@@ -1,0 +1,110 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@font-face {
+  font-family: 'Pretendard Variable';
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/woff2/PretendardVariable.woff2')
+    format('woff2-variations');
+}
+
+:root {
+  --bg: #ffffff;
+  --bg-subtle: #fafafa;
+  --bg-elevated: #ffffff;
+  --fg: #0a0a0a;
+  --fg-muted: #525252;
+  --fg-faint: #a3a3a3;
+  --border: #e5e5e5;
+  --border-strong: #d4d4d4;
+  --accent: #ff9900;
+  --accent-fg: #1f1300;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --code-bg: #f5f5f5;
+}
+
+.dark {
+  --bg: #0a0a0a;
+  --bg-subtle: #111111;
+  --bg-elevated: #161616;
+  --fg: #f5f5f5;
+  --fg-muted: #a3a3a3;
+  --fg-faint: #525252;
+  --border: #262626;
+  --border-strong: #404040;
+  --accent: #ff9900;
+  --accent-fg: #1f1300;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --code-bg: #161616;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-faint: var(--fg-faint);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --font-sans: 'Pretendard Variable', var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-jb), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+* { border-color: var(--border); }
+
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.article {
+  color: var(--fg);
+  font-size: 17px;
+  line-height: 1.75;
+  letter-spacing: -0.005em;
+}
+.article h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin-top: 0; margin-bottom: 1rem; }
+.article h2 { font-size: 1.55rem; font-weight: 700; letter-spacing: -0.015em; line-height: 1.3; margin-top: 2.5rem; margin-bottom: 1rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+.article h3 { font-size: 1.2rem; font-weight: 600; line-height: 1.4; margin-top: 2rem; margin-bottom: 0.75rem; }
+.article h4 { font-size: 1rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+.article p { margin: 1rem 0; }
+.article ul, .article ol { margin: 1rem 0; padding-left: 1.5rem; }
+.article ul { list-style: disc; }
+.article ol { list-style: decimal; }
+.article li { margin: 0.25rem 0; }
+.article li > p { margin: 0.25rem 0; }
+.article a { color: var(--fg); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; transition: text-decoration-color 0.15s; }
+.article a:hover { text-decoration-color: var(--accent); }
+.article strong { color: var(--fg); font-weight: 700; }
+.article em { font-style: italic; }
+.article blockquote { border-left: 2px solid var(--accent); padding-left: 1rem; margin: 1.25rem 0; color: var(--fg-muted); font-style: normal; }
+.article hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+.article code { font-family: var(--font-mono); font-size: 0.88em; padding: 0.1rem 0.35rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; }
+.article pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.1rem; overflow-x: auto; font-size: 0.875rem; line-height: 1.6; margin: 1.25rem 0; }
+.article pre code { background: transparent; border: 0; padding: 0; font-size: inherit; border-radius: 0; }
+.article pre [data-line] { display: block; }
+.article pre [data-highlighted-line] { background: rgba(255, 153, 0, 0.08); }
+.article table { width: 100%; border-collapse: collapse; font-size: 0.93rem; margin: 1.25rem 0; }
+.article th, .article td { text-align: left; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.article th { font-weight: 600; background: var(--bg-subtle); border-bottom: 1px solid var(--border-strong); }
+.article .heading-anchor { color: inherit; text-decoration: none; }
+.article .heading-anchor:hover { color: var(--accent); }
+.article :is(h1, h2, h3, h4) { scroll-margin-top: 80px; }
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }

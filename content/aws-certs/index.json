@@ -1,0 +1,46 @@
+{
+  "category": "aws-certs",
+  "title": "AWS Certification",
+  "certs": [
+    {
+      "slug": "dva-c02",
+      "code": "DVA-C02",
+      "level": "associate",
+      "name": "Developer - Associate",
+      "weeks": 13,
+      "order": 1
+    },
+    {
+      "slug": "saa-c03",
+      "code": "SAA-C03",
+      "level": "associate",
+      "name": "Solutions Architect - Associate",
+      "weeks": 12,
+      "order": 2
+    },
+    {
+      "slug": "soa-c02",
+      "code": "SOA-C02",
+      "level": "associate",
+      "name": "CloudOps Engineer - Associate",
+      "weeks": 12,
+      "order": 3
+    },
+    {
+      "slug": "sap-c02",
+      "code": "SAP-C02",
+      "level": "professional",
+      "name": "Solutions Architect - Professional",
+      "weeks": 16,
+      "order": 4
+    },
+    {
+      "slug": "dop-c02",
+      "code": "DOP-C02",
+      "level": "professional",
+      "name": "DevOps Engineer - Professional",
+      "weeks": 16,
+      "order": 5
+    }
+  ]
+}

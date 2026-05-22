@@ -1,0 +1,12 @@
+{
+  "slug": "sap-c02",
+  "code": "SAP-C02",
+  "level": "professional",
+  "name": "Solutions Architect - Professional",
+  "weeks": 16,
+  "accent": "#FF9900",
+  "order": 4,
+  "dayCount": 80,
+  "sourceRepo": "AWS_professional_solutionArchitect",
+  "syncedAt": "2026-05-22T07:08:09.712Z"
+}

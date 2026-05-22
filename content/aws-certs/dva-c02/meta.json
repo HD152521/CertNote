@@ -1,0 +1,12 @@
+{
+  "slug": "dva-c02",
+  "code": "DVA-C02",
+  "level": "associate",
+  "name": "Developer - Associate",
+  "weeks": 13,
+  "accent": "#FF9900",
+  "order": 1,
+  "dayCount": 65,
+  "sourceRepo": "AWS_associate_developer",
+  "syncedAt": "2026-05-22T07:08:09.403Z"
+}
