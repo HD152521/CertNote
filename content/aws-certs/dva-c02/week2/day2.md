@@ -1,397 +1,340 @@
-# Day 7 - EC2: 보안 그룹, 키 페어, 사용자 데이터
+# Day 7 - 개발자가 만져야 하는 네트워크 경계: Security Group, Key Pair, User Data
 
-📅 날짜: 2026년 5월 25일 (월요일)  
-🎯 주제: EC2 보안 및 초기화  
-⏱️ 학습 시간: 약 90분
+EC2 인스턴스를 만들고 나서 가장 자주 받는 질문은 두 가지다. "왜 SSH가 안 붙어요?"와 "왜 코드는 떴는데 80번 포트가 안 열려요?". 둘 다 답은 같다. 네트워크 통제와 부트스트랩 메커니즘을 잘못 이해해서다. SAA는 "어떤 SG를 어디에 둘 것인가"라는 아키텍처 시점에서 묻는다면, DVA는 "그 SG를 SDK·CLI로 어떻게 만들고, User Data 안에서 Secrets Manager를 어떻게 부르고, IMDSv2를 어떻게 강제하는가"까지 묻는다. 같은 보안 그룹이지만 코드 한 줄, ARN 하나의 차이가 시험 정답을 가른다.
 
----
+오늘은 Security Group의 stateful 메커니즘이 정확히 어떻게 동작하는지, SSH 키 페어 인증의 TLS 핸드셰이크 단계까지 파헤치고, User Data가 cloud-init 위에서 어떤 순서로 돌아가는지를 본다. 개발자가 시험에서 만나는 "왜 권한이 없다는데 SG는 다 열려 있어요?" 같은 디버깅 시나리오는 결국 이 메커니즘을 끝까지 따라가 본 사람만 풀 수 있다.
 
-## 🎯 학습 목표
+## Security Group은 단순한 방화벽이 아니다 — connection tracking의 내부
 
-- 보안 그룹의 개념과 인바운드/아웃바운드 규칙을 설정할 수 있다
-- 키 페어를 생성하고 EC2에 SSH 접속할 수 있다
-- 사용자 데이터(User Data)로 인스턴스 초기화를 자동화한다
+대부분의 입문서가 "SG는 stateful이라 응답이 자동 허용된다"고 적고 끝낸다. 실제로 무슨 일이 일어나는지 보자. 클라이언트 `203.0.113.10:53241`이 EC2 `10.0.1.5:443`으로 TCP SYN을 보낸다. SG는 `Allow TCP 443 from 0.0.0.0/0` 규칙에 매치되면 패킷을 통과시킨다. 이때 SG는 단순히 패킷을 보내는 데 그치지 않고 **conntrack 테이블에 (src_ip=203.0.113.10, src_port=53241, dst_ip=10.0.1.5, dst_port=443, proto=TCP) 5-tuple을 등록**한다. 서버가 SYN-ACK로 응답할 때, 그 패킷의 5-tuple은 (src=10.0.1.5:443, dst=203.0.113.10:53241)이라 outbound 규칙을 본다. 그런데 conntrack에 매칭되는 inbound 흐름이 있으므로 SG는 outbound rule을 평가하지 않고 통과시킨다. 이게 "stateful"의 진짜 의미다.
 
----
+이 메커니즘은 Linux 커널의 `nf_conntrack`(netfilter connection tracking)과 동일한 발상이다. AWS는 Nitro Card에 이 logic을 하드웨어로 구현해 호스트 OS의 부담 없이 ENI 단위로 stateful filtering을 한다. 그래서 SG 변경이 **즉시(수 초 이내) 적용**되고, 기존 진행 중인 TCP 연결도 새 규칙에 의해 끊긴다. NACL은 stateless라 conntrack을 안 쓰고, 패킷 하나하나 규칙을 평가한다. 그래서 NACL에는 ephemeral port(1024-65535) 범위를 outbound로 명시적으로 열어야 응답이 돌아온다.
 
-## 📖 이론 내용
+| 차원 | Security Group | NACL |
+|------|---------------|------|
+| 적용 위치 | ENI (인스턴스 수준) | Subnet (서브넷 수준) |
+| State | Stateful (conntrack) | Stateless (per-packet) |
+| 규칙 종류 | Allow only | Allow + Deny |
+| 평가 순서 | 모든 규칙 OR (allow 하나만 매칭되면 통과) | 번호 순서, 첫 매치 적용 |
+| 응답 트래픽 | 자동 허용 | ephemeral port 명시 필요 |
+| 기본 inbound | 모두 차단 | 기본 NACL은 모두 허용 |
+| 기본 outbound | 모두 허용 | 기본 NACL은 모두 허용 |
+| 자기 자신 참조 | 가능 (`sg-xxx ← sg-xxx`) | 불가 (CIDR만) |
+| 한도 | 인스턴스당 5 SG, SG당 60 in + 60 out | 서브넷당 1 NACL, NACL당 20 in + 20 out (확장 가능) |
 
-### 1. 보안 그룹 (Security Group)
+> 🔍 **더 깊이**: SG의 conntrack 테이블 크기는 인스턴스 타입에 따라 다르다. 기본 c5.large는 수십만 connection, c5n 같은 enhanced networking 인스턴스는 수백만 connection을 추적할 수 있다. 이 한도를 넘으면 새 연결이 drop된다. CloudWatch의 `conntrack_allowance_exceeded` 지표로 확인 가능. 만약 백엔드 API가 RPS는 충분한데 sporadic하게 connection refused가 난다면 conntrack 한도부터 의심해야 한다. m5.large 기준 약 350K, c5n.large는 약 1M 정도가 알려진 수치.
 
-보안 그룹은 EC2 인스턴스의 가상 방화벽으로, 인바운드(들어오는) 및 아웃바운드(나가는) 트래픽을 제어합니다.
+> 💡 **관련 이론**: SG의 stateful 모델은 1990년대 Cisco PIX 방화벽이 도입한 ASA(Adaptive Security Algorithm)와 BSD `pf`(packet filter, OpenBSD 2001)의 state-tracking 방식과 같은 계보다. RFC 5382(NAT Behavioral Requirements for TCP)가 stateful TCP NAT의 동작을 표준화했고, AWS의 ENI-level conntrack은 이 위에서 동작한다. UDP도 추적되지만 connection 개념이 없어 timeout 기반(기본 30초 idle)으로 만료된다. 그래서 DNS·NTP 같은 UDP 트래픽에서 응답이 늦으면 conntrack entry가 사라져 응답이 drop되는 corner case가 있다.
 
-**보안 그룹의 특징:**
-- **상태 저장(Stateful)**: 인바운드 허용 시 응답 트래픽은 자동 허용
-- **허용 규칙만 가능**: Deny 규칙 없음 (기본 모든 인바운드 차단, 모든 아웃바운드 허용)
-- 하나의 인스턴스에 여러 보안 그룹 연결 가능
-- 리전/VPC에 종속적
-- 다른 보안 그룹을 소스로 참조 가능
+```python
+import boto3
 
-**보안 그룹 규칙 구성:**
-- **유형**: SSH, HTTP, HTTPS, 사용자 지정 TCP 등
-- **프로토콜**: TCP, UDP, ICMP
-- **포트 범위**: 단일 포트 또는 범위
-- **소스/대상**: IP 주소, CIDR 블록, 다른 보안 그룹
+ec2 = boto3.client('ec2', region_name='ap-northeast-2')
 
-**⭐ 시험 핵심: 보안 그룹 vs NACL 비교**
+# SG 생성 + 자기 자신 참조 (클러스터 내부 통신 패턴)
+sg = ec2.create_security_group(
+    GroupName='app-tier-sg',
+    Description='App tier internal mesh',
+    VpcId='vpc-0abc1234'
+)
+sg_id = sg['GroupId']
 
-| 특성 | 보안 그룹 | NACL |
-|------|-----------|------|
-| 적용 대상 | 인스턴스 수준 | 서브넷 수준 |
-| 상태 | 상태 저장 (Stateful) | 상태 비저장 (Stateless) |
-| 규칙 유형 | 허용만 가능 | 허용/거부 모두 가능 |
-| 규칙 처리 | 모든 규칙 평가 | 번호 순서대로 처리 |
-
-### 2. 키 페어 (Key Pair)
-
-키 페어는 EC2 인스턴스에 안전하게 접속하기 위한 암호화 키 쌍입니다.
-
-**키 페어 구성:**
-- **공개 키(Public Key)**: AWS에 저장, 인스턴스의 authorized_keys에 등록
-- **개인 키(Private Key)**: 사용자가 보관 (.pem 또는 .ppk 파일)
-
-**접속 방법:**
-```bash
-# Linux/macOS: SSH 접속
-ssh -i "my-key-pair.pem" ec2-user@<public-ip>
-
-# 키 파일 권한 설정 (필수)
-chmod 400 my-key-pair.pem
-
-# Windows: PuTTY 사용 시 .ppk로 변환 필요
+# 자기 자신을 소스로 — 같은 SG 멤버 간 모든 TCP 허용
+ec2.authorize_security_group_ingress(
+    GroupId=sg_id,
+    IpPermissions=[{
+        'IpProtocol': 'tcp',
+        'FromPort': 0,
+        'ToPort': 65535,
+        'UserIdGroupPairs': [{'GroupId': sg_id}]
+    }]
+)
 ```
 
-**운영체제별 기본 사용자:**
-- Amazon Linux: `ec2-user`
-- Ubuntu: `ubuntu`
-- CentOS: `centos`
-- Windows: `Administrator` (RDP로 접속)
+자기 자신을 소스로 참조하는 이 패턴은 Kafka cluster, Cassandra ring, Elasticsearch node 간 통신처럼 "같은 클러스터 멤버끼리는 다 열되, 외부는 막는다"를 표현할 때 표준이다. 새 노드가 추가되면 SG에 attach만 하면 자동으로 통신 가능해진다.
 
-### 3. EC2 사용자 데이터 (User Data)
+> ⚠️ **함정**: 시험에 "SG에서 deny 규칙으로 특정 IP 차단" 같은 보기가 나오면 무조건 오답이다. SG는 deny가 없다. 차단이 필요하면 NACL에 명시적 deny 규칙을 추가하거나, AWS Network Firewall이나 WAF로 처리한다. 또 "SG는 outbound도 stateful이므로 outbound 규칙만 닫으면 inbound 응답도 차단된다"도 자주 헷갈리는데, outbound와 inbound는 별개의 평가 차원이다. inbound로 들어온 요청의 응답은 outbound 규칙 무관 통과, outbound로 나간 요청의 응답은 inbound 규칙 무관 통과다.
 
-인스턴스 최초 시작 시 자동으로 실행되는 스크립트입니다.
+## Security Group과 함께 보는 함정: PrivateLink, VPC Endpoint에서의 SG
 
-**특징:**
-- 루트 권한으로 실행
-- 최초 부팅 시 **1회만** 실행 (기본값)
-- 최대 16KB 크기
-- Base64로 인코딩되어 전달
+VPC Endpoint(특히 Interface Endpoint, PrivateLink 기반)에도 SG를 붙인다. 여기서 가장 흔한 함정이 "Endpoint SG가 호출자(클라이언트)의 IP 또는 SG를 inbound로 허용하지 않아서 호출 실패"다. 예를 들어 Lambda를 VPC에 연결하고 Secrets Manager Interface Endpoint를 통해 GetSecretValue를 호출하려는데 `ConnectTimeoutError`가 난다. 콘솔에선 Lambda SG의 outbound는 0.0.0.0/0 다 열려 있다. 그런데 Endpoint SG의 inbound가 닫혀 있으면 Endpoint ENI까지 패킷이 도달했지만 거기서 drop된다.
 
-**사용 예시:**
+```python
+# Endpoint SG에 Lambda SG로부터의 HTTPS inbound 허용
+ec2.authorize_security_group_ingress(
+    GroupId='sg-endpoint',
+    IpPermissions=[{
+        'IpProtocol': 'tcp',
+        'FromPort': 443,
+        'ToPort': 443,
+        'UserIdGroupPairs': [{'GroupId': 'sg-lambda'}]
+    }]
+)
+```
+
+## Key Pair: SSH 인증의 진짜 단계
+
+키 페어 인증을 "공개키로 챌린지, 개인키로 서명"이라고 한 줄로 끝내는 자료가 많은데, 실제 단계는 더 세밀하다. SSH 프로토콜(RFC 4252, public key authentication)의 흐름을 보자.
+
+```
+1. Client → Server: SSH-2.0 banner 교환
+2. Diffie-Hellman key exchange로 session key 생성
+3. Server가 host key로 자기 신원 증명 (client는 known_hosts 비교)
+4. Client → Server: SSH_MSG_USERAUTH_REQUEST (method=publickey, user=ec2-user)
+5. Server: authorized_keys 파일에서 public key 매칭
+6. Server → Client: SSH_MSG_USERAUTH_PK_OK (이 키 인정함)
+7. Client: session_id를 자기 private key로 서명, 서명 전송
+8. Server: 그 서명을 public key로 검증, 통과면 인증 완료
+```
+
+여기서 핵심은 **session_id가 매번 다르다**는 점이다. 같은 키로 100번 접속하면 100번 다른 데이터에 서명한다. 그래서 키 한 번 만든 걸로 replay attack이 불가능하다. EC2에서 AWS는 인스턴스 시작 시 cloud-init이 IMDS의 `public-keys/0/openssh-key`를 읽어 `~/.ssh/authorized_keys`에 자동 추가한다. 즉 키 페어를 "EC2에 등록"하면 실제로 일어나는 일은 "AMI에 cloud-init이 들어 있고, 그 cloud-init이 IMDS에서 public key를 가져와 OS 안에 심는다"이다.
+
+> 🔍 **더 깊이**: AWS Key Pair는 기본적으로 RSA 2048-bit이지만 2021년부터 **ED25519**도 지원한다. ED25519는 elliptic curve 기반(Curve25519, DJB Bernstein 2011)으로 RSA 2048보다 키 길이가 짧고(256-bit), 서명 생성/검증이 빠르고, side-channel 공격에 더 강하다. 새 키를 만든다면 `KeyType=ed25519`를 명시하자. 또 EC2는 키를 분실해도 복구할 방법이 있다: ① 인스턴스 stop → ② EBS 루트 볼륨 detach → ③ 다른 인스턴스에 attach → ④ `/home/ec2-user/.ssh/authorized_keys`를 새 public key로 교체 → ⑤ 원래 인스턴스에 재attach → ⑥ start. 이 시퀀스는 시험에 가끔 나온다.
+
+> 💡 **관련 이론**: SSH의 public key auth는 PKI(Public Key Infrastructure)의 발상을 두 당사자 사이로 압축한 것이다. CA(Certificate Authority)가 없고 trust on first use(TOFU, known_hosts)로 host key를 신뢰한다. 그래서 첫 접속 때 host key를 잘못 신뢰하면 그 뒤로 MITM 공격에 취약해진다. AWS는 콘솔이나 CLI(`aws ec2 get-console-output`)에서 인스턴스 부팅 로그를 받아 host fingerprint를 확인할 수 있게 해두었다. 보안 환경에선 첫 SSH 전에 콘솔에서 fingerprint를 확인하는 게 정석.
+
+키 페어보다 더 안전한 대안이 있다. **EC2 Instance Connect**(2019년 출시)는 SSH 키를 IAM 권한으로 발급하고 60초간만 유효한 임시 키를 IMDS를 거치지 않고 EC2 안에 push한다. **Session Manager**(SSM Agent 기반)는 SSH 자체를 안 쓰고 HTTPS over WebSocket으로 shell session을 연다. 키도, 22번 포트 inbound도 필요 없다. 시험에 "프로덕션 EC2에 22번 포트를 절대 열고 싶지 않다"는 시나리오가 나오면 답은 거의 항상 Session Manager다.
+
 ```bash
+# Session Manager로 접속 (포트 22 닫혀 있어도 가능)
+aws ssm start-session --target i-0abc1234
+
+# EC2 Instance Connect로 60초 짜리 임시 키 push
+aws ec2-instance-connect send-ssh-public-key \
+  --instance-id i-0abc1234 \
+  --availability-zone ap-northeast-2a \
+  --instance-os-user ec2-user \
+  --ssh-public-key file://~/.ssh/id_ed25519.pub
+```
+
+> ⚠️ **함정**: "SSH 키를 GitHub에 실수로 push했다" → 키 회전 절차는 ① 새 키 페어 생성 → ② EBS root에 새 public key 주입(또는 SSM `aws ssm send-command`로 `authorized_keys` 교체) → ③ 인스턴스 재부팅 → ④ 노출된 키 페어 AWS에서 삭제 → ⑤ CloudTrail에서 그 키로 발생한 RunInstances·StartInstances 등 호출 감사. 키 페어 자체는 IAM 자격증명이 아니라 OS 레벨 인증이라 IAM 관점의 "compromised credential" 처리와 다르다는 점이 시험에 나온다.
+
+## User Data와 cloud-init: 부팅 시퀀스의 끝단
+
+User Data 16KB 제한, 1회 실행, 루트 권한은 다 외운다. 그런데 실제로 cloud-init 안에서 무슨 일이 일어나는지를 보면 시험 함정이 더 잘 보인다.
+
+```
+0. Nitro hypervisor가 인스턴스 슬롯 할당, EBS attach
+1. UEFI bootloader → kernel 로드
+2. systemd 시작
+3. cloud-init-local.service (네트워크 없이 실행되는 초기화)
+   - hostname 설정, /etc/hosts 갱신
+4. cloud-init.service (네트워크 + IMDS 접근)
+   - IMDS의 instance-id, IAM role, public-keys 등 fetch
+   - public-keys를 ec2-user의 authorized_keys에 주입
+5. cloud-config.service
+   - user-data가 cloud-config YAML이면 여기서 적용
+   - packages 설치, write_files, runcmd 등
+6. cloud-final.service
+   - user-data가 #!/bin/bash 스크립트면 여기서 실행
+   - 로그는 /var/log/cloud-init-output.log
+```
+
+User Data 스크립트가 실패하는 가장 흔한 이유는 ① shebang 누락(첫 줄 `#!/bin/bash`), ② Windows CRLF 줄바꿈으로 인한 `^M: command not found`, ③ User Data 안에서 외부 리소스(S3, Secrets Manager)를 부르는데 IAM 인스턴스 프로파일이 attach 전이거나 권한이 없는 경우다. 디버깅의 첫 단계는 항상 `/var/log/cloud-init-output.log`를 보는 것.
+
+```bash
+# User Data 안에서 Secrets Manager로부터 DB 비밀번호 가져오기
 #!/bin/bash
-# 시스템 업데이트
-yum update -y
+set -euxo pipefail
 
-# Apache 웹 서버 설치 및 시작
-yum install -y httpd
-systemctl start httpd
-systemctl enable httpd
+# 인스턴스 프로파일이 부여한 IAM role 자격증명으로 자동 호출
+DB_PASSWORD=$(aws secretsmanager get-secret-value \
+  --secret-id prod/app/db \
+  --region ap-northeast-2 \
+  --query SecretString --output text | jq -r '.password')
 
-# 웹 페이지 생성
-echo "<h1>Hello from EC2!</h1>" > /var/www/html/index.html
-echo "<p>Instance ID: $(curl -s http://169.254.169.254/latest/meta-data/instance-id)</p>" >> /var/www/html/index.html
+# 환경변수 파일에 주입 (chmod 600으로 권한 제한)
+echo "DB_PASSWORD=${DB_PASSWORD}" >> /etc/app/secrets.env
+chmod 600 /etc/app/secrets.env
+chown app:app /etc/app/secrets.env
+
+systemctl restart app.service
 ```
 
----
+이 패턴이 시험의 "user-data에 DB 비밀번호를 박았다 → 어떻게 바꿔야 하나" 시나리오의 정답이다. 핵심은 ① 비밀번호 자체는 Secrets Manager에 있고, ② User Data 안에는 fetch 명령만 있고, ③ 권한은 IAM 인스턴스 프로파일이 부여한다. User Data 자체는 IMDS에서 누구나 읽을 수 있어 비밀번호 저장에 부적합하다.
 
-## 🧠 알아두면 좋은 심화 이론
+> 🔍 **더 깊이**: User Data를 매 부팅마다 재실행하려면 cloud-init의 `scripts_per_boot` 모듈을 쓰거나, User Data를 mime-multipart로 구성해 `cloud-init-per` 디렉티브를 사용한다. 또 EC2 console의 "Stop → Edit user data → Start" 시퀀스로 User Data 변경 후 첫 부팅에 새 스크립트를 실행시키는 패턴도 있다. CloudFormation의 `cfn-init`은 User Data보다 더 정교한 metadata-driven 초기화를 제공한다. SSM State Manager는 인스턴스의 desired state를 지속적으로 유지하는 도구로, "한 번 실행"의 User Data보다 운영 측면에서 우월하다.
 
-### VPC 네트워크 구조 (EC2의 배경 지식 - 시험 빈출)
+> 💡 **관련 이론**: cloud-init은 2009년 Canonical(Ubuntu)이 만든 오픈소스 초기화 프레임워크다. 지금은 AWS, GCP, Azure, OpenStack, 로컬 KVM, VMware vSphere 등 거의 모든 환경에서 동일한 YAML로 동작한다. 이 "한 번 쓰면 모든 클라우드"라는 가치 때문에 IaC와 자연스럽게 어울린다. AWS-specific한 cfn-init이나 SSM Agent는 cloud-init 위에 layer로 쌓이는 구조다.
 
+```yaml
+#cloud-config
+# YAML 기반 declarative user-data 예시
+package_update: true
+packages:
+  - nginx
+  - awscli
+  - jq
+
+write_files:
+  - path: /etc/nginx/conf.d/app.conf
+    content: |
+      server {
+        listen 80;
+        location / { proxy_pass http://localhost:8080; }
+      }
+
+runcmd:
+  - systemctl enable --now nginx
+  - aws s3 cp s3://my-bucket/app.tar.gz /opt/
+  - tar xzf /opt/app.tar.gz -C /opt/
+  - systemctl restart app
 ```
-VPC (10.0.0.0/16)
-├── Public Subnet  (10.0.1.0/24) — Internet Gateway 연결
-│     └── EC2 (퍼블릭 IP) + ALB
-├── Private Subnet (10.0.2.0/24) — NAT Gateway로 외부 통신
-│     └── EC2 (앱 서버), RDS
-└── Database Subnet (10.0.3.0/24) — 외부 차단
-```
 
-| 구성 요소 | 역할 |
-|----------|------|
-| **Internet Gateway** | 퍼블릭 서브넷 ↔ 인터넷 |
-| **NAT Gateway** | 프라이빗 서브넷 → 인터넷 (단방향) |
-| **Route Table** | 서브넷의 트래픽 경로 결정 |
-| **VPC Endpoint** | NAT 없이 AWS 서비스 접근 (S3·DynamoDB Gateway, 나머지 Interface) |
+## IMDSv2 강제: 시험에 반드시 나오는 보안 강화
 
-### 퍼블릭 IP vs Elastic IP (시험 함정)
-
-| 항목 | 퍼블릭 IP | Elastic IP (EIP) |
-|------|----------|------------------|
-| 부여 시점 | 인스턴스 시작 시 자동 | 명시적 할당 |
-| 지속성 | 중지 시 변경 | 고정 |
-| 비용 | 무료 | 인스턴스 미연결 시 과금 (2024년부터 연결돼도 시간당 과금) |
-| 한도 | - | 리전당 5개 (Soft limit) |
-
-> ⚠️ **함정**: "EIP를 할당받았는데 인스턴스에 안 붙이면 무료" → 틀림. 미사용 EIP는 과금. 또한 2024년 2월부터 **모든 IPv4 퍼블릭 IP에 시간당 과금**.
-
-### 배치 그룹 (Placement Group) - 3가지 유형
-
-| 유형 | 배치 | 사용 사례 |
-|------|------|-----------|
-| **Cluster** | 동일 AZ, 저지연·고대역 | HPC, 빅데이터 |
-| **Spread** | AZ 내 별도 하드웨어 분산 | 중요 시스템 고가용성 (AZ당 7개 한계) |
-| **Partition** | 여러 파티션으로 분리 | 분산 워크로드 (Hadoop, Cassandra) |
-
-### IMDS hop limit (보안 시나리오 시험 출제)
+Capital One 사고(2019)는 SSRF로 IMDSv1을 노출시켜 IAM 역할 자격증명을 탈취한 사건이다. AWS는 그 직접적 결과로 2019년 11월 IMDSv2(session token 기반)를 도입했고, 2024년부터 새 EC2 인스턴스의 기본값을 IMDSv2 required로 바꿨다.
 
 ```bash
-# 컨테이너에서 호스트 IMDS 접근 차단 (hop limit = 1)
-aws ec2 modify-instance-metadata-options \
-  --instance-id i-xxx \
-  --http-put-response-hop-limit 1 \
-  --http-tokens required
-```
-
-- `http-tokens required` → IMDSv2 강제
-- `hop-limit 1` → 컨테이너(Docker NAT)에서 IMDS 우회 차단
-- 보안팀이 SCP로 강제하는 경우 많음
-
-### 보안 그룹 추가 디테일
-
-- 최대 60개 인바운드 규칙 / 60개 아웃바운드 규칙
-- 인스턴스 하나에 최대 5개 SG 부착
-- **변경 즉시 적용** (기존 연결까지 즉시 영향)
-- 한 SG가 자기 자신을 참조 가능 (`sg-xxx ← sg-xxx`) — 클러스터 내부 통신 패턴
-
-### NAT Gateway vs NAT Instance (시험에 자주 출제)
-
-| 항목 | NAT Gateway | NAT Instance |
-|------|-------------|--------------|
-| 관리 | AWS 관리 | 고객 관리 (EC2 인스턴스) |
-| 대역폭 | 최대 45 Gbps (자동) | 인스턴스 타입에 따라 |
-| 가용성 | AZ 내 고가용 | 단일 EC2 (직접 HA 구성 필요) |
-| 권장 | ✅ 현재 표준 | 거의 안 씀 |
-
-### 실무 사례 - 3-Tier 보안 그룹 구성
-
-```
-[ALB-SG]    Inbound: 443/0.0.0.0/0
-              Outbound: → App-SG
-[App-SG]    Inbound: 8080/ALB-SG
-              Outbound: → DB-SG
-[DB-SG]     Inbound: 3306/App-SG
-              Outbound: (Deny all)
-```
-
-> 💡 보안 그룹 체이닝(다른 SG 참조)으로 IP 관리 없이 계층 분리.
-
-### User Data 추가 시나리오
-
-- **재실행 강제**: `mime-multipart` 헤더로 매 부팅 시 실행 가능 → `cloud-config: scripts_per_boot`
-- **CloudFormation cfn-init**: User Data보다 강력한 초기화 (메타데이터 기반)
-- 로그: `/var/log/cloud-init-output.log`에서 실행 결과 확인
-
-### 관련 서비스 Cross-Reference
-
-- **SG ↔ NACL** → VPC 보안 양대축
-- **키 페어 ↔ EC2 Instance Connect / Session Manager** → SSH 키 없이 접속
-- **User Data ↔ AWS Systems Manager State Manager** → 지속적 설정 관리
-- **IAM 역할 ↔ EC2 인스턴스 프로파일** → [Week 1 Day 4]에서 다룸
-
----
-
-## 아키텍처 다이어그램
-
-```
-EC2 보안 그룹 구조
-================================
-
-인터넷
-  |
-  v
-[보안 그룹 - WebServer-SG]
-  인바운드 규칙:
-  - HTTP (80)  : 0.0.0.0/0 허용
-  - HTTPS (443): 0.0.0.0/0 허용
-  - SSH (22)   : 203.0.113.0/24 허용 (관리자 IP만)
-  아웃바운드:
-  - 모든 트래픽: 0.0.0.0/0 허용
-  |
-  v
-[EC2 인스턴스 - 웹 서버]
-  |
-  v
-[보안 그룹 - DB-SG]
-  인바운드 규칙:
-  - MySQL(3306): WebServer-SG만 허용
-  아웃바운드:
-  - 모든 트래픽: 0.0.0.0/0 허용
-  |
-  v
-[RDS 데이터베이스]
-  (다른 보안 그룹 참조로 세밀한 제어)
-
-
-SSH 키 페어 인증 과정
-================================
-
-[사용자 로컬]          [EC2 인스턴스]
-개인 키 (.pem)          공개 키 (authorized_keys)
-     |                        |
-     +------ SSH 연결 시도 -->+
-     |                        |
-     |<-- 챌린지(Challenge) --+
-     |                        |
-     +-- 개인 키로 서명 ----->+
-     |                        |
-     |<--- 인증 성공 ----------+
-     |                        |
-[SSH 세션 시작]
-
-
-EC2 초기화 흐름 (User Data)
-================================
-
-인스턴스 시작
-    |
-    v
-부팅 프로세스
-    |
-    v
-Cloud-init 실행
-    |
-    v
-User Data 스크립트 실행 (루트 권한)
-    |
-    v
-서비스 시작 / 소프트웨어 설치
-    |
-    v
-인스턴스 준비 완료
-```
-
----
-
-## ⭐ 핵심 포인트 (시험 출제 빈도 높음)
-
-1. ⭐ **보안 그룹은 Stateful**: 인바운드 허용 시 응답 자동 허용, Deny 규칙 없음
-2. ⭐ **NACL은 Stateless**: 인바운드/아웃바운드 모두 명시적 규칙 필요
-3. ⭐ **보안 그룹 체이닝**: 다른 보안 그룹을 소스로 참조 가능 (IP 관리 불필요)
-4. ⭐ **키 페어 분실**: 개인 키를 잃어버리면 복구 불가, 새 키로 교체 필요
-5. ⭐ **User Data**: 최초 1회만 실행, 루트 권한, 최대 16KB
-
----
-
-## 💻 실제 예시
-
-```bash
-# 보안 그룹 생성
-aws ec2 create-security-group \
-  --group-name WebServerSG \
-  --description "Security group for web servers" \
-  --vpc-id vpc-12345678
-
-# 인바운드 HTTP 규칙 추가
-aws ec2 authorize-security-group-ingress \
-  --group-id sg-12345678 \
-  --protocol tcp \
-  --port 80 \
-  --cidr 0.0.0.0/0
-
-# 인바운드 SSH 규칙 추가 (특정 IP만)
-aws ec2 authorize-security-group-ingress \
-  --group-id sg-12345678 \
-  --protocol tcp \
-  --port 22 \
-  --cidr 203.0.113.0/32
-
-# 키 페어 생성
-aws ec2 create-key-pair \
-  --key-name my-key-pair \
-  --query 'KeyMaterial' \
-  --output text > my-key-pair.pem
-
-chmod 400 my-key-pair.pem
-
-# User Data와 함께 인스턴스 시작
+# 인스턴스 시작 시 IMDSv2 강제 + hop limit 1로 컨테이너 차단
 aws ec2 run-instances \
-  --image-id ami-0c9c942bd7bf113a2 \
+  --image-id ami-0abcdef1234567890 \
   --instance-type t3.micro \
-  --key-name my-key-pair \
-  --security-group-ids sg-12345678 \
-  --user-data file://userdata.sh
-
-# userdata.sh 내용:
-cat << 'EOF' > userdata.sh
-#!/bin/bash
-yum update -y
-yum install -y httpd
-systemctl start httpd
-systemctl enable httpd
-echo "<h1>Hello AWS Developer!</h1>" > /var/www/html/index.html
-EOF
+  --metadata-options 'HttpTokens=required,HttpPutResponseHopLimit=1,InstanceMetadataTags=enabled' \
+  ...
 ```
+
+`HttpTokens=required`로 IMDSv1 비활성화, `HttpPutResponseHopLimit=1`로 Docker 컨테이너 안에서의 IMDS 접근을 차단(컨테이너 네트워크는 추가 hop을 거치므로). `InstanceMetadataTags=enabled`(2022년 추가)는 인스턴스의 태그를 IMDS에서 읽을 수 있게 하는 옵션이다. 코드 안에서 `aws ec2 describe-tags` API 호출 없이 태그를 읽을 수 있어 startup latency가 줄어든다.
+
+```bash
+# IMDSv2로 자격증명 가져오기 (PUT으로 토큰 받고 GET에 헤더 첨부)
+TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
+curl -H "X-aws-ec2-metadata-token: $TOKEN" \
+  http://169.254.169.254/latest/meta-data/iam/security-credentials/MyRole
+```
+
+> ⚠️ **함정**: 시험에 "boto3·AWS SDK가 IMDSv2를 지원하느냐"는 시나리오가 나오면 답은 항상 "지원함(2019년 11월 이후 SDK 자동)". 하지만 SDK 버전이 너무 오래된 경우 IMDSv1만 시도하다 실패할 수 있다. AWS SDK for Python(botocore) 1.13.0 이상, AWS SDK for Java 2.x 이상이 안전한 기준. EKS의 IRSA(IAM Roles for Service Accounts)는 IMDS를 안 쓰고 OIDC + STS AssumeRoleWithWebIdentity로 자격증명을 받으므로 IMDS 옵션과 무관하다.
+
+## VPC 안에서 본 SG와 NACL의 평가 순서
+
+패킷이 EC2까지 도달하기까지 SG와 NACL이 어떻게 함께 일하는지를 보면 디버깅이 훨씬 빨라진다.
+
+```
+Inbound (외부 → EC2):
+  Internet → IGW → Route Table → NACL (inbound rule)
+       → Subnet → ENI의 SG (inbound rule) → EC2
+
+Outbound (EC2 → 외부):
+  EC2 → ENI의 SG (outbound rule) → Subnet → NACL (outbound rule)
+       → Route Table → IGW → Internet
+```
+
+SG는 stateful이라 응답에 outbound rule을 다시 안 보지만, NACL은 stateless라 응답 방향(보통 ephemeral port 1024-65535)도 명시적으로 열어야 한다. 그래서 "SG는 다 열려 있는데 통신이 안 된다"는 시나리오의 답은 거의 항상 NACL의 ephemeral port 미허용이다.
+
+> 📚 **사례**: 2020년 Vimeo의 한 엔지니어가 블로그에 "NACL에 outbound TCP 1024-65535를 빠뜨려서 응답이 모두 drop, 디버깅에 4시간"이라는 회고를 올렸다. SG만 보고 디버깅하다가 NACL을 보는 순간 답이 나왔다는 흔한 패턴. 시험 시나리오에서 "SG는 정상인데 connection timed out"이 보이면 NACL을 의심하자.
+
+## 정리하며
+
+오늘 본 그림은 세 가지다. 첫째, Security Group은 conntrack 기반 stateful firewall이고 SG를 자기 자신으로 참조하는 패턴이 클러스터 내부 통신의 표준이다. 둘째, Key Pair는 SSH 표준 위에서 동작하는 OS-level 인증이지 IAM이 아니며, 프로덕션에선 Session Manager나 EC2 Instance Connect로 22번 포트를 닫는 것이 현대적이다. 셋째, User Data는 cloud-init의 마지막 단계에서 1회 실행되고, 비밀번호는 절대 박지 말고 Secrets Manager + 인스턴스 프로파일 패턴을 써야 한다.
+
+다음 글에서는 EC2가 디스크에 접근하는 layer — EBS, 인스턴스 스토어, 그리고 그 위의 EFS·FSx를 본다. 같은 "스토리지"라는 단어 안에 IOPS·throughput·durability·multi-attach가 어떻게 trade-off되는지가 시험의 핵심이다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** 보안 그룹에 대한 올바른 설명은?
+**문제 1.** 한 개발자가 ECS 태스크가 Lambda에서 Secrets Manager Interface Endpoint를 호출하도록 설계했다. Lambda SG의 outbound는 0.0.0.0/0 다 열려 있는데 `ConnectTimeoutError`가 발생한다. 가장 가능성 있는 원인은?
 
-A) 서브넷 수준에서 적용된다  
-B) 허용(Allow)과 거부(Deny) 규칙을 모두 가질 수 있다  
-C) 상태 저장(Stateful)으로 인바운드 허용 시 응답이 자동 허용된다  
-D) 각 인스턴스에는 하나의 보안 그룹만 연결할 수 있다  
+A) Secrets Manager는 Interface Endpoint를 지원하지 않는다
+B) Endpoint SG의 inbound에 Lambda SG로부터의 443 허용이 없다
+C) IAM 권한이 부족하다
+D) Lambda의 timeout이 너무 짧다
 
-**정답: C**  
-해설: 보안 그룹은 상태 저장(Stateful) 방식으로 동작하여 인바운드 트래픽이 허용되면 해당 응답 트래픽은 자동으로 허용됩니다. NACL이 서브넷 수준에 적용됩니다.
-
----
-
-**문제 2.** EC2 인스턴스의 SSH 접속을 위한 키 페어에서 AWS가 보관하는 것은?
-
-A) 개인 키(.pem 파일)  
-B) 공개 키  
-C) 대칭 암호화 키  
-D) 세션 토큰  
-
-**정답: B**  
-해설: AWS는 공개 키를 보관하고, 사용자는 개인 키(.pem 파일)를 보관합니다. 개인 키는 AWS에 저장되지 않으므로 분실 시 복구가 불가합니다.
+**정답: B**
+해설: Interface Endpoint(PrivateLink)는 자체 ENI를 가지고 그 ENI에 SG가 attach된다. Lambda의 outbound가 0.0.0.0/0이어도 Endpoint SG의 inbound가 닫혀 있으면 Endpoint ENI에서 패킷이 drop된다. 해결은 Endpoint SG의 inbound에 Lambda SG를 소스로 TCP 443을 허용. C는 IAM이라면 보통 `AccessDeniedException`이 오지 timeout이 아니다. D는 일반 Secrets Manager 호출은 100ms 이내라 Lambda 기본 3초 timeout보다 훨씬 빠르다. Endpoint SG는 자주 빠뜨리는 함정.
 
 ---
 
-**문제 3.** EC2 사용자 데이터(User Data)에 대한 올바른 설명은?
+**문제 2.** 한 회사가 EC2에서 SSH 키를 쓰지 않고 IAM으로 통제되는 shell access를 원한다. 22번 포트 inbound는 절대 열고 싶지 않다. 가장 적절한 솔루션은?
 
-A) 인스턴스 재시작 시마다 실행된다  
-B) 일반 사용자 권한으로 실행된다  
-C) 최대 1MB까지 지원된다  
-D) 인스턴스 최초 시작 시 한 번만 실행된다  
+A) EC2 Instance Connect (Browser-based SSH)
+B) Session Manager (SSM Agent + HTTPS over WebSocket)
+C) Bastion Host + SSH
+D) Direct Connect + VPN
 
-**정답: D**  
-해설: User Data는 기본적으로 인스턴스 최초 시작 시 1회만 실행되며, 루트 권한으로 실행됩니다. 크기는 최대 16KB입니다.
-
----
-
-**문제 4.** 웹 서버 보안 그룹에서 허용해야 하는 인바운드 트래픽으로 올바른 것은?
-
-A) 포트 22(SSH)를 0.0.0.0/0에서 허용  
-B) 포트 80과 443을 0.0.0.0/0에서 허용  
-C) 모든 트래픽을 모든 IP에서 허용  
-D) 포트 3306(MySQL)을 0.0.0.0/0에서 허용  
-
-**정답: B**  
-해설: 공개 웹 서버는 HTTP(80)와 HTTPS(443)를 모든 IP에서 허용해야 합니다. SSH(22)는 관리자 IP에서만, MySQL(3306)은 애플리케이션 서버에서만 허용해야 합니다.
+**정답: B**
+해설: Session Manager는 SSM Agent가 outbound HTTPS(443)로 SSM 서비스에 연결하고, AWS Console·CLI에서 그 세션 위로 shell을 연다. 22번 포트는 닫혀 있어도 동작하고, IAM 권한(`ssm:StartSession`)으로 누가 어느 인스턴스에 접근 가능한지 통제한다. CloudTrail에 모든 명령이 기록되므로 감사도 가능. A의 EC2 Instance Connect도 IAM 통제는 가능하지만 결국 22번 포트가 SG에서 EC2 Instance Connect 서비스 IP에서 열려 있어야 한다. C는 22번 포트가 어디든 열려야 함. D는 네트워크 연결 방식이지 shell 접근 방식이 아님.
 
 ---
 
-**문제 5.** EC2 인스턴스의 Ubuntu 기본 SSH 사용자명은?
+**문제 3.** 한 EC2 인스턴스가 m5.large인데 sporadic하게 `Connection refused`가 발생한다. CPU·메모리는 여유롭고 애플리케이션 로그에는 에러가 없다. 가장 가능성 있는 원인은?
 
-A) root  
-B) admin  
-C) ec2-user  
-D) ubuntu  
+A) EBS IOPS 한도 초과
+B) Conntrack 테이블 한도 초과 (CloudWatch `conntrack_allowance_exceeded` 지표 확인)
+C) ALB의 deregistration delay
+D) IMDSv2 토큰 만료
 
-**정답: D**  
-해설: Ubuntu AMI의 기본 SSH 사용자는 "ubuntu"입니다. Amazon Linux는 "ec2-user", CentOS는 "centos"를 사용합니다.
+**정답: B**
+해설: 각 EC2 인스턴스는 SG의 stateful conntrack 테이블이 인스턴스 타입별로 정해진 한도(m5.large 약 350K, c5n.large 약 1M)를 갖는다. 한도 초과 시 새 connection이 drop된다. CloudWatch agent의 `conntrack_allowance_exceeded` 지표로 확인. 해결은 ① 인스턴스 타입을 더 큰 것(c5n 계열)으로 변경, ② 애플리케이션이 connection pool을 효율적으로 재사용하도록 변경, ③ keep-alive로 connection 수 감소. A는 IO 한도 초과 시 latency가 늘지 connection refused는 아님. C는 ALB 동작과 무관. D는 메타데이터 조회와 무관.
+
+---
+
+**문제 4.** User Data 스크립트가 인스턴스 부팅 시 실행되지 않는다. 디버깅 첫 단계로 가장 적절한 것은?
+
+A) AMI를 새로 만든다
+B) `/var/log/cloud-init-output.log`와 `/var/log/cloud-init.log`를 확인한다
+C) 인스턴스를 다른 AZ로 옮긴다
+D) IAM 인스턴스 프로파일을 제거한다
+
+**정답: B**
+해설: User Data는 cloud-init의 마지막 단계(`cloud-final.service`)에서 실행되며, 모든 출력은 `/var/log/cloud-init-output.log`에, cloud-init 자체의 동작 로그는 `/var/log/cloud-init.log`에 기록된다. 가장 흔한 실패 원인은 ① shebang(`#!/bin/bash`) 누락, ② Windows CRLF 줄바꿈, ③ User Data 안에서 외부 리소스 호출 시 IAM 권한 부족, ④ User Data 크기 16KB 초과. EC2 콘솔의 "Get System Log"나 `aws ec2 get-console-output`으로도 일부 부팅 로그를 볼 수 있다.
+
+---
+
+**문제 5.** 한 회사가 EC2 인스턴스에 ED25519 키 페어를 사용하려고 한다. CLI로 생성하는 정확한 명령은?
+
+A) `aws ec2 create-key-pair --key-name my-key --key-type ed25519 --query 'KeyMaterial' --output text > my-key.pem`
+B) `aws ec2 create-key-pair --key-name my-key --key-format ed25519`
+C) `aws iam create-key-pair --key-name my-key`
+D) EC2 콘솔에서만 가능
+
+**정답: A**
+해설: `--key-type ed25519`로 명시. 출력은 PEM 포맷으로 받아 `my-key.pem`에 저장하고 `chmod 400 my-key.pem` 후 SSH 사용. ED25519는 RSA 2048보다 키가 짧고 서명·검증이 빠르며 side-channel 공격에 더 강하다. AWS는 2021년부터 ED25519 지원. C의 `aws iam create-key-pair`는 존재하지 않는 명령(IAM의 키는 access key이지 SSH 키가 아님).
+
+---
+
+**문제 6.** 한 EC2 인스턴스가 SSRF 공격으로 IMDSv1을 통해 IAM 역할 자격증명을 탈취당했다. 동일한 사고를 방지하는 가장 적절한 EC2 설정은?
+
+A) IAM 역할을 제거한다
+B) `MetadataOptions.HttpTokens=required, HttpPutResponseHopLimit=1`로 IMDSv2 강제 + 컨테이너 경유 접근 차단
+C) Security Group에서 169.254.169.254를 차단한다
+D) `ec2messages.amazonaws.com` endpoint를 사용한다
+
+**정답: B**
+해설: `HttpTokens=required`로 IMDSv1 비활성화 → SSRF 공격자는 PUT을 못 보내므로 토큰을 받지 못해 메타데이터 접근 차단. `HttpPutResponseHopLimit=1`로 추가 강화 → Docker 컨테이너 네트워크는 hop을 한 번 더 거치므로 컨테이너 안에서 IMDS 접근 차단. A는 애플리케이션이 IAM 권한을 못 쓰게 됨. C는 169.254.169.254가 link-local 주소라 SG로 통제 불가(SG는 ENI 외부 라우팅된 패킷만 봄). D는 SSM 통신용 endpoint로 IMDS와 무관.
+
+---
+
+**문제 7.** 다음 cloud-config YAML 중 매 부팅마다 실행되는 명령을 정의하는 부분은?
+
+A) `runcmd`
+B) `bootcmd`
+C) `scripts_per_boot`
+D) `write_files`
+
+**정답: C**
+해설: `runcmd`는 cloud-init "instance" frequency로 첫 부팅에 1회만 실행. `bootcmd`는 매 부팅마다 실행되지만 매우 이른 단계라 네트워크가 없을 수 있음. `scripts_per_boot`는 `/var/lib/cloud/scripts/per-boot/` 디렉터리의 스크립트를 매 부팅마다 실행. `write_files`는 명령이 아니라 파일 생성 디렉티브. User Data를 매 부팅마다 실행하려면 mime-multipart로 `text/x-shellscript-per-boot` 타입 part를 사용한다.
+
+---
+
+**문제 8.** Lambda 함수가 VPC에 연결돼 PrivateLink로 DynamoDB Gateway Endpoint를 호출하려 한다. Lambda SG와 Endpoint 설정에 대해 옳은 것은?
+
+A) Gateway Endpoint(S3, DynamoDB)는 ENI가 없으므로 SG 적용이 안 되고, 대신 Route Table에 prefix list를 추가해 Lambda subnet의 outbound route를 endpoint로 보낸다
+B) Gateway Endpoint도 ENI가 있어 SG로 통제한다
+C) DynamoDB는 PrivateLink Interface Endpoint만 지원한다
+D) Lambda가 VPC에 연결되면 DynamoDB 호출이 불가능하다
+
+**정답: A**
+해설: AWS의 VPC Endpoint는 두 종류다. **Gateway Endpoint**(S3, DynamoDB 한정)는 Route Table 항목으로 동작해 ENI나 SG 없이 트래픽을 endpoint로 라우팅. **Interface Endpoint**(PrivateLink, 대부분의 서비스)는 ENI를 만들고 그 ENI에 SG를 attach. DynamoDB는 2017년부터 Gateway Endpoint를 지원했고, 2023년 PrivateLink Interface Endpoint도 추가 지원. 시험에서 "Lambda가 VPC에 연결됐는데 DynamoDB 호출이 timeout"이라는 시나리오의 답은 거의 항상 Gateway Endpoint의 Route Table에 prefix list 누락이다.
 
 ---
 
 ## 📌 오늘의 요약
 
-1. 보안 그룹은 EC2의 가상 방화벽으로, Stateful 방식으로 허용 규칙만 지원한다
-2. 보안 그룹 vs NACL: 인스턴스 레벨 vs 서브넷 레벨, Stateful vs Stateless
-3. 키 페어: AWS는 공개 키 보관, 사용자는 개인 키(.pem) 보관 (분실 시 복구 불가)
-4. User Data는 인스턴스 최초 시작 시 1회 실행되는 초기화 스크립트 (루트 권한, 최대 16KB)
-5. 보안 그룹 체이닝으로 IP 대신 다른 보안 그룹을 소스로 참조하면 관리가 편리하다
+1. Security Group은 ENI 단위 stateful firewall, conntrack 테이블에 5-tuple을 추적해 응답 자동 허용. SG → SG 자기 자신 참조가 클러스터 내부 통신 표준 패턴.
+2. NACL은 subnet 단위 stateless ACL, ephemeral port outbound 명시 필요. SG에 비해 디버깅 시 함정이 많다.
+3. Key Pair는 SSH 표준의 public key auth를 EC2에 매핑한 것이고, ED25519가 모던 표준. 프로덕션에선 Session Manager로 22번 포트 자체를 닫는 것이 best practice.
+4. User Data는 cloud-init의 마지막 단계에서 1회 실행, `/var/log/cloud-init-output.log`가 디버깅의 출발점. 비밀번호는 절대 박지 말고 Secrets Manager + 인스턴스 프로파일.
+5. IMDSv2 강제(`HttpTokens=required` + `HttpPutResponseHopLimit=1`)는 SSRF 방어의 핵심. Capital One 사고 직후 도입된 메커니즘.
