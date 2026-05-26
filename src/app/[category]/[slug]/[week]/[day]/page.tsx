@@ -3,9 +3,11 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { getAllDayParams, getDay } from '@/lib/content';
 import { buildToc } from '@/lib/toc';
+import { readingTimeMinutes } from '@/lib/readingTime';
 import { Article } from '@/components/Article';
 import { Toc } from '@/components/Toc';
 import { MarkAsRead } from '@/components/MarkAsRead';
+import { DayMeta } from '@/components/DayMeta';
 import { cn } from '@/lib/cn';
 
 interface PageProps { params: Promise<{ category: string; slug: string; week: string; day: string }>; }
@@ -30,18 +32,20 @@ export default async function DayPage({ params }: PageProps) {
   const content = await getDay(category, slug, w, d);
   if (!content) notFound();
   const toc = buildToc(content.body);
+  const readingMinutes = readingTimeMinutes(content.body);
   return (
     <div className="flex gap-0">
       <MarkAsRead slug={slug} week={w} day={d} title={content.title} href={content.href} />
       <div className="min-w-0 flex-1">
         <div className="mx-auto max-w-2xl">
-          <nav className="mb-6 flex items-center gap-2 text-xs text-fg-muted font-mono">
+          <nav className="mb-4 flex items-center gap-2 text-xs text-fg-muted font-mono">
             <Link href={`/${category}/${slug}`} className="hover:text-fg">← {content.certMeta.code}</Link>
             <span className="text-fg-faint">/</span>
             <span>Week {w}</span>
             <span className="text-fg-faint">/</span>
             <span className="text-fg">Day {d}</span>
           </nav>
+          <DayMeta certMeta={content.certMeta} week={w} day={d} readingMinutes={readingMinutes} />
           <Article source={content.body} />
           <footer className="mt-12 grid grid-cols-2 gap-3 border-t border-border pt-6">
             {content.prev ? (

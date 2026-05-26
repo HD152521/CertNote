@@ -108,3 +108,17 @@ html, body {
 .article .heading-anchor:hover { color: var(--accent); }
 .article :is(h1, h2, h3, h4) { scroll-margin-top: 80px; }
 * { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+
+/* === blockquote/callout 강조 (관련 이론·암기 팁·함정용) === */
+.article blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--bg-subtle);
+  padding: 0.85rem 1.1rem;
+  border-radius: 0 6px 6px 0;
+  margin: 1.25rem 0;
+  color: var(--fg);
+}
+.article blockquote p { margin: 0.4rem 0; }
+.article blockquote p:first-child { margin-top: 0; }
+.article blockquote p:last-child { margin-bottom: 0; }
+.article blockquote strong:first-child { color: var(--accent); }
