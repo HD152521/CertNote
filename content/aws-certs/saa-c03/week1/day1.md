@@ -1,98 +1,23 @@
-# Day 1 - AWS 개요, 글로벌 인프라, 공동 책임 모델
+# Day 1 - AWS 인프라의 지도: 리전, AZ, 그리고 공동 책임이라는 약속
 
-📅 날짜: Week 1 (Day 1)
-🎯 주제: AWS 클라우드 기초와 솔루션 아키텍트 관점의 인프라 이해
-⏱️ 학습 시간: 약 90분 (출퇴근 15-20분으로 핵심만 훑기 가능)
+AWS 콘솔을 처음 열면 우측 상단에 "Seoul" 같은 리전 셀렉터가 보이고, 어떤 서비스는 글로벌이라고 적혀 있는데 어떤 서비스는 리전을 골라야 한다. 둘의 차이가 뭔지 한 번이라도 막힌 적이 있다면, 그게 바로 솔루션 아키텍트가 답해야 할 첫 질문이다.
 
----
+이 글에서는 AWS의 글로벌 인프라가 어떤 계층으로 쌓여 있는지, 그리고 그 위에서 "내 책임"과 "AWS 책임"이 어떻게 갈리는지를 정리한다. SAA-C03 시험은 정확히 이 지점에서 시작한다. 인프라 지도를 머릿속에 그릴 줄 알아야, 다음 주의 VPC도, 그 다음 주의 RDS도 의미가 통한다.
 
-## 🎯 학습 목표
+## 리전과 AZ: HA 설계의 출발선
 
-- AWS 글로벌 인프라(리전 / AZ / 엣지 / Local Zones / Outposts) 차이를 설계 관점에서 설명한다
-- 공동 책임 모델을 IaaS / PaaS / SaaS 추상화 레벨로 구분해서 답할 수 있다
-- Well-Architected Framework 6개 기둥을 키워드로 외운다
-
----
-
-## 🧩 사전 지식 (CS 기초)
-
-> 처음 보는 사람을 위해 — 이 Day를 이해하려면 알아두면 좋은 CS 개념.
-
-- **가용성(Availability)**: 시스템이 정상 동작하는 시간 비율. "Three nines(99.9%)" = 연간 약 8시간 다운 허용.
-- **내구성(Durability)**: 데이터가 손실되지 않는 비율. S3 11 9's는 "1000만 객체 중 1개를 1만 년에 잃을 확률".
-- **장애 격리(Fault isolation)**: 한 컴포넌트 장애가 다른 컴포넌트로 번지지 않게 경계를 두는 설계. AZ는 물리적 격리.
-- **무결성(Integrity) / 기밀성(Confidentiality) / 가용성(Availability) = CIA 트라이어드**: 보안 3대 목표.
-- **추상화 계층 (IaaS / PaaS / SaaS)**: 고객이 관리하는 책임 범위가 점점 줄어든다. EC2(IaaS) → Beanstalk(PaaS) → S3(SaaS-ish).
-
----
-
-## 📖 이론 내용
-
-### 1. AWS 글로벌 인프라 — 설계자의 시야
+AWS 인프라를 한 줄로 표현하면 **Region > AZ > Edge** 의 3층 구조다. 거기에 특수 용도의 Local Zones, Wavelength, Outposts가 곁가지로 붙는다.
 
 | 구성 요소 | 개수(대략) | 설계 의미 |
 |-----------|------|-----------|
 | **Region** | 30+ | 데이터 주권 / 가격 / 서비스 가용성 결정 단위 |
 | **Availability Zone (AZ)** | 리전당 3+ | HA 설계의 최소 단위. 물리적 격리 |
-| **Edge Location** | 400+ | CloudFront / Route 53 / Global Accelerator 사용 |
+| **Edge Location** | 400+ | CloudFront / Route 53 / Global Accelerator |
 | **Local Zones** | 30+ | 1ms 이내 초저지연 (게임, 미디어, ML 추론) |
 | **Wavelength Zone** | 통신사 5G 엣지 | 모바일 5G 디바이스용 |
 | **Outposts** | 고객 데이터센터 | 온프레미스 규제 / 하이브리드 |
 
-> 💡 SAA에서 "1ms 이내", "데이터를 본사 밖으로 못 내보냄", "5G 사용자에게 초저지연" 같은 키워드가 보이면 각각 **Local Zones / Outposts / Wavelength**.
-
-### 2. 공동 책임 모델 (Shared Responsibility Model)
-
-**AWS = Security OF the Cloud / Customer = Security IN the Cloud**
-
-| 책임 영역 | AWS | 고객 |
-|-----------|-----|------|
-| 물리적 시설 / 하드웨어 | ✅ | - |
-| 하이퍼바이저 / 호스트 OS | ✅ | - |
-| 게스트 OS 패치 (EC2) | - | ✅ |
-| 관리형 서비스 OS / 엔진 패치 (RDS/Lambda) | ✅ | - |
-| 네트워크 트래픽 보호 (SG / NACL) | - | ✅ |
-| 데이터 분류 / 암호화 키 정책 | - | ✅ |
-| IAM 사용자 / 권한 | - | ✅ |
-
-핵심 규칙: **"AWS는 콘크리트 바닥부터 하이퍼바이저까지, 그 위는 모두 너의 책임"**. 단, 더 관리형(Managed)인 서비스일수록 AWS 책임이 위로 올라온다.
-
-### 3. AWS Well-Architected Framework (W-AF) 6 Pillars
-
-1. **Operational Excellence (운영 우수성)** — 모니터링, IaC, 자동화
-2. **Security (보안)** — 최소권한, 모든 계층 보안, 데이터 보호
-3. **Reliability (안정성)** — Self-healing, Multi-AZ, 분산
-4. **Performance Efficiency (성능 효율)** — 적절한 리소스, 글로벌화, 서버리스
-5. **Cost Optimization (비용 최적화)** — Right-sizing, 적합한 가격 모델
-6. **Sustainability (지속 가능성)** — 탄소 발자국 최소화 (2021 추가)
-
-> 시험은 6개 기둥 중 보통 4개(Security/Reliability/Performance/Cost)를 시나리오로 묻는다. SAA 도메인 비중과 일치한다.
-
----
-
-## 🧠 알아두면 좋은 심화 이론
-
-| 항목 | 설명 | 시험 포인트 |
-|------|------|-------------|
-| **AZ는 데이터센터 ≠ 1:1** | 한 AZ는 1개 이상의 데이터센터 집합 | "AZ가 곧 단일 DC다" → ❌ |
-| **AZ ID vs AZ Name** | `apne2-az1`(ID) vs `ap-northeast-2a`(Name). 이름은 계정마다 다르게 매핑 | 멀티 계정 비교 시 ID 사용 |
-| **S3는 글로벌? 리전?** | 콘솔/네임스페이스는 글로벌, 데이터는 리전 종속 | 함정 자주 출제 |
-| **GovCloud / China** | 별도 파티션(`aws-us-gov`, `aws-cn`). 일반 계정 접근 불가 | ARN 파티션 구분 |
-| **Global Accelerator** | TCP/UDP 워크로드를 엣지에서 가속. 정적 Anycast IP 2개 제공 | "비-HTTP 글로벌 가속" 키워드 |
-
-> ⚠️ **함정**: "CloudFront는 캐시, Global Accelerator는 네트워크 가속". CloudFront는 HTTP 위주, GA는 TCP/UDP 위주. 게임 서버, MQTT 같으면 GA.
-
-> 💡 **암기 팁**: 6 Pillars 영어 머리글자 → **O-S-R-P-C-S** ("OSRP-CS" = "오 살펴 봐 시험" 으로 외워도 됨).
-
-### 관련 서비스 Cross-Reference
-
-- 공동 책임 → **IAM, KMS** (Week 1, Week 8)
-- AZ 격리 → **Multi-AZ RDS, ASG** (Week 3, Week 5, Week 11)
-- 글로벌 인프라 → **CloudFront, Route 53, Global Accelerator** (Week 4, Week 11)
-
----
-
-## 🏗️ 아키텍처 다이어그램
+여기서 가장 중요한 건 AZ다. 한 AZ는 단일 데이터센터가 아니라 **물리적으로 격리된 1개 이상의 DC 집합**이다. 전원도 네트워크도 분리되어 있고, 같은 리전 안의 AZ 간에는 저지연 전용선으로 묶여 있어서 동기 복제가 가능하다. 그래서 시험에서 "고가용성이 필요하다"라는 키워드가 나오면 거의 항상 답은 **Multi-AZ**다.
 
 ```
                   [ AWS 글로벌 ]
@@ -106,10 +31,48 @@
 
 [Edge Locations (400+)] —— CloudFront / Route 53 / GA
 [Local Zones / Wavelength / Outposts]
+```
 
+> 💡 **관련 이론**: 가용성(Availability)은 "정상 동작 시간 비율"이고, 내구성(Durability)은 "데이터가 손실되지 않는 비율"이다. 둘은 자주 혼동되지만 다른 차원이다. S3가 자랑하는 "11 9's"는 내구성 수치로, 1000만 개 객체 중 1개를 1만 년에 잃을 확률을 뜻한다. 가용성과 내구성은 모두 분산 시스템의 CAP 정리(Brewer, 2000)에서 갈라져 나온 운영 지표다.
 
-공동 책임 — 서비스별 책임 곡선
-================================
+> ⚠️ **함정**: "AZ는 곧 데이터센터 한 곳"이라는 보기가 자주 등장한다. 틀렸다. AZ는 1개 이상의 DC를 묶은 논리적 격리 단위다. 또 한 가지 자주 출제되는 함정은 **AZ ID vs AZ Name**. `ap-northeast-2a`는 계정마다 다른 물리 AZ로 매핑된다. 계정 간 비교가 필요하면 `apne2-az1` 같은 **AZ ID**를 써야 한다.
+
+## Edge에서 일어나는 일: CloudFront와 Global Accelerator
+
+엣지 로케이션은 사용자와 가까운 곳에 데이터를 캐싱하거나 트래픽을 가속하는 지점이다. 두 가지 서비스가 자주 헷갈리는데, 시험에서 명확히 가른다.
+
+- **CloudFront**: HTTP/HTTPS 캐시 중심. 정적 콘텐츠나 API 응답을 엣지에 캐싱.
+- **Global Accelerator**: TCP/UDP 워크로드를 엣지에서 AWS 백본망으로 끌어들여 가속. 정적 Anycast IP 2개 제공.
+
+게임 서버, MQTT, VoIP, 비-HTTP 프로토콜이 보이면 거의 무조건 **Global Accelerator**다. HTTP 캐시·콘텐츠 배포면 CloudFront. 이 한 줄을 외워두면 한두 문제는 그냥 가져온다.
+
+## 특수 인프라: Outposts, Local Zones, Wavelength
+
+이 세 가지는 시나리오 키워드로 구별하는 게 가장 빠르다.
+
+- **Outposts**: "데이터를 본사 밖으로 못 내보냄" / "온프레미스 규제" → 고객 DC 안에 AWS 하드웨어를 두고 같은 API로 운영.
+- **Local Zones**: "특정 도시에 초저지연 필요" / "1ms 이내" → 게임, 실시간 영상, ML 추론.
+- **Wavelength**: "5G 모바일 사용자" / "통신사 엣지" → 5G 단말에 가장 가까운 위치.
+
+> 💡 **암기 팁**: 본사 = O(utposts), 도시 = L(ocal Zones), 5G = W(avelength). 키워드 한 단어만 잡으면 답이 떨어진다.
+
+## 공동 책임 모델: AWS는 어디까지 책임지나
+
+클라우드 보안을 처음 접하면 "AWS가 다 해주는 거 아니야?"라고 착각하기 쉽다. 실제로는 **AWS = Security OF the Cloud / Customer = Security IN the Cloud** 라는 분담이 있다. 콘크리트 바닥부터 하이퍼바이저까지는 AWS, 그 위는 모두 고객 책임이라고 외워두면 거의 맞는다.
+
+| 책임 영역 | AWS | 고객 |
+|-----------|-----|------|
+| 물리적 시설 / 하드웨어 | ✅ | - |
+| 하이퍼바이저 / 호스트 OS | ✅ | - |
+| 게스트 OS 패치 (EC2) | - | ✅ |
+| 관리형 서비스 OS / 엔진 패치 (RDS/Lambda) | ✅ | - |
+| 네트워크 트래픽 보호 (SG / NACL) | - | ✅ |
+| 데이터 분류 / 암호화 키 정책 | - | ✅ |
+| IAM 사용자 / 권한 | - | ✅ |
+
+핵심 규칙 하나만 챙기면 된다. **추상화 레벨이 올라갈수록(=Managed 서비스일수록) AWS의 책임이 위로 올라온다**. EC2(IaaS)는 OS 패치까지 고객이 하지만, RDS(PaaS)는 DB 엔진 패치까지 AWS가, S3 같은 완전 관리형 서비스는 더 위까지 AWS가 책임진다.
+
+```
 관리형↑       AWS 책임 ↑
   S3 / DynamoDB / Lambda        ┐
   RDS / ECS Fargate             │
@@ -117,38 +80,39 @@
 관리형↓       고객 책임 ↑
 ```
 
----
+> 💡 **관련 이론**: 공동 책임 모델은 CIA 트라이어드(Confidentiality, Integrity, Availability)를 클라우드 환경에 매핑한 결과다. 물리적 가용성과 인프라 무결성은 AWS가, 데이터 기밀성과 애플리케이션 무결성은 고객이 맡는다. NIST SP 800-145의 클라우드 서비스 모델(IaaS/PaaS/SaaS) 분류와도 정확히 맞물린다.
 
-## ⭐ 핵심 포인트 (시험 출제 빈도 높음)
+## Well-Architected Framework: 설계의 6가지 축
 
-1. ⭐ **AZ는 물리적 격리. HA의 최소 단위.** Region 내 3개 이상이 표준.
-2. ⭐ **공동 책임 — Managed 서비스일수록 AWS 책임 ↑.** EC2 OS 패치는 고객, RDS DB 엔진 패치는 AWS.
-3. ⭐ **Global Accelerator vs CloudFront**: TCP/UDP·게임 = GA / HTTP 캐시 = CloudFront.
-4. ⭐ **Outposts** = 데이터 본사 밖 못 나감 / **Local Zones** = 초저지연 / **Wavelength** = 5G.
-5. ⭐ **Well-Architected 6 Pillars**: Operational / Security / Reliability / Performance / Cost / Sustainability.
+AWS는 좋은 클라우드 설계를 6개 기둥으로 정리해두었다. SAA 도메인 비중과도 거의 일치하니까 외워두면 시나리오 문제의 의도를 빨리 읽을 수 있다.
 
----
+1. **Operational Excellence (운영 우수성)** — 모니터링, IaC, 자동화
+2. **Security (보안)** — 최소권한, 모든 계층 보안, 데이터 보호
+3. **Reliability (안정성)** — Self-healing, Multi-AZ, 분산
+4. **Performance Efficiency (성능 효율)** — Right-sizing, 글로벌화, 서버리스
+5. **Cost Optimization (비용 최적화)** — 적합한 가격 모델
+6. **Sustainability (지속 가능성)** — 탄소 발자국 최소화 (2021 추가)
 
-## 💻 실제 예시 - AWS CLI
+> 💡 **암기 팁**: 머리글자만 따서 **O-S-R-P-C-S**. "오 살펴봐 시험" 으로 외워도 잘 안 잊혀진다. SAA에서 자주 묻는 건 4개(Security/Reliability/Performance/Cost)다.
+
+## 콘솔 vs CLI로 확인해보기
+
+말로만 외우면 잊어버린다. CLI로 한 번 찍어보면 머리에 박힌다.
 
 ```bash
 # 1) 모든 리전 목록
 aws ec2 describe-regions --output table
 
-# 2) 서울 리전의 AZ
+# 2) 서울 리전의 AZ 확인
 aws ec2 describe-availability-zones \
   --region ap-northeast-2 \
   --query 'AvailabilityZones[*].[ZoneName,ZoneId,State]' \
   --output table
-
-# 3) 현재 계정에서 사용 가능한 서비스 확인 (Service Quotas)
-aws service-quotas list-services --output table | head
 ```
 
-**출력 예시:**
+출력은 이렇게 나온다.
+
 ```
--------------------------------------------------
-|         DescribeAvailabilityZones             |
 +-------------------+-----------+---------------+
 | ap-northeast-2a   | apne2-az1 | available     |
 | ap-northeast-2b   | apne2-az2 | available     |
@@ -156,6 +120,14 @@ aws service-quotas list-services --output table | head
 | ap-northeast-2d   | apne2-az4 | available     |
 +-------------------+-----------+---------------+
 ```
+
+ZoneName과 ZoneId가 따로 있는 게 보일 거다. 멀티 계정 환경에서는 ZoneId가 진실이다.
+
+## 정리
+
+오늘 본 그림은 AWS의 인프라 지도와 그 위의 책임 분담이다. **Region > AZ > Edge** 라는 3층 구조, 그리고 **AWS는 콘크리트 바닥부터 하이퍼바이저까지** 라는 책임 경계 한 줄. 이 두 가지가 다음 글부터 등장할 모든 서비스의 배경이 된다.
+
+다음 글에서는 IAM의 4대 엔터티 — User, Group, Role, Policy — 를 다룬다. 공동 책임 모델에서 "고객 책임"의 가장 첫 번째 항목이 바로 IAM이다. 누구에게 무엇을 허용할지를 정확히 그릴 수 있어야 클라우드 보안의 절반이 끝난다.
 
 ---
 
@@ -169,7 +141,7 @@ C) Outposts
 D) Region 직접 사용
 
 **정답: C**
-해설: 고객 데이터센터 안에 AWS 하드웨어를 두고 동일한 API/서비스를 쓸 수 있는 것이 Outposts.
+해설: 고객 데이터센터 안에 AWS 하드웨어를 두고 동일한 API/서비스를 쓸 수 있는 것이 Outposts. "본사 안", "데이터를 외부로 못 보냄" 키워드가 정답 신호다.
 
 ---
 
@@ -181,7 +153,7 @@ C) 하이퍼바이저 보안
 D) 애플리케이션 코드의 취약점 점검
 
 **정답: C**
-해설: 하이퍼바이저 및 그 아래는 AWS 책임. 그 위 OS/SG/앱은 고객 책임.
+해설: 하이퍼바이저 및 그 아래는 AWS 책임. 게스트 OS, SG, 애플리케이션 코드는 모두 고객 책임이다. EC2는 IaaS이므로 OS 패치도 고객 몫이다.
 
 ---
 
@@ -193,7 +165,7 @@ C) Route 53 Geolocation
 D) Direct Connect
 
 **정답: B**
-해설: CloudFront는 HTTP 캐시 중심, 게임 같은 TCP/UDP·비-HTTP 트래픽은 Global Accelerator가 적합.
+해설: CloudFront는 HTTP 캐시 중심이고, 게임 같은 TCP/UDP·비-HTTP 트래픽에는 Global Accelerator가 적합하다. Route 53 Geolocation은 DNS 라우팅일 뿐 트래픽 자체를 가속하지는 않는다.
 
 ---
 
@@ -205,7 +177,7 @@ C) S3 데이터는 모든 리전에 자동 복제된다
 D) S3는 가용 영역에 종속된다
 
 **정답: B**
-해설: 이름은 글로벌 유일, 데이터는 리전 종속. Cross-Region Replication은 별도 활성화 필요.
+해설: 이름은 글로벌 유일, 데이터는 리전 종속. 데이터 복제는 Cross-Region Replication을 별도로 설정해야 한다. 이름의 글로벌 유일성 때문에 "글로벌 서비스"라고 착각하기 쉬운 함정이다.
 
 ---
 
@@ -217,14 +189,16 @@ C) Compliance
 D) Operational Excellence
 
 **정답: C**
-해설: 6 Pillars는 OE / Security / Reliability / Performance / Cost / Sustainability. Compliance는 별도 개념.
+해설: 6 Pillars는 Operational Excellence / Security / Reliability / Performance Efficiency / Cost Optimization / Sustainability. Compliance는 별도의 거버넌스 개념으로, W-AF의 기둥에는 포함되지 않는다.
 
 ---
 
-## 📌 오늘의 요약
+**문제 6.** 한 회사가 ap-northeast-2 리전에서 RDS Multi-AZ를 운영하면서, 별도 리전(ap-northeast-1)에 읽기 전용 복제본을 두려고 한다. 이 설계의 주된 이점은?
 
-1. AWS 인프라 계층: Region > AZ > Edge / Local Zones / Outposts / Wavelength.
-2. 공동 책임 모델은 추상화 레벨이 올라갈수록 AWS 책임이 커진다.
-3. Outposts/Local Zones/Wavelength는 시나리오 키워드(본사 / 초저지연 / 5G)로 구별.
-4. Global Accelerator는 TCP/UDP 글로벌 가속, CloudFront는 HTTP 캐시.
-5. Well-Architected 6 Pillars는 SAA 도메인 비중과 거의 일치한다.
+A) 단일 AZ 장애 복구
+B) Region 단위 재해 복구(DR) + 동시 읽기 트래픽 분산
+C) IAM 권한 분리
+D) CloudFront 캐시 효율 향상
+
+**정답: B**
+해설: Multi-AZ는 동일 리전 내 HA, 다른 리전의 Read Replica는 Region 단위 DR과 글로벌 읽기 트래픽 분산을 동시에 노린다. AZ 격리(HA)와 Region 격리(DR)는 다른 차원이라는 점을 구분해야 한다.
