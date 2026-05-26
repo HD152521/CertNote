@@ -1,214 +1,228 @@
-# Day 8 - 보안 그룹 vs NACL, VPC Flow Logs
+# Day 8 - 보안 그룹 vs NACL, 그리고 Flow Logs가 말해주는 것
 
-📅 날짜: Week 2 (Day 3)
-🎯 주제: VPC 트래픽 제어 — L4 방화벽
-⏱️ 학습 시간: 약 90분
+VPC 안의 패킷에는 두 개의 방화벽이 차례로 작용한다. 서브넷 경계에 있는 NACL(Network ACL)과 인스턴스(정확히는 ENI) 경계에 있는 Security Group이다. 이 둘은 비슷해 보이지만 작동 방식이 근본적으로 다르고, 그 차이가 시험에 가장 자주 등장하는 포인트다.
 
----
+오늘은 SG vs NACL의 진짜 차이, 그리고 그 위에서 일어난 일을 사후 분석하게 해주는 VPC Flow Logs를 다룬다.
 
-## 🎯 학습 목표
-
-- 보안 그룹(SG)과 네트워크 ACL(NACL) 차이를 stateful/stateless로 설명한다
-- VPC Flow Logs로 트래픽 디버깅을 한다
-- 함정 시나리오(Allow는 SG, Deny는 NACL)에 정답을 고른다
-
----
-
-## 🧩 사전 지식 (CS 기초)
-
-- **Stateful 방화벽**: 한 번 허용한 연결의 응답 패킷은 자동 허용. SG가 stateful.
-- **Stateless 방화벽**: 각 패킷 단독 평가. inbound + outbound 둘 다 규칙 필요. NACL이 stateless.
-- **에페메럴 포트(Ephemeral)**: 클라이언트가 임시로 쓰는 1024-65535 포트 범위. NACL에서 이걸 빠뜨리면 응답 못 받음.
-- **TCP 핸드셰이크**: SYN → SYN-ACK → ACK. stateful이 이 흐름을 추적.
-
----
-
-## 📖 이론 내용
-
-### 1. Security Group (SG)
-
-- **ENI(Elastic Network Interface) 단위** 적용 (= 인스턴스에).
-- **Stateful**: 인바운드 Allow 시 응답 outbound 자동.
-- **Allow 규칙만** 존재. Deny 없음. (없는 것은 Deny)
-- 다른 SG를 source/destination으로 참조 가능 (=동적 그룹).
-- 인스턴스당 최대 5개 SG, 각 SG 최대 60 규칙.
-
-### 2. Network ACL (NACL)
-
-- **서브넷 단위** 적용.
-- **Stateless**: inbound, outbound 별도 규칙. 응답 트래픽도 명시 필요.
-- **Allow + Deny** 모두 가능.
-- **번호 순서**로 평가. 작은 번호가 먼저. 매치되면 즉시 결정.
-- 기본 NACL: 모두 허용. 신규 NACL: 모두 거부.
-
-### 3. SG vs NACL 비교표 (시험 최빈출)
-
-| 항목 | Security Group | NACL |
-|------|-----------------|-------|
-| 단위 | ENI / 인스턴스 | 서브넷 |
-| State | Stateful | Stateless |
-| 규칙 | Allow only | Allow + Deny |
-| 평가 | 모든 규칙 평가 | 번호 순 매치 |
-| 사용 사례 | 인스턴스 보호 | 서브넷 광역 차단 (예: IP 블랙리스트) |
-
-> 💡 **암기 팁**: "차단(Deny)이 필요하면 NACL". SG는 화이트리스트만 가능.
-
-### 4. VPC Flow Logs
-
-- ENI / 서브넷 / VPC 단위로 IP 트래픽 로깅.
-- 대상: **CloudWatch Logs / S3 / Kinesis Data Firehose**.
-- 메타데이터(소스/대상 IP/포트/패킷·바이트/액션)만 — 페이로드 없음.
-- Accept / Reject / All 선택 가능.
-- 시나리오: "SG 차단 원인 파악", "이상 트래픽 탐지(EC2 → 모르는 IP)".
-
-### 5. 디버깅 흐름 — 트래픽이 안 갈 때
-
-1. 라우팅 테이블에 경로 있나?
-2. NACL inbound + outbound 모두 통과?
-3. SG inbound (수신 측) + outbound (송신 측) 통과?
-4. OS 방화벽?
-5. Flow Logs로 Reject 확인.
-
----
-
-## 🧠 알아두면 좋은 심화 이론
-
-| 항목 | 설명 | 시험 포인트 |
-|------|------|-------------|
-| **SG는 Deny IP 못함** | 특정 IP 차단 → NACL 사용 | "특정 IP 차단" 시나리오 |
-| **NACL Ephemeral 함정** | outbound 응답 안 열면 인바운드 응답 못감 | 1024-65535 outbound 필요 |
-| **Reachability Analyzer** | 두 ENI 사이 가상 패킷 시뮬레이션 | 디버깅 도구 |
-| **AWS Network Firewall** | VPC 단위 L3-L7 IPS/IDS | 고급 보안 |
-| **Flow Logs는 0초도 아님** | 약 1분 윈도우로 집계 | 실시간 차단엔 부적합 |
-
-> ⚠️ **함정**: "SG에서 거부 규칙을 추가" → 불가능. SG는 Allow만.
-
-### 관련 서비스 Cross-Reference
-
-- WAF는 L7 → **Week 8**
-- GuardDuty 위협 탐지 → **Week 8**
-- Reachability Analyzer → 본 주 디버깅
-- Network Firewall → 고급 (시험 가벼움)
-
----
-
-## 🏗️ 아키텍처 다이어그램
+## 두 방화벽이 작동하는 순서
 
 ```
-[ 패킷이 EC2까지 도달하는 길 ]
-
-  Internet → IGW
-              ↓
-         (Public Subnet)
-              ↓
-         NACL Inbound 평가  ← Stateless (응답도 outbound 규칙 필요)
-              ↓
-         Route Table
-              ↓
-              SG Inbound 평가  ← Stateful (응답 자동 허용)
-              ↓
-              EC2 (ENI)
-              ↓
-         SG Outbound (응답)   ← 자동
-              ↓
-         NACL Outbound        ← 명시 필요 (Ephemeral!)
-              ↓
-            IGW → Internet
-
-
-[ Flow Logs 흐름 ]
-
-  ENI/Subnet/VPC 트래픽
-        ↓
-  Flow Log 메타데이터
-        ↓
-  CloudWatch Logs / S3 / Firehose
+[ Outside Internet / Other Instance ]
+            ↓
+   Subnet 경계 NACL (Stateless)
+            ↓
+   ENI 경계 Security Group (Stateful)
+            ↓
+   [ EC2 Instance ]
 ```
 
----
+들어오는 패킷은 NACL → SG 순으로 통과해야 도달한다. 나가는 패킷은 그 역순. 두 방화벽이 모두 허용해야 통신이 성립한다.
 
-## ⭐ 핵심 포인트 (시험 출제 빈도 높음)
+## Security Group: Stateful Allow-List
 
-1. ⭐ **SG는 stateful, NACL은 stateless**.
-2. ⭐ **SG는 Allow only**, NACL은 **Allow + Deny**.
-3. ⭐ **특정 IP 블랙리스트는 NACL**, IP 화이트리스트는 SG.
-4. ⭐ NACL outbound에 **Ephemeral 1024-65535** 안 열면 응답 못 옴.
-5. ⭐ Flow Logs는 페이로드 미포함, 메타데이터만.
+SG는 **ENI에 부착되는** stateful 방화벽이다. "Stateful"이라는 게 핵심: 한 번 허용된 outbound 연결의 응답은 inbound 룰을 안 봐도 자동으로 통과한다.
 
----
+| 속성 | SG |
+|------|-----|
+| 적용 | ENI |
+| 상태성 | Stateful |
+| 룰 | Allow만 (Deny 불가) |
+| 평가 | 모든 룰을 한 번에 평가 (순서 무관) |
+| 기본값 | inbound 모두 거부 / outbound 모두 허용 |
+| 한도 | 인스턴스당 5개 SG, SG당 60 in + 60 out 룰 |
+| Source | IP CIDR, 다른 SG, prefix list |
 
-## 💻 실제 예시 - AWS CLI
+> 🔍 **더 깊이**: Stateful이라는 의미는 SG가 **connection tracking table**을 유지한다는 뜻이다. 한 TCP 흐름(src IP:port + dst IP:port + protocol)이 허용되면 그 흐름의 응답 패킷은 자동 통과. 이건 Linux netfilter의 `conntrack` 모듈과 정확히 같은 모델이다. AWS는 ENI마다 별도의 conntrack을 유지하며, 트래픽 폭증 시 conntrack 테이블 크기가 한계에 다다르면 신규 연결이 떨어진다. EC2 인스턴스 타입마다 supported connection 개수가 다르고, Nitro 인스턴스는 수백만 개까지 가능하다.
 
-```bash
-# SG 생성 + HTTP/HTTPS 허용
-aws ec2 create-security-group --group-name web-sg \
-  --description "ALB Web SG" --vpc-id vpc-aaa
+> 💡 **관련 이론**: Stateful 방화벽은 1990년대 Check Point의 FireWall-1이 처음 상업화했고, 그 전까지 모든 방화벽은 stateless(packet-by-packet) 였다. Stateless 방화벽은 응답 트래픽을 위한 ephemeral port range를 명시 허용해야 하는 운영 부담이 있다. AWS NACL이 stateless라서 같은 이슈가 있고, 이게 시험에 자주 나오는 함정이다.
 
-aws ec2 authorize-security-group-ingress \
-  --group-id sg-bbb \
-  --ip-permissions IpProtocol=tcp,FromPort=443,ToPort=443,IpRanges='[{CidrIp=0.0.0.0/0}]'
+### SG를 source로 참조하기
 
-# NACL 생성 + 특정 IP 블랙리스트
-aws ec2 create-network-acl --vpc-id vpc-aaa
-aws ec2 create-network-acl-entry --network-acl-id acl-ccc \
-  --rule-number 100 --protocol -1 \
-  --cidr-block 198.51.100.0/24 --rule-action deny --ingress
+SG의 가장 강력한 기능: **다른 SG를 source/destination으로 참조** 가능. IP가 아니라 "SG에 속한 모든 ENI"가 자동으로 매칭된다.
 
-# Flow Logs 활성화 (VPC 전체)
-aws ec2 create-flow-logs \
-  --resource-type VPC --resource-ids vpc-aaa \
-  --traffic-type ALL --log-destination-type cloud-watch-logs \
-  --log-group-name /aws/vpc/flow --deliver-logs-permission-arn arn:aws:iam::...
 ```
+ALB SG:  inbound 443 from 0.0.0.0/0
+App SG:  inbound 8080 from ALB SG       ← SG 참조
+DB SG:   inbound 5432 from App SG       ← SG 참조
+```
+
+이렇게 묶어두면 인스턴스가 추가되어도 SG에 attach만 하면 자동으로 매칭 범위에 들어온다. IP 화이트리스트 대비 운영 부담이 압도적으로 줄어든다.
+
+## NACL: Stateless Allow + Deny
+
+NACL은 **서브넷에 부착되는** stateless 방화벽이다.
+
+| 속성 | NACL |
+|------|------|
+| 적용 | Subnet |
+| 상태성 | Stateless |
+| 룰 | Allow + Deny 둘 다 |
+| 평가 | 룰 번호 오름차순, 처음 매칭에서 결정 |
+| 기본값 (Default NACL) | 모두 허용 |
+| 기본값 (Custom NACL) | 모두 거부 |
+| 한도 | NACL당 in 20 + out 20 (증가 가능) |
+| Source | IP CIDR만 (SG 참조 불가) |
+
+Stateless이므로 응답 트래픽도 명시 허용해야 한다. 그래서 NACL에는 거의 항상 **ephemeral port range 허용 룰**이 들어간다.
+
+```
+[ Outbound NACL Rules ]
+ 100 ALLOW TCP 443 to 0.0.0.0/0
+ 110 ALLOW TCP 80  to 0.0.0.0/0
+ *   DENY
+
+[ Inbound NACL Rules — 응답을 받기 위함 ]
+ 100 ALLOW TCP 1024-65535 from 0.0.0.0/0   ← ephemeral port
+ *   DENY
+```
+
+> ⚠️ **함정**: NACL에서 inbound 443만 허용하고 outbound ephemeral을 안 열면 응답이 못 나간다. 이게 SG와 다른 점이고, "왜 통신이 안 되지?"의 흔한 원인이다.
+
+> 🔍 **더 깊이**: Ephemeral port range는 OS마다 다르다. Linux 4.x+는 32768-60999, Windows 2008+는 49152-65535, 옛 Linux/Windows는 1024-65535. 안전하게는 **1024-65535를 다 허용**하는 게 표준. NACL의 stateless 특성이 운영을 어렵게 만드는 가장 큰 이유다.
+
+## SG vs NACL: 진짜 차이의 한 줄 요약
+
+| 항목 | SG | NACL |
+|------|-----|------|
+| 적용 단위 | ENI | Subnet |
+| 상태 | Stateful | Stateless |
+| 룰 종류 | Allow만 | Allow + Deny |
+| 평가 | 전체 룰 합집합 | 번호 순서대로 첫 매칭 |
+| Source | IP, SG, prefix list | IP만 |
+| 응답 자동 허용 | 예 | 아니오 (ephemeral 별도) |
+| 변경 영향 | ENI 단위 | 서브넷 전체 |
+| 일반 용도 | 일반 보안 | 광범위 IP 차단 (예: DDoS 의심 IP) |
+
+실무 패턴: **SG가 주, NACL은 보조**. 90%의 보안 룰은 SG로 표현하고, NACL은 "특정 IP/대역 전체 차단" 같은 광역 정책에만 쓴다.
+
+> 📚 **사례**: 2018년 한 회사가 SG를 너무 복잡하게 설정해서 디버깅이 불가능해진 사례가 보고됐다. 한 EC2에 SG 5개가 붙어 있고, 각 SG에 60개씩 룰이 있어 총 300개 룰이 한 ENI에 작용했다. 새 룰을 추가할 때마다 다른 룰과의 상호작용을 추적할 수 없었다. 사후에는 SG를 "역할 기반"으로 단순화하고(SG 1개 = 1개의 역할), 같은 역할의 인스턴스는 같은 SG를 공유하도록 했다. **SG는 IP 화이트리스트가 아니라 역할 그룹**으로 설계하는 게 표준.
+
+## VPC Flow Logs: 누가 누구와 통신했는가
+
+Flow Logs는 VPC 안의 모든 ENI를 통과한 트래픽 메타데이터를 기록한다. 패킷 본문은 안 보고 헤더만 본다. 기본 필드:
+
+```
+version account-id interface-id srcaddr dstaddr srcport dstport
+protocol packets bytes start end action log-status
+```
+
+- **action**: `ACCEPT` 또는 `REJECT` — SG/NACL이 어떻게 판단했는지.
+- **start/end**: 트래픽 흐름의 시작·끝 시각.
+- **packets/bytes**: 양.
+
+저장 위치는 3곳 중 선택: **CloudWatch Logs, S3, Kinesis Data Firehose**. 분석은 보통 **Athena** 또는 **CloudWatch Logs Insights**.
+
+```sql
+-- Athena: 거부된 트래픽 top 10 source IP
+SELECT srcaddr, COUNT(*) as cnt
+FROM vpc_flow_logs
+WHERE action = 'REJECT' AND start_time > current_date - interval '1' day
+GROUP BY srcaddr
+ORDER BY cnt DESC LIMIT 10;
+```
+
+> 💡 **관련 이론**: Flow Logs는 **NetFlow**(Cisco, 1996)의 클라우드 버전이다. NetFlow가 라우터에서 흐름 메타데이터를 collector로 보내는 모델이라면, Flow Logs는 같은 개념을 SDN 위에서 구현했다. IPFIX(RFC 7011)가 NetFlow의 IETF 표준화 버전이고, AWS Flow Logs는 IPFIX와 호환되는 데이터 모델을 따른다.
+
+> 📚 **사례**: 2020년 한 핀테크가 Flow Logs로 GuardDuty가 잡지 못한 데이터 유출을 사후 발견했다. 한 EC2에서 외부 미지의 IP로 매일 자정에 ~500MB가 빠져나가는 패턴이 Athena 쿼리에서 잡혔다. 알고 보니 마이닝 멀웨어가 아니라 잘못 설정된 백업 스크립트가 잘못된 S3 endpoint로 데이터를 보내고 있었던 것. Flow Logs가 없었으면 발견이 몇 달 더 걸렸을 거다.
+
+## Flow Logs의 한계와 보완
+
+Flow Logs는 **샘플링이 아닌 모든 패킷의 메타데이터**를 잡지만, **패킷 페이로드는 안 본다**. DNS 쿼리 내용, HTTP 헤더, SQL 쿼리는 잡지 못한다. 페이로드까지 보려면 **VPC Traffic Mirroring**(2019년 출시)을 써야 한다. ENI 트래픽을 다른 ENI 또는 NLB로 복제해서 깊은 패킷 검사(DPI) 도구로 분석한다.
+
+| 도구 | 보는 것 | 용도 |
+|------|---------|------|
+| VPC Flow Logs | 헤더 메타데이터 | 일반 감사·트러블슈팅 |
+| Traffic Mirroring | 패킷 페이로드 전체 | DPI, IDS, 포렌식 |
+| Route 53 Resolver Query Logs | DNS 쿼리 | 도메인 단위 활동 추적 |
+| CloudTrail | API 호출 | 관리·감사 |
+| GuardDuty | 모든 위 + IOC 매칭 | 자동 위협 탐지 |
+
+## 정리하며
+
+SG는 stateful · ENI · Allow만, NACL은 stateless · subnet · Allow+Deny. 둘은 보완재고 표준은 SG 중심. Flow Logs는 사후 감사의 기본 도구이고, 페이로드까지 보려면 Traffic Mirroring. 다음 글은 VPC 간 연결 — Peering, TGW, Endpoint — 를 본다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** 한 IP에서 오는 트래픽을 **차단**하려고 한다. 가장 적합한 곳은?
+**문제 1.** 인스턴스에서 80 포트로 외부 HTTP를 호출했는데 응답이 안 온다. SG는 outbound 80을 허용한다. NACL을 어떻게 설정해야 하는가?
 
-A) Security Group inbound rule B) Network ACL inbound rule C) IAM 정책 D) Route Table
+A) Outbound 80만 허용
+B) Outbound 80 + Inbound ephemeral port range 허용
+C) Inbound 80만 허용
+D) Inbound 443 허용
 
-**정답: B** — SG는 Allow only. Deny는 NACL.
-
----
-
-**문제 2.** Stateful 방화벽의 특징은?
-
-A) 모든 패킷을 독립 평가 B) 응답 패킷은 자동 허용 C) 번호 순서로 평가 D) 서브넷 단위
-
-**정답: B** — SG.
+**정답: B**
+해설: NACL stateless라 응답 트래픽도 명시 허용 필요. Outbound 80 + Inbound 1024-65535(ephemeral). SG였으면 outbound 한 줄로 끝.
 
 ---
 
-**문제 3.** EC2가 외부 API 응답을 못 받는다. NACL을 확인했더니 outbound 1024-65535이 없다. 원인은?
+**문제 2.** 시험에 자주 나오는 SG와 NACL의 결정적 차이는?
 
-A) SG 막힘 B) NACL outbound Ephemeral 포트 부재 C) IGW 부재 D) RT 부재
+A) SG는 stateful, NACL은 stateless
+B) SG는 subnet에 부착, NACL은 ENI에 부착
+C) NACL은 Allow만, SG는 Allow + Deny
+D) SG는 IP만, NACL은 SG 참조 가능
 
-**정답: B**.
-
----
-
-**문제 4.** VPC Flow Logs가 캡처하는 것은?
-
-A) 패킷 페이로드 B) 패킷 헤더만 C) IP 트래픽 메타데이터(IP/포트/액션) D) HTTP 본문
-
-**정답: C**.
+**정답: A**
+해설: SG=stateful(응답 자동 허용), NACL=stateless(응답 별도 허용). 적용 단위는 SG=ENI, NACL=서브넷. Allow/Deny는 NACL이 둘 다, SG는 Allow만.
 
 ---
 
-**문제 5.** SG에 대한 설명 중 옳지 않은 것은?
+**문제 3.** 특정 IP 대역을 차단해야 한다. SG와 NACL 중 어디서?
 
-A) ENI 단위 적용 B) Deny 규칙 작성 가능 C) 다른 SG를 source로 참조 가능 D) Stateful
+A) SG에서 Deny 룰 추가
+B) NACL에서 Deny 룰 추가
+C) IAM 정책
+D) IGW에서 차단
 
-**정답: B**.
+**정답: B**
+해설: SG는 Allow만 가능, Deny 룰이 없다. 명시적 차단은 NACL의 영역. 광역 IP 블랙리스트가 NACL의 대표 용도.
 
 ---
 
-## 📌 오늘의 요약
+**문제 4.** Flow Logs에서 페이로드를 못 보면 대안은?
 
-1. SG = ENI 단위 / Stateful / Allow only.
-2. NACL = 서브넷 단위 / Stateless / Allow+Deny / 번호 순 평가.
-3. IP 차단(Deny)은 항상 NACL.
-4. Ephemeral 포트(1024-65535) NACL outbound 필수.
-5. Flow Logs는 메타데이터만 — 트러블슈팅/위협 탐지에 사용.
+A) CloudTrail
+B) VPC Traffic Mirroring
+C) GuardDuty
+D) CloudWatch Logs
+
+**정답: B**
+해설: 페이로드 전체 복제는 Traffic Mirroring. DPI, IDS, 포렌식에 사용. CloudTrail은 API 감사라 무관.
+
+---
+
+**문제 5.** 한 ENI에 SG 5개가 붙어 있고 각각 다른 룰을 가진다. 평가 방식은?
+
+A) 위에서 아래로 첫 매칭
+B) 모든 SG의 모든 룰을 합집합으로 평가, 어느 하나라도 허용이면 통과
+C) 가장 처음 부착된 SG가 우선
+D) 알파벳 순서
+
+**정답: B**
+해설: SG는 합집합. 5개 SG에 총 300개 룰이면 그 합집합이 효과. 그래서 SG를 역할별로 단순화하는 게 운영 안정성의 핵심.
+
+---
+
+**문제 6.** Custom NACL을 만들었는데 통신이 안 된다. 가장 가능성 높은 원인은?
+
+A) SG가 모두 거부
+B) Custom NACL은 기본이 모두 거부라 명시 허용 필요
+C) Default NACL이 우선
+D) IGW가 없다
+
+**정답: B**
+해설: Default NACL은 모두 허용, Custom NACL은 모두 거부가 기본. 새 Custom NACL을 만들면 명시 Allow 룰을 다 추가해야 한다.
+
+---
+
+**문제 7.** VPC Flow Logs로 잡히지 않는 것은?
+
+A) AWS DNS 서버(169.254.169.253)로의 쿼리
+B) ARP 같은 L2 트래픽
+C) DHCP 서버와의 통신
+D) 모두 잡힌다
+
+**정답: B**
+해설: Flow Logs는 L3+(IP 이상)만 캡처. ARP, L2 멀티캐스트, 169.254.169.254 메타데이터 일부 패킷은 안 잡힌다. DNS 쿼리는 별도 Route 53 Resolver Query Logs로 캡처.

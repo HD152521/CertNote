@@ -1,335 +1,275 @@
-# Day 6 - EC2 기본: 인스턴스 유형, AMI
+# Day 6 - EC2의 해부학: Nitro, 인스턴스 패밀리, AMI의 내부
 
-📅 날짜: 2026년 5월 24일 (일요일)  
-🎯 주제: Amazon EC2 기초  
-⏱️ 학습 시간: 약 90분
+EC2는 2006년 8월 25일 베타로 출시된 AWS의 가장 오래된 컴퓨트 서비스다. 처음엔 m1.small 한 종류, 단일 리전(us-east-1), 단순한 launch-and-pray 모델이었다. 20년이 지난 지금 EC2는 750개 이상의 인스턴스 타입, Nitro 하이퍼바이저, Graviton ARM 칩, EBS 직결 스토리지를 갖춘 거대한 컴퓨트 생태계가 됐다. 개발자가 이걸 다 외울 수는 없지만, 인스턴스 패밀리의 명명 규칙과 Nitro의 의미를 이해하면 시험 문제 절반은 풀린다.
 
----
+오늘은 EC2를 코드가 돌아가는 컨테이너로 보지 말고 **"가상화된 OS를 실행하는 격리된 컴퓨트 단위"**로 본다. 그 격리가 어떻게 가능한지, AMI가 정확히 무엇인지, 왜 t2와 t3가 다르게 동작하는지를 파헤친다.
 
-## 🎯 학습 목표
+## EC2의 가상화 진화: Xen에서 Nitro까지
 
-- EC2(Elastic Compute Cloud)의 개념과 주요 기능을 이해한다
-- EC2 인스턴스 유형과 각 유형의 사용 사례를 구분한다
-- AMI(Amazon Machine Image)의 개념과 활용 방법을 이해한다
-- EC2 구매 옵션(온디맨드, 예약, 스팟)을 비교할 수 있다
+2006년 EC2가 처음 출시됐을 때 가상화 엔진은 **Xen**(2003년 케임브리지 대학에서 출발한 오픈소스 하이퍼바이저)이었다. Xen은 paravirtualization(게스트 OS가 자기가 가상화됐다는 걸 알고 협력)으로 시작했지만, 점차 hardware-assisted virtualization(Intel VT-x, AMD-V)으로 진화했다. 문제는 Xen이 무거웠다는 점이다. CPU·메모리·네트워크·스토리지 가상화가 모두 hypervisor 안에서 일어나서 약 30%의 오버헤드가 있었다.
 
----
+AWS는 2013년부터 **Nitro 시스템**을 개발하기 시작해 2017년 c5에서 처음 출시했다. Nitro의 혁신은 **하이퍼바이저 기능을 전용 하드웨어 카드(Nitro Cards)에 오프로드**한 것이다. 네트워크 가상화는 Nitro Network Card, 스토리지 가상화는 Nitro EBS Card, 보안은 Nitro Security Chip이 처리한다. 호스트 OS의 KVM(Linux 커널 내장 하이퍼바이저)은 거의 thin layer로 남고, 게스트 인스턴스는 bare-metal에 가까운 성능을 낸다.
 
-## 📖 이론 내용
+Nitro의 또 다른 효과는 **Firecracker microVM**의 탄생이다. Lambda와 Fargate가 동작하는 그 microVM은 KVM 위에서 125ms 안에 부팅 가능하고, 메모리 footprint는 5MB 미만이다. Firecracker는 Nitro 개발 과정에서 축적된 minimal hypervisor 기술이 만든 산물이며, 같은 호스트에서 수천 개 microVM을 격리 실행할 수 있게 한다. 이게 Lambda의 "함수당 격리"를 가능하게 한 핵심 인프라다. 더 자세한 내용은 Week 4에서 Lambda를 다룰 때 다시 보자.
 
-### 1. Amazon EC2란?
+> 🔍 **더 깊이**: Nitro Security Chip은 부팅 시점에 펌웨어 무결성을 검증하고, host kernel이 게스트 메모리에 직접 접근하지 못하게 막는다. 이게 2018년 Spectre·Meltdown 사이드채널 공격에서 AWS가 대부분의 인스턴스 타입을 빠르게 패치할 수 있었던 이유 중 하나다. KVM 기반 Nitro 인스턴스는 호스트와 게스트 간 메모리 격리가 하드웨어 수준에서 강제된다. 자세한 아키텍처는 [The Security Design of the AWS Nitro System](https://docs.aws.amazon.com/whitepapers/latest/security-design-of-aws-nitro-system/security-design-of-aws-nitro-system.html) 백서에 정리돼 있다.
 
-EC2(Elastic Compute Cloud)는 AWS의 핵심 컴퓨팅 서비스로, 클라우드에서 가상 서버(인스턴스)를 제공합니다. "Elastic"은 필요에 따라 용량을 늘리고 줄일 수 있다는 의미입니다.
+> 💡 **관련 이론**: 하이퍼바이저는 Type 1(bare-metal, 호스트 OS 없음 — VMware ESXi, Xen)과 Type 2(host OS 위에서 동작 — VirtualBox, VMware Workstation)로 나뉜다(Popek & Goldberg, 1974). Nitro는 KVM이 Linux 커널의 일부이므로 형식적으로는 Type 2지만, hypervisor 기능 대부분이 별도 하드웨어에 위치하므로 실질적으로는 Type 1에 가깝다. 이 하이브리드 접근이 "성능은 bare-metal, 격리는 가상화"라는 두 요구를 동시에 충족한다. Popek-Goldberg의 가상화 정리(1974)는 가상화 가능한 ISA의 조건을 정의했고, x86이 본격적으로 그 조건을 만족하기 시작한 건 2005년 Intel VT-x 출시 이후다.
 
-**EC2의 주요 기능:**
-- 가상 서버(인스턴스) 임대
-- 다양한 운영체제 지원 (Amazon Linux, Ubuntu, Windows 등)
-- 스토리지 연결 (EBS, 인스턴스 스토어)
-- 네트워크 구성 (VPC, 보안 그룹)
-- 탄력적 IP(Elastic IP) 할당
+> 📚 **사례**: 다른 클라우드도 비슷한 길을 갔다. GCP는 KVM 기반 자체 하이퍼바이저(Borg → gVisor)를, Azure는 Hyper-V 기반 Hypervisor와 Catapult FPGA(SmartNIC)를 쓴다. 셋 다 결국 "하이퍼바이저를 가볍게, 하드웨어 가속을 많이"라는 동일한 방향으로 수렴하고 있다. 차이는 오프로드 칩을 자체 ASIC(AWS Nitro)으로 가는가, FPGA(Azure Catapult)로 가는가, SmartNIC 표준 제품(GCP, 일부 Azure)을 쓰는가다.
 
-### 2. EC2 인스턴스 유형
+## 인스턴스 패밀리: 한 글자가 알려주는 워크로드 적합도
 
-EC2 인스턴스 유형은 CPU, 메모리, 스토리지, 네트워크 특성의 조합입니다.
+EC2 인스턴스 타입은 `m5.xlarge`처럼 **패밀리 + 세대 + 크기**로 명명된다. 패밀리 한 글자가 핵심.
 
-#### 인스턴스 유형 명명 규칙
-```
-m5.xlarge
-|  |  +----> 크기 (nano, micro, small, medium, large, xlarge, 2xlarge, ...)
-|  +-------> 세대 (숫자가 높을수록 최신)
-+----------> 패밀리 (특성 구분)
-```
+| 패밀리 | 의미 | 적합한 워크로드 | 대표 |
+|------|------|------|------|
+| **t** | Burstable | 변동 부하, 개발 환경 | t3, t4g |
+| **m** | General Purpose | 균형 워크로드 | m5, m6i, m7g |
+| **c** | Compute optimized | CPU 집약 | c5, c6i, c7g |
+| **r** | Memory optimized | 메모리 집약 (Redis, ElasticSearch) | r5, r6i |
+| **x** | Extreme memory | 인메모리 DB (SAP HANA) | x1, x2idn |
+| **i** | Storage I/O | NoSQL, 인메모리 분석 | i3, i4i |
+| **d** | Dense HDD storage | 대용량 데이터웨어하우스 | d2, d3 |
+| **p** | GPU (high-performance) | 딥러닝 학습 | p4, p5 |
+| **g** | GPU (graphics) | 게임, 렌더링 | g4, g5 |
+| **inf** | AWS Inferentia | ML 추론 | inf1, inf2 |
+| **trn** | AWS Trainium | ML 학습 (저비용) | trn1 |
 
-#### 주요 인스턴스 패밀리
+세대 숫자(5, 6, 7)는 차세대 칩 + 더 빠른 네트워크. 접미사도 의미가 있다.
 
-| 패밀리 | 유형 | 사용 사례 |
-|--------|------|-----------|
-| **범용** | t3, t4g, m5, m6i | 웹 서버, 소규모 DB, 개발 환경 |
-| **컴퓨팅 최적화** | c5, c6i | CPU 집약적 작업, 고성능 웹 서버, 게임 서버 |
-| **메모리 최적화** | r5, r6i, x1 | 대용량 메모리 DB, 실시간 빅데이터 |
-| **스토리지 최적화** | i3, d2 | 고성능 로컬 스토리지, OLTP |
-| **가속 컴퓨팅** | p3, g4 | ML/AI, GPU 처리, 그래픽 |
+| 접미사 | 의미 |
+|------|------|
+| (없음) | Intel Xeon |
+| `a` | AMD EPYC |
+| `g` | AWS Graviton (ARM) |
+| `i` | Intel (명시적 표기) |
+| `n` | enhanced networking |
+| `d` | NVMe instance store 포함 |
+| `e` | extra memory or storage |
 
-**⭐ 각 패밀리 첫 글자 암기:**
-- **M**: Most scenarios (범용)
-- **C**: Compute (컴퓨팅 최적화)
-- **R**: RAM (메모리 최적화)
-- **I/D**: I/O, Disk (스토리지 최적화)
-- **G/P**: GPU (가속 컴퓨팅)
+> 💡 **암기 팁**: m6g.large는 "범용(m) 6세대 Graviton(g) ARM 칩에 large 크기". 시험에서 비용 최적화 시나리오는 거의 항상 Graviton(g) 답을 유도한다(같은 성능에 약 20% 저렴).
 
-### 3. AMI (Amazon Machine Image)
+> 🔍 **더 깊이**: Graviton의 가격 우위가 가능한 이유는 AWS가 칩을 직접 설계하기 때문이다. 2018년 Graviton1(A1 인스턴스, ARM Neoverse-N1 기반)을 시작으로, 2020년 Graviton2(Arm Neoverse-N1 64코어)는 c6g·m6g·r6g, 2021년 Graviton3는 c7g·m7g·r7g에 들어갔다. 2023년 발표된 Graviton4는 c8g·m8g 시리즈에 96 vCPU로 확장됐다. Intel/AMD 칩을 사 오는 대신 직접 설계해 마진을 절약하고, 그 일부를 고객에 돌려준다. ARM 인스트럭션 세트는 RISC라 같은 와트당 성능이 x86보다 높은 경향이 있다.
 
-AMI는 EC2 인스턴스를 시작하는 데 필요한 정보를 포함하는 템플릿입니다.
+## t 시리즈의 비밀: CPU credit 메커니즘
 
-**AMI 구성 요소:**
-- 루트 볼륨 템플릿 (OS, 애플리케이션)
-- 시작 권한 (어떤 계정이 이 AMI를 사용할 수 있는지)
-- 블록 디바이스 매핑 (연결할 EBS 볼륨)
+t 시리즈(burstable)는 다른 패밀리와 완전히 다른 과금 모델을 쓴다. **baseline CPU 사용률** 이하로 쓰면 CPU credit을 쌓고, baseline을 초과하면 credit을 소비한다.
 
-**AMI 유형:**
-- **AWS에서 제공**: Amazon Linux 2023, Ubuntu, Windows Server 등
-- **AWS Marketplace**: 써드파티 소프트웨어 포함 AMI
-- **커뮤니티 AMI**: 다른 AWS 사용자가 공유한 AMI
-- **나만의 AMI**: 기존 인스턴스로부터 생성한 커스텀 AMI
+| 타입 | vCPU | baseline | 시간당 credit 적립 |
+|------|------|------|------|
+| t3.nano | 2 | 5% / vCPU | 6 |
+| t3.micro | 2 | 10% / vCPU | 12 |
+| t3.small | 2 | 20% / vCPU | 24 |
+| t3.medium | 2 | 20% / vCPU | 24 |
+| t3.large | 2 | 30% / vCPU | 36 |
 
-**⭐ AMI는 특정 리전에 종속적** - 다른 리전 사용 시 AMI를 복사해야 함
+> 🔍 **더 깊이**: t2와 t3의 가장 큰 차이는 **credit 소진 시 동작**이다. t2는 standard 모드만 있어서 credit이 떨어지면 baseline CPU로 제한된다(스로틀링). t3는 기본이 unlimited 모드로, credit이 떨어져도 추가 비용을 내고 burst를 유지한다. CloudWatch에서 `CPUSurplusCreditBalance` 지표가 0보다 크면 추가 과금이 일어나고 있다는 뜻. 비용 예측이 중요한 워크로드에선 t3를 standard 모드로 명시적 전환하거나 m 시리즈를 쓰는 게 안전하다.
 
-### 4. EC2 구매 옵션
+> ⚠️ **함정**: t3.medium을 "프로덕션 API 서버"로 쓰는 건 시험에서 거의 항상 오답이다. 트래픽이 baseline 30%를 자주 넘으면 credit이 빠르게 소진되고, unlimited 비용이 m5보다 비싸지는 경계점이 있다. AWS Compute Optimizer가 이를 분석해 패밀리 변경을 추천한다.
 
-| 옵션 | 설명 | 할인율 | 사용 사례 |
-|------|------|--------|-----------|
-| **온디맨드** | 사용한 만큼 시간/초 단위 과금 | - | 단기, 불규칙 워크로드 |
-| **예약 인스턴스** | 1년 또는 3년 약정 | 최대 72% | 안정적, 예측 가능한 사용 |
-| **절약 플랜** | 사용량 약정 ($/시간) | 최대 72% | 유연한 예약 |
-| **스팟 인스턴스** | 미사용 용량 경매 | 최대 90% | 내결함성, 배치 처리 |
-| **전용 호스트** | 물리적 서버 전용 | - | 라이선스 규정 준수 |
-| **전용 인스턴스** | 전용 하드웨어 | - | 규정 준수 요건 |
+> 💡 **관련 이론**: t 시리즈의 credit 모델은 token bucket 알고리즘의 변형이다. 토큰(=credit)이 일정 속도로 채워지고, 사용 시 토큰을 소비한다. 토큰이 비면 throttle 또는 추가 과금. TCP traffic shaping, API Gateway throttling, DynamoDB provisioned throughput까지 모두 같은 패턴이다. AWS는 이 알고리즘을 "burstable capacity"라는 이름으로 여러 곳에 재사용한다.
 
----
+## AMI: 디스크 이미지 + 메타데이터
 
-## 🧠 알아두면 좋은 심화 이론
-
-### 추가로 알아둘 인스턴스 패밀리 (시험에 가끔 등장)
-
-| 패밀리 | 특화 | 사용 사례 |
-|--------|------|-----------|
-| **X1, X2, u-** | 초대용량 메모리 (수 TB) | SAP HANA, 인메모리 DB |
-| **F1** | FPGA | 하드웨어 가속, 유전체 분석 |
-| **Inf, Trn** | AWS 자체 ML 칩 (Inferentia, Trainium) | ML 추론·학습 (비용 절감) |
-| **Mac** | Mac mini 베어메탈 | iOS/macOS 빌드 |
-| **HPC** | HPC 워크로드 전용 | 시뮬레이션, 과학 계산 |
-| **A1, T4g, M6g, C7g** | **AWS Graviton (ARM 기반)** | 약 40% 가격대비 성능 ↑ |
-
-> 💡 **Graviton 핵심**: ARM 아키텍처. x86 → ARM 마이그레이션 시 컨테이너/Lambda는 거의 무중단, EC2도 호환 AMI만 있으면 OK. 시험에 "비용 최적화" 키워드 나오면 Graviton 의심.
-
-### 구매 옵션 디테일 (시험 함정 다수)
-
-| 옵션 | 약정 | 유연성 | 특징 |
-|------|------|--------|------|
-| **Standard RI** | 1·3년 | 인스턴스 패밀리 고정 | 최대 72% 할인 |
-| **Convertible RI** | 1·3년 | 다른 패밀리로 교환 가능 | 최대 54% 할인 |
-| **Compute Savings Plan** | 1·3년 | EC2/Lambda/Fargate 전부 | 최대 66% 할인 (가장 유연) |
-| **EC2 Instance Savings Plan** | 1·3년 | 특정 패밀리/리전 | 최대 72% 할인 |
-| **Spot Instance** | 없음 | AWS가 회수 가능 | 최대 90% 할인 |
-| **Spot Block** | 1~6시간 고정 | 약속된 시간 동안 회수 X | (현재 신규 미제공) |
-| **Spot Fleet** | - | 여러 인스턴스 풀에서 자동 조합 | 가용성 ↑ |
-
-> ⚠️ **함정**: "예약 인스턴스(RI)는 양도/교환이 불가" → 틀림. Convertible RI는 교환 가능, Standard RI도 RI Marketplace에서 판매 가능.
-
-### Spot 회수 시그널 - 시험 빈출
-
-- **2분 전 알림**: 인스턴스 메타데이터 `/latest/meta-data/spot/instance-action`
-- EventBridge `EC2 Spot Instance Interruption Warning` 이벤트
-- 알림 후 처리 방식 3가지: `terminate` (기본), `stop`, `hibernate`
-
-### 인스턴스 상태 전환 (시험에 자주 옵션으로 등장)
-
-| 동작 | EBS 데이터 | 인스턴스 스토어 | 퍼블릭 IP | 과금 |
-|------|-----------|----------------|----------|------|
-| **Stop** | 유지 | **소멸** | 회수됨 | EBS만 |
-| **Hibernate** | 유지 (RAM도 저장) | 소멸 | 회수됨 | EBS만 |
-| **Reboot** | 유지 | 유지 | 유지 | 정상 |
-| **Terminate** | 기본 삭제(설정 시 유지) | 소멸 | 회수됨 | 없음 |
-
-> ⚠️ **함정**: Hibernate는 RAM 상태를 EBS에 저장(루트 볼륨 암호화 필수). 콜드 부팅 회피용. 모든 인스턴스 타입이 지원하지는 않음.
-
-### 실무 사례 - 비용 최적화 전략
+AMI(Amazon Machine Image)는 EC2를 시작할 때 사용하는 디스크 이미지다. 정확히는 **EBS 스냅샷(또는 instance-store 매니페스트) + 부팅 메타데이터(커널, ramdisk, 블록 디바이스 매핑)** 의 묶음이다.
 
 ```
-프로덕션 기본 = Savings Plan + 일부 RI
-일시적 트래픽 스파이크 = 온디맨드
-배치/CI/ML 학습 = Spot
-라이선스 종속 SW (Oracle/Windows BYOL) = Dedicated Host
+AMI 구성:
+├─ Root EBS Snapshot     (OS + 사전 설치 SW)
+├─ Additional EBS Snapshots (선택적 추가 볼륨)
+├─ Block Device Mapping  (디스크 → /dev/xvda 등 매핑)
+├─ Kernel/RamDisk ID     (PV-AMI인 경우)
+└─ Launch Permissions    (어느 계정이 이 AMI로 시작 가능한가)
 ```
 
-### Capacity Reservation - 잘 안 알려진 시험 주제
+AMI 종류는 3가지다.
 
-- 특정 AZ/인스턴스 타입의 용량을 미리 확보
-- RI와 달리 **할인은 없음**, 가용성만 보장
-- 사용 안 해도 과금됨 → 재해 복구/이벤트 대비용
+| 종류 | 출처 | 특징 |
+|------|------|------|
+| AWS-provided | Amazon Linux, Ubuntu, Windows | 정기 패치 |
+| Marketplace | 벤더 (Bitnami, OracleEnt 등) | 라이선스 포함, 시간당 추가 비용 |
+| Community | 다른 AWS 사용자 | 검증되지 않음, 위험 |
 
-### 관련 서비스 Cross-Reference
+AMI는 **리전 단위**로 존재한다. us-east-1에서 만든 AMI를 ap-northeast-2에서 쓰려면 `CopyImage` API로 복사해야 한다. 복사 시 ID가 바뀌고, EBS 스냅샷도 같이 복사된다(별도 비용).
 
-- **AMI ↔ Image Builder** → 자동화된 골든 AMI 생성
-- **인스턴스 ↔ Systems Manager** → 패치·세션·인벤토리 (SSH 없이 접속)
-- **온디맨드 용량 보장 ↔ Capacity Reservation**
-- **Spot ↔ EC2 Auto Scaling Mixed Instance Policy** → [Day 4]
+> 📚 **사례**: 2018년 Twitter 직원이 실수로 internal AMI를 public으로 공유했다. 이 AMI에는 회사의 root CA 인증서와 SSH 키가 포함돼 있어 신속히 비공개 처리됐다. AWS는 이 사건 이후 `EC2 Image Builder`(2019년 출시)를 통해 AMI 빌드 자동화와 보안 스캐닝, **Image Builder의 자동 패치/감사** 등을 강조하기 시작했다.
 
----
+> 📚 **사례**: 2023년 보안 연구자들이 AWS Marketplace에 등록된 일부 third-party AMI에 SSH backdoor와 unauthorized cron job이 포함된 사실을 발견했다. AWS는 자동 스캔 정책을 강화했지만, 사용자가 직접 AMI fingerprint를 확인하는 게 안전하다. 실무에서는 신뢰할 수 있는 AMI ID를 SSM Parameter Store(`/aws/service/ami-amazon-linux-latest/...`)에서 가져오는 패턴이 표준이다.
 
-## 아키텍처 다이어그램
+## EC2 시작 시퀀스: User Data와 IAM Role
+
+EC2 인스턴스를 시작하면 다음 순서로 부팅된다.
 
 ```
-EC2 인스턴스 유형 구분
-================================
-
-              CPU   메모리  I/O
-범용 (M, T)   중간   중간   중간  --> 웹서버, 앱서버
-                                    
-컴퓨팅 (C)    높음   보통   보통  --> 게임서버, HPC
-                                    
-메모리 (R, X) 보통   높음   보통  --> 대용량 DB, Redis
-
-스토리지 (I)  보통   보통   높음  --> NoSQL DB, 데이터웨어하우스
-
-GPU (G, P)    보통   보통   보통  --> ML/AI, 그래픽 렌더링
-              +GPU
-
-
-AMI -> EC2 인스턴스 생성 과정
-================================
-
-[AMI 선택]
-AWS 제공 AMI | 마켓플레이스 AMI | 커스텀 AMI
-     |
-     v
-[인스턴스 유형 선택]
-t3.micro | m5.large | c5.xlarge | ...
-     |
-     v
-[구성 설정]
-VPC, 서브넷, IAM 역할, 사용자 데이터
-     |
-     v
-[스토리지 설정]
-EBS 볼륨 크기/유형
-     |
-     v
-[보안 그룹, 키 페어 설정]
-     |
-     v
-[EC2 인스턴스 실행]
-
-
-구매 옵션 비교 (비용 절감률)
-================================
-
-온디맨드:    |||||||||||||||||||||  100% (기준)
-예약 (1년):  ||||||||||||          ~60% (40% 절감)
-예약 (3년):  ||||||||              ~40% (60% 절감)
-스팟:        ||                    ~10% (최대 90% 절감!)
+1. Nitro hypervisor가 인스턴스 할당, EBS 볼륨 attach
+2. ENI(Elastic Network Interface) attach
+3. AMI에서 부팅 (BIOS/UEFI → bootloader → kernel)
+4. cloud-init이 IMDS에서 메타데이터 조회
+   - hostname, security groups, IAM role 등
+5. cloud-init이 user-data 실행 (#!/bin/bash 또는 cloud-config YAML)
+6. SSH/RDP 서비스 시작
 ```
 
----
-
-## ⭐ 핵심 포인트 (시험 출제 빈도 높음)
-
-1. ⭐ **스팟 인스턴스**: 최대 90% 할인, 단 AWS가 2분 예고 후 회수 가능
-2. ⭐ **예약 인스턴스 vs 절약 플랜**: 예약=특정 인스턴스 유형, 절약=사용량 약정
-3. ⭐ **AMI는 리전 종속적**: 다른 리전에서 사용 시 AMI 복사 필요
-4. ⭐ **T 계열**: 버스트 가능 인스턴스 (크레딧 기반 CPU 버스팅)
-5. ⭐ **전용 호스트 vs 전용 인스턴스**: 호스트=물리 서버 전용, 인스턴스=하드웨어 전용
-
----
-
-## 💻 실제 예시 - EC2 CLI 명령어
+User data는 인스턴스 시작 시 한 번만(기본) 실행되는 부트스트랩 스크립트다. 흔한 패턴은 SSM Agent 설치, 애플리케이션 코드 다운로드, 시크릿 주입.
 
 ```bash
-# 인스턴스 유형 목록 조회 (특정 리전)
-aws ec2 describe-instance-types \
-  --filters "Name=instance-type,Values=t3.*" \
-  --query 'InstanceTypes[*].[InstanceType,VCpuInfo.DefaultVCpus,MemoryInfo.SizeInMiB]' \
-  --output table
-
-# AMI 검색 (Amazon Linux 2023 최신 버전)
-aws ec2 describe-images \
-  --owners amazon \
-  --filters "Name=name,Values=al2023-ami-*" \
-  --query 'sort_by(Images, &CreationDate)[-1].[ImageId,Name]' \
-  --output table
-
-# EC2 인스턴스 시작
-aws ec2 run-instances \
-  --image-id ami-0c9c942bd7bf113a2 \
-  --instance-type t3.micro \
-  --key-name my-key-pair \
-  --security-group-ids sg-12345678 \
-  --subnet-id subnet-12345678 \
-  --count 1 \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=MyWebServer}]'
-
-# 실행 중인 인스턴스 목록
-aws ec2 describe-instances \
-  --filters "Name=instance-state-name,Values=running" \
-  --query 'Reservations[*].Instances[*].[InstanceId,InstanceType,PublicIpAddress,Tags[?Key==`Name`].Value|[0]]' \
-  --output table
-
-# 커스텀 AMI 생성
-aws ec2 create-image \
-  --instance-id i-1234567890abcdef0 \
-  --name "MyWebServer-AMI-v1.0" \
-  --description "Web server with application installed" \
-  --no-reboot
+#!/bin/bash
+yum update -y
+yum install -y httpd
+echo "<h1>Hello from $(hostname)</h1>" > /var/www/html/index.html
+systemctl enable --now httpd
 ```
+
+> 🔍 **더 깊이**: user-data는 IMDS의 `http://169.254.169.254/latest/user-data`에서 읽을 수 있다. 그래서 **user-data에 비밀번호나 API key를 박으면 인스턴스 내부 모든 프로세스가 그것을 읽을 수 있다**. IMDSv2 강제, SSM Parameter Store/Secrets Manager 사용, IAM Role 활용이 표준 패턴이다. 시험에 "user-data에 DB 비밀번호를 박았다"는 시나리오가 나오면 거의 항상 오답이고, "Secrets Manager에서 부팅 시 가져오기"가 답이다.
+
+> 💡 **관련 이론**: cloud-init은 RHEL/Ubuntu가 공통으로 사용하는 cloud OS 초기화 프레임워크다. 2009년 Canonical(Ubuntu)이 EC2 부팅을 자동화하기 위해 만들었고, 지금은 AWS, GCP, Azure, OpenStack, 로컬 KVM 등 거의 모든 환경에서 동작한다. user-data를 cloud-config YAML로 쓰면 YAML 선언적 명세로 패키지 설치·사용자 생성·파일 작성을 할 수 있다.
+
+## Placement Group: 인스턴스를 어디에 둘지
+
+인스턴스가 같은 AZ 안에서 **어떻게 분산되는지**를 제어하는 옵션이다.
+
+| 종류 | 배치 전략 | 사용처 |
+|------|------|------|
+| Cluster | 같은 랙·같은 네트워크 스파인 | HPC, 저지연 노드 간 통신 (MPI) |
+| Spread | 서로 다른 랙 (최대 7개/AZ) | 작은 critical 워크로드 |
+| Partition | 여러 파티션으로 분리, 각 파티션 = 다른 랙 그룹 | Cassandra, HDFS (대규모 분산 시스템) |
+
+Cluster placement는 인스턴스 간 10 Gbps full-bisection bandwidth를 제공해 MPI(Message Passing Interface) 같은 워크로드에서 latency를 최소화한다. 단점은 하드웨어 장애 시 모든 인스턴스가 같이 죽을 수 있다는 것.
+
+> 🔍 **더 깊이**: Partition placement는 Cassandra·HBase 같은 분산 시스템의 rack awareness와 동일한 발상이다. 각 파티션은 서로 다른 랙·전원·네트워크 스위치에 매핑된다. 데이터 복제본을 다른 파티션에 두면 한 파티션이 죽어도 데이터가 살아남는다. AWS는 AZ당 최대 7개 파티션을 지원하므로, 7개 복제본까지 자연스럽게 격리할 수 있다.
+
+## 가격 모델 4가지
+
+| 모델 | 비용 | 보장 | 적합한 용도 |
+|------|------|------|------|
+| On-Demand | 정가 | 즉시 시작 | 변동성 큰 워크로드 |
+| Reserved Instance (1/3년) | 최대 72% 할인 | 약정 | 안정적 baseline |
+| Savings Plan | 최대 72% 할인 | 시간당 commit | 유연한 약정 |
+| Spot | 최대 90% 할인 | 2분 사전 통보 후 회수 가능 | fault-tolerant 배치 작업 |
+| Dedicated Host | 고가 | 물리 서버 전용 | BYOL 라이선스, 규제 |
+
+> 💡 **암기 팁**: Spot은 "**아무 때나 죽어도 되는**" 워크로드만. CI 빌드, 배치 분석, fault-tolerant 작업. 시험에 "stateless and can be interrupted"가 보이면 Spot 답.
+
+> 🔍 **더 깊이**: Spot 가격은 AWS 내부 수요에 따라 동적으로 결정된다. 예전엔 명시적 입찰(maximum bid price)이 필요했지만, 2018년 이후 단순화돼 max price를 명시 안 하면 On-Demand 가격을 상한선으로 자동 적용한다. Spot 회수는 항상 2분 사전 통보(spot interruption notice via IMDS의 `latest/meta-data/spot/instance-action`)와 함께 오므로, 워크로드가 이 신호를 듣고 graceful shutdown 하도록 만든다. Spot Fleet과 EC2 Fleet은 여러 인스턴스 타입·AZ를 혼합해 회수율을 분산시킨다.
+
+## CLI로 EC2 시작
+
+```bash
+aws ec2 run-instances \
+  --image-id ami-0abcdef1234567890 \
+  --instance-type t3.micro \
+  --key-name MyKeyPair \
+  --security-group-ids sg-0123456 \
+  --subnet-id subnet-0abc123 \
+  --iam-instance-profile Name=MyInstanceProfile \
+  --user-data file://bootstrap.sh \
+  --metadata-options "HttpTokens=required" \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=web-1}]'
+```
+
+`HttpTokens=required`로 IMDSv2 강제, IAM 인스턴스 프로파일로 자격증명 자동 주입, 태그로 식별. 이 7가지 옵션을 기억하면 실무에서 거의 모든 EC2 시작 시나리오를 다룰 수 있다.
+
+## 정리하며
+
+EC2의 핵심은 **Nitro 하이퍼바이저 + 인스턴스 패밀리의 워크로드 적합도 + AMI 라이프사이클**이다. 패밀리 한 글자(t/m/c/r/x/i/d/p/g)로 적합한 워크로드를 식별하고, Graviton(g 접미사)으로 비용을 줄이고, t 시리즈의 credit 모델을 이해하면 시험에서 EC2 관련 문제 대부분이 풀린다.
+
+다음 글에서는 EC2의 네트워크 통제 — 보안 그룹, 키 페어, user-data 보안 — 를 본다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** 메모리 집약적 데이터베이스 워크로드에 가장 적합한 EC2 인스턴스 패밀리는?
+**문제 1.** 한 회사가 c5.xlarge(Intel)에서 c6g.xlarge(Graviton)로 전환을 검토 중이다. 같은 성능을 유지하려면?
 
-A) C 계열 (컴퓨팅 최적화)  
-B) R 계열 (메모리 최적화)  
-C) T 계열 (범용 버스트)  
-D) I 계열 (스토리지 최적화)  
+A) 코드 변경 없이 그대로 전환 가능
+B) ARM64 아키텍처용으로 재컴파일이 필요 (또는 Java/Python처럼 멀티 아키텍처 지원 런타임 사용)
+C) 추가 라이선스 비용 발생
+D) EBS 볼륨도 ARM으로 변환 필요 (불가능)
 
-**정답: B**  
-해설: R 계열은 메모리 최적화 인스턴스로, 대용량 메모리가 필요한 인메모리 데이터베이스, 빅데이터 처리, 실시간 분석에 적합합니다.
-
----
-
-**문제 2.** 스팟 인스턴스에 대한 올바른 설명은?
-
-A) 항상 사용 가능하며 AWS가 중단할 수 없다  
-B) 온디맨드보다 비용이 높다  
-C) AWS가 2분 전 경고 후 회수할 수 있으며 최대 90% 할인  
-D) 1년 또는 3년 약정이 필요하다  
-
-**정답: C**  
-해설: 스팟 인스턴스는 AWS의 미사용 용량을 경매 방식으로 제공하며, 최대 90% 저렴하지만 AWS가 필요 시 2분 경고 후 회수할 수 있습니다.
+**정답: B**
+해설: Graviton은 ARM64 아키텍처라 x86-64 바이너리를 직접 실행할 수 없다. C/C++/Go/Rust 같은 컴파일 언어는 재컴파일이 필요하고, Java/Python/Node.js 같은 인터프리트/JIT 언어는 그대로 동작한다. 컨테이너 이미지도 `linux/arm64` 태그로 multi-arch 빌드가 필요하다. AWS는 Graviton 전환을 위한 [Porting Advisor](https://github.com/aws/porting-advisor-for-graviton)를 제공한다. 같은 성능에 약 20% 저렴해 비용 최적화 시나리오에서 답으로 자주 나온다.
 
 ---
 
-**문제 3.** AMI(Amazon Machine Image)에 대한 올바른 설명은?
+**문제 2.** t3.medium 인스턴스에서 CPU 사용률이 항상 50%를 넘는다. 비용이 예상보다 훨씬 비싸게 청구되는 원인은?
 
-A) AMI는 모든 리전에서 자동으로 사용 가능하다  
-B) AMI는 특정 리전에 종속적이다  
-C) AMI는 반드시 AWS에서 제공하는 것만 사용해야 한다  
-D) AMI를 사용하면 항상 동일한 인스턴스 유형을 사용해야 한다  
+A) AWS 청구 시스템 버그
+B) t3는 기본 unlimited 모드라 baseline(20%) 초과 사용 시 추가 비용 발생
+C) 다른 리전의 인스턴스가 잘못 청구됨
+D) EBS 볼륨 비용
 
-**정답: B**  
-해설: AMI는 특정 리전에 종속됩니다. 다른 리전에서 같은 AMI를 사용하려면 해당 리전으로 AMI를 복사해야 합니다.
-
----
-
-**문제 4.** 예측 가능하고 안정적인 워크로드에 비용을 절감하려면 어떤 구매 옵션이 가장 적합한가?
-
-A) 온디맨드 인스턴스  
-B) 스팟 인스턴스  
-C) 예약 인스턴스 (1년 또는 3년)  
-D) 전용 호스트  
-
-**정답: C**  
-해설: 예약 인스턴스는 1년 또는 3년 약정으로 최대 72% 비용을 절감할 수 있으며, 예측 가능하고 지속적인 워크로드에 최적입니다.
+**정답: B**
+해설: t3는 기본적으로 unlimited 모드라 baseline CPU(t3.medium은 20%)를 초과하면 surplus credit을 사용하고, surplus credit balance가 0이 되면 추가 비용이 청구된다. baseline을 항상 초과하는 워크로드는 m5나 c5처럼 fixed-performance 패밀리로 전환하는 게 비용 효율적. CloudWatch의 `CPUSurplusCreditBalance`와 `CPUSurplusCreditsCharged` 지표로 추적할 수 있다.
 
 ---
 
-**문제 5.** 인스턴스 유형 "c5.2xlarge"에서 "c"가 나타내는 것은?
+**문제 3.** 한 개발자가 user-data에 DB 비밀번호를 박았다. 보안 감사에서 지적당한 후 가장 적절한 대안은?
 
-A) 비용(Cost) 최적화 인스턴스  
-B) 컨테이너(Container) 최적화 인스턴스  
-C) 컴퓨팅(Compute) 최적화 인스턴스  
-D) 커뮤니티(Community) 인스턴스  
+A) user-data를 암호화
+B) AWS Secrets Manager에 비밀번호를 저장하고, 인스턴스의 IAM Role에 `secretsmanager:GetSecretValue` 권한 부여, user-data는 부팅 시 Secrets Manager에서 가져오기
+C) user-data를 짧게 사용 후 삭제
+D) AMI에 비밀번호를 박기
 
-**정답: C**  
-해설: EC2 인스턴스 유형에서 첫 글자는 인스턴스 패밀리를 나타냅니다. "c"는 컴퓨팅 최적화(Compute Optimized) 인스턴스를 의미합니다.
+**정답: B**
+해설: user-data는 IMDS에서 누구나 읽을 수 있으므로 비밀번호 저장에 부적합하다. Secrets Manager + IAM Role 패턴이 표준이다. user-data 안에는 "aws secretsmanager get-secret-value ..." 명령만 두고 실제 비밀번호는 Secrets Manager에 저장. Parameter Store의 SecureString도 가능하지만 Secrets Manager의 자동 회전 기능이 더 강력. D는 AMI도 user-data와 같은 문제(AMI 공유 시 비밀번호 유출).
 
 ---
 
-## 📌 오늘의 요약
+**문제 4.** MPI 기반 HPC 워크로드를 EC2에서 돌리려고 한다. 인스턴스 간 latency를 최소화하려면?
 
-1. EC2는 AWS의 가상 서버 서비스로 다양한 인스턴스 유형(범용, 컴퓨팅, 메모리, 스토리지, GPU)을 제공한다
-2. 인스턴스 유형은 패밀리-세대-크기 형식으로 명명된다 (예: m5.xlarge)
-3. AMI는 인스턴스 시작 템플릿이며 특정 리전에 종속적이다
-4. 구매 옵션: 온디맨드(유연), 예약(72% 절감), 스팟(90% 절감), 전용 호스트(라이선스)
-5. 스팟 인스턴스는 가장 저렴하지만 AWS가 2분 경고 후 회수할 수 있어 내결함성 워크로드에 적합하다
+A) Spread placement group
+B) Cluster placement group + Enhanced Networking + Elastic Fabric Adapter
+C) Multi-AZ 분산 배치
+D) 다른 리전으로 분산
+
+**정답: B**
+해설: Cluster placement group은 같은 랙/스파인에 인스턴스를 배치해 인스턴스 간 latency를 < 50μs로 줄인다. Enhanced Networking(SR-IOV로 가상 NIC를 호스트 NIC에 직접 연결)과 EFA(Elastic Fabric Adapter, OS bypass로 RDMA-like 통신)를 같이 쓰면 MPI 워크로드에 최적. 단 단일 랙 장애 시 모두 죽으므로 fault tolerance가 약하다(HPC는 보통 checkpoint로 대응).
+
+---
+
+**문제 5.** 다음 중 Spot Instance를 사용하기에 가장 부적합한 워크로드는?
+
+A) CI/CD 빌드 작업
+B) ML 모델 학습 (체크포인트 저장)
+C) RDBMS 프라이머리 DB
+D) 배치 데이터 변환 (Spark)
+
+**정답: C**
+해설: Spot은 2분 사전 통보 후 회수 가능하므로 stateful primary DB 같은 항상 켜져 있어야 하는 워크로드엔 부적합. A·B·D는 모두 fault-tolerant(checkpoint로 재시작 가능)하거나 idempotent해서 회수돼도 별 영향 없음. RDBMS는 RDS Multi-AZ 같은 managed service를 쓰거나, self-managed라면 Reserved Instance/On-Demand가 표준. Spot 회수 시 추가 비용 없이 stop만 되므로 데이터 보존이 가능한 EBS root 볼륨 설정도 핵심.
+
+---
+
+**문제 6.** AMI를 us-east-1에서 ap-northeast-2로 옮기려고 한다. 가장 정확한 방법은?
+
+A) AMI는 글로벌이라 자동으로 사용 가능
+B) `aws ec2 copy-image --source-region us-east-1 --source-image-id ami-... --region ap-northeast-2`로 복사
+C) 인스턴스를 다시 만들어 새 AMI를 ap-northeast-2에서 만들기
+D) AMI ID를 그대로 사용
+
+**정답: B**
+해설: AMI는 리전 단위로 존재한다. `CopyImage` API로 다른 리전에 복사할 수 있고, 이때 새 AMI ID가 생성되며 EBS 스냅샷도 함께 복사된다(데이터 전송 비용 발생). 암호화된 AMI는 대상 리전의 KMS 키로 재암호화된다. 시험에 자주 나오는 함정: "다른 리전에서 같은 AMI ID를 사용하려 함" → 항상 오답. 리전마다 다른 ID.
+
+---
+
+**문제 7.** EC2 인스턴스의 IMDS endpoint(169.254.169.254)에서 가져올 수 있는 정보가 아닌 것은?
+
+A) IAM Role의 임시 자격증명
+B) 인스턴스 ID, AMI ID, AZ
+C) 인스턴스의 시간당 청구 금액
+D) user-data
+
+**정답: C**
+해설: IMDS는 인스턴스 자체 메타데이터(ID, AZ, instance type, SG, IAM role 자격증명, user-data 등)를 제공하지만 청구 정보는 노출하지 않는다. 청구는 AWS Cost Explorer나 Cost and Usage Report로 별도 조회. IMDS의 모든 경로는 `aws ec2-instance-connect describe-instance-metadata`나 인스턴스 안에서 `curl http://169.254.169.254/latest/meta-data/`로 확인 가능. IMDSv2 사용 시 PUT으로 토큰을 먼저 받아야 한다.
+
+---
+
+**문제 8.** EC2 Spot 인스턴스가 2분 사전 통보를 받았다. 가장 적절한 대응은?
+
+A) 인스턴스를 종료시키지 않고 새 인스턴스를 다른 리전에서 시작
+B) IMDS의 `spot/instance-action` 신호를 monitoring하고, 받으면 in-flight 요청을 drain한 뒤 graceful shutdown
+C) 무시하고 워크로드 계속 실행
+D) IAM Role을 회수
+
+**정답: B**
+해설: Spot interruption notice는 IMDS endpoint `http://169.254.169.254/latest/meta-data/spot/instance-action`에 도착한다. 워크로드는 이 신호를 polling 또는 EventBridge로 받아 (1) 새 요청 수신 중단, (2) 진행 중 요청 완료, (3) 상태 체크포인트 저장, (4) 종료 시퀀스 실행을 해야 한다. ALB Target Group의 deregistration delay와 결합하면 사용자 영향 없이 회수를 처리할 수 있다.

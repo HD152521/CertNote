@@ -1,444 +1,268 @@
-# Day 5 - Week 1 복습 + 연습문제
+# Day 5 - Week 1 종합: 인프라와 IAM이 만드는 신뢰의 사슬
 
-📅 날짜: 2026년 5월 21일 (목요일)  
-🎯 주제: Week 1 종합 복습  
-⏱️ 학습 시간: 약 90분
+지난 4일간 본 것들을 한 줄로 묶으면 "AWS에서 무언가가 동작하려면 ① 어디서(Region/AZ) ② 누가(Principal) ③ 무엇을(Action) ④ 어디에(Resource) ⑤ 어떤 조건(Condition)에서 할 수 있는지가 모두 맞아야 한다"는 문장이 된다. 이게 DVA 시험에서 보안·문제 해결 도메인(합치면 44%)의 90% 답을 결정한다.
 
----
+오늘은 1주차의 키 개념들을 시나리오 기반으로 다시 묶고, 시험에 자주 나오는 함정 패턴들을 분류한다. 진도가 아니라 정리 회차이므로 문제와 해설을 더 깊게 둔다. 실제 시험 직전에 다시 한 번 훑기 좋은 형태로 정리한다.
 
-## 🎯 학습 목표
+## 1주차의 큰 그림
 
-- 이번 주 학습한 내용(AWS 기초, IAM, CLI)을 종합 정리한다
-- 시험 형식의 문제를 풀어 이해도를 점검한다
-- 취약한 부분을 파악하고 보완한다
+```
+[ AWS Global Infrastructure ]
+    └─ Region (격리된 인프라 단위)
+        └─ AZ (3+ 물리적 DC 그룹)
+            └─ EC2/Lambda/RDS 등 실제 자원
+                └─ IAM (누가 무엇을 할 수 있는가)
+                    ├─ User (장기 자격증명)
+                    ├─ Group (권한 묶음)
+                    ├─ Role (임시 자격증명 발급기)
+                    └─ Policy (JSON 명세서)
+                        └─ Condition (ABAC 엔진)
+```
 
----
+이 사슬에서 어느 하나라도 끊기면 호출이 실패한다. 시험 시나리오를 풀 때 어느 고리가 문제인지 식별하는 게 빠른 답으로 가는 길이다.
 
-## 📖 Week 1 핵심 내용 복습
+다시 한 번 강조하자면, AWS의 모든 보안 모델은 **deny-by-default**다. 어떤 자원에 대해서도 명시적 Allow가 없으면 거부된다. SCP 같은 상위 가드레일이 추가로 차단할 수는 있지만 권한을 생성하지는 못한다. 이 모델을 받아들이고 나면 "왜 권한이 안 되지?"라는 질문은 항상 "어디서 Allow가 누락됐나?"의 검색으로 풀린다.
 
-### Day 1 복습: AWS 글로벌 인프라
+## 자주 출제되는 함정 패턴
 
-| 개념 | 설명 | 숫자 |
+### 1. "EC2가 S3에 접근 못 함"의 5가지 원인
+
+가장 흔한 시나리오. 단순히 "IAM Role을 attach해라"가 항상 답은 아니다. 가능한 원인을 다 짚어보자.
+
+| 원인 | 증상 | 해결 |
 |------|------|------|
-| 리전 | 지리적으로 독립된 데이터 센터 클러스터 | 30개+ |
-| 가용 영역(AZ) | 리전 내 독립적 데이터 센터 | 리전당 2~6개 |
-| 엣지 로케이션 | CloudFront CDN 캐시 서버 | 400개+ |
+| IAM Role 미attach | "Unable to locate credentials" | 인스턴스 프로파일 부여 |
+| Role 정책에 S3 권한 없음 | `AccessDenied` | s3:GetObject 등 추가 |
+| S3 버킷 정책의 Explicit Deny | `AccessDenied` | bucket policy 검토 |
+| S3 Block Public Access + 잘못된 정책 | `AccessDenied` | BPA 또는 정책 재구성 |
+| VPC Endpoint 없이 private subnet | timeout | S3 Gateway Endpoint 추가 |
+| KMS 키로 암호화된 객체 + KMS 권한 없음 | `AccessDenied` (KMS) | KMS Key Policy + IAM kms:Decrypt |
 
-**공동 책임 모델 핵심:**
-```
-AWS 책임: 클라우드 OF 보안
-  - 물리적 인프라, 하이퍼바이저, 관리형 서비스 기반
+> ⚠️ **함정**: SSE-KMS로 암호화된 S3 객체는 IAM의 `s3:GetObject`만으로는 못 읽는다. 같은 Principal에 `kms:Decrypt`도 있어야 하고, KMS Key Policy의 grant 항목에도 그 Principal이 있어야 한다. 시험에서 "S3 권한은 있는데 GetObject가 실패"라는 시나리오는 거의 KMS가 답이다.
 
-고객 책임: 클라우드 IN 보안
-  - 데이터, 애플리케이션, EC2 OS 패치, IAM 관리
-```
+> 🔍 **더 깊이**: VPC Endpoint 시나리오는 네트워크 레이어의 문제라 IAM 디버깅으로는 안 풀린다. private subnet의 EC2가 S3에 접근할 때 (1) NAT Gateway 경유로 인터넷 통해 가거나, (2) S3 Gateway Endpoint(라우팅 테이블에 prefix-list 추가) 또는 Interface Endpoint(PrivateLink)로 AWS 내부망에서 가야 한다. NAT를 안 쓰고 Endpoint도 없으면 timeout이 난다. AccessDenied가 아니라 timeout이라는 점이 진단의 단서.
 
-### Day 2 복습: IAM 기초
+### 2. "Lambda가 다른 계정 자원 접근 못 함"
 
-**IAM 구성 요소:**
-```
-루트 계정 (최고 권한, 일상 사용 금지)
-    |
-    +-- IAM 사용자 (개인/앱)
-    |       |
-    +-- IAM 그룹 (사용자 모음, 중첩 불가)
-    |       |
-    +-- IAM 역할 (임시 자격 증명, 서비스 간 접근)
-    |
-    +-- IAM 정책 (JSON, Effect/Action/Resource/Condition)
-```
+Cross-account는 "양쪽 합의"가 원칙. Lambda 함수의 실행 역할에 ① `sts:AssumeRole` 권한 + 대상 계정 Role ARN 명시, ② 대상 계정 Role의 Trust Policy에 우리 Role을 Principal로 명시, 둘 다 필요하다.
 
-**정책 평가 순서:** 명시적 Deny > 암묵적 Deny > Allow
-
-### Day 3 복습: IAM 심화
-
-- **STS**: 임시 자격 증명 발급 (AccessKey + SecretKey + SessionToken)
-- **교차 계정 접근**: 자격 증명 기반 정책 + 리소스 기반 정책 모두 필요
-- **SCP**: 조직 수준 최대 권한 제한 (권한 부여 아님)
-- **권한 경계**: 사용자에게 위임 가능한 최대 권한
-
-### Day 4 복습: AWS CLI & SDK
-
-**자격 증명 우선 순위:**
-```
-1. 명령줄 옵션
-2. 환경 변수 (AWS_ACCESS_KEY_ID 등)
-3. ~/.aws/credentials
-4. ~/.aws/config
-5. 컨테이너 자격 증명
-6. EC2 인스턴스 메타데이터 (IAM 역할)
+```python
+# Lambda 코드 안에서 cross-account 호출
+import boto3
+sts = boto3.client('sts')
+resp = sts.assume_role(
+    RoleArn='arn:aws:iam::222222222222:role/CrossAccountReadRole',
+    RoleSessionName='lambda-cross-account'
+)
+creds = resp['Credentials']
+s3 = boto3.client('s3',
+    aws_access_key_id=creds['AccessKeyId'],
+    aws_secret_access_key=creds['SecretAccessKey'],
+    aws_session_token=creds['SessionToken']
+)
+s3.list_objects_v2(Bucket='other-account-bucket')
 ```
 
----
+이 코드의 함정: 받은 임시 자격증명은 1시간 후 만료되는데, Lambda가 워크플로 안에서 보관하다가 재사용하면 만료 후 호출에 실패한다. 매 호출마다 새로 assume하거나, SDK의 `RefreshableCredentials`를 활용해 자동 갱신을 맡기는 것이 깔끔하다.
 
-## 🧠 Week 1 시험 함정 모음 (반드시 체크)
+### 3. "STS endpoint" 함정
 
-### 헷갈리기 쉬운 비교표
+`sts.amazonaws.com`(글로벌) vs `sts.ap-northeast-2.amazonaws.com`(리전). 시험에서 "us-east-1 장애 시 다른 리전의 워크로드가 자격증명 발급에 실패"라는 시나리오가 나오면 글로벌 STS endpoint를 의심한다. `AWS_STS_REGIONAL_ENDPOINTS=regional`로 전환.
 
-| 항목 A | 항목 B | 핵심 차이 |
-|--------|--------|-----------|
-| IAM 사용자 | IAM 역할 | 영구 자격증명 vs 임시 자격증명 |
-| 자격 증명 기반 정책 | 리소스 기반 정책 | "내가" vs "이 리소스에" |
-| 권한 경계 | SCP | 사용자 단위 상한 vs 계정/OU 단위 상한 |
-| SCP | IAM 정책 | 제한만(Allow 안 됨) vs 부여 가능 |
-| Trust Policy | Permission Policy | 누가 수임 가능 vs 무엇을 할 수 있음 |
-| AZ | 데이터 센터 | AZ는 1개 이상 DC의 묶음 |
-| 리전 | 엣지 로케이션 | 30+ vs 400+ |
-| IAM 사용자 | IAM Identity Center | 레거시 vs 권장(사람 사용자) |
-| IMDSv1 | IMDSv2 | 단일 GET vs PUT 토큰 |
-| AssumeRole | GetSessionToken | 역할 수임(최대 12h) vs 사용자 본인 강화(최대 36h) |
+### 4. "Permission Boundary"의 이해
 
-### Week 1 자주 출제되는 함정 8가지
+Permission Boundary는 IAM User/Role의 효과적 최대 권한을 정의하는 메커니즘이다. **Boundary에 없는 액션은 Identity Policy에 있어도 차단된다**. 흔히 "관리자가 개발자에게 IAM 관리 권한을 위임하면서 너무 큰 권한이 새어 나가지 않도록" 사용한다. 예: 개발자가 만들 수 있는 모든 Role에 Boundary를 강제하면, 그 Role들이 IAM 자체를 건드릴 수 없게 막을 수 있다.
 
-1. **공동 책임**: "EC2 데이터 암호화는 누구 책임?" → **고객** (AWS가 KMS 키 관리해도 활성화·키 정책은 고객)
-2. **명시적 Deny**: 정책 순서·우선순위 무관, 항상 Allow를 이김
-3. **그룹 중첩 불가** + **역할은 그룹에 못 넣음** (그룹엔 사용자만)
-4. **교차 계정**: 자격증명 정책 + 리소스 정책 **둘 다 필요**
-5. **SCP**: 권한 부여 아님 — "SCP가 Allow면 OK다" → 함정 X
-6. **AssumeRole 최대 12시간**, GetSessionToken은 최대 36시간
-7. **Role Chaining 시 최대 1시간** 강제 제한
-8. **IMDSv2 토큰 방식**: SSRF 방어 → 보안 시나리오 정답
-9. **S3 ARN은 region/account 비어있음** — `arn:aws:s3:::bucket`
-10. **CLI 자격 증명 체인**: 환경변수 > 파일 > 인스턴스 메타데이터
+> ⚠️ **함정**: SCP, Permission Boundary, Session Policy의 차이는 시험에 단골이다. **SCP**는 계정 전체에 적용되는 Organizations 가드레일, **Permission Boundary**는 특정 IAM Entity의 최대 권한 상한, **Session Policy**는 AssumeRole 호출 시 inline으로 한 번만 좁히는 일회성 가드레일. 셋 다 "권한을 부여하지 않고 차감만 한다"는 공통점이 있다.
 
-### Week 1 약어 정리
+## 도메인별 시험 출제 비중과 1주차 매핑
 
-| 약어 | 풀네임 | 의미 |
-|------|--------|------|
-| **IAM** | Identity and Access Management | 신원·접근 관리 |
-| **STS** | Security Token Service | 임시 자격 증명 발급 |
-| **SCP** | Service Control Policy | 조직 가드레일 |
-| **ARN** | Amazon Resource Name | 리소스 고유 식별자 |
-| **MFA** | Multi-Factor Authentication | 다중 인증 |
-| **SAML** | Security Assertion Markup Language | 기업 SSO 표준 |
-| **OIDC** | OpenID Connect | 웹 ID 페더레이션 |
-| **AZ** | Availability Zone | 가용 영역 |
-| **VPC** | Virtual Private Cloud | 가상 사설 클라우드 |
-| **ABAC** | Attribute-Based Access Control | 태그 기반 접근 제어 |
-| **RBAC** | Role-Based Access Control | 역할 기반 접근 제어 |
-| **IMDS** | Instance Metadata Service | EC2 메타데이터 서비스 |
-| **SDK** | Software Development Kit | 개발 키트(boto3 등) |
-| **CLI** | Command Line Interface | 명령줄 도구 |
-| **RTO/RPO** | Recovery Time/Point Objective | 복구 시간/지점 목표 |
-| **SLA** | Service Level Agreement | 가동률 보장 |
-| **JMESPath** | (쿼리 언어) | CLI `--query` 옵션 |
+| 도메인 | 비중 | 1주차에서 다룬 영역 |
+|--------|------|------|
+| 개발 (Development) | 32% | SDK, CLI, credential chain |
+| 보안 (Security) | 26% | IAM 전체, STS, SigV4 |
+| 배포 (Deployment) | 24% | (아직 안 다룸) |
+| 문제 해결 (Troubleshooting) | 18% | IAM 정책 시뮬레이션, `--debug`, get-caller-identity |
 
----
+1주차의 중요도는 시험에서 보안 26% + 문제해결 18%의 절반 이상이 IAM 관련이라는 점에서 압도적이다. **1주차를 완벽하게 이해하면 시험의 30% 이상은 거저 푸는 셈**이다.
 
-## 아키텍처 다이어그램 - Week 1 전체 개요
+## 알아둬야 할 ARN 패턴
 
-```
-AWS 보안 아키텍처 전체 그림
-================================
+ARN(Amazon Resource Name)은 `arn:partition:service:region:account-id:resource` 형식이다. 시험에 자주 나오는 패턴을 외워두자.
 
-인터넷
-  |
-  v
-[사용자/개발자]
-  |
-  +--[관리 콘솔]----+
-  |                 |
-  +--[CLI/SDK]------+
-                    |
-                    v
-         [AWS IAM 인증/인가]
-                    |
-         +----------+----------+
-         |          |          |
-         v          v          v
-      [사용자]    [그룹]    [역할]
-         |          |          |
-         +----------+----------+
-                    |
-                [정책 평가]
-                    |
-          [명시적 Deny?] -- YES --> 거부
-                    |
-                   NO
-                    |
-          [Allow 있음?] --- NO ---> 거부 (암묵적)
-                    |
-                   YES
-                    |
-                  허용
-                    |
-          [AWS 서비스 접근]
-         (EC2, S3, RDS, Lambda...)
-
-글로벌 인프라와 공동 책임
-================================
-
-+------------------------------------------+
-|  AWS 글로벌 인프라                       |
-|                                          |
-|  [리전 A]           [리전 B]            |
-|  +--------+         +--------+          |
-|  | AZ-1   |         | AZ-1   |          |
-|  | AZ-2   |         | AZ-2   |          |
-|  | AZ-3   |         | AZ-3   |          |
-|  +--------+         +--------+          |
-|                                          |
-|  [엣지 로케이션들 - CloudFront]          |
-|  [edge] [edge] [edge] [edge] [edge]      |
-|                                          |
-+----------[AWS 책임 영역]----------------+
-| 물리 보안 / 하드웨어 / 하이퍼바이저     |
-+------------------------------------------+
-| 고객 책임 영역                          |
-| 데이터 / OS / 앱 / IAM / 네트워크 설정  |
-+------------------------------------------+
-```
-
----
-
-## ⭐ Week 1 핵심 암기 사항
-
-1. ⭐ **루트 계정**: 일상 작업 금지, MFA 필수
-2. ⭐ **공동 책임**: EC2=고객이 OS 패치, RDS=AWS가 DB엔진 패치
-3. ⭐ **명시적 Deny**: 항상 Allow보다 우선
-4. ⭐ **IAM 그룹**: 중첩 불가 (그룹 안에 그룹 X)
-5. ⭐ **역할 vs 사용자**: 역할=임시 자격증명, 서비스 간 접근에 사용
-6. ⭐ **SCP**: 권한 부여 아님, 최대 권한만 제한
-7. ⭐ **교차 계정**: 양쪽 정책(자격증명+리소스) 모두 필요
-8. ⭐ **CLI 우선순위**: 환경변수 > 자격증명 파일 > 인스턴스 메타데이터
-
----
-
-## 📝 Week 1 종합 연습문제 (20문제)
-
-**문제 1.** AWS 공동 책임 모델에서 AWS의 책임인 것은?
-
-A) S3 버킷의 데이터 암호화  
-B) EC2의 게스트 운영체제 패치  
-C) 물리적 서버와 네트워크 인프라 관리  
-D) IAM 사용자 비밀번호 정책 설정  
-
-**정답: C** - AWS는 물리적 인프라(서버, 네트워크, 데이터센터)를 관리합니다.
-
----
-
-**문제 2.** 서울 리전(ap-northeast-2)의 가용 영역 개수는?
-
-A) 2개  
-B) 3개  
-C) 4개  
-D) 6개  
-
-**정답: C** - 서울 리전은 a, b, c, d 4개의 가용 영역을 보유합니다.
-
----
-
-**문제 3.** IAM에서 명시적 Deny와 Allow가 동시에 적용될 때 결과는?
-
-A) Allow가 적용된다  
-B) Deny가 적용된다  
-C) 관리자 승인을 요청한다  
-D) 오류가 발생한다  
-
-**정답: B** - 명시적 Deny는 항상 Allow보다 우선합니다.
-
----
-
-**문제 4.** 다음 중 IAM 역할(Role)의 주요 사용 사례가 아닌 것은?
-
-A) EC2 인스턴스가 S3에 접근할 때  
-B) Lambda 함수가 DynamoDB를 쿼리할 때  
-C) 개발자가 매일 AWS 콘솔에 로그인할 때  
-D) 다른 AWS 계정의 리소스에 접근할 때  
-
-**정답: C** - 일반적인 콘솔 로그인은 IAM 사용자가 담당합니다. 역할은 주로 서비스 간 접근이나 교차 계정 접근에 사용됩니다.
-
----
-
-**문제 5.** STS AssumeRole로 발급된 임시 자격 증명의 최대 유효 시간은?
-
-A) 1시간  
-B) 8시간  
-C) 12시간  
-D) 24시간  
-
-**정답: C** - STS 임시 자격 증명의 최대 유효 시간은 12시간(AssumeRole 기준)입니다.
-
----
-
-**문제 6.** IAM 정책의 JSON에서 반드시 포함해야 하는 필수 요소가 아닌 것은?
-
-A) Effect  
-B) Action  
-C) Resource  
-D) Condition  
-
-**정답: D** - Condition은 선택 사항입니다. Effect, Action, Resource는 Statement에 필수 요소입니다.
-
----
-
-**문제 7.** 리전 선택 기준의 올바른 우선 순위는?
-
-A) 가격 > 지연 시간 > 서비스 가용성 > 규정 준수  
-B) 규정 준수 > 지연 시간 > 서비스 가용성 > 가격  
-C) 지연 시간 > 규정 준수 > 가격 > 서비스 가용성  
-D) 서비스 가용성 > 가격 > 규정 준수 > 지연 시간  
-
-**정답: B** - 법적 요구사항인 규정 준수가 가장 먼저, 그 다음 지연 시간, 서비스 가용성, 가격 순입니다.
-
----
-
-**문제 8.** CloudFront의 캐시 서버 역할을 하는 AWS 인프라 구성 요소는?
-
-A) 리전  
-B) 가용 영역  
-C) 엣지 로케이션  
-D) 로컬 존  
-
-**정답: C** - CloudFront CDN은 엣지 로케이션을 캐시 서버로 사용하여 사용자에게 가장 가까운 위치에서 콘텐츠를 제공합니다.
-
----
-
-**문제 9.** EC2 인스턴스에서 AWS 서비스에 접근할 때 가장 보안적으로 올바른 방법은?
-
-A) 루트 계정 자격 증명을 인스턴스에 직접 저장  
-B) IAM 역할을 인스턴스에 연결  
-C) 환경 변수에 액세스 키를 설정  
-D) ~/.aws/credentials에 자격 증명 저장  
-
-**정답: B** - IAM 역할을 연결하면 임시 자격 증명이 자동 관리되어 가장 안전합니다.
-
----
-
-**문제 10.** AWS Organizations의 서비스 제어 정책(SCP)에 대한 올바른 설명은?
-
-A) SCP는 IAM 사용자에게 직접 권한을 부여한다  
-B) SCP는 조직 내 계정들의 최대 권한을 제한한다  
-C) SCP는 루트 계정에는 적용되지 않는다  
-D) SCP는 자격 증명 기반 정책보다 항상 우선한다  
-
-**정답: B** - SCP는 최대 권한을 제한하는 가드레일 역할을 합니다. 권한 부여가 아니라 제한입니다.
-
----
-
-**문제 11.** AWS CLI 자격 증명 우선 순위가 가장 높은 것은?
-
-A) ~/.aws/credentials 파일  
-B) 환경 변수 AWS_ACCESS_KEY_ID  
-C) EC2 인스턴스 메타데이터  
-D) ~/.aws/config 파일  
-
-**정답: B** - 환경 변수는 파일 기반 자격 증명보다 우선합니다.
-
----
-
-**문제 12.** IAM 그룹에 대한 올바른 설명은?
-
-A) 그룹 내에 다른 그룹을 포함할 수 있다  
-B) IAM 역할도 그룹에 포함될 수 있다  
-C) 하나의 사용자는 여러 그룹에 속할 수 있다  
-D) 그룹 자체로 AWS에 로그인할 수 있다  
-
-**정답: C** - 한 사용자는 여러 IAM 그룹에 동시에 속할 수 있습니다. 그룹 중첩과 역할 포함은 불가합니다.
-
----
-
-**문제 13.** 인라인 정책(Inline Policy)의 특징은?
-
-A) AWS에서 관리하며 업데이트한다  
-B) 특정 IAM 엔티티에 직접 포함되어 1:1 관계를 가진다  
-C) 여러 사용자에게 재사용 가능하다  
-D) AWS Marketplace에서 구매할 수 있다  
-
-**정답: B** - 인라인 정책은 특정 사용자/그룹/역할에 직접 포함되어 해당 엔티티가 삭제되면 함께 삭제됩니다.
-
----
-
-**문제 14.** EC2 인스턴스 메타데이터 서비스(IMDS)에 접근하는 기본 URL은?
-
-A) http://10.0.0.1/meta-data/  
-B) http://169.254.169.254/latest/meta-data/  
-C) https://aws.amazon.com/ec2/meta-data/  
-D) http://metadata.aws.com/  
-
-**정답: B** - EC2 인스턴스 메타데이터는 링크-로컬 주소 169.254.169.254를 통해 접근합니다.
-
----
-
-**문제 15.** 다음 중 루트 계정만 수행할 수 있는 작업은?
-
-A) EC2 인스턴스 생성  
-B) S3 버킷 생성  
-C) AWS 계정 해지  
-D) IAM 사용자 생성  
-
-**정답: C** - AWS 계정 해지는 루트 계정만 할 수 있습니다. 나머지는 적절한 IAM 권한이 있으면 IAM 사용자도 가능합니다.
-
----
-
-**문제 16.** 권한 경계(Permissions Boundary)에 대한 올바른 설명은?
-
-A) 사용자에게 추가 권한을 부여한다  
-B) 사용자가 가질 수 있는 최대 권한을 설정한다  
-C) 리소스에 접근하는 주체를 제한한다  
-D) 계정 수준의 비용 한도를 설정한다  
-
-**정답: B** - 권한 경계는 IAM 엔티티가 가질 수 있는 최대 권한의 상한선을 설정합니다.
-
----
-
-**문제 17.** IAM 정책의 Version 필드에 올바른 값은?
-
-A) "2008-10-17"  
-B) "2010-09-09"  
-C) "2012-10-17"  
-D) "2016-01-01"  
-
-**정답: C** - IAM 정책의 최신 버전은 "2012-10-17"이며, 조건 키와 정책 변수를 지원합니다.
-
----
-
-**문제 18.** `aws sts get-caller-identity` 명령어의 출력 내용은?
-
-A) AWS 계정의 모든 IAM 사용자 목록  
-B) 현재 자격 증명의 AWS 계정 ID, 사용자 ID, ARN  
-C) 현재 리전의 가용 서비스 목록  
-D) AWS 계정의 사용량 및 비용 정보  
-
-**정답: B** - 이 명령어는 현재 사용 중인 자격 증명에 대한 정보(계정 ID, 사용자 ID, ARN)를 반환합니다.
-
----
-
-**문제 19.** 리소스 기반 정책을 지원하지 않는 서비스는?
-
-A) Amazon S3  
-B) Amazon SQS  
-C) Amazon EC2  
-D) AWS Lambda  
-
-**정답: C** - Amazon EC2 자체는 리소스 기반 정책을 지원하지 않습니다. 반면 S3(버킷 정책), SQS(큐 정책), Lambda(함수 정책)는 리소스 기반 정책을 지원합니다.
-
----
-
-**문제 20.** 다음 조건 중 서울 리전에서만 API 요청을 허용하는 올바른 조건 키는?
-
-A) `"aws:SourceRegion": "ap-northeast-2"`  
-B) `"aws:RequestedRegion": "ap-northeast-2"`  
-C) `"aws:HomeRegion": "ap-northeast-2"`  
-D) `"aws:CurrentRegion": "ap-northeast-2"`  
-
-**정답: B** - `aws:RequestedRegion` 조건 키를 사용하여 특정 리전에서의 API 요청만 허용할 수 있습니다.
-
----
-
-## 📊 Week 1 자기 평가
-
-| 점수 | 평가 |
+| 자원 | ARN 예시 |
 |------|------|
-| 18-20 | 우수 - Week 2 진행 |
-| 14-17 | 양호 - 틀린 문제 복습 후 진행 |
-| 10-13 | 보통 - Day 1-4 복습 권장 |
-| 0-9 | 미흡 - Week 1 처음부터 재학습 |
+| IAM User | `arn:aws:iam::123456789012:user/Alice` |
+| IAM Role | `arn:aws:iam::123456789012:role/MyRole` |
+| S3 Bucket | `arn:aws:s3:::my-bucket` (region/account 없음) |
+| S3 Object | `arn:aws:s3:::my-bucket/path/to/file` |
+| Lambda Function | `arn:aws:lambda:ap-northeast-2:123456789012:function:MyFn` |
+| Lambda Layer | `arn:aws:lambda:ap-northeast-2:123456789012:layer:MyLayer:3` (버전 번호 포함) |
+| DynamoDB Table | `arn:aws:dynamodb:ap-northeast-2:123456789012:table/MyTable` |
+| SQS Queue | `arn:aws:sqs:ap-northeast-2:123456789012:MyQueue` |
+| SNS Topic | `arn:aws:sns:ap-northeast-2:123456789012:MyTopic` |
+| KMS Key | `arn:aws:kms:ap-northeast-2:123456789012:key/uuid` |
+| Secrets Manager | `arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:Name-randomSuffix` |
+| Parameter Store | `arn:aws:ssm:ap-northeast-2:123456789012:parameter/path/to/param` |
 
-## 📌 오늘의 요약
+> 💡 **암기 팁**: S3와 IAM은 글로벌 서비스라 ARN에 region이 비어 있다(`arn:aws:s3:::`). 다른 서비스는 region이 채워진다. 또 IAM은 account-id가 들어가지만 S3는 안 들어간다(버킷 이름 자체가 글로벌 unique). 그리고 partition은 일반 AWS는 `aws`, GovCloud는 `aws-us-gov`, 중국 리전은 `aws-cn`이다. 정책을 cross-partition으로 복사하면 partition prefix를 바꾸지 않아 fail하는 경우가 있다.
 
-1. AWS 공동 책임 모델: AWS=인프라 보안, 고객=데이터/앱/OS 보안
-2. IAM 정책: 명시적 Deny > 암묵적 Deny > Allow, Condition은 선택 사항
-3. IAM 역할은 서비스 간 접근과 교차 계정 접근에 임시 자격 증명을 제공한다
-4. CLI 자격 증명 우선 순위: 환경 변수 > 파일 > 인스턴스 메타데이터
-5. Week 1 핵심: 루트 계정 보호, 최소 권한 원칙, MFA 활성화
+## 정리하며
+
+1주차는 AWS의 "기반"을 깐다. 인프라 지도 위에 IAM이라는 신뢰의 사슬이 얹혀 있고, 그 사슬에 코드의 SDK 호출이 묶인다. 다음 주부터는 이 위에 진짜 컴퓨트(EC2, Lambda, ECS), 데이터(S3, DynamoDB, RDS), 통합(API Gateway, SQS, EventBridge), 배포(CodePipeline 등)가 올라간다.
+
+기억해야 할 핵심 마인드셋: AWS에서 "이게 왜 안 되지?"라는 질문은 거의 항상 "어떤 IAM 평가 단계에서 막혔나?"로 환원된다. SCP, Resource Policy, Identity Policy, Permission Boundary, Session Policy, Explicit Deny — 이 6개 레이어 중 하나가 답이다. 그리고 그 답을 찾는 출발점은 `aws sts get-caller-identity`와 IAM Policy Simulator다.
+
+---
+
+## 📝 연습 문제
+
+**문제 1.** 한 회사가 모든 직원에게 IAM User를 발급하고 access key로 CLI를 쓰고 있다. CISO가 보안 감사 결과 "장기 키 사용 금지"를 지시했다. 가장 적절한 마이그레이션은?
+
+A) IAM User의 access key를 30일마다 회전
+B) AWS IAM Identity Center(SSO) 도입 + 외부 IdP 연동 + `aws configure sso`로 CLI 사용
+C) Root account를 공유
+D) 모든 직원에게 EC2 인스턴스를 줘서 IAM Role로 접근
+
+**정답: B**
+해설: IAM Identity Center는 외부 IdP(Okta, Azure AD, Google Workspace 등)와 SAML 2.0/OIDC로 연동되며, CLI는 STS로 임시 자격증명을 받아 동작한다. 장기 키가 디스크에 절대 저장되지 않는다. A는 회전 주기만큼 위험이 줄지만 여전히 장기 키. C는 root 공유는 최악의 보안 사고. D는 모든 직원이 EC2를 띄우는 건 비용·운영 부담이 비현실적.
+
+---
+
+**문제 2.** 다음 IAM 정책의 효과는?
+```json
+{
+  "Effect": "Allow",
+  "Action": "s3:*",
+  "Resource": "arn:aws:s3:::project-${aws:PrincipalTag/Project}/*",
+  "Condition": {"Null": {"aws:PrincipalTag/Project": "false"}}
+}
+```
+
+A) 모든 S3 버킷 접근 허용
+B) `Project` 태그가 있는 Principal에게, 그 태그 값과 일치하는 prefix의 버킷에만 모든 S3 액션 허용
+C) 정책 오류로 항상 거부
+D) Root account에만 적용
+
+**정답: B**
+해설: `${aws:PrincipalTag/Project}`는 호출자의 Project 태그 값으로 치환되고, `"Null": false`는 "이 태그가 반드시 존재해야 한다"는 의미다. Project=alpha 사용자는 `project-alpha-*` 버킷에 접근, Project=beta 사용자는 `project-beta-*` 버킷에 접근. 단일 정책으로 부서별 자원 분리가 가능한 ABAC의 대표 패턴이다.
+
+---
+
+**문제 3.** EC2에서 Lambda로 워크로드를 옮긴 후 코드 변경 없이 같은 IAM 정책으로 동작시키려고 한다. 무엇이 달라지는가?
+
+A) Lambda는 IAM Role을 사용할 수 없음
+B) Lambda 실행 역할의 Trust Policy의 Principal이 `ec2.amazonaws.com` → `lambda.amazonaws.com`으로 바뀌어야 함
+C) Lambda는 access key를 코드에 박아야 함
+D) 변경 사항 없음, 그대로 동작
+
+**정답: B**
+해설: IAM Role의 Trust Policy는 "어느 서비스가 이 Role을 assume할 수 있는가"를 결정한다. EC2가 사용하던 Role을 그대로 Lambda에 붙이면 Lambda가 assume을 시도하다 실패한다. Trust Policy의 Principal Service를 변경해야 한다. Permission Policy(실제 권한)는 그대로 재사용 가능.
+
+---
+
+**문제 4.** STS의 AssumeRole 응답에 포함되지 않는 것은?
+
+A) AccessKeyId (ASIA로 시작)
+B) SecretAccessKey
+C) SessionToken
+D) IAM User의 password
+
+**정답: D**
+해설: STS는 임시 자격증명 3종 세트(AccessKeyId / SecretAccessKey / SessionToken) + Expiration timestamp를 반환한다. IAM User의 password는 STS와 무관하며 절대 노출되지 않는다. AccessKeyId가 `ASIA`로 시작하는 게 임시, `AKIA`로 시작하는 게 영구 키임을 구별하는 게 시험에 종종 나온다.
+
+---
+
+**문제 5.** 한 회사가 SCP로 "us-east-1과 ap-northeast-2만 허용"을 설정했다. IAM User에는 `AdministratorAccess`가 있다. 이 User가 eu-west-1에서 EC2를 시작하려 한다. 결과는?
+
+A) AdministratorAccess가 SCP보다 우선해 허용
+B) SCP의 Deny가 우선해 거부
+C) eu-west-1만 비활성화되고 다른 액션은 가능
+D) 경고 표시만 나오고 진행 가능
+
+**정답: B**
+해설: SCP는 Organizations 수준의 절대 상한선이다. Identity-based의 Allow가 아무리 넓어도 SCP가 막으면 거부. `aws:RequestedRegion` 조건으로 비승인 리전 차단은 회사 전체 가드레일의 표준 패턴. 단 IAM, CloudFront, Route 53, Support 같은 글로벌 서비스에는 영향을 주지 않도록 예외 처리가 필요하다(SCP의 NotAction으로 제외).
+
+---
+
+**문제 6.** 다음 시나리오에서 가장 적절한 디버깅 첫 단계는? "EC2에서 boto3 코드가 `An error occurred (AccessDenied) when calling the GetObject operation`을 반환한다."
+
+A) S3 버킷을 public으로 설정
+B) `aws sts get-caller-identity`로 현재 어느 Role/User로 동작하고 있는지 확인
+C) IAM Root 자격증명으로 변경
+D) EC2 인스턴스 재시작
+
+**정답: B**
+해설: AccessDenied의 디버깅은 항상 "내가 누구로 호출하고 있는가"부터 시작한다. `get-caller-identity`는 ARN을 보여주는데, 예상한 Role이 맞는지 확인하면 권한 추적의 출발점이 된다. 그 다음 IAM Policy Simulator로 그 ARN의 권한을 점검, KMS 암호화 객체라면 KMS 권한도 확인, S3 Block Public Access 설정도 검토. A는 보안 사고로 가는 길.
+
+---
+
+**문제 7.** 한 개발자가 `~/.aws/credentials`에 dev profile을 설정했는데, CLI 명령에 `--profile dev`를 명시하지 않으면 default profile의 자격증명이 사용된다. 모든 명령에 자동으로 dev profile이 적용되게 하려면?
+
+A) `aws configure set profile dev`
+B) `AWS_PROFILE=dev` 환경변수 설정
+C) `~/.aws/config`의 default profile을 dev로 교체
+D) `aws configure --profile dev` 다시 실행
+
+**정답: B**
+해설: `AWS_PROFILE` 환경변수는 그 셸 세션 동안 모든 AWS CLI/SDK 호출의 default profile을 결정한다. `~/.bashrc`에 `export AWS_PROFILE=dev`를 두면 영구 적용. C도 가능은 하지만 default profile의 내용 자체를 바꾸는 거라 다른 profile과의 경계가 흐려진다. 또 환경변수 방식은 `unset AWS_PROFILE`로 쉽게 되돌릴 수 있어 멀티 계정 작업에 유연하다.
+
+---
+
+**문제 8.** IAM Policy의 `"Resource": "arn:aws:s3:::my-bucket/${aws:username}/*"`에서 `${aws:username}` 변수가 평가되는 시점은?
+
+A) 정책 작성 시점
+B) 정책 attach 시점
+C) API 호출 시점 (호출자의 정보로 동적 치환)
+D) 평가되지 않고 그대로 사용됨
+
+**정답: C**
+해설: IAM Policy variables는 매 API 호출 시점에 평가된다. Alice가 호출하면 `${aws:username}` → `Alice`로 치환돼 `my-bucket/Alice/*`가 되고, Bob이 호출하면 `my-bucket/Bob/*`가 된다. 단일 정책으로 사용자별 격리된 폴더를 강제할 수 있다. 이 패턴이 SaaS의 "테넌트별 데이터 격리"에서 표준이다.
+
+---
+
+**문제 9.** SigV4 서명이 timestamp 검증에 실패할 때 나오는 에러는?
+
+A) AccessDenied
+B) SignatureDoesNotMatch 또는 RequestTimeTooSkewed
+C) ThrottlingException
+D) ServiceUnavailable
+
+**정답: B**
+해설: 시계가 AWS 서버와 15분 이상 차이나면 `RequestTimeTooSkewed`, 서명 자체가 잘못되면 `SignatureDoesNotMatch`가 나온다. NTP 동기화, 컨테이너 시계, VM clock drift가 흔한 원인. `date -u`로 UTC 확인 후 `chronyd`로 동기화. 클라우드 환경에서 가끔 한 번씩 만나는 이슈인데, 원인을 모르면 IAM 권한을 의심하다 시간을 버린다.
+
+---
+
+**문제 10.** 한 회사가 AWS Organizations로 prod와 dev 계정을 분리하고, 개발자들은 IAM Identity Center로 두 계정의 Role을 모두 assume할 수 있다. dev 계정에 큰 사고가 생겨도 prod이 보호되는 이유는?
+
+A) AWS가 자동으로 격리
+B) Organizations의 OU 분리로 IAM Principal이 계정 경계를 넘으려면 명시적 cross-account 권한이 필요하고, SCP로 추가 격리 가능
+C) prod 계정은 항상 read-only
+D) 모든 액션이 자동 감사됨
+
+**정답: B**
+해설: AWS Account 자체가 강력한 격리 경계다. 같은 Organizations 안에 있어도 다른 계정 자원에 접근하려면 명시적 cross-account 권한(IAM Role + Resource Policy)이 필요하다. SCP로 추가 가드레일(예: prod 계정에서 특정 액션 차단)을 걸 수 있고, GuardDuty/CloudTrail의 multi-account aggregation으로 중앙 감사도 가능. 다중 계정 전략(multi-account strategy)은 AWS Well-Architected의 표준 권장 사항이다.
+
+---
+
+**문제 11.** Lambda 함수가 `LimitExceededException`을 받았다. SDK의 default retry 동작은?
+
+A) 1회만 시도하고 실패
+B) Standard retry mode로 3번 추가 시도 + exponential backoff with jitter
+C) 무한 재시도
+D) 다른 리전으로 자동 페일오버
+
+**정답: B**
+해설: AWS SDK의 기본 retry mode는 standard로 총 4번 시도(첫 호출 + 3번 retry). 각 retry는 0~1초, 0~2초, 0~4초의 무작위 backoff(jitter). LimitExceededException은 throttling류라 retry로 회복될 수 있다. Lambda 함수가 timeout에 가깝다면 max attempts를 환경변수로 줄이는 게 안전. 무한 재시도는 thundering herd를 만들어 서버를 더 죽인다.
+
+---
+
+**문제 12.** 한 회사가 SaaS 모니터링 도구에게 자기 AWS 계정의 CloudWatch 지표를 읽게 하려고 한다. 가장 안전한 설정은?
+
+A) IAM User를 만들고 access key를 SaaS에게 제공
+B) IAM Role을 만들고 Trust Policy에 SaaS의 계정 ID + External ID 조건을 명시, ReadOnlyAccess만 부여
+C) Root account 자격증명을 제공
+D) CloudWatch를 public으로 공개
+
+**정답: B**
+해설: 외부 SaaS 시나리오는 cross-account Role + External ID가 표준이다. External ID는 confused deputy 문제 방지, ReadOnlyAccess는 least privilege 원칙. AWS는 모든 third-party SaaS에서 이 패턴을 요구하며, SaaS 측에서 External ID 자동 생성 기능을 제공한다.

@@ -1,395 +1,282 @@
-# Day 4 - Metric Filter, Embedded Metric Format, Anomaly Detection
+# Day 9 - Metric Filter, EMF 심화, Anomaly Detection: 메트릭과 로그의 다리
 
-📅 날짜: Week 2 (Day 4)
-🎯 주제: 로그에서 메트릭을 추출하고 ML로 이상 감지
-⏱️ 학습 시간: 약 90분
+운영자가 매일 만나는 의사결정 중 하나는 "이 정보를 메트릭으로 발행할까, 로그로 남길까". 둘은 동전의 양면이다. 메트릭은 시계열 + 통계로 빠르게 알람 가능, 로그는 원본 상세로 디버깅 가능. 오늘은 이 둘을 잇는 세 도구 — **Metric Filter, EMF, Anomaly Detection** — 을 깊이 본다.
 
----
+## Metric Filter: 로그를 메트릭으로 변환
 
-## 🎯 학습 목표
+Metric Filter는 Log Group의 로그 패턴을 매치해 CloudWatch 메트릭으로 변환한다. 예: ALB 액세스 로그에서 5xx 응답을 카운트해 메트릭으로 발행.
 
-- Metric Filter로 로그 패턴을 Custom Metric으로 변환하는 방법을 안다
-- Embedded Metric Format(EMF)로 한 번에 로그+메트릭을 푸시하는 패턴을 익힌다
-- Anomaly Detection으로 임계값 없이도 이상을 잡는 방법을 이해한다
-
----
-
-## 🧩 사전 지식 (CS 기초)
-
-- **Time-series anomaly detection**: 정상 범위를 통계/ML로 학습해 벗어남을 감지. STL, ARIMA, LSTM 등
-- **Cardinality 제어**: 메트릭 Dimension 수가 적을수록 비용 효율
-- **Structured logging**: JSON 등으로 로그를 구조화 → 자동 파싱·검색
-- **Cold path vs Hot path**: hot은 알람·실시간, cold는 분석·감사. 두 경로 분리 설계
-- **Sampling**: 모든 데이터가 아닌 일부만 측정. 비용 절감 + 통계적 대표성
-
----
-
-## 📖 이론 내용
-
-### 1. Metric Filter - 로그를 메트릭으로
-
-#### 동작 원리
 ```
-Log Group의 로그
-    │
-    ▼ 패턴 매칭 (Filter Pattern)
-    │
-    ▼ 매칭된 이벤트에서 값 추출
-    │
-    ▼
-CloudWatch Custom Metric 자동 푸시
+[Log Group: /aws/elb/access]
+   "GET /api 500 ..."
+   "POST /order 201 ..."
+   "GET /user 503 ..."
+        │
+        │ Metric Filter Pattern: [request, status=5*, ...]
+        ▼
+[CloudWatch Metric: MyApp/5xxCount = 2]
 ```
 
-#### 사용 사례
-- 애플리케이션 로그의 ERROR 카운트 → 메트릭 → 알람
-- API Gateway 5xx 발생 추출
-- 로그인 실패 횟수 추적
+### Filter 패턴 문법
 
-#### Filter Pattern 문법
+```
+# 1) Simple word
+"ERROR"               ← "ERROR" 포함 매치
 
-**텍스트 매칭:**
-```
-ERROR                    ← "ERROR" 포함 라인
-"Database connection"    ← 정확한 구문
-?ERROR ?FATAL            ← OR (둘 중 하나)
-```
+# 2) Multiple words
+"ERROR" "Database"    ← 둘 다 포함
 
-**JSON 매칭:**
-```
-{ $.level = "ERROR" }
+# 3) Term exclusion
+"ERROR" -"timeout"    ← ERROR 포함, timeout 미포함
+
+# 4) Field-based (space-delimited)
+[ip, user, ..., status=5*, size, ...]    ← 5xx만
+
+# 5) JSON-based
+{ $.level = "ERROR" && $.statusCode >= 500 }
+
+# 6) Numeric
 { $.duration > 1000 }
-{ $.level = "ERROR" && $.user.id = "u123" }
 ```
 
-**스페이스 구분 로그:**
+### Metric Filter 활용 패턴
+
+```yaml
+# CloudFormation 예
+MyErrorFilter:
+  Type: AWS::Logs::MetricFilter
+  Properties:
+    LogGroupName: /aws/lambda/myfn
+    FilterPattern: "?ERROR ?CRITICAL ?Exception"
+    MetricTransformations:
+      - MetricName: ErrorCount
+        MetricNamespace: MyApp/Lambda
+        MetricValue: 1
+        DefaultValue: 0
+        Dimensions:
+          FunctionName: !Ref MyFunction
 ```
-[time, requestid, level=ERROR, ...]
-[time, requestid, level=ERROR, message]
-```
 
-#### Metric Filter 생성 예시
+`DefaultValue: 0`이 중요. 매치 없을 때 0을 발행해야 "데이터 없음" 상태와 "0개 에러" 상태가 구별된다.
 
-```bash
-aws logs put-metric-filter \
-  --log-group-name /aws/lambda/order-service \
-  --filter-name "error-count" \
-  --filter-pattern "ERROR" \
-  --metric-transformations \
-      metricName=OrderServiceErrors,metricNamespace=MyApp/Orders,metricValue=1,defaultValue=0
-```
+> ⚠️ **함정**: `DefaultValue`를 안 넣으면 매치가 없을 때 메트릭이 발행 안 됨. 알람의 `TreatMissingData` 처리에 따라 false negative 발생 가능. 시험에서 "Metric Filter로 만든 메트릭이 알람을 안 울린다" 시나리오는 보통 이 함정.
 
-- `metricValue=1`: 매칭마다 1씩 카운트 → 합계가 곧 ERROR 수
-- `metricValue=$.duration`: JSON에서 필드 값을 메트릭 값으로
-- `defaultValue=0`: 매칭 안 된 기간에도 0으로 발행 → 그래프 연속성
+> 🔍 **더 깊이**: Metric Filter는 **로그 ingestion 시점에 평가**된다. 즉 새 로그가 도착할 때만 메트릭 발행. 과거 로그를 retroactive로 다시 평가하지 않음. 그래서 운영자가 새 Filter를 만들어도 과거 로그는 메트릭화되지 않고, 그 시점부터의 신규 로그만 카운트.
 
-### 2. Embedded Metric Format (EMF)
+## EMF의 깊이: 운영자가 알아야 할 사실
 
-#### 왜 필요한가
-- Metric Filter는 로그를 한 번 더 스캔 → 처리 지연
-- Custom PutMetricData는 API 호출 별도 필요 → 비용·복잡도
-- **EMF**: 로그에 특정 JSON 구조로 출력하면 CloudWatch가 **자동으로 메트릭 추출**
+어제 본 EMF는 메트릭 + 로그 통합. 오늘은 깊이.
 
-#### EMF JSON 구조
+### EMF JSON 스펙
+
 ```json
 {
   "_aws": {
-    "Timestamp": 1748000000000,
-    "CloudWatchMetrics": [
-      {
-        "Namespace": "MyApp/Web",
-        "Dimensions": [["Service", "Environment"]],
-        "Metrics": [
-          { "Name": "OrderCount", "Unit": "Count" },
-          { "Name": "ResponseTime", "Unit": "Milliseconds" }
-        ]
-      }
-    ]
+    "Timestamp": 1716700000000,
+    "CloudWatchMetrics": [{
+      "Namespace": "MyApp",
+      "Dimensions": [
+        ["Service"],
+        ["Service", "Operation"]
+      ],
+      "Metrics": [
+        {"Name": "Latency", "Unit": "Milliseconds"},
+        {"Name": "ErrorCount", "Unit": "Count"}
+      ]
+    }]
   },
   "Service": "checkout",
-  "Environment": "prod",
-  "OrderCount": 1,
-  "ResponseTime": 234,
-  "user_id": "u123",
-  "trace_id": "abc-def-123"
+  "Operation": "PlaceOrder",
+  "Latency": 234,
+  "ErrorCount": 0,
+  "RequestId": "abc-123",
+  "UserId": "u-999"
 }
 ```
 
-- `_aws.CloudWatchMetrics`가 메트릭 정의
-- 같은 JSON의 다른 필드는 로그로만 저장 (메트릭 X)
-- 메트릭 + 풍부한 로그 컨텍스트를 **한 번의 stdout으로** 발행
+핵심:
+- **`Dimensions` 배열의 각 원소가 별도 dimension 조합**. 위 예는 `(Service)` 1개와 `(Service, Operation)` 2개 — 두 개의 별도 메트릭 발행.
+- **EMF JSON의 모든 필드가 로그에 저장**되지만, `CloudWatchMetrics`에 선언된 것만 메트릭이 됨.
+- **카디널리티 높은 필드(RequestId, UserId)는 로그 필드로만, dimension에 안 넣음**.
 
-#### EMF 장점
-1. **레이턴시 ↓**: Metric Filter보다 빠름
-2. **비용 ↓**: PutMetricData API 호출 없음
-3. **컨텍스트 풍부**: user_id, trace_id 같은 고카디널리티 데이터는 로그에만 (메트릭에는 X)
-4. **언어별 라이브러리**: AWS Powertools (Python/Node/Java)
+### EMF의 PowerTools 라이브러리
 
-#### EMF + AWS Powertools 예시 (Python)
 ```python
+# AWS Lambda Powertools (Python)
 from aws_lambda_powertools import Metrics
 from aws_lambda_powertools.metrics import MetricUnit
 
-metrics = Metrics(namespace="MyApp/Orders", service="checkout")
+metrics = Metrics(namespace="MyApp", service="checkout")
 
-@metrics.log_metrics
+@metrics.log_metrics  # 자동으로 함수 끝에 EMF 출력
 def lambda_handler(event, context):
-    metrics.add_metric(name="OrderCount", unit=MetricUnit.Count, value=1)
-    metrics.add_metric(name="OrderAmount", unit=MetricUnit.None, value=event["amount"])
-    return {"status": "ok"}
+    metrics.add_metric(name="ItemsProcessed", 
+                       unit=MetricUnit.Count, value=10)
+    metrics.add_metric(name="Latency", 
+                       unit=MetricUnit.Milliseconds, value=234)
+    metrics.add_dimension(name="Operation", value="PlaceOrder")
+    # 로그 필드 추가 (메트릭은 아님)
+    metrics.add_metadata(key="user_id", value="u-999")
 ```
 
-### 3. CloudWatch Anomaly Detection
+이 코드 한 번이면 EMF JSON이 stdout으로 출력되고, Lambda가 CloudWatch Logs로 전달, 메트릭으로 자동 추출.
 
-#### 개념
-- 메트릭의 정상 범위(밴드)를 ML로 학습 (최소 2주 데이터)
-- 신호가 밴드 밖으로 벗어나면 알람 발생
-- 요일·시간대 패턴 자동 학습 (출퇴근 트래픽 차이 등)
+> 📚 **사례**: 한 금융 회사가 모든 트랜잭션마다 5개 메트릭(latency, amount, error_count, retry_count, db_calls)을 PutMetricData로 발행. 월 API 호출 100억 회 → 비용 $100,000. EMF로 전환 후 API 비용 zero, 로그 비용은 약간 증가했지만 90% 절감. EMF가 "운영자 비용 절감 1순위"인 이유.
 
-#### 활용 시나리오
-- "정상 임계값을 모르겠다" → 학습으로 자동 결정
-- 트래픽 패턴이 시간대별로 변동 (낮 vs 새벽)
-- 비즈니스 메트릭 (주문 수, 매출 등)
+> 💡 **관련 이론**: EMF는 OpenTelemetry의 metrics + logs 통합 모델과 같은 철학. 단일 텔레메트리 이벤트에서 메트릭·로그·트레이스를 모두 추출. 분산 시스템 관찰성의 표준 방향(2020년대 OTel 표준화).
 
-#### 알람 설정
-```bash
-aws cloudwatch put-anomaly-detector \
-  --namespace AWS/EC2 \
-  --metric-name CPUUtilization \
-  --dimensions Name=InstanceId,Value=i-abc \
-  --stat Average
+## Anomaly Detection: ML 기반 동적 베이스라인
 
-aws cloudwatch put-metric-alarm \
-  --alarm-name "EC2-CPU-Anomaly" \
-  --metrics '[
-    {
-      "Id": "m1",
-      "MetricStat": {
-        "Metric": { "Namespace": "AWS/EC2", "MetricName": "CPUUtilization", "Dimensions": [{"Name":"InstanceId","Value":"i-abc"}] },
-        "Period": 300,
-        "Stat": "Average"
-      }
-    },
-    {
-      "Id": "ad1",
-      "Expression": "ANOMALY_DETECTION_BAND(m1, 2)",
-      "Label": "CPU Expected Range"
-    }
-  ]' \
-  --threshold-metric-id ad1 \
-  --comparison-operator LessThanLowerOrGreaterThanUpperThreshold \
-  --evaluation-periods 2
-```
+고정 임계값(예: CPU > 80%) 알람의 단점: 시간대·요일별로 정상 패턴이 다른 워크로드에서 false positive 폭증. **Anomaly Detection**은 최근 2주의 패턴을 ML로 학습해 동적 베이스라인 생성.
 
-- `ANOMALY_DETECTION_BAND(m1, 2)`: 표준편차 2배 범위
-- `LessThanLowerOrGreaterThanUpperThreshold`: 위/아래 모두 알람
-- 처음 2주는 학습 기간 → 알람 동작 안 함
-
-#### 비용
-- 메트릭당 추가 $0.30/월 (anomaly detection 자체)
-- 학습 데이터 별도 비용 없음
-
-### 4. 모니터링 패턴 비교
-
-| 패턴 | 장점 | 단점 | 사용 사례 |
-|------|------|------|-----------|
-| **Metric Filter** | 기존 로그 그대로 활용 | 지연 ~30초, 메트릭당 청구 | 레거시 앱 |
-| **EMF** | 빠름, 효율적 | JSON 구조화 필요 | 신규/Lambda |
-| **PutMetricData** | 유연 | API 호출 비용·복잡도 | 외부 시스템 |
-| **Anomaly Detection** | 임계값 자동 | 학습 2주 + 비용 | 변동성 큰 메트릭 |
-
----
-
-## 🧠 알아두면 좋은 심화 이론
-
-| 항목 | 설명 | 시험 포인트 |
-|------|------|-------------|
-| **Contributor Insights** | 로그/메트릭의 Top N 기여자 자동 추출 | DDoS 공격자 IP, 에러 유발 함수 |
-| **Logs Anomaly Detection** | 로그 패턴 자체에 ML 적용 | 신규 에러 자동 발견 |
-| **Cross-Account Metric Streams** | 메트릭을 Firehose로 실시간 외부 전송 | DataDog/Splunk 통합 |
-| **Composite Alarm** | 여러 알람 조합 (Day 3 Week 3) | 노이즈 감소 |
-
-> ⚠️ **함정 1**: Metric Filter는 **이후 발생하는** 로그에만 적용 — 과거 로그는 메트릭으로 변환 안 됨.
->
-> ⚠️ **함정 2**: Anomaly Detection은 최소 2주 학습 필요. 신규 메트릭에 즉시 적용 X.
->
-> 💡 **암기 팁**: 신규 시스템엔 **EMF** 우선, 레거시엔 **Metric Filter**, 임계값 불명확하면 **Anomaly Detection**.
-
-### 관련 서비스 Cross-Reference
-
-- **Metric Filter → Week 3 Day 1** (알람 트리거로 사용)
-- **EMF → Week 7** (Lambda 운영에서 표준 패턴)
-- **Anomaly Detection → Week 11** (비용 메트릭에도 적용 가능)
-- **Contributor Insights → Week 8** (VPC Flow Logs Top Talker 분석)
-
----
-
-## 🏗️ 아키텍처 다이어그램
+### 작동 원리
 
 ```
-3가지 메트릭 발행 패턴 비교
-=================================================
-
-  ① Metric Filter (사후 추출)
-     로그 생성 → CloudWatch Logs → Filter 매칭 → Custom Metric
-
-  ② EMF (한 번에 발행)
-     앱 stdout: EMF JSON → CloudWatch Logs (저장)
-                                ↓ (자동 파싱)
-                             Custom Metric
-
-  ③ PutMetricData (직접 발행)
-     앱 → CloudWatch API → Custom Metric
-       (로그는 별도)
-
-  ④ Anomaly Detection (ML 학습)
-     기존 메트릭 → 2주 학습 → 정상 밴드 자동 산출
-                              → Alarm: 밴드 벗어나면 알림
+[CPU 메트릭, 지난 14일]
+    │
+    │ STL/ARIMA 회귀 학습
+    ▼
+[모델: 요일별 + 시간대별 평균 + 표준편차]
+    │
+    │ 매시간 재학습
+    ▼
+[Anomaly Band: 평균 ± n × stddev]
 ```
 
----
+알람 설정 시 표준편차 배수(n)만 지정. 보통 2~3.
 
-## ⭐ 핵심 포인트 (시험 출제 빈도 높음)
+> 💡 **관련 이론**: STL(Seasonal-Trend Decomposition using LOESS)은 시계열을 trend + seasonal + residual로 분해. Cleveland et al.(1990, Journal of Official Statistics)에서 발표. ARIMA(AutoRegressive Integrated Moving Average)는 더 일반적인 시계열 모델로 Box-Jenkins 방법론(1970). Facebook Prophet, Twitter AnomalyDetection, AWS Forecast 모두 같은 계열. 운영자가 직접 임계값 튜닝하는 부담을 ML이 대체.
 
-1. ⭐ **Metric Filter는 이후 발생 로그만 적용** — 과거 로그는 변환 X
-2. ⭐ **EMF는 stdout JSON 한 번으로 로그+메트릭** — Lambda 표준 패턴
-3. ⭐ **Anomaly Detection은 2주 학습 후 동작** — 신규 메트릭 즉시 X
-4. ⭐ **Custom Metric은 Dimension 카디널리티 주의** — user_id는 절대 X
-5. ⭐ **Contributor Insights**로 Top N 추출 (DDoS 공격자, 느린 API 등)
+### 운영자 적용 시나리오
 
----
+| 시나리오 | Anomaly Detection 효과 |
+|----------|------------------------|
+| 매일 같은 시간 트래픽 피크 | 평소 피크는 알람 안 울리고 비정상 시점만 |
+| 주말 트래픽 패턴이 다른 서비스 | 요일별 학습으로 정확한 베이스라인 |
+| 점진적 증가 추세 | trend 학습으로 절대값 알람 대체 |
+| 첫 출시 직후 (학습 데이터 부족) | 부적합 (최소 2일 데이터 필요) |
 
-## 💻 실제 예시 - AWS CLI
+> 📚 **사례**: 한 e-commerce 회사가 매일 점심·저녁 트래픽 피크 + 주말 평일 다른 패턴. 고정 임계값으로 알람 만들 때 매일 false positive 30건. Anomaly Detection 도입 후 false positive 90% 감소. 운영자 야간 호출 대폭 감소.
 
-```bash
-# 1. Metric Filter 생성 (ERROR 카운트)
-aws logs put-metric-filter \
-  --log-group-name /aws/lambda/order-service \
-  --filter-name "error-count" \
-  --filter-pattern '?ERROR ?FATAL' \
-  --metric-transformations \
-      'metricName=ErrorCount,metricNamespace=MyApp/Lambda,metricValue=1,defaultValue=0,unit=Count,dimensions={FunctionName=$.functionName}'
+### Math Expression과 Anomaly Detection 결합
 
-# 2. JSON 로그에서 응답 시간 추출 (Metric Filter)
-aws logs put-metric-filter \
-  --log-group-name /myapp/web \
-  --filter-name "response-time" \
-  --filter-pattern '{ $.duration_ms > 0 }' \
-  --metric-transformations \
-      'metricName=ResponseTime,metricNamespace=MyApp/Web,metricValue=$.duration_ms,unit=Milliseconds'
-
-# 3. EMF 로그 직접 생성 (Lambda 외부 테스트)
-cat <<'EOF' | aws logs put-log-events \
-    --log-group-name /myapp/web \
-    --log-stream-name test \
-    --log-events file:///dev/stdin
-[{
-  "timestamp": 1748000000000,
-  "message": "{\"_aws\":{\"Timestamp\":1748000000000,\"CloudWatchMetrics\":[{\"Namespace\":\"MyApp\",\"Dimensions\":[[\"Service\"]],\"Metrics\":[{\"Name\":\"RequestCount\",\"Unit\":\"Count\"}]}]},\"Service\":\"web\",\"RequestCount\":1,\"user_id\":\"u123\"}"
-}]
-EOF
-
-# 4. Anomaly Detector 생성
-aws cloudwatch put-anomaly-detector \
-  --namespace AWS/Lambda \
-  --metric-name Invocations \
-  --dimensions Name=FunctionName,Value=order-service \
-  --stat Sum
-
-# 5. Anomaly 알람 생성
-aws cloudwatch put-metric-alarm \
-  --alarm-name "Order-Lambda-Invocation-Anomaly" \
-  --metrics '[
-    {
-      "Id": "m1",
-      "MetricStat": {
-        "Metric": {
-          "Namespace": "AWS/Lambda",
-          "MetricName": "Invocations",
-          "Dimensions": [{"Name":"FunctionName","Value":"order-service"}]
-        },
-        "Period": 300,
-        "Stat": "Sum"
-      }
-    },
-    {
-      "Id": "ad1",
-      "Expression": "ANOMALY_DETECTION_BAND(m1, 2)"
-    }
-  ]' \
-  --threshold-metric-id ad1 \
-  --comparison-operator LessThanLowerOrGreaterThanUpperThreshold \
-  --evaluation-periods 2 \
-  --alarm-actions arn:aws:sns:ap-northeast-2:123456789012:ops-alerts
 ```
+m1 = ErrorCount (sum, 1분)
+m2 = RequestCount (sum, 1분)
+e1 = m1 / m2 * 100         # 에러율
+e2 = ANOMALY_DETECTION_BAND(e1, 2)  # ML 베이스라인
+```
+
+알람: e1이 e2의 upper band를 넘으면 알람.
+
+> ⚠️ **함정**: Anomaly Detection은 최소 2일치 데이터가 필요. 새로 만든 메트릭에 바로 적용하면 학습 부족으로 거의 모든 데이터 포인트가 anomaly. 시험에서 "신규 서비스에 즉시 anomaly detection 적용 → 잘못된 알람" 시나리오의 답은 "데이터 누적 후 적용".
+
+## Logs Anomaly Detection (2023 출시)
+
+메트릭의 Anomaly Detection과 비슷하게 **로그 패턴 자체**의 이상을 ML로 탐지. 처음 보는 패턴, 빈도가 갑자기 변한 패턴을 자동 알림.
+
+```
+[정상 학습된 패턴]
+"INFO Started processing order=*"
+"INFO Order * completed in *ms"
+"WARN Retry attempt * for order *"
+
+[이상 탐지]
+"FATAL Database connection lost"  ← 처음 보는 패턴, 알람
+"INFO Started processing order=*" (빈도 평소의 10배) ← 비정상 빈도, 알람
+```
+
+운영자가 수동 Metric Filter 안 만들어도 ML이 자동 처리.
+
+## Cross-Account Metric/Log View
+
+여러 계정의 메트릭과 로그를 한 콘솔에서 보려면 **CloudWatch Observability Access Manager** (2022 출시).
+
+```
+[Monitoring Account] ← 운영팀이 보는 계정
+   │ Sink 활성화
+   │
+   ├── Source Account A의 메트릭·로그 자동 동기화
+   ├── Source Account B의 메트릭·로그 자동 동기화
+   └── Source Account C의 메트릭·로그 자동 동기화
+```
+
+운영자 패턴: 별도 모니터링 계정을 만들고 모든 워크로드 계정의 sink를 연결. 운영자는 한 콘솔에서 전 계정 메트릭/로그/X-Ray trace 통합 조회.
+
+## 정리하며
+
+오늘의 흐름:
+- **Metric Filter**: 로그 → 메트릭 (기존 로그를 카운트 메트릭으로)
+- **EMF**: 한 줄 로그에 메트릭 임베드 (가장 비용 효율적)
+- **Anomaly Detection**: ML 기반 동적 임계값 (false positive 감소)
+
+운영자는 신규 워크로드 시작 시:
+1. EMF로 애플리케이션 메트릭 발행
+2. AWS 표준 메트릭은 그대로
+3. 핵심 메트릭에 Anomaly Detection 알람
+4. 기타 메트릭에 고정 임계값 알람
+5. 모든 Log Group에 보존 정책
+
+내일은 Week 2 복습 + 시나리오 10문제.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** 한 회사가 Lambda 함수에서 발생하는 ERROR 로그 횟수를 추적해 알람을 보내려 한다. 가장 효율적인 방법은?
+**문제 1.** Metric Filter를 만들었는데 매치가 없을 때 메트릭이 발행되지 않아 알람이 안 울린다. 원인과 해결은?
 
-A) Logs Insights를 주기 실행
-B) Metric Filter로 ERROR 패턴 → Custom Metric → Alarm
-C) Subscription Filter로 Slack 직접 알림
-D) S3 export 후 Athena
-
-**정답: B**
-해설: 표준 패턴. Metric Filter가 자동으로 카운트 메트릭 발행 → Alarm이 threshold 초과 시 SNS. Subscription Filter+Slack은 모든 ERROR마다 알림이라 노이즈, 일시 폭증 시 부적합.
-
----
-
-**문제 2.** EMF의 장점이 아닌 것은?
-
-A) PutMetricData 별도 호출 불필요
-B) 로그와 메트릭을 한 번에 발행
-C) 메트릭 보존 기간이 영구
-D) 고카디널리티 컨텍스트(user_id 등)는 로그에만 저장
-
-**정답: C**
-해설: EMF로 발행한 메트릭도 일반 메트릭과 같이 **15개월 보존**. 다른 옵션은 모두 EMF 장점.
-
----
-
-**문제 3.** 한 회사의 주문 수 메트릭이 시간대별로 5배까지 변동한다. 고정 threshold로 알람을 만들면 노이즈가 많다. 해결책은?
-
-A) 알람을 끈다
-B) Composite Alarm 사용
-C) Anomaly Detection 알람으로 변경
-D) Period를 늘린다
-
-**정답: C**
-해설: 시간대별 패턴이 있는 메트릭은 Anomaly Detection이 적합. 요일/시간대 정상 범위를 ML로 학습해 자동 밴드 생성. 단, 2주 학습 기간 필요.
-
----
-
-**문제 4.** Metric Filter를 막 생성했는데 과거 로그의 ERROR 수가 메트릭으로 안 나타난다. 이유는?
-
-A) IAM 권한 부족
-B) Metric Filter는 생성 이후 발생하는 로그에만 적용
-C) Log Group 권한
-D) KMS 암호화
+A) Filter 패턴이 잘못됨
+B) `DefaultValue: 0`을 설정해 매치 없을 때 0을 발행하게
+C) Log Group 보존 부족
+D) Alarm Evaluation Period 부족
 
 **정답: B**
-해설: Metric Filter는 forward-only. 과거 로그를 메트릭으로 변환하려면 Logs Insights로 집계 또는 S3 export 후 별도 처리.
+해설: Metric Filter는 매치 시에만 메트릭 발행. 매치 없으면 메트릭 데이터 없음 → 알람의 TreatMissingData에 따라 처리. DefaultValue: 0을 설정하면 매치 없을 때도 0이 발행돼 "0건 에러" 상태가 명확.
 
 ---
 
-**문제 5.** EMF로 메트릭을 발행하는 코드에서 `user_id`를 어떻게 다뤄야 하나?
+**문제 2.** Anomaly Detection을 신규 메트릭에 즉시 적용하니 모든 데이터가 anomaly로 표시. 원인은?
 
-A) Dimension에 추가
-B) Metric Name에 포함
-C) JSON 일반 필드로 두고 (메트릭으로 정의 X), 로그 검색에만 사용
-D) PutMetricData로 별도 발행
+A) Anomaly Detection은 최소 2주 학습 데이터 필요
+B) 메트릭의 dimension이 잘못됨
+C) Alarm Evaluation Period 부족
+D) High-Resolution이 아니라서
 
-**정답: C**
-해설: user_id처럼 고카디널리티 값은 **메트릭 Dimension에 절대 X** (비용 폭발). EMF 장점은 같은 JSON에 메트릭 외 필드를 두어 **로그로만** 검색·필터 가능.
+**정답: A**
+해설: Anomaly Detection은 최근 2주 데이터로 학습. 신규 메트릭은 학습 데이터가 없거나 부족해 거의 모든 값이 anomaly. 운영자는 2-14일 데이터 누적 후 활성화.
 
 ---
 
-## 📌 오늘의 요약
+**문제 3.** 운영자가 매일 같은 시간 트래픽 피크가 있는 워크로드에서 false positive를 줄이려면?
 
-1. Metric Filter: 로그 패턴 → Custom Metric. 사후 발생 로그만 적용
-2. EMF (Embedded Metric Format): stdout JSON 하나로 로그+메트릭 동시 발행. Lambda 표준
-3. Anomaly Detection: ML로 정상 밴드 학습 → 변동성 큰 메트릭에 적합. 2주 학습 기간 필요
-4. 메트릭 Dimension에 user_id 같은 고카디널리티 값 절대 금지
-5. Contributor Insights로 Top N 추출 — DDoS 공격자, 에러 유발 함수 분석에 활용
+A) 고정 임계값을 평균 + 표준편차로 설정
+B) Anomaly Detection 기반 알람
+C) Composite Alarm
+D) Math Expression
+
+**정답: B**
+해설: Anomaly Detection은 시간대·요일별 패턴을 학습. 평소 피크는 정상으로 처리, 진짜 이상만 탐지.
+
+---
+
+**문제 4.** 운영자가 모든 트랜잭션마다 메트릭 5개를 발행해 API 비용이 폭증. 가장 적합한 대안은?
+
+A) 배치 발행
+B) EMF로 한 줄 로그에 메트릭 임베드
+C) Custom Logs Insights
+D) Metric Filter
+
+**정답: B**
+해설: EMF는 console.log 한 줄로 메트릭 자동 추출. API 호출 비용 zero.
+
+---
+
+**문제 5.** 여러 계정의 메트릭과 로그를 한 콘솔에서 보려면?
+
+A) 각 계정 콘솔에 일일이 로그인
+B) CloudWatch Cross-Account Observability + Sink 활성화
+C) S3로 export 후 Athena
+D) 모든 계정의 IAM Role을 통합
+
+**정답: B**
+해설: CloudWatch Observability Access Manager로 monitoring account에 sink, 각 워크로드 계정에서 source 연결. 한 콘솔에서 전 계정 메트릭/로그/X-Ray trace 통합.

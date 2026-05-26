@@ -1,373 +1,274 @@
-# Day 2 - IAM 기초 (사용자, 그룹, 역할, 정책 평가 로직)
+# Day 2 - IAM의 운영자 사용설명서: 사용자·그룹·역할·정책 평가 알고리즘
 
-📅 날짜: Week 1 (Day 2)
-🎯 주제: IAM의 4대 구성요소와 정책 평가 로직 마스터
-⏱️ 학습 시간: 약 90분
+S3 403, Lambda InvalidPermission, ECR pull denied, SSM SessionManager AccessDenied, RDS Connect Failed. 운영자 슬랙 채널에 매일 떠다니는 이 에러들의 공통점은 단 하나, 결국 IAM 정책 평가의 결과라는 것이다. 그래서 운영자에게 IAM은 "권한 부여 시스템"이라기보다 **"매일 일어나는 사고의 절반을 결정하는 의사결정 엔진"**이다. 누가, 무엇을, 어디에서, 어떤 조건으로 할 수 있는지를 결정하는 단 하나의 컴포넌트가 IAM이고, 그것이 잘못되면 권한이 너무 넓어 데이터가 새거나(Capital One), 너무 좁아 배포가 막힌다(흔한 금요일 밤).
 
----
+오늘은 IAM의 4개 엔터티(User, Group, Role, Policy)를 운영자 시점에서 다시 그리고, 정책 평가 알고리즘이 실제로 어떤 순서로 결정을 내리는지, 그리고 거부가 발생했을 때 어디를 봐야 하는지를 정리한다. 이 알고리즘 한 그림이 시험 IAM 문제의 70%를 푼다.
 
-## 🎯 학습 목표
+## IAM의 4가지 엔터티: 운영자가 보는 차이
 
-- IAM 사용자/그룹/역할/정책의 차이를 명확히 이해한다
-- AWS의 정책 평가 알고리즘(Explicit Deny → Allow → Default Deny)을 익힌다
-- 운영자 입장에서 최소 권한 원칙을 정책으로 표현할 수 있다
+| 엔터티 | 본질 | 운영자 사용 시점 | 자격증명 수명 |
+|--------|------|------------------|---------------|
+| **User** | 영구 자격증명(access key + password) | 사람·자동화 스크립트가 직접 로그인 필요할 때 | 무한 (수동 회전 전까지) |
+| **Group** | 사용자 묶음 + 정책 첨부 컨테이너 | 권한을 사람별이 아닌 직무별로 묶을 때 | N/A |
+| **Role** | 일시적 자격증명을 발급해주는 임시 신분 | 서비스 간 호출, Cross-Account 접근, Federation | STS 임시 토큰 (15분~12시간) |
+| **Policy** | 권한 정의 JSON 문서 | Effect/Action/Resource/Condition으로 표현 | N/A |
 
----
+운영자 입장에서 가장 자주 쓰는 건 **Role**이다. 사용자는 인간 한 명에만 발급(혹은 IAM Identity Center로 대체)하고, EC2·Lambda·ECS Task·Cross-Account 신뢰는 전부 Role로 처리한다. 이유는 명확하다.
 
-## 🧩 사전 지식 (CS 기초)
+1. **Role의 자격증명은 STS가 발급하는 임시 토큰(기본 1시간, 최대 12시간)**이라 유출돼도 만료된다
+2. **Role은 CloudTrail에 `AssumedRole` 이벤트로 추적**되므로 누가 언제 어떤 권한을 썼는지 명확
+3. **Role은 access key 회전 부담이 없다** — 사용자에 붙은 access key는 회전을 운영자가 챙겨야 함
+4. **Role은 Trust Policy로 "누가 assume할 수 있는가"를 명확히 제한** 가능
 
-- **AAA (Authentication / Authorization / Accounting)**: 사용자가 누구인지(인증), 무엇을 할 수 있는지(인가), 무엇을 했는지(감사)
-- **RBAC vs ABAC**: Role-Based Access Control(역할 기반) vs Attribute-Based Access Control(속성 기반). IAM은 둘 다 지원 (Condition + Tag 사용 시 ABAC)
-- **Principle of Least Privilege**: 작업 수행에 필요한 최소 권한만 부여
-- **Identity vs Resource policy**: 누구에게 권한을 붙이느냐(사용자/역할) vs 무엇에 권한을 붙이느냐(S3 버킷, KMS 키)
-- **JSON 정책 문법**: Statement, Effect, Action, Resource, Condition. AWS는 JSON으로 권한을 표현
+> 📚 **사례**: 2022년 9월 Uber 해커 사건. 18세 해커가 Uber 직원 한 명에게 MFA 푸시 폭격(MFA fatigue 공격)을 한 뒤, 슬랙 DM으로 "IT 부서다"라며 푸시 승인을 유도. 직원이 승인하자 VPN 접속 권한을 얻었고, 내부 PowerShell 스크립트에 하드코딩된 **PAM(Privileged Access Management) admin 자격증명**을 탈취했다. 그 자격증명으로 Uber의 AWS, GCP, OneLogin, GSuite, vSphere를 모두 손에 넣었다(스크린샷이 외부에 유출됨). 만약 이 PAM 자격증명이 access key가 아니라 **IAM Role + STS 임시 토큰 + 강제 MFA 조건 + IP CIDR 제한** 조합이었다면 침투 범위가 훨씬 좁아졌을 것이다. 운영자 교훈: **장기 자격증명은 자산이 아니라 부채다**. 또 다른 교훈: 한 자격증명으로 여러 시스템에 접근 가능하면 한 시스템 침투가 전부로 번진다.
 
----
+> 🔍 **더 깊이**: STS의 `AssumeRole`이 발급하는 임시 자격증명은 **AccessKeyId(ASIA로 시작) + SecretAccessKey + SessionToken** 3종 세트다. SessionToken은 JWT 비슷한 서명된 토큰이며, AWS API 호출 시 `X-Amz-Security-Token` 헤더에 같이 보내야 한다. 만료 시각이 토큰에 박혀 있어 클라이언트가 임의로 연장 못한다(다시 AssumeRole 호출 필요). 자격증명이 새도 만료 후엔 무용지물. 반면 IAM User의 access key(AKIA로 시작)는 영구 유효 — 명시적으로 비활성화하지 않는 한 5년이고 10년이고 살아있다. GuardDuty가 ASIA로 시작하는 토큰이 비정상 IP에서 사용되면 `CredentialAccess:IAMUser/AnomalousBehavior` finding을 띄우는 게 이 차이 때문이다.
 
-## 📖 이론 내용
+## 정책 평가 알고리즘: 시험과 실무의 모든 거부를 설명하는 단 하나의 그림
 
-### 1. IAM의 4대 구성요소
-
-#### 사용자 (User)
-- 개인이나 애플리케이션에 발급되는 영구 자격 증명
-- Access Key (CLI/SDK 용) + Console 비밀번호 + MFA 설정 가능
-- **운영 모범 사례**: 실제 사람에게만 발급, 서비스/EC2엔 IAM Role 사용
-
-#### 그룹 (Group)
-- 사용자 모음. 그룹에 정책 부여 → 소속 사용자 모두 권한 상속
-- **그룹 안에 그룹은 불가능** (시험 함정)
-- 사용자는 최대 10개 그룹 소속 가능
-
-#### 역할 (Role)
-- 임시 자격 증명을 발급받기 위한 "신원"
-- AWS 서비스(EC2, Lambda), 다른 AWS 계정, 외부 IdP(SAML/OIDC)가 Assume
-- STS(Security Token Service)가 1시간~12시간 유효 토큰 발급
-- **CloudOps 운영자가 가장 많이 만지는 IAM 객체**
-
-#### 정책 (Policy)
-- 권한 명세서. JSON 문서로 표현
-- 종류:
-  - **Identity-based**: User/Group/Role에 붙임
-  - **Resource-based**: S3 버킷, KMS 키, SNS Topic 등에 붙임 (Principal 필수)
-  - **Permission Boundary**: 사용자/역할에 부여 가능한 권한 최대치
-  - **SCP (Service Control Policy)**: Organizations에서 OU/계정 단위 가드레일
-  - **Session Policy**: AssumeRole 시 일시적 권한 축소
-
-### 2. 정책 JSON 구조
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "AllowReadS3Logs",
-      "Effect": "Allow",
-      "Action": [
-        "s3:GetObject",
-        "s3:ListBucket"
-      ],
-      "Resource": [
-        "arn:aws:s3:::my-log-bucket",
-        "arn:aws:s3:::my-log-bucket/*"
-      ],
-      "Condition": {
-        "IpAddress": { "aws:SourceIp": "203.0.113.0/24" },
-        "Bool": { "aws:MultiFactorAuthPresent": "true" }
-      }
-    }
-  ]
-}
-```
-
-각 필드의 의미:
-- **Sid**: 사람이 읽는 식별자 (선택)
-- **Effect**: `Allow` 또는 `Deny`
-- **Action**: 허용/거부할 API 액션 (`service:Action` 형식)
-- **Resource**: 적용 대상 ARN (`*`은 전체)
-- **Condition**: 조건 (IP, MFA, 태그, 날짜·시간 등)
-- **Principal**: Resource-based 정책에서 "누가" (Identity-based엔 불필요)
-
-### 3. 정책 평가 로직 (⭐ 시험 매우 빈출)
-
-AWS는 요청을 받으면 다음 순서로 평가합니다:
+운영자가 가장 자주 만나는 질문은 "왜 거부됐냐?"다. IAM 정책 평가 알고리즘은 다음 6단계로 결정한다. 이 흐름이 시험 문제의 70%를 푼다.
 
 ```
-1. 기본값: 모두 Deny
-2. Organizations SCP 확인 → 명시적 Deny 있으면 즉시 거부
-3. Resource-based 정책에 Allow 있는지 확인
-4. Identity-based 정책에 Allow 있는지 확인
-5. Permission Boundary와 Session Policy의 교집합 적용
-6. 어디서든 Explicit Deny가 있으면 → 거부 (최우선)
-7. 어디에도 Allow가 없으면 → 거부 (Default Deny)
-```
-
-**핵심 규칙:**
-- **Explicit Deny > Explicit Allow > Default Deny**
-- SCP, Permission Boundary, Identity Policy 중 **하나라도 Deny면 차단**
-- **모두에 Allow가 있어야 허용** (교집합)
-
-### 4. IAM Role - 운영자가 반드시 알아야 할 패턴
-
-#### EC2 Instance Profile
-```
-EC2 → IMDS(Instance Metadata Service) v2 → 임시 자격 증명 자동 발급
-→ EC2 위 앱이 S3 / DynamoDB 등 호출 가능
-```
-- **장점**: Access Key를 코드/EC2에 박지 않아도 됨 → 보안 강화
-- 운영 점검 포인트: IMDSv2 강제 적용 (`HttpTokens=required`)
-
-#### Cross-Account Role
-```
-Account A (운영 계정)         Account B (감사 계정)
-  Role: AuditRole       ←   감사자가 AssumeRole
-   Trust Policy: B 신뢰
-   Permission: ReadOnly
-```
-- ExternalId 사용 시 "Confused Deputy" 공격 방지
-
-#### Service-Linked Role (SLR)
-- AWS 서비스가 자기 작업을 위해 자동 생성하는 역할
-- 예: AWS Config가 만드는 `AWSServiceRoleForConfig`
-- **삭제 시 주의**: 해당 서비스가 작동 안 함
-
----
-
-## 🧠 알아두면 좋은 심화 이론
-
-| 항목 | 설명 | 시험 포인트 |
-|------|------|-------------|
-| **AWS Managed Policy** | AWS 제공 (예: `AdministratorAccess`) | 즉시 사용 가능, 수정 불가 |
-| **Customer Managed Policy** | 고객 직접 작성 | 재사용 가능, 버전 관리 |
-| **Inline Policy** | 특정 User/Role에 직접 인라인 | 1:1 매핑, 재사용 X |
-| **NotAction / NotResource** | "이것만 빼고 전부" 표현 | 위험, 광범위한 권한 부여 위험 |
-| **IAM Access Analyzer** | 정책의 의도치 않은 외부 공유 탐지 | Week 9에서 자세히 |
-| **iam:PassRole** | 다른 서비스에 Role을 넘길 때 필요 | Lambda 생성 시 자주 누락 |
-
-> ⚠️ **함정 1**: `s3:*` 같은 와일드카드는 시험에서 거의 항상 오답. 최소 권한 원칙 위배.
->
-> ⚠️ **함정 2**: SCP는 권한을 "허용"하지 않음 — 권한의 "가드레일(상한)"만 설정. SCP에 `Allow s3:*`가 있어도 사용자가 IAM 권한 없으면 못 함.
->
-> 💡 **암기 팁**: "Allow는 합집합 X, 교집합 O". SCP + Permission Boundary + Identity Policy 모두에 허용돼야 동작.
-
-### 운영 모범 사례 - 5가지 IAM 체크리스트
-
-1. **루트 계정 절대 일상 사용 금지** → MFA 켜고 잠가둠
-2. **모든 사용자에 MFA 강제** (Console 사용자)
-3. **Access Key는 90일마다 회전**
-4. **EC2/Lambda는 IAM Role 사용** (Access Key 박지 말 것)
-5. **IAM Access Analyzer 항상 활성화**
-
-### 관련 서비스 Cross-Reference
-
-- **IAM → Week 1 Day 3** (STS, 권한 경계, 조건부 정책 심화)
-- **IAM → Week 4 CloudTrail** (IAM 활동 감사)
-- **IAM → Week 9 Access Analyzer** (정책 자동 분석)
-- **Role → Week 5 SSM** (Instance Profile, Session Manager IAM)
-
----
-
-## 🏗️ 아키텍처 다이어그램
-
-```
-IAM 정책 평가 흐름
-=========================================================
-
-  API 요청 (예: s3:GetObject)
+[1] 명시적 Deny가 있는가?  ─Yes─→  거부 (끝)
+        │ No
+        ▼
+[2] SCP(Service Control Policy)에서 Allow가 있는가?  ─No─→  거부 (끝)
+        │ Yes
+        ▼
+[3] Resource-based Policy의 Allow가 있는가?  ─Yes─→ (조건부 통과)
         │
         ▼
-  ┌──────────────────────────┐
-  │ 1. Organizations SCP     │  ← 명시적 Deny? → 즉시 거부
-  └────────┬─────────────────┘
-           │
-           ▼
-  ┌──────────────────────────┐
-  │ 2. Resource-based Policy │  ← S3 버킷 정책 등
-  └────────┬─────────────────┘
-           │
-           ▼
-  ┌──────────────────────────┐
-  │ 3. Identity-based Policy │  ← 사용자/역할에 붙은 정책
-  └────────┬─────────────────┘
-           │
-           ▼
-  ┌──────────────────────────┐
-  │ 4. Permission Boundary   │  ← User/Role 가드레일
-  └────────┬─────────────────┘
-           │
-           ▼
-  ┌──────────────────────────┐
-  │ 5. Session Policy        │  ← AssumeRole 시
-  └────────┬─────────────────┘
-           │
-   어디서든 Deny? → 거부
-   모두 Allow?   → 허용
-   외엔         → Default Deny
+[4] Identity-based Policy의 Allow가 있는가?  ─No─→  거부 (단, 3에서 Allow면 통과)
+        │ Yes
+        ▼
+[5] Permission Boundary가 있다면 그 안에서 Allow되는가?  ─No─→  거부
+        │ Yes
+        ▼
+[6] Session Policy(STS AssumeRole 시 첨부)가 있다면 Allow?  ─No─→  거부
+        │ Yes
+        ▼
+   허용 ✅
 ```
 
----
+핵심 원칙:
 
-## ⭐ 핵심 포인트 (시험 출제 빈도 높음)
+- **명시적 Deny는 어디서 나오든 최종 거부**: SCP, identity policy, resource policy, boundary 어디서든 한 번이라도 Deny가 있으면 끝
+- **암묵적 거부 = Deny와 다름**: 어떤 정책에도 명시되지 않은 권한은 암묵적으로 거부되지만, 다른 정책에서 Allow로 덮을 수 있음
+- **Resource-based policy의 Allow는 identity policy 없이도 통과 가능**: S3 버킷 정책에서 다른 계정에 Allow를 주면, 그 계정의 사용자는 자기 IAM에 권한이 없어도 접근 가능(같은 계정 내에선 보통 둘 다 필요. 단, KMS는 같은 계정 내에서도 양쪽 다 필요)
 
-1. ⭐ **Explicit Deny가 항상 최우선** — Allow가 있어도 Deny 있으면 차단
-2. ⭐ **EC2/Lambda는 Access Key X, IAM Role 사용** — 운영 모범 사례
-3. ⭐ **SCP는 권한 상한(가드레일)만 설정** — 권한을 "부여"하지 않음
-4. ⭐ **MFA 강제 조건**: `aws:MultiFactorAuthPresent` 또는 `aws:MultiFactorAuthAge`
-5. ⭐ **그룹 안에 그룹 불가** — 사용자만 그룹에 들어감
+> 💡 **관련 이론**: IAM 정책 평가는 본질적으로 **deny-overrides** 모델의 ABAC(Attribute-Based Access Control). RBAC(Role-Based)의 단순 매트릭스를 넘어서 `aws:RequestTag/Env`, `aws:PrincipalTag/Department`, `aws:SourceIp`, `aws:MultiFactorAuthAge`, `aws:CurrentTime` 같은 속성으로 조건부 허용을 표현한다. NIST SP 800-162가 ABAC의 표준 모델을 정의하며, IAM의 Condition 블록이 그 구현이다. SCP가 SCP > identity > resource > boundary > session 순으로 평가되는 건 **"권한은 조직 정책에 의해 제한된다"**는 원칙을 강제하기 위함. 학문적으로는 Sandhu et al.(1996, IEEE Computer)의 RBAC96 모델이 RBAC의 기초, Hu et al.(2014, NIST SP 800-162)이 ABAC의 표준을 정의했다.
 
----
+> ⚠️ **함정**: 시험에서 "한 계정의 IAM 사용자가 다른 계정의 S3 버킷 객체에 PUT을 하려고 한다. 어떤 권한이 필요하냐?"는 문제가 자주 나온다. 답은 **양쪽 모두**다. ① 호출자 계정의 사용자에 `s3:PutObject` 허용 ② 대상 버킷의 Bucket Policy에서 그 사용자(또는 그 계정)에 `s3:PutObject` 허용. 둘 중 하나만 있으면 거부된다. 추가로 KMS 암호화 버킷이면 ③ KMS 키 정책에 `kms:GenerateDataKey` 허용까지 필요. 즉 cross-account + KMS는 3개의 정책이 다 통과해야 한다.
 
-## 💻 실제 예시 - AWS CLI
+> 🔍 **더 깊이**: AWS는 정책 평가 시 **Zelkova**라는 SMT(Satisfiability Modulo Theories) 기반 정형 검증 엔진을 사용한다(Backes et al., 2018 CAV). 정책을 1차 논리식으로 변환한 뒤 Z3 같은 SMT 솔버로 "이 정책이 어떤 입력 조합에서 Allow를 내는가"를 수학적으로 풀어낸다. Access Analyzer가 "이 S3 버킷이 외부 계정에 노출됐다"를 정확히 알려주는 게 이 엔진 덕분. 단순 regex 매칭이 아니라 "모든 가능한 호출 조합 중 외부에 Allow가 나오는 경우가 존재하는가?"를 정형 증명한다.
 
-```bash
-# 1. CloudOps 운영자를 위한 정책 생성 (CloudWatch + EC2 + SSM 읽기)
-cat > cloudops-readonly-policy.json <<'EOF'
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "cloudwatch:Get*",
-        "cloudwatch:List*",
-        "cloudwatch:Describe*",
-        "logs:Get*",
-        "logs:Describe*",
-        "logs:FilterLogEvents",
-        "ec2:Describe*",
-        "ssm:Describe*",
-        "ssm:GetParameter*"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Effect": "Deny",
-      "Action": "*",
-      "Resource": "*",
-      "Condition": {
-        "Bool": { "aws:MultiFactorAuthPresent": "false" }
-      }
-    }
-  ]
-}
-EOF
+## 정책의 6가지 종류: 어디서 누가 첨부하는가
 
-aws iam create-policy \
-  --policy-name CloudOpsReadOnlyMFA \
-  --policy-document file://cloudops-readonly-policy.json
+| 정책 타입 | 첨부 대상 | 누가 만드는가 | 운영자 시점 |
+|-----------|-----------|----------------|-------------|
+| **Identity-based (Managed)** | User/Group/Role | AWS 또는 고객 | 가장 자주 쓰는 표준 |
+| **Identity-based (Inline)** | User/Group/Role 1:1 | 고객 | 단발성·삭제 시 같이 사라짐 |
+| **Resource-based** | S3, Lambda, SNS, SQS, KMS, ECR, EFS 등 | 리소스 소유자 | Cross-Account에 필수 |
+| **Permission Boundary** | User/Role | 권한 위임 관리자 | "개발자가 만드는 Role의 최대 권한" 제한 |
+| **SCP** | AWS Organizations OU/Account | Org admin | 전 계정 가드레일 |
+| **Session Policy** | STS AssumeRole 호출 시 inline | 호출자 | 발급되는 임시 자격증명의 권한 축소 |
 
-# 2. EC2용 Role 생성 (Instance Profile)
-cat > ec2-trust.json <<'EOF'
+운영자가 가장 자주 헷갈리는 게 **Permission Boundary와 SCP**다. 둘 다 "권한의 상한선"을 정하지만 적용 위치가 다르다.
+
+- **SCP**는 계정/OU 전체에 적용 — Organizations 관리자가 사용. SCP는 root 계정에도 적용된다(단, management account는 예외)
+- **Permission Boundary**는 특정 User/Role에 적용 — 권한 위임의 가드레일. 사용자가 만든 정책의 effective permission을 boundary와 교집합으로 제한
+
+또한 **SCP는 절대 Allow를 만들지 않는다**. SCP가 `Allow *`라고 적혀 있어도, 실제로는 "이 OU의 계정에서 이 권한들이 가능하다"는 화이트리스트일 뿐이다. 실제 권한 부여는 identity policy나 resource policy에서 일어난다. 운영자가 자주 하는 실수: SCP에 Allow를 추가하고 "이제 권한이 생겼겠지" 했는데 안 됨 → identity policy를 추가해야 함.
+
+> 🔍 **더 깊이**: 운영자 흔한 패턴은 **개발자에게 IAM Role 생성 권한을 위임**하면서 권한 boundary를 강제하는 것. 예를 들어 개발자 그룹에 `iam:CreateRole`은 주되, `iam:PutRolePermissionsBoundary` 조건으로 항상 회사 표준 boundary policy를 첨부하게 강제한다. 그러면 개발자가 만든 Role의 effective permission은 "그가 첨부한 정책 ∩ boundary policy"이므로, AdministratorAccess를 첨부해도 boundary가 제한된 권한만 허용한다. 이게 "권한 위임 + 가드레일"의 표준 패턴.
+
+```json
 {
   "Version": "2012-10-17",
   "Statement": [{
     "Effect": "Allow",
-    "Principal": { "Service": "ec2.amazonaws.com" },
-    "Action": "sts:AssumeRole"
+    "Action": ["iam:CreateRole", "iam:PutRolePolicy"],
+    "Resource": "*",
+    "Condition": {
+      "StringEquals": {
+        "iam:PermissionsBoundary": "arn:aws:iam::123456789012:policy/DeveloperBoundary"
+      }
+    }
   }]
 }
-EOF
-
-aws iam create-role \
-  --role-name EC2-CloudWatch-SSM-Role \
-  --assume-role-policy-document file://ec2-trust.json
-
-aws iam attach-role-policy \
-  --role-name EC2-CloudWatch-SSM-Role \
-  --policy-arn arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
-
-aws iam attach-role-policy \
-  --role-name EC2-CloudWatch-SSM-Role \
-  --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-
-# 3. 정책 시뮬레이션 (적용 전 검증)
-aws iam simulate-principal-policy \
-  --policy-source-arn arn:aws:iam::123456789012:user/alice \
-  --action-names s3:GetObject \
-  --resource-arns arn:aws:s3:::my-prod-bucket/file.txt
 ```
 
-**시뮬레이션 출력 예시:**
+## 운영자가 매일 만나는 IAM 디버깅 패턴
+
+S3 403이 떴다. 어디부터 봐야 하나? 운영자는 다음 순서로 본다.
+
+```
+[1단계] CloudTrail에서 실패 호출 찾기
+        - eventName: GetObject, PutObject 등
+        - errorCode: AccessDenied
+        - errorMessage: "User: arn:aws:sts::... is not authorized to perform..."
+        - requestParameters에서 bucket, key 확인
+        - userIdentity로 호출자 정체 확인 (User? AssumedRole? FederatedUser?)
+
+[2단계] 호출자가 IAM User인가, AssumedRole인가?
+        - User면 직접 첨부 정책 + 그룹 정책 확인
+        - Role이면 RoleSessionName으로 누가 assume 했는지 추적
+        - sessionIssuer에서 원본 Role ARN 확인
+
+[3단계] IAM Policy Simulator로 시뮬레이션
+        - 호출자 + Action + Resource로 평가 결과 확인
+        - 어떤 정책이 거부했는지 표시됨
+        - Service Last Accessed 정보로 "이 권한이 실제로 쓰였는가" 확인
+
+[4단계] Access Analyzer로 cross-account 노출 확인
+        - 의도하지 않은 외부 노출이 있는지 검증
+        - Policy validation으로 정책 문법·보안 점검
+
+[5단계] 그래도 모르면 CloudTrail Event detail의 errorMessage 정독
+        - 2023년부터 AWS는 "어떤 정책이 거부했는지" 메시지에 명시
+```
+
+> 📚 **사례**: 운영 중인 EC2가 갑자기 S3 PutObject에서 403. 운영자가 CloudTrail을 보니 호출자는 `AssumedRole/EC2-S3Role/i-0abc...`. Identity policy를 보니 `s3:PutObject Allow`. Bucket Policy도 Allow. SCP도 통과. 그런데 거부. 이유는 **버킷에 SSE-KMS 암호화가 켜져 있고, 그 KMS 키의 Key Policy에 EC2 Role이 없어서**였다. S3 PUT 시 KMS 키로 암호화하려면 `kms:GenerateDataKey` 권한이 필요하고, 그 권한은 Key Policy + IAM Policy 양쪽에서 허용돼야 한다(KMS는 cross-account 아니라도 양쪽 다 필요). 운영자가 IAM Policy만 보고 헤매기 쉬운 함정. 게다가 CloudTrail에 KMS 거부 이벤트는 별도로 찍히므로 KMS 쪽 Trail까지 봐야 한다.
+
+> ⚠️ **함정**: errorCode `AccessDenied`라고 무조건 IAM 문제가 아니다. S3 버킷의 BlockPublicAccess가 켜져 있으면 public 정책을 만들어도 BPA가 우선 차단해 403을 낸다. SCP가 SCP에서 Deny하면 IAM에 Allow가 있어도 거부. RAM 공유받은 리소스에 owner 측에서 권한 변경 시 거부 등. 거부의 출처를 정확히 찾으려면 CloudTrail의 `errorMessage` 텍스트를 그대로 읽어야 한다.
+
+## STS의 핵심 API 3종
+
+운영자가 알아야 할 STS API:
+
+| API | 용도 | 운영자 시점 |
+|-----|------|-------------|
+| `AssumeRole` | 같은 계정/다른 계정 Role을 assume | Cross-Account 접근, EC2/Lambda Role |
+| `AssumeRoleWithSAML` | SAML 2.0 IdP에서 assume | AD FS, Okta SAML 페더레이션 |
+| `AssumeRoleWithWebIdentity` | OIDC IdP에서 assume | Cognito, GitHub Actions OIDC, EKS IRSA |
+
+GitHub Actions에서 AWS에 배포할 때 access key를 secret에 박는 게 표준이었지만, **OIDC 페더레이션**으로 바꾸면 access key 자체가 없어진다. GitHub이 발급한 OIDC 토큰을 AWS STS가 검증하고 임시 자격증명을 발급하는 방식. 이게 2022년부터 GitHub Actions의 권장 패턴이고, 2023년 re:Invent에서도 AWS가 공식 추천.
+
+```yaml
+# GitHub Actions OIDC 예시
+- uses: aws-actions/configure-aws-credentials@v4
+  with:
+    role-to-assume: arn:aws:iam::123456789012:role/GitHubActionsDeploy
+    aws-region: ap-northeast-2
+    role-session-name: ${{ github.actor }}-${{ github.run_id }}
+```
+
+이때 IAM Role의 Trust Policy는 다음처럼 GitHub repo + branch까지 좁혀야 한다.
+
 ```json
 {
-  "EvaluationResults": [
-    {
-      "EvalActionName": "s3:GetObject",
-      "EvalResourceName": "arn:aws:s3:::my-prod-bucket/file.txt",
-      "EvalDecision": "allowed",
-      "MatchedStatements": [...]
+  "Condition": {
+    "StringEquals": {
+      "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+    },
+    "StringLike": {
+      "token.actions.githubusercontent.com:sub": "repo:my-org/my-repo:ref:refs/heads/main"
     }
-  ]
+  }
 }
 ```
+
+> 🔍 **더 깊이**: EKS IRSA(IAM Roles for Service Accounts)는 같은 메커니즘이다. EKS 클러스터가 OIDC provider 역할을 하고, Kubernetes ServiceAccount에 매핑된 IAM Role을 Pod이 assume한다. Pod 안의 토큰 마운트 경로(`/var/run/secrets/eks.amazonaws.com/serviceaccount/token`)에서 OIDC JWT를 읽고 `AssumeRoleWithWebIdentity`로 자격증명을 받는다. AWS SDK가 이 흐름을 자동 처리(`webIdentityTokenFile` 환경변수). 2023년부터 **Pod Identity**라는 더 단순한 메커니즘도 나왔는데, 이건 OIDC 대신 EKS Pod Identity Agent를 사용해 IMDS-like 인터페이스로 자격증명을 제공한다. IRSA는 cluster-OIDC 페더레이션, Pod Identity는 EKS native — 둘은 공존 가능.
+
+## 운영자가 알아야 할 IAM 모범 사례 10가지
+
+1. **루트 계정은 일상 사용 금지**: MFA 강제, access key 삭제, 1년에 1-2번 청구·계정 폐쇄 등에만 사용
+2. **모든 IAM User에 MFA 필수**: Condition `aws:MultiFactorAuthPresent: true`로 정책에서 강제
+3. **사람은 IAM Identity Center, 머신은 IAM Role**: User 직접 생성은 최후의 수단
+4. **Access Key 90일 회전**: Credential Report로 확인, Config rule `access-keys-rotated`
+5. **권한은 최소 권한 원칙**: AdministratorAccess는 비상시만, 평소엔 직무별 분리. IAM Access Advisor의 "Service Last Accessed"로 안 쓰는 권한 식별
+6. **Permission Boundary로 위임**: 개발자가 만든 Role의 권한 상한 강제
+7. **CloudTrail은 모든 리전 + Log File Validation 활성화**: 변조 탐지
+8. **Access Analyzer로 외부 노출 자동 탐지**: Organization 단위로 켜기
+9. **사용 안 하는 자격증명은 90일 후 비활성화** (Last Accessed 정보 활용)
+10. **STS Region Endpoint 강제**: `aws:UseRegion` 조건으로 us-east-1 강제 호출 차단. SDK에서 `AWS_STS_REGIONAL_ENDPOINTS=regional` 설정
+
+> ⚠️ **함정**: "IAM User의 access key를 secret manager에 저장하면 안전하다"는 오해. Secret Manager는 access key 자체를 회전시킬 수 있지만(Lambda 회전 기능), 키가 유출되면 회전 전까지는 유효하다. **장기 자격증명이 존재한다는 사실 자체가 공격면**이다. 답은 access key를 안 만드는 것 — Role + STS로 대체. 2024년 AWS는 IAM User의 access key 생성 시 콘솔에서 경고를 띄우기 시작했고, IAM Identity Center가 사실상의 표준이 됐다.
+
+> 💡 **관련 이론**: 이런 분산된 권한 평가의 디버깅 어려움은 **policy explosion** 문제로 알려져 있다. Sandhu et al.(1996, IEEE Computer)의 RBAC96 모델 이후 ABAC, ReBAC(Relationship-Based, Zanzibar) 등 다양한 모델이 나왔지만, 어느 모델이든 정책 수가 늘면 평가 결과 추적이 폭발적으로 어려워진다. AWS는 이를 풀려고 Access Analyzer(Zelkova 엔진)를 만들었다. 같은 문제를 Google은 Zanzibar(2019 USENIX ATC)로, Microsoft Azure는 RBAC + ABAC 조건 표현식으로 풀었다.
+
+## 정리하며
+
+오늘 정리한 정책 평가 알고리즘은 SOA-C02 IAM 문제의 70%를 푼다. 핵심은 단순하다.
+
+- **Deny가 이긴다** (어디서 나오든)
+- **Allow가 한 번은 있어야 한다** (identity 또는 resource policy 어디든)
+- **Cross-Account는 양쪽 다 Allow**
+- **Boundary와 SCP는 상한선 — Allow를 더 만들지는 않음**
+- **STS는 임시 자격증명 — 영구 access key의 회전 부담 없음**
+
+내일은 이 위에 더 깊은 도구들 — Identity Center 페더레이션, ABAC 패턴, 권한 디버깅 — 을 다룬다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** 한 IAM 사용자가 S3 버킷에 접근하지 못한다. 다음 중 가장 적절한 점검 순서는?
+**문제 1.** 계정 A의 IAM 사용자가 계정 B의 S3 버킷에 PutObject를 하려고 한다. 어떤 권한 설정이 필요한가?
 
-A) Identity Policy → Resource Policy → SCP → Permission Boundary
-B) SCP → Resource Policy → Identity Policy → Permission Boundary (Explicit Deny 우선 확인)
-C) Resource Policy만 확인
-D) 그룹 정책만 확인
-
-**정답: B**
-해설: Explicit Deny가 어디든 있는지 먼저 확인해야 함. SCP가 최상단 가드레일이므로 먼저, 그 다음 리소스 정책, Identity 정책, Boundary 순. (실무에서는 IAM Policy Simulator나 Access Advisor 활용)
-
----
-
-**문제 2.** EC2 인스턴스에 있는 애플리케이션이 S3에 접근해야 한다. 보안상 가장 적절한 방법은?
-
-A) Access Key를 EC2 사용자 데이터에 박는다
-B) Access Key를 환경 변수로 설정한다
-C) IAM Role을 만들어 Instance Profile에 연결한다
-D) 루트 계정 자격 증명을 사용한다
+A) 계정 A 사용자의 identity policy에 `s3:PutObject` Allow만 있으면 된다
+B) 계정 B 버킷의 Bucket Policy에 계정 A 사용자 Allow만 있으면 된다
+C) 양쪽 모두 — 계정 A 사용자 identity policy Allow + 계정 B 버킷 정책 Allow
+D) 계정 A의 IAM Role을 만들고 계정 B에서 AssumeRole 해야 한다
 
 **정답: C**
-해설: EC2/Lambda 등 AWS 서비스에서는 항상 IAM Role을 사용. 자격 증명이 자동 회전되고 코드/디스크에 박히지 않음. IMDSv2 강제 설정도 같이.
+해설: Cross-Account 접근은 호출자 측 identity policy와 대상 측 resource policy 양쪽 모두에서 Allow가 필요하다. 한쪽만 있으면 거부. 같은 계정 내에서는 보통 identity policy 또는 resource policy 중 하나만으로 충분하지만, KMS 키 정책은 같은 계정 내에서도 양쪽 다 필요한 예외가 있다. SSE-KMS 버킷이면 KMS 키 정책에 `kms:GenerateDataKey`도 추가 필요.
 
 ---
 
-**문제 3.** 한 회사가 SCP에 `Deny ec2:RunInstances` 명령을 적용했는데, OU 내 한 사용자가 여전히 EC2를 생성할 수 있다. 가능한 이유는?
+**문제 2.** 운영자가 개발자에게 IAM Role 생성 권한을 위임하면서 그 Role이 가질 수 있는 최대 권한을 제한하려고 한다. 가장 적합한 도구는?
 
-A) SCP는 적용에 24시간 걸린다
-B) 해당 사용자가 Organizations 관리 계정(Management Account) 소속이다 — SCP는 관리 계정에 미적용
-C) Identity Policy에 Allow가 있어서 우회된다
-D) Resource Policy가 Allow를 override 한다
+A) SCP
+B) Permission Boundary
+C) Session Policy
+D) Inline Policy
 
 **정답: B**
-해설: SCP는 Organizations의 **관리 계정(Management Account)에는 적용되지 않음**. 또한 SCP는 즉시 적용. Identity Policy Allow가 SCP Deny를 override할 수도 없음.
+해설: Permission Boundary는 User/Role 단위로 적용되는 권한 상한선. SCP는 계정·OU 단위라 더 큰 범위에 적용된다. 운영자는 개발자 그룹에 `iam:CreateRole` 권한을 주되 `iam:PermissionsBoundary` Condition으로 회사 표준 boundary 첨부를 강제하면, 개발자가 만든 Role의 effective permission은 자기 정책 ∩ boundary로 제한된다. Session Policy는 STS AssumeRole 호출 시 일시적으로 발급되는 자격증명에만 적용.
 
 ---
 
-**문제 4.** 다음 정책 중 "MFA를 사용한 경우에만 S3 삭제 허용"을 정확히 표현한 것은?
+**문제 3.** 한 EC2 인스턴스의 IAM Role에 `s3:PutObject Allow`가 있는데, KMS 암호화된 버킷에 PUT 시 AccessDenied가 난다. 가장 가능성 있는 원인은?
 
-A) `"Effect": "Allow", "Action": "s3:Delete*", "Condition": { "Bool": { "aws:MultiFactorAuthPresent": "true" } }`
-B) `"Effect": "Deny", "Action": "s3:Delete*", "Condition": { "Bool": { "aws:MultiFactorAuthPresent": "true" } }`
-C) `"Effect": "Allow", "Action": "s3:Delete*", "Condition": { "Null": { "aws:MultiFactorAuthAge": "true" } }`
-D) `"Effect": "Allow", "Action": "s3:Delete*"` (조건 불필요)
+A) 버킷 정책에 PutObject가 없다
+B) KMS 키 정책에 EC2 Role의 `kms:GenerateDataKey` 권한이 없다
+C) EC2 인스턴스의 IMDSv2가 비활성화돼 있다
+D) S3 SSE 알고리즘이 잘못 설정됐다
+
+**정답: B**
+해설: KMS 암호화된 객체를 PUT하려면 호출자가 `kms:GenerateDataKey`를, GET하려면 `kms:Decrypt`를 가져야 한다. 그 권한은 IAM Policy와 KMS Key Policy 양쪽에서 허용돼야 한다. IAM은 통과해도 Key Policy에 없으면 거부. 운영자가 가장 자주 헤매는 함정 중 하나. CloudTrail에서 `kms:GenerateDataKey` AccessDenied 이벤트가 별도로 찍히므로 그쪽 로그도 봐야 한다.
+
+---
+
+**문제 4.** 운영자가 GitHub Actions에서 AWS로 배포할 때 access key를 GitHub Secret에 박는 대신 OIDC 페더레이션을 쓰려고 한다. 어떤 STS API를 사용하는가?
+
+A) AssumeRole
+B) AssumeRoleWithSAML
+C) AssumeRoleWithWebIdentity
+D) GetSessionToken
+
+**정답: C**
+해설: GitHub Actions는 OIDC IdP로 동작하므로 `AssumeRoleWithWebIdentity`를 호출한다. AWS STS는 GitHub이 발급한 OIDC 토큰을 검증하고 임시 자격증명을 발급한다. AssumeRoleWithSAML은 AD FS/Okta SAML 페더레이션, AssumeRole은 IAM 자격증명 기반. Trust Policy에는 GitHub의 OIDC provider ARN과 repo/branch sub claim을 명시한다.
+
+---
+
+**문제 5.** IAM 정책 평가에서 명시적 Deny가 어디에서 나오든 항상 거부되는 이유는?
+
+A) AWS의 정책 평가 알고리즘이 deny-overrides 모델을 따르기 때문
+B) Deny는 SCP에서만 발생하므로
+C) Permission Boundary가 자동으로 Deny를 우선시하므로
+D) IAM은 RBAC 모델이므로
 
 **정답: A**
-해설: `aws:MultiFactorAuthPresent`가 true일 때만 Allow. C의 `Null` 조건은 MFA 인증이 **없을 때** true가 되므로 반대 의미.
+해설: IAM 정책 평가는 본질적으로 deny-overrides 모델의 ABAC 구현. 어느 레이어(SCP, identity, resource, boundary, session)에서든 명시적 Deny가 한 번 나오면 최종 결과는 거부. 이 원칙이 권한 설계의 안전성을 보장한다.
 
 ---
 
-**문제 5.** IAM Role의 Trust Policy와 Permission Policy의 차이는?
+**문제 6.** 운영자가 EC2 인스턴스의 IAM Role 자격증명을 SDK로 가져오려고 한다. 어디서 가져오는가?
 
-A) Trust Policy는 누가 이 Role을 Assume할 수 있는지, Permission Policy는 Role이 무엇을 할 수 있는지를 정의
-B) 둘 다 같은 것, 이름만 다름
-C) Trust Policy는 권한, Permission Policy는 신원
-D) Trust Policy는 사용자에게, Permission Policy는 그룹에게 붙는다
+A) /etc/aws/credentials 파일
+B) IMDS(http://169.254.169.254/latest/meta-data/iam/security-credentials/)
+C) 환경변수 AWS_ACCESS_KEY_ID
+D) STS GetSessionToken API
 
-**정답: A**
-해설: Trust Policy = "who can assume me?" (Principal 명시). Permission Policy = "what can I do?" (Action/Resource 명시). 두 정책이 모두 있어야 Role이 작동.
-
----
-
-## 📌 오늘의 요약
-
-1. IAM 4대 객체: 사용자(영구), 그룹(권한 묶음), 역할(임시), 정책(JSON 권한 명세)
-2. 정책 평가: Explicit Deny > Allow > Default Deny. 모든 정책 레이어가 교집합으로 허용해야 통과
-3. EC2/Lambda는 **Access Key 대신 IAM Role** 사용 — 운영 보안 모범 사례
-4. SCP는 권한 **상한(가드레일)**만 정함. 권한을 부여하지는 않음. 관리 계정엔 미적용
-5. `iam:PassRole`은 다른 AWS 서비스에 Role을 넘길 때 필요 — Lambda·CodeBuild·CloudFormation 등에서 자주 누락
+**정답: B**
+해설: EC2 인스턴스 프로파일에 첨부된 IAM Role의 임시 자격증명은 IMDS에서 가져온다. AWS SDK는 자동으로 IMDS를 폴링해 자격증명을 갱신한다(기본 6시간 전 갱신). IMDSv2를 쓰면 PUT으로 세션 토큰을 먼저 받아야 한다. Role 자격증명은 STS가 발급한 것이지만 GetSessionToken은 IAM User용. EC2 측에서 보면 IMDS 경로가 표준.

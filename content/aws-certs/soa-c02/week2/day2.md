@@ -1,336 +1,260 @@
-# Day 2 - CloudWatch Logs (Log Group, Stream, Retention, Subscription)
+# Day 7 - CloudWatch Logs: Log Group의 내부 구조와 Subscription 패턴
 
-📅 날짜: Week 2 (Day 2)
-🎯 주제: CloudWatch Logs의 구조, 보존 정책, 실시간 처리
-⏱️ 학습 시간: 약 90분
+운영자가 장애 디버깅을 시작하는 곳은 결국 로그다. 메트릭이 "지표 하나가 비정상"을 알려준다면, 로그는 "정확히 어떤 요청에서 어떤 예외가 났는가"를 알려준다. 그래서 운영자의 일상 도구 No.1이 CloudWatch Logs다. 오늘은 Logs의 내부 구조와 비용·보존·검색·구독 패턴을 깊이 본다.
 
----
-
-## 🎯 학습 목표
-
-- Log Group / Log Stream의 계층 구조와 권한 모델을 이해한다
-- 로그 보존 정책과 저장 비용 최적화 방법을 안다
-- Subscription Filter로 로그를 실시간 처리하는 패턴을 익힌다
-
----
-
-## 🧩 사전 지식 (CS 기초)
-
-- **Structured logging**: JSON 등 구조화된 로그. 검색·분석에 유리
-- **Log shipping**: 로그를 중앙 저장소로 전송하는 행위. Push vs Pull
-- **Append-only log**: 추가만 가능한 로그. 변조 방지에 유리
-- **Cold vs Hot storage**: 자주 조회 vs 드물게 조회. 비용·성능 trade-off
-- **Backpressure**: 다운스트림이 느릴 때 업스트림을 늦추는 메커니즘. Subscription Filter도 throttling 발생 가능
-
----
-
-## 📖 이론 내용
-
-### 1. CloudWatch Logs 구조
+## CloudWatch Logs의 데이터 모델
 
 ```
-Log Group  /aws/lambda/order-service
+Log Group           ← 동일 애플리케이션의 로그 컨테이너
+   │
+   ├─ Log Stream    ← 단일 소스(EC2 인스턴스, Lambda 실행 환경)의 로그 시퀀스
+   │   │
+   │   ├─ Log Event ← 실제 로그 레코드 (timestamp + message)
+   │   └─ Log Event
+   │
+   └─ Log Stream
+```
+
+- **Log Group**: 정책의 단위. 보존 기간·KMS 암호화·메트릭 필터·구독은 Log Group 레벨
+- **Log Stream**: 단일 소스(인스턴스 ID, Lambda 실행 환경 ID)의 시간순 로그 시퀀스
+- **Log Event**: 한 줄의 로그. timestamp(ms) + message(최대 256KB)
+
+Lambda는 함수당 1개 Log Group, 실행 환경(콘테이너)마다 1개 Stream. EC2의 CloudWatch Agent는 보통 인스턴스 ID로 Stream 분리.
+
+> 🔍 **더 깊이**: Log Stream은 Sequence Token이라는 단조 증가 토큰으로 동시성을 제어한다. 한 Stream에 동시에 PutLogEvents를 호출하면 한 쪽은 InvalidSequenceTokenException으로 실패. 그래서 한 Stream에 여러 소스가 쓰지 않는 게 원칙. (참고: 2023년부터 Sequence Token 없이 PutLogEvents 가능한 모드 추가)
+
+## 보존 정책: 디폴트의 함정
+
+**Log Group의 기본 보존은 "Never Expire"** (영구). 운영자가 명시적으로 설정하지 않으면 비용이 무한 증가한다.
+
+| 보존 기간 옵션 | 사용 시점 |
+|----------------|-----------|
+| 1일 | 디버그 로그·고볼륨 액세스 로그 |
+| 7-30일 | 일반 애플리케이션 로그 |
+| 90-180일 | 보안 감사 (CloudTrail은 보통 90일) |
+| 1-7년 | 컴플라이언스 요구 (PCI-DSS는 1년, HIPAA는 6년) |
+| Never Expire | 거의 안 씀 (비용 폭증) |
+
+```bash
+# 보존 기간 일괄 설정
+aws logs put-retention-policy \
+  --log-group-name /aws/lambda/my-function \
+  --retention-in-days 14
+```
+
+> 📚 **사례**: 한 회사가 Lambda 함수 500개를 1년간 운영하고 어느 날 청구서를 봤더니 CloudWatch Logs 비용만 월 $4,000. 원인은 모든 함수의 Log Group이 기본 "Never Expire". 7일 보존으로 일괄 변경 후 비용이 90% 감소. 운영자 First Day Action 중 1순위가 Log Group 보존 정책 표준화.
+
+> 🔍 **더 깊이**: 운영자가 모든 신규 Log Group에 자동으로 보존 정책을 적용하려면:
+> 1. **EventBridge 룰**: `CreateLogGroup` API 이벤트 감지 → Lambda 자동 호출 → put-retention-policy 실행
+> 2. **Config Rule**: `cloudwatch-log-group-retention-period-check`로 비준수 탐지 + 자동 수정
+> 3. **CloudFormation Custom Resource**: Log Group을 IaC로 만들 때 보존 강제
+
+## 비용 구조: 운영자가 폭증하기 쉬운 항목
+
+CloudWatch Logs 비용은 4가지로 구성:
+
+| 항목 | 가격(서울 기준) | 의미 |
+|------|-----------------|------|
+| **Ingestion** | GB당 $0.76 | 로그를 받아 저장하는 비용 |
+| **Storage** | GB·월당 $0.033 | 저장 비용 (S3보다 비쌈) |
+| **Insights Query** | 스캔된 GB당 $0.0076 | 쿼리 실행 비용 |
+| **Data Transfer** | 표준 요율 | 다른 리전 또는 인터넷으로 |
+
+**Ingestion 비용이 압도적으로 크다**. 즉 "로그를 줄이는 게 곧 비용 절감".
+
+> ⚠️ **함정**: VPC Flow Logs를 CloudWatch Logs로 보내면 Ingestion 비용 폭증(VPC가 큰 회사는 월 수십 TB). VPC Flow Logs는 S3로 보내는 게 비용·분석 양면에서 정석. CloudWatch Logs는 실시간 분석이 필요한 경우만.
+
+## Log Subscription: 실시간 로그 처리 파이프라인
+
+Subscription은 Log Group의 신규 로그를 실시간으로 다른 서비스에 전달한다. 운영자가 자주 쓰는 4가지 대상:
+
+| 대상 | 사용 시점 |
+|------|-----------|
+| **Lambda** | 로그 패턴 매치 → 자동 알림·복구 |
+| **Kinesis Data Streams** | 다른 시스템으로 실시간 전달 |
+| **Kinesis Firehose** | S3/Redshift/OpenSearch로 배치 적재 |
+| **OpenSearch** | 검색·대시보드 |
+
+```
+[Log Group]
+    │ (실시간 스트리밍)
+    ▼
+[Subscription Filter] ← "ERROR" 같은 패턴으로 필터
     │
-    ├── Log Stream  2026/05/22/[$LATEST]abc123  (Lambda 실행 1)
-    ├── Log Stream  2026/05/22/[$LATEST]def456  (Lambda 실행 2)
-    └── Log Stream  2026/05/22/[$LATEST]ghi789  (Lambda 실행 3)
-        │
-        ├── 2026-05-22T10:00:00Z  "START RequestId..."
-        ├── 2026-05-22T10:00:01Z  "Processing order #1234"
-        └── 2026-05-22T10:00:02Z  "END RequestId..."
+    ├─→ Lambda     ← 알림 발송, 자동 복구
+    ├─→ Kinesis    ← Splunk, Datadog 같은 외부 시스템
+    └─→ Firehose   ← S3 장기 보관
 ```
 
-- **Log Group**: 같은 retention/권한/메트릭 필터를 공유하는 컨테이너
-- **Log Stream**: 단일 소스(예: 한 EC2 인스턴스, 한 Lambda 실행)의 시계열 로그
-- **Log Event**: timestamp + message 쌍
+Subscription Filter 패턴 예:
+- `"ERROR"` — 단어 매치
+- `"[ip, user_id, status, latency > 1000]"` — JSON 필드 매치
+- `{ $.statusCode = 5* }` — JSON 경로 매치
 
-### 2. Log Group 핵심 설정
+> 🔍 **더 깊이**: Subscription은 push 기반이라 latency가 수 초. 단 한 Log Group에 Subscription Filter는 **최대 2개**(2023년 기준). 더 필요하면 Kinesis Data Streams로 한 번 보내고 그 위에서 여러 consumer가 읽는 구조.
 
-#### Retention (보존 기간)
-- 1일 ~ 10년 또는 영구 (Never expire)
-- **기본값: Never expire** → 비용 폭증 주요 원인!
-- 시험 단골: "비용 최적화" 키워드 → 적절한 retention 설정
+> 📚 **사례**: 한 회사가 운영하는 EC2의 syslog에서 "Out of Memory" 패턴을 감지하면 Lambda가 자동으로 인스턴스를 재시작하고 운영자에게 알림을 보내는 자동화. 평균 다운타임이 분 → 초 단위로 단축.
 
-```bash
-aws logs put-retention-policy \
-  --log-group-name /aws/lambda/order-service \
-  --retention-in-days 30
+## CloudWatch Logs와 EventBridge의 차이
+
+운영자가 자주 헷갈리는 두 도구.
+
+| 도구 | 사용 |
+|------|------|
+| **CloudWatch Logs Subscription** | 로그 메시지(텍스트) 처리 |
+| **EventBridge** | AWS API 호출 이벤트(CloudTrail 기반) 또는 사용자 이벤트 처리 |
+
+"S3 객체가 생성됐을 때 Lambda 실행"은 S3 Event Notification 또는 EventBridge. "Lambda 로그에 ERROR가 떴을 때 알림"은 Logs Subscription 또는 Metric Filter + Alarm.
+
+## Log Insights: 운영자의 SQL
+
+CloudWatch Logs Insights는 SQL과 유사한 쿼리 언어로 로그를 검색·집계한다. 운영자가 매일 쓰는 패턴 몇 개:
+
+```sql
+-- 1) 최근 10분 ERROR 로그
+fields @timestamp, @message
+| filter @message like /ERROR/
+| sort @timestamp desc
+| limit 100
+
+-- 2) Lambda 함수별 평균/최대 Duration
+fields @duration
+| stats avg(@duration), max(@duration), pct(@duration, 99) by bin(5m)
+
+-- 3) ALB 액세스 로그에서 5xx 상위 path
+parse @message "* * * * * * * * * * \"* * HTTP*\" *" 
+  as time, elb, client, target, req, target_resp, response,
+     elbStatusCode, targetStatusCode, requestSize, method, url, ver, ua
+| filter elbStatusCode >= 500
+| stats count() as errors by url
+| sort errors desc
+| limit 20
+
+-- 4) Top user_id by request count
+fields @message
+| filter @message like /user_id/
+| parse @message "user_id=*" as userId
+| stats count(*) as requests by userId
+| sort requests desc
+| limit 50
 ```
 
-#### KMS 암호화
-- Log Group 생성 시 또는 사후 KMS Key 연결
-- 같은 KMS Key를 여러 Log Group에 재사용 가능
-- 사후 disassociate 가능하지만 기존 로그는 여전히 암호화 상태
+> 🔍 **더 깊이**: Logs Insights는 내부적으로 쿼리를 **여러 워커로 병렬 분산**한다. Log Group 크기에 따라 수십 ~ 수백 워커가 각자 일부 Log Stream을 스캔하고 결과를 머지. 그래서 한 쿼리가 TB 단위 로그도 10-30초 안에 끝난다. 단 비용은 스캔한 GB로 청구되므로 **`filter`를 가능한 한 앞에 두고 시간 범위를 좁히는 게 비용·속도 핵심**.
 
-#### Metric Filter
-- 로그 패턴 매칭 → Custom Metric 생성 (Week 2 Day 4에서 자세히)
+> 💡 **관련 이론**: MapReduce(Dean & Ghemawat, 2004 OSDI)의 분산 처리 패러다임과 같은 계열. 쿼리 = 여러 mapper가 부분 결과 산출 → reducer가 머지. Apache Spark, Presto, BigQuery도 같은 구조.
 
-#### Subscription Filter
-- 로그를 실시간으로 다른 서비스에 전송 (아래 자세히)
+> ⚠️ **함정**: 시간 범위를 "1주일"로 잡으면 1주일치 모든 로그를 스캔한다. 비용·속도 양면에서 손해. 운영자는 항상 가능한 좁은 시간 범위부터 시작하고 점점 넓힌다.
 
-### 3. 로그 수집 방법
+## VPC Flow Logs와 Logs 통합
 
-#### EC2: CloudWatch Agent
-- 통합 에이전트가 메트릭 + 로그 동시 수집 (Week 3 Day 3 자세히)
-- 설정 파일에 수집할 로그 파일 경로 지정
-
-#### Lambda: 자동 수집
-- 함수 실행 시 stdout/stderr가 자동으로 `/aws/lambda/<함수명>` Log Group으로
-- IAM Role에 `logs:CreateLogStream`, `logs:PutLogEvents` 필요
-
-#### ECS / EKS: awslogs driver / FireLens
-- ECS Task Definition에 `logDriver: awslogs` 지정
-- 또는 FireLens(Fluent Bit/Fluentd)로 더 유연하게 라우팅
-
-#### VPC / API Gateway / ELB
-- 각 서비스 설정에서 CloudWatch Logs 대상 지정
-- VPC Flow Logs (Week 8), CloudTrail (Week 4)
-
-### 4. Subscription Filter (실시간 처리)
-
-#### 구조
-```
-Log Group → Subscription Filter (패턴 매칭) → Destination
-                                                ├── Kinesis Data Streams
-                                                ├── Kinesis Data Firehose
-                                                ├── Lambda
-                                                └── OpenSearch (Logs 자체 기능)
-```
-
-#### 한도 (시험 주의)
-- **Log Group당 최대 2개 Subscription Filter** (단일 destination → 1개 권장)
-- Cross-Account 시: Destination 계정에 IAM Role 필요
-
-#### 예시: ERROR 로그를 Lambda로 실시간 전송
-```bash
-# 1. Lambda 함수에 Logs 호출 권한
-aws lambda add-permission \
-  --function-name log-error-handler \
-  --statement-id "logs-invoke" \
-  --action "lambda:InvokeFunction" \
-  --principal logs.amazonaws.com \
-  --source-arn "arn:aws:logs:ap-northeast-2:123456789012:log-group:/aws/lambda/order-service:*"
-
-# 2. Subscription Filter 생성
-aws logs put-subscription-filter \
-  --log-group-name /aws/lambda/order-service \
-  --filter-name "error-pattern" \
-  --filter-pattern "ERROR" \
-  --destination-arn "arn:aws:lambda:ap-northeast-2:123456789012:function:log-error-handler"
-```
-
-### 5. Log Group 비용 모델
-
-CloudWatch Logs는 3가지로 과금:
-
-| 항목 | 단가 (서울 리전 기준) |
-|------|-----------------------|
-| **Ingestion** | $0.76 / GB |
-| **Storage** | $0.033 / GB-월 |
-| **Logs Insights 쿼리** | $0.0076 / GB 스캔 |
-
-**비용 절감 패턴:**
-1. **Retention 적절히 설정** (영구 보존은 안티 패턴)
-2. **자주 조회 안 하는 로그는 S3로 export** (S3 IA / Glacier 사용)
-3. **EMF로 메트릭 추출** → 메트릭만 알람에 사용하고 로그 retention 단축
-4. **Log Filter Pattern**: ingestion 줄이기 (Lambda 콘솔 출력 최소화)
-
-### 6. Cross-Account / Cross-Region 로그 집계
-
-#### Subscription Filter Cross-Account
-- Source 계정의 Log Group → Destination 계정의 Kinesis로
-- Destination은 Cross-Account IAM Role + Logs Destination 자원 필요
-
-#### Logs Export to S3
-- One-time 또는 Lambda 스케줄로 정기 export
-- 압축된 JSON 형식으로 S3에 저장
-- 시험 함정: Export는 **최대 12시간**, 그 이상은 청크로 나눠야
-
----
-
-## 🧠 알아두면 좋은 심화 이론
-
-| 항목 | 설명 | 시험 포인트 |
-|------|------|-------------|
-| **Log Insights** | SQL-like 쿼리 (Day 3에서 자세히) | 빠른 ad-hoc 분석 |
-| **Live Tail** | 실시간 로그 스트리밍 (콘솔/CLI) | 디버깅용 |
-| **Anomaly Detection in Logs** | ML 기반 비정상 패턴 자동 탐지 | 신규 기능 |
-| **Data Protection Policy** | 민감 정보(PII) 자동 마스킹 | 컴플라이언스 |
-| **Log Class - Standard vs Infrequent Access** | IA 클래스는 ingestion 50% 저렴, 일부 기능 제약 | 비용 최적화 |
-
-> ⚠️ **함정 1**: Log Group의 기본 Retention은 **Never Expire** → 비용 폭증 주범. 항상 retention 설정.
->
-> ⚠️ **함정 2**: Subscription Filter는 Log Group당 최대 2개 (이전엔 1개였으나 확장됨).
->
-> 💡 **암기 팁**: Log 비용 3종 = Ingestion / Storage / Insights Scan. 가장 큰 건 Ingestion. 로그 양을 줄이는 게 1순위.
-
-### 관련 서비스 Cross-Reference
-
-- **Logs → Week 2 Day 3** (Logs Insights 쿼리)
-- **Logs → Week 2 Day 4** (Metric Filter, EMF)
-- **Logs → Week 4** (CloudTrail이 Logs로 전송)
-- **Logs → Week 8** (VPC Flow Logs)
-
----
-
-## 🏗️ 아키텍처 다이어그램
+VPC 트래픽 로그를 CloudWatch Logs로 보내면 운영자가 실시간 SG/NACL 디버깅 가능.
 
 ```
-로그 수집·처리·집계 패턴
-==========================================================
-
-  [Lambda]    [EC2 + Agent]    [ECS]     [API Gateway]
-      │           │              │            │
-      └───────────┴──────┬───────┴────────────┘
-                         ▼
-              ┌─────────────────────┐
-              │  CloudWatch Logs    │
-              │  Log Group / Stream │
-              └─────┬───────────────┘
-                    │
-        ┌───────────┼───────────┬────────────┐
-        ▼           ▼           ▼            ▼
-   [Metric Filter] [Subscription] [Insights] [S3 Export]
-        │           Filter          │
-        ▼              │            ▼
-   [Custom Metric] ┌───┴─────┐  [Ad-hoc 쿼리]
-        │          ▼         ▼
-        ▼      [Lambda]  [Kinesis/Firehose]
-   [Alarm]                  │
-                            ▼
-                       [OpenSearch/S3]
+[VPC]
+   │ Flow Logs 활성화
+   ▼
+[CloudWatch Logs Group: vpc-flow-logs]
+   │
+   └─→ Logs Insights 쿼리
+       fields @message
+       | parse @message "* * * * * * * * * * * *"
+         as version, accountId, eni, src, dst, srcPort, dstPort,
+            protocol, packets, bytes, start, end, action
+       | filter action = "REJECT"
+       | stats sum(bytes) by src, dst
+       | sort sum(bytes) desc
 ```
 
----
+이 쿼리 하나로 "어떤 IP가 어떤 IP에게 차단당하고 있는가"를 즉시 확인. SG 디버깅의 표준.
 
-## ⭐ 핵심 포인트 (시험 출제 빈도 높음)
+## Logs를 S3로 export하기
 
-1. ⭐ **Log Group 기본 Retention = Never Expire** — 비용 폭증 1순위 원인
-2. ⭐ **Subscription Filter로 실시간 처리** — Lambda/Kinesis/Firehose/OpenSearch
-3. ⭐ **Lambda 로그는 자동 수집** (IAM Role에 logs 권한만 있으면)
-4. ⭐ **EC2 로그는 CloudWatch Agent 필요** — 게스트 OS 파일을 수집
-5. ⭐ **장기 보관은 S3 export + Glacier** — Logs에 영구 저장은 비싸다
+장기 보관과 비용 절감을 위해 Logs를 S3로 보내는 두 방법:
 
----
+1. **Manual Export**: `CreateExportTask` API. 일회성 배치.
+2. **Subscription → Kinesis Firehose → S3**: 실시간 스트리밍. 운영자 표준.
 
-## 💻 실제 예시 - AWS CLI
-
-```bash
-# 1. Log Group 생성 + Retention 30일 + KMS 암호화
-aws logs create-log-group \
-  --log-group-name /myapp/web-prod \
-  --kms-key-id arn:aws:kms:ap-northeast-2:123456789012:key/abc-123
-
-aws logs put-retention-policy \
-  --log-group-name /myapp/web-prod \
-  --retention-in-days 30
-
-# 2. 로그 이벤트 직접 푸시 (sequence token 필요)
-aws logs create-log-stream \
-  --log-group-name /myapp/web-prod \
-  --log-stream-name "instance-i-abc123"
-
-aws logs put-log-events \
-  --log-group-name /myapp/web-prod \
-  --log-stream-name "instance-i-abc123" \
-  --log-events 'timestamp=1748000000000,message="Application started"'
-
-# 3. 모든 Log Group의 Retention 일괄 점검 (운영 점검)
-aws logs describe-log-groups \
-  --query 'logGroups[?!retentionInDays].logGroupName' \
-  --output table
-# → retention이 None(영구)인 Log Group 목록 확인
-
-# 4. 미사용 Log Group 정리 (마지막 이벤트 30일 이전)
-aws logs describe-log-groups \
-  --query 'logGroups[?storedBytes==`0`].logGroupName' \
-  --output text
-
-# 5. Log Group → S3 export 작업
-aws logs create-export-task \
-  --log-group-name /myapp/web-prod \
-  --from $(date -d '90 days ago' +%s)000 \
-  --to $(date -d '30 days ago' +%s)000 \
-  --destination "my-log-archive-bucket" \
-  --destination-prefix "myapp-web-prod"
-
-# 6. Subscription Filter - 에러를 Firehose로
-aws logs put-subscription-filter \
-  --log-group-name /myapp/web-prod \
-  --filter-name "ship-errors-to-firehose" \
-  --filter-pattern "[time, requestid, level=ERROR, ...]" \
-  --destination-arn arn:aws:firehose:ap-northeast-2:123456789012:deliverystream/error-stream \
-  --role-arn arn:aws:iam::123456789012:role/CWLtoFirehoseRole
 ```
+[Log Group]
+    │ (Subscription Filter)
+    ▼
+[Kinesis Firehose]
+    │ (버퍼링 + 압축)
+    ▼
+[S3 with lifecycle: Standard → Glacier]
+```
+
+S3로 보낸 후엔 Athena로 ad-hoc 쿼리. CloudWatch Logs Storage($0.033/GB) → S3 Standard($0.025/GB) → Glacier($0.004/GB)로 비용 대폭 절감.
+
+## 정리하며
+
+CloudWatch Logs의 운영자 체크리스트:
+1. **모든 Log Group에 보존 정책 적용** (Never Expire 금지)
+2. **Subscription으로 실시간 자동화** (ERROR 패턴 → Lambda)
+3. **Logs Insights는 좁은 시간 범위부터** (비용·속도)
+4. **VPC Flow Logs는 S3로** (CloudWatch 비용 폭증 방지)
+5. **장기 보관은 S3 + Athena** (비용 1/10)
+
+내일은 Logs Insights 쿼리 언어를 더 깊이 — 운영자가 매일 쓰는 트러블슈팅 패턴 라이브러리를 만든다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** 회사의 CloudWatch Logs 비용이 지난 6개월간 3배 증가했다. 가장 먼저 점검할 것은?
+**문제 1.** Lambda 함수 500개를 운영하는데 CloudWatch Logs 비용이 폭증했다. 가장 효과적인 첫 조치는?
 
-A) 알람 개수
-B) Log Group의 Retention 설정 — 기본 "Never Expire"가 적용된 그룹이 있는지
-C) Subscription Filter 개수
-D) Log Stream 개수
+A) 함수 코드에서 console.log 줄임
+B) 모든 Log Group의 보존 기간을 7-30일로 설정
+C) 로그 압축
+D) 로그를 S3로 즉시 이동
 
 **정답: B**
-해설: 가장 흔한 원인. 기본 Retention이 "Never Expire"여서 Storage 비용이 계속 누적. `describe-log-groups`로 `retentionInDays`가 None인 그룹 찾아 일괄 설정.
+해설: Log Group 기본 보존은 "Never Expire"라 영구 누적. 보존 정책 일괄 적용이 가장 큰 영향. 그 후 코드 레벨 로그 감소나 S3 export 같은 후속 조치.
 
 ---
 
-**문제 2.** Lambda 함수 실행 시 로그가 CloudWatch에 안 보인다. 가능한 원인은?
+**문제 2.** VPC Flow Logs를 운영자가 실시간으로 보내야 하는데 트래픽이 일평균 100GB. 어디로 보내는 게 비용·분석 양면에서 좋은가?
 
-A) Lambda 콘솔 버그
-B) 함수의 Execution Role에 `logs:CreateLogStream`, `logs:PutLogEvents` 권한 누락
-C) Log Group이 자동 생성되지 않음
-D) B와 C 모두 가능
+A) CloudWatch Logs
+B) S3 + Athena
+C) Kinesis Data Streams
+D) DynamoDB
+
+**정답: B**
+해설: VPC Flow Logs는 볼륨이 크므로 CloudWatch Logs Ingestion($0.76/GB)으로 보내면 비용 폭증. S3($0.025/GB)로 보내고 Athena로 ad-hoc 쿼리가 정석. 실시간성 요구가 있으면 CloudWatch에 일부만 샘플링.
+
+---
+
+**문제 3.** Lambda 함수의 ERROR 로그를 실시간으로 감지해서 운영자에게 Slack 알림을 보내려고 한다. 가장 효율적인 구조는?
+
+A) Logs Insights를 1분마다 폴링
+B) Subscription Filter ("ERROR" 패턴) → Lambda → Slack webhook
+C) Metric Filter + Alarm → SNS → Slack
+D) B 또는 C 모두 가능 (실시간성 차이만)
 
 **정답: D**
-해설: Lambda는 자동으로 Log Group을 만들지만, IAM 권한이 없으면 못 만듦. 또한 함수 첫 실행 전엔 Log Group 자체가 존재하지 않을 수 있음. 표준 `AWSLambdaBasicExecutionRole` 정책에 두 권한 포함.
+해설: Subscription Filter는 수 초 latency로 실시간, Metric Filter는 메트릭 → 알람 → SNS로 분 단위 latency. 둘 다 표준 패턴이고 요구 latency에 따라 선택. 시험에선 "즉각 반응"이면 Subscription, "임계값 기반"이면 Metric Filter + Alarm.
 
 ---
 
-**문제 3.** ERROR 로그가 발생하면 즉시 Slack 알림이 가도록 하고 싶다. 가장 효율적인 방법은?
+**문제 4.** Logs Insights 쿼리에서 시간 범위를 1주일로 설정했더니 비용·속도 문제가 발생. 운영자의 표준 사고는?
 
-A) Lambda를 1분마다 실행해 로그 폴링
-B) Subscription Filter로 ERROR 패턴 매칭 → Lambda 호출 → Slack Webhook
-C) Logs Insights 쿼리를 주기적 실행
-D) S3 export 후 분석
+A) 쿼리에 더 많은 필드 추가
+B) `filter`를 쿼리 앞쪽에 두고 시간 범위를 좁게 시작
+C) Insights 대신 콘솔에서 manual 검색
+D) S3로 export 후 Athena
 
 **정답: B**
-해설: Subscription Filter는 실시간 처리에 최적. Filter Pattern으로 ERROR만 매칭해 Lambda 호출, Lambda가 Slack으로 전송. 폴링 방식은 지연·비용 낭비.
+해설: Logs Insights는 스캔된 GB로 청구. 시간 범위를 좁히고 filter를 앞쪽에 두면 스캔량 최소화. 필요 시에만 범위 확장.
 
 ---
 
-**문제 4.** 회사가 컴플라이언스 요건으로 모든 애플리케이션 로그를 7년간 보관해야 한다. 비용 효율적인 방법은?
+**문제 5.** 운영자가 EC2의 syslog에서 "Out of Memory" 패턴을 감지하면 자동으로 인스턴스를 재시작하려고 한다. 구조는?
 
-A) Log Group의 Retention을 7년으로 설정
-B) Log Group은 30~90일 retention, 그 후 S3로 export하고 S3 라이프사이클로 Glacier 이동
-C) 별도 DB에 보관
-D) DynamoDB에 저장
+A) CloudWatch Logs Subscription → Lambda → EC2 Reboot API
+B) Metric Filter → Alarm → SNS → Operator manual
+C) Logs Insights 쿼리 → Lambda
+D) EventBridge → Step Functions
 
-**정답: B**
-해설: CloudWatch Logs는 Storage 비용이 비싸다 ($0.033/GB-월). S3 IA는 절반, Glacier는 1/10 가격. 단기 hot 데이터만 Logs에 두고 장기는 Glacier가 표준.
-
----
-
-**문제 5.** 회사가 Cross-Account에서 모든 계정의 ERROR 로그를 중앙 집계하려 한다. 가장 적합한 패턴은?
-
-A) 각 계정마다 별도 Log Group, 수동 복사
-B) Subscription Filter → Cross-Account Kinesis Data Streams → 중앙 계정에서 처리
-C) S3 export 후 중앙 분석
-D) EventBridge
-
-**정답: B**
-해설: Subscription Filter는 Cross-Account Kinesis로 실시간 전송 지원. Source 계정에서 Logs Destination 자원 생성 + Destination 계정의 Kinesis가 IAM Role로 수신. S3 export는 배치, EventBridge는 메트릭/이벤트 기반.
-
----
-
-## 📌 오늘의 요약
-
-1. Log Group → Log Stream → Log Event 계층. 같은 Log Group은 retention/권한/필터 공유
-2. **기본 Retention = Never Expire** — 운영자가 반드시 설정해야 할 1순위
-3. Subscription Filter로 로그를 실시간 Lambda/Kinesis/Firehose/OpenSearch로 전송
-4. CloudWatch Logs 비용 3종: Ingestion(가장 큼) / Storage / Insights Scan
-5. 장기 보관은 S3 export + Glacier — Logs 자체 장기 보관은 비효율
+**정답: A**
+해설: Subscription Filter로 "Out of Memory" 패턴 매치 시 Lambda 자동 호출 → Lambda가 SSM Run Command 또는 EC2 Reboot. 즉각 자동 복구 패턴.
