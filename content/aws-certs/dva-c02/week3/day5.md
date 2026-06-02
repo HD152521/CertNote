@@ -1,348 +1,298 @@
-# Day 15 - Week 3 복습: Lambda 종합 시나리오로 실전 감각 다지기
+# Day 15 - Week 3 복습 + 연습문제
 
-Week 3에서 다룬 Lambda는 단순한 "서버리스 함수"가 아니다. Firecracker MicroVM의 실행 모델, 세 가지 호출 방식의 신뢰성 모델, 버전·별칭·레이어의 배포 라이프사이클, 동시성 제어의 네 계층 — 이 모든 것이 유기적으로 연결된 시스템이다.
+📅 날짜: 2026년 6월 4일 (목요일)  
+🎯 주제: Lambda 종합 복습  
+⏱️ 학습 시간: 약 90분
 
-오늘은 암기로 외우는 것이 아니라, "왜 이렇게 설계됐는가"라는 질문을 가지고 전체 지도를 다시 그려본다. 그런 다음 시험에서 실제로 나오는 형태인 시나리오 문제 12개로 실전 감각을 확인한다.
+---
 
-## Lambda 핵심 사양 한눈에 보기
+## 🎯 학습 목표
 
+- Lambda의 모든 핵심 개념을 종합적으로 정리한다
+- 실제 시험 유형의 Lambda 문제를 풀어 실력을 점검한다
+
+---
+
+## 📖 Week 3 핵심 정리
+
+### Lambda 기본 스펙 암기
 ```
-실행 환경
-├── 런타임: Python 3.12/3.11/3.10, Node.js 20/18, Java 21/17/11/8
-│          Go 1.x, .NET 8/6, Ruby 3.3, Custom Runtime
-├── 메모리: 128MB ~ 10,240MB (64MB 단위, 1,769MB = 1 vCPU)
-├── 타임아웃: 1초 ~ 900초 (15분)
-├── /tmp: 512MB ~ 10,240MB
-├── 환경 변수: 4KB 전체
-└── 배포
-    ├── ZIP 직접: 50MB
-    ├── ZIP S3 경유: 250MB (압축 해제)
-    ├── 컨테이너 이미지: 10GB
-    └── 레이어: 최대 5개, 코드+레이어 합계 250MB
-
-페이로드
-├── 동기 (요청/응답): 6MB
-├── 비동기: 256KB
-└── Response Streaming: 20MB
-
-동시성
-├── 계정/리전 기본: 1,000 (증가 요청 가능)
-├── 초기 버스트: 500~3,000 (리전별)
-└── 분당 추가: +500
+메모리:        128MB ~ 10,240MB
+타임아웃:      최소 1초 ~ 최대 15분
+임시 스토리지: 512MB ~ 10GB (/tmp)
+배포 크기:     ZIP 50MB 직접 / 250MB S3 / 컨테이너 10GB
+레이어 최대:   5개 (합계 250MB)
+환경 변수:     최대 4KB
+비동기 재시도: 최대 2회
+동시성 기본:   리전당 1,000
 ```
 
-## 세 가지 호출 방식: 설계 원칙부터 다시
-
-Lambda의 세 가지 호출 방식은 각각 다른 신뢰성 요구에서 탄생했다.
-
-**동기 호출**은 "즉각적인 응답이 필요한 요청"에서 출발했다. API Gateway가 HTTP 요청을 받으면 클라이언트는 응답을 기다리고 있다. Lambda가 실패하면 API Gateway가 바로 클라이언트에 오류를 반환한다. 재시도는 클라이언트의 결정이다. **단순하지만 내구성 없음.**
-
-**비동기 호출**은 "이벤트를 잃으면 안 되는 경우"에서 탄생했다. S3에 파일이 업로드됐다는 이벤트는 처리될 때까지 Lambda 서비스가 내구적으로 보관한다. 2회 재시도 후에도 실패하면 DLQ로 보내 나중에 분석한다. **내구성 높음, 즉각 응답 없음.**
-
-**ESM 폴링**은 "큐/스트림을 소비하는 워커"에서 나왔다. SQS나 Kinesis는 이미 데이터를 내구적으로 보관하고 있다. Lambda가 능동적으로 폴링해서 처리하는 것이 자연스럽다. **큐/스트림의 내구성을 그대로 활용.**
-
+### Lambda 호출 유형 요약
 ```
-호출 방식 → 사용 사례 매핑
-
-API Gateway → Lambda (동기)
-   → RESTful API, 실시간 조회, 동기 처리
-
-S3 이벤트 → Lambda (비동기)
-   → 파일 처리, 이미지 리사이즈, 업로드 트리거
-
-SNS → Lambda (비동기, 팬아웃)
-   → 여러 처리 함수에 이벤트 분배
-
-EventBridge → Lambda (비동기, 이벤트 버스)
-   → 이벤트 패턴 매칭, 스케줄 실행
-
-SQS → Lambda (ESM, 부하 분산)
-   → 주문 처리, 이메일 발송, 비동기 작업 큐
-
-Kinesis → Lambda (ESM, 순서 보장)
-   → 클릭스트림 분석, 실시간 집계, 시계열 처리
-
-DynamoDB Streams → Lambda (ESM, 변경 반응)
-   → 검색 인덱스 동기화, 캐시 갱신, 감사 로그
+동기:  API GW, ALB, Cognito → 즉시 응답, 재시도는 호출자 책임
+비동기: S3, SNS, EventBridge → 2회 재시도 → DLQ/Destinations
+폴링:  SQS, Kinesis, DynamoDB Streams → Lambda가 배치로 가져옴
 ```
 
-## 버전·별칭·레이어: Git과의 유사성
-
-Lambda의 배포 모델을 이해하는 가장 쉬운 방법은 Git 비유다.
-
+### 버전 / 별칭 / 배포 전략
 ```
-Git                    Lambda
-────────────────────────────────────────
-커밋 해시              버전 번호 (불변)
-HEAD                  $LATEST (수정 가능)
-브랜치 포인터          별칭 (변경 가능 포인터)
-Git Tag               버전 + Description
-.npmignore            레이어 (공유 의존성)
+$LATEST → 개발 중인 최신 코드
+버전(1,2,3...) → 불변 스냅샷
+별칭(dev,staging,prod) → 버전 포인터
+카나리 배포 → 별칭에 가중치 설정 (예: 90%/10%)
 ```
 
-`git checkout feature-branch`처럼 별칭을 바꾸면 다른 버전으로 트래픽이 이동한다. `git merge --ff-only`처럼 카나리 배포로 10%씩 점진적 병합이 가능하다.
+---
 
-## 동시성 제어: 층위별 정리
+## 🧠 Week 3 시험 함정 & 약어
 
-| 계층 | 설정 위치 | 비용 | 콜드 스타트 | 목적 |
-|------|----------|------|------------|------|
-| 계정 한도 | AWS Support 티켓 | - | - | 전체 상한 |
-| Reserved Concurrency | 함수 | 없음 | 영향 없음 | 함수별 격리·상한 |
-| Provisioned Concurrency | 버전/별칭 | 있음 | 제거 | 콜드 스타트 해결 |
-| 버스트 한도 | 리전 고정 | - | - | 스케일아웃 속도 제한 |
+### Lambda 헷갈리는 비교
 
-**공동 책임 관계:**
-- Reserved=300: 이 함수는 최대 300개, 나머지 함수에서 300개가 차감됨
-- Provisioned=20 on Reserved=300: 300개 중 20개는 항상 웜, 나머지 280개는 필요시 콜드 스타트
+| A | B | 핵심 |
+|---|---|------|
+| 동기 호출 | 비동기 호출 | API GW(동기) vs S3(비동기) |
+| 비동기 | 이벤트 소스 매핑 | Lambda가 수신 vs Lambda가 폴링 |
+| 예약 동시성 | 프로비저닝된 동시성 | 상한 설정 vs 미리 켜둠 |
+| Reserved=0 | 함수 삭제 | 일시 비활성화 vs 완전 제거 |
+| $LATEST | 버전 | 변경 가능 vs 불변 |
+| 별칭 | 버전 | 포인터 vs 스냅샷 |
+| DLQ | Destinations | 실패만·구형 vs 성공·실패·신형 |
+| 환경 변수 | Secrets Manager | 평문 위험 vs 자동 회전·암호화 |
+| Layer | 함수 코드 | /opt vs /var/task |
+| SnapStart | Provisioned Concurrency | Java/Python 무료 vs 모든 런타임·유료 |
+| ENI 콜드 스타트 (구버전) | Hyperplane ENI (현재) | 수십 초 vs 무시 가능 |
 
-## 에러 처리 의사결정 트리
+### Week 3 시험 함정 12가지
+
+1. **타임아웃 최대 15분** — Step Functions는 1년
+2. **메모리 = vCPU** — 메모리 ↑면 자동으로 CPU·네트워크도 ↑
+3. **/tmp 공유 위험** — 같은 환경 재사용 시 이전 데이터 잔존
+4. **Reserved=0은 비활성화**
+5. **Provisioned는 별칭/버전에만**, `$LATEST` 불가
+6. **Kinesis ESM 실패 = 샤드 블록** → MaximumRetryAttempts 설정 필수
+7. **S3 무한 루프** — 같은 버킷에 출력 금지
+8. **레이어 최대 5개**, 합계 250MB (압축 해제)
+9. **컨테이너 이미지 10GB**
+10. **비동기 재시도 = 2회**, 1분/2분 간격
+11. **별칭 가중치 라우팅은 2개 버전만**
+12. **VPC 연결 시 인터넷 차단** — NAT GW/VPC Endpoint 필요
+
+### Week 3 약어 정리
+
+| 약어 | 풀네임 |
+|------|--------|
+| **DLQ** | Dead Letter Queue |
+| **ESM** | Event Source Mapping |
+| **PC** | Provisioned Concurrency |
+| **ARN** | Amazon Resource Name |
+| **ENI** | Elastic Network Interface |
+| **EFS** | Elastic File System (Lambda 마운트 가능) |
+| **DDB** | DynamoDB |
+| **SAM** | Serverless Application Model |
+| **SnapStart** | Java/Python/.NET 초기화 스냅샷 |
+| **EMF** | Embedded Metric Format |
+| **TTFB** | Time To First Byte (Response Streaming) |
+| **IAM** | (실행 역할 + 리소스 정책 양쪽) |
+
+---
+
+## 아키텍처 다이어그램 - 완전한 서버리스 아키텍처
 
 ```
-Lambda에서 에러 발생?
-    │
-    ├── 동기 호출이면?
-    │       → 즉시 에러 응답 (HTTP 200 + FunctionError 헤더)
-    │       → 재시도: 클라이언트 책임
-    │       → DLQ: 없음
-    │
-    ├── 비동기 호출이면?
-    │       → Lambda 서비스가 1분 후 재시도 (1회)
-    │       → 2분 후 재시도 (2회)
-    │       → 최종 실패 → DLQ 또는 Destinations OnFailure
-    │       → 이벤트 나이 최대 6시간
-    │
-    └── ESM 폴링이면?
-            ├── SQS?
-            │       → 가시성 타임아웃 후 메시지 복귀
-            │       → maxReceiveCount 초과 → SQS DLQ
-            │       → ReportBatchItemFailures로 부분 실패 격리
-            │
-            └── Kinesis/DDB Streams?
-                    → 기본 무한 재시도 (샤드 블록 위험!)
-                    → MaximumRetryAttempts 설정 필수
-                    → BisectBatchOnFunctionError로 격리
-                    → OnFailure Destination으로 최종 실패 처리
+서버리스 주문 처리 시스템
+================================
+
+[모바일/웹 클라이언트]
+        |
+        | HTTPS
+        v
+[API Gateway]
+  /orders POST (동기)
+  /orders GET  (동기)
+        |
+        v
+[Lambda - 주문 API]
+  메모리: 512MB
+  타임아웃: 30초
+  환경변수: DB_URL, TABLE_NAME
+  레이어: 공통 유틸리티 레이어
+  버전: 3, 별칭: prod
+        |
+        +---> [DynamoDB] (주문 저장)
+        |
+        +---> [SQS] (비동기 주문 처리)
+                  |
+                  | (이벤트 소스 매핑)
+                  v
+        [Lambda - 주문 처리]
+          배치 크기: 10
+          예약 동시성: 50
+                  |
+                  +---> 성공 --> [SNS] --> 이메일/SMS 알림
+                  |
+                  +---> 실패 --> [DLQ] --> [Lambda - 오류 처리]
+                                               |
+                                               v
+                                           [CloudWatch Logs]
+                                           [Slack 알림]
+
+배포 파이프라인:
+개발자 커밋
+    --> CodePipeline
+    --> Lambda 새 버전 발행
+    --> 별칭 "prod" 10% 트래픽 → 새 버전 (카나리)
+    --> 문제 없으면 100% 전환
 ```
 
-## 콜드 스타트 최적화 의사결정
+---
 
-```
-콜드 스타트가 문제인가?
-    │
-    ├── Java 함수?
-    │       → SnapStart (무료, 버전 필요)
-    │
-    ├── 응답 SLA가 엄격한가 (p99 < 100ms)?
-    │       → Provisioned Concurrency (비용 발생)
-    │
-    ├── 패키지 크기가 큰가 (>50MB)?
-    │       → 레이어로 분리
-    │       → 컨테이너 이미지 (Lambda SnapStart 활용)
-    │
-    ├── 대용량 라이브러리 import가 느린가?
-    │       → 지연 import (필요할 때만 import)
-    │       → 메모리 증가 (CPU 비례 증가 → INIT 빨라짐)
-    │
-    └── VPC Lambda?
-            → Hyperplane ENI 이후 크게 개선
-            → 여전히 느리면 단일 AZ 서브넷 → 다중 AZ로
-```
+## 📝 Week 3 종합 연습문제
 
-## 시험 함정 집중 복습
+**문제 1.** Lambda 함수의 최대 타임아웃은?
 
-**함정 1**: Provisioned Concurrency는 `$LATEST`에 설정할 수 없다.
-→ 버전을 발행하거나 별칭을 만든 후 그것에 설정해야 한다.
+A) 5분  
+B) 10분  
+C) 15분  
+D) 30분  
 
-**함정 2**: SnapStart는 버전 발행 시 스냅샷이 생성된다.
-→ `$LATEST`에서는 동작하지 않는다. 코드 변경 후 반드시 버전 발행 필요.
-
-**함정 3**: Kinesis ESM의 기본 재시도는 무한이다.
-→ `MaximumRetryAttempts`를 명시적으로 설정하지 않으면 샤드가 영구 블록될 수 있다.
-
-**함정 4**: VPC 연결 Lambda는 퍼블릭 서브넷이어도 인터넷 직접 접근 불가.
-→ NAT Gateway + 프라이빗 서브넷 필요.
-
-**함정 5**: Lambda 별칭 가중치는 2개 버전만.
-→ 3분할 불가능.
-
-**함정 6**: SQS DLQ와 Lambda DLQ는 다른 개념이다.
-→ SQS-Lambda ESM 실패는 SQS DLQ, S3/SNS 비동기 실패는 Lambda DLQ.
-
-**함정 7**: API 키는 인증이 아니다.
-→ 사용량 추적과 제한 목적.
-
-**함정 8**: Lambda 컨테이너 이미지는 레이어를 사용할 수 없다.
-
-**함정 9**: /tmp는 같은 실행 환경의 다음 호출에서 공유된다.
-→ 민감 데이터 주의. 실행 환경이 다르면 공유 안 됨.
-
-**함정 10**: 비동기 재시도는 2회, 간격은 1분/2분.
-→ 무한이 아니다.
-
-## DVA-C02 출제 도메인과 Lambda 연결
-
-| 도메인 | Lambda 관련 키워드 |
-|--------|-------------------|
-| 개발(32%) | 런타임, 핸들러, 이벤트 구조, 컨텍스트 객체, 레이어 |
-| 보안(26%) | Execution Role, Function Policy, VPC, IMDSv2, 환경 변수 암호화 |
-| 배포(24%) | 버전, 별칭, CodeDeploy, SnapStart, SAM, CloudFormation |
-| 문제 해결(18%) | CloudWatch 메트릭, X-Ray 트레이싱, 콜드 스타트 진단 |
+**정답: C** - Lambda 최대 타임아웃은 15분(900초)입니다.
 
 ---
 
-## 📝 Week 3 종합 시나리오 문제
+**문제 2.** Lambda 레이어에 대한 올바른 설명이 아닌 것은?
 
-**문제 1.** 결제 API Lambda 함수가 트래픽 급증 시 높은 레이턴시를 보인다. CloudWatch `ConcurrentExecutions`는 정상 범위이고, `Duration` P99이 3,000ms를 넘는 상황이다. 가장 가능성 높은 원인과 해결책은?
+A) 여러 함수 간 코드 공유  
+B) /opt 디렉토리에 추출  
+C) 최대 10개까지 연결 가능  
+D) 다른 계정과 공유 가능  
 
-A) VPC 설정이 없어서 ENI 생성에 시간이 걸린다 → VPC 제거  
-B) 트래픽 급증 시 새 실행 환경이 생성되어 콜드 스타트가 발생한다 → Provisioned Concurrency 설정  
-C) Lambda 메모리가 부족하다 → 메모리를 10GB로 증가  
-D) Reserved Concurrency 한도에 걸린다 → Reserved 제거  
-
-**정답: B**  
-해설: `ConcurrentExecutions`가 정상이지만 P99 Duration이 갑자기 치솟는 패턴은 콜드 스타트의 전형적 징후다. 트래픽 급증 시 새 실행 환경이 생성되면서 INIT 단계(런타임 부팅 + 코드 로딩 + 글로벌 초기화)가 추가된다. 해결책은 Provisioned Concurrency로 미리 초기화된 인스턴스를 확보하는 것이다. A는 이미 정상 범위의 ConcurrentExecutions이므로 ENI 문제가 아니다. C는 메모리 부족이면 `MemorySize` 메트릭과 `OOM` 에러가 나타난다. D는 Reserved 제거로는 콜드 스타트가 해결되지 않는다.
+**정답: C** - Lambda 레이어는 최대 5개까지 연결 가능합니다.
 
 ---
 
-**문제 2.** S3에 이미지가 업로드되면 Lambda가 썸네일을 생성해 같은 버킷의 `thumbnails/` 디렉토리에 저장한다. 운영 중 Lambda가 무한 루프에 빠진 것을 발견했다. 원인과 해결책은?
+**문제 3.** Lambda 비동기 호출의 최대 재시도 횟수는?
 
-A) Lambda 타임아웃이 너무 짧다 → 타임아웃을 15분으로 늘린다  
-B) `thumbnails/` 디렉토리에 파일이 저장될 때 새 S3 이벤트가 발생해 Lambda가 다시 호출된다 → 이벤트 알림에 suffix 필터(`*.jpg`)를 추가하고 썸네일은 다른 확장자로 저장하거나, 입출력 버킷을 분리한다  
-C) Lambda 동시성이 부족하다 → Reserved Concurrency를 늘린다  
-D) IAM 역할 권한이 부족하다 → S3 full access를 추가한다  
+A) 0  
+B) 2  
+C) 3  
+D) 무제한  
 
-**정답: B**  
-해설: 원본 이미지(`.jpg`) 업로드 → Lambda 실행 → `thumbnails/thumb.jpg` 저장 → 새 S3:ObjectCreated 이벤트 발생 → Lambda 재호출 → 무한 루프. 해결책은 두 가지다. ① 입출력 버킷을 완전히 분리한다(가장 깔끔). ② 같은 버킷을 써야 한다면 이벤트 알림에 prefix 필터(`/` 없이 원본 디렉토리 이름)를 설정하고, Lambda가 썸네일을 저장할 때 이벤트를 트리거하지 않도록 다른 prefix나 확장자를 사용한다. A, C, D는 모두 이 문제와 무관하다.
-
----
-
-**문제 3.** 주문 처리 시스템에서 Lambda가 SQS를 폴링해 주문을 처리한다. 배치 크기는 100이고, 하나의 주문이 외부 API 타임아웃으로 실패했다. 나머지 99개도 다시 처리되는 문제가 발생했다. 어떻게 해결하는가?
-
-A) SQS DLQ를 설정한다  
-B) Lambda 비동기 재시도 횟수를 0으로 설정한다  
-C) `ReportBatchItemFailures`를 활성화하고 Lambda가 실패한 메시지 ID만 `batchItemFailures`로 반환하도록 구현한다  
-D) 배치 크기를 1로 줄인다  
-
-**정답: C**  
-해설: SQS ESM에서 배치 중 일부만 실패했을 때 전체를 재처리하는 것은 기본 동작이다. `ReportBatchItemFailures`를 활성화하면 Lambda가 `batchItemFailures`에 실패한 메시지 ID만 담아 반환할 수 있고, Lambda 서비스는 그 메시지들만 SQS에 돌려보낸다. 성공한 99개는 삭제된다. A는 최종 실패 이후에 작동하므로 직접적 해결책이 아니다. D는 동작하지만 처리량이 100배 줄어 비효율적이다.
+**정답: B** - Lambda 비동기 호출은 최대 2회 자동 재시도합니다.
 
 ---
 
-**문제 4.** Java Spring Boot를 Lambda로 운영 중이다. 콜드 스타트가 3~5초에 달해 API 응답 SLA를 위반한다. 비용 효율적인 해결책은?
+**문제 4.** API Gateway를 통한 Lambda 호출 방식은?
 
-A) 메모리를 10GB로 최대화한다  
-B) Lambda SnapStart를 활성화하고 버전/별칭을 통해 배포한다  
-C) Provisioned Concurrency를 1,000으로 설정한다  
-D) Java에서 Node.js로 런타임을 교체한다  
+A) 비동기  
+B) 동기  
+C) 이벤트 소스 매핑  
+D) 예약 호출  
 
-**정답: B**  
-해설: SnapStart는 Java 함수의 JVM 초기화 상태를 버전 발행 시 스냅샷으로 저장해 콜드 스타트를 90% 이상 줄인다. 무료(스냅샷 S3 저장 비용만)이며 버전/별칭과 함께 사용한다. A는 CPU는 빨라지지만 JVM 클래스 로딩 시간은 크게 줄지 않아 3-5초에서 1-2초 정도 줄이는 수준이다. C는 효과적이지만 1,000개 PC는 막대한 비용이 발생하고 실제 트래픽보다 훨씬 많다. D는 런타임 교체는 대규모 리팩토링이 필요하다.
-
----
-
-**문제 5.** Lambda 함수의 환경 변수에 DB 비밀번호를 저장했다. 보안팀이 이것이 기본 KMS 관리 키로만 암호화되어 계정 내 다른 팀도 잠재적으로 접근 가능하다고 지적했다. 가장 효과적인 해결책은?
-
-A) 비밀번호를 Base64로 인코딩해 저장한다  
-B) AWS Secrets Manager로 이전하거나, 환경 변수를 팀별 고객 관리 KMS 키(CMK)로 암호화한다  
-C) 환경 변수를 완전히 삭제하고 코드에 하드코딩한다  
-D) IAM 역할에서 KMS 권한을 제거한다  
-
-**정답: B**  
-해설: 기본 AWS 관리 키(`aws/lambda`)로 암호화된 환경 변수는 계정 내 Lambda 권한이 있는 누구나 볼 수 있다. 팀별 고객 관리 KMS 키(CMK)로 암호화하면 키 정책으로 접근을 제한할 수 있다. 더 나아가 Secrets Manager는 자동 로테이션, 감사 로그, 교차 계정 공유, 세밀한 접근 제어를 제공하므로 DB 비밀번호에 더 적합하다. A는 Base64는 암호화가 아니다. C는 보안을 더 악화시킨다. D는 KMS 권한을 제거하면 함수가 아예 동작하지 않는다.
+**정답: B** - API Gateway는 Lambda를 동기 방식으로 호출합니다.
 
 ---
 
-**문제 6.** 한 팀이 Lambda 함수에 Reserved Concurrency 500을 설정했다. 계정 전체 동시성 한도는 1,000이다. 다음 날 다른 팀의 함수가 급격한 트래픽 증가로 스로틀링됐다. 원인은?
+**문제 5.** Lambda Provisioned Concurrency의 목적은?
 
-A) 다른 팀이 Lambda를 잘못 작성했다  
-B) Reserved Concurrency 500 설정으로 계정 공유 풀이 500으로 줄어, 다른 함수들이 총 500개밖에 쓸 수 없게 됐다  
-C) Lambda 계정 한도는 팀별로 독립적이다  
-D) Provisioned Concurrency가 없어서 발생했다  
+A) 비용 절감  
+B) 더 많은 메모리 지원  
+C) 콜드 스타트 제거  
+D) 더 긴 타임아웃  
 
-**정답: B**  
-해설: Reserved Concurrency는 계정 전체 풀에서 차감된다. 계정 한도 1,000에서 한 함수가 500을 예약하면, 나머지 모든 함수들은 500을 공유한다. 트래픽 급증 시 다른 함수들이 집합적으로 500을 초과하면 스로틀링이 발생한다. 이는 Lambda Reserved Concurrency의 의도된 동작이지만, 계획 없이 큰 값을 설정하면 다른 팀에 영향을 줄 수 있다. 서비스 중요도에 따라 Reserved를 배분하고, 전체 합계가 계정 한도를 넘지 않도록 관리해야 한다.
-
----
-
-**문제 7.** Lambda 함수가 Kinesis Data Streams를 폴링하는데, CloudWatch에서 `IteratorAge` 메트릭이 지속적으로 증가하고 있다. 무엇을 의미하며 어떻게 대응하는가?
-
-A) Lambda 함수의 메모리가 부족하다 → 메모리를 늘린다  
-B) Lambda가 Kinesis 스트림 레코드를 처리하는 속도가 생성 속도보다 느리다 → ParallelizationFactor 증가, 샤드 수 증가, 처리 로직 최적화  
-C) Kinesis 스트림이 만료됐다 → 보존 기간을 늘린다  
-D) Lambda 권한이 부족하다 → KinesisFullAccess를 추가한다  
-
-**정답: B**  
-해설: `IteratorAge`는 현재 시간과 처리 중인 레코드가 Kinesis에 Put된 시간의 차이다. 이 값이 증가한다면 Lambda가 실시간으로 데이터를 처리하지 못하고 뒤처지고 있음을 의미한다. 대응: ① `ParallelizationFactor`를 높여 샤드당 병렬 Lambda 수를 늘린다(1~10). ② Kinesis 샤드 수를 늘려(split shard) 병렬 처리 용량을 확장한다. ③ Lambda 실행 시간 자체를 최적화해 처리 속도를 높인다. 하나의 레코드가 실패해 샤드가 블록된 경우라면 `MaximumRetryAttempts`와 `BisectBatchOnFunctionError`를 설정한다.
+**정답: C** - Provisioned Concurrency는 미리 초기화된 환경을 유지하여 콜드 스타트를 제거합니다.
 
 ---
 
-**문제 8.** 여러 Lambda 함수에서 동일한 pandas, numpy 라이브러리를 사용한다. 각 함수의 ZIP 크기가 200MB에 달해 배포 속도가 느리다. 어떻게 개선하는가?
+**문제 6.** SQS 이벤트 소스 매핑에서 처리 실패 시 메시지는 어떻게 되는가?
 
-A) 모든 함수를 하나의 큰 Lambda로 합친다  
-B) pandas, numpy를 Lambda Layer로 분리하고, 각 함수는 비즈니스 로직만 포함한다  
-C) 컨테이너 이미지로 전환한다  
-D) 함수 메모리를 줄여 패키지 크기를 줄인다  
+A) 즉시 삭제된다  
+B) 가시성 타임아웃 후 큐로 반환된다  
+C) DLQ로 자동 이동된다  
+D) Lambda가 무한 재시도한다  
 
-**정답: B**  
-해설: Lambda Layer는 공통 라이브러리를 분리해 여러 함수가 공유할 수 있게 한다. pandas+numpy 레이어를 한 번 발행하면, 각 함수의 ZIP은 비즈니스 로직만 포함해 수 KB~수 MB로 줄어든다. 이는 배포 속도를 크게 개선하고, 레이어가 캐싱되므로 Lambda 콜드 스타트에도 유리하다. A는 단일 책임 원칙 위반이고 복잡성 증가. C는 해결책이지만 레이어보다 오버킬이며 컨테이너는 레이어를 사용할 수 없다. D는 메모리와 패키지 크기는 무관하다.
-
----
-
-**문제 9.** Lambda Destinations와 DLQ를 동시에 설정한 경우 어떻게 동작하는가?
-
-A) Destinations가 DLQ보다 우선순위가 낮다  
-B) Destinations OnFailure가 설정되어 있으면 DLQ는 무시된다  
-C) 두 설정이 모두 적용되어 실패 이벤트가 두 곳으로 전송된다  
-D) Lambda가 오류를 발생시켜 두 설정 중 하나를 선택하도록 요청한다  
-
-**정답: B**  
-해설: Lambda Destinations OnFailure가 설정되어 있으면 비동기 호출 최종 실패 시 Destinations로만 이벤트가 전송된다. DLQ는 Destinations가 없을 때의 폴백이다. AWS 공식 문서는 "Destinations supersede DLQ"라고 명시한다. 단, SQS ESM에서는 이 규칙이 다르다 — Lambda DLQ가 아닌 SQS 큐의 DLQ가 적용된다.
+**정답: B** - SQS 메시지 처리 실패 시 메시지는 가시성 타임아웃 이후 큐에 다시 나타납니다.
 
 ---
 
-**문제 10.** Lambda 함수 코드에서 DB 연결을 핸들러 함수 내부에 생성하고 있다. 운영팀이 DB 연결 수 급증으로 RDS Connection Limit 오류가 난다고 보고했다. 가장 효과적인 해결책은?
+**문제 7.** Lambda 함수에서 $LATEST 버전의 특징은?
 
-A) Lambda 메모리를 줄인다  
-B) 핸들러 외부(글로벌 스코프)로 DB 연결 코드를 이동하거나, Amazon RDS Proxy를 사용한다  
-C) Lambda Reserved Concurrency를 1로 설정한다  
-D) RDS 인스턴스 크기를 늘린다  
+A) 발행된 버전 중 가장 최신 버전  
+B) 수정 가능한 현재 작업 버전  
+C) 가장 안정적인 버전  
+D) 삭제할 수 없는 기본 버전  
 
-**정답: B**  
-해설: 핸들러 내부에서 DB 연결을 생성하면 매 호출마다 새 연결을 만들고 닫는다. 동시 실행이 100개면 순간적으로 100개 연결이 생긴다. 핸들러 외부(글로벌 스코프)에서 연결하면 실행 환경이 재사용될 때(웜 스타트) 기존 연결을 재사용해 연결 수를 크게 줄인다. 추가로 RDS Proxy는 연결 풀링으로 Lambda의 대규모 동시성에서도 RDS Connection Limit 문제를 해결한다. C는 동시성을 1로 제한하면 처리량이 극도로 낮아진다. D는 근본 해결이 아니다.
-
----
-
-**문제 11.** Lambda 비동기 호출의 이벤트 나이(event age) 최대값은?
-
-A) 1시간  
-B) 6시간  
-C) 24시간  
-D) 7일  
-
-**정답: B**  
-해설: Lambda 비동기 호출에서 이벤트는 최대 6시간(21,600초) 동안 내부 큐에 보관된다. 이 시간 내에 처리되지 않으면 폐기된다(DLQ/Destinations 설정이 있으면 그곳으로 전송). `MaximumEventAgeInSeconds`로 이 값을 60초 ~ 21,600초 사이로 설정할 수 있다. 처리 가능한 시간이 지난 오래된 이벤트를 DLQ로 보내지 않고 폐기하고 싶을 때 이 값을 낮춘다.
+**정답: B** - $LATEST는 Lambda 함수의 수정 가능한 현재 작업 버전을 가리킵니다.
 
 ---
 
-**문제 12.** Lambda 함수가 사내 온프레미스 데이터베이스에 접근해야 한다. 이 DB는 VPN 연결을 통해서만 접근 가능하다. 어떻게 구성하는가?
+**문제 8.** Lambda 함수에 할당 가능한 최대 메모리는?
 
-A) Lambda Function URL을 사용한다  
-B) Lambda에 Elastic IP를 할당한다  
-C) Lambda를 VPC에 연결하고, VPC에 Direct Connect 또는 Site-to-Site VPN으로 온프레미스 네트워크를 연결한다  
-D) Lambda에 IAM Role을 부여하면 자동으로 VPN 연결된다  
+A) 1,024MB  
+B) 3,008MB  
+C) 5,120MB  
+D) 10,240MB  
 
-**정답: C**  
-해설: 온프레미스 DB 접근은 네트워크 경로가 필요하다. Lambda를 VPC에 연결하고, 그 VPC에서 Direct Connect 또는 Site-to-Site VPN으로 온프레미스 네트워크까지 라우팅 경로를 구성한다. Lambda는 VPC의 ENI를 통해 프라이빗 IP로 DB에 접근한다. A는 Function URL은 인터넷으로 연결된 엔드포인트로, 사내 DB 접근과 무관하다. B는 Lambda는 VPC 밖에서 Elastic IP를 할당할 수 없다. D는 IAM Role은 AWS 서비스 권한이지 네트워크 경로가 아니다.
+**정답: D** - Lambda 함수에는 최대 10,240MB(약 10GB)의 메모리를 할당할 수 있습니다.
 
 ---
 
-## 자기 평가
+**문제 9.** Lambda 함수의 /tmp 디렉토리에 대한 올바른 설명은?
 
-| 정답 수 | 평가 |
-|--------|------|
-| 11-12 | Lambda 마스터 — DVA 시험 준비 완료 |
-| 9-10 | 우수 — 틀린 문제 시나리오 재검토 |
-| 7-8 | 양호 — Day 11-14 재독 후 재도전 |
-| 5-6 | 보통 — Firecracker MicroVM부터 다시 |
-| 0-4 | 미흡 — Week 3 전체 처음부터 |
+A) 인스턴스 간 항상 공유된다  
+B) 최대 512MB만 사용 가능하다  
+C) 동일 실행 환경의 다음 호출에서 재사용될 수 있다  
+D) 함수 종료 시 자동으로 백업된다  
 
+**정답: C** - 동일한 Lambda 실행 환경이 웜 상태로 재사용될 때 /tmp 디렉토리의 내용도 유지됩니다.
+
+---
+
+**문제 10.** Lambda 예약 동시성(Reserved Concurrency)의 효과는?
+
+A) 함수의 최소 실행 보장  
+B) 콜드 스타트 방지  
+C) 함수의 최대 동시 실행 수 제한 및 전용 할당  
+D) 자동 스케일링 설정  
+
+**정답: C** - 예약 동시성은 특정 함수에 최대 동시성을 설정하고 해당 동시성을 다른 함수가 사용하지 못하게 합니다.
+
+---
+
+**문제 11.** DynamoDB Streams와 Lambda 이벤트 소스 매핑에서 레코드 순서는?
+
+A) 처리 순서가 보장되지 않는다  
+B) 샤드 내에서는 순서가 보장된다  
+C) 모든 테이블에서 전역적으로 순서가 보장된다  
+D) 최신 레코드부터 역순으로 처리된다  
+
+**정답: B** - DynamoDB Streams에서 Lambda는 각 샤드 내의 레코드 순서를 보장합니다.
+
+---
+
+**문제 12.** Lambda 컨테이너 이미지 배포의 최대 크기는?
+
+A) 250MB  
+B) 1GB  
+C) 5GB  
+D) 10GB  
+
+**정답: D** - Lambda 컨테이너 이미지 배포의 최대 크기는 10GB입니다.
+
+---
+
+## 📊 Week 3 자기 평가
+
+| 점수 | 평가 |
+|------|------|
+| 10-12 | 우수 - Lambda 완전 이해 |
+| 7-9 | 양호 - 틀린 부분 재학습 |
+| 4-6 | 보통 - Day 11-14 복습 |
+| 0-3 | 미흡 - Week 3 처음부터 재학습 |
+
+## 📌 오늘의 요약
+
+1. Lambda 핵심 스펙: 메모리 10GB, 타임아웃 15분, 레이어 5개(250MB), 비동기 2회 재시도
+2. 호출 유형: 동기(API GW), 비동기(S3/SNS), 폴링(SQS/Kinesis/DynamoDB Streams)
+3. 콜드 스타트 대응: Provisioned Concurrency(완전 제거), SnapStart(Java)
+4. 버전+별칭+카나리: 안전한 배포를 위한 트래픽 점진적 전환
+5. 오류 처리: 동기=호출자 책임, 비동기=자동 재시도+DLQ/Destinations
