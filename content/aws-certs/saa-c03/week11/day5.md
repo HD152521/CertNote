@@ -211,10 +211,10 @@ D) MGN 사용 / 블록 복제 실패
 
 **문제 12.** 한 회사가 단일 AZ 장애에도 RDS의 쓰기가 무중단이고 RPO가 0이어야 하며, 동시에 us-east-1 리전 전체 장애에도 다른 리전에서 서비스를 이어가야 한다. 가장 적절한 조합은?
 
-A) RDS Multi-AZ만
-B) Cross-Region Read Replica만
+A) RDS Multi-AZ만 — 같은 리전 내 동기 스탠바이로 AZ·리전 장애를 모두 대비
+B) Cross-Region Read Replica만 — 다른 리전에 비동기 읽기 사본을 두고 장애 시 승격
 C) RDS Multi-AZ(AZ 장애 대비, 동기 RPO 0) + Aurora Global 또는 Cross-Region 복제(리전 장애 대비)
-D) Backup & Restore만
+D) Backup & Restore만 — Cross-Region 스냅샷을 주기 보관하고 장애 시 다른 리전에 복원
 
 **정답: C**
 

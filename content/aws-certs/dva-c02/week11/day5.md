@@ -106,13 +106,13 @@ Kinesis 안에서의 갈림길이다.
 
 **문제 1.** 결제 트랜잭션을 고객별 순서대로, 중복 없이 정확히 한 번 처리해야 한다. 초당 약 4,000건이 발생한다. 적절한 구성은?
 
-A) SQS 표준 큐 + 멱등 소비자
+A) SQS 표준 큐에 멱등 소비자를 두고 시퀀스 번호로 고객별 순서를 애플리케이션에서 재정렬한다
 
 B) 고처리량 FIFO 큐 + 고객 ID를 메시지 그룹 ID로 사용
 
-C) 단일 그룹 ID의 FIFO 큐
+C) 모든 메시지에 동일한 단일 그룹 ID를 부여한 FIFO 큐로 전역 순서를 강제한다
 
-D) Kinesis Data Streams 단일 샤드
+D) Kinesis Data Streams 단일 샤드에 고객 ID를 파티션 키로 넣어 순서를 보장한다
 
 **정답: B**
 
@@ -122,13 +122,13 @@ D) Kinesis Data Streams 단일 샤드
 
 **문제 2.** S3 객체 업로드 하나에 썸네일 생성·바이러스 검사·검색 색인 세 작업이 독립적으로(한 작업의 실패가 다른 작업에 영향 없이) 반응해야 한다. 가장 정석적인 패턴은?
 
-A) S3 → 단일 Lambda에서 세 작업 순차 실행
+A) S3 이벤트 → 단일 Lambda에서 썸네일·바이러스 검사·색인을 try/catch로 묶어 순차 실행
 
 B) S3 → SNS → 세 개의 SQS(각각 Lambda) 팬아웃
 
-C) S3 → 단일 SQS → Lambda
+C) S3 → 단일 SQS → Lambda가 메시지를 받아 세 작업을 모두 수행하고 ack한다
 
-D) 세 버킷을 만들어 각각 처리
+D) 동일 객체를 세 버킷에 복제 업로드해 각 버킷 이벤트가 작업 하나씩 트리거하게 한다
 
 **정답: B**
 
@@ -138,13 +138,13 @@ D) 세 버킷을 만들어 각각 처리
 
 **문제 3.** 클릭스트림을 Lambda로 실시간 이상 탐지하면서, 동시에 모든 원본을 S3에 아카이브해 나중에 Athena로 분석하려 한다. 적절한 구성은?
 
-A) SQS 하나에 두 소비자 연결
+A) SQS 큐 하나에 이상 탐지 Lambda와 아카이브 Lambda 두 소비자를 붙여 같은 메시지를 둘 다 받게 한다
 
 B) Kinesis Data Streams에 Lambda 소비자와 Firehose 소비자를 동시 연결(Firehose→S3)
 
-C) SNS → 두 SQS
+C) SNS 토픽 → 탐지 SQS와 아카이브 SQS 두 개로 팬아웃해 각각 Lambda·S3로 보낸다
 
-D) DynamoDB Streams → S3
+D) DynamoDB Streams로 클릭 테이블 변경을 캡처해 Lambda 탐지와 S3 적재를 동시에 한다
 
 **정답: B**
 
@@ -154,13 +154,13 @@ D) DynamoDB Streams → S3
 
 **문제 4.** Firehose로 로그를 S3에 적재 중인데 "데이터가 1분 정도 늦게 도착한다"는 불만이 있다. 1초 이내 실시간 처리가 필수라면?
 
-A) Firehose 버퍼 크기를 키운다
+A) Firehose 버퍼 크기를 128MB로 키워 한 번에 더 많이 flush하면 도착이 빨라진다
 
 B) Kinesis Data Streams를 직접 소비(Lambda/EFO)하도록 변경한다
 
-C) Firehose 버퍼 시간을 0으로 설정한다
+C) Firehose 버퍼 간격(buffer interval)을 0초로 설정해 즉시 전달되게 한다
 
-D) SQS로 전환한다
+D) Firehose 앞단을 SQS로 전환해 짧은 가시성 타임아웃으로 1초 내 처리한다
 
 **정답: B**
 
@@ -170,13 +170,13 @@ D) SQS로 전환한다
 
 **문제 5.** SNS를 통해 Lambda로 직접 푸시하던 중, Lambda가 잠시 다운된 사이 발행된 알림이 영구 유실됐다. 내구성을 확보하려면?
 
-A) SNS 메시지 보존 기간을 7일로 설정
+A) SNS 토픽에 메시지 보존 기간을 7일로 설정해 Lambda 복구 후 재전달되게 한다
 
 B) SNS → SQS → Lambda로 바꿔 SQS가 메시지를 보존하게 한다
 
-C) Lambda 동시성을 늘린다
+C) Lambda 예약 동시성을 높여 다운 시간을 줄이고 재시도 처리량을 확보한다
 
-D) SNS 발행 속도를 줄인다
+D) SNS 발행 속도를 스로틀링해 Lambda가 감당할 수 있는 만큼만 보내 유실을 막는다
 
 **정답: B**
 
@@ -186,13 +186,13 @@ D) SNS 발행 속도를 줄인다
 
 **문제 6.** Kinesis 스트림에서 특정 샤드만 `ProvisionedThroughputExceededException`이 나고 다른 샤드는 한가하다. 원인과 해결은?
 
-A) 보존 기간이 짧다 — 늘린다
+A) 보존 기간이 짧아 레코드가 만료된 것 — 보존을 24시간에서 7일로 늘려 해결한다
 
 B) 파티션 키 편향으로 핫 샤드 발생 — 키 카디널리티를 높여 고르게 분산
 
-C) EFO 미사용 — EFO 활성화
+C) 소비자가 EFO를 안 써서 읽기 경합 발생 — EFO를 활성화해 쓰기 스로틀을 해소한다
 
-D) On-Demand 미사용 — Provisioned 전환
+D) On-Demand 모드가 아니라 용량이 막힌 것 — On-Demand에서 Provisioned로 전환한다
 
 **정답: B**
 
@@ -202,13 +202,13 @@ D) On-Demand 미사용 — Provisioned 전환
 
 **문제 7.** 여러 Lambda를 순서대로 실행하고, 중간 실패 시 이전 단계를 보상(롤백)하며, 운영자가 전체 흐름을 시각적으로 추적해야 한다. 적절한 서비스는?
 
-A) Lambda 직접 체인
+A) Lambda가 다음 Lambda를 직접 호출하는 체인 + 실패 시 역순 보상 Lambda 호출
 
 B) Step Functions (Retry/Catch + Saga 보상)
 
-C) SQS 체인
+C) 단계마다 SQS 큐를 두고 한 Lambda가 끝나면 다음 큐로 메시지를 넘기는 체인
 
-D) EventBridge 규칙 체인
+D) EventBridge 규칙으로 각 단계 완료 이벤트를 다음 단계 Lambda에 라우팅하는 체인
 
 **정답: B**
 
@@ -218,13 +218,13 @@ D) EventBridge 규칙 체인
 
 **문제 8.** 환불 워크플로에서 고액 건은 관리자 승인을 받아야 하며, 승인까지 며칠이 걸릴 수 있다. 적절한 구성은?
 
-A) Express 워크플로 + Wait 상태
+A) Express 워크플로 + Wait 상태로 승인이 올 때까지 며칠간 대기시킨다
 
 B) Standard 워크플로 + `.waitForTaskToken`으로 승인 콜백 대기
 
-C) Standard 워크플로 + `.sync`
+C) Standard 워크플로 + `.sync`로 승인 작업이 완료될 때까지 동기 대기한다
 
-D) SQS 지연 큐
+D) SQS 지연 큐에 환불 메시지를 넣고 며칠 뒤 자동 처리되게 한다
 
 **정답: B**
 
@@ -234,13 +234,13 @@ D) SQS 지연 큐
 
 **문제 9.** 모바일 앱이 한 화면에 사용자(DynamoDB)·주문(Lambda)·추천(OpenSearch)을 한 번에 가져오고, 주문 상태 변경을 실시간으로 받아야 한다. 적절한 서비스는?
 
-A) API Gateway REST
+A) API Gateway REST에 통합 백엔드 Lambda를 두어 세 소스를 합쳐 응답하고 상태 변경은 주기 폴링한다
 
 B) AWS AppSync (다중 리졸버 + `@aws_subscribe` 실시간 구독)
 
-C) 세 개의 REST 엔드포인트 + 폴링
+C) 사용자·주문·추천 각각의 REST 엔드포인트 3개를 호출하고 상태 변경은 클라이언트 폴링으로 받는다
 
-D) Kinesis Firehose
+D) Kinesis Firehose로 세 소스를 모아 S3에 적재한 뒤 클라이언트가 조회하게 한다
 
 **정답: B**
 
@@ -266,13 +266,13 @@ D) FIFO로 바꾸면 무조건 해결된다
 
 **문제 11.** SNS가 HTTPS 엔드포인트로의 전달에 반복 실패한 메시지를 보존해 분석하려 한다. 적절한 방법은?
 
-A) SNS 메시지 보존을 켠다
+A) SNS 토픽에 메시지 보존을 켜서 전달 실패분이 토픽에 남도록 한다
 
 B) 해당 구독에 redrive policy로 SNS DLQ(SQS 큐)를 설정한다
 
-C) Lambda DLQ를 설정한다
+C) 구독 대상 함수에 Lambda DLQ를 붙여 비동기 호출 실패 메시지를 보존한다
 
-D) SQS DLQ를 설정한다
+D) HTTPS 엔드포인트 앞에 SQS를 두고 maxReceiveCount 초과분을 SQS DLQ로 보낸다
 
 **정답: B**
 
@@ -282,13 +282,13 @@ D) SQS DLQ를 설정한다
 
 **문제 12.** 세 소비자가 같은 Kinesis 스트림을 각각 수십 ms 지연으로 읽어야 하고 서로 처리량을 빼앗으면 안 된다. 적절한 기능은?
 
-A) 클래식 공유 읽기로 충분
+A) 클래식 공유 읽기에 GetRecords 폴링 간격을 줄여 세 소비자가 충분히 빠르게 읽게 한다
 
 B) Enhanced Fan-Out으로 소비자별 전용 2 MB/s를 HTTP/2 푸시 제공
 
-C) 샤드를 3배로 늘린다
+C) 샤드를 3배로 늘려 소비자마다 사실상 전용 처리량을 확보하고 지연을 낮춘다
 
-D) Firehose로 전환
+D) Firehose로 전환해 세 소비자가 각자 버퍼링된 배치를 받게 한다
 
 **정답: B**
 

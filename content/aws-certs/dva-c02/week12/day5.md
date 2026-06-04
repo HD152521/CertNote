@@ -120,13 +120,13 @@ Week 12를 한 문장으로 묶으면 "컨테이너와 함수를 **선언적 IaC
 
 **문제 1.** Fargate 태스크 50개를 /28 서브넷(가용 IP 약 11개) 하나에 배치하려 했더니 일부 태스크가 시작되지 않고 IP/네트워크 관련 오류가 난다. 근본 원인과 해결로 옳은 것은?
 
-A) taskRole 권한 부족 — 권한 추가
+A) taskRole에 EC2 ENI 생성 권한이 없어 IP를 못 받음 — taskRole에 `ec2:CreateNetworkInterface` 추가
 
 B) awsvpc 모드가 태스크마다 ENI/사설 IP를 소비해 서브넷 IP가 고갈됨 — 더 큰 CIDR 서브넷 추가 또는 여러 서브넷 분산
 
-C) executionRole의 ECR 권한 부족 — 권한 추가
+C) executionRole의 ECR pull 권한 부족으로 일부 태스크만 시작 실패 — executionRole에 ECR 권한 추가
 
-D) 태스크 정의가 불변이라서 — 새 리비전 등록
+D) 태스크 정의 리비전이 오래돼 네트워크 설정이 누락됨 — 새 리비전을 등록해 재배포
 
 **정답: B**
 
@@ -136,29 +136,29 @@ D) 태스크 정의가 불변이라서 — 새 리비전 등록
 
 **문제 2.** 태스크 정의의 `secrets` 블록으로 Secrets Manager의 DB 비밀번호를 환경 변수에 주입하도록 설정했는데, 태스크가 시작조차 못 하고 비밀을 가져오지 못한다. 권한을 어디에 줘야 하나?
 
-A) taskRole에 `secretsmanager:GetSecretValue`
+A) taskRole에 `secretsmanager:GetSecretValue`를 부여해 앱이 비밀을 읽게 한다
 
 B) executionRole에 `secretsmanager:GetSecretValue`
 
-C) 인스턴스 프로파일에 추가
+C) Fargate에는 없는 EC2 인스턴스 프로파일에 `secretsmanager:GetSecretValue`를 추가한다
 
-D) 권한과 무관, 네트워크 문제
+D) 권한이 아니라 Secrets Manager VPC 엔드포인트 부재로 인한 네트워크 도달성 문제다
 
 **정답: B**
 
-해설: 비밀을 가져와 환경 변수로 **주입하는 작업은 컨테이너가 뜨기 전, ECS 인프라(에이전트)가 수행**하므로 **executionRole**의 권한이 필요하다. taskRole은 앱이 런타임에 직접 SDK로 호출할 때 쓰인다 — 여기선 태스크가 시작도 못 했으므로 런타임 권한과 무관하다. "주입=시작 시점=executionRole"로 기억한다. 같은 Secrets Manager라도 "주입"이냐 "런타임 직접 호출"이냐로 역할이 갈린다.
+해설: 비밀을 가져와 환경 변수로 **주입하는 작업은 컨테이너가 뜨기 전, ECS 인프라(에이전트)가 수행**하므로 **executionRole**의 권한이 필요하다. taskRole은 앱이 런타임에 직접 SDK로 호출할 때 쓰인다 — 여기선 태스크가 시작도 못 했으므로 런타임 권한과 무관하다. "주입=시작 시점=executionRole"로 기억한다. 같은 Secrets Manager라도 "주입"이냐 "런타임 직접 호출"이냐로 역할이 갈린다. C) Fargate에는 EC2 인스턴스 프로파일 자체가 없다(서버리스 격리). D) 비밀 주입 실패는 전형적으로 IAM 권한 문제이지 네트워크 부재가 첫 의심 대상은 아니다.
 
 ---
 
 **문제 3.** 사설 서브넷의 Fargate 태스크가 ECR에서 이미지를 pull하지 못한다. executionRole에는 ECR 권한이 충분하다. 다음으로 의심할 원인은?
 
-A) 태스크 정의가 불변이라서
+A) 태스크 정의 리비전이 불변이라 이미지 태그가 옛 다이제스트를 가리켜 pull 실패
 
 B) 사설 서브넷에 NAT 게이트웨이나 ECR/S3용 VPC 엔드포인트가 없어 ECR에 도달하지 못함
 
-C) ECR 수명 주기 정책이 이미지를 삭제함
+C) ECR 수명 주기 정책이 해당 이미지를 만료 삭제해 pull할 대상이 없음
 
-D) taskRole 문제
+D) taskRole에 ECR 읽기 권한이 빠져 런타임에 이미지를 못 가져옴
 
 **정답: B**
 
@@ -168,13 +168,13 @@ D) taskRole 문제
 
 **문제 4.** CloudFormation으로 운영 중인 스택을 업데이트하려는데, RDS 인스턴스가 의도치 않게 교체(replacement)되어 데이터가 날아갈까 걱정된다. 적용 전에 어떤 자원이 어떻게 바뀌는지 확인하려면?
 
-A) 바로 update-stack 실행
+A) 바로 update-stack을 실행하고 롤백 트리거에 의존해 문제 시 자동 복구한다
 
 B) Change Set을 생성해 추가·수정·삭제·교체될 자원 목록을 검토한 뒤 적용
 
-C) Drift Detection 실행
+C) Drift Detection을 실행해 적용 후 바뀔 자원을 미리 감지한다
 
-D) 스택을 삭제하고 다시 생성
+D) 스택을 삭제하고 다시 생성해 깨끗한 상태에서 원하는 구성을 만든다
 
 **정답: B**
 
@@ -184,13 +184,13 @@ D) 스택을 삭제하고 다시 생성
 
 **문제 5.** 스택을 삭제하더라도 그 안의 S3 버킷(중요 데이터 보관)만은 삭제되지 않고 남기를 원한다. 어떻게 설정하나?
 
-A) Termination Protection 활성화
+A) 스택에 Termination Protection을 켜서 스택 삭제 시 버킷이 보존되게 한다
 
 B) 해당 S3 버킷 자원에 `DeletionPolicy: Retain` 설정
 
-C) Stack Policy 설정
+C) Stack Policy로 S3 버킷 자원을 Deny 대상에 넣어 삭제로부터 보호한다
 
-D) Drift Detection 활성화
+D) Drift Detection을 켜서 버킷이 삭제되려 하면 차이를 감지해 막는다
 
 **정답: B**
 
@@ -200,13 +200,13 @@ D) Drift Detection 활성화
 
 **문제 6.** 한 SAM 템플릿을 배포하려는데 `Transform` 선언이 빠져 일반 CloudFormation으로 처리되며 `AWS::Serverless::Function`을 알 수 없는 자원 타입이라 거부한다. 무엇이 필요한가?
 
-A) Parameters 섹션 추가
+A) Parameters 섹션을 추가해 Serverless 자원 타입을 파라미터로 선언한다
 
 B) 템플릿 최상위에 `Transform: AWS::Serverless-2016-10-31` 선언
 
-C) Globals 섹션 추가
+C) Globals 섹션을 추가해 함수 공통 속성을 정의하면 타입이 인식된다
 
-D) Outputs 섹션 추가
+D) Outputs 섹션에 함수 ARN을 내보내면 자원 타입이 등록된다
 
 **정답: B**
 
@@ -216,13 +216,13 @@ D) Outputs 섹션 추가
 
 **문제 7.** 주문 완료 이벤트 하나가 발생하면 재고·이메일·분석 세 시스템이 **동시에** 각자 처리해야 하고, 각 소비자는 일시적 폭주를 버틸 버퍼와 실패 격리가 필요하다. 가장 적합한 구성은?
 
-A) SQS 하나에 세 소비자 연결
+A) SQS 큐 하나에 재고·이메일·분석 세 소비자를 붙여 같은 메시지를 셋 다 받게 한다
 
 B) SNS 토픽 → 세 개의 SQS 구독(각 SQS에 소비자 + DLQ)으로 팬아웃
 
-C) Lambda가 세 시스템을 순차 동기 호출
+C) 주문 Lambda가 재고·이메일·분석 시스템을 순차로 동기 호출하고 실패 시 재시도한다
 
-D) EventBridge 스케줄 규칙
+D) EventBridge 스케줄 규칙으로 주기적으로 세 시스템에 주문 이벤트를 전달한다
 
 **정답: B**
 
@@ -248,13 +248,13 @@ D) 메시지 크기를 줄임
 
 **문제 9.** API Gateway 뒤 Lambda A가 무거운 후처리를 Lambda B에 넘긴다. 현재 A가 B를 동기 호출하는데 비용이 높고, B가 느려지면 API 응답이 타임아웃난다. 개선안은?
 
-A) B의 메모리를 늘려 동기 호출 유지
+A) B의 메모리·타임아웃을 늘려 더 빨리 끝나게 하고 동기 호출 구조는 유지한다
 
 B) A가 SQS에 작업을 넣고 즉시 응답, B가 큐를 비동기로 소비
 
-C) A와 B를 하나의 큰 함수로 합침
+C) A와 B를 하나의 큰 Lambda로 합쳐 호출 간 오버헤드와 이중 과금을 없앤다
 
-D) A가 B를 1초마다 폴링
+D) A가 B를 비동기로 트리거한 뒤 결과가 나올 때까지 1초 간격으로 상태를 폴링한다
 
 **정답: B**
 
@@ -264,13 +264,13 @@ D) A가 B를 1초마다 폴링
 
 **문제 10.** CDK로 작성한 인프라를 새 AWS 계정의 ap-northeast-2 리전에 처음 배포하려 하자 자산 업로드용 버킷이 없다는 류의 오류가 난다. 먼저 무엇을 해야 하나?
 
-A) cdk synth 재실행
+A) cdk synth를 다시 실행해 자산 버킷 정의가 포함된 템플릿을 재생성한다
 
 B) 해당 계정·리전에 `cdk bootstrap` 1회 실행해 배포용 S3·ECR·IAM 발판을 구성
 
-C) cdk destroy 실행
+C) cdk destroy로 잔여 스택을 정리한 뒤 깨끗한 상태에서 다시 deploy한다
 
-D) CloudFormation 콘솔에서 수동 스택 생성
+D) CloudFormation 콘솔에서 자산용 S3 버킷 스택을 수동 생성한 뒤 deploy한다
 
 **정답: B**
 
@@ -280,13 +280,13 @@ D) CloudFormation 콘솔에서 수동 스택 생성
 
 **문제 11.** ap-northeast-2의 네트워크 스택이 Export한 VPC ID를, us-east-1의 다른 스택에서 `!ImportValue`로 가져오려 했더니 동작하지 않는다. 이유는?
 
-A) !ImportValue 문법 오류
+A) `!ImportValue` 구문에 Export 이름을 잘못 적은 문법 오류 때문
 
 B) !ImportValue는 같은 리전 내 스택 간 Export/Import만 지원하며 cross-region 참조가 불가능하기 때문
 
-C) VPC는 Export할 수 없어서
+C) VPC ID는 Export 대상에서 제외되는 자원 타입이라 애초에 Import할 수 없어서
 
-D) taskRole 권한 부족
+D) 가져오는 스택의 실행 역할에 us-east-1 자원 접근 권한이 없어서
 
 **정답: B**
 
@@ -296,13 +296,13 @@ D) taskRole 권한 부족
 
 **문제 12.** 같은 CloudFormation 템플릿을 동일 환경에 두 번 연속 적용했는데, 두 번째 적용에서 아무 변경도 발생하지 않고 자원이 그대로다. 이 동작의 근거는?
 
-A) CloudFormation 버그
+A) CloudFormation이 동일 템플릿을 캐싱해 두 번째 적용을 건너뛰는 버그 때문
 
 B) CloudFormation은 선언적 모델이라 "원하는 상태"와 현재 상태가 같으면 변경할 게 없어 멱등하게 동작함
 
-C) Change Set이 막아서
+C) 두 번째 적용 시 Change Set이 빈 변경 집합을 만들어 업데이트를 차단했기 때문
 
-D) Termination Protection 때문
+D) Termination Protection이 켜져 있어 두 번째 적용의 변경이 막혔기 때문
 
 **정답: B**
 

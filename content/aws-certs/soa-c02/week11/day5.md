@@ -104,13 +104,13 @@ Week 11의 도구들은 "관측 → 판단 → 결정 → 행동"의 운영 루�
 
 **문제 1.** EC2 200대를 운영 중이며 어떤 인스턴스가 over-provisioned인지 인스턴스 단위로 정밀하게 알고 싶다. 가장 적합한 도구는?
 
-A) CloudWatch Dashboard 수동 분석
+A) CloudWatch Dashboard에 인스턴스별 CPU·메모리 그래프를 띄워 운영자가 수동으로 over-provisioned를 판별
 
 B) Compute Optimizer — 14일 메트릭의 퍼센타일 분포를 ML로 분석해 인스턴스별 Over/Under/Optimized와 권장 타입을 제시
 
-C) Trusted Advisor Performance
+C) Trusted Advisor Performance 카테고리로 계정 전반의 활용도 낮은 인스턴스를 모범 사례 기준으로 점검
 
-D) Cost Explorer
+D) Cost Explorer에서 인스턴스 타입별 비용을 분해해 지출이 큰 인스턴스를 over-provisioned로 추정
 
 **정답: B**
 
@@ -120,13 +120,13 @@ D) Cost Explorer
 
 **문제 2.** 운영팀이 매월 $5,000 예산을 두고, 80% 도달 시 알림, 100% 도달 시 일부 EC2를 자동 중지하길 원한다. 사람 개입 없이.
 
-A) Cost Explorer만 사용
+A) Cost Explorer에서 월별 지출을 모니터링하다 80%를 넘으면 운영자가 수동으로 EC2를 중지
 
 B) AWS Budgets + Budgets Action(80% 알림, 100% 도달 시 EC2 stop 또는 IAM Deny 부착)
 
-C) Cost Anomaly Detection
+C) Cost Anomaly Detection으로 비용 급증을 탐지하고 SNS 알림 후 자동으로 EC2를 중지
 
-D) CloudWatch Alarm
+D) 청구 지표(EstimatedCharges)에 CloudWatch Alarm을 걸어 임계 도달 시 Lambda로 EC2를 중지
 
 **정답: B**
 
@@ -136,13 +136,13 @@ D) CloudWatch Alarm
 
 **문제 3.** CloudOps 팀과 DevOps 팀의 비용을 별도로 추적하려 한다. 가장 가벼운 방법은?
 
-A) 팀마다 계정을 분리
+A) 팀마다 별도 AWS 계정을 만들고 Organizations 통합 결제로 계정 단위 비용을 분리 집계
 
 B) 리소스에 `Team` 태그 부여 + Cost Allocation Tag 활성화 + Cost Explorer Group by Tag
 
-C) 팀마다 Budgets만 생성
+C) 팀마다 Budgets를 생성해 예산 단위로 각 팀의 비용을 따로 추적
 
-D) CUR을 매일 수동 분석
+D) CUR을 S3로 내려받아 매일 Athena·스프레드시트로 팀별 비용을 수동 분석
 
 **정답: B**
 
@@ -152,13 +152,13 @@ D) CUR을 매일 수동 분석
 
 **문제 4.** 회사가 향후 3년간 EC2를 안정적으로 운영하지만 패밀리·리전을 자주 바꾼다. 코드 변경 없이 최대한 할인받으려면?
 
-A) Standard RI 3년
+A) Standard RI 3년 — 특정 인스턴스 패밀리에 약정해 최대 할인을 받고 패밀리 변경 시 RI를 재구매
 
 B) Compute Savings Plans 3년 — 모든 리전·패밀리·EC2/Fargate/Lambda에 약정 금액 내 자동 적용
 
-C) On-Demand
+C) On-Demand로 운영하며 패밀리·리전 변경의 자유를 유지하되 할인은 포기
 
-D) Spot
+D) Spot으로 운영해 최대 90% 할인을 받되 회수 시 다른 패밀리로 자동 대체
 
 **정답: B**
 
@@ -168,13 +168,13 @@ D) Spot
 
 **문제 5.** 야간에만 100대 노드로 EMR 배치를 돌린다. 무상태이고 회수돼도 재실행하면 된다. 비용 최소화는?
 
-A) On-Demand 100대
+A) On-Demand 100대로 매 야간 배치마다 정가로 띄우고 종료해 약정 없이 유연하게 운영
 
-B) Standard RI 100대
+B) Standard RI 100대를 3년 약정해 배치 노드에 최대 할인을 적용
 
 C) Spot Fleet + capacityOptimized — 무상태·회수 내성 배치의 최적, 최대 90% 할인 + 안정성 확보
 
-D) Compute Savings Plans
+D) Compute Savings Plans로 야간 배치의 시간당 지출에 약정해 할인을 받음
 
 **정답: C**
 
@@ -184,13 +184,13 @@ D) Compute Savings Plans
 
 **문제 6.** 모든 AWS 서비스의 한도(쿼터)가 80%에 근접하면 자동 경고를 받고 싶다.
 
-A) CloudWatch Custom Metric만
+A) 서비스별 사용량을 CloudWatch Custom Metric으로 직접 publish하고 80% 임계 알람을 수동 구성
 
 B) Trusted Advisor Service Limits + EventBridge 알림 (Business+ Support)
 
-C) Config Rule
+C) Config Rule로 각 서비스 리소스 수를 추적해 한도 대비 80% 초과 여부를 평가
 
-D) Service Quotas 콘솔만 수동 확인
+D) Service Quotas 콘솔에서 각 쿼터의 사용률을 정기적으로 수동 확인
 
 **정답: B**
 
@@ -200,13 +200,13 @@ D) Service Quotas 콘솔만 수동 확인
 
 **문제 7.** 회사 비용이 어느 날 평소 패턴 대비 3배로 튀었다. 고정 예산 임계는 안 넘었다. 이런 이상을 자동 탐지하려면?
 
-A) AWS Budgets(고정 임계 기반)
+A) AWS Budgets로 월 고정 임계를 잘게 쪼개 걸어 패턴 이탈을 임계 초과로 잡음
 
 B) Cost Anomaly Detection — ML로 평소 패턴을 학습해 통계적 이상치를 탐지
 
-C) Trusted Advisor
+C) Trusted Advisor Cost 카테고리로 낭비 리소스를 점검해 비용 급증 원인을 찾음
 
-D) CloudWatch Alarm
+D) 청구 지표(EstimatedCharges)에 CloudWatch Alarm을 걸어 평소 대비 급증을 감지
 
 **정답: B**
 
@@ -220,9 +220,9 @@ A) Standard RI(할인은 되나 용량 보장은 아님)
 
 B) EC2 Capacity Reservation — 특정 AZ에 용량 확보, 할인은 별도(SP/RI와 조합)
 
-C) Spot
+C) Spot으로 해당 AZ에 미리 확보해 두고 회수되면 즉시 재요청
 
-D) On-Demand로 미리 띄워두기
+D) On-Demand 인스턴스를 BCP용으로 미리 띄워 stop 상태로 두고 필요 시 start
 
 **정답: B**
 
@@ -232,13 +232,13 @@ D) On-Demand로 미리 띄워두기
 
 **문제 9.** RDS PostgreSQL을 24/7 운영하며 약정 할인을 받고 싶다.
 
-A) Compute Savings Plans
+A) Compute Savings Plans로 시간당 지출에 약정해 RDS 인스턴스에도 할인을 적용
 
-B) EC2 Instance Savings Plans
+B) EC2 Instance Savings Plans로 특정 인스턴스 패밀리에 약정해 RDS를 포함한 컴퓨트를 할인
 
 C) Reserved Instances (RDS RI)
 
-D) Spot
+D) Spot으로 RDS 인스턴스를 띄워 최대 할인을 받되 회수에 대비
 
 **정답: C**
 
@@ -248,13 +248,13 @@ D) Spot
 
 **문제 10.** EBS 비용 절감을 위해 gp2 → gp3 마이그레이션 후보를 자동 식별하려 한다.
 
-A) CLI로 전 볼륨 수동 조회
+A) CLI로 전 볼륨의 타입·IOPS를 조회해 스프레드시트로 gp2 볼륨을 수동 선별
 
 B) Compute Optimizer EBS Volume 권장 + Trusted Advisor Cost 카테고리
 
-C) Cost Explorer
+C) Cost Explorer에서 EBS 비용을 볼륨 타입별로 분해해 gp2 지출이 큰 볼륨을 후보로 추정
 
-D) Config Rule
+D) Config Rule로 gp2 볼륨을 비준수로 표시해 마이그레이션 후보 목록을 생성
 
 **정답: B**
 
@@ -264,13 +264,13 @@ D) Config Rule
 
 **문제 11.** 회사가 1년 전 산 Compute SP의 Cost Explorer Utilization이 55%로 낮다. 의미와 조치는?
 
-A) 약정이 부족 — 더 산다
+A) 약정이 부족하다는 신호이므로 baseline을 더 키워 SP를 추가 구매해 할인 범위를 넓힌다
 
 B) 과다 약정 — 약정의 45%를 안 쓰고 버리는 중이므로, 다음 약정은 절대 줄지 않는 baseline에 맞춰 규모를 줄인다
 
-C) Coverage가 낮은 것이므로 더 산다
+C) Utilization이 아니라 Coverage가 낮은 상황이므로, 아직 On-Demand로 내는 사용량을 덮도록 약정을 더 산다
 
-D) Utilization은 무의미하다
+D) Utilization은 시점별 변동이 커 신뢰할 수 없는 지표이므로 Coverage만 보고 판단한다
 
 **정답: B**
 

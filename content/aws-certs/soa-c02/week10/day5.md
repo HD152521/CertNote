@@ -88,10 +88,10 @@ S3 Replication·DLM·AWS Backup은 **데이터**를 복제·보관한다. 장애
 
 **문제 1.** 운영자가 사용하지 않는 골든 AMI 수십 개를 deregister했는데 스토리지 비용이 거의 줄지 않았다. 원인과 조치는?
 
-A) AMI 삭제는 비동기라 며칠 후 자동 정리된다
+A) AMI 삭제는 비동기로 처리돼 백그라운드 정리에 며칠이 걸리므로 기다리면 스냅샷까지 자동 회수된다
 B) AMI deregister는 부팅 레시피만 제거하고 연관 EBS 스냅샷은 그대로 남으므로, 스냅샷을 별도 삭제하거나 DLM으로 정리해야 한다
-C) AMI는 비용이 없으므로 정상이다
-D) EC2를 종료하면 정리된다
+C) AMI 자체는 스토리지 과금이 없고 스냅샷 비용은 표준 단가라 줄지 않는 게 정상이다
+D) AMI로 띄운 EC2 인스턴스를 종료하면 연관 스냅샷이 함께 정리된다
 
 **정답: B**
 
@@ -101,10 +101,10 @@ D) EC2를 종료하면 정리된다
 
 **문제 2.** 회사가 RDS·EBS·DynamoDB·EFS를 하나의 정책으로 통합 백업하고 "모든 prod 리소스가 백업되는지" 자동 검증·보고하려 한다. 적합한 구성은?
 
-A) 서비스별 DLM 정책
+A) 리소스 유형마다 별도 DLM 정책을 만들어 태그 기반으로 스냅샷을 찍고 Cross-Region 복제까지 자동화
 B) AWS Backup의 Backup Plan + Backup Audit Manager Framework
-C) Lambda로 서비스별 스냅샷 스크립트
-D) 수동 스냅샷 + 스프레드시트 점검
+C) EventBridge 스케줄로 Lambda를 띄워 각 서비스의 스냅샷 API를 호출하고 결과를 DynamoDB에 기록·집계
+D) 수동 스냅샷을 정기적으로 찍고 스프레드시트에 백업 일시·보존 기간을 기록해 점검
 
 **정답: B**
 
@@ -114,10 +114,10 @@ D) 수동 스냅샷 + 스프레드시트 점검
 
 **문제 3.** Ransomware 공격자가 운영 계정 관리자 권한을 탈취해 백업까지 삭제하는 시나리오를 막아야 한다. 규제상 백업은 발급자조차 삭제 불가여야 한다. 가장 강력한 구조는?
 
-A) 운영 계정 IAM 정책으로 삭제 권한 제거
+A) 운영 계정 IAM 정책에 백업 삭제 Deny를 명시하고 SCP로 조직 차원에서 삭제 API를 차단
 B) Cross-Account로 별도 중앙 계정 Vault에 복제하고 그 금고에 Compliance 모드 Vault Lock 적용
-C) 백업 빈도 증가
-D) 모든 사용자에 MFA
+C) 백업 빈도를 시간 단위로 높여 삭제돼도 최근 복구 지점이 항상 남도록 RPO를 줄임
+D) 모든 사용자에 MFA를 강제하고 삭제 작업에 MFA Delete 조건을 부착
 
 **정답: B**
 
@@ -127,10 +127,10 @@ D) 모든 사용자에 MFA
 
 **문제 4.** 오후 2시 30분에 실행된 잘못된 DELETE 직전 상태로 RDS를 되돌려야 한다. 어제 새벽 스냅샷밖에 없으면 하루치를 잃는다. 필요한 기능은?
 
-A) Manual Snapshot 복원
+A) 어제 새벽 Manual Snapshot을 복원하고 그 이후 변경분은 애플리케이션 로그로 수동 재입력
 B) Point-in-Time Recovery(PITR) — 베이스 스냅샷 + 트랜잭션 로그 재생으로 임의 초 단위 시점을 새 인스턴스로 복원
-C) Multi-AZ 페일오버
-D) Read Replica promote
+C) Multi-AZ 페일오버로 Standby를 승격해 DELETE 이전 상태의 사본으로 전환
+D) Read Replica를 promote해 복제 지연으로 아직 DELETE가 반영 안 된 사본을 독립 인스턴스로 사용
 
 **정답: B**
 
@@ -140,10 +140,10 @@ D) Read Replica promote
 
 **문제 5.** "단일 AZ 장애에서 데이터 손실 없이 자동 복구"가 목표다. 정확한 RDS 기능은?
 
-A) Read Replica
+A) Read Replica를 같은 리전 다른 AZ에 두고 장애 시 promote해 승격
 B) Multi-AZ — 다른 AZ Standby에 동기 복제, RPO 0, 자동 페일오버
-C) Snapshot
-D) Cross-Region Read Replica
+C) 자동 Snapshot을 짧은 주기로 찍어 AZ 장애 시 최신 스냅샷에서 복원
+D) Cross-Region Read Replica를 두어 AZ 장애 시 다른 리전 사본으로 전환
 
 **정답: B**
 
@@ -153,10 +153,10 @@ D) Cross-Region Read Replica
 
 **문제 6.** 운영 중 DB 읽기 부하(분석·리포트)가 폭증한다. 비용 효율적으로 읽기를 분산하려면?
 
-A) DB 인스턴스 크기 증가
+A) DB 인스턴스를 더 큰 타입으로 수직 확장해 읽기·쓰기 처리량을 함께 키움
 B) Read Replica 추가, 별도 endpoint로 읽기 분산
-C) Multi-AZ 활성화
-D) Snapshot 증가
+C) Multi-AZ를 활성화해 Standby에 분석·리포트 읽기 쿼리를 분산
+D) 자동 Snapshot 빈도를 높여 분석은 스냅샷에서 복원한 별도 인스턴스로 처리
 
 **정답: B**
 
@@ -166,10 +166,10 @@ D) Snapshot 증가
 
 **문제 7.** 글로벌 사용자에게 가까운 리전에서 빠른 읽기 + 리전 단위 DR(RPO<1초)이 필요하다. 가장 적합한 도구는?
 
-A) RDS Multi-AZ
+A) RDS Multi-AZ로 다른 AZ Standby에 동기 복제해 가용성과 빠른 페일오버를 확보
 B) Aurora Global Database — 최대 5 Secondary 리전, 스토리지 계층 복제로 RPO<1초·RTO<1분
-C) 단일 리전 Read Replica 다수
-D) DynamoDB Multi-AZ
+C) 단일 리전에 Read Replica를 여러 개 두고 Route 53 Latency 라우팅으로 가까운 사본에 연결
+D) DynamoDB를 Multi-AZ로 구성해 글로벌 읽기와 리전 DR을 함께 처리
 
 **정답: B**
 
@@ -179,10 +179,10 @@ D) DynamoDB Multi-AZ
 
 **문제 8.** Lambda가 트래픽 폭증 시 RDS에 동시 수천 커넥션을 열어 DB 최대 커넥션 한도를 초과한다. 근본 해결은?
 
-A) 인스턴스 타입 증가
+A) DB 인스턴스 타입을 키워 최대 커넥션 한도(max_connections)를 함께 높임
 B) RDS Proxy — 커넥션 풀로 소수의 실제 커넥션을 재사용(multiplexing)
-C) Multi-AZ
-D) Read Replica
+C) Multi-AZ를 활성화해 Standby로 커넥션 부하를 분산
+D) Read Replica를 추가해 커넥션을 여러 사본으로 분산
 
 **정답: B**
 
@@ -192,10 +192,10 @@ D) Read Replica
 
 **문제 9.** 회사가 S3 데이터를 다른 리전 DR에 자동 복제하려 한다. 필수 전제는?
 
-A) DataSync 주기 실행
+A) DataSync 태스크를 스케줄로 주기 실행해 다른 리전 버킷으로 객체를 동기화
 B) S3 Cross-Region Replication + 소스·대상 양쪽 Versioning 활성화 + IAM Role
-C) Storage Gateway
-D) Lifecycle Policy
+C) Storage Gateway File Gateway로 다른 리전 버킷에 객체를 캐시·업로드
+D) Lifecycle Policy로 객체를 다른 리전의 Glacier 계층으로 전환
 
 **정답: B**
 
@@ -205,10 +205,10 @@ D) Lifecycle Policy
 
 **문제 10.** 운영 데이터센터를 AWS로 DR 페일오버 가능하게 하되 평소 비용 최소화, 페일오버 시 분 단위 복구가 필요하다. 어떤 도구인가?
 
-A) S3 Replication
+A) S3 Replication으로 데이터센터 데이터를 다른 리전 버킷에 복제하고 장애 시 그 데이터로 서버 재구축
 B) AWS Elastic Disaster Recovery(DRS) — 블록 레벨 CDP, 평소 작은 Staging, 페일오버 시 실제 크기 launch
-C) Storage Gateway
-D) DataSync
+C) Storage Gateway로 온프레미스 볼륨을 AWS에 백업하고 장애 시 EC2로 복원
+D) DataSync로 온프레미스 파일을 주기적으로 AWS로 전송해 두고 장애 시 복구에 사용
 
 **정답: B**
 
@@ -218,10 +218,10 @@ D) DataSync
 
 **문제 11.** 규제상 S3 객체에 5년간 변경·삭제를 절대 불가능하게 강제해야 한다. 어떤 기능과 전제인가?
 
-A) IAM 정책으로 삭제 거부
+A) 버킷 정책·IAM 정책으로 모든 주체에 DeleteObject·PutObject를 명시적으로 거부
 B) S3 Object Lock Compliance 모드 + 5년 retention, Versioning 필수
-C) Cross-Region Replication
-D) Glacier Deep Archive 이동
+C) Cross-Region Replication으로 다른 리전에 사본을 두어 한쪽이 변경돼도 원본 보존
+D) Glacier Deep Archive로 이동해 즉시 접근·수정이 어려운 콜드 계층에 5년간 보관
 
 **정답: B**
 
@@ -231,10 +231,10 @@ D) Glacier Deep Archive 이동
 
 **문제 12.** DR 페일오버 시 큰 EBS 스냅샷에서 만든 새 볼륨의 첫 IO가 느려 복구가 지연된다. 비용을 고려한 해결은?
 
-A) 스냅샷 재생성
+A) 스냅샷을 다시 만들어 모든 블록이 완전히 채워진 새 스냅샷에서 볼륨을 생성
 B) 페일오버 대상 AZ에만 Fast Snapshot Restore(FSR)를 켜 미리 hydrate
-C) gp2→gp3 변경
-D) 인스턴스 타입 증가
+C) 볼륨 타입을 gp2에서 gp3로 변경해 baseline IOPS·처리량을 높임
+D) 복구 인스턴스 타입을 키워 더 높은 EBS 대역폭으로 초기 IO를 흡수
 
 **정답: B**
 

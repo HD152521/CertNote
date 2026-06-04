@@ -59,13 +59,13 @@ Week 15 한 줄 정리: "글로벌 ERP=거버넌스/네트워크/MGN, 스타트�
 
 **문제 1.** 한 의료 보험사가 일반 상용 리전(us-east-1)에서 PHI를 처리하되, HIPAA Eligible이 아닌 서비스에 PHI가 들어가는 것을 조직 차원에서 원천 차단하려 한다. 가장 적합한 통제는?
 
-A) IAM Policy로 사용자별 제한
+A) IAM Policy로 사용자·역할별 서비스 사용을 제한
 
 B) SCP로 비HIPAA-Eligible 서비스를 Deny
 
-C) Config Rule로 탐지
+C) Config Rule로 비Eligible 서비스 사용을 탐지·기록
 
-D) GuardDuty로 모니터링
+D) GuardDuty로 비정상 서비스 호출을 모니터링
 
 **정답: B**
 
@@ -75,13 +75,13 @@ D) GuardDuty로 모니터링
 
 **문제 2.** 의료 임상 노트(자유 텍스트)에서 환자 이름·진단 같은 PHI를 자동 추출해 비식별화하려 한다. 가장 적합한 서비스는?
 
-A) Amazon Comprehend (일반)
+A) Amazon Comprehend (일반 NLP 엔터티 추출)
 
 B) Amazon Comprehend Medical
 
-C) Amazon Macie
+C) Amazon Macie (S3 민감 데이터 발견·분류)
 
-D) Amazon Textract
+D) Amazon Textract (문서에서 텍스트·표 추출)
 
 **정답: B**
 
@@ -91,13 +91,13 @@ D) Amazon Textract
 
 **문제 3.** 한 정부 기관이 FedRAMP High와 DoD IL5를 충족하고, 시스템을 미국 시민권자만 운영해야 한다(ITAR 관련 데이터 포함). 가장 적합한 환경은?
 
-A) 일반 us-east-1
+A) 일반 us-east-1 + HIPAA Eligible 서비스 + BAA
 
 B) AWS GovCloud (US)
 
-C) eu-west-1
+C) eu-west-1 (데이터 주권 분리 리전)
 
-D) Local Zones
+D) Local Zones (저지연 엣지 컴퓨트)
 
 **정답: B**
 
@@ -107,13 +107,13 @@ D) Local Zones
 
 **문제 4.** PHI를 의료 상호운용성 표준(FHIR R4) 형식으로 저장·분석하는 데이터레이크를 구축하려 한다. 가장 적합한 서비스는?
 
-A) Amazon Athena
+A) Amazon Athena (S3 위 서버리스 SQL 쿼리)
 
 B) Amazon HealthLake
 
-C) Amazon Redshift
+C) Amazon Redshift (컬럼형 데이터 웨어하우스)
 
-D) AWS Lake Formation
+D) AWS Lake Formation (데이터레이크 거버넌스·권한)
 
 **정답: B**
 
@@ -123,13 +123,13 @@ D) AWS Lake Formation
 
 **문제 5.** 거래 로그를 30년간 최저 비용으로 저장하되, 누구도(root 포함) 변경·삭제할 수 없어야 한다. 가장 적합한 조합은?
 
-A) S3 Standard + Versioning
+A) S3 Standard + Versioning으로 버전 보존
 
 B) S3 Glacier Deep Archive + Object Lock Compliance(또는 Vault Lock Compliance)
 
-C) S3 Glacier Deep Archive만
+C) S3 Glacier Deep Archive만으로 저비용 아카이브
 
-D) EBS 스냅샷 30년
+D) EBS 스냅샷을 30년간 보관하고 주기적 복사
 
 **정답: B**
 
@@ -139,13 +139,13 @@ D) EBS 스냅샷 30년
 
 **문제 6.** 글로벌 OTT가 라이브 스포츠를 송출한다. 인코더 장애에도 무중단이어야 하고, 공용 인터넷으로 카메라 피드를 안전하게 받아야 한다. 입력~인코딩 구간의 조합은?
 
-A) MediaConvert + S3
+A) MediaConvert + S3 (파일 기반 VOD 트랜스코딩)
 
 B) MediaConnect(입력 이중화) + MediaLive(파이프라인 이중화)
 
-C) MediaPackage + CloudFront
+C) MediaPackage + CloudFront (패키징·전송 구간)
 
-D) Kinesis + Lambda
+D) Kinesis Video Streams + Lambda (데이터 스트림 처리)
 
 **정답: B**
 
@@ -155,13 +155,13 @@ D) Kinesis + Lambda
 
 **문제 7.** 시드 단계 SaaS가 관계형 DB가 필요한데, 트래픽이 0이 되는 시간이 많고 갑자기 폭증하기도 한다. 비용을 사용량에 비례시키고 끊김 없는 스케일을 원한다. 가장 적합한 선택은?
 
-A) RDS Provisioned Multi-AZ
+A) RDS Provisioned Multi-AZ (고정 용량 + 동기 standby)
 
 B) Aurora Serverless v2
 
-C) Redshift
+C) Redshift (분석용 컬럼형 웨어하우스)
 
-D) DynamoDB
+D) DynamoDB (키-값 NoSQL, On-Demand 과금)
 
 **정답: B**
 
@@ -171,13 +171,13 @@ D) DynamoDB
 
 **문제 8.** 글로벌 제조사가 EU 워크로드의 데이터가 EU 외 리전으로 나가지 못하게 강제하려 한다. 계정 root조차 비EU 리전에 리소스를 만들 수 없어야 한다. 가장 적합한 통제는?
 
-A) IAM Policy
+A) IAM Policy에 리전 조건을 추가해 사용자별 제한
 
 B) SCP DenyRegions(`aws:RequestedRegion`)
 
-C) NACL
+C) NACL로 비EU 리전 네트워크 트래픽 차단
 
-D) Config Rule(탐지만)
+D) Config Rule로 비EU 리전 리소스를 탐지(탐지만)
 
 **정답: B**
 
@@ -187,13 +187,13 @@ D) Config Rule(탐지만)
 
 **문제 9.** 한 은행이 모든 VPC 간·인터넷 트래픽을 중앙에서 IDS/IPS와 TLS Inspection으로 검사해야 한다. 가장 적합한 패턴은?
 
-A) WAF만
+A) WAF만으로 L7 HTTP 트래픽 검사
 
 B) Transit Gateway + Inspection VPC + Network Firewall
 
-C) 각 서브넷 NACL
+C) 각 서브넷 NACL로 IP·포트 단위 허용/차단
 
-D) Security Group 강화
+D) Security Group 규칙 강화로 인바운드 제한
 
 **정답: B**
 
@@ -203,13 +203,13 @@ D) Security Group 강화
 
 **문제 10.** 금융사가 분기별로 의도적 장애를 주입해 DR의 RTO/RPO 달성을 입증하고, 이를 자동 스케줄로 실행하려 한다. 가장 적합한 조합은?
 
-A) Trusted Advisor
+A) Trusted Advisor로 내결함성 카테고리 점검
 
 B) AWS FIS + EventBridge Scheduler (+ Resilience Hub로 평가)
 
-C) Backup Restore 수동
+C) Backup Restore를 분기마다 수동 실행해 복구 확인
 
-D) CloudWatch Alarm
+D) CloudWatch Alarm으로 장애 지표를 모니터링
 
 **정답: B**
 
@@ -219,13 +219,13 @@ D) CloudWatch Alarm
 
 **문제 11.** 한 스타트업이 100배로 성장해 Lambda·Fargate 비용이 월 수만 달러가 됐다. 서버리스를 유지하면서 약정 할인을 받되 리전·패밀리 변경 유연성도 원한다. 가장 적합한 것은?
 
-A) EC2 Instance Savings Plans
+A) EC2 Instance Savings Plans (특정 리전·family 고정)
 
 B) Compute Savings Plans
 
-C) Standard Reserved Instances
+C) Standard Reserved Instances (EC2 family·OS 고정)
 
-D) Spot Instances
+D) Spot Instances (회수 위험 있는 즉시 할인)
 
 **정답: B**
 

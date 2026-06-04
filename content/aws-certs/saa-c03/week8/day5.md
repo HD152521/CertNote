@@ -115,10 +115,10 @@ D) Parameter Store SecureString + KMS CMK로 암호화해 AWS 직원 접근 차�
 
 **문제 3.** 한 회사가 RDS Aurora PostgreSQL의 admin 비밀번호를 90일마다 자동 회전하고, 회전 도중 어떤 다운타임도 발생하면 안 된다. 가장 적합한 솔루션은?
 
-A) Parameter Store SecureString + cron Lambda
+A) Parameter Store SecureString에 비밀번호 저장 + 90일 cron으로 트리거되는 Lambda가 RDS 비밀번호를 직접 변경
 B) Secrets Manager + AWS 제공 RDS rotation Lambda + 90일 일정
-C) CloudHSM에 비밀번호 저장
-D) EC2 환경 변수 + Ansible cron
+C) CloudHSM에 비밀번호를 객체로 저장 + KMS 봉투 암호화 + 90일마다 수동 회전 절차 문서화
+D) EC2 인스턴스의 환경 변수에 비밀번호를 주입 + Ansible Playbook을 cron으로 돌려 90일마다 갱신
 
 **정답: B**
 
@@ -142,9 +142,9 @@ D) S3 버킷 정책으로 Public Write
 **문제 5.** 한 회사가 사용자 가입 시 회사 도메인 이메일(`@mycompany.com`)만 허용하고, 가입 후에는 사용자 정보를 자체 DynamoDB와 자동 동기화하고 싶다. 가장 적합한 솔루션은?
 
 A) PreSignUp Lambda Trigger (도메인 검증) + PostConfirmation Lambda Trigger (DDB 복제)
-B) 백엔드 코드에서 직접 처리
-C) IAM 정책으로 제어
-D) Identity Pool에서 처리
+B) API 백엔드의 가입 핸들러에서 이메일 도메인을 정규식으로 검증하고 가입 성공 후 DynamoDB에 직접 write
+C) User Pool 그룹에 IAM 정책을 붙여 `@mycompany.com` 도메인만 허용하고 DDB 접근 권한을 부여
+D) Identity Pool의 인증 규칙에서 도메인을 검사하고 STS Role로 DDB 동기화 Lambda를 호출
 
 **정답: A**
 
@@ -154,10 +154,10 @@ D) Identity Pool에서 처리
 
 **문제 6.** 한 회사가 S3 버킷에 들어 있는 객체 중 신용카드 번호, 주민번호 같은 PII가 들어 있는 것을 자동으로 탐지하고, 발견되면 즉시 격리하고 SecOps에 알리고 싶다. 가장 적합한 솔루션은?
 
-A) GuardDuty + EventBridge
+A) GuardDuty의 S3 Protection을 켜고 finding을 EventBridge로 받아 Lambda로 객체를 격리하고 SNS로 알림
 B) Macie + EventBridge → Lambda (객체를 격리 버킷으로 이동) + SNS (SecOps)
-C) Inspector + Lambda
-D) Config + SNS
+C) Inspector v2로 버킷 객체를 스캔해 PII를 찾고 finding을 Lambda로 받아 격리
+D) Config Rule로 객체에 PII가 있는지 평가하고 비준수 시 SNS로 SecOps에 알림
 
 **정답: B**
 
@@ -168,9 +168,9 @@ D) Config + SNS
 **문제 7.** 한 회사가 EC2 인스턴스 500대의 OS·패키지에 새로 공개된 Log4Shell 류 CVE가 영향을 미치는지 자동으로 평가하고, 그 결과를 컴플라이언스 대시보드에 통합하고 싶다. 가장 적합한 조합은?
 
 A) Inspector v2 (자동/지속 스캔) + Security Hub (통합 대시보드 + 점수)
-B) GuardDuty + Macie
-C) Config + CloudTrail
-D) Lambda + S3
+B) GuardDuty로 인스턴스의 비정상 행위를 탐지하고 Macie로 디스크의 민감 데이터를 스캔해 CVE 노출을 평가
+C) Config Rule로 패치 수준 준수를 평가하고 CloudTrail로 패치 API 호출 이력을 감사해 취약 인스턴스를 식별
+D) Lambda가 각 인스턴스에서 패키지 목록을 수집해 S3에 적재하고 CVE DB와 대조하는 커스텀 스캐너 구축
 
 **정답: A**
 
@@ -220,9 +220,9 @@ D) Security Group + NACL
 **문제 11.** 한 회사가 GuardDuty에서 "EC2가 알려진 암호화폐 채굴 풀과 통신" finding이 발생하면 5분 내 자동으로 인스턴스를 격리 SG로 이동하고, 사후 분석을 위해 그래프로 IAM Role의 활동을 추적하고, 결과를 SecOps 대시보드에 통합하고 싶다. 가장 적합한 조합은?
 
 A) GuardDuty → EventBridge (severity≥7) → Lambda (격리 SG 교체) + SNS (SecOps) + Detective (그래프 분석) + Security Hub (통합 대시보드)
-B) CloudTrail Insights만
-C) Config만
-D) WAF만
+B) CloudTrail Insights로 비정상 API 호출을 탐지하고 그 이벤트로 Lambda를 트리거해 인스턴스를 격리하고 IAM Role 활동을 추적
+C) Config Rule로 인스턴스의 아웃바운드 SG 규칙 위반을 감지하고 SSM Automation으로 격리 SG를 적용한 뒤 결과를 대시보드에 집계
+D) WAF Rate-based Rule로 채굴 풀 통신을 차단하고 로그를 분석해 IAM Role 활동을 추적
 
 **정답: A**
 
@@ -233,9 +233,9 @@ D) WAF만
 **문제 12.** 한 엔터프라이즈가 AWS Organizations로 80개 계정을 운영하면서 ① 모든 계정의 모든 ALB/CloudFront에 동일한 WAF Managed Rule 강제, ② 모든 계정에 Shield Advanced 자동 적용, ③ 신규 계정에도 자동 적용, ④ CIS·AFSBP 표준 점수 통합 모니터링이 필요하다. 가장 적합한 조합은?
 
 A) Firewall Manager (조직 단위 WAF/Shield 일괄 적용 + 신규 자동) + Security Hub (CIS/AFSBP 통합 점수)
-B) 각 계정에 수동 설정
-C) Lambda로 매일 점검
-D) Config Rule만
+B) 각 계정의 관리자가 동일한 WAF Managed Rule과 Shield Advanced를 콘솔에서 수동으로 설정하고 신규 계정마다 반복
+C) 관리 계정의 Lambda가 매일 모든 계정을 순회하며 WAF/Shield 적용 여부를 점검하고 누락 시 SDK로 적용
+D) 각 계정에 Config Rule을 배포해 WAF/Shield 적용 여부를 평가하고 CIS/AFSBP 표준을 Config Conformance Pack으로 점검
 
 **정답: A**
 

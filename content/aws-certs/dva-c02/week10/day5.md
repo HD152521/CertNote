@@ -131,13 +131,13 @@ D) X-Ray로 다운로드를 추적
 
 **문제 4.** 마이크로서비스에서 "특정 주문 ID를 가진 모든 trace를 X-Ray 콘솔에서 검색"하려 한다. 그리고 디버깅용으로 주문의 전체 JSON 본문도 trace에 첨부하려 한다. 각각 무엇을 쓰는가?
 
-A) 둘 다 Metadata
+A) 둘 다 Metadata에 넣으면 인덱싱되어 콘솔 필터 검색과 본문 조회가 한 번에 된다
 
 B) 주문 ID는 Annotation(검색용), JSON 본문은 Metadata(큰 객체용)
 
-C) 둘 다 Annotation
+C) 둘 다 Annotation에 담아 50개 한도 안에서 주문 ID와 본문 전체를 인덱싱·검색한다
 
-D) 주문 ID는 Segment 이름, 본문은 Annotation
+D) 주문 ID는 Subsegment 이름으로 인코딩하고, 본문은 Annotation에 넣어 검색 가능하게 한다
 
 **정답: B**
 
@@ -163,65 +163,65 @@ D) Lambda는 X-Ray, EC2는 EMF
 
 **문제 6.** root 계정으로 누군가 콘솔 로그인하면 즉시 Slack 알림을 받고 싶다. 가장 적절한 패턴은?
 
-A) IAM 정책으로 root 로그인 차단
+A) IAM 정책에 root 사용자에 대한 Deny 조건을 걸어 콘솔 로그인 자체를 차단한다
 
 B) CloudTrail이 ConsoleLogin 기록 → EventBridge Rule이 root 필터 → Lambda/SNS → Slack
 
-C) CloudWatch 기본 지표 알람
+C) `ConsoleLogin` 횟수를 추적하는 CloudWatch 기본 지표에 1회 초과 알람을 걸어 SNS로 통지한다
 
-D) Config Rule로 감지
+D) AWS Config Rule(`root-account-mfa-enabled` 등)이 root 로그인 시점을 평가해 SNS로 즉시 알린다
 
 **정답: B**
 
-해설: root 로그인 → **CloudTrail**이 `ConsoleLogin` 이벤트 기록 → **EventBridge Rule**이 `userIdentity.type = "Root"` 패턴으로 필터 → Lambda/SNS → Slack 통지가 표준 보안 자동화다. CloudTrail(감지)과 EventBridge(반응)의 결합으로 사람이 로그를 뒤지기 전에 시스템이 반응한다. A) root는 IAM 위에 있어 IAM으로 로그인 자체를 막을 수 없다. C) 로그인은 지표가 아니라 이벤트다.
+해설: root 로그인 → **CloudTrail**이 `ConsoleLogin` 이벤트 기록 → **EventBridge Rule**이 `userIdentity.type = "Root"` 패턴으로 필터 → Lambda/SNS → Slack 통지가 표준 보안 자동화다. CloudTrail(감지)과 EventBridge(반응)의 결합으로 사람이 로그를 뒤지기 전에 시스템이 반응한다. A) root는 IAM 위에 있어 IAM으로 로그인 자체를 막을 수 없다. C) 로그인은 지표가 아니라 이벤트라 기본 지표로 존재하지 않는다. D) Config는 리소스의 *구성 상태*를 평가하는 도구라 "지금 막 일어난 로그인"이라는 순간 이벤트를 실시간 감지하는 데는 맞지 않다.
 
 ---
 
 **문제 7.** 트래픽이 낮·밤·주말로 크게 달라지는 API의 지연 시간 지표에 알람을 걸려 한다. 단일 정적 임계값은 낮엔 너무 둔감하고 밤엔 오탐이 많다. 해법은?
 
-A) 임계값을 여러 개 만들어 시간대마다 전환
+A) 시간대별 임계값을 여러 개 만들고 EventBridge 스케줄로 낮·밤·주말마다 알람을 전환한다
 
 B) CloudWatch Anomaly Detection으로 ML이 학습한 시간대별 정상 밴드 사용
 
-C) Metric Filter
+C) Metric Filter로 지연 시간 로그를 패턴 매칭해 시간대별 평균을 지표화한 뒤 알람을 건다
 
-D) Composite Alarm
+D) Composite Alarm으로 낮·밤·주말 알람 3개를 AND/OR 조합해 오탐을 상쇄한다
 
 **정답: B**
 
-해설: **Anomaly Detection**은 ML로 지표의 계절성(시간대·요일 반복)과 추세를 학습해 "이 시각이면 값이 대략 이 범위"라는 예측 밴드를 만들고 그걸 벗어날 때만 알람을 울린다. 정적 임계값의 시간대 변동 문제를 자동으로 해결한다(Holt-Winters·SARIMA 계열의 시계열 예측 아이디어). A) 수동 시간대 전환은 운영 부담이 크고 패턴 변화에 취약하다.
+해설: **Anomaly Detection**은 ML로 지표의 계절성(시간대·요일 반복)과 추세를 학습해 "이 시각이면 값이 대략 이 범위"라는 예측 밴드를 만들고 그걸 벗어날 때만 알람을 울린다. 정적 임계값의 시간대 변동 문제를 자동으로 해결한다(Holt-Winters·SARIMA 계열의 시계열 예측 아이디어). A) 수동 시간대 전환은 운영 부담이 크고 패턴 변화에 취약하다. C) Metric Filter는 로그를 지표화할 뿐 시간대별 정상 범위를 학습하지 못한다. D) Composite Alarm은 기존 알람들을 논리 조합할 뿐, 각 알람이 여전히 정적 임계값에 의존하므로 근본 문제가 남는다.
 
 ---
 
 **문제 8.** "에러 100건 초과 시 알람"을 걸었는데 트래픽이 평소의 10배로 늘자 정상 상태에서도 알람이 계속 울린다. 더 견고한 알람을 만들려면?
 
-A) 임계값을 1000건으로 올린다
+A) 임계값을 1000건으로 올려 트래픽 10배 상황의 정상 에러까지 흡수하도록 여유를 둔다
 
 B) Metric Math로 에러율(에러/전체×100)을 계산해 비율 기반 알람을 건다
 
-C) Anomaly Detection만 쓴다
+C) Anomaly Detection만 적용해 ML이 학습한 에러 *건수*의 정상 밴드 이탈로 판정한다
 
-D) 알람을 끈다
+D) 평가 주기(period)를 늘리고 데이터포인트 개수를 높여 일시적 급증을 무시하게 한다
 
 **정답: B**
 
-해설: 절대값 임계값("100건")은 트래픽 규모에 따라 의미가 흔들린다. **Metric Math**로 에러율(에러/전체 요청 × 100)을 계산해 "에러율 1% 초과"처럼 비율 기반으로 걸면 트래픽이 늘어도 의미가 일정하다. SRE가 SLO를 절대 카운트가 아니라 비율(가용성 99.9%)로 정의하는 이유다. A) 임계값을 올리면 트래픽이 다시 줄었을 때 진짜 장애를 놓친다.
+해설: 절대값 임계값("100건")은 트래픽 규모에 따라 의미가 흔들린다. **Metric Math**로 에러율(에러/전체 요청 × 100)을 계산해 "에러율 1% 초과"처럼 비율 기반으로 걸면 트래픽이 늘어도 의미가 일정하다. SRE가 SLO를 절대 카운트가 아니라 비율(가용성 99.9%)로 정의하는 이유다. A) 임계값을 올리면 트래픽이 다시 줄었을 때 진짜 장애를 놓친다. C) 에러 *건수*에 Anomaly Detection을 걸어도 건수 자체가 트래픽에 비례해 출렁이므로 비율만큼 안정적이지 않다. D) 평가 주기를 늘리는 건 노이즈를 줄일 뿐 트래픽 규모에 따른 건수 왜곡이라는 근본 원인은 그대로다.
 
 ---
 
 **문제 9.** CloudWatch 지표를 회사 표준 모니터링 도구(Datadog)로 거의 실시간 통합하고, 동시에 애플리케이션 로그도 OpenSearch로 보내려 한다. 각각 무엇을 쓰는가?
 
-A) 둘 다 Metric Stream
+A) 둘 다 Metric Stream으로 Firehose를 거쳐 Datadog과 OpenSearch로 동시에 푸시한다
 
 B) 지표는 Metric Stream(→Firehose), 로그는 CloudWatch Logs Subscription Filter
 
-C) 둘 다 Subscription Filter
+C) 둘 다 Subscription Filter로 지표와 로그를 실시간 스트리밍해 외부로 내보낸다
 
-D) 둘 다 GetMetricData 폴링
+D) 둘 다 GetMetricData·FilterLogEvents API를 주기 폴링해 외부 도구로 적재한다
 
 **정답: B**
 
-해설: **Metric Stream**은 *지표*를 Firehose를 거쳐 외부(Datadog 등)로 거의 실시간 푸시하고, **Subscription Filter**는 *로그*를 실시간으로 Lambda/Kinesis/OpenSearch로 스트리밍한다. 둘은 "지표냐 로그냐"로 역할이 나뉜다. D) GetMetricData 폴링은 지연·비용·API 한도 문제로 실시간 통합에 부적합하다. 지표와 로그는 서로 다른 파이프라인을 탄다는 게 핵심이다.
+해설: **Metric Stream**은 *지표*를 Firehose를 거쳐 외부(Datadog 등)로 거의 실시간 푸시하고, **Subscription Filter**는 *로그*를 실시간으로 Lambda/Kinesis/OpenSearch로 스트리밍한다. 둘은 "지표냐 로그냐"로 역할이 나뉜다. A) Metric Stream은 지표 전용이라 애플리케이션 로그를 OpenSearch로 보낼 수 없다. C) Subscription Filter는 로그 전용이라 CloudWatch 지표를 외부로 스트리밍하지 못한다. D) GetMetricData 폴링은 지연·비용·API 한도 문제로 실시간 통합에 부적합하다. 지표와 로그는 서로 다른 파이프라인을 탄다는 게 핵심이다.
 
 ---
 
@@ -243,17 +243,17 @@ D) X-Ray
 
 **문제 11.** "매일 새벽 2시에 정확히 한 번" 배치 Lambda를 실행하되, 향후 수천 개의 서로 다른 스케줄로 확장될 수 있다. 가장 적절한 구성은?
 
-A) `rate(1 day)` Rule
+A) `rate(1 day)` Rule로 24시간마다 반복시키면 매일 새벽 2시 실행이 보장된다
 
 B) `cron(0 2 * * ? *)` 표현식 — 특정 시각 지정. 대규모 확장은 EventBridge Scheduler 고려
 
-C) CloudWatch 알람
+C) CloudWatch 알람을 새벽 2시 지표 임계값에 걸어 Lambda를 트리거한다
 
-D) SQS 지연 큐
+D) SQS 지연 큐에 24시간 DelaySeconds 메시지를 넣어 매번 다음 실행을 예약한다
 
 **정답: B**
 
-해설: "매일 새벽 2시"는 특정 시각·캘린더 기반이므로 `rate`(주기 간격)가 아니라 **`cron`**이 맞다(`rate(1 day)`는 "마지막 실행으로부터 24시간 후"라 기준 시각이 고정되지 않는다). 향후 수천~백만 개 스케줄·일회성 일정·세밀한 재시도가 필요하면 **EventBridge Scheduler**가 일반 Rule(schedule)보다 적합하다. cron vs rate, Scheduler vs Rule 두 구분이 함께 출제된다.
+해설: "매일 새벽 2시"는 특정 시각·캘린더 기반이므로 `rate`(주기 간격)가 아니라 **`cron`**이 맞다(`rate(1 day)`는 "마지막 실행으로부터 24시간 후"라 기준 시각이 고정되지 않는다). 향후 수천~백만 개 스케줄·일회성 일정·세밀한 재시도가 필요하면 **EventBridge Scheduler**가 일반 Rule(schedule)보다 적합하다. cron vs rate, Scheduler vs Rule 두 구분이 함께 출제된다. A) `rate(1 day)`는 "마지막 실행으로부터 24시간"이라 기준 시각이 떠다녀 "정확히 새벽 2시"를 보장하지 못한다. C) 알람은 지표 임계값 기반이라 시각 스케줄러가 아니다. D) SQS 지연 큐의 최대 지연은 15분이라 24시간 주기 스케줄에 부적합하다.
 
 ---
 

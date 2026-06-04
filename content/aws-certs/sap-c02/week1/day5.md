@@ -119,10 +119,10 @@ Pro 시나리오를 풀 때 **3개 레이어 순서대로** 점검하면 빠진 
 
 **문제 1.** 한 회사가 100개 계정을 운영 중이다. 보안팀이 "production OU에서는 root user의 로그인 자체를 차단하고, MFA 없이 IAM 호출도 차단"하려 한다. 가장 적합한 방법은?
 
-A) 각 계정에서 root user 비밀번호 삭제
+A) 각 계정에서 root user 비밀번호를 삭제하고 액세스 키를 비활성화
 B) Organizations SCP로 production OU에 deny 정책 적용 (Condition: `aws:PrincipalType=Root`, `aws:MultiFactorAuthPresent=false`)
-C) Lambda로 모니터링 후 알람
-D) IAM Identity Center로 모든 사용자 통합
+C) Lambda로 root 로그인 이벤트를 모니터링 후 SNS 알람 발송
+D) IAM Identity Center로 모든 사용자를 통합하고 root 사용을 정책으로 금지
 
 **정답: B**
 해설: SCP는 root user에도 적용되는 유일한 가드레일. Condition으로 root 차단 + MFA 강제. A는 root 비밀번호는 삭제 불가(이메일로 복구 가능). C는 사후 탐지일 뿐 차단 아님. D는 SSO 도구일 뿐 root 차단 무관. Trade-off: Management 계정에는 SCP 적용 안 되므로 Management의 root는 별도 MFA·하드웨어 토큰·이메일 보호.
@@ -131,10 +131,10 @@ D) IAM Identity Center로 모든 사용자 통합
 
 **문제 2.** 한 글로벌 SaaS가 us-east-1에서 운영되며, eu-west-1로 확장한다. EU 사용자 데이터는 GDPR에 따라 EU에 머물러야 한다. 단일 코드베이스를 유지하면서 데이터 격리를 보장하려면?
 
-A) DynamoDB Global Table (양 리전 자동 복제)
-B) RDS Cross-Region Replica
+A) DynamoDB Global Table (양 리전 active-active 자동 복제)
+B) RDS Cross-Region Replica (us-east-1 마스터에서 eu-west-1로 복제)
 C) 리전별 독립 DB + Route 53 Geolocation + 인증 시점 리전 결정
-D) Aurora Global Database
+D) Aurora Global Database (primary us-east-1, secondary eu-west-1)
 
 **정답: C**
 해설: A·B·D는 모두 양 리전 간 데이터 복제 → GDPR 위반 가능성. C는 리전별 완전 격리, 인증 시점에 사용자가 어느 리전에 속하는지 결정해 JWT에 region claim 포함. 단일 코드베이스는 환경 변수·설정으로 처리. 2020년 EU Schrems II 판결로 미국 클라우드 사용에 제약이 생겼고, 이런 시나리오에서 "데이터 절대 안 나간다"는 보장이 가장 중요.
@@ -143,10 +143,10 @@ D) Aurora Global Database
 
 **문제 3.** 한 핀테크가 PCI-DSS 인증을 위해 모든 EC2가 us-east-1 외 리전을 사용하지 못하도록 강제하려 한다. 운영 부담을 최소화하려면?
 
-A) AWS Config Custom Rule을 모든 계정에 배포
+A) AWS Config Custom Rule을 모든 계정에 배포해 비인가 리전 리소스를 탐지
 B) Organizations SCP에 `aws:RequestedRegion ≠ us-east-1`이면 모든 액션 deny + 글로벌 서비스(IAM, Org, Route53) NotAction 예외
-C) Lambda 모니터링으로 비인가 리전 리소스 삭제
-D) 각 계정 IAM 정책 일일이 수정
+C) Lambda를 EventBridge로 트리거해 비인가 리전 리소스를 자동 삭제
+D) 각 계정 IAM 정책에 리전 조건을 일일이 추가하고 신규 계정에도 수동 반영
 
 **정답: B**
 해설: SCP는 Organizations 한 번 적용으로 모든 계정·root까지 강제. 새 계정 추가 시 자동 적용. 글로벌 서비스는 us-east-1로 라우팅되지만 SCP에서 `RequestedRegion`이 글로벌인 경우가 있어 NotAction 예외 필수. C는 사후 처리라 잠시 노출 위험. A는 탐지일 뿐 차단 아님.
@@ -155,10 +155,10 @@ D) 각 계정 IAM 정책 일일이 수정
 
 **문제 4.** 한 회사가 EC2에서 S3에 접근한다. 트래픽이 NAT Gateway를 거쳐 월 $30,000 비용. PCI-DSS 감사에서도 "S3 트래픽이 인터넷을 거친다"고 지적. 어떻게 해결하는가?
 
-A) Interface Endpoint 추가
+A) S3용 Interface Endpoint(PrivateLink)를 AZ마다 추가
 B) Gateway Endpoint 추가 + Route Table prefix list 자동 등록
-C) VPC Peering으로 S3 연결
-D) Direct Connect
+C) VPC Peering으로 S3를 사설 경로로 연결
+D) Direct Connect Public VIF로 S3에 전용 회선 연결
 
 **정답: B**
 해설: S3·DynamoDB는 Gateway Endpoint 무료 + Route Table에 prefix list 자동 등록. 트래픽이 IGW/NAT 없이 사설 경로. 비용 + 보안 동시 해결. Interface Endpoint(A)도 동작은 하지만 시간당 비용 + 데이터 처리 비용 발생, S3에는 Gateway가 표준. Trade-off: Gateway Endpoint는 cross-region S3 접근 불가, 같은 리전만.
@@ -167,10 +167,10 @@ D) Direct Connect
 
 **문제 5.** 한 미디어 회사가 글로벌 게임 매치메이킹(WebSocket)을 운영한다. 정적 IP를 외부에 노출, 리전 장애 시 수 초 내 페일오버, 초당 100만 패킷 처리. 적합한 조합은?
 
-A) ALB + Route 53 Failover
-B) NLB + Route 53 Health Check
+A) ALB + Route 53 Failover 라우팅 (Health Check 기반 DNS 페일오버)
+B) NLB + Route 53 Health Check (latency 라우팅으로 최근접 리전 선택)
 C) Global Accelerator + NLB (Multi-Region)
-D) CloudFront + Lambda@Edge
+D) CloudFront + Lambda@Edge (엣지에서 WebSocket 종단 처리)
 
 **정답: C**
 해설: GA는 BGP Anycast 정적 IP 2개 제공, 리전 장애 시 DNS 캐시 우회 수 초 내 페일오버. NLB는 L4·초당 수백만 패킷·정적 IP·WebSocket 모두 만족. A·B는 DNS TTL 캐시로 페일오버 분 단위. D는 L7 HTTP만.
@@ -179,10 +179,10 @@ D) CloudFront + Lambda@Edge
 
 **문제 6.** 한 회사가 GitHub Actions에서 AWS Lambda에 배포한다. 보안팀이 "long-lived AWS Access Key를 GitHub Secrets에 저장 금지"라고 요구한다. 어떻게 해결하는가?
 
-A) IAM User + 90일 키 회전 자동화
+A) 전용 IAM User를 만들고 90일 키 회전을 Lambda로 자동화
 B) AWS OIDC Provider 등록 + GitHub Actions에서 AssumeRoleWithWebIdentity, Trust Policy의 sub claim으로 repo·branch 제한
-C) S3 ZIP 업로드 후 Lambda 트리거
-D) CodePipeline으로 배포
+C) GitHub Actions가 S3에 ZIP 업로드 후 S3 이벤트로 Lambda 배포 트리거
+D) CodePipeline + CodeBuild로 GitHub 소스를 받아 Lambda에 배포
 
 **정답: B**
 해설: GitHub은 2021년부터 OIDC 지원. AWS OIDC Provider 한 번 등록 후 GitHub Actions가 매번 OIDC id_token으로 임시 자격증명 발급. Long-lived key 불필요. Trust Policy의 Condition으로 `sub`(예: `repo:org/repo:ref:refs/heads/main`)을 제한해 다른 repo·branch가 같은 Role assume 못 하게 막는 게 필수. 그렇지 않으면 confused deputy 변종 공격 가능.
@@ -191,10 +191,10 @@ D) CodePipeline으로 배포
 
 **문제 7.** 한 회사가 야간 ETL 배치(stateless, 재시작 가능)에 EC2 100대를 4시간 운영한다. 비용 최소화 + SLA(다음날 09시 완료) 만족.
 
-A) 100대 On-Demand
-B) 100대 3-year RI
+A) 100대 On-Demand로 SLA 보장 우선
+B) 100대 3-year Standard RI로 시간당 단가 최소화
 C) Spot Fleet with diverse instance families (capacity-optimized) + price-capacity-optimized
-D) 50대 RI + 50대 Spot
+D) 50대 3-year RI baseline + 50대 단일 패밀리 Spot 혼합
 
 **정답: C**
 해설: 4시간만 사용 → RI 손해. Stateless + 재시작 가능 → Spot 적합. 다양한 패밀리(c5, c5n, c5a, m5) 섞으면 단일 패밀리 capacity 부족 위험 분산. `price-capacity-optimized`(2022 추가, 권장)는 가격과 capacity를 동시 최적화.
@@ -205,8 +205,8 @@ D) 50대 RI + 50대 Spot
 
 A) 백엔드에 Passport.js + JWT 검증 구현
 B) ALB의 Cognito 통합 활성화 + X-Amzn-Oidc-Data 헤더 수신
-C) API Gateway + Lambda Authorizer
-D) CloudFront + Lambda@Edge
+C) API Gateway + Lambda Authorizer로 토큰 검증 후 백엔드 전달
+D) CloudFront + Lambda@Edge에서 JWT 검증 후 오리진 포워딩
 
 **정답: B**
 해설: ALB가 직접 OIDC/Cognito 인증 처리, JWT를 X-Amzn-Oidc-Data 헤더로 백엔드 전달. 백엔드 코드 거의 수정 불필요. HTTP 기반이면 최적. gRPC·WebSocket은 별도 처리.
@@ -215,10 +215,10 @@ D) CloudFront + Lambda@Edge
 
 **문제 9.** 한 회사가 RDS MySQL을 us-east-1에서 운영하며, ap-northeast-2에 DR을 구축하려 한다. RPO 1분 이내, RTO 5분 이내. 가장 적합한 솔루션은?
 
-A) RDS Multi-AZ
+A) RDS Multi-AZ (동기 standby로 단일 리전 내 페일오버)
 B) RDS Cross-Region Read Replica + 수동 promote
 C) Aurora Global Database (RPO < 1초, RTO ~1분)
-D) DMS continuous replication
+D) DMS continuous replication으로 타 리전 인스턴스에 지속 복제
 
 **정답: C**
 해설: Aurora Global Database는 RPO < 1초, RTO ~1분 (managed failover). 리전 간 storage-level async replication을 사용하지만 latency가 매우 낮다. RDS Cross-Region Read Replica(B)는 RPO 수 초~수십 초, RTO 수 분~수십 분(수동 promote 필요). A는 같은 리전이라 DR 아님. D는 마이그레이션 도구. Trade-off: Aurora Global은 비용이 RDS보다 30% 이상 비쌈, 단일 리전 워크로드에는 과한 선택.
@@ -227,10 +227,10 @@ D) DMS continuous replication
 
 **문제 10.** 한 SaaS가 자기 서비스를 고객 VPC 안에서 사설 IP로 사용 가능하게 하려고 한다. 표준 패턴은?
 
-A) Cross-Region VPC Peering
-B) Transit Gateway 공유
+A) 고객 VPC와 SaaS VPC 간 Cross-Region VPC Peering
+B) Transit Gateway를 RAM으로 고객과 공유해 라우팅 연결
 C) PrivateLink + NLB + VPC Endpoint Service
-D) Direct Connect Public VIF
+D) Direct Connect Public VIF로 SaaS 엔드포인트 노출
 
 **정답: C**
 해설: PrivateLink는 SaaS가 NLB 뒤 서비스를 Endpoint Service로 등록, 고객은 Interface Endpoint로 접근. 데이터 양방향 노출 없음. Snowflake, MongoDB Atlas, Datadog 등 모두 채택. A·B는 양방향 라우팅이라 SaaS 보안 모델 부적합 — 고객 VPC가 SaaS VPC를 보지 못해야 한다.
@@ -239,10 +239,10 @@ D) Direct Connect Public VIF
 
 **문제 11.** 한 회사가 200명 직원의 AD를 가지고 있다. AWS Organizations 80개 계정에 SSO로 접근. 직원 퇴사 시 자동으로 모든 계정에서 권한 회수. 가장 적합한 솔루션은?
 
-A) 각 계정 IAM User + 수동 관리
+A) 각 계정에 IAM User를 만들고 퇴사 시 수동으로 일괄 비활성화
 B) IAM Identity Center + AD Connector + SCIM 자동 동기화
-C) 각 계정 SAML IdP
-D) Cognito User Pool
+C) 각 계정에 SAML IdP를 등록하고 AD federation으로 연결
+D) Cognito User Pool에 직원을 통합하고 그룹으로 계정 권한 매핑
 
 **정답: B**
 해설: IAM Identity Center가 Organizations와 통합. AD Connector로 기존 AD를 ID 소스로 사용. SCIM(RFC 7644)으로 AD 변경 시 AWS 자동 동기화. 직원 퇴사 즉시 모든 계정에서 권한 회수. Permission Set으로 일괄 정책 배포.
@@ -251,10 +251,10 @@ D) Cognito User Pool
 
 **문제 12.** Multi-AZ에 Private Subnet 3개를 두고 외부 API를 호출한다. 가용성을 확보하면서 비용을 최소화하려면 NAT Gateway를 어떻게 배치하는가?
 
-A) 단일 NAT Gateway (가장 저렴)
+A) 단일 NAT Gateway를 한 AZ에 두고 3개 서브넷이 공유 (가장 저렴)
 B) 각 AZ에 NAT Gateway 1개씩 (총 3개), 각 Private Subnet은 자기 AZ NAT 사용
-C) NAT Instance 직접 운영
-D) IGW로 직접 연결
+C) AZ마다 NAT Instance를 EC2로 직접 운영하며 ASG로 자가 복구
+D) Private Subnet을 IGW에 직접 라우팅해 outbound 처리
 
 **정답: B**
 해설: NAT Gateway는 AZ-local. 단일 NAT는 그 AZ 장애 시 모든 outbound 끊김. AZ별 NAT 배치 + 각 Private Subnet은 자기 AZ NAT 사용. 비용 추가는 시간당 $0.045 × 3 = 월 $97. Trade-off: dev 환경은 단일 NAT 허용. NAT Gateway 데이터 처리 비용($0.045/GB)이 가장 큰 비용원이므로 S3·DynamoDB는 Gateway Endpoint로 우회.

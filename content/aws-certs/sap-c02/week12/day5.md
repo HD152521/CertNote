@@ -161,13 +161,13 @@ SAP 시험의 비용 시나리오는 거의 항상 멀티 계정 전제다. 핵�
 
 **문제 1.** 한 회사가 EC2·Fargate·Lambda를 모두 쓰고 인스턴스 family를 워크로드에 따라 자주 바꾼다. 1년 약정으로 최대한 넓게 할인을 적용하려 한다. 가장 적합한 것은?
 
-A) Standard RI (m5 family)
+A) Standard RI (m5 family 3년 All Upfront)
 
-B) EC2 Instance Savings Plans
+B) EC2 Instance Savings Plans (특정 리전·family 고정)
 
 C) Compute Savings Plans
 
-D) Spot Fleet
+D) Spot Fleet (capacity-optimized, 다양한 풀)
 
 **정답: C**
 해설: Compute SP는 EC2·Fargate·Lambda를 모두 포괄하고 리전·OS·family·tenancy 무관하게 시간당 약정 금액 내 사용에 자동으로 할인을 적용한다. family를 자주 바꾸고 세 컴퓨팅을 통합 할인해야 하는 요건에 정확히 맞는다. A는 family에 묶이고 Fargate·Lambda를 못 덮는다. B는 특정 리전·family 고정이라 "family를 자주 바꾼다"와 충돌한다. D는 중단 위험이 있어 "약정 기반 안정 할인"과 다르다. 함정: Fargate·Lambda 포함은 오직 Compute SP만 가능하다.
@@ -191,13 +191,13 @@ D) SP는 통합 결제에서 공유 안 됨 — 계정별로 재구매
 
 **문제 3.** 야간에만 도는 분산 데이터 처리 잡으로, 중단되어도 재시작 가능하고 비용을 최대로 줄이려 한다. 여러 인스턴스 타입을 쓸 수 있다. 가장 적합한 것은?
 
-A) On-Demand 단일 타입
+A) On-Demand 단일 타입으로 야간에만 기동
 
-B) Standard RI 3년
+B) Standard RI 3년 약정으로 시간당 단가 최소화
 
 C) Spot Fleet, capacity-optimized 전략 + 다양한 인스턴스 풀
 
-D) Compute Savings Plans
+D) Compute Savings Plans 1년 약정으로 안정 할인 적용
 
 **정답: C**
 해설: 중단 허용 + 최대 절감은 Spot의 시그널이며, 안정성의 핵심은 풀 다양화다. capacity-optimized로 회수 위험이 가장 낮은 풀을 고르고 여러 타입을 묶으면 한 풀이 회수돼도 다른 풀로 대체돼 회수율이 낮아진다(분산 투자 원리). A는 정가다. B는 야간만 도는 워크로드에 24h 약정은 낭비다. D는 할인이 Spot보다 작고 약정 부담이 있다. 함정: Spot 안정성은 "최저가(lowest-price)"가 아니라 capacity-optimized + 풀 다양화다.
@@ -206,13 +206,13 @@ D) Compute Savings Plans
 
 **문제 4.** Private subnet의 Lambda·ECS Task가 S3와 DynamoDB에 접근하는데 NAT Gateway 처리량 비용이 매우 크다. 비용을 0에 가깝게 만들려면?
 
-A) Interface Endpoint(PrivateLink)
+A) S3·DynamoDB용 Interface Endpoint(PrivateLink)를 AZ마다 배치
 
 B) S3·DynamoDB Gateway Endpoint
 
-C) NAT Gateway 인스턴스 수 증설
+C) NAT Gateway를 AZ별로 증설해 처리량을 분산
 
-D) Internet Gateway 직접 연결
+D) Private subnet을 Internet Gateway에 직접 라우팅
 
 **정답: B**
 해설: S3와 DynamoDB는 **Gateway Endpoint**로 라우팅하면 NAT를 우회하고 추가 시간 요금도 없어 해당 트래픽 비용이 사실상 0이 된다. A(Interface Endpoint)는 SQS·KMS 등 다른 서비스용이고 시간당 요금이 든다. C는 비용을 오히려 늘린다. D는 private subnet 격리를 깨고 보안에 위배된다. 함정: S3·DynamoDB는 Gateway Endpoint(무료), 그 외 AWS 서비스는 Interface Endpoint(유료)로 구분한다.
@@ -221,13 +221,13 @@ D) Internet Gateway 직접 연결
 
 **문제 5.** 데이터 전송 비용이 전체의 25%로 크지만 Cost Explorer로는 어떤 트래픽인지 분해되지 않는다. 근본 원인을 특정하려면?
 
-A) Budgets로 데이터 전송 예산을 설정
+A) Budgets로 데이터 전송 항목에 예산·알림을 설정
 
 B) CUR을 Athena로 쿼리해 UsageType별로 분해
 
-C) Trusted Advisor 실행
+C) Trusted Advisor를 실행해 비용 카테고리 점검
 
-D) Cost Explorer 필터를 더 좁힘
+D) Cost Explorer 필터를 서비스·UsageType으로 더 좁힘
 
 **정답: B**
 해설: Cost Explorer는 "데이터 전송"을 뭉뚱그려 Cross-AZ·인터넷 egress·Cross-Region을 구분 못 한다. CUR의 lineItem/UsageType 컬럼을 Athena로 쿼리하면 DataTransfer-Regional-Bytes(Cross-AZ), DataTransfer-Out-Bytes(egress), NatGateway-Bytes 등으로 분해해 원인을 특정한다. A는 통제, C는 룰 점검, D는 세밀도 한계로 컬럼 단위 분해 불가. 함정: 비용 근본 원인 분석은 CUR 레벨에서만 가능하다.
@@ -236,13 +236,13 @@ D) Cost Explorer 필터를 더 좁힘
 
 **문제 6.** 글로벌 사용자에게 S3에 저장된 정적 웹 콘텐츠를 제공하면서 egress 비용과 지연을 최소화하려 한다. 가장 적합한 것은?
 
-A) S3 버킷을 퍼블릭으로 공개 + Internet Gateway
+A) S3 버킷을 퍼블릭으로 공개하고 Internet Gateway로 직접 egress
 
 B) CloudFront + S3 (+ Origin Shield)
 
-C) S3 Transfer Acceleration
+C) S3 Transfer Acceleration으로 엣지 경유 전송 가속
 
-D) Global Accelerator
+D) Global Accelerator로 정적 IP·Anycast 경로 제공
 
 **정답: B**
 해설: CloudFront를 S3 앞에 두면 S3→CloudFront 전송이 무료라 egress가 줄고, 엣지 캐싱으로 오리진 부하와 글로벌 지연이 감소한다. Origin Shield는 추가 캐싱 레이어로 오리진 hit을 더 줄인다. A는 egress 비용↑·캐싱 없음. C(Transfer Acceleration)는 업로드 가속용. D(Global Accelerator)는 정적 IP·비HTTP 가속용으로 정적 콘텐츠 캐싱 배포와 목적이 다르다. 함정: "글로벌 정적 콘텐츠 + 비용·지연↓"은 CloudFront+S3다.
@@ -251,13 +251,13 @@ D) Global Accelerator
 
 **문제 7.** 개발 계정의 월 비용이 임계를 넘으면 신규 EC2 생성을 즉시 자동 차단하고 싶다. 다만 청구 지연과 무관하게 절대로 임계를 못 넘게(하드 캡) 보장도 필요하다. 가장 적합한 조합은?
 
-A) CloudWatch Alarm 알림만
+A) CloudWatch Billing Alarm으로 임계 초과 시 SNS 알림만 발송
 
 B) Budgets Action(IAM/SCP Deny)로 사후 차단 + 예방형 SCP/Service Quotas로 리소스 한도 자체를 사전 제한
 
-C) Lambda 일일 스케줄로 비용 확인 후 종료
+C) Lambda 일일 스케줄로 비용을 확인 후 초과 시 인스턴스 종료
 
-D) Cost Anomaly Detection
+D) Cost Anomaly Detection으로 ML 기반 이상 비용을 탐지·알림
 
 **정답: B**
 해설: Budgets Action은 임계 초과 시 IAM/SCP Deny를 자동 적용해 신규 생성을 차단한다. 그러나 청구 데이터 갱신 지연(최종 일관성) 때문에 Budgets만으로는 하드 캡을 보장 못 하므로, 예방형 SCP(특정 인스턴스 타입·리전·서비스 금지)나 Service Quotas로 사전에 상한을 둬 보완한다. A는 알림만, C는 사후 배치라 실시간 아님, D는 탐지만. 함정: "자동 차단"은 Budgets Action이지만 "절대 초과 불가"가 강조되면 예방형 통제를 병행한다.
@@ -266,13 +266,13 @@ D) Cost Anomaly Detection
 
 **문제 8.** Auto Scaling Group으로 운영되는 인스턴스를 Compute Optimizer 권고에 따라 더 작고 최신 세대 타입으로 교체하려 한다. 올바른 방법은?
 
-A) 각 인스턴스를 stop → ModifyInstanceAttribute → start
+A) 각 인스턴스를 stop → ModifyInstanceAttribute로 타입 변경 → start
 
 B) Launch Template 새 버전에 권장 타입을 넣고 Instance Refresh로 롤링 교체
 
-C) ASG를 삭제 후 새로 생성
+C) ASG를 삭제 후 권장 타입으로 새 ASG를 생성하고 트래픽 전환
 
-D) 인스턴스를 직접 종료하면 ASG가 새 타입으로 띄운다
+D) 인스턴스를 직접 종료하면 ASG가 새 타입으로 자동 재기동한다
 
 **정답: B**
 해설: ASG에서 인스턴스를 직접 stop/modify하면 헬스 체크 실패로 종료·재생성되며 옛 Launch Template의 기존 타입으로 다시 뜬다. 올바른 방법은 Launch Template 새 버전에 권장 타입을 넣고 Instance Refresh로 MinHealthyPercentage를 지키며 무중단에 가깝게 롤링 교체하는 것이다. A는 ASG가 간섭해 실패, C는 과도하게 파괴적, D는 옛 타입으로 재생성. 함정: ASG rightsizing은 직접 modify가 아니라 Launch Template + Instance Refresh다.
@@ -281,13 +281,13 @@ D) 인스턴스를 직접 종료하면 ASG가 새 타입으로 띄운다
 
 **문제 9.** Compute Optimizer가 EC2에 대해 CPU·네트워크 권고는 주는데 메모리 권고만 전혀 없다. 원인은?
 
-A) Compute Optimizer는 메모리를 지원하지 않는다
+A) Compute Optimizer는 메모리 권고 자체를 지원하지 않는다
 
 B) 게스트 OS에 CloudWatch Agent가 없어 메모리 메트릭이 수집되지 않는다
 
-C) 권한 부족으로 모든 권고가 차단됐다
+C) IAM 권한 부족으로 Compute Optimizer의 모든 권고가 차단됐다
 
-D) 14일이 지나지 않았다
+D) lookback 기간 14일이 아직 지나지 않아 권고가 보류 중이다
 
 **정답: B**
 해설: 하이퍼바이저는 게스트 OS 내부 메모리를 볼 수 없으므로(가상화 시맨틱 갭) 메모리 메트릭은 CW Agent를 설치해야만 수집된다. Agent가 없으면 Nitro가 자동 계측하는 CPU·네트워크·디스크 권고는 나오지만 메모리 권고만 빠진다. A는 틀림(CO는 메모리 권고 제공). C라면 권고 자체가 안 나온다. D도 그렇다면 CPU 권고도 없어야 한다. 함정: "메모리 권고만 부재"는 거의 항상 CW Agent 미설치다.
@@ -296,13 +296,13 @@ D) 14일이 지나지 않았다
 
 **문제 10.** 50개 멤버 계정의 Organization에서 전체 컴퓨팅 비용을 최소화하면서 약정 활용률을 극대화하려 한다. 가장 적합한 약정 구매 전략은?
 
-A) 각 멤버 계정이 자기 사용량에 맞춰 개별 SP 구매
+A) 각 멤버 계정이 자기 사용량에 맞춰 개별적으로 SP를 구매·관리
 
 B) 관리 계정(또는 전용 결제 계정)에서 Org 전체 baseline에 맞춰 SP를 중앙 구매하고 공유 활성화
 
-C) 멤버 계정마다 Standard RI 구매
+C) 멤버 계정마다 자기 family에 맞춰 Standard RI를 개별 구매
 
-D) 약정 없이 On-Demand만 사용
+D) 약정 없이 On-Demand만 사용하고 Cost Explorer로 사후 분석
 
 **정답: B**
 해설: 통합 결제에서 SP·RI 할인은 공유가 켜지면 Org 전체에 적용된다. 여러 워크로드를 한 풀로 합치면 변동성이 상쇄돼(대수의 법칙) 사용량 하한에 타이트하게 약정해도 안전하고, 한 계정이 한가할 때 남는 약정을 바쁜 계정이 흡수해 활용률이 오른다. A·C는 계정별 과약정으로 빈 약정이 생긴다. D는 할인을 포기한다. 함정: "멤버 계정마다 개별 구매"는 Pro 시험의 전형적 오답이며, 중앙 통합 구매·공유가 정답이다.
@@ -311,13 +311,13 @@ D) 약정 없이 On-Demand만 사용
 
 **문제 11.** 한 미디어 기업이 m4 Standard RI를 대량 보유한 채 워크로드를 m6i로 현대화하려다, 옛 RI는 놀고 새 인스턴스는 On-Demand로 청구되는 상황에 빠졌다. 향후 같은 문제를 막으려면 신규 약정을 무엇으로 해야 하나?
 
-A) 추가 m4/m5 Standard RI 구매
+A) 추가 m4/m5 Standard RI를 구매해 기존 약정에 맞춤
 
 B) Compute Savings Plans(또는 Convertible RI)
 
-C) Zonal RI
+C) Zonal RI로 특정 AZ에 용량을 예약
 
-D) On-Demand로 전환
+D) 약정을 모두 해지하고 On-Demand로 전환
 
 **정답: B**
 해설: family 변경(m4→m6i)이 예상되면 family에 결합되지 않는 약정이 필요하다. Compute SP는 family·리전·OS 무관하게 자동 매칭돼 현대화 후에도 약정이 유효하다(Convertible RI도 교환으로 가능하나 절차가 번거로워 Compute SP가 운영상 우월). A는 같은 함정을 반복한다. C는 AZ 고정 용량 목적이지 family 유연성과 무관하다. D는 할인을 포기한다. 함정: 현대화·기술 변화가 예상되는 워크로드에 family 결합 약정(Standard RI)을 거는 것은 안티패턴이다.
@@ -326,13 +326,13 @@ D) On-Demand로 전환
 
 **문제 12.** S3 비용이 설명 없이 계속 증가한다. 콘솔의 객체 목록으로는 원인이 안 보인다. 가장 의심해야 할 숨은 비용과 조치는?
 
-A) Glacier 요금 — Standard로 전환
+A) Glacier 검색·복원 요금 누적 — 객체를 S3 Standard로 전환
 
 B) 실패한 Incomplete Multipart Upload 조각 누적 — Storage Lens로 확인 후 Lifecycle rule(예: 7일 abort)로 정리
 
-C) CloudFront 캐시 — 캐시 비활성화
+C) CloudFront 엣지 캐시 저장 비용 — 캐시를 비활성화
 
-D) Cost Explorer 버그 — 지원 티켓
+D) Cost Explorer 집계 버그 — 지원 티켓으로 정정 요청
 
 **정답: B**
 해설: 멀티파트 업로드가 중간에 실패하면 partial chunk가 계속 저장돼 일반 목록에는 안 보이게 과금된다. 대규모 환경에서 수십 TB까지 누적될 수 있다. S3 Storage Lens로 incomplete multipart 누적량을 확인하고 Lifecycle rule로 일정 기간 후 자동 abort·삭제하는 것이 표준 조치다(오래된 버전도 함께 점검). A·C·D는 원인이 아니다. 함정: "보이지 않는 S3 저장 비용"의 1순위는 incomplete multipart upload와 미정리 버전이다.
