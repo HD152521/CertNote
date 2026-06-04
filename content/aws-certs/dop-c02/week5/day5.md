@@ -74,10 +74,10 @@ CDK Pipelines → self-mutating, crossAccountKeys 자동화, Wave 병렬 배포
 
 **문제 1.** Tooling 계정의 CodePipeline이 Prod 계정에 ECS 서비스를 배포한다. "배포 Action이 IAM Policy 에러 없이 시작됐는데, Artifact 다운로드 단계에서 다음 오류가 발생한다: `Client error: KMS key access denied when decrypting artifact`". 원인과 해결책은?
 
-A) Pipeline Service Role에 sts:AssumeRole 권한이 없다 → Trust Policy 수정  
-B) S3 버킷 정책에 Prod 계정 Role이 없다 → S3 버킷 정책에 Principal 추가  
+A) Pipeline Service Role에 sts:AssumeRole 권한이 없다 → Spoke Role ARN에 대한 AssumeRole을 허용하는 Identity Policy를 Pipeline Service Role에 추가  
+B) Artifact S3 버킷 정책에 Prod 계정 CrossAccountDeployRole이 Principal로 없다 → 버킷 정책에 GetObject/PutObject 허용 Principal 추가  
 C) Tooling 계정의 KMS Key Policy에 Prod 계정 CrossAccountDeployRole에 대한 kms:Decrypt 허용이 없다 → KMS Key Policy 수정  
-D) ECS 클러스터가 올바른 VPC에 없다 → VPC 재구성  
+D) ECS Task Execution Role과 배포 대상 클러스터의 Security Group이 같은 VPC/서브넷에 정렬되지 않았다 → 네트워킹 재구성  
 
 **정답: C**  
 해설: "배포 Action이 시작됐다"는 것은 AssumeRole(A)과 S3 버킷 정책(B)은 정상이라는 뜻이다. Action이 시작된 후 Artifact 복호화 단계에서 실패하는 것은 KMS Decrypt 권한 부재의 전형적 증상이다. S3 GetObject는 성공해도 KMS Decrypt 없으면 암호화된 내용을 열 수 없다. 해결: Tooling 계정 KMS Key Policy에 Prod 계정 CrossAccountDeployRole을 Principal로 추가하고 `kms:Decrypt`, `kms:DescribeKey` 권한 허용. VPC(D)는 이 에러와 무관하다.
@@ -146,10 +146,10 @@ D) Lambda Invoke Action으로 환경을 확인하고 prod인 경우에만 Manual
 
 **문제 7.** 현재 Pipeline이 SUPERSEDED 모드로 동작 중이다. 10개의 commit이 빠르게 push되면 어떤 현상이 발생하는가?
 
-A) 10개 모두 빌드되어 10번 배포된다  
-B) 마지막 push가 진행 중인 이전 실행을 취소하고 자신이 실행된다. 결과적으로 마지막 commit만 실행 완료된다  
-C) 10개가 큐에 쌓여 순서대로 실행된다  
-D) 동시에 10개가 모두 실행된다  
+A) 10개 commit이 각각 별도 실행을 만들어 순서를 보장하며 10번 모두 빌드·배포된다 (QUEUED 모드의 동작)  
+B) 마지막 push가 진행 중인 이전 실행을 ABANDONED 상태로 취소하고 자신이 실행된다. 결과적으로 마지막 commit만 실행 완료된다  
+C) 10개가 큐에 순서대로 쌓여 하나씩 직렬로 실행되며 모든 commit 이력이 보존된다 (QUEUED 모드의 동작)  
+D) 동시에 10개 실행이 병렬로 시작되어 독립적으로 완료된다 (PARALLEL 모드의 동작, 독립 대상 필요)  
 
 **정답: B**  
 해설: SUPERSEDED(기본)는 새 실행이 시작될 때 현재 진행 중인 실행을 ABANDONED 상태로 만들고 자신이 실행권을 가져간다. 10개의 commit이 빠르게 push되면 1번 실행 → 2번이 1번 취소 → 3번이 2번 취소 → ... → 10번이 9번 취소. 최종적으로 10번(마지막)만 완료된다. "가장 최근 상태만 중요하다"는 가정이 맞는 fast-moving 브랜치에 적합하다. 중간 commit들의 배포 이력이 필요한 경우(감사, 규정 준수)에는 QUEUED를 사용해야 한다.
@@ -194,10 +194,10 @@ D) GitHub Actions에서 SNS Topic에 메시지 publish → Lambda가 start-pipel
 
 **문제 11.** StackSets의 SERVICE_MANAGED 모드로 50개 계정에 배포 중 다음 에러가 발생한다: "You must be an administrator of an Organization to use this operation." 원인은?
 
-A) StackSet 템플릿에 오류가 있다  
+A) StackSet 템플릿에 IAM CAPABILITY_NAMED_IAM 미지정 등 검증 오류가 있어 Organizations 권한 검사 이전에 실패한다  
 B) SERVICE_MANAGED StackSet은 Organizations 관리 계정(Management Account) 또는 Delegated Admin 계정에서만 실행할 수 있는데, 현재 실행 계정이 이 중 어느 쪽도 아니다  
-C) 대상 계정이 Organizations에 속하지 않는다  
-D) StackSet의 MaxConcurrentPercentage가 너무 높다  
+C) 대상 계정이 Organizations에 속하지 않아 trusted access가 활성화되지 않았고, StackSets와 Organizations 간 연동이 끊겨 있다  
+D) StackSet의 MaxConcurrentPercentage가 너무 높아 동시 배포 한도를 초과하며 권한 오류로 표면화된다  
 
 **정답: B**  
 해설: SERVICE_MANAGED StackSet은 AWS Organizations와 통합되어 동작한다. 이 모드는 Organizations 관리 계정(Management Account) 또는 Organizations이 지정한 Delegated Admin 계정에서만 사용 가능하다. 일반 멤버 계정에서 SERVICE_MANAGED StackSet을 생성하거나 작업하려 하면 이 오류가 발생한다. SELF_MANAGED 모드는 Organizations와 독립적이며 어느 계정에서도 사용 가능하지만 대상 계정마다 AWSCloudFormationStackSetExecutionRole을 수동 생성해야 한다.

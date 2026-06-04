@@ -242,10 +242,10 @@ D) API Gateway + Lambda@Edge
 
 **문제 5.** 한 금융 회사가 Aurora Global Database(Primary: us-east-1, Secondary: ap-northeast-2)의 Managed Planned Failover를 실행했다. ap-northeast-2가 새 Primary가 됐다. 이 과정에서 데이터 손실이 발생했는가?
 
-A) 예. Managed Planned Failover도 비동기 복제라 Lag만큼 손실된다
+A) 예. Managed Planned Failover도 결국 비동기 복제 기반이라 전환 시점의 Replication Lag(1초 미만)만큼 데이터가 손실된다
 B) 아니오. Managed Planned Failover는 Secondary가 완전 동기화될 때까지 기다리고 전환하므로 데이터 손실이 없다
-C) 예. 항상 1초 미만의 데이터 손실이 발생한다
-D) 전환 자체가 실패해 다시 시도해야 한다
+C) 예. Aurora Storage Layer 특성상 항상 1초 미만의 데이터 손실(RPO ~1초)이 고정적으로 발생한다
+D) 전환 자체가 진행 중 트랜잭션 충돌로 실패해, Secondary를 수동 promote한 뒤 재시도해야 한다
 
 **정답: B**
 해설: Aurora Global Database의 Managed Planned Failover는 Aurora가 Secondary를 Primary와 완전히 동기화한 후 Primary를 강등하고 Secondary를 승격한다. RPO = 0, 데이터 손실 없음. 반면 Unplanned Failover(재해 상황, Primary 갑자기 죽음)는 Replication Lag만큼 데이터 손실이 발생할 수 있다. 이 차이가 시험에서 자주 출제된다.
@@ -266,10 +266,10 @@ D) Reserved Instances (3년 All Upfront)
 
 **문제 7.** CloudFront Origin Failover와 Route 53 Failover의 결정적 차이는?
 
-A) CloudFront Origin Failover는 리전 간 전환, Route 53 Failover는 동일 리전 내 전환
+A) CloudFront Origin Failover는 리전 간 글로벌 전환을 담당하고, Route 53 Failover는 동일 리전 내 AZ 간 전환만 담당한다
 B) CloudFront Origin Failover는 HTTP 응답 코드 기반 즉각 요청 재시도, Route 53 Failover는 DNS TTL 후 전환
-C) 두 서비스 모두 동일한 방식으로 작동한다
-D) Route 53 Failover가 더 빠르다
+C) 두 서비스 모두 Health Check 실패를 감지한 뒤 DNS 레코드를 변경하는 동일한 방식으로 작동한다
+D) Route 53 Failover가 클라이언트 DNS 캐시를 우회하므로 CloudFront Origin Failover보다 항상 빠르다
 
 **정답: B**
 해설: CloudFront Origin Failover는 Primary Origin에서 5xx 또는 타임아웃이 발생하면 그 요청을 즉시 Secondary Origin으로 재시도한다. 요청 단위, 밀리초 단위 전환. Route 53 Failover는 Health Check가 실패를 감지(수십 초)하고 DNS 레코드를 변경해도 클라이언트 TTL 캐시 때문에 완전 전환까지 수분이 걸린다. 동일 CloudFront Distribution 내에서의 Origin 전환이 필요하면 CloudFront Origin Failover, 리전 자체를 바꾸는 글로벌 전환이면 Route 53 Failover.
@@ -326,10 +326,10 @@ D) Pilot Light (DB 복제 상시 운영)
 
 **문제 12.** 한 회사가 DNSSEC을 Route 53 호스팅 존에 활성화했다. 활성화 후 일부 사용자에서 도메인이 SERVFAIL로 응답한다. 원인과 해결책은?
 
-A) Route 53이 DNSSEC을 지원하지 않는 사용자의 리졸버를 차단한다 — DNSSEC 비활성화
+A) Route 53이 DNSSEC을 지원하지 않는 오래된 리졸버를 자동 차단해 SERVFAIL을 유발한다 — 호스팅 존에서 DNSSEC을 비활성화하면 해결
 B) DS 레코드가 도메인 등록기관에 아직 등록되지 않았거나 잘못 등록됐다 — DS 레코드 정확히 등록 확인
-C) DNSSEC은 퍼블릭 도메인에만 지원된다 — Private Hosted Zone으로 전환
-D) KSK 만료 — 새 KSK로 교체
+C) DNSSEC은 Private Hosted Zone에서만 지원되며 퍼블릭 존에서는 SERVFAIL이 난다 — Private Hosted Zone으로 전환
+D) Route 53이 자동 관리하는 KSK가 만료돼 서명 검증이 깨졌다 — 콘솔에서 새 KSK로 수동 롤오버
 
 **정답: B**
 해설: DNSSEC SERVFAIL의 가장 흔한 원인은 DS 레코드 등록 문제다. DS 레코드가 부모 도메인(도메인 등록기관)에 등록되지 않으면 신뢰 체인이 끊어진다. DNSSEC 검증 리졸버는 서명을 검증하려는데 DS가 없으면 BOGUS로 분류하고 SERVFAIL을 반환한다. 활성화 직후 DS를 등록기관에 정확히 입력했는지 확인하고, `dig DS example.com @8.8.8.8`로 DS 레코드 전파 여부를 검증한다. DNSSEC을 지원하지 않는 리졸버(오래된 DNS 서버)는 DNSSEC 플래그를 무시하고 정상 응답을 받으므로 A는 틀렸다.

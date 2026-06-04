@@ -362,10 +362,10 @@ D) Aurora Multi-AZ를 3개 AZ로 확장하고 Route 53 latency 라우팅으로 �
 
 **문제 9.** 한 스타트업이 개발/스테이징 환경 RDS 비용을 줄이려 한다. 평일 9-18시만 사용하고 주말과 야간엔 사용하지 않는다. 가장 비용 효율적인 구성은?
 
-A) RDS Single-AZ db.t3.micro + 1년 All Upfront Reserved Instance로 약 38% 절감
-B) RDS Multi-AZ db.t3.medium + Storage Auto Scaling으로 야간 부하에 맞춰 자동 축소
+A) RDS Single-AZ db.t3.micro + 1년 All Upfront Reserved Instance로 약 38% 절감, 야간엔 인스턴스를 유지하되 storage를 gp3로 낮춰 비용 절감
+B) RDS Multi-AZ db.t3.medium + Storage Auto Scaling으로 야간 부하에 맞춰 자동 축소하고 read replica로 분석 쿼리 격리
 C) Aurora Serverless v2 (Min 0 ACU - auto-pause)
-D) EventBridge 스케줄로 평일 18시 인스턴스 stop, 9시 start하는 RDS Single-AZ 자동화
+D) EventBridge 스케줄로 평일 18시 인스턴스 stop, 9시 start하는 RDS Single-AZ 자동화 + stop 상태에서도 storage/backup 과금되는 점 감수
 
 **정답: C**
 

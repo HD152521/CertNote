@@ -124,10 +124,10 @@ D) PII를 별도 버킷으로 분리
 
 **문제 5.** 매일 페타바이트급 로그를 Spark 배치로 2~3시간 처리한다. 데이터는 S3에 영구 보관돼 있다. 비용을 최소화하면서 Spot 중단에도 잡이 안전하려면?
 
-A) 상시 EMR 클러스터를 On-Demand로 유지
+A) 상시 EMR 클러스터를 On-Demand로 유지해 잡 시작 지연을 없애고 안정성을 확보한다
 B) 잡 단위 transient EMR + Task를 Instance Fleets Spot 다중 타입으로, 끝나면 종료
-C) Master·Core·Task 전부 Spot
-D) 데이터를 Redshift에 적재 후 SQL 처리
+C) 비용 최소화를 위해 Master·Core·Task 노드를 전부 Spot Instance로 구성한다
+D) 데이터를 Redshift RA3에 COPY로 적재한 뒤 SQL 배치로 처리한다
 
 **정답: B**
 
@@ -163,10 +163,10 @@ D) EventBridge
 
 **문제 8.** ACID 트랜잭션, 스키마 진화, 시간여행(특정 과거 시점 조회)이 필요한 S3 데이터 레이크를 구축한다. 일반 Parquet로는 동시 쓰기·업데이트·삭제 일관성이 보장되지 않는다.
 
-A) Parquet 파일을 직접 관리
+A) 순수 Parquet 파일을 직접 관리하면서 애플리케이션 레벨 락으로 동시 쓰기를 제어한다
 B) Apache Iceberg / Hudi / Delta Lake 같은 트랜잭션 테이블 포맷
-C) CSV로 저장
-D) DynamoDB로 전환
+C) 스키마 진화 유연성을 위해 CSV로 저장하고 버전별 디렉터리로 시간여행을 흉내 낸다
+D) ACID가 필요하므로 데이터를 DynamoDB로 전환하고 PITR로 시간여행을 대체한다
 
 **정답: B**
 
@@ -189,10 +189,10 @@ D) EventBridge 규칙 체인
 
 **문제 10.** 순수 AWS 환경에서 이벤트 기반·간헐적 워크플로우를 만든다. 워크플로우가 안 돌 때 상시 비용이 발생하지 않기를 원하고, 다수 AWS 서비스를 세밀하게 통합해야 한다.
 
-A) MWAA
+A) MWAA로 Airflow DAG를 구성하고 워크플로우를 이벤트로 트리거한다
 B) Step Functions
-C) 상시 EC2 + cron
-D) Jenkins on EC2
+C) 상시 EC2에 cron을 걸어 워크플로우를 폴링 방식으로 실행한다
+D) EC2에 Jenkins를 설치해 파이프라인 잡으로 AWS 서비스를 호출한다
 
 **정답: B**
 
@@ -202,10 +202,10 @@ D) Jenkins on EC2
 
 **문제 11.** 데이터 레이크에 매주 새 테이블이 수십 개 추가된다. 추가될 때마다 수동 권한 부여가 부담이다. 새 테이블에 자동으로 권한이 적용되게 하려면?
 
-A) 테이블마다 IAM Policy 수동 추가
+A) 새 테이블이 생길 때마다 해당 테이블 ARN을 IAM Policy에 수동으로 추가한다
 B) Lake Formation LF Tag(태그 기반 접근 제어, ABAC)
-C) S3 객체 태그
-D) Glue Trigger로 권한 스크립트 실행
+C) S3 객체 태그로 분류하고 태그 조건 기반 버킷 정책으로 접근을 통제한다
+D) Glue Trigger로 새 테이블 감지 시 권한 부여 스크립트를 자동 실행한다
 
 **정답: B**
 

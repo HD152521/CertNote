@@ -208,9 +208,9 @@ D) `LambdaCanary10Percent5Minutes` + Manual Approval
 **문제 3.** ECS Fargate 기반 마이크로서비스를 CodeDeploy로 Blue/Green 배포하려 한다. 다음 중 **필수 사전 조건이 아닌 것**은?
 
 A) ECS service의 deploymentController.type을 CODE_DEPLOY로 설정
-B) ALB Target Group 2개 (Production + Test)
-C) appspec.json에 TaskDefinition과 LoadBalancerInfo 명시
-D) Fargate task에 CodeDeploy Agent 설치
+B) ALB Target Group 2개 (Production + Test)와 두 개의 listener(Production listener + Test listener) 구성
+C) appspec.json(또는 appspec.yaml)에 TaskDefinition과 LoadBalancerInfo, ContainerName/ContainerPort 명시
+D) Fargate task definition의 컨테이너에 CodeDeploy Agent sidecar를 추가하고 lifecycle hook 스크립트 마운트
 
 **정답: D**
 
@@ -325,10 +325,10 @@ D) EC2 user data에 비밀번호 하드코딩
 
 **문제 12.** CodeBuild로 빌드 중인 Java application의 단위 테스트 결과(JUnit XML)를 CodeBuild 콘솔에서 시각화해 보고 싶다. 필요한 buildspec.yml 설정은?
 
-A) `artifacts.files`에 XML 파일 추가
+A) `artifacts.files`에 XML 파일을 추가하고 `artifacts.name`으로 S3 산출물 경로를 지정
 B) `reports` 섹션에 file-format을 JUNITXML로 지정하고 파일 경로 명시
-C) `cache.paths`에 XML 경로 추가
-D) `env.exported-variables`에 JUNIT_XML 추가
+C) `cache.paths`에 XML 경로를 추가하고 cache.type을 LOCAL_CUSTOM_CACHE로 설정
+D) `env.exported-variables`에 JUNIT_XML을 추가하고 후속 stage에서 `#{BuildVariables.JUNIT_XML}`로 참조
 
 **정답: B**
 

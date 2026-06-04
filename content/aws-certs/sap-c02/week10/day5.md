@@ -166,13 +166,13 @@ D) OpenSearch + Lambda로 자체 RAG 구축
 
 **문제 2.** GPU 학습 비용을 최대한 줄이되 Spot 인스턴스가 회수돼도 며칠짜리 학습이 완료되어야 한다. 어떻게 구성하는가?
 
-A) Reserved Instance로 학습
+A) Reserved Instance로 학습 클러스터를 1년 약정해 시간당 단가를 낮추고 중단 없이 완주
 
 B) Managed Spot Training + Checkpoint(checkpoint_s3_uri)
 
-C) Compute Savings Plans
+C) Compute Savings Plans로 약정 할인을 받고 회수 시 On-Demand로 자동 폴백하도록 구성
 
-D) On-Demand 후 결과 캐싱
+D) On-Demand로 학습하되 에폭마다 결과를 캐싱해 재시작 시간을 단축
 
 **정답: B**
 해설: Managed Spot Training은 최대 90% 할인된 Spot을 쓰고, Checkpoint로 회수 시 마지막 저장 지점부터 재개해 긴 학습을 완료시킨다. 체크포인트 없는 Spot 학습은 긴 작업에서 회수 한 번에 전부 날아가 거의 완료되지 못하므로 둘은 항상 함께 쓴다(분산 시스템의 checkpoint-restart 패턴). A·C는 약정 할인이지 90%에 못 미치고 중단 복구와 무관. D는 비용 절감이 없다. 함정: "학습 90% 절감 + 중단 복구"는 Spot + Checkpoint.
@@ -211,13 +211,13 @@ D) Multi-Model Endpoint
 
 **문제 5.** 운영 중 모델의 실제 예측 정확도가 서서히 떨어지는 것을 자동 감지하려 한다. 실제 정답(라벨)은 확보 가능하다. 어떤 모니터링인가?
 
-A) Model Monitor Data Quality
+A) Model Monitor Data Quality로 입력 피처 분포를 기준선과 비교해 정확도 하락을 감지
 
 B) Model Monitor Model Quality
 
-C) Clarify Bias Drift만
+C) SageMaker Clarify의 Bias Drift 모니터로 그룹별 편향 변화만 추적
 
-D) CloudWatch Custom Metric만
+D) 예측값을 CloudWatch Custom Metric으로만 내보내 임계치 알람 설정
 
 **정답: B**
 해설: Model Quality는 실제 라벨과 예측을 비교해 정확도·정밀도·재현율 하락(컨셉 드리프트)을 감지하며, 라벨이 확보 가능할 때 쓴다. A(Data Quality)는 입력 분포만 보고 실제 정확도는 모른다(라벨 불필요한 조기 경보용). C는 편향용, D는 ML 드리프트 자동 감지가 아니다. 함정: "실제 정확도 하락 + 라벨 있음"은 Model Quality, "라벨 없이 조기 감지"는 Data Quality.

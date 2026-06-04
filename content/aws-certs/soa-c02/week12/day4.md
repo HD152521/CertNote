@@ -54,10 +54,10 @@ D) Config
 ---
 
 **문제 4.** SG 변경 이력을 시간순으로 보려면?
-A) CloudTrail
-B) Config (구성 이력)
-C) CloudWatch
-D) VPC Flow Logs
+A) CloudTrail의 `AuthorizeSecurityGroupIngress` 이벤트 조회
+B) Config (구성 이력 타임라인)
+C) CloudWatch 메트릭의 규칙 수 변화 추이
+D) VPC Flow Logs의 거부 트래픽 로그 분석
 
 **정답: B**
 
@@ -78,10 +78,10 @@ D) `select count(*)`
 ---
 
 **문제 6.** Config Rule이 비준수 리소스를 자동 수정하려면?
-A) Lambda 직접 호출
+A) Config Rule에 Lambda ARN을 직접 연결해 호출
 B) Remediation Action (SSM Automation Document)
-C) EventBridge
-D) CloudFormation
+C) EventBridge 규칙으로 비준수 이벤트를 받아 워크플로 실행
+D) CloudFormation 스택 업데이트로 리소스를 재배포
 
 **정답: B**
 
@@ -178,10 +178,10 @@ D) RDS Proxy
 ---
 
 **문제 14.** EBS 일일 자동 스냅샷 + 보존 정책을 가장 가볍게 구현하려면?
-A) AWS Backup
+A) AWS Backup으로 EBS 백업 플랜·보존 규칙 구성
 B) Data Lifecycle Manager (DLM)
-C) CloudFormation
-D) Snapshot 수동
+C) CloudFormation으로 스냅샷 리소스를 정의해 일일 배포
+D) EventBridge 스케줄 + Lambda로 `CreateSnapshot` 수동 호출
 
 **정답: B**
 
@@ -242,10 +242,10 @@ D) 압축
 > 🔍 **더 깊이**: SSM 컴포넌트는 단발(Run)·유지(State)·정기(Patch+MW)·접속(Session)으로 갈린다. Session Manager가 SSH를 대체하는 메커니즘이 단골인데, 핵심은 **인바운드 포트를 전혀 열지 않는다**는 점이다 — SSM Agent가 SSM 엔드포인트로 아웃바운드 연결을 열고 그 위로 세션이 흐른다(인증=IAM, 감사=CloudTrail/Logs, 키 관리 소멸). 프라이빗 서브넷이면 ssm·ssmmessages·ec2messages Interface Endpoint가 필요하다. 그리고 자동 수정은 **멱등적**이어야 한다 — EventBridge·SQS는 RFC 9110이 정의하듯 at-least-once 전달이라 중복 가능하므로, "추가(append)"가 아니라 "이 상태가 되게 하라(ensure)"는 선언형이어야 안전하다.
 
 **문제 19.** CloudFormation에서 변경을 적용 전 미리 검토하려면?
-A) Drift Detection
+A) Drift Detection으로 실제 리소스와 템플릿 차이를 사전 비교
 B) Change Set
-C) Rollback
-D) Nested Stack
+C) Rollback Configuration으로 실패 시 자동 되돌림 설정
+D) Nested Stack으로 변경 영향을 모듈 단위로 격리
 
 **정답: B**
 
@@ -314,10 +314,10 @@ D) IAM
 ---
 
 **문제 25.** CloudFormation 템플릿과 실제 리소스의 차이를 탐지하려면?
-A) Change Set
+A) Change Set으로 다음 변경의 리소스 영향을 미리 비교
 B) Drift Detection
-C) Rollback Trigger
-D) Nested Stack
+C) Rollback Trigger로 임계 초과 시 자동 되돌림 발동
+D) Nested Stack 출력값을 실제 리소스 ID와 대조
 
 **정답: B**
 
@@ -438,10 +438,10 @@ D) Trusted Advisor
 ---
 
 **문제 35.** PCI-DSS·SOC·HIPAA 컴플라이언스 증거 수집과 보고서 작성을 자동화하려면?
-A) Security Hub
+A) Security Hub의 컴플라이언스 점수를 증거로 내보내기
 B) Audit Manager
-C) Artifact
-D) Config
+C) Artifact에서 받은 AWS 인증서로 보고서 대체
+D) Config 규칙 준수 현황을 수동으로 취합해 문서화
 
 **정답: B**
 
@@ -539,9 +539,9 @@ D) Simple
 
 **문제 43.** VPC Flow Logs의 한계는?
 A) 허용/거부 트래픽 메타데이터만 기록, 패킷 페이로드는 X
-B) 모든 패킷 캡처
-C) IPv6 미지원
-D) 실시간 불가
+B) 페이로드를 포함한 모든 패킷을 풀 캡처해 비용이 큼
+C) IPv4만 지원하고 IPv6 ENI 트래픽은 기록 불가
+D) 실시간 스트림 없이 24시간 배치로만 집계됨
 
 **정답: A**
 
@@ -626,10 +626,10 @@ D) Compute SP
 ---
 
 **문제 50.** 월 예산 임계 도달 시 자동으로 EC2 stop 또는 제한 SCP를 부착하려면?
-A) Cost Anomaly Detection
+A) Cost Anomaly Detection으로 급증 감지 후 SNS 알림 발송
 B) Budgets + Budget Action
-C) CloudWatch Alarm
-D) Trusted Advisor
+C) CloudWatch 청구 메트릭 Alarm으로 Lambda 트리거 구성
+D) Trusted Advisor 비용 점검 결과를 받아 수동 대응
 
 **정답: B**
 

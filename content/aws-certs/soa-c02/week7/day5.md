@@ -259,10 +259,10 @@ D) cookbook의 프로비저닝 로직을 Lambda 함수로 재작성하고 EventB
 
 **문제 10.** 회사가 사내 Platform Engineering 팀을 만들어 개발자에게 Git push만으로 표준 Fargate Service + ALB + RDS + CodePipeline이 자동 프로비저닝되는 IDP를 구축하려 한다. 가장 적합한 AWS 네이티브 도구는?
 
-A) Service Catalog만 — 일반 인프라 자가 서비스에는 적합하지만 CI/CD 통합 없음
+A) Service Catalog로 Portfolio와 Product(CloudFormation stack)를 정의해 개발자가 셀프서비스로 인프라를 요청하게 한다 — 표준화된 프로비저닝은 되지만 Git push 트리거와 CodePipeline CI/CD 통합이 내장되지 않아 별도 구성이 필요하다
 B) AWS Proton — Environment Template(공유 인프라) + Service Template(서비스 단위 + CodePipeline 통합) + CFN/Terraform 지원
-C) Elastic Beanstalk — 단일 앱 PaaS, IDP 아님
-D) OpsWorks — Chef 매니지드, 현대 IDP 아님
+C) Elastic Beanstalk로 각 서비스를 환경으로 배포하고 .ebextensions로 ALB/RDS를 묶는다 — 단일 앱 PaaS 추상화라 Platform 팀이 golden path를 템플릿화해 여러 서비스에 재사용하는 IDP 모델이 아니다
+D) OpsWorks Stacks의 Chef 레이어로 서비스를 구성한다 — Chef 매니지드 구성관리 도구이고 2024.5.26 EOL이며 Git push 기반 셀프서비스 IDP를 제공하지 않는다
 
 **정답: B**
 해설: Proton의 정확한 사용 사례는 Internal Developer Platform(IDP) 또는 Platform Engineering. Platform 팀이 Environment Template과 Service Template을 작성하면 개발자는 Service만 인스턴스화하면 끝이다. CodePipeline 통합이 핵심 차별점이다 — Service Catalog는 인프라 프로비저닝만 제공하고 CI/CD는 별도 구성 필요. Spotify Backstage의 AWS 네이티브 버전이라고 이해하면 된다.

@@ -85,13 +85,13 @@ Week 9의 일곱 서비스는 따로 외우는 카드가 아니라, 한 요청�
 
 **문제 1.** 모바일 앱이 Cognito로 사용자를 로그인시킨 뒤, 그 사용자가 자기 전용 S3 폴더에 사진을 직접 업로드해야 한다. 올바른 흐름은?
 
-A) User Pool JWT를 그대로 S3 요청 헤더에 넣어 접근
+A) User Pool이 발급한 ID Token을 Authorization 헤더에 넣어 S3에 SigV4 없이 직접 PutObject 호출
 
 B) User Pool로 로그인 → Identity Pool에 JWT 제출 → IAM 임시 자격 증명 → S3 직접 접근
 
-C) Lambda를 거쳐 S3에 업로드
+C) 모든 업로드를 Lambda 프록시로 받아 Lambda 실행 역할의 IAM 권한으로 S3에 대신 PutObject
 
-D) API Gateway 프록시를 통해서만 가능
+D) API Gateway + Cognito Authorizer 뒤의 백엔드를 통해서만 업로드하고 S3 직접 접근은 차단
 
 **정답: B**
 

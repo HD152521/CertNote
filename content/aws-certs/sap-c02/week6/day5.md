@@ -294,10 +294,10 @@ D) AWS Budgets + AWS Config
 
 **문제 5.** VMware Cloud on AWS(Relocate)로 500대 VM을 이전한 후 6개월 경과. VMware 라이선스 비용이 여전히 높다. 다음 단계는?
 
-A) VMC 라이선스를 재협상한다
+A) VMware/AWS와 VMC 구독 라이선스를 재협상해 호스트 단가를 낮춘다 (아키텍처는 그대로 유지)
 B) MGN으로 VMC VM을 EC2 네이티브로 이전 (Relocate → Rehost)
-C) 모두 즉시 Lambda로 Refactor
-D) VMC 유지 (비용 분석 재검토)
+C) 500대 VM을 모두 즉시 Lambda + DynamoDB로 Refactor해 서버리스로 재설계한다
+D) VMC를 그대로 유지하고 Compute Optimizer로 Right-Sizing만 수행해 비용을 재검토한다
 
 **정답: B**
 해설: Relocate → Rehost는 클라우드 여정의 자연스러운 다음 단계다. VMC는 온프레 VMware를 AWS로 빠르게 이전하는 중간 단계다. 네이티브 EC2로 이전하면 VMware 라이선스를 제거할 수 있다. MGN은 VMC 위에서 실행 중인 VM에서도 Agent를 설치해 동작한다. C는 즉각 Refactor는 대규모 개발 비용과 기간이 필요해 "다음 단계"로 적합하지 않다.
@@ -366,10 +366,10 @@ D) AWS Pricing Calculator
 
 **문제 11.** 한 회사가 온프레미스에서 AWS로 마이그레이션을 완료했다. 이제 온프레미스 데이터센터가 남아있고 이것을 AWS 서비스의 DR 사이트로 활용하고 싶다. 어떤 구성이 가능한가?
 
-A) MGN을 역방향으로 재설치해 AWS EC2 → 온프레로 복제
+A) MGN을 역방향으로 재설치해 AWS EC2를 소스로 온프레미스로 블록 레벨 상시 복제하도록 구성한다
 B) DRS로 AWS EC2를 소스로, 온프레미스를 DR 대상으로 구성 (역방향 복제)
-C) AWS는 온프레미스를 DR 대상으로 지원하지 않는다
-D) AWS DataSync로 EC2 데이터를 온프레미스로 주기 복사
+C) AWS는 온프레미스를 DR 대상으로 지원하지 않으므로 다른 AWS 리전을 DR 대상으로 삼아야 한다
+D) AWS DataSync로 EC2의 EBS 볼륨 데이터를 온프레미스 NFS로 스케줄 기반 주기 복사한다
 
 **정답: B**
 해설: DRS는 소스가 온프레미스인 경우뿐 아니라 AWS EC2가 소스이고 온프레미스(또는 다른 AWS 리전)가 DR 대상인 역방향도 지원한다. "AWS to On-Prem DR" 패턴이다. MGN은 단방향 마이그레이션 도구라 상시 DR 복제에 적합하지 않다. DataSync는 파일/오브젝트 스토리지 이전 도구이지 서버 DR 복제가 아니다.
