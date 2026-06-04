@@ -394,10 +394,10 @@ artifacts:
 
 **문제 1.** 다음 중 PR 단계에서 자동 코드 리뷰를 위한 가장 적절한 AWS 서비스는?
 
-A) CodeGuru Profiler
+A) CodeGuru Profiler — 런타임 flame graph로 코드 hotspot을 PR에 코멘트
 B) CodeGuru Reviewer + CodeGuru Security
-C) Inspector
-D) GuardDuty
+C) Inspector — PR의 코드 변경에서 CVE와 의존성 취약점을 정적 스캔
+D) GuardDuty — 커밋 이벤트를 받아 악성 코드 패턴을 위협 탐지로 분석
 
 **정답: B**
 해설: Profiler는 런타임 성능, Inspector는 의존성·이미지·OS, GuardDuty는 런타임 위협. PR 단계 코드 분석은 Reviewer(품질) + Security(보안). 둘 다 같은 Associate API로 저장소를 등록하고 PR 시 자동 분석.
@@ -406,10 +406,10 @@ D) GuardDuty
 
 **문제 2.** Lambda 배포에 서명 검증을 강제하려면 어떤 설정이 필요한가?
 
-A) `UntrustedArtifactOnDeployment=Warn`
+A) `UntrustedArtifactOnDeployment=Warn` — 미신뢰 코드 배포 시 CloudWatch Logs에 경고 기록
 B) `UntrustedArtifactOnDeployment=Enforce`
-C) Lambda Layer 추가
-D) Provisioned Concurrency 활성화
+C) 서명 검증 로직을 담은 Lambda Layer를 추가해 런타임에 무결성 확인
+D) Provisioned Concurrency를 활성화해 서명된 버전만 미리 초기화되게 고정
 
 **정답: B**
 해설: Warn은 경고만 CloudWatch Logs에 남기고 배포는 진행, Enforce가 실제 차단(CodeSigningConfigNotFoundException). 시험에서 "강제"·"strict"·"reject untrusted code" 키워드는 Enforce.
@@ -419,9 +419,9 @@ D) Provisioned Concurrency 활성화
 **문제 3.** ECR에 푸시되는 모든 이미지를 OS + 언어 의존성까지 자동 스캔하려면?
 
 A) ECR Enhanced Scanning (Inspector v2 통합) 활성화
-B) Lambda로 매번 수동 스캔
-C) S3 객체 알림
-D) CloudTrail로 사후 분석
+B) ECR 푸시 이벤트로 Lambda를 트리거해 Trivy를 돌려 매번 스캔하고 결과를 집계
+C) ECR 이미지를 S3에 export하고 S3 객체 알림으로 외부 스캐너를 호출
+D) CloudTrail의 ECR PutImage 로그를 분석해 사후에 취약 이미지를 식별
 
 **정답: A**
 해설: Inspector Enhanced Scanning이 ECR 푸시마다 자동 스캔 + 24시간 주기 재스캔. Standard scanning은 OS layer만, Enhanced가 언어 의존성까지 포함. 결과는 Security Hub로 자동 전송.
@@ -430,10 +430,10 @@ D) CloudTrail로 사후 분석
 
 **문제 4.** "Shift Left" 원칙에 가장 부합하는 조치는?
 
-A) 프로덕션 배포 후 사후 침투 테스트
+A) 프로덕션 배포 후 staging에서 DAST 기반 사후 침투 테스트를 정기 수행
 B) IDE/PR 단계에서 SAST·SCA·시크릿 스캔 자동화
-C) 보안 검사를 분기에 한 번 수동 실행
-D) 사용자에게 취약점 보고 받기
+C) 릴리스 게이트로 보안팀이 분기에 한 번 전체 코드베이스를 수동 점검
+D) 버그 바운티를 운영해 외부 연구자에게 취약점을 보고받아 대응
 
 **정답: B**
 해설: Shift Left = 보안 검사를 SDLC 앞 단계로 이동. PR/IDE 단계가 가장 빠르고, 사고 비용도 그 단계에서 가장 낮다(IBM Cost of a Data Breach Report: 코드 작성 단계 수정 비용은 prod 사고의 1/100). A는 right shift, C는 시간 간격이 너무 김, D는 reactive.
@@ -442,10 +442,10 @@ D) 사용자에게 취약점 보고 받기
 
 **문제 5.** 빌드 시 DB 비밀번호가 필요하다. 가장 안전한 주입 방식은?
 
-A) buildspec.yml에 하드코딩
-B) GitHub Secrets에 평문 저장
+A) buildspec.yml의 env 변수에 DB 비밀번호를 직접 하드코딩해 빌드에 주입
+B) GitHub Secrets에 평문 저장하고 워크플로가 CodeBuild로 환경 변수 전달
 C) Secrets Manager에 저장 후 CodeBuild env.secrets-manager로 참조
-D) S3에 평문 텍스트로 저장
+D) KMS로 암호화한 비밀번호를 S3에 두고 빌드가 받아 복호화해 사용
 
 **정답: C**
 해설: Secrets Manager + CodeBuild env.secrets-manager 통합이 표준. 자동 회전, 감사 로그, 단일 진실 출처. GitHub Secrets는 GitHub Actions에서는 표준이지만 AWS 컨텍스트(CodeBuild)에서는 Secrets Manager가 정답.
@@ -460,7 +460,7 @@ env:
 
 **문제 6.** CodeGuru Reviewer를 PR 머지의 필수 게이트로 만들려면?
 
-A) CodeGuru Reviewer가 자동 차단
+A) CodeGuru Reviewer가 Finding이 있으면 PR 머지를 자체적으로 자동 차단
 B) Approval Rule + 봇이 CodeGuru Finding을 확인하고 승인 또는 거부
 C) Branch Protection의 Required Status Check + CodeBuild가 Finding 0이 아니면 실패 status push
 D) B와 C 모두 가능
@@ -473,9 +473,9 @@ D) B와 C 모두 가능
 **문제 7.** SBOM(Software Bill of Materials) 생성·관리에 적합한 도구는?
 
 A) Syft / CycloneDX / SPDX
-B) CloudTrail
-C) Config
-D) Trusted Advisor
+B) CloudTrail — API 호출 이력을 모아 빌드에 포함된 구성요소 목록을 재구성
+C) AWS Config — 리소스 구성 스냅샷으로 의존성 인벤토리를 관리
+D) Trusted Advisor — 보안·비용 체크로 의존성 취약점 목록을 보고
 
 **정답: A**
 해설: SBOM은 표준 형식(CycloneDX, SPDX, SWID). Syft가 OSS 생성 도구. Trivy도 SBOM 생성 지원. CodeArtifact는 패키지 저장소지 SBOM 생성기는 아님. US EO 14028(2021)로 연방 정부 납품 시 SBOM이 사실상 의무화됨.
@@ -484,10 +484,10 @@ D) Trusted Advisor
 
 **문제 8.** SLSA L3 등급에 도달하려면 빌드 파이프라인에 필요한 것은?
 
-A) 단순히 CodeBuild로 빌드
+A) CodeBuild로 빌드하고 buildspec을 저장소에 체크인해 빌드 과정을 문서화(L1 수준)
 B) 격리된 빌드 환경(VPC + 최소 IAM Role) + non-falsifiable provenance(빌드 외부 키로 서명된 in-toto attestation) + version control
-C) Trivy 스캔만
-D) Lambda로 빌드
+C) 빌드 산출물에 Trivy 취약점 스캔을 추가해 CVE가 없음을 보증
+D) 빌드를 Lambda로 옮겨 함수 단위 격리로 다른 빌드의 영향을 차단
 
 **정답: B**
 해설: SLSA L3 요구사항은 ① source/build platform 격리 ② isolated build(다른 빌드의 영향 받지 않음) ③ non-falsifiable provenance(서명 키가 빌드 환경 밖에 있어서 빌드가 침투당해도 가짜 provenance 못 만듦). AWS에서는 VPC CodeBuild + KMS 서명 + in-toto attestation 조합으로 구현. SolarWinds 같은 사고를 막기 위한 표준.
@@ -496,10 +496,10 @@ D) Lambda로 빌드
 
 **문제 9.** 한 회사가 Production EKS에서 "서명되지 않은 컨테이너 이미지는 절대 실행 금지"를 강제하려 한다. 가장 적절한 메커니즘은?
 
-A) IAM Policy로 ECR Pull 차단
+A) IAM Policy로 미서명 이미지가 담긴 ECR 리포지토리의 Pull 권한을 거부
 B) AWS Signer로 이미지 서명 + EKS에 ratify(또는 Sigstore policy-controller) admission webhook 배포 + Kyverno/OPA로 정책 표현
-C) NetworkPolicy로 차단
-D) Pod SecurityContext
+C) Calico NetworkPolicy로 미신뢰 레지스트리로의 egress를 차단해 이미지 수신을 막음
+D) Pod SecurityContext에 readOnlyRootFilesystem·비루트 실행을 강제해 미서명 이미지 실행을 제한
 
 **정답: B**
 해설: 컨테이너 서명 검증의 표준 패턴. ① AWS Signer for Containers(Notary v2)로 이미지 서명 또는 cosign keyless 서명 ② EKS에 ratify(AWS) 또는 policy-controller(Sigstore) admission webhook 배포 ③ Kyverno 또는 OPA Gatekeeper로 "서명 없는 이미지 거부" 정책 작성. IAM, NetworkPolicy, SecurityContext는 다른 차원의 통제(접근, 네트워크, 권한)지 서명 검증이 아니다.
@@ -508,10 +508,10 @@ D) Pod SecurityContext
 
 **문제 10.** Lambda 함수의 의존성에 신규 CVE가 발견되었는데, 함수 코드는 변하지 않았다. 가장 빨리 알 수 있는 방법은?
 
-A) 다음 배포 시까지 기다림
+A) 코드가 안 바뀌면 재스캔이 안 되므로 다음 함수 업데이트·배포 시점까지 기다림
 B) Inspector Lambda 스캔(2023+) — Inspector가 CVE DB 변경을 감지하고 기존 함수에 다시 매칭, EventBridge로 알림
-C) CloudTrail로 감지
-D) Lambda를 매일 재배포
+C) CloudTrail의 함수 호출·업데이트 로그를 분석해 취약 의존성 사용을 사후 감지
+D) Lambda를 매일 강제 재배포해 그때마다 배포 시점 의존성 스캔이 돌게 함
 
 **정답: B**
 해설: Log4Shell(2021)의 교훈 — "이미 배포된 함수도 신규 CVE 공개 시 취약해진다". Inspector v2가 Lambda 스캔을 지원(2023년 GA)하며, 함수 업데이트 시 + 24h 주기로 의존성 재평가. 새 CVE 발견 시 EventBridge 이벤트 발생 → Lambda·SNS 통보 → SSM Automation으로 자동 패치. CloudTrail은 API 호출 추적이지 CVE 탐지가 아님.
@@ -520,10 +520,10 @@ D) Lambda를 매일 재배포
 
 **문제 11.** 한 회사가 "공급망 공격(supply chain attack)"을 우려해 빌드 산출물의 신뢰성을 강화하려 한다. 다음 중 SLSA L3 수준에 도달하기 위한 가장 적합한 조합은?
 
-A) Trivy 스캔만 추가
+A) 빌드 산출물에 Trivy CVE 스캔만 추가해 알려진 취약점이 없음을 보증
 B) CodeBuild를 VPC 안에 격리 + KMS 키로 in-toto attestation 서명(빌드 환경 외부에 키 보관) + ECR Enhanced Scanning + AWS Signer로 최종 이미지 서명
-C) GitHub Actions만 사용
-D) 모든 빌드를 수동으로 검토
+C) GitHub-hosted Actions runner만 사용해 빌드 인프라 관리 부담을 AWS 밖으로 위임
+D) 모든 빌드 산출물을 릴리스 전 보안팀이 수동 검토해 침투 여부를 확인
 
 **정답: B**
 해설: SLSA L3의 세 가지 핵심을 모두 충족하는 조합. ① **격리**: VPC CodeBuild + 빌드 전용 IAM Role(최소 권한) ② **non-falsifiable provenance**: KMS 키가 빌드 환경 외부에 있어서 빌드가 침투당해도 가짜 attestation 못 만듦 ③ **검증 가능한 산출물**: AWS Signer 서명 + Inspector 스캔. SolarWinds 사고가 정확히 이 세 가지의 결손이었다.
@@ -532,10 +532,10 @@ D) 모든 빌드를 수동으로 검토
 
 **문제 12.** 한 보안팀이 "PR 단계에서 보안 게이트가 너무 많아 개발자들이 우회한다"는 보고를 받았다. 가장 적절한 대응은?
 
-A) 게이트를 다 제거
+A) PR 단계 보안 게이트를 모두 제거하고 검사를 배포 후 단계로 옮겨 개발 속도를 회복
 B) Risk-based gating — Critical/High만 PR 차단, Medium/Low는 알림만 + 주간 추적 + 자동 fix PR(Dependabot/Snyk) 도입
-C) 모든 게이트를 사람이 수동 검토
-D) Production에서만 검사
+C) 모든 finding을 보안팀이 사람이 직접 검토해 차단 여부를 건별로 판단
+D) PR 단계 검사를 끄고 Production 런타임(GuardDuty 등)에서만 위협을 탐지
 
 **정답: B**
 해설: **Alert fatigue + 우회**는 보안 자동화의 가장 흔한 실패 패턴이다. 정답은 "더 많은 게이트"가 아니라 "더 똑똑한 게이트"다. Risk-based gating은 ① CVSS 점수 기반 분류(Critical 9.0+, High 7.0+만 차단) ② 자동 fix PR로 개발자 부담 최소화 ③ Medium/Low는 dashboard로 추적하되 머지는 허용. CodeGuru Security + Snyk + Dependabot 조합이 표준. A·D는 보안 후퇴, C는 자동화 본질 부정.

@@ -1,342 +1,232 @@
-# Day 1 - Compute Optimizer, Right Sizing, EC2 인스턴스 패밀리
+# Day 1 - Compute Optimizer, 14일치 메트릭이 인스턴스 크기를 다시 정하는 법
 
-📅 날짜: Week 11 (Day 1)
-🎯 주제: 리소스 적정 사이징과 비용·성능 균형
-⏱️ 학습 시간: 약 90분
+클라우드의 가장 비싼 실수는 장애가 아니라 **방치**다. 누군가 3년 전 "넉넉하게" m5.4xlarge를 띄웠고, 그 위에서 도는 서비스는 사실 m5.large면 충분한데, 아무도 다시 들여다보지 않는다. CPU 평균 사용률이 4%인 인스턴스가 24시간 365일 풀 가격으로 청구된다. 온프레미스 시절엔 이런 낭비가 잘 안 보였다 — 서버는 이미 사뒀으니 매몰 비용이었다. 그런데 클라우드는 매시간 과금하므로 과다 프로비저닝이 곧바로 청구서에 박힌다. **Right Sizing**(적정 사이징)은 이 간극, 즉 "프로비저닝한 용량"과 "실제 쓰는 용량" 사이의 거리를 좁히는 작업이다.
 
----
+문제는 이 거리를 사람이 눈으로 재기 어렵다는 점이다. CPU만 보면 메모리를 놓치고, 평균만 보면 피크를 놓치고, 한 인스턴스만 보면 200대를 놓친다. **AWS Compute Optimizer**는 이 판단을 ML에 맡긴다 — 14일치 메트릭을 학습해 "이 인스턴스는 m5.large로 줄여도 됩니다, 월 $X 아낍니다"를 자동으로 뽑아준다. 이 글은 그 권장이 어디서 나오는지, 왜 메모리 메트릭이 없으면 권장이 틀어지는지, 그리고 EC2 인스턴스 패밀리라는 알파벳 코드가 실제로 어떤 하드웨어를 가리키는지 그 내부를 파고든다.
 
-## 🎯 학습 목표
+## Right Sizing의 뿌리 — 통계적 다중화와 over-provisioning의 역사
 
-- Compute Optimizer로 자동 right-sizing 권장사항을 받는다
-- EC2 인스턴스 패밀리(범용/컴퓨팅/메모리/스토리지/GPU)를 구분한다
-- 메트릭 기반 적정 사이징을 수행한다
+과다 프로비저닝은 클라우드가 만든 문제가 아니라 클라우드가 **드러낸** 문제다. 데이터센터 시대 서버 평균 사용률은 업계 조사마다 다르지만 대체로 **10~15%**에 머물렀다. 이유는 단순하다 — 피크에 맞춰 사야 했기 때문이다. 블랙프라이데이 트래픽을 견디려고 1년 내내 그 용량을 사두고, 364일은 놀린다. 가상화(VMware)가 한 물리 서버에 여러 VM을 얹어 이 사용률을 끌어올렸지만, 근본적으로 "피크 대비 구매"라는 구조는 남았다.
 
----
+클라우드의 약속은 이 구조를 뒤집는 것이었다 — 필요할 때 빌리고 안 쓰면 끈다(elasticity). 하지만 사람의 습관은 안 바뀐다. 온프레미스에서 하던 대로 "넉넉하게" 잡고, 끄는 걸 까먹는다. 그래서 클라우드에서도 사용률 10%대 인스턴스가 흔하다. 차이는 이제 그 낭비가 **매시간 돈으로 환산되어 보인다**는 것뿐이다. Right Sizing은 결국 "피크 대비 구매" 습관을 "실측 대비 구매"로 바꾸는 일이고, Compute Optimizer는 그 실측을 자동으로 해주는 도구다.
 
-## 🧩 사전 지식 (CS 기초)
+> 💡 **관련 이론**: Right Sizing의 이론적 토대는 통계적 다중화(statistical multiplexing)와 큐잉 이론(queueing theory)이다. 핵심 통찰은 "독립적인 워크로드를 많이 모으면 전체 피크는 개별 피크의 합보다 훨씬 작다"는 것이다. 100개 서비스가 각자 다른 시각에 피크를 친다면, 전체가 동시에 피크를 칠 확률은 거의 0에 가깝다(대수의 법칙). 그래서 큰 풀에 몰아넣을수록 평균 사용률을 높게 가져가도 안전하다. 반대로 단일 워크로드를 단독 인스턴스에 격리하면 그 인스턴스는 피크에 맞춰야 하므로 사용률이 낮을 수밖에 없다. 큐잉 이론의 M/M/1 모델은 사용률(ρ)이 1에 가까워질수록 대기 시간이 **비선형으로** 폭증함을 보여준다 — 그래서 안전한 목표 사용률은 100%가 아니라 보통 70~80%다. Compute Optimizer가 "딱 맞게"가 아니라 "약간의 헤드룸을 남기고" 권장하는 이유가 여기 있다.
 
-- **Workload profile**: CPU bound / Memory bound / IO bound / Network bound
-- **Right sizing**: 워크로드에 맞는 적절한 크기. 과도하면 낭비, 부족하면 성능 ↓
-- **ML 추천 시스템**: 사용 패턴 학습 → 최적 권장
-- **Burst credit**: t 인스턴스의 누적 신용 기반 burst
-- **Generation upgrade**: 신세대 인스턴스가 동가격에 더 빠름
+## Compute Optimizer는 무엇을 학습하는가 — 14일, 퍼센타일, 그리고 ML
 
----
+Compute Optimizer의 권장은 "최근 14일간의 CloudWatch 메트릭"을 입력으로 받는다. 왜 하필 14일인가? 너무 짧으면(예: 1일) 우연한 트래픽 변동에 휘둘려 잘못된 권장을 내고, 너무 길면 최근의 워크로드 변화를 반영하지 못한다. 2주는 주간 주기(평일 vs 주말 패턴)를 최소 두 번 관측할 수 있는 구간이다 — 월요일 피크와 일요일 골짜기를 모두 본 다음에야 "이 인스턴스의 진짜 모양"을 안다.
 
-## 📖 이론 내용
+내부적으로 Compute Optimizer는 단순히 평균만 보지 않는다. CPU·메모리·네트워크·디스크 메트릭의 **퍼센타일 분포**를 본다. 평균 CPU가 10%여도 P99(상위 1% 순간)가 95%라면 그 인스턴스는 가끔 한계까지 치솟는다는 뜻이고, 함부로 줄이면 그 피크 때 성능이 무너진다. ML 모델은 이 분포를 EC2 인스턴스 타입별 성능 특성 데이터베이스와 대조해 "이 워크로드 모양을 담을 수 있는 가장 작은 그릇"을 찾는다. 그 결과가 세 가지 Finding으로 나온다.
 
-### 1. AWS Compute Optimizer
+| Finding | 의미 | 운영 조치 |
+|---------|------|-----------|
+| **Over-provisioned** | 그릇이 너무 큼 — CPU·메모리 모두 여유 과다 | 다운사이즈 (비용 절감) |
+| **Under-provisioned** | 그릇이 너무 작음 — 자원 부족으로 성능 저하 위험 | 업사이즈 또는 패밀리 변경 |
+| **Optimized** | 적정 — 헤드룸이 알맞음 | 유지 |
 
-#### 개념
-- ML 기반 right-sizing 권장 자동 생성
-- 14일 CloudWatch 메트릭 분석
-- 무료 (기본) 또는 Enhanced (유료, EC2)
+지원 대상은 EC2 인스턴스에서 시작해 점점 넓어졌다 — EC2 Auto Scaling Group, EBS 볼륨, Lambda 함수, ECS Fargate Service, RDS DB 인스턴스, 그리고 상용 소프트웨어 라이선스(SQL Server 등 코어 수 최적화)까지. 기본 분석은 무료이고, Enhanced 등급(EC2 대상, 유료)은 외부 메트릭 통합과 더 긴 룩백을 제공한다.
 
-#### 지원 리소스
-- EC2 인스턴스
-- EC2 Auto Scaling Group
-- EBS 볼륨
-- Lambda 함수
-- ECS Fargate Service
-- RDS DB 인스턴스 (신규)
-- Commercial Software License (SQL Server 등)
+> 🔍 **더 깊이**: Compute Optimizer의 가장 큰 맹점은 **메모리**다. EC2의 표준 CloudWatch 메트릭에는 CPU·네트워크·디스크는 있지만 **메모리 사용률이 없다.** 이유는 하이퍼바이저 레벨에서 게스트 OS 내부의 메모리 사용량을 들여다볼 수 없기 때문이다 — 하이퍼바이저는 VM에 할당한 물리 메모리 양은 알아도, 그 안에서 OS가 얼마나 쓰는지(캐시인지 실사용인지)는 모른다. 그래서 메모리 메트릭은 **CloudWatch Agent를 게스트 OS 안에 설치**해 `mem_used_percent`를 직접 푸시해야 얻을 수 있다. Agent가 없으면 Compute Optimizer는 메모리를 "모르는 값"으로 두고 CPU·네트워크만으로 권장하는데, 이때 메모리 바운드 워크로드(예: Redis, JVM 힙이 큰 앱)를 CPU만 보고 다운사이즈하라고 권하는 위험한 오판이 나온다. 운영에서 "Compute Optimizer 권장이 영 이상하다" 싶으면 십중팔구 Agent가 없어 메모리가 빠진 것이다.
 
-#### Finding 유형
-- **Under-provisioned**: 부족 (성능 저하 위험)
-- **Over-provisioned**: 과다 (비용 낭비)
-- **Optimized**: 적정
+> ⚠️ **함정**: Compute Optimizer는 **현재 워크로드 모양**만 본다 — 미래의 성장이나 곧 출시할 기능을 모른다. P99까지 보고 "Optimized"라 해도, 다음 달 프로모션으로 트래픽이 5배 뛸 예정이라면 그 권장은 무의미하다. 그리고 다운사이즈 권장을 그대로 적용하면 헤드룸이 줄어 갑작스러운 스파이크에 취약해진다. 시험에서 "Compute Optimizer 권장을 적용했는데 성능 문제가 생겼다"가 나오면, 답은 보통 "권장은 과거 14일 기준이라 미래 부하 증가나 메모리 메트릭 부재를 반영하지 못했다"이다.
 
-#### 권장사항 활용
-- 다른 인스턴스 타입 권장 (예: t3.large → t3.medium)
-- 권장 적용 시 예상 비용 절감 표시
-- 메모리 메트릭 있으면 더 정확 (CloudWatch Agent 필요)
+## EC2 인스턴스 패밀리 — 알파벳 한 글자가 가리키는 진짜 하드웨어
 
-### 2. EC2 인스턴스 패밀리
-
-#### 패밀리 분류
-
-| 패밀리 | 의미 | 예시 |
-|--------|------|------|
-| **T (Burstable)** | 기본 + 신용 burst | t3.medium |
-| **M (General)** | 범용 | m5.large, m6i.xlarge |
-| **C (Compute)** | 컴퓨팅 최적화 | c5.large, c7g.xlarge |
-| **R (Memory)** | 메모리 최적화 | r5.large, r6i.xlarge |
-| **X (High Memory)** | 초고메모리 | x2idn.16xlarge |
-| **I (Storage I/O)** | NVMe SSD 최적화 | i4i.large |
-| **D (Storage Dense)** | HDD 밀집 | d3.xlarge |
-| **G (GPU)** | 그래픽 | g5.xlarge |
-| **P (GPU ML)** | ML 학습 | p4d.24xlarge |
-| **Inf (Inferentia)** | ML 추론 | inf2.xlarge |
-| **HPC** | High Performance Computing | hpc7g |
-
-#### 명명 규칙
-```
-c7g.xlarge
-│ │ │ └─ 크기
-│ │ └── 옵션 (g=Graviton, n=네트워크, d=NVMe SSD, e=확장 메모리)
-│ └──── 세대
-└────── 패밀리
-```
-
-#### Graviton (ARM)
-- Graviton 3/4: ARM 기반 CPU
-- 20% 더 저렴 + 더 빠름 (대부분 워크로드)
-- 호환성 확인 필요 (대부분 컨테이너·Java·Node·Python·Go 동작)
-
-#### Burstable (t) 함정
-- T2/T3: Burst Credit 누적 → 소진 시 baseline까지 떨어짐
-- T3.unlimited: 신용 소진 후도 burst (추가 비용)
-- 운영 워크로드엔 m/c 패밀리 권장
-
-### 3. Right Sizing 의사결정 흐름
+인스턴스 타입 이름은 암호처럼 보이지만 사실 잘 설계된 분류 체계다. `c7gn.2xlarge`를 뜯어보면 다섯 조각이 나온다.
 
 ```
-1. CloudWatch + Compute Optimizer 데이터 14일 수집
-2. 메모리·디스크·네트워크 메트릭 활성화 (Agent)
-3. Finding 검토:
-   - Over-provisioned → 다운사이즈
-   - Under-provisioned → 업사이즈 또는 패밀리 변경
-   - Optimized → 유지
-4. 다른 패밀리/세대 권장 검토
-   - Graviton 호환 시도
-   - 최신 세대로 (c5 → c6i → c7g)
-5. 적용 (대부분 stop/start 필요)
-6. 적용 후 재모니터링
+c   7   g n   .   2xlarge
+│   │   │ │       └─ 크기 (vCPU·메모리 배수)
+│   │   │ └──────── 추가 기능 (n = 네트워크 강화)
+│   │   └────────── 프로세서 (g = Graviton/ARM)
+│   └────────────── 세대 (숫자가 클수록 신형)
+└────────────────── 패밀리 (c = 컴퓨팅 최적화)
 ```
 
-### 4. EBS 볼륨 Optimizer
+패밀리 글자는 **CPU 코어와 메모리의 비율**, 그리고 어떤 가속기·스토리지가 붙는지를 결정한다. 이 비율이 워크로드 모양과 맞아야 낭비가 없다.
 
-#### 분석
-- gp2 → gp3 권장 (성능 ↑ 비용 ↓)
-- Provisioned IOPS 과다 (사용량 vs 프로비저닝)
-- 미사용 볼륨
+| 패밀리 | vCPU:메모리 대략 | 무엇에 맞나 | 예시 |
+|--------|------------------|-------------|------|
+| **T (Burstable)** | 다양 | 평소 한가하고 가끔 튀는 워크로드 | t3.medium, t4g.large |
+| **M (General)** | 1:4 | 균형 잡힌 범용 — 웹·앱 서버 | m6i.xlarge, m7g.large |
+| **C (Compute)** | 1:2 | CPU 바운드 — 인코딩·HPC·배치 | c7g.xlarge, c6i.large |
+| **R (Memory)** | 1:8 | 메모리 바운드 — 인메모리 DB·캐시 | r6i.xlarge, r7g.large |
+| **X (High Memory)** | 1:16+ | 초대형 인메모리 — SAP HANA | x2idn.16xlarge |
+| **I (Storage IO)** | NVMe 로컬 SSD | 고 IOPS — NoSQL·데이터 웨어하우스 | i4i.large |
+| **D (Dense Storage)** | HDD 밀집 | 대용량 순차 IO — 분산 파일시스템 | d3.xlarge |
+| **G / P (GPU)** | GPU 장착 | 그래픽(G) / ML 학습(P) | g5.xlarge, p4d.24xlarge |
+| **Inf / Trn** | AWS 자체 칩 | ML 추론(Inferentia) / 학습(Trainium) | inf2.xlarge, trn1.32xlarge |
+| **HPC** | 네트워크·코어 극대화 | 밀결합 클러스터 연산 | hpc7g.16xlarge |
 
-#### gp2 vs gp3
+암기 요령은 단순하다. **M**은 Medium(균형), **C**는 Compute(CPU), **R**은 RAM(메모리), **I**는 IO, **G/P**는 GPU. 첫 글자가 곧 용도다. 시험에서 "메모리 집약적 인메모리 캐시"가 나오면 R, "CPU 집약 배치"면 C, "균형 잡힌 웹 서버"면 M이 정답의 출발점이다.
+
+> 💡 **관련 이론**: 패밀리 선택은 사실 **병목 자원(bottleneck resource)을 식별하는 문제**다. 컴퓨터 구조에서 워크로드는 어떤 자원이 먼저 포화되느냐에 따라 CPU-bound / memory-bound / IO-bound / network-bound로 나뉜다. Amdahl의 법칙이 말하듯 시스템 성능은 가장 느린(가장 먼저 포화되는) 부분이 결정한다 — CPU를 두 배로 늘려도 메모리가 병목이면 성능은 거의 안 오른다. 패밀리 글자는 결국 "어느 자원을 풍부하게 줄 것인가"의 선택이다. 메모리 바운드 워크로드를 C 패밀리(CPU 풍부, 메모리 빈약)에 올리면 메모리가 부족해 스왑이 일어나고, 비싼 CPU는 놀면서 성능은 바닥을 친다. Right Sizing이 단순히 "크기를 줄이는" 게 아니라 "패밀리를 바꾸는" 작업도 포함하는 이유가 이것이다 — 잘못된 패밀리는 어떤 크기로도 효율이 안 난다.
+
+## Graviton — AWS가 직접 만든 ARM 칩이 비용 곡선을 바꾼 이야기
+
+`g`가 붙은 인스턴스(c7**g**, m7**g**, r7**g**)는 **Graviton**, 즉 AWS가 자체 설계한 ARM 기반 프로세서를 쓴다. 이건 단순한 옵션이 아니라 클라우드 컴퓨팅 경제학을 바꾼 사건이다.
+
+수십 년간 서버 CPU는 사실상 x86(Intel·AMD) 독점이었다. ARM은 스마트폰·임베디드용이라는 인식이 강했다 — 전력 효율은 좋지만 서버급 성능은 안 된다는. AWS는 2015년 ARM 서버 칩 스타트업 Annapurna Labs를 인수하고, 2018년 첫 Graviton, 2019년 Graviton2, 이후 Graviton3/4를 내놓으며 이 인식을 뒤집었다. 핵심 동기는 비용 구조였다 — x86 라이선스 비용을 빼고, 클라우드 워크로드(많은 코어, 적당한 단일 스레드 성능)에 맞춰 칩을 직접 설계하면 같은 성능을 더 싸고 더 전력 효율적으로 낼 수 있다는 것이다. 결과적으로 Graviton 인스턴스는 동급 x86 대비 대략 **20% 저렴하면서 가격 대비 성능은 더 높다.**
+
+대가는 **아키텍처 호환성**이다. ARM과 x86은 명령어 집합(ISA)이 다르므로, x86용으로 컴파일된 네이티브 바이너리는 ARM에서 그대로 안 돈다. 다행히 컨테이너·인터프리터 언어(Java, Node, Python, Go, .NET 등)는 런타임/JIT가 아키텍처 차이를 흡수하므로 대부분 재컴파일 없이 동작한다. 막히는 건 C/C++로 짠 네이티브 확장이나 특정 아키텍처 전용 라이브러리뿐이다. 그래서 Graviton 전환의 실무 패턴은 "스테이징에서 ARM AMI로 빌드·테스트 → 호환되면 운영 전환"이다.
+
+> 📚 **사례**: Graviton 채택은 더 이상 실험이 아니다. AWS는 2023년 re:Invent에서 "지난 2년간 출시한 EC2 용량의 50% 이상이 Graviton 기반"이라고 밝혔고, Snap·Twilio·SmugMug 등이 대규모 워크로드를 Graviton으로 옮겨 두 자릿수 비용 절감을 공개 사례로 보고했다. AWS 자체 관리형 서비스들(Lambda, Fargate, RDS, ElastiCache, OpenSearch)도 Graviton 옵션을 제공하는데, 여기서는 사용자가 아키텍처를 신경 쓸 필요조차 없다 — AWS가 런타임을 ARM에 맞춰 빌드해두기 때문이다. SOA 시험 관점에서 "Node.js/Java 마이크로서비스 비용 20% 절감"이라는 키워드가 나오면 거의 항상 Graviton 전환이 정답이다.
+
+## T 패밀리의 함정 — CPU 크레딧이라는 외상 거래
+
+T 인스턴스(t3, t4g 등)는 가장 싸 보여서 가장 자주 잘못 선택된다. 핵심은 T가 **burstable**, 즉 평소엔 낮은 baseline 성능만 보장하고 가끔 튈 때만 누적해둔 크레딧으로 풀 성능을 낸다는 점이다. 이 모델을 이해하지 못하면 운영에서 정체불명의 성능 저하를 만난다.
+
+작동 방식은 **CPU 크레딧**이라는 외상 시스템이다. t3.medium은 vCPU당 baseline이 20%다 — 즉 평소엔 코어의 20%만 쓸 수 있다. 사용률이 baseline보다 낮으면 차액만큼 크레딧이 적립되고(시간당 일정량), 사용률이 baseline을 넘으면 적립된 크레딧을 소모하며 최대 100%까지 burst한다. 한가한 밤에 크레딧을 모았다가 낮에 터뜨리는 구조다. 문제는 **크레딧이 바닥나면** 일어난다 — 더 이상 burst를 못 하고 baseline(20%)에 강제로 묶인다. CPU 그래프는 갑자기 20%에 천장을 친 듯 눌리고, 애플리케이션 응답은 급격히 느려진다. 운영자가 "AWS 장애인가?" 의심하는 전형적 상황이 바로 이 크레딧 고갈이다.
+
+탈출구는 둘이다. **T3 Unlimited 모드**는 크레딧이 떨어져도 계속 burst하되, 초과분에 추가 요금(vCPU-시간당)을 매긴다 — 가끔 튀는 워크로드엔 합리적이지만, 꾸준히 높은 부하면 이 추가 요금이 쌓여 차라리 M 패밀리가 싸진다. 그래서 정석은 **꾸준한 운영 워크로드는 처음부터 M/C 패밀리**를 쓰고, T는 개발 서버·낮은 트래픽 내부 도구처럼 진짜로 대부분 한가한 곳에만 쓰는 것이다.
+
+> ⚠️ **함정**: T 인스턴스의 baseline은 크기마다 다르다(t3.nano는 5%, t3.medium은 20%, t3.xlarge는 40% 등). "T 인스턴스니까 느려도 괜찮겠지"가 아니라, **꾸준한 부하 = T 금지**가 원칙이다. 시험에서 "운영 워크로드를 t3에 올렸더니 일정 시간 후 성능이 급락한다"가 나오면 답은 CPU 크레딧 고갈이고, 해결은 Unlimited 모드 전환이 아니라(비용이 새므로) M/C 패밀리로의 변경이다.
+
+## EBS도 Right Sizing 대상이다 — gp2에서 gp3로의 무중단 전환
+
+Right Sizing은 인스턴스에만 적용되는 게 아니다. Compute Optimizer는 **EBS 볼륨**도 분석해 가장 흔한 권장 하나를 내놓는다 — **gp2 → gp3 전환**이다. 이건 SOA 시험과 실무 양쪽에서 거의 공짜 점수에 가까운 최적화다.
+
+gp2의 설계 문제는 **IOPS가 볼륨 크기에 묶여 있다**는 점이다. gp2는 1GB당 3 IOPS를 주므로, 3,000 IOPS를 얻으려면 1,000GB(1TB) 볼륨을 만들어야 한다. 100GB만 필요한데 IOPS 때문에 1TB를 사는 — 또 다른 형태의 과다 프로비저닝이다. gp3는 이 결합을 끊었다. 크기와 무관하게 **기본 3,000 IOPS·125MB/s를 보장**하고, 더 필요하면 IOPS·처리량을 크기와 독립적으로 추가 구매한다. 게다가 GB당 단가도 gp2보다 약 20% 싸다.
 
 | 항목 | gp2 | gp3 |
 |------|-----|-----|
-| 기본 IOPS | 크기 따라 | 3,000 |
-| 처리량 | 250 MB/s | 125 MB/s (확장 가능) |
-| 비용 | 더 비쌈 | 20% 저렴 |
-| Provisioning | 자동 | 별도 설정 가능 |
+| IOPS | 1GB당 3 IOPS (크기에 종속) | 기본 3,000 (크기 무관, 독립 확장) |
+| 처리량 | IOPS에 종속 | 기본 125MB/s (독립 확장) |
+| GB당 비용 | 기준 | 약 20% 저렴 |
+| 변경 | — | gp2에서 무중단 전환 가능 |
 
-### 5. Lambda Right Sizing
+가장 좋은 점은 전환이 **무중단**이라는 것이다. `modify-volume` API로 볼륨 타입을 gp3로 바꾸면 인스턴스를 멈추지 않고 온라인에서 변경된다(내부적으로 백그라운드 마이그레이션이 돌며, 변경 중 일시적으로 IOPS가 약간 낮아질 수 있다). 스냅샷도 재생성도 필요 없다. 그래서 "수백 개 gp2 볼륨이 있는 계정"에서 gp3 전환은 다운타임 없이 즉시 청구서를 깎는 대표적 quick win이다.
 
-#### Power Tuning
-- Lambda Power Tuning(OSS 도구)으로 메모리·실행시간 최적 조합 찾기
-- Memory ↑ → CPU ↑ → 실행시간 ↓ → 비용 변동
-- 비용과 성능의 sweet spot
+> 🔍 **더 깊이**: gp3가 크기와 IOPS를 분리할 수 있는 건 EBS의 내부 아키텍처가 바뀐 덕이다. gp2 시절 EBS 성능은 사실상 백엔드 스토리지 미디어 용량에 비례하는 단순 모델이었다. gp3는 성능을 용량과 별개의 차원으로 프로비저닝하도록 백엔드를 재설계해, 사용자가 "용량은 100GB, IOPS는 16,000, 처리량은 1,000MB/s"처럼 세 값을 독립적으로 지정할 수 있게 했다. 이는 io2 Block Express 같은 고성능 계열에서 한층 더 극단화되는데, NVMe over Fabrics 기반으로 단일 볼륨에서 수십만 IOPS와 서브밀리초 지연을 제공한다. Right Sizing 관점에서 핵심은 "성능을 용량에 끼워 사지 말고, 필요한 성능만 정확히 사라"는 gp3의 철학이다.
 
-#### Compute Optimizer Lambda
-- 함수별 메모리 권장
-- 실제 사용 메모리 vs 프로비저닝 비교
+## 정리하며
 
-### 6. Auto Scaling 적정성
+비용 최적화의 출발점은 거의 항상 Right Sizing이다 — 약정 할인(Day 4)으로 가기 전에, 애초에 그릇 크기가 맞는지부터 봐야 한다. 잘못된 크기에 할인을 걸면 잘못된 비용을 3년간 약정하는 셈이기 때문이다.
 
-#### ASG Recommendations
-- Mixed Instances로 비용 절감
-- Spot 비율 증가 검토
-- 인스턴스 패밀리 다양화로 가용성 ↑
+운영자가 기억할 다섯 가지는 이렇다. ① Compute Optimizer는 14일치 메트릭의 퍼센타일 분포를 ML로 분석해 Over/Under/Optimized를 판정한다. ② 메모리 메트릭은 표준에 없으므로 **CloudWatch Agent**를 깔아야 정확한 권장이 나온다 — 없으면 메모리 바운드 워크로드를 오판한다. ③ 패밀리 글자는 CPU:메모리 비율과 가속기를 결정한다 — M(균형)·C(CPU)·R(메모리)·I(IO)·G/P(GPU). 병목 자원에 풍부한 패밀리를 골라야 한다. ④ Graviton(`g`)은 ARM 기반으로 약 20% 저렴하고, 컨테이너·인터프리터 언어는 대부분 호환된다. ⑤ T 패밀리는 CPU 크레딧 외상 모델 — 꾸준한 운영 부하엔 부적합하고, 크레딧 고갈 시 baseline에 묶인다. EBS는 gp2→gp3 무중단 전환이 공짜에 가까운 최적화다.
 
-### 7. 운영 점검 체크리스트
-
-| 점검 항목 | 도구 |
-|-----------|------|
-| EC2 over-provisioned | Compute Optimizer |
-| EBS gp2 → gp3 | Compute Optimizer / Trusted Advisor |
-| 미사용 EBS | Trusted Advisor / Cost Explorer |
-| 미사용 EIP | Trusted Advisor |
-| 미사용 NAT GW | Cost Explorer (시간당 비용) |
-| Idle RDS | Compute Optimizer |
-| Lambda 과다 메모리 | Power Tuning |
-
----
-
-## 🧠 알아두면 좋은 심화 이론
-
-| 항목 | 설명 | 시험 포인트 |
-|------|------|-------------|
-| **Resource Optimization Recommendations** | Cost Explorer의 내장 | 빠른 권장 |
-| **AWS Trusted Advisor Recommendations** | Idle 인스턴스, Underutilized 등 | Cost 카테고리 |
-| **Savings Plans** | 1년/3년 약정 할인 | Day 4 |
-| **Predictive Scaling** | ML 기반 예측 스케일링 | 트래픽 패턴 |
-| **Enhanced Monitoring** | RDS OS 레벨 메트릭 | 1초 단위 |
-
-> ⚠️ **함정 1**: Compute Optimizer 권장에는 메모리 데이터가 없으면 부정확 — CloudWatch Agent 필수.
->
-> ⚠️ **함정 2**: t 인스턴스의 baseline은 보통의 5~30% — 운영 워크로드엔 부적합.
->
-> 💡 **암기 팁**: M(범용) - C(CPU) - R(메모리) - I(IO) - G/P(GPU). 첫 글자로 용도 추정.
-
-### 관련 서비스 Cross-Reference
-
-- **Compute Optimizer → Week 3 Day 3 CloudWatch Agent** (메모리 메트릭)
-- **Right Sizing → Week 11 Day 3 Cost Explorer**
-- **EBS gp3 → Week 10 Day 1 Snapshot**
-- **Graviton → Week 7 Image Builder** (ARM AMI)
-
----
-
-## 🏗️ 아키텍처 다이어그램
-
-```
-Compute Optimizer 권장 흐름
-==========================================================
-
-   [EC2 / ASG / Lambda / EBS / ECS Fargate / RDS]
-            │
-            │ 메트릭 발생
-            ▼
-   [CloudWatch Metrics (14일 수집)]
-            │
-            ▼ 메모리 메트릭은
-            │  CloudWatch Agent 필요
-            │
-            ▼
-   ┌─────────────────────────────┐
-   │  AWS Compute Optimizer       │
-   │  - ML 분석                   │
-   │  - Right-sizing 권장          │
-   │  - 예상 절감 표시            │
-   └────────┬────────────────────┘
-            │
-            ▼
-   [운영자 콘솔 검토]
-   - Over-provisioned 다운사이즈
-   - Under-provisioned 업사이즈
-   - 다른 패밀리/세대 권장
-   - Graviton 호환 시도
-```
-
----
-
-## ⭐ 핵심 포인트 (시험 출제 빈도 높음)
-
-1. ⭐ **Compute Optimizer = ML 기반 right-sizing** (14일 분석)
-2. ⭐ **메모리 메트릭 있어야 정확** — CloudWatch Agent 활성화 필수
-3. ⭐ **gp2 → gp3 전환 = 20% 저렴 + 성능 ↑** (Trusted Advisor 빈출 권장)
-4. ⭐ **Graviton (ARM) = 20% 저렴**, 호환 시 적극 검토
-5. ⭐ **T 인스턴스는 burstable** — 운영 핵심 워크로드 부적합 (baseline 낮음)
-
----
-
-## 💻 실제 예시 - AWS CLI
-
-```bash
-# 1. Compute Optimizer 활성화
-aws compute-optimizer update-enrollment-status \
-  --status Active \
-  --include-member-accounts
-
-# 2. EC2 권장사항 조회
-aws compute-optimizer get-ec2-instance-recommendations \
-  --filters Name=Finding,Values=Overprovisioned Name=Finding,Values=Underprovisioned \
-  --query 'instanceRecommendations[*].[instanceArn,currentInstanceType,recommendationOptions[0].instanceType,recommendationOptions[0].savingsOpportunity.savingsOpportunityPercentage]' \
-  --output table
-
-# 3. ASG 권장
-aws compute-optimizer get-auto-scaling-group-recommendations \
-  --query 'autoScalingGroupRecommendations[*].[autoScalingGroupName,currentConfiguration.instanceType,recommendationOptions[0].configuration.instanceType]'
-
-# 4. EBS 권장 (gp2 → gp3)
-aws compute-optimizer get-ebs-volume-recommendations \
-  --filters Name=Finding,Values=NotOptimized \
-  --query 'volumeRecommendations[*].[volumeArn,currentConfiguration.volumeType,volumeRecommendationOptions[0].configuration.volumeType,volumeRecommendationOptions[0].savingsOpportunity.savingsOpportunityPercentage]'
-
-# 5. Lambda 권장
-aws compute-optimizer get-lambda-function-recommendations \
-  --query 'lambdaFunctionRecommendations[*].[functionArn,currentMemorySize,memorySizeRecommendationOptions[0].memorySize]'
-
-# 6. 인스턴스 타입 변경
-aws ec2 stop-instances --instance-ids i-abc
-aws ec2 modify-instance-attribute --instance-id i-abc --instance-type "{\"Value\":\"t3.small\"}"
-aws ec2 start-instances --instance-ids i-abc
-
-# 7. EBS gp2 → gp3 변환 (다운타임 없이)
-aws ec2 modify-volume \
-  --volume-id vol-abc \
-  --volume-type gp3 \
-  --iops 3000 \
-  --throughput 125
-
-# 8. Lambda 메모리 조정
-aws lambda update-function-configuration \
-  --function-name my-func \
-  --memory-size 512
-
-# 9. CloudWatch Agent 메모리 메트릭 (Compute Optimizer 정확도 ↑)
-# - Week 3 Day 3 참고
-```
+다음 글에선 개별 리소스 권장을 넘어, 계정 전체의 비용·성능·보안·내결함성·서비스 한도를 다섯 카테고리로 자동 점검하는 **Trusted Advisor**의 구조와 Support 플랜별 접근 차이를 다룬다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** Compute Optimizer 권장이 부정확하다고 느낀다. 가장 흔한 원인은?
+**문제 1.** Compute Optimizer가 메모리 집약적 워크로드(Redis 캐시)를 운영 중인 인스턴스에 대해 "Over-provisioned, 더 작은 타입으로 줄이라"고 권장했다. 이 권장을 의심해야 하는 가장 큰 이유는?
 
-A) 메모리 메트릭이 없음 (CloudWatch Agent 미설치 → CPU/네트워크만으로 권장)
-B) IAM 권한
-C) 리전
-D) 메트릭 보존 부족
+A) Compute Optimizer는 캐시 워크로드를 지원하지 않는다
 
-**정답: A**
-해설: EC2 메모리는 표준 메트릭 X. Agent 미설치 시 메모리 추측 → 권장 정확도 ↓. Agent 설치하면 ML 권장이 더 정확.
+B) EC2 표준 메트릭에 메모리 사용률이 없어, CloudWatch Agent가 없으면 메모리를 모른 채 CPU·네트워크만으로 권장하므로 메모리 바운드 워크로드를 오판할 수 있다
 
----
+C) 14일은 너무 짧은 분석 기간이다
 
-**문제 2.** 회사가 운영 EC2를 gp2 → gp3로 전환하려 한다. 다운타임 있나?
-
-A) 있음 (인스턴스 중지)
-B) 없음 — `modify-volume`으로 온라인 변경 가능
-C) Snapshot 필요
-D) Migration 도구
+D) Redis는 다운사이즈할 수 없다
 
 **정답: B**
-해설: EBS volume type 변경은 온라인. 단, 변경 중 IOPS 일시 저하 가능. 비용/성능 즉시 이득.
+
+해설: EC2의 표준 CloudWatch 메트릭에는 CPU·네트워크·디스크는 있지만 메모리 사용률이 없다. 하이퍼바이저가 게스트 OS 내부 메모리 사용을 들여다볼 수 없기 때문이다. 메모리 메트릭을 얻으려면 게스트 OS 안에 CloudWatch Agent를 설치해 `mem_used_percent`를 푸시해야 한다. Agent가 없으면 Compute Optimizer는 메모리를 "모르는 값"으로 두고 CPU만으로 권장하는데, Redis 같은 메모리 바운드 워크로드는 CPU 사용률이 낮아도 메모리가 꽉 차 있을 수 있어 다운사이즈가 위험하다. 권장의 신뢰도는 Agent 설치 여부에 직결된다.
 
 ---
 
-**문제 3.** T 인스턴스(t3.medium)에서 운영 워크로드가 갑자기 느려진다. 원인은?
+**문제 2.** 컴퓨팅 집약적 동영상 인코딩 배치 작업을 위한 인스턴스 패밀리를 골라야 한다. 작업은 CPU를 거의 100%까지 쓰지만 메모리는 적게 쓴다. 가장 적합한 패밀리는?
 
-A) AWS 장애
-B) Burst Credit 소진 → baseline(20%) CPU로 떨어짐
-C) Disk 가득
-D) 네트워크
+A) R (메모리 최적화)
+
+B) C (컴퓨팅 최적화) — vCPU:메모리 비율이 1:2로 CPU가 풍부
+
+C) T (버스터블)
+
+D) X (초고메모리)
 
 **정답: B**
-해설: T 인스턴스의 함정. 평소 baseline의 5~30%만 보장, burst는 credit 누적분. 운영 워크로드엔 m/c 권장.
+
+해설: 패밀리 선택은 병목 자원에 풍부한 자원을 매칭하는 문제다. CPU 바운드 워크로드는 C 패밀리(컴퓨팅 최적화)가 맞는다 — vCPU 대비 메모리 비율이 약 1:2로, 같은 가격에 더 많은 CPU를 준다. R(A)은 메모리가 풍부한 대신 CPU당 단가가 비싸 CPU 바운드 작업엔 낭비다. T(C)는 꾸준한 고부하에 크레딧이 고갈된다. X(D)는 초대형 인메모리 DB용이다. 인코딩·HPC·과학 연산처럼 CPU를 꾸준히 태우는 작업은 C가 정석이다.
 
 ---
 
-**문제 4.** 회사가 Node.js 기반 마이크로서비스 비용을 20% 줄이려 한다. 어떤 옵션?
+**문제 3.** Node.js 마이크로서비스 클러스터의 컴퓨팅 비용을 약 20% 줄이라는 지시를 받았다. 코드 변경은 최소화하고 싶다. 가장 효과적인 첫 시도는?
 
-A) 인스턴스 더 크게
-B) Graviton (c6g/c7g) 인스턴스로 전환 - ARM 기반, 20% 저렴 + 더 빠름
-C) Spot 무조건
-D) Lambda
+A) 인스턴스 크기를 한 단계 키운다
+
+B) Graviton(예: c6g/c7g) 기반 인스턴스로 전환 — ARM 기반으로 약 20% 저렴하고, Node 같은 인터프리터/런타임 언어는 대부분 재컴파일 없이 동작
+
+C) 모든 인스턴스를 Spot으로 바꾼다
+
+D) Lambda로 전부 재작성한다
 
 **정답: B**
-해설: Graviton은 대부분 컨테이너·Node·Java·Python·Go에 호환. 20% 저렴 + 더 빠름. 호환성 테스트 후 운영.
+
+해설: Graviton은 AWS 자체 설계 ARM 프로세서로 동급 x86 대비 약 20% 저렴하면서 가격 대비 성능이 높다. 대가는 아키텍처 호환성이지만, Node·Java·Python·Go·.NET 같은 런타임/인터프리터 언어는 런타임이 ARM 차이를 흡수하므로 대부분 재컴파일 없이 동작한다. 실무 패턴은 스테이징에서 ARM AMI로 빌드·테스트 후 운영 전환이다. 크기 확대(A)는 비용을 늘리고, Spot 전면 전환(C)은 무상태·회수 견딤이 전제이며, Lambda 재작성(D)은 코드 변경 최소화 요구에 어긋난다.
 
 ---
 
-**문제 5.** Lambda 함수 메모리를 적정값으로 튜닝하려 한다. 어떤 도구?
+**문제 4.** t3.medium에서 운영 중인 API 서버가 매일 오후가 되면 응답이 급격히 느려지고 CPU 그래프가 20%에 천장을 친 듯 눌린다. AWS 장애는 없다. 원인과 올바른 해결은?
 
-A) Compute Optimizer Lambda + Lambda Power Tuning (Step Functions OSS)
-B) X-Ray만
-C) CloudWatch
-D) Manual
+A) 네트워크 대역폭 부족 — 더 큰 네트워크 옵션 인스턴스로 변경
 
-**정답: A**
-해설: Compute Optimizer가 자동 권장. Power Tuning은 메모리별 실행 시간·비용 그래프로 시각화. 두 도구 함께 사용.
+B) CPU 크레딧 고갈로 baseline(20%)에 묶인 것 — 꾸준한 운영 부하이므로 M/C 패밀리로 변경하는 것이 정석
+
+C) 디스크 IOPS 부족 — gp3로 변경
+
+D) 메모리 누수 — 인스턴스 재시작
+
+**정답: B**
+
+해설: T 패밀리는 burstable 모델로, baseline(t3.medium은 20%) 이상을 쓰려면 누적해둔 CPU 크레딧을 소모한다. 꾸준히 baseline을 넘는 부하가 걸리면 크레딧이 고갈되고, 그 순간부터 CPU가 baseline에 강제로 묶여 그래프가 20%에 천장을 친다. 이것이 정체불명 성능 저하의 전형이다. T3 Unlimited 모드로 계속 burst할 수도 있지만 초과 요금이 쌓여, 꾸준한 운영 부하에는 처음부터 baseline이 전체 코어 성능인 M/C 패밀리로 가는 것이 정석이다.
+
+---
+
+**문제 5.** 수백 개의 gp2 EBS 볼륨이 있는 계정에서, 다운타임 없이 즉시 스토리지 비용을 약 20% 줄이고 성능도 개선하려 한다. 무엇을 해야 하나?
+
+A) 모든 볼륨의 스냅샷을 찍어 더 작은 볼륨으로 복원
+
+B) `modify-volume`으로 gp2 → gp3 무중단 전환 — GB당 약 20% 저렴하고 기본 3,000 IOPS·125MB/s를 크기와 무관하게 보장
+
+C) 볼륨을 io2로 변경
+
+D) 볼륨을 S3로 이전
+
+**정답: B**
+
+해설: gp3는 gp2 대비 GB당 약 20% 저렴하고, IOPS·처리량을 볼륨 크기와 독립적으로 보장한다(기본 3,000 IOPS·125MB/s). gp2는 1GB당 3 IOPS로 IOPS가 크기에 묶여 있어 과다 프로비저닝을 유발하지만 gp3는 이 결합을 끊었다. 전환은 `modify-volume` API로 인스턴스 중지 없이 온라인에서 가능하며 스냅샷·재생성이 필요 없다. io2(C)는 더 비싼 고성능 계열이라 단순 비용 절감 목적엔 과하다. gp2→gp3는 다운타임 없는 대표적 quick win이다.
+
+---
+
+**문제 6.** Compute Optimizer가 한 인스턴스를 "Optimized"로 판정했지만, 다음 달 대규모 프로모션으로 트래픽이 5배 증가할 예정이다. 이 권장을 어떻게 다뤄야 하나?
+
+A) Compute Optimizer 권장은 항상 정확하므로 그대로 신뢰한다
+
+B) Compute Optimizer는 과거 14일 데이터만 보고 미래 부하 증가를 모르므로, 예정된 트래픽 급증을 감안해 권장을 보정해야 한다
+
+C) 권장을 무시하고 인스턴스를 종료한다
+
+D) 14일을 1일로 줄여 재분석한다
+
+**정답: B**
+
+해설: Compute Optimizer의 권장은 최근 14일의 실측 메트릭에 기반한 과거 지향 분석이다. 미래의 트래픽 변화, 곧 출시할 기능, 예정된 프로모션 같은 정보는 입력에 없다. 따라서 "Optimized" 판정은 현재 워크로드 모양 기준일 뿐이며, 5배 트래픽이 예정돼 있다면 운영자가 그 사실을 반영해 헤드룸을 더 확보해야 한다. 도구의 권장은 의사결정의 입력이지 최종 답이 아니다. 1일 재분석(D)은 오히려 우연한 변동에 휘둘려 더 부정확해진다.
+
+---
+
+**문제 7.** 100개의 독립적인 서비스를 큰 공용 인스턴스 풀(Auto Scaling Group)에 모아 운영하면, 각 서비스를 단독 인스턴스에 격리할 때보다 평균 사용률을 더 높게 안전하게 가져갈 수 있다. 그 이론적 근거는?
+
+A) AWS가 풀이 크면 자동 할인을 준다
+
+B) 통계적 다중화 — 독립 워크로드가 많을수록 전체 동시 피크 확률이 낮아져(대수의 법칙) 전체 피크가 개별 피크의 합보다 작다
+
+C) 큰 인스턴스가 항상 더 빠르다
+
+D) Auto Scaling은 사용률을 무시한다
+
+**정답: B**
+
+해설: 통계적 다중화(statistical multiplexing)의 핵심은 독립적인 워크로드를 모을수록 그들이 동시에 피크를 칠 확률이 급격히 낮아진다는 것이다(대수의 법칙). 100개 서비스가 각자 다른 시각에 피크를 친다면 전체가 동시에 피크를 칠 가능성은 거의 0이라, 전체 풀은 개별 피크의 단순 합보다 훨씬 작은 용량으로 모두를 수용할 수 있다. 그래서 큰 공용 풀은 높은 평균 사용률에서도 안전하다. 반대로 단독 격리는 각자 피크에 맞춰야 해 사용률이 낮을 수밖에 없다. 이것이 클라우드가 자원 풀링으로 효율을 내는 근본 원리다.
 
 ---
 
 ## 📌 오늘의 요약
 
-1. Compute Optimizer = ML 기반 right-sizing 자동 권장 (14일 분석)
-2. EC2 패밀리: M(범용)/C(CPU)/R(메모리)/I(IO)/G·P(GPU)/T(burst). 명명에 g(Graviton)·n(네트워크)·d(NVMe) 옵션
-3. Graviton(ARM)은 20% 저렴 + 빠름. 호환 가능한 워크로드에 적극 권장
-4. gp2 → gp3 = 20% 저렴 + 성능 ↑. 다운타임 없이 변경
-5. T 인스턴스는 burstable — 운영 핵심 워크로드 부적합 (baseline 낮음)
+1. Compute Optimizer는 14일치 메트릭의 퍼센타일 분포를 ML로 분석해 Over/Under/Optimized를 판정한다. EC2·ASG·EBS·Lambda·Fargate·RDS 지원
+2. 메모리 메트릭은 EC2 표준에 없으므로 CloudWatch Agent 설치가 정확한 권장의 전제 — 없으면 메모리 바운드 워크로드를 오판
+3. 패밀리 글자 = CPU:메모리 비율 + 가속기. M(균형)·C(CPU)·R(메모리)·I(IO)·G/P(GPU). 병목 자원에 풍부한 패밀리 선택
+4. Graviton(`g`)은 AWS 자체 ARM 칩으로 약 20% 저렴, 컨테이너·런타임 언어는 대부분 호환. T 패밀리는 CPU 크레딧 외상 모델로 꾸준한 부하엔 부적합
+5. EBS는 gp2→gp3 무중단 전환이 GB당 20% 절감 + 성능 개선의 대표적 quick win

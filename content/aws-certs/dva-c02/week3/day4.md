@@ -1,435 +1,447 @@
-# Day 14 - Lambda: 동시성, 오류 처리, DLQ
+# Day 14 - Lambda 동시성 제어: Token Bucket 알고리즘과 에러 처리 계층
 
-📅 날짜: 2026년 6월 3일 (수요일)  
-🎯 주제: Lambda 동시성 및 오류 처리  
-⏱️ 학습 시간: 약 90분
+Lambda의 동시성 모델은 처음 보면 단순해 보인다. "함수가 동시에 몇 개 실행되느냐"의 문제처럼 보인다. 하지만 실제로는 계정 전체 한도, 함수별 Reserved 동시성, Provisioned 동시성, 버스트 한도라는 네 개의 다른 메커니즘이 중첩되어 있고, 이 계층 구조를 이해하지 못하면 "내 Lambda가 왜 429를 뱉는지", "왜 다른 팀 함수 때문에 내 함수가 느려지는지"를 설명할 수 없다.
 
----
+에러 처리도 마찬가지다. 동기, 비동기, ESM 세 가지 호출 방식은 에러가 발생했을 때 완전히 다르게 반응한다. 이걸 모르면 Kinesis 샤드가 통째로 막히거나, SQS 메시지가 영원히 재처리되는 사고로 이어진다.
 
-## 🎯 학습 목표
+## 동시성의 정의와 계산
 
-- Lambda 동시성(Concurrency) 모델을 이해한다
-- Lambda 오류 처리 방법과 재시도 정책을 설명한다
-- DLQ(Dead Letter Queue)와 Lambda Destinations를 구성한다
-
----
-
-## 📖 이론 내용
-
-### 1. Lambda 동시성 (Concurrency)
-
-동시성은 주어진 시간에 동시 처리 중인 Lambda 함수 실행 수입니다.
-
-**동시성 계산:**
-```
-동시성 = 초당 요청 수 × 평균 실행 시간(초)
-예: 1000 req/s × 0.5초 = 500 동시성
-```
-
-**동시성 유형:**
-
-#### 예약 동시성 (Reserved Concurrency)
-- 특정 함수에 동시성 상한선 설정
-- 다른 함수가 이 동시성을 사용할 수 없음
-- **⭐ 동시성을 0으로 설정하면 함수 실행 완전 차단**
-- 스로틀링 방지 또는 다른 함수 보호에 사용
-
-#### 프로비저닝된 동시성 (Provisioned Concurrency)
-- 미리 초기화된 실행 환경 유지
-- 콜드 스타트 완전 제거
-- 비용 추가 발생 (초기화 시간에도 과금)
-- **⭐ 일관된 응답 시간이 중요한 API에 사용**
-
-#### 계정 동시성 한도
-- 리전별 기본 1,000 동시성
-- 증가 요청 가능
-
-### 2. Lambda 스로틀링 (Throttling)
-
-동시성 한도 초과 시 스로틀링 발생:
-- **동기 호출**: HTTP 429 (Too Many Requests) 오류 반환
-- **비동기 호출**: 자동 재시도, 그 후 DLQ 또는 Destinations
-
-### 3. Lambda 오류 처리
-
-#### 오류 유형
-- **함수 오류**: 핸들러 코드에서 발생한 예외
-- **런타임 오류**: 타임아웃, 메모리 부족 등
-- **호출 오류**: 서비스 오류 (스로틀링 등)
-
-#### 동기 호출 오류 처리
-```python
-import json
-import boto3
-
-lambda_client = boto3.client('lambda')
-
-try:
-    response = lambda_client.invoke(
-        FunctionName='my-function',
-        InvocationType='RequestResponse',  # 동기
-        Payload=json.dumps({'key': 'value'})
-    )
-    
-    # 함수 오류 확인 (HTTP 200이어도 함수 내부 오류 가능)
-    if 'FunctionError' in response:
-        error_payload = json.loads(response['Payload'].read())
-        print(f"함수 오류: {error_payload}")
-    else:
-        result = json.loads(response['Payload'].read())
-        print(f"성공: {result}")
-
-except lambda_client.exceptions.TooManyRequestsException:
-    print("스로틀링 발생 - 재시도 필요")
-```
-
-#### 비동기 호출 재시도
-- 자동 2회 재시도
-- 재시도 간격: 1분, 2분
-- 실패 후 DLQ 또는 Destinations로 이벤트 전송
-
-### 4. DLQ (Dead Letter Queue)
-
-실패한 비동기 Lambda 이벤트를 수신하는 큐입니다.
-
-**지원 대상:**
-- Amazon SQS 큐
-- Amazon SNS 주제
-
-**DLQ 사용 시나리오:**
-- 처리 실패한 이벤트 보존
-- 실패 분석 및 재처리
-- 경보 설정
-
-### 5. Lambda Destinations (대상)
-
-Destinations는 DLQ의 더 발전된 형태입니다.
-
-**Destinations 지원:**
-- 성공/실패 모두 설정 가능
-- **SQS, SNS, EventBridge, Lambda** 대상 지원
-- 이벤트 결과와 함께 메타데이터 포함
-
-**DLQ vs Destinations:**
-| 특성 | DLQ | Destinations |
-|------|-----|--------------|
-| 성공 시 | 설정 불가 | 설정 가능 |
-| 지원 서비스 | SQS, SNS | SQS, SNS, EventBridge, Lambda |
-| 이벤트 컨텍스트 | 기본 | 풍부한 메타데이터 |
-| 권장 | 구형 | **최신, 권장** |
-
----
-
-## 🧠 알아두면 좋은 심화 이론
-
-### 동시성 4종 - 정확한 차이 (시험에서 헷갈리기 좋음)
-
-| 종류 | 단위 | 비용 | 용도 |
-|------|------|------|------|
-| **계정 동시성 한도** | 리전 전체 | - | 기본 1,000 (증가 요청 가능) |
-| **예약 동시성 (Reserved)** | 함수당 | 무료 | 함수별 상한선 보장 |
-| **프로비저닝된 동시성 (Provisioned)** | 함수·버전·별칭당 | 시간당 과금 | 콜드 스타트 제거 |
-| **버스트 동시성** | 리전 즉시 한도 | - | 초기 500~3,000 + 분당 +500 |
-
-> ⚠️ **함정**:
-> - **Reserved=0** → 함수 완전 비활성화
-> - Reserved를 설정한 함수는 **전체 동시성 풀에서 그만큼 차감** (나머지 함수가 쓸 수 있는 양 ↓)
-> - Provisioned는 **버전 또는 별칭**에만 설정 가능 ($LATEST 불가)
-
-### 동시성 스케일링 한도 (시험에 자주 나옴)
+Lambda 동시성은 **특정 시점에 동시에 실행 중인 함수 인스턴스 수**다. 공식은 간단하다.
 
 ```
-초기 버스트:     ~3,000 (리전에 따라 500/1,000/3,000)
-이후:           분당 +500 동시성씩 증가
-계정 한도까지 도달 가능
+동시성 = 초당 요청 수(RPS) × 평균 실행 시간(초)
+
+예:
+- RPS = 1,000, 평균 실행 시간 = 200ms(0.2초)
+- 동시성 = 1,000 × 0.2 = 200
+
+- RPS = 100, 평균 실행 시간 = 5초
+- 동시성 = 100 × 5 = 500
 ```
 
-스케일링 속도 한도를 넘으면 **429 스로틀링** → 동기 호출자가 직접 백오프해야 함.
+이 공식에서 보이는 것처럼, 실행 시간이 길수록 동시성 소비가 크다. 타임아웃을 15분으로 설정한 Lambda가 100개 동시 실행되고 있다면, 그 15분 동안 1,500 동시성을 차지한다 — 계정 기본 한도(1,000)를 이미 초과한다.
 
-### 동기 vs 비동기 vs ESM 에러 처리 정확히
+> 💡 **관련 이론**: Lambda의 동시성 소비 계산은 Little's Law(리틀의 법칙, 1961)와 동일하다. `L = λW` — L이 시스템 내 평균 항목 수(동시성), λ가 도착률(RPS), W가 시스템에서 보내는 평균 시간(실행 시간)이다. 이 법칙은 큐 이론(Queueing Theory)의 기반이며, 콜 센터 인력 계산에서 클라우드 용량 계획까지 광범위하게 사용된다. M/M/c 큐 모델로 확장하면 Lambda 스로틀링 확률도 계산할 수 있다.
 
-| 트리거 | 에러 발생 시 |
-|--------|---------------|
-| **동기 (API GW)** | 500 응답 → API GW가 클라이언트에 5xx |
-| **비동기 (S3, SNS)** | 자동 2회 재시도 → DLQ/Destinations |
-| **SQS** | 가시성 타임아웃 후 메시지 큐로 복귀 (`maxReceiveCount` 도달 시 SQS DLQ로) |
-| **Kinesis/DDB Streams** | 기본 무한 재시도 (전체 샤드 블록!) → MaximumRetryAttempts·MaximumRecordAgeInSeconds 설정 필수 |
-
-> ⚠️ **함정**: Kinesis ESM에서 한 레코드가 계속 실패하면 **전체 샤드가 막힘** → 시험 시나리오. 대응: BisectBatchOnFunctionError + OnFailure destination.
-
-### SQS DLQ vs Lambda DLQ - 다른 개념!
-
-| 항목 | SQS DLQ | Lambda DLQ |
-|------|---------|------------|
-| 위치 | SQS 큐의 속성 | Lambda 함수 속성 |
-| 동작 | `maxReceiveCount` 초과 메시지 자동 이동 | Lambda 비동기 호출 최종 실패 시 발송 |
-| 적용 | SQS → Lambda 모두 | 비동기 호출만 |
-
-> 시험에 SQS-Lambda 시나리오에서 "메시지 4번 실패하면 어디로?" → **SQS 큐의 DLQ** 설정.
-
-### Lambda Function URL과 동시성
-
-- Function URL도 일반 동기 호출과 같음
-- 429 스로틀 발생 가능
-- API Gateway 같은 자동 백오프는 없음 → 클라이언트가 처리
-
-### CloudWatch Lambda 메트릭 (시험 출제 - Troubleshooting)
-
-| 메트릭 | 의미 |
-|--------|------|
-| **Invocations** | 호출 횟수 |
-| **Duration** | 실행 시간 |
-| **Errors** | 함수 오류 수 |
-| **Throttles** | 스로틀된 호출 수 |
-| **ConcurrentExecutions** | 동시 실행 수 |
-| **ProvisionedConcurrencyUtilization** | PC 사용률 (80% 넘으면 부족) |
-| **IteratorAge** | Kinesis/DDB Streams 처리 지연 |
-| **DeadLetterErrors** | DLQ 전송 실패 (DLQ 권한 부족) |
-
-> 💡 **IteratorAge가 계속 증가** → Lambda가 스트림을 못 따라잡음 → 동시성 ↑, ParallelizationFactor ↑, 처리 로직 최적화.
-
-### Reserved와 Provisioned 같이 쓰는 패턴
+## 동시성 네 계층의 완전한 그림
 
 ```
-함수 A: Reserved Concurrency = 100
-         Provisioned Concurrency = 30 (버전 5 별칭 "prod")
-         
-의미: 항상 30개 환경 미리 켜둠 (콜드 X)
-      최대 100개까지 확장
-      나머지 70개는 일반 환경에서 콜드 스타트 발생 가능
+계정/리전 전체 한도: 1,000 (기본, 증가 요청 가능)
+│
+├── [함수 A] Reserved: 300 → 최대 300개 인스턴스
+│   └── Provisioned: 20 → 항상 20개 미리 초기화
+│
+├── [함수 B] Reserved: 200 → 최대 200개 인스턴스
+│
+└── [나머지 함수들] 공유 풀: 500 (1000 - 300 - 200)
+    └── Reserved 없는 모든 함수가 이 500을 두고 경쟁
 ```
 
-### 관련 서비스 Cross-Reference
+**Reserved Concurrency(예약 동시성):**
+- 함수의 동시성 **상한선**이자 **전용 할당**
+- 이 함수는 최대 N개까지만 실행되고, 다른 함수가 이 N개를 쓸 수 없다
+- 0으로 설정하면 완전 차단(ThrottlingException)
+- 비용: 없음
 
-- **CloudWatch 경보 → Auto-rollback** → [Week 8 Day 3 CodeDeploy]
-- **X-Ray** → [Week 10 Day 3]: Lambda 함수 추적
-- **EventBridge 스케줄** → [Week 11 Day 3]
-- **SQS visibility timeout** → [Week 11 Day 1]
+**Provisioned Concurrency(프로비저닝된 동시성):**
+- 지정한 수만큼 MicroVM을 미리 초기화해 대기
+- 콜드 스타트 없이 즉시 INVOKE 단계만 실행
+- 반드시 버전 또는 별칭에만 설정 가능 (`$LATEST` 불가)
+- 비용: 초기화된 인스턴스 수 × 시간 × 메모리(GB) × $0.0000097222/GB-초
 
----
+```bash
+# Reserved Concurrency 설정
+aws lambda put-function-concurrency \
+  --function-name payment-api \
+  --reserved-concurrent-executions 300
 
-## 아키텍처 다이어그램
+# 완전 차단 (모든 요청 즉시 ThrottlingException)
+aws lambda put-function-concurrency \
+  --function-name maintenance-mode-function \
+  --reserved-concurrent-executions 0
 
-```
-Lambda 동시성 관리
-================================
-
-계정 동시성 한도: 1000
-  |
-  +-- my-api-function: 예약 동시성 300
-  |    (최대 300개 동시 실행, 이 함수 전용)
-  |
-  +-- my-batch-function: 예약 동시성 200
-  |    (최대 200개 동시 실행)
-  |
-  +-- 나머지 함수들: 500개 공유
-       (예약 동시성 없음)
-
-프로비저닝된 동시성:
-my-api-function: 10개 환경 미리 초기화
-  --> 콜드 스타트 없이 즉시 10개까지 처리
-
-Lambda 오류 처리 흐름
-================================
-
-[이벤트 발생]
-     |
-     v
-[Lambda 호출 시도]
-     |
-     +-- 성공 --> 결과 반환 --> [성공 Destination]
-     |
-     실패
-     |
-     v
-[재시도 1 (1분 후)]
-     |
-     +-- 성공 --> [성공 Destination]
-     |
-     실패
-     |
-     v
-[재시도 2 (2분 후)]
-     |
-     +-- 성공 --> [성공 Destination]
-     |
-     최종 실패
-     |
-     v
-[DLQ 또는 실패 Destination]
-(SQS/SNS/EventBridge/Lambda)
-     |
-     v
-[실패 이벤트 분석/재처리]
+# Provisioned Concurrency (별칭에)
+aws lambda put-provisioned-concurrency-config \
+  --function-name payment-api \
+  --qualifier prod \
+  --provisioned-concurrent-executions 20
 ```
 
----
+> ⚠️ **함정**: Reserved Concurrency를 설정하면 계정 전체 풀에서 그만큼이 차감된다. 함수 A에 Reserved=500을 설정하면 나머지 함수들은 500만 공유한다. 함수들이 많이 동시에 실행되는 피크타임에 "왜 갑자기 다른 함수들이 스로틀링 되지?"라는 상황이 Reserved 설정 때문에 발생하는 경우가 있다.
 
-## ⭐ 핵심 포인트 (시험 출제 빈도 높음)
+## 버스트 동시성 한도: 스케일아웃의 속도 제한
 
-1. ⭐ **예약 동시성 = 0**: 함수 완전 비활성화 (모든 요청 스로틀)
-2. ⭐ **비동기 재시도**: 최대 2회, 1분/2분 간격
-3. ⭐ **Destinations > DLQ**: 성공 이벤트도 처리, 더 많은 대상, 권장
-4. ⭐ **스로틀링 대응**: 동기=429 오류, 비동기=큐에 남겨두고 재시도
-5. ⭐ **동시성 공식**: 초당 요청 수 × 평균 실행 시간
+Lambda는 트래픽 급증 시 자동으로 동시성을 늘린다. 하지만 무한정 빠르게 늘릴 수는 없다.
 
----
+**초기 버스트 한도:** 리전별로 500~3,000개. 서울(ap-northeast-2)은 500개.
 
-## 💻 실제 예시
+**이후 증가율:** 분당 +500개씩 추가.
+
+이 의미는: 갑자기 5,000 동시성이 필요한 트래픽이 들어오면, 첫 번째 분에는 500개만, 2분 후에 1,000개, 3분 후에 1,500개... 순서로 늘어난다. 계정 한도(1,000)에 도달할 때까지. 한도 증가 요청으로 계정 한도를 5,000으로 올려놓았어도, 스케일아웃 속도는 마찬가지로 분당 +500개다.
+
+이 속도를 초과하는 요청은 **ThrottlingException(429)**을 받는다.
+
+| 리전 | 초기 버스트 |
+|------|------------|
+| us-east-1, us-west-2, eu-west-1 | 3,000 |
+| ap-northeast-1 (도쿄), ap-southeast-1 | 1,000 |
+| ap-northeast-2 (서울) | 500 |
+| 나머지 리전 | 500 |
+
+> 🔍 **더 깊이**: 버스트 한도는 Token Bucket 알고리즘으로 구현된다. 버킷에는 최대 3,000개(리전 버스트 한도)의 토큰이 있고, 분당 500개씩 채워진다. Lambda 호출 시 토큰을 하나 소비한다. 토큰이 없으면 429. 이 알고리즘은 AWS API Gateway, SQS, Kinesis, EC2 API 등 AWS 전반에서 스로틀링 제어에 사용된다. RFC 6585에서 HTTP 429 상태 코드를 정의했다.
+
+## CloudWatch 메트릭으로 동시성 문제 진단
+
+| 메트릭 | 네임스페이스 | 의미 | 높으면 조치 |
+|--------|------------|------|------------|
+| `ConcurrentExecutions` | AWS/Lambda | 현재 동시 실행 수 | Reserved 한도에 근접하면 증가 고려 |
+| `Throttles` | AWS/Lambda | 스로틀된 호출 수 | Reserved/계정 한도 증가 |
+| `ProvisionedConcurrencyUtilization` | AWS/Lambda | PC 사용률 | 80% 이상 지속 시 PC 추가 |
+| `IteratorAge` | AWS/Lambda | Kinesis/DDB Streams 처리 지연 | 계속 증가 → ParallelizationFactor 늘리기 |
+| `DeadLetterErrors` | AWS/Lambda | DLQ 전송 실패 | DLQ 권한(IAM) 확인 |
+
+```bash
+# CloudWatch에서 동시성 메트릭 조회
+aws cloudwatch get-metric-statistics \
+  --namespace AWS/Lambda \
+  --metric-name ConcurrentExecutions \
+  --dimensions Name=FunctionName,Value=payment-api \
+  --start-time 2026-05-31T00:00:00Z \
+  --end-time 2026-05-31T23:59:59Z \
+  --period 300 \
+  --statistics Maximum
+```
+
+> 💡 **관련 이론**: `IteratorAge`는 현재 시간과 Kinesis/DynamoDB Streams에서 처리 중인 레코드의 Put 시간 차이다. 이 값이 계속 증가하면 Lambda가 스트림 속도를 따라잡지 못하는 것이다. 해결책은 Kinesis 샤드 수 증가(처리량 분산), Lambda `ParallelizationFactor` 증가(샤드당 병렬 Lambda 수), 또는 Lambda 실행 시간 최적화다.
+
+## 에러 처리 계층: 호출 방식별 완전 비교
+
+에러가 발생했을 때 "누가 재시도하는가", "어디로 실패 이벤트가 가는가"가 호출 방식마다 완전히 다르다.
+
+**동기 호출 (API Gateway, ALB, 직접 invoke):**
+- Lambda가 에러를 던지면 HTTP 200 + `FunctionError` 헤더로 응답
+- 재시도는 **호출자의 책임** (API Gateway 기본: 재시도 없음)
+- DLQ 없음. 에러 이벤트가 어디로도 가지 않는다
+- 클라이언트가 503이나 500을 받으면 직접 재시도 구현 필요
+
+**비동기 호출 (S3, SNS, EventBridge, 직접 invoke Event 타입):**
+- Lambda 서비스가 내부 큐에 이벤트를 보관
+- 자동 재시도: 최대 2회, 1분/2분 간격(지수 백오프)
+- 최종 실패 시 DLQ(SQS 또는 SNS) 또는 Destinations OnFailure로 전송
+- 이벤트 나이 최대 21,600초(6시간) — 그 이후엔 처리 안 됨
+
+**ESM 폴링 (SQS, Kinesis, DDB Streams):**
+- SQS: 가시성 타임아웃 후 메시지가 큐로 복귀. `maxReceiveCount` 초과 시 SQS DLQ
+- Kinesis/DDB Streams: 기본 무한 재시도(샤드 블록!). `MaximumRetryAttempts`로 제한 필수
+- Lambda 함수의 DLQ와 SQS 큐의 DLQ는 **완전히 다른 개념**
+
+```
+호출 방식별 에러 처리 흐름
+
+[동기 - API Gateway]
+클라이언트 → API GW → Lambda → 에러 발생
+                              ↓
+              API GW에 FunctionError 응답
+                              ↓
+              클라이언트에 5XX 반환 (API GW 설정에 따라)
+              재시도 = 클라이언트 코드가 결정
+
+[비동기 - S3]
+S3 업로드 → Lambda 내부 큐 → Lambda 실행 → 에러 발생
+                               ↓
+                         1분 후 자동 재시도
+                               ↓ (또 실패)
+                         2분 후 자동 재시도
+                               ↓ (또 실패)
+                     → DLQ 또는 Destinations OnFailure
+
+[ESM - SQS]
+메시지 → Lambda 폴링 → Lambda 실행 → 에러 발생
+                               ↓
+         가시성 타임아웃 종료 후 메시지 큐 복귀
+                               ↓ (maxReceiveCount 초과)
+                     → SQS DLQ (함수 DLQ 아님!)
+```
+
+> 📚 **사례**: 2020년 한 핀테크 스타트업이 Kinesis + Lambda로 실시간 거래 이상 감지 시스템을 구축했다. 특정 포맷의 이상 거래 레코드가 Lambda 처리를 실패시켰는데, `MaximumRetryAttempts`를 설정하지 않아 샤드 전체가 블록됐다. 수시간 동안 새 거래 데이터가 처리되지 않았고, 이상 거래 알림이 전혀 가지 않았다. `CloudWatch IteratorAge` 메트릭이 치솟고 있었지만 알람이 없어서 늦게 발견됐다. 이후 회사는 `IteratorAge > 300000ms`(5분) 알람을 모든 Kinesis ESM에 필수 설정으로 정책화했다.
+
+## DLQ vs Lambda Destinations: 정확한 선택 기준
+
+| 상황 | 권장 |
+|------|------|
+| 비동기 호출 실패 이벤트 보존 | Destinations OnFailure |
+| 비동기 호출 성공 이벤트도 감사 필요 | Destinations OnSuccess |
+| SQS-Lambda ESM에서 최종 실패 처리 | SQS 큐 자체에 DLQ 설정 |
+| 기존 레거시 코드가 DLQ를 이미 사용 중 | DLQ 유지 (마이그레이션 여유 있을 때 Destinations로) |
+
+Destinations가 DLQ보다 나은 이유:
+1. **성공 이벤트 처리 가능**: 함수가 성공했을 때도 이벤트를 보낼 수 있다 (감사, 다음 단계 트리거)
+2. **더 다양한 대상**: SQS, SNS뿐 아니라 EventBridge와 Lambda도 대상
+3. **풍부한 컨텍스트**: 원본 이벤트 + 요청 컨텍스트 + 응답/에러 정보를 모두 포함한 JSON
+4. **표준 비동기 패턴**: 이벤트 기반 아키텍처의 팬아웃과 더 잘 맞음
 
 ```python
-# Lambda 함수 오류 처리 패턴
-import json
+# Destinations OnFailure가 전달하는 이벤트 구조 (예시)
+{
+  "version": "1.0",
+  "timestamp": "2026-05-31T09:30:00Z",
+  "requestContext": {
+    "requestId": "abc-123",
+    "functionArn": "arn:aws:lambda:...:function:payment-api:prod",
+    "condition": "RetriesExhausted",
+    "approximateInvokeCount": 3  # 원본 1회 + 재시도 2회
+  },
+  "requestPayload": {
+    "customerId": "C001",
+    "amount": 9999
+  },
+  "responseContext": {
+    "statusCode": 200,  # Lambda API 수준, 함수 에러가 있어도 200
+    "executedVersion": "$LATEST",
+    "functionError": "Unhandled"
+  },
+  "responsePayload": {
+    "errorMessage": "Payment gateway timeout",
+    "errorType": "TimeoutError"
+  }
+}
+```
+
+## SQS DLQ vs Lambda DLQ: 같은 이름 다른 개념
+
+시험에서 가장 많이 혼동하는 부분이다.
+
+**SQS DLQ(Dead Letter Queue):**
+- SQS 큐의 **속성**이다
+- SQS 메시지가 `maxReceiveCount` 횟수를 초과해 소비됐을 때 SQS DLQ로 이동
+- SQS-Lambda ESM에서 Lambda가 반복 실패하면 → 메시지가 가시성 타임아웃마다 재시도 → `maxReceiveCount` 초과 → SQS DLQ
+
+**Lambda DLQ:**
+- Lambda 함수의 **설정**이다
+- **비동기 호출**이 최종 실패(원본 + 2회 재시도 모두 실패)할 때 이벤트를 전송
+- SQS-Lambda ESM에서는 Lambda DLQ가 적용되지 않는다. ESM 실패는 SQS DLQ가 담당
+
+```
+시나리오: SQS → Lambda ESM에서 Lambda가 계속 실패
+
+Lambda DLQ 설정 여부와 무관!
+  → 메시지가 가시성 타임아웃 후 SQS 큐로 복귀
+  → maxReceiveCount(기본 3) 초과 후
+  → SQS 큐에 설정된 DLQ로 이동
+
+Lambda DLQ는 S3/SNS 등 비동기 호출에서 동작
+```
+
+## Reserved + Provisioned 동시성을 함께 쓰는 실전 패턴
+
+```
+시나리오: 금융 API (결제 처리)
+- 평소 트래픽: 50 동시성
+- 피크 트래픽: 200 동시성
+- 콜드 스타트 허용 불가 (응답 시간 SLA: p99 < 500ms)
+
+설정:
+Reserved Concurrency = 300  (계정 한도에서 300 전용 할당)
+Provisioned Concurrency = 50  (항상 50개 웜 상태 대기)
+
+동작:
+- 평소: 50개 Provisioned 인스턴스가 처리, 콜드 스타트 없음
+- 트래픽 급증 시: 50개를 초과하는 요청은 새 인스턴스 생성(콜드 스타트 발생 가능)
+- 트래픽이 300 초과 시: ThrottlingException (Reserved가 상한선 역할)
+- 다른 함수들이 이 300을 쓸 수 없음 (전용 할당)
+
+Auto Scaling 설정:
+PC를 80% 사용 시 자동으로 PC 추가
+```
+
+```bash
+# Application Auto Scaling으로 Provisioned Concurrency 자동 조절
+aws application-autoscaling register-scalable-target \
+  --service-namespace lambda \
+  --resource-id function:payment-api:prod \
+  --scalable-dimension lambda:function:ProvisionedConcurrency \
+  --min-capacity 10 \
+  --max-capacity 200
+
+aws application-autoscaling put-scaling-policy \
+  --service-namespace lambda \
+  --resource-id function:payment-api:prod \
+  --scalable-dimension lambda:function:ProvisionedConcurrency \
+  --policy-name pc-tracking-policy \
+  --policy-type TargetTrackingScaling \
+  --target-tracking-scaling-policy-configuration '{
+    "TargetValue": 0.7,
+    "PredefinedMetricSpecification": {
+      "PredefinedMetricType": "LambdaProvisionedConcurrencyUtilization"
+    }
+  }'
+```
+
+## 비동기 에러 처리 패턴: 비즈니스 에러 vs 시스템 에러
+
+Lambda에서 에러를 모두 같은 방식으로 처리하면 안 된다.
+
+**시스템 에러(재시도 가능)**: DB 연결 실패, HTTP 타임아웃, 일시적 503. 예외를 던져서 Lambda 재시도 메커니즘을 활용한다.
+
+**비즈니스 에러(재시도 불필요)**: 유효하지 않은 데이터, 권한 없음, 도메인 규칙 위반. 재시도해도 결과가 같으므로 예외를 던지지 말고 성공 응답을 반환하거나 에러 이벤트를 다른 큐로 라우팅한다.
+
+```python
 import logging
-import traceback
+import json
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 class BusinessError(Exception):
-    """비즈니스 로직 오류 (재시도하면 안 되는 오류)"""
+    """도메인 규칙 위반 — 재시도해도 의미 없음"""
     pass
 
-class TransientError(Exception):
-    """일시적 오류 (재시도 가능)"""
+class RetryableError(Exception):
+    """일시적 시스템 오류 — 재시도하면 성공할 수 있음"""
     pass
 
 def lambda_handler(event, context):
     try:
-        # 비즈니스 로직
-        result = process_event(event)
+        order_id = event.get('orderId')
+        if not order_id:
+            # 비즈니스 에러 — 재시도해도 소용 없음
+            # 예외 대신 에러 응답을 반환하거나 SQS에 직접 보내기
+            logger.error(f"유효하지 않은 주문 ID: {event}")
+            return {'status': 'BUSINESS_ERROR', 'reason': 'orderId missing'}
         
-        return {
-            'statusCode': 200,
-            'body': json.dumps(result)
-        }
+        result = process_order(order_id)
+        return {'status': 'SUCCESS', 'orderId': order_id}
     
-    except BusinessError as e:
-        # 재시도해도 소용 없는 오류 → 로그만 남기고 성공 반환
-        logger.error(f"비즈니스 오류 (재시도 안 함): {str(e)}")
-        return {
-            'statusCode': 400,
-            'body': json.dumps({'error': str(e)})
-        }
-    
-    except TransientError as e:
-        # 재시도 가능한 오류 → 예외 발생시켜 Lambda 재시도 유도
-        logger.warning(f"일시적 오류 (재시도 예정): {str(e)}")
-        raise  # Lambda가 재시도하도록 예외 다시 발생
+    except RetryableError as e:
+        # 재시도 필요 — 예외를 다시 던져서 Lambda 재시도 유도
+        logger.warning(f"일시적 오류, 재시도 예정: {str(e)}")
+        raise  # Lambda 비동기 재시도 메커니즘이 동작
     
     except Exception as e:
-        logger.error(f"예상치 못한 오류: {traceback.format_exc()}")
+        # 예상치 못한 에러 — 재시도하면서 상황 파악
+        logger.error(f"예상치 못한 에러: {str(e)}", exc_info=True)
         raise
-
-def process_event(event):
-    # 비즈니스 로직 구현
-    pass
 ```
 
-```bash
-# 예약 동시성 설정 (함수 보호)
-aws lambda put-function-concurrency \
-  --function-name my-api-function \
-  --reserved-concurrent-executions 300
+> 🔍 **더 깊이**: 비즈니스 에러와 시스템 에러를 구분하는 패턴은 Martin Fowler의 "Patterns of Enterprise Application Architecture"(2002)에서 논의된다. 분산 시스템에서는 여기에 **일시적 장애(transient failure)** 개념이 추가된다 — 재시도하면 성공할 수 있는 오류. AWS SDK는 내부적으로 exponential backoff with jitter를 사용해 재시도한다. 이 알고리즘은 AWS "Exponential Backoff And Jitter" 블로그 포스트(2015)에서 공개적으로 설명됐다.
 
-# 예약 동시성 제거 (공유 풀 사용)
-aws lambda delete-function-concurrency \
-  --function-name my-api-function
+## 스로틀링 대응 패턴
 
-# 프로비저닝된 동시성 설정
-aws lambda put-provisioned-concurrency-config \
-  --function-name my-api-function \
-  --qualifier prod \
-  --provisioned-concurrent-executions 10
+**동기 호출에서 429를 받는 클라이언트:**
+```python
+import boto3
+import time
+from botocore.exceptions import ClientError
 
-# DLQ 설정
-aws lambda update-function-configuration \
-  --function-name my-function \
-  --dead-letter-config TargetArn=arn:aws:sqs:ap-northeast-2:123:my-dlq
+lambda_client = boto3.client('lambda')
 
-# Lambda Destinations 설정
-aws lambda put-function-event-invoke-config \
-  --function-name my-function \
-  --maximum-retry-attempts 2 \
-  --maximum-event-age-in-seconds 3600 \
-  --destination-config '{
-    "OnSuccess": {
-      "Destination": "arn:aws:events:ap-northeast-2:123:event-bus/default"
-    },
-    "OnFailure": {
-      "Destination": "arn:aws:sqs:ap-northeast-2:123:failure-queue"
-    }
-  }'
+def invoke_with_retry(function_name, payload, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return lambda_client.invoke(
+                FunctionName=function_name,
+                InvocationType='RequestResponse',
+                Payload=payload
+            )
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'TooManyRequestsException':
+                wait_time = (2 ** attempt) + (random.random() * 0.5)  # jitter
+                logger.warning(f"스로틀링. {wait_time:.2f}초 후 재시도 (시도 {attempt+1}/{max_retries})")
+                time.sleep(wait_time)
+            else:
+                raise
+    raise Exception("최대 재시도 횟수 초과")
 ```
+
+**SQS를 완충재로 사용:**
+급격한 트래픽 급증이 예상된다면, 호출자가 직접 Lambda를 호출하는 대신 SQS에 넣고, Lambda ESM이 처리 속도를 조절하도록 한다. SQS가 완충재(buffer) 역할을 한다.
+
+```
+[트래픽 급증] → [직접 Lambda 호출] → 429 스로틀링
+                                         ↓
+[트래픽 급증] → [SQS 큐] → [Lambda ESM] → 처리 속도 자동 조절
+```
+
+> 💡 **관련 이론**: 이 패턴은 분산 시스템에서 **백프레셔(Backpressure)** 처리의 전형이다. Reactive Streams 사양(Java 9 Flow API, Project Reactor, RxJava)에서 다운스트림이 처리 가능한 속도로 업스트림을 제어하는 것과 같다. SQS가 업스트림의 속도를 흡수하고, Lambda가 처리할 수 있는 속도로 소비한다.
+
+## 마무리
+
+Lambda 동시성 제어는 네 개의 다른 메커니즘이 중첩된 시스템이다. Reserved는 함수별 격리와 상한선을 제공하고, Provisioned는 콜드 스타트를 제거하며, 버스트 한도는 스케일아웃 속도를 제한하고, 계정 한도는 전체 상한을 정한다. 에러 처리는 호출 방식마다 완전히 다른 계층에서 일어나며, "어디서 재시도하고 어디로 실패 이벤트가 가는지"를 호출 방식별로 정확히 알아야 한다.
+
+다음 글에서는 이 Week 3 전체를 복습하면서 Lambda의 모든 개념을 시나리오 기반 문제로 점검한다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** Lambda 함수의 예약 동시성을 0으로 설정하면 어떻게 되는가?
+**문제 1.** Lambda 함수의 초당 요청이 2,000개이고 평균 실행 시간이 300ms일 때 필요한 동시성은?
 
-A) 함수가 삭제된다  
-B) 모든 요청이 스로틀되어 함수가 실행되지 않는다  
-C) 함수가 1개만 동시에 실행된다  
-D) 기본 동시성 한도가 적용된다  
+A) 100  
+B) 300  
+C) 600  
+D) 2,000  
+
+**정답: C**  
+해설: 동시성 = RPS × 실행 시간(초) = 2,000 × 0.3 = 600. 이 동시성을 안정적으로 확보하려면 계정 동시성 한도(기본 1,000)의 60%를 차지하는 셈이다. 이 함수에 Reserved Concurrency 700을 설정하면 충분한 여유를 확보하면서 다른 함수를 위한 300도 남길 수 있다.
+
+---
+
+**문제 2.** Lambda 함수의 Reserved Concurrency를 0으로 설정했을 때의 결과는?
+
+A) 기본 동시성 한도(1,000)가 적용된다  
+B) 함수가 순차적으로만 실행된다  
+C) 모든 호출이 즉시 ThrottlingException(429)을 반환한다  
+D) 함수가 Lambda 서비스에서 제거된다  
+
+**정답: C**  
+해설: Reserved Concurrency를 0으로 설정하면 함수에 할당된 동시성이 0개이므로 모든 호출이 즉시 스로틀된다. 이는 함수를 임시로 비활성화하는 방법으로 사용된다(코드 배포 없이, 삭제하지 않고). 배포 창 밖 시간에 실수로 함수가 호출되는 것을 막거나, 긴급 차단이 필요할 때 유용하다.
+
+---
+
+**문제 3.** Kinesis Data Streams ESM에서 하나의 레코드가 계속 실패할 때 발생하는 문제와 가장 효과적인 해결책 조합은?
+
+A) Lambda DLQ가 자동으로 실패 레코드를 격리한다  
+B) 샤드 전체가 블록된다 — MaximumRetryAttempts와 BisectBatchOnFunctionError + OnFailure Destination으로 해결한다  
+C) Kinesis가 해당 레코드를 자동 삭제한다  
+D) Lambda가 자동으로 해당 레코드를 건너뛴다  
 
 **정답: B**  
-해설: 예약 동시성을 0으로 설정하면 함수에 대한 모든 요청이 스로틀됩니다. 이는 함수를 일시적으로 비활성화하는 방법으로 사용할 수 있습니다.
+해설: Kinesis ESM은 기본적으로 실패한 레코드를 무한 재시도하며, 이로 인해 해당 샤드의 모든 새 레코드 처리가 차단된다. CloudWatch `IteratorAge` 메트릭이 계속 증가하면 이 상황임을 알 수 있다. 해결책: `MaximumRetryAttempts`로 재시도 횟수 제한, `BisectBatchOnFunctionError`로 실패 배치를 이진 탐색해 문제 레코드 격리, `OnFailure Destination`으로 최종 실패 레코드를 SQS/SNS로 전송해 나중에 분석한다.
 
 ---
 
-**문제 2.** Lambda 비동기 호출에서 함수가 계속 실패하면 어떻게 되는가?
+**문제 4.** SQS DLQ와 Lambda DLQ의 차이점으로 옳은 것은?
 
-A) 무한히 재시도한다  
-B) 이벤트가 즉시 삭제된다  
-C) 최대 2회 재시도 후 DLQ 또는 Destinations 실패 대상으로 이벤트 전송  
-D) SNS를 통해 관리자에게 알림을 보낸다  
-
-**정답: C**  
-해설: Lambda 비동기 호출은 최대 2회 자동 재시도합니다. 최종 실패 시 DLQ(설정된 경우) 또는 Lambda Destinations의 실패 대상으로 이벤트가 전송됩니다.
-
----
-
-**문제 3.** DLQ(Dead Letter Queue) 대신 Lambda Destinations를 권장하는 이유는?
-
-A) DLQ보다 저렴하기 때문에  
-B) 성공 이벤트도 처리 가능하고 더 많은 대상을 지원하기 때문에  
-C) 설정이 더 간단하기 때문에  
-D) 더 많은 재시도를 지원하기 때문에  
+A) SQS DLQ는 비동기 Lambda 호출에, Lambda DLQ는 ESM에 적용된다  
+B) SQS DLQ는 SQS 큐의 속성으로 ESM 실패 처리에 적용되고, Lambda DLQ는 비동기 호출 최종 실패 시 이벤트를 전송한다  
+C) 두 개념은 동일하며 이름만 다르다  
+D) Lambda DLQ만이 EventBridge를 대상으로 지원한다  
 
 **정답: B**  
-해설: Lambda Destinations는 성공/실패 모두 설정 가능하며, DLQ(SQS, SNS만)보다 더 많은 대상(SQS, SNS, EventBridge, Lambda)을 지원합니다.
+해설: SQS DLQ는 SQS 큐 자체의 속성으로, SQS 메시지가 `maxReceiveCount`를 초과하면 해당 메시지를 DLQ로 이동시킨다. SQS-Lambda ESM에서 Lambda가 반복 실패하면 메시지가 가시성 타임아웃 후 큐로 복귀하고, maxReceiveCount 초과 시 SQS DLQ로 이동한다. Lambda DLQ는 Lambda 함수 설정의 일부로, 비동기 호출(S3, SNS 등)이 최종 실패(원본+2회 재시도 모두 실패)할 때 이벤트를 SQS 또는 SNS로 보낸다.
 
 ---
 
-**문제 4.** 1,000개/초의 요청을 처리하는 Lambda 함수의 평균 실행 시간이 200ms일 때 필요한 동시성은?
+**문제 5.** 다음 중 Lambda Destinations의 장점이 아닌 것은?
 
-A) 50  
-B) 100  
-C) 200  
-D) 1000  
+A) 성공 이벤트와 실패 이벤트 모두에 대해 대상을 설정할 수 있다  
+B) EventBridge를 대상으로 지원한다  
+C) SQS ESM의 실패한 메시지를 자동으로 처리한다  
+D) 원본 이벤트와 함수 응답 메타데이터를 함께 전달한다  
 
 **정답: C**  
-해설: 동시성 = 초당 요청 수 × 평균 실행 시간(초) = 1,000 × 0.2 = 200
+해설: Lambda Destinations는 비동기 호출(S3, SNS, EventBridge, 직접 비동기 invoke)에만 적용된다. SQS ESM에서의 실패는 Lambda Destinations가 아닌 SQS 큐 자체의 DLQ 설정으로 처리된다. A, B, D는 모두 Destinations의 실제 장점이다.
 
 ---
 
-**문제 5.** 프로비저닝된 동시성(Provisioned Concurrency)의 주요 목적은?
+**문제 6.** 서울 리전(ap-northeast-2)에서 Lambda 버스트 동시성 한도는?
 
-A) 함수 실행 비용 절감  
-B) 더 많은 메모리 할당  
-C) 콜드 스타트 제거로 일관된 응답 시간 보장  
-D) 더 긴 타임아웃 설정  
+A) 3,000  
+B) 1,000  
+C) 500  
+D) 제한 없음  
 
 **정답: C**  
-해설: 프로비저닝된 동시성은 미리 초기화된 실행 환경을 유지하여 콜드 스타트를 완전히 제거합니다. API와 같이 일관된 응답 시간이 중요한 애플리케이션에 사용됩니다.
+해설: 서울 리전의 초기 버스트 동시성 한도는 500이다. us-east-1, us-west-2, eu-west-1은 3,000이다. 초기 버스트 이후에는 분당 +500개씩 증가할 수 있으며, 계정 한도(기본 1,000)까지 늘어날 수 있다. 이 한도를 초과하는 갑작스러운 트래픽 급증에서는 ThrottlingException이 발생한다.
 
----
-
-## 📌 오늘의 요약
-
-1. 동시성 = 초당 요청 수 × 평균 실행 시간, 리전별 기본 한도 1,000
-2. 예약 동시성: 함수별 한도 설정, 0으로 설정 시 함수 완전 비활성화
-3. 프로비저닝된 동시성: 미리 초기화로 콜드 스타트 완전 제거 (추가 비용 발생)
-4. 비동기 오류: 최대 2회 재시도 → DLQ 또는 Destinations 실패 대상
-5. Lambda Destinations가 DLQ보다 최신이며 성공 이벤트 처리 및 더 많은 대상 지원

@@ -1,373 +1,253 @@
-# Day 59 - CDK, 아키텍처 패턴
+# Day 59 - CDK와 서버리스 아키텍처: "인프라를 코드로 쓴다"의 끝, 그리고 좋은 설계의 문법
 
-📅 날짜: 2026년 8월 5일 (수요일)  
-🎯 주제: AWS CDK 및 서버리스 아키텍처 패턴  
-⏱️ 학습 시간: 약 90분
+인프라를 코드로 정의한다는 생각의 역사는 길다. 처음엔 셸 스크립트로 서버를 설정했고, 그다음엔 Chef·Puppet 같은 구성 관리 도구가 "원하는 상태를 선언하면 맞춰준다"는 발상을 가져왔으며, AWS는 CloudFormation으로 "클라우드 자원 전체를 선언적 템플릿으로 묶는다"는 모델을 정착시켰다. 그런데 YAML/JSON 템플릿은 한 가지 근본적 한계가 있다 — 그건 데이터지 프로그램이 아니다. 반복문도, 조건문도, 타입 검사도, 함수 추상화도 없다. 1,000줄짜리 CloudFormation 템플릿을 손으로 복사·붙여넣기 해본 사람이라면 "차라리 코드였으면" 하고 바라게 된다. AWS CDK(Cloud Development Kit)는 정확히 그 갈망에 대한 답이다 — 진짜 프로그래밍 언어로 인프라를 쓰되, 결과물은 CloudFormation으로 떨어뜨린다.
 
----
+DVA-C02에서 CDK 자체는 깊게 출제되지 않는다(synth가 CloudFormation을 만든다, bootstrap은 계정·리전당 1회 정도). 하지만 그 주변의 "서버리스 아키텍처를 어떻게 조립하느냐"는 시험의 진짜 무게중심이다 — Lambda를 Lambda가 직접 호출하면 왜 안 되는지, SQS와 SNS와 EventBridge가 언제 갈리는지, 멱등성을 왜 보장해야 하는지. 이번 글은 IaC의 추상화 사다리가 어디까지 올라왔는지, CDK가 어떻게 코드를 CloudFormation으로 합성하는지, 그리고 좋은 서버리스 아키텍처를 떠받치는 몇 가지 원칙이 어떤 분산 시스템 이론에서 나왔는지를 깊이 파고든다.
 
-## 🎯 학습 목표
+## IaC의 추상화 사다리: 셸 스크립트에서 CDK까지
 
-- AWS CDK의 기본 개념과 SAM/CloudFormation과의 차이를 이해한다
-- 자주 출제되는 서버리스 아키텍처 패턴을 파악한다
-- 실제 시험에 자주 나오는 아키텍처 설계 원칙을 학습한다
+인프라를 다루는 방식은 추상화 수준이 점점 올라온 역사다. 이 사다리를 이해하면 CDK가 왜 "맨 위 칸"인지 보인다.
 
----
+- **명령적 스크립트(셸, Ansible의 일부)**: "이 명령을 이 순서로 실행하라." 매번 처음 상태가 같아야 결과가 같다. 두 번 실행하면 망가지기도 한다.
+- **구성 관리(Chef·Puppet)**: "최종 상태가 이래야 한다"는 선언으로 옮겨갔다. 하지만 주로 OS·패키지 레벨이고, 클라우드 자원 전체를 묶지는 못했다.
+- **선언적 템플릿(CloudFormation)**: 클라우드 자원 전체를 하나의 선언적 문서로 묶고, 의존 순서를 엔진이 알아서 계산한다. 그러나 표현력은 데이터(YAML/JSON)에 갇힌다.
+- **프로그래밍 가능한 IaC(CDK·Pulumi)**: 진짜 언어로 인프라를 쓴다. 반복·조건·함수·타입·테스트가 다 들어온다. 결과는 다시 선언적 템플릿으로 합성된다.
 
-## 📖 이론 내용
+CDK의 핵심 통찰은 "선언적 결과물의 안전함은 유지하되, 그것을 만드는 과정은 명령적 언어의 표현력으로 한다"는 분리다. 즉 개발자는 TypeScript로 `for` 루프를 돌려 서브넷 10개를 만들 수 있지만, 최종적으로 배포되는 건 CloudFormation이 검증하고 롤백할 수 있는 선언적 템플릿이다.
 
-### 1. AWS CDK (Cloud Development Kit)
+> 💡 **관련 이론**: 이 구도는 컴파일러의 **소스 코드 → 중간 표현(IR) → 기계어** 파이프라인과 정확히 닮았다. CDK 코드는 "소스 코드"이고, `cdk synth`가 만드는 CloudFormation 템플릿은 "중간 표현(IR)"이며, CloudFormation 엔진이 실제 API를 호출해 자원을 만드는 게 "기계어 실행"이다. 컴파일러가 고수준 언어의 표현력과 저수준 코드의 실행 가능성을 분리하듯, CDK는 고수준 언어의 추상화와 CloudFormation의 안전한 배포 모델을 분리한다. 그래서 CDK로 짠 코드의 버그는 대부분 synth 단계(템플릿 생성)에서 잡히지, 실제 자원이 반쯤 만들어진 뒤에 터지지 않는다 — 컴파일 타임에 잡히는 타입 에러와 같은 이치다.
 
-프로그래밍 언어(TypeScript, Python, Java 등)로 인프라를 정의하는 IaC 프레임워크입니다.
+> 🔍 **더 깊이**: CDK는 마법처럼 보이지만 내부는 **jsii**라는 도구가 떠받친다. CDK의 핵심 로직은 TypeScript로 한 번만 작성되고, jsii가 그 타입 정보를 추출해 Python·Java·C#·Go용 바인딩을 자동 생성한다. 그래서 Python CDK 코드가 호출하는 `dynamodb.Table(...)`은 사실 내부적으로 같은 TypeScript 구현으로 이어진다 — 언어별로 따로 구현한 게 아니라, 한 구현을 여러 언어가 감싸는 구조다. 이게 "CDK가 5개 언어를 지원하면서도 동작이 언어마다 미묘하게 다르지 않은" 비결이다. 시험엔 안 나오지만, "왜 CDK는 언어가 달라도 똑같이 동작하나"의 답이다.
 
-**CDK vs CloudFormation vs SAM:**
-- CloudFormation: YAML/JSON 템플릿
-- SAM: 서버리스 특화 CloudFormation 확장
-- CDK: 프로그래밍 언어로 인프라 정의 → CloudFormation으로 변환
+### Construct: CDK가 쌓아 올리는 빌딩 블록
 
-```python
-# CDK Python 예시
-from aws_cdk import (
-    Stack,
-    aws_lambda as _lambda,
-    aws_apigateway as apigw,
-    aws_dynamodb as dynamodb
-)
-from constructs import Construct
+CDK의 모든 것은 **Construct**라는 단위다. 이건 객체지향의 컴포지션을 인프라에 그대로 가져온 것이다. Construct는 세 층위(L1/L2/L3)로 나뉘는데, 이 추상화 단계가 CDK 이해의 핵심이다.
 
-class OrderStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
-        super().__init__(scope, construct_id, **kwargs)
-        
-        # DynamoDB 테이블
-        table = dynamodb.Table(
-            self, "OrdersTable",
-            partition_key=dynamodb.Attribute(
-                name="orderId",
-                type=dynamodb.AttributeType.STRING
-            )
-        )
-        
-        # Lambda 함수
-        handler = _lambda.Function(
-            self, "CreateOrderHandler",
-            runtime=_lambda.Runtime.PYTHON_3_9,
-            code=_lambda.Code.from_asset("src"),
-            handler="create_order.handler",
-            environment={
-                "TABLE_NAME": table.table_name
-            }
-        )
-        
-        # 권한 부여
-        table.grant_read_write_data(handler)
-        
-        # API Gateway
-        api = apigw.RestApi(self, "OrdersApi")
-        orders = api.root.add_resource("orders")
-        orders.add_method("POST", apigw.LambdaIntegration(handler))
-```
+| 층위 | 이름 | 의미 | 예 |
+|------|------|------|-----|
+| **L1** | CFN Resources | CloudFormation 자원과 1:1 대응(`Cfn` 접두사) | `CfnBucket` — 모든 속성을 직접 지정 |
+| **L2** | Curated Constructs | 합리적 기본값과 편의 메서드를 입힌 추상화 | `s3.Bucket` — 암호화·버저닝을 메서드로 |
+| **L3** | Patterns | 여러 자원을 하나의 패턴으로 묶음 | `ApplicationLoadBalancedFargateService` |
+
+L1은 CloudFormation을 거의 그대로 노출하므로 표현력은 최대지만 장황하다. L2는 `table.grant_read_write_data(handler)` 한 줄로 "이 Lambda가 이 테이블을 읽고 쓰도록 IAM 정책을 자동 생성"해준다 — 손으로 IAM 정책 JSON을 쓰던 고통을 메서드 호출로 바꾼다. L3은 "ALB + Fargate 서비스 + 타깃 그룹 + 보안 그룹"을 통째로 한 객체로 만든다.
+
+> ⚠️ **함정**: L2 Construct의 `grant_*` 메서드가 "최소 권한 IAM 정책을 자동 생성"한다는 점은 양날의 검이다. 편하지만, synth된 템플릿을 한 번도 안 보면 어떤 권한이 실제로 부여됐는지 모른 채 배포하게 된다. 시험 맥락에선 "CDK가 IAM을 자동 생성한다"는 사실 자체보다, 그 자동 생성이 `cdk synth`로 만들어진 **CloudFormation 템플릿에 박제된다**는 점이 중요하다 — CDK는 런타임에 권한을 주는 게 아니라, 결국 CloudFormation 자원으로 변환되어 배포된다.
+
+## synth와 bootstrap: CDK가 실제로 하는 두 가지 일
+
+CDK 워크플로에서 시험이 묻는 명령은 사실상 두 개로 압축된다.
 
 ```bash
-# CDK 명령어
-cdk init --language python
-cdk synth          # CloudFormation 템플릿 생성
-cdk diff           # 변경 사항 확인
-cdk deploy         # 배포
-cdk destroy        # 삭제
+cdk bootstrap   # 계정·리전당 1회: CDK가 쓸 S3 버킷·ECR·IAM 역할을 깔아둠
+cdk synth       # CDK 코드 → CloudFormation 템플릿 (배포 안 함)
+cdk diff        # 현재 배포된 스택과 새 템플릿의 차이
+cdk deploy      # synth + CloudFormation 배포
+cdk destroy     # 스택 삭제
 ```
 
-### 2. 서버리스 아키텍처 패턴
+`cdk synth`는 "코드를 실행해서 CloudFormation 템플릿(JSON)을 표준 출력으로 뱉는" 단계다. 이 단계에서는 AWS에 아무것도 배포되지 않는다 — 순수하게 로컬에서 코드가 돌아 템플릿이 만들어진다. `cdk deploy`는 그 템플릿을 CloudFormation에 올려 실제 자원을 만든다.
 
-**패턴 1: API Backend**
-```
-[클라이언트]
-     |
-     v
-[API Gateway]
-     |
-     v
-[Lambda]
-     |
-     +-- [DynamoDB] (데이터 저장)
-     +-- [ElastiCache] (캐싱)
-     +-- [Secrets Manager] (자격 증명)
-```
+`cdk bootstrap`은 자주 헷갈리는 지점이다. CDK는 배포 과정에서 자산(asset) — 예를 들어 Lambda 코드 zip, Docker 이미지 — 을 어딘가 올려둬야 CloudFormation이 그걸 참조할 수 있다. bootstrap은 그 "어딘가"인 S3 버킷, ECR 리포지토리, 배포용 IAM 역할을 미리 깔아두는 일회성 준비다. **계정과 리전의 조합마다 한 번씩** 해야 한다.
 
-**패턴 2: 이벤트 드리븐 처리**
-```
-[S3 파일 업로드]
-     |
-     v
-[Lambda]
-     |
-     +-- 이미지 리사이즈 → S3
-     +-- 메타데이터 저장 → DynamoDB
-     +-- 알림 전송 → SNS
-```
+> 💡 **관련 이론**: bootstrap이 "배포 전에 인프라가 쓸 인프라를 먼저 깐다"는 것은 **부트스트래핑(bootstrapping)** 이라는 컴퓨터 과학의 오래된 개념이다 — 컴파일러를 그 컴파일러 자신의 언어로 작성하려면 먼저 다른 도구로 최초 버전을 만들어야 하고(self-hosting compiler), 운영체제는 작은 부트로더가 더 큰 커널을 메모리에 올린다. "스스로를 돌리기 위한 최소한의 발판을 먼저 만든다"는 같은 패턴이다. CDK bootstrap도 "CDK 배포를 가능하게 하는 최소 자원"을 먼저 깐다. 용어 자체가 "자기 부츠끈을 당겨 스스로를 들어 올린다"는 옛 관용구에서 왔다.
 
-**패턴 3: 마이크로서비스 통신**
-```
-[Lambda A] → [SQS] → [Lambda B]
-            (비동기, 느슨한 결합)
+## CDK vs SAM vs CloudFormation: 같은 목적지, 다른 추상화
 
-[Lambda A] → [SNS] → [Lambda B]
-                   → [Lambda C]
-            (팬아웃)
-```
+세 도구는 모두 최종적으로 CloudFormation으로 귀결된다. 차이는 "얼마나 추상화했고, 무엇에 특화됐느냐"다.
 
-### 3. 시험에 자주 나오는 선택 기준
+| 도구 | 입력 | 특화 | 최종 변환 | 누구에게 |
+|------|------|------|-----------|----------|
+| **CloudFormation** | YAML/JSON 템플릿 | 범용, 모든 AWS 자원 | (자기 자신) | 가장 안정적인 표준이 필요할 때 |
+| **SAM** | YAML(매크로) | 서버리스(Lambda/API/DynamoDB) | CloudFormation(Transform 확장) | 서버리스를 간결하게 |
+| **CDK** | 프로그래밍 언어 | 범용 + 높은 추상화 | CloudFormation(synth) | 코드의 표현력·재사용이 필요할 때 |
+
+SAM은 사실 CloudFormation의 **매크로(macro)** 다 — 템플릿 맨 위 `Transform: AWS::Serverless-2016-10-31` 한 줄이 "이 짧은 SAM 문법을 펼쳐 긴 CloudFormation으로 바꿔달라"는 지시다. `AWS::Serverless::Function` 한 블록이 배포 시 Lambda 함수 + 실행 역할 + 로그 그룹 + (필요시) API Gateway 자원으로 전개된다. CDK가 코드를 펼쳐 템플릿을 만든다면, SAM은 짧은 YAML을 펼쳐 긴 YAML을 만든다 — 둘 다 "압축된 표현을 CloudFormation으로 푸는" 일이다.
+
+> 🔍 **더 깊이**: 그렇다면 셋 중 무엇을 골라야 하나? 실무 휴리스틱은 이렇다. 팀이 YAML에 익숙하고 순수 서버리스(Lambda+API+DDB)면 **SAM**이 가장 군더더기 없다. 복잡한 인프라(VPC, ECS, 여러 환경의 반복 생성)에 프로그래밍 로직이 필요하면 **CDK**다. 조직 표준이 이미 CloudFormation이고 외부 도구 도입이 어렵다면 **CloudFormation** 그대로다. 멀티 클라우드까지 가야 하면 Terraform/Pulumi가 후보지만 이건 AWS 시험 범위 밖이다. DVA 관점에선 "SAM=서버리스 특화, CDK=프로그래밍, 둘 다 CloudFormation으로 귀결"만 확실히 잡으면 된다.
+
+> 📚 **사례**: HashiCorp가 2023년 8월 Terraform의 라이선스를 오픈소스(MPL)에서 BSL(Business Source License)로 바꾸자, 커뮤니티가 즉각 **OpenTofu**라는 포크를 만들어 Linux Foundation 산하로 옮겼다. 이 사건은 "서드파티 IaC 도구는 라이선스 리스크가 있다"는 점을 각인시켰고, AWS 네이티브인 CloudFormation/SAM/CDK가 "벤더 종속이지만 라이선스는 안전하다"는 상대적 강점을 부각시켰다. IaC 도구 선택이 기술만이 아니라 거버넌스·라이선스 문제이기도 하다는 교훈이다.
+
+## 안티패턴의 핵심: Lambda가 Lambda를 직접 부르면 안 되는 이유
+
+서버리스 아키텍처에서 가장 자주 출제되는 안티패턴은 "Lambda A가 Lambda B를 **동기로** 직접 호출"하는 것이다. 왜 나쁜지를 표면적 이유("비용 2배")만 외우면 변형 문제에서 흔들린다. 근본을 보자.
 
 ```
-REST API: API Gateway REST API
-WebSocket API: API Gateway WebSocket
-간단한 API (저렴): HTTP API
-GraphQL: AppSync
-컨테이너: ECS Fargate
-서버리스 함수: Lambda
-작업 큐: SQS
-알림: SNS
-스트리밍: Kinesis
-워크플로우: Step Functions
+나쁨:  [API GW] → [Lambda A] ──동기 invoke──> [Lambda B]
+좋음:  [API GW] → [Lambda A] ──> [SQS] ──> [Lambda B]
 ```
 
-### 4. 잘못된 아키텍처 vs 올바른 아키텍처
+동기 호출(`InvocationType: RequestResponse`)에서 Lambda A는 Lambda B가 끝날 때까지 **블로킹한 채 기다린다**. 이때 일어나는 일:
 
-**잘못된 패턴:**
-```
-[API Gateway] → [Lambda A] → [Lambda B] 동기 호출
-(Lambda에서 Lambda를 직접 호출하면 비용이 2배, 오류 전파)
-```
+- **이중 과금**: A와 B가 동시에 실행 중이고 둘 다 실행 시간만큼 과금된다. A는 일하지 않고 그냥 기다리는데도 돈을 낸다.
+- **강한 결합과 오류 전파**: B가 실패하거나 느려지면 A도 같이 실패하거나 느려진다. B의 장애가 A로, 다시 API Gateway로 전파된다.
+- **타임아웃 누적**: A의 타임아웃 안에 B가 끝나야 한다. B가 느리면 A가 타임아웃나고, 호출 체인 전체가 무너진다.
+- **독립 확장 불가**: A와 B의 처리량이 1:1로 묶인다. B만 느린 작업이어도 A를 함께 늘려야 한다.
 
-**올바른 패턴:**
-```
-[API Gateway] → [Lambda A] → [SQS] → [Lambda B]
-(비동기, 느슨한 결합, 독립적 확장)
-```
+SQS를 사이에 끼우면 이 모든 게 풀린다. A는 메시지를 큐에 넣고 즉시 반환하므로 기다리지 않는다(비용·타임아웃 해결). B는 자기 속도로 큐를 비우므로 독립적으로 확장된다(결합·확장 해결). B가 잠시 죽어도 메시지는 큐에 쌓여 있다가 B가 살아나면 처리된다(내결함성).
 
-### 5. DVA-C02 시험 전략
+> 💡 **관련 이론**: 이 "큐를 사이에 끼워 생산자와 소비자를 떼어놓는" 것은 분산 시스템의 고전 **생산자-소비자 문제(producer-consumer)** 와 그 해법인 **유계 버퍼(bounded buffer)** 다. 생산 속도와 소비 속도가 다를 때, 둘을 직접 연결하면 빠른 쪽이 느린 쪽을 압도하거나 느린 쪽이 빠른 쪽을 막는다. 사이에 버퍼(큐)를 두면 둘은 서로의 속도를 몰라도 되고, 버퍼가 속도 차를 흡수한다. SQS가 바로 그 버퍼다. 그리고 큐가 메시지를 잠시 쌓아두는 능력이 곧 **백프레셔(backpressure)** — 다운스트림이 못 따라올 때 업스트림을 강제로 막지 않고 일감을 잠시 보관하는 — 의 토대다.
 
-**도메인별 출제 비중:**
-```
-Development (개발): 32%
-  - Lambda, API Gateway, DynamoDB
-  - SDK, CLI, CloudFormation
+> 📚 **사례**: 2017년 2월 AWS S3 us-east-1 대규모 장애 때, S3에 동기로 강하게 의존하던 수많은 서비스가 줄줄이 무너졌다(연쇄 장애, cascading failure). 반면 작업을 큐에 넣고 비동기로 처리하던 시스템들은 S3가 복구될 때까지 메시지를 쌓아둔 뒤 정상 재개할 수 있었다. "동기 직접 호출은 한 컴포넌트의 장애를 즉시 전파하지만, 큐를 통한 비동기는 장애를 격리하고 버퍼링한다"는 교훈이 이 사건으로 업계에 깊이 새겨졌다. Lambda→SQS→Lambda 권고의 실전 근거다.
 
-Security (보안): 26%
-  - IAM, KMS, Cognito, Secrets Manager
-  - 암호화, 인증/인가
+## SQS vs SNS vs EventBridge: 비동기 결합의 세 갈래
 
-Deployment (배포): 24%
-  - CI/CD, CodePipeline, Beanstalk
-  - ECS, SAM, CloudFormation
+"Lambda를 직접 부르지 말고 비동기로"까지는 외우기 쉽지만, 그 비동기 매개가 SQS냐 SNS냐 EventBridge냐는 시나리오마다 다르다. 이 셋의 메시징 모델 차이가 시험의 단골이다.
 
-Troubleshooting (문제 해결): 18%
-  - CloudWatch, X-Ray, CloudTrail
-  - 오류 분석, 성능 최적화
-```
+| 서비스 | 모델 | 핵심 성질 | 전형적 시나리오 |
+|--------|------|-----------|------------------|
+| **SQS** | 큐(1:1) | 한 메시지를 한 소비자가 가져가 처리 후 삭제. 버퍼링·재시도·DLQ | 작업 큐, 부하 평탄화, 백프레셔 |
+| **SNS** | 펍/섭(1:N) | 한 메시지를 여러 구독자에게 동시 푸시(팬아웃) | 한 이벤트로 여러 시스템 동시 통지 |
+| **EventBridge** | 이벤트 버스(라우팅) | 내용 기반 규칙으로 이벤트를 라우팅. SaaS·스케줄 통합 | 이벤트 라우팅, 스케줄, 서드파티 통합 |
 
----
+핵심 갈림은 "한 메시지를 **한 곳**이 처리하느냐, **여러 곳**이 받느냐"다. 작업을 나눠 처리하려면 SQS(한 메시지=한 소비자), 한 사건을 여러 시스템에 동시에 알리려면 SNS(팬아웃)다. 그리고 둘을 결합한 **SNS → 여러 SQS** 패턴(fan-out)이 자주 나온다 — SNS가 여러 SQS로 뿌리고, 각 SQS가 자기 소비자에게 버퍼·재시도를 제공한다. EventBridge는 한 단계 위로, "이벤트의 내용을 보고 규칙에 따라 다른 대상으로 보내는" 라우팅과 cron 스케줄, 서드파티 SaaS 이벤트 수신까지 맡는다.
 
-## 🧠 알아두면 좋은 심화 이론
+> 🔍 **더 깊이**: SNS의 팬아웃에 SQS를 끼우는 이유가 미묘하다. SNS가 Lambda를 직접 구독할 수도 있는데 왜 SNS→SQS→Lambda를 권할까? SNS가 Lambda를 직접 호출하면, Lambda가 처리 실패 시 SNS의 재시도 정책에 의존해야 하고, 일시적 폭주를 흡수할 버퍼가 없다. 사이에 SQS를 두면 (1) 메시지가 큐에 안전히 보관돼 소비자 장애에도 유실되지 않고, (2) 소비자가 자기 속도로 처리하며, (3) 처리 실패 메시지를 DLQ로 보내 나중에 분석할 수 있다. "SNS는 뿌리는 데, SQS는 받아 버티는 데" 강하므로 둘을 합치는 것이다.
 
-### CDK 핵심 개념 (시험에는 가끔, 실무 표준)
+## 멱등성: 같은 일을 두 번 해도 안전하게
 
-| 개념 | 의미 |
-|------|------|
-| **App** | CDK 앱 (최상위) |
-| **Stack** | CloudFormation 스택에 매핑 |
-| **Construct** | 재사용 가능한 빌딩 블록 |
-| **Construct Level** | L1(CFN 직접), L2(편의), L3(패턴) |
-| **synth** | CFN 템플릿으로 변환 |
-| **deploy** | 변환 + CloudFormation 배포 |
-| **bootstrap** | CDK 부트스트랩 (계정·리전당 1회) |
+서버리스 메시징의 거의 모든 시험 함정 뒤에는 **at-least-once delivery(최소 한 번 전달)** 가 깔려 있다. SQS 표준 큐, SNS, Lambda 비동기 호출은 모두 "메시지를 **최소 한 번** 전달"을 보장하지, "정확히 한 번"을 보장하지 않는다. 즉 같은 메시지가 **두 번 이상** 올 수 있다.
 
-### CDK 지원 언어
+왜 그럴까? 분산 시스템에서 "정확히 한 번"은 사실상 불가능에 가깝다. 메시지를 보내고 소비자가 "처리 완료" 응답을 보냈는데 그 응답이 네트워크에서 유실되면, 발신자는 "전달 실패"로 보고 다시 보낸다 — 소비자 입장에선 같은 메시지가 두 번 온다. 이 모호함을 없애려면 무한정 대기하거나 막대한 합의 비용을 치러야 하므로, 실용 시스템은 "최소 한 번 + 소비자가 중복을 견딘다"를 택한다.
 
-TypeScript, Python, Java, C#, Go (시험엔 거의 안 나옴)
+그래서 소비자는 **멱등(idempotent)** 해야 한다 — 같은 요청을 몇 번 처리해도 결과가 한 번 처리한 것과 같아야 한다. 구현은 보통 이렇다.
 
-### CDK Pipelines
+- **멱등성 키(idempotency key)**: 요청마다 고유 ID를 부여하고, 처리 전 "이 ID를 이미 처리했나"를 확인한다.
+- **DynamoDB 조건부 쓰기(conditional write)**: `attribute_not_exists(id)` 조건으로, 그 ID가 없을 때만 쓴다. 두 번째 시도는 조건 실패로 무시된다.
+- **SQS FIFO + 중복 제거 ID**: FIFO 큐는 5분 윈도 안에서 같은 중복 제거 ID를 한 번만 받아들인다(완전한 멱등성은 아니지만 보강).
 
-- CDK 코드로 CodePipeline 자체를 정의
-- Self-mutating: 파이프라인 자체가 새 코드로 자동 업데이트
-- 시험엔 거의 안 나옴 (실무)
+> 💡 **관련 이론**: "정확히 한 번"이 어려운 건 분산 시스템 이론의 **두 장군 문제(Two Generals' Problem)** 와 직결된다 — 신뢰할 수 없는 네트워크 위에서 두 당사자가 "메시지가 확실히 전달됐다"는 공통 인식(common knowledge)에 도달하는 것은 불가능함이 증명돼 있다. ACK가 유실될 수 있는 한, 발신자는 "받았는지" 영원히 확신할 수 없으므로 재전송을 택하고, 그 결과 중복이 생긴다. 그래서 실무의 정답은 "정확히 한 번 전달"을 시스템에 강요하는 게 아니라, "최소 한 번 전달 + 멱등한 처리"로 **정확히 한 번의 효과(exactly-once processing)** 를 애플리케이션 레벨에서 만드는 것이다. SQS·SNS·EventBridge가 한결같이 멱등성을 권하는 이유다.
 
-### IaC 도구 비교 (시험에 가끔)
+> ⚠️ **함정**: SQS **표준 큐**는 at-least-once이고 순서 보장도 best-effort(거의 순서대로지만 보장 X)다. **FIFO 큐**만 "정확히 한 번 처리(exactly-once processing)"와 엄격한 순서를 제공한다 — 단, 처리량이 표준보다 낮고(초당 300 메시지, 배치로 3,000) 비용·제약이 있다. 시험에서 "순서가 중요하다/중복을 절대 막아야 한다"면 FIFO, "높은 처리량이 우선이고 중복은 앱이 멱등성으로 처리한다"면 표준 큐다. "표준 큐인데 순서가 보장된다"는 선택지는 함정이다.
 
-| 도구 | 언어 | 사용 시 |
-|------|------|---------|
-| **CloudFormation** | YAML/JSON | AWS 표준, 가장 안정 |
-| **SAM** | YAML | 서버리스 전문 |
-| **CDK** | TS/Python/Java | 프로그래밍 가능, 추상화 ↑ |
-| **Terraform** (3rd) | HCL | 멀티 클라우드 |
-| **Pulumi** (3rd) | 다중 언어 | 다중 클라우드 + 프로그래밍 |
+## 좋은 서버리스 설계의 나머지 원칙들
 
-### 서버리스 아키텍처 모범 사례 (시험 빈출 시나리오)
+위 원칙들 외에 시험이 "잘 설계된 아키텍처"를 물을 때 깔리는 토대를 정리한다. 대부분 AWS Well-Architected Framework의 여섯 기둥(Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization, Sustainability)으로 환원된다.
 
-#### 1. 비동기 통신 우선
-- Lambda → Lambda 직접 호출 X
-- SQS / SNS / EventBridge 경유
+- **작은 함수, 단일 책임**: 한 Lambda는 한 일만. 거대한 함수보다 작은 여러 함수 + Step Functions 오케스트레이션이 디버깅·재시도·확장에 유리하다. 객체지향의 단일 책임 원칙(SRP)을 함수 단위로 옮긴 것이다.
+- **캐싱 적극 활용**: API Gateway 캐시(응답 캐싱), DynamoDB 앞단의 DAX(마이크로초 읽기), ElastiCache(범용), Lambda 메모리 내 캐시(컨테이너 재사용 중). 각 계층에서 반복 읽기를 줄인다.
+- **콜드 스타트 최소화**: Provisioned Concurrency(미리 워밍된 실행 환경 유지), SnapStart(스냅샷에서 복원), 패키지 크기 축소. 지연에 민감한 동기 API에서 중요하다.
+- **백프레셔와 DLQ**: SQS DLQ로 처리 실패 메시지를 격리해 "독성 메시지(poison message)" 하나가 큐 전체를 막는 걸 방지한다. 다운스트림 한도를 알고 Reserved Concurrency로 폭주를 제어한다.
 
-#### 2. 멱등성 보장
-- 같은 요청 두 번 처리해도 같은 결과
-- DynamoDB conditional write 또는 idempotency key
+> 🔍 **더 깊이**: "작은 함수 여러 개"가 항상 옳은 건 아니다. 함수를 잘게 쪼갤수록 콜드 스타트 표면이 늘고, 함수 간 호출 지연·복잡도가 커진다(이른바 "Lambda 핀볼" 안티패턴 — 요청이 함수 사이를 핀볼처럼 튕겨 다니는 것). 그래서 실무는 "단일 책임이되 의미 있는 응집 단위"로 묶는다 — 한 도메인의 CRUD를 하나의 함수로 두고 내부에서 라우팅하는 "Lambdalith(람다 모놀리스)" 절충도 흔하다. 시험은 "Lambda→Lambda 동기 호출 금지" 같은 명확한 안티패턴을 묻지, 이런 회색지대는 잘 묻지 않는다 — 하지만 "무조건 잘게 쪼개라"가 정답이 아니라는 감각은 있어야 한다.
 
-#### 3. 작은 함수, 단일 책임
-- 한 Lambda = 한 일
-- 큰 함수보다 작은 여러 함수 + 오케스트레이션
+## 정리하며
 
-#### 4. 백프레셔 처리
-- SQS DLQ 활용
-- 다운스트림 한도 인지
+CDK를 관통하는 한 문장은 "프로그래밍 언어의 표현력으로 인프라를 쓰되, 결과는 CloudFormation의 안전한 선언적 모델로 합성한다"이다 — 컴파일러가 고수준 언어와 기계어를 잇듯, CDK는 코드와 CloudFormation을 잇는다. `synth`는 코드를 템플릿으로 펴는 컴파일이고, `bootstrap`은 그 배포를 가능하게 하는 일회성 발판이다. 그 위의 서버리스 아키텍처는 몇 개의 분산 시스템 원칙으로 떠받쳐진다 — Lambda 직접 호출 대신 큐로 생산자·소비자를 떼어놓고(유계 버퍼), at-least-once 전달이 만드는 중복을 멱등성으로 흡수하며(두 장군 문제의 실용적 타협), 적절한 비동기 매개(SQS/SNS/EventBridge)를 시나리오로 고른다. 시험이 묻는 "잘 설계된 아키텍처"는 결국 이 원칙들이 Well-Architected 여섯 기둥 위에서 어떻게 조합되는가다.
 
-#### 5. 캐싱 적극 사용
-- ElastiCache, DAX, API GW Cache, Lambda Extension
-
-#### 6. 콜드 스타트 최소화
-- Provisioned Concurrency · SnapStart · 패키지 크기 ↓
-
-### AWS Well-Architected Framework 6 Pillars
-
-1. **Operational Excellence**
-2. **Security**
-3. **Reliability**
-4. **Performance Efficiency**
-5. **Cost Optimization**
-6. **Sustainability** (2021 추가)
-
-> 시험에 가끔: "다음 중 잘 설계된 아키텍처에 가장 부합하는 것은?" → 6 Pillars 관점.
-
-### 시험 자주 출제 아키텍처 패턴 (정리)
-
-| 시나리오 | 답 |
-|----------|-----|
-| 이미지 업로드 후 자동 처리 | S3 → Lambda |
-| 대용량 비동기 처리 | SQS → Lambda |
-| 실시간 분석 | Kinesis → Lambda |
-| 워크플로 (인간 승인 포함) | Step Functions |
-| 멀티 마이크로서비스 라우팅 | API Gateway → 여러 Lambda |
-| 동기 API + 캐싱 | API Gateway 캐시 + Lambda + DAX |
-| 글로벌 멀티 리전 | CloudFront + Global Accelerator + Aurora Global / DDB Global |
-| 모바일 + 실시간 푸시 | AppSync + Cognito + DDB |
-| 컨테이너 + ALB | ECS Fargate + ALB |
-| 자동 확장 + 비용 | Fargate + Spot |
-
-### 관련 서비스 Cross-Reference
-
-- **CDK ↔ CloudFormation** → 합성·배포
-- **Step Functions ↔ Lambda** → 워크플로 오케스트레이션
-- **AWS SAM ↔ CodeDeploy** → Canary 자동
-- **Well-Architected Tool** → 자동 진단
-
----
-
-## 아키텍처 다이어그램
-
-```
-완전한 서버리스 주문 처리 시스템
-================================
-
-[모바일/웹 앱]
-     |
-     | JWT (Cognito)
-     v
-[API Gateway] → [Cognito Authorizer]
-     |
-     +-- POST /orders → [Lambda: CreateOrder]
-     |                       |
-     |               [DynamoDB: Orders]
-     |               [SQS: 주문 처리 큐]
-     |
-     +-- GET /orders/{id} → [Lambda: GetOrder]
-                                  |
-                            [ElastiCache: 캐시]
-                            [DynamoDB: 폴백]
-
-SQS → [Lambda: ProcessOrder]
-           |
-           +-- [SES: 이메일]
-           +-- [SNS: 푸시 알림]
-           +-- [Step Functions: 복잡한 처리]
-
-모니터링:
-  [X-Ray] → 분산 추적
-  [CloudWatch] → 지표/알람
-  [CloudTrail] → 감사 로그
-```
-
----
-
-## ⭐ 핵심 포인트
-
-1. ⭐ **CDK**: 프로그래밍 언어로 인프라, cdk synth로 CF 변환
-2. ⭐ **Lambda 직접 호출**: 피해야 함, SQS/SNS로 느슨한 결합
-3. ⭐ **서버리스 장점**: 자동 확장, 사용량 기반 과금, 관리 최소화
-4. ⭐ **DVA-C02**: 개발(32%) > 보안(26%) > 배포(24%) > 문제해결(18%)
-5. ⭐ **패턴 암기**: 시나리오별 최적 서비스 조합 선택이 핵심
+다음 글에서는 Week 12 전체 — 컨테이너와 IaC — 를 종합 복습하며 실전 시나리오 문제로 마무리한다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** AWS CDK의 특징은?
+**문제 1.** CDK 프로젝트를 새 계정·리전에 처음 배포하려는데 "bootstrap" 관련 오류가 난다. `cdk bootstrap`이 하는 일과 실행 빈도로 옳은 것은?
 
-A) YAML 템플릿만 사용  
-B) 프로그래밍 언어로 인프라 정의, CloudFormation으로 변환  
-C) Terraform과 동일  
-D) 서버리스만 지원  
+A) 매 배포마다 실행하며, Lambda 코드를 압축한다
 
-**정답: B** - CDK는 TypeScript, Python 등 프로그래밍 언어로 인프라를 정의하고 CloudFormation 템플릿으로 합성(synth)됩니다.
+B) 계정·리전 조합마다 1회 실행하며, CDK 배포에 필요한 S3 버킷·ECR·IAM 역할 같은 발판 자원을 깐다
 
----
+C) CDK 코드를 CloudFormation으로 변환만 한다
 
-**문제 2.** Lambda 함수에서 다른 Lambda를 동기로 직접 호출하는 것이 나쁜 이유는?
+D) 기존 스택을 삭제한다
 
-A) 성능 차이가 없음  
-B) 비용이 2배, 오류 전파, 결합도 증가  
-C) Lambda 권한 부족  
-D) 리전 제한  
+**정답: B**
 
-**정답: B** - 동기 호출은 두 Lambda 모두 실행 시간만큼 과금되고, 하나의 오류가 체인 전체에 영향을 줍니다.
+해설: `cdk bootstrap`은 CDK가 배포 과정에서 자산(Lambda zip, Docker 이미지)을 올려둘 S3 버킷·ECR 리포지토리와 배포용 IAM 역할 등 "배포를 가능하게 하는 발판"을 미리 까는 일회성 작업으로, **계정과 리전의 조합마다 한 번씩** 한다. 이는 "스스로를 돌리기 위한 최소 자원을 먼저 만든다"는 부트스트래핑 개념이다. A) 매 배포가 아니라 일회성이다. C) 코드→템플릿 변환은 `cdk synth`다. D) 삭제는 `cdk destroy`다.
 
 ---
 
-**문제 3.** DVA-C02 시험에서 가장 높은 비중의 도메인은?
+**문제 2.** `cdk synth`와 `cdk deploy`의 차이로 옳은 것은?
 
-A) Security (보안)  
-B) Deployment (배포)  
-C) Development (개발)  
-D) Troubleshooting (문제 해결)  
+A) synth는 즉시 자원을 배포하고, deploy는 미리보기만 한다
 
-**정답: C** - Development (개발) 도메인이 32%로 가장 높은 비중입니다.
+B) synth는 CDK 코드를 CloudFormation 템플릿으로 합성할 뿐 배포하지 않고, deploy는 그 템플릿을 CloudFormation에 올려 자원을 만든다
 
----
+C) 둘은 완전히 동일하다
 
-**문제 4.** cdk synth 명령의 역할은?
+D) synth는 Terraform용, deploy는 CloudFormation용이다
 
-A) CDK 스택 배포  
-B) CDK 앱을 CloudFormation 템플릿으로 변환  
-C) 스택 삭제  
-D) 변경 사항 확인  
+**정답: B**
 
-**정답: B** - `cdk synth`는 CDK 코드를 CloudFormation 템플릿으로 합성하여 표준 출력으로 보여줍니다.
+해설: `cdk synth`는 로컬에서 CDK 코드를 실행해 CloudFormation 템플릿(JSON)을 생성할 뿐, AWS에 아무것도 배포하지 않는다. `cdk deploy`는 그 템플릿을 CloudFormation에 제출해 실제 자원을 프로비저닝한다. 이는 컴파일러의 "소스→중간 표현(synth)"과 "실행(deploy)" 분리와 같다. A는 역할이 뒤바뀐 설명이고, C·D는 사실과 다르다.
 
 ---
 
-**문제 5.** 대용량 파일 처리를 위한 최적의 서버리스 아키텍처는?
+**문제 3.** API Gateway 뒤의 Lambda A가 작업의 일부를 Lambda B에 넘기려 한다. 비용·결합도·내결함성 측면에서 권장되는 구성은?
 
-A) API Gateway → Lambda → 직접 처리  
-B) S3 → Lambda(이벤트 트리거) → 처리 → 결과 저장  
-C) EC2 전용 서버  
-D) RDS에 파일 저장  
+A) Lambda A가 Lambda B를 동기(RequestResponse)로 직접 호출
 
-**정답: B** - S3에 파일을 업로드하면 Lambda 이벤트 트리거로 비동기 처리하여 Lambda 15분 제한 내에서 효율적으로 처리할 수 있습니다.
+B) Lambda A가 SQS에 메시지를 넣고, Lambda B가 큐를 소비
+
+C) Lambda A와 B를 하나의 거대 함수로 합침
+
+D) Lambda A가 Lambda B를 1초마다 폴링
+
+**정답: B**
+
+해설: 동기 직접 호출은 A가 B를 기다리며 **이중 과금**되고, B의 장애·지연이 A로 **전파**되며, 둘의 확장이 묶인다. SQS를 끼우면 A는 메시지를 넣고 즉시 반환해 기다리지 않고(비용·타임아웃 해결), B는 자기 속도로 소비하며(독립 확장), B가 잠시 죽어도 메시지가 큐에 남는다(내결함성). 이는 생산자-소비자를 유계 버퍼로 분리하는 고전 패턴이다. A는 안티패턴, C는 단일 책임을 깨고, D는 비효율적 폴링이다.
 
 ---
 
-## 📌 오늘의 요약
+**문제 4.** 하나의 주문 완료 이벤트가 발생하면 (1) 재고 시스템, (2) 이메일 발송, (3) 분석 파이프라인이 **동시에** 그 이벤트를 받아 각자 처리해야 한다. 가장 적합한 구성은?
 
-1. CDK: 프로그래밍 언어 IaC, cdk synth → CloudFormation, cdk deploy → 배포
-2. 서버리스 패턴: API Backend, 이벤트 드리븐, 팬아웃 처리
-3. 안티패턴: Lambda→Lambda 동기 호출, 대신 SQS/SNS 사용
-4. DVA-C02 비중: 개발(32%), 보안(26%), 배포(24%), 문제해결(18%)
-5. 시나리오별 서비스 선택: API GW, Lambda, DynamoDB, SQS/SNS, Kinesis
+A) SQS 하나에 세 소비자를 붙인다
+
+B) SNS 토픽에 세 시스템(또는 각 SQS)을 구독시켜 팬아웃한다
+
+C) Lambda가 세 시스템을 순서대로 동기 호출한다
+
+D) DynamoDB Streams로 직접 세 곳에 쓴다
+
+**정답: B**
+
+해설: "한 이벤트를 여러 시스템이 **동시에**" 받는 것은 펍/섭 팬아웃이고, 이는 **SNS**의 모델이다. 각 구독자(또는 SNS→SQS→소비자)가 같은 메시지의 복사본을 받아 독립적으로 처리한다. A) SQS는 한 메시지를 한 소비자가 가져가 삭제하므로(1:1) 세 곳이 모두 받지 못한다. C) 순차 동기 호출은 결합·전파·지연 누적 문제가 있다. D) Streams는 테이블 변경을 흘리는 용도로 이 요구에 직접 맞지 않는다.
+
+---
+
+**문제 5.** SQS 표준 큐로 메시지를 받는 Lambda 소비자가, 같은 메시지를 가끔 두 번 처리해 중복 레코드가 생긴다. 근본 원인과 올바른 대응은?
+
+A) SQS 버그이므로 AWS에 문의한다
+
+B) 표준 큐는 at-least-once 전달이라 중복이 정상이며, 소비자를 멱등하게(예: DynamoDB 조건부 쓰기로 중복 키 무시) 만든다
+
+C) 큐를 삭제하고 다시 만든다
+
+D) Lambda 메모리를 늘린다
+
+**정답: B**
+
+해설: SQS 표준 큐는 **at-least-once(최소 한 번)** 전달을 보장하므로 같은 메시지가 두 번 이상 올 수 있다 — 이는 두 장군 문제로 인해 분산 시스템에서 "정확히 한 번 전달"이 사실상 불가능하기 때문이다. 정답은 전달을 바꾸려 하기보다 소비자를 **멱등**하게 만드는 것이다: 멱등성 키 + DynamoDB `attribute_not_exists` 조건부 쓰기로 이미 처리한 ID를 무시한다. 또는 엄격한 중복 제거가 필요하면 FIFO 큐를 쓴다. A·C·D는 원인을 오해한 대응이다.
+
+---
+
+**문제 6.** SAM 템플릿과 CDK가 공통으로 가지는 성질로 옳은 것은?
+
+A) 둘 다 멀티 클라우드를 지원한다
+
+B) 둘 다 최종적으로 CloudFormation으로 변환되어 배포된다
+
+C) 둘 다 반드시 TypeScript로 작성한다
+
+D) 둘 다 CloudFormation을 대체하는 별개 엔진이다
+
+**정답: B**
+
+해설: SAM은 `Transform` 매크로로 짧은 YAML을 긴 CloudFormation으로 펼치고, CDK는 `synth`로 프로그래밍 언어 코드를 CloudFormation 템플릿으로 합성한다 — **둘 다 종착지가 CloudFormation**이다. 차이는 입력 형태(SAM=YAML 매크로, CDK=프로그래밍 언어)와 특화(SAM=서버리스)다. A) 멀티 클라우드는 Terraform/Pulumi다. C) CDK는 여러 언어를 지원하고 SAM은 YAML이다. D) 별개 엔진이 아니라 CloudFormation 위에 올라탄다.
+
+---
+
+**문제 7.** 지연에 민감한 동기 REST API의 Lambda가 첫 호출에서 콜드 스타트로 느리다. 콜드 스타트를 줄이는 방법으로 적절하지 않은 것은?
+
+A) Provisioned Concurrency로 실행 환경을 미리 워밍
+
+B) 배포 패키지 크기를 줄여 초기화 시간 단축
+
+C) (Java 등) SnapStart로 스냅샷에서 복원
+
+D) Lambda A가 Lambda B를 동기로 호출하도록 변경
+
+**정답: D**
+
+해설: 콜드 스타트 완화책은 Provisioned Concurrency(미리 워밍된 환경 유지), SnapStart(초기화된 스냅샷에서 복원), 패키지 크기 축소다. D) Lambda 간 동기 직접 호출은 콜드 스타트와 무관할 뿐 아니라 비용·결합도·오류 전파를 키우는 **안티패턴**이라 오히려 상황을 악화시킨다. 콜드 스타트는 함수 자체의 초기화 비용 문제이지 호출 방식으로 푸는 게 아니다.
+
+---

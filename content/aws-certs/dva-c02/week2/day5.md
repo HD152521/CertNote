@@ -210,10 +210,10 @@ Week 3부터는 이 EC2 layer 위에 IAM·Lambda·DynamoDB·API Gateway·CodePip
 
 **문제 1.** 한 e-commerce 회사의 ALB + ASG production 시스템이 매일 오후 7시 sale 시작 시 first 5분간 RPS가 평소의 20배로 spike한다. Target Tracking(CPU 60%) scaling policy를 쓰는데 사용자들이 5xx를 받고 있다. 가장 적절한 개선은?
 
-A) ASG의 min size를 늘린다
+A) ASG의 min size를 spike 피크 수준으로 상시 올려 항상 충분한 인스턴스를 유지 — spike에는 견디나 23시간 동안 유휴 인스턴스 비용이 막대
 B) Predictive Scaling + Scheduled Scaling으로 6:55에 미리 desired를 늘리고, Step Scaling으로 spike 시 공격적 scale-out
-C) Target Tracking의 목표값을 30%로 낮춘다
-D) NLB로 옮긴다
+C) Target Tracking의 CPU 목표값을 30%로 낮춰 더 일찍 scale-out을 트리거 — 평소에도 인스턴스가 2배로 떠 낭비되고 boot 지연은 그대로
+D) ALB를 NLB로 교체해 L4에서 connection을 더 빠르게 분산 — boot 지연이 원인이라 LB 교체로는 5xx가 해소되지 않고 HTTP routing만 잃음
 
 **정답: B**
 해설: Target Tracking은 metric을 보고 반응형으로 조정하는데, 30초 단위 CloudWatch + scale-out에 인스턴스 boot 2-3분 = 총 3-5분 지연. 5분 spike에는 이미 늦었다. **Scheduled Scaling**으로 6:55에 desired를 미리 늘려두면(predictive scaling은 학습된 pattern이 있다면 자동) 인스턴스가 warmed up 상태에서 spike를 받음. + Step Scaling으로 spike 시 +5 같은 공격적 추가. C는 평소에 인스턴스 낭비. D는 ALB의 HTTP 기능을 잃음.
@@ -222,22 +222,20 @@ D) NLB로 옮긴다
 
 **문제 2.** 한 회사가 EC2 인스턴스에서 매일 자정에 ML training을 돌리고 결과를 S3에 업로드한다. 비용을 최소화하면서 작업이 24시간 안에만 끝나면 된다. 가장 적절한 구매 옵션은?
 
-A) On-Demand 시간당 사용
-B) Reserved Instance 1년 약정
+A) On-Demand로 매 자정 시작·종료해 시간당만 과금 — 유연하지만 Spot 대비 할인이 없어 비용 최소화 목표에 미달
+B) Reserved Instance 1년 약정으로 시간당 단가를 낮춤 — 하루 수 시간만 쓰는데 24/7 약정이라 대부분 시간이 낭비
 C) Spot Instance + checkpoint를 S3에 정기 저장
-D) Dedicated Host
-
-**정답: C**
+D) Dedicated Host로 물리 서버를 통째로 확보해 안정적 실행 — BYOL 라이선스 전용 옵션이라 가장 비싸 비용 목표에 정반대
 해설: 매일 새벽 짧은 시간만 사용 + checkpoint로 회수 대응 가능 → Spot 적합. 90% 절감. 회수 시 2분 사전 통보를 IMDS `/latest/meta-data/spot/instance-action`에서 받아 현재 progress를 S3에 sync하고 graceful shutdown. 다음 실행 때 checkpoint에서 resume. A는 매일 다 비용. B는 짧은 시간 사용에 RI 약정 낭비. D는 BYOL 라이선스 한정 비싸다.
 
 ---
 
 **문제 3.** 한 개발자가 EC2 인스턴스의 IMDS에서 IAM 자격증명을 가져오려는데 `curl http://169.254.169.254/latest/meta-data/iam/security-credentials/MyRole`가 401을 반환한다. 가장 가능성 있는 원인은?
 
-A) 인스턴스에 IAM Role이 attach 안 됨
+A) 인스턴스에 IAM Role이 attach 안 됨 — 이 경우 401이 아니라 해당 경로에서 404가 반환되므로 증상과 불일치
 B) IMDSv2 required인데 `curl`이 IMDSv1 GET만 사용 (PUT으로 토큰 먼저 받아야 함)
-C) Security Group에서 169.254.169.254가 차단
-D) NACL이 link-local 트래픽을 차단
+C) web-sg의 outbound 규칙에서 169.254.169.254/32가 차단됨 — link-local IP라 SG로 통제되지 않아 원인일 수 없음
+D) subnet NACL이 169.254.0.0/16 link-local 트래픽을 deny rule로 차단 — link-local은 NACL 적용 대상이 아니라 원인 불가
 
 **정답: B**
 해설: 2024년 이후 새 인스턴스는 기본이 IMDSv2 required. 토큰 없이 GET하면 401. 정확한 방법:
@@ -253,10 +251,10 @@ A라면 404. C/D는 169.254.169.254가 link-local이라 SG/NACL 통제 불가.
 
 **문제 4.** 한 회사가 EC2를 두 대 운영하고 같은 디렉터리에서 read·write 해야 한다. 동시 access가 필요하고, 두 EC2가 다른 AZ에 있다. 가장 적절한 솔루션은?
 
-A) EBS volume을 두 EC2에 attach (Multi-Attach 사용)
+A) io2 EBS volume을 Multi-Attach로 두 EC2에 동시 attach하고 cluster file system을 구성 — Multi-Attach는 같은 AZ만 지원해 다른 AZ인 본 시나리오에 불가
 B) EFS file system을 두 EC2에 NFS로 마운트
-C) S3 버킷에 file sync
-D) Instance Store
+C) S3 버킷을 공유 저장소로 쓰고 두 EC2가 주기적으로 file sync — object store라 POSIX 파일시스템 semantics·동시 read/write 락이 없음
+D) 각 EC2에 Instance Store를 두고 데이터를 양방향 복제 — 호스트 종속 임시 스토리지라 공유도 영속성도 없음
 
 **정답: B**
 해설: EFS는 NFSv4.1 기반으로 multi-AZ 자동 복제, 수천 클라이언트 동시 access 지원. 일반 EBS Multi-Attach는 ① io1/io2만, ② 같은 AZ만, ③ cluster-aware FS 필요한 까다로운 제약. 두 AZ에 EC2가 있으므로 Multi-Attach는 불가능. C는 file system semantics가 아니라 object store. D는 호스트 종속.
@@ -265,10 +263,10 @@ D) Instance Store
 
 **문제 5.** 한 회사가 ALB로 마이크로서비스를 운영한다. `api.example.com/orders/*`는 orders 서비스로, `api.example.com/users/*`는 users 서비스로 보내야 한다. 두 서비스는 각각 ASG로 운영된다. 가장 정확한 구성은?
 
-A) 두 ALB를 만들어 각 서비스에 하나씩
+A) 서비스마다 전용 ALB를 만들고 각 ALB를 별도 서브도메인에 연결 — 동작은 하나 같은 host의 path 분기에 ALB 2개는 비용·운영 낭비
 B) 한 ALB의 한 listener에 두 target group을 만들고, listener rule로 path-pattern matching: `/orders/*` → orders-tg, `/users/*` → users-tg
-C) NLB로 옮긴다
-D) Route 53으로 path 분기
+C) NLB로 옮겨 TCP listener에서 destination 포트별로 서비스를 분기 — NLB는 L4라 URL path를 볼 수 없어 path 라우팅 불가
+D) Route 53 라우팅 정책으로 `/orders/*`와 `/users/*`를 각 서비스 IP로 분기 — DNS는 host name만 보고 path를 모르므로 불가
 
 **정답: B**
 해설: ALB는 path-pattern · host-header 기반 routing이 native. listener rule을 priority 순으로 등록하고 각 rule이 target group에 forward. C의 NLB는 L4라 path 모름. D의 Route 53은 DNS라 path 분기 불가(host name만 가능). A는 비용 낭비 + 운영 복잡도 증가. ALB 1개로 충분.
@@ -277,10 +275,10 @@ D) Route 53으로 path 분기
 
 **문제 6.** 한 EC2 인스턴스가 user-data 안에서 `aws s3 cp s3://bucket/app.tar.gz /opt/`를 호출하는데 `Unable to locate credentials` 에러가 발생한다. 가장 가능성 있는 원인은?
 
-A) S3 버킷이 존재하지 않음
+A) 지정한 S3 버킷이 존재하지 않거나 객체 키가 틀림 — 이 경우 `NoSuchBucket`/`NoSuchKey`가 나지 `Unable to locate credentials`가 아님
 B) 인스턴스에 IAM Instance Profile이 attach 안 됨, 또는 그 Role에 `s3:GetObject` 권한이 없음
-C) 인스턴스의 region이 잘못됨
-D) IMDSv2 토큰 만료
+C) CLI의 default region이 버킷 region과 달라 endpoint resolution이 실패 — region 불일치는 endpoint 오류를 내지 자격증명 오류가 아님
+D) IMDSv2 토큰이 TTL 만료되어 자격증명 조회가 끊김 — botocore 1.13+가 토큰을 자동 재발급하므로 이 에러의 원인이 아님
 
 **정답: B**
 해설: AWS CLI/SDK는 자격증명을 ① 명시적 access key, ② 환경변수, ③ ~/.aws/credentials, ④ IMDS의 인스턴스 프로파일 순으로 탐색한다. `Unable to locate credentials`는 그 어느 것도 못 찾았다는 의미. EC2 인스턴스는 보통 인스턴스 프로파일을 통해 IAM Role의 임시 자격증명을 받는데, 프로파일이 attach 안 됐거나 권한이 없으면 이 에러. A라면 `NoSuchBucket`, C라면 `endpoint not found` 비슷한 에러, D는 IMDSv2 토큰 만료 시 SDK가 자동 재발급(botocore 1.13+).
@@ -289,10 +287,10 @@ D) IMDSv2 토큰 만료
 
 **문제 7.** 한 회사가 production EC2의 EBS volume(미암호화 gp2)을 암호화하려고 한다. downtime을 최소화하려면?
 
-A) `modify-volume --encrypted` 명령으로 직접
+A) `modify-volume --encrypted` 명령으로 실행 중인 볼륨을 무중단으로 in-place 암호화 — modify-volume은 크기·타입·IOPS만 바꾸고 암호화 토글 옵션은 없음
 B) Snapshot 생성 → `copy-snapshot --encrypted`로 암호화 복사 → 암호화된 snapshot에서 새 volume 생성 → 짧은 downtime 동안 detach/attach 교체
-C) AWS Support에 변환 요청
-D) 새 인스턴스를 만들고 데이터를 rsync
+C) AWS Support에 볼륨 암호화 변환을 케이스로 요청해 백엔드에서 처리받음 — Support는 사용자 볼륨을 대신 암호화하지 않음
+D) 새 암호화 인스턴스를 만들고 rsync로 전체 데이터를 옮긴 뒤 cutover — 가능은 하나 대용량에서 동기화 시간·정합성 위험이 커 표준 절차가 아님
 
 **정답: B**
 해설: 표준 5단계 절차. 실행 중인 volume 직접 암호화 불가. 정확한 명령:
@@ -308,10 +306,10 @@ aws ec2 create-volume --snapshot-id snap-encrypted --availability-zone same-az -
 
 **문제 8.** 한 회사가 새 인스턴스가 ALB target group에 등록되자마자 traffic을 받아 application warm-up 전 5xx를 반환한다. 가장 적절한 대응은?
 
-A) ASG의 `HealthCheckGracePeriod`를 300초로 늘린다
+A) ASG의 `HealthCheckGracePeriod`를 300초로 늘려 등록 직후 unhealthy 판정을 유예 — grace period는 조기 종료만 막을 뿐 traffic 수신 자체는 막지 못함
 B) ASG에 `EC2_INSTANCE_LAUNCHING` Lifecycle Hook을 등록하고, 인스턴스 안에서 warmup 완료 시 `complete-lifecycle-action` 호출
-C) ALB의 health check path를 `/`로 변경
-D) target group의 deregistration delay를 늘린다
+C) ALB health check path를 `/`로 변경해 더 가벼운 엔드포인트로 점검 — `/`가 warmup 전에도 200을 주면 false positive로 오히려 조기 등록
+D) target group의 deregistration delay를 늘려 in-flight 요청을 더 오래 보존 — 종료 시점 설정이라 신규 인스턴스의 warm-up 문제와 무관
 
 **정답: B**
 해설: Lifecycle Hook이 정확한 도구. 인스턴스를 Pending:Wait에 머물게 해 InService로의 전환을 지연. warmup(JVM warm, cache preload) 완료 후 명시적 신호로 진행. A의 grace period는 health check를 보류하지 종료 시점만 조정. C는 부적합 (`/`가 항상 200이면 false positive). D는 종료 시점 무관. 대안으로 application의 `/healthz`를 ready flag 통제하에 두는 패턴도 자주 쓰임.
@@ -321,9 +319,9 @@ D) target group의 deregistration delay를 늘린다
 **문제 9.** 한 회사가 NLB로 게임 서버 traffic을 분산한다. 사용자는 5개 AZ에 골고루 분포하는데, 각 AZ의 인스턴스 수가 다르다(AZ-a 10대, AZ-b 5대, AZ-c 2대). traffic이 불균등하다는 보고가 들어왔다. 가장 적절한 조치는?
 
 A) NLB의 cross-zone load balancing 활성화 (단, cross-AZ data transfer 비용 발생)
-B) ALB로 변경
-C) AZ별 인스턴스 수를 동일하게 맞춘다
-D) Route 53 weighted routing
+B) NLB를 ALB로 교체해 L7 라우팅과 가중치 분배를 사용 — ALB는 HTTP 전용이라 L4 게임 traffic(UDP/TCP)에 부적합
+C) 모든 AZ의 인스턴스 수를 10대로 동일하게 고정 — 부분 해결이나 ASG가 AZ 균등 배치를 항상 보장하지 않아 불균형 재발 가능
+D) Route 53 weighted routing으로 AZ별 가중치를 줘 트래픽을 분산 — DNS 캐시·TTL 때문에 즉시 반영되지 않고 connection 단위 분산이 아님
 
 **정답: A**
 해설: NLB는 cross-zone이 기본 OFF로, 각 NLB node가 같은 AZ의 target에만 traffic을 분배. AZ-a 10대 / AZ-b 5대 / AZ-c 2대일 때 traffic은 1/3씩 가지만 AZ-c의 2대는 부하 집중. cross-zone을 켜면 모든 target이 동일 부하를 받지만 cross-AZ data transfer 비용 발생(GB당 $0.01 양방향). C도 해결책이지만 ASG가 AZ별로 균등 배치하는 게 항상 보장되진 않음. B의 ALB는 HTTP 한정이라 게임 traffic에 부적합. D는 DNS layer라 즉시 반영 안 됨.
@@ -332,10 +330,10 @@ D) Route 53 weighted routing
 
 **문제 10.** 한 ML팀이 Lambda 함수에서 2GB ML 모델을 load해야 한다. Lambda layer 한도(250MB)를 초과한다. 가장 적절한 솔루션은?
 
-A) Lambda 대신 EC2 사용
+A) Lambda를 포기하고 모델을 미리 적재한 EC2/ASG에서 추론을 서비스 — 가능은 하나 serverless의 자동 확장·과금 모델 이점을 모두 버리게 됨
 B) Lambda에 EFS access point를 mount하고 EFS에 모델 파일 저장
-C) S3에 모델을 두고 cold start마다 download
-D) 모델을 quantize해서 250MB 아래로
+C) S3에 모델을 두고 각 cold start마다 2GB를 `/tmp`로 download — cold start마다 수 GB 전송이라 latency가 폭발하고 `/tmp` 한도(10GB)도 압박
+D) 모델을 8-bit quantize해 250MB 아래로 줄여 Layer에 패키징 — 한도는 맞으나 정확도 손실이 따르고 요건과 무관한 모델 변경
 
 **정답: B**
 해설: Lambda는 2020년부터 EFS 마운트 지원. EFS access point를 통해 같은 VPC + subnet에서 mount하면 함수 안에서 일반 파일 IO로 모델 access. ZIP/Layer 한도 우회. Cold start latency가 EFS mount 시간만큼 추가되지만 2GB download보다는 훨씬 빠름. C는 매 cold start에 2GB 다운로드 → latency 폭발. A는 serverless 장점 포기. D는 정확도 손실. 단 EFS access point + VPC config 필요.
@@ -345,9 +343,9 @@ D) 모델을 quantize해서 250MB 아래로
 **문제 11.** 한 인스턴스가 sporadic하게 `Connection refused`를 반환한다. CPU·메모리는 여유 있고 SG는 다 열려 있다. CloudWatch에서 `conntrack_allowance_exceeded` 지표가 발생한다. 가장 적절한 대응은?
 
 A) Conntrack 한도 초과. 인스턴스 타입을 더 큰 것(c5n 같은 enhanced networking)으로 변경하거나 application의 connection pool 효율화, keep-alive 사용
-B) AWS Support에 quota 증가 요청
-C) ASG max size를 늘린다
-D) Security Group에 더 많은 규칙 추가
+B) AWS Support에 conntrack 테이블 한도 상향을 quota 증가 요청 — conntrack 한도는 인스턴스 타입에 고정된 hard limit이라 증액 불가
+C) ASG max size를 늘려 인스턴스를 추가 투입 — 전체 처리량은 늘지만 개별 인스턴스의 conntrack 포화는 그대로 남음
+D) Security Group에 명시적 allow 규칙을 더 추가해 connection 처리량을 확보 — 규칙 수는 conntrack 용량과 무관해 효과 없음
 
 **정답: A**
 해설: SG는 conntrack 테이블에 5-tuple을 저장해 stateful filtering. 인스턴스 타입별 한도가 있고(m5.large 약 350K, c5n.large 약 1M) 한도 초과 시 새 connection drop. 해결은 ① 더 큰 인스턴스 (특히 c5n·m5n 계열 enhanced networking), ② keep-alive로 connection 재사용, ③ connection pool 효율 개선. B의 conntrack은 hard limit이라 quota 증액 불가. C는 인스턴스 자체를 추가하지 한 인스턴스의 conntrack은 변함 없음. D는 무관.
@@ -357,9 +355,9 @@ D) Security Group에 더 많은 규칙 추가
 **문제 12.** 한 회사가 EC2 production을 ALB + ASG로 운영한다. CodeDeploy로 Blue/Green 배포를 설정하려는데, ALB의 어떤 기능을 사용하는가?
 
 A) Listener rule의 weighted forward로 두 target group(Blue/Green)에 traffic 분배, CodeDeploy가 weight를 시간에 따라 0/100 → 100/0으로 조정
-B) ALB를 두 개 만들어 Route 53 weighted routing
-C) NLB로 변경 후 source IP affinity 사용
-D) Sticky session
+B) ALB를 Blue/Green 각각 하나씩 두 개 만들고 Route 53 weighted record로 전환 — DNS TTL 캐시 때문에 즉각·점진 전환과 빠른 롤백이 어려움
+C) NLB로 교체하고 source IP affinity로 기존 세션은 Blue, 신규는 Green으로 유도 — affinity는 배포 도구가 아니며 가중 전환·자동 롤백을 제공하지 않음
+D) ALB sticky session(쿠키)으로 사용자를 Blue/Green에 고정 — 세션 고정 기능이지 버전 간 traffic 전환 메커니즘이 아님
 
 **정답: A**
 해설: CodeDeploy의 Blue/Green deployment(ALB integration)는 listener의 weighted forward를 활용한다. 새 Green target group을 만들고, CodeDeploy가 listener rule의 forward action에 두 target group의 weight를 조정. 예: 시작 Blue 100/Green 0 → Linear10PercentEvery1Minute → Blue 0/Green 100 → 검증 후 Blue terminate. 단일 ALB에서 동작. CodeDeploy는 추가로 ASG에 새 인스턴스를 띄워 Green을 채움. B는 DNS TTL 때문에 즉각 전환 불가. C/D는 무관.

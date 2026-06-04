@@ -1,42 +1,32 @@
-# Day 56 - ECS, Fargate, ECR
+# Day 56 - ECS와 Fargate: 컨테이너를 "서버 없이" 돌린다는 말의 진짜 의미
 
-📅 날짜: 2026년 8월 2일 (일요일)  
-🎯 주제: Amazon ECS & Fargate  
-⏱️ 학습 시간: 약 90분
+컨테이너는 "내 노트북에서는 되는데 서버에서는 안 된다"는 오래된 고통을 끝내려고 등장했다. 애플리케이션과 그것이 의존하는 라이브러리, 런타임, 환경 변수를 하나의 이미지로 봉인해서, 어디서 실행하든 똑같이 동작하게 만든다. 그런데 컨테이너 하나를 만드는 것과 수백 개의 컨테이너를 여러 서버에 걸쳐 띄우고, 죽으면 다시 살리고, 트래픽에 맞춰 늘렸다 줄이는 것은 완전히 다른 문제다. 이 "여러 컨테이너를 조율하는 일"이 컨테이너 오케스트레이션(container orchestration)이고, Amazon ECS는 AWS가 내놓은 답이다. Fargate는 거기서 한 걸음 더 나아가 "그 컨테이너를 올릴 서버조차 네가 관리하지 마라"는 서버리스 컨테이너 모델이다.
 
----
+DVA-C02에서 ECS/Fargate/ECR은 배포(Deployment) 도메인의 핵심이다. 단순 암기(awsvpc 모드, executionRole vs taskRole)도 나오지만, 그보다 "왜 Fargate가 awsvpc만 강제하는가", "executionRole과 taskRole을 헷갈리면 어떤 에러가 나는가", "ECR pull이 실패하는 근본 원인" 같은 동작 원리를 묻는 시나리오가 더 자주 나온다. 이번 글은 컨테이너 격리가 리눅스 커널의 어떤 기능에서 나왔는지, ECS의 제어 평면과 데이터 평면이 어떻게 분리되는지, Fargate가 어떤 격리 기술로 "서버리스"를 실현하는지, 그리고 두 IAM 역할이 갈라지는 근본 이유를 깊이 파고든다.
 
-## 🎯 학습 목표
+## 컨테이너가 출발한 자리: cgroups와 namespace
 
-- ECS의 기본 구성 요소를 이해한다
-- EC2 시작 유형과 Fargate의 차이를 구분한다
-- ECR로 컨테이너 이미지를 관리한다
+컨테이너는 마법이 아니라 리눅스 커널 두 기능의 조합이다. **네임스페이스(namespace)** 는 프로세스에게 "너만의 세상"을 보여준다 — PID 네임스페이스는 컨테이너 안에서 자기 프로세스를 PID 1로 보게 하고, 네트워크 네임스페이스는 자기만의 네트워크 인터페이스·라우팅 테이블을 갖게 하며, 마운트 네임스페이스는 자기만의 파일시스템 뷰를 준다. **cgroups(control groups)** 는 그 프로세스가 쓸 수 있는 자원(CPU, 메모리, I/O)에 천장을 씌운다. 즉 네임스페이스가 "보이는 것을 격리"하고 cgroups가 "쓸 수 있는 것을 제한"한다. 이 둘이 합쳐져 "한 커널 위에서 여러 격리된 실행 환경"이라는 컨테이너가 만들어진다.
 
----
+이게 가상 머신(VM)과 결정적으로 다른 점이다. VM은 하이퍼바이저 위에 게스트 OS 커널을 통째로 올리지만, 컨테이너는 **호스트 커널을 공유**하고 그 위에서 격리만 한다. 그래서 컨테이너는 가볍고 빠르게 뜨지만(수백 ms), 커널을 공유하기 때문에 격리 강도는 VM보다 약하다. 이 "커널 공유로 인한 격리 약점"이 나중에 Fargate가 왜 특별한 격리 기술을 쓰는지의 출발점이 된다.
 
-## 📖 이론 내용
+> 💡 **관련 이론**: cgroups는 2007년 구글 엔지니어들이 "process containers"라는 이름으로 리눅스 커널에 기여한 기능이다. 컨테이너라는 개념 자체는 더 오래됐다 — FreeBSD의 jail(2000년), Solaris Zones(2004년)이 선조이고, 더 거슬러 올라가면 1979년 유닉스의 chroot가 "프로세스의 루트 디렉터리를 바꿔 격리한다"는 첫 씨앗이었다. Docker(2013년)는 이 커널 기능들을 쉽게 쓸 수 있는 도구와 이미지 포맷·레지스트리 생태계로 묶어 컨테이너를 대중화한 것이지, 격리 기술 자체를 발명한 게 아니다. ECS는 그 위에 "여러 호스트에 걸친 스케줄링"이라는 한 층을 더 얹었다.
 
-### 1. Amazon ECS란?
+> 🔍 **더 깊이**: 컨테이너 이미지는 **유니온 파일시스템(union filesystem)** 기반의 레이어 구조다. 베이스 이미지(예: `python:3.12-slim`) 위에 의존성 설치 레이어, 애플리케이션 코드 레이어가 차곡차곡 쌓이고, 각 레이어는 콘텐츠 해시로 식별된다. 이게 두 가지 이득을 준다. 첫째, **캐싱**: 코드만 바뀌면 코드 레이어만 다시 빌드·푸시하고 나머지는 재사용한다. 둘째, **공유**: 같은 베이스 레이어를 쓰는 여러 이미지가 디스크에서 그 레이어를 한 번만 저장한다. ECR이 "이미지 푸시 시 변경된 레이어만 업로드"하고, Docker가 "이미 받은 레이어는 다시 안 받는" 것이 모두 이 구조 덕분이다. Dockerfile에서 자주 바뀌는 명령(`COPY . .`)을 맨 아래 두라는 조언도 캐시 무효화를 줄이려는 것이다.
 
-Docker 컨테이너를 실행하고 관리하는 완전 관리형 컨테이너 오케스트레이션 서비스입니다.
+## ECS의 두 평면: 제어 평면과 데이터 평면
 
-**ECS 구성 요소:**
-- **클러스터 (Cluster)**: ECS 리소스의 논리적 그룹
-- **태스크 정의 (Task Definition)**: 컨테이너 실행 방법 정의 (CPU, 메모리, 이미지, 포트)
-- **태스크 (Task)**: 태스크 정의의 인스턴스
-- **서비스 (Service)**: 태스크 개수 유지, 로드밸런서 연결
+ECS를 이해하는 열쇠는 "스케줄링을 결정하는 두뇌"와 "실제 컨테이너가 도는 몸통"이 분리돼 있다는 것이다. 이건 분산 오케스트레이터의 보편적 구조다.
 
-### 2. EC2 시작 유형 vs Fargate
+- **제어 평면(control plane)**: AWS가 완전 관리한다. 클러스터 상태를 저장하고, "어떤 태스크를 어느 인스턴스에 둘지" 스케줄링을 결정하며, 서비스의 원하는 개수(desired count)와 실제 개수를 맞춘다. 사용자는 이 부분을 운영하지 않는다.
+- **데이터 평면(data plane)**: 컨테이너가 실제로 실행되는 컴퓨팅이다. 여기가 EC2냐 Fargate냐가 바로 "시작 유형(launch type)"의 갈림길이다.
 
-| 특성 | EC2 시작 유형 | Fargate |
-|------|--------------|---------|
-| 서버 관리 | EC2 직접 관리 | 서버리스 |
-| 가격 | EC2 인스턴스 비용 | 사용한 CPU/메모리만 |
-| 제어 수준 | 높음 | 낮음 |
-| 시작 시간 | 느림 | 빠름 |
-| 용도 | 비용 최적화, 특수 하드웨어 | 간편한 서버리스 컨테이너 |
+핵심 구성 요소는 다음과 같이 계층을 이룬다.
 
-### 3. ECS 태스크 정의
+- **클러스터(Cluster)**: 컴퓨팅 자원과 서비스를 담는 논리적 경계.
+- **태스크 정의(Task Definition)**: 컨테이너 실행의 설계도. 이미지, CPU/메모리, 포트 매핑, 환경 변수, 로그 설정, 두 IAM 역할이 여기 들어간다. **불변(immutable)이고 버전이 매겨진다** — 수정하면 새 리비전(`my-app:2`)이 생긴다.
+- **태스크(Task)**: 태스크 정의를 실제로 인스턴스화한 실행 단위. 한 태스크 안에 여러 컨테이너가 함께 뜰 수 있다(사이드카 패턴).
+- **서비스(Service)**: 태스크의 개수를 유지하고, 죽으면 다시 띄우며, 로드 밸런서에 연결하고, 롤링 배포를 관리하는 장기 실행 관리자.
 
 ```json
 {
@@ -51,18 +41,7 @@ Docker 컨테이너를 실행하고 관리하는 완전 관리형 컨테이너 �
     {
       "name": "my-app",
       "image": "123456789.dkr.ecr.ap-northeast-2.amazonaws.com/my-app:latest",
-      "portMappings": [
-        {
-          "containerPort": 8080,
-          "protocol": "tcp"
-        }
-      ],
-      "environment": [
-        {
-          "name": "ENV",
-          "value": "production"
-        }
-      ],
+      "portMappings": [{ "containerPort": 8080, "protocol": "tcp" }],
       "secrets": [
         {
           "name": "DB_PASSWORD",
@@ -82,212 +61,217 @@ Docker 컨테이너를 실행하고 관리하는 완전 관리형 컨테이너 �
 }
 ```
 
-### 4. Amazon ECR (Elastic Container Registry)
+> 💡 **관련 이론**: ECS 서비스가 "원하는 개수와 실제 개수를 끊임없이 맞추는" 동작은 쿠버네티스에서 유명해진 **조정 루프(reconciliation loop)** 패턴 그 자체다. "원하는 상태(desired state)"를 선언하면, 컨트롤러가 "현재 상태(current state)"를 관찰해 둘의 차이를 줄이는 행동을 반복한다. 태스크가 죽으면 실제 개수가 3에서 2로 줄고, 컨트롤러가 이 차이를 감지해 새 태스크를 띄워 다시 3으로 맞춘다. 이 "선언적(declarative) 모델"은 명령적(imperative) 모델("태스크를 띄워라"는 일회성 명령)보다 자가 치유에 강하다. CloudFormation의 스택 상태 관리, DynamoDB Auto Scaling, Auto Scaling Group이 모두 같은 철학이다.
 
-Docker 이미지를 저장하고 관리하는 완전 관리형 레지스트리입니다.
+> ⚠️ **함정**: 태스크 정의는 불변이고 버전이 매겨진다는 점이 시험 함정으로 나온다. "환경 변수를 바꾸려면?"의 답은 "기존 태스크 정의를 수정"이 아니라 "**새 리비전을 등록하고 서비스를 그 리비전으로 업데이트**"다. 또 서비스를 `:latest`처럼 특정 리비전 없이 업데이트하면 의도치 않은 배포가 일어날 수 있어, 보통 명시적 리비전 번호로 배포한다.
+
+## Fargate는 어떻게 "서버리스"를 만드는가: Firecracker
+
+EC2 시작 유형과 Fargate의 표면적 차이는 "EC2를 내가 관리하느냐"지만, 그 밑에는 흥미로운 격리 기술이 있다. Fargate에서 사용자는 EC2 인스턴스를 보지도, 관리하지도 않는다. 그렇다고 AWS가 모든 고객의 컨테이너를 한 거대한 공유 커널 위에 그냥 올리면 격리가 위험하다 — 앞서 봤듯 컨테이너는 커널을 공유하므로 멀티테넌트 환경에서 격리 약점이 보안 문제가 된다.
+
+AWS의 해법이 **Firecracker**다. Firecracker는 AWS가 만들어 오픈소스로 공개한 초경량 가상화 기술(microVM)로, "VM의 강한 격리"와 "컨테이너의 빠른 시작"을 동시에 잡으려는 것이다. 일반 VM이 수백 MB의 메모리 오버헤드와 수십 초의 부팅을 가지는 데 비해, Firecracker microVM은 **5MB 미만의 오버헤드로 125ms 안에** 뜬다. Fargate는 각 태스크(또는 작은 묶음)를 별도의 microVM에 넣어, 고객 간에 커널을 공유하지 않는 강한 격리를 제공하면서도 컨테이너처럼 빠르게 시작한다. "서버를 관리하지 않아도 되는" 마법의 정체는 이 microVM을 AWS가 대신 운영해주는 것이다.
+
+| 특성 | EC2 시작 유형 | Fargate |
+|------|--------------|---------|
+| 데이터 평면 | 내가 EC2 직접 운영 | AWS가 microVM 운영 |
+| 격리 | 호스트 커널 공유 | 태스크별 microVM(Firecracker) |
+| 과금 | 인스턴스 시간(놀아도 과금) | 태스크의 vCPU·메모리·실행 시간 |
+| 패치·AMI | 내 책임 | AWS 책임 |
+| 네트워크 모드 | bridge/host/awsvpc/none 선택 | **awsvpc 강제** |
+| 적합 | 비용 최적화, GPU·특수 하드웨어, 데몬 | 간편·빠른 확장, 운영 부담 최소 |
+
+> 🔍 **더 깊이**: Firecracker는 Rust로 작성됐고, KVM(리눅스 커널 가상 머신) 위에서 동작한다. 핵심 설계는 "꼭 필요한 것만 남긴 최소 디바이스 모델"이다 — 일반 QEMU 기반 VM이 온갖 레거시 하드웨어를 에뮬레이트하는 것과 달리, Firecracker는 네트워크·블록·직렬 콘솔 등 극소수 디바이스만 제공한다. 공격 표면이 작아 보안이 강하고, 부팅할 게 적어 빠르다. Lambda도 같은 Firecracker를 쓴다 — 그래서 Lambda와 Fargate는 "서버리스 컴퓨팅"이라는 같은 뿌리를 공유한다. 2018년 re:Invent에서 공개된 이 기술은 "서버리스의 격리는 어떻게 안전하면서도 빠를 수 있는가"라는 질문에 대한 AWS의 답이다.
+
+> 📚 **사례**: 2018년 Firecracker 공개 전까지 Fargate는 내부적으로 EC2 인스턴스를 고객별로 격리해 띄우는 방식이었는데, 이는 자원 낭비와 느린 시작이라는 비용을 치렀다. Firecracker 도입 후 Fargate는 한 베어메탈 호스트 위에 수천 개의 microVM을 안전하게 밀집(bin-packing)시킬 수 있게 됐고, 이 밀도 향상이 Fargate 가격 인하(2019년 약 20% 인하)의 기술적 토대가 됐다. "서버리스가 점점 싸지는" 배경엔 이런 격리 기술의 발전이 깔려 있다.
+
+## 왜 Fargate는 awsvpc만 강제하는가
+
+네트워크 모드는 컨테이너가 네트워크를 어떻게 보느냐를 결정한다. EC2 시작 유형에서는 네 가지 중 고를 수 있지만, Fargate는 **awsvpc만** 쓴다. 이게 단순 제약이 아니라 Fargate 격리 모델의 필연적 결과다.
+
+| 모드 | 동작 | 한계 |
+|------|------|------|
+| **bridge** | Docker 기본. 호스트의 가상 브리지에 NAT로 연결 | 포트 충돌, 성능 오버헤드 |
+| **host** | 컨테이너가 호스트 네트워크를 직접 사용 | 격리 약함, 포트 공유 불가 |
+| **awsvpc** | **태스크마다 자체 ENI(탄력적 네트워크 인터페이스)** 부여 | ENI 개수 한도 |
+| **none** | 네트워크 없음 | 외부 통신 불가 |
+
+awsvpc 모드에서 각 태스크는 VPC 안의 진짜 네트워크 인터페이스(ENI)를 자기 것으로 받는다. 그래서 태스크는 **자기만의 사설 IP**를 가지고, 보안 그룹을 태스크 단위로 붙일 수 있으며, VPC 흐름 로그에 개별적으로 잡힌다. 마치 태스크 하나하나가 작은 EC2 인스턴스처럼 네트워크에 존재한다. Fargate는 사용자에게 호스트를 노출하지 않으므로 host/bridge처럼 "호스트 네트워크"라는 개념을 줄 수가 없다 — 호스트가 보이지 않는데 그 호스트의 네트워크를 공유할 방법이 없다. 그래서 "태스크에 독립 ENI를 준다"는 awsvpc가 유일하게 일관된 선택이 된다.
+
+> ⚠️ **함정**: awsvpc는 태스크마다 ENI를 쓰므로, 한 서브넷의 가용 IP가 부족하거나 EC2 인스턴스의 ENI 한도에 걸리면 "태스크를 띄울 수 없다"는 사고가 난다(EC2 시작 유형에서 특히). 시험에서 "Fargate 태스크가 시작 안 됨 + 서브넷 IP 고갈"이 보이면 답은 "더 큰 CIDR의 서브넷 추가" 계열이다. 또 awsvpc 태스크가 인터넷에서 ECR/Secrets Manager에 접근하려면 NAT 게이트웨이나 VPC 엔드포인트가 필요하다 — 사설 서브넷에 두고 NAT 없이 두면 "이미지 pull 실패"가 난다.
+
+## executionRole 대 taskRole: 두 역할이 갈라지는 근본 이유
+
+이 둘을 헷갈리는 건 ECS 시험의 가장 흔한 함정이다. 핵심은 "**누가, 언제, 무엇을 위해** 권한을 쓰느냐"가 시점상 완전히 다르다는 것이다.
+
+- **executionRole(태스크 실행 역할)**: 태스크를 **시작하는 동안 ECS 에이전트/인프라**가 쓴다. 컨테이너가 아직 뜨기도 전에 필요한 것들 — ECR에서 이미지 pull, CloudWatch Logs 그룹에 로그 스트림 생성, Secrets Manager/SSM에서 비밀 값을 가져와 환경 변수로 주입. 즉 "컨테이너를 무대에 올리기 위한 준비" 권한이다.
+- **taskRole(태스크 역할)**: 태스크가 뜬 **뒤에 컨테이너 안의 애플리케이션 코드**가 쓴다. 앱이 DynamoDB에 쓰고, S3를 읽고, SQS를 폴링하고, 다른 SNS에 발행하는 — 런타임의 비즈니스 로직 권한이다.
+
+시점으로 기억하면 명확하다. **executionRole = 시작 전 인프라가 쓰는 권한, taskRole = 실행 중 앱이 쓰는 권한.** 이미지가 ECR에서 안 받아지면 executionRole 문제고, 앱이 DynamoDB에서 AccessDenied를 받으면 taskRole 문제다.
+
+> 💡 **관련 이론**: 이 분리는 **최소 권한 원칙(Principle of Least Privilege)** 의 깔끔한 적용이다. 만약 한 역할에 ECR pull, 로그 쓰기, DynamoDB 접근을 다 몰아넣으면, 그 컨테이너가 탈취됐을 때 공격자가 ECR과 로그 인프라 권한까지 다 가져간다. 둘을 나누면 "컨테이너 안에서 노출되는 자격 증명"은 taskRole뿐이고(앱이 IMDS 같은 경로로 받는 건 taskRole), executionRole은 컨테이너 바깥의 ECS 에이전트가 쥐고 있어 앱 코드가 접근하지 못한다. 권한의 "폭발 반경(blast radius)"을 줄이는 설계다.
+
+> 📚 **사례**: 가장 흔한 운영 사고 두 가지. (1) Secrets Manager에서 DB 비밀번호를 환경 변수로 주입하도록 태스크 정의에 `secrets`를 넣었는데 **executionRole에 `secretsmanager:GetSecretValue` 권한이 없어** 태스크가 시작조차 안 되는 경우 — 이건 taskRole이 아니라 executionRole 문제다(주입은 시작 시점, 인프라가 한다). (2) 앱이 잘 떴는데 S3 업로드에서 AccessDenied — 이건 taskRole 문제다. 시험에서 "비밀 주입 실패"는 executionRole, "런타임 앱의 AWS 호출 실패"는 taskRole로 가르면 거의 틀리지 않는다.
+
+## 태스크 배치와 용량: 비용과 가용성의 줄다리기
+
+EC2 시작 유형에서는 "여러 인스턴스 중 어디에 태스크를 둘지"를 결정해야 한다(Fargate는 AWS가 알아서 하므로 해당 없음). 이게 **태스크 배치 전략(task placement strategy)** 이다.
+
+| 전략 | 동작 | 의도 |
+|------|------|------|
+| **binpack** | CPU·메모리가 가장 적게 남은 인스턴스부터 채움 | 인스턴스 수 최소화 → **비용 절감** |
+| **spread** | 인스턴스/AZ/호스트에 균등 분산 | 한 곳이 죽어도 영향 최소 → **고가용성** |
+| **random** | 무작위 | 단순·테스트용 |
+
+binpack과 spread는 정반대의 목표를 가진다. binpack은 "적은 인스턴스에 꽉꽉 눌러 담아" 놀고 있는 인스턴스를 없애 비용을 줄이고, spread는 "AZ에 골고루 흩뿌려" 한 AZ가 통째로 죽어도 서비스가 살아남게 한다. 실무에선 "AZ로는 spread, AZ 안에서는 binpack" 식으로 조합한다.
+
+**용량 공급자(Capacity Provider)** 는 여기서 한 단계 위 추상화다. Fargate, Fargate Spot, EC2 Auto Scaling Group을 섞어 "기본 N개는 안정적인 Fargate, 나머지는 70% 싼 Fargate Spot"처럼 비용·안정성을 배합한다. Spot은 2분 전 회수 통보가 오므로 배치 작업·내결함성 있는 워크로드에 쓴다.
+
+> 🔍 **더 깊이**: binpack은 사실 컴퓨터 과학의 고전 문제인 **빈 패킹 문제(bin packing problem)** 그 자체다 — "크기가 제각각인 물건들을 최소 개수의 상자에 담아라"는 NP-난해 문제로, 최적해를 빠르게 구할 수 없어 휴리스틱(예: First-Fit Decreasing)을 쓴다. ECS의 binpack도 완벽한 최적이 아니라 "가장 적게 남은 인스턴스부터 채우는" 그리디 휴리스틱이다. 클라우드 비용 최적화의 상당 부분이 결국 "어떻게 하면 유휴 자원 없이 빽빽이 채우느냐"는 빈 패킹 문제로 환원된다 — Firecracker가 한 호스트에 microVM을 밀집시키는 것도 같은 게임이다.
+
+## ECR: 이미지를 어디에 두고 어떻게 인증하는가
+
+**Amazon ECR(Elastic Container Registry)** 은 컨테이너 이미지를 저장하는 완전 관리형 레지스트리다. 단순 저장소처럼 보이지만 시험에 나오는 디테일이 꽤 있다.
 
 ```bash
-# ECR에 로그인
+# ECR 인증: 12시간 유효한 토큰을 받아 docker login
 aws ecr get-login-password --region ap-northeast-2 | \
     docker login --username AWS --password-stdin \
     123456789.dkr.ecr.ap-northeast-2.amazonaws.com
 
-# 이미지 빌드 및 태그
 docker build -t my-app .
 docker tag my-app:latest 123456789.dkr.ecr.ap-northeast-2.amazonaws.com/my-app:latest
-
-# ECR에 푸시
 docker push 123456789.dkr.ecr.ap-northeast-2.amazonaws.com/my-app:latest
 ```
 
-**ECR 특징:**
-- 이미지 취약점 스캔
-- 이미지 수명 주기 정책
-- 교차 리전/계정 복제
-- OCI 아티팩트 지원
-
-### 4-1. 심화 이론 - ECS/Fargate/ECR
-
-#### Task Placement Strategies (EC2 시작 유형, 시험 가끔)
-
-| 전략 | 동작 |
-|------|------|
-| **binpack** | CPU·메모리 사용량 최대화 (적은 인스턴스에 몰빵) |
-| **random** | 무작위 |
-| **spread** | 인스턴스/AZ/host 균등 분산 (HA) |
-
-#### Capacity Provider Strategy
-
-- 여러 시작 유형 혼합 (EC2 + Fargate + Spot)
-- Auto Scaling Group과 연계
-- 시험 시나리오: "비용 절감 + 안정성" → Fargate + Fargate Spot 조합
-
-#### Fargate Spot
-
-- 정규 Fargate보다 **최대 70% 저렴**
-- 2분 전 알림 후 회수
-- 비-필수 작업 (배치, ML 학습)
-
-#### Network Mode (EC2 시작 유형 시 선택)
-
-| 모드 | 설명 |
-|------|------|
-| **bridge** | Docker 기본, 호스트 NAT |
-| **host** | 호스트 네트워크 직접 사용 |
-| **awsvpc** | 태스크마다 ENI (Fargate는 강제) |
-| **none** | 네트워크 없음 |
-
-#### ECS Service Discovery (시험 가끔)
-
-- AWS Cloud Map과 통합
-- 마이크로서비스끼리 DNS로 발견
-- API Gateway HTTP API에서 VPC Link로 연결 가능
-
-#### Service Connect (2022 신규)
-
-- Service Mesh 라이트 버전
-- 자동 mTLS, 트래픽 모니터링
-- ECS 마이크로서비스 통신 단순화
-
-#### ECS Anywhere & EKS Anywhere
-
-- 온프레미스 서버에 ECS/EKS Agent 설치 → AWS에서 관리
-- 하이브리드 워크로드
-
-#### ECR 디테일
-
 | 항목 | 내용 |
 |------|------|
-| **Image Scanning** | Basic (CVE 무료) / Enhanced (Inspector 통합, 유료) |
-| **Lifecycle Policy** | 태그·일수·개수 기준 자동 정리 |
-| **Replication** | 리전 간·계정 간 자동 복제 |
-| **Pull-through Cache** | Docker Hub·ECR Public 캐시 (속도·rate limit 회피) |
-| **Image Signing** | AWS Signer로 서명 |
-| **인증** | IAM (12시간 토큰), `aws ecr get-login-password` |
+| **인증** | IAM 기반. `get-login-password`가 주는 토큰은 **12시간** 유효 |
+| **취약점 스캔** | Basic(무료, CVE 기반, 푸시 시 스캔) / Enhanced(Amazon Inspector 통합, 유료, 지속 스캔) |
+| **수명 주기 정책** | 태그·개수·일수 기준으로 오래된 이미지 자동 삭제 |
+| **복제** | 리전 간·계정 간 자동 복제 |
+| **풀 스루 캐시** | Docker Hub/ECR Public 이미지를 ECR에 캐싱 → 속도·rate limit 회피 |
+| **불변 태그** | `latest` 같은 태그를 덮어쓰지 못하게 막아 배포 추적성 확보 |
 
-### 5. ECS 서비스와 ALB 통합
+> ⚠️ **함정**: "Fargate 태스크가 ECR 이미지를 pull하지 못한다"의 원인은 보통 셋 중 하나다. (1) **executionRole에 ECR 권한 부족**, (2) **사설 서브넷에 NAT/VPC 엔드포인트가 없어** ECR에 도달 못 함, (3) `get-login-password` 토큰 만료(12시간) — CI 파이프라인이 오래 돌면 토큰이 만료돼 push가 실패한다. "인증 토큰이 12시간"이라는 숫자는 단독으로도 출제된다.
 
-```bash
-# ECS 서비스 생성 (Fargate)
-aws ecs create-service \
-    --cluster my-cluster \
-    --service-name my-service \
-    --task-definition my-app:1 \
-    --desired-count 3 \
-    --launch-type FARGATE \
-    --network-configuration "awsvpcConfiguration={subnets=[subnet-xxx],securityGroups=[sg-xxx],assignPublicIp=ENABLED}" \
-    --load-balancers "targetGroupArn=arn:aws:elasticloadbalancing:...,containerName=my-app,containerPort=8080"
-```
+> 📚 **사례**: Docker Hub가 2020년 익명/무료 사용자에게 이미지 pull rate limit(6시간당 100~200회)을 도입했을 때, Docker Hub 베이스 이미지를 직접 받아 빌드하던 수많은 CI 파이프라인이 "Too Many Requests"로 깨졌다. AWS의 권장 해법이 **ECR 풀 스루 캐시(pull-through cache)** 다 — Docker Hub 이미지를 처음 한 번만 받아 ECR에 캐싱해두고, 이후로는 ECR에서 받아 rate limit과 외부 의존을 동시에 없앤다. 외부 레지스트리 의존이 만든 장애를 캐싱으로 푸는, 클라우드에서 반복되는 패턴이다.
 
----
+## 정리하며
 
-## 아키텍처 다이어그램
+ECS를 관통하는 한 문장은 "선언적 조정 루프로 컨테이너의 원하는 상태를 끊임없이 유지하되, 그 컨테이너가 도는 데이터 평면을 EC2로 직접 쥘지 Fargate에 맡길지를 고른다"이다. 컨테이너의 격리는 namespace와 cgroups라는 커널 기능에서 나오고, Fargate는 그 약한 격리를 Firecracker microVM으로 보강해 "서버 없는" 안전한 멀티테넌시를 만든다. awsvpc 강제는 호스트를 숨기는 Fargate의 필연이고, executionRole과 taskRole의 분리는 "시작 전 인프라"와 "실행 중 앱"의 권한을 시점으로 가르는 최소 권한 설계다. ECR은 12시간 토큰·레이어 캐싱·풀 스루 캐시로 이미지 공급망을 떠받친다. 시험 함정 대부분은 이 파이프라인 위 어느 지점의 "왜 그렇게 설계됐나"를 묻는다.
 
-```
-ECS Fargate 아키텍처
-================================
-
-[ALB]
-  |
-  | 요청 분산
-  v
-[ECS 서비스]
-  태스크 1: [Fargate 컨테이너]
-  태스크 2: [Fargate 컨테이너]
-  태스크 3: [Fargate 컨테이너]
-  (Auto Scaling Group 연결)
-  
-  각 태스크:
-    - awsvpc 모드 (각 태스크에 ENI 부여)
-    - Secrets Manager에서 비밀번호 주입
-    - CloudWatch Logs로 로그 전송
-
-CI/CD 통합
-================================
-
-[CodeCommit]
-     |
-     v
-[CodeBuild] → docker build → [ECR]
-                                  |
-                                  v
-                          [ECS 서비스 업데이트]
-                          (새 태스크 정의 배포)
-```
-
----
-
-## ⭐ 핵심 포인트
-
-1. ⭐ **Fargate**: 서버리스 컨테이너, EC2 관리 불필요
-2. ⭐ **태스크 정의**: CPU/메모리/이미지/포트/환경변수 정의
-3. ⭐ **executionRole**: ECR pull, CloudWatch Logs 권한
-4. ⭐ **taskRole**: 컨테이너가 AWS 서비스에 접근하는 권한
-5. ⭐ **ECR**: 완전 관리형 Docker 레지스트리, 취약점 스캔
+다음 글에서는 이 모든 인프라를 손으로 클릭하지 않고 코드로 선언하는 CloudFormation의 세계로 넘어간다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** Fargate와 EC2 시작 유형의 가장 큰 차이점은?
+**문제 1.** ECS 태스크 정의에 Secrets Manager 비밀을 환경 변수로 주입하도록 설정했는데, 태스크가 시작조차 되지 않고 비밀을 가져오지 못한다. 원인은?
 
-A) 컨테이너 이미지 지원  
-B) Fargate는 서버 인프라 관리 불필요  
-C) 지원 리전 차이  
-D) 네트워킹 방식 차이  
+A) taskRole에 DynamoDB 권한이 없다
 
-**정답: B** - Fargate는 서버리스로 EC2 인스턴스를 직접 관리할 필요 없이 컨테이너를 실행할 수 있습니다.
+B) executionRole에 `secretsmanager:GetSecretValue` 권한이 없다
 
----
+C) 컨테이너 포트가 잘못 설정됐다
 
-**문제 2.** ECS 태스크가 DynamoDB에 접근하려면 어떤 역할이 필요한가?
+D) 네트워크 모드가 bridge다
 
-A) executionRoleArn  
-B) taskRoleArn  
-C) 인스턴스 프로파일  
-D) 보안 그룹 설정  
+**정답: B**
 
-**정답: B** - taskRole은 컨테이너 내 애플리케이션이 AWS 서비스에 접근할 때 사용합니다. executionRole은 ECS 에이전트가 ECR pull, 로그 쓰기에 사용합니다.
+해설: 비밀 값을 가져와 환경 변수로 **주입하는 일은 컨테이너가 뜨기 전, ECS 인프라(에이전트)가 하는 작업**이므로 **executionRole**의 권한이 필요하다. 앱이 실행 중 직접 Secrets Manager를 호출하는 게 아니라 시작 시점에 주입되는 것이라, taskRole이 아니다. A) taskRole 권한은 앱이 런타임에 AWS 서비스를 호출할 때 쓰이며, 여기선 태스크가 시작도 못 했으므로 무관하다. C·D는 비밀 주입 실패와 관계없다. "비밀 주입 = 시작 시점 = executionRole"로 기억한다.
 
 ---
 
-**문제 3.** ECR에서 오래된 이미지를 자동으로 삭제하려면?
+**문제 2.** Fargate 태스크가 사용할 수 있는 네트워크 모드와 그 이유로 옳은 것은?
 
-A) S3 수명 주기 정책  
-B) ECR 이미지 수명 주기 정책  
-C) CloudWatch 이벤트  
-D) Lambda 함수 직접 구현  
+A) bridge — 포트 충돌을 피하려고
 
-**정답: B** - ECR 이미지 수명 주기 정책을 설정하면 규칙에 따라 오래된 이미지를 자동으로 삭제합니다.
+B) host — 성능이 가장 좋아서
 
----
+C) awsvpc — Fargate는 호스트를 노출하지 않아 태스크별 ENI를 주는 방식만 일관되기 때문
 
-**문제 4.** ECS Fargate 태스크가 사용하는 네트워크 모드는?
+D) none — 보안상 네트워크를 막으려고
 
-A) bridge  
-B) host  
-C) awsvpc  
-D) overlay  
+**정답: C**
 
-**정답: C** - Fargate는 awsvpc 네트워크 모드를 사용하며 각 태스크에 독립적인 ENI(Elastic Network Interface)가 부여됩니다.
+해설: Fargate는 사용자에게 EC2 호스트를 노출하지 않으므로, "호스트 네트워크를 공유"하는 host나 "호스트의 브리지에 NAT"하는 bridge 개념을 줄 수 없다. 호스트가 보이지 않는데 그 네트워크를 공유할 방법이 없기 때문이다. 그래서 **각 태스크에 VPC 안의 독립 ENI(자체 사설 IP, 자체 보안 그룹)를 부여하는 awsvpc만** 일관된 선택이 되어 강제된다. A·B는 Fargate에서 불가능한 모드이고, D는 외부 통신이 막혀 실용성이 없다.
 
 ---
 
-**문제 5.** ECS 서비스에서 태스크 수를 자동으로 조정하려면?
+**문제 3.** 비용을 최소화하기 위해 EC2 시작 유형에서 가능한 한 적은 수의 인스턴스에 태스크를 몰아넣고 싶다. 적절한 배치 전략은?
 
-A) ECS 수동 업데이트  
-B) ECS Service Auto Scaling  
-C) EC2 Auto Scaling  
-D) Lambda 함수  
+A) spread
 
-**정답: B** - ECS Service Auto Scaling은 CPU, 메모리 사용률 등을 기반으로 태스크 수를 자동 조정합니다.
+B) binpack
+
+C) random
+
+D) Fargate Spot
+
+**정답: B**
+
+해설: **binpack**은 CPU·메모리가 가장 적게 남은 인스턴스부터 채워, 결과적으로 사용하는 인스턴스 수를 최소화한다. 이는 고전적인 빈 패킹 문제의 그리디 휴리스틱으로, 유휴 인스턴스를 없애 비용을 줄인다. A) spread는 정반대로 AZ·인스턴스에 균등 분산해 가용성을 높이지만 인스턴스가 더 많이 필요하다. C) random은 비용·가용성 어느 쪽도 최적화하지 않는다. D) Fargate Spot은 배치 전략이 아니라 용량 공급자 옵션이다.
 
 ---
 
-## 📌 오늘의 요약
+**문제 4.** CI 파이프라인이 길게 실행되던 중 ECR push가 갑자기 "authentication" 오류로 실패하기 시작했다. 가장 가능성 높은 원인은?
 
-1. ECS: Docker 컨테이너 오케스트레이션, 클러스터/태스크정의/서비스
-2. Fargate: 서버리스, EC2 관리 불필요, awsvpc 네트워크 모드
-3. 태스크 정의: CPU/메모리/이미지/포트/환경변수/비밀번호 정의
-4. 역할: executionRole(ECR/Logs), taskRole(AWS 서비스 접근)
-5. ECR: 완전 관리형 레지스트리, 취약점 스캔, 수명 주기 정책
+A) 이미지가 너무 커서
+
+B) `get-login-password`로 받은 인증 토큰이 12시간을 넘겨 만료됨
+
+C) ECR 수명 주기 정책이 이미지를 삭제함
+
+D) 취약점 스캔이 푸시를 차단함
+
+**정답: B**
+
+해설: ECR의 `get-login-password`가 발급하는 docker 인증 토큰은 **12시간** 유효하다. 파이프라인이 그보다 오래 실행되면 토큰이 만료되어 push/pull이 인증 오류를 낸다. 해결은 작업 직전에 다시 로그인(토큰 재발급)하는 것이다. A) 크기는 인증 오류와 무관하다. C) 수명 주기 정책은 오래된 이미지를 지울 뿐 인증을 막지 않는다. D) 취약점 스캔은 푸시 후 동작하며 인증 단계를 막지 않는다.
+
+---
+
+**문제 5.** 안정적인 기본 용량은 정규 Fargate로, 추가 부하는 비용이 싼 옵션으로 처리하되 일부 중단을 감내하려 한다. 적절한 구성은?
+
+A) 모든 태스크를 EC2 시작 유형으로
+
+B) 용량 공급자 전략으로 Fargate + Fargate Spot 혼합
+
+C) 모든 태스크를 Fargate Spot으로
+
+D) spread 배치 전략만 적용
+
+**정답: B**
+
+해설: **용량 공급자 전략(Capacity Provider Strategy)** 으로 정규 Fargate와 Fargate Spot을 비율로 섞으면, 기본 용량은 회수되지 않는 정규 Fargate로 안정성을 확보하고 추가 용량은 최대 70% 싼 Spot으로 비용을 줄인다. Spot은 2분 전 회수 통보가 오므로 일부 중단을 감내하는 워크로드에 적합하다. A) EC2는 인스턴스 관리 부담이 있다. C) 전부 Spot이면 회수 시 서비스가 통째로 흔들린다. D) 배치 전략만으로는 비용·안정성 배합을 못 한다.
+
+---
+
+**문제 6.** 한 태스크 안에 애플리케이션 컨테이너와 로그 수집용 보조 컨테이너를 함께 실행하려 한다. 이를 가리키는 패턴과 ECS에서의 단위는?
+
+A) 사이드카(sidecar) 패턴 — 한 태스크 안 여러 컨테이너
+
+B) 마이크로서비스 — 각각 별도 서비스
+
+C) 모놀리식 — 단일 컨테이너
+
+D) 팬아웃 — SNS 사용
+
+**정답: A**
+
+해설: 한 태스크 정의 안에 주 컨테이너와 보조(로깅·프록시·모니터링) 컨테이너를 함께 정의해 같은 태스크로 띄우는 것이 **사이드카 패턴**이다. 같은 태스크의 컨테이너들은 네트워크·볼륨을 공유하므로 보조 컨테이너가 주 컨테이너의 로그·트래픽을 가까이서 처리할 수 있다. B는 별도 태스크/서비스로 쪼개는 것이라 한 태스크 안 공존이 아니다. C는 단일 컨테이너라 보조 컨테이너 개념이 없다. D는 메시징 패턴으로 무관하다.
+
+---
+
+**문제 7.** Fargate가 멀티테넌트 환경에서 강한 격리를 빠른 시작 시간과 함께 제공하는 기술적 토대는?
+
+A) 고객마다 전용 물리 서버 할당
+
+B) Firecracker microVM(태스크별 경량 가상화)
+
+C) 단일 공유 커널에 namespace만 적용
+
+D) Docker bridge 네트워크
+
+**정답: B**
+
+해설: Fargate는 각 태스크(또는 작은 묶음)를 **Firecracker microVM**에 넣어, 일반 컨테이너의 "커널 공유로 인한 약한 격리"를 VM 수준 격리로 보강한다. Firecracker는 5MB 미만 오버헤드로 약 125ms 안에 떠서 VM의 강한 격리와 컨테이너의 빠른 시작을 동시에 달성한다. Lambda도 같은 기술을 쓴다. A) 고객별 전용 물리 서버는 비효율적이고 Fargate의 실제 방식이 아니다. C) namespace만으로는 멀티테넌트 격리가 약하다. D) bridge는 네트워크 모드일 뿐 격리 기술이 아니다.

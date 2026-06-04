@@ -1,441 +1,228 @@
-# Day 1 - KMS (Key Policy, Grant, 회전, CloudHSM)
+# Day 1 - KMS, 키를 한 번도 보지 않고 키를 관리하는 법
 
-📅 날짜: Week 9 (Day 1)
-🎯 주제: AWS의 마스터 키 관리 시스템
-⏱️ 학습 시간: 약 90분
+암호화는 결국 키 관리 문제로 귀결된다. AES-256으로 데이터를 암호화하는 알고리즘은 1990년대에 이미 끝난 이야기고, 깨진 적도 없다. 사고는 알고리즘이 아니라 키에서 난다. 키를 코드에 하드코딩했다가 GitHub에 푸시하고, 키를 평문으로 S3에 올려두고, 키를 누가 언제 썼는지 추적하지 못하고, 떠난 직원의 노트북에 키 사본이 남아 있다. 보안 사고의 압도적 다수가 "키를 어디다 뒀는지"의 문제다.
 
----
+KMS의 핵심 설계 철학은 단순하다. **사용자가 키 원본(key material)을 절대 보지 못하게 한다.** 키를 만들 수도 있고, 회전시킬 수도 있고, 삭제 예약을 걸 수도 있지만, 평문 마스터 키 바이트를 다운로드하는 API는 존재하지 않는다. 이게 왜 그렇게 설계됐는지, HSM이라는 물리 장비가 어떻게 이걸 보장하는지, Envelope Encryption이 왜 필요한지, Key Policy가 왜 IAM보다 우선하는지 — 이 결정들의 이유를 따라가는 게 이 글이다.
 
-## 🎯 학습 목표
+## 키를 다운로드할 수 없는 시스템 — KMS가 등장한 이유
 
-- KMS Key 종류(AWS managed / Customer managed / AWS owned)와 차이를 안다
-- Key Policy + Grant + IAM 정책의 평가 흐름을 이해한다
-- 키 회전, 다중 리전 키, CloudHSM의 사용 사례를 익힌다
+AWS 초기에 암호화는 전적으로 고객 책임이었다. S3에 데이터를 올리려면 클라이언트에서 직접 암호화하고, 키는 알아서 보관해야 했다. 문제는 키 보관이 암호화 자체보다 훨씬 어렵다는 것이다. 키를 어디 두지? 환경 변수? 그럼 그 변수를 읽을 수 있는 모든 프로세스가 키를 본다. 파일? 그럼 디스크 이미지를 뜨면 키가 같이 딸려 나간다. 키를 또 다른 키로 암호화? 그럼 그 키는 어디 두지? 이 무한 후퇴(turtles all the way down)가 키 관리의 본질적 난점이다.
 
----
+KMS는 이 후퇴를 **하드웨어에서 끊는다.** 최상위 마스터 키는 FIPS 140-2 인증을 받은 HSM(Hardware Security Module) 안에서만 존재하고, HSM 밖으로 평문 상태로 나오는 일이 물리적으로 불가능하다. HSM은 키를 외부로 추출하려는 시도를 감지하면 키를 스스로 파괴하는 변조 방지(tamper-resistant) 회로를 갖고 있다. 사용자는 "이 데이터를 이 키로 암호화해줘"라고 요청만 보내고, 암호화된 결과만 받는다. 키 바이트 자체는 결코 네트워크를 타지 않는다.
 
-## 🧩 사전 지식 (CS 기초)
+이 모델의 이름은 **"keys never leave the HSM unencrypted"**다. 2014년 KMS가 출시되기 전까지 이 수준의 키 격리는 직접 HSM 장비를 사서 데이터센터에 설치해야만 가능했고, 장비 한 대가 수만 달러였다. KMS는 이걸 월 $1짜리 API 서비스로 만들었다. 시험에서 "왜 KMS를 쓰나, 직접 암호화하면 안 되나"의 답은 단지 편의가 아니라 — **키를 사람이 만질 수 없게 만드는 것 자체가 보안의 핵심**이기 때문이다.
 
-- **대칭키 vs 비대칭키**: 같은 키로 암/복호화 vs 공/사키 쌍
-- **Envelope encryption**: 데이터 키로 데이터 암호화 + 마스터 키로 데이터 키 암호화
-- **HSM (Hardware Security Module)**: 물리 보안 모듈. 키가 절대 외부로 나가지 않음
-- **FIPS 140-2 Level 3**: 미국 정부 보안 표준
-- **Key rotation**: 주기적 키 교체. 손상 시 영향 최소화
+> 💡 **관련 이론**: KMS의 신뢰 모델은 "신뢰할 수 있는 컴퓨팅 기반(Trusted Computing Base, TCB)을 최소화한다"는 보안 공학 원칙의 구현이다. TCB는 시스템 보안을 책임지는 부품의 집합인데, 이게 작을수록 검증·감사가 쉽고 공격 표면이 좁다. KMS는 TCB를 HSM 하드웨어 + 그 안의 펌웨어로 축소한다. 운영체제, 애플리케이션 코드, 네트워크 스택이 모두 침해당해도 마스터 키는 HSM 밖으로 나가지 않으므로 TCB가 깨지지 않는다. 1980년대 Orange Book(TCSEC)에서 정립된 이 개념이 현대 클라우드 KMS의 근간이다.
 
----
+> 🔍 **더 깊이**: KMS HSM은 마스터 키를 평문으로 디스크에 저장하지 않는다. 모든 마스터 키는 KMS가 운영하는 도메인 키(domain key)로 암호화돼 내구성 스토리지에 보관되고, 사용 시점에만 HSM 메모리에서 복호화된다. 도메인 키 자체는 여러 HSM에 분산된 quorum 방식으로만 접근 가능해서, HSM 한 대를 탈취해도 마스터 키를 복원할 수 없다. AWS는 이 설계를 공개 백서로 검증받았는데(KMS Cryptographic Details), 키가 만들어져서 폐기될 때까지 평문으로 HSM 경계를 넘는 순간이 단 한 번도 없음을 수학적으로 보인다.
 
-## 📖 이론 내용
+## Envelope Encryption — KMS가 4KB만 처리하는 이유
 
-### 1. KMS Key 종류
+KMS로 직접 암호화할 수 있는 데이터는 최대 4KB다. 1GB 파일을 KMS에 보내 암호화하려 하면 에러가 난다. 처음엔 이게 제약처럼 보이지만, 사실 이건 **의도된 설계**이고 그 해법이 Envelope Encryption이다.
 
-| 종류 | 관리 주체 | 비용 | 키 정책 제어 |
-|------|-----------|------|--------------|
-| **AWS Owned** | AWS, 여러 고객 공유 | 무료 | 없음 |
-| **AWS Managed** | AWS, 계정별 자동 (`aws/s3` 등) | 무료 | 제한적 |
-| **Customer Managed (CMK)** | 고객 | $1/월/key + API 호출 | 완전 제어 |
+왜 4KB로 제한했나? 첫째, 큰 데이터를 KMS로 보내면 네트워크 왕복이 데이터 크기에 비례해 느려진다 — 1GB를 KMS API로 왕복시키는 건 말이 안 된다. 둘째, 그렇게 하면 모든 바이트가 HSM을 거쳐야 해서 HSM이 처리량 병목이 된다. 셋째, 가장 중요하게, **마스터 키로 대량의 데이터를 직접 암호화하면 같은 키가 너무 많은 암호문에 노출되어 암호 분석 공격(cryptanalysis)의 표면이 넓어진다.**
 
-#### 주의 - 용어 변경
-- 과거 "CMK (Customer Master Key)" → 현재 "**KMS Key**"
-- 시험에서는 둘 다 등장
-
-### 2. Envelope Encryption
+Envelope Encryption은 이 문제를 두 단계로 푼다. 큰 데이터는 일회성 **데이터 키(Data Encryption Key, DEK)**로 로컬에서 빠르게 암호화하고, 그 짧은 DEK만 마스터 키로 암호화해서 데이터 옆에 같이 저장한다. 봉투(envelope) 안에 편지(데이터)를 넣고, 봉투를 마스터 키로 봉인하는 그림이다.
 
 ```
-[데이터]
-    │ 1. Data Key (DEK) 생성
-    ▼
-[데이터 + DEK로 암호화 → 암호화된 데이터]
-[DEK + KMS Master Key로 암호화 → 암호화된 DEK]
-    │
-    ▼
-저장: (암호화된 데이터, 암호화된 DEK) 함께
+GenerateDataKey(KeyId) 호출
+   → KMS가 DEK 한 개를 만들어 두 가지 형태로 반환:
+       Plaintext DEK  (메모리에서만, 암호화에 사용 후 즉시 폐기)
+       Encrypted DEK  (마스터 키로 암호화됨, 데이터와 함께 저장)
+
+암호화: Plaintext DEK로 1GB 데이터를 로컬 AES-256 암호화 → 메모리의 DEK 파기
+저장:   (암호화된 데이터, Encrypted DEK) 한 묶음으로 저장
+복호화: Encrypted DEK를 KMS Decrypt에 보냄 → Plaintext DEK 회수 → 로컬 복호화
 ```
 
-#### 복호화 시
-1. KMS에 `Decrypt(암호화된 DEK)` 요청 → 평문 DEK 받음
-2. 평문 DEK로 암호화된 데이터 복호화
+핵심은 **Plaintext DEK를 사용 직후 메모리에서 지운다**는 점이다. 디스크에 남는 건 암호화된 데이터와 암호화된 DEK뿐이고, 둘을 합쳐도 마스터 키 없이는 복호화할 수 없다. S3 SSE-KMS, EBS 암호화, RDS 암호화가 모두 내부적으로 이 패턴을 쓴다. EBS는 볼륨마다 별도 DEK를 만들고, 그 DEK를 지정된 KMS 키로 암호화해 볼륨 메타데이터에 붙여둔다.
 
-#### 왜 이렇게?
-- KMS는 **최대 4KB**만 직접 암/복호화
-- 큰 데이터는 DEK로 로컬에서 처리 → 성능 ↑
-- DEK는 짧으니 KMS로 안전하게 보호
+> 💡 **관련 이론**: Envelope Encryption은 새로운 발명이 아니라 PGP(Pretty Good Privacy, 1991)가 30년 전 정립한 하이브리드 암호화 패턴이다. PGP는 메시지를 빠른 대칭키(세션 키)로 암호화하고, 그 세션 키만 수신자의 느린 공개키(RSA)로 암호화해 함께 보낸다. 대칭키는 빠르지만 키 교환이 어렵고, 비대칭키는 키 교환이 쉽지만 느리다 — 둘의 장점만 취하는 게 하이브리드 암호화의 본질이다. KMS의 마스터 키는 비대칭은 아니지만 "느리고 안전한 상위 키 + 빠른 하위 데이터 키"라는 계층 구조는 동일하다. TLS의 세션 키 협상도 같은 원리다.
 
-### 3. Key Policy
+> ⚠️ **함정**: `GenerateDataKey`는 Plaintext와 Encrypted DEK를 둘 다 주지만, `GenerateDataKeyWithoutPlaintext`는 Encrypted DEK만 준다. 후자는 "지금 당장 암호화할 건 아니고, 나중에 복호화할 때 쓸 DEK를 미리 만들어두는" 패턴(예: 일별 키 사전 생성)에 쓴다. 시험에서 "DEK를 만들되 평문은 받지 않는다"는 설명이 나오면 `WithoutPlaintext` 버전이다. 또 흔한 실수가 Plaintext DEK를 디스크에 저장해버리는 것 — 그 순간 Envelope Encryption의 모든 보안이 무너진다. Plaintext DEK는 메모리에서만 살아야 한다.
 
-#### Key Policy의 특수성
-- **모든 KMS Key는 Key Policy 필요** — 기본 명시 없으면 아무도 못 씀
-- Key Policy = Resource-based Policy (S3 버킷 정책과 비슷)
-- 다른 정책(IAM/Grant)이 작동하려면 Key Policy가 우선 허용
+## Key Policy가 IAM보다 우선하는 이유 — 람다 봇 두 개의 교착
 
-#### 기본 Key Policy
+KMS에는 다른 AWS 서비스에 없는 독특한 권한 규칙이 있다. **모든 KMS 키에는 Key Policy가 반드시 있어야 하고, Key Policy가 명시적으로 허용하지 않으면 IAM 권한이 아무리 넓어도 그 키를 쓸 수 없다.** S3 버킷은 버킷 정책이 없어도 IAM만으로 접근되지만, KMS는 다르다. 왜 이렇게 설계했나?
+
+이유는 **키 탈취 시 폭발 반경(blast radius)을 제한하기 위해서**다. 만약 KMS도 IAM만으로 접근 가능했다면, 누군가 `kms:*` 권한을 가진 관리자 역할을 탈취하는 순간 계정의 모든 키를 쓸 수 있게 된다. Key Policy를 강제함으로써, 각 키는 자신을 쓸 수 있는 주체를 키 자체에 명시한다 — 키가 자기 방어선을 갖는 셈이다. 보안에 가장 민감한 자산(키)에는 자원 자체에 붙은 정책(resource-based policy)을 의무화해서, IAM 한 곳이 뚫려도 모든 키가 한꺼번에 노출되지 않게 한다.
+
+기본 Key Policy의 한 줄이 이 구조를 만든다.
+
 ```json
 {
-  "Statement": [
-    {
-      "Sid": "Enable IAM User Permissions",
-      "Effect": "Allow",
-      "Principal": { "AWS": "arn:aws:iam::123456789012:root" },
-      "Action": "kms:*",
-      "Resource": "*"
-    }
-  ]
+  "Sid": "Enable IAM User Permissions",
+  "Effect": "Allow",
+  "Principal": { "AWS": "arn:aws:iam::123456789012:root" },
+  "Action": "kms:*",
+  "Resource": "*"
 }
 ```
-→ "이 계정의 IAM 정책에 권한 있으면 사용 가능". `root`는 계정을 의미 (실제 루트 사용자만이 아님).
 
-#### Cross-Account 사용
-- 다른 계정 IAM이 사용하려면 Key Policy에 명시 + 사용자 측 IAM 정책에 명시 둘 다 필요
+`root`는 루트 사용자가 아니라 **"이 계정 전체"**를 의미한다. 이 한 줄이 있으면 "이 계정의 IAM 정책이 허용하면 키를 쓸 수 있다"가 되어, 평소처럼 IAM으로 권한을 관리할 수 있다. 이 줄을 빼버리면 IAM은 무력해지고 오직 Key Policy에 명시된 주체만 키를 쓰게 된다. 운영 사고 중 가장 무서운 게 이거다 — 실수로 기본 Key Policy의 root 줄을 지우고 자기 자신도 명시하지 않으면, **그 키는 아무도 못 쓰게 되고 되돌릴 방법은 AWS Support 티켓뿐이다.** 키를 잠가버린 운영자가 그 키 자체에 대한 권한도 잃기 때문이다.
 
-### 4. Grant (임시 위임)
+> 🔍 **더 깊이**: KMS 권한 평가는 Key Policy → IAM Policy → Grant → Encryption Context 순으로 누적 검토된다. 정확히는 "Key Policy가 IAM을 신뢰하도록 위임했는가"가 먼저 결정되고, 위임됐으면 IAM/Grant 중 하나라도 허용하면 통과한다. 단, 어느 단계든 명시적 Deny가 있으면 즉시 거부된다 — 이건 IAM 전체에 공통인 "explicit deny wins" 원칙이다. Grant는 Key Policy 수정 없이 임시 권한을 주는 장치라 자동화에 유용한데, AWS 서비스(EBS, RDS 등)가 사용자 대신 키를 쓸 때 내부적으로 Grant를 발급한다. 그래서 EBS 암호화 볼륨을 만들면 키에 자동으로 Grant가 붙는 것을 `list-grants`로 볼 수 있다.
 
-#### 개념
-- Key Policy 수정 없이 **임시·세분화된 권한 위임**
-- 자동화·서비스 통합에 활용
+> 📚 **사례**: 2017년 한 SaaS 업체가 KMS 키 정책을 IaC(Terraform)로 관리하다가, 템플릿에서 root 위임 줄을 누락한 채 배포해 프로덕션 키를 잠가버린 사례가 커뮤니티에 보고됐다. 그 키로 암호화된 RDS와 S3 데이터에 일시적으로 접근 불가 상태가 됐고, AWS Support가 키 정책을 복구하는 데 수 시간이 걸렸다. 교훈은 두 가지였다 — 첫째, Key Policy에는 항상 키를 관리할 주체(보통 보안팀 역할)를 root 위임과 별개로 명시할 것. 둘째, KMS 키 삭제·정책 변경은 IaC에서도 사람의 명시적 승인 단계를 둘 것. 이후 그 업체는 Key Policy 변경에 SCP(Service Control Policy)로 가드레일을 걸었다.
 
-#### Key Policy vs Grant vs IAM
+## 키 회전 — backing key는 바뀌어도 Key ID는 그대로다
 
-| 도구 | 동작 | 사용 사례 |
-|------|------|-----------|
-| **Key Policy** | Key 자체 권한. 모든 요청의 기준 | 정적 권한 |
-| **IAM Policy** | 사용자/Role 단위 권한. Key Policy 허용 전제 | 사용자 그룹 |
-| **Grant** | 임시·세분화. Key Policy를 우회 | EBS 암호화, RDS 등 자동화 |
+키 회전을 처음 접하면 직관에 반하는 부분이 있다. "키를 회전하면 옛날 데이터를 어떻게 복호화하지?" 매년 키를 바꾸는데 작년에 암호화한 데이터가 그대로 읽힌다. 비밀은 KMS 키가 사실 **여러 개의 backing key(실제 암호 재료)를 품은 컨테이너**라는 데 있다.
 
-#### Grant 예시
-```bash
-aws kms create-grant \
-  --key-id arn:aws:kms:ap-northeast-2:123:key/abc \
-  --grantee-principal "arn:aws:iam::123:role/MyLambda" \
-  --operations "Decrypt" "GenerateDataKey" \
-  --constraints 'EncryptionContextEquals={Project=MyApp}'
-```
+`enable-key-rotation`을 켜면 KMS는 매년(현재는 기본 365일, 설정으로 90~2560일 조정 가능) 새 backing key를 생성한다. 하지만 **Key ID와 ARN, alias는 그대로 유지된다.** 새로 암호화하는 데이터는 최신 backing key로 처리되고, 과거에 암호화된 데이터는 그 데이터에 기록된 backing key 식별자를 보고 해당 시점의 옛 backing key로 복호화한다. KMS가 모든 backing key를 영구 보관하므로 과거 데이터는 항상 읽힌다. 사용자 입장에선 키 하나가 그대로인데 안쪽 재료만 조용히 갱신된다.
 
-### 5. Key Rotation (키 회전)
+이 설계의 장점은 **애플리케이션이 회전을 전혀 신경 쓸 필요가 없다**는 것이다. 코드는 `alias/myapp`을 부르기만 하면 되고, 안에서 backing key가 몇 개로 늘어나든 무관하다. 반면 수동 회전(새 키 만들고 alias 옮기기)은 alias를 옮기는 순간 옛 키로 암호화된 데이터를 복호화하려면 옛 키를 명시적으로 살려둬야 한다 — 관리 부담이 크다. 그래서 대칭키는 자동 회전이 표준이고, 수동 회전은 비대칭키나 imported key material처럼 자동 회전이 불가능한 경우에만 쓴다.
 
-#### Customer Managed Key
-- **자동 회전**: 활성화 시 매년 자동 (옵션)
-- **수동 회전**: 새 키 만들고 alias 이동 (직접)
-- 회전 시: 새 backing key 생성, 과거 데이터는 과거 backing key로 복호화 가능
+| 키 종류 | 자동 회전 | 회전 주기 | 비고 |
+|---------|-----------|-----------|------|
+| Customer Managed (대칭) | 선택 (켜기/끄기) | 기본 365일, 90~2560일 조정 | backing key 누적, Key ID 불변 |
+| AWS Managed | 강제 (끌 수 없음) | 365일 (구형은 1095일) | 사용자 제어 불가 |
+| Imported (BYOK) | 불가 | - | 수동 재import만, 만료일 설정 가능 |
+| Asymmetric | 불가 | - | 수동 회전만 |
 
-```bash
-aws kms enable-key-rotation --key-id abc
-```
+> ⚠️ **함정**: 자동 회전은 암호화에 쓰이는 backing key만 바꾼다. 키의 **권한(Key Policy)이 유출됐거나 키가 손상됐다고 의심되는 상황에서는 회전이 해결책이 아니다.** 회전은 단지 암호 재료를 새것으로 갈 뿐, 옛 backing key를 폐기하지 않으므로 옛 데이터를 복호화할 수 있는 능력은 그대로다. 진짜 손상 시에는 키를 비활성화하고 데이터를 새 키로 재암호화(re-encrypt)해야 한다. 시험에서 "키가 유출된 것 같다, 회전하면 되나?"는 함정이다 — 회전은 사전 예방이지 사후 대응이 아니다.
 
-#### AWS Managed Key
-- 자동 회전 매년 (활성화/비활성화 불가)
+## Multi-Region Key — 리전 종속을 깨는 유일한 예외
 
-#### Imported Key Material
-- 외부에서 키 가져오기 (BYOK)
-- 자동 회전 X (수동만)
-- 만료 일자 설정 가능
+일반 KMS 키는 철저히 리전에 종속된다. 서울 리전에서 만든 키로 암호화한 데이터는 도쿄 리전의 KMS로는 절대 복호화할 수 없다. 키 ARN에 리전이 박혀 있고, 그 키의 backing material이 그 리전의 HSM에만 존재하기 때문이다. 이건 의도적이다 — 리전 격리는 AWS의 가용성·규제 준수의 근간이고, 키가 리전을 넘나들면 그 격리가 깨진다.
 
-### 6. Multi-Region Key
+그런데 Cross-Region 시나리오에서는 이 격리가 걸림돌이 된다. Global DynamoDB Table은 여러 리전에 데이터를 복제하는데, A 리전 키로 암호화된 데이터를 B 리전에서 읽으려면 B 리전에서도 같은 키가 필요하다. S3 Cross-Region Replication에서 SSE-KMS로 암호화된 객체를 다른 리전으로 복제하면 도착지 리전에서 복호화할 키가 있어야 한다.
 
-#### 개념
-- 한 키를 여러 리전에 복제 (같은 Key ID)
-- 다른 리전에서 같은 키로 복호화 가능 → DR 시 데이터 이동 자유
+**Multi-Region Key**가 이 예외를 만든다. Primary 키를 만들고 다른 리전에 replica를 만들면, 두 키는 **같은 Key ID(정확히는 `mrk-`로 시작하는 공통 키 식별자)와 같은 backing material**을 공유한다. 한 리전에서 암호화한 데이터를 다른 리전의 replica 키로 그대로 복호화할 수 있다. 단, 이건 어디까지나 예외적 도구다 — 키 재료가 리전을 넘어 복제되므로 격리가 약해지고, 한 리전에서 키가 손상되면 모든 replica가 영향받는다. 그래서 "정말 Cross-Region 복호화가 필요한 경우에만" 쓰라고 권장한다.
 
-#### vs Cross-Region Replication
-- 일반 KMS Key는 리전 종속 — 다른 리전에서 복호화 불가
-- Multi-Region Key는 키 자체가 멀티 리전
+> 🔍 **더 깊이**: Multi-Region Key의 backing material 복제는 평문으로 네트워크를 타지 않는다. Primary 리전의 HSM과 replica 리전의 HSM이 서로 인증된 보안 채널을 맺고, 키 재료를 암호화된 상태로 전송한 뒤 도착지 HSM 안에서만 복호화한다. 즉 "keys never leave the HSM unencrypted" 원칙이 리전 간 복제에서도 유지된다. replica 키는 만든 후 독립적으로 회전·정책 관리되지만 backing material 식별 체계는 공유한다. Primary를 다른 리전의 replica로 승격(promote)할 수도 있어 DR 시나리오에 쓰인다.
 
-#### 사용 사례
-- Global DynamoDB Table
-- S3 Cross-Region Replication
-- Multi-Region 백업
+## KMS vs CloudHSM — 멀티테넌트 HSM과 단독 HSM의 갈림길
 
-### 7. CloudHSM
+KMS도 결국 HSM 위에서 돈다면, CloudHSM은 왜 따로 존재하나? 차이는 **HSM을 다른 고객과 공유하느냐, 통째로 빌리느냐**다. KMS의 HSM은 AWS가 운영하며 여러 고객의 키를 (논리적으로 격리된 채) 함께 담는 멀티테넌트 구조다. CloudHSM은 고객이 HSM 장비 자체를 단독으로 임대해, 그 안의 모든 것을 직접 통제한다.
 
-#### KMS vs CloudHSM
+이 차이가 인증 등급을 가른다. KMS는 FIPS 140-2 Level 3 검증을 받은 HSM을 쓰지만 서비스 전체로는 멀티테넌트 운영 모델 때문에 통상 Level 2 맥락으로 설명되고(HSM 모듈 자체는 Level 3), CloudHSM은 고객 단독 점유라 **FIPS 140-2 Level 3을 온전히 충족**한다. 일부 규제 산업(특정 금융·정부 계약)은 "키가 우리만 접근 가능한 단독 HSM에 있어야 한다"를 명문으로 요구하는데, 이때 KMS로는 컴플라이언스를 만족시킬 수 없고 CloudHSM이 유일한 답이다.
 
 | 항목 | KMS | CloudHSM |
 |------|-----|----------|
-| 관리 | AWS 공유 인프라 | 단독 HSM 인스턴스 |
-| FIPS Level | 140-2 L2 (HSM 자체는 L3) | 140-2 L3 |
-| 키 제어 | AWS 관리 (정책 통제) | 고객 100% 제어 |
-| 비용 | 저렴 | 비쌈 (시간당 $1.45+) |
-| 통합 | AWS 서비스 네이티브 | 표준 PKCS#11 |
-| 사용 사례 | 일반 | 규제 산업, BYOK 엄격 |
+| HSM 점유 | 멀티테넌트 (AWS 운영) | 단독 (고객 임대) |
+| FIPS 140-2 | 모듈 L3, 서비스 맥락 L2 | L3 (단독) |
+| 키 통제 | AWS가 운영, 고객은 정책 제어 | 고객 100% (AWS도 접근 불가) |
+| 비용 | $1/월/키 + API | 시간당 $1.45+ (상시 과금) |
+| 통합 | AWS 서비스 네이티브 | 표준 PKCS#11/JCE/OpenSSL |
+| AWS의 키 복구 | 불가 (고객이 잠그면 Support 한도 내) | 불가 (고객이 분실하면 영구 손실) |
+| 사용 사례 | 대부분의 암호화 | 엄격 규제, 단독 통제 요구 |
 
-#### CloudHSM 사용 패턴
-- Custom Key Store: KMS 인터페이스로 쓰되 키는 CloudHSM에
-- 직접 PKCS#11 API로 통합
+CloudHSM의 무서운 점은 **AWS조차 키를 복구할 수 없다**는 것이다. CloudHSM 클러스터의 관리자 자격증명을 분실하면 그 안의 키는 영구히 사라지고 AWS도 도와줄 수 없다. 완전한 통제의 대가는 완전한 책임이다. 두 세계를 잇는 다리가 **KMS Custom Key Store**인데, KMS API의 편의성을 그대로 쓰되 실제 backing key는 고객의 CloudHSM 클러스터에 두는 하이브리드 구성이다.
 
-### 8. KMS 운영 함정
+> 💡 **관련 이론**: KMS와 CloudHSM의 선택은 클라우드 보안의 근본 트레이드오프인 "통제권 vs 운영 부담"의 전형이다. 공유 책임 모델(Shared Responsibility Model)에서 통제권을 고객이 더 많이 가져올수록(CloudHSM) 보안 사고의 책임도 고객에게 더 온다. KMS는 키 가용성·내구성·물리 보안을 AWS에 위임하는 대신 멀티테넌트를 수용하고, CloudHSM은 그 반대다. "더 안전한 게 무조건 좋다"가 아니라 "규제가 단독 HSM을 강제하는가, 아니면 운영 단순성이 더 가치 있는가"를 따져야 한다 — 대부분의 워크로드에는 KMS가 정답이고, CloudHSM은 규제가 강제할 때만 꺼내는 카드다.
 
-#### Key 삭제 (시험 빈출)
-- KMS Key는 즉시 삭제 X
-- **7~30일 대기 기간** 후 삭제 (취소 가능)
-- 삭제된 키로 암호화된 데이터는 영구 복호화 불가 (재해)
+## 키 삭제 대기 기간 — 되돌릴 수 없는 작업에 브레이크를 거는 설계
 
-#### Encryption Context
-- 추가 인증 데이터 (AAD)
-- 키-값 쌍으로 암/복호화 시 함께 전달
-- 같은 context로 복호화해야 성공
+KMS 키는 즉시 삭제할 수 없다. `schedule-key-deletion`을 호출하면 7~30일(기본 30일)의 대기 기간이 설정되고, 그 기간이 지나야 실제로 삭제된다. 대기 중에는 키가 `Pending Deletion` 상태로 비활성화돼 어떤 암호화·복호화도 거부한다. 왜 이런 불편한 지연을 강제하나?
 
-```bash
-aws kms encrypt \
-  --key-id abc \
-  --plaintext "secret" \
-  --encryption-context "Project=Web,User=Alice"
+이유는 **키 삭제가 데이터 영구 손실로 직결되는 비가역적 작업**이기 때문이다. 키로 암호화된 데이터는 그 키 없이는 영원히 복호화할 수 없다. 키 하나를 잘못 지우면 그 키로 암호화된 수 테라바이트의 S3·RDS·EBS 데이터가 한순간에 디지털 쓰레기가 된다. 백업조차 같은 키로 암호화돼 있다면 백업도 무용지물이다. 이건 휴지통에서 파일을 지우는 것과는 차원이 다른 사고다.
 
-# 복호화 시 같은 context 필요
-aws kms decrypt \
-  --ciphertext-blob fileb://cipher \
-  --encryption-context "Project=Web,User=Alice"
-```
+대기 기간은 **이 비가역적 작업에 강제로 브레이크를 거는 안전장치**다. 7~30일 동안 누구든 `cancel-key-deletion`으로 되돌릴 수 있고, 그 사이 CloudWatch로 "Pending Deletion 키에 대한 복호화 시도"를 모니터링하면 "아, 이 키 아직 쓰이고 있었네" 하고 삭제를 취소할 수 있다. 운영 모범 사례는 키 삭제 전에 먼저 키를 **비활성화(disable)**해서 며칠~몇 주 운영해보고, 아무 문제 없으면 그때 삭제를 예약하는 것이다 — 비활성화는 즉시 되돌릴 수 있으므로 사실상 무료 리허설이다.
 
----
+> 📚 **사례**: KMS의 7~30일 대기 기간 설계는 업계의 여러 "되돌릴 수 없는 삭제" 사고에서 배운 결과다. 데이터베이스나 스토리지 서비스에서 "즉시 영구 삭제"가 가능했던 시절, 운영자의 오타 한 줄(`DELETE` 대상 잘못 지정, 스크립트 변수 미설정 등)로 프로덕션 데이터가 순식간에 증발한 사고가 반복됐다. 2017년 한 코드 호스팅 업체가 운영 DB를 실수로 드롭하고 백업까지 깨져 있던 사건은 "비가역 작업에는 반드시 지연·확인 단계를 둬야 한다"는 교훈을 업계에 남겼다. KMS는 이 교훈을 키 삭제에 못 박았다 — 가장 비싼 실수가 일어날 수 있는 지점에 가장 긴 안전 지연을 둔 것이다.
 
-## 🧠 알아두면 좋은 심화 이론
+> ⚠️ **함정**: Encryption Context도 같이 외워둬야 한다. 암호화 시 `--encryption-context "Project=Web"`처럼 키-값 쌍을 주면, 복호화 시 **정확히 같은 context를 제시해야만** 복호화된다. 이건 추가 인증 데이터(AAD, Additional Authenticated Data)로 작동해서, 암호문이 의도한 맥락에서만 풀리도록 묶는다. 예를 들어 S3 SSE-KMS는 객체 ARN을 context로 자동 사용해서, 한 객체의 암호문을 다른 위치로 옮겨 복호화하려는 시도를 막는다. 시험에서 "복호화가 실패하는데 권한은 다 맞다"는 시나리오의 숨은 원인이 종종 Encryption Context 불일치다.
 
-| 항목 | 설명 | 시험 포인트 |
-|------|------|-------------|
-| **Asymmetric KMS Key** | RSA/ECC 비대칭 키 (서명/검증) | 일반 대칭은 AES-256 |
-| **AWS KMS XKS** | 외부 키 저장소 통합 (3rd party HSM) | 고급 옵션 |
-| **Key Spec** | SYMMETRIC_DEFAULT, RSA_2048, ECC_NIST_P256 등 | 용도별 |
-| **EBS Encryption by Default** | 계정·리전 단위 기본 암호화 | 모범 사례 |
-| **AWS Encryption SDK** | 클라이언트 측 라이브러리 | 앱 통합 |
+## 정리하며
 
-> ⚠️ **함정 1**: Key Policy에 명시 없으면 IAM에 권한 있어도 사용 불가 — KMS만의 특이점.
->
-> ⚠️ **함정 2**: 삭제 대기 기간 중인 키는 사용 불가. 영구 복호화 불가 위험 → 신중히.
->
-> 💡 **암기 팁**: KMS(AWS 통합·저렴) ↔ CloudHSM(단독·규제). Multi-Region Key(DR), Grant(임시 위임).
+KMS의 모든 설계 결정은 "사람이 키를 만지지 않게 한다"는 한 가지 원칙에서 파생된다. 키를 다운로드하는 API가 없는 건 HSM 안에서만 키가 존재하기 때문이고, 4KB 제한이 있는 건 큰 데이터를 마스터 키에 직접 노출시키지 않으려는 Envelope Encryption 강제이고, Key Policy가 IAM보다 우선하는 건 키 하나가 뚫려도 전체가 노출되지 않게 하려는 폭발 반경 제한이고, 삭제에 7~30일이 걸리는 건 비가역적 데이터 손실에 브레이크를 거는 안전장치다.
 
-### 관련 서비스 Cross-Reference
+운영자가 기억할 다섯 가지는 이렇다. ① Envelope Encryption — 큰 데이터는 DEK로 로컬 암호화, KMS는 DEK만 봉인. ② Key Policy 우선 — 기본 정책의 root 위임 줄을 절대 함부로 지우지 말 것. ③ 자동 회전은 backing key만 갈고 Key ID는 불변, 손상 대응책은 아님. ④ Cross-Region 복호화는 Multi-Region Key가 유일한 길. ⑤ 키 삭제는 7~30일 대기, 그전에 비활성화로 리허설. 이 다섯이 KMS 문제의 대부분을 커버한다.
 
-- **KMS → Week 4 CloudTrail** (KMS 사용 로깅)
-- **KMS → Week 9 Day 2 Secrets Manager** (자동 회전)
-- **KMS → Week 5 SSM Parameter Store** (SecureString)
-- **KMS → Week 10 백업** (Multi-Region Key)
-
----
-
-## 🏗️ 아키텍처 다이어그램
-
-```
-Envelope Encryption
-==========================================================
-
-   [큰 데이터 1GB]
-       │
-       │ 1. GenerateDataKey(KeyId)
-       ▼
-   ┌─────────────────────────────┐
-   │ KMS Key (Master)            │
-   │   → Plain DEK + Cipher DEK  │
-   └─────────────────────────────┘
-       │
-       ▼
-   [Plain DEK로 데이터 암호화]
-   [Cipher DEK + 암호화 데이터 함께 저장]
-
-   복호화:
-   [Cipher DEK]
-       │ kms:Decrypt
-       ▼
-   [Plain DEK]
-       │
-       ▼
-   [데이터 복호화]
-```
-
-```
-정책 평가 흐름
-==========================================================
-
-   API 요청: kms:Decrypt
-       │
-       ▼
-   ┌──────────────────────────┐
-   │ 1. Key Policy 확인        │ ← Allow 없으면 즉시 거부
-   └──────────┬───────────────┘
-              ▼
-   ┌──────────────────────────┐
-   │ 2. IAM Policy 확인        │
-   └──────────┬───────────────┘
-              ▼
-   ┌──────────────────────────┐
-   │ 3. Grant 확인 (있다면)    │
-   └──────────┬───────────────┘
-              ▼
-   ┌──────────────────────────┐
-   │ 4. Encryption Context 검증│
-   └──────────┬───────────────┘
-              ▼
-            [허용/거부]
-```
-
----
-
-## ⭐ 핵심 포인트 (시험 출제 빈도 높음)
-
-1. ⭐ **Key Policy는 모든 KMS 요청의 기준** — IAM 권한 있어도 Key Policy 허용 없으면 불가
-2. ⭐ **삭제 대기 기간 7~30일** — 즉시 삭제 불가. 복호화 영구 불가 위험
-3. ⭐ **Envelope Encryption** — KMS는 4KB까지만, 큰 데이터는 DEK
-4. ⭐ **Multi-Region Key** — Cross-Region DR/복제 시 유일한 옵션
-5. ⭐ **CloudHSM = FIPS 140-2 L3 + 단독 HSM** (규제 산업)
-
----
-
-## 💻 실제 예시 - AWS CLI
-
-```bash
-# 1. Customer Managed Key 생성
-KEY_ID=$(aws kms create-key \
-  --description "MyApp Encryption Key" \
-  --key-usage ENCRYPT_DECRYPT \
-  --key-spec SYMMETRIC_DEFAULT \
-  --query 'KeyMetadata.KeyId' --output text)
-
-aws kms create-alias \
-  --alias-name alias/myapp \
-  --target-key-id $KEY_ID
-
-# 2. 자동 회전 활성화
-aws kms enable-key-rotation --key-id $KEY_ID
-
-# 3. Key Policy 업데이트 (Cross-Account 허용)
-cat > key-policy.json <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "Enable IAM User Permissions",
-      "Effect": "Allow",
-      "Principal": {"AWS": "arn:aws:iam::123456789012:root"},
-      "Action": "kms:*",
-      "Resource": "*"
-    },
-    {
-      "Sid": "Allow CrossAccount Decrypt",
-      "Effect": "Allow",
-      "Principal": {"AWS": "arn:aws:iam::222233334444:role/BackupReader"},
-      "Action": ["kms:Decrypt", "kms:DescribeKey"],
-      "Resource": "*"
-    }
-  ]
-}
-EOF
-
-aws kms put-key-policy \
-  --key-id $KEY_ID \
-  --policy-name default \
-  --policy file://key-policy.json
-
-# 4. Envelope Encryption 직접 (실무 패턴)
-# Data Key 생성
-DEK_RESPONSE=$(aws kms generate-data-key \
-  --key-id alias/myapp \
-  --key-spec AES_256 \
-  --encryption-context "Project=MyApp")
-
-echo $DEK_RESPONSE | jq -r '.Plaintext' | base64 -d > /tmp/plain-dek
-echo $DEK_RESPONSE | jq -r '.CiphertextBlob' | base64 -d > /tmp/cipher-dek
-
-# 로컬 OpenSSL로 데이터 암호화 (DEK 사용)
-openssl enc -aes-256-cbc -in data.txt -out data.enc -pass file:/tmp/plain-dek
-
-# 5. Grant 생성 (Lambda에 임시 권한)
-aws kms create-grant \
-  --key-id alias/myapp \
-  --grantee-principal "arn:aws:iam::123:role/MyLambda" \
-  --operations "Decrypt" "GenerateDataKey" \
-  --constraints 'EncryptionContextEquals={Project=MyApp}'
-
-# 6. Multi-Region Key 생성
-PRIMARY_KEY=$(aws kms create-key \
-  --multi-region \
-  --description "Multi-Region Key for DR" \
-  --query 'KeyMetadata.KeyId' --output text)
-
-# 다른 리전에 복제
-aws kms replicate-key \
-  --key-id $PRIMARY_KEY \
-  --replica-region us-east-1
-
-# 7. 키 삭제 (대기 기간 설정)
-aws kms schedule-key-deletion \
-  --key-id $KEY_ID \
-  --pending-window-in-days 30
-
-# 취소
-aws kms cancel-key-deletion --key-id $KEY_ID
-
-# 8. 키 사용 감사 (CloudTrail)
-aws cloudtrail lookup-events \
-  --lookup-attributes AttributeKey=ResourceName,AttributeValue=$KEY_ID \
-  --max-items 50
-```
+다음 글에선 KMS가 암호화하는 대상 중 가장 까다로운 것 — 자동으로 바뀌어야 하는 비밀(시크릿)을 다룬다. Secrets Manager가 비밀번호를 무중단으로 회전시키는 4단계 춤과, 멀티 리전에서 같은 비밀을 공유하는 법이다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** IAM 사용자가 KMS Key를 사용하려는데 거부됐다. IAM 정책에는 `kms:*` 허용. 가능한 원인은?
+**문제 1.** 1GB 로그 파일을 KMS로 암호화하려 하자 4KB 한도 에러가 났다. 표준 해결책은?
 
-A) MFA
-B) Key Policy에 해당 사용자/계정에 대한 명시적 Allow 없음 — KMS만의 특이점
-C) 리전
-D) 네트워크
+A) 파일을 4KB 단위로 쪼개 각각 KMS로 암호화
+B) Envelope Encryption — GenerateDataKey로 DEK를 받아 로컬에서 파일을 암호화하고, 암호화된 DEK를 데이터와 함께 저장
+C) KMS 대신 CloudHSM으로 직접 암호화
+D) S3 버킷 정책으로 우회
 
 **정답: B**
-해설: KMS는 Key Policy가 1순위. 기본 Key Policy의 `arn:aws:iam::<account>:root` Allow가 없으면 IAM 권한 무의미. Resource-based Policy처럼 동작.
+
+해설: KMS의 4KB 제한은 의도된 설계다. 마스터 키로 대량 데이터를 직접 암호화하면 네트워크 병목, HSM 처리량 한계, 암호 분석 표면 확대라는 세 가지 문제가 생긴다. Envelope Encryption은 일회성 DEK로 큰 데이터를 로컬에서 빠르게 암호화하고, 짧은 DEK만 마스터 키로 봉인해 함께 저장한다. Plaintext DEK는 사용 직후 메모리에서 폐기해야 하며, 디스크에는 암호화된 데이터와 암호화된 DEK만 남는다. S3 SSE-KMS, EBS, RDS 암호화가 모두 내부적으로 이 패턴을 쓴다.
 
 ---
 
-**문제 2.** 큰 파일(1GB)을 KMS로 암호화하려는데 4KB 한도 에러가 발생한다. 해결책은?
+**문제 2.** IAM 사용자에게 `kms:*` 권한을 부여했는데도 특정 KMS 키 사용이 거부된다. 가장 가능성 높은 원인은?
 
-A) 파일 분할
-B) Envelope Encryption — GenerateDataKey로 DEK 받고, DEK로 파일 암호화, Cipher DEK 함께 저장
-C) S3 직접
-D) DynamoDB
+A) MFA 미인증
+B) Key Policy가 해당 계정/주체를 허용하지 않음 — KMS는 Key Policy가 IAM보다 우선하는 resource-based policy
+C) 키가 다른 리전에 있음
+D) API 호출 한도 초과
 
 **정답: B**
-해설: KMS의 표준 사용법. KMS는 작은 데이터만 직접. 큰 데이터는 DEK + 로컬 암호화 + 마스터 키로 DEK 보호.
+
+해설: KMS는 다른 서비스와 달리 모든 키에 Key Policy가 필수이고, Key Policy가 명시적으로 허용(또는 IAM에 위임)하지 않으면 IAM 권한이 아무리 넓어도 거부된다. 이는 키 하나가 뚫려도 폭발 반경을 제한하려는 설계다. 기본 Key Policy에는 `Principal: arn:aws:iam::account:root`로 "이 계정의 IAM 정책에 위임" 줄이 있는데, 이 줄이 없으면 IAM이 무력해진다. 이 root 줄을 실수로 지우고 자기 자신도 명시하지 않으면 키가 잠겨 AWS Support로만 복구 가능하다.
 
 ---
 
-**문제 3.** 회사가 KMS Key 삭제를 시도했는데 "Pending Deletion" 상태로 7일 후 삭제 예약됐다. 그 동안 이 키를 다시 사용할 수 있나?
+**문제 3.** 보안팀이 "이 키가 유출된 것 같으니 자동 회전을 켜면 되지 않냐"고 묻는다. 올바른 판단은?
 
-A) 가능
-B) 불가능 — Pending Deletion 동안 키 비활성. 삭제 취소(`cancel-key-deletion`) 필요
-C) 자동 부활
-D) 30일 후 자동 복구
+A) 맞다, 자동 회전을 켜면 유출된 키가 즉시 무효화된다
+B) 자동 회전은 새 backing key를 추가할 뿐 옛 backing key를 폐기하지 않으므로 손상 대응책이 아니다 — 키 비활성화 후 데이터를 새 키로 재암호화해야 한다
+C) 회전 대신 키를 즉시 삭제하면 된다
+D) Multi-Region Key로 전환하면 해결된다
 
 **정답: B**
-해설: Pending Deletion 동안 키는 비활성 → 새 암/복호화 불가. 취소하려면 명시적 cancel 명령. 완전 삭제 후엔 영구 복호화 불가.
+
+해설: 자동 회전은 사전 예방 장치이지 사후 대응책이 아니다. 회전은 암호화에 쓰는 backing key를 새것으로 갈지만, 과거 데이터 복호화를 위해 옛 backing key를 영구 보관하므로 옛 키로 데이터를 복호화하는 능력은 그대로 남는다. 키가 실제로 손상됐다면 키를 비활성화하고, 그 키로 암호화된 데이터를 완전히 새 키로 재암호화(re-encrypt)해야 한다. C의 즉시 삭제는 7~30일 대기가 강제되고 데이터 영구 손실 위험이 있어 부적절하다.
 
 ---
 
-**문제 4.** Global DynamoDB Table을 멀티 리전에서 같은 KMS 키로 암/복호화하려 한다. 어떤 KMS 키?
+**문제 4.** Global DynamoDB Table을 서울·도쿄 두 리전에서 운영하며 같은 KMS 키로 양쪽 데이터를 복호화해야 한다. 어떤 키 유형이 필요한가?
 
-A) 일반 Customer Managed Key
-B) Multi-Region Key — 여러 리전에 복제 가능
+A) 일반 Customer Managed Key를 각 리전에 따로 생성
+B) Multi-Region Key — Primary를 만들고 다른 리전에 replica를 두면 같은 키 식별자·backing material로 Cross-Region 복호화 가능
 C) AWS Managed Key
-D) CloudHSM
+D) CloudHSM 단독 클러스터
 
 **정답: B**
-해설: 일반 KMS Key는 리전 종속. Multi-Region Key가 Global Table·Cross-Region Backup 같은 멀티 리전 시나리오에 유일한 해법.
+
+해설: 일반 KMS 키는 리전에 종속돼 한 리전에서 암호화한 데이터를 다른 리전 키로 복호화할 수 없다. 키 ARN에 리전이 박혀 있고 backing material이 그 리전 HSM에만 있기 때문이다. Multi-Region Key는 이 격리의 예외로, Primary 키와 replica 키가 같은 키 식별자(`mrk-`)와 backing material을 공유해 Cross-Region 복호화를 가능하게 한다. backing material 복제도 HSM 간 암호화 채널로 이뤄져 평문이 네트워크를 타지 않는다. Global Table, S3 CRR(SSE-KMS), Multi-Region 백업이 대표 사용 사례다.
 
 ---
 
-**문제 5.** 회사가 PCI-DSS 요건으로 키를 자사가 완전히 통제하고 외부로 절대 나가지 않게 하려 한다. 어떤 도구?
+**문제 5.** 금융 규제 요건상 "키가 회사만 접근 가능한 단독 HSM에 있고 AWS조차 접근 불가해야 한다"가 명문화돼 있다. 어떤 서비스가 필요한가?
 
-A) KMS
-B) CloudHSM — FIPS 140-2 L3, 고객 단독 HSM, 100% 제어
-C) Parameter Store
+A) KMS Customer Managed Key + 자동 회전
+B) KMS Multi-Region Key
+C) CloudHSM — 고객 단독 임대 HSM, FIPS 140-2 Level 3, AWS도 키 접근 불가
 D) Secrets Manager
 
-**정답: B**
-해설: CloudHSM은 단독 HSM 인스턴스, FIPS L3, 고객이 키 완전 통제. KMS는 AWS 공유 인프라(HSM 자체는 L3이지만 멀티 테넌트). 규제 산업 BYOK에 사용.
+**정답: C**
+
+해설: KMS의 HSM은 멀티테넌트(여러 고객 공유) 구조라 "단독 HSM" 요건을 만족할 수 없다. CloudHSM은 고객이 HSM 장비를 통째로 임대해 100% 통제하며, FIPS 140-2 Level 3을 온전히 충족하고, AWS조차 키에 접근할 수 없다. 단 그 대가로 고객이 관리자 자격증명을 분실하면 AWS도 키를 복구할 수 없어 영구 손실된다 — 완전한 통제는 완전한 책임을 동반한다. KMS 편의성과 CloudHSM 통제를 결합하려면 KMS Custom Key Store를 쓴다.
 
 ---
 
-## 📌 오늘의 요약
+**문제 6.** 운영자가 KMS 키를 더 이상 쓰지 않아 삭제하려 한다. 가장 안전한 절차는?
 
-1. KMS Key 종류: AWS Owned(공유) / AWS Managed(자동) / Customer Managed(완전 제어, $1/월)
-2. Envelope Encryption: KMS는 4KB까지, 큰 데이터는 DEK + 로컬 암호화
-3. Key Policy가 1순위 — IAM 권한 있어도 Key Policy 명시 없으면 거부
-4. 삭제 대기 7~30일 + 영구 복호화 불가 위험 — 신중히
-5. Multi-Region Key(DR) / Grant(임시 위임) / CloudHSM(규제 산업) 구분
+A) `schedule-key-deletion`으로 즉시 삭제 예약하고 끝낸다
+B) 먼저 키를 비활성화(disable)해 며칠~몇 주 운영해보고, 복호화 시도가 없음을 확인한 뒤 삭제를 예약한다
+C) Key Policy에서 모든 권한을 제거한다
+D) 키에 연결된 alias만 삭제한다
+
+**정답: B**
+
+해설: 키 삭제는 비가역적이며 그 키로 암호화된 모든 데이터(백업 포함)가 영구 복호화 불가가 된다. KMS가 7~30일 대기 기간을 강제하는 것도 이 위험 때문이다. 안전한 절차는 먼저 키를 비활성화(즉시 되돌릴 수 있음)해 운영하면서 CloudWatch로 복호화 시도를 모니터링하고, 일정 기간 아무 문제가 없으면 그때 `schedule-key-deletion`으로 삭제를 예약하는 것이다. 비활성화는 무료 리허설 역할을 한다. 대기 기간 중에도 `cancel-key-deletion`으로 되돌릴 수 있다.
+
+---
+
+**문제 7.** 권한과 키 상태가 모두 정상인데도 특정 암호문의 복호화가 계속 실패한다. 권한 외에 의심할 원인은?
+
+A) 키 회전이 진행 중이라 일시적으로 막힌 것
+B) 암호화 시 사용한 Encryption Context와 복호화 시 제시한 context가 일치하지 않음
+C) Multi-Region Key가 아니라서
+D) DEK가 만료됨
+
+**정답: B**
+
+해설: Encryption Context는 암호화 시 함께 전달하는 키-값 쌍으로, 추가 인증 데이터(AAD)로 작동한다. 복호화 시 **정확히 같은 context**를 제시해야만 성공하며, 한 글자라도 다르면 권한이 완벽해도 복호화가 거부된다. S3 SSE-KMS는 객체 ARN을 context로 자동 사용해 암호문을 다른 위치로 옮겨 복호화하려는 시도를 막는다. 키 회전(A)은 backing key 식별자가 데이터에 기록돼 자동으로 옛 키를 찾으므로 복호화를 막지 않는다. 권한이 맞는데 복호화가 안 되면 Encryption Context 불일치를 먼저 의심해야 한다.
+
+---

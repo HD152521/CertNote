@@ -1,344 +1,228 @@
-# Day 52 - SNS: 발행/구독 패턴
+# Day 52 - SNS: 한 번 발행하면 모두가 듣는다
 
-📅 날짜: 2026년 7월 27일 (월요일)  
-🎯 주제: Amazon SNS  
-⏱️ 학습 시간: 약 90분
+앞 글의 SQS는 "한 메시지를 정확히 한 소비자가 가져간다"는 포인트-투-포인트 모델이었다. 그런데 현실의 많은 사건은 "한 번 일어났는데 여러 곳이 반응해야" 한다. 주문 하나가 생기면 재고 시스템도, 결제 시스템도, 알림 시스템도, 데이터 웨어하우스도 동시에 그 사실을 알아야 한다. 이걸 SQS로 하려면 생산자가 큐 4개에 똑같은 메시지를 4번 보내야 하고, 새 구독자가 늘 때마다 생산자 코드를 고쳐야 한다. **발행-구독(publish-subscribe)** 모델은 이 문제를 뒤집는다 — 생산자는 "토픽"에 한 번만 발행하고, 누가 듣는지는 신경 쓰지 않는다. Amazon SNS는 이 모델을 완전 관리형으로 구현한 서비스다.
 
----
+DVA-C02에서 SNS는 SQS와 거의 항상 짝으로 나온다. 단독 출제(필터 정책, FIFO 토픽)도 있지만, 핵심은 "**팬아웃(fanout)**"—SNS와 SQS를 결합해 한 이벤트를 여러 큐로 안정적으로 퍼뜨리는 패턴—이다. 이번 글은 발행-구독이 왜 생산자와 구독자를 떼어놓는지, SNS의 "푸시·비보존"이 SQS의 "풀·보존"과 어떻게 상호보완하는지, 그리고 필터 정책이 어떻게 "구독자 코드 없이" 메시지를 선별하는지를 깊이 들여다본다.
 
-## 🎯 학습 목표
+## 발행-구독: 생산자가 구독자를 모르게 만드는 것
 
-- SNS의 발행/구독 패턴을 이해한다
-- SNS와 SQS를 팬아웃 패턴으로 통합한다
-- SNS 필터 정책으로 선택적 메시지 전달을 구현한다
-
----
-
-## 📖 이론 내용
-
-### 1. Amazon SNS란?
-
-발행자(Publisher)가 메시지를 보내면 모든 구독자(Subscriber)에게 즉시 전달하는 완전 관리형 알림 서비스입니다.
-
-**SNS vs SQS:**
-- **SNS**: Push 방식, 모든 구독자에게 동시 전달
-- **SQS**: Pull 방식, 하나의 Consumer가 수신
-
-**SNS 구독 대상:**
-- 이메일/SMS
-- HTTP/HTTPS 엔드포인트
-- Lambda 함수
-- SQS 큐
-- Kinesis Data Firehose
-- AWS 모바일 앱 (Mobile Push)
-
-### 2. SNS 기본 사용
+SNS의 핵심 단어는 **토픽(topic)** 이다. 생산자는 토픽에 메시지를 `publish`하고, 그걸로 끝이다. 토픽은 등록된 모든 구독자에게 그 메시지를 **즉시 푸시(push)** 한다. 구독자가 1명이든 1만 명이든 생산자 코드는 동일하고, 구독자가 추가/삭제돼도 생산자는 영향을 받지 않는다. 이 "생산자가 구독자의 존재를 모른다"는 성질이 발행-구독 모델의 본질적 가치다.
 
 ```python
 import boto3
 
 sns = boto3.client('sns')
 
-# 주제 생성
-response = sns.create_topic(Name='OrderNotifications')
-topic_arn = response['TopicArn']
+# 토픽 생성 — 생산자는 이 토픽만 안다
+topic_arn = sns.create_topic(Name='OrderEvents')['TopicArn']
 
-# 이메일 구독 추가
-sns.subscribe(
-    TopicArn=topic_arn,
-    Protocol='email',
-    Endpoint='admin@example.com'
-)
+# 다양한 구독자 등록 (생산자 코드와 무관하게 늘릴 수 있음)
+sns.subscribe(TopicArn=topic_arn, Protocol='sqs',
+              Endpoint='arn:aws:sqs:...:inventory-queue')
+sns.subscribe(TopicArn=topic_arn, Protocol='lambda',
+              Endpoint='arn:aws:lambda:...:function:notify')
+sns.subscribe(TopicArn=topic_arn, Protocol='email',
+              Endpoint='ops@example.com')
 
-# SQS 큐 구독 추가
-sns.subscribe(
-    TopicArn=topic_arn,
-    Protocol='sqs',
-    Endpoint='arn:aws:sqs:ap-northeast-2:123456789:order-queue'
-)
-
-# Lambda 구독 추가
-sns.subscribe(
-    TopicArn=topic_arn,
-    Protocol='lambda',
-    Endpoint='arn:aws:lambda:ap-northeast-2:123456789:function:process-order'
-)
-
-# 메시지 발행
+# 발행 — 누가 듣는지 신경 쓰지 않는다
 sns.publish(
     TopicArn=topic_arn,
     Message='{"orderId": "O001", "status": "created"}',
-    Subject='새 주문 생성',
-    MessageAttributes={
-        'orderType': {
-            'DataType': 'String',
-            'StringValue': 'premium'
-        }
-    }
+    MessageAttributes={'orderType': {'DataType': 'String', 'StringValue': 'premium'}}
 )
 ```
 
-### 3. SNS 팬아웃 패턴 (Fanout)
+> 💡 **관련 이론**: 발행-구독은 소프트웨어 설계의 **관찰자 패턴(Observer Pattern)** 을 분산 환경으로 확장한 것이다. GoF 디자인 패턴의 관찰자는 "주체(Subject)가 상태 변화를 관찰자(Observer)들에게 통지"하는데, 관찰자 목록을 주체가 직접 들고 있어 결합이 남는다. 메시징의 pub/sub는 그 사이에 **토픽(브로커)** 을 끼워 주체와 관찰자가 서로를 전혀 모르게 완전히 떼어놓는다(공간적 디커플링). 이 덕분에 시스템을 확장할 때 "새 구독자를 추가"하는 것만으로 기능이 늘어나고, 기존 코드는 건드릴 필요가 없다. 이벤트 주도 아키텍처(EDA)의 기반이다.
+
+> 🔍 **더 깊이**: SNS와 SQS의 가장 중요한 대비는 "메시지 보존"이다. **SNS는 메시지를 저장하지 않는다.** 발행 순간 구독자에게 푸시하고, 푸시에 실패하면(재시도 정책에 따라 재시도 후) 메시지는 사라진다. 반면 SQS는 메시지를 최대 14일 보존한다. 이 차이가 결정적인 이유: 만약 SNS가 Lambda나 HTTP 엔드포인트로 직접 푸시하는데 그 대상이 잠깐 다운돼 있으면, 재시도가 소진된 뒤 메시지는 영영 사라진다. 그래서 "절대 잃으면 안 되는" 이벤트는 SNS가 **SQS로 푸시**하게 만든다 — SNS가 SQS에 한 번 넣으면, 그 뒤엔 SQS가 소비자가 살아날 때까지 메시지를 안전하게 보존한다. 이것이 팬아웃 패턴이 단순한 편의가 아니라 내구성 설계인 이유다.
+
+## 팬아웃: SNS의 푸시와 SQS의 보존을 합치다
+
+팬아웃 패턴은 **SNS 토픽 → 여러 SQS 큐**로 메시지를 퍼뜨리는 구조다. 각 SQS 큐는 독립적인 소비자(보통 Lambda나 처리 서비스)에 연결된다.
 
 ```
-팬아웃 패턴 (SNS + SQS)
+팬아웃 아키텍처
 ================================
-
-[S3 이벤트] → [SNS 주제]
-                  |
-          +-------+-------+
-          |       |       |
-       [SQS1]  [SQS2]  [SQS3]
-     (이미지  (데이터  (알림
-      리사이즈) 분석)   발송)
-          |
-          v
-      [Lambda]
-
-S3 버킷은 단 하나의 이벤트 대상만 직접 설정 가능
-→ SNS를 통해 여러 SQS에 동시 전달 (팬아웃)
+[주문 서비스] ──publish──> [SNS 토픽: OrderEvents]
+                                  │
+                  ┌───────────────┼───────────────┐
+                  ▼               ▼               ▼
+            [SQS: 재고]      [SQS: 결제]      [SQS: 분석]
+                  │               │               │
+                  ▼               ▼               ▼
+            [Lambda 재고]   [Lambda 결제]   [Firehose→S3]
 ```
 
-### 4. SNS 필터 정책
+왜 SNS만으로 여러 Lambda를 직접 호출하지 않고 굳이 SQS를 끼우는가? 세 가지 이유가 있다. 첫째, **내구성**이다. 소비자가 다운돼도 메시지는 각자의 SQS 큐에 안전하게 쌓여 기다린다. 둘째, **버퍼링**이다. 갑자기 이벤트가 폭증해도 각 큐가 완충재 역할을 해 소비자가 자기 속도로 처리한다. 셋째, **독립 재시도와 DLQ**다. 결제 처리가 실패하면 결제 큐의 메시지만 재시도되고, 그 큐의 DLQ로 격리된다 — 재고 처리에는 전혀 영향이 없다. SNS의 "한 번 발행으로 다중 전달"과 SQS의 "안정적 보존·재시도"가 각자의 장점을 합친 게 팬아웃이다.
 
-특정 구독자에게만 메시지를 전달합니다:
+> 📚 **사례**: 이 패턴의 전형적 사용처가 **S3 이벤트 분기**다. S3 버킷은 한 이벤트 타입(예: `s3:ObjectCreated:*`)에 대해 직접 연결할 수 있는 대상이 사실상 하나로 제한적이라, "업로드 하나에 썸네일 생성·바이러스 검사·메타데이터 색인을 동시에" 하려면 S3 → SNS → 여러 SQS 팬아웃으로 풀어야 한다. (참고로 최근에는 EventBridge가 더 풍부한 라우팅·필터링을 제공해 S3→EventBridge→다중 타깃도 흔하지만, 시험에서 "정석적 팬아웃"을 물으면 SNS+SQS가 기본 답이다.) 두 접근의 차이는 "단순 복제 배포"(SNS)냐 "내용 기반 복잡 라우팅"(EventBridge)이냐다.
+
+> ⚠️ **함정**: "하나의 이벤트를 여러 소비자가 동시에 처리"라는 문구가 보이면 SNS(또는 EventBridge)가 답이고, SQS 단독은 오답이다. SQS는 한 메시지를 한 소비자만 가져가는 포인트-투-포인트라 같은 메시지를 여러 소비자가 받을 수 없다. 반대로 "한 메시지를 정확히 한 작업자가 처리(작업 큐)"면 SQS다. SNS/SQS 선택 문제의 90%는 이 "1:N이냐 1:1이냐"로 갈린다.
+
+## 필터 정책: 구독자 코드 없이 메시지를 선별하다
+
+팬아웃을 하다 보면 "이 큐는 프리미엄 주문만, 저 큐는 일반 주문만 받고 싶다"는 요구가 생긴다. 순진하게 풀면 모든 큐가 모든 메시지를 받고, 각 소비자가 "이건 내 게 아니네" 하고 버리는 코드를 짠다 — 불필요한 메시지 전달과 처리 비용이 낭비된다. **필터 정책(Filter Policy)** 은 이 선별을 SNS가 **전달 전에** 대신 해준다.
 
 ```python
-# 프리미엄 주문만 특정 SQS로 전달
+# 이 구독은 orderType이 premium인 메시지만 받는다
 sns.set_subscription_attributes(
-    SubscriptionArn='arn:aws:sns:...',
+    SubscriptionArn='arn:aws:sns:...:premium-sub',
     AttributeName='FilterPolicy',
-    AttributeValue='{"orderType": ["premium"]}'
-)
-
-# 일반 주문용 SQS에는 standard 타입만
-sns.set_subscription_attributes(
-    SubscriptionArn='arn:aws:sns:...:standard-queue',
-    AttributeName='FilterPolicy',
-    AttributeValue='{"orderType": ["standard"]}'
+    AttributeValue='{"orderType": ["premium"], "price": [{"numeric": [">", 1000]}]}'
 )
 ```
 
-### 5. SNS FIFO 주제
+필터 정책은 메시지의 속성과 매칭되며, 매칭되지 않는 메시지는 그 구독자에게 **아예 전달되지 않는다**. 구독자는 자기에게 해당하는 메시지만 받으므로 코드가 단순해지고, 전달되지 않은 메시지에 대한 비용도 들지 않는다.
+
+| 매칭 연산 | 예시 |
+|-----------|------|
+| 정확 일치 | `{"store": ["seoul", "busan"]}` |
+| 부정 | `{"event": [{"anything-but": "test"}]}` |
+| 숫자 비교 | `{"price": [{"numeric": [">", 100]}]}` |
+| 존재 여부 | `{"size": [{"exists": true}]}` |
+| 접두사 | `{"region": [{"prefix": "ap-"}]}` |
+
+> 💡 **관련 이론**: 기본 필터링은 메시지 **속성(MessageAttributes)** 만 검사한다. 메시지 본문(payload) 안의 필드로 필터링하려면 `FilterPolicyScope`를 `MessageBody`로 명시적으로 켜야 한다(2022년 추가). 왜 본문 필터링이 기본이 아닐까? 속성은 메타데이터라 구조가 단순하고 파싱이 가볍지만, 본문은 임의의 JSON이라 매번 파싱하는 비용이 크기 때문이다. 이는 메시징의 일반 원칙—"라우팅에 필요한 정보는 헤더(속성)에 두고, 페이로드는 라우팅과 분리"—의 반영이다. AMQP의 헤더 익스체인지, HTTP의 헤더 기반 라우팅과 같은 발상이다.
+
+> 🔍 **더 깊이**: 필터 정책은 **콘텐츠 기반 라우팅(Content-Based Router)** 패턴을 구독자 쪽이 아니라 브로커(SNS) 쪽에서 구현한 것이다. 라우팅 결정을 소비자에게 맡기면 모든 소비자가 모든 메시지를 받아 직접 판단해야 하고(낭비), 별도 라우터 서비스를 두면 그 라우터가 단일 장애점이 된다. SNS는 라우팅 규칙을 구독 속성으로 토픽에 내장시켜, 추가 인프라 없이 브로커가 라우팅하게 했다. 다만 필터의 표현력은 EventBridge의 이벤트 패턴보다 제한적이라, 복잡한 조건 라우팅이 필요하면 EventBridge가 더 적합하다.
+
+## SNS FIFO: 순서를 양 끝단에서 보장하다
+
+SQS에 FIFO가 있듯 SNS에도 FIFO 토픽이 있다. 토픽 이름에 `.fifo` 접미사가 붙고, **SQS FIFO 큐에만 구독**할 수 있다. 이유는 순서 보장이 발행부터 소비까지 끊기지 않으려면 양 끝단이 모두 FIFO여야 하기 때문이다 — SNS FIFO가 순서대로 푸시해도 받는 쪽이 표준 SQS면 거기서 순서가 깨진다.
 
 ```python
-# SNS FIFO 주제 생성 (SQS FIFO 큐와 사용)
-response = sns.create_topic(
+topic_arn = sns.create_topic(
     Name='orders.fifo',
-    Attributes={
-        'FifoTopic': 'true',
-        'ContentBasedDeduplication': 'true'
-    }
-)
+    Attributes={'FifoTopic': 'true', 'ContentBasedDeduplication': 'true'}
+)['TopicArn']
 ```
 
-**FIFO 주제 특성:**
-- 순서 보장
-- 중복 제거
-- SQS FIFO 큐에만 구독 가능
+SNS FIFO + SQS FIFO 조합은 "순서가 중요한 이벤트를 여러 소비자에게 순서대로 팬아웃"하는 경우에 쓴다. 단, 표준 토픽보다 처리량이 낮고(300 msg/s대) 비용이 더 든다는 트레이드오프는 SQS FIFO와 같다.
 
----
+## 전달 실패는 어디로: 재시도와 SNS DLQ
 
-## 🧠 알아두면 좋은 심화 이론
+SNS는 비보존이지만, 그렇다고 한 번 실패에 바로 포기하지는 않는다. 구독 프로토콜마다 **재시도 정책**이 다르다. HTTP/HTTPS 엔드포인트는 기본적으로 약 1시간에 걸쳐 최대 50회까지 재시도한다(지수 백오프 포함). SQS·Lambda 같은 AWS 내부 대상은 더 공격적으로 재시도한다. 그럼에도 재시도가 모두 소진되면 메시지는 사라지는데, 이때 **SNS 구독 단위 DLQ**(redrive policy)를 설정하면 전달 실패 메시지를 SQS DLQ로 보내 보존할 수 있다.
 
-### SNS 핵심 한도 (시험에 가끔)
+> ⚠️ **함정**: SNS의 "메시지 보존 없음"과 "구독 DLQ"를 혼동하면 안 된다. SNS 자체는 메시지를 저장하지 않지만, 특정 구독의 전달이 실패했을 때 그 실패 메시지를 잡아두는 안전망이 구독 DLQ다. 또 "SNS DLQ"와 "Lambda DLQ"는 다른 계층이다 — SNS DLQ는 "SNS가 구독자에게 전달하는 데 실패"한 경우, Lambda DLQ는 "Lambda가 비동기 호출을 처리하는 데 실패"한 경우를 잡는다. 시험에서 둘을 바꿔 출제한다.
 
-| 항목 | 값 |
-|------|-----|
-| 주제 수 (계정/리전) | 100,000 |
-| 구독자 수 (주제당) | 12,500,000 |
-| 메시지 크기 | **256 KB** (SQS와 동일) |
-| SNS Extended Client | 최대 2GB (S3 경유) |
-| 메시지 보존 | **없음** (전달 실패 시 사라짐) |
-| 발행 처리량 | 무제한 (FIFO는 300 msg/s) |
+> 📚 **사례**: SNS는 모바일 푸시 알림의 백엔드로도 널리 쓰인다. iOS는 **APNs**, Android는 **FCM**(구 GCM), Amazon 기기는 **ADM**으로 푸시하는데, SNS가 이들 플랫폼별 프로토콜 차이를 추상화해 하나의 `publish`로 통합한다. 디바이스 토큰을 SNS에 등록하면 플랫폼 엔드포인트 ARN이 생기고, 이후엔 플랫폼을 의식하지 않고 알림을 보낼 수 있다. "여러 모바일 플랫폼에 통합 푸시 알림"이라는 시나리오의 정답이 SNS Mobile Push다.
 
-### SNS 구독 프로토콜 (시험 자주)
+## 정리하며
 
-| 프로토콜 | 대상 |
-|----------|------|
-| **HTTPS** | 웹훅 (자동 재시도 정책 적용) |
-| **HTTP** | 웹훅 (TLS X, 비권장) |
-| **Email** | 이메일 (제목·본문) |
-| **Email-JSON** | 이메일 (JSON 형식) |
-| **SMS** | 모바일 문자 |
-| **SQS** | 큐로 전달 |
-| **Lambda** | 함수 직접 호출 |
-| **Mobile Push** | APNs, GCM, FCM, ADM, Baidu |
-| **Kinesis Data Firehose** | S3·Redshift·OpenSearch로 |
+SNS를 관통하는 한 문장은 "한 번 발행하면 생산자가 구독자를 모른 채 모두에게 푸시된다"이다. 발행-구독 모델은 관찰자 패턴을 토픽이라는 브로커로 완전히 분리한 것이고, 그 핵심 대가는 "메시지 비보존"이다. 그래서 SNS의 즉시 푸시와 SQS의 안정적 보존을 결합한 **팬아웃**이 단순 편의가 아니라 내구성 있는 1:N 배포의 표준이 된다. 필터 정책은 콘텐츠 기반 라우팅을 브로커에 내장해 구독자 코드 없이 선별을 처리하고, FIFO 토픽은 양 끝단에서 순서를 지키며, 구독 DLQ는 비보존 모델의 안전망이 된다. SNS와 SQS는 경쟁이 아니라 "푸시·비보존·1:N"과 "풀·보존·1:1"로 역할을 나눠 함께 쓰일 때 가장 강력하다.
 
-### 재시도 정책 (HTTPS 구독)
-
-```json
-{
-  "deliveryPolicy": {
-    "numRetries": 50,
-    "numNoDelayRetries": 3,
-    "minDelayTarget": 20,
-    "maxDelayTarget": 600
-  }
-}
-```
-
-- 기본 50회 재시도, 1시간 동안
-- 실패 시 → SNS DLQ로 (Lambda Destinations 유사)
-
-### Message Filtering 디테일 (시험 시나리오)
-
-```json
-{
-  "store": ["seoul", "busan"],
-  "event": [{ "anything-but": "test_event" }],
-  "price": [{ "numeric": [">", 100] }],
-  "size": [{ "exists": true }]
-}
-```
-
-- 메시지 본문 필터링 (2022~): `subscriptionAttributes.FilterPolicyScope=MessageBody`
-- 기본은 MessageAttributes만 필터
-
-### SNS FIFO + SQS FIFO 통합
-
-```
-[Producer FIFO] → SNS FIFO Topic → SQS FIFO Queue 1
-                                 → SQS FIFO Queue 2
-                                 (Consumer는 같은 그룹 ID 사용)
-```
-
-- 순서·중복 제거 양 끝단에서 보장
-- 메시지 그룹 ID 사용
-
-### SNS Mobile Push (시험 가끔)
-
-| 플랫폼 | 서비스 |
-|--------|--------|
-| iOS | **APNs** (Apple Push Notification) |
-| Android | **GCM/FCM** (Firebase) |
-| Amazon | **ADM** |
-| Windows | WNS (deprecated) |
-
-- 디바이스 토큰을 SNS에 등록 → endpoint ARN 생성
-
-### SNS Data Protection Policy (PII 마스킹)
-
-- 메시지에서 신용카드·SSN 등 자동 탐지·마스킹
-- 시험엔 거의 안 나옴 (Macie와 함께)
-
-### SNS 비용
-
-- 발행 100만건: $0.50 (HTTPS), $2.00 (SMS는 국가별)
-- SQS 구독: 무료
-- Email/Lambda 호출: 별도 비용
-
-### 관련 서비스 Cross-Reference
-
-- **SNS + SQS 팬아웃** → [Day 1]
-- **SNS + Lambda** → 비동기 호출
-- **SNS + Mobile Push** → 모바일 앱 알림
-- **SNS + CloudWatch Alarms** → 알람 알림
-- **SNS Topic Encryption** → KMS
-
----
-
-## 아키텍처 다이어그램
-
-```
-SNS 팬아웃 아키텍처
-================================
-
-[주문 서비스]
-     |
-     | 주문 생성 이벤트
-     v
-[SNS 주제: OrderEvents]
-     |
-     +---[FilterPolicy: premium]---> [SQS: premium-orders]
-     |                                      |
-     |                                      v
-     |                               [Lambda: VIP 처리]
-     |
-     +---[FilterPolicy: standard]--> [SQS: standard-orders]
-     |                                      |
-     |                                      v
-     |                               [Lambda: 일반 처리]
-     |
-     +---> [이메일 구독] (관리자 알림)
-     |
-     +---> [Lambda: 재고 업데이트]
-```
-
----
-
-## ⭐ 핵심 포인트
-
-1. ⭐ **SNS**: Push, 모든 구독자 동시 전달
-2. ⭐ **팬아웃**: S3→SNS→여러SQS, 하나의 이벤트를 다중 처리
-3. ⭐ **필터 정책**: 특정 속성 기반으로 선택적 메시지 전달
-4. ⭐ **SNS+SQS**: SNS는 즉시 전달, SQS는 안정적 비동기 처리
-5. ⭐ **메시지 보존**: SNS는 비보존 (전달 실패 시 소실), SQS는 보존
+다음 글에서는 메시지를 "처리하면 사라지는" SQS·SNS와 달리, 데이터를 스트림에 보존해 여러 소비자가 각자의 위치에서 반복해 읽을 수 있는 Kinesis로 넘어간다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** 하나의 이벤트를 여러 Lambda 함수가 동시에 처리해야 할 때 사용하는 패턴은?
+**문제 1.** S3 객체 업로드 하나에 대해 썸네일 생성, 바이러스 검사, 메타데이터 색인을 각각 독립적으로 처리해야 한다. 가장 적절한 패턴은?
 
-A) SQS 단독 사용  
-B) SNS 팬아웃 (SNS → 여러 SQS → 여러 Lambda)  
-C) EventBridge 단독  
-D) Kinesis 사용  
+A) S3 이벤트를 하나의 SQS 큐로 보내고 한 Lambda가 세 작업을 모두 처리
 
-**정답: B** - 팬아웃 패턴은 SNS에서 여러 SQS로 메시지를 동시에 전달하여 각각 독립적으로 처리할 수 있습니다.
+B) S3 → SNS → 세 개의 SQS 큐(각각 Lambda 연결)로 팬아웃
 
----
+C) S3 → 단일 Lambda에서 세 작업을 순차 실행
 
-**문제 2.** SNS에서 특정 속성 값을 가진 메시지만 특정 구독자에게 전달하려면?
+D) 세 개의 S3 버킷을 만들어 각각 처리
 
-A) SNS 액세스 정책  
-B) SNS 필터 정책  
-C) SQS 큐 정책  
-D) Lambda 환경 변수  
+**정답: B**
 
-**정답: B** - SNS 필터 정책을 사용하면 메시지 속성에 따라 특정 구독자에게만 메시지를 전달합니다.
+해설: 세 작업이 **독립적**으로(서로의 실패에 영향받지 않고) 처리돼야 하므로 팬아웃이 적절하다. SNS가 한 이벤트를 세 SQS 큐로 동시에 퍼뜨리고, 각 큐는 독립적 버퍼링·재시도·DLQ를 갖는다. 바이러스 검사가 실패해도 썸네일 생성에는 영향이 없다. A·C는 한 작업의 실패가 전체를 막고 독립 확장이 안 된다. D는 같은 객체를 세 번 업로드해야 하는 비현실적 설계다.
 
 ---
 
-**문제 3.** SNS와 SQS의 가장 큰 차이점은?
+**문제 2.** SNS를 통해 Lambda로 직접 푸시하는 구성에서, Lambda가 잠시 다운된 동안 발행된 메시지가 유실됐다. 내구성을 확보하려면?
 
-A) 가격 차이  
-B) SNS는 Push(즉시 전달), SQS는 Pull(Consumer가 수신)  
-C) 보안 차이  
-D) 리전 제한  
+A) SNS의 메시지 보존 기간을 늘린다
 
-**정답: B** - SNS는 발행 즉시 모든 구독자에게 Push하고, SQS는 Consumer가 직접 Pull하는 방식입니다.
+B) SNS → SQS → Lambda 구조로 바꿔, SNS가 SQS에 넣고 SQS가 메시지를 보존하게 한다
 
----
+C) SNS 발행 빈도를 줄인다
 
-**문제 4.** S3 이벤트를 여러 Lambda에 동시에 전달해야 할 때?
+D) Lambda 메모리를 늘린다
 
-A) S3 이벤트 → Lambda 직접 (여러 설정)  
-B) S3 이벤트 → SNS → 여러 Lambda/SQS  
-C) CloudWatch Events 사용  
-D) 불가능  
+**정답: B**
 
-**정답: B** - S3는 하나의 이벤트 대상만 직접 설정 가능하므로, SNS를 중간에 두어 팬아웃합니다.
+해설: **SNS는 메시지를 보존하지 않는다.** 재시도가 소진되면 메시지가 사라지므로, 소비자 다운에 대비한 내구성은 SNS만으로 얻을 수 없다. SNS가 **SQS에 푸시**하면, SQS가 메시지를 최대 14일 보존하므로 Lambda가 살아날 때까지 안전하게 대기한다 — 이것이 팬아웃이 내구성 설계인 이유다. A) SNS에는 늘릴 보존 기간 자체가 없다. C·D는 유실의 원인과 무관하다.
 
 ---
 
-**문제 5.** SNS 메시지가 Lambda 전달에 실패했을 때 기본 동작은?
+**문제 3.** SNS 팬아웃에서 특정 SQS 큐는 `orderType=premium`인 메시지만 받아야 한다. 추가 인프라 없이 구현하려면?
 
-A) SQS로 자동 이동  
-B) 재시도 후 메시지 소실  
-C) DLQ로 자동 이동  
-D) 이메일 알림  
+A) 각 SQS 소비자가 메시지를 받아 premium이 아니면 버리도록 코드 작성
 
-**정답: B** - SNS는 기본적으로 재시도 후 전달에 실패하면 메시지가 소실됩니다. Lambda 함수에 DLQ를 설정하거나 Destinations를 사용해야 합니다.
+B) SNS 구독에 FilterPolicy를 설정해 premium 메시지만 그 큐로 전달
+
+C) 별도 라우터 Lambda를 두어 분류
+
+D) SQS 큐 정책으로 필터링
+
+**정답: B**
+
+해설: **필터 정책**은 SNS가 전달 **전에** 메시지 속성을 검사해, 매칭되지 않는 메시지를 해당 구독자에게 아예 보내지 않는다. 구독자 코드가 단순해지고 불필요한 전달 비용도 없다. 이는 콘텐츠 기반 라우팅을 브로커에 내장한 것이다. A) 소비자가 버리는 방식은 모든 메시지를 받아 처리·비용 낭비가 있다. C) 라우터 Lambda는 불필요한 추가 인프라이자 단일 장애점이다. D) SQS 큐 정책은 접근 제어용이지 내용 필터링이 아니다.
 
 ---
 
-## 📌 오늘의 요약
+**문제 4.** SNS와 SQS의 근본적 차이로 가장 정확한 것은?
 
-1. SNS: 완전 관리형 발행/구독, Push 방식, 즉시 전달
-2. 팬아웃: SNS → 여러 SQS, 하나의 이벤트를 다중 병렬 처리
-3. 필터 정책: 메시지 속성 기반으로 선택적 전달
-4. SNS FIFO: 순서 보장, 중복 제거, SQS FIFO만 구독 가능
-5. SNS vs SQS: SNS는 Push/즉시/비보존, SQS는 Pull/보존
+A) SNS는 더 비싸다
+
+B) SNS는 Push·비보존·1:N(여러 구독자 동시 전달), SQS는 Pull·보존·1:1(한 소비자가 가져감)
+
+C) SNS는 순서를 보장하고 SQS는 못 한다
+
+D) SNS는 리전 제한이 있다
+
+**정답: B**
+
+해설: SNS는 발행 즉시 모든 구독자에게 **푸시**하며 메시지를 **보존하지 않고**, 한 메시지를 **여러 구독자**가 받는다(1:N). SQS는 소비자가 능동적으로 **풀**하며 메시지를 **보존**하고, 한 메시지를 **한 소비자**만 가져간다(1:1). 이 역할 분담이 둘을 결합한 팬아웃의 근거다. A) 비용은 본질적 차이가 아니다. C) FIFO는 양쪽 다 있다. D) 둘 다 리전 서비스다.
+
+---
+
+**문제 5.** SNS 메시지 본문(payload) 안의 JSON 필드 값으로 필터링하려 한다. 기본 설정으로 동작하지 않는 이유와 해결은?
+
+A) SNS는 필터링을 지원하지 않는다
+
+B) 기본 필터는 메시지 속성만 검사하므로, FilterPolicyScope를 MessageBody로 설정해야 한다
+
+C) 본문 필터링은 Lambda로만 가능하다
+
+D) 메시지를 FIFO로 보내야 한다
+
+**정답: B**
+
+해설: SNS 필터 정책은 기본적으로 **메시지 속성(MessageAttributes)** 만 검사한다. 메시지 본문 필드로 필터링하려면 구독 속성 `FilterPolicyScope`를 `MessageBody`로 명시해야 한다(2022년 추가). 속성을 기본으로 두는 이유는 "라우팅 정보는 헤더에, 페이로드는 분리"라는 메시징 원칙과 본문 파싱 비용 때문이다. A) 본문 필터링은 지원된다. C·D는 무관하다.
+
+---
+
+**문제 6.** 순서가 중요한 주문 이벤트를 여러 소비자에게 순서대로 팬아웃해야 한다. 올바른 구성은?
+
+A) 표준 SNS 토픽 → 표준 SQS 큐들
+
+B) SNS FIFO 토픽 → SQS FIFO 큐들
+
+C) SNS FIFO 토픽 → 표준 SQS 큐들
+
+D) 표준 SNS 토픽 → SQS FIFO 큐들
+
+**정답: B**
+
+해설: 순서 보장이 발행부터 소비까지 끊기지 않으려면 **양 끝단이 모두 FIFO**여야 한다. SNS FIFO 토픽은 **SQS FIFO 큐에만** 구독 가능하다. C) FIFO 토픽이 순서대로 푸시해도 표준 SQS가 받으면 거기서 순서가 깨지고, 애초에 구독이 허용되지 않는다. A·D는 어느 한쪽이 표준이라 순서가 보장되지 않는다.
+
+---
+
+**문제 7.** SNS가 HTTPS 엔드포인트로의 전달에 반복 실패할 때 메시지를 보존해 나중에 분석하려면?
+
+A) SNS의 메시지 보존을 켠다
+
+B) 해당 구독에 redrive policy로 SNS DLQ(SQS 큐)를 설정한다
+
+C) Lambda DLQ를 설정한다
+
+D) CloudWatch 알람만 설정한다
+
+**정답: B**
+
+해설: SNS 자체는 비보존이지만, 특정 **구독 단위로 DLQ(redrive policy)** 를 설정하면 재시도 소진 후 전달 실패 메시지를 지정한 SQS 큐로 보내 보존할 수 있다. A) SNS에는 켤 보존 기능이 없다. C) Lambda DLQ는 "Lambda 비동기 호출 실패"를 잡는 다른 계층이며, 여기서는 HTTPS 전달 실패라 SNS 구독 DLQ가 맞다. D) 알람은 통지일 뿐 메시지를 보존하지 못한다.

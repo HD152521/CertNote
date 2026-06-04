@@ -1,325 +1,254 @@
-# Day 2 - 도메인 3·4 복습 (배포·자동화 + 보안·컴플라이언스)
+# Day 2 - 도메인 3·4 다시 읽기, 자동으로 배포하고 최소 권한으로 막는다
 
-📅 날짜: Week 12 (Day 2)
-🎯 주제: SOA-C02 도메인 3·4 핵심 압축 정리
-⏱️ 학습 시간: 약 90분
+도메인 3(배포·프로비저닝·자동화 18%)과 도메인 4(보안·컴플라이언스 16%)는 얼핏 정반대로 보인다. 하나는 "빠르게 바꾸기", 다른 하나는 "함부로 못 바꾸게 막기". 하지만 두 도메인은 같은 질문의 양면이다 — **변경을 어떻게 안전하게 다룰 것인가.** 배포 자동화는 변경을 빠르고 되돌릴 수 있게 만들고, 보안은 그 변경 권한을 최소한으로 가둔다. 빠른 배포 없는 보안은 운영을 마비시키고, 보안 없는 빠른 배포는 사고를 양산한다.
 
----
+이 글은 두 도메인을 키워드로 훑는 대신, CloudFormation이 왜 "선언적·멱등적"으로 설계됐는지, 배포 정책들이 가용성과 비용 사이에서 어떤 수학적 trade-off를 하는지, Session Manager가 SSH를 대체하는 내부 메커니즘, 그리고 IAM 정책 평가가 어떤 결정 트리를 따르는지를 파고든다.
 
-## 🎯 학습 목표
+## IaC의 뿌리 — 선언형이 명령형을 이긴 이유
 
-- 도메인 3(배포·프로비저닝·자동화 18%)과 도메인 4(보안·컴플라이언스 16%) 통합 34%를 정리한다
-- IaC·배포 정책·보안 서비스의 차이를 명확히 한다
-- 도메인 통합 시나리오 5문항으로 점검한다
+CloudFormation을 "복습"할 때 Stack·Template·Change Set을 외우지만, 그 밑에 깔린 더 큰 이야기는 **선언형(declarative)이 명령형(imperative)을 이긴 역사**다. 이 차이를 잡으면 IaC 전체가 한눈에 정리된다.
 
----
+명령형 프로비저닝은 "이걸 만들고, 다음에 저걸 연결하고, 그 다음 이 설정을 켜라"처럼 **절차**를 적는다. 초기 자동화 스크립트(bash, 초기 도구들)가 이 방식이었다. 문제는 두 가지다 — ① 스크립트가 중간에 실패하면 시스템이 어중간한 상태로 남는다(절반만 만들어짐), ② 같은 스크립트를 두 번 돌리면 중복 생성되거나 충돌한다(멱등성 없음).
 
-## 🧩 사전 지식 (CS 기초)
+선언형 프로비저닝은 절차가 아니라 **원하는 최종 상태(desired state)**를 적는다. "이 VPC, 이 서브넷, 이 EC2가 존재해야 한다"고 선언하면, 도구가 현재 상태와 비교해 차이만큼만 만들거나 고친다. CloudFormation·Terraform·CDK가 모두 이 방식이다. 핵심 이점은 **수렴(convergence)**이다 — 몇 번을 돌리든, 어느 상태에서 시작하든, 결국 선언한 상태로 수렴한다. 그래서 선언형은 본질적으로 멱등적이고, 실패한 배포를 다시 돌려도 안전하다.
 
-- **IaC**: Infrastructure as Code (CloudFormation, CDK, Terraform)
-- **Blue/Green vs Canary vs Rolling**: 배포 정책 3종
-- **PoLP**: Principle of Least Privilege (최소 권한 원칙)
-- **Defense in Depth**: 다층 방어 (네트워크 + IAM + 암호화 + 모니터링)
+CloudFormation의 자동 롤백도 이 선언형 모델 덕에 가능하다. 스택 생성 중 한 리소스가 실패하면, CloudFormation은 그때까지 만든 것을 모두 되돌려 **이전 상태로 수렴**시킨다(rollback). 명령형 스크립트라면 "어디까지 만들었는지"를 일일이 추적해 역순으로 지워야 하지만, 선언형은 "이전 선언 상태"라는 명확한 목표가 있으므로 롤백이 깔끔하다.
 
----
+> 💡 **관련 이론**: 선언형 vs 명령형은 프로그래밍 패러다임의 오랜 주제다(SQL이 선언형, C가 명령형인 것과 같은 구분). 인프라에서 선언형이 승리한 결정적 이유는 **상태 조정(state reconciliation) 루프** 때문이다. Kubernetes의 controller, Terraform의 plan/apply, CloudFormation의 drift detection이 모두 같은 패턴을 쓴다 — "원하는 상태(desired)"와 "실제 상태(actual)"의 차이(diff)를 계산하고, 그 차이를 0으로 만드는 액션만 실행한다. 이 reconciliation 루프는 제어 이론의 피드백 제어와 같은 구조다. Drift Detection이 바로 이 diff 계산을 사람이 볼 수 있게 노출한 기능이다 — 누군가 콘솔에서 손으로 바꿔 actual이 desired에서 벗어나면(drift), 그 차이를 보고한다.
 
-## 📖 이론 내용
+## 배포 정책의 수학 — 가용성·속도·비용의 삼각 trade-off
 
-### 1. 도메인 3: 배포·프로비저닝·자동화 (18%)
+배포 정책 표(All at once / Rolling / Immutable / Blue-Green / Canary)를 외우는 건 쉽다. 어려운 건 시나리오에서 "어느 것이 맞는가"를 고르는 것이고, 그러려면 각 정책이 **가용성·롤백 속도·비용**이라는 세 축에서 어디에 서 있는지를 이해해야 한다.
 
-#### 1-1. CloudFormation 핵심
+핵심 통찰은 이렇다 — **무중단 배포의 비용은 결국 "여분의 용량"이다.** 다운타임을 줄이려면 새 버전을 띄울 공간을 따로 마련해야 하고, 그 공간이 비용이다.
 
-| 항목 | 핵심 |
-|------|------|
-| Stack | 배포 단위 |
-| Template | YAML/JSON 정의 |
-| Change Set | 적용 전 변경 미리보기 |
-| Drift Detection | 실제 ↔ 템플릿 차이 |
-| Rollback Trigger | 실패 시 자동 롤백 |
-| StackSets | 멀티 계정/리전 배포 |
-| Nested Stack | 재사용 모듈화 |
-| Cross-Stack Ref | Output → Import |
+- **All at once**: 기존 인스턴스를 동시에 새 버전으로 교체. 여분 용량 0(가장 쌈)이지만 교체 순간 전체 다운타임. 실패 시 전부 영향.
+- **Rolling**: 일부씩 순차 교체. 여분 용량 0이지만, 교체 중인 인스턴스만큼 가용 용량이 일시 감소(용량 부족 위험). 롤백은 다시 굴려야 함.
+- **Rolling with Additional Batch**: 교체 전 여분 배치를 먼저 띄워 용량 감소를 막음. 약간의 추가 비용으로 용량 유지.
+- **Immutable**: 완전히 새 ASG에 전체 새 버전을 띄운 뒤 교체. 새 ASG만큼 일시적 비용 2배, 그러나 기존 환경이 그대로 남아 롤백이 깔끔.
+- **Blue/Green**: 두 개의 독립 환경(blue=구, green=신)을 운영하고 DNS/Target Group을 전환. 환경 2배 비용, 그러나 롤백이 **전환 한 번**으로 즉시.
+- **Canary**: 신 버전에 트래픽을 5%→25%→100%처럼 점진 노출. 문제를 소수 사용자에게만 노출하고 지표로 검증 후 확대.
 
-#### 1-2. 배포 정책 (Elastic Beanstalk / CodeDeploy)
+| 정책 | 다운타임 | 롤백 속도 | 추가 비용 | 핵심 |
+|------|----------|-----------|-----------|------|
+| All at once | 있음 | 느림 | 0 | 개발/비핵심 |
+| Rolling | 없음(용량↓) | 느림(재롤링) | 0 | 비용 우선 |
+| Rolling + Batch | 없음 | 느림 | 소 | 용량 유지 |
+| Immutable | 없음 | 빠름(기존 유지) | 일시 2배 | 안전한 교체 |
+| Blue/Green | 없음 | 즉시(전환) | 2배 | 즉시 롤백 필수 |
+| Canary | 없음 | 빠름(노출 축소) | 소~중 | 점진 검증 |
 
-| 정책 | 다운타임 | 비용 | 롤백 |
-|------|----------|------|------|
-| **All at once** | O (짧음) | 0 | 어려움 |
-| **Rolling** | 부분 다운 | 0 | 보통 |
-| **Rolling with Additional Batch** | 0 | + | 보통 |
-| **Immutable** | 0 | ++ (새 ASG) | 쉬움 |
-| **Blue/Green** | 0 | ++ (별 환경) | 즉시 |
-| **Canary** (CodeDeploy) | 0 | + | 자동 |
+> 🔍 **더 깊이**: Blue/Green의 롤백이 "즉시"인 진짜 이유는 **구 버전을 지우지 않고 그대로 두기 때문**이다. 전환은 트래픽 라우팅(DNS 레코드 또는 ALB Target Group)만 바꾸는 것이라, 문제가 생기면 라우팅을 되돌리는 한 번의 액션으로 끝난다. 단, DNS 전환을 쓰면 **TTL 캐싱** 때문에 일부 클라이언트가 한동안 구 버전으로 계속 간다 — 그래서 빠른 전환이 필요하면 DNS보다 ALB Target Group 스왑(즉각 반영)을 쓴다. 또 하나의 함정은 **데이터베이스 스키마**다. blue와 green이 같은 DB를 공유하면, green용으로 스키마를 바꾼 순간 blue가 깨질 수 있다. 그래서 무중단 배포의 진짜 난이도는 애플리케이션이 아니라 DB 마이그레이션에 있다(backward-compatible 스키마 변경, expand-contract 패턴).
 
-#### 1-3. Systems Manager (SSM) - 운영 자동화 핵심
+> 📚 **사례**: 2017년 AWS S3 us-east-1 대규모 장애는 배포·자동화의 위험을 보여준 상징적 사건이다. 한 엔지니어가 청구 시스템의 속도 저하를 디버깅하려고 playbook의 명령으로 일부 서버를 제거하려 했는데, **명령의 입력 파라미터를 잘못 넣어** 의도보다 훨씬 많은 서버가 제거됐다. 그 서버들이 S3의 인덱스·배치 서브시스템을 담당하고 있어 연쇄적으로 멈췄고, 복구를 위한 재시작에 수 시간이 걸렸다(이 서브시스템들이 그동안 완전 재시작된 적이 없어 부팅이 예상보다 오래 걸렸다). 교훈은 세 가지였다 — ① 강력한 수동 명령에는 안전장치(한 번에 제거 가능한 최대치 제한)가 필요하다, ② 자동화 도구는 잘못된 입력을 검증해야 한다, ③ 복구 절차(재시작 포함)도 정기적으로 리허설해야 실제로 작동한다. SOA 시험이 "수동 운영 최소화 + 자동화 + 안전장치"를 반복해 강조하는 배경이다.
 
-| 컴포넌트 | 역할 |
-|----------|------|
-| **Run Command** | 즉시 실행 (멀티 EC2 명령) |
-| **State Manager** | 원하는 상태 유지 (Association) |
-| **Patch Manager** | OS 패치 자동화 (Baseline + Group) |
-| **Maintenance Window** | 정기 운영 작업 |
-| **Parameter Store** | 설정값/비밀 저장 (SecureString) |
-| **Session Manager** | SSH 없는 안전 접속 |
-| **Automation Runbook** | 단계별 자동화 워크플로 |
+## Session Manager가 SSH를 대체하는 방식 — 포트를 열지 않고 셸을 연다
 
-#### 1-4. EC2 Image Builder & Service Catalog
+도메인 3에서 SSM의 7개 컴포넌트를 외우지만, 그중 Session Manager는 **내부 동작을 알아야** 왜 그렇게 강력한지가 보인다. Session Manager의 핵심은 "인바운드 포트를 하나도 열지 않고" EC2에 셸을 띄운다는 점이다.
 
-| 서비스 | 역할 |
-|--------|------|
-| EC2 Image Builder | AMI 자동 빌드 + 보안 패치 |
-| Service Catalog | 승인된 IaC 카탈로그 (셀프서비스) |
-| AWS Proton | 컨테이너/서버리스 표준 템플릿 |
+전통적 SSH 접속은 22번 포트를 인바운드로 열어야 한다 — 보안 그룹에 22번을 허용하고, 키 페어를 관리하고, 보통 bastion host(점프 서버)를 둔다. 이 모델의 문제는 명확하다. 열린 포트는 공격 표면이고, 키는 분실·유출 위험이며, bastion은 또 하나의 관리 대상이다.
 
-### 2. 도메인 4: 보안·컴플라이언스 (16%)
+Session Manager는 이 모델을 뒤집는다. EC2 안의 **SSM Agent가 SSM 서비스로 아웃바운드 연결을 먼저 맺는다**(outbound 443, HTTPS). 운영자가 세션을 시작하면, 트래픽은 이 미리 맺어진 아웃바운드 채널을 타고 흐른다 — 즉 EC2 쪽에는 인바운드 포트가 0개여도 된다. 권한은 키 페어가 아니라 IAM으로 제어하고(누가 어떤 인스턴스에 세션을 열 수 있는가), 모든 세션은 CloudTrail에 기록되며 세션 로그를 S3/CloudWatch Logs로 보낼 수 있다.
 
-#### 2-1. IAM 핵심
+이 "아웃바운드만으로 역방향 채널을 만든다"는 패턴은 새로운 게 아니다 — 방화벽 뒤의 머신을 외부에서 제어하는 reverse tunnel의 고전적 기법이다. Session Manager는 이걸 관리형으로, IAM 인증과 감사를 붙여 제공한다. 프라이빗 서브넷의 인스턴스(인터넷 게이트웨이 없음)에서도 VPC Interface Endpoint(PrivateLink)를 통해 SSM에 닿으면 동작한다 — 인터넷 노출 없이 셸을 여는 것이다.
 
-| 항목 | 핵심 |
-|------|------|
-| User/Group/Role | 사용자/그룹/역할 |
-| Policy | JSON 권한 |
-| Permission Boundary | 최대 권한 제한 |
-| SCP | Organizations 단위 가드레일 |
-| Identity Center | SSO + Permission Set |
-| Access Analyzer | 외부 노출 분석 |
+> 💡 **관련 이론**: Session Manager의 보안 모델은 **제로 트러스트(Zero Trust)** 철학의 한 구현이다. 전통적 네트워크 보안은 "내부망은 신뢰, 외부는 차단"이라는 경계(perimeter) 모델이었고, bastion host가 그 경계의 문이었다. 제로 트러스트는 "네트워크 위치로 신뢰하지 않고, 모든 접근을 ID로 인증·인가·기록한다"는 원칙이다. Session Manager가 IP/포트 기반 접근(SSH 22번 + bastion)을 ID 기반 접근(IAM 정책 + CloudTrail 감사)으로 바꾼 것이 정확히 이 전환이다. 시험에서 "SSH 키 관리 부담을 없애고 감사를 강화"가 나오면 거의 항상 Session Manager가 답인 이유다 — 이건 단순 편의가 아니라 보안 패러다임의 이동이다.
 
-평가 로직: **SCP → Permission Boundary → Identity Policy → Resource Policy → Session Policy**
+## IAM 정책 평가 — 명시적 Deny가 모든 것을 이기는 결정 트리
 
-#### 2-2. 암호화 (KMS)
+도메인 4에서 "SCP → Permission Boundary → Identity → Resource"라는 평가 순서를 외우지만, 정확히 말하면 이건 순서가 아니라 **결정 트리(decision tree)**다. AWS가 "이 요청을 허용할까?"를 판단하는 알고리즘에는 흔들리지 않는 두 가지 원칙이 있다.
 
-| 항목 | 핵심 |
-|------|------|
-| AWS Managed Key | AWS 관리 (회전 자동) |
-| Customer Managed Key (CMK) | 사용자 관리 (Key Policy + Grant) |
-| 회전 | CMK 매년 자동 회전 가능 |
-| Multi-Region Key | 리전 간 동일 키 복제 |
-| Envelope Encryption | DEK + KEK |
-| CloudHSM | 전용 HSM (FIPS 140-2 Level 3) |
+원칙 1 — **기본은 암묵적 거부(implicit deny)**다. 아무 정책도 명시적으로 허용하지 않으면 거부된다. 권한은 "안 막혀서 되는 것"이 아니라 "명시적으로 허용돼야 되는 것"이다.
 
-#### 2-3. 비밀 관리
+원칙 2 — **명시적 거부(explicit deny)는 그 무엇도 이긴다.** 어떤 정책에서든 명시적으로 Deny가 걸리면, 다른 정책 100개가 Allow해도 결과는 거부다. Deny는 절대적 거부권이다.
 
-| 서비스 | 특징 |
-|--------|------|
-| **Secrets Manager** | 자동 회전 + Cross-Region Replication + Lambda 회전 |
-| **Parameter Store SecureString** | 무료, 회전 X, 간단한 설정 |
-
-→ DB 패스워드·API 키는 Secrets Manager. 일반 설정은 PS.
-
-#### 2-4. 위협 탐지
-
-| 서비스 | 역할 | 데이터 소스 |
-|--------|------|-------------|
-| **GuardDuty** | 위협 탐지 | VPC Flow Logs, DNS, CloudTrail |
-| **Security Hub** | 통합 보안 대시보드 | GuardDuty/Inspector/Macie/Config 통합 |
-| **Inspector** | 취약점 스캔 | EC2/ECR/Lambda |
-| **Macie** | S3 PII 탐지 | S3 객체 |
-| **IAM Access Analyzer** | 외부 노출 분석 | IAM 정책 |
-| **Detective** | 보안 인시던트 조사 | GuardDuty Finding |
-
-#### 2-5. 컴플라이언스
-
-| 서비스 | 역할 |
-|--------|------|
-| **Config** | 리소스 컴플라이언스 (Rule + Conformance Pack) |
-| **Audit Manager** | 컴플라이언스 보고서 자동화 (PCI/SOC/HIPAA) |
-| **Artifact** | AWS 컴플라이언스 문서 다운로드 |
-| **CloudTrail** | API 감사 |
-
-### 3. "키워드 → 정답" 통합표
-
-| 키워드 | 도메인 3·4 정답 |
-|--------|-----------------|
-| "변경 사전 검토" | CloudFormation Change Set |
-| "템플릿과 실제 차이" | Drift Detection |
-| "멀티 계정/리전 IaC" | StackSets |
-| "다운타임 0, 즉시 롤백" | Blue/Green |
-| "OS 패치 자동화" | SSM Patch Manager |
-| "SSH 없는 접속" | Session Manager |
-| "Org 단위 가드레일" | SCP |
-| "권한 경계 제한" | Permission Boundary |
-| "DB 패스워드 자동 회전" | Secrets Manager |
-| "S3 PII 탐지" | Macie |
-| "EC2/ECR 취약점 스캔" | Inspector |
-| "보안 통합 대시보드" | Security Hub |
-
----
-
-## 🧠 알아두면 좋은 심화 이론
-
-| 항목 | 설명 | 시험 포인트 |
-|------|------|-------------|
-| **CodeDeploy AppSpec hooks** | BeforeInstall/AfterInstall 등 7단계 | 시나리오 |
-| **SSM Run Command vs Automation** | Run = 단발, Automation = 워크플로 | 차이 |
-| **Permission Boundary != SCP** | PB = IAM 엔티티, SCP = 계정 | 혼동 주의 |
-| **GuardDuty 멀티 계정** | Organizations로 일괄 enable | 운영 |
-| **Security Hub Standards** | CIS / PCI-DSS / NIST 등 | 컴플라이언스 |
-| **Config Conformance Pack** | 여러 Rule 묶음 + Remediation | 일괄 적용 |
-
-> ⚠️ **함정 1**: Blue/Green = 즉시 롤백 가능 (DNS 전환). Immutable은 새 ASG 생성 후 교체.
->
-> ⚠️ **함정 2**: SCP는 권한을 "허용"하지 않고 "제한"만. SCP만 있어선 권한 X.
->
-> ⚠️ **함정 3**: Parameter Store SecureString은 회전 X. DB 패스워드는 Secrets Manager.
->
-> 💡 **암기 팁**: 도메인 3 = "어떻게 자동 배포할까", 도메인 4 = "어떻게 안전하게 막을까"
-
----
-
-## 🏗️ 아키텍처 다이어그램
+이 두 원칙 위에서 평가는 여러 정책 유형을 모두 검토한다. SCP(조직 가드레일)·Permission Boundary(IAM 엔티티 권한 상한)·Identity 정책(사용자/역할에 붙은 정책)·Resource 정책(S3 버킷 정책 등)·Session 정책이 모두 입력으로 들어간다. 핵심은 이들이 **AND로 교집합**을 이룬다는 것이다 — SCP가 허용하고 **그리고** Boundary가 허용하고 **그리고** Identity가 허용해야 비로소 통과한다. 어느 하나라도 빠지면(또는 Deny하면) 막힌다.
 
 ```
-도메인 3·4 통합: 안전한 자동 배포 파이프라인
-==========================================================
-
-  [코드]──CFN─►[Service Catalog]─►[StackSets 멀티 계정]
-                                        │
-                                        ▼
-                               [Blue/Green Deploy]
-                                        │
-                                        ▼
-        [SSM Patch ◄──┐         [EC2 + ASG + ALB]
-         Manager]      │                │
-                       │         [Inspector 스캔]
-        [Session ◄─────┤                │
-         Manager]      │         [GuardDuty + 
-                       │          Security Hub]
-        [Parameter ◄───┘                │
-         Store/Secrets]          [Config + Audit
-                                  Manager 컴플라이언스]
+요청 평가 결정 트리
+─────────────────────────────────
+1. 어디서든 명시적 Deny가 있나? ── 예 ──► 거부 (끝)
+                │ 아니오
+                ▼
+2. SCP가 이 액션을 허용하나? ── 아니오 ──► 거부
+   (조직 멤버 계정만 해당)
+                │ 예
+                ▼
+3. Permission Boundary가 허용하나? ── 아니오 ──► 거부
+   (Boundary가 설정된 엔티티만)
+                │ 예
+                ▼
+4. Identity 또는 Resource 정책에
+   명시적 Allow가 있나? ── 아니오 ──► 거부 (암묵적 거부)
+                │ 예
+                ▼
+            허용
 ```
 
----
+> ⚠️ **함정**: SCP는 권한을 **주지 않는다 — 제한만 한다.** SCP에 "S3FullAccess를 Allow"라고 써도, 그 계정의 사용자에게 자동으로 권한이 생기진 않는다. SCP는 "이 계정에서 가능한 권한의 천장(상한)"을 정의할 뿐이고, 실제 권한은 여전히 IAM Identity 정책으로 부여해야 한다. 즉 SCP의 Allow는 "여기까지는 허용해도 된다"는 허가 범위이지 부여가 아니다. 시험에서 "SCP에 Allow를 넣었는데도 권한이 없다"가 나오면, 답은 "SCP는 가드레일(상한)일 뿐 Identity 정책으로 실제 부여가 따로 필요하다"이다. 반대로 SCP에 Deny를 넣으면 그건 강력한 차단이 된다(명시적 Deny가 이기므로).
 
-## ⭐ 핵심 포인트 (도메인 3·4 통합)
+## Secrets Manager vs Parameter Store — 회전이라는 한 단어가 가르는 선택
 
-1. ⭐ **CloudFormation**: Change Set(사전 검토) + Drift(차이) + StackSets(멀티)
-2. ⭐ **배포 정책**: Blue/Green = 즉시 롤백, Immutable = 새 ASG, Rolling = 비용 0
-3. ⭐ **SSM**: Run Command(단발) / State Manager(유지) / Patch Manager(패치) / Session Manager(접속)
-4. ⭐ **IAM 평가**: SCP → PB → Identity → Resource (가장 제한적인 게 우선)
-5. ⭐ **보안 서비스**: GuardDuty(위협) / Inspector(취약점) / Macie(PII) / Security Hub(통합)
+도메인 4의 비밀 관리에서 Secrets Manager와 Parameter Store SecureString의 선택은 거의 항상 **자동 회전(rotation)**이라는 한 단어로 갈린다. 둘 다 비밀을 KMS로 암호화해 저장하지만, 설계 목적이 다르다.
 
----
+Parameter Store는 본래 **설정값 저장소**다 — 애플리케이션 설정, 환경 변수, 기능 플래그 같은 값을 계층적 경로(`/app/prod/db-host`)로 관리한다. SecureString 타입으로 비밀도 암호화해 담을 수 있지만, **자동 회전 기능은 없다**. 표준 티어는 무료이고, 단순하다.
 
-## 💻 실제 예시 - AWS CLI
+Secrets Manager는 처음부터 **비밀 전용**으로 설계됐고, 핵심 차별점이 자동 회전이다. RDS·Redshift·DocumentDB는 내장 회전을 지원하고, 그 외 비밀은 Lambda 회전 함수로 주기적으로 새 비밀을 생성·교체한다. 회전의 핵심은 **무중단**이다 — 새 비밀을 만들고(create), 대상 시스템에 적용하고(set), 검증하고(test), 활성 버전을 전환(finish)하는 4단계로, 애플리케이션이 끊김 없이 새 비밀로 넘어가게 한다. 또 Cross-Region Replication으로 비밀을 여러 리전에 복제할 수 있다(DR·멀티리전 앱).
 
-```bash
-# 1. CloudFormation Change Set
-aws cloudformation create-change-set \
-  --stack-name prod-web \
-  --change-set-name update-v2 \
-  --template-body file://template.yaml \
-  --capabilities CAPABILITY_IAM
+| | Parameter Store SecureString | Secrets Manager |
+|---|------------------------------|-----------------|
+| 주 목적 | 설정값 (비밀도 가능) | 비밀 전용 |
+| 자동 회전 | 없음 | 있음 (RDS 내장 / Lambda) |
+| Cross-Region 복제 | 없음 | 있음 |
+| 비용 | 표준 티어 무료 | 비밀당 + API 호출 과금 |
+| 선택 기준 | 회전 불필요한 설정·비밀 | DB 패스워드·API 키(회전 필요) |
 
-aws cloudformation execute-change-set \
-  --stack-name prod-web --change-set-name update-v2
+판단 규칙은 단순하다 — **회전이 필요하면 Secrets Manager, 아니면 Parameter Store.** DB 패스워드·API 키처럼 주기적으로 바꿔야 하는 진짜 비밀은 Secrets Manager, 거의 안 바뀌는 설정값은 Parameter Store가 비용 효율적이다.
 
-# 2. StackSets 멀티 계정 배포
-aws cloudformation create-stack-instances \
-  --stack-set-name baseline-security \
-  --accounts 111122223333 444455556666 \
-  --regions ap-northeast-2 us-east-1
+> 🔍 **더 깊이**: 비밀 회전이 보안에서 중요한 이유는 **노출 시간 창(window of exposure)을 줄이기** 때문이다. 비밀이 한 번 유출되면, 그 비밀이 유효한 동안 공격자가 그걸 쓸 수 있다. 회전 주기가 30일이면 유출된 비밀의 유효 기간도 최대 30일로 제한된다 — 회전은 "이미 유출됐을지 모르는 비밀"의 피해를 시간으로 가둔다. 더 근본적인 접근은 비밀을 아예 안 쓰는 것이다 — EC2/ECS/Lambda가 IAM Role로 임시 자격증명(STS)을 받아 쓰면, 그 자격증명은 자동으로 짧은 시간(보통 1시간)마다 회전되고 코드에 비밀이 박히지 않는다. 그래서 "DB 패스워드 회전 vs IAM 인증"이 선택지로 나오면, RDS IAM 인증을 쓸 수 있는 상황에서는 비밀 자체를 없애는 IAM 인증이 더 깊은 정답일 수 있다. 회전은 차선, 비밀 제거가 최선이다.
 
-# 3. SSM Patch Manager (Baseline)
-aws ssm create-patch-baseline \
-  --name "ProdLinuxBaseline" \
-  --operating-system AMAZON_LINUX_2 \
-  --approval-rules '{"PatchRules":[{
-    "PatchFilterGroup":{"PatchFilters":[
-      {"Key":"CLASSIFICATION","Values":["Security","Bugfix"]},
-      {"Key":"SEVERITY","Values":["Critical","Important"]}
-    ]},
-    "ApproveAfterDays":7
-  }]}'
+## 위협 탐지 서비스들 — 무엇을 보느냐가 각자를 정의한다
 
-# 4. Secrets Manager 자동 회전 설정
-aws secretsmanager rotate-secret \
-  --secret-id prod/db/master \
-  --rotation-lambda-arn arn:aws:lambda:ap-northeast-2:123:function:RotateRDS \
-  --rotation-rules AutomaticallyAfterDays=30
+도메인 4의 보안 서비스(GuardDuty/Inspector/Macie/Security Hub/Detective)는 이름만 외우면 시나리오에서 헷갈린다. 각 서비스를 가르는 단 하나의 질문은 **"무엇을(어떤 데이터를) 보는가"**다.
 
-# 5. GuardDuty 조직 일괄 활성화
-aws guardduty enable-organization-admin-account \
-  --admin-account-id 123456789012
+- **GuardDuty**: **로그를 본다**(VPC Flow Logs, DNS 쿼리 로그, CloudTrail). 행위의 흐름에서 위협 패턴을 찾는다 — 비정상 API 호출, 알려진 악성 IP와의 통신, 암호화폐 채굴 트래픽. "진행 중인 공격"을 탐지한다.
+- **Inspector**: **소프트웨어를 본다**(EC2·ECR 이미지·Lambda의 패키지). 알려진 취약점(CVE)과 대조해 "이 시스템에 패치 안 된 구멍이 있다"를 찾는다. 잠재적 약점을 탐지한다.
+- **Macie**: **S3 데이터 내용을 본다**. ML로 객체를 스캔해 PII(주민번호·카드번호 등 민감정보)가 어디 있는지, 공개 노출됐는지 찾는다. 데이터 위험을 탐지한다.
+- **Security Hub**: **다른 서비스의 finding을 본다**. GuardDuty·Inspector·Macie·Config의 결과를 한곳에 모아 표준(CIS·PCI 등) 대비 점수화한다. 통합 대시보드다.
+- **Detective**: **finding의 맥락을 본다**. GuardDuty가 위협을 알리면, Detective는 관련 로그를 그래프로 엮어 "이 위협이 어디서 왔고 무엇과 연결됐는지" 조사를 돕는다.
 
-# 6. Config Conformance Pack 적용
-aws configservice put-conformance-pack \
-  --conformance-pack-name PCI-DSS-Pack \
-  --template-s3-uri s3://my-conformance-packs/pci-dss.yaml \
-  --delivery-s3-bucket conformance-results-bucket
+암기 요령 — GuardDuty는 **행위**(로그 흐름), Inspector는 **취약점**(소프트웨어 구멍), Macie는 **데이터**(S3 내용), Security Hub는 **통합**(finding 집계), Detective는 **조사**(맥락 연결). 시나리오에서 "무엇을 보고 싶은가"를 잡으면 답이 갈린다.
 
-# 7. Session Manager 접속 (SSH X)
-aws ssm start-session --target i-1234567890abcdef0
-```
+> 📚 **사례**: GuardDuty의 효용은 EC2 자격증명 탈취 탐지에서 두드러진다. 앞서 본 Capital One 사고처럼, 공격자가 SSRF로 EC2의 IAM 임시 자격증명을 빼내 **EC2 밖에서** 그 자격증명을 쓰면, GuardDuty의 `UnauthorizedAccess:IAMUser/InstanceCredentialExfiltration` finding이 발동한다 — 인스턴스에 발급된 자격증명이 그 인스턴스가 아닌 외부 IP에서 사용됐다는 것을 CloudTrail·VPC Flow Logs 상관분석으로 잡아내는 것이다. 이건 Inspector(취약점 스캔)나 Macie(데이터 스캔)로는 절대 못 잡는, 오직 "행위 로그의 흐름"을 보는 GuardDuty만의 영역이다. 각 서비스가 보는 데이터가 곧 탐지 가능 범위를 정의한다는 원칙의 생생한 예다.
+
+## 정리하며
+
+도메인 3·4는 "변경을 안전하게 다룬다"는 한 주제의 양면이다 — 자동화로 빠르고 되돌릴 수 있게, 보안으로 최소 권한으로 가둔다.
+
+다섯 가지를 기억하자. ① IaC는 선언형(원하는 상태)이라 멱등적이고 롤백이 깔끔하다 — Drift Detection은 desired와 actual의 diff를 노출한다. ② 무중단 배포의 비용은 결국 여분 용량이다 — Blue/Green은 구 환경을 안 지워 즉시 롤백, 단 DB 스키마와 DNS TTL이 함정. ③ Session Manager는 아웃바운드 443만으로 역방향 채널을 만들어 인바운드 포트 0으로 셸을 연다 — 제로 트러스트의 구현이다. ④ IAM 평가는 결정 트리다 — 명시적 Deny가 모든 걸 이기고, 정책들은 AND 교집합이며, SCP는 부여가 아니라 상한이다. ⑤ 비밀은 회전이 필요하면 Secrets Manager, 아니면 Parameter Store — 더 깊게는 IAM 인증으로 비밀 자체를 없애는 게 최선. 보안 서비스는 "무엇을 보는가"가 각자를 정의한다(GuardDuty=행위, Inspector=취약점, Macie=데이터).
+
+다음 글에선 도메인 5(네트워킹)와 도메인 6(비용·성능)을 같은 깊이로 다시 읽는다 — 패킷이 VPC를 통과하는 경로, NAT와 Endpoint의 비용 구조, 그리고 약정 할인 모델의 수학을 파고든다.
 
 ---
 
-## 📝 도메인 통합 시나리오 5문항
+## 📝 연습 문제
 
-**문제 1.** 회사가 100개 계정에 동일한 IAM 가드레일을 적용하려 한다.
+**문제 1.** CloudFormation 스택 생성 도중 한 리소스가 실패했다. 명령형 셸 스크립트라면 어중간한 상태로 남았을 텐데, CloudFormation은 깔끔하게 정리됐다. 그 근본 이유는?
 
-A) 각 계정에서 IAM 정책 수동 생성
-B) Organizations + SCP (계정 단위 가드레일)
-C) Permission Boundary
-D) Identity Center
+A) CloudFormation이 더 빠르기 때문
+
+B) 선언형 모델이라 "이전 선언 상태"라는 명확한 목표가 있어 그 상태로 수렴(롤백)할 수 있다 — 명령형은 어디까지 만들었는지 추적해 역순으로 지워야 한다
+
+C) CloudFormation은 실패하지 않는다
+
+D) 모든 리소스를 동시에 만들기 때문
 
 **정답: B**
-해설: SCP는 조직 단위 권한 상한. 멀티 계정 일괄 가드레일에 최적. PB는 개별 IAM 엔티티용.
+
+해설: 선언형 IaC는 "원하는 최종 상태"를 선언하므로, 실패 시 "이전 선언 상태"라는 분명한 목표로 수렴(롤백)할 수 있다. 명령형 스크립트는 절차를 적기 때문에 실패하면 "어디까지 진행됐는지"를 일일이 추적해 역순으로 정리해야 하고, 그 과정이 누락되면 어중간한 상태가 남는다. 이 수렴(convergence) 특성이 선언형의 멱등성과 깔끔한 롤백을 가능케 하는 핵심이며, Drift Detection도 같은 diff 계산을 노출한 기능이다.
 
 ---
 
-**문제 2.** 운영팀이 100개 EC2 인스턴스에 OS 패치를 매월 정기 적용하려 한다.
+**문제 2.** 회사가 새 버전 배포 시 다운타임 0 + 문제 발생 시 즉시 이전 버전으로 복귀를 요구한다. blue/green을 DNS 전환으로 구성했는데, 롤백 후에도 일부 사용자가 한동안 새(문제) 버전으로 계속 간다. 원인과 개선은?
 
-A) Run Command 수동 실행
-B) SSM Patch Manager + Maintenance Window (정기 자동 적용)
-C) CloudFormation
-D) Lambda
+A) Blue/Green은 롤백이 불가능하다
+
+B) DNS TTL 캐싱 때문에 일부 클라이언트가 이전 레코드를 캐시한다 — 즉각 반영이 필요하면 DNS 대신 ALB Target Group 스왑을 쓴다
+
+C) green 환경을 지워야 한다
+
+D) Rolling으로 바꿔야 한다
 
 **정답: B**
-해설: 정기 + 패치 = Patch Manager + MW 조합이 정답. Run Command는 단발.
+
+해설: DNS 기반 blue/green 전환은 TTL 동안 클라이언트가 이전 DNS 응답을 캐시하므로, 전환·롤백이 모든 클라이언트에 즉시 반영되지 않는다. 즉각적이고 일관된 전환이 필요하면 DNS보다 ALB Target Group 스왑(라우팅이 즉시 바뀜)을 쓰는 것이 정석이다. Blue/Green의 즉시 롤백은 구 환경을 지우지 않고 두기에 가능한 것이지만(A 틀림), 전환 메커니즘이 DNS면 TTL 지연이 끼어든다. 추가로 blue/green이 DB를 공유하면 스키마 변경이 또 다른 함정이다.
 
 ---
 
-**문제 3.** 회사가 새 버전 배포 시 다운타임 0 + 문제 발생 시 즉시 이전 버전으로 돌아가야 한다.
+**문제 3.** 보안팀이 EC2 SSH 접속의 키 관리·포트 노출·감사 부담을 모두 없애려 한다. 프라이빗 서브넷(인터넷 게이트웨이 없음) 인스턴스도 대상이다. 가장 적합한 방법과 그 동작 원리는?
+
+A) Bastion host에 강한 SG를 건다
+
+B) Session Manager — SSM Agent가 아웃바운드 443으로 SSM에 연결하므로 인바운드 포트 0으로 셸을 열고, IAM으로 인가·CloudTrail로 감사하며, 프라이빗 서브넷은 VPC Interface Endpoint로 닿는다
+
+C) VPN을 깐다
+
+D) 키 페어를 자주 교체한다
+
+**정답: B**
+
+해설: Session Manager는 EC2 내부 SSM Agent가 SSM 서비스로 아웃바운드(443) 연결을 먼저 맺고, 그 채널로 셸 트래픽을 흘린다. 따라서 인바운드 포트를 하나도 열 필요가 없어 22번 노출과 키 관리가 사라지고, 접근은 IAM 정책으로 인가되며 모든 세션이 CloudTrail에 기록된다. 인터넷 게이트웨이가 없는 프라이빗 서브넷도 VPC Interface Endpoint(PrivateLink)로 SSM에 닿으면 동작한다. 이건 네트워크 위치 신뢰(bastion)를 ID 기반 인가로 바꾼 제로 트러스트의 구현이다.
+
+---
+
+**문제 4.** 어떤 계정의 SCP에 `s3:* Allow`를 명시했는데도 그 계정의 사용자가 S3에 접근하지 못한다. 이유는?
+
+A) SCP에 버그가 있다
+
+B) SCP는 권한을 부여하지 않고 상한(가드레일)만 정의한다 — 실제 권한은 IAM Identity 정책으로 따로 부여해야 하며, SCP의 Allow는 "여기까지 허용 가능"이라는 범위일 뿐이다
+
+C) S3가 그 리전에 없다
+
+D) KMS 키가 없다
+
+**정답: B**
+
+해설: SCP의 Allow는 "이 계정에서 가능한 권한의 천장"을 정의할 뿐, 사용자에게 권한을 직접 부여하지 않는다. IAM 평가는 SCP(상한)·Permission Boundary(상한)·Identity 정책(부여)이 모두 AND로 교집합을 이뤄야 통과하므로, SCP가 허용해도 Identity 정책에 명시적 Allow가 없으면 암묵적 거부로 막힌다. 즉 SCP는 가드레일, 실제 부여는 Identity 정책의 몫이다. 반대로 SCP에 Deny를 넣으면 명시적 Deny가 모든 Allow를 이기므로 강력한 차단이 된다.
+
+---
+
+**문제 5.** RDS DB 마스터 패스워드를 30일마다 무중단으로 자동 교체해야 한다. 가장 적합한 서비스는?
+
+A) Parameter Store SecureString
+
+B) Secrets Manager — RDS 내장 회전 또는 Lambda 회전으로 create→set→test→finish 4단계 무중단 교체를 제공한다
+
+C) KMS
+
+D) IAM Role
+
+**정답: B**
+
+해설: 자동 회전이 필요한 진짜 비밀(DB 패스워드)은 Secrets Manager가 정답이다. RDS·Redshift·DocumentDB는 내장 회전을 지원하고, 회전은 새 비밀 생성→대상 적용→검증→활성 전환의 4단계로 애플리케이션 무중단으로 진행된다. Parameter Store SecureString(A)은 설정 저장용이라 자동 회전 기능이 없다. 더 근본적으로는 RDS IAM 인증으로 비밀 자체를 없애는 방법(STS 임시 자격증명)이 최선일 수 있지만, "패스워드를 회전"이라는 요구에 직접 맞는 서비스는 Secrets Manager다.
+
+---
+
+**문제 6.** 공격자가 SSRF로 EC2의 IAM 임시 자격증명을 탈취해 EC2 외부 IP에서 그 자격증명으로 S3에 접근했다. 이 공격을 진행 중에 탐지할 수 있는 서비스는?
+
+A) Inspector — 취약점을 스캔하므로
+
+B) GuardDuty — CloudTrail·VPC Flow Logs를 상관분석해 "인스턴스에 발급된 자격증명이 그 인스턴스 밖에서 사용됨"(InstanceCredentialExfiltration)을 탐지한다
+
+C) Macie — S3 데이터를 스캔하므로
+
+D) Config
+
+**정답: B**
+
+해설: GuardDuty는 로그 흐름(CloudTrail, VPC Flow Logs, DNS)을 보고 위협 패턴을 탐지하는 행위 기반 서비스다. EC2에 발급된 임시 자격증명이 그 인스턴스가 아닌 외부 IP에서 쓰이면 GuardDuty가 자격증명 탈취 finding을 발동한다. Inspector(A)는 소프트웨어 취약점, Macie(C)는 S3 데이터 내용을 보므로 이런 "행위의 이상"은 못 잡는다. 각 보안 서비스는 "무엇을 보는가"가 탐지 범위를 정의하며, 진행 중인 자격증명 오용 탐지는 GuardDuty의 고유 영역이다.
+
+---
+
+**문제 7.** Elastic Beanstalk 배포에서 "다운타임 0 + 롤백 안전성"을 원하지만 별도 환경(blue/green)을 둘 만큼의 상시 비용은 피하고 싶다. 한 환경 내에서 새 ASG에 전체 새 버전을 띄운 뒤 교체하는 정책은?
 
 A) All at once
+
 B) Rolling
-C) Blue/Green (즉시 DNS/Target Group 전환)
-D) In-place
+
+C) Immutable — 새 ASG에 전체 새 버전을 띄우고 검증 후 교체하므로 다운타임 0, 기존 환경이 그대로 남아 롤백이 깔끔, 일시적으로만 용량 2배
+
+D) Canary
 
 **정답: C**
-해설: Blue/Green은 두 환경 운영 후 DNS/Target Group 전환. 롤백은 다시 전환만 하면 됨.
 
----
-
-**문제 4.** S3에 저장된 고객 데이터에 PII(주민번호 등) 노출 위험을 자동 탐지하려면?
-
-A) Inspector
-B) Macie (S3 PII 탐지)
-C) GuardDuty
-D) Security Hub
-
-**정답: B**
-해설: Macie는 S3 PII 탐지 전용. GuardDuty는 위협, Inspector는 EC2/ECR 취약점.
-
----
-
-**문제 5.** 회사가 EC2에 SSH 접속 시 키 관리·감사가 어렵다. 운영 부하 최소 방법?
-
-A) Bastion Host
-B) SSM Session Manager (CloudTrail 자동 감사, 키 불필요)
-C) VPN
-D) IAM 역할
-
-**정답: B**
-해설: Session Manager는 SSH 키·22 포트 불필요. CloudTrail/CW Logs로 자동 감사.
+해설: Immutable은 기존 ASG는 그대로 두고 새 ASG에 전체 새 버전 인스턴스를 띄운 뒤, 정상 확인 후 트래픽을 옮긴다. 다운타임이 없고, 문제가 생기면 새 ASG만 버리면 되므로 롤백이 깔끔하다. 비용은 교체 과정에서 일시적으로만 2배이고(전환 후 구 ASG 제거), Blue/Green처럼 두 환경을 상시 유지하는 지속 비용은 없다. Rolling(B)은 교체 중 용량이 줄고 롤백이 재롤링이라 느리며, All at once(A)는 다운타임이 있다.
 
 ---
 
 ## 📌 오늘의 요약
 
-1. **CloudFormation**: Change Set / Drift / StackSets / Nested Stack
-2. **배포 정책**: All at once / Rolling / Immutable / Blue/Green / Canary
-3. **SSM 6대 컴포넌트**: Run / State / Patch / MW / Parameter / Session / Automation
-4. **IAM 평가 순서**: SCP → PB → Identity → Resource
-5. **보안 서비스**: GuardDuty(위협) / Inspector(취약점) / Macie(PII) / Security Hub(통합) / Detective(조사)
+1. IaC는 선언형(원하는 상태)이라 멱등적·수렴적 — 실패 시 이전 상태로 깔끔히 롤백. Drift Detection은 desired vs actual의 diff를 노출
+2. 무중단 배포의 비용 = 여분 용량. Blue/Green은 구 환경 유지로 즉시 롤백(단 DB 스키마·DNS TTL 함정), Immutable은 새 ASG로 안전 교체(일시 2배 비용)
+3. Session Manager는 아웃바운드 443만으로 역방향 채널을 만들어 인바운드 포트 0으로 셸을 연다 — IAM 인가 + CloudTrail 감사 = 제로 트러스트 구현
+4. IAM 평가는 결정 트리 — 명시적 Deny가 모든 걸 이기고, 정책은 AND 교집합, SCP는 부여가 아니라 상한(가드레일)
+5. 비밀은 회전 필요 시 Secrets Manager(4단계 무중단 회전), 아니면 Parameter Store. 보안 서비스는 "무엇을 보는가"로 구분(GuardDuty=행위/Inspector=취약점/Macie=데이터/Security Hub=통합/Detective=조사)

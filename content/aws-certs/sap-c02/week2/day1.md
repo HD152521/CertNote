@@ -176,10 +176,10 @@ aws organizations list-accounts-for-parent --parent-id ou-yyyy
 
 **문제 1.** 한 핀테크가 PCI-DSS 인증을 받기 위해 결제 워크로드를 분리하려고 한다. 같은 회사에서 운영하는 인사·물류 워크로드와 같은 AWS 계정에 두고 IAM Role로만 분리하면 어떤 문제가 발생하는가?
 
-A) 비용 증가
+A) 계정당 EBS 스냅샷 비용이 약 2배 증가해 월 청구액이 늘어남
 B) 감사 범위가 전체 계정으로 확대되어 PCI 인증 비용 폭증
-C) RDS Multi-AZ 불가
-D) IAM User가 부족함
+C) PCI 워크로드가 섞이면 해당 계정에서 RDS Multi-AZ 구성이 금지됨
+D) cardholder data 처리량에 비례해 IAM User 쿼터가 빠르게 소진됨
 
 **정답: B**
 해설: PCI-DSS는 cardholder data가 닿는 모든 시스템을 감사 범위로 본다. 같은 계정에 PCI와 non-PCI 워크로드가 섞이면 전체 계정이 감사 대상이 되어 비용·시간이 폭증한다. 별도 계정으로 분리하면 그 계정만 감사 범위. 같은 원리가 HIPAA, SOX에도 적용. Trade-off: 계정 분리 운영 부담 < 감사 비용 절감.
@@ -188,10 +188,10 @@ D) IAM User가 부족함
 
 **문제 2.** Management 계정에 대한 설명으로 옳은 것은?
 
-A) 모든 워크로드를 배포해야 한다
-B) SCP가 자동으로 강하게 적용된다
+A) 결제 집중을 위해 모든 워크로드를 Management 계정에 배포하는 것이 권장된다
+B) Org 루트에 부착한 SCP가 Management 계정에도 자동으로 강하게 적용된다
 C) 결제 마스터이며 워크로드 배포는 표준 가이드라인상 금지
-D) Member 계정과 동일한 SCP가 적용된다
+D) Member 계정에 부착된 것과 동일한 SCP가 상속되어 동일하게 적용된다
 
 **정답: C**
 해설: Management는 결제·Org 관리 전용. 워크로드는 멤버 계정에. SCP는 Management 계정에 적용되지 않는다(의도). 침해되면 모든 멤버 위험하므로 root MFA 하드웨어 토큰·이메일 별도 alias 필수.
@@ -200,10 +200,10 @@ D) Member 계정과 동일한 SCP가 적용된다
 
 **문제 3.** Prod와 Dev를 같은 계정에 두면 발생하는 가장 큰 위험은?
 
-A) 비용 증가
+A) NAT Gateway·데이터 전송 비용이 합산되어 월 청구액이 증가
 B) Dev 실수가 Prod에 영향 (폭발 반경)
-C) IAM 정책 단순화 불가
-D) Region 분리 불가
+C) Dev/Prod 권한이 한 계정에 섞여 IAM 정책을 깔끔히 단순화하기 어려움
+D) 한 계정에 두 환경이 있으면 리전을 분리해 배포할 수 없음
 
 **정답: B**
 해설: 계정 = 강한 격리 경계. Netflix Chaos Engineering의 blast radius 개념. Dev/Prod 같은 계정에서 IAM 정책 실수로 Dev User가 Prod 리소스 접근 가능. Capital One 사고의 핵심 교훈도 같은 계정 격리 부족.
@@ -212,10 +212,10 @@ D) Region 분리 불가
 
 **문제 4.** 100개 계정의 CloudTrail 로그를 단일 위치에 변경 불가능하게 보관하려면?
 
-A) 각 계정 S3에 보관
+A) 각 계정의 S3 버킷에 버킷 정책과 Versioning을 걸어 개별 보관
 B) Log Archive 계정 + S3 Object Lock + Organization Trail
-C) 각 계정 CloudWatch Logs
-D) Athena 직접 쿼리
+C) 각 계정 CloudWatch Logs에 무기한 보존 정책으로 적재
+D) 로그를 그대로 두고 Athena로 직접 쿼리해 필요 시 조회
 
 **정답: B**
 해설: Log Archive 계정 + Object Lock(WORM, Write Once Read Many)이 표준 패턴. Organization Trail은 한 번 켜면 모든 멤버 계정 CloudTrail이 자동으로 같은 S3로 적재. 21 CFR Part 11, SOX 같은 규제에서도 log immutability가 핵심.
@@ -224,10 +224,10 @@ D) Athena 직접 쿼리
 
 **문제 5.** OU를 어떻게 나누어야 하는가?
 
-A) 회사 조직도(영업·개발·인사) 그대로
-B) 리전별로
+A) 회사 조직도(영업·개발·인사 부서)를 그대로 OU로 매핑
+B) 운영 리전별(us/eu/apac)로 OU를 분리
 C) 공통 정책(SCP) 단위로
-D) 개발자 그룹별로
+D) 개발자 개인·팀 그룹별로 OU를 생성
 
 **정답: C**
 해설: OU는 공통 정책이 적용될 계정 묶음. 조직도 그대로 옮기면 OU 간 공통 SCP가 거의 없어 SCP 무의미. SRA 권장은 Security/Infrastructure/Workloads/Sandbox.
@@ -236,10 +236,10 @@ D) 개발자 그룹별로
 
 **문제 6.** Consolidated Billing의 가장 큰 이점은?
 
-A) 보안 강화
+A) 멤버 계정 간 보안 경계가 강화되어 침해 전파가 차단됨
 B) RI·Savings Plans 공유 + 볼륨 할인 합산 + 단일 청구서
-C) IAM 단순화
-D) DR 자동화
+C) 계정 간 IAM 정책이 통합되어 권한 관리가 단순화됨
+D) 멤버 계정 전체에 걸친 DR failover가 자동화됨
 
 **정답: B**
 해설: 모든 계정 사용량 합산 → RI/SP 공유, 단계 할인. CFO·회계 단일 청구서. 결제 통합 자체가 보안을 강화하지는 않는다(별도 SCP/CT 필요).
@@ -248,10 +248,10 @@ D) DR 자동화
 
 **문제 7.** 한 개발자가 자유롭게 실험할 OU 설계 가이드라인은?
 
-A) Workloads OU에 포함
+A) Workloads OU에 포함하고 Prod와 동일한 가드레일을 그대로 적용
 B) Sandbox OU + 제한적 SCP(GPU·고비용 인스턴스 deny) + AWS Budgets 알람 + 자동 정리 Lambda
-C) Management 계정에 IAM User 생성
-D) Security OU에 포함
+C) Management 계정에 실험용 IAM User를 만들어 직접 리소스 생성
+D) Security OU에 포함해 로그·감사 도구와 함께 운영
 
 **정답: B**
 해설: Sandbox OU 패턴 — 격리 + 비용 제어 SCP + 자동 정리. 한 달에 한 번 SC2 Lambda로 사용 안 한 리소스 자동 삭제하는 자동화도 표준. 개발자 실험은 권장되지만 회사 청구서가 폭주하면 안 됨.
@@ -260,10 +260,10 @@ D) Security OU에 포함
 
 **문제 8.** 한 글로벌 회사가 미국·유럽·아시아 3개 지역에서 운영한다. 각 지역마다 별도 규제(GDPR, CCPA). OU 설계는?
 
-A) 단일 OU
+A) 모든 계정을 단일 OU에 두고 SCP를 글로벌로 일괄 적용
 B) 지역별 OU(US/EU/APAC) + 각 안에 Prod/Non-Prod 중첩
-C) 서비스별 OU
-D) 개발자별 OU
+C) 마이크로서비스·애플리케이션 서비스별로 OU를 분리
+D) 개발자 개인·팀별로 OU를 생성해 접근을 분리
 
 **정답: B**
 해설: SCP가 공통 적용될 단위로 묶는 게 OU의 본질. GDPR은 EU OU에만 적용. CCPA는 US OU에만. 공통 PCI-DSS는 별도 OU로 또 분리 가능. 같은 SCP 적용 범위 = 같은 OU.
@@ -272,10 +272,10 @@ D) 개발자별 OU
 
 **문제 9.** 한 보안팀이 새로운 SCP를 시험해 보고 싶다. 실수로 production에 영향을 주면 안 된다. 권장 패턴은?
 
-A) Production OU에 바로 부착하고 모니터링
+A) Production OU에 바로 부착하고 CloudTrail로 영향을 모니터링하며 조정
 B) PolicyStaging OU에 테스트 계정 1개를 두고 부착 후 검증
-C) Management 계정에서 dry-run
-D) Lambda로 시뮬레이션
+C) Management 계정에서 SCP dry-run 모드로 실행해 영향만 미리 확인
+D) Lambda로 IAM 정책 시뮬레이터를 호출해 SCP 효과를 사전 시뮬레이션
 
 **정답: B**
 해설: PolicyStaging OU 패턴이 표준. AWS Config Conformance Pack과 결합해 SCP 효과를 검증한 후 본 OU에 부착. dry-run 모드는 SCP에 공식적으로 없으므로 staging OU가 사실상 dry-run.
@@ -284,10 +284,10 @@ D) Lambda로 시뮬레이션
 
 **문제 10.** 한 회사가 Terraform으로 신규 계정을 자동 생성하고 표준 베이스라인(VPC, IAM, CloudTrail)을 자동 적용하려고 한다. 가장 적합한 도구는?
 
-A) Account Factory (콘솔)
+A) Account Factory 콘솔로 계정을 찍어내고 베이스라인을 수동 적용
 B) AFT (Account Factory for Terraform)
-C) CfCT (Customizations for Control Tower, CloudFormation)
-D) StackSets만
+C) CfCT (Customizations for Control Tower, CloudFormation 기반)
+D) StackSets만으로 베이스라인 스택을 전 계정에 배포
 
 **정답: B**
 해설: AFT는 Terraform 기반 GitOps 흐름과 일치. 계정 단위 커스터마이징(네트워킹 stub, 추가 IAM Role, 태그) 가능. CfCT는 CloudFormation 기반.

@@ -130,10 +130,10 @@ aws iam simulate-principal-policy \
 
 **문제 1.** 한국 사용자 대상 게임 회사가 ap-northeast-2에서 운영 중이다. 운영팀이 us-east-1 장애 중에도 "콘솔 로그인은 가능, 단 새 IAM 사용자 생성·Route 53 레코드 변경 같은 write는 못 할 수 있다"는 사실을 미리 알고 대비하려고 한다. SDK·CLI 측에서 추가로 해야 할 가장 적절한 조치는?
 
-A) STS 글로벌 엔드포인트(sts.amazonaws.com)를 명시적으로 고정한다
+A) STS 글로벌 엔드포인트(sts.amazonaws.com)를 명시적으로 고정하고, 모든 SDK 설정에서 리전 엔드포인트를 비활성화해 단일 진입점으로 통일한다
 B) STS 리전 엔드포인트(sts.ap-northeast-2.amazonaws.com)를 강제하고, IAM·Route 53 같은 글로벌 write는 us-east-1 의존이라는 사실을 런북에 명시한다
-C) Route 53 health check로 us-east-1을 차단한다
-D) IAM Identity Center 인스턴스를 ap-northeast-2에 만들면 us-east-1 의존이 사라진다
+C) Route 53 health check로 us-east-1 엔드포인트를 차단하고, failover 라우팅 정책으로 ap-northeast-2 보조 레코드에 트래픽을 자동 전환한다
+D) IAM Identity Center 인스턴스를 ap-northeast-2에 새로 만들어 home Region을 옮기면 IAM·Route 53의 us-east-1 컨트롤 플레인 의존이 모두 사라진다
 
 **정답: B**
 해설: IAM·Route 53 public zone·CloudFront·Organizations의 컨트롤 플레인은 구조적으로 us-east-1에 있다. 운영팀이 할 수 있는 일은 그 사실을 알고 (a) STS 리전 엔드포인트(`sts.ap-northeast-2.amazonaws.com`)를 명시해 자격증명 발급 같은 데이터 플레인은 ap-northeast-2에서 처리하게 만들고, (b) 글로벌 write는 us-east-1 의존이라는 사실을 런북·DR 시나리오에 명시하는 것이다. STS 글로벌 엔드포인트는 디폴트가 us-east-1 alias라 오히려 us-east-1 장애에 묶인다. Identity Center 인스턴스는 리전을 고를 수 있지만 us-east-1 의존을 완전히 없애지는 못한다.
@@ -142,10 +142,10 @@ D) IAM Identity Center 인스턴스를 ap-northeast-2에 만들면 us-east-1 의
 
 **문제 2.** 한 운영팀이 ASG로 운영 중인 웹 서비스에서 AZ-a 장애 발생 시 모든 트래픽이 끊겼다. 원인 분석 결과 NAT GW가 AZ-a 한 곳에만 있었고, AZ-b·AZ-c의 private subnet 라우팅 테이블도 모두 AZ-a NAT GW를 가리키고 있었다. 정답은?
 
-A) NAT GW를 AZ-b로 옮긴다
+A) NAT GW를 AZ-a에서 AZ-b로 옮기고, 모든 AZ의 private subnet 라우팅을 새 AZ-b NAT GW로 통일해 단일 관리 지점을 유지한다
 B) AZ당 NAT GW를 1개씩 만들고, 각 private subnet의 라우팅 테이블이 자기 AZ의 NAT GW를 가리키게 한다
-C) 모든 NAT GW를 NAT Instance로 교체한다
-D) NAT GW 대신 Internet Gateway를 private subnet에 연결한다
+C) 모든 NAT GW를 ASG로 관리되는 NAT Instance로 교체하고, 단일 인스턴스의 self-heal로 AZ 장애에 대응한다
+D) NAT GW를 제거하고 private subnet 라우팅 테이블에 Internet Gateway를 직접 연결해 아웃바운드 경로를 단순화한다
 
 **정답: B**
 해설: NAT GW는 AZ 단위 리소스이고 자동 페일오버가 없다. 단일 AZ NAT GW에 다른 AZ private subnet 라우팅을 묶어두면 그 AZ가 흔들릴 때 전체 다운된다. **AZ당 1개 NAT GW + 각 private subnet 라우팅 테이블이 자기 AZ NAT GW를 가리키게** 하는 것이 정석. 비용 부담 시 NAT Instance(ASG self-heal)나 Fck-NAT 같은 단순화된 NAT 인스턴스로 GB당 \$0.045 처리비를 줄이는 선택지가 있지만 운영 부담을 동반한다. Internet Gateway는 private subnet에 못 붙는다(붙이면 그 subnet은 더 이상 private이 아니다).
@@ -154,10 +154,10 @@ D) NAT GW 대신 Internet Gateway를 private subnet에 연결한다
 
 **문제 3.** EC2 인스턴스가 KMS CMK로 SSE-KMS 암호화된 S3 버킷에 PUT을 시도하는데 AccessDenied. IAM Policy에 `s3:PutObject Allow`가 있고 Bucket Policy에도 Allow가 있다. CloudTrail에는 `s3.amazonaws.com` 이벤트와 `kms.amazonaws.com` 이벤트 두 줄이 모두 실패로 찍혔다. 가장 가능성 높은 원인은?
 
-A) SCP가 PutObject를 차단하고 있다
+A) Organization SCP가 `s3:PutObject`를 명시적으로 Deny하고 있어 IAM·Bucket Policy의 Allow를 무력화한다
 B) KMS Key Policy에 EC2 Role이 `kms:GenerateDataKey`와 `kms:Decrypt`로 허용돼 있지 않다
-C) S3 버킷이 다른 리전에 있어 cross-region PUT이 막혔다
-D) IMDSv2가 비활성화돼 있어 자격증명을 못 받는다
+C) S3 버킷이 다른 리전에 있어 cross-region PUT이 차단되고, KMS CMK도 리전 종속이라 함께 실패한다
+D) IMDSv2가 비활성화돼 hop limit이 0으로 떨어지면서 인스턴스가 임시 자격증명을 받지 못한다
 
 **정답: B**
 해설: SSE-KMS 객체 PUT은 `kms:GenerateDataKey`(쓰기) / GET은 `kms:Decrypt`(읽기) 권한이 필요하고, IAM Policy + KMS Key Policy 양쪽에서 모두 허용돼야 한다. KMS는 "기본 거부 + Key Policy 명시 허용" 모델이라 IAM Policy만 있고 Key Policy에 해당 principal이 없으면 거부된다. CloudTrail에서 `kms.amazonaws.com` 이벤트와 `s3.amazonaws.com` 이벤트가 동시에 실패로 찍히는 게 전형적 증상. 운영자가 가장 자주 헤매는 함정 중 하나로, 답은 KMS Key Policy에 EC2 Role을 명시적으로 추가하는 것이다.
@@ -166,22 +166,22 @@ D) IMDSv2가 비활성화돼 있어 자격증명을 못 받는다
 
 **문제 4.** 회사가 200명 직원에 60개 AWS 계정을 운영 중이다. 직원이 매주 입·퇴사하며, 보안팀은 access key 회전과 offboarding 누락에 지쳤다. 가장 효율적인 변경은?
 
-A) 모든 직원에게 access key 발급, Lambda로 90일마다 회전
+A) 모든 직원에게 IAM User access key를 발급하고, EventBridge 스케줄 + Lambda로 90일마다 자동 회전 및 비활성 키 폐기
 B) IAM Identity Center 도입 + 외부 IdP(Azure AD / Okta) 페더레이션 + Permission Set 단위 권한 관리
-C) 한 master 계정에 IAM User 두고 다른 계정은 Cross-Account Role로 sts:AssumeRole
-D) Secrets Manager에 모든 access key 저장 후 매일 회전
+C) 한 master 계정에 부서별 IAM User를 두고 다른 59개 계정은 Cross-Account Role + sts:AssumeRole로 hub-and-spoke 접근을 구성
+D) Secrets Manager에 모든 직원 access key를 저장하고 rotation Lambda로 매일 회전하며 CloudTrail로 사용 이력을 감사
 
 **정답: B**
-해설: Identity Center로 IdP에서 한 번 사용자 관리, Permission Set으로 계정·OU별 권한 부여. 직원 퇴사 시 IdP에서 한 번 비활성화하면 전 계정 접근 차단. access key 자체가 거의 사라진다(임시 자격증명만 사용). 2024년부터 AWS가 IAM User를 만들 때 콘솔에 경고를 띄울 만큼 Identity Center가 표준이 됐다. C는 운영은 가능하지만 IAM User 영구 자격증명이 남는다.
+해설: Identity Center로 IdP에서 한 번 사용자 관리, Permission Set으로 계정·OU별 권한 부여. 직원 퇴사 시 IdP에서 한 번 비활성화하면 전 계정 접근 차단. access key 자체가 거의 사라진다(임시 자격증명만 사용). 2024년부터 AWS가 IAM User를 만들 때 콘솔에 경고를 띄울 만큼 Identity Center가 표준이 됐다. C는 운영은 가능하지만 master 계정에 IAM User 영구 자격증명이 남는다. A·D는 회전을 자동화해도 영구 access key 자체가 사라지지 않아 유출·offboarding 누락 위험을 근본적으로 제거하지 못한다.
 
 ---
 
 **문제 5.** 한 회사가 Organizations로 50개 계정을 운영 중이고, 모든 계정에서 `us-east-1`과 `ap-northeast-2` 외 리전을 사용 못하게 강제하려고 한다. 데이터 주권 준수가 목적. 가장 효율적인 방법은?
 
-A) 모든 계정의 모든 IAM Policy에 NotResource Deny 조건을 추가
+A) 모든 계정의 모든 IAM Policy에 `aws:RequestedRegion` NotResource Deny 조건을 추가하고, 신규 정책에도 동일 조건을 강제하는 리뷰 프로세스를 운영
 B) SCP를 root OU에 적용하고, `aws:RequestedRegion` Condition으로 허용 리전 외 Deny + IAM·Route 53 같은 글로벌 서비스는 NotAction으로 예외
-C) Config Rule `region-restriction`으로 비준수 탐지 후 SNS 알림
-D) CloudFormation Stack Set으로 IAM Policy를 모든 계정에 일괄 배포
+C) Config Rule `region-restriction`으로 비준수 리소스를 탐지하고 SNS 알림 + SSM Automation으로 위반 리소스를 자동 종료
+D) CloudFormation Stack Set으로 region-deny IAM Policy를 모든 계정에 일괄 배포하고, drift detection으로 변경을 감지
 
 **정답: B**
 해설: SCP는 계정·OU 단위 가드레일로 전 계정 일괄 적용. `aws:RequestedRegion` 조건으로 허용 리전 외 Deny. IAM / Route 53 / CloudFront / Organizations 같은 글로벌 서비스는 내부적으로 us-east-1로 라우팅되므로 NotAction으로 예외 처리해야 한다(안 하면 IAM User 생성조차 막힘). Config는 탐지만 가능하고 차단은 못 한다.
@@ -190,10 +190,10 @@ D) CloudFormation Stack Set으로 IAM Policy를 모든 계정에 일괄 배포
 
 **문제 6.** 운영자가 개발자에게 IAM Role 생성을 위임하되, 그 Role의 effective permission이 회사 표준 정책 범위를 넘지 못하게 강제하려고 한다. 어떤 조합이 정답인가?
 
-A) 개발자에게 AdministratorAccess
+A) 개발자에게 AdministratorAccess를 부여하되, CloudTrail + Config로 과도한 권한 사용을 사후 탐지해 알림
 B) 개발자에게 `iam:CreateRole`·`iam:AttachRolePolicy` Allow + `iam:PermissionsBoundary` Condition으로 회사 표준 boundary를 강제
-C) SCP로 개발자가 만든 IAM Role의 권한 범위를 제한
-D) Service Catalog로만 Role 생성을 허용
+C) SCP를 개발자 계정 OU에 적용해 개발자가 만든 IAM Role의 effective permission 상한을 회사 표준으로 제한
+D) Service Catalog 제품으로만 Role 생성을 허용하고, 승인된 권한 템플릿 외의 모든 `iam:CreateRole`을 Deny
 
 **정답: B**
 해설: Permission Boundary 패턴이다. 개발자가 만든 Role의 effective permission = Role의 정책 ∩ boundary. 위임 IAM Policy에 `iam:PermissionsBoundary` 조건을 걸어 boundary를 안 붙이면 CreateRole 자체가 실패하게 만든다. SCP는 계정 전체에 적용되므로 개발자만 제약하는 용도엔 너무 광범위하다. Service Catalog는 가능한 선택지지만 일상적인 Role 생성을 모두 카탈로그로 강제하면 개발 속도가 떨어진다.
@@ -202,10 +202,10 @@ D) Service Catalog로만 Role 생성을 허용
 
 **문제 7.** 한 회사가 50개 member 계정의 CloudTrail 로그를 한 곳에 모으고, 운영자가 그 로그를 수정·삭제하지 못하게 하려고 한다. PCI-DSS 10.5.5 요구사항 충족이 목적. 표준 패턴은?
 
-A) Member 계정마다 trail 만들고 cross-account 권한으로 모음
+A) Member 계정마다 개별 trail을 만들고 cross-account IAM 권한으로 중앙 S3 버킷에 로그를 모은 뒤 버킷 정책으로 삭제를 제한
 B) Organization Trail + Log Archive Account의 격리된 S3 버킷 + S3 Object Lock (Compliance 모드, WORM)
-C) CloudWatch Logs Subscription으로 모든 계정 로그를 한 Log Group으로 모음
-D) AWS Backup으로 trail을 매일 백업
+C) CloudWatch Logs Subscription Filter + Cross-Account Destination으로 모든 계정 로그를 중앙 Log Group에 실시간 집계
+D) AWS Backup으로 trail의 S3 버킷을 매일 백업하고, 별도 vault에 보관해 변조 시 복원
 
 **정답: B**
 해설: Organization Trail로 모든 member 계정(신규 포함)에 자동 활성화, Log Archive Account의 격리된 S3 버킷에 적재, S3 Object Lock Compliance 모드로 운영자조차 변조 불가. AWS Landing Zone / Control Tower의 표준 패턴이며 PCI-DSS 10.5.5 ("audit trail의 무결성 보장") 요구사항을 정확히 충족한다. CloudWatch Logs Subscription은 실시간 분석엔 좋지만 변조 방지 측면에선 S3 Object Lock에 못 미친다.
@@ -214,22 +214,22 @@ D) AWS Backup으로 trail을 매일 백업
 
 **문제 8.** 운영팀이 EC2 인스턴스의 메타데이터 SSRF 공격을 막으려고 한다. 가장 강력한 운영 표준 4중 방어는?
 
-A) SG로 169.254.169.254 차단
+A) Security Group 아웃바운드 규칙으로 169.254.169.254/32 목적지를 차단하고, 모든 인스턴스에 일괄 적용
 B) IMDSv2 강제 + hop limit 1 + SCP로 IMDSv1 인스턴스 생성 차단 + Config rule `ec2-imdsv2-check`로 기존 인스턴스 비준수 탐지·자동 수정
-C) IAM 역할을 인스턴스에 안 붙임
-D) NACL로 메타데이터 IP 차단
+C) IAM instance profile을 인스턴스에 부착하지 않고, 애플리케이션엔 Secrets Manager로 자격증명을 별도 주입
+D) Subnet NACL의 inbound/outbound 규칙으로 169.254.169.254 메타데이터 IP 트래픽을 명시적으로 Deny
 
 **정답: B**
-해설: 169.254.169.254는 link-local 주소라 SG·NACL로 막을 수 없다(라우팅 테이블이 아니라 hypervisor 레벨에서 처리). 4중 방어 = ① IMDSv2 강제(PUT 세션 토큰), ② hop limit 1(컨테이너 outside로 메타데이터 못 누출), ③ SCP로 `RunInstances`의 `MetadataOptions.HttpTokens=required`가 아닌 경우 Deny(신규 생성 차단), ④ Config rule로 기존 인스턴스 탐지·자동 수정. C는 SDK가 자격증명을 못 받아 비현실적.
+해설: 169.254.169.254는 link-local 주소라 SG·NACL로 막을 수 없다(라우팅 테이블이 아니라 hypervisor 레벨에서 처리). 4중 방어 = ① IMDSv2 강제(PUT 세션 토큰), ② hop limit 1(컨테이너 outside로 메타데이터 못 누출), ③ SCP로 `RunInstances`의 `MetadataOptions.HttpTokens=required`가 아닌 경우 Deny(신규 생성 차단), ④ Config rule로 기존 인스턴스 탐지·자동 수정. C는 IAM 역할을 안 붙이면 메타데이터 자격증명 노출은 막히지만 Secrets Manager 자격증명 주입은 운영 부담이 크고 SSRF가 노릴 다른 내부 엔드포인트는 그대로라 부분적 방어에 그친다.
 
 ---
 
 **문제 9.** 운영자가 100개 계정의 EC2 인스턴스 인벤토리를 한 번에 보고 싶다. 보안팀은 OS 패치 적용 현황·태그·인스턴스 타입을 알고 싶어 한다. 가장 효율적인 방법은?
 
-A) 각 계정에 로그인해서 EC2 목록 확인
+A) 각 계정에 SSO로 순차 로그인해 EC2 콘솔 목록을 CSV로 내보낸 뒤 스프레드시트로 수동 병합
 B) Resource Explorer Multi-Account 검색 또는 Systems Manager Inventory + Resource Data Sync로 S3에 집계 후 Athena 쿼리
-C) Lambda로 매일 100개 계정을 순회하며 describe-instances 호출
-D) CloudFormation Stack Set으로 EC2 메타데이터 수집 스크립트 배포
+C) 중앙 계정 Lambda가 cross-account role로 매일 100개 계정을 순회하며 describe-instances 호출 후 DynamoDB에 적재
+D) CloudFormation Stack Set으로 EC2 메타데이터 수집 스크립트를 전 계정에 배포하고 결과를 SNS로 중앙 집계
 
 **정답: B**
 해설: Resource Explorer를 organization 단위로 활성화하면 모든 계정 리소스를 한 검색에서 조회. OS 패치·소프트웨어 인벤토리까지 보려면 SSM Inventory + Resource Data Sync로 모든 계정 데이터를 한 S3 버킷에 모은 뒤 Athena·QuickSight로 분석. Lambda 순회는 가능하지만 운영 부담과 throttling 문제. 2022년 출시된 Resource Explorer가 AWS 공식 답이다.
@@ -238,10 +238,10 @@ D) CloudFormation Stack Set으로 EC2 메타데이터 수집 스크립트 배포
 
 **문제 10.** 한 운영팀이 새벽 3시 us-east-1 장애 알림을 받기 위해 EventBridge `aws.health` 룰을 만들었다. 누락 없이 모든 이벤트를 받기 위한 표준 패턴은?
 
-A) us-east-1에 한 룰
+A) us-east-1에 `aws.health` 룰 하나만 만들고, 글로벌 서비스 이벤트가 모두 us-east-1로 모인다는 점에 의존
 B) us-east-1과 us-west-2 양쪽에 동일한 룰을 만들고, 같은 SNS 토픽으로 라우팅 (중복 알람은 dedupe 키로 제거)
-C) 활성화된 모든 리전에 룰을 만든다
-D) 관리 계정에만 한 번 만들면 자동으로 전 리전 전 계정에 적용된다
+C) 워크로드가 없는 리전까지 포함해 활성화된 모든 리전에 동일한 `aws.health` 룰을 만들어 누락 가능성을 0으로 만든다
+D) 관리 계정에 Organizational Health View를 켜고 룰을 한 번만 만들면 자동으로 전 리전·전 계정 이벤트가 라우팅된다
 
 **정답: B**
 해설: AWS Health API는 us-east-1과 us-west-2 두 곳에서 active-active로 운영되며 자동 페일오버한다. EventBridge `aws.health` source 룰을 양쪽 리전에 만들어야 한쪽이 장애일 때도 누락이 없다. Organizational Health View를 켜면 모든 계정 이벤트를 management account에서도 받을 수 있고, member 계정에서도 자체 룰을 만드는 게 표준.
@@ -250,10 +250,10 @@ D) 관리 계정에만 한 번 만들면 자동으로 전 리전 전 계정에 �
 
 **문제 11.** 보안 운영자가 5개 부서별로 200대 EC2의 시작/중지 권한을 분리해야 한다. 100명 직원과 200대 EC2가 있고, 직원이 매주 입·퇴사하며 부서 이동도 잦다. 가장 확장성 있는 방식은?
 
-A) 부서별로 IAM Group 5개를 만들고 EC2 인스턴스마다 별도 IAM Policy 200개
+A) 부서별 IAM Group 5개를 만들고, 인스턴스마다 ARN을 지정한 별도 IAM Policy 200개를 작성해 Group에 매핑
 B) 직원의 IdC `PrincipalTag/Department`와 EC2 `ResourceTag/Department`가 일치할 때만 `ec2:StartInstances`·`ec2:StopInstances`를 Allow하는 ABAC 정책 1개
-C) 부서별 IAM User 5명을 만들어 공유 사용
-D) Service Catalog로 EC2 launch만 허용
+C) 부서별 공용 IAM User 5명을 만들어 access key를 부서 내 공유하고, 부서 이동 시 비밀번호만 재설정
+D) Service Catalog 제품으로 부서별 EC2 launch·start·stop을 래핑하고, 승인 워크플로로 권한을 통제
 
 **정답: B**
 해설: ABAC(Attribute-Based Access Control) 패턴. 정책 하나로 N×M 권한 조합을 처리. 직원 부서가 IdP에서 바뀌면 SAML attribute가 자동 갱신되며 AWS 권한도 자동 변경. NIST SP 800-162 ABAC 표준의 구현. RBAC로 처리하면 부서·역할 조합마다 Group이 늘어 정책 폭증. IAM User 공유는 보안 사고의 입구다.
@@ -262,10 +262,10 @@ D) Service Catalog로 EC2 launch만 허용
 
 **문제 12.** 보안 운영자가 100개 계정의 GuardDuty finding·Security Hub 점수·Inspector vulnerability·Macie 데이터 분류 결과를 한 곳에서 보려고 한다. 표준 패턴은?
 
-A) 각 계정 콘솔에 일일이 로그인
+A) 각 계정 콘솔에 SSO로 일일이 로그인해 4개 서비스 finding을 확인하고 주간 리포트로 수동 취합
 B) Security Account를 GuardDuty / Security Hub / Inspector / Macie 각각의 Delegated Administrator로 지정하고, member 계정은 자동 enrollment
-C) Lambda로 각 계정 finding을 매시간 수집해 별도 DB에 적재
-D) EventBridge로 SNS에 전송 후 별도 SIEM 구축
+C) 중앙 Lambda가 cross-account role로 각 계정의 finding을 매시간 수집해 별도 RDS·DynamoDB에 적재 후 대시보드 제공
+D) 각 계정 EventBridge 룰로 finding을 중앙 SNS에 전송한 뒤 자체 구축한 SIEM(OpenSearch)에서 통합 분석
 
 **정답: B**
 해설: Delegated Administrator 패턴은 GuardDuty·Security Hub·Inspector·Macie·Detective 같은 보안 서비스의 표준 중앙화 방식. management account 부담을 분산하면서 한 보안 계정이 organization 전체를 관리. 2020년 이후 모든 보안 서비스가 이 패턴을 지원하며, AWS Landing Zone / Control Tower의 표준 구성. D처럼 EventBridge로 외부 SIEM(Splunk·Datadog) 보내는 건 보완 패턴으로 가능하다.

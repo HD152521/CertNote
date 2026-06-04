@@ -266,10 +266,10 @@ jobs:
 
 **문제 1.** GitHub Actions에서 AWS에 배포할 때 가장 안전한 자격 증명 관리 방법은?
 
-A) IAM User 액세스 키를 GitHub Secrets에 저장
+A) 전용 IAM User의 장기 액세스 키를 GitHub Secrets에 저장하고 주기적으로 회전
 B) OIDC 페더레이션으로 IAM Role의 단기 자격 증명 사용
-C) EC2 Instance Profile을 GitHub에 공유
-D) Personal Access Token으로 AWS 호출
+C) EC2 Instance Profile 자격 증명을 추출해 GitHub Secrets에 공유하고 워크플로가 사용
+D) GitHub Personal Access Token으로 AWS API Gateway를 거쳐 리소스에 접근
 
 **정답: B**
 해설: 정적 키 자체가 없는 OIDC가 표준. A는 키 노출 시 영향 광범위. C/D는 기술적 의미 부정확.
@@ -278,10 +278,10 @@ D) Personal Access Token으로 AWS 호출
 
 **문제 2.** OIDC Trust Policy에 `sub`을 `repo:my-org/*:ref:refs/heads/main`으로 설정하면 어떤 위험이 있는가?
 
-A) 위험 없음
+A) 위험 없음 — `ref:refs/heads/main` 조건이 이미 main 브랜치로 컨텍스트를 충분히 제한하므로 안전
 B) 조직 내 어떤 리포지토리든 main 브랜치라면 권한 가정 가능 — 한 repo 침해 시 prod 권한 도달
-C) PR에서 자격 증명 사용 가능
-D) Tag 푸시에서 자격 증명 사용 가능
+C) main 외 브랜치의 PR 워크플로에서도 이 Role을 assume해 자격 증명을 사용할 수 있게 됨
+D) `refs/tags/*` 패턴이 포함돼 임의 Tag 푸시 워크플로에서도 prod Role을 가정 가능
 
 **정답: B**
 해설: 와일드카드 repo는 횡적 침해 경로를 만든다. 항상 specific repo로 명시. 가장 안전한 패턴은 `environment:production` 기반.
@@ -290,10 +290,10 @@ D) Tag 푸시에서 자격 증명 사용 가능
 
 **문제 3.** GitHub Actions 워크플로에서 OIDC 토큰이 발급되지 않는다. 가장 먼저 확인할 것은?
 
-A) IAM Role 이름 오타
+A) `role-to-assume`에 지정한 IAM Role ARN의 이름 오타 또는 계정 ID 불일치
 B) 워크플로 YAML에 `permissions: id-token: write` 명시 여부
-C) AWS Region 설정
-D) GitHub Actions 사용량 한도
+C) `configure-aws-credentials`의 `aws-region` 누락 또는 STS 리전 엔드포인트 설정
+D) GitHub Actions의 월간 무료 분량 소진 또는 동시 실행 사용량 한도 초과
 
 **정답: B**
 해설: `id-token: write` 누락이 압도적 1위 원인. 기본값이 `none`이므로 명시 안 하면 토큰 발급 자체가 안 됨.
@@ -302,10 +302,10 @@ D) GitHub Actions 사용량 한도
 
 **문제 4.** "프라이빗 RDS에 마이그레이션 스크립트를 실행하는 빌드"가 필요하다. 가장 적절한 구성은?
 
-A) GitHub-hosted Runner에서 RDS 공인 엔드포인트 활성화
+A) GitHub-hosted Runner가 접근하도록 RDS에 퍼블릭 엔드포인트를 켜고 SG로 runner IP를 허용
 B) Self-hosted Runner를 VPC에 배치 또는 CodeBuild VPC 모드 사용
-C) Lambda에서 모든 마이그레이션 실행
-D) Bastion EC2에 SSH 후 수동 실행
+C) VPC 안의 Lambda에 마이그레이션 로직을 옮겨 워크플로가 그 함수를 호출해 실행
+D) Bastion EC2에 워크플로가 SSH로 접속해 마이그레이션 스크립트를 원격 실행
 
 **정답: B**
 해설: 프라이빗 리소스 접근 = VPC 내부 실행 환경. A는 보안 안티패턴(RDS public 노출). D는 자동화 부재.
@@ -314,10 +314,10 @@ D) Bastion EC2에 SSH 후 수동 실행
 
 **문제 5.** GitHub Environments의 Required Reviewers 기능은 어떤 단계의 보호인가?
 
-A) 코드 머지 단계 (PR 머지)
+A) 코드 머지 단계 — PR을 main에 머지하기 전 지정 리뷰어의 승인을 요구
 B) 워크플로 실행 단계 (deploy job 시작 전 승인)
-C) AWS IAM 단계
-D) CloudFormation Stack 생성 단계
+C) AWS IAM 단계 — Role assume 시점에 IAM이 승인자를 확인해 자격 발급을 보류
+D) CloudFormation Stack 생성 단계 — 스택 변경 적용 전 Change Set 승인을 요구
 
 **정답: B**
 해설: GitHub Environments는 deploy job 직전 게이트. PR 머지 보호는 Branch Protection이 담당하는 별도 계층.
@@ -326,10 +326,10 @@ D) CloudFormation Stack 생성 단계
 
 **문제 6.** Trust Policy의 `aud` 조건 기본값과 변경 이유는?
 
-A) 기본 `sts.amazonaws.com`. 변경 이유 없음
+A) 기본값은 `sts.amazonaws.com`이며 STS가 강제하는 고정값이라 변경할 이유도 방법도 없음
 B) 기본 `sts.amazonaws.com`. 다중 조직 공유 환경에서 audience 분리로 토큰 도용 방지
-C) 기본 `github.com`. 변경 불가
-D) 기본은 OIDC Provider 자체
+C) 기본값은 `github.com`(IdP 도메인)이며 trust policy에 하드코딩돼 변경 불가
+D) 기본값은 OIDC Provider URL 자체(`token.actions.githubusercontent.com`)로 설정됨
 
 **정답: B**
 해설: `aud`를 조직별로 다르게 두면 다른 조직의 GitHub Actions가 우리 Role을 훔쳐 사용 불가. 다중 IdP 환경에서 필수 강화.
@@ -338,10 +338,10 @@ D) 기본은 OIDC Provider 자체
 
 **문제 7.** Reusable workflow를 통해 100개 repo가 공통 deploy 로직을 사용한다. Trust Policy `sub` 조건을 어떻게 작성해야 하는가?
 
-A) 100개 repo 각각의 ref를 OR로 나열
+A) 100개 repo 각각의 `repo:my-org/<name>:ref:...` 값을 `StringLike`에 OR 배열로 모두 나열
 B) `job_workflow_ref:my-org/shared-workflows/.github/workflows/deploy.yml@refs/heads/main`로 정의 repo + ref 기준
-C) 와일드카드 `repo:my-org/*`
-D) 100개 IAM Role을 만든다
+C) 와일드카드 `repo:my-org/*`로 조직 내 모든 repo가 한 조건에 매칭되게 설정
+D) repo마다 전용 IAM Role 100개를 만들어 각 trust policy에 해당 repo만 허용
 
 **정답: B**
 해설: Reusable workflow의 OIDC sub은 호출 repo가 아닌 정의 repo + ref가 기준. `job_workflow_ref` claim을 trust policy에 사용. 한 trust 조건으로 100개 repo 호출 커버.
@@ -350,10 +350,10 @@ D) 100개 IAM Role을 만든다
 
 **문제 8.** Fork된 PR이 base repo의 secrets에 접근하는 시나리오의 위험은?
 
-A) `pull_request` 이벤트는 fork에서 secrets 비공개라 위험 없음
+A) `pull_request` 이벤트는 fork에서 secrets가 비공개로 마스킹되므로 어떤 경우에도 위험 없음
 B) `pull_request_target` 이벤트는 base 컨텍스트로 실행되어 fork PR이 secrets/OIDC 권한 접근 가능 → fork에서 임의 코드 실행 시 prod 권한 탈취 위험
-C) GitHub Actions는 fork PR에서 무조건 차단
-D) 위험 없음
+C) GitHub Actions는 fork에서 온 PR의 워크플로 실행을 무조건 차단하므로 노출 경로가 없음
+D) fork PR은 읽기 전용 토큰만 받으므로 secrets에 닿아도 권한이 없어 위험 없음
 
 **정답: B**
 해설: `pull_request`는 fork 안전, `pull_request_target`은 base 컨텍스트라 secrets 접근 가능. 조직 차원에서 `pull_request_target` 사용 금지가 일반적.
@@ -362,10 +362,10 @@ D) 위험 없음
 
 **문제 9.** OIDC로 발급받은 임시 자격 증명의 기본 유효 시간과 최대치는?
 
-A) 기본 15분, 최대 1시간
+A) 기본 15분, 최대 1시간 — STS 임시 자격의 최소 단위에 맞춰 짧게 고정
 B) 기본 1시간, 최대 12시간(Role MaxSessionDuration 설정)
-C) 기본 12시간, 최대 24시간
-D) 무제한
+C) 기본 12시간, 최대 24시간 — 야간 대규모 빌드를 한 토큰으로 커버하도록 길게
+D) 무제한 — 워크플로가 끝날 때까지 자격 증명이 유지되며 만료되지 않음
 
 **정답: B**
 해설: AssumeRoleWithWebIdentity 기본 1시간. Role 속성 `MaxSessionDuration`을 늘리면 최대 12시간까지 가능. 빌드가 12시간 이상이면 워크플로 분할 필요.
@@ -375,9 +375,9 @@ D) 무제한
 **문제 10.** OIDC + GitHub Environments + Trust Policy `sub: environment:production` 조합을 만들었다. 누군가 main 브랜치에서 직접 prod deploy job을 실행하려 한다. 어떻게 차단되는가?
 
 A) GitHub Environment의 Required Reviewers가 사람 승인 대기 → 미승인 시 job 시작 안 함 → JWT 발급 안 함 → AWS Role assume 시도조차 발생 안 함
-B) AWS IAM이 자동 거부
-C) GitHub이 main 브랜치를 자동 격리
-D) 차단 안 됨
+B) AWS IAM이 trust policy의 `sub` 불일치를 감지해 AssumeRoleWithWebIdentity를 자동 거부
+C) GitHub이 보호된 environment를 참조하는 main 브랜치 job을 자동 격리해 실행을 차단
+D) 차단되지 않음 — main은 기본 브랜치라 environment 게이트가 적용되지 않고 그대로 배포됨
 
 **정답: A**
 해설: GitHub Environments의 게이트는 job 시작 전에 적용된다. 승인이 없으면 JWT 자체가 발급되지 않으므로 AWS는 호출조차 받지 않는다. 이게 이중 방어의 핵심 — AWS IAM에 도달하기 전에 GitHub이 막는다.

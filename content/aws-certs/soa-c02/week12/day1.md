@@ -1,309 +1,219 @@
-# Day 1 - 도메인 1·2 복습 (모니터링·로깅·수정 + 안정성·BCP)
+# Day 1 - 도메인 1·2 다시 읽기, 관측과 복원력이 한 흐름이 되는 자리
 
-📅 날짜: Week 12 (Day 1)
-🎯 주제: SOA-C02 도메인 1·2 핵심 압축 정리
-⏱️ 학습 시간: 약 90분
+시험을 코앞에 두고 도메인을 "복습"한다는 건 보통 표를 다시 외우는 일로 끝난다. 하지만 SOA-C02 도메인 1(모니터링·로깅·수정 20%)과 도메인 2(안정성·BCP 16%)는 사실 **하나의 운영 루프**를 앞뒤로 자른 것이다 — 관측해서 이상을 잡고(도메인 1), 그 이상이 장애로 번지기 전에 시스템이 스스로 견디게 만드는 것(도메인 2). 둘을 따로 외우면 시험의 시나리오 문제, 즉 "관측 → 감지 → 대응 → 복구 → 감사"가 한 문장에 섞여 나오는 문제에서 길을 잃는다.
 
----
+이 글은 두 도메인의 키워드 표를 그냥 나열하는 대신, 각 서비스가 **왜 그렇게 설계됐는지**, CloudWatch의 메트릭이 실제로 어떤 시간 해상도로 저장되는지, CloudTrail과 Config가 근본적으로 다른 데이터 모델을 쓰는 이유, 그리고 RTO/RPO라는 BCP의 두 숫자가 어디서 왔는지를 파고든다. 복습이되, 한 겹 더 깊은 복습이다.
 
-## 🎯 학습 목표
+## Observability는 모니터링과 어떻게 다른가 — 제어 이론에서 온 단어
 
-- 도메인 1(모니터링·로깅·수정 20%)과 도메인 2(안정성·BCP 16%) 통합 36%의 핵심을 한 번에 정리한다
-- 시험 자주 출제되는 "키워드 → 정답 서비스" 매핑을 암기한다
-- 도메인 통합 시나리오 5문항으로 점검한다
+"모니터링"과 "Observability(관측가능성)"는 흔히 같은 말로 쓰이지만 출신이 다르다. Observability는 1960년 제어 이론가 루돌프 칼만(Rudolf Kálmán)이 정의한 개념이다 — **시스템의 외부 출력만 보고 내부 상태를 얼마나 추론할 수 있는가**가 그 시스템의 observability다. 칼만은 동시에 controllability(제어가능성)도 정의했는데, 이 둘은 현대 제어 시스템 설계의 양대 축이다.
 
----
+이 정의를 클라우드 운영에 옮기면 핵심이 분명해진다. 모니터링은 "내가 미리 정해둔 질문에 답하는 것"이다 — CPU가 80%를 넘는가? 디스크가 가득 찼는가? 반면 Observability는 "미리 예상하지 못한 질문에도 답할 수 있는 능력"이다. 운영에서 진짜 무서운 장애는 항상 예상 밖에서 온다. 그래서 Metric(무엇이 얼마나)·Log(무슨 일이 있었나)·Trace(요청이 어디를 거쳤나) 세 축을 모두 남겨두는 것이다 — 세 축이 충분히 풍부하면, 장애가 터진 뒤에도 외부 신호만으로 내부에서 무슨 일이 있었는지 역추적할 수 있다.
 
-## 🧩 사전 지식 (CS 기초)
+> 💡 **관련 이론**: Observability 3축(Metric/Log/Trace)은 각각 데이터의 차원이 다르다. Metric은 시간에 따른 숫자(시계열)로, 저장 비용이 가장 싸고 집계가 빠르지만 "왜"를 모른다. Log는 이산 이벤트(텍스트)로, 맥락이 풍부하지만 양이 많고 검색이 비싸다. Trace는 분산 시스템에서 하나의 요청이 여러 서비스를 거친 인과 사슬로, 마이크로서비스의 병목을 찾는 유일한 수단이다. 이 셋은 카디널리티(cardinality, 고유 값의 수) 측면에서 다르게 다뤄야 한다 — 메트릭에 user_id 같은 고카디널리티 차원을 dimension으로 넣으면 시계열이 폭발해 비용이 치솟는다. 그래서 AWS는 고카디널리티 정보는 로그(Logs Insights)나 X-Ray Trace로 밀고, 메트릭 dimension은 의도적으로 낮은 카디널리티(인스턴스 타입, AZ 등)로 제한하도록 설계됐다.
 
-- **Observability 3축**: Metric / Log / Trace
-- **MTTR**: 평균 복구 시간. 자동화로 줄임
-- **RTO/RPO**: 복구 시간 목표 / 복구 시점 목표 (BCP 핵심)
-- **Idempotency**: 멱등성. 자동 수정의 안전성 보장
+## CloudWatch 메트릭의 시간 해상도 — 1분과 1초 사이에 숨은 비용 구조
 
----
+CloudWatch를 "복습"할 때 대부분 표준 메트릭 5분/Detailed 1분만 외운다. 하지만 그 숫자 뒤에는 CloudWatch의 내부 저장 모델이 있고, 시험은 이 모델의 결과(데이터 보존·해상도·비용)를 묻는다.
 
-## 📖 이론 내용
+EC2 표준 메트릭은 기본 **5분 간격**이다. Detailed Monitoring을 켜면 1분으로 내려가지만 추가 요금이 붙는다. 그런데 PutMetricData로 직접 올리는 커스텀 메트릭은 **고해상도(high-resolution)**, 즉 1초 단위까지 가능하다. 이 1분과 1초 사이의 차이는 단순한 옵션이 아니라 CloudWatch가 데이터를 **자동으로 다운샘플링**하는 구조와 얽혀 있다.
 
-### 1. 도메인 1: 모니터링·로깅·수정 (20%)
+CloudWatch는 데이터를 시간이 지날수록 거친 해상도로 굴린다. 1초 해상도 데이터는 3시간만 보관하고, 1분 데이터는 15일, 5분 데이터는 63일, 1시간 데이터는 455일(15개월) 보관한다. 즉 오래된 데이터를 조회하면 자동으로 더 큰 시간 단위로 집계된 값만 남는다. 이건 시계열 데이터베이스의 보편적 패턴인 **roll-up(롤업)**이다 — 세밀한 데이터는 비싸므로 최근 것만 세밀하게, 옛날 것은 거칠게 보관해 저장 비용과 조회 성능을 맞춘다.
 
-#### 1-1. CloudWatch Metrics
+| 해상도 | 보존 기간 | 용도 |
+|--------|-----------|------|
+| 1초 (high-res custom) | 3시간 | 급격한 스파이크 포착 (예: 배포 직후 1초 단위 지연) |
+| 1분 | 15일 | 일반 운영 알람 |
+| 5분 | 63일 | 표준 EC2 메트릭, 주간 추세 |
+| 1시간 | 455일 (15개월) | 장기 용량 계획 |
 
-| 항목 | 핵심 |
-|------|------|
-| 표준 메트릭 | EC2 기본은 5분, Detailed 1분 (추가 비용) |
-| 사용자 지정 | PutMetricData API, namespace + dimension |
-| **메모리·디스크는 표준 X** | CloudWatch Agent 필수 |
-| Anomaly Detection | ML 학습 후 이상치 알람 |
+> 🔍 **더 깊이**: 고해상도 메트릭의 진짜 함정은 **알람 평가 주기**에 있다. 표준 메트릭으로 만든 알람은 최소 60초 주기로 평가하지만, 고해상도(1초) 메트릭에는 10초·30초 주기 알람을 걸 수 있다. 빠른 알람은 더 빠른 대응을 가능케 하지만, 짧은 평가 주기는 일시적 스파이크에 과민 반응해 알람이 펄럭이는(flapping) 문제를 낳는다. 그래서 실무에서는 고해상도 알람에 "M of N" 데이터포인트 조건(예: 최근 5개 평가 중 3개가 위반)을 걸어 노이즈를 흡수한다. 시험에서 "급격한 트래픽 스파이크를 더 빠르게 감지"가 나오면 고해상도 커스텀 메트릭 + 짧은 평가 주기가 단서지만, "알람이 너무 자주 울린다"가 나오면 M-of-N 또는 평가 주기 조정이 답이다.
 
-#### 1-2. CloudWatch Logs
+## CloudTrail과 Config — 같은 "이력"인데 데이터 모델이 정반대다
 
-| 항목 | 핵심 |
-|------|------|
-| Log Group / Stream | 그룹 = 보존정책 단위 |
-| Subscription Filter | Kinesis/Lambda/OpenSearch 실시간 전송 |
-| Metric Filter | 패턴 매칭 → 메트릭 변환 |
-| Logs Insights | SQL-like 쿼리. 트러블슈팅 |
-| EMF | JSON 로그 안에 메트릭 포함 → 비용 절감 |
+시험에서 가장 많이 틀리는 쌍이 CloudTrail과 Config다. "누가 삭제했나 = CloudTrail, 이전 설정은 = Config"로 암기하면 표면은 맞지만, 둘이 **왜** 다른지를 모르면 변형 문제에서 무너진다. 핵심은 두 서비스가 기록하는 데이터의 **본질**이 다르다는 것이다.
 
-#### 1-3. Alarms
+CloudTrail은 **이벤트 기반(event-sourced)** 모델이다. AWS API가 호출될 때마다 "누가(principal), 언제(timestamp), 무엇을(eventName), 어디서(sourceIPAddress)" 하나의 이벤트를 남긴다. 이건 동사(verb)의 기록이다 — `TerminateInstances`, `DeleteBucket`, `AttachRolePolicy`. CloudTrail에게 "지금 이 인스턴스의 상태"를 물어볼 수는 없다. CloudTrail은 행위의 흐름만 알 뿐, 리소스의 현재 모습은 모른다.
 
-| 종류 | 용도 |
-|------|------|
-| Standard | 단일 메트릭 임계 |
-| Composite | 여러 알람 AND/OR 결합 (알람 폭주 방지) |
-| Anomaly Detection | 동적 임계 (밴드) |
-| M of N | N개 평가 중 M개 위반 시 발동 |
+Config는 **상태 기반(state-snapshot)** 모델이다. 리소스가 변경될 때마다 그 리소스의 **전체 구성 스냅샷**을 찍어 타임라인으로 쌓는다. 이건 명사(noun)의 기록이다 — "이 보안 그룹은 14:00 시점에 이런 규칙들을 가지고 있었다". 그래서 Config에게는 "3일 전 이 SG의 인바운드 규칙은?"을 물을 수 있다. 대신 Config는 "누가 그 변경을 했는지"를 직접 알려주진 않는다(그 답은 CloudTrail에 있다).
 
-#### 1-4. 감사·이력
+| | CloudTrail | Config |
+|---|-----------|--------|
+| 데이터 모델 | 이벤트 소싱 (API 호출 스트림) | 상태 스냅샷 (구성 타임라인) |
+| 기록 단위 | 동사 (행위) | 명사 (리소스 상태) |
+| 답하는 질문 | "누가 언제 무엇을 했나" | "이 리소스는 그때 어떤 모습이었나" |
+| 컴플라이언스 | 감사 추적 (audit trail) | 규칙 평가 (Config Rule) |
+| 자동 수정 | 직접 없음 (EventBridge 경유) | Remediation (SSM Automation) |
 
-| 서비스 | 역할 | 시험 키워드 |
-|--------|------|-------------|
-| **CloudTrail** | API 호출 이력 (Who/When/What) | "누가 삭제했나?" |
-| **Config** | 리소스 구성 이력 + 컴플라이언스 | "이전 SG 설정은?" |
-| **CloudTrail Lake** | SQL 검색 가능한 trail 데이터 레이크 | "장기 보존+분석" |
-| **Audit Manager** | 컴플라이언스 보고서 자동화 | "PCI 감사" |
+이 둘은 경쟁 관계가 아니라 **보완 관계**다. 실제 인시던트 조사에서는 Config로 "언제 잘못된 상태가 됐는지"를 타임라인에서 찾고, 그 시점을 CloudTrail에서 검색해 "누가 그 API를 호출했는지"를 알아낸다. 두 데이터 모델이 만나야 완전한 이야기가 된다.
 
-#### 1-5. 자동 수정
+> 📚 **사례**: 2019년 Capital One 데이터 유출 사고는 이 두 축의 가치를 보여준 대표 사례다. 한 전직 AWS 직원이 잘못 설정된 WAF(웹 방화벽)를 통해 SSRF 공격으로 EC2 인스턴스 메타데이터의 IAM 자격증명을 탈취하고, 그 권한으로 S3 버킷에서 1억 건 이상의 신용 신청 데이터를 빼냈다. 사후 조사에서 CloudTrail 로그가 `ListBuckets`와 대량 `GetObject` 호출의 비정상 패턴을 보여줬고, 이것이 침해 범위 산정의 핵심 증거가 됐다. 교훈은 두 가지였다 — ① CloudTrail이 켜져 있어야 사후 추적이 가능하다(끄면 증거가 없다), ② GuardDuty 같은 실시간 위협 탐지가 있었다면 이 비정상 API 패턴을 **공격 진행 중에** 잡았을 것이다. 그래서 SOA 시험은 "조직 전체 CloudTrail + GuardDuty 상시 활성화"를 거의 기본 모범사례로 다룬다.
 
-- **Config Rule + Remediation** (SSM Automation 호출)
-- **EventBridge + Lambda/SSM**
-- **GuardDuty Finding → EventBridge → 자동 격리**
+## 자동 수정(Remediation)의 핵심 — 멱등성이 없으면 자동화가 사고를 키운다
 
-### 2. 도메인 2: 안정성·BCP (16%)
+도메인 1의 "수정(Remediation)"은 단순히 "Config Rule + SSM Automation"으로 외우고 끝낼 수 없다. 자동 수정의 진짜 난제는 **같은 수정이 여러 번 실행돼도 안전한가**, 즉 멱등성(idempotency)이다.
 
-#### 2-1. 고가용성 (HA)
+자동 수정은 보통 이벤트에 반응한다 — Config Rule이 비준수를 감지하면 Remediation을 호출하고, 그 Remediation이 SSM Automation Document를 실행한다. 문제는 분산 시스템에서 이벤트가 **정확히 한 번(exactly-once)** 전달된다는 보장이 거의 없다는 점이다. EventBridge도, SQS도 기본은 **최소 한 번(at-least-once)** 전달이다 — 즉 같은 이벤트가 중복 전달될 수 있다. 만약 "S3 버킷을 비공개로 바꾼다"는 수정이 멱등하지 않게 짜여 있다면(예: 매번 새 정책을 append), 중복 실행은 정책을 망가뜨릴 수 있다.
 
-| 패턴 | 설명 |
-|------|------|
-| Multi-AZ | 단일 리전, 여러 AZ |
-| Multi-Region | 글로벌 배포 |
-| Auto Scaling | EC2/ECS/Aurora/DynamoDB |
-| ELB + Health Check | 비정상 인스턴스 자동 제거 |
+그래서 잘 설계된 Remediation Document는 **선언적**이다 — "이 상태가 되도록 보장하라(ensure)"는 식이지 "이걸 추가하라(add)"는 식이 아니다. "퍼블릭 액세스 차단을 켠다"는 수정은 이미 켜져 있어도 다시 켜는 것이 무해하므로 멱등하다. 이것이 SSM State Manager가 "원하는 상태(desired state)를 유지"하는 association 모델로 설계된 이유이기도 하다 — 매 주기 현재 상태를 원하는 상태로 수렴시키되, 이미 맞으면 아무것도 하지 않는다.
 
-#### 2-2. RDS HA
+> 💡 **관련 이론**: 멱등성은 자동화 시스템 설계의 기둥이다. HTTP에서도 GET·PUT·DELETE는 멱등(같은 요청을 여러 번 보내도 결과 동일)하지만 POST는 멱등하지 않다고 정의한다(RFC 7231). 인프라 자동화 도구들(Ansible, Terraform, SSM)이 모두 "선언적·멱등적"을 지향하는 이유가 여기 있다 — 명령형("이걸 실행해")은 중복·재시도에 취약하지만, 선언형("이 상태가 되게 해")은 몇 번을 돌려도 같은 결과로 수렴한다. 자동 복구 루프를 짤 때 "이 액션이 두 번 실행돼도 괜찮은가?"를 먼저 물어야 하는 이유다. 괜찮지 않다면 그 자동화는 장애를 막기는커녕 키운다.
 
-| 항목 | Multi-AZ | Read Replica |
-|------|----------|--------------|
-| 목적 | HA (자동 failover) | 읽기 성능 확장 |
-| 동기/비동기 | 동기 | 비동기 |
-| 엔드포인트 | 동일 (자동 전환) | 별도 |
-| Cross-Region | Multi-AZ DB Cluster 일부 가능 | RR로 가능 |
+## RTO와 RPO — BCP의 두 숫자가 DR 전략을 가르는 좌표축
 
-#### 2-3. 백업·DR
+도메인 2는 결국 두 개의 숫자로 압축된다. **RTO(Recovery Time Objective)**는 "장애 후 얼마나 빨리 복구해야 하는가"(시간의 길이), **RPO(Recovery Point Objective)**는 "얼마만큼의 데이터 손실까지 용인하는가"(과거로 거슬러 가는 시점)다. 이 둘은 독립적인 축이고, DR 전략 4종은 이 2차원 평면 위의 좌표다.
 
-| 서비스 | 역할 |
-|--------|------|
-| **EBS Snapshot + DLM** | EBS 자동 스냅샷 + 보존 |
-| **AWS Backup** | 통합 백업 (EBS/RDS/EFS/DynamoDB/S3) |
-| **Cross-Region Copy** | 리전 장애 대비 |
-| **S3 Replication (CRR/SRR)** | 객체 자동 복제 |
-| **Storage Gateway** | 온프레미스 ↔ S3 |
-| **Elastic Disaster Recovery** | 서버 단위 DR |
+RPO는 백업 주기로 결정된다. 6시간마다 백업하면 최악의 경우 장애 직전 6시간치 데이터를 잃는다(RPO = 6시간). RPO를 0에 가깝게 하려면 동기 복제나 연속 복제가 필요하다. RTO는 복구 절차의 속도로 결정된다. 백업에서 통째로 복원하면 몇 시간 걸리지만, 이미 떠 있는 대기 환경으로 전환만 하면 몇 분이다.
 
-#### 2-4. DR 전략 4종
+| 전략 | RTO | RPO | 비용 | 핵심 메커니즘 |
+|------|-----|-----|------|---------------|
+| **Backup & Restore** | 시간 단위 | 시간 단위 | 가장 저렴 | 백업만 보관, 장애 시 복원 |
+| **Pilot Light** | 10분~수십분 | 분 단위 | 중간 | 핵심(DB)만 상시 복제, 나머지는 꺼둠 |
+| **Warm Standby** | 분 이내 | 초~분 | 비쌈 | 축소판 전체 스택 상시 가동, 장애 시 확장 |
+| **Multi-Site Active-Active** | ~0 | ~0 | 가장 비쌈 | 모든 리전이 항상 트래픽 처리 |
 
-| 전략 | RTO | 비용 |
-|------|-----|------|
-| Backup & Restore | 시간 단위 | 가장 저렴 |
-| Pilot Light | 분 단위 | 중간 |
-| Warm Standby | 분 이내 | 비쌈 |
-| Multi-Site Active-Active | 0 | 가장 비쌈 |
+핵심 trade-off는 명확하다 — **RTO·RPO를 0에 가깝게 할수록 비용이 기하급수적으로 오른다.** Active-Active는 RTO/RPO 0에 수렴하지만 인프라를 두 배로 상시 가동해야 한다. 시험은 거의 항상 "비용 대비 적정한 전략"을 묻는다 — "분 단위 복구 + 적당한 비용"이면 Pilot Light, "거의 무중단 + 비용 감수"면 Warm Standby나 Active-Active다.
 
-#### 2-5. Route 53 라우팅 정책 (DR/HA 연계)
+> ⚠️ **함정**: RTO와 RPO를 섞어 쓰면 답이 틀린다. "데이터 손실을 최소화"는 RPO 이야기(복제 주기), "다운타임을 최소화"는 RTO 이야기(전환 속도)다. 예를 들어 "금융 거래라 단 1건의 데이터 손실도 안 된다"면 RPO≈0이 요구되어 동기 복제(Multi-AZ 동기, Aurora 연속 백업)가 필요하고, "복구가 몇 시간 걸려도 되지만 데이터는 다 살려야 한다"면 RPO는 작되 RTO는 커도 되므로 Backup & Restore로 충분하다. 두 숫자가 따로 주어졌을 때 어느 쪽이 비싼 메커니즘을 강제하는지 보는 것이 함정 회피의 핵심이다.
 
-| 정책 | 용도 |
-|------|------|
-| Failover | Primary 장애 시 Secondary |
-| Latency-based | 가장 가까운 리전 |
-| Geolocation | 지리적 위치 기준 |
-| Weighted | 가중치 분산 (Canary, A/B) |
-| Multi-Value Answer | 단순 분산 + 헬스체크 |
+## RDS Multi-AZ와 Read Replica — 동기와 비동기, 복제의 두 철학
 
-### 3. "키워드 → 정답" 통합표
+도메인 2에서 두 번째로 많이 틀리는 쌍이 RDS Multi-AZ와 Read Replica다. 둘 다 "데이터를 복제한다"는 점은 같지만, **무엇을 위해 복제하느냐**가 정반대다 — 그리고 그 목적 차이가 동기/비동기라는 복제 방식의 차이로 직결된다.
 
-| 키워드 | 도메인 1·2 정답 |
-|--------|-----------------|
-| "누가 언제 삭제했나" | CloudTrail |
-| "이전 SG 설정 추적" | Config |
-| "EC2 메모리 메트릭" | CloudWatch Agent |
-| "여러 알람 통합" | Composite Alarm |
-| "이상치 탐지" | Anomaly Detection |
-| "비정상 인스턴스 자동 제거" | ELB Health Check + ASG |
-| "리전 장애 대비 RDS" | Cross-Region Read Replica / Aurora Global DB |
-| "백업 통합 관리" | AWS Backup |
-| "RTO 0 목표" | Multi-Site Active-Active |
-| "Primary 장애 시 자동 전환" | Route 53 Failover Routing |
+Multi-AZ는 **고가용성(HA)**을 위한 복제다. 같은 리전의 다른 AZ에 standby 복제본을 두고 **동기식(synchronous)**으로 복제한다 — primary에 쓰기가 일어나면 standby에도 기록이 확정된 뒤에야 클라이언트에 성공을 응답한다. 그래서 primary가 죽어도 standby는 단 1건의 손실 없이(RPO≈0) 이어받는다. 대신 동기 복제는 매 쓰기마다 네트워크 왕복을 기다리므로 약간의 쓰기 지연을 감수한다. 그리고 standby는 평소에 트래픽을 받지 않는다 — 순수하게 대기만 한다(읽기 확장이 아니다).
+
+Read Replica는 **읽기 성능 확장**을 위한 복제다. **비동기식(asynchronous)**으로 복제한다 — primary는 자기 쓰기를 마치고 곧바로 응답하며, 복제는 백그라운드에서 따라간다. 그래서 복제 지연(replication lag)이 존재하고, replica는 항상 primary보다 약간 과거의 데이터를 본다. 대신 비동기라 primary의 쓰기 성능에 거의 영향을 안 주고, replica를 여러 개 두어 읽기 부하를 분산할 수 있다.
+
+> 🔍 **더 깊이**: 동기 vs 비동기 복제는 분산 시스템의 근본 trade-off인 **CAP 정리**와 연결된다. 동기 복제(Multi-AZ)는 일관성(Consistency)을 우선해 모든 복제본이 같은 데이터를 보장하지만, 그 대가로 지연이 늘고 네트워크 분단 시 가용성이 흔들릴 수 있다. 비동기 복제(Read Replica)는 가용성·성능을 우선하지만 일시적으로 복제본이 뒤처지는 약한 일관성(eventual consistency)을 허용한다. 그래서 "방금 쓴 데이터를 곧바로 읽어야 하는" 워크로드를 Read Replica로 보내면 lag 때문에 옛 데이터를 읽는 버그가 난다 — 이건 read-after-write consistency가 깨진 전형적 사례다. Aurora는 공유 스토리지 구조로 이 lag를 보통 수십 밀리초 이내로 줄였지만, 0은 아니다. 시험에서 "읽기 일관성이 중요한데 Read Replica를 썼더니 옛 데이터가 보인다"가 나오면 답은 "복제 지연 — 일관성이 필요한 읽기는 primary로 보내야 한다"이다.
+
+## 정리하며
+
+도메인 1과 2는 "관측해서 견딘다"는 하나의 운영 철학을 앞뒤로 나눈 것이다. 키워드 표를 외우되, 그 뒤의 설계 의도를 잡으면 변형 문제가 풀린다.
+
+다섯 가지를 기억하자. ① Observability는 "예상 못 한 질문에도 답하는 능력"이고, Metric·Log·Trace는 카디널리티가 달라 다르게 다뤄야 한다. ② CloudWatch 메트릭은 시간이 지나면 자동 롤업되며, 고해상도(1초)는 빠른 알람을 주지만 노이즈는 M-of-N으로 흡수한다. ③ CloudTrail은 동사(API 행위)의 이벤트 스트림, Config는 명사(리소스 상태)의 스냅샷 타임라인 — 둘은 보완 관계다. ④ 자동 수정은 멱등성이 생명이다 — 선언적("이 상태가 되게 하라")이어야 중복 실행에 안전하다. ⑤ DR은 RTO(복구 속도)와 RPO(손실 허용)라는 두 축의 좌표 위에 있고, 0에 가까울수록 비용이 폭증한다. RDS는 Multi-AZ(동기·HA)와 Read Replica(비동기·읽기 확장)가 복제 철학부터 다르다.
+
+다음 글에선 도메인 3(배포·자동화)과 도메인 4(보안)를 같은 깊이로 다시 읽는다 — CloudFormation이 왜 멱등적인지, IAM 정책 평가가 어떤 순서로 결정되는지, 그리고 Session Manager가 SSH를 대체하는 내부 메커니즘을 파고든다.
 
 ---
 
-## 🧠 알아두면 좋은 심화 이론
+## 📝 연습 문제
 
-| 항목 | 설명 | 시험 포인트 |
-|------|------|-------------|
-| **CloudWatch Cross-Account/Region** | 단일 대시보드로 통합 | 멀티 계정 운영 |
-| **Logs Subscription Filter 비용** | Kinesis Firehose가 가장 저렴 | OpenSearch는 비쌈 |
-| **EventBridge vs CloudWatch Events** | 같은 서비스 (리브랜딩) | 동의어 |
-| **Aurora Global DB RPO** | 일반적으로 < 1초 | 빠름 |
-| **RDS Multi-AZ Cluster (3 인스턴스)** | 신규. Reader Endpoint 제공 | 2023+ |
-| **AWS Backup Vault Lock** | WORM 방식, 삭제 방지 | 규제 산업 |
+**문제 1.** 운영팀이 배포 직후 1초 단위로 치솟는 짧은 지연 스파이크를 포착하려 한다. 그런데 평소엔 그 메트릭이 5분 단위로만 기록된다. 가장 적절한 접근은?
 
-> ⚠️ **함정 1**: Multi-AZ는 HA용이지 읽기 성능 확장 아님. 읽기는 Read Replica.
->
-> ⚠️ **함정 2**: CloudWatch 표준 메트릭에 메모리·디스크 없음 → 항상 Agent.
->
-> ⚠️ **함정 3**: CloudTrail은 API 호출, Config는 구성 변경. 혼동 주의.
->
-> 💡 **암기 팁**: 도메인 1 = "보고/추적/자동수정", 도메인 2 = "장애 대비"
+A) Detailed Monitoring을 켜면 1초 해상도가 된다
 
----
+B) PutMetricData로 고해상도(1초) 커스텀 메트릭을 푸시하고, 짧은 평가 주기 알람을 건다. 단 노이즈는 M-of-N 데이터포인트 조건으로 흡수한다
 
-## 🏗️ 아키텍처 다이어그램
+C) CloudTrail로 지연을 추적한다
 
-```
-도메인 1·2 통합 운영 흐름
-==========================================================
-
-  [관측] ─► [감지] ─► [대응] ─► [복구] ─► [감사]
-    │         │         │         │         │
-  Metrics    Alarm    Lambda    Auto      CloudTrail
-   Logs    Composite   SSM      Scaling      Config
-   Traces  Anomaly   EventBridge Multi-AZ  Audit Manager
-                                  Backup
-                                  DR
-
-  RPO/RTO 충족 ──► 백업 + Multi-Region + Route 53 Failover
-```
-
----
-
-## ⭐ 핵심 포인트 (도메인 1·2 통합)
-
-1. ⭐ **CloudTrail = API 이력, Config = 구성 이력** (헷갈리지 말 것)
-2. ⭐ **메모리·디스크 메트릭 = CloudWatch Agent 필수**
-3. ⭐ **자동 수정: Config Rule + Remediation 또는 EventBridge + Lambda/SSM**
-4. ⭐ **RDS HA = Multi-AZ**, **읽기 확장 = Read Replica**, **글로벌 = Aurora Global DB**
-5. ⭐ **DR 4종**: Backup&Restore / Pilot Light / Warm Standby / Multi-Site (RTO·비용 trade-off)
-
----
-
-## 💻 실제 예시 - AWS CLI
-
-```bash
-# 1. CloudTrail 조직 trail (멀티 계정 통합)
-aws cloudtrail create-trail \
-  --name org-trail \
-  --s3-bucket-name central-audit-bucket \
-  --is-organization-trail \
-  --is-multi-region-trail
-
-# 2. Config Rule 자동 수정
-aws configservice put-remediation-configurations \
-  --remediation-configurations '[{
-    "ConfigRuleName":"s3-bucket-public-read-prohibited",
-    "TargetType":"SSM_DOCUMENT",
-    "TargetId":"AWS-DisableS3BucketPublicReadWrite",
-    "Automatic":true
-  }]'
-
-# 3. Composite Alarm (CPU + Memory 모두 위반)
-aws cloudwatch put-composite-alarm \
-  --alarm-name "WebServer-Degraded" \
-  --alarm-rule "ALARM(CPUHigh) AND ALARM(MemoryHigh)" \
-  --alarm-actions arn:aws:sns:ap-northeast-2:123:OpsAlerts
-
-# 4. AWS Backup Plan (일일 + 주간 + 월간)
-aws backup create-backup-plan --backup-plan '{
-  "BackupPlanName":"GoldenPlan",
-  "Rules":[
-    {"RuleName":"Daily","TargetBackupVaultName":"Default","ScheduleExpression":"cron(0 5 ? * * *)","Lifecycle":{"DeleteAfterDays":30}},
-    {"RuleName":"Weekly","TargetBackupVaultName":"Default","ScheduleExpression":"cron(0 5 ? * SUN *)","Lifecycle":{"DeleteAfterDays":90}}
-  ]
-}'
-
-# 5. Route 53 Failover Record
-aws route53 change-resource-record-sets \
-  --hosted-zone-id Z123 \
-  --change-batch '{"Changes":[{
-    "Action":"CREATE",
-    "ResourceRecordSet":{
-      "Name":"app.example.com","Type":"A",
-      "SetIdentifier":"primary",
-      "Failover":"PRIMARY",
-      "HealthCheckId":"hc-123",
-      "AliasTarget":{"HostedZoneId":"Z2FDTNDATAQYW2","DNSName":"primary-alb.region.elb.amazonaws.com","EvaluateTargetHealth":true}
-    }
-  }]}'
-```
-
----
-
-## 📝 도메인 통합 시나리오 5문항
-
-**문제 1.** EC2가 새벽에 종료됐다. 누가/언제 종료했는지 추적하려면?
-
-A) Config
-B) CloudTrail (API 이력 `TerminateInstances`)
-C) CloudWatch Logs
-D) VPC Flow Logs
+D) 5분 메트릭의 평균을 보면 충분하다
 
 **정답: B**
-해설: API 호출 이력은 CloudTrail. Config는 리소스 구성 변경 이력이라 결이 다름.
+
+해설: EC2 Detailed Monitoring은 1분 해상도까지만 내려간다(1초가 아니다). 1초 해상도는 PutMetricData로 올리는 고해상도 커스텀 메트릭에서만 가능하며, 여기에는 10·30초 평가 주기 알람을 걸 수 있다. 다만 짧은 평가 주기는 일시적 스파이크에 과민 반응해 알람이 펄럭이므로, 최근 N개 평가 중 M개 위반 조건으로 노이즈를 흡수하는 것이 실무 패턴이다. CloudTrail(C)은 API 이력이지 성능 메트릭이 아니고, 5분 평균(D)은 1초 스파이크를 평탄화해 놓친다.
 
 ---
 
-**문제 2.** 회사가 "리전 전체 장애" 발생 시 RDS PostgreSQL을 15분 이내 복구해야 한다.
+**문제 2.** 한 S3 버킷이 어느 시점부터 퍼블릭으로 바뀌어 있었다. ① 언제 그 상태가 됐는지 타임라인으로 보고, ② 누가 그 변경 API를 호출했는지를 알아내야 한다. 각각 어떤 서비스를 쓰나?
 
-A) Multi-AZ만
-B) Cross-Region Read Replica (failover 가능)
-C) Snapshot만
-D) On-demand 인스턴스
+A) ① CloudTrail ② Config
+
+B) ① Config(구성 스냅샷 타임라인) ② CloudTrail(API 호출자)
+
+C) 둘 다 CloudWatch Logs
+
+D) 둘 다 VPC Flow Logs
 
 **정답: B**
-해설: 단일 리전 장애 대비 = Cross-Region. Aurora는 Global DB가 정답. 일반 RDS는 CRR Read Replica + 수동/자동 promote.
+
+해설: Config는 리소스의 전체 구성 스냅샷을 시간순으로 쌓는 상태 기반 모델이라 "언제 어떤 상태였는지"를 타임라인에서 답한다. CloudTrail은 API 호출의 이벤트 스트림이라 "누가 그 변경을 호출했는지(principal)"를 답한다. 둘은 데이터 모델이 정반대이고 보완 관계다 — 인시던트 조사에서는 Config로 변경 시점을 찾고, 그 시점을 CloudTrail에서 검색해 호출자를 특정한다. 순서를 바꾼 A는 두 서비스의 역할을 뒤집은 것이다.
 
 ---
 
-**문제 3.** EC2 디스크 사용량 90% 도달 시 알람 + 자동으로 EBS 확장하려면?
+**문제 3.** Config Rule의 자동 수정(Remediation)이 이벤트 중복 전달로 같은 SSM Document를 두 번 실행했는데, 두 번째 실행이 리소스 구성을 망가뜨렸다. 근본 원인과 올바른 설계 원칙은?
 
-A) CloudWatch Alarm만
-B) CloudWatch Agent(디스크 메트릭) + Alarm + EventBridge → SSM Automation(`AWS-ExpandVolume`)
-C) CloudTrail
-D) Trusted Advisor
+A) SSM Automation은 중복 실행을 지원하지 않는다
+
+B) Remediation Document가 멱등하지 않게 짜였다 — EventBridge·SQS는 최소 한 번(at-least-once) 전달이라 중복이 가능하므로, 수정은 "이 상태가 되게 하라"는 선언적·멱등 방식이어야 한다
+
+C) Config Rule을 비활성화해야 한다
+
+D) 리전을 바꿔야 한다
 
 **정답: B**
-해설: 디스크는 Agent 필수. 자동 수정은 SSM Automation Runbook이 표준.
+
+해설: 분산 이벤트 시스템(EventBridge, SQS)은 기본적으로 최소 한 번 전달을 보장하므로 같은 이벤트가 중복 전달될 수 있다. 따라서 자동 수정은 여러 번 실행돼도 결과가 같은 멱등(idempotent) 방식으로 짜야 한다 — "정책을 추가(append)"가 아니라 "이 상태를 보장(ensure)"하는 선언적 형태다. "퍼블릭 차단을 켠다"는 이미 켜져 있어도 무해하므로 멱등하다. 이것이 SSM State Manager가 원하는 상태로 수렴하는 association 모델을 쓰는 이유이기도 하다. 중복 자체를 막으려 하기보다 중복에 안전하게 설계하는 것이 정석이다.
 
 ---
 
-**문제 4.** RTO 0, RPO 0에 가까운 글로벌 서비스를 운영하려면 어떤 DR 전략?
+**문제 4.** 금융 거래 DB라 단 1건의 데이터 손실도 허용되지 않지만(RPO≈0), 복구가 몇 분 걸리는 건 용인된다. 가장 적합한 RDS 구성은?
+
+A) Read Replica 여러 개
+
+B) Multi-AZ — 동기 복제로 standby에 쓰기가 확정된 뒤 응답하므로 primary 장애 시 데이터 손실 없이(RPO≈0) failover한다
+
+C) Snapshot을 매일 1회
+
+D) 단일 AZ + 잦은 백업
+
+**정답: B**
+
+해설: RPO≈0(손실 불허)은 동기 복제를 강제한다. Multi-AZ는 primary 쓰기를 다른 AZ의 standby에 동기식으로 확정한 뒤에야 클라이언트에 성공을 응답하므로, primary가 죽어도 standby가 손실 없이 이어받는다. Read Replica(A)는 비동기라 복제 지연만큼 손실이 날 수 있어 RPO 0을 못 맞춘다. 일일 스냅샷(C)은 최악의 경우 24시간치 손실(RPO=24h)이다. 손실 불허 = 동기 복제 = Multi-AZ(또는 Aurora 연속 백업)가 핵심 연결고리다.
+
+---
+
+**문제 5.** 애플리케이션이 데이터를 쓰자마자 곧바로 다시 읽는데, 읽기를 Read Replica로 보냈더니 가끔 방금 쓴 데이터가 안 보인다. 원인과 해결은?
+
+A) Read Replica 버그 — 교체
+
+B) 비동기 복제의 복제 지연(replication lag) 때문에 replica가 primary보다 과거 데이터를 본다 — 일관성이 필요한 읽기는 primary로 보내야 한다
+
+C) Multi-AZ로 바꾸면 해결된다
+
+D) 캐시를 끈다
+
+**정답: B**
+
+해설: Read Replica는 비동기 복제라 항상 약간의 복제 지연이 있고, replica는 primary보다 약간 과거 상태를 본다. "방금 쓴 걸 곧바로 읽는" read-after-write 일관성이 필요한 읽기를 replica로 보내면 lag 동안 옛 데이터를 읽는 버그가 난다. 해결은 일관성이 중요한 읽기는 primary로 보내고, 지연을 견딜 수 있는 읽기만 replica로 분산하는 것이다. Multi-AZ(C)는 HA용 standby라 읽기 트래픽을 받지 않으므로 읽기 확장의 답이 아니다. 이건 CAP 정리의 일관성-가용성 trade-off가 현실에 드러난 사례다.
+
+---
+
+**문제 6.** 회사가 "리전 전체 장애 시 거의 무중단(RTO 수분 이내) + 데이터 손실 거의 0"을 요구하지만, 비용은 가능한 한 아끼고 싶다. 평소 트래픽은 한 리전이면 충분하다. 가장 균형 잡힌 DR 전략은?
 
 A) Backup & Restore
-B) Pilot Light
-C) Warm Standby
-D) Multi-Site Active-Active
 
-**정답: D**
-해설: RTO 0 = 모든 리전 항상 active. 가장 비싸지만 가장 빠름.
+B) Pilot Light
+
+C) Warm Standby — 축소판 전체 스택을 두 번째 리전에 상시 가동해 두고, 장애 시 빠르게 확장(scale-out)해 트래픽을 받는다
+
+D) 단일 리전 Multi-AZ
+
+**정답: C**
+
+해설: RTO 수분 이내 + RPO≈0을 요구하면서도 Active-Active의 풀 비용은 피하고 싶을 때의 정석이 Warm Standby다. 두 번째 리전에 작게나마 항상 돌아가는 스택과 연속 복제되는 데이터를 두므로, 장애 시 "켜는" 시간 없이 곧바로 확장만 하면 된다. Backup & Restore(A)는 RTO가 시간 단위라 무중단 요구에 못 미치고, Pilot Light(B)는 핵심(DB)만 켜두고 앱 계층은 꺼둬 부팅·확장 시간이 더 걸린다. Multi-AZ(D)는 단일 리전 HA라 리전 전체 장애를 못 막는다. Warm Standby는 "거의 무중단"과 "Active-Active보다 싼 비용" 사이의 균형점이다.
 
 ---
 
-**문제 5.** 회사가 S3 객체 1년 보존이 규제 요건이고 삭제·변경 불가해야 한다.
+**문제 7.** Observability를 "예상하지 못한 질문에도 답할 수 있는 능력"으로 본다면, 메트릭 dimension에 user_id처럼 고유 값이 수백만 개인 차원을 넣는 것이 왜 권장되지 않는가?
 
-A) S3 Versioning만
-B) S3 Object Lock (Compliance Mode) + Lifecycle
-C) S3 Replication
-D) AWS Backup Vault Lock
+A) AWS가 금지한다
+
+B) 고카디널리티 dimension은 시계열 수를 폭발시켜 비용과 저장이 급증한다 — 고카디널리티 정보는 메트릭이 아니라 로그(Logs Insights)나 Trace(X-Ray)로 다뤄야 한다
+
+C) user_id는 숫자가 아니라서
+
+D) 메트릭은 dimension을 지원하지 않는다
 
 **정답: B**
-해설: S3 객체 자체 보존·삭제 불가 요건은 Object Lock Compliance Mode. Vault Lock은 Backup 리소스용.
+
+해설: 메트릭은 dimension 조합마다 별개의 시계열로 저장된다. user_id처럼 카디널리티(고유 값 수)가 수백만인 차원을 dimension으로 넣으면 시계열이 수백만 개로 폭발해 저장 비용과 집계 비용이 급증한다. 그래서 메트릭 dimension은 인스턴스 타입·AZ처럼 의도적으로 낮은 카디널리티로 제한하고, "어떤 user에게 무슨 일이 있었나" 같은 고카디널리티 질문은 로그(Logs Insights 쿼리)나 분산 추적(X-Ray)으로 답하는 것이 설계 원칙이다. 세 축(Metric/Log/Trace)을 카디널리티에 따라 나눠 쓰는 것이 Observability의 핵심 운영 기술이다.
 
 ---
 
 ## 📌 오늘의 요약
 
-1. **CloudTrail(API) vs Config(구성)** 헷갈리지 말 것
-2. 메모리·디스크 = **CloudWatch Agent**, 동적 임계 = **Anomaly Detection**, 알람 통합 = **Composite**
-3. **자동 수정**: Config Rule + Remediation / EventBridge + SSM Automation
-4. **RDS HA = Multi-AZ**, 읽기 = Read Replica, 글로벌 = Aurora Global DB
-5. **DR 4종** = Backup&Restore / Pilot Light / Warm Standby / Multi-Site (RTO·비용 trade-off)
+1. 도메인 1·2는 "관측해서 견딘다"는 하나의 운영 루프 — Observability는 예상 못 한 질문에도 답하는 능력이고 Metric·Log·Trace는 카디널리티가 다르다
+2. CloudWatch 메트릭은 시간이 지나면 자동 롤업(1초→3h, 1분→15일, 5분→63일, 1시간→15개월). 고해상도는 빠른 알람을 주되 노이즈는 M-of-N으로 흡수
+3. CloudTrail = 동사(API)의 이벤트 스트림, Config = 명사(리소스 상태)의 스냅샷 타임라인. 보완 관계 — 시점은 Config, 호출자는 CloudTrail
+4. 자동 수정은 멱등성이 생명 — 이벤트는 최소 한 번 전달이라 중복 가능하므로 선언적("이 상태가 되게 하라") 방식이어야 안전
+5. DR은 RTO(복구 속도)·RPO(손실 허용) 두 축의 좌표 — 0에 가까울수록 비용 폭증. RDS Multi-AZ(동기·HA·RPO0) vs Read Replica(비동기·읽기 확장·lag 존재)

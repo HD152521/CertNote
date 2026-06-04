@@ -119,10 +119,10 @@ ARN(Amazon Resource Name)은 `arn:partition:service:region:account-id:resource` 
 
 **문제 1.** 한 회사가 모든 직원에게 IAM User를 발급하고 access key로 CLI를 쓰고 있다. CISO가 보안 감사 결과 "장기 키 사용 금지"를 지시했다. 가장 적절한 마이그레이션은?
 
-A) IAM User의 access key를 30일마다 회전
+A) IAM User의 access key를 30일마다 회전하고 CloudTrail로 미사용 키를 탐지해 자동 비활성화 — 운영은 개선되나 장기 키 자체는 남는다
 B) AWS IAM Identity Center(SSO) 도입 + 외부 IdP 연동 + `aws configure sso`로 CLI 사용
-C) Root account를 공유
-D) 모든 직원에게 EC2 인스턴스를 줘서 IAM Role로 접근
+C) Root account에 MFA를 걸고 모든 직원이 공유하되 세션을 CloudTrail로 감사 — 자격증명 공유 자체가 최악의 보안 사고
+D) 모든 직원에게 전용 EC2 인스턴스를 발급하고 인스턴스 프로파일 Role로 접근하게 해 키를 제거 — 키는 없어지나 직원당 EC2 비용·운영이 비현실적
 
 **정답: B**
 해설: IAM Identity Center는 외부 IdP(Okta, Azure AD, Google Workspace 등)와 SAML 2.0/OIDC로 연동되며, CLI는 STS로 임시 자격증명을 받아 동작한다. 장기 키가 디스크에 절대 저장되지 않는다. A는 회전 주기만큼 위험이 줄지만 여전히 장기 키. C는 root 공유는 최악의 보안 사고. D는 모든 직원이 EC2를 띄우는 건 비용·운영 부담이 비현실적.
@@ -139,10 +139,10 @@ D) 모든 직원에게 EC2 인스턴스를 줘서 IAM Role로 접근
 }
 ```
 
-A) 모든 S3 버킷 접근 허용
+A) Condition 없이 `s3:*`가 평가돼 계정의 모든 S3 버킷에 대한 모든 액션을 무조건 허용
 B) `Project` 태그가 있는 Principal에게, 그 태그 값과 일치하는 prefix의 버킷에만 모든 S3 액션 허용
-C) 정책 오류로 항상 거부
-D) Root account에만 적용
+C) `${aws:PrincipalTag}` 변수가 Resource ARN에서 지원되지 않아 정책 검증에서 항상 거부로 평가
+D) Resource ARN이 변수를 포함해 Root account(account-id 소유자)에만 적용되고 IAM User에는 무효
 
 **정답: B**
 해설: `${aws:PrincipalTag/Project}`는 호출자의 Project 태그 값으로 치환되고, `"Null": false`는 "이 태그가 반드시 존재해야 한다"는 의미다. Project=alpha 사용자는 `project-alpha-*` 버킷에 접근, Project=beta 사용자는 `project-beta-*` 버킷에 접근. 단일 정책으로 부서별 자원 분리가 가능한 ABAC의 대표 패턴이다.
@@ -151,10 +151,10 @@ D) Root account에만 적용
 
 **문제 3.** EC2에서 Lambda로 워크로드를 옮긴 후 코드 변경 없이 같은 IAM 정책으로 동작시키려고 한다. 무엇이 달라지는가?
 
-A) Lambda는 IAM Role을 사용할 수 없음
+A) Lambda는 인스턴스 프로파일이 없어 IAM Role을 쓸 수 없고 환경변수로 키를 주입해야 함 — 실제로 Lambda는 실행 역할로 Role을 그대로 사용한다
 B) Lambda 실행 역할의 Trust Policy의 Principal이 `ec2.amazonaws.com` → `lambda.amazonaws.com`으로 바뀌어야 함
-C) Lambda는 access key를 코드에 박아야 함
-D) 변경 사항 없음, 그대로 동작
+C) Lambda는 STS 접근이 제한돼 access key를 코드 또는 Secrets Manager에 저장해 명시적으로 로드해야 함 — Lambda는 자동으로 임시 자격증명을 받는다
+D) Trust Policy는 서비스 무관하게 동일하므로 Role을 그대로 붙이면 코드·설정 변경 없이 동작 — Principal Service가 달라 assume에 실패한다
 
 **정답: B**
 해설: IAM Role의 Trust Policy는 "어느 서비스가 이 Role을 assume할 수 있는가"를 결정한다. EC2가 사용하던 Role을 그대로 Lambda에 붙이면 Lambda가 assume을 시도하다 실패한다. Trust Policy의 Principal Service를 변경해야 한다. Permission Policy(실제 권한)는 그대로 재사용 가능.
@@ -163,10 +163,10 @@ D) 변경 사항 없음, 그대로 동작
 
 **문제 4.** STS의 AssumeRole 응답에 포함되지 않는 것은?
 
-A) AccessKeyId (ASIA로 시작)
-B) SecretAccessKey
-C) SessionToken
-D) IAM User의 password
+A) AccessKeyId — 임시 키임을 나타내는 `ASIA` prefix로 시작하는 액세스 키 ID
+B) SecretAccessKey — 요청 SigV4 서명에 쓰이는 비밀 액세스 키
+C) SessionToken — 임시 자격증명 호출마다 헤더로 함께 전달해야 하는 세션 토큰
+D) IAM User의 콘솔 로그인 password — 자격증명 복구를 위해 함께 반환되는 영구 비밀번호
 
 **정답: D**
 해설: STS는 임시 자격증명 3종 세트(AccessKeyId / SecretAccessKey / SessionToken) + Expiration timestamp를 반환한다. IAM User의 password는 STS와 무관하며 절대 노출되지 않는다. AccessKeyId가 `ASIA`로 시작하는 게 임시, `AKIA`로 시작하는 게 영구 키임을 구별하는 게 시험에 종종 나온다.
@@ -175,10 +175,10 @@ D) IAM User의 password
 
 **문제 5.** 한 회사가 SCP로 "us-east-1과 ap-northeast-2만 허용"을 설정했다. IAM User에는 `AdministratorAccess`가 있다. 이 User가 eu-west-1에서 EC2를 시작하려 한다. 결과는?
 
-A) AdministratorAccess가 SCP보다 우선해 허용
+A) Identity-based의 AdministratorAccess가 명시적 Allow라 Organizations SCP의 region 제한보다 우선해 허용
 B) SCP의 Deny가 우선해 거부
-C) eu-west-1만 비활성화되고 다른 액션은 가능
-D) 경고 표시만 나오고 진행 가능
+C) SCP는 콘솔 region selector만 비활성화하므로 CLI나 SDK로는 eu-west-1 EC2를 정상 시작 가능
+D) `aws:RequestedRegion` 위반은 soft warning이라 콘솔에 경고 배너만 뜨고 인스턴스는 생성됨
 
 **정답: B**
 해설: SCP는 Organizations 수준의 절대 상한선이다. Identity-based의 Allow가 아무리 넓어도 SCP가 막으면 거부. `aws:RequestedRegion` 조건으로 비승인 리전 차단은 회사 전체 가드레일의 표준 패턴. 단 IAM, CloudFront, Route 53, Support 같은 글로벌 서비스에는 영향을 주지 않도록 예외 처리가 필요하다(SCP의 NotAction으로 제외).
@@ -187,10 +187,10 @@ D) 경고 표시만 나오고 진행 가능
 
 **문제 6.** 다음 시나리오에서 가장 적절한 디버깅 첫 단계는? "EC2에서 boto3 코드가 `An error occurred (AccessDenied) when calling the GetObject operation`을 반환한다."
 
-A) S3 버킷을 public으로 설정
+A) S3 버킷의 Block Public Access를 해제하고 버킷 정책을 public-read로 열어 접근 확인 — 보안 사고로 가는 길이며 근본 원인 진단이 아님
 B) `aws sts get-caller-identity`로 현재 어느 Role/User로 동작하고 있는지 확인
-C) IAM Root 자격증명으로 변경
-D) EC2 인스턴스 재시작
+C) IAM Root 자격증명을 인스턴스에 주입해 동작 여부를 확인 — Root 키를 EC2에 두는 것은 절대 금지
+D) EC2 인스턴스를 재시작해 인스턴스 프로파일 자격증명 캐시를 갱신 — AccessDenied는 캐시가 아니라 권한 문제라 무관
 
 **정답: B**
 해설: AccessDenied의 디버깅은 항상 "내가 누구로 호출하고 있는가"부터 시작한다. `get-caller-identity`는 ARN을 보여주는데, 예상한 Role이 맞는지 확인하면 권한 추적의 출발점이 된다. 그 다음 IAM Policy Simulator로 그 ARN의 권한을 점검, KMS 암호화 객체라면 KMS 권한도 확인, S3 Block Public Access 설정도 검토. A는 보안 사고로 가는 길.
@@ -199,10 +199,10 @@ D) EC2 인스턴스 재시작
 
 **문제 7.** 한 개발자가 `~/.aws/credentials`에 dev profile을 설정했는데, CLI 명령에 `--profile dev`를 명시하지 않으면 default profile의 자격증명이 사용된다. 모든 명령에 자동으로 dev profile이 적용되게 하려면?
 
-A) `aws configure set profile dev`
+A) `aws configure set profile dev`로 default profile 포인터를 dev로 지정 — 이런 설정 키는 존재하지 않아 무효
 B) `AWS_PROFILE=dev` 환경변수 설정
-C) `~/.aws/config`의 default profile을 dev로 교체
-D) `aws configure --profile dev` 다시 실행
+C) `~/.aws/config`의 `[default]` 블록 내용을 dev의 자격증명으로 덮어써 교체 — 동작은 하나 profile 간 경계가 흐려짐
+D) `aws configure --profile dev`를 다시 실행해 dev를 우선순위가 가장 높은 profile로 재등록 — 값만 갱신될 뿐 default 선택은 바뀌지 않음
 
 **정답: B**
 해설: `AWS_PROFILE` 환경변수는 그 셸 세션 동안 모든 AWS CLI/SDK 호출의 default profile을 결정한다. `~/.bashrc`에 `export AWS_PROFILE=dev`를 두면 영구 적용. C도 가능은 하지만 default profile의 내용 자체를 바꾸는 거라 다른 profile과의 경계가 흐려진다. 또 환경변수 방식은 `unset AWS_PROFILE`로 쉽게 되돌릴 수 있어 멀티 계정 작업에 유연하다.
@@ -211,10 +211,10 @@ D) `aws configure --profile dev` 다시 실행
 
 **문제 8.** IAM Policy의 `"Resource": "arn:aws:s3:::my-bucket/${aws:username}/*"`에서 `${aws:username}` 변수가 평가되는 시점은?
 
-A) 정책 작성 시점
-B) 정책 attach 시점
+A) 정책 작성·저장 시점에 작성자의 username으로 한 번 치환돼 고정됨
+B) 정책을 IAM Entity에 attach하는 시점에 그 Entity의 이름으로 바인딩됨
 C) API 호출 시점 (호출자의 정보로 동적 치환)
-D) 평가되지 않고 그대로 사용됨
+D) 변수는 IAM 정책에서 지원되지 않아 리터럴 문자열 `${aws:username}`으로 그대로 매칭됨
 
 **정답: C**
 해설: IAM Policy variables는 매 API 호출 시점에 평가된다. Alice가 호출하면 `${aws:username}` → `Alice`로 치환돼 `my-bucket/Alice/*`가 되고, Bob이 호출하면 `my-bucket/Bob/*`가 된다. 단일 정책으로 사용자별 격리된 폴더를 강제할 수 있다. 이 패턴이 SaaS의 "테넌트별 데이터 격리"에서 표준이다.
@@ -223,10 +223,10 @@ D) 평가되지 않고 그대로 사용됨
 
 **문제 9.** SigV4 서명이 timestamp 검증에 실패할 때 나오는 에러는?
 
-A) AccessDenied
+A) AccessDenied — IAM 권한 평가 실패로 처리돼 반환되는 권한 거부 에러
 B) SignatureDoesNotMatch 또는 RequestTimeTooSkewed
-C) ThrottlingException
-D) ServiceUnavailable
+C) ThrottlingException — 요청 빈도 초과로 SDK retry를 유발하는 스로틀링 에러
+D) ServiceUnavailable — 서버 측 일시 장애를 나타내는 5xx 계열 에러
 
 **정답: B**
 해설: 시계가 AWS 서버와 15분 이상 차이나면 `RequestTimeTooSkewed`, 서명 자체가 잘못되면 `SignatureDoesNotMatch`가 나온다. NTP 동기화, 컨테이너 시계, VM clock drift가 흔한 원인. `date -u`로 UTC 확인 후 `chronyd`로 동기화. 클라우드 환경에서 가끔 한 번씩 만나는 이슈인데, 원인을 모르면 IAM 권한을 의심하다 시간을 버린다.
@@ -235,10 +235,10 @@ D) ServiceUnavailable
 
 **문제 10.** 한 회사가 AWS Organizations로 prod와 dev 계정을 분리하고, 개발자들은 IAM Identity Center로 두 계정의 Role을 모두 assume할 수 있다. dev 계정에 큰 사고가 생겨도 prod이 보호되는 이유는?
 
-A) AWS가 자동으로 격리
+A) 같은 Organizations 안의 계정은 AWS가 blast radius를 자동 감지해 사고 발생 계정을 네트워크에서 격리 — 그런 자동 격리 기능은 없음
 B) Organizations의 OU 분리로 IAM Principal이 계정 경계를 넘으려면 명시적 cross-account 권한이 필요하고, SCP로 추가 격리 가능
-C) prod 계정은 항상 read-only
-D) 모든 액션이 자동 감사됨
+C) prod 계정은 멤버 계정으로 등록되는 순간 SCP에 의해 자동으로 read-only로 잠김 — 그런 기본 동작은 없음
+D) 모든 cross-account 액션이 CloudTrail로 자동 차단·감사되어 사고가 전파되지 않음 — CloudTrail은 기록만 할 뿐 차단하지 않음
 
 **정답: B**
 해설: AWS Account 자체가 강력한 격리 경계다. 같은 Organizations 안에 있어도 다른 계정 자원에 접근하려면 명시적 cross-account 권한(IAM Role + Resource Policy)이 필요하다. SCP로 추가 가드레일(예: prod 계정에서 특정 액션 차단)을 걸 수 있고, GuardDuty/CloudTrail의 multi-account aggregation으로 중앙 감사도 가능. 다중 계정 전략(multi-account strategy)은 AWS Well-Architected의 표준 권장 사항이다.
@@ -247,10 +247,10 @@ D) 모든 액션이 자동 감사됨
 
 **문제 11.** Lambda 함수가 `LimitExceededException`을 받았다. SDK의 default retry 동작은?
 
-A) 1회만 시도하고 실패
+A) 스로틀링류 에러는 멱등성이 보장되지 않아 retry 없이 1회 시도 후 즉시 예외를 전파
 B) Standard retry mode로 3번 추가 시도 + exponential backoff with jitter
-C) 무한 재시도
-D) 다른 리전으로 자동 페일오버
+C) `LimitExceededException`은 회복 가능 에러로 분류돼 성공할 때까지 backoff 없이 무한 재시도
+D) 호출 리전이 throttle되면 SDK가 동일 파티션의 다른 리전 엔드포인트로 자동 페일오버해 재시도
 
 **정답: B**
 해설: AWS SDK의 기본 retry mode는 standard로 총 4번 시도(첫 호출 + 3번 retry). 각 retry는 0~1초, 0~2초, 0~4초의 무작위 backoff(jitter). LimitExceededException은 throttling류라 retry로 회복될 수 있다. Lambda 함수가 timeout에 가깝다면 max attempts를 환경변수로 줄이는 게 안전. 무한 재시도는 thundering herd를 만들어 서버를 더 죽인다.
@@ -259,10 +259,10 @@ D) 다른 리전으로 자동 페일오버
 
 **문제 12.** 한 회사가 SaaS 모니터링 도구에게 자기 AWS 계정의 CloudWatch 지표를 읽게 하려고 한다. 가장 안전한 설정은?
 
-A) IAM User를 만들고 access key를 SaaS에게 제공
+A) 전용 IAM User를 만들어 CloudWatchReadOnlyAccess만 부여하고 access key를 SaaS에게 전달, 90일마다 회전 — 외부에 장기 키를 넘기는 안티패턴
 B) IAM Role을 만들고 Trust Policy에 SaaS의 계정 ID + External ID 조건을 명시, ReadOnlyAccess만 부여
-C) Root account 자격증명을 제공
-D) CloudWatch를 public으로 공개
+C) Root account에 별도 access key를 발급해 ReadOnly로 제한한 뒤 SaaS에 제공 — Root 키 발급·공유는 최악의 보안 사고
+D) CloudWatch 지표를 cross-account sharing으로 SaaS 계정에 공개하고 인증 없이 읽게 허용 — 인증 없는 공개는 least privilege 위반
 
 **정답: B**
 해설: 외부 SaaS 시나리오는 cross-account Role + External ID가 표준이다. External ID는 confused deputy 문제 방지, ReadOnlyAccess는 least privilege 원칙. AWS는 모든 third-party SaaS에서 이 패턴을 요구하며, SaaS 측에서 External ID 자동 생성 기능을 제공한다.

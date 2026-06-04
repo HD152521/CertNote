@@ -61,10 +61,10 @@ Week 1은 추상의 주간이었다. CALMS의 다섯 축, DORA의 네 메트릭,
 
 **문제 1.** 한 대형 핀테크가 "분기 1회 배포 → 주 1회 배포"로 가속을 추진한다. 현재 상태: 단일 AWS 계정에서 dev/staging/prod를 VPC로만 분리, CodePipeline 없이 사람이 콘솔에서 직접 배포, 사고 발생 시 평균 8시간 복구 소요. CALMS 진단 + 우선순위 처방으로 가장 적합한 것은?
 
-A) Lean 축 약함 → 모노레포로 통합
+A) Lean 축 약함 → 모노레포로 통합해 PR 머지 리드타임을 줄이고 trunk-based dev 전환이 최우선
 B) Automation 축 약함 → Code* 3종(Pipeline+Build+Deploy) 도입이 최우선, 그 다음 멀티 계정 분리 → Measurement(CloudWatch)
-C) Sharing 약함 → Confluence wiki 구축
-D) Culture 약함 → 외부 컨설팅
+C) Sharing 약함 → Confluence wiki + Service Catalog로 팀 간 지식 공유 체계를 먼저 구축
+D) Culture 약함 → 외부 컨설팅으로 blameless postmortem 문화를 도입하는 것이 8시간 MTTR의 근본 처방
 
 **정답: B**
 해설: 가장 약한 축이 전체를 끌어내린다. 콘솔 수동 배포 = Automation 부재. Automation 없이는 Lean(작은 배치)도 MTTR 단축도 데이터 수집도 다 막힌다. 우선순위 1번은 CodePipeline + CodeBuild + CodeDeploy. **단, 단일 계정에서 prod까지 운영하는 것 자체가 blast radius 위험**이므로 같은 단계에서 Organizations + Account-per-stage로 분리해야 한다(사고 시 한 계정 폭발이 다른 환경으로 안 번지게). 그 다음 CloudWatch 측정, AppConfig flag. 이 순서가 시험의 우선순위 패턴.
@@ -73,10 +73,10 @@ D) Culture 약함 → 외부 컨설팅
 
 **문제 2.** 한 회사가 us-east-1과 eu-west-1에 동일 워크로드를 배포한다. 사용자는 글로벌이고 GDPR 준수가 필수. 단일 계정에서 운영 중이라 사고 시 blast radius 우려가 크다. Organizations 도입 후 가장 적합한 OU 구조는?
 
-A) Region 기반 OU (us-east-1 OU, eu-west-1 OU)
+A) Region 기반 OU (us-east-1 OU, eu-west-1 OU로 나눠 GDPR 데이터 주권을 region 단위로 격리)
 B) Environment 기반 OU (Workloads OU 안에 Prod/Non-Prod, 각 계정이 multi-region 운영)
-C) Service 기반 OU (Payment OU, User OU)
-D) Team 기반 OU (Team-A OU, Team-B OU)
+C) Service 기반 OU (Payment OU, User OU로 도메인별 SCP·과금 경계를 분리)
+D) Team 기반 OU (Team-A OU, Team-B OU로 조직도와 1:1 매핑해 ownership을 명확히)
 
 **정답: B**
 해설: AWS 권장 OU 구조는 **Environment 기반**(Prod / Non-Prod / Security / Infrastructure / Sandbox). 한 계정 안에 multi-region을 운영하지, region별로 OU를 나누지 않는다. ① IAM·SCP가 계정 단위라 region 분리해도 권한 통합이 어렵고 ② Region failover 시 다른 region으로 자연스럽게 이동 가능하며 ③ Cost allocation도 환경 기반이 명확하다. GDPR은 별도 KMS 키 + S3 bucket region 정책 + Macie로 해결, OU 분리와는 무관. Region별 OU가 의미 있는 유일한 경우는 **데이터 주권 규제로 region 자체를 격리 운영해야 할 때**이고, 그조차도 보통 계정 단위 분리로 충분하다.
@@ -108,10 +108,10 @@ D) Datadog용 별도 AWS 계정을 만들어 그 안에 모든 리소스 복사
 
 **문제 4.** 한 회사가 "배포 빈도는 일 5회로 Elite 수준인데 Change Failure Rate가 40%"라는 문제를 보고했다. 다음 조치 중 가장 효과적인 것은?
 
-A) 배포 빈도를 줄여 일 1회로 한다
-B) 모든 배포에 수동 승인 게이트를 추가한다
+A) 배포 빈도를 줄여 일 1회로 묶고 배치 크기를 키워 QA 검증 시간을 확보한다
+B) 모든 배포에 수동 승인 게이트 + 변경자문위원회(CAB) 리뷰를 추가해 실패를 사전 차단한다
 C) CodeDeploy Blue/Green + CloudWatch alarm 기반 자동 롤백 + Canary 배포 도입
-D) DORA 측정을 중단한다
+D) DORA 측정을 중단하고 CFR 대신 배포당 평균 코드 변경량을 추적 지표로 전환한다
 
 **정답: C**
 해설: DORA의 핵심 발견은 "**속도와 안정성은 trade-off가 아니라 양의 상관관계**". 빈도를 줄이는 건 잘못된 처방(A). 수동 승인은 lead time만 늘리고 사고를 진짜로 막진 못한다 — 승인하는 사람도 같은 실수를 하기 때문(B). 정답은 자동화 강화: CodeDeploy Blue/Green으로 점진적 트래픽 시프트(예: `Linear10PercentEvery1Minute`), CloudWatch alarm이 임계치 위반 감지하면 자동 롤백, Lambda alias의 weighted alias로 Canary. 수학적으로 보면 Canary 10%에서 5분 노출 시 사용자 영향은 전체 배포의 **1/20 미만**으로 떨어지고, 동시에 자동 롤백이 사람 개입 없이 동작한다. D는 본말 전도.
@@ -122,10 +122,10 @@ D) DORA 측정을 중단한다
 
 **문제 5.** 한 글로벌 회사가 5개 리전에 배포하면서 모든 계정의 CloudTrail 로그를 중앙 집중 + 변조 방지로 관리하려 한다. 가장 적합한 아키텍처는?
 
-A) 각 계정에 CloudTrail trail을 만들고 S3에 저장
+A) 각 계정에 개별 CloudTrail trail을 만들어 같은 계정 S3에 저장하고 bucket versioning으로 변조에 대비
 B) Organization Trail을 management 계정에서 생성 → Log Archive 계정의 S3 bucket에 저장 → SCP로 bucket 변조 차단 + S3 Object Lock(Compliance mode)
-C) 모든 계정의 CloudTrail을 단일 계정의 S3 bucket으로 복제
-D) CloudTrail 대신 CloudWatch Logs 사용
+C) 모든 계정의 CloudTrail을 단일 계정 S3 bucket으로 cross-account 복제 + 야간 배치 동기화
+D) CloudTrail 대신 CloudWatch Logs에 API 호출을 직접 기록하고 Logs Insights로 감사
 
 **정답: B**
 해설: 표준 패턴. ① **Organization Trail**은 management 계정의 단일 trail이 모든 멤버 계정·모든 region 이벤트를 자동 캡처(신규 계정·신규 region 자동 포함) ② **Log Archive 계정**의 S3 bucket이 저장소(계정 분리로 권한 격리, root조차도 SCP로 차단) ③ **SCP**로 Log Archive 계정의 bucket 삭제/변조 차단 ④ **S3 Object Lock Compliance mode**로 retention 기간 내 객체 삭제 자체를 물리적으로 차단(root도 못 지움). A는 계정 분산으로 통합 검색 어려움, C는 복잡한 자체 구현(이미 Organization Trail이 그 일을 함), D는 CloudTrail 자체를 대체할 수 없음(API audit trail 용도).
@@ -148,10 +148,10 @@ D) IAM Identity Center로 SSO 설정만 하면 자동으로 해결
 
 **문제 7.** 한 회사가 모든 계정에 "ap-northeast-2와 us-east-1 외 리전에서 EC2/RDS/S3 작업 금지"를 강제하려 한다. SCP를 작성할 때 반드시 주의해야 할 점은?
 
-A) SCP는 region을 인식하지 못하므로 불가능
+A) SCP는 `aws:RequestedRegion` 조건 키를 지원하지 않으므로 region 제한은 IAM 경계 정책으로만 가능
 B) `NotAction`으로 글로벌 서비스(IAM, CloudFront, Route 53, Organizations, Support 등) 제외 필수, 안 그러면 IAM 작업까지 막혀 계정 운영 불가
-C) SCP는 root에는 적용되지 않음
-D) Service Quota 조정 필요
+C) SCP는 멤버 계정의 root 사용자에는 적용되지 않으므로 root로 우회 배포가 가능해 무력화됨
+D) 대상 region에서 EC2/RDS Service Quota를 0으로 조정해야 SCP가 region 차단을 강제할 수 있음
 
 **정답: B**
 해설: 시험의 단골 함정이다. IAM, CloudFront, Route 53, Organizations 같은 **글로벌 서비스는 region 개념이 없어서** `aws:RequestedRegion` 조건이 글로벌 서비스 API에서는 의도와 다르게 평가된다(글로벌 서비스는 내부적으로 us-east-1로 라우팅된다). region restriction SCP를 만들 때 `NotAction`으로 글로벌 서비스를 제외해야 IAM 작업까지 막히지 않는다. A는 사실 아님(`aws:RequestedRegion` 조건 키 지원), C는 잘못(SCP는 root에도 적용 — 단, management 계정의 root는 예외), D는 무관.
@@ -180,9 +180,9 @@ D) Service Quota 조정 필요
 **문제 8.** 한 회사가 EKS 클러스터를 Prod 계정에 운영하고, ArgoCD를 통해 GitOps 방식으로 배포한다. 단일 클러스터 시나리오에서 ArgoCD는 어디에 두는 게 가장 적합한가?
 
 A) 같은 Prod 클러스터 안에 두기 (pull-based GitOps 원형)
-B) 별도 Shared Services 계정에 두고 Prod 계정의 EKS API에 cross-account로 접근 (Hub-Spoke)
-C) 각 환경 계정마다 별도 ArgoCD 설치 + 중복 운영
-D) ArgoCD 대신 CodePipeline 사용
+B) 별도 Shared Services 계정에 두고 IRSA로 Prod 계정 EKS API에 cross-account 접근 (Hub-Spoke)
+C) 각 환경 계정마다 별도 ArgoCD 설치 + ApplicationSet으로 중복 동기화 운영
+D) ArgoCD 대신 CodePipeline + kubectl ECS deploy action으로 push-based 배포
 
 **정답: A**
 해설: 단일 클러스터·단일 환경에서 GitOps의 정통 패턴은 **같은 클러스터 안에 ArgoCD를 두는 것**이다. ① ArgoCD가 Git을 polling 하고 ② 같은 클러스터의 Kubernetes API에 in-cluster service account로 접근 ③ credential이 클러스터 밖으로 나가지 않음 ④ 클러스터 멀티 테넌시 격리도 ArgoCD Project로 가능. 멀티 클러스터·멀티 계정에서는 B(Hub-Spoke)도 흔한 패턴이지만, 그 경우 Shared Services의 ArgoCD가 각 클러스터의 credential을 들고 있어야 해서 보안 경계가 복잡해진다. C는 중복 운영 부담. D는 GitOps 원칙(pull-based, Git as SSOT) 자체를 위반.
@@ -215,10 +215,10 @@ Google의 **Four Keys** 프로젝트(`github.com/GoogleCloudPlatform/fourkeys`)�
 
 **문제 10.** 한 회사가 Production 계정의 "특정 시간(주말, 새벽 0-6시)에 자동으로 read-only mode"를 강제하려 한다. 가장 적합한 메커니즘은?
 
-A) IAM Policy에 datetime condition을 넣어 모든 user에게 적용
+A) IAM Policy에 `aws:CurrentTime` datetime condition을 넣어 계정의 모든 user에 일일이 attach
 B) SCP에 `Deny` + `aws:CurrentTime` condition으로 작성, 해당 OU에 적용 → 그 시간대 모든 write API 차단. 단, 글로벌 서비스 제외 + 비상 access role은 ArnNotLike로 제외
-C) Route 53 라우팅 비활성화
-D) EC2 인스턴스 자동 종료
+C) EventBridge 스케줄로 그 시간대에 Route 53 라우팅을 비활성화해 트래픽 자체를 차단
+D) Lambda 스케줄로 그 시간대에 Prod EC2/ECS 인스턴스를 자동 종료해 변경 자체를 봉쇄
 
 **정답: B**
 해설: SCP의 `aws:CurrentTime` condition으로 시간 기반 차단 구현. SCP는 계정 전체에 영향을 주는 거버넌스 도구라 모든 user/role에 일관 적용된다. A(IAM Policy)도 가능하지만 모든 user에 일일이 적용해야 하므로 누락 위험. 핵심 함정 — **비상 access role을 반드시 ArnNotLike로 제외**해야 한다. 새벽에 진짜 사고가 났을 때 SRE가 들어갈 수 있어야 한다.
@@ -258,10 +258,10 @@ D) 개발팀과 운영팀을 명확히 분리
 
 **문제 12.** 한 회사가 "한 팀이 sandbox 계정에서 비용을 한 달에 \$30,000 쓴 사고가 발생했다. 같은 일이 재발하지 않게 하라"는 요구를 받았다. 가장 효과적인 조치 조합은?
 
-A) AWS Budgets로 \$5,000 임계 시 알림만
+A) AWS Budgets로 \$5,000 임계 시 SNS·이메일 알림을 보내고 팀 리드가 수동 대응
 B) ① Service Catalog로 instance type 제한 ② SCP로 `ec2:RunInstances` 시 InstanceType condition(`t3.*`, `t4g.*`만 허용) ③ AWS Budgets Action으로 \$5,000 초과 시 IAM 정책 자동 attach(추가 권한 차단) ④ Cost Anomaly Detection 활성화
-C) 사람이 매일 비용 확인
-D) sandbox 계정 폐쇄
+C) 사람이 매일 Cost Explorer를 열어 비용을 확인하고 이상 시 슬랙으로 에스컬레이션
+D) sandbox 계정을 폐쇄하고 실험 워크로드를 승인제 Non-Prod 계정으로 이관
 
 **정답: B**
 해설: **다층 방어(defense in depth)**가 비용 거버넌스의 정답이다. ① Service Catalog는 권장 path만 제공(but 우회 가능) ② SCP는 강제 가드레일(우회 불가) ③ Budgets Action은 사후 자동 대응 ④ Anomaly Detection은 ML 기반 이상 탐지. A(알림만)는 사람이 잘 때 무용지물, C(수동)는 휴먼 에러 누적, D(폐쇄)는 sandbox의 존재 이유 자체를 부정. 핵심은 "**예방(SCP) + 탐지(Anomaly) + 자동 대응(Budgets Action)**" 3단 구조.

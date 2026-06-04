@@ -1,413 +1,335 @@
-# Day 11 - AWS Lambda 개요 및 실행 모델
+# Day 11 - Lambda Execution Model: Firecracker MicroVM이 함수를 실행하는 방법
 
-📅 날짜: 2026년 5월 31일 (일요일)  
-🎯 주제: AWS Lambda 기초  
-⏱️ 학습 시간: 약 90분
+2014년 Amazon은 내부적으로 심각한 문제를 마주하고 있었다. EC2 위에 올라가는 컨테이너 기반 함수 실행 환경은 멀티테넌시 보안 격리가 약했고, 콜드 스타트가 수 초에 달했다. 같은 해 발표된 Lambda는 초창기엔 컨테이너(LXC)로 동작했지만, 이 모델은 보안 경계가 불분명하고 밀도(하드웨어당 동시 실행 수)가 낮았다. 해결책으로 AWS는 2018년 AWS re:Invent에서 **Firecracker**를 공개했다. Rust로 작성된 MicroVM 하이퍼바이저로, 부팅에 125ms 미만, 메모리 오버헤드 5MB 미만을 달성한다. Lambda는 2019년부터 Firecracker 위에서 동작한다.
 
----
+Firecracker를 이해하면 Lambda의 실행 모델이 한눈에 보인다. 전통적인 VM(QEMU 기반)은 에뮬레이션 레이어가 수백 개의 가상 디바이스를 구현한다. Firecracker는 그 대부분을 버리고 최소한의 가상 NIC, 블록 디바이스, 직렬 포트, 키보드만 남긴다. 결과적으로 코드 크기가 50,000줄 이하로 공격 표면(attack surface)이 극도로 작아진다. KVM(Linux 커널의 하이퍼바이저 레이어)을 그대로 활용하기 때문에 Intel VT-x / AMD-V 하드웨어 가상화를 쓰며, Rust의 메모리 안전성이 버그를 원천 차단한다.
 
-## 🎯 학습 목표
+## Lambda 실행 환경의 수명 주기: INIT → INVOKE → SHUTDOWN
 
-- AWS Lambda의 서버리스 개념과 장점을 이해한다
-- Lambda 함수의 실행 모델(콜드 스타트, 웜 스타트)을 설명한다
-- Lambda의 런타임, 메모리, 타임아웃 등 기본 구성을 설정할 수 있다
+Lambda 실행 환경(Execution Environment)은 Firecracker MicroVM 위에서 세 단계를 거친다.
 
----
+**INIT 단계**는 콜드 스타트의 본질이다. Lambda 서비스는 먼저 MicroVM을 부팅하고, 런타임 프로세스(Python 인터프리터, JVM, Node.js 프로세스 등)를 올린다. 그런 다음 ZIP/컨테이너에서 코드를 꺼내 `/var/task`에 올리고, `import`나 클래스 로딩이 일어난다. 마지막으로 핸들러 외부의 코드 — 글로벌 변수 선언, DB 연결 초기화, 설정 파일 로딩 — 가 실행된다. 이 전체가 INIT이고, 이 시간만큼 첫 요청 응답이 느려진다.
 
-## 📖 이론 내용
+**INVOKE 단계**는 핸들러 함수 자체의 실행이다. 이벤트가 핸들러로 전달되고, 함수가 응답을 반환하면 Lambda 서비스가 결과를 회수한다. 웜 스타트는 이 단계만 실행되기 때문에 빠르다.
 
-### 1. AWS Lambda란?
-
-Lambda는 서버를 프로비저닝하거나 관리하지 않고 코드를 실행할 수 있는 서버리스 컴퓨팅 서비스입니다. 코드를 업로드하면 AWS가 실행에 필요한 모든 것을 관리합니다.
-
-**서버리스의 의미:**
-- 서버가 없는 것이 아니라, **서버 관리를 할 필요가 없음**
-- AWS가 서버 프로비저닝, 확장, 패치, 고가용성을 관리
-- 코드 실행 시간에만 과금 (밀리초 단위)
-
-**Lambda의 장점:**
-- 인프라 관리 불필요
-- 자동 확장 (동시 실행 지원)
-- 이벤트 기반 실행
-- 다양한 런타임 지원
-- 비용 효율적 (요청 기반 과금)
-
-### 2. Lambda 기본 개념
-
-#### 런타임 (Runtime)
-Lambda는 다음 언어를 네이티브로 지원합니다:
-- **Node.js** (20.x, 18.x)
-- **Python** (3.12, 3.11, 3.10)
-- **Java** (21, 17, 11, 8)
-- **Go** (1.x)
-- **.NET** (8, 6)
-- **Ruby** (3.3)
-- **사용자 정의 런타임** (Lambda Runtime API, Rust 등)
-
-#### 배포 패키지
-1. **ZIP 파일**: 코드 + 의존성 압축 (최대 50MB 직접, 250MB S3 경유)
-2. **컨테이너 이미지**: Docker 이미지 (최대 10GB)
-
-#### Lambda 구성
-- **메모리**: 128MB ~ 10,240MB (vCPU는 메모리에 비례)
-- **타임아웃**: 최대 15분 (기본 3초)
-- **임시 스토리지**: /tmp 디렉토리, 기본 512MB (최대 10GB)
-- **환경 변수**: 키-값 쌍으로 구성 정보 저장
-
-### 3. Lambda 실행 모델
-
-#### Lambda 실행 환경 수명 주기
-```
-1. INIT 단계 (초기화)
-   - 코드 다운로드
-   - 런타임 부팅
-   - 핸들러 외부 코드 실행 (글로벌 변수, DB 연결 등)
-
-2. INVOKE 단계 (실행)
-   - 핸들러 함수 실행
-   - 이벤트 처리
-
-3. SHUTDOWN 단계 (종료)
-   - 함수가 일정 시간 호출 안 될 때 환경 회수
-```
-
-#### 콜드 스타트 vs 웜 스타트
-
-**콜드 스타트 (Cold Start):**
-- 새 실행 환경이 처음 시작될 때 발생
-- INIT 단계 포함 (수십~수백 밀리초 추가 지연)
-- 발생 시점: 처음 호출, 동시성 급증, 비활성화 후 재호출
-
-**웜 스타트 (Warm Start):**
-- 기존 실행 환경이 재사용될 때 발생
-- INVOKE 단계만 실행 (콜드 스타트보다 훨씬 빠름)
-- 컨테이너가 "따뜻하게" 유지됨
-
-**⭐ 콜드 스타트 최소화 방법:**
-1. **Provisioned Concurrency**: 미리 초기화된 실행 환경 유지
-2. **Lambda SnapStart**: Java 함수 스냅샷 기반 빠른 초기화
-3. **메모리 증가**: 더 많은 vCPU 사용으로 초기화 속도 향상
-4. **코드 최적화**: 패키지 크기 줄이기, 초기화 코드 최소화
-
-### 4. Lambda 과금 방식
-
-- **요청 수**: 월 100만 요청 무료, 이후 요청 수당 $0.20
-- **실행 시간**: GB-초 단위 (메모리 × 실행 시간)
-  - 월 400,000 GB-초 무료
-  - 이후 GB-초당 $0.0000166667
-
----
-
-## 🧠 알아두면 좋은 심화 이론
-
-### Lambda 한도 정리 (시험에서 숫자 그대로 출제)
-
-| 항목 | 한도 |
-|------|------|
-| 메모리 | 128 MB ~ 10,240 MB (1MB 단위) |
-| 타임아웃 | 1초 ~ 900초 (15분) |
-| /tmp 임시 스토리지 | 512 MB ~ 10,240 MB |
-| 환경 변수 총 크기 | 4 KB |
-| 동기 페이로드 (요청/응답) | 6 MB |
-| 비동기 페이로드 | 256 KB |
-| Response Streaming | **20 MB** |
-| ZIP 직접 업로드 | 50 MB |
-| ZIP S3 경유 | 250 MB (압축 해제) |
-| 컨테이너 이미지 | 10 GB |
-| 동시성 (계정/리전) | 기본 1,000 (증가 가능) |
-| 초기 버스트 한도 | 500~3,000 (리전별) |
-| 분당 추가 동시성 | +500 |
-
-### 콜드 스타트 최적화 옵션 4가지 비교
-
-| 옵션 | 효과 | 비용 | 사용 |
-|------|------|------|------|
-| **Provisioned Concurrency** | 콜드 완전 제거 | 가장 비쌈 | 일관된 응답 필요 |
-| **SnapStart** | 최대 10배 빠른 시작 (Java/Python/.NET) | 무료~약간 | Java/Spring 함수 |
-| **메모리 증가** | CPU도 비례 ↑ → INIT 빨라짐 | 시간당 ↑ | 일반 최적화 |
-| **레이어/코드 최적화** | 의존성 축소 | 무료 | 항상 적용 |
-
-> ⚠️ **함정**: SnapStart는 **버전 발행 시점에 스냅샷 생성** → `$LATEST`에서는 동작 X. 별칭/버전 사용 강제.
-
-### Lambda 실행 환경 - 알아두면 좋은 디테일
-
-- **재사용 가능**: 한 번 초기화한 환경이 여러 번 호출 처리 (글로벌 변수 캐시 활용)
-- **단일 요청**: 한 환경은 **한 번에 하나의 요청만** 처리 (스레드 분리 X — 동시성은 환경 수로 결정)
-- **/tmp 공유**: 같은 환경 재사용 시 /tmp도 공유됨 — **민감 데이터 저장 금지**
-- **약 1시간 무사용** → 환경 회수, 콜드 스타트 재발생
-
-### Lambda Extensions
-
-- 사이드카처럼 함수와 함께 실행되는 외부 프로세스
-- 용도: 모니터링(Datadog), 시크릿 캐싱(Parameter Store/Secrets Manager Extension), 로그 수집
-- **내부 확장** (런타임 내부) vs **외부 확장** (별도 프로세스)
-- 시험: "시크릿을 매번 호출 안 하고 캐싱하고 싶어요" → AWS Parameters and Secrets Lambda Extension
-
-### Lambda Response Streaming (2023~)
-
-- HTTP 응답을 청크 단위로 스트리밍 가능 (최대 20MB)
-- TTFB(첫 바이트 시간) 단축 → SSE, LLM 응답, 대용량 파일 다운로드
-- Function URL 또는 `aws-lambda-streamifyResponse` 사용
-
-### Lambda Function URL
-
-- 별도 HTTPS 엔드포인트를 함수에 직접 부여 (API Gateway 없이)
-- 인증: NONE 또는 AWS_IAM (SigV4)
-- CORS 직접 설정
-- 시험에 가끔: "간단한 단일 함수를 HTTPS로 노출하려면?" → Function URL
-
-### VPC에서 Lambda 실행 (시험에 자주 출제)
-
-- VPC에 연결하려면 서브넷 + 보안 그룹 지정
-- ENI(Elastic Network Interface)를 통해 VPC 리소스(RDS 등) 접근
-- **Hyperplane ENI** (2019부터): 콜드 스타트 시 ENI 생성 지연 거의 없음
-- VPC 연결 시 인터넷 직접 접근 불가 → NAT GW 필요 (또는 VPC Endpoint 사용)
-
-> ⚠️ **함정**: "Lambda가 RDS에 못 붙어요" → 1) VPC 연결 확인 2) SG 인바운드 확인 3) 서브넷이 NAT 경로 보유 확인
-
-### Lambda 권한 모델 (2개 정책)
-
-| 정책 | 부착 위치 | 역할 |
-|------|----------|------|
-| **Execution Role** | 함수 자체 | Lambda가 **다른 AWS 서비스 호출**할 권한 |
-| **Resource-based Policy (Function Policy)** | 함수에 리소스 정책으로 | **누가 Lambda를 호출**할 수 있는지 (S3, SNS, API GW 등) |
-
-```bash
-# API Gateway가 Lambda 호출 권한 부여 (리소스 정책)
-aws lambda add-permission \
-  --function-name my-function \
-  --statement-id apigateway-prod \
-  --action lambda:InvokeFunction \
-  --principal apigateway.amazonaws.com \
-  --source-arn "arn:aws:execute-api:region:account:api-id/*/*/*"
-```
-
-### 관련 서비스 Cross-Reference
-
-- **이벤트 소스 매핑(SQS/Kinesis/DDB Streams)** → [Day 2]
-- **Layer/버전/별칭** → [Day 3]
-- **동시성·DLQ** → [Day 4]
-- **API Gateway 통합** → [Week 4]
-- **Lambda + Step Functions** → 15분 초과 워크플로 (Step Functions가 오케스트레이션)
-
----
-
-## 아키텍처 다이어그램
-
-```
-Lambda 실행 모델
-================================
-
-이벤트 소스              Lambda 서비스
-(API GW, S3, SQS...)
-        |
-        | 이벤트 발생
-        v
-[Lambda 서비스 수신]
-        |
-        +-- 기존 웜 환경 있음? --> YES --> [웜 스타트] --> 핸들러 실행
-        |
-        NO
-        |
-        v
-[새 실행 환경 생성 - 콜드 스타트]
-        |
-        v
-[코드 다운로드]
-        |
-        v
-[런타임 부팅]
-        |
-        v
-[글로벌 코드 실행]   <- DB 연결 초기화, 설정 로드
-(핸들러 외부)
-        |
-        v
-[핸들러 함수 실행]
-        |
-        v
-[응답 반환]
-        |
-        v
-[실행 환경 유지 (잠시)]
-     (다음 호출 대기)
-
-Lambda 실행 환경 재사용
-================================
-
-호출 1 --> [환경 초기화] --> [핸들러 실행] --> 결과 반환
-                                                    |
-                          환경 유지 (300ms 내 재호출)
-호출 2 -->                              [핸들러 실행] --> 결과 반환
-                (웜 스타트, 콜드 스타트 비용 없음)
-
-/tmp 디렉토리도 재사용됨 (주의: 민감 데이터 주의!)
-```
-
----
-
-## ⭐ 핵심 포인트 (시험 출제 빈도 높음)
-
-1. ⭐ **Lambda 타임아웃**: 최대 15분 (긴 처리는 Step Functions 사용 고려)
-2. ⭐ **Provisioned Concurrency**: 콜드 스타트 방지, 예측 가능한 응답 시간
-3. ⭐ **Lambda 메모리 = vCPU**: 메모리 늘리면 CPU도 비례 증가
-4. ⭐ **/tmp**: 512MB~10GB 임시 스토리지, 실행 환경 간 공유될 수 있음
-5. ⭐ **컨테이너 이미지**: 최대 10GB, ZIP보다 훨씬 큰 배포 패키지 지원
-
----
-
-## 💻 실제 예시 - Lambda 함수 코드
+**SHUTDOWN 단계**는 일정 시간(대략 수 분 ~ 1시간, 정확한 값은 AWS가 공개하지 않음) 동안 호출이 없을 때 Lambda 서비스가 MicroVM을 회수하는 과정이다. 이후 동일 함수 호출이 오면 다시 INIT부터 시작한다.
 
 ```python
-# Python Lambda 핸들러 기본 구조
 import json
 import boto3
 import logging
 
-# 글로벌 변수 (실행 환경 재사용 시 초기화 안 됨)
+# INIT 단계에서 실행 — 콜드 스타트 시 1회
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# DB 연결은 핸들러 외부에 (웜 스타트 시 재사용)
+# DB 연결을 핸들러 외부에 두어야 웜 스타트 시 재사용
 s3_client = boto3.client('s3')
+_db_connection = None
+
+def get_db():
+    global _db_connection
+    if _db_connection is None:
+        # 실제로는 RDS Proxy나 pymysql 연결
+        _db_connection = create_connection()
+    return _db_connection
 
 def lambda_handler(event, context):
-    """
-    Lambda 핸들러 함수
+    """INVOKE 단계에서 실행 — 매 호출마다"""
+    logger.info(f"함수: {context.function_name}, 남은 시간: {context.get_remaining_time_in_millis()}ms")
     
-    Parameters:
-        event: 이벤트 데이터 (dict)
-        context: 실행 컨텍스트 정보
-    """
-    logger.info(f"이벤트 수신: {json.dumps(event)}")
+    db = get_db()  # 웜 스타트면 이미 연결된 객체 반환
     
-    # 컨텍스트 정보 활용
-    logger.info(f"함수 이름: {context.function_name}")
-    logger.info(f"남은 시간(ms): {context.get_remaining_time_in_millis()}")
-    logger.info(f"메모리 제한(MB): {context.memory_limit_in_mb}")
-    
-    try:
-        # 비즈니스 로직
-        bucket_name = event.get('bucket', 'my-bucket')
-        key = event.get('key', 'test.txt')
-        
-        response = s3_client.get_object(Bucket=bucket_name, Key=key)
-        content = response['Body'].read().decode('utf-8')
-        
-        return {
-            'statusCode': 200,
-            'body': json.dumps({
-                'message': 'Success',
-                'content': content
-            })
-        }
-    except Exception as e:
-        logger.error(f"오류 발생: {str(e)}")
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
+    return {
+        'statusCode': 200,
+        'body': json.dumps({'message': 'ok'})
+    }
 ```
+
+> 💡 **관련 이론**: Lambda의 "한 환경에서 한 번에 하나의 요청만" 처리한다는 규칙은 **공유 상태 없는 함수형 프로그래밍**과 같다. Pure function은 동일 입력에 동일 출력을 반환하며 사이드 이펙트가 없다. 하지만 Lambda는 글로벌 변수로 상태를 캐싱한다 — 이건 의도적으로 허용된 최적화다. 핵심은 같은 환경의 다음 호출에서 그 상태가 보이지만, 다른 환경(다른 MicroVM)에서는 전혀 보이지 않는다는 점이다. 분산 시스템 설계 원칙에서는 이를 "지역 캐싱(local cache)"이라고 부른다.
+
+## 콜드 스타트의 해부: 무엇이 얼마나 걸리는가
+
+콜드 스타트 지연은 세 구간으로 나눌 수 있다.
+
+**런타임 초기화**: Python은 수십 ms, Java(JVM 부팅)는 수백 ms ~ 1초 이상, Go/Rust는 수 ms. JVM이 느린 이유는 클래스 로딩과 JIT 컴파일 warmup이 필요하기 때문이다.
+
+**코드 초기화**: `import boto3`, `import pandas` 같은 대형 패키지 로딩. pandas 자체가 50MB가 넘고, numpy C 확장을 링크한다. 레이어로 분리해도 결국 `/opt`에서 불러야 한다. 코드 크기는 직접 영향을 미친다.
+
+**INIT 코드 실행**: DB 연결, HTTP 클라이언트 초기화, SSM/Secrets Manager에서 시크릿 로딩. 이 부분이 개발자가 통제할 수 있는 가장 큰 변수다.
+
+| 런타임 | 일반 콜드 스타트 | 패키지 최적화 후 |
+|--------|----------------|----------------|
+| Python 3.12 | 200–500ms | 100–200ms |
+| Node.js 20.x | 100–300ms | 50–150ms |
+| Java 21 (JVM) | 1000–3000ms | 500–1000ms |
+| Java 21 (SnapStart) | 100–300ms | 100–300ms |
+| Go 1.x | 50–150ms | 30–100ms |
+| .NET 8 | 300–800ms | 200–500ms |
+
+> 💡 **관련 이론**: SnapStart는 Java에서 **체크포인팅(checkpointing)** 아이디어를 구현한 것이다. CRIU(Checkpoint/Restore In Userspace)라는 Linux 기술을 참고했는데, 프로세스의 메모리 상태를 스냅샷 찍어두고 나중에 복원하는 방식이다. Lambda SnapStart는 버전 발행 시점에 JVM이 완전히 초기화된 상태를 S3에 스냅샷으로 저장한다. 이후 호출 시 MicroVM이 그 스냅샷을 그대로 복원하므로 JVM 부팅과 코드 INIT을 건너뛴다. 단, 스냅샷 복원 시 현재 시간, 랜덤 시드, 환경별 자격증명 같은 것들은 재초기화가 필요하다. `CRaC`(Coordinated Restore at Checkpoint) API로 이 시점에 훅을 걸 수 있다.
+
+> ⚠️ **함정**: SnapStart는 **버전을 발행해야 활성화**된다. `$LATEST`에서는 동작하지 않는다. 따라서 Lambda 별칭과 함께 사용해야 하고, CodeDeploy 트래픽 시프트도 함께 설정하는 것이 일반적이다.
+
+## Provisioned Concurrency vs Reserved Concurrency: 완전히 다른 목적
+
+두 개념을 헷갈리는 것이 시험 실패의 가장 흔한 원인이다.
+
+**Reserved Concurrency**는 함수의 동시성 상한(ceiling)이자 하한(floor)이다. `put-function-concurrency --reserved-concurrent-executions 100`으로 설정하면 이 함수는 최대 100개의 MicroVM만 동시에 실행된다. 동시에, 계정 전체 동시성 풀에서 100개가 이 함수에 전용으로 예약되어 다른 함수가 쓸 수 없다. 0으로 설정하면 모든 호출이 즉시 ThrottlingException 429를 받는다 — 함수를 소프트 비활성화하는 방법이다. **Reserved는 비용이 없다.**
+
+**Provisioned Concurrency**는 콜드 스타트를 미리 없애는 기능이다. `put-provisioned-concurrency-config --provisioned-concurrent-executions 20`을 설정하면 20개의 MicroVM이 INIT까지 완료된 웜 상태로 항상 대기한다. 요청이 와도 즉시 INVOKE 단계만 실행된다. **이건 반드시 버전 또는 별칭에만 설정할 수 있고, `$LATEST`에는 불가능하다.** 비용은 초기화된 MicroVM 수 × 시간 × GB로 과금된다.
 
 ```bash
-# Lambda 함수 생성
-aws lambda create-function \
-  --function-name my-function \
-  --runtime python3.12 \
-  --handler lambda_function.lambda_handler \
-  --role arn:aws:iam::123456789012:role/LambdaRole \
-  --zip-file fileb://function.zip \
-  --timeout 30 \
-  --memory-size 256 \
-  --environment Variables='{BUCKET_NAME=my-bucket,ENV=production}'
+# Reserved Concurrency 설정 (상한선 + 전용 할당)
+aws lambda put-function-concurrency \
+  --function-name payment-service \
+  --reserved-concurrent-executions 200
 
-# Lambda 함수 호출 (동기)
-aws lambda invoke \
-  --function-name my-function \
-  --payload '{"bucket": "my-bucket", "key": "test.txt"}' \
-  --cli-binary-format raw-in-base64-out \
-  output.json
+# Provisioned Concurrency (버전에 설정 — $LATEST 불가)
+aws lambda publish-version \
+  --function-name payment-service
+# 출력: {"Version": "5"}
 
-# Lambda 함수 업데이트
-aws lambda update-function-code \
-  --function-name my-function \
-  --zip-file fileb://function.zip
-
-# Provisioned Concurrency 설정
 aws lambda put-provisioned-concurrency-config \
-  --function-name my-function \
+  --function-name payment-service \
+  --qualifier 5 \
+  --provisioned-concurrent-executions 20
+
+# 또는 별칭에 설정
+aws lambda create-alias \
+  --function-name payment-service \
+  --name prod \
+  --function-version 5
+
+aws lambda put-provisioned-concurrency-config \
+  --function-name payment-service \
   --qualifier prod \
-  --provisioned-concurrent-executions 10
+  --provisioned-concurrent-executions 20
 ```
+
+> 💡 **관련 이론**: Provisioned Concurrency는 자동 확장과도 연동된다. Application Auto Scaling의 **target tracking** 정책으로 `ProvisionedConcurrencyUtilization` 메트릭이 80%를 넘으면 자동으로 Provisioned Concurrency를 늘릴 수 있다. 예측 가능한 트래픽 패턴(오전 9시 spike)이 있다면 **scheduled scaling**으로 사전에 늘려놓는 패턴도 흔하다.
+
+## Lambda 한도: 시험에 나오는 숫자들
+
+| 항목 | 한도 | 비고 |
+|------|------|------|
+| 메모리 | 128MB ~ 10,240MB | 64MB 단위 증가 |
+| vCPU | 메모리에 비례 | 1,769MB = 1 vCPU |
+| 타임아웃 | 1초 ~ 900초 | 15분 |
+| /tmp 스토리지 | 512MB ~ 10,240MB | |
+| 환경 변수 전체 크기 | 4KB | |
+| 동기 페이로드 (요청/응답) | 6MB | |
+| 비동기 페이로드 | 256KB | |
+| Response Streaming | 20MB | Function URL 또는 APIGW |
+| ZIP 직접 업로드 | 50MB | |
+| ZIP S3 경유 | 250MB (압축 해제) | |
+| 컨테이너 이미지 | 10GB | |
+| 계정/리전 동시성 기본 | 1,000 | 증가 요청 가능 |
+| 초기 버스트 한도 | 500~3,000 | 리전별 상이 |
+| 분당 추가 가능 동시성 | +500 | |
+| 레이어 최대 개수 | 5개 | |
+| 레이어+코드 합계 | 250MB | 압축 해제 기준 |
+
+> 🔍 **더 깊이**: `1,769MB = 1 vCPU`라는 숫자는 Lambda 설계 시 정해진 비율이다. 256MB 함수는 약 0.145 vCPU를 받는다. 이 비율은 CPU-bound 작업에서 메모리를 늘리면 성능이 좋아지는 핵심 이유다. 비선형적이라 2배 메모리가 항상 2배 속도를 의미하지는 않지만, CPU 집약적 작업(이미지 처리, 암호화, JSON 직렬화)에서는 메모리 증가가 실행 시간을 줄여 GB-초 기준 비용이 오히려 낮아지는 경우가 있다.
+
+## VPC Lambda와 Hyperplane ENI
+
+VPC Lambda는 2019년 이전에 악명 높았다. 함수가 VPC에 연결될 때마다 ENI(Elastic Network Interface)를 새로 생성했고, ENI 생성에 10~30초가 걸렸다. 스케일아웃 시 ENI를 수십 개 만들어야 해서 콜드 스타트가 폭발적으로 늘었다.
+
+2019년 9월 AWS는 **Hyperplane ENI**를 도입했다. 핵심 아이디어는 ENI를 함수 인스턴스마다 만드는 대신, VPC 설정(서브넷 + SG 조합)을 공유하는 NAT 계층을 두는 것이다. 실행 환경들이 Hyperplane 네트워크 계층을 공유하고, 그 계층이 VPC ENI를 유지한다. 결과적으로 ENI 생성이 첫 VPC 연결 시 한 번만 일어나고, 이후 확장 시에는 ENI를 재사용한다.
+
+```bash
+# VPC 연결 Lambda 생성
+aws lambda create-function \
+  --function-name rds-connector \
+  --runtime python3.12 \
+  --handler handler.lambda_handler \
+  --role arn:aws:iam::123:role/LambdaVpcRole \
+  --zip-file fileb://function.zip \
+  --vpc-config SubnetIds=subnet-abc,subnet-def,SecurityGroupIds=sg-xyz \
+  --timeout 30 \
+  --memory-size 256
+```
+
+> ⚠️ **함정**: VPC에 연결된 Lambda는 **인터넷에 직접 접근할 수 없다**. 퍼블릭 서브넷에 놓아도 마찬가지다 — Lambda는 ENI를 통해 VPC에 들어가지만, 공인 IP를 받지 않는다. 인터넷이 필요하면 NAT Gateway + 프라이빗 서브넷, 또는 VPC Endpoint(AWS 서비스용)가 필요하다. "Lambda가 Secrets Manager에 못 붙어요"라는 시나리오에서 VPC Lambda에 VPC Endpoint가 없는 경우가 흔한 함정이다.
+
+## Lambda 권한 모델: 두 가지 정책
+
+Lambda 함수와 관련된 IAM 정책은 성격이 완전히 다른 두 종류다.
+
+**Execution Role(실행 역할)**은 Lambda 함수가 다른 AWS 서비스를 호출할 때 사용하는 역할이다. 함수 코드 안에서 `boto3.client('s3').put_object(...)` 할 때 이 역할의 권한으로 동작한다.
+
+**Resource-based Policy(리소스 기반 정책, Function Policy)**는 반대 방향이다. "누가 이 Lambda를 호출할 수 있는가"를 제어한다. S3가 Lambda를 트리거하려면, SNS가 Lambda를 호출하려면, API Gateway가 Lambda를 invoke하려면 — 모두 이 정책에 principal이 등록되어야 한다.
+
+```bash
+# API Gateway가 Lambda를 호출하는 권한 부여
+aws lambda add-permission \
+  --function-name my-api \
+  --statement-id apigateway-prod-invoke \
+  --action lambda:InvokeFunction \
+  --principal apigateway.amazonaws.com \
+  --source-arn "arn:aws:execute-api:ap-northeast-2:123456789:abc123/prod/*/orders"
+```
+
+> 💡 **관련 이론**: 이 두 정책은 IAM의 **identity-based policy vs resource-based policy** 구분과 정확히 일치한다. Identity-based는 "나(주체)는 무엇을 할 수 있는가", resource-based는 "이 자원에 누가 접근할 수 있는가"다. 같은 이분법이 S3 버킷 정책, SQS 큐 정책, KMS 키 정책에도 적용된다.
+
+## Lambda Extensions: 사이드카 패턴
+
+Lambda Extensions는 함수와 함께 실행되는 별도 프로세스다. **외부 확장**은 독립적인 프로세스로 실행되며, `/opt/extensions/` 경로에 바이너리를 넣으면 Lambda 서비스가 함수와 나란히 실행시킨다. **내부 확장**은 런타임 내부에서 실행되며, 언어별 래퍼 형태다.
+
+실무에서 가장 많이 쓰이는 것은 **AWS Parameters and Secrets Lambda Extension**이다. 이 확장은 함수 코드가 `localhost:2773`으로 HTTP 요청을 보내면 SSM Parameter Store나 Secrets Manager 값을 캐싱해서 반환한다. 함수가 매 호출마다 Secrets Manager API를 호출하면 비용이 발생하고 레이턴시가 늘지만, 확장이 TTL 기간 동안 캐시를 유지하므로 API 호출 횟수가 대폭 줄어든다.
+
+> 📚 **사례**: Datadog, Dynatrace, New Relic 같은 APM 벤더들이 Lambda Extension을 활용한다. 기존엔 Lambda 함수 코드 안에 SDK를 심어야 했지만, Extension을 통해 함수 코드를 수정하지 않고도 메트릭과 트레이스를 수집할 수 있다. AWS re:Invent 2020에서 공식 발표됐고, 이 패턴은 마이크로서비스의 사이드카 패턴(Envoy, Istio)과 철학적으로 동일하다.
+
+## 다른 클라우드와 비교: FaaS 구현체의 차이
+
+| 항목 | AWS Lambda | GCP Cloud Functions (Gen 2) | Azure Functions |
+|------|-----------|----------------------------|-----------------|
+| 격리 | Firecracker MicroVM | gVisor (Linux syscall 에뮬레이션) | Hyper-V 컨테이너 |
+| 콜드 스타트 (Python) | 200–500ms | 100–300ms | 200–600ms |
+| 최대 실행 시간 | 15분 | 60분 (HTTP), 9분 (이벤트) | 10분 (Consumption) |
+| 최대 메모리 | 10GB | 16GB | 14GB |
+| VPC 연동 | ✅ | ✅ | ✅ |
+| Snapshottng | SnapStart (Java) | 없음 | 없음 |
+| 가격 모델 | 요청 수 + GB-초 | 요청 수 + GHz-초 | 요청 수 + GB-초 |
+
+> 🔍 **더 깊이**: gVisor는 Google이 만든 컨테이너 샌드박스로, 앱과 Linux 커널 사이에 Go로 작성된 커널 에뮬레이션 레이어를 삽입한다. Firecracker가 실제 MicroVM(하드웨어 가상화)인 것과 달리, gVisor는 syscall 인터셉션이라 오버헤드가 다르다. Firecracker는 KVM을 사용하므로 CPU 집약적 작업에서 bare-metal에 더 가깝고, gVisor는 시스템 콜이 많은 I/O 집약적 작업에서 오버헤드가 커질 수 있다. 학술적으로는 2018 OSDI 논문 "gVisor: Reducing Security Overhead with OS-level Virtualization"이 참고 자료다.
+
+## Response Streaming: TTFB 최적화
+
+2023년 출시된 Lambda Response Streaming은 함수가 응답을 다 만들고 한번에 보내는 게 아니라, 청크 단위로 스트리밍하게 한다. HTTP chunked transfer encoding을 기반으로 하며, 최대 20MB까지 스트리밍 가능하다.
+
+**사용 사례**: LLM API 호출 후 토큰 단위 스트리밍(OpenAI처럼), 대용량 JSON 파일 다운로드, 비디오 변환 진행 상황 알림.
+
+**제한**: Function URL 또는 API Gateway HTTP API(payload v2.0)에서만 지원. REST API는 지원 안 된다.
+
+```python
+import json
+
+def lambda_handler(event, context):
+    # streamify 데코레이터 사용 (Node.js) 또는
+    # Python에서 직접 awslambdaric의 streaming response 사용
+    def generate():
+        for i in range(10):
+            yield json.dumps({"chunk": i, "data": "..." * 100}) + "\n"
+    
+    return {
+        "statusCode": 200,
+        "headers": {"Content-Type": "application/x-ndjson"},
+        "body": generate()  # 이터레이터를 반환하면 Lambda가 청크로 스트리밍
+    }
+```
+
+## 과금 모델: 코드에서 비용을 계산하는 법
+
+Lambda 비용은 **요청 수**와 **GB-초** 두 가지로 나온다.
+
+```
+월 비용 계산 예시:
+- 함수 메모리: 512MB = 0.5GB
+- 하루 호출: 100만 회
+- 평균 실행 시간: 300ms
+
+GB-초/월 = 0.5 × 0.3 × 1,000,000 × 30 = 4,500,000 GB-초
+무료 티어: 400,000 GB-초
+
+청구 GB-초: 4,100,000
+비용: 4,100,000 × $0.0000166667 = $68.33/월
+요청 비용: 30,000,000 × $0.20 / 1,000,000 = $6/월
+총계: 약 $74.33/월
+```
+
+> 💡 **관련 이론**: Lambda의 GB-초 과금은 경제학적으로 **시간 기반 가격책정(time-based pricing)**의 변형이다. vCPU가 메모리에 비례하므로, 더 많은 CPU를 원하면 더 많은 메모리를 사야 한다. 이는 EC2의 인스턴스 타입 선택(c5 = 컴퓨팅 최적, r5 = 메모리 최적)과 다른 방식이다. AWS Power Tuning Tool을 사용하면 여러 메모리 설정에서 실행 시간과 비용을 자동으로 벤치마크해 최적 설정을 찾아준다.
+
+## 마무리
+
+Lambda의 실행 모델은 Firecracker MicroVM이라는 독창적인 인프라 위에 세워졌다. 콜드 스타트는 INIT 단계의 필연적 비용이고, Provisioned Concurrency와 SnapStart는 그 비용을 줄이는 두 가지 다른 접근이다. VPC Lambda는 Hyperplane ENI 이후 실용적으로 변했고, Extensions는 Lambda를 더 관찰 가능(observable)하게 만든다. 이 모든 메커니즘을 이해하면 "왜 이 함수가 첫 요청에서 느리지?"나 "왜 RDS에 못 붙지?" 같은 실무 문제가 즉각 진단된다.
+
+다음 글에서는 이 Lambda 함수가 어떤 이벤트로 트리거되는지, SQS·Kinesis·DynamoDB Streams 이벤트 소스 매핑의 내부 폴링 메커니즘을 파고든다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** Lambda 함수의 최대 실행 타임아웃은?
+**문제 1.** Lambda SnapStart에 대한 가장 정확한 설명은?
 
-A) 5분  
-B) 15분  
-C) 30분  
-D) 1시간  
+A) 모든 런타임에서 기본 활성화된다  
+B) 버전 발행 시점에 JVM이 초기화된 스냅샷을 생성하며, $LATEST에서는 동작하지 않는다  
+C) 비용이 추가로 발생하며 메모리 크기에 비례한다  
+D) Provisioned Concurrency와 동시 활성화할 수 없다  
 
 **정답: B**  
-해설: Lambda 함수의 최대 실행 타임아웃은 15분(900초)입니다. 이보다 긴 처리가 필요한 경우 Step Functions 또는 다른 서비스를 사용해야 합니다.
+해설: SnapStart는 버전 발행(publish-version) 시점에 JVM 초기화 상태를 스냅샷으로 저장한다. `$LATEST`에는 설정할 수 없어 반드시 발행된 버전 또는 그 버전을 가리키는 별칭을 통해 호출해야 한다. A는 틀렸다 — Java 런타임만 지원하며 기본 비활성이다. C는 틀렸다 — SnapStart 자체는 무료다(스냅샷 저장 S3 비용만 미미하게 발생). D는 틀렸다 — 함께 사용할 수 있다.
 
 ---
 
-**문제 2.** Lambda 콜드 스타트를 방지하는 가장 효과적인 방법은?
+**문제 2.** 1,769MB 메모리를 가진 Lambda 함수는 몇 vCPU를 받는가?
 
-A) 더 빠른 프로그래밍 언어 사용  
-B) 코드 크기 최소화  
-C) Provisioned Concurrency 활성화  
-D) Lambda 함수를 주기적으로 호출하는 CloudWatch 이벤트 설정  
+A) 0.5 vCPU  
+B) 1 vCPU  
+C) 2 vCPU  
+D) 메모리와 vCPU는 무관하다  
+
+**정답: B**  
+해설: Lambda는 1,769MB = 1 vCPU라는 비율로 CPU를 할당한다. 512MB는 약 0.29 vCPU, 3,008MB는 약 1.7 vCPU다. 이 때문에 CPU 집약적 작업(JSON 직렬화, 암호화, 이미지 처리)에서 메모리를 늘리면 실행 시간이 줄어 GB-초 비용이 오히려 낮아지는 경우가 있다. AWS Lambda Power Tuning 도구로 최적 메모리를 자동으로 찾을 수 있다.
+
+---
+
+**문제 3.** Lambda 함수가 VPC에 연결되어 있을 때 인터넷 API를 호출하려고 한다. 어떤 설정이 필요한가?
+
+A) VPC 연결을 제거하고 퍼블릭 Lambda로 전환한다  
+B) 함수를 퍼블릭 서브넷에 배치한다  
+C) 프라이빗 서브넷과 NAT Gateway를 통해 아웃바운드 인터넷 트래픽을 라우팅한다  
+D) Security Group에 HTTPS(443) 인바운드 룰을 추가한다  
 
 **정답: C**  
-해설: Provisioned Concurrency는 미리 초기화된 실행 환경을 유지하여 완전히 콜드 스타트를 제거합니다. 나머지 방법들은 부분적으로 도움이 되지만 완전한 해결책은 아닙니다.
+해설: VPC Lambda는 ENI를 통해 VPC 내부 주소를 받지만 공인 IP는 없다. 퍼블릭 서브넷에 배치해도 인터넷으로 나갈 수 없다. 인터넷 접근은 프라이빗 서브넷 + NAT Gateway 또는 프라이빗 서브넷 + VPC Endpoint(AWS 서비스 전용) 조합이 필요하다. B처럼 퍼블릭 서브넷에 배치해도 Lambda ENI는 IGW를 통해 라우팅되지 않기 때문에 의미가 없다.
 
 ---
 
-**문제 3.** Lambda 함수에서 실행 환경 간 상태를 공유하면 어떤 문제가 발생할 수 있는가?
+**문제 4.** Provisioned Concurrency와 Reserved Concurrency에 대한 설명 중 옳은 것은?
 
-A) 메모리 부족  
-B) 동시 실행 시 /tmp 디렉토리 데이터가 오염될 수 있다  
-C) 타임아웃 발생  
-D) 함수가 자동으로 종료된다  
+A) 두 기능 모두 $LATEST 버전에 설정 가능하다  
+B) Reserved Concurrency는 미리 초기화된 환경을 유지하여 콜드 스타트를 방지한다  
+C) Provisioned Concurrency는 함수 버전 또는 별칭에만 설정할 수 있고, Reserved Concurrency는 $LATEST를 포함한 함수 자체에 설정한다  
+D) 두 기능 모두 추가 비용이 발생한다  
+
+**정답: C**  
+해설: Provisioned Concurrency는 초기화된 실행 환경을 유지하는 기능으로 반드시 버전 번호 또는 별칭에 설정해야 한다($LATEST 불가). Reserved Concurrency는 함수 전체에 적용되는 동시성 상한선으로 $LATEST를 포함한 모든 호출에 영향을 미치며, 비용이 없다. B는 틀렸다 — Reserved는 콜드 스타트와 무관하다. D는 틀렸다 — Reserved는 무료다.
+
+---
+
+**문제 5.** Lambda 비동기 호출에서 Destination과 DLQ의 차이로 옳은 것은?
+
+A) DLQ는 성공/실패 모두 처리하고, Destination은 실패만 처리한다  
+B) Destination은 성공/실패 모두 처리 가능하고, SQS·SNS·EventBridge·Lambda를 대상으로 지원한다  
+C) DLQ는 EventBridge를 대상으로 지원하지만, Destination은 지원하지 않는다  
+D) 두 기능의 기능은 동일하며 비용만 다르다  
 
 **정답: B**  
-해설: Lambda 실행 환경의 /tmp 디렉토리는 동일 실행 환경이 재사용될 때 유지됩니다. 민감한 데이터나 세션 관련 데이터를 /tmp에 저장하면 다른 요청에서 접근될 수 있습니다.
+해설: Destination은 비동기 호출의 성공(OnSuccess)과 실패(OnFailure) 모두에 대해 SQS, SNS, EventBridge, Lambda를 대상으로 이벤트를 보낼 수 있으며, 요청과 응답 메타데이터를 포함한 풍부한 컨텍스트를 전달한다. 반면 DLQ는 최종 실패 이벤트만 SQS 또는 SNS로 보내며, 기본 페이로드만 포함한다. AWS는 새 설계에서 Destination 사용을 권장한다.
 
 ---
 
-**문제 4.** Lambda 함수의 메모리 설정과 성능의 관계는?
+**문제 6.** Lambda 함수에서 글로벌 변수를 사용하는 올바른 이유는?
 
-A) 메모리 증가는 성능에 영향을 주지 않는다  
-B) 메모리를 늘리면 vCPU도 비례하여 증가한다  
-C) 메모리가 많을수록 항상 비용이 절감된다  
-D) 메모리는 실행 시간과 무관하다  
+A) Lambda는 멀티스레드이므로 스레드 로컬 스토리지가 필요하다  
+B) 같은 실행 환경이 재사용될 때 INIT 코드를 건너뛰어 웜 스타트 성능을 높이기 위해  
+C) 여러 함수 인스턴스 간에 상태를 공유하기 위해  
+D) Lambda에서 글로벌 변수는 권장되지 않는다  
 
 **정답: B**  
-해설: Lambda에서 메모리를 늘리면 할당되는 vCPU 수도 비례하여 증가합니다. 따라서 CPU 집약적 작업의 경우 메모리를 늘리면 실행 시간이 줄어 전체 비용이 낮아질 수 있습니다.
+해설: Lambda 실행 환경(MicroVM)이 웜 상태로 재사용될 때, INIT에서 실행한 글로벌 변수 초기화 코드는 다시 실행되지 않는다. DB 연결, boto3 클라이언트, 설정 파일 등을 글로벌에 두면 웜 스타트 시 재사용돼 응답 시간이 크게 줄어든다. 다만 C는 틀렸다 — 서로 다른 MicroVM 인스턴스 간에는 글로벌 변수가 공유되지 않는다. 각 인스턴스는 완전히 분리된 메모리 공간을 갖는다.
 
 ---
 
-**문제 5.** Lambda 컨테이너 이미지 배포의 최대 크기는?
+**문제 7.** Lambda Extensions에 대한 올바른 설명은?
 
-A) 250MB  
-B) 1GB  
-C) 5GB  
-D) 10GB  
+A) Lambda Extensions는 함수 코드 내부에서만 실행된다  
+B) 외부 확장은 함수와 별도 프로세스로 실행되며 함수가 끝난 후에도 SHUTDOWN 단계까지 실행을 유지한다  
+C) Lambda Extensions는 추가 요금이 없지만 함수 타임아웃을 공유한다  
+D) 외부 확장은 함수 메모리 한도 밖에서 실행된다  
 
-**정답: D**  
-해설: Lambda 컨테이너 이미지 배포의 최대 크기는 10GB입니다. ZIP 파일 배포의 경우 S3 경유 시 250MB까지 지원됩니다.
+**정답: B**  
+해설: 외부 Lambda Extension은 `/opt/extensions/`에 배치된 독립 프로세스로, Lambda 서비스가 함수와 나란히 시작한다. INVOKE 단계에서 함수와 동시에 실행되며, SHUTDOWN 단계에서 정리 작업을 수행한다. C는 틀렸다 — 확장도 함수의 타임아웃(최대 15분)을 공유한다. D는 틀렸다 — 확장은 함수 메모리 한도 안에서 실행되므로, 확장이 메모리를 많이 쓰면 함수에서 쓸 수 있는 메모리가 줄어든다. 따라서 확장 사용 시 메모리를 충분히 늘려야 한다.
 
----
-
-## 📌 오늘의 요약
-
-1. Lambda는 서버 관리 없이 이벤트에 반응하여 코드를 실행하는 서버리스 서비스다
-2. 콜드 스타트는 새 실행 환경 초기화 시 발생하며 Provisioned Concurrency로 방지 가능하다
-3. Lambda 메모리(128MB~10GB)와 vCPU는 비례하며, 최대 타임아웃은 15분이다
-4. 글로벌 변수(DB 연결 등)는 핸들러 외부에 두어 웜 스타트 시 재사용한다
-5. 과금은 요청 수 + 실행 시간(GB-초)으로, 월 100만 요청 + 400,000 GB-초 무료

@@ -1,187 +1,192 @@
-# Day 72 - 스타트업 빠른 성장·비용 최적화
+# Day 72 - 스타트업 빠른 성장·비용 최적화 — 서버리스의 경제학, 100배 확장의 물리학, Savings Plans 수학
 
-📅 Week 15 (Day 2)
-🎯 주제: 서버리스 우선·MVP→Scale
-⏱️ 약 90분 (출퇴근 15-20분 핵심)
+2014년 AWS가 Lambda를 발표했을 때 업계의 반응은 회의적이었다 — "함수 하나 실행하려고 인프라를 추상화한다고?" 그러나 10년 뒤, 서버리스는 스타트업이 **인프라 팀 없이도 글로벌 규모로 확장**하는 표준이 됐다. 그 상징이 2017년의 화제작이었던 한 사진 공유 앱이다. 단 13명의 직원이 수백만 사용자를 서버리스만으로 운영했고, 인프라 엔지니어는 0명이었다. 핵심은 단순하다 — **3명짜리 팀에게 가장 비싼 자원은 서버가 아니라 엔지니어의 시간**이고, 서버리스는 그 시간을 인프라 운영에서 제품으로 옮긴다.
 
----
+오늘 시나리오는 시드 단계 SaaS다. 엔지니어 3명, 빠른 출시, 초기 비용 최소, 그러나 6개월 뒤 100배 사용자 증가 예상. 이 두 요구는 충돌하는 것처럼 보인다 — 초기엔 거의 안 쓰는데 갑자기 100배로 터져야 한다. SAA라면 "Lambda 쓰세요"로 끝나지만, Pro는 **사용량 0에서 비용 0, 100배에서 자동 확장, 그리고 100배 후엔 Savings Plans로 비용을 다시 깎는** 전체 수명주기 경제학을 묻는다. 오늘은 서버리스가 왜 스타트업에 경제적으로 우월한지, 100배 확장이 어디서 막히는지(동시성·콜드 스타트), 그리고 약정 할인의 수학을 깊이 분해한다.
 
-## 🎯 학습 목표
+## 서버리스의 경제학 — 왜 비용 0에서 시작하나
 
-- 서버리스 우선 아키텍처
-- 빠른 반복·비용 효율
-- 사용량 변동 대응
+전통적 EC2는 **프로비저닝된 용량**에 비용을 낸다 — 인스턴스가 트래픽을 받든 안 받든, 켜져 있으면 시간당 과금된다. 스타트업 초기엔 이게 치명적이다. 사용자가 하루 100명일 때도 24시간 EC2를 켜둬야 하니, **유휴 비용(idle cost)**이 매출보다 클 수 있다. Lambda·DynamoDB On-Demand·Aurora Serverless v2는 이 구조를 뒤집는다 — **요청이 없으면 청구도 없다(pay-per-use)**.
 
----
+> 💡 **관련 이론**: 이것이 클라우드 경제학의 핵심 개념인 **자본지출(CAPEX) → 운영지출(OPEX) 전환**의 극단적 형태다. 전통 IT는 서버를 미리 사는 CAPEX 모델이고, EC2는 시간당 OPEX지만 여전히 "켜둠"에 비용이 든다. 서버리스는 **사용량 기반 OPEX**로, 비용이 매출(=사용량)에 선형으로 따라붙는다. 재무적으로 이는 스타트업의 **번레이트(burn rate, 현금 소진 속도)**를 매출 곡선에 묶어, 제품-시장 적합성(PMF)을 찾기 전 현금을 보호한다. WA Framework의 Cost Optimization 기둥이 말하는 "수요와 공급의 일치(matching supply with demand)"가 서버리스에서 자동으로 달성된다. 시험에서 "트래픽 없을 때 비용 0"이 보이면 Lambda·DDB On-Demand·Aurora Serverless v2 셋 중 하나다.
 
-## 📖 시나리오
+> 🔍 **더 깊이**: 그러나 서버리스가 항상 싼 건 아니다. 사용량에는 **손익분기점**이 있다. Lambda는 호출당 + 실행시간(GB-초) 과금이라, 트래픽이 **꾸준히 매우 높으면** 항상 켜진 EC2/Fargate가 오히려 싸진다. 대략 "예측 가능하고 지속적인 고부하"는 프로비저닝된 컴퓨트가, "변동성 크거나 간헐적"은 서버리스가 유리하다. Pro의 통찰은 **수명주기에 따라 모델을 바꾼다**는 것 — 초기엔 서버리스로 비용 0, 사용량이 안정적 고부하가 되면 일부를 Fargate/EC2 + Savings Plans로 옮겨 다시 최적화한다. 시험에서 "예측 가능한 안정적 고부하 + 비용 최소"가 보이면 서버리스가 아니라 프로비저닝 + 약정 할인일 수 있다.
 
-> 시드 단계 SaaS. 3명 엔지니어. 빠른 출시·비용 최소.
-> 6개월 후 100x 사용자 증가 예상.
+## DynamoDB — 무한 확장의 대가와 설계
 
-### 요구사항
+서버리스 데이터의 중심은 **DynamoDB**다. RDS는 단일 노드 수직 확장에 한계가 있지만, DDB는 **파티션을 자동으로 쪼개 수평 확장**해 사실상 무한히 늘어난다. On-Demand 모드는 용량 계획 없이 트래픽에 즉시 따라붙어 100배 폭증을 흡수한다.
 
-- 초기 비용 최소
-- 운영 부담 최소 (관리형)
-- 100x 확장 가능
-- 글로벌 사용자
+> 💡 **관련 이론**: DDB의 설계 철학은 2007년 아마존의 **Dynamo 논문**(SOSP)에서 출발한다. 이 논문은 "쇼핑 카트는 절대 멈추면 안 된다"는 요구에서 **가용성을 일관성보다 우선**하는 AP 시스템(CAP 정리)을 택했다. 기본은 eventual consistency(최종 일관성)이고, 옵션으로 strong read를 제공한다. 이 논문은 Cassandra·Riak 등 후대 NoSQL의 시조가 됐다. DDB가 무한 확장하는 비결은 **파티션 키의 해시로 데이터를 노드에 분산(consistent hashing)**하는 것 — 그래서 파티션 키 설계가 곧 성능이다. 시험에서 "단일 키에 트래픽 집중(hot partition)"이 보이면 키 설계 문제이고, write sharding이나 키 분산이 해법이다.
 
----
+> ⚠️ **함정**: "DDB는 무한 확장"이라고 외우면 **핫 파티션(hot partition)** 함정에 빠진다. 트래픽이 특정 파티션 키에 몰리면 그 파티션의 처리량 한계(파티션당 약 3,000 RCU/1,000 WCU)에 막혀 throttle된다 — 전체 테이블엔 여유가 있어도. 100배 확장 시 이게 터진다. 해법은 파티션 키를 고르게 분산되도록 설계하거나(예: 날짜+랜덤 접미사로 write sharding), 시계열 같은 패턴은 키에 분산 인자를 더하는 것이다. 시험에서 "DDB인데 일부 키에서만 throttle"이 보이면 용량 부족이 아니라 핫 파티션이다.
 
-## 📖 솔루션
+> 🔍 **더 깊이**: 관계형이 꼭 필요하면 **Aurora Serverless v2**를 쓴다. v1과 v2의 차이가 시험에 자주 나온다 — v1은 **스케일 시 일시 중단(pause)**이 있고 스케일링이 느리며 0까지 내려가지만 콜드 스타트 지연이 컸다. v2는 **0.5 ACU 단위로 끊김 없이(in-place) 초 단위 스케일**해 프로덕션 워크로드에 적합하다. 다만 v2는 완전히 0으로 내려가진 않았다(2024년 들어 자동 일시정지 기능이 추가되며 0 ACU 지원). 시험에서 "관계형 + 사용량 변동 + 프로덕션"은 Aurora Serverless v2다.
 
-### 1. 컴퓨트
+## 100배 확장의 물리학 — 동시성과 콜드 스타트
 
-- **API**: API Gateway + Lambda (또는 AppSync GraphQL)
-- **Workers**: SQS + Lambda
-- **Cron**: EventBridge Scheduler + Lambda
+Lambda의 확장은 무한해 보이지만 두 개의 실질적 벽이 있다 — **동시성 한도(concurrency limit)**와 **콜드 스타트(cold start)**다.
 
-### 2. 데이터
+Lambda는 요청마다 실행 환경(execution environment)을 띄운다. 같은 순간에 처리 중인 요청 수가 동시성이고, 계정·리전당 기본 동시성 한도(보통 1,000, 상향 가능)가 있다. 100배 폭증이 이 한도를 넘으면 throttle된다. 또 새 실행 환경을 처음 띄울 때 런타임 초기화·코드 로드에 걸리는 지연이 **콜드 스타트**다 — 자바/.NET처럼 무거운 런타임에서 수백 ms~수 초가 될 수 있다.
 
-- **DynamoDB On-Demand** (오토 스케일·서버 0)
-- **Aurora Serverless v2** (관계형 필요 시)
-- **S3 Intelligent-Tiering**
+> 💡 **관련 이론**: 콜드 스타트는 본질적으로 **상태 없는(stateless) 함수를 상태 있는(stateful) 인프라 위에서 시뮬레이션**하는 비용이다. Lambda는 사용 후 환경을 잠시 재사용(warm)하다 유휴 시 회수한다 — 이 회수-재생성 사이클이 콜드 스타트의 근원이다. AWS는 이를 줄이기 위해 **Provisioned Concurrency**(미리 환경을 데워둠, 비용 발생)와 2022년 **SnapStart**(Java 함수의 초기화 스냅샷을 미리 떠 복원, Firecracker microVM의 스냅샷 기능 활용)를 도입했다. Firecracker는 AWS가 2018년 오픈소스로 공개한 경량 가상화 기술로, Lambda·Fargate의 격리 기반이다. 시험에서 "Lambda 콜드 스타트로 지연 SLA 위반"이 보이면 Provisioned Concurrency(또는 Java면 SnapStart)가 정답이다.
 
-### 3. 인증
+> ⚠️ **함정**: 100배 확장 시 흔한 실수는 **하류(downstream) 자원이 Lambda 동시성을 못 따라가는 것**이다. Lambda는 순식간에 1,000개 동시 실행으로 폭발하는데, 그 뒤의 RDS는 커넥션 한도(예: 수백 개)에서 무너진다 — Lambda 인스턴스마다 DB 커넥션을 열기 때문이다. 해법은 **RDS Proxy**(커넥션 풀링)로 커넥션을 재사용하거나, DDB 같은 서버리스 데이터로 가는 것이다. 시험에서 "Lambda + RDS인데 확장 시 'too many connections'"가 보이면 RDS Proxy가 정답이다. 서버리스는 **가장 약한 연결고리만큼만 확장**한다.
 
-- **Cognito User Pools** (소셜 로그인 통합)
-- **Cognito Identity Pools** (AWS 리소스 액세스)
+> 🎯 **시나리오**: "한 스타트업이 마케팅 캠페인으로 트래픽이 평소의 100배로 순간 폭증할 것을 안다. API Gateway + Lambda + DynamoDB 구조다. 가장 신경 써야 할 세 가지는?" — 답: **(1) Lambda 예약/프로비저닝 동시성으로 throttle·콜드 스타트 대비, (2) DynamoDB On-Demand 또는 핫 파티션 방지 키 설계, (3) API Gateway throttle 한도 상향 + SQS로 버퍼링**. 동기 폭증을 SQS로 받아 Lambda가 자기 속도로 소비하게(buffer & decouple) 만들면, 하류를 보호하면서 유실 없이 처리한다. 시험에서 "예측된 폭증 흡수"가 보이면 SQS 버퍼링 + 동시성 관리가 핵심이다.
 
-### 4. 글로벌
+## 글로벌 엣지 — CloudFront와 Edge 컴퓨트
 
-- **CloudFront** + S3 (정적·SPA)
-- **Route 53** (Latency Routing)
-- **Lambda@Edge**·**CloudFront Functions**으로 엣지 로직
+글로벌 사용자에겐 **CloudFront + S3(SPA 정적 호스팅)**가 정석이다. CloudFront는 전 세계 엣지 로케이션에 콘텐츠를 캐싱해 지연을 줄이고, 1TB/월 무료 티어로 초기 비용도 거의 0이다. 동적 엣지 로직은 두 가지로 갈린다.
 
-### 5. 관측성
+| 항목 | CloudFront Functions | Lambda@Edge |
+|------|---------------------|-------------|
+| **실행 위치** | 엣지 로케이션(218+) | 리전 엣지 캐시(13곳) |
+| **런타임** | 경량 JS | Node.js/Python |
+| **지연** | 1ms 미만 | 수 ms~수십 ms |
+| **용도** | 헤더 조작·리다이렉트·URL 재작성 | 무거운 로직·외부 호출·바디 조작 |
+| **최대 실행** | 1ms 미만 | 5초(viewer)~30초(origin) |
 
-- **CloudWatch Logs + Metrics + Alarms**
-- **X-Ray**·**CloudWatch ServiceLens** (분산 추적)
-- **CloudWatch Synthetics** (가동 모니터링)
+> 🔍 **더 깊이**: 이 둘의 분리는 **"가장 가까운 곳에서 가장 가벼운 일을"**이라는 엣지 컴퓨팅 원칙의 구현이다. CloudFront Functions는 V8 격리(isolate) 기반으로 극도로 가벼워 모든 엣지에서 0.x ms에 돈다 — 그래서 단순 헤더 추가·A/B 라우팅·간단한 인증 체크에 쓴다. Lambda@Edge는 더 무겁지만 외부 API 호출·요청 바디 변형 등 복잡한 로직을 처리한다. 시험에서 "엣지에서 단순 헤더/리다이렉트, 최저 지연·최저 비용"은 CloudFront Functions, "엣지에서 인증 토큰 검증·외부 호출"은 Lambda@Edge로 갈린다.
 
-### 6. CI/CD
+## Savings Plans 수학 — 100배 후 비용을 다시 깎기
 
-- **CodePipeline + CodeBuild + CodeDeploy** 또는 GitHub Actions + OIDC
-- **SAM** 또는 **CDK** 인프라 코드
+100배로 커지고 사용량이 안정화되면, 온디맨드 가격은 비싸진다. 이때 **Savings Plans(SP)**로 약정 할인을 받는다. SP는 "시간당 $X를 1년 또는 3년간 쓰겠다"고 약정하면 온디맨드 대비 최대 72%까지 할인하는 모델이다.
 
-### 7. 비용
+| 유형 | 적용 대상 | 유연성 | 최대 할인 |
+|------|----------|--------|-----------|
+| **Compute Savings Plans** | EC2·Fargate·Lambda 전부, 리전·인스턴스 패밀리 무관 | 최고 | ~66% |
+| **EC2 Instance Savings Plans** | 특정 리전·패밀리의 EC2만 | 중간 | ~72% |
+| **Reserved Instances** | 특정 인스턴스 타입 | 낮음(예전 방식) | ~72% |
 
-- **AWS Free Tier** 활용
-- **Budgets** 알림·자동 정지
-- 100x 시: **Compute Savings Plans** (Lambda·Fargate)
-- **CloudFront Free Tier** (1TB/월)
+> 💡 **관련 이론**: SP의 경제학은 **수요 예측 가능성과 할인율의 교환**이다. AWS는 사용자가 미래 사용을 약정하면 용량 계획이 쉬워져 그 대가로 할인을 준다 — 일종의 선물(futures) 계약이다. 핵심 수학: 할인율 D, 약정 비율 C(전체 사용량 중 약정으로 커버하는 비율)일 때, 절감 = C × D × (온디맨드 비용)이다. 그래서 **변동이 큰 워크로드는 베이스라인(항상 도는 최소 사용량)만 SP로 약정하고, 변동분은 온디맨드로 흡수**하는 게 최적이다. 베이스라인을 너무 크게 약정하면, 사용량이 줄어도 약정액을 내야 해(use-it-or-lose-it) 손해다. 시험에서 "사용량 변동 + 약정 할인"이 보이면 Compute SP로 베이스라인만 커버가 정답 사고다.
 
----
+> 🔍 **더 깊이**: 스타트업에 특히 중요한 건 **Compute SP가 Lambda·Fargate까지 커버**한다는 점이다. 서버리스 우선 스타트업이 100배 커져 Lambda·Fargate 비용이 월 수만 달러가 되면, Compute SP 1년 약정으로 그 위에 할인을 얹을 수 있다 — 서버리스를 포기하지 않고도 약정 절감을 얻는다. EC2 Instance SP나 RI는 Lambda에 적용되지 않는다. 시험에서 "Lambda·Fargate 비용 절감 + 유연성 유지"가 보이면 **Compute Savings Plans**가 직답이다. 또 약정 기간(1년 vs 3년)과 결제 방식(All/Partial/No Upfront)에 따라 할인율이 달라져, 현금 여유와 할인의 트레이드오프를 묻기도 한다.
 
-## 🧠 함정 회피
+## CI/CD와 IaC — 3명이 빠르게 반복하는 법
 
-- "관리형" 키워드 = Lambda·Fargate·DDB·Aurora Serverless
-- "100x 확장" = 서버리스·DDB On-Demand
-- "글로벌" = CloudFront + Route 53 Latency
+작은 팀이 빠르게 반복하려면 **IaC(SAM/CDK)**와 **CI/CD**가 필수다. SAM은 서버리스 특화 IaC이고, CDK는 실제 프로그래밍 언어(TypeScript·Python 등)로 인프라를 정의해 추상화·재사용에 강하다. 권한은 **GitHub Actions에서 OIDC로 IAM Role을 가정(assume)**해 장기 액세스 키를 저장하지 않는다.
 
----
+> ⚠️ **함정**: CI/CD에 AWS 액세스 키를 GitHub Secrets에 저장하는 것은 안티패턴이다 — 키가 유출되면 영구 권한이 노출되고, 로테이션 부담도 크다. **OIDC(OpenID Connect) 페더레이션**은 GitHub가 발급한 단기 토큰으로 IAM Role을 가정해, 액세스 키를 아예 저장하지 않는다(키리스). 토큰은 워크플로 실행 동안만 유효하고 자동 만료된다. 시험에서 "GitHub Actions/외부 CI에서 AWS 접근 + 장기 키 없이"가 보이면 OIDC + IAM Role이 정답이다.
 
-## 🏗️ 아키텍처
+## 정리하며
 
-```
-[Users → Route 53 Latency]
-   │
-[CloudFront] ───── [S3 (SPA)]
-   │
-[API GW] ─── [Lambda]
-                  │
-              [DDB On-Demand]
-                  │
-              [Cognito]
+스타트업 서버리스 설계는 **수명주기 경제학**이다 — 초기엔 서버리스(Lambda·DDB On-Demand·Aurora Serverless v2)로 사용량 0=비용 0, 폭증 땐 동시성·핫 파티션·하류 커넥션을 관리하며 자동 확장, 안정화 후엔 Compute SP로 베이스라인을 약정해 다시 절감한다. 핵심 통찰은 (1) 서버리스는 번레이트를 매출에 묶고, (2) DDB의 무한 확장은 키 설계가 좌우하며, (3) 서버리스는 가장 약한 연결고리(RDS 커넥션)만큼만 확장하고, (4) Compute SP는 Lambda·Fargate까지 커버한다는 것이다.
 
-[EventBridge Scheduler] ─▶ [Lambda]
-[SQS] ─▶ [Lambda Worker]
-```
-
----
-
-## ⭐ 핵심 포인트
-
-1. ⭐ Lambda·DDB On-Demand·Aurora Serverless v2 = 사용량 0이면 비용 0
-2. ⭐ Cognito = 인증 관리형
-3. ⭐ CloudFront + Lambda@Edge = 글로벌
-4. ⭐ 100x 후 Compute SP 1년 약정
-5. ⭐ CDK/SAM = IaC
+SAP 시험 단골 매핑: (1) "트래픽 0일 때 컴퓨트 비용 0" → **Lambda**, (2) "관계형 + 변동 큰 사용량 + 프로덕션" → **Aurora Serverless v2**, (3) "글로벌 SPA 빠른 배포·비용 최소" → **CloudFront + S3(OAC)**, (4) "Lambda·Fargate 비용 절감 + 유연성" → **Compute Savings Plans**, (5) "외부 CI에서 AWS 접근·장기 키 없이" → **OIDC + IAM Role**, (6) "엣지 단순 헤더·최저 지연" → **CloudFront Functions**, (7) "Lambda 콜드 스타트 SLA 위반" → **Provisioned Concurrency/SnapStart**, (8) "Lambda+RDS 확장 시 커넥션 폭발" → **RDS Proxy**, (9) "예측된 폭증 흡수" → **SQS 버퍼링 + 동시성 관리**. 다음 day는 정반대 — 규제·격리·감사가 모든 것을 지배하는 금융권 아키텍처를 파고든다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** 트래픽 0일 때 컴퓨트 비용 0.
+**문제 1.** 한 시드 단계 SaaS가 야간엔 트래픽이 거의 0이지만 낮엔 변동이 크다. 컴퓨트 비용을 사용량에 정확히 비례시키고, 트래픽이 없을 땐 비용이 0이 되길 원한다. 가장 적합한 컴퓨트는?
 
-A) EC2 t2.micro
-B) Lambda
-C) Fargate
-D) ECS EC2
+A) EC2 t3.micro 상시 가동
+
+B) AWS Lambda
+
+C) ECS on EC2 (상시 클러스터)
+
+D) EC2 Auto Scaling(min 1)
 
 **정답: B**
 
+해설: Lambda는 요청이 있을 때만 실행되고 호출당 + 실행시간(GB-초)으로 과금되어, 트래픽이 0이면 비용도 0이다 — 비용이 사용량에 선형으로 따라붙는다. A·C·D는 모두 최소 1개 이상의 인스턴스가 항상 켜져 있어 유휴 비용이 발생한다(특히 min 1인 ASG는 트래픽 0에도 1대를 유지). 스타트업 초기엔 이 유휴 비용이 번레이트를 키운다. 함정: "트래픽 0일 때 비용 0"은 서버리스(Lambda)의 직답 신호다.
+
 ---
 
-**문제 2.** 사용량 변동 큰 RDB.
+**문제 2.** 관계형 데이터베이스가 필요한 프로덕션 워크로드인데, 사용량 변동이 매우 크고 끊김 없는 초 단위 스케일링을 원한다. 가장 적합한 선택은?
 
-A) RDS Provisioned
+A) RDS Provisioned (고정 인스턴스)
+
 B) Aurora Serverless v2
-C) Redshift
+
+C) Aurora Serverless v1
+
 D) DynamoDB
 
 **정답: B**
 
+해설: Aurora Serverless **v2**는 0.5 ACU 단위로 **끊김 없이(in-place) 초 단위 스케일**해 변동 큰 프로덕션 워크로드에 적합하다. C의 **v1**은 스케일 시 일시 중단(pause)과 느린 스케일링, 콜드 스타트 지연이 있어 프로덕션 변동 대응에 v2보다 열등하다 — 이 v1/v2 구분이 핵심 함정이다. A는 고정 용량이라 변동에 비효율적이다. D는 NoSQL이라 "관계형 필요"라는 전제에 맞지 않는다. 함정: "관계형 + 프로덕션 + 변동"은 Aurora Serverless v2다.
+
 ---
 
-**문제 3.** 글로벌 정적 + SPA 빠른 배포.
+**문제 3.** 100배 트래픽 폭증 후 Lambda가 RDS에 접속할 때 'too many connections' 오류가 빈발한다. 가장 적합한 해결은?
 
-A) S3 공개
-B) CloudFront + S3 (OAC)
-C) ALB
-D) Lightsail
+A) RDS 인스턴스 크기를 키운다
+
+B) RDS Proxy로 커넥션 풀링을 도입한다
+
+C) Lambda 메모리를 늘린다
+
+D) Lambda 타임아웃을 늘린다
 
 **정답: B**
 
+해설: Lambda는 동시 실행 인스턴스마다 DB 커넥션을 열기 때문에, 폭증 시 수천 개의 커넥션이 RDS의 커넥션 한도를 초과한다 — 서버리스가 하류의 가장 약한 연결고리에서 막히는 전형이다. **RDS Proxy**는 커넥션을 풀링·재사용해 실제 DB 커넥션 수를 크게 줄여 이 문제를 해결한다. A는 일부 완화되나 근본 해결이 아니고 비싸다. C·D는 커넥션 수와 무관하다. 함정: "Lambda + RDS + 확장 시 커넥션 폭발"은 RDS Proxy다.
+
 ---
 
-**문제 4.** 100x 확장 후 비용 절감.
+**문제 4.** 100배로 성장해 Lambda·Fargate 비용이 월 수만 달러가 됐다. 서버리스 아키텍처를 유지하면서 비용을 약정 할인으로 줄이되, 인스턴스 패밀리·리전을 바꿀 유연성도 원한다. 가장 적합한 것은?
 
-A) Spot
+A) EC2 Instance Savings Plans
+
 B) Compute Savings Plans
-C) RI Standard
-D) EC2 Instance SP
 
-**정답: B** — Lambda·Fargate 통합 SP
+C) Standard Reserved Instances
 
----
-
-**문제 5.** GitHub Actions에서 AWS 권한.
-
-A) Access Key 저장
-B) OIDC + IAM Role
-C) IAM User 공유
-D) SSM Parameter
+D) Spot Instances
 
 **정답: B**
 
+해설: **Compute Savings Plans**는 EC2뿐 아니라 **Fargate와 Lambda까지** 커버하며, 리전·인스턴스 패밀리·OS에 무관하게 적용되는 최고 유연성의 약정 모델이다. 서버리스를 그대로 두고도 약정 할인(최대 ~66%)을 얻는다. A의 EC2 Instance SP와 C의 RI는 **EC2에만** 적용되어 Lambda·Fargate를 커버하지 못한다. D의 Spot은 약정 할인이 아니라 중단 가능한 여유 용량이라 성격이 다르다. 함정: "Lambda·Fargate 비용 절감 + 유연성"은 Compute SP의 직답이다.
+
 ---
 
-**문제 6.** 가동·SLA 모니터링.
+**문제 5.** GitHub Actions 파이프라인에서 AWS에 배포해야 한다. 보안팀은 장기 액세스 키를 어디에도 저장하지 말라고 요구한다. 가장 적합한 방법은?
 
-A) X-Ray
-B) CloudWatch Synthetics
-C) Trusted Advisor
-D) Config
+A) IAM User 액세스 키를 GitHub Secrets에 저장
+
+B) OIDC 페더레이션으로 IAM Role을 가정(키리스)
+
+C) 공유 IAM User를 만들어 팀이 공용
+
+D) 액세스 키를 SSM Parameter Store에 저장
 
 **정답: B**
 
+해설: GitHub Actions는 **OIDC(OpenID Connect)** 토큰을 발급할 수 있고, 이를 신뢰 정책에 설정한 IAM Role을 가정(AssumeRoleWithWebIdentity)하면 **장기 액세스 키 없이** 단기 자격증명으로 배포한다. 토큰은 워크플로 실행 동안만 유효하고 자동 만료되어 유출 위험이 근본적으로 사라진다. A·C·D는 모두 장기 키를 어딘가 저장하는 안티패턴으로, 유출 시 영구 권한이 노출되고 로테이션 부담이 크다. 함정: "외부 CI + 장기 키 없이"는 OIDC + IAM Role이다.
+
 ---
 
-## 📌 오늘의 요약
+**문제 6.** DynamoDB 테이블 전체에는 용량 여유가 충분한데, 특정 파티션 키에서만 throttle이 발생한다. 원인과 해법으로 가장 정확한 것은?
 
-1. 서버리스 우선 (Lambda·DDB·Aurora SLS v2)
-2. Cognito·CloudFront로 인증·글로벌
-3. CDK/SAM IaC
-4. 100x 후 Compute SP
-5. Synthetics·X-Ray 관측성
+A) 테이블 전체 용량 부족 — 용량을 늘린다
+
+B) 핫 파티션 — 파티션 키를 고르게 분산되도록 재설계(write sharding)한다
+
+C) GSI 누락 — 인덱스를 추가한다
+
+D) 리전 장애 — 다른 리전으로 옮긴다
+
+**정답: B**
+
+해설: DDB는 파티션 키의 해시로 데이터를 분산하는데, 트래픽이 특정 키에 몰리면 그 **파티션의 처리량 한도(약 3,000 RCU/1,000 WCU)**에 막혀 throttle된다 — 테이블 전체엔 여유가 있어도. 이것이 핫 파티션 문제다. 해법은 파티션 키에 분산 인자(날짜+랜덤 접미사 등)를 더해 트래픽을 여러 파티션에 고르게 퍼뜨리는 write sharding이다. A는 전체 용량이 문제가 아니라 효과가 없다. C·D는 throttle의 본질과 무관하다. 함정: "일부 키에서만 throttle"은 용량 부족이 아니라 핫 파티션이다.
+
+---
+
+**문제 7.** 마케팅 캠페인으로 동기 API 트래픽이 순간 100배로 폭증할 것을 안다. Lambda 동시성 throttle과 하류 자원 보호가 걱정이다. 가장 적합한 완충 설계는?
+
+A) API Gateway를 제거하고 Lambda를 직접 노출
+
+B) 요청을 SQS로 받아 Lambda가 자기 속도로 소비(buffer & decouple)
+
+C) Lambda 메모리를 최대로 설정
+
+D) DynamoDB를 RDS로 교체
+
+**정답: B**
+
+해설: 동기 폭증을 그대로 받으면 Lambda 동시성 한도와 하류 자원이 동시에 무너진다. **SQS로 요청을 버퍼링**하면 폭증을 큐가 흡수하고 Lambda가 자기 처리 속도로 소비해(decouple) 유실 없이 부드럽게 처리한다 — 전형적인 buffer & decouple 패턴이다. A는 보호 계층을 없애 더 취약해진다. C는 동시성·하류 문제와 무관하다. D는 오히려 커넥션 한계가 있는 RDS로 가 악화된다. 함정: "예측된 폭증 흡수"는 SQS 버퍼링이다.
+
+---
+

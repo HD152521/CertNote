@@ -1,224 +1,311 @@
-# Day 60 - Week 12 복습 + 연습문제 (컨테이너/IaC)
+# Day 60 - Week 12 종합 복습: 컨테이너와 IaC를 하나의 그림으로 꿰기
 
-📅 날짜: 2026년 8월 6일 (목요일)  
-🎯 주제: 컨테이너 및 IaC 종합 복습  
-⏱️ 학습 시간: 약 90분
+한 주 동안 흩어져 배운 조각들 — ECS와 Fargate의 격리 모델, CloudFormation의 선언적 엔진, SAM의 매크로, CDK의 합성, 그리고 서버리스 아키텍처의 결합 원칙 — 은 사실 하나의 큰 질문에 대한 서로 다른 답이다. "어떻게 하면 사람이 손으로 클릭하지 않고도, 안전하고 반복 가능하게, 컨테이너와 함수를 클라우드 위에 올려 운영할 수 있는가." 이번 복습은 개별 사실을 다시 나열하는 게 아니라, 그 사실들이 **왜 그렇게 설계됐는지**를 한 줄로 꿰어 시험장에서 변형 문제에도 흔들리지 않게 만드는 것을 목표로 한다.
 
----
+DVA-C02의 컨테이너·IaC 영역은 배포(Deployment) 도메인의 큰 축이다. 단순 암기형(Fargate=awsvpc, SAM=Transform 필수)도 나오지만, 점수를 가르는 건 "이 증상의 근본 원인은 어느 계층인가"를 묻는 시나리오 문제다 — ECR pull 실패가 IAM 문제인지 네트워크 문제인지, 스택 업데이트 실패가 Change Set으로 막을 수 있었는지, 멱등성 부재가 만든 중복인지. 이번 글은 Week 12의 핵심을 비교표와 "왜"로 다시 묶고, 실전 시나리오 12문항으로 마무리한다.
 
-## 🎯 학습 목표
+## 한 장으로 보는 Week 12: 다섯 기둥과 그 연결
 
-- ECS, CloudFormation, SAM, CDK의 핵심을 종합 정리한다
-- 실전 시험 유형의 컨테이너/IaC 문제를 풀어 실력을 점검한다
-
----
-
-## 📖 Week 12 핵심 정리
-
-### IaC 도구 비교
-```
-CloudFormation: YAML/JSON, 범용 IaC
-SAM: 서버리스 특화 CloudFormation 확장
-CDK: 프로그래밍 언어, CloudFormation으로 변환
-Elastic Beanstalk: PaaS, 코드만 배포
-```
-
-### 컨테이너 핵심 암기
-```
-ECS: Docker 컨테이너 오케스트레이션
-Fargate: 서버리스 컨테이너, EC2 관리 불필요
-ECR: 컨테이너 이미지 레지스트리, 취약점 스캔
-태스크 정의: CPU/메모리/이미지/포트/환경변수
-executionRole: ECR pull, CloudWatch Logs
-taskRole: 컨테이너가 AWS 서비스 접근
-```
-
----
-
-## 아키텍처 다이어그램
+Week 12는 다섯 개의 기둥으로 이뤄졌고, 그것들은 하나의 배포 파이프라인 위에서 만난다.
 
 ```
-컨테이너 + IaC 배포 파이프라인
-================================
-
-[개발자]
-  코드 수정 + sam.yaml / cdk.py 수정
-     |
-     v
-[CodeCommit]
-     |
-     v
-[CodeBuild]
-  - sam build 또는 cdk synth
-  - docker build → ECR push
-     |
-     v
-[CodeDeploy / CloudFormation]
-  - ECS 서비스 업데이트
-  - Lambda 함수 업데이트
-  - 인프라 변경 적용
+[개발자] 코드 + 인프라 정의(sam.yaml / cdk.py)
+   |
+   v
+[CodeCommit/Git] → [CodeBuild]
+                     - cdk synth / sam build
+                     - docker build → ECR push
+   |
+   v
+[CloudFormation / CodeDeploy]
+   - ECS 서비스 롤링/블루그린 업데이트
+   - Lambda 버전·별칭 전환
+   |
+   v
+[ECS Fargate 태스크] ←── [ECR 이미지 pull]
+   - taskRole로 런타임에 DynamoDB/S3/SQS 접근
 ```
 
----
+이 그림에서 각 기둥이 어디에 끼는지 보면 헷갈림이 줄어든다.
 
-## 🧠 Week 12 시험 함정 & 약어
+- **ECS/Fargate/ECR**: 데이터 평면(컨테이너가 실제 도는 곳)과 이미지 공급망.
+- **CloudFormation**: 모든 IaC의 최종 실행 엔진. SAM·CDK도 결국 여기로 귀결.
+- **SAM**: 서버리스를 위한 CloudFormation 매크로.
+- **CDK**: 프로그래밍 언어 → CloudFormation 합성.
+- **서버리스 아키텍처 원칙**: 이 위에 올라가는 함수들을 어떻게 느슨하게 결합하느냐.
 
-### 헷갈리는 비교
+> 💡 **관련 이론**: 이 파이프라인 전체를 관통하는 철학은 **선언적 모델(declarative model)** 이다. ECS 서비스는 "원하는 태스크 수"를 선언하면 조정 루프가 맞추고, CloudFormation은 "원하는 자원 상태"를 선언하면 엔진이 현재 상태와의 차이를 계산해 적용한다. 명령적 모델("이 명령을 이 순서로 실행")과 달리, 선언적 모델은 "목표 상태"만 말하고 "거기 도달하는 경로"는 시스템이 계산한다. 이 차이가 **멱등성**(같은 템플릿을 두 번 적용해도 결과가 같음)과 **자가 치유**(상태가 어긋나면 다시 맞춤)를 가능하게 한다. Week 12의 거의 모든 도구가 이 선언적 철학을 공유한다 — 그래서 한 도구의 직관이 다른 도구로 전이된다.
 
-| A | B | 핵심 |
-|---|---|------|
-| ECS EC2 시작 | Fargate | 직접 관리 vs 서버리스 |
-| executionRole | taskRole | ECR/Logs vs 앱→AWS 서비스 |
-| awsvpc | bridge | ENI per task vs Docker NAT |
-| ECS | EKS | AWS 자체 vs 쿠버네티스 |
-| ECR Basic Scan | Enhanced Scan | 무료·CVE vs Inspector·유료 |
-| Fargate | Fargate Spot | 정규 vs 회수·70% 저렴 |
-| CloudFormation | SAM | 범용 vs 서버리스 특화 |
-| SAM | CDK | YAML 매크로 vs 프로그래밍 |
-| Change Set | Direct Update | 미리보기 vs 즉시 적용 |
-| DeletionPolicy: Retain | Snapshot | 그대로 유지 vs 스냅샷 생성 |
-| Stack Policy | Termination Protection | 업데이트 보호 vs 삭제 방지 |
-| !Ref | !GetAtt | 리소스 자체 vs 속성 |
-| !Sub | !Join | ${} 치환 vs 문자열 연결 |
-| Nested Stack | Stack Set | 한 계정 vs 다중 계정/리전 |
-| Custom Resource | Hook | 사용자 정의 리소스 vs 검증 |
-| Drift Detection | Change Set | 실제 차이 감지 vs 미리보기 |
+## 컨테이너 계층: 증상으로 원인 역추적하기
 
-### Week 12 시험 함정 15가지
+ECS 시나리오 문제는 거의 항상 "어떤 증상 → 어느 계층의 원인"을 묻는다. 이 매핑을 표로 박아두면 변형에도 강하다.
 
-1. **Fargate는 awsvpc만**
-2. **executionRole vs taskRole 헷갈리지 않기**
-3. **ECR 인증 토큰 12시간**
-4. **Fargate Spot은 2분 알림 후 회수**
-5. **CloudFormation Drift 자동 감지 안 됨**
-6. **Change Set은 안전한 업데이트 표준**
-7. **DeletionPolicy Retain ≠ Termination Protection** (다른 개념)
-8. **!ImportValue는 같은 리전 내 스택끼리만** (cross-region X)
-9. **SAM Transform 선언 필수**
-10. **`sam local`은 Docker 필요**
-11. **SAM Policy Templates 외워두면 점수 ↑**
-12. **CDK는 cdk synth → CFN으로 변환**
-13. **CDK bootstrap은 계정·리전당 1회**
-14. **Stack Set은 Organizations로 다중 계정**
-15. **Lambda→Lambda 직접 호출은 안티 패턴** (SQS/SNS 사용)
+| 증상 | 가장 흔한 근본 원인 | 계층 |
+|------|---------------------|------|
+| 이미지 pull 실패 | executionRole에 ECR 권한 부족 | IAM(시작 시) |
+| 이미지 pull 실패(사설 서브넷) | NAT/VPC 엔드포인트 없어 ECR 도달 불가 | 네트워크 |
+| 비밀 주입 실패로 태스크 시작 안 됨 | executionRole에 `secretsmanager:GetSecretValue` 없음 | IAM(시작 시) |
+| 앱이 떴는데 S3/DynamoDB AccessDenied | taskRole 권한 부족 | IAM(런타임) |
+| 태스크가 안 뜸 + 서브넷 IP 고갈 | awsvpc가 태스크마다 ENI/IP 소비 | 네트워크 |
+| CI에서 ECR push 인증 오류 | get-login-password 토큰 12시간 만료 | 인증 |
 
-### Week 12 약어 정리
+이 표의 핵심 분기는 **"시작 시점이냐 런타임이냐"** 다. executionRole은 컨테이너가 뜨기 **전에** ECS 인프라가 쓰는 권한(ECR pull, 로그 그룹 생성, 비밀 주입)이고, taskRole은 컨테이너가 뜬 **뒤에** 앱 코드가 쓰는 권한(DynamoDB·S3·SQS 호출)이다. "비밀을 환경 변수로 주입"은 시작 시점이라 executionRole, "앱이 런타임에 Secrets Manager를 직접 호출"은 taskRole — 같은 Secrets Manager라도 시점이 다르면 역할이 갈린다.
 
-| 약어 | 풀네임 |
-|------|--------|
-| **ECS** | Elastic Container Service |
-| **EKS** | Elastic Kubernetes Service |
-| **ECR** | Elastic Container Registry |
-| **CFN** | CloudFormation |
-| **SAM** | Serverless Application Model |
-| **SAR** | Serverless Application Repository |
-| **CDK** | Cloud Development Kit |
-| **IaC** | Infrastructure as Code |
-| **ENI** | Elastic Network Interface |
-| **CVE** | Common Vulnerabilities and Exposures |
-| **mTLS** | Mutual TLS |
-| **DLM** | Data Lifecycle Manager |
-| **Saga** | 분산 트랜잭션 보상 |
-| **OCI** | Open Container Initiative |
-| **PaaS** | Platform as a Service |
-| **Well-Architected** | 6 Pillars Framework |
+> ⚠️ **함정**: "Secrets Manager 접근 실패"라는 같은 문구라도 두 갈래다. 태스크 정의의 `secrets` 블록으로 **환경 변수에 주입**하려다 실패하면 → 주입은 시작 시점이라 **executionRole** 문제. 앱이 런타임에 SDK로 `getSecretValue`를 **직접 호출**하다 실패하면 → **taskRole** 문제. 시험은 이 미묘한 차이를 노린다. "주입(injection)이냐 직접 호출(runtime call)이냐"를 먼저 가려라.
 
----
+> 🔍 **더 깊이**: Fargate가 awsvpc만 강제하는 게 IP 고갈 사고의 근원이다. awsvpc는 태스크마다 진짜 ENI와 사설 IP를 하나씩 준다 — 태스크 100개면 IP 100개를 서브넷에서 가져간다. /24 서브넷(약 251개 가용 IP)에 다른 자원까지 있으면 빠르게 고갈된다. EC2 시작 유형에선 한 인스턴스의 ENI 한도(인스턴스 타입별)에도 걸린다. 그래서 "Fargate 태스크 확장 중 갑자기 시작 실패 + IP/ENI 부족" 시나리오의 답은 "더 큰 CIDR 서브넷 추가" 또는 "여러 서브넷 분산"이다. 격리를 위해 태스크마다 ENI를 주는 설계의 대가가 IP 소비라는 점을 이해하면 암기가 필요 없다.
 
-## 📝 Week 12 종합 연습문제
+## IaC 계층: 안전한 변경을 만드는 장치들
 
-**문제 1.** EC2 없이 컨테이너를 실행하려면?
+CloudFormation 시나리오는 "변경을 어떻게 안전하게 하느냐"와 "삭제/보호를 어떻게 다루느냐"에 집중된다. 자주 헷갈리는 개념 쌍을 "무엇을 보호하느냐"로 가른다.
 
-A) ECS EC2 시작 유형  
-B) ECS Fargate  
-C) EC2 + Docker  
-D) ECR  
+| 개념 | 무엇을 하나 | 흔한 혼동 |
+|------|-------------|-----------|
+| **Change Set** | 업데이트 **전** 바뀔 자원 목록 미리보기 | Drift Detection(실제 차이 감지)과 혼동 |
+| **Drift Detection** | 배포 후 콘솔에서 손댄 **실제 차이** 감지 | 자동 아님(수동 트리거) |
+| **DeletionPolicy: Retain** | 스택 삭제 시 그 자원만 **남김** | Termination Protection과 혼동 |
+| **Termination Protection** | **스택 자체**의 삭제를 막음 | DeletionPolicy(자원별)와 혼동 |
+| **Stack Policy** | 스택 **업데이트** 중 특정 자원 보호 | Termination Protection(삭제)과 혼동 |
+| **Nested Stack** | 한 계정 내 스택을 모듈로 중첩 | Stack Set(다중 계정·리전)과 혼동 |
 
-**정답: B** - Fargate는 서버리스 컨테이너 서비스로 EC2 인스턴스를 관리할 필요가 없습니다.
+핵심 분기 셋을 외우자. (1) **Change Set은 "업데이트 전 미리보기", Drift는 "배포 후 실제 차이 감지"** — 시점이 반대다. (2) **DeletionPolicy는 자원 단위, Termination Protection은 스택 단위** — 보호 대상의 크기가 다르다. (3) **Nested Stack은 한 계정 모듈화, Stack Set은 Organizations로 다중 계정·리전 배포** — 범위가 다르다.
 
----
+> 💡 **관련 이론**: CloudFormation이 자원을 만드는 순서를 스스로 계산하는 것은 **위상 정렬(topological sort)** 이다. 자원들의 의존 관계(`!Ref`, `!GetAtt`, `DependsOn`)는 방향 그래프를 이루고, CloudFormation은 이 그래프를 위상 정렬해 "의존되는 것부터" 순서대로 만든다 — VPC를 만든 뒤 서브넷, 서브넷 뒤에 EC2. 만약 순환 의존(A가 B를, B가 A를 참조)이 생기면 위상 정렬이 불가능해 CloudFormation이 에러를 낸다. 이 그래프 덕분에 사용자는 순서를 직접 지정할 필요가 없고, 병렬로 만들 수 있는 자원(서로 의존 없는)은 동시에 만들어 배포를 빠르게 한다. "선언만 하면 순서는 알아서"의 정체가 위상 정렬이다.
 
-**문제 2.** SAM 템플릿의 필수 선언은?
+> 📚 **사례**: 2017년 2월 GitLab의 운영자가 복구 작업 중 잘못된 서버의 데이터 디렉터리를 직접 삭제해 약 300GB의 프로덕션 데이터를 날린 사고가 있었다. 이 사건은 "사람이 인프라를 손으로 직접 만지는 것의 위험"을 업계에 각인시켰고, IaC와 Change Set 같은 **미리보기·승인 게이트**의 가치를 부각시켰다. CloudFormation에서 Change Set은 정확히 이 역할이다 — 실제 적용 전에 "무엇이 추가·수정·**삭제**될지"를 보여줘, RDS 같은 상태 저장 자원이 의도치 않게 교체(replacement)되어 데이터가 날아가는 걸 사람이 검토 단계에서 막게 한다. "바로 업데이트"가 아니라 "Change Set 검토 후 적용"이 표준인 이유다.
 
-A) Globals 섹션  
-B) Transform: AWS::Serverless-2016-10-31  
-C) Parameters 섹션  
-D) Outputs 섹션  
+> ⚠️ **함정**: `!ImportValue`는 **같은 리전 안의** 스택끼리 Export한 값만 가져올 수 있다 — cross-region·cross-account 참조가 안 된다. 또 한 스택이 Export한 값을 다른 스택이 Import 중이면, 그 Export 값을 바꾸거나 Export한 스택을 지울 수 없다(의존 잠금). "다른 리전의 값을 ImportValue로 가져온다"는 선택지는 함정이고, 그런 경우엔 SSM Parameter Store나 다른 메커니즘을 써야 한다.
 
-**정답: B** - SAM 템플릿에는 반드시 `Transform: AWS::Serverless-2016-10-31`을 선언해야 합니다.
+## SAM과 CDK: 같은 종착지의 두 지름길
 
----
+SAM과 CDK는 "CloudFormation을 직접 쓰기엔 장황하다"는 같은 불만에서 출발해, 다른 방식으로 푼다. 핵심을 다시 짚는다.
 
-**문제 3.** ECS 태스크가 S3에서 파일을 읽으려면 어떤 역할이 필요한가?
+| 항목 | SAM | CDK |
+|------|-----|-----|
+| 입력 | YAML(매크로) | 프로그래밍 언어(TS/Python/Java/C#/Go) |
+| 펼치는 방식 | `Transform`이 짧은 YAML을 긴 CFN으로 | `synth`가 코드를 CFN으로 |
+| 특화 | 서버리스(Lambda/API/DDB) | 범용 + 높은 추상화 |
+| 로컬 테스트 | `sam local`(Docker 필요) | (직접 지원 약함) |
+| 필수 선언 | `Transform: AWS::Serverless-2016-10-31` | bootstrap(계정·리전당 1회) |
+| 최종 | CloudFormation | CloudFormation |
 
-A) executionRoleArn  
-B) taskRoleArn  
-C) 인스턴스 프로파일  
-D) 서비스 역할  
+둘의 공통 진실은 **"종착지가 CloudFormation"** 이라는 것이다. SAM은 YAML 압축을 풀고, CDK는 코드를 합성한다. 차이는 입력의 표현력이다 — SAM은 정형화된 서버리스 패턴을 짧게, CDK는 반복·조건·타입·테스트가 필요한 복잡한 인프라를 코드로.
 
-**정답: B** - taskRole은 컨테이너 내 애플리케이션이 AWS 서비스(S3, DynamoDB 등)에 접근하는 데 사용합니다.
+> 🔍 **더 깊이**: `sam local`이 왜 Docker를 요구하는지가 미묘하다. Lambda 함수는 AWS의 특정 런타임 환경(Amazon Linux 기반, 정해진 라이브러리 버전)에서 돈다. 로컬 머신은 그 환경과 다르므로, 내 노트북에서 그냥 함수를 실행하면 "로컬에선 되는데 Lambda에선 안 되는" 환경 불일치가 생긴다. `sam local`은 AWS가 제공하는 **Lambda 런타임을 본뜬 Docker 이미지** 안에서 함수를 실행해, 실제 Lambda 환경을 로컬에서 흉내 낸다 — 이것이 컨테이너의 본질적 가치("어디서나 같은 환경")를 테스트에 적용한 것이다. 그래서 Docker가 없으면 `sam local`이 동작하지 않는다.
+
+> 💡 **관련 이론**: SAM의 `Transform`은 CloudFormation **매크로(macro)** 의 한 종류다. 매크로는 "템플릿을 배포 전에 프로그램이 변환한다"는 메타프로그래밍이다 — 프로그래밍 언어의 매크로(Lisp, Rust의 매크로)가 "코드를 컴파일 전에 다른 코드로 펼치는" 것과 정확히 같은 발상이다. `AWS::Serverless::Function` 한 블록이 매크로 확장을 거쳐 `AWS::Lambda::Function` + `AWS::IAM::Role` + `AWS::Logs::LogGroup` 등 여러 자원으로 펼쳐진다. CDK가 코드 실행으로 템플릿을 만든다면, SAM은 선언적 매크로 확장으로 템플릿을 부풀린다 — 둘 다 "압축된 표현을 펼치는" 코드 생성(code generation)이다.
+
+## 서버리스 결합: 동기 호출이라는 원죄
+
+Week 12의 아키텍처 원칙 중 시험이 가장 사랑하는 건 "Lambda를 Lambda가 동기로 직접 호출하지 마라"다. 이걸 "비용 2배"로만 외우면 변형에 약하므로, 한 번 더 근본을 묶는다.
+
+동기 직접 호출의 네 가지 죄: **이중 과금**(둘 다 실행 시간 과금), **오류 전파**(B 장애가 A로), **타임아웃 누적**(A의 한도 안에 B가 끝나야), **확장 결합**(처리량 1:1). 해법은 비동기 매개를 끼우는 것이고, 그 매개의 선택은 시나리오로 갈린다.
+
+- **작업을 나눠 한 곳이 처리** → SQS(큐, 1:1, 버퍼·재시도·DLQ)
+- **한 사건을 여러 곳이 동시에 수신** → SNS(펍/섭, 1:N, 팬아웃)
+- **이벤트 내용으로 라우팅 / 스케줄 / SaaS 통합** → EventBridge
+- **순서·복잡한 분기·인간 승인** → Step Functions
+
+> ⚠️ **함정**: SQS 표준 큐는 **at-least-once** 전달이라 중복이 정상이고, 소비자가 **멱등**해야 한다(중복은 두 장군 문제 때문에 분산 시스템에서 불가피). "정확히 한 번 처리 + 엄격한 순서"가 꼭 필요하면 **FIFO 큐**지만 처리량이 낮다(초당 300, 배치 3,000). 시험에서 "순서·중복 방지 필수"면 FIFO, "고처리량 우선 + 앱이 멱등성 처리"면 표준 큐다. "표준 큐가 순서를 보장한다"는 선택지는 항상 틀린 함정이다.
+
+## 정리하며
+
+Week 12를 한 문장으로 묶으면 "컨테이너와 함수를 **선언적 IaC**로 안전하게 배포하고, 그것들을 **느슨한 비동기 결합**으로 엮는다"이다. ECS는 조정 루프로 원하는 상태를 유지하고 Fargate는 Firecracker로 서버리스 격리를 만들며, executionRole/taskRole은 시작 시점과 런타임으로 권한을 가른다. CloudFormation은 위상 정렬로 자원 순서를 풀고 Change Set으로 변경을 미리 보여주며, SAM과 CDK는 각각 매크로 확장과 코드 합성으로 CloudFormation에 귀결된다. 그 위의 서버리스 아키텍처는 동기 직접 호출이라는 원죄를 큐로 풀고, at-least-once가 만드는 중복을 멱등성으로 흡수한다. 시험의 시나리오 문제 대부분은 이 사슬 위 어느 지점에서 "증상의 근본 원인은 어느 계층인가"를 묻는다 — 시점(시작 vs 런타임), 보호 대상(자원 vs 스택), 결합 모델(1:1 vs 1:N)을 가르는 감각이 점수를 만든다.
+
+이로써 Week 12 컨테이너·IaC 단원을 마친다. 다음 주에는 관찰성과 문제 해결(CloudWatch, X-Ray, CloudTrail)로 넘어가, 배포한 시스템을 어떻게 들여다보고 고치는지를 다룬다.
 
 ---
 
-**문제 4.** CloudFormation 스택 업데이트 전에 변경 사항을 미리 확인하는 방법은?
+## 📝 Week 12 종합 시나리오 연습문제
 
-A) 바로 업데이트 실행  
-B) Change Set 생성 후 검토  
-C) 드리프트 감지  
-D) 스냅샷 생성  
+**문제 1.** Fargate 태스크 50개를 /28 서브넷(가용 IP 약 11개) 하나에 배치하려 했더니 일부 태스크가 시작되지 않고 IP/네트워크 관련 오류가 난다. 근본 원인과 해결로 옳은 것은?
 
-**정답: B** - Change Set을 생성하면 실제 업데이트 전에 추가/삭제/수정될 리소스 목록을 확인할 수 있습니다.
+A) taskRole 권한 부족 — 권한 추가
 
----
+B) awsvpc 모드가 태스크마다 ENI/사설 IP를 소비해 서브넷 IP가 고갈됨 — 더 큰 CIDR 서브넷 추가 또는 여러 서브넷 분산
 
-**문제 5.** CDK와 CloudFormation의 관계는?
+C) executionRole의 ECR 권한 부족 — 권한 추가
 
-A) 완전히 별개의 서비스  
-B) CDK는 프로그래밍 언어로 인프라 정의, 배포 시 CloudFormation으로 변환  
-C) CloudFormation이 CDK의 일부  
-D) 동일한 기능, 다른 인터페이스  
+D) 태스크 정의가 불변이라서 — 새 리비전 등록
 
-**정답: B** - CDK는 TypeScript, Python 등으로 인프라를 정의하고 `cdk synth`/`cdk deploy` 시 CloudFormation 템플릿으로 변환됩니다.
+**정답: B**
+
+해설: Fargate는 awsvpc 모드를 강제하며, 이 모드는 **태스크마다 독립 ENI와 사설 IP를 하나씩** 부여한다. 태스크 50개는 IP 50개를 요구하는데 /28 서브넷은 약 11개뿐이라 고갈된다. 해결은 더 큰 CIDR 서브넷을 쓰거나 여러 서브넷/AZ에 분산하는 것이다. A·C는 IAM 권한 문제로 IP 고갈과 무관하고, D는 환경 변수 변경 시나리오로 무관하다.
 
 ---
 
-**문제 6.** ECR의 이미지 취약점 스캔 기능의 역할은?
+**문제 2.** 태스크 정의의 `secrets` 블록으로 Secrets Manager의 DB 비밀번호를 환경 변수에 주입하도록 설정했는데, 태스크가 시작조차 못 하고 비밀을 가져오지 못한다. 권한을 어디에 줘야 하나?
 
-A) 이미지 압축  
-B) Docker 이미지에서 보안 취약점 탐지  
-C) 이미지 암호화  
-D) 이미지 크기 감소  
+A) taskRole에 `secretsmanager:GetSecretValue`
 
-**정답: B** - ECR의 취약점 스캔은 컨테이너 이미지 내 OS 패키지와 라이브러리의 보안 취약점을 탐지합니다.
+B) executionRole에 `secretsmanager:GetSecretValue`
 
----
+C) 인스턴스 프로파일에 추가
 
-**문제 7.** CloudFormation에서 다른 스택의 VPC ID를 참조하려면?
+D) 권한과 무관, 네트워크 문제
 
-A) !Ref VPCId  
-B) !ImportValue vpc-stack-VPCId  
-C) !GetAtt VPC.Id  
-D) !FindInMap [VPC, Id, Value]  
+**정답: B**
 
-**정답: B** - !ImportValue 함수로 다른 스택에서 Export한 값을 가져올 수 있습니다.
+해설: 비밀을 가져와 환경 변수로 **주입하는 작업은 컨테이너가 뜨기 전, ECS 인프라(에이전트)가 수행**하므로 **executionRole**의 권한이 필요하다. taskRole은 앱이 런타임에 직접 SDK로 호출할 때 쓰인다 — 여기선 태스크가 시작도 못 했으므로 런타임 권한과 무관하다. "주입=시작 시점=executionRole"로 기억한다. 같은 Secrets Manager라도 "주입"이냐 "런타임 직접 호출"이냐로 역할이 갈린다.
 
 ---
 
-**문제 8.** SAM 로컬 API 테스트를 위해 필요한 도구는?
+**문제 3.** 사설 서브넷의 Fargate 태스크가 ECR에서 이미지를 pull하지 못한다. executionRole에는 ECR 권한이 충분하다. 다음으로 의심할 원인은?
 
-A) Kubernetes  
-B) Docker  
-C) VirtualBox  
-D) EC2 인스턴스  
+A) 태스크 정의가 불변이라서
 
-**정답: B** - SAM 로컬 실행은 Docker 컨테이너를 기반으로 Lambda 환경을 시뮬레이션합니다.
+B) 사설 서브넷에 NAT 게이트웨이나 ECR/S3용 VPC 엔드포인트가 없어 ECR에 도달하지 못함
+
+C) ECR 수명 주기 정책이 이미지를 삭제함
+
+D) taskRole 문제
+
+**정답: B**
+
+해설: 권한이 충분한데도 pull이 안 되면 **네트워크 도달성** 문제다. 사설 서브넷의 태스크가 ECR(및 이미지 레이어가 저장된 S3)에 도달하려면 NAT 게이트웨이(인터넷 경유) 또는 ECR·S3 VPC 엔드포인트(프라이빗 경로)가 필요하다. 둘 다 없으면 "이미지 pull 실패"가 난다. A는 무관, C는 이미지가 실제로 없을 때의 별개 문제, D는 런타임 권한이라 pull과 무관하다. "권한 OK인데 pull 실패=네트워크"로 분기한다.
 
 ---
 
-## 📌 오늘의 요약
+**문제 4.** CloudFormation으로 운영 중인 스택을 업데이트하려는데, RDS 인스턴스가 의도치 않게 교체(replacement)되어 데이터가 날아갈까 걱정된다. 적용 전에 어떤 자원이 어떻게 바뀌는지 확인하려면?
 
-1. ECS: 컨테이너 오케스트레이션, EC2 또는 Fargate 시작 유형
-2. Fargate: 서버리스 컨테이너, EC2 관리 불필요, awsvpc 네트워크
-3. ECR: 컨테이너 이미지 레지스트리, 취약점 스캔, 수명 주기 정책
-4. CloudFormation: YAML IaC, Change Set으로 안전한 업데이트
-5. SAM: 서버리스 특화, Transform 필수, sam local로 로컬 테스트
+A) 바로 update-stack 실행
+
+B) Change Set을 생성해 추가·수정·삭제·교체될 자원 목록을 검토한 뒤 적용
+
+C) Drift Detection 실행
+
+D) 스택을 삭제하고 다시 생성
+
+**정답: B**
+
+해설: **Change Set**은 업데이트를 실제 적용하기 **전에** 어떤 자원이 추가·수정·삭제·**교체(replacement)** 될지 미리 보여준다. RDS 같은 상태 저장 자원의 교체는 데이터 손실로 이어질 수 있으므로, Change Set 검토로 사람이 위험을 사전에 잡는다. A는 미리보기 없이 위험을 감수하는 것, C) Drift는 "이미 배포된 것과 실제의 차이"를 감지하는 별개 기능(미래 변경 미리보기가 아님), D는 데이터를 확실히 날린다.
+
+---
+
+**문제 5.** 스택을 삭제하더라도 그 안의 S3 버킷(중요 데이터 보관)만은 삭제되지 않고 남기를 원한다. 어떻게 설정하나?
+
+A) Termination Protection 활성화
+
+B) 해당 S3 버킷 자원에 `DeletionPolicy: Retain` 설정
+
+C) Stack Policy 설정
+
+D) Drift Detection 활성화
+
+**정답: B**
+
+해설: **DeletionPolicy: Retain**은 **자원 단위**로 "스택이 삭제돼도 이 자원은 남긴다"를 지정한다. 데이터가 중요한 S3·RDS 등에 흔히 쓴다. A) Termination Protection은 **스택 자체**의 삭제를 막는 것(자원 단위가 아님)으로 목적이 다르다. C) Stack Policy는 업데이트 중 자원 보호이고, D) Drift는 차이 감지로 무관하다. "자원만 남김=DeletionPolicy, 스택 삭제 자체 차단=Termination Protection"으로 가른다.
+
+---
+
+**문제 6.** 한 SAM 템플릿을 배포하려는데 `Transform` 선언이 빠져 일반 CloudFormation으로 처리되며 `AWS::Serverless::Function`을 알 수 없는 자원 타입이라 거부한다. 무엇이 필요한가?
+
+A) Parameters 섹션 추가
+
+B) 템플릿 최상위에 `Transform: AWS::Serverless-2016-10-31` 선언
+
+C) Globals 섹션 추가
+
+D) Outputs 섹션 추가
+
+**정답: B**
+
+해설: SAM은 CloudFormation **매크로**이고, `Transform: AWS::Serverless-2016-10-31` 선언이 "이 짧은 SAM 문법을 긴 CloudFormation으로 펼쳐라"라고 엔진에 지시한다. 이 선언이 없으면 CloudFormation은 `AWS::Serverless::*` 자원을 인식하지 못한다. A·C·D는 선택적 섹션으로 이 오류와 무관하다. "SAM=Transform 필수"는 단독으로도 출제되는 핵심이다.
+
+---
+
+**문제 7.** 주문 완료 이벤트 하나가 발생하면 재고·이메일·분석 세 시스템이 **동시에** 각자 처리해야 하고, 각 소비자는 일시적 폭주를 버틸 버퍼와 실패 격리가 필요하다. 가장 적합한 구성은?
+
+A) SQS 하나에 세 소비자 연결
+
+B) SNS 토픽 → 세 개의 SQS 구독(각 SQS에 소비자 + DLQ)으로 팬아웃
+
+C) Lambda가 세 시스템을 순차 동기 호출
+
+D) EventBridge 스케줄 규칙
+
+**정답: B**
+
+해설: "한 이벤트를 여러 시스템이 동시에" 받는 건 SNS 팬아웃이고, 각 구독을 **SQS로 받으면** 소비자별 버퍼·재시도·DLQ(실패 격리)가 생긴다. SNS가 Lambda를 직접 구독하는 것보다 SNS→SQS→소비자가 폭주 흡수와 유실 방지에 강하다. A) SQS는 1:1이라 한 메시지를 한 소비자만 가져가 세 곳이 모두 못 받는다. C) 순차 동기 호출은 결합·전파 문제, D) 스케줄은 이 요구와 무관하다.
+
+---
+
+**문제 8.** SQS 표준 큐를 소비하는 결제 처리 Lambda가 같은 메시지를 가끔 두 번 처리해 이중 결제가 발생한다. 올바른 근본 대응은?
+
+A) SQS를 신뢰할 수 없으니 SNS로 교체
+
+B) 표준 큐는 at-least-once라 중복이 정상이므로, 멱등성 키 + DynamoDB 조건부 쓰기(`attribute_not_exists`)로 소비자를 멱등하게 만들거나 FIFO 큐 사용
+
+C) Lambda 동시성을 1로 제한
+
+D) 메시지 크기를 줄임
+
+**정답: B**
+
+해설: SQS 표준 큐는 **at-least-once** 전달이라 같은 메시지가 두 번 올 수 있다(두 장군 문제로 "정확히 한 번 전달"이 불가능). 결제처럼 중복이 치명적이면 소비자를 **멱등**하게 만들어야 한다 — 멱등성 키로 이미 처리한 요청을 식별하고 DynamoDB 조건부 쓰기로 중복을 무시한다. 또는 "정확히 한 번 처리"를 보장하는 **FIFO 큐**를 쓴다. A는 모델이 더 안 맞고, C는 성능을 죽이며 근본 해결도 아니고, D는 무관하다.
+
+---
+
+**문제 9.** API Gateway 뒤 Lambda A가 무거운 후처리를 Lambda B에 넘긴다. 현재 A가 B를 동기 호출하는데 비용이 높고, B가 느려지면 API 응답이 타임아웃난다. 개선안은?
+
+A) B의 메모리를 늘려 동기 호출 유지
+
+B) A가 SQS에 작업을 넣고 즉시 응답, B가 큐를 비동기로 소비
+
+C) A와 B를 하나의 큰 함수로 합침
+
+D) A가 B를 1초마다 폴링
+
+**정답: B**
+
+해설: 동기 호출은 A가 B를 기다리며 **이중 과금**되고 B의 지연이 API 타임아웃으로 전파된다. A가 SQS에 작업을 넣고 즉시 반환하면 사용자는 빠른 응답을 받고, B는 자기 속도로 큐를 비워 독립 확장되며, B 장애 시에도 메시지가 보존된다(생산자-소비자를 유계 버퍼로 분리). A는 근본 문제(결합·과금)를 안 풀고, C는 단일 책임을 깨고, D는 비효율적이다.
+
+---
+
+**문제 10.** CDK로 작성한 인프라를 새 AWS 계정의 ap-northeast-2 리전에 처음 배포하려 하자 자산 업로드용 버킷이 없다는 류의 오류가 난다. 먼저 무엇을 해야 하나?
+
+A) cdk synth 재실행
+
+B) 해당 계정·리전에 `cdk bootstrap` 1회 실행해 배포용 S3·ECR·IAM 발판을 구성
+
+C) cdk destroy 실행
+
+D) CloudFormation 콘솔에서 수동 스택 생성
+
+**정답: B**
+
+해설: CDK는 배포 시 Lambda zip·Docker 이미지 같은 자산을 올려둘 S3·ECR과 배포용 IAM 역할이 필요하고, `cdk bootstrap`이 이 발판을 **계정·리전 조합마다 1회** 깐다. 새 계정/리전이라면 bootstrap이 선행돼야 한다. A) synth는 템플릿 생성일 뿐 발판을 안 만들고, C) destroy는 삭제, D) 수동 생성은 CDK 워크플로가 아니다.
+
+---
+
+**문제 11.** ap-northeast-2의 네트워크 스택이 Export한 VPC ID를, us-east-1의 다른 스택에서 `!ImportValue`로 가져오려 했더니 동작하지 않는다. 이유는?
+
+A) !ImportValue 문법 오류
+
+B) !ImportValue는 같은 리전 내 스택 간 Export/Import만 지원하며 cross-region 참조가 불가능하기 때문
+
+C) VPC는 Export할 수 없어서
+
+D) taskRole 권한 부족
+
+**정답: B**
+
+해설: `!ImportValue`(및 Export)는 **같은 리전 안의** 스택끼리만 값을 주고받는다 — cross-region·cross-account 참조를 지원하지 않는다. 리전을 가로질러 값을 공유하려면 SSM Parameter Store 같은 다른 메커니즘을 써야 한다. A는 문법 문제로 단정할 수 없고, C) VPC ID는 Export 가능하며, D는 무관하다. "ImportValue=동일 리전 한정"은 단독 출제 포인트다.
+
+---
+
+**문제 12.** 같은 CloudFormation 템플릿을 동일 환경에 두 번 연속 적용했는데, 두 번째 적용에서 아무 변경도 발생하지 않고 자원이 그대로다. 이 동작의 근거는?
+
+A) CloudFormation 버그
+
+B) CloudFormation은 선언적 모델이라 "원하는 상태"와 현재 상태가 같으면 변경할 게 없어 멱등하게 동작함
+
+C) Change Set이 막아서
+
+D) Termination Protection 때문
+
+**정답: B**
+
+해설: CloudFormation은 **선언적**이라 "목표 상태"를 선언하면 현재 상태와의 차이만 적용한다. 이미 목표 상태에 도달했다면 두 번째 적용은 적용할 차이가 없어 아무것도 바꾸지 않는다 — 이것이 **멱등성**이다(같은 입력을 여러 번 적용해도 결과가 한 번 적용한 것과 같음). 명령적 스크립트라면 두 번 실행 시 부작용이 누적될 수 있지만, 선언적 IaC는 그렇지 않다. A는 정상 동작을 오해한 것이고, C·D는 이 동작의 원인이 아니다.
+
+---

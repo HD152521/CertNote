@@ -1,355 +1,214 @@
-# Day 53 - Kinesis: 실시간 스트리밍
+# Day 53 - Kinesis: 흐르는 데이터를 붙잡아두는 로그
 
-📅 날짜: 2026년 7월 28일 (화요일)  
-🎯 주제: Amazon Kinesis  
-⏱️ 학습 시간: 약 90분
+SQS와 SNS는 메시지를 "처리하면 사라지는" 것으로 다룬다. 소비자가 가져가면 큐에서 지워지고, 발행되면 푸시되고 잊힌다. 그런데 어떤 데이터는 본질적으로 다르다. 사용자 클릭 스트림, IoT 센서 측정값, 애플리케이션 로그—이런 것들은 끊임없이 *흐르고*, 여러 시스템이 같은 데이터를 *각자 다른 목적으로* 동시에 읽고 싶어 하며, 어제 데이터를 오늘 새 알고리즘으로 다시 처리하고 싶기도 하다. Amazon Kinesis는 이런 **스트리밍 데이터**를 위해, 메시지를 소비 후 버리는 대신 **로그에 추가만 하고 일정 기간 보존**하는 전혀 다른 모델을 택했다.
 
----
+DVA-C02에서 Kinesis는 "SQS·SNS와 무엇이 다른가"를 묻는 비교 시나리오로 가장 자주 나온다. 샤드 처리량 숫자, Data Streams와 Firehose의 역할 구분, Enhanced Fan-Out 같은 디테일도 출제된다. 이번 글은 Kinesis가 왜 "추가 전용 로그(append-only log)"라는 구조를 택했는지, 샤드와 파티션 키가 어떻게 순서와 확장을 동시에 푸는지, Data Streams와 Firehose가 갈라지는 이유, 그리고 Kinesis가 SQS와 근본적으로 다른 지점을 깊이 파고든다.
 
-## 🎯 학습 목표
+## 추가 전용 로그: Kinesis의 심장
 
-- Kinesis 4가지 서비스의 역할을 구분한다
-- Kinesis Data Streams의 샤드 개념을 이해한다
-- Kinesis와 SQS/SNS의 차이를 파악한다
+Kinesis Data Streams의 데이터 모델을 한 단어로 줄이면 **로그(log)** 다. 데이터베이스나 큐가 아니라, 시간 순서대로 레코드를 **끝에 추가만** 하고 중간을 수정하지 않는 불변(immutable) 시퀀스다. 생산자는 로그의 끝에 레코드를 붙이고, 소비자는 로그의 어느 지점부터든 자기가 원하는 위치(시퀀스 번호)에서 읽기 시작한다. 읽어도 데이터는 사라지지 않고, 보존 기간(기본 24시간, 최대 365일) 동안 그 자리에 남아 있다.
 
----
+이 단순한 구조가 SQS로는 불가능한 세 가지를 가능하게 한다. 첫째, **다중 독립 소비**다. 여러 소비자가 같은 스트림을 각자의 위치에서 동시에 읽는다 — A는 실시간 알림용으로 스트림 끝을 따라가고, B는 배치 분석용으로 1시간 전 데이터를 읽는다. 서로 간섭하지 않는다. 둘째, **재처리(replay)** 다. 버그를 고친 새 소비자를 어제 시점부터 다시 돌려 과거 데이터를 재처리할 수 있다(SQS는 소비하면 사라져 불가능). 셋째, **순서 보존**이다. 로그는 본질적으로 순서가 있는 시퀀스라, 같은 파티션 안의 데이터는 쓰인 순서대로 읽힌다.
 
-## 📖 이론 내용
+> 💡 **관련 이론**: "로그를 데이터 시스템의 중심에 둔다"는 발상은 Kinesis만의 것이 아니라 분산 시스템의 큰 흐름이다. Jay Kreps(Kafka 공동 창시자)의 글 "The Log: What every software engineer should know about real-time data's unifying abstraction"(2013)이 이 사상을 정리했다 — 데이터베이스의 복제도, 메시징도, 이벤트 소싱도 결국 "추가 전용 로그"라는 하나의 추상화로 통합된다는 것이다. 이 아이디어의 뿌리는 데이터베이스의 **WAL(Write-Ahead Log)** 이다. DB는 변경을 데이터 파일에 쓰기 전에 로그에 먼저 기록하는데, 이 로그만 있으면 어떤 상태든 재구성할 수 있다. Kinesis와 Kafka는 이 "로그가 진실의 원천"이라는 통찰을 메시징 시스템 자체로 만든 것이다.
 
-### 1. Amazon Kinesis란?
+> 🔍 **더 깊이**: Kinesis와 SQS의 차이는 "소비가 데이터를 파괴하느냐"로 압축된다. SQS는 `DeleteMessage`로 소비가 곧 삭제다(파괴적 읽기). Kinesis는 읽기와 보존이 분리되어, 소비자가 "내가 어디까지 읽었나"를 스스로 기억해야 한다(체크포인트). KCL(Kinesis Client Library)이 이 체크포인트를 DynamoDB 테이블에 저장해주는 이유가 여기 있다 — 로그 자체는 소비자의 위치를 모르므로, 위치 관리 책임이 소비자에게 있다. 이건 Kafka의 컨슈머 오프셋과 정확히 같은 구조다. "스트림은 진실을 보존하고, 어디까지 읽었는지는 소비자가 책임진다"가 로그 기반 시스템의 핵심 계약이다.
 
-실시간 스트리밍 데이터를 수집, 처리, 분석하는 서비스 패밀리입니다.
+## 샤드와 파티션 키: 순서와 확장을 동시에
 
-**4가지 서비스:**
-- **Kinesis Data Streams**: 실시간 데이터 스트리밍, 직접 처리
-- **Kinesis Data Firehose**: 완전 관리형 데이터 전달, S3/Redshift/OpenSearch
-- **Kinesis Data Analytics**: SQL로 스트리밍 데이터 분석
-- **Kinesis Video Streams**: 비디오 스트리밍
+하나의 로그를 한 줄로만 두면 처리량이 그 한 줄의 천장에 묶인다(SQS FIFO에서 본 문제와 같다). Kinesis는 스트림을 여러 **샤드(shard)** 로 쪼개 병렬화한다. 각 샤드는 독립된 로그이고, 고유한 처리량 한도를 가진다.
 
-### 2. Kinesis Data Streams
+| 동작 | 샤드당 한도 |
+|------|------------|
+| 쓰기 | 1 MB/s 또는 1,000 records/s |
+| 읽기 (Classic) | 2 MB/s 또는 5 GetRecords 호출/s (모든 소비자 공유) |
+| 읽기 (Enhanced Fan-Out) | 2 MB/s **소비자별 전용** |
+| 레코드 최대 크기 | 1 MB |
+| 보존 | 24시간 ~ 365일 |
 
-```
-샤드 구조
-================================
-
-[Producer]
-  |
-  | 파티션 키 기반으로 샤드 결정
-  v
-[샤드 1] [샤드 2] [샤드 3]
-  각 샤드:
-    - 쓰기: 1MB/s 또는 1,000 레코드/s
-    - 읽기: 2MB/s
-    - 보존: 기본 24시간 (최대 7일 또는 365일)
-  |
-  v
-[Consumer (Lambda, KCL, SDK)]
-```
+여기서 핵심은 **파티션 키(partition key)** 다. 생산자가 레코드를 보낼 때 파티션 키를 지정하면, Kinesis는 그 키를 해시해서 어느 샤드로 갈지 결정한다. **같은 파티션 키를 가진 레코드는 항상 같은 샤드로** 가고, 한 샤드 안에서는 순서가 보존된다. 그래서 "주문 ID를 파티션 키로 쓰면 같은 주문의 이벤트들은 순서대로, 다른 주문들은 여러 샤드에 분산되어 병렬로" 처리된다 — SQS FIFO의 MessageGroupId와 정확히 같은 발상이다.
 
 ```python
-import boto3
-import json
-
+import boto3, json
 kinesis = boto3.client('kinesis')
 
-# 레코드 전송
 kinesis.put_record(
-    StreamName='order-stream',
-    Data=json.dumps({'orderId': 'O001', 'amount': 50000}),
-    PartitionKey='order-001'  # 같은 파티션 키 = 같은 샤드 (순서 보장)
-)
-
-# 배치 전송 (최대 500개, 5MB)
-kinesis.put_records(
-    StreamName='order-stream',
-    Records=[
-        {
-            'Data': json.dumps({'orderId': f'O{i}'}),
-            'PartitionKey': f'order-{i}'
-        }
-        for i in range(10)
-    ]
-)
-
-# 레코드 읽기
-response = kinesis.get_shard_iterator(
-    StreamName='order-stream',
-    ShardId='shardId-000000000000',
-    ShardIteratorType='LATEST'
-)
-shard_iterator = response['ShardIterator']
-
-records = kinesis.get_records(
-    ShardIterator=shard_iterator,
-    Limit=10
+    StreamName='clickstream',
+    Data=json.dumps({'userId': 'U123', 'page': '/checkout'}),
+    PartitionKey='U123'   # 이 사용자의 이벤트는 같은 샤드 → 순서 보존
 )
 ```
 
-### 3. Lambda와 Kinesis 통합
+> ⚠️ **함정**: 파티션 키 설계를 잘못하면 **핫 샤드(hot shard)** 가 생긴다. 예를 들어 모든 레코드에 같은 파티션 키를 주면 전부 한 샤드로 몰려, 다른 샤드들이 놀고 있는데도 그 한 샤드가 1MB/s에서 막혀 `ProvisionedThroughputExceededException`이 난다. 시험에서 "특정 샤드만 스로틀링된다"는 증상의 원인은 거의 항상 편향된 파티션 키다. 해결은 키를 고르게 분산되도록(카디널리티 높게) 설계하는 것이다. 이는 DynamoDB의 핫 파티션 문제와 정확히 같은 구조다 — 둘 다 "키 해시로 분산하는 시스템"의 공통 함정이다.
 
-```python
-# Lambda가 Kinesis 스트림을 소비
-def lambda_handler(event, context):
-    for record in event['Records']:
-        # Base64 디코딩
-        import base64
-        payload = base64.b64decode(record['kinesis']['data']).decode('utf-8')
-        data = json.loads(payload)
-        
-        print(f"주문 처리: {data['orderId']}")
-        
-        # 비즈니스 로직 처리
-        process_order(data)
-```
+> 🔍 **더 깊이**: 클래식 읽기에서 "2 MB/s를 모든 소비자가 공유"한다는 점이 중요하다. 소비자가 3개면 각자 약 0.67 MB/s밖에 못 읽고, 게다가 모두 `GetRecords`를 폴링하므로 지연이 200ms~수초까지 늘어난다. **Enhanced Fan-Out(EFO)** 은 각 소비자에게 2 MB/s 전용 파이프를 HTTP/2 **푸시**로 제공해, 소비자가 늘어도 서로 처리량을 빼앗지 않고 지연도 약 70ms로 떨어진다. 대가는 비용(소비자-샤드 시간당 + 데이터 전송량)이다. "여러 소비자가 같은 스트림을 낮은 지연으로 읽어야 한다"는 시나리오의 답이 EFO다. 풀(클래식)에서 푸시(EFO)로의 전환은 SQS 폴링 대 SNS 푸시의 대비와 같은 맥락이다.
 
-### 4. Kinesis Data Firehose
+## Data Streams 대 Firehose: 처리하느냐, 전달하느냐
 
-```
-완전 관리형 ETL 파이프라인
-================================
+Kinesis는 단일 서비스가 아니라 패밀리다. 시험에서 가장 중요한 구분은 **Data Streams**와 **Data Firehose**다.
 
-[Producer]
-     |
-     v
-[Kinesis Data Firehose]
-     |
-     | 변환 (Lambda, 선택)
-     | 버퍼링 (1분 또는 1MB)
-     v
-[대상]
-  - S3 (JSON, CSV, Parquet 변환)
-  - Amazon Redshift
-  - Amazon OpenSearch
-  - Splunk
-```
+**Data Streams**는 방금 본 샤드 기반 로그다. 소비자(Lambda, KCL 앱, EFO 소비자)가 **직접 데이터를 읽어 실시간 처리**하며, 재처리·다중 소비·낮은 지연이 필요할 때 쓴다. 샤드를 직접 관리하거나(Provisioned) On-Demand로 자동 확장한다.
 
-**특징:**
-- 서버리스, 자동 확장
-- 버퍼링 후 배치 전달
-- 실시간보다는 Near Real-Time (1분 이상 지연)
+**Firehose**는 완전히 다른 목적이다. 데이터를 **버퍼링했다가 목적지로 자동 전달**하는 서버리스 ETL 파이프라인이다. 소비자 코드도, 샤드 관리도 없다. S3·Redshift·OpenSearch·Splunk로 데이터를 흘려보내며, 중간에 Lambda로 변환하거나 JSON을 Parquet로 포맷 변환할 수 있다.
 
-### 5. Kinesis vs SQS
+| 구분 | Data Streams | Firehose |
+|------|-------------|----------|
+| 목적 | 실시간 처리(직접 소비) | 목적지로 자동 전달(ETL) |
+| 관리 | 샤드 관리 또는 On-Demand | 완전 관리형, 서버리스 |
+| 소비자 | 사용자가 작성(Lambda/KCL) | 없음(목적지로 자동) |
+| 지연 | 실시간(~200ms, EFO 70ms) | **최소 60초**(버퍼링) |
+| 재처리 | 가능(보존 기간 내) | 불가(통과형) |
+| 보존 | 24시간~365일 | 없음(통과만) |
 
-| 특성 | Kinesis Data Streams | SQS |
-|------|---------------------|-----|
-| 순서 | 샤드 내 순서 보장 | FIFO만 보장 |
-| 보존 | 1~365일 | 최대 14일 |
-| 소비 | 여러 Consumer 동시 가능 | 하나의 Consumer |
-| 용도 | 실시간 분석, IoT | 작업 큐, 디커플링 |
-
----
-
-## 🧠 알아두면 좋은 심화 이론
-
-### Kinesis 4종 서비스 정확한 비교 (시험 빈출)
-
-| 서비스 | 용도 | 관리 수준 |
-|--------|------|-----------|
-| **Data Streams** | 실시간 스트리밍 (직접 처리) | 샤드 관리 (또는 On-Demand) |
-| **Data Firehose** | ETL → S3/Redshift/OpenSearch | 완전 관리형 |
-| **Data Analytics for Apache Flink** | SQL/Flink로 스트리밍 분석 | 관리형 |
-| **Video Streams** | 비디오 스트리밍 (CCTV, IoT) | 관리형 |
-
-### Kinesis Data Streams 용량 모드 (시험 신규)
-
-| 모드 | 동작 |
-|------|------|
-| **Provisioned** | 샤드 수 직접 지정 |
-| **On-Demand** (2021~) | 자동 확장, 한도 200 MB/s 또는 200,000 RPS |
-
-### 샤드 한도 정리 (정확히)
-
-| 동작 | 한도 |
-|------|------|
-| **쓰기** | 1 MB/s 또는 1,000 records/s (per shard) |
-| **읽기 (Classic)** | 2 MB/s 또는 5 GetRecords/s (모든 consumer 공유) |
-| **읽기 (Enhanced Fan-Out)** | 2 MB/s **per consumer** (HTTP/2 push) |
-| 데이터 보존 | 24시간~365일 |
-| 최대 레코드 크기 | 1 MB |
-| 파티션 키 길이 | 1~256 자 |
-
-### Enhanced Fan-Out (시험에 가끔 출제)
-
-- 클래식: 여러 컨슈머가 같은 2 MB/s 공유
-- Enhanced: 각 컨슈머가 2 MB/s 전용
-- 비용 추가 (시간당 + 전송량)
-- HTTP/2 푸시 → 70 ms 지연
-
-### Producer 옵션
-
-| 도구 | 사용 |
-|------|------|
-| **KPL** (Kinesis Producer Library) | 배치·재시도·CloudWatch 자동, Java |
-| **Kinesis Agent** | 로그 파일 자동 수집 |
-| **AWS SDK** | 단순한 직접 호출 |
-| **Kinesis Client Library (KCL)** | Consumer용 |
-
-### Consumer 옵션
-
-| 도구 | 사용 |
-|------|------|
-| **KCL** | 분산 처리, 체크포인트, 셰일 자동 |
-| **Lambda** (ESM) | 서버리스, 자동 확장 |
-| **Firehose** | S3로 자동 전달 |
-| **Data Analytics** | SQL/Flink 분석 |
-
-### Firehose 디테일 (시험 자주)
-
-| 항목 | 값 |
-|------|-----|
-| 데이터 변환 | Lambda (선택) |
-| 데이터 포맷 변환 | JSON → Parquet/ORC (자동) |
-| 압축 | GZIP, ZIP, Snappy |
-| 버퍼링 | 크기 (1~128 MB) 또는 시간 (60~900 초) |
-| 백업 | S3 백업 (실패 또는 모든 데이터) |
-| 가격 | 수집 GB당 |
-| 지연 | **최소 60초** (실시간 X) |
-
-### Firehose 대상
-
-| 대상 | 비고 |
-|------|------|
-| **S3** | 가장 일반적 |
-| **Redshift** | S3 경유 → COPY 명령 |
-| **OpenSearch** | 직접 인덱싱 |
-| **Splunk** | HEC 엔드포인트 |
-| **HTTP Endpoint** | 사용자 정의 |
-| **3rd party** (Datadog, MongoDB, New Relic 등) | |
-
-### Kinesis vs SQS vs SNS - 결정 표 (시험 시나리오 매우 빈출)
-
-| 시나리오 | 선택 |
-|----------|------|
-| 비동기 작업 큐 | **SQS** |
-| 한 번 발행 → 여러 수신 | **SNS** |
-| 실시간 로그 스트리밍 + 재처리 | **Kinesis Data Streams** |
-| 로그 → S3 저장 (서버리스 ETL) | **Firehose** |
-| 백만 RPS 이벤트 처리 | **Kinesis (On-Demand)** |
-| 순서·정확히 1회 | **SQS FIFO** |
-| 모바일 앱 푸시 | **SNS Mobile Push** |
-
-### Kinesis Data Analytics (Apache Flink)
-
-- 스트리밍 데이터에 SQL/Flink 적용
-- 윈도우 함수 (sliding, tumbling)
-- 시험엔 거의 안 나옴 (Developer 시험 범위)
-
-### MSK (Managed Kafka) - 시험에 가끔
-
-- Apache Kafka 호환 (Kinesis와 비슷한 역할)
-- 기존 Kafka 사용자가 마이그레이션 시
-- Kinesis vs MSK: AWS 네이티브 vs 표준 Kafka
-
-### 관련 서비스 Cross-Reference
-
-- **Kinesis + Lambda ESM** → [Week 3 Day 2]
-- **DDB Streams ↔ Kinesis Streams for DDB** → [Week 6 Day 3]
-- **Firehose ↔ S3 Athena** → 데이터 레이크
-- **CloudWatch Logs Subscription → Firehose** → [Week 10 Day 1]
-
----
-
-## 아키텍처 다이어그램
+핵심 결정 기준: "데이터를 **내가 코드로 처리**해야 하나, 아니면 **그냥 S3/Redshift로 보내기만** 하면 되나?" 전자는 Data Streams, 후자는 Firehose다.
 
 ```
-실시간 데이터 파이프라인
-================================
-
-[웹 앱 클릭 이벤트]
-[IoT 센서 데이터]
-[앱 로그]
-         |
-         | Kinesis SDK/Agent로 전송
-         v
-[Kinesis Data Streams]
-         |
-         +-- Lambda (실시간 처리, 알림)
-         |
-         +-- KCL 앱 (복잡한 처리)
-         |
-         v
-[Kinesis Data Firehose]
-         |
-         +-- S3 (데이터 레이크)
-         |
-         +-- Redshift (BI 분석)
-         |
-         +-- OpenSearch (검색)
+[클릭 이벤트/IoT/로그]
+        │
+        ▼
+[Kinesis Data Streams] ──> Lambda (실시간 알림·이상 탐지)
+        │              └──> KCL 앱 (복잡한 상태 기반 처리)
+        ▼
+[Kinesis Data Firehose] ──버퍼링(60s/1MB)──> S3 (데이터 레이크, Parquet)
+                                          └──> Redshift / OpenSearch
 ```
 
----
+> 📚 **사례**: 두 서비스를 **함께** 쓰는 게 흔한 패턴이다. 실시간 분석은 Data Streams + Lambda로 즉시 처리하면서, **동시에** 같은 스트림을 Firehose가 구독해 모든 원본 데이터를 S3에 아카이브한다(나중에 Athena로 분석). 이게 가능한 이유가 앞서 본 "다중 독립 소비"다 — 한 스트림을 실시간 소비자와 아카이브 소비자가 동시에, 서로 간섭 없이 읽는다. CloudWatch Logs를 Subscription Filter로 Firehose에 흘려 S3에 장기 보관하는 것도 같은 ETL 패턴이다.
 
-## ⭐ 핵심 포인트
+> ⚠️ **함정**: "실시간"이라는 단어에 속으면 안 된다. Firehose는 최소 60초 버퍼링이라 **진짜 실시간이 아니다**(Near Real-Time). "1초 이내 즉시 처리"가 필요하면 Data Streams를 직접 소비해야 하고, Firehose는 "어차피 S3에 모아 배치 분석할 거라 1분 지연이 괜찮은" 경우에 쓴다. 시험에서 "초저지연 실시간 처리"면 Data Streams, "S3로 자동 적재(서버리스, 코드 최소)"면 Firehose가 답이다.
 
-1. ⭐ **샤드**: Kinesis의 기본 단위, 1MB/s 쓰기, 2MB/s 읽기
-2. ⭐ **파티션 키**: 같은 키 = 같은 샤드 = 순서 보장
-3. ⭐ **Firehose**: 서버리스 ETL, S3/Redshift/OpenSearch 전달
-4. ⭐ **데이터 보존**: Kinesis 24시간~365일, SQS 최대 14일
-5. ⭐ **여러 Consumer**: Kinesis는 동시에 여러 Consumer 가능
+## Kinesis 대 SQS 대 SNS: 언제 무엇을
+
+이 세 서비스의 선택은 시험에서 가장 빈출하는 시나리오다. 표면적으로 다 "메시지를 옮기는" 것 같지만 모델이 근본적으로 다르다.
+
+| 시나리오 | 선택 | 이유 |
+|----------|------|------|
+| 비동기 작업 큐(한 작업 = 한 처리) | **SQS** | 포인트-투-포인트, 소비 후 삭제 |
+| 순서·정확히 1회 처리 | **SQS FIFO** | 그룹 내 순서 + dedup |
+| 한 이벤트 → 여러 구독자 동시 | **SNS** | 발행-구독 푸시 |
+| 실시간 스트림 + 재처리 + 다중 소비 | **Kinesis Data Streams** | 보존되는 로그 |
+| 스트림 → S3/Redshift 자동 적재 | **Firehose** | 서버리스 ETL |
+| 초당 수백만 이벤트, 변동 큰 트래픽 | **Kinesis On-Demand** | 자동 확장(200 MB/s) |
+| 다중 모바일 플랫폼 푸시 알림 | **SNS Mobile Push** | APNs/FCM 추상화 |
+
+> 💡 **관련 이론**: Kinesis와 SQS의 가장 본질적 차이를 다시 정리하면—SQS는 **메시지 단위로 소비·삭제**하고 소비자가 "각 메시지를 처리했나"를 추적(가시성 타임아웃)한다. Kinesis는 **샤드 단위로 순서대로 읽고** 소비자가 "어디까지 읽었나"를 추적(체크포인트)한다. 그래서 SQS에서는 한 메시지가 독이 되어도 그것만 DLQ로 빼면 되지만, Kinesis에서는 한 레코드가 처리에 실패하면 그 뒤 레코드들이 막힌다(순서 보존의 대가). 이 "head-of-line blocking"을 다루려고 Lambda-Kinesis 통합은 `BisectBatchOnFunctionError`, `MaximumRetryAttempts`, `DestinationConfig`(실패 레코드를 SQS/SNS로) 같은 옵션을 둔다. 모델의 차이가 실패 처리 방식의 차이로 직결된다.
+
+## 정리하며
+
+Kinesis를 관통하는 한 문장은 "메시지를 소비 후 버리는 대신, 추가 전용 로그에 보존해 여러 소비자가 각자의 위치에서 반복해 읽게 한다"이다. 이 로그 모델이 SQS로는 불가능한 다중 독립 소비·재처리·순서 보존을 가능하게 하고, 그 대가로 소비자가 자기 위치(체크포인트)를 책임진다. 샤드는 로그를 병렬화하고 파티션 키는 순서와 분산을 동시에 푼다(핫 샤드는 그 함정). Data Streams는 직접 처리, Firehose는 자동 전달로 역할이 갈리며, 둘을 함께 쓰면 실시간 처리와 아카이브를 한 스트림에서 동시에 얻는다. SQS·SNS·Kinesis의 선택은 결국 "소비가 데이터를 파괴하느냐(SQS), 1:N으로 푸시하느냐(SNS), 보존되는 로그로 다중 소비·재처리하느냐(Kinesis)"라는 모델의 차이로 귀결된다.
+
+다음 글에서는 이런 개별 서비스들을 하나의 흐름으로 엮어 오케스트레이션하는 Step Functions와, 다중 데이터 소스를 단일 GraphQL로 묶는 AppSync로 넘어간다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** Kinesis Data Streams의 각 샤드 쓰기 처리량은?
+**문제 1.** 실시간 클릭스트림을 (1) Lambda로 즉시 이상 탐지하면서, 동시에 (2) 모든 원본을 S3에 아카이브하려 한다. 한 데이터 소스로 둘 다 만족시키는 구성은?
 
-A) 10MB/s  
-B) 1MB/s 또는 1,000 레코드/s  
-C) 100MB/s  
-D) 5MB/s  
+A) SQS 큐 하나에 두 소비자를 연결
 
-**정답: B** - 각 Kinesis 샤드는 초당 1MB 또는 1,000개의 레코드를 쓸 수 있습니다.
+B) Kinesis Data Streams 하나에 Lambda 소비자와 Firehose 소비자를 동시에 연결
 
----
+C) SNS → 두 SQS 팬아웃
 
-**문제 2.** 실시간 클릭스트림 데이터를 S3에 저장하는 가장 쉬운 방법은?
+D) 두 개의 별도 스트림에 같은 데이터를 두 번 전송
 
-A) Kinesis Data Streams + Lambda + S3 직접 저장  
-B) Kinesis Data Firehose → S3  
-C) SQS → Lambda → S3  
-D) 직접 S3 API 호출  
+**정답: B**
 
-**정답: B** - Kinesis Data Firehose는 서버리스로 데이터를 수집하고 자동으로 S3에 저장합니다.
+해설: Kinesis Data Streams는 **다중 독립 소비**가 가능하다 — 한 스트림을 Lambda(실시간 이상 탐지)와 Firehose(S3 아카이브)가 각자의 위치에서 동시에, 서로 간섭 없이 읽는다. 이는 데이터가 소비 후에도 보존되는 로그 모델 덕분이다. A) SQS는 한 메시지를 한 소비자만 가져가므로 같은 데이터를 둘이 못 읽는다. C) SNS는 보존이 없어 재처리·스트리밍에 부적합하다. D) 이중 전송은 불필요한 낭비이자 일관성 문제를 만든다.
 
 ---
 
-**문제 3.** Kinesis에서 같은 파티션 키를 사용하는 레코드의 특성은?
+**문제 2.** Kinesis 스트림에서 특정 샤드만 `ProvisionedThroughputExceededException`이 발생한다. 다른 샤드는 한가하다. 가장 가능성 높은 원인은?
 
-A) 다른 샤드에 분산  
-B) 같은 샤드에 저장, 순서 보장  
-C) 우선순위 처리  
-D) 중복 제거  
+A) 보존 기간이 너무 짧다
 
-**정답: B** - 같은 파티션 키를 가진 레코드는 항상 같은 샤드에 저장되어 순서가 보장됩니다.
+B) 파티션 키가 편향되어 레코드가 한 샤드로 몰리는 핫 샤드
 
----
+C) Enhanced Fan-Out 미사용
 
-**문제 4.** Kinesis Data Streams와 SQS의 가장 큰 차이점은?
+D) Firehose 버퍼링이 너무 길다
 
-A) 비용 차이  
-B) Kinesis는 여러 Consumer가 동시에 같은 데이터를 읽을 수 있음  
-C) 처리 속도 차이  
-D) 리전 제한  
+**정답: B**
 
-**정답: B** - Kinesis는 데이터가 스트림에 보존되므로 여러 Consumer가 각자의 위치에서 독립적으로 데이터를 읽을 수 있습니다.
+해설: 특정 샤드만 스로틀링되는 것은 **핫 샤드**의 전형적 증상이다. 파티션 키 카디널리티가 낮거나 편향되면(예: 모든 레코드에 같은 키) 그 키들이 한 샤드로 몰려 1MB/s·1,000 RPS 한도에서 막힌다. 해결은 파티션 키를 고르게 분산되도록 설계하는 것이다 — DynamoDB 핫 파티션과 같은 원리다. A) 보존은 쓰기 처리량과 무관하다. C) EFO는 읽기 측이다. D) Firehose 버퍼링은 스트림 쓰기 스로틀링과 무관하다.
 
 ---
 
-**문제 5.** Kinesis Data Firehose의 최소 지연 시간은?
+**문제 3.** 세 개의 소비자가 같은 Kinesis 스트림을 각각 낮은 지연(수십 ms)으로 읽어야 하며, 서로 처리량을 빼앗으면 안 된다. 적절한 기능은?
 
-A) 즉시  
-B) 1분  
-C) 5분  
-D) 1시간  
+A) 클래식 공유 처리량으로 충분하다
 
-**정답: B** - Firehose는 데이터를 버퍼링하여 배치로 전달하므로 최소 1분의 지연이 발생합니다 (Near Real-Time).
+B) Enhanced Fan-Out으로 소비자별 전용 2 MB/s를 HTTP/2 푸시로 제공
+
+C) 샤드 수를 3배로 늘린다
+
+D) Firehose로 전환한다
+
+**정답: B**
+
+해설: 클래식 읽기는 샤드당 2 MB/s를 **모든 소비자가 공유**하고 폴링이라 지연도 크다(소비자 3개면 각 ~0.67 MB/s). **Enhanced Fan-Out**은 각 소비자에게 전용 2 MB/s 파이프를 HTTP/2 푸시로 줘, 소비자가 늘어도 서로 간섭 없이 약 70ms 지연으로 읽는다. A) 공유 방식은 처리량을 나눠 쓰고 지연이 크다. C) 샤드를 늘려도 클래식은 여전히 공유라 근본 해결이 아니다. D) Firehose는 60초 버퍼링이라 낮은 지연 요건에 부적합하다.
 
 ---
 
-## 📌 오늘의 요약
+**문제 4.** 로그 데이터를 코드 작성 없이 S3에 자동 적재하되, 1분 정도의 지연은 허용된다. JSON을 Parquet로 변환해 저장하려 한다. 적절한 서비스는?
 
-1. Kinesis Data Streams: 실시간 스트리밍, 샤드 단위, 여러 Consumer
-2. Kinesis Data Firehose: 서버리스 ETL, S3/Redshift/OpenSearch 전달
-3. 샤드: 1MB/s 쓰기, 2MB/s 읽기, 파티션 키로 샤드 결정
-4. 보존 기간: 기본 24시간, 최대 365일 (확장 보존)
-5. Kinesis vs SQS: Kinesis는 스트리밍/다중Consumer, SQS는 작업큐/단일Consumer
+A) Kinesis Data Streams + 직접 작성한 Lambda 소비자
+
+B) Kinesis Data Firehose (Parquet 변환 + S3 전달)
+
+C) SQS → Lambda → S3
+
+D) SNS → S3
+
+**정답: B**
+
+해설: **Firehose**는 서버리스 ETL로, 소비자 코드 없이 데이터를 버퍼링했다가 S3로 자동 전달하며 JSON→Parquet 포맷 변환을 내장 지원한다. 1분 지연이 허용되는 "S3 자동 적재" 시나리오의 정석이다. A) Data Streams는 소비자 코드를 직접 작성해야 한다. C) SQS+Lambda는 직접 구현이 필요하고 포맷 변환도 수동이다. D) SNS는 보존도 변환도 없고 S3 직접 전달 대상도 아니다.
+
+---
+
+**문제 5.** Kinesis Data Streams와 SQS의 가장 본질적인 차이는?
+
+A) 가격
+
+B) Kinesis는 데이터를 로그에 보존해 여러 소비자가 각자 위치에서 반복·재처리할 수 있고, SQS는 소비하면 메시지가 삭제된다
+
+C) Kinesis는 암호화를 지원하지 않는다
+
+D) SQS가 더 빠르다
+
+**정답: B**
+
+해설: Kinesis는 **추가 전용 로그**라 읽어도 데이터가 사라지지 않고 보존 기간 동안 남아, 다중 독립 소비와 재처리(replay)가 가능하다. 소비자는 체크포인트로 자기 위치를 추적한다. SQS는 **파괴적 읽기**로 소비(삭제) 시 메시지가 큐에서 사라져 한 소비자만 처리하고 재처리가 불가능하다. 이 모델 차이가 두 서비스의 모든 동작 차이의 근원이다. A·C·D는 본질적 구분이 아니다.
+
+---
+
+**문제 6.** Firehose의 지연 특성에 대한 설명으로 옳은 것은?
+
+A) 즉시(밀리초) 전달한다
+
+B) 최소 60초 버퍼링이 있어 Near Real-Time이며, 초저지연 실시간 처리에는 부적합하다
+
+C) 항상 1시간 지연된다
+
+D) 지연이 없고 재처리도 가능하다
+
+**정답: B**
+
+해설: Firehose는 데이터를 크기(1~128MB) 또는 시간(60~900초) 기준으로 버퍼링한 뒤 배치 전달하므로 **최소 60초** 지연이 있다(Near Real-Time). "1초 이내 즉시 처리"가 필요하면 Data Streams를 직접 소비해야 한다. A는 Data Streams(EFO ~70ms)에 가깝다. C) 1시간은 최대 버퍼링(900초=15분)보다도 크게 틀렸다. D) Firehose는 통과형이라 보존·재처리가 없다.
+
+---
+
+**문제 7.** Lambda가 Kinesis 스트림을 소비하던 중 한 레코드가 처리에 계속 실패한다. 그 뒤 레코드들이 처리되지 않고 막힌다. 이 현상과 대응으로 옳은 것은?
+
+A) SQS와 동일하게 해당 레코드만 자동으로 DLQ로 빠진다
+
+B) 샤드 내 순서 보존 때문에 head-of-line blocking이 발생하며, BisectBatchOnFunctionError·MaximumRetryAttempts·실패 대상(SQS/SNS) 설정으로 완화한다
+
+C) 스트림을 삭제하고 다시 만들어야 한다
+
+D) 파티션 키를 바꾸면 해결된다
+
+**정답: B**
+
+해설: Kinesis는 샤드 내 **순서를 보존**하므로, 실패한 레코드를 건너뛸 수 없어 그 뒤가 막히는 **head-of-line blocking**이 일어난다(순서 보존의 대가). Lambda 이벤트 소스 매핑은 이를 완화하려 배치를 이등분해 문제 레코드를 좁히고(`BisectBatchOnFunctionError`), 최대 재시도 횟수를 제한하며(`MaximumRetryAttempts`), 소진된 실패 레코드를 SQS/SNS로 보내는(`DestinationConfig`) 옵션을 제공한다. A) SQS와 달리 Kinesis는 자동으로 한 레코드만 빼지 못한다. C·D는 무관하다.

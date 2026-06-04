@@ -187,10 +187,10 @@ Week 1은 "AWS라는 우주의 좌표계"를 머리에 박는 시간이었다. R
 
 **문제 1.** 한 글로벌 게임 회사가 전 세계 사용자에게 일관된 TCP 기반 게임 서버 응답 시간을 제공하려 한다. 가장 적합한 솔루션은?
 
-A) CloudFront + Lambda@Edge
+A) CloudFront + Lambda@Edge — 엣지 PoP 600여 곳에 HTTP 콘텐츠를 캐시하고 Node.js 로직까지 실행하지만, L7 HTTP/HTTPS 전용이라 게임의 raw TCP 세션은 가속하지 못함
 B) Global Accelerator
-C) Route 53 Latency Routing
-D) ElastiCache Global Datastore
+C) Route 53 Latency Routing — 클라이언트를 지연 최소 리전 엔드포인트로 DNS 응답하지만, TTL 캐싱에 묶이고 실제 패킷은 공용 인터넷을 그대로 타 백본 가속이 없음
+D) ElastiCache Global Datastore — 리전 간 1초 미만으로 Redis 데이터를 복제하는 캐시 계층일 뿐, 게임 서버 TCP 트래픽 라우팅과는 무관함
 
 **정답: B**
 해설: TCP/UDP면 무조건 L4 가속인 Global Accelerator. CloudFront는 HTTP L7만, Route 53은 DNS 응답만 다르게 줄 뿐 트래픽 가속 X. ElastiCache는 캐시 서비스로 무관. Global Accelerator는 BGP Anycast 2개의 정적 IP를 제공하므로 DNS TTL과 무관하게 라우팅이 변경되고, 백본망을 거치기 때문에 패킷 손실률·jitter도 줄어든다. 실측치로 보면 글로벌 사용자의 p99 latency가 30-60% 줄어드는 경우가 흔하다.
@@ -199,10 +199,10 @@ D) ElastiCache Global Datastore
 
 **문제 2.** 한 금융 회사가 한국 금융감독원 규정으로 일부 데이터를 본사 내부에 보관하면서도 AWS API로 운영해야 한다. 가장 적합한 솔루션은?
 
-A) Direct Connect만 사용
-B) Local Zones
+A) Direct Connect만 사용 — 본사와 AWS 리전을 전용 회선으로 저지연 연결하지만, 데이터 자체는 결국 AWS 리전에 저장되므로 "본사 내부 보관" 규제 요건을 충족하지 못함
+B) Local Zones — 주요 도시에 배치된 AWS 운영 미니 시설로 저지연을 주지만, 고객 건물이 아닌 AWS 데이터센터라 데이터 주권 요건에 부적합
 C) Outposts
-D) Snowball Edge
+D) Snowball Edge — 페타바이트급 데이터를 오프라인으로 옮기거나 단기 엣지 컴퓨팅에 쓰는 일회성 장비라, 상시 AWS API 운영 플랫폼으로는 부적합
 
 **정답: C**
 해설: 고객 데이터센터 안에 AWS 하드웨어 + 동일 API. 전자금융감독규정·GDPR Schrems II 같은 규제 시나리오의 정답. Local Zones는 AWS 운영 시설, Direct Connect는 전용선, Snowball Edge는 일회성 데이터 이전용. Outposts는 "내 건물 + AWS API"가 동시에 필요한 거의 유일한 시나리오에 쓴다 — 그렇지 않으면 Direct Connect로 충분한 경우가 많다. 비용으로는 Outposts가 3년 약정 기준 EC2 대비 1.5~2배 비싼 편이라 규제 외 이유로는 잘 안 쓴다.
@@ -211,10 +211,10 @@ D) Snowball Edge
 
 **문제 3.** 한 회사가 50개 AWS 계정에서 us-east-1 외 모든 리전 사용을 차단하려 한다. 가장 효율적인 방법은?
 
-A) 각 계정마다 IAM 정책 추가
+A) 각 계정마다 IAM 정책 추가 — 50개 계정의 모든 사용자·역할에 동일 정책을 일일이 붙여야 해 관리가 폭증하고, 새 신원이 생길 때마다 누락 위험이 커 거버넌스로 부적합
 B) Organizations SCP로 `aws:RequestedRegion` 조건 Deny
-C) CloudTrail 알림
-D) VPC를 us-east-1에만 생성
+C) CloudTrail 알림 — 리전 사용을 사후에 로그로 탐지·알림할 뿐, API 호출 자체를 막지 못해 예방적 차단이 되지 못함
+D) VPC를 us-east-1에만 생성 — VPC가 없어도 리전 단위 글로벌 서비스나 S3·DynamoDB 같은 서비스는 다른 리전에서 그대로 호출되므로 차단이 불완전함
 
 **정답: B**
 해설: 다계정 권한 상한 = SCP. `aws:RequestedRegion` Deny가 표준 패턴. 단 Management 계정엔 SCP 미적용이라 운영 워크로드 두면 안 됨. 글로벌 서비스(IAM, CloudFront, Route 53)는 `aws:RequestedRegion`이 `us-east-1`로 보여서 예외 처리가 필요하다는 미묘한 함정도 같이 챙겨야 한다. 또 SCP 적용 후 기존 리소스는 그대로 남고 새 API 호출만 차단되므로, 기존 다른 리전 리소스 정리는 별도 작업이 필요하다.
@@ -223,10 +223,10 @@ D) VPC를 us-east-1에만 생성
 
 **문제 4.** EC2가 S3에 접근하는 가장 안전한 방식은?
 
-A) Access Key를 ~/.aws/credentials에 저장
+A) Access Key를 ~/.aws/credentials에 저장 — 장기 자격 증명이 디스크에 평문으로 남아 인스턴스 침해 시 그대로 탈취되고, 수동 키 회전 부담까지 더해져 위험함
 B) IAM Role을 Instance Profile로 attach + IMDSv2
-C) root Access Key 사용
-D) S3 Public Read 허용
+C) root Access Key 사용 — 계정 전체 무제한 권한을 가진 최상위 자격 증명이라 노출 시 피해가 계정 전역으로 번지며 AWS도 절대 사용 금지로 권고함
+D) S3 Public Read 허용 — 인증 없이 누구나 객체를 읽게 만들어 데이터 유출로 직결되고, EC2 접근 제어와는 정반대 방향의 설정임
 
 **정답: B**
 해설: Instance Profile + IMDSv2. SDK가 임시 자격 증명을 자동 갱신, SSRF도 방어. A는 키 유출 위험, C는 절대 금기, D는 데이터 노출. Capital One 사고의 직접 원인이 IMDSv1이었음을 떠올리면 "왜 IMDSv2를 명시적으로 적어야 하는지"가 분명해진다. 더 완벽한 방어는 EC2 Launch Template에서 `HttpTokens=required` + `HttpPutResponseHopLimit=1`을 강제하고 SCP로 IMDSv1 호출을 차단하는 조합이다.
@@ -235,10 +235,10 @@ D) S3 Public Read 허용
 
 **문제 5.** GitHub Actions가 AWS에 배포할 때 키 회전 부담을 없애려면?
 
-A) IAM User Access Key를 Secret으로 저장
+A) IAM User Access Key를 Secret으로 저장 — GitHub Secrets에 장기 키를 보관해 동작은 하지만, 정기 수동 회전 부담이 남고 로그 노출 시 그대로 탈취되는 Travis CI 침해와 동일한 위험을 안음
 B) OIDC 페더레이션으로 Role 단명 자격 증명
-C) EC2를 띄워 SSH 키
-D) root 자격 증명
+C) EC2를 띄워 SSH 키 — 배포마다 별도 EC2와 SSH 키를 관리해야 해 운영이 복잡해지고, 키 자체가 또 다른 장기 시크릿이 되어 회전 부담을 없애지 못함
+D) root 자격 증명 — 계정 전역 무제한 권한을 CI에 노출하는 것으로, 최소 권한 원칙을 정면으로 위반하는 최악의 선택임
 
 **정답: B**
 해설: GitHub OIDC → STS AssumeRoleWithWebIdentity → 단명 토큰. Trust Policy에서 `sub` claim으로 repo·branch 제한. Travis CI 침해 사례가 OIDC 표준화의 결정적 계기. 같은 패턴이 GitLab, Bitbucket, Buildkite 등에도 확장 적용되고 있어서, 이제는 CI 전반의 표준이라 봐도 무방하다. 보안 강화로는 trust policy에 `token.actions.githubusercontent.com:sub` claim을 `repo:org/repo:ref:refs/heads/main`처럼 브랜치까지 잠그는 게 정석이다.
@@ -248,9 +248,9 @@ D) root 자격 증명
 **문제 6.** 한 SaaS가 우리 AWS의 CloudWatch 로그를 수집한다. Confused Deputy 방어를 위해 필요한 것은?
 
 A) Cross-Account Role + External ID 조건
-B) IAM User에 Access Key 부여
-C) S3 Public Read
-D) VPN 연결
+B) IAM User에 Access Key 부여 — SaaS에 장기 Access Key를 넘기는 방식으로 키 유출·회전 부담이 크고, Confused Deputy(혼동된 대리인) 문제 자체를 전혀 해결하지 못함
+C) S3 Public Read — 로그 버킷을 공개로 열어 누구나 읽게 만드는 데이터 유출 설정으로, 안전한 위임 수집과는 정반대임
+D) VPN 연결 — 네트워크 계층 터널만 제공할 뿐, SaaS가 우리 계정 역할을 빌릴 때의 신원 위임·권한 경계 문제와는 무관함
 
 **정답: A**
 해설: External ID는 사전 공유 비밀로 다른 SaaS 고객이 우리 Role ARN을 알아도 빌릴 수 없게 차단. Marketplace ISV 인증의 필수 요건. External ID에 더해 `aws:SourceAccount`나 `aws:SourceArn` 조건을 같이 거는 게 더 안전하다. 2022년 AWS가 발견한 "Confused Deputy" 패턴 점검 결과에 따르면, 다수 ISV가 External ID만 적용하고 SourceArn을 빠뜨려 부분적으로 취약한 상태였다.
@@ -259,10 +259,10 @@ D) VPN 연결
 
 **문제 7.** 한 회사가 새 AWS 계정을 매주 10개씩 발급하면서 동일한 보안 베이스라인을 적용하려 한다. 가장 적합한 방법은?
 
-A) 운영자가 매번 수동 설정
+A) 운영자가 매번 수동 설정 — 매주 10개 계정마다 사람이 베이스라인을 손으로 적용해야 해 누락·드리프트가 불가피하고, 규모가 커질수록 운영이 무너짐
 B) Control Tower Account Factory + StackSets auto-deployment
-C) CloudFormation을 각 계정에서 수동 실행
-D) Terraform Apply를 매번 실행
+C) CloudFormation을 각 계정에서 수동 실행 — 템플릿은 일관되지만 새 계정마다 사람이 직접 스택을 실행·교차 계정 역할을 설정해야 해 자동 전파가 빠짐
+D) Terraform Apply를 매번 실행 — IaC로 표준화는 되지만 새 계정 생성·등록을 별도 파이프라인으로 묶지 않으면 매번 수동 트리거가 필요해 완전 자동화에 미치지 못함
 
 **정답: B**
 해설: Control Tower가 표준 Landing Zone을 자동 생성, StackSets `SERVICE_MANAGED + auto-deployment Enabled`가 새 계정에 베이스라인을 자동 배포. 운영자 개입 없이 일관성 유지. 더 큰 조직은 Account Factory for Terraform(AFT)으로 GitOps 흐름까지 묶는다. AFT는 새 계정 요청을 PR로 받고, 머지되면 Terraform Cloud가 자동으로 계정 생성·베이스라인 적용·SSO 권한 부여까지 처리한다.
@@ -271,10 +271,10 @@ D) Terraform Apply를 매번 실행
 
 **문제 8.** 한 회사가 신입 개발자에게 IAM Role을 자유롭게 만들 권한을 주되, AdministratorAccess급 Role 생성은 막고 싶다. 가장 적절한 방법은?
 
-A) CloudTrail로 사후 감지
+A) CloudTrail로 사후 감지 — Role 생성을 로그로 남겨 사후 추적은 가능하지만, 과한 권한 Role이 만들어지는 것 자체를 사전에 막지 못해 예방적 통제가 아님
 B) Permissions Boundary를 강제 첨부 조건으로 정책에 명시
-C) 신입 권한을 모두 회수
-D) Organizations SCP만 사용
+C) 신입 권한을 모두 회수 — Role 생성 권한 자체를 빼앗는 것이라 "자유롭게 만들되 상한만 둔다"는 요구를 정면으로 위반함
+D) Organizations SCP만 사용 — 계정·OU 단위 상한이라 같은 계정 안에서 개별 Role마다 다른 한도를 강제하기엔 입자도가 너무 거칠어 부적합
 
 **정답: B**
 해설: `iam:CreateRole` 호출 시 `iam:PermissionsBoundary` 조건 강제. 만든 Role의 실효 권한은 Boundary와 교집합으로 제한. SCP는 더 큰 단위(계정·OU)라 같은 계정 안 개별 Role마다 다른 한도를 두는 데 부적합하다. 이게 "권한을 위임하면서도 위임받은 자가 권한을 확장하지 못하게" 만드는 표준 패턴이고, AWS 공식 가이드의 *Delegated Administrator* 모델의 핵심이다.
@@ -283,10 +283,10 @@ D) Organizations SCP만 사용
 
 **문제 9.** 한 AZ에서 냉방 장애로 EC2가 다운된다. 이미 ASG가 multi-AZ로 구성되어 있다면?
 
-A) 모든 서비스 다운
+A) 모든 서비스 다운 — multi-AZ ASG가 살아있는 AZ에 인스턴스를 보충하므로, 한 AZ 장애로 전체가 내려간다는 전제 자체가 HA 설계와 모순됨
 B) ASG가 다른 AZ에 자동으로 인스턴스 보충, 서비스 유지
-C) RDS Multi-AZ도 같이 다운
-D) 수동 페일오버 필요
+C) RDS Multi-AZ도 같이 다운 — RDS Multi-AZ는 standby가 다른 AZ에 있어 30~60초 내 자동 페일오버하므로, 함께 영구 다운된다는 설명은 틀림
+D) 수동 페일오버 필요 — ASG health check와 ELB가 자동으로 비정상 인스턴스를 교체·재분산하므로, 운영자의 수동 개입이 필요하지 않음
 
 **정답: B**
 해설: 2019년 도쿄 리전 사고 그대로의 시나리오. ASG가 health check 실패 인스턴스를 떨어뜨리고 살아있는 AZ에 새 인스턴스 추가. RDS Multi-AZ는 30-60초 안에 standby로 자동 페일오버. 단 EBS·EFS가 한 AZ에만 묶여 있으면 그 부분은 같이 죽으므로, EFS는 Multi-AZ Standard 클래스로 잡거나 S3/DynamoDB 쪽 저장으로 옮기는 게 안전하다. ALB도 cross-zone load balancing이 기본 활성화되어 다른 AZ로 트래픽이 자동 재분산된다.
@@ -295,10 +295,10 @@ D) 수동 페일오버 필요
 
 **문제 10.** 다음 중 AWS 책임이 아닌 것은?
 
-A) 하이퍼바이저 보안
+A) 하이퍼바이저 보안 — Nitro 등 가상화 계층은 AWS가 설계·패치·격리하는 "클라우드의 보안" 영역이라 전적으로 AWS 책임임
 B) 게스트 OS 패치 (EC2)
-C) 물리 시설 보안
-D) AZ 간 네트워크 암호화
+C) 물리 시설 보안 — 데이터센터 출입 통제·전원·냉방 같은 물리 인프라는 AWS가 전담하는 대표적 AWS 책임 영역임
+D) AZ 간 네트워크 암호화 — 리전 내 AZ를 잇는 백본 트래픽은 2018년 이후 Nitro 인스턴스 간 자동 암호화되어 AWS가 책임지며 고객 작업이 불필요함
 
 **정답: B**
 해설: EC2의 게스트 OS는 고객 책임. IaaS 추상화 레벨 때문에 OS 위 모든 게 고객. Fargate로 바꾸면 OS 패치도 AWS 책임으로 넘어간다. 같은 워크로드를 Lambda로 옮기면 런타임까지 AWS 책임이 된다 — 추상화가 올라갈수록 책임 경계선이 위로 올라간다. 참고로 D의 AZ 간 트래픽 암호화는 2018년 이후 Nitro 인스턴스 간에는 자동 적용되며 고객이 추가 작업할 필요가 없다.
@@ -307,10 +307,10 @@ D) AZ 간 네트워크 암호화
 
 **문제 11.** 한 시스템이 트랜잭션당 1ms 미만 RPO를 요구하고 한 리전 안에서만 운영된다. RDS는?
 
-A) Single-AZ Standard
+A) Single-AZ Standard — 단일 AZ에 인스턴스 하나뿐이라 복제 자체가 없어, AZ 장애 시 백업 복원 전까지 데이터 손실이 발생해 1ms RPO를 보장하지 못함
 B) Multi-AZ Synchronous Replication
-C) Cross-Region Read Replica
-D) Aurora Global Database
+C) Cross-Region Read Replica — 리전 간 비동기 복제라 복제 지연이 초 단위로 벌어져 RPO가 1ms를 한참 초과하고, 동일 리전 운영이라는 조건에도 과한 구성임
+D) Aurora Global Database — 리전 간 storage-level 비동기 복제(약 1초 RPO)라 보조 리전 손실 위험이 있고, 단일 리전만 요구하는 시나리오에는 과잉임
 
 **정답: B**
 해설: 동일 리전 동기 복제로 RPO ≈ 0. AZ 간 1-2ms latency 안에서 commit ack. C는 async라 RPO 초 단위, D는 리전 간 async. RDS Multi-AZ는 standby가 read 트래픽을 받지 않는다는 점(Aurora와 다름)도 같이 알아두면 좋다 — read 분산이 필요하면 Read Replica를 별도로 띄워야 한다. Aurora는 같은 리전 내 6-way replication을 storage layer에서 자동으로 하기 때문에 별도 Multi-AZ 토글이 없다.
@@ -319,10 +319,10 @@ D) Aurora Global Database
 
 **문제 12.** 한 회사가 Organizations 안에서 중앙 Networking 계정의 VPC 서브넷을 다른 30개 워크로드 계정에 공유하려 한다. 가장 적합한 솔루션은?
 
-A) VPC Peering을 30번
+A) VPC Peering을 30번 — 중앙 VPC와 30개 계정을 각각 점대점으로 잇는 방식으로, 서브넷을 공유하는 게 아니라 별도 CIDR VPC를 연결하는 것이라 요구사항과 다르고 non-transitive 제약도 따름
 B) AWS RAM으로 서브넷 공유
-C) Transit Gateway만 사용
-D) Direct Connect
+C) Transit Gateway만 사용 — VPC 간 라우팅 허브일 뿐 각 계정이 독립 VPC를 그대로 운영해야 해, "중앙 VPC의 서브넷을 직접 공유"하는 요구는 충족하지 못함
+D) Direct Connect — 온프레미스와 AWS를 잇는 전용 회선 서비스라, 계정 간 VPC 서브넷 공유 시나리오와는 전혀 무관함
 
 **정답: B**
 해설: RAM으로 서브넷 공유 → 받는 계정은 ENI/EC2를 만들 수 있지만 라우팅·NACL은 못 건드림. 네트워크 설계와 워크로드 운영의 깔끔한 분리. Peering은 점대점, TGW는 라우팅 허브로 보완재. 실제 운영에서는 RAM(서브넷 공유) + Transit Gateway(VPC 간 라우팅 허브) 조합을 같이 쓰는 경우가 가장 많다. RAM은 같은 Organization 안에서만 적용 가능(Resource Sharing Sharing Outside Organization을 켜면 외부 계정도 가능하지만 보안상 거의 안 씀).

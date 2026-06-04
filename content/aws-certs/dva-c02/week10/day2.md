@@ -1,355 +1,206 @@
-# Day 47 - X-Ray: 분산 추적
+# Day 47 - X-Ray: "어디서 느린가"를 답하는 분산 추적
 
-📅 날짜: 2026년 7월 20일 (월요일)  
-🎯 주제: AWS X-Ray  
-⏱️ 학습 시간: 약 90분
+모놀리식 애플리케이션에서 "왜 느린가"는 프로파일러 하나로 답할 수 있었다. 한 프로세스 안에서 함수 호출 스택을 따라 내려가며 어느 함수가 시간을 잡아먹는지 보면 됐다. 그런데 요청 하나가 API Gateway → Lambda → DynamoDB → 외부 API → ElastiCache를 거치는 마이크로서비스 구조에서는 이 방법이 통하지 않는다. 각 서비스는 자기 안에서만 일어난 일을 알 뿐, 요청 전체가 어디서 시간을 흘렸는지는 *아무도* 갖고 있지 않다. 로그를 다 모아도 "이 요청"에 속한 로그들을 어떻게 묶을지부터 막힌다. AWS X-Ray는 바로 이 "분산된 요청을 하나로 꿰는" 문제를 푸는 분산 추적(distributed tracing) 서비스다.
 
----
+DVA-C02 시험에서 X-Ray는 "지표는 무엇이 느린지 알려주지만 어디서 느린지는 못 알려준다"는 한계의 답으로 등장한다. Lambda에서는 토글 하나, EC2/ECS에서는 데몬 설치라는 활성화 방식의 차이, Annotation과 Metadata의 인덱싱 차이, 샘플링의 작동 원리가 단골 출제 포인트다. 이번 글은 분산 추적이라는 분야가 어디서 왔는지(Google Dapper), Trace ID가 어떻게 서비스 경계를 넘어 전파되는지, 그리고 왜 X-Ray가 "모든 요청을 추적하지 않는가"를 깊이 들여다본다.
 
-## 🎯 학습 목표
+## 분산 추적의 뿌리: Google Dapper와 인과 관계 추적
 
-- X-Ray 분산 추적의 개념을 이해한다
-- X-Ray SDK를 Lambda와 EC2에 통합한다
-- X-Ray 서비스 맵과 트레이스를 분석한다
+X-Ray의 개념은 AWS의 발명이 아니다. 2010년 Google이 발표한 논문 **"Dapper, a Large-Scale Distributed Systems Tracing Infrastructure"** 가 현대 분산 추적의 직접적 조상이다. Dapper가 제시한 핵심 데이터 모델 — trace(요청 전체), span(각 작업 단위), 그리고 span들이 부모-자식으로 이루는 트리 — 이 거의 그대로 X-Ray의 Trace/Segment/Subsegment로 이어진다.
 
----
+Dapper가 풀려던 문제는 명확했다. 구글 검색 한 번이 수천 대의 서버를 거치는데, 어떤 요청이 느릴 때 그 책임이 어느 서버·어느 단계에 있는지를 알아내야 했다. 해법은 두 가지였다. 첫째, 요청에 **고유 ID(trace ID)** 를 부여하고 그게 모든 하위 호출에 따라다니게 한다. 둘째, 각 단계가 "내가 언제 시작해서 언제 끝났고, 누가 나를 호출했는가"를 기록한다. 이 두 가지가 있으면 흩어진 기록들을 trace ID로 모으고 부모-자식 관계로 재구성해 요청 전체의 타임라인을 그릴 수 있다.
 
-## 📖 이론 내용
+> 💡 **관련 이론**: Dapper의 진짜 통찰은 추적이 본질적으로 **인과 관계(causality) 추적**이라는 점이다. 분산 시스템에서 "A가 B를 일으켰다"를 아는 건 단순 타임스탬프 비교로는 부족하다 — 서로 다른 머신의 시계는 미세하게 어긋나기 때문이다(시계 동기화 문제). 그래서 span의 부모-자식 관계는 시간 순서가 아니라 *호출 관계*로 정의된다. Leslie Lamport의 1978년 논문 "Time, Clocks, and the Ordering of Events"가 제기한 "분산 시스템에서 사건의 순서는 인과 관계로 정해진다"는 통찰의 실용적 구현이 분산 추적인 셈이다. X-Ray가 Subsegment를 부모 Segment 아래 트리로 구성하는 것도 시간이 아니라 인과를 표현하기 위함이다.
 
-### 1. AWS X-Ray란?
+> 🔍 **더 깊이**: Dapper 논문이 강조한 또 하나는 "추적은 반드시 **저오버헤드**여야 한다"는 제약이었다. 모든 요청을 추적하면 추적 자체가 시스템을 느리게 만든다 — 추적 데이터를 만들고 전송하는 비용이 요청 처리 비용에 더해지기 때문이다. Dapper는 이를 **샘플링**으로 해결했고(전체의 일부만 추적), 이 발상이 X-Ray의 샘플링 규칙으로 이어진다. "관측이 대상을 교란한다"는 건 물리학의 관측자 효과와 닮은 엔지니어링 제약이고, 분산 추적 설계의 근본 트레이드오프다. OpenTelemetry(현재 CNCF 표준), Jaeger(Uber), Zipkin(Twitter)이 모두 Dapper의 후손이며, X-Ray도 ADOT(AWS Distro for OpenTelemetry)를 통해 이 표준 생태계와 연결된다.
 
-마이크로서비스 아키텍처에서 요청의 흐름을 추적하는 분산 추적 서비스입니다.
+## Trace ID는 어떻게 서비스 경계를 넘는가: 컨텍스트 전파
 
-**X-Ray가 해결하는 문제:**
+분산 추적의 심장은 **컨텍스트 전파(context propagation)** 다. 요청이 서비스 A에서 서비스 B로 넘어갈 때, A가 갖고 있던 trace ID가 B에게 전달되지 않으면 두 서비스의 기록은 영영 따로 논다. X-Ray는 이걸 HTTP 헤더 하나로 해결한다.
+
 ```
-API Gateway → Lambda → DynamoDB → ElastiCache
-    |
-    어디서 지연이 발생하는가?
-    어디서 오류가 발생하는가?
-    어떤 서비스가 병목인가?
+X-Amzn-Trace-Id: Root=1-5e1b4151-5ac6c58dc39a6d6c2c8e4b21;Parent=53995c3f42cd8ad8;Sampled=1
 ```
 
-**핵심 개념:**
-- **Trace**: 하나의 요청 전체 흐름
-- **Segment**: 각 서비스에서의 처리 정보
-- **Subsegment**: 세부 작업 (DB 쿼리, HTTP 호출 등)
-- **Annotation**: 인덱싱 가능한 키-값 (필터링 가능)
-- **Metadata**: 인덱싱 불가 추가 정보
+`Root`은 이 요청 전체의 trace ID, `Parent`는 직전 span의 ID, `Sampled`는 "이 요청을 추적할지" 여부다. 서비스 A가 B를 호출할 때 이 헤더를 같이 보내면, B는 자기 span의 부모가 A의 어느 span인지 알고 같은 trace에 자기 기록을 붙인다. `Sampled=1`이 함께 전파되므로, 한 요청은 처음 진입점에서 추적 여부가 결정되면 그 결정이 끝까지 일관되게 유지된다 — 절반만 추적된 반쪽짜리 trace가 생기지 않는다.
 
-### 2. Lambda에서 X-Ray 활성화
+> 🔍 **더 깊이**: `patch_all()`이 하는 일이 바로 이 전파의 자동화다. X-Ray SDK는 boto3·requests 같은 라이브러리를 몽키패칭해, 애플리케이션이 외부 호출을 할 때마다 SDK가 자동으로 trace 헤더를 주입하고 subsegment를 연다. 개발자가 모든 호출마다 수동으로 헤더를 넣지 않아도 되는 이유다. 이 "라이브러리 자동 계측(auto-instrumentation)"은 분산 추적 도입의 가장 큰 실용적 장벽 — "수천 개의 호출 지점을 일일이 고칠 수 없다" — 을 우회하는 핵심 기법이고, OpenTelemetry도 같은 방식의 자동 계측 에이전트를 제공한다.
+
+> ⚠️ **함정**: ALB는 X-Ray를 지원하지 않는다. ALB는 trace 헤더를 *통과(pass-through)* 시킬 뿐 자기 span을 만들지 않으므로 서비스 맵에 노드로 나타나지 않는다. 추적이 의미 있게 시작되는 진입점은 **API Gateway**(스테이지에서 X-Ray 활성화)부터다. 시험에서 "ALB 뒤 요청 지연을 X-Ray로 추적"이 보이면, ALB 자체는 추적 대상이 아니라는 점을 함정으로 깐다.
+
+## 활성화 방식의 차이: 왜 Lambda는 토글이고 EC2는 데몬인가
+
+X-Ray 활성화 방법이 서비스마다 다른 건 시험 단골이지만, 그 이유를 알면 외울 필요가 없다. 차이의 본질은 "**추적 데이터를 누가 X-Ray 서비스로 보내는가**"다.
+
+X-Ray SDK는 생성한 span을 곧장 X-Ray API로 보내지 않는다. 대신 **로컬 UDP 포트 2000**으로 쏜다. 이걸 받아서 모아 배치로 X-Ray 서비스에 HTTPS 전송하는 게 **X-Ray 데몬**이다. SDK와 데몬을 분리한 이유는 SDK가 매 span마다 X-Ray API에 동기 호출하면 애플리케이션이 느려지기 때문이다 — UDP는 "보내고 잊는(fire-and-forget)" 방식이라 애플리케이션을 블로킹하지 않고, 실제 전송·배치·재시도는 데몬이 백그라운드에서 담당한다.
+
+EC2·ECS·EKS에서는 이 데몬을 사용자가 직접 띄워야 한다(프로세스로 또는 ECS 사이드카 컨테이너로). 반면 **Lambda는 이 데몬이 실행 환경에 이미 내장**돼 있다. 그래서 Lambda는 `Active Tracing` 토글 하나만 켜면 AWS가 알아서 데몬 역할을 해준다 — 사용자가 데몬을 띄울 인프라 자체가 없는 서버리스 환경이라 AWS가 대신 품고 있는 것이다.
+
+| 서비스 | 활성화 | 데몬 |
+|--------|--------|------|
+| Lambda | Active Tracing 토글 | AWS가 내장 (불필요) |
+| API Gateway | 스테이지에서 활성화 | 해당 없음 |
+| EC2 / ECS / EKS | SDK + 데몬 직접 실행 | 사용자 책임 (UDP 2000) |
+| Beanstalk | 환경 설정에서 활성화 | 플랫폼이 데몬 포함 |
+
+> 📚 **사례**: ECS에서 X-Ray를 쓸 때 가장 흔한 실수가 데몬 사이드카를 빠뜨리는 것이다. SDK는 UDP 2000으로 span을 계속 쏘지만 받는 데몬이 없으면 그냥 허공에 사라지고, 추적이 "조용히" 안 된다 — 에러도 안 나서 디버깅이 어렵다. 표준 패턴은 태스크 정의에 `amazon/aws-xray-daemon` 컨테이너를 사이드카로 추가하고, 애플리케이션 컨테이너가 같은 태스크 네트워크의 2000번 포트로 보내게 하는 것이다. "추적이 안 보인다"의 90%는 IAM 권한 누락 아니면 이 데몬 부재다.
+
+## Annotation과 Metadata: 인덱싱이 가른 두 종류의 부가 정보
+
+trace에 부가 정보를 붙이는 방법은 두 가지인데, 차이는 단 하나 — **인덱싱되는가**다.
 
 ```python
-# Lambda에서 X-Ray SDK 사용
-from aws_xray_sdk.core import xray_recorder
-from aws_xray_sdk.core import patch_all
-
-# AWS SDK 자동 패치 (boto3 등)
-patch_all()
-
 @xray_recorder.capture('process_order')
 def process_order(order_id):
-    # 이 함수의 실행 시간이 자동으로 추적됨
-    with xray_recorder.in_subsegment('validate_order') as subsegment:
-        # 주석 추가 (필터링 가능)
-        subsegment.put_annotation('orderId', order_id)
-        subsegment.put_annotation('environment', 'production')
-        
-        # 메타데이터 추가 (필터링 불가)
-        subsegment.put_metadata('orderDetails', {'amount': 50000})
-        
-        result = validate(order_id)
-    
-    return result
-
-def lambda_handler(event, context):
-    order_id = event.get('orderId')
-    return process_order(order_id)
+    with xray_recorder.in_subsegment('validate_order') as subseg:
+        subseg.put_annotation('orderId', order_id)      # 인덱싱 O → 검색/필터 가능
+        subseg.put_metadata('orderDetails', {...})       # 인덱싱 X → 보기만 가능
 ```
 
-**Lambda X-Ray 활성화:**
-```bash
-# Lambda 함수에서 X-Ray 활성화
-aws lambda update-function-configuration \
-    --function-name my-function \
-    --tracing-config Mode=Active
-```
+**Annotation**은 인덱싱되어 X-Ray 콘솔에서 필터 표현식으로 검색할 수 있다(`annotation.orderId = "O-123"` 같은 식으로). 대신 trace당 **최대 50개**, 값은 문자열·숫자·불린만 가능하다. **Metadata**는 인덱싱되지 않아 검색에는 못 쓰지만 크기 제한 없이 임의의 JSON 객체를 담을 수 있어 디버깅용 큰 데이터에 적합하다.
 
-### 3. EC2/ECS에서 X-Ray 데몬
+> 💡 **관련 이론**: 이 구분은 데이터베이스의 인덱스 설계와 정확히 같은 트레이드오프다. 인덱스는 검색을 빠르게 하지만 저장·쓰기 비용을 늘리므로, 모든 컬럼에 인덱스를 걸지 않는다. X-Ray가 Annotation을 50개로 제한하는 것도 같은 이유 — 모든 부가 정보를 인덱싱하면 X-Ray의 trace 검색 인프라가 감당할 수 없다. 그래서 "검색·필터에 쓸 식별자(userId, orderId, 결과 코드)는 Annotation, 단순히 보기만 할 큰 객체(요청 본문, 응답 페이로드)는 Metadata"라는 역할 분담이 생긴다. "무엇을 인덱싱할 가치가 있는가"를 묻는 건 모든 검색 시스템 설계의 핵심 질문이다.
 
-EC2/ECS에서는 X-Ray 데몬이 필요합니다:
+> ⚠️ **함정**: "userId로 특정 사용자의 모든 trace를 찾고 싶다"면 반드시 **Annotation**이다. Metadata에 userId를 넣으면 trace에 데이터로 붙긴 하지만 검색이 안 돼 무용지물이다. 시험에서 "필터링/검색 가능한 데이터" 키워드가 보이면 Annotation, "큰 객체/디버깅 정보"면 Metadata로 갈린다.
 
-```bash
-# X-Ray 데몬 설치 및 실행
-curl https://s3.us-east-2.amazonaws.com/aws-xray-assets.us-east-2/xray-daemon/aws-xray-daemon-3.x.rpm -o xray.rpm
-sudo yum install -y xray.rpm
-sudo systemctl start xray
-```
+## 샘플링: 왜 모든 요청을 추적하지 않는가
 
-**X-Ray 데몬 동작:**
-```
-[애플리케이션 SDK]
-     |
-     | UDP 포트 2000으로 세그먼트 전송
-     v
-[X-Ray 데몬]
-     |
-     | HTTPS로 X-Ray 서비스 전송
-     v
-[AWS X-Ray 서비스]
-```
-
-### 4. X-Ray 서비스 맵
-
-```
-시각적으로 표현:
-
-[사용자] → [API Gateway] → [Lambda] → [DynamoDB]
-                                 |
-                                 v
-                         [ElastiCache]
-                         
-각 연결선에:
-- 평균 응답 시간
-- 요청 수 (RPM)
-- 오류율 (%)
-표시됨
-```
-
-### 5. X-Ray 샘플링
-
-모든 요청을 추적하면 비용이 많이 들 수 있습니다:
-
-```json
-{
-  "version": 2,
-  "rules": [
-    {
-      "description": "상태 확인 제외",
-      "host": "*",
-      "http_method": "GET",
-      "url_path": "/health",
-      "fixed_target": 0,
-      "rate": 0.00
-    }
-  ],
-  "default": {
-    "fixed_target": 1,
-    "rate": 0.05
-  }
-}
-```
-
-**기본 샘플링**: 처음 1개 요청 + 이후 초당 5%
-
----
-
-## 🧠 알아두면 좋은 심화 이론
-
-### X-Ray 통합 가능 서비스 (시험 자주 출제)
-
-| 서비스 | 활성화 방법 |
-|--------|------------|
-| **Lambda** | Active Tracing 토글 (콘솔/CLI) |
-| **API Gateway** | 스테이지 X-Ray 활성화 |
-| **EC2 / ECS / EKS** | X-Ray 데몬 실행 (UDP 2000) |
-| **Beanstalk** | 환경 설정에서 X-Ray 활성화 |
-| **AppMesh** | Envoy 사이드카에 X-Ray 활성화 |
-
-> ⚠️ **함정**: ALB는 X-Ray 미지원 (단순 트래픽 패스스루). API Gateway부터 추적 가능.
-
-### Trace ID 전파 (시험에 가끔)
-
-```
-헤더: X-Amzn-Trace-Id: Root=1-5e1b4151-5ac6c58dc39a6d6c2c8e4b21;Parent=53995c3f42cd8ad8;Sampled=1
-```
-
-- 마이크로서비스 호출 시 헤더로 Trace ID 전파
-- 같은 Trace ID로 모든 서비스 통합 추적
-
-### X-Ray 데몬 구성
-
-```bash
-# X-Ray 데몬 (EC2/ECS)
-sudo systemctl start xray
-# 또는 Docker
-docker run -d --name xray -p 2000:2000/udp amazon/aws-xray-daemon
-```
-
-- 컨테이너로도 실행 (ECS 사이드카)
-- 데몬은 SDK로부터 UDP 받아 X-Ray API로 전송 (HTTPS)
-
-### Annotation vs Metadata 디테일
-
-| 항목 | Annotation | Metadata |
-|------|-----------|----------|
-| 인덱싱 | ✅ | ❌ |
-| 검색·필터 | ✅ | ❌ |
-| 크기 한도 | **50개**, 키 500자, 값 1000자 | 무제한 |
-| 사용 | userId, orderId 등 식별자 | 디버깅용 큰 객체 |
-
-### X-Ray 샘플링 규칙
+X-Ray의 기본 샘플링은 "매 초 처음 **1개** 요청은 무조건 추적하고, 그 이후로는 **5%**만 추적"이다. 이 숫자 조합 — `fixed_target: 1`, `rate: 0.05` — 에는 분산 추적의 핵심 설계 의도가 담겨 있다.
 
 ```json
 {
   "rules": [
-    {
-      "description": "헬스체크 제외",
-      "host": "*",
-      "http_method": "GET",
-      "url_path": "/health",
-      "fixed_target": 0,
-      "rate": 0
-    },
-    {
-      "description": "결제 API 100%",
-      "url_path": "/payment/*",
-      "fixed_target": 1,
-      "rate": 1.0
-    }
+    { "description": "헬스체크 제외", "http_method": "GET",
+      "url_path": "/health", "fixed_target": 0, "rate": 0 },
+    { "description": "결제 API 전수 추적",
+      "url_path": "/payment/*", "fixed_target": 1, "rate": 1.0 }
   ],
-  "default": {
-    "fixed_target": 1,
-    "rate": 0.05
-  }
+  "default": { "fixed_target": 1, "rate": 0.05 }
 }
 ```
 
-- **fixed_target**: 초당 최소 추적할 트레이스 수
-- **rate**: 그 이후의 비율
+`fixed_target`(초당 보장 추적 수)과 `rate`(그 이후 비율)를 분리한 이유가 중요하다. 트래픽이 적은 서비스(초당 1건)는 5%만 추적하면 평균 20초에 한 번꼴이라 사실상 아무것도 못 본다. `fixed_target: 1`은 "트래픽이 아무리 적어도 초당 최소 1건은 보장"해, 한산한 서비스에서도 표본이 끊기지 않게 한다. 반대로 초당 수만 건이 쏟아지는 서비스에서는 그 1건 보장분 위에 5%만 더해 추적량이 폭증하지 않게 막는다.
 
-### X-Ray Insights (시험 신규)
+> 🔍 **더 깊이**: 샘플링 결정은 요청의 *진입점*에서 한 번만 내려지고 `Sampled` 헤더로 전체 경로에 전파된다(앞서 본 컨텍스트 전파). 이게 중요한 이유는, 만약 각 서비스가 독립적으로 샘플링을 결정하면 어떤 요청은 A에서만 추적되고 B에서는 안 돼서 trace가 군데군데 비어버린다. "추적 여부는 한 번 정하면 끝까지 일관"이라는 원칙이 trace의 완결성을 보장한다. 결제 API에 `rate: 1.0`(100%)을 거는 것처럼, 비즈니스적으로 중요하거나 에러율이 높은 경로는 샘플링을 높이고 헬스체크 같은 노이즈는 0으로 까는 게 표준 튜닝 패턴이다.
 
-- 비정상 패턴 자동 감지 (응답 시간 증가, 에러율 증가)
-- 머신 러닝 기반
-- EventBridge로 통합 → 자동 알림
+> 📚 **사례**: X-Ray Insights는 이 샘플링된 데이터 위에서 머신러닝으로 비정상 패턴(응답 시간 급증, 에러율 상승)을 자동 감지해 EventBridge로 알림을 보낸다. 흥미로운 건 샘플링으로 일부만 추적함에도 이상 탐지가 작동한다는 점인데, 통계적으로 5% 표본만으로도 분포의 변화(평소 대비 지연 증가)를 충분히 감지할 수 있기 때문이다. 이는 "전수 조사 없이 표본으로 모집단을 추정"하는 통계학의 기본 원리가 운영 모니터링에 적용된 예다.
 
-### Service Map 디테일
+## 정리하며
 
-- 각 노드 색깔: 녹색(정상) → 노란색(경고) → 빨강(에러)
-- 각 엣지에 평균 지연·요청 수·에러율 표시
-- 클라이언트·서버·DB 자동 식별
+X-Ray는 "지표는 무엇이 느린지만 알려준다"는 한계를, 요청 하나에 trace ID를 부여해 분산된 기록을 인과 관계로 재구성하는 것으로 넘어선다. 그 모델은 2010년 Google Dapper에서 왔고, 컨텍스트 전파(`X-Amzn-Trace-Id` 헤더)가 서비스 경계를 잇는 심장이다. Lambda가 토글이고 EC2가 데몬인 건 "누가 UDP 2000의 span을 X-Ray로 보내는가"의 차이일 뿐이고, Annotation과 Metadata는 인덱싱 여부로 갈린다. 샘플링은 "관측이 대상을 교란한다"는 근본 제약에 대한 답이며, `fixed_target + rate`의 분리에 그 균형이 담겨 있다.
 
-### CloudWatch ServiceLens (시험 가끔)
-
-- X-Ray + CloudWatch Metrics + Logs를 한 화면에 통합
-- 서비스 맵에서 메트릭·로그 바로 확인
-
-### ADOT (AWS Distro for OpenTelemetry)
-
-- 표준 OpenTelemetry 기반 추적
-- X-Ray와 호환 + Jaeger·Prometheus 등 통합
-- 시험엔 거의 안 나오지만 실무 트렌드
-
-### 관련 서비스 Cross-Reference
-
-- **X-Ray ↔ API Gateway** → [Week 4 Day 3]
-- **X-Ray ↔ Lambda** → [Week 3 Day 1] Active Tracing
-- **ServiceLens ↔ CloudWatch + X-Ray + Logs**
-- **AppConfig + X-Ray** → 점진 배포 모니터링
-
----
-
-## 아키텍처 다이어그램
-
-```
-X-Ray 분산 추적 흐름
-================================
-
-[클라이언트 요청]
-      |
-      v
-[API Gateway] → Segment (100ms)
-      |
-      v
-[Lambda 함수] → Segment (250ms)
-      |
-      +-- DynamoDB GetItem → Subsegment (30ms)
-      |
-      +-- ElastiCache Get → Subsegment (5ms)
-      |
-      +-- 외부 API 호출 → Subsegment (200ms)
-
-전체 트레이스 시간: ~585ms
-병목 위치: 외부 API (200ms)
-
-X-Ray 콘솔에서:
-  서비스 맵: 각 서비스 연결과 응답 시간 시각화
-  트레이스: 개별 요청의 세부 타임라인
-```
-
----
-
-## ⭐ 핵심 포인트
-
-1. ⭐ **Trace**: 하나의 요청 전체 흐름
-2. ⭐ **Annotation**: 인덱싱 가능, 필터링/검색에 사용
-3. ⭐ **EC2/ECS**: X-Ray 데몬 별도 설치 필요
-4. ⭐ **Lambda**: 콘솔에서 X-Ray 활성화만 하면 됨 (데몬 불필요)
-5. ⭐ **샘플링**: 기본 처음 1개 + 초당 5%, 비용 최적화
+다음 글에서는 시간 순서대로 일어난 일을 *추적*하는 것을 넘어, 누가 무엇을 했는지를 *감사*하고 그 사건에 자동으로 반응하는 CloudTrail과 EventBridge로 넘어간다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** X-Ray에서 필터링 가능한 데이터를 추가하려면?
+**문제 1.** X-Ray에서 "특정 userId를 가진 모든 trace를 콘솔에서 검색"하려 한다. userId를 어디에 넣어야 하는가?
 
-A) Metadata  
-B) Annotation  
-C) Comment  
-D) Tag  
+A) Metadata
 
-**정답: B** - Annotation은 키-값 쌍으로 X-Ray 콘솔에서 필터링 및 검색이 가능합니다.
+B) Annotation
 
----
+C) Segment 이름
 
-**문제 2.** EC2에서 X-Ray를 사용하기 위한 전제 조건은?
+D) Subsegment 이름
 
-A) CloudWatch Agent 설치  
-B) X-Ray 데몬 설치 및 실행  
-C) VPC Flow Logs 활성화  
-D) CloudTrail 활성화  
+**정답: B**
 
-**정답: B** - EC2에서 X-Ray를 사용하려면 X-Ray 데몬을 설치하고 실행해야 합니다.
+해설: **Annotation**만 인덱싱되어 X-Ray 콘솔의 필터 표현식으로 검색·필터링할 수 있다(`annotation.userId = "..."`). Metadata는 trace에 데이터로 붙지만 인덱싱되지 않아 검색이 불가능하다 — userId를 Metadata에 넣으면 "특정 사용자의 trace 찾기"가 작동하지 않는다. 단, Annotation은 trace당 50개, 값은 문자열·숫자·불린으로 제한된다. 큰 객체나 디버깅용 페이로드는 Metadata가 맞다.
 
 ---
 
-**문제 3.** X-Ray 서비스 맵에서 알 수 있는 정보가 아닌 것은?
+**문제 2.** ECS Fargate에서 애플리케이션에 X-Ray SDK를 통합했는데 콘솔에 trace가 전혀 나타나지 않는다. 에러 로그도 없다. 가장 가능성 높은 원인은?
 
-A) 서비스 간 연결 관계  
-B) 평균 응답 시간  
-C) 서비스 비용  
-D) 오류율  
+A) Annotation을 50개 초과로 넣었다
 
-**정답: C** - X-Ray 서비스 맵은 연결 관계, 응답 시간, 요청 수, 오류율을 보여주지만 비용 정보는 포함되지 않습니다.
+B) X-Ray 데몬 사이드카가 태스크에 없어 UDP 2000의 span을 받는 곳이 없다
 
----
+C) 샘플링 rate가 5%여서
 
-**문제 4.** X-Ray 기본 샘플링 규칙은?
+D) ALB를 앞에 두어서
 
-A) 모든 요청 추적  
-B) 처음 1개 + 초당 5%  
-C) 처음 10개 + 초당 1%  
-D) 1분당 1개  
+**정답: B**
 
-**정답: B** - X-Ray 기본 샘플링은 매 초 처음 1개 요청과 이후 5%의 요청을 추적합니다.
+해설: X-Ray SDK는 span을 로컬 **UDP 2000**으로 fire-and-forget 방식으로 쏘고, 이를 받아 X-Ray로 전송하는 건 **데몬**이다. ECS에서는 데몬을 사이드카 컨테이너(`amazon/aws-xray-daemon`)로 직접 띄워야 하며, 없으면 span이 허공으로 사라진다 — UDP라 에러도 안 나서 "조용히" 추적이 안 된다. C) 5% 샘플링이어도 일부 trace는 보여야 하므로 "전혀 안 보임"의 원인이 아니다. D) ALB는 추적 자체를 막지 않는다.
 
 ---
 
-**문제 5.** Lambda에서 X-Ray를 활성화하는 방법은?
+**문제 3.** Lambda 함수에서 X-Ray를 활성화하는 가장 적절한 방법과, EC2와의 차이를 옳게 설명한 것은?
 
-A) X-Ray 데몬 Lambda Layer 추가  
-B) Lambda 설정에서 X-Ray Active Tracing 활성화  
-C) CloudWatch와 연동  
-D) VPC 설정 변경  
+A) Lambda도 EC2처럼 데몬을 설치해야 한다
 
-**정답: B** - Lambda 콘솔이나 CLI에서 X-Ray Active Tracing을 활성화하면 됩니다. 데몬 설치가 필요 없습니다.
+B) Lambda는 Active Tracing 토글만 켜면 됨 — 실행 환경에 데몬이 내장돼 있기 때문
+
+C) Lambda는 X-Ray를 지원하지 않는다
+
+D) Lambda는 CloudWatch Agent로 추적한다
+
+**정답: B**
+
+해설: Lambda는 서버리스라 사용자가 데몬을 띄울 인프라 자체가 없고, 그래서 AWS가 실행 환경에 X-Ray 데몬을 내장해둔다. 사용자는 **Active Tracing** 토글만 켜면 된다. EC2/ECS/EKS는 사용자가 데몬을 프로세스 또는 사이드카로 직접 실행해야 한다(UDP 2000 수신). 활성화 방식의 차이는 "데몬을 누가 책임지는가"로 일관되게 설명된다.
 
 ---
 
-## 📌 오늘의 요약
+**문제 4.** X-Ray 기본 샘플링 규칙 `fixed_target: 1, rate: 0.05`에서 `fixed_target`의 역할은?
 
-1. X-Ray: 분산 추적, 마이크로서비스 디버깅 및 성능 분석
-2. Trace/Segment/Subsegment로 계층적 요청 추적
-3. Annotation: 필터 가능, Metadata: 필터 불가 추가 정보
-4. Lambda: Active Tracing 활성화만으로 사용 가능
-5. EC2/ECS: X-Ray 데몬 설치 필요, UDP 2000 포트로 통신
+A) 전체 요청의 1%만 추적
+
+B) 트래픽이 적어도 초당 최소 1건은 보장 추적하고, 그 이후 요청에 5%를 적용
+
+C) 1분마다 1건 추적
+
+D) 첫 1초만 추적하고 이후 중단
+
+**정답: B**
+
+해설: `fixed_target`은 "초당 보장 추적 수", `rate`는 "그 보장분을 넘는 요청에 적용할 비율"이다. 트래픽이 적은 서비스(초당 1건)는 5%만 추적하면 표본이 거의 안 잡히므로, `fixed_target: 1`이 한산한 서비스에서도 최소 표본을 보장한다. 반대로 고트래픽 서비스에서는 그 1건 위에 5%만 더해 추적량 폭증을 막는다. 두 파라미터의 분리가 트래픽 규모와 무관하게 유용한 표본을 유지하는 핵심이다.
+
+---
+
+**문제 5.** ALB 뒤에 있는 백엔드 요청의 지연을 X-Ray로 추적하려 한다. 추적이 의미 있게 시작되는 지점은?
+
+A) ALB가 첫 번째 Segment로 나타난다
+
+B) ALB는 X-Ray를 지원하지 않으며, API Gateway 또는 계측된 애플리케이션부터 추적이 시작된다
+
+C) ALB에 X-Ray 데몬을 설치한다
+
+D) CloudWatch로만 가능하다
+
+**정답: B**
+
+해설: ALB는 trace 헤더를 통과시킬 뿐 자기 span을 만들지 않으므로 서비스 맵에 노드로 나타나지 않는다. 추적이 의미 있게 시작되는 진입점은 **API Gateway**(스테이지 X-Ray 활성화)나 X-Ray SDK로 계측된 애플리케이션이다. C) ALB에는 데몬을 설치할 수 없다. "ALB는 X-Ray 미지원"은 자주 출제되는 함정이다.
+
+---
+
+**문제 6.** 마이크로서비스 A가 B를 호출할 때 두 서비스의 추적 기록이 하나의 trace로 묶이게 하는 메커니즘은?
+
+A) 두 서비스가 같은 CloudWatch 로그 그룹을 공유
+
+B) `X-Amzn-Trace-Id` 헤더로 Trace ID(및 Sampled 결정)를 전파
+
+C) 동일한 IAM 역할 사용
+
+D) 같은 VPC에 배치
+
+**정답: B**
+
+해설: 분산 추적의 심장은 **컨텍스트 전파**다. A가 B를 호출할 때 `X-Amzn-Trace-Id` 헤더(`Root`, `Parent`, `Sampled`)를 함께 보내면, B는 자기 span을 같은 trace의 자식으로 붙인다. `Sampled` 값도 전파되므로 추적 여부가 진입점에서 한 번 정해져 전체 경로에 일관되게 유지된다(반쪽짜리 trace 방지). X-Ray SDK의 `patch_all()`이 이 헤더 주입을 자동화한다.
+
+---
+
+**문제 7.** X-Ray에 디버깅용으로 수 KB 크기의 요청/응답 전체 페이로드를 첨부하려 한다. 검색에는 쓰지 않는다. 적절한 것은?
+
+A) Annotation (trace당 50개 제한)
+
+B) Metadata (크기 제한 없음, 인덱싱 안 됨)
+
+C) CloudWatch Logs에만 저장
+
+D) Segment 이름에 인코딩
+
+**정답: B**
+
+해설: **Metadata**는 인덱싱되지 않는 대신 크기 제한 없이 임의의 JSON 객체를 담을 수 있어 디버깅용 큰 페이로드에 적합하다. Annotation은 인덱싱되어 검색 가능하지만 trace당 50개, 값 타입도 단순값으로 제한되어 큰 객체에 부적합하다. "검색 안 함 + 큰 객체"는 Metadata, "검색함 + 식별자"는 Annotation으로 갈린다. 이 구분은 DB 인덱스 설계의 트레이드오프와 같다.

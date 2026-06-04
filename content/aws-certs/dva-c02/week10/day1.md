@@ -1,239 +1,84 @@
-# Day 46 - CloudWatch: 지표, 로그, 알람
+# Day 46 - CloudWatch: 지표 하나가 어떻게 알람과 자동화로 이어지는가
 
-📅 날짜: 2026년 7월 19일 (일요일)  
-🎯 주제: Amazon CloudWatch  
-⏱️ 학습 시간: 약 90분
+운영 중인 시스템에 문제가 생겼을 때, 가장 먼저 던지는 질문은 늘 같다. "지금 뭐가 잘못됐는가, 그리고 그걸 우리는 어떻게 알았어야 하는가." 모니터링이라는 분야 전체가 사실 이 두 문장을 자동화하려는 시도다. AWS CloudWatch는 그 자동화를 "모든 것은 결국 시계열 숫자(metric)다"라는 단 하나의 추상화 위에 올려놓은 서비스다. CPU 사용률도, 람다 호출 횟수도, 로그에서 추출한 에러 개수도, 심지어 사용자 정의 비즈니스 지표도 — CloudWatch 안에서는 전부 `(timestamp, value, dimensions)`라는 동일한 형태의 데이터 포인트로 환원된다. 이 단일 추상화가 왜 강력한지를 이해하면, 지표·로그·알람·대시보드가 따로 노는 기능들이 아니라 하나의 파이프라인이라는 게 보인다.
 
----
+DVA-C02 시험에서 CloudWatch는 모니터링 섹션의 중심축이다. 단독 출제도 잦지만, 그보다 "EC2 메모리는 왜 기본 지표가 아닌가", "로그에서 알람을 만들려면 무엇을 거쳐야 하는가", "람다에서 비용 안 들이고 지표를 만드는 법" 같은 통합 시나리오로 더 자주 나온다. 이번 글은 CloudWatch가 어디서 출발한 서비스인지, 푸시(push) 기반 모델이 무엇을 가능하게 했는지, 그리고 메트릭 한 개가 어떻게 알람과 Auto Scaling 같은 자동 대응으로 이어지는지를 깊이 들여다본다.
 
-## 🎯 학습 목표
+## CloudWatch가 출발한 자리: 폴링에서 푸시로
 
-- CloudWatch 지표와 사용자 정의 지표를 이해한다
-- CloudWatch Logs로 애플리케이션 로그를 관리한다
-- CloudWatch 알람으로 자동화된 대응을 구현한다
+CloudWatch는 2009년 EC2 모니터링 도구로 처음 등장했다. 당시 인프라 모니터링의 표준은 Nagios(1999), 그리고 그 뒤를 이은 Zabbix·Munin 같은 **폴링(poll) 기반** 도구였다. 폴링 모델에서는 중앙 모니터링 서버가 주기적으로 각 호스트에 "지금 CPU 몇 %냐"고 물어보러 다닌다. 호스트가 수천 대로 늘면 중앙 서버가 그 수천 대를 다 순회해야 하고, 새 인스턴스가 뜨면 모니터링 서버 설정에 일일이 등록해야 한다. 오토스케일링으로 인스턴스가 분 단위로 생겼다 사라지는 클라우드 환경에서 이 모델은 근본적으로 맞지 않았다.
 
----
+CloudWatch는 반대로 **푸시(push) 기반**을 택했다. 각 리소스(또는 에이전트)가 자기 지표를 CloudWatch로 *밀어 올린다*. 중앙 서버가 호스트를 찾아다니지 않으므로 인스턴스가 몇 대로 늘든 수평 확장이 자연스럽고, 새 인스턴스가 떠도 자기 지표를 알아서 보내면 그만이다. `PutMetricData`라는 단일 진입점으로 모든 게 들어온다는 설계가 여기서 나온다.
 
-## 📖 이론 내용
+> 💡 **관련 이론**: 폴링 대 푸시는 모니터링 설계의 오래된 분기점이다. Prometheus(2012, CNCF)는 흥미롭게도 클라우드 시대에 *다시* 폴링(scrape)으로 돌아갔는데, 서비스 디스커버리(쿠버네티스 API 등)와 결합해 "무엇을 긁을지"를 동적으로 알아내는 방식으로 폴링의 확장성 문제를 풀었다. CloudWatch(푸시)와 Prometheus(풀)의 이 대비는 시험에 직접 나오진 않지만, Container Insights 대 Managed Prometheus 선택(Day 4)의 배경 철학이다. 푸시는 "보내는 쪽이 책임", 풀은 "수집하는 쪽이 책임"이라는 권한·신뢰 경계의 차이로도 읽힌다.
 
-### 1. CloudWatch 지표 (Metrics)
+> 🔍 **더 깊이**: 푸시 모델의 대가는 "지표를 안 보내면 CloudWatch는 그 존재조차 모른다"는 것이다. 폴링 모델에서는 호스트가 응답을 안 하면 그 자체가 "다운"이라는 신호가 되지만, 푸시 모델에서는 침묵이 "정상인데 조용한 것"인지 "죽어서 못 보내는 것"인지 구분되지 않는다. CloudWatch 알람의 `INSUFFICIENT_DATA` 상태와 데이터 누락 처리 옵션(`missing`/`notBreaching`/`breaching`/`ignore`)이 존재하는 이유가 바로 이 모호함을 운영자가 명시적으로 해석하도록 강제하기 위함이다. "데이터가 없을 때 이걸 정상으로 볼지 장애로 볼지"는 푸시 기반 시스템이 반드시 사람에게 떠넘겨야 하는 결정이다.
 
-AWS 서비스가 자동으로 보내는 성능 지표입니다.
+## 왜 EC2 메모리는 기본 지표가 아닌가: 하이퍼바이저 경계
 
-**EC2 기본 지표:**
-- `CPUUtilization`: CPU 사용률
-- `NetworkIn/Out`: 네트워크 트래픽
-- `StatusCheckFailed`: 인스턴스 상태 확인
+CloudWatch 시험 문제에서 가장 많이 나오는 함정이 "EC2 메모리·디스크 사용량은 기본 지표가 아니다"라는 사실이다. 이걸 단순 암기로 외우면 잊어버리지만, *왜* 그런지를 알면 절대 안 틀린다.
 
-**⭐ EC2 기본 지표에 포함되지 않는 것:**
-- 메모리 사용률 (RAM)
-- 디스크 사용량 (Disk Space)
-→ CloudWatch Agent 설치 필요
+CloudWatch가 자동 수집하는 EC2 기본 지표(`CPUUtilization`, `NetworkIn/Out`, `DiskReadOps`, `StatusCheckFailed` 등)는 전부 **하이퍼바이저(Xen/Nitro) 바깥에서 관측 가능한 것들**이다. 하이퍼바이저는 게스트 VM에 CPU 시간을 얼마나 줬는지, 네트워크 패킷이 가상 NIC를 얼마나 통과했는지, EBS 볼륨에 블록 I/O가 몇 번 일어났는지를 안다 — 이건 가상화 계층이 직접 중개하는 값이라 OS 안을 들여다보지 않아도 된다. 반면 **메모리 사용률**과 **디스크 사용 공간**은 게스트 OS 안에서만 의미가 있다. 하이퍼바이저는 VM에 4GB RAM을 할당했다는 건 알지만, 그 안에서 OS가 캐시로 얼마나 쓰는지, 애플리케이션이 얼마나 점유하는지는 OS 안에서 `/proc/meminfo`를 읽어야만 안다. AWS가 게스트 OS 내부를 임의로 들여다보는 건 보안·격리 원칙 위반이다.
 
-```bash
-# CloudWatch Agent 설치 (Amazon Linux 2)
-sudo yum install amazon-cloudwatch-agent
+그래서 메모리·디스크 사용량은 **CloudWatch Agent**를 OS 안에 설치해 OS 내부에서 측정한 값을 푸시하도록 만든 것이다. "OS 수준 지표 → Agent 필요"라는 규칙은 이 하이퍼바이저 경계의 직접적 귀결이다.
 
-# 설정 파일 생성
-sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+> ⚠️ **함정**: 시험에서 `DiskReadOps`/`DiskWriteOps`(블록 I/O 횟수)는 **기본 지표**이고, `disk_used_percent`(디스크 사용 공간)는 **Agent 필요**다. 둘 다 "디스크"라는 단어가 들어가 헷갈리게 출제된다. 구분 기준은 똑같다 — I/O 횟수는 하이퍼바이저가 EBS 경계에서 세지만, "공간이 얼마나 찼나"는 파일시스템(OS) 안을 봐야 안다. "메모리"도 마찬가지로 항상 Agent 쪽이다.
 
-# 에이전트 시작
-sudo systemctl start amazon-cloudwatch-agent
-```
+> 📚 **사례**: CloudWatch Agent 이전에는 AWS가 Perl로 짠 "CloudWatch Monitoring Scripts"(`mon-put-instance-data.pl`)를 제공했고, 많은 운영팀이 이걸 cron에 걸어 메모리 지표를 푸시했다. 2017년 통합 CloudWatch Agent가 나오면서 이 Perl 스크립트는 사실상 폐기됐는데, 구버전 블로그·튜토리얼·심지어 일부 문제 은행에 아직 남아 있다. 시험에서 "EC2 메모리 모니터링"의 정답은 항상 **CloudWatch Agent**이지 Perl 스크립트가 아니다.
 
-### 2. 사용자 정의 지표 (Custom Metrics)
+## 해상도와 보존: 시계열 데이터베이스의 트레이드오프
 
-```python
-import boto3
+CloudWatch 지표에는 두 가지 해상도가 있다. 기본은 **1분**, 고해상도(high-resolution)는 **1초**다. 그리고 EC2 모니터링에는 별도로 Basic(5분)과 Detailed(1분)라는 축이 또 있다. 이 숫자들이 헷갈리는 이유는 서로 다른 것을 가리키기 때문이다 — 해상도는 "사용자 정의 지표를 얼마나 촘촘하게 보낼 수 있나"이고, Basic/Detailed는 "EC2가 자동 지표를 얼마나 자주 보내나"다.
 
-cloudwatch = boto3.client('cloudwatch')
+| 구분 | 값 | 비고 |
+|------|-----|------|
+| 사용자 정의 지표 기본 해상도 | 1분 | `PutMetricData` 기본 |
+| 사용자 정의 고해상도 | 1초 | `StorageResolution: 1`, 추가 비용 |
+| EC2 Basic Monitoring | 5분 | 기본, 무료 |
+| EC2 Detailed Monitoring | 1분 | 인스턴스당 추가 비용 |
 
-# 사용자 정의 지표 전송
-cloudwatch.put_metric_data(
-    Namespace='MyApplication',
-    MetricData=[
-        {
-            'MetricName': 'ActiveUsers',
-            'Value': 150,
-            'Unit': 'Count',
-            'Dimensions': [
-                {
-                    'Name': 'Environment',
-                    'Value': 'Production'
-                }
-            ]
-        }
-    ]
-)
-```
+보존(retention)도 단순하지 않다. CloudWatch는 오래된 데이터를 자동으로 **롤업(aggregation)** 한다 — 1분 데이터는 15일만 원본으로 유지되고, 그 후엔 5분으로 합쳐져 63일, 다시 1시간으로 합쳐져 15개월까지 보존된다. 60초 미만 고해상도 데이터는 단 3시간만 살아남는다.
 
-**기본 해상도**: 1분  
-**고해상도 (High Resolution)**: 1초 (스토리지 비용 추가)
+> 💡 **관련 이론**: 이 "시간이 지날수록 해상도를 낮춰 보관"하는 전략은 시계열 데이터베이스(TSDB)의 전형적 패턴으로 **다운샘플링(downsampling)** 또는 **롤업**이라 부른다. RRDtool(1999)이 원형으로, 고정 크기 순환 버퍼에 최근 데이터는 고해상도로, 과거는 저해상도로 저장한다. Graphite의 Whisper, Prometheus의 recording rule, InfluxDB의 retention policy가 모두 같은 발상이다. 핵심 트레이드오프는 "최근 데이터는 디버깅용으로 촘촘하게 필요하지만, 6개월 전 데이터는 추세만 보면 되니 1초 단위까지 보관할 이유가 없다"는 것이다. CloudWatch가 이걸 자동으로 해주기 때문에 사용자는 보관 비용을 의식하지 않아도 되지만, "어제 1초짜리 스파이크를 한 달 뒤에 다시 보려 한다"면 이미 5분 단위로 뭉개진 뒤라는 점이 시험에 함정으로 나올 수 있다.
 
-### 3. CloudWatch Logs
+> 🔍 **더 깊이**: 백분위수 통계(`p99`, `p95`, `p50`)가 평균보다 운영에서 중요한 이유도 이 맥락이다. API 지연 시간의 평균이 200ms라도, p99가 3초라면 100명 중 1명은 3초를 기다린다는 뜻이고 이게 사용자 이탈의 진짜 원인이다. 평균은 소수의 극단값을 희석해 숨기지만 p99는 그 꼬리를 드러낸다. 그래서 "95%의 요청이 1초 이내"라는 SLO는 `p95 < 1000ms` 알람으로 구현한다. 다만 백분위수는 일반 통계와 달리 데이터 포인트를 합산·평균낼 수 없어(p99들의 평균은 전체 p99가 아니다) CloudWatch가 원시 분포를 보존해야 계산 가능하며, 이 때문에 고해상도·백분위수 조합은 비용이 더 든다.
+
+## 메트릭 한 개가 자동 대응이 되기까지: 알람의 상태 기계
+
+CloudWatch의 진짜 가치는 지표를 *보여주는* 데 있지 않고, 지표가 임계값을 넘었을 때 *사람 없이 대응하게* 만드는 데 있다. 그 중심에 알람(Alarm)이 있고, 알람은 본질적으로 세 상태를 오가는 **상태 기계(state machine)** 다.
 
 ```python
-import boto3
-import time
-
-logs = boto3.client('logs')
-
-# 로그 그룹 생성
-logs.create_log_group(logGroupName='/myapp/application')
-
-# 로그 보존 기간 설정 (일)
-logs.put_retention_policy(
-    logGroupName='/myapp/application',
-    retentionInDays=30
-)
-
-# 로그 이벤트 전송
-logs.put_log_events(
-    logGroupName='/myapp/application',
-    logStreamName='instance-1',
-    logEvents=[
-        {
-            'timestamp': int(time.time() * 1000),
-            'message': 'ERROR: Database connection failed'
-        }
-    ]
-)
-```
-
-**CloudWatch Logs Insights:**
-```sql
--- 에러 로그 조회
-fields @timestamp, @message
-| filter @message like /ERROR/
-| sort @timestamp desc
-| limit 20
-```
-
-### 4. CloudWatch 알람
-
-```python
-# CPU 사용률 80% 초과 시 알람
 cloudwatch.put_metric_alarm(
     AlarmName='HighCPU',
     MetricName='CPUUtilization',
     Namespace='AWS/EC2',
-    Period=300,        # 5분
-    EvaluationPeriods=2,  # 연속 2회
-    Threshold=80.0,
+    Period=300,            # 5분 단위로 평가
+    EvaluationPeriods=2,   # 연속 2개 데이터 포인트가
+    Threshold=80.0,        # 80%를 넘으면
     ComparisonOperator='GreaterThanThreshold',
-    AlarmActions=['arn:aws:sns:...'],  # SNS 알림
+    AlarmActions=['arn:aws:sns:...'],  # ALARM 진입 시 SNS 발행
     Dimensions=[{'Name': 'InstanceId', 'Value': 'i-1234567890'}]
 )
 ```
 
-**알람 상태:**
-- `OK`: 정상
-- `ALARM`: 임계값 초과
-- `INSUFFICIENT_DATA`: 데이터 부족
+알람은 `OK`(정상), `ALARM`(임계값 위반), `INSUFFICIENT_DATA`(평가 불가) 세 상태를 가진다. 여기서 `EvaluationPeriods=2`가 중요하다 — 한 번 80%를 찍었다고 바로 알람이 울리지 않고, **연속 2개 기간**이 위반해야 상태가 전환된다. 이건 일시적 스파이크에 과민 반응하지 않게 하는 디바운싱(debouncing)이다. 더 정밀하게는 "M of N" 평가(`DatapointsToAlarm`)로 "최근 5개 중 3개가 위반하면" 같은 조건도 만들 수 있다.
 
-**알람 액션:**
-- SNS 알림
-- Auto Scaling 정책 실행
-- EC2 인스턴스 중지/재시작
-- Systems Manager OpsCenter 생성
+알람이 `ALARM` 상태로 *진입하는 순간*(상태 전환 시점)에 액션이 발화된다. 액션은 SNS 발행, Auto Scaling 정책 트리거, EC2 인스턴스 중지/재시작/복구, Systems Manager 작업 생성 등이다. 여기서 자주 오해되는 게 "알람이 Auto Scaling을 직접 한다"는 생각인데, 정확히는 알람이 Auto Scaling **정책**을 호출하고 그 정책이 용량을 조정한다.
 
----
+> ⚠️ **함정**: "CPU 80% 초과 시 자동 스케일 아웃"의 정답은 "CloudWatch 알람 → Auto Scaling 정책 연결"이다. EventBridge로 직접 연결하거나 Lambda로 직접 구현하는 선택지는 오답으로 출제된다 — 기술적으로 가능은 하지만 AWS가 의도한 표준 경로가 아니고 불필요하게 복잡하다. 시험은 "가장 적합한 방법"을 묻는다.
 
-## 🧠 알아두면 좋은 심화 이론
+> 🔍 **더 깊이**: 단일 알람을 여러 개 묶는 **복합 알람(Composite Alarm)** 은 "알람 폭풍(alarm storm)"을 막기 위해 도입됐다. 데이터베이스 장애 하나로 그에 의존하는 50개 서비스 알람이 동시에 울리면, 운영자는 진짜 근본 원인을 50개 알림 더미 속에서 찾아야 한다. 복합 알람은 "DB 알람이 ALARM이면 하위 서비스 알람들은 억제"하는 식으로 AND/OR 논리를 걸어, 근본 원인 하나만 통지하게 만든다. 이는 상관관계 기반 알림 억제(alert suppression)라는 SRE 패턴을 CloudWatch에 내장한 것이다.
 
-### CloudWatch 지표 핵심 정리 (시험 빈출)
+## 로그도 결국 지표가 된다: Metric Filter와 EMF
 
-| 항목 | 기본 | 고해상도 |
-|------|------|----------|
-| 해상도 | **1분** | **1초** |
-| 보존 | 15일~15개월 (자동 단계 축소) | - |
-| 보존 단계 | 1분→3시간, 5분→15일, 1시간→63일, 끝까지 15개월 | - |
-| 비용 | 무료 (EC2 기본 지표) | 추가 |
+CloudWatch Logs는 로그 그룹(보존 단위) → 로그 스트림(리소스별 흐름) → 로그 이벤트(개별 라인)의 계층으로 비정형 텍스트를 저장한다. 하지만 CloudWatch의 통합 철학에서 로그는 종착점이 아니라 *지표의 원료*다. 두 가지 길로 로그가 지표로 변환된다.
 
-### EC2 기본 지표에 없는 것 (시험 자주 출제)
+첫째, **Metric Filter**는 로그 텍스트에서 패턴(`ERROR` 등)을 감지해 그 발생 횟수를 지표로 만든다. 이렇게 만든 지표에 알람을 걸면 "로그에 ERROR가 분당 5건 넘으면 통지"가 구현된다. 로그 → 패턴 매칭 → 지표 → 알람이라는 파이프라인이다.
 
-❌ **메모리 사용률** (RAM)
-❌ **디스크 사용량** (Used Space)
-❌ **프로세스 정보**
-
-→ **CloudWatch Agent** 설치 필수.
-
-> ⚠️ **함정**: "EC2 OS 수준 지표" → CloudWatch Agent. "디스크 IO 읽기/쓰기 횟수"(`DiskReadOps`)는 기본 지표.
-
-### Detailed Monitoring (시험 가끔)
-
-| 옵션 | 빈도 |
-|------|------|
-| **Basic** (기본) | 5분 |
-| **Detailed Monitoring** | **1분** (추가 비용) |
-
-> ⚠️ **함정**: EC2 기본 모니터링은 **5분 단위**. 1분 단위로 보려면 Detailed Monitoring 활성화 (인스턴스당 추가 비용).
-
-### CloudWatch Logs 디테일
-
-| 단위 | 설명 |
-|------|------|
-| **Log Group** | 보존 기간 설정 단위 |
-| **Log Stream** | 인스턴스/리소스별 로그 흐름 |
-| **Log Event** | 개별 로그 라인 |
-
-| 항목 | 값 |
-|------|-----|
-| 기본 보존 | **무기한 (영구)** |
-| 설정 가능 | 1일~10년 (또는 무기한) |
-| 암호화 | KMS 옵션 |
-| 단일 PutLogEvents 크기 | 1MB |
-
-### Logs Insights 핵심 쿼리 (시험 가끔)
-
-```sql
-fields @timestamp, @message
-| filter @message like /ERROR/
-| stats count(*) by bin(5m)
-| sort @timestamp desc
-| limit 20
-```
-
-- 모든 로그 그룹 동시 쿼리 가능
-- 최대 60분 쿼리 시간
-
-### Logs Subscription Filter
-
-- 실시간 로그 → Lambda·Kinesis·Firehose로 스트리밍
-- 사용: 로그 → Elasticsearch·OpenSearch·S3
-
-```
-CloudWatch Logs → Subscription Filter → Lambda → 변환·전송
-                                      → Kinesis Data Firehose → S3/Splunk
-```
-
-### CloudWatch Alarm 디테일 (시험 빈출)
-
-| 항목 | 값 |
-|------|-----|
-| 평가 기간 | 1~24개 데이터 포인트 |
-| 데이터 포인트 누락 처리 | missing / notBreaching / breaching / ignore |
-| 복합 알람 | 여러 알람을 AND/OR 조합 |
-| 알람 액션 | SNS, AutoScaling, EC2 동작, Systems Manager |
-| Composite Alarm | 알람들의 조합 (Alarm storm 방지) |
-
-### 통계 함수 (시험 가끔)
-
-| 함수 | 의미 |
-|------|------|
-| Average | 평균 |
-| Sum | 합계 |
-| Minimum / Maximum | 최소·최대 |
-| SampleCount | 데이터 포인트 수 |
-| **p99, p95, p50** | 백분위수 (지연 시간 분석에 유용) |
-
-> 💡 시험 시나리오: "API 지연 95%가 1초 이내 보장" → `p95 < 1000ms` 알람.
-
-### EMF (Embedded Metric Format) - Lambda 최적화
+둘째, **EMF(Embedded Metric Format)** 는 방향이 거꾸로다. 애플리케이션이 약속된 JSON 구조로 로그를 출력하면, CloudWatch가 그 JSON을 파싱해 *자동으로 지표를 추출*한다. `PutMetricData` API를 따로 호출하지 않아도 된다.
 
 ```python
 import json
-
 print(json.dumps({
     "_aws": {
         "Timestamp": 1721000000000,
@@ -248,144 +93,126 @@ print(json.dumps({
 }))
 ```
 
-- 로그에 JSON 출력 → CloudWatch가 자동으로 지표 추출
-- `PutMetricData` API 호출 없이 지표 생성 (비용 ↓, 빠름)
-- AWS Lambda Powertools가 이를 자동 처리
+> 💡 **관련 이론**: EMF가 람다에서 특히 중요한 이유는 람다의 실행 모델 때문이다. `PutMetricData`는 동기 API 호출이라 람다 핸들러 안에서 호출하면 그 네트워크 왕복 시간만큼 함수 실행이 길어지고, 실행 시간에 비례해 과금되는 람다에서는 그게 곧 비용이다. EMF는 그냥 `stdout`에 JSON을 한 줄 출력할 뿐이다 — 로그는 어차피 CloudWatch로 비동기 전송되므로 추가 지연이 없고, 지표 추출은 CloudWatch 쪽에서 일어난다. "동기 API 호출을 비동기 로그 출력으로 대체해 핫 패스에서 빼낸다"는 건 분산 시스템에서 흔한 최적화 패턴이고, AWS Lambda Powertools 라이브러리가 이 EMF 출력을 자동으로 처리해준다.
 
-### CloudWatch Logs Insights vs Athena (시험 가끔)
+> 📚 **사례**: 로그를 외부 시스템으로 흘려보내는 **Subscription Filter**는 실시간 로그 파이프라인의 표준 진입점이다. 많은 조직이 CloudWatch Logs를 1차 수집소로 쓰되, Subscription Filter로 OpenSearch(검색·대시보드)나 Kinesis Data Firehose를 거쳐 S3(장기 보관)·Splunk·Datadog으로 분기시킨다. CloudWatch Logs Insights가 자체 쿼리 문법으로 최근 로그를 빠르게 뒤지는 데 강하다면, 장기 아카이브 분석은 S3 + Athena(표준 SQL) 조합이 비용 효율적이라 둘을 역할 분담시키는 게 실무 패턴이다.
 
-| 항목 | Logs Insights | Athena |
-|------|---------------|--------|
-| 대상 | CloudWatch Logs | S3 |
-| 쿼리 언어 | 자체 문법 | 표준 SQL |
-| 비용 | 스캔 GB | 스캔 GB |
-| 사용 | 실시간 로그 분석 | 아카이브·대용량 분석 |
+## 정리하며
 
-### CloudWatch 비용 함정 (실무)
+CloudWatch를 관통하는 한 문장은 "모든 신호는 결국 시계열 지표로 환원되고, 그 지표는 알람을 거쳐 자동 대응이 된다"이다. 푸시 기반 설계가 클라우드의 동적 확장과 맞아떨어졌고, 그 대가로 "침묵의 모호함"(`INSUFFICIENT_DATA`)을 운영자가 해석하게 됐다. EC2 메모리가 기본 지표가 아닌 건 하이퍼바이저 경계 때문이고, 해상도·보존의 단계적 롤업은 TSDB의 보편적 트레이드오프다. 로그조차 Metric Filter와 EMF로 지표가 되어 같은 알람 파이프라인에 합류한다 — 이 통합이 CloudWatch의 핵심이고, 시험 함정의 대부분은 이 파이프라인 위 어느 한 지점의 디테일을 묻는다.
 
-- **Custom Metrics**: 지표당 $0.30/월 → 차원 폭증 시 비용 폭증
-- **Logs**: 수집 $0.50/GB, 저장 $0.03/GB/월
-- **Logs Insights**: 스캔 $0.005/GB
-- **알람**: 표준 $0.10/월, 고해상도 $0.30/월
-
-### 관련 서비스 Cross-Reference
-
-- **CloudWatch Agent** → EC2 메모리·디스크, on-premise도 가능
-- **EMF + Lambda Powertools** → [Week 3]
-- **EventBridge ↔ CloudWatch Events** → 동일 서비스 (리브랜딩)
-- **Container Insights** → [Day 4]
-- **Subscription Filter ↔ OpenSearch** → 로그 분석 파이프라인
-
----
-
-## 아키텍처 다이어그램
-
-```
-CloudWatch 모니터링 아키텍처
-================================
-
-[EC2 / Lambda / RDS / 기타 서비스]
-          |
-          | 지표 자동 전송 (1분마다)
-          v
-[CloudWatch]
-  [지표 (Metrics)]
-  [로그 (Logs)]
-          |
-          +-- 임계값 초과
-          v
-[CloudWatch 알람]
-          |
-          +---> [SNS] → 이메일/SMS 알림
-          +---> [Auto Scaling] 스케일 아웃
-          +---> [EC2 Action] 재시작/중지
-
-사용자 정의 지표 + CloudWatch Agent
-================================
-
-EC2 인스턴스:
-  [CloudWatch Agent]
-    - 메모리 사용률 (기본 미포함)
-    - 디스크 사용량 (기본 미포함)
-    - 애플리케이션 로그
-          |
-          v
-  [CloudWatch Metrics/Logs]
-```
-
----
-
-## ⭐ 핵심 포인트
-
-1. ⭐ **EC2 메모리/디스크**: 기본 지표 아님, CloudWatch Agent 필요
-2. ⭐ **고해상도 지표**: 1초 해상도, 추가 비용 발생
-3. ⭐ **로그 보존 기간**: 기본 무기한, 비용 절감을 위해 설정 권장
-4. ⭐ **Logs Insights**: SQL 유사 쿼리로 로그 분석
-5. ⭐ **알람 상태**: OK, ALARM, INSUFFICIENT_DATA 3가지
+다음 글에서는 지표가 "무엇이 느린가"는 알려줘도 "*어디서* 느린가"는 못 알려주는 한계를 넘어, 요청 하나가 마이크로서비스들을 통과하는 전체 경로를 추적하는 X-Ray로 넘어간다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** EC2의 메모리 사용률을 CloudWatch로 모니터링하려면?
+**문제 1.** EC2 인스턴스의 메모리 사용률을 CloudWatch에서 모니터링하려 한다. 가장 적절한 방법은?
 
-A) EC2 기본 지표로 자동 수집  
-B) CloudWatch Agent 설치 필요  
-C) CloudTrail 활성화  
-D) VPC Flow Logs 활성화  
+A) EC2 기본 지표에 이미 포함되어 있어 별도 작업 불필요
 
-**정답: B** - EC2 메모리 사용률은 기본 지표가 아닙니다. CloudWatch Agent를 설치해야 수집됩니다.
+B) CloudWatch Agent를 인스턴스에 설치하여 OS 내부 지표를 푸시
 
----
+C) Detailed Monitoring을 활성화
 
-**문제 2.** CloudWatch 알람에서 INSUFFICIENT_DATA 상태는?
+D) CloudTrail을 활성화하여 메모리 이벤트 수집
 
-A) 알람이 울리는 상태  
-B) 정상 상태  
-C) 지표 데이터가 부족하여 평가 불가  
-D) 알람이 비활성화된 상태  
+**정답: B**
 
-**정답: C** - INSUFFICIENT_DATA는 지표 데이터가 부족하거나 수집이 시작되지 않아 알람을 평가할 수 없는 상태입니다.
+해설: 메모리 사용률은 게스트 OS 내부에서만 측정 가능한 값이라 하이퍼바이저가 관측할 수 없고, 따라서 EC2 기본 지표에 없다. **CloudWatch Agent**를 OS 안에 설치해 `/proc/meminfo` 같은 OS 내부 정보를 읽어 푸시해야 한다. A) 기본 지표(CPU, 네트워크, DiskOps)는 모두 하이퍼바이저 경계에서 관측되는 것뿐이다. C) Detailed Monitoring은 EC2 *기본 지표*를 5분에서 1분 주기로 더 자주 보낼 뿐, 메모리라는 *새 지표*를 추가하지 않는다 — 이게 핵심 함정이다. D) CloudTrail은 API 감사용이지 성능 지표와 무관하다.
 
 ---
 
-**문제 3.** CloudWatch Logs에서 특정 패턴의 로그를 빠르게 분석하려면?
+**문제 2.** `DiskReadOps`와 `disk_used_percent` 중 EC2 기본 지표로 자동 수집되는 것과 그 이유로 옳은 것은?
 
-A) CloudWatch 지표 필터  
-B) CloudWatch Logs Insights  
-C) CloudTrail  
-D) S3 Select  
+A) 둘 다 기본 지표다
 
-**정답: B** - CloudWatch Logs Insights는 SQL 유사 쿼리 언어로 로그를 빠르게 분석할 수 있습니다.
+B) `DiskReadOps`는 기본, `disk_used_percent`는 Agent 필요 — 전자는 EBS 경계에서, 후자는 파일시스템 내부에서 측정
 
----
+C) `disk_used_percent`가 기본, `DiskReadOps`는 Agent 필요
 
-**문제 4.** 사용자 정의 지표의 기본 해상도는?
+D) 둘 다 Agent가 필요하다
 
-A) 1초  
-B) 1분  
-C) 5분  
-D) 1시간  
+**정답: B**
 
-**정답: B** - CloudWatch 사용자 정의 지표의 기본 해상도는 1분입니다. 1초 해상도는 고해상도 지표를 사용해야 합니다.
+해설: `DiskReadOps`(블록 I/O 횟수)는 하이퍼바이저가 EBS 볼륨 경계에서 직접 셀 수 있어 기본 지표다. 반면 `disk_used_percent`(디스크가 얼마나 찼나)는 파일시스템 메타데이터를 읽어야 알 수 있으므로 게스트 OS 안의 **CloudWatch Agent**가 필요하다. 둘 다 "디스크"라는 단어가 들어가 헷갈리게 출제되지만, 기준은 "하이퍼바이저 밖에서 보이는가 vs OS 안을 봐야 하는가"로 일관된다. 메모리도 같은 이유로 항상 Agent 쪽이다.
 
 ---
 
-**문제 5.** CPU 사용률이 80%를 넘을 때 자동으로 Auto Scaling을 트리거하려면?
+**문제 3.** CloudWatch 알람에서 `EvaluationPeriods=3`, `Period=60`으로 설정한 의도로 가장 적절한 것은?
 
-A) CloudTrail 알람  
-B) CloudWatch 알람 → Auto Scaling 정책 연결  
-C) EventBridge 직접 연결  
-D) Lambda로 직접 구현  
+A) 1분마다 알람을 3번 발송한다
 
-**정답: B** - CloudWatch 알람에 Auto Scaling 정책을 연결하면 CPU 임계값 초과 시 자동으로 스케일 아웃됩니다.
+B) 60초 데이터 포인트가 연속 3개 위반해야 ALARM으로 전환 — 일시적 스파이크에 과민 반응 방지
+
+C) 3분 동안만 알람이 활성화된다
+
+D) 3개의 SNS 주제로 동시 발송한다
+
+**정답: B**
+
+해설: `Period`는 데이터 포인트의 길이(60초), `EvaluationPeriods`는 상태 전환에 필요한 연속 위반 횟수(3개)다. 즉 3분 연속 임계값을 넘어야 `ALARM`이 되며, 이는 순간적 스파이크에 알람이 울리지 않도록 하는 디바운싱이다. 더 정밀한 제어는 `DatapointsToAlarm`로 "N개 중 M개" 조건을 만든다. A·C·D는 알람 평가 메커니즘과 무관한 잘못된 해석이다.
 
 ---
 
-## 📌 오늘의 요약
+**문제 4.** 람다 함수에서 비즈니스 지표(주문 수 등)를 CloudWatch로 보낼 때, 실행 비용과 지연을 최소화하는 방법은?
 
-1. CloudWatch 지표: AWS 서비스 자동 수집, EC2 메모리/디스크는 Agent 필요
-2. 사용자 정의 지표: put_metric_data API, 1분 또는 1초 해상도
-3. CloudWatch Logs: 로그 그룹/스트림, 보존 기간 설정, Logs Insights
-4. CloudWatch 알람: OK/ALARM/INSUFFICIENT_DATA, SNS/Auto Scaling 액션
-5. CloudWatch Agent: EC2에서 메모리/디스크/애플리케이션 로그 수집
+A) 핸들러 안에서 `PutMetricData`를 동기 호출
+
+B) EMF(Embedded Metric Format)로 약속된 JSON을 stdout에 출력
+
+C) 매 호출마다 CloudWatch Agent를 실행
+
+D) X-Ray Annotation으로 대체
+
+**정답: B**
+
+해설: `PutMetricData`는 동기 네트워크 호출이라 그 왕복 시간만큼 람다 실행이 길어지고, 실행 시간 기반 과금인 람다에서는 곧 비용 증가다. **EMF**는 stdout에 JSON 한 줄을 출력할 뿐이고(로그는 어차피 비동기 전송), 지표 추출은 CloudWatch 쪽에서 일어나므로 핫 패스에 지연을 추가하지 않는다. AWS Lambda Powertools가 이를 자동 처리한다. C) Agent는 EC2/온프레미스용이지 람다용이 아니다. D) Annotation은 추적 데이터지 지표가 아니다.
+
+---
+
+**문제 5.** CloudWatch 알람이 `INSUFFICIENT_DATA` 상태인 가장 일반적인 원인은?
+
+A) 임계값을 초과했다
+
+B) 지표 데이터가 도착하지 않아 평가할 수 없다
+
+C) 알람이 정상이다
+
+D) SNS 구독이 확인되지 않았다
+
+**정답: B**
+
+해설: 푸시 기반 모델에서 지표가 전송되지 않으면 CloudWatch는 평가할 데이터가 없어 `INSUFFICIENT_DATA`가 된다. 이는 "정상인데 조용한 것"인지 "죽어서 못 보내는 것"인지 시스템이 스스로 판단할 수 없는 푸시 모델의 본질적 모호함을 드러낸다. 그래서 알람의 누락 데이터 처리 옵션(`missing`/`notBreaching`/`breaching`/`ignore`)으로 운영자가 명시적으로 해석을 지정한다. A) 초과는 `ALARM`, C) 정상은 `OK` 상태다.
+
+---
+
+**문제 6.** 로그 그룹에 쌓인 텍스트 로그에서 `ERROR` 발생 횟수가 임계값을 넘을 때 알람을 보내려 한다. 올바른 경로는?
+
+A) CloudTrail로 ERROR 이벤트를 직접 감지
+
+B) Logs Metric Filter로 ERROR 패턴을 지표로 변환한 뒤, 그 지표에 알람 설정
+
+C) X-Ray로 ERROR 로그를 추적
+
+D) Logs Insights 쿼리에 직접 알람을 연결
+
+**정답: B**
+
+해설: CloudWatch에서 로그는 지표의 원료다. **Metric Filter**가 로그 텍스트의 `ERROR` 패턴을 감지해 발생 횟수를 지표로 만들고, 그 지표에 알람을 건다(로그 → 패턴 매칭 → 지표 → 알람). A) CloudTrail은 AWS API 감사용이지 애플리케이션 로그 패턴 감지용이 아니다. C) X-Ray는 분산 추적이다. D) Logs Insights는 분석 쿼리 도구이며 쿼리 결과에 직접 알람을 거는 메커니즘은 표준 경로가 아니다.
+
+---
+
+**문제 7.** 데이터베이스 장애 하나로 그에 의존하는 다수 서비스의 알람이 동시에 울리는 "알람 폭풍"을 막고 근본 원인만 통지하려 한다. 적절한 기능은?
+
+A) 각 알람의 임계값을 높인다
+
+B) Composite Alarm으로 알람들을 AND/OR 논리로 묶어 상위 원인만 통지
+
+C) 모든 알람의 SNS 액션을 비활성화
+
+D) Detailed Monitoring 활성화
+
+**정답: B**
+
+해설: **복합 알람(Composite Alarm)** 은 여러 알람을 논리 조건으로 결합해, "DB 알람이 ALARM이면 하위 서비스 알람은 억제" 같은 상관관계 기반 알림 억제를 구현한다. 50개 하위 알림 더미가 아니라 근본 원인 하나만 운영자에게 도달하게 한다. A) 임계값 조정은 폭풍 자체를 못 막는다. C) 전부 끄면 진짜 장애도 놓친다. D) Detailed Monitoring은 수집 주기 설정이지 알림 억제와 무관하다.

@@ -1,293 +1,372 @@
-# Day 25 - S3: 이벤트 알림, 프리사인 URL, 정적 웹사이트
+# Day 25 - S3 고급 기능 + Week 5 종합 복습
 
-📅 날짜: 2026년 6월 18일 (목요일)  
-🎯 주제: S3 고급 기능 및 Week 5 복습  
-⏱️ 학습 시간: 약 90분
+Week 5의 마지막 날이다. S3 이벤트 알림, Presigned URL, 정적 웹사이트 호스팅이라는 세 가지 고급 기능을 마저 살펴보고, 그 다음 지난 4일간 배운 S3 전체를 시험 관점에서 정리한다. S3는 DVA-C02에서 가장 많은 문제가 나오는 서비스 중 하나다. 단순 암기가 아니라 "왜 그렇게 동작하는가"를 이해하면 변형 문제에서도 흔들리지 않는다.
 
----
+## S3 이벤트 알림 — 파일이 도착할 때 무슨 일이 일어나는가
 
-## 🎯 학습 목표
+S3 이벤트 알림은 "버킷에서 특정 일이 발생했을 때 누군가에게 알려라"는 패턴이다. 이 패턴은 서버리스 아키텍처의 핵심이다 — S3에 파일이 올라오면 Lambda가 자동으로 실행되고, 이미지 리사이징, 문서 변환, 데이터 검증이 일어난다.
 
-- S3 이벤트 알림으로 자동화 워크플로우를 구성한다
-- 프리사인 URL로 임시 접근을 부여한다
-- S3를 정적 웹사이트 호스팅에 활용한다
+지원하는 이벤트 유형:
+- `s3:ObjectCreated:*` — PUT, POST, COPY, 멀티파트 완료 모두 포함
+- `s3:ObjectCreated:Put` — PUT만
+- `s3:ObjectRemoved:*` — 삭제 및 삭제 마커 생성
+- `s3:ObjectRestore:*` — Glacier 복원 시작/완료
+- `s3:Replication:*` — 복제 실패, 미완료 등
 
----
+직접 연결 대상 3종: Lambda 함수, SQS 큐, SNS 주제.
 
-## 📖 이론 내용
+**Amazon EventBridge를 경유하는 방법**이 2021년 추가됐고, 이 방식이 현재 가장 권장된다. 이유는 이벤트 아카이빙, 재생(replay), 18개 이상의 대상(Step Functions, Kinesis, API Gateway, CodePipeline 등), 세밀한 이벤트 패턴 필터링(접두사, 접미사, 크기 조건 등)이 가능하기 때문이다.
 
-### 1. S3 이벤트 알림
+직접 연결(Lambda/SQS/SNS)은 대상이 이미 명확하고 간단한 경우, EventBridge는 유연성이 필요한 경우를 선택 기준으로 삼으면 된다.
 
-S3에서 특정 이벤트 발생 시 자동으로 알림 전송합니다.
+> 💡 **관련 이론**: S3 이벤트 알림은 이벤트 기반 아키텍처(EDA, Event-Driven Architecture)의 전형적인 구현이다. 2003년 Amazon의 내부 SOA(Service-Oriented Architecture) 전환 이후, AWS 서비스들은 이벤트로 소통하는 것을 기본 설계 원칙으로 삼는다. S3 이벤트는 최소 한 번 전달(at-least-once)을 보장하지만 중복 전달이 가능하다 — Lambda나 SQS 컨슈머에서 멱등성(Idempotency)을 보장해야 하는 이유다.
 
-**이벤트 유형:**
-- `s3:ObjectCreated:*` (PUT, POST, COPY, 멀티파트 완료)
-- `s3:ObjectRemoved:*` (Delete, DeleteMarkerCreated)
-- `s3:ObjectRestore:*` (Glacier 복원)
+> ⚠️ **함정**: S3 이벤트 알림은 "최소 한 번(at-least-once)" 전달이지 "정확히 한 번(exactly-once)"이 아니다. 같은 PUT에 대해 Lambda가 두 번 호출될 수 있다. Lambda 내에서 멱등 처리(이미 처리된 파일인지 확인하는 DynamoDB 항목 등)를 구현해야 한다.
 
-**대상:**
-- Lambda 함수
-- SQS 큐
-- SNS 주제
-- **⭐ EventBridge**: 모든 이벤트 → 더 많은 필터링 옵션, 더 많은 대상
+## Presigned URL — IAM 권한을 URL에 담는 방법
 
-**EventBridge 권장 이유**: 이벤트 아카이빙, 재실행, 세밀한 필터링, 18개+ 대상 지원
-
-### 2. 프리사인 URL (Pre-signed URL)
-
-IAM 자격 증명으로 임시 접근 URL 생성:
+Presigned URL은 생성자의 IAM 자격증명을 사용해 서명된 임시 URL이다. URL을 받은 사람은 해당 URL이 유효한 동안 생성자의 권한으로 S3 작업을 수행할 수 있다.
 
 ```python
 import boto3
+from datetime import datetime, timedelta
+
 s3 = boto3.client('s3')
 
-# 다운로드 URL (GET)
-url = s3.generate_presigned_url(
+# 1. 비공개 파일 임시 공유 (GET)
+download_url = s3.generate_presigned_url(
     'get_object',
-    Params={'Bucket': 'my-bucket', 'Key': 'file.pdf'},
-    ExpiresIn=3600  # 1시간
+    Params={
+        'Bucket': 'my-private-bucket',
+        'Key': 'confidential/report-2026.pdf'
+    },
+    ExpiresIn=3600  # 1시간 유효
 )
 
-# 업로드 URL (PUT)
+# 2. 클라이언트가 서버를 통하지 않고 직접 S3에 업로드 (PUT)
 upload_url = s3.generate_presigned_url(
     'put_object',
-    Params={'Bucket': 'my-bucket', 'Key': 'upload.jpg'},
-    ExpiresIn=300   # 5분
+    Params={
+        'Bucket': 'my-upload-bucket',
+        'Key': f'user-uploads/{user_id}/avatar.jpg',
+        'ContentType': 'image/jpeg'
+    },
+    ExpiresIn=300  # 5분 유효
+)
+
+# 3. POST 형식 Presigned URL (HTML form 업로드)
+response = s3.generate_presigned_post(
+    Bucket='my-bucket',
+    Key='uploads/${filename}',  # 변수 사용 가능
+    Fields={'Content-Type': 'image/jpeg'},
+    Conditions=[
+        ['content-length-range', 1, 10 * 1024 * 1024]  # 최대 10MB
+    ],
+    ExpiresIn=600
 )
 ```
 
-**특징:**
-- 생성한 사용자의 권한이 URL에 적용
-- 만료 시간: 기본 1시간, 최대 7일
-- **⭐ PUT 프리사인 URL**: 클라이언트가 서버 통하지 않고 직접 S3 업로드
-- 생성자 권한이 없으면 URL도 작동 안 함
+**Presigned URL의 핵심 특성들:**
 
-### 3. S3 정적 웹사이트 호스팅
+만료 시간: IAM 사용자 기반이면 최대 7일, **IAM 역할(STS 임시 자격증명) 기반이면 최대 12시간**(STS 토큰 만료 시간에 제한됨). 시험에서 "최대 7일"이 아닌 "최대 1시간"이 맞는 경우가 있는데 — IAM 역할로 Lambda나 EC2에서 생성했다면 STS 토큰 TTL(최대 12시간)이 제한이 된다.
 
-S3를 웹 서버로 사용하여 HTML, CSS, JS 파일 호스팅:
+생성자 권한: URL을 생성한 시점에 생성자가 해당 작업 권한을 가지고 있어야 한다. 생성 시점에 권한이 있었더라도, 이후 IAM 정책 변경으로 권한이 제거되면 URL도 작동을 멈춘다.
 
-**설정 방법:**
-```bash
-# 정적 웹사이트 호스팅 활성화
-aws s3api put-bucket-website \
-  --bucket my-website-bucket \
-  --website-configuration '{
-    "IndexDocument": {"Suffix": "index.html"},
-    "ErrorDocument": {"Key": "error.html"}
-  }'
+PUT Presigned URL 패턴: 서버가 URL을 생성해서 클라이언트에게 전달하고, 클라이언트가 직접 S3에 파일을 업로드한다. 서버는 파일 데이터를 처리하지 않아 대역폭 부하가 없다. 파일 업로드가 완료되면 클라이언트가 서버에 완료 알림을 보내고, 서버는 S3 이벤트나 DynamoDB 메타데이터를 확인한다.
 
-# 퍼블릭 읽기 허용 버킷 정책
-{
-  "Version": "2012-10-17",
-  "Statement": [{
-    "Effect": "Allow",
-    "Principal": "*",
-    "Action": "s3:GetObject",
-    "Resource": "arn:aws:s3:::my-website-bucket/*"
-  }]
-}
+> 🔍 **더 깊이**: Presigned URL의 서명은 AWS SigV4(Signature Version 4) 알고리즘으로 생성된다. SigV4는 HMAC-SHA256을 사용하며 요청의 HTTP 메서드, 버킷/키, 만료 시간, 허용된 헤더 등이 서명에 포함된다. URL을 변조하면 서명 검증에서 실패한다. SDK의 `generate_presigned_url`이 이 복잡한 과정을 추상화해준다.
+
+## 정적 웹사이트 호스팅 — HTTP만 지원하는 근본 이유
+
+S3 정적 웹사이트는 비용 효율적이지만 중요한 제약이 있다: **HTTP만 지원한다**. S3 자체에 TLS 인증서를 설치할 수 없다. HTTPS를 제공하려면 CloudFront + ACM(AWS Certificate Manager) 조합이 필수다.
+
+왜 HTTP만인가? S3는 웹 서버가 아니라 오브젝트 스토리지다. TLS handshake, 인증서 관리, SNI(Server Name Indication) 같은 HTTPS의 복잡한 요소들은 CloudFront나 ALB 같은 Layer 7 서비스의 역할이다. AWS는 이를 서비스별 역할 분리 원칙으로 유지한다.
+
+정적 웹사이트 URL 형식(두 가지 모두 시험에 나옴):
+```
+http://bucket-name.s3-website-region.amazonaws.com
+http://bucket-name.s3-website.region.amazonaws.com
 ```
 
-**URL 형식:**
+정적 웹사이트 + HTTPS 아키텍처:
 ```
-http://bucket.s3-website-ap-northeast-2.amazonaws.com
-```
-
-**⭐ HTTPS**: S3 정적 웹사이트는 HTTP만 지원 → **CloudFront + ACM 필요**
-
----
-
-## 아키텍처 다이어그램
-
-```
-S3 이벤트 알림 아키텍처
-================================
-
-사용자 파일 업로드
-        |
-        v
-[S3 버킷]
-        |
-        | ObjectCreated 이벤트
-        v
-[Amazon EventBridge]
-        |
-        +---> Lambda (이미지 리사이즈)
-        |
-        +---> SQS (비동기 처리)
-        |
-        +---> SNS (알림)
-        |
-        +---> Step Functions (워크플로우)
-
-프리사인 URL 흐름
-================================
-
-[클라이언트]
-    1. "업로드 URL 주세요"
-        |
-        v
-[API Gateway + Lambda]
-    2. presigned URL 생성
-        |
-        v
-[클라이언트]
-    3. presigned URL 수신
-        |
-        | 4. 직접 S3에 업로드! (서버 통하지 않음)
-        v
-[S3 버킷]
-
-HTTPS 웹사이트 구성
-================================
-
+[사용자 브라우저]
+      ↕ HTTPS (ACM 인증서)
 [CloudFront 배포]
-  - ACM 인증서 (HTTPS)
-  - 오리진: S3 버킷
-  - OAC로 S3 직접 접근 차단
-        |
-        v
-[S3 정적 웹사이트]
-  index.html, style.css, app.js
+      ↕ HTTP (S3 웹사이트 엔드포인트)
+      또는
+      ↕ S3 오리진 + OAC (권장)
+[S3 버킷]
 ```
 
+CloudFront + OAC 방식(권장)에서는 버킷을 퍼블릭으로 열지 않아도 된다. CloudFront만 버킷에 접근하고 사용자에게 HTTPS로 서빙한다.
+
+> ⚠️ **함정**: S3 정적 웹사이트 호스팅과 일반 S3 버킷의 퍼블릭 URL은 다르다. 웹사이트 호스팅을 활성화한 버킷의 웹사이트 엔드포인트(`s3-website`)는 HTML 파일을 브라우저로 렌더링한다. 일반 S3 URL(`s3.amazonaws.com`)은 파일을 다운로드(Content-Disposition: attachment)로 처리할 수 있다. 정적 웹사이트 기능을 켜야 index.html을 기본 문서로 서빙하고 에러 페이지를 설정할 수 있다.
+
+## Week 5 전체 복습 — DVA-C02 핵심 정리
+
+### S3 기본 스펙 (반드시 암기)
+```
+최대 객체 크기:     5TB
+단일 PUT 최대:      5GB (초과 시 멀티파트 필수)
+멀티파트 최소:      100MB 권장, 5GB 이상 필수
+파트 최소 크기:     5MB (마지막 파트 제외)
+파트 최대 개수:     10,000개
+접두사당 처리량:    PUT 3,500/s, GET 5,500/s
+내구성:             11 nines (모든 클래스 동일)
+Standard 가용성:    99.99%
+One Zone-IA 가용성: 99.5%
+```
+
+### 스토리지 클래스 핵심 비교
+
+| 클래스 | 최소 보관 | 즉시 검색 | AZ | 핵심 사용 사례 |
+|--------|----------|----------|-----|-------------|
+| Standard | 없음 | ✅ | 3+ | 자주 접근 |
+| Intelligent-Tiering | 없음 | ✅* | 3+ | 불규칙 접근 |
+| Standard-IA | 30일 | ✅ | 3+ | 월 1회 미만 |
+| One Zone-IA | 30일 | ✅ | 1 | 재생성 가능 |
+| Glacier Instant | 90일 | ✅ | 3+ | 분기 1회 |
+| Glacier Flexible | 90일 | ❌(1분~12시간) | 3+ | 연 1~2회 |
+| Glacier Deep Archive | 180일 | ❌(12~48시간) | 3+ | 장기 규제 |
+
+*Intelligent-Tiering에서 Archive Access 티어 활성화 시 복구 지연 발생.
+
+### 버전 관리 핵심 포인트
+
+```
+상태: Unversioned → Enabled → Suspended (비활성화 불가)
+삭제 = 삭제 마커 추가 (진짜 삭제 아님)
+진짜 삭제 = DELETE + 버전 ID 명시
+MFA Delete: 루트 계정만 설정/해제 가능
+비용 함정: 이전 버전도 전부 저장 비용 발생
+해결: NoncurrentVersionExpiration 수명 주기 규칙
+```
+
+### 암호화 방식 요약
+
+```
+SSE-S3:    AWS 완전 관리, 기본값, 무료, 감사 로그 없음
+SSE-KMS:   KMS 키 정책, CloudTrail 감사, KMS API 한도 주의
+           → S3 Bucket Key로 최대 99% KMS 비용 절감
+DSSE-KMS:  이중 암호화, FIPS 140-3 Level 3, 정부/국방
+SSE-C:     고객이 키 제공, HTTPS 필수, AWS에 키 미저장
+CSE:       클라이언트가 직접 암호화, 최고 보안
+```
+
+### 복제 핵심
+
+```
+CRR: 다른 리전 → 재해 복구, 지연 시간 최적화
+SRR: 같은 리전 → 개발/스테이징 분리, 로그 집계
+요건: 양쪽 모두 버전 관리 활성화 필수
+기존 객체: Batch Replication 별도 사용
+삭제 마커: 기본 미복제 (선택 활성화)
+RTC: 99.99%를 15분 내 복제 보장 (유료 SLA)
+```
+
+### 보안 계층 우선순위
+
+```
+① 계정/버킷 수준 Block Public Access (최우선)
+② 명시적 Deny (버킷 정책, SCP)
+③ 리소스 기반 Allow (버킷 정책) + IAM Allow
+④ ACL (Bucket Owner Enforced 설정 시 무시)
+```
+
+### 이벤트 알림 vs EventBridge
+
+```
+직접 연결 (Lambda/SQS/SNS): 단순, 빠름, 대상 3종
+EventBridge 경유: 유연, 18개+ 대상, 아카이빙, 재생, 세밀한 필터
+현재 권장: EventBridge 경유
+```
+
+## Week 5 시험 함정 20가지
+
+1. **버킷 이름 글로벌 유일** — 같은 리전 내가 아니라 전 세계 유일
+2. **점 포함 버킷 이름** — 기술적 유효하지만 HTTPS 인증서 와일드카드 깨짐
+3. **S3는 2020년부터 Strong Consistency** — "eventual"이라고 하면 틀림
+4. **One Zone-IA는 AZ 장애 시 데이터 손실 가능** — 재생성 가능 데이터만
+5. **최소 보관 기간은 조기 삭제해도 과금** — IA 30일, Glacier 90일, Deep Archive 180일
+6. **Glacier Deep Archive 최소 객체 크기 40KB** — IA는 128KB
+7. **버전 관리 비활성화 불가** — Suspended로만 가능
+8. **삭제 = 삭제 마커** — 영구 삭제는 버전 ID 명시 필요
+9. **MFA Delete = 루트 계정만** — 관리자 IAM 사용자도 불가
+10. **복제 = 양쪽 버전 관리 필수** — 기존 객체는 Batch Replication
+11. **2023+ 모든 신규 객체 SSE-S3 기본 암호화** — "암호화 여부?" → "항상 예"
+12. **SSE-KMS KMS API 한도** → Bucket Key로 99% 절감
+13. **신규 버킷 Block Public Access 4개 기본 ON + Bucket Owner Enforced**
+14. **OAI 레거시, OAC 현재 권장** — SSE-KMS 객체 CloudFront 서빙 = OAC 필수
+15. **단일 PUT 최대 5GB** — 초과 시 멀티파트 필수
+16. **멀티파트 미완료 파트 저장 비용** → AbortIncompleteMultipartUpload 수명 주기 규칙
+17. **정적 웹사이트 HTTP만** → HTTPS는 CloudFront + ACM 필수
+18. **Presigned URL IAM 역할 기반은 최대 12시간** — STS 토큰 TTL 제한
+19. **EventBridge가 이벤트 알림에서 가장 유연** — 18개+ 대상, 아카이빙, 재생
+20. **S3 Select는 단일 파일, 간단한 SQL만** — 복잡한 쿼리는 Athena
+
+## Week 5 약어 정리
+
+| 약어 | 풀네임 | 핵심 포인트 |
+|------|--------|-----------|
+| S3 | Simple Storage Service | 객체 스토리지 |
+| IA | Infrequent Access | 30일 최소 |
+| CRR/SRR | Cross/Same Region Replication | 양쪽 버전 관리 필수 |
+| RTC | Replication Time Control | 15분 SLA |
+| MRAP | Multi-Region Access Point | 글로벌 단일 엔드포인트 |
+| OAC/OAI | Origin Access Control/Identity | OAC가 현재 권장 |
+| BPA | Block Public Access | 최우선 보안 레이어 |
+| SSE | Server-Side Encryption | 서버 측 암호화 |
+| CSE | Client-Side Encryption | 클라이언트 측 암호화 |
+| DSSE | Dual-layer SSE | 이중 암호화 |
+| WORM | Write Once Read Many | Object Lock |
+| MPU | Multipart Upload | 100MB+ 권장 |
+| ETag | Entity Tag | 객체 무결성 해시 |
+| CORS | Cross-Origin Resource Sharing | 브라우저 직접 S3 접근 시 필요 |
+| ACM | AWS Certificate Manager | HTTPS 인증서 관리 |
+
+## 📝 Week 5 종합 연습 문제
+
+**문제 1.** 회사의 의료 영상 데이터를 규정상 10년 보존해야 한다. 처음 1년은 자주 접근하고, 이후 접근이 거의 없다가 감사 시 즉시 조회가 필요하다. 가장 비용 효율적인 수명 주기 설계는?
+
+A) 10년 내내 Standard에 그대로 보관해 항상 즉시 조회를 보장 — 즉시성은 충족하나 거의 접근 없는 9년 구간까지 최고가 클래스라 비용 최적화에 정반대
+B) Standard로 1년 보관 후 Glacier Deep Archive로 전환해 장기 보관 비용을 최소화 — Deep Archive는 복구에 12~48시간 걸려 감사 시 "즉시 조회" 요건을 위반
+C) Standard → 30일 후 Standard-IA → 1년 후 Glacier Instant Retrieval → 10년 후 삭제
+D) Intelligent-Tiering으로 10년간 자동 티어링에 맡겨 접근 패턴 변화에 대응 — 자동이지만 객체당 모니터링 비용이 10년 누적되고 Archive 티어가 켜지면 즉시 조회가 깨질 수 있음
+
+**정답: C**
+해설: 첫 달은 Standard, 30일 후 Standard-IA로 저장 비용 절감, 1년 후 Glacier Instant Retrieval로 더 큰 비용 절감 — Glacier Instant는 밀리초 내 즉시 검색이 가능해 "즉시 조회" 요건을 충족한다. Glacier Flexible Retrieval이나 Deep Archive는 복구에 시간이 필요해 즉시 조회 요건에 맞지 않는다. A는 비용 최적화 없음. B의 Glacier Deep Archive는 12~48시간 복구. D의 Intelligent-Tiering은 자동이지만 Archive 티어 활성화 시 즉시 검색이 안 될 수 있고, 10년 동안 모니터링 비용이 누적된다.
+
 ---
 
-## ⭐ 핵심 포인트
+**문제 2.** 모바일 앱 사용자가 프로필 사진을 업로드해야 한다. 서버가 대용량 파일 데이터를 처리하는 부하를 피하고 싶다. 가장 적합한 아키텍처는?
 
-1. ⭐ **프리사인 URL 최대 7일**: IAM 역할 기반은 만료 시간 최대 1시간
-2. ⭐ **PUT 프리사인 URL**: 클라이언트 직접 S3 업로드, 서버 부하 없음
-3. ⭐ **정적 웹사이트 HTTPS**: CloudFront + ACM 필요
-4. ⭐ **EventBridge**: S3 이벤트를 가장 유연하게 라우팅
-5. ⭐ **생성자 권한**: 프리사인 URL은 생성자가 권한 없으면 작동 안 함
+A) 클라이언트가 서버로 파일을 보내면 서버가 받아 S3에 다시 올리는 순차 프록시 업로드 — 모든 바이트가 서버를 거쳐 피하려던 대역폭·부하가 그대로 서버에 집중
+B) 서버에서 PUT Presigned URL 생성 → 클라이언트가 해당 URL로 S3에 직접 업로드
+C) S3 Transfer Acceleration 엔드포인트로 클라이언트가 직접 업로드해 전송 속도를 가속 — 원거리 전송은 빨라지나 인증·권한 통제 수단이 아니며 가속 요금이 추가됨
+D) CloudFront 배포를 업로드 경로로 두어 엣지에서 S3로 전달 — CloudFront는 주로 다운로드 캐싱·배포용이라 사용자 업로드 부하 제거 패턴으로는 부적합
 
----
-
-## 🧠 Week 5 시험 함정 & 약어
-
-### 헷갈리는 비교
-
-| A | B | 핵심 |
-|---|---|------|
-| Standard-IA | One Zone-IA | 3AZ vs 1AZ |
-| Glacier Instant | Glacier Flexible | 즉시 vs 분~시간 |
-| Glacier Flexible | Deep Archive | 90일·시간 vs 180일·시간/일 |
-| Intelligent-Tiering | S-IA | 자동 vs 수동 분류 |
-| SSE-S3 | SSE-KMS | 무료·자동 vs 감사·세밀 |
-| SSE-KMS | SSE-C | AWS 키 vs 고객 키 |
-| Bucket Key | KMS Key | 비용 ↓ vs 일반 |
-| CRR | SRR | 다른 리전 vs 같은 리전 |
-| OAI | OAC | 레거시 vs 현재 권장 |
-| Gateway Endpoint | Interface Endpoint | 무료·S3/DDB vs 비용·전체 |
-| ACL | 버킷 정책 | 레거시 vs 권장 |
-| Object Lock Governance | Compliance | IAM 권한이면 가능 vs 절대 불가 |
-| Presigned URL | Bucket Policy 공개 | 임시·개별 vs 영구·전체 |
-| EventBridge mode | S3 Event Notification | 풍부 vs 단순 |
-| S3 Select | Athena | 단일 객체 SQL vs 다중·복잡 |
-| Versioning Suspended | Disabled | 일시 중지 vs 비활성화 (불가) |
-
-### Week 5 시험 함정 15가지
-
-1. **버킷 이름은 글로벌 유일**, 점(`.`) 포함 시 HTTPS 인증서 문제
-2. **2020+ 강력한 일관성** (eventual consistency 아님)
-3. **One Zone-IA는 AZ 장애 시 데이터 손실**
-4. **IA·Glacier 최소 보관 기간** (30/90/180일) — 조기 삭제도 과금
-5. **Glacier Deep Archive 최소 객체 40KB**, IA는 128KB
-6. **버전 관리 비활성화 불가** — Suspended만
-7. **삭제 = 삭제 마커**, 영구 삭제는 버전 ID 명시
-8. **MFA Delete = 루트 계정만**
-9. **복제는 양쪽 버전 관리 필수**, 기존 객체는 Batch Replication
-10. **2023+ 모든 새 객체 자동 SSE-S3 암호화**
-11. **SSE-KMS는 KMS API 한도** → Bucket Key로 99% 절감
-12. **신규 버킷 BPA 4개 모두 ON** + Bucket Owner Enforced (ACL 비활성)
-13. **OAI는 레거시, OAC가 현재 권장**
-14. **단일 PUT 5GB**, 그 이상은 멀티파트 필수
-15. **정적 웹사이트는 HTTP만** → HTTPS는 CloudFront + ACM
-
-### Week 5 약어 정리
-
-| 약어 | 풀네임 |
-|------|--------|
-| **S3** | Simple Storage Service |
-| **IA** | Infrequent Access |
-| **CRR / SRR** | Cross/Same Region Replication |
-| **RTC** | Replication Time Control |
-| **MRAP** | Multi-Region Access Point |
-| **OAC / OAI** | Origin Access Control / Identity |
-| **BPA** | Block Public Access |
-| **SSE** | Server-Side Encryption |
-| **CSE** | Client-Side Encryption |
-| **DSSE** | Dual-layer SSE |
-| **CMK** | Customer Master Key (KMS) |
-| **ACL** | Access Control List |
-| **WORM** | Write Once Read Many (Object Lock) |
-| **TTFB** | Time To First Byte |
-| **MPU** | Multipart Upload |
-| **ETag** | Entity Tag (객체 해시) |
+**정답: B**
+해설: PUT Presigned URL 패턴은 서버가 URL을 생성하고 클라이언트가 그 URL로 S3에 직접 업로드한다. 서버는 파일 바이트를 처리하지 않아 대역폭 부하가 없다. URL에는 버킷, 키, 만료 시간, 허용된 ContentType 등이 서명으로 포함되어 무단 업로드를 방지한다. 업로드 완료 후 S3 이벤트 알림으로 Lambda를 트리거해 이미지 리사이징 등의 후처리를 할 수 있다. 이 패턴은 소셜 미디어, 파일 공유 서비스 등의 표준 업로드 아키텍처다.
 
 ---
 
-## 📝 Week 5 종합 연습문제
+**문제 3.** AWS Organizations에서 모든 S3 버킷에서 Block Public Access를 강제로 유지하고 싶다. 어떤 서비스를 사용하는가?
 
-**문제 1.** 비공개 S3 객체를 외부에 임시로 공유하는 방법은?
+A) 각 계정에서 버킷마다 수동으로 Block Public Access 4개 옵션을 켜 둔다 — 강제력이 없어 누군가 끄면 그대로 풀리고 조직 전체 일관성을 보장하지 못함
+B) SCP(Service Control Policy)로 Block Public Access 비활성화 작업 거부
+C) Lambda + EventBridge로 BPA 비활성화 이벤트를 감지하면 즉시 재활성화하는 자동 교정을 구성 — 사후 탐지·수정이라 변경과 복구 사이에 공개 노출 공백이 생김
+D) AWS Config 관리형 규칙으로 BPA 미준수 버킷을 탐지하고 대시보드에 보고 — 탐지만 할 뿐 자동 차단·교정에는 별도 Remediation Lambda가 필요
 
-A) 버킷 퍼블릭으로 설정  
-B) 파트너 IAM 사용자 생성  
-C) 프리사인 URL 생성  
-D) ACL 설정  
-
-**정답: C** - 프리사인 URL은 만료 시간이 있는 임시 URL로 안전하게 공유 가능합니다.
-
----
-
-**문제 2.** S3 정적 웹사이트에서 HTTPS를 제공하려면?
-
-A) S3 자체 SSL 설정  
-B) CloudFront + ACM 인증서  
-C) Route 53 SSL  
-D) ALB + ACM  
-
-**정답: B** - S3 정적 웹사이트는 HTTP만 지원합니다. HTTPS는 CloudFront + ACM이 필요합니다.
+**정답: B**
+해설: SCP를 사용하면 Organization 내 모든 계정에서 Block Public Access를 끄는 API 호출 자체를 거부할 수 있다. 예를 들어 `s3:PutBucketPublicAccessBlock` 액션에 Deny 조건을 걸면 누구도 Block Public Access를 변경할 수 없다. C의 Lambda + EventBridge 패턴은 사후 감지와 수정으로, 변경과 수정 사이의 시간 간격이 있어 보안 공백이 생긴다. D의 AWS Config는 탐지만 하고 자동 수정에는 추가 Lambda가 필요하다. B가 예방적(Preventive) 제어로 가장 강력하다.
 
 ---
 
-**문제 3.** S3 이벤트 알림을 가장 유연하게 라우팅하려면?
+**문제 4.** S3 이벤트 알림을 통해 객체 업로드 시 Lambda를 호출하는 아키텍처에서, 같은 파일이 짧은 시간 내에 두 번 Lambda를 트리거했다. 이 현상의 원인과 해결책은?
 
-A) Lambda 직접 연결  
-B) SQS 큐  
-C) Amazon EventBridge  
-D) SNS 주제  
+A) Lambda 동시성 설정 오류로 같은 이벤트가 중복 실행됨 — Reserved Concurrency를 늘린다 — 동시성은 병렬 실행 수일 뿐 같은 이벤트의 중복 전달과 무관
+B) S3 이벤트 알림은 at-least-once 전달이므로 정상 동작 — Lambda 내 멱등 처리 구현
+C) 버킷 정책이 이벤트 알림을 두 대상에 중복 등록해 두 번 호출됨 — 버킷 정책을 정리한다 — 버킷 정책은 접근 제어일 뿐 이벤트 알림 등록·중복과 관련 없음
+D) ObjectCreated 와일드카드 필터가 PUT·COPY를 모두 잡아 중복됨 — ObjectCreated:Put만 필터링한다 — 이벤트 타입을 좁혀도 단일 PUT의 중복 전달 자체는 막지 못함
 
-**정답: C** - EventBridge는 세밀한 필터링과 18개+ 대상 지원으로 가장 유연합니다.
-
----
-
-**문제 4.** 클라이언트가 서버 없이 직접 S3에 업로드하는 방법은?
-
-A) S3 Transfer Acceleration  
-B) 멀티파트 업로드  
-C) PUT 프리사인 URL  
-D) S3 게이트웨이 엔드포인트  
-
-**정답: C** - PUT 프리사인 URL을 생성하면 클라이언트가 서버 통하지 않고 직접 S3에 업로드할 수 있습니다.
+**정답: B**
+해설: S3 이벤트 알림은 at-least-once 전달을 보장하며, 드물게 중복 전달이 발생할 수 있다. 이것은 설계된 동작이며 버그가 아니다. 해결책은 Lambda 함수 내에서 멱등 처리를 구현하는 것이다 — 처리할 파일의 S3 ETag나 버전 ID를 DynamoDB에 기록하고, 이미 처리된 이벤트는 조용히 건너뛰는 방식이다. 이벤트 필터링은 이벤트 타입을 제한하지만 중복 전달 문제를 해결하지 못한다.
 
 ---
 
-**문제 5.** S3 이벤트 알림이 지원하는 대상이 아닌 것은?
+**문제 5.** 글로벌 서비스를 제공하는 회사가 S3에서 정적 웹 애플리케이션을 호스팅한다. HTTPS 필수, 글로벌 최적화, SEO를 위한 커스텀 도메인이 요구사항이다. 어떤 아키텍처가 맞는가?
 
-A) Lambda 함수  
-B) SQS 큐  
-C) RDS 데이터베이스  
-D) SNS 주제  
+A) S3 정적 웹사이트 엔드포인트에 Route 53 alias만 연결해 커스텀 도메인으로 서빙 — 웹사이트 엔드포인트는 HTTP만 지원해 HTTPS 필수 요건을 충족하지 못함
+B) 웹사이트 호스팅을 켠 퍼블릭 S3 버킷 + CloudFront + ACM + Route 53 — HTTPS·도메인은 되지만 버킷을 퍼블릭으로 열어 OAC 방식보다 보안이 약함
+C) S3 버킷 (OAC) + CloudFront + ACM + Route 53
+D) EC2 웹 서버에서 정적 파일을 서빙하고 S3는 원본 저장만 사용 — 상시 인스턴스 운영·패치·스케일링이 필요해 정적 사이트에 과도한 복잡도
 
-**정답: C** - S3 이벤트 알림은 Lambda, SQS, SNS, EventBridge를 지원합니다. RDS는 직접 대상이 되지 않습니다.
+**정답: C**
+해설: 모든 요구사항을 충족하는 아키텍처는 C다. OAC를 사용하면 S3 버킷을 퍼블릭으로 열 필요 없이 CloudFront만 접근을 허용한다(B의 퍼블릭 버킷보다 보안상 우수). CloudFront는 HTTPS(ACM 인증서), 글로벌 캐싱, Route 53 커스텀 도메인 연결을 모두 지원한다. S3 정적 웹사이트 자체(A)는 HTTP만 지원하고 CloudFront 없이는 HTTPS가 불가능하다. EC2 웹 서버(D)는 불필요한 복잡도를 더한다.
 
 ---
 
-## 📌 오늘의 요약
+**문제 6.** S3 버킷에서 수명 주기 정책이 "30일 후 Standard-IA로, 90일 후 Glacier Flexible로 전환"으로 설정되어 있다. 50일째 되는 날 객체를 삭제했다. 청구되는 요금은?
 
-1. S3 이벤트 알림: Lambda, SQS, SNS, EventBridge, EventBridge가 가장 유연
-2. 프리사인 URL: 생성자 권한 기반, 만료 시간 최대 7일, PUT으로 직접 업로드 가능
-3. 정적 웹사이트: 버킷 공개 필요, HTTP만 지원, HTTPS는 CloudFront + ACM
-4. Week 5 핵심: 스토리지 클래스, 버전 관리, 수명 주기, 암호화, 성능 최적화
-5. S3는 DVA-C02 시험에서 매우 중요한 서비스이므로 모든 개념을 완벽히 숙지
+A) 30일치 Standard + 실제 IA 저장 20일치 Standard-IA — 일수만 보면 그럴듯하나 IA의 30일 최소 보관 과금을 빠뜨려 20일만 청구하는 오답
+B) 50일치 Standard + 30일치 Standard-IA (IA 최소 보관 30일)
+C) 전환 후에도 원래 클래스 기준으로 50일치 Standard만 청구 — IA 전환·최소 보관 과금을 무시한 오답
+D) Glacier 전환 조건(90일) 충족 전 삭제이므로 90일치 Standard-IA가 청구 — 존재하지 않는 Glacier 최소 보관 소급 과금을 가정한 오답
+
+**정답: B**
+해설: Standard는 최소 보관 기간이 없으므로 30일치만 청구된다. Standard-IA로 전환된 것은 30일째이고, 50일째에 삭제됐으므로 IA로 저장된 기간은 20일이다. 그러나 Standard-IA의 최소 보관 기간은 30일이므로, 실제로는 20일을 저장했지만 30일치 IA 비용이 청구된다. 즉 Standard 30일 + Standard-IA 30일(최소) = B가 정답이다. 조기 삭제 과금은 IA, Glacier, Deep Archive 모두에 적용된다.
+
+---
+
+**문제 7.** 개발팀이 S3에 저장된 Lambda 배포 패키지를 다른 AWS 계정의 Lambda가 접근해야 한다. S3 버킷을 퍼블릭으로 열지 않고 가장 안전하게 접근 권한을 부여하는 방법은?
+
+A) 배포 패키지마다 GET Presigned URL을 생성해 다른 계정 Lambda에 전달 — 동작은 하나 URL이 만료되고 배포 버전마다 재발급해야 해 자동화 파이프라인에 부적합
+B) 버킷 정책에서 다른 계정 ARN을 Principal로 지정해 Allow
+C) 버킷을 퍼블릭으로 열고 다른 계정 NAT IP만 화이트리스트로 허용 — 퍼블릭 노출 + IP 스푸핑 위험이 있어 "퍼블릭 비공개" 요건을 위반
+D) CRR로 패키지를 다른 계정이 소유한 버킷·리전에 복제해 로컬에서 읽게 함 — 데이터를 복제·중복 저장할 뿐 접근 권한 부여 메커니즘이 아니며 버전 관리 등 추가 설정 필요
+
+**정답: B**
+해설: 버킷 정책에서 다른 계정의 Lambda 실행 역할 ARN을 Principal로 지정하면 퍼블릭으로 열지 않고 교차 계정 접근이 가능하다. 리소스 기반 정책(버킷 정책)은 IAM 사용자가 없는 다른 계정에도 권한을 부여할 수 있는 S3의 강점이다. Presigned URL은 임시이고 만료된다. 퍼블릭 + IP 화이트리스트는 IP 스푸핑 위험이 있다. CRR은 데이터 복제이지 접근 제어가 아니다.
+
+---
+
+**문제 8.** 2024년 기준 모든 S3 신규 버킷의 기본 설정으로 올바른 것은?
+
+A) 퍼블릭 접근 허용 + 암호화 비활성화 + ACL 활성화 — 편의를 위해 개방형으로 출고된다는 가정이지만 현재는 secure-by-default 원칙과 정반대
+B) Block Public Access 4개 모두 비활성화 + SSE-S3 기본 암호화 + ACL 활성화 — 암호화는 맞지만 BPA가 꺼진 채 출고된다는 부분이 틀림
+C) Block Public Access 4개 모두 활성화, SSE-S3 기본 암호화, Bucket Owner Enforced(ACL 비활성화)
+D) Block Public Access 4개 중 1개만 활성화 + 암호화는 선택 + Object Writer 소유권 — 부분 활성화·선택적 암호화·구식 소유권 모델로 현재 기본값과 불일치
+
+**정답: C**
+해설: 2023년 이후 모든 신규 S3 버킷의 기본값은 ① Block Public Access 4개 옵션 모두 활성화, ② SSE-S3(AES-256) 기본 암호화, ③ Object Ownership = Bucket Owner Enforced(ACL 비활성화)다. 이 세 가지 기본값은 "안전한 기본 설정(Secure by Default)" 원칙의 구현이다. 정적 웹사이트 호스팅을 위해 퍼블릭 접근이 필요하면 명시적으로 Block Public Access를 끄고 버킷 정책을 작성해야 한다.
+
+---
+
+**문제 9.** S3 버킷에 수십억 개의 객체가 있고, 전체 객체 중 SSE-KMS 암호화가 적용되지 않은 객체를 찾아서 일괄 암호화 적용해야 한다. 어떤 방법이 적합한가?
+
+A) Lambda로 ListObjects를 페이지네이션하며 객체마다 HeadObject로 암호화 상태를 확인하고 재암호화 — 동작은 하나 수십억 객체에 대한 API 호출·실행 시간·비용이 폭발해 비현실적
+B) S3 Inventory로 암호화 상태 보고서 생성 → Athena로 미암호화 객체 필터링 → S3 Batch Operations로 SSE-KMS 복사 적용
+C) S3 Storage Class Analysis 보고서에서 객체별 암호화 상태를 추출해 대상 목록을 만든다 — Storage Class Analysis는 접근 패턴·스토리지 클래스 분석용이라 암호화 상태를 제공하지 않음
+D) CloudTrail PUT 이벤트 로그를 역추적해 SSE 헤더 유무로 미암호화 객체를 식별 — CloudTrail 보존 기간 밖 객체를 놓치고 수십억 건 로그 분석이 비효율적
+
+**정답: B**
+해설: 수십억 객체에 대한 대규모 작업은 S3 Inventory + Athena + S3 Batch Operations의 조합이 정답이다. S3 Inventory는 정기적으로 버킷의 모든 객체 목록과 메타데이터(암호화 상태 포함)를 CSV/Parquet으로 생성한다. Athena로 "ServerSideEncryption이 aws:kms가 아닌" 객체를 필터링해 목록을 만든 후, 이 목록을 S3 Batch Operations의 manifest로 사용해 SSE-KMS 적용 복사 작업을 실행한다. Lambda로 수십억 객체를 직접 순회하면 시간과 비용이 엄청나다. Storage Class Analysis는 암호화 상태를 제공하지 않는다.
+
+---
+
+**문제 10.** 다음 시나리오에서 올바른 해결책을 선택하라. "회사는 파트너사가 특정 S3 버킷에 파일을 업로드해야 한다. 파트너는 AWS 계정이 없다."
+
+A) 파트너 전용 IAM 사용자를 만들고 PutObject만 허용한 Access Key를 전달 — 권한은 좁혀도 외부에 장기 자격증명을 넘기게 되어 키 관리·회전 부담이 큼
+B) 버킷을 퍼블릭 쓰기 가능으로 설정해 누구나 업로드하게 함 — 인증 없는 공개 쓰기는 데이터 오염·악용 위험이 큰 심각한 보안 사고
+C) 파트너용 PUT Presigned URL을 주기적으로 생성하여 전달
+D) 파트너 네트워크와 VPC Peering을 맺어 프라이빗 경로로 업로드하게 함 — 파트너가 AWS 계정·VPC를 보유해야 성립하므로 "계정 없음" 전제와 모순
+
+**정답: C**
+해설: AWS 계정이 없는 외부 파트너에게 S3 접근을 부여할 때 PUT Presigned URL이 가장 안전하고 간단하다. 만료 시간을 설정해 유효 기간을 제한하고, 특정 키(파일명)와 ContentType까지 제한할 수 있다. IAM 사용자 생성(A)은 파트너에게 장기 자격증명을 제공하는 것으로 자격증명 관리 부담이 생긴다. 퍼블릭 버킷(B)은 보안상 매우 나쁘다. VPC Peering(D)은 파트너가 AWS 계정과 VPC를 가져야 한다.
+
+---
+
+**문제 11.** S3 버킷 A(us-east-1)에서 버킷 B(ap-northeast-2)로 CRR을 설정했다. 버킷 A에서 객체를 삭제 마커 없이 직접 영구 삭제(버전 ID 명시)했다. 버킷 B에서는?
+
+A) 영구 삭제가 복제 파이프라인을 통해 전파되어 버킷 B의 해당 버전도 자동으로 삭제된다 — CRR은 기본적으로 버전 영구 삭제를 복제하지 않아 전파되지 않음
+B) 해당 객체는 버킷 B에 그대로 유지된다
+C) 영구 삭제 대신 삭제 마커가 버킷 B로 복제되어 최신 버전이 가려진다 — 버전 ID 명시 영구 삭제이지 삭제 마커 생성이 아니며, 삭제 마커 복제도 기본 비활성
+D) 원본 버전이 사라져 정합성 검사에 실패하고 복제 실패 이벤트·알림이 발생한다 — 삭제는 복제 대상이 아니라 실패로 처리되지 않음
+
+**정답: B**
+해설: S3 복제는 기본적으로 삭제 작업을 복제하지 않는다 — 데이터 보호 목적이다. 버킷 A에서 특정 버전을 영구 삭제해도 버킷 B에는 그 버전이 그대로 남아 있다. 삭제 마커도 기본적으로 복제되지 않는다(선택적으로 활성화 가능). 이 설계는 실수나 악의적 삭제가 복제를 통해 전파되는 것을 방지한다. 양방향 복제에서 삭제 마커 복제를 활성화하면 교차 삭제 위험이 생긴다 — 신중하게 설정해야 한다.
+
+---
+
+**문제 12.** 다음 중 S3 Access Point에 대한 올바른 설명으로 모두 맞는 것은?
+
+A) Access Point는 기존 버킷과 별개로 데이터를 담는 새 버킷을 생성한다 — Access Point는 새 버킷을 만들지 않고 기존 버킷 위에 이름 붙은 가상 입구만 추가
+B) VPC 전용 Access Point로 인터넷에서의 접근을 차단할 수 있다
+C) Access Point는 버킷당 최대 1개만 생성 가능해 입구를 단일화한다 — 실제로는 버킷당 수천 개(최대 10,000개) Access Point를 만들 수 있음
+D) 각 Access Point는 자체 독립적인 정책과 DNS 이름을 가진다
+
+**정답: B와 D**
+해설: Access Point는 새 버킷을 만들지 않고 기존 버킷 위에 가상 입구를 만든다(A 틀림). 버킷당 최대 10,000개의 Access Point를 생성할 수 있다(C 틀림). VPC 전용 Access Point를 설정하면 해당 Access Point로의 접근이 지정한 VPC 내에서만 허용되며 인터넷 접근이 차단된다(B 맞음). 각 Access Point는 고유한 DNS 이름(`<name>-<account-id>.s3-accesspoint.<region>.amazonaws.com`)과 독립적인 버킷 정책을 가진다(D 맞음).
+
+---
