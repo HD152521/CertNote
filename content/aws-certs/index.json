@@ -1,6 +1,6 @@
 {
   "category": "aws-certs",
-  "title": "AWS Certification",
+  "title": "Certification Notes",
   "certs": [
     {
       "slug": "dva-c02",
@@ -41,6 +41,14 @@
       "name": "DevOps Engineer - Professional",
       "weeks": 16,
       "order": 5
+    },
+    {
+      "slug": "linux-master-1",
+      "code": "리눅스마스터 1급",
+      "level": "professional",
+      "name": "리눅스마스터 1급",
+      "weeks": 14,
+      "order": 6
     }
   ]
 }

@@ -9,9 +9,9 @@ export default async function HomePage() {
   return (
     <div className="mx-auto max-w-3xl space-y-12">
       <section className="space-y-3">
-        <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">AWS Certification · 5 tracks</p>
+        <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">Certification Notes · 6 tracks</p>
         <h1 className="text-3xl font-semibold tracking-tight">출퇴근 15분, 자격증 한 권</h1>
-        <p className="text-base text-fg-muted max-w-xl">매일 한 페이지씩. 5개 AWS 자격증 학습 자료를 모았습니다. 사이드바에서 자격증을 골라 시작하세요.</p>
+        <p className="text-base text-fg-muted max-w-xl">매일 한 페이지씩. AWS 5종 + 리눅스마스터 1급 학습 자료를 모았습니다. 사이드바에서 자격증을 골라 시작하세요.</p>
       </section>
       <ContinueCards certs={certs} />
       <section className="space-y-4">
