@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "questions:build": "node scripts/build-questions-index.mjs",
+    "prebuild": "node scripts/build-questions-index.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
