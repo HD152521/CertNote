@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { CertMeta } from '@/lib/content';
 import { ThemeToggle } from './ThemeToggle';
 import { SearchButton } from './SearchButton';
+import { AuthNav } from './AuthNav';
 import { cn } from '@/lib/cn';
 
 interface HeaderProps { certs: CertMeta[]; }
@@ -28,6 +29,7 @@ export function Header({ certs }: HeaderProps) {
           </ul>
           <SearchButton />
           <ThemeToggle />
+          <AuthNav />
         </nav>
       </div>
     </header>
