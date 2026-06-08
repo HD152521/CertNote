@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { emitAuthChange } from '@/lib/auth/authEvents';
 
 type Mode = 'login' | 'signup';
 
@@ -40,6 +41,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         setError(data.message ?? '요청을 처리하지 못했습니다.');
         return;
       }
+      emitAuthChange();
       const next = params.get('next') || '/';
       router.push(next);
       router.refresh();
