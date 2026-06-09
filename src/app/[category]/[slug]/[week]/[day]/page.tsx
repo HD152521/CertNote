@@ -46,7 +46,7 @@ export default async function DayPage({ params }: PageProps) {
             <span className="text-fg">Day {d}</span>
           </nav>
           <DayMeta certMeta={content.certMeta} week={w} day={d} readingMinutes={readingMinutes} />
-          <Article source={content.body} />
+          <Article source={content.body} slug={slug} week={w} day={d} />
           <footer className="mt-12 grid grid-cols-2 gap-3 border-t border-border pt-6">
             {content.prev ? (
               <Link href={content.prev.href} className={cn('flex flex-col gap-1 rounded-md border border-border p-3 transition', 'hover:border-border-strong')}>

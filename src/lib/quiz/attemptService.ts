@@ -1,0 +1,33 @@
+import { AppError } from '../auth/errors';
+import { getQuestionById } from '../questions';
+import { isSelectionCorrect } from './correctness';
+import { PgAttemptRepository, type AttemptRecord, type AttemptRepository } from './attemptRepository';
+
+const VALID_CHOICE = /^[A-E]$/;
+
+// 퀴즈 풀이 기록 로직. 정답 여부는 서버에서 문제 인덱스로 판정한다(클라이언트 신뢰 X).
+export class AttemptService {
+  constructor(private readonly attempts: AttemptRepository) {}
+
+  async record(userId: string, questionId: string, selected: string): Promise<{ correct: boolean }> {
+    const choice = selected.trim().toUpperCase();
+    if (!VALID_CHOICE.test(choice)) {
+      throw new AppError(400, 'invalid_choice', '선택지는 A~E 중 하나여야 합니다.');
+    }
+    const question = getQuestionById(questionId);
+    if (!question) {
+      throw new AppError(404, 'question_not_found', '존재하지 않는 문제입니다.');
+    }
+    const correct = isSelectionCorrect(question.answer, choice);
+    await this.attempts.create({ userId, questionId, selected: choice, correct });
+    return { correct };
+  }
+
+  list(userId: string, limit = 200): Promise<AttemptRecord[]> {
+    return this.attempts.listByUser(userId, limit);
+  }
+}
+
+export function getAttemptService(): AttemptService {
+  return new AttemptService(new PgAttemptRepository());
+}

@@ -21,6 +21,19 @@ try {
     );
   `);
   console.log('✓ users 테이블 준비 완료');
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS quiz_attempts (
+      id           BIGSERIAL PRIMARY KEY,
+      user_id      BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      question_id  TEXT NOT NULL,
+      selected     TEXT,
+      correct      BOOLEAN NOT NULL,
+      attempted_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_quiz_attempts_user ON quiz_attempts (user_id);');
+  console.log('✓ quiz_attempts 테이블 준비 완료');
 } catch (err) {
   console.error('마이그레이션 실패:', err);
   process.exit(1);

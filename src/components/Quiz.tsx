@@ -3,21 +3,35 @@
 import { useState } from 'react';
 import { Check, X } from 'lucide-react';
 import type { QuizQuestion } from '@/lib/parseQuiz';
+import { parseCorrectSet } from '@/lib/quiz/correctness';
 import { cn } from '@/lib/cn';
 
-interface QuizProps { question: QuizQuestion; }
-
-function parseCorrectSet(answer: string): Set<string> {
-  return new Set(
-    answer.split(/[,\/\s]+/).map((s) => s.trim().toUpperCase()).filter((s) => /^[A-E]$/.test(s)),
-  );
+interface QuizProps {
+  question: QuizQuestion;
+  questionId?: string;
 }
 
-export function Quiz({ question }: QuizProps) {
+// 로그인 사용자면 서버에 풀이를 기록(실패·비로그인은 무시 — fire-and-forget).
+function recordAttempt(questionId: string, selected: string): void {
+  fetch('/api/quiz/attempt', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ questionId, selected }),
+  }).catch(() => {});
+}
+
+export function Quiz({ question, questionId }: QuizProps) {
   const [picked, setPicked] = useState<string | null>(null);
   const correctSet = parseCorrectSet(question.answer);
   const isAnswered = picked !== null;
   const isCorrect = picked !== null && correctSet.has(picked);
+
+  function handlePick(label: string) {
+    if (isAnswered) return;
+    setPicked(label);
+    if (questionId) recordAttempt(questionId, label);
+  }
+
   return (
     <div className="my-5 rounded-lg border border-border bg-bg-elevated p-4 sm:p-5">
       <p className="font-mono text-[11px] uppercase tracking-wider text-fg-faint mb-2">문제 {question.number}</p>
@@ -31,7 +45,7 @@ export function Quiz({ question }: QuizProps) {
           const revealed = showResult && isCorrectChoice;
           return (
             <li key={c.label}>
-              <button type="button" onClick={() => { if (!isAnswered) setPicked(c.label); }} disabled={isAnswered} aria-pressed={isPicked}
+              <button type="button" onClick={() => handlePick(c.label)} disabled={isAnswered} aria-pressed={isPicked}
                 className={cn(
                   'flex w-full items-start gap-3 rounded-md border px-3 py-2.5 text-left transition',
                   !isAnswered && 'border-border hover:border-border-strong cursor-pointer',
