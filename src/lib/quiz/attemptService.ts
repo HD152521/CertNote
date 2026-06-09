@@ -1,13 +1,19 @@
 import { AppError } from '../auth/errors';
 import { getQuestionById } from '../questions';
+import { getReviewRepository } from '../review/factory';
+import type { ReviewEnqueuer } from '../review/types';
 import { isSelectionCorrect } from './correctness';
 import { PgAttemptRepository, type AttemptRecord, type AttemptRepository } from './attemptRepository';
 
 const VALID_CHOICE = /^[A-E]$/;
 
 // 퀴즈 풀이 기록 로직. 정답 여부는 서버에서 문제 인덱스로 판정한다(클라이언트 신뢰 X).
+// 오답이면 복습 큐(SRS)에도 적재한다 — 큐 의존은 ReviewEnqueuer 인터페이스로만(DIP).
 export class AttemptService {
-  constructor(private readonly attempts: AttemptRepository) {}
+  constructor(
+    private readonly attempts: AttemptRepository,
+    private readonly reviewQueue?: ReviewEnqueuer,
+  ) {}
 
   async record(userId: string, questionId: string, selected: string): Promise<{ correct: boolean }> {
     const choice = selected.trim().toUpperCase();
@@ -20,6 +26,9 @@ export class AttemptService {
     }
     const correct = isSelectionCorrect(question.answer, choice);
     await this.attempts.create({ userId, questionId, selected: choice, correct });
+    if (!correct && this.reviewQueue) {
+      await this.reviewQueue.enqueueWrong(userId, questionId);
+    }
     return { correct };
   }
 
@@ -29,5 +38,5 @@ export class AttemptService {
 }
 
 export function getAttemptService(): AttemptService {
-  return new AttemptService(new PgAttemptRepository());
+  return new AttemptService(new PgAttemptRepository(), getReviewRepository());
 }
