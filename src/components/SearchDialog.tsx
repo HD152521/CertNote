@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Fuse from 'fuse.js';
 import { Search } from 'lucide-react';
-import type { SearchEntry } from '@/lib/content';
+import type { SearchEntry, SearchBodyEntry } from '@/lib/content';
 import { cn } from '@/lib/cn';
 
 interface SearchDialogProps { index: SearchEntry[]; onClose: () => void; }
@@ -14,23 +14,38 @@ export function SearchDialog({ index, onClose }: SearchDialogProps) {
   const [q, setQ] = useState('');
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // 본문 포함 인덱스를 첫 오픈 시 1회 받아온다(정적 캐시). 로딩 전엔 제목 인덱스로 동작.
+  const [bodyIndex, setBodyIndex] = useState<SearchBodyEntry[] | null>(null);
+  useEffect(() => {
+    let active = true;
+    fetch('/api/search')
+      .then((r) => r.json())
+      .then((d) => { if (active && Array.isArray(d.index)) setBodyIndex(d.index as SearchBodyEntry[]); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  const data: SearchEntry[] = bodyIndex ?? index;
   const fuse = useMemo(
-    () => new Fuse(index, {
+    () => new Fuse(data, {
       keys: [
-        { name: 'title', weight: 0.7 },
-        { name: 'certCode', weight: 0.2 },
-        { name: 'certName', weight: 0.1 },
+        { name: 'title', weight: 0.5 },
+        { name: 'body', weight: 0.3 },
+        { name: 'certCode', weight: 0.15 },
+        { name: 'certName', weight: 0.05 },
       ],
       threshold: 0.4,
       ignoreLocation: true,
       includeScore: true,
+      minMatchCharLength: 2,
     }),
-    [index],
+    [data],
   );
   const results = useMemo(() => {
-    if (!q.trim()) return index.slice(0, 12);
+    if (!q.trim()) return data.slice(0, 12);
     return fuse.search(q).slice(0, 25).map((r) => r.item);
-  }, [q, fuse, index]);
+  }, [q, fuse, data]);
   useEffect(() => { inputRef.current?.focus(); }, []);
   useEffect(() => { setActive(0); }, [q]);
   function onKey(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -53,7 +68,7 @@ export function SearchDialog({ index, onClose }: SearchDialogProps) {
         <div className="flex items-center gap-2 border-b border-border px-3.5 py-3">
           <Search className="h-4 w-4 text-fg-muted" />
           <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKey}
-            placeholder="제목·자격증 코드로 검색..."
+            placeholder="제목·본문·코드로 검색..."
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-fg-faint"
           />
           <kbd className="font-mono text-[10px] text-fg-faint border border-border rounded px-1.5 py-0.5">ESC</kbd>
