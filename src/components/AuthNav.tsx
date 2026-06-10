@@ -54,6 +54,7 @@ export function AuthNav() {
 
   return (
     <div className="flex items-center gap-1">
+      <Link href="/exam" className={LINK_CLASS}>모의고사</Link>
       <Link href="/dashboard" className={LINK_CLASS}>대시보드</Link>
       <Link href="/notebook" className={LINK_CLASS}>오답노트</Link>
       {user.role === 'admin' && <Link href="/admin" className={LINK_CLASS}>관리자</Link>}
