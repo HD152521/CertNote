@@ -54,6 +54,8 @@ export function AuthNav() {
 
   return (
     <div className="flex items-center gap-1">
+      <Link href="/dashboard" className={LINK_CLASS}>대시보드</Link>
+      <Link href="/notebook" className={LINK_CLASS}>오답노트</Link>
       {user.role === 'admin' && <Link href="/admin" className={LINK_CLASS}>관리자</Link>}
       <span className="hidden sm:inline px-1 text-xs text-fg-faint">{user.email}</span>
       <button type="button" onClick={handleLogout} className={LINK_CLASS}>로그아웃</button>

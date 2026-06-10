@@ -3,19 +3,24 @@ import type { CertMeta } from '@/lib/content';
 import { ThemeToggle } from './ThemeToggle';
 import { SearchButton } from './SearchButton';
 import { AuthNav } from './AuthNav';
+import { MobileNav } from './MobileNav';
+import type { CertTree } from './SidebarNav';
 import { cn } from '@/lib/cn';
 
-interface HeaderProps { certs: CertMeta[]; }
+interface HeaderProps { certs: CertMeta[]; certTrees: CertTree[]; }
 
-export function Header({ certs }: HeaderProps) {
+export function Header({ certs, certTrees }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg/80 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center justify-between gap-4 px-4 lg:px-6">
+        <div className="flex items-center gap-1 sm:gap-2">
+        <MobileNav certTrees={certTrees} />
         <Link href="/" className="flex items-center gap-2 text-sm font-semibold tracking-tight">
           <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-sm bg-accent" />
           <span>Cert Notes</span>
           <span className="text-fg-faint font-normal hidden sm:inline">/ 출퇴근 학습 노트</span>
         </Link>
+        </div>
         <nav className="flex items-center gap-2">
           <ul className="hidden md:flex items-center gap-1">
             {certs.map((c) => (
