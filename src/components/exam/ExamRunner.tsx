@@ -15,6 +15,7 @@ interface ExamQuestion {
   slug: string;
   week: number;
   day: number;
+  multi: boolean;
 }
 
 interface ExamResultItem extends ExamQuestion {
@@ -135,8 +136,17 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
     }
   }
 
-  function pick(qid: string, label: string) {
-    setAnswers((prev) => ({ ...prev, [qid]: label }));
+  function pick(q: ExamQuestion, label: string) {
+    setAnswers((prev) => {
+      if (!q.multi) return { ...prev, [q.questionId]: label };
+      // 복수 응답: 토글 후 정규화("B,D"). 모두 해제하면 키 제거(미응답).
+      const cur = new Set((prev[q.questionId] ?? '').split(',').filter(Boolean));
+      if (cur.has(label)) cur.delete(label); else cur.add(label);
+      const val = [...cur].sort().join(',');
+      const next = { ...prev };
+      if (val) next[q.questionId] = val; else delete next[q.questionId];
+      return next;
+    });
   }
   function toggleMark(qid: string) {
     setMarked((prev) => {
@@ -211,7 +221,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
 
   if (phase === 'running') {
     const q = questions[idx];
-    const picked = answers[q.questionId];
+    const pickedSet = new Set((answers[q.questionId] ?? '').split(',').filter(Boolean));
     const isLow = timeLeft !== null && timeLeft <= 60;
     return (
       <div className="space-y-4">
@@ -251,16 +261,18 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
               <Flag className="h-3 w-3" /> {marked.has(q.questionId) ? '마킹됨' : '나중에'}
             </button>
           </div>
-          <p className="mb-4 font-medium leading-relaxed text-fg whitespace-pre-wrap">{q.prompt}</p>
+          <p className="mb-2 font-medium leading-relaxed text-fg whitespace-pre-wrap">{q.prompt}</p>
+          {q.multi && <p className="mb-3 text-xs text-accent">복수 응답 — 해당하는 보기를 모두 선택하세요.</p>}
           <ul className="space-y-2">
             {q.choices.map((c) => {
-              const isPicked = picked === c.label;
+              const isPicked = pickedSet.has(c.label);
               return (
                 <li key={c.label}>
-                  <button type="button" onClick={() => pick(q.questionId, c.label)} aria-pressed={isPicked}
+                  <button type="button" onClick={() => pick(q, c.label)} aria-pressed={isPicked}
                     className={cn('flex w-full items-start gap-3 rounded-md border px-3 py-2.5 text-left transition',
                       isPicked ? 'border-accent bg-accent/10' : 'border-border hover:border-border-strong')}>
-                    <span className={cn('mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-mono text-[10px]',
+                    <span className={cn('mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center font-mono text-[10px]',
+                      q.multi ? 'rounded' : 'rounded-full',
                       isPicked ? 'bg-accent text-white' : 'border border-border-strong text-fg-muted')}>{c.label}</span>
                     <span className="flex-1 text-sm leading-relaxed text-fg">{c.text}</span>
                   </button>
@@ -326,6 +338,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
       <ul className="space-y-3">
         {shown.map((it, i) => {
           const correctSet = new Set(it.answer.toUpperCase().replace(/[^A-E]/g, '').split(''));
+          const selectedSet = new Set((it.selected ?? '').split(',').map((x) => x.trim()).filter(Boolean));
           return (
             <li key={`${it.questionId}-${i}`} className="rounded-lg border border-border bg-bg-elevated p-4">
               <div className="mb-2 flex items-center justify-between gap-2">
@@ -336,7 +349,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
               <ul className="space-y-1.5">
                 {it.choices.map((c) => {
                   const isAnswer = correctSet.has(c.label);
-                  const isPicked = it.selected === c.label;
+                  const isPicked = selectedSet.has(c.label);
                   return (
                     <li key={c.label} className={cn('flex items-start gap-2 rounded-md border px-2.5 py-1.5 text-sm',
                       isAnswer ? 'border-success/40 bg-success/5 text-fg' : isPicked ? 'border-danger/40 bg-danger/5 text-fg' : 'border-border text-fg-muted')}>

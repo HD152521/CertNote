@@ -1,11 +1,10 @@
 import { getAllQuestions, getQuestionById, getQuestionsByCert, type IndexedQuestion } from '../questions';
-import { isSelectionCorrect } from '../quiz/correctness';
+import { isMultiAnswer, isSelectionCorrect, normalizeSelection } from '../quiz/correctness';
 import { getAttemptService } from '../quiz/attemptService';
 
 // AWS 시험 합격선은 1000점 만점 720점(≈72%). 모의고사도 동일 기준으로 합/불 판정.
 export const PASS_MARK = 72;
 export const MAX_COUNT = 100;
-const VALID_CHOICE = /^[A-E]$/;
 
 // 시험 중 클라이언트로 내려가는 문제(정답·해설 제외 — 치팅 방지).
 export interface ExamQuestion {
@@ -16,6 +15,7 @@ export interface ExamQuestion {
   slug: string;
   week: number;
   day: number;
+  multi: boolean; // 복수 정답 여부(정답 자체는 노출하지 않고 "여러 개 선택" 안내용으로만 사용).
 }
 
 export interface ExamResultItem extends ExamQuestion {
@@ -36,7 +36,7 @@ export interface ExamResult {
 }
 
 function toExamQuestion(q: IndexedQuestion): ExamQuestion {
-  return { questionId: q.id, number: q.number, prompt: q.prompt, choices: q.choices, slug: q.slug, week: q.week, day: q.day };
+  return { questionId: q.id, number: q.number, prompt: q.prompt, choices: q.choices, slug: q.slug, week: q.week, day: q.day, multi: isMultiAnswer(q.answer) };
 }
 
 // Fisher–Yates 셔플(원본 불변 — 복사본을 섞는다).
@@ -70,12 +70,12 @@ export async function gradeExam(
     const q = getQuestionById(id);
     if (!q) continue;
     const raw = answers[id];
-    const selected = raw ? raw.trim().toUpperCase() : null;
+    const selected = raw ? normalizeSelection(raw) : null;
     const isCorrect = selected ? isSelectionCorrect(q.answer, selected) : false;
     if (selected) answered += 1;
     if (isCorrect) correct += 1;
     items.push({ ...toExamQuestion(q), selected, correct: isCorrect, answer: q.answer, explanation: q.explanation });
-    if (selected && VALID_CHOICE.test(selected)) {
+    if (selected) {
       try {
         await getAttemptService().record(userId, id, selected);
       } catch {

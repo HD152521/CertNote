@@ -1,10 +1,8 @@
 import { AppError } from '../auth/errors';
 import { getQuestionById, type IndexedQuestion } from '../questions';
-import { isSelectionCorrect } from '../quiz/correctness';
+import { isSelectionCorrect, normalizeSelection } from '../quiz/correctness';
 import { isMastered, nextSchedule } from './schedule';
 import type { ReviewCounts, ReviewItem, ReviewRepository } from './types';
-
-const VALID_CHOICE = /^[A-E]$/;
 
 // 클라이언트로 보낼 복습 카드(문제 본문 + 일정 메타).
 export interface ReviewCard {
@@ -61,9 +59,9 @@ export class ReviewService {
     questionId: string,
     selected: string,
   ): Promise<{ correct: boolean; mastered: boolean; dueAt: string }> {
-    const choice = selected.trim().toUpperCase();
-    if (!VALID_CHOICE.test(choice)) {
-      throw new AppError(400, 'invalid_choice', '선택지는 A~E 중 하나여야 합니다.');
+    const choice = normalizeSelection(selected);
+    if (!choice) {
+      throw new AppError(400, 'invalid_choice', '보기를 하나 이상 선택해야 합니다.');
     }
     const question = getQuestionById(questionId);
     if (!question) {
