@@ -51,6 +51,41 @@ try {
   `);
   await pool.query('CREATE INDEX IF NOT EXISTS idx_review_items_due ON review_items (user_id, due_at);');
   console.log('✓ review_items 테이블 준비 완료');
+
+  // 구독 권한(entitlement) 컬럼. plan='free'|'pro'. current_period_end=null 이면 무기한(수동 부여).
+  // 결제 연동 시 webhook이 이 컬럼들만 갱신하면 게이팅은 그대로 동작한다.
+  await pool.query(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS plan               TEXT NOT NULL DEFAULT 'free',
+      ADD COLUMN IF NOT EXISTS plan_status        TEXT,
+      ADD COLUMN IF NOT EXISTS plan_since         TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMPTZ;
+  `);
+  console.log('✓ users.plan 컬럼 준비 완료');
+
+  // 업그레이드 대기자(결제 전 수요 수집). 같은 이메일 중복 등록은 애플리케이션에서 무시.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS waitlist (
+      id         BIGSERIAL PRIMARY KEY,
+      email      TEXT NOT NULL,
+      user_id    BIGINT REFERENCES users(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_waitlist_email ON waitlist (email);');
+  console.log('✓ waitlist 테이블 준비 완료');
+
+  // 비밀번호 재설정 토큰. 평문이 아닌 해시를 PK로 저장하고, 만료/사용 시각으로 1회성 보장.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS password_resets (
+      token_hash TEXT PRIMARY KEY,
+      user_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at    TIMESTAMPTZ
+    );
+  `);
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets (user_id);');
+  console.log('✓ password_resets 테이블 준비 완료');
 } catch (err) {
   console.error('마이그레이션 실패:', err);
   process.exit(1);

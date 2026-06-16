@@ -9,6 +9,7 @@ interface Me {
   id: string;
   email: string;
   role: string;
+  plan: 'free' | 'pro';
 }
 
 const LINK_CLASS = 'px-2.5 py-1 text-xs rounded-md text-fg-muted hover:bg-bg-subtle hover:text-fg transition';
@@ -58,6 +59,11 @@ export function AuthNav() {
       <Link href="/dashboard" className={LINK_CLASS}>대시보드</Link>
       <Link href="/notebook" className={LINK_CLASS}>오답노트</Link>
       {user.role === 'admin' && <Link href="/admin" className={LINK_CLASS}>관리자</Link>}
+      {user.plan === 'pro' ? (
+        <span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">Pro</span>
+      ) : (
+        <Link href="/pricing" className="rounded-md border border-accent/40 px-2 py-0.5 text-xs font-medium text-accent hover:bg-accent/10 transition">업그레이드</Link>
+      )}
       <span className="hidden sm:inline px-1 text-xs text-fg-faint">{user.email}</span>
       <button type="button" onClick={handleLogout} className={LINK_CLASS}>로그아웃</button>
     </div>

@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { FREE_WEEK } from './entitlement/policy';
 
 const CONTENT_ROOT = path.join(process.cwd(), 'content');
 
@@ -112,6 +113,18 @@ function extractSearchBody(raw: string): string {
   return `${headingStr} ${s.slice(0, SEARCH_BODY_MAX)}`.trim().slice(0, SEARCH_BODY_MAX + 400);
 }
 
+// 잠긴(유료) day의 미리보기. frontmatter 제거 후 앞부분 마크다운 일부만 반환한다.
+// 정적 페이지에 이 발췌만 싣고 전체 본문은 절대 싣지 않는다(우회 방지).
+const PREVIEW_MAX = 800;
+export function previewOf(body: string, max: number = PREVIEW_MAX): string {
+  const s = body.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').trimStart();
+  if (s.length <= max) return s;
+  // 단어/문단 경계에서 자연스럽게 자른다.
+  const cut = s.slice(0, max);
+  const lastBreak = Math.max(cut.lastIndexOf('\n\n'), cut.lastIndexOf('. '));
+  return (lastBreak > max * 0.5 ? cut.slice(0, lastBreak) : cut).trimEnd();
+}
+
 export async function getAllDays(category: string, slug: string): Promise<DayRef[]> {
   const meta = await getCertMeta(category, slug);
   const days: DayRef[] = [];
@@ -177,12 +190,17 @@ export async function buildSearchBodyIndex(category: string): Promise<SearchBody
   for (const c of certs) {
     const days = await getAllDays(category, c.slug);
     for (const d of days) {
-      const p = path.join(CONTENT_ROOT, category, c.slug, `week${d.week}`, `day${d.day}.md`);
-      const raw = await fs.readFile(p, 'utf8');
+      // 유료(Week2+) 본문은 정적 검색 인덱스에 싣지 않는다(이 라우트는 force-static이라
+      // 사용자별 게이팅이 불가 → 누구나 받는다). 무료 Week1만 본문 검색, 나머지는 제목만.
+      // 결제/Pro 본문 검색은 P1에서 인증된 동적 엔드포인트로 제공.
+      const includeBody = d.week <= FREE_WEEK;
+      const raw = includeBody
+        ? await fs.readFile(path.join(CONTENT_ROOT, category, c.slug, `week${d.week}`, `day${d.day}.md`), 'utf8')
+        : '';
       out.push({
         category, certSlug: c.slug, certCode: c.code, certName: c.name, certLevel: c.level,
         week: d.week, day: d.day, title: d.title, href: d.href,
-        body: extractSearchBody(raw),
+        body: includeBody ? extractSearchBody(raw) : '',
       });
     }
   }

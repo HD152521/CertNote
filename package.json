@@ -9,8 +9,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:migrate": "node --env-file=.env scripts/db-migrate.mjs",
-    "db:seed": "node --env-file=.env scripts/db-seed-admin.mjs"
+    "db:seed": "node --env-file=.env scripts/db-seed-admin.mjs",
+    "grant:pro": "node --env-file=.env scripts/grant-pro.mjs"
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",
@@ -43,6 +46,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.0"
   }
 }

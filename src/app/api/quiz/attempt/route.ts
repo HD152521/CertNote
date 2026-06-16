@@ -1,5 +1,6 @@
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { getAttemptService } from '@/lib/quiz/attemptService';
+import { getEntitlementService } from '@/lib/entitlement/factory';
 import { AppError, errorResponse } from '@/lib/auth/errors';
 
 // 로그인 사용자의 퀴즈 풀이 1건 기록. 정답 여부는 서버가 판정해 반환.
@@ -13,6 +14,8 @@ export async function POST(req: Request) {
     if (!body || typeof body.questionId !== 'string' || typeof body.selected !== 'string') {
       throw new AppError(400, 'invalid_body', '요청 형식이 올바르지 않습니다.');
     }
+    // 무료 사용자는 Week1 문제만 풀이 기록 가능(우회 방지 — 서버 권위 판정).
+    await getEntitlementService().assertQuestionAccess(session.sub, body.questionId);
     const result = await getAttemptService().record(session.sub, body.questionId, body.selected);
     return Response.json(result);
   } catch (err) {

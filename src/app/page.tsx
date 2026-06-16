@@ -1,8 +1,13 @@
 import { listCerts } from '@/lib/content';
 import { CertCard } from '@/components/CertCard';
 import { ContinueCards } from '@/components/ContinueCards';
+import { getCurrentUser } from '@/lib/auth/currentUser';
+import { Landing } from '@/components/marketing/Landing';
 
 export default async function HomePage() {
+  // 비로그인 방문자는 마케팅 랜딩, 로그인 사용자는 학습 홈(자격증 그리드).
+  const session = await getCurrentUser();
+  if (!session) return <Landing />;
   const certs = await listCerts('aws-certs');
   const associates = certs.filter((c) => c.level === 'associate');
   const professionals = certs.filter((c) => c.level === 'professional');

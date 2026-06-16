@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/lib/auth/currentUser';
+import { getEntitlementService } from '@/lib/entitlement/factory';
 import { AppError, errorResponse } from '@/lib/auth/errors';
 import { getReviewService } from '@/lib/review/factory';
 
@@ -13,6 +14,8 @@ export async function POST(req: Request) {
     if (!body || typeof body.questionId !== 'string' || typeof body.selected !== 'string') {
       throw new AppError(400, 'invalid_body', '요청 형식이 올바르지 않습니다.');
     }
+    // 무료 사용자는 Week1 문제만 복습 가능.
+    await getEntitlementService().assertQuestionAccess(session.sub, body.questionId);
     const result = await getReviewService().review(session.sub, body.questionId, body.selected);
     return Response.json(result);
   } catch (err) {
