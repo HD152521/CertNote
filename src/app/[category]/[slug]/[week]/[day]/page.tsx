@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { getAllDayParams, getDay, previewOf } from '@/lib/content';
+import { getDay, previewOf } from '@/lib/content';
 import { buildToc } from '@/lib/toc';
 import { readingTimeMinutes } from '@/lib/readingTime';
 import { getCurrentUser } from '@/lib/auth/currentUser';
@@ -16,16 +16,10 @@ import { cn } from '@/lib/cn';
 
 interface PageProps { params: Promise<{ category: string; slug: string; week: string; day: string }>; }
 
-// 무료(Week ≤ FREE_WEEK)만 정적 생성 → CDN 캐시. 유료 주차는 dynamicParams로 온디맨드 렌더되며,
-// 그때 쿠키(로그인)·권한을 읽어 게이팅한다(잠긴 본문은 응답에 포함되지 않음).
-export async function generateStaticParams() {
-  const params = await getAllDayParams('aws-certs');
-  return params
-    .filter((p) => Number.parseInt(p.week.slice('week'.length), 10) <= FREE_WEEK)
-    .map((p) => ({ category: 'aws-certs', ...p }));
-}
-
-export const dynamicParams = true;
+// 항상 동적 렌더. day 페이지는 쿠키(로그인)·권한을 읽어 게이팅하므로 정적 생성과 양립 불가다.
+// (generateStaticParams + cookies() 조합은 프로덕션에서 DYNAMIC_SERVER_USAGE 500을 유발했다.)
+// 본문은 권한 있을 때만 응답에 포함되고, 잠기면 미리보기+Paywall만 내려간다.
+export const dynamic = 'force-dynamic';
 
 function parseSegment(seg: string, prefix: string): number | null {
   if (!seg.startsWith(prefix)) return null;
