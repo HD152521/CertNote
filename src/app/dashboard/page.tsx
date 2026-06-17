@@ -122,7 +122,7 @@ export default async function DashboardPage() {
                 {data.recent.map((r, i) => (
                   <li key={`${r.questionId}-${i}`}>
                     <Link
-                      href={`/aws-certs/${r.slug}/week${r.week}/day${r.day}`}
+                      href={r.week > 0 ? `/aws-certs/${r.slug}/week${r.week}/day${r.day}` : `/aws-certs/${r.slug}`}
                       className="flex items-center gap-3 rounded-lg border border-border bg-bg-elevated px-3 py-2 transition hover:border-border-strong"
                     >
                       <span
@@ -133,7 +133,7 @@ export default async function DashboardPage() {
                         {r.correct ? '✓' : '✗'}
                       </span>
                       <span className="min-w-0 flex-1 truncate text-sm text-fg">{r.prompt}</span>
-                      <span className="shrink-0 font-mono text-[10px] uppercase text-fg-faint">{r.slug} W{r.week}D{r.day}</span>
+                      <span className="hidden sm:inline shrink-0 font-mono text-[10px] uppercase text-fg-faint">{r.week > 0 ? `${r.slug} W${r.week}D${r.day}` : `${r.slug} 모의고사`}</span>
                       <span className="shrink-0 text-[11px] text-fg-faint">{relTime(r.attemptedAt)}</span>
                     </Link>
                   </li>
