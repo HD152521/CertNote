@@ -540,6 +540,1410 @@
     "explanation": "CloudWatch 교차 계정 관찰성은 모니터링 계정에서 여러 소스 계정·리전의 지표·로그·X-Ray 추적을 한곳에서 보게 해 운영 가시성을 높인다. 개별 접속(A)·이메일(C)은 비효율, 끄기(D)는 가시성 상실."
   },
   {
+    "id": "exam-dop-c02-21",
+    "slug": "dop-c02",
+    "domain": "SDLC 자동화",
+    "number": 21,
+    "prompt": "커밋 시 자동으로 빌드·테스트·다단계 승인·배포가 흐르는 파이프라인을 구성하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CodePipeline에 소스/빌드/테스트/수동 승인/배포 스테이지를 구성"
+      },
+      {
+        "label": "B",
+        "text": "개발자가 수동으로 단계마다 실행"
+      },
+      {
+        "label": "C",
+        "text": "배포를 하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "FTP로 직접 업로드"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CodePipeline은 스테이지·액션으로 전체 릴리스 워크플로(빌드/테스트/승인/배포)를 자동 오케스트레이션한다. 수동 실행(B)은 일관성·속도가 떨어진다."
+  },
+  {
+    "id": "exam-dop-c02-22",
+    "slug": "dop-c02",
+    "domain": "SDLC 자동화",
+    "number": 22,
+    "prompt": "CodeBuild 빌드에서 단위 테스트 실패 시 파이프라인을 중단해 불량 산출물이 배포되지 않게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "buildspec에 테스트 단계를 두고 실패 시 빌드가 실패하도록 설정"
+      },
+      {
+        "label": "B",
+        "text": "테스트를 배포 후에만 실행"
+      },
+      {
+        "label": "C",
+        "text": "테스트를 생략"
+      },
+      {
+        "label": "D",
+        "text": "실패를 무시"
+      }
+    ],
+    "answer": "A",
+    "explanation": "buildspec의 테스트 명령이 비정상 종료하면 빌드가 실패하고 후속 스테이지가 진행되지 않아 불량 산출물 배포를 막는다. 사후 테스트·생략(B,C)은 품질 게이트가 아니다."
+  },
+  {
+    "id": "exam-dop-c02-23",
+    "slug": "dop-c02",
+    "domain": "SDLC 자동화",
+    "number": 23,
+    "prompt": "여러 마이크로서비스 리포지토리의 공통 빌드 표준을 재사용하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "공유 buildspec/CodeBuild 프로젝트 템플릿과 파이프라인 모듈을 표준화"
+      },
+      {
+        "label": "B",
+        "text": "각 리포에 빌드 스크립트를 복붙"
+      },
+      {
+        "label": "C",
+        "text": "빌드를 수동으로"
+      },
+      {
+        "label": "D",
+        "text": "표준 없이 자유롭게"
+      }
+    ],
+    "answer": "A",
+    "explanation": "공유 buildspec·재사용 가능한 파이프라인 모듈(예: CDK/CloudFormation 템플릿)로 표준을 일관 적용한다. 복붙(B)은 드리프트를 만든다."
+  },
+  {
+    "id": "exam-dop-c02-24",
+    "slug": "dop-c02",
+    "domain": "SDLC 자동화",
+    "number": 24,
+    "prompt": "아티팩트를 버전 관리하고 빌드 산출물을 안전하게 저장·공유하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CodeArtifact(패키지)와 S3(빌드 아티팩트)로 버전 관리·저장"
+      },
+      {
+        "label": "B",
+        "text": "개발자 PC에 보관"
+      },
+      {
+        "label": "C",
+        "text": "산출물을 매번 삭제"
+      },
+      {
+        "label": "D",
+        "text": "이메일로 공유"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CodeArtifact는 패키지 의존성을, S3는 빌드 아티팩트를 안전하게 버전 관리·공유한다. PC 보관·삭제(B,C)는 추적성이 없다."
+  },
+  {
+    "id": "exam-dop-c02-25",
+    "slug": "dop-c02",
+    "domain": "SDLC 자동화",
+    "number": 25,
+    "prompt": "Lambda 함수 배포 시 트래픽을 10%→100%로 점진 이동하고 경보 시 자동 롤백하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CodeDeploy의 Lambda 카나리/선형 배포 + CloudWatch 경보 자동 롤백"
+      },
+      {
+        "label": "B",
+        "text": "함수를 즉시 전체 교체"
+      },
+      {
+        "label": "C",
+        "text": "수동으로 트래픽 분배"
+      },
+      {
+        "label": "D",
+        "text": "롤백 없이 진행"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CodeDeploy는 Lambda 별칭 가중치로 카나리/선형 전환하고 경보 초과 시 자동 롤백한다. 즉시 교체·무롤백(B,D)은 위험이 크다."
+  },
+  {
+    "id": "exam-dop-c02-26",
+    "slug": "dop-c02",
+    "domain": "SDLC 자동화",
+    "number": 26,
+    "prompt": "풀 리퀘스트마다 격리된 테스트 환경을 자동 생성·삭제하려 한다. 가장 적합한 접근은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IaC로 임시 스택(ephemeral environment)을 PR 이벤트에 따라 생성·정리"
+      },
+      {
+        "label": "B",
+        "text": "환경을 항상 켜둔다"
+      },
+      {
+        "label": "C",
+        "text": "운영 환경에서 테스트"
+      },
+      {
+        "label": "D",
+        "text": "테스트하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "PR 이벤트로 IaC 스택을 생성하고 머지/종료 시 삭제하면 격리·일관 테스트 환경을 비용 효율적으로 제공한다. 운영 테스트(C)는 위험하다."
+  },
+  {
+    "id": "exam-dop-c02-27",
+    "slug": "dop-c02",
+    "domain": "SDLC 자동화",
+    "number": 27,
+    "prompt": "ECS 서비스의 새 작업 정의를 블루/그린으로 배포하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CodeDeploy의 ECS 블루/그린 배포로 대상 그룹 전환"
+      },
+      {
+        "label": "B",
+        "text": "기존 작업을 즉시 종료"
+      },
+      {
+        "label": "C",
+        "text": "수동으로 컨테이너 교체"
+      },
+      {
+        "label": "D",
+        "text": "배포하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CodeDeploy ECS 블루/그린은 새 작업 세트를 띄우고 ALB 대상 그룹을 전환해 무중단·롤백 가능한 배포를 제공한다. 즉시 종료(B)는 다운타임을 만든다."
+  },
+  {
+    "id": "exam-dop-c02-28",
+    "slug": "dop-c02",
+    "domain": "SDLC 자동화",
+    "number": 28,
+    "prompt": "배포 전 통합 테스트를 위해 실제와 유사한 데이터로 사전 환경을 자동 시드(seed)하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "파이프라인 단계에서 시드 스크립트를 자동 실행해 테스트 데이터 준비"
+      },
+      {
+        "label": "B",
+        "text": "운영 데이터를 그대로 복사"
+      },
+      {
+        "label": "C",
+        "text": "수동으로 매번 입력"
+      },
+      {
+        "label": "D",
+        "text": "데이터 없이 테스트"
+      }
+    ],
+    "answer": "A",
+    "explanation": "파이프라인에 데이터 시드 단계를 두면 일관된 테스트 데이터로 통합 테스트를 자동화한다. 운영 데이터 복사(B)는 민감정보 노출 위험이 있다."
+  },
+  {
+    "id": "exam-dop-c02-29",
+    "slug": "dop-c02",
+    "domain": "SDLC 자동화",
+    "number": 29,
+    "prompt": "멀티 계정(dev/stage/prod)에 동일 파이프라인으로 단계적 승격(promotion)을 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "크로스 계정 역할과 스테이지별 승인으로 dev→stage→prod 승격"
+      },
+      {
+        "label": "B",
+        "text": "계정마다 별도 수동 배포"
+      },
+      {
+        "label": "C",
+        "text": "prod에 바로 배포"
+      },
+      {
+        "label": "D",
+        "text": "단일 계정만 사용"
+      }
+    ],
+    "answer": "A",
+    "explanation": "크로스 계정 배포 역할과 단계 승인을 둔 파이프라인으로 환경 간 안전한 승격을 자동화한다. prod 직행(C)은 검증 단계를 건너뛴다."
+  },
+  {
+    "id": "exam-dop-c02-30",
+    "slug": "dop-c02",
+    "domain": "구성 관리 및 IaC",
+    "number": 30,
+    "prompt": "인프라를 코드로 정의하고 변경 전에 영향(diff)을 검토한 뒤 적용하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudFormation 변경 세트(change set)로 변경 영향을 미리 검토 후 실행"
+      },
+      {
+        "label": "B",
+        "text": "콘솔에서 직접 수정"
+      },
+      {
+        "label": "C",
+        "text": "변경을 검토하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "리소스를 삭제 후 재생성"
+      }
+    ],
+    "answer": "A",
+    "explanation": "변경 세트는 스택에 적용될 변경을 사전 미리보기로 보여줘 의도치 않은 교체·삭제를 방지한다. 콘솔 직접 수정(B)은 드리프트를 만든다."
+  },
+  {
+    "id": "exam-dop-c02-31",
+    "slug": "dop-c02",
+    "domain": "구성 관리 및 IaC",
+    "number": 31,
+    "prompt": "고수준 프로그래밍 언어로 재사용 가능한 인프라 구성요소를 정의하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS CDK로 구문(construct)을 코드화해 합성"
+      },
+      {
+        "label": "B",
+        "text": "콘솔 클릭으로 매번 생성"
+      },
+      {
+        "label": "C",
+        "text": "문서로만 적어둔다"
+      },
+      {
+        "label": "D",
+        "text": "수동 스크립트 복붙"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CDK는 익숙한 언어로 재사용 구문을 작성해 CloudFormation으로 합성하므로 추상화·재사용성이 높다. 콘솔 클릭(B)은 반복·일관성이 없다."
+  },
+  {
+    "id": "exam-dop-c02-32",
+    "slug": "dop-c02",
+    "domain": "구성 관리 및 IaC",
+    "number": 32,
+    "prompt": "스택의 실제 리소스가 콘솔 수동 변경으로 템플릿과 달라졌는지 정기적으로 점검·교정하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "드리프트 감지로 차이를 식별하고 IaC로 재배포해 교정"
+      },
+      {
+        "label": "B",
+        "text": "드리프트를 무시"
+      },
+      {
+        "label": "C",
+        "text": "수동 변경을 권장"
+      },
+      {
+        "label": "D",
+        "text": "스택을 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "드리프트 감지로 템플릿과 실제의 차이를 찾고 IaC 재배포로 원하는 상태로 되돌린다. 수동 변경 권장(C)은 드리프트를 악화시킨다."
+  },
+  {
+    "id": "exam-dop-c02-33",
+    "slug": "dop-c02",
+    "domain": "구성 관리 및 IaC",
+    "number": 33,
+    "prompt": "대규모 인스턴스 플릿의 OS 구성·소프트웨어 상태를 원하는 상태로 유지하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Systems Manager State Manager로 원하는 구성 상태를 지속 적용"
+      },
+      {
+        "label": "B",
+        "text": "각 서버에 SSH로 수동 설정"
+      },
+      {
+        "label": "C",
+        "text": "설정을 방치"
+      },
+      {
+        "label": "D",
+        "text": "서버를 매번 새로 만든다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "State Manager는 연결(association)로 원하는 구성을 정기 적용해 구성 드리프트를 막는다. 수동 SSH(B)는 확장성이 없다."
+  },
+  {
+    "id": "exam-dop-c02-34",
+    "slug": "dop-c02",
+    "domain": "구성 관리 및 IaC",
+    "number": 34,
+    "prompt": "여러 계정·리전에 동일 IaC 스택을 일괄 배포·갱신하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudFormation StackSets"
+      },
+      {
+        "label": "B",
+        "text": "각 계정에서 따로 배포"
+      },
+      {
+        "label": "C",
+        "text": "수동 복제"
+      },
+      {
+        "label": "D",
+        "text": "단일 계정만 사용"
+      }
+    ],
+    "answer": "A",
+    "explanation": "StackSets는 단일 템플릿을 다계정·다리전에 일관 배포·관리한다. 개별 배포·복제(B,C)는 드리프트 위험이 크다."
+  },
+  {
+    "id": "exam-dop-c02-35",
+    "slug": "dop-c02",
+    "domain": "구성 관리 및 IaC",
+    "number": 35,
+    "prompt": "민감 구성값과 일반 파라미터를 코드 밖에서 계층적으로 관리하고 IaC가 참조하게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SSM Parameter Store(SecureString 포함)를 IaC가 동적 참조"
+      },
+      {
+        "label": "B",
+        "text": "템플릿에 평문 하드코딩"
+      },
+      {
+        "label": "C",
+        "text": "값을 로그에 출력"
+      },
+      {
+        "label": "D",
+        "text": "공개 버킷에 저장"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Parameter Store는 계층적 파라미터와 SecureString을 제공하고 CloudFormation 동적 참조로 안전하게 주입된다. 평문 하드코딩(B)은 노출 위험이다."
+  },
+  {
+    "id": "exam-dop-c02-36",
+    "slug": "dop-c02",
+    "domain": "구성 관리 및 IaC",
+    "number": 36,
+    "prompt": "표준 골든 AMI를 정기 빌드·패치·테스트해 IaC가 항상 최신 검증 AMI를 쓰게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "EC2 Image Builder 파이프라인 + Parameter Store에 최신 AMI ID 게시"
+      },
+      {
+        "label": "B",
+        "text": "수동으로 AMI를 만든다"
+      },
+      {
+        "label": "C",
+        "text": "임의의 베이스 이미지를 쓴다"
+      },
+      {
+        "label": "D",
+        "text": "AMI를 갱신하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Image Builder가 골든 AMI를 자동 빌드·검증하고 최신 AMI ID를 Parameter Store에 게시하면 IaC가 동적으로 참조한다. 수동·미갱신(B,D)은 일관성·보안이 떨어진다."
+  },
+  {
+    "id": "exam-dop-c02-37",
+    "slug": "dop-c02",
+    "domain": "구성 관리 및 IaC",
+    "number": 37,
+    "prompt": "IaC 템플릿이 보안 모범 사례(예: 공개 S3, 과도 보안그룹)를 위반하지 않는지 배포 전에 검사하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "정책 검사 도구(cfn-guard/CDK Aspects 등)를 파이프라인에 통합"
+      },
+      {
+        "label": "B",
+        "text": "배포 후에만 점검"
+      },
+      {
+        "label": "C",
+        "text": "검사하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "수동 리뷰만"
+      }
+    ],
+    "answer": "A",
+    "explanation": "cfn-guard 등 정책-as-코드 도구를 빌드 단계에 넣어 위반 템플릿을 사전 차단(shift-left)한다. 사후 점검·미검사(B,C)는 위험을 늦게 발견한다."
+  },
+  {
+    "id": "exam-dop-c02-38",
+    "slug": "dop-c02",
+    "domain": "구성 관리 및 IaC",
+    "number": 38,
+    "prompt": "Auto Scaling 인스턴스가 부팅 시 항상 동일한 에이전트·구성으로 시작되게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "시작 템플릿의 사용자 데이터/골든 AMI로 부팅 구성을 표준화"
+      },
+      {
+        "label": "B",
+        "text": "부팅 후 사람이 매번 설정"
+      },
+      {
+        "label": "C",
+        "text": "설정을 생략"
+      },
+      {
+        "label": "D",
+        "text": "인스턴스마다 다르게 설정"
+      }
+    ],
+    "answer": "A",
+    "explanation": "시작 템플릿+사용자 데이터 또는 사전 베이크된 골든 AMI로 모든 인스턴스가 동일 구성으로 부팅된다. 수동 설정(B)·임의 설정(D)은 일관성을 깬다."
+  },
+  {
+    "id": "exam-dop-c02-39",
+    "slug": "dop-c02",
+    "domain": "복원력 있는 클라우드 솔루션",
+    "number": 39,
+    "prompt": "다중 AZ에 배포된 상태 비저장 애플리케이션이 인스턴스 장애에도 자동 복구되게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ALB+ASG로 다중 AZ 배포, ELB 상태 확인으로 비정상 인스턴스 자동 교체"
+      },
+      {
+        "label": "B",
+        "text": "단일 인스턴스 유지"
+      },
+      {
+        "label": "C",
+        "text": "장애 시 수동 대응"
+      },
+      {
+        "label": "D",
+        "text": "더 큰 인스턴스로 교체"
+      }
+    ],
+    "answer": "A",
+    "explanation": "다중 AZ ASG와 ELB 상태 확인은 장애 인스턴스를 자동 교체하고 트래픽을 정상 대상에만 보낸다. 단일 인스턴스(B)는 단일 장애점이다."
+  },
+  {
+    "id": "exam-dop-c02-40",
+    "slug": "dop-c02",
+    "domain": "복원력 있는 클라우드 솔루션",
+    "number": 40,
+    "prompt": "비동기 처리에서 일시 오류로 실패한 이벤트를 유실 없이 보관·재처리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "DLQ 또는 실패 대상(on-failure destination)으로 캡처 후 재처리"
+      },
+      {
+        "label": "B",
+        "text": "실패를 무시"
+      },
+      {
+        "label": "C",
+        "text": "재시도를 0으로"
+      },
+      {
+        "label": "D",
+        "text": "로그만 남기고 폐기"
+      }
+    ],
+    "answer": "A",
+    "explanation": "DLQ/실패 대상은 실패 이벤트를 격리 보관해 분석·재처리하게 한다. 무시·폐기(B,D)는 데이터 손실을 초래한다."
+  },
+  {
+    "id": "exam-dop-c02-41",
+    "slug": "dop-c02",
+    "domain": "복원력 있는 클라우드 솔루션",
+    "number": 41,
+    "prompt": "리전 장애에 대비해 비교적 경제적으로 분 단위 RTO를 달성하려 한다. 가장 적합한 전략은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "파일럿 라이트/워밍 스탠바이로 핵심 구성요소를 다른 리전에 최소 가동"
+      },
+      {
+        "label": "B",
+        "text": "백업&복구만"
+      },
+      {
+        "label": "C",
+        "text": "DR 없음"
+      },
+      {
+        "label": "D",
+        "text": "단일 리전 인스턴스 추가"
+      }
+    ],
+    "answer": "A",
+    "explanation": "파일럿 라이트/워밍 스탠바이는 핵심을 다른 리전에 상시 유지해 비용을 억제하며 짧은 RTO를 달성한다. 백업&복구(B)는 RTO가 길다."
+  },
+  {
+    "id": "exam-dop-c02-42",
+    "slug": "dop-c02",
+    "domain": "복원력 있는 클라우드 솔루션",
+    "number": 42,
+    "prompt": "배포 후 장애를 빠르게 감지해 자동으로 이전 버전으로 되돌리려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "배포에 CloudWatch 경보 기반 자동 롤백을 연결"
+      },
+      {
+        "label": "B",
+        "text": "며칠 뒤 수동 확인"
+      },
+      {
+        "label": "C",
+        "text": "롤백하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "오류를 무시"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CodeDeploy/배포 파이프라인에 경보 기반 자동 롤백을 두면 오류율·지연 급증 시 즉시 이전 버전으로 복귀한다. 수동 확인(B)은 장애를 키운다."
+  },
+  {
+    "id": "exam-dop-c02-43",
+    "slug": "dop-c02",
+    "domain": "복원력 있는 클라우드 솔루션",
+    "number": 43,
+    "prompt": "프로덕션 시스템의 약점을 사전에 발견하려 통제된 장애 실험을 수행하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Fault Injection Service(FIS)로 카오스 실험을 수행"
+      },
+      {
+        "label": "B",
+        "text": "실제 장애를 무작정 기다린다"
+      },
+      {
+        "label": "C",
+        "text": "실험하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "운영 DB를 임의 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "FIS는 통제된 장애 주입(인스턴스 종료, 지연 추가 등)으로 복원력 약점을 안전하게 검증한다. 무작정 대기(B)는 사전 검증이 아니다."
+  },
+  {
+    "id": "exam-dop-c02-44",
+    "slug": "dop-c02",
+    "domain": "복원력 있는 클라우드 솔루션",
+    "number": 44,
+    "prompt": "정적 사이트의 오리진(S3) 장애 시에도 사용자에게 콘텐츠를 계속 제공하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudFront 오리진 그룹(origin failover)으로 보조 오리진 전환"
+      },
+      {
+        "label": "B",
+        "text": "단일 오리진만"
+      },
+      {
+        "label": "C",
+        "text": "캐싱을 끈다"
+      },
+      {
+        "label": "D",
+        "text": "장애 시 서비스 중단"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CloudFront 오리진 그룹은 1차 오리진 실패 시 2차 오리진으로 자동 전환해 가용성을 높인다. 단일 오리진(B)은 장애에 취약하다."
+  },
+  {
+    "id": "exam-dop-c02-45",
+    "slug": "dop-c02",
+    "domain": "복원력 있는 클라우드 솔루션",
+    "number": 45,
+    "prompt": "급증하는 비동기 작업을 안정적으로 흡수하고 워커가 자기 속도로 처리하게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SQS 큐로 버퍼링하고 ASG가 큐 길이 기반으로 워커를 확장"
+      },
+      {
+        "label": "B",
+        "text": "모든 작업을 동기 처리"
+      },
+      {
+        "label": "C",
+        "text": "작업을 버린다"
+      },
+      {
+        "label": "D",
+        "text": "단일 워커만 사용"
+      }
+    ],
+    "answer": "A",
+    "explanation": "SQS 버퍼와 큐 깊이 기반 오토스케일링은 급증 부하를 흡수하고 처리량에 맞춰 워커를 확장한다. 동기 처리·단일 워커(B,D)는 병목이 된다."
+  },
+  {
+    "id": "exam-dop-c02-46",
+    "slug": "dop-c02",
+    "domain": "복원력 있는 클라우드 솔루션",
+    "number": 46,
+    "prompt": "데이터베이스 계층의 AZ 장애에도 쓰기를 지속하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "RDS/Aurora Multi-AZ로 자동 페일오버 구성"
+      },
+      {
+        "label": "B",
+        "text": "단일 AZ 인스턴스 유지"
+      },
+      {
+        "label": "C",
+        "text": "스냅샷만 자주"
+      },
+      {
+        "label": "D",
+        "text": "읽기 복제본만 추가"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Multi-AZ는 대기 인스턴스로 자동 페일오버해 AZ 장애에도 쓰기 가용성을 유지한다. 단일 AZ·스냅샷만(B,C)은 자동 복구가 아니다."
+  },
+  {
+    "id": "exam-dop-c02-47",
+    "slug": "dop-c02",
+    "domain": "모니터링 및 로깅",
+    "number": 47,
+    "prompt": "여러 서비스의 로그에서 특정 오류 패턴이 임계 횟수를 넘으면 경보를 보내려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudWatch Logs 지표 필터로 패턴을 지표화하고 경보 구성"
+      },
+      {
+        "label": "B",
+        "text": "로그를 눈으로 확인"
+      },
+      {
+        "label": "C",
+        "text": "로그를 삭제"
+      },
+      {
+        "label": "D",
+        "text": "경보를 만들지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "지표 필터는 로그 패턴을 카운트 지표로 변환해 임계 초과 시 경보를 트리거한다. 수동 확인(B)은 확장성이 없다."
+  },
+  {
+    "id": "exam-dop-c02-48",
+    "slug": "dop-c02",
+    "domain": "모니터링 및 로깅",
+    "number": 48,
+    "prompt": "분산 추적으로 마이크로서비스 간 지연 병목을 시각화하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS X-Ray로 요청 추적·서비스 맵 분석"
+      },
+      {
+        "label": "B",
+        "text": "CPU 지표만 본다"
+      },
+      {
+        "label": "C",
+        "text": "추적하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "로그만 grep"
+      }
+    ],
+    "answer": "A",
+    "explanation": "X-Ray는 세그먼트로 요청 흐름을 추적해 서비스 맵과 병목을 보여준다. CPU만·grep(B,D)은 엔드투엔드 추적이 어렵다."
+  },
+  {
+    "id": "exam-dop-c02-49",
+    "slug": "dop-c02",
+    "domain": "모니터링 및 로깅",
+    "number": 49,
+    "prompt": "여러 계정·리전의 지표·로그·추적을 단일 모니터링 계정에서 통합 관찰하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudWatch 교차 계정 관찰성을 구성"
+      },
+      {
+        "label": "B",
+        "text": "계정마다 따로 로그인"
+      },
+      {
+        "label": "C",
+        "text": "이메일로 취합"
+      },
+      {
+        "label": "D",
+        "text": "모니터링을 끈다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "교차 계정 관찰성은 소스 계정의 지표·로그·X-Ray를 모니터링 계정에서 통합 조회하게 한다. 개별 로그인(B)은 비효율적이다."
+  },
+  {
+    "id": "exam-dop-c02-50",
+    "slug": "dop-c02",
+    "domain": "모니터링 및 로깅",
+    "number": 50,
+    "prompt": "CloudWatch 경보가 순간 스파이크에 오탐을 낸다. 지속 이상에만 울리게 하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "평가 기간과 M of N 데이터 포인트 조건을 조정"
+      },
+      {
+        "label": "B",
+        "text": "임계값을 0으로"
+      },
+      {
+        "label": "C",
+        "text": "경보를 삭제"
+      },
+      {
+        "label": "D",
+        "text": "지표 수집 중단"
+      }
+    ],
+    "answer": "A",
+    "explanation": "평가 기간·M of N 조건을 늘리면 지속적 이상에서만 경보가 울려 오탐이 준다. 삭제·수집 중단(C,D)은 가시성을 잃는다."
+  },
+  {
+    "id": "exam-dop-c02-51",
+    "slug": "dop-c02",
+    "domain": "모니터링 및 로깅",
+    "number": 51,
+    "prompt": "규정상 모든 API 호출을 변조 불가하게 기록·보관하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudTrail을 켜고 S3에 저장, Object Lock으로 변조 방지"
+      },
+      {
+        "label": "B",
+        "text": "로컬 디스크에 보관"
+      },
+      {
+        "label": "C",
+        "text": "대시보드만 캡처"
+      },
+      {
+        "label": "D",
+        "text": "로그를 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CloudTrail은 API 활동을 기록하고 S3 Object Lock(WORM)으로 변조·삭제를 막아 감사 요건을 충족한다. 로컬 보관(B)은 소실·변조 위험이 크다."
+  },
+  {
+    "id": "exam-dop-c02-52",
+    "slug": "dop-c02",
+    "domain": "모니터링 및 로깅",
+    "number": 52,
+    "prompt": "합성 모니터링으로 사용자 경험(엔드포인트 가용성·지연)을 능동 측정하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudWatch Synthetics 카나리로 정기 합성 트랜잭션 실행"
+      },
+      {
+        "label": "B",
+        "text": "장애 신고를 기다린다"
+      },
+      {
+        "label": "C",
+        "text": "측정하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "로그만 본다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CloudWatch Synthetics 카나리는 스크립트로 엔드포인트를 정기 호출해 가용성·지연을 능동 감지한다. 신고 대기(B)는 수동·지연 대응이다."
+  },
+  {
+    "id": "exam-dop-c02-53",
+    "slug": "dop-c02",
+    "domain": "모니터링 및 로깅",
+    "number": 53,
+    "prompt": "EC2 메모리·디스크 지표와 애플리케이션 로그를 함께 수집하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "통합 CloudWatch 에이전트로 지표·로그를 수집·전송"
+      },
+      {
+        "label": "B",
+        "text": "기본 지표만으로 충분하다"
+      },
+      {
+        "label": "C",
+        "text": "SSH로 매번 확인"
+      },
+      {
+        "label": "D",
+        "text": "수집하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "통합 CloudWatch 에이전트는 게스트 OS의 메모리·디스크 지표와 로그를 함께 수집·전송한다. 기본 지표(B)에는 메모리·디스크가 없다."
+  },
+  {
+    "id": "exam-dop-c02-54",
+    "slug": "dop-c02",
+    "domain": "모니터링 및 로깅",
+    "number": 54,
+    "prompt": "대량 CloudWatch Logs를 SQL 유사 구문으로 대화식 분석하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudWatch Logs Insights로 쿼리"
+      },
+      {
+        "label": "B",
+        "text": "스트림을 눈으로 스크롤"
+      },
+      {
+        "label": "C",
+        "text": "다운받아 메모장 검색"
+      },
+      {
+        "label": "D",
+        "text": "로그를 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Logs Insights는 전용 쿼리로 로그를 집계·필터·통계 분석한다. 수동 스크롤·메모장(B,C)은 비효율적이다."
+  },
+  {
+    "id": "exam-dop-c02-55",
+    "slug": "dop-c02",
+    "domain": "인시던트 및 이벤트 대응",
+    "number": 55,
+    "prompt": "특정 운영 이벤트(예: 인스턴스 비정상, 보안 발견) 발생 시 자동 복구·알림 워크플로를 트리거하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "EventBridge 규칙으로 이벤트를 감지해 Lambda/SSM 자동화/SNS를 트리거"
+      },
+      {
+        "label": "B",
+        "text": "사람이 콘솔을 계속 지켜본다"
+      },
+      {
+        "label": "C",
+        "text": "대응하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "cron으로 폴링"
+      }
+    ],
+    "answer": "A",
+    "explanation": "EventBridge는 서비스 이벤트를 패턴 매칭해 자동 대응(Lambda 복구, SSM 런북, 알림)을 즉시 트리거한다. 수동 관찰·폴링(B,D)은 느리다."
+  },
+  {
+    "id": "exam-dop-c02-56",
+    "slug": "dop-c02",
+    "domain": "인시던트 및 이벤트 대응",
+    "number": 56,
+    "prompt": "CloudWatch 경보가 울리면 자동 진단·복구 절차(런북)를 코드로 실행하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SSM 자동화 런북을 경보/EventBridge로 트리거"
+      },
+      {
+        "label": "B",
+        "text": "운영자가 위키를 보며 수동 실행"
+      },
+      {
+        "label": "C",
+        "text": "무시한다"
+      },
+      {
+        "label": "D",
+        "text": "서버를 재부팅만 한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "SSM 자동화 런북은 다단계 복구 절차를 코드화해 경보 시 자동 실행한다. 수동 위키 실행(B)은 느리고 오류가 잦다."
+  },
+  {
+    "id": "exam-dop-c02-57",
+    "slug": "dop-c02",
+    "domain": "인시던트 및 이벤트 대응",
+    "number": 57,
+    "prompt": "인시던트 발생 시 온콜 담당자에게 에스컬레이션·일정 기반 알림을 보내려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SNS 알림과 함께 온콜/인시던트 관리(예: Incident Manager)로 에스컬레이션"
+      },
+      {
+        "label": "B",
+        "text": "전체 직원에게 이메일"
+      },
+      {
+        "label": "C",
+        "text": "알리지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "로그만 남긴다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Systems Manager Incident Manager는 온콜 일정·에스컬레이션·런북을 연계해 체계적으로 대응한다. 전체 이메일(B)은 책임 소재가 불명확하다."
+  },
+  {
+    "id": "exam-dop-c02-58",
+    "slug": "dop-c02",
+    "domain": "인시던트 및 이벤트 대응",
+    "number": 58,
+    "prompt": "반복 실패하는 메시지가 무한 재처리되어 시스템을 압박한다. 가장 적합한 대응은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "maxReceiveCount와 DLQ로 실패 메시지를 격리"
+      },
+      {
+        "label": "B",
+        "text": "재시도를 무한으로"
+      },
+      {
+        "label": "C",
+        "text": "메시지를 즉시 삭제"
+      },
+      {
+        "label": "D",
+        "text": "큐를 비활성화"
+      }
+    ],
+    "answer": "A",
+    "explanation": "maxReceiveCount 초과 메시지를 DLQ로 격리하면 무한 재처리를 막고 원인을 분석할 수 있다. 무한 재시도(B)는 자원 낭비, 즉시 삭제(C)는 손실이다."
+  },
+  {
+    "id": "exam-dop-c02-59",
+    "slug": "dop-c02",
+    "domain": "인시던트 및 이벤트 대응",
+    "number": 59,
+    "prompt": "근본 원인 분석을 위해 인시던트 시점의 리소스 구성과 변경 이력을 확인하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Config 구성 타임라인과 CloudTrail 이벤트를 상관 분석"
+      },
+      {
+        "label": "B",
+        "text": "추측한다"
+      },
+      {
+        "label": "C",
+        "text": "로그를 삭제"
+      },
+      {
+        "label": "D",
+        "text": "아무 것도 보지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Config는 시점별 구성 스냅샷·변경 이력을, CloudTrail은 누가 무엇을 했는지를 제공해 RCA에 핵심 단서를 준다. 추측(B)은 부정확하다."
+  },
+  {
+    "id": "exam-dop-c02-60",
+    "slug": "dop-c02",
+    "domain": "인시던트 및 이벤트 대응",
+    "number": 60,
+    "prompt": "배포 직후 오류율이 급증할 때 사람이 개입하기 전에 자동으로 트래픽을 안전 상태로 되돌리려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "배포 경보에 연동된 자동 롤백을 구성"
+      },
+      {
+        "label": "B",
+        "text": "수동 롤백만"
+      },
+      {
+        "label": "C",
+        "text": "롤백하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "무시한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "경보 기반 자동 롤백은 인시던트 초기에 사람 개입 없이 안정 버전으로 복귀시켜 MTTR을 줄인다. 수동 롤백만(B)은 대응이 느리다."
+  },
+  {
+    "id": "exam-dop-c02-61",
+    "slug": "dop-c02",
+    "domain": "인시던트 및 이벤트 대응",
+    "number": 61,
+    "prompt": "보안 발견 사항(GuardDuty 등)에 자동 대응(격리·차단)을 연결하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "GuardDuty 발견을 EventBridge로 받아 Lambda/SSM으로 자동 대응"
+      },
+      {
+        "label": "B",
+        "text": "발견을 무시"
+      },
+      {
+        "label": "C",
+        "text": "사람이 며칠 뒤 본다"
+      },
+      {
+        "label": "D",
+        "text": "GuardDuty를 끈다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "GuardDuty 발견을 EventBridge 규칙으로 받아 보안 그룹 격리·인스턴스 분리 등 자동 대응을 트리거하면 대응 시간이 크게 준다. 무시·지연(B,C)은 위험을 키운다."
+  },
+  {
+    "id": "exam-dop-c02-62",
+    "slug": "dop-c02",
+    "domain": "인시던트 및 이벤트 대응",
+    "number": 62,
+    "prompt": "인시던트 대응 후 동일 문제 재발을 막기 위한 사후 조치로 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "사후 분석(post-incident review)으로 원인·조치를 문서화하고 자동화·경보를 보강"
+      },
+      {
+        "label": "B",
+        "text": "다음에 또 수동 대응"
+      },
+      {
+        "label": "C",
+        "text": "기록하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "담당자를 비난한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "비난 없는 사후 분석으로 근본 원인을 찾고 자동화·경보·런북을 개선해 재발을 막는 것이 DevOps 문화의 핵심이다. 미기록·비난(C,D)은 개선으로 이어지지 않는다."
+  },
+  {
+    "id": "exam-dop-c02-63",
+    "slug": "dop-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 63,
+    "prompt": "CI/CD 파이프라인 빌드 단계에서 의존성·컨테이너 이미지의 알려진 취약점을 자동 검사하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ECR 이미지 스캔/SCA 도구를 빌드 단계에 통합(shift-left)"
+      },
+      {
+        "label": "B",
+        "text": "배포 후에만 점검"
+      },
+      {
+        "label": "C",
+        "text": "검사하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "수동 점검만"
+      }
+    ],
+    "answer": "A",
+    "explanation": "빌드 단계에 이미지 스캔·SCA를 통합하면 취약점을 조기에 차단한다. 사후·수동(B,D)은 위험을 늦게 발견한다."
+  },
+  {
+    "id": "exam-dop-c02-64",
+    "slug": "dop-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 64,
+    "prompt": "정적 키 없이 GitHub Actions가 AWS에 인증하게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM OIDC 자격 증명 공급자를 신뢰하는 역할로 임시 자격증명 발급"
+      },
+      {
+        "label": "B",
+        "text": "장기 액세스 키를 시크릿에 저장"
+      },
+      {
+        "label": "C",
+        "text": "루트 키 사용"
+      },
+      {
+        "label": "D",
+        "text": "키를 코드에 커밋"
+      }
+    ],
+    "answer": "A",
+    "explanation": "OIDC 페더레이션은 CI 토큰을 신뢰해 STS 임시 자격증명을 발급하므로 장기 키 보관이 불필요하다. 장기 키 저장·커밋(B,D)은 노출 위험이 크다."
+  },
+  {
+    "id": "exam-dop-c02-65",
+    "slug": "dop-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 65,
+    "prompt": "리소스 구성이 규정 준수 기준을 위반하면 자동으로 교정하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Config 규칙 + SSM 자동화 교정(remediation)"
+      },
+      {
+        "label": "B",
+        "text": "위반을 무시"
+      },
+      {
+        "label": "C",
+        "text": "분기마다 수동 점검"
+      },
+      {
+        "label": "D",
+        "text": "추적하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Config 규칙이 비준수를 감지하면 SSM 자동화로 즉시 교정(예: 퍼블릭 차단, 암호화 활성화)한다. 수동 점검(C)은 지연·누락이 크다."
+  },
+  {
+    "id": "exam-dop-c02-66",
+    "slug": "dop-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 66,
+    "prompt": "시크릿(DB 비밀번호 등)을 코드·파이프라인에 노출하지 않고 안전하게 주입·자동 교체하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Secrets Manager에 저장·자동 교체하고 런타임에 IAM 역할로 조회"
+      },
+      {
+        "label": "B",
+        "text": "파이프라인 변수에 평문 저장"
+      },
+      {
+        "label": "C",
+        "text": "코드에 하드코딩"
+      },
+      {
+        "label": "D",
+        "text": "로그에 출력"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Secrets Manager는 시크릿을 중앙 저장·자동 교체하고 IAM으로 접근을 제어해 노출을 막는다. 평문 변수·하드코딩(B,C)은 위험하다."
+  },
+  {
+    "id": "exam-dop-c02-67",
+    "slug": "dop-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 67,
+    "prompt": "커밋된 코드에 실수로 들어간 자격증명·시크릿을 자동으로 탐지·차단하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "시크릿 스캐닝(예: git-secrets/도구)을 파이프라인·사전 커밋 훅에 통합"
+      },
+      {
+        "label": "B",
+        "text": "사람이 모든 커밋을 눈으로 검토"
+      },
+      {
+        "label": "C",
+        "text": "검사하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "시크릿을 그대로 둔다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "시크릿 스캐닝을 사전 커밋/파이프라인에 통합하면 자격증명 유출을 자동 차단한다. 수동 검토(B)는 누락이 잦다."
+  },
+  {
+    "id": "exam-dop-c02-68",
+    "slug": "dop-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 68,
+    "prompt": "배포 역할에 과도한 권한이 부여되었는지 점검하고 최소 권한으로 좁히려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM Access Analyzer와 마지막 액세스 정보로 미사용 권한 식별 후 축소"
+      },
+      {
+        "label": "B",
+        "text": "AdministratorAccess 부여"
+      },
+      {
+        "label": "C",
+        "text": "권한 점검 생략"
+      },
+      {
+        "label": "D",
+        "text": "정책을 임의 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Access Analyzer와 서비스 마지막 액세스 정보로 미사용·과도 권한을 찾아 최소 권한으로 다듬는다. Admin 부여·임의 삭제(B,D)는 위험·장애를 부른다."
+  },
+  {
+    "id": "exam-dop-c02-69",
+    "slug": "dop-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 69,
+    "prompt": "조직 전 계정에서 CloudTrail 비활성화 같은 고위험 작업을 누구도 못 하게 강제하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Organizations SCP로 해당 작업을 거부"
+      },
+      {
+        "label": "B",
+        "text": "교육만 한다"
+      },
+      {
+        "label": "C",
+        "text": "사후 감사만"
+      },
+      {
+        "label": "D",
+        "text": "개별 정책 복제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "SCP는 루트 포함 누구도 금지 작업을 못 하도록 조직 차원에서 강제한다. 교육·사후 감사(B,C)는 예방이 아니다."
+  },
+  {
+    "id": "exam-dop-c02-70",
+    "slug": "dop-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 70,
+    "prompt": "프로덕션 변경에 대해 변경 승인·감사 추적을 강제해 규정 준수를 보장하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "파이프라인 수동 승인 단계 + CloudTrail/Config로 변경 감사"
+      },
+      {
+        "label": "B",
+        "text": "승인 없이 바로 배포"
+      },
+      {
+        "label": "C",
+        "text": "감사하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "콘솔에서 임의 변경"
+      }
+    ],
+    "answer": "A",
+    "explanation": "수동 승인 게이트와 CloudTrail/Config 감사로 변경 통제·추적성을 확보한다. 무승인 배포·임의 변경(B,D)은 규정 위반·드리프트를 만든다."
+  },
+  {
+    "id": "exam-dop-c02-71",
+    "slug": "dop-c02",
+    "domain": "복원력 있는 클라우드 솔루션",
+    "number": 71,
+    "prompt": "배포 안전성을 높이기 위한 조치 2가지는? (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "카나리/블루-그린 배포로 점진 전환"
+      },
+      {
+        "label": "B",
+        "text": "CloudWatch 경보 기반 자동 롤백 구성"
+      },
+      {
+        "label": "C",
+        "text": "한 번에 전체 교체"
+      },
+      {
+        "label": "D",
+        "text": "롤백을 비활성화"
+      }
+    ],
+    "answer": "A, B",
+    "explanation": "점진 배포와 경보 기반 자동 롤백을 함께 쓰면 blast radius를 줄이고 문제 발생 시 빠르게 복구한다. 일괄 교체·무롤백(C,D)은 위험을 키운다."
+  },
+  {
+    "id": "exam-dop-c02-72",
+    "slug": "dop-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 72,
+    "prompt": "CI/CD 파이프라인 보안을 강화하기 위한 조치 2가지는? (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "빌드 단계에 의존성·이미지 취약점 스캔 통합"
+      },
+      {
+        "label": "B",
+        "text": "OIDC 페더레이션으로 임시 자격증명 사용"
+      },
+      {
+        "label": "C",
+        "text": "장기 액세스 키를 평문 변수에 저장"
+      },
+      {
+        "label": "D",
+        "text": "시크릿을 코드에 커밋"
+      }
+    ],
+    "answer": "A, B",
+    "explanation": "빌드 단계 취약점 스캔(shift-left)과 OIDC 임시 자격증명은 파이프라인 보안을 크게 높인다. 평문 키 저장·시크릿 커밋(C,D)은 노출 위험이 크다."
+  },
+  {
     "id": "exam-dva-c02-1",
     "slug": "dva-c02",
     "domain": "개발",
@@ -1107,6 +2511,1275 @@
     "explanation": "SSM Parameter Store/AppConfig는 구성·기능 플래그를 외부화해 코드 변경 없이 갱신하고 버전·이력 관리, 점진 롤아웃을 지원한다. 하드코딩(A)·전체 재배포(C)·로그 보관(D)은 비효율·위험하다."
   },
   {
+    "id": "exam-dva-c02-22",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 22,
+    "prompt": "Lambda 함수에서 RDS 프록시 없이 매 호출마다 DB 커넥션을 새로 열어 커넥션 고갈이 발생한다. 코드 변경을 최소화하며 커넥션을 풀링하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "호출마다 새 커넥션을 열고 닫는다"
+      },
+      {
+        "label": "B",
+        "text": "Amazon RDS Proxy를 두고 Lambda가 프록시를 통해 연결"
+      },
+      {
+        "label": "C",
+        "text": "Lambda 동시성을 무제한으로 늘린다"
+      },
+      {
+        "label": "D",
+        "text": "DB 인스턴스를 더 키운다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "RDS Proxy는 커넥션 풀을 관리해 서버리스의 폭발적 동시성에서 커넥션 고갈을 막는다. 매번 열기(A)·동시성 증가(C)는 고갈을 악화, 수직 확장(D)은 근본 해결이 아니다."
+  },
+  {
+    "id": "exam-dva-c02-23",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 23,
+    "prompt": "DynamoDB에서 특정 파티션 키의 모든 항목을 조회할 때 정렬 키 범위로 효율적으로 가져오려 한다. 가장 적합한 연산은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Scan으로 전체 테이블을 읽고 필터"
+      },
+      {
+        "label": "B",
+        "text": "Query로 파티션 키 + 정렬 키 조건 사용"
+      },
+      {
+        "label": "C",
+        "text": "GetItem을 항목 수만큼 반복"
+      },
+      {
+        "label": "D",
+        "text": "BatchWriteItem"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Query는 파티션 키와 정렬 키 조건으로 인덱스를 활용해 효율적으로 조회한다. Scan(A)은 전체를 읽어 비효율, GetItem 반복(C)은 비효율, BatchWriteItem(D)은 쓰기용이다."
+  },
+  {
+    "id": "exam-dva-c02-24",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 24,
+    "prompt": "DynamoDB 테이블에서 파티션 키가 아닌 속성으로 자주 조회해야 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "매번 Scan"
+      },
+      {
+        "label": "B",
+        "text": "글로벌 보조 인덱스(GSI)를 생성해 다른 키로 조회"
+      },
+      {
+        "label": "C",
+        "text": "테이블을 새로 만든다"
+      },
+      {
+        "label": "D",
+        "text": "RDS로 마이그레이션"
+      }
+    ],
+    "answer": "B",
+    "explanation": "GSI는 기본 키와 다른 파티션/정렬 키로 조회를 가능하게 해 액세스 패턴을 추가 지원한다. Scan(A)은 비효율적이며, 테이블 재생성·RDS 이전(C,D)은 과도하다."
+  },
+  {
+    "id": "exam-dva-c02-25",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 25,
+    "prompt": "여러 서비스가 단일 비즈니스 이벤트에 느슨하게 결합되어 반응하도록 이벤트 기반 아키텍처를 만들려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 서비스를 순차 동기 호출"
+      },
+      {
+        "label": "B",
+        "text": "EventBridge로 이벤트를 발행하고 규칙으로 여러 대상에 라우팅"
+      },
+      {
+        "label": "C",
+        "text": "서비스 간 공유 DB에 폴링"
+      },
+      {
+        "label": "D",
+        "text": "cron으로 5분마다 전체 동기화"
+      }
+    ],
+    "answer": "B",
+    "explanation": "EventBridge는 이벤트를 받아 규칙 기반으로 여러 대상(Lambda, SQS 등)에 라우팅해 느슨한 결합의 이벤트 기반 설계를 지원한다. 동기 호출(A)·공유 DB 폴링(C)은 강결합·비효율이다."
+  },
+  {
+    "id": "exam-dva-c02-26",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 26,
+    "prompt": "동일 SNS 토픽 메시지를 여러 SQS 큐가 각각 독립적으로 받아 처리하는 팬아웃 패턴을 만들려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SNS 토픽에 여러 SQS 큐를 구독시킨다"
+      },
+      {
+        "label": "B",
+        "text": "하나의 큐만 만들고 순차 처리"
+      },
+      {
+        "label": "C",
+        "text": "각 소비자가 SNS를 폴링"
+      },
+      {
+        "label": "D",
+        "text": "메시지를 복제해 직접 전송"
+      }
+    ],
+    "answer": "A",
+    "explanation": "SNS 팬아웃은 하나의 토픽에 여러 SQS 큐를 구독시켜 각 소비자가 독립적으로 동일 메시지를 받게 한다. 단일 큐(B)는 팬아웃이 아니며, SNS 폴링(C)은 푸시 모델과 맞지 않다."
+  },
+  {
+    "id": "exam-dva-c02-27",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 27,
+    "prompt": "API Gateway 뒤의 Lambda가 동일 요청을 자주 받는다. 백엔드 호출을 줄이고 지연을 낮추려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "API Gateway 캐싱을 활성화"
+      },
+      {
+        "label": "B",
+        "text": "매 요청을 항상 백엔드로 전달"
+      },
+      {
+        "label": "C",
+        "text": "Lambda 메모리를 줄인다"
+      },
+      {
+        "label": "D",
+        "text": "타임아웃을 늘린다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "API Gateway 스테이지 캐싱은 동일 키 요청의 응답을 캐시해 백엔드 호출과 지연을 줄인다. 항상 전달(B)은 캐싱 이점이 없고, 메모리 축소·타임아웃(C,D)은 무관하다."
+  },
+  {
+    "id": "exam-dva-c02-28",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 28,
+    "prompt": "DynamoDB에서 두 항목을 모두 성공해야만 갱신되는 원자적 트랜잭션이 필요하다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "PutItem을 두 번 호출"
+      },
+      {
+        "label": "B",
+        "text": "TransactWriteItems로 여러 쓰기를 원자적으로 처리"
+      },
+      {
+        "label": "C",
+        "text": "BatchWriteItem"
+      },
+      {
+        "label": "D",
+        "text": "각각 UpdateItem 후 실패 시 무시"
+      }
+    ],
+    "answer": "B",
+    "explanation": "TransactWriteItems는 최대 여러 항목 쓰기를 ACID 원자성으로 묶어 전부 성공 또는 전부 실패시킨다. PutItem 두 번·BatchWriteItem(A,C)은 원자성을 보장하지 않는다."
+  },
+  {
+    "id": "exam-dva-c02-29",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 29,
+    "prompt": "대량 항목을 DynamoDB에서 한 번에 여러 개 효율적으로 읽어오되 트랜잭션 보장은 필요 없다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "GetItem을 루프로 수백 번"
+      },
+      {
+        "label": "B",
+        "text": "BatchGetItem으로 여러 항목을 한 요청에 조회"
+      },
+      {
+        "label": "C",
+        "text": "Scan 전체"
+      },
+      {
+        "label": "D",
+        "text": "Query 반복"
+      }
+    ],
+    "answer": "B",
+    "explanation": "BatchGetItem은 최대 100개 항목을 한 요청으로 조회해 왕복을 줄인다. GetItem 루프(A)는 비효율, Scan(C)은 전체 읽기로 비용 큼."
+  },
+  {
+    "id": "exam-dva-c02-30",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 30,
+    "prompt": "Step Functions로 주문 처리 워크플로를 만들 때, 단계 간 분기·재시도·오류 처리를 선언적으로 구성하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "단일 거대 Lambda에 모든 로직을 넣는다"
+      },
+      {
+        "label": "B",
+        "text": "Step Functions 상태 머신으로 Task/Choice/Retry/Catch를 정의"
+      },
+      {
+        "label": "C",
+        "text": "cron으로 단계를 순서대로 호출"
+      },
+      {
+        "label": "D",
+        "text": "SQS만으로 분기 구현"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Step Functions는 상태 머신으로 단계, 분기(Choice), 재시도(Retry), 오류 포착(Catch)을 선언적으로 오케스트레이션한다. 거대 Lambda(A)는 가시성·복원력이 떨어진다."
+  },
+  {
+    "id": "exam-dva-c02-31",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 31,
+    "prompt": "Lambda 함수의 콜드 스타트로 인한 첫 요청 지연을 줄여 일정한 응답 시간을 보장하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "프로비저닝된 동시성(provisioned concurrency)을 설정"
+      },
+      {
+        "label": "B",
+        "text": "메모리를 128MB로 낮춘다"
+      },
+      {
+        "label": "C",
+        "text": "함수를 더 자주 배포"
+      },
+      {
+        "label": "D",
+        "text": "타임아웃을 늘린다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "프로비저닝된 동시성은 초기화된 실행 환경을 미리 준비해 콜드 스타트를 제거하고 일관된 지연을 제공한다. 메모리 축소(B)는 오히려 느려질 수 있고, 잦은 배포·타임아웃(C,D)은 콜드 스타트와 무관하다."
+  },
+  {
+    "id": "exam-dva-c02-32",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 32,
+    "prompt": "Lambda에서 자주 변하지 않는 초기화(예: SDK 클라이언트, DB 커넥션)를 매 호출마다 반복해 성능이 떨어진다. 가장 적합한 개선은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "핸들러 함수 밖(전역 범위)에서 클라이언트를 한 번 초기화해 재사용"
+      },
+      {
+        "label": "B",
+        "text": "핸들러 내부에서 매번 새로 생성"
+      },
+      {
+        "label": "C",
+        "text": "초기화를 제거"
+      },
+      {
+        "label": "D",
+        "text": "메모리를 줄인다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "핸들러 밖 전역 범위의 초기화는 실행 환경이 재사용되는 동안 워밍 호출에서 재사용되어 성능이 향상된다. 매번 생성(B)은 불필요한 오버헤드를 만든다."
+  },
+  {
+    "id": "exam-dva-c02-33",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 33,
+    "prompt": "클라이언트가 S3에 직접 대용량 파일을 업로드하되, 서버 자격증명을 노출하지 않고 제한된 시간 동안만 권한을 주려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "버킷을 퍼블릭 쓰기로 연다"
+      },
+      {
+        "label": "B",
+        "text": "사전 서명된 URL(presigned URL)을 발급"
+      },
+      {
+        "label": "C",
+        "text": "IAM 사용자 키를 클라이언트에 심는다"
+      },
+      {
+        "label": "D",
+        "text": "서버를 거쳐 모두 프록시"
+      }
+    ],
+    "answer": "B",
+    "explanation": "사전 서명된 URL은 만료 시간이 있는 임시 권한을 부여해 클라이언트가 자격증명 없이 직접 업로드/다운로드하게 한다. 퍼블릭 쓰기(A)·키 노출(C)은 위험하다."
+  },
+  {
+    "id": "exam-dva-c02-34",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 34,
+    "prompt": "여러 Lambda가 공통 라이브러리·의존성을 공유한다. 배포 패키지를 작게 유지하며 공통 코드를 재사용하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 함수에 라이브러리를 중복 포함"
+      },
+      {
+        "label": "B",
+        "text": "Lambda 레이어(Layer)로 공통 의존성을 분리해 공유"
+      },
+      {
+        "label": "C",
+        "text": "코드를 매번 복사-붙여넣기"
+      },
+      {
+        "label": "D",
+        "text": "S3에서 매 호출마다 다운로드"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Lambda 레이어는 공통 라이브러리/런타임을 별도로 패키징해 여러 함수가 공유하고 배포 패키지를 작게 유지한다. 중복 포함·복붙(A,C)은 관리가 어렵다."
+  },
+  {
+    "id": "exam-dva-c02-35",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 35,
+    "prompt": "DynamoDB 항목 변경(삽입/수정/삭제)에 실시간으로 반응해 다운스트림 처리를 트리거하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "주기적으로 Scan해 변경 감지"
+      },
+      {
+        "label": "B",
+        "text": "DynamoDB Streams를 켜고 Lambda 트리거로 변경 이벤트 처리"
+      },
+      {
+        "label": "C",
+        "text": "애플리케이션이 매번 폴링"
+      },
+      {
+        "label": "D",
+        "text": "CloudWatch 지표로 감지"
+      }
+    ],
+    "answer": "B",
+    "explanation": "DynamoDB Streams는 항목 수준 변경을 시간 순서로 캡처하고 Lambda 트리거로 실시간 처리한다. 주기 Scan·폴링(A,C)은 지연·비용이 크다."
+  },
+  {
+    "id": "exam-dva-c02-36",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 36,
+    "prompt": "동일한 메시지가 중복 전달돼도 결과가 한 번 처리한 것과 같아야 한다. 가장 적합한 설계는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "멱등성(idempotency) 키로 중복 요청을 식별해 한 번만 처리"
+      },
+      {
+        "label": "B",
+        "text": "중복을 무시하고 매번 처리"
+      },
+      {
+        "label": "C",
+        "text": "재시도를 비활성화"
+      },
+      {
+        "label": "D",
+        "text": "메시지를 즉시 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "분산 시스템의 at-least-once 전달에서는 멱등성 키(예: 고유 토큰)로 중복 처리를 막는 것이 핵심이다. 매번 처리(B)는 중복 부작용을 일으킨다."
+  },
+  {
+    "id": "exam-dva-c02-37",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 37,
+    "prompt": "SQS 표준 큐의 처리 중 다른 소비자가 같은 메시지를 가져가지 못하게 하려 한다. 가장 적합한 메커니즘은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "가시성 타임아웃(visibility timeout)을 처리 시간보다 길게 설정"
+      },
+      {
+        "label": "B",
+        "text": "큐를 삭제한다"
+      },
+      {
+        "label": "C",
+        "text": "메시지를 즉시 삭제 후 처리"
+      },
+      {
+        "label": "D",
+        "text": "폴링을 끈다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "가시성 타임아웃은 한 소비자가 수신한 메시지를 일정 시간 다른 소비자에게 숨겨 중복 처리를 방지한다. 처리 시간보다 길게 잡고 처리 완료 후 삭제한다. 즉시 삭제(C)는 실패 시 유실된다."
+  },
+  {
+    "id": "exam-dva-c02-38",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 38,
+    "prompt": "엄격한 순서 보장과 중복 제거가 필요한 메시지 처리에 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SQS 표준 큐"
+      },
+      {
+        "label": "B",
+        "text": "SQS FIFO 큐"
+      },
+      {
+        "label": "C",
+        "text": "SNS 표준 토픽"
+      },
+      {
+        "label": "D",
+        "text": "EventBridge"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SQS FIFO 큐는 메시지 그룹 내 순서 보장과 정확히 한 번 처리(중복 제거)를 제공한다. 표준 큐(A)는 순서·중복을 보장하지 않는다."
+  },
+  {
+    "id": "exam-dva-c02-39",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 39,
+    "prompt": "GraphQL API를 서버 관리 없이 제공하고 여러 데이터 소스를 단일 엔드포인트로 통합하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS AppSync로 관리형 GraphQL API 구성"
+      },
+      {
+        "label": "B",
+        "text": "EC2에 직접 GraphQL 서버 운영"
+      },
+      {
+        "label": "C",
+        "text": "각 소스마다 별도 REST API"
+      },
+      {
+        "label": "D",
+        "text": "클라이언트가 DB에 직접 접속"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AppSync는 관리형 GraphQL로 여러 데이터 소스(DynamoDB, Lambda 등)를 리졸버로 통합하고 실시간 구독을 제공한다. EC2 직접 운영(B)은 운영 부담이 크다."
+  },
+  {
+    "id": "exam-dva-c02-40",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 40,
+    "prompt": "컨테이너 이미지를 안전하게 저장하고 ECS/EKS에서 가져오며 취약점 스캔까지 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon ECR에 이미지를 푸시하고 이미지 스캔 활성화"
+      },
+      {
+        "label": "B",
+        "text": "각 인스턴스 로컬에 이미지 보관"
+      },
+      {
+        "label": "C",
+        "text": "이미지를 S3에 tar로 저장"
+      },
+      {
+        "label": "D",
+        "text": "공용 레지스트리에만 의존"
+      }
+    ],
+    "answer": "A",
+    "explanation": "ECR은 관리형 컨테이너 레지스트리로 IAM 통합, 이미지 스캔, ECS/EKS 연동을 제공한다. 로컬·S3 tar(B,C)는 배포·스캔이 비효율적이다."
+  },
+  {
+    "id": "exam-dva-c02-41",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 41,
+    "prompt": "환경(dev/stage/prod)별로 다른 구성값을 코드 변경 없이 계층적으로 관리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SSM Parameter Store에 계층 경로(/app/dev/...)로 구성 저장"
+      },
+      {
+        "label": "B",
+        "text": "환경별로 코드를 따로 빌드"
+      },
+      {
+        "label": "C",
+        "text": "구성을 로그에 출력"
+      },
+      {
+        "label": "D",
+        "text": "하드코딩 후 분기"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Parameter Store는 계층적 경로와 환경별 파라미터를 지원해 코드 변경 없이 구성을 외부화한다. SecureString으로 민감값도 KMS 암호화한다. 환경별 빌드(B)·하드코딩(D)은 비효율적이다."
+  },
+  {
+    "id": "exam-dva-c02-42",
+    "slug": "dva-c02",
+    "domain": "보안",
+    "number": 42,
+    "prompt": "Lambda 함수가 DynamoDB 테이블 한 개에만 읽기 접근하면 된다. 최소 권한 원칙을 따르려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "실행 역할에 AdministratorAccess 부여"
+      },
+      {
+        "label": "B",
+        "text": "해당 테이블 ARN에 dynamodb:GetItem/Query만 허용하는 정책"
+      },
+      {
+        "label": "C",
+        "text": "모든 DynamoDB 작업 허용"
+      },
+      {
+        "label": "D",
+        "text": "IAM 사용자 키를 코드에 포함"
+      }
+    ],
+    "answer": "B",
+    "explanation": "최소 권한은 특정 리소스 ARN과 필요한 액션만 허용한다. Admin·전체 허용(A,C)은 과도, 키 하드코딩(D)은 노출 위험이다."
+  },
+  {
+    "id": "exam-dva-c02-43",
+    "slug": "dva-c02",
+    "domain": "보안",
+    "number": 43,
+    "prompt": "클라이언트 측 모바일 앱 사용자 인증·가입·토큰 발급을 관리형으로 처리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Cognito 사용자 풀로 인증·토큰 관리"
+      },
+      {
+        "label": "B",
+        "text": "각 앱에 IAM 사용자 생성"
+      },
+      {
+        "label": "C",
+        "text": "비밀번호를 DynamoDB에 평문 저장"
+      },
+      {
+        "label": "D",
+        "text": "루트 키를 앱에 배포"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Cognito 사용자 풀은 가입/로그인/MFA/토큰(JWT) 발급을 관리형으로 제공한다. IAM 사용자(B)는 앱 최종 사용자용이 아니며, 평문 저장·루트 키 배포(C,D)는 보안 위반이다."
+  },
+  {
+    "id": "exam-dva-c02-44",
+    "slug": "dva-c02",
+    "domain": "보안",
+    "number": 44,
+    "prompt": "API Gateway REST API를 호출하는 사용자가 Cognito 사용자 풀로 인증된 사용자여야 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Cognito 사용자 풀 권한 부여자(authorizer)를 메서드에 연결"
+      },
+      {
+        "label": "B",
+        "text": "모든 요청을 무인증 허용"
+      },
+      {
+        "label": "C",
+        "text": "API 키만 요구"
+      },
+      {
+        "label": "D",
+        "text": "IP 화이트리스트만"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Cognito 사용자 풀 권한 부여자는 요청의 JWT를 검증해 인증된 사용자만 메서드를 호출하게 한다. API 키(C)는 인증이 아닌 사용량 식별용, 무인증(B)은 부적절하다."
+  },
+  {
+    "id": "exam-dva-c02-45",
+    "slug": "dva-c02",
+    "domain": "보안",
+    "number": 45,
+    "prompt": "KMS로 봉투 암호화(envelope encryption)를 사용해 대용량 데이터를 효율적으로 암호화하려 한다. 옳은 흐름은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "KMS에서 데이터 키를 생성해 평문 키로 로컬 암호화하고, 암호화된 키만 데이터와 함께 저장"
+      },
+      {
+        "label": "B",
+        "text": "모든 데이터를 KMS API로 직접 암호화"
+      },
+      {
+        "label": "C",
+        "text": "평문 데이터 키를 디스크에 영구 저장"
+      },
+      {
+        "label": "D",
+        "text": "암호화 키를 코드에 하드코딩"
+      }
+    ],
+    "answer": "A",
+    "explanation": "봉투 암호화는 KMS의 GenerateDataKey로 데이터 키를 받아 로컬에서 대용량 데이터를 암호화하고, 암호문 데이터 키만 보관(평문 키는 메모리에서 폐기)한다. KMS 직접 암호화(B)는 4KB 제한·성능 문제가 있다."
+  },
+  {
+    "id": "exam-dva-c02-46",
+    "slug": "dva-c02",
+    "domain": "보안",
+    "number": 46,
+    "prompt": "CI/CD 파이프라인 빌드 단계에서 외부 패키지의 알려진 취약점을 자동으로 검사하려 한다. 가장 적합한 접근은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "의존성 취약점 스캔(예: SCA 도구/ECR 이미지 스캔)을 파이프라인에 통합"
+      },
+      {
+        "label": "B",
+        "text": "취약점 검사를 생략"
+      },
+      {
+        "label": "C",
+        "text": "배포 후 수동 점검만"
+      },
+      {
+        "label": "D",
+        "text": "모든 패키지를 최신으로 무조건 강제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "빌드 단계에 SCA/이미지 스캔을 통합하면 알려진 CVE를 조기에 차단(shift-left)한다. 생략·사후 수동(B,C)은 위험을 늦게 발견한다."
+  },
+  {
+    "id": "exam-dva-c02-47",
+    "slug": "dva-c02",
+    "domain": "보안",
+    "number": 47,
+    "prompt": "서드파티 SaaS가 내 계정 리소스에 접근해야 한다. 외부 ID(external ID)를 사용하는 이유로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "혼동된 대리자(confused deputy) 공격을 방지하기 위해"
+      },
+      {
+        "label": "B",
+        "text": "요금을 절감하기 위해"
+      },
+      {
+        "label": "C",
+        "text": "지연을 줄이기 위해"
+      },
+      {
+        "label": "D",
+        "text": "로그를 줄이기 위해"
+      }
+    ],
+    "answer": "A",
+    "explanation": "크로스 계정 역할에 external ID 조건을 두면 제3자가 다른 고객을 가장해 역할을 가로채는 혼동된 대리자 공격을 방지한다. 비용·지연·로그(B,C,D)와는 무관하다."
+  },
+  {
+    "id": "exam-dva-c02-48",
+    "slug": "dva-c02",
+    "domain": "보안",
+    "number": 48,
+    "prompt": "정적 자격증명 없이 GitHub Actions 같은 외부 CI가 AWS에 인증하도록 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM OIDC 자격 증명 공급자를 신뢰하는 역할로 임시 자격증명 발급"
+      },
+      {
+        "label": "B",
+        "text": "장기 액세스 키를 CI 시크릿에 저장"
+      },
+      {
+        "label": "C",
+        "text": "루트 키를 사용"
+      },
+      {
+        "label": "D",
+        "text": "키를 코드에 커밋"
+      }
+    ],
+    "answer": "A",
+    "explanation": "OIDC 페더레이션으로 CI의 ID 토큰을 신뢰해 STS 임시 자격증명을 발급하면 장기 키 보관이 불필요하다. 장기 키 저장·루트 키·커밋(B,C,D)은 노출 위험이 크다."
+  },
+  {
+    "id": "exam-dva-c02-49",
+    "slug": "dva-c02",
+    "domain": "보안",
+    "number": 49,
+    "prompt": "민감 데이터를 SSM Parameter Store에 저장하되 암호화하고 접근을 제어하려 한다. 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SecureString 타입으로 KMS 암호화하고 IAM으로 접근 제어"
+      },
+      {
+        "label": "B",
+        "text": "String 평문 타입으로 저장"
+      },
+      {
+        "label": "C",
+        "text": "로그에 값을 출력"
+      },
+      {
+        "label": "D",
+        "text": "누구나 읽도록 공개"
+      }
+    ],
+    "answer": "A",
+    "explanation": "SecureString은 KMS로 값을 암호화하며, IAM 정책과 KMS 키 정책으로 복호화 권한을 제한한다. 평문(B)·로그 출력·공개(C,D)는 노출 위험이다."
+  },
+  {
+    "id": "exam-dva-c02-50",
+    "slug": "dva-c02",
+    "domain": "배포",
+    "number": 50,
+    "prompt": "Lambda 새 버전을 트래픽의 10%에만 먼저 보내 문제 없으면 점진 확대하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CodeDeploy로 Lambda 별칭(alias)에 카나리/선형 배포"
+      },
+      {
+        "label": "B",
+        "text": "전체를 즉시 교체"
+      },
+      {
+        "label": "C",
+        "text": "함수를 삭제 후 재생성"
+      },
+      {
+        "label": "D",
+        "text": "수동으로 트래픽을 나눈다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CodeDeploy는 Lambda 별칭의 가중치를 조정해 카나리/선형 배포로 트래픽을 점진 이동하고 경보 시 자동 롤백한다. 즉시 교체(B)는 blast radius가 크다."
+  },
+  {
+    "id": "exam-dva-c02-51",
+    "slug": "dva-c02",
+    "domain": "배포",
+    "number": 51,
+    "prompt": "인프라를 코드로 정의해 환경 간 일관되게 반복 배포하고 변경을 버전 관리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "콘솔에서 수동 클릭으로 리소스 생성"
+      },
+      {
+        "label": "B",
+        "text": "CloudFormation/CDK 같은 IaC로 스택 정의"
+      },
+      {
+        "label": "C",
+        "text": "리소스를 매번 손으로 재현"
+      },
+      {
+        "label": "D",
+        "text": "스크린샷으로 구성 보관"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudFormation/CDK는 인프라를 선언적으로 코드화해 반복·일관 배포, 변경 세트, 롤백, 버전 관리를 제공한다. 수동 클릭(A,C)은 드리프트·오류 위험이 크다."
+  },
+  {
+    "id": "exam-dva-c02-52",
+    "slug": "dva-c02",
+    "domain": "배포",
+    "number": 52,
+    "prompt": "서버리스 애플리케이션(Lambda+API GW+DynamoDB)을 단일 템플릿으로 간결하게 정의·배포하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS SAM 템플릿으로 정의하고 sam deploy"
+      },
+      {
+        "label": "B",
+        "text": "각 리소스를 콘솔에서 따로 만든다"
+      },
+      {
+        "label": "C",
+        "text": "EC2에 직접 설치"
+      },
+      {
+        "label": "D",
+        "text": "수동 zip 업로드만 반복"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS SAM은 서버리스 리소스를 축약 문법으로 정의하고 빌드·패키징·배포를 단순화한다. 콘솔 수동(B)·EC2 설치(C)는 서버리스 모델·자동화에 맞지 않다."
+  },
+  {
+    "id": "exam-dva-c02-53",
+    "slug": "dva-c02",
+    "domain": "배포",
+    "number": 53,
+    "prompt": "코드 커밋 시 자동으로 빌드·테스트·배포가 이어지는 파이프라인을 구성하려 한다. 가장 적합한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CodePipeline + CodeBuild + CodeDeploy로 CI/CD 자동화"
+      },
+      {
+        "label": "B",
+        "text": "개발자가 수동으로 빌드해 FTP 업로드"
+      },
+      {
+        "label": "C",
+        "text": "커밋마다 사람이 콘솔 배포"
+      },
+      {
+        "label": "D",
+        "text": "배포를 하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CodePipeline이 소스→빌드(CodeBuild)→배포(CodeDeploy) 단계를 오케스트레이션해 커밋 시 자동 파이프라인을 구성한다. 수동 빌드·FTP(B)·수동 배포(C)는 비효율·오류 위험이 크다."
+  },
+  {
+    "id": "exam-dva-c02-54",
+    "slug": "dva-c02",
+    "domain": "배포",
+    "number": 54,
+    "prompt": "블루/그린 배포로 새 버전을 별도 환경에 띄우고 검증 후 즉시 전환, 문제 시 빠르게 롤백하려 한다. 이 전략의 핵심 이점은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "다운타임 최소화와 빠른 롤백(트래픽을 이전 환경으로 즉시 되돌림)"
+      },
+      {
+        "label": "B",
+        "text": "스토리지 비용 절감"
+      },
+      {
+        "label": "C",
+        "text": "코드 품질 자동 향상"
+      },
+      {
+        "label": "D",
+        "text": "테스트 불필요"
+      }
+    ],
+    "answer": "A",
+    "explanation": "블루/그린은 신·구 환경을 병행 운영하다 트래픽을 한 번에 전환하므로 다운타임이 적고, 문제 시 이전 환경으로 즉시 되돌려 롤백이 빠르다. 비용 절감(B)이 목적은 아니다."
+  },
+  {
+    "id": "exam-dva-c02-55",
+    "slug": "dva-c02",
+    "domain": "배포",
+    "number": 55,
+    "prompt": "Lambda 함수 코드는 그대로 두고 호출 대상(예: dev/prod)을 별칭으로 가리켜 안전하게 전환하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Lambda 버전과 별칭(alias)을 사용해 트래픽을 특정 버전에 매핑"
+      },
+      {
+        "label": "B",
+        "text": "매번 함수를 새로 만든다"
+      },
+      {
+        "label": "C",
+        "text": "$LATEST만 직접 호출"
+      },
+      {
+        "label": "D",
+        "text": "코드를 환경마다 복제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Lambda는 게시된 버전을 불변으로 두고 별칭으로 가리켜, 별칭의 대상 버전·가중치를 바꿔 안전하게 전환·롤백한다. $LATEST 직접 호출(C)은 변경에 취약하다."
+  },
+  {
+    "id": "exam-dva-c02-56",
+    "slug": "dva-c02",
+    "domain": "배포",
+    "number": 56,
+    "prompt": "API Gateway에서 dev/test/prod 단계를 분리하고 각 단계에 다른 변수·스로틀링을 적용하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "API Gateway 스테이지(stage)와 스테이지 변수를 사용"
+      },
+      {
+        "label": "B",
+        "text": "환경마다 API를 통째로 새로 만든다"
+      },
+      {
+        "label": "C",
+        "text": "하나의 단계만 쓴다"
+      },
+      {
+        "label": "D",
+        "text": "클라이언트가 환경을 구분"
+      }
+    ],
+    "answer": "A",
+    "explanation": "스테이지와 스테이지 변수는 동일 API를 단계별로 배포하고 환경별 설정·스로틀링을 적용하게 한다. API 전체 복제(B)는 관리 부담이 크다."
+  },
+  {
+    "id": "exam-dva-c02-57",
+    "slug": "dva-c02",
+    "domain": "배포",
+    "number": 57,
+    "prompt": "컨테이너 워크로드를 서버 관리 없이 실행하고 작업 수에 따라 자동 확장하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ECS/EKS를 AWS Fargate로 서버리스 실행"
+      },
+      {
+        "label": "B",
+        "text": "EC2를 수동 프로비저닝해 도커 직접 운영"
+      },
+      {
+        "label": "C",
+        "text": "온프레미스 서버에 배포"
+      },
+      {
+        "label": "D",
+        "text": "Lambda에 큰 모놀리식 컨테이너를 강제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Fargate는 EC2 관리 없이 컨테이너를 실행하고 작업 단위로 자동 확장한다. EC2 수동 운영(B)은 패치·확장 부담이 크다."
+  },
+  {
+    "id": "exam-dva-c02-58",
+    "slug": "dva-c02",
+    "domain": "배포",
+    "number": 58,
+    "prompt": "CodeBuild 빌드에서 매번 의존성을 새로 내려받아 빌드가 느리다. 빌드 시간을 줄이려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "빌드 캐시(로컬/S3 캐시)를 구성해 의존성을 재사용"
+      },
+      {
+        "label": "B",
+        "text": "빌드를 더 작은 인스턴스로 한다"
+      },
+      {
+        "label": "C",
+        "text": "테스트를 제거"
+      },
+      {
+        "label": "D",
+        "text": "캐시를 비활성화"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CodeBuild 캐시(S3 또는 로컬)는 의존성·중간 산출물을 재사용해 빌드 시간을 단축한다. 작은 인스턴스(B)·테스트 제거(C)는 부적절하다."
+  },
+  {
+    "id": "exam-dva-c02-59",
+    "slug": "dva-c02",
+    "domain": "문제 해결 및 최적화",
+    "number": 59,
+    "prompt": "분산 마이크로서비스에서 한 요청이 여러 서비스를 거치며 어디서 지연이 발생하는지 추적하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS X-Ray로 분산 추적과 서비스 맵 분석"
+      },
+      {
+        "label": "B",
+        "text": "각 서비스 로그를 따로 grep"
+      },
+      {
+        "label": "C",
+        "text": "CPU 지표만 확인"
+      },
+      {
+        "label": "D",
+        "text": "추적을 하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "X-Ray는 요청을 세그먼트/서브세그먼트로 추적해 서비스 맵과 지연 병목을 시각화한다. 개별 grep(B)·CPU만 보기(C)는 엔드투엔드 추적이 어렵다."
+  },
+  {
+    "id": "exam-dva-c02-60",
+    "slug": "dva-c02",
+    "domain": "문제 해결 및 최적화",
+    "number": 60,
+    "prompt": "DynamoDB에서 특정 핫 파티션 키에 요청이 몰려 스로틀링이 발생한다. 가장 적합한 개선은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "파티션 키 카디널리티를 높여(예: 키에 접미사 추가) 트래픽을 고르게 분산"
+      },
+      {
+        "label": "B",
+        "text": "모든 항목을 같은 키로 모은다"
+      },
+      {
+        "label": "C",
+        "text": "테이블을 삭제"
+      },
+      {
+        "label": "D",
+        "text": "읽기를 모두 Scan으로 바꾼다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "핫 파티션은 키 설계가 원인이므로 카디널리티를 높이거나 분할(write sharding)해 트래픽을 여러 파티션에 분산한다. 동일 키 집중(B)·Scan 전환(D)은 악화시킨다."
+  },
+  {
+    "id": "exam-dva-c02-61",
+    "slug": "dva-c02",
+    "domain": "문제 해결 및 최적화",
+    "number": 61,
+    "prompt": "Lambda 함수가 자주 타임아웃되고 CPU 바운드 작업이 느리다. 메모리만 늘리면 무엇이 함께 좋아지나?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "메모리에 비례해 vCPU 성능도 증가해 처리 속도가 빨라진다"
+      },
+      {
+        "label": "B",
+        "text": "메모리는 성능과 무관하다"
+      },
+      {
+        "label": "C",
+        "text": "메모리를 늘리면 항상 느려진다"
+      },
+      {
+        "label": "D",
+        "text": "타임아웃이 자동 0이 된다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Lambda는 메모리 설정에 비례해 CPU·네트워크가 할당되므로 CPU 바운드 작업은 메모리를 늘리면 처리 속도가 빨라지고 종종 총비용도 줄어든다. 메모리와 무관(B)은 틀리다."
+  },
+  {
+    "id": "exam-dva-c02-62",
+    "slug": "dva-c02",
+    "domain": "문제 해결 및 최적화",
+    "number": 62,
+    "prompt": "API Gateway가 429 Too Many Requests를 반환한다. 원인과 대응으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "스로틀링 한도 초과이므로 사용량 계획·한도 조정과 클라이언트의 지수 백오프 재시도"
+      },
+      {
+        "label": "B",
+        "text": "무조건 즉시 재시도를 반복"
+      },
+      {
+        "label": "C",
+        "text": "API를 삭제"
+      },
+      {
+        "label": "D",
+        "text": "타임아웃을 0으로"
+      }
+    ],
+    "answer": "A",
+    "explanation": "429는 속도/버스트 한도 초과로, 사용량 계획·스로틀링 한도를 조정하고 클라이언트는 지수 백오프+지터로 재시도한다. 즉시 반복 재시도(B)는 폭주를 악화시킨다."
+  },
+  {
+    "id": "exam-dva-c02-63",
+    "slug": "dva-c02",
+    "domain": "문제 해결 및 최적화",
+    "number": 63,
+    "prompt": "SQS 큐의 메시지가 반복 실패해 무한 재처리된다. 실패 메시지를 격리하고 분석하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데드레터 큐(DLQ)와 최대 수신 횟수(maxReceiveCount)를 구성"
+      },
+      {
+        "label": "B",
+        "text": "실패 메시지를 즉시 삭제"
+      },
+      {
+        "label": "C",
+        "text": "재시도를 무한으로 둔다"
+      },
+      {
+        "label": "D",
+        "text": "큐를 비활성화"
+      }
+    ],
+    "answer": "A",
+    "explanation": "maxReceiveCount를 넘긴 메시지를 DLQ로 보내 무한 재처리를 막고 실패 원인을 분석한다. 즉시 삭제(B)는 데이터 손실, 무한 재시도(C)는 자원 낭비다."
+  },
+  {
+    "id": "exam-dva-c02-64",
+    "slug": "dva-c02",
+    "domain": "문제 해결 및 최적화",
+    "number": 64,
+    "prompt": "CloudWatch에서 애플리케이션의 사용자 정의 비즈니스 지표(예: 결제 성공 수)를 모니터링하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "사용자 지정 지표(custom metric)를 PutMetricData로 게시하고 경보 구성"
+      },
+      {
+        "label": "B",
+        "text": "CPU 지표로 추정"
+      },
+      {
+        "label": "C",
+        "text": "지표를 보지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "로그만 보고 추측"
+      }
+    ],
+    "answer": "A",
+    "explanation": "PutMetricData로 사용자 지정 지표를 게시하면 비즈니스 KPI를 CloudWatch에서 모니터링·경보할 수 있다. CPU 추정(B)·추측(D)은 부정확하다."
+  },
+  {
+    "id": "exam-dva-c02-65",
+    "slug": "dva-c02",
+    "domain": "문제 해결 및 최적화",
+    "number": 65,
+    "prompt": "반복적으로 같은 데이터를 외부 API에서 가져와 지연이 크다. 비용·지연을 줄이는 가장 적합한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "결과를 캐싱(ElastiCache/API GW 캐시)하고 TTL로 갱신"
+      },
+      {
+        "label": "B",
+        "text": "매 요청마다 외부 API 호출"
+      },
+      {
+        "label": "C",
+        "text": "외부 API를 더 자주 호출"
+      },
+      {
+        "label": "D",
+        "text": "타임아웃을 늘린다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "자주 변하지 않는 외부 응답은 캐싱하고 TTL로 신선도를 관리하면 지연·호출 비용을 줄인다. 매번 호출(B)·잦은 호출(C)은 비효율적이다."
+  },
+  {
+    "id": "exam-dva-c02-66",
+    "slug": "dva-c02",
+    "domain": "문제 해결 및 최적화",
+    "number": 66,
+    "prompt": "배포 후 특정 Lambda의 오류율이 급증했다. 자동으로 이전 버전으로 되돌리려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CodeDeploy 배포에 CloudWatch 경보를 연결해 임계 초과 시 자동 롤백"
+      },
+      {
+        "label": "B",
+        "text": "수동으로 며칠 뒤 확인"
+      },
+      {
+        "label": "C",
+        "text": "오류를 무시"
+      },
+      {
+        "label": "D",
+        "text": "함수를 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CodeDeploy 배포에 CloudWatch 경보 기반 자동 롤백을 구성하면 오류율 급증 시 즉시 이전 버전으로 되돌아간다. 수동 확인(B)·무시(C)는 장애를 키운다."
+  },
+  {
+    "id": "exam-dva-c02-67",
+    "slug": "dva-c02",
+    "domain": "개발",
+    "number": 67,
+    "prompt": "서버리스 API의 비동기 Lambda 처리에서 메시지 유실을 막기 위한 조치로 적절한 것 2가지는? (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "실패 시 데드레터 큐(DLQ) 또는 on-failure 대상 구성"
+      },
+      {
+        "label": "B",
+        "text": "멱등성 키로 중복 처리를 방지"
+      },
+      {
+        "label": "C",
+        "text": "재시도를 0으로 설정"
+      },
+      {
+        "label": "D",
+        "text": "오류를 무시하고 폐기"
+      }
+    ],
+    "answer": "A, B",
+    "explanation": "DLQ/실패 대상으로 실패 이벤트를 보존하고, 멱등성 키로 재시도 시 중복 부작용을 방지하면 유실 없이 안정적으로 처리된다. 재시도 0·폐기(C,D)는 유실을 초래한다."
+  },
+  {
+    "id": "exam-dva-c02-68",
+    "slug": "dva-c02",
+    "domain": "보안",
+    "number": 68,
+    "prompt": "클라이언트가 자격증명 노출 없이 S3에 안전하게 접근하도록 하는 방법 2가지는? (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "사전 서명된 URL을 발급"
+      },
+      {
+        "label": "B",
+        "text": "Cognito 자격 증명 풀로 임시 자격증명 부여"
+      },
+      {
+        "label": "C",
+        "text": "버킷을 퍼블릭 쓰기로 개방"
+      },
+      {
+        "label": "D",
+        "text": "IAM 사용자 키를 앱에 내장"
+      }
+    ],
+    "answer": "A, B",
+    "explanation": "사전 서명 URL과 Cognito 자격 증명 풀(임시 자격증명) 모두 장기 키 노출 없이 제한된 접근을 제공한다. 퍼블릭 개방·키 내장(C,D)은 노출 위험이 크다."
+  },
+  {
     "id": "exam-linux-master-1-1",
     "slug": "linux-master-1",
     "domain": "리눅스 운영 및 관리",
@@ -1645,6 +4318,816 @@
     ],
     "answer": "A",
     "explanation": "ss -tlnp(또는 구식 netstat -tlnp)는 LISTEN 중인 TCP 포트와 연결된 프로세스를 보여준다. uptime(B)은 가동 시간, date(C)는 날짜, whoami(D)는 현재 사용자라 포트 점검과 관련이 없다."
+  },
+  {
+    "id": "exam-linux-master-1-21",
+    "slug": "linux-master-1",
+    "domain": "리눅스 운영 및 관리",
+    "number": 21,
+    "prompt": "현재 시스템에 설치된 커널 버전을 확인하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "uname -r"
+      },
+      {
+        "label": "B",
+        "text": "pwd"
+      },
+      {
+        "label": "C",
+        "text": "echo $SHELL"
+      },
+      {
+        "label": "D",
+        "text": "history"
+      }
+    ],
+    "answer": "A",
+    "explanation": "uname -r은 실행 중인 커널 릴리스 버전을 출력한다. pwd(B)는 현재 경로, echo $SHELL(C)은 셸, history(D)는 명령 이력이라 무관하다."
+  },
+  {
+    "id": "exam-linux-master-1-22",
+    "slug": "linux-master-1",
+    "domain": "리눅스 운영 및 관리",
+    "number": 22,
+    "prompt": "시스템 전체의 디스크 파티션별 사용량과 남은 공간을 사람이 읽기 쉬운 단위로 보려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "df -h"
+      },
+      {
+        "label": "B",
+        "text": "du -h 파일"
+      },
+      {
+        "label": "C",
+        "text": "free -h"
+      },
+      {
+        "label": "D",
+        "text": "top"
+      }
+    ],
+    "answer": "A",
+    "explanation": "df -h는 파일 시스템별 전체/사용/가용 용량을 사람이 읽기 쉬운 단위로 보여준다. du(B)는 특정 경로 사용량, free(C)는 메모리, top(D)은 프로세스 모니터다."
+  },
+  {
+    "id": "exam-linux-master-1-23",
+    "slug": "linux-master-1",
+    "domain": "리눅스 운영 및 관리",
+    "number": 23,
+    "prompt": "특정 디렉터리 트리가 차지하는 총 디스크 용량을 요약해서 확인하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "du -sh /경로"
+      },
+      {
+        "label": "B",
+        "text": "df -h"
+      },
+      {
+        "label": "C",
+        "text": "ls -l"
+      },
+      {
+        "label": "D",
+        "text": "cat /경로"
+      }
+    ],
+    "answer": "A",
+    "explanation": "du -sh는 지정 디렉터리의 총 사용량을 요약(-s) 단위 표기(-h)로 보여준다. df(B)는 파일 시스템 단위, ls -l(C)은 파일 목록, cat(D)은 내용 출력이다."
+  },
+  {
+    "id": "exam-linux-master-1-24",
+    "slug": "linux-master-1",
+    "domain": "리눅스 운영 및 관리",
+    "number": 24,
+    "prompt": "시스템의 메모리와 스왑 사용 현황을 사람이 읽기 쉬운 단위로 확인하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "free -h"
+      },
+      {
+        "label": "B",
+        "text": "df -h"
+      },
+      {
+        "label": "C",
+        "text": "uptime"
+      },
+      {
+        "label": "D",
+        "text": "whoami"
+      }
+    ],
+    "answer": "A",
+    "explanation": "free -h는 총/사용/가용 메모리와 스왑을 보기 쉬운 단위로 출력한다. df(B)는 디스크, uptime(C)은 가동 시간, whoami(D)는 사용자다."
+  },
+  {
+    "id": "exam-linux-master-1-25",
+    "slug": "linux-master-1",
+    "domain": "리눅스 운영 및 관리",
+    "number": 25,
+    "prompt": "RPM 기반 배포판에서 패키지를 설치·업데이트하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "dnf install 패키지 (또는 yum install)"
+      },
+      {
+        "label": "B",
+        "text": "apt install 패키지"
+      },
+      {
+        "label": "C",
+        "text": "tar -xzf 패키지"
+      },
+      {
+        "label": "D",
+        "text": "make 패키지"
+      }
+    ],
+    "answer": "A",
+    "explanation": "RHEL/Fedora 계열은 dnf(구 yum)로 패키지를 설치·갱신한다. apt(B)는 데비안 계열, tar(C)는 압축 해제, make(D)는 빌드 도구다."
+  },
+  {
+    "id": "exam-linux-master-1-26",
+    "slug": "linux-master-1",
+    "domain": "파일 시스템 및 권한",
+    "number": 26,
+    "prompt": "파일 report.txt의 권한을 소유자는 읽기·쓰기, 그룹과 기타는 읽기 전용으로 설정하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "chmod 644 report.txt"
+      },
+      {
+        "label": "B",
+        "text": "chmod 777 report.txt"
+      },
+      {
+        "label": "C",
+        "text": "chmod 600 report.txt"
+      },
+      {
+        "label": "D",
+        "text": "chmod 000 report.txt"
+      }
+    ],
+    "answer": "A",
+    "explanation": "644는 소유자 rw-(6), 그룹 r--(4), 기타 r--(4)로 요건과 일치한다. 777(B)은 모두 전체 권한, 600(C)은 그룹/기타 권한 없음, 000(D)은 모두 권한 없음이다."
+  },
+  {
+    "id": "exam-linux-master-1-27",
+    "slug": "linux-master-1",
+    "domain": "파일 시스템 및 권한",
+    "number": 27,
+    "prompt": "파일 app.log의 소유자를 user1, 그룹을 devs로 변경하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "chown user1:devs app.log"
+      },
+      {
+        "label": "B",
+        "text": "chmod user1:devs app.log"
+      },
+      {
+        "label": "C",
+        "text": "chgrp user1 app.log"
+      },
+      {
+        "label": "D",
+        "text": "mv user1 app.log"
+      }
+    ],
+    "answer": "A",
+    "explanation": "chown user1:devs는 소유자와 그룹을 한 번에 변경한다. chmod(B)는 권한 변경, chgrp(C)는 그룹만, mv(D)는 이동/이름변경이다."
+  },
+  {
+    "id": "exam-linux-master-1-28",
+    "slug": "linux-master-1",
+    "domain": "파일 시스템 및 권한",
+    "number": 28,
+    "prompt": "심볼릭 링크를 생성해 /var/www를 /home/web으로 가리키게 하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ln -s /var/www /home/web"
+      },
+      {
+        "label": "B",
+        "text": "ln /var/www /home/web"
+      },
+      {
+        "label": "C",
+        "text": "cp -r /var/www /home/web"
+      },
+      {
+        "label": "D",
+        "text": "mv /var/www /home/web"
+      }
+    ],
+    "answer": "A",
+    "explanation": "ln -s는 심볼릭(소프트) 링크를 만든다. 옵션 없는 ln(B)은 하드 링크, cp -r(C)은 복사, mv(D)는 이동이다."
+  },
+  {
+    "id": "exam-linux-master-1-29",
+    "slug": "linux-master-1",
+    "domain": "파일 시스템 및 권한",
+    "number": 29,
+    "prompt": "디렉터리 shared 안에서 새로 만들어지는 파일이 항상 디렉터리의 그룹을 상속받게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "chmod g+s shared (setgid 비트 설정)"
+      },
+      {
+        "label": "B",
+        "text": "chmod u+s shared"
+      },
+      {
+        "label": "C",
+        "text": "chmod +t shared"
+      },
+      {
+        "label": "D",
+        "text": "chmod 000 shared"
+      }
+    ],
+    "answer": "A",
+    "explanation": "디렉터리에 setgid(g+s)를 설정하면 그 안에서 생성되는 파일·하위 디렉터리가 디렉터리의 그룹을 상속한다. setuid(B)는 실행 파일용, 스티키 비트(+t, C)는 삭제 제한용이다."
+  },
+  {
+    "id": "exam-linux-master-1-30",
+    "slug": "linux-master-1",
+    "domain": "파일 시스템 및 권한",
+    "number": 30,
+    "prompt": "/tmp처럼 누구나 쓸 수 있지만 다른 사용자의 파일은 삭제하지 못하게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "스티키 비트를 설정 (chmod +t)"
+      },
+      {
+        "label": "B",
+        "text": "chmod 777만 설정"
+      },
+      {
+        "label": "C",
+        "text": "setuid 설정"
+      },
+      {
+        "label": "D",
+        "text": "chmod 700"
+      }
+    ],
+    "answer": "A",
+    "explanation": "스티키 비트가 설정된 디렉터리에서는 파일 소유자(또는 root)만 자신의 파일을 삭제할 수 있어 공용 디렉터리에 적합하다. 단순 777(B)은 누구나 삭제 가능, 700(D)은 소유자만 접근이라 공용이 아니다."
+  },
+  {
+    "id": "exam-linux-master-1-31",
+    "slug": "linux-master-1",
+    "domain": "파일 시스템 및 권한",
+    "number": 31,
+    "prompt": "특정 파일이 어떤 파일 시스템 유형(ext4, xfs 등)에 있는지 확인하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "df -T /경로 (또는 mount, lsblk -f)"
+      },
+      {
+        "label": "B",
+        "text": "cat /경로"
+      },
+      {
+        "label": "C",
+        "text": "chmod /경로"
+      },
+      {
+        "label": "D",
+        "text": "echo /경로"
+      }
+    ],
+    "answer": "A",
+    "explanation": "df -T는 마운트된 파일 시스템의 유형을 함께 표시하며, mount나 lsblk -f로도 확인할 수 있다. cat(B)은 내용 출력, chmod(C)는 권한 변경이라 무관하다."
+  },
+  {
+    "id": "exam-linux-master-1-32",
+    "slug": "linux-master-1",
+    "domain": "사용자 및 그룹 관리",
+    "number": 32,
+    "prompt": "새 사용자 alice를 홈 디렉터리와 함께 생성하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "useradd -m alice (또는 adduser alice)"
+      },
+      {
+        "label": "B",
+        "text": "usermod alice"
+      },
+      {
+        "label": "C",
+        "text": "passwd alice"
+      },
+      {
+        "label": "D",
+        "text": "groupadd alice"
+      }
+    ],
+    "answer": "A",
+    "explanation": "useradd -m은 사용자를 만들고 홈 디렉터리를 생성한다. usermod(B)는 기존 사용자 수정, passwd(C)는 비밀번호 설정, groupadd(D)는 그룹 생성이다."
+  },
+  {
+    "id": "exam-linux-master-1-33",
+    "slug": "linux-master-1",
+    "domain": "사용자 및 그룹 관리",
+    "number": 33,
+    "prompt": "기존 사용자 bob을 추가 그룹 docker에 보조 그룹으로 추가하되 기존 그룹은 유지하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "usermod -aG docker bob"
+      },
+      {
+        "label": "B",
+        "text": "usermod -G docker bob"
+      },
+      {
+        "label": "C",
+        "text": "groupadd docker bob"
+      },
+      {
+        "label": "D",
+        "text": "userdel bob"
+      }
+    ],
+    "answer": "A",
+    "explanation": "usermod -aG는 -a(append)로 기존 보조 그룹을 유지하며 docker 그룹을 추가한다. -G만(B) 쓰면 기존 보조 그룹이 모두 대체되어 사라진다. userdel(D)은 사용자 삭제다."
+  },
+  {
+    "id": "exam-linux-master-1-34",
+    "slug": "linux-master-1",
+    "domain": "사용자 및 그룹 관리",
+    "number": 34,
+    "prompt": "사용자 carol의 비밀번호를 설정·변경하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "passwd carol"
+      },
+      {
+        "label": "B",
+        "text": "useradd carol"
+      },
+      {
+        "label": "C",
+        "text": "chmod carol"
+      },
+      {
+        "label": "D",
+        "text": "id carol"
+      }
+    ],
+    "answer": "A",
+    "explanation": "passwd 사용자명은 해당 사용자의 비밀번호를 설정·변경한다. useradd(B)는 사용자 생성, chmod(C)는 권한, id(D)는 UID/GID 확인이다."
+  },
+  {
+    "id": "exam-linux-master-1-35",
+    "slug": "linux-master-1",
+    "domain": "사용자 및 그룹 관리",
+    "number": 35,
+    "prompt": "특정 사용자가 속한 그룹과 UID/GID를 확인하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "id 사용자명"
+      },
+      {
+        "label": "B",
+        "text": "pwd"
+      },
+      {
+        "label": "C",
+        "text": "ls -l"
+      },
+      {
+        "label": "D",
+        "text": "df -h"
+      }
+    ],
+    "answer": "A",
+    "explanation": "id 명령은 사용자의 UID, GID, 소속 그룹을 보여준다. pwd(B)는 경로, ls -l(C)은 파일 목록, df(D)는 디스크라 무관하다."
+  },
+  {
+    "id": "exam-linux-master-1-36",
+    "slug": "linux-master-1",
+    "domain": "사용자 및 그룹 관리",
+    "number": 36,
+    "prompt": "일반 사용자가 관리 권한이 필요한 단일 명령을 root 권한으로 안전하게 실행하려 한다. 가장 적합한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "sudo 명령 (sudoers에 권한 위임)"
+      },
+      {
+        "label": "B",
+        "text": "root 비밀번호를 모두에게 공유"
+      },
+      {
+        "label": "C",
+        "text": "chmod 777로 전체 개방"
+      },
+      {
+        "label": "D",
+        "text": "항상 root로 로그인"
+      }
+    ],
+    "answer": "A",
+    "explanation": "sudo는 sudoers 정책에 따라 특정 사용자가 제한된 명령을 권한 상승해 실행하고 감사 로그를 남긴다. root 공유·상시 root 로그인(B,D)은 보안 위험, 777(C)은 권한 남용이다."
+  },
+  {
+    "id": "exam-linux-master-1-37",
+    "slug": "linux-master-1",
+    "domain": "셸 및 스크립트",
+    "number": 37,
+    "prompt": "파일 access.log에서 \"ERROR\"가 포함된 줄만 출력하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "grep \"ERROR\" access.log"
+      },
+      {
+        "label": "B",
+        "text": "sort access.log"
+      },
+      {
+        "label": "C",
+        "text": "wc -l access.log"
+      },
+      {
+        "label": "D",
+        "text": "touch access.log"
+      }
+    ],
+    "answer": "A",
+    "explanation": "grep은 패턴이 포함된 줄을 출력한다. sort(B)는 정렬, wc -l(C)은 줄 수 세기, touch(D)는 파일 생성/타임스탬프 갱신이다."
+  },
+  {
+    "id": "exam-linux-master-1-38",
+    "slug": "linux-master-1",
+    "domain": "셸 및 스크립트",
+    "number": 38,
+    "prompt": "명령의 표준 출력을 화면에 보이면서 동시에 파일에도 저장하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "명령 | tee out.txt"
+      },
+      {
+        "label": "B",
+        "text": "명령 > out.txt"
+      },
+      {
+        "label": "C",
+        "text": "명령 < out.txt"
+      },
+      {
+        "label": "D",
+        "text": "명령 2> out.txt"
+      }
+    ],
+    "answer": "A",
+    "explanation": "tee는 표준 입력을 화면(표준 출력)과 파일에 동시에 쓴다. >(B)는 파일로만 리다이렉트, <(C)는 입력 리다이렉트, 2>(D)는 표준 에러만 저장한다."
+  },
+  {
+    "id": "exam-linux-master-1-39",
+    "slug": "linux-master-1",
+    "domain": "셸 및 스크립트",
+    "number": 39,
+    "prompt": "셸 스크립트 첫 줄에 인터프리터를 지정하는 셔뱅(shebang)으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "#!/bin/bash"
+      },
+      {
+        "label": "B",
+        "text": "// bash"
+      },
+      {
+        "label": "C",
+        "text": "<?bash?>"
+      },
+      {
+        "label": "D",
+        "text": "@bash"
+      }
+    ],
+    "answer": "A",
+    "explanation": "#!/bin/bash 셔뱅은 스크립트를 bash로 실행하도록 커널에 알린다. 나머지(B,C,D)는 셸 셔뱅 문법이 아니다."
+  },
+  {
+    "id": "exam-linux-master-1-40",
+    "slug": "linux-master-1",
+    "domain": "셸 및 스크립트",
+    "number": 40,
+    "prompt": "cmd1의 출력을 cmd2의 입력으로 연결하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "cmd1 | cmd2 (파이프)"
+      },
+      {
+        "label": "B",
+        "text": "cmd1 && cmd2"
+      },
+      {
+        "label": "C",
+        "text": "cmd1 ; cmd2"
+      },
+      {
+        "label": "D",
+        "text": "cmd1 > cmd2"
+      }
+    ],
+    "answer": "A",
+    "explanation": "파이프(|)는 앞 명령의 표준 출력을 뒤 명령의 표준 입력으로 전달한다. &&(B)는 성공 시 다음 실행, ;(C)는 순차 실행, >(D)는 파일 리다이렉트(여기서 cmd2를 파일로 취급)다."
+  },
+  {
+    "id": "exam-linux-master-1-41",
+    "slug": "linux-master-1",
+    "domain": "셸 및 스크립트",
+    "number": 41,
+    "prompt": "파일에서 각 줄의 첫 번째 공백 구분 필드만 추출하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "awk '{print $1}' 파일 (또는 cut -d' ' -f1)"
+      },
+      {
+        "label": "B",
+        "text": "wc 파일"
+      },
+      {
+        "label": "C",
+        "text": "chmod 파일"
+      },
+      {
+        "label": "D",
+        "text": "mkdir 파일"
+      }
+    ],
+    "answer": "A",
+    "explanation": "awk '{print $1}'은 공백 기준 첫 필드를 출력하며, cut -d' ' -f1로도 가능하다. wc(B)는 카운트, chmod(C)는 권한, mkdir(D)은 디렉터리 생성이다."
+  },
+  {
+    "id": "exam-linux-master-1-42",
+    "slug": "linux-master-1",
+    "domain": "서비스 및 시스템 관리",
+    "number": 42,
+    "prompt": "systemd에서 nginx 서비스를 지금 시작하고 부팅 시 자동 시작되게 하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "systemctl start nginx && systemctl enable nginx"
+      },
+      {
+        "label": "B",
+        "text": "systemctl stop nginx"
+      },
+      {
+        "label": "C",
+        "text": "kill nginx"
+      },
+      {
+        "label": "D",
+        "text": "systemctl disable nginx"
+      }
+    ],
+    "answer": "A",
+    "explanation": "start는 즉시 시작, enable은 부팅 시 자동 시작을 설정한다. stop/disable(B,D)은 반대 동작, kill(C)은 프로세스 강제 종료다."
+  },
+  {
+    "id": "exam-linux-master-1-43",
+    "slug": "linux-master-1",
+    "domain": "서비스 및 시스템 관리",
+    "number": 43,
+    "prompt": "systemd 서비스 sshd의 현재 상태와 최근 로그 일부를 확인하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "systemctl status sshd"
+      },
+      {
+        "label": "B",
+        "text": "systemctl mask sshd"
+      },
+      {
+        "label": "C",
+        "text": "rm sshd"
+      },
+      {
+        "label": "D",
+        "text": "chmod sshd"
+      }
+    ],
+    "answer": "A",
+    "explanation": "systemctl status는 서비스의 활성 상태, PID, 최근 로그 줄을 보여준다. mask(B)는 서비스 차단, rm·chmod(C,D)는 무관하다."
+  },
+  {
+    "id": "exam-linux-master-1-44",
+    "slug": "linux-master-1",
+    "domain": "서비스 및 시스템 관리",
+    "number": 44,
+    "prompt": "특정 서비스가 남긴 로그를 systemd 저널에서 조회하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "journalctl -u 서비스명"
+      },
+      {
+        "label": "B",
+        "text": "cat /etc/passwd"
+      },
+      {
+        "label": "C",
+        "text": "ls -l /var"
+      },
+      {
+        "label": "D",
+        "text": "df -h"
+      }
+    ],
+    "answer": "A",
+    "explanation": "journalctl -u는 지정한 systemd 유닛의 로그를 조회한다. 나머지(B,C,D)는 사용자 목록·파일 목록·디스크 확인이라 서비스 로그와 무관하다."
+  },
+  {
+    "id": "exam-linux-master-1-45",
+    "slug": "linux-master-1",
+    "domain": "서비스 및 시스템 관리",
+    "number": 45,
+    "prompt": "CPU·메모리 사용량이 높은 프로세스를 실시간으로 모니터링하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "top (또는 htop)"
+      },
+      {
+        "label": "B",
+        "text": "date"
+      },
+      {
+        "label": "C",
+        "text": "pwd"
+      },
+      {
+        "label": "D",
+        "text": "echo hello"
+      }
+    ],
+    "answer": "A",
+    "explanation": "top/htop은 프로세스별 CPU·메모리 사용량을 실시간 갱신해 보여준다. date·pwd·echo(B,C,D)는 모니터링과 무관하다."
+  },
+  {
+    "id": "exam-linux-master-1-46",
+    "slug": "linux-master-1",
+    "domain": "서비스 및 시스템 관리",
+    "number": 46,
+    "prompt": "특정 프로세스 ID(PID 1234)를 정상 종료 신호로 종료하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "kill 1234 (SIGTERM)"
+      },
+      {
+        "label": "B",
+        "text": "cat 1234"
+      },
+      {
+        "label": "C",
+        "text": "cd 1234"
+      },
+      {
+        "label": "D",
+        "text": "ls 1234"
+      }
+    ],
+    "answer": "A",
+    "explanation": "kill PID는 기본적으로 SIGTERM(정상 종료)을 보내며, 무시될 경우 kill -9로 강제 종료한다. cat·cd·ls(B,C,D)는 종료 명령이 아니다."
+  },
+  {
+    "id": "exam-linux-master-1-47",
+    "slug": "linux-master-1",
+    "domain": "네트워크 관리",
+    "number": 47,
+    "prompt": "현재 시스템의 네트워크 인터페이스와 IP 주소를 확인하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ip addr (또는 ip a)"
+      },
+      {
+        "label": "B",
+        "text": "ps aux"
+      },
+      {
+        "label": "C",
+        "text": "df -h"
+      },
+      {
+        "label": "D",
+        "text": "history"
+      }
+    ],
+    "answer": "A",
+    "explanation": "ip addr는 인터페이스별 IP·상태를 보여준다(구식 ifconfig 대체). ps(B)는 프로세스, df(C)는 디스크, history(D)는 명령 이력이다."
+  },
+  {
+    "id": "exam-linux-master-1-48",
+    "slug": "linux-master-1",
+    "domain": "네트워크 관리",
+    "number": 48,
+    "prompt": "원격 호스트 8.8.8.8까지의 네트워크 경로(홉)를 추적하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "traceroute 8.8.8.8 (또는 tracepath)"
+      },
+      {
+        "label": "B",
+        "text": "ping -c1 8.8.8.8"
+      },
+      {
+        "label": "C",
+        "text": "ls 8.8.8.8"
+      },
+      {
+        "label": "D",
+        "text": "cat 8.8.8.8"
+      }
+    ],
+    "answer": "A",
+    "explanation": "traceroute는 목적지까지 거치는 라우터(홉)들을 순서대로 보여준다. ping(B)은 도달성·지연만 측정하고 경로 전체는 보여주지 않는다."
+  },
+  {
+    "id": "exam-linux-master-1-49",
+    "slug": "linux-master-1",
+    "domain": "네트워크 관리",
+    "number": 49,
+    "prompt": "HTTP 엔드포인트에서 응답 본문을 받아오려 한다(명령줄). 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "curl http://example.com (또는 wget)"
+      },
+      {
+        "label": "B",
+        "text": "chmod http://example.com"
+      },
+      {
+        "label": "C",
+        "text": "kill http://example.com"
+      },
+      {
+        "label": "D",
+        "text": "mkdir http://example.com"
+      }
+    ],
+    "answer": "A",
+    "explanation": "curl/wget은 URL의 콘텐츠를 받아온다. chmod·kill·mkdir(B,C,D)은 권한·프로세스·디렉터리 명령이라 HTTP 요청과 무관하다."
+  },
+  {
+    "id": "exam-linux-master-1-50",
+    "slug": "linux-master-1",
+    "domain": "네트워크 관리",
+    "number": 50,
+    "prompt": "현재 호스트의 라우팅 테이블(기본 게이트웨이 포함)을 확인하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ip route (또는 route -n)"
+      },
+      {
+        "label": "B",
+        "text": "free -h"
+      },
+      {
+        "label": "C",
+        "text": "whoami"
+      },
+      {
+        "label": "D",
+        "text": "uptime"
+      }
+    ],
+    "answer": "A",
+    "explanation": "ip route는 라우팅 테이블과 기본 게이트웨이(default via)를 보여준다. free·whoami·uptime(B,C,D)은 메모리·사용자·가동 시간이라 라우팅과 무관하다."
   },
   {
     "id": "exam-saa-c03-1",
@@ -2727,6 +6210,762 @@
     "explanation": "Direct Connect는 온프레미스와 AWS를 전용 회선으로 연결해 일관된 대역폭·낮은 지연·안정성을 제공하며 대량·상시 전송에 적합하다. VPN(A)은 인터넷 품질에 좌우되고, S3 멀티파트(C)·CloudFront(D)는 회선 안정성 문제를 해결하지 못한다."
   },
   {
+    "id": "exam-saa-c03-41",
+    "slug": "saa-c03",
+    "domain": "보안 설계",
+    "number": 41,
+    "prompt": "EC2에서 실행되는 애플리케이션이 S3와 DynamoDB에 접근해야 한다. 장기 액세스 키 없이 최소 권한으로 임시 자격증명을 사용하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "액세스 키를 인스턴스의 환경 변수에 둔다"
+      },
+      {
+        "label": "B",
+        "text": "필요한 권한만 가진 IAM 역할을 EC2 인스턴스 프로파일로 연결한다"
+      },
+      {
+        "label": "C",
+        "text": "루트 계정 자격증명을 사용한다"
+      },
+      {
+        "label": "D",
+        "text": "액세스 키를 코드에 하드코딩한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "인스턴스 프로파일로 IAM 역할을 부여하면 EC2가 IMDS를 통해 자동 교체되는 임시 자격증명을 받아 최소 권한으로 접근한다. 환경 변수·하드코딩(A,D)은 키 노출 위험, 루트(C)는 과도 권한이다."
+  },
+  {
+    "id": "exam-saa-c03-42",
+    "slug": "saa-c03",
+    "domain": "보안 설계",
+    "number": 42,
+    "prompt": "저장 데이터를 KMS로 암호화하되, 키 사용 권한을 키 정책과 IAM으로 세분화하고 키 사용 내역을 감사하려 한다. 가장 적합한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "KMS 고객 관리형 키(CMK) + 키 정책/IAM 권한 + CloudTrail로 사용 로깅"
+      },
+      {
+        "label": "B",
+        "text": "평문 저장 후 접근 로그만 남긴다"
+      },
+      {
+        "label": "C",
+        "text": "각 인스턴스에서 자체 구현 암호화 라이브러리 사용"
+      },
+      {
+        "label": "D",
+        "text": "암호화를 비활성화하고 보안 그룹으로만 보호"
+      }
+    ],
+    "answer": "A",
+    "explanation": "고객 관리형 KMS 키는 키 정책+IAM으로 사용 권한을 세분화하고, 모든 KMS 호출은 CloudTrail에 기록되어 감사가 가능하다. 평문(B)·암호화 비활성(D)은 미흡, 자체 구현(C)은 운영·감사 부담이 크다."
+  },
+  {
+    "id": "exam-saa-c03-43",
+    "slug": "saa-c03",
+    "domain": "보안 설계",
+    "number": 43,
+    "prompt": "프라이빗 서브넷의 EC2가 OS 패치를 위해 인터넷의 패키지 저장소에 아웃바운드 접근해야 하지만, 인터넷에서 인바운드로 접근되면 안 된다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "인터넷 게이트웨이에 직접 라우팅하고 퍼블릭 IP 부여"
+      },
+      {
+        "label": "B",
+        "text": "퍼블릭 서브넷의 NAT 게이트웨이를 통해 아웃바운드만 허용"
+      },
+      {
+        "label": "C",
+        "text": "보안 그룹에서 0.0.0.0/0 인바운드 허용"
+      },
+      {
+        "label": "D",
+        "text": "VPC 피어링으로 다른 VPC를 경유"
+      }
+    ],
+    "answer": "B",
+    "explanation": "NAT 게이트웨이는 프라이빗 서브넷의 아웃바운드를 허용하되 인바운드 개시 연결은 막는다. 퍼블릭 IP(A)·인바운드 개방(C)은 노출 위험, 피어링(D)은 인터넷 접근 수단이 아니다."
+  },
+  {
+    "id": "exam-saa-c03-44",
+    "slug": "saa-c03",
+    "domain": "보안 설계",
+    "number": 44,
+    "prompt": "다른 AWS 계정의 역할에 일시적으로 접근 권한을 위임해 크로스 계정 작업을 수행하려 한다. 가장 적합한 메커니즘은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "양 계정에 동일한 IAM 사용자 비밀번호를 공유"
+      },
+      {
+        "label": "B",
+        "text": "신뢰 정책을 가진 IAM 역할을 만들고 STS AssumeRole로 임시 자격증명을 받는다"
+      },
+      {
+        "label": "C",
+        "text": "액세스 키를 이메일로 전달"
+      },
+      {
+        "label": "D",
+        "text": "루트 계정 키를 공유"
+      }
+    ],
+    "answer": "B",
+    "explanation": "크로스 계정 접근은 대상 계정에 신뢰 정책이 있는 역할을 두고 sts:AssumeRole로 임시 자격증명을 받는 것이 표준이다. 비밀번호·키 공유(A,C,D)는 보안 원칙 위반이다."
+  },
+  {
+    "id": "exam-saa-c03-45",
+    "slug": "saa-c03",
+    "domain": "보안 설계",
+    "number": 45,
+    "prompt": "CloudFront로 배포되는 정적 사이트의 S3 오리진을 직접 URL로 우회 접근하지 못하게 하려 한다. 가장 적합한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 버킷을 퍼블릭으로 공개"
+      },
+      {
+        "label": "B",
+        "text": "Origin Access Control(OAC)로 CloudFront만 S3에 접근하도록 버킷 정책 제한"
+      },
+      {
+        "label": "C",
+        "text": "S3에 정적 호스팅을 켜고 누구나 접근 허용"
+      },
+      {
+        "label": "D",
+        "text": "버킷 이름을 추측하기 어렵게 짓는다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "OAC를 사용하면 CloudFront 배포만 S3 오리진에 접근하도록 버킷 정책으로 제한해 직접 URL 우회를 차단한다. 퍼블릭 공개(A,C)는 우회 가능, 이름 난독화(D)는 보안 통제가 아니다."
+  },
+  {
+    "id": "exam-saa-c03-46",
+    "slug": "saa-c03",
+    "domain": "보안 설계",
+    "number": 46,
+    "prompt": "여러 마이크로서비스가 외부 API 키와 DB 비밀번호 등 시크릿을 공유한다. 시크릿을 중앙에서 안전 저장하고 자동 교체하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Secrets Manager에 저장하고 자동 교체를 활성화, 각 서비스는 IAM 역할로 조회"
+      },
+      {
+        "label": "B",
+        "text": "모든 시크릿을 공용 S3 버킷에 평문 저장"
+      },
+      {
+        "label": "C",
+        "text": "각 서비스 코드에 상수로 하드코딩"
+      },
+      {
+        "label": "D",
+        "text": "시크릿을 컨테이너 이미지에 굽는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Secrets Manager는 중앙 저장+자동 교체를 제공하고 IAM으로 접근 제어한다. 평문 S3(B)·하드코딩(C)·이미지 내장(D)은 모두 노출·교체 곤란 문제가 있다."
+  },
+  {
+    "id": "exam-saa-c03-47",
+    "slug": "saa-c03",
+    "domain": "보안 설계",
+    "number": 47,
+    "prompt": "규정상 모든 API 호출 기록을 변조 불가능하게 장기 보관해야 한다. 가장 적합한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudTrail을 켜고 로그를 S3에 저장, S3 Object Lock(WORM)으로 변조 방지"
+      },
+      {
+        "label": "B",
+        "text": "각 서비스가 자체 로그를 로컬 디스크에 보관"
+      },
+      {
+        "label": "C",
+        "text": "CloudWatch 대시보드만 캡처"
+      },
+      {
+        "label": "D",
+        "text": "로그를 분기마다 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CloudTrail은 계정의 API 활동을 기록하고, S3 Object Lock(WORM)으로 보존 기간 동안 변조·삭제를 막아 규정 준수 감사 요건을 충족한다. 로컬 보관(B)·삭제(D)는 변조·소실 위험, 대시보드 캡처(C)는 부정확하다."
+  },
+  {
+    "id": "exam-saa-c03-48",
+    "slug": "saa-c03",
+    "domain": "보안 설계",
+    "number": 48,
+    "prompt": "IAM 권한이 의도보다 넓게 부여되었는지 점검하고, 실제 사용되지 않은 권한을 식별해 최소 권한으로 좁히려 한다. 가장 적합한 도구는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM Access Analyzer와 마지막 액세스 정보(Access Advisor)로 미사용 권한 식별"
+      },
+      {
+        "label": "B",
+        "text": "모든 사용자에게 AdministratorAccess 부여"
+      },
+      {
+        "label": "C",
+        "text": "권한 점검을 생략"
+      },
+      {
+        "label": "D",
+        "text": "정책을 임의로 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "IAM Access Analyzer는 외부 노출·과도 권한을 분석하고, 서비스 마지막 액세스 정보로 실제 미사용 권한을 찾아 최소 권한으로 다듬을 수 있다. Admin 부여(B)·임의 삭제(D)는 위험·운영 장애를 초래한다."
+  },
+  {
+    "id": "exam-saa-c03-49",
+    "slug": "saa-c03",
+    "domain": "복원력 설계",
+    "number": 49,
+    "prompt": "주문 처리 시스템에서 생산자와 소비자를 분리(decouple)해 갑작스러운 트래픽 급증에도 메시지 유실 없이 처리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "생산자가 소비자를 동기 호출"
+      },
+      {
+        "label": "B",
+        "text": "Amazon SQS 큐로 비동기 분리하고 소비자가 자기 속도로 폴링"
+      },
+      {
+        "label": "C",
+        "text": "모든 요청을 단일 EC2에서 동기 처리"
+      },
+      {
+        "label": "D",
+        "text": "요청을 즉시 버린다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SQS는 생산자/소비자를 분리해 버퍼 역할을 하므로 급증 트래픽을 큐에 적재하고 소비자가 자기 처리량으로 안전하게 소비한다. 동기 호출(A,C)은 백프레셔에 취약, 폐기(D)는 유실이다."
+  },
+  {
+    "id": "exam-saa-c03-50",
+    "slug": "saa-c03",
+    "domain": "복원력 설계",
+    "number": 50,
+    "prompt": "RDS(MySQL) 데이터베이스의 가용성을 높여 AZ 장애 시 자동 장애 조치되게 하려 한다. 가장 적합한 옵션은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "단일 AZ 인스턴스에 스냅샷만 자주 찍는다"
+      },
+      {
+        "label": "B",
+        "text": "RDS Multi-AZ 배포를 활성화"
+      },
+      {
+        "label": "C",
+        "text": "읽기 전용 복제본만 추가"
+      },
+      {
+        "label": "D",
+        "text": "더 큰 인스턴스로 변경"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Multi-AZ는 대기 인스턴스를 다른 AZ에 동기 복제로 유지하다 장애 시 자동 페일오버해 가용성을 높인다. 읽기 복제본(C)은 읽기 확장·DR용이지 자동 페일오버가 아니며, 스냅샷·수직 확장(A,D)은 가용성 자동화가 아니다."
+  },
+  {
+    "id": "exam-saa-c03-51",
+    "slug": "saa-c03",
+    "domain": "복원력 설계",
+    "number": 51,
+    "prompt": "리전 전체 장애에 대비해 RPO/RTO를 분 단위로 낮춘 재해 복구를 비교적 경제적으로 구성하려 한다. 가장 적합한 DR 전략은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "백업 후 복구(Backup & Restore)만"
+      },
+      {
+        "label": "B",
+        "text": "파일럿 라이트(Pilot Light) 또는 워밍 스탠바이로 핵심 구성요소를 다른 리전에 최소 가동"
+      },
+      {
+        "label": "C",
+        "text": "DR을 구성하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "단일 리전에 인스턴스만 추가"
+      }
+    ],
+    "answer": "B",
+    "explanation": "파일럿 라이트/워밍 스탠바이는 다른 리전에 핵심 요소(DB 복제 등)를 항상 켜두고 나머지는 최소화해 비용을 억제하면서도 분 단위 RTO를 달성한다. 백업·복구(A)는 RTO가 길고, 단일 리전(D)은 리전 장애를 못 막는다."
+  },
+  {
+    "id": "exam-saa-c03-52",
+    "slug": "saa-c03",
+    "domain": "복원력 설계",
+    "number": 52,
+    "prompt": "여러 AZ에 분산된 EC2 앞단의 ALB가 비정상 인스턴스로 트래픽을 보내지 않게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "대상 그룹의 상태 확인(health check)을 구성해 비정상 대상은 자동 제외"
+      },
+      {
+        "label": "B",
+        "text": "모든 인스턴스에 균등 분배하고 상태는 무시"
+      },
+      {
+        "label": "C",
+        "text": "인스턴스를 하나만 남긴다"
+      },
+      {
+        "label": "D",
+        "text": "로드 밸런서를 제거"
+      }
+    ],
+    "answer": "A",
+    "explanation": "ALB는 대상 그룹 상태 확인으로 비정상 인스턴스를 자동으로 라우팅에서 제외하고 정상 복구되면 다시 포함한다. 상태 무시(B)는 오류 라우팅, 단일 인스턴스·LB 제거(C,D)는 가용성을 떨어뜨린다."
+  },
+  {
+    "id": "exam-saa-c03-53",
+    "slug": "saa-c03",
+    "domain": "복원력 설계",
+    "number": 53,
+    "prompt": "정적 자산을 전 세계 사용자에게 낮은 지연으로 제공하면서 오리진 장애 시에도 캐시된 콘텐츠를 제공하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "단일 리전 S3에서 직접 제공"
+      },
+      {
+        "label": "B",
+        "text": "CloudFront로 엣지 캐싱 + 오리진 장애 시 캐시/오리진 그룹(failover) 활용"
+      },
+      {
+        "label": "C",
+        "text": "각 사용자가 EC2에 직접 접속"
+      },
+      {
+        "label": "D",
+        "text": "자산을 이메일로 배포"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudFront는 엣지에서 캐싱해 지연을 낮추고, 오리진 그룹(origin failover)으로 1차 오리진 장애 시 2차 오리진으로 전환해 복원력을 높인다. 단일 리전 직접 제공(A)·EC2 직접 접속(C)은 지연·가용성에 불리하다."
+  },
+  {
+    "id": "exam-saa-c03-54",
+    "slug": "saa-c03",
+    "domain": "복원력 설계",
+    "number": 54,
+    "prompt": "Auto Scaling 그룹의 인스턴스가 종료되어도 세션 데이터가 유실되지 않게 상태 비저장 아키텍처를 만들려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "세션을 각 인스턴스 로컬 메모리에 보관"
+      },
+      {
+        "label": "B",
+        "text": "세션 상태를 ElastiCache(Redis)나 DynamoDB 같은 외부 저장소로 분리"
+      },
+      {
+        "label": "C",
+        "text": "세션을 EBS에 저장하고 인스턴스에 고정"
+      },
+      {
+        "label": "D",
+        "text": "세션을 사용하지 않게 강제"
+      }
+    ],
+    "answer": "B",
+    "explanation": "세션을 외부 공유 저장소(ElastiCache/DynamoDB)로 분리하면 인스턴스가 교체·종료돼도 세션이 유지되어 상태 비저장 수평 확장이 가능하다. 로컬 메모리·EBS 고정(A,C)은 인스턴스 종료 시 유실된다."
+  },
+  {
+    "id": "exam-saa-c03-55",
+    "slug": "saa-c03",
+    "domain": "복원력 설계",
+    "number": 55,
+    "prompt": "서버리스 비동기 처리에서 Lambda가 다운스트림 일시 오류로 실패할 때, 실패 이벤트를 잃지 않고 별도로 보관·재처리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "실패 시 그냥 무시"
+      },
+      {
+        "label": "B",
+        "text": "Lambda 대상(on-failure destination) 또는 데드레터 큐(DLQ)로 실패 이벤트 캡처"
+      },
+      {
+        "label": "C",
+        "text": "재시도를 0으로 설정하고 종료"
+      },
+      {
+        "label": "D",
+        "text": "로그만 남기고 이벤트는 폐기"
+      }
+    ],
+    "answer": "B",
+    "explanation": "비동기 호출 실패는 DLQ나 실패 대상(SQS/SNS/EventBridge)으로 보내 유실 없이 보관·재처리할 수 있다. 무시·폐기(A,C,D)는 이벤트 손실을 초래한다."
+  },
+  {
+    "id": "exam-saa-c03-56",
+    "slug": "saa-c03",
+    "domain": "복원력 설계",
+    "number": 56,
+    "prompt": "DynamoDB 테이블을 단일 리전 장애에도 견디게 하고 전 세계 다중 리전에서 낮은 지연으로 읽기/쓰기하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "단일 리전 테이블에 백업만 켠다"
+      },
+      {
+        "label": "B",
+        "text": "DynamoDB 글로벌 테이블로 다중 리전 활성-활성 복제 구성"
+      },
+      {
+        "label": "C",
+        "text": "테이블을 RDS로 옮긴다"
+      },
+      {
+        "label": "D",
+        "text": "읽기 전용 복제본을 다른 리전에 둔다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "글로벌 테이블은 여러 리전에 활성-활성으로 자동 복제해 리전 장애 내성과 지역별 낮은 지연을 제공한다. 단일 리전 백업(A)은 RTO가 길고, RDS 이전(C)·읽기 복제본(D)은 요건에 맞지 않다."
+  },
+  {
+    "id": "exam-saa-c03-57",
+    "slug": "saa-c03",
+    "domain": "고성능 설계",
+    "number": 57,
+    "prompt": "읽기가 매우 많은 관계형 워크로드에서 데이터베이스 읽기 부하를 분산해 응답 지연을 줄이려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "쓰기 인스턴스를 더 키운다"
+      },
+      {
+        "label": "B",
+        "text": "RDS/Aurora 읽기 전용 복제본을 추가하고 읽기 트래픽을 분산"
+      },
+      {
+        "label": "C",
+        "text": "모든 읽기를 기본 인스턴스로만 보낸다"
+      },
+      {
+        "label": "D",
+        "text": "캐시를 끈다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "읽기 전용 복제본은 읽기 트래픽을 오프로드해 기본 인스턴스 부하와 지연을 낮춘다. 수직 확장(A)은 한계·비용 문제, 단일 인스턴스 집중(C)·캐시 비활성(D)은 성능에 불리하다."
+  },
+  {
+    "id": "exam-saa-c03-58",
+    "slug": "saa-c03",
+    "domain": "고성능 설계",
+    "number": 58,
+    "prompt": "데이터베이스 앞단에서 반복적인 동일 쿼리 결과를 캐싱해 지연과 DB 부하를 크게 줄이려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ElastiCache(Redis/Memcached)로 인메모리 캐시 계층 추가"
+      },
+      {
+        "label": "B",
+        "text": "쿼리를 매번 풀스캔"
+      },
+      {
+        "label": "C",
+        "text": "DB 인스턴스를 매번 재시작"
+      },
+      {
+        "label": "D",
+        "text": "캐싱을 금지"
+      }
+    ],
+    "answer": "A",
+    "explanation": "ElastiCache는 인메모리 캐시로 자주 조회되는 데이터를 보관해 응답을 마이크로초 단위로 제공하고 DB 부하를 줄인다. 풀스캔·재시작(B,C)은 성능 저하, 캐싱 금지(D)는 목적에 반한다."
+  },
+  {
+    "id": "exam-saa-c03-59",
+    "slug": "saa-c03",
+    "domain": "고성능 설계",
+    "number": 59,
+    "prompt": "대용량 미디어 파일을 S3에 업로드할 때 처리량을 높이고 네트워크 중단 시 부분 재전송이 가능하게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "단일 PUT으로 통째로 업로드"
+      },
+      {
+        "label": "B",
+        "text": "S3 멀티파트 업로드로 병렬·부분 재전송"
+      },
+      {
+        "label": "C",
+        "text": "파일을 잘게 나눠 이메일로 전송"
+      },
+      {
+        "label": "D",
+        "text": "EBS에 저장하고 끝낸다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "멀티파트 업로드는 파일을 여러 파트로 나눠 병렬 전송하고 실패한 파트만 재전송하므로 처리량·복원력이 높다. 단일 PUT(A)은 대용량·중단에 취약, 이메일·EBS(C,D)는 요건과 무관하다."
+  },
+  {
+    "id": "exam-saa-c03-60",
+    "slug": "saa-c03",
+    "domain": "고성능 설계",
+    "number": 60,
+    "prompt": "온프레미스와 AWS 간 지속적이고 일관된 대역폭·낮은 지연의 전용 연결이 필요하다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "공용 인터넷 VPN만 사용"
+      },
+      {
+        "label": "B",
+        "text": "AWS Direct Connect로 전용 물리 회선 구성"
+      },
+      {
+        "label": "C",
+        "text": "S3 Transfer Acceleration"
+      },
+      {
+        "label": "D",
+        "text": "CloudFront 배포"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Direct Connect는 전용 물리 회선으로 일관된 대역폭과 낮은 지연을 제공해 대규모·민감 워크로드에 적합하다. VPN(A)은 인터넷 경유라 변동성이 크고, C·D는 콘텐츠 전송 가속용이다."
+  },
+  {
+    "id": "exam-saa-c03-61",
+    "slug": "saa-c03",
+    "domain": "고성능 설계",
+    "number": 61,
+    "prompt": "실시간 스트리밍 데이터(클릭스트림 등)를 높은 처리량으로 수집해 여러 소비자가 동시에 처리하게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 이벤트를 RDS에 즉시 INSERT"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Kinesis Data Streams로 수집하고 다수 소비자가 병렬 처리"
+      },
+      {
+        "label": "C",
+        "text": "이벤트를 CSV로 모아 하루에 한 번 처리"
+      },
+      {
+        "label": "D",
+        "text": "이벤트를 폐기"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Kinesis Data Streams는 고처리량 실시간 스트림을 수집하고 샤드/소비자로 병렬 처리하며 여러 애플리케이션이 동일 스트림을 소비할 수 있다. RDS 즉시 INSERT(A)는 확장 한계, 일배치(C)는 실시간성 상실, 폐기(D)는 부적절하다."
+  },
+  {
+    "id": "exam-saa-c03-62",
+    "slug": "saa-c03",
+    "domain": "비용 최적화 설계",
+    "number": 62,
+    "prompt": "예측 가능한 안정적 기준 컴퓨팅 사용량에 대해 1~3년 약정으로 최대 할인을 받으려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모두 온디맨드로 사용"
+      },
+      {
+        "label": "B",
+        "text": "Savings Plans 또는 예약 인스턴스(RI)로 기준 사용량 약정"
+      },
+      {
+        "label": "C",
+        "text": "스팟 인스턴스로 기준 워크로드를 돌린다"
+      },
+      {
+        "label": "D",
+        "text": "인스턴스를 과다 프로비저닝"
+      }
+    ],
+    "answer": "B",
+    "explanation": "안정적 기준 사용량은 Savings Plans/RI 약정으로 온디맨드 대비 큰 할인을 받는다. 온디맨드(A)·과다 프로비저닝(D)은 비싸고, 스팟(C)은 중단될 수 있어 안정 기준에는 부적합하다."
+  },
+  {
+    "id": "exam-saa-c03-63",
+    "slug": "saa-c03",
+    "domain": "비용 최적화 설계",
+    "number": 63,
+    "prompt": "내결함성이 있는 배치/렌더링 작업을 최대 90%까지 저렴하게 실행하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "온디맨드 대형 인스턴스 상시 가동"
+      },
+      {
+        "label": "B",
+        "text": "스팟 인스턴스(필요 시 스팟 플릿/혼합)로 실행하고 중단을 처리"
+      },
+      {
+        "label": "C",
+        "text": "예약 인스턴스 3년 약정"
+      },
+      {
+        "label": "D",
+        "text": "서버를 끄지 않고 유휴 가동"
+      }
+    ],
+    "answer": "B",
+    "explanation": "중단에 견디는 배치 워크로드는 스팟으로 최대 90% 절감할 수 있고, 중단 알림을 처리하거나 혼합 구성으로 안정화한다. 온디맨드 상시(A)·유휴 가동(D)은 비싸고, RI(C)는 가변 배치에 비효율적이다."
+  },
+  {
+    "id": "exam-saa-c03-64",
+    "slug": "saa-c03",
+    "domain": "비용 최적화 설계",
+    "number": 64,
+    "prompt": "자주 접근하지 않는 데이터의 S3 스토리지 비용을 줄이되, 접근 패턴이 불규칙해 수동 계층 이동이 어렵다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모두 S3 Standard에 둔다"
+      },
+      {
+        "label": "B",
+        "text": "S3 Intelligent-Tiering으로 접근 패턴에 따라 자동 계층 이동"
+      },
+      {
+        "label": "C",
+        "text": "데이터를 매번 삭제"
+      },
+      {
+        "label": "D",
+        "text": "EBS로 옮긴다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Intelligent-Tiering은 객체 접근 패턴을 모니터링해 자동으로 저렴한 계층으로 이동·복귀시켜 수동 관리 없이 비용을 최적화한다. Standard 고정(A)은 비싸고, 삭제(C)·EBS 이전(D)은 요건과 다르다."
+  },
+  {
+    "id": "exam-saa-c03-65",
+    "slug": "saa-c03",
+    "domain": "비용 최적화 설계",
+    "number": 65,
+    "prompt": "로그 데이터를 30일 후 저빈도 계층으로, 90일 후 아카이브로 옮기고 1년 후 삭제해 비용을 자동 관리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 수명 주기(lifecycle) 규칙으로 전환·만료 자동화"
+      },
+      {
+        "label": "B",
+        "text": "운영자가 매일 수동으로 파일을 옮긴다"
+      },
+      {
+        "label": "C",
+        "text": "모든 로그를 Standard에 영구 보관"
+      },
+      {
+        "label": "D",
+        "text": "로그를 EBS 스냅샷으로 보관"
+      }
+    ],
+    "answer": "A",
+    "explanation": "S3 수명 주기 규칙은 정해진 기간에 따라 객체를 IA·Glacier로 전환하고 만료 삭제까지 자동화해 비용을 최적화한다. 수동 이동(B)·영구 Standard(C)는 비효율적이다."
+  },
+  {
+    "id": "exam-saa-c03-66",
+    "slug": "saa-c03",
+    "domain": "비용 최적화 설계",
+    "number": 66,
+    "prompt": "여러 계정의 비용을 통합 청구하고 볼륨 할인을 받으며 계정별 비용을 가시화하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 계정이 개별 결제하고 비용을 따로 본다"
+      },
+      {
+        "label": "B",
+        "text": "AWS Organizations 통합 결제 + Cost Explorer/비용 할당 태그로 가시화"
+      },
+      {
+        "label": "C",
+        "text": "비용을 추적하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "계정을 모두 합쳐 하나만 쓴다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Organizations 통합 결제는 사용량을 합산해 볼륨 할인을 적용하고, Cost Explorer와 비용 할당 태그로 계정·서비스별 비용을 분석한다. 개별 결제(A)·미추적(C)은 절감·가시성에 불리하다."
+  },
+  {
+    "id": "exam-saa-c03-67",
+    "slug": "saa-c03",
+    "domain": "비용 최적화 설계",
+    "number": 67,
+    "prompt": "개발/테스트 EC2 환경이 야간·주말에도 켜져 있어 비용이 낭비된다. 운영 변경 없이 비가동 시간에 자동 중지하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "인스턴스를 항상 켜둔다"
+      },
+      {
+        "label": "B",
+        "text": "EventBridge 스케줄 + Lambda(또는 Instance Scheduler)로 업무 외 시간 자동 시작/중지"
+      },
+      {
+        "label": "C",
+        "text": "더 비싼 인스턴스로 교체"
+      },
+      {
+        "label": "D",
+        "text": "예약 인스턴스를 산다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "EventBridge 스케줄로 Lambda나 Instance Scheduler를 트리거해 업무 외 시간에 dev/test 인스턴스를 자동 중지하면 유휴 비용을 줄인다. 상시 가동(A)·고가 인스턴스(C)는 낭비, RI(D)는 상시 워크로드용이다."
+  },
+  {
+    "id": "exam-saa-c03-68",
+    "slug": "saa-c03",
+    "domain": "비용 최적화 설계",
+    "number": 68,
+    "prompt": "대량의 정적 콘텐츠를 사용자에게 제공할 때 S3에서 직접 나가는 데이터 전송 비용을 줄이려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "사용자가 항상 S3 오리진에서 직접 다운로드"
+      },
+      {
+        "label": "B",
+        "text": "CloudFront로 엣지 캐싱하여 오리진 요청·데이터 전송 비용 절감"
+      },
+      {
+        "label": "C",
+        "text": "콘텐츠를 더 큰 파일로 합친다"
+      },
+      {
+        "label": "D",
+        "text": "전송을 막는다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudFront는 엣지에서 캐싱해 S3 오리진으로의 반복 요청과 오리진 데이터 전송을 줄이고, CloudFront 전송 요금이 일반적으로 더 유리하다. S3 직접 제공(A)은 오리진 부하·비용이 크다."
+  },
+  {
     "id": "exam-sap-c02-1",
     "slug": "sap-c02",
     "domain": "복잡한 조직을 위한 솔루션 설계",
@@ -3267,6 +7506,1410 @@
     "explanation": "Aurora Serverless v2는 부하에 따라 용량을 세밀하게 자동 확장·축소해 버스트성 워크로드의 운영 부담과 유휴 비용을 줄인다. 상시 대형(A)·과다 프로비저닝(D)은 유휴 비용, EC2 수동(C)은 운영 부담이 크다."
   },
   {
+    "id": "exam-sap-c02-21",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 21,
+    "prompt": "대기업이 수백 개 계정을 표준 가드레일과 베이스라인으로 자동 프로비저닝·거버넌스하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Control Tower로 랜딩 존을 구성하고 계정 팩토리·가드레일 적용"
+      },
+      {
+        "label": "B",
+        "text": "계정마다 수동으로 설정"
+      },
+      {
+        "label": "C",
+        "text": "단일 계정에 모든 워크로드 집중"
+      },
+      {
+        "label": "D",
+        "text": "IAM 사용자만으로 분리"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Control Tower는 다계정 랜딩 존을 자동 구성하고 계정 팩토리·예방/탐지 가드레일로 거버넌스를 표준화한다. 수동 설정(B)은 드리프트·확장성 문제가 크다."
+  },
+  {
+    "id": "exam-sap-c02-22",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 22,
+    "prompt": "온프레미스 Active Directory 사용자가 별도 자격증명 없이 AWS 콘솔과 여러 계정에 SSO로 접근하게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM Identity Center를 AD와 연동해 다계정 권한 집합으로 SSO 제공"
+      },
+      {
+        "label": "B",
+        "text": "계정마다 IAM 사용자 수동 생성"
+      },
+      {
+        "label": "C",
+        "text": "AD 비밀번호를 공유"
+      },
+      {
+        "label": "D",
+        "text": "루트 계정 공유"
+      }
+    ],
+    "answer": "A",
+    "explanation": "IAM Identity Center는 외부 IdP/AD와 연동해 SSO와 권한 집합으로 다계정 접근을 중앙 관리한다. 계정별 IAM 사용자(B)는 관리·드리프트 부담이 크다."
+  },
+  {
+    "id": "exam-sap-c02-23",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 23,
+    "prompt": "수십 개 VPC와 여러 온프레미스 사이트를 중앙에서 라우팅·세분화하려 한다. 가장 확장적인 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Transit Gateway 허브와 라우트 테이블로 도메인 분리"
+      },
+      {
+        "label": "B",
+        "text": "모든 VPC를 풀메시 피어링"
+      },
+      {
+        "label": "C",
+        "text": "각 VPC를 인터넷으로 연결"
+      },
+      {
+        "label": "D",
+        "text": "VPC를 하나로 통합"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Transit Gateway는 허브-스포크로 다수 VPC·온프레미스를 연결하고 라우트 테이블로 세분화한다. 풀메시 피어링(B)은 연결 수가 폭증해 비확장적이다."
+  },
+  {
+    "id": "exam-sap-c02-24",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 24,
+    "prompt": "조직 전역에서 특정 고위험 작업(예: CloudTrail 비활성화, 특정 리전 사용)을 누구도 못 하게 강제하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Organizations SCP로 해당 작업을 명시적으로 거부"
+      },
+      {
+        "label": "B",
+        "text": "각 사용자에게 교육만"
+      },
+      {
+        "label": "C",
+        "text": "개별 IAM 정책 복제"
+      },
+      {
+        "label": "D",
+        "text": "사후 감사만"
+      }
+    ],
+    "answer": "A",
+    "explanation": "SCP는 OU/계정 차원에서 작업 상한을 강제해 루트 포함 누구도 금지 작업을 못 하게 한다. 교육·사후 감사(B,D)는 예방이 아니다."
+  },
+  {
+    "id": "exam-sap-c02-25",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 25,
+    "prompt": "중앙 보안 팀이 모든 계정의 위협 탐지·취약점·발견 사항을 통합 관리하려 한다. 가장 적합한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "위임 관리자 계정에서 GuardDuty·Inspector·Security Hub를 조직 전체로 활성화"
+      },
+      {
+        "label": "B",
+        "text": "각 계정에서 개별 운영"
+      },
+      {
+        "label": "C",
+        "text": "보안 서비스를 끈다"
+      },
+      {
+        "label": "D",
+        "text": "스프레드시트로 취합"
+      }
+    ],
+    "answer": "A",
+    "explanation": "GuardDuty·Inspector·Security Hub는 Organizations와 위임 관리자를 통해 조직 전체 자동 등록·중앙 집계가 가능하다. 개별 운영·수동 취합(B,D)은 비효율·누락 위험이 크다."
+  },
+  {
+    "id": "exam-sap-c02-26",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 26,
+    "prompt": "공유 서비스(예: 중앙 DNS, 디렉터리, 검사 VPC)를 여러 계정이 안전하게 공유하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS RAM으로 서브넷·리소스를 다른 계정과 공유"
+      },
+      {
+        "label": "B",
+        "text": "각 계정에 중복 배포"
+      },
+      {
+        "label": "C",
+        "text": "퍼블릭으로 노출"
+      },
+      {
+        "label": "D",
+        "text": "수동 복제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS Resource Access Manager(RAM)는 VPC 서브넷·Transit Gateway·Resolver 규칙 등을 계정 간 안전하게 공유한다. 중복 배포(B)는 비용·관리 부담이 크다."
+  },
+  {
+    "id": "exam-sap-c02-27",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 27,
+    "prompt": "규제 산업에서 모든 계정의 구성 변경을 기록하고 비준수를 조직 차원에서 자동 교정하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Config 조직 규칙(organization rules)과 자동 교정 연동"
+      },
+      {
+        "label": "B",
+        "text": "각 계정 콘솔을 매일 본다"
+      },
+      {
+        "label": "C",
+        "text": "추적하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "분기마다 수동 점검"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Config 조직 규칙은 전 계정에 일괄 배포되어 비준수를 평가하고 SSM 자동화로 교정을 연동한다. 수동 점검(B,D)은 누락·지연이 크다."
+  },
+  {
+    "id": "exam-sap-c02-28",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 28,
+    "prompt": "대규모 데이터 전송 비용과 지연을 줄이려 여러 계정이 공유하는 중앙 인터넷·NAT 송신을 만들려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "중앙 송신(egress) VPC에 NAT/방화벽을 두고 TGW로 라우팅"
+      },
+      {
+        "label": "B",
+        "text": "계정마다 NAT를 중복 생성"
+      },
+      {
+        "label": "C",
+        "text": "모두 퍼블릭 IP 사용"
+      },
+      {
+        "label": "D",
+        "text": "송신을 막는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "중앙 송신 VPC에 NAT·Network Firewall을 두고 Transit Gateway로 라우팅하면 비용·관리·검사 일원화가 가능하다. 계정별 NAT 중복(B)은 비용이 크다."
+  },
+  {
+    "id": "exam-sap-c02-29",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 29,
+    "prompt": "여러 팀이 독립적으로 배포하되 공통 보안·로깅 표준을 자동 적용받게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "OU 구조 + SCP + Config 규칙으로 표준을 계정에 상속"
+      },
+      {
+        "label": "B",
+        "text": "팀마다 자유롭게 설정"
+      },
+      {
+        "label": "C",
+        "text": "단일 계정 공유"
+      },
+      {
+        "label": "D",
+        "text": "표준을 두지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "OU 계층에 SCP·Config 규칙을 적용하면 하위 계정이 표준을 자동 상속받아 자율성과 거버넌스를 함께 달성한다. 자유 설정(B)·표준 없음(D)은 거버넌스 실패를 부른다."
+  },
+  {
+    "id": "exam-sap-c02-30",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 30,
+    "prompt": "다계정 환경에서 중앙 로그 아카이브 계정에 모든 CloudTrail·VPC Flow Logs를 변조 불가하게 모으려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "조직 추적(organization trail)을 중앙 로그 계정 S3로 전달하고 Object Lock 적용"
+      },
+      {
+        "label": "B",
+        "text": "각 계정 로컬에 보관"
+      },
+      {
+        "label": "C",
+        "text": "로그를 끈다"
+      },
+      {
+        "label": "D",
+        "text": "개발자 PC에 저장"
+      }
+    ],
+    "answer": "A",
+    "explanation": "조직 CloudTrail은 전 계정 이벤트를 중앙 로그 계정 S3로 모으고 Object Lock(WORM)으로 변조를 방지해 감사 요건을 충족한다. 로컬 보관(B)은 분산·소실 위험이 크다."
+  },
+  {
+    "id": "exam-sap-c02-31",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 31,
+    "prompt": "서로 다른 팀의 비용을 명확히 배분하고 쇼백/차지백을 운영하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "비용 할당 태그 + Cost Categories로 팀/프로젝트별 비용 분류"
+      },
+      {
+        "label": "B",
+        "text": "총액만 본다"
+      },
+      {
+        "label": "C",
+        "text": "추측 분배"
+      },
+      {
+        "label": "D",
+        "text": "비용을 추적하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "비용 할당 태그와 Cost Categories는 계정·태그를 그룹으로 묶어 팀/프로젝트별 비용을 분류·차지백할 수 있게 한다. 총액·추측(B,C)은 정확한 배분이 어렵다."
+  },
+  {
+    "id": "exam-sap-c02-32",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 32,
+    "prompt": "여러 계정의 KMS 키 사용을 중앙에서 거버넌스하면서 각 계정이 자체 데이터 키로 암호화하게 하려 한다. 가장 적합한 접근은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "키 정책으로 계정별 사용 권한을 위임하고 CloudTrail로 사용 감사"
+      },
+      {
+        "label": "B",
+        "text": "모든 계정이 단일 평문 키 공유"
+      },
+      {
+        "label": "C",
+        "text": "암호화 안 함"
+      },
+      {
+        "label": "D",
+        "text": "키를 코드에 하드코딩"
+      }
+    ],
+    "answer": "A",
+    "explanation": "KMS 키 정책으로 크로스 계정 사용을 세밀히 위임하고 CloudTrail로 키 사용을 감사하면 중앙 거버넌스와 계정별 사용을 양립한다. 평문 키 공유(B)는 보안 위반이다."
+  },
+  {
+    "id": "exam-sap-c02-33",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 33,
+    "prompt": "대규모 조직에서 새 계정 생성 시 네트워크·보안·로깅 베이스라인을 자동 적용하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Control Tower 계정 팩토리(또는 커스터마이즈 파이프라인)로 베이스라인 자동화"
+      },
+      {
+        "label": "B",
+        "text": "매번 수동 구성"
+      },
+      {
+        "label": "C",
+        "text": "베이스라인 없이 생성"
+      },
+      {
+        "label": "D",
+        "text": "개발자에게 일임"
+      }
+    ],
+    "answer": "A",
+    "explanation": "계정 팩토리(및 AFT 같은 파이프라인)는 새 계정에 표준 네트워크·보안·로깅을 자동 적용한다. 수동·일임(B,D)은 일관성이 깨진다."
+  },
+  {
+    "id": "exam-sap-c02-34",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 34,
+    "prompt": "온프레미스와 AWS 간 안정적 고대역 연결에 더해 단일 회선 장애에도 견디게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Direct Connect를 이중화(다른 위치/장치)하고 VPN 백업을 병행"
+      },
+      {
+        "label": "B",
+        "text": "단일 DX 회선만"
+      },
+      {
+        "label": "C",
+        "text": "인터넷만 사용"
+      },
+      {
+        "label": "D",
+        "text": "백업 없이 운영"
+      }
+    ],
+    "answer": "A",
+    "explanation": "복원력 있는 하이브리드 연결은 DX를 여러 위치/장치로 이중화하고 VPN을 백업으로 두는 것이 모범 사례다. 단일 회선(B)은 단일 장애점이다."
+  },
+  {
+    "id": "exam-sap-c02-35",
+    "slug": "sap-c02",
+    "domain": "새로운 솔루션을 위한 설계",
+    "number": 35,
+    "prompt": "예측 불가한 트래픽의 신규 웹 API를 서버 관리 없이 자동 확장하고 사용량만큼만 과금되게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "API Gateway + Lambda + DynamoDB의 서버리스 아키텍처"
+      },
+      {
+        "label": "B",
+        "text": "대형 EC2 상시 가동"
+      },
+      {
+        "label": "C",
+        "text": "온프레미스 서버"
+      },
+      {
+        "label": "D",
+        "text": "고정 크기 RDS만"
+      }
+    ],
+    "answer": "A",
+    "explanation": "API Gateway+Lambda+DynamoDB는 요청당 자동 확장·과금되어 가변 트래픽에 운영·비용 효율적이다. 상시 EC2(B)는 유휴 비용·운영 부담이 크다."
+  },
+  {
+    "id": "exam-sap-c02-36",
+    "slug": "sap-c02",
+    "domain": "새로운 솔루션을 위한 설계",
+    "number": 36,
+    "prompt": "대용량 데이터를 S3에 두고 서버 없이 SQL로 분석하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Athena로 S3 데이터를 직접 쿼리"
+      },
+      {
+        "label": "B",
+        "text": "데이터를 RDS로 모두 적재"
+      },
+      {
+        "label": "C",
+        "text": "EC2에서 수동 파싱"
+      },
+      {
+        "label": "D",
+        "text": "다운받아 엑셀로 분석"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Athena는 서버리스로 S3의 데이터를 표준 SQL로 직접 쿼리하고 스캔량만큼 과금한다. RDS 적재·수동 파싱(B,C)은 운영·비용 부담이 크다."
+  },
+  {
+    "id": "exam-sap-c02-37",
+    "slug": "sap-c02",
+    "domain": "새로운 솔루션을 위한 설계",
+    "number": 37,
+    "prompt": "대규모 데이터 웨어하우스로 페타바이트급 분석을 빠르게 수행하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Redshift(필요 시 Spectrum/서버리스)"
+      },
+      {
+        "label": "B",
+        "text": "단일 RDS 인스턴스"
+      },
+      {
+        "label": "C",
+        "text": "DynamoDB로 집계"
+      },
+      {
+        "label": "D",
+        "text": "EC2에 MySQL"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Redshift는 컬럼형·MPP 구조로 대규모 분석에 최적이며 Spectrum으로 S3까지 쿼리한다. RDS·DynamoDB(B,C)는 대규모 OLAP에 부적합하다."
+  },
+  {
+    "id": "exam-sap-c02-38",
+    "slug": "sap-c02",
+    "domain": "새로운 솔루션을 위한 설계",
+    "number": 38,
+    "prompt": "실시간 스트리밍 데이터를 수집·변환해 거의 실시간으로 S3/Redshift로 적재하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Kinesis Data Streams/Firehose로 수집·전달"
+      },
+      {
+        "label": "B",
+        "text": "하루 한 번 배치 업로드"
+      },
+      {
+        "label": "C",
+        "text": "이메일로 전송"
+      },
+      {
+        "label": "D",
+        "text": "수동 복사"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Kinesis Firehose는 스트림을 버퍼링·변환해 S3/Redshift/OpenSearch로 거의 실시간 적재한다. 일배치(B)는 실시간성이 없다."
+  },
+  {
+    "id": "exam-sap-c02-39",
+    "slug": "sap-c02",
+    "domain": "새로운 솔루션을 위한 설계",
+    "number": 39,
+    "prompt": "마이크로서비스 간 비동기 이벤트 라우팅과 스키마 기반 통합이 필요한 신규 시스템을 설계한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "EventBridge 이벤트 버스와 규칙으로 이벤트 라우팅"
+      },
+      {
+        "label": "B",
+        "text": "서비스 간 직접 동기 호출만"
+      },
+      {
+        "label": "C",
+        "text": "공유 DB 폴링"
+      },
+      {
+        "label": "D",
+        "text": "수동 트리거"
+      }
+    ],
+    "answer": "A",
+    "explanation": "EventBridge는 이벤트 버스·규칙·스키마 레지스트리로 느슨한 결합의 이벤트 기반 통합을 제공한다. 동기 호출·공유 DB 폴링(B,C)은 강결합을 만든다."
+  },
+  {
+    "id": "exam-sap-c02-40",
+    "slug": "sap-c02",
+    "domain": "새로운 솔루션을 위한 설계",
+    "number": 40,
+    "prompt": "글로벌 사용자에게 짧은 지연으로 읽기/쓰기하는 신규 키-값 데이터 스토어가 필요하다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "DynamoDB 글로벌 테이블"
+      },
+      {
+        "label": "B",
+        "text": "단일 리전 RDS"
+      },
+      {
+        "label": "C",
+        "text": "EC2 로컬 파일"
+      },
+      {
+        "label": "D",
+        "text": "단일 노드 Redis"
+      }
+    ],
+    "answer": "A",
+    "explanation": "DynamoDB 글로벌 테이블은 다중 리전 활성-활성 복제로 지역별 낮은 지연과 리전 내성을 제공한다. 단일 리전 RDS(B)는 글로벌 지연·내성이 부족하다."
+  },
+  {
+    "id": "exam-sap-c02-41",
+    "slug": "sap-c02",
+    "domain": "새로운 솔루션을 위한 설계",
+    "number": 41,
+    "prompt": "머신러닝 추론 API를 자동 확장하고 GPU를 효율적으로 사용하며 운영 부담을 줄이려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SageMaker 엔드포인트(또는 서버리스/비동기 추론)로 관리형 배포"
+      },
+      {
+        "label": "B",
+        "text": "EC2에 직접 모델 서버 운영"
+      },
+      {
+        "label": "C",
+        "text": "Lambda로 대형 GPU 추론 강제"
+      },
+      {
+        "label": "D",
+        "text": "온프레미스 GPU"
+      }
+    ],
+    "answer": "A",
+    "explanation": "SageMaker 엔드포인트는 모델 호스팅·오토스케일·A/B를 관리형으로 제공하고 비동기/서버리스 추론으로 비용을 최적화한다. EC2 직접 운영(B)은 부담이 크다."
+  },
+  {
+    "id": "exam-sap-c02-42",
+    "slug": "sap-c02",
+    "domain": "새로운 솔루션을 위한 설계",
+    "number": 42,
+    "prompt": "대량 파일 업로드를 받는 신규 서비스에서 백엔드를 직접 거치지 않고 안전하게 S3로 업로드하게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "사전 서명된 URL로 클라이언트가 S3에 직접 업로드"
+      },
+      {
+        "label": "B",
+        "text": "모든 파일을 백엔드 메모리로 받는다"
+      },
+      {
+        "label": "C",
+        "text": "버킷을 퍼블릭 쓰기로 연다"
+      },
+      {
+        "label": "D",
+        "text": "FTP 서버를 별도 운영"
+      }
+    ],
+    "answer": "A",
+    "explanation": "사전 서명 URL은 만료 권한으로 클라이언트가 S3에 직접 업로드하게 해 백엔드 부하를 줄이고 자격증명 노출을 막는다. 퍼블릭 쓰기(C)는 위험하다."
+  },
+  {
+    "id": "exam-sap-c02-43",
+    "slug": "sap-c02",
+    "domain": "새로운 솔루션을 위한 설계",
+    "number": 43,
+    "prompt": "마이크로초 단위 캐싱이 필요한 신규 읽기 집약 서비스를 설계한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ElastiCache(Redis) 캐시 계층과 적절한 무효화 전략"
+      },
+      {
+        "label": "B",
+        "text": "매번 DB 풀스캔"
+      },
+      {
+        "label": "C",
+        "text": "캐시를 사용하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "정적 파일로만 응답"
+      }
+    ],
+    "answer": "A",
+    "explanation": "ElastiCache(Redis)는 인메모리로 마이크로초 응답을 제공하고 적절한 TTL·무효화로 신선도를 관리한다. 풀스캔·무캐시(B,C)는 지연·부하가 크다."
+  },
+  {
+    "id": "exam-sap-c02-44",
+    "slug": "sap-c02",
+    "domain": "새로운 솔루션을 위한 설계",
+    "number": 44,
+    "prompt": "컨테이너 마이크로서비스를 서버 관리 없이 실행하고 트래픽에 따라 작업을 자동 확장하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ECS/EKS on Fargate로 서버리스 컨테이너 운영"
+      },
+      {
+        "label": "B",
+        "text": "EC2를 수동 패치·확장"
+      },
+      {
+        "label": "C",
+        "text": "단일 대형 인스턴스에 모든 컨테이너"
+      },
+      {
+        "label": "D",
+        "text": "온프레미스 도커"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Fargate는 노드 관리 없이 컨테이너를 실행하고 작업 단위로 자동 확장한다. EC2 수동 운영(B)·단일 인스턴스 집중(C)은 부담·단일 장애점이 된다."
+  },
+  {
+    "id": "exam-sap-c02-45",
+    "slug": "sap-c02",
+    "domain": "새로운 솔루션을 위한 설계",
+    "number": 45,
+    "prompt": "신규 분석 워크로드가 간헐적이고 예측 불가하다. 운영·유휴 비용을 최소화하는 관계형 DB는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Aurora Serverless v2로 부하에 따라 자동 확장·축소"
+      },
+      {
+        "label": "B",
+        "text": "대형 프로비저닝 인스턴스 상시 가동"
+      },
+      {
+        "label": "C",
+        "text": "EC2 자체 설치 DB"
+      },
+      {
+        "label": "D",
+        "text": "과다 프로비저닝 고정 인스턴스"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Aurora Serverless v2는 부하에 맞춰 세밀하게 자동 확장·축소해 간헐적 워크로드의 유휴 비용·운영 부담을 줄인다. 상시 대형(B)·과다 프로비저닝(D)은 낭비다."
+  },
+  {
+    "id": "exam-sap-c02-46",
+    "slug": "sap-c02",
+    "domain": "새로운 솔루션을 위한 설계",
+    "number": 46,
+    "prompt": "민감한 멀티테넌트 SaaS에서 테넌트별 데이터 격리와 확장성을 모두 달성하려 한다. 가장 적합한 패턴은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "테넌트 식별자 기반 파티셔닝과 IAM/정책으로 테넌트 격리(풀/사일로 모델 선택)"
+      },
+      {
+        "label": "B",
+        "text": "모든 테넌트 데이터를 구분 없이 한 테이블에 평문 혼합"
+      },
+      {
+        "label": "C",
+        "text": "테넌트마다 루트 계정 발급"
+      },
+      {
+        "label": "D",
+        "text": "격리하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "SaaS는 테넌트 식별자 기반 파티셔닝과 세밀한 IAM/정책으로 격리하며, 요건에 따라 풀/브리지/사일로 모델을 택한다. 무격리 혼합(B,D)은 데이터 유출 위험이 크다."
+  },
+  {
+    "id": "exam-sap-c02-47",
+    "slug": "sap-c02",
+    "domain": "새로운 솔루션을 위한 설계",
+    "number": 47,
+    "prompt": "전 세계 사용자에게 동적 콘텐츠 가속과 고정 애니캐스트 IP가 필요한 신규 글로벌 서비스를 설계한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Global Accelerator로 애니캐스트 IP와 최적 경로 라우팅"
+      },
+      {
+        "label": "B",
+        "text": "단일 리전 ALB만"
+      },
+      {
+        "label": "C",
+        "text": "각 사용자가 오리진에 직접 접속"
+      },
+      {
+        "label": "D",
+        "text": "DNS 라운드로빈만"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Global Accelerator는 고정 애니캐스트 IP와 AWS 백본 최적 경로로 글로벌 지연·가용성을 개선한다. 단일 리전(B)·DNS 라운드로빈(D)은 성능·장애 전환이 부족하다."
+  },
+  {
+    "id": "exam-sap-c02-48",
+    "slug": "sap-c02",
+    "domain": "새로운 솔루션을 위한 설계",
+    "number": 48,
+    "prompt": "IoT/모바일에서 들어오는 대량 쓰기를 안정적으로 흡수하고 다운스트림이 자기 속도로 처리하게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "수집 계층 앞에 SQS/Kinesis 버퍼를 두어 부하를 평탄화"
+      },
+      {
+        "label": "B",
+        "text": "모든 쓰기를 DB에 동기 직접"
+      },
+      {
+        "label": "C",
+        "text": "요청을 버린다"
+      },
+      {
+        "label": "D",
+        "text": "단일 인스턴스에서 동기 처리"
+      }
+    ],
+    "answer": "A",
+    "explanation": "SQS/Kinesis 버퍼는 급증 쓰기를 흡수해 다운스트림이 안정적으로 소비하도록 부하를 평탄화한다. DB 동기 직접(B)·단일 인스턴스(D)는 병목·유실 위험이 있다."
+  },
+  {
+    "id": "exam-sap-c02-49",
+    "slug": "sap-c02",
+    "domain": "기존 솔루션의 지속적 개선",
+    "number": 49,
+    "prompt": "기존 모놀리식 애플리케이션의 데이터베이스가 읽기 부하로 느리다. 코드 변경을 최소화하며 개선하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "읽기 전용 복제본을 추가하고 캐싱 계층을 도입"
+      },
+      {
+        "label": "B",
+        "text": "아키텍처를 즉시 전면 재작성"
+      },
+      {
+        "label": "C",
+        "text": "DB를 제거"
+      },
+      {
+        "label": "D",
+        "text": "트래픽을 차단"
+      }
+    ],
+    "answer": "A",
+    "explanation": "읽기 복제본 오프로드와 ElastiCache 캐싱은 코드 변경 최소화로 읽기 병목을 완화하는 점진적 개선이다. 전면 재작성(B)은 위험·비용이 크다."
+  },
+  {
+    "id": "exam-sap-c02-50",
+    "slug": "sap-c02",
+    "domain": "기존 솔루션의 지속적 개선",
+    "number": 50,
+    "prompt": "기존 워크로드의 비용을 절감하려 사용 패턴을 분석한 결과 안정적 기준 사용량이 크다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Compute Savings Plans/RI로 기준 사용량을 약정 할인"
+      },
+      {
+        "label": "B",
+        "text": "모두 온디맨드 유지"
+      },
+      {
+        "label": "C",
+        "text": "전부 스팟으로 전환"
+      },
+      {
+        "label": "D",
+        "text": "인스턴스를 키운다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "안정적 기준 사용량은 Savings Plans/RI 약정으로 큰 할인을 받고, 가변 부분만 온디맨드/스팟으로 보완한다. 전량 스팟(C)은 중단 위험, 온디맨드 유지(B)는 비싸다."
+  },
+  {
+    "id": "exam-sap-c02-51",
+    "slug": "sap-c02",
+    "domain": "기존 솔루션의 지속적 개선",
+    "number": 51,
+    "prompt": "운영 가시성이 부족한 기존 분산 시스템에서 지연 병목을 찾으려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "X-Ray 분산 추적과 CloudWatch 지표/로그를 통합 도입"
+      },
+      {
+        "label": "B",
+        "text": "CPU만 본다"
+      },
+      {
+        "label": "C",
+        "text": "추측으로 튜닝"
+      },
+      {
+        "label": "D",
+        "text": "모니터링을 끈다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "X-Ray와 CloudWatch는 엔드투엔드 추적·지표·로그로 병목을 데이터 기반으로 식별하게 한다. 추측 튜닝(C)은 비효율적이다."
+  },
+  {
+    "id": "exam-sap-c02-52",
+    "slug": "sap-c02",
+    "domain": "기존 솔루션의 지속적 개선",
+    "number": 52,
+    "prompt": "기존 단일 AZ 워크로드의 가용성을 개선하려 한다. 가장 적합한 점진적 조치는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "다중 AZ로 확장하고 ALB+ASG, Multi-AZ DB를 도입"
+      },
+      {
+        "label": "B",
+        "text": "더 큰 단일 인스턴스로 교체"
+      },
+      {
+        "label": "C",
+        "text": "백업만 자주"
+      },
+      {
+        "label": "D",
+        "text": "변경하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "다중 AZ 분산, ALB+ASG, Multi-AZ DB는 단일 AZ 장애 내성을 확보하는 표준 개선이다. 수직 확장(B)·백업만(C)은 가용성 자체를 높이지 못한다."
+  },
+  {
+    "id": "exam-sap-c02-53",
+    "slug": "sap-c02",
+    "domain": "기존 솔루션의 지속적 개선",
+    "number": 53,
+    "prompt": "기존 S3 데이터의 스토리지 비용이 계속 증가한다. 운영 부담 없이 비용을 최적화하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "수명 주기 규칙으로 계층 전환·만료, 불규칙 접근은 Intelligent-Tiering"
+      },
+      {
+        "label": "B",
+        "text": "모두 Standard 유지"
+      },
+      {
+        "label": "C",
+        "text": "데이터를 임의 삭제"
+      },
+      {
+        "label": "D",
+        "text": "EBS로 이전"
+      }
+    ],
+    "answer": "A",
+    "explanation": "수명 주기 규칙과 Intelligent-Tiering은 접근 패턴에 맞춰 자동으로 비용을 최적화한다. Standard 고정(B)은 비효율, 임의 삭제(C)는 데이터 손실 위험이다."
+  },
+  {
+    "id": "exam-sap-c02-54",
+    "slug": "sap-c02",
+    "domain": "기존 솔루션의 지속적 개선",
+    "number": 54,
+    "prompt": "기존 배포가 위험해 장애가 잦다. 안전하게 개선하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "블루/그린 또는 카나리 배포와 자동 롤백을 도입"
+      },
+      {
+        "label": "B",
+        "text": "한 번에 전체 교체"
+      },
+      {
+        "label": "C",
+        "text": "야간에 몰래 배포"
+      },
+      {
+        "label": "D",
+        "text": "배포를 중단"
+      }
+    ],
+    "answer": "A",
+    "explanation": "블루/그린·카나리는 점진 전환과 자동 롤백으로 blast radius를 줄여 배포 위험을 낮춘다. 일괄 교체(B)는 위험이 크다."
+  },
+  {
+    "id": "exam-sap-c02-55",
+    "slug": "sap-c02",
+    "domain": "기존 솔루션의 지속적 개선",
+    "number": 55,
+    "prompt": "기존 Lambda 기반 워크로드의 콜드 스타트 지연이 SLA를 위협한다. 가장 적합한 개선은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "프로비저닝된 동시성을 설정하고 함수 초기화를 최적화"
+      },
+      {
+        "label": "B",
+        "text": "메모리를 최소화"
+      },
+      {
+        "label": "C",
+        "text": "타임아웃만 늘린다"
+      },
+      {
+        "label": "D",
+        "text": "동시성을 0으로"
+      }
+    ],
+    "answer": "A",
+    "explanation": "프로비저닝된 동시성은 워밍 환경을 유지해 콜드 스타트를 제거하고, 의존성·초기화 최적화로 추가 개선한다. 메모리 최소화(B)는 오히려 느려질 수 있다."
+  },
+  {
+    "id": "exam-sap-c02-56",
+    "slug": "sap-c02",
+    "domain": "기존 솔루션의 지속적 개선",
+    "number": 56,
+    "prompt": "기존 관계형 DB가 쓰기 확장 한계에 도달했다. 워크로드 일부를 분리해 확장하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "적합한 액세스 패턴을 DynamoDB 등 목적별 DB로 분리(폴리글랏 영속성)"
+      },
+      {
+        "label": "B",
+        "text": "단일 DB를 무한히 키운다"
+      },
+      {
+        "label": "C",
+        "text": "캐시를 끈다"
+      },
+      {
+        "label": "D",
+        "text": "쓰기를 막는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "액세스 패턴에 맞는 목적별 데이터스토어로 분리하면 단일 RDB의 쓰기 한계를 우회하고 확장성을 높인다. 무한 수직 확장(B)은 한계·비용 문제가 있다."
+  },
+  {
+    "id": "exam-sap-c02-57",
+    "slug": "sap-c02",
+    "domain": "기존 솔루션의 지속적 개선",
+    "number": 57,
+    "prompt": "기존 시스템의 DR 목표(RTO/RPO)가 강화되었다. 비용을 고려해 개선하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "현재 전략을 파일럿 라이트→워밍 스탠바이 등으로 등급을 올려 RTO/RPO 단축"
+      },
+      {
+        "label": "B",
+        "text": "DR을 없앤다"
+      },
+      {
+        "label": "C",
+        "text": "백업 주기를 늘린다"
+      },
+      {
+        "label": "D",
+        "text": "단일 리전으로 통합"
+      }
+    ],
+    "answer": "A",
+    "explanation": "DR 전략을 백업&복구→파일럿 라이트→워밍 스탠바이→멀티사이트로 올릴수록 RTO/RPO가 짧아지므로 요건·비용에 맞춰 등급을 조정한다. DR 제거·백업 주기 증가(B,C)는 목표에 역행한다."
+  },
+  {
+    "id": "exam-sap-c02-58",
+    "slug": "sap-c02",
+    "domain": "기존 솔루션의 지속적 개선",
+    "number": 58,
+    "prompt": "기존 EC2 플릿이 과다 프로비저닝돼 비용이 높다. 데이터 기반으로 적정 크기를 찾으려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Compute Optimizer 권장으로 인스턴스 적정 크기 조정(rightsizing)"
+      },
+      {
+        "label": "B",
+        "text": "모두 더 키운다"
+      },
+      {
+        "label": "C",
+        "text": "추측으로 줄인다"
+      },
+      {
+        "label": "D",
+        "text": "그대로 둔다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Compute Optimizer는 실제 사용 지표로 적정 인스턴스 타입·크기를 권장해 비용을 최적화한다. 확대·추측(B,C)은 낭비를 키운다."
+  },
+  {
+    "id": "exam-sap-c02-59",
+    "slug": "sap-c02",
+    "domain": "기존 솔루션의 지속적 개선",
+    "number": 59,
+    "prompt": "기존 정적 자산 제공이 오리진 부하·지연이 크다. 가장 적합한 개선은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudFront를 앞단에 도입해 엣지 캐싱"
+      },
+      {
+        "label": "B",
+        "text": "오리진을 더 키운다"
+      },
+      {
+        "label": "C",
+        "text": "캐싱을 끈다"
+      },
+      {
+        "label": "D",
+        "text": "단일 리전 직접 제공 유지"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CloudFront 엣지 캐싱은 오리진 부하와 사용자 지연을 동시에 줄인다. 오리진 확대(B)는 근본 개선이 아니다."
+  },
+  {
+    "id": "exam-sap-c02-60",
+    "slug": "sap-c02",
+    "domain": "마이그레이션 및 현대화 가속",
+    "number": 60,
+    "prompt": "대규모 서버 인벤토리를 가진 온프레미스 환경을 클라우드로 마이그레이션하기 전에 종속성·사양을 자동 수집·분석하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Application Discovery Service / Migration Hub로 인벤토리·종속성 수집"
+      },
+      {
+        "label": "B",
+        "text": "수기로 서버 목록을 적는다"
+      },
+      {
+        "label": "C",
+        "text": "분석 없이 바로 이전"
+      },
+      {
+        "label": "D",
+        "text": "추측한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Application Discovery Service와 Migration Hub는 서버 사양·종속성·사용률을 수집·분석해 마이그레이션 계획을 돕는다. 수기·무분석(B,C)은 위험·누락이 크다."
+  },
+  {
+    "id": "exam-sap-c02-61",
+    "slug": "sap-c02",
+    "domain": "마이그레이션 및 현대화 가속",
+    "number": 61,
+    "prompt": "수백 대 VM을 최소 변경으로 EC2로 리프트 앤 시프트하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Application Migration Service(MGN)로 블록 수준 복제 후 전환"
+      },
+      {
+        "label": "B",
+        "text": "각 VM을 수동 재설치"
+      },
+      {
+        "label": "C",
+        "text": "전부 재작성"
+      },
+      {
+        "label": "D",
+        "text": "데이터만 복사"
+      }
+    ],
+    "answer": "A",
+    "explanation": "MGN은 소스 서버를 블록 수준으로 복제해 최소 다운타임으로 EC2로 전환(rehost)한다. 수동 재설치·재작성(B,C)은 시간·위험이 크다."
+  },
+  {
+    "id": "exam-sap-c02-62",
+    "slug": "sap-c02",
+    "domain": "마이그레이션 및 현대화 가속",
+    "number": 62,
+    "prompt": "이기종 DB(예: Oracle→Aurora PostgreSQL)로 스키마·코드 변환과 데이터 이전을 함께 하려 한다. 가장 적합한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS SCT로 스키마 변환 + DMS로 데이터 마이그레이션"
+      },
+      {
+        "label": "B",
+        "text": "수동으로 모든 테이블을 다시 만든다"
+      },
+      {
+        "label": "C",
+        "text": "CSV로 내보내 엑셀 변환"
+      },
+      {
+        "label": "D",
+        "text": "마이그레이션을 포기"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Schema Conversion Tool(SCT)은 이기종 스키마/코드를 변환하고 DMS는 최소 다운타임으로 데이터를 이전한다. 수동 재생성(B)은 오류·시간이 크다."
+  },
+  {
+    "id": "exam-sap-c02-63",
+    "slug": "sap-c02",
+    "domain": "마이그레이션 및 현대화 가속",
+    "number": 63,
+    "prompt": "운영 중인 동종 DB를 다운타임 최소화로 RDS로 옮기되 마이그레이션 중에도 변경분을 지속 복제하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "DMS의 전체 적재 + 변경 데이터 캡처(CDC)로 지속 복제"
+      },
+      {
+        "label": "B",
+        "text": "서비스를 중단하고 한 번에 덤프"
+      },
+      {
+        "label": "C",
+        "text": "스냅샷만 복원"
+      },
+      {
+        "label": "D",
+        "text": "수동 동기화"
+      }
+    ],
+    "answer": "A",
+    "explanation": "DMS는 전체 적재 후 CDC로 진행 중 변경을 계속 복제해 거의 무중단 전환을 가능하게 한다. 서비스 중단 덤프(B)는 다운타임이 길다."
+  },
+  {
+    "id": "exam-sap-c02-64",
+    "slug": "sap-c02",
+    "domain": "마이그레이션 및 현대화 가속",
+    "number": 64,
+    "prompt": "대용량(페타바이트) 데이터를 네트워크로 옮기기엔 시간이 너무 오래 걸린다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Snowball/Snowmobile 같은 오프라인 전송 장비 사용"
+      },
+      {
+        "label": "B",
+        "text": "느린 인터넷으로 몇 달간 업로드"
+      },
+      {
+        "label": "C",
+        "text": "데이터를 버린다"
+      },
+      {
+        "label": "D",
+        "text": "압축만 한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Snow 패밀리는 물리 장비로 대용량 데이터를 오프라인 전송해 네트워크 한계를 우회한다. 느린 업로드(B)는 비현실적이다."
+  },
+  {
+    "id": "exam-sap-c02-65",
+    "slug": "sap-c02",
+    "domain": "마이그레이션 및 현대화 가속",
+    "number": 65,
+    "prompt": "온프레미스 파일 서버를 클라우드로 옮기면서 기존 NFS/SMB 접근을 유지하고 S3로 캐시·동기화하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Storage Gateway(File Gateway)로 NFS/SMB 인터페이스 제공 + S3 백엔드"
+      },
+      {
+        "label": "B",
+        "text": "각 서버에 USB로 복사"
+      },
+      {
+        "label": "C",
+        "text": "서비스를 중단"
+      },
+      {
+        "label": "D",
+        "text": "파일을 이메일로 전송"
+      }
+    ],
+    "answer": "A",
+    "explanation": "File Gateway는 온프레미스에 NFS/SMB 인터페이스를 제공하면서 데이터를 S3에 저장·캐싱해 점진 마이그레이션과 하이브리드 접근을 돕는다. USB 복사(B)는 비확장적이다."
+  },
+  {
+    "id": "exam-sap-c02-66",
+    "slug": "sap-c02",
+    "domain": "마이그레이션 및 현대화 가속",
+    "number": 66,
+    "prompt": "대규모 온프레미스↔S3 파일 전송을 자동화하고 일정·검증·증분 전송을 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS DataSync로 온라인 데이터 전송 자동화"
+      },
+      {
+        "label": "B",
+        "text": "수동 scp 반복"
+      },
+      {
+        "label": "C",
+        "text": "전송하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "한 번에 통째 복사"
+      }
+    ],
+    "answer": "A",
+    "explanation": "DataSync는 온프레미스↔AWS 스토리지 간 전송을 가속·검증·증분 처리하고 스케줄링한다. 수동 scp(B)는 비효율·오류 위험이 크다."
+  },
+  {
+    "id": "exam-sap-c02-67",
+    "slug": "sap-c02",
+    "domain": "마이그레이션 및 현대화 가속",
+    "number": 67,
+    "prompt": "모놀리식 애플리케이션을 점진적으로 마이크로서비스로 현대화하려 한다. 위험을 줄이는 패턴은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "스트랭글러 무화과(strangler fig) 패턴으로 기능을 점진 분리·대체"
+      },
+      {
+        "label": "B",
+        "text": "한 번에 전부 재작성"
+      },
+      {
+        "label": "C",
+        "text": "아무 것도 바꾸지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "코드를 그대로 복사"
+      }
+    ],
+    "answer": "A",
+    "explanation": "스트랭글러 패턴은 기존 시스템을 유지한 채 기능을 하나씩 새 서비스로 옮겨 위험을 분산한다. 전면 재작성(B)은 위험이 크다."
+  },
+  {
+    "id": "exam-sap-c02-68",
+    "slug": "sap-c02",
+    "domain": "마이그레이션 및 현대화 가속",
+    "number": 68,
+    "prompt": "마이그레이션 후 EC2에서 도는 애플리케이션을 컨테이너로 현대화해 운영 부담을 줄이려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "App2Container/컨테이너화 후 ECS·EKS(on Fargate)로 운영"
+      },
+      {
+        "label": "B",
+        "text": "EC2를 더 키운다"
+      },
+      {
+        "label": "C",
+        "text": "온프레미스로 되돌린다"
+      },
+      {
+        "label": "D",
+        "text": "변경하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "애플리케이션을 컨테이너화해 ECS/EKS(Fargate)로 옮기면 이식성·확장성·운영 효율이 향상된다. 수직 확장(B)은 현대화가 아니다."
+  },
+  {
+    "id": "exam-sap-c02-69",
+    "slug": "sap-c02",
+    "domain": "마이그레이션 및 현대화 가속",
+    "number": 69,
+    "prompt": "대규모 마이그레이션 프로그램의 진행 상황을 여러 도구에 걸쳐 단일 화면에서 추적하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Migration Hub로 마이그레이션 진행을 중앙 추적"
+      },
+      {
+        "label": "B",
+        "text": "엑셀로 각자 관리"
+      },
+      {
+        "label": "C",
+        "text": "추적하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "이메일로만 보고"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Migration Hub는 MGN·DMS 등 여러 도구의 마이그레이션 상태를 한 곳에서 추적·시각화한다. 엑셀 개별 관리(B)는 가시성이 떨어진다."
+  },
+  {
+    "id": "exam-sap-c02-70",
+    "slug": "sap-c02",
+    "domain": "마이그레이션 및 현대화 가속",
+    "number": 70,
+    "prompt": "마이그레이션 시 비용이 큰 라이선스 종속(예: 상용 DB)을 줄이고 클라우드 네이티브로 현대화하려 한다. 가장 적합한 방향은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "오픈소스 호환 엔진(Aurora MySQL/PostgreSQL 등)으로 재플랫폼/리팩터"
+      },
+      {
+        "label": "B",
+        "text": "동일 상용 라이선스를 그대로 유지만"
+      },
+      {
+        "label": "C",
+        "text": "마이그레이션을 포기"
+      },
+      {
+        "label": "D",
+        "text": "온프레미스 유지"
+      }
+    ],
+    "answer": "A",
+    "explanation": "상용 DB를 Aurora 등 오픈소스 호환 엔진으로 재플랫폼하면 라이선스 비용을 줄이고 관리형 이점을 얻는다. 상용 유지(B)는 비용 절감 효과가 없다."
+  },
+  {
+    "id": "exam-sap-c02-71",
+    "slug": "sap-c02",
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "number": 71,
+    "prompt": "다계정 환경에서 중앙 거버넌스를 강화하려 한다. 적절한 조치 2가지는? (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Organizations SCP로 가드레일을 강제"
+      },
+      {
+        "label": "B",
+        "text": "IAM Identity Center로 SSO·권한 집합 중앙 관리"
+      },
+      {
+        "label": "C",
+        "text": "각 계정에 루트 키를 공유"
+      },
+      {
+        "label": "D",
+        "text": "계정별로 정책을 수동 복제"
+      }
+    ],
+    "answer": "A, B",
+    "explanation": "SCP는 작업 상한을 강제하고, IAM Identity Center는 다계정 SSO·권한 집합을 중앙 관리해 거버넌스를 강화한다. 루트 키 공유(C)·수동 복제(D)는 위험·드리프트를 만든다."
+  },
+  {
+    "id": "exam-sap-c02-72",
+    "slug": "sap-c02",
+    "domain": "마이그레이션 및 현대화 가속",
+    "number": 72,
+    "prompt": "이기종 데이터베이스 마이그레이션을 최소 다운타임으로 수행하려 한다. 적절한 도구 2가지는? (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS SCT로 스키마·코드 변환"
+      },
+      {
+        "label": "B",
+        "text": "AWS DMS로 전체 적재 + CDC 지속 복제"
+      },
+      {
+        "label": "C",
+        "text": "CSV로 내보내 엑셀 변환"
+      },
+      {
+        "label": "D",
+        "text": "서비스를 중단하고 한 번에 덤프"
+      }
+    ],
+    "answer": "A, B",
+    "explanation": "SCT는 이기종 스키마/코드를 변환하고, DMS는 전체 적재 후 CDC로 변경을 계속 복제해 거의 무중단 전환을 가능하게 한다. 엑셀 변환·중단 덤프(C,D)는 오류·다운타임이 크다."
+  },
+  {
     "id": "exam-soa-c02-1",
     "slug": "soa-c02",
     "domain": "모니터링·로깅·교정",
@@ -3805,5 +9448,1301 @@
     ],
     "answer": "A, B",
     "explanation": "예약된 조정은 예측 가능한 피크에 선제 확장하고, 대상 추적은 CPU/요청 수 등 지표에 따라 동적으로 반응한다. 두 가지를 함께 쓰면 사전·사후 모두 대응된다. 최대 1 고정(C)·정책 삭제(D)는 확장 자체를 막는다."
+  },
+  {
+    "id": "exam-soa-c02-21",
+    "slug": "soa-c02",
+    "domain": "모니터링·로깅·교정",
+    "number": 21,
+    "prompt": "EC2의 메모리 사용률과 디스크 사용량은 기본 CloudWatch 지표에 없다. 이를 수집하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudWatch 에이전트를 설치해 메모리·디스크 지표를 게시"
+      },
+      {
+        "label": "B",
+        "text": "기본 지표만으로 추정"
+      },
+      {
+        "label": "C",
+        "text": "SSH로 매번 확인"
+      },
+      {
+        "label": "D",
+        "text": "지표를 포기"
+      }
+    ],
+    "answer": "A",
+    "explanation": "메모리·디스크는 하이퍼바이저에서 보이지 않으므로 CloudWatch 에이전트(또는 통합 에이전트)를 게스트 OS에 설치해 게시해야 한다. 기본 지표(B)에는 없다."
+  },
+  {
+    "id": "exam-soa-c02-22",
+    "slug": "soa-c02",
+    "domain": "모니터링·로깅·교정",
+    "number": 22,
+    "prompt": "CloudWatch 경보가 일시적 스파이크에 너무 자주 울린다. 오탐을 줄이려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "평가 기간(periods)과 데이터 포인트(M out of N)를 조정해 지속 조건일 때만 ALARM"
+      },
+      {
+        "label": "B",
+        "text": "경보를 모두 삭제"
+      },
+      {
+        "label": "C",
+        "text": "임계값을 0으로"
+      },
+      {
+        "label": "D",
+        "text": "지표 수집을 끈다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "평가 기간 수와 N개 중 M개 조건을 늘리면 순간 스파이크가 아니라 지속적 이상에서만 경보가 울려 오탐이 준다. 삭제·수집 중단(B,D)은 가시성을 잃는다."
+  },
+  {
+    "id": "exam-soa-c02-23",
+    "slug": "soa-c02",
+    "domain": "모니터링·로깅·교정",
+    "number": 23,
+    "prompt": "리소스 구성 변경 이력을 추적하고 규정 준수 규칙 위반(예: 암호화되지 않은 볼륨)을 자동 감지하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Config로 구성 기록 + 관리형/사용자 정의 규칙으로 비준수 감지"
+      },
+      {
+        "label": "B",
+        "text": "CloudWatch 대시보드만 본다"
+      },
+      {
+        "label": "C",
+        "text": "수동으로 분기 점검"
+      },
+      {
+        "label": "D",
+        "text": "변경을 추적하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS Config는 리소스 구성 변경을 기록하고 Config 규칙으로 원하는 상태 위반을 지속 평가·자동 교정(remediation)까지 연동한다. 수동 점검(C)은 드리프트를 놓친다."
+  },
+  {
+    "id": "exam-soa-c02-24",
+    "slug": "soa-c02",
+    "domain": "모니터링·로깅·교정",
+    "number": 24,
+    "prompt": "CloudWatch Logs에 쌓인 대량 로그를 SQL 유사 구문으로 대화식 분석·검색하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudWatch Logs Insights로 쿼리"
+      },
+      {
+        "label": "B",
+        "text": "각 로그 스트림을 눈으로 스크롤"
+      },
+      {
+        "label": "C",
+        "text": "로그를 다운받아 메모장으로 검색"
+      },
+      {
+        "label": "D",
+        "text": "로그를 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Logs Insights는 전용 쿼리 언어로 로그 그룹을 집계·필터·통계 분석한다. 수동 스크롤·메모장(B,C)은 비효율적이다."
+  },
+  {
+    "id": "exam-soa-c02-25",
+    "slug": "soa-c02",
+    "domain": "모니터링·로깅·교정",
+    "number": 25,
+    "prompt": "EventBridge 규칙으로 EC2 상태 변경 등 특정 이벤트가 발생하면 자동 대응(Lambda 실행, SNS 알림)을 트리거하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "EventBridge 이벤트 패턴 규칙으로 대상(Lambda/SNS)을 호출"
+      },
+      {
+        "label": "B",
+        "text": "cron으로 1분마다 상태를 폴링"
+      },
+      {
+        "label": "C",
+        "text": "사람이 콘솔을 지켜본다"
+      },
+      {
+        "label": "D",
+        "text": "아무 것도 하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "EventBridge는 AWS 서비스 이벤트를 패턴 매칭해 대상으로 라우팅하므로 상태 변경에 즉시 자동 대응한다. 폴링·수동 관찰(B,C)은 지연·비효율적이다."
+  },
+  {
+    "id": "exam-soa-c02-26",
+    "slug": "soa-c02",
+    "domain": "모니터링·로깅·교정",
+    "number": 26,
+    "prompt": "여러 계정·리전의 운영 데이터를 단일 대시보드에서 통합 관찰하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudWatch 교차 계정 관찰성 구성"
+      },
+      {
+        "label": "B",
+        "text": "각 계정에 따로 로그인"
+      },
+      {
+        "label": "C",
+        "text": "지표를 이메일로 모은다"
+      },
+      {
+        "label": "D",
+        "text": "모니터링을 끈다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CloudWatch 교차 계정 관찰성은 모니터링 계정에서 여러 소스 계정·리전의 지표·로그·추적을 통합 조회하게 한다. 개별 로그인(B)은 비효율적이다."
+  },
+  {
+    "id": "exam-soa-c02-27",
+    "slug": "soa-c02",
+    "domain": "모니터링·로깅·교정",
+    "number": 27,
+    "prompt": "CloudTrail 로그를 분석해 \"누가 언제 어떤 API를 호출했는가\"를 사후 조사하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudTrail 이벤트를 S3에 저장하고 Athena로 쿼리(또는 CloudTrail Lake)"
+      },
+      {
+        "label": "B",
+        "text": "CPU 지표를 본다"
+      },
+      {
+        "label": "C",
+        "text": "추측한다"
+      },
+      {
+        "label": "D",
+        "text": "로그를 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CloudTrail은 관리/데이터 이벤트를 기록하고, S3+Athena 또는 CloudTrail Lake로 행위자·시간·API를 쿼리해 감사·조사할 수 있다. CPU(B)는 무관하다."
+  },
+  {
+    "id": "exam-soa-c02-28",
+    "slug": "soa-c02",
+    "domain": "모니터링·로깅·교정",
+    "number": 28,
+    "prompt": "특정 지표가 임계 초과 시 EC2를 자동 재부팅하거나 복구하도록 자동 조치를 연결하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudWatch 경보의 EC2 작업(복구/재부팅/중지)을 사용"
+      },
+      {
+        "label": "B",
+        "text": "운영자에게 전화로만 알린다"
+      },
+      {
+        "label": "C",
+        "text": "아무 조치도 하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "인스턴스를 종료"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CloudWatch 경보는 상태 기반으로 EC2 복구/재부팅/중지 등의 자동 작업을 트리거해 운영 개입을 줄인다. 전화 알림만(B)은 자동화가 아니다."
+  },
+  {
+    "id": "exam-soa-c02-29",
+    "slug": "soa-c02",
+    "domain": "모니터링·로깅·교정",
+    "number": 29,
+    "prompt": "온프레미스 및 EC2 서버의 로그를 표준화해 CloudWatch로 보내고 지표화하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "통합 CloudWatch 에이전트로 로그를 수집·전송하고 지표 필터로 패턴 추출"
+      },
+      {
+        "label": "B",
+        "text": "로그를 각 서버에 방치"
+      },
+      {
+        "label": "C",
+        "text": "로그를 출력만 한다"
+      },
+      {
+        "label": "D",
+        "text": "로그를 끈다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "통합 CloudWatch 에이전트는 로그를 수집해 CloudWatch Logs로 보내고, 지표 필터로 패턴을 지표화·경보화한다. 방치·끄기(B,D)는 운영성이 없다."
+  },
+  {
+    "id": "exam-soa-c02-30",
+    "slug": "soa-c02",
+    "domain": "안정성·비즈니스 연속성",
+    "number": 30,
+    "prompt": "EBS 볼륨을 정기적으로 자동 백업하고 보존 기간을 관리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Data Lifecycle Manager(DLM)나 AWS Backup으로 스냅샷 정책 자동화"
+      },
+      {
+        "label": "B",
+        "text": "수동으로 가끔 스냅샷"
+      },
+      {
+        "label": "C",
+        "text": "백업하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "볼륨을 복제해 같은 인스턴스에 붙인다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "DLM/AWS Backup은 스냅샷 생성·보존·삭제를 정책 기반으로 자동화한다. 수동·미백업(B,C)은 신뢰성이 낮다."
+  },
+  {
+    "id": "exam-soa-c02-31",
+    "slug": "soa-c02",
+    "domain": "안정성·비즈니스 연속성",
+    "number": 31,
+    "prompt": "여러 계정·서비스(EBS, RDS, EFS, DynamoDB 등)의 백업을 중앙에서 정책으로 통합 관리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Backup으로 백업 계획·금고를 중앙 관리"
+      },
+      {
+        "label": "B",
+        "text": "서비스마다 다른 방식으로 따로 관리"
+      },
+      {
+        "label": "C",
+        "text": "백업을 끈다"
+      },
+      {
+        "label": "D",
+        "text": "스크린샷으로 보관"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS Backup은 다수 서비스의 백업을 백업 계획·금고로 중앙 집중 관리하고 교차 계정·리전 복사를 지원한다. 서비스별 산발 관리(B)는 일관성이 떨어진다."
+  },
+  {
+    "id": "exam-soa-c02-32",
+    "slug": "soa-c02",
+    "domain": "안정성·비즈니스 연속성",
+    "number": 32,
+    "prompt": "Multi-AZ RDS에서 기본 인스턴스 장애 시 동작을 옳게 설명한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "대기 인스턴스로 자동 페일오버되고 엔드포인트(DNS)가 새 기본으로 전환"
+      },
+      {
+        "label": "B",
+        "text": "수동으로 복원해야만 한다"
+      },
+      {
+        "label": "C",
+        "text": "데이터가 유실된다"
+      },
+      {
+        "label": "D",
+        "text": "읽기 복제본이 자동으로 기본이 된다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Multi-AZ는 동기 복제된 대기 인스턴스로 자동 페일오버하고 동일 엔드포인트가 새 기본을 가리켜 애플리케이션 변경이 거의 없다. 읽기 복제본(D)은 별개 개념이다."
+  },
+  {
+    "id": "exam-soa-c02-33",
+    "slug": "soa-c02",
+    "domain": "안정성·비즈니스 연속성",
+    "number": 33,
+    "prompt": "Route 53으로 기본 리전 장애 시 DR 리전으로 자동 트래픽 전환을 구성하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "상태 확인(health check) 기반 장애 조치(failover) 라우팅 정책"
+      },
+      {
+        "label": "B",
+        "text": "단순 라우팅으로 한 리전만 가리킨다"
+      },
+      {
+        "label": "C",
+        "text": "TTL을 매우 길게 고정"
+      },
+      {
+        "label": "D",
+        "text": "DNS를 사용하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Route 53 장애 조치 라우팅은 기본 레코드의 상태 확인이 실패하면 보조(DR) 레코드로 자동 전환한다. 단순 라우팅(B)은 자동 전환이 없다."
+  },
+  {
+    "id": "exam-soa-c02-34",
+    "slug": "soa-c02",
+    "domain": "안정성·비즈니스 연속성",
+    "number": 34,
+    "prompt": "S3 데이터를 다른 리전에 자동 복제해 리전 장애와 규정 요건에 대비하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 교차 리전 복제(CRR)를 활성화"
+      },
+      {
+        "label": "B",
+        "text": "수동으로 객체를 복사"
+      },
+      {
+        "label": "C",
+        "text": "복제하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "버전 관리를 끈다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CRR은 버전 관리가 켜진 버킷의 객체를 다른 리전으로 자동 비동기 복제해 DR·규정 준수를 돕는다. 수동 복사(B)는 누락·드리프트 위험이 크다."
+  },
+  {
+    "id": "exam-soa-c02-35",
+    "slug": "soa-c02",
+    "domain": "안정성·비즈니스 연속성",
+    "number": 35,
+    "prompt": "Auto Scaling 그룹에서 비정상 인스턴스를 자동 교체하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ELB 상태 확인을 ASG 상태 확인 유형으로 사용해 비정상 인스턴스를 종료·교체"
+      },
+      {
+        "label": "B",
+        "text": "상태를 무시하고 그대로 둔다"
+      },
+      {
+        "label": "C",
+        "text": "최소 용량을 0으로"
+      },
+      {
+        "label": "D",
+        "text": "ASG를 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "ASG가 ELB 상태 확인을 사용하면 애플리케이션 수준 비정상 인스턴스를 감지해 종료하고 새 인스턴스로 교체해 가용성을 유지한다. 상태 무시(B)는 장애 인스턴스를 방치한다."
+  },
+  {
+    "id": "exam-soa-c02-36",
+    "slug": "soa-c02",
+    "domain": "안정성·비즈니스 연속성",
+    "number": 36,
+    "prompt": "RDS의 특정 시점(예: 실수로 삭제 직전)으로 복구하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "특정 시점 복구(PITR)로 새 인스턴스를 그 시점으로 복원"
+      },
+      {
+        "label": "B",
+        "text": "운영 DB에 직접 덮어쓴다"
+      },
+      {
+        "label": "C",
+        "text": "복구가 불가능하다"
+      },
+      {
+        "label": "D",
+        "text": "스냅샷을 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "자동 백업이 켜진 RDS는 보존 기간 내 임의 시점으로 PITR이 가능해 새 인스턴스로 복원한다. 운영 DB 덮어쓰기(B)는 위험하다."
+  },
+  {
+    "id": "exam-soa-c02-37",
+    "slug": "soa-c02",
+    "domain": "안정성·비즈니스 연속성",
+    "number": 37,
+    "prompt": "EC2 인스턴스가 손상돼도 데이터가 유지되도록 루트가 아닌 데이터 디스크를 분리 관리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터를 별도 EBS 볼륨에 두고 스냅샷으로 백업, 필요 시 다른 인스턴스에 연결"
+      },
+      {
+        "label": "B",
+        "text": "데이터를 인스턴스 스토어에 둔다"
+      },
+      {
+        "label": "C",
+        "text": "데이터를 메모리에만 둔다"
+      },
+      {
+        "label": "D",
+        "text": "백업하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "데이터를 영구 EBS 볼륨에 두고 스냅샷 백업하면 인스턴스 손상 시 볼륨을 다른 인스턴스에 연결해 복구할 수 있다. 인스턴스 스토어(B)는 휘발성이라 종료 시 소실된다."
+  },
+  {
+    "id": "exam-soa-c02-38",
+    "slug": "soa-c02",
+    "domain": "배포·프로비저닝·자동화",
+    "number": 38,
+    "prompt": "수백 대 인스턴스에 패치를 일정에 맞춰 일괄 적용하고 규정 준수 상태를 추적하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Systems Manager Patch Manager로 패치 기준선·유지 관리 기간으로 자동 적용"
+      },
+      {
+        "label": "B",
+        "text": "각 인스턴스에 SSH로 수동 패치"
+      },
+      {
+        "label": "C",
+        "text": "패치하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "인스턴스를 매번 새로 만든다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Patch Manager는 패치 기준선과 유지 관리 기간으로 대규모 패치를 자동 적용·보고한다. 수동 SSH(B)는 확장성이 없다."
+  },
+  {
+    "id": "exam-soa-c02-39",
+    "slug": "soa-c02",
+    "domain": "배포·프로비저닝·자동화",
+    "number": 39,
+    "prompt": "SSH 키나 베스천 없이 프라이빗 인스턴스에 안전하게 셸 접근하고 명령을 실행하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Systems Manager Session Manager로 IAM 기반 셸 접근"
+      },
+      {
+        "label": "B",
+        "text": "모든 인스턴스에 퍼블릭 IP와 22번 포트 개방"
+      },
+      {
+        "label": "C",
+        "text": "키를 공유"
+      },
+      {
+        "label": "D",
+        "text": "RDP를 전부 연다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Session Manager는 IAM 권한과 SSM 에이전트로 인바운드 포트·베스천 없이 감사 가능한 셸 접근을 제공한다. 22번 개방·키 공유(B,C)는 공격 표면을 늘린다."
+  },
+  {
+    "id": "exam-soa-c02-40",
+    "slug": "soa-c02",
+    "domain": "배포·프로비저닝·자동화",
+    "number": 40,
+    "prompt": "여러 계정·리전에 동일한 기본 리소스를 일관되게 배포하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudFormation StackSets로 다계정·다리전 배포"
+      },
+      {
+        "label": "B",
+        "text": "각 계정에서 콘솔로 따로 생성"
+      },
+      {
+        "label": "C",
+        "text": "수동 복제"
+      },
+      {
+        "label": "D",
+        "text": "스크린샷 보관"
+      }
+    ],
+    "answer": "A",
+    "explanation": "StackSets는 단일 템플릿을 여러 계정·리전에 일관 배포·갱신한다. 콘솔 수동(B)·복제(C)는 드리프트 위험이 크다."
+  },
+  {
+    "id": "exam-soa-c02-41",
+    "slug": "soa-c02",
+    "domain": "배포·프로비저닝·자동화",
+    "number": 41,
+    "prompt": "반복되는 운영 작업(예: AMI 생성, 인스턴스 정리)을 사람 개입 없이 자동 실행하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Systems Manager 자동화 런북(Automation runbook)으로 절차를 자동 실행"
+      },
+      {
+        "label": "B",
+        "text": "매번 손으로 클릭"
+      },
+      {
+        "label": "C",
+        "text": "문서로만 절차를 적어둔다"
+      },
+      {
+        "label": "D",
+        "text": "작업을 생략"
+      }
+    ],
+    "answer": "A",
+    "explanation": "SSM 자동화 런북은 다단계 운영 작업을 코드화해 일정·이벤트로 자동 실행한다. 수동 클릭(B)·문서화만(C)은 자동화가 아니다."
+  },
+  {
+    "id": "exam-soa-c02-42",
+    "slug": "soa-c02",
+    "domain": "배포·프로비저닝·자동화",
+    "number": 42,
+    "prompt": "CloudFormation 스택의 실제 리소스가 콘솔 수동 변경으로 템플릿과 달라졌는지 확인하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "드리프트 감지(drift detection)를 실행"
+      },
+      {
+        "label": "B",
+        "text": "스택을 삭제"
+      },
+      {
+        "label": "C",
+        "text": "무시한다"
+      },
+      {
+        "label": "D",
+        "text": "리소스를 모두 수동 재생성"
+      }
+    ],
+    "answer": "A",
+    "explanation": "드리프트 감지는 스택 템플릿과 실제 리소스 구성의 차이를 보고해 수동 변경을 식별한다. 삭제·무시(B,C)는 부적절하다."
+  },
+  {
+    "id": "exam-soa-c02-43",
+    "slug": "soa-c02",
+    "domain": "배포·프로비저닝·자동화",
+    "number": 43,
+    "prompt": "EC2 부팅 시 패키지 설치·구성 같은 초기화를 자동화하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "사용자 데이터(user data) 스크립트나 EC2 Image Builder로 구성 자동화"
+      },
+      {
+        "label": "B",
+        "text": "부팅 후 매번 수동 설치"
+      },
+      {
+        "label": "C",
+        "text": "구성하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "인스턴스를 켜두고 방치"
+      }
+    ],
+    "answer": "A",
+    "explanation": "사용자 데이터 스크립트는 부팅 시 초기화를 자동 실행하고, Image Builder는 표준 AMI를 파이프라인으로 만든다. 수동 설치(B)는 확장성이 없다."
+  },
+  {
+    "id": "exam-soa-c02-44",
+    "slug": "soa-c02",
+    "domain": "배포·프로비저닝·자동화",
+    "number": 44,
+    "prompt": "태그가 누락된 리소스를 찾아 일괄적으로 표준 태그를 적용하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Resource Groups/Tag Editor와 Config로 태그 규정 준수 점검·적용"
+      },
+      {
+        "label": "B",
+        "text": "태그를 무시"
+      },
+      {
+        "label": "C",
+        "text": "리소스를 삭제"
+      },
+      {
+        "label": "D",
+        "text": "이름만 바꾼다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Tag Editor로 다수 리소스의 태그를 일괄 검색·편집하고, Config 규칙으로 필수 태그 준수를 점검·교정한다. 태그 무시(B)는 비용 추적·거버넌스를 어렵게 한다."
+  },
+  {
+    "id": "exam-soa-c02-45",
+    "slug": "soa-c02",
+    "domain": "배포·프로비저닝·자동화",
+    "number": 45,
+    "prompt": "골든 AMI를 정기적으로 만들고 패치·검증·배포 파이프라인을 자동화하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "EC2 Image Builder 파이프라인으로 빌드·테스트·배포 자동화"
+      },
+      {
+        "label": "B",
+        "text": "수동으로 인스턴스를 만들어 이미지화"
+      },
+      {
+        "label": "C",
+        "text": "AMI를 만들지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "매번 다른 베이스 이미지를 임의 사용"
+      }
+    ],
+    "answer": "A",
+    "explanation": "EC2 Image Builder는 이미지 빌드·패치·테스트·배포를 파이프라인으로 자동화해 일관된 골든 AMI를 유지한다. 수동 이미지화(B)는 반복·검증이 어렵다."
+  },
+  {
+    "id": "exam-soa-c02-46",
+    "slug": "soa-c02",
+    "domain": "보안·규정 준수",
+    "number": 46,
+    "prompt": "S3 버킷이 실수로 퍼블릭 노출되는 것을 계정·버킷 수준에서 강제로 차단하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 퍼블릭 액세스 차단(Block Public Access)을 켠다"
+      },
+      {
+        "label": "B",
+        "text": "버킷 정책을 매번 점검"
+      },
+      {
+        "label": "C",
+        "text": "버킷 이름을 복잡하게"
+      },
+      {
+        "label": "D",
+        "text": "아무 것도 하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "퍼블릭 액세스 차단은 ACL·정책을 통한 퍼블릭 노출을 계정/버킷 수준에서 강제 차단한다. 수동 점검(B)·이름 난독화(C)는 신뢰성이 낮다."
+  },
+  {
+    "id": "exam-soa-c02-47",
+    "slug": "soa-c02",
+    "domain": "보안·규정 준수",
+    "number": 47,
+    "prompt": "여러 계정의 GuardDuty·Inspector·Config 발견 사항을 한 곳에 모아 보안 표준 점검을 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Security Hub로 발견 사항 집계·표준 점검"
+      },
+      {
+        "label": "B",
+        "text": "각 서비스 콘솔을 따로 확인"
+      },
+      {
+        "label": "C",
+        "text": "발견 사항을 무시"
+      },
+      {
+        "label": "D",
+        "text": "서비스를 끈다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Security Hub는 여러 보안 서비스의 발견 사항을 표준화·집계하고 모범 사례 점수를 제공한다. 개별 확인(B)은 비효율적이다."
+  },
+  {
+    "id": "exam-soa-c02-48",
+    "slug": "soa-c02",
+    "domain": "보안·규정 준수",
+    "number": 48,
+    "prompt": "EC2의 OS·소프트웨어 취약점을 자동으로 지속 스캔하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Inspector를 활성화해 자동 취약점 평가"
+      },
+      {
+        "label": "B",
+        "text": "수동으로 가끔 점검"
+      },
+      {
+        "label": "C",
+        "text": "스캔하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "방화벽만 켠다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Amazon Inspector는 EC2·ECR·Lambda의 취약점과 네트워크 노출을 자동·지속 평가한다. 수동·미점검(B,C)은 위험을 놓친다."
+  },
+  {
+    "id": "exam-soa-c02-49",
+    "slug": "soa-c02",
+    "domain": "보안·규정 준수",
+    "number": 49,
+    "prompt": "S3에 저장되는 데이터에 개인 식별 정보(PII)가 있는지 자동 탐지·분류하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Macie로 S3의 민감 데이터 자동 탐지"
+      },
+      {
+        "label": "B",
+        "text": "사람이 모든 객체를 연다"
+      },
+      {
+        "label": "C",
+        "text": "무시한다"
+      },
+      {
+        "label": "D",
+        "text": "데이터를 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Macie는 머신러닝으로 S3의 PII 등 민감 데이터를 탐지·분류하고 보고한다. 수동 점검(B)은 대규모에 비현실적이다."
+  },
+  {
+    "id": "exam-soa-c02-50",
+    "slug": "soa-c02",
+    "domain": "보안·규정 준수",
+    "number": 50,
+    "prompt": "EBS 볼륨과 스냅샷이 항상 암호화되도록 계정 차원에서 강제하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "리전별 EBS 암호화 기본값(default encryption)을 활성화"
+      },
+      {
+        "label": "B",
+        "text": "각 볼륨 생성 시마다 수동 선택"
+      },
+      {
+        "label": "C",
+        "text": "암호화하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "볼륨을 공유"
+      }
+    ],
+    "answer": "A",
+    "explanation": "EBS 기본 암호화를 켜면 해당 리전에서 새로 만드는 모든 볼륨·스냅샷이 자동 암호화된다. 수동 선택(B)은 누락 위험이 있다."
+  },
+  {
+    "id": "exam-soa-c02-51",
+    "slug": "soa-c02",
+    "domain": "보안·규정 준수",
+    "number": 51,
+    "prompt": "특정 리전에서만 리소스 생성을 허용하고 다른 리전 사용을 조직 차원에서 금지하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Organizations SCP로 허용 리전 외 작업을 거부"
+      },
+      {
+        "label": "B",
+        "text": "각 사용자에게 부탁"
+      },
+      {
+        "label": "C",
+        "text": "IAM 사용자마다 수동 정책"
+      },
+      {
+        "label": "D",
+        "text": "아무 통제도 안 한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "SCP는 조직/OU 차원에서 리전 조건으로 작업을 거부해 가드레일을 강제한다. 사용자 부탁·수동 정책(B,C)은 드리프트·누락 위험이 크다."
+  },
+  {
+    "id": "exam-soa-c02-52",
+    "slug": "soa-c02",
+    "domain": "보안·규정 준수",
+    "number": 52,
+    "prompt": "IAM 사용자의 콘솔 로그인에 다단계 인증(MFA)을 강제하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "MFA가 없으면 작업을 거부하는 IAM 정책 조건(aws:MultiFactorAuthPresent)을 사용"
+      },
+      {
+        "label": "B",
+        "text": "비밀번호만 길게"
+      },
+      {
+        "label": "C",
+        "text": "MFA를 권장만 한다"
+      },
+      {
+        "label": "D",
+        "text": "루트만 MFA"
+      }
+    ],
+    "answer": "A",
+    "explanation": "IAM 정책에 aws:MultiFactorAuthPresent 조건을 두면 MFA 미인증 세션의 작업을 거부해 MFA를 강제할 수 있다. 권장만(C)으로는 강제되지 않는다."
+  },
+  {
+    "id": "exam-soa-c02-53",
+    "slug": "soa-c02",
+    "domain": "네트워킹·콘텐츠 전송",
+    "number": 53,
+    "prompt": "프라이빗 서브넷의 인스턴스가 인터넷 게이트웨이 없이 AWS 서비스(S3, DynamoDB)에 접근하게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "VPC 게이트웨이 엔드포인트(S3/DynamoDB)를 만든다"
+      },
+      {
+        "label": "B",
+        "text": "퍼블릭 IP를 부여"
+      },
+      {
+        "label": "C",
+        "text": "NAT 없이 인터넷 라우팅"
+      },
+      {
+        "label": "D",
+        "text": "서비스를 끈다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "게이트웨이 엔드포인트는 라우팅 테이블을 통해 S3/DynamoDB로의 트래픽을 AWS 내부로만 보내 인터넷 경유 없이 접근하게 한다. 퍼블릭 IP(B)는 노출을 늘린다."
+  },
+  {
+    "id": "exam-soa-c02-54",
+    "slug": "soa-c02",
+    "domain": "네트워킹·콘텐츠 전송",
+    "number": 54,
+    "prompt": "두 VPC 간에 사설 통신이 필요하지만 라우팅이 단순해야 한다. 소규모 1:1 연결에 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "VPC 피어링"
+      },
+      {
+        "label": "B",
+        "text": "각 VPC를 인터넷으로 노출"
+      },
+      {
+        "label": "C",
+        "text": "VPN을 인터넷 경유로 매번"
+      },
+      {
+        "label": "D",
+        "text": "VPC를 합친다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "VPC 피어링은 두 VPC 간 사설 라우팅을 단순하게 제공한다(다수 VPC 메시는 Transit Gateway가 유리). 인터넷 노출(B)은 보안 위험이다."
+  },
+  {
+    "id": "exam-soa-c02-55",
+    "slug": "soa-c02",
+    "domain": "네트워킹·콘텐츠 전송",
+    "number": 55,
+    "prompt": "수십 개 VPC와 온프레미스를 허브-스포크로 중앙 연결·라우팅하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Transit Gateway로 중앙 허브 라우팅"
+      },
+      {
+        "label": "B",
+        "text": "모든 VPC를 일일이 피어링(메시)"
+      },
+      {
+        "label": "C",
+        "text": "인터넷으로 연결"
+      },
+      {
+        "label": "D",
+        "text": "VPC를 하나로 합친다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Transit Gateway는 다수 VPC·온프레미스를 허브로 묶어 라우팅을 단순화한다. 풀메시 피어링(B)은 연결 수가 폭발적으로 늘어 관리가 어렵다."
+  },
+  {
+    "id": "exam-soa-c02-56",
+    "slug": "soa-c02",
+    "domain": "네트워킹·콘텐츠 전송",
+    "number": 56,
+    "prompt": "특정 서브넷에서 들어오고 나가는 트래픽을 상태 비저장(stateless)으로 추가 제어하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "네트워크 ACL(NACL)로 서브넷 수준 인바운드/아웃바운드 규칙"
+      },
+      {
+        "label": "B",
+        "text": "보안 그룹만으로 서브넷을 제어"
+      },
+      {
+        "label": "C",
+        "text": "IAM 정책으로 패킷을 막는다"
+      },
+      {
+        "label": "D",
+        "text": "DNS로 막는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "NACL은 서브넷 경계에서 상태 비저장 규칙으로 트래픽을 허용/거부한다(보안 그룹은 상태 저장·인스턴스 수준). IAM·DNS(C,D)는 네트워크 패킷 제어 수단이 아니다."
+  },
+  {
+    "id": "exam-soa-c02-57",
+    "slug": "soa-c02",
+    "domain": "네트워킹·콘텐츠 전송",
+    "number": 57,
+    "prompt": "CloudFront로 전 세계 사용자에게 동적·정적 콘텐츠를 낮은 지연으로 제공하려 한다. 가장 적합한 추가 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "엣지 캐싱과 함께 오리진(S3/ALB)을 지정하고 캐시 정책으로 TTL 관리"
+      },
+      {
+        "label": "B",
+        "text": "각 사용자가 오리진에 직접 접속"
+      },
+      {
+        "label": "C",
+        "text": "캐싱을 끈다"
+      },
+      {
+        "label": "D",
+        "text": "단일 리전에서만 제공"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CloudFront는 엣지 로케이션에서 콘텐츠를 캐싱해 지연을 줄이고, 캐시 정책으로 TTL·동작을 제어한다. 오리진 직접 접속(B)·단일 리전(D)은 지연이 크다."
+  },
+  {
+    "id": "exam-soa-c02-58",
+    "slug": "soa-c02",
+    "domain": "네트워킹·콘텐츠 전송",
+    "number": 58,
+    "prompt": "온프레미스 DNS와 Route 53 프라이빗 호스팅 영역 간 양방향 이름 해석이 필요하다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Route 53 Resolver 인바운드/아웃바운드 엔드포인트를 구성"
+      },
+      {
+        "label": "B",
+        "text": "hosts 파일을 수동 편집"
+      },
+      {
+        "label": "C",
+        "text": "DNS를 사용하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "퍼블릭 DNS만 쓴다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Route 53 Resolver 엔드포인트는 온프레미스↔VPC 간 DNS 쿼리를 포워딩해 하이브리드 이름 해석을 제공한다. hosts 수동 편집(B)은 확장성이 없다."
+  },
+  {
+    "id": "exam-soa-c02-59",
+    "slug": "soa-c02",
+    "domain": "네트워킹·콘텐츠 전송",
+    "number": 59,
+    "prompt": "보안 그룹과 NACL의 차이로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보안 그룹은 상태 저장·인스턴스 수준, NACL은 상태 비저장·서브넷 수준"
+      },
+      {
+        "label": "B",
+        "text": "둘 다 상태 비저장이다"
+      },
+      {
+        "label": "C",
+        "text": "보안 그룹은 서브넷 수준이다"
+      },
+      {
+        "label": "D",
+        "text": "NACL은 인스턴스 단위로만 동작"
+      }
+    ],
+    "answer": "A",
+    "explanation": "보안 그룹은 인스턴스(ENI) 수준의 상태 저장 방화벽으로 응답 트래픽을 자동 허용하고, NACL은 서브넷 수준의 상태 비저장 규칙이라 인/아웃을 각각 명시해야 한다."
+  },
+  {
+    "id": "exam-soa-c02-60",
+    "slug": "soa-c02",
+    "domain": "네트워킹·콘텐츠 전송",
+    "number": 60,
+    "prompt": "ALB로 들어온 트래픽을 경로(/api, /img)에 따라 다른 대상 그룹으로 라우팅하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ALB 리스너 규칙의 경로 기반/호스트 기반 라우팅"
+      },
+      {
+        "label": "B",
+        "text": "NLB로 IP만 라우팅"
+      },
+      {
+        "label": "C",
+        "text": "단일 대상 그룹에 모두 보낸다"
+      },
+      {
+        "label": "D",
+        "text": "DNS로 경로를 나눈다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "ALB는 L7에서 경로·호스트 헤더 기반 규칙으로 요청을 적절한 대상 그룹에 라우팅한다. NLB(B)는 L4라 경로 기반 라우팅이 없다."
+  },
+  {
+    "id": "exam-soa-c02-61",
+    "slug": "soa-c02",
+    "domain": "비용·성능 최적화",
+    "number": 61,
+    "prompt": "미사용·과다 프로비저닝된 리소스를 식별하고 비용 절감 권장 사항을 받으려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Compute Optimizer와 Cost Explorer 권장 사항을 활용"
+      },
+      {
+        "label": "B",
+        "text": "추측으로 줄인다"
+      },
+      {
+        "label": "C",
+        "text": "아무 것도 안 한다"
+      },
+      {
+        "label": "D",
+        "text": "모든 리소스를 키운다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Compute Optimizer는 사용 지표로 인스턴스 적정 크기를 권장하고, Cost Explorer는 비용 추세·RI/SP 권장을 제공한다. 추측·확대(B,D)는 낭비를 키운다."
+  },
+  {
+    "id": "exam-soa-c02-62",
+    "slug": "soa-c02",
+    "domain": "비용·성능 최적화",
+    "number": 62,
+    "prompt": "예산을 초과할 가능성이 보이면 사전에 알림을 받으려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Budgets로 예산·예측 임계 경보 설정"
+      },
+      {
+        "label": "B",
+        "text": "월말 청구서를 본다"
+      },
+      {
+        "label": "C",
+        "text": "추적하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "계정을 닫는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS Budgets는 실제·예측 비용/사용량 임계에 대해 SNS 경보를 보내 초과 전에 대응하게 한다. 월말 확인(B)은 사후 대응이다."
+  },
+  {
+    "id": "exam-soa-c02-63",
+    "slug": "soa-c02",
+    "domain": "비용·성능 최적화",
+    "number": 63,
+    "prompt": "EBS 볼륨이 과도하게 큰 IOPS로 프로비저닝돼 비용이 높다. 일반 워크로드에 가장 비용 효율적인 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "gp3로 전환해 필요한 만큼만 IOPS·처리량을 설정"
+      },
+      {
+        "label": "B",
+        "text": "io2를 항상 최대 IOPS로"
+      },
+      {
+        "label": "C",
+        "text": "볼륨을 더 키운다"
+      },
+      {
+        "label": "D",
+        "text": "볼륨을 복제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "gp3는 용량과 독립적으로 IOPS·처리량을 설정할 수 있어 일반 워크로드에서 io1/io2보다 비용 효율적이다. io2 최대(B)·확대(C)는 과다 비용이다."
+  },
+  {
+    "id": "exam-soa-c02-64",
+    "slug": "soa-c02",
+    "domain": "비용·성능 최적화",
+    "number": 64,
+    "prompt": "S3 스토리지 비용을 접근 패턴에 맞춰 자동 최적화하되 운영 부담이 없어야 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 Intelligent-Tiering으로 자동 계층화"
+      },
+      {
+        "label": "B",
+        "text": "모두 Standard 유지"
+      },
+      {
+        "label": "C",
+        "text": "데이터를 삭제"
+      },
+      {
+        "label": "D",
+        "text": "EBS로 옮긴다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Intelligent-Tiering은 접근 패턴 변화에 따라 자동으로 계층을 이동해 수동 관리 없이 비용을 최적화한다. Standard 고정(B)은 비효율적이다."
+  },
+  {
+    "id": "exam-soa-c02-65",
+    "slug": "soa-c02",
+    "domain": "비용·성능 최적화",
+    "number": 65,
+    "prompt": "읽기 지연을 줄이려고 DynamoDB 앞단에 마이크로초 응답 캐시를 두려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "DynamoDB Accelerator(DAX)를 사용"
+      },
+      {
+        "label": "B",
+        "text": "매 읽기를 강한 일관성으로 강제"
+      },
+      {
+        "label": "C",
+        "text": "테이블을 더 키운다"
+      },
+      {
+        "label": "D",
+        "text": "Scan으로 전환"
+      }
+    ],
+    "answer": "A",
+    "explanation": "DAX는 DynamoDB용 완전관리형 인메모리 캐시로 읽기를 마이크로초로 가속한다. 강한 일관성 강제(B)·Scan(D)은 지연·비용을 늘린다."
+  },
+  {
+    "id": "exam-soa-c02-66",
+    "slug": "soa-c02",
+    "domain": "비용·성능 최적화",
+    "number": 66,
+    "prompt": "비정상적 비용 급증을 자동으로 탐지해 알림을 받으려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Cost Anomaly Detection을 구성"
+      },
+      {
+        "label": "B",
+        "text": "청구서를 수동 비교"
+      },
+      {
+        "label": "C",
+        "text": "무시한다"
+      },
+      {
+        "label": "D",
+        "text": "예산을 0으로"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Cost Anomaly Detection은 머신러닝으로 비정상 지출을 탐지해 알림을 보낸다. 수동 비교(B)는 늦고 부정확하다."
+  },
+  {
+    "id": "exam-soa-c02-67",
+    "slug": "soa-c02",
+    "domain": "안정성·비즈니스 연속성",
+    "number": 67,
+    "prompt": "트래픽을 사전·사후 모두 대응하도록 Auto Scaling을 구성하려 한다. 적절한 조치 2가지는? (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "예약된 조정으로 알려진 피크에 선제 확장"
+      },
+      {
+        "label": "B",
+        "text": "대상 추적 정책으로 지표 기반 동적 확장"
+      },
+      {
+        "label": "C",
+        "text": "최대 용량을 1로 고정"
+      },
+      {
+        "label": "D",
+        "text": "조정 정책을 모두 제거"
+      }
+    ],
+    "answer": "A, B",
+    "explanation": "예약 조정은 예측 가능한 피크에 선제 대응하고, 대상 추적은 실시간 지표에 동적으로 반응한다. 최대 1 고정·정책 제거(C,D)는 확장을 막는다."
+  },
+  {
+    "id": "exam-soa-c02-68",
+    "slug": "soa-c02",
+    "domain": "보안·규정 준수",
+    "number": 68,
+    "prompt": "S3 버킷의 우발적 퍼블릭 노출을 막기 위한 조치 2가지는? (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "계정/버킷 수준 퍼블릭 액세스 차단을 켠다"
+      },
+      {
+        "label": "B",
+        "text": "IAM Access Analyzer로 외부 접근 가능 리소스를 점검"
+      },
+      {
+        "label": "C",
+        "text": "버킷 이름을 길게 짓는다"
+      },
+      {
+        "label": "D",
+        "text": "모든 객체 ACL을 public-read로 둔다"
+      }
+    ],
+    "answer": "A, B",
+    "explanation": "퍼블릭 액세스 차단으로 노출을 강제 방지하고, Access Analyzer로 외부 접근 가능 리소스를 지속 점검한다. 이름 난독화(C)·public-read(D)는 보호가 아니다."
   }
 ]

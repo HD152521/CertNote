@@ -4,10 +4,22 @@
     "domain": "보안 설계",
     "prompt": "한 회사가 S3 버킷에 저장된 민감 데이터를 같은 리전의 EC2 인스턴스에서만 접근하도록 제한하려고 한다. 인터넷 경유 없이 가장 안전하게 구성하는 방법은?",
     "choices": [
-      { "label": "A", "text": "버킷 정책에서 0.0.0.0/0을 허용하고 IAM 사용자 자격증명으로 제어한다" },
-      { "label": "B", "text": "S3 게이트웨이 VPC 엔드포인트를 만들고, 버킷 정책의 aws:SourceVpce 조건으로 해당 엔드포인트만 허용한다" },
-      { "label": "C", "text": "EC2에 퍼블릭 IP를 부여하고 보안 그룹으로 S3 접근을 제한한다" },
-      { "label": "D", "text": "S3 버킷을 퍼블릭으로 전환하고 CloudFront OAI를 사용한다" }
+      {
+        "label": "A",
+        "text": "버킷 정책에서 0.0.0.0/0을 허용하고 IAM 사용자 자격증명으로 제어한다"
+      },
+      {
+        "label": "B",
+        "text": "S3 게이트웨이 VPC 엔드포인트를 만들고, 버킷 정책의 aws:SourceVpce 조건으로 해당 엔드포인트만 허용한다"
+      },
+      {
+        "label": "C",
+        "text": "EC2에 퍼블릭 IP를 부여하고 보안 그룹으로 S3 접근을 제한한다"
+      },
+      {
+        "label": "D",
+        "text": "S3 버킷을 퍼블릭으로 전환하고 CloudFront OAI를 사용한다"
+      }
     ],
     "answer": "B",
     "explanation": "S3 게이트웨이 엔드포인트는 트래픽을 AWS 내부 네트워크로만 흐르게 하고, 버킷 정책의 aws:SourceVpce 조건으로 특정 VPC 엔드포인트 경유만 허용하면 인터넷·타 VPC 접근을 차단한다. A는 과도 개방, C는 보안 그룹으로 S3(서비스)를 직접 제어 불가, D는 데이터 공개라 부적절."
@@ -17,10 +29,22 @@
     "domain": "보안 설계",
     "prompt": "여러 AWS 계정을 운영하는 조직이 모든 계정에 공통 보안 가드레일(예: 특정 리전 사용 금지, 루트 사용자 액세스 키 생성 금지)을 강제하려 한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "각 계정에 동일한 IAM 정책을 수동 복제한다" },
-      { "label": "B", "text": "AWS Organizations의 서비스 제어 정책(SCP)을 OU에 적용한다" },
-      { "label": "C", "text": "계정마다 IAM 그룹을 만들어 권한을 부여한다" },
-      { "label": "D", "text": "GuardDuty를 활성화한다" }
+      {
+        "label": "A",
+        "text": "각 계정에 동일한 IAM 정책을 수동 복제한다"
+      },
+      {
+        "label": "B",
+        "text": "AWS Organizations의 서비스 제어 정책(SCP)을 OU에 적용한다"
+      },
+      {
+        "label": "C",
+        "text": "계정마다 IAM 그룹을 만들어 권한을 부여한다"
+      },
+      {
+        "label": "D",
+        "text": "GuardDuty를 활성화한다"
+      }
     ],
     "answer": "B",
     "explanation": "SCP는 조직/OU/계정 단위로 권한의 상한(가드레일)을 강제한다. 개별 IAM 정책(A,C)은 계정마다 누락·드리프트 위험이 크고, GuardDuty(D)는 위협 탐지지 예방적 권한 제어가 아니다."
@@ -30,10 +54,22 @@
     "domain": "보안 설계",
     "prompt": "애플리케이션이 RDS 자격증명을 코드에 하드코딩하고 있어 보안 감사를 통과하지 못했다. 자격증명을 안전하게 관리하고 자동 교체(rotation)까지 원할 때 가장 적합한 서비스 조합은? (2개 선택)",
     "choices": [
-      { "label": "A", "text": "AWS Secrets Manager로 자격증명을 저장하고 자동 교체를 활성화" },
-      { "label": "B", "text": "환경 변수에 평문으로 저장" },
-      { "label": "C", "text": "애플리케이션에 IAM 역할을 부여해 Secrets Manager API 호출 권한만 허용" },
-      { "label": "D", "text": "S3 버킷에 자격증명 파일을 업로드" }
+      {
+        "label": "A",
+        "text": "AWS Secrets Manager로 자격증명을 저장하고 자동 교체를 활성화"
+      },
+      {
+        "label": "B",
+        "text": "환경 변수에 평문으로 저장"
+      },
+      {
+        "label": "C",
+        "text": "애플리케이션에 IAM 역할을 부여해 Secrets Manager API 호출 권한만 허용"
+      },
+      {
+        "label": "D",
+        "text": "S3 버킷에 자격증명 파일을 업로드"
+      }
     ],
     "answer": "A, C",
     "explanation": "Secrets Manager는 자격증명 저장 + Lambda 기반 자동 교체를 제공하고, 애플리케이션은 IAM 역할(임시 자격증명)로 시크릿을 읽어 장기 키 노출을 없앤다. B·D는 평문 노출 위험. (SSM Parameter Store도 가능하지만 자동 교체는 Secrets Manager가 기본 제공.)"
@@ -43,10 +79,22 @@
     "domain": "보안 설계",
     "prompt": "퍼블릭 ALB 뒤의 웹 애플리케이션이 SQL 인젝션·XSS 공격을 받고 있다. 애플리케이션 코드 변경 없이 L7에서 악성 요청을 필터링하려면?",
     "choices": [
-      { "label": "A", "text": "Network ACL로 공격자 IP를 차단" },
-      { "label": "B", "text": "AWS WAF를 ALB에 연결하고 관리형 규칙(예: SQLi, XSS)을 적용" },
-      { "label": "C", "text": "보안 그룹에서 80/443을 닫는다" },
-      { "label": "D", "text": "Shield Standard를 활성화" }
+      {
+        "label": "A",
+        "text": "Network ACL로 공격자 IP를 차단"
+      },
+      {
+        "label": "B",
+        "text": "AWS WAF를 ALB에 연결하고 관리형 규칙(예: SQLi, XSS)을 적용"
+      },
+      {
+        "label": "C",
+        "text": "보안 그룹에서 80/443을 닫는다"
+      },
+      {
+        "label": "D",
+        "text": "Shield Standard를 활성화"
+      }
     ],
     "answer": "B",
     "explanation": "WAF는 ALB/CloudFront/API Gateway에 붙어 L7 요청을 검사하며 SQLi·XSS 관리형 규칙을 제공한다. NACL/보안그룹(A,C)은 L3/4라 페이로드 검사 불가, Shield(D)는 DDoS 방어용."
@@ -56,10 +104,22 @@
     "domain": "복원력 설계",
     "prompt": "단일 AZ의 EC2에서 동작하는 상태 비저장(stateless) 웹 계층을 가용성 높게 재설계하려 한다. 가장 적합한 구성은?",
     "choices": [
-      { "label": "A", "text": "더 큰 인스턴스 타입으로 수직 확장" },
-      { "label": "B", "text": "여러 AZ에 걸친 Auto Scaling 그룹 + ALB" },
-      { "label": "C", "text": "EC2에 Elastic IP를 부여하고 CloudWatch로 모니터링" },
-      { "label": "D", "text": "EBS 스냅샷을 주기적으로 생성" }
+      {
+        "label": "A",
+        "text": "더 큰 인스턴스 타입으로 수직 확장"
+      },
+      {
+        "label": "B",
+        "text": "여러 AZ에 걸친 Auto Scaling 그룹 + ALB"
+      },
+      {
+        "label": "C",
+        "text": "EC2에 Elastic IP를 부여하고 CloudWatch로 모니터링"
+      },
+      {
+        "label": "D",
+        "text": "EBS 스냅샷을 주기적으로 생성"
+      }
     ],
     "answer": "B",
     "explanation": "다중 AZ ASG + ALB는 AZ 장애 시에도 트래픽을 건강한 인스턴스로 분산하고 자동 복구·확장한다. 수직 확장(A)은 단일 장애점 유지, EIP(C)·스냅샷(D)은 가용성 자체를 높이지 못한다."
@@ -69,10 +129,22 @@
     "domain": "복원력 설계",
     "prompt": "주문 처리 시스템에서 트래픽 급증 시 주문이 유실된다. 생산자와 소비자를 분리(decouple)하고 급증을 흡수하려면 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "주문을 Amazon SQS 큐에 넣고 소비자(ASG)가 큐 길이에 따라 확장" },
-      { "label": "B", "text": "주문을 RDS에 직접 동기 기록" },
-      { "label": "C", "text": "더 큰 EC2로 교체" },
-      { "label": "D", "text": "Route 53 가중 라우팅 적용" }
+      {
+        "label": "A",
+        "text": "주문을 Amazon SQS 큐에 넣고 소비자(ASG)가 큐 길이에 따라 확장"
+      },
+      {
+        "label": "B",
+        "text": "주문을 RDS에 직접 동기 기록"
+      },
+      {
+        "label": "C",
+        "text": "더 큰 EC2로 교체"
+      },
+      {
+        "label": "D",
+        "text": "Route 53 가중 라우팅 적용"
+      }
     ],
     "answer": "A",
     "explanation": "SQS는 버퍼 역할로 급증을 흡수하고 생산자-소비자를 비동기로 분리한다. 소비자는 큐 깊이(ApproximateNumberOfMessages) 기반으로 확장한다. 동기 기록(B)은 급증에 취약, C·D는 분리/버퍼링과 무관."
@@ -82,10 +154,22 @@
     "domain": "복원력 설계",
     "prompt": "미션 크리티컬한 RDS(MySQL) 데이터베이스의 가용성을 높이고, 인스턴스 장애 시 자동 장애 조치(failover)를 원한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "읽기 전용 복제본(Read Replica)을 추가" },
-      { "label": "B", "text": "Multi-AZ 배포를 활성화" },
-      { "label": "C", "text": "더 큰 인스턴스 클래스로 변경" },
-      { "label": "D", "text": "자동 스냅샷 보관 기간을 늘린다" }
+      {
+        "label": "A",
+        "text": "읽기 전용 복제본(Read Replica)을 추가"
+      },
+      {
+        "label": "B",
+        "text": "Multi-AZ 배포를 활성화"
+      },
+      {
+        "label": "C",
+        "text": "더 큰 인스턴스 클래스로 변경"
+      },
+      {
+        "label": "D",
+        "text": "자동 스냅샷 보관 기간을 늘린다"
+      }
     ],
     "answer": "B",
     "explanation": "RDS Multi-AZ는 동기 복제 대기 인스턴스를 다른 AZ에 두고 장애 시 자동 failover한다. 읽기 복제본(A)은 읽기 확장용이며 자동 failover가 아니다(승격은 수동/지연). C·D는 가용성 자동화와 무관."
@@ -95,10 +179,22 @@
     "domain": "복원력 설계",
     "prompt": "정적 웹사이트(S3 호스팅)의 가용성·내구성을 극대화하고 리전 장애에도 대비하려 한다. 적절한 조치 2가지는? (2개 선택)",
     "choices": [
-      { "label": "A", "text": "S3 교차 리전 복제(CRR)로 다른 리전에 사본 유지" },
-      { "label": "B", "text": "CloudFront로 콘텐츠를 글로벌 엣지에 캐싱·배포" },
-      { "label": "C", "text": "단일 AZ One Zone-IA 스토리지 클래스로 전환" },
-      { "label": "D", "text": "EC2에 정적 파일을 복사" }
+      {
+        "label": "A",
+        "text": "S3 교차 리전 복제(CRR)로 다른 리전에 사본 유지"
+      },
+      {
+        "label": "B",
+        "text": "CloudFront로 콘텐츠를 글로벌 엣지에 캐싱·배포"
+      },
+      {
+        "label": "C",
+        "text": "단일 AZ One Zone-IA 스토리지 클래스로 전환"
+      },
+      {
+        "label": "D",
+        "text": "EC2에 정적 파일을 복사"
+      }
     ],
     "answer": "A, B",
     "explanation": "CRR은 리전 장애 대비 사본을, CloudFront는 엣지 캐싱으로 가용성·성능을 높인다. One Zone-IA(C)는 단일 AZ라 내구성·가용성이 낮고, EC2 복사(D)는 관리·SPOF 부담만 늘린다."
@@ -108,10 +204,22 @@
     "domain": "고성능 설계",
     "prompt": "읽기가 매우 많은 웹 앱의 RDS 데이터베이스가 읽기 부하로 느려진다. 애플리케이션 변경을 최소화하며 읽기 처리량을 높이려면?",
     "choices": [
-      { "label": "A", "text": "RDS 읽기 전용 복제본을 추가하고 읽기 트래픽을 분산" },
-      { "label": "B", "text": "RDS를 Single-AZ로 변경" },
-      { "label": "C", "text": "EBS 볼륨 크기를 늘린다" },
-      { "label": "D", "text": "더 작은 인스턴스로 축소" }
+      {
+        "label": "A",
+        "text": "RDS 읽기 전용 복제본을 추가하고 읽기 트래픽을 분산"
+      },
+      {
+        "label": "B",
+        "text": "RDS를 Single-AZ로 변경"
+      },
+      {
+        "label": "C",
+        "text": "EBS 볼륨 크기를 늘린다"
+      },
+      {
+        "label": "D",
+        "text": "더 작은 인스턴스로 축소"
+      }
     ],
     "answer": "A",
     "explanation": "읽기 복제본은 읽기 트래픽을 오프로드해 읽기 처리량을 수평 확장한다. ElastiCache 캐싱도 흔한 보완책. Single-AZ 전환(B)·볼륨 확대(C)·축소(D)는 읽기 확장과 무관."
@@ -121,10 +229,22 @@
     "domain": "고성능 설계",
     "prompt": "전 세계 사용자에게 동적 API 응답 지연을 줄이려 한다. 캐싱이 어려운 동적 콘텐츠에 가장 효과적인 것은?",
     "choices": [
-      { "label": "A", "text": "단일 리전에 더 큰 EC2 배치" },
-      { "label": "B", "text": "AWS Global Accelerator로 Anycast IP·AWS 백본 경유 라우팅" },
-      { "label": "C", "text": "S3 정적 호스팅으로 전환" },
-      { "label": "D", "text": "RDS Multi-AZ 적용" }
+      {
+        "label": "A",
+        "text": "단일 리전에 더 큰 EC2 배치"
+      },
+      {
+        "label": "B",
+        "text": "AWS Global Accelerator로 Anycast IP·AWS 백본 경유 라우팅"
+      },
+      {
+        "label": "C",
+        "text": "S3 정적 호스팅으로 전환"
+      },
+      {
+        "label": "D",
+        "text": "RDS Multi-AZ 적용"
+      }
     ],
     "answer": "B",
     "explanation": "Global Accelerator는 엣지에서 가장 가까운 진입점으로 받아 AWS 글로벌 백본으로 전달해, 캐싱 불가한 동적 트래픽의 지연·변동성을 줄인다. CloudFront는 캐싱 가능 콘텐츠에 더 적합. A·C·D는 글로벌 지연과 직접 관련 없음."
@@ -134,10 +254,22 @@
     "domain": "고성능 설계",
     "prompt": "밀리초 미만 지연이 필요한 세션 저장소/리더보드를 구현하려 한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "Amazon ElastiCache for Redis" },
-      { "label": "B", "text": "Amazon S3" },
-      { "label": "C", "text": "Amazon Athena" },
-      { "label": "D", "text": "Amazon Glacier" }
+      {
+        "label": "A",
+        "text": "Amazon ElastiCache for Redis"
+      },
+      {
+        "label": "B",
+        "text": "Amazon S3"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Athena"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Glacier"
+      }
     ],
     "answer": "A",
     "explanation": "ElastiCache for Redis는 인메모리라 밀리초 미만 지연과 정렬셋(리더보드)·세션 저장에 적합하다. S3(B)·Athena(C)·Glacier(D)는 지연 특성상 부적합."
@@ -147,10 +279,22 @@
     "domain": "비용 최적화 설계",
     "prompt": "예측 가능한 24/7 기준 부하를 1년 이상 운영할 EC2 워크로드의 비용을 최적화하려 한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "온디맨드 인스턴스 유지" },
-      { "label": "B", "text": "Compute Savings Plans 또는 예약 인스턴스(RI) 구매" },
-      { "label": "C", "text": "스팟 인스턴스만 사용" },
-      { "label": "D", "text": "더 큰 인스턴스로 변경" }
+      {
+        "label": "A",
+        "text": "온디맨드 인스턴스 유지"
+      },
+      {
+        "label": "B",
+        "text": "Compute Savings Plans 또는 예약 인스턴스(RI) 구매"
+      },
+      {
+        "label": "C",
+        "text": "스팟 인스턴스만 사용"
+      },
+      {
+        "label": "D",
+        "text": "더 큰 인스턴스로 변경"
+      }
     ],
     "answer": "B",
     "explanation": "꾸준한 기준 부하는 1~3년 약정의 Savings Plans/RI로 최대 ~72% 절감한다. 온디맨드(A)는 비싸고, 스팟(C)은 중단 가능해 상시 기준 부하엔 부적합, D는 비용 증가."
@@ -160,10 +304,22 @@
     "domain": "비용 최적화 설계",
     "prompt": "거의 접근하지 않지만 규정상 7년 보관해야 하는 로그를 가장 저렴하게 저장하려 한다(검색은 드물고 수 시간 지연 허용). 가장 적합한 S3 스토리지 클래스는?",
     "choices": [
-      { "label": "A", "text": "S3 Standard" },
-      { "label": "B", "text": "S3 Standard-IA" },
-      { "label": "C", "text": "S3 Glacier Deep Archive" },
-      { "label": "D", "text": "S3 One Zone-IA" }
+      {
+        "label": "A",
+        "text": "S3 Standard"
+      },
+      {
+        "label": "B",
+        "text": "S3 Standard-IA"
+      },
+      {
+        "label": "C",
+        "text": "S3 Glacier Deep Archive"
+      },
+      {
+        "label": "D",
+        "text": "S3 One Zone-IA"
+      }
     ],
     "answer": "C",
     "explanation": "수 시간 검색 지연이 허용되는 장기 규정 보관에는 Glacier Deep Archive가 가장 저렴하다. Standard(A)/IA(B)는 비싸고, One Zone-IA(D)는 단일 AZ라 규정 보관에 내구성 부족. 수명주기 정책으로 자동 전환 권장."
@@ -173,10 +329,22 @@
     "domain": "비용 최적화 설계",
     "prompt": "내결함성이 있는 배치/이미지 처리 워크로드를 가장 저렴하게 실행하려 한다. 중단되어도 재시도 가능할 때 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "스팟 인스턴스(또는 스팟 기반 ASG)" },
-      { "label": "B", "text": "온디맨드 인스턴스" },
-      { "label": "C", "text": "3년 예약 인스턴스" },
-      { "label": "D", "text": "전용 호스트(Dedicated Host)" }
+      {
+        "label": "A",
+        "text": "스팟 인스턴스(또는 스팟 기반 ASG)"
+      },
+      {
+        "label": "B",
+        "text": "온디맨드 인스턴스"
+      },
+      {
+        "label": "C",
+        "text": "3년 예약 인스턴스"
+      },
+      {
+        "label": "D",
+        "text": "전용 호스트(Dedicated Host)"
+      }
     ],
     "answer": "A",
     "explanation": "중단 허용·재시도 가능한 배치 작업은 스팟으로 최대 ~90% 절감할 수 있다. 온디맨드(B)·RI(C)·전용 호스트(D)는 비용이 더 크거나 약정/규정 목적이라 이 시나리오엔 비효율."
@@ -186,10 +354,22 @@
     "domain": "고성능 설계",
     "prompt": "급격히 변하는 트래픽을 가진 이벤트 기반 이미지 썸네일 생성 기능을 운영 부담 없이(서버리스) 구현하려 한다. 가장 적합한 조합은?",
     "choices": [
-      { "label": "A", "text": "S3 이벤트 알림 → Lambda 함수로 썸네일 생성" },
-      { "label": "B", "text": "상시 켜둔 EC2가 폴링" },
-      { "label": "C", "text": "온프레미스 cron 작업" },
-      { "label": "D", "text": "RDS 트리거" }
+      {
+        "label": "A",
+        "text": "S3 이벤트 알림 → Lambda 함수로 썸네일 생성"
+      },
+      {
+        "label": "B",
+        "text": "상시 켜둔 EC2가 폴링"
+      },
+      {
+        "label": "C",
+        "text": "온프레미스 cron 작업"
+      },
+      {
+        "label": "D",
+        "text": "RDS 트리거"
+      }
     ],
     "answer": "A",
     "explanation": "S3 이벤트가 Lambda를 트리거하면 업로드마다 자동 확장 처리되어 서버 관리·유휴 비용이 없다. 상시 EC2(B)는 유휴 비용·확장 부담, C·D는 시나리오에 부적합."
@@ -199,10 +379,22 @@
     "domain": "보안 설계",
     "prompt": "프라이빗 서브넷의 EC2가 외부 패키지 저장소(인터넷)에서 업데이트를 받아야 하지만, 인바운드 인터넷 접근은 절대 허용하면 안 된다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "인터넷 게이트웨이를 프라이빗 서브넷 라우트에 추가" },
-      { "label": "B", "text": "퍼블릭 서브넷의 NAT 게이트웨이를 통해 아웃바운드만 허용" },
-      { "label": "C", "text": "EC2에 퍼블릭 IP 부여" },
-      { "label": "D", "text": "VPC 피어링 구성" }
+      {
+        "label": "A",
+        "text": "인터넷 게이트웨이를 프라이빗 서브넷 라우트에 추가"
+      },
+      {
+        "label": "B",
+        "text": "퍼블릭 서브넷의 NAT 게이트웨이를 통해 아웃바운드만 허용"
+      },
+      {
+        "label": "C",
+        "text": "EC2에 퍼블릭 IP 부여"
+      },
+      {
+        "label": "D",
+        "text": "VPC 피어링 구성"
+      }
     ],
     "answer": "B",
     "explanation": "NAT 게이트웨이는 프라이빗 인스턴스의 아웃바운드 인터넷만 허용하고 인바운드 시작 연결은 차단한다. IGW 직결(A)·퍼블릭 IP(C)는 인바운드 노출, 피어링(D)은 VPC 간 연결로 인터넷 업데이트와 무관."
@@ -212,10 +404,22 @@
     "domain": "보안 설계",
     "prompt": "EC2 인스턴스에서 실행되는 애플리케이션이 S3와 DynamoDB에 접근해야 한다. 보안 모범 사례에 따라 자격증명을 관리하는 방법은?",
     "choices": [
-      { "label": "A", "text": "IAM 사용자 액세스 키를 EC2 사용자 데이터에 삽입" },
-      { "label": "B", "text": "IAM 역할을 EC2 인스턴스 프로파일에 연결하고 최소 권한 정책 부여" },
-      { "label": "C", "text": "루트 계정 액세스 키를 애플리케이션 설정 파일에 저장" },
-      { "label": "D", "text": "모든 인스턴스가 공유하는 단일 액세스 키를 사용" }
+      {
+        "label": "A",
+        "text": "IAM 사용자 액세스 키를 EC2 사용자 데이터에 삽입"
+      },
+      {
+        "label": "B",
+        "text": "IAM 역할을 EC2 인스턴스 프로파일에 연결하고 최소 권한 정책 부여"
+      },
+      {
+        "label": "C",
+        "text": "루트 계정 액세스 키를 애플리케이션 설정 파일에 저장"
+      },
+      {
+        "label": "D",
+        "text": "모든 인스턴스가 공유하는 단일 액세스 키를 사용"
+      }
     ],
     "answer": "B",
     "explanation": "EC2 인스턴스 프로파일에 IAM 역할을 부여하면 임시 자격증명이 자동 발급·교체되어 장기 키 노출이 없다. A·C·D는 장기 키 하드코딩으로 유출 위험이 크고 최소 권한 원칙에 위배된다."
@@ -225,10 +429,22 @@
     "domain": "보안 설계",
     "prompt": "회사가 저장 데이터(S3)와 전송 중 데이터를 모두 암호화하면서 암호화 키 사용 감사 로그를 CloudTrail로 남기길 원한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "SSE-S3(Amazon 관리형 키)만 사용" },
-      { "label": "B", "text": "SSE-KMS(고객 관리형 키)를 사용하고 HTTPS 전송을 강제" },
-      { "label": "C", "text": "클라이언트에서 평문으로 업로드" },
-      { "label": "D", "text": "버킷 정책으로만 접근 제어하고 암호화는 생략" }
+      {
+        "label": "A",
+        "text": "SSE-S3(Amazon 관리형 키)만 사용"
+      },
+      {
+        "label": "B",
+        "text": "SSE-KMS(고객 관리형 키)를 사용하고 HTTPS 전송을 강제"
+      },
+      {
+        "label": "C",
+        "text": "클라이언트에서 평문으로 업로드"
+      },
+      {
+        "label": "D",
+        "text": "버킷 정책으로만 접근 제어하고 암호화는 생략"
+      }
     ],
     "answer": "B",
     "explanation": "SSE-KMS는 KMS 키 사용을 CloudTrail에 기록해 감사 가능하고 키 정책으로 세밀한 제어가 된다. HTTPS(aws:SecureTransport)로 전송 암호화를 강제한다. SSE-S3(A)는 KMS 수준 감사·제어가 약하고, C·D는 암호화 요구를 충족 못 함."
@@ -238,10 +454,22 @@
     "domain": "보안 설계",
     "prompt": "온프레미스 디렉터리(Active Directory) 사용자가 AWS 콘솔에 별도 IAM 사용자 없이 SSO로 접근하길 원한다. 가장 적합한 방식은?",
     "choices": [
-      { "label": "A", "text": "각 사용자마다 IAM 사용자를 수동 생성" },
-      { "label": "B", "text": "IAM Identity Center(또는 SAML 2.0 페더레이션)로 AD와 연동해 페더레이션 액세스 제공" },
-      { "label": "C", "text": "모든 사용자에게 동일한 IAM 액세스 키 배포" },
-      { "label": "D", "text": "루트 자격증명을 공유" }
+      {
+        "label": "A",
+        "text": "각 사용자마다 IAM 사용자를 수동 생성"
+      },
+      {
+        "label": "B",
+        "text": "IAM Identity Center(또는 SAML 2.0 페더레이션)로 AD와 연동해 페더레이션 액세스 제공"
+      },
+      {
+        "label": "C",
+        "text": "모든 사용자에게 동일한 IAM 액세스 키 배포"
+      },
+      {
+        "label": "D",
+        "text": "루트 자격증명을 공유"
+      }
     ],
     "answer": "B",
     "explanation": "IAM Identity Center/SAML 페더레이션은 기존 AD 자격증명으로 임시 자격증명을 발급해 SSO를 제공하며 IAM 사용자 개별 관리가 불필요하다. A는 운영 부담·드리프트, C·D는 심각한 보안 위반."
@@ -251,10 +479,22 @@
     "domain": "보안 설계",
     "prompt": "DynamoDB 테이블에 대한 접근을 사용자별로 자신이 소유한 항목(파티션 키가 사용자 ID)에만 제한하려 한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "테이블 전체 읽기/쓰기를 모두에게 허용" },
-      { "label": "B", "text": "IAM 정책의 dynamodb:LeadingKeys 조건으로 행 수준 접근 제어" },
-      { "label": "C", "text": "애플리케이션 코드에서만 필터링하고 IAM은 전체 허용" },
-      { "label": "D", "text": "각 사용자마다 별도 테이블 생성" }
+      {
+        "label": "A",
+        "text": "테이블 전체 읽기/쓰기를 모두에게 허용"
+      },
+      {
+        "label": "B",
+        "text": "IAM 정책의 dynamodb:LeadingKeys 조건으로 행 수준 접근 제어"
+      },
+      {
+        "label": "C",
+        "text": "애플리케이션 코드에서만 필터링하고 IAM은 전체 허용"
+      },
+      {
+        "label": "D",
+        "text": "각 사용자마다 별도 테이블 생성"
+      }
     ],
     "answer": "B",
     "explanation": "IAM 정책의 dynamodb:LeadingKeys 조건은 요청자의 파티션 키가 본인 ID와 일치하는 항목만 접근하도록 세밀히 제어한다. A·C는 권한 과다, D는 운영·비용 비효율."
@@ -264,10 +504,22 @@
     "domain": "보안 설계",
     "prompt": "여러 계정에서 발생하는 비정상적 API 호출과 침해된 EC2 인스턴스를 자동 탐지하려 한다. 머신러닝 기반 위협 탐지 서비스로 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "AWS Config" },
-      { "label": "B", "text": "Amazon GuardDuty" },
-      { "label": "C", "text": "AWS Trusted Advisor" },
-      { "label": "D", "text": "Amazon Inspector" }
+      {
+        "label": "A",
+        "text": "AWS Config"
+      },
+      {
+        "label": "B",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "C",
+        "text": "AWS Trusted Advisor"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Inspector"
+      }
     ],
     "answer": "B",
     "explanation": "GuardDuty는 CloudTrail·VPC Flow Logs·DNS 로그를 분석해 비정상 API·침해 인스턴스를 ML로 탐지한다. Config(A)는 구성 준수, Trusted Advisor(C)는 모범 사례 점검, Inspector(D)는 취약점 스캔용."
@@ -277,10 +529,22 @@
     "domain": "복원력 설계",
     "prompt": "두 리전에 걸친 액티브-패시브 재해 복구를 구현하면서, 1차 리전 장애 시 Route 53이 자동으로 2차 리전으로 트래픽을 보내도록 하려 한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "Route 53 단순 라우팅으로 두 리전을 모두 등록" },
-      { "label": "B", "text": "Route 53 장애 조치(failover) 라우팅 + 상태 확인(health check)" },
-      { "label": "C", "text": "수동으로 DNS 레코드를 변경" },
-      { "label": "D", "text": "CloudFront 오리진 그룹만 사용" }
+      {
+        "label": "A",
+        "text": "Route 53 단순 라우팅으로 두 리전을 모두 등록"
+      },
+      {
+        "label": "B",
+        "text": "Route 53 장애 조치(failover) 라우팅 + 상태 확인(health check)"
+      },
+      {
+        "label": "C",
+        "text": "수동으로 DNS 레코드를 변경"
+      },
+      {
+        "label": "D",
+        "text": "CloudFront 오리진 그룹만 사용"
+      }
     ],
     "answer": "B",
     "explanation": "Route 53 failover 라우팅은 health check로 1차 엔드포인트 상태를 감시하다 비정상 시 자동으로 2차(보조) 레코드로 전환한다. 단순 라우팅(A)·수동 변경(C)은 자동 failover 불가, CloudFront 오리진 그룹(D)은 오리진 장애 대응이지 리전 DR 라우팅 솔루션은 아니다."
@@ -290,10 +554,22 @@
     "domain": "복원력 설계",
     "prompt": "여러 마이크로서비스가 SQS로 비동기 처리하는데, 일부 메시지가 반복 실패해 큐를 막고 있다. 실패 메시지를 격리하고 정상 처리를 보호하려면?",
     "choices": [
-      { "label": "A", "text": "큐를 삭제하고 새로 만든다" },
-      { "label": "B", "text": "데드레터 큐(DLQ)를 구성하고 maxReceiveCount를 설정" },
-      { "label": "C", "text": "가시성 제한 시간을 0으로 설정" },
-      { "label": "D", "text": "메시지 보존 기간을 무한대로 설정" }
+      {
+        "label": "A",
+        "text": "큐를 삭제하고 새로 만든다"
+      },
+      {
+        "label": "B",
+        "text": "데드레터 큐(DLQ)를 구성하고 maxReceiveCount를 설정"
+      },
+      {
+        "label": "C",
+        "text": "가시성 제한 시간을 0으로 설정"
+      },
+      {
+        "label": "D",
+        "text": "메시지 보존 기간을 무한대로 설정"
+      }
     ],
     "answer": "B",
     "explanation": "DLQ에 maxReceiveCount를 지정하면 일정 횟수 이상 실패한 '독성 메시지'를 별도 큐로 격리해 정상 처리 흐름을 보호하고 사후 분석이 가능하다. A는 데이터 손실, C는 무한 재처리, D는 근본 해결이 아니다."
@@ -303,10 +579,22 @@
     "domain": "복원력 설계",
     "prompt": "컨테이너 워크로드를 운영 부담 없이 실행하고, 노드 관리 없이 자동으로 컴퓨팅을 프로비저닝하길 원한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "EC2에 직접 Docker를 설치해 운영" },
-      { "label": "B", "text": "ECS 또는 EKS를 AWS Fargate 시작 유형으로 실행" },
-      { "label": "C", "text": "단일 대형 EC2에 모든 컨테이너 배치" },
-      { "label": "D", "text": "Lambda로 장기 실행 컨테이너 배치" }
+      {
+        "label": "A",
+        "text": "EC2에 직접 Docker를 설치해 운영"
+      },
+      {
+        "label": "B",
+        "text": "ECS 또는 EKS를 AWS Fargate 시작 유형으로 실행"
+      },
+      {
+        "label": "C",
+        "text": "단일 대형 EC2에 모든 컨테이너 배치"
+      },
+      {
+        "label": "D",
+        "text": "Lambda로 장기 실행 컨테이너 배치"
+      }
     ],
     "answer": "B",
     "explanation": "Fargate는 서버리스 컨테이너 컴퓨팅으로 노드 프로비저닝·패치 부담 없이 태스크 단위로 자동 확장한다. A·C는 노드 관리·SPOF, Lambda(D)는 15분 제한이 있어 장기 실행 컨테이너에 부적합."
@@ -316,10 +604,22 @@
     "domain": "복원력 설계",
     "prompt": "ALB 뒤의 애플리케이션이 사용자 세션을 인스턴스 로컬 메모리에 저장해, 인스턴스 교체 시 로그인이 풀린다. 세션을 외부화해 무상태로 만들려면 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "ALB 스티키 세션만 활성화" },
-      { "label": "B", "text": "세션 상태를 ElastiCache 또는 DynamoDB에 저장" },
-      { "label": "C", "text": "인스턴스를 절대 교체하지 않는다" },
-      { "label": "D", "text": "세션을 EBS 볼륨에 저장" }
+      {
+        "label": "A",
+        "text": "ALB 스티키 세션만 활성화"
+      },
+      {
+        "label": "B",
+        "text": "세션 상태를 ElastiCache 또는 DynamoDB에 저장"
+      },
+      {
+        "label": "C",
+        "text": "인스턴스를 절대 교체하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "세션을 EBS 볼륨에 저장"
+      }
     ],
     "answer": "B",
     "explanation": "세션을 ElastiCache/DynamoDB 같은 공유 저장소로 외부화하면 어느 인스턴스가 받아도 세션이 유지되어 무상태·고가용 확장이 가능하다. 스티키 세션(A)은 해당 인스턴스 장애 시 세션 손실, C는 비현실적, D(EBS)는 단일 인스턴스 종속."
@@ -329,10 +629,22 @@
     "domain": "복원력 설계",
     "prompt": "여러 AZ의 EC2 인스턴스들이 공유 파일 시스템에 동시에 읽기/쓰기를 해야 하고, 용량이 자동 확장되길 원한다. 가장 적합한 스토리지는?",
     "choices": [
-      { "label": "A", "text": "단일 EBS 볼륨을 여러 인스턴스에 연결" },
-      { "label": "B", "text": "Amazon EFS(Elastic File System)" },
-      { "label": "C", "text": "각 인스턴스의 인스턴스 스토어" },
-      { "label": "D", "text": "S3를 파일 시스템처럼 직접 마운트" }
+      {
+        "label": "A",
+        "text": "단일 EBS 볼륨을 여러 인스턴스에 연결"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EFS(Elastic File System)"
+      },
+      {
+        "label": "C",
+        "text": "각 인스턴스의 인스턴스 스토어"
+      },
+      {
+        "label": "D",
+        "text": "S3를 파일 시스템처럼 직접 마운트"
+      }
     ],
     "answer": "B",
     "explanation": "EFS는 여러 AZ의 다수 EC2가 동시에 마운트·공유할 수 있는 완전관리형 NFS이며 용량이 자동 확장된다. 일반 EBS(A)는 기본적으로 단일 인스턴스용, 인스턴스 스토어(C)는 휘발성·비공유, S3(D)는 객체 스토리지로 POSIX 파일 시스템이 아니다."
@@ -342,10 +654,22 @@
     "domain": "고성능 설계",
     "prompt": "정적·동적 콘텐츠를 모두 제공하는 글로벌 웹사이트의 지연을 줄이고 오리진 부하를 낮추려 한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "단일 리전 ALB만 사용" },
-      { "label": "B", "text": "Amazon CloudFront를 앞단에 배치해 엣지 캐싱" },
-      { "label": "C", "text": "RDS 읽기 복제본 추가" },
-      { "label": "D", "text": "더 큰 EC2 인스턴스로 교체" }
+      {
+        "label": "A",
+        "text": "단일 리전 ALB만 사용"
+      },
+      {
+        "label": "B",
+        "text": "Amazon CloudFront를 앞단에 배치해 엣지 캐싱"
+      },
+      {
+        "label": "C",
+        "text": "RDS 읽기 복제본 추가"
+      },
+      {
+        "label": "D",
+        "text": "더 큰 EC2 인스턴스로 교체"
+      }
     ],
     "answer": "B",
     "explanation": "CloudFront는 전 세계 엣지에서 콘텐츠를 캐싱·가속해 지연을 줄이고 오리진 요청을 감소시킨다. 동적 콘텐츠도 엣지 종단 TLS·연결 재사용으로 가속된다. A·C·D는 글로벌 엣지 캐싱을 제공하지 않는다."
@@ -355,10 +679,22 @@
     "domain": "고성능 설계",
     "prompt": "초당 수만 건의 실시간 스트리밍 데이터(IoT 텔레메트리)를 수집해 여러 소비자가 동시에 처리하길 원한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "Amazon SQS 표준 큐" },
-      { "label": "B", "text": "Amazon Kinesis Data Streams" },
-      { "label": "C", "text": "Amazon SNS만 사용" },
-      { "label": "D", "text": "RDS에 직접 INSERT" }
+      {
+        "label": "A",
+        "text": "Amazon SQS 표준 큐"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Kinesis Data Streams"
+      },
+      {
+        "label": "C",
+        "text": "Amazon SNS만 사용"
+      },
+      {
+        "label": "D",
+        "text": "RDS에 직접 INSERT"
+      }
     ],
     "answer": "B",
     "explanation": "Kinesis Data Streams는 고처리량 실시간 스트림을 샤드 단위로 수집하고, 여러 소비자가 동일 스트림을 독립적으로(재생 포함) 읽을 수 있다. SQS(A)는 메시지를 소비 후 삭제해 다중 독립 소비·재생에 부적합, SNS(C)는 영속 스트림이 아니며, RDS(D)는 고속 스트림 수집에 부적합."
@@ -368,10 +704,22 @@
     "domain": "고성능 설계",
     "prompt": "빅데이터 분석 팀이 S3에 저장된 대용량 로그를 SQL로 임시 조회하려 한다. 서버를 프로비저닝하지 않고 사용한 만큼만 과금되는 방식으로 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "EC2에 데이터베이스를 설치해 로드" },
-      { "label": "B", "text": "Amazon Athena로 S3 데이터를 직접 쿼리" },
-      { "label": "C", "text": "RDS로 전체 데이터를 import" },
-      { "label": "D", "text": "DynamoDB로 마이그레이션" }
+      {
+        "label": "A",
+        "text": "EC2에 데이터베이스를 설치해 로드"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Athena로 S3 데이터를 직접 쿼리"
+      },
+      {
+        "label": "C",
+        "text": "RDS로 전체 데이터를 import"
+      },
+      {
+        "label": "D",
+        "text": "DynamoDB로 마이그레이션"
+      }
     ],
     "answer": "B",
     "explanation": "Athena는 서버리스로 S3의 데이터를 표준 SQL로 직접 쿼리하고 스캔한 데이터양만큼만 과금되어 임시·간헐 분석에 적합하다. A·C·D는 프로비저닝·로딩 부담과 상시 비용이 발생한다."
@@ -381,10 +729,22 @@
     "domain": "고성능 설계",
     "prompt": "급증·급감이 심한 트래픽을 가진 REST API를 서버 관리 없이 자동 확장하며 운영하려 한다. 가장 적합한 조합은?",
     "choices": [
-      { "label": "A", "text": "Amazon API Gateway + AWS Lambda" },
-      { "label": "B", "text": "단일 EC2에 API 배포" },
-      { "label": "C", "text": "온프레미스 서버 + VPN" },
-      { "label": "D", "text": "고정 크기 ASG" }
+      {
+        "label": "A",
+        "text": "Amazon API Gateway + AWS Lambda"
+      },
+      {
+        "label": "B",
+        "text": "단일 EC2에 API 배포"
+      },
+      {
+        "label": "C",
+        "text": "온프레미스 서버 + VPN"
+      },
+      {
+        "label": "D",
+        "text": "고정 크기 ASG"
+      }
     ],
     "answer": "A",
     "explanation": "API Gateway + Lambda는 완전 서버리스로 요청 수에 따라 자동 확장하고 유휴 비용이 없어 변동성 큰 API에 이상적이다. 단일 EC2(B)·온프레미스(C)·고정 ASG(D)는 급증 대응·운영 효율이 떨어진다."
@@ -394,10 +754,22 @@
     "domain": "고성능 설계",
     "prompt": "글로벌 쓰기·읽기가 빈번하고 한 자릿수 밀리초 지연이 필요한 NoSQL 워크로드를 여러 리전에서 활성-활성으로 운영하려 한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "단일 리전 RDS Multi-AZ" },
-      { "label": "B", "text": "DynamoDB 글로벌 테이블" },
-      { "label": "C", "text": "ElastiCache 단일 노드" },
-      { "label": "D", "text": "S3 교차 리전 복제" }
+      {
+        "label": "A",
+        "text": "단일 리전 RDS Multi-AZ"
+      },
+      {
+        "label": "B",
+        "text": "DynamoDB 글로벌 테이블"
+      },
+      {
+        "label": "C",
+        "text": "ElastiCache 단일 노드"
+      },
+      {
+        "label": "D",
+        "text": "S3 교차 리전 복제"
+      }
     ],
     "answer": "B",
     "explanation": "DynamoDB 글로벌 테이블은 여러 리전에 활성-활성 복제를 제공해 로컬 저지연 읽기/쓰기와 리전 장애 대비를 동시에 만족한다. RDS Multi-AZ(A)는 단일 리전, ElastiCache(C)는 캐시, S3 CRR(D)은 객체 스토리지라 부적합."
@@ -407,10 +779,22 @@
     "domain": "고성능 설계",
     "prompt": "EC2에서 매우 높은 IOPS와 낮은 지연이 일관되게 요구되는 트랜잭션 데이터베이스 볼륨이 필요하다. 가장 적합한 EBS 볼륨 유형은?",
     "choices": [
-      { "label": "A", "text": "범용 SSD(gp2/gp3)" },
-      { "label": "B", "text": "프로비저닝 IOPS SSD(io1/io2)" },
-      { "label": "C", "text": "처리량 최적화 HDD(st1)" },
-      { "label": "D", "text": "콜드 HDD(sc1)" }
+      {
+        "label": "A",
+        "text": "범용 SSD(gp2/gp3)"
+      },
+      {
+        "label": "B",
+        "text": "프로비저닝 IOPS SSD(io1/io2)"
+      },
+      {
+        "label": "C",
+        "text": "처리량 최적화 HDD(st1)"
+      },
+      {
+        "label": "D",
+        "text": "콜드 HDD(sc1)"
+      }
     ],
     "answer": "B",
     "explanation": "프로비저닝 IOPS SSD(io1/io2)는 일관된 고IOPS·저지연을 보장해 미션 크리티컬 트랜잭션 DB에 적합하다. gp3(A)는 비용효율적이나 극단적 IOPS 보장에는 io2가 우수, HDD 계열(C,D)은 처리량/아카이브용이라 부적합."
@@ -420,10 +804,22 @@
     "domain": "비용 최적화 설계",
     "prompt": "접근 패턴을 예측할 수 없는 다양한 객체들의 S3 스토리지 비용을 관리 부담 없이 자동 최적화하려 한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "모든 객체를 S3 Standard에 고정" },
-      { "label": "B", "text": "S3 Intelligent-Tiering 사용" },
-      { "label": "C", "text": "객체마다 수동으로 스토리지 클래스를 분류" },
-      { "label": "D", "text": "모든 객체를 즉시 Glacier로 이동" }
+      {
+        "label": "A",
+        "text": "모든 객체를 S3 Standard에 고정"
+      },
+      {
+        "label": "B",
+        "text": "S3 Intelligent-Tiering 사용"
+      },
+      {
+        "label": "C",
+        "text": "객체마다 수동으로 스토리지 클래스를 분류"
+      },
+      {
+        "label": "D",
+        "text": "모든 객체를 즉시 Glacier로 이동"
+      }
     ],
     "answer": "B",
     "explanation": "Intelligent-Tiering은 접근 패턴을 자동 모니터링해 객체를 접근/비접근 계층으로 이동시켜 운영 부담 없이 비용을 최적화한다. Standard 고정(A)·수동 분류(C)는 비효율, 즉시 Glacier(D)는 빈번 접근 시 검색비·지연 문제가 생긴다."
@@ -433,10 +829,22 @@
     "domain": "비용 최적화 설계",
     "prompt": "여러 계정의 청구를 통합해 볼륨 할인을 받고, 계정별 비용을 한곳에서 분석하려 한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "각 계정에서 개별적으로 청구서를 받는다" },
-      { "label": "B", "text": "AWS Organizations 통합 결제(consolidated billing)와 Cost Explorer 사용" },
-      { "label": "C", "text": "수동 스프레드시트로 비용 합산" },
-      { "label": "D", "text": "계정을 하나로 합친다" }
+      {
+        "label": "A",
+        "text": "각 계정에서 개별적으로 청구서를 받는다"
+      },
+      {
+        "label": "B",
+        "text": "AWS Organizations 통합 결제(consolidated billing)와 Cost Explorer 사용"
+      },
+      {
+        "label": "C",
+        "text": "수동 스프레드시트로 비용 합산"
+      },
+      {
+        "label": "D",
+        "text": "계정을 하나로 합친다"
+      }
     ],
     "answer": "B",
     "explanation": "Organizations 통합 결제는 사용량을 합산해 볼륨·RI/SP 공유 할인을 적용하고, Cost Explorer로 계정·태그별 분석이 가능하다. A·C는 할인·가시성 부족, D는 격리·운영 측면에서 부적절하다."
@@ -446,10 +854,22 @@
     "domain": "비용 최적화 설계",
     "prompt": "VPC 내 EC2가 S3와 대량 데이터를 주고받는데 NAT 게이트웨이 데이터 처리 비용이 과다하다. 비용을 줄이는 가장 적합한 방법은?",
     "choices": [
-      { "label": "A", "text": "NAT 게이트웨이를 더 추가" },
-      { "label": "B", "text": "S3용 게이트웨이 VPC 엔드포인트를 만들어 NAT 우회" },
-      { "label": "C", "text": "인스턴스에 퍼블릭 IP를 부여" },
-      { "label": "D", "text": "데이터 전송을 중단" }
+      {
+        "label": "A",
+        "text": "NAT 게이트웨이를 더 추가"
+      },
+      {
+        "label": "B",
+        "text": "S3용 게이트웨이 VPC 엔드포인트를 만들어 NAT 우회"
+      },
+      {
+        "label": "C",
+        "text": "인스턴스에 퍼블릭 IP를 부여"
+      },
+      {
+        "label": "D",
+        "text": "데이터 전송을 중단"
+      }
     ],
     "answer": "B",
     "explanation": "S3 게이트웨이 엔드포인트는 무료이며 S3 트래픽을 NAT를 거치지 않고 AWS 내부로 라우팅해 NAT 데이터 처리 비용을 없앤다. NAT 추가(A)·퍼블릭 IP(C)는 비용·보안 측면에서 부적절, D는 비현실적."
@@ -459,10 +879,22 @@
     "domain": "비용 최적화 설계",
     "prompt": "개발/테스트 환경의 EC2가 야간·주말에 유휴 상태인데도 계속 과금된다. 운영 부담을 최소화하며 비용을 줄이려면?",
     "choices": [
-      { "label": "A", "text": "인스턴스를 항상 켜둔다" },
-      { "label": "B", "text": "Instance Scheduler 또는 EventBridge 일정으로 비업무 시간에 자동 중지/시작" },
-      { "label": "C", "text": "더 큰 인스턴스로 교체" },
-      { "label": "D", "text": "3년 예약 인스턴스를 구매" }
+      {
+        "label": "A",
+        "text": "인스턴스를 항상 켜둔다"
+      },
+      {
+        "label": "B",
+        "text": "Instance Scheduler 또는 EventBridge 일정으로 비업무 시간에 자동 중지/시작"
+      },
+      {
+        "label": "C",
+        "text": "더 큰 인스턴스로 교체"
+      },
+      {
+        "label": "D",
+        "text": "3년 예약 인스턴스를 구매"
+      }
     ],
     "answer": "B",
     "explanation": "비업무 시간에 자동으로 중지하면 중지된 EC2는 컴퓨팅 요금이 발생하지 않아 개발/테스트 비용을 크게 절감한다. 항상 켜둠(A)·대형화(C)는 비용 증가, RI(D)는 상시 가동 워크로드에 적합해 간헐 사용엔 비효율."
@@ -472,10 +904,22 @@
     "domain": "보안 설계",
     "prompt": "규정 준수를 위해 모든 계정의 API 호출 기록을 변조 불가능하게 장기 보관하고, 무단 변경 시 탐지하려 한다. 적절한 조치 2가지는? (2개 선택)",
     "choices": [
-      { "label": "A", "text": "조직 전체 CloudTrail 추적을 활성화해 중앙 S3 버킷에 로그 전달" },
-      { "label": "B", "text": "S3 객체 잠금(Object Lock) 또는 로그 파일 무결성 검증을 활성화" },
-      { "label": "C", "text": "CloudTrail을 비활성화하고 애플리케이션 로그만 보관" },
-      { "label": "D", "text": "로그 버킷을 퍼블릭으로 공개" }
+      {
+        "label": "A",
+        "text": "조직 전체 CloudTrail 추적을 활성화해 중앙 S3 버킷에 로그 전달"
+      },
+      {
+        "label": "B",
+        "text": "S3 객체 잠금(Object Lock) 또는 로그 파일 무결성 검증을 활성화"
+      },
+      {
+        "label": "C",
+        "text": "CloudTrail을 비활성화하고 애플리케이션 로그만 보관"
+      },
+      {
+        "label": "D",
+        "text": "로그 버킷을 퍼블릭으로 공개"
+      }
     ],
     "answer": "A, B",
     "explanation": "조직 추적은 모든 계정의 API 호출을 중앙 버킷에 모으고, S3 Object Lock(WORM)/로그 파일 무결성 검증은 변조를 방지·탐지한다. CloudTrail 비활성화(C)는 감사 자체를 무력화, 퍼블릭 공개(D)는 심각한 보안 위반."
@@ -485,10 +929,22 @@
     "domain": "보안 설계",
     "prompt": "Lambda 함수가 RDS와 외부 API에 접근하면서 데이터베이스 자격증명을 안전하게 관리하고 함수 환경 변수에 평문 저장을 피하려 한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "환경 변수에 비밀번호를 평문으로 저장" },
-      { "label": "B", "text": "Secrets Manager에서 런타임에 자격증명을 조회하고 IAM 실행 역할로 접근 제어" },
-      { "label": "C", "text": "함수 코드에 비밀번호를 하드코딩" },
-      { "label": "D", "text": "공개 S3 객체에 비밀번호를 저장" }
+      {
+        "label": "A",
+        "text": "환경 변수에 비밀번호를 평문으로 저장"
+      },
+      {
+        "label": "B",
+        "text": "Secrets Manager에서 런타임에 자격증명을 조회하고 IAM 실행 역할로 접근 제어"
+      },
+      {
+        "label": "C",
+        "text": "함수 코드에 비밀번호를 하드코딩"
+      },
+      {
+        "label": "D",
+        "text": "공개 S3 객체에 비밀번호를 저장"
+      }
     ],
     "answer": "B",
     "explanation": "Lambda 실행 역할로 Secrets Manager에서 런타임에 자격증명을 조회하면 평문 저장·하드코딩을 피하고 자동 교체도 활용할 수 있다. A·C·D는 모두 자격증명 노출 위험이 크다."
@@ -498,10 +954,22 @@
     "domain": "복원력 설계",
     "prompt": "여러 단계로 이루어진 주문 처리 워크플로(결제→재고차감→배송)를 안정적으로 오케스트레이션하고 실패 시 자동 재시도·상태 추적을 원한다. 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "각 단계를 단일 Lambda 안에서 순차 호출" },
-      { "label": "B", "text": "AWS Step Functions 상태 머신으로 단계·재시도·오류 처리를 오케스트레이션" },
-      { "label": "C", "text": "EC2 cron으로 순차 실행" },
-      { "label": "D", "text": "단계마다 사람이 수동 확인" }
+      {
+        "label": "A",
+        "text": "각 단계를 단일 Lambda 안에서 순차 호출"
+      },
+      {
+        "label": "B",
+        "text": "AWS Step Functions 상태 머신으로 단계·재시도·오류 처리를 오케스트레이션"
+      },
+      {
+        "label": "C",
+        "text": "EC2 cron으로 순차 실행"
+      },
+      {
+        "label": "D",
+        "text": "단계마다 사람이 수동 확인"
+      }
     ],
     "answer": "B",
     "explanation": "Step Functions는 단계별 상태·재시도·캐치를 시각적으로 정의해 분산 워크플로를 안정적으로 오케스트레이션하고 각 실행을 추적한다. 단일 Lambda(A)는 타임아웃·결합도 문제, cron(C)·수동(D)은 신뢰성·자동화가 떨어진다."
@@ -511,12 +979,724 @@
     "domain": "고성능 설계",
     "prompt": "온프레미스 데이터센터에서 AWS로 매일 수 TB의 데이터를 안정적이고 일관된 낮은 지연으로 전송해야 한다. 인터넷 VPN 대비 안정적 대역폭이 필요할 때 가장 적합한 것은?",
     "choices": [
-      { "label": "A", "text": "공용 인터넷 VPN 연결" },
-      { "label": "B", "text": "AWS Direct Connect 전용 회선" },
-      { "label": "C", "text": "S3 멀티파트 업로드만 사용" },
-      { "label": "D", "text": "CloudFront 배포" }
+      {
+        "label": "A",
+        "text": "공용 인터넷 VPN 연결"
+      },
+      {
+        "label": "B",
+        "text": "AWS Direct Connect 전용 회선"
+      },
+      {
+        "label": "C",
+        "text": "S3 멀티파트 업로드만 사용"
+      },
+      {
+        "label": "D",
+        "text": "CloudFront 배포"
+      }
     ],
     "answer": "B",
     "explanation": "Direct Connect는 온프레미스와 AWS를 전용 회선으로 연결해 일관된 대역폭·낮은 지연·안정성을 제공하며 대량·상시 전송에 적합하다. VPN(A)은 인터넷 품질에 좌우되고, S3 멀티파트(C)·CloudFront(D)는 회선 안정성 문제를 해결하지 못한다."
+  },
+  {
+    "number": 41,
+    "domain": "보안 설계",
+    "prompt": "EC2에서 실행되는 애플리케이션이 S3와 DynamoDB에 접근해야 한다. 장기 액세스 키 없이 최소 권한으로 임시 자격증명을 사용하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "액세스 키를 인스턴스의 환경 변수에 둔다"
+      },
+      {
+        "label": "B",
+        "text": "필요한 권한만 가진 IAM 역할을 EC2 인스턴스 프로파일로 연결한다"
+      },
+      {
+        "label": "C",
+        "text": "루트 계정 자격증명을 사용한다"
+      },
+      {
+        "label": "D",
+        "text": "액세스 키를 코드에 하드코딩한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "인스턴스 프로파일로 IAM 역할을 부여하면 EC2가 IMDS를 통해 자동 교체되는 임시 자격증명을 받아 최소 권한으로 접근한다. 환경 변수·하드코딩(A,D)은 키 노출 위험, 루트(C)는 과도 권한이다."
+  },
+  {
+    "number": 42,
+    "domain": "보안 설계",
+    "prompt": "저장 데이터를 KMS로 암호화하되, 키 사용 권한을 키 정책과 IAM으로 세분화하고 키 사용 내역을 감사하려 한다. 가장 적합한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "KMS 고객 관리형 키(CMK) + 키 정책/IAM 권한 + CloudTrail로 사용 로깅"
+      },
+      {
+        "label": "B",
+        "text": "평문 저장 후 접근 로그만 남긴다"
+      },
+      {
+        "label": "C",
+        "text": "각 인스턴스에서 자체 구현 암호화 라이브러리 사용"
+      },
+      {
+        "label": "D",
+        "text": "암호화를 비활성화하고 보안 그룹으로만 보호"
+      }
+    ],
+    "answer": "A",
+    "explanation": "고객 관리형 KMS 키는 키 정책+IAM으로 사용 권한을 세분화하고, 모든 KMS 호출은 CloudTrail에 기록되어 감사가 가능하다. 평문(B)·암호화 비활성(D)은 미흡, 자체 구현(C)은 운영·감사 부담이 크다."
+  },
+  {
+    "number": 43,
+    "domain": "보안 설계",
+    "prompt": "프라이빗 서브넷의 EC2가 OS 패치를 위해 인터넷의 패키지 저장소에 아웃바운드 접근해야 하지만, 인터넷에서 인바운드로 접근되면 안 된다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "인터넷 게이트웨이에 직접 라우팅하고 퍼블릭 IP 부여"
+      },
+      {
+        "label": "B",
+        "text": "퍼블릭 서브넷의 NAT 게이트웨이를 통해 아웃바운드만 허용"
+      },
+      {
+        "label": "C",
+        "text": "보안 그룹에서 0.0.0.0/0 인바운드 허용"
+      },
+      {
+        "label": "D",
+        "text": "VPC 피어링으로 다른 VPC를 경유"
+      }
+    ],
+    "answer": "B",
+    "explanation": "NAT 게이트웨이는 프라이빗 서브넷의 아웃바운드를 허용하되 인바운드 개시 연결은 막는다. 퍼블릭 IP(A)·인바운드 개방(C)은 노출 위험, 피어링(D)은 인터넷 접근 수단이 아니다."
+  },
+  {
+    "number": 44,
+    "domain": "보안 설계",
+    "prompt": "다른 AWS 계정의 역할에 일시적으로 접근 권한을 위임해 크로스 계정 작업을 수행하려 한다. 가장 적합한 메커니즘은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "양 계정에 동일한 IAM 사용자 비밀번호를 공유"
+      },
+      {
+        "label": "B",
+        "text": "신뢰 정책을 가진 IAM 역할을 만들고 STS AssumeRole로 임시 자격증명을 받는다"
+      },
+      {
+        "label": "C",
+        "text": "액세스 키를 이메일로 전달"
+      },
+      {
+        "label": "D",
+        "text": "루트 계정 키를 공유"
+      }
+    ],
+    "answer": "B",
+    "explanation": "크로스 계정 접근은 대상 계정에 신뢰 정책이 있는 역할을 두고 sts:AssumeRole로 임시 자격증명을 받는 것이 표준이다. 비밀번호·키 공유(A,C,D)는 보안 원칙 위반이다."
+  },
+  {
+    "number": 45,
+    "domain": "보안 설계",
+    "prompt": "CloudFront로 배포되는 정적 사이트의 S3 오리진을 직접 URL로 우회 접근하지 못하게 하려 한다. 가장 적합한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 버킷을 퍼블릭으로 공개"
+      },
+      {
+        "label": "B",
+        "text": "Origin Access Control(OAC)로 CloudFront만 S3에 접근하도록 버킷 정책 제한"
+      },
+      {
+        "label": "C",
+        "text": "S3에 정적 호스팅을 켜고 누구나 접근 허용"
+      },
+      {
+        "label": "D",
+        "text": "버킷 이름을 추측하기 어렵게 짓는다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "OAC를 사용하면 CloudFront 배포만 S3 오리진에 접근하도록 버킷 정책으로 제한해 직접 URL 우회를 차단한다. 퍼블릭 공개(A,C)는 우회 가능, 이름 난독화(D)는 보안 통제가 아니다."
+  },
+  {
+    "number": 46,
+    "domain": "보안 설계",
+    "prompt": "여러 마이크로서비스가 외부 API 키와 DB 비밀번호 등 시크릿을 공유한다. 시크릿을 중앙에서 안전 저장하고 자동 교체하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Secrets Manager에 저장하고 자동 교체를 활성화, 각 서비스는 IAM 역할로 조회"
+      },
+      {
+        "label": "B",
+        "text": "모든 시크릿을 공용 S3 버킷에 평문 저장"
+      },
+      {
+        "label": "C",
+        "text": "각 서비스 코드에 상수로 하드코딩"
+      },
+      {
+        "label": "D",
+        "text": "시크릿을 컨테이너 이미지에 굽는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Secrets Manager는 중앙 저장+자동 교체를 제공하고 IAM으로 접근 제어한다. 평문 S3(B)·하드코딩(C)·이미지 내장(D)은 모두 노출·교체 곤란 문제가 있다."
+  },
+  {
+    "number": 47,
+    "domain": "보안 설계",
+    "prompt": "규정상 모든 API 호출 기록을 변조 불가능하게 장기 보관해야 한다. 가장 적합한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudTrail을 켜고 로그를 S3에 저장, S3 Object Lock(WORM)으로 변조 방지"
+      },
+      {
+        "label": "B",
+        "text": "각 서비스가 자체 로그를 로컬 디스크에 보관"
+      },
+      {
+        "label": "C",
+        "text": "CloudWatch 대시보드만 캡처"
+      },
+      {
+        "label": "D",
+        "text": "로그를 분기마다 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CloudTrail은 계정의 API 활동을 기록하고, S3 Object Lock(WORM)으로 보존 기간 동안 변조·삭제를 막아 규정 준수 감사 요건을 충족한다. 로컬 보관(B)·삭제(D)는 변조·소실 위험, 대시보드 캡처(C)는 부정확하다."
+  },
+  {
+    "number": 48,
+    "domain": "보안 설계",
+    "prompt": "IAM 권한이 의도보다 넓게 부여되었는지 점검하고, 실제 사용되지 않은 권한을 식별해 최소 권한으로 좁히려 한다. 가장 적합한 도구는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM Access Analyzer와 마지막 액세스 정보(Access Advisor)로 미사용 권한 식별"
+      },
+      {
+        "label": "B",
+        "text": "모든 사용자에게 AdministratorAccess 부여"
+      },
+      {
+        "label": "C",
+        "text": "권한 점검을 생략"
+      },
+      {
+        "label": "D",
+        "text": "정책을 임의로 삭제"
+      }
+    ],
+    "answer": "A",
+    "explanation": "IAM Access Analyzer는 외부 노출·과도 권한을 분석하고, 서비스 마지막 액세스 정보로 실제 미사용 권한을 찾아 최소 권한으로 다듬을 수 있다. Admin 부여(B)·임의 삭제(D)는 위험·운영 장애를 초래한다."
+  },
+  {
+    "number": 49,
+    "domain": "복원력 설계",
+    "prompt": "주문 처리 시스템에서 생산자와 소비자를 분리(decouple)해 갑작스러운 트래픽 급증에도 메시지 유실 없이 처리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "생산자가 소비자를 동기 호출"
+      },
+      {
+        "label": "B",
+        "text": "Amazon SQS 큐로 비동기 분리하고 소비자가 자기 속도로 폴링"
+      },
+      {
+        "label": "C",
+        "text": "모든 요청을 단일 EC2에서 동기 처리"
+      },
+      {
+        "label": "D",
+        "text": "요청을 즉시 버린다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SQS는 생산자/소비자를 분리해 버퍼 역할을 하므로 급증 트래픽을 큐에 적재하고 소비자가 자기 처리량으로 안전하게 소비한다. 동기 호출(A,C)은 백프레셔에 취약, 폐기(D)는 유실이다."
+  },
+  {
+    "number": 50,
+    "domain": "복원력 설계",
+    "prompt": "RDS(MySQL) 데이터베이스의 가용성을 높여 AZ 장애 시 자동 장애 조치되게 하려 한다. 가장 적합한 옵션은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "단일 AZ 인스턴스에 스냅샷만 자주 찍는다"
+      },
+      {
+        "label": "B",
+        "text": "RDS Multi-AZ 배포를 활성화"
+      },
+      {
+        "label": "C",
+        "text": "읽기 전용 복제본만 추가"
+      },
+      {
+        "label": "D",
+        "text": "더 큰 인스턴스로 변경"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Multi-AZ는 대기 인스턴스를 다른 AZ에 동기 복제로 유지하다 장애 시 자동 페일오버해 가용성을 높인다. 읽기 복제본(C)은 읽기 확장·DR용이지 자동 페일오버가 아니며, 스냅샷·수직 확장(A,D)은 가용성 자동화가 아니다."
+  },
+  {
+    "number": 51,
+    "domain": "복원력 설계",
+    "prompt": "리전 전체 장애에 대비해 RPO/RTO를 분 단위로 낮춘 재해 복구를 비교적 경제적으로 구성하려 한다. 가장 적합한 DR 전략은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "백업 후 복구(Backup & Restore)만"
+      },
+      {
+        "label": "B",
+        "text": "파일럿 라이트(Pilot Light) 또는 워밍 스탠바이로 핵심 구성요소를 다른 리전에 최소 가동"
+      },
+      {
+        "label": "C",
+        "text": "DR을 구성하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "단일 리전에 인스턴스만 추가"
+      }
+    ],
+    "answer": "B",
+    "explanation": "파일럿 라이트/워밍 스탠바이는 다른 리전에 핵심 요소(DB 복제 등)를 항상 켜두고 나머지는 최소화해 비용을 억제하면서도 분 단위 RTO를 달성한다. 백업·복구(A)는 RTO가 길고, 단일 리전(D)은 리전 장애를 못 막는다."
+  },
+  {
+    "number": 52,
+    "domain": "복원력 설계",
+    "prompt": "여러 AZ에 분산된 EC2 앞단의 ALB가 비정상 인스턴스로 트래픽을 보내지 않게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "대상 그룹의 상태 확인(health check)을 구성해 비정상 대상은 자동 제외"
+      },
+      {
+        "label": "B",
+        "text": "모든 인스턴스에 균등 분배하고 상태는 무시"
+      },
+      {
+        "label": "C",
+        "text": "인스턴스를 하나만 남긴다"
+      },
+      {
+        "label": "D",
+        "text": "로드 밸런서를 제거"
+      }
+    ],
+    "answer": "A",
+    "explanation": "ALB는 대상 그룹 상태 확인으로 비정상 인스턴스를 자동으로 라우팅에서 제외하고 정상 복구되면 다시 포함한다. 상태 무시(B)는 오류 라우팅, 단일 인스턴스·LB 제거(C,D)는 가용성을 떨어뜨린다."
+  },
+  {
+    "number": 53,
+    "domain": "복원력 설계",
+    "prompt": "정적 자산을 전 세계 사용자에게 낮은 지연으로 제공하면서 오리진 장애 시에도 캐시된 콘텐츠를 제공하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "단일 리전 S3에서 직접 제공"
+      },
+      {
+        "label": "B",
+        "text": "CloudFront로 엣지 캐싱 + 오리진 장애 시 캐시/오리진 그룹(failover) 활용"
+      },
+      {
+        "label": "C",
+        "text": "각 사용자가 EC2에 직접 접속"
+      },
+      {
+        "label": "D",
+        "text": "자산을 이메일로 배포"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudFront는 엣지에서 캐싱해 지연을 낮추고, 오리진 그룹(origin failover)으로 1차 오리진 장애 시 2차 오리진으로 전환해 복원력을 높인다. 단일 리전 직접 제공(A)·EC2 직접 접속(C)은 지연·가용성에 불리하다."
+  },
+  {
+    "number": 54,
+    "domain": "복원력 설계",
+    "prompt": "Auto Scaling 그룹의 인스턴스가 종료되어도 세션 데이터가 유실되지 않게 상태 비저장 아키텍처를 만들려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "세션을 각 인스턴스 로컬 메모리에 보관"
+      },
+      {
+        "label": "B",
+        "text": "세션 상태를 ElastiCache(Redis)나 DynamoDB 같은 외부 저장소로 분리"
+      },
+      {
+        "label": "C",
+        "text": "세션을 EBS에 저장하고 인스턴스에 고정"
+      },
+      {
+        "label": "D",
+        "text": "세션을 사용하지 않게 강제"
+      }
+    ],
+    "answer": "B",
+    "explanation": "세션을 외부 공유 저장소(ElastiCache/DynamoDB)로 분리하면 인스턴스가 교체·종료돼도 세션이 유지되어 상태 비저장 수평 확장이 가능하다. 로컬 메모리·EBS 고정(A,C)은 인스턴스 종료 시 유실된다."
+  },
+  {
+    "number": 55,
+    "domain": "복원력 설계",
+    "prompt": "서버리스 비동기 처리에서 Lambda가 다운스트림 일시 오류로 실패할 때, 실패 이벤트를 잃지 않고 별도로 보관·재처리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "실패 시 그냥 무시"
+      },
+      {
+        "label": "B",
+        "text": "Lambda 대상(on-failure destination) 또는 데드레터 큐(DLQ)로 실패 이벤트 캡처"
+      },
+      {
+        "label": "C",
+        "text": "재시도를 0으로 설정하고 종료"
+      },
+      {
+        "label": "D",
+        "text": "로그만 남기고 이벤트는 폐기"
+      }
+    ],
+    "answer": "B",
+    "explanation": "비동기 호출 실패는 DLQ나 실패 대상(SQS/SNS/EventBridge)으로 보내 유실 없이 보관·재처리할 수 있다. 무시·폐기(A,C,D)는 이벤트 손실을 초래한다."
+  },
+  {
+    "number": 56,
+    "domain": "복원력 설계",
+    "prompt": "DynamoDB 테이블을 단일 리전 장애에도 견디게 하고 전 세계 다중 리전에서 낮은 지연으로 읽기/쓰기하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "단일 리전 테이블에 백업만 켠다"
+      },
+      {
+        "label": "B",
+        "text": "DynamoDB 글로벌 테이블로 다중 리전 활성-활성 복제 구성"
+      },
+      {
+        "label": "C",
+        "text": "테이블을 RDS로 옮긴다"
+      },
+      {
+        "label": "D",
+        "text": "읽기 전용 복제본을 다른 리전에 둔다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "글로벌 테이블은 여러 리전에 활성-활성으로 자동 복제해 리전 장애 내성과 지역별 낮은 지연을 제공한다. 단일 리전 백업(A)은 RTO가 길고, RDS 이전(C)·읽기 복제본(D)은 요건에 맞지 않다."
+  },
+  {
+    "number": 57,
+    "domain": "고성능 설계",
+    "prompt": "읽기가 매우 많은 관계형 워크로드에서 데이터베이스 읽기 부하를 분산해 응답 지연을 줄이려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "쓰기 인스턴스를 더 키운다"
+      },
+      {
+        "label": "B",
+        "text": "RDS/Aurora 읽기 전용 복제본을 추가하고 읽기 트래픽을 분산"
+      },
+      {
+        "label": "C",
+        "text": "모든 읽기를 기본 인스턴스로만 보낸다"
+      },
+      {
+        "label": "D",
+        "text": "캐시를 끈다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "읽기 전용 복제본은 읽기 트래픽을 오프로드해 기본 인스턴스 부하와 지연을 낮춘다. 수직 확장(A)은 한계·비용 문제, 단일 인스턴스 집중(C)·캐시 비활성(D)은 성능에 불리하다."
+  },
+  {
+    "number": 58,
+    "domain": "고성능 설계",
+    "prompt": "데이터베이스 앞단에서 반복적인 동일 쿼리 결과를 캐싱해 지연과 DB 부하를 크게 줄이려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ElastiCache(Redis/Memcached)로 인메모리 캐시 계층 추가"
+      },
+      {
+        "label": "B",
+        "text": "쿼리를 매번 풀스캔"
+      },
+      {
+        "label": "C",
+        "text": "DB 인스턴스를 매번 재시작"
+      },
+      {
+        "label": "D",
+        "text": "캐싱을 금지"
+      }
+    ],
+    "answer": "A",
+    "explanation": "ElastiCache는 인메모리 캐시로 자주 조회되는 데이터를 보관해 응답을 마이크로초 단위로 제공하고 DB 부하를 줄인다. 풀스캔·재시작(B,C)은 성능 저하, 캐싱 금지(D)는 목적에 반한다."
+  },
+  {
+    "number": 59,
+    "domain": "고성능 설계",
+    "prompt": "대용량 미디어 파일을 S3에 업로드할 때 처리량을 높이고 네트워크 중단 시 부분 재전송이 가능하게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "단일 PUT으로 통째로 업로드"
+      },
+      {
+        "label": "B",
+        "text": "S3 멀티파트 업로드로 병렬·부분 재전송"
+      },
+      {
+        "label": "C",
+        "text": "파일을 잘게 나눠 이메일로 전송"
+      },
+      {
+        "label": "D",
+        "text": "EBS에 저장하고 끝낸다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "멀티파트 업로드는 파일을 여러 파트로 나눠 병렬 전송하고 실패한 파트만 재전송하므로 처리량·복원력이 높다. 단일 PUT(A)은 대용량·중단에 취약, 이메일·EBS(C,D)는 요건과 무관하다."
+  },
+  {
+    "number": 60,
+    "domain": "고성능 설계",
+    "prompt": "온프레미스와 AWS 간 지속적이고 일관된 대역폭·낮은 지연의 전용 연결이 필요하다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "공용 인터넷 VPN만 사용"
+      },
+      {
+        "label": "B",
+        "text": "AWS Direct Connect로 전용 물리 회선 구성"
+      },
+      {
+        "label": "C",
+        "text": "S3 Transfer Acceleration"
+      },
+      {
+        "label": "D",
+        "text": "CloudFront 배포"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Direct Connect는 전용 물리 회선으로 일관된 대역폭과 낮은 지연을 제공해 대규모·민감 워크로드에 적합하다. VPN(A)은 인터넷 경유라 변동성이 크고, C·D는 콘텐츠 전송 가속용이다."
+  },
+  {
+    "number": 61,
+    "domain": "고성능 설계",
+    "prompt": "실시간 스트리밍 데이터(클릭스트림 등)를 높은 처리량으로 수집해 여러 소비자가 동시에 처리하게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 이벤트를 RDS에 즉시 INSERT"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Kinesis Data Streams로 수집하고 다수 소비자가 병렬 처리"
+      },
+      {
+        "label": "C",
+        "text": "이벤트를 CSV로 모아 하루에 한 번 처리"
+      },
+      {
+        "label": "D",
+        "text": "이벤트를 폐기"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Kinesis Data Streams는 고처리량 실시간 스트림을 수집하고 샤드/소비자로 병렬 처리하며 여러 애플리케이션이 동일 스트림을 소비할 수 있다. RDS 즉시 INSERT(A)는 확장 한계, 일배치(C)는 실시간성 상실, 폐기(D)는 부적절하다."
+  },
+  {
+    "number": 62,
+    "domain": "비용 최적화 설계",
+    "prompt": "예측 가능한 안정적 기준 컴퓨팅 사용량에 대해 1~3년 약정으로 최대 할인을 받으려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모두 온디맨드로 사용"
+      },
+      {
+        "label": "B",
+        "text": "Savings Plans 또는 예약 인스턴스(RI)로 기준 사용량 약정"
+      },
+      {
+        "label": "C",
+        "text": "스팟 인스턴스로 기준 워크로드를 돌린다"
+      },
+      {
+        "label": "D",
+        "text": "인스턴스를 과다 프로비저닝"
+      }
+    ],
+    "answer": "B",
+    "explanation": "안정적 기준 사용량은 Savings Plans/RI 약정으로 온디맨드 대비 큰 할인을 받는다. 온디맨드(A)·과다 프로비저닝(D)은 비싸고, 스팟(C)은 중단될 수 있어 안정 기준에는 부적합하다."
+  },
+  {
+    "number": 63,
+    "domain": "비용 최적화 설계",
+    "prompt": "내결함성이 있는 배치/렌더링 작업을 최대 90%까지 저렴하게 실행하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "온디맨드 대형 인스턴스 상시 가동"
+      },
+      {
+        "label": "B",
+        "text": "스팟 인스턴스(필요 시 스팟 플릿/혼합)로 실행하고 중단을 처리"
+      },
+      {
+        "label": "C",
+        "text": "예약 인스턴스 3년 약정"
+      },
+      {
+        "label": "D",
+        "text": "서버를 끄지 않고 유휴 가동"
+      }
+    ],
+    "answer": "B",
+    "explanation": "중단에 견디는 배치 워크로드는 스팟으로 최대 90% 절감할 수 있고, 중단 알림을 처리하거나 혼합 구성으로 안정화한다. 온디맨드 상시(A)·유휴 가동(D)은 비싸고, RI(C)는 가변 배치에 비효율적이다."
+  },
+  {
+    "number": 64,
+    "domain": "비용 최적화 설계",
+    "prompt": "자주 접근하지 않는 데이터의 S3 스토리지 비용을 줄이되, 접근 패턴이 불규칙해 수동 계층 이동이 어렵다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모두 S3 Standard에 둔다"
+      },
+      {
+        "label": "B",
+        "text": "S3 Intelligent-Tiering으로 접근 패턴에 따라 자동 계층 이동"
+      },
+      {
+        "label": "C",
+        "text": "데이터를 매번 삭제"
+      },
+      {
+        "label": "D",
+        "text": "EBS로 옮긴다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Intelligent-Tiering은 객체 접근 패턴을 모니터링해 자동으로 저렴한 계층으로 이동·복귀시켜 수동 관리 없이 비용을 최적화한다. Standard 고정(A)은 비싸고, 삭제(C)·EBS 이전(D)은 요건과 다르다."
+  },
+  {
+    "number": 65,
+    "domain": "비용 최적화 설계",
+    "prompt": "로그 데이터를 30일 후 저빈도 계층으로, 90일 후 아카이브로 옮기고 1년 후 삭제해 비용을 자동 관리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 수명 주기(lifecycle) 규칙으로 전환·만료 자동화"
+      },
+      {
+        "label": "B",
+        "text": "운영자가 매일 수동으로 파일을 옮긴다"
+      },
+      {
+        "label": "C",
+        "text": "모든 로그를 Standard에 영구 보관"
+      },
+      {
+        "label": "D",
+        "text": "로그를 EBS 스냅샷으로 보관"
+      }
+    ],
+    "answer": "A",
+    "explanation": "S3 수명 주기 규칙은 정해진 기간에 따라 객체를 IA·Glacier로 전환하고 만료 삭제까지 자동화해 비용을 최적화한다. 수동 이동(B)·영구 Standard(C)는 비효율적이다."
+  },
+  {
+    "number": 66,
+    "domain": "비용 최적화 설계",
+    "prompt": "여러 계정의 비용을 통합 청구하고 볼륨 할인을 받으며 계정별 비용을 가시화하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 계정이 개별 결제하고 비용을 따로 본다"
+      },
+      {
+        "label": "B",
+        "text": "AWS Organizations 통합 결제 + Cost Explorer/비용 할당 태그로 가시화"
+      },
+      {
+        "label": "C",
+        "text": "비용을 추적하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "계정을 모두 합쳐 하나만 쓴다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Organizations 통합 결제는 사용량을 합산해 볼륨 할인을 적용하고, Cost Explorer와 비용 할당 태그로 계정·서비스별 비용을 분석한다. 개별 결제(A)·미추적(C)은 절감·가시성에 불리하다."
+  },
+  {
+    "number": 67,
+    "domain": "비용 최적화 설계",
+    "prompt": "개발/테스트 EC2 환경이 야간·주말에도 켜져 있어 비용이 낭비된다. 운영 변경 없이 비가동 시간에 자동 중지하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "인스턴스를 항상 켜둔다"
+      },
+      {
+        "label": "B",
+        "text": "EventBridge 스케줄 + Lambda(또는 Instance Scheduler)로 업무 외 시간 자동 시작/중지"
+      },
+      {
+        "label": "C",
+        "text": "더 비싼 인스턴스로 교체"
+      },
+      {
+        "label": "D",
+        "text": "예약 인스턴스를 산다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "EventBridge 스케줄로 Lambda나 Instance Scheduler를 트리거해 업무 외 시간에 dev/test 인스턴스를 자동 중지하면 유휴 비용을 줄인다. 상시 가동(A)·고가 인스턴스(C)는 낭비, RI(D)는 상시 워크로드용이다."
+  },
+  {
+    "number": 68,
+    "domain": "비용 최적화 설계",
+    "prompt": "대량의 정적 콘텐츠를 사용자에게 제공할 때 S3에서 직접 나가는 데이터 전송 비용을 줄이려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "사용자가 항상 S3 오리진에서 직접 다운로드"
+      },
+      {
+        "label": "B",
+        "text": "CloudFront로 엣지 캐싱하여 오리진 요청·데이터 전송 비용 절감"
+      },
+      {
+        "label": "C",
+        "text": "콘텐츠를 더 큰 파일로 합친다"
+      },
+      {
+        "label": "D",
+        "text": "전송을 막는다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudFront는 엣지에서 캐싱해 S3 오리진으로의 반복 요청과 오리진 데이터 전송을 줄이고, CloudFront 전송 요금이 일반적으로 더 유리하다. S3 직접 제공(A)은 오리진 부하·비용이 크다."
   }
 ]
