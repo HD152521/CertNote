@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
+import { UserRound, X } from 'lucide-react';
 import { emitAuthChange, onAuthChange } from '@/lib/auth/authEvents';
 
 interface Me {
@@ -87,9 +87,9 @@ export function AuthNav() {
           onClick={() => setMenuOpen((o) => !o)}
           aria-label="계정 메뉴"
           aria-expanded={menuOpen}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted transition hover:bg-bg-subtle hover:text-fg"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-fg-muted transition hover:bg-bg-subtle hover:text-fg"
         >
-          {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          {menuOpen ? <X className="h-4 w-4" /> : <UserRound className="h-4 w-4" />}
         </button>
         {menuOpen && (
           <>

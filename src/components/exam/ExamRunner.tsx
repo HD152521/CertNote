@@ -241,7 +241,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
             const isMarked = marked.has(qq.questionId);
             return (
               <button key={qq.questionId} type="button" onClick={() => setIdx(i)}
-                className={cn('relative h-7 w-7 rounded text-[11px] font-mono tabular-nums transition',
+                className={cn('relative h-9 w-9 rounded text-xs font-mono tabular-nums transition',
                   i === idx ? 'ring-2 ring-accent' : '',
                   done ? 'bg-accent/15 text-fg' : 'bg-bg-subtle text-fg-faint hover:text-fg')}>
                 {i + 1}
