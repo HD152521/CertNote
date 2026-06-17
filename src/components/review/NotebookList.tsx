@@ -18,6 +18,7 @@ interface Card {
   slug: string;
   week: number;
   day: number;
+  domain?: string;
 }
 
 type Filter = 'all' | 'due' | 'mastered';
@@ -111,9 +112,9 @@ export function NotebookList() {
           return (
             <li key={card.questionId} className="rounded-lg border border-border bg-bg-elevated p-4">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <Link href={`/aws-certs/${card.slug}/week${card.week}/day${card.day}`}
+                <Link href={card.week > 0 ? `/aws-certs/${card.slug}/week${card.week}/day${card.day}` : `/aws-certs/${card.slug}`}
                   className="font-mono text-[11px] uppercase tracking-wider text-fg-faint hover:text-fg">
-                  {card.slug} · W{card.week} D{card.day}
+                  {card.week > 0 ? `${card.slug} · W${card.week} D${card.day}` : `${card.slug} · 모의고사${card.domain ? ` · ${card.domain}` : ''}`}
                 </Link>
                 <span className={cn('rounded-full border px-2 py-0.5 text-[10px]', badge.tone)}>{badge.text}</span>
               </div>

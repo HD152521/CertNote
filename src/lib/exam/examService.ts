@@ -1,4 +1,4 @@
-import { getAllQuestions, getQuestionById, getQuestionsByCert, type IndexedQuestion } from '../questions';
+import { getAllExamQuestions, getExamQuestionById, getExamQuestionsByCert, type ExamBankQuestion } from './examBank';
 import { isMultiAnswer, isSelectionCorrect, normalizeSelection } from '../quiz/correctness';
 import { getAttemptService } from '../quiz/attemptService';
 
@@ -13,8 +13,7 @@ export interface ExamQuestion {
   prompt: string;
   choices: { label: string; text: string }[];
   slug: string;
-  week: number;
-  day: number;
+  domain: string; // 시험 도메인(예: "보안 설계"). day 위치(week/day)는 없음.
   multi: boolean; // 복수 정답 여부(정답 자체는 노출하지 않고 "여러 개 선택" 안내용으로만 사용).
 }
 
@@ -35,8 +34,8 @@ export interface ExamResult {
   items: ExamResultItem[];
 }
 
-function toExamQuestion(q: IndexedQuestion): ExamQuestion {
-  return { questionId: q.id, number: q.number, prompt: q.prompt, choices: q.choices, slug: q.slug, week: q.week, day: q.day, multi: isMultiAnswer(q.answer) };
+function toExamQuestion(q: ExamBankQuestion): ExamQuestion {
+  return { questionId: q.id, number: q.number, prompt: q.prompt, choices: q.choices, slug: q.slug, domain: q.domain, multi: isMultiAnswer(q.answer) };
 }
 
 // Fisher–Yates 셔플(원본 불변 — 복사본을 섞는다).
@@ -49,9 +48,9 @@ function shuffle<T>(arr: readonly T[]): T[] {
   return a;
 }
 
-// 자격증(없으면 전체)에서 무작위 count문항을 뽑아 정답 없이 반환.
+// 모의고사 은행(day 퀴즈와 별개)에서 자격증(없으면 전체) 무작위 count문항을 정답 없이 반환.
 export function buildExam(certSlug: string | null, count: number): ExamQuestion[] {
-  const pool = certSlug ? getQuestionsByCert(certSlug) : getAllQuestions();
+  const pool = certSlug ? getExamQuestionsByCert(certSlug) : getAllExamQuestions();
   const n = Math.min(Math.max(1, Math.floor(count) || 1), Math.min(MAX_COUNT, pool.length));
   return shuffle(pool).slice(0, n).map(toExamQuestion);
 }
@@ -67,7 +66,7 @@ export async function gradeExam(
   let correct = 0;
   let answered = 0;
   for (const id of questionIds) {
-    const q = getQuestionById(id);
+    const q = getExamQuestionById(id);
     if (!q) continue;
     const raw = answers[id];
     const selected = raw ? normalizeSelection(raw) : null;
@@ -77,6 +76,7 @@ export async function gradeExam(
     items.push({ ...toExamQuestion(q), selected, correct: isCorrect, answer: q.answer, explanation: q.explanation });
     if (selected) {
       try {
+        // record()는 getQuestionById(통합 lookup)로 모의고사 문제도 인식 → 오답이 복습 큐·대시보드에 연동된다.
         await getAttemptService().record(userId, id, selected);
       } catch {
         // 기록 실패는 채점을 막지 않는다.

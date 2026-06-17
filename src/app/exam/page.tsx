@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { listCerts } from '@/lib/content';
+import { getExamCertSlugs } from '@/lib/exam/examBank';
 import { ExamRunner } from '@/components/exam/ExamRunner';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +11,11 @@ export default async function ExamPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/exam');
 
-  const certs = (await listCerts('aws-certs')).map((c) => ({ slug: c.slug, code: c.code, name: c.name }));
+  // 모의고사 문제가 준비된 자격증만 범위 선택지로 노출.
+  const examSlugs = new Set(getExamCertSlugs());
+  const certs = (await listCerts('aws-certs'))
+    .filter((c) => examSlugs.has(c.slug))
+    .map((c) => ({ slug: c.slug, code: c.code, name: c.name }));
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 py-10">

@@ -17,6 +17,7 @@ interface Card {
   slug: string;
   week: number;
   day: number;
+  domain?: string;
 }
 
 interface ReviewResult {
@@ -113,7 +114,7 @@ export function ReviewSession() {
     <div>
       <div className="mb-3 flex items-center justify-between text-xs text-fg-muted font-mono">
         <span>{idx + 1} / {cards.length}</span>
-        <span className="uppercase tracking-wider">{current!.slug} · W{current!.week} D{current!.day}</span>
+        <span className="uppercase tracking-wider">{current!.week > 0 ? `${current!.slug} · W${current!.week} D${current!.day}` : `${current!.slug} · 모의고사${current!.domain ? ` · ${current!.domain}` : ''}`}</span>
       </div>
       <div className="rounded-lg border border-border bg-bg-elevated p-4 sm:p-5">
         <p className="font-medium leading-relaxed mb-4 text-fg whitespace-pre-wrap">{current!.prompt}</p>

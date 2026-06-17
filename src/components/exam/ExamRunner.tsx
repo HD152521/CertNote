@@ -13,8 +13,7 @@ interface ExamQuestion {
   prompt: string;
   choices: { label: string; text: string }[];
   slug: string;
-  week: number;
-  day: number;
+  domain: string;
   multi: boolean;
 }
 
@@ -254,7 +253,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
 
         <div className="rounded-lg border border-border bg-bg-elevated p-4 sm:p-5">
           <div className="mb-3 flex items-start justify-between gap-3">
-            <p className="font-mono text-[11px] uppercase tracking-wider text-fg-faint">{q.slug} · W{q.week}D{q.day}</p>
+            <p className="font-mono text-[11px] uppercase tracking-wider text-fg-faint">{q.slug} · {q.domain}</p>
             <button type="button" onClick={() => toggleMark(q.questionId)}
               className={cn('flex items-center gap-1 rounded px-2 py-0.5 text-[11px] transition',
                 marked.has(q.questionId) ? 'text-amber-500' : 'text-fg-faint hover:text-fg')}>
@@ -342,7 +341,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
           return (
             <li key={`${it.questionId}-${i}`} className="rounded-lg border border-border bg-bg-elevated p-4">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <Link href={`/aws-certs/${it.slug}/week${it.week}/day${it.day}`} className="font-mono text-[11px] uppercase tracking-wider text-fg-faint hover:text-fg">{it.slug} · W{it.week}D{it.day}</Link>
+                <Link href={`/aws-certs/${it.slug}`} className="font-mono text-[11px] uppercase tracking-wider text-fg-faint hover:text-fg">{it.slug} · {it.domain}</Link>
                 <span className={cn('flex h-5 w-5 items-center justify-center rounded-full text-xs', it.correct ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger')}>{it.correct ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}</span>
               </div>
               <p className="mb-3 font-medium leading-relaxed text-fg whitespace-pre-wrap">{it.prompt}</p>

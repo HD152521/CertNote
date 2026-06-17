@@ -16,8 +16,9 @@ export interface ReviewCard {
   answer: string;
   explanation: string;
   slug: string;
-  week: number;
+  week: number; // 모의고사 문제는 0(주차 없음).
   day: number;
+  domain?: string; // 모의고사 문제의 도메인.
 }
 
 function toCard(item: ReviewItem, q: IndexedQuestion): ReviewCard {
@@ -34,6 +35,7 @@ function toCard(item: ReviewItem, q: IndexedQuestion): ReviewCard {
     slug: q.slug,
     week: q.week,
     day: q.day,
+    domain: q.domain,
   };
 }
 
