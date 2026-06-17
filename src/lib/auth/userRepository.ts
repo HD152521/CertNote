@@ -7,6 +7,8 @@ interface UserRow {
   password_hash: string;
   role: Role;
   created_at: string;
+  email_verified: boolean;
+  token_version: number;
 }
 
 function mapRow(row: UserRow): UserRecord {
@@ -16,6 +18,9 @@ function mapRow(row: UserRow): UserRecord {
     passwordHash: row.password_hash,
     role: row.role,
     createdAt: row.created_at,
+    // 마이그레이션 이전/직후 NULL 가능성에 대비해 안전한 기본값으로 수렴(verified=true, ver=0).
+    emailVerified: row.email_verified ?? true,
+    tokenVersion: row.token_version ?? 0,
   };
 }
 
@@ -26,10 +31,10 @@ export class PgUserRepository implements UserRepository {
     return rows[0] ? mapRow(rows[0]) : null;
   }
 
-  async create(input: { email: string; passwordHash: string; role?: Role }): Promise<UserRecord> {
+  async create(input: { email: string; passwordHash: string; role?: Role; emailVerified?: boolean }): Promise<UserRecord> {
     const rows = await query<UserRow>(
-      'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING *',
-      [input.email, input.passwordHash, input.role ?? 'user'],
+      'INSERT INTO users (email, password_hash, role, email_verified) VALUES ($1, $2, $3, $4) RETURNING *',
+      [input.email, input.passwordHash, input.role ?? 'user', input.emailVerified ?? true],
     );
     return mapRow(rows[0]);
   }

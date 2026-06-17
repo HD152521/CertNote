@@ -1,0 +1,262 @@
+[
+  {
+    "number": 1,
+    "domain": "리눅스 운영 및 관리",
+    "prompt": "현재 실행 중인 모든 프로세스를 사용자·CPU·메모리 점유와 함께 한 번에 출력하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      { "label": "A", "text": "ps aux" },
+      { "label": "B", "text": "ls -al" },
+      { "label": "C", "text": "df -h" },
+      { "label": "D", "text": "free -m" }
+    ],
+    "answer": "A",
+    "explanation": "ps aux는 모든 사용자의 프로세스를 CPU·메모리·상태와 함께 출력한다. ls(B)는 파일 목록, df(C)는 디스크 사용량, free(D)는 메모리 총량이라 프로세스 목록과는 무관하다."
+  },
+  {
+    "number": 2,
+    "domain": "리눅스 운영 및 관리",
+    "prompt": "특정 프로세스(PID 1234)에 종료 시그널을 보내되, 프로세스가 정리 작업을 수행할 기회를 주는 기본 종료 시그널을 보내려 한다. 가장 적합한 명령은?",
+    "choices": [
+      { "label": "A", "text": "kill -9 1234" },
+      { "label": "B", "text": "kill 1234" },
+      { "label": "C", "text": "kill -STOP 1234" },
+      { "label": "D", "text": "kill -HUP 1234" }
+    ],
+    "answer": "B",
+    "explanation": "옵션 없는 kill은 SIGTERM(15)을 보내 프로세스가 정상 종료·정리할 기회를 준다. -9(SIGKILL, A)는 강제 종료로 정리 불가, -STOP(C)은 일시 중지, -HUP(D)은 재시작/재로드 용도가 일반적이다."
+  },
+  {
+    "number": 3,
+    "domain": "파일 시스템 및 권한",
+    "prompt": "파일 report.txt의 권한을 소유자는 읽기·쓰기, 그룹과 기타 사용자는 읽기만 가능하도록 설정하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      { "label": "A", "text": "chmod 644 report.txt" },
+      { "label": "B", "text": "chmod 777 report.txt" },
+      { "label": "C", "text": "chmod 600 report.txt" },
+      { "label": "D", "text": "chmod 755 report.txt" }
+    ],
+    "answer": "A",
+    "explanation": "644는 소유자 rw-(6), 그룹 r--(4), 기타 r--(4)를 의미해 요구와 정확히 일치한다. 777(B)은 전체 rwx로 과도, 600(C)은 그룹·기타 접근 차단, 755(D)는 그룹·기타에 실행 권한까지 부여한다."
+  },
+  {
+    "number": 4,
+    "domain": "파일 시스템 및 권한",
+    "prompt": "디렉터리 /data와 그 하위 모든 파일·디렉터리의 소유자를 사용자 alice, 그룹 dev로 한 번에 변경하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      { "label": "A", "text": "chown alice:dev /data" },
+      { "label": "B", "text": "chown -R alice:dev /data" },
+      { "label": "C", "text": "chmod -R alice:dev /data" },
+      { "label": "D", "text": "chgrp alice /data" }
+    ],
+    "answer": "B",
+    "explanation": "chown -R은 디렉터리 하위 전체에 재귀적으로 소유자:그룹을 변경한다. 옵션 없는 chown(A)은 /data 자체만 변경, chmod(C)는 권한 명령이라 소유자 변경 불가, chgrp(D)는 그룹만 바꾸고 재귀도 아니다."
+  },
+  {
+    "number": 5,
+    "domain": "파일 시스템 및 권한",
+    "prompt": "공유 디렉터리에서 파일을 만든 본인 또는 root만 자신의 파일을 삭제할 수 있게 하여 다른 사용자가 남의 파일을 지우지 못하도록 설정하려 한다. 가장 적합한 특수 권한은?",
+    "choices": [
+      { "label": "A", "text": "SetUID 비트" },
+      { "label": "B", "text": "Sticky 비트" },
+      { "label": "C", "text": "SetGID 비트" },
+      { "label": "D", "text": "읽기 전용 마운트" }
+    ],
+    "answer": "B",
+    "explanation": "디렉터리에 Sticky 비트(chmod +t, 예: /tmp)를 설정하면 파일 소유자와 root만 해당 파일을 삭제할 수 있다. SetUID(A)/SetGID(C)는 실행 시 권한 상속용이고, 읽기 전용 마운트(D)는 쓰기 자체를 막아 요구와 다르다."
+  },
+  {
+    "number": 6,
+    "domain": "파일 시스템 및 권한",
+    "prompt": "새 디스크 파티션 /dev/sdb1을 ext4 파일 시스템으로 포맷하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      { "label": "A", "text": "mkfs.ext4 /dev/sdb1" },
+      { "label": "B", "text": "mount /dev/sdb1 /mnt" },
+      { "label": "C", "text": "fdisk -l" },
+      { "label": "D", "text": "fsck /dev/sdb1" }
+    ],
+    "answer": "A",
+    "explanation": "mkfs.ext4는 파티션을 ext4 파일 시스템으로 생성(포맷)한다. mount(B)는 마운트, fdisk -l(C)은 파티션 정보 조회, fsck(D)는 파일 시스템 검사·복구라 포맷이 아니다."
+  },
+  {
+    "number": 7,
+    "domain": "파일 시스템 및 권한",
+    "prompt": "부팅 시 /dev/sdb1을 /data에 자동으로 마운트되게 영구 설정하려 한다. 수정해야 할 파일은?",
+    "choices": [
+      { "label": "A", "text": "/etc/passwd" },
+      { "label": "B", "text": "/etc/fstab" },
+      { "label": "C", "text": "/etc/hosts" },
+      { "label": "D", "text": "/etc/resolv.conf" }
+    ],
+    "answer": "B",
+    "explanation": "/etc/fstab에 마운트 항목을 추가하면 부팅 시 자동 마운트된다. /etc/passwd(A)는 사용자 계정, /etc/hosts(C)는 호스트명 매핑, /etc/resolv.conf(D)는 DNS 설정 파일이라 마운트와 무관하다."
+  },
+  {
+    "number": 8,
+    "domain": "사용자 및 그룹 관리",
+    "prompt": "새 사용자 bob을 생성하면서 홈 디렉터리를 함께 만들고 기본 셸을 /bin/bash로 지정하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      { "label": "A", "text": "useradd -m -s /bin/bash bob" },
+      { "label": "B", "text": "passwd bob" },
+      { "label": "C", "text": "groupadd bob" },
+      { "label": "D", "text": "userdel bob" }
+    ],
+    "answer": "A",
+    "explanation": "useradd -m은 홈 디렉터리를 생성하고 -s는 로그인 셸을 지정한다. passwd(B)는 비밀번호 설정, groupadd(C)는 그룹 생성, userdel(D)은 사용자 삭제라 계정 생성과 다르다."
+  },
+  {
+    "number": 9,
+    "domain": "사용자 및 그룹 관리",
+    "prompt": "사용자 계정의 비밀번호 만료 정책(최대 사용 일수 등)과 계정 만료일을 조회·변경하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      { "label": "A", "text": "chage" },
+      { "label": "B", "text": "chmod" },
+      { "label": "C", "text": "chown" },
+      { "label": "D", "text": "umask" }
+    ],
+    "answer": "A",
+    "explanation": "chage는 비밀번호 만료·최소/최대 사용 일수·계정 만료일 등 에이징 정책을 조회·변경한다. chmod(B)는 권한, chown(C)은 소유자, umask(D)는 기본 권한 마스크라 계정 만료 정책과 무관하다."
+  },
+  {
+    "number": 10,
+    "domain": "사용자 및 그룹 관리",
+    "prompt": "일반 사용자가 특정 관리 명령만 root 권한으로 실행할 수 있도록 안전하게 위임하려 한다. 가장 적합한 방법은?",
+    "choices": [
+      { "label": "A", "text": "root 비밀번호를 공유한다" },
+      { "label": "B", "text": "/etc/sudoers(visudo)에 허용 명령을 지정해 sudo 권한을 위임" },
+      { "label": "C", "text": "모든 파일 권한을 777로 바꾼다" },
+      { "label": "D", "text": "사용자를 root로 로그인시킨다" }
+    ],
+    "answer": "B",
+    "explanation": "visudo로 /etc/sudoers를 편집해 사용자별 허용 명령을 지정하면 최소 권한으로 안전하게 root 작업을 위임할 수 있다. 비밀번호 공유(A)·root 로그인(D)·777(C)은 모두 과도한 권한 노출로 보안에 치명적이다."
+  },
+  {
+    "number": 11,
+    "domain": "셸 및 스크립트",
+    "prompt": "현재 셸 세션에서 변수 PATH를 자식 프로세스에서도 사용할 수 있게 환경 변수로 내보내려 한다. 가장 적합한 명령은?",
+    "choices": [
+      { "label": "A", "text": "export PATH" },
+      { "label": "B", "text": "alias PATH" },
+      { "label": "C", "text": "unset PATH" },
+      { "label": "D", "text": "echo PATH" }
+    ],
+    "answer": "A",
+    "explanation": "export는 변수를 환경 변수로 표시해 이후 실행되는 자식 프로세스에 상속되게 한다. alias(B)는 명령 별칭, unset(C)은 변수 제거, echo(D)는 단순 출력이라 내보내기가 아니다."
+  },
+  {
+    "number": 12,
+    "domain": "셸 및 스크립트",
+    "prompt": "파일 access.log에서 문자열 'ERROR'가 포함된 행만 추출해 화면에 출력하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      { "label": "A", "text": "grep \"ERROR\" access.log" },
+      { "label": "B", "text": "sort access.log" },
+      { "label": "C", "text": "wc -l access.log" },
+      { "label": "D", "text": "touch access.log" }
+    ],
+    "answer": "A",
+    "explanation": "grep은 지정한 패턴이 포함된 행만 출력한다. sort(B)는 정렬, wc -l(C)은 행 수 계산, touch(D)는 빈 파일 생성/타임스탬프 갱신이라 패턴 검색과 무관하다."
+  },
+  {
+    "number": 13,
+    "domain": "셸 및 스크립트",
+    "prompt": "명령 ls의 표준 출력을 화면이 아닌 파일 list.txt에 기존 내용을 지우고 새로 저장하려 한다. 가장 적합한 표현은?",
+    "choices": [
+      { "label": "A", "text": "ls > list.txt" },
+      { "label": "B", "text": "ls >> list.txt" },
+      { "label": "C", "text": "ls < list.txt" },
+      { "label": "D", "text": "ls | list.txt" }
+    ],
+    "answer": "A",
+    "explanation": "> 는 표준 출력을 파일로 리다이렉트하며 기존 내용을 덮어쓴다. >>(B)는 이어붙이기, <(C)는 입력 리다이렉트, |(D)는 다른 명령으로 파이프라 파일에 직접 저장하지 못한다."
+  },
+  {
+    "number": 14,
+    "domain": "셸 및 스크립트",
+    "prompt": "매일 새벽 3시에 백업 스크립트 /usr/local/bin/backup.sh를 자동 실행하도록 예약하려 한다. crontab 항목으로 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "0 3 * * * /usr/local/bin/backup.sh" },
+      { "label": "B", "text": "3 0 * * * /usr/local/bin/backup.sh" },
+      { "label": "C", "text": "* * * * 3 /usr/local/bin/backup.sh" },
+      { "label": "D", "text": "0 0 3 * * /usr/local/bin/backup.sh" }
+    ],
+    "answer": "A",
+    "explanation": "cron 필드는 분 시 일 월 요일 순서이며 '0 3 * * *'는 매일 03시 00분을 의미한다. B는 00시 03분, C는 매주 수요일 매분, D는 매월 3일 00시 00분이라 요구와 다르다."
+  },
+  {
+    "number": 15,
+    "domain": "서비스 및 시스템 관리",
+    "prompt": "systemd 기반 시스템에서 nginx 서비스를 지금 시작하고, 부팅 시에도 자동 시작되게 하려 한다. 적절한 명령 2가지는? (2개 선택)",
+    "choices": [
+      { "label": "A", "text": "systemctl start nginx" },
+      { "label": "B", "text": "systemctl enable nginx" },
+      { "label": "C", "text": "systemctl mask nginx" },
+      { "label": "D", "text": "systemctl stop nginx" }
+    ],
+    "answer": "A, B",
+    "explanation": "systemctl start는 서비스를 즉시 시작하고, enable은 부팅 시 자동 시작되도록 등록한다. mask(C)는 서비스 시작을 아예 차단하고, stop(D)은 중지라 요구와 반대다."
+  },
+  {
+    "number": 16,
+    "domain": "서비스 및 시스템 관리",
+    "prompt": "systemd 시스템에서 실패한 서비스의 최근 로그를 확인해 원인을 파악하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      { "label": "A", "text": "journalctl -u 서비스명" },
+      { "label": "B", "text": "ps -ef" },
+      { "label": "C", "text": "top" },
+      { "label": "D", "text": "df -h" }
+    ],
+    "answer": "A",
+    "explanation": "journalctl -u <서비스명>은 해당 유닛의 systemd 저널 로그를 조회해 실패 원인 파악에 사용된다. ps(B)는 프로세스 목록, top(C)은 실시간 자원 모니터링, df(D)는 디스크 사용량이라 로그 확인이 아니다."
+  },
+  {
+    "number": 17,
+    "domain": "네트워크 관리",
+    "prompt": "리눅스 호스트의 IP 주소와 인터페이스 상태를 확인하려 한다. 최신 배포판에서 권장되는 명령은?",
+    "choices": [
+      { "label": "A", "text": "ip addr show" },
+      { "label": "B", "text": "cat /etc/hostname" },
+      { "label": "C", "text": "passwd" },
+      { "label": "D", "text": "chmod 755 eth0" }
+    ],
+    "answer": "A",
+    "explanation": "ip addr show(iproute2)는 인터페이스별 IP·상태를 출력하며 구식 ifconfig를 대체한다. /etc/hostname(B)은 호스트명, passwd(C)는 비밀번호 변경, chmod(D)는 권한 명령이라 IP 확인과 무관하다."
+  },
+  {
+    "number": 18,
+    "domain": "네트워크 관리",
+    "prompt": "원격 호스트 192.168.1.10이 네트워크로 응답하는지 가장 먼저 간단히 확인하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      { "label": "A", "text": "ping 192.168.1.10" },
+      { "label": "B", "text": "ls 192.168.1.10" },
+      { "label": "C", "text": "rm 192.168.1.10" },
+      { "label": "D", "text": "cd 192.168.1.10" }
+    ],
+    "answer": "A",
+    "explanation": "ping은 ICMP 에코 요청으로 대상 호스트의 응답·도달 가능성을 확인하는 기본 도구다. ls(B)·rm(C)·cd(D)는 파일/디렉터리 명령이라 네트워크 연결 확인과 전혀 관련이 없다."
+  },
+  {
+    "number": 19,
+    "domain": "네트워크 관리",
+    "prompt": "도메인 이름 www.example.com이 어떤 IP로 해석되는지 DNS 조회로 확인하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      { "label": "A", "text": "dig www.example.com (또는 nslookup)" },
+      { "label": "B", "text": "tar www.example.com" },
+      { "label": "C", "text": "kill www.example.com" },
+      { "label": "D", "text": "mount www.example.com" }
+    ],
+    "answer": "A",
+    "explanation": "dig 또는 nslookup은 도메인의 DNS 레코드를 조회해 해석되는 IP를 보여준다. tar(B)는 압축, kill(C)은 프로세스 종료, mount(D)는 파일 시스템 마운트라 DNS 조회와 무관하다."
+  },
+  {
+    "number": 20,
+    "domain": "네트워크 관리",
+    "prompt": "현재 서버에서 LISTEN 상태로 열려 있는 TCP 포트와 해당 프로세스를 확인하려 한다. 가장 적합한 명령은?",
+    "choices": [
+      { "label": "A", "text": "ss -tlnp (또는 netstat -tlnp)" },
+      { "label": "B", "text": "uptime" },
+      { "label": "C", "text": "date" },
+      { "label": "D", "text": "whoami" }
+    ],
+    "answer": "A",
+    "explanation": "ss -tlnp(또는 구식 netstat -tlnp)는 LISTEN 중인 TCP 포트와 연결된 프로세스를 보여준다. uptime(B)은 가동 시간, date(C)는 날짜, whoami(D)는 현재 사용자라 포트 점검과 관련이 없다."
+  }
+]

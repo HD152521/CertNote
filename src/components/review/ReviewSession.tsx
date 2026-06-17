@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Check, X } from 'lucide-react';
-import { parseCorrectSet } from '@/lib/quiz/correctness';
+import { answerCount, isMultiAnswer, parseCorrectSet } from '@/lib/quiz/correctness';
 import { cn } from '@/lib/cn';
 
 interface Card {
@@ -36,7 +36,8 @@ function formatDue(iso: string): string {
 export function ReviewSession() {
   const [cards, setCards] = useState<Card[] | null>(null);
   const [idx, setIdx] = useState(0);
-  const [picked, setPicked] = useState<string | null>(null);
+  // 선택한 보기들(단일·복수 공통으로 배열로 관리).
+  const [picked, setPicked] = useState<string[]>([]);
   const [result, setResult] = useState<ReviewResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,29 +52,42 @@ export function ReviewSession() {
   }, []);
 
   const current = cards?.[idx];
+  const multi = current ? isMultiAnswer(current.answer) : false;
 
-  async function pick(label: string) {
-    if (picked || !current || submitting) return;
-    setPicked(label);
+  // 선택을 정렬·join한 표준 문자열("B" 또는 "B,D")로 서버에 보내 채점한다.
+  async function submit(selection: string[]) {
+    if (!current || submitting || selection.length === 0) return;
+    const selected = [...selection].sort().join(',');
     setSubmitting(true);
     try {
       const res = await fetch('/api/review', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questionId: current.questionId, selected: label }),
+        body: JSON.stringify({ questionId: current.questionId, selected }),
       });
       if (!res.ok) throw new Error();
       setResult((await res.json()) as ReviewResult);
     } catch {
       setError('채점에 실패했습니다. 다시 시도해 주세요.');
-      setPicked(null);
+      setPicked([]);
     } finally {
       setSubmitting(false);
     }
   }
 
+  // 보기 토글. 단일정답은 클릭 즉시 제출(기존 UX), 복수정답은 토글만 한다.
+  function toggle(label: string) {
+    if (result || submitting || !current) return;
+    if (!multi) {
+      setPicked([label]);
+      void submit([label]);
+      return;
+    }
+    setPicked((prev) => (prev.includes(label) ? prev.filter((x) => x !== label) : [...prev, label]));
+  }
+
   function next() {
-    setPicked(null);
+    setPicked([]);
     setResult(null);
     setError(null);
     setIdx((i) => i + 1);
@@ -117,35 +131,38 @@ export function ReviewSession() {
         <span className="uppercase tracking-wider">{current!.week > 0 ? `${current!.slug} · W${current!.week} D${current!.day}` : `${current!.slug} · 모의고사${current!.domain ? ` · ${current!.domain}` : ''}`}</span>
       </div>
       <div className="rounded-lg border border-border bg-bg-elevated p-4 sm:p-5">
+        {multi && (
+          <div className="mb-2">
+            <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">정답 {answerCount(current!.answer)}개 선택</span>
+          </div>
+        )}
         <p className="font-medium leading-relaxed mb-4 text-fg whitespace-pre-wrap">{current!.prompt}</p>
         <ul className="space-y-2">
           {current!.choices.map((c) => {
-            const isPicked = picked === c.label;
+            const isPicked = picked.includes(c.label);
             const isCorrectChoice = correctSet.has(c.label);
             const isWrong = isAnswered && isPicked && !isCorrectChoice;
             const revealed = isAnswered && isCorrectChoice;
             return (
               <li key={c.label}>
-                <button type="button" onClick={() => pick(c.label)} disabled={isAnswered || submitting} aria-pressed={isPicked}
+                <button type="button" onClick={() => toggle(c.label)} disabled={isAnswered || submitting} aria-pressed={isPicked}
                   className={cn(
                     'flex w-full items-start gap-3 rounded-md border px-3 py-2.5 text-left transition',
-                    !isAnswered && 'border-border hover:border-border-strong cursor-pointer',
+                    !isAnswered && (isPicked ? 'border-accent bg-accent/10' : 'border-border hover:border-border-strong cursor-pointer'),
                     isAnswered && !revealed && !isWrong && 'border-border opacity-50',
                     revealed && 'border-success/40 bg-success/5',
                     isWrong && 'border-danger/40 bg-danger/5',
                   )}
                 >
                   <span className={cn(
-                    'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-mono text-[10px]',
+                    'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center font-mono text-[10px]',
+                    multi ? 'rounded' : 'rounded-full',
                     revealed && 'bg-success text-white',
                     isWrong && 'bg-danger text-white',
-                    !isAnswered && 'border border-border-strong text-fg-muted',
+                    !isAnswered && (isPicked ? 'bg-accent text-white' : 'border border-border-strong text-fg-muted'),
                     isAnswered && !revealed && !isWrong && 'border border-border text-fg-faint',
                   )}>
-                    {revealed && <Check className="h-3 w-3" />}
-                    {isWrong && <X className="h-3 w-3" />}
-                    {!isAnswered && c.label}
-                    {isAnswered && !revealed && !isWrong && c.label}
+                    {revealed ? <Check className="h-3 w-3" /> : isWrong ? <X className="h-3 w-3" /> : c.label}
                   </span>
                   <span className="text-sm flex-1 leading-relaxed text-fg">{c.text}</span>
                 </button>
@@ -153,6 +170,12 @@ export function ReviewSession() {
             );
           })}
         </ul>
+        {multi && !isAnswered && (
+          <button type="button" onClick={() => submit(picked)} disabled={picked.length === 0 || submitting}
+            className="mt-3 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40">
+            정답 확인
+          </button>
+        )}
         {error && <p className="mt-3 text-sm text-danger">{error}</p>}
         {isAnswered && (
           <div className={cn('mt-4 rounded-md border p-3 text-sm', result!.correct ? 'border-success/40 bg-success/5' : 'border-danger/40 bg-danger/5')}>

@@ -7,6 +7,8 @@ export interface UserRecord {
   passwordHash: string;
   role: Role;
   createdAt: string;
+  emailVerified: boolean;
+  tokenVersion: number;
 }
 
 // 클라이언트로 내보내도 안전한 사용자 정보.
@@ -23,5 +25,5 @@ export function toPublicUser(user: UserRecord): PublicUser {
 // 데이터 접근 추상화(DIP) — AuthService는 이 인터페이스에만 의존한다.
 export interface UserRepository {
   findByEmail(email: string): Promise<UserRecord | null>;
-  create(input: { email: string; passwordHash: string; role?: Role }): Promise<UserRecord>;
+  create(input: { email: string; passwordHash: string; role?: Role; emailVerified?: boolean }): Promise<UserRecord>;
 }

@@ -33,6 +33,11 @@ export async function consumeResetToken(token: string): Promise<string | null> {
   return rows[0] ? String(rows[0].user_id) : null;
 }
 
+// 비밀번호 교체 + token_version 증가(기존 세션 전부 무효화). 재설정은 통상 "계정 탈취 의심"
+// 상황이므로 기존 세션을 끊는 것이 안전하다.
 export async function updateUserPassword(userId: string, passwordHash: string): Promise<void> {
-  await query('UPDATE users SET password_hash = $1 WHERE id = $2', [passwordHash, userId]);
+  await query(
+    'UPDATE users SET password_hash = $1, token_version = token_version + 1 WHERE id = $2',
+    [passwordHash, userId],
+  );
 }

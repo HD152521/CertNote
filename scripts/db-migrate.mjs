@@ -86,6 +86,31 @@ try {
   `);
   await pool.query('CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets (user_id);');
   console.log('✓ password_resets 테이블 준비 완료');
+
+  // 이메일 인증 + 세션 무효화 컬럼.
+  // DEFAULT 값으로 기존 사용자(특히 admin)가 잠기지 않게 한다:
+  //   - email_verified DEFAULT true → 기존 사용자는 인증된 것으로 간주(로그인/배너 영향 없음).
+  //   - token_version DEFAULT 0   → 기존 발급 세션의 ver(없으면 0으로 취급)과 일치 → 로그아웃되지 않음.
+  // 멱등(IF NOT EXISTS): 재실행해도 기존 데이터를 덮어쓰지 않는다.
+  await pool.query(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT true,
+      ADD COLUMN IF NOT EXISTS token_version  INT     NOT NULL DEFAULT 0;
+  `);
+  console.log('✓ users.email_verified / token_version 컬럼 준비 완료');
+
+  // 이메일 인증 토큰. password_resets와 동일 패턴: 평문이 아닌 해시를 PK로 저장,
+  // 만료/사용 시각으로 1회성 보장.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS email_verifications (
+      token_hash TEXT PRIMARY KEY,
+      user_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at    TIMESTAMPTZ
+    );
+  `);
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_email_verifications_user ON email_verifications (user_id);');
+  console.log('✓ email_verifications 테이블 준비 완료');
 } catch (err) {
   console.error('마이그레이션 실패:', err);
   process.exit(1);

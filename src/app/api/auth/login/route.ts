@@ -16,7 +16,8 @@ export async function POST(req: Request) {
       throw new AppError(400, 'invalid_body', '요청 형식이 올바르지 않습니다.');
     }
     const user = await getAuthService().login(body.email, body.password);
-    const token = await createSessionToken({ sub: user.id, email: user.email, role: user.role });
+    // 미인증 사용자도 로그인 허용(UI가 배너로 안내). ver에 현재 token_version을 담는다.
+    const token = await createSessionToken({ sub: user.id, email: user.email, role: user.role, ver: user.tokenVersion });
     const res = NextResponse.json({ user: toPublicUser(user) });
     res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
     return res;

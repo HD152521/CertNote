@@ -1,0 +1,275 @@
+[
+  {
+    "number": 1,
+    "domain": "개발",
+    "prompt": "Lambda 함수가 동일한 구성·라이브러리를 여러 함수에서 공유해야 한다. 배포 패키지 크기를 줄이고 공통 의존성을 재사용하는 가장 적합한 방법은?",
+    "choices": [
+      { "label": "A", "text": "각 함수에 동일한 라이브러리를 중복 포함" },
+      { "label": "B", "text": "Lambda 레이어(Layer)를 만들어 공통 라이브러리를 공유" },
+      { "label": "C", "text": "S3에서 매 호출 시 라이브러리를 다운로드" },
+      { "label": "D", "text": "함수를 하나로 합친다" }
+    ],
+    "answer": "B",
+    "explanation": "Lambda 레이어는 공통 라이브러리·런타임 의존성을 여러 함수에서 공유해 패키지 크기를 줄이고 유지보수를 단순화한다. 중복 포함(A)은 비효율, 매 호출 다운로드(C)는 지연·비용 증가, 함수 통합(D)은 결합도를 높인다."
+  },
+  {
+    "number": 2,
+    "domain": "개발",
+    "prompt": "DynamoDB 테이블에서 파티션 키가 아닌 다른 속성으로 효율적으로 쿼리해야 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "전체 테이블 Scan을 사용" },
+      { "label": "B", "text": "글로벌 보조 인덱스(GSI)를 생성해 다른 키로 쿼리" },
+      { "label": "C", "text": "RDS로 마이그레이션" },
+      { "label": "D", "text": "애플리케이션에서 전부 읽어 메모리에서 필터링" }
+    ],
+    "answer": "B",
+    "explanation": "GSI는 대체 파티션/정렬 키로 효율적 Query를 가능하게 한다. 전체 Scan(A)·전량 읽기(D)는 RCU 낭비·지연이 크고, RDS 마이그레이션(C)은 과한 대응이다."
+  },
+  {
+    "number": 3,
+    "domain": "개발",
+    "prompt": "DynamoDB에 동시 업데이트가 발생할 때 다른 사용자의 변경을 덮어쓰지 않도록 보장하려 한다. 가장 적합한 방법은?",
+    "choices": [
+      { "label": "A", "text": "조건식(Condition Expression) 기반 낙관적 잠금(버전 속성 비교)" },
+      { "label": "B", "text": "테이블 전체를 잠근다" },
+      { "label": "C", "text": "재시도 없이 마지막 쓰기를 그대로 둔다" },
+      { "label": "D", "text": "모든 쓰기를 단일 스레드로 직렬화" }
+    ],
+    "answer": "A",
+    "explanation": "조건식으로 버전/타임스탬프를 비교하는 낙관적 동시성 제어는 충돌 시 쓰기를 거부해 분실 갱신을 방지한다. DynamoDB엔 테이블 잠금(B)이 없고, C는 데이터 손실, D는 확장성 저하."
+  },
+  {
+    "number": 4,
+    "domain": "개발",
+    "prompt": "API Gateway 뒤의 Lambda가 콜드 스타트로 첫 요청 지연이 크다. 지연에 민감한 경로에서 일관된 응답 시간을 보장하려면?",
+    "choices": [
+      { "label": "A", "text": "프로비저닝된 동시성(Provisioned Concurrency)을 구성" },
+      { "label": "B", "text": "타임아웃을 늘린다" },
+      { "label": "C", "text": "메모리를 128MB로 줄인다" },
+      { "label": "D", "text": "함수를 비활성화한다" }
+    ],
+    "answer": "A",
+    "explanation": "프로비저닝된 동시성은 초기화된 실행 환경을 미리 준비해 콜드 스타트를 제거하고 일관된 저지연을 제공한다. 타임아웃 증가(B)는 콜드 스타트와 무관, 메모리 축소(C)는 오히려 느려지고, D는 비현실적."
+  },
+  {
+    "number": 5,
+    "domain": "개발",
+    "prompt": "여러 서비스가 단일 SQS 표준 큐를 소비하는데, 동일 메시지가 두 번 처리되어 부작용이 생긴다. 안정적으로 처리하려면 가장 적합한 설계는?",
+    "choices": [
+      { "label": "A", "text": "소비자 로직을 멱등(idempotent)하게 구현" },
+      { "label": "B", "text": "큐를 자주 비운다" },
+      { "label": "C", "text": "가시성 제한 시간을 0으로 설정" },
+      { "label": "D", "text": "메시지를 받지 않는다" }
+    ],
+    "answer": "A",
+    "explanation": "SQS 표준 큐는 최소 1회(at-least-once) 전달이라 중복이 가능하므로 소비자를 멱등하게 만드는 것이 정석이다(또는 FIFO 큐 + 중복 제거 ID). C는 즉시 재처리로 중복 악화, B·D는 해결책이 아니다."
+  },
+  {
+    "number": 6,
+    "domain": "보안",
+    "prompt": "모바일 앱 사용자가 소셜 로그인(Google/Facebook)으로 인증한 뒤, 임시 AWS 자격증명을 받아 S3에 직접 업로드하길 원한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "앱에 IAM 액세스 키를 내장" },
+      { "label": "B", "text": "Amazon Cognito 자격증명 풀로 페더레이션 후 임시 자격증명 발급" },
+      { "label": "C", "text": "루트 자격증명을 공유" },
+      { "label": "D", "text": "모든 사용자에게 동일한 키 배포" }
+    ],
+    "answer": "B",
+    "explanation": "Cognito 자격증명 풀은 소셜 IdP로 인증된 사용자에게 STS 임시 자격증명을 발급해 안전하게 AWS 리소스에 접근시킨다. 앱에 키 내장(A)·루트 공유(C)·동일 키(D)는 모두 심각한 자격증명 노출 위험."
+  },
+  {
+    "number": 7,
+    "domain": "보안",
+    "prompt": "Lambda 환경 변수에 저장한 API 키를 저장 시 암호화하고 KMS로 접근을 감사하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "고객 관리형 KMS 키로 환경 변수 암호화를 활성화" },
+      { "label": "B", "text": "키를 함수 코드 주석에 적는다" },
+      { "label": "C", "text": "퍼블릭 S3에 키를 둔다" },
+      { "label": "D", "text": "키를 로그로 출력한다" }
+    ],
+    "answer": "A",
+    "explanation": "Lambda 환경 변수는 고객 관리형 KMS 키로 암호화할 수 있어 저장 시 보호와 KMS CloudTrail 감사가 가능하다. B·C·D는 평문 노출·로그 유출로 이어지는 안티패턴이다."
+  },
+  {
+    "number": 8,
+    "domain": "보안",
+    "prompt": "API Gateway REST API에 대해 OAuth 2.0/OIDC 토큰을 검증하고 사용자별 접근을 제어하려 한다. 운영 부담을 줄이는 가장 적합한 방법은?",
+    "choices": [
+      { "label": "A", "text": "각 Lambda에서 토큰 검증 로직을 중복 구현" },
+      { "label": "B", "text": "Cognito 사용자 풀 권한 부여자 또는 Lambda 권한 부여자를 API Gateway에 구성" },
+      { "label": "C", "text": "인증 없이 공개" },
+      { "label": "D", "text": "IP 화이트리스트만 사용" }
+    ],
+    "answer": "B",
+    "explanation": "API Gateway의 Cognito/ Lambda 권한 부여자는 토큰 검증을 게이트웨이 계층에서 일원화해 백엔드 중복을 없앤다. 각 Lambda 중복(A)은 비효율, 공개(C)는 위험, IP 화이트리스트(D)는 사용자 인증을 대체하지 못한다."
+  },
+  {
+    "number": 9,
+    "domain": "보안",
+    "prompt": "CI/CD 파이프라인이 코드에 하드코딩된 액세스 키로 AWS에 배포하고 있어 보안 감사를 통과하지 못했다. 가장 적합한 개선은? (2개 선택)",
+    "choices": [
+      { "label": "A", "text": "하드코딩 키를 제거하고 IAM 역할로 임시 자격증명을 사용" },
+      { "label": "B", "text": "키를 더 긴 문자열로 변경" },
+      { "label": "C", "text": "노출된 키를 즉시 비활성화·교체하고 비밀 스캐닝을 도입" },
+      { "label": "D", "text": "키를 다른 리포지토리로 옮긴다" }
+    ],
+    "answer": "A, C",
+    "explanation": "장기 키를 제거하고 IAM 역할 기반 임시 자격증명으로 전환하며, 이미 노출된 키는 즉시 폐기·교체하고 비밀 스캐닝으로 재발을 막는다. 키 길이 변경(B)·다른 리포 이동(D)은 노출 위험을 해소하지 못한다."
+  },
+  {
+    "number": 10,
+    "domain": "배포",
+    "prompt": "Lambda 새 버전을 배포할 때 트래픽을 점진적으로(예: 10%씩) 이동하며 오류 발생 시 자동 롤백하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "전체 트래픽을 한 번에 신규 버전으로 전환" },
+      { "label": "B", "text": "Lambda 별칭 가중치 + CodeDeploy 카나리/선형 배포로 점진 전환 및 CloudWatch 경보 롤백" },
+      { "label": "C", "text": "함수를 삭제 후 재생성" },
+      { "label": "D", "text": "수동으로 콘솔에서 코드를 교체" }
+    ],
+    "answer": "B",
+    "explanation": "Lambda 별칭 가중치와 CodeDeploy의 카나리/선형 배포는 트래픽을 점진 이동하고 CloudWatch 경보로 자동 롤백을 트리거한다. 일괄 전환(A)은 위험, C·D는 무중단·자동 롤백을 제공하지 못한다."
+  },
+  {
+    "number": 11,
+    "domain": "배포",
+    "prompt": "서버리스 애플리케이션(Lambda+API GW+DynamoDB)을 코드로 정의하고 로컬 테스트 후 반복 배포하려 한다. 가장 적합한 도구는?",
+    "choices": [
+      { "label": "A", "text": "수동으로 콘솔에서 각 리소스를 생성" },
+      { "label": "B", "text": "AWS SAM(Serverless Application Model) 템플릿으로 정의·패키징·배포" },
+      { "label": "C", "text": "각 리소스를 일일이 CLI로 생성하는 스크립트" },
+      { "label": "D", "text": "EC2에 직접 배포" }
+    ],
+    "answer": "B",
+    "explanation": "AWS SAM은 서버리스 리소스를 간결한 IaC로 정의하고 sam local로 로컬 테스트, sam deploy로 반복 배포를 지원한다. 수동 콘솔(A)·임시 스크립트(C)는 재현성·일관성이 떨어지고, EC2(D)는 서버리스가 아니다."
+  },
+  {
+    "number": 12,
+    "domain": "배포",
+    "prompt": "여러 환경(dev/stage/prod)에 동일 인프라를 반복 배포하면서 환경별 파라미터만 다르게 적용하려 한다. CloudFormation에서 가장 적합한 방법은?",
+    "choices": [
+      { "label": "A", "text": "환경마다 완전히 별개의 템플릿을 작성" },
+      { "label": "B", "text": "단일 템플릿에 Parameters/Mappings를 사용해 환경별 값을 주입" },
+      { "label": "C", "text": "값을 하드코딩하고 수동 수정" },
+      { "label": "D", "text": "스택을 사용하지 않고 콘솔에서 클릭" }
+    ],
+    "answer": "B",
+    "explanation": "Parameters/Mappings로 환경별 값을 외부화하면 단일 템플릿을 재사용해 dev/stage/prod에 일관 배포할 수 있다. 별개 템플릿(A)·하드코딩(C)·콘솔 클릭(D)은 드리프트·중복을 유발한다."
+  },
+  {
+    "number": 13,
+    "domain": "배포",
+    "prompt": "ECS에 컨테이너 애플리케이션을 무중단으로 새 버전 배포하면서, 신규 버전 검증 실패 시 즉시 이전 버전으로 되돌리려 한다. 가장 적합한 전략은?",
+    "choices": [
+      { "label": "A", "text": "모든 태스크를 동시에 중지하고 새로 시작" },
+      { "label": "B", "text": "CodeDeploy 블루/그린 배포로 새 태스크 세트를 검증 후 트래픽 전환" },
+      { "label": "C", "text": "단일 태스크만 운영" },
+      { "label": "D", "text": "수동으로 컨테이너를 교체" }
+    ],
+    "answer": "B",
+    "explanation": "ECS 블루/그린 배포는 새 태스크 세트를 띄워 검증한 뒤 ALB 트래픽을 전환하고, 실패 시 즉시 블루로 롤백해 무중단을 보장한다. 동시 중지(A)는 다운타임, C·D는 안전한 검증·롤백을 제공하지 못한다."
+  },
+  {
+    "number": 14,
+    "domain": "문제 해결 및 최적화",
+    "prompt": "분산된 서버리스 애플리케이션에서 어느 단계가 지연을 유발하는지 엔드투엔드로 추적하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "각 함수에 print 문을 추가" },
+      { "label": "B", "text": "AWS X-Ray로 분산 추적을 활성화해 서비스 맵·세그먼트 분석" },
+      { "label": "C", "text": "추측으로 코드를 수정" },
+      { "label": "D", "text": "함수 메모리를 무작정 늘린다" }
+    ],
+    "answer": "B",
+    "explanation": "X-Ray는 요청을 서비스 전반에 걸쳐 추적해 서비스 맵·세그먼트별 지연을 시각화하고 병목을 정확히 식별한다. print(A)·추측 수정(C)·맹목적 메모리 증설(D)은 비효율적이다."
+  },
+  {
+    "number": 15,
+    "domain": "문제 해결 및 최적화",
+    "prompt": "동일한 DynamoDB 항목을 매우 자주 읽는 읽기 집약 애플리케이션의 지연과 비용을 줄이려 한다. 코드 변경을 최소화하는 가장 적합한 캐싱은?",
+    "choices": [
+      { "label": "A", "text": "DynamoDB Accelerator(DAX)를 도입" },
+      { "label": "B", "text": "RCU를 무한정 늘린다" },
+      { "label": "C", "text": "테이블을 매번 재생성" },
+      { "label": "D", "text": "전체 항목을 Scan으로 읽는다" }
+    ],
+    "answer": "A",
+    "explanation": "DAX는 DynamoDB 앞단의 인메모리 캐시로 마이크로초 단위 읽기를 제공하고 RCU 소비·비용을 줄이며 API 호환성이 높아 변경이 최소화된다. RCU 증설(B)은 비용 증가, C·D는 비효율적."
+  },
+  {
+    "number": 16,
+    "domain": "문제 해결 및 최적화",
+    "prompt": "API Gateway 뒤의 백엔드가 갑작스러운 트래픽 급증에 과부하된다. 백엔드를 보호하기 위해 게이트웨이 계층에서 할 수 있는 가장 적합한 조치는?",
+    "choices": [
+      { "label": "A", "text": "사용량 계획(Usage Plan)과 스로틀링/쿼터를 설정" },
+      { "label": "B", "text": "모든 캐싱을 비활성화" },
+      { "label": "C", "text": "타임아웃을 무한대로 설정" },
+      { "label": "D", "text": "백엔드를 더 작은 인스턴스로 교체" }
+    ],
+    "answer": "A",
+    "explanation": "API Gateway 스로틀링·사용량 계획은 초당 요청·버스트를 제한해 백엔드를 보호하고, 응답 캐싱으로 부하를 더 줄일 수 있다. 캐싱 비활성화(B)·무한 타임아웃(C)·축소(D)는 과부하를 악화시킨다."
+  },
+  {
+    "number": 17,
+    "domain": "문제 해결 및 최적화",
+    "prompt": "Lambda가 VPC 내 RDS에 접속하는데 'too many connections' 오류가 발생한다. 동시성이 높을 때 연결을 효율적으로 관리하는 가장 적합한 방법은?",
+    "choices": [
+      { "label": "A", "text": "RDS Proxy를 사용해 연결 풀링" },
+      { "label": "B", "text": "함수마다 연결을 더 많이 연다" },
+      { "label": "C", "text": "RDS를 재부팅 반복" },
+      { "label": "D", "text": "타임아웃을 0으로 설정" }
+    ],
+    "answer": "A",
+    "explanation": "RDS Proxy는 연결을 풀링·재사용해 Lambda의 폭발적 동시성으로 인한 연결 소진을 방지한다. 연결 추가(B)는 악화, 재부팅(C)·타임아웃 0(D)은 근본 해결이 아니다."
+  },
+  {
+    "number": 18,
+    "domain": "개발",
+    "prompt": "이벤트 소스(S3 업로드)가 Lambda를 트리거하는데, 처리 실패한 이벤트를 유실 없이 보관하고 나중에 재처리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "실패를 무시한다" },
+      { "label": "B", "text": "Lambda 비동기 호출의 데드레터 큐(DLQ) 또는 대상(Destination)을 SQS로 구성" },
+      { "label": "C", "text": "재시도를 비활성화" },
+      { "label": "D", "text": "로그만 남기고 폐기" }
+    ],
+    "answer": "B",
+    "explanation": "비동기 호출 실패 이벤트는 DLQ/온-실패 대상(SQS·SNS)으로 보내 유실 없이 보관하고 재처리할 수 있다. 무시(A)·재시도 비활성(C)·폐기(D)는 데이터 손실로 이어진다."
+  },
+  {
+    "number": 19,
+    "domain": "개발",
+    "prompt": "여러 마이크로서비스가 단일 이벤트에 각자 다른 방식으로 반응해야 한다(팬아웃). 결합도를 낮추는 가장 적합한 패턴은?",
+    "choices": [
+      { "label": "A", "text": "SNS 토픽으로 발행하고 각 서비스가 자신의 SQS 큐로 구독(fan-out)" },
+      { "label": "B", "text": "생산자가 각 소비자를 직접 동기 호출" },
+      { "label": "C", "text": "하나의 큐를 모두가 경쟁 소비" },
+      { "label": "D", "text": "공유 데이터베이스를 폴링" }
+    ],
+    "answer": "A",
+    "explanation": "SNS→SQS 팬아웃은 한 번 발행한 이벤트를 여러 구독 큐로 복제해 각 소비자가 독립적으로 처리하게 해 결합도를 낮춘다. 직접 호출(B)은 강결합, 단일 큐 경쟁(C)은 각자 받지 못함, DB 폴링(D)은 비효율적."
+  },
+  {
+    "number": 20,
+    "domain": "개발",
+    "prompt": "큰 객체 페이로드를 SQS로 보내야 하는데 메시지 크기 제한(256KB)을 초과한다. 가장 적합한 방법은?",
+    "choices": [
+      { "label": "A", "text": "메시지를 임의로 잘라 보낸다" },
+      { "label": "B", "text": "객체를 S3에 저장하고 SQS에는 참조(포인터)만 전송(예: 확장 클라이언트 라이브러리)" },
+      { "label": "C", "text": "제한을 무시하고 그대로 전송" },
+      { "label": "D", "text": "메시지를 데이터베이스에 직접 쓴다" }
+    ],
+    "answer": "B",
+    "explanation": "대용량 페이로드는 S3에 저장하고 SQS 메시지에 S3 참조만 담는 패턴(SQS Extended Client)으로 크기 제한을 우회한다. 자르기(A)는 데이터 손상, 무시(C)는 전송 실패, D는 큐 분리 이점을 잃는다."
+  },
+  {
+    "number": 21,
+    "domain": "배포",
+    "prompt": "여러 개발자가 환경별 구성값(예: 기능 플래그, 엔드포인트)을 코드 재배포 없이 변경하고 버전·이력 관리하길 원한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "구성값을 코드에 상수로 하드코딩" },
+      { "label": "B", "text": "SSM Parameter Store 또는 AWS AppConfig로 구성을 외부화" },
+      { "label": "C", "text": "구성 변경 시마다 전체 재배포" },
+      { "label": "D", "text": "구성값을 로그 파일에 둔다" }
+    ],
+    "answer": "B",
+    "explanation": "SSM Parameter Store/AppConfig는 구성·기능 플래그를 외부화해 코드 변경 없이 갱신하고 버전·이력 관리, 점진 롤아웃을 지원한다. 하드코딩(A)·전체 재배포(C)·로그 보관(D)은 비효율·위험하다."
+  }
+]

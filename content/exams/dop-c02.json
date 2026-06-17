@@ -1,0 +1,262 @@
+[
+  {
+    "number": 1,
+    "domain": "SDLC 자동화",
+    "prompt": "코드 커밋부터 빌드·테스트·배포까지 완전 자동화된 파이프라인을 AWS 관리형 서비스로 구성하려 한다. 단계 간 오케스트레이션에 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "개발자가 수동으로 각 단계를 실행" },
+      { "label": "B", "text": "AWS CodePipeline으로 소스·빌드·테스트·배포 단계를 오케스트레이션" },
+      { "label": "C", "text": "cron으로 빌드를 주기 실행" },
+      { "label": "D", "text": "EC2에서 셸 스크립트를 수동 실행" }
+    ],
+    "answer": "B",
+    "explanation": "CodePipeline은 소스(CodeCommit/GitHub)→빌드(CodeBuild)→테스트→배포(CodeDeploy 등) 단계를 이벤트 기반으로 오케스트레이션해 완전 자동 CI/CD를 구성한다. 수동 실행(A,D)·cron(C)은 일관성·추적성·트리거 면에서 떨어진다."
+  },
+  {
+    "number": 2,
+    "domain": "SDLC 자동화",
+    "prompt": "여러 마이크로서비스의 빌드 산출물(컨테이너 이미지·아티팩트)을 빌드 정의와 함께 일관되게 만들고, 빌드 환경을 코드로 재현하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "개발자 노트북에서 각자 빌드" },
+      { "label": "B", "text": "AWS CodeBuild에서 buildspec.yml로 빌드를 정의·실행" },
+      { "label": "C", "text": "프로덕션 서버에서 직접 빌드" },
+      { "label": "D", "text": "빌드를 생략하고 소스를 배포" }
+    ],
+    "answer": "B",
+    "explanation": "CodeBuild는 buildspec.yml로 빌드 절차를 코드화해 격리된 환경에서 재현 가능하게 빌드·테스트하고 산출물을 만든다. 노트북 빌드(A)는 환경 드리프트, 프로덕션 빌드(C)는 위험, 빌드 생략(D)은 품질 보장 불가."
+  },
+  {
+    "number": 3,
+    "domain": "SDLC 자동화",
+    "prompt": "파이프라인에서 프로덕션 배포 직전에 책임자의 승인을 받아야만 진행되도록 게이트를 두려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "승인 없이 자동 배포" },
+      { "label": "B", "text": "CodePipeline에 수동 승인(manual approval) 액션을 추가하고 SNS로 알림" },
+      { "label": "C", "text": "배포 후에 이메일로 통보만 한다" },
+      { "label": "D", "text": "파이프라인을 비활성화한다" }
+    ],
+    "answer": "B",
+    "explanation": "CodePipeline의 수동 승인 액션은 다음 단계 진행 전 승인을 요구하고 SNS로 승인 요청을 알린다. 무승인 자동 배포(A)는 통제 부재, 사후 통보(C)는 게이트가 아니며, 비활성화(D)는 CD 자체를 멈춘다."
+  },
+  {
+    "number": 4,
+    "domain": "구성 관리 및 IaC",
+    "prompt": "여러 환경에 동일 인프라를 코드로 배포하면서, 변경을 적용하기 전에 무엇이 추가·수정·삭제되는지 미리 검토하려 한다. CloudFormation에서 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "스택을 바로 업데이트한다" },
+      { "label": "B", "text": "변경 세트(Change Set)를 생성해 적용 전 영향을 검토" },
+      { "label": "C", "text": "리소스를 콘솔에서 직접 수정" },
+      { "label": "D", "text": "스택을 삭제 후 재생성" }
+    ],
+    "answer": "B",
+    "explanation": "변경 세트는 스택 업데이트가 적용될 변경(추가/수정/대체/삭제)을 미리 보여줘 위험을 검토 후 실행하게 한다. 즉시 업데이트(A)는 의도치 않은 대체 위험, 콘솔 직접 수정(C)은 드리프트, 삭제 후 재생성(D)은 다운타임·데이터 손실 위험."
+  },
+  {
+    "number": 5,
+    "domain": "구성 관리 및 IaC",
+    "prompt": "대규모 EC2 플릿의 OS 설정·에이전트 설치·구성 드리프트 교정을 코드로 일관되게 관리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "각 서버에 수동으로 설정을 적용" },
+      { "label": "B", "text": "Systems Manager State Manager/문서(SSM Documents)로 원하는 상태를 강제" },
+      { "label": "C", "text": "구성 변경 시마다 서버를 새로 만든다" },
+      { "label": "D", "text": "구성을 문서로만 적어둔다" }
+    ],
+    "answer": "B",
+    "explanation": "SSM State Manager는 SSM 문서로 정의한 원하는 상태(패키지·구성)를 주기적으로 적용·교정해 드리프트를 막는다. 수동 적용(A)·문서화만(D)은 강제력이 없고, 매번 재생성(C)은 과도하다."
+  },
+  {
+    "number": 6,
+    "domain": "구성 관리 및 IaC",
+    "prompt": "여러 계정·리전에 동일한 CloudFormation 스택을 한 번의 작업으로 배포·업데이트하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "각 계정에 개별적으로 스택을 만든다" },
+      { "label": "B", "text": "CloudFormation StackSets로 여러 계정·리전에 일괄 배포" },
+      { "label": "C", "text": "한 계정에만 배포한다" },
+      { "label": "D", "text": "콘솔에서 복사-붙여넣기로 반복 생성" }
+    ],
+    "answer": "B",
+    "explanation": "StackSets는 단일 작업으로 여러 계정·리전에 스택을 배포·업데이트·삭제하며 조직 단위 자동 배포도 지원한다. 개별 생성(A)·복붙(D)은 비효율·드리프트, 단일 계정(C)은 요구 미충족."
+  },
+  {
+    "number": 7,
+    "domain": "복원력 있는 클라우드 솔루션",
+    "prompt": "ECS 서비스의 새 버전을 무중단으로 배포하고 검증 실패 시 즉시 이전 버전으로 자동 롤백하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "모든 태스크를 한 번에 교체" },
+      { "label": "B", "text": "CodeDeploy 블루/그린 배포로 트래픽을 점진 전환하고 경보 기반 자동 롤백" },
+      { "label": "C", "text": "단일 태스크만 운영" },
+      { "label": "D", "text": "수동으로 컨테이너를 교체" }
+    ],
+    "answer": "B",
+    "explanation": "CodeDeploy 블루/그린은 새 태스크 세트를 띄워 검증 후 ALB 트래픽을 전환하고, CloudWatch 경보로 실패를 감지하면 자동 롤백한다. 일괄 교체(A)는 다운타임·위험, C·D는 안전한 검증·롤백을 제공하지 못한다."
+  },
+  {
+    "number": 8,
+    "domain": "복원력 있는 클라우드 솔루션",
+    "prompt": "다중 AZ에 배포된 상태 비저장 웹 계층을 AZ 장애에도 자동 복구·확장되도록 하고, 인스턴스 비정상 시 자동 교체되게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "단일 AZ에 큰 인스턴스 한 대" },
+      { "label": "B", "text": "여러 AZ에 걸친 Auto Scaling 그룹 + ELB 상태 확인" },
+      { "label": "C", "text": "EIP를 가진 단일 인스턴스" },
+      { "label": "D", "text": "수동으로 인스턴스를 추가" }
+    ],
+    "answer": "B",
+    "explanation": "다중 AZ ASG는 ELB 상태 확인으로 비정상 인스턴스를 자동 교체하고 부하에 따라 확장하며 AZ 장애에도 가용성을 유지한다. 단일 인스턴스(A,C)는 SPOF, 수동 추가(D)는 자동 복구가 아니다."
+  },
+  {
+    "number": 9,
+    "domain": "복원력 있는 클라우드 솔루션",
+    "prompt": "두 리전에 걸친 액티브-패시브 DR을 운영하면서 배포 파이프라인이 두 리전에 일관되게 인프라·코드를 배포하고 장애 시 자동 전환되게 하려 한다. 적절한 조치 2가지는? (2개 선택)",
+    "choices": [
+      { "label": "A", "text": "IaC(StackSets/파이프라인)로 두 리전에 동일 구성을 배포" },
+      { "label": "B", "text": "Route 53 상태 확인 + 장애 조치 라우팅으로 리전 전환을 자동화" },
+      { "label": "C", "text": "보조 리전 구성을 수동으로 가끔 맞춘다" },
+      { "label": "D", "text": "DR 테스트를 하지 않는다" }
+    ],
+    "answer": "A, B",
+    "explanation": "IaC로 양 리전에 동일 구성을 코드로 배포해 드리프트를 막고, Route 53 health check + failover 라우팅으로 장애 시 자동 전환한다. 수동 맞춤(C)은 드리프트, DR 미테스트(D)는 실패 위험을 키운다."
+  },
+  {
+    "number": 10,
+    "domain": "모니터링 및 로깅",
+    "prompt": "마이크로서비스 전반의 요청 흐름과 단계별 지연을 추적해 성능 병목을 찾으려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "각 서비스 로그를 개별로 읽는다" },
+      { "label": "B", "text": "AWS X-Ray로 분산 추적을 수집해 서비스 맵·지연을 분석" },
+      { "label": "C", "text": "추측으로 코드를 수정" },
+      { "label": "D", "text": "모니터링을 하지 않는다" }
+    ],
+    "answer": "B",
+    "explanation": "X-Ray는 요청을 서비스 전반에 걸쳐 추적해 서비스 맵·세그먼트별 지연·오류율을 제공해 병목을 정확히 식별한다. 개별 로그(A)·추측(C)은 비효율, 미모니터링(D)은 진단 불가."
+  },
+  {
+    "number": 11,
+    "domain": "모니터링 및 로깅",
+    "prompt": "수십 개 서비스의 로그를 중앙 집계하고, 특정 오류 패턴 발생 횟수가 임계를 넘으면 자동 알림·대응을 트리거하려 한다. 가장 적합한 조합은?",
+    "choices": [
+      { "label": "A", "text": "서버마다 로그를 grep" },
+      { "label": "B", "text": "CloudWatch Logs 집계 + 지표 필터 → 경보 → SNS/Lambda 자동 대응" },
+      { "label": "C", "text": "로그를 주기적으로 삭제" },
+      { "label": "D", "text": "로그를 출력만 한다" }
+    ],
+    "answer": "B",
+    "explanation": "CloudWatch Logs로 중앙 집계 후 지표 필터로 오류 패턴을 카운트해 경보를 만들고 SNS/Lambda로 자동 대응한다. grep(A)은 비확장, 삭제(C)는 운영성 상실, 출력만(D)은 분석·대응 불가."
+  },
+  {
+    "number": 12,
+    "domain": "모니터링 및 로깅",
+    "prompt": "프로덕션에서 특정 리소스 구성이 규정(예: 암호화·태깅)을 위반하면 자동으로 탐지하고 즉시 교정하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "분기별 수동 감사" },
+      { "label": "B", "text": "AWS Config 규칙 + SSM Automation 자동 교정을 구성" },
+      { "label": "C", "text": "규정을 문서로만 둔다" },
+      { "label": "D", "text": "모든 변경을 차단한다" }
+    ],
+    "answer": "B",
+    "explanation": "AWS Config 규칙이 비준수 구성을 지속 탐지하고 연결된 SSM Automation 교정 작업이 즉시 바로잡는다. 분기 감사(A)는 느리고, 문서(C)는 강제력 없음, 전면 차단(D)은 비현실적이다."
+  },
+  {
+    "number": 13,
+    "domain": "인시던트 및 이벤트 대응",
+    "prompt": "특정 운영 이벤트(예: 새 EC2 시작, ECR 이미지 푸시)에 거의 실시간으로 반응해 후속 자동화를 트리거하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "주기적으로 폴링하는 cron" },
+      { "label": "B", "text": "Amazon EventBridge 규칙으로 이벤트를 매칭해 Lambda/Step Functions를 트리거" },
+      { "label": "C", "text": "수동으로 이벤트를 확인" },
+      { "label": "D", "text": "이벤트를 무시한다" }
+    ],
+    "answer": "B",
+    "explanation": "EventBridge는 AWS 서비스·커스텀 이벤트를 거의 실시간 매칭해 Lambda·Step Functions 등 자동화를 트리거하는 이벤트 버스다. cron 폴링(A)은 지연·비효율, 수동 확인(C)·무시(D)는 자동 대응이 아니다."
+  },
+  {
+    "number": 14,
+    "domain": "인시던트 및 이벤트 대응",
+    "prompt": "인시던트 발생 시 정해진 진단·복구 절차(런북)를 사람이 일일이 실행하지 않고 표준화·자동 실행해 MTTR을 줄이려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "엔지니어가 매번 위키를 보며 수동 수행" },
+      { "label": "B", "text": "Systems Manager Automation 런북을 만들어 경보/이벤트로 자동 실행" },
+      { "label": "C", "text": "인시던트를 무시한다" },
+      { "label": "D", "text": "서버를 항상 재부팅한다" }
+    ],
+    "answer": "B",
+    "explanation": "SSM Automation 런북은 표준 진단·복구 절차를 코드화해 경보·EventBridge로 자동 실행하므로 MTTR과 사람 오류를 줄인다. 수동 위키(A)는 느리고 일관성이 없으며, 무시(C)·맹목 재부팅(D)은 부적절하다."
+  },
+  {
+    "number": 15,
+    "domain": "인시던트 및 이벤트 대응",
+    "prompt": "Auto Scaling 그룹이 비정상 인스턴스를 종료하기 전에 로그를 수집하거나 정상 종료 작업을 수행할 시간이 필요하다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "종료를 막을 방법이 없다" },
+      { "label": "B", "text": "Auto Scaling 수명 주기 후크(lifecycle hook)로 종료 전 대기·작업 수행" },
+      { "label": "C", "text": "인스턴스를 절대 종료하지 않는다" },
+      { "label": "D", "text": "수동으로 종료를 모니터링" }
+    ],
+    "answer": "B",
+    "explanation": "수명 주기 후크는 인스턴스 시작/종료를 일시 보류(Wait 상태)해 로그 수집·드레이닝·정상 종료 작업을 수행한 뒤 진행하게 한다. A는 틀렸고, 종료 금지(C)·수동 모니터링(D)은 자동화·확장과 맞지 않는다."
+  },
+  {
+    "number": 16,
+    "domain": "보안 및 규정 준수",
+    "prompt": "CI/CD 파이프라인이 장기 IAM 액세스 키로 배포해 키 유출 위험이 있다. 키 없이 안전하게 권한을 부여하려는 가장 적합한 방법은?",
+    "choices": [
+      { "label": "A", "text": "키를 파이프라인 환경 변수에 평문 저장" },
+      { "label": "B", "text": "CodePipeline/CodeBuild에 IAM 역할을 부여해 임시 자격증명으로 배포" },
+      { "label": "C", "text": "키를 소스 코드에 커밋" },
+      { "label": "D", "text": "모든 단계에 관리자 키를 사용" }
+    ],
+    "answer": "B",
+    "explanation": "파이프라인·빌드 프로젝트에 최소 권한 IAM 역할을 부여하면 장기 키 없이 임시 자격증명으로 안전하게 배포한다. 평문 저장(A)·소스 커밋(C)·관리자 키(D)는 모두 심각한 유출·권한 과다 위험이다."
+  },
+  {
+    "number": 17,
+    "domain": "보안 및 규정 준수",
+    "prompt": "배포 파이프라인에서 빌드된 컨테이너 이미지의 취약점을 배포 전에 자동 검사하고, 심각 취약점이 있으면 배포를 차단하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "취약점 검사를 생략한다" },
+      { "label": "B", "text": "ECR 이미지 스캔(Amazon Inspector 통합)을 파이프라인에 넣고 결과로 게이트" },
+      { "label": "C", "text": "배포 후에만 검사한다" },
+      { "label": "D", "text": "수동으로 가끔 검사한다" }
+    ],
+    "answer": "B",
+    "explanation": "ECR 이미지 스캔(Inspector 연동)을 파이프라인 단계로 두고 심각 취약점 발견 시 배포를 차단하면 안전한 공급망을 보장한다. 생략(A)·사후 검사(C)·수동(D)은 취약 이미지가 프로덕션에 도달할 위험을 남긴다."
+  },
+  {
+    "number": 18,
+    "domain": "SDLC 자동화",
+    "prompt": "여러 환경(test/prod)의 애플리케이션 구성과 기능 플래그를 코드 재배포 없이 안전하게 점진 롤아웃하고, 문제 시 자동 롤백하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "구성을 코드에 하드코딩하고 매번 재배포" },
+      { "label": "B", "text": "AWS AppConfig로 구성·기능 플래그를 검증·점진 배포하고 경보 기반 롤백" },
+      { "label": "C", "text": "구성을 수동으로 서버마다 바꾼다" },
+      { "label": "D", "text": "기능 플래그를 사용하지 않는다" }
+    ],
+    "answer": "B",
+    "explanation": "AppConfig는 구성·기능 플래그를 검증 후 점진 배포하고 CloudWatch 경보로 자동 롤백해 안전한 런타임 구성 변경을 제공한다. 하드코딩 재배포(A)·수동 변경(C)은 위험·비효율이고, 플래그 미사용(D)은 점진 제어를 포기한다."
+  },
+  {
+    "number": 19,
+    "domain": "복원력 있는 클라우드 솔루션",
+    "prompt": "데이터베이스 스키마 변경이나 위험한 배포를 트래픽 일부에만 먼저 적용해 영향을 관찰한 뒤 확대하려 한다. 가장 적합한 배포 전략은?",
+    "choices": [
+      { "label": "A", "text": "전체에 한 번에 배포" },
+      { "label": "B", "text": "카나리(canary)/선형(linear) 배포로 소수 트래픽부터 점진 확대하며 모니터링" },
+      { "label": "C", "text": "배포를 하지 않는다" },
+      { "label": "D", "text": "야간에 몰래 전체 교체" }
+    ],
+    "answer": "B",
+    "explanation": "카나리/선형 배포는 트래픽의 일부에 먼저 적용해 지표를 관찰하고 문제없으면 확대, 이상 시 롤백한다. 일괄 배포(A)·야간 전체 교체(D)는 blast radius가 크고, 배포 안 함(C)은 개선 자체를 막는다."
+  },
+  {
+    "number": 20,
+    "domain": "모니터링 및 로깅",
+    "prompt": "여러 계정·리전의 운영 지표·로그·추적을 단일 모니터링 계정에서 통합 관찰하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "계정마다 콘솔에 따로 접속해 본다" },
+      { "label": "B", "text": "CloudWatch 교차 계정 관찰성을 구성해 중앙에서 통합 관찰" },
+      { "label": "C", "text": "지표를 이메일로 모은다" },
+      { "label": "D", "text": "모니터링을 끈다" }
+    ],
+    "answer": "B",
+    "explanation": "CloudWatch 교차 계정 관찰성은 모니터링 계정에서 여러 소스 계정·리전의 지표·로그·X-Ray 추적을 한곳에서 보게 해 운영 가시성을 높인다. 개별 접속(A)·이메일(C)은 비효율, 끄기(D)는 가시성 상실."
+  }
+]

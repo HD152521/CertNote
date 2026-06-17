@@ -9,6 +9,7 @@ export interface SessionPayload {
   sub: string; // user id
   email: string;
   role: Role;
+  ver: number; // token_version — 비번 변경/재설정 시 DB값과 불일치하면 세션 무효(서버 컴포넌트/라우트에서 판정)
 }
 
 function getSecret(): Uint8Array {
@@ -20,7 +21,7 @@ function getSecret(): Uint8Array {
 }
 
 export async function createSessionToken(payload: SessionPayload): Promise<string> {
-  return new SignJWT({ email: payload.email, role: payload.role })
+  return new SignJWT({ email: payload.email, role: payload.role, ver: payload.ver })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(payload.sub)
     .setIssuedAt()
@@ -33,7 +34,9 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
   try {
     const { payload } = await jwtVerify(token, getSecret());
     const role = payload.role === 'admin' ? 'admin' : 'user';
-    return { sub: String(payload.sub ?? ''), email: String(payload.email ?? ''), role };
+    // ver 누락(구 토큰)은 0으로 취급 → token_version DEFAULT 0과 일치해 기존 세션이 무효화되지 않는다.
+    const ver = typeof payload.ver === 'number' ? payload.ver : 0;
+    return { sub: String(payload.sub ?? ''), email: String(payload.email ?? ''), role, ver };
   } catch {
     return null;
   }

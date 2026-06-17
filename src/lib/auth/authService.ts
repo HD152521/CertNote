@@ -30,7 +30,9 @@ export class AuthService {
       throw new AppError(409, 'email_taken', '이미 가입된 이메일입니다.');
     }
     const passwordHash = await hashPassword(password);
-    return this.users.create({ email: normalized, passwordHash });
+    // 신규 가입자는 미인증 상태로 생성(인증 메일은 signup 라우트에서 발송).
+    // 기존 사용자는 마이그레이션 DEFAULT true라 영향 없음.
+    return this.users.create({ email: normalized, passwordHash, emailVerified: false });
   }
 
   async login(email: string, password: string): Promise<UserRecord> {

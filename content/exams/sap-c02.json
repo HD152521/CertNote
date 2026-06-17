@@ -1,0 +1,262 @@
+[
+  {
+    "number": 1,
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "prompt": "대기업이 수백 개의 AWS 계정을 부서·환경별로 운영하면서 신규 계정을 표준 가드레일·로깅·네트워크 베이스라인과 함께 자동 프로비저닝하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "계정을 만들 때마다 수동으로 설정을 적용" },
+      { "label": "B", "text": "AWS Control Tower로 랜딩 존을 구성하고 Account Factory로 계정을 표준화 프로비저닝" },
+      { "label": "C", "text": "단일 계정에 모든 워크로드를 집중" },
+      { "label": "D", "text": "각 부서가 독립적으로 계정을 만들고 관리" }
+    ],
+    "answer": "B",
+    "explanation": "Control Tower는 다계정 랜딩 존을 구성하고 Account Factory로 가드레일·중앙 로깅·OU 구조를 표준화해 계정을 자동 프로비저닝한다. 수동 설정(A)·부서별 독립(D)은 드리프트를, 단일 계정(C)은 격리·blast radius 문제를 유발한다."
+  },
+  {
+    "number": 2,
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "prompt": "조직 전체에서 개발자가 위험한 작업(예: CloudTrail 비활성화, 특정 리전 사용)을 절대 수행하지 못하도록 권한 상한을 강제하면서, 계정 내 역할 권한은 팀이 자율 관리하게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "모든 사용자에게 관리자 권한을 부여" },
+      { "label": "B", "text": "OU에 서비스 제어 정책(SCP)으로 명시적 거부 가드레일을 적용" },
+      { "label": "C", "text": "각 IAM 정책을 중앙에서 일일이 작성" },
+      { "label": "D", "text": "GuardDuty로 차단" }
+    ],
+    "answer": "B",
+    "explanation": "SCP는 OU/계정의 권한 상한을 정의해 위험 작업을 명시적으로 거부하면서도, 그 상한 안에서 팀이 IAM을 자율 관리하게 한다. 관리자 일괄 부여(A)는 위험, 중앙 IAM 작성(C)은 확장 불가, GuardDuty(D)는 탐지지 예방이 아니다."
+  },
+  {
+    "number": 3,
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "prompt": "여러 계정·여러 VPC와 온프레미스 데이터센터를 모두 연결하는 확장 가능한 허브-스포크 네트워크를 구성하려 한다. VPC 피어링의 전이성 한계를 피하면서 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "모든 VPC를 풀메시 피어링" },
+      { "label": "B", "text": "AWS Transit Gateway를 허브로 사용하고 RAM으로 여러 계정에 공유" },
+      { "label": "C", "text": "각 VPC에 NAT 게이트웨이를 둔다" },
+      { "label": "D", "text": "퍼블릭 인터넷으로 통신" }
+    ],
+    "answer": "B",
+    "explanation": "Transit Gateway는 다수 VPC·온프레미스를 전이적으로 연결하는 허브이며, Resource Access Manager(RAM)로 여러 계정이 공유할 수 있어 대규모에 적합하다. 풀메시 피어링(A)은 N² 복잡도, NAT(C)·인터넷(D)은 사설 허브 연결이 아니다."
+  },
+  {
+    "number": 4,
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "prompt": "조직 내 모든 계정에서 공통으로 쓰는 라이선스가 부여된 AMI와 보안 강화 이미지를 중앙에서 빌드·검증·배포·버전 관리하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "각 팀이 수동으로 AMI를 만든다" },
+      { "label": "B", "text": "EC2 Image Builder로 이미지 파이프라인을 구성하고 RAM으로 계정 간 공유" },
+      { "label": "C", "text": "마켓플레이스 이미지를 그대로 사용" },
+      { "label": "D", "text": "이미지를 S3에 zip으로 보관" }
+    ],
+    "answer": "B",
+    "explanation": "EC2 Image Builder는 강화·패치된 이미지를 자동 빌드·테스트·버전 관리하고 계정 간 배포·공유한다. 수동 제작(A)은 드리프트, 마켓플레이스 그대로(C)는 강화 미흡, zip 보관(D)은 AMI 관리가 아니다."
+  },
+  {
+    "number": 5,
+    "domain": "새로운 솔루션을 위한 설계",
+    "prompt": "글로벌 사용자에게 활성-활성으로 제공되는 웹 애플리케이션이 한 리전 장애 시에도 낮은 지연으로 동작하고, 데이터는 여러 리전에서 일관되게 읽고 쓰여야 한다. 가장 적합한 데이터 계층은?",
+    "choices": [
+      { "label": "A", "text": "단일 리전 RDS Multi-AZ" },
+      { "label": "B", "text": "DynamoDB 글로벌 테이블로 다중 리전 활성-활성 복제" },
+      { "label": "C", "text": "단일 리전 ElastiCache" },
+      { "label": "D", "text": "EBS 다중 연결" }
+    ],
+    "answer": "B",
+    "explanation": "DynamoDB 글로벌 테이블은 다중 리전 활성-활성 복제로 로컬 저지연 읽기/쓰기와 리전 장애 복원력을 제공한다. 단일 리전 RDS(A)·ElastiCache(C)는 리전 장애에 취약, EBS 다중 연결(D)은 단일 AZ 블록 스토리지라 부적합."
+  },
+  {
+    "number": 6,
+    "domain": "새로운 솔루션을 위한 설계",
+    "prompt": "RTO 수 분, RPO 수 초 수준의 엄격한 재해 복구가 필요한 미션 크리티컬 관계형 데이터베이스를 두 리전에 걸쳐 구성하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "야간 스냅샷을 다른 리전에 복사" },
+      { "label": "B", "text": "Aurora 글로벌 데이터베이스로 교차 리전 복제 및 빠른 승격" },
+      { "label": "C", "text": "백업만 보관하고 DR은 수동 복구" },
+      { "label": "D", "text": "단일 리전 Multi-AZ만 사용" }
+    ],
+    "answer": "B",
+    "explanation": "Aurora 글로벌 데이터베이스는 일반적으로 1초 미만 지연의 교차 리전 복제와 분 단위 보조 리전 승격을 제공해 낮은 RTO/RPO를 만족한다. 야간 스냅샷(A)·백업 수동 복구(C)는 RPO/RTO가 크고, 단일 리전 Multi-AZ(D)는 리전 DR이 아니다."
+  },
+  {
+    "number": 7,
+    "domain": "새로운 솔루션을 위한 설계",
+    "prompt": "초당 수십만 이벤트의 스트리밍 데이터를 수집·실시간 분석하고, 동시에 원본을 데이터 레이크에 적재하려 한다. 운영 부담을 줄이는 가장 적합한 조합은?",
+    "choices": [
+      { "label": "A", "text": "EC2 클러스터에 직접 Kafka를 운영하고 수동 적재" },
+      { "label": "B", "text": "Kinesis Data Streams로 수집 → 실시간 처리 + Kinesis Data Firehose로 S3 데이터 레이크 적재" },
+      { "label": "C", "text": "RDS에 모든 이벤트를 INSERT" },
+      { "label": "D", "text": "SQS 표준 큐만 사용" }
+    ],
+    "answer": "B",
+    "explanation": "Kinesis Data Streams로 고처리량 스트림을 수집해 실시간 소비하고, Firehose로 S3 데이터 레이크에 자동 적재하면 운영 부담이 낮다. 자체 Kafka(A)는 운영 부담, RDS(C)는 처리량 한계, SQS(D)는 스트림 재생·분석에 부적합."
+  },
+  {
+    "number": 8,
+    "domain": "새로운 솔루션을 위한 설계",
+    "prompt": "여러 팀의 마이크로서비스가 이벤트로 느슨하게 통합되어야 하고, SaaS 파트너·여러 AWS 서비스의 이벤트를 스키마 기반으로 라우팅하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "각 서비스가 서로를 직접 동기 호출" },
+      { "label": "B", "text": "Amazon EventBridge 이벤트 버스와 규칙·스키마 레지스트리로 이벤트 라우팅" },
+      { "label": "C", "text": "공유 데이터베이스 폴링" },
+      { "label": "D", "text": "단일 거대 모놀리식으로 통합" }
+    ],
+    "answer": "B",
+    "explanation": "EventBridge는 AWS·SaaS·커스텀 이벤트를 규칙으로 라우팅하고 스키마 레지스트리를 제공해 느슨한 결합의 이벤트 기반 아키텍처에 적합하다. 직접 호출(A)·모놀리식(D)은 강결합, DB 폴링(C)은 비효율적."
+  },
+  {
+    "number": 9,
+    "domain": "기존 솔루션의 지속적 개선",
+    "prompt": "모놀리식 EC2 애플리케이션을 점진적으로 마이크로서비스로 전환하면서 기존 트래픽을 끊지 않고 일부 경로만 새 서비스로 보내려 한다. 가장 적합한 패턴은?",
+    "choices": [
+      { "label": "A", "text": "한 번에 전체를 재작성해 교체" },
+      { "label": "B", "text": "스트랭글러 무화과(Strangler Fig) 패턴으로 ALB/ API GW 경로별 라우팅을 통해 점진 이전" },
+      { "label": "C", "text": "모놀리식을 그대로 둔다" },
+      { "label": "D", "text": "모든 기능을 단일 Lambda로 옮긴다" }
+    ],
+    "answer": "B",
+    "explanation": "스트랭글러 패턴은 ALB/API Gateway 라우팅으로 경로를 하나씩 새 서비스로 옮겨 위험을 분산하며 점진 전환한다. 일괄 재작성(A)은 고위험, 방치(C)는 개선 없음, 단일 Lambda 집약(D)은 또 다른 모놀리식."
+  },
+  {
+    "number": 10,
+    "domain": "기존 솔루션의 지속적 개선",
+    "prompt": "온프레미스에서 NFS 기반 파일 공유에 의존하는 애플리케이션을 변경 없이 AWS로 옮기되, 클라우드 측 파일 시스템과 자주 동기화하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "수동으로 파일을 복사" },
+      { "label": "B", "text": "AWS DataSync로 온프레미스 NFS와 EFS/S3 간 데이터를 자동 동기화" },
+      { "label": "C", "text": "이메일로 파일을 전송" },
+      { "label": "D", "text": "애플리케이션을 전면 재작성" }
+    ],
+    "answer": "B",
+    "explanation": "DataSync는 온프레미스 NFS/SMB와 EFS·FSx·S3 간 대량 데이터를 가속·검증하며 예약 동기화한다. 수동 복사(A)·이메일(C)은 비효율·비신뢰, 전면 재작성(D)은 '변경 없이' 요구에 어긋난다."
+  },
+  {
+    "number": 11,
+    "domain": "기존 솔루션의 지속적 개선",
+    "prompt": "비용이 과다한 대규모 EC2 플릿의 사용 패턴을 분석해 적정 크기·적합한 구매 옵션을 권장받아 비용을 최적화하려 한다. 적절한 조치 2가지는? (2개 선택)",
+    "choices": [
+      { "label": "A", "text": "Compute Optimizer 권장으로 인스턴스를 적정 크기로 조정" },
+      { "label": "B", "text": "꾸준한 기준 부하에 Savings Plans/RI를, 가변 부분에 스팟을 적용" },
+      { "label": "C", "text": "모든 인스턴스를 최대 크기로 통일" },
+      { "label": "D", "text": "비용 분석 없이 온디맨드만 유지" }
+    ],
+    "answer": "A, B",
+    "explanation": "Compute Optimizer로 적정 크기를 찾고, 워크로드 특성에 맞춰 기준 부하는 SP/RI, 내결함 가변 부하는 스팟으로 구매 전략을 혼합하면 비용이 크게 준다. 최대 통일(C)·온디맨드만(D)은 낭비를 키운다."
+  },
+  {
+    "number": 12,
+    "domain": "마이그레이션 및 현대화 가속",
+    "prompt": "수백 대의 온프레미스 VM 포트폴리오를 AWS로 이전하기 전에 의존성·우측 크기·비용을 평가하고 마이그레이션 계획을 세우려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "감으로 인스턴스 크기를 정한다" },
+      { "label": "B", "text": "AWS Application Discovery Service/Migration Hub로 인벤토리·의존성·권장 크기를 수집·계획" },
+      { "label": "C", "text": "모든 VM을 가장 큰 인스턴스로 옮긴다" },
+      { "label": "D", "text": "마이그레이션 계획 없이 즉시 lift-and-shift" }
+    ],
+    "answer": "B",
+    "explanation": "Application Discovery Service는 서버·의존성·사용량을 수집하고 Migration Hub가 이를 통합해 우측 크기·비용 추정·계획을 지원한다. 감(A)·최대 크기(C)·무계획 이전(D)은 비용·위험을 키운다."
+  },
+  {
+    "number": 13,
+    "domain": "마이그레이션 및 현대화 가속",
+    "prompt": "이기종 데이터베이스(Oracle → Aurora PostgreSQL)로 스키마를 변환하고 운영 중단을 최소화하며 데이터를 지속 복제 이전하려 한다. 가장 적합한 조합은?",
+    "choices": [
+      { "label": "A", "text": "수동으로 스키마를 다시 작성하고 일괄 덤프/복원" },
+      { "label": "B", "text": "AWS SCT로 스키마 변환 + DMS로 CDC 기반 지속 복제 후 컷오버" },
+      { "label": "C", "text": "Oracle을 EC2에 그대로 둔다" },
+      { "label": "D", "text": "애플리케이션을 멈추고 며칠간 복사" }
+    ],
+    "answer": "B",
+    "explanation": "Schema Conversion Tool(SCT)로 이기종 스키마를 변환하고, DMS의 변경 데이터 캡처(CDC)로 가동 중 지속 복제해 다운타임을 최소화한 뒤 컷오버한다. 수동/일괄(A)·장기 중단 복사(D)는 위험·다운타임이 크고, C는 마이그레이션이 아니다."
+  },
+  {
+    "number": 14,
+    "domain": "마이그레이션 및 현대화 가속",
+    "prompt": "네트워크 대역폭이 제한된 환경에서 수십 PB의 데이터를 AWS로 이전해야 한다. 온라인 전송이 비현실적일 때 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "인터넷으로 전부 업로드" },
+      { "label": "B", "text": "AWS Snowball/Snow Family 디바이스로 오프라인 대량 전송" },
+      { "label": "C", "text": "Direct Connect 1Gbps 회선으로 수개월 전송" },
+      { "label": "D", "text": "이메일 첨부로 전송" }
+    ],
+    "answer": "B",
+    "explanation": "수십 PB를 제한된 대역폭에서 옮길 때는 Snow Family 디바이스로 오프라인 물리 운송이 가장 현실적·경제적이다. 인터넷(A)·1Gbps(C)는 시간이 비현실적이고, 이메일(D)은 말도 안 된다."
+  },
+  {
+    "number": 15,
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "prompt": "조직의 여러 계정·VPC가 동일한 인터페이스 엔드포인트(예: 여러 AWS 서비스 PrivateLink)를 중복 생성해 비용·관리가 늘어난다. 중앙에서 공유하려는 가장 적합한 접근은?",
+    "choices": [
+      { "label": "A", "text": "각 VPC가 개별 엔드포인트를 계속 만든다" },
+      { "label": "B", "text": "중앙 네트워킹 계정에 엔드포인트를 두고 Transit Gateway/공유 VPC로 접근을 집중" },
+      { "label": "C", "text": "퍼블릭 인터넷으로 서비스에 접근" },
+      { "label": "D", "text": "엔드포인트를 사용하지 않는다" }
+    ],
+    "answer": "B",
+    "explanation": "중앙 네트워킹 계정에 엔드포인트를 배치하고 Transit Gateway/공유 VPC로 다른 계정이 경유하게 하면 중복·비용을 줄인다. 개별 생성(A)은 중복 비용, 퍼블릭 접근(C)은 사설 요구 위반, 미사용(D)은 보안성 저하."
+  },
+  {
+    "number": 16,
+    "domain": "새로운 솔루션을 위한 설계",
+    "prompt": "규제 산업 고객이 모든 계정에서 저장 데이터 암호화 키를 자체적으로 통제하고, 키 사용을 세밀히 감사·교체하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "AWS 관리형 키만 사용하고 통제는 포기" },
+      { "label": "B", "text": "고객 관리형 KMS 키(키 정책·자동 교체·CloudTrail 감사)를 사용하거나 규제 요구 시 CloudHSM 활용" },
+      { "label": "C", "text": "암호화를 비활성화" },
+      { "label": "D", "text": "키를 평문으로 S3에 저장" }
+    ],
+    "answer": "B",
+    "explanation": "고객 관리형 KMS 키는 키 정책으로 세밀한 통제, 자동 교체, CloudTrail 감사를 제공하며, 전용 HSM이 필요한 규제엔 CloudHSM을 쓴다. AWS 관리형 전용(A)은 통제 약함, 비활성화(C)·평문(D)은 규제 위반."
+  },
+  {
+    "number": 17,
+    "domain": "기존 솔루션의 지속적 개선",
+    "prompt": "ALB 뒤 웹 계층이 특정 지역에서 발생하는 대규모 봇·DDoS 트래픽과 애플리케이션 계층 공격으로 간헐 장애를 겪는다. 운영 부담을 줄이며 종합 방어하려는 가장 적합한 조합은?",
+    "choices": [
+      { "label": "A", "text": "보안 그룹만으로 모든 IP를 수동 차단" },
+      { "label": "B", "text": "AWS WAF(속도 기반·지역·관리형 규칙) + Shield Advanced로 L7/DDoS 방어" },
+      { "label": "C", "text": "서버를 더 크게 만든다" },
+      { "label": "D", "text": "웹사이트를 잠시 내린다" }
+    ],
+    "answer": "B",
+    "explanation": "WAF의 속도 기반·지역·관리형 규칙으로 L7 공격·봇을 막고 Shield Advanced로 대규모 DDoS를 완화·대응한다. 수동 IP 차단(A)은 확장 불가, 서버 확대(C)는 근본 해결이 아니며, 다운(D)은 가용성 포기."
+  },
+  {
+    "number": 18,
+    "domain": "마이그레이션 및 현대화 가속",
+    "prompt": "온프레미스 애플리케이션을 코드 변경 없이 빠르게 AWS로 옮긴 뒤 점진적으로 현대화하려 한다. 자동화된 lift-and-shift(rehost)를 위한 가장 적합한 서비스는?",
+    "choices": [
+      { "label": "A", "text": "각 서버를 수동으로 AMI화" },
+      { "label": "B", "text": "AWS Application Migration Service(MGN)로 자동 rehost" },
+      { "label": "C", "text": "애플리케이션을 전부 재작성" },
+      { "label": "D", "text": "데이터만 S3에 올린다" }
+    ],
+    "answer": "B",
+    "explanation": "Application Migration Service(MGN)는 소스 서버를 지속 복제해 최소 다운타임으로 EC2에 자동 rehost하므로 빠른 lift-and-shift에 적합하다. 수동 AMI(A)는 느리고, 전면 재작성(C)은 '코드 변경 없이'에 위배, 데이터만 이전(D)은 부분적이다."
+  },
+  {
+    "number": 19,
+    "domain": "복잡한 조직을 위한 솔루션 설계",
+    "prompt": "조직 전체 계정의 보안 발견 사항(GuardDuty, Inspector, Macie 등)을 중앙에서 수집·우선순위화하고 통합 대응하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "각 계정에서 개별적으로 발견 사항을 확인" },
+      { "label": "B", "text": "AWS Security Hub로 다계정 발견 사항을 집계·표준화하고 자동 대응을 연동" },
+      { "label": "C", "text": "발견 사항을 스프레드시트에 수기 입력" },
+      { "label": "D", "text": "보안 서비스를 모두 끈다" }
+    ],
+    "answer": "B",
+    "explanation": "Security Hub는 GuardDuty·Inspector·Macie 등 여러 소스의 발견 사항을 ASFF로 표준화·집계하고 보안 표준 점검·자동 대응을 제공한다. 개별 확인(A)·수기 입력(C)은 비효율, 서비스 비활성화(D)는 가시성 상실."
+  },
+  {
+    "number": 20,
+    "domain": "새로운 솔루션을 위한 설계",
+    "prompt": "예측이 어려운 간헐적·버스트성 워크로드를 가진 신규 분석 데이터베이스를 운영 부담과 유휴 비용 없이 자동 확장·축소되게 하려 한다. 가장 적합한 것은?",
+    "choices": [
+      { "label": "A", "text": "대형 프로비저닝 RDS 인스턴스를 상시 가동" },
+      { "label": "B", "text": "Aurora Serverless v2로 용량을 부하에 따라 자동 확장·축소" },
+      { "label": "C", "text": "EC2에 직접 DB를 설치하고 수동 확장" },
+      { "label": "D", "text": "고정 크기 인스턴스를 과다 프로비저닝" }
+    ],
+    "answer": "B",
+    "explanation": "Aurora Serverless v2는 부하에 따라 용량을 세밀하게 자동 확장·축소해 버스트성 워크로드의 운영 부담과 유휴 비용을 줄인다. 상시 대형(A)·과다 프로비저닝(D)은 유휴 비용, EC2 수동(C)은 운영 부담이 크다."
+  }
+]
