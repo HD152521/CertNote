@@ -1,12 +1,17 @@
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { AppError, errorResponse } from '@/lib/auth/errors';
 import { query } from '@/lib/db';
+import { clientIp, rateLimit } from '@/lib/rateLimit';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 // 업그레이드 대기자 등록(결제 전 수요 수집). 중복 이메일은 조용히 무시한다.
 export async function POST(req: Request) {
   try {
+    const rl = rateLimit(`waitlist:${clientIp(req)}`, 5, 60_000);
+    if (!rl.ok) {
+      throw new AppError(429, 'rate_limited', `너무 많이 시도했습니다. ${rl.retryAfter}초 후 다시 시도해 주세요.`);
+    }
     const body = await req.json().catch(() => null);
     const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
     if (!EMAIL_RE.test(email)) {

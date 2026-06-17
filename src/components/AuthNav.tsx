@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { Menu, X } from 'lucide-react';
 import { emitAuthChange, onAuthChange } from '@/lib/auth/authEvents';
 
 interface Me {
@@ -13,10 +14,12 @@ interface Me {
 }
 
 const LINK_CLASS = 'px-2.5 py-1 text-xs rounded-md text-fg-muted hover:bg-bg-subtle hover:text-fg transition';
+const MENU_ITEM = 'block w-full rounded-md px-2 py-1.5 text-left text-sm text-fg-muted hover:bg-bg-subtle hover:text-fg transition';
 
 export function AuthNav() {
   // undefined = 로딩 중, null = 비로그인, Me = 로그인
   const [user, setUser] = useState<Me | null | undefined>(undefined);
+  const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -30,9 +33,8 @@ export function AuthNav() {
     }
   }, []);
 
-  // 마운트 + 경로 변경 시 재조회 (헤더는 재마운트되지 않으므로 필요).
-  useEffect(() => { refresh(); }, [refresh, pathname]);
-  // 로그인/로그아웃 이벤트 시 재조회.
+  // 마운트 + 경로 변경 시 재조회. 경로가 바뀌면 모바일 메뉴는 닫는다.
+  useEffect(() => { refresh(); setMenuOpen(false); }, [refresh, pathname]);
   useEffect(() => onAuthChange(refresh), [refresh]);
 
   async function handleLogout() {
@@ -42,6 +44,7 @@ export function AuthNav() {
       // 로그아웃 요청 실패해도 클라이언트 상태는 비운다.
     }
     setUser(null);
+    setMenuOpen(false);
     emitAuthChange();
     router.push('/');
     router.refresh();
@@ -53,19 +56,56 @@ export function AuthNav() {
     return <Link href="/login" className={LINK_CLASS}>로그인</Link>;
   }
 
+  const links = [
+    { href: '/exam', label: '모의고사' },
+    { href: '/dashboard', label: '대시보드' },
+    { href: '/notebook', label: '오답노트' },
+    ...(user.role === 'admin' ? [{ href: '/admin', label: '관리자' }] : []),
+  ];
+
+  const badge = user.plan === 'pro' ? (
+    <span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">Pro</span>
+  ) : (
+    <Link href="/pricing" className="rounded-md border border-accent/40 px-2 py-0.5 text-xs font-medium text-accent transition hover:bg-accent/10">업그레이드</Link>
+  );
+
   return (
     <div className="flex items-center gap-1">
-      <Link href="/exam" className={LINK_CLASS}>모의고사</Link>
-      <Link href="/dashboard" className={LINK_CLASS}>대시보드</Link>
-      <Link href="/notebook" className={LINK_CLASS}>오답노트</Link>
-      {user.role === 'admin' && <Link href="/admin" className={LINK_CLASS}>관리자</Link>}
-      {user.plan === 'pro' ? (
-        <span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">Pro</span>
-      ) : (
-        <Link href="/pricing" className="rounded-md border border-accent/40 px-2 py-0.5 text-xs font-medium text-accent hover:bg-accent/10 transition">업그레이드</Link>
-      )}
-      <span className="hidden sm:inline px-1 text-xs text-fg-faint">{user.email}</span>
-      <button type="button" onClick={handleLogout} className={LINK_CLASS}>로그아웃</button>
+      {/* 데스크탑: 인라인 메뉴 */}
+      <div className="hidden items-center gap-1 sm:flex">
+        {links.map((l) => (<Link key={l.href} href={l.href} className={LINK_CLASS}>{l.label}</Link>))}
+        {badge}
+        <span className="max-w-[14ch] truncate px-1 text-xs text-fg-faint">{user.email}</span>
+        <button type="button" onClick={handleLogout} className={LINK_CLASS}>로그아웃</button>
+      </div>
+
+      {/* 모바일: 배지 + 메뉴 버튼 + 드롭다운 (가로로 펼쳐져 줄바꿈되던 문제 해결) */}
+      <div className="relative flex items-center gap-1 sm:hidden">
+        {badge}
+        <button
+          type="button"
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-label="계정 메뉴"
+          aria-expanded={menuOpen}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted transition hover:bg-bg-subtle hover:text-fg"
+        >
+          {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+        </button>
+        {menuOpen && (
+          <>
+            <div className="fixed inset-0 z-40" aria-hidden onClick={() => setMenuOpen(false)} />
+            <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-44 rounded-lg border border-border bg-bg-elevated p-1.5 shadow-lg">
+              <p className="truncate px-2 py-1 text-[11px] text-fg-faint">{user.email}</p>
+              {links.map((l) => (
+                <Link key={l.href} href={l.href} role="menuitem" onClick={() => setMenuOpen(false)} className={MENU_ITEM}>
+                  {l.label}
+                </Link>
+              ))}
+              <button type="button" onClick={handleLogout} role="menuitem" className={MENU_ITEM}>로그아웃</button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
