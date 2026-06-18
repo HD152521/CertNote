@@ -7,13 +7,19 @@ import { useEffect } from 'react';
 export function ServiceWorkerRegister() {
   useEffect(() => {
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
-    const onLoad = () => {
+    const register = () => {
       navigator.serviceWorker.register('/sw.js').catch(() => {
         /* 등록 실패는 무시 */
       });
     };
-    window.addEventListener('load', onLoad);
-    return () => window.removeEventListener('load', onLoad);
+    // 마운트 시점에 이미 load가 끝났으면 'load'는 다시 안 뜬다 → 즉시 등록.
+    // 아직 로딩 중이면 load 이후 등록(초기 페인트 경쟁 회피).
+    if (document.readyState === 'complete') {
+      register();
+      return;
+    }
+    window.addEventListener('load', register, { once: true });
+    return () => window.removeEventListener('load', register);
   }, []);
   return null;
 }
