@@ -111,6 +111,32 @@ try {
   `);
   await pool.query('CREATE INDEX IF NOT EXISTS idx_email_verifications_user ON email_verifications (user_id);');
   console.log('✓ email_verifications 테이블 준비 완료');
+
+  // 알림(푸시) 설정 컬럼. 기존 사용자는 DEFAULT로 켜진 상태/08시(KST)로 수렴.
+  // last_seen_at: N일 미방문 복귀 알림 판정용. last_inactive_notif_at: 복귀 알림 과발송 방지.
+  await pool.query(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS last_seen_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+      ADD COLUMN IF NOT EXISTS notify_review         BOOLEAN     NOT NULL DEFAULT true,
+      ADD COLUMN IF NOT EXISTS notify_inactive       BOOLEAN     NOT NULL DEFAULT true,
+      ADD COLUMN IF NOT EXISTS reminder_hour         INT         NOT NULL DEFAULT 8,
+      ADD COLUMN IF NOT EXISTS last_inactive_notif_at TIMESTAMPTZ;
+  `);
+  console.log('✓ users 알림 설정 컬럼 준비 완료');
+
+  // 웹 푸시 구독. 한 사용자가 여러 기기를 가질 수 있어 endpoint를 UNIQUE 키로.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id         BIGSERIAL PRIMARY KEY,
+      user_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      endpoint   TEXT NOT NULL UNIQUE,
+      p256dh     TEXT NOT NULL,
+      auth       TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions (user_id);');
+  console.log('✓ push_subscriptions 테이블 준비 완료');
 } catch (err) {
   console.error('마이그레이션 실패:', err);
   process.exit(1);

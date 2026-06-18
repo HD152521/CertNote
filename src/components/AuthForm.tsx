@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { BellRing } from 'lucide-react';
 import { emitAuthChange } from '@/lib/auth/authEvents';
+import { enablePush, isPushSupported } from '@/lib/push/client';
 
 type Mode = 'login' | 'signup';
 
@@ -25,6 +27,14 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // 회원가입 성공 후, 알림 권한을 묻는 단계로 전환(지원 브라우저에 한해).
+  const [askPush, setAskPush] = useState(false);
+
+  function goNext() {
+    const next = params.get('next') || '/';
+    router.push(next);
+    router.refresh();
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,14 +52,54 @@ export function AuthForm({ mode }: AuthFormProps) {
         return;
       }
       emitAuthChange();
-      const next = params.get('next') || '/';
-      router.push(next);
-      router.refresh();
+      // 가입 직후엔 알림 권한 단계로(지원 시). 그 외/미지원이면 바로 이동.
+      if (mode === 'signup' && isPushSupported()) {
+        setAskPush(true);
+        return;
+      }
+      goNext();
     } catch {
       setError('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleEnablePush() {
+    setSubmitting(true);
+    await enablePush();
+    setSubmitting(false);
+    goNext();
+  }
+
+  if (askPush) {
+    return (
+      <div className="mx-auto max-w-sm space-y-6 py-12 text-center">
+        <BellRing className="mx-auto h-10 w-10 text-accent" />
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold tracking-tight">학습 알림을 받을까요?</h1>
+          <p className="text-sm text-fg-muted">복습할 카드가 쌓이면 매일 정해진 시각에 알려드려요. 설정에서 언제든 끌 수 있어요.</p>
+        </div>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={handleEnablePush}
+            disabled={submitting}
+            className="w-full rounded-md border border-border-strong px-3 py-2 text-sm font-medium transition hover:bg-fg/5 disabled:opacity-50"
+          >
+            {submitting ? '설정 중…' : '알림 받기'}
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={submitting}
+            className="w-full px-3 py-2 text-sm text-fg-muted transition hover:text-fg disabled:opacity-50"
+          >
+            나중에
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
