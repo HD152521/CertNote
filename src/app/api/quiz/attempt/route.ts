@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/lib/auth/currentUser';
 import { getAttemptService } from '@/lib/quiz/attemptService';
 import { getEntitlementService } from '@/lib/entitlement/factory';
 import { AppError, errorResponse } from '@/lib/auth/errors';
+import { recordActivity } from '@/lib/study/activity';
 
 // 로그인 사용자의 퀴즈 풀이 1건 기록. 정답 여부는 서버가 판정해 반환.
 export async function POST(req: Request) {
@@ -17,6 +18,7 @@ export async function POST(req: Request) {
     // 무료 사용자는 Week1 문제만 풀이 기록 가능(우회 방지 — 서버 권위 판정).
     await getEntitlementService().assertQuestionAccess(session.sub, body.questionId);
     const result = await getAttemptService().record(session.sub, body.questionId, body.selected);
+    await recordActivity(session.sub).catch(() => {}); // 스트릭용 활동 기록(실패 무시)
     return Response.json(result);
   } catch (err) {
     return errorResponse(err);

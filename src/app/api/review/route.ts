@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/lib/auth/currentUser';
 import { getEntitlementService } from '@/lib/entitlement/factory';
 import { AppError, errorResponse } from '@/lib/auth/errors';
 import { getReviewService } from '@/lib/review/factory';
+import { recordActivity } from '@/lib/study/activity';
 
 // 복습 한 문제 채점 + 다음 일정 갱신. 정답 여부는 서버가 판정한다.
 export async function POST(req: Request) {
@@ -17,6 +18,7 @@ export async function POST(req: Request) {
     // 무료 사용자는 Week1 문제만 복습 가능.
     await getEntitlementService().assertQuestionAccess(session.sub, body.questionId);
     const result = await getReviewService().review(session.sub, body.questionId, body.selected);
+    await recordActivity(session.sub).catch(() => {}); // 스트릭용 활동 기록(실패 무시)
     return Response.json(result);
   } catch (err) {
     return errorResponse(err);

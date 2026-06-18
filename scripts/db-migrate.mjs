@@ -137,6 +137,30 @@ try {
   `);
   await pool.query('CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions (user_id);');
   console.log('✓ push_subscriptions 테이블 준비 완료');
+
+  // 합격 플랜: 자격증별 시험일 1건. 오늘 학습 분량은 콘텐츠 day를 생성일→시험일에 균등 분배해 계산.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS study_plans (
+      id         BIGSERIAL PRIMARY KEY,
+      user_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      cert_slug  TEXT NOT NULL,
+      exam_date  DATE NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (user_id, cert_slug)
+    );
+  `);
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_study_plans_user ON study_plans (user_id);');
+  console.log('✓ study_plans 테이블 준비 완료');
+
+  // 학습 스트릭용 일별 활동 기록(KST 날짜). 읽기/퀴즈/복습 중 하나라도 하면 1행.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS daily_activity (
+      user_id       BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      activity_date DATE NOT NULL,
+      PRIMARY KEY (user_id, activity_date)
+    );
+  `);
+  console.log('✓ daily_activity 테이블 준비 완료');
 } catch (err) {
   console.error('마이그레이션 실패:', err);
   process.exit(1);
