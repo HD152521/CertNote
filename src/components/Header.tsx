@@ -1,15 +1,15 @@
 import Link from 'next/link';
-import type { CertMeta } from '@/lib/content';
 import { ThemeToggle } from './ThemeToggle';
 import { SearchButton } from './SearchButton';
 import { AuthNav } from './AuthNav';
 import { MobileNav } from './MobileNav';
 import type { CertTree } from './SidebarNav';
-import { cn } from '@/lib/cn';
 
-interface HeaderProps { certs: CertMeta[]; certTrees: CertTree[]; }
+interface HeaderProps { certTrees: CertTree[]; }
 
-export function Header({ certs, certTrees }: HeaderProps) {
+// 자격증 목록은 헤더에 두지 않는다. lg+는 왼쪽 사이드바, lg 미만은 햄버거 드로어가 담당한다.
+// (헤더에 코드 칩을 같이 두면 계정 메뉴와 겹쳐 데스크탑에서도 줄바꿈이 발생했다.)
+export function Header({ certTrees }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg/80 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center justify-between gap-4 px-4 lg:px-6">
@@ -22,16 +22,6 @@ export function Header({ certs, certTrees }: HeaderProps) {
         </Link>
         </div>
         <nav className="flex items-center gap-2">
-          <ul className="hidden md:flex items-center gap-1">
-            {certs.map((c) => (
-              <li key={c.slug}>
-                <Link href={`/aws-certs/${c.slug}`}
-                  className={cn('px-2.5 py-1 text-xs font-mono rounded-md text-fg-muted', 'hover:bg-bg-subtle hover:text-fg transition')}
-                  title={c.name}
-                >{c.code}</Link>
-              </li>
-            ))}
-          </ul>
           <SearchButton />
           <ThemeToggle />
           <AuthNav />

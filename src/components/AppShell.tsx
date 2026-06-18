@@ -15,7 +15,7 @@ export async function AppShell({ certs, children }: AppShellProps) {
   return (
     <SearchProvider index={searchIndex}>
       <div className="flex min-h-screen flex-col">
-        <Header certs={certs} certTrees={certTrees} />
+        <Header certTrees={certTrees} />
         <div className="mx-auto flex w-full max-w-[1400px] flex-1 px-4 lg:px-6">
           <Sidebar certTrees={certTrees} />
           <main className="min-w-0 flex-1 py-6 lg:py-10 lg:pl-8">{children}</main>
