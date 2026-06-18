@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { UserRound, X } from 'lucide-react';
 import { emitAuthChange, onAuthChange } from '@/lib/auth/authEvents';
 
@@ -20,7 +20,6 @@ export function AuthNav() {
   // undefined = 로딩 중, null = 비로그인, Me = 로그인
   const [user, setUser] = useState<Me | null | undefined>(undefined);
   const [menuOpen, setMenuOpen] = useState(false);
-  const router = useRouter();
   const pathname = usePathname();
 
   const refresh = useCallback(async () => {
@@ -39,15 +38,16 @@ export function AuthNav() {
 
   async function handleLogout() {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' });
     } catch {
       // 로그아웃 요청 실패해도 클라이언트 상태는 비운다.
     }
     setUser(null);
     setMenuOpen(false);
     emitAuthChange();
-    router.push('/');
-    router.refresh();
+    // 전체 새로고침으로 라우터 캐시를 통째로 비운다. router.push/refresh는 현재 경로만
+    // 갱신하므로, 로그인 중 캐시된 유료 페이지(2주차 등)가 로그아웃 후에도 그대로 보였다.
+    window.location.assign('/');
   }
 
   if (user === undefined) return null;
