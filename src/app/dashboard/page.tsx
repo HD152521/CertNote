@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { getDashboardData, type CertProgress } from '@/lib/dashboard/dashboardService';
+import { listCerts } from '@/lib/content';
+import { StudyPlanWidget } from '@/components/study/StudyPlanWidget';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,6 +66,7 @@ export default async function DashboardPage() {
 
   const data = await getDashboardData(user.sub);
   const hasActivity = data.attempts > 0 || data.review.total > 0;
+  const certOptions = (await listCerts('aws-certs')).map((c) => ({ slug: c.slug, name: c.name, code: c.code }));
 
   return (
     <div className="mx-auto max-w-3xl space-y-8 py-10">
@@ -72,6 +75,9 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-semibold tracking-tight">학습 대시보드</h1>
         <p className="text-sm text-fg-muted">{user.email}님의 학습 현황</p>
       </header>
+
+      {/* 합격 플랜 + 스트릭 — 활동 유무와 무관하게 상단에 노출 */}
+      <StudyPlanWidget certs={certOptions} />
 
       {!hasActivity ? (
         <div className="rounded-xl border border-border bg-bg-elevated p-8 text-center">
