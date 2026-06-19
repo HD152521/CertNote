@@ -4,6 +4,14 @@ import { FREE_WEEK } from './entitlement/policy';
 
 const CONTENT_ROOT = path.join(process.cwd(), 'content');
 
+// 콘텐츠는 빌드 후 불변이라 프로덕션에선 프로세스 단위로 메모이즈한다(디스크 재독 제거).
+// day 페이지(getDay→getAllDays)·대시보드·알림 크론이 모두 이 핫패스를 공유하므로 효과가 크다.
+// 개발 중엔 캐시하지 않아 콘텐츠 편집이 즉시 반영된다.
+const CONTENT_CACHE = process.env.NODE_ENV === 'production';
+const indexCache = new Map<string, CategoryIndex>();
+const metaCache = new Map<string, CertMeta>();
+const daysCache = new Map<string, DayRef[]>();
+
 export type CertLevel = 'associate' | 'professional';
 
 export interface CertMeta {
@@ -66,13 +74,22 @@ async function readJson<T>(p: string): Promise<T> {
 }
 
 export async function getCategoryIndex(category: string): Promise<CategoryIndex> {
+  const cached = CONTENT_CACHE ? indexCache.get(category) : undefined;
+  if (cached) return cached;
   const p = path.join(CONTENT_ROOT, category, 'index.json');
-  return readJson<CategoryIndex>(p);
+  const idx = await readJson<CategoryIndex>(p);
+  if (CONTENT_CACHE) indexCache.set(category, idx);
+  return idx;
 }
 
 export async function getCertMeta(category: string, slug: string): Promise<CertMeta> {
+  const key = `${category}/${slug}`;
+  const cached = CONTENT_CACHE ? metaCache.get(key) : undefined;
+  if (cached) return cached;
   const p = path.join(CONTENT_ROOT, category, slug, 'meta.json');
-  return readJson<CertMeta>(p);
+  const meta = await readJson<CertMeta>(p);
+  if (CONTENT_CACHE) metaCache.set(key, meta);
+  return meta;
 }
 
 export async function getCertReadme(category: string, slug: string): Promise<string> {
@@ -126,6 +143,9 @@ export function previewOf(body: string, max: number = PREVIEW_MAX): string {
 }
 
 export async function getAllDays(category: string, slug: string): Promise<DayRef[]> {
+  const key = `${category}/${slug}`;
+  const cached = CONTENT_CACHE ? daysCache.get(key) : undefined;
+  if (cached) return cached;
   const meta = await getCertMeta(category, slug);
   const days: DayRef[] = [];
   for (let w = 1; w <= meta.weeks; w++) {
@@ -136,6 +156,7 @@ export async function getAllDays(category: string, slug: string): Promise<DayRef
       days.push({ category, slug, week: w, day: d, title: extractTitle(body, d), href: `/${category}/${slug}/week${w}/day${d}` });
     }
   }
+  if (CONTENT_CACHE) daysCache.set(key, days);
   return days;
 }
 
