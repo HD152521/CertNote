@@ -25,10 +25,6 @@ interface PlanRow {
   created_at: string;
 }
 
-function ymd(value: string): string {
-  return value.slice(0, 10);
-}
-
 // 두 'YYYY-MM-DD' 사이 일수(b - a).
 function daysBetween(a: string, b: string): number {
   const da = new Date(`${a}T00:00:00Z`).getTime();
@@ -37,12 +33,18 @@ function daysBetween(a: string, b: string): number {
 }
 
 // 사용자의 모든 플랜(시험일 가까운 순).
+// 날짜는 SQL에서 'YYYY-MM-DD' 문자열로 변환해 받는다. node-pg는 DATE/timestamptz를
+// JS Date로 파싱하는데, 그러면 (1) 문자열 메서드가 깨지고 (2) 타임존 변환으로 하루 밀린다.
+// exam_date는 그대로, created_at(시작일)은 KST 날짜로 변환.
 export async function listPlans(userId: string): Promise<StudyPlan[]> {
   const rows = await query<PlanRow>(
-    'SELECT cert_slug, exam_date, created_at FROM study_plans WHERE user_id = $1 ORDER BY exam_date ASC',
+    `SELECT cert_slug,
+            to_char(exam_date, 'YYYY-MM-DD') AS exam_date,
+            to_char(created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
+     FROM study_plans WHERE user_id = $1 ORDER BY exam_date ASC`,
     [userId],
   );
-  return rows.map((r) => ({ certSlug: r.cert_slug, examDate: ymd(r.exam_date), createdAt: r.created_at }));
+  return rows.map((r) => ({ certSlug: r.cert_slug, examDate: r.exam_date, createdAt: r.created_at }));
 }
 
 // 시험일 설정(upsert). examDate는 'YYYY-MM-DD'.
@@ -64,7 +66,7 @@ export async function computeToday(plan: StudyPlan): Promise<TodayPortion> {
   const days = await getAllDays('aws-certs', plan.certSlug);
   const totalDays = days.length;
   const today = kstToday();
-  const start = ymd(plan.createdAt);
+  const start = plan.createdAt; // listPlans/크론에서 이미 'YYYY-MM-DD'(KST)로 받음
   const dday = daysBetween(today, plan.examDate);
 
   // 학습 가능 일수(시작일~시험일 전날). 최소 1.

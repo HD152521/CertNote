@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/lib/auth/currentUser';
 import { AppError, errorResponse } from '@/lib/auth/errors';
 import { clearPlan, listPlans, setPlan } from '@/lib/study/plan';
 import { kstToday } from '@/lib/study/activity';
+import { listCerts } from '@/lib/content';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,11 @@ export async function PUT(req: Request) {
     }
     if (examDate < kstToday()) {
       throw new AppError(400, 'past_date', '시험일은 오늘 이후여야 합니다.');
+    }
+    // 실존 자격증만 허용 — 불량 slug가 들어오면 computeToday(getCertMeta)가 터져 대시보드·크론을 깨뜨린다.
+    const certs = await listCerts('aws-certs');
+    if (!certs.some((c) => c.slug === certSlug)) {
+      throw new AppError(400, 'unknown_cert', '존재하지 않는 자격증입니다.');
     }
     await setPlan(user.sub, certSlug, examDate);
     return Response.json({ ok: true, plans: await listPlans(user.sub) });

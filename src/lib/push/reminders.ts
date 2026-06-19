@@ -59,8 +59,11 @@ export async function runReminders(kstHour: number): Promise<ReminderResult> {
   }
 
   // 2) 합격 플랜: 알림 켬 + 해당 시각 + 시험일 안 지남 + 구독 존재. 오늘 분량을 안내.
+  // 날짜는 SQL에서 문자열로 변환(node-pg의 Date 파싱·타임존 밀림 회피). created_at은 KST 날짜.
   const planRows = await query<PlanRow>(
-    `SELECT sp.user_id, sp.cert_slug, sp.exam_date, sp.created_at,
+    `SELECT sp.user_id, sp.cert_slug,
+            to_char(sp.exam_date, 'YYYY-MM-DD') AS exam_date,
+            to_char(sp.created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at,
             (SELECT COUNT(*) FROM review_items r WHERE r.user_id = sp.user_id AND r.due_at <= now()) AS due
      FROM study_plans sp
      JOIN users u ON u.id = sp.user_id
@@ -73,27 +76,32 @@ export async function runReminders(kstHour: number): Promise<ReminderResult> {
   let planSent = 0;
   for (const row of planRows) {
     if (sent.has(row.user_id)) continue; // 복귀 알림으로 이미 보냄, 또는 이 사용자 다른 플랜 이미 처리.
-    const portion = await computeToday({ certSlug: row.cert_slug, examDate: row.exam_date.slice(0, 10), createdAt: row.created_at });
-    const due = Number(row.due);
-    const reviewSuffix = due > 0 ? ` · 복습 ${due}개` : '';
-    let body: string;
-    if (portion.finished) {
-      body = due > 0 ? `예정 분량 완료! 복습 ${due}개로 마무리해요.` : `예정 분량을 모두 봤어요. 오늘은 복습으로 다져요 💪`;
-    } else if (portion.items.length > 0) {
-      body = `오늘 학습 ${portion.items.length}개${reviewSuffix}`;
-    } else if (due > 0) {
-      body = `복습 ${due}개가 기다리고 있어요.`;
-    } else {
-      continue; // 오늘 보낼 내용 없음.
+    try {
+      const portion = await computeToday({ certSlug: row.cert_slug, examDate: row.exam_date, createdAt: row.created_at });
+      const due = Number(row.due);
+      const reviewSuffix = due > 0 ? ` · 복습 ${due}개` : '';
+      let body: string;
+      if (portion.finished) {
+        body = due > 0 ? `예정 분량 완료! 복습 ${due}개로 마무리해요.` : `예정 분량을 모두 봤어요. 오늘은 복습으로 다져요 💪`;
+      } else if (portion.items.length > 0) {
+        body = `오늘 학습 ${portion.items.length}개${reviewSuffix}`;
+      } else if (due > 0) {
+        body = `복습 ${due}개가 기다리고 있어요.`;
+      } else {
+        continue; // 오늘 보낼 내용 없음.
+      }
+      const n = await sendToUser(row.user_id, {
+        title: `${ddayLabel(portion.dday)} · 오늘의 학습`,
+        body,
+        url: `${APP_URL}/dashboard`,
+        tag: 'plan',
+      });
+      if (n > 0) planSent += 1;
+      sent.add(row.user_id);
+    } catch (err) {
+      // 한 사용자의 오류(예: 콘텐츠 누락)가 전체 발송을 막지 않도록 격리.
+      console.error('[reminders] 플랜 처리 실패 user=%s:', row.user_id, err);
     }
-    const n = await sendToUser(row.user_id, {
-      title: `${ddayLabel(portion.dday)} · 오늘의 학습`,
-      body,
-      url: `${APP_URL}/dashboard`,
-      tag: 'plan',
-    });
-    if (n > 0) planSent += 1;
-    sent.add(row.user_id);
   }
 
   // 3) 복습 리마인더: 플랜 없는 사용자 중 마감 복습카드 있는 사람.
