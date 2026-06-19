@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Check, X } from 'lucide-react';
 import type { QuizQuestion } from '@/lib/parseQuiz';
 import { answerCount, isMultiAnswer, parseCorrectSet } from '@/lib/quiz/correctness';
+import { TutorPanel } from '@/components/tutor/TutorPanel';
 import { cn } from '@/lib/cn';
 
 interface QuizProps {
@@ -102,7 +103,10 @@ export function Quiz({ question, questionId }: QuizProps) {
         <div className={cn('mt-4 rounded-md border p-3 text-sm', isCorrect ? 'border-success/40 bg-success/5' : 'border-danger/40 bg-danger/5')}>
           <p className="font-medium mb-1.5 text-fg">{isCorrect ? '✓ 정답!' : `✗ 정답: ${question.answer}`}</p>
           {question.explanation && (<p className="text-fg-muted whitespace-pre-wrap leading-relaxed">{question.explanation}</p>)}
-          <button type="button" onClick={reset} className="mt-2 text-xs text-fg-muted hover:text-fg underline underline-offset-4">다시 풀기</button>
+          {!isCorrect && questionId && (
+            <TutorPanel questionId={questionId} selected={multi ? [...picked].sort().join(',') : (picked[0] ?? '')} />
+          )}
+          <button type="button" onClick={reset} className="mt-2 block text-xs text-fg-muted hover:text-fg underline underline-offset-4">다시 풀기</button>
         </div>
       )}
     </div>
