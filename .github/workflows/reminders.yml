@@ -19,7 +19,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger reminders endpoint
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl -fsS -X GET "${{ secrets.APP_URL }}/api/cron/reminders" \
-            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+          # Secrets 미설정이면 조용히 건너뛴다(실패 메일 방지). 둘 다 설정해야 작동.
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "APP_URL/CRON_SECRET secrets 미설정 — 건너뜀. 활성화하려면 Settings → Secrets and variables → Actions 에 두 값을 추가하세요."
+            exit 0
+          fi
+          curl -fsS -X GET "$APP_URL/api/cron/reminders" \
+            -H "x-cron-secret: $CRON_SECRET" \
             --max-time 60
