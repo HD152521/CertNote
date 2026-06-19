@@ -36,14 +36,6 @@ function daysBetween(a: string, b: string): number {
   return Math.round((db - da) / 86_400_000);
 }
 
-export async function getPlan(userId: string, certSlug: string): Promise<StudyPlan | null> {
-  const rows = await query<PlanRow>(
-    'SELECT cert_slug, exam_date, created_at FROM study_plans WHERE user_id = $1 AND cert_slug = $2',
-    [userId, certSlug],
-  );
-  return rows[0] ? { certSlug: rows[0].cert_slug, examDate: ymd(rows[0].exam_date), createdAt: rows[0].created_at } : null;
-}
-
 // 사용자의 모든 플랜(시험일 가까운 순).
 export async function listPlans(userId: string): Promise<StudyPlan[]> {
   const rows = await query<PlanRow>(

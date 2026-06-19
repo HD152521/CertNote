@@ -30,15 +30,20 @@ const REASON_MSG: Record<string, string> = {
 // 계정 설정의 알림 섹션. 기기 구독 on/off + 복습/미방문 토글 + 발송 시각.
 export function NotificationSettings() {
   const [supported] = useState(() => (typeof window === 'undefined' ? true : isPushSupported()));
+  const [loading, setLoading] = useState(true);
   const [subscribed, setSubscribed] = useState(false);
   const [prefs, setPrefs] = useState<NotifPrefs | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
-    const [sub, p] = await Promise.all([isSubscribed(), fetchPrefs()]);
-    setSubscribed(sub);
-    setPrefs(p);
+    try {
+      const [sub, p] = await Promise.all([isSubscribed(), fetchPrefs()]);
+      setSubscribed(sub);
+      setPrefs(p);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -70,6 +75,10 @@ export function NotificationSettings() {
     setPrefs(optimistic);
     const ok = await savePrefs(next);
     if (!ok) setPrefs(prev);
+  }
+
+  if (loading) {
+    return <div className="h-24 animate-pulse rounded-lg border border-border" />;
   }
 
   if (!supported) {

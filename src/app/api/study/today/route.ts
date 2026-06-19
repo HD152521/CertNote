@@ -1,7 +1,7 @@
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { AppError, errorResponse } from '@/lib/auth/errors';
 import { computeToday, listPlans } from '@/lib/study/plan';
-import { getStreak } from '@/lib/study/activity';
+import { getStreak, kstToday } from '@/lib/study/activity';
 import { listCerts } from '@/lib/content';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +17,7 @@ export async function GET() {
       return Response.json({ streak, portion: null });
     }
     // listPlans는 시험일 오름차순 → 아직 안 지난 가장 가까운 시험, 없으면 첫 번째.
-    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+    const today = kstToday();
     const target = plans.find((p) => p.examDate >= today) ?? plans[0];
     const portion = await computeToday(target);
 
