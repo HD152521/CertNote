@@ -2,9 +2,12 @@ import { getCurrentUser } from '@/lib/auth/currentUser';
 import { query } from '@/lib/db';
 import { GrantProForm } from '@/components/admin/GrantProForm';
 
+// 쿠키·DB를 읽으므로 항상 동적 렌더.
+export const dynamic = 'force-dynamic';
+
 interface WaitlistRow {
   email: string;
-  created_at: string;
+  created_at: string; // SQL에서 to_char로 'YYYY-MM-DD' 문자열로 받음(node-pg의 Date 반환·slice 크래시 회피)
 }
 
 interface CountRow {
@@ -16,7 +19,7 @@ interface CountRow {
 export default async function AdminPage() {
   const user = await getCurrentUser();
   const [waitlist, counts] = await Promise.all([
-    query<WaitlistRow>('SELECT email, created_at FROM waitlist ORDER BY created_at DESC LIMIT 200'),
+    query<WaitlistRow>(`SELECT email, to_char(created_at, 'YYYY-MM-DD') AS created_at FROM waitlist ORDER BY created_at DESC LIMIT 200`),
     query<CountRow>(`SELECT count(*) FILTER (WHERE plan = 'pro') AS pro, count(*) AS total FROM users`),
   ]);
   const c = counts[0] ?? { pro: '0', total: '0' };
