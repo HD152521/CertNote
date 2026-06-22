@@ -1,6 +1,8 @@
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { query } from '@/lib/db';
 import { GrantProForm } from '@/components/admin/GrantProForm';
+import { AdminWaitlist } from '@/components/admin/AdminWaitlist';
+import { AdminUserList } from '@/components/admin/AdminUserList';
 
 // 쿠키·DB를 읽으므로 항상 동적 렌더.
 export const dynamic = 'force-dynamic';
@@ -8,6 +10,12 @@ export const dynamic = 'force-dynamic';
 interface WaitlistRow {
   email: string;
   created_at: string; // SQL에서 to_char로 'YYYY-MM-DD' 문자열로 받음(node-pg의 Date 반환·slice 크래시 회피)
+}
+
+interface UserRow {
+  email: string;
+  plan: string;
+  role: string;
 }
 
 interface CountRow {
@@ -18,8 +26,9 @@ interface CountRow {
 // /admin은 middleware에서 admin 역할만 통과시킨다.
 export default async function AdminPage() {
   const user = await getCurrentUser();
-  const [waitlist, counts] = await Promise.all([
+  const [waitlist, users, counts] = await Promise.all([
     query<WaitlistRow>(`SELECT email, to_char(created_at, 'YYYY-MM-DD') AS created_at FROM waitlist ORDER BY created_at DESC LIMIT 200`),
+    query<UserRow>(`SELECT email, plan, role FROM users ORDER BY created_at DESC LIMIT 500`),
     query<CountRow>(`SELECT count(*) FILTER (WHERE plan = 'pro') AS pro, count(*) AS total FROM users`),
   ]);
   const c = counts[0] ?? { pro: '0', total: '0' };
@@ -31,23 +40,11 @@ export default async function AdminPage() {
         <p className="text-sm text-fg-muted">{user?.email}님 · 전체 사용자 {c.total}명 / Pro {c.pro}명</p>
       </header>
 
-      <GrantProForm />
+      <AdminWaitlist items={waitlist} />
 
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium">업그레이드 대기자 ({waitlist.length})</h2>
-        {waitlist.length === 0 ? (
-          <p className="text-sm text-fg-faint">아직 대기자가 없습니다.</p>
-        ) : (
-          <ul className="divide-y divide-border rounded-lg border border-border text-sm">
-            {waitlist.map((w, i) => (
-              <li key={`${w.email}-${i}`} className="flex items-center justify-between px-3 py-2">
-                <span>{w.email}</span>
-                <span className="text-xs text-fg-faint">{w.created_at.slice(0, 10)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <AdminUserList users={users} />
+
+      <GrantProForm />
     </div>
   );
 }
