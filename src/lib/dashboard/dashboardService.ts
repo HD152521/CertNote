@@ -32,6 +32,14 @@ export interface RecentAttempt {
   attemptedAt: string;
 }
 
+// 도메인별 정답률(약점 분석용). domain 필드가 있는 문제(모의고사)만 집계된다.
+export interface DomainStat {
+  domain: string;
+  attempts: number;
+  correct: number;
+  accuracy: number; // 0~100
+}
+
 export interface DashboardData {
   attempts: number;
   correct: number;
@@ -41,6 +49,7 @@ export interface DashboardData {
   coverage: number; // 0~100, 전체 문제 중 한 번이라도 푼 비율
   review: ReviewCounts;
   certs: CertProgress[];
+  domains: DomainStat[]; // 정답률 낮은 순(약점 우선)
   recent: RecentAttempt[];
 }
 
@@ -78,6 +87,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
   let attempts = 0;
   let correct = 0;
   const attemptedAll = new Set<string>();
+  const domainAgg = new Map<string, { attempts: number; correct: number }>();
   for (const at of attemptList) {
     const q = getQuestionById(at.questionId);
     if (!q) continue; // 삭제·재생성된 문제 id는 건너뜀
@@ -91,7 +101,24 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
       a.correct += 1;
       a.solved.add(at.questionId);
     }
+    // 도메인 집계(domain 있는 모의고사 문제만).
+    if (q.domain) {
+      const d = domainAgg.get(q.domain) ?? { attempts: 0, correct: 0 };
+      d.attempts += 1;
+      if (at.correct) d.correct += 1;
+      domainAgg.set(q.domain, d);
+    }
   }
+
+  // 정답률 낮은 순(약점 우선). 동률은 시도 많은 순.
+  const domains: DomainStat[] = [...domainAgg.entries()]
+    .map(([domain, d]) => ({
+      domain,
+      attempts: d.attempts,
+      correct: d.correct,
+      accuracy: Math.round((d.correct / d.attempts) * 100),
+    }))
+    .sort((a, b) => a.accuracy - b.accuracy || b.attempts - a.attempts);
 
   const certProgress: CertProgress[] = certs.map((c) => {
     const a = aggByCert.get(c.slug);
@@ -136,6 +163,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     coverage: totalQuestions > 0 ? Math.round((attemptedAll.size / totalQuestions) * 100) : 0,
     review,
     certs: certProgress,
+    domains,
     recent,
   };
 }

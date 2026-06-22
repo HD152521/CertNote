@@ -120,6 +120,33 @@ export default async function DashboardPage() {
             </div>
           </section>
 
+          {/* 도메인별 약점 — 모의고사 풀이가 쌓이면 채워진다(정답률 낮은 순) */}
+          <section className="space-y-3">
+            <h2 className="text-sm font-medium text-fg-muted">도메인별 약점</h2>
+            {data.domains.length === 0 ? (
+              <p className="rounded-lg border border-border bg-bg-elevated px-4 py-3 text-sm text-fg-faint">
+                모의고사를 풀면 시험 도메인별 정답률이 여기에 쌓여요. 약한 영역부터 보여드릴게요.
+              </p>
+            ) : (
+              <div className="space-y-2 rounded-lg border border-border bg-bg-elevated px-4 py-3">
+                {data.domains.map((d) => {
+                  const tone = d.accuracy < 60 ? '#ef4444' : d.accuracy < 80 ? '#f59e0b' : '#22c55e';
+                  return (
+                    <div key={d.domain}>
+                      <div className="mb-1 flex items-center justify-between gap-3 text-xs">
+                        <span className="min-w-0 truncate text-fg">{d.domain}</span>
+                        <span className="shrink-0 tabular-nums text-fg-muted">{d.accuracy}% · {d.correct}/{d.attempts}</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-bg-subtle">
+                        <div className="h-full rounded-full" style={{ width: `${d.accuracy}%`, backgroundColor: tone }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
           {/* 최근 학습 */}
           {data.recent.length > 0 && (
             <section className="space-y-3">
