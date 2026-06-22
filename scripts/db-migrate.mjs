@@ -161,6 +161,20 @@ try {
     );
   `);
   console.log('✓ daily_activity 테이블 준비 완료');
+
+  // 사용자 피드백(폰+글). 보상(커피 기프티콘)은 관리자가 보고 수동 발송, rewarded로 발송여부 체크.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS feedback (
+      id         BIGSERIAL PRIMARY KEY,
+      user_id    BIGINT REFERENCES users(id) ON DELETE SET NULL,
+      phone      TEXT NOT NULL,
+      message    TEXT NOT NULL,
+      rewarded   BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback (created_at DESC);');
+  console.log('✓ feedback 테이블 준비 완료');
 } catch (err) {
   console.error('마이그레이션 실패:', err);
   process.exit(1);

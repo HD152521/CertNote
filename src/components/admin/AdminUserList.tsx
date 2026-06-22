@@ -7,6 +7,8 @@ interface AdminUser {
   email: string;
   plan: string; // 'pro' | 'free'
   role: string;
+  period_end: string | null; // 'YYYY-MM-DD'(KST), null=무기한
+  days_left: number | null;
 }
 
 // 현재 유저 목록 + Pro 부여/해지. /api/admin/grant 재사용.
@@ -54,6 +56,11 @@ export function AdminUserList({ users }: { users: AdminUser[] }) {
                 <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${isPro ? 'bg-accent/10 text-accent' : 'bg-bg-subtle text-fg-faint'}`}>
                   {isPro ? 'Pro' : 'Free'}
                 </span>
+                {isPro && (
+                  <span className={`shrink-0 text-[11px] tabular-nums ${u.days_left !== null && u.days_left <= 7 ? 'text-danger' : 'text-fg-faint'}`}>
+                    {u.period_end === null ? '무기한' : `~${u.period_end} · ${u.days_left}일`}
+                  </span>
+                )}
               </div>
               {isPro ? (
                 <button
