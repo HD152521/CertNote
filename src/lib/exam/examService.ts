@@ -48,11 +48,48 @@ function shuffle<T>(arr: readonly T[]): T[] {
   return a;
 }
 
-// 모의고사 은행(day 퀴즈와 별개)에서 자격증(없으면 전체) 무작위 count문항을 정답 없이 반환.
+// 도메인 비례 샘플링: 각 도메인을 은행 내 비중대로 뽑아 실제 시험 유형 분포를 재현한다.
+// (문제은행이 자격증별 공식 도메인 비중으로 작성돼 있어, 비례 추출이 곧 시험 블루프린트 근사.)
+function sampleByDomain(pool: readonly ExamBankQuestion[], n: number): ExamBankQuestion[] {
+  if (n >= pool.length) return shuffle(pool);
+
+  const byDomain = new Map<string, ExamBankQuestion[]>();
+  for (const q of pool) {
+    const key = q.domain || '기타';
+    const list = byDomain.get(key);
+    if (list) list.push(q);
+    else byDomain.set(key, [q]);
+  }
+
+  // 1차: 도메인별 정수 쿼터(floor). 남은 문제는 보충 후보로 모은다.
+  const picked: ExamBankQuestion[] = [];
+  const leftovers: ExamBankQuestion[] = [];
+  const restByDomain = new Map<string, number>();
+  for (const [domain, qs] of byDomain) {
+    const shuffled = shuffle(qs);
+    const exact = (n * qs.length) / pool.length;
+    const quota = Math.min(qs.length, Math.floor(exact));
+    picked.push(...shuffled.slice(0, quota));
+    leftovers.push(...shuffled.slice(quota));
+    restByDomain.set(domain, exact - Math.floor(exact));
+  }
+
+  // 2차: 반올림 손실분을 소수부 큰 도메인 우선으로 보충.
+  const need = n - picked.length;
+  if (need > 0) {
+    leftovers.sort((a, b) => (restByDomain.get(b.domain || '기타') ?? 0) - (restByDomain.get(a.domain || '기타') ?? 0));
+    picked.push(...leftovers.slice(0, need));
+  }
+
+  // 도메인이 뭉치지 않게 최종 셔플.
+  return shuffle(picked);
+}
+
+// 모의고사 은행(day 퀴즈와 별개)에서 자격증(없으면 전체) count문항을 도메인 비례로 정답 없이 반환.
 export function buildExam(certSlug: string | null, count: number): ExamQuestion[] {
   const pool = certSlug ? getExamQuestionsByCert(certSlug) : getAllExamQuestions();
   const n = Math.min(Math.max(1, Math.floor(count) || 1), Math.min(MAX_COUNT, pool.length));
-  return shuffle(pool).slice(0, n).map(toExamQuestion);
+  return sampleByDomain(pool, n).slice(0, n).map(toExamQuestion);
 }
 
 // 제출 채점: 미응답은 오답 처리, 응답분은 attempt로 기록(오답 자동 복습 적재 + 대시보드 반영).
