@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "db:migrate": "node --env-file=.env scripts/db-migrate.mjs",
     "db:seed": "node --env-file=.env scripts/db-seed-admin.mjs",
-    "grant:pro": "node --env-file=.env scripts/grant-pro.mjs"
+    "grant:pro": "node --env-file=.env scripts/grant-pro.mjs",
+    "qa:questions": "node --env-file=.env scripts/qa-questions.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.105.0",
