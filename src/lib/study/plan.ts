@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORY } from '../category';
 import { query } from '../db';
 import { getAllDays } from '../content';
 import { kstToday } from './activity';
@@ -63,7 +64,7 @@ export async function clearPlan(userId: string, certSlug: string): Promise<void>
 
 // 콘텐츠 day들을 생성일→시험일에 균등 분배해 '오늘 분량'을 계산(읽음 진행도와 무관, 날짜 기반).
 export async function computeToday(plan: StudyPlan): Promise<TodayPortion> {
-  const days = await getAllDays('aws-certs', plan.certSlug);
+  const days = await getAllDays(DEFAULT_CATEGORY, plan.certSlug);
   const totalDays = days.length;
   const today = kstToday();
   const start = plan.createdAt; // listPlans/크론에서 이미 'YYYY-MM-DD'(KST)로 받음

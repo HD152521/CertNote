@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORY } from '@/lib/category';
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
@@ -22,7 +23,7 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const certs = await listCerts('aws-certs');
+  const certs = await listCerts(DEFAULT_CATEGORY);
   return (
     <html lang="ko" suppressHydrationWarning className={`${inter.variable} ${jbMono.variable} h-full antialiased`}>
       <body className="min-h-full bg-bg text-fg">

@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORY } from '@/lib/category';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import type { CertMeta } from '@/lib/content';
@@ -8,7 +9,7 @@ interface CertCardProps { cert: CertMeta; }
 export function CertCard({ cert }: CertCardProps) {
   const isPro = cert.level === 'professional';
   return (
-    <Link href={`/aws-certs/${cert.slug}`}
+    <Link href={`/${DEFAULT_CATEGORY}/${cert.slug}`}
       className={cn('group flex flex-col gap-3 rounded-lg border border-border bg-bg-elevated p-5', 'transition hover:border-border-strong')}>
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs text-fg-faint">{cert.code}</span>

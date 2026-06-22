@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORY } from '@/lib/category';
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { AppError, errorResponse } from '@/lib/auth/errors';
 import { computeToday, listPlans } from '@/lib/study/plan';
@@ -21,7 +22,7 @@ export async function GET() {
     const target = plans.find((p) => p.examDate >= today) ?? plans[0];
     const portion = await computeToday(target);
 
-    const certs = await listCerts('aws-certs');
+    const certs = await listCerts(DEFAULT_CATEGORY);
     const meta = certs.find((c) => c.slug === target.certSlug);
     return Response.json({
       streak,

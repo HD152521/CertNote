@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORY } from '@/lib/category';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
@@ -7,13 +8,13 @@ import { cn } from '@/lib/cn';
 interface PageProps { params: Promise<{ category: string; slug: string }>; }
 
 export async function generateStaticParams() {
-  const certs = await listCerts('aws-certs');
-  return certs.map((c) => ({ category: 'aws-certs', slug: c.slug }));
+  const certs = await listCerts(DEFAULT_CATEGORY);
+  return certs.map((c) => ({ category: DEFAULT_CATEGORY, slug: c.slug }));
 }
 
 export default async function CertIndexPage({ params }: PageProps) {
   const { category, slug } = await params;
-  if (category !== 'aws-certs') notFound();
+  if (category !== DEFAULT_CATEGORY) notFound();
   let meta;
   try { meta = await getCertMeta(category, slug); } catch { notFound(); }
   const days = await getAllDays(category, slug);

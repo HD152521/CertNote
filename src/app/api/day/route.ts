@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORY } from '@/lib/category';
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { getEntitlementService } from '@/lib/entitlement/factory';
 import { AppError, errorResponse } from '@/lib/auth/errors';
@@ -11,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const category = searchParams.get('category') ?? 'aws-certs';
+    const category = searchParams.get('category') ?? DEFAULT_CATEGORY;
     const slug = searchParams.get('slug');
     const week = Number(searchParams.get('week'));
     const day = Number(searchParams.get('day'));

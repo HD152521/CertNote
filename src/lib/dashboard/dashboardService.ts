@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORY } from '../category';
 import { listCerts, type CertMeta } from '../content';
 import { getAllQuestions, getQuestionById } from '../questions';
 import { getAttemptService } from '../quiz/attemptService';
@@ -65,7 +66,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
   const [attemptList, review, certs] = await Promise.all([
     getAttemptService().list(userId, ATTEMPT_LIMIT),
     getReviewService().stats(userId),
-    listCerts('aws-certs'),
+    listCerts(DEFAULT_CATEGORY),
   ]);
 
   // 자격증별 전체 문제 수.

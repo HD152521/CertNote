@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORY } from '@/lib/category';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
@@ -29,7 +30,7 @@ function parseSegment(seg: string, prefix: string): number | null {
 
 export default async function DayPage({ params }: PageProps) {
   const { category, slug, week, day } = await params;
-  if (category !== 'aws-certs') notFound();
+  if (category !== DEFAULT_CATEGORY) notFound();
   const w = parseSegment(week, 'week');
   const d = parseSegment(day, 'day');
   if (w === null || d === null) notFound();

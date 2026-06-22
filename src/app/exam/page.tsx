@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORY } from '@/lib/category';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { listCerts } from '@/lib/content';
@@ -13,7 +14,7 @@ export default async function ExamPage() {
 
   // 모의고사 문제가 준비된 자격증만 범위 선택지로 노출.
   const examSlugs = new Set(getExamCertSlugs());
-  const certs = (await listCerts('aws-certs'))
+  const certs = (await listCerts(DEFAULT_CATEGORY))
     .filter((c) => examSlugs.has(c.slug))
     .map((c) => ({ slug: c.slug, code: c.code, name: c.name }));
 

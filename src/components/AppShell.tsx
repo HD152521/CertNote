@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORY } from '@/lib/category';
 import type { ReactNode } from 'react';
 import type { CertMeta } from '@/lib/content';
 import { Header } from './Header';
@@ -9,9 +10,9 @@ interface AppShellProps { certs: CertMeta[]; children: ReactNode; }
 
 export async function AppShell({ certs, children }: AppShellProps) {
   const certTrees = await Promise.all(
-    certs.map(async (c) => ({ meta: c, days: await getAllDays('aws-certs', c.slug) })),
+    certs.map(async (c) => ({ meta: c, days: await getAllDays(DEFAULT_CATEGORY, c.slug) })),
   );
-  const searchIndex = await buildSearchIndex('aws-certs');
+  const searchIndex = await buildSearchIndex(DEFAULT_CATEGORY);
   return (
     <SearchProvider index={searchIndex}>
       <div className="flex min-h-screen flex-col">

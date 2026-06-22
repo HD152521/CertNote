@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORY } from '@/lib/category';
 import { buildSearchBodyIndex } from '@/lib/content';
 
 // 본문 포함 검색 인덱스. 콘텐츠는 빌드 타임 자산이라 정적 캐시(1회 생성)로 충분하다.
@@ -5,6 +6,6 @@ import { buildSearchBodyIndex } from '@/lib/content';
 export const dynamic = 'force-static';
 
 export async function GET() {
-  const index = await buildSearchBodyIndex('aws-certs');
+  const index = await buildSearchBodyIndex(DEFAULT_CATEGORY);
   return Response.json({ index });
 }

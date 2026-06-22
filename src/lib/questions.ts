@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORY } from './category';
 import questionsData from '@/data/questions.json';
 import { getExamQuestionById } from './exam/examBank';
 
@@ -34,7 +35,7 @@ export function getQuestionById(id: string): IndexedQuestion | undefined {
   if (!examQ) return undefined;
   return {
     id: examQ.id,
-    category: 'aws-certs',
+    category: DEFAULT_CATEGORY,
     slug: examQ.slug,
     week: 0,
     day: 0,

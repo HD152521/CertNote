@@ -1,4 +1,5 @@
 'use client';
+import { DEFAULT_CATEGORY } from '@/lib/category';
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -112,7 +113,7 @@ export function NotebookList() {
           return (
             <li key={card.questionId} className="rounded-lg border border-border bg-bg-elevated p-4">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <Link href={card.week > 0 ? `/aws-certs/${card.slug}/week${card.week}/day${card.day}` : `/aws-certs/${card.slug}`}
+                <Link href={card.week > 0 ? `/${DEFAULT_CATEGORY}/${card.slug}/week${card.week}/day${card.day}` : `/${DEFAULT_CATEGORY}/${card.slug}`}
                   className="font-mono text-[11px] uppercase tracking-wider text-fg-faint hover:text-fg">
                   {card.week > 0 ? `${card.slug} · W${card.week} D${card.day}` : `${card.slug} · 모의고사${card.domain ? ` · ${card.domain}` : ''}`}
                 </Link>

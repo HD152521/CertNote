@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORY } from '@/lib/category';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth/currentUser';
@@ -36,7 +37,7 @@ function CertRow({ c }: { c: CertProgress }) {
   const acc = c.attempts > 0 ? Math.round((c.correct / c.attempts) * 100) : null;
   return (
     <Link
-      href={`/aws-certs/${c.slug}`}
+      href={`/${DEFAULT_CATEGORY}/${c.slug}`}
       className="block rounded-lg border border-border bg-bg-elevated px-4 py-3 transition hover:border-border-strong"
     >
       <div className="mb-2 flex items-center justify-between gap-3">
@@ -66,7 +67,7 @@ export default async function DashboardPage() {
 
   const data = await getDashboardData(user.sub);
   const hasActivity = data.attempts > 0 || data.review.total > 0;
-  const certOptions = (await listCerts('aws-certs')).map((c) => ({ slug: c.slug, name: c.name, code: c.code }));
+  const certOptions = (await listCerts(DEFAULT_CATEGORY)).map((c) => ({ slug: c.slug, name: c.name, code: c.code }));
 
   return (
     <div className="mx-auto max-w-3xl space-y-8 py-10">
@@ -155,7 +156,7 @@ export default async function DashboardPage() {
                 {data.recent.map((r, i) => (
                   <li key={`${r.questionId}-${i}`}>
                     <Link
-                      href={r.week > 0 ? `/aws-certs/${r.slug}/week${r.week}/day${r.day}` : `/aws-certs/${r.slug}`}
+                      href={r.week > 0 ? `/${DEFAULT_CATEGORY}/${r.slug}/week${r.week}/day${r.day}` : `/${DEFAULT_CATEGORY}/${r.slug}`}
                       className="flex items-center gap-3 rounded-lg border border-border bg-bg-elevated px-3 py-2 transition hover:border-border-strong"
                     >
                       <span

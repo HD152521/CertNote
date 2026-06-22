@@ -1,4 +1,5 @@
 'use client';
+import { DEFAULT_CATEGORY } from '@/lib/category';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -21,7 +22,7 @@ interface SidebarNavProps {
 export function SidebarNav({ certTrees, onNavigate }: SidebarNavProps) {
   const pathname = usePathname();
   const activeSlug = (() => {
-    const m = pathname.match(/^\/aws-certs\/([^/]+)/);
+    const m = pathname.match(new RegExp('^/' + DEFAULT_CATEGORY + '/([^/]+)'));
     return m ? m[1] : null;
   })();
   const [openSlugs, setOpenSlugs] = useState<Record<string, boolean>>(() => {
@@ -56,7 +57,7 @@ export function SidebarNav({ certTrees, onNavigate }: SidebarNavProps) {
               <ul className="mt-1 mb-2 ml-2 space-y-0.5 border-l border-border pl-2">
                 {[...byWeek.entries()].map(([w, ws]) => (
                   <li key={w}>
-                    <details open={pathname.includes(`/aws-certs/${meta.slug}/week${w}/`)}>
+                    <details open={pathname.includes(`/${DEFAULT_CATEGORY}/${meta.slug}/week${w}/`)}>
                       <summary className={cn('cursor-pointer rounded px-2 py-1 text-xs text-fg-muted', 'hover:bg-bg-subtle hover:text-fg list-none')}>Week {w}</summary>
                       <ul className="mt-0.5 ml-2 space-y-0.5 border-l border-border pl-2">
                         {ws.map((d) => {
