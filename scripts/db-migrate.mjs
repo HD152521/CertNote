@@ -175,6 +175,17 @@ try {
   `);
   await pool.query('CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback (created_at DESC);');
   console.log('✓ feedback 테이블 준비 완료');
+
+  // AI 튜터 일일 사용량(유저×KST날짜). LLM 비용 상한용 — 하루 N회 초과 차단.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tutor_usage (
+      user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      day     DATE NOT NULL,
+      count   INT NOT NULL DEFAULT 0,
+      PRIMARY KEY (user_id, day)
+    );
+  `);
+  console.log('✓ tutor_usage 테이블 준비 완료');
 } catch (err) {
   console.error('마이그레이션 실패:', err);
   process.exit(1);

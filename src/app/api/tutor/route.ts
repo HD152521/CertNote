@@ -2,7 +2,7 @@ import { getCurrentUser } from '@/lib/auth/currentUser';
 import { AppError, errorResponse } from '@/lib/auth/errors';
 import { getEntitlementService } from '@/lib/entitlement/factory';
 import { getQuestionById } from '@/lib/questions';
-import { isTutorConfigured, sanitizeHistory, streamTutor } from '@/lib/tutor/tutorService';
+import { consumeTutorQuota, isTutorConfigured, sanitizeHistory, streamTutor } from '@/lib/tutor/tutorService';
 import { clientIp, rateLimit } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs'; // Anthropic SDK는 Node 런타임 필요.
@@ -35,6 +35,12 @@ export async function POST(req: Request) {
     }
     const question = getQuestionById(body.questionId);
     if (!question) throw new AppError(404, 'question_not_found', '문제를 찾을 수 없습니다.');
+
+    // 일일 사용 한도(비용 보호). LLM 호출 전에 선차감 — 초과 시 호출 자체를 막는다.
+    const quota = await consumeTutorQuota(user.sub);
+    if (!quota.allowed) {
+      throw new AppError(429, 'daily_limit', `오늘 AI 설명 한도(${quota.limit}회)를 모두 사용했어요. 내일 다시 이용해 주세요.`);
+    }
 
     const selected = typeof body.selected === 'string' ? body.selected : '';
     const history = sanitizeHistory(body.history);

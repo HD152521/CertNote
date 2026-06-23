@@ -1,6 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { IndexedQuestion } from '../questions';
 import { buildSystemPrompt, buildUserPrompt } from './prompt';
+import { query } from '../db';
+
+// 유저별 일일 호출 상한(LLM 비용 보호). env로 조정 가능, 기본 10회.
+export const TUTOR_DAILY_LIMIT = Number(process.env.TUTOR_DAILY_LIMIT) || 10;
 
 // 모델은 env로 교체 가능. 기본 Opus 4.8(최고 품질). thinking은 끄고 effort로 깊이를 조절해
 // 지연·비용을 억제한다(Vercel 함수 타임아웃 여유 확보).
@@ -25,6 +29,20 @@ function getClient(): Anthropic {
 export interface TutorTurn {
   role: 'user' | 'assistant';
   text: string;
+}
+
+// 오늘(KST) 사용 1회를 선차감하고 현재 카운트를 반환(원자적 upsert).
+// LLM 호출 전에 차감하므로 비용 상한이 보장된다(초과 시 호출 자체를 막음).
+export async function consumeTutorQuota(userId: string): Promise<{ allowed: boolean; count: number; limit: number }> {
+  const rows = await query<{ count: number }>(
+    `INSERT INTO tutor_usage (user_id, day, count)
+     VALUES ($1, (now() AT TIME ZONE 'Asia/Seoul')::date, 1)
+     ON CONFLICT (user_id, day) DO UPDATE SET count = tutor_usage.count + 1
+     RETURNING count`,
+    [userId],
+  );
+  const count = rows[0]?.count ?? 1;
+  return { allowed: count <= TUTOR_DAILY_LIMIT, count, limit: TUTOR_DAILY_LIMIT };
 }
 
 // 신뢰할 수 없는 입력(클라이언트 후속 대화)을 정리: 역할 검증·길이·개수 제한.
