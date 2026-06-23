@@ -2,1701 +2,1701 @@
   {
     "number": 1,
     "domain": "모니터링·로깅·교정",
-    "prompt": "EC2 인스턴스의 메모리 사용률을 CloudWatch에서 모니터링하고 임계치 초과 시 경보를 받으려 한다. 기본 지표에 메모리가 없을 때 가장 적합한 방법은?",
+    "prompt": "한 SysOps 관리자가 메모리 누수가 의심되는 Java 애플리케이션을 EC2 인스턴스에서 운영한다. 사용 가능한 메모리가 일정 기준 아래로 떨어지면 운영팀에 알림이 가야 하며, 추가 인프라 도입은 최소화해야 한다. 가장 운영 부담이 적은 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "기본 EC2 지표만으로 메모리 경보를 만든다"
+        "text": "CloudWatch 에이전트를 설치해 mem_available_percent를 사용자 지정 지표로 게시하고 해당 지표에 경보를 구성한다"
       },
       {
         "label": "B",
-        "text": "CloudWatch 에이전트를 설치해 사용자 지정 메모리 지표를 게시하고 경보 구성"
+        "text": "메모리 부족 시 인스턴스를 자동 교체하도록 Auto Scaling 그룹의 상태 확인에 의존한다"
       },
       {
         "label": "C",
-        "text": "메모리는 모니터링할 수 없다"
+        "text": "Lambda 함수가 1분마다 SSH로 접속해 free 명령 결과를 파싱하고 SNS로 알림을 보낸다"
       },
       {
         "label": "D",
-        "text": "인스턴스를 더 크게 만든다"
+        "text": "EC2 세부 모니터링을 활성화하고 기본 메모리 지표에 CloudWatch 경보를 만든다"
       }
     ],
-    "answer": "B",
-    "explanation": "메모리·디스크 사용률은 하이퍼바이저에서 보이지 않으므로 CloudWatch 에이전트로 게스트 OS 지표를 게시해야 한다. 기본 지표(A)엔 메모리가 없고, C는 틀렸으며, D는 모니터링과 무관하다."
+    "answer": "A",
+    "explanation": "메모리 사용률은 하이퍼바이저에서 보이지 않으므로 CloudWatch 에이전트로 게스트 OS 내부의 사용 가능 메모리 지표를 게시한 뒤 그 지표에 경보를 거는 방식이 추가 인프라 없이 요건을 충족해 가장 운영 부담이 적다. 세부 모니터링을 켜는 접근은 수집 주기만 1분으로 줄일 뿐 메모리 지표 자체를 제공하지 않는다. Lambda가 SSH로 free 명령을 파싱하는 방식은 키 관리·파싱 등 운영 부담이 크고 확장성이 낮다. Auto Scaling 상태 확인에 의존하는 방식은 메모리 임계 알림 목적이 아니며 EC2 상태 점검은 메모리를 보지 않는다."
   },
   {
     "number": 2,
     "domain": "모니터링·로깅·교정",
-    "prompt": "여러 계정·리전의 CloudWatch 로그와 지표를 한 대시보드에서 통합 관찰하려 한다. 가장 적합한 것은?",
+    "prompt": "기업이 Organizations로 30개 계정을 여러 리전에 걸쳐 운영한다. 운영팀은 중앙 모니터링 계정 한 곳에서 모든 계정의 지표·로그·추적을 조회하고 교차 계정 대시보드를 만들고 싶다. 가장 권장되는 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "각 계정에 개별 콘솔로 접속해 수동 확인"
+        "text": "CloudWatch 교차 계정 관찰성(observability)을 구성해 소스 계정을 모니터링 계정에 연결한다"
       },
       {
         "label": "B",
-        "text": "CloudWatch 교차 계정·교차 리전 관찰성(observability)을 구성"
+        "text": "각 계정에 동일한 대시보드를 CloudFormation StackSets로 배포하고 계정을 전환하며 본다"
       },
       {
         "label": "C",
-        "text": "모든 로그를 이메일로 전송"
+        "text": "모든 계정에서 IAM 교차 계정 역할을 만들어 운영자가 콘솔을 전환해 직접 확인한다"
       },
       {
         "label": "D",
-        "text": "계정을 하나로 합친다"
+        "text": "각 소스 계정의 지표를 Kinesis Data Firehose로 모니터링 계정의 S3에 모아 Athena로 조회한다"
       }
     ],
-    "answer": "B",
-    "explanation": "CloudWatch 교차 계정 관찰성은 모니터링 계정에서 여러 소스 계정·리전의 지표·로그·추적을 통합해 본다. 개별 접속(A)·이메일(C)은 비효율, 계정 통합(D)은 격리 측면에서 부적절하다."
+    "answer": "A",
+    "explanation": "CloudWatch 교차 계정 관찰성은 모니터링 계정 한 곳에서 여러 소스 계정·리전의 지표·로그·추적을 통합 조회하고 교차 계정 대시보드를 제공해 가장 운영 부담이 적다. Firehose로 S3에 모아 Athena로 조회하는 방식은 별도 파이프라인과 쿼리를 직접 구축해야 한다. StackSets로 동일 대시보드를 배포하는 방식과 IAM 역할로 콘솔을 전환하는 방식은 모두 계정을 옮겨 다녀야 하므로 단일 화면 통합이 되지 않는다."
   },
   {
     "number": 3,
     "domain": "모니터링·로깅·교정",
-    "prompt": "특정 IAM API 호출(예: 보안 그룹 변경)이 발생하면 즉시 알림을 받고 자동 대응을 트리거하려 한다. 가장 적합한 조합은?",
+    "prompt": "보안 정책상 누군가 보안 그룹의 인바운드 규칙을 변경하면 즉시 보안팀에 알리고, 위반 규칙을 자동으로 되돌려야 한다. 가장 효율적인 구성은?",
     "choices": [
       {
         "label": "A",
-        "text": "CloudTrail 이벤트를 EventBridge 규칙으로 매칭해 SNS 알림/Lambda 자동 대응 실행"
+        "text": "CloudTrail 로그를 S3에 저장하고 매일 Athena 쿼리를 돌려 변경을 보고서로 받는다"
       },
       {
         "label": "B",
-        "text": "로그를 매일 수동으로 검토"
+        "text": "VPC Flow Logs를 분석하는 Lambda를 5분마다 실행해 새 규칙을 탐지하면 알린다"
       },
       {
         "label": "C",
-        "text": "CloudTrail을 비활성화"
+        "text": "CloudTrail이 기록한 AuthorizeSecurityGroupIngress 이벤트를 EventBridge 규칙으로 매칭해 SNS 알림과 교정용 Lambda를 호출한다"
       },
       {
         "label": "D",
-        "text": "보안 그룹 변경을 금지한다"
+        "text": "Config 적합성 팩을 적용하고 분기별 감사 보고서에서 위반을 검토한다"
       }
     ],
-    "answer": "A",
-    "explanation": "CloudTrail이 기록한 API 이벤트를 EventBridge 규칙으로 거의 실시간 매칭해 SNS 알림·Lambda 자동 교정을 트리거할 수 있다. 수동 검토(B)는 느리고, C는 감사 무력화, D는 비현실적."
+    "answer": "C",
+    "explanation": "CloudTrail의 보안 그룹 변경 관리 이벤트를 EventBridge로 거의 실시간 매칭하면 SNS 알림과 Lambda 자동 교정을 즉시 트리거할 수 있어 '즉시 알림 + 자동 롤백' 요건을 만족한다. Flow Logs를 분석하는 방식은 트래픽 메타데이터일 뿐 보안 그룹 규칙 변경 API를 담지 않는다. CloudTrail을 매일 Athena로 쿼리하는 방식과 Config 적합성 팩을 분기별로 검토하는 방식은 지연이 커서 즉시 대응과 자동 롤백 요건을 만족하지 못한다."
   },
   {
     "number": 4,
     "domain": "안정성·비즈니스 연속성",
-    "prompt": "Auto Scaling 그룹이 일시적 부팅 지연 때문에 정상 인스턴스를 비정상으로 판단해 교체하는 일이 잦다. 가장 적합한 조정은?",
+    "prompt": "ALB 뒤의 Auto Scaling 그룹이 부팅에 약 4분 걸리는 인스턴스를 사용한다. 부팅 중 애플리케이션이 아직 뜨지 않아 ELB 상태 확인이 실패하면서 정상 인스턴스가 비정상으로 종료·교체되는 일이 반복된다. 가장 적절한 조치는?",
     "choices": [
       {
         "label": "A",
-        "text": "상태 확인 유예 기간(health check grace period)을 적절히 늘린다"
+        "text": "ASG의 상태 확인 유예 기간(health check grace period)을 인스턴스 워밍업 시간보다 길게 설정한다"
       },
       {
         "label": "B",
-        "text": "상태 확인을 끈다"
+        "text": "ASG 상태 확인 유형을 ELB에서 EC2로 변경한다"
       },
       {
         "label": "C",
-        "text": "최소 용량을 0으로 설정"
+        "text": "ALB 대상 그룹의 비정상 임계값(unhealthy threshold)을 1로 낮춘다"
       },
       {
         "label": "D",
-        "text": "ALB를 제거한다"
+        "text": "ASG 최소 용량을 늘려 교체로 인한 용량 부족을 보완한다"
       }
     ],
     "answer": "A",
-    "explanation": "유예 기간을 늘리면 인스턴스가 부팅·초기화를 마칠 때까지 상태 확인을 보류해 조기 교체를 방지한다. 상태 확인 끔(B)은 장애 인스턴스 방치, C·D는 가용성을 떨어뜨린다."
+    "explanation": "상태 확인 유예 기간을 워밍업 시간보다 길게 두면 부팅·초기화가 끝날 때까지 상태 확인 결과를 무시해 조기 교체를 막으므로 가장 적절하다. 상태 확인 유형을 ELB에서 EC2로 바꾸는 방식은 애플리케이션 수준 장애를 감지하지 못해 진짜 비정상 인스턴스를 방치한다. 비정상 임계값을 1로 낮추는 방식은 오히려 더 빨리 교체해 문제를 악화시킨다. 최소 용량을 늘리는 방식은 근본 원인을 두고 비용만 늘린다."
   },
   {
     "number": 5,
     "domain": "안정성·비즈니스 연속성",
-    "prompt": "RDS 데이터베이스를 운영 부담 없이 매일 백업하고, 특정 시점(point-in-time)으로 복구할 수 있게 하려 한다. 가장 적합한 것은?",
+    "prompt": "한 RDS for PostgreSQL DB가 운영 중이며, 규정상 최근 14일 내 어느 시점으로든 복구가 가능해야 하고 운영 부담은 최소여야 한다. 가장 적합한 구성은?",
     "choices": [
       {
         "label": "A",
-        "text": "자동 백업을 활성화하고 백업 보존 기간을 설정"
+        "text": "EventBridge 스케줄로 매일 수동 DB 스냅샷을 생성하고 14일 지난 것을 Lambda로 삭제한다"
       },
       {
         "label": "B",
-        "text": "수동으로만 스냅샷을 가끔 찍는다"
+        "text": "AWS Backup 계획으로 매일 스냅샷을 만들고 14일 보존 규칙을 적용한다"
       },
       {
         "label": "C",
-        "text": "백업을 하지 않는다"
+        "text": "자동 백업을 활성화하고 백업 보존 기간을 14일로 설정한다"
       },
       {
         "label": "D",
-        "text": "EBS를 직접 복사"
+        "text": "읽기 전용 복제본을 생성해 장애 시 승격한다"
       }
     ],
-    "answer": "A",
-    "explanation": "RDS 자동 백업은 일일 스냅샷 + 트랜잭션 로그로 보존 기간 내 임의 시점 복구(PITR)를 제공한다. 가끔 수동 스냅샷(B)은 PITR 불가, C는 위험, D(EBS 직접 복사)는 RDS에서 권장되지 않는다."
+    "answer": "C",
+    "explanation": "RDS 자동 백업은 일일 스냅샷과 트랜잭션 로그를 보관해 보존 기간 내 임의 시점 복구(PITR)를 기본 제공하므로 보존 기간을 14일로 설정하면 '어느 시점으로든' 요건을 가장 적은 운영 부담으로 만족한다. AWS Backup으로 매일 스냅샷을 만드는 방식이나 수동 스냅샷을 매일 만드는 방식은 스냅샷을 찍은 시점으로만 복구되어 임의 시점 PITR이 불가능하다. 읽기 전용 복제본은 가용성·확장 수단일 뿐 과거 시점 복구 기능이 아니다."
   },
   {
     "number": 6,
     "domain": "안정성·비즈니스 연속성",
-    "prompt": "S3 버킷에서 실수로 객체를 삭제·덮어써도 복구할 수 있게 하려 한다. 가장 적합한 것은?",
+    "prompt": "여러 팀이 공유하는 S3 버킷에서 객체가 실수로 삭제되거나 덮어써지는 사고가 반복된다. 이전 상태로 복구할 수 있어야 하고, 권한 있는 사용자가 객체를 영구 삭제하는 것도 어렵게 만들고 싶다. 가장 적합한 조합은?",
     "choices": [
       {
         "label": "A",
-        "text": "버전 관리(Versioning)를 활성화"
+        "text": "교차 리전 복제(CRR)를 활성화해 다른 리전 버킷에 사본을 둔다"
       },
       {
         "label": "B",
-        "text": "버킷을 퍼블릭으로 전환"
+        "text": "버전 관리를 활성화하고 30일 후 이전 버전을 만료시키는 수명 주기 규칙을 추가한다"
       },
       {
         "label": "C",
-        "text": "삭제를 금지하는 IAM 정책만 적용"
+        "text": "S3 객체 잠금을 거버넌스 모드로 켜고 모든 사용자에게 우회 권한을 부여한다"
       },
       {
         "label": "D",
-        "text": "객체를 매번 다시 업로드"
+        "text": "버전 관리를 활성화하고 버킷에 MFA 삭제를 구성한다"
       }
     ],
-    "answer": "A",
-    "explanation": "S3 버전 관리는 모든 버전을 보존해 실수 삭제·덮어쓰기 후에도 이전 버전 복구가 가능하다(추가로 MFA 삭제·수명주기 권장). 퍼블릭 전환(B)은 무관·위험, IAM만(C)은 덮어쓰기 복구 불가, D는 비효율적."
+    "answer": "D",
+    "explanation": "버전 관리는 삭제·덮어쓰기 후에도 이전 버전 복구를 가능하게 하고, MFA 삭제는 버전 영구 삭제 시 MFA를 요구해 권한자라도 쉽게 지우지 못하게 하므로 두 요건을 함께 충족한다. 버전 관리에 이전 버전을 30일 후 만료시키는 수명 주기 규칙을 더하는 방식은 오히려 이전 버전을 자동 삭제해 복구를 어렵게 만든다. 교차 리전 복제는 리전 장애 대비일 뿐 삭제 자체를 막지 못한다. 거버넌스 모드를 켜고 모든 사용자에게 우회 권한을 주면 잠금 효과가 사실상 사라진다."
   },
   {
     "number": 7,
     "domain": "배포·프로비저닝·자동화",
-    "prompt": "수백 대의 EC2 인스턴스에 동일한 패치를 일정에 맞춰 적용하고 규정 준수 상태를 보고하려 한다. 운영 부담을 최소화하는 가장 적합한 것은?",
+    "prompt": "한 회사가 여러 OS가 섞인 수백 대 EC2 인스턴스를 운영하며, 매월 정기 점검 시간에 운영체제 패치를 자동 적용하고 미준수 인스턴스를 보고받아야 한다. 가장 운영 부담이 적은 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "각 인스턴스에 SSH로 접속해 수동 패치"
+        "text": "EventBridge 스케줄로 Lambda를 호출해 각 인스턴스에 패치 명령을 전송한다"
       },
       {
         "label": "B",
-        "text": "Systems Manager Patch Manager로 패치 기준선·유지 관리 기간을 사용"
+        "text": "Systems Manager Run Command로 매월 yum/apt 업데이트 스크립트를 직접 실행한다"
       },
       {
         "label": "C",
-        "text": "인스턴스를 모두 재생성"
+        "text": "패치가 적용된 새 AMI를 EC2 Image Builder로 만들어 Auto Scaling 그룹을 교체한다"
       },
       {
         "label": "D",
-        "text": "패치를 적용하지 않는다"
+        "text": "Systems Manager Patch Manager에서 패치 기준선과 유지 관리 기간을 정의하고 패치 규정 준수를 보고한다"
       }
     ],
-    "answer": "B",
-    "explanation": "SSM Patch Manager는 패치 기준선과 유지 관리 기간으로 대규모 패치를 자동화하고 규정 준수 보고를 제공한다. 수동 SSH(A)는 비효율, 전체 재생성(C)은 과도, D는 보안 위험."
+    "answer": "D",
+    "explanation": "Patch Manager는 패치 기준선과 유지 관리 기간으로 OS별 패치를 자동 일정 적용하고 규정 준수 상태를 기본 대시보드로 보고해 요건을 한 번에 충족하므로 가장 운영 부담이 적다. Run Command로 업데이트 스크립트를 직접 실행하는 방식은 일정·기준선·준수 보고를 직접 만들어야 한다. Image Builder로 새 AMI를 만들어 교체하는 방식은 ASG 기반이 아닌 기존 인스턴스에는 부적합하고 과도하다. Lambda로 패치 명령을 직접 전송하는 방식은 보고·기준선 기능을 새로 구현해야 한다."
   },
   {
     "number": 8,
     "domain": "배포·프로비저닝·자동화",
-    "prompt": "프라이빗 서브넷의 EC2에 SSH 키·배스천 호스트 없이 안전하게 셸 접근하고 명령을 감사하려 한다. 가장 적합한 것은?",
+    "prompt": "보안팀이 프라이빗 서브넷의 EC2 인스턴스에 대한 모든 대화형 셸 접근을 감사 로그로 남기고, 인바운드 포트·배스천·SSH 키를 없애길 원한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "0.0.0.0/0에 22번 포트를 연다"
+        "text": "VPN을 구성한 뒤 SSH 키 기반으로 접속하고 auth 로그를 CloudWatch로 전송한다"
       },
       {
         "label": "B",
-        "text": "Systems Manager Session Manager를 사용"
+        "text": "프라이빗 서브넷에 배스천 호스트를 두고 보안 그룹으로 회사 IP만 22번 포트를 허용한다"
       },
       {
         "label": "C",
-        "text": "퍼블릭 IP를 부여하고 SSH"
+        "text": "EC2 Instance Connect를 사용하고 접속 기록은 CloudTrail로 확인한다"
       },
       {
         "label": "D",
-        "text": "배스천 호스트를 인터넷에 공개"
+        "text": "Systems Manager Session Manager를 사용하고 세션 로그를 S3/CloudWatch Logs로 보낸다"
       }
     ],
-    "answer": "B",
-    "explanation": "Session Manager는 인바운드 포트·배스천·SSH 키 없이 IAM 기반으로 셸 접근을 제공하고 세션을 CloudTrail/로그로 감사한다. 22번 개방(A)·퍼블릭 IP(C)·공개 배스천(D)은 공격 표면을 키운다."
+    "answer": "D",
+    "explanation": "Session Manager는 인바운드 포트·배스천·SSH 키 없이 IAM 기반 셸 접근을 제공하고 세션 내용 전체를 S3/CloudWatch Logs로 감사할 수 있어 요건에 정확히 맞는다. 배스천 호스트를 두는 방식은 키와 인바운드 포트를 그대로 두어 요건에 반한다. Instance Connect를 쓰는 방식은 보안 그룹에 SSH 인바운드가 필요하고 CloudTrail은 접속 사실만 남길 뿐 셸 명령은 기록하지 못한다. VPN과 SSH 키를 쓰는 방식은 여전히 키 관리가 남고 명령 단위 감사가 어렵다."
   },
   {
     "number": 9,
     "domain": "배포·프로비저닝·자동화",
-    "prompt": "동일한 VPC·서브넷·보안 그룹 구성을 여러 리전에 반복 배포하면서 변경을 추적하려 한다. 가장 적합한 것은?",
+    "prompt": "개발·스테이징·운영 환경에 동일한 VPC·서브넷·보안 그룹 스택을 일관되게 만들고, 환경별로 CIDR과 인스턴스 크기만 다르게 하면서 변경 이력을 추적하려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "콘솔에서 매번 수동으로 생성"
+        "text": "운영 VPC를 만들고 AWS Backup으로 다른 계정에 복원해 환경을 재현한다"
       },
       {
         "label": "B",
-        "text": "CloudFormation 템플릿으로 인프라를 코드화해 배포·버전 관리"
+        "text": "운영 환경을 콘솔로 만든 뒤 CloudFormer로 추출한 템플릿을 다른 환경에 그대로 적용한다"
       },
       {
         "label": "C",
-        "text": "한 리전에만 배포"
+        "text": "CloudFormation 템플릿을 작성하고 환경별 파라미터로 스택을 배포하며 변경 세트로 변경을 검토한다"
       },
       {
         "label": "D",
-        "text": "스크린샷으로 구성을 기록"
+        "text": "한 환경을 만든 다음 AWS CLI 스크립트로 리소스를 복제하는 셸 스크립트를 작성한다"
       }
     ],
-    "answer": "B",
-    "explanation": "CloudFormation은 인프라를 코드로 정의해 여러 리전·환경에 일관 배포하고 변경 세트로 변경을 추적한다. 수동 생성(A)·스크린샷(D)은 재현성·추적성이 없고, C는 요구 미충족."
+    "answer": "C",
+    "explanation": "CloudFormation은 인프라를 코드로 정의하고 파라미터로 환경별 CIDR·인스턴스 크기 차이를 흡수하며 변경 세트로 변경을 사전 검토·추적할 수 있어 가장 적합하다. CLI 스크립트로 리소스를 복제하는 방식은 멱등성·드리프트 추적이 약하고 유지보수가 어렵다. AWS Backup으로 복원해 재현하는 방식은 데이터 백업용이지 네트워크 스택 프로비저닝 도구가 아니다. 콘솔로 만든 뒤 추출한 템플릿을 그대로 적용하는 방식은 환경별 파라미터화와 변경 추적이 빠져 일관성을 보장하지 못한다."
   },
   {
     "number": 10,
     "domain": "배포·프로비저닝·자동화",
-    "prompt": "특정 CloudWatch 경보(예: CPU 높음)가 울리면 자동으로 정해진 교정 작업(예: 인스턴스 재시작, 런북 실행)을 수행하려 한다. 가장 적합한 것은?",
+    "prompt": "운영 중인 애플리케이션에서 EBS 볼륨 사용률이 임계치를 넘으면, 사람 개입 없이 볼륨을 자동으로 확장하는 표준 절차를 적용하고 싶다. 가장 효율적인 구성은?",
     "choices": [
       {
         "label": "A",
-        "text": "운영자가 경보를 보고 수동으로 대응"
+        "text": "CloudWatch 경보가 EventBridge를 통해 SSM Automation 런북을 호출해 볼륨 확장과 파일시스템 확장을 수행한다"
       },
       {
         "label": "B",
-        "text": "Systems Manager Automation 런북을 경보/EventBridge로 트리거"
+        "text": "Auto Scaling 그룹의 시작 템플릿에서 더 큰 EBS 볼륨을 지정하고 인스턴스를 교체한다"
       },
       {
         "label": "C",
-        "text": "경보를 무시"
+        "text": "EventBridge 스케줄로 매시간 Lambda를 실행해 모든 볼륨을 일정 크기로 확장한다"
       },
       {
         "label": "D",
-        "text": "임계치를 매우 높게 설정"
+        "text": "경보가 SNS로 운영자에게 알리면 운영자가 콘솔에서 볼륨을 수동 확장한다"
       }
     ],
-    "answer": "B",
-    "explanation": "SSM Automation 런북은 경보·EventBridge로 트리거되어 인스턴스 재시작 등 표준 교정을 자동 실행해 MTTR을 단축한다. 수동 대응(A)은 느리고, 무시(C)·임계치 회피(D)는 문제를 방치한다."
+    "answer": "A",
+    "explanation": "CloudWatch 경보가 EventBridge를 통해 SSM Automation 런북을 호출하는 구성은 디스크 임계 초과 시 볼륨 수정과 OS 파일시스템 확장까지 표준화된 절차로 자동 실행해 사람 개입을 없애므로 가장 효율적이다. 운영자가 콘솔에서 수동 확장하는 방식은 자동화 요건에 어긋난다. 시작 템플릿의 볼륨을 키워 인스턴스를 교체하는 방식은 상태 데이터를 가진 볼륨에 부적합하고 과도하다. 매시간 모든 볼륨을 일정 크기로 확장하는 방식은 임계와 무관하게 모든 볼륨을 키워 비용 낭비와 불필요한 변경을 부른다."
   },
   {
     "number": 11,
     "domain": "보안·규정 준수",
-    "prompt": "조직의 모든 계정에서 리소스 구성이 규정(예: S3 퍼블릭 차단, EBS 암호화)을 준수하는지 지속 평가하고 위반 시 알림·자동 교정하려 한다. 가장 적합한 것은?",
+    "prompt": "보안 거버넌스팀이 조직 전체에서 S3 버킷의 퍼블릭 액세스 차단이 켜져 있는지 지속 평가하고, 꺼진 버킷이 발견되면 자동으로 다시 켜지도록 하려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "AWS Config 규칙과 교정 작업을 구성"
+        "text": "GuardDuty를 활성화해 S3 보호 기능으로 퍼블릭 버킷을 탐지하고 알림을 받는다"
       },
       {
         "label": "B",
-        "text": "분기마다 수동 점검"
+        "text": "EventBridge로 PutBucketAcl 이벤트를 받아 보안팀에 SNS 알림만 보낸다"
       },
       {
         "label": "C",
-        "text": "GuardDuty만 활성화"
+        "text": "AWS Config 관리형 규칙(s3-bucket-level-public-access-prohibited)에 SSM Automation 자동 교정을 연결한다"
       },
       {
         "label": "D",
-        "text": "규정을 문서로만 보관"
+        "text": "Trusted Advisor의 S3 버킷 권한 점검을 주기적으로 확인한다"
       }
     ],
-    "answer": "A",
-    "explanation": "AWS Config 규칙은 리소스 구성을 지속 평가해 비준수를 탐지하고 SSM Automation 기반 자동 교정을 연결할 수 있다. 수동 점검(B)은 드물고, GuardDuty(C)는 위협 탐지지 구성 준수가 아니며, 문서(D)는 강제력이 없다."
+    "answer": "C",
+    "explanation": "AWS Config 관리형 규칙은 구성을 지속 평가해 비준수를 탐지하고, 연결된 SSM Automation 교정으로 퍼블릭 액세스 차단을 자동 복원할 수 있어 '지속 평가 + 자동 교정' 요건을 정확히 만족한다. GuardDuty는 위협 탐지 중심이라 구성 준수 평가·자동 교정 도구가 아니다. Trusted Advisor 점검은 주기적 확인일 뿐 자동 교정이 없다. EventBridge로 알림만 보내는 방식은 통지만 하고 자동으로 되돌리지 못한다."
   },
   {
     "number": 12,
     "domain": "보안·규정 준수",
-    "prompt": "EC2 인스턴스와 컨테이너 이미지의 소프트웨어 취약점(CVE)을 자동으로 스캔·평가하려 한다. 가장 적합한 것은?",
+    "prompt": "한 팀이 EC2 인스턴스와 ECR에 저장된 컨테이너 이미지의 소프트웨어 취약점(CVE)을 지속적으로 자동 평가하고, 새 취약점이 공개되면 다시 스캔되길 원한다. 가장 적합한 서비스는?",
     "choices": [
       {
         "label": "A",
-        "text": "Amazon Inspector를 활성화"
+        "text": "Systems Manager Inventory로 설치 패키지 목록을 수집해 CVE 목록과 대조한다"
       },
       {
         "label": "B",
-        "text": "수동으로 OS 버전을 확인"
+        "text": "AWS Config 규칙으로 인스턴스의 패치 규정 준수 상태를 평가한다"
       },
       {
         "label": "C",
-        "text": "CloudTrail 로그를 분석"
+        "text": "Security Hub의 기반 보안 모범 사례 표준을 켜고 점수를 확인한다"
       },
       {
         "label": "D",
-        "text": "Trusted Advisor 비용 점검"
+        "text": "Amazon Inspector를 활성화해 EC2와 ECR 이미지를 지속 스캔한다"
       }
     ],
-    "answer": "A",
-    "explanation": "Amazon Inspector는 EC2·ECR 이미지·Lambda의 취약점을 지속 자동 스캔하고 위험도를 점수화한다. 수동 확인(B)은 비효율, CloudTrail(C)은 API 감사, Trusted Advisor(D)는 모범 사례 점검용."
+    "answer": "D",
+    "explanation": "Amazon Inspector는 EC2·ECR 이미지·Lambda의 CVE를 자동·지속 스캔하고 새 취약점 공개 시 자동 재평가하므로 요건에 가장 부합한다. SSM Inventory는 패키지 목록만 모을 뿐 취약점 평가 엔진이 아니다. Config 패치 준수 평가는 패치 적용 여부만 보고 CVE 자체를 평가하지 않는다. Security Hub는 여러 소스의 발견 사항을 집계하는 계층이라 단독으로 취약점을 스캔하지 않는다."
   },
   {
     "number": 13,
     "domain": "보안·규정 준수",
-    "prompt": "여러 팀이 공유하는 VPC에서 특정 서브넷의 인스턴스가 의도치 않은 포트로 외부와 통신하는지 흐름을 분석하려 한다. 가장 적합한 것은?",
+    "prompt": "보안팀이 특정 서브넷의 인스턴스가 어떤 외부 IP·포트와 통신했는지, 그리고 보안 그룹·NACL에서 거부된 트래픽이 있는지 사후 분석하려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "VPC Flow Logs를 활성화해 트래픽 메타데이터를 분석"
+        "text": "CloudTrail 데이터 이벤트를 켜서 네트워크 호출을 기록하고 Athena로 조회한다"
       },
       {
         "label": "B",
-        "text": "각 인스턴스에서 tcpdump를 상시 실행"
+        "text": "Traffic Mirroring으로 패킷을 복제해 별도 분석 어플라이언스로 보낸다"
       },
       {
         "label": "C",
-        "text": "보안 그룹을 모두 삭제"
+        "text": "VPC Flow Logs를 활성화해 CloudWatch Logs로 보내고 Logs Insights로 ACCEPT/REJECT 트래픽을 분석한다"
       },
       {
         "label": "D",
-        "text": "서브넷을 분리한다"
+        "text": "각 인스턴스에서 tcpdump를 상시 실행해 패킷 캡처를 S3에 적재한다"
       }
     ],
-    "answer": "A",
-    "explanation": "VPC Flow Logs는 ENI/서브넷/VPC 단위로 허용·거부된 트래픽 메타데이터를 기록해 비정상 통신을 분석한다. 상시 tcpdump(B)는 운영 부담, 보안 그룹 삭제(C)는 위험, D는 분석 도구가 아니다."
+    "answer": "C",
+    "explanation": "VPC Flow Logs는 ENI/서브넷/VPC 단위로 허용·거부된 트래픽의 IP·포트 메타데이터를 기록하며 Logs Insights로 손쉽게 분석할 수 있어 가장 적합하다. Traffic Mirroring은 전체 패킷 페이로드까지 복제해 과하고 어플라이언스 운영 부담이 크다. CloudTrail 데이터 이벤트는 API 호출 감사용이라 네트워크 흐름을 담지 않는다. 상시 tcpdump로 캡처를 적재하는 방식은 모든 인스턴스에 부담을 주고 거부 트래픽 메타데이터를 표준화해 보기 어렵다."
   },
   {
     "number": 14,
     "domain": "네트워킹·콘텐츠 전송",
-    "prompt": "프라이빗 EC2가 DNS 이름으로 RDS·내부 서비스를 안정적으로 해석해야 하고, 온프레미스와 하이브리드 DNS도 필요하다. 가장 적합한 것은?",
+    "prompt": "프라이빗 서브넷의 애플리케이션이 RDS 등 내부 서비스를 사용자 지정 도메인 이름으로 해석해야 하고, Direct Connect로 연결된 온프레미스 DNS 영역의 레코드도 해석해야 한다. 가장 적합한 구성은?",
     "choices": [
       {
         "label": "A",
-        "text": "hosts 파일을 수동 관리"
+        "text": "퍼블릭 호스팅 영역에 내부 레코드를 만들고 인스턴스가 퍼블릭 리졸버를 쓰게 한다"
       },
       {
         "label": "B",
-        "text": "Route 53 Resolver(프라이빗 호스팅 영역 + 인바운드/아웃바운드 엔드포인트)"
+        "text": "Route 53 프라이빗 호스팅 영역을 VPC에 연결하고, 온프레미스 영역은 Route 53 Resolver 아웃바운드 엔드포인트와 포워딩 규칙으로 해석한다"
       },
       {
         "label": "C",
-        "text": "퍼블릭 DNS만 사용"
+        "text": "온프레미스 DNS 서버 IP를 VPC DHCP 옵션 세트에 지정해 모든 쿼리를 온프레미스로 보낸다"
       },
       {
         "label": "D",
-        "text": "DNS를 비활성화"
+        "text": "각 인스턴스의 /etc/hosts에 내부 서비스와 온프레미스 호스트를 등록한다"
       }
     ],
     "answer": "B",
-    "explanation": "Route 53 Resolver는 프라이빗 호스팅 영역으로 VPC 내부 이름을 해석하고, 인바운드/아웃바운드 엔드포인트로 온프레미스와 하이브리드 DNS를 연동한다. hosts 파일(A)은 확장성 없음, 퍼블릭 DNS(C)는 내부 해석 불가, D는 비현실적."
+    "explanation": "프라이빗 호스팅 영역이 VPC 내부 이름을 해석하고, Resolver 아웃바운드 엔드포인트와 포워딩 규칙이 온프레미스 영역을 해석해 하이브리드 DNS를 깔끔히 구성하므로 가장 적합하다. hosts 파일에 등록하는 방식은 확장성이 없고 RDS 엔드포인트 변경에 취약하다. DHCP로 모든 쿼리를 온프레미스로 보내는 방식은 AWS 내부 이름 해석과 가용성이 저하된다. 퍼블릭 호스팅 영역에 내부 레코드를 두는 방식은 정보 노출과 프라이빗 해석 측면에서 부적절하다."
   },
   {
     "number": 15,
     "domain": "네트워킹·콘텐츠 전송",
-    "prompt": "CloudFront로 제공하는 S3 콘텐츠를 S3 버킷 직접 접근은 차단하고 CloudFront 경유만 허용하려 한다. 권장되는 가장 적합한 방법은?",
+    "prompt": "CloudFront로 S3의 정적 자산을 배포하는데, 사용자가 S3 버킷 URL로 직접 접근하는 것을 차단하고 CloudFront를 통해서만 접근하도록 해야 한다. 가장 권장되는 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "S3 버킷을 퍼블릭으로 공개"
+        "text": "버킷 정책에서 CloudFront의 퍼블릭 IP 범위만 허용한다"
       },
       {
         "label": "B",
-        "text": "CloudFront Origin Access Control(OAC)을 사용하고 버킷 정책으로 OAC만 허용"
+        "text": "S3 버킷을 퍼블릭으로 열고 CloudFront 서명된 URL을 사용한다"
       },
       {
         "label": "C",
-        "text": "버킷 정책으로 0.0.0.0/0 허용"
+        "text": "S3 정적 웹사이트 호스팅 엔드포인트를 오리진으로 쓰고 Referer 헤더 검사로 직접 접근을 차단한다"
       },
       {
         "label": "D",
-        "text": "S3 정적 호스팅 엔드포인트를 직접 노출"
+        "text": "Origin Access Control(OAC)을 구성하고 S3 버킷 정책에서 해당 CloudFront 배포만 허용한다"
       }
     ],
-    "answer": "B",
-    "explanation": "OAC(과거 OAI 후속)는 CloudFront만 S3 오리진에 접근하도록 서명하고, 버킷 정책으로 OAC 외 직접 접근을 차단한다. 퍼블릭 공개(A)·0.0.0.0/0(C)·직접 노출(D)은 우회 접근을 허용한다."
+    "answer": "D",
+    "explanation": "OAC는 CloudFront가 서명한 요청만 S3 오리진에 닿게 하고 버킷 정책으로 해당 배포만 허용하면 직접 접근이 차단되어 현재 권장 방식이다. Referer 헤더 검사로 차단하는 방식은 헤더 위조로 우회 가능하고 정적 호스팅 엔드포인트는 OAC를 지원하지 않는다. 버킷을 퍼블릭으로 열고 서명 URL을 쓰는 방식은 서명과 무관하게 직접 접근을 허용한다. CloudFront IP 범위만 허용하는 방식은 IP가 자주 바뀌고 유지보수가 비현실적이다."
   },
   {
     "number": 16,
     "domain": "네트워킹·콘텐츠 전송",
-    "prompt": "두 VPC(서로 다른 계정) 간에 사설 IP로 통신해야 하고, 전이적 라우팅 없이 1:1 연결만 필요하다. 가장 적합한 것은?",
+    "prompt": "서로 다른 두 계정의 VPC에 있는 애플리케이션이 사설 IP로 직접 통신해야 한다. 연결은 1:1이고 전이적 라우팅은 필요 없으며 트래픽은 인터넷을 거치지 않아야 한다. 가장 비용 효율적인 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "VPC 피어링"
+        "text": "AWS PrivateLink로 서비스 엔드포인트를 노출해 상대 VPC가 소비하게 한다"
       },
       {
         "label": "B",
-        "text": "각 VPC에 인터넷 게이트웨이를 두고 퍼블릭 IP로 통신"
+        "text": "두 VPC 간 VPC 피어링을 설정하고 각 라우팅 테이블에 상대 CIDR 경로를 추가한다"
       },
       {
         "label": "C",
-        "text": "VPN over 인터넷"
+        "text": "양쪽 VPC에 Site-to-Site VPN을 구성해 사설 터널로 연결한다"
       },
       {
         "label": "D",
-        "text": "S3를 중계로 사용"
+        "text": "두 VPC를 Transit Gateway에 연결해 중앙 라우팅으로 통신한다"
       }
     ],
-    "answer": "A",
-    "explanation": "VPC 피어링은 두 VPC를 사설 IP로 직접 연결하며 비전이적이라 단순 1:1 연결에 적합하다(다수 VPC 허브는 Transit Gateway). 퍼블릭 IP(B)·인터넷 VPN(C)은 사설·단순 요구와 거리가 멀고, S3 중계(D)는 부적절."
+    "answer": "B",
+    "explanation": "단순 1:1, 비전이적, 인터넷 미경유 요건에는 VPC 피어링이 가장 단순하고 시간당 요금이 없어 비용 효율적이다. Transit Gateway로 연결하는 방식은 다수 VPC 허브에 적합하지만 연결당 시간 요금이 발생해 2개 VPC에는 과하다. PrivateLink로 서비스를 노출하는 방식은 특정 서비스 노출에 적합하지 양방향 일반 통신에는 부적합하다. Site-to-Site VPN은 보통 인터넷 또는 DX 위에 구성하며 동일 리전 VPC 간 직접 사설 연결에는 불필요하게 복잡하다."
   },
   {
     "number": 17,
     "domain": "비용·성능 최적화",
-    "prompt": "여러 계정에서 미사용 리소스, 과대 프로비저닝, 권장 RI/Savings Plans를 한곳에서 식별해 비용을 줄이려 한다. 가장 적합한 것은?",
+    "prompt": "여러 계정을 가진 조직의 재무팀이 EC2 적정 크기 권장, 미사용 리소스, Savings Plans 권장을 한곳에서 검토해 비용을 줄이려 한다. 가장 적합한 도구 조합은?",
     "choices": [
       {
         "label": "A",
-        "text": "Cost Explorer와 Compute Optimizer 권장 사항을 활용"
+        "text": "AWS Budgets로 예산 경보를 설정하면 자동으로 비용이 최적화된다"
       },
       {
         "label": "B",
-        "text": "청구서를 PDF로만 보관"
+        "text": "Trusted Advisor의 비용 최적화 점검만으로 모든 권장을 확인한다"
       },
       {
         "label": "C",
-        "text": "모든 인스턴스를 최대 크기로 통일"
+        "text": "Cost Explorer로 지출 분석과 Savings Plans 권장을 보고, Compute Optimizer로 인스턴스 적정 크기 권장을 검토한다"
       },
       {
         "label": "D",
-        "text": "비용 모니터링을 하지 않는다"
+        "text": "CloudWatch 지표로 CPU 사용률을 보고 낮은 인스턴스를 수동으로 축소한다"
       }
     ],
-    "answer": "A",
-    "explanation": "Cost Explorer는 지출 분석·RI/SP 권장을, Compute Optimizer는 인스턴스 적정 크기 권장을 제공해 낭비를 식별한다. PDF 보관(B)·최대 통일(C)·미모니터링(D)은 최적화에 도움이 되지 않는다."
+    "answer": "C",
+    "explanation": "Cost Explorer는 지출 추세와 Savings Plans·RI 권장을, Compute Optimizer는 사용 지표 기반 인스턴스 적정 크기 권장을 제공해 두 도구의 조합이 요건을 함께 충족한다. Trusted Advisor 비용 최적화 점검만 쓰는 방식은 일부 비용 점검을 주지만 적정 크기 권장 깊이는 Compute Optimizer가 우월하다. CPU만 보고 수동 축소하는 방식은 메모리·네트워크를 놓치고 확장성이 없다. Budgets는 알림 도구일 뿐 비용을 자동으로 줄이지 않는다."
   },
   {
     "number": 18,
     "domain": "비용·성능 최적화",
-    "prompt": "월 예산을 초과할 가능성이 보이면 사전에 경고를 받고, 예측치가 임계를 넘으면 알림을 보내려 한다. 가장 적합한 것은?",
+    "prompt": "재무팀이 월 비용이 예산을 초과할 것으로 '예측'되는 시점에 미리 알림을 받고, 실제 지출이 80%·100%에 도달할 때도 알림을 받으려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "AWS Budgets로 예산·예측 기반 경보를 설정"
+        "text": "Cost Explorer 보고서를 매주 이메일로 받아 추세를 직접 판단한다"
       },
       {
         "label": "B",
-        "text": "매일 콘솔에서 청구서를 본다"
+        "text": "Cost Anomaly Detection을 켜서 예산 초과 시점을 예측한다"
       },
       {
         "label": "C",
-        "text": "비용 태그를 모두 제거"
+        "text": "CloudWatch 청구 경보를 만들어 추정 요금이 임계값을 넘으면 알린다"
       },
       {
         "label": "D",
-        "text": "예산을 무제한으로 둔다"
+        "text": "AWS Budgets에서 비용 예산을 만들고 실제·예측 임계값에 대한 알림을 SNS로 구성한다"
       }
     ],
-    "answer": "A",
-    "explanation": "AWS Budgets는 실제·예측 지출이 임계치를 넘으면 알림을 보내 사전 대응을 가능하게 한다. 수동 확인(B)은 늦고, 태그 제거(C)는 가시성 저하, 무제한(D)은 통제 불능."
+    "answer": "D",
+    "explanation": "AWS Budgets는 실제 지출과 예측 지출 모두에 대해 여러 임계값(80%·100% 등) 알림을 SNS로 보낼 수 있어 '예측 기반 사전 경고' 요건을 정확히 만족한다. Cost Explorer 보고서를 이메일로 받는 방식은 수동 판단이 필요하고 임계 알림이 없다. Cost Anomaly Detection은 비정상 급증 탐지용이지 예산 대비 예측 알림이 아니다. CloudWatch 청구 경보는 실제 추정 요금 임계만 지원하고 예측 알림과 다중 임계 구성이 약하다."
   },
   {
     "number": 19,
     "domain": "모니터링·로깅·교정",
-    "prompt": "수십 대 인스턴스의 애플리케이션 로그를 중앙에서 집계하고, 특정 오류 패턴이 임계 횟수를 넘으면 경보를 보내려 한다. 가장 적합한 것은?",
+    "prompt": "수십 대 인스턴스에서 동작하는 웹 애플리케이션의 로그를 중앙 집계하고, 'ERROR 500' 패턴이 5분 동안 100회를 넘으면 경보를 보내려 한다. 가장 효율적인 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "각 서버에서 로그를 개별로 grep"
+        "text": "각 인스턴스에서 cron으로 grep을 돌려 임계 초과 시 SNS로 알린다"
       },
       {
         "label": "B",
-        "text": "CloudWatch Logs로 수집하고 지표 필터(metric filter)로 패턴 카운트 후 경보"
+        "text": "CloudWatch 에이전트로 로그를 CloudWatch Logs에 보내고 지표 필터로 패턴을 카운트한 뒤 경보를 건다"
       },
       {
         "label": "C",
-        "text": "로그를 모두 삭제"
+        "text": "로그를 S3에 적재하고 EventBridge 스케줄로 5분마다 Athena 쿼리를 실행해 카운트를 확인한다"
       },
       {
         "label": "D",
-        "text": "로그를 이메일로 전부 전송"
+        "text": "OpenSearch 도메인에 로그를 스트리밍하고 대시보드에서 운영자가 모니터링한다"
       }
     ],
     "answer": "B",
-    "explanation": "CloudWatch Logs는 로그를 중앙 집계하고 지표 필터로 오류 패턴을 지표화해 경보를 트리거한다. 개별 grep(A)·이메일 전송(D)은 비확장적, 삭제(C)는 운영성 상실."
+    "explanation": "CloudWatch 에이전트로 로그를 모으고 지표 필터로 패턴을 지표화한 뒤 경보를 거는 방식은 로그 패턴을 카운트해 임계 경보까지 직접 설정할 수 있어 중앙 집계와 패턴 경보를 가장 적은 운영 부담으로 구현한다. S3에 적재해 5분마다 Athena로 쿼리하는 방식은 파이프라인을 직접 구성해야 하고 지연이 있다. OpenSearch 대시보드는 강력하지만 자동 경보보다 운영자 관찰에 의존하고 비용·운영 부담이 크다. 인스턴스별 grep 방식은 분산 임계 집계가 어렵고 확장성이 낮다."
   },
   {
     "number": 20,
     "domain": "안정성·비즈니스 연속성",
-    "prompt": "Auto Scaling이 트래픽 패턴에 따라 사전에(시간대 기준) 용량을 늘리고, 예측 불가한 급증에도 반응하길 원한다. 적절한 조치 2가지는? (2개 선택)",
+    "prompt": "전자상거래 서비스의 Auto Scaling 그룹이 매일 오전 9시 프로모션에 맞춰 미리 용량을 늘려야 하고, 동시에 예측 불가한 트래픽 급증에도 자동으로 반응해야 한다. 적절한 조치 2가지는? (2개 선택)",
     "choices": [
       {
         "label": "A",
-        "text": "예약된 조정(scheduled scaling)으로 알려진 피크 시간에 미리 확장"
+        "text": "단계 조정(step scaling)에 매우 긴 쿨다운을 두어 잦은 조정을 막는다"
       },
       {
         "label": "B",
-        "text": "대상 추적(target tracking) 조정 정책으로 지표 기반 동적 확장"
+        "text": "예약된 조정(scheduled action)으로 매일 오전 9시 직전 희망 용량을 늘린다"
       },
       {
         "label": "C",
-        "text": "최대 용량을 1로 고정"
+        "text": "수동 조정으로 운영자가 매일 아침 용량을 늘린다"
       },
       {
         "label": "D",
-        "text": "조정 정책을 모두 삭제"
+        "text": "대상 추적(target tracking) 정책으로 평균 CPU 또는 요청 수를 목표값으로 유지한다"
       }
     ],
-    "answer": "A, B",
-    "explanation": "예약된 조정은 예측 가능한 피크에 선제 확장하고, 대상 추적은 CPU/요청 수 등 지표에 따라 동적으로 반응한다. 두 가지를 함께 쓰면 사전·사후 모두 대응된다. 최대 1 고정(C)·정책 삭제(D)는 확장 자체를 막는다."
+    "answer": "B, D",
+    "explanation": "예약된 조정은 매일 오전 9시처럼 알려진 피크 시간에 선제적으로 용량을 확보하고, 대상 추적 정책은 평균 CPU나 요청 수를 목표값으로 유지하며 예측 불가한 급증에 동적으로 반응한다. 이 둘의 조합이 사전·사후 대응을 모두 충족한다. 운영자가 매일 아침 수동으로 늘리는 방식은 자동화가 아니라 누락·지연 위험이 있다. 단계 조정에 매우 긴 쿨다운을 두는 방식은 급증에 느리게 반응해 가용성을 떨어뜨린다."
   },
   {
     "number": 21,
     "domain": "모니터링·로깅·교정",
-    "prompt": "EC2의 메모리 사용률과 디스크 사용량은 기본 CloudWatch 지표에 없다. 이를 수집하려면?",
+    "prompt": "한 SysOps 관리자가 EC2 인스턴스의 루트 파일시스템 디스크 사용률을 모니터링하려 한다. CloudWatch에는 디스크 사용률 지표가 보이지 않는다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "CloudWatch 에이전트를 설치해 메모리·디스크 지표를 게시"
+        "text": "EC2 세부 모니터링을 켜면 디스크 사용률 지표가 노출된다"
       },
       {
         "label": "B",
-        "text": "기본 지표만으로 추정"
+        "text": "SSM Inventory로 디스크 정보를 수집하고 변화를 추적한다"
       },
       {
         "label": "C",
-        "text": "SSH로 매번 확인"
+        "text": "통합 CloudWatch 에이전트를 설치하고 disk_used_percent 지표를 게시하도록 구성한다"
       },
       {
         "label": "D",
-        "text": "지표를 포기"
+        "text": "CloudWatch에서 EBS 볼륨의 VolumeReadBytes/VolumeWriteBytes로 사용률을 추정한다"
       }
     ],
-    "answer": "A",
-    "explanation": "메모리·디스크는 하이퍼바이저에서 보이지 않으므로 CloudWatch 에이전트(또는 통합 에이전트)를 게스트 OS에 설치해 게시해야 한다. 기본 지표(B)에는 없다."
+    "answer": "C",
+    "explanation": "디스크 사용률은 게스트 OS 내부 정보라 하이퍼바이저에서 보이지 않으므로 통합 CloudWatch 에이전트로 disk_used_percent를 게시해야 한다. EBS의 읽기·쓰기 바이트 지표로 추정하는 방식은 처리량 통계일 뿐 파일시스템 사용률이 아니다. 세부 모니터링을 켜는 방식은 수집 주기를 1분으로 줄일 뿐 디스크 사용률 지표를 추가하지 않는다. SSM Inventory는 구성 인벤토리 수집용이라 연속 지표·경보에 부적합하다."
   },
   {
     "number": 22,
     "domain": "모니터링·로깅·교정",
-    "prompt": "CloudWatch 경보가 일시적 스파이크에 너무 자주 울린다. 오탐을 줄이려면?",
+    "prompt": "CPU 사용률 경보가 짧은 순간 스파이크마다 ALARM으로 전환되어 야간 호출이 잦다. 진짜 지속적인 부하일 때만 경보가 울리게 하면서 데이터 누락 시 잘못 울리지 않게 하려 한다. 가장 적합한 조정은?",
     "choices": [
       {
         "label": "A",
-        "text": "평가 기간(periods)과 데이터 포인트(M out of N)를 조정해 지속 조건일 때만 ALARM"
+        "text": "평가 기간을 늘리고 'N개 중 M개' 데이터 포인트 조건과 누락 데이터 처리 방식을 적절히 설정한다"
       },
       {
         "label": "B",
-        "text": "경보를 모두 삭제"
+        "text": "경보 작업에 쿨다운을 추가해 연속 알림을 억제한다"
       },
       {
         "label": "C",
-        "text": "임계값을 0으로"
+        "text": "경보의 임계값을 더 높여 스파이크가 임계를 넘지 않게 한다"
       },
       {
         "label": "D",
-        "text": "지표 수집을 끈다"
+        "text": "지표 수집 주기를 5분으로 늘려 스파이크가 평균에 묻히게 한다"
       }
     ],
     "answer": "A",
-    "explanation": "평가 기간 수와 N개 중 M개 조건을 늘리면 순간 스파이크가 아니라 지속적 이상에서만 경보가 울려 오탐이 준다. 삭제·수집 중단(B,D)은 가시성을 잃는다."
+    "explanation": "평가 기간 수와 'N 중 M' 조건을 늘리면 일시적 스파이크가 아닌 지속 이상에서만 ALARM이 되고, 누락 데이터 처리 방식을 설정해 데이터 공백 시 오탐을 막을 수 있어 두 요건을 함께 충족한다. 임계값을 더 높이는 방식은 진짜 고부하도 놓칠 수 있다. 수집 주기를 5분으로 늘리는 방식은 가시성을 떨어뜨리고 실제 문제 감지를 지연시킨다. CloudWatch 경보 자체에는 작업 쿨다운 개념이 없어 경보 작업에 쿨다운을 추가하는 방식은 부적절하다."
   },
   {
     "number": 23,
     "domain": "모니터링·로깅·교정",
-    "prompt": "리소스 구성 변경 이력을 추적하고 규정 준수 규칙 위반(예: 암호화되지 않은 볼륨)을 자동 감지하려 한다. 가장 적합한 것은?",
+    "prompt": "감사팀이 EBS 볼륨이 암호화되지 않은 상태로 생성되는 경우를 지속적으로 탐지하고, 위반 발생 시점의 구성 변경 이력도 함께 확인하려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "AWS Config로 구성 기록 + 관리형/사용자 정의 규칙으로 비준수 감지"
+        "text": "리전별 EBS 기본 암호화를 켜기만 하면 평가가 자동으로 이뤄진다"
       },
       {
         "label": "B",
-        "text": "CloudWatch 대시보드만 본다"
+        "text": "CloudTrail의 CreateVolume 이벤트를 EventBridge로 받아 알림만 보낸다"
       },
       {
         "label": "C",
-        "text": "수동으로 분기 점검"
+        "text": "AWS Config로 구성 항목을 기록하고 encrypted-volumes 관리형 규칙으로 비준수를 평가한다"
       },
       {
         "label": "D",
-        "text": "변경을 추적하지 않는다"
+        "text": "Security Hub의 점수만 주기적으로 확인한다"
       }
     ],
-    "answer": "A",
-    "explanation": "AWS Config는 리소스 구성 변경을 기록하고 Config 규칙으로 원하는 상태 위반을 지속 평가·자동 교정(remediation)까지 연동한다. 수동 점검(C)은 드리프트를 놓친다."
+    "answer": "C",
+    "explanation": "AWS Config는 리소스 구성과 변경 타임라인을 기록하고 encrypted-volumes 규칙으로 비준수를 지속 평가하므로 '탐지 + 변경 이력' 요건을 동시에 충족한다. CloudTrail 이벤트로 알림만 보내는 방식은 변경 사실만 알릴 뿐 준수 평가와 구성 타임라인을 제공하지 않는다. 기본 암호화를 켜는 방식은 예방책이지 기존 위반 탐지·이력 조회가 아니다. Security Hub 점수만 확인하는 방식은 발견 사항 집계 계층으로 상세한 구성 변경 타임라인을 직접 제공하지 않는다."
   },
   {
     "number": 24,
     "domain": "모니터링·로깅·교정",
-    "prompt": "CloudWatch Logs에 쌓인 대량 로그를 SQL 유사 구문으로 대화식 분석·검색하려 한다. 가장 적합한 것은?",
+    "prompt": "장애 후 사후 분석에서, 운영자가 여러 로그 그룹에 흩어진 대량 로그를 대화식으로 필터링하고 오류 상위 URL을 집계하려 한다. 추가 인프라 없이 가장 빠르게 분석하는 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "CloudWatch Logs Insights로 쿼리"
+        "text": "CloudWatch Logs Insights에서 쿼리 언어로 필드 파싱·필터·집계를 수행한다"
       },
       {
         "label": "B",
-        "text": "각 로그 스트림을 눈으로 스크롤"
+        "text": "각 로그 스트림을 콘솔에서 필터 패턴으로 하나씩 검색한다"
       },
       {
         "label": "C",
-        "text": "로그를 다운받아 메모장으로 검색"
+        "text": "로그를 S3에 적재하고 Glue 크롤러 후 Athena로 SQL 분석한다"
       },
       {
         "label": "D",
-        "text": "로그를 삭제"
+        "text": "로그를 S3로 내보내 OpenSearch Service에 색인하고 대시보드를 만든다"
       }
     ],
     "answer": "A",
-    "explanation": "Logs Insights는 전용 쿼리 언어로 로그 그룹을 집계·필터·통계 분석한다. 수동 스크롤·메모장(B,C)은 비효율적이다."
+    "explanation": "Logs Insights는 CloudWatch Logs에 이미 있는 로그를 별도 인프라 없이 즉시 파싱·필터·집계할 수 있어 빠른 사후 분석에 가장 적합하다. OpenSearch에 색인해 대시보드를 만드는 방식과 S3에 적재해 Glue·Athena로 분석하는 방식은 강력하지만 색인·크롤링 등 파이프라인 구축이 필요해 즉시성이 떨어진다. 스트림을 하나씩 수동 검색하는 방식은 여러 그룹 집계가 불가능하고 비효율적이다."
   },
   {
     "number": 25,
     "domain": "모니터링·로깅·교정",
-    "prompt": "EventBridge 규칙으로 EC2 상태 변경 등 특정 이벤트가 발생하면 자동 대응(Lambda 실행, SNS 알림)을 트리거하려 한다. 가장 적합한 것은?",
+    "prompt": "EC2 인스턴스가 'stopped' 상태로 전환되면 자동으로 운영 채널에 알리고 정해진 복구 절차를 실행하려 한다. 가장 효율적인 구성은?",
     "choices": [
       {
         "label": "A",
-        "text": "EventBridge 이벤트 패턴 규칙으로 대상(Lambda/SNS)을 호출"
+        "text": "Lambda를 1분 주기로 실행해 DescribeInstances로 상태를 폴링하고 분기 처리한다"
       },
       {
         "label": "B",
-        "text": "cron으로 1분마다 상태를 폴링"
+        "text": "CloudWatch 경보의 StatusCheckFailed 지표에 EC2 복구 작업을 연결한다"
       },
       {
         "label": "C",
-        "text": "사람이 콘솔을 지켜본다"
+        "text": "CloudTrail StopInstances 이벤트를 S3에 저장하고 Athena로 사후 조회한다"
       },
       {
         "label": "D",
-        "text": "아무 것도 하지 않는다"
+        "text": "EC2 인스턴스 상태 변경 이벤트를 EventBridge 규칙으로 매칭해 SNS와 SSM Automation 런북을 대상으로 지정한다"
       }
     ],
-    "answer": "A",
-    "explanation": "EventBridge는 AWS 서비스 이벤트를 패턴 매칭해 대상으로 라우팅하므로 상태 변경에 즉시 자동 대응한다. 폴링·수동 관찰(B,C)은 지연·비효율적이다."
+    "answer": "D",
+    "explanation": "EventBridge는 EC2 상태 변경 이벤트를 패턴 매칭해 SNS 알림과 SSM Automation 런북을 동시에 호출할 수 있어 이벤트 기반 자동 대응에 가장 적합하다. StatusCheckFailed 지표에 EC2 복구를 연결하는 방식은 하드웨어 손상 복구용이지 'stopped' 상태 전환 이벤트를 다루지 못한다. Lambda 폴링 방식은 지연·비용이 크고 이벤트 누락 위험이 있다. CloudTrail 이벤트를 S3에 저장해 Athena로 조회하는 방식은 사후 조회용이라 즉시 자동 대응이 아니다."
   },
   {
     "number": 26,
     "domain": "모니터링·로깅·교정",
-    "prompt": "여러 계정·리전의 운영 데이터를 단일 대시보드에서 통합 관찰하려 한다. 가장 적합한 것은?",
+    "prompt": "여러 계정·리전에 분산된 마이크로서비스의 분산 추적(trace)과 지표를 모니터링 계정 한 곳에서 상관 분석하려 한다. 가장 운영 부담이 적은 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "CloudWatch 교차 계정 관찰성 구성"
+        "text": "모든 서비스를 단일 계정·단일 리전으로 이전해 추적을 통합한다"
       },
       {
         "label": "B",
-        "text": "각 계정에 따로 로그인"
+        "text": "계정마다 별도 대시보드를 만들고 운영자가 화면을 전환해 비교한다"
       },
       {
         "label": "C",
-        "text": "지표를 이메일로 모은다"
+        "text": "각 계정의 X-Ray 데이터를 S3로 내보내 모니터링 계정에서 수동으로 결합한다"
       },
       {
         "label": "D",
-        "text": "모니터링을 끈다"
+        "text": "CloudWatch 교차 계정 관찰성을 구성해 소스 계정의 지표·로그·X-Ray 추적을 모니터링 계정에 연결한다"
       }
     ],
-    "answer": "A",
-    "explanation": "CloudWatch 교차 계정 관찰성은 모니터링 계정에서 여러 소스 계정·리전의 지표·로그·추적을 통합 조회하게 한다. 개별 로그인(B)은 비효율적이다."
+    "answer": "D",
+    "explanation": "CloudWatch 교차 계정 관찰성은 지표·로그뿐 아니라 X-Ray 추적까지 모니터링 계정에서 통합 상관 분석하게 해 가장 운영 부담이 적다. X-Ray 데이터를 S3로 내보내 수동 결합하는 방식은 직접 파이프라인을 만들어야 한다. 모든 서비스를 단일 계정·리전으로 이전하는 방식은 격리·운영 구조를 흔드는 과도한 변경이다. 계정마다 대시보드를 만들어 화면을 전환하는 방식은 단일 화면 상관 분석이 불가능하다."
   },
   {
     "number": 27,
     "domain": "모니터링·로깅·교정",
-    "prompt": "CloudTrail 로그를 분석해 \"누가 언제 어떤 API를 호출했는가\"를 사후 조사하려 한다. 가장 적합한 것은?",
+    "prompt": "보안 사고 조사에서 '지난 90일 동안 특정 IAM 역할이 어떤 API를 언제 호출했는가'를 SQL로 질의해야 한다. CloudTrail 이벤트 기록 콘솔은 보존 기간이 짧아 부족하다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "CloudTrail 이벤트를 S3에 저장하고 Athena로 쿼리(또는 CloudTrail Lake)"
+        "text": "CloudTrail Insights를 켜서 비정상 호출 패턴을 자동 탐지한다"
       },
       {
         "label": "B",
-        "text": "CPU 지표를 본다"
+        "text": "CloudTrail Lake 이벤트 데이터 스토어를 사용하거나 추적을 S3에 저장하고 Athena로 쿼리한다"
       },
       {
         "label": "C",
-        "text": "추측한다"
+        "text": "IAM Access Analyzer로 역할의 외부 접근 가능성을 분석한다"
       },
       {
         "label": "D",
-        "text": "로그를 삭제"
+        "text": "Config 고급 쿼리로 IAM 역할의 구성 변경을 조회한다"
       }
     ],
-    "answer": "A",
-    "explanation": "CloudTrail은 관리/데이터 이벤트를 기록하고, S3+Athena 또는 CloudTrail Lake로 행위자·시간·API를 쿼리해 감사·조사할 수 있다. CPU(B)는 무관하다."
+    "answer": "B",
+    "explanation": "CloudTrail Lake 또는 추적을 S3에 저장해 Athena로 쿼리하는 방식은 장기 보존된 API 이벤트를 SQL로 질의해 행위자·시간·API를 정밀 조사할 수 있어 요건에 맞는다. CloudTrail Insights는 비정상 패턴 탐지용이지 임의 SQL 조회 도구가 아니다. Config 고급 쿼리는 구성 상태 조회이지 API 호출 이력이 아니다. IAM Access Analyzer는 권한 노출 분석용으로 호출 이력과 무관하다."
   },
   {
     "number": 28,
     "domain": "모니터링·로깅·교정",
-    "prompt": "특정 지표가 임계 초과 시 EC2를 자동 재부팅하거나 복구하도록 자동 조치를 연결하려 한다. 가장 적합한 것은?",
+    "prompt": "기반 하드웨어 손상으로 인스턴스 시스템 상태 점검이 실패할 때, 사람 개입 없이 동일 인스턴스를 다른 정상 하드웨어로 복구하려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "CloudWatch 경보의 EC2 작업(복구/재부팅/중지)을 사용"
+        "text": "ASG에 인스턴스를 넣어 비정상 시 종료·신규 생성으로 대체한다"
       },
       {
         "label": "B",
-        "text": "운영자에게 전화로만 알린다"
+        "text": "StatusCheckFailed_System 지표에 EC2 복구(recover) 작업을 연결한 CloudWatch 경보를 만든다"
       },
       {
         "label": "C",
-        "text": "아무 조치도 하지 않는다"
+        "text": "StatusCheckFailed_Instance 지표에 인스턴스 재부팅 작업을 연결한다"
       },
       {
         "label": "D",
-        "text": "인스턴스를 종료"
+        "text": "EventBridge로 상태 점검 실패 알림을 받아 운영자가 수동으로 중지·시작한다"
       }
     ],
-    "answer": "A",
-    "explanation": "CloudWatch 경보는 상태 기반으로 EC2 복구/재부팅/중지 등의 자동 작업을 트리거해 운영 개입을 줄인다. 전화 알림만(B)은 자동화가 아니다."
+    "answer": "B",
+    "explanation": "시스템 상태 점검 실패는 기반 하드웨어 문제를 의미하며, 시스템 점검 지표에 EC2 복구 작업을 연결하면 동일 ID·사설 IP를 유지한 채 정상 하드웨어로 이전해 요건을 만족한다. 인스턴스 점검 실패에 재부팅을 연결하는 방식은 게스트 OS 문제용이라 하드웨어 손상에는 부적합하다. ASG로 종료·신규 생성하는 방식은 인스턴스 ID가 바뀌고 상태 보존이 어렵다. 운영자가 수동으로 중지·시작하는 방식은 사람 개입을 없애려는 요건에 어긋난다."
   },
   {
     "number": 29,
     "domain": "모니터링·로깅·교정",
-    "prompt": "온프레미스 및 EC2 서버의 로그를 표준화해 CloudWatch로 보내고 지표화하려 한다. 가장 적합한 것은?",
+    "prompt": "온프레미스 서버와 EC2 인스턴스의 syslog를 표준 형식으로 CloudWatch Logs에 모으고, 인증 실패 패턴이 임계를 넘으면 경보를 보내려 한다. 온프레미스 서버는 Systems Manager 하이브리드 활성화로 관리된다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "통합 CloudWatch 에이전트로 로그를 수집·전송하고 지표 필터로 패턴 추출"
+        "text": "온프레미스 로그는 수집할 수 없으므로 EC2 로그만 CloudWatch에 보낸다"
       },
       {
         "label": "B",
-        "text": "로그를 각 서버에 방치"
+        "text": "각 서버에서 fluentd로 S3에 적재하고 Athena 스케줄 쿼리로 임계를 점검한다"
       },
       {
         "label": "C",
-        "text": "로그를 출력만 한다"
+        "text": "통합 CloudWatch 에이전트로 양쪽 로그를 수집·전송하고 지표 필터로 인증 실패를 카운트해 경보를 건다"
       },
       {
         "label": "D",
-        "text": "로그를 끈다"
+        "text": "Kinesis Agent로 로그를 Kinesis Data Streams에 보내고 Lambda로 패턴을 집계한다"
       }
     ],
-    "answer": "A",
-    "explanation": "통합 CloudWatch 에이전트는 로그를 수집해 CloudWatch Logs로 보내고, 지표 필터로 패턴을 지표화·경보화한다. 방치·끄기(B,D)는 운영성이 없다."
+    "answer": "C",
+    "explanation": "통합 CloudWatch 에이전트는 온프레미스 하이브리드 관리 노드와 EC2 양쪽에서 로그를 표준 수집·전송하고, 지표 필터로 인증 실패를 지표화해 경보까지 연결해 가장 단순하다. Kinesis Streams와 Lambda로 집계하는 방식이나 fluentd로 S3에 적재해 Athena로 점검하는 방식은 패턴 경보 파이프라인을 직접 구축해야 한다. 온프레미스 로그를 수집할 수 없다는 전제로 EC2 로그만 보내는 방식은 그 전제 자체가 틀렸다."
   },
   {
     "number": 30,
     "domain": "안정성·비즈니스 연속성",
-    "prompt": "EBS 볼륨을 정기적으로 자동 백업하고 보존 기간을 관리하려 한다. 가장 적합한 것은?",
+    "prompt": "여러 EC2 인스턴스에 부착된 데이터 EBS 볼륨을 매일 스냅샷으로 백업하고 7일간 보존하며, 단일 계정 내에서 운영 부담을 최소화하려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "Amazon Data Lifecycle Manager(DLM)나 AWS Backup으로 스냅샷 정책 자동화"
+        "text": "EventBridge 스케줄로 Lambda를 호출해 CreateSnapshot과 오래된 스냅샷 삭제를 직접 구현한다"
       },
       {
         "label": "B",
-        "text": "수동으로 가끔 스냅샷"
+        "text": "Amazon Data Lifecycle Manager(DLM) 정책으로 태그 기반 스냅샷 일정과 7일 보존을 자동화한다"
       },
       {
         "label": "C",
-        "text": "백업하지 않는다"
+        "text": "각 볼륨을 동일 AZ의 새 볼륨으로 복제해 보관한다"
       },
       {
         "label": "D",
-        "text": "볼륨을 복제해 같은 인스턴스에 붙인다"
+        "text": "운영자가 매일 콘솔에서 스냅샷을 생성하고 주간 점검 때 오래된 것을 삭제한다"
       }
     ],
-    "answer": "A",
-    "explanation": "DLM/AWS Backup은 스냅샷 생성·보존·삭제를 정책 기반으로 자동화한다. 수동·미백업(B,C)은 신뢰성이 낮다."
+    "answer": "B",
+    "explanation": "DLM은 태그 기반으로 스냅샷 생성·보존·삭제를 정책으로 자동화해 단일 계정 EBS 백업에 가장 적은 운영 부담을 제공한다. Lambda로 스냅샷 생성·삭제를 직접 구현하는 방식은 동일 작업을 코드로 다시 만들어 유지보수 부담이 크다. 운영자가 매일 콘솔에서 스냅샷을 만드는 방식은 누락·실수 위험이 높다. 볼륨을 복제해 보관하는 방식은 비용이 크고 보존·일정 관리 기능이 없다."
   },
   {
     "number": 31,
     "domain": "안정성·비즈니스 연속성",
-    "prompt": "여러 계정·서비스(EBS, RDS, EFS, DynamoDB 등)의 백업을 중앙에서 정책으로 통합 관리하려 한다. 가장 적합한 것은?",
+    "prompt": "조직이 EBS, RDS, EFS, DynamoDB 백업을 계정·서비스마다 따로 관리해 정책 일관성과 규정 준수 보고가 어렵다. 백업 정책을 중앙에서 정의하고 다른 리전에도 사본을 두려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "AWS Backup으로 백업 계획·금고를 중앙 관리"
+        "text": "각 서비스의 네이티브 백업(자동 스냅샷, PITR 등)을 그대로 쓰고 스프레드시트로 추적한다"
       },
       {
         "label": "B",
-        "text": "서비스마다 다른 방식으로 따로 관리"
+        "text": "AWS Backup으로 백업 계획·금고를 중앙 정의하고 교차 리전 복사와 백업 감사 보고서를 구성한다"
       },
       {
         "label": "C",
-        "text": "백업을 끈다"
+        "text": "CloudFormation으로 서비스별 백업 리소스를 배포하고 직접 일정을 맞춘다"
       },
       {
         "label": "D",
-        "text": "스크린샷으로 보관"
+        "text": "DLM으로 모든 서비스의 백업을 통합 정책으로 관리한다"
       }
     ],
-    "answer": "A",
-    "explanation": "AWS Backup은 다수 서비스의 백업을 백업 계획·금고로 중앙 집중 관리하고 교차 계정·리전 복사를 지원한다. 서비스별 산발 관리(B)는 일관성이 떨어진다."
+    "answer": "B",
+    "explanation": "AWS Backup은 여러 서비스의 백업을 백업 계획·금고로 중앙 관리하고 교차 리전·교차 계정 복사와 감사 보고서를 제공해 일관성과 규정 준수 요건을 충족한다. 네이티브 백업을 그대로 쓰고 스프레드시트로 추적하는 방식은 일관성·중앙 보고가 없다. DLM은 주로 EBS·AMI 대상이라 RDS·EFS·DynamoDB를 통합 관리하지 못한다. CloudFormation은 배포 도구일 뿐 백업 정책·보존을 통합 관리하지 않는다."
   },
   {
     "number": 32,
     "domain": "안정성·비즈니스 연속성",
-    "prompt": "Multi-AZ RDS에서 기본 인스턴스 장애 시 동작을 옳게 설명한 것은?",
+    "prompt": "Multi-AZ로 배포된 RDS 인스턴스에서 기본(primary) AZ에 장애가 발생했다. 애플리케이션 연결 문자열은 RDS 엔드포인트를 사용한다. 이때의 동작을 옳게 설명한 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "대기 인스턴스로 자동 페일오버되고 엔드포인트(DNS)가 새 기본으로 전환"
+        "text": "비동기 복제 지연 때문에 일부 커밋된 트랜잭션이 유실될 수 있다"
       },
       {
         "label": "B",
-        "text": "수동으로 복원해야만 한다"
+        "text": "운영자가 최신 스냅샷에서 새 인스턴스를 복원해 엔드포인트를 수동 변경해야 한다"
       },
       {
         "label": "C",
-        "text": "데이터가 유실된다"
+        "text": "읽기 전용 복제본 중 하나가 자동으로 기본으로 승격되어 읽기·쓰기를 처리한다"
       },
       {
         "label": "D",
-        "text": "읽기 복제본이 자동으로 기본이 된다"
+        "text": "동기 복제된 대기 인스턴스로 자동 페일오버되고, DNS 엔드포인트가 새 기본을 가리켜 연결 문자열 변경이 필요 없다"
       }
     ],
-    "answer": "A",
-    "explanation": "Multi-AZ는 동기 복제된 대기 인스턴스로 자동 페일오버하고 동일 엔드포인트가 새 기본을 가리켜 애플리케이션 변경이 거의 없다. 읽기 복제본(D)은 별개 개념이다."
+    "answer": "D",
+    "explanation": "Multi-AZ는 대기 인스턴스에 동기 복제하므로 장애 시 자동 페일오버되고 동일 DNS 엔드포인트가 새 기본을 가리켜 연결 문자열을 바꿀 필요가 없다는 설명이 옳다. 읽기 전용 복제본이 승격된다는 설명은 Multi-AZ 페일오버와 별개 메커니즘이라 틀렸다. 스냅샷에서 수동 복원해야 한다는 설명은 Multi-AZ의 자동성에 어긋난다. 동기 복제이므로 커밋된 트랜잭션이 유실될 수 있다는 설명은 전제부터 틀렸다."
   },
   {
     "number": 33,
     "domain": "안정성·비즈니스 연속성",
-    "prompt": "Route 53으로 기본 리전 장애 시 DR 리전으로 자동 트래픽 전환을 구성하려 한다. 가장 적합한 것은?",
+    "prompt": "활성 리전과 대기 리전에 동일 애플리케이션을 운영한다. 기본 리전 엔드포인트가 비정상이면 자동으로 대기 리전으로 트래픽을 전환하고, 정상 복구 시 다시 기본으로 돌아오게 하려 한다. 가장 적합한 구성은?",
     "choices": [
       {
         "label": "A",
-        "text": "상태 확인(health check) 기반 장애 조치(failover) 라우팅 정책"
+        "text": "단순(simple) 라우팅에 두 리전 IP를 모두 등록해 라운드로빈한다"
       },
       {
         "label": "B",
-        "text": "단순 라우팅으로 한 리전만 가리킨다"
+        "text": "Route 53 상태 확인과 장애 조치(failover) 라우팅 정책으로 기본/보조 레코드를 구성한다"
       },
       {
         "label": "C",
-        "text": "TTL을 매우 길게 고정"
+        "text": "가중치 기반(weighted) 라우팅으로 기본 100, 보조 0을 두고 장애 시 운영자가 가중치를 바꾼다"
       },
       {
         "label": "D",
-        "text": "DNS를 사용하지 않는다"
+        "text": "지연 시간 기반(latency) 라우팅으로 더 빠른 리전으로 자동 분산한다"
       }
     ],
-    "answer": "A",
-    "explanation": "Route 53 장애 조치 라우팅은 기본 레코드의 상태 확인이 실패하면 보조(DR) 레코드로 자동 전환한다. 단순 라우팅(B)은 자동 전환이 없다."
+    "answer": "B",
+    "explanation": "장애 조치 라우팅은 기본 레코드의 상태 확인이 실패하면 보조로 자동 전환하고 복구 시 기본으로 되돌려 active-passive DR에 정확히 맞는다. 가중치 기반으로 운영자가 가중치를 바꾸는 방식은 자동 전환이 없고 수동 변경이 필요하다. 지연 시간 기반 라우팅은 성능 기반 분산이지 장애 조치 목적이 아니다. 단순 라우팅은 상태 확인이 없어 비정상 엔드포인트로도 트래픽을 보낸다."
   },
   {
     "number": 34,
     "domain": "안정성·비즈니스 연속성",
-    "prompt": "S3 데이터를 다른 리전에 자동 복제해 리전 장애와 규정 요건에 대비하려 한다. 가장 적합한 것은?",
+    "prompt": "규정상 S3에 저장되는 객체를 다른 리전에 자동 복제해 두고, 복제는 15분 이내에 완료되어야 한다는 SLA를 보장해야 한다. 가장 적합한 구성은?",
     "choices": [
       {
         "label": "A",
-        "text": "S3 교차 리전 복제(CRR)를 활성화"
+        "text": "수명 주기 규칙으로 객체를 다른 리전의 버킷으로 전환한다"
       },
       {
         "label": "B",
-        "text": "수동으로 객체를 복사"
+        "text": "버전 관리를 켜고 복제 시간 제어(RTC)가 활성화된 교차 리전 복제(CRR)를 구성한다"
       },
       {
         "label": "C",
-        "text": "복제하지 않는다"
+        "text": "교차 리전 복제(CRR)만 활성화하고 별도 시간 보장은 두지 않는다"
       },
       {
         "label": "D",
-        "text": "버전 관리를 끈다"
+        "text": "S3 배치 작업(Batch Operations)을 매시간 실행해 객체를 다른 리전으로 복사한다"
       }
     ],
-    "answer": "A",
-    "explanation": "CRR은 버전 관리가 켜진 버킷의 객체를 다른 리전으로 자동 비동기 복제해 DR·규정 준수를 돕는다. 수동 복사(B)는 누락·드리프트 위험이 크다."
+    "answer": "B",
+    "explanation": "교차 리전 복제에 복제 시간 제어(RTC)를 켜면 대부분 객체를 15분 이내 복제하는 SLA가 보장되며 버전 관리는 CRR의 전제 조건이라 요건을 충족한다. RTC 없이 CRR만 켜는 방식은 시간 보장이 없다. 배치 작업을 매시간 실행하는 방식은 15분 SLA를 만족하지 못한다. 수명 주기 규칙은 동일 리전 스토리지 클래스 전환·만료용이지 교차 리전 복제 수단이 아니다."
   },
   {
     "number": 35,
     "domain": "안정성·비즈니스 연속성",
-    "prompt": "Auto Scaling 그룹에서 비정상 인스턴스를 자동 교체하려 한다. 가장 적합한 것은?",
+    "prompt": "ALB 뒤의 Auto Scaling 그룹에서 일부 인스턴스가 OS는 살아 있으나 애플리케이션 프로세스가 죽어 요청을 처리하지 못한다. 이런 인스턴스를 자동 감지·교체하려 한다. 가장 적합한 구성은?",
     "choices": [
       {
         "label": "A",
-        "text": "ELB 상태 확인을 ASG 상태 확인 유형으로 사용해 비정상 인스턴스를 종료·교체"
+        "text": "ASG 상태 확인 유형을 EC2로 두어 인스턴스 상태 점검 실패 시 교체한다"
       },
       {
         "label": "B",
-        "text": "상태를 무시하고 그대로 둔다"
+        "text": "ASG 상태 확인 유형을 ELB로 설정하고 ALB 대상 그룹 상태 확인이 애플리케이션 헬스 경로를 점검하게 한다"
       },
       {
         "label": "C",
-        "text": "최소 용량을 0으로"
+        "text": "CloudWatch 경보로 CPU가 0에 가까우면 인스턴스를 종료한다"
       },
       {
         "label": "D",
-        "text": "ASG를 삭제"
+        "text": "예약된 조정으로 매일 모든 인스턴스를 재시작한다"
       }
     ],
-    "answer": "A",
-    "explanation": "ASG가 ELB 상태 확인을 사용하면 애플리케이션 수준 비정상 인스턴스를 감지해 종료하고 새 인스턴스로 교체해 가용성을 유지한다. 상태 무시(B)는 장애 인스턴스를 방치한다."
+    "answer": "B",
+    "explanation": "ASG가 ELB 상태 확인을 사용하면 ALB가 애플리케이션 헬스 경로를 점검해 프로세스 장애를 감지하고 비정상 인스턴스를 종료·교체하므로 요건에 맞는다. 상태 확인 유형을 EC2로 두는 방식은 OS·하드웨어만 보므로 살아 있는 OS의 애플리케이션 장애를 놓친다. CPU가 0에 가까우면 종료하는 방식은 정상적인 저부하도 오인할 수 있다. 매일 모든 인스턴스를 재시작하는 방식은 장애 감지가 아니라 무차별 조치다."
   },
   {
     "number": 36,
     "domain": "안정성·비즈니스 연속성",
-    "prompt": "RDS의 특정 시점(예: 실수로 삭제 직전)으로 복구하려 한다. 가장 적합한 것은?",
+    "prompt": "운영자가 실수로 RDS 테이블 데이터를 대량 삭제했고, 약 20분 전 상태로 되돌려야 한다. 자동 백업과 보존 기간이 설정되어 있다. 운영 영향을 최소화하는 복구 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "특정 시점 복구(PITR)로 새 인스턴스를 그 시점으로 복원"
+        "text": "특정 시점 복구(PITR)로 20분 전 시점의 새 DB 인스턴스를 만들고, 필요한 데이터를 확인 후 전환한다"
       },
       {
         "label": "B",
-        "text": "운영 DB에 직접 덮어쓴다"
+        "text": "읽기 전용 복제본을 승격해 삭제 이전 데이터를 확보한다"
       },
       {
         "label": "C",
-        "text": "복구가 불가능하다"
+        "text": "가장 최근 자동 스냅샷을 기존 인스턴스 위에 직접 복원해 덮어쓴다"
       },
       {
         "label": "D",
-        "text": "스냅샷을 삭제"
+        "text": "Multi-AZ 페일오버를 강제로 일으켜 대기 인스턴스의 옛 데이터를 가져온다"
       }
     ],
     "answer": "A",
-    "explanation": "자동 백업이 켜진 RDS는 보존 기간 내 임의 시점으로 PITR이 가능해 새 인스턴스로 복원한다. 운영 DB 덮어쓰기(B)는 위험하다."
+    "explanation": "PITR은 보존 기간 내 임의 시점의 새 인스턴스를 생성하므로 20분 전 상태를 안전하게 복원하고 검증 후 전환할 수 있어 영향이 가장 작다. 스냅샷을 기존 인스턴스 위에 덮어쓰는 방식은 RDS에서 기존 인스턴스 위 복원이 불가능하며 위험하다. 읽기 전용 복제본을 승격하는 방식은 삭제가 동기적으로 복제되므로 옛 데이터가 남아 있지 않다. Multi-AZ 페일오버 역시 동기 복제라 삭제가 그대로 반영되어 복구 수단이 아니다."
   },
   {
     "number": 37,
     "domain": "안정성·비즈니스 연속성",
-    "prompt": "EC2 인스턴스가 손상돼도 데이터가 유지되도록 루트가 아닌 데이터 디스크를 분리 관리하려 한다. 가장 적합한 것은?",
+    "prompt": "고성능 임시 스크래치 영역이 필요한 워크로드를 EC2에서 운영한다. 스크래치 데이터는 인스턴스 재시작(stop/start) 시 보존될 필요가 없지만, 별도의 영구 데이터는 인스턴스가 손상돼도 반드시 살아남아야 한다. 가장 적합한 스토리지 설계는?",
     "choices": [
       {
         "label": "A",
-        "text": "데이터를 별도 EBS 볼륨에 두고 스냅샷으로 백업, 필요 시 다른 인스턴스에 연결"
+        "text": "스크래치와 영구 데이터를 모두 루트 EBS 볼륨에 두고 정기 스냅샷을 찍는다"
       },
       {
         "label": "B",
-        "text": "데이터를 인스턴스 스토어에 둔다"
+        "text": "스크래치는 인스턴스 스토어에, 영구 데이터는 별도 EBS 볼륨에 두고 스냅샷으로 백업한다"
       },
       {
         "label": "C",
-        "text": "데이터를 메모리에만 둔다"
+        "text": "스크래치와 영구 데이터를 모두 인스턴스 스토어에 두어 최대 성능을 얻는다"
       },
       {
         "label": "D",
-        "text": "백업하지 않는다"
+        "text": "영구 데이터를 인스턴스 메모리(tmpfs)에 두고 종료 시 S3로 백업한다"
       }
     ],
-    "answer": "A",
-    "explanation": "데이터를 영구 EBS 볼륨에 두고 스냅샷 백업하면 인스턴스 손상 시 볼륨을 다른 인스턴스에 연결해 복구할 수 있다. 인스턴스 스토어(B)는 휘발성이라 종료 시 소실된다."
+    "answer": "B",
+    "explanation": "인스턴스 스토어는 고성능이지만 휘발성이라 stop/start 시 사라지므로 보존이 불필요한 스크래치에 적합하고, 영구 데이터는 별도 EBS 볼륨에 두고 스냅샷 백업하면 인스턴스 손상에도 다른 인스턴스에 연결해 복구할 수 있어 요건에 부합한다. 둘 다 루트 EBS에 두는 방식은 성능 분리가 없고 영구·임시 혼재로 비효율적이다. 둘 다 인스턴스 스토어에 두는 방식은 영구 데이터가 휘발돼 요건을 위반한다. 영구 데이터를 메모리에 두는 방식은 유실 위험이 매우 크다."
   },
   {
     "number": 38,
     "domain": "배포·프로비저닝·자동화",
-    "prompt": "수백 대 인스턴스에 패치를 일정에 맞춰 일괄 적용하고 규정 준수 상태를 추적하려 한다. 가장 적합한 것은?",
+    "prompt": "한 팀이 EC2 함대에서 일회성 운영 명령(예: 특정 데몬 재시작)을 수백 대에 동시에 실행하고 결과를 중앙에서 확인해야 한다. SSH는 정책상 막혀 있다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "Systems Manager Patch Manager로 패치 기준선·유지 관리 기간으로 자동 적용"
+        "text": "Systems Manager Run Command로 대상 태그를 지정해 명령을 실행하고 출력을 S3/CloudWatch Logs로 수집한다"
       },
       {
         "label": "B",
-        "text": "각 인스턴스에 SSH로 수동 패치"
+        "text": "Lambda가 각 인스턴스에 SSM 에이전트 API로 직접 접속해 명령을 실행한다"
       },
       {
         "label": "C",
-        "text": "패치하지 않는다"
+        "text": "EC2 사용자 데이터를 수정하고 모든 인스턴스를 재부팅해 스크립트를 실행한다"
       },
       {
         "label": "D",
-        "text": "인스턴스를 매번 새로 만든다"
+        "text": "Patch Manager 유지 관리 기간에 사용자 지정 스크립트를 등록해 실행한다"
       }
     ],
     "answer": "A",
-    "explanation": "Patch Manager는 패치 기준선과 유지 관리 기간으로 대규모 패치를 자동 적용·보고한다. 수동 SSH(B)는 확장성이 없다."
+    "explanation": "Run Command는 SSH 없이 태그 기반으로 대량 인스턴스에 일회성 명령을 보내고 출력을 중앙 수집해 요건에 정확히 부합한다. Patch Manager 유지 관리 기간을 쓰는 방식은 패치 일정 관리용이라 임의 일회성 명령에 부적합하다. 사용자 데이터를 수정해 재부팅하는 방식은 부팅 시에만 실행되고 재부팅 영향이 크다. Lambda가 SSM 에이전트에 직접 접속한다는 발상은 SSM 아키텍처상 성립하지 않으며 Run Command가 표준이다."
   },
   {
     "number": 39,
     "domain": "배포·프로비저닝·자동화",
-    "prompt": "SSH 키나 베스천 없이 프라이빗 인스턴스에 안전하게 셸 접근하고 명령을 실행하려 한다. 가장 적합한 것은?",
+    "prompt": "여러 팀이 같은 계정을 공유한다. 특정 팀의 운영자만 자신들의 'Team=Payments' 태그가 붙은 인스턴스에 Session Manager로 접속하게 제한하려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "Systems Manager Session Manager로 IAM 기반 셸 접근"
+        "text": "IAM 정책에서 ssm:StartSession을 리소스 태그 조건(ssm:resourceTag/Team=Payments)으로 제한한다"
       },
       {
         "label": "B",
-        "text": "모든 인스턴스에 퍼블릭 IP와 22번 포트 개방"
+        "text": "팀별로 별도 SSM 에이전트 버전을 설치해 접근을 구분한다"
       },
       {
         "label": "C",
-        "text": "키를 공유"
+        "text": "팀별로 다른 SSH 키 페어를 배포해 접근을 통제한다"
       },
       {
         "label": "D",
-        "text": "RDP를 전부 연다"
+        "text": "각 인스턴스의 보안 그룹을 팀별로 분리한다"
       }
     ],
     "answer": "A",
-    "explanation": "Session Manager는 IAM 권한과 SSM 에이전트로 인바운드 포트·베스천 없이 감사 가능한 셸 접근을 제공한다. 22번 개방·키 공유(B,C)는 공격 표면을 늘린다."
+    "explanation": "Session Manager 접근은 IAM으로 제어되며 StartSession 작업에 리소스 태그 조건을 걸면 특정 태그 인스턴스로 세션을 제한할 수 있어 요건에 맞는다. 보안 그룹을 팀별로 분리하는 방식은 네트워크 포트 제어용이라 Session Manager의 IAM 기반 접근 제한과 무관하다. 팀별 SSM 에이전트 버전을 설치하는 방식은 접근 제어 수단이 아니다. 팀별 SSH 키를 배포하는 방식은 Session Manager를 쓰지 않는 방식이라 전제와 어긋난다."
   },
   {
     "number": 40,
     "domain": "배포·프로비저닝·자동화",
-    "prompt": "여러 계정·리전에 동일한 기본 리소스를 일관되게 배포하려 한다. 가장 적합한 것은?",
+    "prompt": "보안 거버넌스팀이 Organizations의 모든 신규·기존 계정에 동일한 IAM 역할과 Config 레코더를 일관되게 배포하고, 신규 계정 생성 시 자동으로 적용되게 하려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "CloudFormation StackSets로 다계정·다리전 배포"
+        "text": "Lambda가 신규 계정 생성 이벤트를 받아 리소스를 API로 직접 생성한다"
       },
       {
         "label": "B",
-        "text": "각 계정에서 콘솔로 따로 생성"
+        "text": "CloudFormation StackSets를 서비스 관리형 권한으로 OU에 배포하고 자동 배포(automatic deployment)를 켠다"
       },
       {
         "label": "C",
-        "text": "수동 복제"
+        "text": "CodePipeline으로 계정 목록을 순회하며 템플릿을 배포하는 파이프라인을 만든다"
       },
       {
         "label": "D",
-        "text": "스크린샷 보관"
+        "text": "각 계정에서 동일 CloudFormation 템플릿을 콘솔로 수동 배포한다"
       }
     ],
-    "answer": "A",
-    "explanation": "StackSets는 단일 템플릿을 여러 계정·리전에 일관 배포·갱신한다. 콘솔 수동(B)·복제(C)는 드리프트 위험이 크다."
+    "answer": "B",
+    "explanation": "StackSets의 서비스 관리형 권한과 자동 배포를 쓰면 OU에 속한 기존 계정은 물론 신규 계정에도 스택이 자동 적용되어 요건을 가장 적은 운영 부담으로 충족한다. 각 계정에서 콘솔로 수동 배포하는 방식은 신규 계정 자동 적용이 안 된다. CodePipeline으로 계정 목록을 순회하는 방식은 계정 목록을 직접 관리해야 하고 신규 계정 자동화가 번거롭다. Lambda가 리소스를 직접 생성하는 방식은 멱등성·드리프트 관리를 새로 구현해야 해 부담이 크다."
   },
   {
     "number": 41,
     "domain": "배포·프로비저닝·자동화",
-    "prompt": "반복되는 운영 작업(예: AMI 생성, 인스턴스 정리)을 사람 개입 없이 자동 실행하려 한다. 가장 적합한 것은?",
+    "prompt": "운영팀이 'EBS 볼륨 용량 부족'과 'EC2 비정상' 같은 반복 인시던트에 대해 표준화된 다단계 복구 절차를 코드로 정의하고, 승인 단계를 포함해 실행하려 한다. 가장 적합한 서비스는?",
     "choices": [
       {
         "label": "A",
-        "text": "Systems Manager 자동화 런북(Automation runbook)으로 절차를 자동 실행"
+        "text": "Lambda 단일 함수에 모든 절차를 작성해 호출한다"
       },
       {
         "label": "B",
-        "text": "매번 손으로 클릭"
+        "text": "Run Command로 각 단계를 개별 명령으로 그때그때 실행한다"
       },
       {
         "label": "C",
-        "text": "문서로만 절차를 적어둔다"
+        "text": "Systems Manager Automation 런북으로 다단계 절차와 수동 승인 단계를 정의해 실행한다"
       },
       {
         "label": "D",
-        "text": "작업을 생략"
+        "text": "EC2 사용자 데이터에 복구 스크립트를 넣어 부팅 시 실행한다"
       }
     ],
-    "answer": "A",
-    "explanation": "SSM 자동화 런북은 다단계 운영 작업을 코드화해 일정·이벤트로 자동 실행한다. 수동 클릭(B)·문서화만(C)은 자동화가 아니다."
+    "answer": "C",
+    "explanation": "SSM Automation 런북은 다단계 절차를 코드화하고 수동 승인 단계를 기본 지원해 표준 운영 절차에 가장 적합하다. Run Command로 각 단계를 개별 실행하는 방식은 단일 명령 실행에 적합하지 분기·승인이 있는 워크플로에는 부족하다. Lambda 단일 함수에 모든 절차를 넣는 방식은 승인 대기·장기 실행·재시도 오케스트레이션을 직접 구현해야 한다. 사용자 데이터에 스크립트를 넣는 방식은 부팅 시점 실행이라 인시던트 대응 절차에 맞지 않는다."
   },
   {
     "number": 42,
     "domain": "배포·프로비저닝·자동화",
-    "prompt": "CloudFormation 스택의 실제 리소스가 콘솔 수동 변경으로 템플릿과 달라졌는지 확인하려 한다. 가장 적합한 것은?",
+    "prompt": "CloudFormation으로 관리하는 운영 스택에서 누군가 콘솔로 보안 그룹 규칙을 수동 변경했을 가능성이 있다. 변경 여부를 파악하고 이후 그런 수동 변경을 예방하려 한다. 가장 적합한 조합은?",
     "choices": [
       {
         "label": "A",
-        "text": "드리프트 감지(drift detection)를 실행"
+        "text": "스택을 삭제 후 재생성해 구성을 초기화한다"
       },
       {
         "label": "B",
-        "text": "스택을 삭제"
+        "text": "스택에 드리프트 감지를 실행해 차이를 확인하고, 스택 정책 또는 SCP로 직접 변경을 제한한다"
       },
       {
         "label": "C",
-        "text": "무시한다"
+        "text": "Config 규칙으로 보안 그룹을 평가하고 위반 시 스택을 자동 롤백한다"
       },
       {
         "label": "D",
-        "text": "리소스를 모두 수동 재생성"
+        "text": "CloudTrail에서 모든 변경 이벤트를 보고 수동으로 원복한다"
       }
     ],
-    "answer": "A",
-    "explanation": "드리프트 감지는 스택 템플릿과 실제 리소스 구성의 차이를 보고해 수동 변경을 식별한다. 삭제·무시(B,C)는 부적절하다."
+    "answer": "B",
+    "explanation": "드리프트 감지는 템플릿과 실제 리소스의 차이를 보고하고, 스택 정책·SCP·권한 제한으로 향후 직접 변경을 예방할 수 있어 '파악 + 예방' 요건을 함께 만족한다. 스택을 삭제·재생성하는 방식은 운영 중단을 유발하는 과도한 조치다. Config 위반 시 스택을 자동 롤백한다는 기능은 존재하지 않는다. CloudTrail에서 보고 수동 원복하는 방식은 사후 추적·수작업이라 예방이 안 된다."
   },
   {
     "number": 43,
     "domain": "배포·프로비저닝·자동화",
-    "prompt": "EC2 부팅 시 패키지 설치·구성 같은 초기화를 자동화하려 한다. 가장 적합한 것은?",
+    "prompt": "Auto Scaling 그룹의 새 인스턴스가 부팅될 때마다 동일한 패키지 설치와 구성이 필요하다. 부팅 시간을 줄이고 설정 드리프트를 없애려 한다. 가장 권장되는 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "사용자 데이터(user data) 스크립트나 EC2 Image Builder로 구성 자동화"
+        "text": "EC2 Image Builder로 패키지·구성이 포함된 골든 AMI를 만들고 시작 템플릿이 이를 사용하게 한다"
       },
       {
         "label": "B",
-        "text": "부팅 후 매번 수동 설치"
+        "text": "인스턴스 생성 후 운영자가 Run Command로 구성을 적용한다"
       },
       {
         "label": "C",
-        "text": "구성하지 않는다"
+        "text": "부팅 후 SSM State Manager가 매번 전체 구성을 다시 적용하게 한다"
       },
       {
         "label": "D",
-        "text": "인스턴스를 켜두고 방치"
+        "text": "사용자 데이터 스크립트에 모든 설치·구성 명령을 넣어 매 부팅 시 실행한다"
       }
     ],
     "answer": "A",
-    "explanation": "사용자 데이터 스크립트는 부팅 시 초기화를 자동 실행하고, Image Builder는 표준 AMI를 파이프라인으로 만든다. 수동 설치(B)는 확장성이 없다."
+    "explanation": "Image Builder로 패키지·구성이 구워진 골든 AMI를 쓰면 부팅 시 설치 단계가 없어 시작이 빠르고 모든 인스턴스가 동일해 드리프트가 사라진다. 사용자 데이터에 설치 명령을 넣어 매 부팅 시 실행하는 방식은 매번 다운로드·설치로 시간이 늘고 외부 의존성 변동에 취약하다. State Manager가 매번 전체 구성을 재적용하는 방식은 보완책이지 부팅 시간 단축에는 도움이 되지 않는다. 운영자가 Run Command로 구성을 적용하는 방식은 자동 확장과 맞지 않는다."
   },
   {
     "number": 44,
     "domain": "배포·프로비저닝·자동화",
-    "prompt": "태그가 누락된 리소스를 찾아 일괄적으로 표준 태그를 적용하려 한다. 가장 적합한 것은?",
+    "prompt": "비용 배분을 위해 모든 신규 EC2 인스턴스에 'CostCenter' 태그가 반드시 있어야 한다. 태그가 없는 인스턴스 생성을 막고, 이미 태그가 누락된 기존 리소스는 찾아 일괄 보정하려 한다. 가장 적합한 조합은?",
     "choices": [
       {
         "label": "A",
-        "text": "Resource Groups/Tag Editor와 Config로 태그 규정 준수 점검·적용"
+        "text": "IAM/SCP 정책으로 CostCenter 태그 없는 RunInstances를 거부하고, Tag Editor로 기존 누락 리소스를 검색해 일괄 태깅한다"
       },
       {
         "label": "B",
-        "text": "태그를 무시"
+        "text": "EventBridge로 RunInstances 이벤트를 받아 사후에 태그를 추가한다"
       },
       {
         "label": "C",
-        "text": "리소스를 삭제"
+        "text": "Config 규칙으로 태그를 평가만 하고 위반 시 인스턴스를 종료한다"
       },
       {
         "label": "D",
-        "text": "이름만 바꾼다"
+        "text": "비용 할당 태그를 활성화하면 누락 태그가 자동으로 채워진다"
       }
     ],
     "answer": "A",
-    "explanation": "Tag Editor로 다수 리소스의 태그를 일괄 검색·편집하고, Config 규칙으로 필수 태그 준수를 점검·교정한다. 태그 무시(B)는 비용 추적·거버넌스를 어렵게 한다."
+    "explanation": "태그 조건이 있는 IAM/SCP 거부 정책은 태그 없는 인스턴스 생성을 사전 차단하고, Tag Editor는 기존 누락 리소스를 검색·일괄 보정해 '예방 + 보정' 요건을 충족한다. Config 위반 시 인스턴스를 종료하는 방식은 과도하고 운영 중단을 부른다. 비용 할당 태그를 활성화하는 방식은 보고용 토글일 뿐 태그를 자동 생성하지 않는다. EventBridge로 사후에 태그를 추가하는 방식은 생성을 막지 못하고 경합 상황에서 누락이 생길 수 있다."
   },
   {
     "number": 45,
     "domain": "배포·프로비저닝·자동화",
-    "prompt": "골든 AMI를 정기적으로 만들고 패치·검증·배포 파이프라인을 자동화하려 한다. 가장 적합한 것은?",
+    "prompt": "매월 보안 패치가 적용된 표준 AMI를 만들고, 빌드 후 자동으로 보안 검증 테스트를 거쳐 통과한 AMI만 특정 계정과 공유하려 한다. 가장 운영 부담이 적은 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "EC2 Image Builder 파이프라인으로 빌드·테스트·배포 자동화"
+        "text": "Patch Manager로 패치만 적용하고 AMI 생성·테스트·공유는 별도 스크립트로 처리한다"
       },
       {
         "label": "B",
-        "text": "수동으로 인스턴스를 만들어 이미지화"
+        "text": "EC2 Image Builder 파이프라인에 빌드·테스트 컴포넌트와 배포 단계를 정의하고 월간 일정으로 실행한다"
       },
       {
         "label": "C",
-        "text": "AMI를 만들지 않는다"
+        "text": "CloudFormation으로 매번 새 인스턴스를 만들어 CreateImage API를 호출한다"
       },
       {
         "label": "D",
-        "text": "매번 다른 베이스 이미지를 임의 사용"
+        "text": "운영자가 매월 인스턴스를 만들어 패치 후 수동으로 AMI를 생성하고 공유한다"
       }
     ],
-    "answer": "A",
-    "explanation": "EC2 Image Builder는 이미지 빌드·패치·테스트·배포를 파이프라인으로 자동화해 일관된 골든 AMI를 유지한다. 수동 이미지화(B)는 반복·검증이 어렵다."
+    "answer": "B",
+    "explanation": "EC2 Image Builder는 빌드·테스트 컴포넌트, 배포·공유 단계, 일정 실행을 하나의 파이프라인으로 자동화해 검증 통과 AMI만 공유하는 요건을 가장 적은 운영 부담으로 만족한다. 운영자가 매월 수동으로 생성·공유하는 방식은 반복·검증·공유를 사람이 모두 처리해야 한다. Patch Manager로 패치만 적용하고 나머지를 스크립트로 처리하는 방식이나 CloudFormation으로 CreateImage를 호출하는 방식은 테스트·공유 로직을 직접 구현·유지해야 해 부담이 크다."
   },
   {
     "number": 46,
     "domain": "보안·규정 준수",
-    "prompt": "S3 버킷이 실수로 퍼블릭 노출되는 것을 계정·버킷 수준에서 강제로 차단하려 한다. 가장 적합한 것은?",
+    "prompt": "조직 전체에서 어떤 사용자도 S3 버킷을 퍼블릭으로 만들 수 없도록 강제하고, 개별 계정 관리자가 이 설정을 끄지 못하게 하려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "S3 퍼블릭 액세스 차단(Block Public Access)을 켠다"
+        "text": "Organizations SCP로 s3:PutBucketPublicAccessBlock 비활성화와 퍼블릭 ACL/정책 설정을 거부한다"
       },
       {
         "label": "B",
-        "text": "버킷 정책을 매번 점검"
+        "text": "각 계정에서 S3 계정 수준 퍼블릭 액세스 차단만 켠다"
       },
       {
         "label": "C",
-        "text": "버킷 이름을 복잡하게"
+        "text": "Config 규칙으로 퍼블릭 버킷을 탐지해 알림만 보낸다"
       },
       {
         "label": "D",
-        "text": "아무 것도 하지 않는다"
+        "text": "버킷마다 명시적 Deny 버킷 정책을 추가한다"
       }
     ],
     "answer": "A",
-    "explanation": "퍼블릭 액세스 차단은 ACL·정책을 통한 퍼블릭 노출을 계정/버킷 수준에서 강제 차단한다. 수동 점검(B)·이름 난독화(C)는 신뢰성이 낮다."
+    "explanation": "SCP는 조직 차원의 권한 상한이므로 퍼블릭 액세스 차단 해제나 퍼블릭 설정 API를 거부하면 계정 관리자조차 우회할 수 없어 요건을 충족한다. 각 계정에서 계정 수준 차단만 켜는 방식은 권한 있는 관리자가 끌 수 있다. Config로 탐지해 알림만 보내는 방식은 사후 탐지일 뿐 강제가 아니다. 버킷마다 명시적 Deny 정책을 추가하는 방식은 신규 버킷마다 누락 위험이 있고 일괄 강제력이 약하다."
   },
   {
     "number": 47,
     "domain": "보안·규정 준수",
-    "prompt": "여러 계정의 GuardDuty·Inspector·Config 발견 사항을 한 곳에 모아 보안 표준 점검을 하려 한다. 가장 적합한 것은?",
+    "prompt": "여러 계정에서 GuardDuty, Inspector, Config의 발견 사항이 흩어져 있어 보안팀이 우선순위를 매기기 어렵다. 발견 사항을 표준 형식으로 집계하고 CIS 같은 보안 표준 준수 점수를 확인하려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "AWS Security Hub로 발견 사항 집계·표준 점검"
+        "text": "AWS Security Hub를 위임 관리자 계정으로 활성화해 발견 사항을 집계하고 보안 표준 점검을 켠다"
       },
       {
         "label": "B",
-        "text": "각 서비스 콘솔을 따로 확인"
+        "text": "각 계정의 서비스 콘솔을 순회하며 발견 사항을 수동 취합한다"
       },
       {
         "label": "C",
-        "text": "발견 사항을 무시"
+        "text": "Detective를 켜서 발견 사항을 시각화하고 근본 원인을 분석한다"
       },
       {
         "label": "D",
-        "text": "서비스를 끈다"
+        "text": "각 서비스의 발견 사항을 EventBridge로 받아 단일 S3 버킷에 모아 Athena로 분석한다"
       }
     ],
     "answer": "A",
-    "explanation": "Security Hub는 여러 보안 서비스의 발견 사항을 표준화·집계하고 모범 사례 점수를 제공한다. 개별 확인(B)은 비효율적이다."
+    "explanation": "Security Hub는 여러 보안 서비스의 발견 사항을 ASFF 표준으로 집계하고 CIS·AWS 모범 사례 등 표준 준수 점수를 제공해 요건에 정확히 맞는다. EventBridge로 받아 S3에 모아 Athena로 분석하는 방식은 표준 점수·집계 화면을 직접 구축해야 한다. Detective는 조사·근본 원인 분석용이지 표준 준수 점검·집계 허브가 아니다. 콘솔을 순회하며 수동 취합하는 방식은 비효율적이고 표준 점수가 없다."
   },
   {
     "number": 48,
     "domain": "보안·규정 준수",
-    "prompt": "EC2의 OS·소프트웨어 취약점을 자동으로 지속 스캔하려 한다. 가장 적합한 것은?",
+    "prompt": "규정상 EC2 인스턴스의 운영체제 취약점뿐 아니라 의도치 않게 인터넷에 개방된 네트워크 경로도 지속 평가해야 한다. 에이전트 관리 부담은 최소화하고 싶다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "Amazon Inspector를 활성화해 자동 취약점 평가"
+        "text": "Config 규칙으로 보안 그룹 개방을 평가하고 OS 취약점은 별도 스캐너를 운영한다"
       },
       {
         "label": "B",
-        "text": "수동으로 가끔 점검"
+        "text": "Inspector 클래식을 인스턴스마다 설치·구성해 정기 평가 템플릿을 실행한다"
       },
       {
         "label": "C",
-        "text": "스캔하지 않는다"
+        "text": "Amazon Inspector를 켜서 SSM 에이전트 기반으로 OS 취약점과 네트워크 도달 가능성을 자동 평가한다"
       },
       {
         "label": "D",
-        "text": "방화벽만 켠다"
+        "text": "VPC Reachability Analyzer만 정기 실행해 네트워크 경로를 점검한다"
       }
     ],
-    "answer": "A",
-    "explanation": "Amazon Inspector는 EC2·ECR·Lambda의 취약점과 네트워크 노출을 자동·지속 평가한다. 수동·미점검(B,C)은 위험을 놓친다."
+    "answer": "C",
+    "explanation": "현행 Amazon Inspector는 SSM 에이전트를 활용해 별도 전용 에이전트 없이 OS 취약점과 네트워크 도달 가능성을 모두 자동·지속 평가하므로 요건과 운영 부담 최소화에 가장 부합한다. Inspector 클래식을 인스턴스마다 설치하는 방식은 인스턴스별 설치·템플릿 관리가 필요해 부담이 크다. Reachability Analyzer만 실행하는 방식은 경로 분석만 하고 OS 취약점을 다루지 않는다. Config와 별도 스캐너를 함께 쓰는 방식은 두 시스템을 운영해 부담이 늘어난다."
   },
   {
     "number": 49,
     "domain": "보안·규정 준수",
-    "prompt": "S3에 저장되는 데이터에 개인 식별 정보(PII)가 있는지 자동 탐지·분류하려 한다. 가장 적합한 것은?",
+    "prompt": "데이터 거버넌스팀이 여러 S3 버킷에 개인 식별 정보(PII)가 저장되는지 자동으로 탐지·분류하고, 발견 시 Security Hub로 알림을 보내려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "Amazon Macie로 S3의 민감 데이터 자동 탐지"
+        "text": "Amazon Macie를 활성화해 민감 데이터 검색 작업을 구성하고 발견 사항을 Security Hub로 보낸다"
       },
       {
         "label": "B",
-        "text": "사람이 모든 객체를 연다"
+        "text": "Lambda로 객체를 다운로드해 정규식으로 PII 패턴을 검사한다"
       },
       {
         "label": "C",
-        "text": "무시한다"
+        "text": "Glue 크롤러로 스키마를 추론하고 Athena로 PII 컬럼을 직접 쿼리한다"
       },
       {
         "label": "D",
-        "text": "데이터를 삭제"
+        "text": "Inspector로 S3 버킷의 민감 데이터를 스캔한다"
       }
     ],
     "answer": "A",
-    "explanation": "Macie는 머신러닝으로 S3의 PII 등 민감 데이터를 탐지·분류하고 보고한다. 수동 점검(B)은 대규모에 비현실적이다."
+    "explanation": "Macie는 머신러닝으로 S3의 PII 등 민감 데이터를 자동 탐지·분류하고 발견 사항을 Security Hub·EventBridge로 전달해 요건에 정확히 맞는다. Glue로 스키마를 추론해 Athena로 쿼리하는 방식은 정형 데이터 분석용이라 비정형 객체의 PII 탐지에 부적합하다. Lambda로 정규식 검사하는 방식은 대규모에서 비용·정확도·운영 부담이 크다. Inspector는 취약점 평가 서비스로 데이터 분류 기능이 없다."
   },
   {
     "number": 50,
     "domain": "보안·규정 준수",
-    "prompt": "EBS 볼륨과 스냅샷이 항상 암호화되도록 계정 차원에서 강제하려 한다. 가장 적합한 것은?",
+    "prompt": "규정상 특정 리전에서 새로 만드는 모든 EBS 볼륨과 그 스냅샷은 예외 없이 KMS로 암호화되어야 한다. 개발자가 깜빡하고 암호화를 끄는 일을 원천 차단하려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "리전별 EBS 암호화 기본값(default encryption)을 활성화"
+        "text": "암호화되지 않은 볼륨을 EventBridge로 탐지해 사후에 스냅샷 후 암호화 사본으로 교체한다"
       },
       {
         "label": "B",
-        "text": "각 볼륨 생성 시마다 수동 선택"
+        "text": "Config 규칙으로 암호화되지 않은 볼륨을 탐지해 알림을 보낸다"
       },
       {
         "label": "C",
-        "text": "암호화하지 않는다"
+        "text": "해당 리전에서 EBS 기본 암호화를 활성화하고 사용할 KMS 키를 지정한다"
       },
       {
         "label": "D",
-        "text": "볼륨을 공유"
+        "text": "볼륨 생성 시 암호화를 선택하도록 운영 가이드 문서를 배포한다"
       }
     ],
-    "answer": "A",
-    "explanation": "EBS 기본 암호화를 켜면 해당 리전에서 새로 만드는 모든 볼륨·스냅샷이 자동 암호화된다. 수동 선택(B)은 누락 위험이 있다."
+    "answer": "C",
+    "explanation": "리전별 EBS 기본 암호화를 켜고 KMS 키를 지정하면 그 리전에서 생성되는 모든 새 볼륨과 스냅샷이 자동으로 암호화되어 개발자가 끌 수 없으므로 원천 차단 요건에 맞는다. Config로 탐지해 알림을 보내는 방식과 EventBridge로 사후 교체하는 방식은 미암호화 생성 자체를 막지 못하는 탐지·교정책이다. 운영 가이드 문서를 배포하는 방식은 강제력이 없어 누락이 발생한다."
   },
   {
     "number": 51,
     "domain": "보안·규정 준수",
-    "prompt": "특정 리전에서만 리소스 생성을 허용하고 다른 리전 사용을 조직 차원에서 금지하려 한다. 가장 적합한 것은?",
+    "prompt": "보안팀이 조직의 모든 계정에서 승인된 2개 리전 외에서는 리소스 생성을 금지하려 한다. IAM 콘솔 글로벌 작업과 청구 같은 글로벌 서비스는 영향을 받지 않아야 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "Organizations SCP로 허용 리전 외 작업을 거부"
+        "text": "Config 규칙으로 비승인 리전 리소스를 탐지해 자동 삭제한다"
       },
       {
         "label": "B",
-        "text": "각 사용자에게 부탁"
+        "text": "Organizations SCP에서 aws:RequestedRegion 조건과 글로벌 서비스 NotAction 예외로 비승인 리전 작업을 거부한다"
       },
       {
         "label": "C",
-        "text": "IAM 사용자마다 수동 정책"
+        "text": "VPC를 승인 리전에만 만들어 다른 리전 사용을 사실상 막는다"
       },
       {
         "label": "D",
-        "text": "아무 통제도 안 한다"
+        "text": "각 IAM 사용자에게 리전 제한 정책을 개별 첨부한다"
       }
     ],
-    "answer": "A",
-    "explanation": "SCP는 조직/OU 차원에서 리전 조건으로 작업을 거부해 가드레일을 강제한다. 사용자 부탁·수동 정책(B,C)은 드리프트·누락 위험이 크다."
+    "answer": "B",
+    "explanation": "SCP에 요청 리전 조건을 쓰고 글로벌 서비스 작업을 NotAction으로 예외 처리하면 조직 차원에서 비승인 리전을 거부하면서 IAM·청구 등 글로벌 작업은 보존할 수 있어 요건에 정확히 맞는다. 각 IAM 사용자에게 정책을 개별 첨부하는 방식은 누락·드리프트 위험이 크다. Config로 비승인 리전 리소스를 자동 삭제하는 방식은 사후 조치라 생성을 막지 못하고 위험하다. VPC를 승인 리전에만 만드는 방식은 VPC를 쓰지 않는 글로벌·리전 서비스 사용을 막지 못한다."
   },
   {
     "number": 52,
     "domain": "보안·규정 준수",
-    "prompt": "IAM 사용자의 콘솔 로그인에 다단계 인증(MFA)을 강제하려 한다. 가장 적합한 것은?",
+    "prompt": "한 계정에서 IAM 사용자가 EC2 종료 같은 민감 작업을 수행하려면 반드시 MFA로 인증된 세션이어야 한다. MFA 미인증 시 해당 작업을 거부하려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "MFA가 없으면 작업을 거부하는 IAM 정책 조건(aws:MultiFactorAuthPresent)을 사용"
+        "text": "루트 사용자에만 MFA를 활성화한다"
       },
       {
         "label": "B",
-        "text": "비밀번호만 길게"
+        "text": "사용자에게 MFA 디바이스를 등록하기만 하면 자동으로 강제된다"
       },
       {
         "label": "C",
-        "text": "MFA를 권장만 한다"
+        "text": "계정 암호 정책에서 최소 길이를 늘리고 회전 주기를 단축한다"
       },
       {
         "label": "D",
-        "text": "루트만 MFA"
+        "text": "IAM 정책에 aws:MultiFactorAuthPresent가 false이면 민감 작업을 Deny하는 조건을 추가한다"
       }
     ],
-    "answer": "A",
-    "explanation": "IAM 정책에 aws:MultiFactorAuthPresent 조건을 두면 MFA 미인증 세션의 작업을 거부해 MFA를 강제할 수 있다. 권장만(C)으로는 강제되지 않는다."
+    "answer": "D",
+    "explanation": "MFA 존재 여부 조건으로 MFA 미인증 세션의 민감 작업을 명시적으로 거부해야 비로소 MFA가 강제되므로 요건에 맞는다. MFA 디바이스를 등록만 하는 방식은 인증 없이도 작업이 가능해 강제가 아니다. 암호 정책의 길이·회전을 조정하는 방식은 MFA와 무관하다. 루트 사용자에만 MFA를 켜는 방식은 IAM 사용자 작업에 영향을 주지 않는다."
   },
   {
     "number": 53,
     "domain": "네트워킹·콘텐츠 전송",
-    "prompt": "프라이빗 서브넷의 인스턴스가 인터넷 게이트웨이 없이 AWS 서비스(S3, DynamoDB)에 접근하게 하려 한다. 가장 적합한 것은?",
+    "prompt": "프라이빗 서브넷의 EC2 인스턴스가 NAT 게이트웨이 비용 없이 S3와 DynamoDB에 접근해야 한다. 다른 인터넷 접근은 필요 없다. 가장 비용 효율적인 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "VPC 게이트웨이 엔드포인트(S3/DynamoDB)를 만든다"
+        "text": "S3·DynamoDB용 인터페이스 엔드포인트(PrivateLink)를 만든다"
       },
       {
         "label": "B",
-        "text": "퍼블릭 IP를 부여"
+        "text": "인스턴스에 퍼블릭 IP를 부여하고 보안 그룹으로 두 서비스만 허용한다"
       },
       {
         "label": "C",
-        "text": "NAT 없이 인터넷 라우팅"
+        "text": "S3와 DynamoDB용 VPC 게이트웨이 엔드포인트를 만들고 라우팅 테이블에 연결한다"
       },
       {
         "label": "D",
-        "text": "서비스를 끈다"
+        "text": "NAT 게이트웨이를 두어 프라이빗 인스턴스가 인터넷으로 두 서비스에 접근한다"
       }
     ],
-    "answer": "A",
-    "explanation": "게이트웨이 엔드포인트는 라우팅 테이블을 통해 S3/DynamoDB로의 트래픽을 AWS 내부로만 보내 인터넷 경유 없이 접근하게 한다. 퍼블릭 IP(B)는 노출을 늘린다."
+    "answer": "C",
+    "explanation": "S3·DynamoDB는 게이트웨이 엔드포인트를 지원하며 시간당·데이터 처리 요금이 없어 NAT보다 비용 효율적이고 트래픽이 AWS 내부로만 흐른다. 인터페이스 엔드포인트는 시간·데이터 요금이 들어 게이트웨이 엔드포인트가 가능한 두 서비스에는 비효율적이다. NAT 게이트웨이는 시간·데이터 요금이 비싸다. 퍼블릭 IP를 부여하는 방식은 인터넷 노출을 늘려 요건과 보안에 반한다."
   },
   {
     "number": 54,
     "domain": "네트워킹·콘텐츠 전송",
-    "prompt": "두 VPC 간에 사설 통신이 필요하지만 라우팅이 단순해야 한다. 소규모 1:1 연결에 가장 적합한 것은?",
+    "prompt": "한 공급자 VPC가 여러 소비자 VPC(서로 다른 계정 포함)에게 내부 API 서비스 하나만 노출하려 한다. 소비자는 공급자 VPC의 다른 리소스에는 접근하면 안 되고, CIDR 겹침도 허용해야 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "VPC 피어링"
+        "text": "공급자 VPC를 인터넷에 노출하고 API에 인증을 추가한다"
       },
       {
         "label": "B",
-        "text": "각 VPC를 인터넷으로 노출"
+        "text": "Transit Gateway에 모든 VPC를 연결해 라우팅한다"
       },
       {
         "label": "C",
-        "text": "VPN을 인터넷 경유로 매번"
+        "text": "공급자 측에 AWS PrivateLink로 엔드포인트 서비스(NLB 기반)를 만들고 소비자가 인터페이스 엔드포인트로 연결한다"
       },
       {
         "label": "D",
-        "text": "VPC를 합친다"
+        "text": "각 소비자 VPC와 VPC 피어링을 맺는다"
       }
     ],
-    "answer": "A",
-    "explanation": "VPC 피어링은 두 VPC 간 사설 라우팅을 단순하게 제공한다(다수 VPC 메시는 Transit Gateway가 유리). 인터넷 노출(B)은 보안 위험이다."
+    "answer": "C",
+    "explanation": "PrivateLink 엔드포인트 서비스는 단일 서비스만 노출하고 소비자는 인터페이스 엔드포인트로만 접근하므로 다른 리소스 접근을 막고 CIDR 겹침도 문제되지 않아 요건에 가장 부합한다. 소비자 VPC마다 피어링을 맺는 방식과 Transit Gateway로 모든 VPC를 연결하는 방식은 네트워크 전체를 연결해 최소 노출 원칙과 CIDR 겹침 제약에 어긋난다. 공급자 VPC를 인터넷에 노출하는 방식은 사설·최소 노출 요건에 반한다."
   },
   {
     "number": 55,
     "domain": "네트워킹·콘텐츠 전송",
-    "prompt": "수십 개 VPC와 온프레미스를 허브-스포크로 중앙 연결·라우팅하려 한다. 가장 적합한 것은?",
+    "prompt": "회사가 40개 VPC와 2개 온프레미스 데이터센터를 단일 허브로 연결하고 중앙에서 라우팅·세그먼트를 관리하려 한다. 풀메시 피어링의 관리 복잡도를 피하고 싶다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "AWS Transit Gateway로 중앙 허브 라우팅"
+        "text": "VPC를 하나의 대형 VPC로 통합한다"
       },
       {
         "label": "B",
-        "text": "모든 VPC를 일일이 피어링(메시)"
+        "text": "PrivateLink로 각 VPC의 서비스를 서로 노출한다"
       },
       {
         "label": "C",
-        "text": "인터넷으로 연결"
+        "text": "AWS Transit Gateway에 VPC와 온프레미스(VPN/Direct Connect)를 연결하고 라우팅 테이블로 세그먼트를 관리한다"
       },
       {
         "label": "D",
-        "text": "VPC를 하나로 합친다"
+        "text": "모든 VPC 쌍을 VPC 피어링으로 연결한다"
       }
     ],
-    "answer": "A",
-    "explanation": "Transit Gateway는 다수 VPC·온프레미스를 허브로 묶어 라우팅을 단순화한다. 풀메시 피어링(B)은 연결 수가 폭발적으로 늘어 관리가 어렵다."
+    "answer": "C",
+    "explanation": "Transit Gateway는 다수 VPC와 온프레미스를 허브-스포크로 묶고 라우팅 테이블로 세그먼트를 중앙 관리해 대규모 연결에 적합하다. 모든 VPC 쌍을 피어링으로 연결하는 방식은 연결 수가 n(n-1)/2로 폭증해 관리가 불가능에 가깝다. PrivateLink로 서비스를 서로 노출하는 방식은 특정 서비스 노출용이라 일반 네트워크 연결에 부적합하다. 하나의 대형 VPC로 통합하는 방식은 격리·운영·CIDR 측면에서 비현실적이다."
   },
   {
     "number": 56,
     "domain": "네트워킹·콘텐츠 전송",
-    "prompt": "특정 서브넷에서 들어오고 나가는 트래픽을 상태 비저장(stateless)으로 추가 제어하려 한다. 가장 적합한 것은?",
+    "prompt": "보안팀이 특정 서브넷 전체에 대해 알려진 악성 IP 대역의 인바운드 접근을 명시적으로 차단(deny)하려 한다. 보안 그룹은 명시적 거부를 지원하지 않는다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "네트워크 ACL(NACL)로 서브넷 수준 인바운드/아웃바운드 규칙"
+        "text": "서브넷에 연결된 네트워크 ACL(NACL)에서 해당 IP 대역을 거부 규칙으로 추가한다"
       },
       {
         "label": "B",
-        "text": "보안 그룹만으로 서브넷을 제어"
+        "text": "보안 그룹에 해당 IP 대역을 거부 규칙으로 추가한다"
       },
       {
         "label": "C",
-        "text": "IAM 정책으로 패킷을 막는다"
+        "text": "IAM 정책으로 해당 IP의 API 호출을 거부한다"
       },
       {
         "label": "D",
-        "text": "DNS로 막는다"
+        "text": "Route 53로 해당 IP에 대한 응답을 차단한다"
       }
     ],
     "answer": "A",
-    "explanation": "NACL은 서브넷 경계에서 상태 비저장 규칙으로 트래픽을 허용/거부한다(보안 그룹은 상태 저장·인스턴스 수준). IAM·DNS(C,D)는 네트워크 패킷 제어 수단이 아니다."
+    "explanation": "NACL은 서브넷 경계에서 상태 비저장 규칙으로 명시적 거부를 지원하므로 악성 IP 대역 차단에 적합하다. 보안 그룹에 거부 규칙을 추가하는 방식은 허용 규칙만 가능하고 거부 규칙이 없어 전제부터 불가능하다. Route 53로 응답을 차단하는 방식은 DNS 해석이지 트래픽 차단 수단이 아니다. IAM 정책으로 거부하는 방식은 AWS API 권한 제어이지 네트워크 패킷 차단과 무관하다."
   },
   {
     "number": 57,
     "domain": "네트워킹·콘텐츠 전송",
-    "prompt": "CloudFront로 전 세계 사용자에게 동적·정적 콘텐츠를 낮은 지연으로 제공하려 한다. 가장 적합한 추가 구성은?",
+    "prompt": "전 세계 사용자에게 S3의 정적 자산과 ALB의 동적 콘텐츠를 단일 도메인으로 제공한다. 정적 자산은 오래 캐싱하고 동적 응답은 캐싱하지 않으며 지연을 줄이려 한다. 가장 적합한 구성은?",
     "choices": [
       {
         "label": "A",
-        "text": "엣지 캐싱과 함께 오리진(S3/ALB)을 지정하고 캐시 정책으로 TTL 관리"
+        "text": "S3 전송 가속화만 사용하고 ALB는 직접 노출한다"
       },
       {
         "label": "B",
-        "text": "각 사용자가 오리진에 직접 접속"
+        "text": "CloudFront 배포에 S3와 ALB 두 오리진을 두고 경로별 캐시 동작(behavior)으로 정적은 길게, 동적은 캐싱 비활성 정책을 적용한다"
       },
       {
         "label": "C",
-        "text": "캐싱을 끈다"
+        "text": "ALB와 S3에 각각 별도 도메인을 두고 클라이언트가 콘텐츠 종류에 따라 다른 도메인을 호출한다"
       },
       {
         "label": "D",
-        "text": "단일 리전에서만 제공"
+        "text": "모든 콘텐츠를 단일 캐시 정책으로 동일 TTL을 적용한다"
       }
     ],
-    "answer": "A",
-    "explanation": "CloudFront는 엣지 로케이션에서 콘텐츠를 캐싱해 지연을 줄이고, 캐시 정책으로 TTL·동작을 제어한다. 오리진 직접 접속(B)·단일 리전(D)은 지연이 크다."
+    "answer": "B",
+    "explanation": "CloudFront는 다중 오리진과 경로 기반 캐시 동작을 지원해 단일 도메인으로 정적은 길게 캐싱하고 동적은 캐싱하지 않도록 분리하며 엣지로 지연을 줄여 요건을 충족한다. ALB와 S3에 별도 도메인을 두는 방식은 단일 도메인 요건에 반한다. 모든 콘텐츠에 동일 TTL을 적용하는 방식은 동적 콘텐츠를 잘못 캐싱한다. S3 전송 가속화만 쓰고 ALB를 직접 노출하는 방식은 동적 콘텐츠 가속이 아니고 엣지 이점을 잃는다."
   },
   {
     "number": 58,
     "domain": "네트워킹·콘텐츠 전송",
-    "prompt": "온프레미스 DNS와 Route 53 프라이빗 호스팅 영역 간 양방향 이름 해석이 필요하다. 가장 적합한 것은?",
+    "prompt": "온프레미스 서버가 Route 53 프라이빗 호스팅 영역의 이름을 해석할 수 있어야 하고, VPC의 리소스도 온프레미스 DNS 영역의 이름을 해석해야 한다. Direct Connect가 이미 연결되어 있다. 가장 적합한 구성은?",
     "choices": [
       {
         "label": "A",
-        "text": "Route 53 Resolver 인바운드/아웃바운드 엔드포인트를 구성"
+        "text": "VPC DHCP 옵션 세트를 온프레미스 DNS로만 지정한다"
       },
       {
         "label": "B",
-        "text": "hosts 파일을 수동 편집"
+        "text": "온프레미스 DNS에 모든 AWS 레코드를 수동 복제한다"
       },
       {
         "label": "C",
-        "text": "DNS를 사용하지 않는다"
+        "text": "Route 53 Resolver 인바운드 엔드포인트(온프레미스→VPC)와 아웃바운드 엔드포인트+포워딩 규칙(VPC→온프레미스)을 함께 구성한다"
       },
       {
         "label": "D",
-        "text": "퍼블릭 DNS만 쓴다"
+        "text": "인바운드 엔드포인트만 구성한다"
       }
     ],
-    "answer": "A",
-    "explanation": "Route 53 Resolver 엔드포인트는 온프레미스↔VPC 간 DNS 쿼리를 포워딩해 하이브리드 이름 해석을 제공한다. hosts 수동 편집(B)은 확장성이 없다."
+    "answer": "C",
+    "explanation": "양방향 해석에는 인바운드 엔드포인트로 온프레미스에서 VPC로 향하는 쿼리를, 아웃바운드 엔드포인트와 포워딩 규칙으로 VPC에서 온프레미스로 향하는 쿼리를 처리해야 하므로 두 엔드포인트를 함께 구성하는 방식이 옳다. 인바운드 엔드포인트만 구성하는 방식은 한 방향만 해결한다. 모든 AWS 레코드를 수동 복제하는 방식은 확장성·정확성이 떨어진다. DHCP를 온프레미스 DNS로만 지정하는 방식은 AWS 내부 이름 해석과 가용성이 저하된다."
   },
   {
     "number": 59,
     "domain": "네트워킹·콘텐츠 전송",
-    "prompt": "보안 그룹과 NACL의 차이로 옳은 것은?",
+    "prompt": "한 인스턴스의 트래픽이 예상대로 흐르지 않아 보안 그룹과 NACL을 점검 중이다. 두 메커니즘의 동작을 옳게 설명한 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "보안 그룹은 상태 저장·인스턴스 수준, NACL은 상태 비저장·서브넷 수준"
+        "text": "NACL은 ENI 수준에, 보안 그룹은 서브넷 수준에 적용된다"
       },
       {
         "label": "B",
-        "text": "둘 다 상태 비저장이다"
+        "text": "보안 그룹은 명시적 거부 규칙을 지원하고 NACL은 허용 규칙만 지원한다"
       },
       {
         "label": "C",
-        "text": "보안 그룹은 서브넷 수준이다"
+        "text": "보안 그룹과 NACL 모두 상태 저장이며 응답 트래픽이 자동 허용된다"
       },
       {
         "label": "D",
-        "text": "NACL은 인스턴스 단위로만 동작"
+        "text": "보안 그룹은 인스턴스(ENI) 수준의 상태 저장 방화벽이라 응답이 자동 허용되고, NACL은 서브넷 수준의 상태 비저장이라 인바운드·아웃바운드를 각각 명시해야 한다"
       }
     ],
-    "answer": "A",
-    "explanation": "보안 그룹은 인스턴스(ENI) 수준의 상태 저장 방화벽으로 응답 트래픽을 자동 허용하고, NACL은 서브넷 수준의 상태 비저장 규칙이라 인/아웃을 각각 명시해야 한다."
+    "answer": "D",
+    "explanation": "보안 그룹은 ENI 수준 상태 저장으로 허용된 요청의 응답을 자동 허용하고, NACL은 서브넷 수준 상태 비저장이라 응답 포트까지 양방향 규칙을 명시해야 한다는 설명이 옳다. 보안 그룹이 거부 규칙을 지원하고 NACL은 허용만 지원한다는 설명은 실제와 반대라 틀렸다. 둘 다 상태 저장이라는 설명은 NACL이 상태 비저장인 점에서 틀렸다. NACL이 ENI 수준, 보안 그룹이 서브넷 수준이라는 설명은 적용 수준이 뒤바뀌어 틀렸다."
   },
   {
     "number": 60,
     "domain": "네트워킹·콘텐츠 전송",
-    "prompt": "ALB로 들어온 트래픽을 경로(/api, /img)에 따라 다른 대상 그룹으로 라우팅하려 한다. 가장 적합한 것은?",
+    "prompt": "하나의 도메인으로 들어온 HTTP 요청을 경로(/api는 백엔드 서비스, /static은 정적 서비스)와 호스트 헤더에 따라 서로 다른 대상 그룹으로 라우팅해야 한다. 가장 적합한 구성은?",
     "choices": [
       {
         "label": "A",
-        "text": "ALB 리스너 규칙의 경로 기반/호스트 기반 라우팅"
+        "text": "Application Load Balancer 리스너에 경로 기반·호스트 기반 규칙을 만들어 대상 그룹으로 라우팅한다"
       },
       {
         "label": "B",
-        "text": "NLB로 IP만 라우팅"
+        "text": "단일 대상 그룹에 모두 보내고 애플리케이션이 내부에서 분기한다"
       },
       {
         "label": "C",
-        "text": "단일 대상 그룹에 모두 보낸다"
+        "text": "Route 53 가중치 라우팅으로 경로별 트래픽을 나눈다"
       },
       {
         "label": "D",
-        "text": "DNS로 경로를 나눈다"
+        "text": "Network Load Balancer로 TCP 포트에 따라 대상 그룹을 나눈다"
       }
     ],
     "answer": "A",
-    "explanation": "ALB는 L7에서 경로·호스트 헤더 기반 규칙으로 요청을 적절한 대상 그룹에 라우팅한다. NLB(B)는 L4라 경로 기반 라우팅이 없다."
+    "explanation": "ALB는 L7에서 경로·호스트 헤더 기반 리스너 규칙으로 요청을 적절한 대상 그룹에 라우팅해 요건에 정확히 맞는다. Network Load Balancer는 L4라 HTTP 경로·호스트 기반 라우팅을 하지 못한다. 단일 대상 그룹에 보내 애플리케이션이 내부 분기하는 방식은 부하 분산·헬스 체크를 서비스별로 분리하지 못한다. Route 53 가중치 라우팅은 DNS 수준 분산이라 URL 경로를 인식하지 못한다."
   },
   {
     "number": 61,
     "domain": "비용·성능 최적화",
-    "prompt": "미사용·과다 프로비저닝된 리소스를 식별하고 비용 절감 권장 사항을 받으려 한다. 가장 적합한 것은?",
+    "prompt": "운영팀이 EC2 인스턴스 중 과대 프로비저닝되었거나 거의 유휴 상태인 것을 데이터 기반으로 식별해 적정 크기로 줄이려 한다. CPU뿐 아니라 메모리·네트워크 사용 패턴까지 고려하고 싶다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "AWS Compute Optimizer와 Cost Explorer 권장 사항을 활용"
+        "text": "Trusted Advisor의 저사용 인스턴스 점검 목록을 그대로 적용한다"
       },
       {
         "label": "B",
-        "text": "추측으로 줄인다"
+        "text": "AWS Compute Optimizer를 활성화해 인스턴스 적정 크기 권장을 받고, 메모리 권장 정확도를 위해 메모리 지표를 수집한다"
       },
       {
         "label": "C",
-        "text": "아무 것도 안 한다"
+        "text": "Cost Explorer의 비용 상위 인스턴스를 모두 더 작은 유형으로 변경한다"
       },
       {
         "label": "D",
-        "text": "모든 리소스를 키운다"
+        "text": "CloudWatch에서 평균 CPU만 보고 낮은 인스턴스를 한 단계 아래로 줄인다"
       }
     ],
-    "answer": "A",
-    "explanation": "Compute Optimizer는 사용 지표로 인스턴스 적정 크기를 권장하고, Cost Explorer는 비용 추세·RI/SP 권장을 제공한다. 추측·확대(B,D)는 낭비를 키운다."
+    "answer": "B",
+    "explanation": "Compute Optimizer는 사용 지표를 분석해 인스턴스 적정 크기를 권장하며, 메모리 지표를 수집하면 메모리 기반 권장 정확도가 높아져 CPU 외 메모리·네트워크까지 고려하는 요건에 가장 부합한다. 평균 CPU만 보고 줄이는 방식은 메모리·네트워크 병목을 놓쳐 위험하다. Trusted Advisor 점검 목록을 그대로 적용하는 방식은 단순 임계 기반이라 적정 크기 권장 깊이가 부족하다. 비용 상위 인스턴스를 무조건 작게 변경하는 방식은 성능 영향을 무시한 위험한 접근이다."
   },
   {
     "number": 62,
     "domain": "비용·성능 최적화",
-    "prompt": "예산을 초과할 가능성이 보이면 사전에 알림을 받으려 한다. 가장 적합한 것은?",
+    "prompt": "여러 팀이 비용 태그(Team)로 구분된 한 계정을 공유한다. 각 팀별 월 지출이 배정 예산을 초과할 것으로 예측되면 해당 팀과 재무팀에 알림을 보내려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "AWS Budgets로 예산·예측 임계 경보 설정"
+        "text": "팀 태그로 필터링한 AWS Budgets를 팀별로 만들고 실제·예측 임계 알림을 구성한다"
       },
       {
         "label": "B",
-        "text": "월말 청구서를 본다"
+        "text": "Cost Anomaly Detection을 켜서 팀별 비정상 지출을 감지한다"
       },
       {
         "label": "C",
-        "text": "추적하지 않는다"
+        "text": "Cost Explorer 보고서를 팀별로 추출해 매월 이메일로 공유한다"
       },
       {
         "label": "D",
-        "text": "계정을 닫는다"
+        "text": "CloudWatch 청구 경보를 팀별로 만들어 추정 요금을 추적한다"
       }
     ],
     "answer": "A",
-    "explanation": "AWS Budgets는 실제·예측 비용/사용량 임계에 대해 SNS 경보를 보내 초과 전에 대응하게 한다. 월말 확인(B)은 사후 대응이다."
+    "explanation": "AWS Budgets는 태그·차원으로 필터링한 예산을 만들고 실제·예측 지출 임계에 SNS 알림을 보낼 수 있어 팀별 예산 초과 사전 알림 요건에 정확히 맞는다. Cost Anomaly Detection은 예산 대비가 아니라 비정상 패턴 탐지다. Cost Explorer 보고서를 이메일로 공유하는 방식은 사후·수동 공유다. CloudWatch 청구 경보는 태그 차원 예산·예측 알림 구성이 약하다."
   },
   {
     "number": 63,
     "domain": "비용·성능 최적화",
-    "prompt": "EBS 볼륨이 과도하게 큰 IOPS로 프로비저닝돼 비용이 높다. 일반 워크로드에 가장 비용 효율적인 것은?",
+    "prompt": "일반 워크로드에 gp2 볼륨을 쓰는데, 용량은 충분하지만 기준 IOPS가 부족해 성능이 들쭉날쭉하다. 용량을 키우지 않고 IOPS·처리량을 비용 효율적으로 올리려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "gp3로 전환해 필요한 만큼만 IOPS·처리량을 설정"
+        "text": "볼륨을 gp3로 전환하고 필요한 만큼 IOPS·처리량을 용량과 독립적으로 프로비저닝한다"
       },
       {
         "label": "B",
-        "text": "io2를 항상 최대 IOPS로"
+        "text": "io2 볼륨으로 전환하고 매우 높은 IOPS를 항상 프로비저닝한다"
       },
       {
         "label": "C",
-        "text": "볼륨을 더 키운다"
+        "text": "여러 gp2 볼륨을 RAID 0으로 묶어 성능을 합친다"
       },
       {
         "label": "D",
-        "text": "볼륨을 복제"
+        "text": "gp2 볼륨 용량을 크게 늘려 기준 IOPS를 함께 끌어올린다"
       }
     ],
     "answer": "A",
-    "explanation": "gp3는 용량과 독립적으로 IOPS·처리량을 설정할 수 있어 일반 워크로드에서 io1/io2보다 비용 효율적이다. io2 최대(B)·확대(C)는 과다 비용이다."
+    "explanation": "gp3는 IOPS·처리량을 용량과 분리해 필요한 만큼만 프로비저닝할 수 있어 용량을 키우지 않고도 일반 워크로드에서 가장 비용 효율적으로 성능을 올린다. gp2 용량을 크게 늘리는 방식은 쓰지 않는 용량 비용까지 늘어 낭비다. io2 고IOPS를 항상 프로비저닝하는 방식은 일반 워크로드엔 과도한 비용이다. 여러 gp2 볼륨을 RAID 0으로 묶는 방식은 관리 복잡도와 장애 위험을 키우며 gp3로 단순 해결 가능하다."
   },
   {
     "number": 64,
     "domain": "비용·성능 최적화",
-    "prompt": "S3 스토리지 비용을 접근 패턴에 맞춰 자동 최적화하되 운영 부담이 없어야 한다. 가장 적합한 것은?",
+    "prompt": "수명 주기가 다양하고 접근 패턴을 예측하기 어려운 객체가 한 버킷에 섞여 있다. 자주·드물게 접근되는 객체가 시간이 지나며 바뀌는데, 수동 관리 없이 스토리지 비용을 자동 최적화하려 한다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "S3 Intelligent-Tiering으로 자동 계층화"
+        "text": "수명 주기 규칙으로 30일 후 Standard-IA, 90일 후 Glacier로 일괄 전환한다"
       },
       {
         "label": "B",
-        "text": "모두 Standard 유지"
+        "text": "모든 객체를 Standard-IA에 두어 저장 비용을 낮춘다"
       },
       {
         "label": "C",
-        "text": "데이터를 삭제"
+        "text": "S3 Intelligent-Tiering을 사용해 접근 패턴 변화에 따라 자동으로 계층을 이동시킨다"
       },
       {
         "label": "D",
-        "text": "EBS로 옮긴다"
+        "text": "S3 Storage Lens 보고서를 보고 운영자가 매월 수동으로 계층을 조정한다"
       }
     ],
-    "answer": "A",
-    "explanation": "Intelligent-Tiering은 접근 패턴 변화에 따라 자동으로 계층을 이동해 수동 관리 없이 비용을 최적화한다. Standard 고정(B)은 비효율적이다."
+    "answer": "C",
+    "explanation": "Intelligent-Tiering은 객체별 접근 패턴 변화를 모니터링해 자동으로 계층을 이동하므로 예측 불가·혼재 패턴에서 수동 관리 없이 비용을 최적화한다. 고정된 수명 주기로 일괄 전환하는 방식은 접근 패턴이 다시 잦아져도 되돌리지 못해 검색 비용이 늘 수 있다. 모든 객체를 Standard-IA에 두는 방식은 자주 접근하는 객체에 검색 요금이 붙어 비효율적이다. Storage Lens를 보고 매월 수동 조정하는 방식은 운영 부담이 크다."
   },
   {
     "number": 65,
     "domain": "비용·성능 최적화",
-    "prompt": "읽기 지연을 줄이려고 DynamoDB 앞단에 마이크로초 응답 캐시를 두려 한다. 가장 적합한 것은?",
+    "prompt": "읽기 비중이 매우 높은 애플리케이션이 DynamoDB에서 동일 항목을 반복 조회하며, 응답 지연을 밀리초에서 마이크로초로 낮추고 읽기 비용을 줄이려 한다. 애플리케이션 코드 변경은 최소화하고 싶다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "DynamoDB Accelerator(DAX)를 사용"
+        "text": "DynamoDB Accelerator(DAX) 클러스터를 앞단에 두고 DAX SDK 클라이언트로 연결한다"
       },
       {
         "label": "B",
-        "text": "매 읽기를 강한 일관성으로 강제"
+        "text": "모든 읽기를 강력한 일관성으로 전환해 캐시 정합성을 높인다"
       },
       {
         "label": "C",
-        "text": "테이블을 더 키운다"
+        "text": "프로비저닝된 읽기 용량을 크게 늘려 지연을 줄인다"
       },
       {
         "label": "D",
-        "text": "Scan으로 전환"
+        "text": "ElastiCache를 별도로 운영하며 캐시 무효화 로직을 애플리케이션에 구현한다"
       }
     ],
     "answer": "A",
-    "explanation": "DAX는 DynamoDB용 완전관리형 인메모리 캐시로 읽기를 마이크로초로 가속한다. 강한 일관성 강제(B)·Scan(D)은 지연·비용을 늘린다."
+    "explanation": "DAX는 DynamoDB용 완전관리형 인메모리 캐시로 읽기를 마이크로초로 가속하고 반복 읽기 비용을 줄이며 DynamoDB API와 호환되어 코드 변경이 적다. 모든 읽기를 강력한 일관성으로 전환하는 방식은 캐시 효과를 줄이고 비용·지연을 늘린다. 읽기 용량을 크게 늘리는 방식은 지연을 마이크로초로 낮추지 못하고 비용만 늘린다. ElastiCache를 별도 운영하는 방식은 캐시 무효화 로직을 직접 구현해야 해 코드 변경이 크다."
   },
   {
     "number": 66,
     "domain": "비용·성능 최적화",
-    "prompt": "비정상적 비용 급증을 자동으로 탐지해 알림을 받으려 한다. 가장 적합한 것은?",
+    "prompt": "재무팀이 평소와 다른 비정상적 비용 급증(예: 특정 서비스의 갑작스러운 폭증)을 머신러닝으로 자동 탐지해 근본 원인 요약과 함께 알림 받기를 원한다. 임계값을 일일이 정하고 싶지 않다. 가장 적합한 방법은?",
     "choices": [
       {
         "label": "A",
-        "text": "AWS Cost Anomaly Detection을 구성"
+        "text": "Cost Explorer 데이터를 QuickSight로 시각화해 운영자가 이상치를 찾는다"
       },
       {
         "label": "B",
-        "text": "청구서를 수동 비교"
+        "text": "AWS Budgets에 서비스별 고정 임계 예산을 만들어 초과 시 알린다"
       },
       {
         "label": "C",
-        "text": "무시한다"
+        "text": "CloudWatch 청구 경보를 서비스마다 만들어 추정 요금 임계를 감시한다"
       },
       {
         "label": "D",
-        "text": "예산을 0으로"
+        "text": "AWS Cost Anomaly Detection을 구성해 서비스·계정 모니터로 비정상 지출을 탐지하고 알림을 받는다"
       }
     ],
-    "answer": "A",
-    "explanation": "Cost Anomaly Detection은 머신러닝으로 비정상 지출을 탐지해 알림을 보낸다. 수동 비교(B)는 늦고 부정확하다."
+    "answer": "D",
+    "explanation": "Cost Anomaly Detection은 머신러닝으로 비정상 지출을 자동 탐지하고 근본 원인 요약과 함께 알림을 보내며 임계값을 수동 설정할 필요가 없어 요건에 정확히 맞는다. 서비스별 고정 임계 예산을 만드는 방식과 서비스마다 청구 경보를 만드는 방식은 고정 임계를 직접 정해야 한다. QuickSight로 시각화하는 방식은 운영자가 수동으로 이상치를 찾아야 해 자동 탐지가 아니다."
   },
   {
     "number": 67,
     "domain": "안정성·비즈니스 연속성",
-    "prompt": "트래픽을 사전·사후 모두 대응하도록 Auto Scaling을 구성하려 한다. 적절한 조치 2가지는? (2개 선택)",
+    "prompt": "구독 기반 서비스가 매주 월요일 오전에 트래픽이 급증하고, 그 외에도 불규칙한 캠페인으로 갑작스러운 부하가 발생한다. 비용을 통제하면서 두 상황 모두에 자동 대응하도록 Auto Scaling을 구성하려 한다. 적절한 조치 2가지는? (2개 선택)",
     "choices": [
       {
         "label": "A",
-        "text": "예약된 조정으로 알려진 피크에 선제 확장"
+        "text": "모든 조정 정책을 제거하고 운영자가 캠페인마다 수동으로 조정한다"
       },
       {
         "label": "B",
-        "text": "대상 추적 정책으로 지표 기반 동적 확장"
+        "text": "최대 용량을 1로 고정해 비용을 줄인다"
       },
       {
         "label": "C",
-        "text": "최대 용량을 1로 고정"
+        "text": "대상 추적 정책으로 요청 수 또는 CPU를 목표값으로 유지해 불규칙 부하에 동적으로 대응한다"
       },
       {
         "label": "D",
-        "text": "조정 정책을 모두 제거"
+        "text": "예약된 조정으로 매주 월요일 오전 직전 희망 용량을 상향한다"
       }
     ],
-    "answer": "A, B",
-    "explanation": "예약 조정은 예측 가능한 피크에 선제 대응하고, 대상 추적은 실시간 지표에 동적으로 반응한다. 최대 1 고정·정책 제거(C,D)는 확장을 막는다."
+    "answer": "C, D",
+    "explanation": "예약된 조정은 매주 예측 가능한 월요일 피크에 선제 확장하고, 대상 추적 정책은 요청 수나 CPU를 목표값으로 유지하며 불규칙한 캠페인 부하에 동적 반응해 두 상황을 모두 자동 대응하면서 평상시 축소로 비용을 통제한다. 최대 용량을 1로 고정하는 방식은 확장을 막아 가용성을 해친다. 모든 조정 정책을 제거하고 수동으로 조정하는 방식은 자동 대응 요건에 어긋나고 누락·지연 위험이 크다."
   },
   {
     "number": 68,
     "domain": "보안·규정 준수",
-    "prompt": "S3 버킷의 우발적 퍼블릭 노출을 막기 위한 조치 2가지는? (2개 선택)",
+    "prompt": "보안팀이 S3 버킷의 우발적 외부 노출을 예방하고, 이미 외부에서 접근 가능한 버킷이 있는지도 지속적으로 식별하려 한다. 가장 적합한 조치 2가지는? (2개 선택)",
     "choices": [
       {
         "label": "A",
-        "text": "계정/버킷 수준 퍼블릭 액세스 차단을 켠다"
+        "text": "IAM Access Analyzer를 활성화해 외부에서 접근 가능한 버킷을 지속 식별한다"
       },
       {
         "label": "B",
-        "text": "IAM Access Analyzer로 외부 접근 가능 리소스를 점검"
+        "text": "계정·버킷 수준 S3 퍼블릭 액세스 차단을 활성화해 퍼블릭 노출을 강제로 막는다"
       },
       {
         "label": "C",
-        "text": "버킷 이름을 길게 짓는다"
+        "text": "모든 객체 ACL을 public-read로 설정하고 CloudFront로만 제공한다"
       },
       {
         "label": "D",
-        "text": "모든 객체 ACL을 public-read로 둔다"
+        "text": "버킷 이름을 추측하기 어렵게 무작위 문자열로 짓는다"
       }
     ],
     "answer": "A, B",
-    "explanation": "퍼블릭 액세스 차단으로 노출을 강제 방지하고, Access Analyzer로 외부 접근 가능 리소스를 지속 점검한다. 이름 난독화(C)·public-read(D)는 보호가 아니다."
+    "explanation": "퍼블릭 액세스 차단은 ACL·정책을 통한 외부 노출을 강제로 막아 예방하고, IAM Access Analyzer는 외부 접근 가능한 버킷을 지속 식별해 탐지를 담당하므로 두 조치가 요건을 함께 충족한다. 버킷 이름을 무작위로 짓는 방식은 보안 통제가 아니라 추측 의존이다. 모든 객체 ACL을 public-read로 설정하는 방식은 오히려 외부 노출을 만들어 요건에 정면으로 반한다."
   }
 ]

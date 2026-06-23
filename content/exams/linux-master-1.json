@@ -2,357 +2,357 @@
   {
     "number": 1,
     "domain": "리눅스 운영 및 관리",
-    "prompt": "현재 실행 중인 모든 프로세스를 사용자·CPU·메모리 점유와 함께 한 번에 출력하려 한다. 가장 적합한 명령은?",
+    "prompt": "ps 명령에서 BSD 스타일 옵션을 사용하여 터미널에 연결되지 않은 프로세스까지 포함해 시스템의 모든 프로세스를 사용자 정보와 함께 출력하려 한다. 가장 적합한 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "ps aux"
+        "text": "ps -e"
       },
       {
         "label": "B",
-        "text": "ls -al"
+        "text": "ps aux"
       },
       {
         "label": "C",
-        "text": "df -h"
+        "text": "ps -u"
       },
       {
         "label": "D",
-        "text": "free -m"
+        "text": "ps -l"
       }
     ],
-    "answer": "A",
-    "explanation": "ps aux는 모든 사용자의 프로세스를 CPU·메모리·상태와 함께 출력한다. ls(B)는 파일 목록, df(C)는 디스크 사용량, free(D)는 메모리 총량이라 프로세스 목록과는 무관하다."
+    "answer": "B",
+    "explanation": "BSD 스타일의 aux는 a(모든 사용자), u(사용자 중심 형식), x(제어 터미널 없는 프로세스 포함)를 합쳐 모든 프로세스를 소유자·CPU·메모리와 함께 출력한다. -e는 모든 프로세스를 출력하지만 UNIX 스타일이라 사용자/자원 열이 기본 표시되지 않는다. -u는 특정 사용자를 지정하는 옵션이라 인자 없이는 의도와 다르고, -l은 PPID·우선순위 등을 보여주는 long 형식 상세 출력이라 모든 프로세스를 사용자 자원과 함께 보여주는 용도가 아니다."
   },
   {
     "number": 2,
     "domain": "리눅스 운영 및 관리",
-    "prompt": "특정 프로세스(PID 1234)에 종료 시그널을 보내되, 프로세스가 정리 작업을 수행할 기회를 주는 기본 종료 시그널을 보내려 한다. 가장 적합한 명령은?",
+    "prompt": "특정 프로세스(PID 1234)에 종료 시그널을 보내되, 프로세스가 정리 작업을 수행한 뒤 정상 종료할 기회를 주는 기본 종료 시그널을 보내려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "kill -9 1234"
+        "text": "kill -2 1234"
       },
       {
         "label": "B",
-        "text": "kill 1234"
+        "text": "kill -1 1234"
       },
       {
         "label": "C",
-        "text": "kill -STOP 1234"
+        "text": "kill -15 1234"
       },
       {
         "label": "D",
-        "text": "kill -HUP 1234"
+        "text": "kill -9 1234"
       }
     ],
-    "answer": "B",
-    "explanation": "옵션 없는 kill은 SIGTERM(15)을 보내 프로세스가 정상 종료·정리할 기회를 준다. -9(SIGKILL, A)는 강제 종료로 정리 불가, -STOP(C)은 일시 중지, -HUP(D)은 재시작/재로드 용도가 일반적이다."
+    "answer": "C",
+    "explanation": "시그널 15(SIGTERM)는 kill의 기본 시그널로, 프로세스가 종료 핸들러를 실행하고 정상 종료하도록 요청한다. 시그널 2(SIGINT)는 Ctrl+C에 해당하는 인터럽트라 정상 종료 요청의 표준은 아니고, 시그널 1(SIGHUP)은 터미널 종료/데몬 설정 재로드 용도이며, 시그널 9(SIGKILL)는 종료 핸들러 없이 즉시 강제 종료하여 정리 기회를 주지 않는다."
   },
   {
     "number": 3,
     "domain": "파일 시스템 및 권한",
-    "prompt": "파일 report.txt의 권한을 소유자는 읽기·쓰기, 그룹과 기타 사용자는 읽기만 가능하도록 설정하려 한다. 가장 적합한 명령은?",
+    "prompt": "파일 report.txt의 권한이 -rw-r--r-- 인 상태에서, 그룹과 기타 사용자의 읽기 권한은 그대로 두고 그룹에만 실행 권한을 추가하려 한다. 기존 권한을 건드리지 않는 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "chmod 644 report.txt"
+        "text": "chmod g=x report.txt"
       },
       {
         "label": "B",
-        "text": "chmod 777 report.txt"
+        "text": "chmod +x report.txt"
       },
       {
         "label": "C",
-        "text": "chmod 600 report.txt"
+        "text": "chmod 754 report.txt"
       },
       {
         "label": "D",
-        "text": "chmod 755 report.txt"
+        "text": "chmod g+x report.txt"
       }
     ],
-    "answer": "A",
-    "explanation": "644는 소유자 rw-(6), 그룹 r--(4), 기타 r--(4)를 의미해 요구와 정확히 일치한다. 777(B)은 전체 rwx로 과도, 600(C)은 그룹·기타 접근 차단, 755(D)는 그룹·기타에 실행 권한까지 부여한다."
+    "answer": "D",
+    "explanation": "g+x는 그룹의 기존 권한을 유지한 채 실행 권한만 더하므로 그룹/기타의 읽기는 그대로 남는다. g=x는 그룹 권한을 실행만으로 덮어써 기존 그룹 읽기를 제거하고, +x는 소유자·그룹·기타 모두에 실행을 추가해 범위가 과도하다. 754는 결과 권한이 같아 보여도 절대 모드라 기존 권한 상태를 직접 계산해 지정해야 하므로 '기존을 건드리지 않는' 상대 지정 방식이 아니다."
   },
   {
     "number": 4,
     "domain": "파일 시스템 및 권한",
-    "prompt": "디렉터리 /data와 그 하위 모든 파일·디렉터리의 소유자를 사용자 alice, 그룹 dev로 한 번에 변경하려 한다. 가장 적합한 명령은?",
+    "prompt": "디렉터리 /data와 그 하위 모든 파일·디렉터리의 소유자를 alice, 그룹을 dev로 한 번에 변경하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "chown alice:dev /data"
+        "text": "chown -R dev:alice /data"
       },
       {
         "label": "B",
-        "text": "chown -R alice:dev /data"
+        "text": "chown alice:dev -r /data"
       },
       {
         "label": "C",
-        "text": "chmod -R alice:dev /data"
+        "text": "chown -R alice.dev /data/*"
       },
       {
         "label": "D",
-        "text": "chgrp alice /data"
+        "text": "chown -R alice:dev /data"
       }
     ],
-    "answer": "B",
-    "explanation": "chown -R은 디렉터리 하위 전체에 재귀적으로 소유자:그룹을 변경한다. 옵션 없는 chown(A)은 /data 자체만 변경, chmod(C)는 권한 명령이라 소유자 변경 불가, chgrp(D)는 그룹만 바꾸고 재귀도 아니다."
+    "answer": "D",
+    "explanation": "chown -R alice:dev /data는 /data 자체와 하위 전체를 재귀적으로 소유자 alice, 그룹 dev로 변경한다. dev:alice 형태는 소유자와 그룹이 뒤바뀌어 dev가 소유자, alice가 그룹이 되고, alice:dev -r 형태의 소문자 -r은 chown에서 재귀(-R)로 인식되지 않는 옵션이다. alice.dev /data/* 형태는 /data/* 글로빙이라 점(.)으로 시작하는 숨김 항목과 /data 자신이 누락될 수 있다."
   },
   {
     "number": 5,
     "domain": "파일 시스템 및 권한",
-    "prompt": "공유 디렉터리에서 파일을 만든 본인 또는 root만 자신의 파일을 삭제할 수 있게 하여 다른 사용자가 남의 파일을 지우지 못하도록 설정하려 한다. 가장 적합한 특수 권한은?",
+    "prompt": "공유 디렉터리 /share에서 누구나 파일을 생성할 수 있되, 파일을 만든 본인과 root만 자신의 파일을 삭제·이름변경할 수 있도록 설정하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "SetUID 비트"
+        "text": "chmod 1777 /share"
       },
       {
         "label": "B",
-        "text": "Sticky 비트"
+        "text": "chmod 2777 /share"
       },
       {
         "label": "C",
-        "text": "SetGID 비트"
+        "text": "chmod 0777 /share"
       },
       {
         "label": "D",
-        "text": "읽기 전용 마운트"
+        "text": "chmod 4777 /share"
       }
     ],
-    "answer": "B",
-    "explanation": "디렉터리에 Sticky 비트(chmod +t, 예: /tmp)를 설정하면 파일 소유자와 root만 해당 파일을 삭제할 수 있다. SetUID(A)/SetGID(C)는 실행 시 권한 상속용이고, 읽기 전용 마운트(D)는 쓰기 자체를 막아 요구와 다르다."
+    "answer": "A",
+    "explanation": "앞자리 1은 스티키 비트로, 설정 시 디렉터리 내 파일은 소유자와 root만 삭제·이름변경할 수 있다(/tmp 방식). 앞자리 2는 setgid라 그룹을 상속시키고, 앞자리 4는 setuid로 실행 시 소유자 권한을 적용하며, 앞자리 0은 특수 권한이 없어 다른 사용자도 남의 파일을 지울 수 있다."
   },
   {
     "number": 6,
     "domain": "파일 시스템 및 권한",
-    "prompt": "새 디스크 파티션 /dev/sdb1을 ext4 파일 시스템으로 포맷하려 한다. 가장 적합한 명령은?",
+    "prompt": "새 파티션 /dev/sdb1을 ext4 파일 시스템으로 생성(포맷)하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "mkfs.ext4 /dev/sdb1"
+        "text": "tune2fs -t ext4 /dev/sdb1"
       },
       {
         "label": "B",
-        "text": "mount /dev/sdb1 /mnt"
+        "text": "mke2fs /dev/sdb1 ext4"
       },
       {
         "label": "C",
-        "text": "fdisk -l"
+        "text": "mkswap /dev/sdb1"
       },
       {
         "label": "D",
-        "text": "fsck /dev/sdb1"
+        "text": "mkfs -t ext4 /dev/sdb1"
       }
     ],
-    "answer": "A",
-    "explanation": "mkfs.ext4는 파티션을 ext4 파일 시스템으로 생성(포맷)한다. mount(B)는 마운트, fdisk -l(C)은 파티션 정보 조회, fsck(D)는 파일 시스템 검사·복구라 포맷이 아니다."
+    "answer": "D",
+    "explanation": "mkfs -t ext4(= mkfs.ext4)는 지정 파티션에 ext4 파일 시스템을 생성한다. tune2fs는 기존 ext 파일 시스템의 속성을 조정하는 도구라 포맷 명령이 아니고, mke2fs는 기본이 ext2이며 유형은 -t로 지정해야 하므로 'ext4'를 인자로 둔 형태는 잘못된 구문이다. mkswap은 파일 시스템이 아니라 스왑 영역을 만든다."
   },
   {
     "number": 7,
     "domain": "파일 시스템 및 권한",
-    "prompt": "부팅 시 /dev/sdb1을 /data에 자동으로 마운트되게 영구 설정하려 한다. 수정해야 할 파일은?",
+    "prompt": "부팅 시 /dev/sdb1을 /data에 자동 마운트되도록 영구 등록하려 한다. 이때 수정하는 /etc/fstab 한 행의 필드 순서로 옳은 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "/etc/passwd"
+        "text": "마운트지점  장치  파일시스템유형  마운트옵션  덤프  순서(fsck)"
       },
       {
         "label": "B",
-        "text": "/etc/fstab"
+        "text": "장치  마운트지점  파일시스템유형  마운트옵션  덤프  순서(fsck)"
       },
       {
         "label": "C",
-        "text": "/etc/hosts"
+        "text": "장치  파일시스템유형  마운트지점  덤프  마운트옵션  순서(fsck)"
       },
       {
         "label": "D",
-        "text": "/etc/resolv.conf"
+        "text": "마운트지점  장치  마운트옵션  파일시스템유형  순서(fsck)  덤프"
       }
     ],
     "answer": "B",
-    "explanation": "/etc/fstab에 마운트 항목을 추가하면 부팅 시 자동 마운트된다. /etc/passwd(A)는 사용자 계정, /etc/hosts(C)는 호스트명 매핑, /etc/resolv.conf(D)는 DNS 설정 파일이라 마운트와 무관하다."
+    "explanation": "/etc/fstab 각 행은 '장치(또는 UUID) - 마운트지점 - 파일시스템유형 - 마운트옵션 - dump - fsck 순서'의 6개 필드로 구성된다. '마운트지점  장치  파일시스템유형 …' 순서와 '마운트지점  장치  마운트옵션 …' 순서는 장치와 마운트지점이 뒤바뀌어 있고, '장치  파일시스템유형  마운트지점 …' 순서는 마운트지점과 파일시스템유형, 덤프와 마운트옵션의 위치가 서로 어긋나 있다."
   },
   {
     "number": 8,
     "domain": "사용자 및 그룹 관리",
-    "prompt": "새 사용자 bob을 생성하면서 홈 디렉터리를 함께 만들고 기본 셸을 /bin/bash로 지정하려 한다. 가장 적합한 명령은?",
+    "prompt": "새 사용자 bob을 생성하면서 홈 디렉터리를 함께 만들고 로그인 셸을 /bin/bash로 지정하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "useradd -m -s /bin/bash bob"
+        "text": "useradd -m -g /bin/bash bob"
       },
       {
         "label": "B",
-        "text": "passwd bob"
+        "text": "useradd -d -s /bin/bash bob"
       },
       {
         "label": "C",
-        "text": "groupadd bob"
+        "text": "useradd -m -s /bin/bash bob"
       },
       {
         "label": "D",
-        "text": "userdel bob"
+        "text": "usermod -m -s /bin/bash bob"
       }
     ],
-    "answer": "A",
-    "explanation": "useradd -m은 홈 디렉터리를 생성하고 -s는 로그인 셸을 지정한다. passwd(B)는 비밀번호 설정, groupadd(C)는 그룹 생성, userdel(D)은 사용자 삭제라 계정 생성과 다르다."
+    "answer": "C",
+    "explanation": "useradd에서 -m은 홈 디렉터리 생성, -s는 로그인 셸 지정이므로 -m -s /bin/bash 조합이 정확히 들어맞는다. -m -g /bin/bash는 -g가 기본 그룹 지정 옵션이라 셸 경로를 그룹 이름으로 잘못 해석하고, -d -s /bin/bash는 -d가 홈 디렉터리 경로를 받는 옵션이라 뒤따르는 경로 인자가 -s와 충돌한다. usermod는 기존 사용자를 수정하는 명령이라 신규 생성에 부적합하다."
   },
   {
     "number": 9,
     "domain": "사용자 및 그룹 관리",
-    "prompt": "사용자 계정의 비밀번호 만료 정책(최대 사용 일수 등)과 계정 만료일을 조회·변경하려 한다. 가장 적합한 명령은?",
+    "prompt": "사용자 john의 비밀번호 최대 사용 가능 일수를 90일로 변경하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "chage"
+        "text": "chage -m 90 john"
       },
       {
         "label": "B",
-        "text": "chmod"
+        "text": "chage -E 90 john"
       },
       {
         "label": "C",
-        "text": "chown"
+        "text": "chage -M 90 john"
       },
       {
         "label": "D",
-        "text": "umask"
+        "text": "chage -d 90 john"
       }
     ],
-    "answer": "A",
-    "explanation": "chage는 비밀번호 만료·최소/최대 사용 일수·계정 만료일 등 에이징 정책을 조회·변경한다. chmod(B)는 권한, chown(C)은 소유자, umask(D)는 기본 권한 마스크라 계정 만료 정책과 무관하다."
+    "answer": "C",
+    "explanation": "chage -M(대문자)은 비밀번호 최대 사용 일수(MAX_DAYS)를 지정한다. -m(소문자)은 변경 후 재변경까지의 최소 일수, -E는 계정 만료일, -d는 비밀번호 마지막 변경일을 설정해 모두 의미가 다르다."
   },
   {
     "number": 10,
     "domain": "사용자 및 그룹 관리",
-    "prompt": "일반 사용자가 특정 관리 명령만 root 권한으로 실행할 수 있도록 안전하게 위임하려 한다. 가장 적합한 방법은?",
+    "prompt": "사용자 dev1이 root 권한으로 /usr/sbin/service 명령만 비밀번호 없이 실행할 수 있도록 위임하려 한다. /etc/sudoers에 추가할 항목으로 옳은 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "root 비밀번호를 공유한다"
+        "text": "dev1 ALL=(ALL) ALL"
       },
       {
         "label": "B",
-        "text": "/etc/sudoers(visudo)에 허용 명령을 지정해 sudo 권한을 위임"
+        "text": "%dev1 ALL=(ALL) NOPASSWD: /usr/sbin/service"
       },
       {
         "label": "C",
-        "text": "모든 파일 권한을 777로 바꾼다"
+        "text": "dev1 NOPASSWD=(ALL): /usr/sbin/service"
       },
       {
         "label": "D",
-        "text": "사용자를 root로 로그인시킨다"
+        "text": "dev1 ALL=(ALL) NOPASSWD: /usr/sbin/service"
       }
     ],
-    "answer": "B",
-    "explanation": "visudo로 /etc/sudoers를 편집해 사용자별 허용 명령을 지정하면 최소 권한으로 안전하게 root 작업을 위임할 수 있다. 비밀번호 공유(A)·root 로그인(D)·777(C)은 모두 과도한 권한 노출로 보안에 치명적이다."
+    "answer": "D",
+    "explanation": "'사용자 호스트=(실행사용자) 태그: 명령' 형식에 맞춰 dev1 ALL=(ALL) NOPASSWD: /usr/sbin/service는 dev1에게 service 명령만 비밀번호 없이 허용한다. dev1 ALL=(ALL) ALL은 모든 명령을 비밀번호 입력하에 허용해 범위가 과도하고, 맨 앞에 %를 붙인 %dev1은 사용자가 아니라 그룹 dev1을 의미하며, dev1 NOPASSWD=(ALL): … 형태는 호스트/실행사용자 필드와 NOPASSWD 태그의 문법 위치가 잘못됐다."
   },
   {
     "number": 11,
     "domain": "셸 및 스크립트",
-    "prompt": "현재 셸 세션에서 변수 PATH를 자식 프로세스에서도 사용할 수 있게 환경 변수로 내보내려 한다. 가장 적합한 명령은?",
+    "prompt": "변수 MYVAR에 값을 대입하는 동시에 자식 프로세스에서도 사용할 수 있도록 환경 변수로 내보내려 한다. 가장 적합한 한 줄 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "export PATH"
+        "text": "set MYVAR=hello"
       },
       {
         "label": "B",
-        "text": "alias PATH"
+        "text": "export MYVAR=hello"
       },
       {
         "label": "C",
-        "text": "unset PATH"
+        "text": "env MYVAR=hello"
       },
       {
         "label": "D",
-        "text": "echo PATH"
+        "text": "export MYVAR = hello"
       }
     ],
-    "answer": "A",
-    "explanation": "export는 변수를 환경 변수로 표시해 이후 실행되는 자식 프로세스에 상속되게 한다. alias(B)는 명령 별칭, unset(C)은 변수 제거, echo(D)는 단순 출력이라 내보내기가 아니다."
+    "answer": "B",
+    "explanation": "bash에서 export MYVAR=hello는 대입과 동시에 환경 변수로 내보낸다(등호 양옆에 공백 금지). set MYVAR=hello는 set이 셸 옵션·위치 매개변수 설정용이라 변수 대입으로 그대로 처리되지 않으며, env MYVAR=hello는 변수를 일시 적용한 새 환경을 만들 뿐 현재 셸에 남기지 않는다. export MYVAR = hello는 등호 주위 공백 때문에 export가 MYVAR를 명령 인자로 오인해 오류가 난다."
   },
   {
     "number": 12,
     "domain": "셸 및 스크립트",
-    "prompt": "파일 access.log에서 문자열 'ERROR'가 포함된 행만 추출해 화면에 출력하려 한다. 가장 적합한 명령은?",
+    "prompt": "파일 access.log에서 대소문자를 구분하지 않고 'error'가 포함된 행만 출력하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "grep \"ERROR\" access.log"
+        "text": "grep -c error access.log"
       },
       {
         "label": "B",
-        "text": "sort access.log"
+        "text": "grep -i error access.log"
       },
       {
         "label": "C",
-        "text": "wc -l access.log"
+        "text": "grep -v error access.log"
       },
       {
         "label": "D",
-        "text": "touch access.log"
+        "text": "grep -n error access.log"
       }
     ],
-    "answer": "A",
-    "explanation": "grep은 지정한 패턴이 포함된 행만 출력한다. sort(B)는 정렬, wc -l(C)은 행 수 계산, touch(D)는 빈 파일 생성/타임스탬프 갱신이라 패턴 검색과 무관하다."
+    "answer": "B",
+    "explanation": "-i는 대소문자를 무시하고 패턴을 검색해 'Error', 'ERROR'까지 모두 잡는다. -c는 일치 행의 개수만 세고, -v는 패턴이 없는 행을 출력(반전)하며, -n은 행 번호를 함께 출력하지만 대소문자는 구분하므로 의도와 다르다."
   },
   {
     "number": 13,
     "domain": "셸 및 스크립트",
-    "prompt": "명령 ls의 표준 출력을 화면이 아닌 파일 list.txt에 기존 내용을 지우고 새로 저장하려 한다. 가장 적합한 표현은?",
+    "prompt": "명령 myapp의 표준 출력과 표준 에러를 모두 같은 파일 log.txt에 새로 저장하려 한다. 가장 적합한 표현은?",
     "choices": [
       {
         "label": "A",
-        "text": "ls > list.txt"
+        "text": "myapp 2>&1 > log.txt"
       },
       {
         "label": "B",
-        "text": "ls >> list.txt"
+        "text": "myapp > log.txt 2>&1"
       },
       {
         "label": "C",
-        "text": "ls < list.txt"
+        "text": "myapp > log.txt 1>&2"
       },
       {
         "label": "D",
-        "text": "ls | list.txt"
+        "text": "myapp >> log.txt 2>1"
       }
     ],
-    "answer": "A",
-    "explanation": "> 는 표준 출력을 파일로 리다이렉트하며 기존 내용을 덮어쓴다. >>(B)는 이어붙이기, <(C)는 입력 리다이렉트, |(D)는 다른 명령으로 파이프라 파일에 직접 저장하지 못한다."
+    "answer": "B",
+    "explanation": "> log.txt로 표준 출력을 파일로 보낸 뒤 2>&1로 표준 에러를 표준 출력과 같은 곳(파일)으로 연결하므로 둘 다 파일에 저장된다. 2>&1 > log.txt는 순서상 2>&1이 먼저라 표준 에러가 아직 터미널인 표준 출력으로 가고 이후 표준 출력만 파일로 바뀐다. 1>&2는 표준 출력을 표준 에러로 보내 의도와 반대이고, 2>1은 표준 에러를 '1'이라는 이름의 파일로 보낸다."
   },
   {
     "number": 14,
     "domain": "셸 및 스크립트",
-    "prompt": "매일 새벽 3시에 백업 스크립트 /usr/local/bin/backup.sh를 자동 실행하도록 예약하려 한다. crontab 항목으로 가장 적합한 것은?",
+    "prompt": "매주 일요일 새벽 4시 30분에 스크립트 /usr/local/bin/weekly.sh를 실행하도록 예약하려 한다. crontab 항목으로 가장 적합한 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "0 3 * * * /usr/local/bin/backup.sh"
+        "text": "30 4 * * 0 /usr/local/bin/weekly.sh"
       },
       {
         "label": "B",
-        "text": "3 0 * * * /usr/local/bin/backup.sh"
+        "text": "30 4 * * 7,1 /usr/local/bin/weekly.sh"
       },
       {
         "label": "C",
-        "text": "* * * * 3 /usr/local/bin/backup.sh"
+        "text": "4 30 * * 0 /usr/local/bin/weekly.sh"
       },
       {
         "label": "D",
-        "text": "0 0 3 * * /usr/local/bin/backup.sh"
+        "text": "30 4 0 * * /usr/local/bin/weekly.sh"
       }
     ],
     "answer": "A",
-    "explanation": "cron 필드는 분 시 일 월 요일 순서이며 '0 3 * * *'는 매일 03시 00분을 의미한다. B는 00시 03분, C는 매주 수요일 매분, D는 매월 3일 00시 00분이라 요구와 다르다."
+    "explanation": "cron 필드는 분 시 일 월 요일이며 요일 0(또는 7)은 일요일이므로 '30 4 * * 0'은 매주 일요일 04시 30분이다. '30 4 * * 7,1'은 요일 자리에 7,1을 두어 일요일과 월요일 둘 다 실행하고, '4 30 * * 0'은 분과 시가 바뀌어 30시가 무효이며, '30 4 0 * *'는 세 번째 일(日) 필드에 0을 두어 일요일이 아니라 매월 0일을 의미해 잘못됐다."
   },
   {
     "number": 15,
     "domain": "서비스 및 시스템 관리",
-    "prompt": "systemd 기반 시스템에서 nginx 서비스를 지금 시작하고, 부팅 시에도 자동 시작되게 하려 한다. 적절한 명령 2가지는? (2개 선택)",
+    "prompt": "systemd 기반 시스템에서 nginx 서비스가 부팅 시 자동 시작되도록 등록은 하되, 지금 당장 실행하지는 않으려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
@@ -364,353 +364,353 @@
       },
       {
         "label": "C",
-        "text": "systemctl mask nginx"
+        "text": "systemctl enable --now nginx"
       },
       {
         "label": "D",
-        "text": "systemctl stop nginx"
+        "text": "systemctl restart nginx"
       }
     ],
-    "answer": "A, B",
-    "explanation": "systemctl start는 서비스를 즉시 시작하고, enable은 부팅 시 자동 시작되도록 등록한다. mask(C)는 서비스 시작을 아예 차단하고, stop(D)은 중지라 요구와 반대다."
+    "answer": "B",
+    "explanation": "enable은 부팅 시 자동 시작을 등록할 뿐 현재 실행 상태는 바꾸지 않으므로 '지금은 실행하지 않는다'는 조건에 맞는다. start는 즉시 시작만 하고 부팅 등록은 하지 않으며, enable --now는 등록과 동시에 즉시 시작까지 해 조건에 어긋나고, restart는 현재 실행 중인 서비스를 다시 시작한다."
   },
   {
     "number": 16,
     "domain": "서비스 및 시스템 관리",
-    "prompt": "systemd 시스템에서 실패한 서비스의 최근 로그를 확인해 원인을 파악하려 한다. 가장 적합한 명령은?",
+    "prompt": "systemd 시스템에서 sshd 서비스의 로그를 이번 부팅 이후 기록분만 골라 확인하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "journalctl -u 서비스명"
+        "text": "journalctl -k sshd"
       },
       {
         "label": "B",
-        "text": "ps -ef"
+        "text": "journalctl -p sshd"
       },
       {
         "label": "C",
-        "text": "top"
+        "text": "journalctl -f sshd"
       },
       {
         "label": "D",
-        "text": "df -h"
+        "text": "journalctl -u sshd -b"
       }
     ],
-    "answer": "A",
-    "explanation": "journalctl -u <서비스명>은 해당 유닛의 systemd 저널 로그를 조회해 실패 원인 파악에 사용된다. ps(B)는 프로세스 목록, top(C)은 실시간 자원 모니터링, df(D)는 디스크 사용량이라 로그 확인이 아니다."
+    "answer": "D",
+    "explanation": "-u는 유닛(sshd)을 지정하고 -b는 현재 부팅 이후의 로그만 보여주므로 요건에 정확히 맞는다. -k는 커널 메시지만 출력해 서비스 단위 조회와 맞지 않고, -p는 로그 우선순위를 필터링하는 옵션이며, -f는 실시간 추적 옵션이라 'sshd'가 유닛으로 인식되지 않고 인자 오류가 난다."
   },
   {
     "number": 17,
     "domain": "네트워크 관리",
-    "prompt": "리눅스 호스트의 IP 주소와 인터페이스 상태를 확인하려 한다. 최신 배포판에서 권장되는 명령은?",
+    "prompt": "iproute2 패키지의 명령으로 인터페이스 eth0에 IP 주소 192.168.0.10/24를 추가하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "ip addr show"
+        "text": "ip route add 192.168.0.10/24 dev eth0"
       },
       {
         "label": "B",
-        "text": "cat /etc/hostname"
+        "text": "ip addr set 192.168.0.10/24 dev eth0"
       },
       {
         "label": "C",
-        "text": "passwd"
+        "text": "ip addr add 192.168.0.10/24 dev eth0"
       },
       {
         "label": "D",
-        "text": "chmod 755 eth0"
+        "text": "ip link add 192.168.0.10/24 dev eth0"
       }
     ],
-    "answer": "A",
-    "explanation": "ip addr show(iproute2)는 인터페이스별 IP·상태를 출력하며 구식 ifconfig를 대체한다. /etc/hostname(B)은 호스트명, passwd(C)는 비밀번호 변경, chmod(D)는 권한 명령이라 IP 확인과 무관하다."
+    "answer": "C",
+    "explanation": "ip addr add … dev <인터페이스>가 주소를 인터페이스에 추가하는 표준 구문이다. ip route add는 라우팅 경로를 추가하는 명령이고, ip addr에는 set 하위 명령이 없어 무효이며, ip link add는 가상 인터페이스 등 링크 장치를 생성하는 용도라 주소 추가와 다르다."
   },
   {
     "number": 18,
     "domain": "네트워크 관리",
-    "prompt": "원격 호스트 192.168.1.10이 네트워크로 응답하는지 가장 먼저 간단히 확인하려 한다. 가장 적합한 명령은?",
+    "prompt": "원격 호스트 192.168.1.10에 ICMP 요청을 정확히 4번만 보내고 종료하도록 확인하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "ping 192.168.1.10"
+        "text": "ping -c 4 192.168.1.10"
       },
       {
         "label": "B",
-        "text": "ls 192.168.1.10"
+        "text": "ping -t 4 192.168.1.10"
       },
       {
         "label": "C",
-        "text": "rm 192.168.1.10"
+        "text": "ping -s 4 192.168.1.10"
       },
       {
         "label": "D",
-        "text": "cd 192.168.1.10"
+        "text": "ping -i 4 192.168.1.10"
       }
     ],
     "answer": "A",
-    "explanation": "ping은 ICMP 에코 요청으로 대상 호스트의 응답·도달 가능성을 확인하는 기본 도구다. ls(B)·rm(C)·cd(D)는 파일/디렉터리 명령이라 네트워크 연결 확인과 전혀 관련이 없다."
+    "explanation": "-c(count)는 보낼 패킷 횟수를 지정해 4번 보낸 뒤 종료한다. -t는 TTL 값을 지정하고, -s는 보낼 패킷의 데이터 크기(바이트)를, -i는 패킷 전송 간격(초)을 의미해 모두 횟수 제한과 무관하다."
   },
   {
     "number": 19,
     "domain": "네트워크 관리",
-    "prompt": "도메인 이름 www.example.com이 어떤 IP로 해석되는지 DNS 조회로 확인하려 한다. 가장 적합한 명령은?",
+    "prompt": "도메인 www.example.com의 메일 서버(MX) 레코드를 조회하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "dig www.example.com (또는 nslookup)"
+        "text": "dig www.example.com A"
       },
       {
         "label": "B",
-        "text": "tar www.example.com"
+        "text": "dig www.example.com NS"
       },
       {
         "label": "C",
-        "text": "kill www.example.com"
+        "text": "dig -x www.example.com"
       },
       {
         "label": "D",
-        "text": "mount www.example.com"
+        "text": "dig www.example.com MX"
       }
     ],
-    "answer": "A",
-    "explanation": "dig 또는 nslookup은 도메인의 DNS 레코드를 조회해 해석되는 IP를 보여준다. tar(B)는 압축, kill(C)은 프로세스 종료, mount(D)는 파일 시스템 마운트라 DNS 조회와 무관하다."
+    "answer": "D",
+    "explanation": "dig 뒤에 레코드 유형 MX를 지정하면 메일 교환 서버 레코드를 조회한다. A는 IPv4 주소 레코드, NS는 네임서버 레코드를 조회하고, -x는 IP를 도메인으로 바꾸는 역방향 조회 옵션이라 MX 조회와 다르다."
   },
   {
     "number": 20,
     "domain": "네트워크 관리",
-    "prompt": "현재 서버에서 LISTEN 상태로 열려 있는 TCP 포트와 해당 프로세스를 확인하려 한다. 가장 적합한 명령은?",
+    "prompt": "현재 서버에서 LISTEN 상태로 열려 있는 TCP 포트와 해당 프로세스 이름을 숫자 형식으로 확인하려 한다. ss 명령으로 가장 적합한 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "ss -tlnp (또는 netstat -tlnp)"
+        "text": "ss -tanp"
       },
       {
         "label": "B",
-        "text": "uptime"
+        "text": "ss -tln"
       },
       {
         "label": "C",
-        "text": "date"
+        "text": "ss -tlnp"
       },
       {
         "label": "D",
-        "text": "whoami"
+        "text": "ss -ulnp"
       }
     ],
-    "answer": "A",
-    "explanation": "ss -tlnp(또는 구식 netstat -tlnp)는 LISTEN 중인 TCP 포트와 연결된 프로세스를 보여준다. uptime(B)은 가동 시간, date(C)는 날짜, whoami(D)는 현재 사용자라 포트 점검과 관련이 없다."
+    "answer": "C",
+    "explanation": "-t(TCP) -l(LISTEN) -n(숫자 표시) -p(프로세스)를 합친 -tlnp가 요건과 정확히 일치한다. -tanp는 -l 대신 -a라서 LISTEN뿐 아니라 ESTABLISHED 등 모든 상태가 섞여 나오고, -tln은 -p가 없어 프로세스 정보를 보여주지 않으며, -ulnp는 TCP가 아닌 UDP 소켓을 대상으로 한다."
   },
   {
     "number": 21,
     "domain": "리눅스 운영 및 관리",
-    "prompt": "현재 시스템에 설치된 커널 버전을 확인하려 한다. 가장 적합한 명령은?",
+    "prompt": "현재 실행 중인 커널의 릴리스 버전만 출력하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "uname -r"
+        "text": "uname -m"
       },
       {
         "label": "B",
-        "text": "pwd"
+        "text": "uname -n"
       },
       {
         "label": "C",
-        "text": "echo $SHELL"
+        "text": "uname -r"
       },
       {
         "label": "D",
-        "text": "history"
+        "text": "uname -a"
       }
     ],
-    "answer": "A",
-    "explanation": "uname -r은 실행 중인 커널 릴리스 버전을 출력한다. pwd(B)는 현재 경로, echo $SHELL(C)은 셸, history(D)는 명령 이력이라 무관하다."
+    "answer": "C",
+    "explanation": "-r은 커널 릴리스(버전) 문자열만 출력한다. -m은 머신 하드웨어 아키텍처, -n은 노드(호스트)명을 출력하고, -a는 커널명·호스트명·버전·아키텍처 등 모든 정보를 한꺼번에 보여줘 '버전만'이라는 조건과 다르다."
   },
   {
     "number": 22,
     "domain": "리눅스 운영 및 관리",
-    "prompt": "시스템 전체의 디스크 파티션별 사용량과 남은 공간을 사람이 읽기 쉬운 단위로 보려 한다. 가장 적합한 명령은?",
+    "prompt": "마운트된 각 파일 시스템의 사용량을 사람이 읽기 쉬운 단위와 함께 파일 시스템 유형(ext4, xfs 등)까지 표시하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "df -h"
+        "text": "df -k"
       },
       {
         "label": "B",
-        "text": "du -h 파일"
+        "text": "df -hT"
       },
       {
         "label": "C",
-        "text": "free -h"
+        "text": "df -hi"
       },
       {
         "label": "D",
-        "text": "top"
+        "text": "df -a"
       }
     ],
-    "answer": "A",
-    "explanation": "df -h는 파일 시스템별 전체/사용/가용 용량을 사람이 읽기 쉬운 단위로 보여준다. du(B)는 특정 경로 사용량, free(C)는 메모리, top(D)은 프로세스 모니터다."
+    "answer": "B",
+    "explanation": "-h는 사람이 읽기 쉬운 단위로, -T는 파일 시스템 유형 열을 추가로 표시한다. -k는 1K 블록 단위 고정 출력이라 읽기 쉬운 단위 효과가 없고, -hi는 용량 대신 inode 사용량을 보여주며, -a는 0블록 등 모든 파일 시스템을 포함하지만 유형 열은 표시하지 않는다."
   },
   {
     "number": 23,
     "domain": "리눅스 운영 및 관리",
-    "prompt": "특정 디렉터리 트리가 차지하는 총 디스크 용량을 요약해서 확인하려 한다. 가장 적합한 명령은?",
+    "prompt": "디렉터리 /var/log가 차지하는 총 용량만 사람이 읽기 쉬운 단위로 요약해 한 줄로 확인하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "du -sh /경로"
+        "text": "du -ch /var/log"
       },
       {
         "label": "B",
-        "text": "df -h"
+        "text": "du -ah /var/log"
       },
       {
         "label": "C",
-        "text": "ls -l"
+        "text": "du -h /var/log"
       },
       {
         "label": "D",
-        "text": "cat /경로"
+        "text": "du -sh /var/log"
       }
     ],
-    "answer": "A",
-    "explanation": "du -sh는 지정 디렉터리의 총 사용량을 요약(-s) 단위 표기(-h)로 보여준다. df(B)는 파일 시스템 단위, ls -l(C)은 파일 목록, cat(D)은 내용 출력이다."
+    "answer": "D",
+    "explanation": "-s는 합계만 요약(하위 항목 미표시)하고 -h는 읽기 쉬운 단위라 디렉터리 총합을 한 줄로 보여준다. -ch는 항목별 출력에 마지막 총계(total) 줄만 더할 뿐 요약 한 줄이 아니고, -ah는 파일 단위까지 전부 표시하며, -h는 하위 디렉터리별 용량을 모두 출력한다."
   },
   {
     "number": 24,
     "domain": "리눅스 운영 및 관리",
-    "prompt": "시스템의 메모리와 스왑 사용 현황을 사람이 읽기 쉬운 단위로 확인하려 한다. 가장 적합한 명령은?",
+    "prompt": "메모리 사용 현황을 1초 간격으로 갱신하며 반복 출력해 실시간으로 관찰하려 한다. free 명령으로 가장 적합한 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "free -h"
+        "text": "free -c 1"
       },
       {
         "label": "B",
-        "text": "df -h"
+        "text": "free -l"
       },
       {
         "label": "C",
-        "text": "uptime"
+        "text": "free -t"
       },
       {
         "label": "D",
-        "text": "whoami"
+        "text": "free -s 1"
       }
     ],
-    "answer": "A",
-    "explanation": "free -h는 총/사용/가용 메모리와 스왑을 보기 쉬운 단위로 출력한다. df(B)는 디스크, uptime(C)은 가동 시간, whoami(D)는 사용자다."
+    "answer": "D",
+    "explanation": "-s(seconds)는 지정한 초 간격으로 반복 출력해 실시간 관찰에 쓰인다. -c는 -s와 함께 반복 횟수를 정하는 옵션이라 단독으로 1회만 의미가 없고, -l은 낮은/높은 메모리 상세를, -t는 총계(Total) 줄을 추가할 뿐 갱신 기능이 없다."
   },
   {
     "number": 25,
     "domain": "리눅스 운영 및 관리",
-    "prompt": "RPM 기반 배포판에서 패키지를 설치·업데이트하려 한다. 가장 적합한 명령은?",
+    "prompt": "이미 내려받은 로컬 RPM 파일 sample.rpm을 의존성 확인과 진행 표시줄과 함께 설치하려 한다. rpm 명령으로 가장 적합한 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "dnf install 패키지 (또는 yum install)"
+        "text": "rpm -ivh sample.rpm"
       },
       {
         "label": "B",
-        "text": "apt install 패키지"
+        "text": "rpm -qa sample.rpm"
       },
       {
         "label": "C",
-        "text": "tar -xzf 패키지"
+        "text": "rpm -e sample.rpm"
       },
       {
         "label": "D",
-        "text": "make 패키지"
+        "text": "rpm -Uvh --nodeps sample.rpm"
       }
     ],
     "answer": "A",
-    "explanation": "RHEL/Fedora 계열은 dnf(구 yum)로 패키지를 설치·갱신한다. apt(B)는 데비안 계열, tar(C)는 압축 해제, make(D)는 빌드 도구다."
+    "explanation": "-i(install) -v(verbose) -h(hash, 진행 표시줄)의 조합이 신규 설치에 표준이며 의존성 검사도 수행한다. -qa는 설치된 전체 패키지를 질의하는 옵션이라 파일 설치가 아니고, -e는 패키지를 제거하며, -Uvh --nodeps는 업그레이드이면서 --nodeps로 의존성 검사를 건너뛰어 '의존성 확인' 조건에 어긋난다."
   },
   {
     "number": 26,
     "domain": "파일 시스템 및 권한",
-    "prompt": "파일 report.txt의 권한을 소유자는 읽기·쓰기, 그룹과 기타는 읽기 전용으로 설정하려 한다. 가장 적합한 명령은?",
+    "prompt": "현재 권한이 -rwxr-xr-x인 파일 script.sh에서 기타(other) 사용자의 실행 권한만 제거하려 한다. 기존 다른 권한은 유지하는 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "chmod 644 report.txt"
+        "text": "chmod o-x script.sh"
       },
       {
         "label": "B",
-        "text": "chmod 777 report.txt"
+        "text": "chmod 754 script.sh"
       },
       {
         "label": "C",
-        "text": "chmod 600 report.txt"
+        "text": "chmod a-x script.sh"
       },
       {
         "label": "D",
-        "text": "chmod 000 report.txt"
+        "text": "chmod o=r script.sh"
       }
     ],
     "answer": "A",
-    "explanation": "644는 소유자 rw-(6), 그룹 r--(4), 기타 r--(4)로 요건과 일치한다. 777(B)은 모두 전체 권한, 600(C)은 그룹/기타 권한 없음, 000(D)은 모두 권한 없음이다."
+    "explanation": "o-x는 기타 사용자의 실행 권한만 제거하고 소유자·그룹 권한은 그대로 둔다. 754는 결과 권한이 같아 보여도 절대 모드라 현재 상태를 일일이 계산해 지정해야 하므로 '실행만 제거'라는 상대적 의도에 정확히 부합하지 않고, a-x는 소유자·그룹·기타 모두의 실행을 제거하며, o=r은 기타 권한을 읽기만으로 덮어쓰는 절대 지정이라(여기서는 우연히 r-x→r--로 결과가 비슷해 보여도) 의미가 다르다."
   },
   {
     "number": 27,
     "domain": "파일 시스템 및 권한",
-    "prompt": "파일 app.log의 소유자를 user1, 그룹을 devs로 변경하려 한다. 가장 적합한 명령은?",
+    "prompt": "파일 app.log의 그룹 소유권만 devs로 변경하고 사용자 소유자는 그대로 두려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "chown user1:devs app.log"
+        "text": "chown devs app.log"
       },
       {
         "label": "B",
-        "text": "chmod user1:devs app.log"
+        "text": "chown :devs app.log:user1"
       },
       {
         "label": "C",
-        "text": "chgrp user1 app.log"
+        "text": "chmod devs app.log"
       },
       {
         "label": "D",
-        "text": "mv user1 app.log"
+        "text": "chgrp devs app.log"
       }
     ],
-    "answer": "A",
-    "explanation": "chown user1:devs는 소유자와 그룹을 한 번에 변경한다. chmod(B)는 권한 변경, chgrp(C)는 그룹만, mv(D)는 이동/이름변경이다."
+    "answer": "D",
+    "explanation": "chgrp는 그룹 소유권만 변경하므로 사용자 소유자는 그대로 유지된다(chown :devs app.log도 같은 효과). chown devs는 그룹이 아니라 사용자 소유자를 devs로 바꾸고, chown :devs app.log:user1은 파일명 뒤에 :user1을 붙여 인자 문법이 잘못됐으며, chmod는 권한을 바꾸는 명령이라 소유권을 변경할 수 없다."
   },
   {
     "number": 28,
     "domain": "파일 시스템 및 권한",
-    "prompt": "심볼릭 링크를 생성해 /var/www를 /home/web으로 가리키게 하려 한다. 가장 적합한 명령은?",
+    "prompt": "파일 /etc/nginx/nginx.conf를 가리키는 심볼릭 링크를 현재 디렉터리에 conf라는 이름으로 만들려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "ln -s /var/www /home/web"
+        "text": "ln -s conf /etc/nginx/nginx.conf"
       },
       {
         "label": "B",
-        "text": "ln /var/www /home/web"
+        "text": "ln -d /etc/nginx/nginx.conf conf"
       },
       {
         "label": "C",
-        "text": "cp -r /var/www /home/web"
+        "text": "ln /etc/nginx/nginx.conf conf"
       },
       {
         "label": "D",
-        "text": "mv /var/www /home/web"
+        "text": "ln -s /etc/nginx/nginx.conf conf"
       }
     ],
-    "answer": "A",
-    "explanation": "ln -s는 심볼릭(소프트) 링크를 만든다. 옵션 없는 ln(B)은 하드 링크, cp -r(C)은 복사, mv(D)는 이동이다."
+    "answer": "D",
+    "explanation": "ln -s <대상> <링크이름> 순서이므로 ln -s /etc/nginx/nginx.conf conf는 원본을 가리키는 conf 심볼릭 링크를 만든다. ln -s conf /etc/nginx/nginx.conf는 대상과 링크 이름이 뒤바뀌어 nginx.conf 위치에 conf를 가리키는 링크를 만들려다 의도와 반대가 되고, -s 없는 ln은 하드 링크를 생성하며, -d는 디렉터리 하드 링크용(특권 필요) 옵션이라 부적합하다."
   },
   {
     "number": 29,
     "domain": "파일 시스템 및 권한",
-    "prompt": "디렉터리 shared 안에서 새로 만들어지는 파일이 항상 디렉터리의 그룹을 상속받게 하려 한다. 가장 적합한 것은?",
+    "prompt": "디렉터리 shared에 setgid 비트를 설정해, 그 안에서 생성되는 파일이 항상 디렉터리의 그룹을 상속받게 하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "chmod g+s shared (setgid 비트 설정)"
+        "text": "chmod u+s shared"
       },
       {
         "label": "B",
-        "text": "chmod u+s shared"
+        "text": "chmod g+s shared"
       },
       {
         "label": "C",
@@ -718,535 +718,535 @@
       },
       {
         "label": "D",
-        "text": "chmod 000 shared"
+        "text": "chmod o+s shared"
       }
     ],
-    "answer": "A",
-    "explanation": "디렉터리에 setgid(g+s)를 설정하면 그 안에서 생성되는 파일·하위 디렉터리가 디렉터리의 그룹을 상속한다. setuid(B)는 실행 파일용, 스티키 비트(+t, C)는 삭제 제한용이다."
+    "answer": "B",
+    "explanation": "디렉터리에 g+s(setgid)를 주면 내부에서 만들어지는 파일·하위 디렉터리가 상위 디렉터리의 그룹을 상속한다. u+s는 setuid로 실행 파일에서 소유자 권한을 적용하는 용도이고, +t는 스티키 비트로 삭제 제한 기능이며, o+s는 기타(other)에 대한 set 비트가 정의되지 않아 효과가 없다."
   },
   {
     "number": 30,
     "domain": "파일 시스템 및 권한",
-    "prompt": "/tmp처럼 누구나 쓸 수 있지만 다른 사용자의 파일은 삭제하지 못하게 하려 한다. 가장 적합한 것은?",
+    "prompt": "디렉터리 /pub가 현재 drwxrwxrwx인 상태에서, 다른 사용자가 남의 파일을 삭제하지 못하도록 스티키 비트만 추가하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "스티키 비트를 설정 (chmod +t)"
+        "text": "chmod +t /pub"
       },
       {
         "label": "B",
-        "text": "chmod 777만 설정"
+        "text": "chmod 777 /pub"
       },
       {
         "label": "C",
-        "text": "setuid 설정"
+        "text": "chmod g+s /pub"
       },
       {
         "label": "D",
-        "text": "chmod 700"
+        "text": "chmod u+t /pub"
       }
     ],
     "answer": "A",
-    "explanation": "스티키 비트가 설정된 디렉터리에서는 파일 소유자(또는 root)만 자신의 파일을 삭제할 수 있어 공용 디렉터리에 적합하다. 단순 777(B)은 누구나 삭제 가능, 700(D)은 소유자만 접근이라 공용이 아니다."
+    "explanation": "+t는 기존 rwx 권한을 유지한 채 스티키 비트만 추가해 파일 소유자와 root만 삭제·이름변경할 수 있게 한다. 777은 특수 비트 없이 일반 권한만 설정해 스티키 효과가 없고, g+s는 setgid(그룹 상속)라 삭제 제한과 무관하며, u+t는 스티키 비트가 소유자 클래스에 정의되지 않은 잘못된 지정이라 의도한 삭제 제한이 적용되지 않는다."
   },
   {
     "number": 31,
     "domain": "파일 시스템 및 권한",
-    "prompt": "특정 파일이 어떤 파일 시스템 유형(ext4, xfs 등)에 있는지 확인하려 한다. 가장 적합한 명령은?",
+    "prompt": "ext4 파일 시스템 /dev/sdb1을 검사하되, 마운트 해제된 상태에서 오류 발견 시 자동으로 복구하도록 실행하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "df -T /경로 (또는 mount, lsblk -f)"
+        "text": "mkfs -y /dev/sdb1"
       },
       {
         "label": "B",
-        "text": "cat /경로"
+        "text": "fsck -y /dev/sdb1"
       },
       {
         "label": "C",
-        "text": "chmod /경로"
+        "text": "fsck -n /dev/sdb1"
       },
       {
         "label": "D",
-        "text": "echo /경로"
+        "text": "fsck -A /dev/sdb1"
       }
     ],
-    "answer": "A",
-    "explanation": "df -T는 마운트된 파일 시스템의 유형을 함께 표시하며, mount나 lsblk -f로도 확인할 수 있다. cat(B)은 내용 출력, chmod(C)는 권한 변경이라 무관하다."
+    "answer": "B",
+    "explanation": "fsck -y는 검사 중 발견된 모든 문제에 자동으로 'yes'로 응답해 복구한다. mkfs는 검사가 아니라 포맷이라 데이터가 삭제되고, fsck -n은 모든 질문에 'no'로 답해 변경 없이 검사만 하며, fsck -A는 /etc/fstab의 전체 파일 시스템을 검사하는 옵션이라 단일 장치 자동 복구 의도와 다르다."
   },
   {
     "number": 32,
     "domain": "사용자 및 그룹 관리",
-    "prompt": "새 사용자 alice를 홈 디렉터리와 함께 생성하려 한다. 가장 적합한 명령은?",
+    "prompt": "useradd로 사용자를 만들 때 기본으로 적용되는 셸, 홈 디렉터리 골격, UID 범위 등의 기본값이 정의된 설정 파일은?",
     "choices": [
       {
         "label": "A",
-        "text": "useradd -m alice (또는 adduser alice)"
+        "text": "/etc/default/useradd"
       },
       {
         "label": "B",
-        "text": "usermod alice"
+        "text": "/etc/passwd"
       },
       {
         "label": "C",
-        "text": "passwd alice"
+        "text": "/etc/shadow"
       },
       {
         "label": "D",
-        "text": "groupadd alice"
+        "text": "/etc/group"
       }
     ],
     "answer": "A",
-    "explanation": "useradd -m은 사용자를 만들고 홈 디렉터리를 생성한다. usermod(B)는 기존 사용자 수정, passwd(C)는 비밀번호 설정, groupadd(D)는 그룹 생성이다."
+    "explanation": "/etc/default/useradd(와 /etc/login.defs)에 useradd의 기본 셸·홈 골격·그룹 등 기본값이 정의되어 useradd -D로 확인·변경한다. /etc/passwd는 이미 생성된 계정 정보를, /etc/shadow는 암호화된 비밀번호와 에이징 정보를, /etc/group은 그룹 정보를 담는 파일이라 기본값 정의처가 아니다."
   },
   {
     "number": 33,
     "domain": "사용자 및 그룹 관리",
-    "prompt": "기존 사용자 bob을 추가 그룹 docker에 보조 그룹으로 추가하되 기존 그룹은 유지하려 한다. 가장 적합한 명령은?",
+    "prompt": "기존 사용자 bob을 보조 그룹 docker에 추가하되, 그가 이미 속한 다른 보조 그룹들은 그대로 유지하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "usermod -aG docker bob"
+        "text": "gpasswd -d bob docker"
       },
       {
         "label": "B",
-        "text": "usermod -G docker bob"
+        "text": "usermod -g docker bob"
       },
       {
         "label": "C",
-        "text": "groupadd docker bob"
+        "text": "usermod -aG docker bob"
       },
       {
         "label": "D",
-        "text": "userdel bob"
+        "text": "usermod -G docker bob"
       }
     ],
-    "answer": "A",
-    "explanation": "usermod -aG는 -a(append)로 기존 보조 그룹을 유지하며 docker 그룹을 추가한다. -G만(B) 쓰면 기존 보조 그룹이 모두 대체되어 사라진다. userdel(D)은 사용자 삭제다."
+    "answer": "C",
+    "explanation": "-a(append)와 -G(보조 그룹)를 함께 쓰면 기존 보조 그룹을 유지하며 docker를 추가한다. gpasswd -d는 오히려 bob을 docker 그룹에서 제거하고, -g(소문자)는 기본(주) 그룹을 docker로 바꾸며, -a 없이 -G만 쓰면 지정한 그룹 목록으로 기존 보조 그룹이 전부 대체되어 사라진다."
   },
   {
     "number": 34,
     "domain": "사용자 및 그룹 관리",
-    "prompt": "사용자 carol의 비밀번호를 설정·변경하려 한다. 가장 적합한 명령은?",
+    "prompt": "관리자가 사용자 carol의 비밀번호를 강제로 다음 로그인 시 변경하도록 만료 처리하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "passwd carol"
+        "text": "passwd -u carol"
       },
       {
         "label": "B",
-        "text": "useradd carol"
+        "text": "passwd -d carol"
       },
       {
         "label": "C",
-        "text": "chmod carol"
+        "text": "passwd -e carol"
       },
       {
         "label": "D",
-        "text": "id carol"
+        "text": "passwd -l carol"
       }
     ],
-    "answer": "A",
-    "explanation": "passwd 사용자명은 해당 사용자의 비밀번호를 설정·변경한다. useradd(B)는 사용자 생성, chmod(C)는 권한, id(D)는 UID/GID 확인이다."
+    "answer": "C",
+    "explanation": "-e(expire)는 비밀번호를 즉시 만료시켜 다음 로그인 때 변경을 강제한다. -u는 잠긴 비밀번호를 해제하고, -d는 비밀번호를 삭제(없음)하며, -l은 계정 비밀번호를 잠가 로그인을 막는 용도라 만료 강제와 다르다."
   },
   {
     "number": 35,
     "domain": "사용자 및 그룹 관리",
-    "prompt": "특정 사용자가 속한 그룹과 UID/GID를 확인하려 한다. 가장 적합한 명령은?",
+    "prompt": "사용자 alice의 유효 사용자 ID(UID) 숫자만 출력하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "id 사용자명"
+        "text": "id -u alice"
       },
       {
         "label": "B",
-        "text": "pwd"
+        "text": "id -g alice"
       },
       {
         "label": "C",
-        "text": "ls -l"
+        "text": "id -G alice"
       },
       {
         "label": "D",
-        "text": "df -h"
+        "text": "id -un alice"
       }
     ],
     "answer": "A",
-    "explanation": "id 명령은 사용자의 UID, GID, 소속 그룹을 보여준다. pwd(B)는 경로, ls -l(C)은 파일 목록, df(D)는 디스크라 무관하다."
+    "explanation": "-u는 유효 UID 숫자만 출력한다. -g는 기본 그룹 ID(GID)를 출력하고, -G는 소속된 모든 그룹의 ID 목록을 출력하며, -un은 -n이 더해져 UID 대신 사용자 이름을 보여준다."
   },
   {
     "number": 36,
     "domain": "사용자 및 그룹 관리",
-    "prompt": "일반 사용자가 관리 권한이 필요한 단일 명령을 root 권한으로 안전하게 실행하려 한다. 가장 적합한 방법은?",
+    "prompt": "현재 사용자 환경 변수를 유지한 채로 root 권한 셸로 전환하려 한다. su 명령으로 가장 적합한 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "sudo 명령 (sudoers에 권한 위임)"
+        "text": "su - root"
       },
       {
         "label": "B",
-        "text": "root 비밀번호를 모두에게 공유"
+        "text": "su -c root"
       },
       {
         "label": "C",
-        "text": "chmod 777로 전체 개방"
+        "text": "su root"
       },
       {
         "label": "D",
-        "text": "항상 root로 로그인"
+        "text": "su -l root"
       }
     ],
-    "answer": "A",
-    "explanation": "sudo는 sudoers 정책에 따라 특정 사용자가 제한된 명령을 권한 상승해 실행하고 감사 로그를 남긴다. root 공유·상시 root 로그인(B,D)은 보안 위험, 777(C)은 권한 남용이다."
+    "answer": "C",
+    "explanation": "옵션 없는 su root는 대상 사용자로 전환하되 현재 환경 변수를 대부분 유지하는 비로그인 셸을 연다. su - root와 su -l root는 로그인 셸로 전환해 대상 사용자의 환경을 새로 읽어 들이므로 기존 환경 유지와 다르고, su -c는 명령 하나만 실행하는 옵션이라 뒤따르는 root가 실행할 명령으로 해석되어 의도와 맞지 않는다."
   },
   {
     "number": 37,
     "domain": "셸 및 스크립트",
-    "prompt": "파일 access.log에서 \"ERROR\"가 포함된 줄만 출력하려 한다. 가장 적합한 명령은?",
+    "prompt": "파일 access.log에서 'ERROR'가 포함된 행이 모두 몇 개인지 그 개수만 출력하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "grep \"ERROR\" access.log"
+        "text": "grep -n ERROR access.log"
       },
       {
         "label": "B",
-        "text": "sort access.log"
+        "text": "grep -l ERROR access.log"
       },
       {
         "label": "C",
-        "text": "wc -l access.log"
+        "text": "grep -o ERROR access.log"
       },
       {
         "label": "D",
-        "text": "touch access.log"
+        "text": "grep -c ERROR access.log"
       }
     ],
-    "answer": "A",
-    "explanation": "grep은 패턴이 포함된 줄을 출력한다. sort(B)는 정렬, wc -l(C)은 줄 수 세기, touch(D)는 파일 생성/타임스탬프 갱신이다."
+    "answer": "D",
+    "explanation": "-c는 패턴이 일치하는 행의 개수만 출력한다. -n은 일치 행을 행 번호와 함께 출력하고, -l은 일치가 있는 파일 이름만 보여주며, -o는 일치한 부분 문자열만 추출해 한 줄에 여러 건이 있으면 행 수와 달라진다."
   },
   {
     "number": 38,
     "domain": "셸 및 스크립트",
-    "prompt": "명령의 표준 출력을 화면에 보이면서 동시에 파일에도 저장하려 한다. 가장 적합한 것은?",
+    "prompt": "명령 build.sh의 출력을 화면에 보이면서 동시에 기존 로그 build.log 끝에 이어 붙여 저장하려 한다. 가장 적합한 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "명령 | tee out.txt"
+        "text": "build.sh | tee -a build.log"
       },
       {
         "label": "B",
-        "text": "명령 > out.txt"
+        "text": "build.sh >> build.log"
       },
       {
         "label": "C",
-        "text": "명령 < out.txt"
+        "text": "build.sh | cat >> build.log"
       },
       {
         "label": "D",
-        "text": "명령 2> out.txt"
+        "text": "build.sh | tee build.log"
       }
     ],
     "answer": "A",
-    "explanation": "tee는 표준 입력을 화면(표준 출력)과 파일에 동시에 쓴다. >(B)는 파일로만 리다이렉트, <(C)는 입력 리다이렉트, 2>(D)는 표준 에러만 저장한다."
+    "explanation": "tee는 화면과 파일에 동시에 출력하며 -a(append)로 기존 내용에 이어 붙인다. >>는 파일에 이어 붙이지만 화면에는 보이지 않고, | cat >>도 마찬가지로 화면 출력 없이 파일에만 이어 붙이며, -a 없는 tee는 화면에는 보이되 파일을 덮어쓴다."
   },
   {
     "number": 39,
     "domain": "셸 및 스크립트",
-    "prompt": "셸 스크립트 첫 줄에 인터프리터를 지정하는 셔뱅(shebang)으로 옳은 것은?",
+    "prompt": "셸 스크립트에서 직전에 실행한 명령의 종료 상태(성공/실패 여부)를 담고 있는 특수 변수는?",
     "choices": [
       {
         "label": "A",
-        "text": "#!/bin/bash"
+        "text": "$!"
       },
       {
         "label": "B",
-        "text": "// bash"
+        "text": "$?"
       },
       {
         "label": "C",
-        "text": "<?bash?>"
+        "text": "$$"
       },
       {
         "label": "D",
-        "text": "@bash"
+        "text": "$#"
       }
     ],
-    "answer": "A",
-    "explanation": "#!/bin/bash 셔뱅은 스크립트를 bash로 실행하도록 커널에 알린다. 나머지(B,C,D)는 셸 셔뱅 문법이 아니다."
+    "answer": "B",
+    "explanation": "$?는 직전 명령의 종료 상태 값(0이면 성공)을 담는다. $!는 가장 최근 백그라운드 프로세스의 PID, $$는 현재 셸의 PID, $#는 스크립트에 전달된 위치 인자의 개수를 의미한다."
   },
   {
     "number": 40,
     "domain": "셸 및 스크립트",
-    "prompt": "cmd1의 출력을 cmd2의 입력으로 연결하려 한다. 가장 적합한 것은?",
+    "prompt": "두 명령을 'cmd1이 성공(종료 상태 0)했을 때만 cmd2를 실행'하도록 연결하려 한다. 가장 적합한 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "cmd1 | cmd2 (파이프)"
-      },
-      {
-        "label": "B",
         "text": "cmd1 && cmd2"
       },
       {
+        "label": "B",
+        "text": "cmd1 || cmd2"
+      },
+      {
         "label": "C",
-        "text": "cmd1 ; cmd2"
+        "text": "cmd1 | cmd2"
       },
       {
         "label": "D",
-        "text": "cmd1 > cmd2"
+        "text": "cmd1 ; cmd2"
       }
     ],
     "answer": "A",
-    "explanation": "파이프(|)는 앞 명령의 표준 출력을 뒤 명령의 표준 입력으로 전달한다. &&(B)는 성공 시 다음 실행, ;(C)는 순차 실행, >(D)는 파일 리다이렉트(여기서 cmd2를 파일로 취급)다."
+    "explanation": "&&는 앞 명령이 성공(종료 상태 0)했을 때만 뒤 명령을 실행한다. ||는 반대로 앞 명령이 실패했을 때 뒤 명령을 실행하고, |는 앞 명령의 출력을 뒤 명령의 입력으로 연결하는 파이프이며, ;는 성공 여부와 무관하게 순차 실행한다."
   },
   {
     "number": 41,
     "domain": "셸 및 스크립트",
-    "prompt": "파일에서 각 줄의 첫 번째 공백 구분 필드만 추출하려 한다. 가장 적합한 명령은?",
+    "prompt": "콜론(:)으로 구분된 /etc/passwd 파일에서 각 줄의 7번째 필드(로그인 셸)만 추출하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "awk '{print $1}' 파일 (또는 cut -d' ' -f1)"
+        "text": "awk -F: '{print $1}' /etc/passwd"
       },
       {
         "label": "B",
-        "text": "wc 파일"
+        "text": "cut -d: -c7 /etc/passwd"
       },
       {
         "label": "C",
-        "text": "chmod 파일"
+        "text": "cut -d: -f7 /etc/passwd"
       },
       {
         "label": "D",
-        "text": "mkdir 파일"
+        "text": "cut -f7 /etc/passwd"
       }
     ],
-    "answer": "A",
-    "explanation": "awk '{print $1}'은 공백 기준 첫 필드를 출력하며, cut -d' ' -f1로도 가능하다. wc(B)는 카운트, chmod(C)는 권한, mkdir(D)은 디렉터리 생성이다."
+    "answer": "C",
+    "explanation": "-d로 구분자를 콜론으로 지정하고 -f7로 7번째 필드를 추출한다. awk -F: '{print $1}'은 구분자를 콜론으로 잡았지만 $1이라 첫 번째 필드(사용자명)를 출력하고, -c7은 필드가 아니라 7번째 '문자'를 잘라내며, -d 없이 -f7만 쓰면 기본 구분자가 탭이라 콜론 구분 파일에서는 줄 전체가 한 필드로 잡혀 의도와 다르다."
   },
   {
     "number": 42,
     "domain": "서비스 및 시스템 관리",
-    "prompt": "systemd에서 nginx 서비스를 지금 시작하고 부팅 시 자동 시작되게 하려 한다. 가장 적합한 명령은?",
+    "prompt": "systemd 유닛 파일을 직접 수정한 뒤 데몬에 변경 사항을 다시 읽어 들이게 하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "systemctl start nginx && systemctl enable nginx"
+        "text": "systemctl reset-failed"
       },
       {
         "label": "B",
-        "text": "systemctl stop nginx"
+        "text": "systemctl daemon-reload"
       },
       {
         "label": "C",
-        "text": "kill nginx"
+        "text": "systemctl restart systemd"
       },
       {
         "label": "D",
-        "text": "systemctl disable nginx"
+        "text": "systemctl reload nginx"
       }
     ],
-    "answer": "A",
-    "explanation": "start는 즉시 시작, enable은 부팅 시 자동 시작을 설정한다. stop/disable(B,D)은 반대 동작, kill(C)은 프로세스 강제 종료다."
+    "answer": "B",
+    "explanation": "daemon-reload는 systemd가 유닛 파일 정의를 다시 읽어 매니저 구성을 갱신한다. reset-failed는 실패(failed) 상태 유닛의 표시를 초기화할 뿐 유닛 파일을 다시 읽지 않고, restart systemd는 PID 1 매니저를 통째로 재시작하려는 위험·부적절한 명령이며, reload nginx는 특정 서비스의 설정만 다시 읽는 것이다."
   },
   {
     "number": 43,
     "domain": "서비스 및 시스템 관리",
-    "prompt": "systemd 서비스 sshd의 현재 상태와 최근 로그 일부를 확인하려 한다. 가장 적합한 명령은?",
+    "prompt": "현재 시스템의 systemd 기본 타깃(부팅 시 진입하는 동작 수준)을 확인하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "systemctl status sshd"
+        "text": "systemctl isolate multi-user.target"
       },
       {
         "label": "B",
-        "text": "systemctl mask sshd"
+        "text": "systemctl list-units --type=target"
       },
       {
         "label": "C",
-        "text": "rm sshd"
+        "text": "systemctl get-default"
       },
       {
         "label": "D",
-        "text": "chmod sshd"
+        "text": "systemctl set-default multi-user.target"
       }
     ],
-    "answer": "A",
-    "explanation": "systemctl status는 서비스의 활성 상태, PID, 최근 로그 줄을 보여준다. mask(B)는 서비스 차단, rm·chmod(C,D)는 무관하다."
+    "answer": "C",
+    "explanation": "get-default는 부팅 시 사용되는 기본 타깃(예: multi-user.target, graphical.target)을 출력한다. isolate는 즉시 해당 타깃으로 전환하고, list-units --type=target은 현재 로드된 타깃 목록을 나열할 뿐 '기본' 타깃을 콕 집어 알려주지 않으며, set-default는 기본 타깃을 변경하는 명령이라 확인 용도가 아니다."
   },
   {
     "number": 44,
     "domain": "서비스 및 시스템 관리",
-    "prompt": "특정 서비스가 남긴 로그를 systemd 저널에서 조회하려 한다. 가장 적합한 명령은?",
+    "prompt": "systemd 저널에서 우선순위가 error(3) 이상인 로그만 골라 확인하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "journalctl -u 서비스명"
+        "text": "journalctl -u err"
       },
       {
         "label": "B",
-        "text": "cat /etc/passwd"
+        "text": "journalctl -p err"
       },
       {
         "label": "C",
-        "text": "ls -l /var"
+        "text": "journalctl -f err"
       },
       {
         "label": "D",
-        "text": "df -h"
+        "text": "journalctl -b err"
       }
     ],
-    "answer": "A",
-    "explanation": "journalctl -u는 지정한 systemd 유닛의 로그를 조회한다. 나머지(B,C,D)는 사용자 목록·파일 목록·디스크 확인이라 서비스 로그와 무관하다."
+    "answer": "B",
+    "explanation": "-p(priority)는 syslog 우선순위로 필터링하며 err를 지정하면 err 이상(emerg~err) 메시지를 보여준다. -u는 유닛 지정 옵션이라 'err'를 유닛명으로 오인하고, -f는 실시간 추적, -b는 부팅 회차 지정 옵션이라 우선순위 필터와 다르다."
   },
   {
     "number": 45,
     "domain": "서비스 및 시스템 관리",
-    "prompt": "CPU·메모리 사용량이 높은 프로세스를 실시간으로 모니터링하려 한다. 가장 적합한 명령은?",
+    "prompt": "CPU 사용률이 높은 순으로 한 번만(반복 갱신 없이) 프로세스 상위 목록을 텍스트로 출력해 스크립트나 로그에 남기려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "top (또는 htop)"
+        "text": "top -b -n 1"
       },
       {
         "label": "B",
-        "text": "date"
+        "text": "top -d 1"
       },
       {
         "label": "C",
-        "text": "pwd"
+        "text": "top -i"
       },
       {
         "label": "D",
-        "text": "echo hello"
+        "text": "top -u root"
       }
     ],
     "answer": "A",
-    "explanation": "top/htop은 프로세스별 CPU·메모리 사용량을 실시간 갱신해 보여준다. date·pwd·echo(B,C,D)는 모니터링과 무관하다."
+    "explanation": "-b(batch 모드)는 대화형 화면 대신 텍스트로 출력하고 -n 1은 한 번만 출력 후 종료해 로그 저장에 적합하다. -d 1은 갱신 간격을 1초로 줄일 뿐 계속 반복되고, -i는 유휴(idle) 프로세스를 숨기는 토글이며, -u root는 root 소유 프로세스만 필터링하는 옵션이다."
   },
   {
     "number": 46,
     "domain": "서비스 및 시스템 관리",
-    "prompt": "특정 프로세스 ID(PID 1234)를 정상 종료 신호로 종료하려 한다. 가장 적합한 명령은?",
+    "prompt": "이름이 'httpd'인 모든 프로세스에 한꺼번에 종료 시그널(SIGTERM)을 보내려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "kill 1234 (SIGTERM)"
+        "text": "pgrep httpd"
       },
       {
         "label": "B",
-        "text": "cat 1234"
+        "text": "killall -0 httpd"
       },
       {
         "label": "C",
-        "text": "cd 1234"
+        "text": "kill httpd"
       },
       {
         "label": "D",
-        "text": "ls 1234"
+        "text": "pkill httpd"
       }
     ],
-    "answer": "A",
-    "explanation": "kill PID는 기본적으로 SIGTERM(정상 종료)을 보내며, 무시될 경우 kill -9로 강제 종료한다. cat·cd·ls(B,C,D)는 종료 명령이 아니다."
+    "answer": "D",
+    "explanation": "pkill은 프로세스 이름으로 일치하는 모든 프로세스에 시그널(기본 SIGTERM)을 보낸다. pgrep은 일치하는 PID를 찾아 출력만 할 뿐 종료하지 않고, killall -0은 시그널 0을 보내 존재 여부만 확인할 뿐 실제 종료하지 않으며, kill은 PID를 받아야 해서 이름 'httpd'를 인자로 주면 오류가 난다."
   },
   {
     "number": 47,
     "domain": "네트워크 관리",
-    "prompt": "현재 시스템의 네트워크 인터페이스와 IP 주소를 확인하려 한다. 가장 적합한 명령은?",
+    "prompt": "특정 네트워크 인터페이스 카드의 링크 상태(UP/DOWN)와 MAC 주소만 IP 정보 없이 확인하려 한다. 가장 적합한 명령은?",
     "choices": [
       {
         "label": "A",
-        "text": "ip addr (또는 ip a)"
+        "text": "ip addr show"
       },
       {
         "label": "B",
-        "text": "ps aux"
+        "text": "ip neigh show"
       },
       {
         "label": "C",
-        "text": "df -h"
+        "text": "ip route show"
       },
       {
         "label": "D",
-        "text": "history"
+        "text": "ip link show"
       }
     ],
-    "answer": "A",
-    "explanation": "ip addr는 인터페이스별 IP·상태를 보여준다(구식 ifconfig 대체). ps(B)는 프로세스, df(C)는 디스크, history(D)는 명령 이력이다."
+    "answer": "D",
+    "explanation": "ip link show는 인터페이스의 링크 계층 정보(상태, MAC 주소, MTU)를 보여준다. ip addr show는 거기에 더해 IP 주소까지 표시하므로 'IP 없이'라는 조건과 다르고, ip neigh show는 ARP/이웃 테이블을, ip route show는 라우팅 테이블을 출력한다."
   },
   {
     "number": 48,
     "domain": "네트워크 관리",
-    "prompt": "원격 호스트 8.8.8.8까지의 네트워크 경로(홉)를 추적하려 한다. 가장 적합한 명령은?",
+    "prompt": "기본 게이트웨이를 192.168.0.1로 추가하는 라우팅 설정을 하려 한다. iproute2 명령으로 가장 적합한 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "traceroute 8.8.8.8 (또는 tracepath)"
+        "text": "ip route add 192.168.0.1 default"
       },
       {
         "label": "B",
-        "text": "ping -c1 8.8.8.8"
+        "text": "ip route add default dev 192.168.0.1"
       },
       {
         "label": "C",
-        "text": "ls 8.8.8.8"
+        "text": "ip route add default via 192.168.0.1"
       },
       {
         "label": "D",
-        "text": "cat 8.8.8.8"
+        "text": "ip addr add default via 192.168.0.1"
       }
     ],
-    "answer": "A",
-    "explanation": "traceroute는 목적지까지 거치는 라우터(홉)들을 순서대로 보여준다. ping(B)은 도달성·지연만 측정하고 경로 전체는 보여주지 않는다."
+    "answer": "C",
+    "explanation": "기본 게이트웨이는 'ip route add default via <게이트웨이IP>' 구문으로 추가한다. ip route add 192.168.0.1 default는 인자 순서·키워드가 잘못됐고, ip route add default dev …의 dev 뒤에는 IP가 아니라 인터페이스명이 와야 하며, ip addr add …는 라우팅이 아닌 주소 관리 명령이라 route 구문을 받지 못한다."
   },
   {
     "number": 49,
     "domain": "네트워크 관리",
-    "prompt": "HTTP 엔드포인트에서 응답 본문을 받아오려 한다(명령줄). 가장 적합한 명령은?",
+    "prompt": "URL의 응답 본문은 저장하지 않고 HTTP 응답 헤더만 받아 상태 코드를 확인하려 한다. curl 명령으로 가장 적합한 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "curl http://example.com (또는 wget)"
+        "text": "curl -O http://example.com"
       },
       {
         "label": "B",
-        "text": "chmod http://example.com"
+        "text": "curl -I http://example.com"
       },
       {
         "label": "C",
-        "text": "kill http://example.com"
+        "text": "curl -s http://example.com"
       },
       {
         "label": "D",
-        "text": "mkdir http://example.com"
+        "text": "curl -L http://example.com"
       }
     ],
-    "answer": "A",
-    "explanation": "curl/wget은 URL의 콘텐츠를 받아온다. chmod·kill·mkdir(B,C,D)은 권한·프로세스·디렉터리 명령이라 HTTP 요청과 무관하다."
+    "answer": "B",
+    "explanation": "-I(대문자)는 HEAD 요청을 보내 응답 헤더(상태 코드 포함)만 가져온다. -O는 본문을 원본 파일명으로 저장하고, -s는 진행률 표시를 숨길 뿐 본문은 그대로 받으며, -L은 리다이렉트를 따라가며 본문을 받아온다."
   },
   {
     "number": 50,
     "domain": "네트워크 관리",
-    "prompt": "현재 호스트의 라우팅 테이블(기본 게이트웨이 포함)을 확인하려 한다. 가장 적합한 명령은?",
+    "prompt": "특정 목적지 8.8.8.8로 패킷이 나갈 때 시스템이 어떤 경로(인터페이스·게이트웨이·출발지 IP)를 선택하는지 조회하려 한다. iproute2 명령으로 가장 적합한 것은?",
     "choices": [
       {
         "label": "A",
-        "text": "ip route (또는 route -n)"
+        "text": "ip route show 8.8.8.8"
       },
       {
         "label": "B",
-        "text": "free -h"
+        "text": "ip route flush 8.8.8.8"
       },
       {
         "label": "C",
-        "text": "whoami"
+        "text": "ip route get 8.8.8.8"
       },
       {
         "label": "D",
-        "text": "uptime"
+        "text": "ip route add 8.8.8.8"
       }
     ],
-    "answer": "A",
-    "explanation": "ip route는 라우팅 테이블과 기본 게이트웨이(default via)를 보여준다. free·whoami·uptime(B,C,D)은 메모리·사용자·가동 시간이라 라우팅과 무관하다."
+    "answer": "C",
+    "explanation": "ip route get은 특정 목적지로 향하는 실제 선택 경로(출력 인터페이스, 게이트웨이, src 주소)를 계산해 보여준다. ip route show는 라우팅 테이블 항목을 나열할 뿐 단일 목적지의 선택 결과를 계산하지 않고, ip route add는 경로를 추가하며, ip route flush는 경로를 삭제하므로 조회 목적과 정반대다."
   }
 ]
