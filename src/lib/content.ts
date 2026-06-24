@@ -12,7 +12,10 @@ const indexCache = new Map<string, CategoryIndex>();
 const metaCache = new Map<string, CertMeta>();
 const daysCache = new Map<string, DayRef[]>();
 
-export type CertLevel = 'associate' | 'professional';
+export type CertLevel = 'foundational' | 'associate' | 'professional' | 'specialty';
+// 레벨 표시 라벨은 fs 비의존 모듈(category.ts)에 둔다 — 클라이언트 컴포넌트(SidebarNav)도
+// 안전하게 import 할 수 있도록(content.ts는 node:fs를 쓰므로 클라이언트 번들에 못 들어간다).
+export { certLevelLabel } from './category';
 
 export interface CertMeta {
   slug: string;

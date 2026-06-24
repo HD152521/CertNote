@@ -1,0 +1,24 @@
+{
+  "examCode": "SCS-C03",
+  "fullName": "AWS Certified Security – Specialty",
+  "level": "specialty",
+  "questionCount": 65,
+  "durationMin": 170,
+  "passingScore": 750,
+  "scoreMax": 1000,
+  "costUsd": 300,
+  "validityYears": 3,
+  "languages": ["영어", "한국어", "일본어", "포르투갈어(브라질)", "중국어 간체", "스페인어(중남미)"],
+  "prerequisites": "없음(권장: IT 보안 5년 + AWS 워크로드 보안 2년 경험)",
+  "format": "객관식·복수응답",
+  "domains": [
+    { "name": "위협 탐지 및 인시던트 대응", "weight": 14 },
+    { "name": "보안 로깅 및 모니터링", "weight": 18 },
+    { "name": "인프라 보안", "weight": 20 },
+    { "name": "자격 증명 및 액세스 관리", "weight": 16 },
+    { "name": "데이터 보호", "weight": 18 },
+    { "name": "관리 및 보안 거버넌스", "weight": 14 }
+  ],
+  "officialUrl": "https://aws.amazon.com/certification/certified-security-specialty/",
+  "registerUrl": "https://www.aws.training/certification"
+}

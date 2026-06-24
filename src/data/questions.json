@@ -68104,6 +68104,2877 @@
     "explanation": "DataZone은 비즈니스 도메인 단위 데이터 카탈로그·검색·구독·승인 워크플로우를 제공하는 거버넌스 서비스로, 데이터 프로듀서(게시)와 컨슈머(검색·구독) 경험을 분리하고 Lake Formation·Glue·Redshift·S3와 통합된다. 구독 승인이 실제 LF 권한 부여로 이어진다. A(Lake Formation)는 권한 메커니즘이지 검색·구독 마켓플레이스 경험이 아님. C는 스키마 추론 도구. D는 BI 시각화로 목적이 다르다."
   },
   {
+    "id": "scs-c03-w1-d1-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 1,
+    "number": 1,
+    "prompt": "한 회사가 Amazon RDS for PostgreSQL을 사용 중이다. 공동 책임 모델에서 **AWS의 책임**에 해당하는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터베이스에 저장되는 PII의 분류와 암호화 활성화 결정"
+      },
+      {
+        "label": "B",
+        "text": "데이터베이스 사용자 계정과 IAM 인증 정책 구성"
+      },
+      {
+        "label": "C",
+        "text": "데이터베이스 엔진의 보안 패치 적용"
+      },
+      {
+        "label": "D",
+        "text": "보안 그룹으로 DB 포트 접근을 제한하는 설정"
+      }
+    ],
+    "answer": "C",
+    "explanation": "RDS는 관리형(PaaS) 서비스라서 엔진·OS의 패치는 AWS가 책임진다(고객은 유지보수 윈도우만 관리). 데이터 분류·암호화 활성화 여부, DB 사용자/IAM 인증, 보안 그룹 설정은 모두 \"클라우드 안(in the cloud)\"의 고객 책임이다. 데이터와 접근제어는 어떤 서비스 유형에서도 AWS로 넘어가지 않는다는 점이 핵심이다."
+  },
+  {
+    "id": "scs-c03-w1-d1-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 1,
+    "number": 2,
+    "prompt": "다음 중 **예방(preventive) 통제**가 아닌 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SCP로 특정 리전 외 EC2 실행을 deny"
+      },
+      {
+        "label": "B",
+        "text": "KMS 키 정책으로 특정 계정만 복호화 허용"
+      },
+      {
+        "label": "C",
+        "text": "GuardDuty로 비정상 API 호출 패턴을 탐지"
+      },
+      {
+        "label": "D",
+        "text": "보안 그룹으로 인바운드 트래픽을 443만 허용"
+      }
+    ],
+    "answer": "C",
+    "explanation": "GuardDuty는 이미 발생한(또는 발생 중인) 위협을 알아채는 탐지(detective) 통제다. SCP·KMS 키 정책·보안 그룹은 모두 행위가 일어나기 전에 막는 예방 통제다. \"탐지\"는 사고를 막지 못하고 알아챌 뿐이라는 차이가 통제 유형 분류의 핵심이며, 시험에서 \"가장 먼저 사고를 막을 방법\"을 물으면 예방 통제가 답이 된다."
+  },
+  {
+    "id": "scs-c03-w1-d1-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 1,
+    "number": 3,
+    "prompt": "SCS-C03 도메인 중 가중치가 가장 높은 영역과, 그 영역이 다루는 주제로 가장 적절한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Identity and Access Management — KMS 키 회전 정책"
+      },
+      {
+        "label": "B",
+        "text": "Infrastructure Security — VPC·보안 그룹·WAF 등 네트워크 경계 방어"
+      },
+      {
+        "label": "C",
+        "text": "Data Protection — Organizations SCP로 조직 거버넌스"
+      },
+      {
+        "label": "D",
+        "text": "Threat Detection and Incident Response — CloudTrail 로그 보존 정책"
+      }
+    ],
+    "answer": "B",
+    "explanation": "가중치가 가장 높은 도메인은 Infrastructure Security(20%)이고, VPC·보안 그룹·NACL·WAF·Shield 같은 네트워크 경계 방어를 다룬다. KMS는 Data Protection, SCP는 Management and Governance, CloudTrail 보존은 Logging and Monitoring 영역으로, 나머지 보기는 도메인과 주제가 어긋나 있다."
+  },
+  {
+    "id": "scs-c03-w1-d1-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 1,
+    "number": 4,
+    "prompt": "멀티 계정 환경에서 GuardDuty와 Security Hub를 운영할 때 AWS 모범 사례로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Management 계정에서 직접 GuardDuty와 Security Hub를 운영한다"
+      },
+      {
+        "label": "B",
+        "text": "각 워크로드 계정이 독립적으로 GuardDuty를 켜고 개별 관리한다"
+      },
+      {
+        "label": "C",
+        "text": "별도의 Security Tooling 계정을 delegated administrator로 지정해 조직 전체를 집계한다"
+      },
+      {
+        "label": "D",
+        "text": "Log Archive 계정에서 GuardDuty를 운영해 로그와 탐지를 한곳에 둔다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "GuardDuty·Security Hub·Macie·Config는 delegated administrator(위임 관리자) 패턴을 지원하며, 전용 Security Tooling 계정에 위임하는 것이 모범 사례다. Management 계정은 billing·조직 관리만 맡아야 폭발 반경이 작아지고, 워크로드 계정별 개별 운영은 가시성이 파편화된다. Log Archive 계정은 로그 불변 저장 전용이라 보안 운영 도구를 두지 않는다."
+  },
+  {
+    "id": "scs-c03-w1-d1-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 1,
+    "number": 5,
+    "prompt": "S3 버킷의 PII가 외부에 유출되는 사고가 발생했다. 조사 결과 버킷이 public-read로 설정돼 있었다. 공동 책임 모델 관점에서 가장 정확한 판단은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 인프라가 뚫린 것이므로 AWS의 책임이다"
+      },
+      {
+        "label": "B",
+        "text": "버킷 접근제어 설정은 고객 책임이므로 고객의 구성 오류다"
+      },
+      {
+        "label": "C",
+        "text": "데이터 내구성 문제이므로 AWS와 고객이 절반씩 책임진다"
+      },
+      {
+        "label": "D",
+        "text": "S3는 SaaS이므로 데이터 보호 책임 전부가 AWS에 있다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "S3의 내구성·가용성·물리 인프라는 AWS 책임이지만, 버킷 정책·ACL·Block Public Access 같은 접근제어 설정은 100% 고객 책임이다. SaaS 성격이 강한 S3라도 데이터 분류와 접근제어 책임은 절대 AWS로 넘어가지 않는다. 이런 사고를 막기 위해 AWS는 Block Public Access를 기본 통제로 강제하는 방향으로 발전시켰다."
+  },
+  {
+    "id": "scs-c03-w1-d2-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 2,
+    "number": 1,
+    "prompt": "한 IAM 사용자가 `AdministratorAccess` 관리형 정책을 가지고 있다. 동시에 그 사용자가 속한 계정의 SCP에 `s3:*`에 대한 명시적 `Deny`가 있다. 이 사용자가 S3 객체를 읽으려 하면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AdministratorAccess가 우선하므로 허용된다"
+      },
+      {
+        "label": "B",
+        "text": "SCP의 명시적 Deny가 모든 Allow를 이기므로 거부된다"
+      },
+      {
+        "label": "C",
+        "text": "두 정책이 충돌하므로 평가 오류가 발생한다"
+      },
+      {
+        "label": "D",
+        "text": "root 사용자만 S3에 접근할 수 있다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "정책 평가의 절대 원칙은 명시적 Deny가 어떤 Allow보다 우선한다는 것이다. SCP는 가드레일로서 해당 Action의 상한을 차단하므로, 사용자 정책에 admin 권한이 있어도 SCP의 Deny에 막혀 거부된다. 평가 충돌로 오류가 나는 것이 아니라 결정론적으로 Deny가 이기며, root 접근 여부는 이 판단과 무관하다."
+  },
+  {
+    "id": "scs-c03-w1-d2-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 2,
+    "number": 2,
+    "prompt": "계정 A의 IAM 역할이 계정 B의 S3 버킷에 객체를 쓰려고 한다. 접근이 성공하려면 반드시 충족돼야 하는 조건은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "계정 A의 신원 기반 정책에만 Allow가 있으면 충분하다"
+      },
+      {
+        "label": "B",
+        "text": "계정 B의 버킷 정책에만 Allow가 있으면 충분하다"
+      },
+      {
+        "label": "C",
+        "text": "계정 A의 신원 기반 정책과 계정 B의 버킷 정책 양쪽 모두 Allow가 있어야 한다"
+      },
+      {
+        "label": "D",
+        "text": "두 계정이 같은 Organization에 속하면 정책 없이 자동 허용된다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "cross-account 접근은 양쪽 계정에서 각각 평가가 일어나므로, 호출 측(A)의 신원 기반 정책 Allow와 리소스 측(B)의 리소스 기반 정책 Allow가 모두 필요하다. 같은 계정 내에서는 둘 중 하나만 있어도 되지만 계정 경계를 넘으면 둘 다 필수다. 같은 Organization이라는 사실만으로 자동 허용되지 않는다."
+  },
+  {
+    "id": "scs-c03-w1-d2-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 2,
+    "number": 3,
+    "prompt": "IAM Group에 대한 설명으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Group은 자체 자격 증명을 가지며 직접 로그인할 수 있다"
+      },
+      {
+        "label": "B",
+        "text": "Role의 trust policy에서 Group을 Principal로 지정할 수 있다"
+      },
+      {
+        "label": "C",
+        "text": "Group은 자격 증명이 없는 정책 부착용 컨테이너이며 Principal이 될 수 없다"
+      },
+      {
+        "label": "D",
+        "text": "Group에 임시 자격 증명을 발급해 cross-account 접근에 사용한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Group은 사용자에게 정책을 일괄 부여하기 위한 컨테이너일 뿐 자격 증명이 없고, 따라서 로그인하거나 Principal로 지정될 수 없다. AssumeRole의 대상이나 trust policy의 Principal로 Group을 쓰면 동작하지 않는다. 임시 자격 증명은 Role을 통해 STS가 발급하며 Group과는 무관하다."
+  },
+  {
+    "id": "scs-c03-w1-d2-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 2,
+    "number": 4,
+    "prompt": "한 개발자에게 `AmazonS3FullAccess`가 부여돼 있지만, 어떤 정책도 명시적으로 허용하지 않은 `dynamodb:GetItem`을 호출하려 한다. 결과와 그 이유로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "허용 — 명시적 Deny가 없으므로 기본적으로 허용된다"
+      },
+      {
+        "label": "B",
+        "text": "거부 — 어떤 정책도 해당 Action을 Allow하지 않아 암묵적 Deny가 적용된다"
+      },
+      {
+        "label": "C",
+        "text": "허용 — S3 권한이 있으면 DynamoDB도 자동으로 허용된다"
+      },
+      {
+        "label": "D",
+        "text": "거부 — DynamoDB는 IAM으로 통제되지 않기 때문이다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "IAM의 기본 상태는 암묵적 Deny이며 권한은 명시적으로 부여돼야 한다. S3 권한은 DynamoDB Action과 무관하므로, `dynamodb:GetItem`을 허용하는 명시적 Allow가 없으면 암묵적 Deny로 거부된다. 명시적 Deny가 없다고 자동 허용되는 것은 아니며, DynamoDB도 당연히 IAM으로 통제된다."
+  },
+  {
+    "id": "scs-c03-w1-d2-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 2,
+    "number": 5,
+    "prompt": "보안팀이 모든 멤버 계정에서 누구도(admin·root 포함) CloudTrail을 비활성화하지 못하게 강제하려 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 계정의 모든 IAM 사용자 정책에 CloudTrail Deny를 일일이 추가한다"
+      },
+      {
+        "label": "B",
+        "text": "SCP에 `cloudtrail:StopLogging`과 `cloudtrail:DeleteTrail`에 대한 Deny를 작성해 OU에 적용한다"
+      },
+      {
+        "label": "C",
+        "text": "CloudTrail에 리소스 기반 정책으로 Deny를 설정한다"
+      },
+      {
+        "label": "D",
+        "text": "GuardDuty로 CloudTrail 비활성화를 탐지해 알림만 보낸다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SCP의 명시적 Deny는 멤버 계정의 admin과 root에까지 적용되는 조직 가드레일이므로, CloudTrail 중단·삭제 Action을 Deny로 묶으면 누구도 끌 수 없다. 사용자별 정책 추가는 누락 위험이 크고, CloudTrail은 리소스 기반 정책으로 이런 통제를 하지 않으며, GuardDuty 탐지는 사후 알림일 뿐 비활성화 자체를 막지 못한다."
+  },
+  {
+    "id": "scs-c03-w1-d3-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 3,
+    "number": 1,
+    "prompt": "계정 A의 Lambda 함수가 계정 B에서 관리하는 KMS 키로 암호화된 데이터를 복호화해야 한다. 반드시 설정해야 하는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "계정 A의 Lambda 실행 역할에 `kms:Decrypt` 권한만 추가하면 된다"
+      },
+      {
+        "label": "B",
+        "text": "계정 B의 KMS 키 정책에 계정 A의 역할을 허용하고, 계정 A 역할에도 `kms:Decrypt`를 부여한다"
+      },
+      {
+        "label": "C",
+        "text": "계정 B의 IAM 사용자 정책에만 `kms:Decrypt`를 추가한다"
+      },
+      {
+        "label": "D",
+        "text": "두 계정이 같은 리전이면 별도 설정 없이 자동 허용된다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "KMS는 키 정책이 1차 권위를 가지므로, cross-account 사용 시 키 소유 계정(B)의 키 정책이 호출 계정(A)의 주체를 명시적으로 허용해야 하고, 동시에 A 측 신원 정책에도 `kms:Decrypt` Allow가 있어야 한다. 한쪽만으로는 부족하며, 같은 리전이라는 사실은 권한 부여와 무관하다."
+  },
+  {
+    "id": "scs-c03-w1-d3-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 3,
+    "number": 2,
+    "prompt": "다음 조건 중 \"MFA가 없으면 거부\"를 의도했지만, 서비스 간 호출처럼 MFA 키가 아예 없는 정상 요청까지 차단해버릴 위험이 있는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`\"BoolIfExists\": {\"aws:MultiFactorAuthPresent\": \"false\"}`"
+      },
+      {
+        "label": "B",
+        "text": "`\"Bool\": {\"aws:MultiFactorAuthPresent\": \"false\"}`"
+      },
+      {
+        "label": "C",
+        "text": "`\"Null\": {\"aws:MultiFactorAuthPresent\": \"true\"}`"
+      },
+      {
+        "label": "D",
+        "text": "`\"BoolIfExists\": {\"aws:MultiFactorAuthPresent\": \"true\"}`"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`Bool`은 키가 반드시 존재한다고 가정하고 값을 평가하므로, MFA 컨텍스트 키가 없는 서비스 호출에서도 조건이 의도치 않게 매칭돼 정상 요청을 막을 수 있다. `BoolIfExists`는 키가 있을 때만 값을 평가하고 없으면 통과시켜 이런 부작용을 피한다. 이 차이가 MFA 강제 정책 작성의 단골 함정이다."
+  },
+  {
+    "id": "scs-c03-w1-d3-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 3,
+    "number": 3,
+    "prompt": "한 조직이 팀이 늘 때마다 IAM 정책을 추가하는 운영 부담에 직면했다. 정책 수를 폭증시키지 않고 \"주체와 리소스의 팀 태그가 일치할 때만 허용\"을 구현하는 가장 적절한 접근은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "팀마다 별도 역할과 전용 정책을 만든다"
+      },
+      {
+        "label": "B",
+        "text": "모든 사용자에게 동일한 admin 정책을 주고 신뢰로 운영한다"
+      },
+      {
+        "label": "C",
+        "text": "`aws:PrincipalTag`와 `aws:ResourceTag`를 비교하는 ABAC 조건으로 정책을 통일한다"
+      },
+      {
+        "label": "D",
+        "text": "팀별로 별도 AWS 계정을 만들어 물리적으로 분리한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "ABAC은 주체 태그와 리소스 태그의 일치를 조건으로 표현해 정책 하나로 임의 개수의 팀을 처리하므로, 팀이 늘어도 정책 변경 없이 태그만 부여하면 된다. 팀별 역할·정책 양산은 RBAC의 정책 폭증 문제를 그대로 안고, admin 일괄 부여는 최소 권한 위반이며, 팀별 계정 분리는 과도하고 본 문제의 의도와 다르다."
+  },
+  {
+    "id": "scs-c03-w1-d3-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 3,
+    "number": 4,
+    "prompt": "개발자에게 IAM 역할 생성 권한을 주되, 그가 만든 역할이 부여받은 상한을 넘지 못하게 강제하려 한다. 가장 적절한 메커니즘은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SCP로 `iam:CreateRole` 자체를 Deny한다"
+      },
+      {
+        "label": "B",
+        "text": "`iam:CreateRole` 허용 시 특정 Permissions Boundary 부착을 조건으로 강제한다"
+      },
+      {
+        "label": "C",
+        "text": "개발자에게 `ReadOnlyAccess`만 부여한다"
+      },
+      {
+        "label": "D",
+        "text": "생성된 역할을 매일 사람이 검토해 과도하면 삭제한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`iam:PermissionsBoundary` 조건으로 역할 생성 시 지정한 boundary 부착을 강제하면, 생성된 역할의 실효 권한이 boundary와의 교집합으로 제한돼 권한 상승을 구조적으로 차단한다. CreateRole을 아예 막으면 위임 자체가 불가능하고, ReadOnly만 주면 역할을 만들 수 없으며, 사람의 사후 검토는 누락과 지연 위험이 크다."
+  },
+  {
+    "id": "scs-c03-w1-d3-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 3,
+    "number": 5,
+    "prompt": "S3 버킷에 올라오는 모든 객체가 KMS로 암호화되도록 강제하려 한다. 가장 직접적이고 누락 없는 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "업로드하는 모든 애플리케이션 코드에 암호화 헤더를 넣도록 개발 가이드를 배포한다"
+      },
+      {
+        "label": "B",
+        "text": "버킷 정책에 `s3:x-amz-server-side-encryption` 조건으로 암호화 헤더가 없는 PutObject를 Deny한다"
+      },
+      {
+        "label": "C",
+        "text": "GuardDuty로 미암호화 객체를 탐지해 알림을 보낸다"
+      },
+      {
+        "label": "D",
+        "text": "IAM 사용자별로 암호화 권한을 따로 부여한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "버킷 정책에서 `s3:x-amz-server-side-encryption` 조건으로 암호화 헤더 없는 PutObject를 명시적으로 Deny하면, 어떤 주체가 올리든 미암호화 업로드가 차단되는 예방 통제가 된다. 개발 가이드는 강제력이 없어 누락되고, GuardDuty 탐지는 사후 알림일 뿐 업로드를 막지 못하며, 사용자별 권한 부여는 암호화 강제와 직접 관련이 없다."
+  },
+  {
+    "id": "scs-c03-w1-d4-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 4,
+    "number": 1,
+    "prompt": "STS 임시 자격 증명이 장기 IAM User access key보다 보안상 우수한 가장 본질적인 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "더 긴 무작위 문자열이라 추측이 불가능하기 때문"
+      },
+      {
+        "label": "B",
+        "text": "만료 시간이 있어 노출되더라도 피해가 시간적으로 제한되기 때문"
+      },
+      {
+        "label": "C",
+        "text": "암호화되어 전송되기 때문"
+      },
+      {
+        "label": "D",
+        "text": "root 계정에서만 발급할 수 있기 때문"
+      }
+    ],
+    "answer": "B",
+    "explanation": "임시 자격 증명은 만료 시간(AssumeRole 기본 1시간, 최대 12시간)이 있어, 탈취되더라도 유효 기간 이후에는 무력화되므로 노출 피해가 시간적으로 한정된다. 길이나 전송 암호화는 장기 키와 본질적 차이가 아니고, 임시 자격 증명은 root 전용이 아니라 역할을 맡는 모든 주체가 받는다."
+  },
+  {
+    "id": "scs-c03-w1-d4-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 4,
+    "number": 2,
+    "prompt": "서드파티 모니터링 SaaS가 여러 고객의 AWS 계정에 동일한 SaaS 계정으로 AssumeRole 접근한다. 한 고객의 역할을 다른 고객이 SaaS를 통해 맡지 못하게 격리하는 핵심 메커니즘은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "trust policy의 Principal을 root로 지정"
+      },
+      {
+        "label": "B",
+        "text": "trust policy의 Condition에 서드파티가 고객별로 발급한 `sts:ExternalId`를 명시"
+      },
+      {
+        "label": "C",
+        "text": "고객이 임의로 정한 ExternalId를 trust policy에 넣음"
+      },
+      {
+        "label": "D",
+        "text": "SaaS에 IAM User access key를 발급해 전달"
+      }
+    ],
+    "answer": "B",
+    "explanation": "ExternalId는 서드파티가 고객마다 고유하게 발급한 값을 trust policy 조건에 박아 Confused Deputy 공격을 막는다. 고객이 임의로 정하면 충돌·예측으로 격리가 깨질 수 있어 발급 주체는 서드파티여야 하고, root Principal 지정만으로는 고객 간 격리가 되지 않으며, access key 발급은 장기 자격 증명 노출이라는 더 큰 위험을 만든다."
+  },
+  {
+    "id": "scs-c03-w1-d4-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 4,
+    "number": 3,
+    "prompt": "역할 체이닝(한 역할을 맡은 상태에서 또 다른 역할을 맡음)에 대한 설명으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "체이닝된 세션은 원본 역할의 MaxSessionDuration을 그대로 따라 최대 12시간까지 가능하다"
+      },
+      {
+        "label": "B",
+        "text": "체이닝 시 세션 최대 시간은 1시간으로 제한된다"
+      },
+      {
+        "label": "C",
+        "text": "체이닝은 권한 추적을 단순화하므로 항상 권장된다"
+      },
+      {
+        "label": "D",
+        "text": "체이닝에는 trust policy가 필요 없다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "역할 체이닝으로 발급되는 세션의 최대 시간은 1시간으로 고정되며, 원본 역할의 긴 MaxSessionDuration이 적용되지 않는다. 체이닝은 오히려 권한 추적을 흐리므로 가급적 피하는 것이 권장되고, 모든 AssumeRole과 마찬가지로 대상 역할의 trust policy 허용이 반드시 필요하다."
+  },
+  {
+    "id": "scs-c03-w1-d4-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 4,
+    "number": 4,
+    "prompt": "GitHub Actions가 장기 access key 없이 AWS 역할을 맡도록 구성할 때, 보안상 가장 중요한 trust policy 설정은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`sub` 조건을 `repo:org/*`로 두어 조직의 모든 repo가 역할을 맡게 한다"
+      },
+      {
+        "label": "B",
+        "text": "`sub` 조건을 `repo:org/repo:ref:refs/heads/main`처럼 특정 repo·브랜치로 좁힌다"
+      },
+      {
+        "label": "C",
+        "text": "Principal을 `*`로 설정해 어떤 OIDC 토큰이든 허용한다"
+      },
+      {
+        "label": "D",
+        "text": "trust policy 없이 permission policy만 넓게 설정한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "OIDC 페더레이션에서 `token.actions.githubusercontent.com:sub` 조건을 특정 repo와 브랜치로 좁혀야, 그 워크플로만 역할을 맡을 수 있어 안전하다. `repo:org/*`나 Principal `*`는 조직의 임의 repo·토큰이 역할을 탈취할 통로를 열고, trust policy 없이 권한만 넓히는 것은 누구나 역할을 맡을 수 있게 만든다."
+  },
+  {
+    "id": "scs-c03-w1-d4-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 1,
+    "day": 4,
+    "number": 5,
+    "prompt": "EC2 인스턴스에 부여된 임시 자격 증명이 SSRF 공격으로 탈취된 사고를 예방하기 위해 가장 직접적으로 적용해야 할 통제는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "EC2 인스턴스 역할에 AdministratorAccess를 부여해 운영을 단순화한다"
+      },
+      {
+        "label": "B",
+        "text": "IMDSv2(토큰 기반 메타데이터 서비스)를 강제하고 인스턴스 역할에 최소 권한을 적용한다"
+      },
+      {
+        "label": "C",
+        "text": "EC2에 장기 IAM User access key를 직접 저장한다"
+      },
+      {
+        "label": "D",
+        "text": "임시 자격 증명의 만료 시간을 12시간으로 늘린다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "IMDSv2는 세션 토큰을 요구해 SSRF를 통한 메타데이터·임시 자격 증명 탈취를 크게 어렵게 만들고, 인스턴스 역할 최소 권한은 탈취되더라도 피해 범위를 줄인다. admin 부여는 폭발 반경을 키우고, 장기 키 저장은 더 위험하며, 만료 시간을 늘리면 탈취 자격 증명의 유효 기간만 길어져 오히려 위험이 커진다."
+  },
+  {
+    "id": "scs-c03-w2-d1-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 1,
+    "number": 1,
+    "prompt": "한 사용자에게 `AdministratorAccess` Identity 정책이 부착되어 있다. 그런데 이 사용자가 특정 S3 버킷의 객체를 읽으려 하자 `AccessDenied`가 발생한다. CloudTrail에는 SCP 차단 기록이 없다. 가장 가능성 높은 원인은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM 정책이 우선순위에서 밀렸기 때문"
+      },
+      {
+        "label": "B",
+        "text": "버킷 정책에 해당 주체를 대상으로 한 명시적 Deny가 있기 때문"
+      },
+      {
+        "label": "C",
+        "text": "S3는 Identity 정책을 지원하지 않기 때문"
+      },
+      {
+        "label": "D",
+        "text": "AdministratorAccess는 S3를 포함하지 않기 때문"
+      }
+    ],
+    "answer": "B",
+    "explanation": "명시적 Deny는 모든 Allow를 이긴다. SCP 차단이 아니라면, 리소스 기반 정책인 버킷 정책의 explicit deny가 가장 유력하다. 우선순위가 밀린 게 아니라 평가 1단계에서 Deny가 즉시 최종 결정을 내린 것이다. S3는 Identity 정책을 지원하며, AdministratorAccess(`*:*`)는 S3를 포함하므로 나머지 보기는 틀리다."
+  },
+  {
+    "id": "scs-c03-w2-d1-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 1,
+    "number": 2,
+    "prompt": "Permission Boundary가 `s3:*`만 허용하도록 설정된 롤이 있다. 이 롤의 Identity 정책은 `ec2:RunInstances`와 `s3:GetObject`를 Allow한다. 이 롤이 실제로 수행할 수 있는 액션은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`ec2:RunInstances`와 `s3:GetObject` 모두"
+      },
+      {
+        "label": "B",
+        "text": "`s3:GetObject`만"
+      },
+      {
+        "label": "C",
+        "text": "`ec2:RunInstances`만"
+      },
+      {
+        "label": "D",
+        "text": "아무것도 못 함"
+      }
+    ],
+    "answer": "B",
+    "explanation": "유효 권한은 Permission Boundary와 Identity 정책의 교집합이다. Boundary가 `s3:*`만 허용하므로 `ec2:RunInstances`는 상한을 넘어 거부되고, `s3:GetObject`만 양쪽이 모두 허용하여 통과한다. Boundary는 권한을 부여하지 않고 상한만 정한다는 핵심 원리를 묻는 문제다."
+  },
+  {
+    "id": "scs-c03-w2-d1-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 1,
+    "number": 3,
+    "prompt": "계정 A의 IAM 사용자가 계정 B의 S3 버킷에 객체를 업로드해야 한다. 동작하게 하려면 무엇이 반드시 필요한가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "계정 A의 IAM 정책에 `s3:PutObject` Allow만 있으면 된다"
+      },
+      {
+        "label": "B",
+        "text": "계정 B의 버킷 정책에 계정 A를 허용하는 Allow만 있으면 된다"
+      },
+      {
+        "label": "C",
+        "text": "계정 A의 IAM 정책과 계정 B의 버킷 정책이 모두 Allow해야 한다"
+      },
+      {
+        "label": "D",
+        "text": "두 계정을 같은 Organizations에 두기만 하면 된다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "크로스 계정 접근은 호출자 계정의 Identity 정책과 리소스 계정의 Resource 정책이 모두 Allow해야 하는 AND 관계다. 한쪽만으로는 통과하지 못한다. 같은 Organizations 소속이라는 사실만으로 권한이 생기지는 않으며, SCP는 오히려 상한을 더 제한할 뿐이다."
+  },
+  {
+    "id": "scs-c03-w2-d1-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 1,
+    "number": 4,
+    "prompt": "한 보안 엔지니어가 SCP로 `Deny ec2:*`를 OU에 적용했다. 그런데 해당 OU의 한 계정에서 관리자가 IAM 정책으로 `Allow ec2:*`를 부여했다. 이 계정의 사용자는 EC2 인스턴스를 시작할 수 있는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "가능하다, IAM 정책이 SCP보다 구체적이므로"
+      },
+      {
+        "label": "B",
+        "text": "가능하다, 계정 관리자 권한이 SCP를 무시하므로"
+      },
+      {
+        "label": "C",
+        "text": "불가능하다, SCP의 명시적 Deny가 IAM Allow를 이기므로"
+      },
+      {
+        "label": "D",
+        "text": "조건에 따라 다르다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "SCP의 명시적 Deny는 평가 1단계에서 즉시 최종 결정을 내린다. IAM 정책이 아무리 구체적이거나 관리자급이어도, 명시적 Deny를 뚫을 수 없다. 가드레일은 계정 내부의 어떤 Allow보다 우선하며, 이것이 SCP를 조직 차원 통제 수단으로 쓰는 이유다."
+  },
+  {
+    "id": "scs-c03-w2-d1-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 1,
+    "number": 5,
+    "prompt": "어떤 IAM 정책의 Statement에 `\"Condition\": { \"BoolIfExists\": { \"aws:MultiFactorAuthPresent\": \"true\" } }`가 붙어 있다. `Bool` 대신 `BoolIfExists`를 쓴 이유로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "MFA 키가 존재하지 않는 호출(예: 서비스 롤)에서 의도치 않은 결과를 막기 위해"
+      },
+      {
+        "label": "B",
+        "text": "`BoolIfExists`가 더 빠르게 평가되기 때문"
+      },
+      {
+        "label": "C",
+        "text": "`Bool`은 SCP에서만 동작하기 때문"
+      },
+      {
+        "label": "D",
+        "text": "MFA를 더 강하게 강제하기 위해"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AssumeRole로 얻은 임시 자격증명이나 서비스 롤 호출에는 `aws:MultiFactorAuthPresent` 키가 아예 없을 수 있다. 이때 `Bool`은 키 부재를 다르게 처리해 정책이 의도와 어긋날 수 있으므로, `BoolIfExists`로 \"키가 존재할 때만 비교\"하게 만들어 안전하게 처리한다. 성능이나 SCP 전용 여부와는 무관하다."
+  },
+  {
+    "id": "scs-c03-w2-d2-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 2,
+    "number": 1,
+    "prompt": "한 회사가 개발자에게 `iam:CreateRole`과 `iam:AttachRolePolicy` 권한을 부여하려 한다. 권한 상승을 막으면서 위임하려면 반드시 추가해야 하는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "개발자 계정에 MFA를 강제한다"
+      },
+      {
+        "label": "B",
+        "text": "CreateRole 시 특정 Permission Boundary 부착을 조건으로 강제하고, Boundary 변경을 Deny한다"
+      },
+      {
+        "label": "C",
+        "text": "CloudTrail로 롤 생성을 사후 모니터링한다"
+      },
+      {
+        "label": "D",
+        "text": "개발자에게 읽기 전용 권한만 준다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "권한 상승의 핵심 차단 메커니즘은 `iam:PermissionsBoundary` 조건키로 Boundary 부착을 강제하고, 동시에 그 Boundary를 떼거나 바꾸는 액션을 명시적 Deny로 막는 것이다. MFA나 사후 모니터링은 상승 자체를 사전 차단하지 못하고, 읽기 전용은 위임 목적(롤 생성)을 달성하지 못한다."
+  },
+  {
+    "id": "scs-c03-w2-d2-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 2,
+    "number": 2,
+    "prompt": "Permission Boundary가 부착된 개발자가 자기가 만든 롤에서 Boundary를 제거하려 한다. 이를 막는 가장 직접적인 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SCP로 모든 IAM 액션을 차단한다"
+      },
+      {
+        "label": "B",
+        "text": "개발자 정책에 `iam:DeleteRolePermissionsBoundary`를 명시적 Deny로 추가한다"
+      },
+      {
+        "label": "C",
+        "text": "롤을 읽기 전용으로 만든다"
+      },
+      {
+        "label": "D",
+        "text": "Boundary를 더 넓게 설정한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Boundary 강제 생성만으로는 부족하며, 생성 후 Boundary를 제거하는 `iam:DeleteRolePermissionsBoundary`와 변경하는 `iam:PutRolePermissionsBoundary`를 명시적 Deny로 막아야 우회를 차단한다. SCP로 모든 IAM을 막으면 위임 자체가 불가능해지고, 나머지는 문제를 해결하지 못한다."
+  },
+  {
+    "id": "scs-c03-w2-d2-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 2,
+    "number": 3,
+    "prompt": "Permission Boundary와 SCP의 차이로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Boundary는 권한을 부여하고, SCP는 권한을 제한한다"
+      },
+      {
+        "label": "B",
+        "text": "Boundary는 개별 주체의 상한이고, SCP는 계정 전체의 상한이다"
+      },
+      {
+        "label": "C",
+        "text": "둘 다 멤버 계정의 root 사용자에게 동일하게 적용된다"
+      },
+      {
+        "label": "D",
+        "text": "SCP는 개발자가 직접 관리할 수 있다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Permission Boundary는 특정 User/Role 한 명의 권한 상한이고, SCP는 OU/Account에 적용되어 계정 전체 주체의 상한을 정한다. 둘 다 권한을 부여하지 않고 상한만 정한다. SCP는 멤버 계정 root에도 적용되지만 Boundary는 그렇지 않으며, SCP는 Organizations 관리 계정에서만 관리한다."
+  },
+  {
+    "id": "scs-c03-w2-d2-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 2,
+    "number": 4,
+    "prompt": "개발자에게 `role/dev-*` 패턴의 롤만 만들 수 있도록 `Resource`를 제한한 이유로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "롤 생성 속도를 높이기 위해"
+      },
+      {
+        "label": "B",
+        "text": "개발자가 보안팀이나 운영팀의 롤(예: role/admin-*)을 건드리지 못하게 네임스페이스를 격리하기 위해"
+      },
+      {
+        "label": "C",
+        "text": "롤 개수를 줄이기 위해"
+      },
+      {
+        "label": "D",
+        "text": "Boundary를 생략할 수 있게 하기 위해"
+      }
+    ],
+    "answer": "B",
+    "explanation": "리소스를 이름 접두사로 제한하면 개발자가 자기 네임스페이스(`dev-`) 밖의 권한 높은 롤을 생성하거나 수정하는 것을 막는다. 이는 self-service IAM에서 격리를 구현하는 표준 패턴이며, Boundary를 대체하지는 않고 함께 쓰인다."
+  },
+  {
+    "id": "scs-c03-w2-d2-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 2,
+    "number": 5,
+    "prompt": "개발자가 만든 롤의 유효 권한을 계산하려 한다. 그 롤에는 Identity 정책 `s3:*, ec2:*`, Permission Boundary `s3:*, dynamodb:*`가 있고, 계정 SCP는 `s3:*`만 허용한다. 이 롤의 유효 권한은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`s3:*, ec2:*, dynamodb:*` 전부"
+      },
+      {
+        "label": "B",
+        "text": "`s3:*`만"
+      },
+      {
+        "label": "C",
+        "text": "`s3:*, dynamodb:*`"
+      },
+      {
+        "label": "D",
+        "text": "아무 권한 없음"
+      }
+    ],
+    "answer": "B",
+    "explanation": "유효 권한은 SCP ∩ Boundary ∩ Identity의 교집합이다. SCP는 `s3:*`만, Boundary는 `s3:*`와 `dynamodb:*`, Identity는 `s3:*`와 `ec2:*`를 허용한다. 세 집합 모두에 공통으로 존재하는 것은 `s3:*`뿐이다. `ec2`는 SCP·Boundary에 없고, `dynamodb`는 SCP·Identity에 없어 모두 탈락한다."
+  },
+  {
+    "id": "scs-c03-w2-d3-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 3,
+    "number": 1,
+    "prompt": "한 보안팀이 조직의 모든 계정에서 CloudTrail이 절대 비활성화되지 않도록 강제하려 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 계정에 IAM 정책으로 CloudTrail 보호를 배포한다"
+      },
+      {
+        "label": "B",
+        "text": "Root 또는 상위 OU에 `cloudtrail:StopLogging`과 `cloudtrail:DeleteTrail`을 Deny하는 SCP를 적용한다"
+      },
+      {
+        "label": "C",
+        "text": "AWS Config Rule로 CloudTrail 상태를 모니터링한다"
+      },
+      {
+        "label": "D",
+        "text": "관리 계정에만 SCP를 적용한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SCP는 OU/Root에 한 번 적용하면 하위 모든 계정에 상속되는 예방적 통제다. CloudTrail 비활성화 액션을 Deny하면 어떤 계정에서도, root조차도 끄지 못한다. IAM 배포는 새 계정 누락 위험이 있고, Config는 사후 탐지일 뿐 차단하지 못한다. 관리 계정에는 SCP가 적용되지 않으므로 D는 틀리다."
+  },
+  {
+    "id": "scs-c03-w2-d3-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 3,
+    "number": 2,
+    "prompt": "Prod OU에 `Deny ec2:*` SCP가 걸려 있다. Prod OU 하위의 한 계정에서 IAM 관리자가 `Allow ec2:*` IAM 정책을 만들고, 그 계정에 추가 SCP로 `Allow ec2:RunInstances`도 적용했다. EC2 인스턴스를 시작할 수 있는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "가능하다, 하위 SCP가 상위 OU SCP를 덮어쓰므로"
+      },
+      {
+        "label": "B",
+        "text": "가능하다, IAM 정책이 Allow하므로"
+      },
+      {
+        "label": "C",
+        "text": "불가능하다, 상위 OU의 명시적 Deny가 상속되어 이기므로"
+      },
+      {
+        "label": "D",
+        "text": "조건에 따라 다르다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "SCP 상속은 누적적으로 제한이 강해진다. 상위 OU의 명시적 Deny는 하위로 상속되며, 하위에서 SCP나 IAM으로 다시 열 수 없다. 명시적 Deny는 모든 Allow를 이긴다. 하위 SCP가 상위를 덮어쓰지 않으며, IAM Allow도 SCP Deny를 뚫지 못한다."
+  },
+  {
+    "id": "scs-c03-w2-d3-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 3,
+    "number": 3,
+    "prompt": "리전 제한 SCP를 적용한 직후 사용자들이 콘솔 로그인과 STS 토큰 발급에 실패하기 시작했다. 가장 가능성 높은 원인은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SCP가 관리 계정에 적용되었다"
+      },
+      {
+        "label": "B",
+        "text": "IAM·STS 같은 글로벌 서비스를 `NotAction` 예외로 처리하지 않아 함께 차단되었다"
+      },
+      {
+        "label": "C",
+        "text": "리전 제한은 원래 로그인을 막는다"
+      },
+      {
+        "label": "D",
+        "text": "MFA가 활성화되지 않았다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "글로벌 서비스(IAM, STS, CloudFront, Route 53 등)는 특정 리전 엔드포인트에 묶이지 않고 내부적으로 us-east-1 등으로 라우팅된다. 리전 제한 Deny에서 이들을 `NotAction`으로 예외하지 않으면 로그인과 토큰 발급까지 막혀 계정이 사용 불능이 된다. 이는 리전 제한 SCP의 대표적 실수다."
+  },
+  {
+    "id": "scs-c03-w2-d3-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 3,
+    "number": 4,
+    "prompt": "SCP의 예방적 통제(preventive control)와 AWS Config Rule의 탐지적 통제(detective control)의 차이로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SCP는 위반을 사후 감지하고, Config는 위반을 사전 차단한다"
+      },
+      {
+        "label": "B",
+        "text": "SCP는 위반 행위를 사전에 차단하고, Config는 위반 상태를 사후 감지·알림한다"
+      },
+      {
+        "label": "C",
+        "text": "둘 다 동일하게 작동한다"
+      },
+      {
+        "label": "D",
+        "text": "Config가 SCP보다 항상 강력하다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SCP는 액션 자체를 거부해 사건 발생 전에 차단하는 예방적 통제다. Config Rule은 이미 만들어진 리소스의 준수 여부를 평가해 위반을 감지·알림하는 탐지적 통제다. 막을 수 있으면 막는 SCP가 비용 효율적이며, 탐지가 필요한 영역을 Config가 보완한다."
+  },
+  {
+    "id": "scs-c03-w2-d3-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 3,
+    "number": 5,
+    "prompt": "한 조직이 관리 계정(Management Account)에서 프로덕션 워크로드를 운영하고 있다. 보안 관점에서 이것이 문제인 이유로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "관리 계정은 비용이 더 비싸다"
+      },
+      {
+        "label": "B",
+        "text": "관리 계정에는 SCP가 적용되지 않아 가드레일로 보호할 수 없고, 손상 시 조직 전체가 위험해진다"
+      },
+      {
+        "label": "C",
+        "text": "관리 계정에서는 EC2를 띄울 수 없다"
+      },
+      {
+        "label": "D",
+        "text": "관리 계정은 CloudTrail을 지원하지 않는다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SCP는 멤버 계정에만 적용되고 관리 계정에는 효과가 없다. 따라서 관리 계정에 워크로드를 두면 SCP 가드레일의 보호를 받지 못하며, 조직 전체를 통제하는 계정이 손상될 경우 모든 멤버 계정이 위험에 노출된다. 모범 사례는 관리 계정을 결제·조직 관리 전용으로만 사용하는 것이다."
+  },
+  {
+    "id": "scs-c03-w2-d4-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 4,
+    "number": 1,
+    "prompt": "한 회사가 GitHub Actions에서 AWS로 배포할 때 장기 access key를 워크플로우에 저장하지 않으려 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM 사용자를 만들어 access key를 GitHub Secrets에 저장한다"
+      },
+      {
+        "label": "B",
+        "text": "GitHub을 OIDC provider로 등록하고, `AssumeRoleWithWebIdentity`로 특정 레포·브랜치 조건의 롤을 전환하게 한다"
+      },
+      {
+        "label": "C",
+        "text": "루트 사용자 자격증명을 사용한다"
+      },
+      {
+        "label": "D",
+        "text": "Permission Boundary를 GitHub에 부착한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "GitHub Actions는 OIDC를 지원하므로, OIDC provider로 등록하고 신뢰 정책에 `token.actions.githubusercontent.com:sub` 조건으로 특정 레포·브랜치를 제한하면 장기 키 없이 임시 자격증명만 받는다. access key 저장은 유출 위험이 있고, 루트 사용은 금기이며, Boundary는 GitHub에 부착하는 개념이 아니다."
+  },
+  {
+    "id": "scs-c03-w2-d4-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 4,
+    "number": 2,
+    "prompt": "사용자가 회사 Active Directory로 로그인한 뒤 AWS 콘솔에 접근해야 한다. AD FS가 SAML Assertion을 발급한다. AWS 측에서 이 흐름에 사용되는 STS API는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`sts:AssumeRole`"
+      },
+      {
+        "label": "B",
+        "text": "`sts:GetSessionToken`"
+      },
+      {
+        "label": "C",
+        "text": "`sts:AssumeRoleWithSAML`"
+      },
+      {
+        "label": "D",
+        "text": "`sts:AssumeRoleWithWebIdentity`"
+      }
+    ],
+    "answer": "C",
+    "explanation": "엔터프라이즈 SAML IdP(AD FS, Okta 등)가 발급한 SAML Assertion으로 임시 자격증명을 받을 때는 `AssumeRoleWithSAML`을 사용한다. 일반 `AssumeRole`은 IAM 주체 간 전환, `GetSessionToken`은 MFA용 단기 토큰, `AssumeRoleWithWebIdentity`는 OIDC(모바일·웹·CI/CD)용이다."
+  },
+  {
+    "id": "scs-c03-w2-d4-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 4,
+    "number": 3,
+    "prompt": "한 조직이 팀 10개 × 환경 3개의 조합으로 EC2 접근을 제어하려 하는데, 롤이 30개로 폭발하는 것을 피하려 한다. 가장 확장성 있는 접근법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "30개 롤을 모두 만든다"
+      },
+      {
+        "label": "B",
+        "text": "PrincipalTag와 ResourceTag가 일치할 때만 허용하는 ABAC 정책을 사용한다"
+      },
+      {
+        "label": "C",
+        "text": "모든 사용자에게 AdministratorAccess를 준다"
+      },
+      {
+        "label": "D",
+        "text": "SCP로 각 팀을 분리한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "ABAC는 주체 태그와 리소스 태그가 일치할 때 접근을 허용하는 단일 정책으로 무한히 많은 팀·환경 조합을 커버해 역할 폭발을 막는다. 30개 롤은 RBAC의 한계 그 자체이고, AdministratorAccess는 최소 권한 위반, SCP는 계정 단위 가드레일이라 팀별 리소스 접근 제어에는 부적합하다."
+  },
+  {
+    "id": "scs-c03-w2-d4-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 4,
+    "number": 4,
+    "prompt": "IAM Identity Center에서 직원이 퇴사했을 때 AWS 접근이 즉시 차단되도록 하려면 가장 효과적인 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 계정에서 IAM 사용자를 수동 삭제한다"
+      },
+      {
+        "label": "B",
+        "text": "외부 IdP를 SCIM으로 연동해, IdP에서 사용자 비활성화 시 AWS 접근이 자동 동기화되도록 한다"
+      },
+      {
+        "label": "C",
+        "text": "access key를 회전한다"
+      },
+      {
+        "label": "D",
+        "text": "SCP로 퇴사자를 차단한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SCIM 프로토콜로 외부 IdP와 Identity Center를 연동하면 IdP에서 사용자를 비활성화하는 순간 AWS 접근도 자동으로 끊긴다. 이것이 신뢰의 단일 출처 모델의 핵심 이점이다. 수동 삭제는 누락 위험이 크고, access key는 페더레이션 환경에 존재하지 않으며, SCP는 개별 퇴사자를 다루는 도구가 아니다."
+  },
+  {
+    "id": "scs-c03-w2-d4-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 4,
+    "number": 5,
+    "prompt": "여러 직원이 같은 페더레이션 롤을 사용한다. CloudTrail에서 특정 행위를 한 실제 개인을 식별하려면 무엇이 필요한가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "롤마다 개인을 분리해 만들어야만 가능하다"
+      },
+      {
+        "label": "B",
+        "text": "IdP에서 session name에 직원 식별자(이메일·사번)를 넣도록 구성하면 `sts:RoleSessionName`으로 식별된다"
+      },
+      {
+        "label": "C",
+        "text": "CloudTrail은 페더레이션 사용자를 식별할 수 없다"
+      },
+      {
+        "label": "D",
+        "text": "MFA 로그로만 식별 가능하다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "페더레이션 세션은 `aws:userid`가 `ROLEID:session-name` 형태로 기록되며, IdP가 session name에 직원 식별자를 넣도록 구성하면 CloudTrail의 `sts:RoleSessionName`으로 실제 개인을 추적할 수 있다. 따라서 롤을 개인별로 쪼갤 필요가 없고, CloudTrail은 페더레이션 사용자도 식별 가능하다."
+  },
+  {
+    "id": "scs-c03-w2-d5-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 5,
+    "number": 1,
+    "prompt": "prod 계정의 사용자에게 `AdministratorAccess`가 할당되어 있는데, `eu-west-1`에서 EC2 시작이 거부되고 CloudTrail에 `explicitDeny`가 기록된다. 가장 유력한 원인과 해결책은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM 정책이 부족하므로 더 넓은 정책을 추가한다"
+      },
+      {
+        "label": "B",
+        "text": "prod OU에 리전 제한 SCP가 걸려 있으므로, 허용 리전에서 작업하거나 SCP를 수정한다"
+      },
+      {
+        "label": "C",
+        "text": "Permission Set을 다시 할당한다"
+      },
+      {
+        "label": "D",
+        "text": "MFA를 활성화한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AdministratorAccess는 Identity 정책일 뿐 SCP의 천장을 넘지 못한다. `eu-west-1` + EC2 + explicitDeny 조합은 리전 제한 SCP가 전형적 원인이다. SCP Deny는 IAM Allow로 풀 수 없으므로 정책을 더 넓혀도 소용없고, 허용 리전에서 작업하거나 SCP 자체를 수정해야 한다."
+  },
+  {
+    "id": "scs-c03-w2-d5-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 5,
+    "number": 2,
+    "prompt": "개발자에게 롤 생성을 위임하면서 (1) 권한 상승 차단, (2) 리전 제한, (3) 팀별 리소스 격리를 모두 달성하려 한다. 올바른 도구 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SCP 하나로 전부 해결한다"
+      },
+      {
+        "label": "B",
+        "text": "Permission Boundary 하나로 전부 해결한다"
+      },
+      {
+        "label": "C",
+        "text": "SCP(리전 제한) + Permission Boundary 강제(권한 상승 차단) + ABAC(팀 격리)를 함께 쓴다"
+      },
+      {
+        "label": "D",
+        "text": "AdministratorAccess를 주고 CloudTrail로 감시한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "세 요구사항은 각기 다른 층이 담당한다. 리전 제한은 SCP, 권한 상승 차단은 Boundary 강제 부착, 팀 격리는 ABAC가 푼다. 어느 한 도구만으로는 세 가지를 모두 충족할 수 없다. AdministratorAccess + 사후 감시는 예방이 아니라 탐지일 뿐이라 위임 보안에 부적합하다."
+  },
+  {
+    "id": "scs-c03-w2-d5-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 5,
+    "number": 3,
+    "prompt": "Audit 계정의 보안팀이 여러 prod 계정의 S3 로그 버킷을 읽어야 한다. 임시 자격증명을 쓰고 감사 추적을 남기며 confused deputy를 방지하는 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "prod 계정에 IAM 사용자를 만들어 access key를 공유한다"
+      },
+      {
+        "label": "B",
+        "text": "각 prod 계정에 읽기 전용 롤을 만들고, 신뢰 정책에서 Audit 계정만 AssumeRole 허용 + ExternalId 조건을 건다"
+      },
+      {
+        "label": "C",
+        "text": "모든 버킷을 퍼블릭으로 만든다"
+      },
+      {
+        "label": "D",
+        "text": "Audit 계정에 AdministratorAccess를 준다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "크로스 계정 읽기는 각 계정에 최소 권한 롤을 만들고 신뢰 정책으로 Audit 계정만 AssumeRole하게 하는 것이 표준이다. 임시 자격증명을 쓰고 CloudTrail에 AssumeRole이 남으며, ExternalId 조건으로 confused deputy를 막는다. access key 공유는 장기 자격증명 유출 위험, 퍼블릭 버킷은 심각한 노출, AdministratorAccess는 최소 권한 위반이다."
+  },
+  {
+    "id": "scs-c03-w2-d5-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 5,
+    "number": 4,
+    "prompt": "\"운영 부담을 최소화하면서 50개 신규 계정에 표준 SCP 가드레일과 Identity Center 매핑을 일관되게 적용\"하라는 시나리오에서 가장 적절한 솔루션은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "계정마다 SCP와 Permission Set을 수동으로 설정한다"
+      },
+      {
+        "label": "B",
+        "text": "AWS Control Tower로 OU 가드레일과 Account Factory 표준화를 적용한다"
+      },
+      {
+        "label": "C",
+        "text": "각 계정에 Lambda 자동화를 따로 배포한다"
+      },
+      {
+        "label": "D",
+        "text": "모든 계정을 하나로 합친다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "\"운영 부담 최소화 + 멀티 계정 표준화\" 키워드는 Control Tower를 가리킨다. Control Tower는 OU별 SCP 가드레일을 매니지드로 제공하고 Account Factory로 새 계정 생성 시 표준 설정과 Identity Center 매핑을 자동 적용한다. 수동 설정과 계정별 Lambda는 운영 부담이 크고, 계정 통합은 blast radius 격리를 깨뜨린다."
+  },
+  {
+    "id": "scs-c03-w2-d5-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 2,
+    "day": 5,
+    "number": 5,
+    "prompt": "다음 중 \"권한을 부여하지 않고 오직 상한만 제한하는\" 도구로만 묶인 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Identity 정책, Resource 정책"
+      },
+      {
+        "label": "B",
+        "text": "SCP, Permission Boundary, Session Policy"
+      },
+      {
+        "label": "C",
+        "text": "Identity 정책, SCP"
+      },
+      {
+        "label": "D",
+        "text": "Resource 정책, ABAC"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SCP, Permission Boundary, Session Policy는 모두 권한을 부여하지 않고 상한(천장)만 정하는 가드레일이다. 실제 권한 부여는 Identity 정책과 Resource 정책이 담당한다. 따라서 부여 도구(Identity/Resource)가 섞인 보기는 모두 틀리며, 세 가드레일만 묶인 것이 정답이다."
+  },
+  {
+    "id": "scs-c03-w3-d1-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 1,
+    "number": 1,
+    "prompt": "한 보안 감사에서 RDS 인스턴스가 인터넷에서 접근 가능한지 의심된다. RDS가 실제로 인터넷에서 도달 가능하려면 반드시 충족돼야 하는 조건의 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보안 그룹 인바운드에 0.0.0.0/0만 열려 있으면 충분하다"
+      },
+      {
+        "label": "B",
+        "text": "서브넷 라우팅 테이블에 IGW 경로 + RDS에 Public IP + SG/NACL 허용이 모두 필요하다"
+      },
+      {
+        "label": "C",
+        "text": "NACL이 모든 트래픽을 허용하면 라우팅과 무관하게 도달 가능하다"
+      },
+      {
+        "label": "D",
+        "text": "RDS의 PubliclyAccessible 플래그만 켜져 있으면 SG와 무관하게 도달 가능하다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "인터넷 도달 가능성은 여러 레이어가 동시에 충족돼야 성립한다. 인터넷으로 향하는 IGW 라우팅 경로, 리소스의 퍼블릭 주소, 그리고 보안 그룹과 NACL의 허용이 모두 있어야 한다. 보안 그룹만 열려 있어도 라우팅 경로가 없으면 패킷이 인터넷으로 나갈 수 없다. 라우팅이 빠지면 다른 통제가 열려 있어도 도달 불가다."
+  },
+  {
+    "id": "scs-c03-w3-d1-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 1,
+    "number": 2,
+    "prompt": "새로 만든 서브넷을 라우팅 테이블에 명시적으로 연결하지 않았다. 이 서브넷의 라우팅 동작은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "인터넷 접근이 완전히 차단된 격리 서브넷이 된다"
+      },
+      {
+        "label": "B",
+        "text": "VPC의 Main Route Table을 자동으로 사용한다"
+      },
+      {
+        "label": "C",
+        "text": "라우팅 테이블이 없으므로 VPC 내부 통신도 불가능하다"
+      },
+      {
+        "label": "D",
+        "text": "가장 가까운 AZ의 라우팅 테이블을 상속한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "명시적으로 라우팅 테이블에 연결되지 않은 서브넷은 VPC의 메인 라우팅 테이블을 사용한다. 따라서 메인 라우팅 테이블에 인터넷 게이트웨이 경로가 들어 있으면 새 서브넷이 의도치 않게 인터넷에 노출된다. 이 때문에 메인 라우팅 테이블에는 인터넷 경로를 두지 않는 것이 안전한 기본값이다."
+  },
+  {
+    "id": "scs-c03-w3-d1-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 1,
+    "number": 3,
+    "prompt": "Data Tier 서브넷(RDS 전용)의 라우팅 설계로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "0.0.0.0/0 → NAT Gateway 경로를 두어 OS 패치를 받게 한다"
+      },
+      {
+        "label": "B",
+        "text": "0.0.0.0/0 → IGW 경로를 두어 외부 모니터링을 허용한다"
+      },
+      {
+        "label": "C",
+        "text": "로컬 경로만 두고 인터넷 경로를 두지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "0.0.0.0/0 → Egress-only IGW 경로를 두어 IPv6 아웃바운드를 허용한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "데이터 계층은 인터넷 경로 자체를 두지 않는 것이 가장 강한 격리다. 관리형 RDS의 패치는 AWS가 처리하므로 인터넷 경로가 필요 없다. 인터넷으로 향하는 경로를 추가하면 데이터 유출 경로가 생기므로, 외부 연결이 필요하면 NAT가 아니라 VPC 엔드포인트로 특정 서비스만 사설 연결하는 것이 표준이다."
+  },
+  {
+    "id": "scs-c03-w3-d1-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 1,
+    "number": 4,
+    "prompt": "민감 데이터를 다루는 App Tier에서 인터넷으로 데이터가 유출되는 것을 막으면서도 AWS 서비스(S3, DynamoDB) 접근은 허용하고 싶다. NAT Gateway 대비 더 안전한 접근은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "NAT Gateway의 아웃바운드를 모두 허용하되 SG로 목적지 IP를 제한한다"
+      },
+      {
+        "label": "B",
+        "text": "VPC Endpoint(Gateway/Interface)로 해당 서비스만 사설 연결하고 인터넷 경로를 제거한다"
+      },
+      {
+        "label": "C",
+        "text": "Internet Gateway를 두되 NACL로 아웃바운드 포트를 443만 허용한다"
+      },
+      {
+        "label": "D",
+        "text": "Bastion Host를 통해서만 외부 통신을 중계하도록 강제한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "NAT는 아웃바운드를 폭넓게 허용하므로 데이터 유출 경로가 될 수 있다. 필요한 AWS 서비스만 VPC 엔드포인트로 사설 연결하고 인터넷 경로를 제거하면, 트래픽이 AWS 백본 내부에 머물고 외부로 데이터를 빼낼 경로 자체가 사라진다. 보안 그룹으로 목적지 IP를 제한하는 방식은 AWS 서비스 IP 범위가 광범위하게 변동해 실효성이 떨어진다."
+  },
+  {
+    "id": "scs-c03-w3-d1-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 1,
+    "number": 5,
+    "prompt": "기본(default) NACL과 기본 보안 그룹의 동작 차이로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "기본 NACL은 모든 인/아웃바운드를 허용하고, 기본 SG는 같은 SG 멤버 간만 허용한다"
+      },
+      {
+        "label": "B",
+        "text": "기본 NACL과 기본 SG 모두 모든 트래픽을 차단한다"
+      },
+      {
+        "label": "C",
+        "text": "기본 NACL은 모든 트래픽을 차단하고, 기본 SG는 모두 허용한다"
+      },
+      {
+        "label": "D",
+        "text": "둘 다 같은 SG/서브넷 멤버 간 통신만 허용한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "기본 네트워크 ACL은 인바운드와 아웃바운드를 모두 허용해 사실상 무통제 상태다. 반면 기본 보안 그룹은 동일 보안 그룹에 속한 리소스 간 통신만 허용하고 그 외 인바운드는 차단하며 아웃바운드는 전체 허용한다. 따라서 실질적 격리는 라우팅과 보안 그룹으로 만들고, 네트워크 ACL은 보조적인 서브넷 단위 통제로 쓰는 것이 일반적이다."
+  },
+  {
+    "id": "scs-c03-w3-d2-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 2,
+    "number": 1,
+    "prompt": "한 엔지니어가 웹 서버 서브넷의 NACL 인바운드에 TCP 443을 0.0.0.0/0으로 허용했다. 그런데 외부에서 HTTPS 응답을 받지 못한다. 가장 가능성 높은 원인은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보안 그룹의 아웃바운드 443이 차단되어 있다"
+      },
+      {
+        "label": "B",
+        "text": "NACL 아웃바운드에 임시 포트(1024-65535) 허용이 없다"
+      },
+      {
+        "label": "C",
+        "text": "라우팅 테이블에 로컬 경로가 누락되어 있다"
+      },
+      {
+        "label": "D",
+        "text": "보안 그룹이 stateless라 응답을 별도 허용해야 한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "네트워크 ACL은 비저장 방식이라 요청을 허용해도 응답 트래픽을 자동으로 허용하지 않는다. HTTPS 응답은 클라이언트의 임시 포트 범위로 나가므로, 네트워크 ACL 아웃바운드에 임시 포트 범위를 명시적으로 허용해야 한다. 보안 그룹은 상태를 추적하므로 응답을 자동 허용하며, 이 증상의 원인이 아니다."
+  },
+  {
+    "id": "scs-c03-w3-d2-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 2,
+    "number": 2,
+    "prompt": "단일 악성 IP 주소 하나를 서브넷 전체에서 명시적으로 차단해야 한다. 올바른 접근은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보안 그룹 인바운드에 해당 IP를 Deny 규칙으로 추가한다"
+      },
+      {
+        "label": "B",
+        "text": "보안 그룹에서 0.0.0.0/0을 허용하되 해당 IP만 예외 처리한다"
+      },
+      {
+        "label": "C",
+        "text": "네트워크 ACL에 낮은 번호의 Deny 규칙으로 해당 IP를 추가한다"
+      },
+      {
+        "label": "D",
+        "text": "라우팅 테이블에서 해당 IP로 향하는 경로를 블랙홀로 설정한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "보안 그룹은 허용 규칙만 지원하고 거부 규칙이 없으므로 특정 IP를 명시적으로 차단할 수 없다. 명시적 거부는 네트워크 ACL에서만 가능하며, 규칙 번호 순서대로 첫 매치에서 평가가 종료되므로 거부 규칙을 허용 규칙보다 낮은 번호로 두어야 효과가 있다."
+  },
+  {
+    "id": "scs-c03-w3-d2-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 2,
+    "number": 3,
+    "prompt": "오토스케일링으로 IP가 수시로 바뀌는 백엔드 인스턴스 그룹에 대해, 특정 ALB에서 오는 트래픽만 허용하고 싶다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "백엔드 보안 그룹 인바운드의 소스로 ALB의 보안 그룹을 참조한다"
+      },
+      {
+        "label": "B",
+        "text": "백엔드 NACL에 ALB 인스턴스들의 IP를 모두 나열한다"
+      },
+      {
+        "label": "C",
+        "text": "백엔드 보안 그룹에 ALB 서브넷 CIDR을 허용한다"
+      },
+      {
+        "label": "D",
+        "text": "라우팅 테이블에서 ALB로만 향하는 경로를 추가한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "보안 그룹은 소스로 다른 보안 그룹을 참조할 수 있어, IP가 변해도 그룹 멤버십으로 허용이 유지된다. 네트워크 ACL은 IP/CIDR만 참조하므로 IP가 자주 바뀌는 환경에 부적합하다. 서브넷 CIDR 허용은 같은 서브넷의 다른 리소스까지 열리므로 최소 권한에 어긋난다."
+  },
+  {
+    "id": "scs-c03-w3-d2-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 2,
+    "number": 4,
+    "prompt": "같은 서브넷 안에 있는 두 인스턴스 A, B 사이의 통신을 격리(차단)하려고 한다. 어떤 통제가 효과적인가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "해당 서브넷의 네트워크 ACL 인바운드에 Deny 규칙을 추가한다"
+      },
+      {
+        "label": "B",
+        "text": "두 인스턴스의 보안 그룹 규칙으로 상호 트래픽을 허용하지 않는다"
+      },
+      {
+        "label": "C",
+        "text": "서브넷 라우팅 테이블에서 인스턴스 간 경로를 제거한다"
+      },
+      {
+        "label": "D",
+        "text": "네트워크 ACL과 보안 그룹 둘 중 어느 것으로도 가능하다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "네트워크 ACL은 서브넷 경계를 넘는 트래픽만 검사하므로 같은 서브넷 내부 통신에는 적용되지 않는다. 따라서 동일 서브넷 내 리소스 간 격리는 보안 그룹으로만 강제할 수 있다. 라우팅 테이블의 로컬 경로는 삭제할 수 없으므로 경로 제거 방식도 불가능하다."
+  },
+  {
+    "id": "scs-c03-w3-d2-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 2,
+    "number": 5,
+    "prompt": "보안 그룹과 네트워크 ACL의 평가 방식에 대한 설명으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보안 그룹은 규칙 번호 순서대로 첫 매치에서 평가를 종료한다"
+      },
+      {
+        "label": "B",
+        "text": "네트워크 ACL은 모든 규칙을 종합 평가하여 하나라도 허용하면 통과시킨다"
+      },
+      {
+        "label": "C",
+        "text": "보안 그룹은 모든 규칙을 종합 평가하고, 네트워크 ACL은 번호 순서대로 첫 매치에서 종료한다"
+      },
+      {
+        "label": "D",
+        "text": "둘 다 명시적 Deny 규칙을 우선 평가한 뒤 Allow를 본다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "보안 그룹은 순서 개념 없이 모든 허용 규칙을 종합 평가해, 어느 하나라도 매치하면 트래픽을 허용한다. 네트워크 ACL은 규칙 번호가 낮은 것부터 순서대로 평가하고 첫 매치에서 종료하므로, 거부 규칙을 허용 규칙보다 낮은 번호에 두어야 의도대로 동작한다."
+  },
+  {
+    "id": "scs-c03-w3-d2-q6",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 2,
+    "number": 6,
+    "prompt": "보안 사고 대응 중 진행 중인 악성 연결을 즉시 끊어야 한다. 가장 즉각적으로 차단되는 통제는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보안 그룹에서 인바운드 허용 규칙을 삭제한다"
+      },
+      {
+        "label": "B",
+        "text": "네트워크 ACL에 해당 소스에 대한 Deny 규칙을 추가한다"
+      },
+      {
+        "label": "C",
+        "text": "IAM 정책으로 해당 인스턴스의 권한을 회수한다"
+      },
+      {
+        "label": "D",
+        "text": "라우팅 테이블에서 VPC 로컬 경로를 삭제한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "보안 그룹은 상태를 추적하므로 이미 수립된 연결은 규칙을 삭제해도 추적 정보로 한동안 유지될 수 있다. 반면 네트워크 ACL은 비저장 방식이라 규칙 변경이 다음 패킷부터 즉시 반영되므로 긴급 차단에 더 즉각적이다. 로컬 경로는 삭제할 수 없다."
+  },
+  {
+    "id": "scs-c03-w3-d3-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 3,
+    "number": 1,
+    "prompt": "NAT Gateway 뒤에 있는 여러 인스턴스 중 어느 것이 의심스러운 외부 IP로 통신했는지 특정하려고 한다. Flow Logs에서 반드시 필요한 필드는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "기본 포맷의 srcaddr 필드만으로 충분하다"
+      },
+      {
+        "label": "B",
+        "text": "커스텀 포맷의 pkt-srcaddr 필드"
+      },
+      {
+        "label": "C",
+        "text": "tcp-flags 필드"
+      },
+      {
+        "label": "D",
+        "text": "az-id 필드"
+      }
+    ],
+    "answer": "B",
+    "explanation": "NAT를 거친 트래픽은 기본 출발지 주소 필드에 NAT의 주소가 기록되어 실제 인스턴스를 구분할 수 없다. 패킷의 원본 출발지 주소 필드를 커스텀 포맷에 추가하면 NAT 변환 이전의 실제 송신 인스턴스를 식별할 수 있어, 침해된 내부 호스트를 특정하는 데 결정적이다."
+  },
+  {
+    "id": "scs-c03-w3-d3-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 3,
+    "number": 2,
+    "prompt": "외부 IP 한 곳에서 짧은 시간에 다수의 서로 다른 포트로 향하는 REJECT 레코드가 대량 발생했다. 가장 가능성 높은 활동은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "정상적인 로드밸런서 헬스 체크"
+      },
+      {
+        "label": "B",
+        "text": "포트 스캔 등 정찰 활동"
+      },
+      {
+        "label": "C",
+        "text": "대규모 데이터 유출"
+      },
+      {
+        "label": "D",
+        "text": "NAT Gateway의 임시 포트 재사용"
+      }
+    ],
+    "answer": "B",
+    "explanation": "한 출발지가 다수 포트로 짧은 시간에 접근을 시도하고 모두 거부된 패턴은 열린 포트를 찾는 포트 스캔, 즉 정찰 활동의 전형이다. 데이터 유출은 허용된 연결로 큰 바이트가 나가는 패턴이며, 헬스 체크는 정해진 포트로 허용되는 통신이라 구분된다."
+  },
+  {
+    "id": "scs-c03-w3-d3-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 3,
+    "number": 3,
+    "prompt": "Flow Logs를 보안 알람과 장기 포렌식 보관에 모두 활용하려고 한다. 비용 효율적인 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 트래픽을 CloudWatch Logs로만 보낸다"
+      },
+      {
+        "label": "B",
+        "text": "REJECT 트래픽은 CloudWatch Logs(알람용), 전체 트래픽은 S3(보관·Athena)로 이원화한다"
+      },
+      {
+        "label": "C",
+        "text": "전체 트래픽을 CloudWatch와 S3에 동시에 모두 보낸다"
+      },
+      {
+        "label": "D",
+        "text": "알람과 보관 모두 Kinesis Firehose 하나로 처리한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudWatch Logs는 수집·저장·메트릭 평가 비용이 높으므로 알람에 필요한 거부 트래픽만 좁혀 보내고, 전체 트래픽은 저비용 장기 보관과 대량 쿼리에 적합한 S3로 보내 Athena로 분석하는 이원화가 표준이다. 전체를 CloudWatch로 보내면 비용이 급증한다."
+  },
+  {
+    "id": "scs-c03-w3-d3-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 3,
+    "number": 4,
+    "prompt": "Flow Logs를 실시간 차단(blocking) 메커니즘으로 사용하려는 계획에 대한 평가로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "집계 간격이 최소 1분이라 실시간 차단에는 부적합하며 탐지·분석용이다"
+      },
+      {
+        "label": "B",
+        "text": "밀리초 단위로 기록되므로 실시간 차단에 적합하다"
+      },
+      {
+        "label": "C",
+        "text": "ACCEPT만 기록되므로 차단에 활용할 수 없다"
+      },
+      {
+        "label": "D",
+        "text": "S3로 보낼 때만 실시간 차단이 가능하다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Flow Logs는 집계 간격을 두고 기록되며 기본 10분, 최소 1분이라 즉각적인 인라인 차단에는 맞지 않는다. 트래픽을 막는 통제가 아니라 흐름을 사후에 보는 가시성 도구이므로, 탐지와 분석에 사용하고 차단은 보안 그룹·NACL·네트워크 방화벽으로 수행한다."
+  },
+  {
+    "id": "scs-c03-w3-d3-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 3,
+    "number": 5,
+    "prompt": "GuardDuty와 VPC Flow Logs의 관계로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "GuardDuty를 켜면 Flow Logs도 자동으로 사용자 S3 버킷에 적재된다"
+      },
+      {
+        "label": "B",
+        "text": "GuardDuty는 내부적으로 Flow Logs를 소비하지만 사용자 계정에 적재하지 않으므로, 포렌식 보관은 별도로 Flow Logs를 켜야 한다"
+      },
+      {
+        "label": "C",
+        "text": "둘은 완전히 독립적이며 같은 데이터를 쓰지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "Flow Logs를 켜야만 GuardDuty가 동작한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "GuardDuty는 Flow Logs를 포함한 데이터 소스를 내부적으로 분석하지만 그 로그를 사용자 계정에 저장해 주지는 않는다. 따라서 사고 조사를 위한 트래픽 메타데이터 보관이 필요하면 별도로 Flow Logs를 활성화해 S3 등에 적재해야 한다. GuardDuty는 사용자가 Flow Logs를 켜지 않아도 자체적으로 동작한다."
+  },
+  {
+    "id": "scs-c03-w3-d3-q6",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 3,
+    "number": 6,
+    "prompt": "한 내부 인스턴스의 egress ACCEPT 트래픽 중, 평소 통신하지 않던 외부 IP로 수 GB가 전송된 기록이 발견됐다. 보안 분석가가 우선 의심할 상황은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "정상적인 소프트웨어 업데이트 다운로드"
+      },
+      {
+        "label": "B",
+        "text": "데이터 유출(exfiltration) 가능성"
+      },
+      {
+        "label": "C",
+        "text": "NACL 임시 포트 부족으로 인한 재전송"
+      },
+      {
+        "label": "D",
+        "text": "보안 그룹의 stateful 추적 오류"
+      }
+    ],
+    "answer": "B",
+    "explanation": "안정적이던 통신 목적지가 갑자기 낯선 외부 IP로 바뀌고 대용량 데이터가 아웃바운드로 나가는 패턴은 데이터 유출의 전형적 징후다. 업데이트 다운로드는 일반적으로 인바운드 수신이 크고 목적지가 알려진 배포 엔드포인트이며, 임시 포트나 stateful 추적 문제는 대용량 egress와 무관하다."
+  },
+  {
+    "id": "scs-c03-w3-d4-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 4,
+    "number": 1,
+    "prompt": "VPC 내부의 Lambda 함수가 S3 버킷에 인터넷을 거치지 않고 사설로 접근해야 한다. 가장 비용 효율적인 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Interface Endpoint(PrivateLink)를 S3용으로 생성한다"
+      },
+      {
+        "label": "B",
+        "text": "Gateway Endpoint를 생성해 라우팅 테이블에 S3 경로를 추가한다"
+      },
+      {
+        "label": "C",
+        "text": "NAT Gateway를 통해 S3로 나가게 한다"
+      },
+      {
+        "label": "D",
+        "text": "VPC Peering으로 S3 서비스 VPC와 연결한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "S3와 DynamoDB는 무료인 Gateway Endpoint를 지원하며, 라우팅 테이블에 해당 서비스 경로를 추가하는 방식으로 VPC 내부에서 사설 접근이 가능하다. Interface Endpoint는 시간당·데이터 처리 요금이 발생하므로 VPC 내부 전용 접근에는 비용 면에서 불리하고, S3는 서비스 VPC와 Peering할 수 있는 대상이 아니다."
+  },
+  {
+    "id": "scs-c03-w3-d4-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 4,
+    "number": 2,
+    "prompt": "온프레미스 데이터센터에서 Direct Connect를 통해 S3에 사설로 접근해야 한다. 적절한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 Gateway Endpoint를 생성한다"
+      },
+      {
+        "label": "B",
+        "text": "S3 Interface Endpoint를 생성한다"
+      },
+      {
+        "label": "C",
+        "text": "NAT Gateway를 온프레미스 쪽에 둔다"
+      },
+      {
+        "label": "D",
+        "text": "S3 버킷을 퍼블릭으로 전환한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Gateway Endpoint는 라우팅 기반이라 VPC 내부 전용이며 온프레미스에서 직접 도달할 수 없다. 온프레미스에서 Direct Connect나 VPN을 통해 사설로 접근하려면 서브넷에 ENI를 두는 S3 Interface Endpoint가 필요하다. 버킷을 퍼블릭으로 전환하는 방식은 사설 연결 요구에 어긋난다."
+  },
+  {
+    "id": "scs-c03-w3-d4-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 4,
+    "number": 3,
+    "prompt": "민감 데이터가 담긴 S3 버킷을 오직 사내 VPC 엔드포인트를 거친 요청만 접근 가능하게 하려고 한다. 가장 효과적인 통제는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "버킷 정책에 aws:SourceVpce 조건으로 특정 엔드포인트 경유만 허용한다"
+      },
+      {
+        "label": "B",
+        "text": "버킷에 ACL을 적용해 익명 접근을 막는다"
+      },
+      {
+        "label": "C",
+        "text": "보안 그룹으로 버킷 인바운드를 제한한다"
+      },
+      {
+        "label": "D",
+        "text": "NACL로 S3 IP 범위를 차단한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "버킷 정책에 특정 VPC 엔드포인트 경유 조건을 걸면, 그 엔드포인트를 통하지 않은 인터넷·콘솔·다른 계정의 직접 접근이 거부되어 데이터가 네트워크 경계 안에 갇힌다. S3는 보안 그룹이나 NACL이 직접 적용되는 대상이 아니며, ACL은 이런 네트워크 출처 기반 제약을 표현하지 못한다."
+  },
+  {
+    "id": "scs-c03-w3-d4-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 4,
+    "number": 4,
+    "prompt": "Interface Endpoint를 생성하고 Private DNS를 켰는데도 트래픽이 여전히 인터넷으로 나간다. 가장 먼저 확인할 항목은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "버킷 정책의 Resource 범위"
+      },
+      {
+        "label": "B",
+        "text": "VPC의 enableDnsSupport와 enableDnsHostnames 속성"
+      },
+      {
+        "label": "C",
+        "text": "NAT Gateway의 임시 포트 범위"
+      },
+      {
+        "label": "D",
+        "text": "NACL의 규칙 번호 순서"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Private DNS가 서비스 도메인을 엔드포인트의 사설 IP로 해석하려면 VPC의 DNS 지원과 DNS 호스트네임 속성이 모두 켜져 있어야 한다. 이 속성이 꺼져 있으면 도메인이 공용 IP로 해석되어 트래픽이 인터넷 경로로 흐른다. 임시 포트나 NACL 순서는 DNS 해석 경로와 무관하다."
+  },
+  {
+    "id": "scs-c03-w3-d4-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 4,
+    "number": 5,
+    "prompt": "SaaS 제공자가 다수 고객에게 자사 서비스를 사설로 제공하되, 자사 VPC 전체가 고객에게 노출되지 않도록 하려고 한다. VPC Peering 대비 PrivateLink의 장점은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Peering보다 데이터 전송 비용이 항상 더 저렴하다"
+      },
+      {
+        "label": "B",
+        "text": "제공자가 노출한 단일 서비스 엔드포인트만 보이고 나머지 VPC는 가려지며 CIDR 충돌도 없다"
+      },
+      {
+        "label": "C",
+        "text": "양방향 라우팅을 자동으로 구성해 관리가 쉽다"
+      },
+      {
+        "label": "D",
+        "text": "고객과 제공자의 CIDR이 반드시 겹쳐야 동작한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Peering은 두 VPC의 CIDR 전체가 양방향으로 보이므로 노출 표면이 크고 CIDR이 겹치면 동작하지 않는다. PrivateLink는 제공자가 NLB로 노출한 단일 서비스만 소비자에게 보이고 나머지 제공자 VPC는 완전히 가려지며, 소비자 VPC 주소를 쓰는 ENI 방식이라 CIDR 충돌도 발생하지 않는다."
+  },
+  {
+    "id": "scs-c03-w3-d4-q6",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 4,
+    "number": 6,
+    "prompt": "인터넷 경로가 전혀 없는 \"zero-internet VPC\"에서 EC2 인스턴스를 Systems Manager로 관리하려고 한다. 필요한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "NAT Gateway를 임시로 열어 SSM Agent가 통신하게 한다"
+      },
+      {
+        "label": "B",
+        "text": "ssm, ssmmessages, ec2messages 등에 대한 Interface Endpoint를 생성한다"
+      },
+      {
+        "label": "C",
+        "text": "S3 Gateway Endpoint만 있으면 SSM이 동작한다"
+      },
+      {
+        "label": "D",
+        "text": "인스턴스에 퍼블릭 IP를 부여한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "인터넷 경로가 없는 VPC에서 Systems Manager를 사용하려면 SSM 관련 서비스 엔드포인트를 Interface Endpoint로 사설 연결해야 한다. 이렇게 하면 패치·세션 관리 트래픽이 AWS 백본 내부로만 흐른다. NAT를 열거나 퍼블릭 IP를 부여하는 방식은 데이터 유출 경로를 다시 만드는 것이라 격리 목표에 어긋난다."
+  },
+  {
+    "id": "scs-c03-w3-d5-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 5,
+    "number": 1,
+    "prompt": "프로덕션 RDS가 인터넷에서 접근 가능하다는 경고를 받았다. 가장 근본적인(표면적이 아닌) 차단 조치는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보안 그룹 인바운드의 0.0.0.0/0을 특정 IP로만 좁힌다"
+      },
+      {
+        "label": "B",
+        "text": "RDS를 인터넷 경로가 없는 서브넷에 두고 PubliclyAccessible을 끈다"
+      },
+      {
+        "label": "C",
+        "text": "NACL 아웃바운드 임시 포트를 차단한다"
+      },
+      {
+        "label": "D",
+        "text": "RDS의 자동 백업을 비활성화한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "인터넷 도달은 라우팅 경로와 퍼블릭 주소, 그리고 통제 허용이 모두 충족돼야 성립한다. 인터넷 경로가 없는 서브넷에 두고 퍼블릭 접근 설정을 끄면 경로와 주소 자체가 사라져 가장 근본적으로 차단된다. 보안 그룹만 좁히는 것은 다른 계층이 다시 열리면 무력화될 수 있는 표면적 처방이다."
+  },
+  {
+    "id": "scs-c03-w3-d5-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 5,
+    "number": 2,
+    "prompt": "침해된 인스턴스가 탈취한 자격증명으로 회사 S3 데이터를 외부 공격자 버킷으로 빼내려는 시나리오를 네트워크 설계로 막으려고 한다. 가장 효과적인 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "NAT Gateway를 두되 보안 그룹 아웃바운드를 443만 허용한다"
+      },
+      {
+        "label": "B",
+        "text": "NAT를 제거하고 필요한 AWS 서비스만 VPC Endpoint로 연결하며 버킷 정책에 SourceVpce 조건을 건다"
+      },
+      {
+        "label": "C",
+        "text": "IAM 정책에서 S3 권한을 모두 제거한다"
+      },
+      {
+        "label": "D",
+        "text": "CloudTrail 로깅을 강화한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "NAT를 제거하면 무분별한 아웃바운드 경로가 사라져 외부 버킷으로의 전송 자체가 막히고, 필요한 서비스만 엔드포인트로 연결한 뒤 버킷 정책에 엔드포인트 경유 조건을 걸면 회사 버킷은 그 경로로만 접근된다. 자격증명을 탈취해도 데이터가 빠져나갈 네트워크 경로가 없어진다. 로깅 강화는 탐지일 뿐 차단이 아니다."
+  },
+  {
+    "id": "scs-c03-w3-d5-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 5,
+    "number": 3,
+    "prompt": "연결 트러블슈팅 중 \"요청은 나가는데 응답이 돌아오지 않는\" 증상이 발생했다. 어느 계층을 가장 먼저 의심해야 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보안 그룹 인바운드 규칙"
+      },
+      {
+        "label": "B",
+        "text": "라우팅 테이블의 로컬 경로"
+      },
+      {
+        "label": "C",
+        "text": "NACL 아웃바운드의 임시 포트 허용 여부"
+      },
+      {
+        "label": "D",
+        "text": "엔드포인트 정책의 Resource 범위"
+      }
+    ],
+    "answer": "C",
+    "explanation": "요청은 나가지만 응답만 안 오는 증상은 비저장 방식인 NACL이 응답 트래픽을 막는 전형적 패턴이다. NACL은 상태를 추적하지 않으므로 응답이 나가는 임시 포트 범위를 아웃바운드에 명시 허용해야 한다. 상태를 추적하는 보안 그룹은 응답을 자동 허용하므로 이 증상의 원인이 아니다."
+  },
+  {
+    "id": "scs-c03-w3-d5-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 5,
+    "number": 4,
+    "prompt": "온프레미스에서 Direct Connect로 S3에 접근하려는데 AccessDenied가 아니라 timeout이 발생한다. 가장 가능성 높은 원인은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "버킷 정책의 SourceVpce 조건이 잘못 설정됨"
+      },
+      {
+        "label": "B",
+        "text": "S3 Gateway Endpoint를 사용 중이라 온프레미스에서 도달할 수 없음"
+      },
+      {
+        "label": "C",
+        "text": "IAM 정책에 s3:GetObject 권한이 없음"
+      },
+      {
+        "label": "D",
+        "text": "KMS 키 정책이 복호화를 거부함"
+      }
+    ],
+    "answer": "B",
+    "explanation": "timeout은 정책 거부가 아니라 네트워크 도달 실패를 의미한다. Gateway Endpoint는 라우팅 기반이라 VPC 내부 전용이므로 온프레미스에서 직접 닿을 수 없다. 온프레미스 사설 접근에는 Interface Endpoint와 도메인을 사설 IP로 해석하는 DNS 구성이 필요하다. 정책 문제였다면 timeout이 아니라 AccessDenied가 발생한다."
+  },
+  {
+    "id": "scs-c03-w3-d5-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 5,
+    "number": 5,
+    "prompt": "다음 중 보안 그룹과 NACL의 차이를 올바르게 설명한 것을 모두 고른 조합은?\n\n(가) 보안 그룹은 상태를 추적하고 NACL은 추적하지 않는다\n(나) NACL은 명시적 Deny가 가능하지만 보안 그룹은 Allow만 가능하다\n(다) 같은 서브넷 내부 통신에는 NACL이 적용되지 않는다\n(라) 보안 그룹은 규칙 번호 순서로 첫 매치에서 평가를 종료한다",
+    "choices": [
+      {
+        "label": "A",
+        "text": "가, 나, 다"
+      },
+      {
+        "label": "B",
+        "text": "가, 나, 라"
+      },
+      {
+        "label": "C",
+        "text": "나, 다, 라"
+      },
+      {
+        "label": "D",
+        "text": "가, 다, 라"
+      }
+    ],
+    "answer": "A",
+    "explanation": "보안 그룹은 상태를 추적해 응답을 자동 허용하고 허용 규칙만 지원하며, NACL은 비저장 방식에 거부 규칙도 지원한다. 또 NACL은 서브넷 경계 트래픽만 검사하므로 같은 서브넷 내부 통신에는 적용되지 않는다. 규칙 번호 순서로 첫 매치에서 종료하는 것은 NACL의 평가 방식이며 보안 그룹은 모든 규칙을 종합 평가하므로 (라)는 틀렸다."
+  },
+  {
+    "id": "scs-c03-w3-d5-q6",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 3,
+    "day": 5,
+    "number": 6,
+    "prompt": "Flow Logs 분석에서 \"한 내부 호스트가 짧은 시간에 100개 이상의 서로 다른 외부 목적지와 통신\"하는 패턴이 보였다. 가장 의심되는 활동과, 침해 호스트를 정확히 특정하기 위해 필요한 필드의 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터 유출 의심 / srcaddr 필드"
+      },
+      {
+        "label": "B",
+        "text": "C2 비콘 또는 횡적 이동 의심 / pkt-srcaddr 필드"
+      },
+      {
+        "label": "C",
+        "text": "정상 헬스 체크 / az-id 필드"
+      },
+      {
+        "label": "D",
+        "text": "DDoS 공격 의심 / dstport 필드"
+      }
+    ],
+    "answer": "B",
+    "explanation": "한 호스트가 다수의 서로 다른 목적지와 통신하는 패턴은 명령제어 비콘이나 내부 횡적 이동의 징후다. 그리고 NAT를 거치면 일반 출발지 주소 필드에 NAT 주소가 찍히므로, NAT 변환 이전의 실제 송신 호스트를 식별하려면 패킷 원본 출발지 주소 필드가 필요하다. 이 필드가 침해 호스트 특정의 열쇠다."
+  },
+  {
+    "id": "scs-c03-w4-d1-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 1,
+    "number": 1,
+    "prompt": "Web ACL의 규칙들이 평가되는 방식으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 규칙을 동시에 평가해 가장 엄격한 액션을 적용한다"
+      },
+      {
+        "label": "B",
+        "text": "규칙을 priority 오름차순으로 평가하며, terminating action(Allow/Block)을 만나면 즉시 평가를 종료한다"
+      },
+      {
+        "label": "C",
+        "text": "Block 규칙을 먼저, Allow 규칙을 나중에 평가한다"
+      },
+      {
+        "label": "D",
+        "text": "Default Action을 먼저 적용한 뒤 규칙으로 예외를 만든다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "WAF는 규칙을 priority 오름차순으로 순차 평가하고, Allow 또는 Block 같은 terminating action을 만나는 순간 평가를 멈춘다. Count와 (토큰 발급 후의) 비종료 액션은 다음 규칙으로 흐른다. 동시 평가(모든 규칙을 한꺼번에)는 동작 모델이 아니며, Block/Allow의 평가 순서가 고정돼 있지도 않다. Default Action은 어떤 규칙도 매칭되지 않았을 때 마지막에 적용된다."
+  },
+  {
+    "id": "scs-c03-w4-d1-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 1,
+    "number": 2,
+    "prompt": "SQLi 탐지 규칙을 만들었는데 공격자가 `%53ELECT`처럼 URL 인코딩으로 우회한다. 가장 적절한 보완은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "규칙을 Block에서 Count로 변경"
+      },
+      {
+        "label": "B",
+        "text": "Rate-based rule로 전환"
+      },
+      {
+        "label": "C",
+        "text": "FieldToMatch에 TextTransformation(URL_DECODE, HTML_ENTITY_DECODE, LOWERCASE)을 추가해 매칭 전 정규화"
+      },
+      {
+        "label": "D",
+        "text": "Geo match로 해당 국가를 차단"
+      }
+    ],
+    "answer": "C",
+    "explanation": "WAF는 매칭 *전에* TextTransformation을 적용해 페이로드를 정규화한다. URL_DECODE는 `%53`을 `S`로 디코딩하고, HTML_ENTITY_DECODE는 엔티티를, LOWERCASE는 대소문자 변형을 무력화한다. 이를 누락하면 인코딩·케이스 변형 우회에 취약하다. Count 전환은 차단을 약화시키고, rate-based나 geo match는 인코딩 우회와 무관한 다른 차원의 통제다."
+  },
+  {
+    "id": "scs-c03-w4-d1-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 1,
+    "number": 3,
+    "prompt": "로그인 엔드포인트(`/login`)에 대한 credential stuffing을 완화하려 한다. 가장 정밀한 설계는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "전체 Web ACL에 IP 집계 rate-based rule 하나만 적용"
+      },
+      {
+        "label": "B",
+        "text": "`/login`을 ScopeDownStatement로 지정하고, AggregateKey를 CUSTOM_KEYS(IP + username)로 구성한 rate-based rule"
+      },
+      {
+        "label": "C",
+        "text": "Default Action을 Block으로 바꾼다"
+      },
+      {
+        "label": "D",
+        "text": "CAPTCHA를 모든 경로에 적용"
+      }
+    ],
+    "answer": "B",
+    "explanation": "ScopeDownStatement로 속도 계산 대상을 `/login`에 한정하면 다른 정상 트래픽이 영향받지 않는다. CUSTOM_KEYS로 IP와 username을 함께 집계하면, 한 IP가 여러 계정을 돌려 시도하거나 분산 IP가 한 계정을 노리는 패턴을 모두 포착한다. 전역 IP 집계만으로는 분산 공격을 놓치고, 전체 경로 CAPTCHA는 정상 사용자 마찰을 과도하게 키운다. Default Block은 전체 앱을 막아버린다."
+  },
+  {
+    "id": "scs-c03-w4-d1-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 1,
+    "number": 4,
+    "prompt": "AWS Managed Rule Group을 새로 도입하면서 정상 트래픽 차단(false positive)을 사전에 측정하려 한다. 첫 단계로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "규칙 그룹을 OverrideAction을 Count로 설정해 매칭만 기록하고 차단하지 않게 한다"
+      },
+      {
+        "label": "B",
+        "text": "Web ACL Default Action을 Count로 설정"
+      },
+      {
+        "label": "C",
+        "text": "규칙 그룹을 일단 제거하고 나중에 추가"
+      },
+      {
+        "label": "D",
+        "text": "WCU를 최대로 올린다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "관리형 규칙 그룹 도입의 모범 패턴은 먼저 `OverrideAction: Count`로 그룹 전체를 카운트 모드로 두고 CloudWatch 메트릭·샘플 요청으로 어떤 정상 트래픽이 매칭되는지 측정한 뒤, 안전이 확인되면 Block(None override)으로 전환하는 것이다. Default Action에는 Count가 없으며(Allow/Block만), 그룹을 제거하면 측정 자체가 불가능하고, WCU 상향은 false positive와 무관하다."
+  },
+  {
+    "id": "scs-c03-w4-d1-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 1,
+    "number": 5,
+    "prompt": "CloudFront 배포에 WAF를 연결하려는데 Web ACL이 목록에 보이지 않는다. 가장 가능성 높은 원인은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Web ACL이 REGIONAL 스코프로 생성되어 CLOUDFRONT(us-east-1 글로벌) 스코프 대상에 붙지 않는다"
+      },
+      {
+        "label": "B",
+        "text": "WCU가 부족하다"
+      },
+      {
+        "label": "C",
+        "text": "로깅이 비활성화되어 있다"
+      },
+      {
+        "label": "D",
+        "text": "Default Action이 Allow다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "WAFv2 Web ACL은 스코프가 `CLOUDFRONT`(us-east-1에서 생성되는 글로벌 스코프)와 `REGIONAL`(ALB/API Gateway 등 리전 리소스)로 나뉜다. CloudFront에 연결하려면 반드시 CLOUDFRONT 스코프로 만들어야 하며, REGIONAL ACL은 CloudFront 대상 목록에 나타나지 않는다. WCU, 로깅, Default Action은 연결 가능 여부와 무관하다."
+  },
+  {
+    "id": "scs-c03-w4-d2-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 2,
+    "number": 1,
+    "prompt": "Shield Standard와 Shield Advanced의 차이로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Standard는 L7 공격을, Advanced는 L3/L4 공격만 막는다"
+      },
+      {
+        "label": "B",
+        "text": "Standard는 모든 고객에게 자동·무료로 L3/L4를 흡수하고, Advanced는 유료로 향상된 탐지·DRT 지원·비용 보호·WAF 통합을 추가한다"
+      },
+      {
+        "label": "C",
+        "text": "Standard는 CloudFront에만, Advanced는 EC2에만 적용된다"
+      },
+      {
+        "label": "D",
+        "text": "둘 다 동일하며 이름만 다르다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Shield Standard는 모든 AWS 고객에게 자동·무료로 적용되어 흔한 L3/L4 공격을 엣지에서 흡수한다. Shield Advanced는 유료 구독으로 더 큰 공격 대응, 애플리케이션 계층 통합, SRT(DRT) 지원, DDoS 비용 보호, 공격 가시성 메트릭을 더한다. 계층 분담이 반대로 서술된 보기나, 적용 리소스를 한정한 보기는 틀렸다."
+  },
+  {
+    "id": "scs-c03-w4-d2-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 2,
+    "number": 2,
+    "prompt": "애플리케이션이 HTTP GET flood(L7)를 받고 있다. 가장 직접적인 완화 수단은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Shield Standard에 의존"
+      },
+      {
+        "label": "B",
+        "text": "NACL로 포트 차단"
+      },
+      {
+        "label": "C",
+        "text": "WAF rate-based rule로 IP/키별 요청 한도를 초과하는 소스를 차단"
+      },
+      {
+        "label": "D",
+        "text": "EC2 인스턴스 타입을 키운다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "L7 HTTP flood는 트래픽 양이 작아도 애플리케이션 자원을 고갈시키므로 정밀 필터링이 필요하고, WAF rate-based rule이 IP/커스텀 키별 요청률을 측정해 한도 초과 소스를 동적으로 차단한다. Shield Standard는 L3/L4가 주력이라 L7을 정밀 차단하지 못하고, NACL은 7계층 요청률을 모르며, 인스턴스 확장은 비용만 키우고 근본 완화가 아니다."
+  },
+  {
+    "id": "scs-c03-w4-d2-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 2,
+    "number": 3,
+    "prompt": "DDoS 공격 중 Auto Scaling과 데이터 전송 급증으로 발생한 요금을 보전받고 싶다. 어떤 기능인가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Shield Advanced의 Cost Protection(DDoS 비용 보호)"
+      },
+      {
+        "label": "B",
+        "text": "AWS Budgets 알림"
+      },
+      {
+        "label": "C",
+        "text": "Savings Plans"
+      },
+      {
+        "label": "D",
+        "text": "Reserved Instances"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Shield Advanced는 보호 등록된 리소스가 검증된 DDoS 공격으로 인해 스케일 아웃·데이터 전송이 급증해 발생한 요금에 대해 서비스 크레딧(Cost Protection)을 제공한다. Budgets는 알림일 뿐 환급이 아니고, Savings Plans·Reserved Instances는 일반 사용 요금 할인 약정으로 공격 비용 보전과 무관하다."
+  },
+  {
+    "id": "scs-c03-w4-d2-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 2,
+    "number": 4,
+    "prompt": "CloudFront로 콘텐츠를 서빙 중인데 공격자가 오리진 ALB의 실제 IP로 직접 공격해 엣지 방어를 우회한다. 가장 적절한 대응 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Default Action을 Block으로 변경"
+      },
+      {
+        "label": "B",
+        "text": "오리진 Security Group을 CloudFront managed prefix list로 제한하고, CloudFront가 주입한 비밀 커스텀 헤더를 오리진/WAF가 검증해 직접 요청을 차단"
+      },
+      {
+        "label": "C",
+        "text": "CloudFront를 제거하고 ALB만 사용"
+      },
+      {
+        "label": "D",
+        "text": "Route 53 TTL을 0으로 설정"
+      }
+    ],
+    "answer": "B",
+    "explanation": "엣지 우회의 근본 원인은 오리진이 직접 접근 가능하다는 것이다. 오리진 Security Group을 `com.amazonaws.global.cloudfront.origin-facing` prefix list로 제한해 CloudFront IP만 허용하고, CloudFront가 추가하는 비밀 헤더(예: X-Origin-Verify)를 오리진/WAF에서 검증하면 엣지를 우회한 직접 요청을 거른다. CloudFront 제거(C)는 흡수 방어를 버리는 것이고, Default Block·TTL 변경은 오리진 노출 문제를 해결하지 못한다."
+  },
+  {
+    "id": "scs-c03-w4-d2-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 2,
+    "number": 5,
+    "prompt": "Shield Advanced에서 정상 트래픽 급증(예: 마케팅 캠페인)을 공격으로 오인해 과잉 완화하는 false positive를 줄이려 한다. 가장 효과적인 설정은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 알람 임계값을 최대로 올린다"
+      },
+      {
+        "label": "B",
+        "text": "보호 리소스에 Route 53 health check를 연동해 서비스 건강도 기반 탐지를 활성화한다"
+      },
+      {
+        "label": "C",
+        "text": "WAF를 비활성화한다"
+      },
+      {
+        "label": "D",
+        "text": "CloudFront를 끈다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Shield Advanced의 health-based detection은 Route 53 health check로 애플리케이션 건강도를 함께 판단한다. 트래픽이 늘어도 서비스가 건강하면 공격으로 단정하지 않아 정상 트래픽 급증에 대한 과잉 완화를 억제한다. 임계값을 무작정 올리면 진짜 공격을 놓치고, WAF·CloudFront 비활성화는 방어를 약화시키는 잘못된 방향이다."
+  },
+  {
+    "id": "scs-c03-w4-d3-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 3,
+    "number": 1,
+    "prompt": "AWS Network Firewall에서 stateless 규칙 그룹과 stateful 규칙 그룹의 차이로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "stateless는 연결 상태를 추적하고, stateful은 패킷 단위로만 본다"
+      },
+      {
+        "label": "B",
+        "text": "stateless는 5-tuple로 패킷을 독립 평가(연결 미추적)하고, stateful은 연결·세션을 추적하며 Suricata 규칙으로 도메인·시그니처 검사를 한다"
+      },
+      {
+        "label": "C",
+        "text": "둘 다 동일하며 성능 차이만 있다"
+      },
+      {
+        "label": "D",
+        "text": "stateful은 인바운드만, stateless는 아웃바운드만 검사한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "stateless 규칙 그룹은 각 패킷을 5-tuple(소스/대상 IP·포트, 프로토콜)로 독립 평가해 빠른 pass/drop/forward를 수행하며 연결 상태를 추적하지 않는다. stateful 규칙 그룹은 연결 테이블을 유지하고 Suricata 호환 규칙으로 SNI/Host 도메인, 프로토콜 이상, IPS 시그니처를 검사한다. 상태 추적 주체가 반대로 서술되거나 방향을 한정한 보기는 틀렸다."
+  },
+  {
+    "id": "scs-c03-w4-d3-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 3,
+    "number": 2,
+    "prompt": "도메인 허용 리스트(`example.com`만 아웃바운드 허용)를 stateful 규칙으로 만들었는데 다른 도메인이 여전히 나간다. 가장 가능성 높은 원인은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Suricata 문법 오류"
+      },
+      {
+        "label": "B",
+        "text": "workload subnet의 라우트 테이블이 트래픽을 firewall endpoint로 보내지 않아 검사 자체가 일어나지 않음"
+      },
+      {
+        "label": "C",
+        "text": "DNS Firewall이 비활성화됨"
+      },
+      {
+        "label": "D",
+        "text": "WCU 부족"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Network Firewall는 firewall endpoint를 통과하는 트래픽만 검사한다. 라우트 테이블이 workload subnet의 트래픽을 firewall subnet으로 향하게 하지 않으면 규칙이 아무리 정확해도 검사가 일어나지 않는다. 흔한 실수가 바로 라우팅 누락이다. 문법 오류라면 규칙 배포가 실패하고, DNS Firewall는 다른 계층이며, WCU는 WAF 개념이다."
+  },
+  {
+    "id": "scs-c03-w4-d3-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 3,
+    "number": 3,
+    "prompt": "Transit Gateway 허브와 중앙 inspection VPC로 모든 VPC 간 트래픽을 Network Firewall로 검사하려 한다. stateful 검사가 깨지지 않게 하려면 반드시 필요한 TGW 설정은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ECMP 비활성화"
+      },
+      {
+        "label": "B",
+        "text": "appliance mode 활성화 — 같은 흐름의 패킷이 항상 동일 AZ의 firewall endpoint로 가도록 보장"
+      },
+      {
+        "label": "C",
+        "text": "DNS 지원 비활성화"
+      },
+      {
+        "label": "D",
+        "text": "MTU를 9001로 설정"
+      }
+    ],
+    "answer": "B",
+    "explanation": "TGW appliance mode는 한 연결 흐름의 양방향 패킷이 항상 동일 AZ의 어플라이언스(firewall endpoint)로 라우팅되도록 해 대칭성을 보장한다. 이게 없으면 흐름이 AZ를 가로질러 비대칭이 되고, 연결 상태를 추적하는 stateful 검사가 응답 패킷을 알아보지 못해 오작동한다. ECMP·DNS·MTU 설정은 stateful 대칭성과 직접 관련이 없다."
+  },
+  {
+    "id": "scs-c03-w4-d3-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 3,
+    "number": 4,
+    "prompt": "멀웨어가 데이터를 DNS 질의의 서브도메인에 인코딩해 외부로 유출(DNS exfiltration)하는 것을 막으려 한다. 가장 적절한 서비스·기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Security Group으로 53번 포트 차단"
+      },
+      {
+        "label": "B",
+        "text": "Route 53 Resolver DNS Firewall로 알려진 악성/C2 도메인을 BLOCK하고 비정상 질의를 ALERT"
+      },
+      {
+        "label": "C",
+        "text": "CloudFront OAC"
+      },
+      {
+        "label": "D",
+        "text": "NACL 인바운드 거부"
+      }
+    ],
+    "answer": "B",
+    "explanation": "DNS Firewall는 VPC 내부의 DNS 질의를 Resolver 단계에서 도메인 기준으로 필터링하며, AWS 관리형 악성·봇넷 C2 도메인 목록 차단과 알림으로 DNS 터널링/exfiltration을 완화한다. 53번 포트를 전면 차단하면 정상 DNS도 막혀 서비스가 깨지고, OAC·NACL은 DNS 질의 내용 기반 통제가 아니다."
+  },
+  {
+    "id": "scs-c03-w4-d3-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 3,
+    "number": 5,
+    "prompt": "관리 부담 없이 VPC 아웃바운드 트래픽에 IPS(침입 방지)와 도메인 필터링을 적용하려 한다. 서드파티 어플라이언스 운영은 피하고 싶다. 가장 적절한 선택은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Gateway Load Balancer + 서드파티 방화벽 어플라이언스"
+      },
+      {
+        "label": "B",
+        "text": "AWS Network Firewall(관리형 stateful 규칙으로 IPS·도메인 필터링)"
+      },
+      {
+        "label": "C",
+        "text": "Security Group 규칙만 강화"
+      },
+      {
+        "label": "D",
+        "text": "AWS WAF를 VPC에 직접 연결"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AWS Network Firewall는 관리형 서비스로, Suricata 호환 stateful 규칙으로 IPS/IDS와 SNI/Host 도메인 필터링을 어플라이언스 운영 부담 없이 제공한다. GWLB(A)는 서드파티 어플라이언스를 삽입할 때 쓰는 방식으로 운영 부담이 따른다. Security Group은 IP/포트 수준이라 IPS·도메인 필터링을 못 하고, WAF는 HTTP(L7) 애플리케이션용이라 VPC 일반 트래픽 검사에 직접 붙이는 통제가 아니다."
+  },
+  {
+    "id": "scs-c03-w4-d4-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 4,
+    "number": 1,
+    "prompt": "S3를 오리진으로 하는 CloudFront 배포에서 사용자가 S3 버킷 URL로 직접 접근해 CloudFront(및 WAF)를 우회한다. 가장 적절한 대응은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 버킷을 공개로 두고 ACL만 조정"
+      },
+      {
+        "label": "B",
+        "text": "OAC를 구성하고 S3 버킷 정책에서 해당 CloudFront 배포(SourceArn)만 허용, Block Public Access는 켜둔다"
+      },
+      {
+        "label": "C",
+        "text": "S3 presigned URL로 전환"
+      },
+      {
+        "label": "D",
+        "text": "NACL로 S3 트래픽 차단"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Origin Access Control(OAC)은 CloudFront가 SigV4로 서명해 S3에 요청하게 하고, 버킷 정책에서 `AWS:SourceArn`으로 특정 배포만 허용하면 다른 경로의 직접 접근이 차단된다. Block Public Access를 켜둔 채 OAC로만 접근하게 하는 것이 정석이다. 공개 버킷·NACL은 우회를 못 막고, presigned URL은 오히려 엣지 통제를 건너뛴다."
+  },
+  {
+    "id": "scs-c03-w4-d4-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 4,
+    "number": 2,
+    "prompt": "구독자에게 `/premium/` 하위 수백 개 객체를 1시간 동안 접근 허용하되, 객체마다 별도 링크를 만들고 싶지 않다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudFront 서명 URL을 객체마다 생성"
+      },
+      {
+        "label": "B",
+        "text": "CloudFront 서명 쿠키(경로 패턴 와일드카드 정책)"
+      },
+      {
+        "label": "C",
+        "text": "S3 버킷을 공개로 전환"
+      },
+      {
+        "label": "D",
+        "text": "OAI 적용"
+      }
+    ],
+    "answer": "B",
+    "explanation": "서명 쿠키는 경로 패턴(`/premium/*`) 하위 다수 객체에 대한 시간 제한 접근을 단일 쿠키로 부여하므로 객체마다 URL을 만들 필요가 없다. 서명 URL은 단일 객체용이라 수백 개를 따로 만들어야 한다. 공개 전환은 통제를 없애고, OAI는 오리진 잠금 메커니즘이지 사용자 접근 통제가 아니다."
+  },
+  {
+    "id": "scs-c03-w4-d4-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 4,
+    "number": 3,
+    "prompt": "CloudFront 배포에 ACM 인증서를 연결하려는데 발급한 인증서가 목록에 나타나지 않는다. 가장 가능성 높은 원인은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "인증서가 us-east-1이 아닌 다른 리전에 발급되어 CloudFront에 붙지 않는다"
+      },
+      {
+        "label": "B",
+        "text": "DNS 검증을 사용했기 때문"
+      },
+      {
+        "label": "C",
+        "text": "와일드카드 도메인이라서"
+      },
+      {
+        "label": "D",
+        "text": "인증서가 무료라서"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CloudFront는 글로벌 엣지 서비스라서 연결할 ACM 인증서가 반드시 us-east-1(N. Virginia)에 있어야 한다. 다른 리전 인증서는 CloudFront 선택 목록에 나타나지 않는다. DNS 검증은 오히려 자동 갱신에 유리하고, 와일드카드·무료 여부는 연결 가능성과 무관하다."
+  },
+  {
+    "id": "scs-c03-w4-d4-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 4,
+    "number": 4,
+    "prompt": "ACM이 발급한 인증서의 보안상 핵심 특성으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "개인키를 다운로드해 EC2에 수동 설치할 수 있다"
+      },
+      {
+        "label": "B",
+        "text": "개인키를 추출할 수 없고 ACM이 통합 서비스(CloudFront/ALB/API Gateway)에 안전하게 배포·자동 갱신하므로 키 유출 경로가 제거된다"
+      },
+      {
+        "label": "C",
+        "text": "인증서가 1회용이라 매번 재발급해야 한다"
+      },
+      {
+        "label": "D",
+        "text": "HTTP에서만 사용 가능하다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "ACM 발급 인증서는 개인키가 사용자에게 노출되지 않으며, ACM이 지원 통합 서비스에 직접 배포하고 자동 갱신한다. 키를 직접 다루지 않으므로 유출·오용 경로가 구조적으로 사라지고, 자동 갱신으로 만료 장애도 줄인다. 그래서 EC2 직접 설치(개인키 필요)에는 ACM 발급 키를 쓸 수 없다는 점이 A를 틀리게 만든다."
+  },
+  {
+    "id": "scs-c03-w4-d4-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 4,
+    "number": 5,
+    "prompt": "엣지 경계를 한 줄로 정렬해 우회를 막으려 한다. WAF를 어디에 붙이고 오리진을 어떻게 보호해야 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "WAF를 ALB에만 붙이고 ALB를 공개로 둔다"
+      },
+      {
+        "label": "B",
+        "text": "WAF를 CloudFront(CLOUDFRONT scope)에 붙이고, 오리진 ALB는 CloudFront managed prefix list로 직접 접근을 차단하며 CloudFront 비밀 헤더를 검증한다"
+      },
+      {
+        "label": "C",
+        "text": "WAF를 끄고 Security Group만 사용"
+      },
+      {
+        "label": "D",
+        "text": "WAF를 CloudFront와 ALB 둘 다에 붙이되 오리진은 공개"
+      }
+    ],
+    "answer": "B",
+    "explanation": "경계가 엣지라면 WAF를 CloudFront(CLOUDFRONT scope)에 붙여 모든 진입을 엣지에서 평가하고, 오리진 ALB는 CloudFront prefix list로 직접 접근을 차단하고 CloudFront가 주입한 비밀 헤더(X-Origin-Verify)를 검증해 엣지 우회를 막는다. ALB만 보호하거나 오리진을 공개로 두면 우회 경로가 남고, WAF를 끄면 L7 방어가 사라진다."
+  },
+  {
+    "id": "scs-c03-w4-d5-q1",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 5,
+    "number": 1,
+    "prompt": "글로벌 웹앱이 SQLi 시도, 대규모 SYN flood, 로그인 무차별 대입을 동시에 받는다. 오리진은 ALB+EC2다. 가장 적절한 통합 설계는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ALB에만 WAF를 붙이고 EC2 인스턴스를 키운다"
+      },
+      {
+        "label": "B",
+        "text": "CloudFront 전면 배치 + CLOUDFRONT scope WAF(SQLi managed + `/login` rate-based) + Shield Advanced + 오리진 직접 접근 차단(prefix list/비밀 헤더)"
+      },
+      {
+        "label": "C",
+        "text": "NACL로 모든 의심 IP를 수동 차단"
+      },
+      {
+        "label": "D",
+        "text": "Route 53 가중치 라우팅으로 트래픽 분산만 한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "세 위협이 서로 다른 계층이므로 계층별 통제를 엣지에 결합해야 한다. CloudFront 전면 배치로 진입을 엣지로 모으고, WAF로 SQLi(L7 필터)와 로그인 브루트포스(rate-based)를, Shield Advanced로 SYN flood(L3/4 흡수)와 비용 보호를 처리하며, 오리진 직접 접근을 차단해 우회를 막는다. ALB만 보호하면 엣지 흡수가 없고, NACL 수동 차단·단순 트래픽 분산은 이 복합 위협을 막지 못한다."
+  },
+  {
+    "id": "scs-c03-w4-d5-q2",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 5,
+    "number": 2,
+    "prompt": "100개 계정의 워크로드 VPC 아웃바운드를 승인 도메인으로만 제한하고 IPS를 적용하며 중앙 운영하려 한다. 가장 적절한 아키텍처는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "VPC마다 Network Firewall를 개별 배치"
+      },
+      {
+        "label": "B",
+        "text": "Transit Gateway 허브 + 중앙 inspection VPC의 Network Firewall(도메인 allow-list + Suricata IPS) + TGW appliance mode + Firewall Manager 중앙 배포"
+      },
+      {
+        "label": "C",
+        "text": "Security Group으로 도메인을 화이트리스트"
+      },
+      {
+        "label": "D",
+        "text": "각 VPC에서 NACL로 IP 차단"
+      }
+    ],
+    "answer": "B",
+    "explanation": "다계정 중앙 검사는 TGW 허브 + 전용 inspection VPC에 Network Firewall를 두고, appliance mode로 stateful 대칭성을 보장하며 Firewall Manager로 정책을 중앙 배포하는 choke point 패턴이 정답이다. VPC별 개별 배치는 운영·비용이 비효율적이고, Security Group/NACL은 도메인(SNI/Host) 기반 통제나 IPS를 못 한다."
+  },
+  {
+    "id": "scs-c03-w4-d5-q3",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 5,
+    "number": 3,
+    "prompt": "L7 HTTP GET flood를 받는 상황에서 Shield Standard만으로 충분하다고 본 설계가 실패했다. 올바른 보완은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Shield Standard를 재활성화"
+      },
+      {
+        "label": "B",
+        "text": "WAF rate-based rule로 IP/커스텀 키별 요청률을 제한(필요 시 Shield Advanced 자동 L7 완화 결합)"
+      },
+      {
+        "label": "C",
+        "text": "인스턴스 타입을 키운다"
+      },
+      {
+        "label": "D",
+        "text": "Route 53 TTL을 낮춘다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Shield Standard는 L3/L4 흡수가 주력이라 L7 HTTP flood를 정밀 차단하지 못한다. L7 flood는 WAF rate-based rule이 IP/커스텀 키별 요청률을 측정해 차단하는 것이 직접 통제이며, Shield Advanced의 자동 애플리케이션 계층 완화와 결합할 수 있다. 인스턴스 확장·TTL 변경은 근본 완화가 아니다."
+  },
+  {
+    "id": "scs-c03-w4-d5-q4",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 5,
+    "number": 4,
+    "prompt": "CloudFront 서명 URL과 S3 presigned URL 중, 엣지의 WAF·Shield·OAC 보호를 모두 거치게 하려면 어느 것을 써야 하며 그 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 presigned URL — 더 간단하므로"
+      },
+      {
+        "label": "B",
+        "text": "CloudFront 서명 URL — 엣지에서 검증되어 WAF·Shield·캐싱·OAC 보호를 거치고, S3 presigned URL은 이 통제를 우회한다"
+      },
+      {
+        "label": "C",
+        "text": "둘 다 동일하다"
+      },
+      {
+        "label": "D",
+        "text": "어느 쪽도 WAF를 거치지 않는다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudFront 서명 URL은 엣지에서 검증되므로 WAF·Shield·엣지 캐싱·OAC 잠금을 모두 통과하는 경로에 놓인다. 반면 S3 presigned URL은 S3가 직접 서명·검증해 CloudFront 엣지 통제를 우회한다. 따라서 엣지 보호를 일관 적용하려면 CloudFront 서명 URL + OAC 구성이 정답이다."
+  },
+  {
+    "id": "scs-c03-w4-d5-q5",
+    "category": "aws-certs",
+    "slug": "scs-c03",
+    "week": 4,
+    "day": 5,
+    "number": 5,
+    "prompt": "다음 중 이번 주 통제 배치에서 \"함정\"으로 자주 지적되는 항목이 아닌 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "WAF Web ACL 스코프(CLOUDFRONT/REGIONAL)를 대상과 어긋나게 생성"
+      },
+      {
+        "label": "B",
+        "text": "OAC 설정 후 버킷 정책·KMS 키 정책을 갱신하지 않아 403"
+      },
+      {
+        "label": "C",
+        "text": "Network Firewall로 트래픽 라우팅을 firewall endpoint로 강제하지 않아 검사 미발생"
+      },
+      {
+        "label": "D",
+        "text": "ACM DNS 검증을 사용해 인증서를 자동 갱신 가능하게 구성"
+      }
+    ],
+    "answer": "D",
+    "explanation": "ACM의 DNS 검증은 함정이 아니라 *권장 모범*이다 — 도메인 소유를 지속 확인할 수 있어 완전 자동 갱신이 가능하다. 나머지는 모두 실제 빈출 함정이다: 스코프 불일치로 ACL 미연결, OAC 후 정책 미갱신 403, 라우팅 미구성으로 Network Firewall 검사 자체가 안 일어남. 함정이 *아닌* 것을 고르는 문제이므로 정답은 자동 갱신 구성이다."
+  },
+  {
     "id": "soa-c02-w1-d1-q1",
     "category": "aws-certs",
     "slug": "soa-c02",

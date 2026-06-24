@@ -43,12 +43,20 @@
       "order": 5
     },
     {
+      "slug": "scs-c03",
+      "code": "SCS-C03",
+      "level": "specialty",
+      "name": "Security - Specialty",
+      "weeks": 12,
+      "order": 6
+    },
+    {
       "slug": "linux-master-1",
       "code": "리눅스마스터 1급",
       "level": "professional",
       "name": "리눅스마스터 1급",
       "weeks": 14,
-      "order": 6
+      "order": 7
     }
   ]
 }

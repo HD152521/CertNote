@@ -2,7 +2,7 @@ import { DEFAULT_CATEGORY } from '@/lib/category';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
-import { getAllDays, getCertMeta, listCerts } from '@/lib/content';
+import { getAllDays, getCertMeta, listCerts, certLevelLabel } from '@/lib/content';
 import { getExamInfo } from '@/lib/examInfo';
 import ExamInfoCard from '@/components/ExamInfoCard';
 import { cn } from '@/lib/cn';
@@ -36,7 +36,7 @@ export default async function CertIndexPage({ params }: PageProps) {
           <span>{meta.code}</span>
         </div>
         <h1 className="text-3xl font-semibold tracking-tight">{meta.name}</h1>
-        <p className="text-sm text-fg-muted">{meta.weeks}주 · 총 {meta.dayCount}일 · <span className={meta.level === 'professional' ? 'text-accent' : ''}>{meta.level === 'professional' ? 'Professional' : 'Associate'}</span></p>
+        <p className="text-sm text-fg-muted">{meta.weeks}주 · 총 {meta.dayCount}일 · <span className={meta.level === 'professional' || meta.level === 'specialty' ? 'text-accent' : ''}>{certLevelLabel(meta.level)}</span></p>
         {firstDay && (
           <Link href={firstDay.href}
             className={cn('inline-flex items-center gap-2 rounded-md border border-border bg-bg-subtle', 'px-3 py-1.5 text-sm font-medium transition hover:border-border-strong')}>

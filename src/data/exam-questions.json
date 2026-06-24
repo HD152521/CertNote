@@ -8910,6 +8910,1761 @@
     "explanation": "SCT는 이기종 스키마·PL/SQL을 변환하고 평가 보고서로 변환 불가 항목을 사전 식별하며, DMS는 전체 적재+CDC로 원본 변경분을 지속 복제해 분 단위 컷오버를 가능하게 해 두 도구가 함께 요구를 충족한다. Oracle Data Pump로 익스포트/임포트하는 방식은 이기종 변환을 못 하고 지속 복제를 제공하지 못한다. 서비스를 중단해 CSV로 내보내 스프레드시트로 변환한 뒤 한 번에 덤프·복원하는 방식은 다운타임·PL/SQL 변환·지속 복제·정합성 모두에 부적합하다."
   },
   {
+    "id": "exam-scs-c03-1",
+    "slug": "scs-c03",
+    "domain": "위협 탐지 및 인시던트 대응",
+    "number": 1,
+    "prompt": "한 금융 기업이 AWS Organizations로 200개 이상의 계정을 운영한다. 보안팀은 모든 계정에서 암호화폐 채굴, 손상된 자격 증명, 비정상 API 호출 같은 위협을 중앙에서 지속적으로 탐지하고, 신규 계정이 추가될 때 자동으로 탐지가 활성화되기를 원한다. 운영 부담을 최소화하면서 이 요구사항을 가장 잘 충족하는 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "위임 관리자 계정에서 GuardDuty를 활성화하고 조직 자동 등록(auto-enable)을 켜서 모든 기존 및 신규 계정을 멤버로 등록한다"
+      },
+      {
+        "label": "B",
+        "text": "각 계정에서 VPC 흐름 로그와 CloudTrail을 활성화하고 중앙 계정의 Lambda 함수가 로그를 분석해 위협을 식별하게 한다"
+      },
+      {
+        "label": "C",
+        "text": "각 계정에 Amazon Inspector를 배포하고 EventBridge로 결과를 중앙 계정에 집계한다"
+      },
+      {
+        "label": "D",
+        "text": "Security Hub를 조직 전체에 활성화하고 CIS 벤치마크 표준을 통해 위협을 탐지한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "GuardDuty를 위임 관리자에 두고 조직 자동 등록을 켜면 기존 계정뿐 아니라 신규 계정도 멤버로 자동 등록되어 채굴, 손상 자격 증명, 비정상 API 호출 등 위협 인텔리전스 기반 탐지가 중앙에서 지속된다. 흐름 로그와 CloudTrail을 Lambda로 분석하는 방식은 위협 탐지 로직을 직접 개발·유지해야 하므로 운영 부담이 크다. Inspector는 EC2/컨테이너 취약점 및 네트워크 노출 평가에 특화되어 런타임 위협 탐지에는 맞지 않는다. Security Hub와 CIS 벤치마크는 구성 준수 점검 및 결과 집계용이지 행위 기반 위협 탐지 엔진이 아니다."
+  },
+  {
+    "id": "exam-scs-c03-2",
+    "slug": "scs-c03",
+    "domain": "위협 탐지 및 인시던트 대응",
+    "number": 2,
+    "prompt": "GuardDuty가 한 EC2 인스턴스에서 알려진 명령 제어(C2) 도메인으로의 통신을 탐지했다. 보안팀은 추가 데이터 유출을 막으면서도 메모리와 휘발성 상태를 보존해 포렌식 조사를 수행해야 한다. 가장 적절한 초기 대응 순서는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "인스턴스를 즉시 종료하고 EBS 스냅샷을 생성한 뒤 새 인스턴스에서 복원한다"
+      },
+      {
+        "label": "B",
+        "text": "모든 인바운드/아웃바운드를 차단하는 격리 보안 그룹을 적용하고, 인스턴스를 중지하지 않은 채 EBS 스냅샷과 메모리 덤프를 수집한 후 포렌식 계정에서 분석한다"
+      },
+      {
+        "label": "C",
+        "text": "인스턴스의 IAM 역할을 제거하고 그대로 두어 트래픽을 계속 모니터링한다"
+      },
+      {
+        "label": "D",
+        "text": "Auto Scaling 그룹에서 인스턴스를 분리하고 새 인스턴스를 즉시 시작한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "격리 보안 그룹으로 모든 트래픽을 차단하면 C2 통신과 데이터 유출이 멈추는 동시에 인스턴스를 중지하지 않아 메모리 등 휘발성 상태가 보존되며, EBS 스냅샷과 메모리 덤프를 별도 포렌식 계정에서 분석해 블라스트 반경을 격리할 수 있다. 즉시 종료는 메모리 증거를 소실시킨다. IAM 역할만 제거하고 트래픽을 방치하면 유출이 계속될 수 있다. Auto Scaling에서 분리만 하는 것도 네트워크 격리를 보장하지 못해 유출을 막지 못한다."
+  },
+  {
+    "id": "exam-scs-c03-3",
+    "slug": "scs-c03",
+    "domain": "위협 탐지 및 인시던트 대응",
+    "number": 3,
+    "prompt": "보안팀은 GuardDuty의 특정 유형 결과(예: 알려진 신뢰 IP에서의 정상 스캐닝)에 대해 반복 알림을 줄이고, 심각도 높은 결과는 자동으로 SecOps의 Slack과 티켓 시스템으로 전달되게 하려 한다. 운영 부담이 가장 적은 구현은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "GuardDuty 결과를 S3로 내보내고 Athena 쿼리를 주기적으로 실행해 사람이 검토한다"
+      },
+      {
+        "label": "B",
+        "text": "신뢰 IP 목록을 GuardDuty에 등록하면 모든 알림이 자동으로 적절히 분류되므로 추가 구성이 필요 없다"
+      },
+      {
+        "label": "C",
+        "text": "GuardDuty 억제 규칙(suppression rule)으로 저신호 결과를 자동 보관하고, EventBridge 규칙으로 심각도 임계값 이상 결과를 SNS와 Lambda로 라우팅한다"
+      },
+      {
+        "label": "D",
+        "text": "모든 결과를 Security Hub로 보내고 Security Hub Insights에서 수동으로 우선순위를 매긴다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "억제 규칙은 저신호 결과를 자동으로 보관(archive)해 노이즈를 줄이고, EventBridge에서 finding severity 필드로 필터링해 고심각도 결과만 SNS/Lambda로 보내면 Slack·티켓 통합을 코드 없이 자동화할 수 있어 운영 부담이 가장 적다. S3+Athena 수동 검토는 실시간성과 자동화가 없다. 신뢰 IP 목록은 해당 출처를 탐지 대상에서 제외할 뿐 심각도 기반 라우팅이나 억제를 대신하지 못한다. Security Hub Insights 수동 우선순위화는 자동 전달을 제공하지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-4",
+    "slug": "scs-c03",
+    "domain": "위협 탐지 및 인시던트 대응",
+    "number": 4,
+    "prompt": "한 회사는 침해 사고 발생 시 손상된 IAM 사용자의 액세스 키를 자동으로 비활성화하고, 관련 세션을 무효화하며, 보안팀에 통지하는 자동 대응을 구축하려 한다. GuardDuty가 자격 증명 손상 결과를 생성할 때 트리거되어야 한다. 가장 적절한 아키텍처는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Macie가 자격 증명 노출을 탐지하면 SCP를 자동 적용해 계정 전체 액세스를 차단한다"
+      },
+      {
+        "label": "B",
+        "text": "CloudTrail 로그를 Lambda가 5분마다 폴링해 의심 활동을 찾고 키를 비활성화한다"
+      },
+      {
+        "label": "C",
+        "text": "AWS Config 규칙으로 손상된 키를 탐지하고 자동 교정 작업으로 사용자를 삭제한다"
+      },
+      {
+        "label": "D",
+        "text": "EventBridge 규칙이 GuardDuty 결과를 받아 Lambda를 호출하고, Lambda가 액세스 키를 비활성화하고 IAM 정책으로 세션을 무효화한 뒤 SNS로 통지한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "EventBridge가 GuardDuty 결과를 near-real-time으로 받아 Lambda를 트리거하고, Lambda가 액세스 키를 비활성화한 뒤 AWSRevokeOlderSessions 같은 정책으로 기존 세션을 무효화하고 SNS로 통지하는 흐름이 자동 대응 요구를 정확히 충족한다. CloudTrail 폴링은 지연이 크고 GuardDuty의 위협 인텔리전스를 활용하지 못한다. Config는 구성 준수 평가용이며 사용자 삭제는 과도하고 증거를 소실시킨다. Macie는 데이터(S3) 민감정보 탐지용이라 자격 증명 손상 트리거에 부적합하고 계정 전체 차단은 블라스트 반경이 지나치게 크다."
+  },
+  {
+    "id": "exam-scs-c03-5",
+    "slug": "scs-c03",
+    "domain": "위협 탐지 및 인시던트 대응",
+    "number": 5,
+    "prompt": "여러 계정의 GuardDuty, Inspector, Macie, IAM Access Analyzer 결과를 한 곳에서 통합 보고 표준 형식으로 보고, 조직 차원의 보안 점수와 우선순위를 매기려 한다. 또한 결과 중복 제거가 필요하다. 가장 적절한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Security Hub를 위임 관리자에 활성화하고 통합(integration)으로 모든 서비스 결과를 ASFF 형식으로 수집·집계한다"
+      },
+      {
+        "label": "B",
+        "text": "각 서비스의 결과를 개별 S3 버킷에 모아 QuickSight 대시보드로 시각화한다"
+      },
+      {
+        "label": "C",
+        "text": "CloudWatch 대시보드에 각 서비스의 지표를 모아 표시한다"
+      },
+      {
+        "label": "D",
+        "text": "Detective를 활성화해 모든 보안 서비스 결과를 단일 그래프로 시각화한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Security Hub는 GuardDuty·Inspector·Macie·IAM Access Analyzer 등의 결과를 AWS Security Finding Format(ASFF)으로 표준화해 수집하고, 보안 점수·우선순위·중복 제거를 제공하며 위임 관리자에서 조직 전체를 집계할 수 있어 요구에 정확히 부합한다. S3+QuickSight나 CloudWatch 대시보드는 표준화·점수화·중복 제거 기능을 직접 구현해야 한다. Detective는 결과 통합 보고가 아니라 근본 원인 조사·시각적 분석에 특화되어 있다."
+  },
+  {
+    "id": "exam-scs-c03-6",
+    "slug": "scs-c03",
+    "domain": "위협 탐지 및 인시던트 대응",
+    "number": 6,
+    "prompt": "보안 분석가가 GuardDuty 결과를 받은 뒤 'IAM 사용자가 어떤 API를 언제 호출했고, 어떤 리소스에 접근했으며, 시간에 따라 행위가 어떻게 변했는지'를 신속히 시각적으로 조사해 근본 원인을 파악하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Athena로 CloudTrail 로그를 직접 쿼리한다"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Detective로 CloudTrail·VPC 흐름 로그·GuardDuty 데이터를 그래프 모델로 분석한다"
+      },
+      {
+        "label": "C",
+        "text": "CloudWatch Logs Insights로 흐름 로그를 쿼리한다"
+      },
+      {
+        "label": "D",
+        "text": "Config 타임라인으로 리소스 변경 이력을 확인한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Detective는 CloudTrail, VPC 흐름 로그, GuardDuty 데이터를 자동으로 수집·연결해 엔터티별 행위 그래프와 시간 기반 베이스라인을 제공하므로 누가 무엇을 언제 했는지의 근본 원인 조사를 가장 빠르게 시각화한다. Athena와 CloudWatch Logs Insights는 강력하지만 분석가가 직접 쿼리를 작성하고 데이터를 연결해야 한다. Config 타임라인은 리소스 구성 변경 이력만 보여줘 API 행위·네트워크 흐름 상관 분석에는 부족하다."
+  },
+  {
+    "id": "exam-scs-c03-7",
+    "slug": "scs-c03",
+    "domain": "위협 탐지 및 인시던트 대응",
+    "number": 7,
+    "prompt": "한 조직은 인시던트 대응을 사전에 정의된 자동화 런북으로 일관되게 실행하고, 격리·증거 수집·통지 단계를 사람이 승인 게이트와 함께 오케스트레이션하기를 원한다. 추가로 단계별 실행 이력을 감사 가능하게 남겨야 한다. 가장 적합한 방식은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 단계를 별도 Lambda로 만들어 SNS로 연결한다"
+      },
+      {
+        "label": "B",
+        "text": "운영자가 문서화된 절차를 콘솔에서 수동으로 따른다"
+      },
+      {
+        "label": "C",
+        "text": "Systems Manager Automation 문서 또는 Step Functions로 런북을 정의하고 수동 승인 단계와 실행 로그를 포함한다"
+      },
+      {
+        "label": "D",
+        "text": "EventBridge 규칙만으로 모든 대응 단계를 직접 연결한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Systems Manager Automation 또는 Step Functions는 다단계 워크플로를 선언적으로 정의하고 수동 승인 게이트, 분기, 재시도, 단계별 실행 이력을 제공해 일관되고 감사 가능한 인시던트 런북에 적합하다. Lambda+SNS 연결은 상태 관리·승인 게이트·이력을 직접 구현해야 한다. 콘솔 수동 절차는 일관성과 감사성이 떨어진다. EventBridge 규칙만으로는 순차 오케스트레이션과 승인 게이트를 표현하기 어렵다."
+  },
+  {
+    "id": "exam-scs-c03-8",
+    "slug": "scs-c03",
+    "domain": "위협 탐지 및 인시던트 대응",
+    "number": 8,
+    "prompt": "보안팀은 EC2 인스턴스에 운영체제·애플리케이션 취약점(CVE)과 의도치 않은 네트워크 노출이 새로 발견되면 지속적으로 자동 평가되어 알림을 받기를 원한다. 에이전트 설치 부담을 최소화하면서 컨테이너 이미지(ECR)도 함께 스캔해야 한다. 가장 적합한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Config 규칙으로 패치 수준을 평가한다"
+      },
+      {
+        "label": "B",
+        "text": "GuardDuty를 활성화해 인스턴스 취약점을 탐지한다"
+      },
+      {
+        "label": "C",
+        "text": "주기적으로 nmap과 오픈소스 스캐너를 실행하는 cron 작업을 각 인스턴스에 둔다"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Inspector를 활성화해 EC2와 ECR을 지속 자동 스캔하고 결과를 Security Hub로 보낸다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Amazon Inspector는 SSM 에이전트를 활용해 EC2의 OS·애플리케이션 CVE를 지속적으로 자동 평가하고 네트워크 도달성 분석으로 의도치 않은 노출을 찾으며 ECR 컨테이너 이미지 스캔도 지원하므로 요구에 정확히 부합한다. GuardDuty는 행위 기반 위협 탐지이지 CVE 취약점 스캐너가 아니다. 자체 cron 스캐너는 유지·확장 부담이 크다. Config 규칙은 구성 준수 평가용으로 CVE 식별과 네트워크 도달성 분석을 제공하지 못한다."
+  },
+  {
+    "id": "exam-scs-c03-9",
+    "slug": "scs-c03",
+    "domain": "위협 탐지 및 인시던트 대응",
+    "number": 9,
+    "prompt": "보안팀은 GuardDuty 고심각도 결과가 생성되면 자동으로 두 가지 즉각 조치를 취하려 한다. 사람의 개입을 최소화하면서 near-real-time으로 대응해야 한다. 가장 적절한 조치 두 가지를 고르시오. (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "EventBridge 규칙으로 GuardDuty 결과를 받아 Lambda를 트리거해 격리 보안 그룹 적용 등 자동 대응을 실행한다"
+      },
+      {
+        "label": "B",
+        "text": "GuardDuty 결과를 S3로 내보내 분기별로 사람이 검토한다"
+      },
+      {
+        "label": "C",
+        "text": "EventBridge에서 결과를 SNS 주제로 보내 SecOps에 즉시 통지한다"
+      },
+      {
+        "label": "D",
+        "text": "모든 결과를 무시하고 GuardDuty 콘솔에서만 수동 확인한다"
+      }
+    ],
+    "answer": "AC",
+    "explanation": "EventBridge로 결과를 받아 Lambda를 트리거하면 격리 등 자동 교정을 near-real-time으로 실행할 수 있고, 동시에 SNS 통지로 SecOps가 즉시 인지하게 해 자동 대응과 통지를 함께 충족한다. S3로 내보내 분기별 검토하는 방식은 지연이 커 즉각 대응이 불가능하다. 콘솔에서만 수동 확인하는 방식은 자동화·즉시성이 전혀 없다."
+  },
+  {
+    "id": "exam-scs-c03-10",
+    "slug": "scs-c03",
+    "domain": "보안 로깅 및 모니터링",
+    "number": 10,
+    "prompt": "규제 기관은 모든 계정의 관리 이벤트와 데이터 이벤트가 변경 불가능하게 7년간 보존되고, 단일 멤버 계정 관리자가 로그를 삭제하거나 비활성화할 수 없어야 한다고 요구한다. 가장 안전한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "조직 트레일을 관리 계정에서 생성해 중앙 S3 버킷으로 전송하고, S3 Object Lock(규정 준수 모드)과 KMS 암호화, MFA Delete를 적용한다"
+      },
+      {
+        "label": "B",
+        "text": "각 계정에서 개별 CloudTrail 추적을 만들어 로컬 S3 버킷에 저장한다"
+      },
+      {
+        "label": "C",
+        "text": "CloudWatch Logs에만 이벤트를 저장하고 보존 기간을 7년으로 설정한다"
+      },
+      {
+        "label": "D",
+        "text": "멤버 계정마다 CloudTrail을 켜고 SCP로 멤버가 추적을 끄지 못하게만 한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "조직 트레일은 모든 멤버 계정의 이벤트를 중앙 버킷에 수집하며 멤버 관리자가 끌 수 없고, S3 Object Lock 규정 준수 모드는 보존 기간 내 삭제·덮어쓰기를 루트 계정조차 막아 변경 불가능 보존을 보장한다. 계정별 로컬 버킷은 해당 계정 관리자가 삭제할 위험과 중앙 통제 부재 문제가 있다. CloudWatch Logs만으로는 변경 불가능 장기 보존 보장이 약하고 비용이 높다. SCP만으로 비활성화를 막아도 S3 객체 자체의 변경 불가능성은 보장되지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-11",
+    "slug": "scs-c03",
+    "domain": "보안 로깅 및 모니터링",
+    "number": 11,
+    "prompt": "보안팀은 누군가 CloudTrail 추적을 중지하거나 삭제하거나 KMS 키 정책을 변경하면 5분 이내에 자동으로 탐지·통지받기를 원한다. 운영 부담을 최소화하는 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3에 CloudTrail 로그를 저장하고 매일 Athena 쿼리로 변경 이벤트를 검색한다"
+      },
+      {
+        "label": "B",
+        "text": "CloudTrail을 CloudWatch Logs로 전송하고 StopLogging·DeleteTrail·PutKeyPolicy 이벤트에 대한 지표 필터와 경보를 만들어 SNS로 통지한다"
+      },
+      {
+        "label": "C",
+        "text": "Config 규칙으로 CloudTrail 상태를 매일 평가한다"
+      },
+      {
+        "label": "D",
+        "text": "GuardDuty가 모든 CloudTrail 변경을 자동 탐지하므로 별도 구성은 불필요하다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudTrail을 CloudWatch Logs로 보내고 StopLogging, DeleteTrail, PutKeyPolicy 이벤트에 지표 필터와 경보를 설정하면 거의 실시간으로 SNS 통지가 가능해 5분 이내 탐지 요구를 충족하며 관리형 구성요소만 사용해 부담이 적다. 일일 Athena 쿼리는 탐지 지연이 하루에 달한다. Config의 일일 평가도 5분 요구를 만족하지 못한다. GuardDuty는 일부 CloudTrail 비활성화를 탐지하지만 모든 KMS 정책 변경을 포괄하지 않으며 사용자 정의 5분 통지를 보장하지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-12",
+    "slug": "scs-c03",
+    "domain": "보안 로깅 및 모니터링",
+    "number": 12,
+    "prompt": "민감한 S3 버킷에 대한 객체 수준 읽기/쓰기 접근을 누가 했는지 감사해야 한다. 기본 CloudTrail로는 객체 수준 활동이 기록되지 않는 상태다. 가장 적절한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 서버 액세스 로깅만 활성화한다"
+      },
+      {
+        "label": "B",
+        "text": "VPC 흐름 로그를 활성화해 S3 접근을 추적한다"
+      },
+      {
+        "label": "C",
+        "text": "해당 버킷에 대해 CloudTrail 데이터 이벤트(S3 객체 수준)를 활성화해 객체 GET/PUT 호출을 기록한다"
+      },
+      {
+        "label": "D",
+        "text": "Macie를 활성화해 객체 접근을 기록한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "CloudTrail 데이터 이벤트를 해당 버킷에 활성화하면 객체 수준 GET/PUT API 호출이 호출자 자격 증명과 함께 기록되어 누가 무엇에 접근했는지 감사할 수 있다. S3 서버 액세스 로깅은 best-effort이고 IAM 주체 매핑이 약해 감사 신뢰도가 낮다. VPC 흐름 로그는 IP·포트 수준 네트워크 메타데이터만 제공해 객체 접근 주체를 식별하지 못한다. Macie는 민감 데이터 분류용이며 객체 접근 호출 감사를 대신하지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-13",
+    "slug": "scs-c03",
+    "domain": "보안 로깅 및 모니터링",
+    "number": 13,
+    "prompt": "한 회사는 여러 계정·리전의 CloudTrail, VPC 흐름 로그, Route 53 Resolver 쿼리 로그를 단일 중앙 보안 데이터 레이크로 정규화·집계해 SQL로 분석하고 SIEM과 통합하려 한다. 운영 부담을 최소화하기 위한 조치 두 가지를 고르시오. (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Security Lake를 활성화해 다양한 소스를 OCSF 표준 스키마로 자동 정규화·집계한다"
+      },
+      {
+        "label": "B",
+        "text": "Security Lake 데이터를 Athena로 쿼리하고 구독자(subscriber)로 SIEM을 연결한다"
+      },
+      {
+        "label": "C",
+        "text": "각 로그 소스를 개별 S3 버킷에 모으고 Glue ETL 작업을 직접 작성해 정규화한다"
+      },
+      {
+        "label": "D",
+        "text": "모든 로그를 CloudWatch Logs로 보내고 Logs Insights로만 대규모 분석한다"
+      }
+    ],
+    "answer": "AB",
+    "explanation": "Security Lake는 다양한 로그 소스를 OCSF 표준 스키마로 자동 정규화해 중앙 데이터 레이크에 집계하고, 그 데이터를 Athena로 쿼리하거나 구독자로 SIEM을 연결해 통합할 수 있어 운영 부담이 가장 적다. 개별 버킷+자체 Glue ETL은 정규화 로직을 직접 유지해야 한다. CloudWatch Logs Insights만으로 대규모 다중 소스 데이터 레이크·SIEM 통합을 처리하는 것은 비용·확장성이 불리하다."
+  },
+  {
+    "id": "exam-scs-c03-14",
+    "slug": "scs-c03",
+    "domain": "보안 로깅 및 모니터링",
+    "number": 14,
+    "prompt": "CloudTrail 로그가 저장되는 S3 버킷을 KMS로 암호화하려 한다. CloudTrail이 로그를 쓸 수 있어야 하고, 보안팀만 로그를 복호화해 읽을 수 있어야 하며, 키 관리 권한과 사용 권한이 분리되어야 한다. 가장 적절한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SSE-S3로 버킷을 암호화하고 버킷 정책으로 접근을 제한한다"
+      },
+      {
+        "label": "B",
+        "text": "버킷을 암호화하지 않고 IAM 정책으로만 읽기 권한을 제한한다"
+      },
+      {
+        "label": "C",
+        "text": "AWS 관리형 키(aws/s3)로 암호화하고 IAM 정책으로 복호화를 제한한다"
+      },
+      {
+        "label": "D",
+        "text": "고객 관리형 KMS 키(SSE-KMS)를 사용하고, 키 정책에서 CloudTrail 서비스 주체에 암호화 권한, 보안팀에 복호화 권한, 별도 관리자에 키 관리 권한을 부여한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "고객 관리형 KMS 키를 쓰면 키 정책으로 CloudTrail 서비스 주체의 암호화(kms:GenerateDataKey), 보안팀의 복호화(kms:Decrypt), 관리자의 키 수명주기 관리를 각각 분리해 최소 권한과 직무 분리를 구현할 수 있다. SSE-S3는 키 정책 세분화나 권한 분리를 제공하지 못한다. AWS 관리형 키는 키 정책을 직접 편집할 수 없어 CloudTrail 서비스 주체와 보안팀의 세분화된 권한 분리가 불가능하다. 미암호화는 저장 시 암호화 요구와 직무 분리를 충족하지 못한다."
+  },
+  {
+    "id": "exam-scs-c03-15",
+    "slug": "scs-c03",
+    "domain": "보안 로깅 및 모니터링",
+    "number": 15,
+    "prompt": "운영팀은 프로덕션 VPC 내에서 거부된 트래픽(REJECT)과 특정 인스턴스로의 비정상적 인바운드 연결 패턴을 분석하려 한다. 가장 비용 효율적이고 직접적인 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "VPC 흐름 로그를 활성화해 S3에 저장하고 Athena로 REJECT 레코드와 연결 패턴을 쿼리한다"
+      },
+      {
+        "label": "B",
+        "text": "각 인스턴스에 패킷 캡처 에이전트를 설치해 모든 트래픽을 기록한다"
+      },
+      {
+        "label": "C",
+        "text": "CloudTrail 데이터 이벤트로 네트워크 트래픽을 분석한다"
+      },
+      {
+        "label": "D",
+        "text": "Traffic Mirroring으로 전체 패킷을 미러링해 분석 어플라이언스로 보낸다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "VPC 흐름 로그는 허용/거부 결정(action)과 소스·목적지·포트 메타데이터를 기록하므로 REJECT 분석과 비정상 인바운드 패턴 식별에 적합하고, S3+Athena로 저렴하게 SQL 쿼리할 수 있다. 인스턴스별 패킷 캡처 에이전트는 운영 부담과 비용이 크다. CloudTrail 데이터 이벤트는 API 호출 기록이지 네트워크 흐름이 아니다. Traffic Mirroring은 전체 페이로드가 필요한 심층 패킷 분석용으로 단순 REJECT 통계 목적에는 과도하고 비싸다."
+  },
+  {
+    "id": "exam-scs-c03-16",
+    "slug": "scs-c03",
+    "domain": "보안 로깅 및 모니터링",
+    "number": 16,
+    "prompt": "한 회사는 Lambda 함수와 API Gateway의 보안 관련 지표(인증 실패율, 4xx/5xx 급증)에 대해 임계값 기반 경보와 이상 탐지를 구현하려 한다. 정상 트래픽 패턴이 시간대마다 달라 고정 임계값만으로는 오탐이 많다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudWatch 정적 임계값 경보만 사용한다"
+      },
+      {
+        "label": "B",
+        "text": "CloudWatch 이상 탐지(anomaly detection) 밴드 기반 경보를 사용해 학습된 정상 범위를 벗어나는 지표에 통지한다"
+      },
+      {
+        "label": "C",
+        "text": "로그를 매시간 수동 검토한다"
+      },
+      {
+        "label": "D",
+        "text": "GuardDuty로 API Gateway 인증 실패를 탐지한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudWatch 이상 탐지는 지표의 시간대별 패턴을 학습해 동적 밴드를 만들고 그 범위를 벗어날 때 경보하므로 시간대 변동이 큰 트래픽에서 오탐을 줄이며 인증 실패율·4xx/5xx 급증 탐지에 적합하다. 정적 임계값만으로는 시간대 변동 때문에 오탐이 많다. 수동 검토는 실시간성과 일관성이 없다. GuardDuty는 계정·인프라 위협 탐지에 특화되어 애플리케이션 지표의 동적 임계 경보를 제공하지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-17",
+    "slug": "scs-c03",
+    "domain": "보안 로깅 및 모니터링",
+    "number": 17,
+    "prompt": "보안팀은 EC2 인스턴스의 OS 수준 로그(auth.log, syslog)와 애플리케이션 로그를 중앙에서 수집·검색하고, 인스턴스가 침해되어도 로그가 변조·삭제되지 않도록 인스턴스 외부에 안전하게 보존하려 한다. 가장 적절한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "인스턴스 로컬 디스크에 로그를 보관하고 정기적으로 백업한다"
+      },
+      {
+        "label": "B",
+        "text": "인스턴스에서 SSH로 주기적으로 로그를 수동 다운로드한다"
+      },
+      {
+        "label": "C",
+        "text": "CloudWatch Agent로 OS·앱 로그를 CloudWatch Logs에 스트리밍하고, 적절한 보존 기간과 KMS 암호화 및 변조 방지를 위한 중앙 로그 계정 격리를 적용한다"
+      },
+      {
+        "label": "D",
+        "text": "VPC 흐름 로그로 OS 로그를 대체한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "CloudWatch Agent가 OS·애플리케이션 로그를 실시간으로 CloudWatch Logs에 스트리밍하면 인스턴스가 침해돼도 로그는 외부에 보존되어 변조·삭제로부터 보호되며, KMS 암호화와 중앙 로그 계정 격리로 무결성을 강화할 수 있다. 로컬 디스크 보관은 침해 시 변조·삭제에 노출된다. 수동 SSH 다운로드는 실시간성·일관성·무결성이 모두 약하다. VPC 흐름 로그는 네트워크 메타데이터일 뿐 OS·앱 로그를 대체할 수 없다."
+  },
+  {
+    "id": "exam-scs-c03-18",
+    "slug": "scs-c03",
+    "domain": "보안 로깅 및 모니터링",
+    "number": 18,
+    "prompt": "규정에 따라 KMS 키로 수행된 모든 암호화/복호화 작업과 누가 어떤 데이터 키를 요청했는지 감사해야 한다. 또한 키 사용량이 비정상적으로 급증하면 알림이 필요하다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Config 규칙으로 키 사용량을 평가한다"
+      },
+      {
+        "label": "B",
+        "text": "KMS 키 정책에 로깅 설정을 추가한다"
+      },
+      {
+        "label": "C",
+        "text": "Macie로 키 사용을 모니터링한다"
+      },
+      {
+        "label": "D",
+        "text": "CloudTrail이 KMS API 호출(Encrypt, Decrypt, GenerateDataKey 등)을 기록하게 하고 CloudWatch 지표 필터로 비정상 사용량 경보를 만든다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "CloudTrail은 Encrypt·Decrypt·GenerateDataKey 등 KMS API 호출을 호출자 신원과 키 정보와 함께 기록하므로 키 사용 감사를 충족하고, CloudWatch 지표 필터로 호출 빈도 급증에 경보를 설정할 수 있다. KMS 키 정책에는 로깅 설정 항목 자체가 없다. Macie는 S3 데이터 분류용으로 키 사용 감사를 제공하지 않는다. Config는 키 구성 준수를 평가할 뿐 개별 암호화·복호화 호출 감사나 실시간 사용량 경보를 제공하지 못한다."
+  },
+  {
+    "id": "exam-scs-c03-19",
+    "slug": "scs-c03",
+    "domain": "관리 및 보안 거버넌스",
+    "number": 19,
+    "prompt": "여러 멤버 계정의 보안 결과를 단일 보안 계정에서 보되, 멤버 계정 사용자가 자신의 계정 결과를 수정하거나 Security Hub를 비활성화하지 못하게 통제하려 한다. 가장 적절한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "위임 관리자 계정에서 조직 Security Hub를 구성하고, SCP로 멤버 계정의 securityhub:DisableSecurityHub 등 비활성화 API를 거부한다"
+      },
+      {
+        "label": "B",
+        "text": "각 계정에서 Security Hub를 독립적으로 활성화하고 결과를 이메일로 공유한다"
+      },
+      {
+        "label": "C",
+        "text": "IAM 정책으로 각 멤버 계정 사용자에게 읽기 전용 권한만 부여한다"
+      },
+      {
+        "label": "D",
+        "text": "Security Hub를 관리 계정에서만 활성화하고 멤버 결과는 수동 취합한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "위임 관리자에서 조직 Security Hub를 구성하면 멤버 결과가 중앙 집계되고, SCP로 비활성화 API를 거부하면 멤버 계정의 강력한 권한을 가진 사용자조차 Security Hub를 끄지 못해 통제가 보장된다. 독립 활성화+이메일 공유는 중앙 집계와 통제가 없다. 계정 단위 IAM 읽기 전용 정책은 권한 상승이나 다른 관리자에 의해 우회될 수 있어 SCP만큼 강력하지 않다. 관리 계정에서만 켜고 수동 취합하는 방식은 중앙 자동 집계와 멤버 통제를 동시에 만족하지 못한다."
+  },
+  {
+    "id": "exam-scs-c03-20",
+    "slug": "scs-c03",
+    "domain": "보안 로깅 및 모니터링",
+    "number": 20,
+    "prompt": "Route 53로 DNS를 운영하는 회사가 멀웨어의 DNS 터널링과 알려진 악성 도메인 조회를 탐지·차단하려 한다. 가장 적절한 조치 두 가지를 고르시오. (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Route 53 Resolver DNS Firewall과 Resolver 쿼리 로깅을 활성화해 악성 도메인을 차단하고 조회 가시성을 확보한다"
+      },
+      {
+        "label": "B",
+        "text": "GuardDuty를 활성화해 VPC DNS 로그 기반으로 DNS 터널링·C2 도메인 조회 같은 위협을 탐지한다"
+      },
+      {
+        "label": "C",
+        "text": "VPC 흐름 로그만으로 DNS 조회 도메인 이름을 분석한다"
+      },
+      {
+        "label": "D",
+        "text": "WAF 규칙으로 DNS 쿼리를 필터링한다"
+      }
+    ],
+    "answer": "AB",
+    "explanation": "Resolver DNS Firewall과 쿼리 로깅은 악성 도메인 차단과 조회 가시성을 제공하고, GuardDuty는 VPC DNS 로그를 분석해 DNS 터널링·C2 조회 위협을 탐지하므로 두 가지를 함께 쓰면 탐지·차단 요구를 충족한다. VPC 흐름 로그는 도메인 이름을 담지 않아 DNS 분석에 부적합하다. WAF는 HTTP(S) 계층 보호용으로 DNS 쿼리를 다루지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-21",
+    "slug": "scs-c03",
+    "domain": "보안 로깅 및 모니터링",
+    "number": 21,
+    "prompt": "여러 팀이 같은 계정에서 작업한다. 보안팀은 CloudWatch Logs 비용을 통제하면서, 컴플라이언스 대상 로그 그룹은 장기 보존하고 디버그 로그는 짧게 유지하며, 장기 보존 로그는 더 저렴한 스토리지로 자동 이동시키려 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 로그 그룹의 보존을 무기한으로 설정한다"
+      },
+      {
+        "label": "B",
+        "text": "로그 그룹별 보존 기간을 차등 설정하고, 장기 보존 대상은 S3로 내보내 Glacier 수명주기 정책으로 비용을 절감한다"
+      },
+      {
+        "label": "C",
+        "text": "모든 로그를 매일 삭제하고 필요 시 재생성한다"
+      },
+      {
+        "label": "D",
+        "text": "CloudWatch Logs 대신 EC2 인스턴스에 로그를 저장한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "로그 그룹마다 보존 기간을 차등 설정해 디버그 로그는 짧게, 컴플라이언스 로그는 길게 유지하고, 장기 보존 로그는 S3로 내보내 S3 수명주기로 Glacier 같은 저비용 계층으로 자동 전환하면 보존 요구와 비용 통제를 동시에 만족한다. 무기한 보존은 비용이 통제되지 않는다. 매일 삭제는 컴플라이언스 보존 요구를 위반한다. EC2 자체 저장은 내구성·검색성·관리성이 모두 떨어진다."
+  },
+  {
+    "id": "exam-scs-c03-22",
+    "slug": "scs-c03",
+    "domain": "보안 로깅 및 모니터링",
+    "number": 22,
+    "prompt": "Amazon EKS 클러스터에서 컨트롤 플레인 감사 로그와 함께 런타임 컨테이너 위협(권한 상승, 컨테이너 탈출 시도)을 탐지하려 한다. 운영 부담을 최소화하는 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "VPC 흐름 로그만으로 컨테이너 위협을 탐지한다"
+      },
+      {
+        "label": "B",
+        "text": "각 노드에 오픈소스 IDS를 직접 설치·운영한다"
+      },
+      {
+        "label": "C",
+        "text": "EKS 컨트롤 플레인 로깅을 CloudWatch로 보내고, GuardDuty의 EKS 보호(런타임 모니터링 포함)를 활성화한다"
+      },
+      {
+        "label": "D",
+        "text": "Config 규칙으로 EKS 보안 그룹을 평가한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "EKS 컨트롤 플레인 로깅으로 감사 가시성을 확보하고 GuardDuty EKS 보호의 감사 로그 분석과 런타임 모니터링을 켜면 권한 상승·컨테이너 탈출 같은 런타임 위협을 관리형으로 탐지해 운영 부담이 가장 적다. 노드별 오픈소스 IDS는 설치·튜닝·유지 부담이 크다. VPC 흐름 로그는 컨테이너 내부 런타임 행위를 보지 못한다. Config 규칙은 구성 준수만 평가하고 런타임 위협을 탐지하지 못한다."
+  },
+  {
+    "id": "exam-scs-c03-23",
+    "slug": "scs-c03",
+    "domain": "인프라 보안",
+    "number": 23,
+    "prompt": "퍼블릭 웹 애플리케이션이 SQL 인젝션, 크로스사이트 스크립팅, 그리고 특정 국가에서의 대량 요청 공격을 받고 있다. 또한 알려진 악성 봇 트래픽을 차단해야 한다. ALB 앞단에서 운영 부담을 최소화하며 가장 잘 대응하는 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Network ACL로 악성 IP를 차단하고 보안 그룹으로 포트를 제한한다"
+      },
+      {
+        "label": "B",
+        "text": "CloudFront에 캐싱만 강화한다"
+      },
+      {
+        "label": "C",
+        "text": "AWS Shield Advanced만 활성화한다"
+      },
+      {
+        "label": "D",
+        "text": "AWS WAF를 ALB에 연결하고 AWS 관리형 규칙(SQLi/XSS), 지리적 차단 규칙, 속도 기반 규칙, Bot Control을 적용한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "AWS WAF는 ALB에 연결해 SQLi·XSS 관리형 규칙, 지리적 차단, 속도 기반 규칙으로 대량 요청을 완화하고 Bot Control로 악성 봇을 식별·차단할 수 있어 L7 공격 전반을 관리형으로 방어한다. NACL/보안 그룹은 IP·포트 수준 제어만 가능해 SQLi/XSS 같은 애플리케이션 계층 공격을 막지 못한다. Shield Advanced는 주로 DDoS 보호용이며 인젝션·XSS 시그니처를 다루지 않는다. CloudFront 캐싱 강화는 동적 공격 페이로드 필터링을 제공하지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-24",
+    "slug": "scs-c03",
+    "domain": "인프라 보안",
+    "number": 24,
+    "prompt": "프라이빗 서브넷의 EC2 인스턴스가 S3와 DynamoDB에 접근해야 한다. 보안 정책상 트래픽이 인터넷을 경유해서는 안 되고, NAT 게이트웨이 비용도 줄이고 싶다. 가장 적절한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3와 DynamoDB용 게이트웨이 VPC 엔드포인트를 생성하고 라우팅 테이블과 엔드포인트 정책으로 접근을 제한한다"
+      },
+      {
+        "label": "B",
+        "text": "NAT 게이트웨이를 통해 S3와 DynamoDB에 접근한다"
+      },
+      {
+        "label": "C",
+        "text": "인터넷 게이트웨이와 퍼블릭 IP를 인스턴스에 할당한다"
+      },
+      {
+        "label": "D",
+        "text": "VPN 연결을 통해 AWS 서비스에 접근한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "S3와 DynamoDB는 게이트웨이 VPC 엔드포인트를 지원하므로 트래픽이 AWS 내부 네트워크로만 흐르고 인터넷을 경유하지 않으며, 게이트웨이 엔드포인트 자체는 추가 비용이 없어 NAT 비용도 절감된다. 또한 엔드포인트 정책으로 접근 대상을 제한할 수 있다. NAT 게이트웨이 경유는 인터넷 비경유 요구를 만족하더라도 비용 절감 목표에 어긋난다. 인터넷 게이트웨이+퍼블릭 IP는 인터넷 비경유 정책에 위배된다. VPN은 온프레미스 연결용이지 같은 리전 AWS 서비스 접근에 부적합하다."
+  },
+  {
+    "id": "exam-scs-c03-25",
+    "slug": "scs-c03",
+    "domain": "인프라 보안",
+    "number": 25,
+    "prompt": "한 조직은 여러 VPC가 Transit Gateway로 연결된 환경에서 모든 인터넷 송신 트래픽을 중앙에서 검사하고, 허용된 도메인으로만 나가게 하며 IDS/IPS를 적용하려 한다. 가장 적절한 조치 두 가지를 고르시오. (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "중앙 검사 VPC에 AWS Network Firewall을 배포하고 상태 기반 규칙으로 도메인 허용 목록과 Suricata 호환 IPS 규칙을 적용한다"
+      },
+      {
+        "label": "B",
+        "text": "Transit Gateway 라우팅을 구성해 모든 VPC의 송신 트래픽이 중앙 검사 VPC의 방화벽을 경유하도록 한다"
+      },
+      {
+        "label": "C",
+        "text": "각 VPC에 별도의 프록시 서버를 두어 송신을 개별 검사한다"
+      },
+      {
+        "label": "D",
+        "text": "보안 그룹 아웃바운드 규칙만으로 도메인을 제한한다"
+      }
+    ],
+    "answer": "AB",
+    "explanation": "중앙 검사 VPC에 Network Firewall을 배포해 도메인 허용 목록과 IPS 규칙을 적용하고, Transit Gateway 라우팅으로 모든 송신을 그 방화벽으로 모으면 중앙 집중 검사·통제를 일관되게 구현한다. VPC별 프록시는 관리가 분산되고 일관성이 떨어진다. 보안 그룹은 도메인 기반 필터링이나 IDS/IPS를 지원하지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-26",
+    "slug": "scs-c03",
+    "domain": "인프라 보안",
+    "number": 26,
+    "prompt": "여러 계정의 VPC가 공통 공유 서비스(인증, 로깅)에 접근해야 하지만, 전이적 라우팅과 광범위한 네트워크 노출은 피하면서 특정 애플리케이션 엔드포인트에만 비공개로 연결하려 한다. 가장 안전하고 확장성 있는 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 VPC를 VPC 피어링으로 풀 메시 연결한다"
+      },
+      {
+        "label": "B",
+        "text": "공유 서비스를 AWS PrivateLink(인터페이스 VPC 엔드포인트 + 엔드포인트 서비스)로 노출해 소비자 VPC가 특정 엔드포인트에만 비공개 연결하게 한다"
+      },
+      {
+        "label": "C",
+        "text": "공유 서비스를 퍼블릭 인터넷에 노출하고 IP 허용 목록으로 제한한다"
+      },
+      {
+        "label": "D",
+        "text": "각 VPC에 인터넷 게이트웨이를 추가해 직접 통신한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "PrivateLink는 엔드포인트 서비스로 게시된 특정 애플리케이션에만 인터페이스 엔드포인트를 통해 단방향 비공개 연결을 제공해 전이적 라우팅과 네트워크 광범위 노출 없이 최소 권한 연결을 구현하며 다수 소비자 VPC로 확장이 쉽다. 풀 메시 피어링은 관리 복잡도가 급증하고 네트워크 노출이 넓어진다. 퍼블릭 노출+IP 허용 목록은 인터넷 경유로 공격 표면이 커진다. VPC별 인터넷 게이트웨이는 비공개 연결 요구에 정면으로 위배된다."
+  },
+  {
+    "id": "exam-scs-c03-27",
+    "slug": "scs-c03",
+    "domain": "인프라 보안",
+    "number": 27,
+    "prompt": "프라이빗 EC2 인스턴스에 관리자가 안전하게 셸 접근을 해야 한다. 보안 정책상 인바운드 SSH 포트(22)를 열 수 없고, 배스천 호스트 운영 부담도 없애야 하며, 모든 세션이 감사되어야 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "퍼블릭 배스천 호스트를 두고 SSH 키로 접근하며 CloudTrail로 감사한다"
+      },
+      {
+        "label": "B",
+        "text": "보안 그룹에서 관리자 IP에만 포트 22를 허용한다"
+      },
+      {
+        "label": "C",
+        "text": "Systems Manager Session Manager를 사용해 인바운드 포트 없이 셸 접근하고, 세션 로그를 S3/CloudWatch로 기록한다"
+      },
+      {
+        "label": "D",
+        "text": "Client VPN을 구성하고 SSH로 접근한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Session Manager는 SSM 에이전트와 IAM 권한을 통해 인바운드 포트를 전혀 열지 않고 셸 접근을 제공하며 세션 로그를 S3/CloudWatch에 기록해 감사 요구도 충족하고 배스천 운영 부담을 없앤다. 퍼블릭 배스천은 추가 운영·공격 표면이 생기고 인바운드 SSH가 필요하다. 보안 그룹으로 포트 22를 여는 것은 인바운드 SSH 금지 정책에 위배된다. Client VPN+SSH도 여전히 SSH 포트와 추가 인프라가 필요해 요구를 완전히 충족하지 못한다."
+  },
+  {
+    "id": "exam-scs-c03-28",
+    "slug": "scs-c03",
+    "domain": "인프라 보안",
+    "number": 28,
+    "prompt": "글로벌 사용자를 대상으로 하는 애플리케이션이 대규모 L3/L4 DDoS 공격과 정교한 L7 공격을 받을 위험이 있다. 회사는 공격 시 비용 급증 보호와 24x7 대응팀 지원을 원한다. 가장 적절한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Auto Scaling으로 트래픽 급증을 흡수한다"
+      },
+      {
+        "label": "B",
+        "text": "Shield Standard만으로 모든 공격을 방어한다"
+      },
+      {
+        "label": "C",
+        "text": "NACL과 보안 그룹만으로 DDoS를 완화한다"
+      },
+      {
+        "label": "D",
+        "text": "AWS Shield Advanced를 활성화하고 CloudFront/ALB 앞단에 WAF 규칙을 적용하며 DDoS Response Team(DRT) 지원을 활용한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Shield Advanced는 향상된 L3/L4 DDoS 보호, 공격으로 인한 스케일링 비용에 대한 비용 보호, DRT의 24x7 지원을 제공하고 WAF를 결합하면 L7 공격까지 방어하므로 요구를 모두 충족한다. Shield Standard는 기본 보호만 제공하며 비용 보호·DRT·L7 정교한 방어가 없다. NACL/보안 그룹은 정적 필터로 대규모·정교한 공격을 막기 어렵다. Auto Scaling은 가용성에 도움이 되지만 공격 자체를 차단하지 않고 비용이 폭증한다."
+  },
+  {
+    "id": "exam-scs-c03-29",
+    "slug": "scs-c03",
+    "domain": "인프라 보안",
+    "number": 29,
+    "prompt": "온프레미스 데이터센터와 AWS 간 통신이 인터넷을 경유하지 않고, 안정적인 대역폭과 낮은 지연을 보장하며, 전송 중 데이터가 암호화되어야 한다. 가장 적절한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Direct Connect를 구성하고 그 위에 IPsec VPN(또는 MACsec)을 적용해 전용 회선과 전송 암호화를 함께 제공한다"
+      },
+      {
+        "label": "B",
+        "text": "인터넷 기반 Site-to-Site VPN만 사용한다"
+      },
+      {
+        "label": "C",
+        "text": "퍼블릭 인터넷으로 트래픽을 보내고 TLS로만 보호한다"
+      },
+      {
+        "label": "D",
+        "text": "Transit Gateway만 구성한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Direct Connect는 인터넷을 경유하지 않는 전용 회선으로 안정적 대역폭과 낮은 지연을 제공하지만 자체적으로 암호화하지 않으므로, 그 위에 IPsec VPN이나 MACsec을 적용해 전송 중 암호화 요구까지 충족하는 것이 가장 적합하다. 인터넷 기반 VPN만으로는 인터넷 비경유·안정적 대역폭 요구를 만족하지 못한다. 퍼블릭 인터넷+TLS는 인터넷 비경유 요구에 위배되고 모든 트래픽 보호를 보장하지 못한다. Transit Gateway는 네트워크 연결 허브일 뿐 온프레미스 전용 연결·암호화를 제공하지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-30",
+    "slug": "scs-c03",
+    "domain": "인프라 보안",
+    "number": 30,
+    "prompt": "한 회사는 EC2 인스턴스의 IMDS를 통한 자격 증명 탈취(SSRF) 공격을 방지하려 한다. 애플리케이션은 인스턴스 메타데이터를 사용하지만 v1의 단순 요청 방식은 제거하고 싶다. 가장 적절한 조치는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IMDS를 완전히 비활성화한다"
+      },
+      {
+        "label": "B",
+        "text": "IMDSv2(토큰 필수, hop limit 1)를 강제하고, SCP/Config로 v1 사용 인스턴스를 탐지·차단한다"
+      },
+      {
+        "label": "C",
+        "text": "보안 그룹에서 169.254.169.254로의 트래픽을 차단한다"
+      },
+      {
+        "label": "D",
+        "text": "인스턴스 역할을 제거하고 액세스 키를 환경 변수에 저장한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "IMDSv2는 PUT 토큰을 요구하고 hop limit을 1로 두어 SSRF를 통한 메타데이터 자격 증명 탈취를 크게 어렵게 하며, SCP/Config로 조직 전반에서 v1 사용을 탐지·차단해 강제할 수 있어 요구를 충족한다. IMDS 완전 비활성화는 메타데이터를 사용하는 애플리케이션을 망가뜨린다. 보안 그룹은 링크 로컬 메타데이터 주소(169.254.169.254) 트래픽을 필터링하지 못한다. 인스턴스 역할 제거 후 정적 키 사용은 키 노출·교체 부담이라는 더 큰 위험을 만든다."
+  },
+  {
+    "id": "exam-scs-c03-31",
+    "slug": "scs-c03",
+    "domain": "인프라 보안",
+    "number": 31,
+    "prompt": "여러 계정에서 인터넷 인바운드를 받는 ALB가 직접 노출되지 않고 CloudFront를 통해서만 접근되도록 강제하려 한다. 공격자가 ALB DNS를 직접 알아내 우회 접근하는 것을 막아야 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ALB 보안 그룹을 0.0.0.0/0으로 열어둔다"
+      },
+      {
+        "label": "B",
+        "text": "ALB를 프라이빗 서브넷에 두고 퍼블릭 IP를 제거한다"
+      },
+      {
+        "label": "C",
+        "text": "CloudFront에 사용자 지정 헤더와 비밀 값을 추가하고, ALB의 WAF에서 해당 헤더가 있는 요청만 허용하며 보안 그룹을 CloudFront 관리형 프리픽스 목록으로 제한한다"
+      },
+      {
+        "label": "D",
+        "text": "Route 53에서 ALB 레코드를 숨긴다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "CloudFront가 추가하는 비밀 사용자 지정 헤더를 ALB의 WAF에서 검증하고 보안 그룹을 CloudFront 관리형 프리픽스 목록으로 제한하면 CloudFront를 거치지 않은 직접 요청을 차단해 우회 접근을 막는다. 보안 그룹을 전체 개방하면 누구나 직접 ALB에 접근할 수 있다. ALB를 프라이빗 서브넷에 두면 CloudFront 오리진 연결 구성이 복잡해지고 기본적으로 인터넷 facing 오리진 요구와 충돌할 수 있으며 우회 검증 자체는 제공하지 않는다. Route 53에서 레코드를 숨겨도 ALB DNS는 추측·열거로 노출될 수 있다."
+  },
+  {
+    "id": "exam-scs-c03-32",
+    "slug": "scs-c03",
+    "domain": "인프라 보안",
+    "number": 32,
+    "prompt": "컨테이너 워크로드(ECS/Fargate)가 외부 API를 호출할 때 고정된 송신 IP가 필요해 파트너가 방화벽 허용 목록에 등록할 수 있어야 한다. 동시에 인바운드는 차단되어야 한다. 가장 적절한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 태스크에 퍼블릭 IP를 할당한다"
+      },
+      {
+        "label": "B",
+        "text": "VPC 엔드포인트로 외부 파트너 API에 연결한다"
+      },
+      {
+        "label": "C",
+        "text": "인터넷 게이트웨이를 통해 동적 퍼블릭 IP로 호출한다"
+      },
+      {
+        "label": "D",
+        "text": "프라이빗 서브넷에 태스크를 배치하고 NAT 게이트웨이의 탄력적 IP를 통해 고정 송신 IP로 외부 API를 호출한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "프라이빗 서브넷의 태스크가 NAT 게이트웨이를 통해 나가면 NAT에 연결된 탄력적 IP가 고정 송신 IP가 되어 파트너 허용 목록 등록이 가능하고, NAT는 인바운드 연결을 허용하지 않아 인바운드 차단 요구도 충족한다. 태스크에 퍼블릭 IP를 직접 할당하면 IP가 가변적이고 인바운드 노출이 생긴다. 인터넷 게이트웨이 동적 IP는 고정 IP 요구를 만족하지 못한다. VPC 엔드포인트는 AWS 서비스나 PrivateLink 대상용으로 임의의 외부 파트너 퍼블릭 API에 적용되지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-33",
+    "slug": "scs-c03",
+    "domain": "인프라 보안",
+    "number": 33,
+    "prompt": "보안 정책상 모든 VPC에서 퍼블릭 IP를 가진 EC2 인스턴스 생성과 인터넷 게이트웨이의 새 부착을 조직 전체에서 예방적으로 차단해야 한다. 탐지가 아닌 예방이 핵심이다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SCP로 ec2:AssociatePublicIpAddress 조건과 인터넷 게이트웨이 부착 관련 API를 거부해 조직 차원에서 예방적으로 차단한다"
+      },
+      {
+        "label": "B",
+        "text": "Config 규칙으로 퍼블릭 IP 인스턴스를 탐지하고 사후 교정한다"
+      },
+      {
+        "label": "C",
+        "text": "GuardDuty로 퍼블릭 노출을 탐지한다"
+      },
+      {
+        "label": "D",
+        "text": "각 계정의 IAM 정책으로 개별 차단한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "SCP는 멤버 계정에 적용되는 권한 가드레일로 퍼블릭 IP 할당과 인터넷 게이트웨이 부착 API를 거부하면 액션이 실행되기 전에 예방적으로 차단되어 요구를 정확히 충족한다. Config 규칙은 이미 생성된 리소스를 탐지·교정하는 사후 방식이다. GuardDuty도 탐지 기반이다. 계정별 IAM 정책은 누락·우회·드리프트 위험이 크고 조직 차원의 일관된 예방을 보장하기 어렵다."
+  },
+  {
+    "id": "exam-scs-c03-34",
+    "slug": "scs-c03",
+    "domain": "인프라 보안",
+    "number": 34,
+    "prompt": "RDS 데이터베이스가 프라이빗 서브넷에 있고, 애플리케이션 계층만 접근해야 한다. 또한 데이터베이스 자격 증명이 코드나 구성 파일에 하드코딩되지 않고 자동 교체되어야 한다. 가장 안전한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "RDS를 퍼블릭으로 만들고 SSL로만 보호하며 자격 증명을 환경 변수에 둔다"
+      },
+      {
+        "label": "B",
+        "text": "보안 그룹을 애플리케이션 보안 그룹으로 제한하고, 자격 증명을 Secrets Manager에 저장해 자동 교체를 활성화한다"
+      },
+      {
+        "label": "C",
+        "text": "NACL로만 접근을 제한하고 자격 증명을 Parameter Store 평문에 저장한다"
+      },
+      {
+        "label": "D",
+        "text": "데이터베이스 자격 증명을 IAM 정책에 인라인으로 포함한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "RDS 보안 그룹의 소스를 애플리케이션 보안 그룹으로 지정하면 해당 계층만 접근하도록 최소 권한 네트워크 제어가 되고, Secrets Manager에 자격 증명을 저장하고 자동 교체를 켜면 하드코딩 제거와 주기적 교체를 동시에 충족한다. 퍼블릭 RDS+환경 변수는 노출 표면과 자격 증명 위험이 크다. NACL은 상태 비저장이라 보안 그룹만큼 세밀하지 않고 Parameter Store 평문 저장은 자격 증명 보호와 자동 교체를 제공하지 않는다. 자격 증명을 IAM 정책에 넣는 것은 잘못된 패턴이다."
+  },
+  {
+    "id": "exam-scs-c03-35",
+    "slug": "scs-c03",
+    "domain": "인프라 보안",
+    "number": 35,
+    "prompt": "보안팀은 조직의 모든 VPC에서 의도치 않게 인터넷에 노출된 리소스(개방 보안 그룹, 퍼블릭 S3, 공개 RDS 등)에 대한 외부 접근 가능 경로를 자동으로 식별하려 한다. 가장 적절한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 리소스를 콘솔에서 수동 점검한다"
+      },
+      {
+        "label": "B",
+        "text": "VPC 흐름 로그를 수동 분석해 노출을 찾는다"
+      },
+      {
+        "label": "C",
+        "text": "IAM Access Analyzer를 사용해 리소스 기반 정책으로 외부 엔터티에 노출된 리소스를 자동 식별한다"
+      },
+      {
+        "label": "D",
+        "text": "WAF 로그로 노출 경로를 식별한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "IAM Access Analyzer는 S3 버킷, IAM 역할, KMS 키, Lambda, SQS 등 리소스 기반 정책을 분석해 계정·조직 외부 엔터티에 접근 권한이 부여된 리소스를 자동으로 식별하므로 의도치 않은 외부 노출 탐지에 부합한다. VPC 흐름 로그 수동 분석은 정책 기반 노출 경로를 직접 판별하기 어렵고 노동집약적이다. 콘솔 수동 점검은 확장성이 없다. WAF 로그는 들어온 웹 요청 기록일 뿐 노출 경로를 정적으로 분석하지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-36",
+    "slug": "scs-c03",
+    "domain": "자격 증명 및 액세스 관리",
+    "number": 36,
+    "prompt": "한 회사는 사내 SAML 2.0 IdP로 직원을 인증하고, AWS Organizations 전반에서 직무별로 최소 권한 액세스를 부여하며, 임시 자격 증명만 사용하고 IAM 사용자를 만들지 않으려 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 계정에 IAM 사용자를 만들고 그룹으로 권한을 관리한다"
+      },
+      {
+        "label": "B",
+        "text": "장기 액세스 키를 발급해 직원에게 배포한다"
+      },
+      {
+        "label": "C",
+        "text": "루트 사용자 자격 증명을 팀에 공유한다"
+      },
+      {
+        "label": "D",
+        "text": "IAM Identity Center를 외부 IdP와 연동하고 권한 집합(permission set)을 계정·그룹에 할당해 임시 자격 증명으로 SSO 접근을 제공한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "IAM Identity Center는 외부 SAML IdP와 연동해 SSO를 제공하고 권한 집합으로 다중 계정에 직무별 최소 권한을 할당하며 STS 기반 임시 자격 증명을 발급하므로 IAM 사용자 없이 요구를 모두 충족한다. 계정별 IAM 사용자는 자격 증명 관리·교체 부담이 크고 중앙 SSO가 아니다. 루트 공유는 심각한 보안 위반이다. 장기 액세스 키는 노출·교체 위험이 커 임시 자격 증명만 사용하려는 정책에 위배된다."
+  },
+  {
+    "id": "exam-scs-c03-37",
+    "slug": "scs-c03",
+    "domain": "자격 증명 및 액세스 관리",
+    "number": 37,
+    "prompt": "교차 계정 액세스에서 한 계정(A)의 역할을 다른 계정(B)의 서드파티 SaaS가 위임받아 사용하게 하되, 혼란스러운 대리인(confused deputy) 공격을 방지해야 한다. 가장 안전한 신뢰 정책 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "신뢰 정책에 외부 ID(sts:ExternalId) 조건을 추가해 SaaS가 합의된 고유 ExternalId를 제시할 때만 위임을 허용한다"
+      },
+      {
+        "label": "B",
+        "text": "신뢰 정책에서 Principal을 계정 B 전체로 두고 추가 조건은 두지 않는다"
+      },
+      {
+        "label": "C",
+        "text": "역할 대신 IAM 사용자 액세스 키를 SaaS에 제공한다"
+      },
+      {
+        "label": "D",
+        "text": "신뢰 정책 Principal을 '*'로 설정한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "서드파티가 여러 고객을 대신해 역할을 맡는 상황에서 sts:ExternalId 조건을 두면 합의된 고유 식별자를 제시해야만 위임이 허용되어 혼란스러운 대리인 공격을 방지하므로 표준 권장 패턴이다. Principal만 SaaS 측 계정으로 두고 외부 ID 조건이 없으면 해당 SaaS가 다른 고객의 식별자로도 이 역할을 가정하도록 속을 수 있다. 액세스 키 제공은 장기 자격 증명 노출 위험이 크다. Principal을 와일드카드로 두면 누구나 위임 가능해 매우 위험하다."
+  },
+  {
+    "id": "exam-scs-c03-38",
+    "slug": "scs-c03",
+    "domain": "자격 증명 및 액세스 관리",
+    "number": 38,
+    "prompt": "EKS에서 실행되는 마이크로서비스마다 서로 다른 최소 권한의 AWS 권한이 필요하다. 노드 전체에 광범위한 권한을 주지 않고 파드 단위로 권한을 부여하려 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "노드 인스턴스 역할에 모든 서비스에 필요한 권한을 합쳐 부여한다"
+      },
+      {
+        "label": "B",
+        "text": "IRSA(서비스 계정용 IAM 역할) 또는 EKS Pod Identity로 파드/서비스 계정 단위 IAM 역할을 매핑한다"
+      },
+      {
+        "label": "C",
+        "text": "각 파드에 액세스 키를 시크릿으로 주입한다"
+      },
+      {
+        "label": "D",
+        "text": "모든 파드가 단일 공유 역할을 사용한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "IRSA나 EKS Pod Identity는 Kubernetes 서비스 계정을 특정 IAM 역할에 매핑해 파드 단위로 최소 권한 임시 자격 증명을 부여하므로 노드 전체 권한 확대 없이 마이크로서비스별 권한 분리를 구현한다. 노드 역할에 권한을 합치면 같은 노드의 모든 파드가 과도한 권한을 공유하게 된다. 파드에 액세스 키 주입은 장기 자격 증명 노출·교체 부담이 크다. 단일 공유 역할은 최소 권한 분리 목표에 위배된다."
+  },
+  {
+    "id": "exam-scs-c03-39",
+    "slug": "scs-c03",
+    "domain": "자격 증명 및 액세스 관리",
+    "number": 39,
+    "prompt": "보안팀은 IAM 권한을 부여할 때 실제 사용 이력에 근거해 과도한 권한을 식별·축소하고, 새로 작성하는 정책이 최소 권한 모범 사례를 따르는지 검증하려 한다. 가장 적절한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudTrail 로그를 사람이 일일이 읽어 정책을 작성한다"
+      },
+      {
+        "label": "B",
+        "text": "모든 역할에 AdministratorAccess를 부여하고 추후 줄인다"
+      },
+      {
+        "label": "C",
+        "text": "IAM Access Analyzer의 정책 생성(액세스 활동 기반)과 정책 검증(policy validation)을 사용해 사용 이력 기반 정책 생성과 모범 사례 점검을 수행한다"
+      },
+      {
+        "label": "D",
+        "text": "관리형 정책만 사용하고 사용자 정의 정책은 검증하지 않는다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "IAM Access Analyzer는 CloudTrail 액세스 활동을 분석해 실제 사용한 권한만 담은 정책을 자동 생성하고, 정책 검증 기능으로 작성한 정책의 보안·모범 사례 위반을 점검하므로 최소 권한 도출과 검증을 모두 충족한다. 광범위 권한 부여 후 축소는 그 사이 과다 권한 노출 위험이 크다. CloudTrail 수동 분석은 노동집약적이고 오류가 잦다. 관리형 정책만 쓰고 검증을 생략하면 과도하거나 부적합한 권한을 놓칠 수 있다."
+  },
+  {
+    "id": "exam-scs-c03-40",
+    "slug": "scs-c03",
+    "domain": "자격 증명 및 액세스 관리",
+    "number": 40,
+    "prompt": "조직은 특정 계정에서 누구도(루트 포함) 특정 S3 버킷을 삭제하거나 암호화 설정을 변경하지 못하게 하고, 동시에 모든 계정에서 특정 리전 외 리소스 생성을 막으려 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 계정에 IAM 정책으로 Deny를 설정한다"
+      },
+      {
+        "label": "B",
+        "text": "CloudTrail 경보로 삭제를 사후 탐지한다"
+      },
+      {
+        "label": "C",
+        "text": "버킷 ACL로 삭제를 막는다"
+      },
+      {
+        "label": "D",
+        "text": "SCP로 조직 차원의 거부 가드레일을 설정하고, 버킷에는 버킷 정책으로 추가 Deny를, 리전 제한은 SCP의 aws:RequestedRegion 조건으로 적용한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "SCP는 루트를 포함한 모든 멤버 계정 주체의 권한 상한을 정의하므로 리전 제한(aws:RequestedRegion 조건)과 위험 작업 거부를 조직 차원에서 강제할 수 있고, 특정 버킷 보호는 버킷 정책 Deny로 보강할 수 있다. 계정별 IAM 정책은 루트 사용자에게 적용되지 않고 일관성·확장성이 약하다. 버킷 ACL은 객체·버킷 접근 제어용으로 삭제·암호화 변경 거부 가드레일에 적합하지 않다. CloudTrail 경보는 예방이 아닌 사후 탐지다."
+  },
+  {
+    "id": "exam-scs-c03-41",
+    "slug": "scs-c03",
+    "domain": "자격 증명 및 액세스 관리",
+    "number": 41,
+    "prompt": "한 애플리케이션이 다른 AWS 계정의 S3 버킷에 객체를 쓴다. 객체 소유권 문제로 대상 계정이 객체를 읽지 못하는 일이 발생했다. 보안과 운영을 모두 고려한 가장 적절한 해결책은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "버킷 소유자 강제(Bucket owner enforced) 객체 소유권을 설정해 ACL을 비활성화하고, 업로드 시 버킷 정책으로 접근을 제어한다"
+      },
+      {
+        "label": "B",
+        "text": "버킷을 퍼블릭으로 만들어 모두 읽게 한다"
+      },
+      {
+        "label": "C",
+        "text": "교차 계정 IAM 사용자 키를 공유한다"
+      },
+      {
+        "label": "D",
+        "text": "업로드 후 대상 계정이 객체를 복사해 소유권을 가져간다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "S3 Object Ownership을 'Bucket owner enforced'로 설정하면 ACL이 비활성화되고 버킷 소유자가 모든 객체를 소유하게 되어 교차 계정 업로드 시 소유권·읽기 문제를 근본적으로 해결하며 접근은 IAM·버킷 정책으로 일관되게 제어한다. 퍼블릭 공개는 심각한 데이터 노출 위험이다. 액세스 키 공유는 장기 자격 증명 노출 위험이 크다. 업로드 후 매번 복사하는 방식은 추가 비용·복잡성을 만들고 근본 원인을 해결하지 못한다."
+  },
+  {
+    "id": "exam-scs-c03-42",
+    "slug": "scs-c03",
+    "domain": "자격 증명 및 액세스 관리",
+    "number": 42,
+    "prompt": "보안팀은 EC2 종료, IAM 정책 수정, KMS 키 삭제 같은 민감 작업이 MFA로 인증된 세션에서만 수행되도록 강제하려 한다. 가장 적절한 조치 두 가지를 고르시오. (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM/권한 정책에 aws:MultiFactorAuthPresent: true 조건을 추가해 MFA 인증 세션에서만 민감 작업을 허용한다"
+      },
+      {
+        "label": "B",
+        "text": "SCP에 동일한 MFA 조건을 적용해 조직 차원에서 MFA 없는 민감 작업을 거부하는 가드레일을 둔다"
+      },
+      {
+        "label": "C",
+        "text": "콘솔 로그인 시에만 MFA를 요구하고 CLI/API 세션은 제외한다"
+      },
+      {
+        "label": "D",
+        "text": "CloudTrail로 MFA 없는 작업을 사후 감지해 보고서를 만든다"
+      }
+    ],
+    "answer": "AB",
+    "explanation": "정책에 aws:MultiFactorAuthPresent 조건을 넣으면 MFA 인증 세션에서만 민감 작업을 허용하고, 동일 조건을 SCP 가드레일로 두면 조직 전체 계정에 일관되게 강제할 수 있어 함께 쓰면 요구를 견고히 충족한다. 콘솔 로그인 MFA만으로는 CLI·API·역할 세션을 통제하지 못한다. CloudTrail 사후 감지는 예방 통제가 아니다."
+  },
+  {
+    "id": "exam-scs-c03-43",
+    "slug": "scs-c03",
+    "domain": "자격 증명 및 액세스 관리",
+    "number": 43,
+    "prompt": "온프레미스 서버에서 실행되는 애플리케이션이 AWS API를 호출해야 한다. 장기 액세스 키를 서버에 저장하지 않고, 단기 자격 증명을 안전하게 발급받는 방식을 원한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM 사용자 액세스 키를 서버 디스크에 저장한다"
+      },
+      {
+        "label": "B",
+        "text": "IAM Roles Anywhere를 구성해 신뢰할 수 있는 X.509 인증서로 온프레미스 워크로드가 IAM 역할의 임시 자격 증명을 받게 한다"
+      },
+      {
+        "label": "C",
+        "text": "액세스 키를 환경 변수로 주입한다"
+      },
+      {
+        "label": "D",
+        "text": "루트 자격 증명을 서버에 구성한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "IAM Roles Anywhere는 신뢰 앵커로 등록한 인증 기관의 X.509 인증서를 사용해 온프레미스 워크로드가 IAM 역할을 가정하고 STS 임시 자격 증명을 받게 하므로 장기 키 저장 없이 안전한 단기 자격 증명을 제공한다. 디스크 저장·환경 변수 주입 방식의 장기 액세스 키는 노출·교체 부담이 크다. 루트 자격 증명을 서버에 두는 것은 가장 위험한 안티패턴이다."
+  },
+  {
+    "id": "exam-scs-c03-44",
+    "slug": "scs-c03",
+    "domain": "자격 증명 및 액세스 관리",
+    "number": 44,
+    "prompt": "회사는 개발자에게 자가 서비스로 권한 있는 역할을 임시로 승급(권한 상승)할 수 있게 하되, 승인·시간 제한·전체 감사 추적을 요구한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "개발자에게 영구적으로 관리자 역할을 부여한다"
+      },
+      {
+        "label": "B",
+        "text": "개발자가 필요할 때 루트 자격 증명을 사용한다"
+      },
+      {
+        "label": "C",
+        "text": "IAM Identity Center 권한 집합과 승인 워크플로(예: 임시 액세스 요청/승인 프로세스, 세션 기간 제한)를 결합하고 CloudTrail로 감사한다"
+      },
+      {
+        "label": "D",
+        "text": "모든 개발자를 동일한 강력한 그룹에 넣는다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Identity Center 권한 집합에 세션 기간 제한을 두고 임시 액세스 요청·승인 워크플로를 결합하면 시간 제한·승인 기반의 임시 권한 상승을 구현하고 CloudTrail로 전체 활동을 감사할 수 있어 요구를 충족한다. 영구 관리자 부여는 최소 권한과 시간 제한 요구에 위배된다. 루트 사용은 매우 위험하고 직무 분리가 불가능하다. 모두를 강력한 그룹에 넣으면 상시 과다 권한이 부여되어 승인·시간 제한 통제가 사라진다."
+  },
+  {
+    "id": "exam-scs-c03-45",
+    "slug": "scs-c03",
+    "domain": "자격 증명 및 액세스 관리",
+    "number": 45,
+    "prompt": "한 팀이 위임받은 권한 경계 내에서 IAM 역할과 정책을 스스로 생성할 수 있어야 하지만, 자신에게 관리자급 권한을 부여하는 권한 상승은 막아야 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "팀에 IAM 전체 권한을 부여하고 신뢰한다"
+      },
+      {
+        "label": "B",
+        "text": "역할 생성을 전면 금지한다"
+      },
+      {
+        "label": "C",
+        "text": "팀이 만든 역할을 매주 사람이 검토한다"
+      },
+      {
+        "label": "D",
+        "text": "권한 경계(permissions boundary)를 설정해 팀이 만드는 모든 역할/사용자의 최대 권한을 제한하고, 정책에서 boundary 없는 생성은 거부한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "권한 경계는 IAM 엔터티가 가질 수 있는 최대 권한의 상한을 정의하므로, 팀이 역할·사용자를 스스로 만들되 경계를 초과하는 권한은 효력이 없도록 하고 정책에서 경계 없는 생성을 거부하면 권한 위임과 권한 상승 방지를 동시에 달성한다. IAM 전체 권한 부여는 권한 상승을 그대로 허용한다. 주간 사람 검토는 사후 통제라 그 사이 상승이 가능하다. 역할 생성 전면 금지는 자가 서비스 위임 요구를 충족하지 못한다."
+  },
+  {
+    "id": "exam-scs-c03-46",
+    "slug": "scs-c03",
+    "domain": "데이터 보호",
+    "number": 46,
+    "prompt": "여러 계정에 분산된 S3 버킷에 PII가 의도치 않게 저장되는지 지속적으로 자동 발견하고, 발견 시 보안팀에 알림을 보내며 조직 차원에서 중앙 관리하려 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Macie를 위임 관리자에서 조직 전체로 활성화해 S3의 민감 데이터를 자동 분류·발견하고 결과를 EventBridge/SNS로 통지한다"
+      },
+      {
+        "label": "B",
+        "text": "Lambda로 객체를 다운로드해 정규식으로 PII를 검색한다"
+      },
+      {
+        "label": "C",
+        "text": "GuardDuty로 S3의 PII를 탐지한다"
+      },
+      {
+        "label": "D",
+        "text": "Config 규칙으로 PII 존재를 평가한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Macie는 머신러닝과 패턴 매칭으로 S3 객체의 PII 등 민감 데이터를 자동 분류·발견하고 위임 관리자에서 조직 전체를 중앙 관리하며 결과를 EventBridge/SNS로 통지할 수 있어 요구를 충족한다. Lambda 자체 정규식 스캐너는 분류 정확도·확장성·유지 부담이 크다. GuardDuty는 위협 탐지용이지 데이터 내용 분류기가 아니다. Config는 구성 준수 평가용으로 객체 내용의 민감 데이터를 식별하지 못한다."
+  },
+  {
+    "id": "exam-scs-c03-47",
+    "slug": "scs-c03",
+    "domain": "데이터 보호",
+    "number": 47,
+    "prompt": "규제상 데이터 암호화 키 자료가 회사가 통제하는 외부 HSM에서 생성·보관되어야 하고, AWS는 키 자료에 접근할 수 없어야 하며, 회사가 언제든 키 자료를 AWS에서 제거(삭제)할 수 있어야 한다. 가장 적절한 KMS 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS 관리형 키를 사용한다"
+      },
+      {
+        "label": "B",
+        "text": "외부 키 자료를 가져오는(import) 고객 관리형 KMS 키(BYOK)를 사용해 회사가 키 자료를 생성·보관하고 필요 시 삭제하게 한다"
+      },
+      {
+        "label": "C",
+        "text": "KMS가 자동 생성한 키를 사용하고 자동 교체를 켠다"
+      },
+      {
+        "label": "D",
+        "text": "SSE-S3 기본 암호화를 사용한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "가져온 키 자료(BYOK)를 사용하는 고객 관리형 키는 회사가 외부에서 키 자료를 생성해 KMS로 가져오고 원본을 자체 보관하며 가져온 키 자료를 언제든 삭제해 사용을 중단할 수 있어 외부 통제·제거 요구를 충족한다. AWS 관리형 키와 KMS 자동 생성 키는 키 자료를 AWS가 생성·관리해 외부 통제 요구에 맞지 않는다. SSE-S3는 키 통제 자체를 제공하지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-48",
+    "slug": "scs-c03",
+    "domain": "데이터 보호",
+    "number": 48,
+    "prompt": "한 회사가 S3에 저장된 대용량 데이터를 봉투 암호화로 보호하면서, KMS 호출량 급증으로 인한 처리량 제한과 비용을 줄이려 한다. 보안 수준은 유지해야 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 객체마다 KMS에 직접 Encrypt를 호출한다"
+      },
+      {
+        "label": "B",
+        "text": "SSE-S3로 전환해 KMS를 사용하지 않는다"
+      },
+      {
+        "label": "C",
+        "text": "S3 버킷 키(S3 Bucket Keys)를 활성화해 KMS 호출을 줄이면서 SSE-KMS 봉투 암호화를 유지한다"
+      },
+      {
+        "label": "D",
+        "text": "클라이언트에서 평문으로 저장하고 전송만 암호화한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "S3 버킷 키는 버킷 수준에서 단기 데이터 키를 재사용해 객체별 KMS 호출을 크게 줄이므로 SSE-KMS의 키 통제·감사 이점을 유지하면서 KMS 요청량과 비용을 절감한다. 객체마다 KMS Encrypt를 직접 호출하면 호출량과 비용이 급증한다. SSE-S3 전환은 호출은 줄지만 고객 키 통제·세분화된 감사 이점을 잃는다. 평문 저장은 저장 시 암호화 요구를 위반한다."
+  },
+  {
+    "id": "exam-scs-c03-49",
+    "slug": "scs-c03",
+    "domain": "데이터 보호",
+    "number": 49,
+    "prompt": "여러 리전에 배포되는 애플리케이션이 같은 데이터를 각 리전에서 암호화해야 한다. 단일 리전 KMS 키는 리전 간 사용이 불가능해 운영이 복잡하다. 키 관리 부담을 줄이는 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 리전마다 독립적인 키를 만들고 데이터를 복호화 후 재암호화한다"
+      },
+      {
+        "label": "B",
+        "text": "단일 리전에서만 모든 암복호화를 수행하도록 트래픽을 라우팅한다"
+      },
+      {
+        "label": "C",
+        "text": "키 자료를 애플리케이션 코드에 포함해 리전 간 공유한다"
+      },
+      {
+        "label": "D",
+        "text": "KMS 다중 리전 키(multi-Region key)를 사용해 동일한 키 자료를 여러 리전에 복제하고 리전 로컬로 암복호화한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "KMS 다중 리전 키는 동일한 키 ID·키 자료를 여러 리전에 복제해 한 리전에서 암호화한 데이터를 다른 리전에서 복호화할 수 있게 하므로 복호화-재암호화 없이 리전 간 운영 부담을 줄인다. 리전별 독립 키와 재암호화는 복잡성과 비용이 크다. 키 자료를 코드에 포함하는 것은 심각한 노출 위험이다. 단일 리전 라우팅은 지연·가용성 문제를 일으키고 다중 리전 설계 취지에 어긋난다."
+  },
+  {
+    "id": "exam-scs-c03-50",
+    "slug": "scs-c03",
+    "domain": "데이터 보호",
+    "number": 50,
+    "prompt": "S3 버킷에 저장된 데이터에 대해, 특정 KMS 키로 암호화되지 않은 객체 업로드를 거부하고, 암호화되지 않은(HTTP) 전송도 차단하려 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "버킷 정책에서 s3:x-amz-server-side-encryption 및 KMS 키 조건으로 미암호화 업로드를 거부하고, aws:SecureTransport: false를 Deny해 HTTP를 차단한다"
+      },
+      {
+        "label": "B",
+        "text": "버킷 기본 암호화만 설정한다"
+      },
+      {
+        "label": "C",
+        "text": "IAM 정책으로 업로드 사용자에게만 암호화를 권고한다"
+      },
+      {
+        "label": "D",
+        "text": "CloudTrail로 미암호화 업로드를 사후 탐지한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "버킷 정책에서 s3:x-amz-server-side-encryption-aws-kms-key-id 등 조건으로 지정 KMS 키 미사용 업로드를 Deny하고 aws:SecureTransport가 false인 요청을 Deny하면 전송 중·저장 시 암호화를 모두 강제할 수 있다. 기본 암호화만으로는 클라이언트가 다른 키나 미암호화 헤더를 지정할 여지가 있고 HTTP를 막지 못한다. IAM 권고는 강제력이 없다. CloudTrail은 사후 탐지일 뿐 예방 통제가 아니다."
+  },
+  {
+    "id": "exam-scs-c03-51",
+    "slug": "scs-c03",
+    "domain": "데이터 보호",
+    "number": 51,
+    "prompt": "한 회사가 ACM으로 발급한 퍼블릭 인증서를 ALB와 CloudFront에 적용하고, 인증서를 만료 전에 자동 갱신하려 한다. 또한 내부 마이크로서비스 간 mTLS에 쓸 프라이빗 인증서도 자동 발급·교체해야 한다. 가장 적절한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 인증서를 수동으로 구매·갱신하고 서버에 직접 설치한다"
+      },
+      {
+        "label": "B",
+        "text": "ACM으로 퍼블릭 인증서를 ALB/CloudFront에 적용해 자동 갱신하고, 내부 mTLS용 프라이빗 인증서는 ACM Private CA로 발급·자동 교체한다"
+      },
+      {
+        "label": "C",
+        "text": "Secrets Manager에 인증서를 평문 저장하고 수동 교체한다"
+      },
+      {
+        "label": "D",
+        "text": "자체 서명 인증서를 각 서비스에 하드코딩한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "ACM은 ALB·CloudFront에 통합된 퍼블릭 인증서를 자동 갱신하고, ACM Private CA는 내부 mTLS용 프라이빗 인증서를 자동 발급·교체할 수 있어 퍼블릭·프라이빗 인증서 수명주기를 모두 관리형으로 처리한다. 수동 구매·설치는 갱신 누락과 운영 부담이 크다. Secrets Manager 평문 저장·수동 교체는 자동화·보호가 부족하다. 자체 서명 인증서 하드코딩은 신뢰 체인·교체 관리가 불가능해 안티패턴이다."
+  },
+  {
+    "id": "exam-scs-c03-52",
+    "slug": "scs-c03",
+    "domain": "데이터 보호",
+    "number": 52,
+    "prompt": "데이터베이스 백업(RDS 스냅샷)을 다른 계정으로 공유해 재해 복구를 준비하려 한다. 스냅샷은 고객 관리형 KMS 키로 암호화되어 있다. 대상 계정이 스냅샷을 복원할 수 있게 하면서 키 통제를 유지하는 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "스냅샷을 암호화 해제한 뒤 공유한다"
+      },
+      {
+        "label": "B",
+        "text": "스냅샷을 퍼블릭으로 공유한다"
+      },
+      {
+        "label": "C",
+        "text": "KMS 키 정책/그랜트로 대상 계정에 복호화 권한을 부여하고, 암호화된 스냅샷을 대상 계정과 공유한다"
+      },
+      {
+        "label": "D",
+        "text": "KMS 키 자료를 대상 계정에 내보낸다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "KMS 키 정책이나 그랜트로 대상 계정에 kms:Decrypt 등 필요한 권한을 부여하고 암호화된 스냅샷을 공유하면 대상 계정이 복원할 수 있으면서도 키 자체는 소유 계정이 계속 통제한다. 암호화 해제 후 공유는 저장 시 암호화 요구를 위반한다. 퍼블릭 공유는 심각한 데이터 노출이다. KMS 키 자료 내보내기는 KMS에서 일반적으로 불가능하거나 위험하며 키 통제 유지 목적에 어긋난다."
+  },
+  {
+    "id": "exam-scs-c03-53",
+    "slug": "scs-c03",
+    "domain": "데이터 보호",
+    "number": 53,
+    "prompt": "민감한 애플리케이션 시크릿(DB 자격 증명, API 키)을 안전하게 보관하고, 정기 자동 교체와 세분화된 접근 제어, 그리고 교차 계정 공유를 지원해야 한다. 평문 노출 위험을 최소화하려면 가장 적절한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SSM Parameter Store의 String(표준) 파라미터에 저장한다"
+      },
+      {
+        "label": "B",
+        "text": "S3 버킷에 평문으로 저장한다"
+      },
+      {
+        "label": "C",
+        "text": "환경 변수에 시크릿을 저장한다"
+      },
+      {
+        "label": "D",
+        "text": "AWS Secrets Manager에 저장하고 자동 교체를 구성하며 리소스 정책과 KMS로 접근·암호화를 제어한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Secrets Manager는 KMS 암호화 저장, Lambda 기반 자동 교체, 리소스 정책을 통한 세분화·교차 계정 접근 제어를 기본 제공해 시크릿 보호와 자동 교체 요구를 충족한다. Parameter Store 표준 String은 암호화·자동 교체가 기본이 아니며 교체 기능이 제한적이다. 환경 변수와 S3 평문 저장은 노출 위험이 크고 자동 교체·세분화 제어를 제공하지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-54",
+    "slug": "scs-c03",
+    "domain": "데이터 보호",
+    "number": 54,
+    "prompt": "규정상 KMS 키는 회사 전용 단일 테넌트 하드웨어에서 관리되어야 하고, FIPS 140-2 Level 3 검증을 충족해야 하며, 키 사용에 대한 완전한 통제권이 필요하다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS CloudHSM 클러스터(전용 단일 테넌트 HSM)에서 키를 관리하거나 KMS 사용자 지정 키 저장소(CloudHSM 백업)를 사용한다"
+      },
+      {
+        "label": "B",
+        "text": "AWS KMS 멀티테넌트 관리형 키를 사용한다"
+      },
+      {
+        "label": "C",
+        "text": "SSE-S3 기본 암호화를 사용한다"
+      },
+      {
+        "label": "D",
+        "text": "키를 애플리케이션 메모리에서만 관리한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CloudHSM은 회사 전용 단일 테넌트 HSM으로 FIPS 140-2 Level 3 검증과 키에 대한 완전한 통제권을 제공하며, KMS 사용자 지정 키 저장소로 연결해 KMS 인터페이스를 쓰면서도 키를 CloudHSM에 둘 수 있어 요구를 충족한다. 표준 KMS 관리형 키는 멀티테넌트 HSM 기반으로 단일 테넌트 전용 요구에 맞지 않는다. SSE-S3는 키 통제를 제공하지 않는다. 애플리케이션 메모리 관리는 내구성·검증·통제 측면에서 부적합하다."
+  },
+  {
+    "id": "exam-scs-c03-55",
+    "slug": "scs-c03",
+    "domain": "데이터 보호",
+    "number": 55,
+    "prompt": "암호화된 S3 데이터를 분석 파트너와 공유하되, 파트너가 전체 객체가 아니라 PII가 마스킹/제거된 형태로만 접근하도록 하려 한다. 원본은 그대로 보존해야 한다. 운영 부담을 줄이는 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "원본 객체를 그대로 파트너에게 공유한다"
+      },
+      {
+        "label": "B",
+        "text": "S3 Object Lambda 액세스 포인트를 사용해 GET 시점에 Lambda로 PII를 마스킹/제거한 뷰를 제공하고 원본은 변경하지 않는다"
+      },
+      {
+        "label": "C",
+        "text": "PII를 제거한 사본을 매번 수동 생성해 별도 버킷에 둔다"
+      },
+      {
+        "label": "D",
+        "text": "버킷 정책으로 일부 키 접두사만 허용한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "S3 Object Lambda는 객체 GET 요청 시 Lambda로 데이터를 변환해 PII가 마스킹/제거된 뷰를 제공하면서 원본 객체는 그대로 유지하므로 사본 관리 없이 운영 부담을 줄인다. 원본 그대로 공유는 PII 보호 요구를 위반한다. 매번 수동 사본 생성은 동기화·비용·운영 부담이 크다. 키 접두사 기반 허용은 객체 내부의 PII 필드 마스킹을 구현하지 못한다."
+  },
+  {
+    "id": "exam-scs-c03-56",
+    "slug": "scs-c03",
+    "domain": "데이터 보호",
+    "number": 56,
+    "prompt": "DynamoDB에 저장되는 데이터의 특정 민감 필드를 애플리케이션 측에서 사전에 암호화(클라이언트 측 암호화)해 AWS 서비스도 평문을 보지 못하게 하려 한다. 동시에 키 관리를 단순화하고 봉투 암호화를 적용하려 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "DynamoDB 저장 시 서버 측 암호화(SSE)만 사용한다"
+      },
+      {
+        "label": "B",
+        "text": "애플리케이션에서 직접 만든 정적 키로 필드를 암호화한다"
+      },
+      {
+        "label": "C",
+        "text": "AWS Database Encryption SDK(DynamoDB용 클라이언트 측 암호화)와 KMS를 사용해 민감 필드를 클라이언트에서 봉투 암호화한다"
+      },
+      {
+        "label": "D",
+        "text": "민감 필드를 평문으로 저장하고 IAM으로만 접근을 제한한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "AWS Database Encryption SDK는 KMS를 데이터 키 제공자로 사용해 DynamoDB 항목의 특정 필드를 클라이언트에서 봉투 암호화하므로 DynamoDB 서비스조차 평문을 보지 못하고 키 관리를 KMS로 단순화한다. SSE는 서버 측 저장 암호화로 서비스가 평문을 처리하므로 클라이언트 측 보호 요구를 만족하지 못한다. 자체 정적 키는 교체·보호·감사가 취약하다. 평문 저장은 클라이언트 측 암호화 요구에 정면으로 위배된다."
+  },
+  {
+    "id": "exam-scs-c03-57",
+    "slug": "scs-c03",
+    "domain": "데이터 보호",
+    "number": 57,
+    "prompt": "여러 부서가 같은 계정에서 S3를 공유한다. 보안팀은 모든 기존·신규 버킷에서 퍼블릭 액세스를 차단하고, 조직 차원에서 차단 설정이 해제되지 못하게 하려 한다. 가장 적절한 조치 두 가지를 고르시오. (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "계정 수준 S3 퍼블릭 액세스 차단(Block Public Access)을 활성화해 기존·신규 모든 버킷에 일괄 적용한다"
+      },
+      {
+        "label": "B",
+        "text": "SCP로 s3:PutPublicAccessBlock 해제 등 차단을 무력화하는 API를 거부해 조직 차원에서 강제한다"
+      },
+      {
+        "label": "C",
+        "text": "버킷별로 ACL을 주기적으로 수동 점검한다"
+      },
+      {
+        "label": "D",
+        "text": "CloudTrail로 퍼블릭 설정 변경을 사후 탐지만 한다"
+      }
+    ],
+    "answer": "AB",
+    "explanation": "계정 수준 Block Public Access는 기존·신규 모든 버킷에 퍼블릭 차단을 일괄 적용하고, SCP로 차단 해제 API를 거부하면 조직 차원에서 우회를 예방적으로 막아 함께 쓰면 요구를 충족한다. 버킷별 ACL 수동 점검은 누락·드리프트 위험과 부담이 크다. CloudTrail 사후 탐지는 이미 노출이 일어난 뒤를 다루는 예방 외 통제다."
+  },
+  {
+    "id": "exam-scs-c03-58",
+    "slug": "scs-c03",
+    "domain": "관리 및 보안 거버넌스",
+    "number": 58,
+    "prompt": "한 기업이 다계정 환경을 새로 표준화하려 한다. 계정 자동 프로비저닝, 보안 기준선(가드레일) 자동 적용, 중앙 로깅 계정과 감사 계정 구성을 모범 사례에 따라 일관되게 하려 한다. 운영 부담을 최소화하는 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 계정을 수동으로 생성하고 보안 설정을 개별 구성한다"
+      },
+      {
+        "label": "B",
+        "text": "단일 계정에 모든 워크로드를 통합한다"
+      },
+      {
+        "label": "C",
+        "text": "CloudFormation 템플릿을 각 계정에 사람이 직접 배포한다"
+      },
+      {
+        "label": "D",
+        "text": "AWS Control Tower로 랜딩 존을 구축해 계정 팩토리, 예방·탐지 가드레일, 중앙 로그·감사 계정을 자동 구성한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Control Tower는 랜딩 존을 통해 계정 팩토리 기반 자동 프로비저닝, SCP·Config 기반 예방·탐지 가드레일, 중앙 집중식 로그·감사 계정을 모범 사례에 맞게 자동 구성하므로 다계정 표준화의 운영 부담을 가장 크게 줄인다. 수동 계정 생성·구성은 일관성과 확장성이 떨어진다. 사람이 직접 배포하는 CloudFormation은 표준화는 가능하나 가드레일·계정 팩토리·드리프트 관리를 직접 운영해야 한다. 단일 계정 통합은 블라스트 반경·격리 측면에서 부적합하다."
+  },
+  {
+    "id": "exam-scs-c03-59",
+    "slug": "scs-c03",
+    "domain": "관리 및 보안 거버넌스",
+    "number": 59,
+    "prompt": "보안팀은 모든 계정에서 'EBS 볼륨 미암호화', '보안 그룹의 0.0.0.0/0 SSH 개방' 같은 구성 위반을 지속적으로 평가하고, 위반 발견 시 자동 교정하며, 조직 전체에 규칙을 일괄 배포하려 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Config 조직 집계자와 conformance pack/조직 규칙을 사용해 규칙을 일괄 배포하고, 자동 교정(remediation) 작업을 연결한다"
+      },
+      {
+        "label": "B",
+        "text": "각 계정에서 Config 규칙을 개별 생성한다"
+      },
+      {
+        "label": "C",
+        "text": "GuardDuty로 구성 위반을 탐지한다"
+      },
+      {
+        "label": "D",
+        "text": "Trusted Advisor로 자동 교정한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS Config 조직 규칙과 conformance pack은 다계정에 규칙을 일괄 배포하고 조직 집계자로 준수 상태를 중앙에서 보며 SSM Automation 기반 자동 교정을 연결할 수 있어 지속 평가·자동 교정·일괄 배포 요구를 모두 충족한다. 계정별 개별 생성은 일관성·운영 부담 문제가 있다. GuardDuty는 행위 기반 위협 탐지용이지 구성 준수 평가·교정 엔진이 아니다. Trusted Advisor는 점검 권고를 제공하지만 사용자 정의 규칙의 자동 교정 오케스트레이션을 제공하지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-60",
+    "slug": "scs-c03",
+    "domain": "관리 및 보안 거버넌스",
+    "number": 60,
+    "prompt": "조직은 결제·태깅·리전 사용 규칙을 위반하는 활동을 예방적으로 차단하고 싶다. 예를 들어 승인되지 않은 고비용 인스턴스 유형 시작과 특정 태그 없는 리소스 생성을 막아야 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "비용 이상이 발생하면 Cost Explorer로 사후 분석한다"
+      },
+      {
+        "label": "B",
+        "text": "SCP로 조건(인스턴스 유형, aws:RequestTag 등)을 활용해 비준수 작업을 거부하는 예방적 가드레일을 적용한다"
+      },
+      {
+        "label": "C",
+        "text": "Budgets 경보만 설정한다"
+      },
+      {
+        "label": "D",
+        "text": "Config 규칙으로 사후 평가한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SCP는 인스턴스 유형 제한이나 aws:RequestTag 조건으로 비준수 작업을 실행 전에 거부할 수 있어 예방적 통제 요구를 정확히 충족한다. Cost Explorer 사후 분석과 Budgets 경보는 이미 발생한 비용을 알리는 사후 통제다. Config 규칙도 생성된 리소스를 평가·교정하는 사후 방식이라 예방 차단을 제공하지 못한다."
+  },
+  {
+    "id": "exam-scs-c03-61",
+    "slug": "scs-c03",
+    "domain": "관리 및 보안 거버넌스",
+    "number": 61,
+    "prompt": "회사는 모든 신규 및 기존 계정에서 보안 서비스(GuardDuty, Security Hub, Config, Macie)를 일관되게 활성화하고 중앙 위임 관리 계정에서 관리하려 한다. 또한 관리 계정의 사용을 최소화하는 모범 사례를 따르려 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "관리 계정에서 모든 보안 서비스를 직접 운영한다"
+      },
+      {
+        "label": "B",
+        "text": "계정마다 보안 서비스를 수동 활성화한다"
+      },
+      {
+        "label": "C",
+        "text": "각 보안 서비스에 대해 전용 보안(감사) 계정을 위임 관리자로 지정하고 조직 자동 등록을 활용한다"
+      },
+      {
+        "label": "D",
+        "text": "루트 사용자로 보안 서비스를 구성한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "각 보안 서비스에 전용 보안(감사) 계정을 위임 관리자로 지정하고 조직 자동 등록을 켜면 신규·기존 계정이 자동 포함되면서 관리 계정 사용을 최소화하라는 모범 사례를 따른다. 관리 계정에서 직접 운영하는 것은 관리 계정 노출·블라스트 반경을 키워 권장되지 않는다. 계정별 수동 활성화는 일관성·확장성이 떨어진다. 루트 사용자 구성은 심각한 보안 안티패턴이다."
+  },
+  {
+    "id": "exam-scs-c03-62",
+    "slug": "scs-c03",
+    "domain": "관리 및 보안 거버넌스",
+    "number": 62,
+    "prompt": "보안팀은 AWS 환경 전반의 보안 모범 사례(예: 루트 MFA 미설정, IAM 키 미교체, 공개 스냅샷) 점검과 함께 PCI DSS, CIS 같은 규정 준수 표준 대비 상태를 자동으로 점수화해 보고하려 한다. 가장 적절한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudTrail 로그만으로 준수 여부를 판단한다"
+      },
+      {
+        "label": "B",
+        "text": "각 항목을 수동 체크리스트로 점검한다"
+      },
+      {
+        "label": "C",
+        "text": "GuardDuty로 규정 준수 점수를 산출한다"
+      },
+      {
+        "label": "D",
+        "text": "Security Hub의 보안 표준(CIS, PCI DSS, AWS 기초 모범 사례)을 활성화해 자동 점검·점수화하고, Trusted Advisor 보안 점검을 보조로 활용한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Security Hub는 CIS, PCI DSS, AWS 기초 보안 모범 사례 같은 표준에 대한 자동 점검과 보안 점수를 제공하고 Trusted Advisor 보안 점검을 보조로 결합하면 모범 사례·규정 준수 상태를 자동 보고할 수 있다. 수동 체크리스트는 확장성·정확성이 떨어진다. GuardDuty는 위협 탐지용으로 규정 준수 점수화를 제공하지 않는다. CloudTrail 로그만으로는 표준 대비 자동 점수화·평가가 불가능하다."
+  },
+  {
+    "id": "exam-scs-c03-63",
+    "slug": "scs-c03",
+    "domain": "관리 및 보안 거버넌스",
+    "number": 63,
+    "prompt": "여러 계정에 패치를 일관되게 적용하고, 패치 준수 상태를 중앙에서 보고하며, 정의된 유지보수 기간에만 패치가 적용되도록 자동화하려 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Systems Manager Patch Manager로 패치 베이스라인과 유지보수 기간을 정의하고 다계정·다리전에서 준수 상태를 집계한다"
+      },
+      {
+        "label": "B",
+        "text": "각 인스턴스에 SSH로 접속해 수동으로 패치한다"
+      },
+      {
+        "label": "C",
+        "text": "Config 규칙으로 패치를 적용한다"
+      },
+      {
+        "label": "D",
+        "text": "Inspector로 패치를 직접 설치한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Systems Manager Patch Manager는 패치 베이스라인과 유지보수 기간으로 정의된 시점에만 패치를 적용하고 다계정·다리전 준수 상태를 중앙 집계해 보고하므로 일관된 패치 거버넌스 요구를 충족한다. SSH 수동 패치는 확장성·일관성·감사성이 없다. Config 규칙은 패치 적용을 직접 수행하지 않고 평가용이다. Inspector는 취약점을 평가·식별할 뿐 패치 설치 오케스트레이션을 수행하지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-64",
+    "slug": "scs-c03",
+    "domain": "관리 및 보안 거버넌스",
+    "number": 64,
+    "prompt": "보안팀은 조직의 모든 계정에서 KMS 키, 보안 그룹, IAM 역할 같은 핵심 리소스의 구성 변경 이력을 시점별로 추적하고, 특정 시점의 구성 상태를 조사하며, 변경에 대한 알림을 받으려 한다. 가장 적절한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudWatch 대시보드로 구성 변경을 추적한다"
+      },
+      {
+        "label": "B",
+        "text": "AWS Config로 리소스 구성 변경을 기록하고 구성 타임라인과 EventBridge 알림을 활용한다"
+      },
+      {
+        "label": "C",
+        "text": "GuardDuty로 구성 변경 이력을 본다"
+      },
+      {
+        "label": "D",
+        "text": "S3 액세스 로그로 구성 변경을 추적한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AWS Config는 지원 리소스의 구성 항목(configuration item)을 시점별로 기록해 구성 타임라인으로 특정 시점 상태를 조회하게 하고 변경 시 EventBridge로 알림을 보낼 수 있어 구성 변경 추적·조사·알림 요구를 충족한다. CloudWatch 대시보드는 지표 시각화용으로 리소스 구성 이력을 시점별로 기록하지 않는다. GuardDuty는 위협 탐지용이다. S3 액세스 로그는 S3 객체 접근 기록일 뿐 다양한 리소스의 구성 변경 이력을 다루지 않는다."
+  },
+  {
+    "id": "exam-scs-c03-65",
+    "slug": "scs-c03",
+    "domain": "관리 및 보안 거버넌스",
+    "number": 65,
+    "prompt": "한 회사는 보안 인시던트 대응 시 격리·증거 수집을 위해 사전 승인된 권한을 가진 별도의 '브레이크 글래스' 역할이 필요하다. 평상시에는 사용이 차단되고, 사용 시 즉시 알림과 전체 감사가 이루어져야 하며 최소 권한 원칙을 유지해야 한다. 가장 적절한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 보안 담당자에게 상시 관리자 권한을 부여한다"
+      },
+      {
+        "label": "B",
+        "text": "루트 자격 증명을 봉인해 두고 인시던트 시 사용한다"
+      },
+      {
+        "label": "C",
+        "text": "최소 권한의 인시던트 대응 역할을 만들어 평상시 SCP/조건으로 사용을 제한하고, AssumeRole 시 CloudTrail+EventBridge로 즉시 알림하며 MFA를 강제한다"
+      },
+      {
+        "label": "D",
+        "text": "공유 IAM 사용자 키를 금고에 보관한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "최소 권한의 인시던트 대응 역할을 두고 평상시 SCP·조건으로 사용을 제한한 뒤 AssumeRole 시 CloudTrail·EventBridge로 즉시 알림하고 MFA를 강제하면 평상시 차단·사용 시 알림·전체 감사·최소 권한 요구를 모두 충족한다. 상시 관리자 부여는 최소 권한과 평상시 차단 요구에 위배된다. 루트 자격 증명 사용은 직무 분리·최소 권한·감사 측면에서 부적합하다. 공유 IAM 사용자 키는 장기 자격 증명 공유라는 안티패턴으로 책임 추적과 교체가 어렵다."
+  },
+  {
     "id": "exam-soa-c02-1",
     "slug": "soa-c02",
     "domain": "모니터링·로깅·교정",
