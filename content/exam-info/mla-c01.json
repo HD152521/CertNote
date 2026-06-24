@@ -1,0 +1,22 @@
+{
+  "examCode": "MLA-C01",
+  "fullName": "AWS Certified Machine Learning Engineer – Associate",
+  "level": "associate",
+  "questionCount": 65,
+  "durationMin": 130,
+  "passingScore": 720,
+  "scoreMax": 1000,
+  "costUsd": 150,
+  "validityYears": 3,
+  "languages": ["영어", "한국어", "일본어", "중국어 간체"],
+  "prerequisites": "없음(권장: SageMaker 등 ML 엔지니어링 서비스 1년 경험)",
+  "format": "객관식·복수응답",
+  "domains": [
+    { "name": "ML을 위한 데이터 준비", "weight": 28 },
+    { "name": "ML 모델 개발", "weight": 26 },
+    { "name": "ML 워크플로 배포 및 오케스트레이션", "weight": 22 },
+    { "name": "ML 솔루션 모니터링·유지보수·보안", "weight": 24 }
+  ],
+  "officialUrl": "https://aws.amazon.com/certification/certified-machine-learning-engineer-associate/",
+  "registerUrl": "https://www.aws.training/certification"
+}

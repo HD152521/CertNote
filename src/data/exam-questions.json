@@ -1,5 +1,1760 @@
 [
   {
+    "id": "exam-clf-c02-1",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 1,
+    "prompt": "한 스타트업이 직접 데이터센터를 구축하는 대신 AWS를 사용하기로 했다. 서버를 사용한 만큼만 비용을 지불하고 선행 자본 투자를 피하려고 한다. 이 결정이 보여주는 클라우드 컴퓨팅의 핵심 가치 제안은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 워크로드를 단일 가용 영역에서 실행한다"
+      },
+      {
+        "label": "B",
+        "text": "물리적 서버를 직접 소유하여 통제력을 높인다"
+      },
+      {
+        "label": "C",
+        "text": "대규모 자본 비용을 가변 비용으로 전환한다"
+      },
+      {
+        "label": "D",
+        "text": "사용량과 무관하게 고정 월정액을 지불한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "AWS의 핵심 이점 중 하나는 데이터센터 구축 같은 대규모 선행 자본 지출(CapEx)을 사용한 만큼 지불하는 가변 운영 비용(OpEx)으로 바꾸는 것이다. 모든 워크로드를 단일 가용 영역에서 실행하는 것은 가용성을 떨어뜨리는 안티패턴이므로 클라우드의 가치와 무관하다. 물리적 서버 직접 소유는 온프레미스 모델로, 클라우드가 피하려는 방식이다. 고정 월정액은 종량제(pay-as-you-go) 모델과 반대된다."
+  },
+  {
+    "id": "exam-clf-c02-2",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 2,
+    "prompt": "어떤 기업이 트래픽이 예측 불가능한 웹 애플리케이션을 운영한다. 평소에는 적은 수의 서버로 충분하지만 프로모션 기간에는 급증한다. 수요에 맞춰 자동으로 용량을 늘리고 줄이는 클라우드의 특성을 무엇이라고 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "내결함성"
+      },
+      {
+        "label": "B",
+        "text": "탄력성(Elasticity)"
+      },
+      {
+        "label": "C",
+        "text": "느슨한 결합"
+      },
+      {
+        "label": "D",
+        "text": "수직 통합"
+      }
+    ],
+    "answer": "B",
+    "explanation": "탄력성은 수요 변화에 맞춰 리소스를 자동으로 확장하거나 축소하는 능력으로, 트래픽이 급증하거나 감소할 때 적절한 용량을 유지하게 해 준다. 내결함성은 구성 요소 장애가 있어도 시스템이 계속 동작하는 능력으로 용량 자동 조정과는 다른 개념이다. 느슨한 결합은 구성 요소 간 의존성을 줄이는 설계 원칙이다. 수직 통합은 클라우드 운영 특성이 아니다."
+  },
+  {
+    "id": "exam-clf-c02-3",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 3,
+    "prompt": "AWS 클라우드 채택 시 얻을 수 있는 '규모의 경제로 인한 이점'을 가장 잘 설명한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 고객이 자체 데이터센터를 운영하므로 비용이 분산된다"
+      },
+      {
+        "label": "B",
+        "text": "고객이 더 많은 직원을 고용해야 인프라를 관리할 수 있다"
+      },
+      {
+        "label": "C",
+        "text": "리전 수가 줄어들어 운영 비용이 절감된다"
+      },
+      {
+        "label": "D",
+        "text": "수많은 고객의 사용량이 집계되어 AWS가 더 낮은 종량 요금을 달성하고 이를 고객에게 전달한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "수십만 고객의 클라우드 사용량이 모이면 AWS는 대규모 구매력을 활용해 인프라 비용을 낮추고 그 절감액을 더 낮은 종량 요금 형태로 고객에게 전달한다. 각 고객이 자체 데이터센터를 운영하는 것은 클라우드의 공유 모델과 반대된다. 클라우드는 오히려 인프라 관리 인력 부담을 줄여 준다. 리전을 줄이는 것은 규모의 경제와 무관하며 AWS는 리전을 확대하고 있다."
+  },
+  {
+    "id": "exam-clf-c02-4",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 4,
+    "prompt": "AWS 글로벌 인프라에서 '가용 영역(Availability Zone)'에 대한 설명으로 가장 정확한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "전 세계에 분산된 캐싱 전용 엣지 로케이션이다"
+      },
+      {
+        "label": "B",
+        "text": "하나 이상의 개별 데이터센터로 구성되며 같은 리전 내 다른 AZ와 물리적으로 분리된 위치다"
+      },
+      {
+        "label": "C",
+        "text": "리전과 동일한 의미이며 항상 1:1로 매핑된다"
+      },
+      {
+        "label": "D",
+        "text": "사용자 IAM 권한을 저장하는 논리적 경계다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "가용 영역은 리전 내에서 전원, 네트워킹, 물리적 위치가 분리된 하나 이상의 데이터센터 집합으로, 여러 AZ에 걸쳐 배포하면 단일 데이터센터 장애에 대한 복원력을 얻는다. 엣지 로케이션은 CloudFront 등의 콘텐츠 캐싱에 사용되는 별개의 인프라다. 한 리전은 일반적으로 여러 AZ를 포함하므로 리전과 1:1이 아니다. IAM 권한 저장은 가용 영역의 역할이 아니다."
+  },
+  {
+    "id": "exam-clf-c02-5",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 5,
+    "prompt": "AWS Well-Architected Framework의 기둥(pillar)에 해당하지 않는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보안"
+      },
+      {
+        "label": "B",
+        "text": "비용 최적화"
+      },
+      {
+        "label": "C",
+        "text": "마케팅 효율성"
+      },
+      {
+        "label": "D",
+        "text": "운영 우수성"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Well-Architected Framework는 운영 우수성, 보안, 안정성, 성능 효율성, 비용 최적화, 지속 가능성의 기둥으로 구성된다. 보안, 비용 최적화, 운영 우수성은 모두 정식 기둥이다. 마케팅 효율성은 프레임워크의 기둥이 아니며 아키텍처 설계 원칙과 무관하다."
+  },
+  {
+    "id": "exam-clf-c02-6",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 6,
+    "prompt": "한 회사가 일부 애플리케이션은 온프레미스 데이터센터에 유지하면서 새로운 애플리케이션은 AWS에서 실행하고, 두 환경을 안전하게 연결하려고 한다. 이 배포 모델은 무엇인가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "완전 클라우드(All-in cloud)"
+      },
+      {
+        "label": "B",
+        "text": "멀티 리전 모델"
+      },
+      {
+        "label": "C",
+        "text": "하이브리드 클라우드"
+      },
+      {
+        "label": "D",
+        "text": "온프레미스 전용"
+      }
+    ],
+    "answer": "C",
+    "explanation": "하이브리드 클라우드는 온프레미스 인프라와 클라우드 리소스를 함께 사용하고 둘을 연결해 운영하는 모델로, 점진적 마이그레이션이나 규제 요건이 있는 워크로드에 적합하다. 완전 클라우드는 모든 것을 클라우드에서 실행하므로 온프레미스 유지와 맞지 않는다. 멀티 리전은 여러 AWS 리전을 쓰는 것이지 온프레미스 연동을 뜻하지 않는다. 온프레미스 전용은 클라우드를 사용하지 않는 모델이다."
+  },
+  {
+    "id": "exam-clf-c02-7",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 7,
+    "prompt": "다음 중 클라우드의 '민첩성(Agility)' 이점을 가장 잘 나타내는 상황은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "새 서버 조달에 수 주가 걸려 프로젝트가 지연된다"
+      },
+      {
+        "label": "B",
+        "text": "모든 변경에 대해 하드웨어 구매 승인을 받아야 한다"
+      },
+      {
+        "label": "C",
+        "text": "용량을 항상 최대 예상치로 미리 구매해 둔다"
+      },
+      {
+        "label": "D",
+        "text": "개발팀이 몇 분 만에 리소스를 프로비저닝해 아이디어를 빠르게 실험할 수 있다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "민첩성은 필요한 리소스를 몇 분 만에 프로비저닝하고 폐기할 수 있어 실험과 혁신 주기를 빠르게 가져가는 능력을 의미한다. 서버 조달에 수 주가 걸리는 것은 클라우드 이전의 전통적 IT 문제다. 하드웨어 구매 승인 절차나 최대 예상치를 미리 구매하는 방식은 종량제와 빠른 프로비저닝이라는 클라우드 장점과 정반대다."
+  },
+  {
+    "id": "exam-clf-c02-8",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 8,
+    "prompt": "클라우드 컴퓨팅 모델 중 IaaS(서비스형 인프라)에 대한 설명으로 가장 정확한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "운영체제, 미들웨어, 애플리케이션까지 모두 공급자가 관리하는 완성형 소프트웨어를 제공한다"
+      },
+      {
+        "label": "B",
+        "text": "네트워킹, 스토리지, 가상 서버 같은 기본 컴퓨팅 빌딩 블록을 제공하며 사용자가 OS와 그 위 계층을 관리한다"
+      },
+      {
+        "label": "C",
+        "text": "코드를 업로드하면 인프라를 전혀 신경 쓰지 않아도 되는 함수 실행만 제공한다"
+      },
+      {
+        "label": "D",
+        "text": "물리적 서버를 고객에게 직접 배송한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "IaaS는 가상 서버, 스토리지, 네트워킹 같은 기본 인프라 구성 요소를 제공하고 사용자가 운영체제와 그 위의 계층을 직접 관리한다(예: Amazon EC2). 완성형 소프트웨어를 그대로 사용하는 것은 SaaS다. 인프라를 신경 쓰지 않는 함수 실행은 서버리스/FaaS에 가깝다. 물리적 서버 배송은 클라우드 서비스 모델이 아니다."
+  },
+  {
+    "id": "exam-clf-c02-9",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 9,
+    "prompt": "AWS 클라우드 도입의 이점 중 '몇 분 만에 전 세계에 배포(go global in minutes)'가 의미하는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "여러 AWS 리전에 애플리케이션을 손쉽게 배포해 전 세계 사용자에게 더 낮은 지연 시간을 제공할 수 있다"
+      },
+      {
+        "label": "B",
+        "text": "전 세계 모든 국가에 물리적 사무실을 즉시 개설할 수 있다"
+      },
+      {
+        "label": "C",
+        "text": "데이터를 항상 단일 리전에만 보관해야 한다"
+      },
+      {
+        "label": "D",
+        "text": "모든 서비스가 자동으로 무료 제공된다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS의 글로벌 리전과 엣지 인프라를 활용하면 클릭 몇 번으로 여러 지역에 애플리케이션을 배포해 사용자와 가까운 곳에서 서비스함으로써 지연 시간을 줄일 수 있다. 물리적 사무실 개설은 클라우드 인프라와 무관하다. 데이터를 단일 리전에만 보관하라는 제약은 글로벌 배포의 취지와 반대된다. AWS 서비스가 자동으로 무료가 되는 것은 아니다."
+  },
+  {
+    "id": "exam-clf-c02-10",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 10,
+    "prompt": "클라우드 마이그레이션 전략 중 애플리케이션을 거의 변경하지 않고 그대로 클라우드로 옮기는 '리프트 앤 시프트' 방식을 무엇이라고 부르는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "리팩터링(Refactoring)"
+      },
+      {
+        "label": "B",
+        "text": "리호스팅(Rehosting)"
+      },
+      {
+        "label": "C",
+        "text": "리타이어(Retiring)"
+      },
+      {
+        "label": "D",
+        "text": "리퍼체이스(Repurchasing)"
+      }
+    ],
+    "answer": "B",
+    "explanation": "리호스팅은 코드를 거의 수정하지 않고 애플리케이션을 그대로 클라우드로 이전하는 '리프트 앤 시프트' 전략으로, 빠른 마이그레이션에 적합하다. 리팩터링은 클라우드 네이티브 기능을 활용하도록 애플리케이션을 재설계하는 방식이다. 리타이어는 더 이상 필요 없는 애플리케이션을 폐기하는 것이다. 리퍼체이스는 기존 제품을 SaaS 등 다른 제품으로 교체하는 전략이다."
+  },
+  {
+    "id": "exam-clf-c02-11",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 11,
+    "prompt": "한 조직이 AWS로의 클라우드 전환을 계획하며 인력, 거버넌스, 플랫폼, 운영 등 조직 전반의 변화를 체계적으로 다루는 지침을 찾고 있다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Cloud Adoption Framework(CAF)"
+      },
+      {
+        "label": "B",
+        "text": "AWS Service Catalog"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Inspector"
+      },
+      {
+        "label": "D",
+        "text": "AWS Budgets"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS Cloud Adoption Framework는 비즈니스, 인력, 거버넌스, 플랫폼, 보안, 운영 관점에서 조직의 클라우드 전환을 체계적으로 안내하는 지침이다. Service Catalog는 승인된 IT 제품 카탈로그를 관리하는 도구다. Inspector는 취약점 평가 서비스다. Budgets는 비용·사용량 예산 알림 도구로, 모두 조직 차원의 전환 프레임워크가 아니다."
+  },
+  {
+    "id": "exam-clf-c02-12",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 12,
+    "prompt": "느슨한 결합(loose coupling)과 메시지 큐를 사용해 구성 요소 간 의존성을 줄이면 얻는 주요 이점은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 구성 요소가 항상 동시에 실패하도록 보장한다"
+      },
+      {
+        "label": "B",
+        "text": "네트워크 트래픽을 완전히 제거한다"
+      },
+      {
+        "label": "C",
+        "text": "데이터를 영구적으로 무료 저장한다"
+      },
+      {
+        "label": "D",
+        "text": "한 구성 요소의 장애가 다른 구성 요소로 직접 전파되는 것을 줄여 시스템 복원력을 높인다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "느슨한 결합은 큐 같은 중간 계층을 두어 구성 요소를 분리함으로써, 한 부분의 장애나 부하가 다른 부분으로 직접 전파되지 않게 하여 복원력과 확장성을 높인다. 구성 요소가 동시에 실패하도록 만드는 것은 정반대의 결과다. 메시지 큐가 네트워크 트래픽을 없애지는 않으며, 무료 영구 저장과도 관련이 없다."
+  },
+  {
+    "id": "exam-clf-c02-13",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 13,
+    "prompt": "AWS 리전을 선택할 때 일반적으로 고려해야 하는 요소로 가장 거리가 먼 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터 거버넌스 및 규정 준수(데이터 주권) 요구사항"
+      },
+      {
+        "label": "B",
+        "text": "최종 사용자와의 근접성(지연 시간)"
+      },
+      {
+        "label": "C",
+        "text": "리전에서 제공되는 서비스 가용성과 요금"
+      },
+      {
+        "label": "D",
+        "text": "AWS 계정 루트 사용자의 이메일 도메인"
+      }
+    ],
+    "answer": "D",
+    "explanation": "리전 선택은 보통 규정 준수와 데이터 주권, 사용자와의 근접성에 따른 지연 시간, 해당 리전의 서비스 가용성 및 가격을 기준으로 한다. 데이터 거버넌스, 지연 시간, 서비스/요금은 모두 정당한 고려 요소다. 루트 사용자의 이메일 도메인은 리전 위치 선택과 아무런 관련이 없다."
+  },
+  {
+    "id": "exam-clf-c02-14",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 14,
+    "prompt": "온프레미스 환경 대비 클라우드에서 '용량 추측을 제거'할 수 있다는 것은 무엇을 의미하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "필요한 용량을 미리 정확히 예측해 한 번에 모두 구매해야 한다"
+      },
+      {
+        "label": "B",
+        "text": "용량을 전혀 모니터링할 수 없다"
+      },
+      {
+        "label": "C",
+        "text": "필요할 때 리소스를 확장·축소할 수 있어 과다 또는 과소 프로비저닝을 피할 수 있다"
+      },
+      {
+        "label": "D",
+        "text": "항상 최대 용량으로 고정 운영해야 한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "클라우드에서는 수요에 따라 리소스를 늘리거나 줄일 수 있으므로 사전에 정확한 용량을 추측해 구매할 필요가 없고, 과다·과소 프로비저닝을 모두 피할 수 있다. 미리 정확히 예측해 한 번에 구매하거나 최대 용량으로 고정 운영하는 것은 클라우드가 해결하는 전통적 문제다. 클라우드는 오히려 CloudWatch 등으로 용량 모니터링을 강화한다."
+  },
+  {
+    "id": "exam-clf-c02-15",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 15,
+    "prompt": "다음 중 SaaS(서비스형 소프트웨어)의 예로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "사용자가 직접 OS를 설치하고 관리하는 가상 서버"
+      },
+      {
+        "label": "B",
+        "text": "브라우저로 접속해 바로 사용하는 이메일/협업 애플리케이션"
+      },
+      {
+        "label": "C",
+        "text": "고객이 OS는 신경 쓰지 않고 코드만 배포하는 애플리케이션 플랫폼"
+      },
+      {
+        "label": "D",
+        "text": "물리적 네트워크 스위치 하드웨어"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SaaS는 공급자가 인프라와 애플리케이션을 모두 관리하고 사용자는 브라우저 등으로 완성된 소프트웨어를 바로 사용하는 모델로, 웹 기반 이메일·협업 도구가 대표적이다. OS를 직접 관리하는 가상 서버는 IaaS다. OS를 신경 쓰지 않고 코드만 배포하는 플랫폼은 PaaS다. 물리적 스위치 하드웨어는 클라우드 서비스 모델이 아니다."
+  },
+  {
+    "id": "exam-clf-c02-16",
+    "slug": "clf-c02",
+    "domain": "클라우드 개념",
+    "number": 16,
+    "prompt": "클라우드 컴퓨팅에서 '주문형 셀프서비스(on-demand self-service)' 특성이 의미하는 바는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "리소스를 사용하려면 영업 담당자와 통화해 수동 승인을 받아야 한다"
+      },
+      {
+        "label": "B",
+        "text": "리소스는 한 달에 한 번만 할당 가능하다"
+      },
+      {
+        "label": "C",
+        "text": "AWS 직원이 사용자의 모든 리소스를 수동 구성한다"
+      },
+      {
+        "label": "D",
+        "text": "사용자가 필요할 때 인적 개입 없이 콘솔이나 API로 직접 컴퓨팅 리소스를 프로비저닝할 수 있다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "주문형 셀프서비스는 사용자가 필요한 시점에 인적 개입 없이 콘솔, CLI, API를 통해 직접 리소스를 즉시 프로비저닝할 수 있다는 특성이다. 영업 담당자 통화나 AWS 직원의 수동 구성이 필요하다는 설명은 셀프서비스의 정의와 반대된다. 한 달에 한 번만 할당 가능하다는 제약도 주문형 모델과 맞지 않는다."
+  },
+  {
+    "id": "exam-clf-c02-17",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 17,
+    "prompt": "AWS 책임 공유 모델(Shared Responsibility Model)에서 'AWS가 책임지는 영역'에 해당하는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "EC2 인스턴스의 게스트 운영체제 패치"
+      },
+      {
+        "label": "B",
+        "text": "데이터센터의 물리적 보안과 하드웨어 인프라"
+      },
+      {
+        "label": "C",
+        "text": "S3 버킷에 업로드한 데이터의 암호화 설정"
+      },
+      {
+        "label": "D",
+        "text": "IAM 사용자에게 부여하는 권한 정책"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AWS는 '클라우드의 보안', 즉 데이터센터 물리적 보안, 하드웨어, 호스트 인프라, 네트워크의 기반을 책임진다. EC2 게스트 OS 패치, S3 데이터 암호화 설정, IAM 권한 구성은 모두 '클라우드 내 보안'에 해당하여 고객 책임이다."
+  },
+  {
+    "id": "exam-clf-c02-18",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 18,
+    "prompt": "AWS 계정을 새로 만든 직후 보안 모범 사례로 가장 우선해야 하는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "루트 사용자로 모든 일상 작업을 수행한다"
+      },
+      {
+        "label": "B",
+        "text": "루트 사용자의 액세스 키를 공유 문서에 저장한다"
+      },
+      {
+        "label": "C",
+        "text": "루트 사용자에 MFA를 활성화하고 일상 작업용 IAM 사용자/역할을 별도로 생성한다"
+      },
+      {
+        "label": "D",
+        "text": "루트 사용자 암호를 비활성화한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "모범 사례는 강력한 권한을 가진 루트 사용자를 보호하기 위해 MFA를 켜고, 일상 작업은 최소 권한을 가진 별도의 IAM 사용자나 역할로 수행하는 것이다. 루트로 모든 작업을 하거나 루트 액세스 키를 문서에 저장하는 것은 심각한 보안 위험이다. 루트 암호를 비활성화하는 옵션은 존재하지 않으며 보호 대상은 비활성화가 아니라 MFA로 강화하는 것이다."
+  },
+  {
+    "id": "exam-clf-c02-19",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 19,
+    "prompt": "여러 EC2 인스턴스가 S3 버킷에 접근해야 한다. 자격 증명을 코드나 인스턴스에 하드코딩하지 않고 권한을 부여하는 가장 안전한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM 사용자 액세스 키를 각 인스턴스의 코드에 직접 삽입한다"
+      },
+      {
+        "label": "B",
+        "text": "필요한 S3 권한을 가진 IAM 역할을 만들어 EC2 인스턴스에 연결한다"
+      },
+      {
+        "label": "C",
+        "text": "루트 사용자 자격 증명을 인스턴스에 배포한다"
+      },
+      {
+        "label": "D",
+        "text": "S3 버킷을 퍼블릭으로 공개한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "IAM 역할을 EC2에 연결하면 자동으로 교체되는 임시 자격 증명을 통해 권한을 부여하므로 키를 하드코딩할 필요가 없어 가장 안전하다. 액세스 키를 코드에 삽입하면 유출 위험이 크고 교체도 어렵다. 루트 자격 증명 배포는 절대 금지되는 관행이다. 버킷을 퍼블릭으로 공개하면 의도치 않은 데이터 노출로 이어진다."
+  },
+  {
+    "id": "exam-clf-c02-20",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 20,
+    "prompt": "AWS의 규정 준수 보고서(예: SOC, ISO, PCI DSS 인증서)를 온디맨드로 다운로드할 수 있는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Artifact"
+      },
+      {
+        "label": "B",
+        "text": "AWS CloudTrail"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Macie"
+      },
+      {
+        "label": "D",
+        "text": "AWS Config"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS Artifact는 SOC, ISO, PCI DSS 등 AWS의 규정 준수 보고서와 계약을 온디맨드로 제공하는 자체 서비스 포털이다. CloudTrail은 API 호출 로그를 기록한다. Macie는 S3의 민감 데이터를 탐지한다. Config는 리소스 구성 변경을 추적하고 평가하는 서비스로, 규정 준수 문서 다운로드 용도가 아니다."
+  },
+  {
+    "id": "exam-clf-c02-21",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 21,
+    "prompt": "계정에서 이루어진 모든 API 호출과 사용자 활동을 기록해 거버넌스, 감사, 규정 준수에 활용하려고 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "B",
+        "text": "AWS Trusted Advisor"
+      },
+      {
+        "label": "C",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "D",
+        "text": "AWS CloudTrail"
+      }
+    ],
+    "answer": "D",
+    "explanation": "CloudTrail은 누가, 언제, 어떤 API 호출을 했는지 계정 활동을 기록해 감사와 거버넌스에 사용된다. CloudWatch는 메트릭과 로그 기반 모니터링·경보에 초점을 둔다. Trusted Advisor는 비용·성능·보안 모범 사례를 점검하는 권장 사항 도구다. GuardDuty는 위협 탐지 서비스로, 전체 API 활동 감사 기록 자체를 제공하는 것은 아니다."
+  },
+  {
+    "id": "exam-clf-c02-22",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 22,
+    "prompt": "IAM 정책 설계 시 '최소 권한 원칙(least privilege)'을 올바르게 적용한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 사용자에게 AdministratorAccess를 부여해 작업이 막히지 않게 한다"
+      },
+      {
+        "label": "B",
+        "text": "각 사용자나 역할에 업무 수행에 꼭 필요한 권한만 부여한다"
+      },
+      {
+        "label": "C",
+        "text": "권한 관리를 단순화하기 위해 모두 루트 사용자를 공유한다"
+      },
+      {
+        "label": "D",
+        "text": "권한을 전혀 부여하지 않고 모든 작업을 수동으로 처리한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "최소 권한 원칙은 사용자나 역할이 맡은 작업을 수행하는 데 필요한 최소한의 권한만 부여하는 것으로, 공격 표면과 사고 영향을 줄인다. 모두에게 관리자 권한을 주거나 루트를 공유하는 것은 과도한 권한 부여로 원칙에 위배된다. 권한을 전혀 부여하지 않는 것은 업무 자체를 불가능하게 만들어 실용적이지 않다."
+  },
+  {
+    "id": "exam-clf-c02-23",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 23,
+    "prompt": "Amazon S3 버킷에 저장된 개인정보 같은 민감 데이터를 머신러닝으로 자동 탐지하고 분류하려는 보안팀에 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Macie"
+      },
+      {
+        "label": "B",
+        "text": "AWS Shield"
+      },
+      {
+        "label": "C",
+        "text": "AWS WAF"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Cognito"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Amazon Macie는 머신러닝을 사용해 S3에 저장된 PII 같은 민감 데이터를 자동으로 검색·분류하고 노출 위험을 평가한다. Shield는 DDoS 공격을 방어한다. WAF는 웹 애플리케이션 계층의 공격을 필터링한다. Cognito는 사용자 인증·자격 증명 관리 서비스로, 데이터 분류 기능을 제공하지 않는다."
+  },
+  {
+    "id": "exam-clf-c02-24",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 24,
+    "prompt": "웹 애플리케이션을 SQL 인젝션이나 크로스 사이트 스크립팅 같은 일반적인 웹 익스플로잇으로부터 보호하기 위해 사용할 수 있는 AWS 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Inspector"
+      },
+      {
+        "label": "B",
+        "text": "AWS Key Management Service"
+      },
+      {
+        "label": "C",
+        "text": "AWS WAF(Web Application Firewall)"
+      },
+      {
+        "label": "D",
+        "text": "AWS Config"
+      }
+    ],
+    "answer": "C",
+    "explanation": "AWS WAF는 SQL 인젝션, XSS 등 일반적인 웹 익스플로잇을 차단하는 규칙을 적용해 웹 애플리케이션을 보호한다. Inspector는 EC2/컨테이너의 취약점을 평가하는 도구다. KMS는 암호화 키를 관리한다. Config는 리소스 구성 준수를 추적하는 서비스로, 웹 요청 필터링과는 무관하다."
+  },
+  {
+    "id": "exam-clf-c02-25",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 25,
+    "prompt": "DDoS 공격으로부터 AWS 리소스를 보호하기 위해 모든 AWS 고객에게 추가 비용 없이 기본 제공되는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Shield Standard"
+      },
+      {
+        "label": "B",
+        "text": "AWS Shield Advanced"
+      },
+      {
+        "label": "C",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "D",
+        "text": "AWS Firewall Manager"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS Shield Standard는 모든 AWS 고객에게 추가 비용 없이 자동으로 적용되어 일반적인 네트워크·전송 계층 DDoS 공격을 방어한다. Shield Advanced는 추가 요금이 붙는 유료 상위 등급이다. GuardDuty는 위협 탐지 서비스이고, Firewall Manager는 여러 계정의 방화벽 규칙을 중앙 관리하는 도구로 기본 무료 DDoS 보호와는 다르다."
+  },
+  {
+    "id": "exam-clf-c02-26",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 26,
+    "prompt": "다음 중 책임 공유 모델에서 '항상 고객의 책임'인 항목을 모두 고르면? (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM을 통한 사용자 자격 증명 및 권한 관리"
+      },
+      {
+        "label": "B",
+        "text": "S3 객체에 저장하는 데이터의 분류 및 암호화 결정"
+      },
+      {
+        "label": "C",
+        "text": "하이퍼바이저 및 물리적 호스트 보안"
+      },
+      {
+        "label": "D",
+        "text": "글로벌 네트워크 백본의 물리적 유지보수"
+      }
+    ],
+    "answer": "AB",
+    "explanation": "고객은 자신의 데이터를 통제하므로 IAM으로 자격 증명과 권한을 관리하고, 저장 데이터의 분류·암호화 여부를 스스로 결정해야 한다. 하이퍼바이저와 물리적 호스트 보안, 글로벌 네트워크 백본의 물리적 유지보수는 기반 인프라에 해당하여 AWS의 책임이다."
+  },
+  {
+    "id": "exam-clf-c02-27",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 27,
+    "prompt": "여러 AWS 계정에 일관된 보안 정책과 통제를 적용하고, 계정 간 SCP(서비스 제어 정책)로 허용 가능한 작업을 제한하려고 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS IAM Identity Center 단독"
+      },
+      {
+        "label": "B",
+        "text": "AWS Organizations"
+      },
+      {
+        "label": "C",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "D",
+        "text": "AWS Trusted Advisor"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AWS Organizations는 여러 계정을 OU로 그룹화하고 서비스 제어 정책(SCP)을 통해 계정 전반에 허용되는 작업의 상한을 설정하는 거버넌스 서비스다. IAM Identity Center는 로그인 및 권한 집합을 제공하지만 SCP 기반 계정 통제를 정의하지 않는다. CloudWatch는 모니터링, Trusted Advisor는 모범 사례 점검 도구로 다계정 정책 통제와는 다르다."
+  },
+  {
+    "id": "exam-clf-c02-28",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 28,
+    "prompt": "전송 중(in-transit) 데이터를 보호하기 위한 일반적인 방법으로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "HTTP 평문 통신을 사용한다"
+      },
+      {
+        "label": "B",
+        "text": "데이터를 압축만 하고 암호화는 생략한다"
+      },
+      {
+        "label": "C",
+        "text": "S3 버킷 버전 관리를 켠다"
+      },
+      {
+        "label": "D",
+        "text": "TLS/SSL을 사용해 클라이언트와 서버 간 통신을 암호화한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "전송 중 데이터는 TLS/SSL로 통신을 암호화해 도청과 변조로부터 보호한다. HTTP 평문이나 단순 압축은 데이터를 암호화하지 않아 보호가 되지 않는다. S3 버전 관리는 객체의 이전 버전을 보존하는 기능으로 데이터 보호의 한 형태이긴 하나 전송 중 암호화와는 무관하다."
+  },
+  {
+    "id": "exam-clf-c02-29",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 29,
+    "prompt": "AWS Key Management Service(KMS)의 주요 용도로 가장 정확한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "암호화 키를 중앙에서 생성·관리·제어하고 다른 AWS 서비스와 통합해 데이터를 암호화한다"
+      },
+      {
+        "label": "B",
+        "text": "웹 트래픽을 여러 인스턴스로 분산한다"
+      },
+      {
+        "label": "C",
+        "text": "EC2 인스턴스의 운영체제를 자동 패치한다"
+      },
+      {
+        "label": "D",
+        "text": "도메인 이름을 IP 주소로 변환한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "KMS는 암호화 키를 중앙에서 생성·관리·제어하고 S3, EBS, RDS 등 여러 AWS 서비스와 통합해 저장 데이터를 암호화하게 해 준다. 트래픽 분산은 Elastic Load Balancing의 역할이다. OS 자동 패치는 Systems Manager 등의 기능이다. 도메인 이름을 IP로 변환하는 것은 Route 53의 DNS 기능이다."
+  },
+  {
+    "id": "exam-clf-c02-30",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 30,
+    "prompt": "개발자가 실수로 GitHub 등에 IAM 액세스 키를 노출했을 때 가장 먼저 취해야 할 조치는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "아무 조치도 하지 않고 키가 사용되는지 한 달간 지켜본다"
+      },
+      {
+        "label": "B",
+        "text": "노출된 키를 즉시 비활성화 또는 삭제하고 새 키로 교체한다"
+      },
+      {
+        "label": "C",
+        "text": "키를 다른 공개 저장소로 옮긴다"
+      },
+      {
+        "label": "D",
+        "text": "계정의 모든 리전을 삭제한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "자격 증명이 노출되면 즉시 해당 키를 비활성화하거나 삭제하고 새 키로 교체해 무단 사용을 차단해야 한다. 한 달간 지켜보는 것은 그동안 악용될 위험을 방치하는 것이다. 키를 다른 공개 저장소로 옮기는 것은 노출을 악화시킨다. 리전은 사용자가 삭제할 수 있는 대상이 아니며 사고 대응과도 무관하다."
+  },
+  {
+    "id": "exam-clf-c02-31",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 31,
+    "prompt": "여러 자격 증명 공급자(회사 Active Directory 등)와 통합해 사용자가 한 번 로그인하여 여러 AWS 계정과 애플리케이션에 접근하도록 하는 SSO 기능을 제공하는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Inspector"
+      },
+      {
+        "label": "B",
+        "text": "AWS Config"
+      },
+      {
+        "label": "C",
+        "text": "AWS IAM Identity Center(구 AWS SSO)"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Macie"
+      }
+    ],
+    "answer": "C",
+    "explanation": "AWS IAM Identity Center는 외부 자격 증명 공급자와 연동해 사용자가 한 번 로그인하여 여러 계정과 애플리케이션에 접근하는 싱글 사인온을 제공한다. Inspector는 취약점 평가, Config는 구성 추적, Macie는 민감 데이터 탐지를 담당하므로 SSO·자격 증명 연동 기능과는 다르다."
+  },
+  {
+    "id": "exam-clf-c02-32",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 32,
+    "prompt": "AWS Trusted Advisor가 제공하는 점검 카테고리에 해당하지 않는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "비용 최적화"
+      },
+      {
+        "label": "B",
+        "text": "보안"
+      },
+      {
+        "label": "C",
+        "text": "내결함성(복원력)"
+      },
+      {
+        "label": "D",
+        "text": "데이터센터 평면도 설계"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Trusted Advisor는 비용 최적화, 보안, 내결함성, 성능, 서비스 한도 카테고리에서 모범 사례 권장 사항을 제공한다. 비용 최적화, 보안, 내결함성은 모두 정식 카테고리다. 데이터센터 평면도 설계는 AWS가 관리하는 물리 인프라 영역으로 Trusted Advisor의 점검 대상이 아니다."
+  },
+  {
+    "id": "exam-clf-c02-33",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 33,
+    "prompt": "보안 그룹과 네트워크 ACL의 차이로 가장 정확한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보안 그룹은 상태 저장(stateful) 인스턴스 수준 방화벽이고, 네트워크 ACL은 상태 비저장(stateless) 서브넷 수준 방화벽이다"
+      },
+      {
+        "label": "B",
+        "text": "둘 다 상태 비저장이며 차이가 없다"
+      },
+      {
+        "label": "C",
+        "text": "보안 그룹은 서브넷 수준, 네트워크 ACL은 인스턴스 수준에서 동작한다"
+      },
+      {
+        "label": "D",
+        "text": "네트워크 ACL은 도메인 이름을 IP로 변환한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "보안 그룹은 인스턴스(ENI) 수준에서 동작하는 상태 저장 방화벽으로 인바운드를 허용하면 응답 트래픽이 자동 허용된다. 네트워크 ACL은 서브넷 수준에서 동작하는 상태 비저장 방화벽으로 인바운드·아웃바운드 규칙을 각각 명시해야 한다. 둘이 같다거나 동작 계층이 뒤바뀌었다는 설명은 틀리며, 이름→IP 변환은 Route 53의 기능이다."
+  },
+  {
+    "id": "exam-clf-c02-34",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 34,
+    "prompt": "한 보안 담당자가 AWS 환경에서 손상된 자격 증명, 비정상 API 호출, 암호화폐 채굴 같은 악성 활동을 지능적으로 탐지하는 관리형 위협 탐지 서비스를 찾고 있다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Artifact"
+      },
+      {
+        "label": "B",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "C",
+        "text": "AWS Cost Explorer"
+      },
+      {
+        "label": "D",
+        "text": "Amazon QuickSight"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Amazon GuardDuty는 CloudTrail, VPC 흐름 로그, DNS 로그 등을 분석해 손상된 자격 증명, 비정상 API 호출, 암호화폐 채굴 같은 위협을 지능적으로 탐지하는 관리형 서비스다. Artifact는 규정 준수 문서 제공, Cost Explorer는 비용 분석, QuickSight는 BI 시각화 도구로 위협 탐지와는 무관하다."
+  },
+  {
+    "id": "exam-clf-c02-35",
+    "slug": "clf-c02",
+    "domain": "보안 및 규정 준수",
+    "number": 35,
+    "prompt": "AWS 리소스 구성이 회사의 보안 규정을 지속적으로 준수하는지 평가하고, 구성 변경 이력을 추적하려는 경우 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon CloudFront"
+      },
+      {
+        "label": "B",
+        "text": "AWS Lambda"
+      },
+      {
+        "label": "C",
+        "text": "AWS Config"
+      },
+      {
+        "label": "D",
+        "text": "Amazon SQS"
+      }
+    ],
+    "answer": "C",
+    "explanation": "AWS Config는 리소스 구성을 지속적으로 기록하고, 정의한 규칙에 따라 규정 준수 여부를 평가하며 변경 이력을 추적한다. CloudFront는 콘텐츠 전송 네트워크, Lambda는 서버리스 컴퓨팅, SQS는 메시지 큐 서비스로 구성 준수 평가 기능을 제공하지 않는다."
+  },
+  {
+    "id": "exam-clf-c02-36",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 36,
+    "prompt": "확장 가능한 가상 서버를 시간 단위로 프로비저닝해 다양한 워크로드를 실행할 수 있는 핵심 컴퓨팅 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon S3"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EC2"
+      },
+      {
+        "label": "C",
+        "text": "Amazon RDS"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Route 53"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Amazon EC2는 필요에 따라 시작·중지할 수 있는 확장 가능한 가상 서버를 제공하는 핵심 컴퓨팅 서비스다. S3는 객체 스토리지, RDS는 관리형 관계형 데이터베이스, Route 53은 DNS 서비스로 가상 서버 자체를 제공하지 않는다."
+  },
+  {
+    "id": "exam-clf-c02-37",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 37,
+    "prompt": "서버를 프로비저닝하거나 관리하지 않고 이벤트에 응답해 코드를 실행하며, 실제 실행 시간에만 과금되는 서버리스 컴퓨팅 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon EC2"
+      },
+      {
+        "label": "B",
+        "text": "AWS Batch"
+      },
+      {
+        "label": "C",
+        "text": "AWS Lambda"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Lightsail"
+      }
+    ],
+    "answer": "C",
+    "explanation": "AWS Lambda는 서버 관리 없이 이벤트 기반으로 코드를 실행하고 실행 시간에만 과금되는 대표적 서버리스 서비스다. EC2는 사용자가 관리하는 가상 서버다. Batch는 배치 컴퓨팅 작업을 스케줄링하지만 기반 컴퓨팅 환경을 관리한다. Lightsail은 단순화된 가상 서버 패키지로 서버리스가 아니다."
+  },
+  {
+    "id": "exam-clf-c02-38",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 38,
+    "prompt": "내구성이 매우 높고 사실상 무제한으로 확장되는 객체 스토리지로, 정적 웹사이트 호스팅·백업·데이터 레이크 등에 널리 쓰이는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon EBS"
+      },
+      {
+        "label": "B",
+        "text": "Amazon S3"
+      },
+      {
+        "label": "C",
+        "text": "Amazon EFS"
+      },
+      {
+        "label": "D",
+        "text": "AWS Storage Gateway"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Amazon S3는 99.999999999%(11 9s)의 높은 내구성을 가진 객체 스토리지로 백업, 데이터 레이크, 정적 웹사이트 호스팅에 폭넓게 사용된다. EBS는 EC2에 연결하는 블록 스토리지, EFS는 공유 파일 시스템, Storage Gateway는 온프레미스와 클라우드 스토리지를 연결하는 하이브리드 서비스로 용도가 다르다."
+  },
+  {
+    "id": "exam-clf-c02-39",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 39,
+    "prompt": "데이터베이스 패치, 백업, 복제 같은 관리 작업을 AWS가 처리해 주는 관리형 관계형 데이터베이스 서비스로, MySQL·PostgreSQL·SQL Server 등을 지원하는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon DynamoDB"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Redshift"
+      },
+      {
+        "label": "C",
+        "text": "Amazon ElastiCache"
+      },
+      {
+        "label": "D",
+        "text": "Amazon RDS"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Amazon RDS는 패치, 백업, 복제 등을 AWS가 관리해 주는 관리형 관계형 데이터베이스로 MySQL, PostgreSQL, SQL Server 등 여러 엔진을 지원한다. DynamoDB는 NoSQL 키-값 데이터베이스다. Redshift는 데이터 웨어하우스(분석용)다. ElastiCache는 인메모리 캐싱 서비스로 관계형 DB가 아니다."
+  },
+  {
+    "id": "exam-clf-c02-40",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 40,
+    "prompt": "한 자릿수 밀리초의 일관된 지연 시간이 필요한 대규모 애플리케이션을 위한 완전관리형 NoSQL 키-값/문서 데이터베이스 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon DynamoDB"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Aurora"
+      },
+      {
+        "label": "C",
+        "text": "Amazon RDS for MySQL"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Redshift"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Amazon DynamoDB는 어떤 규모에서도 한 자릿수 밀리초 지연을 제공하는 완전관리형 NoSQL 키-값/문서 데이터베이스다. Aurora와 RDS for MySQL은 관계형 데이터베이스다. Redshift는 분석용 데이터 웨어하우스로, NoSQL 저지연 워크로드와는 목적이 다르다."
+  },
+  {
+    "id": "exam-clf-c02-41",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 41,
+    "prompt": "전 세계 엣지 로케이션을 통해 정적·동적 콘텐츠를 사용자와 가까운 곳에서 캐싱·전송하여 지연 시간을 낮추는 콘텐츠 전송 네트워크(CDN) 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Direct Connect"
+      },
+      {
+        "label": "B",
+        "text": "Amazon CloudFront"
+      },
+      {
+        "label": "C",
+        "text": "Amazon VPC"
+      },
+      {
+        "label": "D",
+        "text": "Elastic Load Balancing"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Amazon CloudFront는 전 세계 엣지 로케이션에서 콘텐츠를 캐싱·전송하는 CDN으로 사용자와 가까운 곳에서 제공해 지연 시간을 줄인다. Direct Connect는 온프레미스와 AWS를 잇는 전용 네트워크 연결이다. VPC는 격리된 가상 네트워크다. ELB는 트래픽을 여러 대상에 분산하는 서비스로 CDN이 아니다."
+  },
+  {
+    "id": "exam-clf-c02-42",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 42,
+    "prompt": "온프레미스 데이터센터와 AWS 사이에 인터넷을 거치지 않는 전용 물리 네트워크 연결을 구성해 일관된 대역폭과 낮은 지연을 얻으려고 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Site-to-Site VPN"
+      },
+      {
+        "label": "B",
+        "text": "Amazon CloudFront"
+      },
+      {
+        "label": "C",
+        "text": "AWS Global Accelerator"
+      },
+      {
+        "label": "D",
+        "text": "AWS Direct Connect"
+      }
+    ],
+    "answer": "D",
+    "explanation": "AWS Direct Connect는 온프레미스와 AWS를 잇는 전용 물리 회선을 제공해 인터넷보다 일관된 대역폭과 낮은 지연을 제공한다. Site-to-Site VPN은 인터넷을 통한 암호화 터널로 전용 회선의 일관성을 보장하지는 못한다. CloudFront는 CDN, Global Accelerator는 AWS 글로벌 네트워크로 트래픽을 라우팅하는 서비스로 전용 물리 연결과는 다르다."
+  },
+  {
+    "id": "exam-clf-c02-43",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 43,
+    "prompt": "AWS에서 논리적으로 격리된 가상 네트워크를 정의하고 서브넷, 라우팅 테이블, 게이트웨이를 구성해 리소스를 배치하는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon S3"
+      },
+      {
+        "label": "B",
+        "text": "AWS IAM"
+      },
+      {
+        "label": "C",
+        "text": "Amazon VPC"
+      },
+      {
+        "label": "D",
+        "text": "Amazon SNS"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Amazon VPC는 AWS 계정 전용으로 논리적으로 격리된 가상 네트워크를 만들어 서브넷, 라우팅, 게이트웨이를 구성하고 리소스를 배치하는 서비스다. S3는 객체 스토리지, IAM은 자격 증명·권한 관리, SNS는 알림 게시/구독 서비스로 가상 네트워크 정의와는 관련이 없다."
+  },
+  {
+    "id": "exam-clf-c02-44",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 44,
+    "prompt": "들어오는 애플리케이션 트래픽을 여러 가용 영역의 여러 대상(EC2 인스턴스 등)으로 자동 분산해 가용성과 내결함성을 높이는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Elastic Load Balancing(ELB)"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Route 53"
+      },
+      {
+        "label": "C",
+        "text": "AWS Auto Scaling"
+      },
+      {
+        "label": "D",
+        "text": "Amazon EBS"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Elastic Load Balancing은 트래픽을 여러 AZ의 여러 대상에 분산해 한 대상이나 AZ에 장애가 있어도 서비스를 유지하도록 가용성과 내결함성을 높인다. Route 53은 DNS 라우팅 서비스다. Auto Scaling은 수요에 따라 인스턴스 수를 조정하지만 트래픽 분산 자체를 수행하지 않는다. EBS는 블록 스토리지다."
+  },
+  {
+    "id": "exam-clf-c02-45",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 45,
+    "prompt": "수요 변화에 맞춰 EC2 인스턴스 수를 자동으로 늘리거나 줄여 성능을 유지하면서 비용을 최적화하는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EC2 Auto Scaling"
+      },
+      {
+        "label": "C",
+        "text": "AWS CloudFormation"
+      },
+      {
+        "label": "D",
+        "text": "Amazon S3"
+      }
+    ],
+    "answer": "B",
+    "explanation": "EC2 Auto Scaling은 정의한 정책과 지표에 따라 인스턴스를 자동으로 추가·제거해 수요 변동에도 성능을 유지하면서 불필요한 비용을 줄인다. CloudWatch는 모니터링·경보를 제공해 스케일링을 트리거할 수 있지만 인스턴스 조정 자체를 하지는 않는다. CloudFormation은 인프라를 코드로 프로비저닝하는 도구이고, S3는 스토리지다."
+  },
+  {
+    "id": "exam-clf-c02-46",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 46,
+    "prompt": "인프라를 코드(템플릿)로 정의해 리소스를 일관되고 반복 가능하게 프로비저닝·관리할 수 있는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Trusted Advisor"
+      },
+      {
+        "label": "B",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "C",
+        "text": "AWS Artifact"
+      },
+      {
+        "label": "D",
+        "text": "AWS CloudFormation"
+      }
+    ],
+    "answer": "D",
+    "explanation": "AWS CloudFormation은 JSON/YAML 템플릿으로 인프라를 코드화해 리소스를 일관되고 반복 가능하게 배포·관리하는 IaC 서비스다. Trusted Advisor는 모범 사례 권장, CloudWatch는 모니터링, Artifact는 규정 준수 문서 제공 서비스로 인프라 프로비저닝 자동화와는 다르다."
+  },
+  {
+    "id": "exam-clf-c02-47",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 47,
+    "prompt": "AWS 리소스의 지표, 로그를 수집·모니터링하고 임계값 기반 경보를 설정해 자동 대응을 트리거할 수 있는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS CloudTrail"
+      },
+      {
+        "label": "B",
+        "text": "AWS Config"
+      },
+      {
+        "label": "C",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Inspector"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Amazon CloudWatch는 지표와 로그를 수집·모니터링하고 경보를 설정해 알림이나 자동 조치를 트리거하는 관측성 서비스다. CloudTrail은 API 호출 감사 로그에 초점을 둔다. Config는 구성 변경·준수 평가를, Inspector는 취약점 평가를 담당하므로 실시간 지표 모니터링·경보 목적과는 다르다."
+  },
+  {
+    "id": "exam-clf-c02-48",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 48,
+    "prompt": "최소한의 설정으로 가상 서버, 스토리지, 데이터베이스를 예측 가능한 월정액 묶음으로 제공해 소규모 워크로드나 초보자에게 단순한 시작점을 제공하는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Lightsail"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EC2"
+      },
+      {
+        "label": "C",
+        "text": "AWS Fargate"
+      },
+      {
+        "label": "D",
+        "text": "Amazon EKS"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Amazon Lightsail은 가상 서버, 스토리지, 데이터베이스를 예측 가능한 월정액 패키지로 묶어 간단하게 시작할 수 있게 해 주는 서비스로 소규모 워크로드와 초보자에게 적합하다. EC2는 더 세밀한 제어가 필요한 범용 가상 서버다. Fargate는 서버리스 컨테이너 실행, EKS는 관리형 Kubernetes로 단순 패키지 제공이 목적이 아니다."
+  },
+  {
+    "id": "exam-clf-c02-49",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 49,
+    "prompt": "서버를 직접 관리하지 않고 컨테이너를 실행할 수 있는 서버리스 컨테이너 컴퓨팅 엔진은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon EC2"
+      },
+      {
+        "label": "B",
+        "text": "AWS Fargate"
+      },
+      {
+        "label": "C",
+        "text": "Amazon RDS"
+      },
+      {
+        "label": "D",
+        "text": "Amazon S3"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AWS Fargate는 ECS나 EKS와 함께 사용해 기반 서버를 직접 프로비저닝·관리하지 않고 컨테이너를 실행하는 서버리스 컴퓨팅 엔진이다. EC2는 사용자가 OS와 서버를 관리하는 가상 서버다. RDS는 관계형 데이터베이스, S3는 객체 스토리지로 컨테이너 실행 엔진이 아니다."
+  },
+  {
+    "id": "exam-clf-c02-50",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 50,
+    "prompt": "도메인 등록, DNS 라우팅, 상태 확인 기반 트래픽 라우팅을 제공하는 고가용성 DNS 웹 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon CloudFront"
+      },
+      {
+        "label": "B",
+        "text": "AWS Direct Connect"
+      },
+      {
+        "label": "C",
+        "text": "Amazon VPC"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Route 53"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Amazon Route 53은 도메인 등록, DNS 라우팅, 상태 확인 기반 라우팅을 제공하는 고가용성 DNS 서비스다. CloudFront는 콘텐츠 전송 네트워크, Direct Connect는 전용 물리 네트워크 연결, VPC는 가상 네트워크로 DNS 서비스 기능을 제공하지 않는다."
+  },
+  {
+    "id": "exam-clf-c02-51",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 51,
+    "prompt": "분산 애플리케이션의 구성 요소를 분리하기 위해 메시지를 저장하고 비동기적으로 처리하게 해 주는 완전관리형 메시지 큐 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon S3"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EC2"
+      },
+      {
+        "label": "C",
+        "text": "Amazon SQS"
+      },
+      {
+        "label": "D",
+        "text": "AWS IAM"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Amazon SQS는 메시지를 저장하고 비동기로 처리하게 해 구성 요소를 느슨하게 결합하는 완전관리형 메시지 큐 서비스다. S3는 객체 스토리지, EC2는 가상 서버, IAM은 자격 증명·권한 관리 서비스로 메시지 큐 기능과는 무관하다."
+  },
+  {
+    "id": "exam-clf-c02-52",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 52,
+    "prompt": "물리적으로 분리된 여러 가용 영역에 EC2 인스턴스를 분산 배포하는 주된 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "단일 데이터센터 장애 시에도 애플리케이션이 계속 동작하도록 고가용성을 확보하기 위해"
+      },
+      {
+        "label": "B",
+        "text": "인스턴스 요금을 무료로 만들기 위해"
+      },
+      {
+        "label": "C",
+        "text": "IAM 권한을 자동으로 부여하기 위해"
+      },
+      {
+        "label": "D",
+        "text": "도메인 이름을 등록하기 위해"
+      }
+    ],
+    "answer": "A",
+    "explanation": "여러 가용 영역에 인스턴스를 분산하면 한 데이터센터(AZ)에 장애가 발생해도 다른 AZ의 인스턴스가 트래픽을 처리해 고가용성을 유지한다. 다중 AZ 배포가 요금을 무료로 만들지는 않으며, IAM 권한 부여나 도메인 등록과도 관련이 없다."
+  },
+  {
+    "id": "exam-clf-c02-53",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 53,
+    "prompt": "대용량 데이터를 분석하기 위한 페타바이트 규모의 완전관리형 데이터 웨어하우스 서비스로, 복잡한 분석 쿼리에 최적화된 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon DynamoDB"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Redshift"
+      },
+      {
+        "label": "C",
+        "text": "Amazon ElastiCache"
+      },
+      {
+        "label": "D",
+        "text": "Amazon RDS"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Amazon Redshift는 페타바이트 규모의 분석 쿼리에 최적화된 완전관리형 데이터 웨어하우스다. DynamoDB는 NoSQL 키-값 데이터베이스, ElastiCache는 인메모리 캐시, RDS는 트랜잭션 위주의 관계형 데이터베이스로 대규모 분석 웨어하우스 용도와는 다르다."
+  },
+  {
+    "id": "exam-clf-c02-54",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 54,
+    "prompt": "EC2 인스턴스에 연결해 사용하는, 단일 인스턴스에 부착되는 영구 블록 스토리지 볼륨을 제공하는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon S3"
+      },
+      {
+        "label": "B",
+        "text": "Amazon CloudFront"
+      },
+      {
+        "label": "C",
+        "text": "AWS Lambda"
+      },
+      {
+        "label": "D",
+        "text": "Amazon EBS"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Amazon EBS는 EC2 인스턴스에 연결되는 영구 블록 스토리지 볼륨으로 운영체제나 데이터베이스 파일 같은 블록 단위 데이터에 적합하다. S3는 객체 스토리지, CloudFront는 CDN, Lambda는 서버리스 컴퓨팅으로 인스턴스 블록 볼륨을 제공하지 않는다."
+  },
+  {
+    "id": "exam-clf-c02-55",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 55,
+    "prompt": "AWS 리소스와 서비스를 명령줄에서 스크립트로 프로그래밍 방식으로 제어·자동화하려고 한다. 사용할 도구로 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Management Console만 사용"
+      },
+      {
+        "label": "B",
+        "text": "AWS CLI(명령줄 인터페이스)"
+      },
+      {
+        "label": "C",
+        "text": "Amazon S3"
+      },
+      {
+        "label": "D",
+        "text": "Amazon CloudWatch 대시보드"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AWS CLI는 터미널에서 명령으로 AWS 서비스를 제어하고 스크립트로 자동화할 수 있게 해 주는 도구다. Management Console은 GUI 기반이라 스크립트 자동화에는 적합하지 않다. S3는 스토리지 서비스, CloudWatch 대시보드는 모니터링 시각화 화면으로 CLI 기반 자동화 도구가 아니다."
+  },
+  {
+    "id": "exam-clf-c02-56",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 56,
+    "prompt": "여러 EC2 인스턴스가 동시에 마운트해 공유할 수 있는, 자동으로 확장·축소되는 완전관리형 공유 파일 시스템 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon EFS(Elastic File System)"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EBS"
+      },
+      {
+        "label": "C",
+        "text": "Amazon S3 Glacier"
+      },
+      {
+        "label": "D",
+        "text": "Amazon DynamoDB"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Amazon EFS는 여러 EC2 인스턴스가 동시에 마운트해 공유할 수 있고 용량이 자동으로 확장·축소되는 완전관리형 파일 시스템이다. EBS는 일반적으로 단일 인스턴스에 연결되는 블록 스토리지다. S3 Glacier는 장기 아카이브용 저비용 스토리지이고, DynamoDB는 NoSQL 데이터베이스로 공유 파일 시스템이 아니다."
+  },
+  {
+    "id": "exam-clf-c02-57",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 57,
+    "prompt": "다음 중 마이그레이션을 도울 수 있는 AWS 서비스를 모두 고르면? (2개 선택)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Database Migration Service(DMS)"
+      },
+      {
+        "label": "B",
+        "text": "AWS Snowball"
+      },
+      {
+        "label": "C",
+        "text": "Amazon SNS"
+      },
+      {
+        "label": "D",
+        "text": "AWS WAF"
+      }
+    ],
+    "answer": "AB",
+    "explanation": "DMS는 데이터베이스를 최소 다운타임으로 AWS로 마이그레이션하고, Snowball은 대용량 데이터를 물리 디바이스로 안전하게 전송해 데이터 마이그레이션을 돕는다. SNS는 알림 게시/구독 서비스, WAF는 웹 애플리케이션 방화벽으로 데이터 마이그레이션 용도가 아니다."
+  },
+  {
+    "id": "exam-clf-c02-58",
+    "slug": "clf-c02",
+    "domain": "클라우드 기술 및 서비스",
+    "number": 58,
+    "prompt": "여러 마이크로서비스나 Lambda 함수의 워크플로를 시각적으로 정의하고 단계별 상태를 조정·오케스트레이션하는 서버리스 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon EC2"
+      },
+      {
+        "label": "B",
+        "text": "Amazon S3"
+      },
+      {
+        "label": "C",
+        "text": "AWS Step Functions"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Route 53"
+      }
+    ],
+    "answer": "C",
+    "explanation": "AWS Step Functions는 여러 단계를 상태 머신으로 시각적으로 정의해 Lambda 함수나 서비스 호출을 순서대로 오케스트레이션하는 서버리스 워크플로 서비스다. EC2는 가상 서버, S3는 객체 스토리지, Route 53은 DNS 서비스로 워크플로 오케스트레이션 기능이 없다."
+  },
+  {
+    "id": "exam-clf-c02-59",
+    "slug": "clf-c02",
+    "domain": "청구·요금·지원",
+    "number": 59,
+    "prompt": "프로덕션 워크로드를 운영하며 1시간 미만의 응답 시간이 보장되는 기술 지원과 전담 기술 계정 관리자(TAM)가 필요하지는 않은 회사에 적합한 AWS Support 플랜은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Basic"
+      },
+      {
+        "label": "B",
+        "text": "Developer"
+      },
+      {
+        "label": "C",
+        "text": "Business"
+      },
+      {
+        "label": "D",
+        "text": "Enterprise"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Business 플랜은 프로덕션 시스템 장애에 대해 1시간 미만 응답과 연중무휴 기술 지원을 제공하며 TAM은 포함하지 않는다. Basic은 무료이지만 기술 사례 지원이 없다. Developer는 업무 시간 지원만 제공해 프로덕션 운영에 부족하다. Enterprise는 전담 TAM과 15분 응답을 제공하지만 TAM이 필요 없는 경우 과한 선택이다."
+  },
+  {
+    "id": "exam-clf-c02-60",
+    "slug": "clf-c02",
+    "domain": "청구·요금·지원",
+    "number": 60,
+    "prompt": "전담 기술 계정 관리자(TAM)와 미션 크리티컬 워크로드에 대한 15분 이내 응답, AWS Incident Detection and Response 자격을 제공하는 최상위 지원 플랜은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Enterprise"
+      },
+      {
+        "label": "B",
+        "text": "Business"
+      },
+      {
+        "label": "C",
+        "text": "Developer"
+      },
+      {
+        "label": "D",
+        "text": "Basic"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Enterprise 플랜은 전담 TAM과 미션 크리티컬 워크로드에 대한 15분 이내 응답 등 최상위 수준의 지원을 제공한다. Business는 TAM 없이 1시간 응답을 제공한다. Developer는 업무 시간 이메일 지원에 그치고, Basic은 무료이지만 기술 사례 지원이 없어 모두 최상위 플랜이 아니다."
+  },
+  {
+    "id": "exam-clf-c02-61",
+    "slug": "clf-c02",
+    "domain": "청구·요금·지원",
+    "number": 61,
+    "prompt": "여러 AWS 계정을 AWS Organizations로 통합 결제(consolidated billing)할 때 얻는 주요 이점은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 계정이 완전히 별도로 청구되어 할인 혜택이 사라진다"
+      },
+      {
+        "label": "B",
+        "text": "모든 리소스가 자동으로 무료가 된다"
+      },
+      {
+        "label": "C",
+        "text": "계정 간 IAM 권한이 자동으로 병합된다"
+      },
+      {
+        "label": "D",
+        "text": "모든 계정의 사용량이 집계되어 볼륨 할인 등급에 더 쉽게 도달하고 단일 청구서로 관리할 수 있다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "통합 결제는 조직 내 여러 계정의 사용량을 합산해 볼륨 기반 할인 등급 도달을 쉽게 하고 하나의 청구서로 관리하게 해 준다. 각 계정을 별도 청구해 할인이 사라진다는 것은 통합 결제의 취지와 반대다. 리소스가 무료가 되거나 IAM 권한이 자동 병합되지는 않는다."
+  },
+  {
+    "id": "exam-clf-c02-62",
+    "slug": "clf-c02",
+    "domain": "청구·요금·지원",
+    "number": 62,
+    "prompt": "시간 경과에 따른 AWS 비용과 사용량을 시각화하고, 서비스·계정·태그별로 분석하며 향후 비용을 예측하는 데 사용하는 도구는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "B",
+        "text": "AWS Cost Explorer"
+      },
+      {
+        "label": "C",
+        "text": "AWS CloudTrail"
+      },
+      {
+        "label": "D",
+        "text": "AWS Config"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AWS Cost Explorer는 비용과 사용량을 시각화하고 서비스·계정·태그별로 분석하며 추세 기반 예측을 제공하는 도구다. CloudWatch는 운영 지표 모니터링, CloudTrail은 API 활동 감사, Config는 구성 준수 추적에 사용되어 비용 분석·예측 용도와는 다르다."
+  },
+  {
+    "id": "exam-clf-c02-63",
+    "slug": "clf-c02",
+    "domain": "청구·요금·지원",
+    "number": 63,
+    "prompt": "예상 비용 또는 사용량이 설정한 임계값을 초과할 때 알림을 받아 지출을 사전에 통제하려고 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Cost Explorer"
+      },
+      {
+        "label": "B",
+        "text": "AWS Pricing Calculator"
+      },
+      {
+        "label": "C",
+        "text": "AWS Budgets"
+      },
+      {
+        "label": "D",
+        "text": "AWS Trusted Advisor"
+      }
+    ],
+    "answer": "C",
+    "explanation": "AWS Budgets는 비용·사용량 예산을 설정하고 임계값을 초과하거나 초과가 예상될 때 알림을 보내 지출을 사전에 통제하게 해 준다. Cost Explorer는 과거 비용 분석·예측에 초점을 둔다. Pricing Calculator는 사전 비용 견적 도구이고, Trusted Advisor는 모범 사례 점검 도구로 예산 알림 기능이 아니다."
+  },
+  {
+    "id": "exam-clf-c02-64",
+    "slug": "clf-c02",
+    "domain": "청구·요금·지원",
+    "number": 64,
+    "prompt": "AWS로 마이그레이션하기 전에 특정 아키텍처의 월 예상 비용을 미리 산정해 보려는 경우 사용할 도구는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Pricing Calculator"
+      },
+      {
+        "label": "B",
+        "text": "AWS Cost Explorer"
+      },
+      {
+        "label": "C",
+        "text": "AWS Budgets"
+      },
+      {
+        "label": "D",
+        "text": "AWS Cost and Usage Report"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS Pricing Calculator는 실제 리소스를 만들기 전에 구성한 아키텍처의 예상 월 비용을 산정해 주는 사전 견적 도구다. Cost Explorer와 Cost and Usage Report는 이미 발생한 사용량·비용을 분석한다. Budgets는 예산 초과 알림용으로, 도입 전 비용 추정이 목적이 아니다."
+  },
+  {
+    "id": "exam-clf-c02-65",
+    "slug": "clf-c02",
+    "domain": "청구·요금·지원",
+    "number": 65,
+    "prompt": "장기적으로 안정적인 워크로드를 EC2에서 운영하며 비용을 크게 절감하려는 회사가 1년 또는 3년 사용을 약정하는 대신 온디맨드보다 낮은 요금을 받는 옵션은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "온디맨드 인스턴스"
+      },
+      {
+        "label": "B",
+        "text": "스팟 인스턴스"
+      },
+      {
+        "label": "C",
+        "text": "전용 호스트를 시간당 온디맨드로만 사용"
+      },
+      {
+        "label": "D",
+        "text": "예약 인스턴스(Reserved Instances) 또는 Savings Plans"
+      }
+    ],
+    "answer": "D",
+    "explanation": "예약 인스턴스나 Savings Plans는 1년 또는 3년 사용을 약정하는 대가로 온디맨드 대비 큰 폭의 할인을 제공하므로 안정적이고 예측 가능한 워크로드에 적합하다. 온디맨드는 약정 없이 유연하지만 할인이 없다. 스팟은 매우 저렴하나 중단될 수 있어 안정적 운영에는 위험하다. 전용 호스트를 온디맨드로만 쓰는 것은 약정 기반 할인을 활용하지 못한다."
+  },
+  {
     "id": "exam-dop-c02-1",
     "slug": "dop-c02",
     "domain": "SDLC 자동화",

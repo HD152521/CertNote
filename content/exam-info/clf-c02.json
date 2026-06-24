@@ -1,0 +1,22 @@
+{
+  "examCode": "CLF-C02",
+  "fullName": "AWS Certified Cloud Practitioner",
+  "level": "foundational",
+  "questionCount": 65,
+  "durationMin": 90,
+  "passingScore": 700,
+  "scoreMax": 1000,
+  "costUsd": 100,
+  "validityYears": 3,
+  "languages": ["영어", "한국어", "일본어", "중국어 간체", "프랑스어", "독일어", "이탈리아어", "포르투갈어(브라질)", "스페인어"],
+  "prerequisites": "없음(권장: AWS 클라우드 6개월 노출)",
+  "format": "객관식·복수응답",
+  "domains": [
+    { "name": "클라우드 개념", "weight": 24 },
+    { "name": "보안 및 규정 준수", "weight": 30 },
+    { "name": "클라우드 기술 및 서비스", "weight": 34 },
+    { "name": "청구·요금·지원", "weight": 12 }
+  ],
+  "officialUrl": "https://aws.amazon.com/certification/certified-cloud-practitioner/",
+  "registerUrl": "https://www.aws.training/certification"
+}

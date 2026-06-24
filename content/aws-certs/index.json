@@ -3,6 +3,14 @@
   "title": "Certification Notes",
   "certs": [
     {
+      "slug": "clf-c02",
+      "code": "CLF-C02",
+      "level": "foundational",
+      "name": "Cloud Practitioner - Foundational",
+      "weeks": 6,
+      "order": 0
+    },
+    {
       "slug": "dva-c02",
       "code": "DVA-C02",
       "level": "associate",

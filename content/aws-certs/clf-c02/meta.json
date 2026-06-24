@@ -1,0 +1,12 @@
+{
+  "slug": "clf-c02",
+  "code": "CLF-C02",
+  "level": "foundational",
+  "name": "Cloud Practitioner - Foundational",
+  "weeks": 6,
+  "accent": "#FF9900",
+  "order": 0,
+  "dayCount": 30,
+  "sourceRepo": "AWS_foundational_cloudPractitioner",
+  "syncedAt": "2026-06-24T00:00:00.000Z"
+}

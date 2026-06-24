@@ -1,0 +1,12 @@
+{
+  "slug": "mla-c01",
+  "code": "MLA-C01",
+  "level": "associate",
+  "name": "Machine Learning Engineer - Associate",
+  "weeks": 10,
+  "accent": "#FF9900",
+  "order": 8,
+  "dayCount": 50,
+  "sourceRepo": "AWS_associate_mlEngineer",
+  "syncedAt": "2026-06-24T00:00:00.000Z"
+}

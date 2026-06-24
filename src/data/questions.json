@@ -1,5 +1,4442 @@
 [
   {
+    "id": "clf-c02-w1-d1-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 1,
+    "number": 1,
+    "prompt": "클라우드 컴퓨팅의 가장 핵심적인 특징을 가장 잘 설명한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 서버를 회사 내부에 직접 설치해 관리한다"
+      },
+      {
+        "label": "B",
+        "text": "인터넷을 통해 컴퓨팅 자원을 필요할 때 빌려 쓰고 사용한 만큼 비용을 낸다"
+      },
+      {
+        "label": "C",
+        "text": "한 번 구매하면 비용이 전혀 들지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "인터넷 연결 없이도 자원을 무제한 사용할 수 있다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "클라우드는 인터넷으로 자원을 주문형으로 빌려 쓰고 사용량만큼 지불하는 방식이다. 회사 내부에 직접 설치하는 것은 온프레미스 방식이고, 클라우드는 사용량에 따라 비용이 계속 발생하며, 인터넷 연결을 통해 자원에 접근한다."
+  },
+  {
+    "id": "clf-c02-w1-d1-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 1,
+    "number": 2,
+    "prompt": "클라우드의 6가지 이점 중 \"미리 거액을 투자하지 않고 사용한 만큼만 지불\"하는 것을 가장 잘 나타내는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "대규모 규모의 경제 효과"
+      },
+      {
+        "label": "B",
+        "text": "자본비용을 가변비용으로 전환"
+      },
+      {
+        "label": "C",
+        "text": "몇 분 만에 전 세계 배포"
+      },
+      {
+        "label": "D",
+        "text": "속도와 민첩성 향상"
+      }
+    ],
+    "answer": "B",
+    "explanation": "선투자(자본비용) 대신 쓴 만큼 지불(가변비용)하는 것이 바로 자본비용의 가변비용 전환이다. 규모의 경제는 많은 고객 덕분에 단가가 낮아지는 효과, 전 세계 배포는 글로벌 확장의 용이성, 속도·민첩성은 자원을 빠르게 확보하는 능력을 가리킨다."
+  },
+  {
+    "id": "clf-c02-w1-d1-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 1,
+    "number": 3,
+    "prompt": "한 스타트업이 트래픽이 얼마나 몰릴지 예측하기 어려운 신규 서비스를 출시하려 한다. 클라우드의 어떤 이점이 이 고민을 직접 해결해 주는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터센터 운영 비용 절감"
+      },
+      {
+        "label": "B",
+        "text": "용량을 미리 추정할 필요가 없음"
+      },
+      {
+        "label": "C",
+        "text": "대규모 규모의 경제 효과"
+      },
+      {
+        "label": "D",
+        "text": "자본비용을 가변비용으로 전환"
+      }
+    ],
+    "answer": "B",
+    "explanation": "수요를 예측하기 어려운 상황에서 가장 직접적인 해법은 용량을 미리 맞출 필요 없이 수요에 따라 늘리고 줄이는 것이다. 운영비 절감과 규모의 경제는 비용 측면의 이점이고, 자본비용 전환은 지불 방식에 대한 것으로 \"예측 불가능한 수요 대응\"이라는 핵심 고민과는 거리가 있다."
+  },
+  {
+    "id": "clf-c02-w1-d1-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 1,
+    "number": 4,
+    "prompt": "퍼블릭 클라우드와 프라이빗 클라우드를 함께 연결해 사용하는 배포 모델은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "퍼블릭 클라우드"
+      },
+      {
+        "label": "B",
+        "text": "프라이빗 클라우드"
+      },
+      {
+        "label": "C",
+        "text": "하이브리드 클라우드"
+      },
+      {
+        "label": "D",
+        "text": "온프레미스"
+      }
+    ],
+    "answer": "C",
+    "explanation": "두 가지(또는 온프레미스 포함)를 연결해 함께 쓰는 것이 하이브리드 클라우드다. 퍼블릭은 여러 고객이 공유하는 공급자의 클라우드, 프라이빗은 한 조직 전용 클라우드이며, 온프레미스는 클라우드가 아니라 직접 보유·운영하는 전통 방식이다."
+  },
+  {
+    "id": "clf-c02-w1-d1-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 1,
+    "number": 5,
+    "prompt": "다음 중 NIST가 정의한 클라우드의 특징이 아닌 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "주문형 셀프서비스"
+      },
+      {
+        "label": "B",
+        "text": "빠른 탄력성"
+      },
+      {
+        "label": "C",
+        "text": "영구 무료 사용"
+      },
+      {
+        "label": "D",
+        "text": "측정된 서비스"
+      }
+    ],
+    "answer": "C",
+    "explanation": "NIST는 주문형 셀프서비스, 광범위한 네트워크 접근, 자원 풀링, 빠른 탄력성, 측정된 서비스를 클라우드의 특징으로 정의한다. 클라우드는 사용량을 측정해 과금하므로 \"영구 무료 사용\"은 클라우드의 특징이 아니다."
+  },
+  {
+    "id": "clf-c02-w1-d2-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 2,
+    "number": 1,
+    "prompt": "AWS 인프라의 구성 단위를 큰 것부터 작은 것 순으로 올바르게 나열한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "가용 영역 > 리전 > 데이터센터"
+      },
+      {
+        "label": "B",
+        "text": "리전 > 가용 영역 > 데이터센터"
+      },
+      {
+        "label": "C",
+        "text": "데이터센터 > 리전 > 가용 영역"
+      },
+      {
+        "label": "D",
+        "text": "엣지 로케이션 > 리전 > 가용 영역"
+      }
+    ],
+    "answer": "B",
+    "explanation": "리전은 여러 가용 영역의 묶음이고, 가용 영역은 하나 이상의 데이터센터로 이루어진다. 따라서 리전 > 가용 영역 > 데이터센터 순서가 맞다. 엣지 로케이션은 이 계층과는 별개로 콘텐츠 전달을 담당하는 거점이다."
+  },
+  {
+    "id": "clf-c02-w1-d2-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 2,
+    "number": 2,
+    "prompt": "한 AZ에 장애가 발생해도 서비스가 중단되지 않게 하려면 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 자원을 하나의 AZ에 몰아서 배치한다"
+      },
+      {
+        "label": "B",
+        "text": "서비스를 2개 이상의 AZ에 나누어 배치한다"
+      },
+      {
+        "label": "C",
+        "text": "엣지 로케이션에만 서비스를 둔다"
+      },
+      {
+        "label": "D",
+        "text": "리전을 자주 변경한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "가용 영역은 서로 독립되어 있으므로 2개 이상의 AZ에 나누어 두면 한 AZ가 죽어도 다른 AZ에서 서비스가 계속된다. 한 AZ에 몰아 두면 그 AZ 장애 시 전체가 중단되고, 엣지 로케이션은 콘텐츠 전달용이지 서비스 실행 기반이 아니며, 리전 변경은 장애 대응 방법이 아니다."
+  },
+  {
+    "id": "clf-c02-w1-d2-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 2,
+    "number": 3,
+    "prompt": "미국 서버의 이미지를 한국 사용자에게 더 빠르게 전달하기 위해 사용자와 가까운 곳에 콘텐츠를 캐싱하는 데 쓰이는 인프라는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "가용 영역"
+      },
+      {
+        "label": "B",
+        "text": "리전"
+      },
+      {
+        "label": "C",
+        "text": "엣지 로케이션"
+      },
+      {
+        "label": "D",
+        "text": "데이터센터"
+      }
+    ],
+    "answer": "C",
+    "explanation": "사용자와 가까운 곳에 콘텐츠를 미리 캐싱해 빠르게 전달하는 거점이 엣지 로케이션이며, CloudFront 같은 CDN이 이를 활용한다. 리전과 가용 영역은 데이터와 연산을 두는 곳이고, 데이터센터는 가용 영역을 구성하는 물리 시설이다."
+  },
+  {
+    "id": "clf-c02-w1-d2-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 2,
+    "number": 4,
+    "prompt": "다음 중 리전과 무관하게 전 세계 하나로 동작하는 글로벌 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "EC2"
+      },
+      {
+        "label": "B",
+        "text": "RDS"
+      },
+      {
+        "label": "C",
+        "text": "IAM"
+      },
+      {
+        "label": "D",
+        "text": "EBS"
+      }
+    ],
+    "answer": "C",
+    "explanation": "IAM(사용자·권한 관리)은 계정 전체에 걸쳐 전 세계 하나로 동작하는 글로벌 서비스다. EC2(가상 서버), RDS(데이터베이스), EBS(블록 스토리지)는 모두 특정 리전에 묶여 동작하는 리전 서비스다."
+  },
+  {
+    "id": "clf-c02-w1-d2-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 2,
+    "number": 5,
+    "prompt": "리전을 선택할 때 고려할 요소로 보기 어려운 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "사용자와의 거리에 따른 지연 시간"
+      },
+      {
+        "label": "B",
+        "text": "데이터를 국내에 보관해야 하는 규정 준수"
+      },
+      {
+        "label": "C",
+        "text": "해당 리전에서 제공되는 서비스 가용성"
+      },
+      {
+        "label": "D",
+        "text": "가용 영역의 색상"
+      }
+    ],
+    "answer": "D",
+    "explanation": "리전 선택은 보통 지연 시간(거리), 규정 준수, 서비스 가용성, 비용을 기준으로 한다. \"가용 영역의 색상\" 같은 것은 존재하지 않는 개념으로, 리전 선택 기준이 될 수 없다."
+  },
+  {
+    "id": "clf-c02-w1-d3-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 3,
+    "number": 1,
+    "prompt": "공동 책임 모델에서 AWS가 책임지는 영역을 가장 잘 설명한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "클라우드 안(IN the cloud)의 보안"
+      },
+      {
+        "label": "B",
+        "text": "클라우드 자체(OF the cloud)의 보안"
+      },
+      {
+        "label": "C",
+        "text": "고객의 데이터 분류"
+      },
+      {
+        "label": "D",
+        "text": "고객의 IAM 권한 설정"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AWS는 데이터센터·하드웨어·가상화 같은 클라우드 자체(OF the cloud)의 보안을 책임진다. 클라우드 안(IN the cloud)의 보안, 데이터 분류, IAM 권한 설정은 모두 고객의 책임 영역이다."
+  },
+  {
+    "id": "clf-c02-w1-d3-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 3,
+    "number": 2,
+    "prompt": "EC2 가상 서버를 운영할 때 고객의 책임에 해당하는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터센터의 물리적 출입 통제"
+      },
+      {
+        "label": "B",
+        "text": "하이퍼바이저(가상화) 보안"
+      },
+      {
+        "label": "C",
+        "text": "게스트 운영체제(OS) 보안 패치"
+      },
+      {
+        "label": "D",
+        "text": "서버 하드웨어 교체"
+      }
+    ],
+    "answer": "C",
+    "explanation": "EC2는 고객이 운영체제를 직접 다루는 IaaS이므로 게스트 OS 패치는 고객 책임이다. 데이터센터 출입 통제, 하이퍼바이저 보안, 하드웨어 교체는 모두 AWS가 책임지는 인프라 영역이다."
+  },
+  {
+    "id": "clf-c02-w1-d3-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 3,
+    "number": 3,
+    "prompt": "어떤 AWS 서비스를 쓰든 항상 고객의 책임으로 남는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "하드웨어 유지보수"
+      },
+      {
+        "label": "B",
+        "text": "데이터와 접근 권한(IAM) 관리"
+      },
+      {
+        "label": "C",
+        "text": "데이터센터 냉방"
+      },
+      {
+        "label": "D",
+        "text": "글로벌 네트워크 인프라"
+      }
+    ],
+    "answer": "B",
+    "explanation": "데이터와 누가 접근할 수 있는지(IAM)는 서비스 종류와 관계없이 항상 고객 책임이다. 하드웨어 유지보수, 데이터센터 냉방, 글로벌 네트워크 인프라는 모두 AWS가 책임지는 영역이다."
+  },
+  {
+    "id": "clf-c02-w1-d3-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 3,
+    "number": 4,
+    "prompt": "같은 작업을 EC2에서 Lambda 같은 완전 관리형 서비스로 옮기면 책임 경계는 어떻게 변하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "고객의 책임이 늘어난다"
+      },
+      {
+        "label": "B",
+        "text": "고객의 책임이 줄어든다"
+      },
+      {
+        "label": "C",
+        "text": "변하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "AWS의 책임이 사라진다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "더 관리형인 서비스로 갈수록 운영체제 패치 등 많은 부분을 AWS가 대신 책임지므로 고객의 책임은 줄어든다. 다만 데이터와 권한은 여전히 고객 몫으로 남으며, AWS의 책임이 사라지는 것은 아니다."
+  },
+  {
+    "id": "clf-c02-w1-d3-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 3,
+    "number": 5,
+    "prompt": "다음 중 AWS가 아니라 고객이 책임지는 항목은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보안 그룹(방화벽 규칙) 설정"
+      },
+      {
+        "label": "B",
+        "text": "데이터센터의 화재 경보 시스템"
+      },
+      {
+        "label": "C",
+        "text": "서버 가상화 계층의 보안"
+      },
+      {
+        "label": "D",
+        "text": "리전 간 네트워크 케이블 관리"
+      }
+    ],
+    "answer": "A",
+    "explanation": "보안 그룹 같은 네트워크 접근 규칙은 고객이 직접 설정하므로 고객 책임이다. 데이터센터 화재 경보, 가상화 계층 보안, 리전 간 네트워크는 모두 AWS가 관리하는 기반 인프라다."
+  },
+  {
+    "id": "clf-c02-w1-d4-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 4,
+    "number": 1,
+    "prompt": "Well-Architected Framework의 6대 기둥에 해당하지 않는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "안정성(Reliability)"
+      },
+      {
+        "label": "B",
+        "text": "보안(Security)"
+      },
+      {
+        "label": "C",
+        "text": "규정 준수(Compliance)"
+      },
+      {
+        "label": "D",
+        "text": "비용 최적화(Cost Optimization)"
+      }
+    ],
+    "answer": "C",
+    "explanation": "6대 기둥은 운영 우수성, 보안, 안정성, 성능 효율성, 비용 최적화, 지속 가능성이다. 규정 준수(Compliance)는 별도의 거버넌스 영역이며 보안 기둥 안에서 다뤄질 뿐 독립된 기둥이 아니다."
+  },
+  {
+    "id": "clf-c02-w1-d4-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 4,
+    "number": 2,
+    "prompt": "\"한 가용 영역(AZ)에 장애가 나도 서비스가 계속 동작해야 한다\"는 요구는 주로 어떤 기둥과 관련되는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "비용 최적화(Cost Optimization)"
+      },
+      {
+        "label": "B",
+        "text": "안정성(Reliability)"
+      },
+      {
+        "label": "C",
+        "text": "지속 가능성(Sustainability)"
+      },
+      {
+        "label": "D",
+        "text": "운영 우수성(Operational Excellence)"
+      }
+    ],
+    "answer": "B",
+    "explanation": "장애가 나도 서비스가 멈추지 않고 복구되는 능력은 안정성(Reliability) 기둥의 핵심이다. 비용 최적화는 지출 절감, 지속 가능성은 환경 영향, 운영 우수성은 운영·자동화에 관한 것이다."
+  },
+  {
+    "id": "clf-c02-w1-d4-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 4,
+    "number": 3,
+    "prompt": "\"사용하지 않는 야간 시간에는 자원을 꺼서 지출을 줄인다\"는 접근은 어떤 기둥에 해당하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보안(Security)"
+      },
+      {
+        "label": "B",
+        "text": "성능 효율성(Performance Efficiency)"
+      },
+      {
+        "label": "C",
+        "text": "비용 최적화(Cost Optimization)"
+      },
+      {
+        "label": "D",
+        "text": "안정성(Reliability)"
+      }
+    ],
+    "answer": "C",
+    "explanation": "안 쓰는 자원을 꺼서 불필요한 지출을 없애는 것은 비용 최적화(Cost Optimization)의 대표적 활동이다. 보안은 데이터·시스템 보호, 성능 효율성은 자원의 효율적 활용, 안정성은 장애 복구에 관한 것이다."
+  },
+  {
+    "id": "clf-c02-w1-d4-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 4,
+    "number": 4,
+    "prompt": "2021년에 Well-Architected Framework에 새로 추가되어 6번째가 된 기둥은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "지속 가능성(Sustainability)"
+      },
+      {
+        "label": "B",
+        "text": "보안(Security)"
+      },
+      {
+        "label": "C",
+        "text": "안정성(Reliability)"
+      },
+      {
+        "label": "D",
+        "text": "운영 우수성(Operational Excellence)"
+      }
+    ],
+    "answer": "A",
+    "explanation": "지속 가능성(Sustainability)은 2021년에 추가되어 6번째 기둥이 되었으며, 클라우드 사용의 환경 영향을 줄이는 데 초점을 둔다. 나머지 보기들은 그 이전부터 있던 기둥이다."
+  },
+  {
+    "id": "clf-c02-w1-d4-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 4,
+    "number": 5,
+    "prompt": "기업이 클라우드를 채택할 때 얻는 가치로 보기 어려운 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "아이디어를 빠르게 실험하고 출시하는 민첩성"
+      },
+      {
+        "label": "B",
+        "text": "사용량에 따라 자원을 늘리고 줄이는 탄력성"
+      },
+      {
+        "label": "C",
+        "text": "데이터센터를 직접 짓고 운영해야 하는 부담 증가"
+      },
+      {
+        "label": "D",
+        "text": "클릭 몇 번으로 전 세계에 서비스하는 글로벌 도달"
+      }
+    ],
+    "answer": "C",
+    "explanation": "클라우드 채택의 가치는 민첩성, 탄력성, 글로벌 도달, 그리고 데이터센터 운영 부담을 더는 것이다. 데이터센터를 직접 짓고 운영하는 부담이 늘어나는 것은 클라우드의 가치가 아니라 오히려 클라우드가 없애 주는 부담이다."
+  },
+  {
+    "id": "clf-c02-w1-d5-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 5,
+    "number": 1,
+    "prompt": "Week 1에서 배운 클라우드의 정의로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 자원을 회사 안에 직접 보유·운영하는 방식"
+      },
+      {
+        "label": "B",
+        "text": "인터넷으로 컴퓨팅 자원을 빌려 쓰고 사용한 만큼 비용을 내는 방식"
+      },
+      {
+        "label": "C",
+        "text": "무료로 무제한 자원을 영구히 제공하는 방식"
+      },
+      {
+        "label": "D",
+        "text": "인터넷 없이 동작하는 독립 시스템"
+      }
+    ],
+    "answer": "B",
+    "explanation": "클라우드는 인터넷으로 자원을 주문형으로 빌려 쓰고 사용량만큼 지불하는 방식이다. 회사 안에 직접 보유하는 것은 온프레미스이고, 무료·무제한이 아니며, 인터넷을 통해 접근한다."
+  },
+  {
+    "id": "clf-c02-w1-d5-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 5,
+    "number": 2,
+    "prompt": "AWS 글로벌 인프라의 구조를 올바르게 표현한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "가용 영역 안에 여러 리전이 들어 있다"
+      },
+      {
+        "label": "B",
+        "text": "리전 안에 여러 가용 영역이 있고, 가용 영역은 하나 이상의 데이터센터로 구성된다"
+      },
+      {
+        "label": "C",
+        "text": "엣지 로케이션 안에 리전이 들어 있다"
+      },
+      {
+        "label": "D",
+        "text": "데이터센터 안에 여러 리전이 있다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "리전은 여러 가용 영역의 묶음이고, 각 가용 영역은 하나 이상의 데이터센터로 구성된다. 나머지 보기는 포함 관계가 뒤바뀌어 있어 틀렸다."
+  },
+  {
+    "id": "clf-c02-w1-d5-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 5,
+    "number": 3,
+    "prompt": "공동 책임 모델에서 어떤 서비스를 쓰든 항상 고객이 책임지는 영역은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터센터 물리 보안"
+      },
+      {
+        "label": "B",
+        "text": "가상화 계층 보안"
+      },
+      {
+        "label": "C",
+        "text": "데이터와 접근 권한(IAM)"
+      },
+      {
+        "label": "D",
+        "text": "서버 하드웨어 유지보수"
+      }
+    ],
+    "answer": "C",
+    "explanation": "데이터와 누가 접근할 수 있는지(IAM)는 서비스 종류와 무관하게 항상 고객 책임이다. 데이터센터 물리 보안, 가상화 계층, 하드웨어 유지보수는 모두 AWS가 책임지는 인프라 영역이다."
+  },
+  {
+    "id": "clf-c02-w1-d5-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 5,
+    "number": 4,
+    "prompt": "\"최소 권한 부여와 데이터 암호화로 시스템을 보호한다\"는 활동은 Well-Architected의 어떤 기둥에 해당하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보안(Security)"
+      },
+      {
+        "label": "B",
+        "text": "비용 최적화(Cost Optimization)"
+      },
+      {
+        "label": "C",
+        "text": "성능 효율성(Performance Efficiency)"
+      },
+      {
+        "label": "D",
+        "text": "지속 가능성(Sustainability)"
+      }
+    ],
+    "answer": "A",
+    "explanation": "최소 권한과 데이터 암호화로 시스템과 데이터를 보호하는 것은 보안(Security) 기둥의 핵심이다. 비용 최적화는 지출 절감, 성능 효율성은 자원의 효율적 활용, 지속 가능성은 환경 영향 감소에 관한 것이다."
+  },
+  {
+    "id": "clf-c02-w1-d5-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 1,
+    "day": 5,
+    "number": 5,
+    "prompt": "다음 중 클라우드의 6가지 이점에 해당하지 않는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "자본비용을 가변비용으로 전환"
+      },
+      {
+        "label": "B",
+        "text": "용량을 미리 추정할 필요가 없음"
+      },
+      {
+        "label": "C",
+        "text": "모든 데이터를 영구적으로 무료 저장"
+      },
+      {
+        "label": "D",
+        "text": "몇 분 만에 전 세계에 배포"
+      }
+    ],
+    "answer": "C",
+    "explanation": "6가지 이점은 자본비용의 가변비용 전환, 규모의 경제, 용량 추정 불필요, 속도·민첩성, 운영비 절감, 전 세계 배포다. \"모든 데이터를 영구적으로 무료 저장\"은 존재하지 않는 항목으로, 클라우드는 사용량에 따라 비용이 발생한다."
+  },
+  {
+    "id": "clf-c02-w2-d1-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 1,
+    "number": 1,
+    "prompt": "트래픽이 불규칙하고 간헐적으로 발생하는 이벤트성 작업을, 서버를 직접 관리하지 않고 사용한 만큼만 비용을 내며 운영하려고 한다. 가장 적합한 컴퓨팅 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "EC2 온디맨드 인스턴스"
+      },
+      {
+        "label": "B",
+        "text": "EC2 예약 인스턴스"
+      },
+      {
+        "label": "C",
+        "text": "AWS Lambda"
+      },
+      {
+        "label": "D",
+        "text": "전용 호스트(Dedicated Host)"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Lambda는 이벤트가 발생할 때만 실행되고 실행된 시간만큼만 과금하며 서버 관리가 전혀 필요 없다. \"불규칙·간헐적·서버 관리 불필요·사용한 만큼 과금\"이라는 조건이 모두 Lambda를 가리킨다. EC2 온디맨드/예약은 서버를 띄워 두어야 하므로 놀 때도 비용이 들고, 전용 호스트는 물리 서버를 통째로 점유하는 방식이라 정반대다."
+  },
+  {
+    "id": "clf-c02-w2-d1-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 1,
+    "number": 2,
+    "prompt": "중단되어도 다시 시작하면 되는 대규모 배치 처리 작업을 가능한 한 저렴하게 실행하려고 한다. 가장 비용 효율적인 EC2 구매 옵션은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "온디맨드 인스턴스"
+      },
+      {
+        "label": "B",
+        "text": "스팟 인스턴스"
+      },
+      {
+        "label": "C",
+        "text": "예약 인스턴스(3년 약정)"
+      },
+      {
+        "label": "D",
+        "text": "전용 호스트"
+      }
+    ],
+    "answer": "B",
+    "explanation": "스팟 인스턴스는 AWS의 남는 용량을 최대 약 90% 저렴하게 쓰는 옵션이며, 단점은 AWS가 용량이 필요하면 회수할 수 있다는 점이다. 따라서 \"중단되어도 괜찮은\" 배치·내결함성 작업에 가장 적합하다. 온디맨드는 가장 비싸고, 예약 인스턴스는 24시간 꾸준한 워크로드용이며, 전용 호스트는 라이선스/규정 준수 목적이라 비용 효율과는 거리가 멀다."
+  },
+  {
+    "id": "clf-c02-w2-d1-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 1,
+    "number": 3,
+    "prompt": "컨테이너 기반 애플리케이션을 운영하되, 그 컨테이너를 돌리는 서버(EC2)를 직접 프로비저닝하거나 관리하고 싶지 않다. 적합한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ECS on EC2"
+      },
+      {
+        "label": "B",
+        "text": "ECS on Fargate"
+      },
+      {
+        "label": "C",
+        "text": "EC2 단독"
+      },
+      {
+        "label": "D",
+        "text": "예약 인스턴스 + EC2"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Fargate는 \"컨테이너용 서버리스\" 실행 방식으로, 컨테이너를 돌릴 기반 서버를 사용자가 프로비저닝·관리하지 않는다. ECS on EC2는 사용자가 EC2를 직접 관리해야 하므로 조건에 어긋나고, EC2 단독이나 예약 인스턴스 조합은 컨테이너 오케스트레이션과 서버 관리를 모두 사용자가 떠안는 방향이다."
+  },
+  {
+    "id": "clf-c02-w2-d1-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 1,
+    "number": 4,
+    "prompt": "다음 중 EC2 인스턴스 유형(instance family)을 고르는 기준을 가장 정확히 설명한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 작업에는 범용 인스턴스가 항상 최선이다"
+      },
+      {
+        "label": "B",
+        "text": "작업의 성격(CPU·메모리·디스크·GPU 비중)에 맞춰 균형이 다른 유형을 고른다"
+      },
+      {
+        "label": "C",
+        "text": "인스턴스 유형은 가격에만 영향을 주고 성능과는 무관하다"
+      },
+      {
+        "label": "D",
+        "text": "메모리를 많이 쓰는 작업에는 컴퓨팅 최적화 인스턴스가 적합하다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "인스턴스 유형은 작업의 성격에 맞춰 CPU·메모리·스토리지·가속기의 균형이 다르게 설계되어 있다. 만능 유형은 없으며(A 오답), 유형 선택은 성능과 비용 모두에 영향을 준다(C 오답). 메모리 집약 작업에는 메모리 최적화 인스턴스가 맞고 컴퓨팅 최적화는 CPU 집약 작업용이므로 D는 틀렸다."
+  },
+  {
+    "id": "clf-c02-w2-d1-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 1,
+    "number": 5,
+    "prompt": "\"서버리스(Serverless)\"라는 용어의 의미로 가장 정확한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "물리적으로 서버가 전혀 존재하지 않는다"
+      },
+      {
+        "label": "B",
+        "text": "서버는 존재하지만 사용자가 프로비저닝·관리하지 않으며 AWS가 책임진다"
+      },
+      {
+        "label": "C",
+        "text": "사용자가 서버를 직접 패치하고 확장해야 한다"
+      },
+      {
+        "label": "D",
+        "text": "EC2만이 서버리스에 해당한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "서버리스는 서버가 없다는 뜻이 아니라, 서버의 프로비저닝·패치·확장 같은 관리 책임을 사용자가 지지 않고 AWS가 떠맡는다는 뜻이다. 따라서 물리 서버가 없다는 A는 틀렸고, 사용자가 직접 관리한다는 C도 서버리스 정의에 반한다. EC2는 사용자가 서버를 관리하는 IaaS이므로 서버리스가 아니다(D 오답). Lambda와 Fargate가 서버리스의 대표 사례다."
+  },
+  {
+    "id": "clf-c02-w2-d2-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 2,
+    "number": 1,
+    "prompt": "여러 EC2 인스턴스가 동시에 같은 파일에 접근하여 읽고 써야 하는 Linux 기반 워크로드가 있다. 가장 적합한 스토리지는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "EBS"
+      },
+      {
+        "label": "B",
+        "text": "EFS"
+      },
+      {
+        "label": "C",
+        "text": "S3 Glacier Deep Archive"
+      },
+      {
+        "label": "D",
+        "text": "인스턴스 스토어"
+      }
+    ],
+    "answer": "B",
+    "explanation": "EFS는 여러 EC2가 동시에 마운트해 공유할 수 있는 파일 시스템으로, \"여러 서버가 같은 파일을 공유\"라는 조건에 정확히 맞는다. EBS는 기본적으로 한 인스턴스 전용 디스크이고, Glacier는 자주 접근하지 않는 아카이브용이라 동시 파일 공유와 무관하다."
+  },
+  {
+    "id": "clf-c02-w2-d2-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 2,
+    "number": 2,
+    "prompt": "법적 의무로 7년간 보관해야 하지만 거의 꺼내 볼 일이 없는 대용량 감사 로그를 가장 저렴하게 저장하려고 한다. 적합한 S3 스토리지 클래스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 Standard"
+      },
+      {
+        "label": "B",
+        "text": "S3 Standard-IA"
+      },
+      {
+        "label": "C",
+        "text": "S3 Glacier Deep Archive"
+      },
+      {
+        "label": "D",
+        "text": "S3 Intelligent-Tiering"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Glacier Deep Archive는 S3에서 보관료가 가장 저렴한 클래스로, 꺼내는 데 수 시간이 걸리지만 \"거의 접근하지 않는 장기 보관\"에는 가장 비용 효율적이다. Standard는 자주 접근하는 데이터용이라 비싸고, Standard-IA는 가끔 접근용, Intelligent-Tiering은 접근 패턴을 모를 때 쓰는 자동 계층화 옵션이다."
+  },
+  {
+    "id": "clf-c02-w2-d2-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 2,
+    "number": 3,
+    "prompt": "S3의 \"내구성 11 9s(99.999999999%)\"가 의미하는 것으로 가장 정확한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터에 언제나 즉시 접근할 수 있는 확률"
+      },
+      {
+        "label": "B",
+        "text": "저장한 데이터를 잃어버리지 않을 확률"
+      },
+      {
+        "label": "C",
+        "text": "데이터 전송 속도"
+      },
+      {
+        "label": "D",
+        "text": "한 달에 다운타임이 없는 비율"
+      }
+    ],
+    "answer": "B",
+    "explanation": "내구성(Durability)은 \"데이터를 손실하지 않을 확률\"을 뜻하며, S3는 데이터를 여러 가용 영역에 자동 복제해 이 목표를 달성한다. 접근 가능성은 가용성(Availability)이라는 별개 개념이므로 A·D는 내구성의 정의가 아니고, 전송 속도(C)와도 무관하다."
+  },
+  {
+    "id": "clf-c02-w2-d2-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 2,
+    "number": 4,
+    "prompt": "EBS 볼륨에 대한 설명으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "여러 가용 영역(AZ)의 EC2에 자유롭게 동시 연결할 수 있다"
+      },
+      {
+        "label": "B",
+        "text": "특정 가용 영역(AZ)에 묶여 있어 그 AZ의 EC2에 연결된다"
+      },
+      {
+        "label": "C",
+        "text": "서버 없이도 HTTP로 직접 접근하는 객체 스토리지다"
+      },
+      {
+        "label": "D",
+        "text": "용량을 미리 정할 수 없고 무한히 자동 확장된다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "EBS 볼륨은 특정 AZ에 종속되어 같은 AZ의 EC2에 연결되며, 다른 AZ로 옮기려면 스냅샷을 떠서 복원해야 한다. 여러 AZ에 자유롭게 동시 연결된다는 A는 틀렸고, HTTP로 접근하는 객체 스토리지는 S3(C)의 특징이며, 무한 자동 확장은 S3·EFS의 특징이지 EBS가 아니다."
+  },
+  {
+    "id": "clf-c02-w2-d2-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 2,
+    "number": 5,
+    "prompt": "S3에서 객체의 접근 빈도가 시간이 지나며 줄어들 때, 비용 절감을 위해 더 저렴한 스토리지 클래스로 자동 이동시키는 메커니즘은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "수명 주기 정책(Lifecycle Policy)"
+      },
+      {
+        "label": "B",
+        "text": "보안 그룹(Security Group)"
+      },
+      {
+        "label": "C",
+        "text": "EBS 스냅샷"
+      },
+      {
+        "label": "D",
+        "text": "예약 인스턴스"
+      }
+    ],
+    "answer": "A",
+    "explanation": "수명 주기 정책은 \"며칠이 지나면 어떤 클래스로 이동하고, 며칠 후 삭제한다\" 같은 규칙으로 객체를 자동으로 더 저렴한 클래스로 옮기거나 삭제한다. 보안 그룹은 네트워크 트래픽 제어, EBS 스냅샷은 블록 볼륨 백업, 예약 인스턴스는 EC2 구매 옵션이므로 모두 무관하다."
+  },
+  {
+    "id": "clf-c02-w2-d3-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 3,
+    "number": 1,
+    "prompt": "AWS 클라우드 안에서 사용자가 갖는, 논리적으로 격리된 전용 가상 네트워크를 가리키는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 버킷"
+      },
+      {
+        "label": "B",
+        "text": "VPC"
+      },
+      {
+        "label": "C",
+        "text": "보안 그룹"
+      },
+      {
+        "label": "D",
+        "text": "인터넷 게이트웨이"
+      }
+    ],
+    "answer": "B",
+    "explanation": "VPC(Virtual Private Cloud)는 AWS 클라우드 안에 사용자가 갖는 논리적으로 격리된 사설 네트워크 공간이다. S3 버킷은 객체 스토리지의 컨테이너, 보안 그룹은 자원 단위 방화벽, 인터넷 게이트웨이는 VPC가 인터넷과 통신하기 위한 통로이므로 네트워크 공간 그 자체가 아니다."
+  },
+  {
+    "id": "clf-c02-w2-d3-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 3,
+    "number": 2,
+    "prompt": "데이터베이스 서버를 인터넷에서 직접 접근할 수 없도록 보호하려고 한다. 가장 적절한 배치는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "퍼블릭 서브넷에 두고 보안 그룹으로 모든 포트를 연다"
+      },
+      {
+        "label": "B",
+        "text": "프라이빗 서브넷에 두고, 같은 VPC의 웹 서버에서만 접근하도록 한다"
+      },
+      {
+        "label": "C",
+        "text": "S3 버킷에 데이터베이스를 둔다"
+      },
+      {
+        "label": "D",
+        "text": "인터넷 게이트웨이를 데이터베이스에 직접 연결한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "인터넷에서 직접 접근하면 안 되는 자원은 인터넷 게이트웨이로 가는 경로가 없는 프라이빗 서브넷에 두고, 보안 그룹으로 신뢰하는 내부 자원(웹 서버)에서 오는 트래픽만 허용하는 것이 표준이다. 퍼블릭 서브넷에 두고 포트를 다 여는 것은 정반대로 위험하고, S3에 DB를 둔다는 것은 개념적으로 맞지 않으며, IGW를 DB에 직접 연결하면 외부 노출이 된다."
+  },
+  {
+    "id": "clf-c02-w2-d3-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 3,
+    "number": 3,
+    "prompt": "보안 그룹(Security Group)에 대한 설명으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "명시적으로 허용한 트래픽만 통과하고, 응답 트래픽은 자동 허용된다(상태 저장)"
+      },
+      {
+        "label": "B",
+        "text": "차단 규칙을 명시적으로 작성해야만 트래픽을 막을 수 있다"
+      },
+      {
+        "label": "C",
+        "text": "서브넷 단위로 적용되며 상태를 기억하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "인터넷과 VPC를 연결하는 통로다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "보안 그룹은 허용 규칙만 사용하며(명시적으로 허용하지 않은 트래픽은 자동 차단), 상태 저장(Stateful)이라 인바운드를 허용하면 그 응답인 아웃바운드는 규칙 없이도 자동 허용된다. 차단 규칙을 따로 쓰는 것은 NACL의 방식이고(B 오답), 서브넷 단위·상태 비저장도 NACL의 특징이며(C 오답), 인터넷 연결 통로는 인터넷 게이트웨이다(D 오답)."
+  },
+  {
+    "id": "clf-c02-w2-d3-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 3,
+    "number": 4,
+    "prompt": "어떤 서브넷이 \"퍼블릭 서브넷\"으로 동작하게 되는 직접적인 조건은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "서브넷 이름에 \"public\"이 포함되어 있다"
+      },
+      {
+        "label": "B",
+        "text": "라우팅 테이블이 인터넷 게이트웨이로 가는 경로를 가지고 있다"
+      },
+      {
+        "label": "C",
+        "text": "서브넷에 EC2가 1대 이상 있다"
+      },
+      {
+        "label": "D",
+        "text": "서브넷이 가장 큰 IP 범위를 가진다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "서브넷이 퍼블릭이 되는 것은 이름이 아니라 라우팅 테이블에 인터넷 게이트웨이로 향하는 경로가 있기 때문이다. 같은 설정이라도 그 경로가 없으면 프라이빗 서브넷이다. 이름(A), EC2 존재 여부(C), IP 범위 크기(D)는 퍼블릭/프라이빗을 결정하지 않는다."
+  },
+  {
+    "id": "clf-c02-w2-d3-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 3,
+    "number": 5,
+    "prompt": "VPC 안의 자원이 인터넷과 양방향으로 통신할 수 있게 하는, VPC에 부착되는 구성 요소는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보안 그룹"
+      },
+      {
+        "label": "B",
+        "text": "인터넷 게이트웨이(Internet Gateway)"
+      },
+      {
+        "label": "C",
+        "text": "EBS 볼륨"
+      },
+      {
+        "label": "D",
+        "text": "수명 주기 정책"
+      }
+    ],
+    "answer": "B",
+    "explanation": "인터넷 게이트웨이는 VPC에 부착되어 VPC 내 자원이 인터넷과 통신할 수 있게 하는 \"대문\" 역할을 한다. 보안 그룹은 자원 단위 트래픽 제어, EBS 볼륨은 블록 스토리지, 수명 주기 정책은 S3 객체 관리 규칙이므로 인터넷 통신 통로와는 관련이 없다."
+  },
+  {
+    "id": "clf-c02-w2-d4-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 4,
+    "number": 1,
+    "prompt": "전 세계 사용자에게 이미지와 동영상을 낮은 지연 시간으로 전달하기 위해, 콘텐츠를 사용자와 가까운 거점에 캐싱하려고 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Route 53"
+      },
+      {
+        "label": "B",
+        "text": "Amazon CloudFront"
+      },
+      {
+        "label": "C",
+        "text": "Amazon EBS"
+      },
+      {
+        "label": "D",
+        "text": "AWS Lambda"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudFront는 AWS의 CDN으로, 콘텐츠를 전 세계 엣지 로케이션에 캐싱해 사용자에게 가까운 곳에서 빠르게 전달한다. Route 53은 DNS(이름→주소 변환) 서비스, EBS는 블록 스토리지, Lambda는 서버리스 컴퓨팅이므로 콘텐츠 캐싱·전달과는 역할이 다르다."
+  },
+  {
+    "id": "clf-c02-w2-d4-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 4,
+    "number": 2,
+    "prompt": "사용자가 입력한 도메인 이름(`example.com`)을 실제 IP 주소나 AWS 자원으로 연결해 주는 AWS 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon CloudFront"
+      },
+      {
+        "label": "B",
+        "text": "Amazon S3"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Route 53"
+      },
+      {
+        "label": "D",
+        "text": "Amazon VPC"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Route 53은 AWS의 DNS 서비스로, 도메인 이름을 IP 주소나 AWS 자원으로 변환(라우팅)하며 도메인 등록과 상태 확인 기능도 제공한다. CloudFront는 콘텐츠 전달(CDN), S3는 객체 스토리지, VPC는 가상 네트워크이므로 이름-주소 변환의 주체가 아니다."
+  },
+  {
+    "id": "clf-c02-w2-d4-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 4,
+    "number": 3,
+    "prompt": "미국과 유럽에 각각 서버를 두고, 각 사용자를 응답이 가장 빠른 리전으로 자동 연결하려고 한다. 가장 적합한 Route 53 라우팅 정책은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "단순(Simple) 라우팅"
+      },
+      {
+        "label": "B",
+        "text": "지연 시간(Latency) 기반 라우팅"
+      },
+      {
+        "label": "C",
+        "text": "가중치(Weighted) 라우팅"
+      },
+      {
+        "label": "D",
+        "text": "장애 조치(Failover) 라우팅"
+      }
+    ],
+    "answer": "B",
+    "explanation": "지연 시간 기반 라우팅은 사용자에게 응답이 가장 빠른 리전으로 트래픽을 보내는 정책으로, 다지역 배포에서 지연을 줄이는 데 적합하다. 단순 라우팅은 한 대상으로만 보내고, 가중치는 비율 분배, 장애 조치는 주/예비 전환 용도이므로 \"가장 빠른 리전\" 조건에는 맞지 않는다."
+  },
+  {
+    "id": "clf-c02-w2-d4-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 4,
+    "number": 4,
+    "prompt": "엣지 로케이션(Edge Location)에 대한 설명으로 가장 정확한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "리전·가용 영역과 동일한 대형 데이터센터다"
+      },
+      {
+        "label": "B",
+        "text": "콘텐츠를 캐싱해 사용자에게 가까이 전달하는, 전 세계에 많이 분산된 거점이다"
+      },
+      {
+        "label": "C",
+        "text": "데이터베이스를 영구 저장하는 전용 스토리지다"
+      },
+      {
+        "label": "D",
+        "text": "EC2 인스턴스를 실행하는 기본 단위다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "엣지 로케이션은 콘텐츠를 캐싱해 사용자에게 가깝게 전달하기 위한, 리전·AZ보다 훨씬 작고 훨씬 많이 분산된 거점이다. 리전·AZ와 동일한 대형 데이터센터가 아니며(A 오답), 영구 데이터 저장소(C)나 EC2 실행 단위(D)도 아니다."
+  },
+  {
+    "id": "clf-c02-w2-d4-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 4,
+    "number": 5,
+    "prompt": "CloudFront와 Route 53의 역할 차이를 가장 정확히 구분한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "둘 다 도메인 이름을 IP로 변환한다"
+      },
+      {
+        "label": "B",
+        "text": "CloudFront는 콘텐츠를 캐싱·전달하고, Route 53은 도메인 이름을 주소로 변환한다"
+      },
+      {
+        "label": "C",
+        "text": "CloudFront는 DNS이고, Route 53은 CDN이다"
+      },
+      {
+        "label": "D",
+        "text": "둘 다 블록 스토리지를 제공한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudFront는 콘텐츠를 엣지에 캐싱해 빠르게 전달하는 CDN이고, Route 53은 도메인 이름을 주소로 변환하는 DNS다. 역할이 반대로 서술된 C는 틀렸고, 둘 다 이름을 IP로 변환한다는 A나 블록 스토리지를 제공한다는 D도 사실이 아니다."
+  },
+  {
+    "id": "clf-c02-w2-d5-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 5,
+    "number": 1,
+    "prompt": "하루에 몇 차례, 파일이 업로드될 때만 잠깐 실행되는 가벼운 처리 작업을 운영하려 한다. 유휴 시간에는 비용이 들지 않도록 하려면 가장 적합한 컴퓨팅 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon EC2"
+      },
+      {
+        "label": "B",
+        "text": "AWS Lambda"
+      },
+      {
+        "label": "C",
+        "text": "Amazon EBS"
+      },
+      {
+        "label": "D",
+        "text": "Amazon VPC"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Lambda는 이벤트가 발생할 때만 실행되고 사용한 만큼만 과금되는 서버리스 서비스라, 간헐적이고 짧은 작업에 적합하다. EC2는 켜져 있는 동안 계속 과금되어 유휴 비용이 발생하고, EBS는 블록 스토리지, VPC는 네트워크이므로 코드 실행 주체가 아니다."
+  },
+  {
+    "id": "clf-c02-w2-d5-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 5,
+    "number": 2,
+    "prompt": "여러 대의 EC2 인스턴스가 동일한 파일을 동시에 읽고 쓸 수 있는 공유 파일 시스템이 필요하다. 가장 적합한 스토리지는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon S3"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EBS"
+      },
+      {
+        "label": "C",
+        "text": "Amazon EFS"
+      },
+      {
+        "label": "D",
+        "text": "Amazon CloudFront"
+      }
+    ],
+    "answer": "C",
+    "explanation": "EFS는 여러 EC2가 동시에 마운트해 공유할 수 있는 파일 스토리지다. EBS는 기본적으로 하나의 인스턴스에만 붙는 블록 디스크라 동시 공유에 부적합하고, S3는 객체 스토리지, CloudFront는 콘텐츠 전달망이므로 공유 파일 시스템 용도가 아니다."
+  },
+  {
+    "id": "clf-c02-w2-d5-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 5,
+    "number": 3,
+    "prompt": "데이터베이스 서버를 인터넷에서 직접 접근하지 못하도록 보호하면서, 웹 서버는 외부 접속을 허용하려 한다. VPC에서 가장 적절한 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "웹 서버와 DB를 모두 퍼블릭 서브넷에 둔다"
+      },
+      {
+        "label": "B",
+        "text": "웹 서버는 퍼블릭 서브넷, DB는 프라이빗 서브넷에 둔다"
+      },
+      {
+        "label": "C",
+        "text": "웹 서버와 DB를 모두 프라이빗 서브넷에 둔다"
+      },
+      {
+        "label": "D",
+        "text": "서브넷을 나누지 않고 보안 그룹도 두지 않는다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "외부 접속이 필요한 웹 서버는 퍼블릭 서브넷, 보호가 필요한 DB는 인터넷 경로가 없는 프라이빗 서브넷에 두는 것이 표준 구성이다. 둘 다 퍼블릭에 두면 DB가 노출되고, 둘 다 프라이빗이면 웹 서버가 외부 접속을 받을 수 없으며, 서브넷·보안 그룹을 두지 않으면 보호 자체가 불가능하다."
+  },
+  {
+    "id": "clf-c02-w2-d5-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 5,
+    "number": 4,
+    "prompt": "S3, EBS, EFS의 차이를 가장 정확하게 구분한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3는 블록, EBS는 객체, EFS는 파일 스토리지다"
+      },
+      {
+        "label": "B",
+        "text": "S3는 객체, EBS는 단일 서버용 블록, EFS는 공유 파일 스토리지다"
+      },
+      {
+        "label": "C",
+        "text": "셋 다 EC2 한 대에만 붙는 디스크다"
+      },
+      {
+        "label": "D",
+        "text": "셋 다 인터넷에서 직접 접근하는 객체 스토리지다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "S3는 객체 스토리지, EBS는 보통 하나의 EC2에 부착되는 블록 스토리지, EFS는 여러 서버가 공유하는 파일 스토리지다. 종류가 뒤바뀐 설명이나, 셋 다 단일 서버 디스크라거나 셋 다 객체 스토리지라는 설명은 사실과 다르다."
+  },
+  {
+    "id": "clf-c02-w2-d5-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 2,
+    "day": 5,
+    "number": 5,
+    "prompt": "전 세계 사용자에게 정적 콘텐츠를 낮은 지연 시간으로 전달하기 위해 콘텐츠를 사용자 가까운 거점에 캐싱하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Route 53"
+      },
+      {
+        "label": "B",
+        "text": "Amazon CloudFront"
+      },
+      {
+        "label": "C",
+        "text": "Amazon EFS"
+      },
+      {
+        "label": "D",
+        "text": "Amazon EC2"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudFront는 콘텐츠를 전 세계 엣지 로케이션에 캐싱해 사용자에게 가까운 곳에서 빠르게 전달하는 CDN이다. Route 53은 도메인 이름을 주소로 바꾸는 DNS이고, EFS는 공유 파일 스토리지, EC2는 가상 서버이므로 콘텐츠 캐싱·전달 역할과는 다르다."
+  },
+  {
+    "id": "clf-c02-w3-d1-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 1,
+    "number": 1,
+    "prompt": "한 회사가 기존 온프레미스 Oracle 데이터베이스를 최소한의 변경으로 AWS로 옮기려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon RDS"
+      },
+      {
+        "label": "B",
+        "text": "Amazon DynamoDB"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Redshift"
+      },
+      {
+        "label": "D",
+        "text": "Amazon ElastiCache"
+      }
+    ],
+    "answer": "A",
+    "explanation": "RDS는 Oracle을 포함한 익숙한 관계형 엔진을 관리형으로 제공하므로 기존 DB를 최소 변경으로 이전하기에 적합하다. DynamoDB는 NoSQL이라 스키마/쿼리를 다시 설계해야 하고, Redshift는 분석용 데이터 웨어하우스, ElastiCache는 캐시라서 운영 DB 자체를 대체하지 못한다."
+  },
+  {
+    "id": "clf-c02-w3-d1-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 1,
+    "number": 2,
+    "prompt": "유연한 데이터 구조와 예측이 어려운 초대규모 트래픽을 처리하며 서버 관리가 필요 없는 NoSQL 데이터베이스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Aurora"
+      },
+      {
+        "label": "B",
+        "text": "Amazon RDS"
+      },
+      {
+        "label": "C",
+        "text": "Amazon DynamoDB"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Redshift"
+      }
+    ],
+    "answer": "C",
+    "explanation": "DynamoDB는 완전 관리형 NoSQL로 유연한 항목 구조와 자동 확장, 한 자리 밀리초 응답을 제공한다. Aurora와 RDS는 관계형(정형 스키마)이고, Redshift는 대량 데이터 분석용 웨어하우스라 운영 트래픽 처리에는 맞지 않는다."
+  },
+  {
+    "id": "clf-c02-w3-d1-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 1,
+    "number": 3,
+    "prompt": "데이터베이스의 읽기 부하를 줄이고 자주 조회되는 데이터의 응답 속도를 높이려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Redshift"
+      },
+      {
+        "label": "B",
+        "text": "Amazon ElastiCache"
+      },
+      {
+        "label": "C",
+        "text": "Amazon RDS"
+      },
+      {
+        "label": "D",
+        "text": "Amazon DynamoDB"
+      }
+    ],
+    "answer": "B",
+    "explanation": "ElastiCache는 Redis/Memcached 기반 인메모리 캐시로, 자주 쓰는 데이터를 메모리에 두어 DB 부하를 줄이고 응답을 가속한다. Redshift는 분석용, RDS/DynamoDB는 원본 저장소이지 캐시 계층이 아니다."
+  },
+  {
+    "id": "clf-c02-w3-d1-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 1,
+    "number": 4,
+    "prompt": "한 회사가 지난 수년간의 판매 데이터를 모아 대규모 집계 분석과 BI 리포트를 만들려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Redshift"
+      },
+      {
+        "label": "B",
+        "text": "Amazon DynamoDB"
+      },
+      {
+        "label": "C",
+        "text": "Amazon ElastiCache"
+      },
+      {
+        "label": "D",
+        "text": "Amazon RDS"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Redshift는 대량 데이터의 집계·분석(OLAP)에 최적화된 데이터 웨어하우스다. DynamoDB와 RDS는 짧고 빈번한 운영 질의(OLTP)에 맞고, ElastiCache는 캐시 계층이라 대규모 분석 질의에 적합하지 않다."
+  },
+  {
+    "id": "clf-c02-w3-d1-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 1,
+    "number": 5,
+    "prompt": "MySQL/PostgreSQL과 호환되면서 표준 대비 높은 성능과 스토리지 자동 확장을 제공하는, AWS가 클라우드에 맞게 새로 설계한 관계형 데이터베이스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon RDS for MySQL"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Aurora"
+      },
+      {
+        "label": "C",
+        "text": "Amazon DynamoDB"
+      },
+      {
+        "label": "D",
+        "text": "Amazon ElastiCache"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Aurora는 MySQL·PostgreSQL과 호환되는 클라우드 네이티브 관계형 DB로, 높은 성능과 자동 확장 스토리지가 특징이다. RDS for MySQL은 표준 엔진을 관리형으로 제공할 뿐이고, DynamoDB는 NoSQL, ElastiCache는 캐시다."
+  },
+  {
+    "id": "clf-c02-w3-d2-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 2,
+    "number": 1,
+    "prompt": "주문 시스템이 트래픽 급증 시에도 메시지를 잃지 않고, 결제 시스템이 자기 속도로 하나씩 처리하도록 두 시스템을 분리하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon SNS"
+      },
+      {
+        "label": "B",
+        "text": "Amazon SQS"
+      },
+      {
+        "label": "C",
+        "text": "Amazon EventBridge"
+      },
+      {
+        "label": "D",
+        "text": "Amazon ElastiCache"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SQS는 메시지를 큐에 안전하게 쌓아 생산자와 소비자를 분리(버퍼링)하므로 트래픽 급증을 완충하고 유실을 막는다. SNS는 다중 수신자 알림용이고, EventBridge는 이벤트 라우팅, ElastiCache는 캐시라 작업 큐 용도가 아니다."
+  },
+  {
+    "id": "clf-c02-w3-d2-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 2,
+    "number": 2,
+    "prompt": "하나의 \"주문 완료\" 이벤트로 고객에게 이메일을 보내고, 분석 시스템에 기록하고, 배송 시스템을 동시에 깨우려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon SQS"
+      },
+      {
+        "label": "B",
+        "text": "Amazon RDS"
+      },
+      {
+        "label": "C",
+        "text": "Amazon SNS"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Redshift"
+      }
+    ],
+    "answer": "C",
+    "explanation": "SNS는 발행/구독(pub/sub) 모델로 하나의 메시지를 여러 구독자에게 동시에 전달(팬아웃)한다. SQS는 보통 한 소비자가 메시지를 가져가는 1:1 큐이고, RDS/Redshift는 데이터베이스라 알림 발송 용도가 아니다."
+  },
+  {
+    "id": "clf-c02-w3-d2-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 2,
+    "number": 3,
+    "prompt": "시스템 컴포넌트를 직접 호출 대신 메시지로 연결할 때 얻는 주된 이점은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "컴포넌트 간 강한 결합으로 속도 향상"
+      },
+      {
+        "label": "B",
+        "text": "느슨한 결합으로 한 컴포넌트 장애가 전체로 번지는 것을 방지"
+      },
+      {
+        "label": "C",
+        "text": "데이터베이스 비용 절감"
+      },
+      {
+        "label": "D",
+        "text": "IAM 권한 자동 구성"
+      }
+    ],
+    "answer": "B",
+    "explanation": "메시징으로 중간을 끊으면 느슨한 결합(loose coupling)이 되어, 한 컴포넌트가 죽어도 메시지가 보관되며 다른 컴포넌트는 영향을 받지 않는다. 직접 호출은 오히려 강한 결합을 만들고, 비용 절감이나 IAM 구성은 메시징의 직접 목적이 아니다."
+  },
+  {
+    "id": "clf-c02-w3-d2-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 2,
+    "number": 4,
+    "prompt": "S3에 특정 파일이 업로드되면 자동으로 Lambda를 실행하는 등, AWS 서비스나 SaaS의 이벤트 내용에 따라 조건부로 작업을 라우팅하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon SQS"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EventBridge"
+      },
+      {
+        "label": "C",
+        "text": "Amazon ElastiCache"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Aurora"
+      }
+    ],
+    "answer": "B",
+    "explanation": "EventBridge는 다양한 소스의 이벤트를 받아 규칙(내용 필터)으로 대상에 라우팅하는 이벤트 버스이며, 스케줄 실행도 지원한다. SQS는 단순 큐, ElastiCache는 캐시, Aurora는 데이터베이스라 이벤트 라우팅 기능이 없다."
+  },
+  {
+    "id": "clf-c02-w3-d2-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 2,
+    "number": 5,
+    "prompt": "SQS와 SNS의 차이로 가장 정확한 설명은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SQS는 다중 수신자에게 푸시하고, SNS는 단일 소비자가 폴링한다"
+      },
+      {
+        "label": "B",
+        "text": "SQS는 메시지 큐(보통 1:1, 소비자가 끌어감), SNS는 발행/구독(1:다, 구독자에게 푸시)이다"
+      },
+      {
+        "label": "C",
+        "text": "둘 다 데이터베이스 서비스다"
+      },
+      {
+        "label": "D",
+        "text": "SQS는 알림 발송 전용, SNS는 작업 버퍼링 전용이다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SQS는 소비자가 폴링해 가져가는 메시지 큐(보통 1:1, 버퍼링)이고, SNS는 하나의 메시지를 여러 구독자에게 푸시하는 발행/구독(1:다)이다. A는 둘을 뒤바꾼 설명이고, 둘 다 데이터베이스가 아니며, 용도도 D와 반대다."
+  },
+  {
+    "id": "clf-c02-w3-d3-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 3,
+    "number": 1,
+    "prompt": "EC2 인스턴스의 CPU 사용률을 시계열로 추적하고, 80%를 넘으면 알림을 보내려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS CloudTrail"
+      },
+      {
+        "label": "B",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "C",
+        "text": "AWS Config"
+      },
+      {
+        "label": "D",
+        "text": "AWS Systems Manager"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudWatch는 성능 지표를 수집하고 임계값 기반 경보(Alarm)를 제공하는 모니터링 서비스다. CloudTrail은 API 활동 기록(감사), Config는 설정 규정 준수, Systems Manager는 운영 작업용이라 성능 경보 용도가 아니다."
+  },
+  {
+    "id": "clf-c02-w3-d3-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 3,
+    "number": 2,
+    "prompt": "보안 조사를 위해 \"누가, 언제, 어떤 IP에서 S3 버킷 정책을 변경했는지\"를 확인해야 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "B",
+        "text": "AWS Config"
+      },
+      {
+        "label": "C",
+        "text": "AWS CloudTrail"
+      },
+      {
+        "label": "D",
+        "text": "Amazon SNS"
+      }
+    ],
+    "answer": "C",
+    "explanation": "CloudTrail은 계정 내 API 호출·활동을 기록하는 감사 로그 서비스로, 누가 언제 무엇을 했는지 추적한다. CloudWatch는 성능 모니터링, Config는 설정 상태 평가, SNS는 알림 발송이라 행위 추적에는 맞지 않는다."
+  },
+  {
+    "id": "clf-c02-w3-d3-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 3,
+    "number": 3,
+    "prompt": "\"모든 S3 버킷은 암호화되어야 한다\"는 회사 규칙을 위반하는 리소스를 자동으로 탐지하고 설정 이력을 추적하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Config"
+      },
+      {
+        "label": "B",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "C",
+        "text": "AWS Systems Manager"
+      },
+      {
+        "label": "D",
+        "text": "Amazon SQS"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS Config는 리소스 설정을 기록하고 규칙(예: 버킷 암호화)에 대한 적합성을 평가하며 설정 이력을 남긴다. CloudWatch는 성능, Systems Manager는 운영 작업, SQS는 메시지 큐라서 설정 규정 준수 평가 기능이 없다."
+  },
+  {
+    "id": "clf-c02-w3-d3-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 3,
+    "number": 4,
+    "prompt": "수백 대의 EC2 인스턴스에 SSH 키나 열린 포트 없이 OS 패치를 일괄 적용하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "B",
+        "text": "AWS CloudTrail"
+      },
+      {
+        "label": "C",
+        "text": "AWS Systems Manager"
+      },
+      {
+        "label": "D",
+        "text": "AWS Config"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Systems Manager는 Patch Manager로 대규모 패치를 일괄 적용하고 Session Manager로 키/포트 없이 안전하게 접속하는 운영 도구 모음이다. CloudWatch·CloudTrail·Config는 각각 모니터링·감사·설정 평가용이라 일괄 운영 작업을 수행하지 않는다."
+  },
+  {
+    "id": "clf-c02-w3-d3-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 3,
+    "number": 5,
+    "prompt": "CloudWatch와 CloudTrail의 역할 차이로 가장 정확한 설명은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudWatch는 API 행위를 기록하고, CloudTrail은 성능을 모니터링한다"
+      },
+      {
+        "label": "B",
+        "text": "CloudWatch는 성능 지표·로그·경보, CloudTrail은 누가 무엇을 했는지의 활동 기록이다"
+      },
+      {
+        "label": "C",
+        "text": "둘 다 설정 규정 준수만 평가한다"
+      },
+      {
+        "label": "D",
+        "text": "둘 다 서버 패치를 자동화한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudWatch는 성능(지표·로그·경보)을 보고, CloudTrail은 행위(누가 무엇을 했는지)를 기록한다. A는 둘을 뒤바꾼 설명이고, 설정 규정 준수는 Config, 서버 패치는 Systems Manager의 역할이다."
+  },
+  {
+    "id": "clf-c02-w3-d4-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 4,
+    "number": 1,
+    "prompt": "동일한 인프라 환경(개발·테스트·운영)을 반복 가능하고 버전 관리되는 방식으로 자동 생성하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Elastic Beanstalk"
+      },
+      {
+        "label": "B",
+        "text": "AWS CloudFormation"
+      },
+      {
+        "label": "C",
+        "text": "AWS Lambda"
+      },
+      {
+        "label": "D",
+        "text": "Amazon ECS"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudFormation은 인프라를 JSON/YAML 템플릿(코드)으로 정의해 반복 재현·버전 관리하는 IaC 서비스다. Elastic Beanstalk은 앱 배포 단순화에 초점이 있고, Lambda는 서버리스 코드 실행, ECS는 컨테이너 오케스트레이션이라 인프라 전체 정의 용도가 아니다."
+  },
+  {
+    "id": "clf-c02-w3-d4-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 4,
+    "number": 2,
+    "prompt": "개발자가 인프라 세부 설정을 직접 다루지 않고, 코드만 업로드하면 EC2·로드밸런서·Auto Scaling을 알아서 구성해 웹 앱을 빠르게 배포하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS CloudFormation"
+      },
+      {
+        "label": "B",
+        "text": "AWS Config"
+      },
+      {
+        "label": "C",
+        "text": "AWS Elastic Beanstalk"
+      },
+      {
+        "label": "D",
+        "text": "Amazon EKS"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Elastic Beanstalk은 코드를 올리면 실행에 필요한 표준 인프라를 자동 구성·배포해 개발자가 코드에 집중하게 해준다. CloudFormation은 모든 리소스를 직접 정의해야 하고, Config는 설정 평가, EKS는 쿠버네티스 관리라 목적이 다르다."
+  },
+  {
+    "id": "clf-c02-w3-d4-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 4,
+    "number": 3,
+    "prompt": "컨테이너를 실행하되 그 아래의 EC2 서버(노드)를 직접 패치·확장하지 않는 서버리스 방식을 원한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon EC2"
+      },
+      {
+        "label": "B",
+        "text": "AWS Fargate"
+      },
+      {
+        "label": "C",
+        "text": "Amazon RDS"
+      },
+      {
+        "label": "D",
+        "text": "AWS CloudTrail"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Fargate는 ECS/EKS에서 노드(EC2) 관리 없이 컨테이너만 실행하는 서버리스 컴퓨팅이다. EC2는 서버를 직접 관리해야 하고, RDS는 데이터베이스, CloudTrail은 감사 로그라 컨테이너 실행과 무관하다."
+  },
+  {
+    "id": "clf-c02-w3-d4-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 4,
+    "number": 4,
+    "prompt": "이벤트(예: 파일 업로드)가 발생할 때만 코드를 실행하고, 실행한 시간만큼만 과금되며 서버를 전혀 관리하지 않으려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Lambda"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EC2"
+      },
+      {
+        "label": "C",
+        "text": "Amazon EKS"
+      },
+      {
+        "label": "D",
+        "text": "AWS Elastic Beanstalk"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Lambda는 이벤트 기반으로만 실행되고 사용한 시간만큼 과금되는 서버리스 컴퓨팅이다. EC2·EKS·Beanstalk은 정도의 차이는 있지만 서버나 환경을 유지·관리해야 하므로 \"서버 전혀 없음\" 조건에 맞지 않는다."
+  },
+  {
+    "id": "clf-c02-w3-d4-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 4,
+    "number": 5,
+    "prompt": "이미 표준 오픈소스 Kubernetes를 사용 중인 팀이 AWS에서 관리형 Kubernetes를 쓰려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon ECS"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EKS"
+      },
+      {
+        "label": "C",
+        "text": "AWS Lambda"
+      },
+      {
+        "label": "D",
+        "text": "AWS CloudFormation"
+      }
+    ],
+    "answer": "B",
+    "explanation": "EKS는 표준 Kubernetes를 관리형으로 제공하므로 기존 쿠버네티스 워크로드와 잘 맞는다. ECS는 AWS 고유 방식의 컨테이너 오케스트레이션, Lambda는 서버리스 함수, CloudFormation은 IaC라서 쿠버네티스 관리 서비스가 아니다."
+  },
+  {
+    "id": "clf-c02-w3-d5-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 5,
+    "number": 1,
+    "prompt": "수백만 사용자의 세션 정보를 밀리초 단위로 빠르게 읽고 쓰며, 트래픽 급증에도 자동으로 확장되어야 한다. 가장 적합한 데이터베이스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Redshift"
+      },
+      {
+        "label": "B",
+        "text": "Amazon DynamoDB"
+      },
+      {
+        "label": "C",
+        "text": "Amazon RDS for MySQL"
+      },
+      {
+        "label": "D",
+        "text": "AWS CloudFormation"
+      }
+    ],
+    "answer": "B",
+    "explanation": "DynamoDB는 밀리초 단위 응답과 자동 확장을 제공하는 관리형 NoSQL로, 대규모 고속 키-값 조회에 적합하다. Redshift는 분석용 데이터 웨어하우스라 응답 지향이 다르고, RDS는 자동 확장성이 NoSQL만큼 유연하지 않으며, CloudFormation은 데이터베이스가 아니라 IaC 서비스다."
+  },
+  {
+    "id": "clf-c02-w3-d5-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 5,
+    "number": 2,
+    "prompt": "주문 한 건이 발생하면 알림 시스템, 재고 시스템, 배송 시스템에 동시에 같은 메시지를 보내고 싶다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon SQS"
+      },
+      {
+        "label": "B",
+        "text": "Amazon SNS"
+      },
+      {
+        "label": "C",
+        "text": "Amazon RDS"
+      },
+      {
+        "label": "D",
+        "text": "Amazon CloudWatch"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SNS는 하나의 메시지를 여러 구독자에게 동시에 전달하는 발행/구독(팬아웃) 서비스라 다수 시스템 동시 통지에 적합하다. SQS는 메시지를 한 줄로 쌓아 순차 처리하는 큐, RDS는 관계형 DB, CloudWatch는 모니터링 서비스이므로 동시 팬아웃 통지 용도가 아니다."
+  },
+  {
+    "id": "clf-c02-w3-d5-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 5,
+    "number": 3,
+    "prompt": "특정 사용자가 언제 어떤 AWS API를 호출해 자원을 삭제했는지 사후에 추적해 보안 감사를 하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "B",
+        "text": "AWS CloudTrail"
+      },
+      {
+        "label": "C",
+        "text": "AWS Config"
+      },
+      {
+        "label": "D",
+        "text": "Amazon EventBridge"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudTrail은 계정 내 API 호출을 \"누가·언제·무엇을\" 했는지 기록하므로 보안 감사와 사고 조사에 적합하다. CloudWatch는 성능 지표·로그 모니터링, Config는 리소스 구성·규정 준수 추적, EventBridge는 이벤트 라우팅에 쓰여 호출 주체 추적이 주 역할이 아니다."
+  },
+  {
+    "id": "clf-c02-w3-d5-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 5,
+    "number": 4,
+    "prompt": "\"모든 EBS 볼륨이 암호화되어 있는지\" 같은 리소스 구성 규칙 준수 여부를 지속적으로 점검하고 변경 이력을 추적하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Config"
+      },
+      {
+        "label": "B",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "C",
+        "text": "Amazon SQS"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Aurora"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Config는 리소스 구성 상태와 변경 이력을 추적하고 규정 준수 규칙 위반을 감지하는 서비스다. CloudWatch는 성능·로그 모니터링, SQS는 메시지 큐, Aurora는 데이터베이스이므로 구성 규정 준수 점검과는 역할이 다르다."
+  },
+  {
+    "id": "clf-c02-w3-d5-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 3,
+    "day": 5,
+    "number": 5,
+    "prompt": "개발·테스트·운영용으로 완전히 동일한 인프라 환경을 실수 없이 반복 생성하고, 필요 없을 때 한 번에 삭제하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "B",
+        "text": "AWS CloudFormation"
+      },
+      {
+        "label": "C",
+        "text": "Amazon DynamoDB"
+      },
+      {
+        "label": "D",
+        "text": "Amazon SNS"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudFormation은 인프라를 템플릿(코드)으로 정의해 스택 단위로 일괄 생성·삭제하는 IaC 서비스라 동일 환경 반복 구성에 적합하다. CloudWatch는 모니터링, DynamoDB는 NoSQL DB, SNS는 알림 서비스이므로 인프라 자동 프로비저닝 용도가 아니다."
+  },
+  {
+    "id": "clf-c02-w4-d1-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 1,
+    "number": 1,
+    "prompt": "공동 책임 모델에서 다음 중 항상 **고객의 책임**에 해당하는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터센터의 물리적 보안"
+      },
+      {
+        "label": "B",
+        "text": "하이퍼바이저(가상화 계층)의 보안"
+      },
+      {
+        "label": "C",
+        "text": "S3에 저장한 데이터의 접근 권한 설정"
+      },
+      {
+        "label": "D",
+        "text": "서버 하드웨어의 유지보수"
+      }
+    ],
+    "answer": "C",
+    "explanation": "데이터와 그 접근 권한은 어떤 서비스를 쓰든 항상 고객 책임(\"in the cloud\")이다. 데이터센터 물리 보안, 하이퍼바이저, 하드웨어 유지보수는 모두 AWS가 책임지는 \"of the cloud\" 영역이다."
+  },
+  {
+    "id": "clf-c02-w4-d1-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 1,
+    "number": 2,
+    "prompt": "EC2 인스턴스에서 실행되는 애플리케이션이 S3 버킷에 접근해야 한다. 가장 안전한 권한 부여 방식은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "액세스 키를 애플리케이션 코드에 하드코딩한다"
+      },
+      {
+        "label": "B",
+        "text": "EC2 인스턴스에 IAM 역할(Role)을 부여한다"
+      },
+      {
+        "label": "C",
+        "text": "루트 사용자의 자격 증명을 사용한다"
+      },
+      {
+        "label": "D",
+        "text": "모든 사용자에게 관리자 권한을 준다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "IAM 역할은 액세스 키를 노출하지 않고 EC2에 임시 권한을 안전하게 제공한다. 코드에 키를 하드코딩하거나 루트 자격 증명을 쓰는 것은 보안 위험이 크고, 관리자 권한 부여는 최소 권한 원칙에 위배된다."
+  },
+  {
+    "id": "clf-c02-w4-d1-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 1,
+    "number": 3,
+    "prompt": "AWS 계정 보안을 강화하기 위한 모범 사례로 옳지 않은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "루트 사용자에 MFA를 활성화한다"
+      },
+      {
+        "label": "B",
+        "text": "일상 작업은 루트 대신 IAM 사용자로 수행한다"
+      },
+      {
+        "label": "C",
+        "text": "루트 사용자의 액세스 키를 만들어 자동화에 사용한다"
+      },
+      {
+        "label": "D",
+        "text": "최소 권한 원칙에 따라 권한을 부여한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "루트 액세스 키는 만들지 않는 것이 권장되며, 탈취 시 계정 전체가 위험해진다. MFA 활성화, 루트 사용 자제와 IAM 사용자 활용, 최소 권한 원칙은 모두 올바른 모범 사례다."
+  },
+  {
+    "id": "clf-c02-w4-d1-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 1,
+    "number": 4,
+    "prompt": "여러 IAM 사용자에게 동일한 권한을 효율적으로 부여하고 관리하려면 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "사용자마다 정책을 개별적으로 작성한다"
+      },
+      {
+        "label": "B",
+        "text": "IAM 그룹에 정책을 붙이고 사용자를 그룹에 추가한다"
+      },
+      {
+        "label": "C",
+        "text": "모든 사용자를 루트 사용자로 통합한다"
+      },
+      {
+        "label": "D",
+        "text": "사용자마다 별도의 역할을 만든다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "그룹에 정책을 부여하면 그룹에 속한 모든 사용자가 같은 권한을 일관되게 갖게 되어 관리가 간편하다. 사용자별 개별 정책은 관리가 번거롭고, 루트 통합은 불가능하며 위험하고, 역할은 임시 권한 위임 용도이지 사용자 권한 표준화 도구가 아니다."
+  },
+  {
+    "id": "clf-c02-w4-d1-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 1,
+    "number": 5,
+    "prompt": "IAM에 대한 설명으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM은 리전별로 따로 설정해야 하는 리전 서비스다"
+      },
+      {
+        "label": "B",
+        "text": "IAM 사용은 추가 요금이 부과된다"
+      },
+      {
+        "label": "C",
+        "text": "IAM은 글로벌 서비스이며 사용에 추가 요금이 없다"
+      },
+      {
+        "label": "D",
+        "text": "IAM 정책은 허용(Allow)만 정의할 수 있다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "IAM은 모든 리전에 걸친 글로벌 서비스이며 사용 자체에 추가 요금이 없다. 리전별 설정이 필요하지 않고, 정책은 허용(Allow)뿐 아니라 명시적 거부(Deny)도 정의할 수 있다."
+  },
+  {
+    "id": "clf-c02-w4-d2-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 2,
+    "number": 1,
+    "prompt": "SQL 인젝션과 크로스 사이트 스크립팅(XSS) 같은 웹 애플리케이션 계층 공격으로부터 웹 앱을 보호하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Shield"
+      },
+      {
+        "label": "B",
+        "text": "AWS WAF"
+      },
+      {
+        "label": "C",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Macie"
+      }
+    ],
+    "answer": "B",
+    "explanation": "WAF는 L7(애플리케이션 계층)에서 SQL 인젝션·XSS 같은 웹 공격 패턴을 필터링한다. Shield는 DDoS(트래픽 폭주)를 막고, GuardDuty는 악의적 활동을 탐지하며, Macie는 S3 민감 데이터를 다루므로 웹 공격 차단과는 거리가 있다."
+  },
+  {
+    "id": "clf-c02-w4-d2-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 2,
+    "number": 2,
+    "prompt": "모든 AWS 고객에게 무료로 기본 제공되며 일반적인 DDoS 공격을 자동으로 방어하는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Shield Standard"
+      },
+      {
+        "label": "B",
+        "text": "AWS WAF"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Inspector"
+      },
+      {
+        "label": "D",
+        "text": "AWS Security Hub"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Shield Standard는 추가 비용 없이 모든 고객에게 제공되어 네트워크/전송 계층 DDoS를 자동 방어한다. WAF는 웹 공격 필터링, Inspector는 취약점 점검, Security Hub는 통합 대시보드로 DDoS 방어 서비스가 아니다."
+  },
+  {
+    "id": "clf-c02-w4-d2-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 2,
+    "number": 3,
+    "prompt": "S3 버킷에 저장된 개인 식별 정보(PII) 같은 민감 데이터를 자동으로 발견하고 분류하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Inspector"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Macie"
+      },
+      {
+        "label": "D",
+        "text": "AWS WAF"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Macie는 머신러닝으로 S3 내 민감 데이터(PII 등)를 발견·분류하는 데 특화되어 있다. GuardDuty는 악의적 활동 탐지, Inspector는 취약점 점검, WAF는 웹 공격 필터링으로 S3 데이터 분류 기능은 없다."
+  },
+  {
+    "id": "clf-c02-w4-d2-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 2,
+    "number": 4,
+    "prompt": "EC2 인스턴스와 컨테이너 이미지에 존재하는 알려진 소프트웨어 취약점을 자동으로 점검하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Inspector"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Macie"
+      },
+      {
+        "label": "C",
+        "text": "AWS Shield"
+      },
+      {
+        "label": "D",
+        "text": "AWS Security Hub"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Inspector는 EC2·컨테이너·Lambda를 스캔해 알려진 취약점(CVE)과 노출 문제를 점검한다. Macie는 S3 민감 데이터, Shield는 DDoS 방어, Security Hub는 결과 통합 대시보드라서 취약점 평가 도구가 아니다."
+  },
+  {
+    "id": "clf-c02-w4-d2-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 2,
+    "number": 5,
+    "prompt": "GuardDuty, Inspector, Macie 등 여러 보안 서비스의 탐지 결과를 한곳에 모아 통합적으로 모니터링하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS WAF"
+      },
+      {
+        "label": "B",
+        "text": "AWS Security Hub"
+      },
+      {
+        "label": "C",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "D",
+        "text": "AWS Shield Advanced"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Security Hub는 여러 보안 서비스의 결과(findings)를 한 화면에 모으고 모범 사례 대비 보안 상태를 보여주는 중앙 집중식 대시보드다. WAF·GuardDuty·Shield는 각각 특정 위협을 다루는 개별 서비스이지 통합 가시성 도구가 아니다."
+  },
+  {
+    "id": "clf-c02-w4-d3-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 3,
+    "number": 1,
+    "prompt": "감사를 위해 AWS의 SOC 2, ISO 27001, PCI DSS 규정 준수 보고서를 다운로드하려 한다. 어떤 서비스를 사용해야 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Artifact"
+      },
+      {
+        "label": "B",
+        "text": "AWS Trusted Advisor"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Inspector"
+      },
+      {
+        "label": "D",
+        "text": "AWS Config"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS Artifact는 SOC, ISO, PCI DSS 등 AWS의 규정 준수 보고서와 인증서를 셀프 서비스로 내려받는 포털이다. Trusted Advisor는 모범 사례 점검, Inspector는 취약점 평가, Config는 리소스 구성 추적 도구로 규정 준수 보고서 다운로드 기능과는 다르다."
+  },
+  {
+    "id": "clf-c02-w4-d3-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 3,
+    "number": 2,
+    "prompt": "한 EU 회사가 법적 요구에 따라 고객 데이터를 반드시 유럽 내에만 저장해야 한다. AWS에서 이를 보장하는 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터를 모든 리전에 자동 복제한다"
+      },
+      {
+        "label": "B",
+        "text": "데이터를 저장할 리전으로 EU 내 리전을 선택한다"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Macie를 활성화한다"
+      },
+      {
+        "label": "D",
+        "text": "AWS Shield Advanced를 구독한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AWS는 고객이 선택한 리전 밖으로 데이터를 임의로 옮기지 않으므로, EU 리전을 선택하면 데이터가 유럽 내에 물리적으로 저장된다(데이터 주권). 전체 리전 복제는 오히려 데이터를 EU 밖으로 내보내고, Macie와 Shield는 데이터 위치를 결정하는 기능이 아니다."
+  },
+  {
+    "id": "clf-c02-w4-d3-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 3,
+    "number": 3,
+    "prompt": "AWS가 PCI DSS 인증을 받았다는 사실에 대한 올바른 이해는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "고객 애플리케이션도 자동으로 PCI DSS를 준수하게 된다"
+      },
+      {
+        "label": "B",
+        "text": "AWS는 인프라 측면의 준수를 책임지고, 고객은 자신의 구성에 대한 준수 책임이 남는다"
+      },
+      {
+        "label": "C",
+        "text": "고객은 더 이상 어떤 보안 설정도 할 필요가 없다"
+      },
+      {
+        "label": "D",
+        "text": "PCI DSS는 AWS에만 적용되고 고객과 무관하다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "규정 준수도 공동 책임이다. AWS는 클라우드 인프라(of the cloud)의 준수를 책임지지만, 고객은 자신의 데이터·접근 통제·구성(in the cloud)이 규정을 지키도록 설정할 책임이 있다. AWS 인증이 곧 고객 앱의 자동 준수를 의미하지는 않는다."
+  },
+  {
+    "id": "clf-c02-w4-d3-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 3,
+    "number": 4,
+    "prompt": "데이터 주권(Data Sovereignty) 요구사항을 충족하기 위해 고객이 통제할 수 있는 가장 직접적인 수단은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "인스턴스 유형 선택"
+      },
+      {
+        "label": "B",
+        "text": "IAM 그룹 구성"
+      },
+      {
+        "label": "C",
+        "text": "데이터를 저장할 AWS 리전 선택"
+      },
+      {
+        "label": "D",
+        "text": "Auto Scaling 설정"
+      }
+    ],
+    "answer": "C",
+    "explanation": "데이터가 물리적으로 어느 지역에 저장될지는 리전 선택으로 결정되며, 이것이 데이터 주권을 충족하는 직접적 수단이다. 인스턴스 유형, IAM 그룹, Auto Scaling은 데이터의 지리적 저장 위치를 결정하지 않는다."
+  },
+  {
+    "id": "clf-c02-w4-d3-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 3,
+    "number": 5,
+    "prompt": "리전을 선택할 때 고려해야 할 요소로 가장 거리가 먼 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "규정 준수 및 데이터 주권 요구사항"
+      },
+      {
+        "label": "B",
+        "text": "사용자와의 지연 시간"
+      },
+      {
+        "label": "C",
+        "text": "해당 리전의 서비스 가용성"
+      },
+      {
+        "label": "D",
+        "text": "IAM 사용자의 비밀번호 길이"
+      }
+    ],
+    "answer": "D",
+    "explanation": "리전 선택은 규정 준수·데이터 주권, 지연 시간, 서비스 가용성, 비용을 기준으로 한다. IAM 사용자의 비밀번호 길이는 계정 보안 정책 설정 사항일 뿐 리전 선택과는 무관하다."
+  },
+  {
+    "id": "clf-c02-w4-d4-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 4,
+    "number": 1,
+    "prompt": "웹 브라우저와 서버 사이를 오가는 데이터를 가로채기로부터 보호하는 것은 어떤 유형의 암호화인가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "저장 시 암호화(at rest)"
+      },
+      {
+        "label": "B",
+        "text": "전송 중 암호화(in transit)"
+      },
+      {
+        "label": "C",
+        "text": "디스크 암호화"
+      },
+      {
+        "label": "D",
+        "text": "키 교체"
+      }
+    ],
+    "answer": "B",
+    "explanation": "네트워크를 통해 이동 중인 데이터를 보호하는 것은 전송 중 암호화이며 TLS/SSL(HTTPS)이 대표 기술이다. 저장 시·디스크 암호화는 저장된 데이터를 보호하고, 키 교체는 암호화 키를 주기적으로 갱신하는 별개의 작업이다."
+  },
+  {
+    "id": "clf-c02-w4-d4-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 4,
+    "number": 2,
+    "prompt": "S3, EBS, RDS 등 여러 AWS 서비스에서 사용하는 암호화 키를 손쉽게 생성하고 중앙에서 관리하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Secrets Manager"
+      },
+      {
+        "label": "B",
+        "text": "AWS KMS"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Macie"
+      },
+      {
+        "label": "D",
+        "text": "AWS Artifact"
+      }
+    ],
+    "answer": "B",
+    "explanation": "KMS는 AWS 서비스 전반과 통합되어 암호화 키를 생성·저장·관리·교체하는 완전 관리형 서비스다. Secrets Manager는 비밀번호 같은 자격 증명 보관용, Macie는 S3 민감 데이터 탐지, Artifact는 규정 준수 보고서 다운로드 포털이다."
+  },
+  {
+    "id": "clf-c02-w4-d4-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 4,
+    "number": 3,
+    "prompt": "엄격한 규정 준수 요구에 따라 암호화 키를 고객 전용 하드웨어에서 단독으로 통제해야 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS KMS의 AWS 관리형 키"
+      },
+      {
+        "label": "B",
+        "text": "AWS CloudHSM"
+      },
+      {
+        "label": "C",
+        "text": "AWS Secrets Manager"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Inspector"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudHSM은 고객 전용 하드웨어 보안 모듈(HSM)을 제공해 키를 단독으로 완전히 통제하게 하며, 엄격한 규정 준수 요구에 적합하다. KMS 관리형 키는 AWS가 관리하는 공유 인프라 기반이고, Secrets Manager는 자격 증명 보관용, Inspector는 취약점 점검 도구다."
+  },
+  {
+    "id": "clf-c02-w4-d4-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 4,
+    "number": 4,
+    "prompt": "데이터베이스 비밀번호와 API 키를 코드에 하드코딩하지 않고 안전하게 보관하며, 주기적으로 자동 교체하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS KMS"
+      },
+      {
+        "label": "B",
+        "text": "AWS CloudHSM"
+      },
+      {
+        "label": "C",
+        "text": "AWS Secrets Manager"
+      },
+      {
+        "label": "D",
+        "text": "AWS WAF"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Secrets Manager는 비밀번호·API 키 같은 자격 증명을 안전하게 저장하고 자동 교체(rotation)를 지원한다. KMS와 CloudHSM은 암호화 \"키\" 관리에 초점이 있고, WAF는 웹 공격 필터링 서비스다."
+  },
+  {
+    "id": "clf-c02-w4-d4-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 4,
+    "number": 5,
+    "prompt": "저장 시 암호화(encryption at rest)에 대한 설명으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "네트워크를 통해 전송되는 데이터를 보호한다"
+      },
+      {
+        "label": "B",
+        "text": "디스크나 스토리지에 저장된 데이터를 키 없이 읽지 못하게 보호한다"
+      },
+      {
+        "label": "C",
+        "text": "HTTPS 통신을 의미한다"
+      },
+      {
+        "label": "D",
+        "text": "오직 EC2에서만 사용할 수 있다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "저장 시 암호화는 디스크·스토리지에 저장된 데이터를 보호해 키가 없으면 읽을 수 없게 한다. 네트워크 전송 보호와 HTTPS는 전송 중 암호화에 해당하며, 저장 시 암호화는 S3·EBS·RDS 등 다양한 스토리지 서비스에서 지원된다."
+  },
+  {
+    "id": "clf-c02-w4-d5-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 5,
+    "number": 1,
+    "prompt": "공동 책임 모델에 따라, EC2 인스턴스에서 실행되는 운영체제의 보안 패치는 누구의 책임인가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS"
+      },
+      {
+        "label": "B",
+        "text": "고객"
+      },
+      {
+        "label": "C",
+        "text": "AWS와 고객이 공동으로 직접 수행"
+      },
+      {
+        "label": "D",
+        "text": "책임 주체가 없다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "EC2(IaaS)에서는 게스트 운영체제와 애플리케이션의 패치가 고객 책임(\"in the cloud\")이다. AWS는 물리 인프라와 가상화 계층 등 \"of the cloud\"를 책임진다. 관리형 서비스로 갈수록 패치 책임이 AWS로 이동하지만 EC2의 OS는 고객 몫이다."
+  },
+  {
+    "id": "clf-c02-w4-d5-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 5,
+    "number": 2,
+    "prompt": "대량의 트래픽을 동시에 퍼부어 서비스를 마비시키는 공격(DDoS)을 방어하며, 모든 고객에게 무료로 기본 제공되는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS WAF"
+      },
+      {
+        "label": "B",
+        "text": "AWS Shield Standard"
+      },
+      {
+        "label": "C",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Macie"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Shield Standard는 모든 고객에게 무료로 제공되어 DDoS(트래픽 폭주)를 자동 방어한다. WAF는 웹 공격(SQL 인젝션·XSS) 필터링, GuardDuty는 악의적 활동 탐지, Macie는 S3 민감 데이터 탐지로 DDoS 방어 서비스가 아니다."
+  },
+  {
+    "id": "clf-c02-w4-d5-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 5,
+    "number": 3,
+    "prompt": "한 회사가 AWS 서비스 전반에서 사용할 암호화 키를 손쉽게 관리하려 한다. 일반적인 요구에 가장 적합한 기본 선택은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS CloudHSM"
+      },
+      {
+        "label": "B",
+        "text": "AWS KMS"
+      },
+      {
+        "label": "C",
+        "text": "AWS Secrets Manager"
+      },
+      {
+        "label": "D",
+        "text": "AWS Artifact"
+      }
+    ],
+    "answer": "B",
+    "explanation": "KMS는 AWS 서비스와 통합되어 암호화 키를 간편하게 생성·관리하는 기본 선택지다. CloudHSM은 전용 하드웨어에서 단독 키 통제가 필요한 엄격한 경우에 쓰고, Secrets Manager는 자격 증명 보관용, Artifact는 규정 준수 보고서 포털이다."
+  },
+  {
+    "id": "clf-c02-w4-d5-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 5,
+    "number": 4,
+    "prompt": "감사를 위해 AWS가 받은 ISO 27001 인증서와 SOC 보고서를 받아야 한다. 그리고 별도로, 데이터를 EU 내에만 보관해야 한다. 각각에 대한 올바른 조치 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Artifact에서 보고서 다운로드 / EU 리전 선택"
+      },
+      {
+        "label": "B",
+        "text": "Inspector로 보고서 생성 / 모든 리전에 복제"
+      },
+      {
+        "label": "C",
+        "text": "Trusted Advisor로 보고서 다운로드 / 인스턴스 유형 변경"
+      },
+      {
+        "label": "D",
+        "text": "Security Hub로 인증서 발급 / IAM 그룹 설정"
+      }
+    ],
+    "answer": "A",
+    "explanation": "규정 준수 보고서는 AWS Artifact에서 셀프 서비스로 내려받고, 데이터 주권 요구는 EU 리전을 선택해 충족한다. Inspector·Trusted Advisor·Security Hub는 보고서 발급 포털이 아니며, 전체 리전 복제·인스턴스 유형 변경·IAM 그룹은 데이터 보관 위치 요구와 무관하다."
+  },
+  {
+    "id": "clf-c02-w4-d5-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 4,
+    "day": 5,
+    "number": 5,
+    "prompt": "데이터베이스 비밀번호를 코드에 하드코딩하지 않고 안전하게 저장하며 주기적으로 자동 교체하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Secrets Manager"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Inspector"
+      },
+      {
+        "label": "C",
+        "text": "AWS WAF"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Macie"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Secrets Manager는 비밀번호·API 키 같은 자격 증명을 안전하게 보관하고 자동 교체(rotation)를 지원한다. Inspector는 취약점 점검, WAF는 웹 공격 필터링, Macie는 S3 민감 데이터 탐지로 자격 증명 보관·교체 기능과는 다르다."
+  },
+  {
+    "id": "clf-c02-w5-d1-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 1,
+    "number": 1,
+    "prompt": "트래픽 패턴이 아직 불확실한 신규 프로젝트를 약정 없이 유연하게 운영하려 한다. 가장 적합한 요금 모델은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "예약 인스턴스(RI)"
+      },
+      {
+        "label": "B",
+        "text": "스팟 인스턴스"
+      },
+      {
+        "label": "C",
+        "text": "온디맨드"
+      },
+      {
+        "label": "D",
+        "text": "Savings Plans"
+      }
+    ],
+    "answer": "C",
+    "explanation": "온디맨드는 장기 약정이나 선결제 없이 실행한 만큼만 과금하므로 예측 불가능하거나 단기인 워크로드의 출발점으로 적합하다. RI와 Savings Plans는 1~3년 약정이 전제라 패턴이 불확실할 때 부담이 되고, 스팟은 회수 위험이 있어 안정 운영에 맞지 않는다."
+  },
+  {
+    "id": "clf-c02-w5-d1-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 1,
+    "number": 2,
+    "prompt": "24시간 꾸준히 돌아가는 안정적 워크로드를 가장 저렴하게 운영하되, 인스턴스 유형이나 리전을 바꿔도 할인이 계속 적용되길 원한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Savings Plans"
+      },
+      {
+        "label": "B",
+        "text": "온디맨드"
+      },
+      {
+        "label": "C",
+        "text": "스팟 인스턴스"
+      },
+      {
+        "label": "D",
+        "text": "프리 티어"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Savings Plans는 시간당 사용 금액을 약정하는 방식이라 인스턴스 유형·리전을 변경해도 약정이 유연하게 적용된다. 온디맨드는 할인이 없고, 스팟은 회수 위험이 커 상시 안정 운영과 맞지 않으며, 프리 티어는 신규 사용자 무료 한도일 뿐 상시 워크로드 할인 수단이 아니다."
+  },
+  {
+    "id": "clf-c02-w5-d1-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 1,
+    "number": 3,
+    "prompt": "중간에 중단됐다가 다시 시작해도 무방한 대규모 배치 데이터 분석 작업을 최대한 저렴하게 처리하려 한다. 가장 적합한 요금 모델은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "온디맨드"
+      },
+      {
+        "label": "B",
+        "text": "예약 인스턴스(RI)"
+      },
+      {
+        "label": "C",
+        "text": "스팟 인스턴스"
+      },
+      {
+        "label": "D",
+        "text": "Savings Plans"
+      }
+    ],
+    "answer": "C",
+    "explanation": "스팟 인스턴스는 AWS 여유 용량을 온디맨드 대비 최대 약 90% 저렴하게 쓰지만 회수될 수 있어, 중단 허용(fault-tolerant) 배치·분석 작업에 가장 적합하다. 온디맨드·RI·Savings Plans는 안정성은 높지만 스팟만큼 저렴하지 않다."
+  },
+  {
+    "id": "clf-c02-w5-d1-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 1,
+    "number": 4,
+    "prompt": "가입 후 비용 부담 없이 일정 한도까지 EC2와 S3를 체험하고 싶은 신규 사용자가 활용할 수 있는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "볼륨 할인"
+      },
+      {
+        "label": "B",
+        "text": "AWS 프리 티어"
+      },
+      {
+        "label": "C",
+        "text": "예약 인스턴스(RI)"
+      },
+      {
+        "label": "D",
+        "text": "Savings Plans"
+      }
+    ],
+    "answer": "B",
+    "explanation": "프리 티어는 신규 사용자가 12개월 무료, 상시 무료, 체험판 형태로 일정 한도까지 무료로 서비스를 써보게 해준다. 볼륨 할인은 사용량 증가에 따른 단가 인하이고, RI·Savings Plans는 약정 기반 할인이라 무료 체험 목적과 다르다."
+  },
+  {
+    "id": "clf-c02-w5-d1-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 1,
+    "number": 5,
+    "prompt": "S3에 데이터를 점점 더 많이 저장할수록 GB당 단가가 자동으로 낮아지는 가격 구조를 무엇이라 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Savings Plans"
+      },
+      {
+        "label": "B",
+        "text": "스팟 가격"
+      },
+      {
+        "label": "C",
+        "text": "볼륨(계층형) 할인"
+      },
+      {
+        "label": "D",
+        "text": "온디맨드 요금"
+      }
+    ],
+    "answer": "C",
+    "explanation": "볼륨(계층형) 할인은 사용량이 늘수록 단가가 자동으로 내려가는 요금 구조로 S3 스토리지가 대표적이다. Savings Plans는 약정 기반 할인, 스팟은 여유 용량 경매가, 온디맨드는 약정 없는 표준 단가라 사용량 자체에 따른 자동 단가 인하와는 개념이 다르다."
+  },
+  {
+    "id": "clf-c02-w5-d2-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 2,
+    "number": 1,
+    "prompt": "지난 몇 달간 어떤 서비스에 비용이 가장 많이 들었는지 그래프로 분석하고, 향후 비용을 예측하려 한다. 가장 적합한 도구는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Budgets"
+      },
+      {
+        "label": "B",
+        "text": "AWS Cost Explorer"
+      },
+      {
+        "label": "C",
+        "text": "비용 할당 태그"
+      },
+      {
+        "label": "D",
+        "text": "AWS CloudTrail"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Cost Explorer는 과거 비용·사용량을 시각화하고 미래 비용을 예측하는 분석 도구다. Budgets는 예산 초과 알림용이고, 비용 할당 태그는 비용 구분 기준일 뿐 분석·예측 자체를 하지 않으며, CloudTrail은 API 감사 로그라 비용 분석 도구가 아니다."
+  },
+  {
+    "id": "clf-c02-w5-d2-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 2,
+    "number": 2,
+    "prompt": "월 예산을 정해두고, 실제 비용이 그 한도의 일정 비율에 도달하면 자동으로 알림을 받아 초과를 예방하려 한다. 가장 적합한 도구는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Cost Explorer"
+      },
+      {
+        "label": "B",
+        "text": "AWS Cost and Usage Report"
+      },
+      {
+        "label": "C",
+        "text": "AWS Budgets"
+      },
+      {
+        "label": "D",
+        "text": "AWS Pricing Calculator"
+      }
+    ],
+    "answer": "C",
+    "explanation": "AWS Budgets는 비용·사용량 예산을 설정하고 임계치 도달·초과 시 알림을 보내 비용 폭탄을 예방한다. Cost Explorer는 사후 분석, CUR은 상세 데이터 내보내기, Pricing Calculator는 사전 비용 견적용이라 임계치 알림 기능이 핵심이 아니다."
+  },
+  {
+    "id": "clf-c02-w5-d2-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 2,
+    "number": 3,
+    "prompt": "회계팀이 시간 단위까지 쪼개진 가장 상세한 라인 아이템 청구 데이터를 S3로 내보내 Athena로 맞춤 분석하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Budgets"
+      },
+      {
+        "label": "B",
+        "text": "AWS Cost and Usage Report(CUR)"
+      },
+      {
+        "label": "C",
+        "text": "AWS Cost Explorer"
+      },
+      {
+        "label": "D",
+        "text": "비용 할당 태그"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CUR은 AWS가 제공하는 가장 상세한 비용·사용량 데이터로, S3로 내보내 Athena·QuickSight와 연계한 맞춤 분석에 적합하다. Cost Explorer는 대시보드 수준 시각화, Budgets는 예산 알림, 태그는 비용 구분 기준이라 원천 데이터 분석 용도와 다르다."
+  },
+  {
+    "id": "clf-c02-w5-d2-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 2,
+    "number": 4,
+    "prompt": "여러 팀이 같은 계정을 쓰는데, 각 팀이 발생시킨 비용을 분리해 부서별로 정산하려 한다. 가장 먼저 활용해야 할 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "비용 할당 태그"
+      },
+      {
+        "label": "B",
+        "text": "스팟 인스턴스"
+      },
+      {
+        "label": "C",
+        "text": "AWS Budgets"
+      },
+      {
+        "label": "D",
+        "text": "프리 티어"
+      }
+    ],
+    "answer": "A",
+    "explanation": "비용 할당 태그를 활성화하면 Team·Project 같은 태그 기준으로 비용을 쪼개 부서별로 배분·정산할 수 있다. Budgets는 예산 알림이고, 스팟·프리 티어는 요금 모델/무료 한도라 비용을 팀별로 구분하는 기능과 무관하다."
+  },
+  {
+    "id": "clf-c02-w5-d2-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 2,
+    "number": 5,
+    "prompt": "Cost Explorer와 AWS Budgets의 핵심 차이를 가장 정확히 설명한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Cost Explorer는 예산 알림, Budgets는 비용 시각화를 한다"
+      },
+      {
+        "label": "B",
+        "text": "Cost Explorer는 과거 분석·예측, Budgets는 예산 설정·초과 알림을 한다"
+      },
+      {
+        "label": "C",
+        "text": "둘 다 동일하며 이름만 다르다"
+      },
+      {
+        "label": "D",
+        "text": "Cost Explorer는 무료 한도 관리, Budgets는 태그 관리를 한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Cost Explorer는 과거 비용을 분석하고 미래를 예측하는 도구이고, Budgets는 예산을 정해 임계치 초과 시 알림을 보내는 도구다. 둘은 역할이 다른 보완 관계이며, 무료 한도 관리나 태그 관리가 본래 역할은 아니다."
+  },
+  {
+    "id": "clf-c02-w5-d3-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 3,
+    "number": 1,
+    "prompt": "프로덕션 워크로드를 24/7로 운영하며, 전화·채팅 기술 지원과 전체 Trusted Advisor 점검이 필요하다. 단, 전담 TAM까지는 필요 없다. 가장 적합한 지원 플랜은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Basic"
+      },
+      {
+        "label": "B",
+        "text": "Developer"
+      },
+      {
+        "label": "C",
+        "text": "Business"
+      },
+      {
+        "label": "D",
+        "text": "Enterprise"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Business 플랜은 24/7 전화·채팅·이메일 기술 지원과 전체 Trusted Advisor 점검을 제공해 프로덕션 운영에 적합하다. Basic은 기술 케이스 불가, Developer는 이메일·업무 시간 한정이며, Enterprise는 TAM·최단 응답까지 포함해 요건을 초과(비용 과다)한다."
+  },
+  {
+    "id": "clf-c02-w5-d3-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 3,
+    "number": 2,
+    "prompt": "미션 크리티컬 환경을 운영하는 대기업이 전담 기술 자문 인력과 가장 빠른 긴급 응답을 원한다. 가장 적합한 지원 플랜은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Developer"
+      },
+      {
+        "label": "B",
+        "text": "Business"
+      },
+      {
+        "label": "C",
+        "text": "Enterprise"
+      },
+      {
+        "label": "D",
+        "text": "Basic"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Enterprise 플랜은 전담 TAM, 긴급 시 가장 빠른 응답(15분 목표), 컨시어지 지원 등을 제공해 미션 크리티컬 환경에 적합하다. Basic·Developer는 24/7 지원조차 없고, Business는 24/7이지만 TAM이 제공되지 않는다."
+  },
+  {
+    "id": "clf-c02-w5-d3-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 3,
+    "number": 3,
+    "prompt": "추가 비용 없이 모든 계정에 기본 제공되며, 기술 지원 케이스는 열 수 없고 청구 문의와 문서·포럼만 이용할 수 있는 플랜은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Basic"
+      },
+      {
+        "label": "B",
+        "text": "Developer"
+      },
+      {
+        "label": "C",
+        "text": "Business"
+      },
+      {
+        "label": "D",
+        "text": "Enterprise"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Basic은 모든 계정에 무료로 제공되지만 기술 지원 케이스는 불가하고 계정·청구 문의, 문서·포럼, 제한된 Trusted Advisor만 이용할 수 있다. Developer 이상은 모두 유료이며 기술 지원 케이스를 열 수 있다."
+  },
+  {
+    "id": "clf-c02-w5-d3-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 3,
+    "number": 4,
+    "prompt": "Enterprise Support에서 제공되며 고객 환경을 지속적으로 파악해 아키텍처·운영·비용을 자문하는 전담 인력은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Trusted Advisor"
+      },
+      {
+        "label": "B",
+        "text": "Technical Account Manager(TAM)"
+      },
+      {
+        "label": "C",
+        "text": "Solutions Architect 인증"
+      },
+      {
+        "label": "D",
+        "text": "AWS Config"
+      }
+    ],
+    "answer": "B",
+    "explanation": "TAM은 Enterprise 플랜에서 제공되는 전담 기술 자문 인력으로 고객을 지속적으로 따라붙으며 모범 사례를 안내한다. Trusted Advisor는 자동 점검 도구(사람이 아님), Config는 설정 평가 서비스라 전담 자문 인력과 다르다."
+  },
+  {
+    "id": "clf-c02-w5-d3-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 3,
+    "number": 5,
+    "prompt": "환경을 자동으로 점검해 비용·성능·보안·내결함성·서비스 한도 다섯 범주의 개선점을 권고하는 서비스는? (단, 전체 점검은 Business 이상에서 제공)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Budgets"
+      },
+      {
+        "label": "B",
+        "text": "AWS Trusted Advisor"
+      },
+      {
+        "label": "C",
+        "text": "AWS Cost Explorer"
+      },
+      {
+        "label": "D",
+        "text": "Technical Account Manager"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Trusted Advisor는 다섯 범주(비용·성능·보안·내결함성·서비스 한도)로 환경을 자동 점검해 모범 사례 대비 개선점을 권고하며, 전체 점검은 Business·Enterprise에서 열린다. Budgets는 예산 알림, Cost Explorer는 비용 분석, TAM은 사람 자문 인력이라 자동 점검 도구가 아니다."
+  },
+  {
+    "id": "clf-c02-w5-d4-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 4,
+    "number": 1,
+    "prompt": "수십 개의 AWS 계정을 운영하는 기업이 결제를 한 장으로 합치고, 사용량을 합산해 볼륨 할인을 키우려 한다. 가장 적합한 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Budgets"
+      },
+      {
+        "label": "B",
+        "text": "AWS Organizations의 통합 결제"
+      },
+      {
+        "label": "C",
+        "text": "AWS Pricing Calculator"
+      },
+      {
+        "label": "D",
+        "text": "비용 할당 태그"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Organizations의 통합 결제는 모든 계정 청구서를 관리 계정 하나로 합치고 사용량을 합산해 볼륨 할인 구간 도달을 앞당기며 RI/SP 약정도 공유한다. Budgets는 예산 알림, Pricing Calculator는 사전 견적, 태그는 비용 구분 기준이라 청구서 합산 기능이 아니다."
+  },
+  {
+    "id": "clf-c02-w5-d4-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 4,
+    "number": 2,
+    "prompt": "여러 계정을 조직 단위(OU)로 묶고 서비스 제어 정책(SCP)으로 일괄 가드레일을 적용해 중앙에서 거버넌스를 하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Organizations"
+      },
+      {
+        "label": "B",
+        "text": "AWS Trusted Advisor"
+      },
+      {
+        "label": "C",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "D",
+        "text": "AWS Cost Explorer"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS Organizations는 여러 계정을 OU로 그룹화하고 SCP로 일괄 정책을 적용해 중앙에서 관리·통제하는 서비스다. Trusted Advisor는 자동 점검, CloudWatch는 모니터링, Cost Explorer는 비용 분석이라 다계정 거버넌스 기능이 아니다."
+  },
+  {
+    "id": "clf-c02-w5-d4-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 4,
+    "number": 3,
+    "prompt": "아직 배포하지 않은 새 아키텍처를 클라우드로 옮길 때 드는 예상 월 비용을 미리 산정해 예산을 짜려 한다. 가장 적합한 도구는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Cost Explorer"
+      },
+      {
+        "label": "B",
+        "text": "AWS Cost and Usage Report"
+      },
+      {
+        "label": "C",
+        "text": "AWS Pricing Calculator"
+      },
+      {
+        "label": "D",
+        "text": "AWS Budgets"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Pricing Calculator는 배포 전 아키텍처의 예상 비용을 산정하는 사전 견적 도구로 마이그레이션·예산 계획에 적합하다. Cost Explorer와 CUR은 이미 발생한 비용을 다루는 사후 도구이고, Budgets는 예산 초과 알림 기능이다."
+  },
+  {
+    "id": "clf-c02-w5-d4-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 4,
+    "number": 4,
+    "prompt": "온프레미스 데이터센터를 유지하는 비용에는 서버 구매비 외에 전력·냉방·운영 인력 같은 숨은 비용이 포함된다. 이렇게 모든 비용을 합산해 클라우드와 비교하는 개념은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "볼륨 할인"
+      },
+      {
+        "label": "B",
+        "text": "총소유비용(TCO)"
+      },
+      {
+        "label": "C",
+        "text": "예약 인스턴스"
+      },
+      {
+        "label": "D",
+        "text": "Savings Plans"
+      }
+    ],
+    "answer": "B",
+    "explanation": "TCO(총소유비용)는 구매비뿐 아니라 전력·냉방·인력·유지보수 등 숨은 비용까지 합산해 온프레미스와 클라우드를 정직하게 비교하는 개념이다. 볼륨 할인은 사용량 기반 단가 인하, RI·Savings Plans는 약정 할인 모델이라 총비용 비교 개념과 다르다."
+  },
+  {
+    "id": "clf-c02-w5-d4-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 4,
+    "number": 5,
+    "prompt": "통합 결제의 비용 측면 이점으로 가장 거리가 먼 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 계정의 청구서를 하나로 합쳐 회계가 단순해진다"
+      },
+      {
+        "label": "B",
+        "text": "계정별 사용량이 합산되어 볼륨 할인 구간에 더 빨리 도달한다"
+      },
+      {
+        "label": "C",
+        "text": "RI·Savings Plans 약정을 조직 내 다른 계정이 공유할 수 있다"
+      },
+      {
+        "label": "D",
+        "text": "각 계정에 서로 다른 SCP를 강제로 적용해 비용을 자동 절감한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "SCP는 통합 결제의 비용 이점이 아니라 Organizations의 권한·거버넌스 통제 수단이며, 정책 자체가 비용을 자동 절감하지도 않는다. 단일 청구서, 볼륨 할인 합산, 약정 공유는 모두 통합 결제의 실제 비용 측면 이점이다."
+  },
+  {
+    "id": "clf-c02-w5-d5-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 5,
+    "number": 1,
+    "prompt": "워크로드가 1년 내내 안정적으로 돌아가는 게 확실해 약정 할인을 받되, 인스턴스 유형과 리전을 바꿔도 할인이 유지되길 원한다. 가장 적합한 요금 모델은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "온디맨드"
+      },
+      {
+        "label": "B",
+        "text": "스팟 인스턴스"
+      },
+      {
+        "label": "C",
+        "text": "Savings Plans"
+      },
+      {
+        "label": "D",
+        "text": "프리 티어"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Savings Plans는 시간당 사용 금액을 약정하는 방식이라 인스턴스 유형·리전 변경에도 할인이 유연하게 적용된다. 온디맨드는 할인이 없고 스팟은 회수 위험이 있으며, 프리 티어는 신규 사용자 무료 한도라 안정적 약정 할인과 다르다."
+  },
+  {
+    "id": "clf-c02-w5-d5-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 5,
+    "number": 2,
+    "prompt": "이미 발생한 비용을 서비스별로 시각화해 분석하려는 경우와, 배포 전 새 아키텍처의 예상 비용을 견적하려는 경우에 각각 적합한 도구를 올바르게 짝지은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "분석=Pricing Calculator, 견적=Cost Explorer"
+      },
+      {
+        "label": "B",
+        "text": "분석=Cost Explorer, 견적=Pricing Calculator"
+      },
+      {
+        "label": "C",
+        "text": "분석=Budgets, 견적=CUR"
+      },
+      {
+        "label": "D",
+        "text": "분석=CUR, 견적=Budgets"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Cost Explorer는 이미 쓴 비용을 시각화·분석하는 사후 도구이고, Pricing Calculator는 배포 전 예상 비용을 산정하는 사전 견적 도구다. Budgets는 예산 알림, CUR은 상세 원천 데이터라 이 두 시점의 역할에 맞지 않는다."
+  },
+  {
+    "id": "clf-c02-w5-d5-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 5,
+    "number": 3,
+    "prompt": "프로덕션을 24시간 운영하려는 회사가 전화·채팅 24/7 지원과 전체 Trusted Advisor 점검을 원하지만, 전담 TAM은 필요 없다. 가장 적합한 지원 플랜은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Basic"
+      },
+      {
+        "label": "B",
+        "text": "Developer"
+      },
+      {
+        "label": "C",
+        "text": "Business"
+      },
+      {
+        "label": "D",
+        "text": "Enterprise"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Business 플랜은 24/7 전화·채팅·이메일 지원과 전체 Trusted Advisor 점검을 제공해 프로덕션 운영에 알맞다. Basic은 기술 케이스 불가, Developer는 이메일·업무 시간 한정, Enterprise는 TAM·최단 응답까지 포함해 요건을 초과한다."
+  },
+  {
+    "id": "clf-c02-w5-d5-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 5,
+    "number": 4,
+    "prompt": "다수의 AWS 계정을 운영하는 조직에서, 권한·정책을 중앙에서 통제하는 일과 청구서를 한 장으로 합쳐 볼륨 할인을 키우는 일을 각각 담당하는 것을 올바르게 짝지은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "거버넌스=통합 결제, 결제=Organizations"
+      },
+      {
+        "label": "B",
+        "text": "거버넌스=Organizations(OU/SCP), 결제=통합 결제"
+      },
+      {
+        "label": "C",
+        "text": "거버넌스=Budgets, 결제=태그"
+      },
+      {
+        "label": "D",
+        "text": "거버넌스=Trusted Advisor, 결제=Cost Explorer"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Organizations는 OU·SCP로 다계정 권한·정책을 중앙 통제(거버넌스)하고, 통합 결제는 청구서를 합산하고 사용량 합산으로 볼륨 할인을 키우는(결제) 기능이다. Budgets·태그·Trusted Advisor·Cost Explorer는 이 두 역할의 주체가 아니다."
+  },
+  {
+    "id": "clf-c02-w5-d5-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 5,
+    "day": 5,
+    "number": 5,
+    "prompt": "고객 환경을 지속적으로 따라붙으며 자문하는 '사람'과, 환경을 자동 점검해 모범 사례를 권고하는 '도구'를 올바르게 짝지은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "사람=Trusted Advisor, 도구=TAM"
+      },
+      {
+        "label": "B",
+        "text": "사람=TAM, 도구=Trusted Advisor"
+      },
+      {
+        "label": "C",
+        "text": "사람=Cost Explorer, 도구=Budgets"
+      },
+      {
+        "label": "D",
+        "text": "사람=Business 플랜, 도구=Enterprise 플랜"
+      }
+    ],
+    "answer": "B",
+    "explanation": "TAM은 Enterprise 플랜에서 제공되는 전담 기술 자문 '인력(사람)'이고, Trusted Advisor는 환경을 자동 점검해 비용·보안 등 모범 사례를 권고하는 '도구'다. Cost Explorer·Budgets는 비용 도구이고, Business·Enterprise는 사람/도구가 아니라 지원 플랜 등급이다."
+  },
+  {
+    "id": "clf-c02-w6-d1-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 1,
+    "number": 1,
+    "prompt": "사용자가 운영체제 패치와 미들웨어 설치까지 직접 책임지길 원할 때 가장 적합한 클라우드 컴퓨팅 모델은 무엇인가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SaaS"
+      },
+      {
+        "label": "B",
+        "text": "IaaS"
+      },
+      {
+        "label": "C",
+        "text": "PaaS"
+      },
+      {
+        "label": "D",
+        "text": "FaaS"
+      }
+    ],
+    "answer": "B",
+    "explanation": "IaaS는 가상 서버 같은 기본 인프라만 제공하고 OS와 미들웨어는 사용자가 관리하므로 통제권이 가장 큽니다. SaaS는 완제품 소프트웨어만 사용하고, PaaS는 코드만 관리하며 OS는 제공자가 책임지므로 직접 패치할 필요가 없습니다. FaaS는 함수 단위 서버리스로 인프라 관리가 더욱 추상화됩니다."
+  },
+  {
+    "id": "clf-c02-w6-d1-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 1,
+    "number": 2,
+    "prompt": "단일 리전 내에서 고가용성 아키텍처를 구성하기 위한 가장 기본적인 단위는 무엇인가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "엣지 로케이션"
+      },
+      {
+        "label": "B",
+        "text": "여러 가용 영역(AZ)에 분산 배치"
+      },
+      {
+        "label": "C",
+        "text": "여러 리전에 분산 배치"
+      },
+      {
+        "label": "D",
+        "text": "하나의 대형 인스턴스"
+      }
+    ],
+    "answer": "B",
+    "explanation": "가용 영역은 한 리전 안에서 물리적으로 분리된 데이터센터 묶음으로, 여러 AZ에 분산하면 한 곳 장애 시에도 서비스가 유지됩니다. 엣지 로케이션은 콘텐츠 캐싱용입니다. 여러 리전 분산은 재해 복구 범위로 더 광범위하며 질문이 요구한 단일 리전 내 구성이 아닙니다. 단일 대형 인스턴스는 단일 장애 지점이 됩니다."
+  },
+  {
+    "id": "clf-c02-w6-d1-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 1,
+    "number": 3,
+    "prompt": "여러 EC2 인스턴스가 동시에 마운트하여 파일을 공유해야 한다. 가장 적합한 스토리지 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon EBS"
+      },
+      {
+        "label": "B",
+        "text": "Amazon S3 Glacier"
+      },
+      {
+        "label": "C",
+        "text": "Amazon EFS"
+      },
+      {
+        "label": "D",
+        "text": "인스턴스 스토어"
+      }
+    ],
+    "answer": "C",
+    "explanation": "EFS는 여러 EC2 인스턴스가 동시에 마운트할 수 있는 공유 파일 스토리지입니다. EBS는 일반적으로 하나의 인스턴스에 연결되는 블록 스토리지입니다. S3 Glacier는 장기 아카이브용으로 즉시 공유 마운트 용도가 아닙니다. 인스턴스 스토어는 인스턴스 중지 시 데이터가 사라지는 임시 저장소입니다."
+  },
+  {
+    "id": "clf-c02-w6-d1-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 1,
+    "number": 4,
+    "prompt": "클라우드 컴퓨팅의 이점 중 \"선행 비용을 가변 비용으로 전환한다\"는 것이 의미하는 바로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "사용량과 무관하게 매달 고정 요금을 낸다"
+      },
+      {
+        "label": "B",
+        "text": "데이터센터를 미리 구축하는 대신 사용한 만큼만 지불한다"
+      },
+      {
+        "label": "C",
+        "text": "모든 서비스가 무료로 제공된다"
+      },
+      {
+        "label": "D",
+        "text": "1년치 비용을 반드시 선결제해야 한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "가변 비용 모델은 대규모 선투자 없이 실제 사용한 리소스에 대해서만 지불하는 것을 뜻합니다. 고정 요금이나 의무 선결제는 이 개념과 반대이며, 클라우드가 무료인 것도 아닙니다."
+  },
+  {
+    "id": "clf-c02-w6-d1-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 1,
+    "number": 5,
+    "prompt": "정적 웹사이트 파일과 대용량 백업을 저장하기 위한 무제한 확장 객체 스토리지로 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon RDS"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EBS"
+      },
+      {
+        "label": "C",
+        "text": "Amazon S3"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Redshift"
+      }
+    ],
+    "answer": "C",
+    "explanation": "S3는 객체 스토리지로 정적 파일과 백업 저장에 적합하며 사실상 무제한으로 확장됩니다. RDS는 관계형 데이터베이스, EBS는 EC2용 블록 스토리지, Redshift는 분석용 데이터 웨어하우스로 객체 저장 용도가 아닙니다."
+  },
+  {
+    "id": "clf-c02-w6-d2-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 2,
+    "number": 1,
+    "prompt": "공동 책임 모델에서 다음 중 항상 고객의 책임에 해당하는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터센터의 물리적 보안"
+      },
+      {
+        "label": "B",
+        "text": "하이퍼바이저 패치"
+      },
+      {
+        "label": "C",
+        "text": "IAM 사용자 및 권한 구성"
+      },
+      {
+        "label": "D",
+        "text": "하드웨어의 안전한 폐기"
+      }
+    ],
+    "answer": "C",
+    "explanation": "IAM 사용자와 권한 설정은 클라우드 \"내부\"의 구성으로 항상 고객 책임입니다. 물리적 보안, 하이퍼바이저 패치, 하드웨어 폐기는 모두 클라우드 인프라에 해당하므로 AWS 책임입니다."
+  },
+  {
+    "id": "clf-c02-w6-d2-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 2,
+    "number": 2,
+    "prompt": "계정에서 발생한 모든 API 호출 기록을 감사 목적으로 추적하려면 어떤 서비스를 사용해야 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "B",
+        "text": "AWS CloudTrail"
+      },
+      {
+        "label": "C",
+        "text": "AWS Config"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Inspector"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudTrail은 누가 언제 어떤 API를 호출했는지 기록하는 감사 로그 서비스입니다. CloudWatch는 성능 지표·로그 모니터링, Config는 리소스 구성 변경·규정 준수 추적, Inspector는 취약점 평가용입니다."
+  },
+  {
+    "id": "clf-c02-w6-d2-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 2,
+    "number": 3,
+    "prompt": "중단되어도 무방한 대규모 배치 처리 작업의 비용을 최대 90%까지 절감하려면 가장 적합한 EC2 요금 모델은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "온디맨드 인스턴스"
+      },
+      {
+        "label": "B",
+        "text": "예약 인스턴스"
+      },
+      {
+        "label": "C",
+        "text": "스팟 인스턴스"
+      },
+      {
+        "label": "D",
+        "text": "전용 호스트"
+      }
+    ],
+    "answer": "C",
+    "explanation": "스팟 인스턴스는 여유 용량을 최대 90% 저렴하게 제공하지만 AWS가 회수할 수 있어 중단에 강한(내결함성) 작업에 적합합니다. 온디맨드는 할인이 없고, 예약 인스턴스는 장기 약정 기반, 전용 호스트는 규정 준수·라이선스 목적입니다."
+  },
+  {
+    "id": "clf-c02-w6-d2-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 2,
+    "number": 4,
+    "prompt": "전담 기술 계정 관리자(TAM)의 지원이 필요한 대규모 기업에 가장 적합한 AWS Support 플랜은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Basic"
+      },
+      {
+        "label": "B",
+        "text": "Developer"
+      },
+      {
+        "label": "C",
+        "text": "Business"
+      },
+      {
+        "label": "D",
+        "text": "Enterprise"
+      }
+    ],
+    "answer": "D",
+    "explanation": "전담 TAM은 Enterprise(및 Enterprise On-Ramp) 플랜에서 제공됩니다. Basic은 무료 기본 지원, Developer는 업무 시간 이메일, Business는 24/7 기술 지원을 제공하지만 전담 TAM은 포함하지 않습니다."
+  },
+  {
+    "id": "clf-c02-w6-d2-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 2,
+    "number": 5,
+    "prompt": "월별 비용이 설정한 한도를 초과할 경우 알림을 받고 싶다면 어떤 도구를 사용해야 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Pricing Calculator"
+      },
+      {
+        "label": "B",
+        "text": "AWS Budgets"
+      },
+      {
+        "label": "C",
+        "text": "AWS Cost Explorer"
+      },
+      {
+        "label": "D",
+        "text": "AWS Artifact"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AWS Budgets는 예산 한도를 설정하고 초과하거나 예측치가 넘으면 알림을 보내는 도구입니다. Pricing Calculator는 사전 견적, Cost Explorer는 과거 비용 분석, Artifact는 규정 준수 보고서 제공 도구입니다."
+  },
+  {
+    "id": "clf-c02-w6-d3-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 3,
+    "number": 1,
+    "prompt": "트래픽이 급증하면 EC2 인스턴스를 자동으로 늘리고, 줄면 자동으로 줄이는 클라우드의 특성을 무엇이라 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "내구성"
+      },
+      {
+        "label": "B",
+        "text": "탄력성"
+      },
+      {
+        "label": "C",
+        "text": "페일오버"
+      },
+      {
+        "label": "D",
+        "text": "다중 테넌시"
+      }
+    ],
+    "answer": "B",
+    "explanation": "탄력성은 수요 변화에 따라 리소스를 자동으로 늘리고 줄이는 능력으로, Auto Scaling이 대표적입니다. 내구성은 데이터 손실 방지 정도, 페일오버는 장애 시 대체 전환, 다중 테넌시는 여러 고객이 인프라를 공유하는 개념입니다."
+  },
+  {
+    "id": "clf-c02-w6-d3-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 3,
+    "number": 2,
+    "prompt": "웹 애플리케이션을 SQL 인젝션과 교차 사이트 스크립팅(XSS) 공격으로부터 보호하려면 어떤 서비스를 사용해야 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Shield"
+      },
+      {
+        "label": "B",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "C",
+        "text": "AWS WAF"
+      },
+      {
+        "label": "D",
+        "text": "AWS KMS"
+      }
+    ],
+    "answer": "C",
+    "explanation": "AWS WAF는 웹 애플리케이션 방화벽으로 SQL 인젝션과 XSS 같은 계층 7 공격을 필터링합니다. Shield는 DDoS 방어, GuardDuty는 위협 탐지, KMS는 암호화 키 관리 서비스입니다."
+  },
+  {
+    "id": "clf-c02-w6-d3-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 3,
+    "number": 3,
+    "prompt": "밀리초 단위의 빠른 응답이 필요한 서버리스 NoSQL 데이터베이스로 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon RDS"
+      },
+      {
+        "label": "B",
+        "text": "Amazon DynamoDB"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Redshift"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Aurora"
+      }
+    ],
+    "answer": "B",
+    "explanation": "DynamoDB는 완전관리형 서버리스 NoSQL로 일관된 한 자릿수 밀리초 성능을 제공합니다. RDS와 Aurora는 관계형 데이터베이스, Redshift는 분석용 데이터 웨어하우스로 용도가 다릅니다."
+  },
+  {
+    "id": "clf-c02-w6-d3-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 3,
+    "number": 4,
+    "prompt": "전 세계 사용자에게 동영상과 이미지를 짧은 지연 시간으로 전달하기 위해 엣지 로케이션에서 콘텐츠를 캐싱하려면 어떤 서비스를 사용해야 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Route 53"
+      },
+      {
+        "label": "B",
+        "text": "AWS Direct Connect"
+      },
+      {
+        "label": "C",
+        "text": "Amazon CloudFront"
+      },
+      {
+        "label": "D",
+        "text": "Amazon VPC"
+      }
+    ],
+    "answer": "C",
+    "explanation": "CloudFront는 콘텐츠 전송 네트워크(CDN)로 엣지 로케이션에 콘텐츠를 캐싱하여 지연 시간을 줄입니다. Route 53은 DNS, Direct Connect는 전용 회선, VPC는 격리된 가상 네트워크입니다."
+  },
+  {
+    "id": "clf-c02-w6-d3-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 3,
+    "number": 5,
+    "prompt": "여러 AWS 계정의 청구를 하나로 합쳐 볼륨 할인 혜택을 공유하려면 무엇을 사용해야 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Organizations의 통합 결제"
+      },
+      {
+        "label": "B",
+        "text": "AWS Budgets"
+      },
+      {
+        "label": "C",
+        "text": "Savings Plans"
+      },
+      {
+        "label": "D",
+        "text": "AWS Cost Explorer"
+      }
+    ],
+    "answer": "A",
+    "explanation": "AWS Organizations의 통합 결제는 여러 계정의 사용량을 합산해 단일 청구서로 만들고 볼륨 기반 할인을 공유합니다. Budgets는 예산 알림, Savings Plans는 사용량 약정 할인, Cost Explorer는 비용 분석 도구입니다."
+  },
+  {
+    "id": "clf-c02-w6-d3-q6",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 3,
+    "number": 6,
+    "prompt": "코드를 업로드하면 AWS가 용량 프로비저닝, 로드 밸런싱, 확장을 자동으로 처리해 주는 PaaS형 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon EC2"
+      },
+      {
+        "label": "B",
+        "text": "AWS Lambda"
+      },
+      {
+        "label": "C",
+        "text": "AWS Elastic Beanstalk"
+      },
+      {
+        "label": "D",
+        "text": "Amazon ECS"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Elastic Beanstalk는 코드를 업로드하면 인프라 구성과 확장을 자동 처리하는 PaaS 서비스입니다. EC2는 사용자가 직접 관리하는 IaaS, Lambda는 함수 단위 서버리스, ECS는 컨테이너 오케스트레이션입니다."
+  },
+  {
+    "id": "clf-c02-w6-d3-q7",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 3,
+    "number": 7,
+    "prompt": "AWS가 제공하는 규정 준수 보고서(SOC, PCI DSS 등)를 직접 다운로드하려면 어떤 서비스를 사용하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Config"
+      },
+      {
+        "label": "B",
+        "text": "AWS Artifact"
+      },
+      {
+        "label": "C",
+        "text": "AWS Trusted Advisor"
+      },
+      {
+        "label": "D",
+        "text": "AWS CloudTrail"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AWS Artifact는 SOC, PCI DSS 등 AWS의 규정 준수 보고서를 온디맨드로 제공하는 포털입니다. Config는 리소스 구성 추적, Trusted Advisor는 모범 사례 점검, CloudTrail은 API 감사 로그 서비스입니다."
+  },
+  {
+    "id": "clf-c02-w6-d3-q8",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 3,
+    "number": 8,
+    "prompt": "안정적이고 지속적으로 실행되는 워크로드에서 1~3년 약정으로 최대 할인을 받으려는 경우 가장 적합한 EC2 요금 모델은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "온디맨드 인스턴스"
+      },
+      {
+        "label": "B",
+        "text": "스팟 인스턴스"
+      },
+      {
+        "label": "C",
+        "text": "예약 인스턴스"
+      },
+      {
+        "label": "D",
+        "text": "전용 인스턴스"
+      }
+    ],
+    "answer": "C",
+    "explanation": "예약 인스턴스(또는 Savings Plans)는 1~3년 사용을 약정하는 대가로 큰 할인을 제공하여 지속적이고 예측 가능한 워크로드에 적합합니다. 온디맨드는 약정·할인이 없고, 스팟은 중단 가능한 작업용, 전용 인스턴스는 격리 요건용입니다."
+  },
+  {
+    "id": "clf-c02-w6-d4-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 4,
+    "number": 1,
+    "prompt": "\"EC2 인스턴스가 자격 증명을 코드에 저장하지 않고 S3 버킷에 접근하도록 안전하게 권한을 부여\"하려면 무엇을 사용해야 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM 사용자에 액세스 키 발급"
+      },
+      {
+        "label": "B",
+        "text": "IAM 역할"
+      },
+      {
+        "label": "C",
+        "text": "루트 사용자 자격 증명"
+      },
+      {
+        "label": "D",
+        "text": "S3 버킷 정책에 비밀번호 저장"
+      }
+    ],
+    "answer": "B",
+    "explanation": "IAM 역할은 임시 자격 증명을 통해 서비스에 권한을 위임하므로 액세스 키를 코드에 하드코딩할 필요가 없습니다. IAM 사용자 키 발급은 키 유출 위험이 있고, 루트 사용자는 절대 사용하면 안 되며, 비밀번호를 버킷 정책에 저장하는 것은 보안에 어긋납니다."
+  },
+  {
+    "id": "clf-c02-w6-d4-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 4,
+    "number": 2,
+    "prompt": "\"리소스 구성이 내부 규정을 계속 준수하는지 추적하고 변경 이력을 보고 싶다.\" 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS CloudTrail"
+      },
+      {
+        "label": "B",
+        "text": "Amazon CloudWatch"
+      },
+      {
+        "label": "C",
+        "text": "AWS Config"
+      },
+      {
+        "label": "D",
+        "text": "AWS WAF"
+      }
+    ],
+    "answer": "C",
+    "explanation": "AWS Config는 리소스 구성 상태와 변경 이력을 추적하고 규정 준수 여부를 평가합니다. CloudTrail은 API 호출 감사, CloudWatch는 지표·로그 모니터링, WAF는 웹 방화벽입니다."
+  },
+  {
+    "id": "clf-c02-w6-d4-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 4,
+    "number": 3,
+    "prompt": "\"거의 조회하지 않는 데이터를 가장 저렴하게 장기 보관\"하려면 어떤 스토리지가 적합한가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon S3 Standard"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EBS"
+      },
+      {
+        "label": "C",
+        "text": "Amazon S3 Glacier"
+      },
+      {
+        "label": "D",
+        "text": "Amazon EFS"
+      }
+    ],
+    "answer": "C",
+    "explanation": "S3 Glacier는 검색 지연을 허용하는 대신 매우 저렴한 장기 아카이브 스토리지입니다. S3 Standard는 자주 접근하는 데이터용으로 더 비싸고, EBS는 EC2용 블록 스토리지, EFS는 공유 파일 스토리지로 장기 아카이브 용도가 아닙니다."
+  },
+  {
+    "id": "clf-c02-w6-d4-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 4,
+    "number": 4,
+    "prompt": "\"운영 부담을 최소화하면서 이벤트가 발생할 때만 코드를 실행\"하고 싶다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon EC2"
+      },
+      {
+        "label": "B",
+        "text": "AWS Lambda"
+      },
+      {
+        "label": "C",
+        "text": "AWS Elastic Beanstalk"
+      },
+      {
+        "label": "D",
+        "text": "Amazon EC2 Auto Scaling"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Lambda는 서버를 관리하지 않고 이벤트 발생 시에만 코드를 실행하는 서버리스 서비스로 운영 부담이 가장 적습니다. EC2와 Auto Scaling은 서버 관리가 필요하고, Elastic Beanstalk도 하부에 EC2를 운영하므로 Lambda보다 부담이 큽니다."
+  },
+  {
+    "id": "clf-c02-w6-d4-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 4,
+    "number": 5,
+    "prompt": "\"대량 트래픽을 동원한 DDoS 공격으로부터 애플리케이션을 보호\"하려면 어떤 서비스를 사용해야 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS WAF"
+      },
+      {
+        "label": "B",
+        "text": "AWS Shield"
+      },
+      {
+        "label": "C",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "D",
+        "text": "AWS KMS"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AWS Shield는 DDoS 공격 방어에 특화된 서비스입니다. WAF는 SQL 인젝션·XSS 같은 계층 7 웹 공격 필터링, GuardDuty는 위협 탐지, KMS는 암호화 키 관리로 DDoS 방어가 주목적이 아닙니다."
+  },
+  {
+    "id": "clf-c02-w6-d5-q1",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 5,
+    "number": 1,
+    "prompt": "CLF-C02 시험의 합격 점수와 점수 범위로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "범위 0~100점, 합격 60점"
+      },
+      {
+        "label": "B",
+        "text": "범위 100~1,000점, 합격 700점"
+      },
+      {
+        "label": "C",
+        "text": "범위 0~500점, 합격 350점"
+      },
+      {
+        "label": "D",
+        "text": "범위 100~900점, 합격 750점"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CLF-C02는 100점에서 1,000점 범위로 채점되며 합격선은 700점입니다. 다른 보기의 점수 범위와 합격선은 실제 시험과 일치하지 않습니다."
+  },
+  {
+    "id": "clf-c02-w6-d5-q2",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 5,
+    "number": 2,
+    "prompt": "시험은 65문항으로 구성되는데, 그중 채점되지 않는 평가용 문항 수는 몇 개인가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "5문항"
+      },
+      {
+        "label": "B",
+        "text": "10문항"
+      },
+      {
+        "label": "C",
+        "text": "15문항"
+      },
+      {
+        "label": "D",
+        "text": "25문항"
+      }
+    ],
+    "answer": "C",
+    "explanation": "65문항 중 15문항은 채점되지 않는 평가용 문항이며 50문항이 실제 점수에 반영됩니다. 어떤 문항이 평가용인지 알 수 없으므로 모든 문항을 성실히 풀어야 합니다."
+  },
+  {
+    "id": "clf-c02-w6-d5-q3",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 5,
+    "number": 3,
+    "prompt": "시험 시간 관리에서 빈칸으로 남긴 문항에 대한 가장 올바른 전략은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "확신이 없으면 비워 두어 감점을 피한다"
+      },
+      {
+        "label": "B",
+        "text": "명백한 오답을 제거한 뒤 추측이라도 반드시 답을 채운다"
+      },
+      {
+        "label": "C",
+        "text": "어려운 문항은 처음부터 건너뛰고 다시 보지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "모든 문항의 답을 C로 통일한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "빈칸은 무조건 0점이지만 추측한 답은 맞을 가능성이 있어 명백한 오답을 지운 뒤 반드시 답을 채워야 합니다. 이 시험에는 오답 감점이 없으므로 비워 두는 것이 불리하며, 어려운 문항을 영영 포기하거나 무작정 한 글자로 통일하는 것도 좋은 전략이 아닙니다."
+  },
+  {
+    "id": "clf-c02-w6-d5-q4",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 5,
+    "number": 4,
+    "prompt": "65문항을 90분 안에 푸는 상황에서 권장되는 페이스 전략으로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "첫 문항부터 완벽히 풀릴 때까지 머문 뒤 다음으로 넘어간다"
+      },
+      {
+        "label": "B",
+        "text": "쉬운 문항을 빠르게 처리하고 어려운 문항은 표시 후 나중에 복귀한다"
+      },
+      {
+        "label": "C",
+        "text": "마지막 10분에 모든 문항을 한꺼번에 푼다"
+      },
+      {
+        "label": "D",
+        "text": "문항을 무작위 순서로 푼다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "쉬운 문항을 빠르게 처리해 시간을 확보하고 어려운 문항은 표시 후 2차에서 재검토하는 것이 한정된 시간에 점수를 극대화하는 방법입니다. 한 문항에 오래 머물거나 마지막에 몰아 푸는 방식은 시간 부족을 초래합니다."
+  },
+  {
+    "id": "clf-c02-w6-d5-q5",
+    "category": "aws-certs",
+    "slug": "clf-c02",
+    "week": 6,
+    "day": 5,
+    "number": 5,
+    "prompt": "24시간 연중무휴(24/7) 기술 지원이 처음으로 제공되는 AWS Support 플랜은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Basic"
+      },
+      {
+        "label": "B",
+        "text": "Developer"
+      },
+      {
+        "label": "C",
+        "text": "Business"
+      },
+      {
+        "label": "D",
+        "text": "모든 플랜에서 제공됨"
+      }
+    ],
+    "answer": "C",
+    "explanation": "24/7 전화·채팅 기술 지원은 Business 플랜부터 제공됩니다. Basic은 무료 기본 지원, Developer는 업무 시간 이메일 지원에 그치며, 모든 플랜이 24/7 지원을 제공하는 것은 아닙니다."
+  },
+  {
     "id": "dop-c02-w1-d1-q1",
     "category": "aws-certs",
     "slug": "dop-c02",
@@ -42077,6 +46514,1456 @@
     ],
     "answer": "B",
     "explanation": "PC는 먼저 DHCP로 IP·DNS 서버 정보를 임대받고(주소 확보), DNS로 도메인을 IP로 변환한 뒤(이름 해석), 그 IP의 웹 서버(Nginx/Apache)에 접속해 응답을 받는다. NTP는 서버 간 시계 일관성을 위한 보조 인프라로 DNS 동작의 전제 조건은 아니다."
+  },
+  {
+    "id": "mla-c01-w1-d1-q1",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 1,
+    "number": 1,
+    "prompt": "Google의 \"Hidden Technical Debt in ML Systems\" 논문이 강조한 핵심으로, MLA-C01 시험 구성에도 반영된 사실은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ML 시스템에서 모델 학습 코드가 전체의 80% 이상을 차지한다"
+      },
+      {
+        "label": "B",
+        "text": "ML 시스템에서 모델 학습 코드는 5% 미만이고, 데이터·서빙·모니터링·인프라가 대부분이다"
+      },
+      {
+        "label": "C",
+        "text": "ML 시스템은 일반 소프트웨어보다 유지보수가 쉽다"
+      },
+      {
+        "label": "D",
+        "text": "ML 모델은 한번 배포하면 재학습이 필요 없다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "논문은 실제 ML 시스템에서 모델 학습 코드는 5% 미만이고 나머지 95%가 데이터 수집·검증·서빙·모니터링·인프라라고 지적했다. MLA-C01이 데이터 준비(28%)와 모니터링(24%)에 절반 이상을 배정한 이유가 이것이다. 학습 코드 비중이 80%라는 것은 정반대이고, ML은 데이터 의존성 때문에 유지보수가 더 어려우며, 모델은 드리프트로 인해 재학습이 필수다."
+  },
+  {
+    "id": "mla-c01-w1-d1-q2",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 1,
+    "number": 2,
+    "prompt": "데이터 사이언티스트가 노트북에서 만든 0.94 정확도 모델을 ML 엔지니어가 프로덕션화할 때 가장 먼저 확보해야 할 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "더 높은 정확도"
+      },
+      {
+        "label": "B",
+        "text": "학습의 재현성 — 데이터 버전, 하이퍼파라미터, 환경을 코드로 고정"
+      },
+      {
+        "label": "C",
+        "text": "더 큰 인스턴스 타입"
+      },
+      {
+        "label": "D",
+        "text": "모델을 더 복잡하게 만들기"
+      }
+    ],
+    "answer": "B",
+    "explanation": "ML 엔지니어링의 1순위 원칙은 재현성이다. 코드만으로는 모델을 재현할 수 없고 데이터 버전, 하이퍼파라미터, 환경(라이브러리·시드)까지 고정해야 한다. 정확도를 더 올리는 것은 데이터 사이언티스트의 영역이고, 인스턴스 크기나 모델 복잡도는 재현성이 확보된 다음 고려할 운영·성능 문제다."
+  },
+  {
+    "id": "mla-c01-w1-d1-q3",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 1,
+    "number": 3,
+    "prompt": "오프라인 평가에서 정확도가 향상된 추천 모델을 배포했더니 사용자 체류 시간이 오히려 줄었다. ML 엔지니어가 이를 사전에 감지하기 위한 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "오프라인 정확도만 더 높이면 된다"
+      },
+      {
+        "label": "B",
+        "text": "신모델에 소량 트래픽만 보내는 A/B 테스트로 실제 비즈니스 지표를 관찰한다"
+      },
+      {
+        "label": "C",
+        "text": "모델을 즉시 전체 트래픽에 배포한다"
+      },
+      {
+        "label": "D",
+        "text": "학습 데이터를 줄인다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "오프라인 지표(정확도)와 온라인 비즈니스 지표(체류 시간)는 어긋날 수 있으므로, 신모델에 트래픽 일부만 보내는 A/B 테스트로 실제 행동 지표를 확인해야 한다. 오프라인 정확도만 올리는 것은 같은 함정을 반복하고, 전체 배포는 위험을 키우며, 학습 데이터 축소는 문제와 무관하다."
+  },
+  {
+    "id": "mla-c01-w1-d1-q4",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 1,
+    "number": 4,
+    "prompt": "코로나 초기에 많은 수요 예측 모델이 무너진 현상을 가장 정확히 설명하는 용어는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "오버피팅(과적합)"
+      },
+      {
+        "label": "B",
+        "text": "데이터 드리프트 — 운영 데이터의 분포가 학습 데이터와 크게 달라짐"
+      },
+      {
+        "label": "C",
+        "text": "언더피팅(과소적합)"
+      },
+      {
+        "label": "D",
+        "text": "데이터 누수(data leakage)"
+      }
+    ],
+    "answer": "B",
+    "explanation": "학습 시점의 데이터 분포와 운영 시점의 입력 분포가 달라진 전형적인 데이터 드리프트다. 과적합/과소적합은 학습 단계에서의 모델 복잡도 문제이고, 데이터 누수는 학습에 미래 정보가 새어 들어가는 별개의 문제다. 드리프트는 SageMaker Model Monitor로 baseline 대비 입력 분포 변화를 감지해 대응한다."
+  },
+  {
+    "id": "mla-c01-w1-d1-q5",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 1,
+    "number": 5,
+    "prompt": "MLA-C01의 4개 도메인 중 합쳐서 가장 큰 비중(절반 이상)을 차지하는 두 영역은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모델 개발과 배포"
+      },
+      {
+        "label": "B",
+        "text": "데이터 준비와 모니터링·유지보수·보안"
+      },
+      {
+        "label": "C",
+        "text": "배포와 모니터링"
+      },
+      {
+        "label": "D",
+        "text": "데이터 준비와 모델 개발"
+      }
+    ],
+    "answer": "B",
+    "explanation": "데이터 준비(28%)와 모니터링·유지보수·보안(24%)을 합치면 52%로 절반을 넘는다. 이는 ML 코드 자체보다 데이터 파이프라인과 운영이 실제 ML 시스템의 본체라는 사실과 일치한다. 다른 조합들은 모두 이 두 영역 중 하나가 빠져 있어 비중이 더 작다."
+  },
+  {
+    "id": "mla-c01-w1-d2-q1",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 2,
+    "number": 1,
+    "prompt": "과거 이탈 여부 라벨이 있는 데이터로 고객 이탈을 예측하려 한다. 이 문제의 학습 방식과 출력 형태는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "비지도 학습, 군집"
+      },
+      {
+        "label": "B",
+        "text": "지도 학습, 분류"
+      },
+      {
+        "label": "C",
+        "text": "강화 학습, 회귀"
+      },
+      {
+        "label": "D",
+        "text": "비지도 학습, 차원 축소"
+      }
+    ],
+    "answer": "B",
+    "explanation": "과거 이탈/유지 라벨이 존재하므로 지도 학습이고, 출력이 \"이탈/유지\"라는 이산적 범주이므로 분류다. 군집·차원 축소는 라벨이 없는 비지도 학습이고, 강화 학습은 보상 기반 순차 의사결정 문제로 이 사례와 맞지 않는다."
+  },
+  {
+    "id": "mla-c01-w1-d2-q2",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 2,
+    "number": 2,
+    "prompt": "사기 거래가 전체의 0.1%인 데이터에서 모델이 정확도 99.9%를 기록했다. 이 정확도를 신뢰할 수 없는 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "정확도는 회귀에만 쓰는 지표이기 때문"
+      },
+      {
+        "label": "B",
+        "text": "극단적 불균형 데이터에서는 \"전부 정상\"으로 찍어도 99.9%가 나오므로 정밀도·재현율을 봐야 한다"
+      },
+      {
+        "label": "C",
+        "text": "정확도가 너무 높으면 항상 과적합이다"
+      },
+      {
+        "label": "D",
+        "text": "정확도는 임계값과 무관하기 때문"
+      }
+    ],
+    "answer": "B",
+    "explanation": "0.1%만 사기인 데이터에서는 모든 거래를 정상으로 예측해도 정확도 99.9%가 나온다. 소수 클래스(사기)를 전혀 못 잡아도 높은 정확도가 나오는 불균형 데이터의 함정이다. 양성 클래스에 초점을 둔 정밀도·재현율, F1, PR-AUC를 봐야 한다. 정확도는 분류 지표이고, 높은 정확도가 곧 과적합은 아니며, 정확도는 임계값에 따라 달라진다."
+  },
+  {
+    "id": "mla-c01-w1-d2-q3",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 2,
+    "number": 3,
+    "prompt": "암 진단 분류 모델에서 무엇보다 우선해야 할 평가 지표와 그 이유로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "정밀도 — 정상인을 환자로 잘못 보면 안 되므로"
+      },
+      {
+        "label": "B",
+        "text": "재현율 — 실제 환자를 놓치는 거짓 음성(FN)이 치명적이므로"
+      },
+      {
+        "label": "C",
+        "text": "정확도 — 전체 맞춘 비율이 가장 중요하므로"
+      },
+      {
+        "label": "D",
+        "text": "MAE — 오차의 절대값이 중요하므로"
+      }
+    ],
+    "answer": "B",
+    "explanation": "암 진단에서는 실제 환자를 \"정상\"으로 놓치는 FN이 생명과 직결되므로 재현율(TP/(TP+FN))을 최우선한다. 정밀도는 거짓 양성(추가 검사 부담)을 줄이는 지표라 이 경우 우선순위가 낮고, 정확도는 불균형 상황에서 오해를 부르며, MAE는 회귀 지표라 분류에 쓰지 않는다."
+  },
+  {
+    "id": "mla-c01-w1-d2-q4",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 2,
+    "number": 4,
+    "prompt": "어떤 모델이 정밀도 0.9, 재현율 0.1을 기록했다. F1 점수가 산술평균 0.5보다 훨씬 낮은 0.18로 나오는 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "F1은 두 값의 곱이기 때문"
+      },
+      {
+        "label": "B",
+        "text": "F1은 조화평균이라 한쪽 값이 낮으면 크게 떨어지기 때문"
+      },
+      {
+        "label": "C",
+        "text": "F1 계산이 잘못되었기 때문"
+      },
+      {
+        "label": "D",
+        "text": "F1은 재현율만 반영하기 때문"
+      }
+    ],
+    "answer": "B",
+    "explanation": "F1은 정밀도와 재현율의 조화평균이라 둘 중 하나가 낮으면 점수가 크게 끌어내려진다. 이는 \"한쪽만 좋아서는 안 된다\"를 강제하기 위함이다. F1은 두 값의 곱이 아니고, 계산은 정상이며, 정밀도와 재현율을 모두 반영한다."
+  },
+  {
+    "id": "mla-c01-w1-d2-q5",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 2,
+    "number": 5,
+    "prompt": "ROC-AUC 값이 0.5인 분류 모델에 대한 해석으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "완벽하게 분류한다"
+      },
+      {
+        "label": "B",
+        "text": "무작위 추측과 동일한 수준의 분별력이다"
+      },
+      {
+        "label": "C",
+        "text": "거꾸로 예측하고 있다"
+      },
+      {
+        "label": "D",
+        "text": "정밀도가 100%다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AUC 0.5는 모델이 양성/음성을 무작위 추측과 같은 수준으로 구분한다는 뜻이다. AUC 1.0이 완벽한 분류, 0.5 미만이 거꾸로 예측하는 경우다. AUC는 임계값에 무관한 순위 매기기 능력 지표라 특정 정밀도 값과 직접 대응되지 않는다."
+  },
+  {
+    "id": "mla-c01-w1-d3-q1",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 3,
+    "number": 1,
+    "prompt": "\"고객이 남긴 영어 리뷰 텍스트의 긍정/부정 감정을 분석하라\"는 표준 요구사항에 가장 적절한 AWS 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SageMaker에서 감정 분석 모델을 직접 학습"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Comprehend의 감정 분석 API 호출"
+      },
+      {
+        "label": "C",
+        "text": "EC2 GPU 인스턴스에 직접 모델 구축"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Polly"
+      }
+    ],
+    "answer": "B",
+    "explanation": "표준 감정 분석은 사전 학습 모델인 Comprehend의 API 호출로 즉시 해결된다. SageMaker로 직접 학습하거나 EC2에 구축하는 것은 표준 작업에 과한 선택으로 시간·비용 낭비다. Polly는 텍스트를 음성으로 변환하는(TTS) 서비스라 감정 분석과 무관하다."
+  },
+  {
+    "id": "mla-c01-w1-d3-q2",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 3,
+    "number": 2,
+    "prompt": "AWS ML 스택 3층 구조에서 위로 올라갈수록(AI 서비스 방향) 나타나는 특징으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "통제권이 커지고 직접 관리할 것이 많아진다"
+      },
+      {
+        "label": "B",
+        "text": "추상화가 높아져 빠르고 쉽지만 통제권은 줄어든다"
+      },
+      {
+        "label": "C",
+        "text": "항상 비용이 더 비싸다"
+      },
+      {
+        "label": "D",
+        "text": "ML 전문성이 더 많이 필요해진다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "상위(AI 서비스)로 갈수록 추상화가 높아 빠르고 쉽게 쓸 수 있지만 모델 커스터마이징 등 통제권은 줄어든다. 통제권이 커지는 것은 하위(인프라) 방향이고, 비용은 워크로드에 따라 달라지며, ML 전문성은 상위 서비스일수록 덜 필요하다."
+  },
+  {
+    "id": "mla-c01-w1-d3-q3",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 3,
+    "number": 3,
+    "prompt": "대규모 추론 트래픽의 비용을 최소화해야 하는 ML 엔지니어가 고려할 AWS 전용 칩은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Trainium"
+      },
+      {
+        "label": "B",
+        "text": "AWS Inferentia"
+      },
+      {
+        "label": "C",
+        "text": "FSx for Lustre"
+      },
+      {
+        "label": "D",
+        "text": "Elastic Block Store"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Inferentia(Inf2)는 추론 전용으로 설계된 AWS 칩으로 추론 단가와 전력을 낮춘다. Trainium은 학습 전용 칩이고, FSx for Lustre는 고속 학습 데이터용 파일시스템, EBS는 블록 스토리지로 모두 추론 비용 절감 목적과 다르다."
+  },
+  {
+    "id": "mla-c01-w1-d3-q4",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 3,
+    "number": 4,
+    "prompt": "SageMaker가 AI 서비스(Rekognition, Comprehend 등)와 구별되는 결정적 차이는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SageMaker는 API 호출만 가능하다"
+      },
+      {
+        "label": "B",
+        "text": "SageMaker는 커스텀 데이터로 모델을 직접 학습·튜닝·배포한다"
+      },
+      {
+        "label": "C",
+        "text": "SageMaker는 모델 학습을 지원하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "AI 서비스가 SageMaker보다 항상 통제권이 더 크다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SageMaker는 데이터 준비·학습·튜닝·배포·모니터링 전체를 커스텀으로 다루는 ML 플랫폼이다. API 호출만 하는 것은 AI 서비스의 특징이고, SageMaker는 학습을 핵심으로 지원하며, 통제권은 AI 서비스보다 SageMaker 쪽이 더 크다."
+  },
+  {
+    "id": "mla-c01-w1-d3-q5",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 3,
+    "number": 5,
+    "prompt": "학습용 칩과 추론용 칩을 별도로 설계하는 것이 합리적인 이유로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "학습과 추론의 연산 특성이 같기 때문"
+      },
+      {
+        "label": "B",
+        "text": "학습은 역전파를 포함한 고처리량 작업, 추론은 순전파만 하는 저지연 작업으로 특성이 다르기 때문"
+      },
+      {
+        "label": "C",
+        "text": "추론은 학습보다 훨씬 드물게 일어나기 때문"
+      },
+      {
+        "label": "D",
+        "text": "두 칩의 가격을 같게 맞추기 위해"
+      }
+    ],
+    "answer": "B",
+    "explanation": "학습은 순전파와 역전파로 그래디언트를 계산하며 큰 배치를 처리(처리량 중심)하고, 추론은 순전파만 하며 낮은 지연으로 작은 배치를 자주 처리(지연 중심)한다. 이 연산 특성 차이 때문에 Trainium(학습)과 Inferentia(추론)를 분리한다. 추론은 사용자 요청마다 반복돼 오히려 더 빈번하며, 칩 분리 목적은 가격 통일이 아니라 작업별 최적화다."
+  },
+  {
+    "id": "mla-c01-w1-d4-q1",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 4,
+    "number": 1,
+    "prompt": "SageMaker Studio가 기존 노트북 인스턴스 대비 비용 효율적인 핵심 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "무료로 제공되기 때문"
+      },
+      {
+        "label": "B",
+        "text": "컴퓨팅과 스토리지가 분리되어 코드는 EFS에 저장하고 실행할 때만 원하는 커널(인스턴스)을 붙이기 때문"
+      },
+      {
+        "label": "C",
+        "text": "GPU를 항상 무제한 제공하기 때문"
+      },
+      {
+        "label": "D",
+        "text": "학습이 로컬 PC에서 실행되기 때문"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Studio는 코드(EFS 영구 저장)와 실행(on-demand 커널)을 분리해 비싼 GPU를 쓸 때만 빌리게 한다. CPU로 코드를 짜다 학습 때만 GPU 커널로 전환할 수 있다. 무료가 아니고, GPU 무제한 제공도 아니며, 학습은 로컬이 아닌 SageMaker 관리 인스턴스에서 실행된다."
+  },
+  {
+    "id": "mla-c01-w1-d4-q2",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 4,
+    "number": 2,
+    "prompt": "SageMaker Studio에서 데이터 사이언티스트에게는 학습 권한만, ML 엔지니어에게는 배포 권한까지 부여하려 한다. 이를 구현하는 구조는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "도메인을 두 개 만든다"
+      },
+      {
+        "label": "B",
+        "text": "같은 도메인 안에서 사용자 프로필별로 서로 다른 IAM 역할을 매핑한다"
+      },
+      {
+        "label": "C",
+        "text": "모든 사용자에게 동일한 관리자 역할을 부여한다"
+      },
+      {
+        "label": "D",
+        "text": "VPC를 분리한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "한 도메인 안에서 사용자 프로필마다 다른 IAM 역할을 매핑해 권한을 분리한다. 도메인은 보통 팀당 하나로, 권한 분리를 위해 도메인을 늘릴 필요는 없다. 동일 관리자 역할은 최소권한 원칙에 어긋나고, VPC 분리는 네트워크 격리이지 사용자별 권한 분리 수단이 아니다."
+  },
+  {
+    "id": "mla-c01-w1-d4-q3",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 4,
+    "number": 3,
+    "prompt": "SageMaker 학습 작업(Training Job)에서 학습 비용이 학습 시간만큼만 청구되는 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "학습 인스턴스가 항상 켜져 있기 때문"
+      },
+      {
+        "label": "B",
+        "text": "학습이 끝나면 SageMaker가 인스턴스를 자동으로 종료하기 때문"
+      },
+      {
+        "label": "C",
+        "text": "학습이 무료이기 때문"
+      },
+      {
+        "label": "D",
+        "text": "학습이 사용자 프로필에서 직접 실행되기 때문"
+      }
+    ],
+    "answer": "B",
+    "explanation": "학습 작업은 인스턴스를 띄워 학습을 돌리고 산출물을 S3에 저장한 뒤 인스턴스를 자동 종료하므로, GPU 비용이 학습 시간만큼만 청구된다. 항상 켜져 있는 것은 실시간 추론 엔드포인트의 특성이고, 학습은 무료가 아니며, 사용자 프로필 자체가 컴퓨팅을 실행하지 않는다."
+  },
+  {
+    "id": "mla-c01-w1-d4-q4",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 4,
+    "number": 4,
+    "prompt": "\"하루에 한 번, 전체 고객 데이터에 대해 이탈 점수를 일괄 계산\"하는 워크로드에 가장 적합한 추론 옵션은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "실시간 엔드포인트"
+      },
+      {
+        "label": "B",
+        "text": "배치 변환(Batch Transform)"
+      },
+      {
+        "label": "C",
+        "text": "비동기 추론"
+      },
+      {
+        "label": "D",
+        "text": "항상 켜진 GPU 서버"
+      }
+    ],
+    "answer": "B",
+    "explanation": "대량 데이터를 일괄 추론하고 끝나면 종료하는 배치 변환이 적합하다. 상시 엔드포인트가 필요 없어 비용 효율적이다. 실시간 엔드포인트는 지속적 저지연 요청용이라 상시 비용이 들고, 비동기 추론은 큰 페이로드·긴 단건 처리용이며, 항상 켜진 GPU 서버는 유휴 비용 낭비다."
+  },
+  {
+    "id": "mla-c01-w1-d4-q5",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 1,
+    "day": 4,
+    "number": 5,
+    "prompt": "정형(테이블) 데이터의 이진 분류 문제를 SageMaker 빌트인 알고리즘으로 풀 때 가장 일반적인 기본 선택은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "K-Means"
+      },
+      {
+        "label": "B",
+        "text": "XGBoost"
+      },
+      {
+        "label": "C",
+        "text": "PCA"
+      },
+      {
+        "label": "D",
+        "text": "DeepAR"
+      }
+    ],
+    "answer": "B",
+    "explanation": "테이블 데이터의 분류·회귀에는 XGBoost가 빌트인 알고리즘의 표준 기본 선택이다. K-Means는 군집(비지도), PCA는 차원 축소, DeepAR은 시계열 예측용으로 정형 데이터 분류와 목적이 다르다."
+  },
+  {
+    "id": "mla-c01-w2-d1-q1",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 1,
+    "number": 1,
+    "prompt": "한 팀이 웹사이트 클릭스트림을 수집해 S3에 적재하려 한다. 인프라 관리 부담을 최소화하면서 near-real-time으로 S3에 저장하고 싶다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Kinesis Data Streams로 직접 S3에 쓰기"
+      },
+      {
+        "label": "B",
+        "text": "Kinesis Data Firehose로 S3에 적재"
+      },
+      {
+        "label": "C",
+        "text": "AWS DMS로 클릭스트림 복제"
+      },
+      {
+        "label": "D",
+        "text": "AWS Snowball로 데이터 이전"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Firehose는 완전관리형 서버리스로 샤드 관리가 필요 없고, 버퍼 크기/시간 조건에 따라 S3에 자동 배치 적재한다. \"관리 부담 최소화 + S3 적재\"의 정석 답이다. Kinesis Data Streams(A)는 S3에 직접 쓰지 못하며 소비자 애플리케이션을 직접 구현해야 해 관리 부담이 크다. DMS(C)는 관계형 DB 복제용이라 클릭스트림에 부적합. Snowball(D)은 물리 디바이스 기반 대용량 일회성 이전용이다."
+  },
+  {
+    "id": "mla-c01-w2-d1-q2",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 1,
+    "number": 2,
+    "prompt": "100개 컬럼을 가진 5TB 데이터셋에서 ML 학습에 5개 컬럼만 사용한다. 학습 시 I/O 비용과 스캔량을 최소화하는 저장 포맷은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CSV (GZIP 압축)"
+      },
+      {
+        "label": "B",
+        "text": "JSON"
+      },
+      {
+        "label": "C",
+        "text": "Parquet"
+      },
+      {
+        "label": "D",
+        "text": "압축하지 않은 텍스트"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Parquet은 열 기반 저장이라 필요한 5개 컬럼만 읽으면 되므로 I/O가 크게 줄고, 컬럼 단위 압축과 predicate pushdown까지 지원한다. CSV(A)는 GZIP으로 압축해도 행 기반이라 100개 컬럼 전체를 읽어야 한다. JSON(B)은 텍스트 기반이라 용량이 크고 파싱 비용이 든다. 압축하지 않은 텍스트(D)는 가장 비효율적이다."
+  },
+  {
+    "id": "mla-c01-w2-d1-q3",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 1,
+    "number": 3,
+    "prompt": "온프레미스 데이터센터에 200TB의 학습용 이미지가 있고, 인터넷 회선은 50Mbps다. 이 데이터를 S3로 옮기는 가장 현실적인 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS DataSync로 인터넷을 통해 전송"
+      },
+      {
+        "label": "B",
+        "text": "AWS Snowball 디바이스로 물리 이전"
+      },
+      {
+        "label": "C",
+        "text": "Kinesis Data Firehose로 스트리밍"
+      },
+      {
+        "label": "D",
+        "text": "S3 멀티파트 업로드 스크립트"
+      }
+    ],
+    "answer": "B",
+    "explanation": "200TB를 50Mbps로 전송하면 1년 이상 걸려 비현실적이다. 이런 페타바이트급/대용량 + 느린 회선 시나리오는 Snowball(물리 디바이스 배송)이 정답이다. DataSync(A)와 멀티파트 업로드(D)는 회선이 충분할 때만 유효하다. Firehose(C)는 스트리밍 수집용이지 대용량 일회성 마이그레이션 도구가 아니다."
+  },
+  {
+    "id": "mla-c01-w2-d1-q4",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 1,
+    "number": 4,
+    "prompt": "ML 데이터 레이크를 구축하며 원본 데이터를 안전하게 보존하면서 변환 단계를 추적하려 한다. 가장 적절한 설계 원칙은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "원본을 변환 결과로 덮어써 스토리지를 절약한다"
+      },
+      {
+        "label": "B",
+        "text": "Raw/Cleaned/Curated 존으로 계층화하고 원본은 절대 덮어쓰지 않는다"
+      },
+      {
+        "label": "C",
+        "text": "모든 데이터를 하나의 버킷 루트에 평면적으로 저장한다"
+      },
+      {
+        "label": "D",
+        "text": "변환 후 원본을 즉시 삭제한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "메달리온 아키텍처(Bronze/Silver/Gold = Raw/Cleaned/Curated)는 원본을 불변으로 보존하고 각 변환 단계를 별도 존에 둔다. 변환 로직 버그 발견 시 Raw로 돌아가 재처리할 수 있고 데이터 계보 추적이 쉽다. 원본 덮어쓰기(A)나 삭제(D)는 재처리 불가능성과 데이터 손실 위험을 낳는다. 평면 저장(C)은 파티셔닝·관리가 어렵다."
+  },
+  {
+    "id": "mla-c01-w2-d1-q5",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 1,
+    "number": 5,
+    "prompt": "다음 중 Kinesis Data Streams가 Kinesis Data Firehose보다 더 적합한 시나리오는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3에 데이터를 적재하되 관리 부담을 최소화하고 싶다"
+      },
+      {
+        "label": "B",
+        "text": "1초 미만 지연으로 커스텀 처리하고 여러 소비자가 같은 스트림을 독립적으로 읽어야 한다"
+      },
+      {
+        "label": "C",
+        "text": "Redshift로 자동 적재만 하면 된다"
+      },
+      {
+        "label": "D",
+        "text": "서버리스로 인프라 없이 운영하고 싶다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "KDS는 샤드 기반 저지연(1초 미만) 처리와 다중 소비자(각자 오프셋 보유)를 지원해, 한 스트림을 실시간 대시보드와 ML 파이프라인이 동시에 소비하는 시나리오에 적합하다. A·C·D는 모두 완전관리형·서버리스로 저장소 적재에 초점을 둔 Firehose의 강점이다."
+  },
+  {
+    "id": "mla-c01-w2-d2-q1",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 2,
+    "number": 1,
+    "prompt": "데이터 엔지니어가 S3의 수천 개 Parquet 파일에 대해 스키마를 일일이 정의하지 않고 자동으로 Glue Data Catalog에 테이블을 등록하려 한다. 가장 적합한 도구는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Glue ETL Job"
+      },
+      {
+        "label": "B",
+        "text": "Glue Crawler"
+      },
+      {
+        "label": "C",
+        "text": "Athena CREATE TABLE"
+      },
+      {
+        "label": "D",
+        "text": "Glue DataBrew"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Glue Crawler는 S3 경로를 스캔해 파일 포맷과 컬럼·타입을 자동 추론하고 파티션을 인식해 Data Catalog에 테이블을 만든다. 스키마 자동 등록의 정석이다. ETL Job(A)은 변환용이지 스키마 등록 도구가 아니다. Athena CREATE TABLE(C)은 수동 정의라 수천 파일에 비현실적이다. DataBrew(D)는 노코드 정제·프로파일링 도구다."
+  },
+  {
+    "id": "mla-c01-w2-d2-q2",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 2,
+    "number": 2,
+    "prompt": "한 데이터 분석가가 코드를 작성하지 않고 시각적 인터페이스로 데이터의 결측치·이상치를 프로파일링하고 정제하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Glue ETL Job (PySpark)"
+      },
+      {
+        "label": "B",
+        "text": "EMR Spark"
+      },
+      {
+        "label": "C",
+        "text": "Glue DataBrew"
+      },
+      {
+        "label": "D",
+        "text": "Kinesis Data Analytics"
+      }
+    ],
+    "answer": "C",
+    "explanation": "DataBrew는 250개 이상의 사전 정의 변환과 데이터 프로파일링을 노코드 GUI로 제공해 비기술 사용자가 빠르게 데이터를 정제·탐색할 수 있다. PySpark ETL Job(A)과 EMR Spark(B)는 모두 코드 작성이 필요하다. Kinesis Data Analytics(D)는 스트림 실시간 분석용이다."
+  },
+  {
+    "id": "mla-c01-w2-d2-q3",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 2,
+    "number": 3,
+    "prompt": "Glue Data Catalog의 핵심 역할로 가장 정확한 설명은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3의 데이터 객체 자체를 복제 저장한다"
+      },
+      {
+        "label": "B",
+        "text": "테이블 스키마·위치·파티션 등 메타데이터를 저장하고 Athena/Redshift/EMR/SageMaker가 공유한다"
+      },
+      {
+        "label": "C",
+        "text": "ETL 변환 로직을 실행한다"
+      },
+      {
+        "label": "D",
+        "text": "실시간 스트림을 처리한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Data Catalog는 Hive Metastore 호환 메타데이터 저장소로, 데이터 자체가 아니라 스키마·S3 위치·파티션 정보를 저장한다. 여러 분석/ML 서비스가 이를 공유해 일관된 스키마를 본다. 데이터 복제(A)나 변환 실행(C), 스트림 처리(D)는 카탈로그의 역할이 아니다."
+  },
+  {
+    "id": "mla-c01-w2-d2-q4",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 2,
+    "number": 4,
+    "prompt": "수 MB 규모의 작은 데이터에 대해 간단한 변환을 수행하려 한다. Spark 클러스터 시작 오버헤드와 비용을 피하려면 어떤 Glue Job 타입이 적합한가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Glue Spark Job"
+      },
+      {
+        "label": "B",
+        "text": "Glue Python Shell Job"
+      },
+      {
+        "label": "C",
+        "text": "Glue Streaming Job"
+      },
+      {
+        "label": "D",
+        "text": "EMR on EC2"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Glue Python Shell Job은 Spark 분산 처리 없이 단순 Python 스크립트를 실행해, 작은 데이터에 대한 변환에서 클러스터 시작 오버헤드와 비용을 피한다. Spark Job(A)은 대규모 분산 변환용이라 작은 데이터에는 과하다. Streaming Job(C)은 스트림 처리용이고, EMR on EC2(D)는 더 무거운 클러스터 운영을 요구한다."
+  },
+  {
+    "id": "mla-c01-w2-d2-q5",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 2,
+    "number": 5,
+    "prompt": "S3 Raw 존에 JSON으로 들어온 데이터를 ML 학습에 효율적인 형태로 만들려 한다. Glue ETL에서 권장되는 출력 방식은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "JSON 그대로 Curated 존에 복사"
+      },
+      {
+        "label": "B",
+        "text": "CSV로 변환해 압축 없이 저장"
+      },
+      {
+        "label": "C",
+        "text": "Parquet으로 변환하고 자주 필터링하는 키로 파티셔닝해 Curated 존에 저장"
+      },
+      {
+        "label": "D",
+        "text": "모든 데이터를 단일 파일로 합쳐 저장"
+      }
+    ],
+    "answer": "C",
+    "explanation": "ML 학습에는 열 기반·압축·predicate pushdown을 지원하는 Parquet이 효율적이며, 자주 쓰는 키로 파티셔닝하면 스캔량이 줄어든다. JSON 복사(A)는 비효율적이고, 압축 없는 CSV(B)도 행 기반이라 부적합하다. 단일 거대 파일(D)은 병렬 처리와 파티션 프루닝을 방해한다."
+  },
+  {
+    "id": "mla-c01-w2-d3-q1",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 3,
+    "number": 1,
+    "prompt": "데이터 사이언티스트가 S3의 Parquet 데이터를 인프라 관리 없이 간헐적으로 SQL로 탐색하려 한다. 비용은 스캔한 데이터량에만 비례하길 원한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Redshift 프로비저닝 클러스터"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Athena"
+      },
+      {
+        "label": "C",
+        "text": "Amazon EMR"
+      },
+      {
+        "label": "D",
+        "text": "Amazon RDS"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Athena는 서버리스로 S3 데이터를 SQL로 직접 쿼리하며 스캔한 데이터량(바이트)에만 과금해, 간헐적·임시 탐색에 이상적이다. Redshift 클러스터(A)는 노드 시간에 과금되고 데이터 적재가 필요해 간헐적 사용에 비효율적이다. EMR(C)은 클러스터 운영 부담이 크고, RDS(D)는 OLTP 데이터베이스다."
+  },
+  {
+    "id": "mla-c01-w2-d3-q2",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 3,
+    "number": 2,
+    "prompt": "Athena 쿼리 비용을 줄이려 한다. 다음 중 스캔량을 가장 효과적으로 줄이는 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CSV 포맷 + 단일 파일 저장"
+      },
+      {
+        "label": "B",
+        "text": "Parquet 포맷 + 파티셔닝 + 압축"
+      },
+      {
+        "label": "C",
+        "text": "JSON 포맷 + 압축"
+      },
+      {
+        "label": "D",
+        "text": "모든 데이터를 한 폴더에 평면 저장"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Athena는 스캔량에 과금되므로 (1) 열 기반 Parquet으로 필요한 컬럼만 읽고, (2) 파티셔닝으로 필요한 파티션만 스캔하고, (3) 압축으로 물리 바이트를 줄이는 3대 레버가 효과적이다. CSV 단일 파일(A)이나 JSON(C)은 행 기반이라 비효율적이고, 평면 저장(D)은 파티션 프루닝을 막는다."
+  },
+  {
+    "id": "mla-c01-w2-d3-q3",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 3,
+    "number": 3,
+    "prompt": "한 팀이 Redshift 클러스터에 자주 쓰는 데이터를 두고, S3에 보관된 차가운(cold) 과거 데이터를 데이터 이동 없이 조인해 쿼리하려 한다. 가장 적합한 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Redshift Spectrum"
+      },
+      {
+        "label": "B",
+        "text": "Glue Crawler"
+      },
+      {
+        "label": "C",
+        "text": "Kinesis Firehose"
+      },
+      {
+        "label": "D",
+        "text": "DMS"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Redshift Spectrum은 Redshift에서 S3의 데이터를 외부 테이블로 직접 쿼리하고 내부 테이블과 조인할 수 있게 해, 핫 데이터는 클러스터에 콜드 데이터는 S3에 두는 패턴을 지원한다. Glue Crawler(B)는 스키마 추론용, Firehose(C)는 스트림 적재용, DMS(D)는 DB 복제용이다."
+  },
+  {
+    "id": "mla-c01-w2-d3-q4",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 3,
+    "number": 4,
+    "prompt": "EDA 중 한 피처가 타깃과 0.99의 비정상적으로 높은 상관을 보인다. 가장 먼저 의심해야 할 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모델 성능이 매우 좋을 것이므로 그대로 사용"
+      },
+      {
+        "label": "B",
+        "text": "데이터 누수(data leakage) 가능성"
+      },
+      {
+        "label": "C",
+        "text": "해당 피처를 두 배 가중치로 사용"
+      },
+      {
+        "label": "D",
+        "text": "결측치 문제"
+      }
+    ],
+    "answer": "B",
+    "explanation": "타깃과 비현실적으로 높은 상관을 가진 피처는 타깃 정보를 미리 포함한 데이터 누수일 가능성이 크다. 학습/검증에선 높은 정확도를 보이지만 배포 시 무용지물이 된다. 그대로 사용(A)하거나 가중치를 키우는 것(C)은 누수를 악화시킨다. 결측치(D)는 상관 수치 자체로 판단할 근거가 아니다."
+  },
+  {
+    "id": "mla-c01-w2-d3-q5",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 2,
+    "day": 3,
+    "number": 5,
+    "prompt": "데이터 이동 없이 Redshift 안에서 SQL 문만으로 모델을 학습하고 예측 컬럼을 만들고 싶다. 어떤 기능을 사용하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Athena CTAS"
+      },
+      {
+        "label": "B",
+        "text": "Redshift ML (CREATE MODEL)"
+      },
+      {
+        "label": "C",
+        "text": "Glue DataBrew"
+      },
+      {
+        "label": "D",
+        "text": "Redshift COPY"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Redshift ML은 `CREATE MODEL` SQL 문으로 내부적으로 SageMaker Autopilot을 호출해 모델을 학습하고, 예측 함수를 만들어 SQL로 추론할 수 있게 한다. 데이터를 옮기지 않고 SQL만으로 ML을 수행한다. Athena CTAS(A)는 쿼리 결과를 테이블로 저장할 뿐 학습 기능은 없고, DataBrew(C)는 데이터 정제, COPY(D)는 데이터 적재 명령이다."
+  },
+  {
+    "id": "mla-c01-w3-d1-q1",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 1,
+    "number": 1,
+    "prompt": "KNN 분류 모델에서 \"연봉(단위: 원, 수백만~수천만)\"과 \"근속연수(0~30)\" 두 특성을 쓰는데 근속연수가 예측에 거의 반영되지 않는다. 가장 적절한 조치는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "근속연수 특성을 제거한다"
+      },
+      {
+        "label": "B",
+        "text": "두 특성에 StandardScaler 또는 MinMaxScaler를 적용해 스케일을 맞춘다"
+      },
+      {
+        "label": "C",
+        "text": "연봉을 범주형으로 One-Hot 인코딩한다"
+      },
+      {
+        "label": "D",
+        "text": "더 많은 데이터를 수집한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "KNN은 유클리드 거리 기반이라 단위가 큰 연봉이 거리 계산을 지배하고 근속연수는 묻힌다. 스케일링으로 두 특성을 같은 범위로 맞추면 둘 다 거리에 공정하게 기여한다. A는 유용한 정보를 버리는 잘못된 선택이고, C는 연속형 수치를 불필요하게 범주화해 정보를 잃으며, D는 스케일 불균형 문제 자체를 해결하지 못한다."
+  },
+  {
+    "id": "mla-c01-w3-d1-q2",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 1,
+    "number": 2,
+    "prompt": "\"도시: 서울/부산/대구/광주\" 명목형 범주를 LabelEncoder로 0/1/2/3으로 변환해 선형회귀에 넣었더니 성능이 이상하다. 원인으로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "LabelEncoder는 결측치를 처리하지 못한다"
+      },
+      {
+        "label": "B",
+        "text": "선형 모델이 정수 인코딩을 순서(광주 3 > 서울 0)로 해석해 존재하지 않는 크기 관계를 학습한다"
+      },
+      {
+        "label": "C",
+        "text": "도시는 항상 타깃 인코딩만 써야 한다"
+      },
+      {
+        "label": "D",
+        "text": "LabelEncoder는 4개 이하 범주만 지원한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "명목형 범주에는 순서가 없는데 정수 인코딩은 인위적 서열을 부여한다. 선형 모델은 이를 \"광주가 서울보다 3배 크다\"는 식으로 잘못 학습한다. 명목형은 One-Hot 인코딩이 정석이다. A는 LabelEncoder의 핵심 문제가 아니고, C는 타깃 인코딩이 한 대안일 뿐 유일한 답은 아니며, D는 범주 개수 제한이라는 잘못된 주장이다."
+  },
+  {
+    "id": "mla-c01-w3-d1-q3",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 1,
+    "number": 3,
+    "prompt": "데이터 누수를 피하면서 StandardScaler를 적용하는 올바른 절차는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "전체 데이터(train+test)로 fit한 뒤 train과 test를 각각 transform한다"
+      },
+      {
+        "label": "B",
+        "text": "train으로 fit_transform하고, 같은 scaler로 test를 transform한다"
+      },
+      {
+        "label": "C",
+        "text": "train과 test를 각각 독립적으로 fit_transform한다"
+      },
+      {
+        "label": "D",
+        "text": "test로 fit하고 train을 transform한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "스케일러는 train 데이터의 통계량(평균·표준편차)만으로 fit해야 하고, 그 통계량으로 test를 transform해야 한다. A는 test 정보가 fit 단계에 새어 들어가는 누수이고, C는 train과 test가 서로 다른 기준으로 변환되어 분포가 어긋나며, D는 train/test 역할이 뒤바뀐 명백한 누수다."
+  },
+  {
+    "id": "mla-c01-w3-d1-q4",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 1,
+    "number": 4,
+    "prompt": "소득 데이터가 오른쪽으로 길게 치우쳐 있고(소수의 초고소득자) 선형회귀 성능이 낮다. 분포를 개선하기 위한 변환으로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "One-Hot 인코딩"
+      },
+      {
+        "label": "B",
+        "text": "log(1+x) 로그 변환"
+      },
+      {
+        "label": "C",
+        "text": "Label 인코딩"
+      },
+      {
+        "label": "D",
+        "text": "모든 값에 동일 상수를 더한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "로그 변환은 오른쪽으로 긴 꼬리를 압축해 분포를 정규분포에 가깝게 만들어 선형 모델 적합도를 높인다. `log1p`는 0 값도 안전하게 처리한다. A와 C는 범주형 인코딩이라 연속형 소득 분포 개선과 무관하고, D는 상수를 더해도 분포 모양이 그대로라 치우침이 해결되지 않는다."
+  },
+  {
+    "id": "mla-c01-w3-d1-q5",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 1,
+    "number": 5,
+    "prompt": "사기 탐지 데이터셋에서 IQR 기준으로 이상치를 탐지했더니 사기 거래 대부분이 이상치로 분류됐다. 이때 적절한 처리는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "탐지된 이상치를 모두 제거한다"
+      },
+      {
+        "label": "B",
+        "text": "이상치가 곧 탐지 대상(정답)이므로 제거하지 않고 보존하며, 필요시 별도 처리한다"
+      },
+      {
+        "label": "C",
+        "text": "이상치를 중앙값으로 대치한다"
+      },
+      {
+        "label": "D",
+        "text": "IQR 배수를 0으로 낮춰 더 많이 제거한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "사기 탐지에서 이상치는 노이즈가 아니라 모델이 잡아내야 할 정답 신호다. 이를 제거하거나 대치하면 양성 클래스가 사라져 모델이 사기를 학습할 수 없게 된다. A·C·D는 모두 핵심 신호를 파괴하는 처리다. 이상치 처리는 항상 도메인 맥락에서 그 값이 오류인지 의미 있는 사건인지 판단해야 한다."
+  },
+  {
+    "id": "mla-c01-w3-d2-q1",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 2,
+    "number": 1,
+    "prompt": "데이터 과학자가 GUI에서 클릭만으로 결측치 대치, One-Hot 인코딩, 스케일링을 적용하고 분포를 시각적으로 확인하면서 빠르게 전처리를 설계하려 한다. 가장 적합한 도구는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SageMaker Data Wrangler"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Redshift"
+      },
+      {
+        "label": "C",
+        "text": "AWS Lambda"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Kinesis"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Data Wrangler는 300개 이상의 내장 변환을 GUI에서 클릭으로 적용하고 분포를 시각화하는 데이터 준비 도구로, 코드 없는 빠른 전처리 설계에 최적이다. B는 데이터 웨어하우스, C는 서버리스 컴퓨팅, D는 실시간 스트리밍 서비스로 시각적 데이터 준비 용도가 아니다."
+  },
+  {
+    "id": "mla-c01-w3-d2-q2",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 2,
+    "number": 2,
+    "prompt": "Data Wrangler에서 화면에 보이는 데이터로 변환을 미리보기했고 잘 동작한다. 이 변환을 수백 GB의 전체 데이터셋에 실제로 적용하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "화면에서 본 결과가 이미 전체에 적용된 것이므로 추가 작업 불필요"
+      },
+      {
+        "label": "B",
+        "text": "flow를 SageMaker Processing Job으로 export하여 전체 데이터에 실행한다"
+      },
+      {
+        "label": "C",
+        "text": "데이터를 다시 업로드한다"
+      },
+      {
+        "label": "D",
+        "text": "변환을 하나씩 수동으로 재입력한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Data Wrangler 화면의 데이터는 샘플이며, 전체 데이터에 변환을 적용하려면 flow를 Processing Job으로 export해 배치 실행해야 한다. A는 샘플이 전체라는 잘못된 가정이고, C·D는 export 메커니즘을 활용하지 못하는 비효율적 방법이다."
+  },
+  {
+    "id": "mla-c01-w3-d2-q3",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 2,
+    "number": 3,
+    "prompt": "Data Wrangler에서 \"마지막 결제일\" 특성이 타깃을 비정상적으로 잘 예측한다는 경고를 받았다. 어떤 분석 기능이 이를 잡아낸 것이며 무엇을 의심해야 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Quick Model — 데이터 부족"
+      },
+      {
+        "label": "B",
+        "text": "Target Leakage 분석 — 타깃 정보가 특성에 새어 들어가는 데이터 누수"
+      },
+      {
+        "label": "C",
+        "text": "히스토그램 — 분포 왜곡"
+      },
+      {
+        "label": "D",
+        "text": "PCA — 차원 과다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Data Wrangler의 Target Leakage 분석은 타깃 정보가 새어 들어간 특성을 비정상적으로 높은 예측력으로 탐지한다. 오프라인 성능은 높지만 실서비스에서는 그 정보를 추론 시점에 알 수 없어 무용지물이 된다. A는 성능 추정 도구, C는 분포 시각화, D는 차원 축소 기법으로 누수 탐지가 주목적이 아니다."
+  },
+  {
+    "id": "mla-c01-w3-d2-q4",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 2,
+    "number": 4,
+    "prompt": "Data Wrangler에서 거대한 S3 데이터셋의 일부만 조건에 맞게 SQL로 불러와 작업하고 싶다. 가장 적합한 데이터 소스 연결은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Athena로 S3 데이터를 SQL 쿼리해 불러온다"
+      },
+      {
+        "label": "B",
+        "text": "전체 S3 파일을 로컬에 다운로드한다"
+      },
+      {
+        "label": "C",
+        "text": "Lambda로 한 행씩 읽는다"
+      },
+      {
+        "label": "D",
+        "text": "CloudFront로 캐싱한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Athena는 S3 위 데이터를 SQL로 쿼리하므로 WHERE 절로 필요한 부분만 효율적으로 불러올 수 있어 대용량 데이터 샘플링에 적합하다. B는 비효율적이고 비용·시간이 크며, C는 ML 데이터 로딩에 부적합, D는 콘텐츠 전송 캐시로 데이터 쿼리 용도가 아니다."
+  },
+  {
+    "id": "mla-c01-w3-d2-q5",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 2,
+    "number": 5,
+    "prompt": "Data Wrangler로 만든 전처리 flow를 학습/추론 시 동일하게 재사용해 training/serving skew를 방지하려 한다. 가장 적절한 export 전략은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "flow를 매번 손으로 노트북에 복사한다"
+      },
+      {
+        "label": "B",
+        "text": "flow를 SageMaker Pipelines 단계 또는 Feature Store로 export해 재현 가능한 파이프라인으로 통합한다"
+      },
+      {
+        "label": "C",
+        "text": "변환 결과만 캡처해 이미지로 저장한다"
+      },
+      {
+        "label": "D",
+        "text": "변환을 적용하지 않고 raw 데이터를 그대로 쓴다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "flow를 SageMaker Pipelines 단계나 Feature Store로 export하면 동일한 변환이 버전 관리되고 학습·추론 양쪽에 재현 가능하게 적용되어 training/serving skew를 방지한다. A는 수작업으로 재현성이 깨지고, C는 변환 로직이 아닌 결과 이미지일 뿐이며, D는 전처리를 포기하는 것이다."
+  },
+  {
+    "id": "mla-c01-w3-d3-q1",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 3,
+    "number": 1,
+    "prompt": "실시간 추천 서비스가 사용자가 페이지를 열 때마다 해당 사용자의 최신 특성을 밀리초 내에 조회해야 한다. SageMaker Feature Store에서 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "오프라인 스토어를 Athena로 쿼리한다"
+      },
+      {
+        "label": "B",
+        "text": "온라인 스토어에서 GetRecord로 최신 레코드를 조회한다"
+      },
+      {
+        "label": "C",
+        "text": "S3 Parquet 파일을 매번 전체 다운로드한다"
+      },
+      {
+        "label": "D",
+        "text": "Redshift 전체 테이블을 스캔한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "온라인 스토어는 key-value 저장으로 단건 최신 특성을 밀리초 내에 반환하므로 실시간 추론 조회에 적합하다. A·C는 오프라인/배치용으로 지연시간이 높고, D 역시 대량 분석용 스캔이라 실시간 저지연 요구에 부적합하다."
+  },
+  {
+    "id": "mla-c01-w3-d3-q2",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 3,
+    "number": 2,
+    "prompt": "학습 파이프라인은 Python으로, 추론 서버는 Java로 \"최근 30일 평균 구매액\"을 각각 계산하다 미묘한 차이로 모델 성능이 저하됐다. 이를 근본적으로 해결하는 접근은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Java 코드를 더 정밀하게 수정한다"
+      },
+      {
+        "label": "B",
+        "text": "Feature Store에 특성을 한 번 계산·저장하고 학습(오프라인)과 추론(온라인)이 같은 저장소에서 읽게 한다"
+      },
+      {
+        "label": "C",
+        "text": "추론을 비활성화한다"
+      },
+      {
+        "label": "D",
+        "text": "모델을 더 크게 만든다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "이는 training/serving skew 문제로, Feature Store가 특성을 한 곳에서 정의·저장해 학습과 추론이 동일한 값을 공유하게 하여 원천 차단한다. A는 두 구현을 계속 동기화해야 하는 임시방편이고, C는 서비스를 포기하는 것이며, D는 특성 불일치와 무관하다."
+  },
+  {
+    "id": "mla-c01-w3-d3-q3",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 3,
+    "number": 3,
+    "prompt": "Feature Group을 생성할 때 반드시 지정해야 하며, 특정 시점의 특성 값을 재구성하는 기준이 되는 요소는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Record Identifier와 Event Time"
+      },
+      {
+        "label": "B",
+        "text": "VPC와 Subnet"
+      },
+      {
+        "label": "C",
+        "text": "인스턴스 타입과 개수"
+      },
+      {
+        "label": "D",
+        "text": "학습률과 배치 크기"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Feature Group은 행을 식별하는 Record Identifier와 값이 기록된 시점을 나타내는 Event Time이 필수이며, Event Time이 point-in-time 조회와 미래 누수 방지의 기준이 된다. B는 네트워크 설정, C는 컴퓨팅 자원, D는 학습 하이퍼파라미터로 Feature Group 정의의 필수 요소가 아니다."
+  },
+  {
+    "id": "mla-c01-w3-d3-q4",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 3,
+    "number": 4,
+    "prompt": "학습용 데이터셋을 만들기 위해 Feature Store에 쌓인 전체 특성 이력을 대량으로 조회하려 한다. 가장 적합한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "온라인 스토어에서 GetRecord를 행마다 반복 호출한다"
+      },
+      {
+        "label": "B",
+        "text": "오프라인 스토어(S3)에 대해 Athena 쿼리로 대량 조회한다"
+      },
+      {
+        "label": "C",
+        "text": "온라인 스토어 전체를 메모리에 적재한다"
+      },
+      {
+        "label": "D",
+        "text": "Feature Group을 삭제 후 재생성한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "오프라인 스토어는 S3 Parquet에 전체 이력을 보관하며 Athena 쿼리로 대량 학습 데이터셋을 효율적으로 만든다. A는 단건 조회를 반복하는 비효율적 방식이고, C는 온라인 스토어 용도와 맞지 않으며, D는 데이터를 파괴하는 잘못된 조치다."
+  },
+  {
+    "id": "mla-c01-w3-d3-q5",
+    "category": "aws-certs",
+    "slug": "mla-c01",
+    "week": 3,
+    "day": 3,
+    "number": 5,
+    "prompt": "두 팀이 동일한 \"고객 활동 점수\" 특성을 각자 만들어 정의가 어긋나고 버그 수정이 한쪽에만 반영되는 문제가 있다. Feature Store가 제공하는 해결책은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 팀이 더 자주 회의한다"
+      },
+      {
+        "label": "B",
+        "text": "특성을 Feature Store에 한 번 정의·공유해 양 팀이 같은 특성을 재사용하고 한 곳 수정이 모두에 반영되게 한다"
+      },
+      {
+        "label": "C",
+        "text": "두 모델을 하나로 합친다"
+      },
+      {
+        "label": "D",
+        "text": "특성을 모두 제거한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Feature Store는 특성을 공유 데이터 자산으로 만들어 팀 간 재사용과 단일 정의를 가능하게 하므로, 한 곳을 고치면 그 특성을 쓰는 모든 모델에 일관되게 반영된다. A는 근본 해결이 아니고, C는 별개 모델을 억지로 합치는 것이며, D는 필요한 특성을 버리는 잘못된 선택이다."
   },
   {
     "id": "saa-c03-w1-d1-q1",
