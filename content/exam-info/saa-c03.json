@@ -1,0 +1,22 @@
+{
+  "examCode": "SAA-C03",
+  "fullName": "AWS Certified Solutions Architect – Associate",
+  "level": "associate",
+  "questionCount": 65,
+  "durationMin": 130,
+  "passingScore": 720,
+  "scoreMax": 1000,
+  "costUsd": 150,
+  "validityYears": 3,
+  "languages": ["영어", "한국어", "일본어", "중국어(간체)", "중국어(번체)", "프랑스어", "이탈리아어", "포르투갈어(브라질)", "스페인어(라틴아메리카)", "스페인어(스페인)"],
+  "prerequisites": "AWS 서비스를 사용한 클라우드 솔루션 설계 경험 1년 이상 권장",
+  "format": "객관식 또는 복수응답형 65문항",
+  "domains": [
+    { "name": "보안 아키텍처 설계", "weight": 30 },
+    { "name": "복원력 있는 아키텍처 설계", "weight": 26 },
+    { "name": "고성능 아키텍처 설계", "weight": 24 },
+    { "name": "비용 최적화 아키텍처 설계", "weight": 20 }
+  ],
+  "officialUrl": "https://aws.amazon.com/certification/certified-solutions-architect-associate/",
+  "registerUrl": "https://www.aws.training/certification"
+}

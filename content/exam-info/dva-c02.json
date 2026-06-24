@@ -1,0 +1,22 @@
+{
+  "examCode": "DVA-C02",
+  "fullName": "AWS Certified Developer – Associate",
+  "level": "associate",
+  "questionCount": 65,
+  "durationMin": 130,
+  "passingScore": 720,
+  "scoreMax": 1000,
+  "costUsd": 150,
+  "validityYears": 3,
+  "languages": ["영어", "한국어", "일본어", "중국어(간체)", "포르투갈어(브라질)", "스페인어(라틴아메리카)"],
+  "prerequisites": "AWS 서비스를 사용한 애플리케이션 개발·유지보수 경험 1년 이상 권장",
+  "format": "객관식 또는 복수응답형 65문항",
+  "domains": [
+    { "name": "AWS 서비스를 통한 개발", "weight": 32 },
+    { "name": "보안", "weight": 26 },
+    { "name": "배포", "weight": 24 },
+    { "name": "문제 해결 및 최적화", "weight": 18 }
+  ],
+  "officialUrl": "https://aws.amazon.com/certification/certified-developer-associate/",
+  "registerUrl": "https://www.aws.training/certification"
+}

@@ -1,0 +1,24 @@
+{
+  "examCode": "SOA-C02",
+  "fullName": "AWS Certified SysOps Administrator – Associate",
+  "level": "associate",
+  "questionCount": 65,
+  "durationMin": 130,
+  "passingScore": 720,
+  "scoreMax": 1000,
+  "costUsd": 150,
+  "validityYears": 3,
+  "languages": ["영어", "한국어", "일본어", "중국어(간체)"],
+  "prerequisites": "AWS 배포·관리·네트워킹·보안 운영 경험 1년 이상 권장",
+  "format": "객관식 또는 복수응답형 65문항 (실습 랩 폐지)",
+  "domains": [
+    { "name": "모니터링·로깅·교정", "weight": 20 },
+    { "name": "배포·프로비저닝·자동화", "weight": 18 },
+    { "name": "네트워킹 및 콘텐츠 전송", "weight": 18 },
+    { "name": "안정성 및 비즈니스 연속성", "weight": 16 },
+    { "name": "보안 및 규정 준수", "weight": 16 },
+    { "name": "비용 및 성능 최적화", "weight": 12 }
+  ],
+  "officialUrl": "https://aws.amazon.com/certification/certified-sysops-admin-associate/",
+  "registerUrl": "https://www.aws.training/certification"
+}

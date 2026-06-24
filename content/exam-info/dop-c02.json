@@ -1,0 +1,24 @@
+{
+  "examCode": "DOP-C02",
+  "fullName": "AWS Certified DevOps Engineer – Professional",
+  "level": "professional",
+  "questionCount": 75,
+  "durationMin": 180,
+  "passingScore": 750,
+  "scoreMax": 1000,
+  "costUsd": 300,
+  "validityYears": 3,
+  "languages": ["영어", "한국어", "일본어", "중국어(간체)"],
+  "prerequisites": "AWS 환경 프로비저닝·운영·관리 경험 2년 이상 및 SDLC·프로그래밍 경험 권장",
+  "format": "객관식 또는 복수응답형 75문항",
+  "domains": [
+    { "name": "SDLC 자동화", "weight": 22 },
+    { "name": "구성 관리 및 IaC", "weight": 17 },
+    { "name": "보안 및 규정 준수", "weight": 17 },
+    { "name": "복원력 있는 클라우드 솔루션", "weight": 15 },
+    { "name": "모니터링 및 로깅", "weight": 15 },
+    { "name": "인시던트 및 이벤트 대응", "weight": 14 }
+  ],
+  "officialUrl": "https://aws.amazon.com/certification/certified-devops-engineer-professional/",
+  "registerUrl": "https://www.aws.training/certification"
+}

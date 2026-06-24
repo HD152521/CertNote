@@ -1,0 +1,22 @@
+{
+  "examCode": "SAP-C02",
+  "fullName": "AWS Certified Solutions Architect – Professional",
+  "level": "professional",
+  "questionCount": 75,
+  "durationMin": 180,
+  "passingScore": 750,
+  "scoreMax": 1000,
+  "costUsd": 300,
+  "validityYears": 3,
+  "languages": ["영어", "한국어", "일본어", "중국어(간체)", "포르투갈어(브라질)", "스페인어(라틴아메리카)"],
+  "prerequisites": "AWS 서비스를 사용한 클라우드 솔루션 설계·구현 경험 2년 이상 권장",
+  "format": "객관식 또는 복수응답형 75문항",
+  "domains": [
+    { "name": "새 솔루션 설계", "weight": 29 },
+    { "name": "조직 복잡성에 대한 솔루션 설계", "weight": 26 },
+    { "name": "기존 솔루션의 지속적 개선", "weight": 25 },
+    { "name": "워크로드 마이그레이션 및 현대화", "weight": 20 }
+  ],
+  "officialUrl": "https://aws.amazon.com/certification/certified-solutions-architect-professional/",
+  "registerUrl": "https://www.aws.training/certification"
+}

@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { getAllDays, getCertMeta, listCerts } from '@/lib/content';
+import { getExamInfo } from '@/lib/examInfo';
+import ExamInfoCard from '@/components/ExamInfoCard';
 import { cn } from '@/lib/cn';
 
 interface PageProps { params: Promise<{ category: string; slug: string }>; }
@@ -24,6 +26,7 @@ export default async function CertIndexPage({ params }: PageProps) {
     byWeek.get(d.week)!.push(d);
   }
   const firstDay = days[0];
+  const examInfo = getExamInfo(slug);
   return (
     <div className="mx-auto max-w-3xl space-y-10">
       <header className="space-y-3">
@@ -41,6 +44,7 @@ export default async function CertIndexPage({ params }: PageProps) {
           </Link>
         )}
       </header>
+      {examInfo && <ExamInfoCard info={examInfo} />}
       <section className="space-y-6">
         {[...byWeek.entries()].map(([w, ws]) => (
           <div key={w} className="space-y-2">
