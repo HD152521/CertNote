@@ -24,6 +24,14 @@ export interface ExamInfo {
   registerUrl: string;
 }
 
+// AWS 자격증 공통 시험 혜택·꿀팁(전 자격증 동일이라 공유 상수). 출처: AWS 공식 인증 혜택/FAQ 페이지.
+export const AWS_EXAM_TIPS: string[] = [
+  '합격하면 다음 시험 50% 할인 바우처가 생깁니다. AWS Certification 계정의 "Benefits"에서 확인하고 재인증·다른 자격증 응시에 쓸 수 있어요(만료일이 있으니 그 전에 사용).',
+  '인증은 3년간 유효하며 만료 전 재인증이 필요합니다. 재인증 때도 이 50% 바우처를 쓸 수 있어요.',
+  '무료 재응시는 없습니다(매 응시 전액 결제). 첫 시도에 붙는 게 가장 저렴하니, 모의고사로 합격선을 넘긴 뒤 응시하세요.',
+  '합격하면 Credly 디지털 배지가 발급돼 링크드인·이메일 서명에 붙일 수 있습니다.',
+];
+
 const EXAM_INFO_ROOT = path.join(process.cwd(), 'content', 'exam-info');
 
 // 시험 정보는 빌드 후 불변이라 프로세스 단위로 메모이즈한다(디스크 재독 제거).

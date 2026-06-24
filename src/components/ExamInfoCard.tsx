@@ -1,5 +1,5 @@
-import { ExternalLink } from 'lucide-react';
-import type { ExamInfo } from '@/lib/examInfo';
+import { ExternalLink, Lightbulb } from 'lucide-react';
+import { AWS_EXAM_TIPS, type ExamInfo } from '@/lib/examInfo';
 
 interface ExamInfoCardProps {
   info: ExamInfo;
@@ -80,6 +80,21 @@ export default function ExamInfoCard({ info }: ExamInfoCardProps) {
         <MetaRow label="형식" value={info.format} />
         <MetaRow label="선수지식" value={info.prerequisites} />
         <MetaRow label="언어" value={info.languages.join(', ')} />
+      </div>
+
+      {/* 시험 혜택 & 꿀팁 (AWS 공통, 공식 확인) */}
+      <div className="space-y-2 border-t border-border pt-4">
+        <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-fg-faint">
+          <Lightbulb className="h-3.5 w-3.5 text-accent" /> 혜택 &amp; 꿀팁
+        </h3>
+        <ul className="space-y-1.5">
+          {AWS_EXAM_TIPS.map((tip, i) => (
+            <li key={i} className="flex gap-2 text-sm leading-relaxed text-fg-muted">
+              <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" />
+              <span className="min-w-0">{tip}</span>
+            </li>
+          ))}
+        </ul>
       </div>
 
       {/* 외부 링크 버튼: 모바일 풀폭, sm+ 인라인 */}
