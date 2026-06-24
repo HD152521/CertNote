@@ -45,14 +45,19 @@ export function SidebarNav({ certTrees, onNavigate }: SidebarNavProps) {
         }
         return (
           <div key={meta.slug}>
-            <button type="button" onClick={() => toggle(meta.slug)}
-              className={cn('group flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left transition', 'hover:bg-bg-subtle', isActive && 'bg-bg-subtle')}>
-              <span className="flex flex-col gap-0.5">
+            {/* 자격증 이름 클릭 → 허브(시험정보·커리큘럼 개요) 이동. 화살표 → 트리 펼침/접힘 */}
+            <div className={cn('group flex items-center rounded-md transition', 'hover:bg-bg-subtle', isActive && 'bg-bg-subtle')}>
+              <Link href={`/${DEFAULT_CATEGORY}/${meta.slug}`} onClick={onNavigate}
+                className="flex min-w-0 flex-1 flex-col gap-0.5 rounded-md px-2 py-1.5">
                 <span className="font-mono text-[11px] text-fg-faint">{meta.code} · {certLevelLabel(meta.level)}</span>
                 <span className="text-fg text-sm leading-tight">{meta.name}</span>
-              </span>
-              <ChevronRight className={cn('h-3.5 w-3.5 text-fg-faint transition-transform', isOpen && 'rotate-90')} />
-            </button>
+              </Link>
+              <button type="button" onClick={() => toggle(meta.slug)}
+                aria-label={`${meta.code} 주차 목록 ${isOpen ? '접기' : '펼치기'}`} aria-expanded={isOpen}
+                className="shrink-0 rounded-md p-2 text-fg-faint hover:text-fg">
+                <ChevronRight className={cn('h-3.5 w-3.5 transition-transform', isOpen && 'rotate-90')} />
+              </button>
+            </div>
             {isOpen && (
               <ul className="mt-1 mb-2 ml-2 space-y-0.5 border-l border-border pl-2">
                 {[...byWeek.entries()].map(([w, ws]) => (
