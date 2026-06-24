@@ -1,4 +1,4 @@
-# Day 8 - Logs Insights 쿼리 언어: 운영자의 디버깅 SQL
+# Day 3 - Logs Insights 쿼리 언어: 운영자의 디버깅 SQL
 
 Logs Insights는 CloudWatch Logs 위에 얹힌 분산 쿼리 엔진이다. 1TB 로그를 30초 안에 스캔하는 이 도구를 운영자가 능숙하게 다루지 못하면, 장애 디버깅에 1시간이 걸리는 일이 5분으로 단축되지 않는다. 새벽 3시 PagerDuty 알람을 받았을 때 "어떤 path의 어떤 user_id에서 어떤 예외가 났는가"를 다섯 줄 쿼리로 끝내는 운영자와, 콘솔에서 텍스트 검색을 30분 돌리는 운영자의 차이는 결국 Insights를 얼마나 손에 익혔는가다.
 

@@ -1,4 +1,4 @@
-# Day 39 - WAF·Shield·GuardDuty·Inspector·Macie: 클라우드 보안 관제의 5개 축
+# Day 4 - WAF·Shield·GuardDuty·Inspector·Macie: 클라우드 보안 관제의 5개 축
 
 클라우드 보안을 설계할 때 가장 먼저 마주치는 깨달음은 "방어 한 가지로는 절대 충분하지 않다"는 것이다. 1990년대 온프레미스 시절에는 외부와 내부를 가르는 단일 perimeter firewall이 "거의 모든" 보안이었지만, 클라우드에서는 그 경계 자체가 흐려졌다. API Gateway는 외부에 노출되지만 그 뒤의 Lambda는 VPC 안에 있을 수 있고, S3는 글로벌 서비스라 perimeter가 없다. 이 환경에서 보안은 **defense in depth** — 여러 계층이 각각 다른 종류의 공격을 막고, 한 계층이 뚫려도 다음 계층이 잡는 구조여야 한다.
 

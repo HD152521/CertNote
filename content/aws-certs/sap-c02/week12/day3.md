@@ -1,4 +1,4 @@
-# Day 58 - Cost Explorer·Budgets·CUR — 비용 가시성의 계층, 예산 자동 통제, FinOps 데이터 파이프라인
+# Day 3 - Cost Explorer·Budgets·CUR — 비용 가시성의 계층, 예산 자동 통제, FinOps 데이터 파이프라인
 
 "측정할 수 없으면 관리할 수 없다"는 격언은 클라우드 비용에서 특히 잔인하게 작동한다. 온프레미스에서는 서버를 더 사려면 결재가 필요했지만, 클라우드에서는 개발자 한 명이 `terraform apply` 한 번으로 월 수만 달러를 만들 수 있다. 지출이 분산되고 실시간이며 셀프서비스인 이 환경에서 비용을 통제하려면, **가시성(보기) → 예산(임계) → 자동 대응(통제)**의 세 계층이 모두 필요하다. AWS는 이를 각각 Cost Explorer, Budgets, CUR + Budgets Action으로 제공한다. 이 사고 체계는 2019년 출범한 **FinOps Foundation**이 정립한 "Inform → Optimize → Operate" 세 단계 프레임워크와 정확히 대응한다 — Inform(가시성·할당), Optimize(rightsizing·약정), Operate(거버넌스·자동화).
 

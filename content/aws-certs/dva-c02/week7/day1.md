@@ -1,4 +1,4 @@
-# Day 31 - RDS: 관리형 RDBMS의 두 얼굴, Multi-AZ와 Read Replica
+# Day 1 - RDS: 관리형 RDBMS의 두 얼굴, Multi-AZ와 Read Replica
 
 RDS를 처음 쓰는 사람들은 보통 "EC2에 MySQL 깔면 되는데 왜 굳이 RDS?"라고 묻는다. 그 답은 단순한 편의성이 아니다. RDS는 "관계형 데이터베이스의 운영(Day-2 ops)이라는, 사실은 가장 무겁고 가장 자주 실수가 발생하는 영역을 AWS가 대신 짊어진다"는 약속이다. 마이너 패치, 백업, 로그 회전, 페일오버 자동화, 스토리지 확장 — 이 모든 게 콘솔 토글이나 API 한 번으로 끝난다.
 

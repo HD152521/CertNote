@@ -1,4 +1,4 @@
-# Day 11 - Lambda Execution Model: Firecracker MicroVM이 함수를 실행하는 방법
+# Day 1 - Lambda Execution Model: Firecracker MicroVM이 함수를 실행하는 방법
 
 2014년 Amazon은 내부적으로 심각한 문제를 마주하고 있었다. EC2 위에 올라가는 컨테이너 기반 함수 실행 환경은 멀티테넌시 보안 격리가 약했고, 콜드 스타트가 수 초에 달했다. 같은 해 발표된 Lambda는 초창기엔 컨테이너(LXC)로 동작했지만, 이 모델은 보안 경계가 불분명하고 밀도(하드웨어당 동시 실행 수)가 낮았다. 해결책으로 AWS는 2018년 AWS re:Invent에서 **Firecracker**를 공개했다. Rust로 작성된 MicroVM 하이퍼바이저로, 부팅에 125ms 미만, 메모리 오버헤드 5MB 미만을 달성한다. Lambda는 2019년부터 Firecracker 위에서 동작한다.
 

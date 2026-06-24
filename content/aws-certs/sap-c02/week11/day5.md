@@ -1,4 +1,4 @@
-# Day 55 - 보안 종합: 암호화·탐지·통합 관제·엣지 방어를 한 시나리오로
+# Day 5 - 보안 종합: 암호화·탐지·통합 관제·엣지 방어를 한 시나리오로
 
 AWS 보안은 단일 서비스로 끝나지 않는다. 11주차에 본 모든 것이 **4개 레이어**로 쌓인다 — **암호화(KMS·CloudHSM)**, **탐지(Macie·GuardDuty·Inspector)**, **통합 관제(Security Hub·Detective·Audit Manager)**, **엣지 방어(WAF·Shield·Firewall Manager·Network Firewall·DNS Firewall)**. production-grade 보안은 이 4개가 유기적으로 결합돼야 완성된다. 그리고 SAP-C02 시험의 보안 시나리오는 거의 항상 **한 문제에 여러 레이어가 동시에 출현**한다 — "데이터를 암호화하고(L1), 위협을 탐지하며(L2), 사고를 조사하고(L3), 엣지를 방어하라(L4)".
 

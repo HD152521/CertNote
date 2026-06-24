@@ -1,4 +1,4 @@
-# Day 40 - Week 8 종합: 보안 도메인 시나리오 12
+# Day 5 - Week 8 종합: 보안 도메인 시나리오 12
 
 이번 주 동안 본 KMS·Secrets Manager·Cognito·WAF·Shield·GuardDuty·Inspector·Macie·Detective·Security Hub는 각각 독립된 서비스이지만, 실제 SAA 시험과 운영 현장에서는 거의 항상 둘 이상이 한 아키텍처 안에서 협력한다. 예를 들어 "모바일 앱 사용자가 S3에 이미지를 업로드한다"는 단순해 보이는 요구도, 그 뒤에는 Cognito User Pool(사용자 인증) + Identity Pool(STS Role) + S3 SSE-KMS(저장 암호화) + Macie(업로드 후 PII 스캔) + WAF(악성 트래픽 차단) + GuardDuty(비정상 접근 탐지)가 동시에 동작한다.
 

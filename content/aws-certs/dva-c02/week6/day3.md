@@ -1,4 +1,4 @@
-# Day 28 - DynamoDB: RCU/WCU 수학, DAX 아키텍처, Streams 처리
+# Day 3 - DynamoDB: RCU/WCU 수학, DAX 아키텍처, Streams 처리
 
 DynamoDB 비용 청구서를 처음 받은 많은 개발자들이 충격을 받는다. 예상보다 10배, 100배 높은 금액이 나오는 이유는 대부분 세 가지다 — RCU/WCU 계산 실수, 온디맨드와 프로비저닝 모드 선택 오류, 미완료 작업으로 인한 낭비. 이 day에서는 RCU/WCU 계산을 수학적으로 정확하게 이해하고, DAX가 어떻게 캐시를 관리하는지, DynamoDB Streams가 어떻게 Lambda와 연동되는지를 파고든다.
 

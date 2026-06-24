@@ -1,4 +1,4 @@
-# Day 45 - Week 9 복습: 보안은 한 줄의 설정이 아니라 계층의 합이다
+# Day 5 - Week 9 복습: 보안은 한 줄의 설정이 아니라 계층의 합이다
 
 한 주 동안 KMS, Secrets Manager, Parameter Store, Cognito, WAF, Shield, ACM을 차례로 봤다. 처음 보면 서로 무관한 서비스들의 나열처럼 느껴지지만, 실제로는 하나의 요청이 인터넷에서 출발해 애플리케이션의 데이터에 닿기까지 거치는 **방어 계층(defense in depth)** 의 단면들이다. DDoS는 Shield가 흡수하고, 악성 HTTP 패턴은 WAF가 거르고, 신원은 Cognito가 증명하고, 전송은 ACM의 TLS가 감싸고, 저장된 비밀은 Secrets Manager가, 그 비밀을 푸는 키는 KMS가 지킨다. 이 순서를 머릿속에 그릴 수 있으면 Week 9의 거의 모든 문제는 "이 계층 어디서 막아야 하는가"라는 단일 질문으로 환원된다.
 

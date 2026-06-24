@@ -1,4 +1,4 @@
-# Day 9 - VPC Peering, Transit Gateway, VPC Endpoint: VPC 너머의 연결
+# Day 4 - VPC Peering, Transit Gateway, VPC Endpoint: VPC 너머의 연결
 
 VPC 하나로 시작했다가 곧 다음 질문이 떠오른다. "다른 VPC와 통신해야 한다", "온프레미스 DC와 연결해야 한다", "S3에 비공개로 접근하고 싶다." 각각 다른 답이 있고, 그 답을 고르는 기준이 SAA 시험의 단골 시나리오다. 이 네 가지 연결 방식 — Peering, Transit Gateway, VPC Endpoint, VPN/Direct Connect — 의 trade-off를 명확히 매핑할 수 있으면 네트워크 영역 시험의 절반은 풀린다.
 

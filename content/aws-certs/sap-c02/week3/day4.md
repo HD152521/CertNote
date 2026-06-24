@@ -1,4 +1,4 @@
-# Day 14 - PrivateLink와 VPC Endpoint: 서비스 추상화 네트워킹
+# Day 4 - PrivateLink와 VPC Endpoint: 서비스 추상화 네트워킹
 
 전통적인 네트워크에서 두 시스템이 통신하려면 IP 라우팅이 필요하다. 라우팅 테이블에 경로가 있어야 하고, CIDR이 겹치지 않아야 하며, 방화벽 규칙이 허용해야 한다. AWS PrivateLink는 이 패러다임을 근본적으로 바꾼다. IP 라우팅 대신 **서비스 이름**으로 통신하고, CIDR이 겹쳐도 동작하며, 단방향이기 때문에 서비스를 소비하는 쪽이 서비스를 제공하는 쪽의 내부 네트워크 구조를 전혀 알 수 없다. 오늘은 PrivateLink의 내부 동작 원리부터 Gateway/Interface/GWLB Endpoint의 차이, DNS 해석 메커니즘, 보안 어플라이언스 체인 패턴까지 SAP-C02 수준으로 깊이 다룬다.
 

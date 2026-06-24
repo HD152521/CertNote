@@ -1,4 +1,4 @@
-# Day 6 - CloudWatch Metrics의 내부 구조: Namespace, Dimension, Resolution, Cardinality
+# Day 1 - CloudWatch Metrics의 내부 구조: Namespace, Dimension, Resolution, Cardinality
 
 CloudWatch 콘솔을 열면 끝없이 펼쳐지는 그래프 더미에 압도된다. EC2 CPU, ELB Request Count, Lambda Duration, RDS Connections, ECS CPU Reservation… 운영자는 이 더미 속에서 "지금 우리 서비스가 죽고 있는가"를 5초 안에 판단해야 한다. 그러려면 메트릭이 어떻게 저장되고 어떻게 인덱싱되며 어떻게 비용이 청구되는지를 알아야 한다. 콘솔 UI만 외우면 5분쯤 지나 다시 그래프를 못 찾고, 청구서를 받아 들고서야 cardinality 폭증을 만난다.
 

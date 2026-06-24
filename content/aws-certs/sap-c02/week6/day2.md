@@ -1,4 +1,4 @@
-# Day 32 - AWS MGN 심화: 블록 레벨 복제의 물리학, DRS 비교, Migration Hub Orchestrator
+# Day 2 - AWS MGN 심화: 블록 레벨 복제의 물리학, DRS 비교, Migration Hub Orchestrator
 
 서버 마이그레이션의 본질적 문제는 하나다. **디스크를 복사하는 동안에도 서버는 계속 쓰기를 한다.** 50TB 디스크를 복사하는 데 24시간 걸린다면, 복사가 끝난 시점에 원본과 복사본이 24시간 분량만큼 다르다. 이 "마지막 변경분"을 따라잡는 것이 Cutover의 기술적 도전이다.
 

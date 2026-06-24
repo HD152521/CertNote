@@ -1,4 +1,4 @@
-# Day 40 - Week 8 종합 — 서버리스·이벤트 아키텍처 시나리오 12선
+# Day 5 - Week 8 종합 — 서버리스·이벤트 아키텍처 시나리오 12선
 
 Week 8은 서버리스와 이벤트 기반 아키텍처가 어떻게 협력하는지를 깊이 봤다. Lambda(콜드 스타트·동시성·VPC ENI), Step Functions(상태 머신·Saga·Distributed Map), EventBridge(Bus·Pipes·Scheduler), AppSync(GraphQL + Subscription), SQS/SNS/Kinesis/MSK(메시징·스트리밍) — 여섯 도메인은 각자 독립적으로 보이지만, 실제 production에서는 거의 항상 두세 개가 함께 쓰인다. SAP-C02 시험이 노리는 것도 정확히 이 부분이다. "Lambda만 알아도 안 되고", "Step Functions만 알아도 안 되고", 시나리오의 키워드를 보고 어느 도구의 조합이 가장 적합한지 판단하는 능력이 필요하다.
 

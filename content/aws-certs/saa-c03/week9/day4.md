@@ -1,4 +1,4 @@
-# Day 44 - X-Ray·Trusted Advisor·Health Dashboard: 한 요청이 여러 서비스를 지날 때 누가 느린지 어떻게 아는가
+# Day 4 - X-Ray·Trusted Advisor·Health Dashboard: 한 요청이 여러 서비스를 지날 때 누가 느린지 어떻게 아는가
 
 마이크로서비스로 시스템을 쪼개면 얻는 게 있고 잃는 게 있다. 얻는 건 독립 배포와 확장이고, 잃는 건 "전체 그림"이다. 모놀리식 시절엔 느린 요청이 있으면 스택 트레이스 하나로 어느 함수가 병목인지 보였다. 그런데 요청 하나가 API Gateway → Lambda → DynamoDB → 외부 결제 API → SNS → 또 다른 Lambda를 지나가면, 각 서비스의 로그는 자기가 본 조각만 안다. Lambda 로그는 "나는 200ms 걸렸다"고 하고, DynamoDB 메트릭은 "나는 5ms였다"고 하는데, 사용자는 3초를 기다렸다. 그 나머지 2.8초가 어디서 샜는지는 어느 한 서비스도 모른다. 이 "조각난 진실을 하나로 꿰는" 문제가 분산 트레이싱(distributed tracing)이 풀려는 것이고, AWS에서 그 도구가 **X-Ray**다.
 

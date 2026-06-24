@@ -1,4 +1,4 @@
-# Day 36 - CodeCommit과 CodeBuild: AWS가 그린 CI/CD의 첫 두 칸
+# Day 1 - CodeCommit과 CodeBuild: AWS가 그린 CI/CD의 첫 두 칸
 
 CI/CD라는 단어를 처음 만난 개발자들은 보통 "Jenkins 한 번 깔아본 적 있어요" 정도로 시작한다. 그러다가 빌드 서버가 죽거나, 빌드 큐가 밀리거나, 빌드 스크립트가 한 사람의 노트북에서만 돌아가는 상황을 한 번 겪고 나면 "이걸 누군가 대신 해줬으면" 하는 마음이 자연스레 든다. AWS의 Code* 시리즈는 정확히 그 지점을 노린 서비스 묶음이다. CodeCommit이 Git 호스팅을, CodeBuild가 빌드 실행을, CodePipeline이 흐름 오케스트레이션을, CodeDeploy가 배포를 맡는다. 이번 글은 그 4단 파이프라인의 앞쪽 두 칸 — 소스 보관과 빌드 실행 — 을 깊이 들여다본다.
 

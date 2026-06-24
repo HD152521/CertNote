@@ -1,4 +1,4 @@
-# Day 16 - API Gateway REST API: 요청이 백엔드에 도달하기까지의 전체 경로
+# Day 1 - API Gateway REST API: 요청이 백엔드에 도달하기까지의 전체 경로
 
 Amazon API Gateway가 처음 등장한 2015년, 서버리스 API를 만드는 방법은 EC2에 Flask나 Express를 올리거나, Elastic Beanstalk를 쓰는 것이었다. API Gateway는 "Lambda 함수를 HTTP 엔드포인트로 노출하는 관리형 서비스"라는 역할로 시작했지만, 시간이 지나며 인증·캐싱·트래픽 제어·모니터링이 붙은 완전한 API 관리 플랫폼으로 성장했다.
 

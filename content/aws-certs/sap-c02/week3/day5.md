@@ -1,4 +1,4 @@
-# Day 15 - Week 3 복습: 고급 네트워킹 아키텍처 종합
+# Day 5 - Week 3 복습: 고급 네트워킹 아키텍처 종합
 
 Week 3는 AWS 고급 네트워킹의 전 스펙트럼을 다뤘다. VPC 간 연결(Peering, TGW, Cloud WAN), 온프레미스 연결(Direct Connect, Site-to-Site VPN, Client VPN), 서비스 단위 사설 접근(PrivateLink, Gateway Endpoint)이라는 세 축이 어떻게 서로 보완하고 대체하는지 이해하는 것이 이번 주의 핵심이었다. 개별 서비스를 다시 암기하는 것이 아니라, "이 시나리오에서 왜 이 서비스가 정답이고 다른 것들은 왜 안 되는가"를 즉각적으로 판단하는 능력을 다지는 것이 오늘의 목표다.
 

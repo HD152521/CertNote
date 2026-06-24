@@ -1,4 +1,4 @@
-# Day 39 - AppSync GraphQL과 SQS/SNS/Kinesis 메시징의 본질
+# Day 4 - AppSync GraphQL과 SQS/SNS/Kinesis 메시징의 본질
 
 마이크로서비스가 일정 규모를 넘어가면 클라이언트-서버 간의 데이터 계약이 큰 운영 비용이 된다. 모바일 앱이 "주문 상세 + 사용자 + 배송지 + 결제 수단"을 한 화면에 보여주려면 REST API 4-5개를 동시에 호출하고 클라이언트에서 합쳐야 한다. 화면이 바뀌면 백엔드 API도 바뀐다. 이 결합을 깨는 답이 **GraphQL**이고, AWS에서는 **AppSync**가 그 매니지드 서비스다.
 

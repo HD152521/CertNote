@@ -1,4 +1,4 @@
-# Day 29 - Week 5 복습: 글로벌 아키텍처 통합 시나리오
+# Day 5 - Week 5 복습: 글로벌 아키텍처 통합 시나리오
 
 Week 5의 5일을 돌아보면 하나의 축이 관통한다. **글로벌 사용자를 어떻게 올바른 리전·엔드포인트로 보내고, 장애 시 어떻게 자동 또는 수동으로 전환하며, 그 모든 것을 비용 안에서 설계하는가.** DR 전략(Day 21), Route 53 라우팅 7종(Day 22), CloudFront 심화(Day 23), Global Accelerator(Day 24), Route 53 Health Check·DNSSEC·Resolver(Day 28). 이 다섯 레이어는 독립적으로 배웠지만 시험장에서는 하나의 시나리오 안에 섞여서 나온다.
 

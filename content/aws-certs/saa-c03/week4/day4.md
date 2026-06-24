@@ -1,4 +1,4 @@
-# Day 19 - CloudFront와 Storage Gateway: CDN의 내부 구조와 하이브리드 스토리지 패턴
+# Day 4 - CloudFront와 Storage Gateway: CDN의 내부 구조와 하이브리드 스토리지 패턴
 
 CloudFront는 단순한 캐시 서버가 아니다. 2008년 출시된 이후 400개가 넘는 엣지 PoP(Point of Presence)로 확장됐고, HTTP 캐시를 넘어 엣지 컴퓨팅, TLS 종료, WAF, 서명 인증, 동적 콘텐츠 가속까지 담당한다. Netflix가 1억 명의 동시 시청자에게 비디오를 스트리밍할 수 있는 것, Amazon Prime Video가 전 세계에서 낮은 레이턴시를 유지할 수 있는 것, 모두 CloudFront 아키텍처 덕분이다.
 

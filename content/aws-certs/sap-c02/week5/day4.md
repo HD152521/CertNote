@@ -1,4 +1,4 @@
-# Day 28 - Route 53 심화: Health Check 알고리즘, DNSSEC, Geoproximity 수학, Resolver 하이브리드 DNS
+# Day 4 - Route 53 심화: Health Check 알고리즘, DNSSEC, Geoproximity 수학, Resolver 하이브리드 DNS
 
 SAP-C02 시험에서 Route 53은 단순 "DNS 서비스"가 아니다. 글로벌 트래픽 라우팅의 두뇌, 하이브리드 DNS의 연결 고리, 그리고 DNSSEC을 통한 보안 레이어까지 담당한다. Day 22에서 7가지 라우팅 정책의 키워드 매핑을 다뤘다면, 오늘은 그 안에서 실제로 일어나는 알고리즘 — Health Check 판정 로직, Geoproximity Bias 수학, Resolver 엔드포인트 내부 동작 — 을 해부한다. 시험에서 "왜 이 정책인가"를 물을 때 알고리즘 수준의 이해가 없으면 유사한 보기 두 개 사이에서 흔들린다.
 

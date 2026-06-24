@@ -1,4 +1,4 @@
-# Day 24 - AWS Config 심화: Rule 평가 트리거, Custom Rule Lambda, Conformance Pack, Auto Remediation
+# Day 3 - AWS Config 심화: Rule 평가 트리거, Custom Rule Lambda, Conformance Pack, Auto Remediation
 
 CloudTrail이 "누가 무엇을 했나(행위)"를 기록한다면, AWS Config는 "지금 어떤 상태인가(상태)"를 지속적으로 추적한다. 이 둘은 경쟁하지 않고 보완한다. CloudTrail이 "누가 S3 버킷 정책을 바꿨는가"를 알려주고, Config가 "그 버킷이 지금 퍼블릭인가, 암호화가 켜져 있는가"를 알려준다. 오늘은 SOA 운영자 관점에서 Config의 Configuration Item 구조, Rule 평가 트리거의 차이, Custom Rule Lambda의 실제 구현, Conformance Pack, Auto Remediation, 그리고 Aggregator로 전사 컴플라이언스 현황을 파악하는 방법까지 깊이 다룬다.
 

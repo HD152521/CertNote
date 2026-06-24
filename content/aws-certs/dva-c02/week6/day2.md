@@ -1,4 +1,4 @@
-# Day 27 - DynamoDB: 파티션 키 설계의 수학, LSI/GSI 내부 동작, Single-Table Design
+# Day 2 - DynamoDB: 파티션 키 설계의 수학, LSI/GSI 내부 동작, Single-Table Design
 
 DynamoDB를 처음 배울 때 "파티션 키를 잘 골라야 한다"는 말을 듣지만, "잘 고른다"의 수학적 의미는 잘 가르쳐주지 않는다. 이 day에서는 파티션 키 설계가 왜 수학적 문제인지, LSI와 GSI가 내부적으로 어떻게 다르게 저장되는지, 그리고 수십 개의 마이크로서비스가 사용하던 테이블들을 하나로 합치는 Single-Table Design이 왜 DynamoDB의 표준 패턴인지를 깊이 파고든다.
 

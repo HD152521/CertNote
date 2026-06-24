@@ -1,4 +1,4 @@
-# Day 17 - API Gateway 통합 유형과 VTL 매핑 템플릿: Lambda 없이 DynamoDB를 직접 호출하기
+# Day 2 - API Gateway 통합 유형과 VTL 매핑 템플릿: Lambda 없이 DynamoDB를 직접 호출하기
 
 API Gateway가 단순히 "Lambda의 HTTP 프록시"라고 생각한다면 절반만 아는 것이다. API Gateway는 Lambda 없이도 DynamoDB, SQS, Kinesis, S3 같은 AWS 서비스를 직접 호출할 수 있다. 이 패턴이 실무에서 의미 있는 이유는 명확하다 — Lambda를 거치지 않으면 레이턴시가 줄고, 비용이 줄고, 관리할 코드가 없어진다.
 

@@ -1,4 +1,4 @@
-# Day 10 - Week 2 종합: EC2 layer가 한 시스템 안에서 맞물리는 방식
+# Day 5 - Week 2 종합: EC2 layer가 한 시스템 안에서 맞물리는 방식
 
 Week 2에서 본 EC2의 모든 layer — Nitro·인스턴스 패밀리·AMI·Security Group·Key Pair·User Data·EBS·Instance Store·ALB·NLB·ASG — 는 따로 외워두면 잘 안 풀리는 시험이다. 시험 문제는 항상 시나리오로 나오고, 그 시나리오에서 "SG는 다 열려 있는데 왜 안 되지?", "왜 새 인스턴스가 ALB에서 안 보이지?", "왜 cross-AZ traffic 비용이 폭발했지?" 같은 질문이 던져진다. 이 질문들은 각 layer를 따로 보면 답이 안 나오고, **layer들이 어떻게 맞물려 동작하는지**를 봐야 풀린다.
 

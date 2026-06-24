@@ -1,4 +1,4 @@
-# Day 13 - Site-to-Site VPN과 Client VPN: IPsec 터널의 모든 것
+# Day 3 - Site-to-Site VPN과 Client VPN: IPsec 터널의 모든 것
 
 인터넷 위에 암호화 터널을 올리는 VPN은 1990년대 후반부터 기업 네트워킹의 핵심이었다. AWS가 2011년 Site-to-Site VPN을 출시했을 때 대부분의 기업은 이미 IPsec 기반 VPN에 익숙했다. 그러나 AWS의 VPN은 단순한 IP 터널 그 이상이다. TGW와 결합한 ECMP로 대역폭을 선형으로 확장하고, Global Accelerator와 연동해 전 세계 어디서든 낮은 지연을 보장하며, BGP로 온프레미스 라우팅 변경을 자동으로 반영한다. 오늘은 Site-to-Site VPN의 내부 동작 원리부터 ECMP를 활용한 대역폭 확장, Accelerated VPN, Client VPN의 인증 흐름까지 SAP-C02 수준의 깊이로 다룬다.
 

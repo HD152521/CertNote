@@ -1,4 +1,4 @@
-# Day 65 - Well-Architected 종합 복습: 6 기둥을 한 시나리오로 풀어내기
+# Day 5 - Well-Architected 종합 복습: 6 기둥을 한 시나리오로 풀어내기
 
 Well-Architected Framework를 "6개의 기둥"으로 외우는 건 SAA 수준이다. Pro에서는 한 시나리오에 **여러 기둥이 동시에 충돌**하고, 그 중 어느 기둥을 우선시할지 trade-off를 판단해야 한다. "비용을 줄이면서 신뢰성도 유지"는 모든 시험 문제의 본질이고, AWS는 정답을 "두 기둥 모두 만족하는 단일 솔루션"으로 설계한다. 오늘은 13주차에서 본 Operational Excellence, Security, Reliability, Performance, Cost, Sustainability를 시나리오 매핑으로 정리한다.
 

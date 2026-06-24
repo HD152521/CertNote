@@ -1,4 +1,4 @@
-# Day 57 - Compute Optimizer·Rightsizing — ML 기반 권고의 내부 동작, 도구 비교, 자동화 패턴
+# Day 2 - Compute Optimizer·Rightsizing — ML 기반 권고의 내부 동작, 도구 비교, 자동화 패턴
 
 비용 최적화에는 두 갈래가 있다. 하나는 "더 싸게 사는 것"(약정·Spot, 어제 다룬 SP·RI), 다른 하나는 "필요한 만큼만 쓰는 것"(rightsizing)이다. 후자가 더 근본적이다 — 아무리 좋은 약정을 사도 m5.4xlarge가 항상 5% CPU만 쓰고 있다면 그건 m5.large를 8배 가격에 사는 것과 같다. 그리고 약정 할인과 rightsizing은 곱셈으로 합쳐진다: 8배 과프로비저닝된 인스턴스에 72% 약정 할인을 얹어 봤자, 먼저 8배를 1배로 줄이는 게 압도적으로 크다. AWS FinOps 백서와 Flexera State of the Cloud 같은 업계 조사가 매년 반복하는 결론도 같다 — 엔터프라이즈 클라우드 지출의 30% 이상이 낭비이고 그 1순위 원인이 과프로비저닝이다. rightsizing은 약정 없이도 즉시 효과가 나는 가장 빠른 레버다.
 

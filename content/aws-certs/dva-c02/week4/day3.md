@@ -1,4 +1,4 @@
-# Day 18 - API Gateway 보안·캐싱·스로틀링: SigV4부터 Token Bucket까지 요청이 통제되는 방법
+# Day 3 - API Gateway 보안·캐싱·스로틀링: SigV4부터 Token Bucket까지 요청이 통제되는 방법
 
 API Gateway를 "그냥 HTTP 프록시"로 이해하면 보안 설계에서 반드시 실수한다. 실제로 API Gateway는 요청이 백엔드에 도달하기 전에 최소 다섯 개의 독립적인 통제 레이어를 통과시킨다: WAF, Resource Policy, Authorizer, Throttle, Cache. 각 레이어는 서로 다른 문제를 해결하며, 어떤 레이어를 언제 써야 하는지 잘못 판단하면 429가 쏟아지거나 인증 우회 취약점이 생긴다. 이 파일에서는 각 통제 레이어의 내부 동작 원리를 해부하고, DVA-C02가 반복해서 출제하는 경계 케이스들을 짚는다.
 

@@ -1,4 +1,4 @@
-# Day 9 - IAM Identity Center, Permission Set, 통합 결제: 멀티 계정 SSO의 표준
+# Day 4 - IAM Identity Center, Permission Set, 통합 결제: 멀티 계정 SSO의 표준
 
 200명 직원이 80개 AWS 계정에 접근해야 한다. 한 직원이 평균 10개 계정에 다른 권한으로 들어간다. 이걸 IAM User로 만들면 200 × 10 = 2,000개 IAM User. 직원이 한 명 퇴사하면 80개 계정을 일일이 돌며 10개 권한을 모두 회수해야 한다. 그 사이 하나라도 빼먹으면 보안 사고. 이 운영 부담이 멀티 계정 환경의 가장 큰 적이었다.
 

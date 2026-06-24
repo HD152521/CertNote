@@ -1,4 +1,4 @@
-# Day 8 - EC2의 디스크 layer: EBS, Instance Store, 그리고 그 위의 EFS·FSx
+# Day 3 - EC2의 디스크 layer: EBS, Instance Store, 그리고 그 위의 EFS·FSx
 
 처음 EC2를 만들 때 "Add storage" 화면을 보면 막막하다. gp3? io2? Block Express? 16TB까지 늘릴 수 있다는데 왜 io2는 비싸고 sc1은 싼지, 왜 인스턴스 스토어는 "이 인스턴스가 죽으면 데이터도 죽는다"고 경고가 뜨는지. 그 답은 EBS가 **네트워크 위에 얹힌 분산 블록 스토리지**라는 사실에서 시작한다. 같은 "디스크"라는 단어 안에 IOPS, throughput, latency, durability, replication 모델이 모두 다르고, 그 trade-off가 시험의 핵심이다.
 

@@ -1,4 +1,4 @@
-# Day 39 - Elastic Beanstalk: AWS가 만든 가장 친절한 PaaS
+# Day 4 - Elastic Beanstalk: AWS가 만든 가장 친절한 PaaS
 
 스타트업이 AWS를 처음 도입할 때 가장 자주 만나는 풍경이 있다. 개발자 두 명, 코드는 Flask 또는 Express, "일단 띄우긴 해야 하는데 ALB는 뭐고 ASG는 뭐고 IAM Role은 또 뭐야". 이런 상황을 해결하기 위해 AWS는 2011년 1월 **Elastic Beanstalk**를 출시했다. "코드만 zip으로 올리면 EC2·ELB·ASG·CloudWatch까지 알아서 만들어주는 PaaS"라는 약속이었다.
 

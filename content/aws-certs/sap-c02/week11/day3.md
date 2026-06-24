@@ -1,4 +1,4 @@
-# Day 53 - 통합 관제: Security Hub·Detective·Audit Manager의 역할 분담
+# Day 3 - 통합 관제: Security Hub·Detective·Audit Manager의 역할 분담
 
 탐지 서비스(Macie·GuardDuty·Inspector)를 다 켜고 나면 새로운 문제가 생긴다. "Finding이 하루에 수천 건씩 쏟아지는데, 이걸 누가 어떻게 보나?" 그리고 한 단계 더 — "보안 사고가 났을 때 무슨 일이 있었는지 어떻게 추적하나?", "감사관이 PCI DSS 증거를 요구하면 어떻게 모으나?" 이 세 가지 운영 질문에 답하는 게 **Security Hub(통합·자세 평가)**, **Detective(사건 조사)**, **Audit Manager(감사 증거)**다.
 

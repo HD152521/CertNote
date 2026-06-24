@@ -1,4 +1,4 @@
-# Day 9 - 트래픽을 분산하는 layer: ALB·NLB·GWLB, 그리고 Auto Scaling Group
+# Day 4 - 트래픽을 분산하는 layer: ALB·NLB·GWLB, 그리고 Auto Scaling Group
 
 처음 ALB를 만들고 EC2를 두 대 붙여보면 신기하다. 같은 URL로 요청을 보내는데 절반은 A 서버, 절반은 B 서버에 도착한다. CPU가 튀면 ASG가 알아서 인스턴스를 늘리고, 하나가 죽으면 새로 띄운다. 이 마법 뒤에는 health check 알고리즘, target group의 internal state machine, ASG의 reconciliation loop가 정밀하게 동작하고 있다.
 

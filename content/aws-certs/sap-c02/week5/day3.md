@@ -1,4 +1,4 @@
-# Day 23 - CloudFront 심화: CDN이 단순 캐시가 아닌 이유
+# Day 3 - CloudFront 심화: CDN이 단순 캐시가 아닌 이유
 
 인터넷 사용자가 서울에서 미국 동부 서버에 요청을 보내면 약 180ms의 왕복 지연이 생긴다. 광속 한계다. CDN(Content Delivery Network)의 출발점은 이 물리 법칙을 우회하는 것이었다. 1998년 Akamai가 처음 상용 CDN을 시작했을 때 아이디어는 단순했다. "콘텐츠를 사용자 가까이 복사해두면 된다." 그런데 2024년의 CloudFront는 단순 캐시를 훨씬 넘어섰다. **보안 계층(WAF, Shield, OAC), 컴퓨팅 계층(Lambda@Edge, CloudFront Functions), 접근 제어(Signed URL/Cookie, Field-Level Encryption)**를 통합한 엣지 플랫폼이다.
 

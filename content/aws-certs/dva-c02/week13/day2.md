@@ -1,4 +1,4 @@
-# Day 62 - 최종 복습 2: S3, DynamoDB, RDS, ElastiCache
+# Day 2 - 최종 복습 2: S3, DynamoDB, RDS, ElastiCache
 
 📅 날짜: 2026년 8월 10일 (월요일)  
 🎯 주제: 스토리지 및 데이터베이스 최종 복습  

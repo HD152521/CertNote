@@ -1,4 +1,4 @@
-# Day 23 - CloudTrail Lake 심화: SQL 감사 분석, Insights 이상 탐지, 크로스 계정 쿼리
+# Day 2 - CloudTrail Lake 심화: SQL 감사 분석, Insights 이상 탐지, 크로스 계정 쿼리
 
 CloudTrail의 S3 + Athena 패턴은 강력하지만 마찰이 있다. Athena 테이블을 만들고, 파티션을 설정하고, 쿼리를 작성하고, 결과를 해석하는 과정이 감사가 급할 때 시간을 잡아먹는다. CloudTrail Lake는 이 마찰을 제거한다. 이벤트 데이터를 전용 레이크에 직접 저장하고, 콘솔에서 SQL을 바로 실행한다. 오늘은 SOA 운영자 시각에서 CloudTrail Lake의 Event Data Store 설계, SQL 쿼리 패턴, Insights의 ML 기반 이상 탐지 원리, 그리고 Organization 규모의 크로스 계정 활용까지 실무 중심으로 깊이 다룬다.
 

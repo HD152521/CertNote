@@ -1,4 +1,4 @@
-# Day 34 - Aurora: AWS가 RDBMS의 스토리지 레이어를 다시 쓴 이야기
+# Day 4 - Aurora: AWS가 RDBMS의 스토리지 레이어를 다시 쓴 이야기
 
 Aurora는 2014년 re:Invent에서 처음 공개됐을 때 많은 사람을 어리둥절하게 만들었다. "MySQL 호환인데 MySQL이 아니다"라는 어색한 표현. AWS의 메시지는 명확했다 — **SQL 엔진 코드는 MySQL/PostgreSQL을 거의 그대로 쓰지만, 그 아래의 스토리지·복제·트랜잭션 레이어를 클라우드 환경에 맞게 처음부터 재설계했다**. 이 결정이 가져온 결과가 "MySQL 대비 5배, PostgreSQL 대비 3배 성능 + 자동 확장 스토리지 + 1초 미만 cross-region 복제"라는 숫자다.
 

@@ -1,4 +1,4 @@
-# Day 32 - EKS의 내부 해부 — 노드 그룹, IRSA, Karpenter가 만드는 운영 표준
+# Day 2 - EKS의 내부 해부 — 노드 그룹, IRSA, Karpenter가 만드는 운영 표준
 
 `kubectl get nodes`를 처음 EKS 클러스터에서 쳐본 사람은 잠시 멍해진다. 컨트롤 플레인이 어디 있는지, 노드가 왜 갑자기 두 개씩 떴는지, Pod가 ENI를 한 칸씩 잡아먹는 이유가 뭔지 — 매니지드 K8s를 쓴다고 해서 K8s가 사라지는 건 아니다. 다만 etcd 백업이나 컨트롤 플레인 패치처럼 운영의 가장 흉한 부분이 AWS 쪽으로 넘어갈 뿐이다. SAP 시험은 이 "남은 부분"을 정확히 짚어낸다. Managed Node Group의 자동 드레인이 어떻게 동작하는지, IRSA가 STS의 어떤 API를 부르는지, Karpenter가 ASG를 안 거치고 EC2를 어떻게 만드는지가 한 도메인에 두세 문제씩 깔린다.
 

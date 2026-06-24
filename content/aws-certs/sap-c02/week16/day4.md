@@ -1,4 +1,4 @@
-# Day 79 - 도메인 4 종합: 지속적 개선 (25%) — SRE의 역사, SLI/SLO 수학, 관측성 3기둥, 카오스 엔지니어링의 뿌리
+# Day 4 - 도메인 4 종합: 지속적 개선 (25%) — SRE의 역사, SLI/SLO 수학, 관측성 3기둥, 카오스 엔지니어링의 뿌리
 
 SAP-C02 도메인 4 "Continuous Improvement for Existing Solutions"는 시험 비중 25%로 둘째로 크다. 본질은 "이미 운영 중인 시스템을 운영하면서 점진적으로 개선하느냐"이고, 그 뿌리는 **SRE(Site Reliability Engineering)**다. Google이 2003년 Ben Treynor Sloss 팀에서 정립한 SRE는 "운영을 소프트웨어 엔지니어링 문제로 다룬다(Toil을 코드로 자동화) + 신뢰성을 측정 가능한 지표로 관리(SLI/SLO/SLA + Error Budget)"라는 패러다임이다. AWS는 이를 위해 관측성·자동화·배포·비용·복원력·보안 6영역에 도구를 제공한다.
 

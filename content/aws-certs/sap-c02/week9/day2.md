@@ -1,4 +1,4 @@
-# Day 42 - Redshift 심화: MPP 내부 동작, RA3 스토리지 분리, Spectrum과 Zero-ETL
+# Day 2 - Redshift 심화: MPP 내부 동작, RA3 스토리지 분리, Spectrum과 Zero-ETL
 
 데이터 웨어하우스를 처음 다루는 엔지니어가 가장 자주 묻는 질문은 "왜 그냥 PostgreSQL을 크게 키워서 쓰면 안 되나"이다. 사실 Redshift는 PostgreSQL 8.0.2를 fork해서 만들어졌고, SQL 문법도 거의 같다. 그런데 단일 PostgreSQL은 수억 행에 `GROUP BY`와 `JOIN`을 거는 분석 쿼리에서 몇 분, 몇 시간씩 걸린다. Redshift는 같은 쿼리를 수 초에 끝낸다. 그 차이는 SQL 엔진이 아니라 **저장 구조(컬럼 지향)와 실행 구조(MPP, 분산)**에서 나온다. Redshift를 제대로 이해한다는 건 "데이터를 노드와 슬라이스에 어떻게 흩뿌리고, 쿼리를 어떻게 그 위에서 병렬 실행하는가"를 이해한다는 뜻이다.
 

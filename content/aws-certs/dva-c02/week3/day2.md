@@ -1,4 +1,4 @@
-# Day 12 - Lambda 이벤트 소스 매핑: SQS·Kinesis·DynamoDB Streams 내부 폴링 메커니즘
+# Day 2 - Lambda 이벤트 소스 매핑: SQS·Kinesis·DynamoDB Streams 내부 폴링 메커니즘
 
 Lambda 함수는 "누군가 호출해야 실행된다"는 원칙에서 출발한다. 그 "누군가"가 누구인지에 따라 Lambda의 동작 방식 — 재시도 횟수, 에러 처리, 순서 보장 여부 — 이 완전히 달라진다. 이걸 이해하지 못하면 SQS 메시지가 무한 반복 처리되거나, Kinesis 샤드가 통째로 막히거나, S3 처리가 무한 루프에 빠지는 사고를 당한다.
 

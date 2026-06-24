@@ -1,4 +1,4 @@
-# Day 9 - Metric Filter, EMF 심화, Anomaly Detection: 메트릭과 로그를 잇는 세 다리
+# Day 4 - Metric Filter, EMF 심화, Anomaly Detection: 메트릭과 로그를 잇는 세 다리
 
 운영자가 매일 만나는 의사결정 중 하나는 "이 정보를 메트릭으로 발행할까, 로그로 남길까". 둘은 동전의 양면이다. 메트릭은 시계열 + 통계로 빠르게 알람·자동 스케일링이 가능하고, 로그는 원본 상세로 디버깅이 가능하다. 메트릭은 분 단위·달러 단위로 비싸고, 로그는 카디널리티에 자유롭지만 검색이 느리다. 두 세계를 잇는 다리가 세 개 있다 — **Metric Filter, EMF, Anomaly Detection**. 오늘은 이 세 도구의 내부 구조를 파고든다.
 

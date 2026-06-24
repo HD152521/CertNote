@@ -1,4 +1,4 @@
-# Day 68 - Resilience Hub·Fault Injection Simulator — 카오스 엔지니어링의 탄생, Stop Condition의 안전 공학, DR 검증 자동화
+# Day 3 - Resilience Hub·Fault Injection Simulator — 카오스 엔지니어링의 탄생, Stop Condition의 안전 공학, DR 검증 자동화
 
 2010년 Netflix가 DVD 우편 사업에서 스트리밍으로, 자체 데이터센터에서 AWS로 옮기던 시기, 엔지니어들은 한 가지 두려운 진실을 마주했다 — **클라우드에서 인스턴스는 언제든 예고 없이 죽는다**. 이들의 대응은 직관에 반했다. "장애가 무서우니 피하자"가 아니라 "장애를 일부러, 자주, 평일 업무 시간에 일으켜 시스템이 그래도 버티는지 끊임없이 증명하자"였다. 그렇게 탄생한 것이 production에서 무작위로 인스턴스를 죽이는 **Chaos Monkey**이고, 이 발상이 곧 **카오스 엔지니어링(Chaos Engineering)**이라는 분야가 됐다.
 

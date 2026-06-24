@@ -1,4 +1,4 @@
-# Day 8 - Control Tower와 Landing Zone: 거버넌스의 자동화
+# Day 3 - Control Tower와 Landing Zone: 거버넌스의 자동화
 
 2017년 Organizations와 SCP가 등장한 후에도 한 가지 큰 문제가 남아 있었다. **신규 계정을 만들 때마다 같은 작업을 반복해야 한다는 것이다.** CloudTrail 활성화, Config 활성화, 기본 IAM Role 생성, SCP 부착, Log Archive로 트레일 전송 설정, Audit 계정에 GuardDuty Master 연결 — 한 계정당 30분 ~ 1시간이 걸리는 작업이었다. 100개 계정을 만들려면 100시간. 그 사이 실수로 한 단계를 빼먹으면 그 계정만 PCI 감사에서 fail.
 

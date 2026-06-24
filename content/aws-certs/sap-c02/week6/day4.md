@@ -1,4 +1,4 @@
-# Day 29 - 마이그레이션 가속 도구: App2Container, MAP, Migration Hub
+# Day 4 - 마이그레이션 가속 도구: App2Container, MAP, Migration Hub
 
 마이그레이션 프로젝트에서 "이전"은 전체 여정의 절반도 안 된다. 나머지 절반은 **무엇을 이전할지 결정하는 Discovery, 얼마나 드는지 파악하는 TCO 분석, 조직 전체가 안전하게 이전하는 Landing Zone 구축, 이전 중 상태를 추적하는 대시보드**다. AWS는 이 각 단계를 지원하는 전문 도구와 프로그램을 제공한다.
 

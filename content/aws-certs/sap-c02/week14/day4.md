@@ -1,4 +1,4 @@
-# Day 69 - RDS·Aurora·DynamoDB Global의 DR — 동기·비동기 복제의 내부, Aurora 스토리지 아키텍처, Active-Active의 충돌 해결
+# Day 4 - RDS·Aurora·DynamoDB Global의 DR — 동기·비동기 복제의 내부, Aurora 스토리지 아키텍처, Active-Active의 충돌 해결
 
 데이터베이스의 DR은 다른 모든 계층의 DR과 결이 다르다. 웹 서버는 죽으면 다시 띄우면 그만이지만, **데이터는 한 번 잃으면 영원히 사라진다**. 그래서 데이터 계층의 복제 방식은 곧 시스템의 RPO를 결정하는 가장 근본적인 설계 결정이며, 여기엔 빛의 속도와 분산 합의(consensus)라는 물리·이론적 한계가 그대로 작용한다. AWS는 RDS·Aurora·DynamoDB라는 세 갈래로 이 문제를 풀었고, 각각이 택한 트레이드오프가 시험의 핵심이다.
 

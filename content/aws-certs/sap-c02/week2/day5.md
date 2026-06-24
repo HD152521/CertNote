@@ -1,4 +1,4 @@
-# Day 10 - 2주차 통합: Organizations·SCP·CT·IDC가 한 시나리오에서 만날 때
+# Day 5 - 2주차 통합: Organizations·SCP·CT·IDC가 한 시나리오에서 만날 때
 
 Pro 시험에서 도메인 1(복잡한 조직 설계, 26%)의 핵심 4종은 **Organizations · SCP · Control Tower · IAM Identity Center**다. 한 주 동안 이 4종을 분리해서 봤다면, 오늘은 **한 시나리오에서 동시에 작동하는** Pro 문제를 본격적으로 풀어본다.
 

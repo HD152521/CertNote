@@ -1,4 +1,4 @@
-# Day 7 - 개발자가 만져야 하는 네트워크 경계: Security Group, Key Pair, User Data
+# Day 2 - 개발자가 만져야 하는 네트워크 경계: Security Group, Key Pair, User Data
 
 EC2 인스턴스를 만들고 나서 가장 자주 받는 질문은 두 가지다. "왜 SSH가 안 붙어요?"와 "왜 코드는 떴는데 80번 포트가 안 열려요?". 둘 다 답은 같다. 네트워크 통제와 부트스트랩 메커니즘을 잘못 이해해서다. SAA는 "어떤 SG를 어디에 둘 것인가"라는 아키텍처 시점에서 묻는다면, DVA는 "그 SG를 SDK·CLI로 어떻게 만들고, User Data 안에서 Secrets Manager를 어떻게 부르고, IMDSv2를 어떻게 강제하는가"까지 묻는다. 같은 보안 그룹이지만 코드 한 줄, ARN 하나의 차이가 시험 정답을 가른다.
 

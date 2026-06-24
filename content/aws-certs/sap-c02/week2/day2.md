@@ -1,4 +1,4 @@
-# Day 7 - Service Control Policy: 천장(Ceiling)이라는 사고 도구
+# Day 2 - Service Control Policy: 천장(Ceiling)이라는 사고 도구
 
 SCP를 "권한 부여 정책"으로 이해하고 시험에 들어가는 사람의 90%는 도메인 1을 놓친다. SCP의 본질을 한 문장으로 표현하면 이렇다 — **"SCP는 권한을 절대 부여하지 않는다. 오직 허용될 수 있는 권한의 최대 한계(ceiling)만 정한다."** 이 한 문장을 제대로 이해하지 못하면 Pro 시험의 "SCP 보기 4개 중 옳은 것" 시나리오에서 매번 헷갈린다.
 

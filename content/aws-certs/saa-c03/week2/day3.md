@@ -1,4 +1,4 @@
-# Day 8 - 보안 그룹 vs NACL, 그리고 Flow Logs가 말해주는 것
+# Day 3 - 보안 그룹 vs NACL, 그리고 Flow Logs가 말해주는 것
 
 VPC 안의 패킷에는 두 개의 방화벽이 차례로 작용한다. 서브넷 경계에 있는 NACL(Network ACL)과 인스턴스(정확히는 ENI) 경계에 있는 Security Group이다. 이 둘은 비슷해 보이지만 작동 방식이 근본적으로 다르고, 그 차이가 시험에 가장 자주 등장하는 포인트다. 두 방화벽의 차이는 결국 *stateful vs stateless*, *role-based vs network-based*, *whitelist-only vs blacklist-capable*이라는 세 축에서 정리된다 — 그리고 이 세 축은 모든 방화벽 설계의 기본 분류 체계이기도 하다.
 

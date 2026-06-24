@@ -1,4 +1,4 @@
-# Day 7 - IGW, NAT Gateway, Bastion: 인터넷과 사설망 사이의 다리들
+# Day 2 - IGW, NAT Gateway, Bastion: 인터넷과 사설망 사이의 다리들
 
 VPC를 만들고 EC2를 띄우면 곧 마주치는 두 가지 욕구가 있다. "외부에서 SSH로 들어와 작업하고 싶다", "내 Private 인스턴스가 외부 API를 호출하고 싶다." 이 둘은 비슷해 보이지만 정반대 방향의 트래픽이고, AWS는 각각에 다른 솔루션을 준비해두었다. IGW와 NAT Gateway가 패킷의 흐름을, Bastion과 Session Manager가 운영자의 접근을 다룬다. 이 네 가지를 헷갈리지 않고 매핑하는 것이 SAA 시험 네트워크 영역의 약 30%를 직접 결정한다.
 

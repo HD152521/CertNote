@@ -1,4 +1,4 @@
-# Day 75 - 정부·헬스케어 컴플라이언스 종합 — HIPAA의 법적 구조, FedRAMP·GovCloud의 격리, Week 15 케이스 통합
+# Day 5 - 정부·헬스케어 컴플라이언스 종합 — HIPAA의 법적 구조, FedRAMP·GovCloud의 격리, Week 15 케이스 통합
 
 1996년 미국 의회는 **HIPAA(Health Insurance Portability and Accountability Act)**를 통과시켰다. 원래 목적은 "직장을 옮겨도 건강보험을 유지하게(portability)" 하는 것이었지만, 법의 진짜 유산은 부수 조항인 **Privacy Rule과 Security Rule** — 환자의 의료 정보(PHI)를 어떻게 보호해야 하는지를 규정한 부분이다. 2009년 **HITECH Act**가 이를 강화하며 위반 시 벌금을 대폭 올리고, 클라우드 같은 **비즈니스 제휴사(Business Associate)**도 직접 책임을 지게 만들었다. 그래서 AWS에서 PHI를 다루려면 **BAA(Business Associate Addendum)** 체결이 법적 전제가 된다. 정부·헬스케어 아키텍처가 다른 도메인과 다른 이유가 여기 있다 — **컴플라이언스가 서비스 선택지 자체를 제한한다.**
 

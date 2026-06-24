@@ -1,4 +1,4 @@
-# Day 28 - Step Functions와 AppSync: 오케스트레이션과 GraphQL
+# Day 3 - Step Functions와 AppSync: 오케스트레이션과 GraphQL
 
 Lambda 함수 하나가 하나의 작업을 처리하는 것은 단순하다. 그런데 주문 처리처럼 검증 → 재고 확인 → 결제 → 배송 요청 → 알림이라는 여러 단계가 순서와 조건을 가지고 연결될 때, Lambda 안에서 이 흐름을 직접 코딩하면 어떻게 될까. 각 Lambda가 다음 Lambda를 호출하고, 실패 시 이전 단계를 취소하고, 어디까지 완료됐는지 추적하는 코드가 Lambda 비즈니스 로직과 뒤엉킨다. Step Functions는 이 흐름 제어(Flow Control)를 코드 밖으로 꺼내서 시각적 상태 머신으로 정의한다.
 

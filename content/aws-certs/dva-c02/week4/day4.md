@@ -1,4 +1,4 @@
-# Day 19 - WebSocket API와 HTTP API: 실시간 연결과 경량 프록시의 내부 동작
+# Day 4 - WebSocket API와 HTTP API: 실시간 연결과 경량 프록시의 내부 동작
 
 API Gateway의 세 가지 API 유형(REST, HTTP, WebSocket)은 단순히 기능 차이가 아니라 근본적으로 다른 네트워킹 패러다임을 구현한다. REST API와 HTTP API는 HTTP/1.1의 요청-응답 모델 위에 구축되고, WebSocket API는 RFC 6455(WebSocket Protocol)의 지속적 양방향 연결을 구현한다. 어떤 API 유형을 선택하느냐는 아키텍처 설계 결정이며, 잘못 선택하면 70% 비용 낭비가 되거나 실시간 기능이 근본적으로 불가능해진다. 이 파일에서는 WebSocket API의 연결 생명주기와 HTTP API가 REST API와 어떻게 다른지를 내부 동작 수준에서 해부한다.
 

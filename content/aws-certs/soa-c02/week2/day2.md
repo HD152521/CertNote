@@ -1,4 +1,4 @@
-# Day 7 - CloudWatch Logs: Log Group의 내부 구조와 Subscription 패턴
+# Day 2 - CloudWatch Logs: Log Group의 내부 구조와 Subscription 패턴
 
 운영자가 장애 디버깅을 시작하는 곳은 결국 로그다. 메트릭이 "지표 하나가 비정상"을 알려준다면, 로그는 "정확히 어떤 요청에서 어떤 예외가 났는가"를 알려준다. 그래서 운영자의 일상 도구 No.1이 CloudWatch Logs다. 동시에 운영자의 청구서를 가장 많이 폭증시키는 서비스 중 하나도 CloudWatch Logs다. 보존 정책을 안 정하고 VPC Flow Logs를 그대로 흘려보내면, 한 달 뒤에 \$10,000 청구서가 도착한다.
 

@@ -1,4 +1,4 @@
-# Day 58 - SAM: 서버리스를 위해 CloudFormation을 압축하다
+# Day 3 - SAM: 서버리스를 위해 CloudFormation을 압축하다
 
 CloudFormation으로 람다 함수 하나를 제대로 배포하려면 생각보다 많은 게 필요하다. `AWS::Lambda::Function`만 있는 게 아니라, 그 함수를 호출할 권한(`AWS::Lambda::Permission`), 실행 역할(`AWS::IAM::Role`), API Gateway라면 RestApi·Resource·Method·Deployment·Stage가 줄줄이 따라붙는다. 함수 하나에 50~100줄의 보일러플레이트가 붙는 셈이다. 서버리스는 "작은 함수를 빠르게"가 핵심인데, 정작 그 함수를 선언하는 데 드는 수고가 너무 컸다. **AWS SAM(Serverless Application Model)** 은 이 문제를 정면으로 친다 — 서버리스에 특화된 짧은 문법을 제공하고, 배포 시 그것을 완전한 CloudFormation으로 "펼쳐(transform)" 준다.
 

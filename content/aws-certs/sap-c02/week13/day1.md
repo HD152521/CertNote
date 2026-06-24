@@ -1,4 +1,4 @@
-# Day 61 - Well-Architected Framework 개요 — 6 기둥의 기원, WA Tool의 내부 동작, Lens의 설계 철학
+# Day 1 - Well-Architected Framework 개요 — 6 기둥의 기원, WA Tool의 내부 동작, Lens의 설계 철학
 
 새로운 아키텍트가 AWS 콘솔을 처음 열면 200개가 넘는 서비스 앞에서 마비된다. "RDS를 쓸까 Aurora를 쓸까, Multi-AZ를 켤까 말까, 이 IAM 정책이 충분히 안전한가"라는 수천 개의 결정이 쌓여 결국 하나의 아키텍처가 된다. 문제는 이 결정들이 대개 **암묵지(tacit knowledge)**로 남아, 다른 팀·다른 프로젝트로 전수되지 않는다는 점이다. Well-Architected Framework(이하 WA)는 AWS가 2012년부터 수만 건의 고객 아키텍처 리뷰를 진행하며 축적한 그 암묵지를 **6개의 기둥과 표준 질문지로 형식지(explicit knowledge)화**한 결과물이다.
 

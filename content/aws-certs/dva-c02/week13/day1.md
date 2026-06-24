@@ -1,4 +1,4 @@
-# Day 61 - 최종 복습 1: IAM, EC2, Lambda, API Gateway
+# Day 1 - 최종 복습 1: IAM, EC2, Lambda, API Gateway
 
 📅 날짜: 2026년 8월 9일 (일요일)  
 🎯 주제: 핵심 서비스 최종 복습 1  

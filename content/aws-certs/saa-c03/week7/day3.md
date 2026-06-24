@@ -1,4 +1,4 @@
-# Day 33 - EventBridge: 이벤트 라우팅 허브가 SaaS·AWS·내부 앱을 한 곳에 모으는 방식
+# Day 3 - EventBridge: 이벤트 라우팅 허브가 SaaS·AWS·내부 앱을 한 곳에 모으는 방식
 
 Day 1과 Day 2에서 본 SQS와 SNS는 둘 다 "내가 명시적으로 보내는 메시지"를 다룬다. 생산자가 SendMessage·Publish API를 부르고 그게 어디로 가는지를 코드로 정한다. 그런데 현대 클라우드 시스템에서 발생하는 이벤트의 대부분은 그렇지 않다. S3에 파일이 올라가는 순간, EC2 인스턴스가 상태 변경되는 순간, CloudFormation 스택이 배포 실패하는 순간, AWS Health가 region 장애를 알리는 순간 — 이것들은 "내가 명시적으로 보내는" 게 아니라 **AWS 인프라가 발생시키는 사건들**이다. 여기에 Datadog 알람, Zendesk 티켓 생성, Auth0 로그인 실패, GitHub PR merge 같은 SaaS 이벤트까지 합치면, 한 회사가 처리해야 할 이벤트 소스는 수십에서 수백 개다.
 

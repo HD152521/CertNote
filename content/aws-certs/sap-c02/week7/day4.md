@@ -1,4 +1,4 @@
-# Day 34 - 서비스 메시의 해부 — App Mesh, Service Connect, Cloud Map이 갈리는 지점
+# Day 4 - 서비스 메시의 해부 — App Mesh, Service Connect, Cloud Map이 갈리는 지점
 
 마이크로서비스를 10개 띄우는 순간, 새로운 종류의 문제가 시작된다. service-a가 service-b의 IP를 어떻게 알 것인가, service-b가 갑자기 5xx를 뱉으면 service-a는 얼마나 빨리 재시도해야 하는가, 통신을 모두 mTLS로 암호화하려면 인증서는 누가 발급·회전하는가, 새 버전을 10%만 트래픽 받게 하려면 어디서 라우팅을 갈라야 하는가. 이 모든 문제를 애플리케이션 코드 안에서 풀면 코드가 비즈니스 로직보다 인프라 코드로 더 두꺼워진다. 서비스 메시는 이 문제를 코드 밖 사이드카 프록시로 옮긴 답이다. SAP 시험은 AWS의 세 가지 옵션 — Cloud Map·ECS Service Connect·App Mesh — 의 차이를 시나리오로 자주 묻는다.
 

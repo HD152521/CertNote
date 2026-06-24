@@ -1,4 +1,4 @@
-# Day 50 - Week 10 종합 복습: ML/AI 아키텍처 의사결정 + 시나리오 12문항
+# Day 5 - Week 10 종합 복습: ML/AI 아키텍처 의사결정 + 시나리오 12문항
 
 한 주 동안 SageMaker(ML 플랫폼), Bedrock(생성형 AI), Managed AI(사전 학습형 서비스), MLOps(운영 자동화)를 다뤘다. 오늘은 이 네 영역을 따로 외우는 대신, SAP-C02 시험이 실제로 묻는 방식 — **"이 비즈니스 시나리오에 어떤 ML/AI 구성이 정답인가"** — 의 의사결정 흐름으로 통합한다. ML/AI 영역의 시험 함정은 거의 항상 "직접 만들 것인가 vs 관리형을 쓸 것인가", "비슷한 서비스 중 무엇인가(Macie vs Comprehend, Async vs Batch, RAG vs fine-tuning)"의 경계에서 나온다.
 

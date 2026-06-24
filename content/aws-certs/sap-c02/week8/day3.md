@@ -1,4 +1,4 @@
-# Day 38 - EventBridge: Event Bus, Pipes, Scheduler의 통합 모델
+# Day 3 - EventBridge: Event Bus, Pipes, Scheduler의 통합 모델
 
 마이크로서비스가 다섯 개를 넘어가는 순간, 시스템의 가장 큰 비용은 코드가 아니라 **결합(coupling)**이 된다. A 서비스가 B를 직접 호출하고 B는 C를 호출하는 식의 체인은 처음엔 단순해 보이지만, B의 장애가 A에게 전파되고 D 같은 새 서비스를 끼워 넣을 때마다 양쪽 코드를 모두 수정해야 한다. 이 문제를 푸는 패턴이 **Event-Driven Architecture(EDA)**다. 서비스는 이벤트를 발행하고, 다른 서비스가 그 이벤트를 구독한다. 발행자는 누가 듣는지 모르고, 구독자는 누가 보냈는지 모른다.
 

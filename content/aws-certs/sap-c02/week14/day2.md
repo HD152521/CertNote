@@ -1,4 +1,4 @@
-# Day 67 - 백업: AWS Backup·Cross-Region Copy — WORM의 법적 기원, Vault Lock의 불가역성, 멀티 계정 백업 거버넌스
+# Day 2 - 백업: AWS Backup·Cross-Region Copy — WORM의 법적 기원, Vault Lock의 불가역성, 멀티 계정 백업 거버넌스
 
 1990년대 월스트리트의 한 증권사가 고객 이메일을 삭제했다는 의혹으로 SEC 조사를 받았다. 이 사건은 미국 증권 규제에 **"한 번 기록하면 누구도 지우거나 바꿀 수 없는 보관(WORM, Write Once Read Many)"**을 의무화하는 SEC Rule 17a-4(f)를 낳았다. 광디스크나 특수 테이프로만 충족되던 이 요구사항을, AWS는 **Backup Vault Lock의 Compliance 모드**라는 소프트웨어로 구현했다 — 활성화하면 AWS의 root 사용자조차 백업을 지울 수 없다.
 

@@ -1,4 +1,4 @@
-# Day 54 - 엣지 보안: WAF·Shield·Firewall Manager와 DDoS 방어의 계층
+# Day 4 - 엣지 보안: WAF·Shield·Firewall Manager와 DDoS 방어의 계층
 
 웹 애플리케이션을 인터넷에 노출하는 순간, 두 종류의 적이 동시에 찾아온다. 하나는 **양(volume)으로 밀어붙이는 DDoS** — 트래픽을 폭증시켜 서버를 마비시킨다. 다른 하나는 **꾀(payload)로 파고드는 애플리케이션 공격** — SQL 인젝션, XSS처럼 정교한 요청으로 데이터를 탈취한다. 이 둘은 방어하는 계층이 다르다. DDoS는 주로 L3/L4(네트워크·전송)에서, 인젝션은 L7(애플리케이션)에서 막는다. 그래서 AWS의 엣지 보안은 **Shield(DDoS)**와 **WAF(L7 필터링)**를 분리하고, 이를 멀티 계정에 일괄 적용하는 **Firewall Manager**, VPC 내부를 지키는 **Network Firewall**, 악성 도메인을 막는 **DNS Firewall**로 확장한다.
 

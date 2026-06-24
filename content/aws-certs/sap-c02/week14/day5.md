@@ -1,4 +1,4 @@
-# Day 70 - 복원력·DR 종합 복습: RTO/RPO를 지키는 4가지 전략과 검증 도구
+# Day 5 - 복원력·DR 종합 복습: RTO/RPO를 지키는 4가지 전략과 검증 도구
 
 DR(Disaster Recovery)을 "백업을 해두는 것"으로 이해하면 SAA 수준이다. Pro에서는 **RTO(Recovery Time Objective, 복구 시간 목표)**와 **RPO(Recovery Point Objective, 데이터 손실 허용 시간)**를 비즈니스가 정의하고, 그 숫자에 맞는 DR 전략을 비용 효율적으로 설계해야 한다. AWS는 이를 위해 **4가지 전략(Backup/Restore, Pilot Light, Warm Standby, Multi-Site)**과 **자동 검증 도구(Resilience Hub, FIS, DRS, Route 53 ARC)**를 제공한다. 오늘은 14주차에 본 DR 전체를 한 시나리오로 정리한다.
 
