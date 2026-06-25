@@ -24,7 +24,10 @@ export const mdxOptions: MDXRemoteProps['options'] = {
       [
         rehypePrettyCode,
         {
-          theme: { dark: 'github-dark-dimmed', light: 'github-light' },
+          // 단일 테마: 코드블록은 라이트/다크 모두 다크 카드로 통일(globals.css의 .article pre).
+          // 단일 테마는 토큰 색을 인라인 style로 직접 내보내 별도 변수 CSS가 필요 없고,
+          // 두 테마를 만드는 비용·HTML 크기를 줄인다.
+          theme: 'github-dark-dimmed',
           keepBackground: false,
         },
       ],
