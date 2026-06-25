@@ -19,6 +19,14 @@
       "order": 1
     },
     {
+      "slug": "mla-c01",
+      "code": "MLA-C01",
+      "level": "associate",
+      "name": "Machine Learning Engineer - Associate",
+      "weeks": 10,
+      "order": 8
+    },
+    {
       "slug": "saa-c03",
       "code": "SAA-C03",
       "level": "associate",
