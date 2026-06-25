@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { BellRing } from 'lucide-react';
 import { emitAuthChange } from '@/lib/auth/authEvents';
 import { enablePush, isPushSupported } from '@/lib/push/client';
-import { PURPOSE_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profileOptions';
+import { OCCUPATION_OPTIONS, PURPOSE_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profileOptions';
 
 type Mode = 'login' | 'signup';
 
@@ -182,9 +182,10 @@ export function AuthForm({ mode, certs = [] }: AuthFormProps) {
             </div>
             <div className="space-y-1">
               <label htmlFor="occupation" className="text-sm text-fg-muted">직업 <span className="text-fg-faint">(선택)</span></label>
-              <input id="occupation" type="text" value={occupation}
-                onChange={(e) => setOccupation(e.target.value)} className={INPUT_CLS}
-                placeholder="예: 대학생, 백엔드 개발자, 취업준비생" />
+              <select id="occupation" value={occupation} onChange={(e) => setOccupation(e.target.value)} className={INPUT_CLS}>
+                <option value="">선택 안 함</option>
+                {OCCUPATION_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
             </div>
             <div className="space-y-1">
               <label htmlFor="purpose" className="text-sm text-fg-muted">학습 목적 <span className="text-fg-faint">(선택)</span></label>

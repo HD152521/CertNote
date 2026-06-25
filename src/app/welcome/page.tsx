@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, PlayCircle, RefreshCw, Trophy } from 'lucide-react';
+import { BookOpen, PlayCircle, RefreshCw, Trophy, Share, MoreVertical } from 'lucide-react';
 
 export const metadata = {
   title: '시작하기 · CertNote',
@@ -28,6 +28,20 @@ const STEPS = [
   },
 ];
 
+// 홈 화면 추가(PWA 설치) 안내 — 기기별 짧은 단계.
+const INSTALL = [
+  {
+    icon: Share,
+    device: '아이폰 (Safari)',
+    steps: ['하단 공유 버튼 (□↑) 탭', "'홈 화면에 추가' 선택", "오른쪽 위 '추가' 탭"],
+  },
+  {
+    icon: MoreVertical,
+    device: '갤럭시·안드로이드 (Chrome)',
+    steps: ['오른쪽 위 메뉴 (⋮) 탭', "'홈 화면에 추가' 또는 '앱 설치' 선택", "'추가' 탭"],
+  },
+];
+
 // 가입 직후 첫 방문 온보딩. 핵심 사용 흐름 4단계 안내.
 export default function WelcomePage() {
   return (
@@ -48,6 +62,31 @@ export default function WelcomePage() {
           </li>
         ))}
       </ol>
+
+      {/* 홈 화면 추가 안내: 앱처럼 쓰면 편하다는 점 + 기기별 짧은 단계 */}
+      <section className="space-y-3 rounded-xl border border-border bg-bg-subtle p-4">
+        <div className="space-y-0.5">
+          <p className="text-sm font-semibold">📲 홈 화면에 추가하면 앱처럼 써요</p>
+          <p className="text-xs text-fg-muted">주소창 없이 한 번에 열리고, 알림도 더 잘 받아요. (30초)</p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {INSTALL.map(({ icon: Icon, device, steps }) => (
+            <div key={device} className="rounded-lg border border-border bg-bg p-3">
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-medium">
+                <Icon className="h-3.5 w-3.5 text-accent" /> {device}
+              </p>
+              <ol className="space-y-1 text-xs text-fg-muted">
+                {steps.map((s, i) => (
+                  <li key={s} className="flex gap-1.5">
+                    <span className="font-mono text-fg-faint">{i + 1}.</span>
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <Link
         href="/"

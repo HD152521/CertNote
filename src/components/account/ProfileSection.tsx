@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CertOption } from '@/components/AuthForm';
-import { PURPOSE_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profileOptions';
+import { OCCUPATION_OPTIONS, PURPOSE_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profileOptions';
 
 export interface ProfileValues {
   name: string;
@@ -74,7 +74,10 @@ export function ProfileSection({ certs, initial }: { certs: CertOption[]; initia
           </select>
         </Field>
         <Field label="직업 (선택)">
-          <input type="text" value={v.occupation} onChange={(e) => set('occupation', e.target.value)} className={INPUT_CLS} placeholder="예: 대학생, 백엔드 개발자" />
+          <select value={v.occupation} onChange={(e) => set('occupation', e.target.value)} className={INPUT_CLS}>
+            <option value="">선택 안 함</option>
+            {OCCUPATION_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
         </Field>
         <Field label="학습 목적 (선택)">
           <select value={v.purpose} onChange={(e) => set('purpose', e.target.value)} className={INPUT_CLS}>
