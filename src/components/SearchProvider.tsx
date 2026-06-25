@@ -1,7 +1,10 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { SearchDialog } from './SearchDialog';
+import dynamic from 'next/dynamic';
+
+// 검색 다이얼로그는 Fuse.js를 포함해 무겁다. 검색을 처음 열 때만 청크를 로드(초기 번들에서 제외).
+const SearchDialog = dynamic(() => import('./SearchDialog').then((m) => m.SearchDialog), { ssr: false });
 
 interface SearchContextValue { open: () => void; close: () => void; }
 
