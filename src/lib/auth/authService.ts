@@ -1,6 +1,6 @@
 import { AppError } from './errors';
 import { hashPassword, verifyPassword } from './passwords';
-import type { UserRecord, UserRepository } from './types';
+import type { SignupProfile, UserRecord, UserRepository } from './types';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
@@ -22,7 +22,7 @@ function assertValidCredentials(email: string, password: string): void {
 export class AuthService {
   constructor(private readonly users: UserRepository) {}
 
-  async signup(email: string, password: string): Promise<UserRecord> {
+  async signup(email: string, password: string, profile?: SignupProfile): Promise<UserRecord> {
     assertValidCredentials(email, password);
     const normalized = normalizeEmail(email);
     const existing = await this.users.findByEmail(normalized);
@@ -32,7 +32,7 @@ export class AuthService {
     const passwordHash = await hashPassword(password);
     // 신규 가입자는 미인증 상태로 생성(인증 메일은 signup 라우트에서 발송).
     // 기존 사용자는 마이그레이션 DEFAULT true라 영향 없음.
-    return this.users.create({ email: normalized, passwordHash, emailVerified: false });
+    return this.users.create({ email: normalized, passwordHash, emailVerified: false, profile });
   }
 
   async login(email: string, password: string): Promise<UserRecord> {

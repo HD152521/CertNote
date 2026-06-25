@@ -22,6 +22,18 @@ try {
   `);
   console.log('✓ users 테이블 준비 완료');
 
+  // 회원가입 프로필(테스터 데이터 수집). 모두 nullable — 기존 사용자/선택 항목 대비.
+  await pool.query(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS name             TEXT,
+      ADD COLUMN IF NOT EXISTS birthdate        DATE,
+      ADD COLUMN IF NOT EXISTS occupation       TEXT,
+      ADD COLUMN IF NOT EXISTS target_cert      TEXT,
+      ADD COLUMN IF NOT EXISTS purpose          TEXT,
+      ADD COLUMN IF NOT EXISTS experience_level TEXT;
+  `);
+  console.log('✓ users 프로필 컬럼 준비 완료');
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS quiz_attempts (
       id           BIGSERIAL PRIMARY KEY,

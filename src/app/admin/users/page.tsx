@@ -18,6 +18,12 @@ interface UserRow {
   role: string;
   period_end: string | null;
   days_left: number | null;
+  name: string | null;
+  birthdate: string | null;
+  occupation: string | null;
+  target_cert: string | null;
+  purpose: string | null;
+  experience_level: string | null;
 }
 
 export default async function AdminUsersPage() {
@@ -26,7 +32,10 @@ export default async function AdminUsersPage() {
     query<UserRow>(`SELECT email, plan, role,
         to_char(current_period_end AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS period_end,
         CASE WHEN current_period_end IS NULL THEN NULL
-             ELSE GREATEST(0, CEIL(EXTRACT(EPOCH FROM (current_period_end - now())) / 86400))::int END AS days_left
+             ELSE GREATEST(0, CEIL(EXTRACT(EPOCH FROM (current_period_end - now())) / 86400))::int END AS days_left,
+        name,
+        to_char(birthdate, 'YYYY-MM-DD') AS birthdate,
+        occupation, target_cert, purpose, experience_level
       FROM users ORDER BY created_at DESC LIMIT 500`),
   ]);
 

@@ -9,6 +9,25 @@ interface AdminUser {
   role: string;
   period_end: string | null; // 'YYYY-MM-DD'(KST), null=무기한
   days_left: number | null;
+  name: string | null;
+  birthdate: string | null; // 'YYYY-MM-DD'
+  occupation: string | null;
+  target_cert: string | null; // 자격증 slug
+  purpose: string | null;
+  experience_level: string | null;
+}
+
+// 가입 시 수집한 프로필을 한 줄 요약으로(빈 값은 생략).
+function profileLine(u: AdminUser): string {
+  const parts = [
+    u.name,
+    u.birthdate,
+    u.occupation,
+    u.target_cert ? `목표:${u.target_cert}` : null,
+    u.purpose,
+    u.experience_level,
+  ].filter(Boolean);
+  return parts.join(' · ');
 }
 
 // 현재 유저 목록 + Pro 부여/해지. /api/admin/grant 재사용.
@@ -48,18 +67,23 @@ export function AdminUserList({ users }: { users: AdminUser[] }) {
           const isPro = u.plan === 'pro';
           return (
             <li key={u.email} className="flex items-center justify-between gap-3 px-3 py-2">
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="truncate">{u.email}</span>
-                {u.role === 'admin' && (
-                  <span className="shrink-0 rounded bg-bg-subtle px-1.5 py-0.5 text-[10px] text-fg-muted">admin</span>
-                )}
-                <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${isPro ? 'bg-accent/10 text-accent' : 'bg-bg-subtle text-fg-faint'}`}>
-                  {isPro ? 'Pro' : 'Free'}
-                </span>
-                {isPro && (
-                  <span className={`shrink-0 text-[11px] tabular-nums ${u.days_left !== null && u.days_left <= 7 ? 'text-danger' : 'text-fg-faint'}`}>
-                    {u.period_end === null ? '무기한' : `~${u.period_end} · ${u.days_left}일`}
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="truncate">{u.email}</span>
+                  {u.role === 'admin' && (
+                    <span className="shrink-0 rounded bg-bg-subtle px-1.5 py-0.5 text-[10px] text-fg-muted">admin</span>
+                  )}
+                  <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${isPro ? 'bg-accent/10 text-accent' : 'bg-bg-subtle text-fg-faint'}`}>
+                    {isPro ? 'Pro' : 'Free'}
                   </span>
+                  {isPro && (
+                    <span className={`shrink-0 text-[11px] tabular-nums ${u.days_left !== null && u.days_left <= 7 ? 'text-danger' : 'text-fg-faint'}`}>
+                      {u.period_end === null ? '무기한' : `~${u.period_end} · ${u.days_left}일`}
+                    </span>
+                  )}
+                </div>
+                {profileLine(u) && (
+                  <span className="truncate text-[11px] text-fg-faint">{profileLine(u)}</span>
                 )}
               </div>
               {isPro ? (

@@ -9,8 +9,16 @@ import { enablePush, isPushSupported } from '@/lib/push/client';
 
 type Mode = 'login' | 'signup';
 
+export interface CertOption {
+  slug: string;
+  code: string;
+  name: string;
+}
+
 interface AuthFormProps {
   mode: Mode;
+  // 회원가입의 "목표 자격증" 드롭다운용. 서버 컴포넌트(signup 페이지)에서 주입.
+  certs?: CertOption[];
 }
 
 const COPY: Record<Mode, { title: string; submit: string; altText: string; altHref: string; altLabel: string }> = {
@@ -18,13 +26,27 @@ const COPY: Record<Mode, { title: string; submit: string; altText: string; altHr
   signup: { title: '회원가입', submit: '가입하기', altText: '이미 계정이 있으신가요?', altHref: '/login', altLabel: '로그인' },
 };
 
-export function AuthForm({ mode }: AuthFormProps) {
+const PURPOSE_OPTIONS = ['취업 준비', '이직', '승진/평가', '자기계발', '학교/학점', '기타'];
+const EXPERIENCE_OPTIONS = ['비전공·입문', 'IT 1년 미만', '1~3년', '3~5년', '5년 이상'];
+
+const INPUT_CLS =
+  'w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-border-strong';
+
+export function AuthForm({ mode, certs = [] }: AuthFormProps) {
   const router = useRouter();
   const params = useSearchParams();
   const copy = COPY[mode];
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  // 회원가입 프로필(테스터 데이터 수집)
+  const [name, setName] = useState('');
+  const [birthdate, setBirthdate] = useState('');
+  const [occupation, setOccupation] = useState('');
+  const [targetCert, setTargetCert] = useState('');
+  const [purpose, setPurpose] = useState('');
+  const [experienceLevel, setExperienceLevel] = useState('');
+  const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   // 회원가입 성공 후, 알림 권한을 묻는 단계로 전환(지원 브라우저에 한해).
@@ -44,7 +66,11 @@ export function AuthForm({ mode }: AuthFormProps) {
       const res = await fetch(`/api/auth/${mode}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(
+          mode === 'signup'
+            ? { email, password, name, birthdate, occupation, targetCert, purpose, experienceLevel, consent }
+            : { email, password },
+        ),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -132,10 +158,62 @@ export function AuthForm({ mode }: AuthFormProps) {
           />
           {mode === 'signup' && <p className="text-xs text-fg-faint">8자 이상</p>}
         </div>
+
+        {mode === 'signup' && (
+          <>
+            <div className="space-y-1">
+              <label htmlFor="name" className="text-sm text-fg-muted">이름</label>
+              <input id="name" type="text" autoComplete="name" required value={name}
+                onChange={(e) => setName(e.target.value)} className={INPUT_CLS} />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="birthdate" className="text-sm text-fg-muted">생년월일</label>
+              <input id="birthdate" type="date" autoComplete="bday" required value={birthdate}
+                onChange={(e) => setBirthdate(e.target.value)} className={INPUT_CLS} />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="targetCert" className="text-sm text-fg-muted">목표 자격증</label>
+              <select id="targetCert" required value={targetCert}
+                onChange={(e) => setTargetCert(e.target.value)} className={INPUT_CLS}>
+                <option value="" disabled>선택해 주세요</option>
+                {certs.map((c) => (
+                  <option key={c.slug} value={c.slug}>{c.code} · {c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="occupation" className="text-sm text-fg-muted">직업 <span className="text-fg-faint">(선택)</span></label>
+              <input id="occupation" type="text" value={occupation}
+                onChange={(e) => setOccupation(e.target.value)} className={INPUT_CLS}
+                placeholder="예: 대학생, 백엔드 개발자, 취업준비생" />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="purpose" className="text-sm text-fg-muted">학습 목적 <span className="text-fg-faint">(선택)</span></label>
+              <select id="purpose" value={purpose} onChange={(e) => setPurpose(e.target.value)} className={INPUT_CLS}>
+                <option value="">선택 안 함</option>
+                {PURPOSE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="experienceLevel" className="text-sm text-fg-muted">현재 수준/경력 <span className="text-fg-faint">(선택)</span></label>
+              <select id="experienceLevel" value={experienceLevel}
+                onChange={(e) => setExperienceLevel(e.target.value)} className={INPUT_CLS}>
+                <option value="">선택 안 함</option>
+                {EXPERIENCE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <label className="flex items-start gap-2 text-xs text-fg-muted">
+              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
+                className="mt-0.5 shrink-0" />
+              <span>(필수) 이름·생년월일 등 입력 정보를 서비스 제공 및 개선 목적으로 수집·이용하는 데 동의합니다.</span>
+            </label>
+          </>
+        )}
+
         {error && <p className="text-sm text-red-500" role="alert">{error}</p>}
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || (mode === 'signup' && !consent)}
           className="w-full rounded-md border border-border-strong px-3 py-2 text-sm font-medium transition hover:bg-fg/5 disabled:opacity-50"
         >
           {submitting ? '처리 중…' : copy.submit}
