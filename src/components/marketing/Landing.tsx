@@ -20,17 +20,24 @@ const HIGHLIGHTS = [
   },
 ];
 
-// 비로그인 방문자용 마케팅 랜딩.
-export function Landing() {
+interface LandingProps {
+  certCount: number;
+  pageCount: number;
+  questionCount: number;
+}
+
+// 비로그인 방문자용 마케팅 랜딩. 수치는 서버(root 페이지)에서 주입 → 자격증 추가 시 자동 반영.
+export function Landing({ certCount, pageCount, questionCount }: LandingProps) {
+  const nf = (n: number) => n.toLocaleString('ko-KR');
   return (
     <div className="mx-auto max-w-3xl space-y-16 py-8">
       <section className="space-y-5">
-        <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">AWS · 리눅스마스터 · 6 tracks</p>
+        <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">AWS · 리눅스마스터 · {certCount} tracks</p>
         <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
           출퇴근 15분,<br />자격증 한 권을 끝내는 가장 빠른 길
         </h1>
         <p className="max-w-xl text-lg text-fg-muted">
-          AWS 5종 + 리눅스마스터 1급. 매일 한 페이지씩 읽고, 2,696문항으로 실전 감각을 채우세요.
+          AWS 자격증 + 리눅스마스터 1급. 매일 한 페이지씩 읽고, {nf(questionCount)}문항으로 실전 감각을 채우세요.
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <Link href="/signup" className="rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-accent-fg transition hover:opacity-90">
@@ -54,9 +61,9 @@ export function Landing() {
       </section>
 
       <section className="grid grid-cols-3 gap-4 rounded-xl border border-border bg-bg-subtle p-6 text-center">
-        <div><p className="text-2xl font-bold">6</p><p className="text-xs text-fg-faint">자격증 트랙</p></div>
-        <div><p className="text-2xl font-bold">415</p><p className="text-xs text-fg-faint">학습 페이지</p></div>
-        <div><p className="text-2xl font-bold">2,696</p><p className="text-xs text-fg-faint">연습 문항</p></div>
+        <div><p className="text-2xl font-bold">{nf(certCount)}</p><p className="text-xs text-fg-faint">자격증 트랙</p></div>
+        <div><p className="text-2xl font-bold">{nf(pageCount)}</p><p className="text-xs text-fg-faint">학습 페이지</p></div>
+        <div><p className="text-2xl font-bold">{nf(questionCount)}</p><p className="text-xs text-fg-faint">연습 문항</p></div>
       </section>
 
       <section className="space-y-3 rounded-xl border border-border p-6">

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { BellRing } from 'lucide-react';
 import { emitAuthChange } from '@/lib/auth/authEvents';
 import { enablePush, isPushSupported } from '@/lib/push/client';
+import { PURPOSE_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profileOptions';
 
 type Mode = 'login' | 'signup';
 
@@ -25,9 +26,6 @@ const COPY: Record<Mode, { title: string; submit: string; altText: string; altHr
   login: { title: '로그인', submit: '로그인', altText: '계정이 없으신가요?', altHref: '/signup', altLabel: '회원가입' },
   signup: { title: '회원가입', submit: '가입하기', altText: '이미 계정이 있으신가요?', altHref: '/login', altLabel: '로그인' },
 };
-
-const PURPOSE_OPTIONS = ['취업 준비', '이직', '승진/평가', '자기계발', '학교/학점', '기타'];
-const EXPERIENCE_OPTIONS = ['비전공·입문', 'IT 1년 미만', '1~3년', '3~5년', '5년 이상'];
 
 const INPUT_CLS =
   'w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-border-strong';
@@ -53,8 +51,9 @@ export function AuthForm({ mode, certs = [] }: AuthFormProps) {
   const [askPush, setAskPush] = useState(false);
 
   function goNext() {
-    const next = params.get('next') || '/';
-    router.push(next);
+    const next = params.get('next');
+    // 신규 가입자는 첫 방문 온보딩으로(명시적 next가 없을 때).
+    router.push(next || (mode === 'signup' ? '/welcome' : '/'));
     router.refresh();
   }
 
@@ -205,7 +204,12 @@ export function AuthForm({ mode, certs = [] }: AuthFormProps) {
             <label className="flex items-start gap-2 text-xs text-fg-muted">
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
                 className="mt-0.5 shrink-0" />
-              <span>(필수) 이름·생년월일 등 입력 정보를 서비스 제공 및 개선 목적으로 수집·이용하는 데 동의합니다.</span>
+              <span>
+                (필수) 이름·생년월일 등 입력 정보를 서비스 제공 및 개선 목적으로 수집·이용하는 데 동의합니다.{' '}
+                <Link href="/privacy" target="_blank" onClick={(e) => e.stopPropagation()} className="text-fg underline underline-offset-2">
+                  개인정보처리방침
+                </Link>
+              </span>
             </label>
           </>
         )}
