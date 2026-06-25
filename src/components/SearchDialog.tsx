@@ -7,9 +7,9 @@ import { Search } from 'lucide-react';
 import type { SearchEntry, SearchBodyEntry } from '@/lib/content';
 import { cn } from '@/lib/cn';
 
-interface SearchDialogProps { index: SearchEntry[]; onClose: () => void; }
+interface SearchDialogProps { index?: SearchEntry[]; onClose: () => void; }
 
-export function SearchDialog({ index, onClose }: SearchDialogProps) {
+export function SearchDialog({ index = [], onClose }: SearchDialogProps) {
   const router = useRouter();
   const [q, setQ] = useState('');
   const [active, setActive] = useState(0);
@@ -74,7 +74,11 @@ export function SearchDialog({ index, onClose }: SearchDialogProps) {
           <kbd className="font-mono text-[10px] text-fg-faint border border-border rounded px-1.5 py-0.5">ESC</kbd>
         </div>
         <ul className="max-h-[60vh] overflow-y-auto p-1.5">
-          {results.length === 0 && (<li className="px-3 py-6 text-center text-sm text-fg-muted">결과 없음</li>)}
+          {results.length === 0 && (
+            <li className="px-3 py-6 text-center text-sm text-fg-muted">
+              {bodyIndex === null ? '불러오는 중…' : '결과 없음'}
+            </li>
+          )}
           {results.map((r, i) => (
             <li key={r.href}>
               <button type="button" onMouseEnter={() => setActive(i)}
@@ -89,7 +93,7 @@ export function SearchDialog({ index, onClose }: SearchDialogProps) {
           ))}
         </ul>
         <div className="border-t border-border px-3.5 py-2 text-[11px] text-fg-faint flex items-center justify-between">
-          <span>총 {index.length}개 페이지</span>
+          <span>총 {data.length}개 페이지</span>
           <span className="flex items-center gap-3">
             <span><kbd className="font-mono">↑↓</kbd> 이동</span>
             <span><kbd className="font-mono">↵</kbd> 열기</span>

@@ -5,7 +5,7 @@ import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { SearchProvider } from './SearchProvider';
 import { FeedbackWidget } from './FeedbackWidget';
-import { buildSearchIndex, getAllDays } from '@/lib/content';
+import { getAllDays } from '@/lib/content';
 
 interface AppShellProps { certs: CertMeta[]; children: ReactNode; }
 
@@ -13,9 +13,9 @@ export async function AppShell({ certs, children }: AppShellProps) {
   const certTrees = await Promise.all(
     certs.map(async (c) => ({ meta: c, days: await getAllDays(DEFAULT_CATEGORY, c.slug) })),
   );
-  const searchIndex = await buildSearchIndex(DEFAULT_CATEGORY);
+  // 검색 인덱스는 인라인하지 않는다 — SearchProvider가 검색창 첫 오픈 시 /api/search에서 받아온다.
   return (
-    <SearchProvider index={searchIndex}>
+    <SearchProvider>
       <div className="flex min-h-screen flex-col">
         <Header certTrees={certTrees} />
         <div className="mx-auto flex w-full max-w-[1400px] flex-1 px-4 lg:px-6">

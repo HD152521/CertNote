@@ -1,10 +1,9 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { SearchEntry } from '@/lib/content';
 import { SearchDialog } from './SearchDialog';
 
-interface SearchContextValue { open: () => void; close: () => void; index: SearchEntry[]; }
+interface SearchContextValue { open: () => void; close: () => void; }
 
 const SearchContext = createContext<SearchContextValue | null>(null);
 
@@ -14,9 +13,11 @@ export function useSearch() {
   return ctx;
 }
 
-interface SearchProviderProps { index: SearchEntry[]; children: ReactNode; }
+interface SearchProviderProps { children: ReactNode; }
 
-export function SearchProvider({ index, children }: SearchProviderProps) {
+// 검색 인덱스는 더 이상 모든 페이지에 인라인하지 않는다. 검색창을 처음 열 때
+// SearchDialog가 /api/search(force-static, CDN 캐시)에서 1회 받아온다 → 페이지 응답 경량화.
+export function SearchProvider({ children }: SearchProviderProps) {
   const [isOpen, setOpen] = useState(false);
   const open = useCallback(() => setOpen(true), []);
   const close = useCallback(() => setOpen(false), []);
@@ -41,9 +42,9 @@ export function SearchProvider({ index, children }: SearchProviderProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
   return (
-    <SearchContext.Provider value={{ open, close, index }}>
+    <SearchContext.Provider value={{ open, close }}>
       {children}
-      {isOpen && <SearchDialog onClose={close} index={index} />}
+      {isOpen && <SearchDialog onClose={close} />}
     </SearchContext.Provider>
   );
 }
