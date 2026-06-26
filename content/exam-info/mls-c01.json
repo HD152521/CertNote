@@ -1,0 +1,22 @@
+{
+  "examCode": "MLS-C01",
+  "fullName": "AWS Certified Machine Learning – Specialty",
+  "level": "specialty",
+  "questionCount": 65,
+  "durationMin": 180,
+  "passingScore": 750,
+  "scoreMax": 1000,
+  "costUsd": 300,
+  "validityYears": 3,
+  "languages": ["영어", "한국어", "일본어", "중국어 간체"],
+  "prerequisites": "없음(권장: ML/딥러닝 개발·운영 2년 이상 경험)",
+  "format": "객관식·복수응답",
+  "domains": [
+    { "name": "데이터 엔지니어링", "weight": 20 },
+    { "name": "탐색적 데이터 분석", "weight": 24 },
+    { "name": "모델링", "weight": 36 },
+    { "name": "머신러닝 구현 및 운영", "weight": 20 }
+  ],
+  "officialUrl": "https://aws.amazon.com/certification/certified-machine-learning-specialty/",
+  "registerUrl": "https://www.aws.training/certification"
+}

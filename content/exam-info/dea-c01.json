@@ -1,0 +1,22 @@
+{
+  "examCode": "DEA-C01",
+  "fullName": "AWS Certified Data Engineer – Associate",
+  "level": "associate",
+  "questionCount": 65,
+  "durationMin": 130,
+  "passingScore": 720,
+  "scoreMax": 1000,
+  "costUsd": 150,
+  "validityYears": 3,
+  "languages": ["영어", "한국어", "일본어", "중국어 간체"],
+  "prerequisites": "없음(권장: 데이터 엔지니어링 2~3년, AWS 1~2년 경험)",
+  "format": "객관식·복수응답",
+  "domains": [
+    { "name": "데이터 수집 및 변환", "weight": 34 },
+    { "name": "데이터 스토어 관리", "weight": 26 },
+    { "name": "데이터 운영 및 지원", "weight": 22 },
+    { "name": "데이터 보안 및 거버넌스", "weight": 18 }
+  ],
+  "officialUrl": "https://aws.amazon.com/certification/certified-data-engineer-associate/",
+  "registerUrl": "https://www.aws.training/certification"
+}

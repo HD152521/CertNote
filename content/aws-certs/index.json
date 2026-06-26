@@ -11,6 +11,14 @@
       "order": 0
     },
     {
+      "slug": "aif-c01",
+      "code": "AIF-C01",
+      "level": "foundational",
+      "name": "AI Practitioner - Foundational",
+      "weeks": 6,
+      "order": 9
+    },
+    {
       "slug": "dva-c02",
       "code": "DVA-C02",
       "level": "associate",

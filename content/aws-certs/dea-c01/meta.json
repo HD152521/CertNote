@@ -1,0 +1,12 @@
+{
+  "slug": "dea-c01",
+  "code": "DEA-C01",
+  "level": "associate",
+  "name": "Data Engineer - Associate",
+  "weeks": 10,
+  "accent": "#FF9900",
+  "order": 10,
+  "dayCount": 50,
+  "sourceRepo": "AWS_associate_dataEngineer",
+  "syncedAt": "2026-06-26T00:00:00.000Z"
+}

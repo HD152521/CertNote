@@ -1,0 +1,23 @@
+{
+  "examCode": "AIF-C01",
+  "fullName": "AWS Certified AI Practitioner",
+  "level": "foundational",
+  "questionCount": 65,
+  "durationMin": 90,
+  "passingScore": 700,
+  "scoreMax": 1000,
+  "costUsd": 100,
+  "validityYears": 3,
+  "languages": ["영어", "한국어", "일본어", "중국어 간체", "프랑스어", "독일어", "이탈리아어", "포르투갈어(브라질)", "스페인어"],
+  "prerequisites": "없음(권장: AWS·AI/ML 6개월 노출)",
+  "format": "객관식·복수응답",
+  "domains": [
+    { "name": "AI 및 ML 기초", "weight": 20 },
+    { "name": "생성형 AI 기초", "weight": 24 },
+    { "name": "파운데이션 모델 응용", "weight": 28 },
+    { "name": "책임 있는 AI 지침", "weight": 14 },
+    { "name": "AI 솔루션의 보안·규정 준수·거버넌스", "weight": 14 }
+  ],
+  "officialUrl": "https://aws.amazon.com/certification/certified-ai-practitioner/",
+  "registerUrl": "https://www.aws.training/certification"
+}
