@@ -8758,6 +8758,7343 @@
     "explanation": "24/7 전화·채팅 기술 지원은 Business 플랜부터 제공됩니다. Basic은 무료 기본 지원, Developer는 업무 시간 이메일 지원에 그치며, 모든 플랜이 24/7 지원을 제공하는 것은 아닙니다."
   },
   {
+    "id": "dea-c01-w1-d1-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 1,
+    "number": 1,
+    "prompt": "데이터 엔지니어의 가장 핵심적인 산출물과 1순위 책임을 가장 정확히 짝지은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "머신러닝 모델 — 예측 정확도"
+      },
+      {
+        "label": "B",
+        "text": "데이터 파이프라인 — 데이터 품질과 신뢰성"
+      },
+      {
+        "label": "C",
+        "text": "BI 대시보드 — 시각화 디자인"
+      },
+      {
+        "label": "D",
+        "text": "운영 데이터베이스 — 트랜잭션 속도"
+      }
+    ],
+    "answer": "B",
+    "explanation": "데이터 엔지니어의 산출물은 모델이나 대시보드가 아니라 원시 데이터를 분석 가능한 형태로 만드는 파이프라인이며, garbage in–garbage out 원칙에 따라 1순위 책임은 데이터 품질·신뢰성이다. 모델은 데이터 사이언티스트, 대시보드는 분석가, 운영 DB의 트랜잭션 속도는 백엔드/DBA의 영역이다."
+  },
+  {
+    "id": "dea-c01-w1-d1-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 1,
+    "number": 2,
+    "prompt": "클라우드 환경에서 전통적 ETL 대신 ELT가 널리 쓰이게 된 핵심 배경은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "변환 로직이 더 단순해졌기 때문"
+      },
+      {
+        "label": "B",
+        "text": "S3 같은 저렴한 스토리지와 강력한 쿼리 엔진 덕에 원시 데이터를 먼저 적재하고 안에서 변환하는 것이 유리해졌기 때문"
+      },
+      {
+        "label": "C",
+        "text": "데이터 보안 요구가 사라졌기 때문"
+      },
+      {
+        "label": "D",
+        "text": "OLTP가 OLAP를 대체했기 때문"
+      }
+    ],
+    "answer": "B",
+    "explanation": "ELT는 저렴한 스토리지(S3)에 원시 데이터를 먼저 적재한 뒤 목적지 안에서 변환한다. 원시 데이터를 보존하므로 변환 로직이 바뀌어도 원천 재호출 없이 재처리할 수 있다. 변환이 단순해진 것도 아니고 보안 요구가 사라진 것도 아니며, OLTP와 OLAP는 여전히 공존한다."
+  },
+  {
+    "id": "dea-c01-w1-d1-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 1,
+    "number": 3,
+    "prompt": "운영 중인 주문 처리 시스템(OLTP)의 데이터를 대상으로 \"지난 3년 월별·지역별 매출 집계\"를 직접 실행하려 한다. 이 접근의 가장 큰 문제는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "OLTP는 SQL을 지원하지 않는다"
+      },
+      {
+        "label": "B",
+        "text": "대량 행을 스캔하는 무거운 집계가 거래 처리에 부하를 주어 서비스가 느려진다"
+      },
+      {
+        "label": "C",
+        "text": "OLTP 데이터는 암호화할 수 없다"
+      },
+      {
+        "label": "D",
+        "text": "집계 결과가 항상 부정확하다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "OLTP는 소수 행을 빠르게 읽고 쓰는 거래 처리에 최적화돼 있어, 수억 행을 훑는 OLAP성 집계를 직접 돌리면 운영 서비스에 부하를 준다. 그래서 데이터 엔지니어는 데이터를 OLAP 환경(Redshift/Athena 등)으로 복제해 분석한다. OLTP도 SQL과 암호화를 지원하며 집계 결과 자체는 정확하다."
+  },
+  {
+    "id": "dea-c01-w1-d1-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 1,
+    "number": 4,
+    "prompt": "schema-on-read 방식으로 정형·반정형·비정형 데이터를 원시 그대로 저장하는 저장 패턴을 무엇이라 하며, AWS의 대표 구성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터 웨어하우스 — Redshift"
+      },
+      {
+        "label": "B",
+        "text": "데이터레이크 — S3 + Glue Data Catalog"
+      },
+      {
+        "label": "C",
+        "text": "OLTP 데이터베이스 — DynamoDB"
+      },
+      {
+        "label": "D",
+        "text": "인메모리 캐시 — ElastiCache"
+      }
+    ],
+    "answer": "B",
+    "explanation": "데이터레이크는 schema-on-read 방식으로 모든 형태의 데이터를 원시 그대로 S3에 저장하고, 읽을 때 Glue Data Catalog로 스키마를 입혀 Athena 등으로 쿼리한다. 웨어하우스(Redshift)는 schema-on-write로 정제된 정형 데이터만 받고, DynamoDB는 OLTP, ElastiCache는 캐시 용도다."
+  },
+  {
+    "id": "dea-c01-w1-d1-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 1,
+    "number": 5,
+    "prompt": "DEA-C01의 4개 도메인 중 가장 큰 비중을 차지하며 데이터 엔지니어 업무의 핵심임을 보여주는 영역은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터 보안·거버넌스"
+      },
+      {
+        "label": "B",
+        "text": "데이터 수집·변환"
+      },
+      {
+        "label": "C",
+        "text": "데이터 운영·지원"
+      },
+      {
+        "label": "D",
+        "text": "데이터 저장·관리"
+      }
+    ],
+    "answer": "B",
+    "explanation": "데이터 수집·변환이 34%로 가장 큰 비중을 차지하며, 이는 흩어진 원시 데이터를 분석 가능한 형태로 만드는 것이 데이터 엔지니어의 핵심 업무임을 반영한다. 저장·관리(26%), 운영·지원(22%), 보안·거버넌스(18%)가 그 뒤를 잇는다."
+  },
+  {
+    "id": "dea-c01-w1-d2-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 2,
+    "number": 1,
+    "prompt": "경계가 없는(unbounded) 데이터 흐름을 다루는 스트리밍 처리에서, 무한한 흐름으로부터 집계 결과를 내기 위해 반드시 필요한 개념은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "정규화(normalization)"
+      },
+      {
+        "label": "B",
+        "text": "윈도잉(windowing) — 흐름을 시간 단위로 잘라 집계"
+      },
+      {
+        "label": "C",
+        "text": "인덱싱(indexing)"
+      },
+      {
+        "label": "D",
+        "text": "샤딩(sharding)"
+      }
+    ],
+    "answer": "B",
+    "explanation": "스트리밍 데이터는 끝이 없으므로 \"최근 5분\"처럼 시간 창(텀블링/슬라이딩/세션 윈도우)으로 흐름을 잘라야 집계 결과를 낼 수 있다. 정규화는 스키마 설계, 인덱싱은 조회 성능, 샤딩은 데이터 분산을 위한 개념으로 윈도잉과는 다른 문제를 다룬다."
+  },
+  {
+    "id": "dea-c01-w1-d2-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 2,
+    "number": 2,
+    "prompt": "\"매일 밤 하루치 거래를 모아 정산 리포트를 생성\"하는 작업에 가장 적합한 처리 패러다임과 그 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "스트리밍 — 지연이 가장 낮으므로"
+      },
+      {
+        "label": "B",
+        "text": "배치 — 경계 있는 데이터를 정해진 주기로 처리하며, 결과가 다소 늦어도 무방하므로"
+      },
+      {
+        "label": "C",
+        "text": "스트리밍 — 처리량이 가장 높으므로"
+      },
+      {
+        "label": "D",
+        "text": "배치 — 늦게 도착하는 데이터를 실시간으로 보정하므로"
+      }
+    ],
+    "answer": "B",
+    "explanation": "\"하루치를 모아 정해진 시각에\"는 경계 있는 데이터를 주기적으로 처리하는 전형적 배치 작업이며, 리포트는 즉시성이 필요 없다. 스트리밍은 낮은 지연이 강점이고 누적 처리량은 오히려 배치가 더 높으며, 늦게 도착하는 데이터 보정은 스트리밍의 과제다."
+  },
+  {
+    "id": "dea-c01-w1-d2-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 2,
+    "number": 3,
+    "prompt": "배치 처리가 스트리밍보다 단위 시간당 처리량(throughput)이 높은 근본적인 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "배치는 데이터를 압축하기 때문"
+      },
+      {
+        "label": "B",
+        "text": "데이터를 묶음으로 한 번에 처리해 건당 오버헤드가 분산되기 때문"
+      },
+      {
+        "label": "C",
+        "text": "배치는 더 비싼 인스턴스를 쓰기 때문"
+      },
+      {
+        "label": "D",
+        "text": "스트리밍은 SQL을 쓸 수 없기 때문"
+      }
+    ],
+    "answer": "B",
+    "explanation": "배치는 많은 레코드를 하나의 작업으로 묶어 처리하므로 건당 처리·전달 오버헤드가 분산되어 처리량이 높다. 대신 모으는 시간만큼 지연이 생긴다. 압축이나 인스턴스 종류 때문이 아니며, 스트리밍도 SQL 기반 처리(예: Flink SQL)가 가능하다."
+  },
+  {
+    "id": "dea-c01-w1-d2-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 2,
+    "number": 4,
+    "prompt": "스트림 데이터를 받아 별도 소비자 코드 운영 없이 S3나 Redshift로 거의 즉시 자동 적재하길 원할 때 가장 적합한 AWS 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Kinesis Data Streams"
+      },
+      {
+        "label": "B",
+        "text": "Kinesis Data Firehose"
+      },
+      {
+        "label": "C",
+        "text": "AWS Glue"
+      },
+      {
+        "label": "D",
+        "text": "Amazon EMR"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Firehose는 스트림을 받아 S3·Redshift·OpenSearch 등으로 자동 적재하는 관리형 준실시간 배달 서비스로, 소비자 코드를 직접 운영할 필요가 없다. Data Streams는 낮은 지연·다중 소비자가 필요한 진짜 스트리밍용이고, Glue·EMR은 배치 ETL 처리 엔진이다."
+  },
+  {
+    "id": "dea-c01-w1-d2-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 2,
+    "number": 5,
+    "prompt": "배치 레이어(정확하지만 느림)와 스피드 레이어(빠르지만 근사)를 함께 운영해 지연과 정확성의 트레이드오프를 푸는 고전적 아키텍처는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "카파 아키텍처(Kappa)"
+      },
+      {
+        "label": "B",
+        "text": "람다 아키텍처(Lambda)"
+      },
+      {
+        "label": "C",
+        "text": "마이크로서비스 아키텍처"
+      },
+      {
+        "label": "D",
+        "text": "서버리스 아키텍처"
+      }
+    ],
+    "answer": "B",
+    "explanation": "람다 아키텍처는 배치 레이어와 스피드 레이어를 동시에 돌려 서빙 레이어에서 합치는 방식이다. 코드 이중 유지 부담 때문에 스트리밍 엔진 하나로 통합하는 카파 아키텍처가 대안으로 나왔다. 마이크로서비스·서버리스는 데이터 처리 패러다임이 아니라 일반적인 시스템 구조 개념이다."
+  },
+  {
+    "id": "dea-c01-w1-d3-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 3,
+    "number": 1,
+    "prompt": "AWS 데이터 파이프라인을 이해하는 기본 골격인 4단계 흐름을 순서대로 올바르게 나열한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "분석 → 처리 → 저장 → 수집"
+      },
+      {
+        "label": "B",
+        "text": "수집 → 저장 → 처리 → 분석"
+      },
+      {
+        "label": "C",
+        "text": "저장 → 수집 → 분석 → 처리"
+      },
+      {
+        "label": "D",
+        "text": "처리 → 수집 → 분석 → 저장"
+      }
+    ],
+    "answer": "B",
+    "explanation": "데이터는 원천에서 들여오는 수집(Kinesis/DMS 등) → 담아두는 저장(S3/Redshift) → 변환하는 처리(Glue/EMR) → 답을 얻는 분석(Athena/QuickSight)의 순서로 흐른다. 거버넌스(Lake Formation/IAM/KMS)는 이 전 구간을 가로질러 감싼다. 나머지 보기는 흐름의 순서가 뒤바뀌어 있다."
+  },
+  {
+    "id": "dea-c01-w1-d3-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 3,
+    "number": 2,
+    "prompt": "운영 중인 RDS 데이터베이스의 변경분(CDC)을 운영 부하 없이 지속적으로 분석 환경(S3/Redshift)으로 복제하려 한다. 가장 적합한 수집 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS DataSync"
+      },
+      {
+        "label": "B",
+        "text": "AWS DMS"
+      },
+      {
+        "label": "C",
+        "text": "Kinesis Data Streams"
+      },
+      {
+        "label": "D",
+        "text": "Amazon QuickSight"
+      }
+    ],
+    "answer": "B",
+    "explanation": "DMS는 데이터베이스 마이그레이션·복제 서비스로, CDC를 통해 트랜잭션 로그에서 변경분만 읽어 OLTP에 거의 부하를 주지 않고 분석 환경으로 흘려보낸다. DataSync는 온프렘 파일 전송, Kinesis는 실시간 이벤트 스트림, QuickSight는 BI 시각화 도구다."
+  },
+  {
+    "id": "dea-c01-w1-d3-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 3,
+    "number": 3,
+    "prompt": "S3에 적재된 데이터를 별도 인프라 없이, 데이터를 옮기지 않고 그 자리에서 SQL로 애드혹 조회하며 스캔량만큼 과금받는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Redshift"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Athena"
+      },
+      {
+        "label": "C",
+        "text": "Amazon EMR"
+      },
+      {
+        "label": "D",
+        "text": "AWS Glue"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Athena는 S3 위에서 동작하는 서버리스 SQL 쿼리 엔진으로, 데이터를 적재·이동하지 않고 그 자리에서 조회하며 스캔한 데이터량만큼 과금한다. Redshift는 데이터를 적재해야 하는 웨어하우스, EMR은 빅데이터 클러스터, Glue는 ETL 처리 엔진이다."
+  },
+  {
+    "id": "dea-c01-w1-d3-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 3,
+    "number": 4,
+    "prompt": "여러 분석 엔진(Athena, Redshift Spectrum, EMR)이 같은 데이터를 동일한 스키마 정의로 공유하도록 메타데이터를 중앙 관리하는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Glue Data Catalog"
+      },
+      {
+        "label": "B",
+        "text": "Amazon S3"
+      },
+      {
+        "label": "C",
+        "text": "AWS KMS"
+      },
+      {
+        "label": "D",
+        "text": "Amazon DynamoDB"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Glue Data Catalog는 통합 메타데이터 카탈로그로, Crawler가 등록한 테이블 정의를 Athena·Redshift Spectrum·EMR 등이 공통으로 참조한다. S3는 데이터 저장소, KMS는 암호화 키 관리, DynamoDB는 NoSQL 데이터베이스다."
+  },
+  {
+    "id": "dea-c01-w1-d3-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 3,
+    "number": 5,
+    "prompt": "IAM이 \"버킷 접근 가능 여부\"를 통제한다면, S3 데이터레이크에서 테이블·컬럼·행 단위의 세밀한 접근 권한을 중앙에서 부여하는 거버넌스 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS KMS"
+      },
+      {
+        "label": "B",
+        "text": "AWS Lake Formation"
+      },
+      {
+        "label": "C",
+        "text": "Amazon OpenSearch"
+      },
+      {
+        "label": "D",
+        "text": "AWS DataSync"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Lake Formation은 데이터레이크에 테이블·컬럼·행 수준의 세밀한 권한을 중앙에서 부여하는 거버넌스 서비스다. IAM이 리소스(버킷) 단위 접근을 다룬다면 Lake Formation은 그 안의 데이터 단위를 통제한다. KMS는 암호화 키, OpenSearch는 검색 분석, DataSync는 파일 전송 도구다."
+  },
+  {
+    "id": "dea-c01-w1-d4-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 4,
+    "number": 1,
+    "prompt": "`SELECT SUM(amount) FROM orders GROUP BY region` 같은 분석 쿼리에서 Parquet 같은 컬럼형 포맷이 행형보다 빠르고 저렴한 가장 근본적인 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "컬럼형은 데이터를 암호화하기 때문"
+      },
+      {
+        "label": "B",
+        "text": "필요한 컬럼(region, amount)만 읽어 스캔 I/O가 줄어들고 압축이 잘 되기 때문"
+      },
+      {
+        "label": "C",
+        "text": "컬럼형은 사람이 읽기 쉽기 때문"
+      },
+      {
+        "label": "D",
+        "text": "컬럼형은 행형보다 항상 모든 워크로드에서 빠르기 때문"
+      }
+    ],
+    "answer": "B",
+    "explanation": "컬럼형은 같은 컬럼끼리 모아 저장하므로 쿼리에 필요한 컬럼만 읽는 컬럼 프루닝이 가능하고, 동질 데이터라 압축도 잘 된다. Athena는 스캔량 과금이라 비용도 준다. 암호화·가독성과는 무관하며, 한 행 전체를 읽고 쓰는 OLTP 작업은 오히려 행형이 유리하므로 \"항상 빠르다\"는 틀리다."
+  },
+  {
+    "id": "dea-c01-w1-d4-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 4,
+    "number": 2,
+    "prompt": "원시 로그가 JSON으로 S3에 들어오고 있다. 이후 Athena로 자주 대규모 집계 분석을 할 예정일 때, 데이터 엔지니어가 취할 가장 효과적인 최적화는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "JSON 그대로 두고 인스턴스를 키운다"
+      },
+      {
+        "label": "B",
+        "text": "처리 단계에서 JSON을 Parquet으로 변환해 분석 영역에 적재한다"
+      },
+      {
+        "label": "C",
+        "text": "JSON을 CSV로 변환한다"
+      },
+      {
+        "label": "D",
+        "text": "데이터를 압축만 한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "컬럼형인 Parquet으로 변환하면 컬럼 프루닝·압축·프레디킷 푸시다운으로 Athena 스캔량과 쿼리 시간이 급감한다. 들어올 때는 JSON, 분석은 Parquet으로 변환하는 것이 전형적 패턴이다. Athena는 서버리스라 인스턴스를 키울 수 없고, CSV·단순 압축은 여전히 행형이라 컬럼형의 이점을 얻지 못한다."
+  },
+  {
+    "id": "dea-c01-w1-d4-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 4,
+    "number": 3,
+    "prompt": "스키마가 자주 변경되는 Kafka/스트리밍 이벤트 파이프라인에서, 쓰기 효율과 스키마 진화 지원이 강점이라 널리 쓰이는 행형 바이너리 포맷은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Parquet"
+      },
+      {
+        "label": "B",
+        "text": "Avro"
+      },
+      {
+        "label": "C",
+        "text": "ORC"
+      },
+      {
+        "label": "D",
+        "text": "CSV"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Avro는 행형 바이너리 포맷으로 쓰기에 강하고, 데이터와 스키마를 함께 다뤄 reader/writer 스키마가 달라도 호환되도록 설계돼 스키마 진화에 강하다. Parquet·ORC는 분석용 컬럼형이고, CSV는 스키마 정보가 없는 단순 텍스트라 진화 관리가 어렵다."
+  },
+  {
+    "id": "dea-c01-w1-d4-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 4,
+    "number": 4,
+    "prompt": "운영 중인 주문 이벤트 스키마에 `coupon_code` 필드를 추가하면서 기존에 쌓인 옛 데이터도 계속 안전하게 읽으려 한다. 가장 안전한 스키마 진화 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "새 필드를 기본값 없이 필수로 추가한다"
+      },
+      {
+        "label": "B",
+        "text": "새 필드에 기본값(default)을 지정해 추가한다"
+      },
+      {
+        "label": "C",
+        "text": "기존 필드를 모두 이름변경한다"
+      },
+      {
+        "label": "D",
+        "text": "옛 데이터를 전부 삭제한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "기본값이 있는 필드를 추가하면, 그 필드가 없는 옛 데이터를 읽어도 기본값으로 채워져 깨지지 않는다(하위 호환). 기본값 없는 필수 필드 추가는 옛 데이터 읽기를 깨뜨리고, 필드 이름변경·데이터 삭제는 호환성을 파괴하는 위험한 변경이다."
+  },
+  {
+    "id": "dea-c01-w1-d4-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 4,
+    "number": 5,
+    "prompt": "프로듀서가 새 스키마를 등록할 때 기존과의 호환성을 검증해, 호환을 깨는 변경을 배포 전에 차단하는 거버넌스 장치는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Glue Crawler"
+      },
+      {
+        "label": "B",
+        "text": "Schema Registry (예: AWS Glue Schema Registry)"
+      },
+      {
+        "label": "C",
+        "text": "S3 수명주기 정책"
+      },
+      {
+        "label": "D",
+        "text": "IAM 정책"
+      }
+    ],
+    "answer": "B",
+    "explanation": "스키마 레지스트리는 새 스키마 등록 시 호환성 규칙(backward/forward/full)을 검증해 데이터 계약을 깨는 변경을 차단한다. AWS Glue Schema Registry가 Kinesis·MSK와 통합돼 이 역할을 한다. Crawler는 스키마 추론, 수명주기 정책은 스토리지 비용 관리, IAM은 접근 권한을 다룬다."
+  },
+  {
+    "id": "dea-c01-w1-d5-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 5,
+    "number": 1,
+    "prompt": "Week 1 전체를 관통하는 단일 설계 원칙으로, OLTP/OLAP·배치/스트림·행형/컬럼형 선택을 모두 결정짓는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "항상 가장 최신 기술을 먼저 고른다"
+      },
+      {
+        "label": "B",
+        "text": "워크로드(데이터를 어떻게 읽고 쓰는가)가 설계를 결정한다"
+      },
+      {
+        "label": "C",
+        "text": "항상 가장 저렴한 서비스를 고른다"
+      },
+      {
+        "label": "D",
+        "text": "항상 실시간 처리를 선택한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "OLTP냐 OLAP냐, 배치냐 스트림이냐, 행형이냐 컬럼형이냐는 모두 데이터를 어떻게 읽고 쓰는가라는 워크로드 특성에서 답이 나온다. 기술이나 비용을 먼저 정하고 끼워맞추는 것이 아니라 워크로드를 분석해 선택하며, 실시간이 항상 옳은 것도 아니다."
+  },
+  {
+    "id": "dea-c01-w1-d5-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 5,
+    "number": 2,
+    "prompt": "\"운영 주문 DB에 부하를 주지 않으면서 그 데이터를 대규모 집계 분석하고 싶다\"는 요구를 충족하는 가장 적절한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "운영 DB에 직접 집계 쿼리를 실행"
+      },
+      {
+        "label": "B",
+        "text": "DMS의 CDC로 변경분을 OLAP 환경(Redshift/S3+Athena)으로 복제해 분석"
+      },
+      {
+        "label": "C",
+        "text": "운영 DB를 DynamoDB로 교체"
+      },
+      {
+        "label": "D",
+        "text": "QuickSight를 운영 DB에 직접 연결해 매번 집계"
+      }
+    ],
+    "answer": "B",
+    "explanation": "OLTP인 운영 DB에 무거운 OLAP성 집계를 직접 돌리면 서비스에 부하를 준다. DMS의 CDC로 변경분만 분석 환경으로 흘려보내 OLAP에서 분석하는 것이 표준이다. DynamoDB로 교체해도 OLTP라 문제가 같고, BI 도구를 운영 DB에 직접 붙여 집계하는 것도 같은 부하 문제를 일으킨다."
+  },
+  {
+    "id": "dea-c01-w1-d5-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 5,
+    "number": 3,
+    "prompt": "\"결제가 일어나는 순간 이상거래를 탐지\"하려는 요구에 가장 적합한 처리 패러다임·수집 서비스·포맷 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "배치 / Glue / CSV"
+      },
+      {
+        "label": "B",
+        "text": "스트리밍 / Kinesis Data Streams / Avro"
+      },
+      {
+        "label": "C",
+        "text": "배치 / DMS / Parquet"
+      },
+      {
+        "label": "D",
+        "text": "준실시간 / Firehose / ORC"
+      }
+    ],
+    "answer": "B",
+    "explanation": "즉시성이 필요하므로 스트리밍이며, 낮은 지연·다중 소비자에 적합한 Kinesis Data Streams로 이벤트를 수집하고, 스키마 진화에 강한 행형 Avro가 이벤트 스트림에 적합하다. 배치 조합은 즉시성이 없고, Firehose는 자동 적재용 준실시간이라 즉각 탐지에는 Data Streams가 더 맞다."
+  },
+  {
+    "id": "dea-c01-w1-d5-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 5,
+    "number": 4,
+    "prompt": "Kinesis Data Streams와 Kinesis Data Firehose의 핵심 차이를 가장 정확히 설명한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Streams는 배치 전용, Firehose는 스트리밍 전용이다"
+      },
+      {
+        "label": "B",
+        "text": "Streams는 저지연·다중 소비자용이고, Firehose는 스트림을 S3/Redshift 등으로 자동 적재하는 준실시간 배달 서비스다"
+      },
+      {
+        "label": "C",
+        "text": "Streams는 SQL을 지원하고 Firehose는 지원하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "둘은 기능이 완전히 동일하다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Data Streams는 낮은 지연과 여러 소비자가 동시에 읽어야 하는 진짜 스트리밍용이고, Firehose는 스트림을 받아 별도 소비자 코드 없이 S3·Redshift·OpenSearch로 자동 적재하는 관리형 준실시간 배달 서비스다. 둘 다 스트리밍 계열이며 기능이 동일하지 않다."
+  },
+  {
+    "id": "dea-c01-w1-d5-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 1,
+    "day": 5,
+    "number": 5,
+    "prompt": "데이터레이크와 데이터 웨어하우스의 장점을 결합해, S3 데이터레이크 위에 테이블 형식과 카탈로그를 얹어 웨어하우스급 쿼리를 제공하는 현대 표준 패턴은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "람다 아키텍처"
+      },
+      {
+        "label": "B",
+        "text": "레이크하우스(Lakehouse)"
+      },
+      {
+        "label": "C",
+        "text": "OLTP 클러스터"
+      },
+      {
+        "label": "D",
+        "text": "마이크로배치"
+      }
+    ],
+    "answer": "B",
+    "explanation": "레이크하우스는 schema-on-read의 유연한 S3 데이터레이크 위에 테이블 형식(Iceberg 등)과 카탈로그를 얹어, 웨어하우스급 쿼리·트랜잭션·거버넌스를 제공하는 통합 패턴이다. 람다 아키텍처는 배치/스피드 레이어 결합, OLTP 클러스터는 거래 처리, 마이크로배치는 준실시간 처리 기법으로 저장 패턴이 아니다."
+  },
+  {
+    "id": "dea-c01-w10-d1-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 1,
+    "number": 1,
+    "prompt": "스케줄로 매시간 실행되는 Glue 잡이 S3의 신규 파일만 처리해야 하는데, 매번 전체 데이터를 다시 읽어 비용과 시간이 과도하다. 가장 적절한 해결책은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "EMR 클러스터로 전환한다"
+      },
+      {
+        "label": "B",
+        "text": "Glue 잡 북마크를 활성화하고 transformation_ctx와 job.commit()을 사용한다"
+      },
+      {
+        "label": "C",
+        "text": "S3 버킷을 매시간 비운다"
+      },
+      {
+        "label": "D",
+        "text": "Athena CTAS로 매번 전체를 다시 만든다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Glue 북마크는 이미 처리한 데이터를 추적해 증분 처리를 지원합니다. transformation_ctx로 상태를 추적하고 job.commit() 시점에 저장합니다. 나머지는 증분 처리를 해결하지 못하거나 비용·복잡도를 키웁니다."
+  },
+  {
+    "id": "dea-c01-w10-d1-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 1,
+    "number": 2,
+    "prompt": "여러 분석 팀이 동일한 S3 데이터레이크를 공유하면서, 특정 테이블의 일부 컬럼(예: 주민번호)은 일부 팀에게만 보이도록 중앙에서 통제하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 버킷 정책에 팀별 컬럼 규칙을 작성"
+      },
+      {
+        "label": "B",
+        "text": "AWS Lake Formation의 컬럼 수준 권한"
+      },
+      {
+        "label": "C",
+        "text": "EC2 보안 그룹"
+      },
+      {
+        "label": "D",
+        "text": "CloudFront 서명 URL"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Lake Formation은 테이블·컬럼·행·셀 수준의 세분화 권한을 중앙에서 관리합니다. S3 버킷 정책은 객체 수준까지만 제어하므로 컬럼 단위 통제가 불가능합니다. 보안 그룹·CloudFront는 데이터 권한과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w10-d1-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 1,
+    "number": 3,
+    "prompt": "초당 수만 건의 IoT 이벤트를 실시간으로 받아 추가 인프라 관리 없이 자동으로 S3에 Parquet로 버퍼링·변환·적재하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Data Firehose"
+      },
+      {
+        "label": "B",
+        "text": "Amazon RDS"
+      },
+      {
+        "label": "C",
+        "text": "AWS Batch"
+      },
+      {
+        "label": "D",
+        "text": "Amazon SQS 표준 큐"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Data Firehose는 완전관리형으로 스트리밍 데이터를 버퍼링하고 포맷 변환(예: Parquet) 후 S3/Redshift 등에 자동 배달합니다. 샤드·컨슈머 관리가 없습니다. RDS/Batch는 스트리밍 적재 용도가 아니며, SQS는 변환·적재 기능이 없습니다."
+  },
+  {
+    "id": "dea-c01-w10-d1-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 1,
+    "number": 4,
+    "prompt": "페타바이트급 팩트 테이블을 작은 날짜 차원 테이블과 자주 조인한다. 노드 간 데이터 이동(셔플)을 최소화하기 위한 Redshift 분배 설정으로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "두 테이블 모두 DISTSTYLE EVEN"
+      },
+      {
+        "label": "B",
+        "text": "모든 테이블에 SORTKEY만 지정"
+      },
+      {
+        "label": "C",
+        "text": "작은 차원 테이블에 DISTSTYLE ALL"
+      },
+      {
+        "label": "D",
+        "text": "팩트 테이블을 DynamoDB로 이전"
+      }
+    ],
+    "answer": "C",
+    "explanation": "작은 차원 테이블을 DISTSTYLE ALL로 모든 노드에 복제하면 조인 시 셔플 없이 로컬에서 조인할 수 있습니다. EVEN은 셔플을 유발하고, SORTKEY는 분배가 아닌 스캔 최적화이며, DynamoDB는 대규모 분석 조인에 부적합합니다."
+  },
+  {
+    "id": "dea-c01-w10-d1-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 1,
+    "number": 5,
+    "prompt": "데이터 분석가가 S3에 저장된 로그를 클러스터나 서버를 띄우지 않고 표준 SQL로 즉석 조회하려 한다. 비용은 스캔한 데이터량 기준으로만 내고 싶다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon EMR"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EC2에 직접 설치한 Presto"
+      },
+      {
+        "label": "C",
+        "text": "AWS Glue 크롤러"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Athena"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Athena는 서버리스로 S3 데이터를 표준 SQL로 쿼리하며 스캔한 데이터량 기준으로 과금합니다. EMR/EC2는 클러스터 운영이 필요하고, Glue 크롤러는 쿼리 엔진이 아니라 스키마 추론 도구입니다."
+  },
+  {
+    "id": "dea-c01-w10-d2-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 2,
+    "number": 1,
+    "prompt": "한 팀이 기존에 사용하던 Apache Airflow DAG을 거의 수정 없이 AWS에서 관리형으로 운영하고자 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Step Functions"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EventBridge Scheduler"
+      },
+      {
+        "label": "C",
+        "text": "AWS Batch"
+      },
+      {
+        "label": "D",
+        "text": "Amazon MWAA"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Amazon MWAA(Managed Workflows for Apache Airflow)는 관리형 Airflow로 기존 DAG을 거의 그대로 운영할 수 있습니다. Step Functions는 상태 기계 기반으로 DAG 문법이 다르고, EventBridge·Batch는 Airflow 호환 워크플로 엔진이 아닙니다."
+  },
+  {
+    "id": "dea-c01-w10-d2-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 2,
+    "number": 2,
+    "prompt": "보안 감사 결과 \"특정 IAM 사용자가 언제 어떤 Glue API를 호출했는지\" 추적할 수 있어야 한다는 요구가 나왔다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon CloudWatch Alarm"
+      },
+      {
+        "label": "B",
+        "text": "AWS CloudTrail"
+      },
+      {
+        "label": "C",
+        "text": "AWS X-Ray"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Macie"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudTrail은 계정 내 API 호출(누가·언제·무엇을)을 기록하는 감사 로그 서비스입니다. CloudWatch Alarm은 지표 임계치 알림, X-Ray는 분산 추적, Macie는 민감정보 탐지로 목적이 다릅니다."
+  },
+  {
+    "id": "dea-c01-w10-d2-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 2,
+    "number": 3,
+    "prompt": "S3에 저장하는 데이터를 암호화하되 키 회전, 키별 접근 통제, 키 사용 내역 감사가 모두 필요하다. 가장 적합한 방식은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "암호화하지 않고 버킷을 프라이빗으로만 둔다"
+      },
+      {
+        "label": "B",
+        "text": "SSE-S3(S3 관리형 키)"
+      },
+      {
+        "label": "C",
+        "text": "SSE-KMS(고객 관리 KMS 키)"
+      },
+      {
+        "label": "D",
+        "text": "클라이언트가 평문으로 업로드 후 IAM으로만 보호"
+      }
+    ],
+    "answer": "C",
+    "explanation": "SSE-KMS의 고객 관리 키(CMK)는 키 정책으로 접근을 통제하고 자동 회전을 지원하며 CloudTrail로 키 사용을 감사할 수 있습니다. SSE-S3는 키 통제·감사가 제한적이고, 나머지는 암호화 요구를 충족하지 못합니다."
+  },
+  {
+    "id": "dea-c01-w10-d2-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 2,
+    "number": 4,
+    "prompt": "여러 S3 버킷에 고객 PII가 어디에 얼마나 있는지 파악되지 않아 컴플라이언스 위험이 있다. 민감 데이터를 자동으로 발견·분류하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Macie"
+      },
+      {
+        "label": "B",
+        "text": "AWS Config"
+      },
+      {
+        "label": "C",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "D",
+        "text": "AWS Trusted Advisor"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Amazon Macie는 머신러닝으로 S3 내 PII·금융정보 등 민감 데이터를 자동 발견·분류합니다. Config는 리소스 구성 추적, GuardDuty는 위협 탐지, Trusted Advisor는 모범 사례 점검으로 민감정보 분류 기능이 없습니다."
+  },
+  {
+    "id": "dea-c01-w10-d2-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 2,
+    "number": 5,
+    "prompt": "Glue ETL 잡이 적재 전에 \"order_id가 비어 있지 않고 amount가 0 이상이며 order_id가 거의 고유한지\"를 자동 검증하고, 규칙 위반 데이터는 격리하려 한다. 가장 적합한 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudWatch Logs Insights"
+      },
+      {
+        "label": "B",
+        "text": "S3 수명주기 정책"
+      },
+      {
+        "label": "C",
+        "text": "Redshift VACUUM"
+      },
+      {
+        "label": "D",
+        "text": "Glue Data Quality 규칙(DQDL)"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Glue Data Quality는 DQDL로 완전성(IsComplete)·유효성(ColumnValues)·고유성(Uniqueness) 등 규칙을 정의해 검증하고 위반 데이터를 격리할 수 있습니다. 나머지는 로그 조회·스토리지 관리·테이블 정리 용도로 품질 검증 기능이 아닙니다."
+  },
+  {
+    "id": "dea-c01-w10-d3-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 3,
+    "number": 1,
+    "prompt": "모바일 앱의 클릭스트림을 실시간으로 받아 추가 서버 관리 없이 S3에 Parquet로 적재하고, 분석가가 즉석 SQL로 조회해야 한다. 가장 적합한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Kinesis Data Firehose → S3(Parquet) → Athena"
+      },
+      {
+        "label": "B",
+        "text": "RDS → EC2 cron → 수동 CSV 다운로드"
+      },
+      {
+        "label": "C",
+        "text": "DynamoDB → DAX → QuickSight 직접"
+      },
+      {
+        "label": "D",
+        "text": "EMR 상시 클러스터 → HDFS → 로컬 Presto"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Firehose는 완전관리형으로 스트리밍을 버퍼링·Parquet 변환 후 S3에 적재하고, Athena는 서버리스 SQL로 즉석 조회합니다. RDS·EC2·EMR 상시 클러스터는 운영 부담이 크고 실시간 적재에 부적합하며, DynamoDB는 분석 SQL 용도가 아닙니다."
+  },
+  {
+    "id": "dea-c01-w10-d3-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 3,
+    "number": 2,
+    "prompt": "온프레미스 PostgreSQL의 변경분을 거의 실시간으로 AWS 분석 환경에 지속 복제해야 한다. 초기 전체 적재 후 지속적인 CDC가 필요하다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Glue 크롤러"
+      },
+      {
+        "label": "B",
+        "text": "AWS DMS(전체 적재 + CDC)"
+      },
+      {
+        "label": "C",
+        "text": "S3 배치 업로드 스크립트"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Athena 페더레이션 쿼리만"
+      }
+    ],
+    "answer": "B",
+    "explanation": "AWS DMS는 초기 전체 적재(full load)에 이어 변경 데이터 캡처(CDC)로 소스 DB 변경분을 지속 복제할 수 있습니다. Glue 크롤러는 스키마 추론, S3 배치는 실시간 CDC가 아니며, 페더레이션 쿼리는 복제가 아니라 즉석 조회입니다."
+  },
+  {
+    "id": "dea-c01-w10-d3-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 3,
+    "number": 3,
+    "prompt": "여러 Lambda·Glue 잡을 순서대로 실행하되, 단계별 분기와 자동 재시도, 시각적 실행 추적이 필요하다. 서버리스로 운영 부담을 최소화하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Step Functions"
+      },
+      {
+        "label": "B",
+        "text": "cron이 설정된 단일 EC2"
+      },
+      {
+        "label": "C",
+        "text": "S3 이벤트 알림만"
+      },
+      {
+        "label": "D",
+        "text": "DynamoDB 스트림 트리거 하나"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Step Functions는 서버리스 상태 기계로 단계 조율, 분기, 자동 재시도, 시각적 실행 추적을 제공합니다. EC2 cron은 운영 부담이 크고, S3 이벤트·DynamoDB 스트림 단독으로는 다단계 분기·재시도 오케스트레이션을 구성하기 어렵습니다."
+  },
+  {
+    "id": "dea-c01-w10-d3-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 3,
+    "number": 4,
+    "prompt": "데이터레이크의 여러 부서가 같은 테이블을 쓰는데, 인사팀만 급여 컬럼을 볼 수 있고 다른 팀은 마스킹되어야 한다. 권한을 중앙에서 컬럼 단위로 통제하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 버킷 ACL"
+      },
+      {
+        "label": "B",
+        "text": "AWS Lake Formation 컬럼 수준 권한"
+      },
+      {
+        "label": "C",
+        "text": "Security Group 규칙"
+      },
+      {
+        "label": "D",
+        "text": "CloudFront 지오 제한"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Lake Formation은 테이블·컬럼·행·셀 수준 권한을 중앙에서 관리하므로 컬럼 단위 접근 통제에 적합합니다. S3 ACL은 객체 수준까지만, Security Group은 네트워크, CloudFront 지오 제한은 콘텐츠 배포용으로 데이터 컬럼 통제와 무관합니다."
+  },
+  {
+    "id": "dea-c01-w10-d3-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 3,
+    "number": 5,
+    "prompt": "Redshift 대시보드 쿼리가 최근 30일 데이터에만 자주 접근하고, 1년 이전 콜드 데이터는 가끔만 조회된다. 비용을 줄이면서 콜드 데이터도 필요 시 SQL로 조회하려 한다. 가장 적합한 접근은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 데이터를 Redshift 노드에 영구 보관"
+      },
+      {
+        "label": "B",
+        "text": "콜드 데이터를 삭제한다"
+      },
+      {
+        "label": "C",
+        "text": "콜드 데이터는 S3에 두고 Redshift Spectrum으로 조회"
+      },
+      {
+        "label": "D",
+        "text": "콜드 데이터를 DynamoDB로 옮긴다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "핫 데이터는 Redshift 클러스터에, 콜드 데이터는 저렴한 S3에 두고 Redshift Spectrum으로 로드 없이 SQL 조회하면 스토리지 비용을 줄이면서 접근성을 유지합니다. 전량 보관은 비용 증가, 삭제는 조회 불가, DynamoDB는 분석 SQL에 부적합합니다."
+  },
+  {
+    "id": "dea-c01-w10-d3-q6",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 3,
+    "number": 6,
+    "prompt": "Glue ETL 잡이 가끔 실패해 재실행되는데, 동일 데이터가 타깃에 중복 적재되는 문제가 있다. 재시도 시 안전하게 만들려면 가장 우선해야 할 설계 원칙은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "잡 재시도를 완전히 비활성화한다"
+      },
+      {
+        "label": "B",
+        "text": "로그 레벨을 낮춘다"
+      },
+      {
+        "label": "C",
+        "text": "잡을 멱등(idempotent)하게 설계해 재실행해도 중복이 생기지 않게 한다"
+      },
+      {
+        "label": "D",
+        "text": "매번 타깃 테이블을 수동으로 비운다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "분산·재시도 환경에서는 잡을 멱등하게 설계(예: 업서트/MERGE, 결정적 키 기반 덮어쓰기)해 재실행해도 결과가 동일하도록 해야 합니다. 재시도 비활성화는 복원력을 해치고, 수동 정리·로그 조정은 근본 해결이 아닙니다."
+  },
+  {
+    "id": "dea-c01-w10-d3-q7",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 3,
+    "number": 7,
+    "prompt": "매시간 S3 raw 존에 도착하는 신규 로그만 처리해 curated 존(Parquet)으로 변환하는 서버리스 ETL을 구성한다. 이미 처리한 파일은 다시 읽지 않아야 한다. 가장 적합한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Glue 잡 + 잡 북마크"
+      },
+      {
+        "label": "B",
+        "text": "EMR 상시 클러스터 + 전체 재처리"
+      },
+      {
+        "label": "C",
+        "text": "Athena CTAS로 매번 전체 재생성"
+      },
+      {
+        "label": "D",
+        "text": "Lambda로 전체 버킷을 매번 스캔"
+      }
+    ],
+    "answer": "A",
+    "explanation": "서버리스 ETL은 Glue가 기본이며, 잡 북마크가 이미 처리한 데이터를 추적해 신규 데이터만 증분 처리합니다. EMR 상시 클러스터·전체 재처리·전체 스캔은 증분 요구와 비용·운영 효율을 위반합니다."
+  },
+  {
+    "id": "dea-c01-w10-d3-q8",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 3,
+    "number": 8,
+    "prompt": "스트리밍 주문 이벤트를 받아 5분 윈도로 매장별 매출 합계를 실시간 집계해야 한다. SQL 기반으로 윈도 집계를 처리하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Athena 단발 쿼리"
+      },
+      {
+        "label": "B",
+        "text": "AWS Glue 배치 잡"
+      },
+      {
+        "label": "C",
+        "text": "Amazon QuickSight"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Managed Service for Apache Flink(Kinesis Data Analytics)"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Managed Service for Apache Flink는 스트리밍 데이터에 대해 텀블링/슬라이딩 윈도 집계를 SQL/Flink로 실시간 처리합니다. Athena·Glue는 배치 지향이라 5분 윈도 실시간 집계에 부적합하고, QuickSight는 시각화 도구입니다."
+  },
+  {
+    "id": "dea-c01-w10-d4-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 4,
+    "number": 1,
+    "prompt": "스트리밍 데이터를 여러 독립 애플리케이션이 각자 컨슈머로 직접 읽고, 24시간 내 데이터를 재처리할 수 있어야 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Data Firehose"
+      },
+      {
+        "label": "B",
+        "text": "Amazon SNS"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Kinesis Data Streams"
+      },
+      {
+        "label": "D",
+        "text": "Amazon SQS FIFO"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Kinesis Data Streams는 샤드 기반으로 여러 컨슈머가 독립적으로 읽고 보존 기간 내 재처리(re-read)가 가능합니다. Firehose는 직접 소비·재처리 개념이 없고, SNS/SQS는 스트림 재처리 모델이 아닙니다."
+  },
+  {
+    "id": "dea-c01-w10-d4-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 4,
+    "number": 2,
+    "prompt": "\"누가 어떤 S3 버킷에 PutObject API를 언제 호출했는지\" 감사해야 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon CloudWatch Logs"
+      },
+      {
+        "label": "B",
+        "text": "AWS CloudTrail"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Macie"
+      },
+      {
+        "label": "D",
+        "text": "AWS Config"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudTrail은 계정의 API 호출(주체·시각·액션)을 기록하는 감사 서비스입니다. CloudWatch Logs는 애플리케이션 로그, Macie는 민감정보 탐지, Config는 리소스 구성 변경 추적으로 API 호출 감사가 주목적이 아닙니다."
+  },
+  {
+    "id": "dea-c01-w10-d4-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 4,
+    "number": 3,
+    "prompt": "분석가가 임시로 S3 데이터를 표준 SQL로 한 번 조회하려 한다. 상시 클러스터를 두고 싶지 않고 운영 부담을 최소화하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Redshift 상시 클러스터"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EMR"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Athena"
+      },
+      {
+        "label": "D",
+        "text": "EC2에 직접 설치한 Hive"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Athena는 서버리스로 상시 인프라 없이 S3를 즉석 SQL 조회하며 스캔량만 과금해 임시·간헐 분석에 가장 적합합니다. Redshift 상시 클러스터·EMR·EC2 Hive는 운영 부담과 비용이 큽니다."
+  },
+  {
+    "id": "dea-c01-w10-d4-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 4,
+    "number": 4,
+    "prompt": "대규모(수십 TB) 일일 배치를 기존 Spark/Hive 코드로 처리하며, 인스턴스 타입과 튜닝을 세밀히 제어하고 Spot으로 비용을 절감하려 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon EMR"
+      },
+      {
+        "label": "B",
+        "text": "AWS Glue"
+      },
+      {
+        "label": "C",
+        "text": "AWS Lambda"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Athena"
+      }
+    ],
+    "answer": "A",
+    "explanation": "EMR은 관리형 Hadoop/Spark 클러스터로 인스턴스 플릿·Spot·세밀한 튜닝과 기존 Spark/Hive 코드 재사용에 적합합니다. Glue는 서버리스라 세밀한 클러스터 제어가 제한적이고, Lambda·Athena는 대규모 배치 처리 엔진이 아닙니다."
+  },
+  {
+    "id": "dea-c01-w10-d4-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 4,
+    "number": 5,
+    "prompt": "S3 버킷에 흩어진 민감 개인정보(PII)를 자동으로 발견·분류하는 것이 목적이다. 침해 위협 탐지가 아니라 데이터 분류가 핵심이다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Macie"
+      },
+      {
+        "label": "C",
+        "text": "AWS WAF"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Inspector"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Macie는 ML로 S3 내 PII·금융정보 등 민감 데이터를 발견·분류합니다. GuardDuty는 위협·침해 탐지, WAF는 웹 공격 차단, Inspector는 취약점 평가로 데이터 분류 기능이 없습니다."
+  },
+  {
+    "id": "dea-c01-w10-d5-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 5,
+    "number": 1,
+    "prompt": "DEA-C01 시험의 구성으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "100문항, 180분, 합격 600점"
+      },
+      {
+        "label": "B",
+        "text": "40문항, 90분, 합격 800점"
+      },
+      {
+        "label": "C",
+        "text": "65문항(채점 50 + 비채점 15), 130분, 합격 720점"
+      },
+      {
+        "label": "D",
+        "text": "75문항, 120분, 합격 700점"
+      }
+    ],
+    "answer": "C",
+    "explanation": "DEA-C01은 총 65문항(채점 50, 비채점 15)을 130분 동안 풀며 1000점 척도에서 720점이 합격선입니다. 나머지는 실제 구성과 다릅니다."
+  },
+  {
+    "id": "dea-c01-w10-d5-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 5,
+    "number": 2,
+    "prompt": "시험 중 한 문항에서 4분째 고민하고 있다. 가장 바람직한 행동은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "답을 찾을 때까지 계속 머문다"
+      },
+      {
+        "label": "B",
+        "text": "그 문항을 비워 둔다"
+      },
+      {
+        "label": "C",
+        "text": "남은 문항을 모두 같은 보기로 찍는다"
+      },
+      {
+        "label": "D",
+        "text": "잠정 답을 고르고 검토 표시 후 다음 문항으로 넘어간다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "문항당 평균 2분 페이스를 지키려면 막히는 문항은 잠정 답을 표시하고 넘어간 뒤 2차 검토에서 다시 봅니다. 무한정 머물면 쉬운 문항을 놓치고, 비워 두면 회수 기회를 잃습니다."
+  },
+  {
+    "id": "dea-c01-w10-d5-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 5,
+    "number": 3,
+    "prompt": "\"다음 중 두 가지를 고르시오\"라는 복수응답 문항에서 한 가지만 확신할 때 가장 적절한 대응은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "한 가지만 선택해 제출한다"
+      },
+      {
+        "label": "B",
+        "text": "나머지 보기들을 독립적으로 참/거짓 판단해 가장 타당한 두 번째를 함께 고른다"
+      },
+      {
+        "label": "C",
+        "text": "무조건 세 개를 고른다"
+      },
+      {
+        "label": "D",
+        "text": "그 문항을 비운다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "복수응답은 요구된 개수를 정확히 채워야 점수가 인정됩니다. 보기를 각각 독립적으로 평가해 가장 타당한 조합을 만들어야 하며, 개수 미달·초과나 미응답은 오답 처리됩니다."
+  },
+  {
+    "id": "dea-c01-w10-d5-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 5,
+    "number": 4,
+    "prompt": "긴 시나리오 문제를 가장 효율적으로 분해하는 순서로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "질문(마지막 문장) 먼저 → 제약 키워드 추출 → 명백한 오답 소거 → 제약 최적화 선택"
+      },
+      {
+        "label": "B",
+        "text": "본문을 처음부터 끝까지 정독한 뒤 보기를 본다"
+      },
+      {
+        "label": "C",
+        "text": "보기를 먼저 외운다"
+      },
+      {
+        "label": "D",
+        "text": "가장 긴 보기를 정답으로 고른다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "질문을 먼저 읽어 채점 기준(비용·운영·실시간 등)을 파악하고, 제약 키워드로 오답을 소거한 뒤 제약을 가장 잘 만족하는 보기를 고르는 것이 시간 효율과 정확도를 높입니다. 보기 길이는 정답과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w10-d5-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 10,
+    "day": 5,
+    "number": 5,
+    "prompt": "시험 종료 5분 전 미응답 문항이 3개 남았다. 가장 합리적인 행동은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "시간이 없으니 그대로 제출한다"
+      },
+      {
+        "label": "B",
+        "text": "한 문항만 신중히 풀고 나머지는 비운다"
+      },
+      {
+        "label": "C",
+        "text": "남은 문항에 가장 그럴듯한 보기를 골라 모두 답을 채운다"
+      },
+      {
+        "label": "D",
+        "text": "이미 푼 답을 모두 지운다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "빈 답은 확정 오답이므로 시간이 부족해도 미응답 문항은 가장 그럴듯한 보기로 모두 채워 기대 점수를 높입니다. 비워 두거나 기존 답을 지우는 것은 점수를 잃는 행동입니다."
+  },
+  {
+    "id": "dea-c01-w2-d1-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 1,
+    "number": 1,
+    "prompt": "온프레미스 NAS에 있는 30TB의 데이터를 매일 밤 변경분만 S3로 자동 동기화하고, 전송 무결성 검증과 파일 메타데이터 보존이 필요하다. 가장 적절한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS DataSync 스케줄 태스크"
+      },
+      {
+        "label": "B",
+        "text": "AWS Snowball Edge를 매일 배송"
+      },
+      {
+        "label": "C",
+        "text": "S3 단순 CLI 업로드 스크립트를 cron으로 실행"
+      },
+      {
+        "label": "D",
+        "text": "AWS Transfer Family SFTP 서버"
+      }
+    ],
+    "answer": "A",
+    "explanation": "대량·반복 스케줄·무결성 검증·메타데이터 보존이 모두 필요한 전형적 DataSync 시나리오다. CLI 스크립트는 증분·검증·메타데이터 보존을 직접 구현해야 해 취약하고, Snowball은 일회성 대량 마이그레이션용이라 매일 배송은 비현실적이다. Transfer Family는 외부가 프로토콜로 밀어넣는 게이트웨이로 방향이 맞지 않는다."
+  },
+  {
+    "id": "dea-c01-w2-d1-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 1,
+    "number": 2,
+    "prompt": "외부 파트너사들이 오랫동안 SFTP 클라이언트로 파일을 전송해 왔다. 이 워크플로를 그대로 유지하면서 수신 파일을 곧바로 S3 데이터 레이크에 저장하려 한다. 코드 변경을 최소화하는 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "파트너에게 AWS SDK로 PutObject를 직접 호출하도록 요청"
+      },
+      {
+        "label": "B",
+        "text": "AWS Transfer Family로 SFTP 서버를 만들고 백엔드를 S3로 지정"
+      },
+      {
+        "label": "C",
+        "text": "DataSync 에이전트를 파트너사에 설치"
+      },
+      {
+        "label": "D",
+        "text": "Snowcone을 파트너사에 배송"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Transfer Family는 기존 SFTP/FTPS/FTP 인증과 클라이언트를 그대로 두고 백엔드 저장소만 S3/EFS로 교체하는 관리형 게이트웨이다. 파트너 측 변경이 없다. SDK 직접 호출은 파트너 시스템 전면 개편을 요구하고, DataSync/Snow는 외부가 표준 프로토콜로 밀어넣는 수신 패턴이 아니다."
+  },
+  {
+    "id": "dea-c01-w2-d1-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 1,
+    "number": 3,
+    "prompt": "100Mbps 회선만 있는 데이터센터에서 80TB의 아카이브를 일회성으로 AWS S3로 마이그레이션해야 한다. 가장 빠르고 회선을 점유하지 않는 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "DataSync로 야간마다 증분 전송"
+      },
+      {
+        "label": "B",
+        "text": "S3 멀티파트 업로드 병렬 실행"
+      },
+      {
+        "label": "C",
+        "text": "AWS Snowball Edge 장비로 데이터를 담아 배송"
+      },
+      {
+        "label": "D",
+        "text": "Transfer Family로 SFTP 업로드"
+      }
+    ],
+    "answer": "C",
+    "explanation": "느린 회선 + 대용량(80TB) + 일회성 마이그레이션은 Snow 패밀리의 정석 시나리오다. 100Mbps로 80TB를 보내면 이론상 수십 일이 걸리고 그동안 회선을 점유한다. Snowball Edge는 80TB급 용량을 물리 배송으로 처리해 회선과 무관하게 약 1주일에 완료한다. DataSync·멀티파트·SFTP는 모두 같은 느린 회선을 사용한다."
+  },
+  {
+    "id": "dea-c01-w2-d1-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 1,
+    "number": 4,
+    "prompt": "S3 비용 청구서에 어떤 객체로도 보이지 않는 정체불명의 스토리지 요금이 꾸준히 발생한다. 대용량 파일 업로드 자동화 직후부터 시작됐다. 가장 가능성 높은 원인과 해결책은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "버전 관리가 켜져 있음 — 버전 관리 비활성화"
+      },
+      {
+        "label": "B",
+        "text": "복제 규칙 오류 — 복제 비활성화"
+      },
+      {
+        "label": "C",
+        "text": "잘못된 스토리지 클래스 — Glacier로 전환"
+      },
+      {
+        "label": "D",
+        "text": "미완료 멀티파트 업로드 조각이 남음 — Lifecycle의 AbortIncompleteMultipartUpload 설정"
+      }
+    ],
+    "answer": "D",
+    "explanation": "멀티파트 업로드를 완료하지 못하면 업로드된 조각이 객체 목록에는 안 보이지만 스토리지로 과금된다. Lifecycle 규칙에 AbortIncompleteMultipartUpload를 넣어 N일 후 자동 정리하는 것이 표준 해결책이다. 버전·스토리지 클래스·복제는 모두 객체로 보이므로 \"보이지 않는\" 비용의 원인이 아니다."
+  },
+  {
+    "id": "dea-c01-w2-d1-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 1,
+    "number": 5,
+    "prompt": "S3 raw/sales/ 경로에 파일이 도착하는 즉시 Glue 변환 잡을 자동 실행하는 이벤트 드리븐 배치를 구성하려 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 Event Notification으로 prefix 필터를 걸어 Lambda를 트리거하고 Glue 잡 실행"
+      },
+      {
+        "label": "B",
+        "text": "Glue 잡을 1분마다 폴링하는 cron 설정"
+      },
+      {
+        "label": "C",
+        "text": "DataSync 태스크에 Glue를 연결"
+      },
+      {
+        "label": "D",
+        "text": "Transfer Family 이벤트로 직접 Redshift 적재"
+      }
+    ],
+    "answer": "A",
+    "explanation": "S3 Event Notification은 ObjectCreated 이벤트를 prefix/suffix 필터와 함께 Lambda·SQS·SNS·EventBridge로 보내 이벤트 드리븐 파이프라인을 만든다. raw/sales/ prefix 필터로 해당 경로만 트리거할 수 있다. 1분 폴링은 지연·비효율적이고, DataSync/Transfer Family는 Glue 잡을 직접 트리거하는 용도가 아니다."
+  },
+  {
+    "id": "dea-c01-w2-d2-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 2,
+    "number": 1,
+    "prompt": "한 KDS 스트림에서 특정 샤드만 지속적으로 ProvisionedThroughputExceededException이 발생하고 나머지 샤드는 거의 비어 있다. 가장 가능성 높은 원인은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "파티션 키 분포가 편향되어 핫 샤드가 발생"
+      },
+      {
+        "label": "B",
+        "text": "보존 기간이 너무 짧음"
+      },
+      {
+        "label": "C",
+        "text": "컨슈머가 너무 많음"
+      },
+      {
+        "label": "D",
+        "text": "On-demand 모드를 사용 중"
+      }
+    ],
+    "answer": "A",
+    "explanation": "특정 샤드만 throttle되고 나머지는 한가한 것은 전형적인 핫 샤드(hot partition) 증상으로, 파티션 키 분포가 고르지 않아 트래픽이 한 샤드로 쏠린 결과다. 카디널리티가 높고 균등한 키로 바꿔야 한다. 보존 기간은 throttle과 무관하고, 컨슈머 수는 읽기 쪽 문제이며, On-demand 모드라면 오히려 자동 확장으로 이 문제가 완화된다."
+  },
+  {
+    "id": "dea-c01-w2-d2-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 2,
+    "number": 2,
+    "prompt": "초당 약 8MB, 6,000개의 레코드를 KDS Provisioned 모드로 안정적으로 수집하려 한다. 최소 샤드 수는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "6개"
+      },
+      {
+        "label": "B",
+        "text": "8개"
+      },
+      {
+        "label": "C",
+        "text": "2개"
+      },
+      {
+        "label": "D",
+        "text": "10개"
+      }
+    ],
+    "answer": "B",
+    "explanation": "샤드당 쓰기 용량은 1MB/s 또는 1,000 records/s 중 먼저 도달하는 한계다. 8MB/s에는 8샤드, 6,000 records/s에는 6샤드가 필요하므로 둘 다 만족하려면 더 큰 값인 8개가 필요하다. 6개는 처리량(MB) 한계를, 2개는 둘 다 초과한다. 10개는 동작하지만 최소가 아니다."
+  },
+  {
+    "id": "dea-c01-w2-d2-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 2,
+    "number": 3,
+    "prompt": "같은 사용자가 발생시킨 클릭 이벤트들을 반드시 발생 순서대로 처리해야 한다. KDS에서 이를 보장하는 설계는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "매 레코드마다 무작위 파티션 키 사용"
+      },
+      {
+        "label": "B",
+        "text": "샤드를 1개로 고정"
+      },
+      {
+        "label": "C",
+        "text": "사용자 ID를 파티션 키로 사용"
+      },
+      {
+        "label": "D",
+        "text": "향상된 팬아웃 활성화"
+      }
+    ],
+    "answer": "C",
+    "explanation": "KDS는 같은 파티션 키의 레코드를 같은 샤드로 보내고 샤드 내 순서를 보장하므로, 사용자 ID를 파티션 키로 쓰면 사용자별 순서가 유지된다. 무작위 키는 여러 샤드로 흩어져 순서가 깨진다. 샤드 1개는 전체 순서를 보장하지만 처리량이 1MB/s로 묶여 확장 불가다. 향상된 팬아웃은 읽기 대역폭 기능으로 순서와 무관하다."
+  },
+  {
+    "id": "dea-c01-w2-d2-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 2,
+    "number": 4,
+    "prompt": "5개의 서로 다른 컨슈머 애플리케이션이 각각 풀 대역폭으로 동일 스트림을 낮은 지연으로 독립 소비해야 한다. 적절한 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "공유 처리량(classic) GetRecords 폴링"
+      },
+      {
+        "label": "B",
+        "text": "샤드 수를 5개로 고정"
+      },
+      {
+        "label": "C",
+        "text": "보존 기간을 365일로 연장"
+      },
+      {
+        "label": "D",
+        "text": "향상된 팬아웃(Enhanced Fan-Out)"
+      }
+    ],
+    "answer": "D",
+    "explanation": "향상된 팬아웃은 컨슈머마다 샤드당 2MB/s 전용 대역폭을 push 방식(약 70ms 지연)으로 제공해, 여러 컨슈머가 서로 경쟁하지 않고 독립적으로 소비할 수 있다. 공유 처리량은 샤드당 2MB/s를 모든 컨슈머가 나눠 써서 컨슈머가 늘수록 느려진다. 보존 기간·샤드 수는 컨슈머 간 대역폭 경쟁 문제를 해결하지 못한다."
+  },
+  {
+    "id": "dea-c01-w2-d2-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 2,
+    "number": 5,
+    "prompt": "컨슈머 처리 로직에 버그가 있었음을 발견하고, 지난 3일간 들어온 데이터를 처음부터 다시 처리하려 한다. 이를 가능하게 하는 KDS의 특성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "보존 기간을 충분히 길게 설정해 두면 해당 구간을 재처리(replay)할 수 있다"
+      },
+      {
+        "label": "B",
+        "text": "SQS처럼 소비하면 메시지가 삭제되므로 불가능하다"
+      },
+      {
+        "label": "C",
+        "text": "파티션 키를 바꾸면 자동 재처리된다"
+      },
+      {
+        "label": "D",
+        "text": "샤드를 분할하면 과거 데이터가 복원된다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "KDS는 append-only 로그처럼 동작해 보존 기간(기본 24h, 최대 365일) 안의 데이터를 보관하므로, 컨슈머를 과거 위치(시퀀스/타임스탬프)부터 다시 읽게 해 재처리할 수 있다. 3일 재처리를 하려면 보존을 3일 이상으로 설정해 두었어야 한다. SQS와 달리 소비해도 데이터가 사라지지 않으며, 파티션 키 변경이나 리샤딩은 재처리와 무관하다."
+  },
+  {
+    "id": "dea-c01-w2-d3-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 3,
+    "number": 1,
+    "prompt": "스트리밍 이벤트를 추가 코드 없이 S3 데이터 레이크에 자동 적재만 하면 되고, 커스텀 실시간 처리나 재처리는 필요 없다. 가장 적절한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Kinesis Data Firehose 전달 스트림"
+      },
+      {
+        "label": "B",
+        "text": "Kinesis Data Streams + KCL 컨슈머 직접 구현"
+      },
+      {
+        "label": "C",
+        "text": "Amazon MSK"
+      },
+      {
+        "label": "D",
+        "text": "SQS + Lambda"
+      }
+    ],
+    "answer": "A",
+    "explanation": "단순 적재만 필요하고 커스텀 처리·재처리가 불필요하면 완전관리형 Firehose가 정답이다. 샤드·컨슈머 코드·스케일링이 모두 자동이며 S3 적재가 빌트인이다. KDS+KCL은 컨슈머 코드를 직접 짜야 해 과한 선택이고, MSK는 운영 부담이 큰 Kafka이며, SQS+Lambda는 적재 로직을 직접 구현해야 한다."
+  },
+  {
+    "id": "dea-c01-w2-d3-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 3,
+    "number": 2,
+    "prompt": "Firehose로 S3에 적재된 데이터를 Athena로 쿼리하니 수많은 작은 파일 때문에 느리다. 가장 효과적인 개선책은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "버퍼 시간을 60초로 줄인다"
+      },
+      {
+        "label": "B",
+        "text": "압축을 끈다"
+      },
+      {
+        "label": "C",
+        "text": "버퍼 크기를 더 크게(예: 128MB) 설정해 큰 파일로 적재한다"
+      },
+      {
+        "label": "D",
+        "text": "목적지를 OpenSearch로 바꾼다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "작은 파일 문제는 버퍼 크기를 키워 적은 수의 큰 파일로 적재하면 완화된다. Athena 같은 엔진은 파일당 오버헤드가 있어 큰 파일이 유리하다. 버퍼 시간을 줄이면 오히려 더 작고 많은 파일이 생긴다. 압축 해제는 스캔량을 늘려 더 비싸지고, 목적지 변경은 Athena 쿼리 요구와 맞지 않는다."
+  },
+  {
+    "id": "dea-c01-w2-d3-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 3,
+    "number": 3,
+    "prompt": "Firehose가 Redshift로 데이터를 적재하는 방식으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Redshift에 레코드별 단건 INSERT를 실행한다"
+      },
+      {
+        "label": "B",
+        "text": "먼저 S3에 스테이징한 뒤 COPY 명령으로 Redshift에 병렬 로드한다"
+      },
+      {
+        "label": "C",
+        "text": "Redshift Spectrum으로 S3를 직접 쿼리한다"
+      },
+      {
+        "label": "D",
+        "text": "DynamoDB를 경유해 적재한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Firehose는 데이터를 먼저 S3에 쓴 뒤 COPY로 Redshift에 적재한다. Redshift는 MPP 웨어하우스로 단건 INSERT가 매우 비효율적이라 S3에서 COPY로 병렬 로드하는 것이 정석이며, Firehose가 이를 자동화한다. Spectrum은 외부 테이블 쿼리 기능으로 적재가 아니고, DynamoDB 경유는 존재하지 않는 경로다."
+  },
+  {
+    "id": "dea-c01-w2-d3-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 3,
+    "number": 4,
+    "prompt": "실시간으로 이상 거래를 탐지하는 분석 앱을 운영하면서, 동시에 모든 원본 거래 이벤트를 S3 데이터 레이크에 보관해야 한다. 가장 적절한 아키텍처는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Firehose 하나로 실시간 탐지와 보관을 모두 처리"
+      },
+      {
+        "label": "B",
+        "text": "Snowball로 거래를 배송"
+      },
+      {
+        "label": "C",
+        "text": "SQS로 거래를 받아 Lambda가 S3에 저장"
+      },
+      {
+        "label": "D",
+        "text": "KDS를 소스로 두고, 분석 앱은 KDS를 직접 소비하며 Firehose가 같은 KDS를 읽어 S3로 적재"
+      }
+    ],
+    "answer": "D",
+    "explanation": "실시간 커스텀 분석(이상 탐지)과 원본 보관을 동시에 요구하므로, KDS를 소스로 두고 분석 앱이 직접 실시간 소비하면서 Firehose가 같은 스트림을 읽어 S3로 자동 적재하는 조합이 정석이다. Firehose 단독은 커스텀 실시간 분석을 못 하고, SQS+Lambda는 재처리·멀티 컨슈머가 약하며, Snowball은 배치 마이그레이션 도구다."
+  },
+  {
+    "id": "dea-c01-w2-d3-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 3,
+    "number": 5,
+    "prompt": "Firehose의 변환 Lambda가 일부 레코드에서 실패하거나 목적지 적재가 실패할 때, 데이터 유실을 막기 위한 Firehose의 기본 동작은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "실패한 레코드를 즉시 폐기한다"
+      },
+      {
+        "label": "B",
+        "text": "실패한 레코드를 지정된 S3 백업/에러 prefix로 보낸다"
+      },
+      {
+        "label": "C",
+        "text": "전체 전달 스트림을 중단한다"
+      },
+      {
+        "label": "D",
+        "text": "프로듀서에게 동기적으로 예외를 던진다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Firehose는 변환 실패·적재 실패 레코드를 폐기하지 않고 지정한 S3 백업(에러) 위치로 보내, 이후 조사·재처리가 가능하게 한다. 따라서 데이터가 유실되지 않는다. 즉시 폐기·스트림 중단·프로듀서 동기 예외는 모두 Firehose의 동작이 아니며 운영 안정성에도 어긋난다."
+  },
+  {
+    "id": "dea-c01-w2-d4-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 4,
+    "number": 1,
+    "prompt": "한 기업이 온프레미스에서 수년간 Apache Kafka로 스트리밍 파이프라인을 운영해 왔고, 기존 컨슈머/프로듀서 코드와 Kafka Connect 커넥터를 거의 그대로 AWS로 옮기려 한다. 가장 적절한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Kinesis Data Streams"
+      },
+      {
+        "label": "B",
+        "text": "Kinesis Data Firehose"
+      },
+      {
+        "label": "C",
+        "text": "Amazon MSK"
+      },
+      {
+        "label": "D",
+        "text": "SQS"
+      }
+    ],
+    "answer": "C",
+    "explanation": "\"기존 Apache Kafka 워크로드를 코드 변경 없이 이전\"은 MSK의 정석 시나리오다. MSK는 표준 Kafka API를 제공하므로 기존 클라이언트 코드·커넥터·토픽 설계를 그대로 재사용(리프트 앤 시프트)할 수 있다. Kinesis는 API가 달라 코드 재작성이 필요하고, SQS는 스트리밍 로그 모델이 아니다."
+  },
+  {
+    "id": "dea-c01-w2-d4-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 4,
+    "number": 2,
+    "prompt": "Kafka의 파티션은 Kinesis Data Streams의 어떤 개념에 가장 가깝게 대응하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "샤드"
+      },
+      {
+        "label": "B",
+        "text": "컨슈머 그룹"
+      },
+      {
+        "label": "C",
+        "text": "전달 스트림"
+      },
+      {
+        "label": "D",
+        "text": "보존 기간"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Kafka의 파티션은 KDS의 샤드에 대응한다. 둘 다 병렬성·처리량의 단위이며 내부적으로 순서가 보장되는 append-only 로그다. 컨슈머 그룹은 KCL 애플리케이션/컨슈머 측 개념이고, 전달 스트림은 Firehose의 단위이며, 보존 기간은 데이터 보관 시간 설정이다."
+  },
+  {
+    "id": "dea-c01-w2-d4-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 4,
+    "number": 3,
+    "prompt": "파티션이 3개인 Kafka 토픽을 한 컨슈머 그룹에서 5개의 컨슈머로 소비하려 한다. 결과로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "5개 컨슈머가 모두 균등하게 일한다"
+      },
+      {
+        "label": "B",
+        "text": "파티션이 3개뿐이므로 최대 3개 컨슈머만 활성, 나머지 2개는 놀게 된다"
+      },
+      {
+        "label": "C",
+        "text": "자동으로 파티션이 5개로 늘어난다"
+      },
+      {
+        "label": "D",
+        "text": "순서 보장이 깨진다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "한 그룹 안에서 각 파티션은 한 컨슈머만 읽으므로, 컨슈머 수가 파티션 수를 넘으면 초과분은 할당받을 파티션이 없어 유휴 상태가 된다. 병렬성 상한은 파티션 수다. 파티션은 자동으로 늘지 않으며(수동 증설 필요), 순서 보장은 파티션 내에서 유지된다."
+  },
+  {
+    "id": "dea-c01-w2-d4-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 4,
+    "number": 4,
+    "prompt": "AWS에서 새 스트리밍 파이프라인을 구축하는데, 운영 부담을 최소화하고 데이터를 단순히 S3와 Redshift에 적재만 하면 된다. Kafka 경험이나 기존 자산은 없다. 가장 적절한 선택은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon MSK Provisioned"
+      },
+      {
+        "label": "B",
+        "text": "Amazon MSK Connect"
+      },
+      {
+        "label": "C",
+        "text": "자체 EC2에 Kafka 직접 설치"
+      },
+      {
+        "label": "D",
+        "text": "Kinesis Data Firehose"
+      }
+    ],
+    "answer": "D",
+    "explanation": "운영 부담 최소화 + 단순 S3/Redshift 적재 + 기존 Kafka 자산 없음 → 완전관리형 Firehose가 정답이다. 목적지가 빌트인이고 서버리스다. MSK는 클러스터 운영을 인식해야 해 부담이 크고, EC2 자체 설치는 운영 부담이 최대이며, MSK Connect는 Kafka 생태계가 전제다."
+  },
+  {
+    "id": "dea-c01-w2-d4-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 4,
+    "number": 5,
+    "prompt": "Kafka와 Kinesis가 SQS 같은 전통적 메시지 큐와 근본적으로 다른 공통 특성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "append-only 로그로 동작해, 보존 기간 동안 여러 컨슈머(그룹)가 각자 오프셋으로 독립 재소비할 수 있다"
+      },
+      {
+        "label": "B",
+        "text": "메시지를 소비하면 즉시 삭제된다"
+      },
+      {
+        "label": "C",
+        "text": "단일 컨슈머만 지원한다"
+      },
+      {
+        "label": "D",
+        "text": "순서를 전혀 보장하지 않는다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Kafka와 Kinesis는 모두 분산 append-only 로그 모델로, 소비해도 데이터가 사라지지 않고 보존 기간 동안 보관되며 여러 컨슈머 그룹이 독립 오프셋/체크포인트로 같은 데이터를 재소비·팬아웃할 수 있다. SQS는 소비 시 삭제되는 큐다. 단일 컨슈머 제한이나 순서 미보장은 둘의 특성과 반대다."
+  },
+  {
+    "id": "dea-c01-w2-d5-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 5,
+    "number": 1,
+    "prompt": "다음 중 KDS를 Firehose보다 우선해야 하는 시나리오는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "여러 컨슈머가 같은 데이터를 독립적으로 소비하고, 버그 수정 후 과거 데이터를 재처리해야 한다"
+      },
+      {
+        "label": "B",
+        "text": "스트리밍 데이터를 추가 코드 없이 S3에 적재만 하면 된다"
+      },
+      {
+        "label": "C",
+        "text": "운영 부담을 최소화하고 싶다"
+      },
+      {
+        "label": "D",
+        "text": "데이터를 곧바로 Redshift에 적재만 하면 된다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "멀티 컨슈머 독립 소비와 재처리(replay)는 KDS의 핵심 강점이다. Firehose는 보존·재처리가 없고 정해진 목적지로만 흘려보낸다. A·C·D는 모두 단순 적재·최소 운영으로 Firehose가 더 적합한 경우다."
+  },
+  {
+    "id": "dea-c01-w2-d5-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 5,
+    "number": 2,
+    "prompt": "온프레미스 파일 서버의 데이터를 매일 야간에 변경분만 무결성 검증과 함께 S3로 동기화한다. 회선 대역폭은 충분하다. 가장 적절한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Snowball Edge"
+      },
+      {
+        "label": "B",
+        "text": "Transfer Family"
+      },
+      {
+        "label": "C",
+        "text": "AWS DataSync"
+      },
+      {
+        "label": "D",
+        "text": "Kinesis Data Firehose"
+      }
+    ],
+    "answer": "C",
+    "explanation": "대량·반복 스케줄·증분·무결성 검증 + 충분한 회선은 DataSync의 정석이다. 회선이 충분하므로 물리 배송(Snowball)은 불필요하다. Transfer Family는 외부가 SFTP로 밀어넣는 수신 패턴이고, Firehose는 스트리밍 적재 도구로 온프레미스 파일 동기화와 맞지 않는다."
+  },
+  {
+    "id": "dea-c01-w2-d5-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 5,
+    "number": 3,
+    "prompt": "한 회사가 기존 Apache Kafka 기반 파이프라인과 Kafka Connect 커넥터를 운영 중이며, 이를 AWS로 코드 변경 최소화하며 옮기려 한다. 동시에 클러스터 운영 부담도 줄이고 싶다. 가장 적절한 선택은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Kinesis Data Streams로 재작성"
+      },
+      {
+        "label": "B",
+        "text": "Amazon MSK(필요 시 MSK Serverless)"
+      },
+      {
+        "label": "C",
+        "text": "SQS로 마이그레이션"
+      },
+      {
+        "label": "D",
+        "text": "Snowmobile로 이전"
+      }
+    ],
+    "answer": "B",
+    "explanation": "기존 Kafka 자산을 코드 변경 없이 이전하려면 표준 Kafka API를 제공하는 MSK가 정답이며, 운영 부담을 더 줄이려면 용량을 자동 관리하는 MSK Serverless를 고른다. KDS 재작성은 코드 변경이 크고, SQS는 Kafka 모델이 아니며, Snowmobile은 데이터 물리 이전 장비로 스트리밍 플랫폼이 아니다."
+  },
+  {
+    "id": "dea-c01-w2-d5-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 5,
+    "number": 4,
+    "prompt": "Firehose로 S3에 적재한 데이터를 Athena로 분석하는데, 수많은 작은 파일과 행 기반 JSON 때문에 쿼리가 느리고 비싸다. 두 가지 개선 방향으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "버퍼 시간을 줄이고 압축을 끈다"
+      },
+      {
+        "label": "B",
+        "text": "파티션 키를 country로 바꾼다"
+      },
+      {
+        "label": "C",
+        "text": "목적지를 OpenSearch로 바꾼다"
+      },
+      {
+        "label": "D",
+        "text": "버퍼 크기를 키워 큰 파일로 만들고, Parquet/ORC 컬럼형으로 포맷 변환한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "작은 파일 문제는 버퍼 크기를 키워 큰 파일로 적재하면 완화되고, 컬럼형(Parquet/ORC) 변환은 Athena 스캔량을 줄여 속도·비용을 모두 개선한다. 버퍼 시간 단축·압축 해제는 오히려 악화시키고, OpenSearch 변경은 Athena 요구와 무관하며, 파티션 키는 스트림 분산 개념으로 Athena 파일 문제와 관계없다."
+  },
+  {
+    "id": "dea-c01-w2-d5-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 2,
+    "day": 5,
+    "number": 5,
+    "prompt": "KDS와 Amazon MSK가 공통으로 가진, 단순 메시지 큐(SQS)와 구별되는 특성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "append-only 로그로 보존 기간 동안 데이터를 보관해 여러 컨슈머의 독립 재소비·재처리가 가능하다"
+      },
+      {
+        "label": "B",
+        "text": "메시지를 소비하면 즉시 삭제된다"
+      },
+      {
+        "label": "C",
+        "text": "처리량이 고정되어 확장할 수 없다"
+      },
+      {
+        "label": "D",
+        "text": "단일 컨슈머만 지원한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "KDS와 MSK(Kafka)는 모두 분산 append-only 로그로, 소비해도 데이터가 사라지지 않고 보존 기간 안에서 여러 컨슈머가 각자 위치(체크포인트/오프셋)로 독립 재소비·재처리할 수 있다. SQS는 소비 시 삭제되는 큐다. 두 서비스 모두 샤드/파티션 추가로 확장 가능하고 멀티 컨슈머를 지원하므로 나머지 보기는 틀렸다."
+  },
+  {
+    "id": "dea-c01-w3-d1-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 1,
+    "number": 1,
+    "prompt": "모바일 앱 클릭 이벤트가 네트워크 지연으로 순서가 뒤바뀌어 도착한다. 실제 발생 시각 기준으로 정확히 집계하면서, 늦은 데이터를 일정 시간까지 기다리려면 Flink에서 무엇을 설정해야 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Event time과 Watermark(forBoundedOutOfOrderness)"
+      },
+      {
+        "label": "B",
+        "text": "Processing time과 Tumbling window"
+      },
+      {
+        "label": "C",
+        "text": "Ingestion time과 Global window"
+      },
+      {
+        "label": "D",
+        "text": "Processing time과 Session window"
+      }
+    ],
+    "answer": "A",
+    "explanation": "실제 발생 시각 기준 집계는 Event time을 써야 하고, 순서가 뒤바뀐 늦은 데이터를 일정 시간까지 허용하려면 Watermark가 필요하다. `forBoundedOutOfOrderness(Duration)`는 허용할 최대 순서 어긋남을 지정한다. Processing time은 처리 시점 기준이라 늦게 도착한 이벤트의 발생 시각을 반영하지 못한다."
+  },
+  {
+    "id": "dea-c01-w3-d1-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 1,
+    "number": 2,
+    "prompt": "\"5분마다 직전 5분간의 매출 합계\"처럼 겹치지 않는 고정 구간 집계에 적합한 윈도우는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Sliding window"
+      },
+      {
+        "label": "B",
+        "text": "Session window"
+      },
+      {
+        "label": "C",
+        "text": "Tumbling window"
+      },
+      {
+        "label": "D",
+        "text": "Global window"
+      }
+    ],
+    "answer": "C",
+    "explanation": "겹치지 않는 고정 크기 구간은 Tumbling window다. Sliding은 구간이 겹치며(이동 평균 등) 메모리를 더 쓴다. Session은 비활동 gap으로 경계를 긋고, Global은 경계가 없어 커스텀 트리거가 필요하다."
+  },
+  {
+    "id": "dea-c01-w3-d1-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 1,
+    "number": 3,
+    "prompt": "Managed Service for Apache Flink 애플리케이션의 `millisBehindLatest` 지표가 시간이 갈수록 계속 증가한다. 가장 적절한 해석과 대응은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "정상이며 무시해도 된다"
+      },
+      {
+        "label": "B",
+        "text": "처리 능력이 유입 속도를 못 따라가므로 병렬성/KPU 또는 소스 샤드를 늘린다"
+      },
+      {
+        "label": "C",
+        "text": "체크포인트가 비활성화된 것이므로 끈다"
+      },
+      {
+        "label": "D",
+        "text": "데이터가 손실되고 있으므로 윈도우를 제거한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`millisBehindLatest`는 스트림 최신 데이터로부터 처리가 얼마나 뒤처졌는지를 나타낸다. 지속 증가는 처리 지연 누적을 의미하며, parallelism/KPU를 늘리거나 Kinesis 샤드를 추가해 처리량을 높여야 한다. 체크포인트를 끄는 것은 내구성을 해치는 잘못된 대응이다."
+  },
+  {
+    "id": "dea-c01-w3-d1-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 1,
+    "number": 4,
+    "prompt": "단순히 들어오는 JSON 레코드의 형식을 변환해 S3에 적재만 하면 되고, 윈도우 집계나 스트림 조인은 필요 없다. 가장 비용 효율적이고 단순한 선택은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Managed Service for Apache Flink"
+      },
+      {
+        "label": "B",
+        "text": "EMR Spark Streaming 클러스터"
+      },
+      {
+        "label": "C",
+        "text": "Redshift Streaming Ingestion"
+      },
+      {
+        "label": "D",
+        "text": "Kinesis Data Firehose + Lambda 변환"
+      }
+    ],
+    "answer": "D",
+    "explanation": "윈도우 집계나 상태 관리 없이 단순 변환 후 S3 적재라면 Firehose + Lambda 변환이 가장 단순하고 저렴하다. Flink와 EMR은 상태 기반 복잡 처리에 적합하며 이 경우 과한 설계다. Redshift Streaming Ingestion은 Redshift로 직접 넣는 다른 목적의 기능이다."
+  },
+  {
+    "id": "dea-c01-w3-d1-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 1,
+    "number": 5,
+    "prompt": "Flink가 노드 장애 후에도 \"정확히 한 번(exactly-once)\" 처리를 보장하는 핵심 메커니즘은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "주기적 체크포인트(분산 스냅샷)로 상태를 저장하고 장애 시 소스 오프셋과 함께 복원"
+      },
+      {
+        "label": "B",
+        "text": "모든 데이터를 DynamoDB에 중복 저장"
+      },
+      {
+        "label": "C",
+        "text": "SQS DLQ로 실패 레코드를 격리"
+      },
+      {
+        "label": "D",
+        "text": "S3 버전 관리"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Flink는 Chandy-Lamport 기반의 분산 스냅샷(체크포인트)으로 모든 연산자 상태를 일관되게 저장하고, 장애 시 마지막 체크포인트로 상태를 복원하면서 소스(Kinesis) 오프셋도 되돌려 재처리한다. 이 조합이 exactly-once 시맨틱의 기반이다. 나머지는 다른 목적의 메커니즘이다."
+  },
+  {
+    "id": "dea-c01-w3-d2-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 2,
+    "number": 1,
+    "prompt": "결제 API가 네트워크 타임아웃으로 같은 요청을 두 번 보낼 수 있다. 중복 결제를 방지하기 위한 가장 견고한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "클라이언트가 부여한 고유 멱등성 키를 DynamoDB 조건부 쓰기로 한 번만 처리하도록 보장한다"
+      },
+      {
+        "label": "B",
+        "text": "요청을 최대한 빨리 처리해 타임아웃을 없앤다"
+      },
+      {
+        "label": "C",
+        "text": "SQS Standard 큐로 보내 순서를 맞춘다"
+      },
+      {
+        "label": "D",
+        "text": "결제 후 이메일로 확인한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "분산 환경에서 중복 전달은 막기 어려우므로, 컨슈머가 멱등성을 갖추는 것이 정답이다. 클라이언트가 부여한 멱등성 키를 DynamoDB 조건부 쓰기(`attribute_not_exists`)로 원자적으로 검사하면, 같은 키의 두 번째 요청은 실제 결제 로직 없이 무시된다. 내용 해시가 아닌 클라이언트 부여 키여야 의도된 동일 결제와 구분된다."
+  },
+  {
+    "id": "dea-c01-w3-d2-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 2,
+    "number": 2,
+    "prompt": "Kinesis Data Streams에서 \"같은 사용자의 이벤트는 발생 순서대로 처리\"되어야 한다. 어떻게 보장하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 이벤트를 단일 샤드로 보낸다"
+      },
+      {
+        "label": "B",
+        "text": "이벤트마다 무작위 파티션 키를 부여한다"
+      },
+      {
+        "label": "C",
+        "text": "SQS Standard로 전환한다"
+      },
+      {
+        "label": "D",
+        "text": "PartitionKey를 userId로 지정해 같은 사용자가 같은 샤드로 가게 한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Kinesis는 샤드 내에서 순서를 보장하고, 같은 파티션 키는 같은 샤드로 라우팅된다. userId를 파티션 키로 쓰면 사용자별 순서가 보장되면서도 여러 샤드로 부하가 분산된다. 단일 샤드로 전부 보내면 순서는 보장되나 처리량이 무너진다. 무작위 키는 순서를 깬다."
+  },
+  {
+    "id": "dea-c01-w3-d2-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 2,
+    "number": 3,
+    "prompt": "SQS 표준 큐에서 컨슈머가 처리에 평균 90초가 걸리는데 가시성 타임아웃이 30초로 설정돼 있다. 어떤 문제가 생기는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "메시지가 손실된다"
+      },
+      {
+        "label": "B",
+        "text": "처리 완료 전에 메시지가 다시 보여 다른 컨슈머가 중복 처리한다"
+      },
+      {
+        "label": "C",
+        "text": "큐가 자동으로 FIFO로 전환된다"
+      },
+      {
+        "label": "D",
+        "text": "DLQ가 비활성화된다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "가시성 타임아웃(30초)이 실제 처리 시간(90초)보다 짧으면, 처리 도중에 메시지가 다시 큐에 보이게 되어 다른 컨슈머가 같은 메시지를 중복 처리한다. 가시성 타임아웃은 최대 처리 시간보다 길게(여유 포함) 설정하거나, 처리 중 `ChangeMessageVisibility`로 연장해야 한다."
+  },
+  {
+    "id": "dea-c01-w3-d2-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 2,
+    "number": 4,
+    "prompt": "일시적 장애가 발생한 다운스트림에 다수 클라이언트가 동시에 재시도하면서 부하가 파동처럼 몰린다. 이를 완화하는 표준 기법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "즉시 무한 재시도"
+      },
+      {
+        "label": "B",
+        "text": "고정 1초 간격 재시도"
+      },
+      {
+        "label": "C",
+        "text": "지수 백오프 + 무작위 지터"
+      },
+      {
+        "label": "D",
+        "text": "재시도를 완전히 비활성화"
+      }
+    ],
+    "answer": "C",
+    "explanation": "지수 백오프만으로는 모든 클라이언트가 같은 시점(1초, 2초, 4초...)에 동시 재시도해 부하가 파동처럼 몰린다(thundering herd). 무작위 지터를 더하면 재시도가 시간축에 고르게 분산되어 다운스트림 회복을 돕는다. 고정 간격도 동시성 문제를 해결하지 못한다."
+  },
+  {
+    "id": "dea-c01-w3-d2-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 2,
+    "number": 5,
+    "prompt": "특정 메시지가 형식 오류로 영원히 처리에 실패해 정상 메시지 처리까지 막고 있다. 가장 적절한 대응은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "큐를 삭제하고 다시 만든다"
+      },
+      {
+        "label": "B",
+        "text": "maxReceiveCount를 설정한 DLQ로 실패 메시지를 격리하고, 원인 수정 후 redrive로 재처리한다"
+      },
+      {
+        "label": "C",
+        "text": "가시성 타임아웃을 0으로 설정한다"
+      },
+      {
+        "label": "D",
+        "text": "모든 메시지를 무조건 삭제한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "영원히 실패하는 독약 메시지는 DLQ로 격리해야 정상 큐가 막히지 않는다. RedrivePolicy의 `maxReceiveCount`로 실패 횟수 임계치를 정하고, DLQ에 알람을 건 뒤 원인(스키마 위반 등)을 수정하고 redrive로 원래 큐로 되돌려 재처리한다. 큐 삭제나 전체 삭제는 정상 데이터까지 잃는다."
+  },
+  {
+    "id": "dea-c01-w3-d3-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 3,
+    "number": 1,
+    "prompt": "운영 중인 RDS MySQL을 다운타임 없이 분석용 S3 데이터 레이크로 옮기면서, 이전 이후에도 변경분을 계속 반영하려 한다. 가장 적절한 DMS 마이그레이션 모드는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Full Load only"
+      },
+      {
+        "label": "B",
+        "text": "CDC only"
+      },
+      {
+        "label": "C",
+        "text": "Full Load + CDC"
+      },
+      {
+        "label": "D",
+        "text": "Schema Conversion only"
+      }
+    ],
+    "answer": "C",
+    "explanation": "무중단 마이그레이션의 표준은 Full Load + CDC다. 기존 데이터를 전체 복사(Full Load)한 뒤, 그 사이 발생한 변경분을 적용하고 이후부터 실시간 CDC로 지속 동기화한다. Full Load only는 이후 변경을 반영 못 하고, CDC only는 초기 데이터가 없는 상태에서만 적합하다."
+  },
+  {
+    "id": "dea-c01-w3-d3-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 3,
+    "number": 2,
+    "prompt": "DMS로 PostgreSQL을 소스로 CDC를 구성했는데 Full Load는 성공하지만 변경분이 전혀 복제되지 않는다. 가장 가능성 높은 원인은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "원본 PostgreSQL의 `wal_level`이 logical로 설정되지 않았다"
+      },
+      {
+        "label": "B",
+        "text": "Replication Instance가 너무 크다"
+      },
+      {
+        "label": "C",
+        "text": "Target Endpoint가 S3여서"
+      },
+      {
+        "label": "D",
+        "text": "Migration Task 이름에 대문자가 있어서"
+      }
+    ],
+    "answer": "A",
+    "explanation": "PostgreSQL CDC는 logical replication을 사용하므로 `wal_level=logical` 설정이 필요하다. 이 설정이 없으면 Full Load는 되지만 CDC가 변경 로그를 읽지 못한다. MySQL은 ROW 형식 binlog, Oracle은 supplemental logging이 동일한 역할을 한다. CDC 사전 로그 설정 누락은 대표적인 함정이다."
+  },
+  {
+    "id": "dea-c01-w3-d3-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 3,
+    "number": 3,
+    "prompt": "Oracle 데이터베이스를 Aurora PostgreSQL로 옮길 때, 테이블 데이터가 아니라 저장 프로시저와 스키마 구조를 PostgreSQL 호환으로 변환하는 도구는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "DMS Migration Task"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Athena"
+      },
+      {
+        "label": "C",
+        "text": "AWS Glue Crawler"
+      },
+      {
+        "label": "D",
+        "text": "AWS SCT(Schema Conversion Tool) / DMS Schema Conversion"
+      }
+    ],
+    "answer": "D",
+    "explanation": "DMS는 데이터 이관을 담당하지만 스키마/저장 프로시저 같은 코드 변환은 SCT(또는 DMS Schema Conversion)의 몫이다. 이기종 마이그레이션에서 \"데이터=DMS, 스키마/코드 변환=SCT\"로 역할이 나뉜다. Glue Crawler는 메타데이터 카탈로그용, Athena는 쿼리 엔진이다."
+  },
+  {
+    "id": "dea-c01-w3-d3-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 3,
+    "number": 4,
+    "prompt": "DMS CDC 작업에서 `CDCLatencyTarget` 지표가 지속적으로 증가하고 `CDCLatencySource`는 정상이다. 무엇을 의미하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "원본 DB 로그를 읽는 속도가 느리다"
+      },
+      {
+        "label": "B",
+        "text": "대상(target)에 변경을 적용하는 단계가 병목이다"
+      },
+      {
+        "label": "C",
+        "text": "Replication Instance가 종료됐다"
+      },
+      {
+        "label": "D",
+        "text": "데이터 검증이 실패했다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`CDCLatencyTarget`은 대상에 변경을 적용하는 지연을, `CDCLatencySource`는 원본 로그를 읽는 지연을 나타낸다. Target만 증가하면 대상 쓰기(예: Redshift 커밋 부담, 인덱스 등)가 병목이라는 뜻이다. 대상 측 처리 능력이나 적재 방식을 개선해야 한다."
+  },
+  {
+    "id": "dea-c01-w3-d3-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 3,
+    "number": 5,
+    "prompt": "운영 DB의 변경을 여러 다운스트림(데이터 레이크, 실시간 대시보드, 검색 인덱스)이 각자 소비하도록 하려 한다. DMS의 CDC 출력을 어디로 보내는 것이 이 팬아웃에 가장 적합한가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Kinesis Data Streams (이후 여러 컨슈머가 구독)"
+      },
+      {
+        "label": "B",
+        "text": "단일 RDS 인스턴스"
+      },
+      {
+        "label": "C",
+        "text": "로컬 파일 시스템"
+      },
+      {
+        "label": "D",
+        "text": "단일 EBS 볼륨"
+      }
+    ],
+    "answer": "A",
+    "explanation": "CDC 변경 이벤트를 Kinesis Data Streams로 보내면 여러 컨슈머(Flink, Firehose→S3, OpenSearch 등)가 같은 스트림을 독립적으로 구독해 각자 재구성할 수 있다. 이는 \"데이터베이스를 이벤트 스트림으로 노출\"하는 팬아웃 패턴의 표준이다. 단일 인스턴스/볼륨은 다중 소비에 부적합하다."
+  },
+  {
+    "id": "dea-c01-w3-d4-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 4,
+    "number": 1,
+    "prompt": "같은 데이터를 \"최근 값은 실시간 근사치로 빠르게, 전체 값은 배치로 정확하게\" 둘 다 제공하려는 아키텍처는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Lambda 아키텍처"
+      },
+      {
+        "label": "B",
+        "text": "Kappa 아키텍처"
+      },
+      {
+        "label": "C",
+        "text": "단일 SQS 큐"
+      },
+      {
+        "label": "D",
+        "text": "단일 RDS 인스턴스"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Lambda 아키텍처는 Speed Layer(실시간 근사)와 Batch Layer(전체 정확 재계산)를 병행하고 Serving Layer에서 합쳐 응답한다. \"최신은 빠르게, 과거는 정확하게\"를 둘 다 잡는다. Kappa는 배치 레이어를 없애고 스트림 단일 경로로 단순화한 대안이다."
+  },
+  {
+    "id": "dea-c01-w3-d4-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 4,
+    "number": 2,
+    "prompt": "Lambda 아키텍처를 운영하다 보니 배치(Spark)와 실시간(Flink)에 같은 집계 로직을 두 번 구현·유지하는 부담이 크다. 로직 중복을 없애는 대안 아키텍처와 그 재처리 방식은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Lambda 아키텍처, 배치 재실행"
+      },
+      {
+        "label": "B",
+        "text": "3-tier 아키텍처, 캐시 무효화"
+      },
+      {
+        "label": "C",
+        "text": "Kappa 아키텍처, 스트림을 처음부터 replay"
+      },
+      {
+        "label": "D",
+        "text": "마이크로서비스, 서비스 재시작"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Kappa 아키텍처는 배치 레이어를 제거하고 스트림 처리 하나로 통합해 로직 중복을 없앤다. 전체 재처리가 필요하면 스트림의 오프셋을 처음으로 되돌려 replay한다. 단, 보존 기간 내 데이터여야 하며 그 이상은 별도 저장소가 필요하다."
+  },
+  {
+    "id": "dea-c01-w3-d4-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 4,
+    "number": 3,
+    "prompt": "하나의 \"주문 생성\" 이벤트가 결제·재고·분석 세 컨슈머에게 동시에 전달되어야 하고, 각 컨슈머는 일시적으로 다운되어도 메시지를 잃지 않아야 한다. 가장 적절한 패턴은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SQS 큐 하나에 세 컨슈머를 연결"
+      },
+      {
+        "label": "B",
+        "text": "EventBridge 없이 Lambda를 순차 체이닝"
+      },
+      {
+        "label": "C",
+        "text": "세 컨슈머를 직접 동기 호출"
+      },
+      {
+        "label": "D",
+        "text": "SNS 토픽에서 세 개의 SQS 큐로 팬아웃하고 각 컨슈머가 자기 큐를 소비"
+      }
+    ],
+    "answer": "D",
+    "explanation": "SNS→SQS 팬아웃이 표준이다. SNS가 한 이벤트를 세 SQS 큐로 동시 복제하고(1:N 분배), 각 SQS가 내구성 있는 버퍼 역할을 해 컨슈머가 다운돼도 메시지가 쌓여 복구 후 처리된다. SQS 큐 하나에 세 컨슈머를 붙이면 한 메시지를 하나만 가져가므로 팬아웃이 안 된다."
+  },
+  {
+    "id": "dea-c01-w3-d4-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 4,
+    "number": 4,
+    "prompt": "\"S3 버킷에 새 객체가 생성되면 특정 Glue Job을 트리거\"하고, 나아가 이벤트 내용(접두사, 크기 등)에 따라 다른 타깃으로 선별 라우팅하고 싶다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SQS Standard 큐"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EventBridge (콘텐츠 기반 규칙)"
+      },
+      {
+        "label": "C",
+        "text": "Kinesis Data Firehose"
+      },
+      {
+        "label": "D",
+        "text": "DynamoDB Streams"
+      }
+    ],
+    "answer": "B",
+    "explanation": "EventBridge는 S3 등 AWS 서비스 이벤트를 받아 이벤트 패턴(콘텐츠 기반 규칙)으로 매칭되는 것만 선별 라우팅한다. \"특정 조건의 이벤트 → 특정 타깃\" 라우팅에 가장 적합하다. SQS는 단순 큐, Firehose는 적재용, DynamoDB Streams는 테이블 변경 캡처용이다."
+  },
+  {
+    "id": "dea-c01-w3-d4-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 4,
+    "number": 5,
+    "prompt": "SNS 단독 대신 SNS→SQS로 큐를 끼우는 주된 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "컨슈머가 일시 다운돼도 SQS에 메시지가 내구성 있게 쌓여 복구 후 처리할 수 있어서"
+      },
+      {
+        "label": "B",
+        "text": "SNS가 더 비싸서"
+      },
+      {
+        "label": "C",
+        "text": "SQS가 자동으로 데이터를 암호화해서"
+      },
+      {
+        "label": "D",
+        "text": "SNS는 JSON을 지원하지 않아서"
+      }
+    ],
+    "answer": "A",
+    "explanation": "SNS는 즉시 푸시하고 컨슈머가 다운되면 제한된 재시도 후 메시지를 잃을 수 있다. 사이에 SQS를 두면 메시지가 큐에 안전하게 버퍼링되어 컨슈머 복구 후 처리되고 DLQ로 실패 격리도 된다. 즉 SNS는 팬아웃, SQS는 내구성 버퍼를 담당하는 보완 조합이다."
+  },
+  {
+    "id": "dea-c01-w3-d5-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 5,
+    "number": 1,
+    "prompt": "Week 3 전체를 관통하는 신뢰성 명제로 가장 정확한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "분산 시스템에서 exactly-once 전달은 항상 보장된다"
+      },
+      {
+        "label": "B",
+        "text": "중복을 막으려면 항상 SQS FIFO만 쓰면 된다"
+      },
+      {
+        "label": "C",
+        "text": "exactly-once 전달은 보장하기 어렵지만, at-least-once 전달과 멱등 컨슈머를 조합하면 effectively-once 처리를 달성할 수 있다"
+      },
+      {
+        "label": "D",
+        "text": "순서 보장은 언제나 전역(global)으로 해야 한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "네트워크에 의존하는 전달은 완벽히 통제할 수 없어 exactly-once 전달은 어렵다. 대신 at-least-once 전달을 전제로 컨슈머를 멱등하게 만들면 중복이 무해해져 effectively-once 처리를 얻는다. SQS FIFO 중복 제거는 5분 윈도우 한계가 있고, 전역 순서는 처리량을 크게 깎으므로 보통 파티션 단위로만 보장한다."
+  },
+  {
+    "id": "dea-c01-w3-d5-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 5,
+    "number": 2,
+    "prompt": "다음 중 Managed Flink(Day1) 대신 Kinesis Data Firehose + Lambda 변환(Day4 단순 경로)을 선택해야 하는 상황은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "들어오는 JSON을 Parquet로 형식 변환만 해서 S3에 적재"
+      },
+      {
+        "label": "B",
+        "text": "두 스트림을 시간 범위로 조인해 데이터를 강화"
+      },
+      {
+        "label": "C",
+        "text": "사용자 세션별 페이지뷰를 세션 윈도우로 집계"
+      },
+      {
+        "label": "D",
+        "text": "최근 10분 이동 평균을 슬라이딩 윈도우로 계산"
+      }
+    ],
+    "answer": "A",
+    "explanation": "윈도우 집계(A, D)나 스트림 조인(B) 같은 stateful 복잡 처리는 Flink의 영역이다. 단순 형식 변환 후 S3 적재는 Firehose + Lambda 변환이 더 간단하고 저렴하며, 이 경우 Flink는 과한 설계다."
+  },
+  {
+    "id": "dea-c01-w3-d5-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 5,
+    "number": 3,
+    "prompt": "DMS로 운영 DB를 무중단으로 분석 시스템에 복제하려는데, Full Load는 성공하지만 이후 변경분이 반영되지 않는다. 가장 먼저 확인할 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Target Endpoint의 색상 설정"
+      },
+      {
+        "label": "B",
+        "text": "Migration Task의 생성 시각"
+      },
+      {
+        "label": "C",
+        "text": "Replication Instance의 이름"
+      },
+      {
+        "label": "D",
+        "text": "원본 DB의 변경 로그 설정(MySQL binlog ROW, PostgreSQL wal_level=logical, Oracle supplemental logging)"
+      }
+    ],
+    "answer": "D",
+    "explanation": "CDC는 원본의 트랜잭션 로그를 읽어 변경을 추출하므로, 해당 로그 기능이 활성화돼 있어야 한다. 설정이 없으면 Full Load는 되지만 CDC가 동작하지 않는다. 엔진별로 binlog(ROW), logical WAL, supplemental logging이 필요하며, 이 누락이 가장 흔한 원인이다."
+  },
+  {
+    "id": "dea-c01-w3-d5-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 5,
+    "number": 4,
+    "prompt": "한 \"주문 생성\" 이벤트를 결제·재고·분석 세 도메인이 각각 독립적으로, 일시 장애에도 유실 없이 처리해야 한다. 그리고 결제 도메인은 영구 실패 메시지를 따로 격리해야 한다. 가장 적절한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "단일 SQS Standard 큐 + 세 컨슈머 + 가시성 타임아웃 0"
+      },
+      {
+        "label": "B",
+        "text": "SNS 팬아웃 → 도메인별 SQS 큐(각 DLQ 연결) → 각 컨슈머가 멱등 처리"
+      },
+      {
+        "label": "C",
+        "text": "세 도메인을 동기 REST로 순차 호출"
+      },
+      {
+        "label": "D",
+        "text": "EventBridge 없이 Lambda를 직접 체이닝"
+      }
+    ],
+    "answer": "B",
+    "explanation": "SNS가 한 이벤트를 세 SQS 큐로 팬아웃(1:N 분배)하고, 각 SQS가 내구성 버퍼로 일시 장애를 흡수하며, 결제 큐에 DLQ를 연결해 영구 실패를 격리한다. 컨슈머는 멱등하게 처리해 중복 전달을 무해화한다. 단일 큐+세 컨슈머는 팬아웃이 안 되고, 동기 호출/직접 체이닝은 강결합이라 한 곳의 장애가 전파된다."
+  },
+  {
+    "id": "dea-c01-w3-d5-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 3,
+    "day": 5,
+    "number": 5,
+    "prompt": "Lambda 아키텍처를 Kappa 아키텍처로 단순화했다. 이때 얻는 이점과 새로 생기는 제약을 옳게 짝지은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "이점: 로직 이중 구현 제거 / 제약: 전체 재처리는 스트림 보존 기간 내에서 replay로만"
+      },
+      {
+        "label": "B",
+        "text": "이점: 저장 비용 0 / 제약: 실시간 처리 불가"
+      },
+      {
+        "label": "C",
+        "text": "이점: 순서 보장 자동 / 제약: 배치 분석 불가"
+      },
+      {
+        "label": "D",
+        "text": "이점: DLQ 불필요 / 제약: 멱등성 불필요"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Kappa는 배치 레이어를 없애 배치/실시간에 같은 로직을 두 번 구현하는 부담을 제거한다. 대신 전체 재처리가 필요하면 스트림을 처음부터 replay해야 하며, 이는 스트림의 데이터 보존 기간 내에서만 가능하다. 그 이상 과거는 별도 저장소(S3)가 필요하다. 나머지는 사실과 다르다."
+  },
+  {
+    "id": "dea-c01-w4-d1-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 1,
+    "number": 1,
+    "prompt": "Athena, Redshift Spectrum, EMR이 S3의 동일한 데이터를 같은 스키마로 조회할 수 있게 하는 중앙 메타데이터 저장소는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon RDS"
+      },
+      {
+        "label": "B",
+        "text": "AWS Glue Data Catalog"
+      },
+      {
+        "label": "C",
+        "text": "Amazon DynamoDB"
+      },
+      {
+        "label": "D",
+        "text": "AWS Lake Formation 권한 정책"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Glue Data Catalog는 Hive 메타스토어 호환 중앙 메타데이터 저장소로, 등록된 스키마를 여러 분석 엔진이 공유한다. RDS와 DynamoDB는 데이터 저장소이지 메타데이터 카탈로그가 아니다. Lake Formation은 그 위에서 접근 권한을 관리하는 별개 계층이다."
+  },
+  {
+    "id": "dea-c01-w4-d1-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 1,
+    "number": 2,
+    "prompt": "S3 경로가 `s3://lake/sales/region=us/year=2026/`처럼 구성되어 있을 때 Glue 크롤러가 수행하는 동작으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`region`과 `year`를 무시하고 단일 비파티션 테이블만 만든다"
+      },
+      {
+        "label": "B",
+        "text": "파일을 모두 DynamoDB로 복사한다"
+      },
+      {
+        "label": "C",
+        "text": "`region`과 `year`를 파티션 컬럼으로 자동 인식해 Catalog에 등록한다"
+      },
+      {
+        "label": "D",
+        "text": "Hive 스타일 경로는 지원하지 않아 오류를 낸다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "크롤러는 `key=value` Hive 스타일 경로를 파티션으로 자동 탐지해 파티션 컬럼으로 등록한다. 이렇게 등록된 파티션은 쿼리 프루닝으로 스캔량과 비용을 줄인다. 크롤러는 데이터를 복사하지 않고 메타데이터만 다룬다."
+  },
+  {
+    "id": "dea-c01-w4-d1-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 1,
+    "number": 3,
+    "prompt": "Glue Data Catalog의 테이블에 대한 설명으로 가장 정확한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "테이블은 스키마와 S3 위치, 형식을 담은 메타데이터 명세이며 데이터 자체는 보관하지 않는다"
+      },
+      {
+        "label": "B",
+        "text": "테이블은 실제 데이터 행을 자체 저장소에 보관한다"
+      },
+      {
+        "label": "C",
+        "text": "테이블 하나는 반드시 하나의 분석 엔진에서만 사용할 수 있다"
+      },
+      {
+        "label": "D",
+        "text": "테이블을 만들면 원본 S3 파일이 Parquet으로 자동 변환된다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Catalog 테이블은 \"데이터는 어디에 어떤 형식·스키마로 있다\"를 가리키는 포인터이자 명세다. 데이터는 S3에 그대로 있고, 여러 엔진이 같은 테이블 정의를 공유한다. 테이블 등록만으로 파일 형식이 변환되지는 않는다."
+  },
+  {
+    "id": "dea-c01-w4-d1-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 1,
+    "number": 4,
+    "prompt": "수백만 개의 S3 객체를 가진 테이블에서 매일 새 폴더만 추가된다. 크롤러 실행 비용과 시간을 줄이는 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "매번 전체 경로를 풀 스캔하도록 둔다"
+      },
+      {
+        "label": "B",
+        "text": "크롤러 동시 실행 수를 늘린다"
+      },
+      {
+        "label": "C",
+        "text": "S3 버킷을 매일 새로 만든다"
+      },
+      {
+        "label": "D",
+        "text": "증분 크롤(Incremental crawl)을 사용하거나 Athena 파티션 프로젝션으로 크롤러를 대체한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "새 폴더만 늘어나는 패턴에서는 증분 크롤로 신규 폴더만 스캔하거나, 파티션 규칙이 일정하면 Athena 파티션 프로젝션으로 크롤러 자체를 없애 비용을 크게 줄일 수 있다. 전체 풀 스캔은 비용을 키우고, 동시 실행이나 버킷 분리는 해결책이 아니다."
+  },
+  {
+    "id": "dea-c01-w4-d1-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 1,
+    "number": 5,
+    "prompt": "비표준 로그 형식이라 내장 Classifier가 스키마를 제대로 추론하지 못한다. 적절한 대응은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "크롤러를 쓰지 말고 모든 테이블을 손으로 DDL 작성한다"
+      },
+      {
+        "label": "B",
+        "text": "데이터를 무조건 CSV로 변환한다"
+      },
+      {
+        "label": "C",
+        "text": "Grok 패턴이나 정규식 기반 Custom Classifier를 정의해 크롤러에 적용한다"
+      },
+      {
+        "label": "D",
+        "text": "S3 대신 DynamoDB에 저장한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "내장 Classifier가 인식하지 못하는 비표준 형식은 Grok/정규식 기반 Custom Classifier를 정의해 크롤러에 우선순위로 적용하면 스키마를 추론할 수 있다. 손수 DDL이나 형식 강제 변환은 비효율적이며 문제의 본질을 해결하지 못한다."
+  },
+  {
+    "id": "dea-c01-w4-d2-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 2,
+    "number": 1,
+    "prompt": "Glue ETL Job에서 같은 컬럼이 어떤 행은 정수, 어떤 행은 문자열로 들어오는 타입 충돌을 깨지지 않고 다룰 수 있게 해 주는 Glue 고유 자료구조는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Spark RDD"
+      },
+      {
+        "label": "B",
+        "text": "Pandas DataFrame"
+      },
+      {
+        "label": "C",
+        "text": "DynamicFrame"
+      },
+      {
+        "label": "D",
+        "text": "Glue Catalog Table"
+      }
+    ],
+    "answer": "C",
+    "explanation": "DynamicFrame은 Choice 타입으로 충돌하는 타입을 모두 보존했다가 ResolveChoice로 정리할 수 있는 Glue 고유 구조다. Spark DataFrame은 타입이 사전 고정이라 충돌에 취약하고, RDD는 저수준 구조, Catalog Table은 메타데이터일 뿐 변환 자료구조가 아니다."
+  },
+  {
+    "id": "dea-c01-w4-d2-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 2,
+    "number": 2,
+    "prompt": "매일 새 데이터가 추가되는 S3 소스를 Glue Job이 매 실행마다 전체 재처리하지 않고 신규분만 처리하게 하려면 무엇이 필요한가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Job 북마크를 Enable하고 소스에 transformation_ctx 지정 후 job.commit() 호출"
+      },
+      {
+        "label": "B",
+        "text": "크롤러를 매번 재생성한다"
+      },
+      {
+        "label": "C",
+        "text": "DPU를 최대로 늘린다"
+      },
+      {
+        "label": "D",
+        "text": "Python Shell Job으로 전환한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "증분 처리는 Job 북마크로 구현한다. 북마크 Enable, 소스/싱크의 transformation_ctx 지정, 마지막 job.commit() 세 가지가 모두 갖춰져야 진행 상태가 추적된다. DPU 증설이나 Python Shell 전환은 증분 처리와 무관하다."
+  },
+  {
+    "id": "dea-c01-w4-d2-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 2,
+    "number": 3,
+    "prompt": "Glue ETL Job의 과금 단위와 관련해 옳은 설명은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "처리한 데이터 GB당 고정 요금만 부과된다"
+      },
+      {
+        "label": "B",
+        "text": "Job 개수당 월 고정 요금이다"
+      },
+      {
+        "label": "C",
+        "text": "무료이며 Athena 쿼리에만 과금된다"
+      },
+      {
+        "label": "D",
+        "text": "DPU(1 DPU = 4 vCPU + 16GB) 사용량과 실행 시간에 비례해 과금된다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Glue ETL은 DPU 기반으로 실행 시간에 비례해 과금된다. 1 DPU는 4 vCPU + 16GB 메모리에 해당한다. 데이터 GB 고정요금이나 Job 개수당 고정요금이 아니며, 실행 자체에 비용이 발생한다."
+  },
+  {
+    "id": "dea-c01-w4-d2-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 2,
+    "number": 4,
+    "prompt": "수백 MB 이하의 가벼운 데이터 정리나 API 호출 같은 단순 작업을, 분산 Spark의 오버헤드 없이 더 저렴하게 실행하려면 어떤 Glue Job 타입이 적합한가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "표준 Spark Job에 DPU를 늘려 실행"
+      },
+      {
+        "label": "B",
+        "text": "EMR 전용 클러스터 상시 가동"
+      },
+      {
+        "label": "C",
+        "text": "Python Shell Job"
+      },
+      {
+        "label": "D",
+        "text": "Managed Flink 애플리케이션"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Python Shell Job은 단일 노드에서 가벼운 파이썬 스크립트를 실행하는 타입으로, 작은 데이터나 오케스트레이션·메타데이터 정리에 적합하고 분산 Spark보다 저렴하다. 큰 분산 변환이 아니면 표준 Spark Job은 과한 비용이다."
+  },
+  {
+    "id": "dea-c01-w4-d2-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 2,
+    "number": 5,
+    "prompt": "Glue ETL Job의 일반적인 데이터 흐름을 가장 정확히 나타낸 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Sink → Transform → Source"
+      },
+      {
+        "label": "B",
+        "text": "Source(읽기) → Transform(변환) → Sink(기록)"
+      },
+      {
+        "label": "C",
+        "text": "Transform만 반복 실행"
+      },
+      {
+        "label": "D",
+        "text": "Catalog가 데이터를 직접 변환"
+      }
+    ],
+    "answer": "B",
+    "explanation": "모든 Glue ETL Job은 소스에서 DynamicFrame을 읽고, 매핑·필터·조인·타입해소 등으로 변환한 뒤, S3/Catalog/Redshift 등 싱크로 기록하는 Source→Transform→Sink 흐름을 따른다. Catalog는 메타데이터 제공자일 뿐 직접 변환하지 않는다."
+  },
+  {
+    "id": "dea-c01-w4-d3-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 3,
+    "number": 1,
+    "prompt": "코드를 작성할 줄 모르는 데이터 분석가가 데이터를 샘플로 대화식 미리보기하며 결측값 채우기·형식 표준화를 클릭으로 적용하고, 데이터 프로파일링까지 하려고 한다. 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Glue ETL Job (PySpark)"
+      },
+      {
+        "label": "B",
+        "text": "Glue DataBrew"
+      },
+      {
+        "label": "C",
+        "text": "EMR Spark"
+      },
+      {
+        "label": "D",
+        "text": "Glue 크롤러"
+      }
+    ],
+    "answer": "B",
+    "explanation": "완전 노코드, 대화식 미리보기, 프로파일링, PII 탐지는 DataBrew의 핵심 기능이며 데이터 분석가를 주 사용자로 한다. PySpark Job과 EMR은 코드가 필요하고, 크롤러는 메타데이터 등록 도구로 변환·정제와 무관하다."
+  },
+  {
+    "id": "dea-c01-w4-d3-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 3,
+    "number": 2,
+    "prompt": "Glue Studio에 대한 설명으로 가장 정확한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "드래그 앤 드롭으로 ETL을 설계하면 뒤에서 Spark 코드를 생성하며, 필요 시 코드로 직접 편집할 수 있다"
+      },
+      {
+        "label": "B",
+        "text": "Recipe라는 변환 목록만 만들고 코드로 전환할 수 없다"
+      },
+      {
+        "label": "C",
+        "text": "메타데이터만 다루고 데이터는 변환하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "실시간 스트림 윈도우 집계 전용 도구다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Glue Studio는 비주얼 그래프로 ETL을 설계하면 PySpark/Scala 코드를 자동 생성하고, 양방향 전환으로 코드 편집도 가능하다. Recipe는 DataBrew 개념이고, 메타데이터 전용은 크롤러/Catalog, 스트림 윈도우 집계는 Managed Flink다."
+  },
+  {
+    "id": "dea-c01-w4-d3-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 3,
+    "number": 3,
+    "prompt": "Glue DataBrew의 \"Recipe\"가 의미하는 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터가 저장된 S3 버킷"
+      },
+      {
+        "label": "B",
+        "text": "Spark 클러스터의 노드 구성"
+      },
+      {
+        "label": "C",
+        "text": "적용한 변환 단계들의 순서 있는 재사용 가능한 목록"
+      },
+      {
+        "label": "D",
+        "text": "IAM 권한 정책 문서"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Recipe는 DataBrew에서 적용한 변환 단계(결측 채우기, 형식 변환 등)를 순서대로 기록한 재사용·버전 관리 가능한 목록이다. 샘플로 만든 Recipe를 Recipe Job으로 전체 데이터에 일괄 적용한다. 나머지는 Recipe와 무관한 개념이다."
+  },
+  {
+    "id": "dea-c01-w4-d3-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 3,
+    "number": 4,
+    "prompt": "데이터 엔지니어가 복잡한 조인과 분산 변환을 포함하는 프로덕션 ETL 파이프라인을 비주얼로 설계하되, 일부 변환은 커스텀 코드로 정밀 제어하고 싶다. 가장 적합한 선택은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Glue DataBrew Recipe만 사용"
+      },
+      {
+        "label": "B",
+        "text": "Glue Studio (비주얼 + 코드 전환)"
+      },
+      {
+        "label": "C",
+        "text": "Athena 쿼리 저장"
+      },
+      {
+        "label": "D",
+        "text": "QuickSight 대시보드"
+      }
+    ],
+    "answer": "B",
+    "explanation": "프로덕션 ETL을 비주얼로 짜면서 필요 시 커스텀 코드로 전환하는 유연성은 Glue Studio의 강점이다. DataBrew는 탐색적 정제용으로 복잡한 분산 변환·파이프라인 통합에 부적합하고, Athena/QuickSight는 ETL 구축 도구가 아니다."
+  },
+  {
+    "id": "dea-c01-w4-d3-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 3,
+    "number": 5,
+    "prompt": "Glue Studio와 DataBrew의 비용에 대한 설명으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "둘 다 완전 무료다"
+      },
+      {
+        "label": "B",
+        "text": "DataBrew만 유료이고 Studio는 무료다"
+      },
+      {
+        "label": "C",
+        "text": "데이터 저장 용량에만 비례한다"
+      },
+      {
+        "label": "D",
+        "text": "Studio는 DPU×실행시간으로, DataBrew는 세션 시간과 Job 노드 시간으로 과금된다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Glue Studio Job은 Spark Job이므로 DPU와 실행 시간 기반으로, DataBrew는 대화식 세션 시간과 Recipe/Profile Job의 노드 시간 기반으로 과금된다. 서버리스라 클러스터 관리는 없지만 무료는 아니며, 저장 용량 단일 기준도 아니다."
+  },
+  {
+    "id": "dea-c01-w4-d4-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 4,
+    "number": 1,
+    "prompt": "Kafka/Kinesis 스트리밍에서 생산자가 보낸 메시지 형식을 소비자가 안전하게 역직렬화하도록, 스키마를 중앙 등록하고 호환성 규칙을 강제하는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Glue Data Catalog"
+      },
+      {
+        "label": "B",
+        "text": "Glue DataBrew"
+      },
+      {
+        "label": "C",
+        "text": "Glue Schema Registry"
+      },
+      {
+        "label": "D",
+        "text": "Glue 크롤러"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Schema Registry는 스트리밍 데이터의 스키마를 버전 관리하고 BACKWARD/FORWARD/FULL 호환성을 강제해 생산자-소비자 계약을 보장한다. Data Catalog는 배치 분석용 메타데이터, DataBrew는 정제 도구, 크롤러는 메타데이터 등록 도구로 호환성 강제와 무관하다."
+  },
+  {
+    "id": "dea-c01-w4-d4-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 4,
+    "number": 2,
+    "prompt": "새 스키마로 만든 소비자가 과거 데이터를 문제없이 읽을 수 있도록 보장하는 Schema Registry의 호환성 모드는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "FORWARD"
+      },
+      {
+        "label": "B",
+        "text": "NONE"
+      },
+      {
+        "label": "C",
+        "text": "DISABLED"
+      },
+      {
+        "label": "D",
+        "text": "BACKWARD"
+      }
+    ],
+    "answer": "D",
+    "explanation": "BACKWARD 호환은 \"새 스키마 소비자가 옛 데이터를 읽을 수 있음\"을 보장하며, 기본값 있는 필드 추가나 필드 삭제를 허용한다. FORWARD는 반대로 옛 소비자가 새 데이터를 읽는 경우를 보장한다. NONE/DISABLED는 검증을 하지 않아 안전성을 보장하지 못한다."
+  },
+  {
+    "id": "dea-c01-w4-d4-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 4,
+    "number": 3,
+    "prompt": "데이터의 스키마는 올바르지만 `amount` 컬럼에 음수 값이 섞여 있고 `order_id`에 중복이 있다. 이를 규칙으로 정의해 자동 검증하고 적재 전 차단하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Glue 크롤러의 파티션 탐지를 사용"
+      },
+      {
+        "label": "B",
+        "text": "Glue Data Quality에 DQDL 규칙을 정의하고 ETL 파이프라인에 품질 게이트로 통합"
+      },
+      {
+        "label": "C",
+        "text": "Schema Registry의 호환성 모드를 FULL로 설정"
+      },
+      {
+        "label": "D",
+        "text": "Athena 파티션 프로젝션을 적용"
+      }
+    ],
+    "answer": "B",
+    "explanation": "값의 유효성(음수 금지, 중복 금지)은 스키마가 아니라 데이터 품질의 문제이며, Glue Data Quality의 DQDL 규칙(ColumnValues, IsUnique 등)으로 정의해 ETL 파이프라인 게이트로 차단·격리한다. Schema Registry는 형태만 검증하고, 크롤러·파티션 프로젝션은 값 검증과 무관하다."
+  },
+  {
+    "id": "dea-c01-w4-d4-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 4,
+    "number": 4,
+    "prompt": "데이터 레이크 배치에서 컬럼 이름을 바꿔도 데이터 매핑이 깨지지 않도록 컬럼에 고유 ID를 부여해 안전한 스키마 진화를 지원하는 테이블 포맷은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "순수 CSV"
+      },
+      {
+        "label": "B",
+        "text": "압축되지 않은 JSON"
+      },
+      {
+        "label": "C",
+        "text": "Apache Iceberg"
+      },
+      {
+        "label": "D",
+        "text": "단일 Parquet 파일(테이블 포맷 없음)"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Apache Iceberg는 컬럼에 고유 ID를 부여해 이름 변경·추가·삭제를 트랜잭션으로 안전하게 처리한다. 위치 기반 매핑인 순수 Parquet/CSV/JSON은 컬럼 이름 변경 시 매핑이 깨질 수 있어 안전한 진화를 보장하지 못한다."
+  },
+  {
+    "id": "dea-c01-w4-d4-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 4,
+    "number": 5,
+    "prompt": "Glue Data Quality의 자동 추천 규칙에 대한 올바른 태도는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "추천은 현재 데이터 분포 기반이라 정상적 변화를 오탐할 수 있으므로 출발점으로 삼되 사람이 검토·조정한다"
+      },
+      {
+        "label": "B",
+        "text": "추천 규칙은 항상 정확하므로 그대로 운영에 적용한다"
+      },
+      {
+        "label": "C",
+        "text": "추천 기능은 존재하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "추천 규칙은 스키마 호환성만 검사한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "추천 규칙은 현재 데이터 분포를 기반으로 생성되므로 미래의 정상적 변화를 이상으로 판정하는 오탐을 낼 수 있다. 따라서 출발점으로 활용하되 비즈니스 규칙에 맞게 사람이 검토·조정해야 한다. 추천 기능은 실제로 존재하며 값 기반 품질 규칙을 다룬다."
+  },
+  {
+    "id": "dea-c01-w4-d5-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 5,
+    "number": 1,
+    "prompt": "다음 중 Glue 크롤러와 Glue ETL Job의 역할을 가장 정확히 구분한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "크롤러는 메타데이터(스키마·파티션)를 등록하고, ETL Job은 실제 데이터를 읽어 변환·기록한다"
+      },
+      {
+        "label": "B",
+        "text": "크롤러가 데이터를 변환하고, ETL Job은 메타데이터만 등록한다"
+      },
+      {
+        "label": "C",
+        "text": "둘 다 동일하며 이름만 다르다"
+      },
+      {
+        "label": "D",
+        "text": "크롤러는 데이터를 삭제하고, ETL Job은 백업한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "크롤러는 데이터를 변환하지 않고 스키마·파티션 메타데이터만 Catalog에 등록한다. 반면 ETL Job이 소스를 읽어 실제로 변환하고 새 위치에 기록한다. \"스키마 알아내기 = 크롤러, 데이터 바꾸기 = ETL Job\"이 핵심 구분이다."
+  },
+  {
+    "id": "dea-c01-w4-d5-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 5,
+    "number": 2,
+    "prompt": "다음 요구사항에 가장 비용 효율적인 선택은? \"들어오는 JSON을 단순히 형식만 바꿔 S3에 적재하면 되고, 윈도우 집계나 복잡한 분산 변환은 필요 없다.\"",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Glue ETL Spark Job에 DPU 최대 설정"
+      },
+      {
+        "label": "B",
+        "text": "EMR 상시 클러스터"
+      },
+      {
+        "label": "C",
+        "text": "Kinesis Data Firehose + Lambda 변환"
+      },
+      {
+        "label": "D",
+        "text": "Glue DataBrew 대화식 세션 상시 유지"
+      }
+    ],
+    "answer": "C",
+    "explanation": "단순 형식 변환 후 S3 적재라면 Firehose + Lambda가 가장 단순하고 저렴하다. Glue Spark Job이나 EMR은 복잡한 분산 변환에 적합하며 이 경우 과한 설계다. DataBrew 세션 상시 유지는 비용만 늘린다. \"Glue가 정답이 아닌 경우\"의 대표 사례다."
+  },
+  {
+    "id": "dea-c01-w4-d5-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 5,
+    "number": 3,
+    "prompt": "Glue Job 북마크가 동작하지 않아 매번 전체 데이터를 재처리한다. 점검할 항목으로 옳지 않은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Job 속성에서 북마크가 Enable되어 있는지"
+      },
+      {
+        "label": "B",
+        "text": "소스/싱크에 transformation_ctx가 지정되어 있는지"
+      },
+      {
+        "label": "C",
+        "text": "스크립트 끝에 job.commit()이 호출되는지"
+      },
+      {
+        "label": "D",
+        "text": "Schema Registry 호환성 모드가 FULL인지"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Job 북마크 동작에는 북마크 Enable, transformation_ctx 지정, job.commit() 호출이 필요하다. Schema Registry 호환성 모드는 스트리밍 스키마 검증과 관련될 뿐 배치 Job 북마크와 무관하므로 점검 대상이 아니다."
+  },
+  {
+    "id": "dea-c01-w4-d5-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 5,
+    "number": 4,
+    "prompt": "데이터의 스키마(형태)와 값(내용) 검증을 담당하는 서비스를 올바르게 짝지은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "스키마 호환성 = Glue Data Quality / 값 유효성 = Schema Registry"
+      },
+      {
+        "label": "B",
+        "text": "스키마 호환성 = Schema Registry / 값 유효성(음수·중복·null) = Glue Data Quality"
+      },
+      {
+        "label": "C",
+        "text": "둘 다 Glue 크롤러가 담당"
+      },
+      {
+        "label": "D",
+        "text": "둘 다 Athena가 담당"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Schema Registry는 스트리밍 데이터의 스키마 호환성(형태)을 강제하고, Glue Data Quality는 DQDL로 값의 유효성(음수 금지, 중복 금지, null 비율 등 내용)을 검증한다. 크롤러는 메타데이터 등록, Athena는 쿼리 엔진으로 둘 다 이 역할을 하지 않는다."
+  },
+  {
+    "id": "dea-c01-w4-d5-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 4,
+    "day": 5,
+    "number": 5,
+    "prompt": "코드를 모르는 분석가가 데이터를 빠르게 프로파일링하고 정제하려 한다. 반면 데이터 엔지니어는 복잡한 조인을 포함한 프로덕션 ETL을 비주얼로 설계하되 일부는 코드로 제어하려 한다. 각각에 맞는 도구는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "분석가 = Glue Studio / 엔지니어 = DataBrew"
+      },
+      {
+        "label": "B",
+        "text": "분석가 = 크롤러 / 엔지니어 = Schema Registry"
+      },
+      {
+        "label": "C",
+        "text": "분석가 = Glue DataBrew / 엔지니어 = Glue Studio"
+      },
+      {
+        "label": "D",
+        "text": "분석가 = Athena / 엔지니어 = QuickSight"
+      }
+    ],
+    "answer": "C",
+    "explanation": "노코드 정제·프로파일링은 분석가용 DataBrew, 비주얼로 프로덕션 ETL을 짜면서 코드 전환이 가능한 것은 엔지니어용 Studio다. A는 둘을 뒤바꿨고, 크롤러·Schema Registry·Athena·QuickSight는 정제/ETL 설계 도구가 아니다."
+  },
+  {
+    "id": "dea-c01-w5-d1-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 1,
+    "number": 1,
+    "prompt": "EMR 클러스터에서 비용을 절감하기 위해 스팟 인스턴스를 적용하려 한다. 데이터 손실 위험 없이 스팟을 쓰기에 가장 적합한 노드는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Primary(마스터) 노드"
+      },
+      {
+        "label": "B",
+        "text": "Core 노드"
+      },
+      {
+        "label": "C",
+        "text": "Task 노드"
+      },
+      {
+        "label": "D",
+        "text": "모든 노드에 동일하게"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Task 노드는 HDFS 데이터를 저장하지 않고 연산만 수행하므로, 스팟 회수로 갑자기 사라져도 데이터 손실이 없다. Core 노드는 HDFS 블록을 보관하므로 스팟 회수 시 데이터 재계산이 필요할 수 있고, Primary는 클러스터 조정을 담당해 사라지면 전체가 멈춘다."
+  },
+  {
+    "id": "dea-c01-w5-d1-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 1,
+    "number": 2,
+    "prompt": "매일 새벽에 1~2시간만 도는 대규모 배치 ETL을 가장 비용 효율적으로 EMR에서 운영하려 한다. 적절하지 않은 설계는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "작업이 끝나면 자동 종료되는 Transient 클러스터 사용"
+      },
+      {
+        "label": "B",
+        "text": "데이터를 S3(EMRFS)에 영구 저장"
+      },
+      {
+        "label": "C",
+        "text": "영구 데이터를 Core 노드의 HDFS에 보관하고 클러스터를 계속 켜둔다"
+      },
+      {
+        "label": "D",
+        "text": "Task 노드를 Instance Fleets + 스팟으로 확장"
+      }
+    ],
+    "answer": "C",
+    "explanation": "HDFS는 클러스터 종료 시 소멸하는 임시 저장소이고, 클러스터를 계속 켜두면 간헐적 작업에 비해 비용이 크다. 영구 데이터는 S3(EMRFS)에 두고 Transient 클러스터로 작업 시에만 띄우는 것이 정석이다. 나머지는 모두 올바른 비용 최적화 패턴이다."
+  },
+  {
+    "id": "dea-c01-w5-d1-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 1,
+    "number": 3,
+    "prompt": "Apache Spark가 전통 MapReduce보다 반복 연산(머신러닝 등)에서 훨씬 빠른 핵심 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 데이터를 항상 HDFS에 저장하기 때문"
+      },
+      {
+        "label": "B",
+        "text": "중간 결과를 메모리에 유지하고 지연 평가로 DAG를 최적화하기 때문"
+      },
+      {
+        "label": "C",
+        "text": "단일 노드에서만 실행되기 때문"
+      },
+      {
+        "label": "D",
+        "text": "데이터를 압축하지 않기 때문"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Spark는 단계마다 디스크에 쓰는 MapReduce와 달리 중간 결과를 인메모리로 유지하고, 변환을 지연 평가하여 액션 시점에 전체 실행 계획(DAG)을 최적화한다. 이 두 특성이 반복 연산 성능의 핵심이다. Spark는 분산 처리 엔진이며 HDFS·S3 등 다양한 스토리지를 쓴다."
+  },
+  {
+    "id": "dea-c01-w5-d1-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 1,
+    "number": 4,
+    "prompt": "운영팀이 클러스터 사이징과 스팟 전략을 관리할 인력이 없고, 워크로드는 간헐적이며 예측이 어렵다. 클러스터 프로비저닝 없이 Spark 작업을 제출하고 사용량만큼 과금받고 싶다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "EMR Serverless"
+      },
+      {
+        "label": "B",
+        "text": "EMR on EC2 (Instance Groups, 24시간 상시)"
+      },
+      {
+        "label": "C",
+        "text": "Redshift"
+      },
+      {
+        "label": "D",
+        "text": "DynamoDB"
+      }
+    ],
+    "answer": "A",
+    "explanation": "EMR Serverless는 클러스터를 직접 띄우지 않고 Spark/Hive 애플리케이션을 제출하면 필요한 워커를 자동 프로비저닝·회수하며 사용한 vCPU·메모리·시간만큼 과금한다. 간헐적·예측 불가 워크로드와 운영 최소화 요구에 부합한다. EMR on EC2 상시 클러스터는 운영 부담과 유휴 비용이 크다."
+  },
+  {
+    "id": "dea-c01-w5-d1-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 1,
+    "number": 5,
+    "prompt": "다음 중 Glue 대신 EMR을 선택할 가장 타당한 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "가장 빠르게 서버리스로 단순 ETL을 개발하고 싶다"
+      },
+      {
+        "label": "B",
+        "text": "Hive, HBase, Presto 등 다양한 빅데이터 생태계 도구를 함께 쓰고 Spark를 세밀히 튜닝하며 스팟으로 비용을 극단적으로 제어해야 한다"
+      },
+      {
+        "label": "C",
+        "text": "운영 오버헤드를 최소화하고 인프라를 전혀 다루고 싶지 않다"
+      },
+      {
+        "label": "D",
+        "text": "DPU 단위의 자동 과금만 원한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "EMR은 다양한 빅데이터 프레임워크 지원, 클러스터 완전 제어, 스팟 활용을 통한 비용 제어, 세밀한 Spark 튜닝이 강점이다. 서버리스·빠른 개발·운영 최소화·DPU 과금은 모두 Glue의 강점이므로 Glue를 택할 이유에 해당한다."
+  },
+  {
+    "id": "dea-c01-w5-d2-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 2,
+    "number": 1,
+    "prompt": "매일 S3에 도착하는 단일 200GB 압축 로그 파일을 디코드하고 복잡한 집계를 수행해야 한다. 다음 중 가장 적절하지 않은 선택은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Lambda 단일 함수로 전체 파일을 처리"
+      },
+      {
+        "label": "B",
+        "text": "AWS Glue Spark 작업"
+      },
+      {
+        "label": "C",
+        "text": "Amazon EMR Spark 클러스터"
+      },
+      {
+        "label": "D",
+        "text": "EMR Serverless"
+      }
+    ],
+    "answer": "A",
+    "explanation": "단일 Lambda 호출은 최대 15분·메모리 10GB 한계가 있어 200GB 파일을 한 번에 디코드·집계할 수 없다. 대규모 복잡 집계는 Glue나 EMR(Serverless 포함) 같은 분산 엔진이 적합하다. Lambda는 작은 파일 단위의 짧은 변환에 한정해야 한다."
+  },
+  {
+    "id": "dea-c01-w5-d2-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 2,
+    "number": 2,
+    "prompt": "Kinesis Data Firehose의 데이터 변환 Lambda에서 각 레코드를 반환할 때 반드시 포함해야 하는 필드는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "bucket과 key"
+      },
+      {
+        "label": "B",
+        "text": "recordId와 result"
+      },
+      {
+        "label": "C",
+        "text": "timestamp와 shardId"
+      },
+      {
+        "label": "D",
+        "text": "partitionKey만"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Firehose 변환 Lambda는 각 레코드에 대해 원본 `recordId`와 처리 `result`(Ok/Dropped/ProcessingFailed), 그리고 변환된 `data`를 반환해야 Firehose가 레코드별 성공·실패를 추적할 수 있다. bucket/key는 S3 이벤트 구조이고 나머지는 무관하다."
+  },
+  {
+    "id": "dea-c01-w5-d2-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 2,
+    "number": 3,
+    "prompt": "Lambda 함수가 CPU 바운드 작업으로 자주 타임아웃에 가깝게 느리게 동작한다. 비용까지 함께 개선할 수 있는 1차적 튜닝은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "메모리 할당을 늘려 비례 증가하는 CPU로 실행 시간을 단축한다"
+      },
+      {
+        "label": "B",
+        "text": "동시성을 0으로 설정한다"
+      },
+      {
+        "label": "C",
+        "text": "/tmp 디스크를 512MB로 줄인다"
+      },
+      {
+        "label": "D",
+        "text": "페이로드 크기를 6MB 이상으로 늘린다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Lambda는 메모리에 비례해 CPU가 할당되므로, CPU 바운드 작업은 메모리를 늘리면 실행 시간이 단축되고 때로는 총비용까지 감소한다. 동시성을 0으로 하면 함수가 실행되지 않고, 페이로드 한계는 6MB이며 이를 늘릴 수 없다."
+  },
+  {
+    "id": "dea-c01-w5-d2-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 2,
+    "number": 4,
+    "prompt": "S3 이벤트로 비동기 트리거되는 Lambda가 간헐적으로 실패한다. 실패 이벤트가 조용히 유실되지 않도록 보장하는 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "함수 메모리를 최대로 설정"
+      },
+      {
+        "label": "B",
+        "text": "DLQ(SQS) 또는 Lambda Destinations로 실패 이벤트를 격리"
+      },
+      {
+        "label": "C",
+        "text": "동기 호출로 전환"
+      },
+      {
+        "label": "D",
+        "text": "Reserved Concurrency를 0으로 설정"
+      }
+    ],
+    "answer": "B",
+    "explanation": "비동기 호출은 기본 재시도 후에도 실패하면 이벤트가 사라질 수 있으므로, DLQ(SQS/SNS)나 Lambda Destinations로 실패 이벤트를 격리해 재처리·조사할 수 있게 해야 한다. 메모리 증가나 동기 전환은 유실 방지의 본질적 해법이 아니다."
+  },
+  {
+    "id": "dea-c01-w5-d2-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 2,
+    "number": 5,
+    "prompt": "다음 중 Lambda 기반 변환이 가장 적합한 워크로드는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "수십 GB를 메모리에 올려 복잡한 셔플 조인을 수행하는 배치"
+      },
+      {
+        "label": "B",
+        "text": "사용자 세션 단위로 상태를 누적하는 장시간 윈도우 집계"
+      },
+      {
+        "label": "C",
+        "text": "S3에 도착하는 1MB 미만 파일을 즉시 정제·포맷 변환하는 이벤트 기반 처리"
+      },
+      {
+        "label": "D",
+        "text": "30분 이상 걸리는 대규모 머신러닝 학습"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Lambda는 이벤트 기반·무상태·짧은 수명에 최적이라, 작은 파일이 S3에 도착하는 즉시 정제·변환하는 워크로드에 이상적이다. 대용량 셔플 조인(Glue/EMR), stateful 윈도우 집계(Flink), 장시간 ML 학습(EMR/SageMaker)은 모두 15분·메모리 한계로 Lambda에 부적합하다."
+  },
+  {
+    "id": "dea-c01-w5-d3-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 3,
+    "number": 1,
+    "prompt": "여러 작업이 순서·조건·재시도로 엮이는데, 한 작업이 다시 자신을 의존하는 순환은 허용되지 않는다. 이런 워크플로를 표현하는 보편 모델은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "순환 연결 리스트"
+      },
+      {
+        "label": "B",
+        "text": "DAG(방향성 비순환 그래프)"
+      },
+      {
+        "label": "C",
+        "text": "해시 테이블"
+      },
+      {
+        "label": "D",
+        "text": "이진 탐색 트리"
+      }
+    ],
+    "answer": "B",
+    "explanation": "오케스트레이션은 작업을 노드, 의존성을 화살표로 하는 DAG로 표현한다. 비순환이라 위상 정렬이 가능해 실행 순서를 정하고 독립 작업을 병렬화할 수 있다. 순환이 있으면 시작점을 정할 수 없어 정렬이 불가능하다."
+  },
+  {
+    "id": "dea-c01-w5-d3-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 3,
+    "number": 2,
+    "prompt": "한 팀이 이미 온프레미스에서 Apache Airflow DAG를 다수 운영 중이며, 일부 작업은 GCP와 사내 DB도 조율한다. 이를 AWS로 옮기되 기존 DAG 자산을 최대한 재사용하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Glue Workflows"
+      },
+      {
+        "label": "B",
+        "text": "S3 이벤트 + Lambda 체인"
+      },
+      {
+        "label": "C",
+        "text": "EventBridge 스케줄러 단독"
+      },
+      {
+        "label": "D",
+        "text": "Amazon MWAA"
+      }
+    ],
+    "answer": "D",
+    "explanation": "MWAA는 관리형 Apache Airflow로 기존 Airflow DAG를 거의 그대로 재사용할 수 있고, 풍부한 프로바이더로 GCP·온프레미스 등 멀티 환경을 한 DAG에서 조율한다. Glue Workflows는 Glue 리소스에 국한되고, Lambda 체인이나 EventBridge 단독으로는 복잡한 Airflow 자산을 대체하기 어렵다."
+  },
+  {
+    "id": "dea-c01-w5-d3-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 3,
+    "number": 3,
+    "prompt": "\"Glue 작업 실행 → 검증 Lambda → 검증 통과 시 Redshift 적재, 실패 시 SNS 알림\"을 분기와 재시도를 포함해 서버리스로 구성하려 한다. 가장 적합한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Step Functions"
+      },
+      {
+        "label": "B",
+        "text": "Amazon MWAA"
+      },
+      {
+        "label": "C",
+        "text": "cron으로 각 작업 개별 트리거"
+      },
+      {
+        "label": "D",
+        "text": "단일 거대 Lambda 함수"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Step Functions는 Glue/Lambda/SNS와 네이티브 통합되고 Choice(분기), Retry/Catch(재시도·에러 처리)를 선언적으로 표현하며 서버리스라 운영 부담이 적다. MWAA는 상시 비용·운영이 크고, cron은 의존성·재시도 관리가 빈약하며, 단일 거대 Lambda는 15분 한계와 가시성 문제가 있다."
+  },
+  {
+    "id": "dea-c01-w5-d3-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 3,
+    "number": 4,
+    "prompt": "Glue 크롤러로 스키마를 갱신한 뒤, 그 완료를 기점으로 Glue 작업 두 개를 순차 실행하는 단순 파이프라인이 있고 다른 AWS 서비스는 끼지 않는다. 추가 서비스 없이 가장 간단히 구성하는 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon MWAA 환경을 새로 프로비저닝"
+      },
+      {
+        "label": "B",
+        "text": "Glue Workflows의 트리거로 크롤러·작업을 체인"
+      },
+      {
+        "label": "C",
+        "text": "EMR Step으로 구성"
+      },
+      {
+        "label": "D",
+        "text": "Kinesis Data Streams로 연결"
+      }
+    ],
+    "answer": "B",
+    "explanation": "흐름이 전부 Glue 크롤러·작업으로 완결되므로 Glue 내장 Glue Workflows의 트리거(완료 이벤트 기반)로 묶으면 추가 서비스 없이 가장 간단하다. MWAA는 과한 운영 부담이고, EMR Step·Kinesis는 이 시나리오와 무관하다."
+  },
+  {
+    "id": "dea-c01-w5-d3-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 3,
+    "number": 5,
+    "prompt": "Step Functions의 Standard와 Express 워크플로에 관한 설명으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Express는 최대 1년까지 실행할 수 있다"
+      },
+      {
+        "label": "B",
+        "text": "둘 다 실행 시간 제한이 없다"
+      },
+      {
+        "label": "C",
+        "text": "Standard는 장기 실행(최대 1년)·정확히 1회 실행에 적합하고, Express는 5분 이내 대량 고빈도 이벤트 처리에 적합하다"
+      },
+      {
+        "label": "D",
+        "text": "Standard는 5분, Express는 무제한이다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Standard는 최대 1년 실행·exactly-once·단계별 과금으로 장기·내구성 ETL에 맞고, Express는 최대 5분·대량 고빈도·실행시간 과금으로 이벤트 스트림 고속 처리에 맞는다. 나머지 보기는 두 타입의 실행 시간 특성을 잘못 기술했다."
+  },
+  {
+    "id": "dea-c01-w5-d4-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 4,
+    "number": 1,
+    "prompt": "Athena 쿼리가 대부분 100개 컬럼 중 3~4개만 조회하는데 데이터가 CSV로 저장돼 비용이 높다. 스캔 비용을 가장 효과적으로 줄이는 포맷 전환은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "JSON으로 변환"
+      },
+      {
+        "label": "B",
+        "text": "Avro로 변환"
+      },
+      {
+        "label": "C",
+        "text": "Parquet 같은 열 기반 포맷으로 변환"
+      },
+      {
+        "label": "D",
+        "text": "압축하지 않은 TSV로 변환"
+      }
+    ],
+    "answer": "C",
+    "explanation": "열 기반 포맷(Parquet/ORC)은 쿼리에 필요한 컬럼 블록만 읽는 컬럼 프루닝과 통계 기반 스킵을 제공해 몇 개 컬럼만 조회할 때 스캔량을 극적으로 줄인다. JSON·TSV·Avro는 행 기반이라 전체 행을 읽어야 하므로 컬럼 프루닝 이점이 없다."
+  },
+  {
+    "id": "dea-c01-w5-d4-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 4,
+    "number": 2,
+    "prompt": "거대한 단일 Gzip 압축 CSV 파일을 EMR Spark가 처리하는데 병렬성이 전혀 나오지 않고 워커 하나만 일한다. 근본 원인은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Gzip 압축률이 너무 높아서"
+      },
+      {
+        "label": "B",
+        "text": "단독 Gzip 텍스트는 분할 불가능(non-splittable)이라 한 워커가 파일 전체를 읽어야 하기 때문"
+      },
+      {
+        "label": "C",
+        "text": "Spark는 압축 파일을 못 읽기 때문"
+      },
+      {
+        "label": "D",
+        "text": "CSV는 컬럼이 없기 때문"
+      }
+    ],
+    "answer": "B",
+    "explanation": "단독 Gzip 텍스트 파일은 분할 불가능해 하나의 파일을 하나의 워커가 통째로 읽어야 하므로 병렬성이 죽는다. 해결책은 Parquet+Snappy처럼 블록 단위로 분할 가능한 형태로 저장하거나, 파일을 적정 크기로 나누는 것이다."
+  },
+  {
+    "id": "dea-c01-w5-d4-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 4,
+    "number": 3,
+    "prompt": "매출 데이터를 `year/month/day`로 파티셔닝해 S3에 저장했다. `WHERE year=2026 AND month=6 AND day=26` 쿼리가 빠르고 저렴한 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 파티션을 병렬로 읽기 때문"
+      },
+      {
+        "label": "B",
+        "text": "파티셔닝이 데이터를 자동 압축하기 때문"
+      },
+      {
+        "label": "C",
+        "text": "파티션 컬럼이 인덱스를 생성하기 때문"
+      },
+      {
+        "label": "D",
+        "text": "해당 날짜 디렉터리만 읽고 다른 날짜 파티션은 아예 스캔하지 않기 때문(partition pruning)"
+      }
+    ],
+    "answer": "D",
+    "explanation": "파티션 키로 필터하면 엔진이 조건에 맞는 디렉터리만 읽고 나머지 파티션은 열어보지도 않는 partition pruning이 일어나 스캔량과 비용이 크게 준다. 파티셔닝 자체가 압축을 하거나 전통적 인덱스를 만드는 것은 아니다."
+  },
+  {
+    "id": "dea-c01-w5-d4-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 4,
+    "number": 4,
+    "prompt": "스트리밍 적재로 S3에 1~10KB짜리 파일이 하루 수십만 개씩 쌓이면서 쿼리가 점점 느려진다. 데이터 총량은 크지 않다. 가장 적절한 대응은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "파일을 더 잘게 쪼갠다"
+      },
+      {
+        "label": "B",
+        "text": "파티션 수를 user_id 같은 고카디널리티 컬럼으로 늘린다"
+      },
+      {
+        "label": "C",
+        "text": "작은 파일들을 128MB~1GB 수준의 큰 파일로 컴팩션하고 Firehose 버퍼 크기/간격을 키운다"
+      },
+      {
+        "label": "D",
+        "text": "모든 파일을 비압축으로 저장한다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "작은 파일 문제는 파일마다 요청·메타데이터·스케줄링 오버헤드가 붙어 발생하므로, 컴팩션으로 적정 크기(128MB~1GB)로 병합하고 Firehose 버퍼를 키워 처음부터 큰 파일을 만들면 해결된다. 파일을 더 쪼개거나 고카디널리티 파티셔닝은 문제를 악화시킨다."
+  },
+  {
+    "id": "dea-c01-w5-d4-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 4,
+    "number": 5,
+    "prompt": "스키마(필드)가 자주 추가·변경되고 행 단위로 빠르게 쓰는 스트리밍 적재 단계에 가장 적합한 포맷은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Avro"
+      },
+      {
+        "label": "B",
+        "text": "Parquet"
+      },
+      {
+        "label": "C",
+        "text": "ORC"
+      },
+      {
+        "label": "D",
+        "text": "압축 CSV"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Avro는 행 기반으로 쓰기가 빠르고 스키마 진화(필드 추가/삭제를 호환성 있게 처리)에 강해 스키마 변경이 잦은 스트리밍 적재에 적합하다. Parquet·ORC는 열 기반으로 분석 쿼리 최적화에 강하지만 빈번한 행 단위 쓰기·스키마 변경에는 Avro가 낫다."
+  },
+  {
+    "id": "dea-c01-w5-d5-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 5,
+    "number": 1,
+    "prompt": "다음 요구를 모두 만족하는 변환 엔진은? \"수십 TB를 처리, Hive와 HBase를 함께 사용, 스팟 인스턴스로 비용을 극단적으로 제어, 클러스터를 세밀히 튜닝.\"",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon EMR on EC2"
+      },
+      {
+        "label": "B",
+        "text": "AWS Lambda"
+      },
+      {
+        "label": "C",
+        "text": "AWS Glue"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Athena"
+      }
+    ],
+    "answer": "A",
+    "explanation": "다양한 빅데이터 생태계 도구(Hive/HBase), 스팟을 통한 비용 제어, 세밀한 클러스터 튜닝은 모두 EMR on EC2의 강점이다. Lambda는 15분 한계, Glue는 서버리스 추상화로 세밀 제어가 제한적, Athena는 쿼리 서비스로 이 요구와 맞지 않는다."
+  },
+  {
+    "id": "dea-c01-w5-d5-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 5,
+    "number": 2,
+    "prompt": "\"S3 파일 도착 → Glue 변환 → 검증 → 통과 시 Redshift 적재, 실패 시 알림\"을 분기·재시도와 함께 서버리스로 조율하려 한다. 가장 적합한 오케스트레이터는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon MWAA"
+      },
+      {
+        "label": "B",
+        "text": "단일 Lambda 함수"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Kinesis"
+      },
+      {
+        "label": "D",
+        "text": "AWS Step Functions"
+      }
+    ],
+    "answer": "D",
+    "explanation": "전부 AWS 서비스로 구성되고 분기(Choice)·재시도(Retry/Catch)를 선언적으로 처리하며 서버리스 저운영을 원하므로 Step Functions가 최적이다. MWAA는 Airflow 자산·멀티 환경이 단서일 때 선택하고, 단일 Lambda는 15분 한계와 가시성 부족, Kinesis는 스트리밍 수집 도구다."
+  },
+  {
+    "id": "dea-c01-w5-d5-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 5,
+    "number": 3,
+    "prompt": "EMR 비용 최적화를 위한 설명 중 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "영구 데이터를 Core 노드 HDFS에 저장하고 클러스터를 24시간 유지한다"
+      },
+      {
+        "label": "B",
+        "text": "Task 노드에 스팟을 적용하고 영구 데이터는 S3(EMRFS)에 두며 Transient 클러스터로 작업 시에만 띄운다"
+      },
+      {
+        "label": "C",
+        "text": "Primary 노드를 스팟으로 구성해 비용을 줄인다"
+      },
+      {
+        "label": "D",
+        "text": "모든 노드를 온디맨드로 고정한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Task 노드는 HDFS를 저장하지 않아 스팟 회수에 안전하고, 영구 데이터는 S3(EMRFS)에 두어 컴퓨트-스토리지를 분리하며, Transient 클러스터로 작업 시에만 띄우는 것이 정석이다. HDFS는 임시 저장소이고, Primary를 스팟으로 두면 회수 시 클러스터 전체가 멈춘다."
+  },
+  {
+    "id": "dea-c01-w5-d5-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 5,
+    "number": 4,
+    "prompt": "Athena 스캔 비용이 급증했다. 데이터는 단일 Gzip CSV로 저장돼 있고 쿼리는 최근 며칠·특정 컬럼만 본다. 다음 중 비용 절감에 도움이 되지 않는 조치는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Parquet 같은 열 기반 포맷으로 변환"
+      },
+      {
+        "label": "B",
+        "text": "year/month/day로 파티셔닝"
+      },
+      {
+        "label": "C",
+        "text": "user_id 같은 고카디널리티 컬럼으로 잘게 파티셔닝하고 파일을 더 쪼갠다"
+      },
+      {
+        "label": "D",
+        "text": "작은 파일을 128MB~1GB로 컴팩션하고 분할 가능한 Snappy 압축 사용"
+      }
+    ],
+    "answer": "C",
+    "explanation": "고카디널리티 컬럼으로 파티셔닝하고 파일을 더 쪼개면 파티션 폭증과 작은 파일 문제로 오히려 성능·비용이 악화된다. 열 포맷 전환, 날짜 파티셔닝, 컴팩션과 분할 가능 압축은 모두 스캔량을 줄이는 올바른 처방이다."
+  },
+  {
+    "id": "dea-c01-w5-d5-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 5,
+    "day": 5,
+    "number": 5,
+    "prompt": "다음 중 도구와 대표 용도의 연결이 잘못된 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Lambda — S3에 도착한 작은 파일을 즉시 정제하는 이벤트 기반 경량 변환"
+      },
+      {
+        "label": "B",
+        "text": "MWAA — 기존 Airflow DAG를 재사용하며 멀티 클라우드를 조율하는 복잡한 워크플로"
+      },
+      {
+        "label": "C",
+        "text": "Glue Workflows — 다양한 비-Glue 서비스를 복잡한 분기와 함께 조율하는 범용 오케스트레이션"
+      },
+      {
+        "label": "D",
+        "text": "Parquet — 분석 쿼리에서 컬럼 프루닝으로 스캔량을 줄이는 열 기반 포맷"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Glue Workflows는 Glue 크롤러·작업에 거의 국한된 경량 오케스트레이션으로, 다양한 비-Glue 서비스와 복잡한 분기 조율에는 약하다. 그 역할은 Step Functions나 MWAA가 맡는다. 나머지 연결(Lambda·MWAA·Parquet)은 모두 올바르다."
+  },
+  {
+    "id": "dea-c01-w6-d1-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 1,
+    "number": 1,
+    "prompt": "데이터레이크에서 수집한 원본 데이터를 절대 변경하지 않고 보관하며, 재처리의 단일 진실 공급원 역할을 하는 존은 무엇인가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Curated 존"
+      },
+      {
+        "label": "B",
+        "text": "Clean 존"
+      },
+      {
+        "label": "C",
+        "text": "Raw 존"
+      },
+      {
+        "label": "D",
+        "text": "Sandbox 존"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Raw(Bronze) 존은 수집한 원본을 그대로 불변 보관하며 재처리의 source of truth입니다. Clean은 검증·정규화된 중간 단계, Curated는 비즈니스 집계 결과로 소비용입니다. Sandbox는 표준 3계층에 포함되지 않습니다."
+  },
+  {
+    "id": "dea-c01-w6-d1-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 1,
+    "number": 2,
+    "prompt": "Athena 쿼리에서 `WHERE year=2026 AND month=6` 조건이 해당 프리픽스만 스캔하도록 만드는 기법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "파티션 프루닝"
+      },
+      {
+        "label": "B",
+        "text": "데이터 스큐"
+      },
+      {
+        "label": "C",
+        "text": "브로드캐스트 조인"
+      },
+      {
+        "label": "D",
+        "text": "버킷팅 셔플"
+      }
+    ],
+    "answer": "A",
+    "explanation": "파티션 키가 WHERE 조건에 있으면 엔진이 관련 프리픽스만 읽는 파티션 프루닝이 작동해 스캔량과 비용을 줄입니다. 나머지는 파티션 기반 스캔 절감과 무관한 개념입니다."
+  },
+  {
+    "id": "dea-c01-w6-d1-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 1,
+    "number": 3,
+    "prompt": "데이터레이크에서 파일이 수만 개의 매우 작은 파일로 쪼개졌을 때 발생하는 문제로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터 내구성이 떨어진다"
+      },
+      {
+        "label": "B",
+        "text": "메타데이터 오버헤드와 S3 요청 비용이 증가한다"
+      },
+      {
+        "label": "C",
+        "text": "파티션 프루닝이 비활성화된다"
+      },
+      {
+        "label": "D",
+        "text": "스키마가 자동으로 변경된다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "작은 파일 문제는 파일별 메타데이터 처리 오버헤드와 다수의 S3 GET 요청으로 비용·지연이 증가합니다. 권장은 128MB~1GB이며 compaction으로 병합합니다. 내구성·스키마·프루닝과는 직접 관련이 없습니다."
+  },
+  {
+    "id": "dea-c01-w6-d1-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 1,
+    "number": 4,
+    "prompt": "Glue Data Catalog에 파티션을 등록하지 않고 테이블 속성의 규칙으로 파티션을 계산해 카탈로그 병목을 줄이는 Athena 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "파티션 프로젝션"
+      },
+      {
+        "label": "B",
+        "text": "크롤러 스케줄링"
+      },
+      {
+        "label": "C",
+        "text": "CTAS"
+      },
+      {
+        "label": "D",
+        "text": "워크그룹 격리"
+      }
+    ],
+    "answer": "A",
+    "explanation": "파티션 프로젝션(Partition Projection)은 파티션을 카탈로그에 일일이 등록하지 않고 범위·포맷 규칙으로 계산해 대량 파티션 환경에서 조회 비용과 지연을 줄입니다. 크롤러는 등록 방식이고, CTAS는 결과 테이블 생성, 워크그룹은 비용·격리 관리입니다."
+  },
+  {
+    "id": "dea-c01-w6-d1-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 1,
+    "number": 5,
+    "prompt": "분석용 데이터레이크에서 컬럼 단위로 필요한 데이터만 읽어 스캔량을 줄이고 압축 효율이 높은 권장 파일 포맷은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CSV"
+      },
+      {
+        "label": "B",
+        "text": "JSON"
+      },
+      {
+        "label": "C",
+        "text": "Parquet"
+      },
+      {
+        "label": "D",
+        "text": "XML"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Parquet(또는 ORC)은 컬럼형 포맷으로 필요한 컬럼만 읽어 스캔 비용을 줄이고 컬럼 단위 압축으로 저장 비용을 낮춥니다. CSV/JSON/XML은 행 기반 또는 비효율적이어서 분석 워크로드에 부적합합니다."
+  },
+  {
+    "id": "dea-c01-w6-d2-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 2,
+    "number": 1,
+    "prompt": "분석가가 S3 버킷에 직접 IAM 권한이 없어도 Lake Formation을 통해 등록된 위치의 데이터를 읽을 수 있게 하는 메커니즘은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 버킷 정책 와일드카드"
+      },
+      {
+        "label": "B",
+        "text": "자격 증명 벤딩(credential vending)"
+      },
+      {
+        "label": "C",
+        "text": "STS 페더레이션 토큰 직접 발급"
+      },
+      {
+        "label": "D",
+        "text": "VPC 엔드포인트 정책"
+      }
+    ],
+    "answer": "B",
+    "explanation": "위치를 Lake Formation에 register하면, 지정된 서비스 역할로 Lake Formation이 임시 자격 증명을 벤딩해 사용자를 대신해 S3에 접근합니다. 분석가에게 S3 직접 권한이 없어도 됩니다. 나머지는 권한 일원화 메커니즘과 다릅니다."
+  },
+  {
+    "id": "dea-c01-w6-d2-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 2,
+    "number": 2,
+    "prompt": "데이터레이크 테이블이 수천 개로 늘었을 때, 리소스에 `classification=pii` 같은 태그를 붙이고 태그 조건으로 권한을 부여해 확장성을 높이는 Lake Formation 방식은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "명명형 리소스 권한"
+      },
+      {
+        "label": "B",
+        "text": "S3 ACL"
+      },
+      {
+        "label": "C",
+        "text": "LF-Tags 기반 TBAC"
+      },
+      {
+        "label": "D",
+        "text": "IAM 인라인 정책"
+      }
+    ],
+    "answer": "C",
+    "explanation": "LF-Tags 기반 TBAC는 태그 조건으로 권한을 부여해 리소스가 많아도 정책 폭증 없이 관리됩니다. 명명형은 리소스를 일일이 지정해야 하고, S3 ACL/IAM 인라인 정책은 세분화·확장성 면에서 부적합합니다."
+  },
+  {
+    "id": "dea-c01-w6-d2-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 2,
+    "number": 3,
+    "prompt": "Lake Formation에서 특정 사용자에게 `region = 'us-east-1'` 행만 노출하려면 무엇을 사용하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "컬럼 와일드카드"
+      },
+      {
+        "label": "B",
+        "text": "데이터 필터(행 수준 필터)"
+      },
+      {
+        "label": "C",
+        "text": "블루프린트"
+      },
+      {
+        "label": "D",
+        "text": "워크그룹"
+      }
+    ],
+    "answer": "B",
+    "explanation": "행 수준 보안은 데이터 필터(data cells filter)의 RowFilter 표현식으로 구현합니다. 컬럼 와일드카드는 컬럼 선택, 블루프린트는 수집 워크플로우 생성, 워크그룹은 Athena 비용·격리 개념입니다."
+  },
+  {
+    "id": "dea-c01-w6-d2-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 2,
+    "number": 4,
+    "prompt": "RDS 같은 JDBC 소스를 북마크 컬럼 기준으로 증분 적재하는 Glue 워크플로우를 자동 생성하려면 어떤 Lake Formation 블루프린트를 사용하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Incremental database 블루프린트"
+      },
+      {
+        "label": "B",
+        "text": "Database snapshot 블루프린트"
+      },
+      {
+        "label": "C",
+        "text": "Log file 블루프린트"
+      },
+      {
+        "label": "D",
+        "text": "Streaming 블루프린트"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Incremental database 블루프린트는 북마크 컬럼 기준 증분 적재 워크플로우를 만듭니다. Database snapshot은 전체 스냅샷, Log file은 로그 적재용이며, Streaming은 표준 블루프린트 유형이 아닙니다."
+  },
+  {
+    "id": "dea-c01-w6-d2-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 2,
+    "number": 5,
+    "prompt": "분석가가 Athena로 Lake Formation 관리 테이블을 쿼리할 때 반드시 필요한 권한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 버킷 정책만"
+      },
+      {
+        "label": "B",
+        "text": "Lake Formation 권한만"
+      },
+      {
+        "label": "C",
+        "text": "KMS 키 정책만"
+      },
+      {
+        "label": "D",
+        "text": "IAM 권한(Athena/Glue API)과 Lake Formation 데이터 권한 모두"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Lake Formation 권한과 IAM 권한은 함께 평가됩니다. Athena/Glue API 호출용 IAM 권한과 데이터 접근용 Lake Formation 권한을 모두 가져야 쿼리가 성공합니다. 어느 한쪽만으로는 부족합니다."
+  },
+  {
+    "id": "dea-c01-w6-d3-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 3,
+    "number": 1,
+    "prompt": "전통적 Hive 스타일 Parquet 테이블 대비 오픈 테이블 포맷(Iceberg/Hudi/Delta)이 제공하는 핵심 기능이 아닌 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ACID 트랜잭션"
+      },
+      {
+        "label": "B",
+        "text": "행 수준 UPDATE/DELETE"
+      },
+      {
+        "label": "C",
+        "text": "과거 시점 시간 여행 조회"
+      },
+      {
+        "label": "D",
+        "text": "컬럼형 압축 자체를 처음 도입"
+      }
+    ],
+    "answer": "D",
+    "explanation": "컬럼형 압축은 Parquet/ORC가 이미 제공하던 기능으로 테이블 포맷의 신규 기능이 아닙니다. ACID, 행 수준 DML, 시간 여행이 오픈 테이블 포맷이 추가한 핵심 가치입니다."
+  },
+  {
+    "id": "dea-c01-w6-d3-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 3,
+    "number": 2,
+    "prompt": "GDPR 삭제 요청에 따라 특정 고객의 행만 효율적으로 삭제해야 한다. 가장 적합한 접근은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "전체 테이블을 매번 CSV로 다시 내보낸다"
+      },
+      {
+        "label": "B",
+        "text": "Iceberg/Hudi/Delta 테이블에서 DELETE 문으로 행 수준 삭제한다"
+      },
+      {
+        "label": "C",
+        "text": "S3 버킷 버전 관리를 끈다"
+      },
+      {
+        "label": "D",
+        "text": "Glue 크롤러를 재실행한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "오픈 테이블 포맷은 행 수준 DELETE를 지원해 파티션 전체 재작성 없이 특정 행을 효율적으로 삭제하므로 GDPR/CCPA 삭제 요청에 적합합니다. 나머지는 행 단위 삭제를 해결하지 못합니다."
+  },
+  {
+    "id": "dea-c01-w6-d3-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 3,
+    "number": 3,
+    "prompt": "업서트와 증분(CDC) 쿼리에 특화되어 있고 Copy-on-Write/Merge-on-Read 모드를 제공하는 테이블 포맷은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Apache Hudi"
+      },
+      {
+        "label": "B",
+        "text": "CSV"
+      },
+      {
+        "label": "C",
+        "text": "Avro"
+      },
+      {
+        "label": "D",
+        "text": "ORC"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Apache Hudi는 CoW/MoR 모드와 인덱스 기반 업서트·증분 쿼리에 강점이 있어 CDC 적재에 적합합니다. CSV/Avro/ORC는 파일 포맷이지 트랜잭션형 테이블 포맷이 아닙니다."
+  },
+  {
+    "id": "dea-c01-w6-d3-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 3,
+    "number": 4,
+    "prompt": "Athena 엔진 v3에서 Iceberg 테이블을 특정 과거 타임스탬프 시점으로 조회하는 올바른 구문은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`SELECT * FROM orders ROLLBACK TO ...`"
+      },
+      {
+        "label": "B",
+        "text": "`SELECT * FROM orders FOR TIMESTAMP AS OF TIMESTAMP '2026-06-20 00:00:00'`"
+      },
+      {
+        "label": "C",
+        "text": "`SELECT * FROM orders SNAPSHOT NOW()`"
+      },
+      {
+        "label": "D",
+        "text": "`SELECT * FROM orders WHERE _version < 5`"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Athena의 시간 여행 구문은 `FOR TIMESTAMP AS OF` 또는 `FOR VERSION AS OF`입니다. 나머지 구문은 Athena Iceberg 시간 여행 문법이 아닙니다."
+  },
+  {
+    "id": "dea-c01-w6-d3-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 3,
+    "number": 5,
+    "prompt": "Merge-on-Read(MoR) 테이블의 읽기 성능이 시간이 지나며 저하되는 주된 이유와 해결책으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "스냅샷이 즉시 삭제되므로 — 버전 관리 비활성화"
+      },
+      {
+        "label": "B",
+        "text": "delete/log 파일이 누적되어 읽기 시 병합 비용 증가 — 주기적 compaction"
+      },
+      {
+        "label": "C",
+        "text": "파티션 키가 자동 변경되므로 — 크롤러 재실행"
+      },
+      {
+        "label": "D",
+        "text": "압축이 풀리므로 — 암호화 해제"
+      }
+    ],
+    "answer": "B",
+    "explanation": "MoR은 변경·삭제를 별도 delete/log 파일로 기록하고 읽을 때 병합하므로, 파일이 쌓이면 읽기 비용이 증가합니다. 주기적 compaction(OPTIMIZE)으로 병합해 성능을 회복합니다. 나머지는 원인·해결로 부적절합니다."
+  },
+  {
+    "id": "dea-c01-w6-d4-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 4,
+    "number": 1,
+    "prompt": "접근 패턴을 예측하기 어렵고 검색 요금 없이 객체별로 자동으로 계층을 이동시키고 싶을 때 가장 적합한 S3 스토리지 클래스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 Standard"
+      },
+      {
+        "label": "B",
+        "text": "S3 Glacier Deep Archive"
+      },
+      {
+        "label": "C",
+        "text": "S3 Intelligent-Tiering"
+      },
+      {
+        "label": "D",
+        "text": "S3 One Zone-IA"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Intelligent-Tiering은 객체별 접근을 모니터링해 자동으로 계층을 이동시키며 검색 요금이 없어 접근 패턴이 불규칙·예측 불가일 때 최적입니다. 나머지는 접근 패턴이 명확하거나 고정 용도에 적합합니다."
+  },
+  {
+    "id": "dea-c01-w6-d4-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 4,
+    "number": 2,
+    "prompt": "자주 읽히는 Curated 존 데이터를 비용 절감 목적으로 Standard-IA에 두었더니 오히려 비용이 증가했다. 가장 큰 원인은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IA는 내구성이 낮다"
+      },
+      {
+        "label": "B",
+        "text": "IA는 GB당 검색(retrieval) 요금이 발생한다"
+      },
+      {
+        "label": "C",
+        "text": "IA는 암호화를 지원하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "IA는 파티션 프루닝을 막는다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "IA 계열은 저장 단가는 낮지만 데이터를 읽을 때 GB당 검색 요금이 부과됩니다. 자주 읽는 데이터를 IA에 두면 검색 비용이 누적되어 Standard보다 비쌀 수 있습니다. 내구성·암호화·프루닝과는 무관합니다."
+  },
+  {
+    "id": "dea-c01-w6-d4-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 4,
+    "number": 3,
+    "prompt": "S3 수명주기 정책에서 거의 모든 버킷에 권장되며 숨은 비용을 제거하는 규칙은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "불완전 멀티파트 업로드 정리(AbortIncompleteMultipartUpload)"
+      },
+      {
+        "label": "B",
+        "text": "모든 객체를 Standard로 즉시 전환"
+      },
+      {
+        "label": "C",
+        "text": "버킷 버전 관리 비활성화"
+      },
+      {
+        "label": "D",
+        "text": "객체를 1일 후 즉시 만료"
+      }
+    ],
+    "answer": "A",
+    "explanation": "실패한 멀티파트 업로드의 파트는 보이지 않게 스토리지 비용을 발생시키므로, AbortIncompleteMultipartUpload 규칙으로 정리하는 것이 거의 모든 버킷에 권장됩니다. 나머지는 일반 권장 사항이 아니거나 데이터 손실 위험이 있습니다."
+  },
+  {
+    "id": "dea-c01-w6-d4-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 4,
+    "number": 4,
+    "prompt": "접근 패턴이 \"30일 후 거의 보지 않음\"으로 명확히 예측될 때, Intelligent-Tiering 대비 더 저렴할 수 있는 이유로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "수명주기 전환은 모니터링/자동화 요금이 없기 때문"
+      },
+      {
+        "label": "B",
+        "text": "Intelligent-Tiering은 내구성이 낮기 때문"
+      },
+      {
+        "label": "C",
+        "text": "수명주기는 검색이 항상 무료이기 때문"
+      },
+      {
+        "label": "D",
+        "text": "Intelligent-Tiering은 암호화 비용이 추가되기 때문"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Intelligent-Tiering은 객체당 모니터링·자동화 요금이 부과됩니다. 접근 패턴이 명확하면 수명주기 전환 규칙으로 직접 IA/Glacier로 보내는 편이 모니터링 요금이 없어 더 저렴할 수 있습니다. 나머지는 사실과 다릅니다."
+  },
+  {
+    "id": "dea-c01-w6-d4-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 4,
+    "number": 5,
+    "prompt": "계정·버킷·프리픽스 수준에서 스토리지 사용량과 절감 기회(미사용 IA, 불완전 업로드 등)를 시각화해 비용 최적화 대상을 찾는 S3 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 Transfer Acceleration"
+      },
+      {
+        "label": "B",
+        "text": "S3 Storage Lens"
+      },
+      {
+        "label": "C",
+        "text": "S3 Object Lock"
+      },
+      {
+        "label": "D",
+        "text": "S3 Replication"
+      }
+    ],
+    "answer": "B",
+    "explanation": "S3 Storage Lens는 조직·버킷·프리픽스 수준 사용량과 절감 권고를 제공하는 가시성 대시보드입니다. Transfer Acceleration은 전송 속도, Object Lock은 변경 방지, Replication은 복제 기능으로 비용 가시성과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w6-d5-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 5,
+    "number": 1,
+    "prompt": "RDS 주문 데이터를 증분으로 데이터레이크에 적재하고, 이후 행 수준 삭제(GDPR)와 MERGE 업서트가 가능하도록 clean 존을 구성하려 한다. 가장 적합한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Lake Formation Database snapshot 블루프린트 + CSV 테이블"
+      },
+      {
+        "label": "B",
+        "text": "Lake Formation Incremental database 블루프린트 + Iceberg 테이블"
+      },
+      {
+        "label": "C",
+        "text": "수동 S3 업로드 + 일반 Hive Parquet 테이블"
+      },
+      {
+        "label": "D",
+        "text": "S3 Replication + One Zone-IA"
+      }
+    ],
+    "answer": "B",
+    "explanation": "증분 적재는 Incremental database 블루프린트가, 행 수준 DELETE/MERGE는 Iceberg 같은 오픈 테이블 포맷이 담당합니다. snapshot+CSV나 일반 Hive Parquet은 행 수준 DML이 어렵고, Replication/One Zone-IA는 요구사항과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w6-d5-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 5,
+    "number": 2,
+    "prompt": "분석가에게 PII 컬럼을 숨기고 자기 지역 행만 노출하려 한다. Lake Formation에서 사용할 기능 조합으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "컬럼 제외/선택 GRANT + 행 수준 데이터 필터"
+      },
+      {
+        "label": "B",
+        "text": "S3 버킷 정책 + One Zone-IA"
+      },
+      {
+        "label": "C",
+        "text": "파티션 프로젝션 + 수명주기 정책"
+      },
+      {
+        "label": "D",
+        "text": "Storage Lens + Object Lock"
+      }
+    ],
+    "answer": "A",
+    "explanation": "컬럼 보안은 GRANT의 컬럼 선택/제외로, 행 보안은 데이터 필터(RowFilter)로 구현합니다. 나머지는 비용·가시성·스토리지 기능으로 세분화 접근 제어와 무관합니다."
+  },
+  {
+    "id": "dea-c01-w6-d5-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 5,
+    "number": 3,
+    "prompt": "데이터레이크에서 자주 읽히는 curated 존과 거의 읽지 않는 raw 존의 스토리지 전략으로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "둘 다 Glacier Deep Archive"
+      },
+      {
+        "label": "B",
+        "text": "curated는 Standard, raw는 수명주기로 IA→Glacier 전환"
+      },
+      {
+        "label": "C",
+        "text": "curated는 One Zone-IA, raw는 Standard"
+      },
+      {
+        "label": "D",
+        "text": "둘 다 Standard-IA 고정"
+      }
+    ],
+    "answer": "B",
+    "explanation": "자주 읽는 curated는 검색 비용이 없는 Standard가, 드물게 접근하는 raw는 수명주기로 IA→Glacier 전환이 비용 효율적입니다. 자주 읽는 데이터를 IA/Glacier에 두면 검색 비용이, 안 읽는 데이터를 Standard에 두면 저장 비용이 낭비됩니다."
+  },
+  {
+    "id": "dea-c01-w6-d5-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 5,
+    "number": 4,
+    "prompt": "다음 중 데이터레이크의 \"schema-on-read\" 특성을 가장 정확히 설명한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터를 적재하기 전에 엄격한 스키마를 강제한다"
+      },
+      {
+        "label": "B",
+        "text": "스키마를 절대 변경할 수 없다"
+      },
+      {
+        "label": "C",
+        "text": "컬럼형 포맷만 저장할 수 있다"
+      },
+      {
+        "label": "D",
+        "text": "데이터를 원본 그대로 저장하고 쿼리 시점에 스키마를 적용한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "schema-on-read는 데이터를 원본 형태로 저장한 뒤 읽을 때 스키마를 부여하는 방식으로, 정형/반정형/비정형을 유연하게 수용합니다. 적재 전 스키마 강제는 schema-on-write(데이터웨어하우스)이며 나머지는 사실과 다릅니다."
+  },
+  {
+    "id": "dea-c01-w6-d5-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 6,
+    "day": 5,
+    "number": 5,
+    "prompt": "데이터레이크 테이블의 파티션이 수만 개로 늘어 Athena 쿼리 시 Glue Data Catalog 조회가 병목이 되었다. 카탈로그에 파티션을 일일이 등록하지 않고 해결하는 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "파티션 프로젝션 활성화"
+      },
+      {
+        "label": "B",
+        "text": "모든 파티션을 단일 파일로 병합"
+      },
+      {
+        "label": "C",
+        "text": "테이블을 CSV로 변환"
+      },
+      {
+        "label": "D",
+        "text": "버킷 버전 관리 활성화"
+      }
+    ],
+    "answer": "A",
+    "explanation": "파티션 프로젝션은 테이블 속성의 범위·포맷 규칙으로 파티션을 계산해 카탈로그 등록·조회 병목을 제거합니다. 단일 파일 병합은 프루닝을 해치고, CSV 변환·버전 관리는 파티션 병목과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w7-d1-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 1,
+    "number": 1,
+    "prompt": "두 큰 테이블을 customer_id로 자주 조인할 때, 네트워크 재분배 없이 조인(co-located join)되도록 하려면 어떤 설정이 가장 적절한가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "두 테이블 모두 DISTSTYLE EVEN"
+      },
+      {
+        "label": "B",
+        "text": "두 테이블 모두 customer_id를 DISTKEY로 지정"
+      },
+      {
+        "label": "C",
+        "text": "두 테이블 모두 DISTSTYLE ALL"
+      },
+      {
+        "label": "D",
+        "text": "한 테이블만 customer_id를 SORTKEY로 지정"
+      }
+    ],
+    "answer": "B",
+    "explanation": "같은 DISTKEY(customer_id)를 가지면 동일 키 값이 같은 슬라이스에 위치해 재분배 없이 조인됩니다. EVEN은 재분배가 발생하고, 큰 테이블에 ALL은 저장·쓰기 비용이 폭증하며, SORTKEY는 정렬용으로 분산과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w7-d1-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 1,
+    "number": 2,
+    "prompt": "작은 차원 테이블을 큰 팩트 테이블과 조인할 때 재분배를 없애기 위한 분산 스타일로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "DISTSTYLE ALL"
+      },
+      {
+        "label": "B",
+        "text": "DISTSTYLE EVEN"
+      },
+      {
+        "label": "C",
+        "text": "DISTSTYLE KEY (팩트 키 기준)"
+      },
+      {
+        "label": "D",
+        "text": "분산 스타일 미지정"
+      }
+    ],
+    "answer": "A",
+    "explanation": "ALL 분산은 작은 테이블을 모든 노드에 복제해 조인 시 데이터 이동을 없앱니다. 큰 테이블에는 비용 문제로 부적합하지만 작은 차원 테이블에는 이상적입니다. EVEN/KEY는 재분배가 발생할 수 있습니다."
+  },
+  {
+    "id": "dea-c01-w7-d1-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 1,
+    "number": 3,
+    "prompt": "Redshift에서 데이터를 클러스터에 적재하지 않고 S3에 저장된 외부 테이블을 직접 쿼리하며, 스캔한 데이터량 기준으로 과금되는 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "동시성 스케일링"
+      },
+      {
+        "label": "B",
+        "text": "머티리얼라이즈드 뷰"
+      },
+      {
+        "label": "C",
+        "text": "Redshift Spectrum"
+      },
+      {
+        "label": "D",
+        "text": "자동 WLM"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Redshift Spectrum은 Glue Data Catalog를 메타스토어로 사용해 S3의 외부 테이블을 직접 쿼리하고 스캔량으로 과금합니다. 동시성 스케일링은 읽기 동시성 확장, 머티리얼라이즈드 뷰는 사전 집계, WLM은 큐 관리입니다."
+  },
+  {
+    "id": "dea-c01-w7-d1-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 1,
+    "number": 4,
+    "prompt": "정렬 키와 zone map이 쿼리 성능을 높이는 원리로 가장 정확한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터를 모든 노드에 복제해 조인을 없앤다"
+      },
+      {
+        "label": "B",
+        "text": "쿼리를 짧은 큐로 분류해 우선 처리한다"
+      },
+      {
+        "label": "C",
+        "text": "컬럼 인코딩을 자동으로 선택한다"
+      },
+      {
+        "label": "D",
+        "text": "블록의 최소/최대값을 기록해 범위 조건과 무관한 블록을 스킵한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "정렬 키로 데이터를 정렬 저장하고 각 블록의 min/max를 zone map에 기록하면, 범위 필터 시 관련 없는 블록을 통째로 스킵해 스캔량을 줄입니다. A는 ALL 분산, B는 SQA, C는 압축 인코딩에 대한 설명입니다."
+  },
+  {
+    "id": "dea-c01-w7-d1-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 1,
+    "number": 5,
+    "prompt": "매일 새벽 대시보드 갱신으로 읽기 쿼리가 일시적으로 폭증해 큐 대기가 길어진다. 추가 비용을 최소화하면서 대기를 줄이는 가장 적절한 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "DC2 노드로 전환"
+      },
+      {
+        "label": "B",
+        "text": "동시성 스케일링 활성화"
+      },
+      {
+        "label": "C",
+        "text": "모든 테이블을 DISTSTYLE ALL로 변경"
+      },
+      {
+        "label": "D",
+        "text": "INTERLEAVED 정렬 키로 변경"
+      }
+    ],
+    "answer": "B",
+    "explanation": "동시성 스케일링은 읽기 폭증 시 임시 클러스터를 자동 기동해 큐 대기를 없애고 사용한 만큼만 과금(일부 무료 크레딧)합니다. DC2 전환은 분리형 이점을 잃고, ALL/INTERLEAVED 변경은 동시성 문제 해결과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w7-d2-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 2,
+    "number": 1,
+    "prompt": "Athena 비용을 줄이는 방법으로 가장 효과가 큰 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SELECT * 사용 + CSV 포맷"
+      },
+      {
+        "label": "B",
+        "text": "파티셔닝 + Parquet + 압축 + 필요 컬럼만 SELECT"
+      },
+      {
+        "label": "C",
+        "text": "모든 데이터를 단일 대용량 파일로 저장"
+      },
+      {
+        "label": "D",
+        "text": "페더레이션 쿼리로 모든 소스를 매번 조인"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Athena는 스캔량으로 과금하므로 파티션 프루닝, 컬럼형 Parquet, 압축, 컬럼 프로젝션이 스캔량을 직접 줄여 비용·속도를 동시에 개선합니다. SELECT *와 CSV는 스캔량을 늘리고, 단일 거대 파일은 병렬성을 해치며, 페더레이션 남용은 비용과 무관하게 비효율적입니다."
+  },
+  {
+    "id": "dea-c01-w7-d2-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 2,
+    "number": 2,
+    "prompt": "Athena에서 CSV 원본을 파티셔닝된 Parquet 테이블로 변환하는 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "MSCK REPAIR TABLE"
+      },
+      {
+        "label": "B",
+        "text": "ALTER TABLE ADD PARTITION"
+      },
+      {
+        "label": "C",
+        "text": "CREATE TABLE AS SELECT (CTAS)"
+      },
+      {
+        "label": "D",
+        "text": "페더레이션 쿼리"
+      }
+    ],
+    "answer": "C",
+    "explanation": "CTAS는 쿼리 결과를 지정 포맷(Parquet)·압축·파티션으로 새 S3 테이블에 물질화해 경량 ETL을 수행합니다. MSCK/ADD PARTITION은 파티션 메타데이터 관리, 페더레이션 쿼리는 이종 소스 조인용입니다."
+  },
+  {
+    "id": "dea-c01-w7-d2-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 2,
+    "number": 3,
+    "prompt": "파티션이 수만 개로 많아 MSCK REPAIR와 Glue 카탈로그 조회가 병목일 때 가장 적절한 해결책은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "파티션 프로젝션 활성화"
+      },
+      {
+        "label": "B",
+        "text": "DISTSTYLE ALL 적용"
+      },
+      {
+        "label": "C",
+        "text": "워크그룹 스캔 한도 설정"
+      },
+      {
+        "label": "D",
+        "text": "ORC 대신 CSV 사용"
+      }
+    ],
+    "answer": "A",
+    "explanation": "파티션 프로젝션은 파티션을 카탈로그에 등록하지 않고 범위·포맷 규칙으로 계산해 대량 파티션 환경의 조회 병목을 제거합니다. DISTSTYLE은 Redshift 개념, 워크그룹 한도는 비용 통제, CSV 전환은 오히려 스캔량을 늘립니다."
+  },
+  {
+    "id": "dea-c01-w7-d2-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 2,
+    "number": 4,
+    "prompt": "S3에 있는 주문 데이터와 RDS PostgreSQL의 고객 마스터를 데이터 이동 없이 한 SQL로 조인하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Redshift COPY 명령"
+      },
+      {
+        "label": "B",
+        "text": "Athena 페더레이션 쿼리(데이터 소스 커넥터)"
+      },
+      {
+        "label": "C",
+        "text": "Glue 크롤러"
+      },
+      {
+        "label": "D",
+        "text": "DynamoDB Streams"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Athena 페더레이션 쿼리는 Lambda 기반 데이터 소스 커넥터로 RDS·DynamoDB 등 이종 소스를 S3 데이터와 동일 SQL로 조인합니다. COPY는 적재, 크롤러는 스키마 추론, Streams는 변경 캡처입니다."
+  },
+  {
+    "id": "dea-c01-w7-d2-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 2,
+    "number": 5,
+    "prompt": "특정 팀의 폭주 쿼리가 한 번에 막대한 데이터를 스캔하는 것을 방지하려면 Athena에서 무엇을 사용하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "머티리얼라이즈드 뷰"
+      },
+      {
+        "label": "B",
+        "text": "동시성 스케일링"
+      },
+      {
+        "label": "C",
+        "text": "워크그룹의 쿼리당 스캔 한도(BytesScannedCutoffPerQuery)"
+      },
+      {
+        "label": "D",
+        "text": "MSCK REPAIR TABLE"
+      }
+    ],
+    "answer": "C",
+    "explanation": "워크그룹에 쿼리당 데이터 스캔 한도를 설정하면 임계 초과 쿼리를 자동 취소해 비용 폭주를 막습니다. 동시성 스케일링은 Redshift 기능, MSCK는 파티션 관리, 머티리얼라이즈드 뷰는 사전 집계입니다."
+  },
+  {
+    "id": "dea-c01-w7-d3-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 3,
+    "number": 1,
+    "prompt": "DynamoDB에서 시계열 데이터의 PK를 날짜(예: `2026-06-26`)로만 지정했을 때 발생하는 문제는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "강한 일관성을 보장하지 못한다"
+      },
+      {
+        "label": "B",
+        "text": "그날의 모든 트래픽이 한 파티션에 몰려 핫 파티션·스로틀링이 발생한다"
+      },
+      {
+        "label": "C",
+        "text": "GSI를 생성할 수 없다"
+      },
+      {
+        "label": "D",
+        "text": "Streams가 비활성화된다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "PK 해시가 같은 날짜 하나로 고정되면 그날 트래픽이 단일 파티션에 집중되어 핫 파티션과 스로틀링이 생깁니다. 해결책은 샤드 접미사 등으로 키를 분산하는 것입니다. 나머지는 키 설계와 직접 관련이 없습니다."
+  },
+  {
+    "id": "dea-c01-w7-d3-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 3,
+    "number": 2,
+    "prompt": "기본 키와 다른 속성(예: status)으로 테이블 전체를 조회하는 새로운 접근 패턴을 추가하려면 무엇을 사용하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "LSI (테이블 생성 후 추가)"
+      },
+      {
+        "label": "B",
+        "text": "VACUUM"
+      },
+      {
+        "label": "C",
+        "text": "GSI (Global Secondary Index)"
+      },
+      {
+        "label": "D",
+        "text": "파티션 프로젝션"
+      }
+    ],
+    "answer": "C",
+    "explanation": "GSI는 다른 PK/SK로 테이블 전체를 인덱싱해 새 조회 축을 추가하며 언제든 생성 가능합니다(비동기·결과적 일관성). LSI는 같은 PK에 다른 SK이고 테이블 생성 시에만 정의되며, 나머지는 DynamoDB 인덱스와 무관합니다."
+  },
+  {
+    "id": "dea-c01-w7-d3-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 3,
+    "number": 3,
+    "prompt": "DynamoDB 테이블의 아이템 변경을 시간순으로 캡처해 분석 파이프라인으로 흘려보내는 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "DynamoDB Streams"
+      },
+      {
+        "label": "B",
+        "text": "Glue 크롤러"
+      },
+      {
+        "label": "C",
+        "text": "Athena CTAS"
+      },
+      {
+        "label": "D",
+        "text": "Redshift WLM"
+      }
+    ],
+    "answer": "A",
+    "explanation": "DynamoDB Streams는 INSERT/MODIFY/REMOVE 변경을 시간순 레코드로 캡처해 Lambda/Kinesis를 거쳐 S3·Redshift로 적재하는 CDC 파이프라인의 출발점입니다. 나머지는 각각 스키마 추론, Athena 테이블 생성, Redshift 큐 관리입니다."
+  },
+  {
+    "id": "dea-c01-w7-d3-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 3,
+    "number": 4,
+    "prompt": "운영 DynamoDB 테이블에 부하를 주지 않고 특정 시점 데이터를 S3로 내보내 Athena로 분석하려면 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "테이블을 풀 스캔하는 분석 쿼리를 직접 실행"
+      },
+      {
+        "label": "B",
+        "text": "PITR 기반 S3 export(테이블 익스포트) 사용"
+      },
+      {
+        "label": "C",
+        "text": "모든 아이템에 GSI 추가"
+      },
+      {
+        "label": "D",
+        "text": "LSI를 추가로 생성"
+      }
+    ],
+    "answer": "B",
+    "explanation": "PITR(특정 시점 복구) 기반 S3 export는 운영 테이블의 읽기 처리량을 소비하지 않고 스냅샷을 S3로 내보내 Athena로 분석할 수 있습니다. 풀 스캔은 운영에 부하를 주고, 인덱스 추가는 분석 익스포트와 무관합니다."
+  },
+  {
+    "id": "dea-c01-w7-d3-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 3,
+    "number": 5,
+    "prompt": "DynamoDB 사용이 분석 관점에서 부적합한 워크로드로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "사용자 ID로 세션 데이터를 한 자릿수 ms로 조회"
+      },
+      {
+        "label": "B",
+        "text": "임의 컬럼들에 대한 복잡한 조인과 대규모 애드혹 집계 리포팅"
+      },
+      {
+        "label": "C",
+        "text": "장바구니·디바이스 상태 저장"
+      },
+      {
+        "label": "D",
+        "text": "예측 불가 트래픽의 서버리스 백엔드"
+      }
+    ],
+    "answer": "B",
+    "explanation": "DynamoDB는 키 기반 고속 조회와 대규모 동시성에 강하지만, 임의 컬럼 조인·대규모 집계·애드혹 분석에는 부적합합니다. 이런 경우 Streams/export로 S3+Athena·Redshift로 옮겨 분석합니다. 나머지는 DynamoDB의 적합 사례입니다."
+  },
+  {
+    "id": "dea-c01-w7-d4-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 4,
+    "number": 1,
+    "prompt": "다음 중 행 기반 OLTP에 최적화되어 정규화된 트랜잭션·ACID 워크로드에 가장 적합한 스토어는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Redshift"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Athena"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Aurora"
+      },
+      {
+        "label": "D",
+        "text": "Amazon OpenSearch"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Aurora(및 RDS)는 행 기반 관계형 OLTP로 정규화 스키마·트랜잭션·소량 행 처리에 최적입니다. Redshift는 컬럼형 OLAP, Athena는 S3 서버리스 분석, OpenSearch는 검색·로그 분석용입니다."
+  },
+  {
+    "id": "dea-c01-w7-d4-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 4,
+    "number": 2,
+    "prompt": "Aurora의 데이터를 별도 ETL 파이프라인(DMS/Glue) 구축 없이 Redshift로 거의 실시간 복제해 분석하려면 무엇을 사용하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "제로 ETL(Zero-ETL) 통합"
+      },
+      {
+        "label": "B",
+        "text": "DynamoDB Streams"
+      },
+      {
+        "label": "C",
+        "text": "Redshift Spectrum"
+      },
+      {
+        "label": "D",
+        "text": "Athena 페더레이션 쿼리"
+      }
+    ],
+    "answer": "A",
+    "explanation": "제로 ETL 통합은 AWS가 CDC 복제를 관리형으로 수행해 Aurora 데이터를 코드리스로 Redshift에 거의 실시간 반영합니다. Streams는 DynamoDB 변경 캡처, Spectrum은 S3 외부 테이블 쿼리, 페더레이션은 Athena의 이종 소스 조인입니다."
+  },
+  {
+    "id": "dea-c01-w7-d4-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 4,
+    "number": 3,
+    "prompt": "운영 Aurora 인스턴스에 무거운 BI 리포팅 쿼리가 트랜잭션 성능을 저하시킨다. 가장 먼저 고려할 1차 완화책은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 테이블을 비정규화한다"
+      },
+      {
+        "label": "B",
+        "text": "읽기 복제본(read replica)으로 분석 부하를 분리한다"
+      },
+      {
+        "label": "C",
+        "text": "DynamoDB로 마이그레이션한다"
+      },
+      {
+        "label": "D",
+        "text": "정렬 키를 추가한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "읽기 복제본으로 분석·리포팅 쿼리를 분리하면 쓰기 트랜잭션 성능 저하를 막을 수 있는 1차 패턴입니다. 대규모 집계가 지속되면 Redshift로 옮기는 것이 다음 단계입니다. 비정규화·DynamoDB 이전·정렬 키는 부적절하거나 관계없습니다."
+  },
+  {
+    "id": "dea-c01-w7-d4-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 4,
+    "number": 4,
+    "prompt": "Oracle DB를 Aurora PostgreSQL로 마이그레이션하면서 마이그레이션 중 지속적 변경 복제(CDC)가 필요하다. 가장 적절한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "제로 ETL 통합"
+      },
+      {
+        "label": "B",
+        "text": "AWS DMS(Database Migration Service)"
+      },
+      {
+        "label": "C",
+        "text": "Athena CTAS"
+      },
+      {
+        "label": "D",
+        "text": "Kinesis Data Firehose"
+      }
+    ],
+    "answer": "B",
+    "explanation": "DMS는 이종 DB 간 마이그레이션과 지속 복제(CDC)를 지원하며 Oracle→Aurora 같은 폭넓은 소스/타깃 조합을 다룹니다. 제로 ETL은 Aurora/RDS/DynamoDB→Redshift/OpenSearch에 한정되고, CTAS·Firehose는 마이그레이션 용도가 아닙니다."
+  },
+  {
+    "id": "dea-c01-w7-d4-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 4,
+    "number": 5,
+    "prompt": "\"사용자 ID 기반 한 자릿수 ms 조회, 예측 불가한 대규모 동시성, 서버리스 운영\"이 핵심 요구일 때 가장 적합한 스토어는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Redshift"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Aurora"
+      },
+      {
+        "label": "C",
+        "text": "Amazon DynamoDB"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Athena"
+      }
+    ],
+    "answer": "C",
+    "explanation": "키 기반 초저지연 조회, 대규모 동시성, 온디맨드 서버리스 운영은 DynamoDB의 핵심 강점입니다. Redshift/Athena는 분석 OLAP, Aurora는 관계형 트랜잭션 워크로드에 적합합니다."
+  },
+  {
+    "id": "dea-c01-w7-d5-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 5,
+    "number": 1,
+    "prompt": "\"S3에 쌓인 데이터를 인프라 프로비저닝 없이 간헐적으로 표준 SQL로 분석\"하려는 요구에 가장 적합한 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Redshift (프로비저닝 클러스터)"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Athena"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Aurora"
+      },
+      {
+        "label": "D",
+        "text": "Amazon DynamoDB"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Athena는 서버리스로 S3 데이터를 SQL로 직접 쿼리하고 스캔량으로 과금되어, 간헐적·애드혹 분석에 인프라 운영 없이 적합합니다. 프로비저닝 Redshift는 상시 클러스터, Aurora는 OLTP, DynamoDB는 키 조회용입니다."
+  },
+  {
+    "id": "dea-c01-w7-d5-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 5,
+    "number": 2,
+    "prompt": "Redshift에서 두 대형 팩트/차원 테이블을 동일 키로 자주 조인할 때 재분배를 피하는 최적 설정은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "두 테이블 모두 동일 컬럼을 DISTKEY로 지정"
+      },
+      {
+        "label": "B",
+        "text": "두 테이블 모두 DISTSTYLE EVEN"
+      },
+      {
+        "label": "C",
+        "text": "두 테이블 모두 INTERLEAVED SORTKEY"
+      },
+      {
+        "label": "D",
+        "text": "한 테이블만 DISTSTYLE ALL (둘 다 대형)"
+      }
+    ],
+    "answer": "A",
+    "explanation": "동일 컬럼을 DISTKEY로 지정하면 같은 키 값이 같은 슬라이스에 배치되어 재분배 없는 co-located join이 됩니다. EVEN은 재분배, INTERLEAVED는 정렬 다축이며 분산과 무관하고, 대형 테이블에 ALL은 비용이 과합니다."
+  },
+  {
+    "id": "dea-c01-w7-d5-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 5,
+    "number": 3,
+    "prompt": "DynamoDB에 저장된 운영 데이터를 대규모로 집계·리포팅해야 한다. 권장 접근은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "DynamoDB에서 풀 스캔으로 직접 집계"
+      },
+      {
+        "label": "B",
+        "text": "GSI를 수십 개 만들어 모든 집계를 인덱스로 처리"
+      },
+      {
+        "label": "C",
+        "text": "Streams/S3 export로 S3·Redshift에 옮겨 Athena/Redshift로 분석"
+      },
+      {
+        "label": "D",
+        "text": "LSI를 추가해 집계 전용 축을 만든다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "DynamoDB는 대량 집계·애드혹 분석에 부적합하므로, Streams나 S3 export로 변경분을 분석 스토어(S3+Athena/Redshift)로 옮겨 분석하는 CQRS형 분리가 정석입니다. 풀 스캔·과도한 인덱스는 비용·성능 면에서 부적절합니다."
+  },
+  {
+    "id": "dea-c01-w7-d5-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 5,
+    "number": 4,
+    "prompt": "Aurora의 운영 데이터를 ETL 파이프라인 운영 부담 없이 Redshift에서 거의 실시간으로 분석하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS DMS로 매시간 배치 마이그레이션"
+      },
+      {
+        "label": "B",
+        "text": "제로 ETL(Zero-ETL) 통합"
+      },
+      {
+        "label": "C",
+        "text": "Athena 페더레이션 쿼리"
+      },
+      {
+        "label": "D",
+        "text": "Redshift Spectrum 외부 스키마"
+      }
+    ],
+    "answer": "B",
+    "explanation": "제로 ETL 통합은 AWS 관리형 CDC로 Aurora 데이터를 코드리스·거의 실시간으로 Redshift에 복제합니다. DMS는 인스턴스 운영 부담이 있고, 페더레이션·Spectrum은 적재 없이 외부를 쿼리하는 방식으로 요구와 다릅니다."
+  },
+  {
+    "id": "dea-c01-w7-d5-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 7,
+    "day": 5,
+    "number": 5,
+    "prompt": "Athena에서 파티션이 수만 개로 늘어 카탈로그 조회와 MSCK REPAIR가 병목이 될 때 가장 적절한 해결책은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "동시성 스케일링 활성화"
+      },
+      {
+        "label": "B",
+        "text": "DISTSTYLE ALL 적용"
+      },
+      {
+        "label": "C",
+        "text": "파티션 프로젝션(Partition Projection)"
+      },
+      {
+        "label": "D",
+        "text": "모든 파일을 CSV로 변환"
+      }
+    ],
+    "answer": "C",
+    "explanation": "파티션 프로젝션은 파티션을 카탈로그에 등록하지 않고 범위·포맷 규칙으로 계산해 대량 파티션 환경의 조회 병목을 제거합니다. 동시성 스케일링·DISTSTYLE은 Redshift 개념이고, CSV 전환은 스캔량을 늘려 역효과입니다."
+  },
+  {
+    "id": "dea-c01-w8-d1-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 1,
+    "number": 1,
+    "prompt": "Kinesis Data Streams 컨슈머가 유입 속도를 따라가지 못해 처리 지연이 누적되고 있는지 가장 직접적으로 나타내는 CloudWatch 지표는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IncomingBytes"
+      },
+      {
+        "label": "B",
+        "text": "GetRecords.IteratorAgeMilliseconds"
+      },
+      {
+        "label": "C",
+        "text": "WriteProvisionedThroughputExceeded"
+      },
+      {
+        "label": "D",
+        "text": "PutRecord.Success"
+      }
+    ],
+    "answer": "B",
+    "explanation": "IteratorAgeMilliseconds는 컨슈머가 현재 읽고 있는 레코드의 나이를 나타내며, 값이 계속 커지면 컨슈머가 뒤처지고 있다는 핵심 신호입니다. IncomingBytes는 유입량, WriteProvisionedThroughputExceeded는 쓰기 스로틀링, PutRecord.Success는 생산자 성공률로 컨슈머 지연을 직접 나타내지 않습니다."
+  },
+  {
+    "id": "dea-c01-w8-d1-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 1,
+    "number": 2,
+    "prompt": "Glue ETL 잡이 장시간 실행되는 동안 잡이 끝나기 전에도 실시간으로 로그를 CloudWatch Logs에서 확인하려면 어떤 기능을 활성화해야 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Job Bookmark"
+      },
+      {
+        "label": "B",
+        "text": "Partition Projection"
+      },
+      {
+        "label": "C",
+        "text": "DynamicFrame"
+      },
+      {
+        "label": "D",
+        "text": "Continuous Logging(연속 로깅)"
+      }
+    ],
+    "answer": "D",
+    "explanation": "연속 로깅을 활성화하면 잡 완료 전에도 드라이버·익스큐터 로그가 실시간으로 CloudWatch Logs로 전송됩니다. Job Bookmark는 재처리 시 중복 방지용 상태, Partition Projection은 Athena 파티션 계산, DynamicFrame은 Glue의 데이터 추상화로 실시간 로깅과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w8-d1-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 1,
+    "number": 3,
+    "prompt": "Lambda나 컨테이너 기반 파이프라인에서 로그 한 줄에 지표와 풍부한 컨텍스트를 함께 남기고 CloudWatch가 자동으로 지표를 추출하게 하는 방식은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "PutMetricData를 호출마다 동기 실행"
+      },
+      {
+        "label": "B",
+        "text": "X-Ray 세그먼트"
+      },
+      {
+        "label": "C",
+        "text": "EMF(Embedded Metric Format)"
+      },
+      {
+        "label": "D",
+        "text": "CloudTrail 데이터 이벤트"
+      }
+    ],
+    "answer": "C",
+    "explanation": "EMF는 구조화된 JSON 로그를 출력하면 CloudWatch가 자동으로 커스텀 지표를 추출하는 방식으로, 별도 API 호출 없이 지표와 컨텍스트를 동시에 기록합니다. PutMetricData 동기 호출은 지연·비용 부담이 크고, X-Ray는 추적, CloudTrail은 API 감사 용도입니다."
+  },
+  {
+    "id": "dea-c01-w8-d1-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 1,
+    "number": 4,
+    "prompt": "여러 개의 개별 알람이 동시에 울려 알림이 폭주(alarm storm)하는 것을 줄이기 위해, 알람들을 AND/OR 논리로 묶어 하나의 상위 상태로 평가하는 CloudWatch 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Composite Alarm(복합 알람)"
+      },
+      {
+        "label": "B",
+        "text": "Metric Math"
+      },
+      {
+        "label": "C",
+        "text": "Anomaly Detection"
+      },
+      {
+        "label": "D",
+        "text": "Dashboard Widget"
+      }
+    ],
+    "answer": "A",
+    "explanation": "복합 알람은 여러 알람의 상태를 불리언 식으로 결합해 단일 알람으로 평가하므로 알람 폭주를 줄이고 의미 있는 상황에서만 통보할 수 있습니다. Metric Math는 지표 계산, Anomaly Detection은 동적 임계값, Dashboard는 시각화 용도입니다."
+  },
+  {
+    "id": "dea-c01-w8-d1-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 1,
+    "number": 5,
+    "prompt": "EMR 클러스터가 작업을 마치고 더 이상 처리할 것이 없어 비용만 발생하는 상태인지 판단해 자동 종료 결정을 돕는 CloudWatch 지표로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IsIdle"
+      },
+      {
+        "label": "B",
+        "text": "ContainerPendingRatio"
+      },
+      {
+        "label": "C",
+        "text": "AppsRunning"
+      },
+      {
+        "label": "D",
+        "text": "IncomingRecords"
+      }
+    ],
+    "answer": "A",
+    "explanation": "IsIdle은 클러스터가 유휴 상태인지 나타내어 비용 절감을 위한 자동 종료 판단에 사용됩니다. ContainerPendingRatio는 리소스 부족, AppsRunning은 실행 중 앱 수를 나타내며, IncomingRecords는 Kinesis 지표로 EMR과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w8-d2-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 2,
+    "number": 1,
+    "prompt": "AWS Glue Data Quality에서 데이터셋의 품질 규칙을 선언형으로 정의하는 데 사용하는 언어는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "HiveQL"
+      },
+      {
+        "label": "B",
+        "text": "PartiQL"
+      },
+      {
+        "label": "C",
+        "text": "JSONPath"
+      },
+      {
+        "label": "D",
+        "text": "DQDL(Data Quality Definition Language)"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Glue Data Quality는 DQDL로 RowCount, IsComplete, IsUnique 등 규칙을 선언형으로 정의합니다. HiveQL/PartiQL은 쿼리 언어, JSONPath는 JSON 경로 표현식으로 품질 규칙 정의 용도가 아닙니다."
+  },
+  {
+    "id": "dea-c01-w8-d2-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 2,
+    "number": 2,
+    "prompt": "데이터 양이 요일·계절에 따라 크게 변하는 파이프라인에서, 고정 임계값보다 오탐이 적게 비정상을 탐지하려면 어떤 방식이 가장 적절한가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "RowCount > 1000 같은 절대 임계값만 사용"
+      },
+      {
+        "label": "B",
+        "text": "과거 추세를 학습하는 이상 탐지(anomaly detection)"
+      },
+      {
+        "label": "C",
+        "text": "모든 레코드에 IsUnique 적용"
+      },
+      {
+        "label": "D",
+        "text": "품질 검증을 비활성화"
+      }
+    ],
+    "answer": "B",
+    "explanation": "이상 탐지는 지표의 과거 추세·정상 범위를 학습해 \"평소와 다른\" 값을 잡으므로 계절성·성장에 따른 변동에 강합니다. 고정 임계값은 트래픽 변동 시 오탐이 많고, IsUnique는 중복 검사일 뿐이며, 검증 비활성화는 품질 보장을 포기하는 것입니다."
+  },
+  {
+    "id": "dea-c01-w8-d2-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 2,
+    "number": 3,
+    "prompt": "데이터 품질 검증 게이트에서 점수가 기준에 미달한 데이터를 처리할 때 권장되는 동작은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "즉시 curated 존에 덮어쓴다"
+      },
+      {
+        "label": "B",
+        "text": "무시하고 삭제한다"
+      },
+      {
+        "label": "C",
+        "text": "격리(quarantine) 영역에 보관하고 다운스트림 진행을 막는다"
+      },
+      {
+        "label": "D",
+        "text": "임계값을 자동으로 낮춰 통과시킨다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "미달 데이터는 격리 영역에 원본·실패 사유와 함께 보관하고 다운스트림 진행을 차단해, 원인 분석과 재처리에 대비합니다. curated 덮어쓰기·삭제는 데이터를 오염·소실시키고, 임계값을 낮추는 것은 품질 게이트의 목적을 무력화합니다."
+  },
+  {
+    "id": "dea-c01-w8-d2-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 2,
+    "number": 4,
+    "prompt": "격리된 불량 데이터를 수정 후 다시 처리할 때, 같은 입력을 여러 번 처리해도 결과가 동일하도록 보장하는 속성은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "멱등성(Idempotency)"
+      },
+      {
+        "label": "B",
+        "text": "휘발성(Volatility)"
+      },
+      {
+        "label": "C",
+        "text": "카디널리티(Cardinality)"
+      },
+      {
+        "label": "D",
+        "text": "직렬화 가능성(Serializability)"
+      }
+    ],
+    "answer": "A",
+    "explanation": "멱등성은 동일 입력을 반복 처리해도 결과가 변하지 않는 속성으로, 업서트(MERGE)나 파티션 단위 결정적 덮어쓰기로 구현해 재처리 시 중복을 방지합니다. 나머지는 재처리 중복 방지와 직접 관련된 개념이 아닙니다."
+  },
+  {
+    "id": "dea-c01-w8-d2-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 2,
+    "number": 5,
+    "prompt": "데이터 품질 검증을 파이프라인의 앞쪽(수집 직후)에 두는 것이 권장되는 주된 이유는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "스토리지 비용이 절감되기 때문"
+      },
+      {
+        "label": "B",
+        "text": "쿼리 성능이 향상되기 때문"
+      },
+      {
+        "label": "C",
+        "text": "IAM 권한이 단순해지기 때문"
+      },
+      {
+        "label": "D",
+        "text": "불량 데이터가 curated까지 흘러간 뒤 발견 시 영향·재처리 비용이 폭증하기 때문"
+      }
+    ],
+    "answer": "D",
+    "explanation": "shift-left 원칙에 따라 검증을 앞단에 두면 불량 데이터가 하류로 전파되기 전에 차단해 영향 범위와 재처리 비용을 최소화합니다. 비용·성능·권한도 부수적으로 좋아질 수 있지만 핵심 이유는 오염 전파 차단입니다."
+  },
+  {
+    "id": "dea-c01-w8-d3-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 3,
+    "number": 1,
+    "prompt": "\"지난 밤 누가 Glue Data Catalog의 테이블을 삭제했는가\"를 자격증명과 시각까지 추적하려면 어떤 서비스를 봐야 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudWatch Logs"
+      },
+      {
+        "label": "B",
+        "text": "CloudTrail"
+      },
+      {
+        "label": "C",
+        "text": "X-Ray"
+      },
+      {
+        "label": "D",
+        "text": "Glue Data Quality"
+      }
+    ],
+    "answer": "B",
+    "explanation": "CloudTrail은 AWS API 호출을 자격증명(userIdentity)·시간과 함께 기록하므로 \"누가 무엇을 했는가\"를 감사할 수 있습니다. CloudWatch Logs는 애플리케이션 로그, X-Ray는 분산 추적, Glue Data Quality는 데이터 품질 평가로 API 감사 용도가 아닙니다."
+  },
+  {
+    "id": "dea-c01-w8-d3-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 3,
+    "number": 2,
+    "prompt": "SQS 큐에서 컨슈머가 특정 메시지 처리를 반복적으로 실패해 큐 전체 처리가 막히는 것을 방지하기 위한 메커니즘은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "FIFO 큐 전환"
+      },
+      {
+        "label": "B",
+        "text": "가시성 타임아웃을 0으로 설정"
+      },
+      {
+        "label": "C",
+        "text": "메시지 보존 기간 단축"
+      },
+      {
+        "label": "D",
+        "text": "데드레터 큐(DLQ) + maxReceiveCount"
+      }
+    ],
+    "answer": "D",
+    "explanation": "maxReceiveCount를 초과해 반복 실패한 메시지를 DLQ로 이동시키면 정상 큐가 막히지 않고, 이후 원인 수정 후 redrive로 재처리할 수 있습니다. FIFO 전환·가시성 타임아웃 0·보존 기간 단축은 반복 실패 메시지 격리 문제를 해결하지 못합니다."
+  },
+  {
+    "id": "dea-c01-w8-d3-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 3,
+    "number": 3,
+    "prompt": "Step Functions에서 일시적 오류(예: ThrottlingException)에 대응할 때, 재시도 폭주(thundering herd)를 줄이기 위해 권장되는 전략은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "즉시 무한 재시도"
+      },
+      {
+        "label": "B",
+        "text": "고정 간격 1초 재시도"
+      },
+      {
+        "label": "C",
+        "text": "지수 백오프 + 지터"
+      },
+      {
+        "label": "D",
+        "text": "재시도 없이 즉시 실패 처리"
+      }
+    ],
+    "answer": "C",
+    "explanation": "지수 백오프는 재시도 간격을 점점 늘리고 지터(무작위성)는 여러 클라이언트의 동시 재시도를 분산시켜 폭주를 방지합니다. 무한·고정 간격 재시도는 부하를 가중시키고, 재시도 없는 즉시 실패는 일시적 오류 복구 기회를 버립니다."
+  },
+  {
+    "id": "dea-c01-w8-d3-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 3,
+    "number": 4,
+    "prompt": "비멱등 작업(예: \"계좌 잔액을 100 증가\")을 자동 재시도할 때 발생할 수 있는 가장 큰 위험은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "동일 작업이 중복 적용되어 데이터가 잘못된다"
+      },
+      {
+        "label": "B",
+        "text": "작업이 느려진다"
+      },
+      {
+        "label": "C",
+        "text": "로그가 사라진다"
+      },
+      {
+        "label": "D",
+        "text": "IAM 권한이 변경된다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "비멱등 작업을 재시도하면 같은 작업이 여러 번 적용되어(예: 잔액이 두 번 증가) 데이터 무결성이 깨집니다. 멱등 키나 조건부 쓰기로 보호해야 재시도가 안전합니다. 느려짐·로그 소실·권한 변경은 핵심 위험이 아닙니다."
+  },
+  {
+    "id": "dea-c01-w8-d3-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 3,
+    "number": 5,
+    "prompt": "파이프라인 장애를 디버깅할 때 가장 먼저 확인하기에 적절한 위치는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "개별 익스큐터의 GC 로그"
+      },
+      {
+        "label": "B",
+        "text": "S3 버킷의 요청 비용"
+      },
+      {
+        "label": "C",
+        "text": "VPC 플로우 로그"
+      },
+      {
+        "label": "D",
+        "text": "오케스트레이터(Step Functions/MWAA)에서 어느 태스크가 실패했는지"
+      }
+    ],
+    "answer": "D",
+    "explanation": "디버깅은 위에서 아래로 좁히는 것이 효율적이므로, 먼저 오케스트레이터에서 실패 지점을 식별한 뒤 해당 태스크의 로그·입력·권한을 확인합니다. GC 로그·요청 비용·플로우 로그는 범위를 좁힌 뒤 필요 시 보는 세부 단서입니다."
+  },
+  {
+    "id": "dea-c01-w8-d4-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 4,
+    "number": 1,
+    "prompt": "데이터 팀이 프로젝트별·환경별 AWS 비용을 분해해서 보고 싶을 때 가장 먼저 해야 할 일은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 리소스를 한 계정으로 통합"
+      },
+      {
+        "label": "B",
+        "text": "모든 인스턴스를 Spot으로 전환"
+      },
+      {
+        "label": "C",
+        "text": "Cost Allocation Tags를 일관되게 달고 청구 콘솔에서 활성화"
+      },
+      {
+        "label": "D",
+        "text": "CloudTrail 데이터 이벤트 활성화"
+      }
+    ],
+    "answer": "C",
+    "explanation": "비용 할당 태그(Project, Environment 등)를 일관되게 달고 활성화하면 Cost Explorer에서 태그별로 비용을 분해할 수 있습니다. 계정 통합·Spot 전환은 분해 가시화와 무관하고, CloudTrail 데이터 이벤트는 비용 분석이 아니라 API 감사 용도입니다."
+  },
+  {
+    "id": "dea-c01-w8-d4-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 4,
+    "number": 2,
+    "prompt": "Glue 잡 실행 중 스테이지별 필요량에 따라 워커 수를 동적으로 늘리고 줄여 비용과 성능을 모두 잡는 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Glue Auto Scaling"
+      },
+      {
+        "label": "B",
+        "text": "Job Bookmark"
+      },
+      {
+        "label": "C",
+        "text": "Partition Projection"
+      },
+      {
+        "label": "D",
+        "text": "DynamicFrame"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Glue Auto Scaling(`--enable-auto-scaling`)은 잡 실행 중 워크로드에 맞춰 워커를 동적으로 조절하고 최대 워커 수만 상한으로 지정합니다. Job Bookmark는 증분 처리 상태, Partition Projection은 Athena 파티션 계산, DynamicFrame은 데이터 추상화입니다."
+  },
+  {
+    "id": "dea-c01-w8-d4-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 4,
+    "number": 3,
+    "prompt": "EMR 클러스터에서 비용을 크게 절감하면서도 중단 가능성에 견디도록 구성하는 전형적 패턴은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 노드를 Spot으로 구성"
+      },
+      {
+        "label": "B",
+        "text": "모든 노드를 On-Demand로 구성"
+      },
+      {
+        "label": "C",
+        "text": "코어 노드를 Spot, 태스크 노드를 On-Demand"
+      },
+      {
+        "label": "D",
+        "text": "코어 노드는 On-Demand/약정, 태스크 노드는 Spot"
+      }
+    ],
+    "answer": "D",
+    "explanation": "HDFS 데이터를 보유하는 코어 노드는 안정적인 On-Demand/약정으로 두고, 상태가 없는 태스크 노드를 Spot으로 구성하면 회수되어도 데이터 손실 없이 비용을 절감합니다. 코어를 Spot으로 두면 회수 시 데이터 손실 위험이 큽니다."
+  },
+  {
+    "id": "dea-c01-w8-d4-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 4,
+    "number": 4,
+    "prompt": "Athena와 Redshift Spectrum의 쿼리 비용을 직접적으로 줄이는 가장 효과적인 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 데이터를 CSV로 저장"
+      },
+      {
+        "label": "B",
+        "text": "Parquet 컬럼 포맷 + 압축 + 파티션 프루닝으로 스캔 바이트 감소"
+      },
+      {
+        "label": "C",
+        "text": "쿼리를 더 자주 실행"
+      },
+      {
+        "label": "D",
+        "text": "결과를 항상 JSON으로 출력"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Athena/Spectrum은 스캔한 바이트로 과금되므로, 컬럼 포맷(Parquet)·압축·파티션 프루닝으로 읽는 데이터양을 줄이면 비용이 직접 감소합니다. CSV/JSON은 스캔량을 늘리고, 쿼리를 자주 실행하면 비용이 증가합니다."
+  },
+  {
+    "id": "dea-c01-w8-d4-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 4,
+    "number": 5,
+    "prompt": "AWS 비용에서 평소와 다른 비정상적인 급증을 머신러닝으로 자동 탐지하고 통보하는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Budgets"
+      },
+      {
+        "label": "B",
+        "text": "Trusted Advisor"
+      },
+      {
+        "label": "C",
+        "text": "Compute Optimizer"
+      },
+      {
+        "label": "D",
+        "text": "Cost Anomaly Detection"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Cost Anomaly Detection은 ML로 비용 패턴을 학습해 비정상적 급증을 자동 탐지·통보합니다. Budgets는 사전 설정한 임계값 기반 알림, Trusted Advisor는 모범사례 점검, Compute Optimizer는 리소스 사이징 권고로 동적 이상 탐지와는 다릅니다."
+  },
+  {
+    "id": "dea-c01-w8-d5-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 5,
+    "number": 1,
+    "prompt": "다음 중 \"어제 누가 prod Glue 테이블을 삭제했는지\"와 \"어젯밤 Kinesis 컨슈머가 얼마나 지연됐는지\"를 각각 확인하기 위한 올바른 도구 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "둘 다 CloudWatch Logs"
+      },
+      {
+        "label": "B",
+        "text": "삭제는 CloudTrail, 지연은 CloudWatch IteratorAgeMilliseconds"
+      },
+      {
+        "label": "C",
+        "text": "삭제는 X-Ray, 지연은 CloudTrail"
+      },
+      {
+        "label": "D",
+        "text": "둘 다 Cost Explorer"
+      }
+    ],
+    "answer": "B",
+    "explanation": "API 호출 감사(\"누가 삭제\")는 CloudTrail, 스트리밍 지연 측정은 CloudWatch의 IteratorAgeMilliseconds 지표입니다. CloudWatch Logs만으로는 감사가 부족하고, X-Ray는 추적, Cost Explorer는 비용 분석 도구입니다."
+  },
+  {
+    "id": "dea-c01-w8-d5-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 5,
+    "number": 2,
+    "prompt": "야간 ETL에서 Glue Data Quality 점수가 임계값 미만일 때 권장되는 파이프라인 동작은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "curated에 그대로 적재하고 나중에 정정"
+      },
+      {
+        "label": "B",
+        "text": "임계값을 자동으로 낮춰 통과시킴"
+      },
+      {
+        "label": "C",
+        "text": "Step Functions Choice로 다운스트림을 막고 데이터를 격리 + 통보"
+      },
+      {
+        "label": "D",
+        "text": "잡을 즉시 삭제"
+      }
+    ],
+    "answer": "C",
+    "explanation": "검증 게이트는 미달 데이터의 다운스트림 진행을 막고 격리 버킷으로 보낸 뒤 통보해 오염 전파를 차단합니다. 그대로 적재·임계값 하향은 품질 게이트를 무력화하고, 잡 삭제는 재처리 기회를 잃습니다."
+  },
+  {
+    "id": "dea-c01-w8-d5-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 5,
+    "number": 3,
+    "prompt": "비용을 절감하기 위해 EMR 태스크 노드를 Spot으로 전환할 때 함께 적용해야 하는 원칙으로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "HDFS 데이터를 보유하는 코어 노드는 안정적인 옵션으로 유지"
+      },
+      {
+        "label": "B",
+        "text": "코어 노드도 모두 Spot으로 전환"
+      },
+      {
+        "label": "C",
+        "text": "자동 스케일링을 비활성화"
+      },
+      {
+        "label": "D",
+        "text": "모든 데이터를 태스크 노드 로컬에 저장"
+      }
+    ],
+    "answer": "A",
+    "explanation": "태스크 노드는 상태가 없어 Spot 회수에 견딜 수 있지만, HDFS 데이터를 보유한 코어 노드는 On-Demand/약정으로 유지해야 회수 시 데이터 손실을 막습니다. 코어 Spot 전환·로컬 저장은 데이터 손실 위험을 키웁니다."
+  },
+  {
+    "id": "dea-c01-w8-d5-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 5,
+    "number": 4,
+    "prompt": "일시적 오류가 잦은 외부 API 호출 태스크를 자동 재시도하도록 구성할 때, 안전성을 위해 반드시 전제되어야 하는 조건은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "태스크가 비멱등이어야 한다"
+      },
+      {
+        "label": "B",
+        "text": "재시도 간격이 항상 0이어야 한다"
+      },
+      {
+        "label": "C",
+        "text": "로그를 비활성화해야 한다"
+      },
+      {
+        "label": "D",
+        "text": "태스크가 멱등(idempotent)이어야 한다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "재시도는 같은 작업이 여러 번 실행될 수 있으므로, 멱등 작업에서만 안전합니다. 비멱등 작업은 중복 적용으로 데이터가 오염되고, 재시도 간격 0은 폭주를 유발하며, 로그 비활성화는 디버깅을 어렵게 합니다."
+  },
+  {
+    "id": "dea-c01-w8-d5-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 8,
+    "day": 5,
+    "number": 5,
+    "prompt": "자동 스케일링을 도입했는데도 평소 비용이 여전히 과도하다면 가장 먼저 점검해야 할 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "더 많은 알람을 추가한다"
+      },
+      {
+        "label": "B",
+        "text": "모든 태그를 제거한다"
+      },
+      {
+        "label": "C",
+        "text": "베이스라인 리소스 사이징(워커/인스턴스/메모리)이 적정한지 점검한다"
+      },
+      {
+        "label": "D",
+        "text": "자동 스케일링 상한을 무한대로 올린다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "자동 스케일링은 변동을 흡수할 뿐 잘못된 베이스라인을 고치지 못하므로, 평상시 비용이 높으면 베이스라인 사이징을 먼저 재조정해야 합니다. 알람 추가·태그 제거·스케일링 상한 상향은 근본 원인인 과대 베이스라인을 해결하지 못합니다."
+  },
+  {
+    "id": "dea-c01-w9-d1-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 1,
+    "number": 1,
+    "prompt": "한 분석가가 Athena로 Glue 카탈로그 테이블을 조회하려는데 \"Insufficient permissions\" 오류가 발생한다. IAM 정책에는 `athena:*`, `glue:GetTable`, `s3:GetObject`가 모두 허용돼 있다. 가장 가능성 높은 원인은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 버킷이 버전 관리되지 않음"
+      },
+      {
+        "label": "B",
+        "text": "Athena 워크그룹이 비활성화됨"
+      },
+      {
+        "label": "C",
+        "text": "테이블이 CSV 포맷임"
+      },
+      {
+        "label": "D",
+        "text": "Lake Formation에서 해당 테이블에 SELECT 권한이 부여되지 않음"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Lake Formation으로 관리되는 데이터는 IAM 권한이 충분해도 LF에서 SELECT/DESCRIBE 권한이 별도로 부여돼야 접근됩니다. 버전 관리·워그룹·포맷은 권한 거부의 직접 원인이 아닙니다."
+  },
+  {
+    "id": "dea-c01-w9-d1-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 1,
+    "number": 2,
+    "prompt": "수백 개의 테이블이 매주 추가되는 데이터레이크에서, 새 테이블이 생길 때마다 사용자별 GRANT 문을 추가하는 운영 부담을 없애려 한다. 가장 적절한 접근 제어 방식은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "모든 사용자에게 `lakeformation:*` 부여"
+      },
+      {
+        "label": "B",
+        "text": "S3 버킷 정책으로만 제어"
+      },
+      {
+        "label": "C",
+        "text": "LF-Tags(TBAC)로 태그 표현식 기반 권한 부여"
+      },
+      {
+        "label": "D",
+        "text": "사용자마다 별도 AWS 계정 생성"
+      }
+    ],
+    "answer": "C",
+    "explanation": "TBAC는 리소스에 태그를 붙이고 태그 표현식에 권한을 부여하므로, 같은 태그를 가진 새 테이블은 자동으로 권한이 적용됩니다. 와일드카드 부여는 최소 권한 위반, 버킷 정책은 세분화가 약하고, 계정 분리는 과도합니다."
+  },
+  {
+    "id": "dea-c01-w9-d1-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 1,
+    "number": 3,
+    "prompt": "분석가에게 `orders` 테이블에서 PII 컬럼(email, ssn)을 제외하고, 자신의 지역(`region`) 행만 보여주려 한다. Lake Formation에서 사용할 단일 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터 필터(Data Cells Filter)"
+      },
+      {
+        "label": "B",
+        "text": "S3 Object Lock"
+      },
+      {
+        "label": "C",
+        "text": "파티션 프로젝션"
+      },
+      {
+        "label": "D",
+        "text": "KMS 키 정책"
+      }
+    ],
+    "answer": "A",
+    "explanation": "데이터 필터는 노출 컬럼 목록과 행 필터 표현식을 하나로 묶어 컬럼·행을 동시에 제어합니다. Object Lock은 삭제 방지, 파티션 프로젝션은 성능, KMS 키 정책은 암호화 권한으로 세분화 접근과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w9-d1-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 1,
+    "number": 4,
+    "prompt": "계정 A의 데이터레이크 테이블을 계정 B의 역할이 조회하도록 교차 계정 공유를 설정했다. 데이터는 KMS CMK로 암호화돼 있다. 접근이 여전히 실패하는 흔한 원인은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "계정 B에 인터넷 게이트웨이가 없음"
+      },
+      {
+        "label": "B",
+        "text": "계정 A의 S3 버킷이 비어 있음"
+      },
+      {
+        "label": "C",
+        "text": "두 계정이 같은 리전에 없음"
+      },
+      {
+        "label": "D",
+        "text": "KMS 키 정책에 계정 B 주체의 복호화 권한이 없음"
+      }
+    ],
+    "answer": "D",
+    "explanation": "암호화된 데이터는 LF/S3 권한이 정렬돼도 KMS 키 정책에 교차 계정 주체의 `kms:Decrypt` 권한이 없으면 복호화에 실패합니다. 게이트웨이·빈 버킷·리전은 일반적 실패 원인이 아닙니다."
+  },
+  {
+    "id": "dea-c01-w9-d1-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 1,
+    "number": 5,
+    "prompt": "IAM 정책 평가에 대한 설명으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Allow가 하나라도 있으면 Deny를 무시한다"
+      },
+      {
+        "label": "B",
+        "text": "묵시적 허용이 기본값이다"
+      },
+      {
+        "label": "C",
+        "text": "명시적 Deny는 어떤 Allow보다 우선해 항상 차단한다"
+      },
+      {
+        "label": "D",
+        "text": "리소스 기반 정책은 평가에 포함되지 않는다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "IAM은 명시적 Deny가 최우선이며, Allow가 없으면 묵시적 거부가 기본값입니다. 리소스 기반 정책도 평가에 포함됩니다. 나머지 보기는 평가 로직을 반대로 설명한 오답입니다."
+  },
+  {
+    "id": "dea-c01-w9-d2-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 2,
+    "number": 1,
+    "prompt": "대량의 S3 객체를 SSE-KMS로 암호화하는데 KMS API 호출 비용과 스로틀링이 문제가 된다. 비용·호출을 줄이는 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SSE-C로 전환"
+      },
+      {
+        "label": "B",
+        "text": "모든 객체를 SSE-S3로 변경"
+      },
+      {
+        "label": "C",
+        "text": "KMS 키를 매일 교체"
+      },
+      {
+        "label": "D",
+        "text": "S3 Bucket Key 활성화"
+      }
+    ],
+    "answer": "D",
+    "explanation": "S3 Bucket Key는 버킷 수준 데이터 키를 사용해 객체별 KMS 호출을 크게 줄여 비용·스로틀링을 완화하면서 KMS 키 제어를 유지합니다. SSE-C/SSE-S3 전환은 키 제어·감사를 잃고, 키 교체는 비용과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w9-d2-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 2,
+    "number": 2,
+    "prompt": "규정상 AWS가 데이터의 평문을 절대 보지 못하도록 보장해야 한다. 가장 적합한 암호화 방식은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SSE-S3"
+      },
+      {
+        "label": "B",
+        "text": "SSE-KMS"
+      },
+      {
+        "label": "C",
+        "text": "클라이언트 측 암호화"
+      },
+      {
+        "label": "D",
+        "text": "DSSE-KMS"
+      }
+    ],
+    "answer": "C",
+    "explanation": "클라이언트 측 암호화는 데이터를 AWS로 보내기 전에 암호화하므로 AWS는 암호문만 받아 평문을 볼 수 없습니다. SSE 계열은 모두 AWS가 수신 후 암호화하므로 일시적으로 평문을 처리합니다."
+  },
+  {
+    "id": "dea-c01-w9-d2-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 2,
+    "number": 3,
+    "prompt": "S3 데이터는 SSE-KMS로 암호화돼 있으나, 보안 검토에서 평문 HTTP 접근이 가능하다는 지적을 받았다. 전송 중 데이터를 보호하기 위한 조치는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "버킷 정책에 `aws:SecureTransport: false` 거부 조건 추가"
+      },
+      {
+        "label": "B",
+        "text": "KMS 키 교체 활성화"
+      },
+      {
+        "label": "C",
+        "text": "S3 버전 관리 활성화"
+      },
+      {
+        "label": "D",
+        "text": "Glacier로 전환"
+      }
+    ],
+    "answer": "A",
+    "explanation": "`aws:SecureTransport`가 false인 요청을 Deny하면 TLS가 아닌 평문 HTTP 접근이 차단되어 전송 중 데이터가 보호됩니다. 키 교체·버전 관리·Glacier 전환은 전송 계층 보호와 무관합니다."
+  },
+  {
+    "id": "dea-c01-w9-d2-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 2,
+    "number": 4,
+    "prompt": "Glue ETL 작업이 SSE-KMS로 암호화된 S3 데이터를 읽지 못하고 권한 오류가 난다. Glue 작업 역할 ARN은 키 정책에 없다. 올바른 해결은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 버킷을 공개로 설정"
+      },
+      {
+        "label": "B",
+        "text": "데이터를 SSE-S3로 재암호화"
+      },
+      {
+        "label": "C",
+        "text": "KMS 키 정책에 Glue 역할의 `kms:Decrypt`/`kms:GenerateDataKey` 허용 추가"
+      },
+      {
+        "label": "D",
+        "text": "Glue 작업을 다른 리전으로 이동"
+      }
+    ],
+    "answer": "C",
+    "explanation": "SSE-KMS 데이터를 읽으려면 해당 IAM 역할이 KMS 키 정책(또는 grant)에서 복호화 권한을 받아야 합니다. 공개 설정은 보안 위반, SSE-S3 재암호화는 키 제어 상실, 리전 이동은 권한 문제와 무관합니다."
+  },
+  {
+    "id": "dea-c01-w9-d2-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 2,
+    "number": 5,
+    "prompt": "KMS 봉투 암호화(envelope encryption)를 가장 정확히 설명한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "KMS 키가 대용량 데이터를 직접 암호화한다"
+      },
+      {
+        "label": "B",
+        "text": "KMS 키로 데이터 키를 암호화하고, 데이터 키로 실제 데이터를 암호화한다"
+      },
+      {
+        "label": "C",
+        "text": "데이터를 두 번 KMS로 암호화한다"
+      },
+      {
+        "label": "D",
+        "text": "클라이언트가 키를 전적으로 관리한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "봉투 암호화는 KMS 키(루트)로 데이터 키를 보호하고, 그 데이터 키로 실제 데이터를 암호화해 대용량 처리 효율과 KMS 호출 절감을 동시에 얻습니다. A는 KMS의 동작과 다르고, C는 DSSE 개념과 혼동, D는 클라이언트 측 암호화 설명입니다."
+  },
+  {
+    "id": "dea-c01-w9-d3-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 3,
+    "number": 1,
+    "prompt": "수천 개의 S3 버킷 중 어디에 신용카드 번호·주민번호가 저장돼 있는지 모른다. 민감 데이터의 위치와 유형을 자동으로 발견하는 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Config"
+      },
+      {
+        "label": "B",
+        "text": "AWS Glue DataBrew"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Macie"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Inspector"
+      }
+    ],
+    "answer": "C",
+    "explanation": "Macie는 ML과 패턴 매칭으로 S3의 PII·민감 데이터를 자동 탐지·분류하고 위치·유형을 발견으로 보고합니다. Config는 리소스 구성, DataBrew는 데이터 준비, Inspector는 워크로드 취약점 스캔용입니다."
+  },
+  {
+    "id": "dea-c01-w9-d3-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 3,
+    "number": 2,
+    "prompt": "결제 분석을 위해 카드번호로 거래를 조인해야 하지만 원본 카드번호는 숨겨야 한다. 나중에 권한 있는 시스템이 원본을 복원할 수도 있어야 한다. 가장 적합한 기법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "비가역 마스킹"
+      },
+      {
+        "label": "B",
+        "text": "컬럼 삭제"
+      },
+      {
+        "label": "C",
+        "text": "Glacier 보관"
+      },
+      {
+        "label": "D",
+        "text": "토큰화"
+      }
+    ],
+    "answer": "D",
+    "explanation": "토큰화는 민감 값을 토큰으로 치환하되 매핑을 볼트에 보관해 조인 일관성을 유지하고 필요 시 역토큰화로 원복할 수 있습니다. 비가역 마스킹·컬럼 삭제는 복원이 불가능하고, Glacier는 보호 기법이 아닙니다."
+  },
+  {
+    "id": "dea-c01-w9-d3-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 3,
+    "number": 3,
+    "prompt": "Redshift에서 동일 테이블을 두 역할이 조회하되, 분석가에게는 카드번호 뒤 4자리만, 관리자에게는 전체를 보여주려 한다. 가장 적절한 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 버킷 정책"
+      },
+      {
+        "label": "B",
+        "text": "Redshift 동적 데이터 마스킹(DDM)"
+      },
+      {
+        "label": "C",
+        "text": "KMS 키 교체"
+      },
+      {
+        "label": "D",
+        "text": "파티션 프로젝션"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Redshift DDM은 컬럼에 마스킹 정책을 붙이고 역할별로 다른 가시성을 제공해 같은 쿼리라도 역할에 따라 다른 값을 반환합니다. 버킷 정책·키 교체·파티션 프로젝션은 컬럼 단위 동적 마스킹을 제공하지 않습니다."
+  },
+  {
+    "id": "dea-c01-w9-d3-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 3,
+    "number": 4,
+    "prompt": "Macie가 민감 데이터를 탐지한 직후 자동으로 해당 버킷을 격리하고 보안팀에 알리고자 한다. 가장 적절한 아키텍처는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Macie 발견 → EventBridge → Lambda(버킷 정책 제한) + SNS 알림"
+      },
+      {
+        "label": "B",
+        "text": "S3 수명주기 정책으로 객체 삭제"
+      },
+      {
+        "label": "C",
+        "text": "CloudFront 배포 생성"
+      },
+      {
+        "label": "D",
+        "text": "Redshift 스냅샷 생성"
+      }
+    ],
+    "answer": "A",
+    "explanation": "Macie 발견을 EventBridge로 받아 Lambda가 버킷 접근을 제한하고 SNS로 알림하면 탐지-대응이 자동 연결됩니다. 수명주기 삭제는 증거 손실 위험, CloudFront·Redshift 스냅샷은 민감 데이터 대응과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w9-d3-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 3,
+    "number": 5,
+    "prompt": "GDPR \"잊힐 권리\"에 따라 특정 고객의 데이터를 데이터레이크에서 행 단위로 영구 삭제해야 한다. 가장 적절한 방법은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "전체 테이블을 다시 적재"
+      },
+      {
+        "label": "B",
+        "text": "S3 버킷 버전 관리만 활성화"
+      },
+      {
+        "label": "C",
+        "text": "Macie 분류 작업 재실행"
+      },
+      {
+        "label": "D",
+        "text": "Iceberg/Hudi 테이블에서 행 수준 DELETE 실행"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Iceberg/Hudi 같은 오픈 테이블 포맷은 행 수준 DELETE를 지원해 특정 고객 레코드만 효율적으로 제거할 수 있습니다. 전체 재적재는 비효율적, 버전 관리는 오히려 사본을 남기며, Macie는 탐지 도구일 뿐 삭제하지 않습니다."
+  },
+  {
+    "id": "dea-c01-w9-d4-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 4,
+    "number": 1,
+    "prompt": "두 회사가 광고 효과를 공동 측정하려 하지만, 서로의 고객 원본 데이터는 절대 노출할 수 없다. 합의된 집계 쿼리 결과만 공유하려면?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Data Exchange로 데이터셋 교환"
+      },
+      {
+        "label": "B",
+        "text": "S3 교차 계정 버킷 정책으로 원본 공유"
+      },
+      {
+        "label": "C",
+        "text": "Redshift 스냅샷 공유"
+      },
+      {
+        "label": "D",
+        "text": "AWS Clean Rooms로 협업"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Clean Rooms는 당사자들이 원본을 서로 노출하지 않고 사전 합의된 분석 규칙으로 집계 결과만 얻는 공동 분석 서비스입니다. Data Exchange·버킷 공유·스냅샷 공유는 모두 원본 데이터를 상대에게 전달하므로 요건에 맞지 않습니다."
+  },
+  {
+    "id": "dea-c01-w9-d4-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 4,
+    "number": 2,
+    "prompt": "한 매출 컬럼의 정의를 변경하기 전에, 그 컬럼이 어떤 다운스트림 리포트와 테이블에 영향을 주는지 파악하려 한다. 가장 도움이 되는 거버넌스 기능은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데이터 계보(lineage)"
+      },
+      {
+        "label": "B",
+        "text": "S3 수명주기 정책"
+      },
+      {
+        "label": "C",
+        "text": "KMS 키 교체"
+      },
+      {
+        "label": "D",
+        "text": "파티션 프로젝션"
+      }
+    ],
+    "answer": "A",
+    "explanation": "데이터 계보는 소스→변환→타깃→BI의 흐름을 기록해 영향 분석(어떤 다운스트림이 깨지는지)을 가능하게 합니다. 수명주기·키 교체·파티션 프로젝션은 영향 추적과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w9-d4-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 4,
+    "number": 3,
+    "prompt": "Athena, Redshift Spectrum, EMR이 동일 S3 데이터에 대해 서로 다른 스키마를 정의해 결과가 불일치한다. 단일 진실 공급원을 제공하는 해결책은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "각 엔진에 별도 스키마 유지"
+      },
+      {
+        "label": "B",
+        "text": "데이터를 CSV로 통일"
+      },
+      {
+        "label": "C",
+        "text": "버킷마다 다른 KMS 키 적용"
+      },
+      {
+        "label": "D",
+        "text": "공유 Glue Data Catalog 사용"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Glue Data Catalog를 공유하면 테이블/스키마를 한 번 정의해 Athena·Spectrum·EMR·Glue가 동일 메타데이터를 사용하므로 불일치가 사라집니다. 별도 스키마 유지는 문제의 원인이고, CSV 통일·KMS는 스키마 일관성과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w9-d4-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 4,
+    "number": 4,
+    "prompt": "감사팀이 \"지난주 누가 민감 S3 버킷의 어떤 객체를 읽었는지\" 알고자 한다. 그러나 CloudTrail에는 관리 이벤트만 보인다. 필요한 조치는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 버전 관리 활성화"
+      },
+      {
+        "label": "B",
+        "text": "CloudTrail 데이터 이벤트(S3 객체 수준) 로깅 활성화"
+      },
+      {
+        "label": "C",
+        "text": "Macie 분류 작업 실행"
+      },
+      {
+        "label": "D",
+        "text": "IAM 정책에 Deny 추가"
+      }
+    ],
+    "answer": "B",
+    "explanation": "S3 객체 수준 접근(GetObject 등)은 CloudTrail 데이터 이벤트로 기록되며 비용 때문에 기본 비활성이므로 명시적으로 켜야 추적됩니다. 버전 관리는 변경 이력, Macie는 탐지, Deny는 차단으로 접근 감사 로그를 만들지 않습니다."
+  },
+  {
+    "id": "dea-c01-w9-d4-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 4,
+    "number": 5,
+    "prompt": "서드파티 시장 조사 데이터셋을 정기적으로 받아 분석 파이프라인에 통합하려 한다. 가장 적절한 AWS 서비스는?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Clean Rooms"
+      },
+      {
+        "label": "B",
+        "text": "AWS Glue Schema Registry"
+      },
+      {
+        "label": "C",
+        "text": "AWS Data Exchange"
+      },
+      {
+        "label": "D",
+        "text": "AWS CloudTrail Lake"
+      }
+    ],
+    "answer": "C",
+    "explanation": "AWS Data Exchange는 서드파티 데이터셋을 구독해 S3/API/Redshift로 정기 수신할 수 있는 데이터 마켓플레이스입니다. Clean Rooms는 원본 비노출 공동 분석, Schema Registry는 스트리밍 스키마, CloudTrail Lake는 감사 이벤트 분석용입니다."
+  },
+  {
+    "id": "dea-c01-w9-d5-q1",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 5,
+    "number": 1,
+    "prompt": "결제 데이터 플랫폼에서 분석가에게 카드번호는 토큰으로, 자기 지역 행만 노출하고, 새 테이블이 추가돼도 권한이 자동 적용되게 하려 한다. 가장 적절한 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IAM 와일드카드 정책 + SSE-S3"
+      },
+      {
+        "label": "B",
+        "text": "S3 버킷 정책 + 클라이언트 측 암호화"
+      },
+      {
+        "label": "C",
+        "text": "Lake Formation TBAC + 데이터 필터 + ETL 토큰화"
+      },
+      {
+        "label": "D",
+        "text": "Redshift 스냅샷 공유 + 파티션 프로젝션"
+      }
+    ],
+    "answer": "C",
+    "explanation": "TBAC는 새 테이블에 태그만 맞으면 권한이 자동 적용되고, 데이터 필터가 컬럼·행을 제한하며, ETL 토큰화가 카드번호 원본을 숨깁니다. 와일드카드는 최소 권한 위반, 버킷 정책은 세분화가 약하고, 스냅샷 공유는 요건과 무관합니다."
+  },
+  {
+    "id": "dea-c01-w9-d5-q2",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 5,
+    "number": 2,
+    "prompt": "보안팀이 \"어떤 IAM 역할이 지난달 결제 버킷의 특정 객체를 읽었는지\"를 입증해야 한다. 필요한 설정은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudTrail 데이터 이벤트(S3 객체 수준) 활성화"
+      },
+      {
+        "label": "B",
+        "text": "Macie 맞춤 식별자 추가"
+      },
+      {
+        "label": "C",
+        "text": "KMS 키 자동 교체"
+      },
+      {
+        "label": "D",
+        "text": "Lake Formation TBAC 적용"
+      }
+    ],
+    "answer": "A",
+    "explanation": "S3 객체 읽기 추적은 CloudTrail 데이터 이벤트로 기록되며 기본 비활성이라 명시적으로 켜야 합니다. Macie는 탐지, 키 교체는 암호화 위생, TBAC는 접근 제어로 객체 접근 감사 로그를 생성하지 않습니다."
+  },
+  {
+    "id": "dea-c01-w9-d5-q3",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 5,
+    "number": 3,
+    "prompt": "외부 파트너와 캠페인 효과를 공동 분석하되 양사 고객 원본은 노출하지 않아야 한다. 동시에 사내 분석가에게는 PII를 제외한 데이터를 제공한다. 올바른 서비스 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "파트너는 Data Exchange, 분석가는 IAM 와일드카드"
+      },
+      {
+        "label": "B",
+        "text": "둘 다 S3 교차 계정 버킷 공유"
+      },
+      {
+        "label": "C",
+        "text": "둘 다 Redshift datashare"
+      },
+      {
+        "label": "D",
+        "text": "파트너는 Clean Rooms, 분석가는 Lake Formation 데이터 필터"
+      }
+    ],
+    "answer": "D",
+    "explanation": "원본 비노출 공동 분석은 Clean Rooms, PII 제외 사내 제공은 Lake Formation 데이터 필터가 각각 정답입니다. Data Exchange·버킷 공유·datashare는 원본을 상대에게 전달하므로 파트너 요건을 위반합니다."
+  },
+  {
+    "id": "dea-c01-w9-d5-q4",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 5,
+    "number": 4,
+    "prompt": "SSE-KMS로 암호화된 결제 버킷에서 대량 객체를 읽는 ETL이 KMS 스로틀링과 비용 급증을 겪는다. 동시에 평문 HTTP 접근도 막아야 한다. 가장 적절한 조치 조합은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SSE-S3로 전환 + 버전 관리"
+      },
+      {
+        "label": "B",
+        "text": "S3 Bucket Key 활성화 + `aws:SecureTransport: false` 거부"
+      },
+      {
+        "label": "C",
+        "text": "클라이언트 측 암호화 + Glacier 전환"
+      },
+      {
+        "label": "D",
+        "text": "KMS 키 매일 교체 + Object Lock"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Bucket Key는 객체별 KMS 호출을 줄여 비용·스로틀링을 완화하고, SecureTransport 거부는 평문 HTTP를 차단합니다. SSE-S3 전환은 키 제어 상실, 클라이언트 측·Glacier는 ETL 부담, 매일 교체·Object Lock은 문제와 무관합니다."
+  },
+  {
+    "id": "dea-c01-w9-d5-q5",
+    "category": "aws-certs",
+    "slug": "dea-c01",
+    "week": 9,
+    "day": 5,
+    "number": 5,
+    "prompt": "데이터 보안·거버넌스의 \"다층 방어\"를 가장 정확히 설명한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "암호화 하나만 충분히 강하면 다른 통제는 불필요하다"
+      },
+      {
+        "label": "B",
+        "text": "접근 제어만 있으면 감사는 필요 없다"
+      },
+      {
+        "label": "C",
+        "text": "암호화·접근 제어·탐지·감사가 함께 작동해야 규제·신뢰 요건을 충족한다"
+      },
+      {
+        "label": "D",
+        "text": "모든 통제를 IAM 하나로 대체할 수 있다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "보안·거버넌스는 기밀성(암호화)·권한(접근 제어)·가시성(탐지)·책임 추적(감사)이 결합된 다층 방어이며, 어느 하나로 나머지를 대체할 수 없습니다. A·B·D는 단일 통제로 충분하다는 잘못된 전제를 담고 있습니다."
+  },
+  {
     "id": "dop-c02-w1-d1-q1",
     "category": "aws-certs",
     "slug": "dop-c02",

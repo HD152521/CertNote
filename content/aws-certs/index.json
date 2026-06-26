@@ -35,6 +35,14 @@
       "order": 8
     },
     {
+      "slug": "dea-c01",
+      "code": "DEA-C01",
+      "level": "associate",
+      "name": "Data Engineer - Associate",
+      "weeks": 10,
+      "order": 10
+    },
+    {
       "slug": "saa-c03",
       "code": "SAA-C03",
       "level": "associate",
