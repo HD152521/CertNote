@@ -83,6 +83,14 @@
       "order": 6
     },
     {
+      "slug": "mls-c01",
+      "code": "MLS-C01",
+      "level": "specialty",
+      "name": "Machine Learning - Specialty",
+      "weeks": 12,
+      "order": 11
+    },
+    {
       "slug": "linux-master-1",
       "code": "리눅스마스터 1급",
       "level": "professional",
