@@ -67,11 +67,14 @@ export function streamTutor(q: IndexedQuestion, selected: string, history: Tutor
     { role: 'user' as const, content: buildUserPrompt(q, selected) },
     ...history.map((t) => ({ role: t.role, content: t.text })),
   ];
+  // effort(output_config)는 Opus 4.x 계열만 지원. Haiku 등은 보내면 400 에러가 나므로
+  // Opus일 때만 첨부한다. (비용 절감용 Haiku 모델에서도 동작하도록)
+  const supportsEffort = MODEL.startsWith('claude-opus');
   return getClient().messages.stream({
     model: MODEL,
     max_tokens: 2048,
     system: buildSystemPrompt(),
-    output_config: { effort: 'medium' },
+    ...(supportsEffort ? { output_config: { effort: 'medium' as const } } : {}),
     messages,
   });
 }
