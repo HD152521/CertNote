@@ -198,6 +198,20 @@ try {
     );
   `);
   console.log('✓ tutor_usage 테이블 준비 완료');
+
+  // AI 튜터 첫 설명 캐시. (문제, 고른 오답)이 같으면 모든 사용자에게 동일하므로
+  // 한 번만 생성해 저장하고 이후엔 LLM 호출 없이 재사용(비용·지연 절감).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tutor_explanations (
+      id          BIGSERIAL PRIMARY KEY,
+      question_id TEXT NOT NULL,
+      selected    TEXT NOT NULL DEFAULT '',
+      content     TEXT NOT NULL,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (question_id, selected)
+    );
+  `);
+  console.log('✓ tutor_explanations 테이블 준비 완료');
 } catch (err) {
   console.error('마이그레이션 실패:', err);
   process.exit(1);

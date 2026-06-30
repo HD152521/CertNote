@@ -45,6 +45,25 @@ export async function consumeTutorQuota(userId: string): Promise<{ allowed: bool
   return { allowed: count <= TUTOR_DAILY_LIMIT, count, limit: TUTOR_DAILY_LIMIT };
 }
 
+// 첫 설명 캐시 조회. (문제, 고른 오답) 기준으로 모든 사용자에게 동일하므로 1회만 생성한다.
+export async function getCachedExplanation(questionId: string, selected: string): Promise<string | null> {
+  const rows = await query<{ content: string }>(
+    'SELECT content FROM tutor_explanations WHERE question_id = $1 AND selected = $2',
+    [questionId, selected],
+  );
+  return rows[0]?.content ?? null;
+}
+
+// 첫 설명을 캐시에 저장. 동시 생성 충돌은 무시(먼저 저장된 것을 유지).
+export async function saveExplanation(questionId: string, selected: string, content: string): Promise<void> {
+  await query(
+    `INSERT INTO tutor_explanations (question_id, selected, content)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (question_id, selected) DO NOTHING`,
+    [questionId, selected, content],
+  );
+}
+
 // 신뢰할 수 없는 입력(클라이언트 후속 대화)을 정리: 역할 검증·길이·개수 제한.
 export function sanitizeHistory(raw: unknown): TutorTurn[] {
   if (!Array.isArray(raw)) return [];
