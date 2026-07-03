@@ -23,6 +23,7 @@ export default function PrivacyPage() {
           <li>필수: 이메일, 비밀번호(암호화 저장), 이름, 생년월일, 목표 자격증</li>
           <li>선택: 직업, 학습 목적, 현재 수준/경력</li>
           <li>자동 수집: 학습 기록(진도·정답·복습), 접속 로그, 알림 구독 정보</li>
+          <li>이용 행태: 페이지 방문·클릭·체류 등 사용 통계(제품 분석 도구 PostHog를 통해 수집)</li>
         </ul>
       </Section>
 
@@ -31,7 +32,7 @@ export default function PrivacyPage() {
           <li>회원 식별 및 로그인·계정 관리</li>
           <li>학습 진도·복습·통계 등 서비스 기능 제공</li>
           <li>학습 알림 발송(동의한 경우)</li>
-          <li>이용 행태 분석을 통한 콘텐츠·서비스 개선</li>
+          <li>이용 행태 분석을 통한 콘텐츠·서비스 개선(PostHog 등 분석 도구 활용)</li>
         </ul>
       </Section>
 

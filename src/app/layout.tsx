@@ -5,6 +5,7 @@ import './globals.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { AppShell } from '@/components/AppShell';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
+import { PostHogProvider } from '@/components/analytics/PostHogProvider';
 import { listCerts } from '@/lib/content';
 
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'], display: 'swap' });
@@ -27,10 +28,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="ko" suppressHydrationWarning className={`${inter.variable} ${jbMono.variable} h-full antialiased`}>
       <body className="min-h-full bg-bg text-fg">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AppShell certs={certs}>{children}</AppShell>
-        </ThemeProvider>
-        <ServiceWorkerRegister />
+        <PostHogProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <AppShell certs={certs}>{children}</AppShell>
+          </ThemeProvider>
+          <ServiceWorkerRegister />
+        </PostHogProvider>
       </body>
     </html>
   );
