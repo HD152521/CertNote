@@ -2,11 +2,12 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import * as Sentry from '@sentry/nextjs';
 
 // 서버/클라이언트 렌더 중 예기치 못한 오류(예: DB 일시 장애)를 잡는 라우트 에러 바운더리.
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    // 상세는 서버 로그/Vercel에 남는다. 여기선 클라이언트 콘솔에만.
+    Sentry.captureException(error);
     console.error(error);
   }, [error]);
 

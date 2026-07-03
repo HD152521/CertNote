@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import posthog from 'posthog-js';
 import { PostHogProvider as PHProvider } from 'posthog-js/react';
+import * as Sentry from '@sentry/nextjs';
 import { onAuthChange } from '@/lib/auth/authEvents';
 
 const KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
@@ -53,9 +54,12 @@ function IdentifyUser() {
           if (posthog.get_distinct_id() !== id) {
             posthog.identify(id, { plan: d.user.plan, role: d.user.role });
           }
+          // Sentry 에러도 같은 유저로 묶는다(DSN 미설정이면 no-op).
+          Sentry.setUser({ id });
           lastId.current = id;
         } else {
           if (lastId.current) posthog.reset(); // 로그아웃 → 익명으로 초기화
+          Sentry.setUser(null);
           lastId.current = null;
         }
       } catch {
