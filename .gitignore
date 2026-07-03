@@ -44,3 +44,8 @@ next-env.d.ts
 
 # 콘텐츠 검수 리포트(전송 산출물)
 qa/
+
+# Playwright E2E
+/test-results/
+/playwright-report/
+/e2e/.auth/
