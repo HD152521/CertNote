@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { BellRing } from 'lucide-react';
 import { emitAuthChange } from '@/lib/auth/authEvents';
+import { track } from '@/lib/analytics';
 import { enablePush, isPushSupported } from '@/lib/push/client';
 import { OCCUPATION_OPTIONS, PURPOSE_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profileOptions';
 
@@ -50,6 +51,15 @@ export function AuthForm({ mode, certs = [] }: AuthFormProps) {
   // 회원가입 성공 후, 알림 권한을 묻는 단계로 전환(지원 브라우저에 한해).
   const [askPush, setAskPush] = useState(false);
 
+  // 퍼널 이벤트: {signup|login}_started → _submitted → _completed / _error.
+  // started는 폼 첫 상호작용에 1회만 — 페이지뷰 대비 실제 작성 시도 비율을 구분하기 위함.
+  const startedRef = useRef(false);
+  function markStarted() {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    track(`${mode}_started`);
+  }
+
   function goNext() {
     const next = params.get('next');
     // 신규 가입자는 첫 방문 온보딩으로(명시적 next가 없을 때).
@@ -61,6 +71,7 @@ export function AuthForm({ mode, certs = [] }: AuthFormProps) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
+    track(`${mode}_submitted`);
     try {
       const res = await fetch(`/api/auth/${mode}`, {
         method: 'POST',
@@ -73,9 +84,12 @@ export function AuthForm({ mode, certs = [] }: AuthFormProps) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        // 이탈 원인 분석용: 검증 실패인지(코드별) 단순 변심인지 구분한다.
+        track(`${mode}_error`, { error_code: data.error ?? `http_${res.status}`, error_message: data.message });
         setError(data.message ?? '요청을 처리하지 못했습니다.');
         return;
       }
+      track(`${mode}_completed`);
       emitAuthChange();
       // 가입 직후엔 알림 권한 단계로(지원 시). 그 외/미지원이면 바로 이동.
       if (mode === 'signup' && isPushSupported()) {
@@ -84,6 +98,7 @@ export function AuthForm({ mode, certs = [] }: AuthFormProps) {
       }
       goNext();
     } catch {
+      track(`${mode}_error`, { error_code: 'network' });
       setError('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setSubmitting(false);
@@ -130,7 +145,7 @@ export function AuthForm({ mode, certs = [] }: AuthFormProps) {
   return (
     <div className="mx-auto max-w-sm space-y-6 py-12">
       <h1 className="text-2xl font-semibold tracking-tight">{copy.title}</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} onFocusCapture={markStarted} className="space-y-4">
         <div className="space-y-1">
           <label htmlFor="email" className="text-sm text-fg-muted">이메일</label>
           <input
@@ -180,28 +195,36 @@ export function AuthForm({ mode, certs = [] }: AuthFormProps) {
                 ))}
               </select>
             </div>
-            <div className="space-y-1">
-              <label htmlFor="occupation" className="text-sm text-fg-muted">직업 <span className="text-fg-faint">(선택)</span></label>
-              <select id="occupation" value={occupation} onChange={(e) => setOccupation(e.target.value)} className={INPUT_CLS}>
-                <option value="">선택 안 함</option>
-                {OCCUPATION_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="purpose" className="text-sm text-fg-muted">학습 목적 <span className="text-fg-faint">(선택)</span></label>
-              <select id="purpose" value={purpose} onChange={(e) => setPurpose(e.target.value)} className={INPUT_CLS}>
-                <option value="">선택 안 함</option>
-                {PURPOSE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="experienceLevel" className="text-sm text-fg-muted">현재 수준/경력 <span className="text-fg-faint">(선택)</span></label>
-              <select id="experienceLevel" value={experienceLevel}
-                onChange={(e) => setExperienceLevel(e.target.value)} className={INPUT_CLS}>
-                <option value="">선택 안 함</option>
-                {EXPERIENCE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
+            {/* 선택 항목은 접어서 폼의 체감 길이를 줄인다(가입 이탈 완화). 값은 그대로 함께 제출. */}
+            <details className="group rounded-md border border-border">
+              <summary className="cursor-pointer select-none px-3 py-2 text-sm text-fg-muted transition hover:text-fg">
+                추가 정보 <span className="text-fg-faint">(선택 · 더 맞는 학습을 추천해 드려요)</span>
+              </summary>
+              <div className="space-y-4 border-t border-border p-3">
+                <div className="space-y-1">
+                  <label htmlFor="occupation" className="text-sm text-fg-muted">직업</label>
+                  <select id="occupation" value={occupation} onChange={(e) => setOccupation(e.target.value)} className={INPUT_CLS}>
+                    <option value="">선택 안 함</option>
+                    {OCCUPATION_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label htmlFor="purpose" className="text-sm text-fg-muted">학습 목적</label>
+                  <select id="purpose" value={purpose} onChange={(e) => setPurpose(e.target.value)} className={INPUT_CLS}>
+                    <option value="">선택 안 함</option>
+                    {PURPOSE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label htmlFor="experienceLevel" className="text-sm text-fg-muted">현재 수준/경력</label>
+                  <select id="experienceLevel" value={experienceLevel}
+                    onChange={(e) => setExperienceLevel(e.target.value)} className={INPUT_CLS}>
+                    <option value="">선택 안 함</option>
+                    {EXPERIENCE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+              </div>
+            </details>
             <label className="flex items-start gap-2 text-xs text-fg-muted">
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
                 className="mt-0.5 shrink-0" />

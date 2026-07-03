@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import { BookOpen, Timer, RefreshCw } from 'lucide-react';
+import { BookOpen, Timer, RefreshCw, ArrowRight } from 'lucide-react';
+import { DEFAULT_CATEGORY } from '@/lib/category';
+import type { CertMeta } from '@/lib/content';
 import { WaitlistForm } from './WaitlistForm';
 
 const HIGHLIGHTS = [
@@ -20,15 +22,23 @@ const HIGHLIGHTS = [
   },
 ];
 
+// 방문자가 가장 많이 열어본 트랙(PostHog 페이지뷰 기준). 콘텐츠는 비로그인도 열람 가능하므로
+// 가입 전에 품질을 직접 확인시키는 게 자연스러운 전환 경로다.
+const POPULAR_SLUGS = ['saa-c03', 'clf-c02', 'linux-master-1'];
+
 interface LandingProps {
   certCount: number;
   pageCount: number;
   questionCount: number;
+  certs: CertMeta[];
 }
 
 // 비로그인 방문자용 마케팅 랜딩. 수치는 서버(root 페이지)에서 주입 → 자격증 추가 시 자동 반영.
-export function Landing({ certCount, pageCount, questionCount }: LandingProps) {
+export function Landing({ certCount, pageCount, questionCount, certs }: LandingProps) {
   const nf = (n: number) => n.toLocaleString('ko-KR');
+  const popular = POPULAR_SLUGS.map((slug) => certs.find((c) => c.slug === slug)).filter(
+    (c): c is CertMeta => Boolean(c),
+  );
   return (
     <div className="mx-auto max-w-3xl space-y-16 py-8">
       <section className="space-y-5">
@@ -59,6 +69,30 @@ export function Landing({ certCount, pageCount, questionCount }: LandingProps) {
           </div>
         ))}
       </section>
+
+      {popular.length > 0 && (
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold">가입 없이 먼저 읽어보세요</h2>
+            <p className="text-sm text-fg-muted">Week 1 학습 자료는 로그인 없이 누구나 볼 수 있어요. 품질을 직접 확인하고 시작하세요.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {popular.map((cert) => (
+              <Link
+                key={cert.slug}
+                href={`/${DEFAULT_CATEGORY}/${cert.slug}`}
+                className="group flex flex-col gap-2 rounded-xl border border-border p-5 transition hover:border-border-strong"
+              >
+                <span className="font-mono text-xs text-fg-faint">{cert.code}</span>
+                <span className="text-sm font-semibold leading-snug">{cert.name}</span>
+                <span className="mt-auto flex items-center gap-1 pt-2 text-xs text-fg-muted transition group-hover:text-accent">
+                  Week 1 무료로 읽기 <ArrowRight className="h-3.5 w-3.5" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="grid grid-cols-3 gap-4 rounded-xl border border-border bg-bg-subtle p-6 text-center">
         <div><p className="text-2xl font-bold">{nf(certCount)}</p><p className="text-xs text-fg-faint">자격증 트랙</p></div>

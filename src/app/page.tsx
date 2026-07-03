@@ -18,7 +18,7 @@ export default async function HomePage() {
   const session = await getCurrentUser();
   const certs = await listCerts(DEFAULT_CATEGORY);
   // 비로그인 방문자는 마케팅 랜딩, 로그인 사용자는 학습 홈(자격증 그리드).
-  if (!session) return <Landing certCount={certs.length} pageCount={PAGE_COUNT} questionCount={QUESTION_COUNT} />;
+  if (!session) return <Landing certCount={certs.length} pageCount={PAGE_COUNT} questionCount={QUESTION_COUNT} certs={certs} />;
 
   const groups = LEVEL_ORDER.map((level) => ({ level, items: certs.filter((c) => c.level === level) })).filter(
     (g) => g.items.length > 0,
