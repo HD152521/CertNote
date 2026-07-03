@@ -1,9 +1,10 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import posthog from 'posthog-js';
 import { PostHogProvider as PHProvider } from 'posthog-js/react';
+import { onAuthChange } from '@/lib/auth/authEvents';
 
 const KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com';
@@ -34,23 +35,38 @@ function PageviewTracker() {
 }
 
 // 로그인 사용자 식별 → 이벤트가 사용자 단위로 묶인다(퍼널·리텐션 분석용).
+// 마운트뿐 아니라 로그인/로그아웃(auth-change)마다 재동기화해야 같은 브라우저에서
+// 계정을 바꿔도 각각 다른 유저로 잡힌다. 계정 전환 시 reset() 후 identify().
 function IdentifyUser() {
+  const lastId = useRef<string | null>(null);
   useEffect(() => {
     if (!ENABLED) return;
     let active = true;
-    fetch('/api/auth/me')
-      .then((r) => r.json())
-      .then((d) => {
+    async function sync() {
+      try {
+        const d = await fetch('/api/auth/me').then((r) => r.json());
         if (!active) return;
-        if (d?.user?.id) {
-          posthog.identify(String(d.user.id), { plan: d.user.plan, role: d.user.role });
+        const id = d?.user?.id ? String(d.user.id) : null;
+        if (id) {
+          // 다른 사용자로 전환될 때만 reset(첫 로그인은 익명→가입 연결 보존).
+          if (lastId.current && lastId.current !== id) posthog.reset();
+          if (posthog.get_distinct_id() !== id) {
+            posthog.identify(id, { plan: d.user.plan, role: d.user.role });
+          }
+          lastId.current = id;
         } else {
-          posthog.reset(); // 로그아웃 상태면 이전 식별 해제
+          if (lastId.current) posthog.reset(); // 로그아웃 → 익명으로 초기화
+          lastId.current = null;
         }
-      })
-      .catch(() => {});
+      } catch {
+        /* /me 실패는 무시 */
+      }
+    }
+    sync();
+    const unsub = onAuthChange(sync); // 로그인/로그아웃마다 재동기화
     return () => {
       active = false;
+      unsub();
     };
   }, []);
   return null;
