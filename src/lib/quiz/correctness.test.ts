@@ -15,6 +15,11 @@ describe('parseCorrectSet', () => {
     expect(parseCorrectSet('B, D').size).toBe(2);
     expect(parseCorrectSet('a/c').has('A')).toBe(true);
   });
+  it('parses concatenated multi answers without separators', () => {
+    expect([...parseCorrectSet('AB')].sort()).toEqual(['A', 'B']);
+    expect([...parseCorrectSet('ABC')].sort()).toEqual(['A', 'B', 'C']);
+    expect(parseCorrectSet('ab').size).toBe(2); // 소문자도 허용
+  });
 });
 
 describe('isMultiAnswer / answerCount', () => {

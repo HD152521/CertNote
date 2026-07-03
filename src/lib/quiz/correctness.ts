@@ -5,6 +5,8 @@ function toSet(s: string): Set<string> {
     s
       .split(/[,/\s]+/)
       .map((x) => x.trim().toUpperCase())
+      // "AB"·"ABC"처럼 구분자 없이 붙여 쓴 복수 정답 표기도 허용(일부 콘텐츠가 이 형식으로 저장됨).
+      .flatMap((x) => (/^[A-E]{2,5}$/.test(x) ? x.split('') : [x]))
       .filter((x) => CHOICE.test(x)),
   );
 }
