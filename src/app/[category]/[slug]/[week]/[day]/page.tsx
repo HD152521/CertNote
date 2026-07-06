@@ -1,8 +1,10 @@
 import { DEFAULT_CATEGORY } from '@/lib/category';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { getDay, previewOf } from '@/lib/content';
+import { excerptOf } from '@/lib/site';
 import { buildToc } from '@/lib/toc';
 import { readingTimeMinutes } from '@/lib/readingTime';
 import { getCurrentUser } from '@/lib/auth/currentUser';
@@ -27,6 +29,34 @@ function parseSegment(seg: string, prefix: string): number | null {
   if (!seg.startsWith(prefix)) return null;
   const n = Number.parseInt(seg.slice(prefix.length), 10);
   return Number.isFinite(n) ? n : null;
+}
+
+// 페이지별 검색 노출 메타. 제목·요약·canonical이 415개 페이지 각각 달라진다.
+// getDay는 프로덕션에서 메모이즈되므로 본문 렌더와 이중 비용이 아니다.
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { category, slug, week, day } = await params;
+  if (category !== DEFAULT_CATEGORY) return {};
+  const w = parseSegment(week, 'week');
+  const d = parseSegment(day, 'day');
+  if (w === null || d === null) return {};
+  const content = await getDay(category, slug, w, d).catch(() => null);
+  if (!content) return {};
+  const title = `${content.title} — ${content.certMeta.code} Week ${w}`;
+  const description = excerptOf(content.body);
+  return {
+    title,
+    description,
+    alternates: { canonical: content.href },
+    // openGraph를 직접 정의하면 상위 세그먼트의 파일 기반 OG 이미지가 덮이므로
+    // 자격증 카드 이미지를 명시적으로 지정한다.
+    openGraph: {
+      title,
+      description,
+      url: content.href,
+      type: 'article',
+      images: [`/${category}/${slug}/opengraph-image`],
+    },
+  };
 }
 
 export default async function DayPage({ params }: PageProps) {

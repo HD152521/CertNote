@@ -1,6 +1,8 @@
 import { DEFAULT_CATEGORY } from '@/lib/category';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { SITE_NAME, SITE_URL } from '@/lib/site';
 import { ArrowRight } from 'lucide-react';
 import { getAllDays, getCertMeta, listCerts, certLevelLabel } from '@/lib/content';
 import { getExamInfo } from '@/lib/examInfo';
@@ -12,6 +14,27 @@ interface PageProps { params: Promise<{ category: string; slug: string }>; }
 export async function generateStaticParams() {
   const certs = await listCerts(DEFAULT_CATEGORY);
   return certs.map((c) => ({ category: DEFAULT_CATEGORY, slug: c.slug }));
+}
+
+// 자격증 허브 = "SAA-C03 정리" 류 검색의 랜딩 페이지. 자격증별 제목·요약·canonical.
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { category, slug } = await params;
+  if (category !== DEFAULT_CATEGORY) return {};
+  let meta;
+  try {
+    meta = await getCertMeta(category, slug);
+  } catch {
+    return {};
+  }
+  const title = `${meta.code} ${meta.name} — ${meta.weeks}주 완성 학습 노트`;
+  const description = `${meta.code} 시험을 ${meta.weeks}주(총 ${meta.dayCount}일) 한국어 커리큘럼으로 준비하세요. 매일 읽는 심화 노트 + 연습 문제 + 모의고사·복습. Week 1은 무료.`;
+  const url = `/${category}/${slug}`;
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title, description, url, type: 'website' },
+  };
 }
 
 export default async function CertIndexPage({ params }: PageProps) {
@@ -27,8 +50,20 @@ export default async function CertIndexPage({ params }: PageProps) {
   }
   const firstDay = days[0];
   const examInfo = getExamInfo(slug);
+  // 구글이 이 페이지를 "강좌"로 이해하게 하는 구조화 데이터(JSON-LD).
+  const courseLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name: `${meta.code} ${meta.name}`,
+    description: `${meta.weeks}주(총 ${meta.dayCount}일) ${meta.code} 자격증 한국어 학습 커리큘럼`,
+    provider: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
+    inLanguage: 'ko',
+    isAccessibleForFree: true,
+    url: `${SITE_URL}/${category}/${slug}`,
+  };
   return (
     <div className="mx-auto max-w-3xl space-y-10">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseLd) }} />
       <header className="space-y-3">
         <div className="flex items-center gap-2 text-xs text-fg-muted font-mono">
           <Link href="/" className="hover:text-fg">← 전체 자격증</Link>
