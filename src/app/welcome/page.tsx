@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import { BookOpen, PlayCircle, RefreshCw, Trophy, Share, MoreVertical } from 'lucide-react';
+import { BookOpen, PlayCircle, RefreshCw, Trophy, Share, MoreVertical, ArrowRight } from 'lucide-react';
+import { getCurrentUser } from '@/lib/auth/currentUser';
+import { getStarterDay } from '@/lib/study/starter';
 
 export const metadata = {
   title: '시작하기 · CertNote',
@@ -43,7 +45,11 @@ const INSTALL = [
 ];
 
 // 가입 직후 첫 방문 온보딩. 핵심 사용 흐름 4단계 안내.
-export default function WelcomePage() {
+// CTA는 가입 시 고른 목표 자격증의 첫 학습 페이지로 직행 — 유저가 이미 알려준
+// 목표를 되묻지 않고 첫 학습(first value)까지 한 클릭으로 줄인다.
+export default async function WelcomePage() {
+  const session = await getCurrentUser();
+  const starter = session ? await getStarterDay(session.sub) : null;
   return (
     <div className="mx-auto max-w-lg space-y-8 py-12">
       <header className="space-y-2 text-center">
@@ -88,12 +94,27 @@ export default function WelcomePage() {
         </div>
       </section>
 
-      <Link
-        href="/"
-        className="block w-full rounded-md bg-accent px-5 py-2.5 text-center text-sm font-medium text-accent-fg transition hover:opacity-90"
-      >
-        시작하기
-      </Link>
+      {starter ? (
+        <Link
+          href={starter.href}
+          className="block w-full rounded-md bg-accent px-5 py-3 text-center text-sm font-medium text-accent-fg transition hover:opacity-90"
+        >
+          <span className="block font-mono text-[11px] uppercase tracking-wider opacity-80">
+            {starter.certCode} · Week 1 · Day 1
+          </span>
+          <span className="mt-0.5 flex items-center justify-center gap-1">
+            <span className="truncate">{starter.title.replace(/^Day\s*\d+\s*[-–]\s*/i, '')}</span>
+            <ArrowRight className="h-4 w-4 shrink-0" />
+          </span>
+        </Link>
+      ) : (
+        <Link
+          href="/"
+          className="block w-full rounded-md bg-accent px-5 py-2.5 text-center text-sm font-medium text-accent-fg transition hover:opacity-90"
+        >
+          시작하기
+        </Link>
+      )}
     </div>
   );
 }

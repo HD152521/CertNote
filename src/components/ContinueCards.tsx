@@ -2,16 +2,21 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowRight, Clock } from 'lucide-react';
+import { ArrowRight, Clock, Sparkles } from 'lucide-react';
 import type { CertMeta } from '@/lib/content';
+import type { StarterDay } from '@/lib/study/starter';
 import { onProgressChange, readProgress, type ProgressEntry } from '@/lib/progress';
 import { cn } from '@/lib/cn';
 
-interface ContinueCardsProps { certs: CertMeta[]; }
+interface ContinueCardsProps {
+  certs: CertMeta[];
+  // 읽던 기록이 없는 신규 유저에게 보여줄 목표 자격증 첫 페이지(서버에서 주입).
+  starter?: StarterDay | null;
+}
 
 interface Row { cert: CertMeta; entry: ProgressEntry; }
 
-export function ContinueCards({ certs }: ContinueCardsProps) {
+export function ContinueCards({ certs, starter }: ContinueCardsProps) {
   const [rows, setRows] = useState<Row[] | null>(null);
   useEffect(() => {
     const refresh = () => {
@@ -27,7 +32,33 @@ export function ContinueCards({ certs }: ContinueCardsProps) {
     refresh();
     return onProgressChange(refresh);
   }, [certs]);
-  if (rows === null || rows.length === 0) return null;
+  if (rows === null) return null;
+  // 읽던 기록이 없으면(신규/기기 변경) 목표 자격증 첫 페이지를 시작점으로 제시.
+  if (rows.length === 0) {
+    if (!starter) return null;
+    return (
+      <section className="space-y-3">
+        <h2 className="flex items-center gap-1.5 text-sm font-medium text-fg-muted">
+          <Sparkles className="h-3.5 w-3.5" /> 여기서 시작하세요
+        </h2>
+        <Link
+          href={starter.href}
+          className={cn('group flex flex-col gap-1.5 rounded-lg border border-accent/40 bg-bg-elevated p-4', 'transition hover:border-accent')}
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[11px] text-fg-faint">{starter.certCode}</span>
+            <span className="font-mono text-[11px] text-fg-faint">Week 1 · Day 1</span>
+          </div>
+          <p className="text-sm font-medium truncate">
+            {starter.title.replace(/^Day\s*\d+\s*[-–]\s*/i, '')}
+          </p>
+          <span className="flex items-center gap-1 text-xs text-fg group-hover:text-accent transition">
+            목표 자격증 첫 페이지 시작 <ArrowRight className="h-3 w-3" />
+          </span>
+        </Link>
+      </section>
+    );
+  }
   return (
     <section className="space-y-3">
       <h2 className="flex items-center gap-1.5 text-sm font-medium text-fg-muted">

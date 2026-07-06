@@ -12,6 +12,7 @@ import { Article } from '@/components/Article';
 import { Paywall } from '@/components/Paywall';
 import { Toc } from '@/components/Toc';
 import { MarkAsRead } from '@/components/MarkAsRead';
+import { ExamDateNudge } from '@/components/study/ExamDateNudge';
 import { DayMeta } from '@/components/DayMeta';
 import { cn } from '@/lib/cn';
 
@@ -93,6 +94,12 @@ export default async function DayPage({ params }: PageProps) {
               </Link>
             ) : (<div />)}
           </footer>
+          {/* 학습을 마친 접점에서 시험일 등록(D-day·일일 분량)을 안내. 잠긴 페이지에선 생략. */}
+          {!locked && (
+            <div className="mt-6">
+              <ExamDateNudge />
+            </div>
+          )}
         </div>
       </div>
       <Toc items={toc} />

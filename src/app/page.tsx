@@ -4,6 +4,8 @@ import type { CertLevel } from '@/lib/content';
 import { CertCard } from '@/components/CertCard';
 import { ContinueCards } from '@/components/ContinueCards';
 import { getCurrentUser } from '@/lib/auth/currentUser';
+import { getStarterDay } from '@/lib/study/starter';
+import { ExamDateNudge } from '@/components/study/ExamDateNudge';
 import { Landing } from '@/components/marketing/Landing';
 
 // 학습 페이지/연습 문항 총량(빌드 시점 스냅샷). 큰 questions.json을 root에 import하지 않기 위한 상수.
@@ -23,6 +25,7 @@ export default async function HomePage() {
   const groups = LEVEL_ORDER.map((level) => ({ level, items: certs.filter((c) => c.level === level) })).filter(
     (g) => g.items.length > 0,
   );
+  const starter = await getStarterDay(session.sub);
 
   return (
     <div className="mx-auto max-w-3xl space-y-12">
@@ -31,7 +34,8 @@ export default async function HomePage() {
         <h1 className="text-3xl font-semibold tracking-tight">출퇴근 15분, 자격증 한 권</h1>
         <p className="text-base text-fg-muted max-w-xl">매일 한 페이지씩. AWS 자격증 + 리눅스마스터 1급 학습 자료를 모았습니다. 사이드바에서 자격증을 골라 시작하세요.</p>
       </section>
-      <ContinueCards certs={certs} />
+      <ContinueCards certs={certs} starter={starter} />
+      <ExamDateNudge />
       {groups.map(({ level, items }) => (
         <section key={level} className="space-y-4">
           <h2 className="text-sm font-medium text-fg-muted">{certLevelLabel(level)}</h2>
