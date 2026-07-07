@@ -1,0 +1,12 @@
+{
+  "slug": "soa-c02",
+  "code": "SOA-C02",
+  "level": "associate",
+  "name": "CloudOps Engineer - Associate",
+  "weeks": 1,
+  "accent": "#FF9900",
+  "order": 3,
+  "dayCount": 5,
+  "sourceRepo": "AWS_associate_cloudopsEngineer",
+  "syncedAt": "2026-06-04T01:20:44.130Z"
+}

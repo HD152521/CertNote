@@ -1,0 +1,12 @@
+{
+  "slug": "scs-c03",
+  "code": "SCS-C03",
+  "level": "specialty",
+  "name": "Security - Specialty",
+  "weeks": 1,
+  "accent": "#FF9900",
+  "order": 6,
+  "dayCount": 5,
+  "sourceRepo": "AWS_specialty_security",
+  "syncedAt": "2026-06-24T00:00:00.000Z"
+}

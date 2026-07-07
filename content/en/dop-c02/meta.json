@@ -1,0 +1,12 @@
+{
+  "slug": "dop-c02",
+  "code": "DOP-C02",
+  "level": "professional",
+  "name": "DevOps Engineer - Professional",
+  "weeks": 1,
+  "accent": "#FF9900",
+  "order": 5,
+  "dayCount": 5,
+  "sourceRepo": "AWS_professional_devopsEngineer",
+  "syncedAt": "2026-06-04T01:20:44.454Z"
+}

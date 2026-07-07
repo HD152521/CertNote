@@ -7,13 +7,14 @@ import { cn } from '@/lib/cn';
 
 interface MobileNavProps {
   certTrees: CertTree[];
+  enCertTrees?: CertTree[];
 }
 
 // 모바일(<lg) 전용 햄버거 + 슬라이드 드로어. 데스크탑에선 숨김(lg:hidden).
 // 드로어는 createPortal로 body에 렌더한다 — Header의 backdrop-blur(backdrop-filter)가
 // position:fixed 자식의 기준을 헤더 박스로 가두기 때문에, 헤더 안에 두면 드로어가
 // 56px 헤더 영역에 갇혀 가려진다. body로 빼내 뷰포트 기준으로 띄운다.
-export function MobileNav({ certTrees }: MobileNavProps) {
+export function MobileNav({ certTrees, enCertTrees }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -65,7 +66,7 @@ export function MobileNav({ certTrees }: MobileNavProps) {
             <X className="h-4 w-4" />
           </button>
         </div>
-        <SidebarNav certTrees={certTrees} onNavigate={() => setOpen(false)} />
+        <SidebarNav certTrees={certTrees} enCertTrees={enCertTrees} onNavigate={() => setOpen(false)} />
       </div>
     </div>
   );

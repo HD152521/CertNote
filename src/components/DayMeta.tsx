@@ -6,9 +6,10 @@ interface DayMetaProps {
   week: number;
   day: number;
   readingMinutes: number;
+  lang?: 'ko' | 'en';
 }
 
-export function DayMeta({ certMeta, week, day, readingMinutes }: DayMetaProps) {
+export function DayMeta({ certMeta, week, day, readingMinutes, lang = 'ko' }: DayMetaProps) {
   return (
     <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-fg-muted">
       <span className="flex items-center gap-1.5">
@@ -22,7 +23,7 @@ export function DayMeta({ certMeta, week, day, readingMinutes }: DayMetaProps) {
       </span>
       <span className="flex items-center gap-1.5">
         <Clock className="h-3.5 w-3.5" />
-        <span>읽기 약 {readingMinutes}분</span>
+        <span>{lang === 'en' ? `~${readingMinutes} min read` : `읽기 약 ${readingMinutes}분`}</span>
       </span>
     </div>
   );

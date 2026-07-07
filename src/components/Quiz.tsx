@@ -10,7 +10,14 @@ import { cn } from '@/lib/cn';
 interface QuizProps {
   question: QuizQuestion;
   questionId?: string;
+  lang?: 'ko' | 'en';
 }
+
+// 영어 콘텐츠 페이지에서 쓰는 최소 이중언어 라벨(전면 i18n 전 단계).
+const LABELS = {
+  ko: { question: '문제', pickN: (n: number) => `정답 ${n}개 선택`, check: '정답 확인', correct: '✓ 정답!', answer: '✗ 정답', retry: '다시 풀기' },
+  en: { question: 'Question', pickN: (n: number) => `Select ${n} answers`, check: 'Check answer', correct: '✓ Correct!', answer: '✗ Answer', retry: 'Try again' },
+} as const;
 
 // 로그인 사용자면 서버에 풀이를 기록(실패·비로그인은 무시 — fire-and-forget).
 function recordAttempt(questionId: string, selected: string): void {
@@ -21,7 +28,8 @@ function recordAttempt(questionId: string, selected: string): void {
   }).catch(() => {});
 }
 
-export function Quiz({ question, questionId }: QuizProps) {
+export function Quiz({ question, questionId, lang = 'ko' }: QuizProps) {
+  const t = LABELS[lang];
   const correctSet = parseCorrectSet(question.answer);
   const multi = isMultiAnswer(question.answer);
   const needed = answerCount(question.answer);
@@ -56,8 +64,8 @@ export function Quiz({ question, questionId }: QuizProps) {
   return (
     <div className="my-5 rounded-lg border border-border bg-bg-elevated p-4 sm:p-5">
       <div className="mb-2 flex items-center gap-2">
-        <p className="font-mono text-[11px] uppercase tracking-wider text-fg-faint">문제 {question.number}</p>
-        {multi && <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">정답 {needed}개 선택</span>}
+        <p className="font-mono text-[11px] uppercase tracking-wider text-fg-faint">{t.question} {question.number}</p>
+        {multi && <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">{t.pickN(needed)}</span>}
       </div>
       <p className="font-medium leading-relaxed mb-4 text-fg">{question.text}</p>
       <ul className="space-y-2">
@@ -96,17 +104,17 @@ export function Quiz({ question, questionId }: QuizProps) {
       {multi && !submitted && (
         <button type="button" onClick={submitMulti} disabled={picked.length === 0}
           className="mt-3 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40">
-          정답 확인
+          {t.check}
         </button>
       )}
       {submitted && (
         <div className={cn('mt-4 rounded-md border p-3 text-sm', isCorrect ? 'border-success/40 bg-success/5' : 'border-danger/40 bg-danger/5')}>
-          <p className="font-medium mb-1.5 text-fg">{isCorrect ? '✓ 정답!' : `✗ 정답: ${question.answer}`}</p>
+          <p className="font-medium mb-1.5 text-fg">{isCorrect ? t.correct : `${t.answer}: ${question.answer}`}</p>
           {question.explanation && (<p className="text-fg-muted whitespace-pre-wrap leading-relaxed">{question.explanation}</p>)}
           {!isCorrect && questionId && (
             <TutorPanel questionId={questionId} selected={multi ? [...picked].sort().join(',') : (picked[0] ?? '')} />
           )}
-          <button type="button" onClick={reset} className="mt-2 block text-xs text-fg-muted hover:text-fg underline underline-offset-4">다시 풀기</button>
+          <button type="button" onClick={reset} className="mt-2 block text-xs text-fg-muted hover:text-fg underline underline-offset-4">{t.retry}</button>
         </div>
       )}
     </div>

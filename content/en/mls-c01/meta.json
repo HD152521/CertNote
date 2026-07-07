@@ -1,0 +1,12 @@
+{
+  "slug": "mls-c01",
+  "code": "MLS-C01",
+  "level": "specialty",
+  "name": "Machine Learning - Specialty",
+  "weeks": 1,
+  "accent": "#FF9900",
+  "order": 11,
+  "dayCount": 5,
+  "sourceRepo": "AWS_specialty_machineLearning",
+  "syncedAt": "2026-06-26T00:00:00.000Z"
+}

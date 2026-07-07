@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { DEFAULT_CATEGORY } from '@/lib/category';
+import { DEFAULT_CATEGORY, EN_CATEGORY } from '@/lib/category';
 import { getAllDays, listCerts } from '@/lib/content';
 import { SITE_URL } from '@/lib/site';
 
@@ -25,6 +25,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         // 무료 Week1은 검색 유입의 정문이라 우선순위를 높게 준다.
         priority: d.week === 1 ? 0.8 : 0.5,
       });
+    }
+  }
+  // 영어판(무료 Week1 트랙). 콘텐츠가 없으면 조용히 생략.
+  const enCerts = await listCerts(EN_CATEGORY).catch(() => []);
+  if (enCerts.length > 0) {
+    out.push({ url: `${SITE_URL}/${EN_CATEGORY}`, changeFrequency: 'weekly', priority: 0.8 });
+    for (const cert of enCerts) {
+      out.push({ url: `${SITE_URL}/${EN_CATEGORY}/${cert.slug}`, changeFrequency: 'weekly', priority: 0.7 });
+      const days = await getAllDays(EN_CATEGORY, cert.slug);
+      for (const d of days) {
+        out.push({ url: `${SITE_URL}${d.href}`, changeFrequency: 'monthly', priority: 0.6 });
+      }
     }
   }
   return out;

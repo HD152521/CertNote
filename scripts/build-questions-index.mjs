@@ -62,6 +62,9 @@ async function main() {
   const out = [];
   const categories = await listDirs(CONTENT_ROOT);
   for (const category of categories) {
+    // 영어판(en)은 한국어 문항의 '번역'이라 같은 문항 id를 재사용한다.
+    // 인덱스에 넣으면 id가 중복되므로 제외 — 채점·SRS는 한국어 엔트리로 동작한다.
+    if (category === 'en') continue;
     const categoryDir = path.join(CONTENT_ROOT, category);
     const slugs = await listDirs(categoryDir);
     for (const slug of slugs) {
