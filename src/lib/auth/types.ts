@@ -43,4 +43,14 @@ export interface UserRepository {
     emailVerified?: boolean;
     profile?: SignupProfile;
   }): Promise<UserRecord>;
+  // 소셜 로그인(OAuth) — provider+sub가 외부 계정의 고유 식별자.
+  findByOauth(provider: string, sub: string): Promise<UserRecord | null>;
+  linkOauth(userId: string, provider: string, sub: string): Promise<void>;
+  createOauthUser(input: {
+    email: string;
+    passwordHash: string;
+    provider: string;
+    sub: string;
+    name: string | null;
+  }): Promise<UserRecord>;
 }

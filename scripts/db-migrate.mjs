@@ -34,6 +34,19 @@ try {
   `);
   console.log('✓ users 프로필 컬럼 준비 완료');
 
+  // 소셜 로그인(OAuth) 연결. provider+sub 조합이 외부 계정의 고유 식별자.
+  await pool.query(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS oauth_provider TEXT,
+      ADD COLUMN IF NOT EXISTS oauth_sub      TEXT;
+  `);
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS users_oauth_uq
+      ON users (oauth_provider, oauth_sub)
+      WHERE oauth_provider IS NOT NULL;
+  `);
+  console.log('✓ users OAuth 컬럼 준비 완료');
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS quiz_attempts (
       id           BIGSERIAL PRIMARY KEY,

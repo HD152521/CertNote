@@ -21,6 +21,8 @@ interface AuthFormProps {
   mode: Mode;
   // 회원가입의 "목표 자격증" 드롭다운용. 서버 컴포넌트(signup 페이지)에서 주입.
   certs?: CertOption[];
+  // 구글 로그인 버튼 표시 여부(서버에서 GOOGLE_CLIENT_ID 유무로 판단해 주입).
+  googleEnabled?: boolean;
 }
 
 const COPY: Record<Mode, { title: string; submit: string; altText: string; altHref: string; altLabel: string }> = {
@@ -31,13 +33,15 @@ const COPY: Record<Mode, { title: string; submit: string; altText: string; altHr
 const INPUT_CLS =
   'w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-border-strong';
 
-export function AuthForm({ mode, certs = [] }: AuthFormProps) {
+export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormProps) {
   const router = useRouter();
   const params = useSearchParams();
   const copy = COPY[mode];
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  // OAuth 콜백 실패 시 /login?error=google 로 돌아온다.
+  const oauthError = params.get('error') === 'google' ? '구글 로그인에 실패했습니다. 다시 시도해 주세요.' : null;
   // 회원가입 프로필(테스터 데이터 수집)
   const [name, setName] = useState('');
   const [birthdate, setBirthdate] = useState('');
@@ -238,7 +242,7 @@ export function AuthForm({ mode, certs = [] }: AuthFormProps) {
           </>
         )}
 
-        {error && <p className="text-sm text-red-500" role="alert">{error}</p>}
+        {(error || oauthError) && <p className="text-sm text-red-500" role="alert">{error ?? oauthError}</p>}
         <button
           type="submit"
           disabled={submitting || (mode === 'signup' && !consent)}
@@ -247,6 +251,29 @@ export function AuthForm({ mode, certs = [] }: AuthFormProps) {
           {submitting ? '처리 중…' : copy.submit}
         </button>
       </form>
+      {googleEnabled && (
+        <>
+          <div className="flex items-center gap-3 text-xs text-fg-faint">
+            <span className="h-px flex-1 bg-border" />
+            또는
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          {/* SPA 전환이 아니라 서버 리다이렉트 플로우라 Link 대신 a 태그. */}
+          <a
+            href={`/api/auth/google${params.get('next') ? `?next=${encodeURIComponent(params.get('next') as string)}` : ''}`}
+            onClick={() => track(`${mode}_google_clicked`)}
+            className="flex w-full items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium transition hover:border-border-strong hover:bg-fg/5"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
+              <path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.66-.22-2.45H12v4.64h6.45a5.52 5.52 0 0 1-2.39 3.62v3h3.87c2.26-2.09 3.57-5.16 3.57-8.81Z" />
+              <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.87-3c-1.07.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.72-4.96H1.29v3.09A12 12 0 0 0 12 24Z" />
+              <path fill="#FBBC05" d="M5.28 14.28A7.2 7.2 0 0 1 4.9 12c0-.79.14-1.56.38-2.28V6.63H1.29a12 12 0 0 0 0 10.74l3.99-3.09Z" />
+              <path fill="#EA4335" d="M12 4.77c1.76 0 3.34.6 4.59 1.79l3.44-3.44A11.98 11.98 0 0 0 12 0 12 12 0 0 0 1.29 6.63l3.99 3.09C6.22 6.88 8.87 4.77 12 4.77Z" />
+            </svg>
+            Google로 계속하기
+          </a>
+        </>
+      )}
       <p className="text-sm text-fg-muted">
         {copy.altText}{' '}
         <Link href={copy.altHref} className="text-fg underline underline-offset-4">{copy.altLabel}</Link>

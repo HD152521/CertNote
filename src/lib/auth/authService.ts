@@ -46,4 +46,39 @@ export class AuthService {
     }
     return user;
   }
+
+  // 소셜 로그인: ①이미 연결된 계정 → 그대로 로그인 ②같은 이메일의 기존 계정 → 연결 후 로그인
+  // (제공자가 이메일을 검증한 경우에만 — 미검증 이메일로 남의 계정에 연결되는 탈취 방지)
+  // ③둘 다 없으면 신규 생성(비밀번호는 추측 불가 무작위 — 원하면 비밀번호 재설정으로 설정).
+  async oauthLogin(identity: {
+    provider: string;
+    sub: string;
+    email: string;
+    emailVerified: boolean;
+    name: string | null;
+  }): Promise<UserRecord> {
+    const linked = await this.users.findByOauth(identity.provider, identity.sub);
+    if (linked) return linked;
+    if (!identity.emailVerified) {
+      throw new AppError(401, 'oauth_email_unverified', '구글 계정의 이메일이 확인되지 않았습니다.');
+    }
+    const normalized = normalizeEmail(identity.email);
+    if (!EMAIL_RE.test(normalized)) {
+      throw new AppError(401, 'oauth_bad_email', '소셜 계정의 이메일을 확인할 수 없습니다.');
+    }
+    const existing = await this.users.findByEmail(normalized);
+    if (existing) {
+      await this.users.linkOauth(existing.id, identity.provider, identity.sub);
+      return existing;
+    }
+    const { randomBytes } = await import('node:crypto');
+    const passwordHash = await hashPassword(randomBytes(32).toString('hex'));
+    return this.users.createOauthUser({
+      email: normalized,
+      passwordHash,
+      provider: identity.provider,
+      sub: identity.sub,
+      name: identity.name,
+    });
+  }
 }
