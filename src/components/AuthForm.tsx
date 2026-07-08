@@ -272,6 +272,11 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
             </svg>
             Google로 계속하기
           </a>
+          <p className="text-center text-[11px] leading-relaxed text-fg-faint">
+            구글로 계속하면{' '}
+            <Link href="/privacy" target="_blank" className="underline underline-offset-2 hover:text-fg">개인정보처리방침</Link>
+            에 동의하는 것으로 간주됩니다.
+          </p>
         </>
       )}
       <p className="text-sm text-fg-muted">

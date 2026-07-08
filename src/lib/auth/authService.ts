@@ -56,9 +56,9 @@ export class AuthService {
     email: string;
     emailVerified: boolean;
     name: string | null;
-  }): Promise<UserRecord> {
+  }): Promise<{ user: UserRecord; isNew: boolean }> {
     const linked = await this.users.findByOauth(identity.provider, identity.sub);
-    if (linked) return linked;
+    if (linked) return { user: linked, isNew: false };
     if (!identity.emailVerified) {
       throw new AppError(401, 'oauth_email_unverified', '구글 계정의 이메일이 확인되지 않았습니다.');
     }
@@ -69,16 +69,18 @@ export class AuthService {
     const existing = await this.users.findByEmail(normalized);
     if (existing) {
       await this.users.linkOauth(existing.id, identity.provider, identity.sub);
-      return existing;
+      return { user: existing, isNew: false };
     }
     const { randomBytes } = await import('node:crypto');
     const passwordHash = await hashPassword(randomBytes(32).toString('hex'));
-    return this.users.createOauthUser({
+    const user = await this.users.createOauthUser({
       email: normalized,
       passwordHash,
       provider: identity.provider,
       sub: identity.sub,
       name: identity.name,
     });
+    // 신규 소셜 가입자는 프로필(목표 자격증 등)이 비어 있다 — 콜백이 1회 보완 온보딩으로 보낸다.
+    return { user, isNew: true };
   }
 }

@@ -37,7 +37,7 @@ export async function GET(req: Request) {
       redirectUri: `${origin}/api/auth/google/callback`,
       nonce: saved.nonce,
     });
-    const user = await getAuthService().oauthLogin({ provider: 'google', ...identity });
+    const { user, isNew } = await getAuthService().oauthLogin({ provider: 'google', ...identity });
     const token = await createSessionToken({
       sub: user.id,
       email: user.email,
@@ -46,7 +46,11 @@ export async function GET(req: Request) {
     });
 
     const next = saved.next && saved.next.startsWith('/') && !saved.next.startsWith('//') ? saved.next : '/';
-    const res = NextResponse.redirect(new URL(next, origin));
+    // 신규 가입자는 프로필 보완 온보딩으로(원래 목적지는 완료/건너뛰기 후 이동).
+    const dest = isNew
+      ? `/onboarding/profile${next !== '/' ? `?next=${encodeURIComponent(next)}` : ''}`
+      : next;
+    const res = NextResponse.redirect(new URL(dest, origin));
     res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
     res.cookies.set(OAUTH_STATE_COOKIE, '', { path: '/', maxAge: 0 });
     return res;
