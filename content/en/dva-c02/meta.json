@@ -3,10 +3,10 @@
   "code": "DVA-C02",
   "level": "associate",
   "name": "Developer - Associate",
-  "weeks": 1,
+  "weeks": 13,
   "accent": "#FF9900",
   "order": 1,
-  "dayCount": 5,
+  "dayCount": 65,
   "sourceRepo": "AWS_associate_developer",
   "syncedAt": "2026-06-04T01:20:43.860Z"
 }

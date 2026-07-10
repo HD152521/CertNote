@@ -7,7 +7,7 @@
       "code": "CLF-C02",
       "level": "foundational",
       "name": "Cloud Practitioner - Foundational",
-      "weeks": 1,
+      "weeks": 6,
       "order": 0
     },
     {
@@ -23,7 +23,7 @@
       "code": "DVA-C02",
       "level": "associate",
       "name": "Developer - Associate",
-      "weeks": 1,
+      "weeks": 13,
       "order": 1
     },
     {
@@ -47,7 +47,7 @@
       "code": "SAA-C03",
       "level": "associate",
       "name": "Solutions Architect - Associate",
-      "weeks": 1,
+      "weeks": 12,
       "order": 2
     },
     {
