@@ -1,43 +1,43 @@
-# Day 1 - The ML Lifecycle and the Role of the ML Engineer
+# Day 1 - ML Lifecycle and the Role of ML Engineers
 
-A data scientist proudly shows off a model with 0.94 accuracy built in a notebook. Yet it usually takes months before that model receives real user traffic, and even after it reaches production, half of such models quietly break down. The person who bridges this gap is the ML engineer. MLA-C01 (AWS Certified Machine Learning Engineer – Associate) is precisely the certification that asks how you handle this "notebook to production" journey on AWS.
+A data scientist builds a 0.94 accuracy model in a notebook and brags about it. Yet it usually takes months for that model to receive actual user traffic, and after it goes into production, half the time it silently fails. The person who bridges this gap is the ML engineer. MLA-C01 (AWS Certified Machine Learning Engineer – Associate) is exactly about this: "from notebook to production" on AWS.
 
-Today we draw the full picture of the ML lifecycle, look at how the ML engineer's role splits from that of the data scientist and the DevOps engineer within it, and map the four exam domains to the stages of this lifecycle.
+Today, we'll sketch the complete ML lifecycle picture, see how ML engineers' roles differ from data scientists and DevOps engineers, and map the 4 domains tested in the exam to each stage of this lifecycle.
 
-## The ML Lifecycle: From Notebook to Production
+## ML Lifecycle: From Notebook to Production
 
-With traditional software, "you write the code, and the behavior is determined." ML is different. **The behavior is learned from data.** That is why the lifecycle gains two additional axes: "data" and "retraining." The big picture consists of the following five stages.
+Traditional software works like "write code → behavior is determined." ML is different. **Behavior is learned from data.** That's why the lifecycle adds two new axes: "data" and "retraining." The big picture has 5 stages:
 
 ```
-1. Data                 : Collection → Cleaning → Labeling → Feature engineering
-2. Train                : Algorithm selection → Training → Hyperparameter tuning
-3. Evaluate             : Offline metrics → Business metrics → Bias checks
-4. Deploy               : Endpoint/Batch → A/B → Canary
-5. Monitor              : Data drift → Performance degradation → Retraining trigger
+1. Data (Data)            : Collection → Cleaning → Labeling → Feature Engineering
+2. Training (Train)       : Algorithm Selection → Training → Hyperparameter Tuning
+3. Evaluation (Evaluate)  : Offline Metrics → Business Metrics → Bias Checking
+4. Deployment (Deploy)    : Endpoints/Batch → A/B → Canary
+5. Monitoring (Monitor)   : Data Drift → Performance Degradation → Retraining Trigger
 ```
 
-The key point is that this is **not linear but a loop**. When drift is detected in stage 5 (monitoring), you go back to stage 1. MLOps emerged as a discipline when "data" and "models" were added on top of the CI/CD that software engineers already know.
+The key point is that this is **not linear but circular (loop)**. If drift is detected in step 5 (monitoring), you loop back to step 1. When "data" and "model" are added to the CI/CD pipeline that software engineers are familiar with, you get MLOps.
 
-> 💡 **Related theory**: This is the core argument of Google's 2015 paper "Hidden Technical Debt in Machine Learning Systems." In real ML systems, ML code (model training) accounts for less than 5% of the entire codebase; the remaining 95% is data collection, validation, serving, monitoring, and infrastructure. This is why MLA-C01 emphasizes data pipelines, deployment, and operations rather than memorizing SageMaker algorithms.
+> 💡 **Related Theory**: This is the core thesis of Google's 2015 paper "Hidden Technical Debt in Machine Learning Systems." In real ML systems, ML code (model training) accounts for less than 5% of the entire codebase, while the remaining 95% is data collection, validation, serving, monitoring, and infrastructure. This is why MLA-C01 emphasizes data pipelines, deployment, and operations over SageMaker algorithm memorization.
 
-## ML Engineer vs. Data Scientist vs. DevOps
+## ML Engineer vs Data Scientist vs DevOps
 
-The three roles overlap but have different centers of gravity. Because the exam asks questions from the "ML engineer's perspective," it is important to draw these boundaries clearly.
+The three roles overlap but have different centers of gravity. Since the exam tests the "ML engineer perspective," it's important to draw these boundaries clearly.
 
-| Role | Center of gravity | Typical deliverables |
+| Role | Center of Gravity | Representative Output |
 |------|---------|------------|
-| Data scientist | Model performance, experimentation | Notebooks, papers, hypothesis validation |
-| ML engineer | Reproducibility, scalability, operationalization | Training pipelines, inference endpoints, monitoring |
-| DevOps/Platform | Infrastructure, CI/CD | IaC, clusters, networking |
+| Data Scientist | Model Performance, Experimentation | Notebooks, Papers, Hypothesis Validation |
+| ML Engineer | Reproducibility, Scalability, Operationalization | Training Pipelines, Inference Endpoints, Monitoring |
+| DevOps/Platform | Infrastructure, CI/CD | IaC, Clusters, Networking |
 
-If the data scientist proves "this model is good," the ML engineer makes sure "this model gets retrained automatically every week, receives traffic safely, and triggers an alarm when it breaks." Even for the same model, the ML engineer bakes the training into reproducible code, pins the data version, and accounts for inference cost.
+If a data scientist proves "this model is good," an ML engineer makes sure "this model retrains automatically every week, safely handles traffic, and alerts when it breaks." Even with the same model, ML engineers write training reproducibly in code, fix data versions, and calculate inference costs.
 
 ```python
-# Data scientist style: improvised in a notebook
-model.fit(X_train, y_train)        # No record of which data was used
+# Data Scientist Style: Ad-hoc in notebook
+model.fit(X_train, y_train)        # No record of what data was used
 preds = model.predict(X_test)      # Not reproducible
 
-# ML engineer style: a reproducible pipeline
+# ML Engineer Style: Reproducible pipeline
 import sagemaker
 from sagemaker.estimator import Estimator
 
@@ -47,20 +47,20 @@ estimator = Estimator(
     instance_count=1,
     instance_type="ml.m5.xlarge",
     hyperparameters={"num_round": 100, "max_depth": 5},
-    output_path="s3://my-bucket/models/",   # Artifact location pinned
+    output_path="s3://my-bucket/models/",   # Fixed output location
 )
-estimator.fit({"train": "s3://my-bucket/data/v3/train/"})  # Data version pinned
+estimator.fit({"train": "s3://my-bucket/data/v3/train/"})  # Fixed data version
 ```
 
-The difference between these two code snippets is the essence of ML engineering. The input data version (`v3`), hyperparameters, and instance type are explicit in the code, so anyone can reproduce the same model six months later.
+The difference between these two code examples is the essence of ML engineering. The input data version (`v3`), hyperparameters, and instance type are explicit in the code, so anyone can reproduce the exact model 6 months later.
 
-> 💡 **Related theory**: Reproducibility is the number-one principle of ML engineering. To reproduce a machine learning experiment, code versioning alone is not enough — you must pin ① code, ② data version, ③ hyperparameters, and ④ environment (library versions, random seeds). This is why SageMaker provides features like Experiments, Model Registry, and lineage tracking.
+> 💡 **Related Theory**: Reproducibility is the #1 principle in ML engineering. To reproduce ML experiments, code version alone isn't enough — you need ① code, ② data version, ③ hyperparameters, and ④ environment (library versions, random seed) all fixed. This is why SageMaker provides features like Experiments, Model Registry, and lineage tracking.
 
-## Offline Metrics and Business Metrics Are Not the Same
+## Offline Metrics and Business Metrics Are Different
 
-Here is a trap ML engineers frequently run into. A model that improved in offline evaluation can actually hurt real business metrics. For example, a recommendation model's accuracy goes up while user dwell time goes down.
+A common pitfall ML engineers hit: a model that improves in offline evaluation can actually hurt real business metrics. A recommendation model's accuracy improves, but user engagement drops.
 
-That is why **A/B testing** is essential at the deployment stage. SageMaker lets you place multiple model variants behind a single endpoint and split traffic between them.
+That's why **A/B testing** is essential in the deployment phase. SageMaker lets you place multiple model variants on a single endpoint and distribute traffic across them.
 
 ```python
 from sagemaker.session import production_variant
@@ -71,97 +71,97 @@ variant_a = production_variant(
 )
 variant_b = production_variant(
     model_name="model-v2", instance_type="ml.m5.large",
-    initial_instance_count=1, variant_name="B", initial_weight=10,  # Only 10% to the new model
+    initial_instance_count=1, variant_name="B", initial_weight=10,  # Only 10% to new model
 )
 ```
 
-You send only 10% of traffic to the new model, observe the real business metrics, and gradually increase the weight if it is safe. This is the ML version of a canary deployment.
+Send only 10% of traffic to the new model, observe actual business metrics, and if safe, gradually increase the weight. This is the ML version of canary deployment.
 
-> 🔍 **Going deeper**: Offline metrics (accuracy, AUC) measure model performance on historical data, while online metrics (click-through rate, conversion rate, revenue) are the outcome of real user behavior. The two typical causes of divergence are ① distribution shift between training data and production data, and ② feedback loops where the model's output changes user behavior and thereby changes the data distribution itself. The ML engineer uses offline metrics as a gate and online metrics as the final verdict.
+> 🔍 **Deeper Dive**: Offline metrics (accuracy, AUC) measure model performance on historical data, while online metrics (click-through rate, conversion rate, revenue) measure actual user behavior outcomes. They diverge for two main reasons: ① distribution shift between training and production data, and ② feedback loops where model outputs change user behavior and thus the data distribution itself. ML engineers use offline metrics as a gate and online metrics as the final verdict.
 
-## Monitoring: A Model Starts Aging the Moment It Ships
+## Monitoring: Models Start Aging the Moment They Ship
 
-Software stays the same after deployment, but a model quietly becomes wrong as the world changes. The classic example is a demand forecasting model trained on pre-COVID data becoming useless in 2020. This is called **model drift**, and it comes in two kinds.
+Software stays the same after deployment, but models silently break when the world changes. A demand forecasting model trained on pre-COVID data became useless in 2020 — a classic example. This is called **model drift** and comes in two types:
 
-- **Data drift**: The distribution of input features changes (e.g., the user age demographics shift)
-- **Concept drift**: The input-output relationship itself changes (e.g., the same behavior takes on a different meaning)
+- **Data Drift**: The distribution of input features changes (e.g., user age demographics shift)
+- **Concept Drift**: The input-output relationship itself changes (e.g., the same behavior has different meaning)
 
-AWS uses **SageMaker Model Monitor** to capture the inputs/outputs of a production endpoint, compare them against the training-time baseline, and raise a CloudWatch alarm when drift crosses a threshold. The alarm can trigger a retraining pipeline (EventBridge → Pipelines).
+AWS uses **SageMaker Model Monitor** to capture inputs/outputs from running endpoints, compare them to a baseline from training time, and trigger CloudWatch alarms when drift exceeds thresholds. Alarms can trigger a retraining pipeline (EventBridge → Pipelines).
 
-> 📚 **Case study**: In early 2020, at the onset of COVID, many companies' demand forecasting, recommendation, and fraud detection models collapsed simultaneously. As human behavior patterns changed abruptly, the distribution of production data diverged completely from the training data — a textbook case of data drift. After this event, the industry-wide realization took hold that "deployment is not the end of a model; monitoring and retraining are the real substance."
+> 📚 **Case Study**: In early 2020, many companies' demand forecasting, recommendation, and fraud detection models collapsed simultaneously. Human behavior patterns shifted dramatically, causing the distribution of training data to diverge completely from production data — a textbook example of data drift. After this event, the industry-wide understanding shifted to "model deployment isn't the end; monitoring and retraining are the core."
 
-## The Four Domains of MLA-C01
+## The 4 Domains of MLA-C01
 
-The exam splits this lifecycle into four domains. Mapping each domain to its lifecycle stage gives you a clear study direction.
+The exam breaks this lifecycle into 4 domains and tests each. Mapping which lifecycle stage each domain corresponds to helps guide study.
 
-| Domain | Weight | Lifecycle stage | Key keywords |
+| Domain | Weight | Lifecycle Stage | Key Keywords |
 |--------|------|-------------|------------|
-| 1. Data Preparation (Data Prep) | 28% | Data | S3, Glue, Feature Store, data labeling |
-| 2. Model Development (Model Dev) | 26% | Train & Evaluate | Built-in algorithms, tuning, evaluation metrics, bias |
-| 3. Deployment & Orchestration (Deploy) | 22% | Deploy | Endpoints, batch, Pipelines, CI/CD |
-| 4. Monitoring, Maintenance & Security (Monitor) | 24% | Monitor | Model Monitor, CloudWatch, IAM, KMS |
+| 1. Data Preparation (Data Prep) | 28% | Data | S3, Glue, Feature Store, Data Labeling |
+| 2. Model Development (Model Dev) | 26% | Training, Evaluation | Built-in Algorithms, Tuning, Evaluation Metrics, Bias |
+| 3. Deployment & Orchestration (Deploy) | 22% | Deployment | Endpoints, Batch, Pipelines, CI/CD |
+| 4. Monitoring, Maintenance & Security (Monitor) | 24% | Monitoring | Model Monitor, CloudWatch, IAM, KMS |
 
-If SAA asks "how do you design it" and DVA asks "how do you deploy it as code," MLA asks "**how do you prepare, train, deploy, and operate ML workloads on AWS**." It is important that Data Preparation and Monitoring together account for half of the exam (52%). What separates pass from fail is data pipelines and operations, not memorizing model algorithms.
+If SAA asks "how to design," and DVA asks "how to deploy with code," then MLA asks "**how to prepare, train, deploy, and operate ML workloads on AWS?**" The fact that data preparation and monitoring together comprise over half (52%) of the exam is crucial. Passing depends more on data pipelines and operations than on algorithm memorization.
 
-## Wrapping Up
+## Summary
 
-We drew two pictures today. First, the ML lifecycle is a circular loop of **data → train → evaluate → deploy → monitor**, and the ML code itself is only 5% of the whole. Second, the ML engineer's role is to turn the data scientist's experiments into systems that are **reproducible, scalable, and operable**.
+Two takeaways from today. First, the ML lifecycle is a **circular loop of data → training → evaluation → deployment → monitoring**, and ML code itself is only 5% of the whole system. Second, an ML engineer's role is to turn a data scientist's experiments into a system that is **reproducible, scalable, and operationalizable**.
 
-In the next article we enter the "training" stage of this lifecycle and look at whether the problem you are trying to solve is supervised, unsupervised, or reinforcement learning; how to distinguish classification, regression, and clustering; and which metrics to evaluate them with.
+Next, we'll enter the "training" stage of this lifecycle, distinguishing supervised, unsupervised, and reinforcement learning, and learning how to classify problems into classification, regression, and clustering, and what metrics evaluate each.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** What is the key point emphasized by Google's "Hidden Technical Debt in ML Systems" paper, which is also reflected in the structure of the MLA-C01 exam?
+**문제 1.** What is the core insight emphasized by Google's "Hidden Technical Debt in Machine Learning Systems" paper, which is also reflected in the structure of the MLA-C01 exam?
 
-A) In an ML system, model training code accounts for more than 80% of the total  
-B) In an ML system, model training code is less than 5%, and data, serving, monitoring, and infrastructure make up most of it  
+A) ML code accounts for 80% or more of ML systems  
+B) ML code is less than 5% of ML systems, while data, serving, monitoring, and infrastructure comprise the majority  
 C) ML systems are easier to maintain than regular software  
-D) Once deployed, an ML model never needs retraining  
+D) Once an ML model is deployed, retraining is unnecessary  
 
 **정답: B**  
-해설: The paper pointed out that in real ML systems, model training code is less than 5%, and the remaining 95% is data collection, validation, serving, monitoring, and infrastructure. This is why MLA-C01 allocates more than half of the exam to Data Preparation (28%) and Monitoring (24%). Saying the training code accounts for 80% is the exact opposite; ML is harder to maintain due to data dependencies; and models require retraining because of drift.
+해설: The paper highlights that in real ML systems, model training code comprises less than 5% of the codebase, while the remaining 95% consists of data collection, validation, serving, monitoring, and infrastructure. MLA-C01 allocates over half of the exam to data preparation (28%) and monitoring (24%) for this reason. The claim that training code comprises 80% is the opposite, ML is harder to maintain due to data dependency, and models require retraining due to drift.
 
 ---
 
-**문제 2.** When an ML engineer productionizes a 0.94-accuracy model that a data scientist built in a notebook, what must be secured first?
+**문제 2.** When an ML engineer productionizes a 0.94 accuracy model created by a data scientist in a notebook, the first thing they must ensure is:
 
 A) Higher accuracy  
-B) Reproducibility of training — pinning the data version, hyperparameters, and environment in code  
+B) Reproducibility of training — fixing data version, hyperparameters, and environment in code  
 C) A larger instance type  
 D) Making the model more complex  
 
 **정답: B**  
-해설: The number-one principle of ML engineering is reproducibility. Code alone cannot reproduce a model — you must also pin the data version, hyperparameters, and environment (libraries, seeds). Pushing accuracy higher is the data scientist's domain, and instance size or model complexity are operational/performance concerns to consider after reproducibility is secured.
+해설: The #1 principle in ML engineering is reproducibility. Code alone cannot reproduce a model; you must fix data version, hyperparameters, and environment (libraries, seeds). Raising accuracy is the data scientist's job. Instance size and model complexity are operational and performance considerations that come after reproducibility is assured.
 
 ---
 
-**문제 3.** After deploying a recommendation model whose accuracy improved in offline evaluation, user dwell time actually decreased. What is the most appropriate way for an ML engineer to detect this in advance?
+**문제 3.** After deploying a recommendation model with improved offline accuracy, user engagement time actually decreased. What is the most appropriate method for an ML engineer to detect this issue beforehand?
 
-A) Just push offline accuracy even higher  
-B) Run an A/B test that sends only a small portion of traffic to the new model and observe real business metrics  
-C) Deploy the model to all traffic immediately  
-D) Reduce the training data  
+A) Simply increase offline accuracy further  
+B) Conduct A/B testing by sending only a small amount of traffic to the new model to observe actual business metrics  
+C) Deploy the new model to all traffic immediately  
+D) Reduce training data  
 
 **정답: B**  
-해설: Offline metrics (accuracy) and online business metrics (dwell time) can diverge, so you must run an A/B test that routes only part of the traffic to the new model and check the real behavioral metrics. Only raising offline accuracy repeats the same trap, full deployment amplifies the risk, and shrinking the training data is unrelated to the problem.
+해설: Since offline metrics (accuracy) can diverge from online business metrics (engagement time), an A/B test sending a portion of traffic to the new model should verify actual behavior metrics. Increasing only offline accuracy repeats the same trap; full deployment risks damage; reducing training data is unrelated to the problem.
 
 ---
 
-**문제 4.** Which term most accurately describes the phenomenon in which many demand forecasting models collapsed in the early days of COVID?
+**문제 4.** The phenomenon of many demand forecasting models failing in early 2020 is best described by which term?
 
 A) Overfitting  
-B) Data drift — the distribution of production data diverged significantly from the training data  
+B) Data Drift — production data distribution significantly differs from training data  
 C) Underfitting  
-D) Data leakage  
+D) Data Leakage  
 
 **정답: B**  
-해설: This is a textbook case of data drift, where the input distribution at serving time diverged from the data distribution at training time. Overfitting/underfitting are model complexity issues at the training stage, and data leakage is a separate problem where future information leaks into training. Drift is handled by detecting changes in the input distribution relative to a baseline with SageMaker Model Monitor.
+해설: This is a textbook example of data drift where the input data distribution at deployment time differs significantly from the training time distribution. Overfitting and underfitting are model complexity issues during training. Data leakage is a separate problem where future information leaks into training. Drift is detected by SageMaker Model Monitor comparing input distribution changes against baseline.
 
 ---
 
-**문제 5.** Which two of the four MLA-C01 domains together account for the largest share (more than half) of the exam?
+**문제 5.** Which two domains of MLA-C01, when combined, constitute over half (52%) of the exam's weight?
 
 A) Model Development and Deployment  
 B) Data Preparation and Monitoring, Maintenance & Security  
@@ -169,6 +169,6 @@ C) Deployment and Monitoring
 D) Data Preparation and Model Development  
 
 **정답: B**  
-해설: Data Preparation (28%) plus Monitoring, Maintenance & Security (24%) totals 52%, more than half. This is consistent with the fact that data pipelines and operations — rather than the ML code itself — are the real substance of production ML systems. All the other combinations omit one of these two domains, so their combined weight is smaller.
+해설: Data Preparation (28%) and Monitoring, Maintenance & Security (24%) together total 52%, exceeding half the exam. This aligns with the fact that data pipelines and operations form the true core of ML systems, not ML code itself. Other combinations miss one of these two areas and carry less weight.
 
 ---

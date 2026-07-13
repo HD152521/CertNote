@@ -15,7 +15,7 @@
       "code": "AIF-C01",
       "level": "foundational",
       "name": "AI Practitioner - Foundational",
-      "weeks": 1,
+      "weeks": 6,
       "order": 9
     },
     {
@@ -31,7 +31,7 @@
       "code": "MLA-C01",
       "level": "associate",
       "name": "Machine Learning Engineer - Associate",
-      "weeks": 1,
+      "weeks": 10,
       "order": 8
     },
     {
@@ -39,7 +39,7 @@
       "code": "DEA-C01",
       "level": "associate",
       "name": "Data Engineer - Associate",
-      "weeks": 1,
+      "weeks": 10,
       "order": 10
     },
     {
@@ -55,7 +55,7 @@
       "code": "SOA-C02",
       "level": "associate",
       "name": "CloudOps Engineer - Associate",
-      "weeks": 1,
+      "weeks": 12,
       "order": 3
     },
     {
@@ -63,7 +63,7 @@
       "code": "SAP-C02",
       "level": "professional",
       "name": "Solutions Architect - Professional",
-      "weeks": 1,
+      "weeks": 16,
       "order": 4
     },
     {

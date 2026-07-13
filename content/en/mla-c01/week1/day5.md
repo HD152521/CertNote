@@ -1,65 +1,65 @@
-# Day 5 - Week 1 Wrap-up — Reviewing ML Fundamentals and the AWS Stack
+# Day 5 - Week 1 Comprehensive Review — ML Fundamentals & AWS Stack
 
-This week we surveyed the basic concepts of machine learning and how to implement them on AWS. Today we tie the scattered pieces into a single picture. Because the MLA-C01 exam asks not for isolated facts but "which tool at which stage do you use in this situation," the most efficient way to memorize is to lay the concepts and services on top of the lifecycle.
+This week we surveyed ML basics and how to implement them on AWS. Today we tie the scattered pieces together. MLA-C01 tests not isolated knowledge but "which tool at which stage for this situation?" — so the most efficient way to learn is to layer concepts and services on the ML lifecycle.
 
-The four axes we review today are ① the ML lifecycle, ② problem types and evaluation metrics, ③ core SageMaker capabilities, and ④ AWS AI services. We organize each axis around the decision criteria of "when do you choose what."
+Four dimensions to review today: ① ML lifecycle, ② problem types and metrics, ③ SageMaker essentials, ④ AWS AI Services. We'll organize each by "when do you pick what?" decision criteria.
 
-## The ML Lifecycle: The Whole Process at a Glance
+## ML Lifecycle: The Full Picture
 
-A machine learning project does not end after one training run — it cycles. The four MLA-C01 domains map directly onto this lifecycle.
+ML projects don't train once and end — they cycle. The four domains of MLA-C01 map directly to this lifecycle.
 
 ```
-[1. Data Preparation] → [2. Model Development] → [3. Deployment & Serving] → [4. Monitoring & Maintenance]
-  Collect/Store/Transform   Train/Tune/Evaluate     Endpoint selection        Drift/Retraining
-  (Domain 1, 28%)          (Domain 2, 26%)         (Domain 3, 22%)          (Domain 4, 24%)
-        ↑                                                      |
-        └──────────────── Retraining trigger ─────────────────┘
+[1. Data Prep] → [2. Model Dev] → [3. Deploy·Serve] → [4. Monitor·Maintain]
+  Collect/Store/Transform   Train/Tune/Evaluate   Pick Endpoint   Drift/Retrain
+  (Domain 1, 28%)           (Domain 2, 26%)       (Domain 3, 22%) (Domain 4, 24%)
+        ↑                                                              |
+        └──────────────── Retrain Trigger ──────────────────────────┘
 ```
 
-The key is the final arrow. Once deployed, a model degrades over time as the data distribution changes (drift), and then you go back to the data preparation stage. The ML engineer's job is to automate and stabilize this cycle.
+The key is that last arrow. Deployed models degrade over time as data distribution drifts, then you cycle back to data prep. ML engineers' job is to automate and stabilize this cycle.
 
-> 💡 **Related theory**: The standardization of this cycle is CRISP-DM (Cross-Industry Standard Process for Data Mining). Established in the 1990s, this methodology defines a six-stage iterative cycle: business understanding → data understanding → data preparation → modeling → evaluation → deployment. Modern MLOps is this cycle with "post-deployment monitoring and automated retraining" tightly coupled on. On the exam, a scenario like "model performance degrades over time" always points to the monitoring/retraining stage of this cycle.
+> 💡 **Related Theory**: This cycle is standardized as CRISP-DM (Cross-Industry Standard Process for Data Mining). Established in the 1990s, it defines 6 iterative stages: business understanding → data understanding → data preparation → modeling → evaluation → deployment. Modern MLOps tightly couples this to "post-deployment monitoring and automated retraining." Exam scenarios saying "model performance declines over time" always point to the monitoring/retrain stage in this cycle.
 
-## Problem Types and Evaluation Metrics
+## Problem Types and Metrics
 
-The evaluation metric depends on what problem the model solves. Choosing the wrong metric leads to "a model with 99% accuracy that is useless."
+What problem a model solves dictates its metrics. Pick the wrong metric and you build a "99% accurate but useless model."
 
-| Problem type | Description | Typical evaluation metrics |
-|----------|------|--------------|
-| Binary classification | One of two (churn/retain) | Precision, Recall, F1, AUC-ROC |
-| Multi-class classification | Three or more categories | Accuracy, Macro-F1, confusion matrix |
-| Regression | Continuous value prediction (price) | RMSE, MAE, R² |
+| Problem Type | Description | Key Metrics |
+|--------------|-------------|-------------|
+| Binary classification | One of two (churn/stay) | Precision, Recall, F1, AUC-ROC |
+| Multi-class classification | Three+ categories | Accuracy, Macro-F1, Confusion Matrix |
+| Regression | Continuous prediction (price) | RMSE, MAE, R² |
 | Clustering | Unsupervised grouping | Silhouette, Inertia |
 
-Let's also revisit the distinction between supervised, unsupervised, and reinforcement learning. **Supervised learning** trains on data with ground-truth labels (classification, regression), **unsupervised learning** finds structure without labels (clustering, dimensionality reduction, anomaly detection), and **reinforcement learning** learns a policy from rewards.
+Also review supervised/unsupervised/reinforcement learning. **Supervised** learns from labeled data (classification·regression). **Unsupervised** finds structure without labels (clustering, dimensionality reduction, anomaly detection). **Reinforcement** learns policies from rewards.
 
 ```python
 from sklearn.metrics import precision_score, recall_score, f1_score
 
-# On imbalanced data (fraud at 0.1%), accuracy is a trap — look at precision/recall
-precision = precision_score(y_true, y_pred)   # Fraction of positive predictions that are truly positive
-recall = recall_score(y_true, y_pred)         # Fraction of actual positives that were caught
-f1 = f1_score(y_true, y_pred)                 # Harmonic mean of the two
+# With imbalanced data (0.1% fraud), accuracy is a trap — look at precision/recall
+precision = precision_score(y_true, y_pred)   # Share of positive predictions that are true
+recall = recall_score(y_true, y_pred)         # Share of actual positives we caught
+f1 = f1_score(y_true, y_pred)                 # Harmonic mean of both
 ```
 
-> 💡 **Related theory**: The precision-recall trade-off stems from cost asymmetry. Problems where "missing one is disastrous," like fraud detection, prioritize Recall (not missing anything); problems where "blocking legitimate mail is a problem," like spam filtering, prioritize Precision (reducing false alarms). When classes are extremely imbalanced, Accuracy is meaningless — predicting everything as the majority class still yields 99%. That is why F1 or AUC-PR is used as the summary metric for imbalanced problems.
+> 💡 **Related Theory**: The Precision-Recall tradeoff comes from asymmetric costs. For "missing is catastrophic" problems like fraud detection, prioritize Recall (catching misses). For "false alarms are painful" like spam filters, prioritize Precision (reducing false alarms). With extreme class imbalance, Accuracy is meaningless — predicting all as the majority class hits 99%. That's why imbalanced problems use F1 or AUC-PR as summary metrics.
 
-> ⚠️ **Pitfall**: Do not confuse RMSE and MAE in regression. RMSE squares the errors, punishing large errors more heavily, so it is sensitive to outliers; MAE treats all errors equally and is robust. If "there are many outliers and large errors must especially be prevented," use RMSE; if "you want to reduce the influence of outliers," use MAE.
+> ⚠️ **Gotcha**: Don't confuse RMSE and MAE in regression. RMSE squares large errors, penalizing them harder, so it's sensitive to outliers. MAE treats all errors equally, more robust. "Lots of outliers and I need to specially penalize large errors" → RMSE. "Reduce outlier impact" → MAE.
 
-## Core SageMaker Capabilities, Organized
+## SageMaker Essentials Organized
 
-SageMaker, which we covered in the latter half of this week, is a collection of tools covering the entire ML lifecycle. Grouped again by stage:
+SageMaker, which we explored in the second half of this week, is a toolkit covering the entire ML lifecycle. By stage:
 
-| Lifecycle stage | SageMaker capability | Role |
-|--------------|---------------|------|
-| Workspace | Studio (domains & user profiles) | Integrated IDE, permission separation |
-| Data preparation | Data Wrangler, Feature Store | Visual transformation, feature management |
-| Training | Training Job, built-in algorithms | Training in ephemeral containers |
+| Lifecycle Stage | SageMaker Feature | Role |
+|-----------------|------------------|------|
+| Work environment | Studio (domain, user profile) | Unified IDE, permission separation |
+| Data prep | Data Wrangler, Feature Store | Visual transforms, feature management |
+| Training | Training Job, built-in algorithms | Ephemeral container training |
 | Tuning | Automatic Model Tuning | Hyperparameter optimization |
-| Deployment | Real-time/Serverless/Batch/Async | Inference options by traffic |
+| Deployment | Real-time/serverless/batch/async | Traffic-specific inference options |
 | Operations | Model Monitor, Pipelines | Drift detection, automation |
 
-Two exam staples: training happens in **ephemeral containers** (instances auto-terminate when done; Spot cuts cost), and the inference options are chosen by **traffic pattern**.
+Key exam points: training happens in **ephemeral containers** (auto-terminates, spot cuts cost), and inference options split by **traffic pattern**.
 
 ```python
 import sagemaker
@@ -68,86 +68,86 @@ from sagemaker.estimator import Estimator
 session = sagemaker.Session()
 role = sagemaker.get_execution_role()
 
-# Train a tabular-data classifier with built-in XGBoost
+# Train tabular classification with built-in XGBoost
 estimator = Estimator(
     image_uri=sagemaker.image_uris.retrieve("xgboost", session.boto_region_name, "1.7-1"),
     role=role,
     instance_count=1,
     instance_type="ml.m5.xlarge",
-    use_spot_instances=True,   # Reduce training cost
+    use_spot_instances=True,   # Cut training costs
 )
 estimator.fit({"train": "s3://my-bucket/train/"})
 ```
 
-> 🔍 **Going deeper**: Memorize the inference option decision in one line each. "Thousands of requests per second, low latency" → real-time endpoint. "Intermittent traffic, idle cost is a waste" → serverless. "Bulk batch scoring" → batch transform. "Large payloads, long processing" → asynchronous. And when the built-ins don't fit, go to script mode (your own code + an AWS framework container) or a custom container.
+> 🔍 **Deeper Dive**: Memorize inference option choice in one line. "Thousands of requests/second, low latency" → Real-time endpoint. "Sporadic, no idle cost" → Serverless. "Bulk batch scoring" → Batch transform. "Large payload, long processing" → Asynchronous. If built-in doesn't fit, use script mode (your code + AWS framework container) or custom container.
 
-## AWS AI Services: Pre-trained Models You Use Without Training
+## AWS AI Services: Pre-Trained Models Without Training
 
-Not every ML problem needs to be trained yourself. AWS provides pre-trained, managed AI services via API. If "it's a common task and you want to bolt it on fast," this is the answer.
+Not every ML problem needs direct training. AWS offers pre-trained managed AI Services via API. "Common task, want it fast" — this is the answer.
 
-| Area | Service | Use case |
-|------|--------|------|
-| Text analysis | Comprehend | Sentiment, entities, key phrase extraction |
+| Domain | Service | Use Case |
+|--------|---------|----------|
+| Text analysis | Comprehend | Sentiment, entities, key phrases |
 | Translation | Translate | Real-time machine translation |
-| Speech→text | Transcribe | Speech recognition, captions |
-| Text→speech | Polly | TTS speech synthesis |
-| Images & video | Rekognition | Object, face, content detection |
-| Document extraction | Textract | OCR, form & table extraction |
-| Forecasting | Forecast | Time-series demand forecasting |
-| Recommendations | Personalize | Personalized recommendation engine |
+| Speech→Text | Transcribe | Speech recognition, subtitles |
+| Text→Speech | Polly | TTS voice synthesis |
+| Image·Video | Rekognition | Objects, faces, content detection |
+| Document extraction | Textract | OCR, forms, tables |
+| Forecasting | Forecast | Time-series demand prediction |
+| Recommendation | Personalize | Personalized recommendation engine |
 | Generative AI | Bedrock | Foundation model API |
 
-The decision criterion is the abstraction level. **AI services** (API calls, no training needed) → **SageMaker** (train and deploy yourself, flexibility) → **self-built EC2** (maximum control, maximum burden). "Common problem + fast implementation" → AI services; "custom model on proprietary data" → SageMaker.
+Decision criterion: abstraction level. **AI Services** (API call, no training) → **SageMaker** (direct train/deploy, flexible) → **EC2 direct** (max control, max burden). "Common problem + speed" → AI Service. "Custom model on my data" → SageMaker.
 
-> 💡 **Related theory**: This hierarchy is the cloud version of "build vs. buy." AI services mean renting a model AWS has pre-trained on massive data (buy), while SageMaker means building your own with your own data (build). The ML engineer's judgment call is "is my problem generic or unique?" Generic NLP/vision tasks are faster, more accurate, and operations-free with AI services, but domain-specific data (e.g., medical imaging, industrial defects) requires training your own model.
+> 💡 **Related Theory**: This hierarchy is the cloud version of "build vs buy." AI Services borrow pre-trained models AWS trained on massive datasets (buy). SageMaker builds custom on your data (build). The ML engineer's decision point: "Is my problem general or domain-specific?" General NLP/vision tasks are faster, more accurate, and less operational burden via AI Services. Domain-specialized data (medical imaging, manufacturing defects) needs direct training.
 
-## Wrapping Up
+## Summary
 
-The big picture of Week 1: ML cycles through a **lifecycle** (preparation → development → deployment → monitoring → retraining); each problem type (classification, regression, clustering) has different **evaluation metrics** (beware the accuracy trap under imbalance); and **SageMaker** covers this entire lifecycle. Common tasks are bolted on quickly with **AI services**, no training needed. The core exam instinct is choosing the abstraction level (AI services → SageMaker → EC2) by how generic or unique the problem is.
+Week 1's big picture: ML cycles through the **lifecycle** (prep → dev → deploy → monitor → retrain), each problem type needs different **metrics** (watch for accuracy traps in imbalance), the whole lifecycle is covered by **SageMaker**, and common tasks attach fast via **AI Services** without training. The core exam skill is choosing abstraction level (AI Services → SageMaker → EC2) by problem generality.
 
-Next week (Week 2) we dig deep into the first stage of the lifecycle — data collection and storage — covering S3, Kinesis, Glue, and Athena.
+Next week (Week 2) we dive deep into the lifecycle's first stage: data collection and storage — S3, Kinesis, Glue, Athena.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** The accuracy of a deployed churn prediction model has been slowly declining over several months. The input data distribution appears to have diverged from training time. Which lifecycle stage does this problem belong to, and what is the response?
+**문제 1.** A deployed churn prediction model's accuracy is slowly declining over months. Input data distribution has shifted from training time. Which lifecycle stage does this correspond to, and the response?
 
-A) The data preparation stage; delete the model  
-B) Detect the drift at the monitoring stage, and run the retraining cycle again with new data  
-C) The deployment stage; scale up the instance type  
-D) The model development stage; adjust only the learning rate  
+A) Data prep stage — delete the model  
+B) Monitoring stage detects drift, retrain by cycling through data prep with new data  
+C) Deployment stage — scale up instance types  
+D) Model dev stage — adjust learning rate only  
 
 **정답: B**  
-해설: Performance degradation caused by data distribution change over time (drift) is detected at the monitoring stage, and the response is to run the data preparation → retraining cycle again with new data. Deleting the model (A) means a service outage, scaling the instance (C) addresses throughput rather than accuracy, and adjusting the learning rate (D) does not fundamentally solve a distribution change.
+해설: Performance degradation from time-based data distribution shift (drift) is detected in monitoring, and the response is cycling data prep → retrain on new data. Deleting (A) stops service, scaling instances (C) addresses throughput not accuracy, and tweaking learning rate (D) doesn't solve distribution shift.
 
 ---
 
-**문제 2.** In a fraud detection model, fraud accounts for 0.1% of all transactions. Which is the most inappropriate evaluation metric, with the correct reason?
+**문제 2.** Fraud detection model where fraud is 0.1% of transactions. Which metric is most inappropriate and why?
 
-A) Recall — because the cost of missing fraud is high  
-B) Accuracy — because predicting everything as normal still yields 99.9%, making it meaningless  
-C) F1 — because it balances precision and recall  
-D) AUC-PR — because it is robust to imbalance  
+A) Recall — the cost of missing fraud is high  
+B) Accuracy — even predicting all as legitimate hits 99.9%, making it a trap metric  
+C) F1 — balances precision and recall  
+D) AUC-PR — robust to imbalance  
 
 **정답: B**  
-해설: Under extreme class imbalance, Accuracy is a trap metric: predicting every sample as the majority class still yields 99.9%, masking the model's real detection ability. Recall (not missing fraud), F1 (balance), and AUC-PR (robust to imbalance) are all appropriate metrics for imbalanced problems.
+해설: With extreme class imbalance, Accuracy is a trap — predicting all as majority class hits 99.9% and hides the model's real detection power. Recall (catch misses), F1 (balance), AUC-PR (imbalance-robust) all suit imbalanced problems.
 
 ---
 
-**문제 3.** You want to convert call center recordings to text and then analyze the sentiment of customer complaints. Which combination implements this fastest without any training?
+**문제 3.** Convert call center recordings to text, then analyze customer complaints for sentiment. Implement fastest without training?
 
-A) Train speech and sentiment models directly in SageMaker  
-B) Amazon Transcribe (speech→text) + Amazon Comprehend (sentiment analysis)  
+A) Train voice and sentiment models directly in SageMaker  
+B) Amazon Transcribe (speech→text) + Amazon Comprehend (sentiment)  
 C) Amazon Rekognition + Amazon Polly  
 D) Amazon Forecast + Amazon Personalize  
 
 **정답: B**  
-해설: Combining Transcribe, which converts speech to text, with Comprehend, which analyzes sentiment, implements this with API calls alone — no training. Training directly in SageMaker (A) is excessive effort for a common task, and Rekognition (images) + Polly (TTS) (C) as well as Forecast (forecasting) + Personalize (recommendations) (D) serve different purposes than speech recognition and sentiment analysis.
+해설: Transcribe converts speech to text, Comprehend analyzes sentiment — combined, just API calls, no training. SageMaker training (A) is overkill for standard tasks. Rekognition (image) + Polly (TTS) (C) and Forecast + Personalize (D) don't match speech recognition and sentiment analysis.
 
 ---
 
-**문제 4.** In regression model evaluation, you want to punish large errors especially heavily and be sensitive to outliers. Which metric fits?
+**문제 4.** For regression evaluation, you want to heavily penalize large errors to catch outliers sensitively. Which metric?
 
 A) MAE  
 B) RMSE  
@@ -155,18 +155,18 @@ C) Accuracy
 D) Silhouette score  
 
 **정답: B**  
-해설: RMSE squares the errors, giving larger penalties to large errors, so it reacts sensitively to outliers. MAE (A) treats all errors equally and is robust, Accuracy (C) is a classification metric, and Silhouette (D) is a clustering quality metric — neither fits regression evaluation.
+해説: RMSE squares errors, penalizing large ones harder, so it's outlier-sensitive. MAE treats all errors equally (robust). Accuracy is classification, Silhouette is clustering — neither fit regression.
 
 ---
 
-**문제 5.** The requirement is "we must train a custom classification model on proprietary industrial defect image data." Which choice in the abstraction hierarchy is appropriate?
+**문제 5.** "Train a custom classifier on unique manufacturing defect images from our domain."  At the abstraction layer, which choice fits?
 
-A) Call the Amazon Rekognition API  
-B) Train and deploy directly with SageMaker  
+A) Call Amazon Rekognition API  
+B) Train and deploy directly in SageMaker  
 C) Analyze text with Comprehend  
 D) Translate with Translate  
 
 **정답: B**  
-해설: Because a custom model must be built from domain-specific proprietary data, SageMaker — which enables training and deploying your own models — is the right fit. Rekognition (A) is a pre-trained model for generic image tasks and falls short on proprietary defect patterns, while Comprehend (C) and Translate (D) are text services unrelated to image classification.
+해説: Domain-specific custom data requires custom training/deployment — SageMaker is the fit. Rekognition (A) is for general image tasks, insufficient for unique defect patterns. Comprehend (C) and Translate (D) are text, unrelated to image classification.
 
 ---

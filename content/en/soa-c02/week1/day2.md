@@ -1,86 +1,86 @@
-# Day 2 - The Operator's Manual for IAM: Users, Groups, Roles, and the Policy Evaluation Algorithm
+﻿# Day 2 - IAM Operator's Manual: Users, Groups, Roles, Policy Evaluation Algorithm
 
-S3 403, Lambda InvalidPermission, ECR pull denied, SSM Session Manager AccessDenied, RDS Connect Failed. The one thing these errors — floating through the operator's Slack channel every day — have in common is that they are all, in the end, the result of IAM policy evaluation. For an operator, IAM is less a "permission-granting system" and more **"the decision engine that determines half of all daily incidents."** IAM is the single component that decides who can do what, where, and under which conditions — and when it goes wrong, either permissions are too broad and data leaks (Capital One), or too narrow and deployments get blocked (the classic Friday night).
+S3 403, Lambda InvalidPermission, ECR pull denied, SSM SessionManager AccessDenied, RDS Connect Failed. These errors floating through the operator's Slack channel daily share one thing in common: they're all outcomes of IAM policy evaluation. For operators, IAM isn't a "permission system" so much as **"a decision engine that determines half of all incidents that happen every day."** It's the single component that decides who, what, where, and under which conditions can do things—and when it goes wrong, permissions become either too broad (data leaks, like Capital One) or too narrow (deployments block on Friday nights—very common).
 
-Today we redraw IAM's four entities (User, Group, Role, Policy) from the operator's viewpoint, walk through the actual order in which the policy evaluation algorithm makes decisions, and lay out where to look when a denial occurs. This one algorithm diagram solves 70% of the exam's IAM questions.
+Today we redraw IAM's four entities (User, Group, Role, Policy) from an operator's perspective, show exactly which order the policy evaluation algorithm follows to make decisions, and identify where to look when denial happens. This single algorithm diagram solves 70% of exam IAM questions.
 
-## IAM's Four Entities: The Differences an Operator Sees
+## IAM's Four Entities: How Operators See the Difference
 
-| Entity | Essence | When Operators Use It | Credential Lifetime |
-|--------|------|------------------|---------------|
-| **User** | Permanent credentials (access key + password) | When a human or automation script needs direct login | Unlimited (until manually rotated) |
-| **Group** | A bundle of users + a policy attachment container | When grouping permissions by job function, not per person | N/A |
-| **Role** | A temporary identity that issues short-lived credentials | Service-to-service calls, cross-account access, federation | STS temporary tokens (15 min - 12 hours) |
-| **Policy** | A JSON document defining permissions | Expressed via Effect/Action/Resource/Condition | N/A |
+| Entity | Essence | Operator Use Case | Credential Lifetime |
+|--------|---------|-------------------|----------------------|
+| **User** | Permanent credentials (access key + password) | When a person or automation script needs direct login | Infinite (until manually rotated) |
+| **Group** | User collection + policy attachment container | When grouping permissions by job, not individual | N/A |
+| **Role** | Temporary credential issuer with temporary identity | Service-to-service calls, cross-account access, federation | STS temporary token (15 min–12 hours) |
+| **Policy** | Permission definition as JSON document | Expression via Effect/Action/Resource/Condition | N/A |
 
-The one operators use most is the **Role**. Issue Users only for individual humans (or replace them with IAM Identity Center), and handle EC2, Lambda, ECS Tasks, and cross-account trust entirely with Roles. The reasons are clear.
+From an operator's view, **Role** is used most. Users are issued only to individual humans (or replaced by IAM Identity Center), and everything between services—EC2, Lambda, ECS Task, cross-account trust—is handled by Roles. The reasons are clear.
 
-1. **Role credentials are temporary tokens issued by STS (default 1 hour, max 12 hours)** — even if leaked, they expire
-2. **Roles are tracked in CloudTrail as `AssumedRole` events**, so who used which permissions and when is clear
-3. **Roles carry no access key rotation burden** — access keys attached to Users must be rotated by the operator
-4. **Roles can precisely restrict "who can assume this" via the Trust Policy**
+1. **Role credentials are temporary tokens issued by STS (default 1 hour, max 12 hours)**—if leaked, they expire
+2. **Roles appear in CloudTrail as `AssumedRole` events**, so you know exactly who used what permission when
+3. **Roles don't require access key rotation drudgery**—users have access keys that operators must rotate manually
+4. **Roles clearly limit "who can assume this role" via Trust Policy**
 
-> 📚 **Case study**: The September 2022 Uber hack. An 18-year-old hacker bombarded one Uber employee with MFA push notifications (an MFA fatigue attack), then posed as "the IT department" in a Slack DM to coax approval. Once the employee approved, the attacker gained VPN access and stole **PAM (Privileged Access Management) admin credentials** hardcoded in an internal PowerShell script. With those credentials, the attacker took over Uber's AWS, GCP, OneLogin, GSuite, and vSphere (screenshots leaked publicly). If those PAM credentials had been an **IAM Role + STS temporary tokens + enforced MFA condition + IP CIDR restriction** instead of an access key, the blast radius would have been far smaller. Operator lesson: **long-lived credentials are a liability, not an asset**. Another lesson: when one credential grants access to multiple systems, one compromised system becomes a full compromise.
+> 📚 **Case Study**: September 2022, Uber hacker incident. An 18-year-old hacker MFA-bombed an Uber employee (MFA fatigue attack), then convinced them via Slack DM claiming to be "IT" to approve an auth push. Once approved, the hacker got VPN access, stole **PAM (Privileged Access Management) admin credentials hardcoded in an internal PowerShell script**, and gained access to Uber's AWS, GCP, OneLogin, GSuite, and vSphere (screenshots leaked externally). If those PAM credentials had instead been an **IAM Role + STS temporary token + enforced MFA condition + IP CIDR restriction**, the breach footprint would've been far narrower. Operator lesson: **long-lived credentials are debt, not assets.** Another lesson: one credential accessing many systems means one system breach becomes total breach.
 
-> 🔍 **Deeper dive**: The temporary credentials issued by STS `AssumeRole` are a 3-piece set: **AccessKeyId (starting with ASIA) + SecretAccessKey + SessionToken**. The SessionToken is a JWT-like signed token that must be sent in the `X-Amz-Security-Token` header with AWS API calls. The expiry time is baked into the token, so clients cannot arbitrarily extend it (they must call AssumeRole again). Even if credentials leak, they're useless after expiry. In contrast, an IAM User's access key (starting with AKIA) is permanently valid — unless explicitly deactivated, it stays alive for 5 or 10 years. This difference is why GuardDuty raises a `CredentialAccess:IAMUser/AnomalousBehavior` finding when an ASIA-prefixed token is used from an anomalous IP.
+> 🔍 **Deeper Dive**: STS's `AssumeRole` issues temporary credentials as a **3-part set: AccessKeyId (starts with ASIA) + SecretAccessKey + SessionToken**. SessionToken is a signed token similar to a JWT; AWS API calls must include it in the `X-Amz-Security-Token` header. Expiration is baked into the token; clients can't extend it unilaterally (need to call AssumeRole again). If leaked, the token is useless after expiry. IAM User access keys (start with AKIA) are permanent—without explicit deactivation, they live 5 years, 10 years, forever. That's why GuardDuty flags ASIA-prefixed tokens used from anomalous IPs as `CredentialAccess:IAMUser/AnomalousBehavior`.
 
-## The Policy Evaluation Algorithm: The One Diagram That Explains Every Denial in Exams and Production
+## Policy Evaluation Algorithm: The Single Diagram Explaining All Denials in Exams and Reality
 
-The question operators face most often is "why was it denied?" The IAM policy evaluation algorithm decides through the following 6 steps. This flow solves 70% of exam questions.
+The most common operator question: "Why was I denied?" IAM's policy evaluation algorithm decides in six steps. This flow solves 70% of exam questions.
 
 ```
-[1] Is there an explicit Deny?  ─Yes─→  Deny (done)
+[1] Is there an explicit Deny?  ─Yes─→  Deny (end)
         │ No
         ▼
-[2] Does the SCP (Service Control Policy) contain an Allow?  ─No─→  Deny (done)
+[2] Is there an Allow in SCP (Service Control Policy)?  ─No─→  Deny (end)
         │ Yes
         ▼
-[3] Does a resource-based policy contain an Allow?  ─Yes─→ (conditionally passes)
+[3] Is there an Allow in Resource-based Policy?  ─Yes─→ (conditional pass)
         │
         ▼
-[4] Does an identity-based policy contain an Allow?  ─No─→  Deny (but passes if Allowed in step 3)
+[4] Is there an Allow in Identity-based Policy?  ─No─→  Deny (unless [3] said Allow)
         │ Yes
         ▼
-[5] If a Permission Boundary exists, does it Allow?  ─No─→  Deny
+[5] If Permission Boundary exists, is it within bounds?  ─No─→  Deny
         │ Yes
         ▼
-[6] If a Session Policy (attached at STS AssumeRole) exists, does it Allow?  ─No─→  Deny
+[6] If Session Policy exists (from STS AssumeRole), is it Allow?  ─No─→  Deny
         │ Yes
         ▼
-   Allow ✅
+   ALLOW ✅
 ```
 
 Core principles:
 
-- **An explicit Deny from anywhere is a final denial**: one Deny in an SCP, identity policy, resource policy, or boundary ends the evaluation
-- **Implicit denial ≠ Deny**: a permission not mentioned in any policy is implicitly denied, but can be overridden by an Allow in another policy
-- **A resource-based policy's Allow can pass without an identity policy**: if an S3 bucket policy grants Allow to another account, that account's user can access it even without permission in their own IAM (within the same account, usually either one suffices — except KMS, which requires both even within the same account)
+- **Explicit Deny wins from anywhere**: One Deny from SCP, identity policy, resource policy, or boundary = final Deny
+- **Implicit Deny ≠ explicit Deny**: Permissions not mentioned anywhere get implicitly denied, but other policies can override with Allow
+- **Resource-based policy Allow can pass without identity policy**: S3 bucket policy granting Allow to another account lets users in that account access even if their IAM has no permission (within same account usually both required; exception: KMS requires both even within account)
 
-> 💡 **Related theory**: IAM policy evaluation is essentially ABAC (Attribute-Based Access Control) with a **deny-overrides** model. Beyond the simple matrix of RBAC (Role-Based), it expresses conditional permission using attributes like `aws:RequestTag/Env`, `aws:PrincipalTag/Department`, `aws:SourceIp`, `aws:MultiFactorAuthAge`, and `aws:CurrentTime`. NIST SP 800-162 defines the standard ABAC model, and IAM's Condition block is its implementation. The reason evaluation proceeds SCP > identity > resource > boundary > session is to enforce the principle that **"permissions are constrained by organizational policy."** Academically, Sandhu et al. (1996, IEEE Computer) laid the foundation of RBAC with the RBAC96 model, and Hu et al. (2014, NIST SP 800-162) defined the ABAC standard.
+> 💡 **Related Theory**: IAM policy evaluation is fundamentally a **deny-overrides ABAC (Attribute-Based Access Control)** model. Beyond simple RBAC matrices, it expresses conditional allowance via attributes like `aws:RequestTag/Env`, `aws:PrincipalTag/Department`, `aws:SourceIp`, `aws:MultiFactorAuthAge`, `aws:CurrentTime`. NIST SP 800-162 defines ABAC's standard model; IAM's Condition block implements it. That SCP evaluates as SCP > identity > resource > boundary > session enforces the principle "permissions are constrained by org policy." Academically, Sandhu et al. (1996, IEEE Computer) defined RBAC96; Hu et al. (2014, NIST SP 800-162) standardized ABAC.
 
-> ⚠️ **Pitfall**: A frequent exam question: "An IAM user in one account wants to PUT an object into an S3 bucket in another account. What permissions are needed?" The answer is **both sides**. ① `s3:PutObject` allowed for the user in the caller's account, and ② `s3:PutObject` allowed for that user (or that account) in the target bucket's Bucket Policy. With only one of the two, it's denied. Additionally, if the bucket is KMS-encrypted, ③ `kms:GenerateDataKey` must also be allowed in the KMS key policy. So cross-account + KMS requires all three policies to pass.
+> ⚠️ **Pitfall**: Exams often ask "An IAM user in account A wants to PUT to account B's S3 bucket object. What permissions are needed?" Answer: **both sides.** ① Caller account's user has `s3:PutObject` allowed ② Target bucket's Bucket Policy allows that user (or account) `s3:PutObject`. One alone = Deny. Add KMS encryption: ③ KMS key policy also needs `kms:GenerateDataKey`. Cross-account + KMS = all three policies must pass.
 
-> 🔍 **Deeper dive**: AWS uses a formal verification engine based on SMT (Satisfiability Modulo Theories) called **Zelkova** for policy analysis (Backes et al., 2018 CAV). Policies are converted to first-order logic formulas and solved mathematically with SMT solvers like Z3 to answer "for which input combinations does this policy produce Allow?" This engine is why Access Analyzer can tell you precisely that "this S3 bucket is exposed to an external account." It's not simple regex matching — it formally proves whether "among all possible call combinations, does any case produce an external Allow?"
+> 🔍 **Deeper Dive**: AWS uses **Zelkova**, an SMT (Satisfiability Modulo Theories) formal verification engine (Backes et al., 2018 CAV), for policy evaluation. Policies are transformed to first-order logic, then an SMT solver like Z3 asks "under which input combinations does this policy return Allow?" mathematically. Access Analyzer's ability to say "this S3 bucket is exposed to external accounts" comes from this engine—not simple regex matching but formal proof that "there exists an input combination where an external account gets Allow."
 
-## The 6 Kinds of Policies: Where They Attach and Who Creates Them
+## Six Types of Policies: Where and Who Attaches Them
 
-| Policy Type | Attaches To | Who Creates It | Operator Viewpoint |
-|-----------|-----------|----------------|-------------|
-| **Identity-based (Managed)** | User/Group/Role | AWS or customer | The most commonly used standard |
-| **Identity-based (Inline)** | User/Group/Role 1:1 | Customer | One-off; deleted along with the entity |
+| Policy Type | Attached To | Creator | Operator View |
+|-------------|-------------|---------|----------------|
+| **Identity-based (Managed)** | User/Group/Role | AWS or customer | Most common standard |
+| **Identity-based (Inline)** | User/Group/Role 1:1 | Customer | Single-use; deleted with principal |
 | **Resource-based** | S3, Lambda, SNS, SQS, KMS, ECR, EFS, etc. | Resource owner | Essential for cross-account |
-| **Permission Boundary** | User/Role | Delegated administration admin | Caps "the maximum permission of Roles developers create" |
+| **Permission Boundary** | User/Role | Delegated permissions admin | Limit max permissions for delegated Roles |
 | **SCP** | AWS Organizations OU/Account | Org admin | Guardrail across all accounts |
-| **Session Policy** | Inline at STS AssumeRole call | Caller | Narrows the permissions of the issued temporary credentials |
+| **Session Policy** | STS AssumeRole call inline | Caller | Narrow temp credentials issued |
 
-What operators confuse most often is **Permission Boundary vs SCP**. Both set "permission ceilings," but they apply in different places.
+Operators most often confuse **Permission Boundary and SCP**. Both set permission ceilings, but apply at different scopes.
 
-- **SCP** applies to entire accounts/OUs — used by the Organizations administrator. SCPs also apply to the root account (except the management account)
-- **Permission Boundary** applies to a specific User/Role — the guardrail for permission delegation. It restricts the effective permission of the user's policies to the intersection with the boundary
+- **SCP** applies org-wide to accounts/OUs—used by Organizations admin. SCP applies even to root (except management account)
+- **Permission Boundary** applies to specific User/Role—a delegation guardrail. A user's effective permission = their policy ∩ boundary
 
-Also, **an SCP never creates an Allow**. Even if an SCP says `Allow *`, it's merely a whitelist of "these permissions are possible in the accounts of this OU." The actual permission grant happens in identity or resource policies. A common operator mistake: adding an Allow to an SCP and assuming "now the permission exists" — it doesn't work → you must add an identity policy.
+Also: **SCP never creates Allow.** Even if SCP says `Allow *`, it's actually a whitelist saying "these permissions are possible in this OU." Real permission granting happens in identity or resource policy. Operator mistake: add Allow to SCP, assume "now permissions exist"—doesn't work. Must add to identity policy too.
 
-> 🔍 **Deeper dive**: A common operator pattern is **delegating IAM Role creation to developers** while enforcing a permission boundary. For example, grant the developer group `iam:CreateRole`, but use an `iam:PutRolePermissionsBoundary` condition to force attachment of the company-standard boundary policy. Then the effective permission of any Role a developer creates is "the policies they attached ∩ the boundary policy," so even attaching AdministratorAccess only allows what the boundary permits. This is the standard pattern for "permission delegation + guardrails."
+> 🔍 **Deeper Dive**: Operator pattern: **delegate Role creation to developers while enforcing Permission Boundary.** Give developers `iam:CreateRole` but Condition on `iam:PutRolePermissionsBoundary` to force company standard boundary attachment. Then effective permissions on developer-created Roles = "their policy ∩ boundary," so even AdministratorAccess is limited by boundary. This is "delegation + guardrail" standard.
 
 ```json
 {
@@ -98,51 +98,51 @@ Also, **an SCP never creates an Allow**. Even if an SCP says `Allow *`, it's mer
 }
 ```
 
-## The IAM Debugging Pattern Operators Encounter Daily
+## IAM Debugging Patterns Operators Face Daily
 
-An S3 403 just appeared. Where do you look first? Operators follow this order.
+S3 403 appears. Where to start? Operators follow this sequence:
 
 ```
-[Step 1] Find the failed call in CloudTrail
+[Step 1] Find failed call in CloudTrail
         - eventName: GetObject, PutObject, etc.
         - errorCode: AccessDenied
         - errorMessage: "User: arn:aws:sts::... is not authorized to perform..."
-        - Check bucket and key in requestParameters
-        - Verify the caller's identity via userIdentity (User? AssumedRole? FederatedUser?)
+        - requestParameters shows bucket, key
+        - userIdentity shows caller identity (User? AssumedRole? FederatedUser?)
 
-[Step 2] Is the caller an IAM User or an AssumedRole?
-        - If a User, check directly attached policies + group policies
-        - If a Role, trace who assumed it via RoleSessionName
-        - Check the original Role ARN in sessionIssuer
+[Step 2] Is caller an IAM User or AssumedRole?
+        - User: check directly attached + group policies
+        - Role: track via RoleSessionName who assumed it
+        - sessionIssuer shows original Role ARN
 
-[Step 3] Simulate with the IAM Policy Simulator
-        - Evaluate with caller + Action + Resource
-        - It shows which policy denied
-        - Use Service Last Accessed data to check "was this permission actually used?"
+[Step 3] Simulate with IAM Policy Simulator
+        - Evaluate caller + Action + Resource
+        - See which policy denied
+        - Service Last Accessed shows "was this permission actually used?"
 
-[Step 4] Check cross-account exposure with Access Analyzer
-        - Verify there is no unintended external exposure
-        - Use policy validation to check policy syntax and security
+[Step 4] Verify cross-account exposure with Access Analyzer
+        - Check unintended external leaks
+        - Policy Validation for syntax and security
 
-[Step 5] If still unclear, read the errorMessage in the CloudTrail event detail carefully
-        - Since 2023, AWS states "which policy denied" in the message
+[Step 5] Last resort: read CloudTrail event errorMessage detail line-by-line
+        - Since 2023, AWS explicitly names "which policy denied"
 ```
 
-> 📚 **Case study**: A production EC2 instance suddenly gets 403 on S3 PutObject. The operator checks CloudTrail: the caller is `AssumedRole/EC2-S3Role/i-0abc...`. The identity policy shows `s3:PutObject Allow`. The Bucket Policy allows it too. The SCP passes. Yet it's denied. The reason: **the bucket had SSE-KMS encryption enabled, and the KMS key's Key Policy did not include the EC2 Role**. To encrypt with a KMS key on S3 PUT, the caller needs `kms:GenerateDataKey`, and that permission must be allowed in both the Key Policy and the IAM Policy (KMS requires both even when it's not cross-account). This is a trap operators easily fall into when checking only the IAM policy. Moreover, KMS denial events are logged separately in CloudTrail, so you must check the KMS trail as well.
+> 📚 **Case Study**: Running EC2 suddenly 403s on S3 PutObject. Operator checks CloudTrail; caller is `AssumedRole/EC2-S3Role/i-0abc...`. Identity policy shows `s3:PutObject Allow`. Bucket Policy: Allow. SCP: pass. Still denied. **Reason: bucket has SSE-KMS encryption, and that KMS key's Key Policy lacks the EC2 Role.** S3 PUT with KMS encryption needs `kms:GenerateDataKey`, required in both Key Policy AND IAM Policy (KMS needs both even same-account). Operator's easy trap: check IAM only and get confused. Plus KMS deny events log separately in CloudTrail, so you must check both trails.
 
-> ⚠️ **Pitfall**: errorCode `AccessDenied` doesn't automatically mean an IAM problem. If S3 Block Public Access is enabled on the bucket, even a public policy gets overridden — BPA blocks first and returns 403. If an SCP denies, an IAM Allow still gets denied. Resources shared via RAM can be denied when the owner changes permissions, and so on. To pinpoint the source of the denial, read the `errorMessage` text in CloudTrail verbatim.
+> ⚠️ **Pitfall**: `AccessDenied` errorCode doesn't always mean IAM. S3 bucket BlockPublicAccess on blocks public policies before 403. SCP Deny blocks even IAM Allow. RAM shared resource with owner-side permission change = Deny. Find denial source precisely—read CloudTrail `errorMessage` verbatim.
 
-## The 3 Core STS APIs
+## STS's Three Core APIs
 
-STS APIs operators must know:
+APIs operators must know:
 
-| API | Purpose | Operator Viewpoint |
-|-----|------|-------------|
-| `AssumeRole` | Assume a Role in the same or a different account | Cross-account access, EC2/Lambda Roles |
-| `AssumeRoleWithSAML` | Assume via a SAML 2.0 IdP | AD FS, Okta SAML federation |
-| `AssumeRoleWithWebIdentity` | Assume via an OIDC IdP | Cognito, GitHub Actions OIDC, EKS IRSA |
+| API | Purpose | Operator View |
+|-----|---------|----------------|
+| `AssumeRole` | Assume Role in same/different account | Cross-account access, EC2/Lambda Roles |
+| `AssumeRoleWithSAML` | Assume from SAML 2.0 IdP | AD FS, Okta SAML federation |
+| `AssumeRoleWithWebIdentity` | Assume from OIDC IdP | Cognito, GitHub Actions OIDC, EKS IRSA |
 
-Embedding access keys in GitHub secrets used to be the standard for deploying to AWS from GitHub Actions, but switching to **OIDC federation** eliminates the access key entirely. AWS STS validates the OIDC token issued by GitHub and issues temporary credentials. This has been GitHub Actions' recommended pattern since 2022, and AWS officially recommended it at re:Invent 2023 as well.
+GitHub Actions deployment to AWS used to mean hardcoding access keys in Secrets, but **OIDC federation** eliminates access keys entirely. GitHub issues an OIDC token; AWS STS verifies it and issues temp credentials. This became GitHub Actions standard in 2022; 2023 re:Invent made it AWS official recommendation.
 
 ```yaml
 # GitHub Actions OIDC example
@@ -153,7 +153,7 @@ Embedding access keys in GitHub secrets used to be the standard for deploying to
     role-session-name: ${{ github.actor }}-${{ github.run_id }}
 ```
 
-The IAM Role's Trust Policy should then be narrowed down to the GitHub repo + branch, like this:
+IAM Role's Trust Policy must narrow to GitHub repo and branch:
 
 ```json
 {
@@ -168,54 +168,54 @@ The IAM Role's Trust Policy should then be narrowed down to the GitHub repo + br
 }
 ```
 
-> 🔍 **Deeper dive**: EKS IRSA (IAM Roles for Service Accounts) is the same mechanism. The EKS cluster acts as an OIDC provider, and Pods assume the IAM Role mapped to a Kubernetes ServiceAccount. The Pod reads the OIDC JWT from the token mount path (`/var/run/secrets/eks.amazonaws.com/serviceaccount/token`) and obtains credentials via `AssumeRoleWithWebIdentity`. The AWS SDK handles this flow automatically (the `webIdentityTokenFile` environment variable). Since 2023 there is also a simpler mechanism called **Pod Identity**, which uses the EKS Pod Identity Agent instead of OIDC to provide credentials via an IMDS-like interface. IRSA is cluster-OIDC federation, Pod Identity is EKS-native — the two can coexist.
+> 🔍 **Deeper Dive**: EKS IRSA (IAM Roles for Service Accounts) is the same mechanism. EKS cluster acts as OIDC provider; Kubernetes ServiceAccount maps to an IAM Role that Pods assume. Pods read OIDC JWT from token mount path (`/var/run/secrets/eks.amazonaws.com/serviceaccount/token`) and call `AssumeRoleWithWebIdentity` for credentials. AWS SDK handles auto (`webIdentityTokenFile` env var). Since 2023, **Pod Identity** offers a simpler path—instead of OIDC, EKS Pod Identity Agent provides an IMDS-like interface for credentials. IRSA is cluster-OIDC federation; Pod Identity is EKS native—both coexist.
 
-## 10 IAM Best Practices Operators Must Know
+## Ten IAM Best Practices Operators Must Know
 
-1. **Never use the root account for daily work**: enforce MFA, delete access keys, use it only 1-2 times a year for billing or account closure
-2. **MFA required for every IAM User**: enforce in policy with the Condition `aws:MultiFactorAuthPresent: true`
-3. **Humans use IAM Identity Center, machines use IAM Roles**: creating Users directly is a last resort
-4. **Rotate access keys every 90 days**: verify via the Credential Report, Config rule `access-keys-rotated`
-5. **Least privilege for all permissions**: AdministratorAccess only for emergencies; separate by job function normally. Identify unused permissions with IAM Access Advisor's "Service Last Accessed"
-6. **Delegate with Permission Boundaries**: cap the permissions of Roles developers create
-7. **CloudTrail in all regions + Log File Validation enabled**: tamper detection
-8. **Auto-detect external exposure with Access Analyzer**: enable at the Organization level
+1. **Root account never for daily use**: MFA mandatory, delete access keys, use only for billing/account closure 1–2x/year
+2. **MFA required for all IAM Users**: Enforce with Condition `aws:MultiFactorAuthPresent: true` in policy
+3. **Humans use IAM Identity Center, machines use IAM Role**: Direct User creation is last resort
+4. **Rotate Access Keys every 90 days**: Check with Credential Report, Config rule `access-keys-rotated`
+5. **Least privilege principle**: AdministratorAccess emergencies only; normal ops: job-specific. Identify unused via IAM Access Advisor "Service Last Accessed"
+6. **Delegate with Permission Boundary**: Limit max for developer-created Roles
+7. **CloudTrail all regions + enable Log File Validation**: Detect tampering
+8. **Auto-detect external exposure with Access Analyzer**: Enable org-wide
 9. **Deactivate unused credentials after 90 days** (use Last Accessed data)
-10. **Enforce STS regional endpoints**: block forced us-east-1 calls with the `aws:UseRegion` condition. Set `AWS_STS_REGIONAL_ENDPOINTS=regional` in the SDK
+10. **Enforce STS Region Endpoint**: Use `aws:UseRegion` Condition to block forced us-east-1 calls. SDK: `AWS_STS_REGIONAL_ENDPOINTS=regional`
 
-> ⚠️ **Pitfall**: The misconception that "storing an IAM User's access key in a secrets manager makes it safe." Secrets Manager can rotate the access key itself (via its Lambda rotation feature), but if the key leaks, it remains valid until rotation. **The very existence of a long-lived credential is an attack surface.** The answer is to not create access keys at all — replace them with Roles + STS. In 2024, AWS started showing a console warning when creating IAM User access keys, and IAM Identity Center became the de facto standard.
+> ⚠️ **Pitfall**: "Store IAM User access key in Secrets Manager = safe." False. Secrets Manager can rotate keys (Lambda rotation), but key leaks remain valid until rotation runs. **The existence of a long-lived credential is itself an attack surface.** Solution: don't create access keys—use Role + STS instead. Since 2024, AWS warns in console when creating IAM User access keys; IAM Identity Center became de facto standard.
 
-> 💡 **Related theory**: The difficulty of debugging such distributed permission evaluation is known as the **policy explosion** problem. Since the RBAC96 model of Sandhu et al. (1996, IEEE Computer), various models have emerged — ABAC, ReBAC (Relationship-Based, Zanzibar) — but in any model, as the number of policies grows, tracing evaluation results becomes explosively harder. AWS built Access Analyzer (the Zelkova engine) to solve this. Google solved the same problem with Zanzibar (2019 USENIX ATC), and Microsoft Azure with RBAC + ABAC condition expressions.
+> 💡 **Related Theory**: Distributed permission evaluation debugging complexity is the **policy explosion** problem. Post-Sandhu et al. (1996, IEEE Computer) RBAC96, ABAC and ReBAC (Relationship-Based, Zanzibar) emerged, but any model eventually hits policy explosion—tracking evaluation results becomes exponentially harder as policies pile up. AWS built Access Analyzer (Zelkova engine) to solve it. Google handled it with Zanzibar (2019 USENIX ATC); Microsoft Azure uses RBAC + ABAC conditional expressions.
 
 ## Wrapping Up
 
-The policy evaluation algorithm we covered today solves 70% of SOA-C02 IAM questions. The essence is simple.
+The policy evaluation algorithm summarized today solves 70% of SOA-C02 IAM questions. The core is simple:
 
-- **Deny wins** (no matter where it comes from)
-- **There must be at least one Allow** (in either an identity or a resource policy)
-- **Cross-account requires Allow on both sides**
-- **Boundaries and SCPs are ceilings — they never add Allows**
-- **STS means temporary credentials — no rotation burden of permanent access keys**
+- **Deny wins** (from anywhere)
+- **Allow must exist** (from identity or resource policy somewhere)
+- **Cross-account = both sides Allow**
+- **Boundary and SCP are ceilings—they don't create Allow**
+- **STS is temporary credentials—no permanent access key rotation drudgery**
 
-Tomorrow we build on this with deeper tools — Identity Center federation, ABAC patterns, and permission debugging.
+Tomorrow we go deeper with tools operators live with daily—Identity Center federation, ABAC patterns, permission debugging.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** An IAM user in account A wants to PutObject into an S3 bucket in account B. What permission configuration is needed?
+**문제 1.** An IAM user in account A wants to PutObject to account B's S3 bucket. What permission setup is required?
 
-A) Only an `s3:PutObject` Allow in the identity policy of account A's user
-B) Only an Allow for account A's user in the Bucket Policy of account B's bucket
-C) Both — an Allow in account A's user identity policy + an Allow in account B's bucket policy
-D) Create an IAM Role in account A and have account B AssumeRole it
+A) Only account A user's identity policy with `s3:PutObject` Allow
+B) Only account B bucket's Bucket Policy with account A user Allow
+C) Both—account A user identity policy Allow + account B bucket policy Allow
+D) Create an IAM Role in account A and AssumeRole from account B
 
 **정답: C**
-해설: Cross-account access requires an Allow on both sides: the caller's identity policy and the target's resource policy. With only one side, it's denied. Within the same account, either an identity policy or a resource policy alone is usually sufficient, but the KMS key policy is an exception requiring both even within the same account. If the bucket uses SSE-KMS, `kms:GenerateDataKey` must additionally be granted in the KMS key policy.
+해설: Cross-account access requires Allow from both sides: caller's identity policy AND target's resource policy. One alone = Deny. Same account usually needs only one, but KMS key policy needs both even same-account. For SSE-KMS buckets, also add `kms:GenerateDataKey` to KMS key policy.
 
 ---
 
-**문제 2.** An operator wants to delegate IAM Role creation to developers while limiting the maximum permissions those Roles can have. What is the most suitable tool?
+**문제 2.** An operator wants to delegate IAM Role creation to developers while limiting maximum permissions those Roles can have. What's the best tool?
 
 A) SCP
 B) Permission Boundary
@@ -223,23 +223,23 @@ C) Session Policy
 D) Inline Policy
 
 **정답: B**
-해설: A Permission Boundary is a permission ceiling applied at the User/Role level. An SCP applies at the account/OU level — a much larger scope. The operator grants the developer group `iam:CreateRole` but forces attachment of the company-standard boundary via an `iam:PermissionsBoundary` Condition; then the effective permission of Roles developers create is limited to their policy ∩ the boundary. A Session Policy applies only to credentials issued temporarily during an STS AssumeRole call.
+해설: Permission Boundary is a per-user/role permission ceiling. SCP is account/OU-level—bigger scope. Operator delegates `iam:CreateRole` with `iam:PermissionsBoundary` Condition forcing standard boundary attachment; developer-created Role effective permission = their policy ∩ boundary. Session Policy only applies to STS-issued temp credentials.
 
 ---
 
-**문제 3.** An EC2 instance's IAM Role has `s3:PutObject Allow`, but PUTs to a KMS-encrypted bucket return AccessDenied. What is the most likely cause?
+**문제 3.** An EC2 instance's IAM Role has `s3:PutObject Allow`, but PUT to KMS-encrypted bucket throws AccessDenied. Most likely cause?
 
-A) The bucket policy lacks PutObject
-B) The KMS key policy lacks the EC2 Role's `kms:GenerateDataKey` permission
-C) IMDSv2 is disabled on the EC2 instance
-D) The S3 SSE algorithm is misconfigured
+A) Bucket policy lacks PutObject
+B) KMS key policy lacks EC2 Role's `kms:GenerateDataKey`
+C) EC2 IMDSv2 is disabled
+D) S3 SSE algorithm is misconfigured
 
 **정답: B**
-해설: To PUT a KMS-encrypted object, the caller needs `kms:GenerateDataKey`; to GET, `kms:Decrypt`. That permission must be allowed in both the IAM Policy and the KMS Key Policy. Even if IAM passes, absence from the Key Policy means denial. One of the traps operators stumble into most often. CloudTrail logs `kms:GenerateDataKey` AccessDenied events separately, so check those logs too.
+해설: Putting KMS-encrypted objects requires `kms:GenerateDataKey`; GETting requires `kms:Decrypt`. Both must be in IAM Policy AND KMS Key Policy. IAM might pass, but Key Policy denial still blocks. Operator's common trap. KMS deny events log separately in CloudTrail—check that trail too.
 
 ---
 
-**문제 4.** An operator wants to use OIDC federation instead of embedding access keys in GitHub Secrets when deploying from GitHub Actions to AWS. Which STS API is used?
+**문제 4.** An operator wants GitHub Actions deployments to AWS using OIDC federation instead of hardcoded access keys. Which STS API is used?
 
 A) AssumeRole
 B) AssumeRoleWithSAML
@@ -247,28 +247,28 @@ C) AssumeRoleWithWebIdentity
 D) GetSessionToken
 
 **정답: C**
-해설: GitHub Actions operates as an OIDC IdP, so it calls `AssumeRoleWithWebIdentity`. AWS STS validates the OIDC token issued by GitHub and issues temporary credentials. AssumeRoleWithSAML is for AD FS/Okta SAML federation; AssumeRole is IAM-credential based. The Trust Policy should specify GitHub's OIDC provider ARN and the repo/branch sub claim.
+해설: GitHub Actions is an OIDC IdP, so `AssumeRoleWithWebIdentity` is called. AWS STS verifies GitHub's OIDC token and issues temp credentials. AssumeRoleWithSAML is for AD FS/Okta; AssumeRole is IAM credential–based. Trust Policy specifies GitHub OIDC provider ARN and repo/branch sub claim.
 
 ---
 
-**문제 5.** In IAM policy evaluation, why does an explicit Deny always result in denial regardless of where it comes from?
+**문제 5.** Why does explicit Deny from anywhere always result in final Deny in IAM policy evaluation?
 
-A) Because AWS's policy evaluation algorithm follows the deny-overrides model
-B) Because Deny only occurs in SCPs
-C) Because Permission Boundaries automatically prioritize Deny
-D) Because IAM is an RBAC model
+A) Because evaluation follows deny-overrides ABAC model
+B) Because Deny only comes from SCP
+C) Because Permission Boundary auto-prioritizes Deny
+D) Because IAM is RBAC
 
 **정답: A**
-해설: IAM policy evaluation is essentially an ABAC implementation with a deny-overrides model. A single explicit Deny at any layer (SCP, identity, resource, boundary, session) makes the final result a denial. This principle guarantees the safety of permission design.
+해설: IAM evaluation is deny-overrides ABAC. Any layer (SCP, identity, resource, boundary, session) returning explicit Deny = final Deny. This principle guarantees safety in permission design.
 
 ---
 
-**문제 6.** An operator wants the SDK to fetch the IAM Role credentials of an EC2 instance. Where do they come from?
+**문제 6.** An operator wants to retrieve IAM Role credentials via SDK on an EC2 instance. Where do they come from?
 
-A) The /etc/aws/credentials file
-B) IMDS (http://169.254.169.254/latest/meta-data/iam/security-credentials/)
-C) The AWS_ACCESS_KEY_ID environment variable
-D) The STS GetSessionToken API
+A) /etc/aws/credentials file
+B) IMDS (`http://169.254.169.254/latest/meta-data/iam/security-credentials/`)
+C) Environment variable AWS_ACCESS_KEY_ID
+D) STS GetSessionToken API
 
 **정답: B**
-해설: Temporary credentials for the IAM Role attached to an EC2 instance profile come from IMDS. The AWS SDK automatically polls IMDS and refreshes credentials (by default, 6 hours before expiry). With IMDSv2, a session token must first be obtained via PUT. Role credentials are issued by STS, but GetSessionToken is for IAM Users. From the EC2 side, the IMDS path is the standard.
+해설: Temp credentials for an IAM Role attached to EC2 instance profile come from IMDS. AWS SDK automatically polls IMDS and refreshes credentials (default refresh 6 hours before expiry). IMDSv2 requires PUT for session token first. Credentials are STS-issued but from EC2's perspective IMDS is standard.

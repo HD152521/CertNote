@@ -1,34 +1,34 @@
-# Day 2 - ML Problem Types and Evaluation Metric Fundamentals
+# Day 2 - ML Problem Types and Evaluation Metrics Basics
 
-A new project comes in: "Predict whether a customer will churn." The first thing an ML engineer must do is not write code, but determine **what kind of problem this is**. Whether it is a classification problem or regression, and whether labels exist or not, completely changes which algorithms and evaluation metrics you can use. If you misidentify the problem type, every subsequent choice goes wrong.
+A new project arrives: "Predict if customers will churn." The first thing an ML engineer must do is not write code, but **identify what kind of problem this is**. Whether it's a classification or regression problem, whether labels exist or not — all of this determines which algorithms and evaluation metrics are applicable. Misidentifying the problem type makes every subsequent choice wrong.
 
-Today we classify ML problems by learning paradigm (supervised/unsupervised/reinforcement) and by output form (classification/regression/clustering), and look at what each of the core metrics for evaluating classification models — accuracy, precision, recall, F1, and AUC — actually measures, and when to use which. This is the core of MLA-C01 Domain 2 (Model Development).
+Today, we'll classify ML problems by learning approach (supervised/unsupervised/reinforcement) and output form (classification/regression/clustering), and explore the core metrics for evaluating classification models — accuracy, precision, recall, F1, and AUC — what each measures, and when to use which metric. This is core to MLA-C01 Domain 2 (Model Development).
 
-## Learning Paradigm: Are There Labels, or Rewards?
+## Learning Approaches: Do You Have Labels? Do You Have Rewards?
 
-ML algorithms split into three branches depending on "what they learn from."
+ML algorithms split three ways depending on "what they learn from."
 
-| Learning paradigm | Learning signal | Typical problems | AWS built-in examples |
+| Learning Approach | Learning Signal | Representative Problem | AWS Built-in Examples |
 |----------|----------|----------|--------------|
-| Supervised | Ground-truth labels | Classification, regression | XGBoost, Linear Learner |
-| Unsupervised | None (structure discovery) | Clustering, dimensionality reduction, anomaly detection | K-Means, PCA, RCF |
-| Reinforcement | Reward | Sequential decision-making | SageMaker RL |
+| Supervised Learning | Correct Labels | Classification, Regression | XGBoost, Linear Learner |
+| Unsupervised Learning | None (Structure Discovery) | Clustering, Dimensionality Reduction, Anomaly Detection | K-Means, PCA, RCF |
+| Reinforcement Learning | Reward | Sequential Decision-Making | SageMaker RL |
 
-The decision rule is simple. **If there are labels, it is supervised; if not, unsupervised; if it maximizes reward through trial and error, it is reinforcement learning.** "Customer churn prediction" has historical churn outcomes (labels), so it is supervised learning. "Grouping customers into similar segments" has no ground-truth groups, so it is unsupervised (clustering). "A game agent maximizing its score" is reinforcement learning.
+The criterion is simple: **If you have labels → supervised. No labels → unsupervised. Trial-and-error to maximize reward → reinforcement.** "Predicting customer churn" has historical churn labels, so it's supervised learning. "Grouping customers into similar segments" has no correct groups, so it's unsupervised (clustering). "A game agent maximizes score" is reinforcement learning.
 
-> 💡 **Related theory**: Supervised learning is the problem of approximating a function f(X)=Y from inputs X to outputs Y. Because labeling is expensive, semi-supervised learning (learning from few labels) and self-supervised learning (generating labels from the data itself — the training approach behind large language models) have become important in practice. This label-cost problem is exactly why AWS SageMaker Ground Truth exists as a service that automates and outsources labeling.
+> 💡 **Related Theory**: Supervised learning is the problem of approximating a function f(X)=Y from input X to output Y. Because labeling is expensive, semi-supervised learning (learning with few labels) and self-supervised learning (generating labels from data itself, the approach used in large language models) have become important in practice. AWS SageMaker Ground Truth automates and outsources labeling precisely because of this label cost problem.
 
-## Output Form: Classification vs. Regression vs. Clustering
+## Output Form: Classification vs Regression vs Clustering
 
-Supervised learning splits again into two, depending on what the output is.
+Supervised learning splits again based on what the output is.
 
-- **Classification**: The output is a **discrete category**. "Churn/retain," "spam/ham," "dog/cat/bird"
-- **Regression**: The output is a **continuous number**. "Tomorrow's revenue," "house price," "delivery time"
+- **Classification**: Output is **discrete categories**. "Churn/Retain," "Spam/Normal," "Dog/Cat/Bird"
+- **Regression**: Output is **continuous numbers**. "Tomorrow's revenue," "House price," "Delivery time"
 
-The flagship of unsupervised learning is **clustering**, which groups similar data points together without labels (e.g., customer segmentation).
+The representative unsupervised approach is **Clustering**, which groups data without labels into similar clusters (e.g., customer segmentation).
 
 ```python
-# Classification: churn prediction with XGBoost (output = probability → discrete label)
+# Classification: XGBoost for churn prediction (output = probability → discrete label)
 estimator = sagemaker.estimator.Estimator(
     image_uri=xgboost_image, role=role,
     instance_count=1, instance_type="ml.m5.xlarge",
@@ -38,139 +38,139 @@ estimator = sagemaker.estimator.Estimator(
     },
 )
 
-# For regression, you would only change the objective
+# If it were regression, just change the objective
 #   "objective": "reg:squarederror"     # Continuous value prediction
 ```
 
-Even with the same XGBoost, a single `objective` hyperparameter separates classification from regression. If you misidentify the problem type, things go wrong from this very point.
+Even with the same XGBoost, a single hyperparameter `objective` determines whether it does classification or regression. Misidentifying the problem type causes divergence right here.
 
-> 🔍 **Going deeper**: Even within classification, you must distinguish whether the output is a "probability" or a "label." `binary:logistic` returns a probability between 0 and 1, and converting it into a label requires a **threshold**. The default is 0.5, but if your business cannot afford to miss churning customers, you lower the threshold to classify more people as "at risk of churn." Threshold adjustment is the heart of the precision-recall trade-off we look at next.
+> 🔍 **Deeper Dive**: Even in classification, you must distinguish whether the output is "probability" or "label." `binary:logistic` returns probability 0~1, and converting to a label requires a **threshold**. Default is 0.5, but if losing churning customers is unacceptable, lower the threshold to classify more people as "churn risk." Threshold adjustment is exactly the core of the precision-recall tradeoff we'll see next.
 
-## The Starting Point of Classification Evaluation: The Confusion Matrix
+## Classification Evaluation Starting Point: Confusion Matrix
 
-To evaluate a classification model, you first need to understand the **confusion matrix** — a 2x2 table crossing predictions with actuals.
+To evaluate a classification model, you first need to understand the **confusion matrix**. It's a 2×2 table crossing predictions and actuals.
 
 ```
-                 Actual Positive       Actual Negative
-Predicted Positive   TP (True Positive)    FP (False Positive)
-Predicted Negative   FN (False Negative)   TN (True Negative)
+                 Actual Positive   Actual Negative
+Predicted Positive  TP (True Positive)   FP (False Positive)
+Predicted Negative  FN (False Negative)  TN (True Negative)
 ```
 
-In the "churn prediction" example: TP = correctly predicting a churner as churn, FP = wrongly flagging a retained customer as churn, FN = missing a churner, TN = correctly predicting a retained customer as retained. Every metric is a combination of these four cells.
+For the "churn prediction" example: TP = correctly identifying someone who churned, FP = incorrectly marking someone who stays as churning, FN = missing someone who actually churned, TN = correctly marking someone who stays as staying. All metrics are combinations of these four cells.
 
-## The Accuracy Trap, and Precision & Recall
+## The Accuracy Trap and Precision/Recall
 
-**Accuracy = (TP+TN) / total.** It is the most intuitive metric but also the most dangerous. On a dataset where fraudulent transactions are 0.1%, a model that predicts "all normal" still achieves 99.9% accuracy. This is called the **accuracy trap of imbalanced data**.
+**Accuracy = (TP+TN) / Total.** Most intuitive but most dangerous. In data where fraud is 0.1%, a model that says "all normal" scores 99.9% accuracy. This is the **accuracy trap in imbalanced data**.
 
-That is why we need two metrics focused on the positive class.
+That's why two metrics focused on the positive class are needed.
 
-- **Precision = TP / (TP+FP)**: "Of those predicted positive, the fraction that are truly positive." Use when you want to reduce false alarms (FP).
-- **Recall = TP / (TP+FN)**: "Of the true positives, the fraction you caught." Use when you want to reduce misses (FN).
+- **Precision = TP / (TP+FP)**: "Of what we called positive, what fraction is truly positive?" Use when you want to reduce false alarms (FP).
+- **Recall = TP / (TP+FN)**: "Of truly positive cases, what fraction did we catch?" Use when you want to reduce misses (FN).
 
-The two are in a **trade-off** relationship. Lowering the threshold predicts more positives, so recall goes up and precision goes down; raising it does the opposite.
+These have a **tradeoff** relationship. Lower the threshold → predict more positives → recall↑ precision↓. Raise it → opposite.
 
-| Business scenario | More important metric | Reason |
+| Business Situation | More Important Metric | Reason |
 |--------------|--------------|------|
-| Cancer diagnosis | Recall | Missing a patient (FN) is fatal |
-| Spam filter | Precision | Legitimate mail must not be flagged as spam (FP) |
-| Fraud detection | Recall first, precision balanced | Missing fraud means losses; false alarms inconvenience customers |
+| Cancer Diagnosis | Recall | Missing a patient (FN) is fatal |
+| Spam Filter | Precision | Marking legitimate mail as spam (FP) is unacceptable |
+| Fraud Detection | Recall first, Precision balanced | Missing fraud means loss, over-detection inconveniences customers |
 
-> 📚 **Case study**: COMPAS was a recidivism prediction system used by US courts. A 2016 ProPublica investigation revealed that the rate of false positives (FP) — wrongly classifying defendants as "high risk of reoffending" — was about twice as high for Black defendants as for white defendants. Overall accuracy was similar across races, but the distribution of FP/FN differed by group. The lesson is that fairness problems invisible in a single accuracy number only become visible when examined at the level of the confusion matrix.
+> 📚 **Case Study**: COMPAS was a recidivism prediction system used by U.S. courts. A 2016 ProPublica investigation revealed that for Black defendants, the false positive rate of classifying them as "high recidivism risk" was roughly 2x higher than for White defendants. Overall accuracy was similar across races, but FP/FN distributions differed by demographic. Looking at a single accuracy number misses fairness issues that you catch when examining the confusion matrix by group.
 
-## F1 and AUC: Summarizing with a Single Number
+## F1 and AUC: Summarizing to a Single Number
 
-When you care about both precision and recall, use the **F1 score** — the harmonic mean of the two.
+When you care about both precision and recall, use the **F1 score**, the harmonic mean of both.
 
 ```
 F1 = 2 * (Precision * Recall) / (Precision + Recall)
 ```
 
-The reason for using the harmonic mean is that F1 drops sharply if either one is low. With precision 0.9 and recall 0.1, the arithmetic mean is 0.5 but F1 is 0.18. It enforces "being good at only one side is not enough."
+The harmonic mean is used because if either value is low, F1 drops sharply. Precision 0.9 + Recall 0.1 has arithmetic mean 0.5 but F1 of 0.18. It enforces "being good at just one isn't enough."
 
-**AUC (area under the ROC curve)** measures the model's discriminative power independently of the threshold. The ROC curve plots recall (TPR) against the false positive rate (FPR) across all thresholds, and the area under it is the AUC.
+**AUC (Area Under the ROC Curve)** measures a model's discriminative power independent of threshold. The ROC curve plots recall (TPR) and false positive rate (FPR) at every threshold; AUC is the area beneath it.
 
 - AUC = 1.0: Perfect classification
-- AUC = 0.5: Equivalent to random guessing
-- AUC < 0.5: Effectively predicting in reverse
+- AUC = 0.5: Same as random guessing
+- AUC < 0.5: Predicting backwards
 
-> 💡 **Related theory**: AUC can also be interpreted as "the probability that, given one randomly drawn positive sample and one negative sample, the model assigns a higher score to the positive one." Because it measures the model's inherent ranking ability before any threshold is set, it is useful in the model comparison stage when a threshold has not yet been chosen. However, on extremely imbalanced data AUC can look optimistic, so PR-AUC (the precision-recall curve) is used alongside it.
+> 💡 **Related Theory**: AUC can also be interpreted as "the probability that if you randomly sample one positive and one negative example, the model gives the positive a higher score." Since it measures a model's ranking ability before a threshold is set, it's useful in model comparison stages before thresholds are determined. However, on extremely imbalanced data, AUC can appear optimistically high, so PR-AUC (Precision-Recall curve) is also examined.
 
-## Evaluation Metrics for Regression
+## Regression Evaluation Metrics
 
-Regression outputs continuous values, so there is no confusion matrix; instead you measure "how close the prediction is to the actual value."
+Regression works with continuous values, so there's no confusion matrix. Instead, "how close is the prediction to the actual?" is measured.
 
-- **MAE (Mean Absolute Error)**: The average of the absolute errors. Less sensitive to outliers.
-- **MSE / RMSE (Mean Squared Error / its square root)**: Squares the errors, so it is sensitive to large errors. RMSE has the same units as the original values, making it easy to interpret.
-- **R² (coefficient of determination)**: How much of the variance the model explains. Closer to 1 is better.
+- **MAE (Mean Absolute Error)**: Average of absolute errors. Less sensitive to outliers.
+- **MSE / RMSE (Mean Squared Error / Square Root)**: Squares errors, so sensitive to large errors. RMSE has the same units as the original, making interpretation easier.
+- **R² (Coefficient of Determination)**: How much variance does the model explain? Closer to 1 is better.
 
-For problems where large errors must especially be avoided (e.g., inventory forecasting), use RMSE; if there are many outliers and robustness matters, use MAE.
+For problems where large errors must be avoided (e.g., inventory forecasting), use RMSE. For robustness against outliers, use MAE.
 
-## Wrapping Up
+## Summary
 
-Two key takeaways today. First, ML problems are divided by learning paradigm (supervised/unsupervised/reinforcement) and output form (classification/regression/clustering), and identifying the problem type is the starting point for choosing algorithms and metrics. Second, when evaluating classification, do not be fooled by the single accuracy number — look at precision and recall from the confusion matrix, and pick the metric (F1, AUC) that fits the business context.
+Two key takeaways today. First, ML problems divide by learning approach (supervised/unsupervised/reinforcement) and output form (classification/regression/clustering), and problem identification is the starting point for algorithm and metric selection. Second, don't trust a single accuracy number; examine precision and recall from the confusion matrix, and choose metrics (F1, AUC) that match your business context.
 
-In the next article, we take a bird's-eye view of the tools that actually solve these problems — the entire AWS ML stack.
+Next, we'll survey the tools that actually solve these problems — AWS's entire ML stack.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** You want to predict customer churn using data that includes historical churn labels. What are the learning paradigm and output form of this problem?
+**문제 1.** Historical churn labels exist in your data, and you want to predict customer churn. What are this problem's learning approach and output form?
 
-A) Unsupervised learning, clustering  
-B) Supervised learning, classification  
-C) Reinforcement learning, regression  
-D) Unsupervised learning, dimensionality reduction  
+A) Unsupervised learning, Clustering  
+B) Supervised learning, Classification  
+C) Reinforcement learning, Regression  
+D) Unsupervised learning, Dimensionality Reduction  
 
 **정답: B**  
-해설: Historical churn/retain labels exist, so it is supervised learning, and the output is a discrete category of "churn/retain," so it is classification. Clustering and dimensionality reduction are unsupervised learning without labels, and reinforcement learning is a reward-based sequential decision-making problem that does not fit this case.
+해설: Historical churn/retention labels exist, so it's supervised learning. The output is "churn/retain," discrete categories, so it's classification. Clustering and dimensionality reduction are unsupervised (no labels), and reinforcement learning is reward-based sequential decision-making, which doesn't match this scenario.
 
 ---
 
-**문제 2.** A model achieves 99.9% accuracy on a dataset where fraudulent transactions make up 0.1% of the total. Why can't this accuracy be trusted?
+**문제 2.** In data where fraud is 0.1% of transactions, your model scores 99.9% accuracy. Why can't this accuracy be trusted?
 
-A) Because accuracy is a metric used only for regression  
-B) Because on extremely imbalanced data, predicting "all normal" also yields 99.9%, so you must look at precision and recall  
-C) Because very high accuracy always means overfitting  
-D) Because accuracy is independent of the threshold  
+A) Accuracy is only for regression metrics  
+B) In extremely imbalanced data, saying "all normal" yields 99.9%, so you must check precision and recall  
+C) High accuracy always means overfitting  
+D) Accuracy is independent of threshold  
 
 **정답: B**  
-해설: On data where only 0.1% is fraud, predicting every transaction as normal still yields 99.9% accuracy. This is the imbalanced-data trap where high accuracy appears even when the minority class (fraud) is never caught. You must look at precision, recall, F1, and PR-AUC, which focus on the positive class. Accuracy is a classification metric, high accuracy does not by itself mean overfitting, and accuracy does vary with the threshold.
+해설: In data that's only 0.1% fraud, predicting all transactions as normal yields 99.9% accuracy. The model catches the minority class (fraud) not at all yet achieves high accuracy — the accuracy trap in imbalanced data. Focus on precision, recall, F1, and PR-AUC for the positive class. Accuracy is a classification metric; high accuracy doesn't necessarily mean overfitting; and accuracy varies with threshold.
 
 ---
 
-**문제 3.** For a cancer diagnosis classification model, which evaluation metric should take top priority, and why?
+**문제 3.** For a cancer diagnosis classification model, which evaluation metric should take priority, and why?
 
-A) Precision — because healthy people must not be misclassified as patients  
-B) Recall — because false negatives (FN) that miss actual patients are fatal  
-C) Accuracy — because the overall fraction correct matters most  
-D) MAE — because the absolute value of the error matters  
+A) Precision — because misclassifying healthy people as patients is unacceptable  
+B) Recall — because falsely labeling actual patients as healthy (False Negative) is fatal  
+C) Accuracy — because the overall ratio of correct classifications matters most  
+D) MAE — because absolute error magnitude matters  
 
 **정답: B**  
-해설: In cancer diagnosis, an FN that misses an actual patient by labeling them "healthy" is a matter of life and death, so recall (TP/(TP+FN)) takes top priority. Precision is a metric for reducing false positives (the burden of extra tests), so it has lower priority here; accuracy is misleading under imbalance; and MAE is a regression metric not used for classification.
+해설: In cancer diagnosis, missing a real patient by marking them "healthy" (FN) is life-threatening, so recall (TP/(TP+FN)) is paramount. Precision reduces false positives (unnecessary follow-up burden), so it's lower priority here. Accuracy misleads in imbalanced situations, and MAE is a regression metric not used for classification.
 
 ---
 
-**문제 4.** A model records precision 0.9 and recall 0.1. Why does the F1 score come out at 0.18, far below the arithmetic mean of 0.5?
+**문제 4.** A model records precision 0.9 and recall 0.1. Why is the F1 score far lower at 0.18 than the arithmetic mean 0.5?
 
-A) Because F1 is the product of the two values  
-B) Because F1 is a harmonic mean, it drops sharply when either value is low  
-C) Because the F1 calculation is wrong  
-D) Because F1 reflects only recall  
+A) F1 is the product of the two values  
+B) F1 is the harmonic mean, so low values in one dimension severely drag down the score  
+C) The F1 calculation is wrong  
+D) F1 only reflects recall  
 
 **정답: B**  
-해설: F1 is the harmonic mean of precision and recall, so when either one is low, the score is dragged down sharply. This is by design, to enforce "being good at only one side is not enough." F1 is not the product of the two values, the calculation is correct, and it reflects both precision and recall.
+해설: F1 is the harmonic mean of precision and recall, so if one is low, the score drops dramatically. This enforces "being strong in just one dimension isn't enough." F1 is not a product; the calculation is correct; and it reflects both metrics equally.
 
 ---
 
-**문제 5.** Which is the correct interpretation of a classification model with an ROC-AUC of 0.5?
+**문제 5.** A ROC-AUC value of 0.5 for a classification model means:
 
 A) It classifies perfectly  
 B) Its discriminative power is equivalent to random guessing  
-C) It is predicting in reverse  
-D) Its precision is 100%  
+C) It's predicting backwards  
+D) It has 100% precision  
 
 **정답: B**  
-해설: AUC 0.5 means the model distinguishes positives from negatives no better than random guessing. AUC 1.0 is perfect classification, and below 0.5 means predicting in reverse. AUC is a threshold-independent ranking-ability metric, so it does not map directly to any specific precision value.
+해설: AUC 0.5 means the model distinguishes positive/negative at random-guessing level. AUC 1.0 is perfect classification; AUC < 0.5 is backwards prediction. AUC is threshold-independent ranking ability and doesn't directly correspond to a specific precision value.
 
 ---
