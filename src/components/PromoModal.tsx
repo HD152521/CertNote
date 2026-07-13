@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 
 export function PromoModal() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isDismissed, setIsDismissed] = useState(true);
 
@@ -25,6 +27,11 @@ export function PromoModal() {
   const handleClose = () => {
     setIsOpen(false);
     localStorage.setItem('promo-modal-seen', 'true');
+  };
+
+  const handleSignup = () => {
+    handleClose();
+    router.push('/signup');
   };
 
   if (!isOpen) return null;
@@ -63,7 +70,7 @@ export function PromoModal() {
               ⏰ 이 혜택은 7월 말까지만 유효합니다.
             </p>
             <button
-              onClick={handleClose}
+              onClick={handleSignup}
               className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 transition-colors"
             >
               지금 가입하기
