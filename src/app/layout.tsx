@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    'AWS 자격증 11종 + 리눅스마스터를 주차별 한국어 노트로. 매일 30분, 연습 문제·모의고사·복습(SRS)까지. Week 1은 무료.',
+    'AWS 자격증 & 클라우드 자격증으로 클라우드 네이티브 커리어 시작. AWS 11종 + 리눅스마스터 1급을 주차별 한국어 노트로. 매일 30분, 연습문제·모의고사·SRS 복습까지. Week 1 무료.',
   alternates: { canonical: '/' },
   openGraph: {
     type: 'website',

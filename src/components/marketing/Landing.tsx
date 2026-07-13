@@ -44,10 +44,10 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
       <section className="space-y-5">
         <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">AWS · 리눅스마스터 · {certCount} tracks</p>
         <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-          출퇴근 15분,<br />자격증 한 권을 끝내는 가장 빠른 길
+          클라우드 네이티브로 시작하는<br />AWS 자격증, 클라우드 자격증
         </h1>
         <p className="max-w-xl text-lg text-fg-muted">
-          AWS 자격증 + 리눅스마스터 1급. 매일 한 페이지씩 읽고, {nf(questionCount)}문항으로 실전 감각을 채우세요.
+          AWS 클라우드 자격증 11종 + 리눅스마스터 1급. 매일 한 페이지씩 읽고, {nf(questionCount)}문항으로 실전 감각을 채우세요.
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <Link href="/signup" className="rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-accent-fg transition hover:opacity-90">
