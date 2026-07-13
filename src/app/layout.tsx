@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { AppShell } from '@/components/AppShell';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { PostHogProvider } from '@/components/analytics/PostHogProvider';
+import { PromoModal } from '@/components/PromoModal';
 import { listCerts } from '@/lib/content';
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from '@/lib/site';
 
@@ -45,6 +46,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <PostHogProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AppShell certs={certs}>{children}</AppShell>
+            <PromoModal />
           </ThemeProvider>
           <ServiceWorkerRegister />
         </PostHogProvider>
