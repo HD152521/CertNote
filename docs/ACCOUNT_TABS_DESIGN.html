@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CertNote 마이페이지 탭 기반 설계</title>
+  <style>
+    :root {
+      --color-bg: oklch(98% 0 0);
+      --color-bg-subtle: oklch(95% 0 0);
+      --color-fg: oklch(18% 0 0);
+      --color-fg-muted: oklch(45% 0 0);
+      --color-fg-faint: oklch(65% 0 0);
+      --color-border: oklch(88% 0 0);
+      --color-border-strong: oklch(82% 0 0);
+      --color-accent: oklch(68% 0.21 250);
+      --color-accent-light: oklch(85% 0.1 250);
+      --color-danger: oklch(63% 0.25 25);
+      --color-danger-light: oklch(88% 0.1 25);
+      --color-success: oklch(68% 0.15 142);
+      --color-success-light: oklch(88% 0.08 142);
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2rem;
+      --space-2xl: 3rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      color: var(--color-fg);
+      background: var(--color-bg);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-bg: oklch(20% 0 0);
+        --color-bg-subtle: oklch(25% 0 0);
+        --color-fg: oklch(95% 0 0);
+        --color-fg-muted: oklch(70% 0 0);
+        --color-fg-faint: oklch(50% 0 0);
+        --color-border: oklch(35% 0 0);
+        --color-border-strong: oklch(45% 0 0);
+        --color-accent: oklch(70% 0.2 250);
+        --color-accent-light: oklch(30% 0.15 250);
+        --color-danger: oklch(65% 0.22 25);
+        --color-danger-light: oklch(25% 0.15 25);
+        --color-success: oklch(70% 0.12 142);
+        --color-success-light: oklch(25% 0.1 142);
+      }
+    }
+
+    body {
+      margin: 0;
+      padding: var(--space-2xl) var(--space-lg);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 600;
+      line-height: 1.2;
+      margin: 0 0 var(--space-lg) 0;
+      letter-spacing: -0.02em;
+    }
+
+    h2 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin: var(--space-2xl) 0 var(--space-lg) 0;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: var(--space-xl) 0 var(--space-md) 0;
+      letter-spacing: -0.005em;
+    }
+
+    h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: var(--space-lg) 0 var(--space-sm) 0;
+    }
+
+    p {
+      margin: 0 0 var(--space-md) 0;
+      line-height: 1.6;
+      max-width: 65ch;
+    }
+
+    p.lead {
+      font-size: 1.125rem;
+      color: var(--color-fg-muted);
+      margin-bottom: var(--space-lg);
+    }
+
+    section {
+      margin-bottom: var(--space-2xl);
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--color-border);
+      margin: var(--space-2xl) 0;
+    }
+
+    /* Design System */
+    .system {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--space-xl);
+      margin: var(--space-xl) 0;
+    }
+
+    .system-item {
+      padding: var(--space-lg);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background: var(--color-bg-subtle);
+    }
+
+    .system-item h4 {
+      margin-top: 0;
+    }
+
+    .color-sample {
+      display: flex;
+      gap: var(--space-md);
+      align-items: center;
+      margin: var(--space-md) 0;
+    }
+
+    .color-swatch {
+      width: 60px;
+      height: 60px;
+      border-radius: 6px;
+      border: 1px solid var(--color-border);
+      flex-shrink: 0;
+    }
+
+    .color-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .color-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin: 0 0 var(--space-xs) 0;
+    }
+
+    .color-value {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      color: var(--color-fg-faint);
+      margin: 0;
+    }
+
+    /* File Structure */
+    .file-tree {
+      background: var(--color-bg-subtle);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: var(--space-lg);
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      margin: var(--space-lg) 0;
+    }
+
+    .file-tree code {
+      color: var(--color-fg);
+      display: block;
+      line-height: 1.6;
+    }
+
+    .indent-1 { margin-left: 1em; }
+    .indent-2 { margin-left: 2em; }
+    .indent-3 { margin-left: 3em; }
+    .new-file { color: var(--color-success); font-weight: 600; }
+    .modified-file { color: var(--color-accent); }
+
+    /* Component Showcase */
+    .showcase {
+      background: var(--color-bg-subtle);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: var(--space-xl);
+      margin: var(--space-lg) 0;
+    }
+
+    .showcase h4 {
+      margin-top: 0;
+    }
+
+    .tabs-demo {
+      display: flex;
+      gap: var(--space-xs);
+      border-bottom: 2px solid var(--color-border);
+      overflow-x: auto;
+      margin-bottom: var(--space-lg);
+    }
+
+    .tab-button {
+      padding: var(--space-md) var(--space-lg);
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-size: 0.95rem;
+      color: var(--color-fg-muted);
+      transition: color 150ms, border-color 150ms;
+      white-space: nowrap;
+    }
+
+    .tab-button:hover {
+      color: var(--color-fg);
+    }
+
+    .tab-button.active {
+      color: var(--color-accent);
+      border-bottom-color: var(--color-accent);
+    }
+
+    .card {
+      background: var(--color-bg-subtle);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: var(--space-lg);
+      margin: var(--space-md) 0;
+    }
+
+    .card.highlight {
+      border-color: var(--color-accent);
+      background: var(--color-accent-light);
+    }
+
+    .card h4 {
+      margin-top: 0;
+      color: var(--color-accent);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin: var(--space-sm) 0;
+    }
+
+    .badge.pro {
+      background: var(--color-accent);
+      color: var(--color-bg);
+    }
+
+    .badge.free {
+      background: var(--color-border-strong);
+      color: var(--color-fg);
+    }
+
+    .badge.new {
+      background: var(--color-success);
+      color: var(--color-bg);
+    }
+
+    /* Data Flow */
+    .flow-diagram {
+      background: var(--color-bg-subtle);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: var(--space-xl);
+      margin: var(--space-lg) 0;
+      font-size: 0.9rem;
+      line-height: 1.8;
+    }
+
+    .flow-step {
+      margin: var(--space-lg) 0;
+      padding-left: var(--space-lg);
+      border-left: 3px solid var(--color-border);
+    }
+
+    .flow-step.server {
+      border-left-color: var(--color-accent);
+    }
+
+    .flow-step.client {
+      border-left-color: var(--color-success);
+    }
+
+    .flow-step-label {
+      font-weight: 600;
+      color: var(--color-fg);
+      margin-bottom: var(--space-xs);
+    }
+
+    .flow-step-label::before {
+      content: '→ ';
+      color: var(--color-fg-faint);
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: var(--space-lg) 0;
+      font-size: 0.95rem;
+    }
+
+    thead {
+      background: var(--color-bg-subtle);
+      border-bottom: 2px solid var(--color-border-strong);
+    }
+
+    th {
+      padding: var(--space-md);
+      text-align: left;
+      font-weight: 600;
+    }
+
+    td {
+      padding: var(--space-md);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    tbody tr:hover {
+      background: var(--color-bg-subtle);
+    }
+
+    .code-block {
+      background: var(--color-bg-subtle);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: var(--space-lg);
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      margin: var(--space-lg) 0;
+      line-height: 1.5;
+    }
+
+    .code-block code {
+      color: var(--color-fg);
+    }
+
+    /* Checklist */
+    .checklist {
+      list-style: none;
+      padding: 0;
+      margin: var(--space-lg) 0;
+    }
+
+    .checklist li {
+      padding: var(--space-sm) 0 var(--space-sm) var(--space-lg);
+      position: relative;
+      margin-bottom: var(--space-xs);
+    }
+
+    .checklist li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--color-accent);
+      font-weight: bold;
+    }
+
+    .highlight-box {
+      background: var(--color-accent-light);
+      border-left: 3px solid var(--color-accent);
+      padding: var(--space-lg);
+      border-radius: 4px;
+      margin: var(--space-lg) 0;
+    }
+
+    .highlight-box h4 {
+      margin-top: 0;
+      color: var(--color-accent);
+    }
+
+    /* Comparison Grid */
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-lg);
+      margin: var(--space-lg) 0;
+    }
+
+    @media (max-width: 768px) {
+      .comparison {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .comparison-box {
+      padding: var(--space-lg);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      background: var(--color-bg-subtle);
+    }
+
+    .comparison-box h4 {
+      margin-top: 0;
+    }
+
+    .good {
+      border-left: 3px solid var(--color-success);
+    }
+
+    .avoid {
+      border-left: 3px solid var(--color-danger);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.75rem;
+      }
+
+      h2 {
+        font-size: 1.25rem;
+      }
+
+      body {
+        padding: var(--space-xl) var(--space-md);
+      }
+
+      .system {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>CertNote 마이페이지 탭 기반 개선 설계</h1>
+  <p class="lead">구독 정보를 중심으로 한 통합 허브 설계 문서</p>
+
+  <!-- 개요 -->
+  <section>
+    <h2>1. 설계 개요</h2>
+    <p>
+      현재 마이페이지는 선형적 스크롤 레이아웃으로, 프로필·구독·설정 정보가 섞여 있어 사용자가 필요한 정보를 찾기 어렵습니다. 이 설계는:
+    </p>
+    <ul style="max-width: 65ch;">
+      <li><strong>탭 기반 정보 구조</strong>로 각 섹션을 명확히 분리</li>
+      <li><strong>대시보드 탭</strong>을 기본으로 하여 구독 상황을 첫 화면에서 강조</li>
+      <li><strong>서버/클라이언트 경계</strong>를 명확히 하여 성능 최적화</li>
+      <li><strong>모바일 반응형</strong>으로 모든 기기에서 자연스러운 경험 제공</li>
+    </ul>
+  </section>
+
+  <!-- 설계 시스템 -->
+  <section>
+    <h2>2. 설계 시스템</h2>
+
+    <h3>색상 (Color Palette)</h3>
+    <p>
+      기존 프로젝트의 oklch 기반 색상 시스템을 따릅니다. Accent를 강조할 때 사용하고, 구독 상태(Pro/Free)는 semantic color로 구분합니다.
+    </p>
+    <div class="system">
+      <div class="system-item">
+        <h4>Primary Colors</h4>
+        <div class="color-sample">
+          <div class="color-swatch" style="background: oklch(68% 0.21 250);"></div>
+          <div class="color-info">
+            <div class="color-name">Accent</div>
+            <div class="color-value">oklch(68% 0.21 250)</div>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--color-fg-faint);">중요한 액션, Pro 배지, 활성 탭</p>
+      </div>
+      <div class="system-item">
+        <h4>Status Colors</h4>
+        <div class="color-sample">
+          <div class="color-swatch" style="background: oklch(68% 0.15 142);"></div>
+          <div class="color-info">
+            <div class="color-name">Success</div>
+            <div class="color-value">oklch(68% 0.15 142)</div>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--color-fg-faint);">저장 완료, 활성 상태</p>
+      </div>
+      <div class="system-item">
+        <h4>Semantic Colors</h4>
+        <div class="color-sample">
+          <div class="color-swatch" style="background: oklch(63% 0.25 25);"></div>
+          <div class="color-info">
+            <div class="color-name">Danger</div>
+            <div class="color-value">oklch(63% 0.25 25)</div>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--color-fg-faint);">계정 삭제, 구독 취소 등 주의 필요</p>
+      </div>
+    </div>
+
+    <h3>타이포그래피</h3>
+    <p>
+      시스템 글꼴 스택 사용 (별도 웹폰트 로드 불필요):
+    </p>
+    <div class="code-block"><code>font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;</code></div>
+    <ul style="max-width: 65ch;">
+      <li><strong>Headings (h1-h4)</strong>: 600 weight, tight line-height (1.2), letter-spacing -0.01em~-0.02em</li>
+      <li><strong>Body text</strong>: 400 weight, 1.6 line-height, 최대 65ch 너비</li>
+      <li><strong>Labels/Captions</strong>: 0.85rem, 600 weight, 0.5em letter-spacing</li>
+    </ul>
+
+    <h3>간격 (Spacing Scale)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Token</th>
+          <th>값</th>
+          <th>용도</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>xs</td>
+          <td>0.25rem (4px)</td>
+          <td>아이콘 간격, 배지 패딩</td>
+        </tr>
+        <tr>
+          <td>sm</td>
+          <td>0.5rem (8px)</td>
+          <td>입력 필드 내부, 라벨 간격</td>
+        </tr>
+        <tr>
+          <td>md</td>
+          <td>1rem (16px)</td>
+          <td>섹션 내부 간격, 카드 패딩</td>
+        </tr>
+        <tr>
+          <td>lg</td>
+          <td>1.5rem (24px)</td>
+          <td>섹션 간 간격, 주요 요소 마진</td>
+        </tr>
+        <tr>
+          <td>xl</td>
+          <td>2rem (32px)</td>
+          <td>탭 간 간격, 주요 섹션 마진</td>
+        </tr>
+        <tr>
+          <td>2xl</td>
+          <td>3rem (48px)</td>
+          <td>탭과 콘텐츠 간 간격</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 탭 구조 -->
+  <section>
+    <h2>3. 탭 구조 & 콘텐츠</h2>
+
+    <div class="showcase">
+      <h4>탭 네비게이션 레이아웃</h4>
+      <div class="tabs-demo">
+        <button class="tab-button active">📊 대시보드</button>
+        <button class="tab-button">👤 프로필</button>
+        <button class="tab-button">💳 구독 & 결제</button>
+        <button class="tab-button">⚙️ 설정</button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--color-fg-faint);">
+        • 모바일: 스크롤 가능한 가로 탭<br>
+        • 데스크톱: 고정 너비 컨테이너 내 탭 모두 표시<br>
+        • 활성 탭: accent 색상의 하단 선 표시
+      </p>
+    </div>
+
+    <h3>3.1 대시보드 탭 (기본)</h3>
+    <p>
+      첫 로드 시 활성화되는 탭. 사용자가 필요한 모든 핵심 정보를 한눈에 볼 수 있습니다.
+    </p>
+
+    <div class="card highlight">
+      <h4>구독 상황 카드 (최우선)</h4>
+      <p>
+        크고 눈에 띄는 영역에 구독 상태를 표시합니다. Free 사용자에게는 업그레이드 유도, Pro 사용자에게는 갱신 정보를 강조합니다.
+      </p>
+      <div class="showcase">
+        <div style="border: 2px solid var(--color-accent); border-radius: 8px; padding: var(--space-lg); background: var(--color-accent-light);">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+              <div style="font-size: 0.85rem; color: var(--color-fg-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">현재 플랜</div>
+              <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-accent); margin: var(--space-sm) 0;">Pro</div>
+              <div style="font-size: 0.9rem; color: var(--color-fg-muted);">
+                갱신일: <strong>2026-08-15</strong><br>
+                <span style="color: var(--color-accent); font-weight: 600;">32일 남음</span>
+              </div>
+            </div>
+            <span class="badge pro">활성</span>
+          </div>
+          <div style="margin-top: var(--space-lg); display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+            <button style="padding: var(--space-sm) var(--space-md); background: var(--color-accent); color: white; border: none; border-radius: 4px; font-size: 0.9rem; font-weight: 600; cursor: pointer;">결제 정보 변경</button>
+            <button style="padding: var(--space-sm) var(--space-md); background: transparent; color: var(--color-danger); border: 1px solid var(--color-danger); border-radius: 4px; font-size: 0.9rem; font-weight: 600; cursor: pointer;">구독 취소</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>학습 통계 (선택사항)</h4>
+      <p>
+        향후 /api/stats에서 가져올 데이터. 현재는 placeholder로 표시하거나 숨길 수 있습니다.
+      </p>
+      <ul style="font-size: 0.9rem; max-width: 65ch;">
+        <li>이번 달 학습 카드 수</li>
+        <li>복습 연속 달성 일</li>
+        <li>목표 자격증까지 진행률</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4>최근 활동 요약</h4>
+      <p>
+        마지막 로그인, 최근 학습한 자격증, 마지막 복습 세션 등. 사용자의 참여도를 시각적으로 표시합니다.
+      </p>
+    </div>
+
+    <h3>3.2 프로필 탭</h3>
+    <p>
+      기존 ProfileSection.tsx를 탭 내부로 이동. 사용자 개인정보와 학습 목표를 편집할 수 있습니다.
+    </p>
+    <div class="card">
+      <h4>포함 필드</h4>
+      <ul style="max-width: 65ch;">
+        <li>이름 (필수)</li>
+        <li>생년월일 (필수)</li>
+        <li>목표 자격증 (필수)</li>
+        <li>직업 (선택)</li>
+        <li>학습 목적 (선택)</li>
+        <li>현재 수준/경력 (선택)</li>
+      </ul>
+      <p style="font-size: 0.9rem; color: var(--color-fg-muted); margin-top: var(--space-lg);">
+        각 필드별 input/select 컴포넌트 사용. 저장 버튼 하단 배치. 저장 성공/실패 메시지 표시.
+      </p>
+    </div>
+
+    <h3>3.3 구독 & 결제 탭</h3>
+    <p>
+      구독과 결제 관련 모든 정보를 한곳에서 관리. SubscriptionCard와 SubscriptionHistory를 통합합니다.
+    </p>
+
+    <div class="card">
+      <h4>구독 정보 섹션</h4>
+      <p>
+        대시보드와 동일한 구독 상황 카드, 하지만 여기서는 더 상세한 정보 포함:
+      </p>
+      <ul style="max-width: 65ch;">
+        <li>현재 플랜 (Free/Pro)</li>
+        <li>구독 시작일</li>
+        <li>갱신일 및 남은 기간</li>
+        <li>다음 청구 금액 (Pro만)</li>
+        <li>[결제 정보 변경] 버튼 (Pro만)</li>
+        <li>[구독 취소] 버튼 (Pro만)</li>
+        <li>[Pro 업그레이드] 버튼 (Free만) → /checkout으로 이동</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4>결제 내역 섹션</h4>
+      <p>
+        SubscriptionHistory.tsx 컴포넌트 통합. 과거 청구 및 갱신 기록 표시.
+      </p>
+    </div>
+
+    <h3>3.4 설정 탭</h3>
+    <p>
+      AccountForms + NotificationSettings를 단일 탭에 통합.
+    </p>
+
+    <div class="card">
+      <h4>알림 설정 섹션</h4>
+      <p>기존 NotificationSettings.tsx 그대로 이동.</p>
+    </div>
+
+    <div class="card">
+      <h4>보안 섹션</h4>
+      <ul style="max-width: 65ch;">
+        <li><strong>비밀번호 변경</strong>: 현재 비밀번호, 새 비밀번호 입력</li>
+        <li><strong>로그아웃</strong>: 현재 기기에서만 로그아웃</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4>계정 관리 섹션</h4>
+      <ul style="max-width: 65ch;">
+        <li><strong>계정 삭제</strong>: 위험도 높음 (danger 색상), 비밀번호 확인 필수</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 파일 구조 -->
+  <section>
+    <h2>4. 파일 구조</h2>
+
+    <h3>새로 추가될 컴포넌트</h3>
+
+    <div class="file-tree">
+      <code>src/</code>
+      <code class="indent-1">├── <span class="modified-file">app/account/AccountPageClient.tsx</span> (수정: 탭 상태 관리)</code>
+      <code class="indent-1">├── components/</code>
+      <code class="indent-2">│   ├── account/</code>
+      <code class="indent-3">│   │   ├── <span class="new-file">AccountTabs.tsx</span> (새로움)</code>
+      <code class="indent-3">│   │   ├── <span class="new-file">tabs/DashboardTab.tsx</span> (새로움)</code>
+      <code class="indent-3">│   │   ├── <span class="new-file">tabs/ProfileTab.tsx</span> (새로움)</code>
+      <code class="indent-3">│   │   ├── <span class="new-file">tabs/BillingTab.tsx</span> (새로움)</code>
+      <code class="indent-3">│   │   ├── <span class="new-file">tabs/SettingsTab.tsx</span> (새로움)</code>
+      <code class="indent-3">│   │   ├── <span class="new-file">subscription/SubscriptionStatus.tsx</span> (새로움)</code>
+      <code class="indent-3">│   │   ├── ProfileSection.tsx (기존: 유지)</code>
+      <code class="indent-3">│   │   ├── <span class="modified-file">subscription/SubscriptionHistory.tsx</span> (기존: 유지)</code>
+      <code class="indent-1">└── app/account/</code>
+      <code class="indent-2">    ├── page.tsx (기존: 데이터 조회만)</code>
+      <code class="indent-2">    ├── AccountPageClient.tsx (기존: 탭 통합)</code>
+      <code class="indent-2">    └── AccountForms.tsx (기존: 유지)</code>
+    </div>
+
+    <h3>컴포넌트 상세</h3>
+
+    <div class="card">
+      <h4>AccountTabs.tsx <span class="badge new">새로움</span></h4>
+      <p>
+        <strong>역할</strong>: 탭 네비게이션 및 콘텐츠 전환을 담당하는 메인 컴포넌트
+      </p>
+      <div class="code-block"><code>interface AccountTabsProps {
+  userEmail: string;
+  certs: CertOption[];
+  initial: ProfileValues;
+  isPro: boolean;
+  periodEnd: string | null;
+  daysLeft: number | null;
+}
+
+export function AccountTabs(props: AccountTabsProps) {
+  const [activeTab, setActiveTab] = useState&lt;'dashboard' | 'profile' | 'billing' | 'settings'&gt;('dashboard');
+  return (
+    &lt;&gt;
+      {/* 탭 네비게이션 */}
+      {/* 콘텐츠: activeTab에 따라 조건부 렌더링 */}
+    &lt;/&gt;
+  );
+}</code></div>
+    </div>
+
+    <div class="card">
+      <h4>tabs/DashboardTab.tsx <span class="badge new">새로움</span></h4>
+      <p>
+        <strong>역할</strong>: 구독 상황, 학습 통계, 최근 활동을 표시
+      </p>
+      <p style="font-size: 0.9rem; color: var(--color-fg-muted);">
+        Props: isPro, periodEnd, daysLeft<br>
+        자식: SubscriptionStatus + 통계/활동 섹션
+      </p>
+    </div>
+
+    <div class="card">
+      <h4>tabs/ProfileTab.tsx <span class="badge new">새로움</span></h4>
+      <p>
+        <strong>역할</strong>: 기존 ProfileSection을 탭 내부로 래핑
+      </p>
+      <p style="font-size: 0.9rem; color: var(--color-fg-muted);">
+        Props: certs, initial<br>
+        자식: ProfileSection 컴포넌트
+      </p>
+    </div>
+
+    <div class="card">
+      <h4>tabs/BillingTab.tsx <span class="badge new">새로움</span></h4>
+      <p>
+        <strong>역할</strong>: 구독 정보 + 결제 내역 표시
+      </p>
+      <p style="font-size: 0.9rem; color: var(--color-fg-muted);">
+        Props: isPro, periodEnd, daysLeft, userEmail<br>
+        자식: SubscriptionStatus + SubscriptionHistory 컴포넌트
+      </p>
+    </div>
+
+    <div class="card">
+      <h4>tabs/SettingsTab.tsx <span class="badge new">새로움</span></h4>
+      <p>
+        <strong>역할</strong>: 알림 설정, 비밀번호 변경, 계정 삭제를 한곳에 모음
+      </p>
+      <p style="font-size: 0.9rem; color: var(--color-fg-muted);">
+        Props: 없음 (각 자식 컴포넌트에서 필요한 상태 관리)<br>
+        자식: NotificationSettings + ChangePasswordForm + DeleteAccountForm
+      </p>
+    </div>
+
+    <div class="card">
+      <h4>subscription/SubscriptionStatus.tsx <span class="badge new">새로움</span></h4>
+      <p>
+        <strong>역할</strong>: 구독 상황을 시각적으로 표시하는 재사용 컴포넌트 (대시보드/결제 탭에서 사용)
+      </p>
+      <div class="code-block"><code>interface SubscriptionStatusProps {
+  isPro: boolean;
+  periodEnd: string | null;
+  daysLeft: number | null;
+  showActions?: boolean; // true면 액션 버튼 표시
+}
+
+export function SubscriptionStatus(props: SubscriptionStatusProps) {
+  // 구독 상황 카드 렌더링
+}</code></div>
+    </div>
+  </section>
+
+  <!-- 서버/클라이언트 데이터 흐름 -->
+  <section>
+    <h2>5. 서버/클라이언트 데이터 흐름</h2>
+
+    <h3>Initial Data Load (서버)</h3>
+    <div class="flow-diagram">
+      <div class="flow-step server">
+        <div class="flow-step-label">Server: page.tsx</div>
+        <p>
+          1. getCurrentUser() 확인<br>
+          2. 프로필 데이터 조회 (SELECT name, birthdate, ...)<br>
+          3. 구독 정보 조회 (plan, current_period_end, days_left)<br>
+          4. 자격증 목록 조회 (listCerts)
+        </p>
+      </div>
+      <div class="flow-step client">
+        <div class="flow-step-label">Client: AccountPageClient.tsx</div>
+        <p>
+          5. Props로 데이터 수신 (userEmail, certs, initial, isPro, periodEnd, daysLeft)<br>
+          6. 탭 상태(activeTab) 클라이언트 상태로 관리 (useState)
+        </p>
+      </div>
+      <div class="flow-step client">
+        <div class="flow-step-label">Client: AccountTabs.tsx</div>
+        <p>
+          7. Props를 각 탭 컴포넌트로 전달<br>
+          8. 탭 전환 시 새로 로드하지 않음 (클라이언트 상태만 변경)
+        </p>
+      </div>
+    </div>
+
+    <h3>상호작용 (클라이언트/서버)</h3>
+
+    <div class="card">
+      <h4>프로필 저장 (ProfileTab)</h4>
+      <div class="flow-diagram">
+        <div class="flow-step client">
+          <div class="flow-step-label">Client: ProfileTab</div>
+          <p>사용자가 프로필 편집 후 [저장] 클릭</p>
+        </div>
+        <div class="flow-step client">
+          <div class="flow-step-label">Client: POST /api/account/profile</div>
+          <p>JSON body로 변경된 필드 전송 (JSON serialization)</p>
+        </div>
+        <div class="flow-step server">
+          <div class="flow-step-label">Server: PATCH /api/account/profile</div>
+          <p>
+            1. JWT 토큰에서 userId 추출<br>
+            2. UPDATE users SET ... WHERE id = userId<br>
+            3. 성공/실패 응답 반환
+          </p>
+        </div>
+        <div class="flow-step client">
+          <div class="flow-step-label">Client: ProfileTab</div>
+          <p>
+            4. 성공 시 router.refresh() → 서버 재평가<br>
+            5. UI에 "저장되었습니다" 메시지 표시<br>
+            6. 실패 시 에러 메시지 표시
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>구독 업그레이드 (BillingTab → /checkout)</h4>
+      <div class="flow-diagram">
+        <div class="flow-step client">
+          <div class="flow-step-label">Client: BillingTab</div>
+          <p>Free 사용자가 [Pro 업그레이드] 버튼 클릭</p>
+        </div>
+        <div class="flow-step client">
+          <div class="flow-step-label">Client: Router</div>
+          <p>useRouter().push('/checkout') 또는 Link href="/checkout"</p>
+        </div>
+        <div class="flow-step client">
+          <div class="flow-step-label">Client: /checkout</div>
+          <p>결제 페이지에서 결제 진행. 성공 시 redirect to /account</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>데이터 타입 정의</h3>
+    <div class="code-block"><code>// src/app/account/page.tsx에서 조회하는 데이터
+interface ProfileRow {
+  name: string | null;
+  birthdate: string | null; // 'YYYY-MM-DD'
+  occupation: string | null;
+  target_cert: string | null;
+  purpose: string | null;
+  experience_level: string | null;
+  plan: 'free' | 'pro';
+  period_end: string | null; // 'YYYY-MM-DD'
+  days_left: number | null;
+}
+
+// AccountPageClient로 전달되는 Props
+interface AccountPageClientProps {
+  userEmail: string;
+  certs: CertOption[];
+  initial: ProfileValues;
+  isPro: boolean;
+  periodEnd: string | null;
+  daysLeft: number | null;
+}</code></div>
+  </section>
+
+  <!-- 스타일 & 레이아웃 -->
+  <section>
+    <h2>6. 스타일 & 레이아웃</h2>
+
+    <h3>탭 네비게이션</h3>
+    <div class="code-block"><code>/* Tailwind Classes */
+&lt;div className="flex gap-1 border-b border-border overflow-x-auto"&gt;
+  &lt;button
+    className={`
+      px-4 py-3 text-sm font-medium whitespace-nowrap
+      border-b-2 transition-colors
+      ${activeTab === 'dashboard'
+        ? 'text-accent border-accent'
+        : 'text-fg-muted border-transparent hover:text-fg'
+      }
+    `}
+    onClick={() => setActiveTab('dashboard')}
+  &gt;
+    📊 대시보드
+  &lt;/button&gt;
+  {/* 다른 탭들도 동일한 구조 */}
+&lt;/div&gt;</code></div>
+
+    <h3>콘텐츠 영역</h3>
+    <div class="code-block"><code>/* Tailwind Classes */
+&lt;div className="mt-8"&gt;
+  {activeTab === 'dashboard' && &lt;DashboardTab ... /&gt;}
+  {activeTab === 'profile' && &lt;ProfileTab ... /&gt;}
+  {activeTab === 'billing' && &lt;BillingTab ... /&gt;}
+  {activeTab === 'settings' && &lt;SettingsTab ... /&gt;}
+&lt;/div&gt;</code></div>
+
+    <h3>구독 상황 카드</h3>
+    <div class="code-block"><code>/* SubscriptionStatus.tsx */
+&lt;div className="rounded-lg border border-accent bg-accent/10 p-6"&gt;
+  &lt;div className="flex items-start justify-between"&gt;
+    &lt;div&gt;
+      &lt;p className="text-xs font-semibold uppercase tracking-wide text-fg-muted"&gt;
+        현재 플랜
+      &lt;/p&gt;
+      &lt;p className="mt-2 text-2xl font-semibold text-accent"&gt;
+        {isPro ? 'Pro' : 'Free'}
+      &lt;/p&gt;
+      {isPro && periodEnd && (
+        &lt;p className="mt-2 text-sm text-fg-muted"&gt;
+          갱신일: &lt;strong&gt;{periodEnd}&lt;/strong&gt;&lt;br /&gt;
+          &lt;span className="text-accent font-semibold"&gt;{daysLeft}일 남음&lt;/span&gt;
+        &lt;/p&gt;
+      )}
+    &lt;/div&gt;
+    &lt;span className={`
+      rounded-full px-3 py-1 text-xs font-semibold
+      ${isPro
+        ? 'bg-accent text-white'
+        : 'bg-border-strong text-fg-secondary'
+      }
+    `}&gt;
+      {isPro ? '활성' : 'Free'}
+    &lt;/span&gt;
+  &lt;/div&gt;
+
+  {showActions && (
+    &lt;div className="mt-6 flex flex-wrap gap-2"&gt;
+      {!isPro ? (
+        &lt;a href="/checkout" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white"&gt;
+          Pro 업그레이드
+        &lt;/a&gt;
+      ) : (
+        &lt;&gt;
+          &lt;button className="rounded-lg border border-border px-4 py-2 text-sm font-semibold"&gt;
+            결제 정보 변경
+          &lt;/button&gt;
+          &lt;button className="rounded-lg border border-danger/50 px-4 py-2 text-sm font-semibold text-danger"&gt;
+            구독 취소
+          &lt;/button&gt;
+        &lt;/&gt;
+      )}
+    &lt;/div&gt;
+  )}
+&lt;/div&gt;</code></div>
+
+    <h3>모바일 반응형</h3>
+    <p>
+      탭 네비게이션이 작은 화면에서 스크롤 가능하도록 설정:
+    </p>
+    <div class="code-block"><code>/* 부모 컨테이너: max-w-sm 유지 */
+&lt;div className="mx-auto max-w-sm py-16 space-y-8"&gt;
+  &lt;!-- 탭 네비게이션: overflow-x-auto --&gt;
+  &lt;div className="overflow-x-auto flex gap-1 border-b border-border"&gt;
+    {/* 탭 버튼들 */}
+  &lt;/div&gt;
+
+  &lt;!-- 콘텐츠 영역 --&gt;
+  &lt;div className="space-y-6"&gt;
+    {/* 탭 콘텐츠 */}
+  &lt;/div&gt;
+&lt;/div&gt;</code></div>
+  </section>
+
+  <!-- 구독 업그레이드 플로우 -->
+  <section>
+    <h2>7. 구독 업그레이드 플로우</h2>
+
+    <div class="highlight-box">
+      <h4>Flow: Free 사용자가 Pro로 업그레이드</h4>
+      <p style="margin-bottom: 0;">
+        사용자는 마이페이지 내 대시보드 탭 또는 결제 탭에서 [Pro 업그레이드] 버튼을 클릭하여 자연스럽게 /checkout으로 이동합니다.
+      </p>
+    </div>
+
+    <div class="flow-diagram">
+      <div class="flow-step client">
+        <div class="flow-step-label">Step 1: BillingTab (Free 사용자)</div>
+        <p>
+          구독 상황 카드에 [Pro 업그레이드] 버튼 표시<br>
+          <code style="background: var(--color-bg); padding: 2px 4px; border-radius: 2px;">&lt;a href="/checkout"&gt;</code>
+        </p>
+      </div>
+      <div class="flow-step client">
+        <div class="flow-step-label">Step 2: /checkout 페이지</div>
+        <p>
+          결제 폼 표시. 사용자가 카드 정보 입력 및 결제<br>
+          (기존 CheckoutPageClient.tsx 로직 따름)
+        </p>
+      </div>
+      <div class="flow-step server">
+        <div class="flow-step-label">Step 3: POST /api/checkout</div>
+        <p>
+          1. 결제 처리 (결제 게이트웨이 호출)<br>
+          2. 성공 시 users.plan = 'pro', current_period_end 업데이트<br>
+          3. 응답 반환
+        </p>
+      </div>
+      <div class="flow-step client">
+        <div class="flow-step-label">Step 4: Redirect to /account</div>
+        <p>
+          결제 성공 후 /account로 리다이렉트<br>
+          (또는 /account?tab=billing로 결제 탭 자동 활성화)
+        </p>
+      </div>
+      <div class="flow-step client">
+        <div class="flow-step-label">Step 5: BillingTab (Pro 사용자)</div>
+        <p>
+          구독 상황 카드가 Pro 상태로 표시<br>
+          [결제 정보 변경], [구독 취소] 버튼 노출
+        </p>
+      </div>
+    </div>
+
+    <h3>URL Parameters (선택사항)</h3>
+    <p>
+      탭 간 네비게이션을 URL에 반영하면 사용자가 링크 공유 가능하고 뒤로가기 시 탭 상태 복구:
+    </p>
+    <div class="code-block"><code>// AccountPageClient.tsx에서 useSearchParams 사용
+const searchParams = useSearchParams();
+const tab = searchParams.get('tab') || 'dashboard';
+const [activeTab, setActiveTab] = useState(tab);
+
+// 탭 변경 시 URL도 업데이트
+function handleTabChange(newTab: string) {
+  setActiveTab(newTab);
+  const params = new URLSearchParams(searchParams);
+  params.set('tab', newTab);
+  router.push(`?${params.toString()}`, { scroll: false });
+}</code></div>
+  </section>
+
+  <!-- 구현 체크리스트 -->
+  <section>
+    <h2>8. 구현 체크리스트</h2>
+
+    <h3>Phase 1: 탭 기본 구조 (1-2 시간)</h3>
+    <ul class="checklist">
+      <li>AccountTabs.tsx 생성 (탭 상태 관리)</li>
+      <li>tabs/ 디렉토리 생성 및 4개 탭 컴포넌트 작성</li>
+      <li>탭 네비게이션 UI 구현 (Tailwind)</li>
+      <li>AccountPageClient에서 AccountTabs로 마이그레이션</li>
+    </ul>
+
+    <h3>Phase 2: 각 탭 콘텐츠 (2-3 시간)</h3>
+    <ul class="checklist">
+      <li>DashboardTab: SubscriptionStatus + 통계/활동 섹션</li>
+      <li>ProfileTab: 기존 ProfileSection 통합</li>
+      <li>BillingTab: SubscriptionStatus + SubscriptionHistory</li>
+      <li>SettingsTab: NotificationSettings + 비밀번호/계정 관리</li>
+    </ul>
+
+    <h3>Phase 3: 스타일 & 반응형 (1-2 시간)</h3>
+    <ul class="checklist">
+      <li>SubscriptionStatus.tsx 컴포넌트 작성</li>
+      <li>구독 상황 카드 스타일 (accent 색상 강조)</li>
+      <li>모바일 탭 네비게이션 (overflow-x-auto)</li>
+      <li>다크모드 테스트</li>
+    </ul>
+
+    <h3>Phase 4: 기능 통합 (1 시간)</h3>
+    <ul class="checklist">
+      <li>결제 성공 후 /account로 리다이렉트 확인</li>
+      <li>URL parameters로 탭 상태 유지 (선택)</li>
+      <li>API 에러 처리</li>
+    </ul>
+
+    <h3>Phase 5: 테스트 (1 시간)</h3>
+    <ul class="checklist">
+      <li>모든 탭 전환 정상 작동</li>
+      <li>프로필 저장 성공/실패</li>
+      <li>구독 업그레이드 플로우</li>
+      <li>모바일/데스크톱 반응형</li>
+    </ul>
+  </section>
+
+  <!-- 향후 개선안 -->
+  <section>
+    <h2>9. 향후 개선안</h2>
+
+    <div class="card">
+      <h4>학습 통계 (Stats API)</h4>
+      <p>
+        대시보드 탭에서 /api/stats 엔드포인트로부터 학습 통계를 가져와 표시. 현재는 placeholder로 둠.
+      </p>
+    </div>
+
+    <div class="card">
+      <h4>로그아웃 로직</h4>
+      <p>
+        설정 탭에서 [로그아웃] 버튼 추가. 현재는 기존 구조에서 로그아웃 버튼이 없으므로, 헤더의 로그아웃 메뉴 사용.
+      </p>
+    </div>
+
+    <div class="card">
+      <h4>결제 정보 변경 플로우</h4>
+      <p>
+        Pro 사용자가 [결제 정보 변경] 버튼 클릭 시 결제 정보 편집 페이지(/account/billing/edit 등)로 이동. 아직 구현 안 함.
+      </p>
+    </div>
+
+    <div class="card">
+      <h4>구독 취소 플로우</h4>
+      <p>
+        Pro 사용자가 [구독 취소] 버튼 클릭 시 확인 모달 표시. 취소 사유 선택 후 API 호출. 아직 구현 안 함.
+      </p>
+    </div>
+
+    <div class="card">
+      <h4>알림 설정 토글 개선</h4>
+      <p>
+        현재 NotificationSettings는 자체적으로 상태 관리. 탭 구조에 맞게 포함시킬 때 UX 개선 고려.
+      </p>
+    </div>
+  </section>
+
+  <!-- 설계 원칙 -->
+  <section>
+    <h2>10. 설계 원칙</h2>
+
+    <div class="comparison">
+      <div class="comparison-box good">
+        <h4>Good: 정보 계층</h4>
+        <ul style="font-size: 0.9rem; max-width: 65ch;">
+          <li>대시보드: 핵심 정보 (구독 상황) 최우선</li>
+          <li>결제 탭: 상세 정보 (갱신 정보, 내역)</li>
+          <li>설정 탭: 관리 기능 (보안, 계정)</li>
+        </ul>
+      </div>
+      <div class="comparison-box good">
+        <h4>Good: 시각적 강조</h4>
+        <ul style="font-size: 0.9rem; max-width: 65ch;">
+          <li>구독 상황 카드: 큰 폰트, 테두리, accent 색상</li>
+          <li>Pro 배지: 색상 및 라벨로 구분</li>
+          <li>액션 버튼: 명확한 CTA</li>
+        </ul>
+      </div>
+      <div class="comparison-box avoid">
+        <h4>Avoid: 과도한 정보</h4>
+        <ul style="font-size: 0.9rem; max-width: 65ch;">
+          <li>모든 정보를 대시보드에 노출 (→ 탭으로 분산)</li>
+          <li>중복된 구독 정보 표시 (→ SubscriptionStatus 재사용)</li>
+          <li>한 탭에 너무 많은 섹션 (→ 명확한 구분)</li>
+        </ul>
+      </div>
+      <div class="comparison-box avoid">
+        <h4>Avoid: 의도 불명확한 액션</h4>
+        <ul style="font-size: 0.9rem; max-width: 65ch;">
+          <li>[설정] 같은 모호한 버튼 (→ 구체적인 라벨)</li>
+          <li>클릭해야 결과를 알 수 있는 버튼 (→ 명확한 라벨)</li>
+          <li>위험한 액션에 accent 색상 (→ danger 색상 사용)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section>
+    <h3 style="margin-top: 0;">문서 작성 일자</h3>
+    <p style="color: var(--color-fg-faint); font-size: 0.9rem;">
+      2026-07-14 · 설계 버전 1.0
+    </p>
+  </section>
+</body>
+</html>
