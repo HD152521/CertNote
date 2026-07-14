@@ -71,7 +71,7 @@
       "code": "DOP-C02",
       "level": "professional",
       "name": "DevOps Engineer - Professional",
-      "weeks": 1,
+      "weeks": 16,
       "order": 5
     },
     {
@@ -79,7 +79,7 @@
       "code": "SCS-C03",
       "level": "specialty",
       "name": "Security - Specialty",
-      "weeks": 1,
+      "weeks": 12,
       "order": 6
     },
     {
@@ -87,7 +87,7 @@
       "code": "MLS-C01",
       "level": "specialty",
       "name": "Machine Learning - Specialty",
-      "weeks": 1,
+      "weeks": 12,
       "order": 11
     }
   ]
