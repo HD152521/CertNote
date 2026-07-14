@@ -49,7 +49,7 @@ Once configured, Chatbot acts as a passthrough: SNS topic → Chatbot → Slack 
 aws codestar-notifications create-notification-rule \
   --resource arn:aws:codepipeline:us-east-1:123456789012:DeployPipeline \
   --event-type-ids codepipeline-pipeline-execution-failure \
-  --targets TargetType=Slack,TargetAddress=https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
+  --targets TargetType=Slack,TargetAddress=https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
 ```
 
 > 🔍 **Going deeper**: Chatbot's architecture is **webhook-based fan-out**. Each AWS service (CloudWatch, EventBridge, CodeStar) has built-in or partner-provided webhook targets; Chatbot is one such target, formatting and relaying to Slack API. This is the **event-driven** pattern again — services emit events (not polls), Chatbot listens and reacts. Contrast with older pattern: on-call manually checks AWS console every 5 minutes.
