@@ -105,7 +105,7 @@ export default async function CertIndexPage({ params }: PageProps) {
           </Link>
         )}
       </header>
-      {lang === 'ko' && examInfo && <ExamInfoCard info={examInfo} />}
+      {lang === 'ko' && examInfo && <ExamInfoCard info={examInfo} lang={lang} />}
       <section className="space-y-6">
         {[...byWeek.entries()].map(([w, ws]) => (
           <div key={w} className="space-y-2">

@@ -22,7 +22,12 @@ export async function middleware(req: NextRequest) {
     loginUrl.searchParams.set('next', path);
     return NextResponse.redirect(loginUrl);
   }
-  return NextResponse.next();
+
+  // Detect language from pathname and add to headers
+  const lang = path.startsWith('/en') ? 'en' : 'ko';
+  const response = NextResponse.next();
+  response.headers.set('x-language', lang);
+  return response;
 }
 
 export const config = {

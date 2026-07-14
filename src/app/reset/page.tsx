@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useLanguage, t } from '@/lib/i18n-client';
 
 function ResetForm() {
+  const lang = useLanguage();
   const params = useSearchParams();
   const router = useRouter();
   const token = params.get('token') ?? '';
@@ -24,35 +26,35 @@ function ResetForm() {
         body: JSON.stringify({ token, password }),
       });
       const data = await res.json();
-      if (!res.ok) setError(data.message ?? '재설정에 실패했습니다.');
+      if (!res.ok) setError(data.message ?? t(lang, 'requestFailed'));
       else {
         setDone(true);
         setTimeout(() => router.push('/login'), 1500);
       }
     } catch {
-      setError('네트워크 오류가 발생했습니다.');
+      setError(t(lang, 'networkError'));
     } finally {
       setBusy(false);
     }
   }
 
   if (!token) {
-    return <p className="text-sm text-danger">유효하지 않은 링크입니다. 재설정을 다시 요청해 주세요.</p>;
+    return <p className="text-sm text-danger">{t(lang, 'invalidLink')}</p>;
   }
   if (done) {
-    return <p className="rounded-md border border-border bg-bg-subtle px-4 py-3 text-sm text-fg-muted">비밀번호가 변경되었습니다. 로그인 페이지로 이동합니다…</p>;
+    return <p className="rounded-md border border-border bg-bg-subtle px-4 py-3 text-sm text-fg-muted">{t(lang, 'passwordChanged')}</p>;
   }
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <p className="text-sm text-fg-muted">새 비밀번호를 입력하세요 (8자 이상).</p>
+      <p className="text-sm text-fg-muted">{t(lang, 'enterNewPassword')}</p>
       <input
         type="password"
         required
         minLength={8}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        placeholder="새 비밀번호"
+        placeholder={t(lang, 'newPassword')}
         className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm"
       />
       {error && <p className="text-xs text-danger">{error}</p>}
@@ -61,21 +63,22 @@ function ResetForm() {
         disabled={busy}
         className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition hover:opacity-90 disabled:opacity-50"
       >
-        {busy ? '변경 중…' : '비밀번호 변경'}
+        {busy ? t(lang, 'changing') : t(lang, 'changePassword')}
       </button>
     </form>
   );
 }
 
 export default function ResetPage() {
+  const lang = useLanguage();
   return (
     <div className="mx-auto max-w-sm space-y-6 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">새 비밀번호 설정</h1>
-      <Suspense fallback={<p className="text-sm text-fg-muted">로딩 중…</p>}>
+      <h1 className="text-2xl font-semibold tracking-tight">{t(lang, 'resetPassword')}</h1>
+      <Suspense fallback={<p className="text-sm text-fg-muted">{t(lang, 'loading')}</p>}>
         <ResetForm />
       </Suspense>
       <p className="text-center text-xs text-fg-faint">
-        <Link href="/login" className="text-accent hover:underline">로그인으로 돌아가기</Link>
+        <Link href="/login" className="text-accent hover:underline">{t(lang, 'backToLogin')}</Link>
       </p>
     </div>
   );

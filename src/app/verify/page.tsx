@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useLanguage, t } from '@/lib/i18n-client';
 
 type State = 'verifying' | 'success' | 'error';
 
 function VerifyInner() {
+  const lang = useLanguage();
   const params = useSearchParams();
   const token = params.get('token') ?? '';
   const [state, setState] = useState<State>('verifying');
@@ -19,7 +21,7 @@ function VerifyInner() {
 
     if (!token) {
       setState('error');
-      setMessage('유효하지 않은 링크입니다.');
+      setMessage(t(lang, 'invalidLink'));
       return;
     }
     (async () => {
@@ -34,22 +36,23 @@ function VerifyInner() {
           setState('success');
         } else {
           setState('error');
-          setMessage(data.message ?? '인증에 실패했습니다.');
+          setMessage(data.message ?? t(lang, 'requestFailed'));
         }
       } catch {
         setState('error');
-        setMessage('네트워크 오류가 발생했습니다.');
+        setMessage(t(lang, 'networkError'));
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   if (state === 'verifying') {
-    return <p className="text-sm text-fg-muted">이메일 인증 중…</p>;
+    return <p className="text-sm text-fg-muted">{t(lang, 'verifyingEmail')}</p>;
   }
   if (state === 'success') {
     return (
       <p className="rounded-md border border-border bg-bg-subtle px-4 py-3 text-sm text-fg-muted">
-        이메일 인증이 완료되었습니다.
+        {t(lang, 'emailVerified')}
       </p>
     );
   }
@@ -57,14 +60,15 @@ function VerifyInner() {
 }
 
 export default function VerifyPage() {
+  const lang = useLanguage();
   return (
     <div className="mx-auto max-w-sm space-y-6 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">이메일 인증</h1>
-      <Suspense fallback={<p className="text-sm text-fg-muted">로딩 중…</p>}>
+      <h1 className="text-2xl font-semibold tracking-tight">{t(lang, 'verifyEmail')}</h1>
+      <Suspense fallback={<p className="text-sm text-fg-muted">{t(lang, 'loading')}</p>}>
         <VerifyInner />
       </Suspense>
       <p className="text-center text-xs text-fg-faint">
-        <Link href="/" className="text-accent hover:underline">홈으로 돌아가기</Link>
+        <Link href="/" className="text-accent hover:underline">{t(lang, 'backToHome')}</Link>
       </p>
     </div>
   );

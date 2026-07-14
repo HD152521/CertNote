@@ -10,38 +10,48 @@ import {
   saveExplanation,
   streamTutor,
 } from '@/lib/tutor/tutorService';
+import { getTutorError } from '@/lib/tutor/errors';
+import type { Language } from '@/lib/i18n';
 import { clientIp, rateLimit } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs'; // Anthropic SDK는 Node 런타임 필요.
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // 스트리밍 응답 여유(플랜에 따라 상한 적용).
 
-// AI 오답 튜터. Pro 전용. 문제+오답을 받아 한국어 설명을 text/plain으로 스트리밍한다.
+// AI 오답 튜터. Pro 전용. 문제+오답을 받아 설명을 text/plain으로 스트리밍한다.
 export async function POST(req: Request) {
   try {
+    // language 파라미터 추출 (기본값: ko)
+    const body = await req.json().catch(() => null);
+    const language: Language = body?.language === 'en' ? 'en' : 'ko';
+
     const user = await getCurrentUser();
-    if (!user) throw new AppError(401, 'unauthorized', '로그인이 필요합니다.');
+    if (!user) throw new AppError(401, 'unauthorized', getTutorError(language, 'proRequired'));
 
     // 사용자 단위 rate limit(LLM 호출 비용 보호). IP도 함께 키에 섞는다.
     const rl = rateLimit(`tutor:${user.sub}:${clientIp(req)}`, 20, 60_000);
     if (!rl.ok) {
-      throw new AppError(429, 'rate_limited', `잠시 후 다시 시도해 주세요. (${rl.retryAfter}초)`);
+      const msg = language === 'en'
+        ? `Please wait and try again. (${rl.retryAfter}s)`
+        : `잠시 후 다시 시도해 주세요. (${rl.retryAfter}초)`;
+      throw new AppError(429, 'rate_limited', msg);
     }
 
     const ent = await getEntitlementService().getEntitlement(user.sub);
     if (!ent.isPro) {
-      throw new AppError(403, 'pro_required', 'AI 오답 튜터는 Pro 전용 기능입니다.');
+      throw new AppError(403, 'pro_required', getTutorError(language, 'proRequired'));
     }
     if (!isTutorConfigured()) {
-      throw new AppError(503, 'tutor_unavailable', 'AI 튜터가 아직 설정되지 않았습니다.');
+      const msg = language === 'en' ? 'AI tutor is not available yet.' : 'AI 튜터가 아직 설정되지 않았습니다.';
+      throw new AppError(503, 'tutor_unavailable', msg);
     }
 
-    const body = await req.json().catch(() => null);
     if (!body || typeof body.questionId !== 'string') {
-      throw new AppError(400, 'invalid_body', '문제 ID가 필요합니다.');
+      const msg = language === 'en' ? 'Question ID is required.' : '문제 ID가 필요합니다.';
+      throw new AppError(400, 'invalid_body', msg);
     }
     const question = getQuestionById(body.questionId);
-    if (!question) throw new AppError(404, 'question_not_found', '문제를 찾을 수 없습니다.');
+    if (!question) throw new AppError(404, 'question_not_found', getTutorError(language, 'invalidQuestion'));
 
     const selected = typeof body.selected === 'string' ? body.selected : '';
     const history = sanitizeHistory(body.history);
@@ -58,10 +68,13 @@ export async function POST(req: Request) {
     // 여기부터 실제 LLM 호출 — 일일 한도는 이 시점에만 차감(캐시 히트는 무료).
     const quota = await consumeTutorQuota(user.sub);
     if (!quota.allowed) {
-      throw new AppError(429, 'daily_limit', `오늘 AI 설명 한도(${quota.limit}회)를 모두 사용했어요. 내일 다시 이용해 주세요.`);
+      const msg = language === 'en'
+        ? `Daily limit (${quota.limit} explanations) reached. Try again tomorrow.`
+        : `오늘 AI 설명 한도(${quota.limit}회)를 모두 사용했어요. 내일 다시 이용해 주세요.`;
+      throw new AppError(429, 'daily_limit', msg);
     }
 
-    const sdkStream = streamTutor(question, selected, history);
+    const sdkStream = streamTutor(question, selected, history, language);
     const encoder = new TextEncoder();
     const questionId = body.questionId;
     const readable = new ReadableStream<Uint8Array>({

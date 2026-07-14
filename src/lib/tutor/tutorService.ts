@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { IndexedQuestion } from '../questions';
+import type { Language } from '@/lib/i18n-client';
 import { buildSystemPrompt, buildUserPrompt } from './prompt';
 import { query } from '../db';
 
@@ -78,12 +79,12 @@ export function sanitizeHistory(raw: unknown): TutorTurn[] {
   return turns.slice(-MAX_HISTORY_TURNS);
 }
 
-// 문제 + 사용자가 고른 오답 + (선택)후속 대화로 한국어 설명을 스트리밍한다.
+// 문제 + 사용자가 고른 오답 + (선택)후속 대화로 설명을 스트리밍한다.
 // 반환값은 SDK의 MessageStream(라우트에서 text delta를 그대로 흘려보낸다).
-export function streamTutor(q: IndexedQuestion, selected: string, history: TutorTurn[]) {
+export function streamTutor(q: IndexedQuestion, selected: string, history: TutorTurn[], language: Language = 'ko') {
   // messages[0]은 항상 합성된 문제 프롬프트(user). 이후 후속 대화가 alternate로 이어진다.
   const messages = [
-    { role: 'user' as const, content: buildUserPrompt(q, selected) },
+    { role: 'user' as const, content: buildUserPrompt(q, selected, language) },
     ...history.map((t) => ({ role: t.role, content: t.text })),
   ];
   // effort(output_config)는 Opus 4.x 계열만 지원. Haiku 등은 보내면 400 에러가 나므로
@@ -92,7 +93,7 @@ export function streamTutor(q: IndexedQuestion, selected: string, history: Tutor
   return getClient().messages.stream({
     model: MODEL,
     max_tokens: 2048,
-    system: buildSystemPrompt(),
+    system: buildSystemPrompt(language),
     ...(supportsEffort ? { output_config: { effort: 'medium' as const } } : {}),
     messages,
   });

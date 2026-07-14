@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useLanguage, t } from '@/lib/i18n-client';
 
 export default function ForgotPage() {
+  const lang = useLanguage();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -20,10 +22,10 @@ export default function ForgotPage() {
         body: JSON.stringify({ email: email.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) setError(data.message ?? '요청에 실패했습니다.');
+      if (!res.ok) setError(data.message ?? t(lang, 'requestFailed'));
       else setSent(true);
     } catch {
-      setError('네트워크 오류가 발생했습니다.');
+      setError(t(lang, 'networkError'));
     } finally {
       setBusy(false);
     }
@@ -31,14 +33,14 @@ export default function ForgotPage() {
 
   return (
     <div className="mx-auto max-w-sm space-y-6 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">비밀번호 재설정</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">{t(lang, 'forgotPassword')}</h1>
       {sent ? (
         <p className="rounded-md border border-border bg-bg-subtle px-4 py-3 text-sm text-fg-muted">
-          입력하신 이메일이 가입되어 있다면 재설정 링크를 보냈습니다. 메일함을 확인해 주세요.
+          {t(lang, 'weSentResetLink')}
         </p>
       ) : (
         <form onSubmit={submit} className="space-y-3">
-          <p className="text-sm text-fg-muted">가입한 이메일을 입력하면 재설정 링크를 보내드립니다.</p>
+          <p className="text-sm text-fg-muted">{t(lang, 'enterEmailForReset')}</p>
           <input
             type="email"
             required
@@ -53,12 +55,12 @@ export default function ForgotPage() {
             disabled={busy}
             className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition hover:opacity-90 disabled:opacity-50"
           >
-            {busy ? '전송 중…' : '재설정 링크 받기'}
+            {busy ? t(lang, 'sending') : t(lang, 'sendResetLink')}
           </button>
         </form>
       )}
       <p className="text-center text-xs text-fg-faint">
-        <Link href="/login" className="text-accent hover:underline">로그인으로 돌아가기</Link>
+        <Link href="/login" className="text-accent hover:underline">{t(lang, 'backToLogin')}</Link>
       </p>
     </div>
   );

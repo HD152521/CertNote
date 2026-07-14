@@ -1,6 +1,5 @@
 import type { IndexedQuestion } from '../questions';
-
-type Language = 'ko' | 'en';
+import type { Language } from '@/lib/i18n-client';
 
 // AI 오답 튜터 프롬프트. 언어별로 자동 설정.
 // thinking을 끄고 호출하므로(지연·비용 절감), 사고 과정이 본문에 새지 않도록

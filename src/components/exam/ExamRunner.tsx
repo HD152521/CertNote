@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Check, X, Flag, Clock } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useLanguage, type Language } from '@/lib/i18n-client';
 
 interface CertOption { slug: string; code: string; name: string }
 
@@ -46,6 +47,7 @@ function fmtTime(sec: number): string {
 }
 
 export function ExamRunner({ certs }: { certs: CertOption[] }) {
+  const lang = useLanguage();
   const [phase, setPhase] = useState<Phase>('setup');
 
   // setup
@@ -86,7 +88,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
       setTimeLeft(null);
       setPhase('result');
     } catch {
-      setError('채점에 실패했습니다. 다시 시도해 주세요.');
+      setError(lang === 'en' ? 'Grading failed. Please try again.' : '채점에 실패했습니다. 다시 시도해 주세요.');
     } finally {
       setSubmitting(false);
     }
@@ -118,7 +120,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.message ?? '시험을 시작하지 못했습니다.');
+        setError(data.message ?? (lang === 'en' ? 'Failed to start exam.' : '시험을 시작하지 못했습니다.'));
         return;
       }
       setQuestions(data.questions as ExamQuestion[]);
@@ -130,7 +132,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
       setTimeLeft(useTimer ? Math.max(1, minutes) * 60 : null);
       setPhase('running');
     } catch {
-      setError('네트워크 오류가 발생했습니다.');
+      setError(lang === 'en' ? 'Network error occurred.' : '네트워크 오류가 발생했습니다.');
     } finally {
       setStarting(false);
     }
@@ -165,7 +167,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
   }
   function trySubmit() {
     const left = questions.length - answeredCount;
-    if (left > 0 && !confirm(`아직 ${left}문항 안 풀었어요. 제출할까요?`)) return;
+    if (left > 0 && !confirm(lang === 'en' ? `${left} questions not answered yet. Submit anyway?` : `아직 ${left}문항 안 풀었어요. 제출할까요?`)) return;
     submit();
   }
 
@@ -173,22 +175,22 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">
-          <label className="block text-sm text-fg-muted">자격증 범위</label>
+          <label className="block text-sm text-fg-muted">{lang === 'en' ? 'Certification' : '자격증 범위'}</label>
           <select value={certSlug} onChange={(e) => setCertSlug(e.target.value)}
             className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-fg outline-none focus:border-border-strong">
-            <option value="">전체 자격증</option>
+            <option value="">{lang === 'en' ? 'All Certifications' : '전체 자격증'}</option>
             {certs.map((c) => <option key={c.slug} value={c.slug}>{c.code} — {c.name}</option>)}
           </select>
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm text-fg-muted">문항 수</label>
+          <label className="block text-sm text-fg-muted">{lang === 'en' ? 'Number of Questions' : '문항 수'}</label>
           <div className="flex gap-2">
             {COUNT_OPTIONS.map((n) => (
               <button key={n} type="button" onClick={() => setCount(n)}
                 className={cn('flex-1 rounded-md border px-3 py-2 text-sm transition',
                   count === n ? 'border-accent bg-accent/10 text-fg' : 'border-border text-fg-muted hover:text-fg')}>
-                {n}문항
+                {n}{lang === 'en' ? 'Q' : '문항'}
               </button>
             ))}
           </div>
@@ -197,14 +199,14 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
         <div className="space-y-2">
           <label className="flex items-center gap-2 text-sm text-fg">
             <input type="checkbox" checked={useTimer} onChange={(e) => setUseTimer(e.target.checked)} />
-            제한 시간 사용
+            {lang === 'en' ? 'Use Time Limit' : '제한 시간 사용'}
           </label>
           {useTimer && (
             <div className="flex items-center gap-2 text-sm text-fg-muted">
               <input type="number" min={1} max={180} value={minutes}
                 onChange={(e) => setMinutes(Math.max(1, Math.min(180, Number(e.target.value) || 1)))}
                 className="w-20 rounded-md border border-border bg-transparent px-2 py-1.5 text-sm outline-none focus:border-border-strong" />
-              분
+              {lang === 'en' ? 'min' : '분'}
             </div>
           )}
         </div>
@@ -212,9 +214,13 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
         {error && <p className="text-sm text-danger" role="alert">{error}</p>}
         <button type="button" onClick={start} disabled={starting}
           className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50">
-          {starting ? '준비 중…' : '시험 시작'}
+          {starting ? (lang === 'en' ? 'Preparing…' : '준비 중…') : (lang === 'en' ? 'Start Exam' : '시험 시작')}
         </button>
-        <p className="text-xs text-fg-faint">제출 전까지 정답은 표시되지 않습니다. 제출 후 일괄 채점되고, 틀린 문제는 복습 큐에 쌓입니다.</p>
+        <p className="text-xs text-fg-faint">
+          {lang === 'en'
+            ? `Answers won't be shown until you submit. After submission, all questions are graded at once, and wrong answers are added to your review queue.`
+            : '제출 전까지 정답은 표시되지 않습니다. 제출 후 일괄 채점되고, 틀린 문제는 복습 큐에 쌓입니다.'}
+        </p>
       </div>
     );
   }
@@ -226,7 +232,9 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-sm text-fg-muted tabular-nums">{idx + 1} / {questions.length} · 답함 {answeredCount}</span>
+          <span className="text-sm text-fg-muted tabular-nums">
+            {idx + 1} / {questions.length} · {lang === 'en' ? 'Answered' : '답함'} {answeredCount}
+          </span>
           {timeLeft !== null && (
             <span className={cn('flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-sm font-mono tabular-nums',
               isLow ? 'border-danger/50 bg-danger/10 text-danger' : 'border-border text-fg-muted')}>
@@ -258,11 +266,11 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
             <button type="button" onClick={() => toggleMark(q.questionId)}
               className={cn('flex items-center gap-1 rounded px-2 py-0.5 text-[11px] transition',
                 marked.has(q.questionId) ? 'text-amber-500' : 'text-fg-faint hover:text-fg')}>
-              <Flag className="h-3 w-3" /> {marked.has(q.questionId) ? '마킹됨' : '나중에'}
+              <Flag className="h-3 w-3" /> {marked.has(q.questionId) ? (lang === 'en' ? 'Flagged' : '마킹됨') : (lang === 'en' ? 'Review Later' : '나중에')}
             </button>
           </div>
           <p className="mb-2 font-medium leading-relaxed text-fg whitespace-pre-wrap">{q.prompt}</p>
-          {q.multi && <p className="mb-3 text-xs text-accent">복수 응답 — 해당하는 보기를 모두 선택하세요.</p>}
+          {q.multi && <p className="mb-3 text-xs text-accent">{lang === 'en' ? 'Multiple answers — select all that apply.' : '복수 응답 — 해당하는 보기를 모두 선택하세요.'}</p>}
           <ul className="space-y-2">
             {q.choices.map((c) => {
               const isPicked = pickedSet.has(c.label);
@@ -286,20 +294,24 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
 
         <div className="flex items-center justify-between gap-2">
           <button type="button" onClick={() => setIdx((i) => Math.max(0, i - 1))} disabled={idx === 0}
-            className="rounded-md border border-border px-3 py-2 text-sm text-fg-muted transition hover:text-fg disabled:opacity-40">← 이전</button>
+            className="rounded-md border border-border px-3 py-2 text-sm text-fg-muted transition hover:text-fg disabled:opacity-40">
+            {lang === 'en' ? '← Previous' : '← 이전'}
+          </button>
           {idx < questions.length - 1 ? (
             <button type="button" onClick={() => setIdx((i) => Math.min(questions.length - 1, i + 1))}
-              className="rounded-md border border-border px-3 py-2 text-sm text-fg-muted transition hover:text-fg">다음 →</button>
+              className="rounded-md border border-border px-3 py-2 text-sm text-fg-muted transition hover:text-fg">
+              {lang === 'en' ? 'Next →' : '다음 →'}
+            </button>
           ) : (
             <button type="button" onClick={trySubmit} disabled={submitting}
               className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50">
-              {submitting ? '채점 중…' : '제출하고 채점'}
+              {submitting ? (lang === 'en' ? 'Grading…' : '채점 중…') : (lang === 'en' ? 'Submit & Grade' : '제출하고 채점')}
             </button>
           )}
         </div>
         <button type="button" onClick={trySubmit} disabled={submitting}
           className="w-full rounded-md border border-border-strong px-3 py-2 text-sm text-fg-muted transition hover:text-fg disabled:opacity-50">
-          지금 제출하기
+          {lang === 'en' ? 'Submit Now' : '지금 제출하기'}
         </button>
       </div>
     );
@@ -311,27 +323,45 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
   return (
     <div className="space-y-6">
       <div className={cn('rounded-xl border p-6 text-center', r.passed ? 'border-success/40 bg-success/5' : 'border-danger/40 bg-danger/5')}>
-        <p className="text-sm text-fg-muted">점수</p>
+        <p className="text-sm text-fg-muted">{lang === 'en' ? 'Score' : '점수'}</p>
         <p className="mt-1 text-5xl font-semibold tabular-nums tracking-tight text-fg">{r.score}<span className="text-2xl font-normal text-fg-faint">%</span></p>
         <p className={cn('mt-2 inline-block rounded-full px-3 py-1 text-sm font-medium', r.passed ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger')}>
-          {r.passed ? '합격' : '불합격'} · 합격선 {r.passMark}%
+          {r.passed ? (lang === 'en' ? 'Passed' : '합격') : (lang === 'en' ? 'Failed' : '불합격')} · {lang === 'en' ? 'Passing score' : '합격선'} {r.passMark}%
         </p>
-        <p className="mt-3 text-xs text-fg-faint tabular-nums">정답 {r.correct} / {r.total} · 응답 {r.answered} · 미응답 {r.total - r.answered}</p>
+        <p className="mt-3 text-xs text-fg-faint tabular-nums">
+          {lang === 'en'
+            ? `Correct ${r.correct} / ${r.total} · Answered ${r.answered} · Unanswered ${r.total - r.answered}`
+            : `정답 ${r.correct} / ${r.total} · 응답 ${r.answered} · 미응답 ${r.total - r.answered}`}
+        </p>
       </div>
 
-      <p className="text-xs text-fg-muted">틀린 문제는 오답노트(복습 큐)에 자동으로 추가됐어요.</p>
+      <p className="text-xs text-fg-muted">
+        {lang === 'en'
+          ? 'Wrong answers have been automatically added to your review queue.'
+          : '틀린 문제는 오답노트(복습 큐)에 자동으로 추가됐어요.'}
+      </p>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
           <button type="button" onClick={() => setFilterWrong(false)}
-            className={cn('rounded-md border px-3 py-1.5 text-xs transition', !filterWrong ? 'border-accent bg-accent/10 text-fg' : 'border-border text-fg-muted hover:text-fg')}>전체 {r.total}</button>
+            className={cn('rounded-md border px-3 py-1.5 text-xs transition', !filterWrong ? 'border-accent bg-accent/10 text-fg' : 'border-border text-fg-muted hover:text-fg')}>
+            {lang === 'en' ? 'All' : '전체'} {r.total}
+          </button>
           <button type="button" onClick={() => setFilterWrong(true)}
-            className={cn('rounded-md border px-3 py-1.5 text-xs transition', filterWrong ? 'border-accent bg-accent/10 text-fg' : 'border-border text-fg-muted hover:text-fg')}>틀린 것 {r.total - r.correct}</button>
+            className={cn('rounded-md border px-3 py-1.5 text-xs transition', filterWrong ? 'border-accent bg-accent/10 text-fg' : 'border-border text-fg-muted hover:text-fg')}>
+            {lang === 'en' ? 'Wrong' : '틀린 것'} {r.total - r.correct}
+          </button>
         </div>
         <div className="flex gap-2 text-xs">
-          <button type="button" onClick={reset} className="rounded-md bg-accent px-3 py-1.5 font-medium text-white hover:opacity-90">다시 풀기</button>
-          <Link href="/notebook" className="rounded-md border border-border px-3 py-1.5 text-fg-muted hover:text-fg">오답노트</Link>
-          <Link href="/dashboard" className="rounded-md border border-border px-3 py-1.5 text-fg-muted hover:text-fg">대시보드</Link>
+          <button type="button" onClick={reset} className="rounded-md bg-accent px-3 py-1.5 font-medium text-white hover:opacity-90">
+            {lang === 'en' ? 'Retake Exam' : '다시 풀기'}
+          </button>
+          <Link href="/notebook" className="rounded-md border border-border px-3 py-1.5 text-fg-muted hover:text-fg">
+            {lang === 'en' ? 'Notebook' : '오답노트'}
+          </Link>
+          <Link href="/dashboard" className="rounded-md border border-border px-3 py-1.5 text-fg-muted hover:text-fg">
+            {lang === 'en' ? 'Dashboard' : '대시보드'}
+          </Link>
         </div>
       </div>
 
@@ -355,13 +385,13 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
                       isAnswer ? 'border-success/40 bg-success/5 text-fg' : isPicked ? 'border-danger/40 bg-danger/5 text-fg' : 'border-border text-fg-muted')}>
                       <span className="mt-0.5 font-mono text-[10px] text-fg-faint">{c.label}</span>
                       <span className="flex-1 leading-relaxed">{c.text}</span>
-                      {isAnswer && <span className="text-[10px] text-success">정답</span>}
-                      {isPicked && !isAnswer && <span className="text-[10px] text-danger">내 선택</span>}
+                      {isAnswer && <span className="text-[10px] text-success">{lang === 'en' ? 'Correct' : '정답'}</span>}
+                      {isPicked && !isAnswer && <span className="text-[10px] text-danger">{lang === 'en' ? 'Your Answer' : '내 선택'}</span>}
                     </li>
                   );
                 })}
               </ul>
-              {it.selected === null && <p className="mt-2 text-xs text-danger">미응답</p>}
+              {it.selected === null && <p className="mt-2 text-xs text-danger">{lang === 'en' ? 'Unanswered' : '미응답'}</p>}
               {it.explanation && <p className="mt-2 text-xs text-fg-muted whitespace-pre-wrap leading-relaxed">💡 {it.explanation}</p>}
             </li>
           );

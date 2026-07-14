@@ -1,5 +1,6 @@
 'use client';
 import { DEFAULT_CATEGORY, EN_CATEGORY, certLevelLabel } from '@/lib/category';
+import { useLanguage } from '@/lib/i18n-client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -23,6 +24,7 @@ interface SidebarNavProps {
 // 자격증 트리 네비게이션. 데스크탑 Sidebar와 모바일 드로어가 공유한다.
 // /en 경로에서는 영어판 트리(무료 Week1만 존재)를 보여준다.
 export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavProps) {
+  const lang = useLanguage();
   const pathname = usePathname();
   const isEn = pathname === `/${EN_CATEGORY}` || pathname.startsWith(`/${EN_CATEGORY}/`);
   const category = isEn && enCertTrees && enCertTrees.length > 0 ? EN_CATEGORY : DEFAULT_CATEGORY;
@@ -59,7 +61,7 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
                 <span className="text-fg text-sm leading-tight">{meta.name}</span>
               </Link>
               <button type="button" onClick={() => toggle(meta.slug)}
-                aria-label={`${meta.code} 주차 목록 ${isOpen ? '접기' : '펼치기'}`} aria-expanded={isOpen}
+                aria-label={`${meta.code} ${lang === 'en' ? 'weeks list' : '주차 목록'} ${lang === 'en' ? (isOpen ? 'collapse' : 'expand') : (isOpen ? '접기' : '펼치기')}`} aria-expanded={isOpen}
                 className="shrink-0 rounded-md p-2 text-fg-faint hover:text-fg">
                 <ChevronRight className={cn('h-3.5 w-3.5 transition-transform', isOpen && 'rotate-90')} />
               </button>

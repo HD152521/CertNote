@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Menu, X } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n-client';
 import { SidebarNav, type CertTree } from './SidebarNav';
 import { cn } from '@/lib/cn';
 
@@ -15,6 +16,7 @@ interface MobileNavProps {
 // position:fixed 자식의 기준을 헤더 박스로 가두기 때문에, 헤더 안에 두면 드로어가
 // 56px 헤더 영역에 갇혀 가려진다. body로 빼내 뷰포트 기준으로 띄운다.
 export function MobileNav({ certTrees, enCertTrees }: MobileNavProps) {
+  const lang = useLanguage();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -48,7 +50,7 @@ export function MobileNav({ certTrees, enCertTrees }: MobileNavProps) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="자격증 메뉴"
+        aria-label={lang === 'en' ? 'Certificates menu' : '자격증 메뉴'}
         className={cn(
           'absolute left-0 top-0 flex h-full w-72 max-w-[85vw] flex-col overflow-y-auto border-r border-border bg-bg p-4 shadow-xl',
           'transition-transform duration-300 ease-out',
@@ -56,11 +58,11 @@ export function MobileNav({ certTrees, enCertTrees }: MobileNavProps) {
         )}
       >
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-sm font-semibold tracking-tight">자격증</span>
+          <span className="text-sm font-semibold tracking-tight">{lang === 'en' ? 'Certificates' : '자격증'}</span>
           <button
             type="button"
             onClick={() => setOpen(false)}
-            aria-label="메뉴 닫기"
+            aria-label={lang === 'en' ? 'Close menu' : '메뉴 닫기'}
             className="inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted transition hover:bg-bg-subtle hover:text-fg"
           >
             <X className="h-4 w-4" />
@@ -76,7 +78,7 @@ export function MobileNav({ certTrees, enCertTrees }: MobileNavProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="메뉴 열기"
+        aria-label={lang === 'en' ? 'Open menu' : '메뉴 열기'}
         className="lg:hidden -ml-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-fg-muted transition hover:bg-bg-subtle hover:text-fg"
       >
         <Menu className="h-5 w-5" />

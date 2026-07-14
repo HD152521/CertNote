@@ -8,6 +8,7 @@ import { emitAuthChange } from '@/lib/auth/authEvents';
 import { track } from '@/lib/analytics';
 import { enablePush, isPushSupported } from '@/lib/push/client';
 import { OCCUPATION_OPTIONS, PURPOSE_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profileOptions';
+import { useLanguage, t } from '@/lib/i18n-client';
 
 type Mode = 'login' | 'signup';
 
@@ -25,23 +26,18 @@ interface AuthFormProps {
   googleEnabled?: boolean;
 }
 
-const COPY: Record<Mode, { title: string; submit: string; altText: string; altHref: string; altLabel: string }> = {
-  login: { title: '로그인', submit: '로그인', altText: '계정이 없으신가요?', altHref: '/signup', altLabel: '회원가입' },
-  signup: { title: '회원가입', submit: '가입하기', altText: '이미 계정이 있으신가요?', altHref: '/login', altLabel: '로그인' },
-};
-
 const INPUT_CLS =
   'w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-border-strong';
 
 export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormProps) {
+  const lang = useLanguage();
   const router = useRouter();
   const params = useSearchParams();
-  const copy = COPY[mode];
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   // OAuth 콜백 실패 시 /login?error=google 로 돌아온다.
-  const oauthError = params.get('error') === 'google' ? '구글 로그인에 실패했습니다. 다시 시도해 주세요.' : null;
+  const oauthError = params.get('error') === 'google' ? (lang === 'en' ? 'Google login failed. Please try again.' : '구글 로그인에 실패했습니다. 다시 시도해 주세요.') : null;
   // 회원가입 프로필(테스터 데이터 수집)
   const [name, setName] = useState('');
   const [birthdate, setBirthdate] = useState('');
@@ -90,7 +86,7 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
       if (!res.ok) {
         // 이탈 원인 분석용: 검증 실패인지(코드별) 단순 변심인지 구분한다.
         track(`${mode}_error`, { error_code: data.error ?? `http_${res.status}`, error_message: data.message });
-        setError(data.message ?? '요청을 처리하지 못했습니다.');
+        setError(data.message ?? t(lang, 'somethingWentWrong'));
         return;
       }
       track(`${mode}_completed`);
@@ -103,7 +99,7 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
       goNext();
     } catch {
       track(`${mode}_error`, { error_code: 'network' });
-      setError('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      setError(t(lang, 'networkError'));
     } finally {
       setSubmitting(false);
     }
@@ -121,8 +117,8 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
       <div className="mx-auto max-w-sm space-y-6 py-12 text-center">
         <BellRing className="mx-auto h-10 w-10 text-accent" />
         <div className="space-y-1">
-          <h1 className="text-xl font-semibold tracking-tight">학습 알림을 받을까요?</h1>
-          <p className="text-sm text-fg-muted">복습할 카드가 쌓이면 매일 정해진 시각에 알려드려요. 설정에서 언제든 끌 수 있어요.</p>
+          <h1 className="text-xl font-semibold tracking-tight">{t(lang, 'pushNotificationTitle')}</h1>
+          <p className="text-sm text-fg-muted">{t(lang, 'pushNotificationDesc')}</p>
         </div>
         <div className="space-y-2">
           <button
@@ -131,7 +127,7 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
             disabled={submitting}
             className="w-full rounded-md border border-border-strong px-3 py-2 text-sm font-medium transition hover:bg-fg/5 disabled:opacity-50"
           >
-            {submitting ? '설정 중…' : '알림 받기'}
+            {submitting ? t(lang, 'processing') : t(lang, 'enableNotifications')}
           </button>
           <button
             type="button"
@@ -139,7 +135,7 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
             disabled={submitting}
             className="w-full px-3 py-2 text-sm text-fg-muted transition hover:text-fg disabled:opacity-50"
           >
-            나중에
+            {t(lang, 'later')}
           </button>
         </div>
       </div>
@@ -148,10 +144,10 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
 
   return (
     <div className="mx-auto max-w-sm space-y-6 py-12">
-      <h1 className="text-2xl font-semibold tracking-tight">{copy.title}</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">{t(lang, mode === 'login' ? 'login' : 'signup')}</h1>
       <form onSubmit={handleSubmit} onFocusCapture={markStarted} className="space-y-4">
         <div className="space-y-1">
-          <label htmlFor="email" className="text-sm text-fg-muted">이메일</label>
+          <label htmlFor="email" className="text-sm text-fg-muted">{t(lang, 'email')}</label>
           <input
             id="email"
             type="email"
@@ -163,7 +159,7 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
           />
         </div>
         <div className="space-y-1">
-          <label htmlFor="password" className="text-sm text-fg-muted">비밀번호</label>
+          <label htmlFor="password" className="text-sm text-fg-muted">{t(lang, 'password')}</label>
           <input
             id="password"
             type="password"
@@ -174,26 +170,26 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-border-strong"
           />
-          {mode === 'signup' && <p className="text-xs text-fg-faint">8자 이상</p>}
+          {mode === 'signup' && <p className="text-xs text-fg-faint">{lang === 'en' ? 'At least 8 characters' : '8자 이상'}</p>}
         </div>
 
         {mode === 'signup' && (
           <>
             <div className="space-y-1">
-              <label htmlFor="name" className="text-sm text-fg-muted">이름</label>
+              <label htmlFor="name" className="text-sm text-fg-muted">{t(lang, 'name')}</label>
               <input id="name" type="text" autoComplete="name" required value={name}
                 onChange={(e) => setName(e.target.value)} className={INPUT_CLS} />
             </div>
             <div className="space-y-1">
-              <label htmlFor="birthdate" className="text-sm text-fg-muted">생년월일</label>
+              <label htmlFor="birthdate" className="text-sm text-fg-muted">{t(lang, 'birthdate')}</label>
               <input id="birthdate" type="date" autoComplete="bday" required value={birthdate}
                 onChange={(e) => setBirthdate(e.target.value)} className={INPUT_CLS} />
             </div>
             <div className="space-y-1">
-              <label htmlFor="targetCert" className="text-sm text-fg-muted">목표 자격증</label>
+              <label htmlFor="targetCert" className="text-sm text-fg-muted">{t(lang, 'targetCert')}</label>
               <select id="targetCert" required value={targetCert}
                 onChange={(e) => setTargetCert(e.target.value)} className={INPUT_CLS}>
-                <option value="" disabled>선택해 주세요</option>
+                <option value="" disabled>{t(lang, 'selectOne')}</option>
                 {certs.map((c) => (
                   <option key={c.slug} value={c.slug}>{c.code} · {c.name}</option>
                 ))}
@@ -202,28 +198,28 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
             {/* 선택 항목은 접어서 폼의 체감 길이를 줄인다(가입 이탈 완화). 값은 그대로 함께 제출. */}
             <details className="group rounded-md border border-border">
               <summary className="cursor-pointer select-none px-3 py-2 text-sm text-fg-muted transition hover:text-fg">
-                추가 정보 <span className="text-fg-faint">(선택 · 더 맞는 학습을 추천해 드려요)</span>
+                {t(lang, 'additionalInfo')} <span className="text-fg-faint">({t(lang, 'additionalInfoDesc')})</span>
               </summary>
               <div className="space-y-4 border-t border-border p-3">
                 <div className="space-y-1">
-                  <label htmlFor="occupation" className="text-sm text-fg-muted">직업</label>
+                  <label htmlFor="occupation" className="text-sm text-fg-muted">{t(lang, 'occupation')}</label>
                   <select id="occupation" value={occupation} onChange={(e) => setOccupation(e.target.value)} className={INPUT_CLS}>
-                    <option value="">선택 안 함</option>
+                    <option value="">{t(lang, 'doNotSelect')}</option>
                     {OCCUPATION_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label htmlFor="purpose" className="text-sm text-fg-muted">학습 목적</label>
+                  <label htmlFor="purpose" className="text-sm text-fg-muted">{t(lang, 'purpose')}</label>
                   <select id="purpose" value={purpose} onChange={(e) => setPurpose(e.target.value)} className={INPUT_CLS}>
-                    <option value="">선택 안 함</option>
+                    <option value="">{t(lang, 'doNotSelect')}</option>
                     {PURPOSE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label htmlFor="experienceLevel" className="text-sm text-fg-muted">현재 수준/경력</label>
+                  <label htmlFor="experienceLevel" className="text-sm text-fg-muted">{t(lang, 'experienceLevel')}</label>
                   <select id="experienceLevel" value={experienceLevel}
                     onChange={(e) => setExperienceLevel(e.target.value)} className={INPUT_CLS}>
-                    <option value="">선택 안 함</option>
+                    <option value="">{t(lang, 'doNotSelect')}</option>
                     {EXPERIENCE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
@@ -233,9 +229,9 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
                 className="mt-0.5 shrink-0" />
               <span>
-                (필수) 이름·생년월일 등 입력 정보를 서비스 제공 및 개선 목적으로 수집·이용하는 데 동의합니다.{' '}
+                {t(lang, 'consentText')}{' '}
                 <Link href="/privacy" target="_blank" onClick={(e) => e.stopPropagation()} className="text-fg underline underline-offset-2">
-                  개인정보처리방침
+                  {t(lang, 'privacyPolicy')}
                 </Link>
               </span>
             </label>
@@ -248,14 +244,14 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
           disabled={submitting || (mode === 'signup' && !consent)}
           className="w-full rounded-md border border-border-strong px-3 py-2 text-sm font-medium transition hover:bg-fg/5 disabled:opacity-50"
         >
-          {submitting ? '처리 중…' : copy.submit}
+          {submitting ? t(lang, 'processing') : t(lang, mode === 'login' ? 'login' : 'signup')}
         </button>
       </form>
       {googleEnabled && (
         <>
           <div className="flex items-center gap-3 text-xs text-fg-faint">
             <span className="h-px flex-1 bg-border" />
-            또는
+            {t(lang, 'or')}
             <span className="h-px flex-1 bg-border" />
           </div>
           {/* SPA 전환이 아니라 서버 리다이렉트 플로우라 Link 대신 a 태그. */}
@@ -270,18 +266,18 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
               <path fill="#FBBC05" d="M5.28 14.28A7.2 7.2 0 0 1 4.9 12c0-.79.14-1.56.38-2.28V6.63H1.29a12 12 0 0 0 0 10.74l3.99-3.09Z" />
               <path fill="#EA4335" d="M12 4.77c1.76 0 3.34.6 4.59 1.79l3.44-3.44A11.98 11.98 0 0 0 12 0 12 12 0 0 0 1.29 6.63l3.99 3.09C6.22 6.88 8.87 4.77 12 4.77Z" />
             </svg>
-            Google로 계속하기
+            {t(lang, 'continueWithGoogle')}
           </a>
           <p className="text-center text-[11px] leading-relaxed text-fg-faint">
-            구글로 계속하면{' '}
-            <Link href="/privacy" target="_blank" className="underline underline-offset-2 hover:text-fg">개인정보처리방침</Link>
-            에 동의하는 것으로 간주됩니다.
+            {t(lang, 'googleContinueText')}{' '}
+            <Link href="/privacy" target="_blank" className="underline underline-offset-2 hover:text-fg">{t(lang, 'privacyPolicy')}</Link>
+            {t(lang, 'googleAgreeTerms')}
           </p>
         </>
       )}
       <p className="text-sm text-fg-muted">
-        {copy.altText}{' '}
-        <Link href={copy.altHref} className="text-fg underline underline-offset-4">{copy.altLabel}</Link>
+        {t(lang, mode === 'login' ? 'dontHaveAccount' : 'alreadyHaveAccount')}{' '}
+        <Link href={mode === 'login' ? '/signup' : '/login'} className="text-fg underline underline-offset-4">{t(lang, mode === 'login' ? 'signup' : 'login')}</Link>
       </p>
     </div>
   );
