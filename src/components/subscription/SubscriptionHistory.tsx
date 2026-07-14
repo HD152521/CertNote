@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { formatDate } from '@/lib/utils/date';
 
 interface PaymentRecord {
   id: string;
@@ -58,7 +57,7 @@ export function SubscriptionHistory({ userId }: SubscriptionHistoryProps) {
           <tbody>
             {records.map((record) => (
               <tr key={record.id} className="border-b border-border-tertiary hover:bg-bg-tertiary">
-                <td className="py-3">{formatDate(new Date(record.createdAt))}</td>
+                <td className="py-3">{new Date(record.createdAt).toLocaleDateString('ko-KR')}</td>
                 <td className="text-right">₩{record.amount.toLocaleString()}</td>
                 <td className="text-center">
                   <span className={`rounded-full px-2 py-1 text-xs font-semibold ${

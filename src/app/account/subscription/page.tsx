@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth/session';
+import { getCurrentUser } from '@/lib/auth/currentUser';
 import { getEntitlementService } from '@/lib/entitlement/factory';
 import { SubscriptionCard } from '@/components/subscription/SubscriptionCard';
 import { SubscriptionHistory } from '@/components/subscription/SubscriptionHistory';
@@ -13,7 +13,7 @@ export default async function SubscriptionPage() {
   if (!user) redirect('/login');
 
   const entitlementService = getEntitlementService();
-  const entitlement = await entitlementService.getEntitlement(user.id);
+  const entitlement = await entitlementService.getEntitlement(user.sub);
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 px-4 py-8">
@@ -24,10 +24,10 @@ export default async function SubscriptionPage() {
       </div>
 
       {/* Current Subscription */}
-      <SubscriptionCard entitlement={entitlement} userId={user.id} />
+      <SubscriptionCard entitlement={entitlement} userId={user.sub} />
 
       {/* Billing History */}
-      <SubscriptionHistory userId={user.id} />
+      <SubscriptionHistory userId={user.sub} />
 
       {/* FAQ */}
       <div className="space-y-4 rounded-lg border border-border-secondary bg-bg-secondary p-6">

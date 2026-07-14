@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth/session';
+import { getCurrentUser } from '@/lib/auth/currentUser';
 import { CheckoutForm } from '@/components/checkout/CheckoutForm';
 
 export const metadata = {
@@ -49,7 +49,7 @@ export default async function CheckoutPage() {
       </div>
 
       {/* Checkout Form */}
-      <CheckoutForm userId={user.id} email={user.email} />
+      <CheckoutForm userId={user.sub} email={user.email} />
 
       {/* Trust Badges */}
       <div className="flex flex-wrap gap-6 border-t border-border-secondary pt-6 text-center">

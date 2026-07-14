@@ -1,7 +1,6 @@
 'use client';
 
 import { Entitlement } from '@/lib/entitlement/types';
-import { formatDate } from '@/lib/utils/date';
 
 interface SubscriptionCardProps {
   entitlement: Entitlement;
@@ -32,7 +31,7 @@ export function SubscriptionCard({ entitlement, userId }: SubscriptionCardProps)
                   <div className="mt-2">
                     {daysRemaining && daysRemaining > 0 ? (
                       <>
-                        <span className="font-medium">갱신일:</span> {formatDate(periodEnd)} ({daysRemaining}일 남음)
+                        <span className="font-medium">갱신일:</span> {periodEnd.toLocaleDateString('ko-KR')} ({daysRemaining}일 남음)
                       </>
                     ) : (
                       <span className="text-red-600">구독이 만료되었습니다</span>
