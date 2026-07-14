@@ -20372,7 +20372,7 @@
       },
       {
         "label": "B",
-        "text": "Last Write Wins(타임스탬프가 늦은 쓰기가 이김)로 해결되며, 노드 간 clock skew로 실제 나중 쓰기가 져서 silent lost update가 날 수 있다"
+        "text": "Last Write Wins(타임스탐프가 늦은 쓰기가 이김)로 해결되며, 노드 간 clock skew로 실제 나중 쓰기가 져서 silent lost update가 날 수 있다"
       },
       {
         "label": "C",
@@ -40606,27 +40606,27 @@
     "week": 9,
     "day": 1,
     "number": 1,
-    "prompt": "10MB 파일을 KMS로 암호화하려 한다. 올바른 방법은?",
+    "prompt": "To encrypt a 10MB file with KMS, what is the correct method?",
     "choices": [
       {
         "label": "A",
-        "text": "`kms:Encrypt` API로 파일을 직접 암호화"
+        "text": "Encrypt the file directly with `kms:Encrypt` API"
       },
       {
         "label": "B",
-        "text": "`GenerateDataKey`로 데이터 키를 받아 로컬에서 암호화하는 봉투 암호화"
+        "text": "Use `GenerateDataKey` to get a data key, then perform envelope encryption locally"
       },
       {
         "label": "C",
-        "text": "파일을 4KB 조각으로 나눠 각각 `kms:Encrypt` 호출"
+        "text": "Split the file into 4KB chunks and call `kms:Encrypt` for each"
       },
       {
         "label": "D",
-        "text": "KMS로는 불가능, 직접 AES 키를 만들어 파일에 저장"
+        "text": "KMS cannot do it; create an AES key directly and store it in the file"
       }
     ],
     "answer": "B",
-    "explanation": "`kms:Encrypt`로 직접 암호화할 수 있는 평문은 **최대 4KB**다. 10MB는 이 한도를 크게 넘으므로 봉투 암호화를 써야 한다 — `GenerateDataKey`로 평문 DEK와 암호화된 DEK를 동시에 받아, 평문 DEK로 큰 데이터를 로컬에서 암호화하고 평문 DEK는 즉시 폐기한다. C)처럼 조각내 매번 KMS를 호출하면 API 한도와 비용 폭증을 부른다. D)는 키 관리를 사용자가 떠안는 안티패턴. 4KB 한도는 KMS가 \"작은 비밀을 보호하는 도구\"라는 설계 의도의 반영이다."
+    "explanation": "The maximum plaintext that can be directly encrypted with `kms:Encrypt` is **4KB**. 10MB far exceeds this limit, so envelope encryption is required — call `GenerateDataKey` to receive both plaintext DEK and encrypted DEK, encrypt the large data locally with the plaintext DEK, then immediately discard it. C) Splitting into chunks and calling KMS repeatedly causes API limit exhaustion and cost explosion. D) Managing keys manually is an anti-pattern. The 4KB limit reflects KMS's design intent: \"tool to protect small secrets,\" not \"tool to directly encrypt large data.\""
   },
   {
     "id": "dva-c02-w9-d1-q2",
@@ -40635,27 +40635,27 @@
     "week": 9,
     "day": 1,
     "number": 2,
-    "prompt": "Customer Managed Key에 대해 IAM 정책으로 `kms:Decrypt`를 허용했는데도 복호화가 거부된다. 가장 가능성 높은 원인은?",
+    "prompt": "You allowed `kms:Decrypt` in IAM policy on a Customer Managed Key, yet decryption is denied. What is the most likely cause?",
     "choices": [
       {
         "label": "A",
-        "text": "CMK가 비대칭 키여서"
+        "text": "The CMK is asymmetric"
       },
       {
         "label": "B",
-        "text": "키 정책에 IAM 권한 위임(root principal Allow) statement가 없어서"
+        "text": "The key policy lacks an IAM delegation (root principal Allow) statement"
       },
       {
         "label": "C",
-        "text": "키 회전이 비활성화돼서"
+        "text": "Key rotation is disabled"
       },
       {
         "label": "D",
-        "text": "리전이 us-east-1이 아니어서"
+        "text": "The region is not us-east-1"
       }
     ],
     "answer": "B",
-    "explanation": "KMS는 키 정책이 권한의 최종 권위다. 키 정책에 `Principal: {\"AWS\": \"...:root\"}` 형태의 IAM 위임 statement가 없으면, IAM 정책에서 아무리 `kms:Decrypt`를 허용해도 효력이 없다. 기본 키 정책에는 이 statement가 자동으로 들어가지만 커스텀 정책 작성 시 빠뜨리기 쉽다. 그래서 KMS 접근은 항상 \"키 정책 + IAM 정책 둘 다 필요\"가 정답이다. A) 비대칭이어도 Decrypt 자체는 가능. C) 회전은 권한과 무관. D) 리전 강제는 CloudFront ACM 인증서 이야기지 KMS 복호화와 무관."
+    "explanation": "KMS makes key policy the final authority. Without a `Principal: {\"AWS\": \"...:root\"}` IAM delegation statement in the key policy, even `kms:Decrypt` in IAM policy has no effect. This statement is auto-included in the default key policy but easy to omit when writing custom policy — resulting in \"key lockout.\" The correct answer is always \"both key policy AND IAM policy required.\" A) Asymmetric keys can still Decrypt. C) Rotation is unrelated to permissions. D) Region enforcement is CloudFront ACM, not KMS decryption."
   },
   {
     "id": "dva-c02-w9-d1-q3",
@@ -40664,27 +40664,27 @@
     "week": 9,
     "day": 1,
     "number": 3,
-    "prompt": "AWS Managed Key(`aws/s3` 등)의 자동 키 회전 주기는?",
+    "prompt": "What is the auto-rotation period for AWS Managed Key (`aws/s3`, etc.)?",
     "choices": [
       {
         "label": "A",
-        "text": "90일"
+        "text": "90 days"
       },
       {
         "label": "B",
-        "text": "1년(365일)"
+        "text": "1 year (365 days)"
       },
       {
         "label": "C",
-        "text": "3년(1095일)"
+        "text": "3 years (1095 days)"
       },
       {
         "label": "D",
-        "text": "회전하지 않음"
+        "text": "Does not rotate"
       }
     ],
     "answer": "B",
-    "explanation": "AWS Managed Key의 자동 회전은 **1년(365일)** 이다. 2022년 5월 이전에는 3년(1095일)이었으나 AWS가 정책을 변경했다. 옛 학습 자료나 문제 은행에 \"3년\"이 남아 있을 수 있으니 주의한다. CMK의 기본 자동 회전도 1년이며, 2024년부터 사용자 지정 주기(90~2560일) 설정도 가능해졌다. 회전은 새 backing key를 추가할 뿐 ARN·키 ID·alias는 그대로라, 회전 후에도 옛 데이터를 다시 암호화할 필요가 없다."
+    "explanation": "AWS Managed Key auto-rotates every **1 year (365 days)**. Before May 2022, it was 3 years (1095 days), but AWS changed policy. Old study materials or test banks may contain \"3 years\"; watch for that. CMK default auto-rotation is also 1 year, and since 2024, custom periods (90–2560 days) are available. Rotation adds new backing key material but keeps the ARN, Key ID, and alias, so old data does not need re-encryption post-rotation."
   },
   {
     "id": "dva-c02-w9-d1-q4",
@@ -40693,7 +40693,7 @@
     "week": 9,
     "day": 1,
     "number": 4,
-    "prompt": "데이터를 **비대칭 키로 암호화**해야 하는 요구사항이 있다. 적합한 KMS Key Spec은?",
+    "prompt": "Data must be encrypted with an **asymmetric key**. Which KMS Key Spec fits?",
     "choices": [
       {
         "label": "A",
@@ -40713,7 +40713,7 @@
       }
     ],
     "answer": "B",
-    "explanation": "비대칭 암호화가 필요하면 RSA 키여야 한다. ECC(타원곡선) 키는 **서명·검증만 가능하고 암호화는 불가능**하다 — ECDSA가 서명 알고리즘이기 때문이다. C) HMAC은 메시지 인증 코드(MAC) 생성·검증용 대칭 키. D) SYMMETRIC_DEFAULT는 대칭(AES-256)이라 \"비대칭\" 요구를 충족하지 못한다. 비대칭 RSA 키는 공개키를 `GetPublicKey`로 내보내 외부에서 암호화하고 KMS 안에서만 복호화하는 패턴에 쓰인다."
+    "explanation": "Asymmetric encryption requires RSA keys. ECC (elliptic curve) keys can **only sign and verify, cannot encrypt** — ECDSA is a signing algorithm. C) HMAC is symmetric MAC for generating/verifying message auth codes. D) SYMMETRIC_DEFAULT is symmetric (AES-256), not \"asymmetric.\" Asymmetric RSA keys allow exporting the public key via `GetPublicKey`, enabling external encryption and KMS-only decryption."
   },
   {
     "id": "dva-c02-w9-d1-q5",
@@ -40722,27 +40722,27 @@
     "week": 9,
     "day": 1,
     "number": 5,
-    "prompt": "실수로 삭제하면 안 되는 프로덕션 CMK가 있다. 키를 삭제 요청했을 때 KMS의 동작은?",
+    "prompt": "A production CMK that must not be deleted is in a deletion request. How does KMS respond?",
     "choices": [
       {
         "label": "A",
-        "text": "즉시 영구 삭제된다"
+        "text": "Immediately and permanently deleted"
       },
       {
         "label": "B",
-        "text": "7~30일 대기 기간 후 삭제되며, 대기 중 취소할 수 있다"
+        "text": "Enters a 7–30 day waiting period; can be cancelled during this time"
       },
       {
         "label": "C",
-        "text": "백업본이 자동 생성되어 언제든 복구 가능하다"
+        "text": "Automatic backup is created; recovery is possible anytime"
       },
       {
         "label": "D",
-        "text": "IAM 관리자 승인 후 즉시 삭제된다"
+        "text": "Deleted immediately after IAM admin approval"
       }
     ],
     "answer": "B",
-    "explanation": "`ScheduleKeyDeletion`은 즉시 삭제하지 않고 **7~30일의 대기 기간**을 둔다. 이 기간 동안 키는 `PendingDeletion` 상태(사용 불가)이지만 `CancelKeyDeletion`으로 취소할 수 있다. CMK가 삭제되면 그 키로 암호화된 모든 데이터가 영구 복호화 불가가 되므로(백업도 소용없음), 비가역적 작업에 유예를 두는 안전 설계다. 즉시 삭제 옵션은 존재하지 않는다. C) KMS는 키 백업을 자동 생성하지 않는다."
+    "explanation": "`ScheduleKeyDeletion` does not delete immediately but starts a **7–30 day waiting period**. During this window, the key is `PendingDeletion` (unusable) but can be recovered via `CancelKeyDeletion`. Deleting a CMK makes all data encrypted with it permanently irrecoverable (backups are useless), so a waiting period provides a safety window against accidents or malice. No immediate-deletion option exists. C) KMS does not auto-create key backups."
   },
   {
     "id": "dva-c02-w9-d1-q6",
@@ -40751,27 +40751,27 @@
     "week": 9,
     "day": 1,
     "number": 6,
-    "prompt": "S3 SSE-KMS로 매일 수백만 개의 객체를 암호화하는 워크로드가 KMS API throttling에 걸린다. 비용과 호출을 줄이는 가장 적합한 방법은?",
+    "prompt": "An S3 SSE-KMS workload encrypts millions of objects daily and hits KMS API throttling. What is the best way to cut costs and calls?",
     "choices": [
       {
         "label": "A",
-        "text": "CMK를 비대칭 키로 변경"
+        "text": "Switch the CMK to asymmetric"
       },
       {
         "label": "B",
-        "text": "S3 Bucket Key 활성화"
+        "text": "Enable S3 Bucket Key"
       },
       {
         "label": "C",
-        "text": "키 회전 주기를 늘림"
+        "text": "Increase key rotation period"
       },
       {
         "label": "D",
-        "text": "객체를 4KB 이하로 분할"
+        "text": "Split objects into ≤4KB pieces"
       }
     ],
     "answer": "B",
-    "explanation": "S3 Bucket Key는 봉투 암호화에 버킷 수준 캐시 키를 한 겹 더 추가해 객체별 `GenerateDataKey` KMS 호출을 최대 99%까지 줄인다. 대량 객체 환경에서 KMS 비용과 throttling을 모두 해소하는 표준 패턴이다. A) 비대칭 키는 처리량이 더 낮아 역효과. C) 회전 주기는 호출 빈도와 무관. D) 4KB 분할은 호출 수를 오히려 폭증시킨다. \"S3 + KMS 비용/한도 절감\"이 보이면 Bucket Key가 정답이다."
+    "explanation": "S3 Bucket Key adds a bucket-level cache layer to envelope encryption, cutting per-object `GenerateDataKey` KMS calls by up to 99%. The standard pattern for bulk-object KMS cost and throttling relief. A) Asymmetric keys have lower throughput — counterproductive. C) Rotation period is unrelated to call frequency. D) 4KB splitting explodes calls instead. \"S3 + KMS cost/limit\" appearing means Bucket Key is the answer."
   },
   {
     "id": "dva-c02-w9-d1-q7",
@@ -40780,7 +40780,7 @@
     "week": 9,
     "day": 1,
     "number": 7,
-    "prompt": "규제 요구사항상 키를 **전용 하드웨어**에 보관하고 AWS도 키 재료에 접근할 수 없어야 한다. 적합한 선택은?",
+    "prompt": "Regulations require storing keys on **dedicated hardware** that AWS cannot access. What is the right choice?",
     "choices": [
       {
         "label": "A",
@@ -40792,7 +40792,7 @@
       },
       {
         "label": "C",
-        "text": "CloudHSM(또는 KMS custom key store로 연결)"
+        "text": "CloudHSM (or KMS custom key store)"
       },
       {
         "label": "D",
@@ -40800,7 +40800,7 @@
       }
     ],
     "answer": "C",
-    "explanation": "KMS는 멀티테넌트 HSM(논리적 격리) 위에서 동작한다. \"전용 하드웨어 + AWS도 키 접근 불가\"라는 강한 규제 요구는 싱글테넌트 전용 HW인 CloudHSM(FIPS 140-2 Level 3)으로 충족한다. KMS의 custom key store로 CloudHSM을 연결하면 친숙한 KMS API를 쓰면서 키는 전용 HW에 보관할 수 있다. A·B) KMS 키는 멀티테넌트라 \"전용 HW\" 요구를 못 채운다. D) Secrets Manager는 비밀 저장 서비스이지 키 격리 HW가 아니다."
+    "explanation": "KMS keys run on multi-tenant HSM (logical isolation). \"Dedicated HW + AWS no access\" satisfies only CloudHSM (single-tenant, FIPS 140-2 Level 3). Connecting CloudHSM as KMS **custom key store** keeps keys on dedicated HW while maintaining familiar KMS API — meeting both requirements. A·B) KMS keys are multi-tenant, missing the \"dedicated\" requirement. D) Secrets Manager stores secrets, not HSM-isolated keys."
   },
   {
     "id": "dva-c02-w9-d2-q1",
@@ -40809,27 +40809,27 @@
     "week": 9,
     "day": 2,
     "number": 1,
-    "prompt": "프로덕션 RDS MySQL의 DB 비밀번호를 30일마다 자동으로 회전해야 한다. 가장 적합한 서비스는?",
+    "prompt": "Production RDS MySQL password must auto-rotate every 30 days. What is the best service?",
     "choices": [
       {
         "label": "A",
-        "text": "SSM Parameter Store SecureString + EventBridge 스케줄"
+        "text": "SSM Parameter Store SecureString + EventBridge schedule"
       },
       {
         "label": "B",
-        "text": "AWS Secrets Manager 자동 회전"
+        "text": "AWS Secrets Manager auto-rotation"
       },
       {
         "label": "C",
-        "text": "Lambda로 직접 회전 로직 구현 + Parameter Store 저장"
+        "text": "Lambda-based rotation + Parameter Store storage"
       },
       {
         "label": "D",
-        "text": "KMS 자동 키 회전"
+        "text": "KMS auto key rotation"
       }
     ],
     "answer": "B",
-    "explanation": "Secrets Manager는 RDS MySQL에 대해 AWS가 검증한 회전 Lambda를 자동 생성·관리한다. 콘솔에서 회전을 켜면 4단계(createSecret → setSecret → testSecret → finishSecret) 회전이 검증과 함께 동작한다. A) Parameter Store는 회전 기능 자체가 없어 스케줄을 걸어도 회전 로직을 직접 짜야 한다. C) 직접 구현은 불필요하게 복잡하고 AWS 관리 Lambda를 재발명하는 격. D) KMS 키 회전은 암호화 키이지 DB 비밀번호와 무관. \"RDS + 자동 회전\"이 보이면 Secrets Manager다."
+    "explanation": "Secrets Manager auto-creates validated rotation Lambda for RDS MySQL, managing four-step rotation (createSecret → setSecret → testSecret → finishSecret). Enable in console; AWS handles it. A) Parameter Store has no rotation feature; scheduling only triggers logic you write. C) Direct Lambda implementation is unnecessarily complex and reinvents the validated wheel. D) KMS key rotation is for encryption keys, not DB passwords. \"RDS + auto-rotation\" means Secrets Manager."
   },
   {
     "id": "dva-c02-w9-d2-q2",
@@ -40838,7 +40838,7 @@
     "week": 9,
     "day": 2,
     "number": 2,
-    "prompt": "SSM Parameter Store에서 SecureString 파라미터를 **평문으로** 가져오는 CLI 명령은?",
+    "prompt": "To fetch SecureString parameter **in plaintext** from SSM Parameter Store, what CLI command?",
     "choices": [
       {
         "label": "A",
@@ -40858,7 +40858,7 @@
       }
     ],
     "answer": "B",
-    "explanation": "SecureString은 기본적으로 **암호화된 채** 반환되며, 평문을 받으려면 `--with-decryption`을 추가해야 한다. 이때 호출자는 해당 KMS 키에 대한 `kms:Decrypt` 권한이 필요하다. 이 분리 덕분에 \"파라미터 존재는 보지만 평문은 못 보는\" 역할을 만들 수 있다. C) `get-secure-parameter`라는 명령은 없다. D) KMS decrypt를 직접 부르는 게 아니라 SSM이 복호화를 대행한다."
+    "explanation": "SecureString returns **encrypted by default**; plaintext requires `--with-decryption`. Caller must have `kms:Decrypt` on the key. This separation allows \"can see parameter exists, cannot read plaintext\" roles. C) No `get-secure-parameter` command exists. D) SSM delegates decryption; KMS decrypt is not called directly."
   },
   {
     "id": "dva-c02-w9-d2-q3",
@@ -40867,27 +40867,27 @@
     "week": 9,
     "day": 2,
     "number": 3,
-    "prompt": "Secrets Manager와 Parameter Store가 **둘 다** 제공하는 기능은?",
+    "prompt": "Which feature do Secrets Manager AND Parameter Store both provide?",
     "choices": [
       {
         "label": "A",
-        "text": "Lambda 기반 자동 회전"
+        "text": "Lambda-based auto-rotation"
       },
       {
         "label": "B",
-        "text": "RDS 통합 회전"
+        "text": "RDS integration rotation"
       },
       {
         "label": "C",
-        "text": "KMS를 이용한 저장 암호화"
+        "text": "KMS storage encryption"
       },
       {
         "label": "D",
-        "text": "64KB 비밀 저장"
+        "text": "64KB secret storage"
       }
     ],
     "answer": "C",
-    "explanation": "두 서비스 모두 KMS로 저장 데이터를 암호화한다 — Parameter Store는 SecureString 타입이 KMS 암호화다. 그래서 \"암호화 지원\"만으로는 둘을 가를 수 없다. A·B) 자동 회전과 RDS 통합 회전은 Secrets Manager 전용이다. D) 64KB는 Secrets Manager만, Parameter Store는 Standard 4KB / Advanced 8KB. 진짜 차이는 회전·통합·크기이지 암호화 여부가 아니라는 게 함정 포인트."
+    "explanation": "Both use KMS to encrypt stored data — Parameter Store's SecureString is KMS-encrypted. So \"encryption support\" alone cannot distinguish. A·B) Auto and RDS rotation are Secrets Manager-only. D) 64KB is Secrets Manager only; Parameter Store is Standard 4KB / Advanced 8KB. Real difference is rotation, integration, size — not encryption. Common trap."
   },
   {
     "id": "dva-c02-w9-d2-q4",
@@ -40896,7 +40896,7 @@
     "week": 9,
     "day": 2,
     "number": 4,
-    "prompt": "자동 회전이 불필요하고, 값이 2KB이며, 비용을 최소화하려는 단순 설정값(예: 기능 플래그)을 저장하려 한다. 가장 적합한 선택은?",
+    "prompt": "Simple config (no rotation, 2KB, cost-minimal) like feature flags. Best choice?",
     "choices": [
       {
         "label": "A",
@@ -40912,11 +40912,11 @@
       },
       {
         "label": "D",
-        "text": "S3 객체"
+        "text": "S3 object"
       }
     ],
     "answer": "B",
-    "explanation": "자동 회전 불필요 + 8KB 이하 + 비용 최우선이면 Parameter Store Standard가 정답이다. Standard는 4KB 한도 안에 들고 **무료**다. A) Secrets Manager는 비밀당 $0.40/월로 회전 없는 단순 설정에는 과한 비용. C) Advanced는 8KB·정책 기능이 필요할 때이지 2KB 단순값엔 불필요. D) S3는 설정 조회용으로는 권한·계층·암호화 통합이 약하다. 결정 트리상 \"회전 NO → 크기 NO → RDS NO → 비용 최우선\"의 종착점이 Parameter Store Standard."
+    "explanation": ""
   },
   {
     "id": "dva-c02-w9-d2-q5",
@@ -40925,27 +40925,27 @@
     "week": 9,
     "day": 2,
     "number": 5,
-    "prompt": "Lambda 함수가 매 호출마다 Secrets Manager를 API로 읽어 비용과 레이턴시가 누적된다. 비밀을 코드에 영구 캐싱하지 않으면서 호출을 줄이는 AWS 권장 방법은?",
+    "prompt": "Lambda reads Secrets Manager per call, accumulating cost and latency. How to reduce calls without hardcoding secrets in code, per AWS?",
     "choices": [
       {
         "label": "A",
-        "text": "비밀을 Lambda 환경변수에 평문으로 복사"
+        "text": "Copy secret to Lambda environment variable in plaintext"
       },
       {
         "label": "B",
-        "text": "Parameters and Secrets Lambda Extension으로 로컬 캐싱"
+        "text": "Use Parameters and Secrets Lambda Extension for local caching"
       },
       {
         "label": "C",
-        "text": "비밀을 S3에 복제해 읽기"
+        "text": "Duplicate secret to S3 and read from there"
       },
       {
         "label": "D",
-        "text": "Provisioned Concurrency 증설"
+        "text": "Increase Provisioned Concurrency"
       }
     ],
     "answer": "B",
-    "explanation": "AWS Parameters and Secrets Lambda Extension은 실행 환경 안에 localhost(기본 2773) 캐시 프록시를 띄워, 웜 컨테이너가 재사용되는 동안 캐시 히트로 실제 API 호출을 줄인다. 비밀을 코드/환경변수에 평문 캐싱하는 위험을 AWS 관리 캐시로 대체한다. A) 환경변수 평문 복사는 노출 위험 + 회전 시 갱신 안 됨. C) S3 복제는 비밀 노출면을 늘림. D) Provisioned Concurrency는 콜드 스타트용이지 비밀 호출 비용과 무관."
+    "explanation": ""
   },
   {
     "id": "dva-c02-w9-d2-q6",
@@ -40954,259 +40954,43 @@
     "week": 9,
     "day": 2,
     "number": 6,
-    "prompt": "Alternating-Users 회전 전략이 Single-User보다 권장되는 핵심 이유는?",
+    "prompt": "Alternating-Users rotation beats Single-User why?",
     "choices": [
       {
         "label": "A",
-        "text": "비용이 더 저렴해서"
+        "text": "Cheaper"
       },
       {
         "label": "B",
-        "text": "회전 중 옛 사용자를 한동안 살려둬 다운타임이 거의 없어서"
+        "text": "Old account stays alive briefly post-rotation, so cached-old-password clients still connect — near-zero downtime"
       },
       {
         "label": "C",
-        "text": "Parameter Store에서도 동작해서"
+        "text": "Works with Parameter Store too"
       },
       {
         "label": "D",
-        "text": "KMS 키도 함께 회전해서"
+        "text": "Also rotates KMS key"
+      },
+      {
+        "label": "A",
+        "text": "Store AMI ID in Secrets Manager"
+      },
+      {
+        "label": "B",
+        "text": "Reference Parameter Store Public Parameter (`/aws/service/ami-amazon-linux-latest/...`)"
+      },
+      {
+        "label": "C",
+        "text": "Lambda daily updates template AMI ID"
+      },
+      {
+        "label": "D",
+        "text": "Inject AMI ID as environment variable"
       }
     ],
     "answer": "B",
-    "explanation": "Alternating-Users는 두 DB 계정(A↔B)을 번갈아 써서, 회전 시 현재 안 쓰는 쪽 비밀번호를 먼저 바꾼 뒤 전환하고 옛 계정을 한동안 유지한다. 덕분에 옛 비밀번호를 캐싱한 클라이언트도 회전 직후 일정 시간 접속을 이어가 다운타임이 거의 없다. Single-User는 같은 계정 비밀번호를 즉시 교체해 전환 순간 짧은 인증 실패가 가능하다. A) 비용과 무관. C) 회전은 Secrets Manager 기능. D) DB 비밀번호 회전이지 KMS 키 회전이 아니다."
-  },
-  {
-    "id": "dva-c02-w9-d2-q7",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 2,
-    "number": 7,
-    "prompt": "EC2 Auto Scaling 시작 템플릿에서 AMI ID를 하드코딩하지 않고 항상 최신 Amazon Linux 2023 이미지를 쓰려 한다. 가장 적합한 방법은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "Secrets Manager에 AMI ID 저장"
-      },
-      {
-        "label": "B",
-        "text": "Parameter Store Public Parameter(`/aws/service/ami-amazon-linux-latest/...`) 참조"
-      },
-      {
-        "label": "C",
-        "text": "Lambda로 매일 AMI ID 조회해 템플릿 수정"
-      },
-      {
-        "label": "D",
-        "text": "AMI ID를 환경변수로 주입"
-      }
-    ],
-    "answer": "B",
-    "explanation": "AWS는 최신 AMI ID 등을 Parameter Store **Public Parameter**로 공개한다. `/aws/service/ami-amazon-linux-latest/al2023-...`를 참조하면 항상 최신 패치 AMI를 하드코딩 없이 가져올 수 있고, CloudFormation/시작 템플릿에서 직접 참조 가능하다. A) Secrets Manager는 비밀 저장용이라 부적합하고 자동 갱신도 안 됨. C) 직접 조회 자동화는 불필요한 복잡성. D) 환경변수 주입은 갱신을 사람이 해야 한다."
-  },
-  {
-    "id": "dva-c02-w9-d3-q1",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 3,
-    "number": 1,
-    "prompt": "모바일 앱이 사용자별로 S3 버킷의 자기 폴더에 직접 파일을 업로드해야 한다. 사용자는 Cognito로 로그인한다. 올바른 구성은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "User Pool JWT를 그대로 S3 SDK에 전달"
-      },
-      {
-        "label": "B",
-        "text": "User Pool로 로그인 → Identity Pool에서 IAM 임시 자격증명 교환 → S3 직접 접근"
-      },
-      {
-        "label": "C",
-        "text": "User Pool JWT를 API Gateway에 보내 Lambda가 대신 업로드"
-      },
-      {
-        "label": "D",
-        "text": "Identity Pool만 사용해 게스트 자격증명으로 업로드"
-      }
-    ],
-    "answer": "B",
-    "explanation": "AWS SDK(S3 직접 호출)는 IAM 자격증명을 요구하므로 User Pool JWT만으로는 호출이 안 된다. User Pool에서 받은 JWT를 Identity Pool에 제시해 STS 임시 자격증명으로 교환한 뒤 S3에 직접 접근한다. 역할 매핑으로 사용자별 prefix를 분리할 수 있다. A) JWT는 신분증이지 AWS 자격증명이 아님. C) Lambda 경유는 가능하지만 \"직접 업로드\" 요구에 비해 불필요한 우회. D) 게스트 자격증명은 로그인한 사용자별 폴더 분리에 부적합. \"S3 직접 접근\"이 보이면 Identity Pool이다."
-  },
-  {
-    "id": "dva-c02-w9-d3-q2",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 3,
-    "number": 2,
-    "prompt": "API Gateway **REST API**에 Cognito Authorizer를 붙였다. 클라이언트가 기본적으로 어떤 토큰을 보내야 하는가?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "Refresh Token"
-      },
-      {
-        "label": "B",
-        "text": "Access Token"
-      },
-      {
-        "label": "C",
-        "text": "ID Token"
-      },
-      {
-        "label": "D",
-        "text": "IAM 임시 자격증명"
-      }
-    ],
-    "answer": "C",
-    "explanation": "REST API의 Cognito Authorizer는 기본적으로 **ID Token**을 검증한다. 반면 HTTP API의 JWT Authorizer는 보통 Access Token을 검증하며 scope 기반 인가를 내장한다. 이 토큰 종류 차이가 시험 빈출 포인트다. A) Refresh Token은 토큰 갱신용이지 API 인증에 직접 쓰지 않는다. D) IAM 자격증명은 IAM 인증(SigV4) 방식이지 Cognito Authorizer가 아니다."
-  },
-  {
-    "id": "dva-c02-w9-d3-q3",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 3,
-    "number": 3,
-    "prompt": "회원가입 시 회사 도메인(@mycompany.com) 이메일만 허용하고 자동 승인하려 한다. 어떤 Cognito 기능을 써야 하는가?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "`PostAuthentication` Lambda 트리거"
-      },
-      {
-        "label": "B",
-        "text": "`PreSignUp` Lambda 트리거"
-      },
-      {
-        "label": "C",
-        "text": "Identity Pool 역할 매핑"
-      },
-      {
-        "label": "D",
-        "text": "API Gateway Authorizer"
-      }
-    ],
-    "answer": "B",
-    "explanation": "`PreSignUp` 트리거는 회원가입이 완료되기 **직전**에 실행돼 이메일 도메인 검증을 하고, `event['response']['autoConfirmUser']`/`autoVerifyEmail`을 설정해 자동 승인까지 처리할 수 있다. A) PostAuthentication은 로그인 성공 후라 가입 검증 시점이 아니다. C) 역할 매핑은 가입이 아닌 IAM 권한 분기. D) Authorizer는 API 요청 인증이지 가입 검증이 아니다."
-  },
-  {
-    "id": "dva-c02-w9-d3-q4",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 3,
-    "number": 4,
-    "prompt": "JWT ID Token에 사용자 비밀번호나 다른 민감 정보를 넣어도 되는가? 그 이유는?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "된다, JWT는 암호화되어 안전하다"
-      },
-      {
-        "label": "B",
-        "text": "안 된다, JWT 페이로드는 Base64 인코딩일 뿐 누구나 디코딩해 읽을 수 있다"
-      },
-      {
-        "label": "C",
-        "text": "된다, 단 Access Token에만"
-      },
-      {
-        "label": "D",
-        "text": "안 된다, JWT는 100바이트로 제한된다"
-      }
-    ],
-    "answer": "B",
-    "explanation": "JWT는 `Header.Payload.Signature` 구조이며 헤더·페이로드는 **Base64URL 인코딩**일 뿐 암호화가 아니다 — 누구나 디코딩해 평문으로 읽을 수 있다. 보안은 서명(RS256)에서 오며, 서명은 \"내용이 변조되지 않았음\"을 보장할 뿐 \"내용을 숨기는\" 것이 아니다. 따라서 비밀번호 등 민감 정보를 넣으면 그대로 노출된다. 토큰에는 식별자·그룹 정도만 넣고 무거운 권한 데이터는 백엔드에서 조회해야 한다."
-  },
-  {
-    "id": "dva-c02-w9-d3-q5",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 3,
-    "number": 5,
-    "prompt": "기존 레거시 인증 시스템의 사용자를 다운타임 없이 점진적으로 Cognito로 옮기려 한다. 가장 적합한 방법은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "모든 사용자를 CSV로 한 번에 import"
-      },
-      {
-        "label": "B",
-        "text": "`UserMigration` Lambda 트리거로 첫 로그인 시 자동 이전"
-      },
-      {
-        "label": "C",
-        "text": "`PreTokenGeneration` 트리거 사용"
-      },
-      {
-        "label": "D",
-        "text": "Identity Pool 게스트 역할 활용"
-      }
-    ],
-    "answer": "B",
-    "explanation": "`UserMigration` 트리거는 사용자가 Cognito에 처음 로그인(또는 비번 재설정)을 시도해 \"사용자 없음\"이 감지될 때 호출된다. Lambda가 레거시 시스템에 그 자격증명으로 인증을 시도하고 성공하면 즉석에서 User Pool에 사용자를 생성한다. 사용자는 한 번 로그인하는 것만으로 자동 이전돼 빅뱅 마이그레이션의 다운타임·일괄 비밀번호 재설정을 피한다. A) CSV import는 비밀번호를 옮길 수 없어 전원 재설정이 필요. C) PreTokenGeneration은 클레임 커스터마이즈용. D) 게스트 역할은 무관."
-  },
-  {
-    "id": "dva-c02-w9-d3-q6",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 3,
-    "number": 6,
-    "prompt": "Identity Pool에서 Admin 그룹 사용자에게는 AdminRole을, 일반 사용자에게는 UserRole을 부여하려 한다. 어떤 기능을 사용하는가?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "User Pool MFA 설정"
-      },
-      {
-        "label": "B",
-        "text": "Identity Pool 역할 매핑(Rules-based 또는 Token-based)"
-      },
-      {
-        "label": "C",
-        "text": "PreSignUp 트리거"
-      },
-      {
-        "label": "D",
-        "text": "KMS Grant"
-      }
-    ],
-    "answer": "B",
-    "explanation": "Identity Pool의 역할 매핑은 JWT의 클레임(`cognito:groups`)에 따라 다른 IAM 역할을 assume하게 한다. Rules-based 매핑은 클레임 값으로 규칙을 정의하고, Token-based는 `cognito:preferred_role` 클레임을 사용한다. 이로써 같은 앱에서 그룹별로 S3 prefix·DynamoDB 접근을 분리할 수 있다. A) MFA는 인증 강화이지 권한 분기가 아니다. C) PreSignUp은 가입 검증. D) KMS Grant는 키 권한."
-  },
-  {
-    "id": "dva-c02-w9-d3-q7",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 3,
-    "number": 7,
-    "prompt": "Cognito User Pool에 Google·Apple 소셜 로그인과 자체 로그인을 모두 지원하려 한다. 앱이 받는 토큰은 로그인 출처에 따라 어떻게 달라지는가?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "출처마다 다른 형식의 토큰을 받아 앱에서 분기 처리해야 한다"
-      },
-      {
-        "label": "B",
-        "text": "출처와 무관하게 동일한 Cognito JWT를 받는다(페더레이션 추상화)"
-      },
-      {
-        "label": "C",
-        "text": "소셜 로그인은 IAM 자격증명을, 자체 로그인은 JWT를 받는다"
-      },
-      {
-        "label": "D",
-        "text": "소셜 로그인은 토큰을 받지 못한다"
-      }
-    ],
-    "answer": "B",
-    "explanation": "User Pool에 외부 IdP를 페더레이션하면 사용자가 Google·Apple로 로그인해도 그 신원이 User Pool에 미러링(JIT 프로비저닝)되고, 앱은 출처와 무관하게 **동일한 Cognito JWT**를 받는다. 앱은 토큰 인터페이스 하나만 다루면 되므로 로그인 출처별 분기 코드가 필요 없다 — 이것이 페더레이션의 추상화 가치다. SAML(엔터프라이즈)과 OIDC(소셜)를 한 풀에 섞을 수도 있다."
+    "explanation": ""
   },
   {
     "id": "dva-c02-w9-d4-q1",
@@ -41215,7 +40999,7 @@
     "week": 9,
     "day": 4,
     "number": 1,
-    "prompt": "웹 애플리케이션에 대한 SQL 인젝션 공격을 요청 단계에서 탐지·차단하려 한다. 적합한 서비스는?",
+    "prompt": "Block SQL injection attacks at the request stage. Right service?",
     "choices": [
       {
         "label": "A",
@@ -41235,7 +41019,7 @@
       }
     ],
     "answer": "B",
-    "explanation": "SQL 인젝션은 L7(애플리케이션) 공격으로, HTTP 요청의 쿼리·바디 내용을 파싱해야 탐지된다. WAF의 SQLi Match 규칙(또는 Managed Rules의 SQL database rule set)이 이를 담당한다. A) Shield는 L3/L4 DDoS 방어라 요청 내용을 보지 않는다. C·D) NACL과 Security Group은 L3/L4 IP·포트 필터링이라 HTTP 페이로드를 검사하지 못한다. \"내용 기반 웹 공격 차단\"이 보이면 WAF다."
+    "explanation": ""
   },
   {
     "id": "dva-c02-w9-d4-q2",
@@ -41244,355 +41028,7 @@
     "week": 9,
     "day": 4,
     "number": 2,
-    "prompt": "DDoS 공격으로 Auto Scaling과 데이터 전송이 폭증해 AWS 청구서가 급증할 위험을 보호받고, 24/7 전문가 대응도 받으려 한다. 적합한 선택은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "Shield Standard"
-      },
-      {
-        "label": "B",
-        "text": "Shield Advanced"
-      },
-      {
-        "label": "C",
-        "text": "WAF Rate-based Rule"
-      },
-      {
-        "label": "D",
-        "text": "CloudFront만 추가"
-      }
-    ],
-    "answer": "B",
-    "explanation": "Shield Advanced는 ① DDoS로 늘어난 AWS 비용을 크레딧으로 돌려주는 **비용 보호**와 ② 24/7 **Shield Response Team(SRT)** 대응을 제공한다. 이 두 가지가 Standard와 Advanced를 가르는 결정적 차이다. A) Standard는 무료 기본 방어이지만 비용 보호·SRT가 없다. C) Rate-based Rule은 L7 요청 제한이라 L3/L4 볼륨 DDoS와 비용 보호를 다루지 못한다. \"DDoS 비용 보호\" 또는 \"24/7 전문가\"가 보이면 Advanced다."
-  },
-  {
-    "id": "dva-c02-w9-d4-q3",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 4,
-    "number": 3,
-    "prompt": "CloudFront 배포에 HTTPS를 적용하기 위한 ACM 인증서는 어느 리전에서 발급해야 하는가?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "배포의 origin이 있는 리전"
-      },
-      {
-        "label": "B",
-        "text": "ap-northeast-2"
-      },
-      {
-        "label": "C",
-        "text": "us-east-1"
-      },
-      {
-        "label": "D",
-        "text": "아무 리전이나 가능"
-      }
-    ],
-    "answer": "C",
-    "explanation": "CloudFront는 글로벌 엣지 서비스이고 제어 평면이 **us-east-1**에 있어, CloudFront에 붙일 ACM 인증서는 반드시 us-east-1에서 발급해야 한다. 다른 리전에서 만든 인증서는 CloudFront에 연결되지 않는다. 반면 ALB 같은 Regional 리소스는 그 리소스와 같은 리전의 ACM 인증서를 쓴다. \"CloudFront 인증서 리전\"은 항상 us-east-1이다."
-  },
-  {
-    "id": "dva-c02-w9-d4-q4",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 4,
-    "number": 4,
-    "prompt": "EC2 인스턴스에서 직접 TLS를 종료하기 위해 ACM 인증서를 설치하려 한다. 결과는?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "정상적으로 설치 가능하다"
-      },
-      {
-        "label": "B",
-        "text": "ACM은 개인키를 export하지 못해 EC2 직접 설치가 불가능하다"
-      },
-      {
-        "label": "C",
-        "text": "us-east-1에서 발급하면 가능하다"
-      },
-      {
-        "label": "D",
-        "text": "Private CA를 쓰면 가능하다"
-      }
-    ],
-    "answer": "B",
-    "explanation": "ACM은 인증서의 개인키를 export하지 못하게 막는다(키 재료가 ACM 경계를 벗어나지 않음). EC2에서 직접 TLS를 종료하려면 개인키 파일이 인스턴스에 있어야 하는데 ACM은 이를 주지 않으므로 직접 설치가 불가능하다. 대신 EC2 앞에 ALB/CloudFront를 두고 거기서 ACM으로 TLS를 종료하거나, EC2에 Let's Encrypt 등 별도 인증서를 설치해야 한다. ACM은 AWS 관리형 종단점에만 쓰인다."
-  },
-  {
-    "id": "dva-c02-w9-d4-q5",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 4,
-    "number": 5,
-    "prompt": "새로운 WAF 규칙을 배포하되, 정상 사용자 트래픽에 영향을 주지 않으면서 규칙이 어떤 요청에 걸리는지 먼저 관찰하려 한다. 어떤 Action을 사용해야 하는가?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "Block"
-      },
-      {
-        "label": "B",
-        "text": "Allow"
-      },
-      {
-        "label": "C",
-        "text": "Count"
-      },
-      {
-        "label": "D",
-        "text": "CAPTCHA"
-      }
-    ],
-    "answer": "C",
-    "explanation": "Count 모드는 요청을 차단하지 않고 \"이 규칙에 걸렸을 요청\"만 CloudWatch 메트릭·샘플 로그로 기록한다. 신규 규칙을 Count로 며칠 관찰해 오탐이 없음을 확인한 뒤 Block으로 승격하는 것이 안전한 운영 패턴이다. A) Block은 바로 차단해 오탐 시 정상 사용자가 막힌다. B) Allow는 통과시키며 관찰 기능이 아니다. D) CAPTCHA는 사람 검증을 강제한다. \"규칙 테스트 + 트래픽 무영향\"이 보이면 Count다."
-  },
-  {
-    "id": "dva-c02-w9-d4-q6",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 4,
-    "number": 6,
-    "prompt": "API Gateway **HTTP API** 앞에 WAF를 붙여 SQL 인젝션을 막으려 한다. 그러나 직접 연결되지 않는다. 올바른 해결책은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "HTTP API를 REST API로 변경하는 것 외엔 방법이 없다"
-      },
-      {
-        "label": "B",
-        "text": "HTTP API 앞에 CloudFront를 두고 CloudFront에 WAF를 연결"
-      },
-      {
-        "label": "C",
-        "text": "NLB를 앞에 두고 WAF 연결"
-      },
-      {
-        "label": "D",
-        "text": "Security Group으로 SQL 패턴 차단"
-      }
-    ],
-    "answer": "B",
-    "explanation": "API Gateway HTTP API는 WAF를 직접 지원하지 않는다. 해결책은 HTTP API 앞에 CloudFront 배포를 두고 CloudFront에 WAF Web ACL을 붙이는 것이다(REST API는 WAF 직접 지원). C) NLB는 L4라 HTTP를 파싱하지 못해 WAF 대상이 아니다. D) Security Group은 IP/포트 필터링이라 SQL 패턴을 못 본다. A) REST API 전환 외에도 CloudFront 우회라는 유효한 방법이 있으므로 오답."
-  },
-  {
-    "id": "dva-c02-w9-d4-q7",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 4,
-    "number": 7,
-    "prompt": "S3 버킷에 고객의 신용카드 번호·주민등록번호 같은 민감 정보가 저장됐는지 자동으로 탐지하려 한다. 적합한 서비스는?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "GuardDuty"
-      },
-      {
-        "label": "B",
-        "text": "Inspector"
-      },
-      {
-        "label": "C",
-        "text": "Macie"
-      },
-      {
-        "label": "D",
-        "text": "Detective"
-      }
-    ],
-    "answer": "C",
-    "explanation": "Macie는 S3에 저장된 PII(개인 식별 정보)를 머신러닝으로 자동 탐지·분류하는 서비스다. A) GuardDuty는 CloudTrail/VPC Flow/DNS 로그로 계정 활동의 이상을 탐지(데이터 내용이 아닌 행위). B) Inspector는 EC2·ECR 이미지의 취약점을 스캔(상태). D) Detective는 보안 사고의 근본 원인을 조사. 셋의 차이는 \"데이터(Macie) vs 행위(GuardDuty) vs 취약점(Inspector)\"이다. \"S3 안의 민감 데이터 발견\"이 보이면 Macie다."
-  },
-  {
-    "id": "dva-c02-w9-d5-q1",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 5,
-    "number": 1,
-    "prompt": "모바일 앱이 Cognito로 사용자를 로그인시킨 뒤, 그 사용자가 자기 전용 S3 폴더에 사진을 직접 업로드해야 한다. 올바른 흐름은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "User Pool이 발급한 ID Token을 Authorization 헤더에 넣어 S3에 SigV4 없이 직접 PutObject 호출"
-      },
-      {
-        "label": "B",
-        "text": "User Pool로 로그인 → Identity Pool에 JWT 제출 → IAM 임시 자격 증명 → S3 직접 접근"
-      },
-      {
-        "label": "C",
-        "text": "모든 업로드를 Lambda 프록시로 받아 Lambda 실행 역할의 IAM 권한으로 S3에 대신 PutObject"
-      },
-      {
-        "label": "D",
-        "text": "API Gateway + Cognito Authorizer 뒤의 백엔드를 통해서만 업로드하고 S3 직접 접근은 차단"
-      }
-    ],
-    "answer": "B",
-    "explanation": "User Pool은 인증(누구인가)을 담당해 JWT를 발급할 뿐, AWS 리소스 접근 권한은 주지 않는다. S3에 직접 접근하려면 그 JWT를 Identity Pool에 제출해 IAM 임시 자격 증명으로 교환해야 한다. A)는 JWT를 S3가 이해하지 못하므로 불가능 — S3는 SigV4 서명된 IAM 자격을 요구한다. C·D)는 동작은 하지만 \"직접 접근\"이라는 요구를 충족하지 못하고 불필요한 중간 계층을 추가한다. Identity Pool의 역할은 \"JWT를 IAM 자격으로 바꾸는 인가 브로커\"임을 기억한다."
-  },
-  {
-    "id": "dva-c02-w9-d5-q2",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 5,
-    "number": 2,
-    "prompt": "RDS 프로덕션 자격 증명을 30일마다 **무중단** 으로 회전해야 한다. 가장 적합한 구성은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "Parameter Store SecureString + EventBridge 스케줄"
-      },
-      {
-        "label": "B",
-        "text": "Secrets Manager + Single-User 회전 전략"
-      },
-      {
-        "label": "C",
-        "text": "Secrets Manager + Alternating-Users 회전 전략"
-      },
-      {
-        "label": "D",
-        "text": "Lambda로 직접 비밀번호 변경 로직 구현"
-      }
-    ],
-    "answer": "C",
-    "explanation": "Parameter Store는 자동 회전 기능 자체가 없으므로 A)는 탈락이다. Secrets Manager는 회전을 내장하는데, **Single-User** 는 한 사용자의 비밀번호를 바꾸므로 전환 순간 짧은 틈이 생길 수 있는 반면 **Alternating-Users** 는 두 DB 사용자를 번갈아 갱신해 다운타임이 사실상 없다. \"무중단\"이 핵심 요구이므로 C)가 정답이다. D)는 회전의 네 단계(createSecret/setSecret/testSecret/finishSecret)와 롤백 안전장치를 직접 재구현하는 안티패턴이다."
-  },
-  {
-    "id": "dva-c02-w9-d5-q3",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 5,
-    "number": 3,
-    "prompt": "웹 애플리케이션이 SQL 인젝션과 XSS 공격을 받고 있다. 이를 탐지·차단할 가장 적합한 서비스는?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "Security Group"
-      },
-      {
-        "label": "B",
-        "text": "Network ACL"
-      },
-      {
-        "label": "C",
-        "text": "AWS WAF"
-      },
-      {
-        "label": "D",
-        "text": "Shield Standard"
-      }
-    ],
-    "answer": "C",
-    "explanation": "SQL 인젝션·XSS는 HTTP 요청 본문/파라미터(L7) 안에 숨는 공격이다. Security Group(L4 상태 기반)과 NACL(L3/L4 IP·포트)은 패킷의 IP·포트만 보므로 페이로드 내용을 검사할 수 없다. Shield는 볼류메트릭 DDoS(L3/L4)를 흡수하지 가용성 공격이지 주입 공격을 막는 도구가 아니다. WAF만이 HTTP 레이어의 콘텐츠를 규칙으로 검사해 SQL/XSS 패턴을 차단한다. \"어느 OSI 계층의 공격인가\"를 먼저 판단하면 즉답이다."
-  },
-  {
-    "id": "dva-c02-w9-d5-q4",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 5,
-    "number": 4,
-    "prompt": "15MB 설정 파일을 KMS로 암호화해 S3에 저장하려 한다. 올바른 접근은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "`kms:Encrypt` API로 파일을 직접 암호화"
-      },
-      {
-        "label": "B",
-        "text": "`GenerateDataKey`로 데이터 키를 받아 로컬에서 봉투 암호화"
-      },
-      {
-        "label": "C",
-        "text": "Secrets Manager에 파일 전체를 저장"
-      },
-      {
-        "label": "D",
-        "text": "Parameter Store 표준 파라미터에 저장"
-      }
-    ],
-    "answer": "B",
-    "explanation": "`kms:Encrypt`의 직접 암호화 한도는 4KB라 15MB에는 쓸 수 없다(A 탈락). 봉투 암호화로 `GenerateDataKey`를 호출해 평문 DEK와 암호화된 DEK를 동시에 받고, 평문 DEK로 파일을 로컬에서 암호화한 뒤 평문 DEK를 폐기한다. C) Secrets Manager 한도는 64KB라 15MB를 못 담는다. D) Parameter Store 표준은 4KB, 고급도 8KB라 불가능하다. 대용량 데이터 암호화는 항상 봉투 암호화가 정답이다."
-  },
-  {
-    "id": "dva-c02-w9-d5-q5",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 5,
-    "number": 5,
-    "prompt": "REST API(API Gateway v1)에 Cognito Authorizer를 붙이면 기본적으로 어떤 토큰을 검증하는가?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "Access Token"
-      },
-      {
-        "label": "B",
-        "text": "ID Token"
-      },
-      {
-        "label": "C",
-        "text": "Refresh Token"
-      },
-      {
-        "label": "D",
-        "text": "IAM 임시 자격 증명"
-      }
-    ],
-    "answer": "B",
-    "explanation": "REST API의 Cognito Authorizer는 기본적으로 **ID Token** 을 검증한다(사용자 신원 속성 중심). 반면 HTTP API(v2)의 JWT Authorizer는 보통 Access Token(scope·groups 중심)을 검증한다. 이 둘의 기본값 차이가 시험 단골이다. C) Refresh Token은 만료된 토큰을 재발급받는 용도이지 API 인가에 직접 쓰지 않는다. D) IAM 임시 자격은 Identity Pool이 발급하는 것으로 Authorizer 검증 대상이 아니다."
-  },
-  {
-    "id": "dva-c02-w9-d5-q6",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 5,
-    "number": 6,
-    "prompt": "CloudFront 배포에 HTTPS를 적용하려 한다. ACM 인증서는 어느 리전에서 발급해야 하며, EC2에 직접 설치할 수 있는가?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "배포가 속한 리전 / 설치 가능"
-      },
-      {
-        "label": "B",
-        "text": "us-east-1 / 설치 불가"
-      },
-      {
-        "label": "C",
-        "text": "아무 리전 / 설치 가능"
-      },
-      {
-        "label": "D",
-        "text": "us-west-2 / 설치 불가"
-      }
-    ],
-    "answer": "B",
-    "explanation": "CloudFront는 전역 서비스라 인증서를 글로벌 컨트롤 플레인이 있는 **us-east-1** 에서만 읽는다. 따라서 다른 리전에서 발급한 인증서는 CloudFront에 붙일 수 없다. 또 ACM 공개 인증서는 개인키를 추출할 수 없게 막아두어 **EC2에 직접 설치가 불가능** 하다 — CloudFront·ALB·API Gateway 같은 관리형 서비스에 연결하는 방식으로만 쓴다. EC2에서 TLS가 필요하면 앞에 ALB를 두고 ALB에 ACM 인증서를 붙인다."
-  },
-  {
-    "id": "dva-c02-w9-d5-q7",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 5,
-    "number": 7,
-    "prompt": "DDoS 공격으로 Auto Scaling이 대량 확장돼 청구액이 급증했다. 이 추가 비용을 크레딧으로 보호받으려면?",
+    "prompt": "DDoS hits; Auto Scaling and data transfer soar; bill explodes. Protect cost. Right choice?",
     "choices": [
       {
         "label": "A",
@@ -41608,78 +41044,223 @@
       },
       {
         "label": "D",
-        "text": "CloudFront 캐싱 강화"
+        "text": "Strengthen CloudFront caching"
       }
     ],
     "answer": "B",
-    "explanation": "DDoS로 인한 스케일링 비용 급증에 대해 **크레딧을 제공하는 것은 Shield Advanced 뿐** 이다($3,000/월). Standard는 무료지만 비용 보호와 SRT 지원이 없다. C) WAF rate-based rule은 L7 요청 빈도를 줄여 공격 자체를 완화하는 데 도움은 되지만 비용 환급과는 무관하다. D) 캐싱은 오리진 부하를 줄일 뿐 청구액 보호 기능이 아니다. \"DDoS 비용 보호\"라는 키워드가 보이면 Shield Advanced가 정답이다."
+    "explanation": "Shield Advanced alone refunds DDoS-caused cost spikes as credits. Standard is free but no cost protection or SRT. C) WAF rate limit helps mitigate but doesn't refund costs. D) Caching reduces origin load, not billing protection. \"DDoS cost protection\" → Advanced."
   },
   {
-    "id": "dva-c02-w9-d5-q8",
+    "id": "dva-c02-w9-d4-q3",
+    "category": "aws-certs",
+    "slug": "dva-c02",
+    "week": 9,
+    "day": 4,
+    "number": 3,
+    "prompt": "CloudFront HTTPS needs ACM cert. Which region?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Origin's region"
+      },
+      {
+        "label": "B",
+        "text": "ap-northeast-2"
+      },
+      {
+        "label": "C",
+        "text": "us-east-1"
+      },
+      {
+        "label": "D",
+        "text": "Any region works"
+      }
+    ],
+    "answer": "C",
+    "explanation": ""
+  },
+  {
+    "id": "dva-c02-w9-d4-q4",
+    "category": "aws-certs",
+    "slug": "dva-c02",
+    "week": 9,
+    "day": 4,
+    "number": 4,
+    "prompt": "Install ACM cert directly on EC2 for TLS termination. Result?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Works fine"
+      },
+      {
+        "label": "B",
+        "text": "ACM refuses export; EC2 direct install impossible"
+      },
+      {
+        "label": "C",
+        "text": "Works if us-east-1 issued"
+      },
+      {
+        "label": "D",
+        "text": "Private CA required"
+      }
+    ],
+    "answer": "B",
+    "explanation": ""
+  },
+  {
+    "id": "dva-c02-w9-d5-q1",
+    "category": "aws-certs",
+    "slug": "dva-c02",
+    "week": 9,
+    "day": 5,
+    "number": 1,
+    "prompt": "Mobile app user logs in via Cognito, then uploads to S3 folder directly. Correct flow?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "User Pool JWT to S3 Authorization header (no SigV4)"
+      },
+      {
+        "label": "B",
+        "text": "User Pool login → Identity Pool swap JWT for IAM temp credentials → S3 direct"
+      },
+      {
+        "label": "C",
+        "text": "Lambda proxy all uploads; Lambda role calls S3"
+      },
+      {
+        "label": "D",
+        "text": "API Gateway + Cognito Authorizer only; no direct S3"
+      }
+    ],
+    "answer": "B",
+    "explanation": "JWT ≠ IAM credentials. User Pool proves who (JWT). Identity Pool converts to AWS credentials. Role mapping splits folder access by user ID. A) S3 needs SigV4 IAM signature. C·D) Possible, not \"direct access.\""
+  },
+  {
+    "id": "dva-c02-w9-d5-q2",
+    "category": "aws-certs",
+    "slug": "dva-c02",
+    "week": 9,
+    "day": 5,
+    "number": 3,
+    "prompt": "App gets SQL injection and XSS attacks. Block at request stage. Right service?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Security Group"
+      },
+      {
+        "label": "B",
+        "text": "Network ACL"
+      },
+      {
+        "label": "C",
+        "text": "AWS WAF"
+      },
+      {
+        "label": "D",
+        "text": "Shield Standard"
+      }
+    ],
+    "answer": "C",
+    "explanation": ""
+  },
+  {
+    "id": "dva-c02-w9-d5-q3",
+    "category": "aws-certs",
+    "slug": "dva-c02",
+    "week": 9,
+    "day": 5,
+    "number": 6,
+    "prompt": "CloudFront HTTPS cert + region + EC2 installability?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Any region / installable"
+      },
+      {
+        "label": "B",
+        "text": "us-east-1 / not installable"
+      },
+      {
+        "label": "C",
+        "text": "Regional / installable"
+      },
+      {
+        "label": "D",
+        "text": "us-west-2 / not installable"
+      }
+    ],
+    "answer": "B",
+    "explanation": ""
+  },
+  {
+    "id": "dva-c02-w9-d5-q4",
+    "category": "aws-certs",
+    "slug": "dva-c02",
+    "week": 9,
+    "day": 5,
+    "number": 7,
+    "prompt": "DDoS hits; Auto Scaling soars; bill explodes. Cost protection?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Shield Standard"
+      },
+      {
+        "label": "B",
+        "text": "Shield Advanced"
+      },
+      {
+        "label": "C",
+        "text": "WAF rate rule"
+      },
+      {
+        "label": "D",
+        "text": "CloudFront cache more"
+      }
+    ],
+    "answer": "B",
+    "explanation": ""
+  },
+  {
+    "id": "dva-c02-w9-d5-q5",
     "category": "aws-certs",
     "slug": "dva-c02",
     "week": 9,
     "day": 5,
     "number": 8,
-    "prompt": "HTTP API(API Gateway v2) 앞에 WAF를 붙여 SQL 인젝션을 막으려 한다. 그런데 WAF가 직접 연결되지 않는다. 올바른 해법은?",
+    "prompt": "HTTP API (v2) needs WAF for SQL injection. Direct attach fails. Solution?",
     "choices": [
       {
         "label": "A",
-        "text": "HTTP API 대신 NACL로 차단"
+        "text": "Rebuild as REST only"
       },
       {
         "label": "B",
-        "text": "HTTP API 앞에 CloudFront를 두고 CloudFront에 WAF 연결"
+        "text": "CloudFront in front + WAF on CloudFront"
       },
       {
         "label": "C",
-        "text": "Shield Advanced로 대체"
+        "text": "NLB in front + WAF"
       },
       {
         "label": "D",
-        "text": "Security Group 규칙 추가"
+        "text": "Security Group SQL rules"
       }
     ],
     "answer": "B",
-    "explanation": "WAF는 REST API(v1)·ALB·CloudFront·AppSync에는 붙지만 **HTTP API(v2)에는 직접 연결되지 않는다.** 그래서 HTTP API를 WAF로 보호하려면 앞에 CloudFront 배포를 두고 CloudFront에 WAF를 연결하는 우회 패턴을 쓴다. A·D) NACL/SG는 L4까지만 보므로 L7 SQL 인젝션을 못 막는다. C) Shield는 DDoS용이지 주입 공격 차단 도구가 아니다. \"HTTP API + WAF\"의 비호환은 자주 나오는 함정이다."
+    "explanation": ""
   },
   {
-    "id": "dva-c02-w9-d5-q9",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 5,
-    "number": 9,
-    "prompt": "비밀번호를 네트워크로 전송하지 않는 가장 안전한 Cognito 인증 흐름은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "`USER_PASSWORD_AUTH`"
-      },
-      {
-        "label": "B",
-        "text": "`ADMIN_USER_PASSWORD_AUTH`"
-      },
-      {
-        "label": "C",
-        "text": "`USER_SRP_AUTH`"
-      },
-      {
-        "label": "D",
-        "text": "`CUSTOM_AUTH`"
-      }
-    ],
-    "answer": "C",
-    "explanation": "`USER_SRP_AUTH`는 SRP(Secure Remote Password) 프로토콜을 사용해 비밀번호를 네트워크로 보내지 않고 인증한다 — 클라이언트와 서버가 비밀번호 자체를 교환하지 않고 증명만 주고받는 방식이라 가장 안전하다. A·B) `*_PASSWORD_AUTH` 계열은 비밀번호를 (TLS 위로) 전송하므로 레거시·관리자 시나리오에만 제한적으로 쓴다. D) `CUSTOM_AUTH`는 Lambda 트리거로 커스텀 챌린지를 구현하는 흐름이지 \"비밀번호 미전송\"을 보장하는 표준 흐름은 아니다."
-  },
-  {
-    "id": "dva-c02-w9-d5-q10",
+    "id": "dva-c02-w9-d5-q6",
     "category": "aws-certs",
     "slug": "dva-c02",
     "week": 9,
     "day": 5,
     "number": 10,
-    "prompt": "S3 버킷에 고객 개인정보(PII)가 실수로 저장됐는지 자동으로 발견하고 싶다. 적합한 서비스는?",
+    "prompt": "S3 auto-detect PII (credit cards, SSNs) stored accidentally. Service?",
     "choices": [
       {
         "label": "A",
@@ -41699,16 +41280,16 @@
       }
     ],
     "answer": "B",
-    "explanation": "**Macie** 는 머신러닝으로 S3 객체를 스캔해 신용카드 번호·주민번호 같은 PII와 민감 데이터를 자동 식별한다(데이터 중심 탐지). A) GuardDuty는 비정상 API 호출·악성 IP 통신 등 계정 행위 기반 위협을 탐지하지 데이터 내용을 분류하지 않는다. C) Inspector는 EC2/컨테이너의 취약점·CVE를 스캔한다. D) Config는 리소스 구성 규정 준수를 추적한다. \"S3 안의 PII 발견\"이면 Macie가 정답이다."
+    "explanation": ""
   },
   {
-    "id": "dva-c02-w9-d5-q11",
+    "id": "dva-c02-w9-d5-q7",
     "category": "aws-certs",
     "slug": "dva-c02",
     "week": 9,
     "day": 5,
     "number": 11,
-    "prompt": "규제상 암호화 키를 **전용 하드웨어** 에 보관하고 AWS도 키 재료에 접근하지 못해야 한다. 또한 기존 KMS API 호환성도 유지하고 싶다. 적합한 선택은?",
+    "prompt": "Regulations: keys on **dedicated hardware** AWS cannot access. Also want KMS API compatibility. Solution?",
     "choices": [
       {
         "label": "A",
@@ -41720,44 +41301,31 @@
       },
       {
         "label": "C",
-        "text": "CloudHSM을 KMS custom key store로 연결"
+        "text": "CloudHSM as KMS custom key store"
       },
       {
         "label": "D",
-        "text": "Secrets Manager에 키를 저장"
-      }
-    ],
-    "answer": "C",
-    "explanation": "KMS 기본 키는 멀티테넌트 HSM(논리적 격리) 위에서 동작하므로 \"전용 HW + AWS도 접근 불가\"라는 강한 규제 요구를 단독으로는 못 채운다(A·B 탈락). CloudHSM은 싱글테넌트 전용 HW(FIPS 140-2 Level 3)이고, 이를 KMS의 **custom key store** 로 연결하면 키 재료는 전용 HW에 보관하면서도 친숙한 KMS API를 그대로 쓸 수 있어 두 요구를 동시에 만족한다. D) Secrets Manager는 비밀 저장 서비스이지 키 격리 HW가 아니다."
-  },
-  {
-    "id": "dva-c02-w9-d5-q12",
-    "category": "aws-certs",
-    "slug": "dva-c02",
-    "week": 9,
-    "day": 5,
-    "number": 12,
-    "prompt": "새로 만든 WAF 규칙을 프로덕션에 적용하기 전에, 정상 트래픽을 잘못 차단하지 않는지(오탐) 안전하게 측정하려 한다. 가장 적합한 방법은?",
-    "choices": [
+        "text": "Secrets Manager key storage"
+      },
       {
         "label": "A",
-        "text": "규칙 액션을 Block으로 두고 로그 관찰"
+        "text": "Block mode, monitor logs"
       },
       {
         "label": "B",
-        "text": "규칙 액션을 Count로 두고 매칭 건수 관찰"
+        "text": "Count mode, measure match rate"
       },
       {
         "label": "C",
-        "text": "규칙을 비활성화한 채 CloudWatch 알람 설정"
+        "text": "Disable rule, set alerts"
       },
       {
         "label": "D",
-        "text": "Shield Advanced로 대체 검증"
+        "text": "Shield Advanced backup"
       }
     ],
-    "answer": "B",
-    "explanation": "WAF 규칙 액션의 **Count** 모드는 트래픽을 차단하지 않고 규칙에 매칭된 건수만 기록한다. 새 규칙을 Count로 먼저 돌려 정상 요청이 얼마나 잡히는지(오탐 비율) 측정한 뒤, 안전이 확인되면 Block으로 승격하는 것이 표준 운영 패턴이다. A)는 검증 단계에서 실제 사용자를 차단해버려 위험하다. C) 비활성 규칙은 매칭 통계를 만들지 않는다. D) Shield는 DDoS용이라 WAF 규칙 검증과 무관하다. \"WAF 규칙 안전 검증\"이면 Count 모드가 정답이다."
+    "answer": "C",
+    "explanation": ""
   },
   {
     "id": "linux-master-1-w1-d1-q1",
@@ -66236,151 +65804,6 @@
     "explanation": "제약 충돌형 시나리오에서는 PII가 워크포스를, 불균형이 지표를, 다소비 요건이 KDS를 각각 강제한다. 정답은 가장 멋지거나 싸거나 단순한 것이 아니라 모든 제약을 동시에 만족하는 선택이다. 제약을 하나라도 위반하면(예: 민감 데이터를 공개 워크포스에) 다른 장점과 무관하게 오답이다."
   },
   {
-    "id": "mls-c01-w10-d1-q1",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 10,
-    "day": 1,
-    "number": 1,
-    "prompt": "한 팀이 매일 자정에 전체 사용자 2천만 명의 이탈 점수를 일괄 계산해 데이터 웨어하우스에 적재하려 한다. 사용자가 실시간으로 결과를 기다리지 않는다. 가장 비용 효율적인 추론 방식은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "Real-time Endpoint를 2대 상시 운영"
-      },
-      {
-        "label": "B",
-        "text": "Serverless Inference"
-      },
-      {
-        "label": "C",
-        "text": "Batch Transform"
-      },
-      {
-        "label": "D",
-        "text": "Asynchronous Inference"
-      }
-    ],
-    "answer": "C",
-    "explanation": "\"실시간 응답 불필요 + 대량 일괄 처리\" 키워드는 Batch Transform이다. 잡이 도는 동안만 과금되어 상시 엔드포인트 비용이 없다. Real-time(A)은 유휴 과금으로 낭비, Serverless(B)는 페이로드/소량 호출용, Asynchronous(D)는 온라인 큐잉용으로 일괄 데이터셋 전체 처리에는 Batch가 적합하다."
-  },
-  {
-    "id": "mls-c01-w10-d1-q2",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 10,
-    "day": 1,
-    "number": 2,
-    "prompt": "어떤 모델이 500MB짜리 고해상도 위성 이미지를 입력받아 약 8분간 추론한다. 결과는 즉시가 아니어도 되며, 처리 완료 시 알림을 받고 싶다. 적절한 옵션은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "Real-time Endpoint"
-      },
-      {
-        "label": "B",
-        "text": "Asynchronous Inference"
-      },
-      {
-        "label": "C",
-        "text": "Serverless Inference"
-      },
-      {
-        "label": "D",
-        "text": "Batch Transform"
-      }
-    ],
-    "answer": "B",
-    "explanation": "페이로드가 6MB/60초 제한을 크게 초과(500MB, 8분)하므로 Real-time(A)과 Serverless(C, 4MB)는 불가능하다. Asynchronous는 최대 1GB·1시간을 지원하고 SNS 알림으로 완료를 통지한다. Batch(D)는 단건 온라인 요청이 아니라 대량 데이터셋 일괄 처리에 쓴다."
-  },
-  {
-    "id": "mls-c01-w10-d1-q3",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 10,
-    "day": 1,
-    "number": 3,
-    "prompt": "사내 분석가들이 사용하는 도구가 하루 평균 30회, 불규칙한 시간대에 호출된다. 페이로드는 작고, 첫 요청의 약간의 지연은 허용 가능하다. 유휴 비용을 0으로 만들고 싶다. 무엇을 선택해야 하는가?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "Serverless Inference"
-      },
-      {
-        "label": "B",
-        "text": "Real-time Endpoint with 오토스케일링"
-      },
-      {
-        "label": "C",
-        "text": "Batch Transform"
-      },
-      {
-        "label": "D",
-        "text": "멀티모델 엔드포인트"
-      }
-    ],
-    "answer": "A",
-    "explanation": "간헐적·예측 불가 트래픽 + 작은 페이로드 + 콜드 스타트 허용 + 유휴 비용 0원은 Serverless의 전형적 시나리오다. Real-time(B)은 오토스케일링을 써도 최소 인스턴스가 켜져 있어 완전한 0원이 어렵다. Batch(C)는 온라인 요청용이 아니고, 멀티모델(D)은 비용 패턴이 아니라 모델 다수 호스팅 기법이다."
-  },
-  {
-    "id": "mls-c01-w10-d1-q4",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 10,
-    "day": 1,
-    "number": 4,
-    "prompt": "전자상거래 사이트의 실시간 추천 API가 초당 수천 건의 안정적 트래픽을 받으며, p99 지연 50ms 이내로 응답해야 한다. 가장 적합한 추론 방식은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "Asynchronous Inference"
-      },
-      {
-        "label": "B",
-        "text": "Batch Transform"
-      },
-      {
-        "label": "C",
-        "text": "Serverless Inference"
-      },
-      {
-        "label": "D",
-        "text": "Real-time Endpoint"
-      }
-    ],
-    "answer": "D",
-    "explanation": "지속적인 고트래픽 + 엄격한 저지연 요구는 상시 가동되는 Real-time Endpoint의 정의 그대로다. Asynchronous(A)는 큐잉 기반 준실시간, Batch(B)는 오프라인, Serverless(C)는 콜드 스타트 때문에 엄격한 p99 지연 보장이 어렵다."
-  },
-  {
-    "id": "mls-c01-w10-d1-q5",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 10,
-    "day": 1,
-    "number": 5,
-    "prompt": "Real-time Endpoint의 페이로드/응답 제한으로 옳은 것은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "페이로드 1GB, 최대 1시간 처리"
-      },
-      {
-        "label": "B",
-        "text": "페이로드 6MB, 응답 60초 이내"
-      },
-      {
-        "label": "C",
-        "text": "페이로드 100MB, 무제한 시간"
-      },
-      {
-        "label": "D",
-        "text": "페이로드 4MB, GPU 필수"
-      }
-    ],
-    "answer": "B",
-    "explanation": "동기식 Real-time 호출은 페이로드 6MB·응답 60초 제한을 가진다. 1GB·1시간(A)은 Asynchronous, 대용량 무제한(C)은 Batch Transform의 특성에 가깝고, 4MB(D)는 Serverless의 페이로드 한도이며 GPU 필수도 아니다."
-  },
-  {
     "id": "mls-c01-w10-d2-q1",
     "category": "aws-certs",
     "slug": "mls-c01",
@@ -73573,151 +72996,6 @@
     "explanation": "GPU 저활용·데이터 로딩 병목 같은 시스템 자원·성능 문제는 Profiler가 분석·권고한다. Debugger(A)는 그래디언트·과적합 등 학습 품질 이상용, AMT(C)는 하이퍼파라미터 탐색, Model Monitor(D)는 배포 후 추론 드리프트 모니터링이다."
   },
   {
-    "id": "mls-c01-w9-d1-q1",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 1,
-    "number": 1,
-    "prompt": "신용카드 사기 탐지 모델에서 사기 거래는 전체의 0.5%다. 한 모델이 정확도 99.5%를 기록했다. 이 정확도를 신뢰할 수 없는 가장 큰 이유는?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "정확도는 회귀에서만 쓰는 지표이기 때문"
-      },
-      {
-        "label": "B",
-        "text": "정확도는 항상 재현율보다 낮게 계산되기 때문"
-      },
-      {
-        "label": "C",
-        "text": "정확도는 다중 클래스에서만 의미가 있기 때문"
-      },
-      {
-        "label": "D",
-        "text": "모든 거래를 \"정상\"으로 찍어도 99.5% 정확도가 나오는 극단적 불균형이기 때문"
-      }
-    ],
-    "answer": "D",
-    "explanation": "사기가 0.5%면 모든 것을 정상으로 예측만 해도 99.5%가 나오므로 정확도는 사기 탐지 능력을 전혀 반영하지 못한다. 정확도는 분류 지표이며(A 오답), 재현율과의 대소관계는 일반화할 수 없고(B 오답), 이진 분류에서도 쓰인다(C 오답)."
-  },
-  {
-    "id": "mls-c01-w9-d1-q2",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 1,
-    "number": 2,
-    "prompt": "암 선별 검사 모델을 평가한다. 환자(양성)를 정상으로 놓치는 일(FN)이 가장 위험하다. 우선해야 할 지표는?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "재현율(Recall)"
-      },
-      {
-        "label": "B",
-        "text": "정밀도(Precision)"
-      },
-      {
-        "label": "C",
-        "text": "특이도(Specificity)"
-      },
-      {
-        "label": "D",
-        "text": "정확도(Accuracy)"
-      }
-    ],
-    "answer": "A",
-    "explanation": "FN을 줄이는 것이 목표이므로 분모에 FN이 들어가는 재현율(TP/(TP+FN))을 우선한다. 정밀도(B)는 FP를 줄일 때, 특이도(C)는 음성 적중에 초점, 정확도(D)는 불균형에서 부적절하다."
-  },
-  {
-    "id": "mls-c01-w9-d1-q3",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 1,
-    "number": 3,
-    "prompt": "어떤 모델의 정밀도가 0.95, 재현율이 0.10이다. 이 둘을 균형 있게 반영하는 F1 점수는 대략 얼마이며 무엇을 시사하는가?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "약 0.53 — 두 지표의 산술평균으로 양호하다"
-      },
-      {
-        "label": "B",
-        "text": "약 0.18 — 재현율이 매우 낮아 실제 양성을 대부분 놓치고 있다"
-      },
-      {
-        "label": "C",
-        "text": "약 0.95 — 정밀도가 높으므로 우수하다"
-      },
-      {
-        "label": "D",
-        "text": "약 0.10 — F1은 항상 재현율과 같다"
-      }
-    ],
-    "answer": "B",
-    "explanation": "F1 = 2×(0.95×0.10)/(0.95+0.10) ≈ 0.18로, 조화평균은 낮은 쪽(재현율)에 민감해 실제 양성을 대부분 놓치고 있음을 드러낸다. 산술평균이 아니며(A), 정밀도만 반영하지 않고(C), 재현율과 같지도 않다(D)."
-  },
-  {
-    "id": "mls-c01-w9-d1-q4",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 1,
-    "number": 4,
-    "prompt": "스팸 필터에서 정상 메일을 스팸함으로 보내는 일(FP)이 사용자에게 가장 큰 피해를 준다. 모델 평가 시 우선해야 할 지표는?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "재현율(Recall)"
-      },
-      {
-        "label": "B",
-        "text": "F2 점수(재현율 가중)"
-      },
-      {
-        "label": "C",
-        "text": "정밀도(Precision)"
-      },
-      {
-        "label": "D",
-        "text": "FN의 절대 개수"
-      }
-    ],
-    "answer": "C",
-    "explanation": "FP를 줄이는 것이 목표이므로 분모에 FP가 들어가는 정밀도(TP/(TP+FP))를 우선한다. 재현율(A)과 F2(B)는 FN/재현율을 강조하므로 반대 방향이고, FN 개수(D)는 누락 측정으로 이 상황과 무관하다."
-  },
-  {
-    "id": "mls-c01-w9-d1-q5",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 1,
-    "number": 5,
-    "prompt": "클래스가 5개이고 일부 클래스의 표본이 매우 적은 다중 분류 문제에서, 소수 클래스의 성능까지 동등하게 반영해 평가하고 싶다. 적절한 평균화 방식은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "Micro 평균"
-      },
-      {
-        "label": "B",
-        "text": "단순 정확도"
-      },
-      {
-        "label": "C",
-        "text": "Weighted 평균"
-      },
-      {
-        "label": "D",
-        "text": "Macro 평균"
-      }
-    ],
-    "answer": "D",
-    "explanation": "Macro 평균은 클래스별 지표를 동등 가중으로 평균하므로 소수 클래스도 큰 클래스와 똑같이 반영된다. Micro(A)와 Weighted(C)는 표본 많은 클래스가 지배하고, 정확도(B)는 불균형을 가린다."
-  },
-  {
     "id": "mls-c01-w9-d2-q1",
     "category": "aws-certs",
     "slug": "mls-c01",
@@ -73861,296 +73139,6 @@
     ],
     "answer": "B",
     "explanation": "AUC는 임계값과 무관하게 모델의 순위 변별력을 0~1로 요약하므로 모델 간 비교 및 튜닝 목적 지표로 적합하다. 정확도(A)는 불균형에 취약하고, 학습 손실(C)은 일반화를 반영하지 못하며, 특정 임계값 FN(D)은 임계값 의존적이다."
-  },
-  {
-    "id": "mls-c01-w9-d3-q1",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 3,
-    "number": 1,
-    "prompt": "데이터에 센서 오류로 인한 소수의 극단적 이상치가 섞여 있고, 이들에 과민 반응하지 않는 평가지표를 원한다. 가장 적절한 것은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "RMSE"
-      },
-      {
-        "label": "B",
-        "text": "MAE"
-      },
-      {
-        "label": "C",
-        "text": "R²"
-      },
-      {
-        "label": "D",
-        "text": "잔차의 최댓값"
-      }
-    ],
-    "answer": "B",
-    "explanation": "MAE는 오차를 제곱하지 않아 극단 이상치에 강건하므로 이상치에 덜 휘둘린다. RMSE(A)는 제곱으로 큰 오차를 증폭하고, R²(C)도 제곱합 기반이라 민감하며, 잔차 최댓값(D)은 이상치 단 하나에 좌우된다."
-  },
-  {
-    "id": "mls-c01-w9-d3-q2",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 3,
-    "number": 2,
-    "prompt": "동일한 예측 결과에서 RMSE가 MAE보다 현저히 크게 나왔다. 이는 무엇을 시사하는가?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "모델에 데이터 누수가 있다"
-      },
-      {
-        "label": "B",
-        "text": "모든 오차가 동일하다"
-      },
-      {
-        "label": "C",
-        "text": "일부 큰 오차(이상치성 큰 잔차)가 존재한다"
-      },
-      {
-        "label": "D",
-        "text": "타깃 변수가 범주형이다"
-      }
-    ],
-    "answer": "C",
-    "explanation": "RMSE는 큰 오차를 제곱으로 증폭하므로 RMSE와 MAE의 격차가 크면 소수의 큰 오차가 존재함을 뜻한다. 데이터 누수(A)나 범주형 타깃(D)과는 무관하며, 모든 오차가 같으면(B) 두 지표가 거의 같아진다."
-  },
-  {
-    "id": "mls-c01-w9-d3-q3",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 3,
-    "number": 3,
-    "prompt": "매출 규모가 제각각인 여러 지점의 예측 성능을 스케일에 관계없이 비교하려 한다. 단, 일부 지점은 매출이 0에 가깝다. 이 지표의 주의점으로 옳은 것은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "MAPE는 스케일 무관이지만 실제값이 0에 가까우면 분모가 폭발해 부적합할 수 있다"
-      },
-      {
-        "label": "B",
-        "text": "MAPE는 실제값이 0이어도 항상 안정적이다"
-      },
-      {
-        "label": "C",
-        "text": "MAPE는 절대 오차이므로 스케일 비교에 부적합하다"
-      },
-      {
-        "label": "D",
-        "text": "MAPE는 분류 전용 지표다"
-      }
-    ],
-    "answer": "A",
-    "explanation": "MAPE는 오차를 실제값으로 나눈 상대 지표라 스케일 비교에 유용하지만, 실제값이 0이거나 0에 가까우면 분모가 폭발해 왜곡된다. 0에서 안정적(B)이지 않고, 절대 오차가 아니라 비율(C)이며, 회귀 지표(D 오답)다."
-  },
-  {
-    "id": "mls-c01-w9-d3-q4",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 3,
-    "number": 4,
-    "prompt": "어떤 회귀 모델의 R²가 -0.2로 계산되었다. 이것이 의미하는 바는?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "계산 오류이며 R²는 음수가 될 수 없다"
-      },
-      {
-        "label": "B",
-        "text": "모델이 분산의 20%를 설명한다"
-      },
-      {
-        "label": "C",
-        "text": "모델이 완벽하다"
-      },
-      {
-        "label": "D",
-        "text": "모델이 타깃 평균으로 예측하는 것보다도 성능이 나쁘다"
-      }
-    ],
-    "answer": "D",
-    "explanation": "R²<0은 모델이 단순 평균선(ȳ)으로 예측한 기준선보다도 못하다는 강한 경고다. R²는 음수가 될 수 있고(A 오답), 음수는 설명력 20%(B)나 완벽(C)을 의미하지 않는다."
-  },
-  {
-    "id": "mls-c01-w9-d3-q5",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 3,
-    "number": 5,
-    "prompt": "RMSE가 낮아 만족스러운데, 잔차 플롯(예측값 vs 잔차)에서 뚜렷한 U자 곡선이 나타났다. 가장 합리적인 해석과 조치는?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "지표가 좋으니 그대로 배포한다"
-      },
-      {
-        "label": "B",
-        "text": "잔차 플롯은 분류에서만 의미가 있으므로 무시한다"
-      },
-      {
-        "label": "C",
-        "text": "모델이 비선형성을 포착하지 못하고 있으므로 피처 변환이나 비선형 모델을 검토한다"
-      },
-      {
-        "label": "D",
-        "text": "데이터를 무작위로 섞으면 곡선이 사라진다"
-      }
-    ],
-    "answer": "C",
-    "explanation": "잔차의 U자/곡선 패턴은 모델이 비선형 관계를 잡지 못했다는 신호이므로 피처 변환이나 비선형 모델을 검토해야 한다. 지표만 믿고 배포(A)는 위험하고, 잔차 분석은 회귀의 핵심 진단이며(B 오답), 셔플은 패턴의 원인을 제거하지 못한다(D)."
-  },
-  {
-    "id": "mls-c01-w9-d4-q1",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 4,
-    "number": 1,
-    "prompt": "딥러닝 학습 잡에서 기울기가 점점 0에 수렴해 학습이 정체되는 문제를 실시간으로 자동 탐지하고, 망가진 잡을 일찍 중단해 비용을 아끼고 싶다. 적절한 서비스는?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "SageMaker Clarify"
-      },
-      {
-        "label": "B",
-        "text": "SageMaker Model Monitor"
-      },
-      {
-        "label": "C",
-        "text": "SageMaker Ground Truth"
-      },
-      {
-        "label": "D",
-        "text": "SageMaker Debugger"
-      }
-    ],
-    "answer": "D",
-    "explanation": "기울기 소실/폭발·과적합 등 학습 과정의 텐서를 실시간 포착하고 규칙으로 자동 중단까지 하는 것은 Debugger다. Clarify(A)는 편향/설명, Model Monitor(B)는 운영 드리프트, Ground Truth(C)는 라벨링 서비스다."
-  },
-  {
-    "id": "mls-c01-w9-d4-q2",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 4,
-    "number": 2,
-    "prompt": "대출 승인 모델이 성별 집단 간에 긍정 예측률이 크게 다른지 규제 대응을 위해 정량적으로 측정하려 한다. 사용할 도구와 지표 유형은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "Clarify의 학습 후 편향 지표(예: Disparate Impact)"
-      },
-      {
-        "label": "B",
-        "text": "Debugger의 vanishing_gradient 규칙"
-      },
-      {
-        "label": "C",
-        "text": "RMSE"
-      },
-      {
-        "label": "D",
-        "text": "Ground Truth 라벨 합의율"
-      }
-    ],
-    "answer": "A",
-    "explanation": "집단 간 예측 공정성은 Clarify의 학습 후 편향 지표(DPPL, Disparate Impact 등)로 측정한다. Debugger 규칙(B)은 학습 과정용, RMSE(C)는 회귀 오차, 라벨 합의율(D)은 라벨링 품질이다."
-  },
-  {
-    "id": "mls-c01-w9-d4-q3",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 4,
-    "number": 3,
-    "prompt": "\"이 특정 대출 거절 예측에서 어떤 피처가 결정에 가장 크게 기여했는가\"를 고객에게 설명해야 한다. 가장 적절한 기법은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "Debugger의 overfit 규칙"
-      },
-      {
-        "label": "B",
-        "text": "Clarify의 SHAP 값(국소 설명)"
-      },
-      {
-        "label": "C",
-        "text": "혼동행렬"
-      },
-      {
-        "label": "D",
-        "text": "ROC 곡선"
-      }
-    ],
-    "answer": "B",
-    "explanation": "개별 예측에 대한 피처 기여도 설명은 Clarify가 제공하는 SHAP 값(국소 설명)이 정확히 그 역할을 한다. overfit 규칙(A)은 과적합 탐지, 혼동행렬(C)·ROC(D)는 전체 분류 성능 평가지표다."
-  },
-  {
-    "id": "mls-c01-w9-d4-q4",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 4,
-    "number": 4,
-    "prompt": "학습 전 편향(pre-training bias) 분석의 목적으로 옳은 것은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "학습된 모델의 예측이 집단 간 공정한지 본다"
-      },
-      {
-        "label": "B",
-        "text": "기울기 폭발을 탐지한다"
-      },
-      {
-        "label": "C",
-        "text": "모델을 만들기 전 데이터 자체의 집단 간 레이블 분포 치우침을 본다"
-      },
-      {
-        "label": "D",
-        "text": "추론 지연시간을 측정한다"
-      }
-    ],
-    "answer": "C",
-    "explanation": "학습 전 편향은 모델 생성 이전 단계에서 데이터 자체의 집단별 분포/레이블 치우침(CI, DPL 등)을 측정한다. 모델 예측의 공정성(A)은 학습 후 편향이고, 기울기(B)·지연시간(D)은 편향 분석과 무관하다."
-  },
-  {
-    "id": "mls-c01-w9-d4-q5",
-    "category": "aws-certs",
-    "slug": "mls-c01",
-    "week": 9,
-    "day": 4,
-    "number": 5,
-    "prompt": "사기 탐지 모델이 전체 재현율은 양호하지만 \"야간 거래\"에서만 재현율이 급락한다. 가장 효과적인 다음 단계는?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "오류 분석으로 야간 오류 버킷을 식별하고 SHAP·데이터 부족 여부를 확인해 그 버킷부터 개선한다"
-      },
-      {
-        "label": "B",
-        "text": "즉시 모델을 폐기하고 처음부터 다시 학습한다"
-      },
-      {
-        "label": "C",
-        "text": "전체 학습률만 무작위로 바꿔 본다"
-      },
-      {
-        "label": "D",
-        "text": "정확도 지표만 보고 배포를 강행한다"
-      }
-    ],
-    "answer": "A",
-    "explanation": "특정 구간에서만 성능이 나쁘면 오류 분석으로 해당 버킷을 식별하고 SHAP/데이터 부족 원인을 진단해 우선 개선하는 것이 효과적이다. 전체 재학습(B)·무작위 튜닝(C)은 비효율적이고, 문제를 무시한 배포(D)는 위험하다."
   },
   {
     "id": "mls-c01-w9-d5-q1",

@@ -1,99 +1,99 @@
-# Day 4 - 비지도·이상탐지: RCF, PCA, IP Insights, 토픽 모델(LDA/NTM)
+# Day 4 - Unsupervised/Anomaly Detection: RCF, PCA, IP Insights, Topic Models (LDA/NTM)
 
-오늘은 레이블 없이 구조·이상·차원·주제를 다루는 비지도 빌트인을 정리한다. 시험은 "레이블이 없다 / 드문 사건 / 차원이 너무 크다 / 주제를 발견" 같은 단서로 이 알고리즘들을 가리킨다. 각각의 입력·핵심 파라미터·헷갈리는 짝을 구분하는 것이 요점이다.
+Today we consolidate unsupervised builtins that handle structure, anomaly, dimension, and topic without labels. Tests hint at these through signals "no labels / rare event / too many dimensions / discover topics." The key is distinguishing each algorithm's input/core parameters/common confusions.
 
-## Random Cut Forest (RCF) — 이상 탐지
+## Random Cut Forest (RCF) — Anomaly Detection
 
-데이터를 무작위로 잘라 트리를 만들고, 격리하기 쉬운(=드문) 포인트에 높은 **anomaly score**를 매긴다.
+Create trees by cutting data randomly, assign high **anomaly scores** to points that are easy to isolate (rare).
 
-- **용도**: 이상 탐지(비지도). 시계열의 급변, 스파이크, 드문 패턴.
-- **입력**: CSV, RecordIO-protobuf.
-- **출력**: 각 레코드의 이상 점수(높을수록 이상).
-- **스트리밍**: Kinesis Data Analytics에 `RANDOM_CUT_FOREST` 함수로 내장 → 실시간 이상 탐지.
+- **Use**: Anomaly detection (unsupervised). Time series spikes, rare patterns
+- **Input**: CSV, RecordIO-protobuf
+- **Output**: Each record's anomaly score (higher = more anomalous)
+- **Streaming**: Kinesis Data Analytics has `RANDOM_CUT_FOREST` function built-in → real-time anomaly detection
 
 ```text
-주요 하이퍼파라미터:
-  num_trees          트리 수 (많을수록 안정)
-  num_samples_per_tree   트리당 샘플 수
-  feature_dim        피처 차원
+Key hyperparameters:
+  num_trees              tree count (more = stable)
+  num_samples_per_tree   samples per tree
+  feature_dim            feature dimension
 ```
 
-> 💡 **관련 이론**: RCF의 직관은 "이상치는 정상보다 트리에서 빨리 격리된다"이다. 정상 포인트는 빽빽한 영역에 있어 여러 번 잘라야 분리되지만, 드문 포인트는 몇 번의 무작위 절단으로 홀로 남는다. 이 격리 깊이를 점수로 환산한다. 레이블이 필요 없고 새로운 형태의 이상에도 반응하므로, Day1에서 본 "레이블이 거의 없는 / 변하는 이상" 문제의 대표 해법이다. 실시간이면 Kinesis Data Analytics의 RCF SQL 함수를 떠올리자.
+> 💡 **Related Theory**: RCF's intuition: "anomalies isolate faster than normal." Normal points are in dense regions, need many cuts to separate. Rare points isolate from few random cuts. This isolation depth becomes a score. No labels needed, responds to new anomaly forms → represents the "almost no labels / changing anomalies" problem from Day 1. Real-time? Recall Kinesis Data Analytics RCF SQL function.
 
-## PCA — 차원 축소
+## PCA — Dimensionality Reduction
 
-상관된 많은 피처를 분산을 최대한 보존하는 소수의 **주성분**으로 압축한다.
+Compress many correlated features into fewer **principal components** preserving variance maximally.
 
-- **용도**: 차원 축소(비지도). 시각화, 다운스트림 모델 입력 경량화, 다중공선성 완화.
-- **입력**: RecordIO-protobuf, CSV.
-- **모드**: `regular`(중간 차원), `randomized`(매우 큰 차원에서 근사·고속).
+- **Use**: Dimensionality reduction (unsupervised). Visualization, lighten downstream model input, relax multicollinearity
+- **Input**: RecordIO-protobuf, CSV
+- **Modes**: `regular`(mid dimensions), `randomized`(huge dimensions, approximate, fast)
 
 ```text
-주요 하이퍼파라미터:
-  num_components     유지할 주성분 수
+Key hyperparameters:
+  num_components     principal components to keep
   algorithm_mode     regular | randomized
-  subtract_mean      평균 제거(센터링)
+  subtract_mean      mean removal (centering)
 ```
 
-- 스케일에 민감하므로 보통 **스케일링/센터링 후** 적용.
-- PCA는 비지도라 레이블을 쓰지 않는다 — 레이블을 활용한 차원 축소가 필요하면 LDA(선형판별분석)지만, 여기서의 SageMaker LDA는 토픽 모델(Latent Dirichlet Allocation)이라는 점에 주의(이름 충돌).
+- Sensitive to scale → usually **scale/center first**
+- PCA is unsupervised, doesn't use labels — need labeled dimensionality reduction? That's LDA(Linear Discriminant Analysis), but note: SageMaker LDA is topic modeling (Latent Dirichlet Allocation), name collision!
 
-## IP Insights — 엔티티-IP 이상 탐지
+## IP Insights — Entity-IP Anomaly Detection
 
-(사용자/계정 같은) **엔티티와 IPv4 주소의 연관**을 학습해, 평소와 다른 조합을 이상으로 탐지한다.
+Learn association between **entity**(user/account) and IPv4, detect unusual combinations.
 
-- **용도**: 비정상 로그인, 계정 탈취, 봇 탐지(비지도).
-- **입력**: CSV — `(엔티티, IP)` 쌍.
-- **출력**: 해당 엔티티가 그 IP를 쓸 가능성에 대한 점수(낮으면 이상).
-- **기법**: 신경망 임베딩으로 엔티티-IP 패턴 학습, 무작위 음성 샘플로 대조.
+- **Use**: Abnormal login, account takeover, bot detection (unsupervised)
+- **Input**: CSV — `(entity, IP)` pairs
+- **Output**: Likelihood that entity uses that IP (low = anomalous)
+- **Technique**: Neural net embedding learns entity-IP patterns, contrastive with random negative samples
 
 ```text
-주요 하이퍼파라미터:
-  num_entity_vectors   엔티티 임베딩 해시 공간 크기
-  vector_dim           임베딩 차원
+Key hyperparameters:
+  num_entity_vectors   entity embedding hash space size
+  vector_dim           embedding dimension
   num_ip_encoder_layers
   random_negative_sampling_rate
 ```
 
-RCF vs IP Insights: 둘 다 이상 탐지지만, **RCF는 일반 수치 데이터의 이상**, **IP Insights는 "엔티티-IP" 관계 특화**다. 로그인 IP 이상이면 IP Insights, 일반 메트릭 스파이크면 RCF.
+RCF vs IP Insights: Both anomaly detection, but **RCF is general numeric data anomaly, IP Insights specializes in "entity-IP" relationships**. Abnormal login IP? → IP Insights. General metric spike? → RCF.
 
-## 토픽 모델: LDA와 NTM
+## Topic Models: LDA and NTM
 
-레이블 없이 문서 집합에서 **잠재 주제**와 주제별 단어 분포를 찾는다. 둘 다 토픽 모델이지만 구현이 다르다.
+Find **latent topics** and word distributions per topic from documents without labels. Both topic models but different implementations.
 
-| 항목 | LDA (Latent Dirichlet Allocation) | NTM (Neural Topic Model) |
+| Item | LDA (Latent Dirichlet Allocation) | NTM (Neural Topic Model) |
 |------|------|------|
-| 기반 | 확률적 생성 모델 | 신경망(오토인코더) |
-| 학습 | CPU 단일, 비교적 단순 | GPU 활용, 대규모·복잡 |
-| 입력 | BoW(문서-단어 카운트) | BoW |
-| 특징 | 해석 쉬움, 작은~중간 데이터 | 더 풍부한 표현, 대규모 |
+| Foundation | Probabilistic generative model | Neural network (autoencoder) |
+| Learning | CPU single, relatively simple | GPU capable, large-scale complex |
+| Input | BoW (document-word counts) | BoW |
+| Strength | Interpretable, small-to-mid data | Richer representations, large-scale |
 
-- 공통 입력: **Bag-of-Words**(어휘 인덱스별 카운트), RecordIO-protobuf 또는 CSV.
-- 사용자는 주제 수(LDA: `num_topics`, NTM: `num_topics`)를 지정.
+- Common input: **Bag-of-Words** (word index frequency counts), RecordIO-protobuf or CSV
+- User specifies topic count (LDA: `num_topics`, NTM: `num_topics`)
 
-> 💡 **관련 이론**: 토픽 모델은 "각 문서는 여러 주제의 혼합이고, 각 주제는 단어들의 분포다"라는 가정에서 출발한다. LDA는 이를 베이지안 확률 모델로 추정하고, NTM은 신경망으로 같은 목표를 근사한다. 둘 다 비지도이므로 정답 주제 레이블이 없고, 주제 수를 하이퍼파라미터로 준다. 시험에서 "둘 중 무엇?"을 물으면 데이터 규모·GPU 활용·해석성으로 가른다(대규모/GPU=NTM, 단순/해석=LDA). 그리고 이 LDA(토픽 모델)는 차원 축소용 선형판별분석(LDA)과 이름만 같을 뿐 다른 것임을 반드시 구분하라.
+> 💡 **Related Theory**: Topic models assume "each document is a mixture of topics, each topic is a word distribution." LDA estimates this as Bayesian prob model, NTM approximates same goal via neural net. Both unsupervised — no ground-truth topic labels, topic count is hyperparameter. Test asks "which of two?" → break by data scale/GPU/interpretability (large/GPU=NTM, simple/interpretable=LDA). This LDA (topic model) is completely different from Linear Discriminant Analysis (LDA), same name only!
 
-## 비지도 빌트인 매핑 요약
+## Unsupervised Builtin Mapping Summary
 
-| 알고리즘 | 과제 | 핵심 단서 | 입력 |
+| Algorithm | Task | Signal Words | Input |
 |------|------|------|------|
-| Random Cut Forest | 이상 탐지(일반 수치) | "드문 사건 / 스파이크 / 실시간" | CSV, protobuf |
-| IP Insights | 이상 탐지(엔티티-IP) | "비정상 로그인 / 계정 IP" | (엔티티, IP) CSV |
-| PCA | 차원 축소 | "피처가 너무 많다 / 압축 / 시각화" | protobuf, CSV |
-| LDA | 토픽 모델(확률) | "주제 발견 / 작은 데이터 / 해석" | BoW |
-| NTM | 토픽 모델(신경망) | "주제 발견 / 대규모 / GPU" | BoW |
+| Random Cut Forest | Anomaly detection (general numeric) | "rare events / spike / realtime" | CSV, protobuf |
+| IP Insights | Anomaly detection (entity-IP) | "abnormal login / account IP" | (entity, IP) CSV |
+| PCA | Dimensionality reduction | "too many features / compress / visualize" | protobuf, CSV |
+| LDA | Topic model (probabilistic) | "topic discovery / small data / interpret" | BoW |
+| NTM | Topic model (neural net) | "topic discovery / large-scale / GPU" | BoW |
 
-## 시험 팁
+## Test Tips
 
-- "레이블 없는 드문 이상 / 실시간 스트림" → RCF(실시간은 Kinesis Data Analytics RCF).
-- "사용자/계정이 평소와 다른 IP" → IP Insights.
-- "피처가 수백~수천, 모델 입력을 줄이자" → PCA(매우 크면 randomized 모드).
-- "문서에서 주제 발견" → LDA/NTM, 규모·GPU·해석성으로 둘 중 선택.
-- LDA의 이름 함정: 토픽 모델 LDA ≠ 차원축소 선형판별분석 LDA.
+- "No-label rare anomaly / realtime stream" → RCF (realtime = Kinesis Data Analytics RCF)
+- "User/account at unusual IP" → IP Insights
+- "Hundreds-to-thousands features, shrink model input" → PCA (huge = randomized mode)
+- "Documents → discover topics" → LDA/NTM, split by scale/GPU/interpretability
+- LDA name trap: Topic model LDA ≠ dimensionality reduction Linear Discriminant Analysis
 
-## 정리하며
+## Summary
 
-오늘은 비지도·이상탐지 빌트인을 정리했다. RCF(일반 이상), IP Insights(엔티티-IP 이상), PCA(차원 축소), LDA/NTM(토픽 모델)이 각각의 정답 신호다. 레이블이 없을 때 "무엇을 발견·탐지·압축하려는가"를 먼저 묻는 것이 핵심이다. 내일은 Week 6 전체를 묶어 알고리즘 선택 의사결정을 종합 복습한다.
+Today we consolidated unsupervised/anomaly builtins: RCF(general anomaly), IP Insights(entity-IP anomaly), PCA(dimensionality reduction), LDA/NTM(topic models). Each answers "what do we discover/detect/compress when there's no label?" Next — synthesize Week 6 decision-making for algorithm selection.
 
 ---
 

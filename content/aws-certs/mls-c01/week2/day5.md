@@ -1,84 +1,84 @@
-# Day 5 - Week 2 종합 복습: 변환부터 분산 학습 데이터 공급까지
+# Day 5 - Week 2 Comprehensive Review: From Transformation to Distributed Training Data Supply
 
-이번 주는 "데이터를 어떻게 가공하고, 자동화하고, 보강하고, 효율적으로 학습에 공급하는가"를 다뤘다. 데이터 엔지니어링의 두 번째 축인 **변환·파이프라인**이다. 오늘은 Day 1~4를 하나의 흐름으로 다시 엮으며, 시험에서 헷갈리기 쉬운 선택 기준을 정리한다.
+This week covered "how to process, automate, augment, and efficiently supply data for training." This is the second axis of data engineering: **transformation and pipelines**. Today, we reconnect Days 1-4 in a single flow and clarify choice criteria that are easily confused in exams.
 
-## 한 장으로 보는 Week 2 흐름
+## Week 2 Flow at a Glance
 
 ```
-[원시 데이터]
-   │  Day1: 변환(ETL)
-   ▼  Glue(서버리스 Spark) / EMR(풀컨트롤 클러스터)
-[정제·가공 데이터]
-   │  Day2: 파이프라인 자동화
-   ▼  Step Functions(범용) / SageMaker Pipelines(ML 전용) + EventBridge 트리거
-[재현 가능한 학습 데이터셋]
-   │  Day3: 증강·합성·불균형 대응
-   ▼  증강(반전·역번역) / 합성(GAN) / SMOTE·가중치
-[충분하고 균형 잡힌 데이터셋]
-   │  Day4: 저장·접근 최적화
+[Raw Data]
+   │  Day 1: Transformation (ETL)
+   ▼  Glue (serverless Spark) / EMR (full-control cluster)
+[Cleaned and Processed Data]
+   │  Day 2: Pipeline Automation
+   ▼  Step Functions (general-purpose) / SageMaker Pipelines (ML-specific) + EventBridge trigger
+[Reproducible Training Dataset]
+   │  Day 3: Augmentation, Synthesis, Imbalance Handling
+   ▼  Augmentation (flip, back-translation) / Synthesis (GAN) / SMOTE, weights
+[Sufficient and Balanced Dataset]
+   │  Day 4: Storage and Access Optimization
    ▼  File/Pipe/FastFile mode / FSx for Lustre / ShardedByS3Key
-[학습 작업에 효율적으로 공급] → 모델 학습
+[Efficiently Supplied to Training] → Model Training
 ```
 
-핵심 메시지: **데이터 준비는 변환 한 단계로 끝나지 않는다.** 가공 → 자동화 → 보강 → 효율적 공급이 모두 모델 품질과 비용에 직결된다.
+Core message: **Data preparation doesn't end with a single transformation step.** Processing → automation → augmentation → efficient supply all directly affect model quality and cost.
 
-## Day 1 복습 — 변환과 ETL
+## Day 1 Review — Transformation and ETL
 
-- **ETL** = Extract(추출) → Transform(변환) → Load(적재). ML에서 결과물은 학습 데이터셋.
-- **AWS Glue**: 서버리스 Spark. Data Catalog, Crawler, ETL Job, DynamicFrame. 운영 부담 최소, 산발적·표준적 ETL에 적합. 과금은 DPU-시간.
-- **Amazon EMR**: Hadoop/Spark/Hive/Presto를 EC2 클러스터에서 직접 운영. 세밀한 튜닝·다양한 프레임워크·스팟 절감이 필요한 무거운 워크로드에 적합.
-- **대규모 전처리**: Parquet 컬럼형 포맷, 파티셔닝(partition pruning), 적정 파일 크기, predicate pushdown.
+- **ETL** = Extract → Transform → Load. In ML, the output is a training dataset.
+- **AWS Glue**: Serverless Spark. Data Catalog, Crawler, ETL Job, DynamicFrame. Minimal operational burden, suitable for sporadic and standard ETL. Billing is DPU-hours.
+- **Amazon EMR**: Directly operate Hadoop/Spark/Hive/Presto on EC2 clusters. Suitable for heavy workloads requiring fine-tuning, multiple frameworks, and spot savings.
+- **Large-scale preprocessing**: Parquet columnar format, partitioning (partition pruning), appropriate file sizes, predicate pushdown.
 
-> 💡 **관련 이론**: Glue vs EMR의 판단 3축 — 운영 부담(최소화→Glue), 워크로드 성격(짧고 산발적→Glue, 길고 무거운 배치→EMR), 프레임워크 다양성(Spark만→Glue, 여러 엔진→EMR).
+> 💡 **Related Theory**: Three axes for Glue vs EMR decision—operational burden (minimize→Glue), workload type (short and sporadic→Glue, long and heavy batch→EMR), framework variety (Spark only→Glue, multiple engines→EMR).
 
-## Day 2 복습 — 파이프라인 자동화
+## Day 2 Review — Pipeline Automation
 
-- **Step Functions**: 범용 오케스트레이터. ASL(JSON)로 상태 머신 정의. ML+비ML 혼합, 승인·외부 시스템·복잡 분기에 강함.
-- **SageMaker Pipelines**: ML 전용. Python SDK. ProcessingStep/TrainingStep/TuningStep/ConditionStep/RegisterModel. lineage·모델 레지스트리 내장.
-- **선택 기준**: 순수 ML CI/CD·추적성 → SageMaker Pipelines, ML+비ML 혼합·승인 → Step Functions. 혼합 사용도 가능.
-- **트리거**: EventBridge(cron/이벤트), S3 이벤트 → 파이프라인 시작.
+- **Step Functions**: General-purpose orchestrator. Define state machines with ASL (JSON). Strong for ML+non-ML mixing, approvals, external systems, and complex branching.
+- **SageMaker Pipelines**: ML-specific. Python SDK. ProcessingStep/TrainingStep/TuningStep/ConditionStep/RegisterModel. Built-in lineage and model registry.
+- **Selection criteria**: Pure ML CI/CD and traceability → SageMaker Pipelines; ML+non-ML mixing and approvals → Step Functions. Mixed usage is also possible.
+- **Triggers**: EventBridge (cron/events), S3 events → start pipeline.
 
-> ⚠️ **함정**: "ML이니까 무조건 SageMaker Pipelines"는 단순화된 오답. 비-ML 단계·승인·복잡 분기가 많으면 Step Functions가 더 적합할 수 있다.
+> ⚠️ **Pitfall**: "It's ML, so definitely SageMaker Pipelines" is oversimplified and incorrect. If there are many non-ML steps, approvals, or complex branching, Step Functions may be more suitable.
 
-## Day 3 복습 — 증강·합성·불균형
+## Day 3 Review — Augmentation, Synthesis, Imbalance Handling
 
-- **증강(augmentation)**: 레이블을 보존하는 변형으로 기존 데이터 다양화. 이미지(반전·회전·색 지터), 텍스트(동의어 치환·역번역). 도메인 의미 보존 필수.
-- **합성(synthesis)**: 새로운 가상 데이터 생성. GAN, 시뮬레이션, 합성 정형 데이터(프라이버시). distribution gap 위험 → 검증은 실데이터.
-- **불균형 대응**: 데이터 수준(오버/언더샘플링, **SMOTE**=보간 합성), 알고리즘 수준(클래스 가중치, 임계값), 평가 수준(정확도 금지 → **재현율·F1·PR-AUC**).
+- **Augmentation**: Diversify existing data through label-preserving transformations. Images (flip, rotate, color jitter), text (synonym replacement, back-translation). Domain meaning preservation is essential.
+- **Synthesis**: Generate new virtual data. GAN, simulation, synthetic tabular data (privacy). Risk of distribution gap → validation must use real data.
+- **Imbalance handling**: Data level (over/undersampling, **SMOTE**=interpolated synthesis), algorithm level (class weights, thresholds), evaluation level (ban accuracy → **recall, F1, PR-AUC**).
 
-> 💡 **관련 이론**: SMOTE는 단순 복제와 달리 소수 샘플과 최근접 이웃 사이를 보간해 새 점을 만든다. 1:999 같은 불균형에서 정확도는 거짓 안심을 주므로 재현율·PR-AUC로 평가한다.
+> 💡 **Related Theory**: SMOTE, unlike simple duplication, interpolates between minority samples and nearest neighbors to create new points. In imbalance like 1:999, accuracy gives false reassurance, so evaluation should use recall and PR-AUC.
 
-## Day 4 복습 — 저장·접근 최적화
+## Day 4 Review — Storage and Access Optimization
 
-| 옵션 | 한 줄 요약 | 적합 상황 |
-|------|-----------|----------|
-| File mode | 전체 다운로드 후 시작 | 작은 데이터, 반복 읽기 |
-| Pipe mode | S3 스트리밍, 즉시 시작 | 매우 큰 데이터, 순차 처리 |
-| FastFile mode | 스트리밍 + POSIX 접근 | 큰 데이터 + 임의 접근 |
-| FSx for Lustre | 초고속 병렬 FS, S3 연동 | 대규모 + 반복 + 저지연 + 분산 |
-| ShardedByS3Key | 노드별로 데이터 분할 분배 | 데이터 병렬 분산 학습 |
+| Option | One-line Summary | Best For |
+|--------|-----------------|----------|
+| File mode | Full download then start | Small data, repeated reads |
+| Pipe mode | S3 streaming, immediate start | Very large data, sequential processing |
+| FastFile mode | Streaming + POSIX access | Large data + random access |
+| FSx for Lustre | Ultra-fast parallel FS, S3 integration | Large scale + repeated + low latency + distributed |
+| ShardedByS3Key | Data split and distributed per node | Data-parallel distributed training |
 
-- 핵심 목표: **비싼 GPU가 I/O를 기다리며 놀지 않게 한다.**
-- 샤딩 전제: 데이터가 여러 S3 객체로 분할되어 있어야 효과.
+- Core goal: **Ensure expensive GPUs don't sit idle waiting for I/O.**
+- Sharding prerequisite: Data must be divided into multiple S3 objects to be effective.
 
-> 🎯 **시나리오 통합**: "수 TB 데이터, 8개 GPU 노드, 시작이 너무 느리다." → 데이터를 여러 Parquet 샤드로 분할(Day1) → 파이프라인으로 자동 생성(Day2) → 불균형이면 SMOTE/가중치(Day3) → ShardedByS3Key + FSx for Lustre로 공급(Day4).
+> 🎯 **Integrated Scenario**: "Multiple TBs of data, 8 GPU nodes, startup is too slow." → Divide data into multiple Parquet shards (Day 1) → auto-generate through pipeline (Day 2) → if imbalanced, use SMOTE/weights (Day 3) → supply with ShardedByS3Key + FSx for Lustre (Day 4).
 
-## 자주 틀리는 비교 포인트 총정리
+## Complete Summary of Commonly Confused Comparison Points
 
-| 헷갈리는 쌍 | 핵심 구분 |
-|------------|----------|
-| Glue vs EMR | 서버리스·운영 최소화 vs 풀컨트롤·다중 프레임워크 |
-| Step Functions vs SageMaker Pipelines | 범용·혼합 워크플로 vs ML 전용·lineage |
-| 증강 vs 합성 | 기존 데이터 변형 vs 새 가상 데이터 생성 |
-| 오버샘플링 vs SMOTE | 단순 복제 vs 보간 합성 |
-| File vs Pipe vs FastFile | 전체 다운로드 vs 스트리밍 vs 절충 |
-| FullyReplicated vs ShardedByS3Key | 전체 복제 vs 노드별 분할 |
+| Confusing Pair | Core Distinction |
+|---|---|
+| Glue vs EMR | Serverless, minimal operations vs full control, multiple frameworks |
+| Step Functions vs SageMaker Pipelines | General-purpose, mixed workflows vs ML-specific, lineage |
+| Augmentation vs Synthesis | Transform existing data vs generate new virtual data |
+| Oversampling vs SMOTE | Simple duplication vs interpolated synthesis |
+| File vs Pipe vs FastFile | Full download vs streaming vs compromise |
+| FullyReplicated vs ShardedByS3Key | Full replication vs per-node splitting |
 
-> 💡 **관련 이론**: MLS-C01 데이터 엔지니어링 영역의 출제 패턴은 거의 항상 "비용/운영 부담/규모/접근 패턴"의 트레이드오프 판단이다. 정답은 단일 기술이 아니라 **상황(요구사항)에 맞는 선택**이다. 문제에서 "운영 인력 최소", "매우 큰 데이터", "임의 접근 필요", "비-ML 단계 포함" 같은 단서를 찾아 매핑하는 훈련이 핵심이다.
+> 💡 **Related Theory**: The question pattern in MLS-C01's data engineering section is almost always trade-off judgment of "cost/operational burden/scale/access pattern." The answer is not a single technology but **a choice matching the situation (requirements)**. The key is training to find clues like "minimal operations," "very large data," "random access needed," "non-ML steps included" in the problem and map them.
 
-## 정리하며
+## Summary
 
-Week 2는 데이터를 모델에 닿게 하는 전 과정 — 변환(Glue/EMR), 자동화(Step Functions/SageMaker Pipelines), 보강(증강·합성·SMOTE), 효율적 공급(입력 모드·FSx·샤딩) — 을 다뤘다. 모든 선택의 밑바탕에는 **비용·운영 부담·규모·접근 패턴의 트레이드오프**가 깔려 있다. 다음 주에는 이렇게 준비된 데이터 위에서 본격적인 **모델링과 알고리즘**으로 들어간다. 오늘 복습한 비교 표들을 시험 직전에 다시 훑어 보길 권한다.
+Week 2 covered the entire process of getting data to models—transformation (Glue/EMR), automation (Step Functions/SageMaker Pipelines), augmentation (augmentation, synthesis, SMOTE), efficient supply (input modes, FSx, sharding). Underlying all choices are **trade-offs of cost, operational burden, scale, and access pattern**. Next week, we move into serious **modeling and algorithms** on top of this prepared data. I recommend reviewing the comparison tables we covered today right before the exam.
 
 ---
 

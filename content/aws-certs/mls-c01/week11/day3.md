@@ -1,10 +1,10 @@
-# Day 3 - ML 보안: IAM 실행 역할, VPC 격리, KMS 암호화
+# Day 3 - ML Security: IAM Execution Roles, VPC Isolation, KMS Encryption
 
-ML 시스템은 민감한 학습 데이터, 값비싼 모델 아티팩트, 광범위한 권한을 한곳에 모은다. 이 셋이 새면 데이터 유출·모델 탈취·권한 오남용으로 직결된다. 오늘은 SageMaker를 중심으로 ML 워크로드를 지키는 세 축 — IAM 실행 역할(누가 무엇을 할 수 있나), VPC 격리(어디로 통신하나), KMS 암호화(저장/전송 데이터 보호)를 다룬다.
+ML systems concentrate sensitive training data, valuable model artifacts, and broad permissions in one place. If these leak, data theft, model stealing, and privilege abuse follow. Today we cover SageMaker-focused three pillars protecting ML workloads — IAM execution roles (who can do what), VPC isolation (where communication goes), KMS encryption (protect data at rest/in transit).
 
-## IAM 실행 역할: 최소 권한 원칙
+## IAM Execution Roles: Least Privilege Principle
 
-SageMaker 학습 작업·엔드포인트는 사용자 자격이 아니라 **실행 역할(Execution Role)**의 권한으로 동작한다. 이 역할에 과도한 권한을 주면 침해 시 피해가 커진다. 최소 권한으로 필요한 S3 경로·KMS 키만 허용한다.
+SageMaker training jobs and endpoints operate with **Execution Role** permissions, not user credentials. Over-permissioning this role magnifies breach damage. Grant only minimum privileges to needed S3 paths and KMS keys.
 
 ```json
 {
@@ -27,7 +27,7 @@ SageMaker 학습 작업·엔드포인트는 사용자 자격이 아니라 **실�
 }
 ```
 
-신뢰 정책(Trust Policy)으로 누가 이 역할을 맡을 수 있는지도 제한한다.
+Trust Policy further restricts who can assume this role.
 
 ```json
 {
@@ -40,11 +40,11 @@ SageMaker 학습 작업·엔드포인트는 사용자 자격이 아니라 **실�
 }
 ```
 
-> 💡 **관련 이론**: 시험에서 "학습 작업이 S3에 접근하지 못한다(AccessDenied)"는 거의 항상 사용자 권한이 아니라 **실행 역할의 권한 부족**이다. 반대로 "역할이 모든 버킷에 접근 가능하다"는 최소 권한 위반이다. 권한 주체가 실행 역할임을 기억하는 것이 출발점이다.
+> 💡 **Related Theory**: On exams, "training job can't access S3 (AccessDenied)" is almost always **execution role permission shortage**, not user permissions. Conversely, "role can access all buckets" = least privilege violation. Remember the permission principal is the execution role.
 
-## VPC 격리: 인터넷 없는 학습
+## VPC Isolation: Training Without Internet
 
-기본적으로 SageMaker 작업은 AWS 관리형 네트워크에서 인터넷에 접근할 수 있다. 민감 데이터는 이를 막아야 한다. `VpcConfig`로 작업을 사용자 VPC의 프라이빗 서브넷에 배치하고, S3 등은 **VPC 엔드포인트**로 인터넷을 거치지 않고 접근한다.
+By default, SageMaker jobs can access the internet from AWS-managed networks. Sensitive data must block this. Use `VpcConfig` to place jobs in user VPC private subnets, access S3 etc. via **VPC Endpoints** without internet.
 
 ```python
 estimator = Estimator(
@@ -52,60 +52,60 @@ estimator = Estimator(
     instance_count=1, instance_type="ml.m5.xlarge",
     subnets=["subnet-priv-a", "subnet-priv-b"],
     security_group_ids=["sg-0123456789"],
-    encrypt_inter_container_traffic=True,   # 분산 학습 노드 간 암호화
-    enable_network_isolation=True,          # 컨테이너의 외부 네트워크 차단
+    encrypt_inter_container_traffic=True,   # encrypt distributed training nodes
+    enable_network_isolation=True,          # block container external network
 )
 ```
 
-- **Network Isolation**: 컨테이너가 어떤 네트워크 호출도 못 하게 막는다(외부에서 받은 코드/모델을 격리 실행할 때).
-- **VPC Endpoint (Gateway)**: S3·DynamoDB는 게이트웨이 엔드포인트로 프라이빗 접근.
-- **VPC Endpoint (Interface/PrivateLink)**: SageMaker API/Runtime, CloudWatch 등은 인터페이스 엔드포인트로.
+- **Network Isolation**: Block any network calls from container (isolate-run external code/models).
+- **VPC Endpoint (Gateway)**: S3, DynamoDB via gateway endpoints for private access.
+- **VPC Endpoint (Interface/PrivateLink)**: SageMaker API/Runtime, CloudWatch via interface endpoints.
 
 ```text
-[프라이빗 서브넷]
-  학습 컨테이너 ──(VPC Gateway Endpoint)──▶ S3
+[Private Subnet]
+  Training container ──(VPC Gateway Endpoint)──▶ S3
        │
        └──(Interface Endpoint/PrivateLink)──▶ SageMaker API
-  (인터넷 게이트웨이 경로 없음)
+  (no internet gateway route)
 ```
 
-## KMS 암호화: 저장과 전송 보호
+## KMS Encryption: Protect at Rest and in Transit
 
-데이터와 모델은 저장 중(at rest)과 전송 중(in transit) 모두 암호화한다. KMS 고객 관리형 키(CMK)로 누가 복호화할 수 있는지까지 통제한다.
+Encrypt data and models both at rest and in transit. KMS customer-managed keys (CMK) control who can decrypt.
 
 ```python
 estimator = Estimator(
     ...,
-    output_kms_key="arn:aws:kms:us-east-1:111122223333:key/abcd-efgh",   # 모델 아티팩트 암호화
-    volume_kms_key="arn:aws:kms:us-east-1:111122223333:key/wxyz-1234",   # 학습 EBS 볼륨 암호화
+    output_kms_key="arn:aws:kms:us-east-1:111122223333:key/abcd-efgh",   # encrypt model artifacts
+    volume_kms_key="arn:aws:kms:us-east-1:111122223333:key/wxyz-1234",   # encrypt training EBS
 )
 ```
 
-| 보호 지점 | 방법 |
+| Protection Point | Method |
 |-----------|------|
-| S3의 학습 데이터/모델 | SSE-KMS(CMK)로 버킷/객체 암호화 |
-| 학습 인스턴스 스토리지 | `volume_kms_key`로 EBS 암호화 |
-| 모델 아티팩트 출력 | `output_kms_key` |
-| 노드 간 분산 학습 트래픽 | `encrypt_inter_container_traffic=True` |
-| 엔드포인트 통신 | TLS(전송 중 암호화 기본) |
+| Training data/models in S3 | SSE-KMS (CMK) encrypt bucket/objects |
+| Training instance storage | `volume_kms_key` encrypts EBS |
+| Model artifact output | `output_kms_key` |
+| Distributed training traffic between nodes | `encrypt_inter_container_traffic=True` |
+| Endpoint communication | TLS (in-transit encryption default) |
 
-> 💡 **관련 이론**: "암호화는 켰는데 누가 키를 쓸 수 있나"가 진짜 통제 지점이다. KMS **키 정책**과 IAM이 함께 작동해, 키 정책에서 허용되지 않으면 IAM 권한이 있어도 복호화하지 못한다. 데이터 격리를 위해 팀/프로젝트별로 별도 CMK를 두는 패턴이 자주 출제된다.
+> 💡 **Related Theory**: "Encryption is on, but who can use the key?" is the real control point. KMS **key policy** and IAM work together; if key policy denies, decryption fails even with IAM permission. Patterns like separate CMK per team/project for data isolation appear frequently on exams.
 
-## 데이터·모델 보호 보조 서비스
+## Data & Model Protection Support Services
 
 ```text
-- Amazon Macie: S3의 PII/민감정보를 자동 탐지·분류
-- SageMaker Clarify: 데이터/모델 편향 탐지(보안은 아니지만 책임 있는 AI)
-- AWS PrivateLink: SageMaker 호출을 인터넷 없이 사설 연결
-- Secrets Manager: 외부 DB/API 자격 증명을 코드에 박지 않고 관리
-- CloudTrail: 모든 API 호출 감사(내일 다룸)
+- Amazon Macie: Auto-detect/classify PII and sensitive info in S3
+- SageMaker Clarify: Detect data/model bias (security-adjacent, responsible AI)
+- AWS PrivateLink: Private SageMaker calls without internet
+- Secrets Manager: Manage external DB/API credentials outside code
+- CloudTrail: Audit all API calls (covered tomorrow)
 ```
 
-## 정리하며
+## Summary
 
-ML 보안의 세 축은 명확하다. IAM 실행 역할로 최소 권한을 강제하고, VPC 격리(프라이빗 서브넷·VPC 엔드포인트·네트워크 격리)로 데이터가 인터넷을 거치지 않게 하며, KMS로 저장·전송 데이터와 모델 아티팩트를 암호화하되 키 정책으로 복호화 주체까지 통제한다. Macie·PrivateLink·Secrets Manager가 이를 보강한다.
+ML security's three pillars are clear. IAM execution roles enforce least privilege. VPC isolation (private subnets, VPC Endpoints, network isolation) keep data off internet. KMS encrypts data at rest/in transit and model artifacts, with key policy controlling decryption principals. Macie, PrivateLink, Secrets Manager reinforce these.
 
-내일은 운영의 나머지 절반 — 비용 최적화, CloudWatch/CloudTrail 로깅·감사, 재해 복구를 다룬다.
+Tomorrow: the other half of operations — cost optimization, CloudWatch/CloudTrail logging & audit, disaster recovery.
 
 ---
 

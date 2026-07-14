@@ -1,97 +1,97 @@
-# Day 5 - Week 3 종합 복습: 정제와 특성 공학
+# Day 5 - Week 3 Comprehensive Review: Cleaning and Feature Engineering
 
-이번 주는 EDA의 전반부 — **데이터 정제**와 **특성 공학** — 을 다뤘다. 이 둘은 MLS-C01 도메인 2(Exploratory Data Analysis)의 핵심이자, 실무에서 모델 성능을 가장 크게 좌우하는 단계다. 오늘은 나흘 치 내용을 하나의 흐름으로 엮어 복습하고, 시험에서 가장 헷갈리는 의사결정 포인트를 정리한다.
+This week, we covered the first half of EDA—**data cleaning** and **feature engineering**. Both are central to MLS-C01 Domain 2 (Exploratory Data Analysis) and are the stages most critical to model performance in practice. Today, we knit together four days of content into one workflow, review it holistically, and clarify the decision points that confuse exam takers most.
 
-## 한 장 요약: 정제 → 특성 공학 → 도구
+## One-Page Summary: Cleaning → Feature Engineering → Tools
 
 ```text
-[Raw 데이터]
+[Raw Data]
    │
-   ├─ 1) 정제 (Day1)
-   │     결측치: MCAR/MAR/MNAR 판단 → 대치(평균/중앙값/KNN/모델)
-   │     이상치: IQR/Z-score 탐지 → 삭제/클리핑/변환/유지
-   │     중복·오류: 분할 전 정리 (누수 방지)
+   ├─ 1) Cleaning (Day 1)
+   │     Missing values: Assess MCAR/MAR/MNAR → Impute (mean/median/KNN/model)
+   │     Outliers: Detect via IQR/Z-score → Delete/clip/transform/keep
+   │     Duplicates & errors: Clean before split (prevent leakage)
    │
-   ├─ 2) 특성 공학 (Day2~3)
-   │     스케일링: 정규화/표준화/RobustScaler (트리는 불필요)
-   │     인코딩: Label/One-Hot/Target (순서·카디널리티로 결정)
-   │     비닝: 비선형성·해석 ↔ 정보 손실
-   │     날짜: 성분 분해 + sin/cos
-   │     텍스트: BoW → TF-IDF → 임베딩
-   │     고차원 범주형: 타깃 인코딩/해싱/임베딩
+   ├─ 2) Feature Engineering (Day 2–3)
+   │     Scaling: Normalization/Standardization/RobustScaler (trees unnecessary)
+   │     Encoding: Label/One-Hot/Target (decide by order & cardinality)
+   │     Binning: Nonlinearity & interpretability ↔ information loss
+   │     Dates: Decompose components + sin/cos
+   │     Text: BoW → TF-IDF → embeddings
+   │     High-cardinality: Target/hashing/embeddings
    │
-   └─ 3) AWS 도구 (Day4)
-         Data Wrangler(시각적) → Processing Job(대규모) → Feature Store(재사용)
+   └─ 3) AWS Tools (Day 4)
+         Data Wrangler (visual) → Processing Job (scale) → Feature Store (reuse)
 ```
 
-## 핵심 의사결정 정리
+## Key Decision Points
 
-### 결측치: 무엇으로 채우나
+### Missing Values: How to Impute?
 
-| 상황 | 권장 |
+| Scenario | Recommendation |
 |------|------|
-| 치우친 수치형 | 중앙값 대치 |
-| 대칭 수치형 | 평균 대치 |
-| 범주형 | 최빈값 대치 |
-| 변수 간 상관 강함 | KNN/모델 기반 대치 |
-| 결측 자체가 신호(MNAR) | 지시 변수 추가 |
+| Right-skewed numeric | Median imputation |
+| Symmetric numeric | Mean imputation |
+| Categorical | Mode imputation |
+| Strong inter-variable correlation | KNN or model-based |
+| Missing value itself is a signal (MNAR) | Add indicator variable |
 
-### 스케일링: 알고리즘별 필요 여부
+### Scaling: Algorithm-Specific Requirement
 
-- **필요**: KNN, K-means, 선형/로지스틱 회귀, SVM, 신경망, PCA, Ridge/Lasso
-- **불필요**: Decision Tree, Random Forest, XGBoost, LightGBM (트리 계열)
-- **이상치 많을 때**: RobustScaler
+- **Required**: KNN, K-means, linear/logistic regression, SVM, neural networks, PCA, Ridge/Lasso
+- **Unnecessary**: Decision Tree, Random Forest, XGBoost, LightGBM (tree-based)
+- **With many outliers**: RobustScaler
 
-### 인코딩: 순서와 카디널리티로 결정
+### Encoding: Decide by Order and Cardinality
 
 ```text
-순서가 있나? ── 예 ──→ Ordinal/Label Encoding
+Is there an order?  ── Yes ──→ Ordinal/Label Encoding
         │
-        └─ 아니오 ──→ 고유값이 많나?
-                        ├─ 적음 → One-Hot
-                        └─ 많음 → Target/Frequency/Hashing/Embedding
+        └─ No ──→ Many unique values?
+                        ├─ Few → One-Hot
+                        └─ Many → Target/Frequency/Hashing/Embedding
 ```
 
-> 💡 **관련 이론**: 이번 주를 관통하는 단일 원칙은 **데이터 누수(data leakage) 방지**다. 대치 통계량(평균·중앙값), 스케일러 파라미터(min/max/μ/σ), 타깃 인코딩 통계, 텍스트 vectorizer 어휘 — 이 모든 변환은 **학습셋으로만 fit**하고 검증/테스트에는 `transform`만 적용해야 한다. 또 중복 제거는 분할 전에, 시계열 특성은 point-in-time을 지켜야 한다. 누수는 오프라인 성능을 비현실적으로 높여 놓고 운영에서 무너지게 만드는, 시험과 실무 모두의 단골 함정이다.
+> 💡 **Key Theory**: One principle threads through this entire week: **preventing data leakage**. All transformations—imputation statistics (mean, median), scaler parameters (min/max/μ/σ), target encoding statistics, text vectorizer vocabulary—must **fit only on training data**; validation and test sets get only `transform`. Duplicate removal must happen before split; time-series features must respect point-in-time. Leakage inflates offline performance unrealistically and collapses in production—it's a perennial trap in exams and real work alike.
 
-## 헷갈리는 쌍 비교
+## Confusing Pairs Compared
 
-| 비교 | 핵심 차이 |
+| Pair | Key Difference |
 |------|------|
-| 평균 vs 중앙값 대치 | 중앙값이 이상치·치우침에 강건 |
-| Z-score vs IQR | IQR이 분포 가정 없이 강건 |
-| 정규화 vs 표준화 | 정규화 [0,1] 고정 범위, 표준화 평균0/분산1; 이상치엔 RobustScaler |
-| Label vs One-Hot | 순서형→Label, 명목형→One-Hot |
-| BoW vs TF-IDF | TF-IDF가 흔한 단어 억제 |
-| Online vs Offline Store | Online=ms 단건 추론, Offline=대량 학습 |
-| Data Wrangler vs Processing Job | 시각적 EDA vs 코드 기반 대규모 처리 |
+| Mean vs median imputation | Median robust to outliers and skew |
+| Z-score vs IQR | IQR is robust without distribution assumptions |
+| Normalization vs standardization | Normalization: fixed [0,1] range; standardization: mean 0, variance 1; outliers: use RobustScaler |
+| Label vs One-Hot | Ordinal → Label; nominal → One-Hot |
+| BoW vs TF-IDF | TF-IDF suppresses common words |
+| Online vs Offline Store | Online: ms single-record inference; Offline: bulk training |
+| Data Wrangler vs Processing Job | Visual EDA vs code-based large-scale processing |
 
-> 💡 **관련 이론**: 특성 공학과 모델 선택은 분리되지 않는다. 같은 데이터라도 **선형 모델**은 스케일링·비닝·One-Hot으로 비선형성과 스케일을 명시적으로 넣어 줘야 잘 동작하고, **트리/부스팅 모델**은 스케일링이 불필요하며 비닝·One-Hot의 이득도 작다(트리가 스스로 분할로 비선형성을 잡으므로). 즉 "어떤 전처리가 정답인가"는 "어떤 모델을 쓸 것인가"에 의존한다. 시험 문제도 알고리즘을 단서로 전처리 답을 좁히도록 설계되는 경우가 많다.
+> 💡 **Key Theory**: Feature engineering and model choice are inseparable. With identical data, **linear models** need scaling, binning, and one-hot to explicitly capture nonlinearity and scale; **tree/boosting models** don't need scaling and gain little from binning/one-hot because trees capture nonlinearity via splits. The answer to "which preprocessing is correct?" depends on "which model will we use?" Exam questions often exploit this—using the algorithm as a clue to narrow the preprocessing answer.
 
-## 자가 점검 질문
+## Self-Check Questions
 
-답을 머릿속으로 떠올려 보자.
+Try to answer these mentally:
 
-1. 소득처럼 오른쪽으로 치우친 변수의 결측을 단순 대치할 때 평균과 중앙값 중 무엇? → **중앙값**
-2. XGBoost에 피처 스케일링이 필요한가? → **불필요**
-3. 우편번호(수천 종) 인코딩에 One-Hot이 부적절한 이유? → **차원 폭발**
-4. 23시와 0시를 인접하게 만드는 변환? → **sin/cos**
-5. 스케일러를 전체 데이터로 fit하면 생기는 문제? → **데이터 누수**
-6. 실시간 추론 단건 조회는 Feature Store의 어느 스토어? → **Online**
+1. For right-skewed income with missing values using simple imputation, mean or median? → **Median**
+2. Is feature scaling needed for XGBoost? → **No**
+3. Why is one-hot inappropriate for postal codes (thousands of values)? → **Dimensionality explosion**
+4. What makes hour 23 and hour 0 adjacent? → **Sin/cos transform**
+5. What problem arises when fitting a scaler to all data? → **Data leakage**
+6. For real-time single-record inference, which Feature Store? → **Online**
 
-## 시험 팁
+## Exam Tips
 
-- 문제에 **알고리즘 이름**이 보이면 전처리 답이 좁혀진다(트리면 스케일링 오답 확률↑).
-- "고유값이 수만 개"는 One-Hot 오답 신호 → 타깃 인코딩/해싱/임베딩.
-- "노코드/시각적/빠른 준비"는 Data Wrangler, "대규모 커스텀 코드"는 Processing Job.
-- "학습/추론 일관성", "피처 재사용", "단건 저지연 조회"는 Feature Store.
-- 어떤 전처리든 **학습셋 fit → 테스트 transform** 원칙을 어기는 보기는 거의 오답.
+- If the problem names an **algorithm**, preprocessing options narrow (tree → scaling likely wrong).
+- "Millions of unique values" = one-hot is wrong → think target encoding, hashing, or embeddings.
+- "No-code/visual/quick prep" = Data Wrangler; "large-scale custom code" = Processing Job.
+- "Training-inference consistency," "feature reuse," "single-record low-latency lookup" = Feature Store.
+- Any preprocessing that violates the **train fit → test transform** rule is nearly always wrong.
 
-## 정리하며
+## Summary
 
-Week 3은 "더러운 원본을 모델이 학습할 수 있는 신뢰할 만한 피처로 바꾸는" 과정이었다. 정제(결측·이상치·중복), 특성 공학(스케일링·인코딩·비닝·날짜·텍스트·고차원), 그리고 이를 규모 있게 수행하는 SageMaker 도구를 묶어 이해하면 된다. 관통하는 원칙은 **누수 방지**와 **모델에 맞는 전처리 선택**이다.
+Week 3 transformed "dirty raw data" into "trusted features that models can learn from." Cleaning (missing, outliers, duplicates), feature engineering (scaling, encoding, binning, dates, text, high-cardinality), and SageMaker tools for scale—these form a unified workflow. Two principles run through all: **leakage prevention** and **choosing preprocessing to match your model**.
 
-다음 주(Week 4)에서는 EDA의 후반부 — 데이터 시각화, 분포·상관 분석, 차원 축소(PCA) 등 분석·통찰 단계를 다룬다.
+Next week (Week 4) covers the second half of EDA: data visualization, distribution and correlation analysis, dimensionality reduction (PCA), and other analytical and insight-generating techniques.
 
 ---
 

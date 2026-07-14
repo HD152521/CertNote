@@ -1,105 +1,105 @@
-# Day 4 - 학습 기법과 전이학습
+# Day 4 - Learning Techniques and Transfer Learning
 
-모델 구조를 정했어도 "어떻게 학습시키는가"가 성능을 좌우한다. 오늘은 딥러닝 학습의 엔진인 **손실 함수·옵티마이저·학습률**과, 적은 데이터로 큰 성과를 내는 **전이학습·파인튜닝**, 그리고 시험에 등장하는 **프레임워크(TensorFlow/PyTorch)와 SageMaker 통합**을 다룬다. MLS-C01은 이 영역에서 "학습이 안 될 때/느릴 때/과적합일 때 무엇을 바꿀까"를 자주 묻는다.
+Even with the right model structure, "how we train it" makes or breaks performance. Today covers **loss functions, optimizers, learning rate** — the training engine — and **transfer learning/fine-tuning** that achieves great results with limited data. Plus **framework (TensorFlow/PyTorch) and SageMaker integration** that tests often ask. MLS-C01 frequently asks "When learning fails/is slow/overfits, what do we change?" — this domain.
 
-## 손실 함수(Loss Function)
+## Loss Function
 
-모델 예측과 정답의 차이를 수치화한다. 문제 유형에 맞춰 선택해야 한다.
+Quantifies difference between prediction and truth. Choose per problem type.
 
-| 문제 유형 | 손실 함수 |
+| Problem Type | Loss Function |
 |------|------|
-| 회귀 | MSE(평균제곱오차), MAE |
-| 이진 분류 | 이진 교차 엔트로피(BCE) |
-| 다중 분류 | 범주형 교차 엔트로피 |
-| 불균형/탐지 | Focal Loss 등 변형 |
+| Regression | MSE (mean squared error), MAE |
+| Binary classification | Binary cross-entropy (BCE) |
+| Multi-class classification | Categorical cross-entropy |
+| Imbalance/detection | Focal Loss variations |
 
-- 분류에 MSE를 쓰면 학습이 느리고 불안정하므로 **교차 엔트로피**가 표준이다.
-- 손실은 학습의 "나침반"이다. 손실 곡선이 떨어지지 않으면 학습률·구조·데이터를 점검한다.
+- Using MSE for classification = slow, unstable learning → **cross-entropy is standard**
+- Loss is training's "compass." If loss doesn't decrease, check learning rate, structure, data
 
-## 옵티마이저(Optimizer)
+## Optimizer
 
-역전파로 구한 기울기를 이용해 가중치를 실제로 갱신하는 알고리즘.
+Uses backprop-computed gradients to actually update weights.
 
-| 옵티마이저 | 핵심 |
+| Optimizer | Essence |
 |------|------|
-| **SGD** | 기울기 반대 방향으로 일정 비율 이동, 단순·견고 |
-| **SGD + Momentum** | 과거 방향을 누적해 진동 줄이고 가속 |
-| **RMSProp** | 파라미터별 학습률을 기울기 크기로 조정 |
-| **Adam** | Momentum + RMSProp 결합, 딥러닝 기본값 |
+| **SGD** | Move in opposite gradient direction at fixed rate, simple and robust |
+| **SGD + Momentum** | Accumulate past direction, reduce oscillation, accelerate |
+| **RMSProp** | Adapt per-parameter learning rate by gradient magnitude |
+| **Adam** | Combine Momentum + RMSProp, DL default |
 
 ```text
 SGD:  w ← w - η * ∇L
-Adam: 1차/2차 모멘트 추정으로 파라미터별 적응적 보폭
+Adam: Estimate 1st/2nd moments → per-parameter adaptive step
 ```
 
-실무 기본값은 **Adam**: 빠른 수렴과 적은 튜닝. 매우 큰 모델의 마지막 미세조정엔 SGD가 더 나은 일반화를 보이기도 한다.
+Practical default is **Adam**: fast convergence, less tuning. Very large model final fine-tuning sometimes sees better generalization with SGD.
 
-> 💡 **관련 이론**: Adam은 각 파라미터마다 기울기의 1차 모멘트(평균)와 2차 모멘트(분산)를 추정해 적응적 학습률을 적용한다. 덕분에 학습률에 덜 민감하고 빠르게 수렴해 대부분의 딥러닝 프로젝트의 안전한 출발점이다. 시험에서 "딥러닝 학습이 너무 느리거나 학습률 튜닝이 어렵다"면 Adam이 자연스러운 선택지다.
+> 💡 **Related Theory**: Adam estimates per-parameter 1st moment (mean) and 2nd moment (variance) to apply adaptive learning rate. Less sensitive to learning rate, fast convergence → safe starting point for most deep learning. Test: "DL learning too slow or tuning hard?" → Adam naturally surfaces
 
-## 학습률(Learning Rate)
+## Learning Rate
 
-가장 중요한 하이퍼파라미터. 한 번에 얼마나 크게 가중치를 옮길지 결정한다.
+Most critical hyperparameter. Controls how much we shift weights per step.
 
-- **너무 크면**: 손실이 발산하거나 진동하며 수렴하지 못함(loss가 NaN/폭증).
-- **너무 작으면**: 수렴이 지나치게 느리고 지역 최소에 갇힘.
-- **학습률 스케줄링**: 처음엔 크게, 점차 줄임(step decay, cosine, warmup).
-- **학습률 워밍업**: 초반 몇 스텝 동안 학습률을 서서히 올려 초기 불안정을 방지(Transformer 등).
+- **Too large**: Loss diverges or oscillates, won't converge (NaN/explosion)
+- **Too small**: Convergence glacially slow, stuck in local minima
+- **Learning rate scheduling**: Start large, decay gradually (step decay, cosine, warmup)
+- **Warmup**: Gently raise LR first few steps, prevent initial instability (Transformers etc.)
 
-> 💡 **관련 이론**: 학습 곡선 진단이 핵심이다. 손실이 폭증/진동 → 학습률 낮추기. 학습 손실은 낮은데 검증 손실이 높아짐 → 과적합(드롭아웃·정규화·증강·조기 종료). 학습·검증 손실 모두 높음 → 과소적합(모델 키우기·더 학습·특성 추가). SageMaker Automatic Model Tuning(베이지안 최적화)으로 학습률·배치·층 수를 자동 탐색할 수 있다.
+> 💡 **Related Theory**: Learning curve diagnosis is key. Loss spikes/oscillates → lower LR. Train loss low but val high → overfitting (dropout, regularization, augment, early stop). Both low → underfitting (bigger model, more learning, more features). SageMaker Automatic Model Tuning (Bayesian) can auto-search LR, batch, layer count
 
-## 정규화와 과적합 방지
+## Regularization and Overfitting Prevention
 
-딥러닝은 파라미터가 많아 과적합되기 쉽다. 대표 처방:
+Deep networks = many parameters = easy overfitting. Standard fixes:
 
-- **드롭아웃(Dropout)**: 학습 중 뉴런 일부를 무작위로 끔 → 공동적응 방지.
-- **L2 가중치 감쇠(weight decay)**: 큰 가중치에 페널티.
-- **배치 정규화(Batch Normalization)**: 층 입력을 정규화해 학습 안정·가속.
-- **데이터 증강**: 입력을 변형해 다양성 확보.
-- **조기 종료(Early Stopping)**: 검증 손실이 더 안 줄면 학습 중단.
+- **Dropout**: Random disable neurons during training → prevent co-adaptation
+- **L2 weight decay**: Penalty on large weights
+- **Batch Normalization**: Normalize layer input → train stability/speed
+- **Data augmentation**: Warp input, ensure diversity
+- **Early Stopping**: Stop when val loss stops improving
 
-## 전이학습(Transfer Learning)
+## Transfer Learning
 
-대규모 데이터로 사전학습된 모델의 지식을 새 과제로 옮긴다. 적은 데이터·짧은 시간에 강력하다.
+Reuse knowledge from large pre-trained models on new task. Few data, short time, strong results.
 
 ```text
-사전학습 모델(ImageNet/대형 코퍼스)
-   ├─ 백본(특징 추출기): 가중치 재사용
-   └─ 헤드(출력층): 새 과제에 맞게 교체·재학습
+Pre-trained model (ImageNet/huge corpus)
+   ├─ Backbone (feature extractor): reuse weights
+   └─ Head (output): replace, retrain for new task
 ```
 
-두 가지 방식:
-- **특징 추출(feature extraction)**: 백본을 **동결(freeze)** 하고 새 헤드만 학습. 데이터가 매우 적을 때.
-- **파인튜닝(fine-tuning)**: 백본 일부/전체를 낮은 학습률로 함께 재학습. 데이터가 어느 정도 있을 때.
+Two strategies:
+- **Feature extraction**: **Freeze** backbone, train new head only. Very limited data
+- **Fine-tuning**: Partially/fully retrain backbone at low LR. Sufficient data
 
-선택 기준:
-- 데이터 적음 + 도메인 유사 → 특징 추출(동결).
-- 데이터 많음 또는 도메인 상이 → 파인튜닝(낮은 학습률).
+Pick:
+- Limited data + similar domain → feature extraction (freeze)
+- Ample data or different domain → fine-tune (low LR)
 
-> 💡 **관련 이론**: 파인튜닝 시 사전학습 가중치를 망치지 않도록 **처음부터 학습할 때보다 훨씬 낮은 학습률**을 쓴다. 또 헤드를 먼저 학습한 뒤(백본 동결) 백본을 점진적으로 푸는 "단계적 해동"이 안정적이다. SageMaker JumpStart는 비전·NLP 사전학습 모델과 파인튜닝 스크립트를 제공해 이 과정을 단순화한다.
+> 💡 **Related Theory**: During fine-tuning, use **much lower LR than training from scratch** to avoid destroying pre-trained weights. Also, "progressive unfreezing" (train head first, gradually unfreeze backbone) is stable. SageMaker JumpStart provides pre-trained models and fine-tuning scripts, simplifying this
 
-## 프레임워크와 SageMaker 통합
+## Framework and SageMaker Integration
 
-| 프레임워크 | 특징 |
+| Framework | Strength |
 |------|------|
-| **TensorFlow / Keras** | 산업 배포·서빙 생태계 풍부, Keras로 고수준 API |
-| **PyTorch** | 동적 그래프로 연구·디버깅 친화, 현재 가장 널리 사용 |
-| **MXNet** | SageMaker 일부 빌트인의 기반(과거) |
+| **TensorFlow/Keras** | Industry deployment/serving rich, high-level Keras API |
+| **PyTorch** | Dynamic graphs, research/debug friendly, now most popular |
+| **MXNet** | Basis of some SageMaker builtins (historical) |
 
-SageMaker에서의 사용:
-- **Script Mode**: 본인의 TF/PyTorch 스크립트를 SageMaker 학습 컨테이너로 실행.
-- **사전 빌트 컨테이너 / Deep Learning Containers(DLC)**: TF·PyTorch 버전별 관리형 이미지.
-- **분산 학습**: 데이터 병렬/모델 병렬 라이브러리, 다중 GPU·다중 인스턴스.
-- **SageMaker JumpStart**: 사전학습 모델·솔루션을 클릭/스크립트로 배포·파인튜닝.
-- GPU 학습엔 `ml.p`·`ml.g` 인스턴스, 추론 비용 최적화엔 `ml.inf`(Inferentia) 등을 고려.
+SageMaker usage:
+- **Script Mode**: Run your TF/PyTorch script in SageMaker training container
+- **Pre-built containers / Deep Learning Containers (DLC)**: TF/PyTorch version management
+- **Distributed training**: Data/model parallelism libraries, multi-GPU, multi-instance
+- **SageMaker JumpStart**: Pre-trained models, solutions, deploy/fine-tune with clicks/script
+- GPU training uses `ml.p`/`ml.g` instances, inference cost optimization considers `ml.inf`(Inferentia)
 
-## 핵심 정리
+## Core Summary
 
-- 손실: 회귀=MSE, 분류=교차 엔트로피(분류에 MSE 금물).
-- 옵티마이저 기본값은 Adam(적응적·빠름), 단순·견고는 SGD(+Momentum).
-- 학습률이 최우선 튜닝 대상: 크면 발산, 작으면 느림, 스케줄링·워밍업 활용.
-- 과적합 방지: 드롭아웃·weight decay·배치 정규화·증강·조기 종료.
-- 전이학습: 데이터 적음→동결(특징 추출), 많음→낮은 학습률 파인튜닝.
-- SageMaker는 Script Mode·DLC·분산 학습·JumpStart로 TF/PyTorch를 통합.
+- Loss: regression = MSE, classification = cross-entropy (never MSE for classification)
+- Optimizer default Adam (adaptive, fast), simple/robust = SGD (+Momentum)
+- Learning rate #1 tuning target: too big = diverge, too small = slow, use schedules/warmup
+- Overfitting prevention: dropout, weight decay, batch norm, augment, early stop
+- Transfer learning: limited data → freeze (feature extraction), ample data → low LR fine-tune
+- SageMaker integrates TF/PyTorch via Script Mode, DLC, distributed, JumpStart
 
 ## 📝 연습 문제
 

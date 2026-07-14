@@ -1,93 +1,93 @@
-# Day 3 - RNN과 시퀀스: LSTM에서 Transformer까지
+# Day 3 - RNNs and Sequences: From LSTM to Transformer
 
-이미지가 공간 구조를 가진다면, 텍스트·시계열·음성·로그는 **순서(시퀀스)** 구조를 가진다. 이전 입력이 다음 출력에 영향을 주는 이런 데이터에는 순환 신경망(RNN)과 그 발전형, 그리고 오늘날의 주류인 Transformer가 쓰인다. MLS-C01은 **RNN/LSTM/GRU의 차이, seq2seq 구조, 어텐션·Transformer 개념, 시계열·NLP에서의 알고리즘 선택**을 묻는다.
+If images have spatial structure, text, time series, speech, and logs have **sequential structure**. For such data where previous input affects next output, we use Recurrent Neural Networks (RNN) and their advanced forms, and today's mainstream Transformer. MLS-C01 asks about **RNN/LSTM/GRU differences, seq2seq architecture, attention and Transformer concepts, and algorithm selection in time series and NLP**.
 
-## RNN의 기본 아이디어
+## The Basic Idea of RNN
 
-RNN은 시퀀스를 한 시점씩 처리하며 **은닉 상태(hidden state)** 에 과거 정보를 누적한다.
+RNN processes sequences one time step at a time, accumulating past information in **hidden state**.
 
 ```text
 h_t = f(W_x * x_t + W_h * h_{t-1} + b)
-출력 y_t 는 h_t 로부터 계산
+Output y_t is computed from h_t
 ```
 
-- `h_{t-1}`: 이전 시점까지의 "기억"이 다음 계산에 전달된다.
-- 같은 가중치를 모든 시점에 공유(시간축 가중치 공유).
-- 가변 길이 시퀀스를 자연스럽게 처리한다.
+- `h_{t-1}`: The "memory" up to the previous time step is passed to the next computation.
+- Weight sharing across all time steps (temporal weight sharing).
+- Naturally handles variable-length sequences.
 
-> 💡 **관련 이론**: RNN은 시간축으로 펼치면(unroll) 매우 깊은 신경망과 같아진다. 따라서 역전파(시간을 따라 펼친 BPTT)에서 기울기가 곱셈으로 누적되며 **기울기 소실/폭발**이 심하게 일어난다. 그 결과 단순 RNN은 먼 과거의 정보를 잘 기억하지 못하는 **장기 의존성(long-term dependency)** 문제를 갖는다. 이 한계가 LSTM·GRU의 탄생 배경이다.
+> 💡 **Related Theory**: When unrolled along the time axis, an RNN is like a very deep neural network. Therefore, during backpropagation (BPTT—backpropagation through time), gradients accumulate via multiplication, causing severe **gradient vanishing/explosion**. As a result, simple RNNs suffer from **long-term dependency** problems, failing to remember distant past information. This limitation motivates LSTM and GRU.
 
-## LSTM과 GRU
+## LSTM and GRU
 
-장기 의존성 문제를 게이트(gate) 메커니즘으로 완화한 RNN 변형이다.
+RNN variants that mitigate long-term dependency via gate mechanisms.
 
-| 모델 | 구조 | 특징 |
-|------|------|------|
-| **LSTM** | 입력·망각·출력 게이트 + 셀 상태 | 장기 기억 보존, 파라미터 많음 |
-| **GRU** | 업데이트·리셋 게이트 | LSTM보다 단순·빠름, 성능 유사 |
+| Model | Structure | Characteristics |
+|-------|-----------|-----------------|
+| **LSTM** | Input, forget, and output gates + cell state | Long-term memory preservation, many parameters |
+| **GRU** | Update and reset gates | Simpler and faster than LSTM, similar performance |
 
-- **셀 상태(cell state)**: LSTM이 정보를 길게 운반하는 "고속도로". 게이트가 무엇을 지우고(망각) 더하고(입력) 내보낼지(출력) 조절한다.
-- GRU는 게이트를 줄여 계산이 가볍다. 데이터·자원이 적당할 때 LSTM 대안으로 좋다.
+- **Cell state**: LSTM's "highway" for carrying information over long distances. Gates control what to erase (forget), add (input), and output.
+- GRU reduces gates for lighter computation. A good LSTM alternative when data and resources are moderate.
 
-선택 가이드: 장기 의존성이 중요하고 자원이 충분하면 LSTM, 가볍게 가고 싶으면 GRU.
+Selection guide: Use LSTM if long-term dependencies are critical and resources sufficient; use GRU for lighter needs.
 
-## seq2seq (인코더-디코더)
+## seq2seq (Encoder-Decoder)
 
-기계 번역처럼 **입력 시퀀스 → 출력 시퀀스**(길이 다를 수 있음)를 매핑하는 구조다.
+A structure mapping **input sequence → output sequence** (possibly different lengths), like machine translation.
 
 ```text
-입력 시퀀스 → [인코더 RNN] → 컨텍스트 벡터 → [디코더 RNN] → 출력 시퀀스
-"I am happy"                                            "나는 행복하다"
+Input Sequence → [Encoder RNN] → Context Vector → [Decoder RNN] → Output Sequence
+"I am happy"                                                      "I am happy"
 ```
 
-- **인코더**가 입력 전체를 고정 길이 컨텍스트 벡터로 압축.
-- **디코더**가 그 벡터로부터 출력을 한 토큰씩 생성.
-- 한계: 긴 입력을 하나의 벡터로 압축하면 정보 손실(병목)이 생긴다.
+- **Encoder** compresses the entire input into a fixed-length context vector.
+- **Decoder** generates output one token at a time from that vector.
+- Limitation: Compressing long input into one vector causes information loss (bottleneck).
 
-## 어텐션(Attention)
+## Attention
 
-seq2seq의 병목을 해결하려고 등장. 디코더가 출력의 각 시점마다 입력의 **어느 부분에 주목할지**를 가중치로 학습한다.
+Emerged to solve seq2seq's bottleneck. The decoder learns to weight which parts of the input to focus on at each output time step.
 
 ```text
-디코더가 "행복"을 생성할 때
-→ 입력 "happy"에 높은 어텐션 가중치를 부여
+When decoder generates "happy"
+→ Assigns high attention weight to input "happy"
 ```
 
-- 고정 컨텍스트 벡터 대신 입력 전체를 동적으로 참조.
-- 긴 시퀀스에서 정보 손실을 줄이고, 어떤 입력이 출력에 영향을 줬는지 해석성도 제공.
+- Dynamically references entire input instead of fixed context vector.
+- Reduces information loss in long sequences and provides interpretability of input-output relationships.
 
-> 💡 **관련 이론**: 어텐션의 핵심은 "쿼리(query)·키(key)·밸류(value)" 메커니즘이다. 디코더의 현재 상태(쿼리)와 인코더의 각 위치(키)의 유사도로 가중치를 만들고, 그 가중치로 밸류를 가중합한다. 이 아이디어를 RNN 없이 시퀀스 내부의 모든 위치 쌍에 적용한 것이 **셀프 어텐션(self-attention)** 이며, Transformer의 토대다.
+> 💡 **Related Theory**: Attention's core is "query, key, value" mechanism. Weight is derived from similarity between decoder's current state (query) and encoder positions (keys), then values are weighted summed. Applying this idea to all position pairs within a sequence without RNN is **self-attention**, the foundation of Transformer.
 
 ## Transformer
 
-"Attention Is All You Need"(2017)가 RNN을 버리고 **셀프 어텐션만으로** 시퀀스를 처리한 구조다. 오늘날 NLP·생성형 AI의 표준이다.
+"Attention Is All You Need" (2017) dropped RNN and processes sequences using **self-attention alone**. Today's standard in NLP and generative AI.
 
-- **병렬 처리**: RNN처럼 시점을 순차 처리하지 않고 전체를 한 번에 → GPU에서 학습이 훨씬 빠름.
-- **장거리 의존성**: 멀리 떨어진 토큰도 직접 어텐션으로 연결.
-- **위치 인코딩(positional encoding)**: 순서 정보를 별도로 주입(어텐션 자체는 순서를 모름).
-- 대표 모델: BERT(인코더, 이해), GPT(디코더, 생성), T5(인코더-디코더).
+- **Parallel processing**: Doesn't sequentially process time steps like RNN but handles entire sequence at once → much faster GPU training.
+- **Long-range dependencies**: Distant tokens connect directly via attention.
+- **Positional encoding**: Injects order information separately (attention itself doesn't know position).
+- Representative models: BERT (encoder, understanding), GPT (decoder, generation), T5 (encoder-decoder).
 
-대규모 사전학습 + 다운스트림 파인튜닝이라는 **사전학습-파인튜닝 패러다임**의 중심이며, AWS에서는 SageMaker JumpStart·Amazon Bedrock으로 이런 모델을 쉽게 활용한다.
+Central to the **pretraining-finetuning paradigm** (large-scale pretraining + downstream finetuning), and AWS provides SageMaker JumpStart and Amazon Bedrock for easy access.
 
-## 시계열·NLP에서의 AWS 매핑
+## AWS Mapping for Time Series and NLP
 
-| 과제 | 적합한 선택 |
+| Task | Suitable Choice |
 |------|------|
-| 수요·매출 시계열 예측 | **DeepAR**(SageMaker), Amazon Forecast |
-| 텍스트 분류/임베딩(전통) | **BlazingText**(Word2Vec/분류) |
-| 기계 번역 | **Seq2Seq**(SageMaker 빌트인) |
-| 엔티티·감성·키프레이즈 추출(관리형) | **Amazon Comprehend** |
-| 생성·요약·QA(대형 언어모델) | SageMaker JumpStart, **Amazon Bedrock** |
+| Demand/revenue time series forecasting | **DeepAR** (SageMaker), Amazon Forecast |
+| Text classification/embedding (traditional) | **BlazingText** (Word2Vec/classification) |
+| Machine translation | **Seq2Seq** (SageMaker built-in) |
+| Entity, sentiment, key phrase extraction (managed) | **Amazon Comprehend** |
+| Generation, summarization, QA (large language models) | SageMaker JumpStart, **Amazon Bedrock** |
 
-> 💡 **관련 이론**: 시계열 예측에서 DeepAR은 여러 관련 시계열을 함께 학습해 한 시계열의 데이터가 적어도 다른 시계열에서 패턴을 빌려온다(글로벌 모델). 이는 상품마다 따로 ARIMA를 적합시키는 전통 방식보다 다수의 유사 시계열(매장·SKU별 수요)에서 강력하다. "수많은 상품의 수요를 한꺼번에 예측"이면 DeepAR/Forecast가 정답 신호다.
+> 💡 **Related Theory**: In time series forecasting, DeepAR learns multiple related time series together so a sparse time series borrows patterns from others (global model). This is more powerful than fitting ARIMA separately to each product for many similar time series (demand by store or SKU). "Forecast demand across many products at once" signals DeepAR/Forecast.
 
-## 핵심 정리
+## Key Summary
 
-- RNN은 은닉 상태로 순서를 처리하지만 장기 의존성·기울기 문제가 있다.
-- LSTM/GRU는 게이트로 장기 기억을 개선(GRU가 더 가벼움).
-- seq2seq(인코더-디코더)는 입력→출력 시퀀스 매핑, 어텐션이 병목을 해소.
-- Transformer는 셀프 어텐션으로 병렬·장거리 처리 → 현대 NLP 표준(BERT/GPT/T5).
-- AWS: 시계열=DeepAR/Forecast, 텍스트=BlazingText/Comprehend, 생성=JumpStart/Bedrock.
+- RNN processes sequences via hidden state but suffers from long-term dependency and gradient issues.
+- LSTM/GRU improve long-term memory via gates (GRU is lighter).
+- seq2seq (encoder-decoder) maps input→output sequences; attention resolves bottleneck.
+- Transformer uses self-attention for parallel and long-range processing → modern NLP standard (BERT/GPT/T5).
+- AWS: time series=DeepAR/Forecast, text=BlazingText/Comprehend, generation=JumpStart/Bedrock.
 
 ## 📝 연습 문제
 

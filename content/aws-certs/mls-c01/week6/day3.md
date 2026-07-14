@@ -1,101 +1,101 @@
-# Day 3 - SageMaker 빌트인 2: 텍스트·이미지·시계열·추천
+# Day 3 - SageMaker Builtin 2: Text, Image, Time Series, Recommendation
 
-어제는 정형 데이터 알고리즘을 다뤘다. 오늘은 데이터 형태가 특별할 때 — **텍스트, 이미지, 시계열, 희소 상호작용** — 쓰는 특화 빌트인 네 가지를 본다. 시험은 "데이터가 텍스트/이미지/시계열이다"라는 단서로 일반 XGBoost가 아니라 이들 특화 알고리즘으로 답을 민다.
+Yesterday we covered tabular data algorithms. Today we tackle specialized builtins for when data shape is special — **text, image, time series, sparse interactions**. Exams push specialized algorithms — text/image/time series signals mean not XGBoost but these specialized builtins.
 
-## BlazingText — 텍스트 분류와 단어 임베딩
+## BlazingText — Text Classification and Word Embeddings
 
-Word2Vec과 텍스트 분류를 GPU로 매우 빠르게 처리하는 빌트인. 두 가지 모드가 있다.
+Word2Vec and text classification GPU-accelerated builtin. Two modes.
 
-- **Word2Vec(비지도)**: 단어를 벡터로 임베딩. 유사 단어 탐색, 다운스트림 피처 생성.
-- **Text Classification(지도)**: 문서 → 레이블(감성/주제 등). fastText 기반.
+- **Word2Vec (unsupervised)**: Embed words into vectors. Find similar words, generate downstream features
+- **Text Classification (supervised)**: Document → label (sentiment, topic, etc). fastText-based
 
 ```text
-모드 결정:
-  레이블이 있고 문서를 분류 → supervised (text classification)
-  레이블 없이 단어 벡터만   → Word2Vec (cbow / skipgram / batch_skipgram)
+Mode decision:
+  Labels present, classify documents → supervised (text classification)
+  No labels, just word vectors  → Word2Vec (cbow / skipgram / batch_skipgram)
 ```
 
-- **입력**: 텍스트 파일(공백 토큰화). 지도 모드는 `__label__<레이블> 문장` 형식.
-- **강점**: 대규모 코퍼스에서 압도적 속도, 다국어, OOV(미등록 단어) 대응(subword).
+- **Input**: Text files (whitespace tokenization). Supervised mode: `__label__<label> sentence` format
+- **Strengths**: Dominates speed on massive corpora, multilingual, handles OOV (out-of-vocab) with subword
 
-> 💡 **관련 이론**: BlazingText의 Word2Vec은 "주변 단어로 중심 단어를 맞히거나(CBOW) 중심 단어로 주변을 맞히는(skip-gram)" 방식으로 의미가 비슷한 단어를 벡터 공간에서 가깝게 배치한다. 이렇게 학습된 임베딩은 그 자체로 단어 유사도 검색에 쓰이거나, 다른 모델의 입력 피처가 된다. 시험에서 "단어 간 의미적 유사도" / "임베딩"이 핵심이면 Word2Vec 모드, "문서를 카테고리로 분류"이면 supervised 모드로 갈린다.
+> 💡 **Related Theory**: BlazingText Word2Vec uses "predict center from context (CBOW) or context from center (skip-gram)" to place semantically similar words close in vector space. Learned embeddings themselves are used for word similarity search or become input features for other models. On exams, "semantic word similarity" / "embedding" signals Word2Vec mode, "classify documents to categories" signals supervised mode.
 
-## Image Classification — 이미지 분류
+## Image Classification — Image Classification
 
-이미지를 하나 이상의 레이블로 분류하는 CNN(ResNet) 기반 빌트인.
+CNN (ResNet)-based builtin for classifying images into one or more labels.
 
-- **용도**: 단일/다중 레이블 이미지 분류.
-- **입력**: RecordIO 또는 이미지(.jpg/.png) + .lst 리스트 파일.
-- **핵심 기법**: **전이 학습(Transfer Learning)** — `use_pretrained_model=1`로 ImageNet 사전학습 가중치에서 시작해 적은 데이터로도 좋은 성능.
+- **Use**: Single/multi-label image classification
+- **Input**: RecordIO or images (.jpg/.png) + .lst list file
+- **Key technique**: **Transfer Learning** — start from ImageNet pre-trained weights with `use_pretrained_model=1` for good performance even on small data
 
 ```text
-주요 하이퍼파라미터:
+Key hyperparameters:
   num_classes, num_training_samples
-  use_pretrained_model   0(처음부터) | 1(전이학습)
+  use_pretrained_model   0(from scratch) | 1(transfer learning)
   image_shape, learning_rate, mini_batch_size
-  augmentation_type      이미지 증강 (crop/color 등)
+  augmentation_type      image augmentation (crop/color etc)
 ```
 
-- 데이터가 적을 때: 전이 학습 + 데이터 증강이 정석.
-- 객체 위치까지 필요하면 분류가 아니라 **Object Detection** 빌트인, 픽셀 단위는 **Semantic Segmentation**.
+- Limited data: transfer learning + data augmentation is standard
+- Need object locations too: not classification but **Object Detection** builtin; pixel-level → **Semantic Segmentation**
 
-## DeepAR — 시계열 예측
+## DeepAR — Time Series Forecasting
 
-RNN 기반 시계열 예측 빌트인. 단일 시계열이 아니라 **여러 관련 시계열을 함께 학습**해 패턴을 공유하는 것이 핵심 강점이다.
+RNN-based time series forecasting builtin. Core strength is **learning many related series together** to share patterns, not modeling one series alone.
 
-- **용도**: 수요/매출/트래픽 등 미래 값 예측, 확률적(분위수) 예측.
-- **입력**: JSON Lines — 각 시계열의 `start`, `target`, 선택적 `cat`(범주), `dynamic_feat`(공변량).
-- **강점**: 많은 유사 시계열(예: 매장 수천 곳)에서 개별 학습보다 정확. 신규/짧은 시계열(콜드 스타트)도 다른 시계열에서 배운 패턴으로 예측.
+- **Use**: Predict future values for demand/revenue/traffic, probabilistic (quantile) forecasts
+- **Input**: JSON Lines — each series has `start`, `target`, optional `cat` (category), `dynamic_feat` (covariates)
+- **Strengths**: More accurate on many related series (e.g., thousands of stores) than individual modeling. Even new/short series (cold start) can forecast using patterns learned from similar series
 
 ```text
-주요 하이퍼파라미터:
-  context_length      과거 입력 구간 길이
-  prediction_length   예측 구간 길이
+Key hyperparameters:
+  context_length      length of past input window
+  prediction_length   length of forecast window
   epochs, num_cells, num_layers
-  likelihood          출력 분포(가우시안 등)
+  likelihood          output distribution (Gaussian etc)
 ```
 
-> 💡 **관련 이론**: 전통적 ARIMA/지수평활은 시계열 하나씩 따로 모델링하지만, DeepAR는 수많은 관련 시계열을 한 모델로 학습해 **계절성·추세를 교차 학습**한다. 그래서 데이터가 짧은 신규 항목도 비슷한 항목의 패턴을 빌려 예측할 수 있다. 또 점 추정이 아니라 분포(분위수)를 내놓아 P10/P50/P90 같은 불확실성 구간을 제공한다. 시험에서 "수천 개의 관련 시계열" / "신규 상품 수요" / "확률적 예측 구간"이 보이면 DeepAR가 단서다. 더 관리형이 필요하면 Amazon Forecast.
+> 💡 **Related Theory**: Traditional ARIMA/exponential smoothing model each series separately, but DeepAR trains many related series in one model for **cross-learn seasonality, trends**. So even short new items can borrow patterns from similar items. Outputs distribution (quantiles) not point estimates, giving P10/P50/P90 uncertainty bands. On exams, "thousands of related series" / "new product demand" / "probabilistic forecast intervals" signal DeepAR. For more managed service, Amazon Forecast.
 
-## Factorization Machines — 희소 고차원 추천
+## Factorization Machines — Sparse High-Dimensional Recommendation
 
-사용자-아이템처럼 **매우 희소하고 고차원**인 데이터에서 피처 간 상호작용(2차)을 효율적으로 모델링한다.
+Efficiently model feature interactions (2-way) in **very sparse, high-dimensional** data like user-item.
 
-- **용도**: 추천(클릭률 예측, 평점 예측), 희소 분류/회귀.
-- **입력**: RecordIO-protobuf(float32). **희소 데이터에 최적화**되어 CSV는 비권장.
-- **강점**: One-Hot으로 폭발한 초고차원·희소 입력에서도 상호작용을 효율적으로 학습.
+- **Use**: Recommendation (click prediction, rating prediction), sparse classification/regression
+- **Input**: RecordIO-protobuf (float32). **Optimized for sparse data**, CSV not recommended
+- **Strengths**: Learns interactions efficiently even in ultra-high-dimensional sparse input exploded by One-Hot
 
 ```text
-주요 하이퍼파라미터:
-  num_factors        잠재 요인(latent) 차원
+Key hyperparameters:
+  num_factors        latent factor dimension
   predictor_type     binary_classifier | regressor
-  bias/linear/factors 각 항의 정규화·초기화 설정
+  bias/linear/factors   regularization, init settings per term
 ```
 
-추천 맥락에서 FM은 협업 필터링을 일반화한다: 사용자 ID·아이템 ID를 One-Hot으로 넣으면 행렬 분해와 유사하게 동작하고, 추가 피처(시간·맥락)도 함께 넣을 수 있다.
+In recommendation context, FM generalizes collaborative filtering: feed user ID, item ID as One-Hot and it behaves like matrix factorization, can also include additional features (time, context).
 
-## 데이터 형태별 매핑 요약
+## Data Shape Mapping Summary
 
-| 데이터 형태 | 과제 | 빌트인 | 포인트 |
+| Data Shape | Task | Builtin | Key Point |
 |------|------|------|------|
-| 텍스트 | 분류 | BlazingText(supervised) | `__label__` 포맷 |
-| 텍스트 | 임베딩/유사도 | BlazingText(Word2Vec) | cbow/skipgram |
-| 이미지 | 분류 | Image Classification | 전이학습·증강 |
-| 이미지 | 위치 탐지 | Object Detection | 분류 아님 |
-| 시계열 | 예측 | DeepAR | 다수 시계열 공유, 확률 예측 |
-| 희소 상호작용 | 추천 | Factorization Machines | RecordIO-protobuf, 희소 최적 |
+| Text | Classification | BlazingText (supervised) | `__label__` format |
+| Text | Embedding/Similarity | BlazingText (Word2Vec) | cbow/skipgram |
+| Image | Classification | Image Classification | transfer learning, augmentation |
+| Image | Locate objects | Object Detection | not classification |
+| Time series | Forecast | DeepAR | share many series, probabilistic |
+| Sparse interactions | Recommend | Factorization Machines | RecordIO-protobuf, sparse-optimal |
 
-## 시험 팁
+## Exam Tips
 
-- "텍스트를 카테고리로" → BlazingText supervised, "단어 의미 유사도/임베딩" → Word2Vec.
-- "이미지 + 데이터가 적음" → Image Classification + **전이 학습/증강**.
-- "이미지에서 물체 위치까지" → Object Detection(분류 아님).
-- "수천 개 관련 시계열 / 신규 항목 수요 / P90 구간" → DeepAR.
-- "사용자-아이템 / 매우 희소 / 추천" → Factorization Machines(+ RecordIO-protobuf).
+- "Classify text to categories" → BlazingText supervised; "word semantic similarity/embedding" → Word2Vec
+- "Image + limited data" → Image Classification + **transfer learning/augmentation**
+- "Image locate objects" → Object Detection (not classification)
+- "Thousands related series / new item demand / P90 bands" → DeepAR
+- "User-item / very sparse / recommend" → Factorization Machines (+ RecordIO-protobuf)
 
-## 정리하며
+## Summary
 
-오늘은 데이터 형태가 특수할 때의 빌트인을 정리했다. 텍스트(BlazingText), 이미지(Image Classification, 전이학습), 시계열(DeepAR, 다수 시계열·확률 예측), 희소 추천(Factorization Machines, RecordIO-protobuf)이 각각의 정답 신호다. 내일은 비지도·이상탐지 계열(RCF, PCA, IP Insights, LDA/NTM)을 다룬다.
+Today we organized builtins for special data shapes. Text (BlazingText), image (Image Classification, transfer learning), time series (DeepAR, many series, probabilistic), sparse recommendation (Factorization Machines, RecordIO-protobuf) are each solution signals. Tomorrow covers unsupervised, anomaly detection (RCF, PCA, IP Insights, LDA/NTM).
 
 ---
 

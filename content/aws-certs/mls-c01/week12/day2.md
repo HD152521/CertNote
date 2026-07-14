@@ -1,128 +1,81 @@
-# Day 2 - 도메인 3 통합 복습: 모델링(알고리즘·딥러닝·튜닝·평가)
+# Day 2 - Domain 3 Integration: Modeling (Algorithm to Evaluation)
 
-오늘은 시험 최대 비중인 **도메인 3 모델링(36%)**을 통째로 복습한다. 이 도메인은 "문제를 ML 문제로 정의하고, 올바른 알고리즘을 고르고, 학습·튜닝하고, 평가·디버깅하는" 모델링의 전 과정이다. 시험 한 문제 걸러 한 문제가 도메인 3에서 나온다고 보면 된다. 오늘은 알고리즘 선택 → 딥러닝 → 하이퍼파라미터 튜닝 → 평가의 네 축을 한 흐름으로 엮는다.
+Domain 3: **ML's core** — choose algorithm, structure (DL), tune, evaluate. Today: integrated **problem → algorithm → learn → evaluate** flow.
 
-## 한 장 요약: 문제 정의에서 평가까지
+## End-to-End Modeling
 
 ```text
-[비즈니스 문제]
+[Business problem]
    │
-   ├─ 1) ML 문제 유형 매핑
-   │     라벨 있음 → 지도학습 (분류/회귀)
-   │     라벨 없음 → 비지도 (군집/이상탐지/차원축소)
-   │     보상 신호  → 강화학습
+   ├─ 1) DEFINE ML TYPE
+   │     Label? → supervised (classification/regression) or unsupervised
+   │     Output? → category/number/cluster/anomaly/recommendation
    │
-   ├─ 2) 알고리즘 선택
-   │     정형 표 데이터 → XGBoost, Linear Learner
-   │     이미지        → CNN (Image Classification)
-   │     시퀀스/시계열  → RNN/LSTM, DeepAR
-   │     텍스트        → BlazingText, Transformer
+   ├─ 2) PICK ALGORITHM
+   │     Tabular → XGBoost (default)
+   │     Image → CNN
+   │     Sequence/TS → RNN/LSTM or DeepAR
+   │     Text → BlazingText
    │
-   ├─ 3) 학습/튜닝
-   │     하이퍼파라미터 = 학습 전 사람이 정함
-   │     AMT(베이지안)로 탐색, 과적합 ↔ 과소적합 조절
+   ├─ 3) STRUCTURE (if DL)
+   │     Activate: ReLU (hidden) → Sigmoid/Softmax/linear (output)
+   │     Loss: cross-entropy (classify) or MSE (regress)
    │
-   └─ 4) 평가/디버깅
-         분류=정밀도/재현율/F1/AUC, 회귀=RMSE/MAE/R²
-         Debugger(과정) / Clarify(편향·설명)
+   ├─ 4) OPTIMIZE/TUNE
+   │     Hyperparameter search: Bayesian (efficient) or Hyperband (DL)
+   │     Diagnosis: overfit → regularize; underfit → more capacity
+   │     Learning rate: NaN → too high; stalled → too low
+   │
+   └─ 5) EVALUATE
+         Classify: precision/recall/F1 (imbalance-aware)
+         Regress: RMSE/MAE/R²
+         Residual plot: patterns = model assumptions broken
+         Confusion: where do errors cluster?
 ```
 
-## 알고리즘 선택: 데이터 형태로 갈린다
+## Algorithm Selection by Data Shape
 
-| 데이터/문제 | 대표 알고리즘 (SageMaker 빌트인) |
-|------|------|
-| 정형 표 데이터 분류·회귀 | XGBoost, Linear Learner |
-| 이미지 분류 | Image Classification (CNN/ResNet) |
-| 객체 탐지 | Object Detection |
-| 시계열 예측 | DeepAR |
-| 텍스트 분류·임베딩 | BlazingText |
-| 토픽 모델링 | LDA, NTM |
-| 군집화 | K-Means |
-| 차원 축소 | PCA |
-| 이상 탐지 | Random Cut Forest (RCF) |
-| 추천 | Factorization Machines |
-
-> 💡 **관련 이론**: "정형 표 데이터에서 일단 XGBoost"는 실무·시험 양쪽의 강한 기본값이다. 그래디언트 부스팅은 결측치·혼합 타입·비선형 상호작용을 잘 다루고 튜닝 여지가 크다. 반대로 데이터 형태가 이미지·시퀀스·텍스트로 명시되면 각각 CNN·RNN/DeepAR·BlazingText로 분기한다. 알고리즘 문제의 첫 단서는 거의 항상 "데이터가 어떤 모양인가(표/이미지/시퀀스/텍스트)"다.
-
-## 딥러닝: 구조와 용도
-
-| 구조 | 적합 데이터 | 핵심 |
+| Data | Default | Alt |
 |------|------|------|
-| CNN | 이미지, 공간 패턴 | 합성곱으로 지역 특징 추출 |
-| RNN/LSTM | 시퀀스, 시계열, 텍스트 | 순서·문맥 기억 |
-| Transformer | 텍스트, 장거리 의존 | 어텐션, 병렬 처리 |
-| Autoencoder | 차원축소, 이상탐지 | 재구성 오차 |
+| Tabular | XGBoost | Linear |
+| Image | CNN | ResNet (transfer) |
+| Sequence | LSTM | GRU |
+| Time series | DeepAR | Prophet |
+| Text | BlazingText | Transformer |
+| Unlabeled | Unsuitable | K-Means (cluster) |
+| Rare anomaly | Unsuitable | RCF |
 
-| 활성화 함수 | 용도 |
+## Learning Pathway
+
+1. **Diagnose curve pattern**:
+   - Train low, val low → underfit (need capacity/data)
+   - Train low, val high → overfitting (regularize/early-stop)
+
+2. **Tune**:
+   - Learning rate: no NaN, loss falling
+   - Regularization: dropout/L1/L2 if overfitting
+   - Batch size: balance speed/stability
+
+3. **Evaluate**:
+   - Metric per problem (imbalance=F1, regression=MAE)
+   - Residual plot: random or patterns?
+   - Cross-validate: general or data-lucky?
+
+## Metric Selection by Business Cost
+
+| Scenario | Metric |
 |------|------|
-| ReLU | 은닉층 기본(기울기 소실 완화) |
-| Sigmoid | 이진 분류 출력 |
-| Softmax | 다중 분류 출력 |
-| Tanh | 중심 0, RNN 게이트 |
+| Fraud (FN costly) | Recall / F1 |
+| Spam (FP costly) | Precision |
+| Both equal | F1 |
+| Regression outliers | MAE |
+| Regression catastrophic | RMSE |
 
-> 💡 **관련 이론**: 출력층 활성화는 문제 유형의 직접 번역이다. 이진 분류는 Sigmoid(0~1 확률 하나), 다중 분류는 Softmax(합이 1인 확률 벡터), 회귀는 활성화 없음(선형)이다. 은닉층은 기울기 소실을 줄이는 ReLU가 사실상 기본값이다. "다중 클래스 출력에 Sigmoid"나 "회귀 출력에 Softmax" 같은 보기는 함정이다.
+## Summary
 
-## 하이퍼파라미터 튜닝
+Domain 3 = problem → algorithm → DL structure → tuning → evaluation. Pick by data shape (tabular=XGBoost, image=CNN, seq=LSTM). Diagnose curves (underfit vs overfit). Tune hyperparameters. Evaluate per business cost. Residual plots reveal hidden failures.
 
-| 개념 | 내용 |
-|------|------|
-| 파라미터 vs 하이퍼파라미터 | 학습으로 얻음 vs 학습 전 사람이 정함 |
-| learning rate | 너무 크면 발산, 너무 작으면 느림 |
-| epochs/early stopping | 과적합 전 중단 |
-| regularization (L1/L2, dropout) | 과적합 억제 |
-| AMT 탐색 전략 | Bayesian(기본, 효율) > Random > Grid |
-
-| 증상 | 진단 | 대응 |
-|------|------|------|
-| 학습 정확도 높고 검증 낮음 | 과적합 | 정규화↑, 데이터↑, 모델 단순화, early stopping |
-| 학습·검증 모두 낮음 | 과소적합 | 모델 복잡도↑, 피처↑, 학습 더 |
-| 손실이 발산/진동 | learning rate 과대 | learning rate↓ |
-
-> 💡 **관련 이론**: SageMaker Automatic Model Tuning의 기본 전략은 베이지안 최적화다. 그리드/랜덤 서치가 탐색 이력을 무시하고 무작정 시도하는 반면, 베이지안은 이전 시도 결과로 다음 후보를 똑똑하게 고른다. 그래서 같은 잡 예산으로 더 나은 하이퍼파라미터를 찾을 확률이 높다. "효율적/적은 시도로 최적"이라는 단서가 보이면 베이지안이다. 또 목적 지표 방향은 오차(RMSE)는 Minimize, 성능(F1/AUC)은 Maximize다.
-
-## 평가: 지표는 비즈니스 비용의 번역
-
-| 지표 | 언제 |
-|------|------|
-| Accuracy | 균형 데이터만 |
-| Precision | FP 비용 클 때(스팸) |
-| Recall | FN 비용 클 때(질병/사기) |
-| F1 | 불균형, FP·FN 균형 |
-| ROC-AUC | 임계값 무관 모델 비교 |
-| PR-AUC | 극단 불균형 |
-| RMSE / MAE | 큰 오차 민감 / 이상치 강건(회귀) |
-
-> 💡 **관련 이론**: 모델 선택과 임계값 결정은 분리된 두 단계다. AUC 같은 임계값-무관 지표로 "잘 순위 매기는 모델"을 먼저 고르고, 그 위에서 FP/FN 비용에 맞는 운영 임계값을 사후에 정한다. 비용 구조가 바뀌어도 재학습 없이 임계값만 조정하면 된다. 디버깅은 SageMaker Debugger(학습 과정의 텐서·기울기·과적합), 편향·설명은 Clarify(집단 공정성·SHAP)로 갈린다.
-
-## 도메인 3 핵심 비교
-
-| 비교 | 핵심 차이 |
-|------|------|
-| 지도 vs 비지도 | 라벨 있음 vs 없음 |
-| 분류 vs 회귀 | 범주 출력 vs 연속값 출력 |
-| XGBoost vs 딥러닝 | 정형 표 데이터 vs 이미지/시퀀스/텍스트 |
-| CNN vs RNN | 공간 패턴 vs 순서·문맥 |
-| Sigmoid vs Softmax | 이진 출력 vs 다중 출력 |
-| 과적합 vs 과소적합 | 검증만 낮음 vs 둘 다 낮음 |
-| Bayesian vs Grid 튜닝 | 이력 활용 효율 vs 전수 탐색 |
-| Debugger vs Clarify | 학습 과정 vs 편향·설명 |
-
-## 자가 점검 질문
-
-1. 라벨이 없고 고객을 자연 그룹으로 묶으려면? → **K-Means(비지도 군집)**
-2. 정형 표 데이터 분류의 강한 기본값은? → **XGBoost**
-3. 시계열 수요 예측 빌트인 알고리즘은? → **DeepAR**
-4. 다중 클래스 분류의 출력 활성화는? → **Softmax**
-5. 학습 정확도 99%, 검증 70%면? → **과적합 → 정규화·데이터 증강·조기 종료**
-6. AMT의 효율적 기본 탐색 전략은? → **베이지안 최적화**
-7. 회귀 튜닝 목적 지표의 방향은? → **Minimize(RMSE 등)**
-8. 학습 중 기울기 소실을 자동 탐지하는 서비스는? → **SageMaker Debugger**
-
-## 정리하며
-
-도메인 3은 모델링의 전 과정 — 문제 정의, 알고리즘 선택, 딥러닝 구조, 튜닝, 평가·디버깅 — 을 아우르며 시험 비중도 가장 크다. 데이터 형태로 알고리즘을 고르고(표=XGBoost, 이미지=CNN, 시퀀스=RNN/DeepAR, 텍스트=BlazingText), 출력층 활성화는 문제 유형의 번역(이진=Sigmoid, 다중=Softmax)이며, 과적합/과소적합 증상으로 튜닝 방향을 잡고, 지표는 비즈니스 비용으로 고른다. 이 분기들을 즉답할 수 있으면 도메인 3은 안정권이다.
-
----
+Tomorrow: Domain 4 (deployment).
 
 ## 📝 연습 문제
 

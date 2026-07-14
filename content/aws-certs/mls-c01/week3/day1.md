@@ -1,37 +1,37 @@
-# Day 1 - 데이터 정제: 결측치 처리, 이상치 탐지, 중복·오류
+# Day 1 - Data Cleaning: Missing Values, Outlier Detection, Duplicates and Errors
 
-탐색적 데이터 분석(EDA)의 첫 단계는 "데이터를 깨끗하게 만드는 일"이다. MLS-C01 시험의 도메인 2(Exploratory Data Analysis)는 전체의 약 24%를 차지하고, 그 핵심에 **데이터 정제(data cleaning)**가 있다. 모델 아키텍처가 아무리 뛰어나도 결측치·이상치·중복이 뒤섞인 데이터를 넣으면 "garbage in, garbage out"이 된다.
+The first step in exploratory data analysis (EDA) is "making data clean." Domain 2 (Exploratory Data Analysis) in the MLS-C01 exam accounts for about 24% of the test, with **data cleaning** at its core. No matter how excellent a model architecture is, "garbage in, garbage out" results when data containing missing values, outliers, and duplicates is fed into it.
 
-오늘은 세 가지 더러움 — **결측치(missing values)**, **이상치(outliers)**, **중복·오류(duplicates & errors)** — 을 다룬다. 각각을 탐지하는 방법과 처리 전략, 그리고 그 선택이 모델에 미치는 영향까지 본다.
+Today, we address three types of "dirt"—**missing values**, **outliers**, and **duplicates and errors**. We examine methods to detect each, treatment strategies, and the impact these choices have on models.
 
-## 결측치 처리: 발생 메커니즘부터
+## Handling Missing Values: Starting with Mechanisms
 
-결측치를 처리하기 전에 **왜 비어 있는가**를 먼저 이해해야 한다. 통계학에서는 결측 메커니즘을 세 가지로 분류한다.
+Before treating missing values, we must first understand **why they are missing**. In statistics, missing mechanisms are classified into three types.
 
-| 메커니즘 | 의미 | 예시 |
-|------|------|------|
-| **MCAR** (Missing Completely At Random) | 결측이 완전히 무작위, 다른 변수와 무관 | 센서 일시 오류로 무작위 누락 |
-| **MAR** (Missing At Random) | 결측이 관측된 다른 변수에 의존 | 고소득자가 소득 응답을 더 자주 거부 |
-| **MNAR** (Missing Not At Random) | 결측이 그 값 자체에 의존 | 매우 낮은 신용점수자가 점수를 숨김 |
+| Mechanism | Meaning | Example |
+|-----------|---------|---------|
+| **MCAR** (Missing Completely At Random) | Missing is completely random, unrelated to other variables | Random omission due to sensor glitch |
+| **MAR** (Missing At Random) | Missing depends on observed other variables | High-income earners more often refuse income response |
+| **MNAR** (Missing Not At Random) | Missing depends on the value itself | Very low credit score holders hide their scores |
 
-MCAR이면 행을 삭제해도 편향이 적지만, MNAR이면 단순 삭제가 심각한 편향을 일으킨다. 메커니즘에 따라 전략이 달라진다.
+If MCAR, deleting rows introduces little bias; if MNAR, simple deletion causes serious bias. Strategy varies by mechanism.
 
-> 💡 **관련 이론**: 결측 메커니즘 분류(MCAR/MAR/MNAR)는 통계학자 Donald Rubin이 1976년 제안한 프레임워크다. 핵심 통찰은 "결측 처리 방법의 타당성은 데이터가 왜 비었는지에 달려 있다"는 것이다. 단순 평균 대치는 MCAR 가정 위에서만 편향이 없고, MNAR 데이터에 적용하면 분포를 왜곡한다. 그래서 무작정 `fillna(mean)`을 쓰기 전에 결측 패턴을 시각화(예: 결측 히트맵)해 보는 것이 EDA의 정석이다.
+> 💡 **Related Theory**: The missing mechanism classification (MCAR/MAR/MNAR) is a framework proposed by statistician Donald Rubin in 1976. The key insight is "the validity of missing treatment depends on why data is missing." Simple mean imputation is unbiased only under MCAR assumption; applying it to MNAR data distorts the distribution. Thus, before blindly using `fillna(mean)`, visualizing missing patterns (e.g., missing heatmap) is EDA best practice.
 
-## 결측치 대치(imputation) 전략
+## Missing Value Imputation Strategies
 
-결측 처리는 크게 **삭제**와 **대치**로 나뉜다.
+Missing treatment broadly splits into **deletion** and **imputation**.
 
-| 전략 | 방법 | 적합 상황 | 위험 |
-|------|------|------|------|
-| 행 삭제 (listwise) | 결측 포함 행 제거 | 결측 비율이 매우 낮고 MCAR | 데이터 손실, 표본 편향 |
-| 평균/중앙값 대치 | 수치형 결측을 통계값으로 | 빠른 베이스라인 | 분산 축소, 상관 왜곡 |
-| 최빈값 대치 | 범주형 결측을 최빈 범주로 | 범주형 | 다수 범주 과대표현 |
-| KNN 대치 | 이웃 샘플의 값으로 추정 | 변수 간 상관 존재 | 계산 비용, 스케일 민감 |
-| 모델 기반 대치 | 회귀/MICE로 예측 | MAR, 변수 간 관계 강함 | 복잡도, 과적합 위험 |
-| 지시 변수 추가 | "결측이었다" 플래그 컬럼 생성 | MNAR, 결측 자체가 신호 | 차원 증가 |
+| Strategy | Method | Best For | Risk |
+|----------|--------|----------|------|
+| Row deletion (listwise) | Remove rows with missing | Very low missing rate and MCAR | Data loss, sample bias |
+| Mean/median imputation | Fill numeric missing with statistics | Quick baseline | Variance reduction, correlation distortion |
+| Mode imputation | Fill categorical missing with mode | Categorical | Over-representation of majority |
+| KNN imputation | Estimate from neighbor values | Inter-variable correlation exists | Computation cost, scale sensitivity |
+| Model-based imputation | Predict via regression/MICE | MAR, strong inter-variable relationships | Complexity, overfitting risk |
+| Indicator variable | Create "was missing" flag column | MNAR, missing is itself a signal | Dimension increase |
 
-중앙값은 평균보다 이상치에 강건(robust)하므로, 분포가 치우친(skewed) 수치형에는 중앙값 대치가 안전하다.
+Median is more robust to outliers than mean, so median imputation is safer for skewed numeric data.
 
 ```python
 import pandas as pd
@@ -39,84 +39,84 @@ from sklearn.impute import SimpleImputer, KNNImputer
 
 df = pd.read_csv("raw/customers.csv")
 
-# 수치형: 중앙값 대치 (이상치에 강건)
+# Numeric: median imputation (robust to outliers)
 num_imputer = SimpleImputer(strategy="median")
 df[["age", "income"]] = num_imputer.fit_transform(df[["age", "income"]])
 
-# 범주형: 최빈값 대치
+# Categorical: mode imputation
 cat_imputer = SimpleImputer(strategy="most_frequent")
 df[["region"]] = cat_imputer.fit_transform(df[["region"]])
 
-# 변수 간 상관이 강하면 KNN 대치
+# KNN imputation if inter-variable correlation is strong
 knn_imputer = KNNImputer(n_neighbors=5)
 df_num = pd.DataFrame(knn_imputer.fit_transform(df.select_dtypes("number")))
 ```
 
-> 💡 **관련 이론**: MICE(Multiple Imputation by Chained Equations)는 각 결측 변수를 다른 변수들로 회귀 예측하는 과정을 여러 번 반복해, 단일 대치가 무시하는 "대치 불확실성"까지 반영한다. 평균 대치가 분산을 인위적으로 줄여 신뢰구간을 좁게 만드는 문제를 다중 대치가 보정한다. 시험 수준에서는 "변수 간 관계가 강하면 단순 대치보다 KNN/모델 기반 대치가 정확하다"는 직관이면 충분하다.
+> 💡 **Related Theory**: MICE (Multiple Imputation by Chained Equations) repeatedly regresses each missing variable on others, capturing "imputation uncertainty" that single imputation ignores. Multiple imputation corrects the problem where mean imputation artificially reduces variance and artificially narrows confidence intervals. At exam level, understanding that "if inter-variable relationships are strong, KNN/model-based imputation is more accurate than simple imputation" is sufficient.
 
-> ⚠️ **함정**: 대치는 반드시 **학습 데이터로만 fit** 하고, 그 통계량을 검증/테스트에 적용해야 한다. 전체 데이터로 평균을 계산하면 테스트 정보가 학습에 새어 들어가는 **데이터 누수(data leakage)**가 발생한다. scikit-learn의 `fit_transform`은 학습셋에, `transform`만 테스트셋에 쓰는 이유다.
+> ⚠️ **Pitfall**: Imputation must **fit only on training data**, and apply those statistics to validation/test. Computing mean on all data causes **data leakage** where test information leaks into training, inflating performance. That's why scikit-learn uses `fit_transform` on train and `transform` only on test.
 
-## 이상치 탐지와 처리
+## Outlier Detection and Treatment
 
-이상치(outlier)는 다른 관측값과 크게 동떨어진 값이다. 입력 오류일 수도, 진짜 희귀 사건일 수도 있어 무조건 제거하면 안 된다.
+An outlier is a value significantly distant from other observations. It may be input error or a genuine rare event, so it must not be indiscriminately removed.
 
-탐지 방법:
+Detection methods:
 
-- **Z-score**: 평균에서 표준편차 몇 배 떨어졌는지. \|z\| > 3을 이상치로 보는 게 일반적. 정규분포 가정에 의존.
-- **IQR(사분위 범위)**: Q1 − 1.5×IQR 미만 또는 Q3 + 1.5×IQR 초과를 이상치로. 분포 가정이 없어 더 강건.
-- **시각화**: 박스플롯, 산점도, 히스토그램으로 눈으로 확인.
-- **모델 기반**: Isolation Forest, DBSCAN(밀도 기반), Local Outlier Factor 등.
+- **Z-score**: How many standard deviations from the mean. |z| > 3 is conventionally considered an outlier. Depends on normal distribution assumption.
+- **IQR (Interquartile Range)**: Values below Q1 − 1.5×IQR or above Q3 + 1.5×IQR are outliers. No distribution assumption, more robust.
+- **Visualization**: Visually confirm with boxplots, scatter plots, histograms.
+- **Model-based**: Isolation Forest, DBSCAN (density-based), Local Outlier Factor, etc.
 
 ```python
 import numpy as np
 
-# IQR 방식 이상치 경계
+# IQR-based outlier boundary
 Q1 = df["income"].quantile(0.25)
 Q3 = df["income"].quantile(0.75)
 IQR = Q3 - Q1
 lower, upper = Q1 - 1.5 * IQR, Q3 + 1.5 * IQR
 
-# 윈저라이징(winsorizing): 경계로 클리핑 (삭제 대신 보존)
+# Winsorizing: clipping to boundary (preserve instead of delete)
 df["income"] = df["income"].clip(lower, upper)
 ```
 
-처리 방법은 상황에 따라 다르다.
+Treatment methods vary by situation.
 
-| 처리 | 설명 | 적합 |
-|------|------|------|
-| 삭제 | 이상치 행 제거 | 명백한 입력 오류 |
-| 윈저라이징/클리핑 | 경계값으로 대체 | 극단값 영향만 줄이고 보존 |
-| 변환 | 로그/제곱근 변환으로 압축 | 오른쪽으로 긴 꼬리 분포 |
-| 유지 | 그대로 둠 | 사기 탐지처럼 이상치가 타깃일 때 |
+| Treatment | Description | Best For |
+|-----------|-------------|----------|
+| Deletion | Remove outlier rows | Clear input errors |
+| Winsorizing/Clipping | Replace with boundary value | Reduce extreme impact while preserving |
+| Transformation | Compress via log/sqrt transform | Right-skewed long-tailed distribution |
+| Retention | Leave as is | When outliers are target (fraud detection) |
 
-> 💡 **관련 이론**: IQR이 Z-score보다 강건한 이유는 **분해점(breakdown point)** 개념으로 설명된다. 평균과 표준편차는 이상치 하나만으로도 크게 흔들리지만(분해점 0%), 중앙값·사분위수는 데이터의 최대 25%가 오염돼도 안정적이다. 즉 이상치를 찾는 도구 자체가 이상치에 휘둘리면 안 되므로, 강건 통계량(median, IQR)이 선호된다. 사기 탐지·이상 거래처럼 이상치가 곧 정답인 문제에서는 제거가 아니라 "그 이상치를 학습"해야 한다는 점도 시험 포인트다.
+> 💡 **Related Theory**: IQR is more robust than Z-score because of the **breakdown point** concept. Mean and standard deviation are shaken by a single outlier (breakdown point 0%), while median and quartiles remain stable even if up to 25% of data is corrupted. Outlier detection tools themselves should not be swayed by outliers, so robust statistics (median, IQR) are preferred. In fraud detection or anomaly where outliers are themselves the answer, the key exam point is not deletion but "learning those outliers."
 
-## 중복과 오류
+## Duplicates and Errors
 
-마지막 더러움은 **중복 행**과 **논리적 오류**다.
+The final "dirt" is **duplicate rows** and **logical errors**.
 
-- **완전 중복**: 모든 컬럼이 같은 행. 보통 수집 중복으로 발생 → 제거.
-- **부분 중복**: 같은 엔티티가 표기만 다르게 여러 번(예: "Seoul" vs "서울"). 정규화 후 통합.
-- **논리 오류**: 나이 −5, 미래 날짜의 생년월일, 합계가 부분의 합과 불일치 등.
+- **Complete duplicates**: All columns are identical. Usually from collection duplication → remove.
+- **Partial duplicates**: Same entity with different notation appearing multiple times (e.g., "Seoul" vs Korean spelling). Normalize then consolidate.
+- **Logic errors**: Negative age, future date of birth, totals not matching partial sums, etc.
 
 ```python
-# 완전 중복 제거
+# Remove complete duplicates
 df = df.drop_duplicates()
 
-# 키 기준 중복 (최신 레코드만 유지)
+# Duplicates by key (keep latest record)
 df = df.sort_values("updated_at").drop_duplicates(subset=["user_id"], keep="last")
 
-# 논리 오류 필터링
+# Filter logic errors
 df = df[(df["age"] >= 0) & (df["age"] <= 120)]
 ```
 
-> ⚠️ **함정**: 중복 제거를 모델 학습 직전에만 하면, 학습/검증 분할 후 같은 레코드가 양쪽에 흩어져 **누수**를 일으킬 수 있다. 특히 시계열·사용자 단위 데이터는 분할 전에 중복·키 정리를 끝내야 평가가 정직해진다.
+> ⚠️ **Pitfall**: Removing duplicates only right before model training allows the same record to scatter across train and validation sets after splitting, causing **leakage**. Especially for time-series or user-level data, deduplication and key cleaning must be completed before splitting for honest evaluation.
 
-## 정리하며
+## Summary
 
-데이터 정제의 핵심은 (1) 결측은 **왜 비었는지(MCAR/MAR/MNAR)**를 먼저 보고 전략을 고르고, (2) 이상치는 **강건 통계(IQR)**로 탐지하되 무조건 제거하지 말며, (3) 중복·오류는 **분할 전에** 정리해 누수를 막는 것이다. 모든 대치·정제 통계량은 학습셋에서만 산출한다.
+The core of data cleaning is: (1) for missing values, first understand **why they're missing (MCAR/MAR/MNAR)** then choose strategy; (2) for outliers, detect with **robust statistics (IQR)** but don't indiscriminately remove; (3) for duplicates and errors, **clean before splitting** to prevent leakage. All imputation and cleaning statistics are computed from training data only.
 
-다음 글에서는 정제된 데이터를 모델이 잘 학습하도록 변형하는 **특성 공학(스케일링·인코딩·비닝)**을 본다.
+Next, we'll look at **feature engineering (scaling, encoding, binning)** that transforms cleaned data for models to learn well.
 
 ---
 

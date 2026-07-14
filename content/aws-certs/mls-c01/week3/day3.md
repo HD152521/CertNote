@@ -1,21 +1,21 @@
-# Day 3 - 시계열·텍스트 특성과 고차원 범주형 처리
+# Day 3 - Time Series, Text Features, and High-Cardinality Categorical Handling
 
-수치형과 일반 범주형은 어제 다뤘다. 오늘은 특별한 처리가 필요한 두 가지 데이터 유형 — **날짜·시간(시계열)**과 **텍스트** — 의 특성 공학을 본다. 마지막으로 인코딩에서 늘 골치인 **고차원(high-cardinality) 범주형**을 차원 축소·해싱으로 다루는 법을 정리한다.
+Yesterday we covered numeric and general categorical data. Today we explore feature engineering for two specialized data types—**dates and times (time series)** and **text**—that require custom handling. Finally, we'll address the perpetual challenge in encoding: managing **high-cardinality categorical features** through dimensionality reduction and hashing techniques.
 
-이 영역은 MLS-C01에서 "어떤 변환이 어떤 데이터에 맞는가"를 묻는 형태로 자주 출제된다.
+This topic appears frequently in MLS-C01 exams in the form "which transformation is appropriate for what data?"
 
-## 날짜·시간 파생 특성
+## Derived Features from Dates and Times
 
-날짜 컬럼(`2026-06-26 14:30:00`)을 그대로 쓰면 모델은 의미를 못 읽는다. 의미 있는 성분으로 **분해(decompose)**해야 한다.
+Using a date column as-is (e.g., `2026-06-26 14:30:00`) leaves the model unable to extract meaning. The date must be **decomposed** into meaningful components.
 
-| 파생 피처 | 예시 | 포착하는 패턴 |
+| Derived Feature | Example | Pattern Captured |
 |------|------|------|
-| year / month / day | 2026, 6, 26 | 장기 추세, 계절성 |
-| dayofweek | 0(월)~6(일) | 요일 효과 |
-| hour | 0~23 | 일중 패턴 |
-| is_weekend | 0/1 | 주말 여부 |
-| is_holiday | 0/1 | 공휴일 효과 |
-| days_since_event | 90 | 경과 시간 |
+| year / month / day | 2026, 6, 26 | Long-term trends, seasonality |
+| dayofweek | 0 (Mon) – 6 (Sun) | Day-of-week effects |
+| hour | 0 – 23 | Intra-day patterns |
+| is_weekend | 0/1 | Weekend flag |
+| is_holiday | 0/1 | Holiday effects |
+| days_since_event | 90 | Elapsed time |
 
 ```python
 import pandas as pd
@@ -27,7 +27,7 @@ df["hour"] = df["ts"].dt.hour
 df["is_weekend"] = (df["dayofweek"] >= 5).astype(int)
 ```
 
-주기성(cyclical) 변수는 함정이 있다. 시(hour) 23시와 0시는 실제로 1시간 차이지만, 정수로는 23만큼 떨어져 보인다. **사인/코사인 변환**으로 원형 구조를 복원한다.
+Cyclical variables present a hidden challenge. Hour 23 and hour 0 are actually 1 hour apart, but as integers they appear 23 units away. **Sine/cosine transformation** restores the circular structure.
 
 ```python
 import numpy as np
@@ -36,50 +36,50 @@ df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
 df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
 ```
 
-> 💡 **관련 이론**: 사인/코사인 인코딩의 핵심은 "주기적 거리를 보존"하는 것이다. 시간을 단위원 위의 각도로 매핑하면, 23시(345°)와 0시(0°)가 단위원 위에서 가까운 위치가 되어 모델이 둘을 인접하게 인식한다. 한 축(sin)만으로는 12시와 0시가 같은 값이 되어 모호하므로, sin과 cos 두 축을 함께 써야 24개 시각이 모두 고유한 (x, y) 좌표를 갖는다. 요일·월처럼 모든 주기형 변수에 적용 가능한 보편 기법이다.
+> 💡 **Key Theory**: The essence of sine/cosine encoding is to "preserve periodic distance." By mapping hours as angles on the unit circle, hour 23 (345°) and hour 0 (0°) become adjacent on the circle—the model now treats them as close. Using only sine creates ambiguity (hours 12 and 0 get the same value), so both sine and cosine are necessary to give all 24 hours unique (x, y) coordinates. This universal technique applies to any periodic variable (days, months, etc.).
 
-## 텍스트 특성: BoW, TF-IDF, 임베딩
+## Text Features: BoW, TF-IDF, Embeddings
 
-텍스트를 숫자 벡터로 바꾸는 것을 **벡터화(vectorization)**라 한다. 복잡도 순서로 보자.
+Converting text to numeric vectors is called **vectorization**. Let's review approaches from simplest to most sophisticated.
 
-| 기법 | 표현 | 특징 | 한계 |
+| Technique | Representation | Strengths | Limitations |
 |------|------|------|------|
-| **Bag of Words (BoW)** | 단어 빈도 카운트 | 단순, 빠름 | 순서·의미 무시, 흔한 단어 과대평가 |
-| **TF-IDF** | 빈도 × 희소성 가중 | 흔한 단어 억제 | 여전히 순서·의미 무시 |
-| **N-gram** | 연속 단어 묶음 | 일부 순서 포착 | 차원 급증 |
-| **Word Embedding** | 밀집 벡터(Word2Vec/GloVe) | 의미·유사도 포착 | 사전학습 필요 |
-| **문맥 임베딩** | BERT 등 | 문맥별 의미 | 무거움 |
+| **Bag of Words (BoW)** | Word frequency counts | Simple, fast | Ignores order/meaning; overweights common words |
+| **TF-IDF** | Frequency × sparsity weight | Suppresses common words | Still ignores order/meaning |
+| **N-gram** | Consecutive word groups | Captures some order | Dimensionality explosion |
+| **Word Embedding** | Dense vectors (Word2Vec/GloVe) | Captures semantics and similarity | Requires pretrained models |
+| **Contextual Embedding** | BERT, etc. | Context-aware semantics | Computationally heavy |
 
-TF-IDF는 BoW의 핵심 약점을 보완한다. "the", "is" 같은 모든 문서에 나오는 단어는 변별력이 없는데, BoW는 빈도만 보고 이런 단어를 과대평가한다. TF-IDF는 **여러 문서에 흔히 나오는 단어의 가중치를 낮춰** 문서를 구별하는 단어를 부각한다.
+TF-IDF addresses BoW's fundamental weakness. Words like "the" and "is" appear in all documents but carry no discriminative signal; BoW naively overweights them by counting frequency alone. TF-IDF **reduces weights for words appearing in many documents**, elevating rare but meaningful words.
 
 ```python
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 vectorizer = TfidfVectorizer(
-    max_features=5000,      # 상위 5000개 단어만
-    ngram_range=(1, 2),     # 유니그램 + 바이그램
-    stop_words="english",   # 불용어 제거
+    max_features=5000,      # top 5000 words only
+    ngram_range=(1, 2),     # unigrams + bigrams
+    stop_words="english",   # remove stopwords
 )
 X_text = vectorizer.fit_transform(train_texts)
-X_test_text = vectorizer.transform(test_texts)   # transform만
+X_test_text = vectorizer.transform(test_texts)   # transform only
 ```
 
-> 💡 **관련 이론**: TF-IDF의 IDF(역문서빈도) = log(전체 문서 수 / 해당 단어가 등장한 문서 수)다. 모든 문서에 나오는 단어는 비율이 1에 가까워 log가 0에 수렴해 가중치가 사라지고, 소수 문서에만 나오는 단어는 IDF가 커진다. 즉 "흔하면 무시, 희귀하면 강조"라는 정보 이론적 직관을 곱셈으로 구현한 것이다. 다만 TF-IDF는 단어를 독립적으로 보아 "좋다/훌륭하다"의 의미 유사성은 포착 못 한다. 그 한계를 넘으려면 단어를 밀집 벡터 공간에 배치하는 임베딩(Word2Vec은 "주변 단어로 중심 단어 예측"으로 학습)이 필요하다.
+> 💡 **Key Theory**: TF-IDF's IDF (inverse document frequency) = log(total documents / documents containing that word). Words appearing in all documents have a ratio near 1, making their log approach 0 (weight vanishes); words appearing in few documents get large IDF. This implements an information-theoretic principle ("ignore common, highlight rare") via multiplication. However, TF-IDF treats words independently, missing semantic similarities like "good" and "great." Embeddings overcome this by placing words in dense vector space, where Word2Vec learns by predicting center words from context.
 
-AWS에서는 텍스트를 직접 벡터화하지 않고 **Amazon Comprehend**(개체·감성·핵심구 추출)나 SageMaker 내장 **BlazingText**(Word2Vec 구현)로 임베딩을 생성하는 선택지도 있다.
+On AWS, instead of vectorizing text directly, you can use **Amazon Comprehend** (entity, sentiment, key phrase extraction) or SageMaker's built-in **BlazingText** (Word2Vec implementation) to generate embeddings.
 
-## 고차원 범주형(High-Cardinality) 처리
+## High-Cardinality Categorical Handling
 
-도시·상품 ID·사용자 ID처럼 고유값이 수천~수백만인 범주형은 One-Hot 하면 차원이 폭발한다. 전략을 정리하면:
+Categories with thousands or millions of unique values—cities, product IDs, user IDs—explode in dimensionality if one-hot encoded. Here's the strategy breakdown:
 
-| 전략 | 방법 | 장점 | 단점 |
+| Strategy | Method | Advantage | Drawback |
 |------|------|------|------|
-| **Target/Frequency 인코딩** | 타깃 평균·빈도로 치환 | 1컬럼 유지 | 누수 위험 |
-| **Feature Hashing** | 해시 함수로 고정 차원 매핑 | 메모리 고정, 스트리밍 가능 | 충돌(collision) |
-| **임베딩 레이어** | 신경망이 밀집 벡터 학습 | 의미 포착 | 학습 데이터·신경망 필요 |
-| **희귀 범주 묶기** | 빈도 낮은 범주를 "Other"로 | 단순, 차원 축소 | 정보 손실 |
+| **Target/Frequency Encoding** | Replace with target mean or frequency | Maintains single column | Risk of leakage |
+| **Feature Hashing** | Hash function maps to fixed dimensions | Fixed memory, streaming-friendly | Collision |
+| **Embedding Layer** | Neural network learns dense vectors | Captures semantics | Requires training data and network |
+| **Group Rare Categories** | Lump low-frequency categories into "Other" | Simple, reduces dimensions | Information loss |
 
-해싱 트릭(hashing trick)은 범주를 해시 함수로 고정 크기 벡터에 매핑한다. 사전(vocabulary)을 미리 만들 필요가 없어 **미지의 범주·스트리밍 데이터**에 강하다. 대가는 서로 다른 범주가 같은 슬롯에 들어가는 충돌이다.
+The hashing trick maps categories to fixed-size vectors using a hash function. Since no vocabulary is needed upfront, it's robust to **unseen categories and streaming data**. The tradeoff is collision—different categories may hash to the same slot.
 
 ```python
 from sklearn.feature_extraction import FeatureHasher
@@ -88,15 +88,15 @@ hasher = FeatureHasher(n_features=256, input_type="string")
 X_hashed = hasher.transform(df["city"].astype(str).apply(lambda x: [x]))
 ```
 
-> 💡 **관련 이론**: 임베딩은 고차원 희소(one-hot) 표현을 저차원 밀집 표현으로 학습하는 것이다. 각 범주를 예컨대 16차원 실수 벡터로 매핑하고, 그 벡터를 모델 학습 과정에서 함께 최적화한다. 결과적으로 "비슷하게 행동하는 범주"들이 벡터 공간에서 가까워진다(예: 추천 시스템에서 비슷한 취향 사용자끼리 인접). 이는 단어 임베딩과 같은 원리이며, 딥러닝 추천·NLP의 표준이다. 차원 수는 보통 카디널리티의 4제곱근 정도를 경험칙으로 쓴다.
+> 💡 **Key Theory**: Embeddings learn a mapping from high-dimensional sparse (one-hot) to low-dimensional dense representations. Each category is mapped to, say, a 16-dimensional real vector, which is jointly optimized during model training. The result: "similar-behaving categories" cluster together in vector space (e.g., in recommendation systems, users with similar preferences become adjacent). This mirrors word embeddings and is the standard in deep learning recommendation and NLP. The embedding dimension is often chosen as the fourth root of cardinality by rule of thumb.
 
-> ⚠️ **함정**: 고차원 범주형에 무작정 One-Hot을 쓰면 메모리 폭발뿐 아니라 희소성으로 모델 학습이 어려워진다. "고유값이 수만 개"라는 키워드가 나오면 One-Hot은 오답일 가능성이 높고, 타깃 인코딩·해싱·임베딩을 떠올려야 한다.
+> ⚠️ **Pitfall**: Blindly applying one-hot encoding to high-cardinality categories causes memory explosion and makes model training difficult due to sparsity. If you see "millions of unique values," one-hot is likely wrong—think target encoding, hashing, or embeddings instead.
 
-## 정리하며
+## Summary
 
-특수 데이터의 특성 공학 요점: (1) **날짜**는 성분으로 분해하고 주기성은 sin/cos로, (2) **텍스트**는 BoW→TF-IDF→임베딩 순으로 복잡도와 표현력이 올라가며 TF-IDF는 흔한 단어를 억제, (3) **고차원 범주형**은 One-Hot 대신 타깃 인코딩·해싱·임베딩으로 차원을 통제한다.
+Key points for specialized data feature engineering: (1) **Dates** are decomposed into components; periodicity uses sine/cosine; (2) **Text** progresses from BoW → TF-IDF → embeddings in rising complexity and expressiveness; TF-IDF suppresses common words; (3) **High-cardinality categories** use target encoding, hashing, or embeddings instead of one-hot to control dimensions.
 
-다음 글에서는 이 모든 변환을 노코드/대규모로 수행하는 SageMaker 도구 — Data Wrangler, Processing Job, Feature Store — 를 본다.
+Next, we'll see SageMaker tools that automate all these transformations at scale: Data Wrangler, Processing Jobs, and Feature Store.
 
 ---
 

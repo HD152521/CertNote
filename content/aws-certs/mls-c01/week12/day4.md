@@ -1,40 +1,73 @@
-# Day 4 - 전체 모의고사 페이스: 4개 도메인 종합 시나리오
+# Day 4 - Synthesis: 4 Domains + End-to-End Scenarios
 
-오늘은 실전 페이스 훈련이다. 시험은 단일 지식 암기가 아니라 "현실 시나리오에서 요구사항을 읽고 최적의 기법·서비스를 고르는" 능력을 묻는다. 네 도메인이 한 문제에 섞여 나오기도 하고, 정답이 둘처럼 보이는 보기 사이에서 "가장 적합한" 하나를 골라야 하는 경우가 많다. 오늘은 도메인 1~4를 가로지르는 연습문제 8개를 실전처럼 푼다. 한 문제당 1.5분 페이스를 의식하며, 먼저 답을 정한 뒤 해설을 읽자.
+Final day: integrate all four domains through **real test scenarios** that blend them.
 
-## 실전 풀이 전략
+## Integration Map: Four Domains as One Pipeline
 
-| 단계 | 행동 |
-|------|------|
-| 1. 키워드 추출 | "실시간/오프라인", "불균형", "비용 최소", "운영 없이" 등 결정 단서 표시 |
-| 2. 도메인 식별 | 수집/저장(1), 정제/피처(2), 알고리즘/튜닝(3), 배포/운영(4) |
-| 3. 보기 소거 | 명백히 다른 도메인·반대 방향 보기를 먼저 제거 |
-| 4. 최적 1개 | 둘이 맞아 보이면 "요구사항 우선순위"(비용 vs 지연 vs 운영부담)로 결정 |
+```
+Domain 1: DATA           Domain 2: EDA           Domain 3: MODELING      Domain 4: OPS
+─────────────────────────────────────────────────────────────────────────────────
+Kinesis Streams   →   Clean nulls            Tabular + trees  →      Real-time endpoint
+S3 lake           →   One-Hot encode        XGBoost + AMT            Auto-scale
+Glue ETL          →   Correlation check     Bayesian tuning          Monitor drift
+Athena SQL        →   Distribution plot     F1 (imbalance)           Canary deploy
+                                            Residual plot             Model Registry
+```
 
-> 💡 **관련 이론**: MLS-C01의 함정 대부분은 "기술적으로 가능한 보기"와 "가장 적합한 보기"를 구분하는 데 있다. 예컨대 대량 오프라인 채점을 Real-time Endpoint로 "할 수는 있지만" 비용·운영 면에서 Batch Transform이 더 적합하다. 따라서 보기를 맞다/틀리다가 아니라 "요구사항이 강조한 제약(비용/지연/운영/규모)에 가장 부합하는가"로 줄세워야 한다.
+Each domain's output flows to next.
 
-## 종합 시나리오 핵심 매핑 (속독용)
+## Key Distinctions That Trip Tests
 
-| 단서 | 정답 방향 |
-|------|------|
-| 실시간 다중 소비자·재처리 | Kinesis Data Streams |
-| 운영 없이 S3 적재 | Kinesis Data Firehose |
-| 서버리스 S3 SQL | Athena |
-| 서버리스 ETL·카탈로그 | Glue |
-| 불균형 평가 | F1 / PR-AUC (정확도 금지) |
-| 정형 표 데이터 | XGBoost |
-| 효율적 튜닝 | 베이지안(AMT) |
-| 대량 오프라인 추론 | Batch Transform |
-| 간헐 트래픽·콜드 OK | Serverless Inference |
-| 드리프트 감지 | Model Monitor |
-| 학습 비용↓·중단 OK | Managed Spot Training |
-| 편향·SHAP | Clarify |
+| Pair | When/Why | Example |
+|------|------|------|
+| Streams vs Firehose | Multi-consumer/replay vs managed-drop | Same IoT → Streams (many teams), then copy → Firehose (append log) |
+| Glue vs EMR | Serverless vs cluster control | "Quick ETL" → Glue, "tune Spark" → EMR |
+| XGBoost vs CNN | Tabular vs image | Fraud (Xgb) vs face verify (CNN) |
+| Precision vs Recall | FP vs FN cost | Spam (precision), cancer (recall) |
+| Real-time vs Serverless | Steady vs sparse | API (real-time), internal tool (serverless) |
+| Canary vs Shadow | Risk vs zero-risk | "Production users" → canary, "lab test" → shadow |
+| Model Monitor vs Debugger | Drift vs training | Post-deploy drift → Model Monitor, training issue → Debugger |
 
-## 정리하며
+## Scenario Walkthrough: Fraud Detection
 
-오늘 8문제는 네 도메인을 한 흐름으로 압축한 실전 연습이다. 키워드를 먼저 잡고 도메인을 식별한 뒤, 반대 방향·다른 도메인 보기를 소거하고, 마지막에 "요구사항의 우선순위"로 최적 하나를 고르는 페이스를 몸에 익히는 것이 목표다. 틀린 문제는 "어떤 단서를 놓쳤는지"를 기록해 두자. 내일은 D-Day 마무리로 시험 구성·시간 배분·번역표·함정을 총정리한다.
+```text
+1. DATA: Daily fraud reports → S3 (lake)
+         Kinesis Streams: real-time fraud flags (multi-team)
+         Glue ETL: daily clean → dedupe, impute
 
----
+2. EDA:  Explore: 0.5% fraud (extreme imbalance)
+         One-Hot encode merchant_id (high-cardinality)
+         No scaling needed (XGBoost)
+
+3. MODELING: XGBoost binary classification
+             AMT Bayesian: optimize F1 (not accuracy!)
+             Diagnosis: Train 85%, Val 78% (overfitting)
+             → Add dropout, L1 regularization
+             → Final: Train 80%, Val 79% (better)
+
+4. OPS:   Real-time endpoint (user waits)
+          Canary deploy: 5% → 25% → 100%
+          Auto-alarm if recall drops below 70%
+          Model Monitor: daily baseline refresh
+          If drift detected → retrain pipeline
+```
+
+## Compressed Test Roadmap
+
+**Question Type → Answer Strategy**
+
+1. **"Which service?"** → Narrow by 3 axes (data type, scale, managed?)
+2. **"Is this leakage?"** → Time? Feature generatable at predict time?
+3. **"Fix overfitting?"** → Regularize, early-stop, more data, drop features
+4. **"Which metric?"** → Imbalance/business cost → F1/Recall/Precision
+5. **"Deploy safely?"** → Shadow (zero risk), Canary (gradual), Real-time (production)
+6. **"Post-deploy fail?"** → Model Monitor (drift), Debugger (train anomaly)
+
+## Summary
+
+All four domains form one pipeline. Domain 1 moves data, Domain 2 preps it, Domain 3 builds models, Domain 4 ships them. Tests blend domains: pick Streams (domain 1) + F1 (domain 3) + canary (domain 4) based on scenario.
+
+MLS-C01 is over. Weeks 1-4 (data, stats), 5-6 (alg select), 7-12 (modeling + ops).
 
 ## 📝 연습 문제
 

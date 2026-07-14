@@ -1,41 +1,41 @@
-# Day 4 - 클래스 불균형 처리: 오버/언더샘플링, SMOTE, 클래스 가중치, 평가 영향
+# Day 4 - Handling Class Imbalance: Over/Undersampling, SMOTE, Class Weights, Evaluation
 
-현실의 분류 문제는 대부분 **불균형(imbalanced)**하다. 사기 거래는 0.1%, 질병 양성은 2%, 이탈 고객은 5%처럼 소수 클래스가 정작 우리가 잡고 싶은 대상이다. 이런 데이터를 그대로 학습하면 모델은 "전부 다수 클래스"라고 찍기만 해도 높은 정확도를 얻어 버린다.
+Most real classification problems are **imbalanced**. Fraud is 0.1%, disease positive is 2%, churn is 5%—the minority class is what we actually want to catch. Training on raw imbalanced data causes models to achieve high accuracy just by predicting all majority class.
 
-오늘은 불균형이 왜 함정인지, 그리고 **리샘플링(오버/언더샘플링)**, **SMOTE**, **클래스 가중치**로 대응하는 법과 **평가 지표 선택**까지 다룬다. MLS-C01에서 자주 출제되는 핵심 영역이다.
+Today we explore why imbalance is a trap, and how to handle it via **resampling (over/undersampling)**, **SMOTE**, **class weights**, and **metric selection**. This is a frequently-tested MLS-C01 domain.
 
-## 불균형의 함정: 정확도 역설
+## The Imbalance Trap: Accuracy Paradox
 
-양성 2%인 데이터에서 "전부 음성"으로 예측하면 정확도는 98%다. 하지만 잡고 싶은 양성은 하나도 못 잡았다. 이것이 **정확도 역설(accuracy paradox)**이다.
+With 2% positive data, predicting "all negative" yields 98% accuracy—yet catches zero positives we care about. This is the **accuracy paradox**.
 
-| 지표 | 정의 | 불균형에서의 의미 |
+| Metric | Definition | Meaning in Imbalance |
 |------|------|-------------------|
-| Accuracy | (TP+TN)/전체 | 다수 클래스에 편향, 오해 유발 |
-| Precision | TP/(TP+FP) | 양성 예측 중 진짜 비율 |
-| Recall | TP/(TP+FN) | 실제 양성 중 잡은 비율 |
-| F1 | precision·recall 조화평균 | 둘의 균형 |
-| AUC-PR | 정밀도-재현율 곡선 면적 | 불균형에서 ROC보다 민감 |
+| Accuracy | (TP+TN)/total | Biased toward majority, misleading |
+| Precision | TP/(TP+FP) | Ratio of true among positive predictions |
+| Recall | TP/(TP+FN) | Ratio of positives caught |
+| F1 | Harmonic mean of precision/recall | Balanced tradeoff |
+| PR-AUC | Precision-recall curve area | More sensitive in imbalance than ROC |
 
-> 💡 **관련 이론**: 불균형 데이터에서는 **ROC-AUC보다 PR-AUC(정밀도-재현율 곡선)**가 더 유용하다. ROC 곡선의 x축인 거짓 양성률(FPR)은 분모에 거대한 음성(TN+FP)이 들어가 소수 양성의 오류가 희석된다. 반면 PR 곡선은 양성에만 집중하므로 소수 클래스 성능 변화에 민감하다. 그래서 "사기 탐지처럼 양성이 희소하면 PR-AUC로 평가하라"가 정석이다.
+> 💡 **Key Theory**: In imbalanced data, **PR-AUC is more useful than ROC-AUC**. ROC's x-axis (False Positive Rate) has a huge denominator of negatives (TN+FP), diluting minority class errors. PR curves focus on positives, so they're sensitive to minority class performance shifts. Thus "for sparse positives like fraud, evaluate with PR-AUC" is standard.
 
-## 데이터 수준 대응: 리샘플링
+## Data-Level Remedy: Resampling
 
-### 오버샘플링(소수 클래스 늘리기)
+### Oversampling (Increase Minority)
 
-- **무작위 오버샘플링**: 소수 샘플을 복제 → 과적합 위험(같은 점 반복)
-- **SMOTE**: 소수 샘플 사이를 보간해 합성 샘플 생성 → 다양성 확보
+- **Random oversampling**: Duplicate minority samples → overfitting risk (repeated points)
+- **SMOTE**: Interpolate between minority samples to create synthetic ones → diversity maintained
 
-### 언더샘플링(다수 클래스 줄이기)
+### Undersampling (Reduce Majority)
 
-- **무작위 언더샘플링**: 다수 샘플 일부 제거 → 정보 손실 위험
-- 데이터가 매우 크면 언더샘플링이 학습 속도에도 유리
+- **Random undersampling**: Remove some majority samples → information loss risk
+- For very large data, undersampling accelerates training
 
 ```python
 from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.pipeline import Pipeline
 
-# SMOTE 오버샘플 후 다수 클래스 일부 언더샘플 (조합)
+# SMOTE oversample then undersample majority (hybrid)
 pipe = Pipeline([
     ("over", SMOTE(sampling_strategy=0.3, random_state=42)),
     ("under", RandomUnderSampler(sampling_strategy=0.5, random_state=42)),
@@ -43,46 +43,46 @@ pipe = Pipeline([
 X_res, y_res = pipe.fit_resample(X_train, y_train)
 ```
 
-> 💡 **관련 이론**: SMOTE(Synthetic Minority Over-sampling Technique)는 소수 클래스 샘플의 k-최근접 이웃을 찾아 그 사이를 선형 보간한 새 점을 만든다. 단순 복제와 달리 결정 경계 주변을 더 일반화하지만, 약점도 있다 — 노이즈나 클래스 겹침 영역에서 비현실적 샘플을 만들 수 있고, 범주형 특성에는 그대로 쓸 수 없다(SMOTE-NC 같은 변형 필요). 또 고차원에서는 보간이 의미를 잃는다.
+> 💡 **Key Theory**: SMOTE (Synthetic Minority Over-sampling Technique) finds k-nearest neighbors of minority samples and interpolates new points between them. Unlike simple duplication, it generalizes around decision boundaries, but has drawbacks—can create unrealistic samples in noise/overlap regions; doesn't work directly on categorical features (needs SMOTE-NC variant); interpolation loses meaning in high dimensions.
 
-> ⚠️ **함정**: 리샘플링은 **반드시 학습 분할 이후, 학습셋에만** 적용한다. 분할 전에 SMOTE를 적용하면 합성된 양성이 학습·검증에 동시에 새어 들어가 **데이터 누수**가 생기고 성능이 과대평가된다. 그래서 imblearn의 `Pipeline`과 교차검증을 함께 써서 각 fold 안에서만 리샘플하도록 한다.
+> ⚠️ **Pitfall**: Resampling must **apply only after train-test split, to training set only**. Applying SMOTE before split leaks synthetic positives into both train and validation, causing **data leakage** and inflated performance. Use imblearn's `Pipeline` with cross-validation to resample within each fold.
 
-## 알고리즘 수준 대응: 클래스 가중치
+## Algorithm-Level Remedy: Class Weights
 
-데이터를 바꾸지 않고 **손실 함수에서 소수 클래스 오류에 더 큰 벌점**을 준다.
+Penalize minority class errors more heavily in the loss function without changing data.
 
 ```python
 from sklearn.linear_model import LogisticRegression
 
-# 클래스 빈도에 반비례해 자동 가중
+# Auto-weight inversely to class frequency
 clf = LogisticRegression(class_weight="balanced")
 
-# XGBoost: 양성/음성 비율로 scale_pos_weight 설정
-# scale_pos_weight = (음성 수) / (양성 수)
+# XGBoost: set scale_pos_weight by negative/positive ratio
+# scale_pos_weight = (negative count) / (positive count)
 import xgboost as xgb
-model = xgb.XGBClassifier(scale_pos_weight=49)  # 음성:양성 = 49:1
+model = xgb.XGBClassifier(scale_pos_weight=49)  # negative:positive = 49:1
 ```
 
-| 방법 | 데이터 변경 | 장점 | 단점 |
+| Method | Data Changed | Strength | Weakness |
 |------|-------------|------|------|
-| 리샘플링 | O | 직관적, 모든 모델에 적용 | 누수·과적합·정보 손실 주의 |
-| 클래스 가중치 | X | 데이터 그대로, 빠름 | 모델이 지원해야 함 |
-| 임계값 조정 | X | 학습 후 운영에서 조정 | 적절한 임계값 탐색 필요 |
+| Resampling | Yes | Intuitive, works with any model | Watch leakage, overfitting, information loss |
+| Class weights | No | Data unchanged, fast | Model must support it |
+| Threshold adjustment | No | Tune after training, in production | Finding right threshold takes work |
 
-> 💡 **관련 이론**: 분류기는 보통 확률 0.5를 임계값으로 양/음을 나누지만, 불균형에서는 이 기본값이 부적절하다. PR 곡선이나 비용 행렬을 보고 **임계값을 조정(threshold moving)**하면 모델을 재학습하지 않고도 재현율-정밀도 균형을 옮길 수 있다. 사기 탐지처럼 거짓 음성(놓친 사기) 비용이 크면 임계값을 낮춰 재현율을 높인다.
+> 💡 **Key Theory**: Classifiers typically use 0.5 probability as threshold, but in imbalance this default fails. **Threshold moving** lets you adjust the recall-precision tradeoff by inspecting the PR curve or cost matrix without retraining. For fraud where false negatives (missed fraud) are costly, lower the threshold to raise recall.
 
-## SageMaker에서의 대응
+## SageMaker Approaches
 
-- 내장 알고리즘 다수가 가중치/불균형 관련 하이퍼파라미터 제공(예: XGBoost `scale_pos_weight`)
-- SageMaker Clarify로 학습 전 클래스 분포·편향을 사전 점검
-- 평가 메트릭을 정확도가 아닌 F1·AUC-PR로 모니터링하도록 설정
+- Many built-in algorithms offer imbalance hyperparameters (e.g., XGBoost `scale_pos_weight`)
+- Use SageMaker Clarify to pre-check class distribution and bias before training
+- Monitor with F1/PR-AUC instead of accuracy
 
-## 정리
+## Summary
 
-- 정확도 역설: 불균형에서 accuracy는 오해를 부른다 → Precision/Recall/F1/PR-AUC 사용
-- 데이터 수준: 오버샘플(SMOTE)·언더샘플, 학습셋에만·분할 후 적용
-- 알고리즘 수준: 클래스 가중치(`class_weight`, `scale_pos_weight`), 임계값 조정
-- 평가: 소수 클래스가 희소하면 ROC보다 PR-AUC
+- **Accuracy paradox**: Accuracy misleads in imbalance → use Precision/Recall/F1/PR-AUC
+- **Data-level**: Oversample (SMOTE), undersample; apply after split, train set only
+- **Algorithm-level**: Class weights (`class_weight`, `scale_pos_weight`), threshold tuning
+- **Evaluation**: For sparse minorities, PR-AUC > ROC-AUC
 
 ## 📝 연습 문제
 

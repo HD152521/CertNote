@@ -1,120 +1,120 @@
-# Day 2 - SageMaker 빌트인 1: XGBoost, Linear Learner, K-Means, KNN
+# Day 2 - SageMaker Builtin 1: XGBoost, Linear Learner, K-Means, KNN
 
-어제 매핑 표에서 가장 자주 등장하는 **정형 데이터(tabular)** 알고리즘 네 개를 오늘 깊이 본다. 이들은 시험 출제 빈도가 가장 높은 빌트인이며, 각각이 잘하는 문제·입력 포맷·핵심 하이퍼파라미터를 구분하는 것이 핵심이다.
+From yesterday's mapping table, today we dig deep into the four most common **tabular data** algorithms. These are the most frequently tested builtins, and distinguishing which problems each solves best, input formats, and key hyperparameters is essential.
 
-## XGBoost — 정형 데이터의 기본기
+## XGBoost — Tabular Data Workhorse
 
-그래디언트 부스팅 트리. 분류·회귀 모두 강력하고, 캐글·실무·시험에서 정형 데이터의 사실상 기본값이다.
+Gradient boosting trees. Powerful for both classification and regression, effectively the default for tabular data in Kaggle, practice, and exams.
 
-- **용도**: 이진/다중 분류, 회귀, 랭킹.
-- **입력 포맷**: CSV, libsvm, Parquet, RecordIO-protobuf. (CSV는 첫 열이 레이블)
-- **강점**: 결측치 자체 처리, 비선형·상호작용 자동 포착, 스케일링 불필요(트리 계열).
+- **Use**: Binary/multi-class classification, regression, ranking
+- **Input Format**: CSV, libsvm, Parquet, RecordIO-protobuf (CSV: first column is label)
+- **Strengths**: Handles missing values natively, automatically captures nonlinearities and interactions, scaling unnecessary (tree-based)
 
-핵심 하이퍼파라미터:
+Core hyperparameters:
 
 ```text
 objective         binary:logistic | multi:softmax | reg:squarederror
-num_round         부스팅 라운드 수 (트리 개수)
-max_depth         트리 깊이 — 클수록 복잡/과적합 위험
-eta               학습률 (작을수록 천천히, 보통 0.01~0.3)
-subsample         행 샘플링 비율 (과적합 억제)
-colsample_bytree  열 샘플링 비율
-gamma, lambda, alpha   정규화 (과적합 억제)
-scale_pos_weight  클래스 불균형 보정
+num_round         number of boosting rounds (tree count)
+max_depth         tree depth — larger = more complex/overfitting risk
+eta               learning rate (smaller = slower, typically 0.01~0.3)
+subsample         row sampling ratio (suppress overfitting)
+colsample_bytree  column sampling ratio
+gamma, lambda, alpha   regularization (suppress overfitting)
+scale_pos_weight  class imbalance adjustment
 ```
 
-> 💡 **관련 이론**: XGBoost의 과적합 제어는 "모델을 단순하게" 미는 손잡이들의 조합이다. `max_depth`를 줄이고, `eta`를 낮추되 `num_round`를 늘리고, `subsample`·`colsample_bytree`로 무작위성을 주고, `gamma`/`lambda`/`alpha`로 정규화를 거는 식이다. 시험에서 "검증 손실은 오르는데 학습 손실만 계속 내려간다(과적합)"는 지문이 나오면, 정답 보기는 보통 `max_depth`↓ / `eta`↓ / 정규화↑ / `subsample`↓ 방향이다. 반대로 과소적합이면 그 반대 방향이다.
+> 💡 **Related Theory**: XGBoost overfitting control is a combo of knobs "simplifying the model." Reduce `max_depth`, lower `eta` but increase `num_round`, add randomness with `subsample`/`colsample_bytree`, apply regularization with `gamma`/`lambda`/`alpha`. On exams, "validation loss rises while training loss keeps falling (overfitting)" scenarios typically answer with `max_depth`↓ / `eta`↓ / regularization↑ / `subsample`↓ directions. Underfitting goes opposite.
 
-## Linear Learner — 선형 모델, 대규모·고속
+## Linear Learner — Linear Models, Massive Scale, Fast
 
-선형/로지스틱 회귀를 SageMaker가 분산·최적화한 버전. 분류와 회귀를 모두 지원한다.
+SageMaker's distributed/optimized version of linear/logistic regression. Supports both classification and regression.
 
-- **용도**: 이진/다중 분류, 회귀.
-- **입력 포맷**: RecordIO-protobuf(권장, 효율적), CSV.
-- **강점**: 매우 큰 데이터에서 빠르고, 여러 모델을 동시에 학습해 자동으로 최적을 고름. 해석이 쉬움.
-- **주의**: 선형 모델이므로 **피처 스케일링이 중요**(빌트인이 normalize 옵션 제공).
+- **Use**: Binary/multi-class classification, regression
+- **Input Format**: RecordIO-protobuf (recommended, efficient), CSV
+- **Strengths**: Fast on massive data, trains multiple models simultaneously and auto-selects best. Easy to interpret
+- **Caution**: Linear model, so **feature scaling is critical** (builtin provides normalize option)
 
-핵심 하이퍼파라미터:
+Core hyperparameters:
 
 ```text
 predictor_type        binary_classifier | multiclass_classifier | regressor
-num_classes           다중분류 시 클래스 수
-mini_batch_size       미니배치 크기
-learning_rate         학습률
-l1, wd(L2)            정규화
-normalize_data        입력 표준화 여부
-balance_multiclass_weights   불균형 보정
+num_classes           number of classes for multi-class
+mini_batch_size       mini-batch size
+learning_rate         learning rate
+l1, wd(L2)            regularization
+normalize_data        whether to standardize input
+balance_multiclass_weights   imbalance adjustment
 ```
 
-XGBoost vs Linear Learner: **비선형 관계가 중요하면 XGBoost, 관계가 대체로 선형이고 초대규모·해석성이 중요하면 Linear Learner.**
+XGBoost vs Linear Learner: **If nonlinear relationships matter, use XGBoost. If mostly linear, massive scale, and interpretability matter, use Linear Learner.**
 
-## K-Means — 비지도 군집
+## K-Means — Unsupervised Clustering
 
-레이블 없이 데이터를 k개 그룹으로 나눈다. 고객 세분화 등.
+Divide data into k groups without labels. Customer segmentation, etc.
 
-- **용도**: 군집(비지도).
-- **입력 포맷**: RecordIO-protobuf, CSV.
-- **핵심**: 클러스터 수 `k`를 미리 지정해야 한다.
-- **주의**: 거리 기반이므로 **스케일링 필수**.
+- **Use**: Clustering (unsupervised)
+- **Input Format**: RecordIO-protobuf, CSV
+- **Key**: Must pre-specify cluster count `k`
+- **Caution**: Distance-based, so **scaling is mandatory**
 
-핵심 하이퍼파라미터:
+Core hyperparameters:
 
 ```text
-k                 클러스터 수 (필수)
-feature_dim       피처 차원
-mini_batch_size   미니배치 크기
-init_method       random | kmeans++ (초기 중심 선택)
-extra_center_factor   후보 중심 추가 생성 후 축소
+k                 number of clusters (required)
+feature_dim       feature dimension
+mini_batch_size   mini-batch size
+init_method       random | kmeans++ (initial center selection)
+extra_center_factor   create then shrink candidate centers
 ```
 
-k 선택: 정답이 없으므로 엘보우(WCSS 꺾이는 지점), 실루엣 계수로 결정한다. SageMaker K-Means는 `k`를 키워 후보 중심을 만든 뒤 줄이는 방식으로 안정적인 군집을 찾는다.
+Choosing k: No single answer, so use elbow (WCSS inflection) or silhouette coefficient. SageMaker K-Means finds stable clusters by growing k to create candidate centers, then shrinking.
 
-## KNN — 거리 기반 분류/회귀
+## KNN — Distance-Based Classification/Regression
 
-가장 가까운 k개 이웃의 다수결(분류) 또는 평균(회귀)으로 예측한다.
+Predict using majority vote (classification) or average (regression) of k nearest neighbors.
 
-- **용도**: 분류, 회귀.
-- **입력 포맷**: RecordIO-protobuf, CSV.
-- **핵심**: 학습이라기보다 "기억". 추론 시 이웃 탐색 비용이 큼 → SageMaker는 차원 축소(sample_size, dimension_reduction)로 가속.
-- **주의**: 거리 기반이므로 **스케일링 필수**, 고차원에서 성능 저하(차원의 저주).
+- **Use**: Classification, regression
+- **Input Format**: RecordIO-protobuf, CSV
+- **Key**: More "memorization" than learning. Inference neighbor search is expensive → SageMaker accelerates with dimension reduction (sample_size, dimension_reduction)
+- **Caution**: Distance-based, so **scaling mandatory**. Performance degrades in high dimensions (curse of dimensionality)
 
-핵심 하이퍼파라미터:
+Core hyperparameters:
 
 ```text
-k                 참조할 이웃 수
-sample_size       학습에 사용할 샘플 수
-dimension_reduction_type   sign | fjlt (차원 축소)
+k                 number of neighbors to reference
+sample_size       number of samples for training
+dimension_reduction_type   sign | fjlt (dimension reduction)
 predictor_type    classifier | regressor
 ```
 
-> 💡 **관련 이론**: 거리 기반 알고리즘(KNN, K-Means)과 선형 모델(Linear Learner)은 **피처 스케일이 결과를 직접 왜곡**하므로 스케일링이 필수다. 예컨대 "연봉(수천만 단위)"과 "나이(수십 단위)"를 그대로 두면 유클리드 거리가 연봉에 지배당한다. 반면 트리 기반(XGBoost)은 각 피처를 독립적으로 임계값 분할하므로 스케일에 불변이다. 시험에서 "스케일링이 필요한가"를 물으면 알고리즘이 거리/선형 계열인지(필요) 트리 계열인지(불필요)로 즉답할 수 있다.
+> 💡 **Related Theory**: Distance-based algorithms (KNN, K-Means) and linear models (Linear Learner) have **feature scale directly distort results**, so scaling is mandatory. For example, leave "salary (millions)" and "age (tens)" unscaled and Euclidean distance gets dominated by salary. Tree-based algorithms (XGBoost), by contrast, split each feature independently at thresholds, scale-invariant. On exams, when asked "is scaling needed?", instant answer: distance/linear family (yes), tree family (no).
 
-## 네 알고리즘 비교 요약
+## Four-Algorithm Comparison Summary
 
-| 알고리즘 | 유형 | 스케일링 | 강점 | 대표 단서 |
+| Algorithm | Type | Scaling | Strength | Signal |
 |------|------|------|------|------|
-| XGBoost | 지도(분류/회귀) | 불필요 | 정형 데이터 만능, 비선형 | "표 형식 / 높은 정확도 / 캐글류" |
-| Linear Learner | 지도(분류/회귀) | 필요 | 초대규모·고속·해석성 | "매우 큰 데이터 / 선형 / 빠르게" |
-| K-Means | 비지도(군집) | 필요 | 그룹 자동 발견 | "세분화 / 그룹 발견 / 레이블 없음" |
-| KNN | 지도(분류/회귀) | 필요 | 단순·비모수 | "가장 비슷한 사례 / 이웃 기반" |
+| XGBoost | Supervised (class/reg) | Not needed | Tabular powerhouse, nonlinear | "tabular / high accuracy / Kaggle-like" |
+| Linear Learner | Supervised (class/reg) | Required | Massive scale, fast, interpretable | "huge data / linear / fast" |
+| K-Means | Unsupervised (cluster) | Required | Auto discover groups | "segmentation / group discovery / no labels" |
+| KNN | Supervised (class/reg) | Required | Simple, nonparametric | "most similar cases / neighbor-based" |
 
-## 공통 운영 팁
+## Common Operations Tips
 
-- **RecordIO-protobuf**는 대부분의 빌트인에서 가장 효율적인 입력 포맷(파이프 모드로 스트리밍 학습 가능).
-- 대용량 데이터는 **Pipe mode**로 S3에서 스트리밍하면 디스크 복사 없이 학습 시작이 빨라진다.
-- 하이퍼파라미터는 SageMaker **Automatic Model Tuning**으로 탐색할 수 있다(Week 7 주제).
+- **RecordIO-protobuf** is most efficient input format for most builtins (streaming training possible with pipe mode)
+- Large data streams from S3 with **Pipe mode** for faster training start without disk copy
+- Hyperparameters searchable via SageMaker **Automatic Model Tuning** (Week 7 topic)
 
-## 시험 팁
+## Exam Tips
 
-- "정형 데이터 + 높은 정확도"는 거의 XGBoost.
-- "초대규모 + 빠름 + 선형/해석"은 Linear Learner.
-- "그룹/세분화 발견 + 레이블 없음"은 K-Means.
-- 과적합 지문이면 XGBoost는 `max_depth`↓·`eta`↓·정규화↑.
-- 거리/선형 계열(KNN, K-Means, Linear)에서 "스케일링 생략" 보기는 오답 신호.
+- "Tabular data + high accuracy" almost always XGBoost
+- "Massive scale + fast + linear/interpretable" is Linear Learner
+- "Discover groups/segmentation + no labels" is K-Means
+- Overfitting scenario with XGBoost: `max_depth`↓, `eta`↓, regularization↑
+- "Skip scaling" option in distance/linear family (KNN, K-Means, Linear) is a wrong-answer signal
 
-## 정리하며
+## Summary
 
-오늘은 정형 데이터의 4대 빌트인을 정리했다. XGBoost(비선형 트리, 스케일링 불필요), Linear Learner(대규모 선형), K-Means(비지도 군집), KNN(이웃 기반) — 각각의 문제 유형·스케일링 필요성·핵심 하이퍼파라미터를 구분하는 것이 시험의 요점이다. 내일은 텍스트·이미지·시계열·추천을 위한 특화 빌트인을 다룬다.
+Today we organized four tabular data builtins. XGBoost (nonlinear trees, scaling unnecessary), Linear Learner (massive-scale linear), K-Means (unsupervised clustering), KNN (neighbor-based) — distinguishing problem types, scaling requirements, and key hyperparameters is the exam focus. Tomorrow covers specialized builtins for text, image, time series, and recommendation.
 
 ---
 

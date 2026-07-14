@@ -1,20 +1,20 @@
 # Day 2 - MLOps: SageMaker Pipelines, Model Registry, CI/CD
 
-어제 드리프트가 감지되면 재학습으로 이어져야 한다고 했다. 그 "재학습으로 이어진다"를 손으로 하면 운영이 무너진다. MLOps는 데이터 처리→학습→평가→등록→배포를 코드로 정의해 반복 가능하고 추적 가능하게 만드는 일이다. 오늘은 SageMaker Pipelines로 워크플로를 정의하고, Model Registry로 모델을 버전 관리하며, CI/CD로 자동 배포하는 구조를 다룬다.
+Yesterday I said drift detection must trigger retraining. If retraining is manual, operations break. MLOps means defining data processing → training → evaluation → registration → deployment in code to make them repeatable and traceable. Today we cover defining workflows with SageMaker Pipelines, managing model versions with Model Registry, and automating deployment with CI/CD.
 
-## MLOps가 푸는 문제
+## The Problem MLOps Solves
 
-수동 ML은 노트북에서 한 번 돌린 모델을 사람이 콘솔에서 배포하는 식이다. 재현 불가, 추적 불가, 협업 불가다. MLOps는 이를 세 가지로 푼다.
+Manual ML: run a model once in a notebook, deploy from console by hand. Unrepeatable, untraceable, non-collaborative. MLOps solves this three ways:
 
 ```text
-- 재현성(Reproducibility): 같은 코드+데이터 → 같은 결과 (파이프라인 정의)
-- 거버넌스(Governance): 어떤 모델이 어떤 데이터로 학습됐고 누가 승인했나 (Model Registry)
-- 자동화(Automation): 커밋/이벤트가 학습·배포를 트리거 (CI/CD)
+- Reproducibility: same code + data → same result (pipeline definition)
+- Governance: which model trained on what data, who approved (Model Registry)
+- Automation: commits/events trigger training·deployment (CI/CD)
 ```
 
-## SageMaker Pipelines: ML 워크플로를 DAG로
+## SageMaker Pipelines: ML Workflows as DAG
 
-SageMaker Pipelines는 단계(Step)를 연결한 방향성 비순환 그래프(DAG)다. 각 단계는 처리·학습·평가·조건·모델 등록 등으로 구성된다.
+SageMaker Pipelines connect Steps into a Directed Acyclic Graph (DAG). Each step composes processing, training, evaluation, conditions, model registration, etc.
 
 ```python
 from sagemaker.workflow.pipeline import Pipeline
@@ -26,7 +26,7 @@ step_process = ProcessingStep(name="Preprocess", processor=sklearn_proc, ...)
 step_train   = TrainingStep(name="Train", estimator=xgb, ...)
 step_eval    = ProcessingStep(name="Evaluate", processor=eval_proc, ...)
 
-# 평가 지표가 임계값을 넘을 때만 등록
+# Register only if evaluation metric exceeds threshold
 cond = ConditionGreaterThanOrEqualTo(
     left=JsonGet(step=step_eval, property_file=eval_report, json_path="metrics.auc.value"),
     right=0.80,
@@ -43,11 +43,11 @@ pipeline.upsert(role_arn=role)
 pipeline.start()
 ```
 
-> 💡 **관련 이론**: ConditionStep은 MLOps 품질 게이트의 핵심이다. "평가 AUC가 0.80 미만이면 등록하지 않는다"처럼, 나쁜 모델이 자동으로 운영에 흘러드는 것을 파이프라인이 막는다. 시험에서 "모델이 기준 미달이면 배포를 막는 자동화"는 ConditionStep + Model Registry 승인 조합으로 본다.
+> 💡 **Related Theory**: ConditionStep is the heart of MLOps quality gates. Like "don't register if evaluation AUC < 0.80," it stops bad models from flowing automatically into production. On exams, "automate blocking deployment if model misses standard" maps to ConditionStep + Model Registry approval combo.
 
-## Model Registry: 모델 버전과 승인 거버넌스
+## Model Registry: Model Versions and Approval Governance
 
-학습된 모델은 Model Package로 **Model Package Group**에 버전별로 등록된다. 각 버전은 `PendingManualApproval` 상태로 시작하며, 승인되어야 배포 대상이 된다.
+Trained models register as Model Packages in **Model Package Groups** by version. Each version starts in `PendingManualApproval` status and must be approved to become deployment-ready.
 
 ```python
 from sagemaker.workflow.step_collections import RegisterModel
@@ -60,57 +60,57 @@ step_register = RegisterModel(
     inference_instances=["ml.m5.large"],
     transform_instances=["ml.m5.large"],
     model_package_group_name="churn-models",
-    approval_status="PendingManualApproval",   # 승인 게이트
+    approval_status="PendingManualApproval",   # approval gate
 )
 ```
 
 ```text
 churn-models (Model Package Group)
-├── v1  Approved   (운영 중)
-├── v2  Rejected   (평가 미달)
-└── v3  PendingManualApproval  (검토 대기)
+├── v1  Approved   (in production)
+├── v2  Rejected   (evaluation failed)
+└── v3  PendingManualApproval  (awaiting review)
 ```
 
-승인 상태를 `Approved`로 바꾸면 EventBridge가 이를 받아 배포 단계를 트리거할 수 있다.
+Change approval status to `Approved`, and EventBridge can trigger deployment steps.
 
-> 💡 **관련 이론**: Model Registry는 "어떤 모델 아티팩트가, 어떤 학습 작업/메트릭/데이터로 만들어졌는가"를 묶는 계보(lineage)의 중심이다. 감사와 롤백의 출발점이며, 승인 상태(Approved/Rejected/Pending)는 사람이나 자동화가 거버넌스를 강제하는 스위치다.
+> 💡 **Related Theory**: Model Registry is the center of lineage, binding "which model artifact, from which training job/metrics/data?" It's the origin of audit and rollback; approval status (Approved/Rejected/Pending) is the switch for people or automation to enforce governance.
 
-## SageMaker Projects와 CI/CD
+## SageMaker Projects and CI/CD
 
-SageMaker Projects는 MLOps 템플릿으로 두 개의 리포지토리와 파이프라인을 자동 프로비저닝한다.
+SageMaker Projects are MLOps templates that auto-provision two repos and pipelines.
 
 ```text
-- ModelBuild 리포 → CodeCommit/Git push → CodePipeline → SageMaker Pipeline 실행 → 모델 등록
-- ModelDeploy 리포 → 모델 승인(Approved) 이벤트 → CodePipeline → 스테이징 배포 → 승인 → 프로덕션 배포
+- ModelBuild repo → CodeCommit/Git push → CodePipeline → run SageMaker Pipeline → register model
+- ModelDeploy repo → model approved event → CodePipeline → staging deploy → approval → production deploy
 ```
 
-CodeBuild가 빌드/테스트를, CodePipeline이 오케스트레이션을, CloudFormation이 엔드포인트 인프라를 IaC로 배포한다.
+CodeBuild does build/test; CodePipeline orchestrates; CloudFormation deploys endpoint infra as IaC.
 
 ```yaml
-# buildspec.yml 발췌 (CodeBuild)
+# buildspec.yml excerpt (CodeBuild)
 phases:
   build:
     commands:
       - python pipelines/run_pipeline.py --module-name pipelines.churn.pipeline
-      - python -m pytest tests/    # 코드/데이터 검증 테스트
+      - python -m pytest tests/    # code/data validation tests
 ```
 
-## 배포 전략: 안전한 출시
+## Deployment Strategies: Safe Release
 
-새 모델을 한 번에 전체 트래픽으로 보내지 않는다. SageMaker 엔드포인트는 점진적 배포를 지원한다.
+Don't send new models to all traffic at once. SageMaker endpoints support gradual deployment.
 
-| 전략 | 동작 | 용도 |
+| Strategy | Behavior | Use |
 |------|------|------|
-| **Blue/Green** | 새 플릿 띄우고 일괄/캐노피 전환 | 기본 안전 배포 |
-| **Canary** | 소수 트래픽 먼저 보내 검증 후 확대 | 위험 최소화 |
-| **Linear** | 일정 비율씩 단계적 증가 | 점진 모니터링 |
-| **A/B (Production Variant)** | 두 모델에 트래픽 분배 | 성능 비교 |
+| **Blue/Green** | Spin up new fleet, switch all/canary | Default safe deploy |
+| **Canary** | Send few traffic first, verify, expand | Minimize risk |
+| **Linear** | Step-wise percentage increase | Gradual monitoring |
+| **A/B (Production Variant)** | Split traffic between two models | Compare performance |
 
-## 정리하며
+## Summary
 
-MLOps는 ML을 재현 가능하고 추적 가능하며 자동화된 시스템으로 만든다. SageMaker Pipelines는 처리·학습·평가·조건·등록 단계를 DAG로 정의하고, ConditionStep으로 품질 게이트를 건다. Model Registry는 모델을 버전·승인 상태로 거버넌스하며, SageMaker Projects가 CodePipeline 기반 CI/CD와 Blue/Green·Canary 배포로 안전한 출시를 자동화한다.
+MLOps makes ML repeatable, traceable, automated. SageMaker Pipelines define processing-training-evaluation-condition-registration steps as DAG, ConditionStep builds quality gates. Model Registry governs versions and approval status; SageMaker Projects automate safe releases with CodePipeline CI/CD and Blue/Green·Canary deployment.
 
-내일은 이 모든 파이프라인을 떠받치는 ML 보안 — IAM 실행 역할, VPC 격리, KMS 암호화를 다룬다.
+Tomorrow: ML security that backs all these pipelines — IAM execution roles, VPC isolation, KMS encryption.
 
 ---
 

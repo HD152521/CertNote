@@ -1,54 +1,54 @@
-# Day 1 - ML 수명주기 (Specialty 관점)
+# Day 1 - ML Lifecycle (Specialty Perspective)
 
-MLS-C01(AWS Certified Machine Learning – Specialty)은 SageMaker 버튼 위치를 묻지 않는다. "이 비즈니스 문제를 풀려면 어떤 데이터를, 어떻게 가공해서, 어떤 알고리즘으로, 어떤 지표로 평가하고, 어떻게 배포·모니터링할 것인가"를 시나리오로 묻는다. 그래서 첫날은 전체 수명주기를 Specialty 깊이로 다시 그린다. Associate가 "각 단계가 뭔지"를 묻는다면, Specialty는 "단계 사이의 트레이드오프"를 묻는다.
+The AWS Certified Machine Learning – Specialty (MLS-C01) exam doesn't ask about SageMaker button locations. Instead, it presents scenarios asking: "To solve this business problem, what data do I need, how should I prepare it, which algorithm should I use, what metrics should I track, and how should I deploy and monitor?" That's why Day 1 reframes the entire lifecycle at Specialty depth. While Associate-level asks "what is each stage?", Specialty asks "what are the trade-offs between stages?"
 
-오늘 목표는 ① 문제를 ML 문제로 번역하는 법, ② 데이터→특성→모델→배포→모니터링의 순환 구조, ③ 오프라인 모델 지표를 비즈니스 지표에 연결하는 사고를 잡는 것이다.
+Today's goals are to: ① learn how to translate business problems into ML problems, ② understand the circular structure of data → features → model → deployment → monitoring, and ③ develop the mindset to connect offline model metrics to business metrics.
 
-## 문제 정의: 비즈니스 질문을 ML 문제로 번역하기
+## Problem Definition: Translating Business Questions into ML Problems
 
-가장 흔한 실패는 모델링이 아니라 문제 정의에서 일어난다. "이탈을 줄이고 싶다"는 비즈니스 목표지 ML 문제가 아니다. ML 문제로 번역하려면 세 가지를 고정해야 한다.
+The most common failures happen not in modeling but in problem definition. "We want to reduce churn" is a business goal, not an ML problem. To translate it into an ML problem, you must fix three things.
 
-1. **예측 대상(target)**: 무엇을 예측하는가 — 다음 30일 내 이탈 여부(이진 분류)
-2. **입력(features)**: 어떤 신호로 예측하는가 — 최근 로그인 빈도, 결제 이력, 지원 티켓 수
-3. **성공 기준(metric)**: 무엇이 "좋은" 모델인가 — recall 0.8 이상에서 precision 최대화
+1. **Prediction target**: What do you predict — binary classification of churn within the next 30 days?
+2. **Input features**: What signals predict it — recent login frequency, payment history, support tickets?
+3. **Success metric**: What defines a "good" model — maximize precision at recall ≥ 0.8?
 
-문제 유형을 잘못 잡으면 그 뒤 모든 게 어긋난다. Specialty 시험은 다음 매핑을 시나리오로 끊임없이 묻는다.
+Getting the problem type wrong throws everything after it off-track. The Specialty exam constantly presents this mapping in scenarios.
 
-| 비즈니스 질문 | ML 문제 유형 | 대표 출력 |
-|--------------|-------------|----------|
-| 이 거래가 사기인가? | 이진 분류 | 0~1 확률 |
-| 이 고객은 어느 등급인가? | 다중 분류 | 클래스 레이블 |
-| 다음 달 매출은 얼마? | 회귀 | 연속값 |
-| 이 사용자와 비슷한 그룹은? | 군집화 | 클러스터 ID |
-| 다음에 살 상품은? | 추천 | 순위 리스트 |
-| 이 센서값이 비정상인가? | 이상 탐지 | 이상 점수 |
+| Business Question | ML Problem Type | Typical Output |
+|-----------|---|---|
+| Is this transaction fraudulent? | Binary Classification | 0–1 probability |
+| Which customer segment is this? | Multi-class Classification | Class label |
+| What will next month's revenue be? | Regression | Continuous value |
+| Which users form similar groups? | Clustering | Cluster ID |
+| What product will this user buy next? | Recommendation | Ranked list |
+| Is this sensor reading anomalous? | Anomaly Detection | Anomaly score |
 
-> 💡 **관련 이론**: 지도학습(supervised)은 레이블이 있는 데이터로 입력→출력 매핑을 배우고, 비지도학습(unsupervised)은 레이블 없이 구조를 발견한다. "사기 탐지"는 보통 지도학습 이진 분류로 풀지만, 레이블(과거 사기 사례)이 극히 적으면 이상 탐지(Random Cut Forest 같은 비지도 기법)로 접근한다. 같은 비즈니스 문제도 **레이블 가용성**에 따라 문제 유형이 바뀐다는 점이 Specialty의 단골 함정이다.
+> 💡 **Related Theory**: Supervised learning learns input→output mapping from labeled data, while unsupervised learning discovers structure without labels. Fraud detection is typically solved as supervised binary classification, but if labeled examples (past fraud cases) are extremely sparse, it might shift to unsupervised anomaly detection (like Random Cut Forest). The same business problem can change problem types based on **label availability** — this label-availability trap is a frequent Specialty curveball.
 
-## 수명주기는 선형이 아니라 순환이다
+## Lifecycle is Circular, Not Linear
 
-ML 시스템은 한 번 만들고 끝나지 않는다. 운영 중 데이터가 변하면(드리프트) 다시 처음으로 돌아간다.
+ML systems don't end after one build. When data changes during operation (drift), the cycle starts over.
 
 ```
-1. 데이터 (Data)        : 수집 → 정제 → 레이블링 → 저장(데이터레이크)
-2. 특성 (Feature)       : 피처 엔지니어링 → 변환 → Feature Store
-3. 모델 (Model)         : 알고리즘 선택 → 학습 → HPO 튜닝 → 평가
-4. 배포 (Deploy)        : 실시간 엔드포인트 / 배치 변환 / 서버리스
-5. 모니터링 (Monitor)   : 데이터·모델 품질 드리프트 → 재학습 트리거
-                         └──────────────(loop back to 1)──────────────┘
+1. Data        : Collect → Clean → Label → Store (data lake)
+2. Features    : Feature engineering → Transform → Feature Store
+3. Model       : Algorithm selection → Train → HPO tuning → Evaluate
+4. Deploy      : Real-time endpoint / Batch transform / Serverless
+5. Monitor     : Data/model quality drift → retrain trigger
+                 └──────────(loop back to 1)──────────┘
 ```
 
-이번 주(Week 1)는 1단계 데이터와 그 직전 단계인 수집·저장·레이블링에 집중한다. Specialty 시험에서 데이터 엔지니어링 도메인의 비중이 크기 때문이다(전체의 약 20%).
+This week (Week 1) focuses on stage 1 (data) and the stages just before it: collection, storage, and labeling. Specialty places heavy weight on data engineering (~20% of exam).
 
 ```python
-# SageMaker SDK로 본 수명주기 — 단계별 책임 분리
+# SageMaker SDK view of lifecycle — separation of concerns per stage
 import sagemaker
 from sagemaker.processing import ProcessingInput, ProcessingOutput
 
 session = sagemaker.Session()
 role = sagemaker.get_execution_role()
 
-# 1~2단계: 데이터 정제 + 피처 엔지니어링을 Processing Job으로
+# Stages 1–2: Data cleaning + feature engineering via Processing Job
 from sagemaker.sklearn.processing import SKLearnProcessor
 
 processor = SKLearnProcessor(
@@ -64,37 +64,37 @@ processor.run(
 )
 ```
 
-각 단계를 별도 잡으로 분리하면 재현성과 재실행이 쉬워진다. 정제만 다시 돌리거나, 같은 피처로 다른 알고리즘을 학습하는 식이다.
+Separating each stage into its own job makes reproducibility and re-running easier. You can re-run cleaning alone or train different algorithms on the same features.
 
-> 💡 **관련 이론**: training-serving skew(학습-서빙 괴리)는 학습 때 쓴 피처 변환 로직과 추론 때 쓰는 로직이 달라서 생기는 성능 저하다. 위처럼 전처리를 코드(`preprocess.py`)로 고정하고 학습·추론에서 동일하게 재사용하거나, SageMaker Feature Store로 피처를 중앙에서 관리하면 이 괴리를 줄인다. 노트북에서 즉흥적으로 가공한 피처는 거의 항상 skew를 만든다.
+> 💡 **Related Theory**: Training-serving skew (train-serve disparity) occurs when the feature transformation logic used during training differs from the logic during inference, causing performance degradation. Pinning preprocessing to code (`preprocess.py`) and reusing it identically in training and inference—or managing features centrally via SageMaker Feature Store—reduces this skew. Features engineered ad-hoc in notebooks almost always create skew.
 
-## 오프라인 모델 지표를 비즈니스 지표에 연결하기
+## Connecting Offline Model Metrics to Business Metrics
 
-Specialty가 가장 깊게 파고드는 부분이다. accuracy 같은 단일 지표는 비즈니스를 호도한다. 사기 거래가 0.1%인 데이터에서 "전부 정상"이라고 찍어도 accuracy는 99.9%다. 그래서 **클래스 불균형**과 **오류 비용**을 함께 봐야 한다.
+This is where Specialty digs deepest. A single metric like accuracy is misleading. If fraud is 0.1% of transactions, predicting "all normal" gives 99.9% accuracy. That's why you must consider both **class imbalance** and **error costs** together.
 
 ```python
-# 분류 문제의 핵심 지표 계산 (혼동행렬 기반)
+# Core classification metrics (confusion matrix based)
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
 
-# precision = TP / (TP + FP)  → "사기라고 한 것 중 진짜 사기 비율" (오탐 비용)
-# recall    = TP / (TP + FN)  → "실제 사기 중 잡아낸 비율"      (미탐 비용)
+# precision = TP / (TP + FP)  → "Of those labeled fraud, what fraction truly are?" (false alarm cost)
+# recall    = TP / (TP + FN)  → "Of actual fraud, what fraction did we catch?" (miss cost)
 precision = precision_score(y_true, y_pred)
 recall    = recall_score(y_true, y_pred)
-f1        = f1_score(y_true, y_pred)          # precision·recall 조화평균
-auc       = roc_auc_score(y_true, y_score)    # 임계값 무관, 순위 품질
+f1        = f1_score(y_true, y_pred)          # harmonic mean of precision·recall
+auc       = roc_auc_score(y_true, y_score)    # threshold-agnostic, ranking quality
 ```
 
-비즈니스 맥락이 지표 선택을 결정한다.
+Business context determines which metric to optimize.
 
-- **사기 탐지/암 진단**: 놓치면 치명적 → **recall** 우선
-- **스팸 필터/마케팅 타겟팅**: 오탐이 비싸다(정상 메일 차단) → **precision** 우선
-- **클래스 불균형 + 임계값을 아직 못 정함**: **AUC** 또는 **PR-AUC**로 모델 자체의 분별력 비교
+- **Fraud detection / Cancer diagnosis**: Missing one is catastrophic → prioritize **recall**
+- **Spam filter / Marketing targeting**: False alarm is expensive (blocking legitimate email) → prioritize **precision**
+- **Class imbalance + threshold not yet set**: Use **AUC** or **PR-AUC** to compare the model's raw discrimination power
 
-> 💡 **관련 이론**: ROC-AUC는 다양한 임계값에서의 TPR-FPR 곡선 아래 면적이라 클래스 불균형에 비교적 둔감하다. 하지만 **극단적 불균형**(양성 0.1%)에서는 ROC-AUC가 낙관적으로 보이므로, precision-recall 곡선 아래 면적인 **PR-AUC**가 더 정직한 신호다. Specialty는 "불균형 데이터에서 어떤 지표?"를 자주 묻고, 답은 대개 PR-AUC 또는 recall/precision 중 비용이 큰 쪽이다.
+> 💡 **Related Theory**: ROC-AUC (TPR-FPR curve area) is relatively insensitive to class imbalance. But with extreme imbalance (positive class 0.1%), ROC-AUC can look overly optimistic, so **PR-AUC** (precision-recall curve area) gives a more honest signal. Specialty frequently asks "which metric for imbalanced data?" and the answer is usually PR-AUC or whichever of recall/precision has the higher cost.
 
-## A/B 테스트로 온라인 검증하기
+## Online Validation via A/B Testing
 
-오프라인 지표가 좋아도 실제 사용자 행동(매출, 체류시간)은 떨어질 수 있다. 그래서 배포는 한 번에 전환하지 않고 트래픽을 나눠 검증한다. SageMaker는 한 엔드포인트에 여러 variant를 두고 가중치로 분배한다.
+Good offline metrics don't guarantee real user behavior improves (revenue, time on site). So deployment isn't one-time; traffic is split to validate. SageMaker lets you put multiple variants on one endpoint and distribute traffic via weights.
 
 ```python
 from sagemaker.session import production_variant
@@ -107,10 +107,10 @@ variant_b = production_variant(model_name="model-v2", instance_type="ml.m5.large
 session.endpoint_from_production_variants(
     name="fraud-endpoint", production_variants=[variant_a, variant_b]
 )
-# 신모델(B)에 10%만 보내 CloudWatch로 비즈니스 지표 비교 후 가중치 조정
+# Send only 10% to new model (B), compare business metrics via CloudWatch, then adjust weights
 ```
 
-오프라인 지표는 **게이트**(통과 못 하면 배포 안 함), 온라인 지표는 **최종 판정**으로 쓴다. 이 분리가 Specialty가 요구하는 운영 감각이다.
+Offline metrics are the **gate** (fail to pass and don't deploy), online metrics are the **final verdict**. This separation is the operational sensibility Specialty demands.
 
 ## 📝 연습 문제
 

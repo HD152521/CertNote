@@ -1,131 +1,117 @@
-# Day 1 - 모델 모니터링: SageMaker Model Monitor와 드리프트 대응
+# Day 1 - Model Monitoring: SageMaker Model Monitor and Drift Response
 
-모델을 배포했다고 끝이 아니다. 세상은 변하고, 어제 정확하던 모델은 오늘 조용히 틀리기 시작한다. 입력 데이터의 분포가 바뀌고(데이터 드리프트), 예측 대상의 관계가 바뀌면(컨셉 드리프트) 모델은 자기도 모르게 망가진다. 오늘은 SageMaker Model Monitor로 운영 중인 엔드포인트를 감시하고, 드리프트가 감지되면 재학습으로 연결하는 운영 루프를 다룬다.
+Deploy, celebrate, ship → quiet catastrophe. Months pass, model silently degrades. Validation was 95%, production is 60%. The culprit: the world changed, data drifted. Today covers **SageMaker Model Monitor** — detecting data/model drift without labels — and automating **retrain on alarm**.
 
-## 왜 배포 후 모니터링이 필요한가
+## Why Post-Deploy Monitoring Matters
 
-학습 시점의 데이터 분포와 운영 시점의 트래픽은 시간이 지나며 벌어진다. 이를 그대로 두면 모델 성능이 서서히 저하되지만, 정확도 같은 정답(ground truth)은 한참 뒤에야 도착하거나 아예 오지 않는다. 그래서 **정답 없이도** 감시할 수 있는 입력 분포 변화를 먼저 본다.
+Deployed model relies on learned patterns. Real-world distribution shifts:
+- Users change behavior (seasonality, new segment, crisis)
+- Data source changes (sensor recalibration, upstream pipeline shift)
+- Target relationship breaks (same features, different meaning)
+
+Ground truth (actual labels) arrives late or not at all. So **monitor input distribution** as proxy alarm.
 
 ```text
-드리프트 종류
-- Data drift(공변량 시프트): 입력 X의 분포가 변함 (예: 평균 나이 35→48)
-- Concept drift: X와 Y의 관계가 변함 (예: 같은 특성이라도 이탈 패턴이 변함)
-- Label drift: 타깃 Y의 분포가 변함 (예: 사기 비율 0.5%→3%)
+Drift types:
+- Data drift: X distribution shifts (e.g., avg age 35→48)
+- Concept drift: X-Y relationship changes (same feature, different outcome)
+- Label drift: Y distribution shifts (e.g., fraud 0.5%→3%)
 ```
 
-> 💡 **관련 이론**: 시험에서 "모델 정확도가 시간이 지나며 떨어진다, 정답 레이블은 즉시 얻을 수 없다, 무엇을 모니터링하는가?"라는 문제가 나오면 답은 거의 항상 입력 데이터의 통계적 변화를 감시하는 **데이터 품질(Data Quality) 모니터링**이다. 정답이 필요한 모델 품질 모니터링과 구분하는 것이 핵심이다.
+> 💡 **Related Theory**: "Model degrades, labels arrive slowly, what do we watch?" Answer: **input data statistics without labels**. Drift in X alone is early warning. Concept drift is hardest (needs labels) but data drift is actionable today.
 
-## SageMaker Model Monitor의 4가지 모니터 유형
+## SageMaker Model Monitor: 4 Monitor Types
 
-Model Monitor는 실시간 엔드포인트에서 들어오는 요청/응답을 **Data Capture**로 S3에 저장한 뒤, 정기 모니터링 작업을 돌려 베이스라인과 비교한다.
+| Monitor | Watches | Labels needed? |
+|------|------|------|
+| **Data Quality** | Input feature stats (missing, type, distribution) | No |
+| **Model Quality** | Accuracy, F1, RMSE (prediction quality) | Yes |
+| **Bias Drift** | Group fairness (Clarify) | Partial |
+| **Feature Attribution Drift** | SHAP contributions change | No |
 
-| 모니터 | 감시 대상 | 정답 필요? |
-|--------|-----------|-----------|
-| **Data Quality** | 입력 피처의 통계(결측, 타입, 분포) | 불필요 |
-| **Model Quality** | 정확도·F1·RMSE 등 예측 성능 | 필요(라벨 머지) |
-| **Bias Drift** | 운영 트래픽의 편향 지표(Clarify) | 일부 필요 |
-| **Feature Attribution Drift** | 피처 기여도(SHAP) 변화 | 불필요 |
+## Setup: Data Capture → Baseline → Schedule
 
-## 1단계: Data Capture 활성화
+### 1. Data Capture
 
-엔드포인트에 들어오는 입력과 나가는 예측을 S3로 캡처하도록 설정한다.
+Endpoint captures in/out to S3.
 
 ```python
 from sagemaker.model_monitor import DataCaptureConfig
 
 data_capture_config = DataCaptureConfig(
     enable_capture=True,
-    sampling_percentage=100,          # 트래픽의 100% 캡처(샘플링 가능)
+    sampling_percentage=100,          # or sample %
     destination_s3_uri="s3://my-bucket/datacapture",
 )
 
 predictor = model.deploy(
-    initial_instance_count=1,
-    instance_type="ml.m5.xlarge",
+    ...,
     data_capture_config=data_capture_config,
 )
 ```
 
-## 2단계: 베이스라인 생성
+### 2. Baseline Generation
 
-학습/검증 데이터로 "정상이란 무엇인가"의 기준선을 만든다. Model Monitor는 내부적으로 Deequ(Spark 기반 데이터 품질 라이브러리)로 제약 조건과 통계를 산출한다.
+Learn "normal" from train/val data.
 
 ```python
 from sagemaker.model_monitor import DefaultModelMonitor
-from sagemaker.model_monitor.dataset_format import DatasetFormat
 
-monitor = DefaultModelMonitor(
-    role=role, instance_count=1, instance_type="ml.m5.xlarge",
-    volume_size_in_gb=20, max_runtime_in_seconds=3600,
-)
-
+monitor = DefaultModelMonitor(...)
 monitor.suggest_baseline(
     baseline_dataset="s3://my-bucket/baseline/train.csv",
-    dataset_format=DatasetFormat.csv(header=True),
+    ...
     output_s3_uri="s3://my-bucket/baseline-results",
 )
-# 산출물: statistics.json(통계), constraints.json(제약)
+# Outputs: statistics.json, constraints.json
 ```
 
-## 3단계: 정기 모니터링 스케줄
+### 3. Scheduled Monitoring
 
-캡처된 트래픽을 베이스라인과 주기적으로 비교한다(보통 시간 단위 cron).
+Compare captured traffic vs baseline hourly (or custom cron).
 
 ```python
-from sagemaker.model_monitor import CronExpressionGenerator
-
 monitor.create_monitoring_schedule(
     monitor_schedule_name="data-quality-hourly",
     endpoint_input=predictor.endpoint_name,
     statistics=monitor.baseline_statistics(),
     constraints=monitor.suggested_constraints(),
     schedule_cron_expression=CronExpressionGenerator.hourly(),
-    enable_cloudwatch_metrics=True,   # CloudWatch로 위반 지표 전송
+    enable_cloudwatch_metrics=True,
 )
 ```
 
-각 실행은 위반 사항을 `constraint_violations.json`으로 내보내고, CloudWatch 지표로도 발행한다.
+Each run → `constraint_violations.json` + CloudWatch metrics.
 
-> 💡 **관련 이론**: 베이스라인은 "현재의 정상"을 고정한 스냅샷이다. 모델을 재학습해 새 분포를 의도적으로 받아들였다면 **베이스라인도 다시 만들어야** 한다. 오래된 베이스라인을 두면 정당한 변화까지 드리프트로 오탐(false alarm)한다.
+> 💡 **Related Theory**: Baseline is "today's normal" snapshot. If you retrain, **regenerate baseline** — old baseline gets false alarms (legitimate distribution you intentionally taught). Baseline drift is real.
 
-## 4단계: 드리프트 → 재학습 트리거
+### 4. Drift → Retrain Automation
 
-모니터링 작업이 위반을 발행하면 CloudWatch 경보가 발동하고, EventBridge가 이를 받아 재학습 파이프라인을 자동으로 시작한다.
+Monitoring → CloudWatch alarm → EventBridge → Lambda/Pipeline retrain.
 
 ```text
-[Endpoint] → DataCapture(S3)
+[Endpoint] DataCapture(S3)
    ↓
-[Monitoring Schedule] → 위반 → CloudWatch Metric/Alarm
+[Monitor] constraints violation → CloudWatch Metric/Alarm
    ↓
-[EventBridge Rule] → SageMaker Pipeline 실행(재학습)
+[EventBridge] alarm breach → trigger SageMaker Pipeline
    ↓
-[Model Registry] 새 모델 등록 → 승인 → 재배포
+[Pipeline] retrain, register model
+   ↓
+[Model Registry] new version, manual approval, redeploy
 ```
 
-EventBridge 규칙은 CloudWatch 경보 상태 변화를 받아 Lambda나 Pipeline을 호출하도록 구성한다.
+## Model Quality Monitoring (With Label Delay)
 
-```json
-{
-  "source": ["aws.cloudwatch"],
-  "detail-type": ["CloudWatch Alarm State Change"],
-  "detail": {
-    "alarmName": ["data-quality-drift-alarm"],
-    "state": { "value": ["ALARM"] }
-  }
-}
-```
+Needs actual labels. Strategy: predictions merge with labels arriving later, Model Quality compares.
 
-## Model Quality 모니터링과 라벨 지연
+If labels never arrive, Data Quality is your 1st line.
 
-정확도 기반 Model Quality 모니터는 실제 정답이 있어야 한다. 운영에서는 정답이 나중에 도착하므로, 예측 결과와 나중에 수집한 라벨을 S3에서 머지해 `ModelQualityMonitor`가 비교하게 한다. 라벨이 즉시 없으면 우선 Data Quality로 대리 감시하는 것이 현실적이다.
+## Summary
 
-## 정리하며
+Post-deploy: capture traffic, baseline on clean train data, monitor stats, alarm on drift, retrain on breach. No labels needed for data quality. Cascades to Model Quality once labels arrive. Baseline regeneration critical.
 
-배포된 모델은 시간이 지나며 드리프트로 조용히 저하된다. Model Monitor는 Data Capture로 트래픽을 모으고, 베이스라인과 비교해 데이터/모델/편향/기여도 드리프트를 감시한다. 정답이 늦는 운영 환경에서는 데이터 품질 모니터링이 1차 방어선이며, 위반은 CloudWatch→EventBridge→Pipeline으로 이어져 재학습을 자동화한다.
-
-내일은 이 재학습 자동화를 본격적으로 구성하는 SageMaker Pipelines와 Model Registry, CI/CD를 다룬다.
-
----
+Tomorrow: MLOps end-to-end — Pipelines, Registry, governance.
 
 ## 📝 연습 문제
 

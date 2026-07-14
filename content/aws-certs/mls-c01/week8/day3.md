@@ -1,110 +1,110 @@
-# Day 3 - 과적합·과소적합: 진단과 정규화·데이터 증강
+# Day 3 - Overfitting/Underfitting: Diagnosis and Regularization/Data Augmentation
 
-튜닝으로 좋은 하이퍼파라미터를 찾았다 해도, 모델이 **학습 데이터에만 잘 맞고 새 데이터엔 실패**하면 무용지물이다. 오늘은 모델 일반화의 양대 실패 — 과적합(overfitting)과 과소적합(underfitting) — 을 진단하고, 이를 잡는 정규화(L1/L2/드롭아웃/조기 종료)와 데이터 증강을 다룬다. 시험은 학습/검증 곡선 패턴, 편향-분산, 정규화 기법 매칭으로 출제한다.
+Even with good hyperparameters from tuning, if a model **fits training well but validates poorly**, it's useless. Today covers **generalization failure's two sides** — overfitting and underfitting — how to diagnose, and how to fix each with regularization (L1/L2/dropout/early stopping) and data augmentation. Tests ask about learning curve patterns, bias-variance, matching fixes.
 
-## 편향과 분산, 그리고 일반화
+## Bias and Variance, Generalization
 
-일반화 오차는 크게 편향(bias)과 분산(variance)으로 분해된다.
+Generalization error decomposes into bias and variance.
 
-- **편향이 높다 = 과소적합(underfitting)**: 모델이 너무 단순해 학습 데이터의 패턴조차 못 잡음. 학습 오차도 검증 오차도 둘 다 높음.
-- **분산이 높다 = 과적합(overfitting)**: 모델이 학습 데이터의 잡음까지 외움. 학습 오차는 낮은데 검증 오차가 큼(둘 사이 격차가 큼).
-
-```text
-과소적합:  train error ↑  valid error ↑   (둘 다 나쁨, 격차 작음)
-적정:      train error ↓  valid error ↓   (둘 다 좋음)
-과적합:    train error ↓  valid error ↑   (격차 큼)
-```
-
-> 💡 **관련 이론**: 편향-분산 트레이드오프는 모델 복잡도와 일반화의 핵심 긴장이다. 복잡도를 올리면 편향은 줄지만 분산이 늘고, 줄이면 그 반대다. 목표는 둘의 합(총 일반화 오차)이 최소가 되는 지점을 찾는 것이다. 정규화는 분산을 줄여 과적합을 잡는 쪽으로, 모델 용량 증대·특징 추가는 편향을 줄여 과소적합을 잡는 쪽으로 작동한다.
-
-## 진단: 학습/검증 곡선 읽기
-
-코드보다 곡선 해석이 시험의 핵심이다.
+- **High bias = underfitting**: Model too simple to capture training patterns. Both training and validation error high
+- **High variance = overfitting**: Model memorizes noise. Training error low, validation error high (big gap)
 
 ```text
-[과적합 신호]
-- 학습 정확도 99% / 검증 정확도 72% (큰 격차)
-- 에폭이 갈수록 학습 손실은 계속 내려가나 검증 손실이 다시 올라감
-
-[과소적합 신호]
-- 학습 정확도 65% / 검증 정확도 64% (둘 다 낮고 비슷)
-- 더 학습해도 두 손실 모두 높은 수준에서 정체
+Underfitting:  train error ↑  valid error ↑   (both bad, small gap)
+Ideal:         train error ↓  valid error ↓   (both good)
+Overfitting:   train error ↓  valid error ↑   (gap is large)
 ```
 
-대응 매핑:
-- **과적합** → 데이터 더 모으기, 정규화 강화, 모델 단순화, 특징 줄이기, 조기 종료, 드롭아웃, 데이터 증강.
-- **과소적합** → 모델 복잡도 키우기, 특징 추가, 학습 더 오래, 정규화 약화.
+> 💡 **Related Theory**: Bias-variance tradeoff is core tension of model complexity vs generalization. Increasing complexity → reduces bias but raises variance; decreasing → opposite. Goal: find sweet spot where total (bias + variance) is minimized. Regularization reduces variance to fight overfitting, increasing model capacity/features fights underfitting
 
-## 정규화 1: L1, L2
+## Diagnosis: Reading Learning Curves
 
-손실 함수에 가중치 크기에 대한 페널티를 더해 분산을 줄인다.
+Curve interpretation is more tested than code.
 
-| 기법 | 페널티 | 효과 |
+```text
+[Overfitting signals]
+- Train 99% / valid 72% (large gap)
+- As epochs progress: train loss keeps falling, val loss rises again
+
+[Underfitting signals]
+- Train 65% / valid 64% (both low, similar)
+- More training still yields high loss, plateau
+```
+
+Intervention map:
+- **Overfitting** → more data, strengthen regularization, simplify model, fewer features, early stop, dropout, augment
+- **Underfitting** → increase complexity, add features, train longer, weaken regularization
+
+## Regularization 1: L1, L2
+
+Penalize weight magnitude in loss to reduce variance.
+
+| Technique | Penalty | Effect |
 |------|------|------|
-| **L1(Lasso)** | 가중치 절댓값 합 | 일부 가중치를 정확히 0으로 → **특징 선택**(희소성) |
-| **L2(Ridge)** | 가중치 제곱 합 | 가중치를 0에 가깝게 축소(0은 아님) → 부드럽게 작은 값 |
-| **ElasticNet** | L1+L2 결합 | 희소성 + 안정성 절충 |
+| **L1 (Lasso)** | Sum of weight absolute values | Some weights → exactly 0 → **feature selection** (sparsity) |
+| **L2 (Ridge)** | Sum of weight squares | Weights → small (not 0) → smooth shrinkage |
+| **ElasticNet** | L1 + L2 combo | Sparsity + stability blend |
 
 ```python
-# Linear Learner 예: L1/L2 정규화 강도
+# Example: Linear Learner L1/L2 strength
 hyperparameters = {
-    "l1": 0.01,                  # L1 강도 (희소성)
+    "l1": 0.01,                  # L1 strength (sparsity)
     "wd": 0.001,                 # weight decay = L2
 }
 ```
 
-판별 신호:
-- "특징이 너무 많아 불필요한 특징을 자동으로 제거 / 희소 모델" → **L1**.
-- "모든 특징을 유지하되 가중치를 작게 눌러 과적합 완화" → **L2**.
+Signal:
+- "Too many features, auto-discard unnecessary, sparse model" → **L1**
+- "Keep all features but shrink weights, fight overfitting" → **L2**
 
-## 정규화 2: 드롭아웃, 조기 종료
+## Regularization 2: Dropout, Early Stopping
 
-신경망 특화 정규화.
+Deep learning-specific.
 
-- **드롭아웃(Dropout)**: 학습 중 매 스텝마다 뉴런 일부를 무작위로 끔(예: rate 0.5). 특정 뉴런 의존을 막아 앙상블 효과를 낸다. **추론 시에는 끄고** 가중치를 보정한다.
-- **조기 종료(Early Stopping)**: 검증 손실이 더 이상 개선되지 않으면 학습을 멈춘다. 검증 손실이 다시 오르기 시작하는 지점(과적합 시작)을 막는다.
+- **Dropout**: Random disable neurons per step (e.g., rate 0.5). Prevents specific neuron dependence, implicit ensemble. **Disable at inference**, adjust weights
+- **Early Stopping**: Stop when validation loss stops improving. Prevents reaching overfitting point
 
 ```python
-# 신경망 하이퍼파라미터 예
+# Example neural net hyperparameters
 hyperparameters = {
     "dropout": 0.5,
-    "early_stopping_patience": 5,   # 5 에폭 동안 개선 없으면 중단
+    "early_stopping_patience": 5,   # Stop if no improvement 5 epochs
 }
 ```
 
-> 💡 **관련 이론**: 드롭아웃은 매 스텝 서로 다른 부분 네트워크를 학습시키는 것과 같아, 추론 시 그 평균을 쓰는 암묵적 앙상블로 해석된다. 조기 종료는 모델이 잡음을 외우기 시작하는 시점 직전에 멈춰 분산을 억제한다. 둘 다 "더 단순한 효과적 모델"을 만들어 과적합을 잡는다는 점에서 정규화의 일종이다.
+> 💡 **Related Theory**: Dropout trains different sub-networks each step → inference averages them (implicit ensemble). Early Stopping halts right before noise memorization starts, shrinking variance. Both achieve "simpler effective model," fighting overfitting differently
 
-## 데이터 증강(Data Augmentation)
+## Data Augmentation
 
-데이터를 더 모으기 어려울 때, 기존 데이터를 변형해 학습 분포를 넓힌다. 과적합을 줄이는 강력한 수단이다.
+When collecting more data is hard, transform existing data to broaden training distribution. Powerful overfitting reducer.
 
-- **이미지**: 회전, 좌우 반전, 크롭, 밝기·대비 변경, 노이즈 추가, 컷아웃.
-- **텍스트**: 동의어 치환, 역번역(back-translation), 랜덤 삭제.
-- **표 형식/불균형**: **SMOTE** 같은 소수 클래스 합성으로 클래스 불균형 완화.
+- **Images**: Rotate, flip, crop, brightness/contrast, noise, cutout
+- **Text**: Synonym swap, back-translation, random deletion
+- **Tabular/imbalance**: **SMOTE** synthesize minority class, relieve class imbalance
 
-판별 신호:
-- "데이터가 부족해 과적합 / 더 수집은 비용이 큼" → **데이터 증강**.
-- "소수 클래스가 너무 적어 모델이 다수 클래스만 학습" → **SMOTE/오버샘플링**(또는 클래스 가중치).
+Signal:
+- "Limited data, overfitting / data collection costly" → **augmentation**
+- "Minority class too rare, model learns majority only" → **SMOTE/oversample** (or class weights)
 
-## 데이터 분할과 누수 방지
+## Data Split and Leakage Prevention
 
-일반화를 올바로 측정하려면 분할이 정확해야 한다.
+Measuring generalization honestly needs correct splitting.
 
-- **train / validation / test** 3분할. 검증으로 하이퍼파라미터를 고르고, 테스트는 최종 1회 평가에만 쓴다.
-- **k-fold 교차검증**: 데이터가 적을 때 분할 운에 덜 흔들리게 평균 성능을 본다.
-- **데이터 누수(leakage)**: 미래 정보·타깃에서 파생된 특징·테스트 정보가 학습에 새면 검증 점수가 비현실적으로 높아진다. 스케일링·인코딩은 **train으로 fit 후 valid/test에 transform**해야 한다.
+- **train / validation / test** 3-way. Validation picks hyperparameters, test scores once final
+- **k-fold cross-validation**: Limited data → average performance avoiding split luck
+- **Leakage**: Future info/target-derived features/test info in training → unrealistic val scores. Scalers/encoders/imputers must `fit` train only, `transform` valid/test
 
-## 시험 팁
+## Test Tips
 
-- "학습 정확도 높고 검증 정확도 낮음(격차 큼)" → 과적합. 대응: 정규화↑, 데이터↑, 드롭아웃, 조기 종료, 증강.
-- "학습·검증 둘 다 낮음" → 과소적합. 대응: 복잡도↑, 특징↑, 더 학습.
-- "특징 선택 / 희소 모델" → L1. "가중치 전반 축소" → L2.
-- "데이터가 부족하다" + 이미지/텍스트 → 데이터 증강.
-- 스케일러를 전체 데이터에 fit하면 누수 — train에만 fit.
+- "Train accurate, validation low (big gap)" → overfitting. Fix: regularize↑, data↑, dropout, early stop, augment
+- "Train·validation both low" → underfitting. Fix: complexity↑, features↑, train longer
+- "Unwanted features, auto-remove / sparse" → L1. "Shrink all weights" → L2
+- "Data scarce" + image/text → augmentation
+- Scaler fitted on all data = leakage → fit train only
 
-## 정리하며
+## Summary
 
-오늘은 일반화 실패의 진단과 처방을 다뤘다. 핵심 흐름은 **학습/검증 곡선으로 과적합·과소적합 판별 → 편향-분산 관점으로 원인 파악 → 과적합엔 정규화(L1/L2/드롭아웃/조기종료)·데이터 증강, 과소적합엔 복잡도·특징 증대**다. 내일은 학습 자체를 더 잘 수렴시키는 최적화(배치 크기·학습률 스케줄·그래디언트 문제)와 SageMaker Debugger/Profiler를 다룬다.
+Today covered generalization failure diagnosis and fixes. Key: **learning curves tell overfitting/underfitting → bias-variance lens → overfitting = regularize (L1/L2/dropout/early stop), data augment; underfitting = more capacity, features, training**. Next: learning stability itself — batch size, learning rate schedules, gradient problems, Debugger/Profiler
 
 ---
 

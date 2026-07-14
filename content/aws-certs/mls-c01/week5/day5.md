@@ -1,89 +1,89 @@
-# Day 5 - Week 5 종합 복습: 통계와 검증 설계
+# Day 5 - Week 5 Comprehensive Review: Statistics and Validation Design
 
-이번 주는 EDA의 후반부 — **통계적 토대**와 **검증 설계** — 를 다뤘다. 데이터를 정직하게 요약하고(통계), 변수 사이의 관계를 읽고(상관), 평가를 오염시키는 함정을 피하며(누수), 일반화 성능을 신뢰할 수 있게 추정하는(검증) 일이다. 이 네 가지는 MLS-C01 도메인 2의 마지막 관문이자, 실무에서 "왜 내 모델이 운영에서 무너지는가"의 답이 숨어 있는 영역이다. 오늘은 나흘 치를 하나의 흐름으로 엮어 복습한다.
+This week covered the second half of EDA — **statistical foundation** and **validation design**. Honestly summarizing data (statistics), reading relationships between variables (correlation), avoiding pitfalls that contaminate evaluation (leakage), and reliably estimating generalization performance (validation). These four form the final gate of MLS-C01 Domain 2 and hide the answer to the practical question "why does my model fail in production?" Today we review four days as one integrated flow.
 
-## 한 장 요약: 통계 → 관계 → 누수 → 검증
+## One-Page Summary: Statistics → Correlation → Leakage → Validation
 
 ```text
-[데이터]
+[Data]
    │
-   ├─ 1) 통계 기초 (Day1)
-   │     분포: 왜도·첨도 먼저 본다 (앤스컴 4중주)
-   │     중심: 치우치면 중앙값, 대칭이면 평균
-   │     산포: std/IQR, 강건성은 IQR
-   │     변환: 선형(표준화)=모양 불변, 로그/Box-Cox=치우침 완화
-   │     표본↔모집단: CLT, 대표성·편향 의심
+   ├─ 1) Statistical Foundations (Day1)
+   │     Distribution: Check skew/kurtosis first (Anscombe's quartet)
+   │     Center: Median if skewed, mean if symmetric
+   │     Spread: std/IQR, robustness = IQR
+   │     Transform: Linear (standardization) = shape unchanged, log/Box-Cox = reduce skew
+   │     Sample ↔ Population: CLT, suspect representativeness/bias
    │
-   ├─ 2) 상관과 관계 (Day2)
-   │     Pearson(선형) vs Spearman(단조·강건)
-   │     상관 ≠ 인과: 역인과·교란변수·우연
-   │     다중공선성: VIF>5~10, 선형 모델 계수 불안정 (트리는 둔감)
-   │     범주형: 카이제곱 / 크래머의 V
+   ├─ 2) Correlation and Relationships (Day2)
+   │     Pearson (linear) vs Spearman (monotonic, robust)
+   │     Correlation ≠ causation: reverse causation, confounders, chance
+   │     Multicollinearity: VIF>5~10, linear model coefficients unstable (trees robust)
+   │     Categorical: chi-square / Cramér's V
    │
-   ├─ 3) 데이터 누수 (Day3)
-   │     타깃 누수: 결과 정보 혼입 → 분할로 못 잡음, 시점 점검
-   │     시계열 누수: 무작위 분할·미래 윈도우 금지
-   │     train-test 오염: 분할 후 학습셋에만 fit, Pipeline으로 가둠
+   ├─ 3) Data Leakage (Day3)
+   │     Target leakage: result info enters → splitting misses it, check timing
+   │     Time series leakage: forbid random split, future windows
+   │     Train-test contamination: after split, fit only on training, wrap with Pipeline
    │
-   └─ 4) 검증 설계 (Day4)
-         3-way 분할: test는 끝까지 봉인, 단 한 번
-         k-fold: 데이터 절약, 평균±분산 (k=5/10)
-         층화(stratified): 불균형 분류 필수
-         시계열: TimeSeriesSplit (과거→미래)
+   └─ 4) Validation Design (Day4)
+         3-way split: test sealed until end, seen once only
+         k-fold: conserve data, mean ± std (k=5/10)
+         Stratified: essential for imbalanced classification
+         Time series: TimeSeriesSplit (past → future)
 ```
 
-## 핵심 의사결정 정리
+## Core Decision-Making Summary
 
-### 중심·산포: 무엇을 보고할까
+### Center·Spread: What Do We Report?
 
-| 상황 | 중심 | 산포 |
+| Situation | Center | Spread |
 |------|------|------|
-| 대칭 분포 | 평균 | 표준편차 |
-| 치우침·이상치 | 중앙값 | IQR |
-| 범주형 | 최빈값 | — |
+| Symmetric distribution | Mean | Std deviation |
+| Skew, outliers | Median | IQR |
+| Categorical | Mode | — |
 
-### 변환: 모양을 바꾸나
+### Transformation: Change the Shape?
 
-| 처리 | 분포 모양 |
+| Treatment | Distribution Shape |
 |------|------|
-| 표준화·min-max (선형) | **불변** (치우침 그대로) |
-| 로그·제곱근 (비선형) | 오른쪽 치우침 완화 |
-| Box-Cox·Yeo-Johnson | 정규에 가깝게 |
+| Standardization, min-max (linear) | **Unchanged** (skew preserved) |
+| Log, square root (nonlinear) | Reduce right skew |
+| Box-Cox, Yeo-Johnson | Closer to normal |
 
-### 상관계수: 무엇을 쓸까
+### Correlation Coefficient: What to Use?
 
-| 관계·데이터 | 권장 |
+| Relationship·Data | Recommended |
 |------|------|
-| 선형, 연속형 | Pearson |
-| 비선형·단조, 이상치 | Spearman |
-| 두 범주형 | 카이제곱 / 크래머의 V |
-| 다중공선성 진단 | 상관 히트맵 + VIF |
+| Linear, continuous | Pearson |
+| Nonlinear, monotonic, outliers | Spearman |
+| Two categorical | Chi-square / Cramér's V |
+| Multicollinearity diagnosis | Correlation heatmap + VIF |
 
-### 누수 방지: 황금률
+### Leakage Prevention: Golden Rules
 
-| 원칙 | 실행 |
+| Principle | Implementation |
 |------|------|
-| 분할을 가장 먼저 | 전처리보다 split 우선 |
-| fit은 학습셋만 | 스케일러·인코더·대치기 |
-| Pipeline 사용 | fold마다 자동 격리 |
-| 시계열은 시간 순 | 무작위 분할 금지 |
-| 특성 생성 시점 점검 | "예측 시점에 알 수 있나?" |
+| Split first | Priority over preprocessing |
+| Fit only on training | Scaler, encoder, imputer |
+| Use Pipeline | Auto-isolation per fold |
+| Time series time-ordered | No random split |
+| Audit feature creation | "Knowable at prediction?" |
 
-### 검증 전략 선택
+### Validation Strategy Selection
 
-| 데이터 특성 | 권장 검증 |
+| Data Characteristic | Recommended Validation |
 |------|------|
-| 일반 분류, 충분한 양 | Stratified 3-way 분할 |
-| 데이터 적음 | Stratified k-fold |
-| 클래스 불균형 | 반드시 층화 |
-| 시계열 | TimeSeriesSplit |
-| 그룹 구조(사용자·환자) | GroupKFold |
+| General classification, sufficient data | Stratified 3-way split |
+| Data limited | Stratified k-fold |
+| Class imbalance | Must stratify |
+| Time series | TimeSeriesSplit |
+| Group structure (users, patients) | GroupKFold |
 
-## 가장 헷갈리는 시험 포인트
+## Most Confusing Exam Points
 
-> 💡 **관련 이론**: 이번 주 내용은 하나의 질문으로 수렴한다 — **"내 검증 점수를 믿을 수 있는가?"** 통계(분포·표본)는 데이터가 모집단을 대표하는지, 상관 분석은 관계를 인과로 오해하지 않는지, 누수 점검은 미래·결과 정보가 새지 않았는지, 검증 설계는 테스트셋이 진짜 독립인지를 보장한다. 이 네 가지 중 하나라도 무너지면 검증 점수는 일반화 성능이 아니라 환상이 된다.
+> 💡 **Related Theory**: This week's content converges on one question — **"Can I trust my validation score?"** Statistics (distribution, samples) ensure data represents the population, correlation analysis prevents mistaking correlation for causation, leakage checks prevent future/outcome information seeping, and validation design ensures the test set is truly independent. If any one of these four breaks down, validation scores aren't generalization — they're illusions.
 
-종합 점검:
+Integrated checklist:
 
 ```python
 from sklearn.pipeline import Pipeline
@@ -92,10 +92,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 
-# 누수 차단 + 불균형 대응을 한 번에: Pipeline + StratifiedKFold
+# Block leakage + handle imbalance together: Pipeline + StratifiedKFold
 pipe = Pipeline([
-    ("impute", SimpleImputer(strategy="median")),  # 치우침엔 중앙값
-    ("scale", StandardScaler()),                    # fold별 학습 부분에만 fit
+    ("impute", SimpleImputer(strategy="median")),  # median for skew
+    ("scale", StandardScaler()),                    # fit only on fold training portion
     ("clf", LogisticRegression(class_weight="balanced")),
 ])
 skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
@@ -103,15 +103,15 @@ scores = cross_val_score(pipe, X, y, cv=skf, scoring="f1")
 print(f"F1: {scores.mean():.3f} ± {scores.std():.3f}")
 ```
 
-> ⚠️ **함정 총정리**: ① 표준화로 치우침이 사라진다(아니다, 모양 불변). ② 강한 상관이니 인과다(아니다, 교란변수 의심). ③ 분할만 잘하면 누수는 없다(아니다, 타깃 누수는 못 잡음). ④ 전체 데이터로 스케일링 후 분할해도 된다(아니다, 누수). ⑤ 시계열을 무작위로 나눠도 된다(아니다, 시간 순). ⑥ 불균형 데이터를 무작위 분할해도 된다(아니다, 층화). ⑦ 테스트셋으로 튜닝해도 된다(아니다, 단 한 번 봉인).
+> ⚠️ **Pitfall Summary**: ① Standardization removes skew (no, shape unchanged). ② Strong correlation means causation (no, suspect confounders). ③ Good splitting eliminates leakage (no, target leakage escapes). ④ Scale entire data then split (no, leakage). ⑤ Random split time series (no, time order). ⑥ Random split imbalanced data (no, stratify). ⑦ Tune on test set (no, seal once only).
 
-## 다음 주 예고
+## Next Week Preview
 
-다음 주는 EDA를 넘어 **모델링(도메인 3: Modeling)**으로 넘어간다. 오늘까지 다진 통계·검증의 토대 위에서, 알고리즘 선택과 학습·평가가 어떻게 이뤄지는지 본다. 검증 설계를 제대로 익혔다면, 모델링에서 "이 점수를 믿어도 되는가"를 스스로 판단할 수 있을 것이다.
+Next week we move beyond EDA to **Modeling (Domain 3)**. On the foundation of statistics and validation we've built, we'll see how algorithm choice, training, and evaluation work. If you've mastered validation design, you'll be able to judge "should I trust this score?" on your own during modeling.
 
-## 정리하며
+## Summary
 
-이번 주의 한 문장: **"좋은 검증 점수는 좋은 통계·관계 이해·누수 차단·검증 설계 위에서만 정직하다."** 분포를 먼저 보고(왜도·강건 통계), 상관을 인과로 착각하지 않고(교란변수), 누수를 시점으로 점검하며(타깃·시계열·전처리), 데이터 특성에 맞는 검증(층화·교차검증·시계열 분할)을 설계하라. 이 네 가지가 갖춰질 때 모델 선택의 모든 결정이 신뢰할 수 있게 된다.
+This week in one sentence: **"Honest validation scores rest only on good statistics, relationship understanding, leakage blocking, and validation design."** Check distribution first (skew, robust statistics), don't mistake correlation for causation (confounders), audit leakage by timing (target, time series, preprocessing), and design validation matching data (stratification, cross-validation, time series split). When all four are in place, every decision in model selection becomes trustworthy.
 
 ---
 

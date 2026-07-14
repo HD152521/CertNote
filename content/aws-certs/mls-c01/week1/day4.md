@@ -1,14 +1,14 @@
-# Day 4 - 데이터 레이블링: SageMaker Ground Truth·액티브 러닝·레이블 품질
+# Day 4 - Data Labeling: SageMaker Ground Truth·Active Learning·Label Quality
 
-지도학습 모델의 천장은 알고리즘이 아니라 **레이블 품질**이 정한다. 레이블이 틀리면 아무리 좋은 모델도 틀린 답을 학습한다("garbage in, garbage out"). 그런데 수십만 장의 이미지를 사람이 일일이 라벨링하는 비용은 막대하다. Specialty는 "이 레이블링 요구를 어떻게 싸고 정확하게?"를 묻고, 답의 중심에 SageMaker Ground Truth가 있다.
+The ceiling on supervised learning models isn't set by algorithms—it's set by **label quality**. If labels are wrong, even the best model learns the wrong answer ("garbage in, garbage out"). Yet manually labeling hundreds of thousands of images is prohibitively expensive. Specialty asks: "How do we label this cost-effectively and accurately?" and the answer centers on SageMaker Ground Truth.
 
-오늘은 ① Ground Truth의 구조와 워크포스 선택, ② 비용을 줄이는 자동 레이블링(액티브 러닝), ③ 레이블 품질을 보장하는 합의(consensus) 기법을 다룬다.
+Today we cover: ① Ground Truth workflow and workforce choices, ② cost reduction via automated labeling (active learning), and ③ label quality assurance through consensus mechanisms.
 
-## SageMaker Ground Truth: 레이블링 워크플로우
+## SageMaker Ground Truth: Labeling Workflow
 
-Ground Truth는 레이블링 작업(job)을 ① 입력 데이터(S3), ② 레이블링 태스크 유형, ③ 워크포스(누가 라벨링하나), ④ 라벨링 UI 템플릿으로 구성한다. 결과는 표준화된 **augmented manifest**(JSON Lines) 형식으로 나와 바로 학습에 쓸 수 있다.
+Ground Truth structures a labeling job as ① input data (S3), ② task type, ③ workforce (who labels?), and ④ labeling UI template. Output comes as standardized **augmented manifest** (JSON Lines) ready for training.
 
-지원 태스크 유형: 이미지 분류·바운딩 박스(객체 탐지)·시맨틱 세그멘테이션·텍스트 분류·개체명 인식·비디오 등.
+Supported task types: image classification, bounding box (object detection), semantic segmentation, text classification, named entity recognition, video, etc.
 
 ```python
 import boto3
@@ -23,75 +23,75 @@ sm.create_labeling_job(
     RoleArn=role_arn,
     LabelCategoryConfigS3Uri="s3://my-lake/labeling/labels.json",
     HumanTaskConfig={
-        "WorkteamArn": private_workteam_arn,        # 워크포스 선택 (아래 표)
+        "WorkteamArn": private_workteam_arn,        # Workforce choice (see table)
         "PreHumanTaskLambdaArn": prehuman_lambda,
         "TaskTitle": "Draw boxes around cats and dogs",
-        "NumberOfHumanWorkersPerDataObject": 3,     # 한 객체를 3명이 라벨링 → 합의
+        "NumberOfHumanWorkersPerDataObject": 3,     # Each object labeled by 3 people → consensus
         "TaskTimeLimitInSeconds": 300,
     },
 )
 ```
 
-워크포스(누가 라벨링하나)는 데이터 민감도와 비용으로 선택한다.
+Choose workforce based on data sensitivity and cost.
 
-| 워크포스 | 특징 | 적합한 데이터 |
-|---------|------|--------------|
-| **Amazon Mechanical Turk** | 대규모·저비용 공개 작업자 | 민감하지 않은 공개 데이터, 빠른 대량 |
-| **Private** | 사내 직원 등 신뢰 그룹 | 기밀·규제 데이터(의료·금융) |
-| **Vendor** | AWS Marketplace의 전문 벤더 | 전문 지식 필요(의료 영상 판독 등) |
+| Workforce | Characteristics | Best For |
+|-----------|---|-----|
+| **Amazon Mechanical Turk** | Large-scale, low-cost public workers | Non-sensitive public data, fast bulk operations |
+| **Private** | In-house staff or trusted group | Confidential/regulated data (healthcare, finance) |
+| **Vendor** | AWS Marketplace specialists | Expert knowledge required (medical imaging interpretation) |
 
-> 💡 **관련 이론**: 민감 데이터(환자 영상, PII)를 Mechanical Turk 같은 공개 워크포스에 노출하면 컴플라이언스 위반이다. 이런 경우 반드시 Private 워크포스(사내) 또는 신뢰할 수 있는 Vendor를 쓴다. Specialty는 "의료/금융 등 민감 데이터의 레이블링 워크포스?"를 자주 묻고 답은 거의 항상 Private 또는 Vendor다. 비용과 규모만 보고 Mechanical Turk를 고르면 함정에 빠진다.
+> 💡 **Related Theory**: Exposing sensitive data (patient images, PII) to public workforces like Mechanical Turk violates compliance. In such cases, use Private workforce (in-house) or a trusted Vendor. Specialty frequently asks "labeling workforce for sensitive data?" and the answer is almost always Private or Vendor. Choosing Mechanical Turk for cost and scale alone is a Specialty trap.
 
-## 액티브 러닝: 자동 레이블링으로 비용 절감
+## Active Learning: Cost Reduction via Automated Labeling
 
-Ground Truth의 핵심 비용 절감 기능이 **automated data labeling(액티브 러닝)**이다. 동작 원리:
+The key cost-reduction feature of Ground Truth is **automated data labeling** (active learning). How it works:
 
-1. 사람이 일부 데이터를 라벨링한다(seed).
-2. 그 레이블로 모델을 학습한다.
-3. 모델이 전체 데이터에 예측을 매기고, **확신도가 높은 것은 자동 레이블**로 채택한다.
-4. **확신도가 낮은(모호한) 것만** 다시 사람에게 보낸다.
-5. 사람이 라벨링한 새 데이터로 모델을 다시 학습하며 반복한다.
+1. Humans label some data (seed).
+2. Train a model on those labels.
+3. Model predicts on all data; adopt predictions with **high confidence as automatic labels**.
+4. Route only **low-confidence (ambiguous) predictions** back to humans.
+5. Humans label the new data; retrain the model and repeat.
 
-핵심 통찰: 모델이 헷갈려 하는 경계 사례에 사람의 노동을 집중하면, 전체 데이터의 일부만 사람이 라벨링해도 높은 품질을 얻는다.
+Key insight: By concentrating human labor on boundary cases the model finds ambiguous, you achieve high quality while labeling only a fraction of the full dataset.
 
 ```python
-# create_labeling_job에 LabelingJobAlgorithmsConfig를 추가하면 액티브 러닝 활성화
+# Add LabelingJobAlgorithmsConfig to create_labeling_job to enable active learning
 labeling_algorithm = {
     "LabelingJobAlgorithmsConfig": {
-        # 태스크 유형에 맞는 내장 알고리즘 ARN (이미지 분류 예)
+        # Built-in algorithm ARN for task type (image classification example)
         "LabelingJobAlgorithmSpecificationArn":
             "arn:aws:sagemaker:us-east-1:027400017018:labeling-job-algorithm-specification/image-classification"
     }
 }
-# 확신도 높은 객체는 모델이 자동 레이블, 모호한 객체만 사람에게 라우팅 → 비용↓
+# High-confidence objects auto-labeled by model, ambiguous routed to humans → cost ↓
 ```
 
-> 💡 **관련 이론**: 액티브 러닝(active learning)은 "모든 데이터가 똑같이 학습에 유용하진 않다"는 전제에서 출발한다. 모델이 이미 확신하는 샘플은 추가 레이블의 정보 가치가 낮고, 결정 경계 근처의 모호한 샘플(uncertainty가 높은 샘플)이 가장 정보량이 크다. 이 모호한 샘플만 골라 사람에게 묻는 전략을 **uncertainty sampling**이라 한다. 데이터가 많고 라벨링 예산이 빠듯할수록 효과가 크다.
+> 💡 **Related Theory**: Active learning begins with "not all data is equally useful for learning." Samples the model already feels confident about have low information value for additional labels; the highest information value comes from ambiguous samples near the decision boundary (high uncertainty). Focusing only on those ambiguous samples is called **uncertainty sampling**. The larger the dataset and the tighter the labeling budget, the bigger the benefit.
 
-## 레이블 품질 보장: 합의와 검증
+## Ensuring Label Quality: Consensus and Validation
 
-사람도 틀린다. 한 명의 라벨러는 실수·편향·피로로 오류를 낸다. Ground Truth는 품질을 위해 여러 장치를 둔다.
+Humans make mistakes. One labeler can err from carelessness, bias, fatigue. Ground Truth uses several mechanisms to protect quality.
 
-- **합의(consensus)**: `NumberOfHumanWorkersPerDataObject`를 2~5로 두면 같은 객체를 여러 명이 라벨링하고, 결과를 종합(다수결·가중)해 최종 레이블을 정한다.
-- **레이블 통합(annotation consolidation)**: 여러 답을 통합하는 로직. 기본 제공되며 커스텀 Lambda로 교체 가능.
-- **품질 검증 워크플로우**: 레이블링 결과를 별도 워크포스가 검토·수정.
+- **Consensus**: Set `NumberOfHumanWorkersPerDataObject` to 2–5; the same object is labeled by multiple people and results are consolidated (majority vote, weighted).
+- **Annotation consolidation**: Logic to combine multiple answers. Built-in defaults exist; swap in custom Lambda if needed.
+- **Quality review workflow**: A separate workforce reviews and corrects labeling results.
 
 ```python
-# 합의: 1개 객체를 3명이 라벨링 → 통합 알고리즘이 최종 레이블 산출
+# Consensus: 1 object labeled by 3 people → consolidation algo produces final label
 "NumberOfHumanWorkersPerDataObject": 3,
-# 통합 로직(기본 다수결) 또는 커스텀 consolidation Lambda 지정 가능
+# Consolidation logic (default majority vote) or custom Lambda
 "AnnotationConsolidationConfig": {
     "AnnotationConsolidationLambdaArn": consolidation_lambda_arn
 }
 ```
 
-레이블 품질을 측정하는 지표로 **inter-annotator agreement**(라벨러 간 일치도, 예: Cohen's kappa)가 있다. 일치도가 낮으면 작업 지침(guideline)이 모호하거나 태스크가 본질적으로 어렵다는 신호다.
+A metric for label quality is **inter-annotator agreement** (e.g., Cohen's kappa). Low agreement signals either vague instructions or an inherently difficult task.
 
-> 💡 **관련 이론**: 레이블 노이즈는 모델 성능의 상한을 직접 깎는다. 합의 기반 레이블링은 무작위 오류를 다수결로 상쇄해 노이즈를 줄이지만, 모든 라벨러가 같은 방향으로 틀리는 **체계적 편향**(예: 모호한 지침)은 합의로도 못 잡는다. 그래서 명확한 라벨링 가이드라인과 golden set(정답이 알려진 샘플)으로 라벨러를 검증하는 절차가 함께 필요하다. 비용은 정확도·라벨러 수와 트레이드오프이며, 액티브 러닝으로 사람 라벨링 양 자체를 줄이는 것이 비용·품질을 동시에 잡는 정석이다.
+> 💡 **Related Theory**: Label noise directly caps model performance. Consensus-based labeling reduces random errors via majority vote but can't catch **systematic bias** (e.g., vague instructions that make all labelers wrong the same way). Clear labeling guidelines and validation via golden set (samples with known answers) are essential. Cost trade-offs exist between accuracy, number of labelers, and active learning to reduce the amount of human labeling itself is the principled way to optimize both cost and quality.
 
-## 레이블링 대안: 데이터가 정말 다 필요한가
+## Labeling Alternatives: Do You Really Need All That Data?
 
-레이블링 전에 물어야 할 질문도 있다. ① 사전학습 모델 + 전이학습으로 적은 레이블만 필요한가? ② 데이터 증강(augmentation)으로 기존 레이블을 늘릴 수 있나? ③ 약지도학습(weak supervision)으로 휴리스틱 레이블을 쓸 수 있나? Specialty는 "레이블링 비용을 줄이는 방법"을 종종 묻고, 액티브 러닝·전이학습이 정답으로 나온다.
+Before labeling, ask: ① Can a pre-trained model + transfer learning work with fewer labels? ② Can data augmentation stretch existing labels further? ③ Can weak supervision (heuristic labels) be used? Specialty often asks "how to cut labeling costs?" and active learning + transfer learning are frequent correct answers.
 
 ## 📝 연습 문제
 

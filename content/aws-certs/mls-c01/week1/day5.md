@@ -1,106 +1,106 @@
-# Day 5 - Week 1 종합 복습: ML 개요 & 데이터 엔지니어링 1
+# Day 5 - Week 1 Integrated Review: ML Overview & Data Engineering 1
 
-이번 주는 MLS-C01의 토대를 깔았다. ML 수명주기를 Specialty 깊이로 다시 보고(Day 1), 데이터를 어디에 어떤 포맷으로 둘지(Day 2), 어떻게 수집할지(Day 3), 어떻게 레이블링할지(Day 4)를 다뤘다. 오늘은 이 조각들이 하나의 데이터 파이프라인으로 어떻게 맞물리는지 통합하고, 시험에서 자주 흔들리는 결정 기준을 정리한다.
+This week, we laid the foundation for MLS-C01. We reviewed the ML lifecycle at Specialty depth (Day 1), explored where and how to store data (Day 2), how to collect it (Day 3), and how to label it (Day 4). Today we integrate these pieces into one data pipeline and sharpen the decision criteria that often trip up the exam.
 
-## 한눈에 보는 데이터 엔지니어링 파이프라인
+## The Data Engineering Pipeline at a Glance
 
-이번 주 내용을 하나의 흐름으로 이으면 다음과 같다.
+This week's content flows as follows.
 
 ```
-[원천]  클릭로그·IoT·거래  ──┐
-                            ▼
-[수집]  스트림? → Kinesis (Firehose=적재 / KDS=다소비·재생)   (Day 3)
-        배치?   → Glue ETL / EMR / Batch
-                            ▼
-[저장]  S3 데이터레이크 (Parquet/RecordIO)                     (Day 2)
-                            ▼
-[레이블] SageMaker Ground Truth (워크포스 + 액티브 러닝 + 합의) (Day 4)
-                            ▼
-[특성]  Glue/Processing로 피처 엔지니어링 → Feature Store
-                            ▼
-[학습 I/O] S3(Pipe/File/FastFile) | EFS | FSx for Lustre       (Day 2)
-                            ▼
-[모델]  학습 → 평가(비즈니스 지표 연결) → 배포 → 모니터링        (Day 1)
-                            └──── 드리프트 시 루프백 ────┘
+[Source]  Click logs · IoT · Transactions  ──┐
+                                             ▼
+[Ingest]  Stream? → Kinesis (Firehose=deliver / KDS=multi-consumer·replay)  (Day 3)
+          Batch?   → Glue ETL / EMR / Batch
+                                             ▼
+[Store]   S3 data lake (Parquet/RecordIO)                                   (Day 2)
+                                             ▼
+[Label]   SageMaker Ground Truth (workforce + active learning + consensus)  (Day 4)
+                                             ▼
+[Features] Glue/Processing for feature engineering → Feature Store
+                                             ▼
+[Train I/O] S3 (Pipe/File/FastFile) | EFS | FSx for Lustre                 (Day 2)
+                                             ▼
+[Model]   Train → Evaluate (link to business metrics) → Deploy → Monitor    (Day 1)
+                                             └──── Drift triggers loop-back ────┘
 ```
 
-> 💡 **관련 이론**: 이 파이프라인 전체에서 일관되게 흐르는 원칙은 **재현성**과 **training-serving skew 방지**다. 수집·정제·피처 로직을 코드로 고정하고, 데이터 버전을 관리하며, 학습과 추론에서 동일한 변환을 쓰는 것. 노트북에서 즉흥적으로 만든 피처나 출처 불명의 데이터는 운영에서 조용히 모델을 망가뜨린다.
+> 💡 **Related Theory**: One consistent principle flows through this entire pipeline: **reproducibility** and **preventing training-serving skew**. Fix collection, cleaning, and feature logic in code; version your data; use identical transformations in training and inference. Ad-hoc features engineered in notebooks or data from unknown sources quietly break models in production.
 
-## 핵심 결정 기준 정리
+## Core Decision Criteria Summary
 
-시험에서 자주 갈리는 선택을 한 줄 기준으로 압축한다.
+Compress decisions that trip people up in exam questions.
 
-**스토리지 입력 모드 (Day 2)**
+**Storage Input Mode (Day 2)**
 
-| 상황 | 선택 |
-|------|------|
-| 대용량·순차·시작 빨리 | Pipe 모드 |
-| 작은 데이터·랜덤 접근 | File 모드 |
-| 대용량인데 일부/랜덤만 | FastFile 모드 |
-| 반복·고처리량 공유 | FSx for Lustre |
-| 범용 공유 파일시스템 | EFS |
+| Situation | Choice |
+|---------|-----|
+| Large data, sequential, fast startup | Pipe mode |
+| Small data, random access | File mode |
+| Large data but partial/random access | FastFile mode |
+| Repeated, high-throughput shared access | FSx for Lustre |
+| General-purpose shared filesystem | EFS |
 
-**데이터 포맷 (Day 2)**
+**Data Formats (Day 2)**
 
-| 상황 | 선택 |
-|------|------|
-| 정형 데이터 분석·ETL, 일부 컬럼만 | Parquet (컬럼형) |
-| SageMaker 내장 알고리즘 대용량 학습 | RecordIO-protobuf |
-| 수백만 작은 파일 | 샤딩으로 큰 묶음 통합 |
+| Situation | Choice |
+|---------|-----|
+| Structured data analytics, ETL, subset of columns | Parquet (columnar) |
+| SageMaker built-in algorithm, large-scale sequential | RecordIO-protobuf |
+| Millions of small files | Consolidate via sharding |
 
-**수집 서비스 (Day 3)**
+**Ingestion Services (Day 3)**
 
-| 상황 | 선택 |
-|------|------|
-| 코드 없이 S3 등으로 단순 적재 | Kinesis Data Firehose |
-| 다소비자·재처리·커스텀 처리 | Kinesis Data Streams |
-| 스트림 실시간 집계·이상탐지 | Managed Service for Flink |
-| 스키마 추론·카탈로그 | Glue Crawler |
-| 서버리스 Spark ETL | Glue ETL Job |
+| Situation | Choice |
+|---------|-----|
+| No-code delivery to S3, etc. | Kinesis Data Firehose |
+| Multi-consumer, reprocessing, custom handling | Kinesis Data Streams |
+| Real-time aggregation, anomaly detection | Managed Service for Flink |
+| Schema inference, catalog | Glue Crawler |
+| Serverless Spark ETL | Glue ETL Job |
 
-**레이블링 (Day 4)**
+**Labeling (Day 4)**
 
-| 상황 | 선택 |
-|------|------|
-| 민감·규제 데이터 | Private 또는 Vendor 워크포스 |
-| 공개·대규모·저비용 | Mechanical Turk |
-| 레이블링 비용 절감 | 액티브 러닝(자동 레이블링) |
-| 무작위 오류 감소 | 합의(다수 라벨러 + 통합) |
+| Situation | Choice |
+|---------|-----|
+| Sensitive, regulated data | Private or Vendor workforce |
+| Public, large-scale, low-cost | Mechanical Turk |
+| Reduce labeling cost | Active learning (automated labeling) |
+| Reduce random labeler error | Consensus (multiple labelers + consolidation) |
 
-## 평가 지표 빠른 복습 (Day 1)
+## Quick Review: Evaluation Metrics (Day 1)
 
 ```python
-# 분류 지표 결정 트리 (의사코드)
-if 클래스가_심하게_불균형:
-    if 미탐_비용이_큼(사기·질병):      → recall 우선, 비교는 PR-AUC
-    elif 오탐_비용이_큼(스팸·마케팅):  → precision 우선
-    else:                              → PR-AUC
+# Classification metric decision tree (pseudocode)
+if classes_severely_imbalanced:
+    if miss_cost_high (fraud, disease):         → prioritize recall, compare via PR-AUC
+    elif false_alarm_cost_high (spam, marketing): → prioritize precision
+    else:                                        → PR-AUC
 else:
-    if 임계값_미정:                    → ROC-AUC
-    else:                              → F1 / accuracy
+    if threshold_undecided:                     → ROC-AUC
+    else:                                       → F1 / accuracy
 ```
 
-> 💡 **관련 이론**: 단일 지표 함정을 항상 경계하자. accuracy 99.9%가 불균형 데이터에서는 "전부 음성" 모델일 수 있다. 오프라인 지표는 배포 게이트, 온라인 비즈니스 지표(A/B 테스트)는 최종 판정이라는 2단 구조를 기억하면 Day 1의 핵심을 다 잡은 것이다.
+> 💡 **Related Theory**: Always guard against single-metric traps. A 99.9% accuracy on imbalanced data might be a "predict all negative" model. Offline metrics gate deployment; online business metrics (A/B tests) render the final verdict. Remembering this two-stage structure captures the essence of Day 1.
 
-## 미니 통합 시나리오
+## Mini Integrated Scenario
 
-> **시나리오**: 글로벌 이커머스가 실시간 클릭스트림으로 사기 거래를 탐지하려 한다. 과거 사기 레이블은 매우 적고, 거래의 0.1%만 사기다. 데이터는 PII를 포함한다.
+> **Scenario**: A global e-commerce company wants to detect fraudulent transactions in real-time click streams. Historical fraud labels are very sparse, and fraud is 0.1% of transactions. Data includes PII.
 
-단계별 정답 흐름:
+Step-by-step answer flow:
 
-1. **수집**: 다소비자·재처리가 필요하므로 Kinesis **Data Streams** + 실시간 피처는 Flink, 동시에 Firehose로 S3에 축적(람다 아키텍처).
-2. **저장**: S3 데이터레이크에 **Parquet**으로 적재.
-3. **레이블**: PII 포함이므로 **Private 워크포스**. 레이블이 적으니 액티브 러닝으로 효율화하거나, 레이블이 너무 적으면 비지도 이상 탐지(Random Cut Forest)로 시작.
-4. **평가**: 0.1% 불균형 + 미탐 비용 큼 → **recall 우선, PR-AUC**로 모델 비교.
-5. **배포**: A/B로 소량 트래픽 검증 후 확대, 모니터링으로 드리프트 감지.
+1. **Ingest**: Multi-consumer and reprocessing required, so **Kinesis Data Streams** + real-time features via Flink, simultaneously Firehose to S3 (lambda architecture).
+2. **Store**: S3 data lake as **Parquet**.
+3. **Label**: PII present, so **Private workforce**. Labels very sparse, so use active learning for efficiency or, if seed is too small, start with unsupervised anomaly detection (Random Cut Forest).
+4. **Evaluate**: 0.1% imbalance + high miss cost → **prioritize recall, compare via PR-AUC**.
+5. **Deploy**: A/B with small traffic split first, then expand; monitor for drift.
 
-이 한 시나리오에 Week 1의 모든 개념이 들어 있다. 각 결정의 근거를 말로 설명할 수 있으면 이번 주를 소화한 것이다.
+This single scenario embeds every concept from Week 1. If you can explain the reasoning behind each decision, you've internalized this week.
 
-> 💡 **관련 이론**: 여러 개념이 충돌하는 시나리오 문제에서는 "제약 조건"이 먼저다. PII는 워크포스를 강제하고, 극단적 불균형은 지표를 강제하며, 다소비자 요건은 KDS를 강제한다. 보기 중 가장 멋진 기술이 아니라, **모든 제약을 동시에 만족하는** 선택이 정답이다.
+> 💡 **Related Theory**: In constraint-conflict scenarios, **constraints come first**. PII mandates workforce choice, extreme imbalance mandates metric choice, multi-consumer requirement mandates KDS. The answer isn't the fanciest technology, but the choice that **simultaneously satisfies all constraints**. Violating even one constraint (e.g., PII to public workforce) makes an answer wrong regardless of other merits.
 
-## 다음 주 예고
+## Next Week Preview
 
-Week 2는 데이터 엔지니어링 2로, EMR·Spark 기반 대규모 처리, 데이터 변환·정제 심화, 결측치·이상치·불균형 데이터 처리, 그리고 피처 엔지니어링의 본격적인 기법으로 들어간다. 오늘 정리한 파이프라인의 "특성(Feature)" 단계를 깊게 파는 주다.
+Week 2 dives into Data Engineering 2: large-scale processing with EMR and Spark, data transformation and cleaning deep-dive, handling missing values, outliers, imbalanced data, and the full toolkit of feature engineering techniques. It's where we zoom into the "Features" step of the pipeline.
 
 ## 📝 연습 문제
 

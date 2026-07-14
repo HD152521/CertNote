@@ -1,18 +1,18 @@
-# Day 2 - 실시간 엔드포인트 운영: 구성·오토스케일링·멀티모델
+# Day 2 - Real-time Endpoint Operations: Configuration, Auto Scaling, Multi-Model
 
-어제 네 가지 추론 옵션 중 가장 운영 부담이 큰 것이 Real-time Endpoint라고 했다. 상시 가동되는 인스턴스 위에서 안정적 저지연을 제공하려면, 엔드포인트를 어떻게 구성하고, 트래픽 변동에 어떻게 자동 대응하며, 모델이 수십~수천 개로 늘어날 때 비용을 어떻게 통제할지를 알아야 한다. 오늘은 SageMaker 실시간 엔드포인트의 운영 3대 축 — 엔드포인트 구성, 오토스케일링, 멀티모델/멀티컨테이너 — 를 다룬다.
+Yesterday we identified that real-time endpoints carry the heaviest operational burden among four inference options. To provide stable low-latency service on always-on instances, you must understand endpoint configuration, traffic-responsive auto-scaling, and cost control as models multiply from tens to thousands. Today covers the three pillars of SageMaker real-time endpoint operations: endpoint configuration, auto-scaling, and multi-model/multi-container patterns.
 
-## 엔드포인트의 3계층 구조
+## Endpoint's Three-Layer Architecture
 
-SageMaker 실시간 추론은 세 가지 리소스로 분리되어 있고, 이 분리가 무중단 업데이트와 트래픽 분할의 토대가 된다.
+SageMaker real-time inference separates three resources, providing the foundation for zero-downtime updates and traffic splitting.
 
 ```text
-Model              : 학습 산출물(S3 모델 아티팩트) + 추론 컨테이너 이미지
-EndpointConfig     : 어떤 Model들을 어떤 인스턴스/비율로 올릴지 정의(ProductionVariant)
-Endpoint           : 실제 HTTPS URL. EndpointConfig를 가리킨다.
+Model              : Training output (S3 model artifact) + inference container image
+EndpointConfig     : Defines which Models, on which instances/ratios (ProductionVariant)
+Endpoint           : Actual HTTPS URL. Points to EndpointConfig.
 ```
 
-핵심은 **Endpoint와 EndpointConfig가 분리**되어 있다는 점이다. 새 EndpointConfig를 만든 뒤 `UpdateEndpoint`로 바꿔 끼우면, SageMaker가 새 플릿을 띄우고 트래픽을 옮긴 다음 기존 플릿을 내리는 무중단 교체를 수행한다.
+The key is that **Endpoint and EndpointConfig are separate**. Create a new EndpointConfig, then UpdateEndpoint swaps it in—SageMaker launches a new fleet, shifts traffic, then tears down the old one (zero downtime).
 
 ```python
 from sagemaker.model import Model
@@ -25,11 +25,11 @@ model.deploy(
 )
 ```
 
-> 💡 **관련 이론**: ProductionVariant는 하나의 EndpointConfig 안에 여러 개를 둘 수 있고, 각 Variant에 `InitialVariantWeight`로 트래픽 비율을 지정한다. 이 가중치 기반 분할이 내일 배울 A/B 테스트와 카나리 배포의 기반 메커니즘이다.
+> 💡 **Related Theory**: A single EndpointConfig can hold multiple ProductionVariants, each with `InitialVariantWeight` to specify traffic ratio. This weight-based splitting is the foundation for A/B testing and canary deployment, covered tomorrow.
 
-## 오토스케일링: 트래픽에 맞춰 인스턴스 조절
+## Auto Scaling: Instance Count Matches Traffic
 
-상시 가동의 비용 함정을 줄이려면, 트래픽에 따라 인스턴스 수를 자동으로 늘리고 줄여야 한다. SageMaker는 Application Auto Scaling으로 Variant 단위 스케일링을 지원한다.
+To reduce always-on cost traps, instance count must scale automatically with traffic. SageMaker supports variant-level scaling via Application Auto Scaling.
 
 ```python
 import boto3
@@ -54,70 +54,70 @@ client.put_scaling_policy(
 )
 ```
 
-- **권장 기본 지표**: `SageMakerVariantInvocationsPerInstance` — 인스턴스당 초당 호출 수를 목표값으로 추적(Target Tracking)
-- **쿨다운**: ScaleOut(증설)은 짧게, ScaleIn(축소)은 길게 두어 트래픽이 출렁여도 인스턴스를 성급히 내렸다 다시 올리는 플래핑(flapping)을 막는다.
-- **MinCapacity ≥ 1**: 0으로 내려가지 않는다. 완전 0 스케일이 필요하면 Serverless/Async를 써야 한다.
+- **Recommended base metric**: `SageMakerVariantInvocationsPerInstance` — tracks invocations per instance per second against target (Target Tracking).
+- **Cooldowns**: Keep ScaleOut short, ScaleIn long, to prevent flapping (repeatedly scaling down then up on traffic volatility).
+- **MinCapacity ≥ 1**: Never goes to zero. Need complete zero-scaling? Use Serverless or Async instead.
 
-## 정책 유형
+## Policy Types
 
 ```text
-Target Tracking : 목표 지표값을 유지하도록 자동 조절(가장 권장, 설정 단순)
-Step Scaling    : CloudWatch 알람 단계별로 정해진 양만큼 가감
-Scheduled       : 트래픽 패턴이 예측 가능할 때 시간표 기반(예: 업무시간만 증설)
+Target Tracking : Auto-adjust to maintain target metric (most recommended, simple config)
+Step Scaling    : CloudWatch alarms trigger predefined step adjustments
+Scheduled       : Time-based when traffic pattern is predictable (e.g., business hours only)
 ```
 
-대부분의 시험 시나리오에서 "특정 지연/사용률을 유지하라"는 요구는 Target Tracking이 정답이다.
+In most exam scenarios, "maintain specific latency/utilization" → Target Tracking is the answer.
 
-## 멀티모델 엔드포인트(MME): 모델 수천 개를 한 엔드포인트에
+## Multi-Model Endpoint (MME): Thousands of Models on One Endpoint
 
-고객별/지역별로 모델이 수백~수천 개로 늘어나면, 각각 별도 엔드포인트로 띄우는 것은 비용·관리 측면에서 불가능하다. 멀티모델 엔드포인트는 하나의 엔드포인트에서 다수 모델을 공유 인스턴스에 동적 로딩한다.
+When models multiply to hundreds or thousands (per customer, per region), hosting each on separate endpoints is cost-prohibitive and unmanageable. A multi-model endpoint hosts many models on shared instances, loading them dynamically.
 
 ```python
 from sagemaker.multidatamodel import MultiDataModel
 
 mme = MultiDataModel(
     name="mme-endpoint",
-    model_data_prefix="s3://my-bucket/models/",  # 모델 아티팩트들이 모인 prefix
+    model_data_prefix="s3://my-bucket/models/",  # Prefix where model artifacts live
     image_uri=image, role=role,
 )
 predictor = mme.deploy(initial_instance_count=2, instance_type="ml.m5.xlarge")
-# 호출 시 TargetModel로 어떤 모델을 쓸지 지정
+# On invoke, specify which model via TargetModel
 predictor.predict(data, target_model="customer-123.tar.gz")
 ```
 
-- **동작 원리**: 요청이 오면 해당 모델을 메모리에 로드(이미 로드돼 있으면 즉시 사용), 메모리가 부족하면 오랫동안 안 쓰인 모델을 언로드(LRU)
-- **장점**: 모델 수천 개를 인스턴스 몇 대로 호스팅 → 큰 비용 절감
-- **트레이드오프**: 한동안 호출 안 된 모델은 첫 호출 시 로딩 지연(cold). 모든 모델은 **동일 프레임워크/컨테이너**여야 한다.
+- **Mechanism**: Incoming request triggers model load to memory (or reuse if already loaded); when memory runs low, least-recently-used models are unloaded (LRU).
+- **Benefit**: Host thousands of models on just a few instances → massive cost savings.
+- **Tradeoff**: Models not invoked recently incur cold-start latency on first call. All models must **share framework/container**.
 
-## 멀티컨테이너 엔드포인트(MCE)와 추론 파이프라인
+## Multi-Container Endpoint (MCE) and Inference Pipeline
 
-서로 다른 프레임워크의 모델을 한 엔드포인트에 두려면 멀티모델이 아니라 멀티컨테이너를 쓴다.
-
-```text
-멀티모델 엔드포인트(MME)    : 같은 컨테이너, 다른 모델 아티팩트 N개를 동적 로딩
-멀티컨테이너 엔드포인트(MCE) : 서로 다른 컨테이너 N개. Direct(개별 호출) 또는 Serial(순차) 모드
-추론 파이프라인(Pipeline)   : 컨테이너를 순차로 연결(전처리→예측→후처리)해 한 요청으로 처리
-```
-
-추론 파이프라인은 예를 들어 "Scikit-learn 전처리 컨테이너 → XGBoost 예측 컨테이너"를 직렬로 묶어, 학습 때와 동일한 전처리를 추론 시에도 보장한다(학습-서빙 스큐 방지).
-
-> 💡 **관련 이론**: "수천 개의 유사 모델, 같은 프레임워크, 비용 절감"이면 MME. "전처리와 예측을 한 요청으로 묶고 싶다"면 추론 파이프라인. "서로 다른 프레임워크 모델을 한 엔드포인트에서 따로 호출"이면 MCE의 Direct 모드. 이 세 키워드 구분이 시험 단골이다.
-
-## 운영 모니터링 핵심 지표
+For models in different frameworks on one endpoint, use multi-container, not multi-model.
 
 ```text
-ModelLatency           : 모델 컨테이너가 추론에 쓴 시간
-OverheadLatency        : SageMaker 오버헤드(요청/응답 처리)
-Invocations            : 호출 수
-Invocation4XX/5XX      : 클라이언트/서버 오류
-CPU/GPU/Memory Utilization : 자원 사용률 → 스케일링/인스턴스 타입 결정 근거
+Multi-Model Endpoint (MME)    : Same container, N different model artifacts, dynamic loading
+Multi-Container Endpoint (MCE): N different containers. Direct (individual calls) or Serial mode
+Inference Pipeline            : Link containers sequentially (preprocess→predict→postprocess) into one request
 ```
 
-지연이 ModelLatency에서 큰지 OverheadLatency에서 큰지에 따라 처방이 다르다. 전자는 모델 최적화/인스턴스 업그레이드, 후자는 페이로드/직렬화 문제를 의심한다.
+An inference pipeline example: chain Scikit-learn preprocessing container → XGBoost prediction container to guarantee the same preprocessing at inference as at training (prevents train-serving skew).
 
-## 마무리
+> 💡 **Related Theory**: "Thousands similar models, same framework, cost savings" → MME. "Bundle preprocessing and prediction into one request" → Inference Pipeline. "Different framework models on one endpoint, called separately" → MCE Direct mode. Distinguishing these three is a frequent exam question.
 
-실시간 엔드포인트 운영은 "구성(무중단 교체) → 오토스케일링(비용·안정성) → 멀티모델/파이프라인(규모·재현성)"의 세 축으로 이해하면 된다. 특히 멀티모델·멀티컨테이너·추론 파이프라인의 구분은 시험에서 명확한 키워드로 갈리므로 반드시 외워둔다. 내일은 이 엔드포인트가 더 빠르고 싸게 돌도록 만드는 추론 최적화 — Neo, Inferentia, 추론 파이프라인 — 를 다룬다.
+## Key Operations Monitoring Metrics
+
+```text
+ModelLatency           : Time model container spent on inference
+OverheadLatency        : SageMaker overhead (request/response handling)
+Invocations            : Invocation count
+Invocation4XX/5XX      : Client/server errors
+CPU/GPU/Memory Utilization : Resource usage → basis for scaling/instance type decisions
+```
+
+If latency is high in ModelLatency, optimize model/upgrade instance. If high in OverheadLatency, suspect payload/serialization issues.
+
+## Summary
+
+Real-time endpoint operations follow three axes: "Configuration (zero-downtime swap) → Auto Scaling (cost and stability) → Multi-Model/Pipeline (scale and consistency)." The distinction between multi-model, multi-container, and inference pipeline is critical for exams. Next, we optimize endpoints to run faster and cheaper with Neo, Inferentia, and inference pipelines.
 
 ## 📝 연습 문제
 

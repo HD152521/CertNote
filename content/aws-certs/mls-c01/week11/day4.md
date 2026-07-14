@@ -1,106 +1,75 @@
-# Day 4 - 운영·비용: 비용 최적화, 로깅·감사, 재해 복구
+# Day 4 - Operations & Cost: Cost Optimization, Logging/Audit, Disaster Recovery
 
-ML 워크로드는 GPU 학습과 24시간 떠 있는 엔드포인트 때문에 비용이 쉽게 폭주한다. 동시에 규제 환경에서는 "누가 언제 무엇을 했는가"를 증명해야 하고, 장애가 나도 서비스를 복구할 수 있어야 한다. 오늘은 운영의 세 기둥 — 비용 최적화, 로깅·감사(CloudWatch/CloudTrail), 재해 복구를 다룬다.
+ML workflows cost continuously (data pipelines, training GPUs, always-on endpoints). Regulation demands "who did what when." Infrastructure fails. Today's three pillars: **cost**, **audit**, **resilience**.
 
-## 비용 최적화: 학습과 추론을 나눠서 본다
+## Cost Optimization: Training vs Inference Split
 
-ML 비용은 학습(간헐적·집중적)과 추론(지속적·항상)으로 성격이 다르므로 전략도 다르다.
+Learning and serving have opposite economics.
 
-```text
-학습 비용 절감
-- Managed Spot Training: 여유 용량을 최대 90% 저렴하게, 체크포인트로 중단 복구
-- 적정 인스턴스(right-sizing): GPU가 필요 없으면 CPU, 분산이 필요 없으면 단일
-- Automatic Model Tuning의 조기 종료(early stopping)
+### Training Cost Cuts
+- **Managed Spot Training**: 90% cheaper, checkpoint on interruption
+- **Right-sizing**: No GPU if CPU suffices, distributed only if needed
+- **Early stopping in AMT**: Discard hopeless trials early
 
-추론 비용 절감
-- Serverless Inference: 트래픽이 간헐적이면 유휴 비용 0(요청 시에만 과금)
-- Multi-Model Endpoint(MME): 수많은 모델을 한 엔드포인트에 적재해 공유
-- Asynchronous Inference: 큰 페이로드/긴 처리, 트래픽 없으면 0으로 스케일
-- Auto Scaling: 트래픽에 따라 인스턴스 수 조정
-```
+### Inference Cost Cuts
+- **Serverless**: Sparse traffic → pay-per-call, zero idle
+- **Multi-Model Endpoint**: 1000s models on single endpoint
+- **Asynchronous**: Big payload, no urgency → queue, 0-scale
+- **Auto Scaling**: Busy → add instances, idle → shrink
 
-### Managed Spot Training
+## Logging & Audit: CloudWatch vs CloudTrail
 
-```python
-estimator = Estimator(
-    image_uri=image, role=role,
-    instance_count=1, instance_type="ml.p3.2xlarge",
-    use_spot_instances=True,
-    max_run=3600,            # 최대 학습 시간
-    max_wait=7200,           # Spot 대기 포함 최대 대기 시간(max_run 이상)
-    checkpoint_s3_uri="s3://my-bucket/checkpoints",  # 중단 시 재개용
-)
-```
-
-> 💡 **관련 이론**: 추론 인스턴스 선택은 "트래픽 패턴"이 결정한다. 항상 일정한 트래픽→프로비저닝된 실시간 엔드포인트, 간헐적·예측 불가→Serverless Inference, 트래픽 없는 시간이 길거나 큰 페이로드→Asynchronous Inference. 시험에서 "유휴 시간이 많은데 비용을 줄이려면"의 정답은 거의 Serverless 또는 Async다.
-
-### 적정 인스턴스와 추론 가속
-
-추론 비용을 더 줄이려면 SageMaker Neo로 모델을 컴파일해 더 작은 인스턴스에서 빠르게 돌리거나, AWS Inferentia 같은 전용 칩을 쓴다. CPU로 충분한 추론에 GPU를 켜 두는 것은 흔한 낭비다.
-
-## 로깅·감사: CloudWatch vs CloudTrail
-
-둘은 자주 헷갈리지만 보는 대상이 다르다.
-
-| 서비스 | 무엇을 기록 | 질문 |
-|--------|-------------|------|
-| **CloudWatch Logs** | 애플리케이션/작업 로그, 지표 | "학습이 왜 실패했나? 손실은 얼마였나?" |
-| **CloudWatch Metrics/Alarms** | CPU/GPU 사용률, 지연, 호출 수 | "엔드포인트 지연이 임계값을 넘었나?" |
-| **CloudTrail** | 모든 AWS **API 호출** 감사 | "누가 이 엔드포인트를 삭제했나?" |
+| Service | Records | Question |
+|------|------|------|
+| **CloudWatch Logs** | App/job logs, metrics | "Why did training fail? What was loss?" |
+| **CloudWatch Metrics** | CPU, GPU, latency | "Was endpoint healthy? Spike?" |
+| **CloudTrail** | **All AWS API calls** | "Who deleted this? When?" |
 
 ```text
-- 학습 손실 곡선, 컨테이너 stdout → CloudWatch Logs
-- 엔드포인트 ModelLatency, Invocations, OverheadLatency → CloudWatch Metrics
-- "user X가 CreateEndpoint를 호출" → CloudTrail (S3로 영구 보관·감사)
+Training loss curves, container stdout → CloudWatch Logs
+Endpoint latency, errors → CloudWatch Metrics
+"User alice called DeleteEndpoint at 3:14 UTC" → CloudTrail
 ```
 
-CloudTrail은 누가·언제·어디서·무엇을 호출했는지를 기록하므로 규제 준수 감사의 핵심이다. 로그는 S3에 저장해 변조 방지(객체 잠금)·장기 보관한다.
+CloudTrail to S3 (permanent, tamper-proof, audit).
 
-```text
-[CloudTrail 이벤트 예]
-eventName: DeleteEndpoint
-userIdentity.arn: arn:aws:iam::1111:user/alice
-eventTime: 2026-06-29T03:14:00Z
-sourceIPAddress: 203.0.113.10
-```
+> 💡 **Related Theory**: "Debug performance" = CloudWatch. "Prove compliance" = CloudTrail. CloudTrail is who-what-when-where of every API — regulatory bedrock.
 
-> 💡 **관련 이론**: "성능/실패를 디버깅" = CloudWatch, "누가 무엇을 했는지 감사·규정 준수" = CloudTrail. 이 한 줄 구분이 시험에서 대부분의 로깅 문제를 가른다. 보안 사고 추적·컴플라이언스는 CloudTrail, 모델·인프라 상태 감시는 CloudWatch다.
+## Disaster Recovery: Data → Model → Endpoint
 
-## 재해 복구(DR): 복원력 설계
+Three assets need recovery plans.
 
-ML 시스템의 DR은 데이터·모델·엔드포인트 세 자산을 어떻게 복원하느냐다.
+### Data
+- S3 Cross-Region Replication: train data redundant
+- Versioning + immutable locks
 
-```text
-- 데이터: S3 Cross-Region Replication으로 학습 데이터를 다른 리전에 복제
-- 모델 아티팩트: S3 버전 관리 + 교차 리전 복제, Model Registry로 어떤 버전을 복원할지 추적
-- 엔드포인트: IaC(CloudFormation/Pipelines)로 재현 가능 → 다른 리전/계정에 재배포
-- 가용성: Multi-AZ 엔드포인트(instance_count ≥ 2)로 단일 AZ 장애 견딤
-```
+### Models
+- S3 versions + cross-region copy
+- Model Registry: which version to restore
 
-| DR 전략 | RTO/RPO | 비용 |
-|---------|---------|------|
-| Backup & Restore | 높음(느린 복구) | 낮음 |
-| Pilot Light | 중간 | 중간 |
-| Warm Standby | 낮음 | 높음 |
-| Multi-Region Active-Active | 최저 | 최고 |
+### Endpoints
+- IaC (CloudFormation/Pipelines): recreate in alt region/account
+- Multi-AZ (instance_count ≥ 2): survive single-AZ failure
 
-핵심은 "엔드포인트를 코드로 재현 가능하게" 두는 것이다. IaC와 Model Registry가 있으면 리전 장애 시에도 동일 모델을 다른 리전에 빠르게 다시 세울 수 있다.
+| Strategy | RTO/RPO | Cost |
+|------|------|------|
+| Backup & Restore | Slow | Low |
+| Pilot Light | Medium | Medium |
+| Warm Standby | Fast | High |
+| Multi-Region Active | Instant | Highest |
 
-## 가용성과 운영 자동화
+**Key**: Endpoint recreatable from code + Model Registry.
 
-```text
-- Endpoint Auto Scaling: TargetTrackingScaling으로 SageMakerVariantInvocationsPerInstance 기준 스케일
-- Multi-AZ: 인스턴스 ≥ 2면 SageMaker가 자동으로 여러 AZ에 분산
-- EventBridge + Lambda: 장애/드리프트 이벤트에 자동 대응
-```
+### Availability & Automation
+- Endpoint Auto Scaling: handle traffic spikes
+- Multi-AZ: instance_count ≥ 2
+- EventBridge + Lambda: auto-respond to failures
 
-## 정리하며
+## Summary
 
-운영의 세 기둥은 비용·감사·복구다. 비용은 학습(Spot·right-sizing)과 추론(Serverless·Async·MME·Auto Scaling)을 트래픽 패턴에 맞춰 줄인다. 로깅은 성능/실패 디버깅의 CloudWatch와 API 호출 감사의 CloudTrail로 명확히 나뉜다. 재해 복구는 데이터·모델의 교차 리전 복제와 IaC 기반 엔드포인트 재현, Multi-AZ로 복원력을 확보한다.
+Operations three pillars: (1) Cost = training (Spot, early-stop), inference (Serverless, Async, MME, scaling). (2) Audit = CloudWatch (debug), CloudTrail (compliance). (3) Resilience = data/model/endpoint replication, IaC, multi-AZ, auto-scale.
 
-내일은 Week 11 전체(모니터링·MLOps·보안·운영)를 종합 복습한다.
-
----
+Tomorrow: Week 11 wrap — monitoring, operations, governance integrated.
 
 ## 📝 연습 문제
 

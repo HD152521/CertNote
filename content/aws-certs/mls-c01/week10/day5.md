@@ -1,110 +1,110 @@
-# Day 5 - Week 10 종합: ML 구현 및 운영 1 — 배포·추론 복습
+# Day 5 - Week 10 Review: ML Implementation & Operations 1 — Deployment & Inference
 
-이번 주는 "학습이 끝난 모델을 어떻게 세상에 내보내는가"를 다뤘다. 추론 옵션 선택(Day 1), 실시간 엔드포인트 운영(Day 2), 추론 최적화(Day 3), 배포 전략(Day 4)은 따로 보면 별개 같지만, 실제로는 하나의 결정 흐름으로 이어진다: 어떤 추론 방식으로 → 어떤 엔드포인트 구성으로 → 어떻게 최적화하고 → 어떻게 안전하게 내보낼 것인가. 오늘은 이 흐름을 한 장으로 묶고, 시험에서 갈리는 키워드들을 정리한다.
+This week covered "how to release trained models to production." Inference option selection (Day 1), real-time endpoint operations (Day 2), inference optimization (Day 3), deployment strategies (Day 4) look separate but form one decision flow: which inference mode → which endpoint config → how to optimize → how to deploy safely. Today we compress this flow into one page and organize keywords that split answers on the exam.
 
-## 한눈에 보는 Week 10 결정 흐름
+## Week 10 Decision Flow at a Glance
 
 ```text
-[1] 추론 방식 선택
-    오프라인 대량 → Batch Transform
-    온라인 + 큰 페이로드/긴 처리 → Asynchronous
-    온라인 + 간헐적 트래픽 → Serverless
-    온라인 + 지속 트래픽/저지연 → Real-time
+[1] Choose Inference Mode
+    Offline bulk → Batch Transform
+    Online + large payload/long process → Asynchronous
+    Online + sparse traffic → Serverless
+    Online + steady traffic/low latency → Real-time
         │
-[2] (Real-time) 엔드포인트 운영
-    무중단 교체: EndpointConfig 분리 + UpdateEndpoint
-    비용/안정성: 오토스케일링(Target Tracking)
-    규모: 멀티모델(MME) / 멀티컨테이너(MCE) / 추론 파이프라인
+[2] (Real-time) Endpoint Operations
+    Zero-downtime replacement: separate EndpointConfig + UpdateEndpoint
+    Cost/stability: auto-scaling (Target Tracking)
+    Scale: Multi-Model (MME) / Multi-Container (MCE) / inference pipeline
         │
-[3] 추론 최적화
-    지연↓: Neo 컴파일, 빠른 인스턴스
-    비용↓: Elastic Inference, Inferentia, Serverless
-    처리량↑: 배치 추론, 오토스케일 증설
+[3] Inference Optimization
+    Reduce latency: Neo compilation, faster instances
+    Reduce cost: Elastic Inference, Inferentia, Serverless
+    Increase throughput: batch inference, auto-scale add instances
         │
-[4] 안전한 배포
-    노출 0 검증: 섀도
-    소수→확대 + 자동 롤백: 카나리(배포 가드레일)
-    실트래픽 KPI 비교: A/B
-    전체 전환 + 빠른 롤백: 블루/그린
+[4] Safe Deployment
+    Zero-exposure validation: shadow
+    Few→expand + auto rollback: Canary (deployment guardrails)
+    Real-traffic KPI compare: A/B
+    Full switch + fast rollback: Blue/Green
 ```
 
-> 💡 **관련 이론**: 시험 문제는 거의 항상 [1]~[4] 중 한 칸을 묻는다. 지문의 키워드(트래픽 패턴, 페이로드 크기, 지연/비용/처리량 요구, 사용자 노출 여부)를 잡아 해당 칸으로 매핑하는 것이 핵심 스킬이다.
+> 💡 **Related Theory**: Exam questions almost always ask [1]~[4] slots. Key skill: grab keywords from the prompt (traffic pattern, payload size, latency/cost/throughput need, user exposure) and map to the correct slot.
 
-## Day 1 복습: 추론 옵션 핵심 표
+## Day 1 Review: Inference Options Essential Table
 
 ```text
-옵션           지연    트래픽       페이로드/시간   유휴비용
-Real-time      ms      지속적       6MB / 60초      상시 과금
-Serverless     초      간헐적       4MB / 60초      0원(콜드스타트)
-Asynchronous   준실시간 큐잉/대형    1GB / 1시간     0 스케일 가능
-Batch          오프라인 대량 일괄    대용량          잡 실행 시간만
+Option          Latency  Traffic    Payload/Time   Idle Cost
+Real-time       ms       Continuous 6MB / 60s      Always charged
+Serverless      seconds  Sparse     4MB / 60s      Free (cold start)
+Asynchronous    quasi    Queued/big 1GB / 1 hour   0, scalable
+Batch           Offline  Bulk once  Large          Job time only
 ```
 
-가장 자주 틀리는 함정: "간헐적 트래픽인데 Real-time 상시 운영" → Serverless 권장, "500MB 페이로드를 Real-time으로" → 6MB 초과로 불가, Asynchronous 사용.
+Most common traps: "sparse traffic with always-on Real-time" → use Serverless; "500MB payload on Real-time" → exceeds 6MB limit, use Asynchronous.
 
-## Day 2 복습: 엔드포인트 운영
+## Day 2 Review: Endpoint Operations
 
-- **3계층**: Model → EndpointConfig → Endpoint. 분리 덕분에 무중단 교체 가능.
-- **오토스케일링**: Target Tracking + `SageMakerVariantInvocationsPerInstance`가 기본. MinCapacity ≥ 1(완전 0은 Serverless/Async).
-- **규모 패턴 3종 구분**:
-  - MME = 같은 컨테이너, 다른 모델 수천 개 동적 로딩(비용 절감)
-  - MCE = 서로 다른 컨테이너(Direct/Serial)
-  - 추론 파이프라인 = 전처리→예측→후처리 직렬(학습-서빙 스큐 방지)
+- **3-tier**: Model → EndpointConfig → Endpoint. Separation enables zero-downtime replacement.
+- **Auto-scaling**: Target Tracking + `SageMakerVariantInvocationsPerInstance` default. MinCapacity ≥ 1 (full 0 only for Serverless/Async).
+- **3 Scale Patterns**:
+  - MME = same container, thousands different models dynamically loaded (cost savings)
+  - MCE = different containers (Direct/Serial)
+  - Inference pipeline = preprocess→predict→postprocess serial (prevent training-serving skew)
 
-## Day 3 복습: 추론 최적화
+## Day 3 Review: Inference Optimization
 
 ```text
-Neo            : 대상 하드웨어용 컴파일. 정확도 유지, 속도/메모리 개선. 엣지 배포 강점
-Elastic Infer. : CPU 인스턴스에 부분 GPU 가속 부착(비용 절감)
-Inferentia     : 추론 전용 칩(Inf1/Inf2). 고처리량·비용 효율
-Trainium       : 학습 전용 칩(혼동 주의 — 추론 아님)
-모델 경량화     : 양자화(INT8), 프루닝, 지식 증류
+Neo            : Compile for target hardware. Maintain accuracy, improve speed/memory. Edge strong
+Elastic Infer. : Attach partial GPU acceleration to CPU instance (cost savings)
+Inferentia     : Inference-only chip (Inf1/Inf2). High throughput, cost-efficient
+Trainium       : Training-only chip (confusion alert — NOT inference)
+Model lightweighting : Quantization (INT8), pruning, knowledge distillation
 ```
 
-요구별 매칭: 지연↓→Neo/빠른 인스턴스, 비용↓→EI/Inferentia/Serverless, 처리량↑→배치/Inferentia.
+Match by need: lower latency→Neo/fast instances, lower cost→EI/Inferentia/Serverless, higher throughput→batch/Inferentia.
 
-## Day 4 복습: 배포 전략
+## Day 4 Review: Deployment Strategies
 
 ```text
-A/B        : 실트래픽으로 두 모델 KPI 비교(통계적 유의성 필요)
-블루/그린   : 전체 전환 + 블루 살아 있어 빠른 롤백
-카나리      : 소수(5%)→점진 확대, 배포 가드레일 + CloudWatch 자동 롤백
-섀도        : 응답을 사용자에게 반환하지 않는 무위험 검증
+A/B        : Compare KPI of two models on real traffic (need statistical significance)
+Blue/Green : Full switch + blue alive for fast rollback
+Canary     : Few (5%)→gradual expand, deployment guardrails + CloudWatch auto-rollback
+Shadow     : Return responses to users — zero-risk validation
 ```
 
-가장 헷갈리는 구분: "사용자 노출 0 + 실트래픽 검증" = 섀도, "소수 노출 후 확대 + 자동 복귀" = 카나리, "분할 노출 비교" = A/B.
+Trickiest distinctions: "zero user exposure + real-traffic validation" = shadow; "small exposure→expand + auto-return" = canary; "split exposure comparison" = A/B.
 
-## 통합 시나리오 사고법
+## Integrated Scenario Approach
 
-시험 지문을 만나면 다음 순서로 키워드를 잡는다.
+When encountering exam prompts, grab keywords in this order:
 
 ```text
-1. 온라인인가 오프라인인가?           (실시간 응답 필요 여부)
-2. 페이로드 크기와 처리 시간은?        (6MB/60초 초과 여부)
-3. 트래픽 패턴은?                      (지속/간헐)
-4. 무엇을 줄이려 하나?                 (지연/비용/처리량)
-5. 사용자에게 새 모델을 노출해도 되나?  (섀도/카나리/A-B/블루그린)
+1. Online or offline?                    (need real-time response?)
+2. Payload size and processing time?     (exceed 6MB/60s?)
+3. Traffic pattern?                      (continuous/sparse)
+4. What to reduce?                       (latency/cost/throughput)
+5. Expose new model to users?            (shadow/canary/A-B/blue-green)
 ```
 
-이 다섯 질문이 Week 10의 모든 결정 칸을 커버한다.
+These five questions cover all Week 10 decision slots.
 
-## 자주 나오는 함정 정리
+## Common Traps Summary
 
 ```text
-함정                                   → 올바른 처방
-간헐적 트래픽에 상시 Real-time          → Serverless 또는 Async(0 스케일)
-큰 페이로드/긴 처리를 Real-time으로      → Asynchronous(1GB/1시간)
-서로 다른 프레임워크 모델을 MME에        → MCE(컨테이너가 달라야 함)
-전처리 정합성 문제                      → 추론 파이프라인(직렬 컨테이너)
-엣지 배포 지연 감소                      → Neo 컴파일
-학습용 칩 Inferentia로 착각             → Inferentia=추론, Trainium=학습
-사용자 영향 없이 검증하고 싶다           → 섀도 배포
-안전한 점진 배포 + 자동 복귀            → 배포 가드레일 Canary/Linear
+Trap                                     → Correct Fix
+Sparse traffic with always-on Real-time   → Serverless or Async (0-scale)
+Large payload/long process on Real-time   → Asynchronous (1GB/1 hour)
+Different framework models in MME         → MCE (different containers needed)
+Preprocessing consistency issue           → Inference pipeline (serial containers)
+Reduce edge latency                       → Neo compilation
+Training chip mistaken for Inferentia     → Inferentia=inference, Trainium=training
+Validate with zero user impact            → Shadow deployment
+Safe gradual deploy + auto rollback       → Canary/Linear deployment guardrails
 ```
 
-## 마무리
+## Wrap-up
 
-Week 10은 모델을 "동작하게" 만드는 것을 넘어 "효율적이고 안전하게 운영"하는 단계였다. 추론 옵션 → 엔드포인트 운영 → 최적화 → 배포 전략이라는 흐름과, 각 단계에서 키워드가 어떻게 정답을 가르는지를 체득했다면 이 주차의 목표는 달성된 것이다. 다음 주(Week 11)에서는 ML 구현 및 운영의 두 번째 축 — 모니터링, 모델 드리프트 탐지, 보안과 비용 거버넌스 — 로 이어진다.
+Week 10 moved beyond "making models work" to "operating them efficiently and safely." If you've internalized the flow (inference option → endpoint operations → optimization → deployment strategy) and how keywords split answers at each stage, you've achieved this week's goal. Next week (Week 11) continues ML implementation and operations' second axis — monitoring, model drift detection, security, and cost governance.
 
 ## 📝 연습 문제
 

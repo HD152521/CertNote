@@ -1,102 +1,102 @@
-# Day 3 - 데이터 증강과 합성: 부족하고 불균형한 데이터에 대응하기
+# Day 3 - Data Augmentation and Synthesis: Addressing Insufficient and Imbalanced Data
 
-좋은 모델을 만들려면 충분하고 균형 잡힌 데이터가 필요하다. 그런데 현실은 그렇지 않을 때가 많다. 희귀 질병 진단 데이터는 양성 샘플이 극소수이고, 사기 거래는 전체의 0.1%에 불과하며, 특정 클래스의 이미지는 몇 장밖에 없다. 이런 상황을 그대로 두면 모델은 다수 클래스만 잘 맞히고 정작 중요한 소수 클래스를 놓친다.
+Building a good model requires sufficient and balanced data. However, reality is often different. Rare disease diagnostic data has very few positive samples, fraudulent transactions represent only 0.1% of the total, and certain classes of images may have only a handful of examples. If this situation is left unchanged, the model will only match the majority class well and miss the important minority class.
 
-오늘은 부족한 데이터를 늘리는 **데이터 증강(augmentation)**과 **합성(synthesis)**, 그리고 **불균형 데이터** 대응 기법(SMOTE 등)의 개념을 다룬다. MLS-C01은 코드 구현보다 "어떤 상황에 어떤 기법이 적절한가"를 묻는다.
+Today, we cover the concepts of **data augmentation** and **synthesis**, as well as techniques for handling **imbalanced data** (such as SMOTE). The MLS-C01 exam asks not so much about code implementation, but rather "which technique is appropriate for which situation."
 
-## 데이터 증강이란
+## What is Data Augmentation?
 
-데이터 증강은 **기존 데이터를 변형해 새로운 학습 샘플을 만들어 내는** 기법이다. 새 데이터를 수집하지 않고도 데이터셋의 다양성과 양을 늘려 모델의 일반화 성능을 높이고 과적합을 줄인다.
+Data augmentation is a technique that **transforms existing data to create new training samples**. Without collecting new data, it increases the diversity and volume of a dataset, improving the model's generalization performance and reducing overfitting.
 
-> 💡 **관련 이론**: 증강의 핵심 원리는 "레이블을 바꾸지 않는 변형"이다. 고양이 사진을 좌우 반전해도 여전히 고양이다. 즉 입력은 다양해지되 정답(레이블)은 유지되는 변형만 적용해야 한다. 이를 통해 모델은 "위치·각도·밝기가 달라도 본질은 같다"는 불변성(invariance)을 학습한다.
+> 💡 **Related Theory**: The core principle of augmentation is "transformation that does not change the label." Flipping a cat photo horizontally still leaves it a cat. In other words, only transformations that diversify the input while preserving the correct answer (label) should be applied. Through this, the model learns invariance—that "the essence is the same even if position, angle, or brightness differ."
 
-### 이미지 증강
+### Image Augmentation
 
-이미지는 증강이 가장 활발한 영역이다. 대표적 변형:
+Images are the most active domain for augmentation. Representative transformations include:
 
-- **기하 변환**: 좌우/상하 반전, 회전, 이동(translation), 확대·축소(scaling), 자르기(crop)
-- **색·밝기 변환**: 밝기·대비·채도 조정, 색상 지터(jitter)
-- **노이즈·차폐**: 가우시안 노이즈 추가, 일부 영역 가리기(Cutout), 두 이미지 혼합(Mixup/CutMix)
+- **Geometric transformations**: Horizontal/vertical flips, rotation, translation, scaling, cropping
+- **Color and brightness transformations**: Adjusting brightness, contrast, saturation; color jitter
+- **Noise and masking**: Adding Gaussian noise, masking regions (Cutout), mixing two images (Mixup/CutMix)
 
 ```python
-# 이미지 증강 (개념 예시 — torchvision transforms)
+# Image augmentation (conceptual example — torchvision transforms)
 from torchvision import transforms
 
 augment = transforms.Compose([
-    transforms.RandomHorizontalFlip(p=0.5),   # 좌우 반전
-    transforms.RandomRotation(degrees=15),    # ±15도 회전
-    transforms.ColorJitter(brightness=0.2,    # 밝기·대비 변화
+    transforms.RandomHorizontalFlip(p=0.5),   # horizontal flip
+    transforms.RandomRotation(degrees=15),    # ±15 degree rotation
+    transforms.ColorJitter(brightness=0.2,    # brightness and contrast changes
                            contrast=0.2),
-    transforms.RandomResizedCrop(224),        # 무작위 크롭 후 리사이즈
+    transforms.RandomResizedCrop(224),        # random crop then resize
 ])
 ```
 
-> ⚠️ **함정**: 증강을 무분별하게 적용하면 레이블이 깨질 수 있다. 예를 들어 숫자 인식에서 "6"을 180도 회전하면 "9"가 되어 레이블이 틀려진다. 또 의료 영상에서 좌우 반전은 좌/우 장기를 뒤바꿔 진단 의미를 훼손할 수 있다. 증강은 **도메인 의미를 보존하는 범위 안에서만** 적용해야 한다.
+> ⚠️ **Pitfall**: Indiscriminate augmentation can corrupt labels. For example, in digit recognition, rotating "6" by 180 degrees becomes "9," corrupting the label. Additionally, in medical imaging, horizontal flipping can swap left/right organs and compromise diagnostic meaning. Augmentation should be applied **only within the bounds of preserving domain meaning**.
 
-### 텍스트 증강
+### Text Augmentation
 
-텍스트는 이미지보다 까다롭다(단어 하나 바꿔도 의미가 변할 수 있다). 그래도 흔히 쓰이는 기법:
+Text is more challenging than images (changing a single word can change meaning). Still, commonly used techniques include:
 
-- **동의어 치환(synonym replacement)**: 일부 단어를 동의어로 교체
-- **역번역(back-translation)**: 한국어 → 영어 → 한국어로 번역해 표현을 다양화
-- **무작위 삽입·삭제·교환**: 단어를 일부 추가·제거·위치 교환
-- **임베딩 기반 치환·문맥 모델 활용**: 사전학습 언어모델로 자연스러운 변형 생성
+- **Synonym replacement**: Replacing some words with synonyms
+- **Back-translation**: Translating Korean → English → Korean to diversify expressions
+- **Random insertion, deletion, and swap**: Adding, removing, or rearranging some words
+- **Embedding-based substitution and contextual model usage**: Creating natural variations using pre-trained language models
 
-## 데이터 합성 — 없는 데이터를 만들어 내기
+## Data Synthesis — Creating Data That Doesn't Exist
 
-증강이 "기존 데이터의 변형"이라면, 합성은 **완전히 새로운 가상의 데이터를 생성**하는 것에 가깝다. 실데이터가 극히 부족하거나, 프라이버시 때문에 실데이터를 못 쓸 때 활용한다.
+If augmentation is "transformation of existing data," synthesis is closer to **generating completely new virtual data**. It is used when real data is extremely scarce or when real data cannot be used due to privacy concerns.
 
-- **GAN(생성적 적대 신경망)**: 생성기와 판별기가 경쟁하며 진짜 같은 이미지를 만들어 낸다.
-- **시뮬레이션·합성 데이터셋**: 자율주행처럼 위험·희귀 상황을 시뮬레이터로 생성.
-- **합성 정형 데이터**: 통계적 분포를 모방해 개인정보 없는 가짜 테이블 데이터를 생성(프라이버시 보호).
+- **GAN (Generative Adversarial Network)**: A generator and discriminator compete to produce realistic images.
+- **Simulation and synthetic datasets**: Generating rare or dangerous scenarios via simulation, as in autonomous driving.
+- **Synthetic tabular data**: Generating fake table data without personal information by mimicking statistical distributions (privacy protection).
 
-> 💡 **관련 이론**: 합성 데이터는 강력하지만 "분포 갭(distribution gap)" 위험이 있다. 합성 데이터가 실제 데이터 분포를 완벽히 재현하지 못하면, 거기서 학습한 모델이 실세계에서 성능이 떨어진다. 그래서 합성 데이터는 보통 실데이터를 **보완**하는 용도로 쓰며, 검증은 반드시 실데이터로 한다.
+> 💡 **Related Theory**: Synthetic data is powerful but carries the risk of "distribution gap." If synthetic data fails to perfectly reproduce the actual data distribution, models trained on it will show degraded performance in the real world. Therefore, synthetic data is typically used to **supplement** real data, and validation must always be done on real data.
 
-## 불균형 데이터 대응
+## Handling Imbalanced Data
 
-클래스 불균형(class imbalance)은 ML 시험의 단골 주제다. 사기 탐지처럼 양성:음성 = 1:999인 경우, 모델이 "전부 음성"이라 답해도 정확도가 99.9%로 나온다 — 하지만 사기를 하나도 못 잡는 쓸모없는 모델이다.
+Class imbalance is a recurring topic in ML exams. In fraud detection, where positive:negative = 1:999, a model that answers "all negative" achieves 99.9% accuracy—but it's a useless model that catches no fraud.
 
-대응 전략은 크게 세 갈래다.
+The response strategy has three major approaches.
 
-### 1. 데이터 수준 — 리샘플링
+### 1. Data Level — Resampling
 
-- **오버샘플링(oversampling)**: 소수 클래스를 복제·증강해 늘린다.
-- **언더샘플링(undersampling)**: 다수 클래스를 줄여 균형을 맞춘다(데이터 손실 위험).
-- **SMOTE(Synthetic Minority Over-sampling Technique)**: 소수 클래스 샘플들 사이를 보간(interpolation)해 **새로운 합성 샘플**을 생성한다. 단순 복제와 달리 다양성을 더한다.
+- **Oversampling**: Duplicating and augmenting minority class samples to increase them.
+- **Undersampling**: Reducing majority class samples to balance (risks data loss).
+- **SMOTE (Synthetic Minority Over-sampling Technique)**: Interpolating between minority class samples to **generate new synthetic samples**. Unlike simple duplication, it adds diversity.
 
 ```python
-# SMOTE로 소수 클래스 합성 오버샘플링 (개념 예시 — imbalanced-learn)
+# Synthetic minority oversampling with SMOTE (conceptual example — imbalanced-learn)
 from imblearn.over_sampling import SMOTE
 
 smote = SMOTE(random_state=42)
 X_balanced, y_balanced = smote.fit_resample(X_train, y_train)
-# 소수 클래스 샘플들 사이를 보간한 합성 샘플이 추가되어 클래스 비율이 균형화됨
+# Synthetic samples interpolated between minority class samples are added, balancing class ratios
 ```
 
-> 💡 **관련 이론**: SMOTE는 단순 복제(중복으로 인한 과적합 위험)와 달리, 기존 소수 샘플과 그 최근접 이웃 사이의 선을 따라 **새로운 점을 생성**한다. 따라서 모델이 더 일반화된 결정 경계를 학습하게 돕는다. 다만 노이즈나 클래스 경계가 모호한 데이터에서는 잘못된 합성 샘플을 만들 수 있어 주의가 필요하다.
+> 💡 **Related Theory**: Unlike simple duplication (which risks overfitting from duplication), SMOTE **creates new points** along the line between existing minority samples and their nearest neighbors. This helps the model learn a more generalized decision boundary. However, caution is needed as it can create incorrect synthetic samples in noisy or ambiguous class boundary data.
 
-### 2. 알고리즘 수준 — 가중치·임계값
+### 2. Algorithm Level — Weights and Thresholds
 
-- **클래스 가중치(class weights)**: 손실 함수에서 소수 클래스 오류에 더 큰 페널티를 준다.
-- **결정 임계값 조정**: 기본 0.5 대신 소수 클래스를 더 잘 잡도록 임계값을 옮긴다.
+- **Class weights**: Applying larger penalties for minority class errors in the loss function.
+- **Decision threshold adjustment**: Moving the threshold from the default 0.5 to better capture the minority class.
 
-### 3. 평가 지표 수준
+### 3. Evaluation Metric Level
 
-> ⚠️ **함정**: 불균형 데이터에서 **정확도(accuracy)는 거짓 안심을 준다**. 1:999 데이터에서 99.9% 정확도는 사실상 무의미하다. 대신 **정밀도(precision), 재현율(recall), F1, PR-AUC, ROC-AUC** 같은 지표를 봐야 소수 클래스 성능을 제대로 평가할 수 있다. 특히 사기·질병처럼 소수 클래스가 중요하면 **재현율**과 **PR-AUC**가 핵심이다.
+> ⚠️ **Pitfall**: With imbalanced data, **accuracy provides false reassurance**. 99.9% accuracy on 1:999 data is essentially meaningless. Instead, metrics like **precision, recall, F1, PR-AUC, ROC-AUC** should be used to properly evaluate minority class performance. Especially for fraud and disease where the minority class is critical, **recall** and **PR-AUC** are key.
 
-## AWS 맥락에서의 적용
+## Application in AWS Context
 
-- **SageMaker Processing / Data Wrangler**: 전처리 단계에서 리샘플링·증강 로직을 실행.
-- **SageMaker built-in 알고리즘의 가중치 옵션**: 예) XGBoost의 `scale_pos_weight`로 불균형 보정.
-- **GAN 학습**: SageMaker 학습 작업으로 생성 모델을 훈련해 합성 데이터를 만들 수 있다.
+- **SageMaker Processing / Data Wrangler**: Execute resampling and augmentation logic during preprocessing.
+- **Weight options in SageMaker built-in algorithms**: For example, using XGBoost's `scale_pos_weight` to correct imbalance.
+- **GAN training**: Train generative models through SageMaker training jobs to create synthetic data.
 
-> 🎯 **시나리오**: "신용카드 사기 탐지 데이터가 양성 0.2%로 극도로 불균형하다. 모델이 사기를 거의 못 잡는다." → (1) SMOTE 등 오버샘플링이나 클래스 가중치로 불균형을 보정하고, (2) 평가는 정확도가 아니라 재현율·PR-AUC로 하며, (3) 결정 임계값을 사기 검출 쪽으로 조정한다.
+> 🎯 **Scenario**: "Credit card fraud detection data is extremely imbalanced at 0.2% positive rate. The model barely catches fraud." → (1) Correct imbalance with oversampling like SMOTE or class weights, (2) evaluate using recall and PR-AUC instead of accuracy, and (3) adjust the decision threshold toward fraud detection.
 
-## 정리하며
+## Summary
 
-오늘은 데이터가 부족하거나 불균형할 때의 대응을 배웠다. **증강은 레이블을 보존하는 변형으로 기존 데이터를 다양화**하고(이미지 반전·회전, 텍스트 역번역 등), **합성은 새로운 가상 데이터를 생성**한다(GAN, 시뮬레이션, 합성 정형 데이터). 불균형 데이터는 **리샘플링(SMOTE), 클래스 가중치, 임계값 조정**으로 다루되, 평가는 정확도가 아니라 **재현율·F1·PR-AUC**로 해야 한다. 합성·증강 데이터의 검증은 항상 실데이터로 한다는 원칙을 기억하자.
+Today we learned how to handle situations with insufficient or imbalanced data. **Augmentation diversifies existing data through label-preserving transformations** (image flipping/rotation, text back-translation, etc.), while **synthesis generates new virtual data** (GANs, simulation, synthetic tabular data). For imbalanced data, use **resampling (SMOTE), class weights, and threshold adjustment**, but evaluate using **recall, F1, and PR-AUC** rather than accuracy. Remember the principle that validation of synthesized and augmented data must always be done on real data.
 
-내일은 이렇게 준비한 대규모 데이터를 학습 시 **어떻게 효율적으로 저장하고 읽어 들이는가**(Pipe/File mode, FSx for Lustre, 샤딩)를 다룬다.
+Tomorrow we will cover **how to efficiently store and read large-scale data during training** (Pipe/File mode, FSx for Lustre, sharding).
 
 ---
 

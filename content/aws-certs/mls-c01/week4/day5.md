@@ -1,19 +1,19 @@
-# Day 5 - Week 4 종합: 차원 축소·특성 선택·시각화·불균형 복습
+# Day 5 - Week 4 Comprehensive Review: Dimensionality, Feature Selection, Visualization, Imbalance
 
-Week 4는 탐색적 데이터 분석(EDA)의 두 번째 묶음 — **고차원과 불균형을 다루는 기술** — 을 다뤘다. 오늘은 4일치를 하나의 워크플로로 엮어 복습하고, 시험에서 헷갈리기 쉬운 대비 포인트를 정리한다.
+Week 4 covered the second cluster of EDA—**techniques for handling high dimensions and class imbalance**. Today we knit four days into one workflow, review holistically, and highlight exam traps.
 
-## 한눈에 보는 Week 4
+## Week 4 at a Glance
 
-| Day | 주제 | 핵심 |
+| Day | Topic | Essentials |
 |-----|------|------|
-| 1 | 차원 축소 | 차원의 저주, PCA(분산 보존·표준화 필수), t-SNE(시각화 전용) |
-| 2 | 특성 선택 | 필터·래퍼·임베디드, 특성 중요도, 다중공선성(VIF) |
-| 3 | 데이터 시각화 | 분포·상관 차트, QuickSight, 앤스컴의 교훈 |
-| 4 | 클래스 불균형 | 정확도 역설, SMOTE·언더샘플, 클래스 가중치, PR-AUC |
+| 1 | Dimensionality reduction | Curse of dimensionality, PCA (variance preservation, standardization mandatory), t-SNE (visualization only) |
+| 2 | Feature selection | Filter, wrapper, embedded; feature importance; multicollinearity (VIF) |
+| 3 | Data visualization | Distribution, correlation charts; QuickSight; Anscombe's lesson |
+| 4 | Class imbalance | Accuracy paradox; SMOTE, undersampling; class weights; PR-AUC |
 
-## 통합 워크플로
+## Unified Workflow
 
-고차원·불균형 데이터에 대한 전형적 EDA·전처리 순서다.
+Typical EDA and preprocessing order for high-dimensional, imbalanced data.
 
 ```python
 from sklearn.model_selection import train_test_split
@@ -22,15 +22,15 @@ from sklearn.decomposition import PCA
 from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline
 
-# 1) 먼저 분할 — 모든 fit은 학습셋에서만 (누수 방지)
+# 1) Split first—all fit on train only (prevent leakage)
 X_tr, X_te, y_tr, y_te = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42)
 
-# 2) 시각화로 분포·상관·불균형 점검 (학습셋 기준)
-#    히스토그램/박스플롯, 상관 히트맵, 클래스 분포 막대
+# 2) Visualize distribution, correlation, imbalance (on train)
+#    Histograms/boxplots, correlation heatmap, class distribution bar
 
-# 3) 표준화 → 차원 축소(또는 특성 선택)
-# 4) 리샘플링은 학습셋에만, Pipeline 안에서
+# 3) Standardize → dimensionality reduce (or feature selection)
+# 4) Resample in train only, within Pipeline
 pipe = Pipeline([
     ("scaler", StandardScaler()),
     ("pca", PCA(n_components=0.95)),
@@ -39,52 +39,52 @@ pipe = Pipeline([
 X_tr_proc, y_tr_proc = pipe.fit_resample(X_tr, y_tr)
 ```
 
-> 💡 **관련 이론**: 이 워크플로의 일관된 원칙은 "**분할 먼저, fit은 학습셋에서만**"이다. 표준화·PCA·SMOTE·특성 선택·결측 대치 — 모든 데이터 의존 변환은 테스트 정보가 새지 않도록 학습셋에서 학습한 통계/규칙을 테스트에 적용만 해야 한다. 이 한 가지 원칙이 Week 3(정제·인코딩)부터 Week 4(차원·불균형)까지를 관통한다.
+> 💡 **Key Theory**: This workflow's binding principle: "**split first, fit training set only**." Standardization, PCA, SMOTE, feature selection, imputation—all data-dependent transformations must learn statistics/rules from the training set and apply only to test. This one principle threads from Week 3 (cleaning, encoding) through Week 4 (dimensionality, imbalance).
 
-## 헷갈리기 쉬운 대비 포인트
+## Confusing Comparisons
 
-### PCA vs 특성 선택
+### PCA vs Feature Selection
 
-| 구분 | PCA | 특성 선택 |
+| Distinction | PCA | Feature Selection |
 |------|-----|-----------|
-| 결과 특성 | 합성 축(의미 소실) | 원본 부분집합(해석 유지) |
-| 유형 | 비지도 | 지도/비지도 모두 |
-| 다중공선성 | 직교 축으로 해소 | 상관 특성 제거 |
-| 규제 산업 | 설명 어려움 | 설명 가능, 선호 |
+| Result features | Synthetic axes (meaning lost) | Original subset (interpretability kept) |
+| Type | Unsupervised | Both supervised and unsupervised |
+| Multicollinearity | Resolved via orthogonal axes | Remove correlated features |
+| Regulated industry | Hard to explain | Explainable, preferred |
 
 ### PCA vs t-SNE
 
-- PCA: 선형, 전역 분산 보존, 새 데이터 `transform` 가능, 모델 전처리 가능
-- t-SNE: 비선형, 국소 구조, 재학습 필요, **시각화 전용**
+- **PCA**: Linear, preserves global variance, `transform` new data possible, suitable for model preprocessing
+- **t-SNE**: Nonlinear, preserves local structure, requires retraining, **visualization-only**
 
-### 불균형 대응 선택
+### Imbalance Response Choices
 
-- 데이터 변경 가능 + 다양성 필요 → **SMOTE**
-- 데이터 매우 큼 + 속도 중요 → **언더샘플링**
-- 데이터 그대로 유지 → **클래스 가중치** / **임계값 조정**
+- Data modifiable + diversity needed → **SMOTE**
+- Huge data + speed matters → **Undersampling**
+- Keep data unchanged → **Class weights** / **Threshold tuning**
 
-> 💡 **관련 이론**: 시험에서 자주 묶이는 함정 세 가지 — (1) "t-SNE 임베딩을 분류기 입력으로" → 틀림(시각화 전용). (2) "불균형에서 정확도가 99%니 좋다" → 정확도 역설. (3) "분할 전에 SMOTE/스케일링" → 데이터 누수. 이 셋만 정확히 구분해도 EDA 영역 점수가 안정된다.
+> 💡 **Key Theory**: Three frequent exam traps: (1) "Use t-SNE embeddings as classifier input" → wrong (visualization only). (2) "Accuracy 99% in imbalanced data is good" → accuracy paradox. (3) "Apply SMOTE/scaling before split" → data leakage. Mastering these three solidifies EDA section scores.
 
-## AWS 서비스 매핑 복습
+## AWS Service Mapping Review
 
-| 작업 | 서비스/도구 |
+| Task | Service/Tool |
 |------|-------------|
-| 대규모 PCA | SageMaker 내장 PCA(`randomized` 모드) |
-| 시각적 데이터 준비·분포 리포트 | SageMaker Data Wrangler |
-| 코드 기반 EDA 시각화 | SageMaker 노트북(seaborn/matplotlib) |
-| BI 대시보드·ML Insights | Amazon QuickSight |
-| S3 서버리스 SQL 분석 | Amazon Athena (+ QuickSight) |
-| 학습 전 편향·분포 점검 | SageMaker Clarify |
+| Large-scale PCA | SageMaker built-in PCA (`randomized` mode) |
+| Visual data prep and distribution reports | SageMaker Data Wrangler |
+| Code-based EDA visualization | SageMaker notebook (seaborn/matplotlib) |
+| BI dashboards and ML Insights | Amazon QuickSight |
+| Serverless SQL analysis on S3 | Amazon Athena (+ QuickSight) |
+| Pre-training bias and distribution check | SageMaker Clarify |
 
-## 시험 대비 핵심 요약
+## Exam Prep Summary
 
-- **차원의 저주**: 고차원에서 거리 변별력 상실 → 거리 기반(KNN·K-means) 취약
-- **PCA**: 분산 보존, 표준화 필수, 설명 분산 비율로 k 선택
-- **t-SNE**: 시각화 전용, 클러스터 간 거리 의미 없음
-- **특성 선택 3종**: 필터(빠름·독립) / 래퍼(정확·느림) / 임베디드(Lasso·트리)
-- **다중공선성**: VIF>5~10 주의, 선형 모델에 치명적, 트리는 둔감
-- **시각화**: 통계 요약만 믿지 말고 그려 본다(앤스컴); 피어슨은 선형만
-- **불균형**: 정확도 역설, SMOTE는 학습셋에만, PR-AUC, 클래스 가중치/임계값 조정
+- **Curse of dimensionality**: High dimensions lose distance discriminability → distance-based (KNN, K-means) vulnerable
+- **PCA**: Preserve variance, standardization mandatory, select k by explained variance ratio
+- **t-SNE**: Visualization-only, inter-cluster distance meaningless
+- **Feature selection 3 types**: Filter (fast, independent) / Wrapper (accurate, slow) / Embedded (Lasso, trees)
+- **Multicollinearity**: VIF > 5–10 caution; deadly for linear, ignorable for trees
+- **Visualization**: Don't trust summary stats alone—visualize (Anscombe); Pearson is linear-only
+- **Imbalance**: Accuracy paradox; SMOTE on training set only; PR-AUC; class weights/threshold tuning
 
 ## 📝 연습 문제
 

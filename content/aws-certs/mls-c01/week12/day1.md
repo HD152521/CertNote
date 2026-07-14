@@ -1,124 +1,90 @@
-# Day 1 - 도메인 1·2 통합 복습: 데이터 엔지니어링 + 탐색적 데이터 분석
+# Day 1 - Domains 1 & 2 Integration: Data Engineering + EDA
 
-마지막 주의 시작이다. 오늘은 시험 비중의 약 40%를 차지하는 앞쪽 두 도메인 — **도메인 1 데이터 엔지니어링(20%)**과 **도메인 2 탐색적 데이터 분석(24%)** — 을 한 흐름으로 복습한다. 두 도메인은 "데이터를 모으고, 저장하고, 옮기고, 변환하고, 정제하고, 시각화해서 학습 가능한 상태로 만드는" 한 파이프라인의 앞부분이다. 개별 서비스 암기가 아니라 "요구사항이 어떤 단어로 표현되면 어떤 서비스·기법으로 번역되는가"를 다시 세운다.
+Week 12: final review, four domains in integrated flow. Today, **Domains 1 (data eng) & 2 (EDA)** — data collected, stored, transformed, cleaned, featured into training-ready form. The pipeline **data → lake → transform → clean → visualize → ML-ready**.
 
-## 한 장 요약: 데이터가 학습 가능해지기까지
+## One-Sheet: Data Becomes Training-Ready
 
 ```text
-[원천 데이터]
+[Raw sources]
    │
-   ├─ 1) 수집/적재 (도메인 1)
-   │     실시간 스트림 → Kinesis (Data Streams / Firehose)
-   │     배치 적재     → S3 + Glue 카탈로그
-   │     관계형/이관   → DMS, DataSync
+   ├─ 1) COLLECT/LOAD (Domain 1)
+   │     Streaming → Kinesis (Streams/Firehose)
+   │     Batch    → S3 + Glue catalog
+   │     Migration → DMS, DataSync
    │
-   ├─ 2) 저장 (도메인 1)
-   │     데이터 레이크 = S3 (사실상 표준)
-   │     쿼리         = Athena(서버리스), Redshift(웨어하우스)
+   ├─ 2) STORE (Domain 1)
+   │     Lake = S3 (de facto standard)
+   │     Query = Athena (serverless), Redshift (warehouse)
    │
-   ├─ 3) 변환/ETL (도메인 1)
-   │     Glue(서버리스 Spark) / EMR(대규모 클러스터)
+   ├─ 3) TRANSFORM/ETL (Domain 1)
+   │     Glue (serverless Spark) / EMR (clusters)
    │
-   ├─ 4) 정제 (도메인 2)
-   │     결측치 처리, 이상치, 중복 제거, 타입 보정
+   ├─ 4) CLEAN (Domain 2)
+   │     Missing → impute/drop
+   │     Outliers → clip, remove
+   │     Dupe → dedupe
    │
-   ├─ 5) 피처 엔지니어링 (도메인 2)
-   │     인코딩, 스케일링, 비닝, 차원 축소(PCA)
+   ├─ 5) FEATURE (Domain 2)
+   │     Encode, scale, bin, PCA
    │
-   └─ 6) 시각화/EDA (도메인 2)
-         분포·상관·이상치 탐색 → QuickSight, 산점도/히스토그램
+   └─ 6) VISUALIZE/EDA (Domain 2)
+         Distribution, corr, anomaly → QuickSight
 ```
 
-## 도메인 1: 수집과 스트리밍 (Kinesis 4종)
+## Domain 1: Collection & Storage
 
-스트리밍 문제는 거의 항상 Kinesis 4형제의 역할 구분으로 갈린다.
-
-| 서비스 | 핵심 역할 | 단서 단어 |
+| Task | Service | Signal |
 |------|------|------|
-| Kinesis Data Streams | 실시간 수집, 커스텀 소비자, 샤드 관리 | 밀리초 지연, 다중 소비자, 재처리 |
-| Kinesis Data Firehose | 완전관리 적재(S3/Redshift/OpenSearch) | 서버리스, 버퍼링 후 적재, 변환 |
-| Kinesis Data Analytics | 스트림에 SQL/Flink로 실시간 분석 | 실시간 집계, 윈도우 쿼리 |
-| Kinesis Video Streams | 비디오 스트림 수집 | 카메라, 영상 |
+| Real-time multi-consumer | Kinesis Streams | millisec, replay |
+| Managed S3 load | Kinesis Firehose | serverless |
+| S3 queries | Athena | adhoc, no cluster |
+| Warehouse | Redshift | sized, persistent |
+| ETL | Glue (serverless) or EMR (cluster) | scale |
 
-> 💡 **관련 이론**: Streams vs Firehose는 "관리 부담을 누가 지는가"로 갈린다. Streams는 샤드 용량·소비자·보존기간을 직접 관리해 가장 유연하지만 운영 부담이 크다. Firehose는 샤드 개념 없이 버퍼 크기·시간만 정하면 S3/Redshift로 자동 적재되어 "완전관리/서버리스/최소 운영" 단어와 함께 나오면 정답이다. "커스텀 처리·밀리초·재처리"는 Streams, "그냥 S3로 떨궈줘"는 Firehose로 즉답한다.
+**Kinesis trap**: Streams = control/replay, Firehose = complete-managed drop to S3.
 
-## 도메인 1: 저장과 ETL
+## Domain 2: Clean → Feature → EDA
 
-| 요구사항 | 서비스 |
+| Step | Handling |
 |------|------|
-| 데이터 레이크 중앙 저장소 | S3 |
-| S3 위 서버리스 SQL 쿼리 | Athena |
-| 대규모 정형 분석 웨어하우스 | Redshift |
-| 서버리스 Spark ETL + 카탈로그 | Glue |
-| 대규모 Hadoop/Spark 클러스터 제어 | EMR |
-| 온프레미스 DB → AWS 이관 | DMS |
-| 대용량 파일 동기화 전송 | DataSync |
+| Missing | Drop (MCAR few%) or impute (KNN, model) |
+| Outliers | IQR/Z-score detection, clip or remove |
+| Imbalance | SMOTE, undersample, weights |
+| Encoding | One-Hot (unordered), Label (ordered), target encode (high-cardinal) |
+| Scale | StandardScaler (distance/gradient models), unnecessary for trees |
+| Dimension | PCA if multicollinearity or too many features |
+| EDA | Histogram, box, scatter, corr heatmap, time series → QuickSight |
 
-> 💡 **관련 이론**: Glue vs EMR은 "운영 통제 vs 편의"의 또 다른 사례다. Glue는 서버리스라 클러스터를 띄우지 않고 ETL 잡과 데이터 카탈로그(메타데이터)를 제공해 "서버리스 ETL, 스키마 자동 추론"에 강하다. EMR은 클러스터를 직접 띄워 스파크 버전·라이브러리·하둡 생태계를 세밀히 제어할 때 쓴다. "관리형/서버리스/빠른 시작"=Glue, "세밀한 클러스터 튜닝/기존 하둡 잡"=EMR이다.
+**Scaler trap**: XGBoost scale-invariant. Not needed.
 
-## 도메인 2: 데이터 정제
+## Cross-Domain Decisions
 
-| 문제 | 처리 기법 |
-|------|------|
-| 결측치(소량, MCAR) | 행 삭제 또는 평균/중앙값 대치 |
-| 결측치(다수, 패턴 있음) | KNN/모델 기반 대치, 결측 플래그 피처 추가 |
-| 수치 이상치 | IQR/Z-score 탐지 후 윈저화 또는 제거 |
-| 클래스 불균형 | SMOTE(오버샘플링), 언더샘플링, 가중치 |
-| 중복/형식 오류 | 중복 제거, 타입·단위 표준화 |
+| Signal | Domain 1 | Domain 2 | Choice |
+|------|------|------|------|
+| Real-time millisec multi-consumer | Streams ✓ | — | Streams |
+| Serverless S3 ETL | Glue ✓ | — | Glue |
+| Unordered categories | — | One-Hot ✓ | One-Hot |
+| Trees model | — | No scale ✓ | Skip scaling |
+| High cardinality | — | Target/freq encode ✓ | Target |
 
-## 도메인 2: 피처 엔지니어링과 인코딩
+## Integration Example: End-to-End
 
-| 데이터/목표 | 기법 |
-|------|------|
-| 순서 없는 범주형 | One-Hot Encoding |
-| 순서 있는 범주형 | Ordinal/Label Encoding |
-| 고카디널리티 범주 | 임베딩, 타깃/빈도 인코딩 |
-| 거리/경사기반 모델의 스케일 차이 | 표준화(StandardScaler), 정규화(MinMax) |
-| 연속값을 구간화 | 비닝(Binning) |
-| 차원 과다, 다중공선성 | PCA(주성분 분석) |
-| 텍스트 | TF-IDF, BoW, 임베딩 |
+User behavior data → analysis:
 
-> 💡 **관련 이론**: 스케일링이 "필요한 모델"과 "불필요한 모델"의 구분이 자주 출제된다. 거리 기반(KNN, K-Means, SVM)과 경사하강 기반(선형/로지스틱 회귀, 신경망)은 피처 스케일에 민감해 표준화가 거의 필수다. 반면 트리 기반(결정트리, 랜덤포레스트, XGBoost)은 분할 기준이 스케일에 불변이라 스케일링이 사실상 무의미하다. "XGBoost인데 스케일링이 필수다"류 보기는 함정이다.
+1. IoT → Kinesis Data Streams (multi-tenant consumers)
+2. Lake → S3 (central storage)
+3. Transform → Glue ETL (serverless)
+4. Athena → Ad-hoc SQL (analyst queries)
+5. Clean → Remove nulls, dupe (Domain 2)
+6. Feature → One-Hot categories, PCA if > 100 features
+7. QuickSight → Explore corr, distribution
+8. Ready → ML training
 
-## 도메인 2: 시각화로 무엇을 보는가
+## Summary
 
-| 차트 | 보는 것 |
-|------|------|
-| 히스토그램/밀도 | 단일 변수 분포, 왜도 |
-| 박스플롯 | 이상치, 사분위 분산 |
-| 산점도 | 두 변수 관계, 군집·이상치 |
-| 상관 히트맵 | 다중공선성, 피처 간 상관 |
-| 라인 차트 | 시계열 추세·계절성 |
+Domains 1 & 2 form "data pipeline foundation." Collect (Kinesis), store (S3), transform (Glue), clean (drop/impute/dupe), feature (encode/scale/dim-reduce), visualize (EDA). Each step builds on previous — garbage in → garbage out.
 
-> 💡 **관련 이론**: EDA의 목적은 "보기 좋은 그림"이 아니라 "전처리·모델링 의사결정의 근거 확보"다. 히스토그램에서 강한 왜도가 보이면 로그 변환을, 박스플롯에서 이상치가 보이면 윈저화를, 상관 히트맵에서 두 피처가 0.95 이상이면 다중공선성 제거(하나 드롭 또는 PCA)를 결정한다. 시각화 문제는 "이 그림에서 무엇을 보고 다음에 무엇을 하느냐"로 환원된다.
-
-## 두 도메인을 잇는 핵심 비교
-
-| 비교 | 핵심 차이 |
-|------|------|
-| Streams vs Firehose | 커스텀/저지연 vs 완전관리 적재 |
-| Glue vs EMR | 서버리스 ETL vs 클러스터 제어 |
-| Athena vs Redshift | 애드혹 S3 쿼리 vs 대규모 웨어하우스 |
-| One-Hot vs Label 인코딩 | 순서 없음 vs 순서 있음 |
-| 표준화 필요(거리·경사) vs 불필요(트리) | 스케일 민감 vs 불변 |
-| 오버샘플링 vs 언더샘플링 | 소수 늘림 vs 다수 줄임 |
-
-## 자가 점검 질문
-
-1. 밀리초 지연으로 다중 소비자가 같은 스트림을 재처리해야 하면? → **Kinesis Data Streams**
-2. 운영 없이 스트림을 S3로 자동 적재하면? → **Kinesis Data Firehose**
-3. S3 데이터 레이크를 서버리스로 SQL 쿼리하면? → **Athena**
-4. 서버리스 Spark ETL과 스키마 자동 추론(카탈로그)은? → **Glue**
-5. XGBoost 학습 전 표준화는 필수인가? → **아니다(트리는 스케일 불변)**
-6. 순서 없는 범주형(색상)의 인코딩은? → **One-Hot Encoding**
-7. 피처 두 개의 상관이 0.97일 때 대응은? → **다중공선성 제거(드롭 또는 PCA)**
-8. 강한 우왜도 분포의 흔한 변환은? → **로그 변환**
-
-## 정리하며
-
-도메인 1·2는 "원천 데이터를 학습 가능한 깨끗한 피처로 바꾸는" 파이프라인의 앞부분이다. 수집(Kinesis), 저장(S3/Athena/Redshift), 변환(Glue/EMR)으로 데이터를 옮기고, 정제·인코딩·스케일링·시각화로 모델에 먹일 형태를 만든다. 시험에서는 "저지연/커스텀=Streams, 완전관리=Firehose", "서버리스 ETL=Glue, 클러스터=EMR", "거리·경사 모델만 스케일링", "상관 높음=다중공선성 제거"가 가장 반복되는 판단 분기다.
-
----
+Tomorrow: Domain 3 (modeling) review.
 
 ## 📝 연습 문제
 
