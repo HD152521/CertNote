@@ -1,42 +1,42 @@
 # Day 4 - STS and Temporary Credentials: AssumeRole, Federation, Role Chaining, Confused Deputy Prevention
 
-Over the past three days we kept repeating "don't use long-term credentials (IAM user access keys) — use roles." Today we dig into how a role is actually "assumed": what STS (Security Token Service), the mechanism behind it, issues, and how external identities (federation) are exchanged for AWS credentials. This is where Domain 4 of SCS-C03 differentiates most deeply — the trust relationship of AssumeRole, the constraints of role chaining, and the Confused Deputy attack that must be blocked in cross-account delegation.
+For the past four days, we've repeated "use Role and its temporary credentials, not IAM User's long-term access key." Today we dive into **how** that Role is "assumed" — the mechanism of STS (Security Token Service) that issues credentials, how external identities (federation) exchange for AWS credentials, and why cross-account delegation demands blocking the Confused Deputy attack. The deepest differentiation in SCS-C03's Domain 4 lies here — AssumeRole trust relationships, role chaining constraints, and mandatory Confused Deputy prevention.
 
-The key sentence first: **STS issues expiring temporary credentials (AccessKeyId + SecretAccessKey + SessionToken), and "who may assume this role" is decided by the role's trust policy.**
+Core one-liner first: **STS issues expiring temporary credentials (AccessKeyId + SecretAccessKey + SessionToken), and "who can assume this role" is decided by the role's trust policy.**
 
-## What STS Issues: Three Temporary Credential Components
+## What STS Issues: Three Types of Temporary Credentials
 
-Long-term IAM user credentials consist of two keys (AccessKeyId, SecretAccessKey), but STS temporary credentials consist of **three**.
+Long-term IAM User credentials are 2 keys (AccessKeyId, SecretAccessKey), but STS temporary credentials are **3**.
 
 | Component | Role |
 |------|------|
 | AccessKeyId | Identifier |
 | SecretAccessKey | Signing key |
-| **SessionToken** | Temporary session proof (absent from long-term keys) |
+| **SessionToken** | Temporary session proof (doesn't exist in long-term keys) |
 
-These credentials have an **expiration time**. AssumeRole defaults to 1 hour, with a maximum of 12 hours (within the role's `MaxSessionDuration`). Once expired, they must be reissued. **Even if exposed, the damage is bounded in time** — this is the fundamental reason they are safer than long-term keys.
+These credentials have an **expiration time**. AssumeRole defaults to 1 hour, maximum 12 hours (within role's `MaxSessionDuration`). After expiration, you must get new ones. **Even if exposed, damage is time-limited** — the fundamental reason temporary credentials are safer than long-term keys.
 
 Key STS APIs:
 
 | API | Purpose |
 |-----|------|
-| `AssumeRole` | Assume an IAM role in the same or another account (most common) |
-| `AssumeRoleWithSAML` | Federation with a SAML 2.0 IdP (e.g., AD FS, Okta) |
+| `AssumeRole` | Assume an IAM Role in same/different account (most common) |
+| `AssumeRoleWithSAML` | SAML 2.0 IdP federation (e.g., AD FS, Okta) |
 | `AssumeRoleWithWebIdentity` | OIDC federation (e.g., Cognito, Google, GitHub Actions) |
-| `GetSessionToken` | MFA-backed temporary credentials (for IAM users) |
+| `GetSessionToken` | MFA-applied temporary credentials (IAM User) |
 | `GetFederationToken` | Legacy federation |
 
-> 💡 **Related theory**: EC2 instance profiles, Lambda execution roles, and ECS task roles are all STS AssumeRole under the hood. For EC2, the Instance Metadata Service (IMDS) automatically issues and refreshes the temporary credentials — which is why no keys ever need to go into code. Enforcing **IMDSv2 (token-based)** is what blocks metadata theft via SSRF (the core vector of the Capital One incident) — a perennial exam topic.
+> 💡 **Related Theory**: EC2 instance profiles, Lambda execution roles, ECS task roles all internally use STS AssumeRole. For EC2, the instance metadata service (IMDS) auto-issues and refreshes temporary credentials. No need to embed keys in code. **IMDSv2 (token-based)** must be enforced to block SSRF attacks that steal metadata — a classic exam topic and was central to the Capital One incident.
 
-## AssumeRole: The Two Axes of Trust Policy and Permission Policy
+## AssumeRole: Two Axes of Trust and Permission Policies
 
-A role has **two policies**. This distinction is the most confusing point in IAM.
+A Role holds **two policies**. This distinction is the most confusing in IAM.
 
-- **Trust policy**: "**Who** may assume this role" (the parties allowed `sts:AssumeRole`). Contains a Principal = resource-based policy.
-- **Permission policy**: "Once this role is assumed, **what** can be done." Identity-based policy.
+- **Trust policy**: "**Who** can assume this role" (`sts:AssumeRole` permissible targets). Contains Principal = resource-based policy.
+- **Permission policy**: "**What** this role can do once assumed." Identity-based policy.
 
 ```json
-// Trust policy: principals in account 111122223333 may assume this role
+// Trust policy: principals in account 111122223333 can assume this role
 {
   "Version": "2012-10-17",
   "Statement": [{
@@ -51,57 +51,57 @@ A role has **two policies**. This distinction is the most confusing point in IAM
 }
 ```
 
-For a cross-account AssumeRole to succeed, **both sides** must line up.
+Cross-account AssumeRole succeeds only when **both align**:
 
-1. The **target role's trust policy** allows the calling account/principal as Principal
-2. The **caller's identity policy** contains an `sts:AssumeRole` Allow (specifying the target role ARN)
+1. **Target role's trust policy** permits the calling account/principal as Principal
+2. **Calling side's identity policy** has `sts:AssumeRole` Allow (target role ARN specified)
 
-> ⚠️ **Pitfall**: Writing `"arn:aws:iam::111122223333:root"` in the trust policy's Principal means "the **entire** account 111122223333 may assume the role," not just the root user. However, in practice only principals within that account who have been granted `sts:AssumeRole` can actually assume it (condition 2). The intuition that "using root as Principal is dangerous" is only half right — account-level delegation is a normal pattern, but permission control inside that account is entrusted to that account.
+> ⚠️ **Trap**: Using `"arn:aws:iam::111122223333:root"` in trust policy Principal means "**entire account 111122223333** can assume this role" — not just the root user. However, practically, only principals in that account holding `sts:AssumeRole` permission can assume it (condition 2). The intuition "root Principal is risky" is half right — account delegation is normal, but internal permission control is that account's responsibility.
 
-## Federation: Turning External Identities into AWS Credentials
+## Federation: Converting External Identity to AWS Credentials
 
-Federation means accessing AWS with a corporate directory (AD) or social/OIDC identity without creating IAM users.
+Without creating IAM Users, accessing AWS via corporate directory (AD) or social/OIDC identity is federation.
 
-### SAML 2.0 Federation (Corporate Workforce)
+### SAML 2.0 Federation (Enterprise Workforce)
 
 ```
-[ SAML federation flow ]
+[ SAML Federation Flow ]
 
-  User → signs in to corporate IdP (AD FS/Okta)
-       → IdP issues SAML assertion (containing role ARN)
+  User → Enterprise IdP(AD FS/Okta) login
+       → IdP issues SAML assertion(role ARN included)
        → AWS STS AssumeRoleWithSAML
        → Temporary credentials issued
        → Access AWS resources
 ```
 
-The recommended approach today is **IAM Identity Center (formerly AWS SSO)**. In multi-account environments, you define permission sets, integrate with an external IdP (Okta, Entra ID, etc.), and after a single sign-in users access multiple accounts and roles with temporary credentials. It eliminates the anti-pattern of creating IAM users in every account.
+Today's recommended approach: **IAM Identity Center (formerly AWS SSO)**. Define permission sets in multi-account environments, integrate with external IdPs (Okta, Entra ID, etc.), and users get temporary credentials across multiple accounts and roles via single login. Eliminates the anti-pattern of creating IAM Users per account.
 
-### OIDC / Web Identity Federation (Apps and CI/CD)
+### OIDC / Web Identity Federation (Apps·CI/CD)
 
-Mobile apps (Cognito), GitHub Actions, Kubernetes (EKS IRSA), and the like use OIDC with `AssumeRoleWithWebIdentity`. **GitHub Actions OIDC** in particular matters for both the exam and real work — instead of putting long-term access keys into GitHub secrets, you assume a role with GitHub's OIDC token, eliminating key exposure risk.
+Mobile apps (Cognito), GitHub Actions, Kubernetes (EKS IRSA) use OIDC for `AssumeRoleWithWebIdentity`. Particularly **GitHub Actions OIDC** matters in both exam and practice — instead of embedding long-lived access key in GitHub secrets, GitHub's OIDC token assumes a role, eliminating key exposure risk.
 
-> 🔍 **Going deeper**: The trust policy for GitHub Actions OIDC uses `token.actions.githubusercontent.com` as the OIDC provider and, in the Condition, allows **only specific repos and branches** via `token.actions.githubusercontent.com:sub`. Leaving this sub condition loose, like `repo:org/*`, lets any repo in the organization assume the role — dangerous. Narrow it like `repo:org/repo:ref:refs/heads/main`. EKS IRSA maps roles to pods using the same OIDC principle.
+> 🔍 **Deep Dive**: GitHub Actions OIDC trust policy sets `token.actions.githubusercontent.com` as OIDC provider, and Condition limits with `token.actions.githubusercontent.com:sub` to **specific repo·branch only**. Loose conditions like `repo:org/*` let any org repo assume the role — risky. Tighten to `repo:org/repo:ref:refs/heads/main`. EKS IRSA uses the same OIDC principle, mapping pods to roles.
 
-## Role Chaining and Its Constraints
+## Role Chaining (Role Chaining) and Constraints
 
-Role chaining is assuming **yet another role** while already operating under an assumed role: Account A → assume Role X → use Role X to assume Role Y.
+**Assuming another role while already in one role** is role chaining. Account A → assume role X → assume role Y with role X credentials.
 
-Two key constraints appear on the exam.
+Two key constraints in exams:
 
-1. **The maximum session duration when chaining is fixed at 1 hour.** Even if Role X's `MaxSessionDuration` is 12 hours, a session obtained through chaining is capped at 1 hour.
-2. Some calls, such as `GetSessionToken`, are restricted from a chained session.
+1. **Chained session max time is fixed at 1 hour**. Even if role X's `MaxSessionDuration` is 12 hours, a chained session tops at 1 hour.
+2. Chained sessions can't invoke certain calls like `GetSessionToken`.
 
-> 💡 **Related theory**: Role chaining can blur permission traceability, so avoid it where possible. Prefer **session policies** or direct AssumeRole instead. That said, the cross-account pattern of "reaching a spoke account through a hub account's role" is legitimate chaining. Traceability is supplemented via the `assumedRole` session name in CloudTrail (set `sts:RoleSessionName` to something meaningful).
+> 💡 **Related Theory**: Role chaining obscures permission tracking and is generally avoided. Prefer **session policy** or direct AssumeRole. However, "hub account role → spoke account access" pattern in cross-account is legitimate chaining. Traceability is supplemented by CloudTrail's `assumedRole` session name (set `sts:RoleSessionName` meaningfully).
 
 ## Confused Deputy Prevention: ExternalId and aws:SourceArn
 
-Today's security centerpiece. A **Confused Deputy** attack tricks a privileged party (the deputy) into exercising its privileges on behalf of a third party.
+Today's security core. **Confused Deputy (confused intermediary)** is when an authorized principal (intermediary) is tricked into using permissions on behalf of a third party.
 
-### Scenario: Cross-Account Access by a Third-Party SaaS
+### Scenario: Third-party SaaS Cross-Account Access
 
-Suppose a monitoring SaaS (e.g., Datadog) accesses your account via AssumeRole. The SaaS assumes roles for **every customer** from the same SaaS account. If the trust policy only checks "allow if it's the SaaS account," a malicious user could spoof their account ID as yours and get the SaaS to access your resources.
+Say monitoring SaaS (e.g., Datadog) AssumeRoles into your account. SaaS uses the **same SaaS account** for all customers. If trust policy only checks "SaaS account, allow," a malicious user could impersonate your account ID to SaaS and gain your resources.
 
-The remedy is **ExternalId** — a unique secret the SaaS issued only to you, embedded in the trust policy's Condition.
+Solution: **ExternalId** — SaaS issues you a unique secret that you embed in the trust policy's Condition.
 
 ```json
 {
@@ -114,11 +114,11 @@ The remedy is **ExternalId** — a unique secret the SaaS issued only to you, em
 }
 ```
 
-The SaaS passes this ExternalId when assuming your role, and it cannot assume your role using another customer's ExternalId. Isolation between customers is guaranteed.
+SaaS passes this ExternalId when assuming your role; customers' ExternalIds won't work. Isolation is guaranteed.
 
-### When an AWS Service Is the Deputy: aws:SourceArn / aws:SourceAccount
+### When AWS Service is the Intermediary: aws:SourceArn / aws:SourceAccount
 
-The same attack is possible when a service principal (e.g., CloudWatch, S3, SNS) uses your role or resource. Here you enforce "allow only calls triggered by this specific resource" with `aws:SourceArn` (or `aws:SourceAccount`).
+When a service principal (e.g., CloudWatch, S3, SNS) uses your role or resource, the same attack is possible. Use `aws:SourceArn` (or `aws:SourceAccount`) to enforce "only this specific resource triggers this."
 
 ```json
 {
@@ -132,95 +132,95 @@ The same attack is possible when a service principal (e.g., CloudWatch, S3, SNS)
 }
 ```
 
-> 🎯 **Scenario**: "We need to create a cross-account role granting a third-party backup vendor access to our S3." The correct pattern is: ① do not hand the vendor IAM user access keys (absolutely forbidden), ② IAM role + trust policy specifying the vendor account plus an **ExternalId**, ③ a permission policy limited to only the needed buckets and Actions (least privilege). Without an ExternalId, a Confused Deputy hole remains through which another customer of the same vendor could access your resources. This pattern is identical for every third-party integration — Datadog, New Relic, PagerDuty, and the rest.
+> 🎯 **Scenario**: "Third-party backup vendor needs cross-account S3 access." Answer pattern: ① never give vendor IAM User access keys (absolute ban) ② create IAM Role + trust policy with vendor account + **ExternalId** ③ permission policy restricted to needed buckets/Actions (least privilege). Without ExternalId, another vendor customer using the same vendor could access our resources — Confused Deputy hole. This pattern applies uniformly to Datadog, New Relic, PagerDuty, all third-party integrations.
 
-> ⚠️ **Pitfall**: An ExternalId is not a "password" — it blocks the attack even if guessable. The crux is that **the third party issues the ExternalId; the customer does not choose it themselves**. If customers picked it arbitrarily, collisions with other customers or predictability would break the isolation. On the exam, an answer choice saying "the customer freely sets the ExternalId" is a trap.
+> ⚠️ **Trap**: ExternalId isn't a "password" — even if guessable, it blocks the attack. The key is **customer doesn't set ExternalId; vendor issues it**. Customer-set IDs could collide with others or be predictable, breaking isolation. Trap answer: "Customer freely sets ExternalId" — wrong.
 
-## AssumeRole Through the CLI
+## AssumeRole as CLI
 
 ```bash
-# Assume the role — returns the three temporary credential components
+# Assume role — returns 3 credential types
 aws sts assume-role \
   --role-arn arn:aws:iam::444455556666:role/CrossAccountReadRole \
   --role-session-name security-audit-2026 \
   --external-id your-unique-external-id-xyz \
   --duration-seconds 3600
 
-# Make subsequent calls with the returned credentials (after setting environment variables)
+# Use returned credentials for subsequent calls (after env vars set)
 export AWS_ACCESS_KEY_ID=ASIA...
 export AWS_SECRET_ACCESS_KEY=...
-export AWS_SESSION_TOKEN=...   # SessionToken is required for temporary credentials
-aws sts get-caller-identity    # Verify whose identity you are acting under
+export AWS_SESSION_TOKEN=...   # SessionToken mandatory for temp credentials
+aws sts get-caller-identity    # Verify who you are now
 ```
 
-> 📚 **Case study**: The essence of the 2019 Capital One incident was: ① WAF (inadequate SSRF defense), ② **theft of EC2's temporary credentials via IMDSv1**, ③ S3 access with those credentials. Temporary credentials are themselves a safeguard, but they are neutralized if **the path to steal them (SSRF → IMDS)** is left open. That is why IMDSv2 enforcement + least-privilege instance roles + WAF appear on the exam as one bundle. Temporary credentials are only the "time-limited if exposed" line of defense; closing the exposure path is a separate control.
+> 📚 **Case Study**: The 2019 Capital One incident's essence: ① WAF (SSRF defense insufficient) ② **IMDSv1 let EC2 temp credentials be stolen** ③ those credentials accessed S3. Temporary credentials are safe, but **the path to steal them (SSRF → IMDS)** being open neutralizes that. Hence IMDSv2 enforcement + least-privilege instance role + WAF bundle in exam. Temporary credentials are "exposure damage is time-limited," but blocking exposure paths is separate.
 
-## Wrapping Up — Temporary Credentials as the Security Default
+## Summary — Temporary Credentials Are Security Default
 
-Today's three takeaways. First, **STS issues expiring temporary credentials (including a SessionToken)**, and EC2/Lambda/ECS/federation all operate on top of them — replace the anti-pattern of putting long-term keys into code or CI with OIDC and instance roles. Second, AssumeRole runs on the two axes of **trust policy (who) and permission policy (what)**, and cross-account requires both sides to allow. Third, in cross-account delegation you must block **Confused Deputy with ExternalId (third parties) and aws:SourceArn (AWS services)**.
+Three essentials today. First, **STS issues expiring temporary credentials (with SessionToken)**, and EC2/Lambda/ECS/federation all run on this — replace long-key code/CI anti-patterns with OIDC and instance roles. Second, AssumeRole is **two axes: trust policy (who) and permission policy (what)** — cross-account needs both sides allowing. Third, cross-account delegation **must block Confused Deputy via ExternalId (third-party) or aws:SourceArn (AWS service)**.
 
-Tomorrow, wrapping up Week 1, we weave the IAM, STS, and policy evaluation learned so far into integrated scenarios. Through hands-on problems like "I have the permission — why is it denied," "delegate permissions to a third party safely," and "convert long-term keys to temporary credentials," we solidify Week 1's thinking framework.
+Tomorrow closes Week 1 with integrated scenarios. "Why is access denied despite having permissions," "safely delegate to third parties," "convert long-term keys to temporary credentials" — real-world problems synthesizing everything Week 1 taught. We cement this week's IAM thinking framework.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** What is the most fundamental reason STS temporary credentials are more secure than long-term IAM user access keys?
+**문제 1.** STS 임시 자격 증명이 장기 IAM User access key보다 보안상 우수한 가장 본질적인 이유는?
 
-A) They are longer random strings and therefore impossible to guess  
-B) They have an expiration time, so even if exposed the damage is bounded in time  
-C) They are transmitted encrypted  
-D) They can only be issued from the root account  
+A) 더 긴 무작위 문자열이라 추측이 불가능하기 때문  
+B) 만료 시간이 있어 노출되더라도 피해가 시간적으로 제한되기 때문  
+C) 암호화되어 전송되기 때문  
+D) root 계정에서만 발급할 수 있기 때문  
 
 **정답: B**  
-해설: Temporary credentials have an expiration (AssumeRole defaults to 1 hour, max 12 hours), so even if stolen they become useless after the validity window, bounding the exposure damage in time. Length and transport encryption are not fundamental differences from long-term keys, and temporary credentials are not root-only — every principal that assumes a role receives them.
+해설: 임시 자격 증명은 만료 시간(AssumeRole 기본 1시간, 최대 12시간)이 있어, 탈취되더라도 유효 기간 이후에는 무력화되므로 노출 피해가 시간적으로 한정된다. 길이나 전송 암호화는 장기 키와 본질적 차이가 아니고, 임시 자격 증명은 root 전용이 아니라 역할을 맡는 모든 주체가 받는다.
 
 ---
 
-**문제 2.** A third-party monitoring SaaS accesses multiple customers' AWS accounts via AssumeRole from the same SaaS account. What is the key mechanism that isolates one customer's role from being assumed on behalf of another customer through the SaaS?
+**문제 2.** 서드파티 모니터링 SaaS가 여러 고객의 AWS 계정에 동일한 SaaS 계정으로 AssumeRole 접근한다. 한 고객의 역할을 다른 고객이 SaaS를 통해 맡지 못하게 격리하는 핵심 메커니즘은?
 
-A) Specifying root as the Principal in the trust policy  
-B) Specifying the `sts:ExternalId` that the third party issued per customer in the trust policy's Condition  
-C) Putting a customer-chosen arbitrary ExternalId in the trust policy  
-D) Issuing IAM user access keys to the SaaS  
+A) trust policy의 Principal을 root로 지정  
+B) trust policy의 Condition에 서드파티가 고객별로 발급한 `sts:ExternalId`를 명시  
+C) 고객이 임의로 정한 ExternalId를 trust policy에 넣음  
+D) SaaS에 IAM User access key를 발급해 전달  
 
 **정답: B**  
-해설: The ExternalId is a value the third party issues uniquely per customer; embedding it in the trust policy condition blocks Confused Deputy attacks. If the customer picks it arbitrarily, collisions or predictability can break the isolation, so the issuer must be the third party; specifying a root Principal alone does not isolate customers; and issuing access keys creates the larger risk of long-term credential exposure.
+해설: ExternalId는 서드파티가 고객마다 고유하게 발급한 값을 trust policy 조건에 박아 Confused Deputy 공격을 막는다. 고객이 임의로 정하면 충돌·예측으로 격리가 깨질 수 있어 발급 주체는 서드파티여야 하고, root Principal 지정만으로는 고객 간 격리가 되지 않으며, access key 발급은 장기 자격 증명 노출이라는 더 큰 위험을 만든다.
 
 ---
 
-**문제 3.** Which statement about role chaining (assuming another role while already under an assumed role) is correct?
+**문제 3.** 역할 체이닝(한 역할을 맡은 상태에서 또 다른 역할을 맡음)에 대한 설명으로 옳은 것은?
 
-A) A chained session inherits the original role's MaxSessionDuration and can last up to 12 hours  
-B) When chaining, the maximum session duration is limited to 1 hour  
-C) Chaining simplifies permission traceability and is therefore always recommended  
-D) Chaining does not require a trust policy  
+A) 체이닝된 세션은 원본 역할의 MaxSessionDuration을 그대로 따라 최대 12시간까지 가능하다  
+B) 체이닝 시 세션 최대 시간은 1시간으로 제한된다  
+C) 체이닝은 권한 추적을 단순화하므로 항상 권장된다  
+D) 체이닝에는 trust policy가 필요 없다  
 
 **정답: B**  
-해설: The maximum duration of a session issued via role chaining is fixed at 1 hour; the original role's longer MaxSessionDuration does not apply. Chaining actually blurs permission traceability and should be avoided where possible, and like every AssumeRole it absolutely requires the target role's trust policy to allow it.
+해설: 역할 체이닝으로 발급되는 세션의 최대 시간은 1시간으로 고정되며, 원본 역할의 긴 MaxSessionDuration이 적용되지 않는다. 체이닝은 오히려 권한 추적을 흐리므로 가급적 피하는 것이 권장되고, 모든 AssumeRole과 마찬가지로 대상 역할의 trust policy 허용이 반드시 필요하다.
 
 ---
 
-**문제 4.** When configuring GitHub Actions to assume an AWS role without long-term access keys, what is the most security-critical trust policy setting?
+**문제 4.** GitHub Actions가 장기 access key 없이 AWS 역할을 맡도록 구성할 때, 보안상 가장 중요한 trust policy 설정은?
 
-A) Set the `sub` condition to `repo:org/*` so every repo in the organization can assume the role  
-B) Narrow the `sub` condition to a specific repo and branch, like `repo:org/repo:ref:refs/heads/main`  
-C) Set the Principal to `*` to accept any OIDC token  
-D) Skip the trust policy and just configure a broad permission policy  
+A) `sub` 조건을 `repo:org/*`로 두어 조직의 모든 repo가 역할을 맡게 한다  
+B) `sub` 조건을 `repo:org/repo:ref:refs/heads/main`처럼 특정 repo·브랜치로 좁힌다  
+C) Principal을 `*`로 설정해 어떤 OIDC 토큰이든 허용한다  
+D) trust policy 없이 permission policy만 넓게 설정한다  
 
 **정답: B**  
-해설: In OIDC federation, narrowing the `token.actions.githubusercontent.com:sub` condition to a specific repo and branch ensures only that workflow can assume the role, which is safe. `repo:org/*` or a `*` Principal opens a path for any repo or token in the organization to hijack the role, and widening permissions without a trust policy would let anyone assume the role.
+해설: OIDC 페더레이션에서 `token.actions.githubusercontent.com:sub` 조건을 특정 repo와 브랜치로 좁혀야, 그 워크플로만 역할을 맡을 수 있어 안전하다. `repo:org/*`나 Principal `*`는 조직의 임의 repo·토큰이 역할을 탈취할 통로를 열고, trust policy 없이 권한만 넓히는 것은 누구나 역할을 맡을 수 있게 만든다.
 
 ---
 
-**문제 5.** To prevent an incident where the temporary credentials granted to an EC2 instance are stolen via an SSRF attack, which control should be applied most directly?
+**문제 5.** EC2 인스턴스에 부여된 임시 자격 증명이 SSRF 공격으로 탈취된 사고를 예방하기 위해 가장 직접적으로 적용해야 할 통제는?
 
-A) Grant the EC2 instance role AdministratorAccess to simplify operations  
-B) Enforce IMDSv2 (the token-based metadata service) and apply least privilege to the instance role  
-C) Store long-term IAM user access keys directly on the EC2 instance  
-D) Extend the temporary credentials' expiration to 12 hours  
+A) EC2 인스턴스 역할에 AdministratorAccess를 부여해 운영을 단순화한다  
+B) IMDSv2(토큰 기반 메타데이터 서비스)를 강제하고 인스턴스 역할에 최소 권한을 적용한다  
+C) EC2에 장기 IAM User access key를 직접 저장한다  
+D) 임시 자격 증명의 만료 시간을 12시간으로 늘린다  
 
 **정답: B**  
-해설: IMDSv2 requires a session token, making metadata and temporary-credential theft via SSRF far harder, and least privilege on the instance role reduces the blast radius even if theft occurs. Granting admin enlarges the blast radius, storing long-term keys is even riskier, and extending expiration only lengthens the validity of stolen credentials — increasing the risk.
+해설: IMDSv2는 세션 토큰을 요구해 SSRF를 통한 메타데이터·임시 자격 증명 탈취를 크게 어렵게 만들고, 인스턴스 역할 최소 권한은 탈취되더라도 피해 범위를 줄인다. admin 부여는 폭발 반경을 키우고, 장기 키 저장은 더 위험하며, 만료 시간을 늘리면 탈취 자격 증명의 유효 기간만 길어져 오히려 위험이 커진다.
 
 ---
