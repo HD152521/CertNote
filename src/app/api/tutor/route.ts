@@ -1,7 +1,10 @@
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { AppError, errorResponse } from '@/lib/auth/errors';
+import { clientIp, rateLimit } from '@/lib/rateLimit';
 import { getEntitlementService } from '@/lib/entitlement/factory';
 import { getQuestionById } from '@/lib/questions';
+import type { Language } from '@/lib/i18n';
+import { getTutorError } from '@/lib/tutor/errors';
 import {
   consumeTutorQuota,
   getCachedExplanation,
@@ -10,13 +13,22 @@ import {
   saveExplanation,
   streamTutor,
 } from '@/lib/tutor/tutorService';
-import { getTutorError } from '@/lib/tutor/errors';
-import type { Language } from '@/lib/i18n';
-import { clientIp, rateLimit } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs'; // Anthropic SDK는 Node 런타임 필요.
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // 스트리밍 응답 여유(플랜에 따라 상한 적용).
+
+// 구조화된 로깅: 타이스탬프, 컨텍스트, 사용자 ID, 에러 메시지
+const logError = (context: string, userId: string, error: unknown) => {
+  console.error(
+    JSON.stringify({
+      timestamp: new Date().toISOString(),
+      context,
+      userId,
+      error: error instanceof Error ? error.message : String(error),
+    })
+  );
+};
 
 // AI 오답 튜터. Pro 전용. 문제+오답을 받아 설명을 text/plain으로 스트리밍한다.
 export async function POST(req: Request) {
@@ -31,10 +43,7 @@ export async function POST(req: Request) {
     // 사용자 단위 rate limit(LLM 호출 비용 보호). IP도 함께 키에 섞는다.
     const rl = rateLimit(`tutor:${user.sub}:${clientIp(req)}`, 20, 60_000);
     if (!rl.ok) {
-      const msg = language === 'en'
-        ? `Please wait and try again. (${rl.retryAfter}s)`
-        : `잠시 후 다시 시도해 주세요. (${rl.retryAfter}초)`;
-      throw new AppError(429, 'rate_limited', msg);
+      throw new AppError(429, 'rate_limited', getTutorError(language, 'rateLimited'));
     }
 
     const ent = await getEntitlementService().getEntitlement(user.sub);
@@ -92,13 +101,13 @@ export async function POST(req: Request) {
             try {
               await saveExplanation(questionId, selected, full);
             } catch (e) {
-              console.error('[tutor] 캐시 저장 실패:', e);
+              logError('cache_save_failed', user.sub, e);
             }
           }
           controller.close();
         } catch (err) {
           // 스트림 도중 오류는 로그만 — 헤더는 이미 전송돼 상태코드를 못 바꾼다.
-          console.error('[tutor] 스트림 오류:', err);
+          logError('stream_error', user.sub, err);
           controller.error(err);
         }
       },

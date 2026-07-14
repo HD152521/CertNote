@@ -1,7 +1,7 @@
 import type { Language } from '@/lib/i18n';
 
 /**
- * Tutor-specific error messages in both languages
+ * 튜터 기능의 오류 메시지 (한국어, 영어)
  */
 export const TUTOR_ERRORS = {
   ko: {
@@ -33,18 +33,23 @@ export const TUTOR_ERRORS = {
 } as const;
 
 /**
- * Get tutor error message for a specific error type and language
+ * 특정 오류 타입과 언어에 해당하는 튜터 오류 메시지 조회
  * @example getTutorError('en', 'proRequired') → 'AI tutor is a Pro-only feature...'
  */
 export function getTutorError(
   lang: Language,
   key: keyof typeof TUTOR_ERRORS.ko
 ): string {
-  return TUTOR_ERRORS[lang][key];
+  const msg = TUTOR_ERRORS[lang][key];
+  if (!msg) {
+    console.error(`[i18n] Missing tutor error key: ${key}`);
+    return TUTOR_ERRORS[lang]['unknownError'] || 'An error occurred';
+  }
+  return msg;
 }
 
 /**
- * Get tutor status message (e.g., "Thinking...")
+ * 튜터 상태 메시지 조회 (예: "생각 중...")
  */
 export function getTutorStatus(lang: Language, status: 'thinking'): string {
   return TUTOR_ERRORS[lang][status];
