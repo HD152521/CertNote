@@ -1,0 +1,35 @@
+# CertNote Robots.txt
+# Google SEO Starter Guide: https://developers.google.com/search/docs/fundamentals/seo-starter-guide
+
+User-agent: *
+Allow: /
+Allow: /content/en/
+Allow: /content/ko/
+
+# Disallow unnecessary paths
+Disallow: /_next/
+Disallow: /api/
+Disallow: /.env*
+Disallow: /config/
+Disallow: /private/
+
+# Allow search engines to crawl specific resources
+Allow: /*.js
+Allow: /*.css
+Allow: /public/
+
+# Specify crawl delay
+Crawl-delay: 1
+
+# Sitemaps
+Sitemap: https://certnote.com/sitemap.xml
+Sitemap: https://certnote.com/sitemap-ko.xml
+Sitemap: https://certnote.com/sitemap-en.xml
+
+# Google-specific
+User-agent: Googlebot
+Crawl-delay: 0
+
+# Bing-specific
+User-agent: Bingbot
+Crawl-delay: 1

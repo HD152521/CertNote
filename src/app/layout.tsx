@@ -21,7 +21,14 @@ export const metadata: Metadata = {
   },
   description:
     'AWS 자격증 & 클라우드 자격증으로 클라우드 네이티브 커리어 시작. AWS 11종 + 리눅스마스터 1급을 주차별 한국어 노트로. 매일 30분, 연습문제·모의고사·SRS 복습까지. Week 1 무료.',
-  alternates: { canonical: '/' },
+  alternates: {
+    canonical: '/',
+    languages: {
+      'ko': '/',
+      'en': '/en',
+      'x-default': '/',
+    },
+  },
   openGraph: {
     type: 'website',
     siteName: SITE_NAME,
