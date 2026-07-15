@@ -58,8 +58,7 @@ export function AuthNav() {
 
   const links = [
     { href: '/exam', label: '모의고사' },
-    { href: '/dashboard', label: '대시보드' },
-    { href: '/notebook', label: '오답노트' },
+    { href: '/account', label: '마이페이지' },
     ...(user.role === 'admin' ? [{ href: '/admin', label: '관리자' }] : []),
   ];
 

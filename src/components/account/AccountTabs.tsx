@@ -6,11 +6,12 @@ import { useLanguage, t } from '@/lib/i18n-client';
 import type { ProfileValues } from '@/components/account/ProfileSection';
 import type { CertOption } from '@/app/account/AccountPageClient';
 import { DashboardTab } from './tabs/DashboardTab';
+import { NotebookTab } from './tabs/NotebookTab';
 import { ProfileTab } from './tabs/ProfileTab';
 import { BillingTab } from './tabs/BillingTab';
 import { SettingsTab } from './tabs/SettingsTab';
 
-type TabId = 'dashboard' | 'profile' | 'billing' | 'settings';
+type TabId = 'dashboard' | 'notebook' | 'profile' | 'billing' | 'settings';
 
 interface AccountTabsProps {
   userEmail: string;
@@ -23,6 +24,7 @@ interface AccountTabsProps {
 
 const TABS: Array<{ id: TabId; icon: string; label: { en: string; ko: string } }> = [
   { id: 'dashboard', icon: '📊', label: { en: 'Dashboard', ko: '대시보드' } },
+  { id: 'notebook', icon: '📝', label: { en: 'Notebook', ko: '오답노트' } },
   { id: 'profile', icon: '👤', label: { en: 'Profile', ko: '프로필' } },
   { id: 'billing', icon: '💳', label: { en: 'Subscription & Billing', ko: '구독 & 결제' } },
   { id: 'settings', icon: '⚙️', label: { en: 'Settings', ko: '설정' } },
@@ -81,6 +83,7 @@ export function AccountTabs({
         {activeTab === 'dashboard' && (
           <DashboardTab isPro={isPro} periodEnd={periodEnd} daysLeft={daysLeft} />
         )}
+        {activeTab === 'notebook' && <NotebookTab />}
         {activeTab === 'profile' && <ProfileTab certs={certs} initial={initial} />}
         {activeTab === 'billing' && (
           <BillingTab
