@@ -15,6 +15,7 @@ import { Paywall } from '@/components/Paywall';
 import { Toc } from '@/components/Toc';
 import { MarkAsRead } from '@/components/MarkAsRead';
 import { ExamDateNudge } from '@/components/study/ExamDateNudge';
+import { DayNavigationOverlay } from '@/components/study/DayNavigationOverlay';
 import { DayMeta } from '@/components/DayMeta';
 import { cn } from '@/lib/cn';
 
@@ -97,6 +98,8 @@ export default async function DayPage({ params }: PageProps) {
       {!locked && (
         <MarkAsRead slug={slug} week={w} day={d} title={content.title} href={content.href} />
       )}
+      {/* Mobile navigation overlay - Click to show arrows */}
+      <DayNavigationOverlay prevHref={content.prev?.href} nextHref={content.next?.href} />
       <div className="min-w-0 flex-1">
         <div className="mx-auto max-w-2xl">
           <nav className="mb-4 flex items-center gap-2 text-xs text-fg-muted font-mono">
