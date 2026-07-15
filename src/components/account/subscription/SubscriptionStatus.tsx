@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useLanguage, t } from '@/lib/i18n-client';
+import { ChangePaymentModal, CancelSubscriptionModal } from './SubscriptionModals';
 
 interface SubscriptionStatusProps {
   isPro: boolean;
@@ -96,18 +97,8 @@ export function SubscriptionStatus({
           )}
           {isPro && (
             <>
-              <button
-                type="button"
-                className="flex-1 rounded-lg border border-border-strong px-4 py-2.5 text-sm font-semibold hover:bg-bg-tertiary transition"
-              >
-                {t(lang, 'changePayment')}
-              </button>
-              <button
-                type="button"
-                className="flex-1 rounded-lg border border-red-500/40 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-500/10 transition"
-              >
-                {t(lang, 'cancelSubscription')}
-              </button>
+              <ChangePaymentModal />
+              <CancelSubscriptionModal />
             </>
           )}
         </div>

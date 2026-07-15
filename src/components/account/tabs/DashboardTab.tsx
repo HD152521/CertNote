@@ -1,6 +1,7 @@
 'use client';
 
 import { useLanguage, t } from '@/lib/i18n-client';
+import { useEffect, useState } from 'react';
 import { SubscriptionStatus } from '@/components/account/subscription/SubscriptionStatus';
 
 interface DashboardTabProps {
@@ -9,8 +10,33 @@ interface DashboardTabProps {
   daysLeft: number | null;
 }
 
+interface ReviewStats {
+  totalCards: number;
+  dueCards: number;
+  masteredCards: number;
+}
+
 export function DashboardTab({ isPro, periodEnd, daysLeft }: DashboardTabProps) {
   const lang = useLanguage();
+  const [stats, setStats] = useState<ReviewStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/review/stats');
+        if (!res.ok) throw new Error('Failed to fetch stats');
+        const data = await res.json();
+        setStats(data);
+      } catch (error) {
+        console.error('Stats fetch error:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchStats();
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -30,56 +56,79 @@ export function DashboardTab({ isPro, periodEnd, daysLeft }: DashboardTabProps) 
       {/* 📊 Learning Statistics - Grid Layout */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted">
-          {lang === 'en' ? '📊 This Month' : '📊 이번 달'}
+          {lang === 'en' ? '📊 Your Progress' : '📊 학습 진행도'}
         </h2>
         <div className="grid grid-cols-3 gap-3">
-          {/* Cards Study Count */}
+          {/* Total Cards */}
           <div className="rounded-lg border border-border bg-bg-secondary p-4">
-            <p className="text-xs text-fg-muted mb-1">
-              {lang === 'en' ? 'Cards Studied' : '학습한 카드'}
+            <p className="text-xs text-fg-muted mb-2">
+              {lang === 'en' ? 'Total Cards' : '전체 카드'}
             </p>
-            <p className="text-2xl font-semibold text-fg">—</p>
-            <p className="text-xs text-fg-faint mt-1">Coming soon</p>
+            {loading ? (
+              <div className="h-8 bg-border rounded animate-pulse" />
+            ) : (
+              <p className="text-2xl font-semibold text-fg">{stats?.totalCards ?? 0}</p>
+            )}
           </div>
 
-          {/* Correct Rate */}
+          {/* Mastered Rate */}
           <div className="rounded-lg border border-border bg-bg-secondary p-4">
-            <p className="text-xs text-fg-muted mb-1">
-              {lang === 'en' ? 'Correct Rate' : '정답률'}
+            <p className="text-xs text-fg-muted mb-2">
+              {lang === 'en' ? 'Mastered' : '마스터한'}
             </p>
-            <p className="text-2xl font-semibold text-fg">—</p>
-            <p className="text-xs text-fg-faint mt-1">Coming soon</p>
+            {loading ? (
+              <div className="h-8 bg-border rounded animate-pulse" />
+            ) : (
+              <>
+                <p className="text-2xl font-semibold text-accent">
+                  {stats && stats.totalCards > 0
+                    ? Math.round((stats.masteredCards / stats.totalCards) * 100)
+                    : 0}%
+                </p>
+              </>
+            )}
           </div>
 
-          {/* Streak */}
+          {/* Review Due */}
           <div className="rounded-lg border border-border bg-bg-secondary p-4">
-            <p className="text-xs text-fg-muted mb-1">
-              {lang === 'en' ? 'Day Streak' : '연속 학습'}
+            <p className="text-xs text-fg-muted mb-2">
+              {lang === 'en' ? 'Due Today' : '오늘 복습'}
             </p>
-            <p className="text-2xl font-semibold text-fg">—</p>
-            <p className="text-xs text-fg-faint mt-1">Coming soon</p>
+            {loading ? (
+              <div className="h-8 bg-border rounded animate-pulse" />
+            ) : (
+              <p className={`text-2xl font-semibold ${
+                (stats?.dueCards ?? 0) > 0 ? 'text-orange-500' : 'text-fg'
+              }`}>
+                {stats?.dueCards ?? 0}
+              </p>
+            )}
           </div>
         </div>
       </section>
 
-      {/* 🎯 Recent Activity - Timeline */}
+      {/* 🎯 Quick Actions */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted">
-          {lang === 'en' ? '🎯 Recent Activity' : '🎯 최근 활동'}
+          {lang === 'en' ? '🎯 Quick Actions' : '🎯 빠른 액션'}
         </h2>
-        <div className="rounded-lg border border-border bg-bg-secondary p-6">
-          <div className="space-y-3 text-center py-4">
-            <p className="text-sm text-fg-muted">
-              {lang === 'en'
-                ? 'Your learning activity will appear here'
-                : '학습 활동이 여기에 표시됩니다'}
+        <div className="space-y-2">
+          <a href="/exam" className="block rounded-lg border border-border bg-bg-secondary p-4 hover:border-accent hover:bg-bg-tertiary transition">
+            <p className="text-sm font-medium text-fg">
+              {lang === 'en' ? '📝 Take Practice Exam' : '📝 모의고사 시작'}
             </p>
-            <p className="text-xs text-fg-faint">
-              {lang === 'en'
-                ? 'Start studying to see your progress'
-                : '학습을 시작하면 진행도가 표시됩니다'}
+            <p className="text-xs text-fg-muted mt-1">
+              {lang === 'en' ? 'Test your knowledge' : '지식을 테스트해보세요'}
             </p>
-          </div>
+          </a>
+          <a href="/review" className="block rounded-lg border border-border bg-bg-secondary p-4 hover:border-accent hover:bg-bg-tertiary transition">
+            <p className="text-sm font-medium text-fg">
+              {lang === 'en' ? '🔄 Start Review' : '🔄 복습 시작'}
+            </p>
+            <p className="text-xs text-fg-muted mt-1">
+              {lang === 'en' ? 'Review due cards' : '복습할 카드를 검토하세요'}
+            </p>
+          </a>
         </div>
       </section>
 
