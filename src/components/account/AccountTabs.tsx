@@ -50,36 +50,42 @@ export function AccountTabs({
   }
 
   return (
-    <div className="mx-auto max-w-sm py-16 space-y-8">
-      {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{t(lang, 'myPage')}</h1>
-        <p className="text-sm text-fg-muted">{userEmail}</p>
+    <div className="mx-auto max-w-2xl py-12 px-4 md:px-0 space-y-0">
+      {/* Sticky Header */}
+      <div className="sticky top-14 z-40 bg-bg pb-4 mb-6">
+        <div className="space-y-4">
+          {/* Title Section */}
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight">{t(lang, 'myPage')}</h1>
+            <p className="text-sm text-fg-muted">{userEmail}</p>
+          </div>
+
+          {/* Tab Navigation - Horizontal Scrollable */}
+          <div className="flex gap-1 border-b border-border overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  px-3 py-3 text-sm font-medium whitespace-nowrap
+                  border-b-2 transition-all duration-200
+                  ${
+                    activeTab === tab.id
+                      ? 'text-accent border-accent'
+                      : 'text-fg-muted border-transparent hover:text-fg'
+                  }
+                `}
+              >
+                <span className="mr-1.5">{tab.icon}</span>
+                {getTabLabel(tab.id)}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex gap-1 border-b border-border overflow-x-auto">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`
-              px-4 py-3 text-sm font-medium whitespace-nowrap
-              border-b-2 transition-colors
-              ${
-                activeTab === tab.id
-                  ? 'text-accent border-accent'
-                  : 'text-fg-muted border-transparent hover:text-fg'
-              }
-            `}
-          >
-            {tab.icon} {getTabLabel(tab.id)}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      <div className="space-y-6">
+      {/* Tab Content Container */}
+      <div className="space-y-8">
         {activeTab === 'dashboard' && (
           <DashboardTab isPro={isPro} periodEnd={periodEnd} daysLeft={daysLeft} />
         )}

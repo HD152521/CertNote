@@ -13,10 +13,12 @@ export function DashboardTab({ isPro, periodEnd, daysLeft }: DashboardTabProps) 
   const lang = useLanguage();
 
   return (
-    <div className="space-y-6">
-      {/* Subscription Status - Prominent Card */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium">{t(lang, 'subscriptionPlan')}</h2>
+    <div className="space-y-8">
+      {/* 📦 Subscription Status - Prominent Section */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted">
+          {lang === 'en' ? '📦 Your Plan' : '📦 현재 플랜'}
+        </h2>
         <SubscriptionStatus
           isPro={isPro}
           periodEnd={periodEnd}
@@ -25,30 +27,72 @@ export function DashboardTab({ isPro, periodEnd, daysLeft }: DashboardTabProps) 
         />
       </section>
 
-      {/* Learning Statistics - Placeholder */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium">
-          {lang === 'en' ? 'Learning Statistics' : '학습 통계'}
+      {/* 📊 Learning Statistics - Grid Layout */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted">
+          {lang === 'en' ? '📊 This Month' : '📊 이번 달'}
         </h2>
-        <div className="rounded-lg border border-border bg-bg-secondary p-6">
-          <p className="text-sm text-fg-muted">
-            {lang === 'en'
-              ? 'Learning statistics coming soon. Check back later!'
-              : '학습 통계는 곧 추가될 예정입니다. 나중에 다시 확인해 주세요!'}
-          </p>
+        <div className="grid grid-cols-3 gap-3">
+          {/* Cards Study Count */}
+          <div className="rounded-lg border border-border bg-bg-secondary p-4">
+            <p className="text-xs text-fg-muted mb-1">
+              {lang === 'en' ? 'Cards Studied' : '학습한 카드'}
+            </p>
+            <p className="text-2xl font-semibold text-fg">—</p>
+            <p className="text-xs text-fg-faint mt-1">Coming soon</p>
+          </div>
+
+          {/* Correct Rate */}
+          <div className="rounded-lg border border-border bg-bg-secondary p-4">
+            <p className="text-xs text-fg-muted mb-1">
+              {lang === 'en' ? 'Correct Rate' : '정답률'}
+            </p>
+            <p className="text-2xl font-semibold text-fg">—</p>
+            <p className="text-xs text-fg-faint mt-1">Coming soon</p>
+          </div>
+
+          {/* Streak */}
+          <div className="rounded-lg border border-border bg-bg-secondary p-4">
+            <p className="text-xs text-fg-muted mb-1">
+              {lang === 'en' ? 'Day Streak' : '연속 학습'}
+            </p>
+            <p className="text-2xl font-semibold text-fg">—</p>
+            <p className="text-xs text-fg-faint mt-1">Coming soon</p>
+          </div>
         </div>
       </section>
 
-      {/* Recent Activity - Placeholder */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium">
-          {lang === 'en' ? 'Recent Activity' : '최근 활동'}
+      {/* 🎯 Recent Activity - Timeline */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted">
+          {lang === 'en' ? '🎯 Recent Activity' : '🎯 최근 활동'}
         </h2>
         <div className="rounded-lg border border-border bg-bg-secondary p-6">
-          <p className="text-sm text-fg-muted">
+          <div className="space-y-3 text-center py-4">
+            <p className="text-sm text-fg-muted">
+              {lang === 'en'
+                ? 'Your learning activity will appear here'
+                : '학습 활동이 여기에 표시됩니다'}
+            </p>
+            <p className="text-xs text-fg-faint">
+              {lang === 'en'
+                ? 'Start studying to see your progress'
+                : '학습을 시작하면 진행도가 표시됩니다'}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 💡 Tips - Info Card */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted">
+          {lang === 'en' ? '💡 Study Tip' : '💡 학습 팁'}
+        </h2>
+        <div className="rounded-lg border border-accent/30 bg-accent/5 p-4">
+          <p className="text-sm text-fg">
             {lang === 'en'
-              ? 'Your recent activity will appear here.'
-              : '최근 활동이 여기에 표시됩니다.'}
+              ? 'Consistent study is the key to mastering AWS certifications. Practice daily and review difficult topics regularly.'
+              : 'AWS 자격증 취득의 핵심은 꾸준한 학습입니다. 매일 연습하고 어려운 주제를 정기적으로 복습하세요.'}
           </p>
         </div>
       </section>
