@@ -40,6 +40,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const w = parseSegment(week, 'week');
   const d = parseSegment(day, 'day');
   if (w === null || d === null) return {};
+
+  // Week 2 이상은 Google 검색 인덱싱 차단 (프리미엄 콘텐츠)
+  if (w > FREE_WEEK) {
+    return {
+      robots: 'noindex, nofollow',
+    };
+  }
+
   const content = await getDay(category, slug, w, d).catch(() => null);
   if (!content) return {};
   const title = `${content.title} — ${content.certMeta.code} Week ${w}`;
