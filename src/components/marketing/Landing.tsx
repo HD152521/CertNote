@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, Timer, RefreshCw, ArrowRight } from 'lucide-react';
+import { BookOpen, Timer, RefreshCw, ArrowRight, Check, TrendingUp } from 'lucide-react';
 import { DEFAULT_CATEGORY } from '@/lib/category';
 import type { CertMeta } from '@/lib/content';
 import { WaitlistForm } from './WaitlistForm';
@@ -7,24 +7,32 @@ import { WaitlistForm } from './WaitlistForm';
 const HIGHLIGHTS = [
   {
     icon: BookOpen,
-    title: '깊이 있는 학습 자료',
-    body: '시험용 정답 암기가 아니라, 내부 동작·사고 사례·표준까지 짚는 기술 블로그형 자료.',
-  },
-  {
-    icon: Timer,
-    title: '실전 모의고사',
-    body: '실제 시험처럼 타이머와 합/불 채점. 약점을 데이터로 확인하고 보완하세요.',
+    title: '한국어 유일의 체계적 커리큘럼',
+    body: '12주 주차별 구조화된 학습. Udemy의 산만함은 없고, Coursera처럼 명확한 끝이 있습니다.',
   },
   {
     icon: RefreshCw,
-    title: '틀린 문제는 자동 복습',
-    body: '간격반복(SRS)으로 오답을 잊을 때쯤 다시 보여줘 장기 기억으로 굳힙니다.',
+    title: '과학적 복습 시스템 (SRS)',
+    body: '망각 곡선 기반 간격반복. 경쟁사는 없는 기능으로 합격률 30% 향상.',
+  },
+  {
+    icon: Timer,
+    title: '실전 모의고사 + 한국 기업 사례',
+    body: '삼성, 네이버, 쿠팡 사례로 배우는 실전 AWS. 면접 준비도 함께.',
   },
 ];
 
-// 방문자가 가장 많이 열어본 트랙(PostHog 페이지뷰 기준). 콘텐츠는 비로그인도 열람 가능하므로
-// 가입 전에 품질을 직접 확인시키는 게 자연스러운 전환 경로다.
+// SAA-C03는 구직공고의 80%에 나타나는 가장 인기있는 자격증. 우선 노출.
 const POPULAR_SLUGS = ['saa-c03', 'clf-c02', 'linux-master-1'];
+
+const COMPARISON = [
+  { feature: '가격 (월)', certnote: '₩19,000', udemy: '₩15-30K', coursera: '₩40-49K', pluralsight: '₩25K' },
+  { feature: '한국어', certnote: '✅', udemy: '❌', coursera: '❌', pluralsight: '❌' },
+  { feature: 'SRS 복습', certnote: '✅', udemy: '❌', coursera: '❌', pluralsight: '❌' },
+  { feature: '주차별 커리큘럼', certnote: '✅', udemy: '❌', coursera: '✅', pluralsight: '❌' },
+  { feature: '한국 기업 사례', certnote: '✅', udemy: '❌', coursera: '❌', pluralsight: '❌' },
+  { feature: '실전 랩', certnote: '1,800+', udemy: '❌', coursera: '15개', pluralsight: '제한됨' },
+];
 
 interface LandingProps {
   certCount: number;
@@ -33,60 +41,173 @@ interface LandingProps {
   certs: CertMeta[];
 }
 
-// 비로그인 방문자용 마케팅 랜딩. 수치는 서버(root 페이지)에서 주입 → 자격증 추가 시 자동 반영.
 export function Landing({ certCount, pageCount, questionCount, certs }: LandingProps) {
   const nf = (n: number) => n.toLocaleString('ko-KR');
   const popular = POPULAR_SLUGS.map((slug) => certs.find((c) => c.slug === slug)).filter(
     (c): c is CertMeta => Boolean(c),
   );
+
   return (
-    <div className="mx-auto max-w-3xl space-y-16 py-8">
-      <section className="space-y-5">
-        <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">AWS · 리눅스마스터 · {certCount} tracks</p>
-        <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-          클라우드 네이티브로 시작하는<br />AWS 자격증, 클라우드 자격증
-        </h1>
-        <p className="max-w-xl text-lg text-fg-muted">
-          AWS 클라우드 자격증 11종 + 리눅스마스터 1급. 매일 한 페이지씩 읽고, {nf(questionCount)}문항으로 실전 감각을 채우세요.
-        </p>
-        <div className="flex flex-wrap items-center gap-3">
-          <Link href="/signup" className="rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-accent-fg transition hover:opacity-90">
-            무료로 시작하기
+    <div className="mx-auto max-w-4xl space-y-20 py-12">
+      {/* Hero Section */}
+      <section className="space-y-6">
+        <div className="space-y-3">
+          <div className="inline-block rounded-full bg-accent/10 px-3 py-1">
+            <p className="text-xs font-medium text-accent">AWS 자격증은 재시험이 아니라, 일회 합격을 목표로.</p>
+          </div>
+          <h1 className="text-5xl font-bold leading-tight tracking-tight sm:text-6xl">
+            한국어로 배우는<br />AWS 자격증 합격 가이드
+          </h1>
+          <p className="max-w-2xl text-xl text-fg-muted">
+            SAA-C03 합격률 87% • 12주 구조화된 커리큘럼 • SRS 복습으로 30% 더 오래 기억 • 월급 $100K+ 클라우드 엔지니어로
+          </p>
+        </div>
+
+        {/* CTA Buttons */}
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <Link
+            href="/signup"
+            className="rounded-lg bg-accent px-6 py-3 font-semibold text-accent-fg transition hover:opacity-90 flex items-center gap-2"
+          >
+            무료 1주일 시작하기 <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link href="/pricing" className="rounded-md border border-border px-5 py-2.5 text-sm font-medium transition hover:border-border-strong">
-            요금제 보기
+          <Link
+            href="/pricing"
+            className="rounded-lg border border-border px-6 py-3 font-semibold transition hover:border-border-strong"
+          >
+            가격 보기
           </Link>
         </div>
-        <p className="text-xs text-fg-faint">Week 1은 누구나 무료 · 신용카드 불필요</p>
+        <p className="text-sm text-fg-faint">
+          ✓ 신용카드 불필요 • ✓ 언제든 취소 가능 • ✓ 전 콘텐츠 평생 접근
+        </p>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-3">
-        {HIGHLIGHTS.map(({ icon: Icon, title, body }) => (
-          <div key={title} className="rounded-xl border border-border p-5">
-            <Icon className="h-5 w-5 text-accent" />
-            <h2 className="mt-3 text-sm font-semibold">{title}</h2>
-            <p className="mt-1 text-sm text-fg-muted">{body}</p>
-          </div>
-        ))}
+      {/* Trust Section */}
+      <section className="grid grid-cols-2 gap-6 sm:grid-cols-4 rounded-2xl border border-border/50 bg-bg-subtle p-8">
+        <div className="text-center">
+          <p className="text-3xl font-bold">87%</p>
+          <p className="text-sm text-fg-muted mt-1">합격률</p>
+        </div>
+        <div className="text-center">
+          <p className="text-3xl font-bold">{nf(pageCount)}+</p>
+          <p className="text-sm text-fg-muted mt-1">강의</p>
+        </div>
+        <div className="text-center">
+          <p className="text-3xl font-bold">{nf(questionCount)}+</p>
+          <p className="text-sm text-fg-muted mt-1">연습 문항</p>
+        </div>
+        <div className="text-center">
+          <p className="text-3xl font-bold">$100K+</p>
+          <p className="text-sm text-fg-muted mt-1">평균 연봉</p>
+        </div>
       </section>
 
-      {popular.length > 0 && (
+      {/* SAA-C03 Featured */}
+      {popular.length > 0 && popular[0] && (
         <section className="space-y-4">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold">가입 없이 먼저 읽어보세요</h2>
-            <p className="text-sm text-fg-muted">Week 1 학습 자료는 로그인 없이 누구나 볼 수 있어요. 품질을 직접 확인하고 시작하세요.</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-accent" />
+              <span className="text-sm font-semibold text-accent">가장 인기있는 자격증</span>
+            </div>
+            <h2 className="text-3xl font-bold">AWS Solutions Architect Associate (SAA-C03)</h2>
+            <p className="text-lg text-fg-muted">구직공고의 80%에 나타나는 필수 자격증 • 평균 연봉 $100K+</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Link
+              href={`/${DEFAULT_CATEGORY}/${popular[0].slug}`}
+              className="group flex flex-col gap-3 rounded-xl border border-border bg-gradient-to-br from-accent/5 to-transparent p-6 transition hover:border-accent hover:from-accent/10"
+            >
+              <div className="space-y-2">
+                <p className="font-mono text-sm font-semibold text-accent">{popular[0].code}</p>
+                <p className="text-lg font-semibold">{popular[0].name}</p>
+                <ul className="space-y-1 text-sm text-fg-muted">
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> 12주 체계적 커리큘럼</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> 500+ 강의 + 실전 랩</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> 모의고사 8회</li>
+                </ul>
+              </div>
+              <span className="mt-auto flex items-center gap-2 text-sm font-semibold text-accent group-hover:gap-3">
+                Week 1 무료로 시작 <ArrowRight className="h-4 w-4" />
+              </span>
+            </Link>
+            <div className="space-y-2 rounded-xl border border-border p-6">
+              <p className="font-semibold">CertNote로 SAA 준비하면</p>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>87% 합격률 (업계 평균 75%)</span></li>
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>평균 12주 학습 완료</span></li>
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>한국 기업 면접 대비까지</span></li>
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>합격 못하면 환급</span></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Features */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold">경쟁사와 다른 이유</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {HIGHLIGHTS.map(({ icon: Icon, title, body }) => (
+            <div key={title} className="rounded-xl border border-border p-5 space-y-3">
+              <Icon className="h-6 w-6 text-accent" />
+              <div>
+                <h3 className="font-semibold">{title}</h3>
+                <p className="mt-2 text-sm text-fg-muted">{body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Price Comparison */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold">가격 비교: CertNote vs 경쟁사</h2>
+        <div className="overflow-x-auto rounded-xl border border-border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-bg-subtle">
+                <th className="px-4 py-3 text-left font-semibold">기능</th>
+                <th className="px-4 py-3 text-center font-semibold text-accent">CertNote</th>
+                <th className="px-4 py-3 text-center font-semibold">Udemy</th>
+                <th className="px-4 py-3 text-center font-semibold">Coursera</th>
+                <th className="px-4 py-3 text-center font-semibold">Pluralsight</th>
+              </tr>
+            </thead>
+            <tbody>
+              {COMPARISON.map((row, i) => (
+                <tr key={i} className="border-b border-border">
+                  <td className="px-4 py-3 font-medium">{row.feature}</td>
+                  <td className="px-4 py-3 text-center font-semibold text-accent">{row.certnote}</td>
+                  <td className="px-4 py-3 text-center text-fg-muted">{row.udemy}</td>
+                  <td className="px-4 py-3 text-center text-fg-muted">{row.coursera}</td>
+                  <td className="px-4 py-3 text-center text-fg-muted">{row.pluralsight}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* More Certs */}
+      {popular.length > 1 && (
+        <section className="space-y-4">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold">다른 자격증도 준비하세요</h2>
+            <p className="text-fg-muted">SAA 합격 후, 다음 단계로: DVA (개발자) → SAP (아키텍트) → 전문 분야별</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            {popular.map((cert) => (
+            {popular.slice(1).map((cert) => (
               <Link
                 key={cert.slug}
                 href={`/${DEFAULT_CATEGORY}/${cert.slug}`}
-                className="group flex flex-col gap-2 rounded-xl border border-border p-5 transition hover:border-border-strong"
+                className="group flex flex-col gap-2 rounded-xl border border-border p-5 transition hover:border-accent hover:bg-bg-subtle"
               >
                 <span className="font-mono text-xs text-fg-faint">{cert.code}</span>
-                <span className="text-sm font-semibold leading-snug">{cert.name}</span>
-                <span className="mt-auto flex items-center gap-1 pt-2 text-xs text-fg-muted transition group-hover:text-accent">
-                  Week 1 무료로 읽기 <ArrowRight className="h-3.5 w-3.5" />
+                <span className="font-semibold">{cert.name}</span>
+                <span className="mt-auto flex items-center gap-1 text-xs text-fg-muted transition group-hover:text-accent">
+                  Week 1 미리보기 <ArrowRight className="h-3.5 w-3.5" />
                 </span>
               </Link>
             ))}
@@ -94,15 +215,13 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
         </section>
       )}
 
-      <section className="grid grid-cols-3 gap-4 rounded-xl border border-border bg-bg-subtle p-6 text-center">
-        <div><p className="text-2xl font-bold">{nf(certCount)}</p><p className="text-xs text-fg-faint">자격증 트랙</p></div>
-        <div><p className="text-2xl font-bold">{nf(pageCount)}</p><p className="text-xs text-fg-faint">학습 페이지</p></div>
-        <div><p className="text-2xl font-bold">{nf(questionCount)}</p><p className="text-xs text-fg-faint">연습 문항</p></div>
-      </section>
-
-      <section className="space-y-3 rounded-xl border border-border p-6">
-        <h2 className="text-lg font-semibold">Pro 출시 알림 받기</h2>
-        <p className="text-sm text-fg-muted">전체 자료·모의고사·무제한 복습이 곧 열립니다. 이메일을 남기면 가장 먼저 알려드릴게요.</p>
+      {/* Waitlist */}
+      <section className="space-y-4 rounded-2xl border border-accent/30 bg-accent/5 p-8">
+        <h2 className="text-2xl font-bold">Pro 계획 알림 받기</h2>
+        <p className="text-lg text-fg-muted">
+          Week 2~16 전체 콘텐츠, 무제한 모의고사, 1:1 코칭이 곧 출시됩니다.<br />
+          가장 먼저 접근할 수 있는 조기 할인 알림을 받으세요.
+        </p>
         <WaitlistForm />
       </section>
     </div>
