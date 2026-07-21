@@ -12,13 +12,13 @@ const HIGHLIGHTS = [
   },
   {
     icon: RefreshCw,
-    title: '과학적 복습 시스템 (SRS)',
-    body: '망각 곡선 기반 간격반복. 경쟁사는 없는 기능으로 합격률 30% 향상.',
+    title: '간격반복 복습 (SRS)',
+    body: '틀린 문제를 잊을 때쯤 다시 보여주는 간격반복으로 장기 기억에 남깁니다.',
   },
   {
     icon: Timer,
-    title: '실전 모의고사 + 한국 기업 사례',
-    body: '삼성, 네이버, 쿠팡 사례로 배우는 실전 AWS. 면접 준비도 함께.',
+    title: '실전 모의고사',
+    body: '실제 시험처럼 타이머와 합/불 채점. 약점을 데이터로 확인하고 보완하세요.',
   },
 ];
 
@@ -30,8 +30,8 @@ const COMPARISON = [
   { feature: '한국어', certnote: '✅', udemy: '❌', coursera: '❌', pluralsight: '❌' },
   { feature: 'SRS 복습', certnote: '✅', udemy: '❌', coursera: '❌', pluralsight: '❌' },
   { feature: '주차별 커리큘럼', certnote: '✅', udemy: '❌', coursera: '✅', pluralsight: '❌' },
-  { feature: '한국 기업 사례', certnote: '✅', udemy: '❌', coursera: '❌', pluralsight: '❌' },
-  { feature: '실전 랩', certnote: '1,800+', udemy: '❌', coursera: '15개', pluralsight: '제한됨' },
+  { feature: '실전 모의고사', certnote: '✅', udemy: '별도', coursera: '✅', pluralsight: '✅' },
+  { feature: '오답노트 자동복습', certnote: '✅', udemy: '❌', coursera: '❌', pluralsight: '❌' },
 ];
 
 interface LandingProps {
@@ -59,7 +59,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
             한국어로 배우는<br />AWS 자격증 합격 가이드
           </h1>
           <p className="max-w-2xl text-xl text-fg-muted">
-            SAA-C03 합격률 87% • 12주 구조화된 커리큘럼 • SRS 복습으로 30% 더 오래 기억 • 월급 $100K+ 클라우드 엔지니어로
+            주차별 구조화된 커리큘럼 • 매일 30분 심화 노트 • 연습문제·모의고사·간격반복 복습까지. Week 1은 무료.
           </p>
         </div>
 
@@ -79,15 +79,15 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
           </Link>
         </div>
         <p className="text-sm text-fg-faint">
-          ✓ 신용카드 불필요 • ✓ 언제든 취소 가능 • ✓ 전 콘텐츠 평생 접근
+          ✓ 신용카드 불필요 • ✓ 언제든 취소 가능 • ✓ Week 1 무료
         </p>
       </section>
 
       {/* Trust Section */}
       <section className="grid grid-cols-2 gap-6 sm:grid-cols-4 rounded-2xl border border-border/50 bg-bg-subtle p-8">
         <div className="text-center">
-          <p className="text-3xl font-bold">87%</p>
-          <p className="text-sm text-fg-muted mt-1">합격률</p>
+          <p className="text-3xl font-bold">{nf(certCount)}</p>
+          <p className="text-sm text-fg-muted mt-1">자격증 트랙</p>
         </div>
         <div className="text-center">
           <p className="text-3xl font-bold">{nf(pageCount)}+</p>
@@ -98,8 +98,8 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
           <p className="text-sm text-fg-muted mt-1">연습 문항</p>
         </div>
         <div className="text-center">
-          <p className="text-3xl font-bold">$100K+</p>
-          <p className="text-sm text-fg-muted mt-1">평균 연봉</p>
+          <p className="text-3xl font-bold">₩0</p>
+          <p className="text-sm text-fg-muted mt-1">Week 1 무료</p>
         </div>
       </section>
 
@@ -112,7 +112,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
               <span className="text-sm font-semibold text-accent">가장 인기있는 자격증</span>
             </div>
             <h2 className="text-3xl font-bold">AWS Solutions Architect Associate (SAA-C03)</h2>
-            <p className="text-lg text-fg-muted">구직공고의 80%에 나타나는 필수 자격증 • 평균 연봉 $100K+</p>
+            <p className="text-lg text-fg-muted">클라우드 직군에서 가장 널리 요구되는 어소시에이트 자격증</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Link
@@ -123,9 +123,9 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
                 <p className="font-mono text-sm font-semibold text-accent">{popular[0].code}</p>
                 <p className="text-lg font-semibold">{popular[0].name}</p>
                 <ul className="space-y-1 text-sm text-fg-muted">
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> 12주 체계적 커리큘럼</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> 500+ 강의 + 실전 랩</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> 모의고사 8회</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> {popular[0].weeks}주 · 총 {popular[0].dayCount}일 커리큘럼</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> 매일 심화 노트 + 연습 문제</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> 실전 모의고사 · 간격반복 복습</li>
                 </ul>
               </div>
               <span className="mt-auto flex items-center gap-2 text-sm font-semibold text-accent group-hover:gap-3">
@@ -135,8 +135,9 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
             <div className="space-y-2 rounded-xl border border-border p-6">
               <p className="font-semibold">CertNote로 SAA 준비하면</p>
               <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>87% 합격률 (업계 평균 75%)</span></li>
-                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>평균 12주 학습 완료</span></li>
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>한국어 심화 노트로 개념부터 탄탄히</span></li>
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>매일 한 페이지씩, 출퇴근 15분 학습</span></li>
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>틀린 문제는 간격반복으로 자동 복습</span></li>
               </ul>
             </div>
           </div>

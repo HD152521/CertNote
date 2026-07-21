@@ -18,7 +18,7 @@ const FREE_FEATURES = [
 ];
 
 const PRO_FEATURES = [
-  { name: '전 자격증 전체 학습 자료 (2,696문항)', included: true },
+  { name: 'AWS 11종 + 리눅스마스터 전체 학습 자료', included: true },
   { name: '실전 모의고사 8회 (타이머 · 합/불 채점)', included: true },
   { name: '무제한 간격반복 복습 (SRS) · 오답노트', included: true },
   { name: '자격증별 진척 · 정답률 상세 통계', included: true },
@@ -29,8 +29,8 @@ const COMPARISON = [
   { name: '가격 (월)', free: '₩0', pro: '₩9,900', udemy: '₩15-30K', coursera: '₩40-49K' },
   { name: '한국어', free: '✅', pro: '✅', udemy: '❌', coursera: '❌' },
   { name: 'SRS 복습', free: '❌', pro: '✅', udemy: '❌', coursera: '❌' },
-  { name: '주차별 커리큘럼', free: 'Week 1만', pro: '✅ 16주', udemy: '❌', coursera: '✅' },
-  { name: '1,800+ 실전 랩', free: '❌', pro: '✅', udemy: '❌', coursera: '15개만' },
+  { name: '주차별 커리큘럼', free: 'Week 1만', pro: '✅ 전체', udemy: '❌', coursera: '✅' },
+  { name: '실전 모의고사', free: '❌', pro: '✅', udemy: '별도', coursera: '✅' },
 ];
 
 const FAQS = [
@@ -44,7 +44,7 @@ const FAQS = [
   },
   {
     q: '다른 자격증도 포함되나요?',
-    a: '네, Pro 구독으로 AWS 11종(SAA, SOA, DVA, SAP, SCS, PAS, DBS, ANS, MLS, MAP, SpecSol) + 리눅스마스터 1급 모두 접근 가능합니다. 향후 Kubernetes, Docker 등 추가될 예정입니다.',
+    a: '네, Pro 구독으로 AWS 자격증 11종(Cloud Practitioner·SAA·SOA·DVA·SAP·DOP·Security·ML·Data Engineer 등) + 리눅스마스터 1급 모두 접근 가능합니다.',
   },
   {
     q: 'Free에서 Pro로 전환하면 진도가 초기화되나요?',
@@ -111,7 +111,7 @@ export default function PricingPage() {
           </div>
           <p className="mt-1 text-4xl font-bold">₩9,900<span className="text-lg font-normal text-fg-muted"> / 월</span></p>
           <p className="text-sm text-fg-faint">언제든 해지 가능</p>
-          <p className="mt-3 text-sm text-accent font-semibold">💰 Coursera보다 75% 저렴 • 🎯 87% 합격률</p>
+          <p className="mt-3 text-sm text-accent font-semibold">💰 Coursera(₩40-49K)보다 75% 저렴</p>
           <ul className="mt-6 space-y-2">
             {PRO_FEATURES.map((f) => (
               <CheckItem key={f.name} included={f.included}>{f.name}</CheckItem>
