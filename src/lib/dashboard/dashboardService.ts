@@ -41,6 +41,51 @@ export interface DomainStat {
   accuracy: number; // 0~100
 }
 
+// 자격증·주차별 정답률(약점 분석용). day 문제는 domain 태그가 없어 주차로 버킷한다.
+// → 모의고사를 풀지 않아도(day 퀴즈만 풀어도) 약점 신호가 채워진다.
+export interface TopicStat {
+  slug: string;
+  code: string;
+  week: number;
+  attempts: number;
+  correct: number;
+  accuracy: number; // 0~100
+}
+
+interface TopicAttempt {
+  questionId: string;
+  correct: boolean;
+}
+
+// day 문제(week>0)를 자격증·주차별로 집계해 약점순(정답률 낮은 순)으로 반환한다(순수).
+// getQ/codeBySlug를 주입받아 DB 없이 단위테스트 가능(dashboardService IO와 분리).
+export function buildTopicStats(
+  attempts: TopicAttempt[],
+  getQ: (id: string) => { slug: string; week: number } | undefined,
+  codeBySlug: Map<string, string>,
+): TopicStat[] {
+  const agg = new Map<string, { slug: string; week: number; attempts: number; correct: number }>();
+  for (const at of attempts) {
+    const q = getQ(at.questionId);
+    if (!q || q.week <= 0) continue; // 모의고사(week 0)는 domain 집계가 담당.
+    const key = `${q.slug}#${q.week}`;
+    const cur = agg.get(key) ?? { slug: q.slug, week: q.week, attempts: 0, correct: 0 };
+    cur.attempts += 1;
+    if (at.correct) cur.correct += 1;
+    agg.set(key, cur);
+  }
+  return [...agg.values()]
+    .map((t) => ({
+      slug: t.slug,
+      code: codeBySlug.get(t.slug) ?? t.slug,
+      week: t.week,
+      attempts: t.attempts,
+      correct: t.correct,
+      accuracy: Math.round((t.correct / t.attempts) * 100),
+    }))
+    .sort((a, b) => a.accuracy - b.accuracy || b.attempts - a.attempts);
+}
+
 export interface DashboardData {
   attempts: number;
   correct: number;
@@ -50,7 +95,8 @@ export interface DashboardData {
   coverage: number; // 0~100, 전체 문제 중 한 번이라도 푼 비율
   review: ReviewCounts;
   certs: CertProgress[];
-  domains: DomainStat[]; // 정답률 낮은 순(약점 우선)
+  domains: DomainStat[]; // 모의고사 도메인별, 정답률 낮은 순(약점 우선)
+  topics: TopicStat[]; // day 문제 자격증·주차별, 정답률 낮은 순(약점 우선)
   recent: RecentAttempt[];
 }
 
@@ -139,6 +185,14 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
 
   const totalQuestions = getAllQuestions().length;
 
+  // day 문제 주차별 약점(모의고사 없이도 채워지도록). 자격증 코드 매핑 주입.
+  const codeBySlug = new Map(certs.map((c) => [c.slug, c.code]));
+  const topics = buildTopicStats(
+    attemptList.map((at) => ({ questionId: at.questionId, correct: at.correct })),
+    getQuestionById,
+    codeBySlug,
+  );
+
   const recent: RecentAttempt[] = [];
   for (const at of attemptList.slice(0, RECENT_LIMIT)) {
     const q = getQuestionById(at.questionId);
@@ -165,6 +219,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     review,
     certs: certProgress,
     domains,
+    topics,
     recent,
   };
 }

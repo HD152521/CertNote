@@ -161,6 +161,30 @@ export default async function DashboardPage() {
             )}
           </section>
 
+          {/* 주차별 약점 — day 퀴즈 정답률(자격증·주차별, 약점순). 모의고사 없이도 채워진다. */}
+          {data.topics.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-sm font-medium text-fg-muted">{lang === 'en' ? 'Weak Areas by Week' : '주차별 약점'}</h2>
+              <div className="space-y-2 rounded-lg border border-border bg-bg-elevated px-4 py-3">
+                {data.topics.slice(0, 6).map((t) => {
+                  const tone = t.accuracy < 60 ? '#ef4444' : t.accuracy < 80 ? '#f59e0b' : '#22c55e';
+                  const label = lang === 'en' ? `${t.code} · Week ${t.week}` : `${t.code} · ${t.week}주차`;
+                  return (
+                    <div key={`${t.slug}-${t.week}`}>
+                      <div className="mb-1 flex items-center justify-between gap-3 text-xs">
+                        <span className="min-w-0 truncate text-fg">{label}</span>
+                        <span className="shrink-0 tabular-nums text-fg-muted">{t.accuracy}% · {t.correct}/{t.attempts}</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-bg-subtle">
+                        <div className="h-full rounded-full" style={{ width: `${t.accuracy}%`, backgroundColor: tone }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
           {/* 최근 학습 */}
           {data.recent.length > 0 && (
             <section className="space-y-3">
