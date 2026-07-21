@@ -15,7 +15,6 @@ const FREE_FEATURES = [
   { name: '전체 자료 (Week 2~16)', included: false },
   { name: '모의고사 8회', included: false },
   { name: 'SRS 무제한 복습', included: false },
-  { name: '1:1 코칭 (Pro+)', included: false },
 ];
 
 const PRO_FEATURES = [
@@ -24,13 +23,10 @@ const PRO_FEATURES = [
   { name: '무제한 간격반복 복습 (SRS) · 오답노트', included: true },
   { name: '자격증별 진척 · 정답률 상세 통계', included: true },
   { name: '출시되는 신규 자격증 자동 포함', included: true },
-  { name: '월 1회 라이브 Q&A 세션 (한국 시간대)', included: true },
-  { name: '합격 못하면 환급 (조건 적용)', included: true },
-  { name: '한국 기업 면접 대비 가이드', included: true },
 ];
 
 const COMPARISON = [
-  { name: '가격 (월)', free: '₩0', pro: '₩19,000', udemy: '₩15-30K', coursera: '₩40-49K' },
+  { name: '가격 (월)', free: '₩0', pro: '₩9,900', udemy: '₩15-30K', coursera: '₩40-49K' },
   { name: '한국어', free: '✅', pro: '✅', udemy: '❌', coursera: '❌' },
   { name: 'SRS 복습', free: '❌', pro: '✅', udemy: '❌', coursera: '❌' },
   { name: '주차별 커리큘럼', free: 'Week 1만', pro: '✅ 16주', udemy: '❌', coursera: '✅' },
@@ -41,10 +37,6 @@ const FAQS = [
   {
     q: 'SAA-C03 합격까지 몇 주 걸려요?',
     a: '평균 12주입니다. CertNote의 주차별 커리큘럼을 따르면 주당 5-7시간 학습으로 12주 안에 완료 가능합니다. 더 빨리 진도를 나가거나 느리게 진도를 나갈 수 있습니다.',
-  },
-  {
-    q: '환급 조건이 뭔가요?',
-    a: 'Pro 계약 중 본격적으로 시험 준비를 했는데(모의고사 5회 이상, Week 2~10 강의 50% 이상 완료) 시험에 탈락한 경우, 3개월 무료 연장 또는 전액 환급을 선택할 수 있습니다.',
   },
   {
     q: 'Week 1 무료로도 충분히 배울 수 있나요?',
@@ -85,7 +77,7 @@ export default function PricingPage() {
         <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">Pricing</p>
         <h1 className="text-4xl font-bold tracking-tight">경쟁사보다 60% 저렴합니다</h1>
         <p className="mx-auto max-w-2xl text-lg text-fg-muted">
-          Coursera는 ₩40-49K, CertNote는 ₩19K.<br />
+          Coursera는 ₩40-49K, CertNote는 ₩9,900.<br />
           한국어 + SRS 복습은 덤입니다.
         </p>
       </header>
@@ -117,9 +109,9 @@ export default function PricingPage() {
             <h2 className="text-2xl font-bold">Pro</h2>
             <span className="rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase text-accent-fg">추천</span>
           </div>
-          <p className="mt-1 text-4xl font-bold">₩19,000<span className="text-lg font-normal text-fg-muted"> / 월</span></p>
+          <p className="mt-1 text-4xl font-bold">₩9,900<span className="text-lg font-normal text-fg-muted"> / 월</span></p>
           <p className="text-sm text-fg-faint">언제든 해지 가능</p>
-          <p className="mt-3 text-sm text-accent font-semibold">💰 Coursera보다 55% 저렴 • 🎯 87% 합격률</p>
+          <p className="mt-3 text-sm text-accent font-semibold">💰 Coursera보다 75% 저렴 • 🎯 87% 합격률</p>
           <ul className="mt-6 space-y-2">
             {PRO_FEATURES.map((f) => (
               <CheckItem key={f.name} included={f.included}>{f.name}</CheckItem>

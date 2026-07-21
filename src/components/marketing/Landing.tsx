@@ -26,7 +26,7 @@ const HIGHLIGHTS = [
 const POPULAR_SLUGS = ['saa-c03', 'clf-c02', 'linux-master-1'];
 
 const COMPARISON = [
-  { feature: '가격 (월)', certnote: '₩19,000', udemy: '₩15-30K', coursera: '₩40-49K', pluralsight: '₩25K' },
+  { feature: '가격 (월)', certnote: '₩9,900', udemy: '₩15-30K', coursera: '₩40-49K', pluralsight: '₩25K' },
   { feature: '한국어', certnote: '✅', udemy: '❌', coursera: '❌', pluralsight: '❌' },
   { feature: 'SRS 복습', certnote: '✅', udemy: '❌', coursera: '❌', pluralsight: '❌' },
   { feature: '주차별 커리큘럼', certnote: '✅', udemy: '❌', coursera: '✅', pluralsight: '❌' },
@@ -137,8 +137,6 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>87% 합격률 (업계 평균 75%)</span></li>
                 <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>평균 12주 학습 완료</span></li>
-                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>한국 기업 면접 대비까지</span></li>
-                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>합격 못하면 환급</span></li>
               </ul>
             </div>
           </div>
