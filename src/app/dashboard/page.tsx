@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { getDashboardData, type CertProgress } from '@/lib/dashboard/dashboardService';
 import { listCerts } from '@/lib/content';
+import { nextUp, weakDomainDrill } from '@/lib/recommend/recommendService';
 import { StudyPlanWidget } from '@/components/study/StudyPlanWidget';
 import type { Language } from '@/lib/i18n-client';
 
@@ -70,8 +71,13 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/dashboard');
 
-  const data = await getDashboardData(user.sub);
+  const [data, recNext, recDrill] = await Promise.all([
+    getDashboardData(user.sub),
+    nextUp(user.sub, 3),
+    weakDomainDrill(user.sub, 5),
+  ]);
   const hasActivity = data.attempts > 0 || data.review.total > 0;
+  const hasRecommend = recNext.length > 0 || recDrill.length > 0;
   const certOptions = (await listCerts(DEFAULT_CATEGORY)).map((c) => ({ slug: c.slug, name: c.name, code: c.code }));
 
   return (
@@ -84,6 +90,58 @@ export default async function DashboardPage() {
 
       {/* 합격 플랜 + 스트릭 — 활동 유무와 무관하게 상단에 노출 */}
       <StudyPlanWidget certs={certOptions} />
+
+      {/* 오늘의 추천 — 다음 학습(플랜 분량/콜드스타트) + 약점 드릴. 활동 유무와 무관하게 상단. */}
+      {hasRecommend && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-medium text-fg-muted">{lang === 'en' ? "Today's Recommendation" : '오늘의 추천'}</h2>
+
+          {recNext.map((n) => (
+            <Link
+              key={`next-${n.slug}-${n.week}-${n.day}`}
+              href={n.href}
+              className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 transition hover:border-accent"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-base">
+                {n.reason === 'start' ? '🚀' : '📘'}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] font-medium text-accent">
+                  {n.reason === 'start'
+                    ? lang === 'en' ? 'Start here' : '여기서 시작'
+                    : lang === 'en' ? "Today's portion" : '오늘 분량'}
+                </span>
+                <span className="block truncate text-sm text-fg">{n.title}</span>
+              </span>
+              <span className="shrink-0 text-xs text-fg-faint">→</span>
+            </Link>
+          ))}
+
+          {recDrill.length > 0 && (
+            <div className="rounded-xl border border-border bg-bg-elevated px-4 py-3">
+              <p className="mb-2 text-xs font-medium text-fg-muted">
+                {lang === 'en' ? `Weak-area drill · ${recDrill.length} questions` : `약점 드릴 · ${recDrill.length}문제`}
+              </p>
+              <ul className="space-y-1.5">
+                {recDrill.map((d) => (
+                  <li key={`drill-${d.id}`}>
+                    <Link
+                      href={`/${DEFAULT_CATEGORY}/${d.slug}/week${d.week}/day${d.day}`}
+                      className="flex items-center gap-3 rounded-lg border border-border px-3 py-2 transition hover:border-border-strong"
+                    >
+                      <span className="shrink-0 rounded bg-danger/10 px-1.5 py-0.5 font-mono text-[10px] text-danger">
+                        {d.bucketLabel}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm text-fg">{d.prompt}</span>
+                      <span className="shrink-0 text-xs text-fg-faint">→</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
 
       {!hasActivity ? (
         <div className="rounded-xl border border-border bg-bg-elevated p-8 text-center">
