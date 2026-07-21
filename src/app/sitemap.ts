@@ -13,6 +13,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const out: MetadataRoute.Sitemap = [
     { url: SITE_URL, lastModified: now, changeFrequency: 'weekly', priority: 1 },
+    // 카테고리 허브 = "aws 자격증 순서/종류" 착지 페이지.
+    { url: `${SITE_URL}/${DEFAULT_CATEGORY}`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${SITE_URL}/pricing`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
   ];
   for (const cert of certs) {
