@@ -145,6 +145,17 @@ export function previewOf(body: string, max: number = PREVIEW_MAX): string {
   return (lastBreak > max * 0.5 ? cut.slice(0, lastBreak) : cut).trimEnd();
 }
 
+// day 마크다운 파일의 수정시각(sitemap lastModified용). 배포 시 git 체크아웃 시각 ≈ 최신 배포일.
+// 파일이 없으면 undefined(조용히 생략). 캐시하지 않음 — sitemap 생성은 빌드 시 1회.
+export async function getDayMtime(category: string, slug: string, week: number, day: number): Promise<Date | undefined> {
+  try {
+    const p = path.join(CONTENT_ROOT, category, slug, `week${week}`, `day${day}.md`);
+    return (await fs.stat(p)).mtime;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function getAllDays(category: string, slug: string): Promise<DayRef[]> {
   const key = `${category}/${slug}`;
   const cached = CONTENT_CACHE ? daysCache.get(key) : undefined;

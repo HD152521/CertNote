@@ -50,7 +50,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const content = await getDay(category, slug, w, d).catch(() => null);
   if (!content) return {};
-  const title = `${content.title} — ${content.certMeta.code} Week ${w}`;
+  // 주제어(content.title)를 앞세운다. "Week N"은 검색량이 없어 title 자리를 낭비하므로 제외.
+  const title = `${content.title} — ${content.certMeta.code}`;
   const description = excerptOf(content.body);
   // 한/영 상호 hreflang: 반대 언어 버전이 실제로 존재할 때만 연결(무료 Week1만 영어판이 있다).
   const otherCategory = category === EN_CATEGORY ? DEFAULT_CATEGORY : EN_CATEGORY;

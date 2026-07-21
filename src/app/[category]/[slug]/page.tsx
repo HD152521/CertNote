@@ -68,6 +68,8 @@ export default async function CertIndexPage({ params }: PageProps) {
   const firstDay = days[0];
   const examInfo = getExamInfo(slug);
   // 구글이 이 페이지를 "강좌"로 이해하게 하는 구조화 데이터(JSON-LD).
+  // 전체 강좌는 유료(Week2+ 페이월)이고 Week1만 무료다. "전부 무료"로 선언하면
+  // 페이월과 불일치 → 구조화 데이터 스팸(수동 조치 사유). hasPart로 무료 파트를 정직하게 명시한다.
   const courseLd = {
     '@context': 'https://schema.org',
     '@type': 'Course',
@@ -75,7 +77,12 @@ export default async function CertIndexPage({ params }: PageProps) {
     description: `${meta.weeks}주(총 ${meta.dayCount}일) ${meta.code} 자격증 한국어 학습 커리큘럼`,
     provider: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
     inLanguage: lang,
-    isAccessibleForFree: true,
+    isAccessibleForFree: false,
+    hasPart: {
+      '@type': 'CreativeWork',
+      name: lang === 'en' ? 'Week 1 (free preview)' : 'Week 1 (무료 미리보기)',
+      isAccessibleForFree: true,
+    },
     url: `${SITE_URL}/${category}/${slug}`,
   };
   return (
@@ -105,7 +112,7 @@ export default async function CertIndexPage({ params }: PageProps) {
           </Link>
         )}
       </header>
-      {lang === 'ko' && examInfo && <ExamInfoCard info={examInfo} lang={lang} />}
+      {examInfo && <ExamInfoCard info={examInfo} lang={lang} />}
       <section className="space-y-6">
         {[...byWeek.entries()].map(([w, ws]) => (
           <div key={w} className="space-y-2">
