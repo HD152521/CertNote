@@ -42,15 +42,28 @@ export function ReviewSession() {
   const [result, setResult] = useState<ReviewResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [weakFirst, setWeakFirst] = useState(false); // 약점(정답률 낮은 영역)부터 정렬
 
   useEffect(() => {
     let active = true;
-    fetch('/api/review/due', { cache: 'no-store' })
+    const url = weakFirst ? '/api/review/due?order=weak' : '/api/review/due';
+    fetch(url, { cache: 'no-store' })
       .then((r) => r.json())
       .then((d) => { if (active) setCards(d.items ?? []); })
       .catch(() => { if (active) setError('복습 목록을 불러오지 못했습니다.'); });
     return () => { active = false; };
-  }, []);
+  }, [weakFirst]);
+
+  // 정렬 변경: 목록을 새로 불러오며 세션을 처음으로 되돌린다.
+  function changeOrder(next: boolean) {
+    if (next === weakFirst) return;
+    setCards(null);
+    setIdx(0);
+    setPicked([]);
+    setResult(null);
+    setError(null);
+    setWeakFirst(next);
+  }
 
   const current = cards?.[idx];
   const multi = current ? isMultiAnswer(current.answer) : false;
@@ -127,6 +140,16 @@ export function ReviewSession() {
 
   return (
     <div>
+      <div className="mb-3 flex items-center gap-1 text-xs">
+        <button type="button" onClick={() => changeOrder(false)}
+          className={cn('rounded-md px-2.5 py-1 font-medium transition', !weakFirst ? 'bg-accent/10 text-accent' : 'text-fg-muted hover:text-fg')}>
+          기본순
+        </button>
+        <button type="button" onClick={() => changeOrder(true)}
+          className={cn('rounded-md px-2.5 py-1 font-medium transition', weakFirst ? 'bg-accent/10 text-accent' : 'text-fg-muted hover:text-fg')}>
+          약점부터
+        </button>
+      </div>
       <div className="mb-3 flex items-center justify-between text-xs text-fg-muted font-mono">
         <span>{idx + 1} / {cards.length}</span>
         <span className="uppercase tracking-wider">{current!.week > 0 ? `${current!.slug} · W${current!.week} D${current!.day}` : `${current!.slug} · 모의고사${current!.domain ? ` · ${current!.domain}` : ''}`}</span>

@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { DayRef } from '../content';
 import {
+  buildWeaknessIndex,
+  drillHref,
+  orderCardsByWeakness,
   pickNextUp,
   selectDrillQuestions,
   type DrillCandidate,
+  type DrillItem,
   type WeakBucket,
 } from './recommendService';
 
@@ -130,5 +134,116 @@ describe('pickNextUp', () => {
 
   it('returns [] when limit <= 0', () => {
     expect(pickNextUp({ todayItems: [dayRef('saa-c03', 1, 1)], fallbackDay: null, limit: 0 })).toEqual([]);
+  });
+});
+
+// ── drillHref ────────────────────────────────────────────────────────────────
+
+const drillItem = (over: Partial<DrillItem>): DrillItem => ({
+  id: 'q1',
+  slug: 'saa-c03',
+  week: 3,
+  day: 2,
+  number: 1,
+  prompt: 'Q',
+  bucketKey: 'topic:saa-c03#3',
+  bucketLabel: 'SAA-C03 · Week 3',
+  reason: 'topic',
+  ...over,
+});
+
+describe('drillHref', () => {
+  it('links a topic drill to its day page', () => {
+    expect(drillHref(drillItem({ reason: 'topic', slug: 'saa-c03', week: 3, day: 2 }))).toBe(
+      '/aws-certs/saa-c03/week3/day2',
+    );
+  });
+
+  it('links a domain drill to the mock exam (no day coordinates)', () => {
+    expect(drillHref(drillItem({ reason: 'domain', week: 0, day: 0 }))).toBe('/exam');
+  });
+});
+
+// ── buildWeaknessIndex ───────────────────────────────────────────────────────
+
+const WQ: Record<string, { slug: string; week: number; domain?: string }> = {
+  't-w1-a': { slug: 'saa-c03', week: 1 },
+  't-w1-b': { slug: 'saa-c03', week: 1 },
+  't-w2-a': { slug: 'saa-c03', week: 2 },
+  'exam-iam': { slug: 'saa-c03', week: 0, domain: 'IAM' },
+  'exam-iam2': { slug: 'saa-c03', week: 0, domain: 'IAM' },
+};
+const getWQ = (id: string) => WQ[id];
+
+describe('buildWeaknessIndex', () => {
+  it('aggregates topic accuracy by slug#week', () => {
+    const idx = buildWeaknessIndex(
+      [
+        { questionId: 't-w1-a', correct: true },
+        { questionId: 't-w1-b', correct: false }, // week1: 50%
+        { questionId: 't-w2-a', correct: true }, // week2: 100%
+      ],
+      getWQ,
+    );
+    expect(idx.topic['saa-c03#1']).toBe(50);
+    expect(idx.topic['saa-c03#2']).toBe(100);
+  });
+
+  it('aggregates domain accuracy and excludes week-0 from topic', () => {
+    const idx = buildWeaknessIndex(
+      [
+        { questionId: 'exam-iam', correct: false },
+        { questionId: 'exam-iam2', correct: false }, // IAM: 0%
+      ],
+      getWQ,
+    );
+    expect(idx.domain['IAM']).toBe(0);
+    expect(idx.topic).toEqual({});
+  });
+
+  it('skips unknown question ids', () => {
+    const idx = buildWeaknessIndex([{ questionId: 'ghost', correct: true }], getWQ);
+    expect(idx).toEqual({ topic: {}, domain: {} });
+  });
+});
+
+// ── orderCardsByWeakness ─────────────────────────────────────────────────────
+
+interface DueCard {
+  questionId: string;
+  slug: string;
+  week: number;
+  domain?: string;
+}
+
+describe('orderCardsByWeakness', () => {
+  const index = { topic: { 'saa-c03#1': 30, 'saa-c03#2': 90 }, domain: { IAM: 10 } };
+
+  it('sorts weakest area first (topic + domain interleaved)', () => {
+    const cards: DueCard[] = [
+      { questionId: 'a', slug: 'saa-c03', week: 2 }, // 90
+      { questionId: 'b', slug: 'saa-c03', week: 1 }, // 30
+      { questionId: 'c', slug: 'saa-c03', week: 0, domain: 'IAM' }, // 10
+    ];
+    expect(orderCardsByWeakness(cards, index).map((c) => c.questionId)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('pushes unknown areas to the end and is stable within ties', () => {
+    const cards: DueCard[] = [
+      { questionId: 'x', slug: 'saa-c03', week: 9 }, // unknown → last
+      { questionId: 'y', slug: 'saa-c03', week: 1 }, // 30
+      { questionId: 'z', slug: 'saa-c03', week: 9 }, // unknown → last, after x
+    ];
+    expect(orderCardsByWeakness(cards, index).map((c) => c.questionId)).toEqual(['y', 'x', 'z']);
+  });
+
+  it('does not mutate the input array', () => {
+    const cards: DueCard[] = [
+      { questionId: 'a', slug: 'saa-c03', week: 2 },
+      { questionId: 'b', slug: 'saa-c03', week: 1 },
+    ];
+    const before = cards.map((c) => c.questionId);
+    orderCardsByWeakness(cards, index);
+    expect(cards.map((c) => c.questionId)).toEqual(before);
   });
 });

@@ -126,7 +126,7 @@ export default async function DashboardPage() {
                 {recDrill.map((d) => (
                   <li key={`drill-${d.id}`}>
                     <Link
-                      href={`/${DEFAULT_CATEGORY}/${d.slug}/week${d.week}/day${d.day}`}
+                      href={d.href}
                       className="flex items-center gap-3 rounded-lg border border-border px-3 py-2 transition hover:border-border-strong"
                     >
                       <span className="shrink-0 rounded bg-danger/10 px-1.5 py-0.5 font-mono text-[10px] text-danger">

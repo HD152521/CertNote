@@ -1,8 +1,9 @@
 import { DEFAULT_CATEGORY } from '../category';
 import { getAllDays, listCerts, type DayRef } from '../content';
 import { buildTopicStats } from '../dashboard/dashboardService';
-import { canAccessWeek, FREE_WEEK } from '../entitlement/policy';
+import { canAccessWeek, canTakeExam, FREE_WEEK } from '../entitlement/policy';
 import { getEntitlementService } from '../entitlement/factory';
+import { getExamQuestionsByDomain } from '../exam/examBank';
 import { getLearnerProfile } from '../profile/profileService';
 import { getAttemptService } from '../quiz/attemptService';
 import { getQuestionById, getQuestionsByCert } from '../questions';
@@ -36,6 +37,17 @@ export interface DrillItem extends DrillCandidate {
   bucketKey: string;
   bucketLabel: string;
   reason: 'domain' | 'topic';
+}
+
+// 화면에서 바로 이동할 링크가 붙은 드릴 항목(IO 계층이 반환).
+export interface DrillRec extends DrillItem {
+  href: string;
+}
+
+// 드릴 항목의 이동 링크(순수). topic=해당 day 페이지, domain=모의고사(day 좌표 없음).
+export function drillHref(item: DrillItem): string {
+  if (item.reason === 'domain') return '/exam';
+  return `/${DEFAULT_CATEGORY}/${item.slug}/week${item.week}/day${item.day}`;
 }
 
 // 약점 버킷(약점 우선)에서 미마스터 문제를 최대 limit개 고른다(순수).
@@ -108,10 +120,67 @@ export function pickNextUp(params: {
   return [];
 }
 
+// 약점 인덱스: 주차(topic)·도메인별 정답률 조회표. 복습 "약점부터" 정렬에 쓴다.
+export interface WeaknessIndex {
+  topic: Record<string, number>; // `${slug}#${week}` → accuracy(0~100)
+  domain: Record<string, number>; // domain → accuracy(0~100)
+}
+
+interface WeaknessAttempt {
+  questionId: string;
+  correct: boolean;
+}
+
+// 풀이 기록 → 주차·도메인별 정답률(순수). getQ 주입으로 DB 없이 테스트 가능.
+export function buildWeaknessIndex(
+  attempts: WeaknessAttempt[],
+  getQ: (id: string) => { slug: string; week: number; domain?: string } | undefined,
+): WeaknessIndex {
+  const topicAgg = new Map<string, { a: number; c: number }>();
+  const domainAgg = new Map<string, { a: number; c: number }>();
+  const bump = (m: Map<string, { a: number; c: number }>, key: string, correct: boolean) => {
+    const cur = m.get(key) ?? { a: 0, c: 0 };
+    cur.a += 1;
+    if (correct) cur.c += 1;
+    m.set(key, cur);
+  };
+  for (const at of attempts) {
+    const q = getQ(at.questionId);
+    if (!q) continue;
+    if (q.week > 0) bump(topicAgg, `${q.slug}#${q.week}`, at.correct);
+    if (q.domain) bump(domainAgg, q.domain, at.correct);
+  }
+  const toRec = (m: Map<string, { a: number; c: number }>): Record<string, number> => {
+    const out: Record<string, number> = {};
+    for (const [k, v] of m) out[k] = Math.round((v.c / v.a) * 100);
+    return out;
+  };
+  return { topic: toRec(topicAgg), domain: toRec(domainAgg) };
+}
+
+// 정답률 미상(한 번도 안 푼 영역)은 정렬 뒤로 보내는 중립값. 100 초과라 약점보다 뒤.
+const UNKNOWN_ACCURACY = 101;
+
+// 복습 카드를 약점(정답률 낮은) 순으로 정렬(순수, 안정적). 원본은 불변.
+export function orderCardsByWeakness<T extends { slug: string; week: number; domain?: string }>(
+  cards: T[],
+  index: WeaknessIndex,
+): T[] {
+  const accuracyOf = (c: T): number => {
+    if (c.week > 0) return index.topic[`${c.slug}#${c.week}`] ?? UNKNOWN_ACCURACY;
+    if (c.domain) return index.domain[c.domain] ?? UNKNOWN_ACCURACY;
+    return UNKNOWN_ACCURACY;
+  };
+  return cards
+    .map((card, i) => ({ card, i, acc: accuracyOf(card) }))
+    .sort((x, y) => x.acc - y.acc || x.i - y.i)
+    .map((e) => e.card);
+}
+
 // ── IO 오케스트레이션 (읽기 전용 — 서버에서 호출) ───────────────────────────
 
-// 약점 주차의 미마스터 문제를 큐잉한다. 무료 사용자는 week1 범위만.
-export async function weakDomainDrill(userId: string, limit = DEFAULT_DRILL_LIMIT): Promise<DrillItem[]> {
+// 약점 영역의 미마스터 문제를 큐잉한다(주차 + 모의고사 도메인). 무료는 week1, 도메인은 Pro만.
+export async function weakDomainDrill(userId: string, limit = DEFAULT_DRILL_LIMIT): Promise<DrillRec[]> {
   const [attempts, certs, ent] = await Promise.all([
     getAttemptService().list(userId, ATTEMPT_LIMIT),
     listCerts(DEFAULT_CATEGORY),
@@ -120,16 +189,13 @@ export async function weakDomainDrill(userId: string, limit = DEFAULT_DRILL_LIMI
 
   // 이미 맞힌 문제는 드릴에서 제외(약점=아직 못 맞힌 것에 집중).
   const solved = new Set(attempts.filter((a) => a.correct).map((a) => a.questionId));
+  const graded = attempts.map((a) => ({ questionId: a.questionId, correct: a.correct }));
 
   const codeBySlug = new Map(certs.map((c) => [c.slug, c.code]));
-  const topics = buildTopicStats(
-    attempts.map((a) => ({ questionId: a.questionId, correct: a.correct })),
-    getQuestionById,
-    codeBySlug,
-  );
+  const topics = buildTopicStats(graded, getQuestionById, codeBySlug);
 
-  // 오답이 있는(정답률 100 미만) 주차만 약점 버킷으로. buildTopicStats가 이미 약점 우선 정렬.
-  const buckets: WeakBucket[] = topics
+  // 주차 버킷(day 퀴즈) — 오답 있는(정답률<100) 주차만. buildTopicStats가 약점 우선 정렬.
+  const topicBuckets: WeakBucket[] = topics
     .filter((t) => t.accuracy < 100)
     .map((t) => ({
       key: `topic:${t.slug}#${t.week}`,
@@ -138,18 +204,39 @@ export async function weakDomainDrill(userId: string, limit = DEFAULT_DRILL_LIMI
       accuracy: t.accuracy,
     }));
 
+  // 도메인 버킷(모의고사) — 정답률<100 도메인. selectDrillQuestions가 정답률로 함께 정렬.
+  const { domain: domainAcc } = buildWeaknessIndex(graded, getQuestionById);
+  const domainBuckets: WeakBucket[] = Object.entries(domainAcc)
+    .filter(([, acc]) => acc < 100)
+    .map(([domain, acc]) => ({ key: `domain:${domain}`, label: domain, reason: 'domain', accuracy: acc }));
+
+  const buckets = [...topicBuckets, ...domainBuckets];
+
   const poolFor = (key: string): DrillCandidate[] => {
-    const m = /^topic:(.+)#(\d+)$/.exec(key);
-    if (!m) return [];
-    const slug = m[1];
-    const week = Number(m[2]);
-    if (!canAccessWeek(ent.plan, week)) return []; // Pro 게이팅.
-    return getQuestionsByCert(slug)
-      .filter((q) => q.week === week)
-      .map((q) => ({ id: q.id, slug: q.slug, week: q.week, day: q.day, number: q.number, prompt: q.prompt }));
+    const tm = /^topic:(.+)#(\d+)$/.exec(key);
+    if (tm) {
+      const week = Number(tm[2]);
+      if (!canAccessWeek(ent.plan, week)) return []; // 무료는 week1까지.
+      return getQuestionsByCert(tm[1])
+        .filter((q) => q.week === week)
+        .map((q) => ({ id: q.id, slug: q.slug, week: q.week, day: q.day, number: q.number, prompt: q.prompt }));
+    }
+    const dm = /^domain:(.+)$/.exec(key);
+    if (dm) {
+      if (!canTakeExam(ent.plan)) return []; // 모의고사 도메인 드릴은 Pro 전용.
+      return getExamQuestionsByDomain(dm[1]).map((q) => ({
+        id: q.id,
+        slug: q.slug,
+        week: 0,
+        day: 0,
+        number: q.number,
+        prompt: q.prompt,
+      }));
+    }
+    return [];
   };
 
-  return selectDrillQuestions(buckets, poolFor, solved, limit);
+  return selectDrillQuestions(buckets, poolFor, solved, limit).map((item) => ({ ...item, href: drillHref(item) }));
 }
 
 // 프로필 target_cert + 학습 플랜 기반 다음 학습 추천. 무료 사용자는 week1 범위만.

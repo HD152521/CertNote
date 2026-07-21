@@ -28,6 +28,11 @@ export function getExamQuestionsByCert(slug: string): ExamBankQuestion[] {
   return questions.filter((q) => q.slug === slug);
 }
 
+// 특정 시험 도메인의 문제(약점 도메인 드릴용).
+export function getExamQuestionsByDomain(domain: string): ExamBankQuestion[] {
+  return questions.filter((q) => q.domain === domain);
+}
+
 // 모의고사 문제를 보유한 자격증 slug 목록(셋업 화면의 범위 선택용).
 export function getExamCertSlugs(): string[] {
   return [...new Set(questions.map((q) => q.slug))];
