@@ -1,6 +1,6 @@
 'use client';
 
-import { useLanguage, t } from '@/lib/i18n-client';
+import { useLanguage } from '@/lib/i18n-client';
 import { SubscriptionStatus } from '@/components/account/subscription/SubscriptionStatus';
 
 interface BillingTabProps {
@@ -33,7 +33,7 @@ export function BillingTab({ isPro, periodEnd, daysLeft }: BillingTabProps) {
         <h2 className="text-sm font-medium">
           {lang === 'en' ? 'Payment History' : '결제 내역'}
         </h2>
-        <div className="rounded-lg border border-border bg-bg-secondary p-6">
+        <div className="rounded-lg border border-border bg-bg-elevated p-6">
           <SubscriptionHistory userId="" />
         </div>
       </section> */}
@@ -43,7 +43,7 @@ export function BillingTab({ isPro, periodEnd, daysLeft }: BillingTabProps) {
         <h2 className="text-sm font-medium">
           {lang === 'en' ? 'Billing FAQ' : '청구 FAQ'}
         </h2>
-        <div className="rounded-lg border border-border bg-bg-secondary p-4">
+        <div className="rounded-lg border border-border bg-bg-elevated p-4">
           <div className="space-y-3 text-sm">
             <div>
               <p className="font-medium text-fg">

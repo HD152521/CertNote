@@ -1,6 +1,6 @@
 'use client';
 
-import { useLanguage, t } from '@/lib/i18n-client';
+import { useLanguage } from '@/lib/i18n-client';
 import { ProfileSection, type ProfileValues } from '@/components/account/ProfileSection';
 import type { CertOption } from '@/app/account/AccountPageClient';
 

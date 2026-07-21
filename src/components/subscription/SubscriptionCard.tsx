@@ -19,7 +19,7 @@ export function SubscriptionCard({ entitlement, userId }: SubscriptionCardProps)
   const dateFormat = lang === 'en' ? 'en-US' : 'ko-KR';
 
   return (
-    <div className="rounded-lg border border-border-secondary bg-bg-secondary p-6">
+    <div className="rounded-lg border border-border-secondary bg-bg-elevated p-6">
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-lg font-semibold">
@@ -66,7 +66,7 @@ export function SubscriptionCard({ entitlement, userId }: SubscriptionCardProps)
           </a>
         )}
         {isPro && (
-          <button className="rounded-lg border border-border-secondary px-4 py-2 text-sm font-semibold hover:bg-bg-tertiary">
+          <button className="rounded-lg border border-border-secondary px-4 py-2 text-sm font-semibold hover:bg-bg-subtle">
             {t(lang, 'changePayment')}
           </button>
         )}

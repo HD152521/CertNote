@@ -34,7 +34,7 @@ export function ChangePaymentModal() {
       <button
         onClick={() => setIsOpen(true)}
         type="button"
-        className="flex-1 rounded-lg border border-border-strong px-4 py-2.5 text-sm font-semibold hover:bg-bg-tertiary transition"
+        className="flex-1 rounded-lg border border-border-strong px-4 py-2.5 text-sm font-semibold hover:bg-bg-subtle transition"
       >
         {t(lang, 'changePayment')}
       </button>
@@ -79,7 +79,7 @@ export function ChangePaymentModal() {
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-bg-tertiary transition"
+                className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-bg-subtle transition"
               >
                 {lang === 'en' ? 'Cancel' : '취소'}
               </button>
@@ -184,7 +184,7 @@ export function CancelSubscriptionModal() {
                   <button
                     type="button"
                     onClick={() => setIsOpen(false)}
-                    className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-bg-tertiary transition"
+                    className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-bg-subtle transition"
                   >
                     {lang === 'en' ? 'Keep Subscription' : '유지'}
                   </button>
@@ -216,7 +216,7 @@ export function CancelSubscriptionModal() {
                   {reasons.map((reason) => (
                     <label
                       key={reason.value}
-                      className="flex items-center gap-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-bg-tertiary transition"
+                      className="flex items-center gap-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-bg-subtle transition"
                     >
                       <input
                         type="radio"
@@ -245,7 +245,7 @@ export function CancelSubscriptionModal() {
                       setStep('confirm');
                       setSelectedReason('');
                     }}
-                    className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-bg-tertiary transition"
+                    className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-bg-subtle transition"
                   >
                     {lang === 'en' ? 'Back' : '뒤로'}
                   </button>

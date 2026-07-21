@@ -28,7 +28,7 @@ export function CheckoutPageClient({ userId, email }: CheckoutPageClientProps) {
       {/* Plan Comparison */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Free Plan */}
-        <div className="rounded-lg border border-border-secondary bg-bg-secondary p-6">
+        <div className="rounded-lg border border-border-secondary bg-bg-elevated p-6">
           <h3 className="text-lg font-semibold">{t(lang, 'freePlan')}</h3>
           <p className="mt-1 text-2xl font-bold">₩0<span className="text-sm">/{lang === 'en' ? 'month' : '월'}</span></p>
           <ul className="mt-4 space-y-2 text-sm">
@@ -40,7 +40,7 @@ export function CheckoutPageClient({ userId, email }: CheckoutPageClientProps) {
         </div>
 
         {/* Pro Plan */}
-        <div className="rounded-lg border-2 border-accent bg-bg-secondary p-6">
+        <div className="rounded-lg border-2 border-accent bg-bg-elevated p-6">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">{t(lang, 'proPlan')}</h3>
             <span className="rounded bg-accent px-2 py-1 text-xs font-semibold text-bg">{lang === 'en' ? 'Recommended' : '추천'}</span>

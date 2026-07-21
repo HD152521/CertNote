@@ -40,7 +40,7 @@ export function SubscriptionHistory({ userId }: SubscriptionHistoryProps) {
 
   if (records.length === 0) {
     return (
-      <div className="rounded-lg border border-border-secondary bg-bg-secondary p-6 text-center">
+      <div className="rounded-lg border border-border-secondary bg-bg-elevated p-6 text-center">
         <p className="text-sm text-fg-secondary">{t(lang, 'noPaymentHistory')}</p>
       </div>
     );
@@ -66,7 +66,7 @@ export function SubscriptionHistory({ userId }: SubscriptionHistoryProps) {
           </thead>
           <tbody>
             {records.map((record) => (
-              <tr key={record.id} className="border-b border-border-tertiary hover:bg-bg-tertiary">
+              <tr key={record.id} className="border-b border-border-tertiary hover:bg-bg-subtle">
                 <td className="py-3">{new Date(record.createdAt).toLocaleDateString(dateFormat)}</td>
                 <td className="text-right">₩{record.amount.toLocaleString()}</td>
                 <td className="text-center">

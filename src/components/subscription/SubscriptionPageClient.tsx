@@ -34,7 +34,7 @@ export function SubscriptionPageClient({ entitlement, userId }: SubscriptionPage
       <SubscriptionHistory userId={userId} />
 
       {/* FAQ */}
-      <div className="space-y-4 rounded-lg border border-border-secondary bg-bg-secondary p-6">
+      <div className="space-y-4 rounded-lg border border-border-secondary bg-bg-elevated p-6">
         <h2 className="text-lg font-semibold">{t(lang, 'faq')}</h2>
         <dl className="space-y-4 text-sm">
           <div>
