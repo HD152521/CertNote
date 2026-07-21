@@ -47,7 +47,7 @@ export default function OgImage() {
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 26, color: '#8b98b3' }}>
           <div>Daily notes · Quizzes · Mock exams · SRS review</div>
-          <div>cert-note.vercel.app</div>
+          <div>cert.juganlab.com</div>
         </div>
       </div>
     ),

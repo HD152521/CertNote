@@ -71,7 +71,7 @@ export default async function OgImage({ params }: { params: Promise<{ category: 
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 26, color: '#8b98b3' }}>
           <div>{weeks > 0 ? `${weeks}-week curriculum · Quizzes · Mock exam` : 'Daily notes · Quizzes · Mock exams'}</div>
-          <div>cert-note.vercel.app</div>
+          <div>cert.juganlab.com</div>
         </div>
       </div>
     ),
