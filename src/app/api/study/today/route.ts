@@ -32,7 +32,13 @@ export async function GET() {
     const meta = certs.find((c) => c.slug === target.certSlug);
     return Response.json({
       streak,
-      portion: { ...portion, certName: meta?.name ?? target.certSlug, certCode: meta?.code ?? '' },
+      portion: {
+        ...portion,
+        certName: meta?.name ?? target.certSlug,
+        certCode: meta?.code ?? '',
+        targetAccuracy: target.targetAccuracy,
+        dailyMinutesGoal: target.dailyMinutesGoal,
+      },
       activity,
       today,
     });

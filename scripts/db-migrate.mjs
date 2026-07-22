@@ -200,6 +200,14 @@ try {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_study_plans_user ON study_plans (user_id);');
   console.log('✓ study_plans 테이블 준비 완료');
 
+  // 학습 목표 고도화(M4): 목표 정확도·일일 학습시간. 기존 플랜은 DEFAULT 70%로 수렴.
+  await pool.query(`
+    ALTER TABLE study_plans
+      ADD COLUMN IF NOT EXISTS target_accuracy    INT NOT NULL DEFAULT 70,
+      ADD COLUMN IF NOT EXISTS daily_minutes_goal INT;
+  `);
+  console.log('✓ study_plans 학습목표 컬럼 준비 완료');
+
   // 학습 스트릭용 일별 활동 기록(KST 날짜). 읽기/퀴즈/복습 중 하나라도 하면 1행.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS daily_activity (

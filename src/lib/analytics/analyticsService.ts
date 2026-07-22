@@ -66,6 +66,7 @@ export async function getAnalytics(userId: string, trendDays = DEFAULT_TREND_DAY
     totalQuestions: dash.totalQuestions,
     attemptedQuestions: dash.attemptedQuestions,
     dday,
+    targetAccuracy: plan?.targetAccuracy, // M4: 사용자 목표 정확도를 예측 임계값으로.
   });
 
   const trend = buildDailyTrend(

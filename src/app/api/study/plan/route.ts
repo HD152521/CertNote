@@ -1,7 +1,7 @@
 import { DEFAULT_CATEGORY } from '@/lib/category';
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { AppError, errorResponse } from '@/lib/auth/errors';
-import { clearPlan, listPlans, setPlan } from '@/lib/study/plan';
+import { clearPlan, listPlans, normalizeGoals, setPlan, setPlanGoals } from '@/lib/study/plan';
 import { kstToday } from '@/lib/study/activity';
 import { listCerts } from '@/lib/content';
 
@@ -42,6 +42,22 @@ export async function PUT(req: Request) {
       throw new AppError(400, 'unknown_cert', '존재하지 않는 자격증입니다.');
     }
     await setPlan(user.sub, certSlug, examDate);
+    return Response.json({ ok: true, plans: await listPlans(user.sub) });
+  } catch (err) {
+    return errorResponse(err);
+  }
+}
+
+// 학습 목표 갱신. body: { certSlug, targetAccuracy?, dailyMinutesGoal? }
+export async function PATCH(req: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) throw new AppError(401, 'unauthorized', '로그인이 필요합니다.');
+    const body = await req.json().catch(() => null);
+    if (typeof body?.certSlug !== 'string') {
+      throw new AppError(400, 'invalid_body', 'certSlug가 필요합니다.');
+    }
+    await setPlanGoals(user.sub, body.certSlug, normalizeGoals(body));
     return Response.json({ ok: true, plans: await listPlans(user.sub) });
   } catch (err) {
     return errorResponse(err);

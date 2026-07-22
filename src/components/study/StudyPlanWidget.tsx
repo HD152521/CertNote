@@ -28,7 +28,11 @@ interface Portion {
   totalDays: number;
   scheduledIndex: number;
   finished: boolean;
+  targetAccuracy: number;
+  dailyMinutesGoal: number | null;
 }
+
+const ACCURACY_OPTIONS = [60, 70, 80, 90];
 
 interface Streak {
   current: number;
@@ -87,7 +91,7 @@ export function StudyPlanWidget({ certs }: StudyPlanWidgetProps) {
         <StreakBadge streak={streak} />
       </div>
 
-      {portion && !editing && <PlanSummary portion={portion} onEdit={() => setEditing(true)} />}
+      {portion && !editing && <PlanSummary portion={portion} onEdit={() => setEditing(true)} onSaved={load} />}
 
       {showForm && (
         <PlanForm
@@ -133,7 +137,7 @@ function StreakBadge({ streak }: { streak: Streak | null }) {
   );
 }
 
-function PlanSummary({ portion, onEdit }: { portion: Portion; onEdit: () => void }) {
+function PlanSummary({ portion, onEdit, onSaved }: { portion: Portion; onEdit: () => void; onSaved: () => void }) {
   const ddayLabel = portion.dday > 0 ? `D-${portion.dday}` : portion.dday === 0 ? 'D-DAY' : `D+${-portion.dday}`;
   return (
     <div className="space-y-3">
@@ -169,9 +173,85 @@ function PlanSummary({ portion, onEdit }: { portion: Portion; onEdit: () => void
         )}
       </div>
 
+      <GoalEditor portion={portion} onSaved={onSaved} />
+
       <button type="button" onClick={onEdit} className="text-xs text-fg-faint underline underline-offset-4 hover:text-fg-muted">
         시험일 변경
       </button>
+    </div>
+  );
+}
+
+// 학습 목표(정확도·일일시간) 편집. 저장 시 PATCH → 목록 새로고침.
+function GoalEditor({ portion, onSaved }: { portion: Portion; onSaved: () => void }) {
+  const [accuracy, setAccuracy] = useState(portion.targetAccuracy);
+  const [minutes, setMinutes] = useState<string>(portion.dailyMinutesGoal != null ? String(portion.dailyMinutesGoal) : '');
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const dirty = accuracy !== portion.targetAccuracy || minutes !== (portion.dailyMinutesGoal != null ? String(portion.dailyMinutesGoal) : '');
+
+  async function save() {
+    setBusy(true);
+    setSaved(false);
+    try {
+      const res = await fetch('/api/study/plan', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          certSlug: portion.certSlug,
+          targetAccuracy: accuracy,
+          dailyMinutesGoal: minutes === '' ? null : Number(minutes),
+        }),
+      });
+      if (res.ok) {
+        setSaved(true);
+        onSaved();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-bg-subtle p-3">
+      <p className="mb-2 text-xs font-medium text-fg-muted">학습 목표</p>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <label className="flex items-center gap-1.5">
+          <span className="text-fg-muted">목표 정확도</span>
+          <select
+            value={accuracy}
+            onChange={(e) => { setAccuracy(Number(e.target.value)); setSaved(false); }}
+            className="rounded-md border border-border bg-transparent px-2 py-1 outline-none focus:border-border-strong"
+          >
+            {ACCURACY_OPTIONS.map((a) => <option key={a} value={a}>{a}%</option>)}
+          </select>
+        </label>
+        <label className="flex items-center gap-1.5">
+          <span className="text-fg-muted">하루</span>
+          <input
+            type="number"
+            min={0}
+            max={600}
+            value={minutes}
+            onChange={(e) => { setMinutes(e.target.value); setSaved(false); }}
+            placeholder="—"
+            className="w-16 rounded-md border border-border bg-transparent px-2 py-1 outline-none focus:border-border-strong"
+          />
+          <span className="text-fg-muted">분</span>
+        </label>
+        {dirty && (
+          <button
+            type="button"
+            onClick={save}
+            disabled={busy}
+            className="rounded-md border border-border-strong px-2.5 py-1 font-medium transition hover:bg-fg/5 disabled:opacity-50"
+          >
+            {busy ? '저장 중…' : '저장'}
+          </button>
+        )}
+        {saved && !dirty && <span className="text-accent">저장됨</span>}
+      </div>
     </div>
   );
 }

@@ -4,10 +4,39 @@ import { getAllDays } from '../content';
 import { kstToday } from './activity';
 import type { DayRef } from '../content';
 
-export interface StudyPlan {
+// computeToday가 실제로 쓰는 최소 스케줄 정보. StudyPlan이 목표 필드로 커져도
+// 리터럴 호출(크론 등)이 깨지지 않도록 좁은 구조 타입으로 분리한다.
+export interface PlanSchedule {
   certSlug: string;
   examDate: string; // 'YYYY-MM-DD'
   createdAt: string;
+}
+
+export interface StudyPlan extends PlanSchedule {
+  targetAccuracy: number; // 목표 정확도(%) — 기본 70. 합격확률 임계값으로 사용.
+  dailyMinutesGoal: number | null; // 일일 학습시간 목표(분), 미설정 시 null.
+}
+
+export interface PlanGoals {
+  targetAccuracy: number;
+  dailyMinutesGoal: number | null;
+}
+
+const DEFAULT_TARGET_ACCURACY = 70;
+const MAX_DAILY_MINUTES = 600;
+
+// 입력값(임의 타입)을 안전한 목표로 정규화(순수). 검증·클램프.
+export function normalizeGoals(input: { targetAccuracy?: unknown; dailyMinutesGoal?: unknown }): PlanGoals {
+  const acc = Number(input.targetAccuracy);
+  const targetAccuracy = Number.isFinite(acc) ? Math.min(100, Math.max(0, Math.round(acc))) : DEFAULT_TARGET_ACCURACY;
+
+  let dailyMinutesGoal: number | null = null;
+  const dm = input.dailyMinutesGoal;
+  if (dm !== null && dm !== undefined && dm !== '') {
+    const n = Number(dm);
+    if (Number.isFinite(n) && n > 0) dailyMinutesGoal = Math.min(MAX_DAILY_MINUTES, Math.round(n));
+  }
+  return { targetAccuracy, dailyMinutesGoal };
 }
 
 export interface TodayPortion {
@@ -24,6 +53,8 @@ interface PlanRow {
   cert_slug: string;
   exam_date: string;
   created_at: string;
+  target_accuracy: number;
+  daily_minutes_goal: number | null;
 }
 
 // 두 'YYYY-MM-DD' 사이 일수(b - a).
@@ -41,11 +72,18 @@ export async function listPlans(userId: string): Promise<StudyPlan[]> {
   const rows = await query<PlanRow>(
     `SELECT cert_slug,
             to_char(exam_date, 'YYYY-MM-DD') AS exam_date,
-            to_char(created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
+            to_char(created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at,
+            target_accuracy, daily_minutes_goal
      FROM study_plans WHERE user_id = $1 ORDER BY exam_date ASC`,
     [userId],
   );
-  return rows.map((r) => ({ certSlug: r.cert_slug, examDate: r.exam_date, createdAt: r.created_at }));
+  return rows.map((r) => ({
+    certSlug: r.cert_slug,
+    examDate: r.exam_date,
+    createdAt: r.created_at,
+    targetAccuracy: r.target_accuracy ?? DEFAULT_TARGET_ACCURACY,
+    dailyMinutesGoal: r.daily_minutes_goal ?? null,
+  }));
 }
 
 // 시험일 설정(upsert). examDate는 'YYYY-MM-DD'.
@@ -62,8 +100,16 @@ export async function clearPlan(userId: string, certSlug: string): Promise<void>
   await query('DELETE FROM study_plans WHERE user_id = $1 AND cert_slug = $2', [userId, certSlug]);
 }
 
+// 학습 목표(정확도·일일시간) 갱신. 해당 플랜이 없으면 no-op.
+export async function setPlanGoals(userId: string, certSlug: string, goals: PlanGoals): Promise<void> {
+  await query(
+    'UPDATE study_plans SET target_accuracy = $3, daily_minutes_goal = $4 WHERE user_id = $1 AND cert_slug = $2',
+    [userId, certSlug, goals.targetAccuracy, goals.dailyMinutesGoal],
+  );
+}
+
 // 콘텐츠 day들을 생성일→시험일에 균등 분배해 '오늘 분량'을 계산(읽음 진행도와 무관, 날짜 기반).
-export async function computeToday(plan: StudyPlan): Promise<TodayPortion> {
+export async function computeToday(plan: PlanSchedule): Promise<TodayPortion> {
   const days = await getAllDays(DEFAULT_CATEGORY, plan.certSlug);
   const totalDays = days.length;
   const today = kstToday();
