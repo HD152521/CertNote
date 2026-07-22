@@ -2,108 +2,119 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { X } from 'lucide-react';
+import { X, Check, ArrowRight } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n-client';
+
+// 얼리버드 혜택: 7월 내 가입자에게 3개월 Pro 무료. 마감일은 명시적으로 표기.
+const FREE_MONTHS = 3;
+const DEADLINE_KO = '2026년 7월 31일';
+const DEADLINE_EN = 'July 31, 2026';
+
+// 한국어·영어를 함께 노출("한눈에" 보이게). 사용자 언어를 주 텍스트로, 반대 언어를 보조로.
+function order<T>(en: boolean, ko: T, enVal: T): [T, T] {
+  return en ? [enVal, ko] : [ko, enVal];
+}
 
 export function PromoModal() {
   const router = useRouter();
+  const lang = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(true);
 
   useEffect(() => {
-    // 7월 31일 이후는 표시 안 함
+    // 7월(가입 마감 달)에만, 그리고 아직 안 본 사용자에게만 노출.
     const today = new Date();
-    if (today.getMonth() !== 6 || today.getDate() > 31) {
-      return;
-    }
-
-    // localStorage에서 이전 방문 확인
-    const hasSeenPromo = localStorage.getItem('promo-modal-seen');
-    if (!hasSeenPromo) {
-      setIsOpen(true);
-      setIsDismissed(false);
-    }
+    const inJuly = today.getFullYear() === 2026 && today.getMonth() === 6;
+    if (!inJuly) return;
+    // 마운트 시 1회: localStorage(클라 전용)를 읽어 최초 방문자에게만 노출.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!localStorage.getItem('promo-modal-seen')) setIsOpen(true);
   }, []);
 
-  const handleClose = () => {
+  const dismiss = () => {
     setIsOpen(false);
     localStorage.setItem('promo-modal-seen', 'true');
   };
 
-  const handleSignup = () => {
-    handleClose();
+  const goSignup = () => {
+    dismiss();
     router.push('/signup');
   };
 
   if (!isOpen) return null;
 
-  const isKo = typeof window !== 'undefined' && navigator.language.startsWith('ko');
+  const en = lang === 'en';
+  const [headline, headlineSub] = order(en, `${FREE_MONTHS}개월 Pro 무료`, `${FREE_MONTHS} Months of Pro — Free`);
+  const [badge] = order(en, '얼리버드 혜택', 'Early-bird offer');
+  const [lead, leadSub] = order(
+    en,
+    `지금 가입하면 ${FREE_MONTHS}개월 동안 모든 Pro 콘텐츠를 무료로 이용할 수 있어요.`,
+    `Sign up now and get ${FREE_MONTHS} months of full Pro access, on us.`,
+  );
+  const [deadline, deadlineSub] = order(
+    en,
+    `${DEADLINE_KO}까지 가입한 분 한정`,
+    `Only for members who sign up by ${DEADLINE_EN}`,
+  );
+  const [perks, perksSub] = order(
+    en,
+    'AWS 자격증 11종 + 리눅스마스터 전체 · 모의고사 · SRS 복습',
+    'All 11 AWS certs + Linux Master · mock exams · SRS review',
+  );
+  const [cta, ctaSub] = order(en, '지금 무료로 시작', 'Start free now');
+  const [note] = order(en, '신용카드 불필요', 'No credit card required');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="relative max-w-md rounded-lg bg-white p-8 shadow-xl dark:bg-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+      <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border bg-bg-elevated shadow-2xl">
         <button
-          onClick={handleClose}
-          className="absolute right-4 top-4 text-fg-muted hover:text-fg transition-colors"
-          aria-label="Close"
+          onClick={dismiss}
+          className="absolute right-3 top-3 z-10 rounded-full p-1.5 text-accent-fg/80 transition hover:bg-white/15 hover:text-accent-fg"
+          aria-label="닫기 / Close"
         >
-          <X size={24} />
+          <X size={20} />
         </button>
 
-        {isKo ? (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-fg">🎉 MVP 특별 혜택</h2>
-            <p className="text-fg-muted">
-              Cert Notes는 현재 <span className="font-semibold">MVP 버전</span>으로 운영 중입니다.
-            </p>
-            <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950">
-              <p className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                🚀 지금 가입하시면
-              </p>
-              <p className="text-blue-800 dark:text-blue-200">
-                <span className="font-bold">Pro 버전 무료 이용</span>을 받으실 수 있습니다.
-              </p>
-            </div>
-            <p className="text-sm text-fg-muted">
-              AWS 자격증 11종 + 리눅스마스터의 모든 콘텐츠를 제한 없이 학습하세요.
-            </p>
-            <p className="text-xs text-fg-faint">
-              ⏰ 이 혜택은 7월 말까지만 유효합니다.
-            </p>
-            <button
-              onClick={handleSignup}
-              className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 transition-colors"
-            >
-              지금 가입하기
-            </button>
+        {/* 액센트 헤더 — 혜택을 한눈에 */}
+        <div className="bg-gradient-to-br from-accent to-accent/75 px-7 pb-7 pt-8 text-accent-fg">
+          <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide">
+            🎉 {badge}
+          </span>
+          <p className="mt-3 text-3xl font-bold leading-tight tracking-tight">{headline}</p>
+          <p className="mt-0.5 text-sm font-medium opacity-90">{headlineSub}</p>
+        </div>
+
+        {/* 본문 */}
+        <div className="space-y-4 px-7 py-6">
+          <div>
+            <p className="text-[15px] leading-relaxed text-fg">{lead}</p>
+            <p className="mt-1 text-sm leading-relaxed text-fg-muted">{leadSub}</p>
           </div>
-        ) : (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-fg">🎉 MVP Special Offer</h2>
-            <p className="text-fg-muted">
-              Cert Notes is currently running as an <span className="font-semibold">MVP version</span>.
-            </p>
-            <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950">
-              <p className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                🚀 Sign up now and get
-              </p>
-              <p className="text-blue-800 dark:text-blue-200">
-                <span className="font-bold">Free Pro access</span> for unlimited learning.
-              </p>
-            </div>
-            <p className="text-sm text-fg-muted">
-              Learn all AWS certifications (11 tracks) + Linux Master without any limitations.
-            </p>
-            <p className="text-xs text-fg-faint">
-              ⏰ This offer is valid only until the end of July.
-            </p>
-            <button
-              onClick={handleClose}
-              className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 transition-colors"
-            >
-              Sign Up Now
-            </button>
+
+          {/* 마감일 강조 — 기간·대상 명시 */}
+          <div className="rounded-xl border border-accent/30 bg-accent/5 px-4 py-3">
+            <p className="text-sm font-semibold text-fg">📅 {deadline}</p>
+            <p className="mt-0.5 text-xs text-fg-muted">{deadlineSub}</p>
           </div>
-        )}
+
+          {/* 포함 내역 */}
+          <div className="flex items-start gap-2">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+            <div>
+              <p className="text-sm text-fg">{perks}</p>
+              <p className="text-xs text-fg-faint">{perksSub}</p>
+            </div>
+          </div>
+
+          <button
+            onClick={goSignup}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3 font-semibold text-accent-fg transition hover:opacity-90"
+          >
+            <span>{cta}</span>
+            <span className="text-sm font-normal opacity-80">· {ctaSub}</span>
+            <ArrowRight className="h-4 w-4" />
+          </button>
+          <p className="text-center text-[11px] text-fg-faint">✓ {note}</p>
+        </div>
       </div>
     </div>
   );
