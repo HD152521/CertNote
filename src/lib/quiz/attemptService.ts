@@ -5,6 +5,9 @@ import type { ReviewEnqueuer } from '../review/types';
 import { isSelectionCorrect, normalizeSelection } from './correctness';
 import { PgAttemptRepository, type AttemptRecord, type AttemptRepository } from './attemptRepository';
 
+// 한 사용자의 풀이 기록을 "전량" 조회할 때의 상한(집계·개인화에서 공유).
+export const ATTEMPT_HISTORY_LIMIT = 5000;
+
 // 퀴즈 풀이 기록 로직. 정답 여부는 서버에서 문제 인덱스로 판정한다(클라이언트 신뢰 X).
 // 오답이면 복습 큐(SRS)에도 적재한다 — 큐 의존은 ReviewEnqueuer 인터페이스로만(DIP).
 export class AttemptService {

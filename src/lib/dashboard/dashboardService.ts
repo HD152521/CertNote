@@ -2,13 +2,11 @@ import { DEFAULT_CATEGORY } from '../category';
 import { listCerts, type CertMeta } from '../content';
 import type { StudyContext } from '../personalization/context';
 import { getAllQuestions, getQuestionById } from '../questions';
-import { getAttemptService } from '../quiz/attemptService';
+import { getAttemptService, ATTEMPT_HISTORY_LIMIT } from '../quiz/attemptService';
 import type { AttemptRecord } from '../quiz/attemptRepository';
 import { getReviewService } from '../review/factory';
 import type { ReviewCounts } from '../review/types';
 
-// 한 사용자가 가질 법한 풀이 기록 상한(집계는 JS에서 문제→자격증 매핑이 필요해 전량 조회).
-const ATTEMPT_LIMIT = 5000;
 const RECENT_LIMIT = 8;
 
 export interface CertProgress {
@@ -121,7 +119,7 @@ export async function getDashboardData(
     ({ attempts: attemptList, review, certs } = ctx);
   } else {
     [attemptList, review, certs] = await Promise.all([
-      getAttemptService().list(userId, ATTEMPT_LIMIT),
+      getAttemptService().list(userId, ATTEMPT_HISTORY_LIMIT),
       getReviewService().stats(userId),
       listCerts(DEFAULT_CATEGORY),
     ]);

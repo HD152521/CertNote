@@ -1,7 +1,7 @@
 import { DEFAULT_CATEGORY } from '../category';
 import { getAllDays, type DayRef } from '../content';
 import { buildTopicStats } from '../dashboard/dashboardService';
-import { canAccessWeek, canTakeExam, FREE_WEEK } from '../entitlement/policy';
+import { canAccessWeek, canTakeExam } from '../entitlement/policy';
 import { getExamQuestionsByDomain } from '../exam/examBank';
 import { loadStudyContext, type StudyContext } from '../personalization/context';
 import { getQuestionById, getQuestionsByCert } from '../questions';
@@ -261,5 +261,3 @@ export async function nextUp(userId: string, limit = 1, ctx?: StudyContext): Pro
 
   return pickNextUp({ todayItems, fallbackDay, limit });
 }
-
-export { FREE_WEEK };

@@ -3,7 +3,7 @@ import { listCerts, type CertMeta } from '../content';
 import { getEntitlementService } from '../entitlement/factory';
 import type { Entitlement } from '../entitlement/types';
 import { getLearnerProfile, type LearnerProfile } from '../profile/profileService';
-import { getAttemptService } from '../quiz/attemptService';
+import { getAttemptService, ATTEMPT_HISTORY_LIMIT } from '../quiz/attemptService';
 import type { AttemptRecord } from '../quiz/attemptRepository';
 import { getReviewService } from '../review/factory';
 import type { ReviewCounts } from '../review/types';
@@ -20,12 +20,10 @@ export interface StudyContext {
   review: ReviewCounts;
 }
 
-const ATTEMPT_LIMIT = 5000;
-
 // 공유 원시 데이터를 병렬로 1회 로드.
 export async function loadStudyContext(userId: string): Promise<StudyContext> {
   const [attempts, certs, entitlement, plans, profile, review] = await Promise.all([
-    getAttemptService().list(userId, ATTEMPT_LIMIT),
+    getAttemptService().list(userId, ATTEMPT_HISTORY_LIMIT),
     listCerts(DEFAULT_CATEGORY),
     getEntitlementService().getEntitlement(userId),
     listPlans(userId),

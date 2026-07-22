@@ -1,13 +1,12 @@
 import { getDashboardData, type DashboardData } from '../dashboard/dashboardService';
 import type { StudyContext } from '../personalization/context';
 import { getLearnerProfile, type LearnerProfile } from '../profile/profileService';
-import { getAttemptService } from '../quiz/attemptService';
+import { getAttemptService, ATTEMPT_HISTORY_LIMIT } from '../quiz/attemptService';
 import type { AttemptRecord } from '../quiz/attemptRepository';
 import { computeToday, listPlans, type StudyPlan } from '../study/plan';
 import { predictPass, type PassPrediction } from './passPredictor';
 import { buildDailyTrend, type TrendPoint } from './trend';
 
-const ATTEMPT_LIMIT = 5000;
 const RECENT_WINDOW = 20; // 최근 정답률(추세) 표본 크기.
 const DEFAULT_TREND_DAYS = 14;
 
@@ -53,7 +52,7 @@ export async function getAnalytics(
   } else {
     [dash, attempts, plans, profile] = await Promise.all([
       getDashboardData(userId),
-      getAttemptService().list(userId, ATTEMPT_LIMIT),
+      getAttemptService().list(userId, ATTEMPT_HISTORY_LIMIT),
       listPlans(userId),
       getLearnerProfile(userId),
     ]);

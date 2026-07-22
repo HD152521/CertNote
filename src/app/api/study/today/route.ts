@@ -3,16 +3,15 @@ import { getCurrentUser } from '@/lib/auth/currentUser';
 import { AppError, errorResponse } from '@/lib/auth/errors';
 import { computeToday, listPlans } from '@/lib/study/plan';
 import { getStreak, kstToday, listRecentActivity } from '@/lib/study/activity';
-import { getAttemptService } from '@/lib/quiz/attemptService';
+import { getAttemptService, ATTEMPT_HISTORY_LIMIT } from '@/lib/quiz/attemptService';
 import { getQuestionById } from '@/lib/questions';
 import { listCerts } from '@/lib/content';
 
 const CALENDAR_DAYS = 12 * 7; // 히트맵 12주.
-const ATTEMPT_LIMIT = 5000;
 
 // 해당 자격증에서 실제로 완료한 day 수(퀴즈를 푼 distinct week#day). 뒤처짐 판정용.
 async function completedDaysFor(userId: string, slug: string): Promise<number> {
-  const attempts = await getAttemptService().list(userId, ATTEMPT_LIMIT);
+  const attempts = await getAttemptService().list(userId, ATTEMPT_HISTORY_LIMIT);
   const done = new Set<string>();
   for (const a of attempts) {
     const q = getQuestionById(a.questionId);
