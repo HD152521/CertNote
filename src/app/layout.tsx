@@ -19,8 +19,8 @@ export const metadata: Metadata = {
     default: `${SITE_NAME} — ${SITE_TAGLINE}`,
     template: `%s | ${SITE_NAME}`,
   },
-  description:
-    'AWS 자격증 & 클라우드 자격증으로 클라우드 네이티브 커리어 시작. AWS 11종 + 리눅스마스터 1급을 주차별 한국어 노트로. 매일 30분, 연습문제·모의고사·SRS 복습까지. Week 1 무료.',
+  // 네이버 서치어드바이저 권장 80자 이내(검색 스니펫 잘림 방지). og:description도 이 값을 자동 상속한다.
+  description: 'AWS 자격증 독학 커리큘럼. 하루 30분 한국어 노트로 SAA·DVA·SOA 합격 준비. Week 1 무료.',
   alternates: {
     canonical: '/',
     languages: {
