@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Check, X } from 'lucide-react';
 import { answerCount, isMultiAnswer, parseCorrectSet } from '@/lib/quiz/correctness';
 import { TutorPanel } from '@/components/tutor/TutorPanel';
+import { WrongReasonPicker } from '@/components/review/WrongReasonPicker';
 import { cn } from '@/lib/cn';
 
 interface Card {
@@ -210,7 +211,10 @@ export function ReviewSession() {
             {current!.explanation && <p className="text-fg-muted whitespace-pre-wrap leading-relaxed mb-2">{current!.explanation}</p>}
             <p className="text-xs text-fg-faint">다음 복습: {formatDue(result!.dueAt)}</p>
             {!result!.correct && (
-              <TutorPanel questionId={current!.questionId} selected={[...picked].sort().join(',')} />
+              <>
+                <WrongReasonPicker questionId={current!.questionId} />
+                <TutorPanel questionId={current!.questionId} selected={[...picked].sort().join(',')} />
+              </>
             )}
             <button type="button" onClick={next} className="mt-3 block rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-white hover:opacity-90">
               {idx + 1 < cards.length ? '다음 문제 →' : '복습 끝내기'}

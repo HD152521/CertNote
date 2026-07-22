@@ -2,7 +2,8 @@ import { AppError } from '../auth/errors';
 import { getQuestionById, type IndexedQuestion } from '../questions';
 import { isSelectionCorrect, normalizeSelection } from '../quiz/correctness';
 import { isMastered, nextSchedule } from './schedule';
-import type { ReviewCounts, ReviewItem, ReviewRepository } from './types';
+import { nextScheduleSM2, qualityFromResult } from './sm2';
+import type { ReviewCounts, ReviewItem, ReviewRepository, WrongReason } from './types';
 
 // 클라이언트로 보낼 복습 카드(문제 본문 + 일정 메타).
 export interface ReviewCard {
@@ -71,9 +72,27 @@ export class ReviewService {
     }
     const correct = isSelectionCorrect(question.answer, choice);
     const existing = await this.repo.find(userId, questionId);
-    const { box, dueAt } = nextSchedule(existing?.box ?? 0, correct);
-    await this.repo.applySchedule(userId, questionId, box, dueAt, correct);
-    return { correct, mastered: isMastered(box), dueAt: dueAt.toISOString() };
+
+    // box는 카운트/마스터 표시용으로 기존 Leitner 로직 유지, 다음 복습일은 SM-2가 개인화.
+    const { box } = nextSchedule(existing?.box ?? 0, correct);
+    const sm2 = nextScheduleSM2(
+      { ef: existing?.ef ?? 2.5, interval: existing?.interval ?? 0, reps: existing?.reps ?? 0 },
+      qualityFromResult(correct),
+    );
+    await this.repo.applySchedule(userId, questionId, {
+      box,
+      dueAt: sm2.dueAt,
+      correct,
+      ef: sm2.ef,
+      interval: sm2.interval,
+      reps: sm2.reps,
+    });
+    return { correct, mastered: isMastered(box), dueAt: sm2.dueAt.toISOString() };
+  }
+
+  // 오답 이유 기록(채점과 분리 — 결과를 본 뒤 사용자가 고른다).
+  setReason(userId: string, questionId: string, reason: WrongReason): Promise<void> {
+    return this.repo.setReason(userId, questionId, reason);
   }
 
   // 큐 항목을 문제 본문과 합친다. 인덱스에 없는(삭제된) 문제는 건너뛴다.

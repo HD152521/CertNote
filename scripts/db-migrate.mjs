@@ -77,6 +77,17 @@ try {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_review_items_due ON review_items (user_id, due_at);');
   console.log('✓ review_items 테이블 준비 완료');
 
+  // SM-2 개인화 간격 + 오답 이유. 기존 행은 DEFAULT로 안전 초기화(box 유지 → 마스터/카운트 무손실).
+  // 다음 복습 때부터 각 항목이 SM-2로 재기준화된다(과거 due_at은 그대로).
+  await pool.query(`
+    ALTER TABLE review_items
+      ADD COLUMN IF NOT EXISTS ef          REAL NOT NULL DEFAULT 2.5,
+      ADD COLUMN IF NOT EXISTS interval    INT  NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS reps        INT  NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS last_reason TEXT;
+  `);
+  console.log('✓ review_items SM-2 컬럼 준비 완료');
+
   // 구독 권한(entitlement) 컬럼. plan='free'|'pro'. current_period_end=null 이면 무기한(수동 부여).
   // 결제 연동 시 webhook이 이 컬럼들만 갱신하면 게이팅은 그대로 동작한다.
   await pool.query(`
