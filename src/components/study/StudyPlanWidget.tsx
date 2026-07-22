@@ -298,6 +298,15 @@ function PlanForm({
     }
     setBusy(true);
     try {
+      // 편집 중 자격증을 바꾼 경우: 새 자격증으로 플랜을 '이동'시킨다.
+      // 플랜은 자격증별 키라 삭제 없이 PUT만 하면 옛 플랜이 남아 위젯이 계속 그걸 보여준다.
+      if (initial && initial.certSlug !== certSlug) {
+        await fetch('/api/study/plan', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ certSlug: initial.certSlug }),
+        }).catch(() => {});
+      }
       const res = await fetch('/api/study/plan', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
