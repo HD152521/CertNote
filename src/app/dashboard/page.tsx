@@ -6,7 +6,10 @@ import { getCurrentUser } from '@/lib/auth/currentUser';
 import { getDashboardData, type CertProgress } from '@/lib/dashboard/dashboardService';
 import { listCerts } from '@/lib/content';
 import { nextUp, weakDomainDrill } from '@/lib/recommend/recommendService';
+import { getAnalytics } from '@/lib/analytics/analyticsService';
 import { StudyPlanWidget } from '@/components/study/StudyPlanWidget';
+import { PassProbability } from '@/components/dashboard/PassProbability';
+import { TrendChart } from '@/components/dashboard/TrendChart';
 import type { Language } from '@/lib/i18n-client';
 
 export const dynamic = 'force-dynamic';
@@ -71,10 +74,11 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/dashboard');
 
-  const [data, recNext, recDrill] = await Promise.all([
+  const [data, recNext, recDrill, analytics] = await Promise.all([
     getDashboardData(user.sub),
     nextUp(user.sub, 3),
     weakDomainDrill(user.sub, 5),
+    getAnalytics(user.sub),
   ]);
   const hasActivity = data.attempts > 0 || data.review.total > 0;
   const hasRecommend = recNext.length > 0 || recDrill.length > 0;
@@ -173,6 +177,17 @@ export default async function DashboardPage() {
             <StatTile label={lang === 'en' ? 'Coverage' : '진도(커버리지)'} value={data.coverage} suffix="%" />
             <StatTile label={lang === 'en' ? 'Review Due' : '복습 필요'} value={data.review.due} tone={data.review.due > 0 ? 'text-danger' : 'text-fg'} />
             <StatTile label={lang === 'en' ? 'Mastered' : '마스터'} value={data.review.mastered} tone="text-success" />
+          </section>
+
+          {/* 합격 예측(추정) + 학습 추이 */}
+          <section className="grid gap-3 sm:grid-cols-2">
+            <PassProbability
+              prediction={analytics.prediction}
+              dday={analytics.dday}
+              examDate={analytics.examDate}
+              lang={lang}
+            />
+            <TrendChart trend={analytics.trend} lang={lang} />
           </section>
 
           {/* 자격증별 진행 */}
