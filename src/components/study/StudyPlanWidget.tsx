@@ -30,6 +30,12 @@ interface Portion {
   finished: boolean;
   targetAccuracy: number;
   dailyMinutesGoal: number | null;
+  catchUp?: {
+    isBehind: boolean;
+    behindBy: number;
+    perDay: number;
+    basePerDay: number;
+  };
 }
 
 const ACCURACY_OPTIONS = [60, 70, 80, 90];
@@ -152,6 +158,13 @@ function PlanSummary({ portion, onEdit, onSaved }: { portion: Portion; onEdit: (
         </div>
         <span className={`shrink-0 text-lg font-bold tabular-nums ${portion.dday >= 0 ? 'text-accent' : 'text-fg-faint'}`}>{ddayLabel}</span>
       </div>
+
+      {portion.catchUp?.isBehind && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
+          일정보다 <b>{portion.catchUp.behindBy}일</b> 뒤처졌어요. 시험일에 맞추려고 오늘 분량을{' '}
+          <b>{portion.catchUp.basePerDay}개 → {portion.catchUp.perDay}개</b>로 늘렸어요.
+        </div>
+      )}
 
       <div>
         <p className="mb-1 text-xs font-medium text-fg-muted">오늘 학습 분량</p>
