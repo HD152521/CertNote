@@ -7,6 +7,7 @@ import { getDashboardData, type CertProgress } from '@/lib/dashboard/dashboardSe
 import { listCerts } from '@/lib/content';
 import { nextUp, weakDomainDrill } from '@/lib/recommend/recommendService';
 import { getAnalytics } from '@/lib/analytics/analyticsService';
+import { loadStudyContext } from '@/lib/personalization/context';
 import { StudyPlanWidget } from '@/components/study/StudyPlanWidget';
 import { PassProbability } from '@/components/dashboard/PassProbability';
 import { TrendChart } from '@/components/dashboard/TrendChart';
@@ -74,11 +75,13 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/dashboard');
 
-  const [data, recNext, recDrill, analytics] = await Promise.all([
-    getDashboardData(user.sub),
-    nextUp(user.sub, 3),
-    weakDomainDrill(user.sub, 5),
-    getAnalytics(user.sub),
+  // 공유 원시 데이터를 1회 로드해 개인화 함수들에 주입(attempts/certs/plans 중복 조회 제거).
+  const ctx = await loadStudyContext(user.sub);
+  const data = await getDashboardData(user.sub, ctx);
+  const [recNext, recDrill, analytics] = await Promise.all([
+    nextUp(user.sub, 3, ctx),
+    weakDomainDrill(user.sub, 5, ctx),
+    getAnalytics(user.sub, 14, { ctx, dash: data }),
   ]);
   const hasActivity = data.attempts > 0 || data.review.total > 0;
   const hasRecommend = recNext.length > 0 || recDrill.length > 0;

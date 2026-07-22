@@ -1,7 +1,9 @@
 import { DEFAULT_CATEGORY } from '../category';
 import { listCerts, type CertMeta } from '../content';
+import type { StudyContext } from '../personalization/context';
 import { getAllQuestions, getQuestionById } from '../questions';
 import { getAttemptService } from '../quiz/attemptService';
+import type { AttemptRecord } from '../quiz/attemptRepository';
 import { getReviewService } from '../review/factory';
 import type { ReviewCounts } from '../review/types';
 
@@ -108,12 +110,22 @@ interface CertAgg {
 }
 
 // 로그인 사용자의 학습 현황을 집계한다. 읽기 전용 — 서버 컴포넌트에서 호출.
-export async function getDashboardData(userId: string): Promise<DashboardData> {
-  const [attemptList, review, certs] = await Promise.all([
-    getAttemptService().list(userId, ATTEMPT_LIMIT),
-    getReviewService().stats(userId),
-    listCerts(DEFAULT_CATEGORY),
-  ]);
+export async function getDashboardData(
+  userId: string,
+  ctx?: Pick<StudyContext, 'attempts' | 'review' | 'certs'>,
+): Promise<DashboardData> {
+  let attemptList: AttemptRecord[];
+  let review: ReviewCounts;
+  let certs: CertMeta[];
+  if (ctx) {
+    ({ attempts: attemptList, review, certs } = ctx);
+  } else {
+    [attemptList, review, certs] = await Promise.all([
+      getAttemptService().list(userId, ATTEMPT_LIMIT),
+      getReviewService().stats(userId),
+      listCerts(DEFAULT_CATEGORY),
+    ]);
+  }
 
   // 자격증별 전체 문제 수.
   const totalByCert = new Map<string, number>();

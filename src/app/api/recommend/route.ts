@@ -1,5 +1,6 @@
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { AppError, errorResponse } from '@/lib/auth/errors';
+import { loadStudyContext } from '@/lib/personalization/context';
 import { nextUp, weakDomainDrill } from '@/lib/recommend/recommendService';
 
 export const dynamic = 'force-dynamic';
@@ -12,9 +13,10 @@ export async function GET() {
     if (!session) {
       throw new AppError(401, 'unauthorized', '로그인이 필요합니다.');
     }
+    const ctx = await loadStudyContext(session.sub); // 두 함수가 공유 → 중복 조회 제거.
     const [next, drill] = await Promise.all([
-      nextUp(session.sub, 3),
-      weakDomainDrill(session.sub, 5),
+      nextUp(session.sub, 3, ctx),
+      weakDomainDrill(session.sub, 5, ctx),
     ]);
     return Response.json({ nextUp: next, drill });
   } catch (err) {

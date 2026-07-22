@@ -1,6 +1,8 @@
-import { getDashboardData } from '../dashboard/dashboardService';
-import { getLearnerProfile } from '../profile/profileService';
+import { getDashboardData, type DashboardData } from '../dashboard/dashboardService';
+import type { StudyContext } from '../personalization/context';
+import { getLearnerProfile, type LearnerProfile } from '../profile/profileService';
 import { getAttemptService } from '../quiz/attemptService';
+import type { AttemptRecord } from '../quiz/attemptRepository';
 import { computeToday, listPlans, type StudyPlan } from '../study/plan';
 import { predictPass, type PassPrediction } from './passPredictor';
 import { buildDailyTrend, type TrendPoint } from './trend';
@@ -35,13 +37,27 @@ function recentDays(days: number): string[] {
 }
 
 // 학습 분석: 합격 예측 + 추이. 읽기 전용(서버에서 호출).
-export async function getAnalytics(userId: string, trendDays = DEFAULT_TREND_DAYS): Promise<AnalyticsData> {
-  const [dash, attempts, plans, profile] = await Promise.all([
-    getDashboardData(userId),
-    getAttemptService().list(userId, ATTEMPT_LIMIT),
-    listPlans(userId),
-    getLearnerProfile(userId),
-  ]);
+// injected(ctx+dash) 주입 시 재조회 없이 재사용(대시보드 중복 조회 방지).
+export async function getAnalytics(
+  userId: string,
+  trendDays = DEFAULT_TREND_DAYS,
+  injected?: { ctx: StudyContext; dash: DashboardData },
+): Promise<AnalyticsData> {
+  let dash: DashboardData;
+  let attempts: AttemptRecord[];
+  let plans: StudyPlan[];
+  let profile: LearnerProfile;
+  if (injected) {
+    dash = injected.dash;
+    ({ attempts, plans, profile } = injected.ctx);
+  } else {
+    [dash, attempts, plans, profile] = await Promise.all([
+      getDashboardData(userId),
+      getAttemptService().list(userId, ATTEMPT_LIMIT),
+      listPlans(userId),
+      getLearnerProfile(userId),
+    ]);
+  }
 
   // 목표 자격증의 시험일 우선, 없으면 가장 임박한 플랜.
   const target = profile.targetCert;

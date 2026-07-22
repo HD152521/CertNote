@@ -1,16 +1,12 @@
 import { DEFAULT_CATEGORY } from '../category';
-import { getAllDays, listCerts, type DayRef } from '../content';
+import { getAllDays, type DayRef } from '../content';
 import { buildTopicStats } from '../dashboard/dashboardService';
 import { canAccessWeek, canTakeExam, FREE_WEEK } from '../entitlement/policy';
-import { getEntitlementService } from '../entitlement/factory';
 import { getExamQuestionsByDomain } from '../exam/examBank';
-import { getLearnerProfile } from '../profile/profileService';
-import { getAttemptService } from '../quiz/attemptService';
+import { loadStudyContext, type StudyContext } from '../personalization/context';
 import { getQuestionById, getQuestionsByCert } from '../questions';
-import { computeToday, listPlans } from '../study/plan';
+import { computeToday } from '../study/plan';
 
-// 한 사용자의 풀이 기록 상한(약점 집계에 전량 필요).
-const ATTEMPT_LIMIT = 5000;
 const DEFAULT_DRILL_LIMIT = 5;
 
 // ── 순수 선택 로직 (IO와 분리 — 단위테스트 대상) ─────────────────────────────
@@ -180,12 +176,9 @@ export function orderCardsByWeakness<T extends { slug: string; week: number; dom
 // ── IO 오케스트레이션 (읽기 전용 — 서버에서 호출) ───────────────────────────
 
 // 약점 영역의 미마스터 문제를 큐잉한다(주차 + 모의고사 도메인). 무료는 week1, 도메인은 Pro만.
-export async function weakDomainDrill(userId: string, limit = DEFAULT_DRILL_LIMIT): Promise<DrillRec[]> {
-  const [attempts, certs, ent] = await Promise.all([
-    getAttemptService().list(userId, ATTEMPT_LIMIT),
-    listCerts(DEFAULT_CATEGORY),
-    getEntitlementService().getEntitlement(userId),
-  ]);
+// ctx 주입 시 공유 컨텍스트 재사용(대시보드 중복 조회 방지).
+export async function weakDomainDrill(userId: string, limit = DEFAULT_DRILL_LIMIT, ctx?: StudyContext): Promise<DrillRec[]> {
+  const { attempts, certs, entitlement: ent } = ctx ?? (await loadStudyContext(userId));
 
   // 이미 맞힌 문제는 드릴에서 제외(약점=아직 못 맞힌 것에 집중).
   const solved = new Set(attempts.filter((a) => a.correct).map((a) => a.questionId));
@@ -240,12 +233,9 @@ export async function weakDomainDrill(userId: string, limit = DEFAULT_DRILL_LIMI
 }
 
 // 프로필 target_cert + 학습 플랜 기반 다음 학습 추천. 무료 사용자는 week1 범위만.
-export async function nextUp(userId: string, limit = 1): Promise<NextUpItem[]> {
-  const [profile, plans, ent] = await Promise.all([
-    getLearnerProfile(userId),
-    listPlans(userId),
-    getEntitlementService().getEntitlement(userId),
-  ]);
+// ctx 주입 시 공유 컨텍스트 재사용(대시보드 중복 조회 방지).
+export async function nextUp(userId: string, limit = 1, ctx?: StudyContext): Promise<NextUpItem[]> {
+  const { profile, plans, entitlement: ent } = ctx ?? (await loadStudyContext(userId));
 
   const gate = (d: DayRef): boolean => canAccessWeek(ent.plan, d.week);
 
