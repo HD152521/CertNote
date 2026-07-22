@@ -1,8 +1,23 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+// 정식 도메인. Vercel 기본 도메인(cert-note.vercel.app)이 같은 앱을 200으로 서빙해
+// 구글이 중복 색인 → 검색결과에 vercel 주소가 노출되는 문제. 여기서 301로 통합한다.
+// (vercel 도메인을 '삭제'하면 구글 결과 클릭 시 죽은 페이지가 되므로, 삭제가 아니라 리다이렉트.)
+const PRODUCTION_HOST = 'cert.juganlab.com';
+const VERCEL_HOST = 'cert-note.vercel.app';
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: VERCEL_HOST }],
+        destination: `https://${PRODUCTION_HOST}/:path*`,
+        permanent: true, // 301 — 구글에 canonical 이전 신호.
+      },
+    ];
+  },
 };
 
 // Sentry 빌드 래핑: 소스맵 업로드는 SENTRY_AUTH_TOKEN이 있을 때만(없어도 빌드·에러 수집은 정상,
