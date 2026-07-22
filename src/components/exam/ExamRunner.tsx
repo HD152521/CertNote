@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Check, X, Flag, Clock } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { Select } from '@/components/ui/Select';
 import { useLanguage, type Language } from '@/lib/i18n-client';
 
 interface CertOption { slug: string; code: string; name: string }
@@ -176,11 +177,9 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
       <div className="space-y-6">
         <div className="space-y-2">
           <label className="block text-sm text-fg-muted">{lang === 'en' ? 'Certification' : '자격증 범위'}</label>
-          <select value={certSlug} onChange={(e) => setCertSlug(e.target.value)}
-            className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-fg outline-none focus:border-border-strong">
-            <option value="">{lang === 'en' ? 'All Certifications' : '전체 자격증'}</option>
-            {certs.map((c) => <option key={c.slug} value={c.slug}>{c.code} — {c.name}</option>)}
-          </select>
+          <Select value={certSlug} onChange={setCertSlug}
+            options={[{ value: '', label: lang === 'en' ? 'All Certifications' : '전체 자격증' }, ...certs.map((c) => ({ value: c.slug, label: `${c.code} — ${c.name}` }))]}
+            ariaLabel={lang === 'en' ? 'Certification' : '자격증'} />
         </div>
 
         <div className="space-y-2">

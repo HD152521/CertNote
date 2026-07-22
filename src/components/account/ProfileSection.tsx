@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CertOption } from '@/components/AuthForm';
+import { Select } from '@/components/ui/Select';
 import { OCCUPATION_OPTIONS, PURPOSE_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profileOptions';
+
+const optional = (opts: readonly string[]) => [{ value: '', label: '선택 안 함' }, ...opts.map((o) => ({ value: o, label: o }))];
 
 export interface ProfileValues {
   name: string;
@@ -69,30 +72,22 @@ export function ProfileSection({ certs, initial }: { certs: CertOption[]; initia
 
       <Group title="학습 정보" hint="맞춤 추천에 사용됩니다">
         <Field label="목표 자격증">
-          <select required value={v.targetCert} onChange={(e) => set('targetCert', e.target.value)} className={INPUT_CLS}>
-            <option value="" disabled>선택해 주세요</option>
-            {certs.map((c) => (
-              <option key={c.slug} value={c.slug}>{c.code} · {c.name}</option>
-            ))}
-          </select>
+          <Select
+            value={v.targetCert}
+            onChange={(val) => set('targetCert', val)}
+            options={certs.map((c) => ({ value: c.slug, label: `${c.code} · ${c.name}` }))}
+            placeholder="선택해 주세요"
+            ariaLabel="목표 자격증"
+          />
         </Field>
         <Field label="직업" optional>
-          <select value={v.occupation} onChange={(e) => set('occupation', e.target.value)} className={INPUT_CLS}>
-            <option value="">선택 안 함</option>
-            {OCCUPATION_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
+          <Select value={v.occupation} onChange={(val) => set('occupation', val)} options={optional(OCCUPATION_OPTIONS)} placeholder="선택 안 함" ariaLabel="직업" />
         </Field>
         <Field label="학습 목적" optional>
-          <select value={v.purpose} onChange={(e) => set('purpose', e.target.value)} className={INPUT_CLS}>
-            <option value="">선택 안 함</option>
-            {PURPOSE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
+          <Select value={v.purpose} onChange={(val) => set('purpose', val)} options={optional(PURPOSE_OPTIONS)} placeholder="선택 안 함" ariaLabel="학습 목적" />
         </Field>
         <Field label="현재 수준/경력" optional>
-          <select value={v.experienceLevel} onChange={(e) => set('experienceLevel', e.target.value)} className={INPUT_CLS}>
-            <option value="">선택 안 함</option>
-            {EXPERIENCE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
+          <Select value={v.experienceLevel} onChange={(val) => set('experienceLevel', val)} options={optional(EXPERIENCE_OPTIONS)} placeholder="선택 안 함" ariaLabel="현재 수준/경력" />
         </Field>
       </Group>
 

@@ -6,6 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { track } from '@/lib/analytics';
 import { EXPERIENCE_OPTIONS, OCCUPATION_OPTIONS, PURPOSE_OPTIONS } from '@/lib/profileOptions';
 import type { CertOption } from '@/components/AuthForm';
+import { Select } from '@/components/ui/Select';
+
+const obOptional = (opts: readonly string[]) => [{ value: '', label: '선택 안 함' }, ...opts.map((o) => ({ value: o, label: o }))];
 
 interface OnboardingProfileFormProps {
   certs: CertOption[];
@@ -79,12 +82,9 @@ export function OnboardingProfileForm({ certs, initialName }: OnboardingProfileF
         </div>
         <div className="space-y-1">
           <label htmlFor="ob-cert" className="text-sm text-fg-muted">목표 자격증</label>
-          <select id="ob-cert" required value={targetCert} onChange={(e) => setTargetCert(e.target.value)} className={INPUT_CLS}>
-            <option value="" disabled>선택하세요</option>
-            {certs.map((c) => (
-              <option key={c.slug} value={c.slug}>{c.code} · {c.name}</option>
-            ))}
-          </select>
+          <Select id="ob-cert" value={targetCert} onChange={setTargetCert}
+            options={certs.map((c) => ({ value: c.slug, label: `${c.code} · ${c.name}` }))}
+            placeholder="선택하세요" ariaLabel="목표 자격증" />
         </div>
 
         <button type="button" onClick={() => setShowExtra((v) => !v)} className="text-xs text-fg-muted underline underline-offset-4 hover:text-fg">
@@ -94,24 +94,15 @@ export function OnboardingProfileForm({ certs, initialName }: OnboardingProfileF
           <div className="space-y-4">
             <div className="space-y-1">
               <label htmlFor="ob-occ" className="text-sm text-fg-muted">직업</label>
-              <select id="ob-occ" value={occupation} onChange={(e) => setOccupation(e.target.value)} className={INPUT_CLS}>
-                <option value="">선택 안 함</option>
-                {OCCUPATION_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-              </select>
+              <Select id="ob-occ" value={occupation} onChange={setOccupation} options={obOptional(OCCUPATION_OPTIONS)} placeholder="선택 안 함" ariaLabel="직업" />
             </div>
             <div className="space-y-1">
               <label htmlFor="ob-pur" className="text-sm text-fg-muted">응시 목적</label>
-              <select id="ob-pur" value={purpose} onChange={(e) => setPurpose(e.target.value)} className={INPUT_CLS}>
-                <option value="">선택 안 함</option>
-                {PURPOSE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-              </select>
+              <Select id="ob-pur" value={purpose} onChange={setPurpose} options={obOptional(PURPOSE_OPTIONS)} placeholder="선택 안 함" ariaLabel="응시 목적" />
             </div>
             <div className="space-y-1">
               <label htmlFor="ob-exp" className="text-sm text-fg-muted">경력 수준</label>
-              <select id="ob-exp" value={experienceLevel} onChange={(e) => setExperienceLevel(e.target.value)} className={INPUT_CLS}>
-                <option value="">선택 안 함</option>
-                {EXPERIENCE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-              </select>
+              <Select id="ob-exp" value={experienceLevel} onChange={setExperienceLevel} options={obOptional(EXPERIENCE_OPTIONS)} placeholder="선택 안 함" ariaLabel="경력 수준" />
             </div>
           </div>
         )}

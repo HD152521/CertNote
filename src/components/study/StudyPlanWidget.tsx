@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Flame, CalendarDays, Target, Snowflake } from 'lucide-react';
 import { StreakCalendar } from './StreakCalendar';
+import { Select } from '@/components/ui/Select';
 
 interface CertOption {
   slug: string;
@@ -236,13 +237,13 @@ function GoalEditor({ portion, onSaved }: { portion: Portion; onSaved: () => voi
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <label className="flex items-center gap-1.5">
           <span className="text-fg-muted">목표 정확도</span>
-          <select
-            value={accuracy}
-            onChange={(e) => { setAccuracy(Number(e.target.value)); setSaved(false); }}
-            className="rounded-md border border-border bg-transparent px-2 py-1 outline-none focus:border-border-strong"
-          >
-            {ACCURACY_OPTIONS.map((a) => <option key={a} value={a}>{a}%</option>)}
-          </select>
+          <Select
+            value={String(accuracy)}
+            onChange={(val) => { setAccuracy(Number(val)); setSaved(false); }}
+            options={ACCURACY_OPTIONS.map((a) => ({ value: String(a), label: `${a}%` }))}
+            className="w-24"
+            ariaLabel="목표 정확도"
+          />
         </label>
         <label className="flex items-center gap-1.5">
           <span className="text-fg-muted">하루</span>
@@ -332,15 +333,12 @@ function PlanForm({
     <div className="space-y-3">
       {!initial && <p className="text-sm text-fg-muted">시험일을 정하면 D-day 카운트다운과 매일 학습 분량을 챙겨드려요.</p>}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <select
+        <Select
           value={certSlug}
-          onChange={(e) => setCertSlug(e.target.value)}
-          className="rounded-md border border-border bg-transparent px-2 py-2 text-sm outline-none focus:border-border-strong"
-        >
-          {certs.map((c) => (
-            <option key={c.slug} value={c.slug}>{c.code} · {c.name}</option>
-          ))}
-        </select>
+          onChange={setCertSlug}
+          options={certs.map((c) => ({ value: c.slug, label: `${c.code} · ${c.name}` }))}
+          ariaLabel="자격증"
+        />
         <input
           type="date"
           value={examDate}

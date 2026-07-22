@@ -12,6 +12,7 @@ import {
   savePrefs,
 } from '@/lib/push/client';
 import type { NotifPrefs } from '@/lib/push/types';
+import { Select } from '@/components/ui/Select';
 
 function hourLabel(h: number): string {
   const period = h < 12 ? '오전' : '오후';
@@ -126,15 +127,13 @@ export function NotificationSettings() {
           />
           <label className="flex items-center justify-between gap-3 text-sm">
             <span className="text-fg">알림 받을 시각</span>
-            <select
-              value={prefs?.reminderHour ?? 8}
-              onChange={(e) => patch({ reminderHour: Number(e.target.value) })}
-              className="rounded-md border border-border bg-transparent px-2 py-1 text-sm outline-none focus:border-border-strong"
-            >
-              {Array.from({ length: 24 }, (_, h) => (
-                <option key={h} value={h}>{hourLabel(h)}</option>
-              ))}
-            </select>
+            <Select
+              value={String(prefs?.reminderHour ?? 8)}
+              onChange={(v) => patch({ reminderHour: Number(v) })}
+              options={Array.from({ length: 24 }, (_, h) => ({ value: String(h), label: hourLabel(h) }))}
+              className="w-32"
+              ariaLabel="알림 받을 시각"
+            />
           </label>
           <button
             type="button"
