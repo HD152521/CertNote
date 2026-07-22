@@ -1,19 +1,15 @@
-'use client';
-
 import { Suspense } from 'react';
-import Link from 'next/link';
 import { AuthForm } from '@/components/AuthForm';
 import { isGoogleLoginEnabled } from '@/lib/auth/oauth/google';
-import { useLanguage, t } from '@/lib/i18n-client';
+import { ForgotPasswordLink } from './ForgotPasswordLink';
 
+// 서버 컴포넌트로 둔다: googleEnabled는 서버 env(GOOGLE_CLIENT_ID/SECRET)로 판단해야 하며,
+// 'use client'였을 땐 브라우저에서 process.env가 비어 구글 로그인 버튼이 사라졌다.
 export default function LoginPage() {
-  const lang = useLanguage();
   return (
     <Suspense fallback={null}>
       <AuthForm mode="login" googleEnabled={isGoogleLoginEnabled()} />
-      <p className="mx-auto mt-4 max-w-sm text-center text-xs text-fg-faint">
-        <Link href="/forgot" className="text-accent hover:underline">{t(lang, 'forgotPasswordQuestion')}</Link>
-      </p>
+      <ForgotPasswordLink />
     </Suspense>
   );
 }
