@@ -1,7 +1,9 @@
 import { query } from '../db';
 import { sendToUser } from './send';
 import { computeToday } from '../study/plan';
-import { getStreak } from '../study/activity';
+import { getStreak, kstToday } from '../study/activity';
+import { daysBetween } from '../study/streak';
+import { predictPass } from '../analytics/passPredictor';
 import { getAllQuestions } from '../questions';
 import { parseSentCodes, pickMilestone } from './milestones';
 
@@ -26,9 +28,19 @@ interface PlanRow {
 export interface ReminderResult {
   hour: number;
   milestoneSent: number;
+  crisisSent: number;
   inactiveSent: number;
   planSent: number;
   reviewSent: number;
+}
+
+interface CrisisRow {
+  id: string;
+  attempts: string;
+  correct: string;
+  distinct_q: string;
+  target_accuracy: number;
+  exam_date: string;
 }
 
 function ddayLabel(dday: number): string {
@@ -67,6 +79,52 @@ export async function runReminders(kstHour: number): Promise<ReminderResult> {
     } catch (err) {
       console.error('[reminders] 마일스톤 처리 실패 user=%s:', row.id, err);
     }
+  }
+
+  // 0.5) 합격 위험 알림: at_risk 판정 사용자에게. 주 1회 상한(last_crisis_notif_at)으로 스팸 방지.
+  const today = kstToday();
+  const crisisRows = await query<CrisisRow>(
+    `SELECT DISTINCT ON (u.id) u.id,
+       (SELECT COUNT(*) FROM quiz_attempts a WHERE a.user_id = u.id) AS attempts,
+       (SELECT COUNT(*) FILTER (WHERE a.correct) FROM quiz_attempts a WHERE a.user_id = u.id) AS correct,
+       (SELECT COUNT(DISTINCT a.question_id) FROM quiz_attempts a WHERE a.user_id = u.id) AS distinct_q,
+       sp.target_accuracy,
+       to_char(sp.exam_date, 'YYYY-MM-DD') AS exam_date
+     FROM users u
+     JOIN study_plans sp ON sp.user_id = u.id AND sp.exam_date >= (now() AT TIME ZONE 'Asia/Seoul')::date
+     WHERE u.notify_progress = true AND u.reminder_hour = $1
+       AND (u.last_crisis_notif_at IS NULL OR u.last_crisis_notif_at < now() - interval '7 days')
+       AND EXISTS (SELECT 1 FROM push_subscriptions p WHERE p.user_id = u.id)
+     ORDER BY u.id, sp.exam_date ASC`,
+    [kstHour],
+  );
+  let crisisSent = 0;
+  for (const row of crisisRows) {
+    if (sent.has(row.id)) continue;
+    const attempts = Number(row.attempts);
+    const distinctQ = Number(row.distinct_q);
+    const coverage = totalQ > 0 ? Math.round((distinctQ / totalQ) * 100) : 0;
+    const accuracy = attempts > 0 ? Math.round((Number(row.correct) / attempts) * 100) : 0;
+    const dday = daysBetween(today, row.exam_date);
+    const pred = predictPass({
+      coverage,
+      accuracy,
+      recentAccuracy: null,
+      totalQuestions: totalQ,
+      attemptedQuestions: distinctQ,
+      dday,
+      targetAccuracy: row.target_accuracy,
+    });
+    if (pred.verdict !== 'at_risk') continue;
+    const n = await sendToUser(row.id, {
+      title: '⏰ 합격 위험 신호',
+      body: `${ddayLabel(dday)} · 지금 페이스론 목표에 못 미쳐요. 오늘 집중해서 만회해요!`,
+      url: `${APP_URL}/dashboard`,
+      tag: 'crisis',
+    });
+    if (n > 0) crisisSent += 1;
+    sent.add(row.id);
+    await query('UPDATE users SET last_crisis_notif_at = now() WHERE id = $1', [row.id]);
   }
 
   // 1) 복귀 알림: 알림 켬 + 해당 시각 + INACTIVE_DAYS일+ 미방문 + 최근 복귀알림 없음 + 구독 존재.
@@ -160,5 +218,5 @@ export async function runReminders(kstHour: number): Promise<ReminderResult> {
     sent.add(id);
   }
 
-  return { hour: kstHour, milestoneSent, inactiveSent, planSent, reviewSent };
+  return { hour: kstHour, milestoneSent, crisisSent, inactiveSent, planSent, reviewSent };
 }

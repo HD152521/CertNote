@@ -168,7 +168,8 @@ try {
       ADD COLUMN IF NOT EXISTS last_freeze_at        DATE,
       ADD COLUMN IF NOT EXISTS notify_progress       BOOLEAN NOT NULL DEFAULT true,
       ADD COLUMN IF NOT EXISTS notify_milestone      BOOLEAN NOT NULL DEFAULT true,
-      ADD COLUMN IF NOT EXISTS last_milestone_sent   TEXT;
+      ADD COLUMN IF NOT EXISTS last_milestone_sent   TEXT,
+      ADD COLUMN IF NOT EXISTS last_crisis_notif_at  TIMESTAMPTZ;
   `);
   console.log('✓ users 스트릭 프리즈/알림 컬럼 준비 완료');
 
