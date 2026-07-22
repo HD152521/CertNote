@@ -160,6 +160,18 @@ try {
   `);
   console.log('✓ users 알림 설정 컬럼 준비 완료');
 
+  // 스트릭 프리즈 + 스마트 알림 설정(M5). 기존 사용자는 DEFAULT로 프리즈 1개 보유.
+  // last_milestone_sent: 마일스톤(7/30일·50/100% 등) 축하 중복발송 방지 플래그.
+  await pool.query(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS streak_freeze_tokens INT     NOT NULL DEFAULT 1,
+      ADD COLUMN IF NOT EXISTS last_freeze_at        DATE,
+      ADD COLUMN IF NOT EXISTS notify_progress       BOOLEAN NOT NULL DEFAULT true,
+      ADD COLUMN IF NOT EXISTS notify_milestone      BOOLEAN NOT NULL DEFAULT true,
+      ADD COLUMN IF NOT EXISTS last_milestone_sent   TEXT;
+  `);
+  console.log('✓ users 스트릭 프리즈/알림 컬럼 준비 완료');
+
   // 웹 푸시 구독. 한 사용자가 여러 기기를 가질 수 있어 endpoint를 UNIQUE 키로.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS push_subscriptions (

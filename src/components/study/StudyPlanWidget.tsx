@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Flame, CalendarDays, Target } from 'lucide-react';
+import { Flame, CalendarDays, Target, Snowflake } from 'lucide-react';
+import { StreakCalendar } from './StreakCalendar';
 
 interface CertOption {
   slug: string;
@@ -32,6 +33,9 @@ interface Portion {
 interface Streak {
   current: number;
   activeToday: boolean;
+  longest: number;
+  freezeTokens: number;
+  frozenDate: string | null;
 }
 
 interface StudyPlanWidgetProps {
@@ -46,6 +50,8 @@ export function StudyPlanWidget({ certs }: StudyPlanWidgetProps) {
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState<Streak | null>(null);
   const [portion, setPortion] = useState<Portion | null>(null);
+  const [activity, setActivity] = useState<string[]>([]);
+  const [today, setToday] = useState('');
   const [editing, setEditing] = useState(false);
 
   const load = useCallback(async () => {
@@ -55,6 +61,8 @@ export function StudyPlanWidget({ certs }: StudyPlanWidgetProps) {
       const data = await res.json();
       setStreak(data.streak ?? null);
       setPortion(data.portion ?? null);
+      setActivity(data.activity ?? []);
+      setToday(data.today ?? '');
     } finally {
       setLoading(false);
     }
@@ -92,6 +100,23 @@ export function StudyPlanWidget({ certs }: StudyPlanWidgetProps) {
           }}
           onCancel={portion ? () => setEditing(false) : undefined}
         />
+      )}
+
+      {today && activity.length > 0 && (
+        <div className="mt-4 border-t border-border pt-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="text-xs font-medium text-fg-muted">연속 학습 기록</p>
+            <p className="flex items-center gap-2 text-[11px] text-fg-faint">
+              <span>최장 {streak?.longest ?? 0}일</span>
+              {(streak?.freezeTokens ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-0.5 text-sky-500">
+                  <Snowflake className="h-3 w-3" /> {streak?.freezeTokens}
+                </span>
+              )}
+            </p>
+          </div>
+          <StreakCalendar activeDates={activity} frozenDate={streak?.frozenDate ?? null} today={today} />
+        </div>
       )}
     </section>
   );
