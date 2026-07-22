@@ -1,6 +1,9 @@
 import { query } from '../db';
 import { sendToUser } from './send';
 import { computeToday } from '../study/plan';
+import { getStreak } from '../study/activity';
+import { getAllQuestions } from '../questions';
+import { parseSentCodes, pickMilestone } from './milestones';
 
 const INACTIVE_DAYS = 3;
 const APP_URL = process.env.APP_URL || '';
@@ -22,6 +25,7 @@ interface PlanRow {
 
 export interface ReminderResult {
   hour: number;
+  milestoneSent: number;
   inactiveSent: number;
   planSent: number;
   reviewSent: number;
@@ -35,6 +39,35 @@ function ddayLabel(dday: number): string {
 // 우선순위: 복귀 알림 > 합격 플랜(오늘 분량) > 복습 리마인더. 한 사용자에겐 하루 1건만.
 export async function runReminders(kstHour: number): Promise<ReminderResult> {
   const sent = new Set<string>();
+
+  // 0) 마일스톤 축하(최우선): 큰 성취는 루틴 알림에 묻히지 않게 먼저.
+  //    notify_milestone + 해당 시각 + 구독 존재. 커버리지는 distinct 풀이수/전체문항.
+  const totalQ = getAllQuestions().length;
+  const milestoneRows = await query<{ id: string; sent: string | null; attempted: string }>(
+    `SELECT u.id, u.last_milestone_sent AS sent,
+            (SELECT COUNT(DISTINCT a.question_id) FROM quiz_attempts a WHERE a.user_id = u.id) AS attempted
+     FROM users u
+     WHERE u.notify_milestone = true AND u.reminder_hour = $1
+       AND EXISTS (SELECT 1 FROM push_subscriptions p WHERE p.user_id = u.id)`,
+    [kstHour],
+  );
+  let milestoneSent = 0;
+  for (const row of milestoneRows) {
+    try {
+      const sentCodes = parseSentCodes(row.sent);
+      const { current: streak } = await getStreak(row.id);
+      const coverage = totalQ > 0 ? Math.round((Number(row.attempted) / totalQ) * 100) : 0;
+      const m = pickMilestone({ streak, coverage }, sentCodes);
+      if (!m) continue;
+      const n = await sendToUser(row.id, { title: m.title, body: m.body, url: `${APP_URL}/dashboard`, tag: 'milestone' });
+      if (n > 0) milestoneSent += 1;
+      sent.add(row.id);
+      sentCodes.add(m.code);
+      await query('UPDATE users SET last_milestone_sent = $2 WHERE id = $1', [row.id, [...sentCodes].join(',')]);
+    } catch (err) {
+      console.error('[reminders] 마일스톤 처리 실패 user=%s:', row.id, err);
+    }
+  }
 
   // 1) 복귀 알림: 알림 켬 + 해당 시각 + INACTIVE_DAYS일+ 미방문 + 최근 복귀알림 없음 + 구독 존재.
   const inactive = await query<IdRow>(
@@ -127,5 +160,5 @@ export async function runReminders(kstHour: number): Promise<ReminderResult> {
     sent.add(id);
   }
 
-  return { hour: kstHour, inactiveSent, planSent, reviewSent };
+  return { hour: kstHour, milestoneSent, inactiveSent, planSent, reviewSent };
 }
