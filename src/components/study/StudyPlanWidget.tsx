@@ -113,17 +113,21 @@ export function StudyPlanWidget({ certs }: StudyPlanWidgetProps) {
       )}
 
       {today && activity.length > 0 && (
-        <div className="mt-4 border-t border-border pt-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-xs font-medium text-fg-muted">연속 학습 기록</p>
-            <p className="flex items-center gap-2 text-[11px] text-fg-faint">
-              <span>최장 {streak?.longest ?? 0}일</span>
+        <div className="mt-4 border-t border-border pt-4">
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div className="flex items-baseline gap-1.5">
+              <Flame className={`h-5 w-5 self-center ${streak?.activeToday ? 'text-accent' : 'text-fg-faint'}`} />
+              <span className="text-2xl font-bold leading-none tabular-nums text-fg">{streak?.current ?? 0}</span>
+              <span className="text-sm text-fg-muted">일 연속</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px]">
+              <span className="rounded-full bg-bg-subtle px-2 py-0.5 text-fg-muted">최장 {streak?.longest ?? 0}일</span>
               {(streak?.freezeTokens ?? 0) > 0 && (
-                <span className="inline-flex items-center gap-0.5 text-sky-500">
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-sky-500/10 px-2 py-0.5 font-medium text-sky-500">
                   <Snowflake className="h-3 w-3" /> {streak?.freezeTokens}
                 </span>
               )}
-            </p>
+            </div>
           </div>
           <StreakCalendar activeDates={activity} frozenDate={streak?.frozenDate ?? null} today={today} />
         </div>

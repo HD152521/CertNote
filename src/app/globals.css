@@ -12,6 +12,7 @@
 }
 
 :root {
+  color-scheme: light; /* 네이티브 컨트롤(select 옵션·date 피커·스크롤바)을 라이트로 */
   --bg: #ffffff;
   --bg-subtle: #fafafa;
   --bg-elevated: #ffffff;
@@ -29,6 +30,7 @@
 }
 
 .dark {
+  color-scheme: dark; /* 다크모드: select 옵션 팝업을 어두운 배경+밝은 글씨로 렌더 */
   --bg: #0a0a0a;
   --bg-subtle: #111111;
   --bg-elevated: #161616;
@@ -65,14 +67,6 @@
 }
 
 * { border-color: var(--border); }
-
-/* 드롭다운(select) — 다크모드에서 옵션 팝업이 브라우저 기본색(흰 배경)으로 떠서
-   글씨가 안 보이던 문제. 옵션에 테마 색을 명시해 라이트/다크 모두 가독성 확보. */
-select { color: var(--fg); }
-select option {
-  background-color: var(--bg-elevated);
-  color: var(--fg);
-}
 
 html, body {
   background: var(--bg);
