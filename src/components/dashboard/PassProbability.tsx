@@ -50,7 +50,7 @@ export function PassProbability({ prediction, dday, examDate, lang }: PassProbab
   const en = lang === 'en';
 
   return (
-    <div className="rounded-xl border border-border bg-bg-elevated p-5">
+    <div className="flex h-full flex-col rounded-xl border border-border bg-bg-elevated p-5">
       <div className="mb-2 flex items-center justify-between gap-2">
         <h2 className="text-sm font-medium text-fg-muted">
           {en ? 'Pass Probability' : '합격 가능성'}

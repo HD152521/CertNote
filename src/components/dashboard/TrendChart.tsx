@@ -8,8 +8,8 @@ interface TrendChartProps {
 
 // viewBox 좌표계(고정). 실제 렌더 크기는 CSS가 결정 → 반응형.
 const W = 320;
-const H = 96;
-const PAD = { top: 8, right: 8, bottom: 16, left: 8 };
+const H = 150;
+const PAD = { top: 10, right: 10, bottom: 18, left: 26 };
 const PLOT_W = W - PAD.left - PAD.right;
 const PLOT_H = H - PAD.top - PAD.bottom;
 
@@ -20,10 +20,13 @@ export function TrendChart({ trend, lang }: TrendChartProps) {
   const en = lang === 'en';
   const n = trend.length;
   const totalAttempts = trend.reduce((s, p) => s + p.attempts, 0);
+  const totalCorrect = trend.reduce((s, p) => s + p.correct, 0);
+  const activeDays = trend.filter((p) => p.attempts > 0).length;
+  const avgAccuracy = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : null;
 
   if (n === 0 || totalAttempts === 0) {
     return (
-      <div className="rounded-xl border border-border bg-bg-elevated p-5">
+      <div className="flex h-full flex-col rounded-xl border border-border bg-bg-elevated p-5">
         <h2 className="mb-2 text-sm font-medium text-fg-muted">{en ? 'Trend' : '학습 추이'}</h2>
         <p className="text-sm text-fg-faint">
           {en ? 'Practice over a few days to see your accuracy and activity trend.' : '며칠 풀이가 쌓이면 정답률·활동량 추이가 여기에 그려집니다.'}
@@ -52,25 +55,43 @@ export function TrendChart({ trend, lang }: TrendChartProps) {
   if (cur.length > 1) segments.push(cur.join(' '));
 
   return (
-    <div className="rounded-xl border border-border bg-bg-elevated p-5">
-      <div className="mb-2 flex items-center justify-between">
+    <div className="flex h-full flex-col rounded-xl border border-border bg-bg-elevated p-5">
+      <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-medium text-fg-muted">{en ? 'Trend' : '학습 추이'}</h2>
         <span className="text-[11px] text-fg-faint">{en ? `Last ${n} days` : `최근 ${n}일`}</span>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={en ? 'Accuracy and activity trend' : '정답률·활동량 추이'}>
-        {/* 기준선 0/50/100% */}
+      {/* 요약 통계 — 차트 위 여백을 채우고 한눈 요약 */}
+      <div className="mb-3 grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-lg bg-bg-subtle px-2 py-1.5">
+          <p className="text-lg font-semibold tabular-nums text-fg">{avgAccuracy}<span className="text-xs font-normal text-fg-faint">%</span></p>
+          <p className="text-[10px] text-fg-muted">{en ? 'Avg accuracy' : '평균 정답률'}</p>
+        </div>
+        <div className="rounded-lg bg-bg-subtle px-2 py-1.5">
+          <p className="text-lg font-semibold tabular-nums text-fg">{totalAttempts}</p>
+          <p className="text-[10px] text-fg-muted">{en ? 'Solved' : '푼 문제'}</p>
+        </div>
+        <div className="rounded-lg bg-bg-subtle px-2 py-1.5">
+          <p className="text-lg font-semibold tabular-nums text-fg">{activeDays}<span className="text-xs font-normal text-fg-faint">/{n}</span></p>
+          <p className="text-[10px] text-fg-muted">{en ? 'Active days' : '학습한 날'}</p>
+        </div>
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} className="mt-auto w-full" role="img" aria-label={en ? 'Accuracy and activity trend' : '정답률·활동량 추이'}>
+        {/* 기준선 0/50/100% + y축 라벨 */}
         {[0, 50, 100].map((g) => (
-          <line
-            key={g}
-            x1={PAD.left}
-            x2={W - PAD.right}
-            y1={yForAcc(g)}
-            y2={yForAcc(g)}
-            stroke="var(--color-border, #e5e5e5)"
-            strokeWidth={0.5}
-            strokeDasharray={g === 0 ? '0' : '2 3'}
-          />
+          <g key={g}>
+            <line
+              x1={PAD.left}
+              x2={W - PAD.right}
+              y1={yForAcc(g)}
+              y2={yForAcc(g)}
+              stroke="var(--color-border, #e5e5e5)"
+              strokeWidth={0.5}
+              strokeDasharray={g === 0 ? '0' : '2 3'}
+            />
+            <text x={PAD.left - 5} y={yForAcc(g) + 3} fontSize={8} textAnchor="end" className="fill-fg-faint">{g}</text>
+          </g>
         ))}
 
         {/* 활동량 막대(배경, 옅게) */}
@@ -108,7 +129,7 @@ export function TrendChart({ trend, lang }: TrendChartProps) {
         <text x={W - PAD.right} y={H - 4} fontSize={9} textAnchor="end" className="fill-fg-faint">{mmdd(trend[n - 1].date)}</text>
       </svg>
 
-      <div className="mt-1 flex items-center gap-3 text-[11px] text-fg-faint">
+      <div className="mt-2 flex items-center gap-3 text-[11px] text-fg-faint">
         <span className="flex items-center gap-1"><span className="inline-block h-1.5 w-3 rounded-full bg-accent" />{en ? 'Accuracy' : '정답률'}</span>
         <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-accent/20" />{en ? 'Activity' : '활동량'}</span>
       </div>
