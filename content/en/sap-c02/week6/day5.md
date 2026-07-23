@@ -364,7 +364,7 @@ Actual CPU/memory/network usage pattern based instance Right-Sizing recommendati
 
 ---
 
-**문题 11.** Company completed on-premises to AWS migration. Remaining on-premises data center to be used as AWS service DR site. Possible configuration?
+**문제 11.** Company completed on-premises to AWS migration. Remaining on-premises data center to be used as AWS service DR site. Possible configuration?
 
 A) Reinstall MGN in reverse—AWS EC2 source, on-premises block-level continuous replication
 B) Configure DRS with AWS EC2 source, on-premises DR target (reverse replication)

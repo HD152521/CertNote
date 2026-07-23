@@ -210,7 +210,7 @@ Next article presents **Week 2 integrated scenarios 12 questions**. Organization
 
 ## 📝 연습 문제
 
-**問題 1.** 100 AWS accounts + Okta IdP + console/CLI SSO. Best?
+**문제 1.** 100 AWS accounts + Okta IdP + console/CLI SSO. Best?
 
 A) Register SAML IdP in each account
 B) IAM Identity Center + Okta (SCIM + SAML)
@@ -222,7 +222,7 @@ D) Direct Connect + AD
 
 ---
 
-**問題 2.** Assign Permission Set to account·group. Result?
+**문제 2.** Assign Permission Set to account·group. Result?
 
 A) IAM User created
 B) Account's `AWSReservedSSO_*` IAM Role auto-created
@@ -234,7 +234,7 @@ D) SCP created
 
 ---
 
-**問題 3.** B2C app customer signup·login. Which service?
+**문제 3.** B2C app customer signup·login. Which service?
 
 A) IAM Identity Center
 B) Cognito User Pool
@@ -246,7 +246,7 @@ D) Directory Service
 
 ---
 
-**問題 4.** Consolidated Billing benefit that's NOT one?
+**문제 4.** Consolidated Billing benefit that's NOT one?
 
 A) RI/SP sharing
 B) Volume discount pooling
@@ -258,7 +258,7 @@ D) Single invoice
 
 ---
 
-**問題 5.** Okta employee resigns. Revoke from ALL AWS accounts fastest. Best?
+**문제 5.** Okta employee resigns. Revoke from ALL AWS accounts fastest. Best?
 
 A) Delete each account's IAM User
 B) Okta deactivate → IDC SCIM sync auto-revokes all (within 5 min)
@@ -270,19 +270,19 @@ D) CloudTrail monitor
 
 ---
 
-**問題 6.** Shorten IDC session to 1 hour. Why?
+**문제 6.** Shorten IDC session to 1 hour. Why?
 
 A) Cost saving
 B) Security — minimize exposed-token impact (especially admin)
 C) Performance
 D) IAM simplification
 
-**정答: B**
-해説: Short session = stolen token damages minimized. Admin 1h, dev 4h, readonly 8h standard. break-glass pattern: PowerUser day-to-day, Admin session temporarily for admin work.
+**정답: B**
+해설: Short session = stolen token damages minimized. Admin 1h, dev 4h, readonly 8h standard. break-glass pattern: PowerUser day-to-day, Admin session temporarily for admin work.
 
 ---
 
-**問題 7.** 100 projects, each separate S3·EC2. User accesses only their project. RBAC = 100 Role explosion. Solution?
+**문제 7.** 100 projects, each separate S3·EC2. User accesses only their project. RBAC = 100 Role explosion. Solution?
 
 A) Create 100 Permission Sets
 B) ABAC + IDC (user attribute → session tag → resource tag match)
@@ -294,12 +294,12 @@ D) 100 accounts
 
 ---
 
-**問題 8.** 80 accounts: some 24/7, some 9-18h. Minimize RI cost?
+**문제 8.** 80 accounts: some 24/7, some 9-18h. Minimize RI cost?
 
 A) RI Sharing OFF
 B) Consolidated Billing + RI Sharing ON (default) + Compute Savings Plans
 C) On-Demand only
 D) Spot only
 
-**정答: B**
-解説: RI Sharing ON lets night-unused RI used by day-shift account. Compute SP covers EC2·Fargate·Lambda most flexible. Cost precise split? Sharing OFF or use Cost Allocation Tags.
+**정답: B**
+해설: RI Sharing ON lets night-unused RI used by day-shift account. Compute SP covers EC2·Fargate·Lambda most flexible. Cost precise split? Sharing OFF or use Cost Allocation Tags.

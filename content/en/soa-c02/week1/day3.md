@@ -340,7 +340,7 @@ D) Yes, root account only
 
 ---
 
-**문题 6.** Identity Center user gets STS token via CLI. Which command?
+**문제 6.** Identity Center user gets STS token via CLI. Which command?
 
 A) `aws iam create-access-key`
 B) `aws sts assume-role`

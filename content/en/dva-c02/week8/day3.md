@@ -410,13 +410,13 @@ D) CloudTrail logs queried by CloudWatch Logs Insight every 5 min
 
 ---
 
-**문题 7.** CodePipeline V2 **execution mode** where new run auto-cancels waiting prior run?
+**문제 7.** CodePipeline V2 **execution mode** where new run auto-cancels waiting prior run?
 
 A) QUEUED
 B) PARALLEL
 C) SUPERSEDED
 D) BLOCKING
 
-**정答: C**
+**정답: C**
 
-해説: SUPERSEDED is V1 default behavior, named explicitly in V2. Cancels intermediate runs when fast pushes happen — only latest matters, saves resources. QUEUED processes all (no cancellation), PARALLEL all simultaneous. BLOCKING doesn't exist. When "execution mode" keyword appears, SUPERSEDED/QUEUED/PARALLEL trio is answer source.
+해설: SUPERSEDED is V1 default behavior, named explicitly in V2. Cancels intermediate runs when fast pushes happen — only latest matters, saves resources. QUEUED processes all (no cancellation), PARALLEL all simultaneous. BLOCKING doesn't exist. When "execution mode" keyword appears, SUPERSEDED/QUEUED/PARALLEL trio is answer source.

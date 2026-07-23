@@ -123,7 +123,7 @@ Three full-mesh features (mTLS, weighted canary, circuit breaker) = App Mesh dom
 
 ---
 
-**문题 7.** ECS Cluster inter-microservice: ① auto-discovery ② auto Envoy sidecar ③ auto CloudWatch metrics ④ minimum ops. Weighted canary unnecessary. Which service?
+**문제 7.** ECS Cluster inter-microservice: ① auto-discovery ② auto Envoy sidecar ③ auto CloudWatch metrics ④ minimum ops. Weighted canary unnecessary. Which service?
 
 A) App Mesh
 B) ECS Service Connect
@@ -135,7 +135,7 @@ Service Connect: single ECS Service block enables Envoy auto-inject, Cloud Map a
 
 ---
 
-**問題 8.** Manufacturer operates 100 factory gateways. Some internet-down for days. Control plane must operate autonomously inside factory. Most fitting service?
+**문제 8.** Manufacturer operates 100 factory gateways. Some internet-down for days. Control plane must operate autonomously inside factory. Most fitting service?
 
 A) ECS Anywhere
 B) EKS Anywhere
@@ -147,7 +147,7 @@ D) Snowball Edge
 
 ---
 
-**問題 9.** EKS 1.22 → 1.24 upgrade. Most accurate procedure?
+**문제 9.** EKS 1.22 → 1.24 upgrade. Most accurate procedure?
 
 A) Control Plane 1.22 → 1.24 one step
 B) Node groups first to 1.24, then Control Plane

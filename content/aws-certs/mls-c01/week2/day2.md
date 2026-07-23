@@ -1,40 +1,40 @@
-# Day 2 - Automating ML Training Pipelines: Step Functions and SageMaker Pipelines
+# Day 2 - 학습 데이터 파이프라인 자동화: Step Functions와 SageMaker Pipelines
 
-Yesterday we learned how to transform data with Glue and EMR. But in real operations, transformation doesn't happen just once. Every time new data arrives, or at a fixed time each day, we must automatically repeat **extract → transform → validate → train → evaluate**. If this repetition is done manually, mistakes occur and reproducibility breaks.
+어제 우리는 Glue와 EMR으로 데이터를 변환하는 법을 배웠다. 그런데 실무에서 변환은 한 번 돌리고 끝나지 않는다. 새 데이터가 들어올 때마다, 혹은 매일 정해진 시각에 **추출 → 변환 → 검증 → 학습 → 평가**를 자동으로 반복해야 한다. 이 반복을 사람이 손으로 돌리면 실수가 나고 재현성이 깨진다.
 
-Today we cover AWS's two main pillars for automating ML workflows: **AWS Step Functions** and **Amazon SageMaker Pipelines**. The MLS-C01 exam frequently asks "which orchestration tool to choose and when."
+오늘은 AWS에서 이 ML 워크플로를 자동화하는 두 축, **AWS Step Functions**와 **Amazon SageMaker Pipelines**를 다룬다. MLS-C01은 "어떤 오케스트레이션 도구를 언제 선택하는가"를 자주 묻는다.
 
-## Why Orchestration is Necessary
+## 왜 오케스트레이션이 필요한가
 
-ML workflows have multiple steps with order, conditions, and dependencies intertwined. For example:
+ML 워크플로는 여러 단계가 순서·조건·의존성을 갖고 엮여 있다. 예를 들어:
 
 ```
-[Data Extraction] → [Preprocessing] → [Data Quality Validation]
-                                          │
-                  Quality Pass ────────┤──── Quality Fail → Alert and Stop
+[데이터 추출] → [전처리] → [데이터 품질 검증]
+                                  │
+                  품질 통과 ──────┤──── 품질 실패 → 경보 후 중단
                   │
                   ▼
-            [Model Training] → [Model Evaluation] → Accuracy Threshold Met?
+            [모델 학습] → [모델 평가] → 정확도 기준 충족?
                                           │
-                  Met → [Register & Deploy Model]  │  Not Met → Retrain or Notify
+                  충족 → [모델 등록·배포]  │  미충족 → 재학습 or 알림
 ```
 
-Managing such branching, retries, and parallel processing in a single code block is fragile. An **orchestrator** makes each step a node and lets you declaratively define state transitions, error handling, and retries.
+이런 분기·재시도·병렬 처리를 코드 한 덩어리로 관리하면 깨지기 쉽다. **오케스트레이터**는 각 단계를 노드로 만들고, 상태 전이·에러 처리·재시도를 선언적으로 정의하게 해 준다.
 
-> 💡 **Related Theory**: The core values of a good pipeline are **reproducibility** and **lineage**. The same input should always produce the same result, and you should be able to trace back which data, code, and hyperparameters built a specific model. Automated pipelines structurally guarantee both.
+> 💡 **관련 이론**: 좋은 파이프라인의 핵심 가치는 **재현성(reproducibility)**과 **추적성(lineage)**이다. 같은 입력이면 언제 돌려도 같은 결과가 나와야 하고, 특정 모델이 "어떤 데이터·어떤 코드·어떤 파라미터"로 만들어졌는지 거슬러 추적할 수 있어야 한다. 자동화 파이프라인은 이 두 가지를 구조적으로 보장한다.
 
-## AWS Step Functions — A General-Purpose Workflow Orchestrator
+## AWS Step Functions — 범용 워크플로 오케스트레이터
 
-Step Functions is a **serverless orchestration service that connects AWS services via state machines**. Each step is defined as a "state," and workflows are described using Amazon States Language (ASL), a JSON DSL.
+Step Functions는 **AWS 서비스 전반을 상태 머신(state machine)으로 엮는** 서버리스 오케스트레이션 서비스다. 각 단계를 "상태(state)"로 정의하고, Amazon States Language(ASL)라는 JSON DSL로 흐름을 기술한다.
 
-Where Step Functions excels in ML:
-- **Heterogeneous services** (Glue jobs, Lambda, SageMaker training/processing/batch transform, ECS) can be tied into one flow.
-- `Choice` (branching), `Parallel` (parallelism), `Retry`/`Catch` (retries and exception handling) are expressed declaratively.
-- **Native SageMaker actions** are built-in to directly invoke training, tuning, and batch transform jobs.
+ML에서 Step Functions가 강한 지점:
+- Glue 작업, Lambda, SageMaker 학습/처리/배치변환, ECS 등 **이질적인 서비스를 한 흐름에 묶을 수 있다**.
+- `Choice`(분기), `Parallel`(병렬), `Retry`/`Catch`(재시도·예외 처리)를 선언적으로 표현한다.
+- **SageMaker 통합 액션**이 내장되어 학습·튜닝·배치변환 작업을 직접 호출한다.
 
 ```json
 {
-  "Comment": "ML Training Pipeline",
+  "Comment": "ML 학습 파이프라인",
   "StartAt": "GlueETL",
   "States": {
     "GlueETL": {
@@ -64,20 +64,20 @@ Where Step Functions excels in ML:
 }
 ```
 
-The `.sync` suffix means "wait until that task completes." Note how `Retry` and `Catch` declaratively handle retry and notification flows on failure.
+`.sync` 접미사는 "해당 작업이 끝날 때까지 기다린다"는 의미다. `Retry`와 `Catch`로 실패 시 재시도·알림 흐름을 선언적으로 처리하는 점에 주목하자.
 
-> 💡 **Related Theory**: Step Functions is not ML-specific but a **general-purpose workflow tool**. It excels at broad orchestration where you need to bind together ML and non-ML steps (data extraction, S3 cleanup, external API calls, approval waits).
+> 💡 **관련 이론**: Step Functions는 ML 전용이 아니라 **범용 워크플로 도구**다. 따라서 ML 단계와 비-ML 단계(예: 데이터 추출, S3 정리, 외부 API 호출, 승인 대기)를 함께 묶어야 하는 광범위한 오케스트레이션에 강점이 있다.
 
-## Amazon SageMaker Pipelines — ML-Native Pipelines
+## Amazon SageMaker Pipelines — ML 네이티브 파이프라인
 
-SageMaker Pipelines is a **CI/CD orchestrator designed exclusively for ML workflows**. Define steps with Python SDK, and SageMaker handles execution, tracking, and versioning. It's characterized by providing step types specialized for ML work.
+SageMaker Pipelines는 **ML 워크플로 전용**으로 설계된 CI/CD 오케스트레이터다. Python SDK로 단계를 정의하면 SageMaker가 실행·추적·버저닝을 담당한다. ML 작업에 특화된 단계 타입을 제공하는 것이 특징이다.
 
-Key step types:
-- `ProcessingStep` — preprocessing and postprocessing (SageMaker Processing)
-- `TrainingStep` — model training
-- `TuningStep` — hyperparameter tuning
-- `RegisterModel` / `ModelStep` — model registry registration
-- `ConditionStep` — branching based on evaluation metrics (e.g., register only if accuracy ≥ 0.85)
+주요 단계(step) 타입:
+- `ProcessingStep` — 전처리·후처리(SageMaker Processing)
+- `TrainingStep` — 모델 학습
+- `TuningStep` — 하이퍼파라미터 튜닝
+- `RegisterModel` / `ModelStep` — 모델 레지스트리 등록
+- `ConditionStep` — 평가 지표 기준 분기(예: 정확도 ≥ 0.85일 때만 등록)
 
 ```python
 from sagemaker.workflow.steps import ProcessingStep, TrainingStep
@@ -85,7 +85,7 @@ from sagemaker.workflow.condition_step import ConditionStep
 from sagemaker.workflow.conditions import ConditionGreaterThanOrEqualTo
 from sagemaker.workflow.pipeline import Pipeline
 
-# Preprocess → Train → Evaluate → (Conditionally) Register Model
+# 전처리 → 학습 → 평가 → (조건부) 모델 등록
 step_process = ProcessingStep(name="Preprocess", processor=sklearn_processor, ...)
 step_train = TrainingStep(name="Train", estimator=xgb_estimator, ...)
 
@@ -95,8 +95,8 @@ cond_accuracy = ConditionGreaterThanOrEqualTo(
 step_cond = ConditionStep(
     name="AccuracyGate",
     conditions=[cond_accuracy],
-    if_steps=[step_register_model],   # Register model if threshold is met
-    else_steps=[]                     # Don't register if not met
+    if_steps=[step_register_model],   # 기준 충족 시 모델 등록
+    else_steps=[]                     # 미충족 시 등록하지 않음
 )
 
 pipeline = Pipeline(
@@ -107,37 +107,37 @@ pipeline.upsert(role_arn=role)
 pipeline.start()
 ```
 
-> 💡 **Related Theory**: SageMaker Pipelines automatically records **lineage** with each execution. Which dataset, code, and hyperparameters built which model is tracked and linked to the SageMaker Model Registry. This is a critical feature in regulated environments (explainability and audit).
+> 💡 **관련 이론**: SageMaker Pipelines는 실행마다 **lineage(계보)**를 자동 기록한다. 어떤 데이터셋·코드·하이퍼파라미터로 어떤 모델이 만들어졌는지가 SageMaker Model Registry와 연결되어 추적된다. 이는 규제 환경(설명 가능성·감사)에서 매우 중요한 기능이다.
 
-## Step Functions vs SageMaker Pipelines — Selection Criteria
+## Step Functions vs SageMaker Pipelines — 선택 기준
 
-| Aspect | Step Functions | SageMaker Pipelines |
-|--------|----------------|---------------------|
-| Scope | General-purpose (AWS-wide orchestration) | ML-only |
-| Definition | ASL (JSON) / Workflow Studio | Python SDK |
-| ML Integration | SageMaker actions supported | Native, with model registry and lineage built-in |
-| Non-ML Steps | Strong (Lambda, Glue, approvals, SNS) | Limited |
-| Best For | Mixed ML+non-ML, complex branching/approvals | Pure ML CI/CD, lineage-critical |
+| 관점 | Step Functions | SageMaker Pipelines |
+|------|----------------|---------------------|
+| 범위 | 범용(AWS 전반 오케스트레이션) | ML 전용 |
+| 정의 방식 | ASL(JSON) / Workflow Studio | Python SDK |
+| ML 통합 | SageMaker 액션 지원 | 네이티브, 모델 레지스트리·lineage 내장 |
+| 비-ML 단계 | 강함(Lambda, Glue, 승인, SNS 등) | 제한적 |
+| 적합 상황 | ML+비ML 혼합, 복잡한 분기·승인 | 순수 ML CI/CD, 추적성 중시 |
 
-Core decision: **If workflows are purely ML training/evaluation/registration, use SageMaker Pipelines**; **if ML steps intertwine with data pipelines, external systems, and approval steps, Step Functions feels more natural**. A hybrid pattern (Step Functions orchestrating at the top level, calling SageMaker jobs within) is also common.
+핵심 판단: **워크플로가 순수하게 ML 학습/평가/등록 중심이면 SageMaker Pipelines**, **ML 단계와 데이터 파이프라인·외부 시스템·승인 단계가 뒤섞이면 Step Functions**가 자연스럽다. 둘을 함께 쓰는 패턴(Step Functions가 상위에서 전체를 오케스트레이션하고, 그 안에서 SageMaker 작업 호출)도 흔하다.
 
-> ⚠️ **Pitfall**: "It's an ML task, so definitely use SageMaker Pipelines" is an oversimplified trap answer. If your workflow has approval waits, multiple non-ML system integrations, and complex conditional branching, the more general Step Functions may be better suited. Read the problem requirements (proportion of non-ML steps, traceability needs) to decide.
+> ⚠️ **함정**: "ML 작업이니까 무조건 SageMaker Pipelines"는 단순화된 오답이다. 만약 워크플로에 승인 대기, 여러 비-ML 시스템 연동, 복잡한 조건 분기가 많다면 범용성이 높은 Step Functions가 더 적합할 수 있다. 문제의 요구사항(비-ML 단계 비중, 추적성 요구)을 읽어 판단해야 한다.
 
-## Triggers and Scheduling
+## 트리거와 스케줄링
 
-Deciding "when to run the pipeline" is part of the design.
+파이프라인을 "언제 돌릴 것인가"도 설계의 일부다.
 
-- **Amazon EventBridge**: Start the pipeline on a schedule (cron) or event (e.g., new data arrives in S3).
-- **S3 Event → Lambda → Start Pipeline**: A typical pattern using data arrival as the trigger.
-- **SageMaker Pipelines Schedule**: EventBridge rules trigger regular executions.
+- **Amazon EventBridge**: 일정(cron) 또는 이벤트(예: 새 데이터가 S3에 도착)에 반응해 파이프라인을 시작한다.
+- **S3 이벤트 → Lambda → 파이프라인 시작**: 데이터 도착을 트리거로 삼는 전형적 패턴.
+- **SageMaker Pipelines 스케줄**: EventBridge 규칙과 연동해 정기 실행.
 
-> 🎯 **Scenario**: "Every day at 2 AM, preprocess yesterday's logs and retrain the model, but if evaluation accuracy is below 0.9, don't deploy and notify the data team." → Use an EventBridge cron rule to trigger the SageMaker Pipeline, place a `ConditionStep` (accuracy gate) inside, and add SNS notifications on failure.
+> 🎯 **시나리오**: "매일 새벽 2시에 전날 로그를 전처리하고 모델을 재학습하되, 평가 정확도가 0.9 미만이면 배포하지 말고 데이터 팀에 알림을 보내라." → EventBridge cron으로 SageMaker Pipeline을 트리거하고, 파이프라인 내부에 `ConditionStep`(정확도 게이트)과 실패 시 SNS 알림을 두면 된다.
 
-## Summary
+## 정리하며
 
-Today we compared two tools for automating ML training pipelines. **Step Functions is a general orchestrator binding AWS services, excelling at mixed ML and non-ML workflows**, while **SageMaker Pipelines is ML-only with built-in lineage and model registry integration and strong conditional branching**. The real value of automation is reproducibility and lineage; attach EventBridge scheduling and event triggers to complete a fully automated pipeline.
+오늘은 ML 학습 데이터 파이프라인을 자동화하는 두 도구를 비교했다. **Step Functions는 AWS 전반을 엮는 범용 오케스트레이터로 ML+비ML 혼합 워크플로에 강하고**, **SageMaker Pipelines는 ML 전용으로 lineage·모델 레지스트리 통합과 조건부 분기에 강하다**. 자동화의 진짜 가치는 재현성과 추적성이며, EventBridge로 스케줄·이벤트 트리거를 붙여 완전 자동 파이프라인을 완성한다.
 
-Tomorrow we explore **data augmentation and synthesis** techniques to address insufficient or imbalanced data.
+내일은 데이터가 부족하거나 불균형할 때 이를 보완하는 **데이터 증강과 합성** 기법을 살펴본다.
 
 ---
 

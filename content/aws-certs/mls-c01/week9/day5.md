@@ -1,109 +1,109 @@
-# Day 5 - Week 9 Review: Evaluation and Debugging
+# Day 5 - Week 9 종합 복습: 평가와 디버깅
 
-This week covered the final stage of Domain 3 (Modeling) — **how to evaluate and debug models**. After choosing an algorithm (Week 6) and training/tuning it (Weeks 7-8), we must now answer "is this model truly good, where and how does it fail" with numbers and tools. Today we tie four days into one evaluation-debugging flow and organize the trickiest choices.
+이번 주는 도메인 3(Modeling)의 마지막 단계 — **모델을 평가하고 디버깅하는 법** — 을 다뤘다. 알고리즘을 고르고(Week 6) 학습·튜닝했다면(Week 7~8), 이제 "이 모델이 정말 좋은가, 어디서 어떻게 틀리는가"에 숫자와 도구로 답해야 한다. 오늘은 나흘 치를 하나의 평가·디버깅 흐름으로 엮고, 가장 헷갈리는 선택을 정리한다.
 
-## One-Page Summary: Evaluation to Debugging
+## 한 장 요약: 평가에서 디버깅까지
 
 ```text
-[Trained model]
+[학습된 모델]
    │
-   ├─ 1) Determine metric family by problem type
-   │     Classification → accuracy/precision/recall/F1, ROC-AUC, PR-AUC
-   │     Regression → RMSE/MAE/MAPE/R²
+   ├─ 1) 문제 유형으로 지표군 결정
+   │     분류 → 정확도/정밀도/재현율/F1, ROC-AUC, PR-AUC
+   │     회귀 → RMSE/MAE/MAPE/R²
    │
-   ├─ 2) Select metrics and thresholds by business cost
-   │     FN deadly → recall / lower threshold
-   │     FP deadly → precision / raise threshold
-   │     Imbalance → F1, PR-AUC (ban accuracy)
+   ├─ 2) 비즈니스 비용으로 지표·임계값 선택
+   │     FN 치명 → 재현율 / 임계값 ↓
+   │     FP 치명 → 정밀도 / 임계값 ↑
+   │     불균형  → F1, PR-AUC (정확도 금지)
    │
-   ├─ 3) Analyze trade-offs with curves
-   │     ROC/AUC = discrimination, model comparison
-   │     PR curve = honest on extreme imbalance
+   ├─ 3) 곡선으로 트레이드오프 분석
+   │     ROC/AUC = 변별력, 모델 비교
+   │     PR 곡선 = 극단 불균형에서 정직
    │
-   └─ 4) Debug, bias, error analysis
-         Debugger = training process (gradients/loss/overfitting)
-         Clarify = bias (group fairness) + SHAP (explainability)
-         Error analysis = improve from largest error bucket
+   └─ 4) 디버깅·편향·오류 분석
+         Debugger = 학습 과정(기울기/손실/과적합)
+         Clarify  = 편향(집단 공정성) + SHAP(설명)
+         오류 분석 = 큰 오류 버킷부터 개선
 ```
 
-## Classification Metrics (Day1~2)
+## 분류 지표 (Day1~2)
 
-| Metric | Formula Denominator | When |
+| 지표 | 공식 분모 | 언제 |
 |------|------|------|
-| Accuracy | All | Balanced data only, ban on imbalance |
-| Precision | TP+FP (predicted positive) | High FP cost (spam) |
-| Recall | TP+FN (actual positive) | High FN cost (disease/fraud) |
-| F1 | Harmonic mean | Balance FP·FN, imbalanced data |
-| ROC-AUC | TPR vs FPR area | Threshold-independent model comparison |
-| PR-AUC | Precision vs Recall area | Honest on extreme imbalance |
+| Accuracy | 전체 | 균형 데이터만, 불균형 금지 |
+| Precision | TP+FP (예측 양성) | FP 비용 클 때 (스팸) |
+| Recall | TP+FN (실제 양성) | FN 비용 클 때 (질병/사기) |
+| F1 | 조화평균 | FP·FN 균형, 불균형 데이터 |
+| ROC-AUC | TPR vs FPR 면적 | 임계값 무관 모델 비교 |
+| PR-AUC | Precision vs Recall 면적 | 극단 불균형에서 정직 |
 
-## Regression Metrics (Day3)
+## 회귀 지표 (Day3)
 
-| Metric | Character | Signal |
+| 지표 | 성격 | 단서 |
 |------|------|------|
-| MAE | Robust to outliers, intuitive unit | Ignore outliers |
-| RMSE | Sensitive to large errors (squared) | Large mistakes catastrophic, built-in default |
-| MAPE | Scale-independent relative error | Compare across scales (watch y=0) |
-| R² | Explanatory power vs mean | Negative = worse than mean |
+| MAE | 이상치 강건, 단위 직관 | 이상치 무시하고 싶을 때 |
+| RMSE | 큰 오차에 민감(제곱) | 큰 실수가 치명적, 빌트인 기본 |
+| MAPE | 스케일 무관 상대오차 | 규모 다른 항목 비교 (단, y=0 주의) |
+| R² | 평균 대비 설명력 | 음수면 평균보다 못함 |
 
-Residual plot: random scatter=good, U-shape=missed nonlinearity, funnel=heteroscedasticity, skew=bias.
+잔차 플롯: 무작위 산포면 양호, U자=비선형 미포착, 깔때기=이분산성, 치우침=편향.
 
-## Debugging, Bias (Day4)
+## 디버깅·편향 (Day4)
 
-| Keyword | Service |
+| 키워드 | 서비스 |
 |------|------|
-| Vanishing/exploding gradients, overfitting, tensor capture, auto-stop job | **Debugger** |
-| Group fairness, Disparate Impact, pre/post-training bias | **Clarify (bias)** |
-| SHAP, feature contribution, prediction explanation | **Clarify (explainability)** |
+| 기울기 소실/폭발, 과적합, 텐서 캡처, 잡 자동중단 | **Debugger** |
+| 집단 공정성, Disparate Impact, 학습 전/후 편향 | **Clarify (편향)** |
+| SHAP, 피처 기여도, 예측 설명 | **Clarify (설명)** |
 
-> 💡 **Related Theory**: The single principle threading this week is **"metrics translate business cost."** Same model, high FP cost → focus precision; high FN cost → focus recall; imbalance → ditch accuracy for F1/PR-AUC. In regression too: big mistakes catastrophic → RMSE; outliers noise → MAE. Metric selection almost always reduces to "which mistake costs more in this business?"
+> 💡 **관련 이론**: 이번 주를 관통하는 단일 원칙은 **"지표는 비즈니스 비용의 번역이다"**이다. 같은 모델이라도 FP가 비싸면 정밀도를, FN이 비싸면 재현율을 보고, 불균형이면 정확도를 버리고 F1/PR-AUC로 간다. 회귀에서도 큰 실수가 치명적이면 RMSE, 이상치가 잡음이면 MAE다. 지표 선택 문제는 거의 항상 "이 비즈니스에서 어떤 실수가 더 비싼가"로 환원된다.
 
-## Trickiest Comparisons
+## 가장 헷갈리는 비교
 
-| Comparison | Core Difference |
+| 비교 | 핵심 차이 |
 |------|------|
-| Precision vs Recall | Reduce FP / Reduce FN |
-| Accuracy vs F1 | Balanced data / Imbalanced data |
-| ROC vs PR curves | General / Extreme imbalance (no TN in denominator) |
-| AUC vs threshold choice | Model comparison / Operational cut decision |
-| RMSE vs MAE | Emphasize large errors / Robust to outliers |
-| R² positive vs negative | Better than mean / Worse than mean |
-| Debugger vs Clarify | Training process health / Bias & explainability |
-| Clarify bias vs SHAP | Group fairness / Prediction explanation |
-| Classification tuning vs regression tuning | Maximize (F1/AUC) / Minimize (RMSE) |
+| 정밀도 vs 재현율 | FP 줄이기 / FN 줄이기 |
+| Accuracy vs F1 | 균형 데이터 / 불균형 데이터 |
+| ROC vs PR 곡선 | 일반 / 극단 불균형(분모에 TN 없음) |
+| AUC vs 임계값 선택 | 모델 비교 / 운영 컷 결정 |
+| RMSE vs MAE | 큰 오차 강조 / 이상치 강건 |
+| R² 양수 vs 음수 | 평균보다 나음 / 평균보다 못함 |
+| Debugger vs Clarify | 학습 과정 건강 / 편향·설명 |
+| Clarify 편향 vs SHAP | 집단 공정성 / 예측 설명 |
+| 분류 튜닝 vs 회귀 튜닝 | Maximize(F1/AUC) / Minimize(RMSE) |
 
-> 💡 **Related Theory**: Model evaluation and threshold decision are separate stages. Use threshold-independent metrics like AUC to pick a "good-ranking model" first, then post-hoc pick threshold matching FP/FN costs on top. This separation lets you adjust threshold alone if cost structure changes, no model retraining. Exam splits "model comparison=AUC, operational cut=one point on curve" for this reason.
+> 💡 **관련 이론**: 모델 평가와 임계값 결정은 분리된 단계다. AUC 같은 임계값-무관 지표로 "잘 순위 매기는 모델"을 먼저 고르고, 그 위에서 FP/FN 비용에 맞는 임계값을 사후에 정한다. 이 분리 덕분에 비용 구조가 바뀌어도 모델 재학습 없이 임계값만 조정하면 된다. 시험에서 "모델 비교=AUC, 운영 컷=곡선 위 한 점"으로 갈리는 이유가 여기 있다.
 
-## Self-Check Questions
+## 자가 점검 질문
 
-Try answering in your head:
+답을 머릿속으로 떠올려 보자.
 
-1. Fraud is 0.5% but accuracy is 99.5%, why not trust it? → **Classify all as normal = 99.5%, imbalance**
-2. When missing fraud (FN) is deadly, priority metric? → **Recall**
-3. On extreme imbalance, more honest curve than ROC? → **PR curve (PR-AUC)**
-4. If RMSE much larger than MAE? → **Large errors (outlier residuals) present**
-5. If R² negative? → **Worse than predicting mean**
-6. Residual plot U-shaped? → **Missed nonlinearity, review features/model**
-7. Service that auto-detects vanishing gradients during training? → **SageMaker Debugger**
-8. Measure prediction fairness across groups? → **SageMaker Clarify (bias metrics)**
-9. Explain feature contribution for single prediction? → **Clarify SHAP values**
-10. Regression tuning objective direction? → **Minimize (RMSE, etc)**
+1. 사기 0.5%인데 정확도 99.5%를 신뢰 못 하는 이유는? → **다 정상으로 찍어도 99.5%, 불균형**
+2. 질병을 놓치는 FN이 치명적일 때 우선 지표는? → **재현율(Recall)**
+3. 극단 불균형에서 ROC보다 정직한 곡선은? → **PR 곡선(PR-AUC)**
+4. RMSE가 MAE보다 훨씬 크면? → **큰 오차(이상치성 잔차) 존재**
+5. R²가 음수면? → **평균선 예측보다도 못함**
+6. 잔차 플롯이 U자 곡선이면? → **비선형성 미포착, 피처/모델 재검토**
+7. 기울기 소실을 학습 중 자동 탐지하는 서비스는? → **SageMaker Debugger**
+8. 집단 간 예측 공정성 측정은? → **SageMaker Clarify (편향 지표)**
+9. 개별 예측의 피처 기여도 설명은? → **Clarify의 SHAP 값**
+10. 회귀 튜닝 목적 지표의 방향은? → **Minimize (RMSE 등)**
 
-## Exam Tips Summary
+## 시험 팁 종합
 
-- **Step 1**: Classification or regression? → pick metric family.
-- **Step 2**: By FP vs FN cost, choose precision/recall/F1; on imbalance, ditch accuracy.
-- See "imbalance" word? Accuracy option = wrong, F1/PR-AUC = right.
-- "Compare models / discrimination" = AUC; "operational threshold" = min-cost point on curve.
-- Regression: "big mistakes catastrophic"=RMSE, "outliers noise"=MAE, "scale-different"=MAPE.
-- "Gradients/loss/overfitting/tensors"=Debugger, "fairness/groups/SHAP"=Clarify → instant answer.
-- Tuning direction: classification metrics Maximize, error metrics Minimize.
+- **1단계**: 분류인가 회귀인가 → 지표군을 결정.
+- **2단계**: FP vs FN 비용으로 정밀도/재현율/F1을 고르고, 불균형이면 정확도를 버린다.
+- "불균형" 단어가 보이면 정확도 보기는 오답, F1/PR-AUC가 정답으로 향한다.
+- "모델 비교/변별력"은 AUC, "운영 임계값"은 곡선 위 비용 최소 지점.
+- 회귀에서 "큰 실수 치명적"=RMSE, "이상치 잡음"=MAE, "규모 다른 비교"=MAPE.
+- "기울기/손실/과적합/텐서"=Debugger, "공정성/집단/SHAP"=Clarify로 즉답.
+- 튜닝 방향: 분류 지표는 Maximize, 오차 지표는 Minimize.
 
-## Summary
+## 정리하며
 
-Week 9 was the final modeling step — "score and fix models." Define metric family by problem type, pick precision/recall/F1·threshold by business cost, read trade-offs with curves (ROC/PR). Then use Debugger for training process, Clarify for bias and explainability, error analysis for biggest error buckets. Core principles: **"metrics translate business cost"**, "classification Maximize / regression Minimize", "Debugger=process / Clarify=bias·explainability".
+Week 9는 "모델을 채점하고 고치는" 모델링의 마지막 단계였다. 문제 유형으로 지표군을 정하고, 비즈니스 비용으로 정밀도/재현율/F1·임계값을 고르며, 곡선(ROC/PR)으로 트레이드오프를 읽는다. 그리고 Debugger로 학습 과정을, Clarify로 편향과 설명가능성을, 오류 분석으로 큰 오류 버킷을 다룬다. 핵심은 **"지표는 비즈니스 비용의 번역"**이라는 원칙과, "분류 Maximize / 회귀 Minimize", "Debugger=과정 / Clarify=편향·설명"의 구분이다.
 
-Next week (Week 10) shifts to Domain 4 — actually **deploying, operating, monitoring** models.
+다음 주(Week 10)부터는 도메인 4(Machine Learning Implementation and Operations) — 모델을 실제로 배포하고 운영·모니터링하는 단계 — 로 넘어간다.
 
 ---
 

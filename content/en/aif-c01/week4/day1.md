@@ -124,12 +124,12 @@ B) Bedrock Guardrails
 C) Simple text generation call  
 D) Amazon Polly  
 
-**정答: A**  
+**정답: A**  
 해설: Agents let models reason multi-step, calling external APIs like Lambda or Knowledge Bases to perform actual tasks. B is safety filtering. C is simple generation without external action. D is a text-to-speech service—unrelated.
 
 ---
 
-**問題 5.** When choosing a model in Bedrock, which criterion is most distant from consideration?
+**문제 5.** When choosing a model in Bedrock, which criterion is most distant from consideration?
 
 A) Accuracy and reasoning ability needed for the task  
 B) Cost per token and response latency  

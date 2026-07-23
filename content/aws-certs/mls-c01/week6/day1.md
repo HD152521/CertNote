@@ -1,107 +1,107 @@
-# Day 1 - Algorithm Selection: Problem Type to Mapping
+# Day 1 - 알고리즘 선택: 문제 유형별 매핑
 
-Week 6 begins Domain 3 (Modeling). The first decision in modeling is "which algorithm?" and MLS-C01 narrows this through **problem type → algorithm class → SageMaker builtin** sequencing. Today we learn to translate business problems into ML problem types and map algorithm candidates for each type.
+Week 6은 MLS-C01 도메인 3(Modeling)의 출발점이다. 모델링의 첫 의사결정은 "어떤 알고리즘을 쓸 것인가"이며, 시험은 이를 **문제 유형 → 알고리즘 부류 → SageMaker 빌트인** 순으로 좁히도록 출제한다. 오늘은 비즈니스 문제를 ML 문제 유형으로 번역하고, 유형별로 후보 알고리즘을 매핑하는 사고 틀을 잡는다.
 
-## Translating Business Problems to ML Types
+## 비즈니스 문제를 ML 유형으로 번역하기
 
-Test text is almost always given in business language. The first step is converting that to standard ML problem type.
+시험 지문은 거의 항상 비즈니스 언어로 주어진다. 첫 단계는 그것을 표준 ML 문제 유형으로 바꾸는 것이다.
 
 ```text
-"Identify customers likely to churn early"         → Binary classification (churn yes/no)
-"Categorize emails as spam/normal/promotional"    → Multi-class classification
-"Forecast tomorrow's revenue amount"               → Regression
-"Automatically discover similar user groups"       → Clustering (unsupervised)
-"Recommend products never seen before"             → Recommendation / collaborative filtering
-"Detect unusual transactions"                      → Anomaly detection
-"Extract topics from document pile"                → Topic modeling (unsupervised)
+"이탈할 고객을 미리 식별"          → 이진 분류 (churn yes/no)
+"이메일을 스팸/정상/홍보로 구분"   → 다중 분류
+"내일 매출 금액 예측"              → 회귀
+"비슷한 사용자 그룹 자동 발견"      → 군집 (비지도)
+"본 적 없는 상품 추천"             → 추천 / 협업 필터링
+"평소와 다른 거래 탐지"            → 이상 탐지
+"문서 더미에서 주제 발견"          → 토픽 모델링 (비지도)
 ```
 
-Discriminating signals:
-- **Do we have labels (answers)?** Yes → supervised, no → unsupervised
-- **Is output categorical or numeric?** Categorical = classification, continuous numeric = regression
-- **Is it "find groups/patterns" or "predict"?** Find = clustering/topic, predict = classification/regression
+판별 신호:
+- **레이블(정답)이 있나?** 있으면 지도학습, 없으면 비지도.
+- **출력이 범주인가 수치인가?** 범주=분류, 연속 수치=회귀.
+- **"그룹/패턴 발견"인가 "예측"인가?** 발견=군집/토픽, 예측=분류/회귀.
 
-> 💡 **Related Theory**: Boundary between supervised/unsupervised/reinforcement lies on "existence of label." Classification/regression learn input-output pairs (supervised), clustering/dimensionality reduction/topic modeling/anomaly detection (mostly) find structure without labels (unsupervised). Recommendation handles user-item interaction matrices — technically unsupervised from a collaborative filtering view, but becomes supervised regression if using explicit ratings as target. Reinforcement learning is separate, learning policy from reward signals (SageMaker RL).
+> 💡 **관련 이론**: 지도/비지도/강화의 경계는 "정답 레이블의 존재"로 갈린다. 분류·회귀는 입력-출력 쌍을 학습하는 지도학습이고, 군집·차원축소·토픽모델·이상탐지(대부분)는 레이블 없이 구조를 찾는 비지도학습이다. 추천은 사용자-아이템 상호작용 행렬을 다루며 협업 필터링 관점에선 비지도에 가깝지만, 명시적 평점을 타깃으로 쓰면 지도(회귀)로도 볼 수 있다. 강화학습은 보상 신호로 정책을 학습하는 별도 범주다(SageMaker RL).
 
-## Classification
+## 분류 (Classification)
 
-Output is a **discrete category**. Binary/multi-class/multi-label types exist.
+출력이 **이산 범주**일 때. 이진/다중/다중레이블로 나뉜다.
 
-| Sub-type | Example | Representative Algorithms |
+| 세부 유형 | 예시 | 대표 알고리즘 |
 |------|------|------|
-| Binary classification | Churn, fraud | XGBoost, Linear Learner, KNN |
-| Multi-class classification | Product category | XGBoost, Linear Learner |
-| Multi-label | Multiple tags per image | Neural networks, Image Classification |
-| Text classification | Sentiment/topic | BlazingText |
+| 이진 분류 | 이탈 여부, 사기 여부 | XGBoost, Linear Learner, KNN |
+| 다중 분류 | 상품 카테고리 분류 | XGBoost, Linear Learner |
+| 다중 레이블 | 한 이미지에 여러 태그 | 신경망, Image Classification |
+| 텍스트 분류 | 감성/주제 분류 | BlazingText |
 
-Key metric: Accuracy alone often insufficient. Imbalanced data (fraud 1%) needs precision, recall, F1, AUC.
+핵심 지표: 정확도만으로 부족할 때가 많다. 불균형 데이터(사기 1%)에서는 정밀도·재현율·F1·AUC를 본다.
 
-## Regression
+## 회귀 (Regression)
 
-Output is **continuous numeric**. Revenue, price, demand forecasting.
+출력이 **연속 수치**일 때. 매출액, 가격, 수요량 예측 등.
 
-- Candidates: **XGBoost(objective=reg:squarederror)**, **Linear Learner(predictor_type=regressor)**
-- Time series demand forecasts with time-axis priority fit **DeepAR**(Day 3) or Amazon Forecast better than forcing general regression
-- Metrics: RMSE, MAE, R². If sensitive to outliers, watch MAE alongside
+- 후보: **XGBoost(objective=reg:squarederror)**, **Linear Learner(predictor_type=regressor)**.
+- 시계열 수요 예측처럼 시간축이 핵심이면 회귀로 억지로 풀기보다 **DeepAR**(Day3)나 Amazon Forecast가 적합하다.
+- 지표: RMSE, MAE, R². 이상치에 민감하면 MAE를 함께 본다.
 
-## Clustering
+## 군집 (Clustering)
 
-Bundle data into natural groups without labels. Customer segmentation, document grouping.
+레이블 없이 데이터를 자연스러운 그룹으로 묶는다. 고객 세분화, 문서 그룹핑.
 
-- Candidates: **K-Means**(SageMaker builtin). Specify cluster count k beforehand
-- Evaluation: No external truth, so use internal metrics — silhouette coefficient, elbow (WCSS) to choose k
+- 후보: **K-Means**(SageMaker 빌트인). 클러스터 수 k를 미리 지정.
+- 평가: 외부 정답이 없으므로 실루엣 계수, 엘보우(WCSS) 등 내부 지표로 k를 고른다.
 
-## Recommendation
+## 추천 (Recommendation)
 
-Predict preferences from user-item interactions.
+사용자-아이템 상호작용으로 선호를 예측한다.
 
-- Candidates: **Factorization Machines**(strong on sparse high-dimensional interactions), neural recommendation networks
-- Core challenges: cold start, sparsity (most cells empty)
+- 후보: **Factorization Machines**(희소 고차원 상호작용에 강함), 신경망 기반 추천.
+- 콜드 스타트, 희소성(대부분의 셀이 비어 있음)이 핵심 난점.
 
-## Anomaly Detection
+## 이상 탐지 (Anomaly Detection)
 
-Find rare events deviating from normal. Often approached as unsupervised with scarce anomaly labels.
+정상에서 벗어난 드문 사건을 찾는다. 레이블이 거의 없는 비지도 문제로 흔히 접근한다.
 
-- Candidates: **Random Cut Forest (RCF)**, **IP Insights**(entity-IP anomaly), streaming via Kinesis Data Analytics RCF
-- Extreme imbalance (anomaly 0.1%) makes supervised classification hard
+- 후보: **Random Cut Forest(RCF)**, **IP Insights**(엔티티-IP 이상), 스트리밍은 Kinesis Data Analytics RCF.
+- 불균형이 극단적(이상 0.1%)이라 분류로 풀기 어려운 경우가 많다.
 
-> 💡 **Related Theory**: "Can't we solve anomaly detection as supervised classification?" is a common trap. If sufficient anomaly labels exist and patterns are stable, supervised classification works. Reality: anomalies are rare, constantly morphing into new forms. Unsupervised anomaly detection learning only normal (RCF etc.) and measuring deviation is more robust. Signal words "almost no labels / new anomaly forms" → RCF over supervised.
+> 💡 **관련 이론**: "이상 탐지를 분류로 풀면 안 되나?"라는 함정이 자주 나온다. 이상 사례 레이블이 충분하고 패턴이 안정적이면 지도 분류도 가능하지만, 현실은 이상 사례가 극소수이고 새로운 형태로 끊임없이 변한다. 이때 정상만 학습해 벗어남을 측정하는 비지도 이상탐지(RCF 등)가 더 견고하다. 시험에서 "레이블이 거의 없다 / 새로운 형태의 이상" 단서가 보이면 분류보다 RCF 계열이 정답일 확률이 높다.
 
-## At-a-Glance Mapping Table
+## 한눈에 보는 매핑 표
 
-| Problem Type | Supervised/Unsupervised | SageMaker Builtin Candidates |
+| 문제 유형 | 지도/비지도 | SageMaker 빌트인 후보 |
 |------|------|------|
-| Tabular classification/regression | Supervised | XGBoost, Linear Learner |
-| Distance-based classification/regression | Supervised | KNN |
-| Clustering | Unsupervised | K-Means |
-| Recommendation (sparse interaction) | Supervised/Unsupervised | Factorization Machines |
-| Text classification/embedding | Supervised/Unsupervised | BlazingText |
-| Image classification | Supervised | Image Classification |
-| Time series forecasting | Supervised | DeepAR |
-| Anomaly detection | Unsupervised | Random Cut Forest, IP Insights |
-| Dimensionality reduction | Unsupervised | PCA |
-| Topic modeling | Unsupervised | LDA, NTM |
+| 표 형식 분류/회귀 | 지도 | XGBoost, Linear Learner |
+| 거리 기반 분류/회귀 | 지도 | KNN |
+| 군집 | 비지도 | K-Means |
+| 추천(희소 상호작용) | 지도/비지도 | Factorization Machines |
+| 텍스트 분류/임베딩 | 지도/비지도 | BlazingText |
+| 이미지 분류 | 지도 | Image Classification |
+| 시계열 예측 | 지도 | DeepAR |
+| 이상 탐지 | 비지도 | Random Cut Forest, IP Insights |
+| 차원 축소 | 비지도 | PCA |
+| 토픽 모델링 | 비지도 | LDA, NTM |
 
-## Additional Considerations in Algorithm Selection
+## 알고리즘 선택 시 추가 고려사항
 
-Choice doesn't end at problem type. Also consider:
+선택은 문제 유형만으로 끝나지 않는다. 다음도 함께 본다.
 
-- **Data shape**: Table vs text vs image vs time series → strongly constrains algorithm class
-- **Data size/sparsity**: Huge sparse data → Linear Learner/FM, mid-size tabular → XGBoost
-- **Interpretability**: If regulation/explanation needed → linear models advantaged
-- **Learning/inference cost**: DL = GPU/time cost↑. Avoid overkill for simple problems (KISS)
+- **데이터 형태**: 표(정형) vs 텍스트 vs 이미지 vs 시계열 → 데이터 형태가 알고리즘 부류를 강하게 제약.
+- **데이터 크기/희소성**: 매우 큰 희소 데이터엔 Linear Learner/FM, 중간 규모 정형 데이터엔 XGBoost.
+- **해석 가능성**: 규제·설명이 필요하면 선형 모델이 유리.
+- **학습/추론 비용**: 딥러닝은 GPU·시간 비용↑. 단순 문제에 과한 모델은 피한다(KISS).
 
-## Test Tips
+## 시험 팁
 
-- From text, first confirm **output form**(category/numeric/group/recommendation/anomaly) — narrows candidates by half
-- "No labels / discover groups / find topics" → unsupervised signal
-- "Time series / future value / seasonality" → DeepAR/Forecast signal, not general regression
-- "Text / image" → BlazingText/Image Classification, not general XGBoost
-- "Extremely rare / new anomaly forms" → RCF anomaly detection
+- 지문에서 **출력 형태**(범주/수치/그룹/추천/이상)를 먼저 확정하라 — 유형이 정해지면 후보가 절반으로 줄어든다.
+- "레이블이 없다 / 그룹을 발견 / 주제를 찾는다"는 비지도 신호.
+- "시계열 / 미래 값 예측 / 계절성"은 DeepAR·Forecast 신호이지 일반 회귀가 아닐 수 있다.
+- "텍스트 / 이미지"라는 단어는 일반 XGBoost가 아니라 BlazingText / Image Classification으로 답을 민다.
+- "극히 드문 / 새로운 형태의 비정상"은 RCF 같은 이상탐지로 민다.
 
-## Summary
+## 정리하며
 
-Today we covered the first gate of modeling — problem type identification and algorithm mapping. Core flow: **business problem → output form determines ML type → data shape/size/interpretability narrows algorithm**. Starting tomorrow, we dig deep into each builtin algorithm (XGBoost, Linear Learner, K-Means, KNN) from this mapping table.
+오늘은 모델링의 첫 관문 — 문제 유형 식별과 알고리즘 매핑 — 을 다뤘다. 핵심 흐름은 **비즈니스 문제 → 출력 형태로 ML 유형 판별 → 데이터 형태·규모·해석성으로 알고리즘 좁히기**다. 내일부터는 이 매핑 표의 각 빌트인 알고리즘(XGBoost, Linear Learner, K-Means, KNN)을 하나씩 깊이 파고든다.
 
 ---
 

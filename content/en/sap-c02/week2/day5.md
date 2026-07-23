@@ -175,7 +175,7 @@ D) AD Connector Okta link, IAM User per account per employee
 
 ---
 
-**問題 4.** New account auto-create + standard baseline (CloudTrail, IAM Role, tags). Terraform. Best?
+**문제 4.** New account auto-create + standard baseline (CloudTrail, IAM Role, tags). Terraform. Best?
 
 A) Account Factory console, manual baseline after
 B) AFT (Account Factory for Terraform)
@@ -188,33 +188,33 @@ D) StackSets baseline resource deploy all accounts
 
 ---
 
-**問題 5.** Policy: all EBS KMS-encrypted. Block at deploy time. Which guardrail?
+**문제 5.** Policy: all EBS KMS-encrypted. Block at deploy time. Which guardrail?
 
 A) Detective — Config Rule (`encrypted-volumes`) detect, auto-remediate post
 B) Proactive (CloudFormation Hook)
 C) Preventive — SCP `ec2:CreateVolume` with `ec2:Encrypted=false` Deny
 D) Tag Policy enforce encryption tag
 
-**정答: B**
+**정답: B**
 
-解説: Deploy-time block = Proactive(CFN Hook). Preventive(SCP) `ec2:CreateVolume` Deny also valid, but CFN Hook cleanest for IaC flow. Declarative Policy(2024) also option. Standard = Preventive + Proactive + Detective triple defense.
+해설: Deploy-time block = Proactive(CFN Hook). Preventive(SCP) `ec2:CreateVolume` Deny also valid, but CFN Hook cleanest for IaC flow. Declarative Policy(2024) also option. Standard = Preventive + Proactive + Detective triple defense.
 
 ---
 
-**問題 6.** 100 accounts' CloudTrail logs immutable single place. Best?
+**문제 6.** 100 accounts' CloudTrail logs immutable single place. Best?
 
 A) Each account self-managed bucket, IAM Policy removes delete
 B) Log Archive + S3 Object Lock(WORM) + Organization Trail
 C) CloudWatch Logs all accounts, forever retention
 D) S3 aggregate, Athena query change detection
 
-**정答: B**
+**정답: B**
 
-解説: Log Archive pattern + Object Lock(Compliance mode) = standard. Root can't delete during retention (21 CFR Part 11, SEC 17a-4, SOX). Organization Trail = auto-capture from new accounts. Log Archive vs Audit split = SoD.
+해설: Log Archive pattern + Object Lock(Compliance mode) = standard. Root can't delete during retention (21 CFR Part 11, SEC 17a-4, SOX). Organization Trail = auto-capture from new accounts. Log Archive vs Audit split = SoD.
 
 ---
 
-**問題 7.** Dev OU: developer free experiment. Cost runaway risk. Best?
+**문제 7.** Dev OU: developer free experiment. Cost runaway risk. Best?
 
 A) Workloads OU include
 B) Sandbox OU + SCP(p4/p5/x2 expensive Deny) + Budgets Alert + auto Lambda cleanup
@@ -227,7 +227,7 @@ D) Direct Connect + separate VPC
 
 ---
 
-**問題 8.** CFO: split billing by department. Best?
+**문제 8.** CFO: split billing by department. Best?
 
 A) Consolidated Billing + department OU + Cost Allocation Tag + Cost Explorer per-department
 B) Separate Org per department
@@ -236,50 +236,50 @@ D) Trusted Advisor
 
 **정답: A**
 
-해説: Org + tag-based cost split standard. Cost Allocation Tag activate, tag all resources `CostCenter`, `Department`. Tag Policy enforce tagging. B(Org split) loses RI/SP share benefit, fragments governance. A = Layer 1 (Org structure) + billing integration.
+해설: Org + tag-based cost split standard. Cost Allocation Tag activate, tag all resources `CostCenter`, `Department`. Tag Policy enforce tagging. B(Org split) loses RI/SP share benefit, fragments governance. A = Layer 1 (Org structure) + billing integration.
 
 ---
 
-**問題 9.** CloudTrail disabling guarantee. Best?
+**문제 9.** CloudTrail disabling guarantee. Best?
 
 A) All accounts' IAM: remove `cloudtrail:StopLogging`, auto-reapply periodic
 B) SCP: `cloudtrail:StopLogging`, `DeleteTrail`, `UpdateTrail` explicit Deny
 C) Trail S3 bucket NACL CloudTrail API traffic Deny
 D) WAF console/API CloudTrail disable-attempt rule block
 
-**정答: B**
+**정답: B**
 
-解説: SCP Deny unbreakable. Post-Equifax(2017), NIST CSF, PCI-DSS v4.0(2022) mandate log immutability. Standard baseline SCP. A misses root+future Roles = gaps.
+해설: SCP Deny unbreakable. Post-Equifax(2017), NIST CSF, PCI-DSS v4.0(2022) mandate log immutability. Standard baseline SCP. A misses root+future Roles = gaps.
 
 ---
 
-**問題 10.** Org just joined, need Landing Zone fast, Audit·Log auto-standard. Best?
+**문제 10.** Org just joined, need Landing Zone fast, Audit·Log auto-standard. Best?
 
 A) CFN/SCP/Config direct multi-month self-build
 B) Control Tower
 C) Service Catalog account·baseline portfolio self-service
 D) Trusted Advisor security·resilience checks manual standard apply
 
-**정答: B**
+**정답: B**
 
-解説: Control Tower 1h Landing Zone auto. Log Archive·Audit auto, guardrails auto, SRA baseline. C(Service Catalog) is internal Control Tower Account Factory tool, not standalone Landing Zone. D(Trusted Advisor) advisory, doesn't build.
+해설: Control Tower 1h Landing Zone auto. Log Archive·Audit auto, guardrails auto, SRA baseline. C(Service Catalog) is internal Control Tower Account Factory tool, not standalone Landing Zone. D(Trusted Advisor) advisory, doesn't build.
 
 ---
 
-**問題 11.** SaaS: company-external Principal access NO OU S3 buckets. One policy one-place block. Best?
+**문제 11.** SaaS: company-external Principal access NO OU S3 buckets. One policy one-place block. Best?
 
 A) Per-bucket Bucket Policy script
 B) Lambda monitor
 C) RCP (`aws:PrincipalOrgID != o-xxxx` Deny) OU-attach
 D) GuardDuty alert
 
-**정答: C**
+**정답: C**
 
-解説: RCP(2024 Resource-side) one place = all OU resources. Post-2017 S3 public accidents prevent structurally. SCP = Principal-side, RCP = Resource-side complement. A = bucket count risk, B/D = detect only.
+해설: RCP(2024 Resource-side) one place = all OU resources. Post-2017 S3 public accidents prevent structurally. SCP = Principal-side, RCP = Resource-side complement. A = bucket count risk, B/D = detect only.
 
 ---
 
-**問題 12.** 100 projects, separate S3/EC2. User accesses only own-project. RBAC = 100 Role explosion. Solution?
+**문제 12.** 100 projects, separate S3/EC2. User accesses only own-project. RBAC = 100 Role explosion. Solution?
 
 A) 100 Permission Set IDC define
 B) ABAC + IDC: IdP attribute → session tag → resource tag match

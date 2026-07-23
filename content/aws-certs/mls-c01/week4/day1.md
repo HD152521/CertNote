@@ -1,33 +1,33 @@
-# Day 1 - Dimensionality Reduction: PCA, t-SNE, and the Curse of Dimensionality
+# Day 1 - 차원 축소: PCA, t-SNE, 차원의 저주
 
-Week 4 focuses on the second axis of exploratory data analysis—**handling high-dimensional data**. As the number of features grows, models appear to have more information, but in practice, data becomes sparse in space and distance-based algorithms collapse due to the **curse of dimensionality**.
+Week 4는 탐색적 데이터 분석(EDA)의 두 번째 축인 **고차원 데이터 다루기**로 들어간다. 특성(feature)이 많아질수록 모델은 더 많은 정보를 갖는 것처럼 보이지만, 실제로는 데이터가 공간에서 희박해지고 거리 기반 알고리즘이 무너지는 **차원의 저주(curse of dimensionality)**에 빠진다.
 
-Today, we explore why this curse is a problem and two leading mitigation techniques: **PCA (Principal Component Analysis)** and **t-SNE**. MLS-C01 exams typically ask "when do you use PCA, and why is t-SNE visualization-only?"
+오늘은 차원의 저주가 왜 문제인지, 그리고 이를 완화하는 두 대표 기법 **PCA(주성분 분석)**와 **t-SNE**를 다룬다. MLS-C01 시험에서는 "어떤 상황에 PCA를 쓰고, t-SNE는 왜 시각화 전용인가"를 묻는 식으로 출제된다.
 
-## The Curse of Dimensionality
+## 차원의 저주
 
-As dimensionality increases, the volume of space that must be filled by a fixed sample size grows exponentially. The result: data points become increasingly distant from each other, and **distance-based measurements lose discriminative power**.
+차원이 늘어나면 같은 표본 수로 채워야 할 공간의 부피가 기하급수적으로 커진다. 그 결과 데이터 포인트들이 서로 멀어지고, **거리 기반 측정의 변별력이 사라진다**.
 
-| Symptom | Description |
+| 증상 | 설명 |
 |------|------|
-| Data sparsity | Sample count needed for equal density grows exponentially with dimensions |
-| Distance homogenization | All point pairs become roughly equidistant; nearest/farthest neighbors become indistinguishable |
-| Overfitting risk | When feature count approaches sample count, models memorize noise |
-| Computational cost | Learning and inference cost scale with dimension (linearly or quadratically) |
+| 데이터 희박화 | 차원이 늘수록 동일 밀도를 위해 필요한 표본이 지수적으로 증가 |
+| 거리 동질화 | 모든 점 쌍의 거리가 비슷해져 최근접/최원접 구분이 무의미 |
+| 과적합 위험 | 특성 수가 표본 수에 근접하면 모델이 노이즈를 외움 |
+| 계산 비용 | 차원에 비례/제곱해 학습·추론 비용 증가 |
 
-Algorithms relying on Euclidean distance—KNN, K-means—are particularly vulnerable in high dimensions.
+KNN, K-means처럼 유클리드 거리에 의존하는 알고리즘은 고차원에서 특히 취약하다.
 
-> 💡 **Key Theory**: The mathematical heart of the curse is that in a high-dimensional unit hypercube, the ratio of maximum to minimum distance between random points converges to 1. Put simply, "nearest neighbor" and "farthest neighbor" become essentially identical. This means dimensionality reduction isn't just about cutting computation—it's about **restoring the space in which distance-based learning works**.
+> 💡 **관련 이론**: 고차원 단위 초입방체에서 두 무작위 점 사이 거리의 최댓값과 최솟값 비율이 1에 수렴한다는 것이 차원의 저주의 수학적 핵심이다. 즉 "가장 가까운 이웃"과 "가장 먼 이웃"이 사실상 같아진다. 이 때문에 차원 축소는 단순히 계산을 줄이는 게 아니라, **거리 기반 학습이 작동하는 공간을 복원**하는 의미가 있다.
 
-## PCA: Principal Component Analysis
+## PCA: 주성분 분석
 
-PCA is a linear dimensionality reduction technique that finds orthogonal axes (principal components) that **maximize variance retention** and projects data onto those axes.
+PCA는 데이터의 **분산을 최대한 보존하는 직교 축(주성분)**을 찾아 그 축으로 데이터를 사영(projection)하는 선형 차원 축소 기법이다.
 
-- First principal component (PC1) is the direction of maximum variance
-- Second principal component (PC2) is orthogonal to PC1 and captures the most remaining variance
-- Keep top k principal components to reduce dimensions from d → k
+- 첫 번째 주성분(PC1)은 분산이 가장 큰 방향
+- 두 번째 주성분(PC2)은 PC1과 직교하면서 남은 분산이 가장 큰 방향
+- 상위 k개 주성분만 남겨 차원을 d → k로 줄인다
 
-Key requirement: **Always standardize before PCA**. Since PCA is variance-based, large-scale variables will dominate principal components.
+핵심 전제: **PCA 전에는 반드시 표준화(standardization)** 한다. 분산 기반이므로 스케일이 큰 변수가 주성분을 지배하기 때문이다.
 
 ```python
 import numpy as np
@@ -36,35 +36,35 @@ from sklearn.decomposition import PCA
 
 X_scaled = StandardScaler().fit_transform(X_train)
 
-pca = PCA(n_components=0.95)   # auto-select minimum components explaining 95% variance
+pca = PCA(n_components=0.95)   # 분산 95%를 설명하는 최소 주성분 수
 X_reduced = pca.fit_transform(X_scaled)
 
-print("Number of components selected:", pca.n_components_)
-print("Cumulative explained variance:", pca.explained_variance_ratio_.cumsum())
+print("선택된 주성분 수:", pca.n_components_)
+print("설명 분산 비율:", pca.explained_variance_ratio_.cumsum())
 ```
 
-Passing a ratio (0–1) to `n_components` instead of an integer auto-selects the minimum number of components explaining that variance ratio. Choose k using the **scree plot** or the elbow of the cumulative variance curve.
+`n_components`에 정수 대신 0~1 비율을 주면 "누적 설명 분산이 그 비율을 넘는 최소 주성분 수"를 자동 선택한다. 적절한 k는 **스크리 플롯(scree plot)**이나 누적 설명 분산 곡선의 팔꿈치(elbow)로 고른다.
 
-> 💡 **Key Theory**: PCA is mathematically equivalent to eigendecomposition of the data covariance matrix. Eigenvectors are principal component directions; eigenvalues are the variance in those directions. "Explained variance ratio" is each eigenvalue divided by the sum of all eigenvalues. The same result can be obtained via Singular Value Decomposition (SVD); scikit-learn and SageMaker use randomized SVD for large-scale data efficiency.
+> 💡 **관련 이론**: PCA는 데이터 공분산 행렬의 고유분해(eigendecomposition)와 동치다. 고유벡터가 주성분 방향, 고유값이 그 방향의 분산이다. 따라서 "설명 분산 비율"은 곧 각 고유값을 전체 고유값 합으로 나눈 값이다. 특이값 분해(SVD)로도 같은 결과를 얻으며, scikit-learn과 SageMaker는 대규모 데이터에서 randomized SVD를 사용해 효율을 높인다.
 
-## SageMaker Built-In PCA Algorithm
+## SageMaker 내장 PCA 알고리즘
 
-For large datasets that won't fit in memory, use SageMaker's built-in **PCA algorithm**.
+대규모 데이터에서는 메모리에 다 올릴 수 없으므로 SageMaker 내장 **PCA 알고리즘**을 쓴다.
 
-| Mode | Use Case |
+| 모드 | 사용 시점 |
 |------|-----------|
-| `regular` | Medium-scale features and observations |
-| `randomized` | Very high feature count (approximate SVD for scalability) |
+| `regular` | 특성 수와 관측치가 중간 규모 |
+| `randomized` | 특성 수가 매우 많을 때(근사 SVD로 확장성 확보) |
 
-- Input formats: `recordIO-protobuf` or CSV; distributed training supported
-- Key hyperparameters: `feature_dim`, `num_components`, `algorithm_mode`, `subtract_mean`
-- Use output principal components to reduce downstream model (XGBoost, etc.) input dimensionality
+- 입력은 `recordIO-protobuf` 또는 CSV, 학습은 분산 처리 지원
+- 주요 하이퍼파라미터: `feature_dim`, `num_components`, `algorithm_mode`, `subtract_mean`
+- 출력된 주성분으로 후속 모델(XGBoost 등)의 입력 차원을 축소
 
 ```python
 from sagemaker import image_uris
 
 container = image_uris.retrieve("pca", region="ap-northeast-2")
-# Estimator hyperparameter example
+# Estimator 하이퍼파라미터 예시
 hyperparameters = {
     "feature_dim": 784,
     "num_components": 50,
@@ -73,36 +73,36 @@ hyperparameters = {
 }
 ```
 
-## t-SNE: Nonlinear Visualization-Only Technique
+## t-SNE: 시각화 전용 비선형 기법
 
-t-SNE (t-distributed Stochastic Neighbor Embedding) is a **nonlinear technique** that preserves neighborhood relationships (local structure) from high dimensions into 2–3 dimensions.
+t-SNE(t-distributed Stochastic Neighbor Embedding)는 **고차원에서의 이웃 관계(국소 구조)를 2~3차원에 보존**하도록 매핑하는 비선형 기법이다.
 
-| Aspect | PCA | t-SNE |
+| 항목 | PCA | t-SNE |
 |------|-----|-------|
-| Linear/Nonlinear | Linear | Nonlinear |
-| Purpose | Variance preservation, dimensionality reduction | Cluster visualization |
-| Distance interpretation | Preserves global structure | Local structure only |
-| New data transformation | `transform` possible | Not possible (requires retraining) |
-| Determinism | Deterministic | Stochastic (seed-dependent) |
+| 선형/비선형 | 선형 | 비선형 |
+| 목적 | 분산 보존, 차원 축소 | 군집 시각화 |
+| 거리 해석 | 전역 구조 보존 | 국소 구조만 신뢰 |
+| 새 데이터 변환 | `transform` 가능 | 불가(매번 재학습) |
+| 결정성 | 결정적 | 무작위(seed 의존) |
 
-t-SNE excels for **visual cluster inspection** but should **never be used as model input preprocessing**. Inter-cluster distances and cluster sizes have no physical meaning, and new samples cannot be projected into the same space.
+t-SNE는 군집을 눈으로 보기엔 훌륭하지만 **모델 입력 전처리로는 쓰지 않는다**. 군집 간 거리나 클러스터 크기에 물리적 의미가 없고, 새 샘플을 같은 공간에 사영할 수 없기 때문이다.
 
 ```python
 from sklearn.manifold import TSNE
 
 tsne = TSNE(n_components=2, perplexity=30, random_state=42)
-X_embedded = tsne.fit_transform(X_scaled)   # 2D coordinates for visualization
+X_embedded = tsne.fit_transform(X_scaled)   # 시각화용 2D 좌표
 ```
 
-`perplexity` balances the number of neighbors to consider, typically tuned between 5 and 50.
+`perplexity`는 고려할 이웃 수의 균형을 조절하며, 보통 5~50 범위에서 조정한다.
 
-> 💡 **Key Theory**: t-SNE converts high-dimensional distances into conditional probability distributions and minimizes KL divergence to reproduce them in low dimensions using a heavy-tailed t-distribution. The t-distribution's heavy tails alleviate the "crowding problem"—clusters spread out instead of collapsing. However, the inter-cluster spacing has no meaning—exam trap: "judge similarity by cluster distances in t-SNE output" is wrong.
+> 💡 **관련 이론**: t-SNE는 고차원 거리들을 조건부 확률 분포로 바꾸고, 저차원에서 무거운 꼬리를 가진 t-분포로 같은 관계를 재현하도록 KL 발산을 최소화한다. t-분포의 무거운 꼬리가 "혼잡 문제(crowding problem)"를 완화해 군집이 뭉치지 않고 퍼지게 한다. 그러나 이 과정 때문에 클러스터 사이의 빈 공간 크기는 의미가 없다 — 시험에서 "t-SNE 결과의 클러스터 거리로 유사도를 판단하라"는 보기는 함정이다.
 
-## Summary
+## 정리
 
-- **Curse of dimensionality**: High-dimensional loss of distance discriminability, data sparsity, overfitting
-- **PCA**: Linear, preserves variance, requires standardization, suitable for model preprocessing, built-in SageMaker algorithm available
-- **t-SNE**: Nonlinear, preserves local structure, visualization-only, unsuitable for model input
+- 차원의 저주: 고차원에서 거리 변별력 상실, 데이터 희박화, 과적합
+- PCA: 선형, 분산 보존, 표준화 필수, 모델 전처리에 활용 가능, SageMaker 내장 알고리즘 제공
+- t-SNE: 비선형, 국소 구조 보존, 시각화 전용, 모델 입력으로 부적합
 
 ## 📝 연습 문제
 

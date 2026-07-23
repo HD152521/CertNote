@@ -81,7 +81,7 @@ Next, we'll see remaining AI services (Lex, Kendra, Personalize, Forecast) and *
 
 ## 📝 연習 問題
 
-**問題 1.** You want to detect objects and faces in user-uploaded photos and automatically filter inappropriate content. Which is the most appropriate service?
+**문제 1.** You want to detect objects and faces in user-uploaded photos and automatically filter inappropriate content. Which is the most appropriate service?
 
 A) Amazon Comprehend  
 B) Amazon Rekognition  
@@ -93,7 +93,7 @@ D) Amazon Translate
 
 ---
 
-**問題 2.** You want to extract key-value pairs like "Total" and "Date" and table data from a scanned invoice image into structured form. Which is the most appropriate service?
+**문제 2.** You want to extract key-value pairs like "Total" and "Date" and table data from a scanned invoice image into structured form. Which is the most appropriate service?
 
 A) Amazon Textract  
 B) Amazon Transcribe  
@@ -105,7 +105,7 @@ D) Amazon Polly
 
 ---
 
-**問題 3.** You want to automatically classify thousands of customer reviews as positive or negative and extract entities like people and places from text. Which service is appropriate?
+**문제 3.** You want to automatically classify thousands of customer reviews as positive or negative and extract entities like people and places from text. Which service is appropriate?
 
 A) Amazon Translate  
 B) Amazon Comprehend  
@@ -117,7 +117,7 @@ D) Amazon Lex
 
 ---
 
-**問題 4.** You want to convert call center recording to text and then analyze the text's customer sentiment. Which service combination is appropriate?
+**문제 4.** You want to convert call center recording to text and then analyze the text's customer sentiment. Which service combination is appropriate?
 
 A) Polly → Translate  
 B) Transcribe → Comprehend  
@@ -129,14 +129,14 @@ D) Translate → Polly
 
 ---
 
-**問題 5.** You want to convert your website's guidance text to natural-sounding human voice and play it. Which is the most appropriate service?
+**문제 5.** You want to convert your website's guidance text to natural-sounding human voice and play it. Which is the most appropriate service?
 
 A) Amazon Transcribe  
 B) Amazon Polly  
 C) Amazon Comprehend  
 D) Amazon Rekognition  
 
-**정答: B**  
-해説: Polly synthesizes text into natural-sounding speech—a TTS service. A (Transcribe) is the opposite, converting speech to text (STT). C is text meaning analysis, D is image analysis—both unrelated to speech synthesis.
+**정답: B**  
+해설: Polly synthesizes text into natural-sounding speech—a TTS service. A (Transcribe) is the opposite, converting speech to text (STT). C is text meaning analysis, D is image analysis—both unrelated to speech synthesis.
 
 ---

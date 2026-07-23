@@ -71,62 +71,62 @@ Tomorrow we see AWS tools actually implementing these principles (SageMaker Clar
 
 ## 📝 練習 問題
 
-**問題 1.** A hiring AI trained on past data consistently gives female applicants low scores. What Responsible AI principle is most directly violated?
+**문제 1.** A hiring AI trained on past data consistently gives female applicants low scores. What Responsible AI principle is most directly violated?
 
 A) Robustness  
 B) Fairness and Bias  
 C) Privacy  
 D) Availability  
 
-**正答: B**  
-解説: Discriminatory results favoring one group (women) stem from data bias, violating fairness. A (Robustness) is stability for anomalies, C (Privacy) is personal info protection, D (Availability) is system access—not directly related.
+**정답: B**  
+해설: Discriminatory results favoring one group (women) stem from data bias, violating fairness. A (Robustness) is stability for anomalies, C (Privacy) is personal info protection, D (Availability) is system access—not directly related.
 
 ---
 
-**問題 2.** Which best explains the difference between "Transparency" and "Explainability"?
+**문제 2.** Which best explains the difference between "Transparency" and "Explainability"?
 
 A) They're completely identical concepts  
 B) Transparency discloses system purpose and limits; Explainability explains why specific output appeared  
 C) Transparency is model speed, Explainability is accuracy  
 D) Explainability is system disclosure, Transparency is output reasoning  
 
-**正答: B**  
-解説: Transparency is public documentation of "what this system is and its limits"; Explainability is providing reasoning for "why this decision." A conflates them. C brings unrelated performance metrics. D reverses definitions.
+**정답: B**  
+해설: Transparency is public documentation of "what this system is and its limits"; Explainability is providing reasoning for "why this decision." A conflates them. C brings unrelated performance metrics. D reverses definitions.
 
 ---
 
-**問題 3.** Which about "Bias" is incorrect?
+**문제 3.** Which about "Bias" is incorrect?
 
 A) Bias can enter unintentionally through training data  
 B) More data automatically eliminates bias  
 C) Sampling bias occurs when certain group data is insufficient  
 D) Bias can lead to unfair outcomes  
 
-**正答: B**  
-解説: Even vast skewed data perpetuates bias—volume alone doesn't eliminate it. A, C, D correctly describe bias: unintentional entry through data, occurrence from sample deficiency, unfairness result.
+**정답: B**  
+해설: Even vast skewed data perpetuates bias—volume alone doesn't eliminate it. A, C, D correctly describe bias: unintentional entry through data, occurrence from sample deficiency, unfairness result.
 
 ---
 
-**問題 4.** In high-risk decisions like loan rejection or medical diagnosis, what's the key safeguard strengthening Responsible AI?
+**문제 4.** In high-risk decisions like loan rejection or medical diagnosis, what's the key safeguard strengthening Responsible AI?
 
 A) Maximize temperature  
 B) Human-in-the-Loop (human review and approval)  
 C) Just increase model size  
 D) Delete all logs  
 
-**正答: B**  
-解説: High-risk decisions use Human-in-the-Loop where humans review and approve AI results, strengthening fairness, explainability, and safety together. A raises output diversity dangerously. C is unrelated. D breaks auditability and governance.
+**정답: B**  
+해설: High-risk decisions use Human-in-the-Loop where humans review and approve AI results, strengthening fairness, explainability, and safety together. A raises output diversity dangerously. C is unrelated. D breaks auditability and governance.
 
 ---
 
-**問題 5.** A model works well on normal input but produces completely wrong answers to slightly modified (noisy) input. Which Responsible AI principle is missing?
+**문제 5.** A model works well on normal input but produces completely wrong answers to slightly modified (noisy) input. Which Responsible AI principle is missing?
 
 A) Transparency  
 B) Privacy  
 C) Robustness  
 D) Explainability  
 
-**正答: C**  
-解説: Robustness is operating stably despite unexpected input and noise. Breaking on modified input shows robustness lacks. A is system disclosure, B is data protection, D is decision reasoning—none directly address this instability.
+**정답: C**  
+해설: Robustness is operating stably despite unexpected input and noise. Breaking on modified input shows robustness lacks. A is system disclosure, B is data protection, D is decision reasoning—none directly address this instability.
 
 ---

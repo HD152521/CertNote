@@ -146,9 +146,9 @@ C) Anomaly Detection
 
 D) Logs Insights query
 
-**정答: B**
+**정답: B**
 
-해説: Success rate needs ratio calculation. **Metric Math** combines into derived metric, alarm on ratio. Ratio alarms are stable — "100 errors" breaks at traffic scale, but "1% error rate" stays meaningful. SRE defines SLOs in ratios (99.9% uptime), implements via Metric Math.
+해설: Success rate needs ratio calculation. **Metric Math** combines into derived metric, alarm on ratio. Ratio alarms are stable — "100 errors" breaks at traffic scale, but "1% error rate" stays meaningful. SRE defines SLOs in ratios (99.9% uptime), implements via Metric Math.
 
 ---
 
@@ -162,9 +162,9 @@ C) Impossible, per-account isolation
 
 D) Export all to S3, combine manually
 
-**정答: B**
+**정답: B**
 
-해説: CloudWatch supports **cross-account, cross-region dashboards**, merging metrics from multiple accounts/regions into unified view. Essential for distributed org setups. A·D manual, C false.
+해설: CloudWatch supports **cross-account, cross-region dashboards**, merging metrics from multiple accounts/regions into unified view. Essential for distributed org setups. A·D manual, C false.
 
 ---
 
@@ -184,7 +184,7 @@ D) CloudTrail
 
 ---
 
-**问题 7.** EKS team has existing Prometheus/Grafana ops and assets. Container monitoring standard choice, vs. Container Insights:
+**문제 7.** EKS team has existing Prometheus/Grafana ops and assets. Container monitoring standard choice, vs. Container Insights:
 
 A) Container Insights always best
 
@@ -194,6 +194,6 @@ C) X-Ray alternative
 
 D) CloudTrail monitors containers
 
-**정答: B**
+**정답: B**
 
-해説: Container Insights is AWS-native (CloudWatch push/integrated). **AMP+AMG** follows CNCF standard (Prometheus scrapes, Grafana displays), compatible with existing Prometheus/Grafana experience. "Simple in AWS" → Container Insights; "Kubernetes standard, existing assets" → AMP — push vs. pull choice.
+해설: Container Insights is AWS-native (CloudWatch push/integrated). **AMP+AMG** follows CNCF standard (Prometheus scrapes, Grafana displays), compatible with existing Prometheus/Grafana experience. "Simple in AWS" → Container Insights; "Kubernetes standard, existing assets" → AMP — push vs. pull choice.

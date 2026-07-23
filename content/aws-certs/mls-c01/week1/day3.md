@@ -1,59 +1,59 @@
-# Day 3 - Data Collection: Kinesis·Glue·Batch vs Streaming
+# Day 3 - 데이터 수집: Kinesis·Glue·배치 vs 스트리밍
 
-Training data must flow in from somewhere. Click logs, IoT sensors, and transaction events stream in real-time; operational databases and external systems arrive in periodic batches. Specialty asks scenarios: "Which Kinesis service fits this ingestion need? How should we use Glue?"
+학습 데이터는 어딘가에서 흘러들어와야 한다. 클릭 로그·IoT 센서·거래 이벤트는 실시간 스트림으로 쏟아지고, 운영 DB나 외부 시스템의 데이터는 주기적 배치로 들어온다. Specialty는 "이 수집 요구사항에 Kinesis 어느 서비스를? Glue를 어떻게?"를 시나리오로 묻는다.
 
-Today we cover: ① the 4 Kinesis services (Data Streams, Firehose, Managed Service for Flink, Video) and how they differ, ② Glue's ETL, catalog, and crawlers, and ③ the differences between batch and streaming training data pipelines.
+오늘은 ① Kinesis 4종(Data Streams·Firehose·Managed Service for Flink·Video)의 구분, ② Glue의 ETL·카탈로그·크롤러, ③ 배치 학습 데이터와 스트리밍 학습 데이터의 차이를 다룬다.
 
-## The 4 Kinesis Services: A Specialty Favorite
+## Kinesis 4종 구분: Specialty 단골
 
-"Kinesis" isn't one service—it's four. The names make them easy to confuse, so precision matters.
+"Kinesis"는 하나가 아니라 네 개의 서비스다. 이름만 보고 헷갈리기 쉬워 정확히 구분해야 한다.
 
-| Service | Role | Key Characteristics |
-|---------|------|-----|
-| **Data Streams (KDS)** | Real-time stream collection and storage | Shard-based, direct consumer code needed, data retention (up to 365 days) |
-| **Data Firehose** | Stream → destination delivery (ETL loading) | Fully managed, auto-deliver to S3/Redshift/OpenSearch, buffering and transformation |
-| **Managed Service for Flink** | Real-time stream analysis | SQL/Flink for windowed aggregation, anomaly detection |
-| **Video Streams** | Video stream collection | Video ML input (facial recognition, etc.) |
+| 서비스 | 역할 | 핵심 특징 |
+|--------|------|----------|
+| **Data Streams (KDS)** | 실시간 스트림 수집·저장 | 샤드 기반, 직접 소비자 코드 필요, 데이터 보관(최대 365일) |
+| **Data Firehose** | 스트림→목적지 적재(ETL 로딩) | 완전관리형, S3/Redshift/OpenSearch로 자동 배달, 버퍼링·변환 |
+| **Managed Service for Flink** | 스트림 실시간 분석 | SQL/Flink로 윈도우 집계·이상탐지 |
+| **Video Streams** | 비디오 스트림 수집 | 영상 ML 입력(얼굴 인식 등) |
 
-The most-confused pair: KDS vs Firehose. Decision tree:
+가장 자주 헷갈리는 KDS vs Firehose의 결정 트리:
 
-- **Need only automatic delivery to destination?** → Firehose (no code, auto-deliver to S3, etc.)
-- **Multiple consumers reading the same stream differently? Custom processing? Replay data?** → Data Streams
+- **목적지로 자동 적재만 필요?** → Firehose (코드 없이 S3 등으로 배달)
+- **여러 소비자가 같은 스트림을 다르게 처리? 커스텀 처리? 데이터 재생?** → Data Streams
 
 ```python
 import boto3, json
 kinesis = boto3.client("kinesis")
 
-# Data Streams: put events — PartitionKey distributes across shards
+# Data Streams에 이벤트 넣기 — PartitionKey로 샤드 분배
 kinesis.put_record(
     StreamName="clickstream",
     Data=json.dumps({"user_id": "u123", "event": "click", "ts": 1719300000}),
-    PartitionKey="u123",     # Same key → same shard → order guarantee per partition
+    PartitionKey="u123",     # 같은 키는 같은 샤드 → 순서 보장 단위
 )
 ```
 
 ```python
-# Firehose: auto-deliver to S3 with no code + buffering config (delivery stream setup example)
+# Firehose: 코드 없이 S3로 자동 배달 + 버퍼링 설정 (전송 스트림 구성 예)
 firehose = boto3.client("firehose")
 firehose.put_record(
     DeliveryStreamName="to-datalake",
     Record={"Data": json.dumps({"user_id": "u123", "amount": 42.0}) + "\n"},
 )
-# Firehose fills buffer (e.g., 5MB or 60s) then converts to Parquet, compresses, delivers to S3
+# Firehose가 버퍼(예: 5MB 또는 60초)를 채우면 S3에 Parquet으로 변환·압축 적재
 ```
 
-> 💡 **Related Theory**: KDS scales processing by shard. One shard handles ~1 MB/s writes, 1,000 records/s, ~2 MB/s reads; as traffic grows you add shards (or switch to on-demand mode). KDS also **retains** data so multiple consumers can independently read and reprocess the same data (replay). Firehose has no retention or replay—it's "fire and forget," responsible only for destination delivery. Core decision rule: **Multiple consumers/replay = KDS; simple delivery = Firehose**.
+> 💡 **관련 이론**: KDS는 샤드(shard) 단위로 처리량을 확장한다. 샤드 하나가 쓰기 1MB/s·1,000 records/s, 읽기 2MB/s를 처리하므로 트래픽이 늘면 샤드를 늘려야 한다(또는 on-demand 모드). 또한 KDS는 데이터를 보관(retention)해 여러 소비자가 같은 데이터를 독립적으로 읽고 재처리할 수 있다(replay). 반면 Firehose는 보관·재생이 없고 목적지 적재만 책임지는 "fire and forget" 파이프다. "여러 소비자/재처리 = KDS, 단순 적재 = Firehose"가 핵심 분기다.
 
-## Glue: Serverless ETL and Data Catalog
+## Glue: 서버리스 ETL과 데이터 카탈로그
 
-AWS Glue bundles three things into one serverless service.
+AWS Glue는 세 가지를 묶은 서버리스 서비스다.
 
-1. **Glue Data Catalog**: Central metadata store (schema, location, partitions) shared by Athena, Redshift Spectrum, EMR.
-2. **Glue Crawler**: Scans S3, auto-infers schema, registers as table in the catalog.
-3. **Glue ETL Jobs**: Serverless transformations via Spark (or Python shell).
+1. **Glue Data Catalog**: 데이터의 메타데이터(스키마·위치·파티션) 중앙 저장소. Athena·Redshift Spectrum·EMR이 공유한다.
+2. **Glue Crawler**: S3 등을 스캔해 스키마를 자동 추론하고 카탈로그에 테이블로 등록.
+3. **Glue ETL Jobs**: Spark(또는 Python shell) 기반 서버리스 변환 작업.
 
 ```python
-# Glue ETL job (PySpark) — read catalog table, clean, save to Parquet
+# Glue ETL 잡 (PySpark) — 카탈로그 테이블을 읽어 정제 후 Parquet로 저장
 import sys
 from awsglue.context import GlueContext
 from awsglue.transforms import DropNullFields
@@ -61,13 +61,13 @@ from pyspark.context import SparkContext
 
 glueContext = GlueContext(SparkContext.getOrCreate())
 
-# Load table registered by crawler as DynamicFrame
+# 카탈로그에 크롤러가 등록한 테이블을 DynamicFrame으로 로드
 dyf = glueContext.create_dynamic_frame.from_catalog(
     database="raw_db", table_name="clickstream"
 )
-clean = DropNullFields.apply(frame=dyf)          # Remove null columns
+clean = DropNullFields.apply(frame=dyf)          # 결측 컬럼 제거
 
-# Save to features location as Parquet (partitioned)
+# 학습용 피처 위치에 Parquet으로 저장 (파티셔닝)
 glueContext.write_dynamic_frame.from_options(
     frame=clean,
     connection_type="s3",
@@ -76,33 +76,33 @@ glueContext.write_dynamic_frame.from_options(
 )
 ```
 
-> 💡 **Related Theory**: Glue's DynamicFrame is a Spark DataFrame extension for ML/ETL, handling semi-structured data (JSON, etc.) without strict schemas—rows with mismatched schemas aren't discarded, they're preserved. Once structured transformation is done, call `toDF()` to convert to regular Spark DataFrame for familiar operations. Because Crawler populates the Data Catalog, Athena can immediately query via SQL, speeding up the EDA (exploratory data analysis) phase before ML preprocessing.
+> 💡 **관련 이론**: Glue의 DynamicFrame은 Spark DataFrame의 ML/ETL 친화 확장으로, 스키마가 제각각인 반정형 데이터(JSON 등)를 스키마 강제 없이 다룰 수 있다(스키마 불일치 행을 버리지 않고 보존). 정형 변환이 끝나면 `toDF()`로 일반 Spark DataFrame으로 바꿔 익숙한 연산을 쓴다. Crawler가 채운 Data Catalog 덕에 Athena로 즉시 SQL 탐색이 가능해, ML 전처리 전 데이터 이해(EDA) 단계가 빨라진다.
 
-## Batch Training Data vs Streaming Training Data
+## 배치 학습 데이터 vs 스트리밍 학습 데이터
 
-Data ingestion splits into two patterns.
+ML 데이터 수집은 두 패턴으로 나뉜다.
 
-| Aspect | Batch | Streaming |
-|--------|------|-----|
-| Arrival | Periodic bulk loads (daily/hourly) | Event-by-event as it arrives |
-| Tools | Glue, EMR, Batch, S3 | Kinesis, MSK (Kafka) |
-| Latency | Minutes to hours | Seconds to milliseconds |
-| Training fit | Most model retraining | Real-time features, online learning |
-| Freshness | Older data OK | Recency is valuable |
+| 구분 | 배치(Batch) | 스트리밍(Streaming) |
+|------|------------|---------------------|
+| 도착 방식 | 주기적 대량 적재(매일/매시) | 이벤트가 도착하는 즉시 |
+| 대표 도구 | Glue, EMR, Batch, S3 | Kinesis, MSK(Kafka) |
+| 지연(latency) | 분~시간 | 초~밀리초 |
+| 학습 적합 | 대부분의 모델 재학습 | 실시간 피처·온라인 학습 |
+| 신선도 | 오래됨 허용 | 최신성이 가치 |
 
-**Most** ML training is **batch**. Data accumulates overnight, then the model retrains on the batch. Streaming is needed when: ① real-time features (last 5 minutes of transactions) go into inference, or ② immediate scoring is required (fraud detection).
+대부분의 ML 학습은 **배치**다. 매일 밤 누적된 데이터로 모델을 재학습하는 식이다. 스트리밍이 필요한 경우는 ① 실시간 피처(최근 5분 거래 횟수)를 추론에 써야 할 때, ② 사기 탐지처럼 즉시 점수가 필요할 때다.
 
 ```python
-# Lambda architecture pattern: streams processed immediately, simultaneously written to S3 for later batch retraining
-# Firehose → S3 (batch retraining data lake accumulates)
-# KDS → Flink → real-time features → inference endpoint (immediate processing)
+# 람다 아키텍처 패턴: 스트림은 즉시 처리, 동시에 S3로 적재해 나중에 배치 재학습
+# Firehose → S3 (배치 학습용 데이터레이크 축적)
+# KDS → Flink → 실시간 피처 → 추론 엔드포인트 (즉시 처리)
 ```
 
-> 💡 **Related Theory**: Lambda architecture (lambda architecture) processes the same data via **speed layer** (streaming, low-latency approximation) and **batch layer** (periodic, accurate, complete) simultaneously, combining both strengths. In ML it's common to accumulate all events in S3 via Firehose (for batch retraining) while computing real-time features via KDS+Flink (for immediate inference). But if feature logic diverges between the two paths, training-serving skew results, so consistency is critical.
+> 💡 **관련 이론**: 람다 아키텍처(lambda architecture)는 같은 데이터를 **스피드 레이어**(스트리밍, 저지연 근사)와 **배치 레이어**(주기적, 정확·완전)로 동시에 처리해 둘의 장점을 합친다. ML에서는 Firehose로 모든 이벤트를 S3에 축적(배치 재학습용)하면서, KDS+Flink로 실시간 피처를 계산(즉시 추론용)하는 형태로 자주 쓰인다. 다만 두 경로의 피처 계산 로직이 어긋나면 training-serving skew가 생기므로 일관성 관리가 중요하다.
 
-## Data Ingestion Pipeline Design Thinking
+## 수집 파이프라인 설계 사고
 
-When solving exam scenarios, ask in order: ① Is the data a stream or batch? ② If stream, is it simple delivery (Firehose) or custom/multi-consumer (KDS)? ③ Does transformation happen (Glue ETL)? ④ Is the destination a data lake (S3) or analytics (Redshift/OpenSearch)? These four questions solve most ingestion scenarios.
+시험 시나리오를 풀 때 순서대로 묻자. ① 데이터가 스트림인가 배치인가? ② 스트림이면 단순 적재(Firehose)인가 커스텀/다소비자(KDS)인가? ③ 변환이 필요한가(Glue ETL)? ④ 목적지는 데이터레이크(S3)인가 분석(Redshift/OpenSearch)인가? 이 네 질문이면 대부분의 수집 문제가 풀린다.
 
 ## 📝 연습 문제
 

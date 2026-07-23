@@ -49,3 +49,6 @@ qa/
 /test-results/
 /playwright-report/
 /e2e/.auth/
+
+# agent worktrees (should never be committed)
+.claude/worktrees/

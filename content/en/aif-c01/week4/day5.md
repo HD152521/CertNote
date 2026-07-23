@@ -95,43 +95,43 @@ With this, we've conquered the exam's highest-weight section. From next week, we
 
 ## 📝 練習 問題
 
-**問題 1.** When dividing AWS AI/ML services by abstraction level, which does NOT belong to "call completed functions via API without worrying about models"?
+**문제 1.** When dividing AWS AI/ML services by abstraction level, which does NOT belong to "call completed functions via API without worrying about models"?
 
 A) Amazon Rekognition  
 B) Amazon Comprehend  
 C) Amazon SageMaker  
 D) Amazon Translate  
 
-**정答: C**  
-해説: SageMaker is an ML platform layer where you train, deploy, and control models directly—not the finished API layer. A, B, D all belong to finished AI services where you call functions without worrying about models.
+**정답: C**  
+해설: SageMaker is an ML platform layer where you train, deploy, and control models directly—not the finished API layer. A, B, D all belong to finished AI services where you call functions without worrying about models.
 
 ---
 
-**問題 2.** You want your chatbot to answer with frequently changing internal latest info. Rather than retraining the model itself, what's the appropriate approach?
+**문제 2.** You want your chatbot to answer with frequently changing internal latest info. Rather than retraining the model itself, what's the appropriate approach?
 
 A) Fine-tune and retrain the model each time  
 B) RAG to search external knowledge and attach to prompt  
 C) Configure Guardrails  
 D) Output via Polly  
 
-**정答: B**  
-해説: Frequently changing facts and latest info suit RAG to search and attach externally without retraining costs. A is costly and inefficient for frequent changes. C is safety filtering. D is speech synthesis—both unrelated to reflecting latest knowledge.
+**정답: B**  
+해설: Frequently changing facts and latest info suit RAG to search and attach externally without retraining costs. A is costly and inefficient for frequent changes. C is safety filtering. D is speech synthesis—both unrelated to reflecting latest knowledge.
 
 ---
 
-**問題 3.** Which most accurately explains the difference between Rekognition and Textract?
+**문제 3.** Which most accurately explains the difference between Rekognition and Textract?
 
 A) Rekognition processes speech, Textract translates  
 B) Rekognition analyzes images/video; Textract extracts structured data from documents  
 C) They're completely identical services  
 D) Textract does recommendations, Rekognition does forecasting  
 
-**정答: B**  
-解說: Rekognition analyzes objects, faces, content in images and video; Textract specializes in extracting structured data like tables and key-values from documents. A describes unrelated functions. C is wrong—they're different services. D are Personalize and Forecast roles—unrelated.
+**정답: B**  
+해설: Rekognition analyzes objects, faces, content in images and video; Textract specializes in extracting structured data like tables and key-values from documents. A describes unrelated functions. C is wrong—they're different services. D are Personalize and Forecast roles—unrelated.
 
 ---
 
-**問題 4.** For a pipeline analyzing call center calls to understand customer sentiment, what's the most appropriate order?
+**문제 4.** For a pipeline analyzing call center calls to understand customer sentiment, what's the most appropriate order?
 
 A) Polly → Comprehend  
 B) Transcribe → Comprehend  
@@ -139,18 +139,18 @@ C) Rekognition → Polly
 D) Translate → Forecast  
 
 **정답: B**  
-해説: Converting speech to text with Transcribe, then analyzing sentiment with Comprehend is the appropriate flow. A illogically converts text to speech then analyzes. C combines images and speech synthesis. D mixes translation and forecasting—none fit call sentiment analysis.
+해설: Converting speech to text with Transcribe, then analyzing sentiment with Comprehend is the appropriate flow. A illogically converts text to speech then analyzes. C combines images and speech synthesis. D mixes translation and forecasting—none fit call sentiment analysis.
 
 ---
 
-**問題 5.** A team has data science expertise and wants to directly train, deploy, and monitor domain-specialized predictive models using their own data. Which is the most appropriate layer/service?
+**문제 5.** A team has data science expertise and wants to directly train, deploy, and monitor domain-specialized predictive models using their own data. Which is the most appropriate layer/service?
 
 A) Finished AI services (e.g., Comprehend)  
 B) Amazon Q Business  
 C) Amazon SageMaker  
 D) Amazon Bedrock alone  
 
-**정答: C**  
-解說: Training, deploying, and monitoring custom models with own data under direct control requires SageMaker, the ML platform. A is finished API without model control. B is a business assistant product. D focuses on renting FMs, not building custom models directly.
+**정답: C**  
+해설: Training, deploying, and monitoring custom models with own data under direct control requires SageMaker, the ML platform. A is finished API without model control. B is a business assistant product. D focuses on renting FMs, not building custom models directly.
 
 ---

@@ -218,7 +218,7 @@ D) Trusted Advisor
 
 ---
 
-**問題 6.** Control Tower's Detective guardrail uses which service?
+**문제 6.** Control Tower's Detective guardrail uses which service?
 
 A) SCP
 B) AWS Config Rule
@@ -230,7 +230,7 @@ D) WAF Rule
 
 ---
 
-**問題 7.** Fintech: 200 new microservice accounts yearly. GitOps + Terraform. Best?
+**문제 7.** Fintech: 200 new microservice accounts yearly. GitOps + Terraform. Best?
 
 A) Account Factory console 200 times
 B) AFT + Git Repo + CodePipeline
@@ -242,7 +242,7 @@ D) CloudFormation StackSets
 
 ---
 
-**問題 8.** In Control Tower, create OU in Organizations console. Result?
+**문제 8.** In Control Tower, create OU in Organizations console. Result?
 
 A) Normal operation
 B) Control Tower doesn't recognize → guardrails don't auto-attach, "unregistered OU"

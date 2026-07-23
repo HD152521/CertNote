@@ -106,7 +106,7 @@ C) Data Events only retain 90 days
 
 D) Auto-moves to CloudTrail Lake after 90 days
 
-**정答: B**
+**정답: B**
 
 해설: 90 days applies only to **Event History** (console quick-query cache), not all logs. Permanent retention requires **Trail** to S3 (unlimited) or CloudTrail Lake (7 days to 10 years). "90-day deletion" and "audit beyond 90 days needs Trail" are key distinctions.
 
@@ -122,7 +122,7 @@ C) CloudWatch Events is newer
 
 D) EventBridge is part of X-Ray
 
-**정答: B**
+**정답: B**
 
 해설: 2016 CloudWatch Events evolved 2019 into **EventBridge** (rebranded + added SaaS partners/custom buses, elevated to independent service). Old APIs still work; EventBridge is the superset. "Same service; EventBridge is the upgrade."
 
@@ -154,7 +154,7 @@ C) CloudWatch basic metric alarm
 
 D) GuardDuty alone enough
 
-**정答: B**
+**정답: B**
 
 해설: root login → CloudTrail records `ConsoleLogin` → **EventBridge Rule** filters `userIdentity.type = "Root"` → Lambda/SNS → notification is standard security automation. CloudTrail detects, EventBridge responds — "system acts before humans check logs." A) Can't IAM-block root (root is above IAM). C) Login is event, not metric.
 
@@ -170,13 +170,13 @@ C) CloudWatch alarm
 
 D) SQS delay queue
 
-**정答: B**
+**정답: B**
 
 해설: "Monday 8 AM" is calendar/specific-time, so **`cron(...)`**. `rate(...)` is "N intervals from last" (periodic). Calendar → cron; intervals → rate. Large scale/one-time/fine retry → EventBridge Scheduler; simple periodic → Rule.
 
 ---
 
-**问题 7.** Filter/transform SQS messages and send to Step Functions without Lambda plumbing code, declaratively:
+**문제 7.** Filter/transform SQS messages and send to Step Functions without Lambda plumbing code, declaratively:
 
 A) EventBridge Pipes
 

@@ -155,7 +155,7 @@ B) Download entire S3 file locally
 C) Lambda read row-by-row  
 D) CloudFront cache  
 
-**정答: A**  
+**정답: A**  
 해설: Athena queries S3 with SQL WHERE for efficient selective loading, ideal for large dataset sampling. B costly/slow, C unsuitable for ML loading, D is content delivery cache, not data query.
 
 ---
@@ -167,7 +167,7 @@ B) Export flow to SageMaker Pipelines stage or Feature Store for reproducible pi
 C) Capture transformation results as image  
 D) Skip transformations, use raw data  
 
-**正答: B**  
+**정답: B**  
 해설: Exporting to Pipelines or Feature Store version-controls and reproducibly applies identical transformations at training and inference, preventing skew. A loses reproducibility, C only has result image not logic, D skips preprocessing.
 
 ---

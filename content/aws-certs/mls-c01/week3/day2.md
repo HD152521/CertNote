@@ -1,116 +1,116 @@
-# Day 2 - Feature Engineering: Scaling, Encoding, and Binning
+# Day 2 - 특성 공학: 스케일링, 인코딩, 비닝
 
-After data cleaning, it's time to **transform** your data into a form that models can learn from effectively. Feature engineering is so critical that it's often said to account for 80% of model performance—a testament to its significance in the ML pipeline.
+정제로 데이터를 깨끗하게 만들었다면, 이제 모델이 잘 학습할 수 있는 형태로 **변형**할 차례다. 특성 공학(feature engineering)은 흔히 "모델 성능의 80%를 좌우한다"고 말할 정도로 ML 파이프라인에서 비중이 크다.
 
-Today, we'll cover three core transformations: **scaling** to align numeric feature ranges, **encoding** to convert categorical data to numbers, and **binning** to group continuous values into discrete intervals. We'll explore why each technique is necessary for different algorithms.
+오늘은 세 가지 핵심 변형을 다룬다. 수치형의 범위를 맞추는 **스케일링**, 범주형을 숫자로 바꾸는 **인코딩**, 연속값을 구간으로 묶는 **비닝(binning)**이다. 각 기법이 어떤 알고리즘에서 왜 필요한지를 함께 본다.
 
-## Scaling: Normalization vs. Standardization
+## 스케일링: 정규화 vs 표준화
 
-Many algorithms are sensitive to the **scale (magnitude)** of features. If you feed age (0–100) and income (0–100M) directly into an algorithm, income will dominate distance and gradient calculations.
+많은 알고리즘이 피처의 **스케일(크기)**에 민감하다. 나이(0~100)와 소득(0~1억)을 그대로 넣으면 거리·기울기 계산에서 소득이 압도한다.
 
-| Technique | Formula | Output Range | Outlier Sensitivity |
+| 기법 | 변환식 | 결과 범위 | 이상치 영향 |
 |------|------|------|------|
-| **Min-Max Normalization** | (x − min) / (max − min) | [0, 1] | Very sensitive |
-| **Standardization (Z-score)** | (x − μ) / σ | Mean 0, Var 1 | Sensitive |
-| **RobustScaler** | (x − median) / IQR | Variable | Robust |
-| **MaxAbs** | x / \|max\| | [−1, 1] | Sensitive |
+| **Min-Max 정규화** | (x − min) / (max − min) | [0, 1] | 매우 민감 |
+| **표준화 (Z-score)** | (x − μ) / σ | 평균 0, 분산 1 | 민감 |
+| **RobustScaler** | (x − 중앙값) / IQR | 가변 | 강건 |
+| **MaxAbs** | x / \|max\| | [−1, 1] | 민감 |
 
-Scaling is **required** for: distance-based algorithms (KNN, K-means), gradient-based algorithms (linear/logistic regression, neural networks), models with regularization terms (Ridge/Lasso), SVM, and PCA.
+스케일링이 **필수**인 알고리즘: 거리 기반(KNN, K-means), 기울기 기반(선형/로지스틱 회귀, 신경망), 정규화 항이 있는 모델(Ridge/Lasso), SVM, PCA.
 
-Scaling is **unnecessary** for: tree-based algorithms (Decision Tree, Random Forest, XGBoost). Trees only look for split points within each feature independently, making them invariant to monotonic transformations.
+스케일링이 **불필요**한 알고리즘: 트리 기반(Decision Tree, Random Forest, XGBoost). 트리는 한 피처 안에서의 분할 기준점만 보므로 단조 변환에 불변이다.
 
 ```python
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
-# Standardization: standard for neural networks and linear models
+# 표준화: 신경망/선형모델 기본
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)   # not fit!
+X_test_scaled = scaler.transform(X_test)   # fit 아님!
 
-# Use RobustScaler when outliers are abundant
+# 이상치가 많으면 RobustScaler
 robust = RobustScaler()
 X_train_robust = robust.fit_transform(X_train)
 ```
 
-> 💡 **Key Theory**: Gradient descent is sensitive to scale because of the contour shape of the loss function. When features have different scales, contours become elongated ellipses, and gradients converge slowly toward the minimum in a zigzag pattern. Standardizing all features to the same scale makes contours nearly circular, enabling faster and more stable convergence. For distance-based models (KNN, K-means), scaling prevents large-scale features from dominating Euclidean distance calculations.
+> 💡 **관련 이론**: 경사 하강법(gradient descent)이 스케일에 민감한 이유는 손실 함수의 등고선 모양 때문이다. 피처 스케일이 제각각이면 등고선이 길쭉한 타원이 되어, 기울기가 최솟값을 향해 지그재그로 느리게 수렴한다. 표준화로 모든 피처를 같은 스케일로 맞추면 등고선이 원에 가까워져 수렴이 빠르고 안정적이다. 거리 기반 모델(KNN, K-means)에서는 유클리드 거리가 큰 스케일 피처에 지배되는 것을 막는 효과가 있다.
 
-> ⚠️ **Pitfall**: Like an imputer, scalers must **fit only on training data**. Using test set min/max/mean is data leakage. Additionally, Min-Max is vulnerable to extreme outliers—a single outlier pulls the max value up, compressing all other values near 0. If outliers are suspected, RobustScaler is safer.
+> ⚠️ **함정**: 스케일러도 imputer와 똑같이 **학습셋으로만 fit**해야 한다. 테스트셋의 min/max/평균을 쓰면 누수다. 또한 Min-Max는 이상치 하나가 max를 끌어올려 나머지 값을 0 근처로 압축해 버리므로, 이상치가 의심되면 RobustScaler가 안전하다.
 
-## Encoding: Converting Categorical to Numeric
+## 인코딩: 범주형을 숫자로
 
-Most algorithms accept only numeric input, so categorical variables must be converted to numbers.
+대부분의 알고리즘은 숫자만 입력으로 받으므로 범주형(categorical) 변수를 숫자로 바꿔야 한다.
 
-| Encoding | Method | Best For | Caution |
+| 인코딩 | 방법 | 적합 | 주의 |
 |------|------|------|------|
-| **Label Encoding** | Category → integer (0,1,2…) | Ordinal data, tree models | Misleads linear models with false order on nominal data |
-| **One-Hot Encoding** | Create 0/1 column per category | Nominal data, low cardinality | Dimensionality explosion with high cardinality |
-| **Ordinal Encoding** | Map to integers with meaningful order | Grades (low/mid/high) | Only when order is genuine |
-| **Target Encoding** | Replace category with target mean | High cardinality | Risk of data leakage and overfitting |
-| **Frequency Encoding** | Replace category with frequency | High cardinality | Collision when frequencies match |
+| **Label Encoding** | 범주 → 정수(0,1,2…) | 순서형(ordinal), 트리 모델 | 명목형에 쓰면 가짜 순서 부여 |
+| **One-Hot Encoding** | 범주마다 0/1 컬럼 생성 | 명목형(nominal), 저카디널리티 | 고카디널리티에서 차원 폭발 |
+| **Ordinal Encoding** | 의미 있는 순서로 정수 매핑 | 등급(low/mid/high) | 순서가 진짜일 때만 |
+| **Target Encoding** | 범주를 타깃 평균으로 치환 | 고카디널리티 | 누수·과적합 위험 |
+| **Frequency Encoding** | 범주를 빈도로 치환 | 고카디널리티 | 빈도 같으면 충돌 |
 
-Core distinction: **Is there an order?** For ordinal data like grades (low < mid < high), Ordinal/Label encoding is natural. For unordered categories like colors (red/blue/green), One-Hot is appropriate. Using Label Encoding on colors in a linear model creates a false order: "green > blue > red".
+핵심 구분: **순서가 있는가?** 등급(낮음<중간<높음)이면 Ordinal/Label이 자연스럽고, 색깔(빨강/파랑/초록)처럼 순서가 없으면 One-Hot이 맞다. 선형 모델에 색깔을 Label Encoding(빨강=0, 파랑=1, 초록=2)하면 "초록 > 파랑 > 빨강"이라는 거짓 순서가 생긴다.
 
 ```python
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
-# Nominal: one-hot
+# 명목형: 원핫
 ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
 X_color = ohe.fit_transform(df[["color"]])
 
-# Ordinal: explicit order
+# 순서형: 명시적 순서로 ordinal
 oe = OrdinalEncoder(categories=[["low", "mid", "high"]])
 df["level_enc"] = oe.fit_transform(df[["level"]])
 ```
 
-Target encoding is powerful but risky.
+타깃 인코딩은 강력하지만 위험하다.
 
 ```python
-# Target encoding (prevent leakage by computing statistics on train folds only)
+# 타깃 인코딩 (누수 방지를 위해 학습셋 fold로만 통계 산출)
 means = X_train.groupby("city")["target"].mean()
 X_train["city_te"] = X_train["city"].map(means)
-X_test["city_te"] = X_test["city"].map(means)   # apply training statistics
+X_test["city_te"] = X_test["city"].map(means)   # 학습셋 통계 적용
 ```
 
-> 💡 **Key Theory**: Target encoding avoids the dimensionality explosion of one-hot encoding for high-cardinality features (e.g., thousands of postal codes) by compressing the relationship with the target into a single column. However, creating features from the target itself causes **target leakage**—the model peeks at the answer. K-fold target encoding (compute statistics on each fold using other folds) or smoothing (blend category mean with global mean weighted by sample count) mitigate this. For exams, the key tradeoff is: high cardinality → one-hot causes explosion, target encoding requires leakage prevention.
+> 💡 **관련 이론**: 타깃 인코딩은 고카디널리티(예: 우편번호 수천 개)에서 원핫의 차원 폭발을 피하면서 타깃과의 관계를 한 컬럼에 압축한다. 그러나 같은 데이터의 타깃으로 피처를 만들면 모델이 정답을 엿보는 **타깃 누수**가 생긴다. 이를 막으려고 K-fold 타깃 인코딩(각 fold의 통계를 다른 fold로 산출)이나 스무딩(전체 평균과 범주 평균을 표본 수로 가중)을 쓴다. 시험에서는 "고카디널리티 → 원핫은 차원 폭발, 타깃 인코딩은 누수 주의"라는 트레이드오프가 핵심이다.
 
-> ⚠️ **Pitfall**: If one-hot encoding encounters unseen categories in the test set, it will error. Set `handle_unknown="ignore"` to treat unknown categories as all-zero vectors for production safety.
+> ⚠️ **함정**: One-Hot 인코딩 시 테스트셋에 학습 때 못 본 새 범주가 나오면 에러가 난다. `handle_unknown="ignore"`로 미지의 범주를 모두 0 벡터로 처리하도록 설정해야 운영에서 안전하다.
 
-## Binning: Grouping Continuous Values into Intervals
+## 비닝(Binning): 연속값을 구간으로
 
-Binning divides a continuous variable into discrete intervals (bins) and treats them like categories.
+비닝은 연속형 변수를 구간(bin)으로 나눠 범주형처럼 다루는 기법이다.
 
-| Approach | Description | Example |
+| 방식 | 설명 | 예시 |
 |------|------|------|
-| **Equal-width** | Divide value range into equal-sized intervals | 0–10, 10–20, 20–30 |
-| **Equal-frequency** | Each interval contains equal sample counts | Quartile-based |
-| **Domain-based** | Divide using meaningful domain boundaries | Age → child/adult/senior |
+| **등폭(equal-width)** | 값 범위를 동일 폭으로 분할 | 0–10, 10–20, 20–30 |
+| **등빈도(equal-frequency)** | 각 구간에 같은 수의 샘플 | 사분위수 기반 |
+| **도메인 기반** | 의미 있는 경계로 분할 | 나이 → 미성년/청년/중년/노년 |
 
-Benefits of binning:
+비닝의 효과:
 
-- **Captures nonlinearity**: Linear models can learn nonlinear patterns (e.g., "purchase rate spikes ages 30–40") through bin dummy variables.
-- **Mitigates outliers and noise**: Extreme values fall into the same top bin, reducing their influence.
-- **Improves interpretability**: "High-income bracket" is easier to explain than continuous income.
+- **비선형 관계 포착**: 선형 모델이 "나이가 30~40에서 구매율 급증" 같은 비선형 패턴을 구간 더미로 학습할 수 있다.
+- **이상치·노이즈 완화**: 극단값이 같은 최상위 구간에 묶여 영향이 줄어든다.
+- **해석 용이성**: "고소득 구간"이 연속 소득보다 설명하기 쉽다.
 
-The drawback is **information loss**. Fine-grained differences within a bin disappear.
+단점은 **정보 손실**이다. 구간 내 미세한 차이가 사라진다.
 
 ```python
 import pandas as pd
 
-# Equal-width binning
+# 등폭 비닝
 df["age_bin"] = pd.cut(df["age"], bins=[0, 18, 35, 60, 120],
                        labels=["minor", "young", "middle", "senior"])
 
-# Equal-frequency binning (quartiles)
+# 등빈도 비닝 (사분위)
 df["income_q"] = pd.qcut(df["income"], q=4, labels=["Q1", "Q2", "Q3", "Q4"])
 ```
 
-> 💡 **Key Theory**: Binning is a tool for adjusting the bias-variance tradeoff. Using continuous values, linear models express only monotonic relationships (high bias). Converting to bin dummies lets each bin learn its independent effect, capturing nonlinearity (lower bias). However, creating too many bins reduces samples per bin, destabilizing estimates (higher variance). Equal-frequency binning mitigates this variance issue by balancing sample counts across bins.
+> 💡 **관련 이론**: 비닝은 모델의 편향-분산 트레이드오프를 조정하는 도구다. 연속값을 그대로 쓰면 선형 모델은 단조 직선 관계만 표현하지만(높은 편향), 구간 더미로 바꾸면 각 구간에서 독립적인 효과를 학습해 비선형성을 잡는다(편향 감소). 다만 구간을 너무 잘게 나누면 각 구간의 표본이 적어져 추정이 불안정해진다(분산 증가). 등빈도 비닝은 각 구간 표본 수를 균등하게 해 이 분산 문제를 완화한다.
 
-## Summary
+## 정리하며
 
-The three pillars of feature engineering are: (1) **Scaling**—mandatory for distance and gradient-based models, unnecessary for trees; use RobustScaler with many outliers; (2) **Encoding**—Ordinal for ordered data, One-Hot for nominal, Target Encoding for high cardinality (watch for leakage); (3) **Binning**—captures nonlinearity and improves interpretability but sacrifices granularity. The universal principle: **fit all transformations only on training data** to prevent leakage.
+특성 공학의 세 축은 (1) **스케일링** — 거리·기울기 기반 모델엔 필수, 트리엔 불필요, 이상치 많으면 RobustScaler, (2) **인코딩** — 순서형은 Ordinal, 명목형은 One-Hot, 고카디널리티는 타깃 인코딩(누수 주의), (3) **비닝** — 비선형성·해석을 얻되 정보 손실 감수다. 공통 원칙은 **모든 변환을 학습셋으로만 fit**해 누수를 막는 것이다.
 
-Next, we'll explore feature engineering for specialized data types like dates and text, plus handling high-dimensional categorical features.
+다음 글에서는 날짜·텍스트 같은 특수 데이터의 특성 공학과 고차원 범주형 처리를 본다.
 
 ---
 

@@ -352,17 +352,17 @@ D) RDS embedded in environment
 
 **정답: B**
 
-해説: Traffic Splitting uses ALB **weighted target group** feature. CLB/NLB lack weight routing. A) Worker has no ALB. C) Classic LB no weights. D) RDS unrelated. When "Traffic Splitting + Beanstalk," ALB is implicit.
+해설: Traffic Splitting uses ALB **weighted target group** feature. CLB/NLB lack weight routing. A) Worker has no ALB. C) Classic LB no weights. D) RDS unrelated. When "Traffic Splitting + Beanstalk," ALB is implicit.
 
 ---
 
-**문題 7.** Beanstalk Immutable deployment, first new ASG instance fails health check, what happens?
+**문제 7.** Beanstalk Immutable deployment, first new ASG instance fails health check, what happens?
 
 A) Production unaffected, new ASG auto-deletes, deployment marked failed
 B) Existing ASG also terminates
 C) Auto-switches to Rolling
 D) Environment completely deletes
 
-**正答: A**
+**정답: A**
 
-해説: Immutable's safety core — new ASG separate from production. Failed health check → new ASG deleted only, existing continues traffic. Deployment fails but service safe. B/C/D wrong behaviors. When "Immutable safety," health check failure answer is A.
+해설: Immutable's safety core — new ASG separate from production. Failed health check → new ASG deleted only, existing continues traffic. Deployment fails but service safe. B/C/D wrong behaviors. When "Immutable safety," health check failure answer is A.

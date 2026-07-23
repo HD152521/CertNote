@@ -155,7 +155,7 @@ C) Accuracy
 D) Silhouette score  
 
 **정답: B**  
-해説: RMSE squares errors, penalizing large ones harder, so it's outlier-sensitive. MAE treats all errors equally (robust). Accuracy is classification, Silhouette is clustering — neither fit regression.
+해설: RMSE squares errors, penalizing large ones harder, so it's outlier-sensitive. MAE treats all errors equally (robust). Accuracy is classification, Silhouette is clustering — neither fit regression.
 
 ---
 
@@ -167,6 +167,6 @@ C) Analyze text with Comprehend
 D) Translate with Translate  
 
 **정답: B**  
-해説: Domain-specific custom data requires custom training/deployment — SageMaker is the fit. Rekognition (A) is for general image tasks, insufficient for unique defect patterns. Comprehend (C) and Translate (D) are text, unrelated to image classification.
+해설: Domain-specific custom data requires custom training/deployment — SageMaker is the fit. Rekognition (A) is for general image tasks, insufficient for unique defect patterns. Comprehend (C) and Translate (D) are text, unrelated to image classification.
 
 ---

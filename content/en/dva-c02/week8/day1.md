@@ -342,7 +342,7 @@ D) Store in S3 text file and download during build
 
 ---
 
-**문题 5.** A CodeBuild project needs to run a migration script on a private subnet RDS instance. What additional configuration is required?
+**문제 5.** A CodeBuild project needs to run a migration script on a private subnet RDS instance. What additional configuration is required?
 
 A) No additional config needed (CodeBuild can access all VPCs by default)
 B) Switch CodeBuild project to VPC mode and specify appropriate subnet + security group

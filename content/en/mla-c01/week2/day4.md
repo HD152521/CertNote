@@ -146,14 +146,14 @@ D) Insufficient number of workers
 
 ---
 
-**문题 5.** SageMaker training shows low GPU usage and GPU starvation (waiting for data). Which is least relevant to storage/input improvements?
+**문제 5.** SageMaker training shows low GPU usage and GPU starvation (waiting for data). Which is least relevant to storage/input improvements?
 
 A) Convert data to efficient format like Parquet  
 B) Use Pipe/FastFile mode to relieve input bottleneck  
 C) Split data into multiple appropriately-sized shards  
 D) Lower learning rate  
 
-**定答: D**  
+**정답: D**  
 해설: Learning rate affects model convergence, a hyperparameter unrelated to data input bottleneck (GPU starvation). Format conversion (A), streaming input mode (B), and proper sharding (C) all speed data supply to prevent GPU starvation, so they're storage/input improvements.
 
 ---

@@ -246,7 +246,7 @@ Multi-tool migration progress unified tracking → Migration Hub. After home reg
 
 ---
 
-**문题 4.** Large monolithic Java app → microservices transition. Full redesign is too risky. Keep monolith while developing new features as microservices, gradually replacing. Which service manages this routing?
+**문제 4.** Large monolithic Java app → microservices transition. Full redesign is too risky. Keep monolith while developing new features as microservices, gradually replacing. Which service manages this routing?
 
 A) AWS App Mesh (service mesh)
 B) AWS Migration Hub Refactor Spaces

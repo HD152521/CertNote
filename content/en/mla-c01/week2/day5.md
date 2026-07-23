@@ -158,7 +158,7 @@ D) S3 is streaming-only
 
 ---
 
-**问题 4.** During Athena EDA, costs exceeded expectations because all queries used `SELECT *` scanning entire data. What most appropriately reduces cost?
+**문제 4.** During Athena EDA, costs exceeded expectations because all queries used `SELECT *` scanning entire data. What most appropriately reduces cost?
 
 A) Resave data as CSV  
 B) Select only needed columns and filter by partition keys to reduce scan volume  
@@ -177,7 +177,7 @@ B) Use user_id as PartitionKey so same user's records route to same shard
 C) Reduce shards to 1  
 D) Switch to Firehose  
 
-**정答: B**  
+**정답: B**  
 해설: Records with same PartitionKey route to same shard, preserving shard order, so using user_id preserves per-user event order. Random keys (A) break order, single shard (C) limits throughput, Firehose (D) isn't for order-guaranteed stream processing.
 
 ---

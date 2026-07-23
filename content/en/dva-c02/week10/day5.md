@@ -97,7 +97,7 @@ D) VPC Flow Logs packet round-trip time to back-trace
 
 ---
 
-**문题 2.** EC2 monitoring needs: memory usage, disk space used (%), and `DiskReadOps`. What's required?
+**문제 2.** EC2 monitoring needs: memory usage, disk space used (%), and `DiskReadOps`. What's required?
 
 A) All three are basic hypervisor-observable
 
@@ -107,7 +107,7 @@ C) All require OS-level Agent measurement
 
 D) Detailed Monitoring enables all three auto-collect
 
-**정答: B**
+**정답: B**
 
 해설: Memory usage and disk space *used* require guest OS measurement — **Agent needed**. `DiskReadOps` (block I/O *count*) is hypervisor-observable at EBS boundary — **basic**. "Disk" appears in both, deliberately confusing. Criterion consistent: "hypervisor boundary vs. OS internals." D) Detailed only changes frequency (5m→1m) of *basic* metrics, doesn't add *new* metrics like memory.
 
@@ -123,7 +123,7 @@ C) CloudWatch Logs auto-records GetObject
 
 D) X-Ray traces download
 
-**정答: B**
+**정답: B**
 
 해설: GetObject is **Data Event** (data plane), default OFF — needs explicit enable (extra cost). CloudTrail Event History is 90 days only; 7-year needs **Trail → S3 (unlimited)** or **CloudTrail Lake** (max 10 years, SQL). A) Management Events are control plane, don't record GetObject. C) GetObject not auto-logged to CWL.
 
@@ -139,9 +139,9 @@ C) Both Annotation (50/trace limit handles both)
 
 D) userId in Segment name; JSON in Annotation
 
-**정答: B**
+**정답: B**
 
-해説: Only **Annotation** indexed (searchable filters). userId searchable → Annotation. Debug JSON not searched, large → **Metadata** (unlimited). Index trade-off like databases — searchability vs. cost. "Searchable + identifier" → Annotation; "unsearched + bulk" → Metadata.
+해설: Only **Annotation** indexed (searchable filters). userId searchable → Annotation. Debug JSON not searched, large → **Metadata** (unlimited). Index trade-off like databases — searchability vs. cost. "Searchable + identifier" → Annotation; "unsearched + bulk" → Metadata.
 
 ---
 
@@ -157,7 +157,7 @@ D) Lambda X-Ray; EC2 EMF
 
 **정답: B**
 
-해説: Lambda's `PutMetricData` (A) is sync network call → extends execution time/cost. **EMF** outputs JSON to stdout (async log) → hot-path latency-free. EC2/ECS X-Ray "no traces" → missing **daemon sidecar** (UDP 2000 receiver); UDP fire-and-forget means silent failure. Both problems root-cause at "sync/missing infrastructure."
+해설: Lambda's `PutMetricData` (A) is sync network call → extends execution time/cost. **EMF** outputs JSON to stdout (async log) → hot-path latency-free. EC2/ECS X-Ray "no traces" → missing **daemon sidecar** (UDP 2000 receiver); UDP fire-and-forget means silent failure. Both problems root-cause at "sync/missing infrastructure."
 
 ---
 
@@ -173,11 +173,11 @@ D) AWS Config Rule evaluates root
 
 **정답: B**
 
-해説: root login → CloudTrail `ConsoleLogin` event → **EventBridge Rule** pattern-filters `userIdentity.type="Root"` → Lambda/SNS → alert. CloudTrail detects, EventBridge responds — "system preempts human log review." A) Can't IAM-block root. C) Login is *event*, not metric. D) Config evaluates *state*, not real-time events.
+해설: root login → CloudTrail `ConsoleLogin` event → **EventBridge Rule** pattern-filters `userIdentity.type="Root"` → Lambda/SNS → alert. CloudTrail detects, EventBridge responds — "system preempts human log review." A) Can't IAM-block root. C) Login is *event*, not metric. D) Config evaluates *state*, not real-time events.
 
 ---
 
-**문题 7.** Traffic low/high/weekend variance makes single CPU threshold fail — "80% oversensitive early morning, undersensitive noon." Solution without manual threshold swap:
+**문제 7.** Traffic low/high/weekend variance makes single CPU threshold fail — "80% oversensitive early morning, undersensitive noon." Solution without manual threshold swap:
 
 A) Multiple static thresholds, EventBridge schedule swaps hourly
 
@@ -189,7 +189,7 @@ D) Composite Alarm AND/OR multiple alarms
 
 **정답: B**
 
-해説: **Anomaly Detection** learns daily/weekly patterns, generates "hour/weekday → expected range" band. 3 AM low and noon high both normal; same 50% reads differently by time. Statistically captures calendar variance. A) Manual swap is operations burden, pattern-blind. C) Filter can't learn seasonality. D) Composite combines existing alarms; each still static-thresheld.
+해설: **Anomaly Detection** learns daily/weekly patterns, generates "hour/weekday → expected range" band. 3 AM low and noon high both normal; same 50% reads differently by time. Statistically captures calendar variance. A) Manual swap is operations burden, pattern-blind. C) Filter can't learn seasonality. D) Composite combines existing alarms; each still static-thresheld.
 
 ---
 
@@ -205,7 +205,7 @@ D) Lengthen eval period, more datapoints to smooth
 
 **정답: B**
 
-해説: Absolute "100 errors" is fragile — scales with traffic. **Metric Math** → error *rate* ("error rate < 1%") stays meaningful at any traffic. SRE defines SLOs in ratios (99.9% uptime), implements via Metric Math. A) Threshold raised still breaks at different traffic scale. C) Count-based Anomaly Detection still rides traffic; ratio more stable. D) Period lengthening reduces noise, doesn't fix traffic-scale problem.
+해설: Absolute "100 errors" is fragile — scales with traffic. **Metric Math** → error *rate* ("error rate < 1%") stays meaningful at any traffic. SRE defines SLOs in ratios (99.9% uptime), implements via Metric Math. A) Threshold raised still breaks at different traffic scale. C) Count-based Anomaly Detection still rides traffic; ratio more stable. D) Period lengthening reduces noise, doesn't fix traffic-scale problem.
 
 ---
 
@@ -221,11 +221,11 @@ D) Both `GetMetricData`/`FilterLogEvents` API polling
 
 **정답: B**
 
-해説: **Metric Stream** streams *metrics* via Firehose to external; **Subscription Filter** streams *logs* to Lambda/Kinesis/OpenSearch. Two separate pipelines. A) Metric Stream is metrics-only. C) Filter is logs-only. D) Polling suffers latency/cost/rate-limit. Metrics vs. logs → different paths.
+해설: **Metric Stream** streams *metrics* via Firehose to external; **Subscription Filter** streams *logs* to Lambda/Kinesis/OpenSearch. Two separate pipelines. A) Metric Stream is metrics-only. C) Filter is logs-only. D) Polling suffers latency/cost/rate-limit. Metrics vs. logs → different paths.
 
 ---
 
-**问题 10.** ECS Fargate: one task memory-starved, restarts repeatedly; host average shows normal. Container-level visibility:
+**문제 10.** ECS Fargate: one task memory-starved, restarts repeatedly; host average shows normal. Container-level visibility:
 
 A) EC2 basic metrics sufficient
 
@@ -235,9 +235,9 @@ C) CloudWatch Agent on host
 
 D) X-Ray
 
-**정答: B**
+**정답: B**
 
-해説: Host average hides individual task spikes. **Container Insights** aggregates layers (cluster → service → task → container), shows which task peaks, orchestration signals (restart). Containers ephemeral/dynamic; host-level insufficient. C) Fargate can't install Agent on-host directly.
+해설: Host average hides individual task spikes. **Container Insights** aggregates layers (cluster → service → task → container), shows which task peaks, orchestration signals (restart). Containers ephemeral/dynamic; host-level insufficient. C) Fargate can't install Agent on-host directly.
 
 ---
 
@@ -251,13 +251,13 @@ C) CloudWatch alarm on 9 AM metric
 
 D) SQS 24-hour delay queue periodic cycle
 
-**정答: B**
+**정답: B**
 
-해説: "Exact 9 AM" is specific time, calendar-based → **`cron(...)`**. `rate(1 day)` is "24 hours since last," no fixed anchor → no 9 AM guarantee. Large scale/one-time/fine retry → **EventBridge Scheduler** (Rule only for simple periodic). cron vs. rate, Scheduler vs. Rule — two distinctions together. A) `rate` has no time anchor. C) Alarms aren't schedulers. D) SQS max 15-min delay.
+해설: "Exact 9 AM" is specific time, calendar-based → **`cron(...)`**. `rate(1 day)` is "24 hours since last," no fixed anchor → no 9 AM guarantee. Large scale/one-time/fine retry → **EventBridge Scheduler** (Rule only for simple periodic). cron vs. rate, Scheduler vs. Rule — two distinctions together. A) `rate` has no time anchor. C) Alarms aren't schedulers. D) SQS max 15-min delay.
 
 ---
 
-**问题 12.** Post-deploy: API returns 200, but payment button on screen broken, unclickable. Metrics show all normal. Detect "technically works, user-broken" automatically:
+**문제 12.** Post-deploy: API returns 200, but payment button on screen broken, unclickable. Metrics show all normal. Detect "technically works, user-broken" automatically:
 
 A) CloudWatch basic metric alarm
 
@@ -267,9 +267,9 @@ C) X-Ray sampling
 
 D) CloudTrail Data Events
 
-**정答: B**
+**정답: B**
 
-해説: Metrics (white-box internal) don't catch user-experience failures. **Synthetics** scripts real flows end-to-end, Visual monitoring detects pixel-level breaks (button rendering failure) — black-box observes from *user* perspective. "Technically 200 but UI broken" is exactly Synthetics' use case. A) Metrics don't see UI breaks.
+해설: Metrics (white-box internal) don't catch user-experience failures. **Synthetics** scripts real flows end-to-end, Visual monitoring detects pixel-level breaks (button rendering failure) — black-box observes from *user* perspective. "Technically 200 but UI broken" is exactly Synthetics' use case. A) Metrics don't see UI breaks.
 
 ---
 

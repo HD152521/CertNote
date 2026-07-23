@@ -307,9 +307,9 @@ B) Partner can terminate EC2 instances
 C) Instance IDs, traffic patterns, error messages exposed without auth
 D) IAM policy auto-changes
 
-**정答: C**
+**정답: C**
 
-解説: Public Sharing = anyone with URL sees dashboard. Instance IDs, error patterns, traffic spike patterns = useful attacker info. Read-only so can't directly modify, but information exposure risk. External sharing needs SSO users or separate read-only IAM account.
+해설: Public Sharing = anyone with URL sees dashboard. Instance IDs, error patterns, traffic spike patterns = useful attacker info. Read-only so can't directly modify, but information exposure risk. External sharing needs SSO users or separate read-only IAM account.
 
 ---
 
@@ -320,9 +320,9 @@ B) Change history, team review (PR), environment auto-deploy, drift detection
 C) Cost reduced per dashboard
 D) 3+ dashboards free
 
-**정答: B**
+**정답: B**
 
-解説: IaC management includes code review (PR), Git history "who when what widget added," environment (dev/prod) parameters auto-deploy identical template. Cost/speed unchanged. `AWS::CloudWatch::Dashboard` DashboardBody property JSON.
+해설: IaC management includes code review (PR), Git history "who when what widget added," environment (dev/prod) parameters auto-deploy identical template. Cost/speed unchanged. `AWS::CloudWatch::Dashboard` DashboardBody property JSON.
 
 ---
 
@@ -333,7 +333,7 @@ B) Redesign Executive → Service → Operational hierarchy, TV display Service 
 C) Consolidate all metrics single dashboard
 D) Reduce alarms, separate dashboard correlation
 
-**正答: B**
+**정답: B**
 
-解説: Hierarchical dashboard standard solution. Normally display Level 2 (Golden Signals per-service) on TV. Discover anomaly → drill-down Level 3 (Operational). Level 1 (business KPI) executive reports. Not viewing all 20, but "which level now" clear.
+해설: Hierarchical dashboard standard solution. Normally display Level 2 (Golden Signals per-service) on TV. Discover anomaly → drill-down Level 3 (Operational). Level 1 (business KPI) executive reports. Not viewing all 20, but "which level now" clear.
 

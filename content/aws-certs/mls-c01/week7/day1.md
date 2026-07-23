@@ -1,117 +1,118 @@
-# Day 1 - Neural Network Foundations: Perceptron to Backpropagation
+# Day 1 - 신경망 기초: 퍼셉트론에서 역전파까지
 
-Week 7 covers the second pillar of Domain 3 (Modeling): **deep learning**. Unstructured data (images, text, audio) and complex nonlinear relationships are deep learning's domain. MLS-C01 doesn't probe framework-level coding but presumes conceptual understanding of **perceptron, activation functions, loss, backpropagation, hyperparameters**. Today we nail the big picture of how neural nets turn input into prediction, and how they learn.
+Week 7은 도메인 3(Modeling)의 두 번째 축인 **딥러닝**을 다룬다. 트리·선형 모델로 풀리지 않는 비정형 데이터(이미지·텍스트·음성)와 복잡한 비선형 관계가 딥러닝의 무대다. MLS-C01은 딥러닝을 프레임워크 코딩 수준으로 깊게 묻지는 않지만, **퍼셉트론·활성화 함수·손실·역전파·하이퍼파라미터**의 개념적 이해를 전제로 한 문제를 낸다. 오늘은 신경망이 어떻게 입력을 예측으로 바꾸고, 어떻게 학습하는지의 큰 그림을 잡는다.
 
-## Perceptron: Neural Network's Minimal Unit
+## 퍼셉트론: 신경망의 최소 단위
 
-A perceptron takes weighted input, adds bias, and passes through activation function.
+퍼셉트론은 입력에 가중치를 곱해 더하고, 편향을 더한 뒤, 활성화 함수를 통과시키는 단일 뉴런이다.
 
 ```text
 z = w1*x1 + w2*x2 + ... + wn*xn + b
-a = f(z)        # f = activation function
+a = f(z)        # f = 활성화 함수
 ```
 
-- **w (weights)**: Importance of each input. Core learnable parameters adjusted by training
-- **b (bias)**: Shifts decision boundary
-- **f (activation)**: Injects nonlinearity
+- **w(가중치)**: 각 입력의 중요도. 학습으로 조정되는 핵심 파라미터.
+- **b(편향)**: 결정 경계를 평행 이동시키는 항.
+- **f(활성화)**: 비선형성을 주입하는 함수.
 
-Single perceptron can only do linear separation (can't solve XOR). This limitation motivates **stacking hidden layers** in multi-layer perceptron (MLP).
+단일 퍼셉트론은 선형 분리만 가능하다(XOR을 못 푼다). 이 한계가 **은닉층을 쌓는** 다층 퍼셉트론(MLP)의 동기다.
 
-> 💡 **Related Theory**: Without activation functions, stacking layers makes just composed linear transformations → still one linear model. Nonlinear activation is how neural nets express curved decision boundaries and complex functions. This is why deep learning has "deep" expressiveness.
+> 💡 **관련 이론**: 활성화 함수가 없으면 층을 아무리 쌓아도 선형 변환의 합성이라 결국 하나의 선형 모델과 같다. 비선형 활성화가 있어야 신경망이 곡선 형태의 복잡한 결정 경계를 표현할 수 있다. 이것이 "딥"러닝이 표현력을 갖는 근본 이유다.
 
-## Hidden Layers and Multi-Layer Perceptron (MLP)
+## 은닉층과 다층 퍼셉트론(MLP)
 
-Insert one or more **hidden layers** between input and output → networks can approximate nonlinear functions.
+입력층과 출력층 사이에 하나 이상의 **은닉층**을 두면 신경망은 비선형 함수를 근사할 수 있다.
 
 ```text
-Input layer  →  Hidden layer 1  →  Hidden layer 2  →  Output layer
-(features)      (low-level         (high-level        (prediction)
-                 patterns)          patterns)
+입력층  →  은닉층1  →  은닉층2  →  출력층
+(특성)    (저수준    (고수준     (예측)
+           패턴)      패턴)
 ```
 
-- **Layer width** (neuron count) and **depth** (layer count) determine model capacity
-- Deeper/wider = higher expressiveness, but overfitting/compute/vanishing gradient risk grows
-- Universal approximation: Single hidden layer MLP with sufficient neurons approximates any continuous function. But "deep" networks often achieve same expressiveness with fewer parameters
+- **층의 너비(뉴런 수)**와 **깊이(층 수)**가 모델 용량을 결정한다.
+- 깊고 넓을수록 표현력은 커지지만 과적합·연산비용·기울기 소실 위험이 커진다.
+- 보편 근사 정리: 충분한 뉴런을 가진 단일 은닉층 MLP는 임의 연속 함수를 근사할 수 있다. 다만 "깊게" 쌓는 것이 같은 표현력을 더 적은 파라미터로 달성하는 경우가 많다.
 
-## Activation Functions
+## 활성화 함수
 
-Inject nonlinearity between layers. Three frequently tested, distinguish them:
+층 사이에 비선형성을 주입하는 핵심 요소. 시험에 자주 나오는 세 가지를 구분하자.
 
-| Function | Output Range | Main Use | Features |
+| 함수 | 출력 범위 | 주 용도 | 특징 |
 |------|------|------|------|
-| **Sigmoid** | (0, 1) | Binary classification output | Gradient vanishes at ends, output is probability |
-| **Tanh** | (-1, 1) | Hidden layers (historically) | 0-centered → more stable than Sigmoid |
-| **ReLU** | [0, ∞) | Hidden layers (default) | Compute simple, mitigates vanishing gradient, "dead ReLU" issue |
-| **Softmax** | (0,1), sum=1 | Multi-class output | Produces probability distribution |
+| **Sigmoid** | (0, 1) | 이진 분류 출력 | 양 끝에서 기울기 소실, 출력이 확률 해석 가능 |
+| **Tanh** | (-1, 1) | 은닉층(과거) | 0 중심이라 Sigmoid보다 학습 안정 |
+| **ReLU** | [0, ∞) | 은닉층 기본값 | 계산 단순, 기울기 소실 완화, "죽은 ReLU" 문제 |
+| **Softmax** | (0,1), 합=1 | 다중 분류 출력 | 클래스별 확률 분포 산출 |
 
 ```python
-# Conceptual definitions
+# 개념적 정의
 relu(z)    = max(0, z)
 sigmoid(z) = 1 / (1 + exp(-z))
 softmax(z_i) = exp(z_i) / sum(exp(z_j) for all j)
 ```
 
-Selection guide:
-- **Hidden layers**: Default **ReLU** (or Leaky ReLU, GELU variants). Mitigates vanishing gradient, fast
-- **Binary classification output**: **Sigmoid** single node
-- **Multi-class output**: **Softmax** (one node per class)
-- **Regression output**: No activation (linear) or output-range-appropriate
+선택 가이드:
+- **은닉층**: 기본은 **ReLU**(또는 Leaky ReLU, GELU 등 변형). 기울기 소실에 강하고 빠르다.
+- **이진 분류 출력**: **Sigmoid** 1개 노드.
+- **다중 분류 출력**: **Softmax** (클래스 수만큼 노드).
+- **회귀 출력**: 활성화 없이 선형(또는 출력 범위에 맞는 함수).
 
-> 💡 **Related Theory**: Sigmoid/Tanh have derivatives near 0 at extremes → backprop shrinks gradients to nearly 0 in deep nets (vanishing gradient). ReLU's positive segment has derivative = 1 constantly → greatly mitigates. Downside: negative inputs always output 0 → "dead ReLU" permanently inactive neurons (Leaky ReLU addresses this)
+> 💡 **관련 이론**: Sigmoid/Tanh는 입력이 크거나 작을 때 도함수가 0에 가까워져 역전파 과정에서 기울기가 점점 작아지는 **기울기 소실(vanishing gradient)** 을 일으킨다. ReLU는 양수 구간에서 기울기가 1로 일정해 이 문제를 크게 완화하지만, 음수 입력에서 항상 0을 출력해 일부 뉴런이 영원히 비활성되는 "죽은 ReLU"가 생길 수 있고, 이를 막으려 Leaky ReLU가 나왔다.
 
-## Forward Pass and Loss
+## 순전파와 손실
 
-Learning happens across two flows. First, **forward pass** creates predictions.
-
-```text
-Input → (weighted sum + activation) per layer → final prediction ŷ
-```
-
-**Loss function** quantifies difference between prediction ŷ and truth y.
-
-- Regression: mean squared error (MSE)
-- Binary classification: binary cross-entropy (BCE)
-- Multi-class: categorical cross-entropy
-- Lower loss = better model. Training goal: "find weights minimizing loss"
-
-## Backpropagation
-
-To reduce loss, need to know how much each weight contributes to loss. Backprop uses **chain rule** to propagate loss gradients backward from output to input.
+학습은 두 방향의 흐름으로 이뤄진다. 먼저 **순전파(forward pass)** 로 예측을 만든다.
 
 ```text
-1. Forward pass: compute prediction ŷ
-2. Compute loss: L(ŷ, y)
-3. Backprop: compute ∂L/∂w via chain rule output→input direction
-4. Update weights: w ← w - η * ∂L/∂w   (η = learning rate)
-5. Repeat 1-4 per batch/epoch
+입력 → (가중합 + 활성화)를 층마다 반복 → 최종 예측 ŷ
 ```
 
-- **Gradient**: says "if we increase this weight, loss changes in what direction/magnitude?"
-- **Gradient descent**: step opposite gradient direction incrementally
-- Repeat over data batches/epochs thousands to hundreds of thousands of times
+예측 ŷ와 실제 정답 y의 차이를 **손실 함수(loss)** 로 수치화한다.
 
-Backprop pairs with optimizer (Day 4). Backprop calculates "which direction," optimizer determines "how far, how"
+- 회귀: 평균제곱오차(MSE).
+- 이진 분류: 이진 교차 엔트로피(binary cross-entropy).
+- 다중 분류: 범주형 교차 엔트로피(categorical cross-entropy).
 
-## Epochs, Batches, Iterations — Terminology
+손실이 작을수록 좋은 모델이다. 학습의 목표는 "손실을 최소화하는 가중치"를 찾는 것이다.
 
-| Term | Meaning |
+## 역전파(Backpropagation)
+
+손실을 줄이려면 각 가중치가 손실에 얼마나 기여하는지를 알아야 한다. 역전파는 **연쇄 법칙(chain rule)** 으로 출력층에서 입력층 방향으로 손실의 기울기(gradient)를 전파해 계산한다.
+
+```text
+1. 순전파: 예측 ŷ 계산
+2. 손실 계산: L(ŷ, y)
+3. 역전파: ∂L/∂w 를 출력→입력 방향으로 연쇄법칙으로 계산
+4. 가중치 갱신: w ← w - η * ∂L/∂w   (η = 학습률)
+5. 1~4를 배치/에폭 단위로 반복
+```
+
+- **기울기**는 "이 가중치를 늘리면 손실이 어느 방향으로 얼마나 변하는가"를 알려준다.
+- **경사하강법**으로 기울기 반대 방향으로 가중치를 조금씩 옮긴다.
+- 이 과정을 데이터 배치 단위로 수만~수십만 번 반복하며 손실을 낮춘다.
+
+역전파는 옵티마이저(Day4)와 짝을 이룬다. 역전파가 "어느 방향으로"를 계산하면, 옵티마이저가 "얼마나, 어떻게" 움직일지를 결정한다.
+
+## 에폭·배치·이터레이션 용어 정리
+
+| 용어 | 의미 |
 |------|------|
-| **Epoch** | Pass through entire training dataset once |
-| **Batch** | Sample group used in one weight update |
-| **Batch size** | Samples per batch (memory/stability tradeoff) |
-| **Iteration** | One batch processed = one weight update |
+| **에폭(epoch)** | 전체 학습 데이터를 한 번 모두 통과 |
+| **배치(batch)** | 한 번의 가중치 갱신에 쓰는 샘플 묶음 |
+| **배치 크기** | 한 배치의 샘플 수 (메모리·안정성 trade-off) |
+| **이터레이션** | 한 배치 처리 = 한 번의 가중치 갱신 |
 
-Example: 1000 samples, batch size 100 → one epoch = 10 iterations
+예: 데이터 1000개, 배치 크기 100이면 한 에폭 = 10 이터레이션.
 
-> 💡 **Related Theory**: Large batch → stable gradient estimates, high GPU utilization, but less generalization. Small batch → noisy gradients help escape local minima sometimes. Test: "OOM (out of memory)" → reduce batch size is first fix
+> 💡 **관련 이론**: 배치 크기가 크면 기울기 추정이 안정적이고 GPU 활용도가 높지만 메모리를 많이 쓰고 일반화가 약간 나빠질 수 있다. 작으면 노이즈가 섞인 기울기로 지역 최소점을 빠져나오는 데 도움이 되기도 한다. 시험에서 "메모리 부족(OOM)으로 학습이 실패"하면 배치 크기를 줄이는 것이 1차 처방이다.
 
-## Core Takeaway
+## 핵심 정리
 
-- Perceptron = weighted sum + bias + activation. Single perceptron only linear separation
-- Hidden layers + nonlinear activation → approximate complex nonlinear functions
-- Hidden layer default: ReLU. Output: Sigmoid/Softmax/linear by task type
-- Forward pass predicts, loss measures error, backprop computes gradients, gradient descent updates
-- Epochs/batches/iterations: distinguish clearly
+- 퍼셉트론 = 가중합 + 편향 + 활성화. 단일 퍼셉트론은 선형 분리만 가능.
+- 은닉층 + 비선형 활성화 → 복잡한 비선형 함수 근사.
+- 은닉층 기본 활성화는 ReLU, 출력은 문제 유형별로 Sigmoid/Softmax/선형.
+- 순전파로 예측, 손실로 오차 측정, 역전파로 기울기 계산, 경사하강으로 갱신.
+- 에폭·배치·이터레이션의 관계를 정확히 구분한다.
 
 ## 📝 연습 문제
 

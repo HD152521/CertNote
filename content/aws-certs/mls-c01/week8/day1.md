@@ -1,63 +1,63 @@
-# Day 1 - SageMaker Training Jobs: Estimator, Input Modes, Distributed Learning, Spot
+# Day 1 - SageMaker 학습 작업: Estimator, 입력 모드, 분산 학습, Spot
 
-Week 8 covers the latter half of Domain 3 (Modeling) — "how to train models, how to tune them, and how to generalize them." Today we dive into **SageMaker Training Jobs**, the runtime foundation of learning. After selecting an algorithm (Week 6), the next question is "on what compute, with what data transfer method, and how cheaply can we run this training?" The exam tests Estimator configuration, input modes (File/Pipe/FastFile), distributed learning strategies, and Spot training cost optimization as key indicators.
+Week 8은 도메인 3(Modeling)의 후반부 — 모델을 "어떻게 학습시키고, 어떻게 튜닝하고, 어떻게 일반화시키는가"를 다룬다. 오늘은 학습의 실행 기반인 **SageMaker Training Job**을 파고든다. 알고리즘을 골랐다면(Week 6), 다음 질문은 "이 학습을 어떤 컴퓨트 위에서, 어떤 데이터 전달 방식으로, 얼마나 싸게 돌릴 것인가"다. 시험은 Estimator 설정, 입력 모드(File/Pipe/FastFile), 분산 학습 전략, Spot 학습 비용 절감을 단서로 출제한다.
 
-## Training Job Execution Model
+## Training Job의 동작 모델
 
-The flow of a SageMaker training job is always the same.
-
-```text
-1. Define Estimator (image, instance, hyperparameters, output path)
-2. Call fit() → provision training instances
-3. Transfer training data from S3 to container (input mode)
-4. Write data to /opt/ml/input/data/<channel>, write outputs to /opt/ml/model
-5. Training completes → automatically upload /opt/ml/model to S3 (output_path) as tar.gz
-6. Terminate instances (billing stops)
-```
-
-The key point: **instances exist only during the job**, and only model artifacts written to `/opt/ml/model` are uploaded to S3. Memorizing the standard training container paths makes you strong on tricky questions (checkpoint path, output path).
+SageMaker 학습 작업의 흐름은 항상 동일하다.
 
 ```text
-/opt/ml/input/data/<channel_name>   ← input data channel
-/opt/ml/input/config/               ← hyperparameters, resource config (JSON)
-/opt/ml/model/                      ← model artifacts (auto-uploaded to S3)
-/opt/ml/output/                     ← failure file on error
-/opt/ml/checkpoints/                ← checkpoints (synced to S3 when configured)
+1. Estimator 정의 (이미지, 인스턴스, 하이퍼파라미터, 출력 경로)
+2. fit() 호출 → 학습 인스턴스 프로비저닝
+3. S3에서 학습 데이터를 컨테이너로 전달 (입력 모드)
+4. /opt/ml/input/data/<channel> 에 데이터, /opt/ml/model 에 산출물 기록
+5. 학습 종료 → /opt/ml/model 을 S3(output_path)로 자동 업로드(tar.gz)
+6. 인스턴스 종료 (과금 중단)
 ```
 
-> 💡 **Related Theory**: SageMaker training is "managed one-off batch jobs." Instances are not permanently running like EC2 — they spawn when fit() is called and disappear when complete. To preserve intermediate training state, you must explicitly export checkpoints to S3. This one-off nature is why Spot training (cheap but interruptible) naturally fits here.
+핵심은 **인스턴스는 작업 동안만 살아 있고**, 모델 산출물은 `/opt/ml/model`에 쓴 것만 S3로 올라간다는 점이다. 학습 컨테이너의 표준 경로를 외워두면 함정형 문제(체크포인트 경로, 산출물 경로)에 강해진다.
 
-## Estimator Configuration
+```text
+/opt/ml/input/data/<channel_name>   ← 입력 데이터 채널
+/opt/ml/input/config/               ← 하이퍼파라미터, 리소스 설정(JSON)
+/opt/ml/model/                      ← 모델 산출물(S3로 자동 업로드)
+/opt/ml/output/                     ← 실패 시 failure 파일
+/opt/ml/checkpoints/                ← 체크포인트(설정 시 S3와 동기화)
+```
 
-The Python SDK's `Estimator` (or framework-specific `PyTorch`, `TensorFlow`, `XGBoost` Estimators) defines training jobs.
+> 💡 **관련 이론**: SageMaker 학습은 "관리형 일회성 배치 잡"이다. 인스턴스가 영구히 떠 있는 EC2가 아니라, fit() 시 떴다가 끝나면 사라지는 구조다. 따라서 학습 중간 상태를 보존하려면 반드시 체크포인트를 S3로 내보내야 한다. 이 일회성 특성이 곧 뒤에 나오는 Spot 학습(저렴하지만 중단 가능)이 자연스럽게 어울리는 이유다.
+
+## Estimator 구성
+
+Python SDK의 `Estimator`(또는 프레임워크별 `PyTorch`, `TensorFlow`, `XGBoost` Estimator)가 학습 작업을 정의한다.
 
 ```python
 from sagemaker.estimator import Estimator
 
 est = Estimator(
-    image_uri=xgboost_image,          # built-in or custom container image
+    image_uri=xgboost_image,          # 빌트인/커스텀 컨테이너 이미지
     role=role,
     instance_count=1,
     instance_type="ml.m5.xlarge",
-    output_path="s3://bucket/output", # model output location
+    output_path="s3://bucket/output", # 모델 산출물 위치
     hyperparameters={"max_depth": 5, "num_round": 100},
 )
 est.fit({"train": train_s3, "validation": val_s3})
 ```
 
-- **instance_count > 1** triggers distributed training (see below).
-- Channel names (`train`, `validation`) become `/opt/ml/input/data/<channel>` paths inside the container.
-- For custom code, use `entry_point` and `source_dir` for script mode.
+- **instance_count > 1**이면 분산 학습으로 들어간다(아래 참조).
+- 채널 이름(`train`, `validation`)은 컨테이너 안에서 `/opt/ml/input/data/<채널>` 경로가 된다.
+- 커스텀 코드를 쓰려면 `entry_point`와 `source_dir`로 스크립트 모드를 사용한다.
 
-## Input Modes: File vs Pipe vs FastFile
+## 입력 모드: File vs Pipe vs FastFile
 
-How you transfer training data from S3 to the container directly impacts startup latency, cost, and memory. This is a frequent test topic.
+학습 데이터를 S3에서 컨테이너로 어떻게 전달하느냐가 시작 지연·비용·메모리에 직접 영향을 준다. 시험 단골 주제다.
 
-| Mode | Behavior | Best For |
+| 모드 | 동작 | 적합한 상황 |
 |------|------|------|
-| **File** (default) | **Downloads entire dataset to EBS** before training starts | Small/medium data that fits on instance disk |
-| **Pipe** | **Streams data from S3** without download wait | Large data exceeding disk, reduce startup latency and storage cost |
-| **FastFile** | Files appear local, but **lazy-load on read (streaming)** | Pipe streaming + File random access convenience |
+| **File** (기본) | 학습 시작 전 전체 데이터를 EBS로 **다운로드 완료** 후 시작 | 데이터가 인스턴스 디스크에 들어가는 중소 규모 |
+| **Pipe** | S3에서 데이터를 **스트리밍**으로 흘려보냄(다운로드 대기 없음) | 디스크보다 큰 대용량, 시작 지연·스토리지 절감 |
+| **FastFile** | 파일을 로컬처럼 보이게 하되 **읽을 때 지연 로딩(stream)** | Pipe의 스트리밍 + File의 임의 접근 편의 |
 
 ```python
 from sagemaker.inputs import TrainingInput
@@ -69,19 +69,19 @@ train = TrainingInput(
 est.fit({"train": train})
 ```
 
-Key discrimination:
-- "Data exceeds instance disk / want to reduce download wait" → **Pipe** or **FastFile**.
-- "Receive all data quickly and access randomly from disk" → **File**.
-- Pipe excels at sequential streaming; FastFile is a modern option adding random access convenience.
+핵심 판별:
+- "데이터가 인스턴스 디스크보다 크다 / 다운로드 대기를 줄이고 싶다" → **Pipe** 또는 **FastFile**.
+- "전체 데이터를 빠르게 다 받아 디스크에서 임의 접근" → **File**.
+- Pipe는 순차 스트리밍에 강하고, FastFile은 임의 접근까지 편한 신형 옵션이다.
 
-> 💡 **Related Theory**: File mode must complete downloads before training starts, making startup latency and EBS costs high for terabyte-scale data. Pipe mode pairs with streaming-friendly formats like protobuf RecordIO to feed the first batch immediately. FastFile mounts like POSIX files but actually pulls bytes from S3 on access, letting you gain streaming benefits with minimal code changes.
+> 💡 **관련 이론**: File 모드는 다운로드가 끝나야 학습이 시작되므로 테라바이트급 데이터에선 시작 지연·EBS 비용이 커진다. Pipe 모드는 protobuf RecordIO 같은 스트리밍 친화 포맷과 결합해 첫 배치를 바로 흘려보낸다. FastFile은 POSIX 파일처럼 마운트되지만 실제 바이트는 접근 시점에 S3에서 당겨오므로, 코드를 거의 바꾸지 않으면서 스트리밍 이점을 얻는다.
 
-## Distributed Training: Data Parallel vs Model Parallel
+## 분산 학습: 데이터 병렬 vs 모델 병렬
 
-When you increase `instance_count` or have multiple GPUs, choose a distributed strategy.
+`instance_count`를 늘리거나 GPU가 여러 개일 때 분산 전략을 고른다.
 
-- **Data Parallel**: Replicate the same model across multiple devices, partition data batches, then combine gradients. **Standard choice when the model fits on one device**. SageMaker Distributed Data Parallel (SMDDP) optimizes AllReduce.
-- **Model Parallel**: **When the model itself cannot fit in a single device's memory** (massive models), split layers/tensors across devices. SageMaker Distributed Model Parallel (SMP).
+- **데이터 병렬(Data Parallel)**: 같은 모델 복제본을 여러 디바이스에 두고, 데이터 배치를 나눠 처리한 뒤 그래디언트를 합친다. **모델이 한 디바이스에 들어갈 때** 표준 선택. SageMaker Distributed Data Parallel(SMDDP)이 AllReduce를 최적화.
+- **모델 병렬(Model Parallel)**: **모델 자체가 한 디바이스 메모리에 안 들어갈 때**(초대형 모델) 레이어/텐서를 여러 디바이스로 쪼갠다. SageMaker Distributed Model Parallel(SMP).
 
 ```python
 est = Estimator(
@@ -91,44 +91,44 @@ est = Estimator(
 )
 ```
 
-Discrimination signals:
-- "Training is slow, accelerate with more GPUs" + model fits in memory → **Data Parallel**.
-- "Model is too large, exceeds single GPU memory (OOM)" → **Model Parallel**.
+판별 신호:
+- "학습이 느려서 더 많은 GPU로 가속" + 모델은 메모리에 들어감 → **데이터 병렬**.
+- "모델이 너무 커서 단일 GPU 메모리 초과(OOM)" → **모델 병렬**.
 
-## Managed Spot Training: Cost Savings
+## Managed Spot Training: 비용 절감
 
-Using Spot instances for training can cut costs by ~90% compared to On-Demand. However, Spot can be interrupted, so **checkpoints are mandatory**.
+Spot 인스턴스를 학습에 쓰면 온디맨드 대비 최대 ~90% 절감이 가능하다. 단, Spot은 중단될 수 있으므로 **체크포인트**가 필수다.
 
 ```python
 est = Estimator(
     image_uri=img, role=role,
     instance_count=1, instance_type="ml.m5.xlarge",
     use_spot_instances=True,
-    max_run=3600,            # total training time allowed
-    max_wait=7200,           # max time including Spot wait (>= max_run)
+    max_run=3600,            # 총 학습 허용 시간
+    max_wait=7200,           # Spot 대기 포함 최대 시간 (>= max_run)
     checkpoint_s3_uri="s3://bucket/checkpoints/",
 )
 ```
 
-- `use_spot_instances=True` and `max_wait >= max_run` is a required combination (includes wait time).
-- On interruption, SageMaker **resumes from** the checkpoint stored in `checkpoint_s3_uri`.
-- Without checkpoints, interrupted training restarts from scratch, eliminating cost savings.
+- `use_spot_instances=True`, `max_wait >= max_run`이 필수 조합이다(대기 시간 포함).
+- 중단 시 SageMaker가 `checkpoint_s3_uri`에 저장된 체크포인트에서 **재개**한다.
+- 체크포인트가 없으면 중단된 학습을 처음부터 다시 해야 하므로 절감 효과가 사라진다.
 
-Discrimination signals:
-- "Cut training cost significantly, tolerate some latency" → **Managed Spot Training**.
-- "Spot interrupted training restarts from scratch" → caused by missing checkpoint configuration.
+판별 신호:
+- "학습 비용을 크게 줄이되 약간의 시간 지연은 허용" → **Managed Spot Training**.
+- "Spot인데 중단되면 처음부터 다시 한다" → 체크포인트 미설정이 원인.
 
-## Exam Tips
+## 시험 팁
 
-- Input mode questions: "Data exceeds disk / reduce startup latency" → Pipe·FastFile; "download all then random access" → File.
-- Distributed questions: keyword "model exceeds GPU memory" → model parallel; "simple acceleration" → data parallel.
-- Spot questions: "cost savings" visible → Spot, and almost always **checkpoint + checkpoint_s3_uri** is the paired correct answer.
-- Output path trap: models must be written to `/opt/ml/model` to upload to S3. Other paths disappear.
-- Memorize `max_wait >= max_run` constraint to filter Spot configuration trap questions.
+- 입력 모드 문제: "디스크보다 큰 데이터 / 시작 지연 감소" → Pipe·FastFile, "전체 다운로드 후 임의 접근" → File.
+- 분산 문제: 키워드 "모델이 GPU 메모리 초과" → 모델 병렬, "단순 가속" → 데이터 병렬.
+- Spot 문제: "비용 절감"이 보이면 Spot, 그리고 거의 항상 **체크포인트 + checkpoint_s3_uri**가 정답의 짝이다.
+- 산출물 경로 함정: 모델은 `/opt/ml/model`에 써야 S3로 올라간다. 다른 경로에 쓰면 사라진다.
+- `max_wait >= max_run` 제약을 외워두면 Spot 설정 함정 문제를 거른다.
 
-## Summary
+## 정리하며
 
-Today we covered training's runtime infrastructure — Estimator configuration, input modes, distributed strategies, and Spot cost optimization. The core flow: **choose input mode by data scale → choose distributed strategy by model size/speed needs → add Spot + checkpoints for cost targets**. Tomorrow we tackle Automatic Model Tuning (AMT), which automatically runs training jobs multiple times to find optimal hyperparameters.
+오늘은 학습의 실행 인프라 — Estimator 구성, 입력 모드, 분산 전략, Spot 비용 절감 — 를 정리했다. 핵심 흐름은 **데이터 규모로 입력 모드 선택 → 모델 크기/속도 요구로 분산 전략 선택 → 비용 목표에 따라 Spot + 체크포인트**다. 내일은 이 학습 작업을 자동으로 여러 번 돌려 최적 하이퍼파라미터를 찾는 Automatic Model Tuning(AMT)을 다룬다.
 
 ---
 

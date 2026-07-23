@@ -107,7 +107,7 @@ D) Amazon Forecast
 
 ---
 
-**문題 3.** Data science team wants to directly train custom ML model with company data, tune it, deploy it, and post-deployment monitor drift. Most fitting?
+**문제 3.** Data science team wants to directly train custom ML model with company data, tune it, deploy it, and post-deployment monitor drift. Most fitting?
 
 A) Amazon SageMaker  
 B) Amazon Q Business  

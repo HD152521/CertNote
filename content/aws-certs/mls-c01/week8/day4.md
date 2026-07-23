@@ -1,66 +1,66 @@
-# Day 4 - Learning Optimization: Batch Size, Learning Rate, Gradient Issues, Debugger/Profiler
+# Day 4 - 학습 최적화: 배치 크기·학습률, 그래디언트 문제, Debugger/Profiler
 
-Whether preprocessing is sound and overfitting is managed, "how do we stabilize convergence itself?" When models are stuck or collapsing, batch size, learning rate schedule, gradient problems often hide culprits. Today covers **batch size, learning rate with scheduling, vanishing/exploding gradients**, and SageMaker **Debugger** (learning quality) and **Profiler** (resource efficiency) that give visibility.
+과적합·과소적합이 "무엇을 학습하는가"의 문제였다면, 오늘은 "어떻게 잘 수렴시키는가"의 문제다. 같은 모델·데이터라도 배치 크기, 학습률 스케줄, 그래디언트 안정성에 따라 학습이 발산하거나, 안 움직이거나, 느리게 수렴한다. 또 SageMaker는 이 과정을 들여다보는 **Debugger**와 자원 효율을 보는 **Profiler**를 제공한다. 시험은 학습이 잘 안 될 때의 원인 진단과 도구 선택으로 출제한다.
 
-## Batch Size
+## 배치 크기(Batch Size)
 
-Number of samples used per weight update.
+한 번의 가중치 업데이트에 쓰는 샘플 수다.
 
-| Size | Advantages | Disadvantages |
+| 배치 크기 | 장점 | 단점 |
 |------|------|------|
-| **Small** (e.g., 32) | Noise helps gen, memory↓ | Updates frequent, can be slow, noisy |
-| **Large** (e.g., 1024+) | GPU utilization↑, stable | Memory↑, may miss good minimum, worse gen |
+| **작음**(예: 32) | 노이즈가 일반화에 도움, 메모리↓ | 업데이트 잦아 느릴 수 있음, 노이즈 큼 |
+| **큼**(예: 1024+) | GPU 활용↑, 업데이트 안정 | 메모리↑, 평탄 최소점 놓쳐 일반화 저하 가능 |
 
-- Bigger batch → usually increase LR too (linear scaling heuristic to keep convergence speed)
-- OOM (out of memory) often → reduce batch size or use gradient accumulation
+- 배치를 키우면 보통 학습률도 함께 키워야 수렴 속도가 유지된다(선형 스케일링 경험칙).
+- GPU 메모리 초과(OOM)의 흔한 원인이 과도한 배치 크기다 → 배치 축소 또는 gradient accumulation.
 
-> 💡 **Related Theory**: Small batch noise helps escape sharp minima toward flatter, better generalizing regions. Very large batches lose this exploration, generalizing worse. It's not just speed — batch size is optimization/generalization tradeoff.
+> 💡 **관련 이론**: 작은 배치의 그래디언트 잡음은 손실 표면의 날카로운 최소점을 빠져나와 더 평탄하고 일반화 좋은 영역으로 향하게 돕는다는 관점이 있다. 반대로 매우 큰 배치는 그래디언트가 정확해져 안정적이지만 이런 탐색성을 잃어 일반화가 떨어질 수 있다. 그래서 배치 크기는 단순 속도 문제가 아니라 최적화·일반화 트레이드오프다.
 
-## Learning Rate and Schedules
+## 학습률과 스케줄
 
-Most sensitive hyperparameter. How much to shift weights per step.
+학습률(learning rate)은 한 스텝에 가중치를 얼마나 움직일지다. 학습에서 가장 민감한 하이퍼파라미터.
 
 ```text
-Too large → loss diverges/oscillates (NaN loss)
-Too small → glacial convergence, local minima trap
-Just right → stable decrease
+너무 큼  → 손실이 발산하거나 진동(NaN loss)
+너무 작음 → 수렴이 매우 느리고 지역 최소에 갇힘
+적정     → 안정적으로 감소
 ```
 
-Schedules (adjust LR over time):
-- **Step decay**: Drop LR fixed ratio every N epochs
-- **Exponential decay**: Decay exponentially step-by-step
-- **Cosine annealing**: Smooth cosine curve decay
-- **Warmup**: Gently raise LR first steps, prevent initial instability (Transformers)
+학습률 스케줄(시간에 따라 학습률 조정):
+- **Step decay**: 일정 에폭마다 일정 비율로 감소.
+- **Exponential decay**: 지수적으로 점차 감소.
+- **Cosine annealing**: 코사인 곡선으로 부드럽게 감소.
+- **Warmup**: 초반에 작은 학습률에서 점차 키워 초기 불안정을 줄임(대형 모델·트랜스포머에서 흔함).
 
-Signal:
-- "NaN loss / diverge / oscillate" → LR **too large**
-- "Learning stalled / glacial" → LR **too small** or vanishing gradient
+판별 신호:
+- "손실이 NaN / 발산 / 크게 진동" → 학습률이 **너무 큼**.
+- "학습이 거의 안 움직임 / 너무 느림" → 학습률이 **너무 작음** 또는 그래디언트 소실.
 
-## Gradient Problems: Vanishing and Exploding
+## 그래디언트 문제: 소실과 폭발
 
-Deep backprop through multiplication → gradient magnitude changes.
+깊은 신경망에서 역전파 시 그래디언트가 곱해지며 생기는 문제다.
 
-| Problem | Symptom | Fix |
+| 문제 | 증상 | 대응 |
 |------|------|------|
-| **Vanishing gradient** | Front layers barely train, loss stuck | ReLU family activation, batch norm, residual (ResNet), proper init |
-| **Exploding gradient** | Loss NaN/diverges, weights blow up | **Gradient clipping**, lower LR, batch norm |
+| **Vanishing gradient(소실)** | 앞쪽 층이 거의 학습 안 됨, 손실 정체 | ReLU 계열 활성화, 배치 정규화, 잔차 연결(ResNet), 적절한 가중치 초기화 |
+| **Exploding gradient(폭발)** | 손실 NaN/발산, 가중치 급증 | **그래디언트 클리핑**, 학습률↓, 배치 정규화 |
 
 ```python
 hyperparameters = {
-    "gradient_clipping": 1.0,   # gradient norm ceiling
+    "gradient_clipping": 1.0,   # 그래디언트 노름 상한
     "lr_scheduler": "cosine",
 }
 ```
 
-> 💡 **Related Theory**: Sigmoid/tanh derivatives near 0 at saturations → chained multiplication shrinks to 0 (vanishing). ReLU derivative = 1 constantly → mitigates. Exploding is opposite: >1 values chain-multiply, diverge. Gradient clipping caps norm, batch norm and residual connections both help
+> 💡 **관련 이론**: 시그모이드·tanh는 포화 구간에서 미분값이 0에 가까워, 깊은 망에서 그래디언트가 연쇄적으로 0으로 수렴(소실)한다. ReLU는 양수 구간 미분이 1이라 이를 완화한다. 폭발은 반대로 1보다 큰 값이 연쇄 곱해져 발산하는 것이며, 그래디언트 클리핑으로 노름 상한을 둬 억제한다. 배치 정규화와 잔차 연결은 양쪽 문제 모두를 완화하는 구조적 장치다.
 
 ## SageMaker Debugger
 
-Real-time capture of tensors (gradients, weights, loss, activations) during training, **auto-detect anomalies**.
+학습 중 텐서(그래디언트, 가중치, 손실 등)를 캡처해 **학습 이상을 자동 탐지**한다.
 
-- **Built-in rules**: `vanishing_gradient`, `exploding_tensor`, `overfit`, `overtraining`, `loss_not_decreasing`, `class_imbalance`, `saturated_activation`
-- Rule breach → CloudWatch event → auto-alert or early-stop trigger
-- Tensors saved to S3 for post-hoc analysis
+- **내장 규칙(built-in rules)**: `vanishing_gradient`, `exploding_tensor`, `overfit`, `overtraining`, `loss_not_decreasing`, `class_imbalance`, `saturated_activation` 등.
+- 규칙 위반 시 CloudWatch 이벤트 발생 → 자동 알림이나 학습 조기 중단 트리거 가능.
+- 텐서를 S3에 저장해 사후 분석.
 
 ```python
 from sagemaker.debugger import Rule, rule_configs
@@ -72,37 +72,37 @@ rules = [
 est = Estimator(..., rules=rules)
 ```
 
-Signal: "Auto-detect gradient vanish/explode, overfit, training stall during run" → **Debugger**
+판별 신호: "학습 도중 그래디언트 소실/폭발·과적합·손실 정체를 자동으로 탐지·알림" → **Debugger**.
 
 ## SageMaker Profiler
 
-Analyze training's **system resource & performance bottlenecks** (not model quality, but efficiency).
+학습의 **시스템 자원·성능 병목**을 분석한다(모델 품질이 아니라 효율).
 
-- CPU/GPU utilization, GPU memory, I/O waits, data loading bottlenecks
-- "GPU underutilized, data loading is bottleneck, CPU bound" — diagnosis & recommendations
-- Cost optimization: inefficient instance usage → smaller/fewer instances suggested
+- CPU/GPU 사용률, GPU 메모리, I/O 대기, 데이터 로딩 병목 등 시스템 메트릭.
+- "GPU가 놀고 있다(저활용)", "데이터 로딩이 병목", "CPU 바운드" 같은 진단과 권고 리포트.
+- 비용 최적화: 인스턴스가 비효율적으로 쓰이면 더 작은/적은 인스턴스 권고.
 
-Signal:
-- "Training quality problem (vanish/explode/overfit)" → **Debugger**
-- "Resource utilization, bottleneck, GPU underuse, speed/cost inefficiency" → **Profiler**
+판별 신호:
+- "학습 품질 이상(소실/폭발/과적합)" → **Debugger**.
+- "자원 활용·병목·GPU 저활용·학습 속도/비용 비효율" → **Profiler**.
 
-## Additional Optimization Techniques
+## 학습 최적화 추가 기법
 
-- **Mixed Precision (FP16/BF16)**: Mem↓, speed↑. Useful large batch/big model
-- **Gradient Accumulation**: Pool small batches for large-batch effect — avoid OOM
-- **Checkpointing**: Long training, Spot interruption prep
+- **혼합 정밀도(Mixed Precision, FP16/BF16)**: 메모리↓, 속도↑. 큰 배치/대형 모델에 유용.
+- **그래디언트 누적(Gradient Accumulation)**: 작은 배치를 여러 번 모아 큰 배치 효과 — 메모리 제약 회피.
+- **체크포인트**: 긴 학습·Spot 중단 대비(Day1 연계).
 
-## Test Tips
+## 시험 팁
 
-- "NaN loss / diverge / oscillate" → excess LR or exploding gradient (clip)
-- "Front layers train barely / loss stuck" → vanishing gradient (ReLU, BN, residual, init)
-- "OOM" → batch shrink or gradient accum/mixed precision
-- **Tool trap**: Quality anomalies = Debugger, resource/bottleneck/cost = Profiler. This one line gathers ~80% right
-- Batch up → LR up too (scaling rule)
+- "NaN loss / 발산 / 진동" → 학습률 과다 또는 그래디언트 폭발(클리핑).
+- "앞쪽 층 학습 안 됨 / 손실 정체" → 그래디언트 소실(ReLU·BN·잔차·초기화).
+- "OOM" → 배치 크기 축소 또는 그래디언트 누적/혼합 정밀도.
+- 도구 함정: **품질 이상 = Debugger**, **자원·병목·비용 = Profiler**. 이 한 줄로 두 문제를 거의 다 가른다.
+- 배치를 키우면 학습률도 키워야 한다는 경험칙을 기억.
 
-## Summary
+## 정리하며
 
-Today: Learning stability — batch size, LR schedule, gradient issues, observability. Key: symptoms → root causes (vanish/explode/LR/memory) → **Debugger (quality), Profiler (efficiency)**. Next: comprehensive review — modeling's full pipeline
+오늘은 학습 수렴 자체를 다루는 최적화 — 배치 크기, 학습률 스케줄, 그래디언트 소실/폭발 — 와 이를 관찰하는 Debugger(품질)·Profiler(자원)를 정리했다. 핵심은 **증상으로 원인(학습률·그래디언트·메모리)을 짚고, 품질 문제는 Debugger·자원 문제는 Profiler로 대응**하는 것이다. 내일은 Week 8 전체(학습 작업·AMT·일반화·최적화)를 종합 복습하며 시험 관점으로 묶는다.
 
 ---
 

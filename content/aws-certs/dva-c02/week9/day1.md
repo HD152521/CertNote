@@ -1,24 +1,24 @@
-# Day 1 - KMS: Handling Encryption Keys Without Touching Them Directly
+# Day 1 - KMS: 암호화 키를 직접 만지지 않고 다루는 기술
 
-The first wall a developer learning encryption hits is not the algorithm itself, but the question **"where do I put the key?"**. Encrypting data with AES-256 takes one line of code, but the moment you try to decide where to store that 256-bit key, everything gets complicated. Hardcode it in code and it lives in git forever. Put it in an environment variable and it leaks on process dump. Put it in a file and then who guards that file? The old security industry saying rings true here: "the real problem with encryption is not encryption, but key management." AWS KMS (Key Management Service) solves this "key must never be exported in plaintext" problem with a single design principle.
+암호화를 처음 배우는 개발자가 가장 먼저 부딪히는 벽은 알고리즘이 아니라 **키를 어디에 둘 것인가**라는 질문이다. AES-256으로 데이터를 암호화하는 코드는 한 줄이면 되지만, 그 256비트 키를 어디 저장할지 정하는 순간 모든 게 복잡해진다. 키를 코드에 박으면 git에 영원히 남고, 환경변수에 두면 프로세스 덤프로 새고, 파일에 두면 그 파일을 또 누가 지키느냐는 무한 후퇴가 시작된다. "암호화의 진짜 문제는 암호화가 아니라 키 관리"라는 보안 업계의 오래된 격언은 정확히 이 지점을 가리킨다. AWS KMS(Key Management Service)는 바로 그 키 관리 문제를 "키를 절대 평문으로 밖에 내보내지 않는다"는 단 하나의 설계 원칙으로 풀어낸 서비스다.
 
-In the DVA-C02 exam, KMS appears as both a standalone topic and, more importantly, behind the encryption of nearly every storage service — S3, EBS, RDS, DynamoDB, Secrets Manager. Once you understand KMS's operation model — especially **Envelope Encryption** and the three-tier permission structure of key policies — half of the exam's security section solves itself. This article looks at why KMS was designed to keep keys inside, where the 4KB limit comes from, and how envelope encryption actually works to bypass that limit.
+DVA-C02 시험에서 KMS는 단독 주제로도 나오지만, 그보다 S3·EBS·RDS·DynamoDB·Secrets Manager 등 거의 모든 저장 서비스의 암호화 뒤에 KMS가 있기 때문에 더 중요하다. KMS의 동작 모델 — 특히 봉투 암호화(Envelope Encryption)와 키 정책의 3중 권한 구조 — 을 이해하면 시험의 보안 섹션 절반이 풀린다. 이번 글은 KMS가 왜 키를 밖으로 안 내보내도록 설계됐는지, 4KB 한도가 어디서 나온 숫자인지, 그리고 그 한도를 우회하는 봉투 암호화가 실제로 어떻게 동작하는지를 깊이 들여다본다.
 
-## The Problem KMS Set Out to Solve: Keys Must Never Leave the Boundary
+## KMS가 풀려고 한 문제: 키는 절대 밖으로 나가면 안 된다
 
-The core design decision of KMS is surprisingly simple. **The key material of a CMK (Customer Master Key) can never be extracted as plaintext via any API.** Call `kms:Encrypt` and KMS encrypts internally, returning only the ciphertext. Call `kms:Decrypt` and KMS decrypts internally, returning only the plaintext. The key itself exists only within the HSM (Hardware Security Module) boundary and never crosses it. This is the fundamental difference between KMS and traditional PKI tools where you create a key and download it as a file.
+KMS의 핵심 설계 결정은 의외로 단순하다. **CMK(Customer Master Key)의 키 재료(key material)는 어떤 API로도 평문으로 추출할 수 없다.** `kms:Encrypt`를 호출하면 KMS가 내부에서 암호화해 ciphertext만 돌려주고, `kms:Decrypt`를 호출하면 내부에서 복호화해 plaintext만 돌려준다. 키 자체는 HSM(Hardware Security Module) 경계 안에서만 존재하고 그 경계를 넘지 않는다. 이게 KMS와 "키를 만들어 파일로 다운로드받는" 전통적 PKI 도구의 근본적 차이다.
 
-> 💡 **Related theory**: This design implements the cryptographic principle of **key isolation** at cloud scale. FIPS 140-2 defines security levels 1-4 for cryptographic modules, and "keys do not cross the module boundary in plaintext" is a core requirement for Level 2 and above. KMS uses HSM validated to FIPS 140-2 Level 3 (on multi-tenant HSM, in some regions as of 2023). Making keys non-extractable is not sacrificing convenience but a direct consequence of the threat model: "what cannot be extracted cannot be exfiltrated."
+> 💡 **관련 이론**: 이 설계는 암호학의 **키 격리(key isolation)** 원칙을 클라우드 규모로 구현한 것이다. FIPS 140-2 표준은 암호화 모듈의 보안 수준을 Level 1~4로 나누는데, "키가 모듈 경계를 평문으로 넘지 않을 것"은 Level 2 이상의 핵심 요구사항이다. KMS는 멀티테넌트 HSM 위에서 FIPS 140-2 Level 3 검증을 받은 HSM(2023년부터 일부 리전)을 사용한다. 키를 추출 불가로 만든 건 편의를 희생한 게 아니라, "추출할 수 없는 것은 유출될 수 없다"는 위협 모델의 직접적 귀결이다.
 
-> 🔍 **Going deeper**: Intentionally, there is no `GetKeyMaterial` function in the KMS API. The **only** direction to retrieve keys is the opposite one — the Imported Key Material feature only lets you *put* your key *into* KMS. Even then, you must encrypt the key with KMS's public key (obtained from `GetParametersForImport`) before sending it, and once it's in, you cannot get it back out. In BYOK (Bring Your Own Key) scenarios where AWS cannot see the key, this one-directional property is preserved. Users keep the original in an external HSM and can delete the KMS copy at any time — this control is important for compliance customers.
+> 🔍 **더 깊이**: KMS API에는 `GetKeyMaterial` 같은 함수가 의도적으로 없다. 키를 가져오는 유일한 방향은 **반대 방향** — Imported Key Material 기능으로 사용자가 자기 키를 KMS *안으로* 넣을 수만 있다. 이때도 KMS의 공개키(`GetParametersForImport`로 받은 wrapping key)로 키를 암호화해 보내야 하고, 한 번 들어가면 다시 못 꺼낸다. AWS가 키를 못 보는 BYOK(Bring Your Own Key) 시나리오에서도 이 단방향성은 유지된다. 사용자가 외부 HSM에 원본을 보관하고 KMS의 복사본을 언제든 삭제할 수 있다는 게 컴플라이언스 고객에게 중요한 통제권이다.
 
-This "keys never escape" constraint becomes KMS's biggest limitation. Since every encryption and decryption must go through the KMS API call, directly encrypting large data via KMS means ① sending data over the network to KMS ② receiving it back. That's why KMS limits the maximum plaintext size that can be directly encrypted to **4KB**.
+이 "키가 안 나간다"는 제약이 곧 KMS의 가장 큰 한계로 이어진다. 모든 암호화·복호화가 KMS API 호출을 거쳐야 하므로, 큰 데이터를 직접 KMS로 암호화하면 ① 데이터를 네트워크로 KMS에 보냈다가 ② 다시 받아와야 한다. 그래서 KMS는 직접 암호화 가능한 데이터 크기를 **최대 4KB**로 제한한다.
 
-> ⚠️ **Trap**: "4KB" appears in almost every exam question. The maximum plaintext you can directly encrypt with `kms:Encrypt` is 4,096 bytes. Missing this leads to the trap of choosing direct `kms:Encrypt` for "how to encrypt a 10MB file with KMS." The answer is always envelope encryption. The 4KB limit reflects the design intent that KMS is "a tool to protect small secrets (data keys, passwords, tokens)" not "a tool to directly encrypt large data."
+> ⚠️ **함정**: "4KB"라는 숫자는 시험에 거의 매번 나온다. `kms:Encrypt`로 직접 암호화할 수 있는 평문은 최대 4096바이트다. 이걸 모르면 "10MB 파일을 KMS로 암호화하는 법"에서 `kms:Encrypt` 직접 호출을 고르는 함정에 빠진다. 정답은 항상 봉투 암호화다. 4KB가 한도인 이유는 KMS가 "작은 비밀(데이터 키, 패스워드, 토큰)을 보호하는 도구"이지 "대용량 데이터를 직접 암호화하는 도구"가 아니라는 설계 의도를 반영한다.
 
-## Envelope Encryption: A Two-Step Trick of Encrypting Keys with Keys
+## 봉투 암호화: 키로 키를 암호화하는 두 단계 트릭
 
-The elegant way to bypass the 4KB limit is to not ask KMS to encrypt the data directly. Instead, **create one disposable Data Encryption Key (DEK), then encrypt large data locally with that key**. KMS's master key (CMK) serves only one purpose: protecting (encrypting) that data key. Keys wrap around keys — hence the term "envelope" encryption.
+4KB 한도를 우회하는 방법은 우아하다. KMS에게 데이터를 직접 암호화해달라고 하지 말고, **일회용 데이터 키(DEK, Data Encryption Key)를 하나 만들어달라고** 한 뒤, 그 키로 큰 데이터를 로컬에서 직접 암호화하는 것이다. KMS의 마스터 키(CMK)는 오직 그 데이터 키를 보호(암호화)하는 데만 쓰인다. 키가 키를 감싼다는 의미에서 봉투(envelope) 암호화라 부른다.
 
 ```python
 import boto3, os
@@ -26,51 +26,51 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 kms = boto3.client('kms')
 
-# 1) Request one data key from KMS — receive both plaintext DEK and encrypted DEK simultaneously
+# 1) KMS에 데이터 키 한 개 요청 - 평문 DEK와 암호화된 DEK를 동시에 받는다
 resp = kms.generate_data_key(
     KeyId='alias/myapp-key',
     KeySpec='AES_256'
 )
-plaintext_dek  = resp['Plaintext']        # 32 bytes plaintext key (used for encryption)
-encrypted_dek  = resp['CiphertextBlob']   # Key encrypted with CMK (stored with data)
+plaintext_dek  = resp['Plaintext']        # 32바이트 평문 키 (암호화에 사용)
+encrypted_dek  = resp['CiphertextBlob']   # CMK로 암호화된 키 (데이터와 함께 저장)
 
-# 2) Encrypt large data locally with the plaintext DEK (no KMS call)
+# 2) 평문 DEK로 큰 데이터를 로컬에서 직접 암호화 (KMS 호출 없음)
 aesgcm = AESGCM(plaintext_dek)
 nonce  = os.urandom(12)
 ciphertext = aesgcm.encrypt(nonce, b'...10MB of data...', None)
 
-# 3) Immediately discard plaintext DEK from memory — this is the key point
+# 3) 평문 DEK를 메모리에서 즉시 폐기 - 이게 핵심
 del plaintext_dek
 
-# 4) Storage: [encrypted data + nonce + encrypted DEK]
-#    The encrypted DEK can only be decrypted by going through KMS Decrypt
+# 4) 저장: [암호화된 데이터 + nonce + 암호화된 DEK]
+#    암호화된 DEK는 평문으로 풀려면 반드시 KMS Decrypt를 거쳐야 함
 ```
 
-Decryption works exactly the reverse. Take the stored encrypted DEK, decrypt it with `kms:Decrypt` to get plaintext DEK briefly, decrypt the data locally with it, and discard the plaintext DEK again.
+복호화는 정확히 거꾸로다. 저장된 암호화된 DEK를 `kms:Decrypt`로 풀어 평문 DEK를 잠깐 받은 뒤, 그것으로 데이터를 로컬에서 복호화하고, 평문 DEK를 다시 폐기한다.
 
-> 💡 **Related theory**: This pattern did not originate with KMS but comes from the **hybrid encryption** lineage that PGP/GPG has used since 1991. PGP rapidly encrypts email with a symmetric key (session key) and encrypts only that session key with the recipient's RSA public key. Symmetric encryption is fast but key exchange is hard; asymmetric is easy to exchange but slow — hybrid combines them: "large data symmetric, small keys asymmetric (or protected master key)." Envelope encryption applies this idea to cloud key management, and S3 SSE-KMS, EBS volume encryption, and RDS encryption all use this internally.
+> 💡 **관련 이론**: 이 패턴은 KMS만의 발명이 아니라 PGP/GPG가 1991년부터 써온 **하이브리드 암호화**와 같은 계보다. PGP는 이메일을 대칭키(세션 키)로 빠르게 암호화하고, 그 세션 키만 수신자의 RSA 공개키로 암호화해 붙인다. 대칭 암호화는 빠르지만 키 교환이 어렵고, 비대칭 암호화는 키 교환이 쉽지만 느리다 — 둘을 합쳐 "큰 데이터는 대칭, 작은 키는 비대칭(또는 보호된 마스터 키)으로" 처리하는 게 하이브리드 암호화다. 봉투 암호화는 이 아이디어를 클라우드 키 관리에 옮긴 것이고, S3 SSE-KMS, EBS 볼륨 암호화, RDS 암호화가 전부 내부적으로 이 방식을 쓴다.
 
-> 🔍 **Going deeper**: The key insight is that `GenerateDataKey` returns both plaintext DEK and encrypted DEK **in a single call**. If they were separate, you'd need an API to fetch the plaintext DEK, which violates KMS's "never export keys plaintext" rule. AWS resolved this contradiction by deciding "data keys are not CMK" — the DEK is a one-time dependent key generated on the spot by the CMK. Being brief-lived and disposable, the plaintext DEK can briefly escape without breaking CMK isolation. The plaintext DEK must never touch disk because if it does, a plaintext key sits next to encrypted data, rendering encryption meaningless. That's why `GenerateDataKeyWithoutPlaintext` exists as a variant — receive only the encrypted DEK to store ahead, then plaintext-ify only at decryption time.
+> 🔍 **더 깊이**: `GenerateDataKey`가 평문 DEK와 암호화된 DEK를 **한 번의 호출로 동시에** 돌려주는 게 핵심이다. 만약 둘을 따로 받아야 한다면 평문 DEK를 받는 API가 필요한데, 그건 "키를 평문으로 내보낸다"는 KMS의 금기를 깬다. AWS는 이 모순을 "데이터 키는 CMK가 아니다"로 해결했다 — DEK는 CMK가 그 자리에서 생성한 일회용 종속 키이고, 평문 형태로 잠깐 나가도 곧 폐기되므로 CMK 자체의 격리는 깨지지 않는다. 평문 DEK가 절대 디스크에 닿으면 안 되는 이유가 여기 있다. 디스크에 남으면 암호화된 데이터 옆에 평문 키가 같이 저장돼 암호화가 무의미해진다. 그래서 `GenerateDataKeyWithoutPlaintext`라는 변종도 있는데, 암호화된 DEK만 받아 미리 저장해두고 나중에 복호화 시점에만 평문화하는 용도다.
 
-> 📚 **Case study**: S3 SSE-KMS workloads handling millions of objects hit KMS API limits if calling `GenerateDataKey` per object. AWS's **S3 Bucket Key** (introduced 2020) solved this by adding one more layer to envelope encryption — creating a bucket-level key cached briefly to reduce per-object DEK generation KMS calls by 99%. Stacking the "keys wrap keys" idea one layer deeper, it dramatically lowered KMS costs in bulk-object environments.
+> 📚 **사례**: S3 SSE-KMS에서 객체 수백만 개를 한꺼번에 다루는 워크로드는 객체마다 `GenerateDataKey`를 호출하면 KMS API 한도에 부딪힌다. AWS가 2020년 도입한 **S3 Bucket Key**는 이 문제를 봉투 암호화의 한 단계를 더 추가해 해결했다 — 버킷 수준에서 짧은 시간 캐싱되는 버킷 키를 만들어 객체별 DEK 생성 시 KMS 호출을 99%까지 줄인다. 봉투 암호화의 "키로 키를 감싼다"는 발상을 한 겹 더 쌓은 셈이고, 대량 객체 환경에서 KMS 비용을 극적으로 낮춘 실제 패턴이다.
 
-## Key Types: Who Owns and Controls the Key
+## 키 유형: 누가 키를 소유하고 통제하는가
 
-KMS keys split into three types based on who creates and controls the policy. This distinction is a frequent exam trap.
+KMS의 키는 "누가 만들고 누가 정책을 통제하느냐"에 따라 세 가지로 나뉜다. 이 구분이 시험 함정의 단골 소재다.
 
-| Type | Cost | Key Policy Control | Auto Rotation | Use Case |
+| 유형 | 비용 | 키 정책 제어 | 자동 회전 | 사용처 |
 |------|------|--------------|-----------|--------|
-| **AWS Owned Key** | Free | Not visible | Managed by AWS | Internal encryption not exposed to customers |
-| **AWS Managed Key** (`aws/<service>`) | Free | View only | Automatic (1 year) | S3·RDS default encryption |
-| **Customer Managed Key (CMK)** | $1/month + API | Full control | Optional (1 year) | Fine-grained permissions and audit |
+| **AWS Owned Key** | 무료 | 보이지 않음 | AWS가 관리 | 고객에게 노출 안 되는 내부 암호화 |
+| **AWS Managed Key** (`aws/<service>`) | 무료 | 보기만 가능 | 자동 (1년) | S3·RDS 등 서비스 기본 암호화 |
+| **Customer Managed Key (CMK)** | $1/월 + API | 완전 제어 | 옵션 (1년) | 세밀한 권한·감사가 필요한 경우 |
 
-> ⚠️ **Trap**: AWS Managed Key auto-rotation period is **365 days (1 year)**. Pre-May 2022 materials say "3 years (1095 days)"; AWS changed policy and now it's 1 year. Old questions may linger in test banks, so pick 1 year when "AWS Managed Key rotation period" appears. CMK auto-rotation also defaults to 1 year, and since 2024, custom periods (90–2560 days) are configurable.
+> ⚠️ **함정**: AWS Managed Key의 자동 회전 주기는 **365일(1년)** 이다. 2022년 5월 이전 자료에는 "3년(1095일)"로 적혀 있는데, AWS가 정책을 바꿔 이제는 1년이다. 시험 문제 은행에 옛 정보가 남아 있을 수 있으니 "AWS Managed Key 회전 주기"가 나오면 1년을 고른다. CMK의 자동 회전도 기본 1년이며, 2024년부터는 사용자 지정 주기(90~2560일)도 설정할 수 있게 됐다.
 
-> 🔍 **Going deeper**: Key rotation does not "create a new key" but rather **adds new key material (backing key)**. Rotating a CMK keeps the ARN, Key ID, and alias — only the backing key changes. New encryptions use the new backing key; already-encrypted data auto-decrypts with its original backing key because KMS records which backing key was used in the ciphertext header. Post-rotation, old data does not need re-encryption, and application code seeing only the ARN changes nothing. This answers the common misunderstanding "won't old data become unreadable after rotation?"
+> 🔍 **더 깊이**: 키 회전이 "키를 새로 만든다"가 아니라는 점이 중요하다. CMK를 회전하면 **새 키 재료(backing key)가 추가**되지만, 키의 ARN·키 ID·alias는 그대로다. 새로 암호화하는 데이터는 새 backing key로, 이미 암호화된 데이터는 그것을 만든 옛 backing key로 자동 복호화된다 — KMS가 ciphertext 헤더에 어느 backing key를 썼는지 기록해두기 때문이다. 그래서 회전 후에도 옛 데이터를 다시 암호화할 필요가 없고, 애플리케이션 코드도 ARN만 참조하므로 바뀔 게 없다. 이게 "회전했는데 옛 데이터를 못 읽는 것 아니냐"는 흔한 오해에 대한 답이다.
 
-## Key Policy + IAM + Grant: KMS's Three-Tier Permission Model
+## 키 정책 + IAM + Grant: KMS의 3중 권한 모델
 
-The decisive point where KMS differs from other AWS services is that **key policy is the final authority on permissions**. Most services control access via IAM policy alone, but KMS adds a key policy on the key itself that decides "does this key delegate to IAM permissions at all?"
+KMS 권한이 다른 AWS 서비스와 다른 결정적 지점은 **키 정책(Key Policy)이 권한의 최종 권위**라는 점이다. 대부분의 서비스는 IAM 정책만으로 접근을 통제하지만, KMS는 키 자체에 붙은 키 정책이 "이 키에 IAM 권한을 위임할지" 여부까지 결정한다.
 
 ```json
 {
@@ -82,122 +82,122 @@ The decisive point where KMS differs from other AWS services is that **key polic
 }
 ```
 
-**If this statement is absent from the key policy**, even if IAM policy allows `kms:Decrypt`, it has no effect. Allowing the `root` principal means "I grant this account's IAM policy decision-making authority"; without it, only principals explicitly named in the key policy can use the key.
+이 statement가 키 정책에 **없으면**, IAM 정책에서 아무리 `kms:Decrypt`를 허용해도 효력이 없다. `root` principal을 허용한다는 건 "이 계정의 IAM 정책에 권한 위임을 인정한다"는 선언이고, 이게 빠지면 키 정책에 명시된 principal만 키를 쓸 수 있다.
 
-> ⚠️ **Trap**: "I gave `kms:*` in IAM policy but access is denied?" is a frequent exam scenario. Answer: the key policy lacks the IAM delegation statement. The default key policy includes this statement automatically, but writing a custom policy and omitting it results in "key lockout" — even the creator cannot use the key. So the answer is always "both key policy AND IAM policy required," never "IAM policy alone is enough."
+> ⚠️ **함정**: "IAM 정책으로 `kms:*`를 줬는데 왜 접근이 안 되는가?"는 시험에 자주 나오는 시나리오다. 답은 키 정책에 IAM 위임 statement가 없기 때문이다. 기본 키 정책에는 이 statement가 자동으로 들어가지만, 커스텀 키 정책을 작성하면서 빠뜨리면 키를 만든 본인조차 못 쓰는 "키 잠금(key lockout)" 상태가 된다. 그래서 항상 "키 정책 + IAM 정책 둘 다 필요"가 정답이지 "IAM 정책만으로 충분"은 오답이다.
 
-The third axis, **Grant**, is a code-based way to grant temporary, fine-grained permissions. Without touching Key Policy or IAM, issue one-off permissions like "this principal can only Decrypt with this key, under this condition."
+세 번째 축인 **Grant**는 코드로 임시·세밀한 권한을 부여하는 방법이다. Key Policy나 IAM을 건드리지 않고 "이 principal이 이 키로 `Decrypt`만, 이 조건에서만" 같은 일회성 권한을 발급한다.
 
-> 🔍 **Going deeper**: Grant is often used internally when AWS services must use a key on the user's behalf. For example, attaching an encrypted EBS volume to EC2 causes the EC2 service to obtain a temporary Grant for that volume's CMK to decrypt at boot. Users do not need to modify key policies directly; the service creates minimal-permission Grants as needed, then deletes them when done. Grant is an excellent pattern for "least privilege, short-lived" enforcement when Lambda must temporarily use a key on behalf of another user.
+> 🔍 **더 깊이**: Grant는 AWS 서비스가 사용자 대신 키를 써야 할 때 내부적으로 자주 쓰인다. 예를 들어 암호화된 EBS 볼륨을 EC2에 붙이면, EC2 서비스가 그 볼륨의 CMK에 대해 임시 Grant를 받아 부팅 시 복호화한다. 사용자가 키 정책을 직접 고칠 필요 없이, 서비스가 필요한 순간 최소 권한 Grant를 만들고 작업이 끝나면 폐기하는 패턴이다. Grant는 "최소 권한, 짧은 수명"을 코드로 강제하기 좋은 메커니즘이라 Lambda가 다른 사용자 대신 일시적으로 키를 써야 하는 시나리오에서도 등장한다.
 
-## KMS API Limits and Asymmetric Keys
+## KMS API 한도와 비대칭 키
 
-A single CMK's encryption API throughput is limited per region and key type (symmetric keys typically support thousands per second; large regions like us-east-1 go higher). Exceeding the limit raises `ThrottlingException`. This is the second reason envelope encryption reduces KMS calls — reusing and caching DEK avoids API explosion.
+CMK 한 개의 암호화 API 처리량에는 리전·키 타입별 한도가 있다(대칭 키는 보통 초당 수만 건, us-east-1 등 큰 리전은 더 높다). 이 한도를 넘으면 `ThrottlingException`이 발생한다. 봉투 암호화가 KMS 호출을 줄여주는 두 번째 이유가 여기 있다 — 데이터마다 KMS를 호출하지 않고 DEK를 재사용·캐싱하면 API 호출 폭증을 막을 수 있다.
 
-KMS supports both symmetric and asymmetric keys.
+KMS는 대칭 키(AES-256) 외에 비대칭 키도 지원한다.
 
-| Key Spec | Type | Purpose |
-|----------|------|--------|
-| `SYMMETRIC_DEFAULT` (AES-256) | Symmetric | General encryption (most cases) |
-| `RSA_2048` / `RSA_3072` / `RSA_4096` | Asymmetric | Encryption + sign/verify |
-| `ECC_NIST_P256` / `P384` | Asymmetric | Sign/verify only (no encryption) |
-| `HMAC_*` | Symmetric MAC | Generate/verify message auth code |
+| Key Spec | 종류 | 용도 |
+|----------|------|------|
+| `SYMMETRIC_DEFAULT` (AES-256) | 대칭 | 일반 암호화 (대부분) |
+| `RSA_2048` / `RSA_3072` / `RSA_4096` | 비대칭 | 암호화 + 서명/검증 |
+| `ECC_NIST_P256` / `P384` | 비대칭 | 서명/검증만 (암호화 불가) |
+| `HMAC_*` | 대칭 MAC | 메시지 인증 코드 생성/검증 |
 
-> ⚠️ **Trap**: ECC (elliptic curve) keys can **only sign and verify, not encrypt**. ECDSA is a signing algorithm, not an encryption algorithm. If you need asymmetric encryption, pick RSA. Also, asymmetric keys can export the public key via `GetPublicKey`, enabling external systems to encrypt with the public key and KMS to decrypt with the private key — unlike symmetric keys, the public key is not isolation-protected.
+> ⚠️ **함정**: ECC(타원곡선) 키는 **서명·검증만 되고 암호화는 안 된다**. ECDSA는 서명 알고리즘이지 암호화 알고리즘이 아니기 때문이다. "데이터를 비대칭 키로 암호화"가 필요하면 RSA를 골라야 한다. 또 비대칭 키는 공개키를 `GetPublicKey`로 내보낼 수 있어, 외부 시스템이 공개키로 암호화하고 KMS 안에서만 개인키로 복호화하는 시나리오가 가능하다 — 대칭 키와 달리 공개키는 격리 대상이 아니다.
 
-## Multi-Region Key and Key Deletion Safeguards
+## Multi-Region Key와 키 삭제의 안전장치
 
-By default, a CMK is region-bound. Data encrypted in ap-northeast-2 cannot be decrypted by KMS in another region. For multi-region workloads (S3 Cross-Region Replication, DynamoDB Global Tables), **Multi-Region Key** maintains the same key ID across replicas in multiple regions, allowing decryption in a different region of data encrypted in one.
+기본 CMK는 리전에 종속된다. ap-northeast-2에서 암호화한 데이터는 다른 리전의 KMS로는 복호화할 수 없다. 멀티 리전 워크로드(S3 Cross-Region Replication, DynamoDB Global Tables)에서 이게 걸림돌이 되므로, **Multi-Region Key**는 같은 키 ID를 가진 복제본을 여러 리전에 두어 한 리전에서 암호화한 것을 다른 리전에서 복호화할 수 있게 한다.
 
-Key deletion has strong safeguards. Calling `ScheduleKeyDeletion` does not delete immediately; instead, a **7–30 day waiting period** begins. During this time, the key is `PendingDeletion` (unusable) but can be cancelled via `CancelKeyDeletion`.
+키 삭제에는 강력한 안전장치가 있다. `ScheduleKeyDeletion`을 호출하면 즉시 삭제되지 않고 **7~30일의 대기 기간(waiting period)** 이 시작된다. 이 기간 동안 키는 `PendingDeletion` 상태로 사용 불가지만 취소(`CancelKeyDeletion`)는 가능하다.
 
-> 💡 **Related theory**: Making keys non-immediately-deletable exemplifies a safety-design pattern: "add time delay to irreversible destructive operations." Deleting a CMK permanently makes all data encrypted with it irrecoverable — backups are useless. A 7–30 day grace window provides a window to undo accidents or malice. The same philosophy underlies S3 object version MFA Delete and RDS final snapshot requirements. Note: there is no immediate-deletion option at all.
+> 💡 **관련 이론**: 키를 즉시 못 지우게 한 건 "되돌릴 수 없는 파괴적 작업에 시간 지연을 둔다"는 안전 설계의 전형이다. CMK가 삭제되면 그 키로 암호화된 모든 데이터가 영구히 복호화 불가능해진다 — 백업도 소용없다. 이런 비가역적 작업에 7~30일의 유예를 둬 실수나 악의적 삭제를 되돌릴 창을 제공한다. S3 객체 버전 삭제의 MFA Delete, RDS의 최종 스냅샷 강제와 같은 철학이다. 즉시 삭제 옵션이 아예 없다는 점이 시험 포인트다.
 
-## CloudHSM and KMS's Boundary: When KMS Isn't Enough
+## CloudHSM과의 경계: 언제 KMS로 부족한가
 
-KMS runs on multi-tenant HSM — multiple customers' keys are logically isolated but share physical hardware. Heavily regulated industries (certain financial, government) demand "hardware dedicated to my keys only." Enter CloudHSM.
+KMS는 멀티테넌트 HSM 위에서 동작한다 — 여러 고객의 키가 논리적으로는 격리되지만 물리적 HSM은 공유된다. 규제가 매우 강한 산업(특정 금융·정부)에서는 "내 키 전용 하드웨어"가 요구되기도 한다. 이때 쓰는 게 CloudHSM이다.
 
-| Item | KMS | CloudHSM |
+| 항목 | KMS | CloudHSM |
 |------|-----|----------|
-| Management | Fully managed | Customer-managed (cluster operations) |
-| Isolation | Multi-tenant (logical) | Single-tenant (dedicated HW) |
-| Standard | FIPS 140-2 Level 2–3 | FIPS 140-2 Level 3 |
+| 관리 | 완전 관리형 | 고객 관리(클러스터 운영) |
+| 격리 | 멀티테넌트(논리적) | 싱글테넌트(전용 HW) |
+| 표준 | FIPS 140-2 Level 2~3 | FIPS 140-2 Level 3 |
 | API | AWS SDK | PKCS#11, JCE, KSP |
-| Cost | $1/key + API | Instance hour billing |
+| 비용 | 키당 $1 + API | 인스턴스당 시간 과금 |
 
-> 🔍 **Going deeper**: KMS can connect CloudHSM as a **custom key store**. This means key material lives in the user's dedicated CloudHSM cluster while remaining accessible via the familiar KMS API — the actual crypto operations happen on dedicated hardware. Combining "KMS convenience + CloudHSM dedicated isolation." If "keys must be on AWS-invisible dedicated HW" in a regulatory context appears on the exam, CloudHSM (or KMS custom key store) is the answer; general "managed key encryption" is KMS.
+> 🔍 **더 깊이**: KMS는 CloudHSM을 **custom key store**로 연결할 수 있다. 이러면 키 재료는 사용자 전용 CloudHSM 클러스터에 보관되고, 평소엔 친숙한 KMS API로 호출하되 실제 암호 연산은 전용 HW에서 일어난다. "KMS의 편의 + CloudHSM의 전용 격리"를 합치는 패턴이다. 시험에서 "키를 AWS가 절대 볼 수 없어야 하고 전용 HW가 필요하다"는 규제 시나리오가 나오면 CloudHSM(또는 KMS custom key store)이 정답이고, 일반적인 "관리형 키 암호화"는 KMS다.
 
-## Hands-On with CLI
+## CLI로 만져보기
 
 ```bash
-# 1) Create CMK + assign alias
+# 1) CMK 생성 + alias 부여
 aws kms create-key --description "myapp prod key"
 aws kms create-alias --alias-name alias/myapp-key --target-key-id <key-id>
 
-# 2) Enable auto rotation (1 year)
+# 2) 자동 회전 활성화 (1년)
 aws kms enable-key-rotation --key-id alias/myapp-key
 aws kms get-key-rotation-status --key-id alias/myapp-key
 
-# 3) Issue data key for envelope encryption
+# 3) 봉투 암호화용 데이터 키 발급
 aws kms generate-data-key --key-id alias/myapp-key --key-spec AES_256
 
-# 4) Direct encryption for ≤4KB (e.g., config token)
+# 4) 4KB 이하 직접 암호화 (예: 설정 토큰)
 aws kms encrypt --key-id alias/myapp-key --plaintext fileb://token.bin --output text --query CiphertextBlob
 
-# 5) Schedule key deletion (minimum 7 days' wait)
+# 5) 키 삭제 예약 (최소 7일 대기)
 aws kms schedule-key-deletion --key-id <key-id> --pending-window-in-days 7
 ```
 
-## Wrapping Up
+## 정리하며
 
-KMS's problem was "keep keys in plaintext out while making encryption convenient." That constraint created the 4KB limit, and bypassing it with envelope encryption became the standard for all AWS storage encryption. Key policy is the final permission authority; missing the IAM delegation statement locks the key. Key deletion has 7–30 days' grace. ECC handles signing only; RSA handles encryption. These subtle differences are exam trap cores.
+KMS가 풀려던 문제는 "키를 절대 평문으로 밖에 내보내지 않으면서도 암호화를 편하게 쓰게 하기"였다. 그 제약에서 4KB 한도가 나왔고, 그 한도를 우회하는 봉투 암호화가 AWS 전체 저장 암호화의 표준이 됐다. 권한은 키 정책이 최종 권위이며 IAM 위임 statement가 빠지면 키가 잠긴다는 점, 키 삭제에 7~30일 유예가 있다는 점, ECC는 서명만 되고 암호화는 RSA라는 점 — 이 미세한 차이들이 시험 함정의 핵심이다.
 
-Next we look at Secrets Manager and Parameter Store, layering on top of KMS to handle secret storage and even **automatic rotation**.
+다음 글에서는 KMS 위에 한 겹 더 얹혀, 비밀의 저장과 **자동 회전**까지 책임지는 Secrets Manager와, 더 가볍고 계층적인 Parameter Store를 본다.
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** To encrypt a 10MB file with KMS, what is the correct method?
+**문제 1.** 10MB 파일을 KMS로 암호화하려 한다. 올바른 방법은?
 
-A) Encrypt the file directly with `kms:Encrypt` API
-B) Use `GenerateDataKey` to get a data key, then perform envelope encryption locally
-C) Split the file into 4KB chunks and call `kms:Encrypt` for each
-D) KMS cannot do it; create an AES key directly and store it in the file
-
-**정답: B**
-
-해설: The maximum plaintext that can be directly encrypted with `kms:Encrypt` is **4KB**. 10MB far exceeds this limit, so envelope encryption is required — call `GenerateDataKey` to receive both plaintext DEK and encrypted DEK, encrypt the large data locally with the plaintext DEK, then immediately discard it. C) Splitting into chunks and calling KMS repeatedly causes API limit exhaustion and cost explosion. D) Managing keys manually is an anti-pattern. The 4KB limit reflects KMS's design intent: "tool to protect small secrets," not "tool to directly encrypt large data."
-
----
-
-**문제 2.** You allowed `kms:Decrypt` in IAM policy on a Customer Managed Key, yet decryption is denied. What is the most likely cause?
-
-A) The CMK is asymmetric
-B) The key policy lacks an IAM delegation (root principal Allow) statement
-C) Key rotation is disabled
-D) The region is not us-east-1
+A) `kms:Encrypt` API로 파일을 직접 암호화
+B) `GenerateDataKey`로 데이터 키를 받아 로컬에서 암호화하는 봉투 암호화
+C) 파일을 4KB 조각으로 나눠 각각 `kms:Encrypt` 호출
+D) KMS로는 불가능, 직접 AES 키를 만들어 파일에 저장
 
 **정답: B**
 
-해설: KMS makes key policy the final authority. Without a `Principal: {"AWS": "...:root"}` IAM delegation statement in the key policy, even `kms:Decrypt` in IAM policy has no effect. This statement is auto-included in the default key policy but easy to omit when writing custom policy — resulting in "key lockout." The correct answer is always "both key policy AND IAM policy required." A) Asymmetric keys can still Decrypt. C) Rotation is unrelated to permissions. D) Region enforcement is CloudFront ACM, not KMS decryption.
+해설: `kms:Encrypt`로 직접 암호화할 수 있는 평문은 **최대 4KB**다. 10MB는 이 한도를 크게 넘으므로 봉투 암호화를 써야 한다 — `GenerateDataKey`로 평문 DEK와 암호화된 DEK를 동시에 받아, 평문 DEK로 큰 데이터를 로컬에서 암호화하고 평문 DEK는 즉시 폐기한다. C)처럼 조각내 매번 KMS를 호출하면 API 한도와 비용 폭증을 부른다. D)는 키 관리를 사용자가 떠안는 안티패턴. 4KB 한도는 KMS가 "작은 비밀을 보호하는 도구"라는 설계 의도의 반영이다.
 
 ---
 
-**문제 3.** What is the auto-rotation period for AWS Managed Key (`aws/s3`, etc.)?
+**문제 2.** Customer Managed Key에 대해 IAM 정책으로 `kms:Decrypt`를 허용했는데도 복호화가 거부된다. 가장 가능성 높은 원인은?
 
-A) 90 days
-B) 1 year (365 days)
-C) 3 years (1095 days)
-D) Does not rotate
+A) CMK가 비대칭 키여서
+B) 키 정책에 IAM 권한 위임(root principal Allow) statement가 없어서
+C) 키 회전이 비활성화돼서
+D) 리전이 us-east-1이 아니어서
 
 **정답: B**
 
-해설: AWS Managed Key auto-rotates every **1 year (365 days)**. Before May 2022, it was 3 years (1095 days), but AWS changed policy. Old study materials or test banks may contain "3 years"; watch for that. CMK default auto-rotation is also 1 year, and since 2024, custom periods (90–2560 days) are available. Rotation adds new backing key material but keeps the ARN, Key ID, and alias, so old data does not need re-encryption post-rotation.
+해설: KMS는 키 정책이 권한의 최종 권위다. 키 정책에 `Principal: {"AWS": "...:root"}` 형태의 IAM 위임 statement가 없으면, IAM 정책에서 아무리 `kms:Decrypt`를 허용해도 효력이 없다. 기본 키 정책에는 이 statement가 자동으로 들어가지만 커스텀 정책 작성 시 빠뜨리기 쉽다. 그래서 KMS 접근은 항상 "키 정책 + IAM 정책 둘 다 필요"가 정답이다. A) 비대칭이어도 Decrypt 자체는 가능. C) 회전은 권한과 무관. D) 리전 강제는 CloudFront ACM 인증서 이야기지 KMS 복호화와 무관.
 
 ---
 
-**문제 4.** Data must be encrypted with an **asymmetric key**. Which KMS Key Spec fits?
+**문제 3.** AWS Managed Key(`aws/s3` 등)의 자동 키 회전 주기는?
+
+A) 90일
+B) 1년(365일)
+C) 3년(1095일)
+D) 회전하지 않음
+
+**정답: B**
+
+해설: AWS Managed Key의 자동 회전은 **1년(365일)** 이다. 2022년 5월 이전에는 3년(1095일)이었으나 AWS가 정책을 변경했다. 옛 학습 자료나 문제 은행에 "3년"이 남아 있을 수 있으니 주의한다. CMK의 기본 자동 회전도 1년이며, 2024년부터 사용자 지정 주기(90~2560일) 설정도 가능해졌다. 회전은 새 backing key를 추가할 뿐 ARN·키 ID·alias는 그대로라, 회전 후에도 옛 데이터를 다시 암호화할 필요가 없다.
+
+---
+
+**문제 4.** 데이터를 **비대칭 키로 암호화**해야 하는 요구사항이 있다. 적합한 KMS Key Spec은?
 
 A) `ECC_NIST_P256`
 B) `RSA_2048`
@@ -206,43 +206,43 @@ D) `SYMMETRIC_DEFAULT`
 
 **정답: B**
 
-해설: Asymmetric encryption requires RSA keys. ECC (elliptic curve) keys can **only sign and verify, cannot encrypt** — ECDSA is a signing algorithm. C) HMAC is symmetric MAC for generating/verifying message auth codes. D) SYMMETRIC_DEFAULT is symmetric (AES-256), not "asymmetric." Asymmetric RSA keys allow exporting the public key via `GetPublicKey`, enabling external encryption and KMS-only decryption.
+해설: 비대칭 암호화가 필요하면 RSA 키여야 한다. ECC(타원곡선) 키는 **서명·검증만 가능하고 암호화는 불가능**하다 — ECDSA가 서명 알고리즘이기 때문이다. C) HMAC은 메시지 인증 코드(MAC) 생성·검증용 대칭 키. D) SYMMETRIC_DEFAULT는 대칭(AES-256)이라 "비대칭" 요구를 충족하지 못한다. 비대칭 RSA 키는 공개키를 `GetPublicKey`로 내보내 외부에서 암호화하고 KMS 안에서만 복호화하는 패턴에 쓰인다.
 
 ---
 
-**문제 5.** A production CMK that must not be deleted is in a deletion request. How does KMS respond?
+**문제 5.** 실수로 삭제하면 안 되는 프로덕션 CMK가 있다. 키를 삭제 요청했을 때 KMS의 동작은?
 
-A) Immediately and permanently deleted
-B) Enters a 7–30 day waiting period; can be cancelled during this time
-C) Automatic backup is created; recovery is possible anytime
-D) Deleted immediately after IAM admin approval
+A) 즉시 영구 삭제된다
+B) 7~30일 대기 기간 후 삭제되며, 대기 중 취소할 수 있다
+C) 백업본이 자동 생성되어 언제든 복구 가능하다
+D) IAM 관리자 승인 후 즉시 삭제된다
 
 **정답: B**
 
-해설: `ScheduleKeyDeletion` does not delete immediately but starts a **7–30 day waiting period**. During this window, the key is `PendingDeletion` (unusable) but can be recovered via `CancelKeyDeletion`. Deleting a CMK makes all data encrypted with it permanently irrecoverable (backups are useless), so a waiting period provides a safety window against accidents or malice. No immediate-deletion option exists. C) KMS does not auto-create key backups.
+해설: `ScheduleKeyDeletion`은 즉시 삭제하지 않고 **7~30일의 대기 기간**을 둔다. 이 기간 동안 키는 `PendingDeletion` 상태(사용 불가)이지만 `CancelKeyDeletion`으로 취소할 수 있다. CMK가 삭제되면 그 키로 암호화된 모든 데이터가 영구 복호화 불가가 되므로(백업도 소용없음), 비가역적 작업에 유예를 두는 안전 설계다. 즉시 삭제 옵션은 존재하지 않는다. C) KMS는 키 백업을 자동 생성하지 않는다.
 
 ---
 
-**문제 6.** An S3 SSE-KMS workload encrypts millions of objects daily and hits KMS API throttling. What is the best way to cut costs and calls?
+**문제 6.** S3 SSE-KMS로 매일 수백만 개의 객체를 암호화하는 워크로드가 KMS API throttling에 걸린다. 비용과 호출을 줄이는 가장 적합한 방법은?
 
-A) Switch the CMK to asymmetric
-B) Enable S3 Bucket Key
-C) Increase key rotation period
-D) Split objects into ≤4KB pieces
+A) CMK를 비대칭 키로 변경
+B) S3 Bucket Key 활성화
+C) 키 회전 주기를 늘림
+D) 객체를 4KB 이하로 분할
 
 **정답: B**
 
-해설: S3 Bucket Key adds a bucket-level cache layer to envelope encryption, cutting per-object `GenerateDataKey` KMS calls by up to 99%. The standard pattern for bulk-object KMS cost and throttling relief. A) Asymmetric keys have lower throughput — counterproductive. C) Rotation period is unrelated to call frequency. D) 4KB splitting explodes calls instead. "S3 + KMS cost/limit" appearing means Bucket Key is the answer.
+해설: S3 Bucket Key는 봉투 암호화에 버킷 수준 캐시 키를 한 겹 더 추가해 객체별 `GenerateDataKey` KMS 호출을 최대 99%까지 줄인다. 대량 객체 환경에서 KMS 비용과 throttling을 모두 해소하는 표준 패턴이다. A) 비대칭 키는 처리량이 더 낮아 역효과. C) 회전 주기는 호출 빈도와 무관. D) 4KB 분할은 호출 수를 오히려 폭증시킨다. "S3 + KMS 비용/한도 절감"이 보이면 Bucket Key가 정답이다.
 
 ---
 
-**문제 7.** Regulations require storing keys on **dedicated hardware** that AWS cannot access. What is the right choice?
+**문제 7.** 규제 요구사항상 키를 **전용 하드웨어**에 보관하고 AWS도 키 재료에 접근할 수 없어야 한다. 적합한 선택은?
 
 A) KMS Customer Managed Key
 B) KMS AWS Managed Key
-C) CloudHSM (or KMS custom key store)
+C) CloudHSM(또는 KMS custom key store로 연결)
 D) Secrets Manager
 
 **정답: C**
 
-해설: KMS keys run on multi-tenant HSM (logical isolation). "Dedicated HW + AWS no access" satisfies only CloudHSM (single-tenant, FIPS 140-2 Level 3). Connecting CloudHSM as KMS **custom key store** keeps keys on dedicated HW while maintaining familiar KMS API — meeting both requirements. A·B) KMS keys are multi-tenant, missing the "dedicated" requirement. D) Secrets Manager stores secrets, not HSM-isolated keys.
+해설: KMS는 멀티테넌트 HSM(논리적 격리) 위에서 동작한다. "전용 하드웨어 + AWS도 키 접근 불가"라는 강한 규제 요구는 싱글테넌트 전용 HW인 CloudHSM(FIPS 140-2 Level 3)으로 충족한다. KMS의 custom key store로 CloudHSM을 연결하면 친숙한 KMS API를 쓰면서 키는 전용 HW에 보관할 수 있다. A·B) KMS 키는 멀티테넌트라 "전용 HW" 요구를 못 채운다. D) Secrets Manager는 비밀 저장 서비스이지 키 격리 HW가 아니다.

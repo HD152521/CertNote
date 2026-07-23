@@ -153,7 +153,7 @@ C) Trace 1/minute
 
 D) Trace only first 1 second
 
-**정答: B**
+**정답: B**
 
 해설: `fixed_target` is "guaranteed traces per second"; `rate` is "ratio applied to remaining requests." Low-traffic services (1 req/sec) with 5% alone sample every ~20 seconds (useless). `fixed_target: 1` keeps minimum sample even when traffic is light. High-traffic gets 1 guarantee plus 5%, preventing explosion. The split balances scales.
 

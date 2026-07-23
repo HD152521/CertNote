@@ -77,7 +77,7 @@ From next session, we'll see AWS's domain-specific managed AI services (Rekognit
 
 ## 📝 연습 문제
 
-**问题 1.** A team wants to directly train a custom predictive model using their company's unique data and continuously monitor model quality post-deployment. What is the most appropriate service?
+**문제 1.** A team wants to directly train a custom predictive model using their company's unique data and continuously monitor model quality post-deployment. What is the most appropriate service?
 
 A) Amazon Bedrock  
 B) Amazon SageMaker  
@@ -120,12 +120,12 @@ B) Batch Transform
 C) Retrain the model each time  
 D) Manually operate an always-on GPU instance  
 
-**정答: B**  
+**정답: B**  
 해설: Batch Transform is cost-effective for regularly processing accumulated data at once. A stays on, incurring cost even idle. C is training, not inference. D carries operational burden and cost.
 
 ---
 
-**問題 5.** Traffic is irregular and sporadic; you want costs near zero when there are no requests. What inference method suits this scenario?
+**문제 5.** Traffic is irregular and sporadic; you want costs near zero when there are no requests. What inference method suits this scenario?
 
 A) Serverless inference  
 B) Always-on real-time endpoint  

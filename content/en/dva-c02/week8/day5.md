@@ -240,7 +240,7 @@ D) All at once
 
 **정답: C**
 
-해説: Immutable meets all: no downtime ✓, fast rollback (delete new ASG) ✓, capacity maintained (old ASG untouched) ✓, 2x cost (temp) ✓. A) Capacity drops. B) Rollback is redeploy. D) Has downtime. Immutable satisfies all four.
+해설: Immutable meets all: no downtime ✓, fast rollback (delete new ASG) ✓, capacity maintained (old ASG untouched) ✓, 2x cost (temp) ✓. A) Capacity drops. B) Rollback is redeploy. D) Has downtime. Immutable satisfies all four.
 
 ---
 
@@ -252,9 +252,9 @@ C) Artifact CMK cross-account policy
 D) Artifact bucket policy Prod read
 E) ECS container CodeDeploy Agent
 
-**정答: A, B, C, D (exclude E)**
+**정답: A, B, C, D (exclude E)**
 
-해説: Cross-account chain A+B+C+D all essential. E) ECS never needs Agent. Missing any one breaks deployment. Four-part chain is standard cross-account pattern.
+해설: Cross-account chain A+B+C+D all essential. E) ECS never needs Agent. Missing any one breaks deployment. Four-part chain is standard cross-account pattern.
 
 ---
 
@@ -278,9 +278,9 @@ B) EventBridge (FAILED detection) → Lambda → JIRA REST API
 C) CloudWatch Logs Insight 5min polling
 D) Console JIRA integration
 
-**정答: B**
+**정답: B**
 
-해説: "Complex conditional automation" = EventBridge + Lambda standard. A) Manual step. C) Polling inefficient. D) No console option. EventBridge + Lambda is event-driven automation pattern.
+해설: "Complex conditional automation" = EventBridge + Lambda standard. A) Manual step. C) Polling inefficient. D) No console option. EventBridge + Lambda is event-driven automation pattern.
 
 ---
 
@@ -293,7 +293,7 @@ D) S3 file pass
 
 **정답: B**
 
-해説: `exported-variables` standard inter-stage variable passing. Build exports → pipeline captures → deploy references. A) Static only. C/D) Possible but extra overhead. Exported-variables is standard.
+해설: `exported-variables` standard inter-stage variable passing. Build exports → pipeline captures → deploy references. A) Static only. C/D) Possible but extra overhead. Exported-variables is standard.
 
 ---
 
@@ -304,9 +304,9 @@ B) CloudWatch directly CodeDeploy API
 C) Lambda on alarm
 D) ASG health check type ELB
 
-**정答: A**
+**정답: A**
 
-해説: Two settings required: ① alarm registered ② auto-rollback event triggered on alarm. B) CloudWatch can't call CodeDeploy API. C) Manual complexity. D) Unrelated. Both settings together = auto-rollback answer.
+해설: Two settings required: ① alarm registered ② auto-rollback event triggered on alarm. B) CloudWatch can't call CodeDeploy API. C) Manual complexity. D) Unrelated. Both settings together = auto-rollback answer.
 
 ---
 
@@ -317,9 +317,9 @@ B) Secrets Manager auto-rotation, application fetches via SDK
 C) S3 file rotation
 D) Hardcode in user data
 
-**정答: B**
+**정답: B**
 
-해説: Secrets Manager native auto-rotation + Lambda. Application dynamic fetch via SDK = new password instant use. A) Plaintext, manual. C) Rotation hard to automate. D) Rotation impossible. Secrets Manager auto-rotate + SDK fetch is pattern.
+해설: Secrets Manager native auto-rotation + Lambda. Application dynamic fetch via SDK = new password instant use. A) Plaintext, manual. C) Rotation hard to automate. D) Rotation impossible. Secrets Manager auto-rotate + SDK fetch is pattern.
 
 ---
 
@@ -330,9 +330,9 @@ B) `reports` section, file-format JUNITXML
 C) `cache.paths` LOCAL_CUSTOM_CACHE
 D) `env.exported-variables` JUNIT_XML
 
-**정答: B**
+**정답: B**
 
-해説: `reports` section processes tests separately, console visualizes. JUnit, Cucumber, TestNG, NUnit, Visual Studio TRX supported. A) Artifacts = general output. C) Cache is dependency. D) Variables = passing values. Reports section is test visualization.
+해설: `reports` section processes tests separately, console visualizes. JUnit, Cucumber, TestNG, NUnit, Visual Studio TRX supported. A) Artifacts = general output. C) Cache is dependency. D) Variables = passing values. Reports section is test visualization.
 
 ```yaml
 reports:

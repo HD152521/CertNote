@@ -265,9 +265,9 @@ B) StatusCheckFailed_Instance won't recover. System Check failure only
 C) Recovery needs no EBS
 D) Region limit
 
-**정答: B**
+**정답: B**
 
-解說: Auto Recovery only `StatusCheckFailed_System` — AWS infrastructure (hardware, power, network). Guest OS panic = `StatusCheckFailed_Instance`, software layer AWS can't control. Needs Reboot or SSM Automation.
+해설: Auto Recovery only `StatusCheckFailed_System` — AWS infrastructure (hardware, power, network). Guest OS panic = `StatusCheckFailed_Instance`, software layer AWS can't control. Needs Reboot or SSM Automation.
 
 ---
 
@@ -280,7 +280,7 @@ D) GreaterThanThreshold
 
 **정답: B**
 
-解說: Faster response not problem. Band exceeding = slower. `GreaterThanUpperThreshold` detects upper only. Bidirectional (too fast or too slow) needs `LessThanLowerOrGreaterThanUpperThreshold` — Lambda invocation count dropping = anomaly.
+해설: Faster response not problem. Band exceeding = slower. `GreaterThanUpperThreshold` detects upper only. Bidirectional (too fast or too slow) needs `LessThanLowerOrGreaterThanUpperThreshold` — Lambda invocation count dropping = anomaly.
 
 ---
 
@@ -291,9 +291,9 @@ B) Alarm evals same-region metrics only; can't direct-alarm other-region source
 C) Can't recover other-region EC2
 D) Composite Alarm children one-region only
 
-**정答: B**
+**정답: B**
 
-解説: Fundamental limit: Alarms eval same-region metrics only. us-east-1 metric, alarm in ap-northeast-2 impossible. Multi-region needs Metric Stream copy to central, alarm there, or cross-region EventBridge rules.
+해설: Fundamental limit: Alarms eval same-region metrics only. us-east-1 metric, alarm in ap-northeast-2 impossible. Multi-region needs Metric Stream copy to central, alarm there, or cross-region EventBridge rules.
 
 ---
 
@@ -304,7 +304,7 @@ B) 1 of 10 violates → immediate alarm
 C) 5 of 10 violations needed
 D) INSUFFICIENT_DATA
 
-**正答: B**
+**정답: B**
 
-解説: DatapointsToAlarm=1 most sensitive — single N-window violation triggers. Used when 10-min window any 5xx event = alarm scenario.
+해설: DatapointsToAlarm=1 most sensitive — single N-window violation triggers. Used when 10-min window any 5xx event = alarm scenario.
 

@@ -235,7 +235,7 @@ B) GitHub webhook event-driven
 C) Manual trigger  
 D) S3 event  
 
-**정答: B** - CodePipeline starts immediately via GitHub webhook on push event.
+**정답: B** - CodePipeline starts immediately via GitHub webhook on push event.
 
 ---
 

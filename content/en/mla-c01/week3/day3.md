@@ -148,19 +148,19 @@ B) Bulk query offline store (S3) via Athena
 C) Load entire online store into memory  
 D) Delete and recreate Feature Group  
 
-**정答: B**  
+**정답: B**  
 해설: Offline store keeps full history in S3 Parquet, allowing efficient bulk training dataset creation via Athena. A inefficiently repeats single queries, C not designed for offline bulk access, D destroys data.
 
 ---
 
-**문题 5.** Two teams each created identical "customer activity score" feature with mismatched definitions and bug fixes reflecting only partially. Feature Store solution?
+**문제 5.** Two teams each created identical "customer activity score" feature with mismatched definitions and bug fixes reflecting only partially. Feature Store solution?
 
 A) Teams meet more frequently  
 B) Define feature once in Feature Store, share for reuse; single fix applies to all using models  
 C) Merge two models  
 D) Remove all features  
 
-**正答: B**  
+**정답: B**  
 해설: Feature Store makes features shared data assets, enabling reuse and single definition so fixing one place consistently applies to all models using that feature. A doesn't solve fundamentally, C merges separate models wrongly, D discards needed features.
 
 ---

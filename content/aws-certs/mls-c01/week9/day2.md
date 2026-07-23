@@ -1,72 +1,72 @@
-# Day 2 - ROC/AUC and Threshold Adjustment: Reading Model Performance with Curves
+# Day 2 - ROC/AUC와 임계값 조정: 곡선으로 읽는 모델 성능
 
-Yesterday's precision and recall were single slices at a specific threshold (usually 0.5). But classification models don't output 0 or 1 — they output **probability scores**, and where you cut that score completely changes precision and recall. Today we cover ROC curves and PR curves that sweep the threshold from 0 to 1 to draw full performance, and AUC that summarizes curves into a single number. The core question is "where do we set the threshold?" and the answer comes from business trade-offs.
+어제의 정밀도·재현율은 특정 임계값(보통 0.5)에서 계산한 단면이었다. 하지만 분류 모델은 사실 0과 1이 아니라 **확률 점수**를 내고, 그 점수를 어디서 자르느냐가 정밀도와 재현율을 통째로 바꾼다. 오늘은 임계값을 0부터 1까지 움직이며 성능 전체를 그리는 ROC 곡선과 PR 곡선, 그리고 곡선을 하나의 숫자로 요약하는 AUC를 다룬다. 핵심 질문은 "임계값을 어디에 둘 것인가"이며, 그 답은 비즈니스 트레이드오프에서 나온다.
 
-## What Threshold Changes
+## 임계값이 바꾸는 것
 
-A classifier outputs a score like `P(Positive) = 0.73`. Set threshold t: if `score ≥ t`, classify as Positive.
-
-```text
-Threshold ↓ (e.g., 0.3)  → classify more as Positive
-   → recall ↑ (catch more positives), precision ↓ (more FP)
-
-Threshold ↑ (e.g., 0.7)  → classify more conservatively as Positive
-   → precision ↑ (only sure ones), recall ↓ (miss more positives)
-```
-
-So a single model has countless (precision, recall) pairs depending on threshold. The curve unfolds all these pairs in one diagram.
-
-## ROC Curve: TPR vs FPR
-
-The ROC (Receiver Operating Characteristic) curve plots two axes as threshold moves.
+분류기는 `P(Positive) = 0.73` 같은 점수를 출력한다. 임계값 t를 정해 `점수 ≥ t`면 Positive로 분류한다.
 
 ```text
-Y-axis: TPR (recall)      = TP / (TP + FN)   ← How many positives caught
-X-axis: FPR (false pos rate) = FP / (FP + TN)   ← How many negatives falsely alarmed
+임계값 ↓ (예: 0.3)  → 더 많이 Positive로 분류
+   → 재현율 ↑ (양성을 더 많이 잡음), 정밀도 ↓ (FP 증가)
 
-(0,0) Classify everything as Negative (threshold=1)
-(1,1) Classify everything as Positive (threshold=0)
-Closer to top-left (0,1) = better model
-Diagonal y=x = random guess level
+임계값 ↑ (예: 0.7)  → 더 보수적으로 Positive 분류
+   → 정밀도 ↑ (확실한 것만), 재현율 ↓ (놓치는 양성 증가)
 ```
 
-Better models have curves spiking toward the top-left corner, rapidly raising TPR while barely increasing FPR.
+즉 단 하나의 모델이라도 임계값에 따라 무수히 많은 (정밀도, 재현율) 쌍을 가진다. 곡선은 이 모든 쌍을 한 그림에 펼친 것이다.
 
-## AUC: Area Under the Curve
+## ROC 곡선: TPR vs FPR
 
-AUC (Area Under the Curve) summarizes model performance as **threshold-independent** single number 0~1 below the ROC curve.
+ROC(Receiver Operating Characteristic) 곡선은 임계값을 움직이며 두 축을 그린다.
 
 ```text
-AUC = 1.0   Perfect classification
-AUC = 0.5   Random guess (diagonal)
-AUC < 0.5   Worse than random (flip predictions to improve)
+세로축 TPR (재현율)      = TP / (TP + FN)   ← 양성을 얼마나 잡나
+가로축 FPR (거짓양성률)  = FP / (FP + TN)   ← 음성을 얼마나 잘못 경보하나
+
+(0,0) 모든 것을 Negative로 분류 (임계값=1)
+(1,1) 모든 것을 Positive로 분류 (임계값=0)
+좌상단 (0,1)에 가까울수록 좋은 모델
+대각선 y=x : 무작위 추측 수준
 ```
 
-Intuitive AUC interpretation: **probability that a randomly chosen positive's score exceeds a randomly chosen negative's score**. It measures how well the model "ranks" positives vs negatives. Useful for comparing model discrimination before choosing threshold.
+좋은 모델일수록 곡선이 좌상단 모서리로 솟구친다. FPR을 거의 늘리지 않으면서 TPR을 빠르게 끌어올리는 모양이다.
 
-> 💡 **Related Theory**: AUC's threshold-independence is a double-edged sword. Convenient for comparing multiple models' discrimination at once, but in real operations you eventually pick one threshold. So exam questions split: "compare models" → use AUC; "set operational threshold" → pick a point on ROC/PR curve.
+## AUC: 곡선 아래 면적
 
-## PR Curve: More Honest than ROC on Imbalanced Data
-
-PR (Precision-Recall) curve plots recall on X-axis, precision on Y-axis. On extremely imbalanced data, PR curves give a more honest picture than ROC.
+AUC(Area Under the Curve)는 ROC 곡선 아래 면적으로, 모델 성능을 **임계값과 무관하게** 0~1 사이 한 숫자로 요약한다.
 
 ```text
-Why: ROC's FPR = FP / (FP + TN)
-When negatives vastly dominate (imbalance), even if FP grows,
-it's buried in the huge TN denominator, so FPR barely changes.
-→ ROC looks overly optimistic
-
-PR curve's precision = TP / (TP + FP)
-FP increase directly reflects in precision → exposes imbalance pain fully
+AUC = 1.0   완벽한 분류
+AUC = 0.5   무작위 추측 (대각선)
+AUC < 0.5   무작위보다 나쁨 (예측을 뒤집으면 개선)
 ```
 
-So for problems where positives are rare (fraud, disease), prioritize **PR AUC (Average Precision)**.
+AUC의 직관적 해석: **무작위로 고른 양성 샘플의 점수가 무작위로 고른 음성 샘플의 점수보다 높을 확률**이다. 즉 모델이 양성과 음성을 얼마나 잘 "순위 매기는지"를 잰다. 임계값을 고르기 전에 모델 자체의 변별력을 비교할 때 유용하다.
 
-> 💡 **Related Theory**: The basis for "imbalance → PR curve" is the denominator. ROC's FPR includes majority class (TN) in denominator, diluting FP increases; PR's precision denominator is only (TP+FP), so false alarms in minority class show clearly. By examining what goes in the denominator, you judge which curve is trap-resistant.
+> 💡 **관련 이론**: AUC가 임계값과 무관하다는 점이 양날의 검이다. 여러 모델의 변별력을 한 번에 비교할 때는 편리하지만, 실제 운영에서는 결국 임계값 하나를 골라야 한다. 그래서 시험에서 "모델들을 비교"하면 AUC, "운영 임계값을 정하라"면 ROC/PR 곡선 위의 특정 지점을 고르는 문제로 갈린다.
 
-## Threshold Selection: Business Trade-offs
+## PR 곡선: 불균형 데이터에서 ROC보다 정직하다
 
-After drawing the curve, operationalize with a threshold. Methods vary by business cost structure.
+PR(Precision-Recall) 곡선은 가로축에 재현율, 세로축에 정밀도를 둔다. 극단적 불균형 데이터에서는 PR 곡선이 ROC보다 더 정직한 그림을 준다.
+
+```text
+이유: ROC의 FPR = FP / (FP + TN)
+음성(TN)이 압도적으로 많으면(불균형), FP가 늘어도
+거대한 TN 분모에 묻혀 FPR이 거의 안 변한다.
+→ ROC 곡선이 실제보다 낙관적으로 보임
+
+PR 곡선의 정밀도 = TP / (TP + FP)
+FP 증가가 정밀도에 직접 반영 → 불균형의 고통을 그대로 드러냄
+```
+
+따라서 사기·질병처럼 양성이 극히 드문 문제에서는 **PR AUC(Average Precision)**를 우선 본다.
+
+> 💡 **관련 이론**: "불균형이면 PR 곡선"이라는 규칙의 근거는 분모에 있다. ROC의 FPR은 분모에 다수 클래스(TN)를 포함해 FP 증가를 희석하지만, PR의 정밀도는 분모가 (TP+FP)뿐이라 소수 클래스에서의 오탐을 가리지 않는다. 분모에 무엇이 들어가는지를 보면 어떤 곡선이 함정에 강한지 판단할 수 있다.
+
+## 임계값 선택: 비즈니스 트레이드오프
+
+곡선이 그려졌다면 운영 임계값을 정해야 한다. 방법은 비즈니스 비용 구조에 따라 다르다.
 
 ```python
 import numpy as np
@@ -74,49 +74,49 @@ from sklearn.metrics import precision_recall_curve
 
 precision, recall, thresholds = precision_recall_curve(y_true, y_scores)
 
-# Example: Regulated environment mandating ≥90% recall
-#     → Among thresholds meeting constraint, pick highest precision
+# 예: 재현율 90% 이상을 의무화하는 규제 환경
+#     → 그 제약을 만족하는 임계값 중 정밀도가 가장 높은 점 선택
 mask = recall[:-1] >= 0.90
 best_idx = np.argmax(precision[:-1][mask])
 chosen_threshold = thresholds[mask][best_idx]
 ```
 
-Representative selection strategies:
+대표적 선택 전략:
 
-| Situation | Threshold Strategy |
+| 상황 | 임계값 전략 |
 |------|------|
-| High FN cost (disease/fraud) | Guarantee recall floor → lower threshold |
-| High FP cost (spam/recommendations) | Guarantee precision floor → raise threshold |
-| Balance FP·FN | Pick F1 maximization point |
-| Cost quantifiable in dollars | Minimize expected cost `cost_FP×FP + cost_FN×FN` |
+| FN 비용 큼 (질병/사기) | 재현율 하한 보장 → 임계값 낮춤 |
+| FP 비용 큼 (스팸/추천) | 정밀도 하한 보장 → 임계값 높임 |
+| FP·FN 균형 | F1 최대화 지점 선택 |
+| 비용을 금액으로 환산 가능 | 기대비용 `cost_FP×FP + cost_FN×FN` 최소화 지점 |
 
-Expected cost minimization is most principled. Given dollar costs per FP and FN, calculate total cost at each threshold on the curve, pick cheapest point.
+기대비용 최소화는 가장 원칙적인 방법이다. FP 한 건과 FN 한 건의 달러 비용을 알면, 곡선 위 각 임계값의 총비용을 계산해 가장 싼 지점을 고른다.
 
-## Using in SageMaker
+## SageMaker에서의 활용
 
-Built-in binary classifiers export `validation:auc` as a training metric, usable as objective for Automatic Model Tuning. Also, SageMaker endpoints return probability scores, so threshold cutting happens in inference post-processing.
+빌트인 이진 분류기는 `validation:auc`를 학습 지표로 내보내므로 Automatic Model Tuning의 목적 지표로 쓸 수 있다. 또한 SageMaker 엔드포인트는 확률 점수를 반환하므로, 임계값 컷은 추론 후처리 단계에서 적용한다.
 
 ```python
 tuner = HyperparameterTuner(
     estimator=xgb_estimator,
-    objective_metric_name="validation:auc",  # tune by discrimination
+    objective_metric_name="validation:auc",  # 변별력 기준 튜닝
     objective_type="Maximize",
     hyperparameter_ranges=ranges,
 )
-# Endpoint returns 0.0~1.0 scores → apply business threshold in post-process
+# 엔드포인트는 0.0~1.0 점수를 반환 → 후처리에서 비즈니스 임계값 적용
 score = float(predictor.predict(payload))
 label = 1 if score >= chosen_threshold else 0
 ```
 
-Real-world pattern: pick good model using AUC, then separately choose threshold to fit business constraints — **2-stage separation**.
+AUC로 좋은 모델을 고른 뒤, 임계값은 별도로 비즈니스 제약에 맞춰 정하는 **2단계 분리**가 실무 패턴이다.
 
-> 💡 **Related Theory**: Model training/tuning and threshold decision are separate decision stages. Tuning with AUC as objective yields a "good-ranking model" immune to threshold gyration; then post-hoc pick threshold matching cost structure on top of that model. This separation means if cost structure changes, retune threshold only, no model retraining needed.
+> 💡 **관련 이론**: 모델 학습/튜닝과 임계값 결정은 서로 다른 단계의 의사결정이다. AUC를 목적 지표로 튜닝하면 임계값에 휘둘리지 않는 "잘 순위 매기는 모델"을 얻고, 그 모델 위에서 비용 구조에 맞는 임계값을 사후에 고른다. 이 분리 덕분에 비용 구조가 바뀌어도 모델을 다시 학습하지 않고 임계값만 조정할 수 있다.
 
-## Summary
+## 정리하며
 
-Classifiers output probabilities; thresholds convert probabilities to labels. ROC curve shows TPR vs FPR for model discrimination; PR curve shows precision vs recall for imbalance reality. AUC summarizes curves into one threshold-independent number for model comparison; actual operational threshold is one point on the curve, determined by FP/FN costs. With severe imbalance, trust PR curves over ROC.
+분류기는 확률을 내고, 임계값이 그 확률을 라벨로 바꾼다. ROC 곡선은 TPR vs FPR로 모델의 변별력을, PR 곡선은 정밀도 vs 재현율로 불균형에서의 실상을 보여준다. AUC는 곡선을 임계값 무관한 한 숫자로 요약해 모델 비교에 쓰고, 실제 운영 임계값은 FP/FN 비용에 따라 곡선 위 한 점으로 정한다. 불균형이 심하면 ROC보다 PR 곡선을 신뢰하라.
 
-Tomorrow we shift from classification to regression model metrics — RMSE, MAE, MAPE, R² and residual analysis.
+내일은 분류가 아닌 회귀 모델의 평가지표 — RMSE·MAE·MAPE·R²와 잔차 분석 — 으로 넘어간다.
 
 ---
 
