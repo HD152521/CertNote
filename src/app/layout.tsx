@@ -45,11 +45,29 @@ export const viewport: Viewport = {
   themeColor: '#0a0a0a',
 };
 
+// 사이트 대표 구조화 데이터 — 검색엔진의 브랜드/사이트명 표시 신호. 페이지별 Course/ItemList와 별개로 전역 1회.
+const siteLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: `${SITE_URL}/icons/icon-512.png`,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE_NAME,
+    url: SITE_URL,
+  },
+];
+
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const certs = await listCerts(DEFAULT_CATEGORY);
   return (
     <html lang="ko" suppressHydrationWarning className={`${inter.variable} ${jbMono.variable} h-full antialiased`}>
       <body className="min-h-full bg-bg text-fg">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteLd) }} />
         <PostHogProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AppShell certs={certs}>{children}</AppShell>

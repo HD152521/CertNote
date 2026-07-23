@@ -1,7 +1,15 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import { SITE_NAME } from '@/lib/site';
 
-export const metadata = {
-  title: '개인정보처리방침 · CertNote',
+const TITLE = '개인정보처리방침';
+const DESCRIPTION = `${SITE_NAME}가 수집하는 개인정보 항목과 이용 목적, 보관 기간, 이용자 권리를 안내합니다.`;
+
+export const metadata: Metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: '/privacy' },
+  openGraph: { title: TITLE, description: DESCRIPTION, url: '/privacy', type: 'website' },
 };
 
 // 개인정보처리방침(MVP 버전). 회원가입 동의 문구에서 링크된다.

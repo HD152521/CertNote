@@ -1,10 +1,17 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Check, X, ChevronDown } from 'lucide-react';
 import { WaitlistForm } from '@/components/marketing/WaitlistForm';
+import { SITE_NAME } from '@/lib/site';
 
-export const metadata = {
-  title: '요금제 · CertNote',
-  description: 'CertNote 무료 플랜과 Pro 플랜 비교. 경쟁사보다 60% 저렴하고 한국어 + SRS 복습.',
+const TITLE = '요금제';
+const DESCRIPTION = `${SITE_NAME} 무료 플랜과 Pro 플랜 비교. 경쟁사보다 60% 저렴하고 한국어 + SRS 복습.`;
+
+export const metadata: Metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: '/pricing' },
+  openGraph: { title: TITLE, description: DESCRIPTION, url: '/pricing', type: 'website' },
 };
 
 const FREE_FEATURES = [
