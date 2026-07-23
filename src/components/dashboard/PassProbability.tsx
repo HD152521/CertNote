@@ -6,6 +6,7 @@ interface PassProbabilityProps {
   dday: number | null;
   examDate: string | null;
   lang: Language;
+  certLabel?: string; // 예측 대상 자격증 코드(예: SAA-C03)
 }
 
 const VERDICT: Record<Verdict, { color: string; ko: string; en: string }> = {
@@ -45,16 +46,17 @@ function Gauge({ value, color }: { value: number; color: string }) {
   );
 }
 
-export function PassProbability({ prediction, dday, examDate, lang }: PassProbabilityProps) {
+export function PassProbability({ prediction, dday, examDate, lang, certLabel }: PassProbabilityProps) {
   const v = VERDICT[prediction.verdict];
   const en = lang === 'en';
 
   return (
     <div className="flex h-full flex-col rounded-xl border border-border bg-bg-elevated p-5">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-medium text-fg-muted">
-          {en ? 'Pass Probability' : '합격 가능성'}
-          <span className="ml-1.5 rounded bg-bg-subtle px-1.5 py-0.5 text-[10px] font-normal text-fg-faint">
+        <h2 className="flex items-center gap-1.5 text-sm font-medium text-fg-muted">
+          <span>{en ? 'Pass Probability' : '합격 가능성'}</span>
+          {certLabel && <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] text-accent">{certLabel}</span>}
+          <span className="rounded bg-bg-subtle px-1.5 py-0.5 text-[10px] font-normal text-fg-faint">
             {en ? 'estimate' : '추정'}
           </span>
         </h2>

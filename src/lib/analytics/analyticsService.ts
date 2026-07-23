@@ -3,6 +3,7 @@ import type { StudyContext } from '../personalization/context';
 import { getLearnerProfile, type LearnerProfile } from '../profile/profileService';
 import { getAttemptService, ATTEMPT_HISTORY_LIMIT } from '../quiz/attemptService';
 import type { AttemptRecord } from '../quiz/attemptRepository';
+import { getQuestionById } from '../questions';
 import { computeToday, listPlans, type StudyPlan } from '../study/plan';
 import { predictPass, type PassPrediction } from './passPredictor';
 import { buildDailyTrend, type TrendPoint } from './trend';
@@ -69,17 +70,34 @@ export async function getAnalytics(
     examDate = portion.examDate;
   }
 
-  // 최근 정답률(추세): attempts는 최신순 → 앞에서 RECENT_WINDOW개.
-  const recent = attempts.slice(0, RECENT_WINDOW);
+  // 합격 예측은 '목표 자격증' 범위로 계산한다. 전체 통합(모든 자격증)으로 하면
+  // 한 자격증만 파도 커버리지가 낮게 나오고, 다른 자격증 정답이 엉뚱하게 반영된다.
+  const predictCert = plan?.certSlug ?? target;
+  const certProg = predictCert ? dash.certs.find((c) => c.slug === predictCert) : undefined;
+
+  const coverage =
+    certProg && certProg.totalQuestions > 0
+      ? Math.round((certProg.attemptedQuestions / certProg.totalQuestions) * 100)
+      : dash.coverage;
+  const accuracy =
+    certProg && certProg.attempts > 0 ? Math.round((certProg.correct / certProg.attempts) * 100) : dash.accuracy;
+  const scopedTotal = certProg ? certProg.totalQuestions : dash.totalQuestions;
+  const scopedAttempted = certProg ? certProg.attemptedQuestions : dash.attemptedQuestions;
+
+  // 최근 정답률(추세): 목표 자격증 문제만, 최신순 앞에서 RECENT_WINDOW개.
+  const certAttempts = predictCert
+    ? attempts.filter((a) => getQuestionById(a.questionId)?.slug === predictCert)
+    : attempts;
+  const recent = certAttempts.slice(0, RECENT_WINDOW);
   const recentAccuracy =
     recent.length > 0 ? Math.round((recent.filter((a) => a.correct).length / recent.length) * 100) : null;
 
   const prediction = predictPass({
-    coverage: dash.coverage,
-    accuracy: dash.accuracy,
+    coverage,
+    accuracy,
     recentAccuracy,
-    totalQuestions: dash.totalQuestions,
-    attemptedQuestions: dash.attemptedQuestions,
+    totalQuestions: scopedTotal,
+    attemptedQuestions: scopedAttempted,
     dday,
     targetAccuracy: plan?.targetAccuracy, // M4: 사용자 목표 정확도를 예측 임계값으로.
   });
@@ -89,5 +107,5 @@ export async function getAnalytics(
     recentDays(trendDays),
   );
 
-  return { prediction, trend, examDate, dday, targetCert: target };
+  return { prediction, trend, examDate, dday, targetCert: predictCert };
 }

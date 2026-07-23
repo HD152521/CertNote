@@ -189,6 +189,7 @@ export default async function DashboardPage() {
               dday={analytics.dday}
               examDate={analytics.examDate}
               lang={lang}
+              certLabel={data.certs.find((c) => c.slug === analytics.targetCert)?.code}
             />
             <TrendChart trend={analytics.trend} lang={lang} />
           </section>
