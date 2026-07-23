@@ -146,75 +146,75 @@ Next time we comprehensively review all of Week 13 — Multi-AZ, Multi-Region, D
 
 ## 📝 연습 문제
 
-**문제 1.** EC2 운영 인스턴스 중 무작위 30%에 5분간 CPU 부하를 주입하되, 실험 중 P99 지연이 임계를 넘으면 즉시 중단·롤백되게 하려 한다. FIS 구성으로 올바른 것은?
+**문제 1.** You want to inject CPU stress for 5 minutes into a random 30% of EC2 production instances, but have it immediately stop and roll back if P99 latency exceeds a threshold during the experiment. Which FIS configuration is correct?
 
-A) SelectionMode ALL + Stop Condition 없음
+A) SelectionMode ALL + no Stop Condition
 
-B) Target SelectionMode PERCENT(30) + Action AWSFIS-Run-CPU-Stress(PT5M) + Stop Condition(CloudWatch P99 Alarm)
+B) Target SelectionMode PERCENT(30) + Action AWSFIS-Run-CPU-Stress(PT5M) + Stop Condition (CloudWatch P99 Alarm)
 
-C) 모든 인스턴스를 Terminate
+C) Terminate all instances
 
-D) 수동으로 콘솔에서 CPU를 올린다
-
-**정답: B**
-
-해설: 무작위 30%는 SelectionMode PERCENT(30)으로 폭발 반경을 정량 제어하고, CPU 부하는 AWSFIS-Run-CPU-Stress SSM 문서를 5분(PT5M) 동안 실행하며, P99 지연 임계 초과 시 즉시 중단은 CloudWatch Alarm 기반 Stop Condition으로 구현한다. SelectionMode ALL+Stop 없음(A)은 폭발 반경이 전체이고 안전망이 없어 위험하고, 전체 Terminate(C)는 의도(CPU 부하)와 다르며 너무 파괴적이고, 수동(D)은 재현·자동화가 안 된다. PERCENT(폭발 반경) + Stop Condition(안전벨트)의 결합이 안전한 카오스의 핵심이다.
-
----
-
-**문제 2.** 카오스 엔지니어링이 단순한 "고의적 장애 던지기"와 구별되는 핵심은?
-
-A) 더 많은 인스턴스를 죽인다
-
-B) 정상 상태(steady state)를 측정 가능한 지표로 정의하고, "시스템이 X 장애에도 정상 상태를 유지한다"는 가설을 세워 실험으로 검증하는 과학적 방법을 따른다
-
-C) 운영 환경에서만 한다
-
-D) 안전장치를 두지 않는다
+D) Manually raise CPU from the console
 
 **정답: B**
 
-해설: 카오스 엔지니어링은 과학적 방법의 적용이다 — 정상 상태를 측정 가능한 지표(성공률, P99 등)로 정의하고, "시스템이 특정 장애에도 정상 상태를 유지할 것"이라는 가설을 세운 뒤, 실제 장애를 주입해 그 가설을 검증·반증한다(Principles of Chaos Engineering). 반증되면 그것이 발견된 약점이다. 이는 포퍼의 반증주의처럼 "믿음"이 아니라 "검증된 증거"로 복원력을 다루는 것이다. 더 많이 죽이기(A)·운영 한정(C)·안전장치 제거(D)는 모두 카오스 엔지니어링의 본질이 아니며, 오히려 D는 위험한 안티패턴이다.
+해설: The random 30% is quantitatively blast-radius-controlled via SelectionMode PERCENT(30), CPU stress runs the AWSFIS-Run-CPU-Stress SSM document for 5 minutes (PT5M), and immediate halt on P99 latency threshold exceedance is implemented with a CloudWatch Alarm-based Stop Condition. SelectionMode ALL with no Stop Condition (A) is dangerous because the blast radius is the entire fleet with no safety net; terminating everything (C) differs from the intent (CPU stress) and is too destructive; manual (D) can't be reproduced or automated. The combination of PERCENT (blast radius) + Stop Condition (safety belt) is the core of safe chaos.
 
 ---
 
-**문제 3.** 카오스 실험을 "작은 폭발 반경(예: 인스턴스 5%)에서 시작해 점진적으로 확대"하는 권장 방식의 근거는?
+**문제 2.** What distinguishes chaos engineering from simply "throwing intentional failures" at a system?
 
-A) 작게 하면 비용이 싸서
+A) It kills more instances
 
-B) 위험을 작은 범위에 가둬 통제하면서 점진적으로 신뢰를 쌓는 점증적 노출(progressive exposure) — 배포의 카나리와 같은 사상
+B) It follows the scientific method — defining the steady state with measurable metrics, forming the hypothesis that "the system maintains steady state even under fault X," and validating it through experiments
 
-C) AWS가 큰 실험을 금지해서
+C) It's done only in production
 
-D) 작은 실험이 더 정확해서
+D) It uses no safety mechanisms
 
 **정답: B**
 
-해설: 폭발 반경(blast radius)을 작게 시작하는 것은 위험을 작은 범위에 가둬 통제하면서 점진적으로 신뢰를 쌓는 점증적 노출(progressive exposure) 전략이다 — 새 코드를 5%에게만 노출하는 배포의 카나리와 같은 사상으로, "장애를 작은 범위에 가둬" 위험을 통제한다. FIS의 SelectionMode(PERCENT/COUNT)가 이 폭발 반경 다이얼이다. 비용(A)이나 정확성(D)이 핵심이 아니고, AWS가 큰 실험을 금지(C)하는 것도 아니다 — 안전이 확인되면 의도적으로 확대한다.
+해설: Chaos engineering is an application of the scientific method — you define the steady state with measurable metrics (success rate, P99, etc.), form the hypothesis that "the system will maintain steady state even under a specific fault," then inject a real failure to validate or falsify that hypothesis (Principles of Chaos Engineering). If falsified, that is a discovered weakness. Like Popper's falsificationism, this treats resilience as "verified evidence" rather than "belief." Killing more (A), production-only (C), and removing safety mechanisms (D) are all not the essence of chaos engineering — in fact D is a dangerous anti-pattern.
 
 ---
 
-**문제 4.** FIS 카오스 실험이 진짜 운영 장애로 번지는 것을 막는 가장 중요한 안전장치는?
+**문제 3.** What is the rationale for the recommended approach of "starting a chaos experiment with a small blast radius (e.g., 5% of instances) and expanding gradually"?
 
-A) 실험 시간을 짧게 잡는다
+A) Because doing it small is cheaper
 
-B) Stop Condition(CloudWatch Alarm 기반) — 임계 초과 시 FIS가 즉시 실험을 중단·롤백, 작은 폭발 반경과 함께 다층 방어
+B) Progressive exposure — confining and controlling risk in a small scope while gradually building trust, the same idea as canary deployment
 
-C) 실험을 야간에만 한다
+C) Because AWS prohibits large experiments
 
-D) 실험 후 수동으로 점검한다
+D) Because small experiments are more accurate
 
 **정답: B**
 
-해설: FIS의 Stop Condition은 실험 중 CloudWatch Alarm이 발동하면(예: P99 지연 임계 초과) FIS가 즉시 실험을 중단하고 주입한 장애를 롤백하는 핵심 안전장치다 — 카오스가 진짜 장애로 번지는 것을 막는다. 단 Stop Condition은 중단할 뿐 이미 난 피해를 되돌리진 못하므로, 작은 폭발 반경(PERCENT)과 함께 "작은 반경 + 빠른 중단"의 다층 방어로 가야 한다. 짧은 시간(A)·야간 실행(C)·사후 점검(D)은 보조일 뿐, 실시간 자동 중단인 Stop Condition이 가장 중요하다.
+해설: Starting with a small blast radius is a progressive exposure strategy that confines and controls risk in a small scope while gradually building trust — the same idea as a canary deployment that exposes new code to only 5%, controlling risk by "confining failure to a small scope." FIS's SelectionMode (PERCENT/COUNT) is this blast radius dial. Cost (A) and accuracy (D) are not the core, and AWS does not prohibit large experiments (C) — once safety is confirmed, you deliberately expand.
 
 ---
 
-**문제 5.** 워크로드가 설정한 RTO/RPO 목표(예: AZ 장애 RTO 600초)를 실제 구성이 달성하는지 측정하고, 미달 시 개선안과 비용 영향을 받고 싶다. 가장 적합한 서비스는?
+**문제 4.** What is the most important safety mechanism preventing a FIS chaos experiment from escalating into a real operational failure?
 
-A) FIS만 사용
+A) Keep the experiment duration short
 
-B) AWS Resilience Hub — 워크로드를 분석해 장애 유형별(Hardware/Software/AZ/Region) RTO/RPO 목표 대비 실측 갭과 권장 개선안·비용을 제시하고 FIS와 통합 검증
+B) Stop Condition (CloudWatch Alarm-based) — on threshold exceedance FIS immediately halts and rolls back the experiment, multi-layered defense together with a small blast radius
+
+C) Run the experiment only at night
+
+D) Manually inspect after the experiment
+
+**정답: B**
+
+해설: FIS's Stop Condition is the core safety mechanism that immediately halts the experiment and rolls back the injected failure when a CloudWatch Alarm fires during the experiment (e.g., P99 latency threshold exceeded) — preventing chaos from escalating into a real failure. However, a Stop Condition only stops; it can't undo damage already done, so it must be paired with a small blast radius (PERCENT) as a "small radius + fast stop" multi-layered defense. Short duration (A), nighttime execution (C), and post-hoc inspection (D) are only supplementary — the real-time automatic halt of the Stop Condition is most important.
+
+---
+
+**문제 5.** You want to measure whether your actual configuration achieves the workload's set RTO/RPO goals (e.g., AZ failure RTO 600 seconds), and receive improvement proposals and cost impact when it falls short. Which service is most appropriate?
+
+A) Use FIS alone
+
+B) AWS Resilience Hub — analyzes the workload to present measured gaps versus RTO/RPO goals by fault type (Hardware/Software/AZ/Region) plus recommended improvements and costs, with integrated FIS validation
 
 C) CloudWatch Dashboard
 
@@ -222,39 +222,39 @@ D) AWS Config
 
 **정답: B**
 
-해설: Resilience Hub는 워크로드 구성을 분석해 설정한 복원력 정책(Hardware/Software/AZ/Region별 RTO/RPO)을 실제로 달성하는지 평가하고, 미달 시 구체적 개선안과 비용 영향을 제시하며, 결과를 FIS 실험으로 검증한다 — Well-Architected Reliability Pillar의 계량화 도구다. FIS(A)는 장애를 주입하는 손이지 목표 대비 측정·권고를 하지 않고, CloudWatch Dashboard(C)는 지표 시각화이며, Config(D)는 구성 규정 준수 추적이라 RTO/RPO 평가가 아니다.
+해설: Resilience Hub analyzes the workload configuration to evaluate whether it actually achieves the set resilience policy (RTO/RPO by Hardware/Software/AZ/Region), presents concrete improvement proposals and cost impact when it falls short, and validates results with FIS experiments — it's the quantification tool for the Well-Architected Reliability Pillar. FIS (A) is the hand that injects failure, not something that measures against goals or recommends; CloudWatch Dashboard (C) is metric visualization; and Config (D) tracks configuration compliance, not RTO/RPO evaluation.
 
 ---
 
-**문제 6.** DR 리전 페일오버 절차가 정말 RTO 안에 작동하는지 매달 자동으로 검증하려 한다. 가장 적합한 조합은?
+**문제 6.** You want to automatically verify every month whether the DR region failover procedure actually works within RTO. Which combination is most appropriate?
 
-A) 운영팀이 분기마다 수동으로 페일오버
+A) The ops team manually fails over each quarter
 
-B) Route 53 ARC Routing Control 전환을 FIS Action으로 트리거해 DR 페일오버 자체를 정기 카오스 실험으로 자동 검증
+B) Trigger the Route 53 ARC Routing Control switch as a FIS Action to automatically validate the DR failover itself as a periodic chaos experiment
 
-C) 문서로 절차만 기록
+C) Only document the procedure
 
-D) Backup을 더 자주 수행
+D) Perform Backup more frequently
 
 **정답: B**
 
-해설: Route 53 ARC의 Routing Control 전환을 FIS Action으로 트리거하면 DR 페일오버 절차 자체를 정기 자동 실험으로 검증할 수 있다 — "리전 페일오버가 정말 RTO 안에 끝나는가"를 매달 자동으로 확인해, "검증 안 된 DR은 작동 안 한다"는 위험을 정면으로 푼다. 수동 분기 페일오버(A)는 빈도가 낮고 실수 위험이 있으며, 문서 기록(C)은 실제 작동을 검증하지 못하고, 잦은 Backup(D)은 페일오버 절차 검증과 무관하다.
+해설: Triggering the Route 53 ARC Routing Control switch as a FIS Action lets you validate the DR failover procedure itself as a periodic automated experiment — automatically confirming every month "does region failover actually finish within RTO?", directly resolving the risk that "untested DR doesn't work." Manual quarterly failover (A) is infrequent and error-prone, documentation (C) doesn't validate actual operation, and frequent Backup (D) is unrelated to validating the failover procedure.
 
 ---
 
-**문제 7.** Game Day와 Chaos Engineering의 관계로 가장 정확한 것은?
+**문제 7.** What most accurately describes the relationship between Game Day and Chaos Engineering?
 
-A) 같은 것의 다른 이름이다
+A) They are different names for the same thing
 
-B) Game Day는 사람·프로세스·런북을 검증하는 일회성 훈련(분기/연), Chaos Engineering은 시스템의 자동 복구를 검증하는 정기 자동화(일/주)로 서로 보완한다
+B) Game Day is a one-time drill (quarterly/annual) validating people, processes, and runbooks, while Chaos Engineering is periodic automation (daily/weekly) validating the system's auto-recovery — they complement each other
 
-C) Chaos Engineering이 Game Day를 대체했다
+C) Chaos Engineering has replaced Game Day
 
-D) Game Day가 더 자주 실행된다
+D) Game Day runs more frequently
 
 **정답: B**
 
-해설: Game Day는 팀이 모여 의도적 장애 시나리오를 수동 실행하며 사람·프로세스·런북을 점검하는 일회성 훈련(분기/연, 학습 중심)이고, Chaos Engineering은 FIS 같은 도구로 장애 주입을 정기 자동화(일/주, 검증 중심)한 것이다. 둘은 보완 관계 — Game Day는 "사람이 장애에 어떻게 대응하는가", Chaos는 "시스템이 장애에 어떻게 반응하는가"를 검증한다. 성숙한 조직은 분기 Game Day로 사람을 훈련하고 주간 자동 카오스로 시스템을 검증한다. 같은 것(A)도, 대체 관계(C)도 아니며, 정기 자동인 Chaos가 더 자주 실행되므로 D도 틀리다.
+해설: Game Day is a one-time drill (quarterly/annual, learning-focused) where a team gathers to manually execute intentional failure scenarios and check people, processes, and runbooks, while Chaos Engineering periodically automates failure injection (daily/weekly, validation-focused) with tools like FIS. They are complementary — Game Day validates "how do people respond to failure," Chaos validates "how does the system respond to failure." Mature organizations train people with quarterly Game Days and validate systems with weekly automated chaos. They are neither the same thing (A) nor a replacement relationship (C), and since periodic-automated Chaos runs more often, D is also wrong.
 
 ---
 
