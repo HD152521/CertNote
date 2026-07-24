@@ -1,5 +1,7 @@
 import type { TrendPoint } from '@/lib/analytics/trend';
 import type { Language } from '@/lib/i18n-client';
+import { pick } from '@/lib/strings/dict';
+import { fmt, trendChartStrings } from '@/lib/strings/study';
 
 interface TrendChartProps {
   trend: TrendPoint[];
@@ -17,7 +19,7 @@ const mmdd = (ymd: string) => ymd.slice(5).replace('-', '/');
 
 // 최근 N일 정답률(선) + 활동량(막대) 시계열. 경량 SVG 자작(번들 예산 준수).
 export function TrendChart({ trend, lang }: TrendChartProps) {
-  const en = lang === 'en';
+  const s = pick(trendChartStrings, lang);
   const n = trend.length;
   const totalAttempts = trend.reduce((s, p) => s + p.attempts, 0);
   const totalCorrect = trend.reduce((s, p) => s + p.correct, 0);
@@ -27,10 +29,8 @@ export function TrendChart({ trend, lang }: TrendChartProps) {
   if (n === 0 || totalAttempts === 0) {
     return (
       <div className="flex h-full flex-col rounded-xl border border-border bg-bg-elevated p-5">
-        <h2 className="mb-2 text-sm font-medium text-fg-muted">{en ? 'Trend' : '학습 추이'}</h2>
-        <p className="text-sm text-fg-faint">
-          {en ? 'Practice over a few days to see your accuracy and activity trend.' : '며칠 풀이가 쌓이면 정답률·활동량 추이가 여기에 그려집니다.'}
-        </p>
+        <h2 className="mb-2 text-sm font-medium text-fg-muted">{s.title}</h2>
+        <p className="text-sm text-fg-faint">{s.emptyHint}</p>
       </div>
     );
   }
@@ -57,27 +57,27 @@ export function TrendChart({ trend, lang }: TrendChartProps) {
   return (
     <div className="flex h-full flex-col rounded-xl border border-border bg-bg-elevated p-5">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-medium text-fg-muted">{en ? 'Trend' : '학습 추이'}</h2>
-        <span className="text-[11px] text-fg-faint">{en ? `Last ${n} days` : `최근 ${n}일`}</span>
+        <h2 className="text-sm font-medium text-fg-muted">{s.title}</h2>
+        <span className="text-[11px] text-fg-faint">{fmt(s.lastNDays, { n })}</span>
       </div>
 
       {/* 요약 통계 — 차트 위 여백을 채우고 한눈 요약 */}
       <div className="mb-3 grid grid-cols-3 gap-2 text-center">
         <div className="rounded-lg bg-bg-subtle px-2 py-1.5">
           <p className="text-lg font-semibold tabular-nums text-fg">{avgAccuracy}<span className="text-xs font-normal text-fg-faint">%</span></p>
-          <p className="text-[10px] text-fg-muted">{en ? 'Avg accuracy' : '평균 정답률'}</p>
+          <p className="text-[10px] text-fg-muted">{s.avgAccuracy}</p>
         </div>
         <div className="rounded-lg bg-bg-subtle px-2 py-1.5">
           <p className="text-lg font-semibold tabular-nums text-fg">{totalAttempts}</p>
-          <p className="text-[10px] text-fg-muted">{en ? 'Solved' : '푼 문제'}</p>
+          <p className="text-[10px] text-fg-muted">{s.solved}</p>
         </div>
         <div className="rounded-lg bg-bg-subtle px-2 py-1.5">
           <p className="text-lg font-semibold tabular-nums text-fg">{activeDays}<span className="text-xs font-normal text-fg-faint">/{n}</span></p>
-          <p className="text-[10px] text-fg-muted">{en ? 'Active days' : '학습한 날'}</p>
+          <p className="text-[10px] text-fg-muted">{s.activeDays}</p>
         </div>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="mt-auto w-full" role="img" aria-label={en ? 'Accuracy and activity trend' : '정답률·활동량 추이'}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="mt-auto w-full" role="img" aria-label={s.chartAria}>
         {/* 기준선 0/50/100% + y축 라벨 */}
         {[0, 50, 100].map((g) => (
           <g key={g}>
@@ -130,8 +130,8 @@ export function TrendChart({ trend, lang }: TrendChartProps) {
       </svg>
 
       <div className="mt-2 flex items-center gap-3 text-[11px] text-fg-faint">
-        <span className="flex items-center gap-1"><span className="inline-block h-1.5 w-3 rounded-full bg-accent" />{en ? 'Accuracy' : '정답률'}</span>
-        <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-accent/20" />{en ? 'Activity' : '활동량'}</span>
+        <span className="flex items-center gap-1"><span className="inline-block h-1.5 w-3 rounded-full bg-accent" />{s.legendAccuracy}</span>
+        <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-accent/20" />{s.legendActivity}</span>
       </div>
     </div>
   );

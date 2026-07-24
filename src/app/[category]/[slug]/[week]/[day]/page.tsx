@@ -125,7 +125,7 @@ export default async function DayPage({ params }: PageProps) {
                 <Article source={previewOf(content.body)} slug={slug} week={w} day={d} lang={lang} />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-bg to-transparent" />
               </div>
-              <Paywall loggedIn={loggedIn} />
+              <Paywall loggedIn={loggedIn} lang={lang} />
             </>
           ) : (
             <Article source={content.body} slug={slug} week={w} day={d} lang={lang} />

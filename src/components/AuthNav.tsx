@@ -5,6 +5,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { UserRound, X } from 'lucide-react';
 import { emitAuthChange, onAuthChange } from '@/lib/auth/authEvents';
+import { useLanguage, t } from '@/lib/i18n-client';
+import { pick } from '@/lib/strings/dict';
+import { shellStrings } from '@/lib/strings/shell';
 
 interface Me {
   id: string;
@@ -21,6 +24,8 @@ export function AuthNav() {
   const [user, setUser] = useState<Me | null | undefined>(undefined);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const lang = useLanguage();
+  const s = pick(shellStrings, lang);
 
   const refresh = useCallback(async () => {
     try {
@@ -53,20 +58,20 @@ export function AuthNav() {
   if (user === undefined) return null;
 
   if (!user) {
-    return <Link href="/login" className={LINK_CLASS}>로그인</Link>;
+    return <Link href="/login" className={LINK_CLASS}>{t(lang, 'login')}</Link>;
   }
 
   const links = [
-    { href: '/dashboard', label: '대시보드' },
-    { href: '/exam', label: '모의고사' },
-    { href: '/account', label: '마이페이지' },
-    ...(user.role === 'admin' ? [{ href: '/admin', label: '관리자' }] : []),
+    { href: '/dashboard', label: t(lang, 'dashboard') },
+    { href: '/exam', label: t(lang, 'mockExam') },
+    { href: '/account', label: t(lang, 'myPage') },
+    ...(user.role === 'admin' ? [{ href: '/admin', label: s.admin }] : []),
   ];
 
   const badge = user.plan === 'pro' ? (
     <span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">Pro</span>
   ) : (
-    <Link href="/pricing" className="rounded-md border border-accent/40 px-2 py-0.5 text-xs font-medium text-accent transition hover:bg-accent/10">업그레이드</Link>
+    <Link href="/pricing" className="rounded-md border border-accent/40 px-2 py-0.5 text-xs font-medium text-accent transition hover:bg-accent/10">{t(lang, 'upgradeButton')}</Link>
   );
 
   return (
@@ -76,7 +81,7 @@ export function AuthNav() {
         {links.map((l) => (<Link key={l.href} href={l.href} className={LINK_CLASS}>{l.label}</Link>))}
         {badge}
         <span className="max-w-[14ch] truncate px-1 text-xs text-fg-faint">{user.email}</span>
-        <button type="button" onClick={handleLogout} className={LINK_CLASS}>로그아웃</button>
+        <button type="button" onClick={handleLogout} className={LINK_CLASS}>{t(lang, 'logout')}</button>
       </div>
 
       {/* 모바일: 배지 + 메뉴 버튼 + 드롭다운 (가로로 펼쳐져 줄바꿈되던 문제 해결) */}
@@ -85,7 +90,7 @@ export function AuthNav() {
         <button
           type="button"
           onClick={() => setMenuOpen((o) => !o)}
-          aria-label="계정 메뉴"
+          aria-label={s.accountMenu}
           aria-expanded={menuOpen}
           className="inline-flex h-9 w-9 items-center justify-center rounded-md text-fg-muted transition hover:bg-bg-subtle hover:text-fg"
         >
@@ -101,7 +106,7 @@ export function AuthNav() {
                   {l.label}
                 </Link>
               ))}
-              <button type="button" onClick={handleLogout} role="menuitem" className={MENU_ITEM}>로그아웃</button>
+              <button type="button" onClick={handleLogout} role="menuitem" className={MENU_ITEM}>{t(lang, 'logout')}</button>
             </div>
           </>
         )}

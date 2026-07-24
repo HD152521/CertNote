@@ -2,10 +2,14 @@
 import { useEffect, useState } from 'react';
 import type { TocItem } from '@/lib/toc';
 import { cn } from '@/lib/cn';
+import { useLanguage } from '@/lib/i18n-client';
+import { pick } from '@/lib/strings/dict';
+import { chromeStrings } from '@/lib/strings/chrome';
 
 interface TocProps { items: TocItem[]; }
 
 export function Toc({ items }: TocProps) {
+  const s = pick(chromeStrings, useLanguage());
   const [active, setActive] = useState<string | null>(null);
   useEffect(() => {
     if (!items.length) return;
@@ -26,7 +30,7 @@ export function Toc({ items }: TocProps) {
   return (
     <aside className="hidden xl:block w-56 shrink-0 py-10 pl-8">
       <div className="sticky top-20">
-        <p className="mb-3 text-xs font-medium uppercase tracking-wider text-fg-faint">이 페이지</p>
+        <p className="mb-3 text-xs font-medium uppercase tracking-wider text-fg-faint">{s.tocTitle}</p>
         <ul className="space-y-1 text-sm border-l border-border">
           {items.map((it) => (
             <li key={it.id}>

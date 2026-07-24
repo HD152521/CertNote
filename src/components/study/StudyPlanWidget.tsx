@@ -1,10 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Flame, CalendarDays, Target, Snowflake } from 'lucide-react';
 import { StreakCalendar } from './StreakCalendar';
 import { Select } from '@/components/ui/Select';
+import { useLanguage } from '@/lib/i18n-client';
+import { pick } from '@/lib/strings/dict';
+import { fmt, fmtRich, studyPlanStrings } from '@/lib/strings/study';
 
 interface CertOption {
   slug: string;
@@ -58,6 +61,8 @@ function stripDayPrefix(title: string): string {
 }
 
 export function StudyPlanWidget({ certs }: StudyPlanWidgetProps) {
+  const lang = useLanguage();
+  const s = pick(studyPlanStrings, lang);
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState<Streak | null>(null);
   const [portion, setPortion] = useState<Portion | null>(null);
@@ -93,7 +98,7 @@ export function StudyPlanWidget({ certs }: StudyPlanWidgetProps) {
     <section className="rounded-xl border border-border bg-bg-elevated p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-sm font-medium">
-          <Target className="h-4 w-4 text-accent" /> 합격 플랜
+          <Target className="h-4 w-4 text-accent" /> {s.planTitle}
         </h2>
         <StreakBadge streak={streak} />
       </div>
@@ -119,10 +124,10 @@ export function StudyPlanWidget({ certs }: StudyPlanWidgetProps) {
             <div className="flex items-baseline gap-1.5">
               <Flame className={`h-5 w-5 self-center ${streak?.activeToday ? 'text-accent' : 'text-fg-faint'}`} />
               <span className="text-2xl font-bold leading-none tabular-nums text-fg">{streak?.current ?? 0}</span>
-              <span className="text-sm text-fg-muted">일 연속</span>
+              <span className="text-sm text-fg-muted">{s.streakUnit}</span>
             </div>
             <div className="flex items-center gap-1.5 text-[11px]">
-              <span className="rounded-full bg-bg-subtle px-2 py-0.5 text-fg-muted">최장 {streak?.longest ?? 0}일</span>
+              <span className="rounded-full bg-bg-subtle px-2 py-0.5 text-fg-muted">{fmt(s.longestBadge, { n: streak?.longest ?? 0 })}</span>
               {(streak?.freezeTokens ?? 0) > 0 && (
                 <span className="inline-flex items-center gap-0.5 rounded-full bg-sky-500/10 px-2 py-0.5 font-medium text-sky-500">
                   <Snowflake className="h-3 w-3" /> {streak?.freezeTokens}
@@ -138,17 +143,19 @@ export function StudyPlanWidget({ certs }: StudyPlanWidgetProps) {
 }
 
 function StreakBadge({ streak }: { streak: Streak | null }) {
+  const s = pick(studyPlanStrings, useLanguage());
   if (!streak || streak.current === 0) {
-    return <span className="text-xs text-fg-faint">스트릭 없음</span>;
+    return <span className="text-xs text-fg-faint">{s.noStreak}</span>;
   }
   return (
     <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${streak.activeToday ? 'bg-accent/10 text-accent' : 'bg-bg-subtle text-fg-muted'}`}>
-      <Flame className="h-3.5 w-3.5" /> {streak.current}일 연속
+      <Flame className="h-3.5 w-3.5" /> {fmt(s.streakBadge, { n: streak.current })}
     </span>
   );
 }
 
 function PlanSummary({ portion, onEdit, onSaved }: { portion: Portion; onEdit: () => void; onSaved: () => void }) {
+  const s = pick(studyPlanStrings, useLanguage());
   const ddayLabel = portion.dday > 0 ? `D-${portion.dday}` : portion.dday === 0 ? 'D-DAY' : `D+${-portion.dday}`;
   return (
     <div className="space-y-3">
@@ -159,24 +166,29 @@ function PlanSummary({ portion, onEdit, onSaved }: { portion: Portion; onEdit: (
             <span className="font-mono text-[11px] text-fg-faint">{portion.certCode}</span>
             <span className="truncate text-fg">{portion.certName}</span>
           </p>
-          <p className="mt-0.5 text-xs text-fg-faint">시험일 {portion.examDate}</p>
+          <p className="mt-0.5 text-xs text-fg-faint">{fmt(s.examDateLabel, { date: portion.examDate })}</p>
         </div>
         <span className={`shrink-0 text-lg font-bold tabular-nums ${portion.dday >= 0 ? 'text-accent' : 'text-fg-faint'}`}>{ddayLabel}</span>
       </div>
 
       {portion.catchUp?.isBehind && (
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
-          일정보다 <b>{portion.catchUp.behindBy}일</b> 뒤처졌어요. 시험일에 맞추려고 오늘 분량을{' '}
-          <b>{portion.catchUp.basePerDay}개 → {portion.catchUp.perDay}개</b>로 늘렸어요.
+          {fmtRich(s.catchUp, {
+            behind: portion.catchUp.behindBy,
+            from: portion.catchUp.basePerDay,
+            to: portion.catchUp.perDay,
+          }).map((part, i) =>
+            part.bold ? <b key={i}>{part.text}</b> : <Fragment key={i}>{part.text}</Fragment>,
+          )}
         </div>
       )}
 
       <div>
-        <p className="mb-1 text-xs font-medium text-fg-muted">오늘 학습 분량</p>
+        <p className="mb-1 text-xs font-medium text-fg-muted">{s.todayHeading}</p>
         {portion.finished ? (
-          <p className="text-sm text-fg-faint">예정 분량을 모두 마쳤어요. 복습으로 마무리해요 💪</p>
+          <p className="text-sm text-fg-faint">{s.allDone}</p>
         ) : portion.items.length === 0 ? (
-          <p className="text-sm text-fg-faint">오늘 배정된 분량이 없어요.</p>
+          <p className="text-sm text-fg-faint">{s.nothingToday}</p>
         ) : (
           <ul className="space-y-1">
             {portion.items.map((it) => (
@@ -194,7 +206,7 @@ function PlanSummary({ portion, onEdit, onSaved }: { portion: Portion; onEdit: (
       <GoalEditor portion={portion} onSaved={onSaved} />
 
       <button type="button" onClick={onEdit} className="text-xs text-fg-faint underline underline-offset-4 hover:text-fg-muted">
-        시험일 변경
+        {s.changeExamDate}
       </button>
     </div>
   );
@@ -202,6 +214,7 @@ function PlanSummary({ portion, onEdit, onSaved }: { portion: Portion; onEdit: (
 
 // 학습 목표(정확도·일일시간) 편집. 저장 시 PATCH → 목록 새로고침.
 function GoalEditor({ portion, onSaved }: { portion: Portion; onSaved: () => void }) {
+  const s = pick(studyPlanStrings, useLanguage());
   const [accuracy, setAccuracy] = useState(portion.targetAccuracy);
   const [minutes, setMinutes] = useState<string>(portion.dailyMinutesGoal != null ? String(portion.dailyMinutesGoal) : '');
   const [busy, setBusy] = useState(false);
@@ -233,20 +246,20 @@ function GoalEditor({ portion, onSaved }: { portion: Portion; onSaved: () => voi
 
   return (
     <div className="rounded-lg border border-border bg-bg-subtle p-3">
-      <p className="mb-2 text-xs font-medium text-fg-muted">학습 목표</p>
+      <p className="mb-2 text-xs font-medium text-fg-muted">{s.goalsHeading}</p>
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <label className="flex items-center gap-1.5">
-          <span className="text-fg-muted">목표 정확도</span>
+          <span className="text-fg-muted">{s.targetAccuracy}</span>
           <Select
             value={String(accuracy)}
             onChange={(val) => { setAccuracy(Number(val)); setSaved(false); }}
             options={ACCURACY_OPTIONS.map((a) => ({ value: String(a), label: `${a}%` }))}
             className="w-24"
-            ariaLabel="목표 정확도"
+            ariaLabel={s.targetAccuracy}
           />
         </label>
         <label className="flex items-center gap-1.5">
-          <span className="text-fg-muted">하루</span>
+          <span className="text-fg-muted">{s.dailyLabel}</span>
           <input
             type="number"
             min={0}
@@ -256,7 +269,7 @@ function GoalEditor({ portion, onSaved }: { portion: Portion; onSaved: () => voi
             placeholder="—"
             className="w-16 rounded-md border border-border bg-transparent px-2 py-1 outline-none focus:border-border-strong"
           />
-          <span className="text-fg-muted">분</span>
+          <span className="text-fg-muted">{s.minutesUnit}</span>
         </label>
         {dirty && (
           <button
@@ -265,10 +278,10 @@ function GoalEditor({ portion, onSaved }: { portion: Portion; onSaved: () => voi
             disabled={busy}
             className="rounded-md border border-border-strong px-2.5 py-1 font-medium transition hover:bg-fg/5 disabled:opacity-50"
           >
-            {busy ? '저장 중…' : '저장'}
+            {busy ? s.saving : s.save}
           </button>
         )}
-        {saved && !dirty && <span className="text-accent">저장됨</span>}
+        {saved && !dirty && <span className="text-accent">{s.saved}</span>}
       </div>
     </div>
   );
@@ -285,6 +298,7 @@ function PlanForm({
   onDone: () => void;
   onCancel?: () => void;
 }) {
+  const s = pick(studyPlanStrings, useLanguage());
   const [certSlug, setCertSlug] = useState(initial?.certSlug ?? certs[0]?.slug ?? '');
   const [examDate, setExamDate] = useState(initial?.examDate ?? '');
   const [busy, setBusy] = useState(false);
@@ -293,7 +307,7 @@ function PlanForm({
   async function submit() {
     setError(null);
     if (!certSlug || !examDate) {
-      setError('자격증과 시험일을 선택하세요.');
+      setError(s.selectCertAndDate);
       return;
     }
     setBusy(true);
@@ -314,7 +328,7 @@ function PlanForm({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.message ?? '저장하지 못했습니다.');
+        setError(data.message ?? s.saveFailed);
         return;
       }
       onDone();
@@ -340,13 +354,13 @@ function PlanForm({
 
   return (
     <div className="space-y-3">
-      {!initial && <p className="text-sm text-fg-muted">시험일을 정하면 D-day 카운트다운과 매일 학습 분량을 챙겨드려요.</p>}
+      {!initial && <p className="text-sm text-fg-muted">{s.planIntro}</p>}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Select
           value={certSlug}
           onChange={setCertSlug}
           options={certs.map((c) => ({ value: c.slug, label: `${c.code} · ${c.name}` }))}
-          ariaLabel="자격증"
+          ariaLabel={s.certAriaLabel}
         />
         <input
           type="date"
@@ -363,14 +377,14 @@ function PlanForm({
           disabled={busy}
           className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-medium transition hover:bg-fg/5 disabled:opacity-50"
         >
-          {busy ? '저장 중…' : '시험일 저장'}
+          {busy ? s.saving : s.saveExamDate}
         </button>
         {onCancel && (
-          <button type="button" onClick={onCancel} disabled={busy} className="px-2 py-1.5 text-sm text-fg-muted hover:text-fg">취소</button>
+          <button type="button" onClick={onCancel} disabled={busy} className="px-2 py-1.5 text-sm text-fg-muted hover:text-fg">{s.cancel}</button>
         )}
         {initial && (
           <button type="button" onClick={remove} disabled={busy} className="ml-auto text-xs text-fg-faint underline underline-offset-4 hover:text-red-500">
-            플랜 삭제
+            {s.deletePlan}
           </button>
         )}
       </div>

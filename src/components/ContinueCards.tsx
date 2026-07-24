@@ -7,6 +7,9 @@ import type { CertMeta } from '@/lib/content';
 import type { StarterDay } from '@/lib/study/starter';
 import { onProgressChange, readProgress, type ProgressEntry } from '@/lib/progress';
 import { cn } from '@/lib/cn';
+import { useLanguage } from '@/lib/i18n-client';
+import { pick } from '@/lib/strings/dict';
+import { chromeStrings } from '@/lib/strings/chrome';
 
 interface ContinueCardsProps {
   certs: CertMeta[];
@@ -17,6 +20,7 @@ interface ContinueCardsProps {
 interface Row { cert: CertMeta; entry: ProgressEntry; }
 
 export function ContinueCards({ certs, starter }: ContinueCardsProps) {
+  const s = pick(chromeStrings, useLanguage());
   const [rows, setRows] = useState<Row[] | null>(null);
   useEffect(() => {
     const refresh = () => {
@@ -39,7 +43,7 @@ export function ContinueCards({ certs, starter }: ContinueCardsProps) {
     return (
       <section className="space-y-3">
         <h2 className="flex items-center gap-1.5 text-sm font-medium text-fg-muted">
-          <Sparkles className="h-3.5 w-3.5" /> 여기서 시작하세요
+          <Sparkles className="h-3.5 w-3.5" /> {s.startHere}
         </h2>
         <Link
           href={starter.href}
@@ -53,7 +57,7 @@ export function ContinueCards({ certs, starter }: ContinueCardsProps) {
             {starter.title.replace(/^Day\s*\d+\s*[-–]\s*/i, '')}
           </p>
           <span className="flex items-center gap-1 text-xs text-fg group-hover:text-accent transition">
-            목표 자격증 첫 페이지 시작 <ArrowRight className="h-3 w-3" />
+            {s.startFirstPage} <ArrowRight className="h-3 w-3" />
           </span>
         </Link>
       </section>
@@ -62,7 +66,7 @@ export function ContinueCards({ certs, starter }: ContinueCardsProps) {
   return (
     <section className="space-y-3">
       <h2 className="flex items-center gap-1.5 text-sm font-medium text-fg-muted">
-        <Clock className="h-3.5 w-3.5" /> 이어서 읽기
+        <Clock className="h-3.5 w-3.5" /> {s.continueReading}
       </h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {rows.slice(0, 4).map(({ cert, entry }) => (
@@ -79,7 +83,7 @@ export function ContinueCards({ certs, starter }: ContinueCardsProps) {
               {entry.title.replace(/^Day\s*\d+\s*[-–]\s*/i, '')}
             </p>
             <span className="flex items-center gap-1 text-xs text-fg group-hover:text-accent transition">
-              계속 <ArrowRight className="h-3 w-3" />
+              {s.continueCta} <ArrowRight className="h-3 w-3" />
             </span>
           </Link>
         ))}

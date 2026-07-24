@@ -3,10 +3,15 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import type { CertMeta } from '@/lib/content';
 import { cn } from '@/lib/cn';
+import type { Language } from '@/lib/i18n';
+import { pick } from '@/lib/strings/dict';
+import { chromeStrings, formatCertLength } from '@/lib/strings/chrome';
 
-interface CertCardProps { cert: CertMeta; }
+// 서버 컴포넌트라 훅을 못 쓴다. 현재는 한국어 홈(/)에서만 쓰이므로 기본값은 ko다.
+interface CertCardProps { cert: CertMeta; lang?: Language; }
 
-export function CertCard({ cert }: CertCardProps) {
+export function CertCard({ cert, lang = 'ko' }: CertCardProps) {
+  const s = pick(chromeStrings, lang);
   const isPro = cert.level === 'professional';
   return (
     <Link href={`/${DEFAULT_CATEGORY}/${cert.slug}`}
@@ -19,8 +24,8 @@ export function CertCard({ cert }: CertCardProps) {
       </div>
       <h3 className="text-base font-semibold leading-snug">{cert.name}</h3>
       <div className="flex items-center justify-between text-xs text-fg-muted">
-        <span>{cert.weeks}주 · {cert.dayCount}일</span>
-        <span className="flex items-center gap-1 text-fg group-hover:text-accent transition">시작 <ArrowRight className="h-3.5 w-3.5" /></span>
+        <span>{formatCertLength(lang, cert.weeks, cert.dayCount)}</span>
+        <span className="flex items-center gap-1 text-fg group-hover:text-accent transition">{s.certCardStart} <ArrowRight className="h-3.5 w-3.5" /></span>
       </div>
     </Link>
   );

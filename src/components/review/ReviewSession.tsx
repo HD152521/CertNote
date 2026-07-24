@@ -7,6 +7,15 @@ import { answerCount, isMultiAnswer, parseCorrectSet } from '@/lib/quiz/correctn
 import { TutorPanel } from '@/components/tutor/TutorPanel';
 import { WrongReasonPicker } from '@/components/review/WrongReasonPicker';
 import { cn } from '@/lib/cn';
+import { useLanguage } from '@/lib/i18n-client';
+import { fmt, pick } from '@/lib/strings/dict';
+import {
+  formatDoneTitle,
+  formatDue,
+  formatPickCount,
+  formatWrong,
+  reviewStrings,
+} from '@/lib/strings/review';
 
 interface Card {
   questionId: string;
@@ -28,14 +37,9 @@ interface ReviewResult {
   dueAt: string;
 }
 
-function formatDue(iso: string): string {
-  const days = Math.round((new Date(iso).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
-  if (days <= 0) return '오늘';
-  if (days === 1) return '내일';
-  return `${days}일 뒤`;
-}
-
 export function ReviewSession() {
+  const lang = useLanguage();
+  const s = pick(reviewStrings, lang);
   const [cards, setCards] = useState<Card[] | null>(null);
   const [idx, setIdx] = useState(0);
   // 선택한 보기들(단일·복수 공통으로 배열로 관리).
@@ -51,9 +55,9 @@ export function ReviewSession() {
     fetch(url, { cache: 'no-store' })
       .then((r) => r.json())
       .then((d) => { if (active) setCards(d.items ?? []); })
-      .catch(() => { if (active) setError('복습 목록을 불러오지 못했습니다.'); });
+      .catch(() => { if (active) setError(s.loadFailed); });
     return () => { active = false; };
-  }, [weakFirst]);
+  }, [weakFirst, s.loadFailed]);
 
   // 정렬 변경: 목록을 새로 불러오며 세션을 처음으로 되돌린다.
   function changeOrder(next: boolean) {
@@ -83,7 +87,7 @@ export function ReviewSession() {
       if (!res.ok) throw new Error();
       setResult((await res.json()) as ReviewResult);
     } catch {
-      setError('채점에 실패했습니다. 다시 시도해 주세요.');
+      setError(s.gradeFailed);
       setPicked([]);
     } finally {
       setSubmitting(false);
@@ -109,15 +113,15 @@ export function ReviewSession() {
   }
 
   if (error && !cards) return <p className="text-sm text-danger">{error}</p>;
-  if (!cards) return <p className="text-sm text-fg-muted">불러오는 중…</p>;
+  if (!cards) return <p className="text-sm text-fg-muted">{s.loading}</p>;
 
   if (cards.length === 0) {
     return (
       <div className="rounded-lg border border-border bg-bg-elevated p-8 text-center">
         <p className="text-2xl mb-2">🎉</p>
-        <p className="font-medium text-fg mb-1">지금 복습할 문제가 없어요</p>
-        <p className="text-sm text-fg-muted mb-4">연습 문제를 틀리면 이곳에 자동으로 쌓입니다.</p>
-        <Link href="/" className="text-sm text-accent underline underline-offset-4">학습으로 돌아가기</Link>
+        <p className="font-medium text-fg mb-1">{s.emptyTitle}</p>
+        <p className="text-sm text-fg-muted mb-4">{s.emptyBody}</p>
+        <Link href="/" className="text-sm text-accent underline underline-offset-4">{s.backToStudy}</Link>
       </div>
     );
   }
@@ -126,11 +130,11 @@ export function ReviewSession() {
     return (
       <div className="rounded-lg border border-success/40 bg-success/5 p-8 text-center">
         <p className="text-2xl mb-2">✅</p>
-        <p className="font-medium text-fg mb-1">오늘 복습 완료! ({cards.length}문제)</p>
-        <p className="text-sm text-fg-muted mb-4">맞힌 문제는 다음 복습일이 미뤄지고, 틀린 문제는 곧 다시 나옵니다.</p>
+        <p className="font-medium text-fg mb-1">{formatDoneTitle(lang, cards.length)}</p>
+        <p className="text-sm text-fg-muted mb-4">{s.doneBody}</p>
         <div className="flex justify-center gap-3">
-          <Link href="/notebook" className="text-sm text-accent underline underline-offset-4">오답노트 보기</Link>
-          <Link href="/" className="text-sm text-fg-muted underline underline-offset-4">학습으로</Link>
+          <Link href="/notebook" className="text-sm text-accent underline underline-offset-4">{s.viewNotebook}</Link>
+          <Link href="/" className="text-sm text-fg-muted underline underline-offset-4">{s.toStudy}</Link>
         </div>
       </div>
     );
@@ -144,21 +148,21 @@ export function ReviewSession() {
       <div className="mb-3 flex items-center gap-1 text-xs">
         <button type="button" onClick={() => changeOrder(false)}
           className={cn('rounded-md px-2.5 py-1 font-medium transition', !weakFirst ? 'bg-accent/10 text-accent' : 'text-fg-muted hover:text-fg')}>
-          기본순
+          {s.orderDefault}
         </button>
         <button type="button" onClick={() => changeOrder(true)}
           className={cn('rounded-md px-2.5 py-1 font-medium transition', weakFirst ? 'bg-accent/10 text-accent' : 'text-fg-muted hover:text-fg')}>
-          약점부터
+          {s.orderWeakFirst}
         </button>
       </div>
       <div className="mb-3 flex items-center justify-between text-xs text-fg-muted font-mono">
         <span>{idx + 1} / {cards.length}</span>
-        <span className="uppercase tracking-wider">{current!.week > 0 ? `${current!.slug} · W${current!.week} D${current!.day}` : `${current!.slug} · 모의고사${current!.domain ? ` · ${current!.domain}` : ''}`}</span>
+        <span className="uppercase tracking-wider">{current!.week > 0 ? `${current!.slug} · W${current!.week} D${current!.day}` : `${current!.slug} · ${s.mockExam}${current!.domain ? ` · ${current!.domain}` : ''}`}</span>
       </div>
       <div className="rounded-lg border border-border bg-bg-elevated p-4 sm:p-5">
         {multi && (
           <div className="mb-2">
-            <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">정답 {answerCount(current!.answer)}개 선택</span>
+            <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">{formatPickCount(lang, answerCount(current!.answer))}</span>
           </div>
         )}
         <p className="font-medium leading-relaxed mb-4 text-fg whitespace-pre-wrap">{current!.prompt}</p>
@@ -198,18 +202,18 @@ export function ReviewSession() {
         {multi && !isAnswered && (
           <button type="button" onClick={() => submit(picked)} disabled={picked.length === 0 || submitting}
             className="mt-3 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40">
-            정답 확인
+            {s.checkAnswer}
           </button>
         )}
         {error && <p className="mt-3 text-sm text-danger">{error}</p>}
         {isAnswered && (
           <div className={cn('mt-4 rounded-md border p-3 text-sm', result!.correct ? 'border-success/40 bg-success/5' : 'border-danger/40 bg-danger/5')}>
             <p className="font-medium mb-1.5 text-fg">
-              {result!.correct ? '✓ 정답!' : `✗ 정답: ${current!.answer}`}
-              {result!.mastered && <span className="ml-2 text-xs text-success">· 마스터 🎓</span>}
+              {result!.correct ? s.correct : formatWrong(lang, current!.answer)}
+              {result!.mastered && <span className="ml-2 text-xs text-success">{s.mastered}</span>}
             </p>
             {current!.explanation && <p className="text-fg-muted whitespace-pre-wrap leading-relaxed mb-2">{current!.explanation}</p>}
-            <p className="text-xs text-fg-faint">다음 복습: {formatDue(result!.dueAt)}</p>
+            <p className="text-xs text-fg-faint">{fmt(s.nextDue, { due: formatDue(lang, result!.dueAt) })}</p>
             {!result!.correct && (
               <>
                 <WrongReasonPicker questionId={current!.questionId} />
@@ -217,7 +221,7 @@ export function ReviewSession() {
               </>
             )}
             <button type="button" onClick={next} className="mt-3 block rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-white hover:opacity-90">
-              {idx + 1 < cards.length ? '다음 문제 →' : '복습 끝내기'}
+              {idx + 1 < cards.length ? s.nextQuestion : s.finishReview}
             </button>
           </div>
         )}

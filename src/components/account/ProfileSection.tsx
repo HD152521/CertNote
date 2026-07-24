@@ -5,8 +5,14 @@ import { useRouter } from 'next/navigation';
 import type { CertOption } from '@/components/AuthForm';
 import { Select } from '@/components/ui/Select';
 import { OCCUPATION_OPTIONS, PURPOSE_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profileOptions';
+import { useLanguage, t } from '@/lib/i18n-client';
+import { pick } from '@/lib/strings/dict';
+import { accountStrings } from '@/lib/strings/account';
 
-const optional = (opts: readonly string[]) => [{ value: '', label: '선택 안 함' }, ...opts.map((o) => ({ value: o, label: o }))];
+const optional = (opts: readonly string[], noneLabel: string) => [
+  { value: '', label: noneLabel },
+  ...opts.map((o) => ({ value: o, label: o })),
+];
 
 export interface ProfileValues {
   name: string;
@@ -23,6 +29,8 @@ const INPUT_CLS =
 // 마이페이지 내 프로필 보기/수정. PATCH /api/account/profile.
 // 개인정보 / 학습 정보 두 그룹으로 나눠 스캔하기 쉽게 한다.
 export function ProfileSection({ certs, initial }: { certs: CertOption[]; initial: ProfileValues }) {
+  const lang = useLanguage();
+  const s = pick(accountStrings, lang);
   const router = useRouter();
   const [v, setV] = useState<ProfileValues>(initial);
   const [busy, setBusy] = useState(false);
@@ -47,13 +55,13 @@ export function ProfileSection({ certs, initial }: { certs: CertOption[]; initia
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.message ?? '저장에 실패했습니다.');
+        setError(data.message ?? s.saveFailed);
         return;
       }
       setDone(true);
       router.refresh();
     } catch {
-      setError('네트워크 오류가 발생했습니다.');
+      setError(t(lang, 'networkError'));
     } finally {
       setBusy(false);
     }
@@ -61,41 +69,41 @@ export function ProfileSection({ certs, initial }: { certs: CertOption[]; initia
 
   return (
     <form onSubmit={save} className="space-y-6">
-      <Group title="개인정보">
-        <Field label="이름">
+      <Group title={s.personalInfo}>
+        <Field label={t(lang, 'name')}>
           <input type="text" required value={v.name} onChange={(e) => set('name', e.target.value)} className={INPUT_CLS} />
         </Field>
-        <Field label="생년월일">
+        <Field label={t(lang, 'birthdate')}>
           <input type="date" required value={v.birthdate} onChange={(e) => set('birthdate', e.target.value)} className={INPUT_CLS} />
         </Field>
       </Group>
 
-      <Group title="학습 정보" hint="맞춤 추천에 사용됩니다">
-        <Field label="목표 자격증">
+      <Group title={s.studyInfo} hint={s.studyInfoHint}>
+        <Field label={t(lang, 'targetCert')}>
           <Select
             value={v.targetCert}
             onChange={(val) => set('targetCert', val)}
             options={certs.map((c) => ({ value: c.slug, label: `${c.code} · ${c.name}` }))}
-            placeholder="선택해 주세요"
-            ariaLabel="목표 자격증"
+            placeholder={t(lang, 'selectOne')}
+            ariaLabel={t(lang, 'targetCert')}
           />
         </Field>
-        <Field label="직업" optional>
-          <Select value={v.occupation} onChange={(val) => set('occupation', val)} options={optional(OCCUPATION_OPTIONS)} placeholder="선택 안 함" ariaLabel="직업" />
+        <Field label={t(lang, 'occupation')} optionalLabel={s.optionalTag}>
+          <Select value={v.occupation} onChange={(val) => set('occupation', val)} options={optional(OCCUPATION_OPTIONS, t(lang, 'doNotSelect'))} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'occupation')} />
         </Field>
-        <Field label="학습 목적" optional>
-          <Select value={v.purpose} onChange={(val) => set('purpose', val)} options={optional(PURPOSE_OPTIONS)} placeholder="선택 안 함" ariaLabel="학습 목적" />
+        <Field label={t(lang, 'purpose')} optionalLabel={s.optionalTag}>
+          <Select value={v.purpose} onChange={(val) => set('purpose', val)} options={optional(PURPOSE_OPTIONS, t(lang, 'doNotSelect'))} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'purpose')} />
         </Field>
-        <Field label="현재 수준/경력" optional>
-          <Select value={v.experienceLevel} onChange={(val) => set('experienceLevel', val)} options={optional(EXPERIENCE_OPTIONS)} placeholder="선택 안 함" ariaLabel="현재 수준/경력" />
+        <Field label={t(lang, 'experienceLevel')} optionalLabel={s.optionalTag}>
+          <Select value={v.experienceLevel} onChange={(val) => set('experienceLevel', val)} options={optional(EXPERIENCE_OPTIONS, t(lang, 'doNotSelect'))} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'experienceLevel')} />
         </Field>
       </Group>
 
       {error && <p className="text-sm text-danger" role="alert">{error}</p>}
-      {done && <p className="text-sm text-accent">저장되었습니다.</p>}
+      {done && <p className="text-sm text-accent">{s.profileSaved}</p>}
       <button type="submit" disabled={busy}
         className="w-full rounded-md bg-accent px-3 py-2.5 text-sm font-semibold text-accent-fg transition hover:opacity-90 disabled:opacity-50">
-        {busy ? '저장 중…' : '프로필 저장'}
+        {busy ? t(lang, 'saving') : s.saveProfile}
       </button>
     </form>
   );
@@ -113,12 +121,13 @@ function Group({ title, hint, children }: { title: string; hint?: string; childr
   );
 }
 
-function Field({ label, optional, children }: { label: string; optional?: boolean; children: React.ReactNode }) {
+// optionalLabel이 있으면 '선택' 배지를 붙인다 — 배지 문구가 언어별로 달라 boolean 대신 문자열을 받는다.
+function Field({ label, optionalLabel, children }: { label: string; optionalLabel?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
       <label className="flex items-center gap-1.5 text-sm text-fg-muted">
         {label}
-        {optional && <span className="text-[11px] text-fg-faint">선택</span>}
+        {optionalLabel && <span className="text-[11px] text-fg-faint">{optionalLabel}</span>}
       </label>
       {children}
     </div>

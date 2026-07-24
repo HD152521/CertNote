@@ -6,10 +6,15 @@ import Fuse from 'fuse.js';
 import { Search } from 'lucide-react';
 import type { SearchEntry, SearchBodyEntry } from '@/lib/content';
 import { cn } from '@/lib/cn';
+import { useLanguage } from '@/lib/i18n-client';
+import { pick } from '@/lib/strings/dict';
+import { chromeStrings, formatSearchCount } from '@/lib/strings/chrome';
 
 interface SearchDialogProps { index?: SearchEntry[]; onClose: () => void; }
 
 export function SearchDialog({ index = [], onClose }: SearchDialogProps) {
+  const lang = useLanguage();
+  const s = pick(chromeStrings, lang);
   const router = useRouter();
   const [q, setQ] = useState('');
   const [active, setActive] = useState(0);
@@ -68,7 +73,7 @@ export function SearchDialog({ index = [], onClose }: SearchDialogProps) {
         <div className="flex items-center gap-2 border-b border-border px-3.5 py-3">
           <Search className="h-4 w-4 text-fg-muted" />
           <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKey}
-            placeholder="제목·본문·코드로 검색..."
+            placeholder={s.searchPlaceholder}
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-fg-faint"
           />
           <kbd className="font-mono text-[10px] text-fg-faint border border-border rounded px-1.5 py-0.5">ESC</kbd>
@@ -76,7 +81,7 @@ export function SearchDialog({ index = [], onClose }: SearchDialogProps) {
         <ul className="max-h-[60vh] overflow-y-auto p-1.5">
           {results.length === 0 && (
             <li className="px-3 py-6 text-center text-sm text-fg-muted">
-              {bodyIndex === null ? '불러오는 중…' : '결과 없음'}
+              {bodyIndex === null ? s.searchLoading : s.searchNoResults}
             </li>
           )}
           {results.map((r, i) => (
@@ -93,10 +98,10 @@ export function SearchDialog({ index = [], onClose }: SearchDialogProps) {
           ))}
         </ul>
         <div className="border-t border-border px-3.5 py-2 text-[11px] text-fg-faint flex items-center justify-between">
-          <span>총 {data.length}개 페이지</span>
+          <span>{formatSearchCount(lang, data.length)}</span>
           <span className="flex items-center gap-3">
-            <span><kbd className="font-mono">↑↓</kbd> 이동</span>
-            <span><kbd className="font-mono">↵</kbd> 열기</span>
+            <span><kbd className="font-mono">↑↓</kbd> {s.searchNavigate}</span>
+            <span><kbd className="font-mono">↵</kbd> {s.searchOpen}</span>
           </span>
         </div>
       </div>

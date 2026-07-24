@@ -2,6 +2,9 @@
 
 import { cn } from '@/lib/cn';
 import { prevDate } from '@/lib/study/streak';
+import { useLanguage } from '@/lib/i18n-client';
+import { pick } from '@/lib/strings/dict';
+import { chromeStrings, formatRecentWeeks } from '@/lib/strings/chrome';
 
 interface StreakCalendarProps {
   activeDates: string[];
@@ -12,6 +15,8 @@ interface StreakCalendarProps {
 
 // 최근 N주 활동 히트맵(경량). 학습일/프리즈일/오늘을 색으로 구분한다.
 export function StreakCalendar({ activeDates, frozenDate, today, weeks = 12 }: StreakCalendarProps) {
+  const lang = useLanguage();
+  const s = pick(chromeStrings, lang);
   const total = weeks * 7;
   const active = new Set(activeDates);
 
@@ -52,10 +57,10 @@ export function StreakCalendar({ activeDates, frozenDate, today, weeks = 12 }: S
         ))}
       </div>
       <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-fg-faint">
-        <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-accent" />학습</span>
-        <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-sky-400" />프리즈</span>
-        <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-fg/[0.08]" />미학습</span>
-        <span className="ml-auto">최근 {weeks}주</span>
+        <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-accent" />{s.legendStudied}</span>
+        <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-sky-400" />{s.legendFreeze}</span>
+        <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-fg/[0.08]" />{s.legendMissed}</span>
+        <span className="ml-auto">{formatRecentWeeks(lang, weeks)}</span>
       </div>
     </div>
   );

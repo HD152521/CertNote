@@ -5,6 +5,10 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { parseCorrectSet } from '@/lib/quiz/correctness';
 import { cn } from '@/lib/cn';
+import { useLanguage } from '@/lib/i18n-client';
+import type { Language } from '@/lib/i18n';
+import { pick } from '@/lib/strings/dict';
+import { formatBox, formatStartReview, reviewStrings } from '@/lib/strings/review';
 
 interface Card {
   questionId: string;
@@ -28,13 +32,16 @@ function isDue(iso: string): boolean {
   return new Date(iso).getTime() <= Date.now();
 }
 
-function boxLabel(card: Card): { text: string; tone: string } {
-  if (card.mastered) return { text: '마스터 🎓', tone: 'text-success border-success/40 bg-success/5' };
-  if (isDue(card.dueAt)) return { text: '복습 필요', tone: 'text-danger border-danger/40 bg-danger/5' };
-  return { text: `${card.box}단계`, tone: 'text-fg-muted border-border' };
+function boxLabel(card: Card, lang: Language): { text: string; tone: string } {
+  const s = pick(reviewStrings, lang);
+  if (card.mastered) return { text: s.badgeMastered, tone: 'text-success border-success/40 bg-success/5' };
+  if (isDue(card.dueAt)) return { text: s.badgeDue, tone: 'text-danger border-danger/40 bg-danger/5' };
+  return { text: formatBox(lang, card.box), tone: 'text-fg-muted border-border' };
 }
 
 export function NotebookList() {
+  const lang = useLanguage();
+  const s = pick(reviewStrings, lang);
   const [cards, setCards] = useState<Card[] | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
   const [error, setError] = useState<string | null>(null);
@@ -44,9 +51,9 @@ export function NotebookList() {
     fetch('/api/review/notebook', { cache: 'no-store' })
       .then((r) => r.json())
       .then((d) => { if (active) setCards(d.items ?? []); })
-      .catch(() => { if (active) setError('오답노트를 불러오지 못했습니다.'); });
+      .catch(() => { if (active) setError(s.notebookLoadFailed); });
     return () => { active = false; };
-  }, []);
+  }, [s.notebookLoadFailed]);
 
   const stats = useMemo(() => {
     const list = cards ?? [];
@@ -65,23 +72,23 @@ export function NotebookList() {
   }, [cards, filter]);
 
   if (error) return <p className="text-sm text-danger">{error}</p>;
-  if (!cards) return <p className="text-sm text-fg-muted">불러오는 중…</p>;
+  if (!cards) return <p className="text-sm text-fg-muted">{s.loading}</p>;
 
   if (cards.length === 0) {
     return (
       <div className="rounded-lg border border-border bg-bg-elevated p-8 text-center">
         <p className="text-2xl mb-2">📒</p>
-        <p className="font-medium text-fg mb-1">아직 틀린 문제가 없어요</p>
-        <p className="text-sm text-fg-muted mb-4">연습 문제를 풀다가 틀리면 자동으로 여기 모입니다.</p>
-        <Link href="/" className="text-sm text-accent underline underline-offset-4">학습 시작하기</Link>
+        <p className="font-medium text-fg mb-1">{s.notebookEmptyTitle}</p>
+        <p className="text-sm text-fg-muted mb-4">{s.notebookEmptyBody}</p>
+        <Link href="/" className="text-sm text-accent underline underline-offset-4">{s.startStudying}</Link>
       </div>
     );
   }
 
   const FILTERS: { key: Filter; label: string; count: number }[] = [
-    { key: 'all', label: '전체', count: stats.total },
-    { key: 'due', label: '복습 필요', count: stats.due },
-    { key: 'mastered', label: '마스터', count: stats.mastered },
+    { key: 'all', label: s.filterAll, count: stats.total },
+    { key: 'due', label: s.filterDue, count: stats.due },
+    { key: 'mastered', label: s.filterMastered, count: stats.mastered },
   ];
 
   return (
@@ -101,7 +108,7 @@ export function NotebookList() {
         </div>
         {stats.due > 0 && (
           <Link href="/review" className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-white hover:opacity-90">
-            복습 시작 ({stats.due})
+            {formatStartReview(lang, stats.due)}
           </Link>
         )}
       </div>
@@ -109,13 +116,13 @@ export function NotebookList() {
       <ul className="space-y-3">
         {filtered.map((card) => {
           const correctSet = parseCorrectSet(card.answer);
-          const badge = boxLabel(card);
+          const badge = boxLabel(card, lang);
           return (
             <li key={card.questionId} className="rounded-lg border border-border bg-bg-elevated p-4">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <Link href={card.week > 0 ? `/${DEFAULT_CATEGORY}/${card.slug}/week${card.week}/day${card.day}` : `/${DEFAULT_CATEGORY}/${card.slug}`}
                   className="font-mono text-[11px] uppercase tracking-wider text-fg-faint hover:text-fg">
-                  {card.week > 0 ? `${card.slug} · W${card.week} D${card.day}` : `${card.slug} · 모의고사${card.domain ? ` · ${card.domain}` : ''}`}
+                  {card.week > 0 ? `${card.slug} · W${card.week} D${card.day}` : `${card.slug} · ${s.mockExam}${card.domain ? ` · ${card.domain}` : ''}`}
                 </Link>
                 <span className={cn('rounded-full border px-2 py-0.5 text-[10px]', badge.tone)}>{badge.text}</span>
               </div>
