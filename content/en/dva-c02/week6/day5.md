@@ -1,157 +1,158 @@
-# Day 5 - Week 6 Comprehensive Review: DynamoDB Complete Architecture Map
+# Day 5 - Week 6 Comprehensive Review: The Complete DynamoDB Map
 
-This is the last day of Week 6. DynamoDB is the service generating the most questions on DVA-C02. Simple memorization doesn't survive variant problems. In this day, we connect partition key design mathematics, read consistency models, LSI/GSI internal differences, DAX cache layer, Streams + Lambda integration, transaction 2PC, and TTL async deletion into one architecture map, concluding with full-exam-style comprehensive problems. Those viewing DynamoDB "from the perspective of how data is stored and read at partition level" versus those "memorizing only API names" get completely different exam results on the same problem.
+This is the last day of Week 6. DynamoDB is the service that generates more exam questions than any other on DVA-C02, and plain memorization won't hold up against reworded variations. Today we connect everything the week covered — the mathematics of partition key design, the read consistency models, the internal differences between LSI and GSI, the DAX cache layer, Streams plus Lambda integration, the two-phase commit behind transactions, and TTL's asynchronous deletion — into a single map, then close with comprehensive questions in real exam format. Someone who looks at DynamoDB through the lens of "how is data actually stored and read at the partition level" and someone who has only memorized API names will get completely different results on the same question.
 
-## DynamoDB Complete Architecture Map
+## The Complete DynamoDB Architecture Map
 
 ```
 Client request
       │
       ▼
-  [DAX Cluster]  ─── Cache hit → return μs
-      │ Cache miss
+  [DAX cluster]  ─── cache hit → returns in μs
+      │ cache miss
       ▼
-[DynamoDB Request Router]
+[DynamoDB request router]
       │
       ▼
-[Partition Metadata Service]
-  Partition Key → Hash → Determine storage node
+[Partition metadata service]
+  Partition key → hash → determines the owning storage node
       │
       ▼
-[Storage Node (B-Tree + WAL)]
+[Storage node (B-Tree + WAL)]
   Primary Node ──replicate──► Replica 1
-               ──replicate──► Replica 2 (3 AZ distributed)
+               ──replicate──► Replica 2 (spread across 3 AZs)
       │
-      ├── Read (Eventually Consistent): Any Replica
+      ├── Read (Eventually Consistent): any replica
       ├── Read (Strongly Consistent): Primary only
-      └── Write: Primary → WAL → Replication complete
+      └── Write: Primary → WAL → replication complete
       │
       ▼
-[DynamoDB Streams Shard]  (24-hour retention)
+[DynamoDB Streams shard]  (changes retained 24 hours)
       │
       ▼
-[Lambda ESM Polling]
-  Batch process → BisectBatchOnFunctionError → DLQ
+[Lambda ESM polling]
+  Batch processing → BisectBatchOnFunctionError → DLQ
 ```
 
-> 💡 **Related theory**: DynamoDB's internal storage is B-Tree based LSM (Log-Structured Merge-tree). On write, first record in Write-Ahead Log (WAL), Primary acknowledges, background propagates to replicas. Eventually Consistent reads can hit Replica before propagation completes, seeing stale data. Strongly Consistent reads hit Primary only, always latest but 2× RCU cost.
+> 💡 **Related theory**: DynamoDB's internal storage is a B-Tree-based LSM (Log-Structured Merge-tree). On a write, the change is first recorded in the Write-Ahead Log (WAL); once the Primary node acknowledges the write, it propagates to the remaining replicas in the background. An Eventually Consistent read can hit a replica before that propagation finishes, which is how you end up seeing stale data. A Strongly Consistent read goes only to the Primary, so it is always current — but it consumes twice the RCU.
 
-## Partition Key Design — Hot Partition Mathematics
+## Partition Key Design — The Mathematics of Hot Partitions
 
-Partition limits: **3,000 RCU + 1,000 WCU + 10GB**
+Per-partition limits: **3,000 RCU + 1,000 WCU + 10GB**
 
-When items concentrate in specific partition, that partition hits limits causing `ProvisionedThroughputExceededException` (hot partition problem).
+When items concentrate on one partition, that partition hits its limit and throws `ProvisionedThroughputExceededException` — the hot partition problem.
 
 ```
 Bad partition key examples:
-  status = "PENDING" → Most new orders concentrate in one partition
-  date = "2026-06-27" → All today's data in one partition
+  status = "PENDING" → most new orders land on a single partition
+  date = "2026-06-27" → all of today's data on a single partition
 
 Good partition key examples:
-  orderId = UUID → Random distribution
-  userId + timestamp → Distributed by user + time-sorted
+  orderId = UUID → random distribution
+  userId + timestamp → distributed per user, sorted by time
 
-Write Sharding pattern:
+Write sharding pattern:
   partition_key = userId + "#" + str(random.randint(0, 9))
-  → Same userId distributed across 10 partitions
-  → Query requires 0~9 Query all, then merge results
+  → the same userId is spread across 10 partitions
+  → reads must Query all of 0~9 and merge the results
 ```
 
-> 🔍 **Going deeper**: Adaptive Capacity introduced 2018: when one partition traffic increases, auto-redistribute spare capacity from other partitions. Burst Capacity accumulates last 300 seconds unused capacity, up to 300 seconds reserve, consumed on spike. Both auto-operate but aren't root solution for sustained hot partitions.
+> 🔍 **Going deeper**: Adaptive Capacity, introduced in 2018, automatically shifts spare capacity from other partitions when traffic to one partition rises, so a hot partition can temporarily survive exceeding its provisioned share. Burst Capacity separately accumulates whatever capacity a partition left unused over the last 300 seconds (5 minutes), banking up to 300 seconds' worth as reserve and spending it on a sudden spike. Both operate automatically, but neither is a real fix for a sustained hot partition.
 
-## RCU/WCU Mathematics Quick Reference
+## RCU/WCU Mathematics: A Quick Reference
 
 ```
-Read (basis: 4KB, ceil rounding):
+Reads (unit: 4KB, rounded up):
   Eventually Consistent = ceil(size/4KB) × 0.5
   Strongly Consistent   = ceil(size/4KB) × 1
   Transactional Read    = ceil(size/4KB) × 2
 
-Write (basis: 1KB, ceil rounding):
+Writes (unit: 1KB, rounded up):
   Standard Write        = ceil(size/1KB) × 1
   Transactional Write   = ceil(size/1KB) × 2
 
-Key: Read is 4KB-based, Write is 1KB-based → WCU is 4× more than RCU for same item
+Key point: reads are measured in 4KB, writes in 1KB → for the same item you need 4× more WCU than RCU
 ```
 
-Calculation examples:
+Worked examples:
 ```
-6.5KB item, Strongly Consistent, 40/sec:
+6.5KB item, strongly consistent, 40 per second:
   ceil(6.5/4) = 2 → 2 × 1 × 40 = 80 RCU
 
-3KB item, transactional write, 20/sec:
+3KB item, transactional write, 20 per second:
   ceil(3/1) = 3 → 3 × 2 × 20 = 120 WCU
 ```
 
-> ⚠️ **Trap**: FilterExpression doesn't reduce RCU. Unmatched items are read then filtered, RCU already consumed. To save RCU, reduce items read with KeyConditionExpression. Create GSI for query pattern matching PK.
+> ⚠️ **Trap**: FilterExpression does not reduce RCU. Items that don't match the condition are still read and then filtered out, so the RCU is already spent. To save RCU you have to reduce the number of items read in the first place with KeyConditionExpression. The correct approach is to create a GSI whose partition key matches your query pattern.
 
-## LSI vs GSI Internal Operation Comparison
+## LSI vs GSI: How They Work Internally
 
 | Item | LSI | GSI |
 |------|-----|-----|
-| PK | Same as base table | Different attribute possible |
-| SK | Different attribute | Different attribute possible |
-| Creation | Only at table creation | Add/delete anytime |
-| Max count | 5 | 20 (default, increase requestable) |
-| Consistency | Eventually + **Strongly** both | Eventually Consistent only |
-| Capacity | Shared with base table | **Separate RCU/WCU setting** |
-| Storage structure | Separate B-Tree within same partition | Completely separate partitions |
+| PK | Same as the base table | Can be a different attribute |
+| SK | A different attribute | Can be a different attribute |
+| When created | Only at table creation | Add or delete at any time |
+| Maximum count | 5 | 20 (default limit, increase on request) |
+| Consistency model | Both Eventually and **Strongly** supported | Eventually Consistent only |
+| Capacity | Shares the base table's capacity | **Separate RCU/WCU setting** |
+| Sparse Index | Supported | Supported |
+| Storage structure | A separate B-Tree inside the same partition as the base table | An entirely separate partition space |
 
-> 💡 **Related theory**: LSI shares base table PK, so data co-located in same partition. Base Primary manages LSI data too, enabling Strongly Consistent reads. GSI in separate partitions async-replicated, replication delay exists, Eventually Consistent only. "Think GSI as separate table" clarifies this difference.
+> 💡 **Related theory**: An LSI shares the base table's partition key, so its data is stored together in the same partition. That co-location is what lets the base table's Primary node manage the LSI data as well, which in turn makes Strongly Consistent reads possible. A GSI is replicated asynchronously into a completely separate partition space, so replication lag exists and only Eventually Consistent reads are supported. If you think of a GSI as "a separate table," this difference feels natural.
 
-**Sparse Index pattern**: Using attribute GSI PK that not all items have → only items with that attribute appear in GSI.
+**The Sparse Index pattern**: if you use an attribute that not every item carries as a GSI's partition key, only the items that have that attribute show up in the GSI.
 
 ```
 Users table:
-  userId(PK) | email | isPremium (some only)
+  userId(PK) | email | isPremium (present on some items only)
 
 GSI: isPremium-index
-  PK = isPremium → Only isPremium attribute items indexed
-  Query "isPremium = true" → Premium users only
-  Regular users without isPremium absent from GSI → storage cost saved
+  PK = isPremium → only items carrying the isPremium attribute are indexed
+  Query "isPremium = true" → efficiently retrieves premium users only
+  Regular users without isPremium are absent from the GSI entirely → storage cost saved
 ```
 
-> 📚 **Case study**: Airbnb using GSI Sparse Index for reservation status. Only PENDING reservations have `pendingAt` attribute used as GSI PK. On reservation confirmation, delete `pendingAt` → auto-removed from GSI. Query "current PENDING reservations" in O(PENDING count) without full table Scan.
+> 📚 **Case study**: When Airbnb adopted DynamoDB Single-Table Design, it used a GSI sparse index for reservation status management. Only items whose reservation status was "PENDING" were given a `pendingAt` attribute, which served as the GSI's partition key. When a reservation is confirmed, `pendingAt` is deleted and the item drops out of the GSI automatically. That makes "all currently PENDING reservations" a GSI Query costing O(number of PENDING items), with no full table Scan.
 
-## DAX Cache Layer — When Does It Bypass
+## The DAX Cache Layer — When Does It Get Bypassed?
 
 ```
-DAX applies caching:
-  GetItem → Item Cache (default TTL 5min)
-  Query   → Query Cache (default TTL 5min)
+DAX caches:
+  GetItem → Item Cache (default TTL 5 minutes)
+  Query   → Query Cache (default TTL 5 minutes)
   Scan    → Query Cache
 
-DAX bypasses (direct to DynamoDB):
-  ConsistentRead=true Strongly Consistent reads
+DAX is bypassed (goes straight to DynamoDB):
+  ConsistentRead=true strongly consistent reads
   TransactGetItems
   All writes (Put/Update/Delete)
 ```
 
-DAX writes are Write-Through: write to DynamoDB first → update Item Cache → return completion. Write-Back not used, no data loss risk.
+DAX writes are write-through: write to DynamoDB first → update the Item Cache → return completion. It isn't write-back, so there is no risk of data loss.
 
-> ⚠️ **Trap**: DAX accessible VPC-only. No internet direct access. Lambda using DAX must be in same VPC, DAX SG must permit Lambda SG. DAX cluster minimum 3 nodes (Multi-AZ) for HA.
+> ⚠️ **Trap**: DAX is reachable only from inside a VPC. There is no direct access from the internet. For a Lambda function to use DAX, that Lambda must sit in the same VPC, and the DAX cluster's security group must allow the Lambda's security group. A DAX cluster needs at least 3 nodes (Multi-AZ) for high availability.
 
-## DynamoDB Streams + Lambda ESM Details
+## DynamoDB Streams + Lambda ESM in Detail
 
 ```
 Stream view types:
   KEYS_ONLY:          PK + SK only (cheapest)
-  NEW_IMAGE:          Full item after change
-  OLD_IMAGE:          Full item before change
-  NEW_AND_OLD_IMAGES: Both before and after (audit)
+  NEW_IMAGE:          the whole item after the change
+  OLD_IMAGE:          the whole item before the change
+  NEW_AND_OLD_IMAGES: both before and after (audit logging)
 
-Lambda ESM key settings:
+Key Lambda ESM settings:
   BatchSize:                    1~10,000 records
-  BisectBatchOnFunctionError:   Split batch half on error, retry separately
-  MaximumRetryAttempts:         Max retry count (default: infinite)
-  DestinationConfig:            Failed records → SQS DLQ or SNS
-  ParallelizationFactor:        Parallel Lambdas per shard (1~10)
-  FilterCriteria:               Server-side event pattern filter
+  BisectBatchOnFunctionError:   on error, split the batch in half and retry
+  MaximumRetryAttempts:         maximum retry count (default: unlimited)
+  DestinationConfig:            failed records → SQS DLQ or SNS
+  ParallelizationFactor:        parallel Lambdas per shard (1~10)
+  FilterCriteria:               trigger Lambda only on matching event patterns
 ```
 
-> 💡 **Related theory**: DynamoDB Streams internally Kinesis-based. One Stream shard per partition, partition-key-level event order guaranteed. Lambda ESM polls Streams (not push). `ParallelizationFactor=10` allows one shard processed by 10 Lambdas parallel, but partition-key event order guarantee becomes complex.
+> 💡 **Related theory**: DynamoDB Streams runs on a Kinesis-based architecture internally. There is one stream shard per partition, and within a shard the ordering of events per partition key is guaranteed. Lambda ESM polls the shards — Streams does not "push" to Lambda; Lambda "pulls" from Streams. Setting `ParallelizationFactor=10` lets 10 Lambdas process a single shard in parallel, but it complicates the ordering guarantee for events sharing a partition key.
 
-`FilterCriteria` example — INSERT events only:
+A `FilterCriteria` example — process INSERT events only:
 ```json
 {
   "Filters": [
@@ -162,80 +163,80 @@ Lambda ESM key settings:
 }
 ```
 
-Lambda identifying TTL deletion event:
+Identifying a TTL deletion event inside the Lambda function:
 ```python
 def handler(event, context):
     for record in event['Records']:
         if record['eventName'] == 'REMOVE':
             user_identity = record.get('userIdentity', {})
             if user_identity.get('type') == 'Service':
-                # TTL auto-deletion → skip business logic
+                # Automatic deletion by TTL → skip the business logic
                 continue
-            # Explicit DeleteItem call → audit log
+            # Explicit DeleteItem call → record an audit log
             log_deletion(record['dynamodb']['OldImage'])
 ```
 
-> 📚 **Case study**: 2019 DoorDash case. Order completion triggered Streams event → Lambda updated ElasticSearch index. Lambda BatchSize=100. On order surge, processing delayed, Lambda timeout caused entire batch failure, same 100 records stuck in retry loop. `BisectBatchOnFunctionError=true` and `DestinationConfig`(DLQ) not configured. Solution: bisect separates Poison Pill to DLQ, normal records continue processing.
+> 📚 **Case study**: A 2019 DoorDash case. In a pipeline that received order-completion events from DynamoDB Streams and updated an ElasticSearch index, the Lambda was configured with BatchSize=100. When orders surged, processing fell behind, the Lambda timed out, the entire batch failed, and the same 100 records fell into a loop of endless retries. The problem was that neither `BisectBatchOnFunctionError=true` nor `DestinationConfig` (a DLQ) had been configured. After the fix, the pipeline isolated poison-pill messages to a DLQ while normal records kept flowing.
 
-## Transaction vs Conditional Write Selection Criteria
+## Transaction vs Conditional Write: How to Choose
 
 ```
-Single item, condition needed → ConditionExpression (fast, cheap)
-Multiple items atomicity needed → TransactWriteItems (2× cost)
-Read+write atomicity → TransactGetItems + TransactWriteItems
-Idempotent API request → ClientRequestToken (10min valid)
+Single item, condition needed → ConditionExpression (fast and cheap)
+Multiple items need atomicity → TransactWriteItems (2× cost)
+Reads and writes need atomicity → TransactGetItems + TransactWriteItems
+Idempotent API request → ClientRequestToken (valid 10 minutes)
 ```
 
 | Scenario | Recommended API | Reason |
 |---------|---------|------|
-| Prevent duplicate order | PutItem + `attribute_not_exists` | Single item, condition only |
-| Inventory decrease + order create | TransactWriteItems | Two tables need atomicity |
-| Concurrent modification conflict | UpdateItem + version condition | Optimistic Locking |
-| Large batch data load | BatchWriteItem | No atomicity needed, speed priority |
-| Coupon first-come-first-served | UpdateItem + `attribute_not_exists` | Single item, First-Write-Wins |
+| Prevent duplicate orders | PutItem + `attribute_not_exists` | Single item, only a condition is needed |
+| Decrement inventory + create order | TransactWriteItems | Two tables need atomicity |
+| Detect concurrent modification conflicts | UpdateItem + version condition | Optimistic locking |
+| Bulk data load | BatchWriteItem | Atomicity unnecessary, speed first |
+| First-come-first-served coupon claim | UpdateItem + `attribute_not_exists` | Single item, first-write-wins |
 
 ## PITR vs On-Demand Backup vs TTL
 
 | Item | PITR | On-Demand Backup | TTL |
 |------|------|-----------------|-----|
-| Purpose | Mistake recovery | Long-term snapshot | Auto-delete temp data |
-| Retention | Max 35 days (second-level restore) | Indefinite | 0~48hr async delete |
-| Cost | Per GB additional | Per GB additional | Free (no WCU consumed) |
+| Purpose | Recovering from mistakes | Long-term retention snapshot | Automatic deletion of temporary data |
+| Retention | Up to 35 days (second-level restore) | Indefinite | Asynchronous deletion within 0~48 hours |
+| Cost | Additional charge per GB | Additional charge per GB | Free (consumes no WCU) |
 | Restore target | New table only | New table only | - |
-| Automation | Auto (when enabled) | Manual or AWS Backup | Auto |
+| Automation | Automatic (once enabled) | Manual or AWS Backup | Automatic |
 
-> 🔍 **Going deeper**: 35-day PITR limit because AWS retains WAL internally 35 days. Connecting Kinesis Data Streams for DynamoDB extends retention to max 365 days. Kinesis Firehose → S3 pipeline enables multi-year retention via S3 lifecycle. Long-term audit logs need Streams + Kinesis standard.
+> 🔍 **Going deeper**: PITR is capped at 35 days because AWS internally retains the change log (WAL) for 35 days. If you additionally connect Kinesis Data Streams for DynamoDB, you can retain the change history for up to 365 days, and by building a Kinesis Firehose → S3 pipeline you can keep it for years under an S3 lifecycle policy. When you need long-term audit logs, Streams + Kinesis is the standard answer.
 
-## Global Tables — Active-Active Design Implications
-
-```
-Conflict resolution: Last Writer Wins (latest timestamp priority)
-Replication: Streams-based async
-Consistency: Local Strongly Consistent only per region
-Requirements: Streams enabled, on-demand or equal provisioning
-```
-
-Global Tables trap: "Global Strongly Consistent" doesn't exist. Seoul write propagating to Virginia takes time; Virginia Strongly Consistent read before propagation completes won't include Seoul's latest data. Each region guarantees only its local replica consistency.
-
-> ⚠️ **Trap**: Simultaneous item modification across two regions resolved via Last Writer Wins. Both regions returned success but one write ultimately overwritten. Financial data where both writes must persist finds Global Tables conflict resolution unsuitable. Architecture: only primary region writes, other regions read-only.
-
-## Core Numbers Memorization Table
+## Global Tables — The Implications of Active-Active Design
 
 ```
-Max item size:          400KB
-Transaction max:         100 items, 4MB
-BatchWriteItem:          25 items, 16MB
-BatchGetItem:            100 items, 16MB
-Streams retention:        24 hours (fixed)
-Kinesis for DDB:         Max 365 days
-PITR restore window:     35 days
-TTL delete delay:        0~48 hours
-On-demand switch:        1/24hr
-Partition limits:        3,000 RCU + 1,000 WCU + 10GB
-GSI default max:         20
-LSI max:                 5 (creation only)
-DAX default TTL:         5 min (Item Cache, Query Cache)
-Transaction ClientToken: 10 min valid
+Conflict resolution: Last Writer Wins (latest timestamp wins)
+Replication:         asynchronous, based on DynamoDB Streams
+Consistency:         local strong consistency within each region only
+Requirements:        Streams must be enabled; on-demand or identical provisioning
+```
+
+The trap you need to know before using Global Tables: "global Strongly Consistent" does not exist. If data written in Seoul hasn't yet replicated to Virginia, a strongly consistent read in Virginia still won't see Seoul's latest data. Each region guarantees consistency only against its own local replica.
+
+> ⚠️ **Trap**: When two regions modify the same item simultaneously in Global Tables, the conflict is resolved by Last Writer Wins. Both regions return a success response, yet one of the writes ends up overwritten. For something like financial data, where both writes must be durable, Global Tables' conflict resolution policy may simply be unsuitable. In that case you should choose an architecture that permits writes only in a single "primary" region and keeps the other regions read-only.
+
+## Core Numbers to Memorize
+
+```
+Max item size:               400KB
+Transaction max:             100 items, 4MB
+BatchWriteItem:              25 items, 16MB
+BatchGetItem:                100 items, 16MB
+Streams retention:           24 hours (fixed)
+Kinesis for DDB retention:   up to 365 days
+PITR restore window:         35 days
+TTL deletion delay:          0~48 hours
+On-demand mode switch:       once per 24 hours
+Partition limits:            3,000 RCU + 1,000 WCU + 10GB
+GSI default max:             20
+LSI max:                     5 (at creation only)
+DAX default TTL:             5 minutes (Item Cache, Query Cache)
+Transaction ClientRequestToken: valid 10 minutes
 ```
 
 ## 📝 Week 6 Comprehensive Practice Problems

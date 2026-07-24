@@ -70,159 +70,159 @@ Week 9 one-liner: **Aggregate data into S3 in standard format (Parquet+partition
 
 ## 📝 12-Question Scenarios
 
-**문제 1.** Athena 쿼리 비용(S3 스캔량 과금)이 너무 높다. 데이터는 현재 압축 안 된 CSV로 단일 경로에 쌓여 있다. 스캔 비용을 가장 크게 줄이려면?
+**Question 1.** Athena query cost (billed on the volume of S3 data scanned) is too high. The data currently accumulates as uncompressed CSV under a single path. What reduces scan cost the most?
 
-A) WHERE 절을 더 많이 추가
-B) Parquet 컬럼 포맷 + 날짜 파티셔닝 + 압축으로 변환
-C) Athena Workgroup 분리
-D) 쿼리 결과 재사용(Result Reuse)만 활성화
+A) Add more WHERE clauses
+B) Convert to Parquet columnar format + date partitioning + compression
+C) Separate Athena Workgroups
+D) Enable query Result Reuse only
 
-**정답: B**
+**Answer: B**
 
-해설: Athena는 S3 스캔 데이터량으로 과금되므로, (1) 컬럼 포맷(Parquet)으로 필요한 컬럼만 읽고(컬럼 프루닝), (2) 파티셔닝으로 관련 없는 파티션을 통째로 건너뛰고(파티션 프루닝), (3) 압축으로 물리 바이트를 줄이면 스캔량이 수십~90% 이상 감소한다. A(WHERE)는 CSV·비파티션에선 결국 전체를 스캔하므로 효과 제한적. C(Workgroup)는 비용 가시성·제어용이지 스캔량 자체를 줄이지 않음. D(Result Reuse)는 동일 쿼리 반복에만 효과가 있고 근본 스캔량 문제를 못 푼다.
+Explanation: Athena bills on the volume of S3 data scanned, so (1) a columnar format (Parquet) reads only the columns you need (column pruning), (2) partitioning skips irrelevant partitions wholesale (partition pruning), and (3) compression shrinks the physical bytes — together cutting scanned volume by tens of percent up to 90% or more. A (WHERE) has limited effect because unpartitioned CSV still ends up being scanned in full. C (Workgroup) is for cost visibility and control; it does not reduce scan volume itself. D (Result Reuse) helps only on repeated identical queries and leaves the underlying scan-volume problem unsolved.
 
 ---
 
-**문제 2.** 이미 Redshift RA3를 운영 중이고, S3 데이터 레이크의 5년치 과거 주문(Parquet)을 Redshift의 최근 주문 테이블과 한 쿼리에서 조인해야 한다. 과거 데이터를 Redshift로 적재하고 싶지 않다.
+**Question 2.** You already run Redshift RA3, and you need to join five years of historical orders (Parquet) in the S3 data lake with the recent-orders table in Redshift within a single query. You do not want to load the historical data into Redshift.
 
-A) COPY로 S3 데이터를 Redshift 내부 테이블에 적재
+A) COPY the S3 data into a Redshift internal table
 B) Redshift Spectrum + External Schema
-C) Athena로 따로 쿼리 후 결과를 수동 결합
+C) Query separately with Athena and combine the results manually
 D) Federated Query
 
-**정답: B**
+**Answer: B**
 
-해설: Spectrum은 S3 데이터를 적재하지 않고 Glue Catalog 외부 테이블을 참조하는 External Schema로 직접 질의하며, Redshift 내부 테이블과 한 쿼리에서 조인한다(레이크하우스). S3 스캔은 별도 Spectrum 노드 풀에서 처리되어 클러스터 자원을 거의 안 쓴다. A는 적재가 발생해 조건 위반. C는 두 시스템 결과를 수동 결합해야 해 비효율·오류. D(Federated Query)는 RDS/Aurora 같은 운영 DB 대상이지 S3 대상이 아니다. "Redshift + S3 조인 + 적재 회피"는 Spectrum.
+Explanation: Spectrum queries S3 data directly through an External Schema that references Glue Catalog external tables — no loading — and joins it with Redshift internal tables in a single query (lakehouse). The S3 scan runs on a separate Spectrum node pool, so it barely consumes cluster resources. A violates the constraint because it loads the data. C is inefficient and error-prone, since results from two systems must be stitched together by hand. D (Federated Query) targets operational databases such as RDS/Aurora, not S3. "Redshift + join with S3 + avoid loading" is Spectrum.
 
 ---
 
-**문제 3.** Aurora PostgreSQL OLTP 데이터를 거의 실시간으로 Redshift에서 분석해야 한다. ETL 파이프라인을 직접 만들고 싶지 않고, 운영 DB에 분석 쿼리 부하를 주고 싶지도 않다.
+**Question 3.** You need to analyze Aurora PostgreSQL OLTP data in Redshift in near real time. You do not want to build an ETL pipeline yourself, and you do not want analytic queries putting load on the operational database.
 
 A) Redshift Federated Query
 B) Aurora PostgreSQL Zero-ETL Integration with Redshift
-C) DMS CDC로 S3 복제 후 Glue ETL
-D) 매시간 Glue 배치 ETL
+C) Replicate to S3 with DMS CDC, then run Glue ETL
+D) Hourly Glue batch ETL
 
-**정답: B**
+**Answer: B**
 
-해설: Zero-ETL은 CDC로 Aurora 변경을 Redshift에 거의 실시간(수 초~수십 초) 자동 복제한다. ETL 코드를 작성·유지할 필요가 없고(완전 관리형), 데이터가 Redshift로 복제되므로 운영 DB에 분석 쿼리 부하가 가지 않는다. A(Federated Query)는 ETL은 없지만 운영 DB에 직접 쿼리해 부하를 주므로 "부하 회피" 조건 위반 — 이 한 조건이 A와 B를 가른다. C는 파이프라인을 직접 관리해야 하고 운영 부담. D는 실시간이 아니다.
-
----
-
-**문제 4.** S3 데이터 레이크의 한 테이블에서 분석가 그룹에게 PII 컬럼(주민번호)을 제외한 나머지 컬럼만 노출하고, 동시에 한국 지사 사용자에게는 region='KR' 행만 보여줘야 한다.
-
-A) IAM Policy로 객체 접근 제한
-B) Lake Formation 컬럼 권한 + 행 필터(데이터 필터)
-C) S3 Bucket Policy
-D) PII를 별도 버킷으로 분리
-
-**정답: B**
-
-해설: Lake Formation은 Glue Catalog 위에서 컬럼 수준 권한(PII 컬럼 제외, CLS)과 행 필터(region='KR'만, RLS)를 동시에 적용한다. 같은 데이터를 사용자별로 다른 행·열만 보여줘 데이터 복제·뷰 분리가 필요 없다. A·C는 객체/버킷 수준이라 테이블 내부 입도가 안 나옴. D는 데이터를 분리·복제해 관리 부담이 크고 행 단위 통제도 안 된다. "PII 컬럼 제외 + 특정 행만"은 Lake Formation 데이터 필터.
+Explanation: Zero-ETL uses CDC to replicate Aurora changes into Redshift automatically in near real time (seconds to tens of seconds). There is no ETL code to write or maintain (fully managed), and because the data is replicated into Redshift, analytic queries never load the operational database. A (Federated Query) also requires no ETL, but it queries the operational DB directly and therefore adds load, violating the "avoid load" condition — that single condition is what separates A from B. C means managing the pipeline yourself, with operational overhead. D is not real time.
 
 ---
 
-**문제 5.** 매일 페타바이트급 로그를 Spark 배치로 2~3시간 처리한다. 데이터는 S3에 영구 보관돼 있다. 비용을 최소화하면서 Spot 중단에도 잡이 안전하려면?
+**Question 4.** For one table in the S3 data lake, an analyst group must see every column except a PII column (national ID number), while users in the Korean branch must at the same time see only rows where region='KR'.
 
-A) 상시 EMR 클러스터를 On-Demand로 유지해 잡 시작 지연을 없애고 안정성을 확보한다
-B) 잡 단위 transient EMR + Task를 Instance Fleets Spot 다중 타입으로, 끝나면 종료
-C) 비용 최소화를 위해 Master·Core·Task 노드를 전부 Spot Instance로 구성한다
-D) 데이터를 Redshift RA3에 COPY로 적재한 뒤 SQL 배치로 처리한다
+A) Restrict object access with an IAM policy
+B) Lake Formation column permissions + row filters (data filters)
+C) S3 bucket policy
+D) Split the PII out into a separate bucket
 
-**정답: B**
+**Answer: B**
 
-해설: 데이터가 S3(EMRFS)에 있으므로 처리할 때만 클러스터를 띄우고 끝나면 종료하는 transient cluster가 비용 최적이다. Task 노드는 HDFS 데이터를 안 들고 있어 Spot에 안전하고, Instance Fleets로 여러 타입을 섞으면 한 타입 Spot이 중단돼도 자동 대체되어 강건하다. A는 유휴 시간에도 비용 발생. C는 Master(중단 시 클러스터 전멸)·Core(중단 시 HDFS 데이터 소실)를 Spot으로 돌리는 치명적 실수. D는 배치 변환에 굳이 DW 적재가 불필요하다.
+Explanation: Lake Formation applies column-level permissions (excluding the PII column, CLS) and row filters (region='KR' only, RLS) simultaneously on top of the Glue Catalog. The same data exposes different rows and columns per user, so no data duplication or separate views are needed. A and C operate at the object/bucket level and cannot reach inside a table. D splits and duplicates data, creating management burden, and still provides no row-level control. "Exclude PII columns + only certain rows" is a Lake Formation data filter.
 
 ---
 
-**문제 6.** 하루 몇 번 불규칙하게 도는 Spark 잡이 있다. 클러스터 사이징·노드 관리를 하기 싫고, 안 돌 때 비용을 0에 가깝게 하려면?
+**Question 5.** Petabyte-scale logs are processed daily by a 2-3 hour Spark batch. The data is stored permanently in S3. How do you minimize cost while keeping the job safe from Spot interruptions?
 
-A) EMR on EC2 상시 클러스터
+A) Keep a persistent EMR cluster on On-Demand to eliminate job start-up delay and ensure stability
+B) A per-job transient EMR cluster with Task nodes on Instance Fleets Spot across multiple types, terminated when the job finishes
+C) To minimize cost, run Master, Core, and Task nodes all on Spot Instances
+D) COPY the data into Redshift RA3 and process it with SQL batches
+
+**Answer: B**
+
+Explanation: Because the data lives in S3 (EMRFS), a transient cluster that spins up only for processing and terminates afterward is the cost optimum. Task nodes hold no HDFS data, so they are safe on Spot, and mixing several instance types with Instance Fleets makes the job robust — if one type is interrupted, capacity is replaced automatically. A incurs cost during idle time. C is the fatal mistake of running Master (an interruption kills the entire cluster) and Core (an interruption loses HDFS data) on Spot. D loads data into a DW unnecessarily for what is a batch transformation.
+
+---
+
+**Question 6.** A Spark job runs a few times a day on an irregular schedule. You do not want to size clusters or manage nodes, and you want cost near zero when it is not running.
+
+A) A persistent EMR on EC2 cluster
 B) EMR Serverless
 C) Glue Crawler
 D) Redshift Serverless
 
-**정답: B**
+**Answer: B**
 
-해설: EMR Serverless는 클러스터·노드 개념 없이 잡 제출 시 워커를 자동으로 띄우고 끝나면 회수하며 실행 시간만 과금해, 간헐적·가변 Spark 워크로드에서 사이징 실수와 유휴 비용을 없앤다. A는 유휴 비용·사이징 관리 필요. C(Crawler)는 스키마 추론 도구로 Spark 잡 실행이 아님. D(Redshift Serverless)는 데이터 웨어하우스로 Spark 처리 엔진이 아니다. "가변 Spark + 사이징 회피"는 EMR Serverless.
+Explanation: EMR Serverless has no cluster or node concept — it provisions workers automatically when a job is submitted, reclaims them when the job finishes, and bills only for execution time, which removes both sizing mistakes and idle cost for intermittent, variable Spark workloads. A requires idle spend and sizing management. C (Crawler) is a schema-inference tool, not a Spark job runner. D (Redshift Serverless) is a data warehouse, not a Spark processing engine. "Variable Spark + avoid sizing" is EMR Serverless.
 
 ---
 
-**문제 7.** 온프레미스 자체 운영 Kafka를 AWS로 옮긴다. 기존 프로듀서·컨슈머 코드와 Debezium 커넥터를 거의 그대로 쓰고, 추후 다른 클라우드 이전 가능성도 고려한다.
+**Question 7.** You are moving a self-managed on-premises Kafka to AWS. You want to reuse the existing producer/consumer code and Debezium connectors nearly as-is, and you also want to keep the option of migrating to another cloud later.
 
 A) Kinesis Data Streams
 B) Amazon MSK
 C) SQS FIFO
 D) EventBridge
 
-**정답: B**
+**Answer: B**
 
-해설: MSK는 Apache Kafka 매니지드라 Kafka API가 그대로여서 기존 코드·커넥터를 거의 수정 없이 재사용하고, Kafka가 OSS 표준이라 타클라우드(Azure Event Hubs Kafka API, GCP Managed Kafka 등)·온프렘 이전 이식성이 좋다. A(Kinesis)는 AWS 독자라 코드 전면 재작성 + 종속. C(SQS)는 메시지 큐로 스트림 재생·컨슈머 그룹 모델이 다름. D는 이벤트 버스로 Kafka 스트림 처리가 아니다. "기존 Kafka + 이식성"은 MSK.
-
----
-
-**문제 8.** ACID 트랜잭션, 스키마 진화, 시간여행(특정 과거 시점 조회)이 필요한 S3 데이터 레이크를 구축한다. 일반 Parquet으로는 동시 쓰기·업데이트·삭제 일관성이 보장되지 않는다.
-
-A) 순수 Parquet 파일을 직접 관리하면서 애플리케이션 레벨 락으로 동시 쓰기를 제어한다
-B) Apache Iceberg / Hudi / Delta Lake 같은 트랜잭션 테이블 포맷
-C) 스키마 진화 유연성을 위해 CSV로 저장하고 버전별 디렉터리로 시간여행을 흉내 낸다
-D) ACID가 필요하므로 데이터를 DynamoDB로 전환하고 PITR로 시간여행을 대체한다
-
-**정답: B**
-
-해설: Iceberg·Hudi·Delta Lake는 S3 객체 위에 트랜잭션 로그·메타데이터 계층을 얹어 ACID, 동시 쓰기 격리, 스키마 진화, 시간여행(스냅샷 조회), upsert/delete를 제공한다(레이크하우스 테이블 포맷). A(순수 Parquet)는 트랜잭션·시간여행이 없어 동시 쓰기 일관성 보장 불가. C(CSV)는 컬럼·압축·트랜잭션 모두 열위. D(DynamoDB)는 OLTP NoSQL로 대규모 분석 레이크 용도가 아니다.
+Explanation: MSK is managed Apache Kafka, so the Kafka API is unchanged and existing code and connectors are reused with almost no modification; and because Kafka is an open-source standard, portability to other clouds (Azure Event Hubs Kafka API, GCP Managed Kafka, and so on) or back on-prem is good. A (Kinesis) is AWS-proprietary, requiring a full code rewrite plus lock-in. C (SQS) is a message queue with a different model — no stream replay, no consumer groups. D is an event bus, not Kafka stream processing. "Existing Kafka + portability" is MSK.
 
 ---
 
-**문제 9.** 수십 개 단계가 의존성을 갖는 데이터 파이프라인을 오케스트레이션한다. 팀은 이미 Airflow를 쓰고, 멀티클라우드 이식성과 복잡한 Python 분기 로직이 필요하다.
+**Question 8.** You are building an S3 data lake that requires ACID transactions, schema evolution, and time travel (querying a specific past point in time). Plain Parquet does not guarantee consistency for concurrent writes, updates, and deletes.
 
-A) Step Functions(ASL)
+A) Manage plain Parquet files directly and control concurrent writes with application-level locks
+B) A transactional table format such as Apache Iceberg / Hudi / Delta Lake
+C) Store as CSV for schema-evolution flexibility and imitate time travel with per-version directories
+D) Since ACID is required, move the data to DynamoDB and substitute PITR for time travel
+
+**Answer: B**
+
+Explanation: Iceberg, Hudi, and Delta Lake layer a transaction log and metadata tier on top of S3 objects to provide ACID, concurrent-write isolation, schema evolution, time travel (snapshot queries), and upsert/delete (lakehouse table formats). A (plain Parquet) has no transactions or time travel, so concurrent-write consistency cannot be guaranteed. C (CSV) is inferior on columnar access, compression, and transactions alike. D (DynamoDB) is OLTP NoSQL, not a large-scale analytical lake.
+
+---
+
+**Question 9.** You need to orchestrate a data pipeline whose dozens of steps have dependencies. The team already uses Airflow, and multi-cloud portability plus complex Python branching logic are required.
+
+A) Step Functions (ASL)
 B) MWAA
 C) Glue Workflow
-D) EventBridge 규칙 체인
+D) A chain of EventBridge rules
 
-**정답: B**
+**Answer: B**
 
-해설: MWAA는 Airflow 매니지드라 기존 Python DAG를 거의 그대로 옮기고, Airflow가 OSS라 GCP Composer·온프렘 등으로 이식성이 좋으며, Python 코드의 표현력으로 복잡한 조건 분기·동적 태스크를 짠다. A(Step Functions)는 ASL JSON·AWS 종속이라 이식성 조건 위반. C(Glue Workflow)는 Glue 잡 위주 단순 오케스트레이션으로 복잡 DAG·이식성에 부족. D는 단순 이벤트 연결이지 의존성 그래프 오케스트레이션이 아니다.
+Explanation: MWAA is managed Airflow, so existing Python DAGs port over almost unchanged; because Airflow is open source, portability to GCP Composer or on-prem is good; and the expressiveness of Python handles complex conditional branching and dynamic tasks. A (Step Functions) is ASL JSON and AWS-bound, violating the portability requirement. C (Glue Workflow) is simple orchestration centered on Glue jobs and falls short on complex DAGs and portability. D is simple event chaining, not dependency-graph orchestration.
 
 ---
 
-**문제 10.** 순수 AWS 환경에서 이벤트 기반·간헐적 워크플로우를 만든다. 워크플로우가 안 돌 때 상시 비용이 발생하지 않기를 원하고, 다수 AWS 서비스를 세밀하게 통합해야 한다.
+**Question 10.** You are building an event-driven, intermittent workflow in a pure AWS environment. You want no standing cost when the workflow is not running, and you need fine-grained integration with many AWS services.
 
-A) MWAA로 Airflow DAG를 구성하고 워크플로우를 이벤트로 트리거한다
+A) Build Airflow DAGs on MWAA and trigger the workflow by events
 B) Step Functions
-C) 상시 EC2에 cron을 걸어 워크플로우를 폴링 방식으로 실행한다
-D) EC2에 Jenkins를 설치해 파이프라인 잡으로 AWS 서비스를 호출한다
+C) Run cron on a persistent EC2 instance and execute the workflow by polling
+D) Install Jenkins on EC2 and call AWS services from pipeline jobs
 
-**정답: B**
+**Answer: B**
 
-해설: Step Functions는 완전 서버리스로 상태 전이당 과금되어 안 돌면 비용이 0에 수렴하고, 200개 이상 AWS 서비스를 네이티브로 통합한다. 이벤트 기반·간헐적·AWS 종속 환경에 최적. A(MWAA)는 Airflow 환경(웹서버·스케줄러)이 잡이 없어도 상시 떠 있어 시간당 비용이 계속 나가므로 "상시 비용 회피"에 불리 — 9번과 10번이 MWAA vs Step Functions를 정반대 조건으로 가르는 한 쌍이다. C·D는 인프라를 직접 운영하고 상시 비용·관리 부담이 크다.
-
----
-
-**문제 11.** 데이터 레이크에 매주 새 테이블이 수십 개 추가된다. 추가될 때마다 수동 권한 부여가 부담이다. 새 테이블에 자동으로 권한이 적용되게 하려면?
-
-A) 새 테이블이 생길 때마다 해당 테이블 ARN을 IAM Policy에 수동으로 추가한다
-B) Lake Formation LF Tag(태그 기반 접근 제어, ABAC)
-C) S3 객체 태그로 분류하고 태그 조건 기반 버킷 정책으로 접근을 통제한다
-D) Glue Trigger로 새 테이블 감지 시 권한 부여 스크립트를 자동 실행한다
-
-**정답: B**
-
-해설: LF Tag는 ABAC로 데이터에 분류 태그를 붙이고 사용자/역할에 태그 권한을 줘, 새 테이블·컬럼이 태그를 받는 순간 권한이 자동 적용된다. 자원이 늘어도 정책 수가 선형으로만 증가해 스케일링된다(NIST SP 800-162 ABAC). A는 수동 부담 그대로. C는 LF 권한과 무관한 S3 태그. D는 직접 스크립트를 짜고 유지해야 해 관리형 ABAC 이점이 없다. "새 테이블 자동 권한 + 대규모"는 LF Tag.
+Explanation: Step Functions is fully serverless and billed per state transition, so cost converges to zero when nothing runs, and it integrates natively with 200+ AWS services — optimal for event-driven, intermittent, AWS-bound environments. A (MWAA) keeps the Airflow environment (web server, scheduler) running even with no jobs, so hourly cost accrues continuously, which is bad for "avoid standing cost." Questions 9 and 10 are a matched pair that split MWAA vs Step Functions on exactly opposite conditions. C and D mean operating infrastructure yourself, with large standing cost and management burden.
 
 ---
 
-**문제 12.** 두 개의 분리된 RA3 클러스터(BI팀·데이터 과학팀)가 같은 매출 데이터를 읽어야 한다. 데이터 복제·동기화 비용을 피하면서 각 팀 쿼리가 서로의 성능에 영향을 주지 않게 격리하려면?
+**Question 11.** Dozens of new tables are added to the data lake every week, and granting permissions manually each time is a burden. How do you get permissions applied to new tables automatically?
 
-A) 한 클러스터를 두 팀이 공유
-B) Redshift Data Sharing(프로듀서 → 컨슈머)
-C) 각 팀이 데이터를 COPY로 복제
-D) Redshift Spectrum으로 공유
+A) Manually add each new table's ARN to an IAM policy as it is created
+B) Lake Formation LF Tags (tag-based access control, ABAC)
+C) Classify with S3 object tags and control access with tag-condition bucket policies
+D) Use a Glue Trigger to run a permission-granting script automatically when a new table is detected
 
-**정답: B**
+**Answer: B**
 
-해설: RA3의 Data Sharing은 데이터가 RMS(S3 기반)에 있다는 점을 활용해 프로듀서 클러스터의 데이터를 복사 없이 컨슈머 클러스터가 읽기 공유하게 한다. 각 클러스터는 독립 컴퓨팅을 가져 워크로드가 격리되고(서로 성능 영향 없음) 복제·동기화 부담이 없다(멀티 계정·멀티 리전 지원). A는 워크로드 격리 실패(자원 경합). C는 복제 비용·동기화 부담 발생. D(Spectrum)는 S3 외부 데이터 질의용이지 Redshift 내부 테이블 공유 메커니즘이 아니다. "복제 없이 다중 클러스터 공유 + 워크로드 격리"는 Data Sharing.
+Explanation: LF Tags implement ABAC — you attach classification tags to data and grant tag permissions to users and roles, so the moment a new table or column receives a tag, permissions apply automatically. As resources grow, the number of policies grows only linearly, so it scales (NIST SP 800-162 ABAC). A leaves the manual burden intact. C uses S3 tags, which are unrelated to Lake Formation permissions. D means writing and maintaining your own script, forfeiting the benefits of managed ABAC. "Automatic permissions on new tables + large scale" is LF Tags.
+
+---
+
+**Question 12.** Two separate RA3 clusters (a BI team and a data science team) must read the same sales data. How do you avoid data duplication and synchronization cost while isolating each team's queries so they do not affect the other's performance?
+
+A) Have both teams share one cluster
+B) Redshift Data Sharing (producer → consumer)
+C) Have each team replicate the data with COPY
+D) Share via Redshift Spectrum
+
+**Answer: B**
+
+Explanation: RA3 Data Sharing exploits the fact that data lives in RMS (S3-backed) to let a consumer cluster read the producer cluster's data without any copy. Each cluster has independent compute, so workloads are isolated (no mutual performance impact) and there is no replication or synchronization burden (multi-account and multi-region supported). A fails workload isolation (resource contention). C incurs replication cost and sync burden. D (Spectrum) is for querying external S3 data, not a mechanism for sharing Redshift internal tables. "Share across multiple clusters without copying + workload isolation" is Data Sharing.
 
 ---
 

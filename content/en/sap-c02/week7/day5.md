@@ -297,12 +297,12 @@ Week solidified every container building block. If exam shows 4 options and you 
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
-1. **SAP 컨테이너 = 블록 조합**, 멀티 계정·Multi-Region·7R·WA 6 Pillar와 결합
-2. **12 시나리오**로 한 주 굳히기: 분기 판단 능력이 핵심
-3. **결정 트리**: 키워드 분해로 답 후보 좁히기
-4. **멀티 계정**: ECR Cross-Account Pull + SCP Guardrail + VPC Endpoint
-5. **Multi-Region**: Active/Active (Route 53) vs Pilot Light (비용), ECR Cross-Region + GitOps
+1. **SAP containers = combining building blocks**, joined with multi-account, Multi-Region, 7R, and the WA 6 Pillars
+2. **12 scenarios** to consolidate the week: branch-point judgment is the core skill
+3. **Decision tree**: narrow the candidate answers by decomposing keywords
+4. **Multi-account**: ECR Cross-Account Pull + SCP Guardrail + VPC Endpoint
+5. **Multi-Region**: Active/Active (Route 53) vs Pilot Light (cost), ECR Cross-Region + GitOps
 6. **7R**: Replatform = Docker + Fargate, Refactor = Microservices + EKS
-7. **WA 6 Pillar**: 트레이드오프 프레임워크, 한 Pillar만 최대는 오답
+7. **WA 6 Pillar**: a trade-off framework — maximizing only one Pillar is the wrong answer

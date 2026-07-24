@@ -1,109 +1,109 @@
-# Day 5 - D-Day 마무리: 시험 구성·시간 배분·요구사항 번역표·함정 총정리
+# Day 5 - D-Day Wrap-Up: Exam Structure, Time Allocation, Requirement Translation Tables, Trap Roundup
 
-12주 여정의 마지막 날이다. 오늘은 새 지식을 넣지 않는다. 대신 **시험장에서 그대로 쓸 수 있는 운영 매뉴얼**을 만든다. 시험 구성과 시간 배분, 어떤 순서로 풀지, "요구사항 문장 → 기법/서비스" 번역표, 그리고 가장 자주 발을 헛디디는 함정들을 한곳에 모은다. 시험 직전에 이 문서만 다시 훑어도 되도록 압축했다.
+This is the final day of the 12-week journey. Today we add no new knowledge. Instead, we build **an operating manual you can use as-is inside the exam room**. Exam structure and time allocation, what order to answer in, a "requirement sentence → technique/service" translation table, and the traps people most often stumble over — all gathered in one place. It is compressed enough that skimming this single document right before the exam is sufficient.
 
-## 시험 구성 한눈에
+## Exam Structure at a Glance
 
-| 항목 | 내용 |
+| Item | Details |
 |------|------|
-| 시험명 | AWS Certified Machine Learning – Specialty (MLS-C01) |
-| 문항 수 | 65문항 (채점 50 + 비채점 15, 구분 표시 없음) |
-| 시간 | 180분 |
-| 합격 점수 | 750 / 1000 (스케일 점수) |
-| 문항 유형 | 객관식(택1) + 복수 정답(택2~3) |
-| 합격 판정 | 전체 스케일 점수 기준(도메인별 과락 없음) |
+| Exam name | AWS Certified Machine Learning – Specialty (MLS-C01) |
+| Number of questions | 65 questions (50 scored + 15 unscored, not identified) |
+| Time | 180 minutes |
+| Passing score | 750 / 1000 (scaled score) |
+| Question types | Multiple choice (pick 1) + multiple response (pick 2-3) |
+| Pass determination | Based on the overall scaled score (no per-domain minimum) |
 
-| 도메인 | 비중 |
+| Domain | Weight |
 |------|------|
-| 1. 데이터 엔지니어링 | 20% |
-| 2. 탐색적 데이터 분석 | 24% |
-| 3. 모델링 | 36% |
-| 4. ML 구현 및 운영 | 20% |
+| 1. Data Engineering | 20% |
+| 2. Exploratory Data Analysis | 24% |
+| 3. Modeling | 36% |
+| 4. Machine Learning Implementation and Operations | 20% |
 
-> 💡 **관련 이론**: 합격은 도메인별 과락 없이 전체 스케일 점수 750 이상이면 된다. 비채점 15문항은 표시되지 않으므로 모든 문항을 동일하게 성실히 푼다. 스케일 점수는 단순 정답률이 아니라 문항 난이도를 보정한 값이라 "정확히 몇 개 맞히면 합격"이 고정돼 있지 않다. 따라서 특정 도메인을 버리기보다 비중이 가장 큰 도메인 3(36%)에서의 정확도를 끌어올리는 것이 점수 기대값을 가장 크게 높인다.
+> 💡 **Related theory**: You pass with an overall scaled score of 750 or higher — there is no per-domain minimum you can fail on. The 15 unscored questions are not marked, so treat every question with the same care. A scaled score is not a raw percentage correct; it is adjusted for question difficulty, so there is no fixed "get exactly N right and you pass." That means abandoning a specific domain is worse than raising your accuracy in Domain 3 (36%), the most heavily weighted one, which lifts your expected score the most.
 
-## 시간 배분 전략
+## Time Allocation Strategy
 
-| 구간 | 권장 |
+| Phase | Recommendation |
 |------|------|
-| 1패스(전체) | 65문항 × 약 2분 = 130분, 확실한 문제부터 |
-| 표시(플래그) | 헷갈리면 즉답 후 플래그, 붙잡지 말 것 |
-| 2패스(플래그) | 남은 시간으로 재검토 (약 40분) |
-| 최종 검토 | 마지막 10분, 마킹 누락 확인 |
+| Pass 1 (all questions) | 65 questions × about 2 minutes = 130 minutes, start with the ones you're sure about |
+| Flagging | If you're unsure, answer immediately and flag it — don't cling to it |
+| Pass 2 (flagged) | Re-review with the time left (about 40 minutes) |
+| Final review | Last 10 minutes, check for unanswered questions |
 
-> 💡 **관련 이론**: 180분/65문항이면 한 문항당 약 2.8분이지만, 쉬운 문항을 1분대에 끝내 어려운 시나리오에 시간을 몰아주는 것이 핵심이다. 한 문항에 4분 이상 매달리는 순간 기대 손실이 커진다. "확신 70% 이상이면 답하고 플래그, 미련 두지 않기"가 페이스를 지키는 규칙이다. 빈칸은 0점이므로 시간이 부족하면 반드시 추정 답이라도 채운다.
+> 💡 **Related theory**: 180 minutes for 65 questions works out to about 2.8 minutes each, but the key is finishing easy questions in around a minute so you can pour the surplus into hard scenarios. The moment you spend more than 4 minutes on a single question, expected loss grows. "If you're at least 70% confident, answer, flag it, and move on without regret" is the rule that protects your pace. A blank is worth zero, so if you run short on time, always fill in a best guess.
 
-## 요구사항 → 기법/서비스 번역표 (도메인 1·2)
+## Requirement → Technique/Service Translation Table (Domains 1 and 2)
 
-| 요구사항 문장의 단서 | 정답 방향 |
+| Clue in the requirement sentence | Answer direction |
 |------|------|
-| "밀리초 지연, 다중 소비자, 재처리" | Kinesis Data Streams |
-| "운영 최소화하며 S3로 적재" | Kinesis Data Firehose |
-| "스트림에 실시간 SQL 집계" | Kinesis Data Analytics |
-| "서버리스로 S3를 SQL 조회" | Athena |
-| "대규모 정형 분석 웨어하우스" | Redshift |
-| "서버리스 ETL + 스키마 카탈로그" | Glue |
-| "세밀한 하둡/스파크 클러스터 제어" | EMR |
-| "순서 없는 범주형 인코딩" | One-Hot |
-| "거리·경사 기반 모델, 스케일 차이" | 표준화/정규화 |
-| "트리 모델(XGBoost)인데 스케일링 필수" | 함정(불필요) |
-| "상관 0.9+ 다중공선성" | 피처 제거 또는 PCA |
-| "소수 클래스 과소" | SMOTE/오버샘플링/가중치 |
+| "millisecond latency, multiple consumers, reprocessing" | Kinesis Data Streams |
+| "load into S3 with minimal operational overhead" | Kinesis Data Firehose |
+| "real-time SQL aggregation over a stream" | Kinesis Data Analytics |
+| "query S3 with SQL, serverless" | Athena |
+| "large-scale structured analytics warehouse" | Redshift |
+| "serverless ETL + schema catalog" | Glue |
+| "fine-grained control of a Hadoop/Spark cluster" | EMR |
+| "categorical encoding with no inherent order" | One-Hot |
+| "distance/gradient-based model, differing scales" | Standardization/normalization |
+| "tree model (XGBoost) but scaling is mandatory" | Trap (not needed) |
+| "correlation 0.9+, multicollinearity" | Drop features or PCA |
+| "minority class underrepresented" | SMOTE / oversampling / class weights |
 
-## 요구사항 → 기법/서비스 번역표 (도메인 3·4)
+## Requirement → Technique/Service Translation Table (Domains 3 and 4)
 
-| 요구사항 문장의 단서 | 정답 방향 |
+| Clue in the requirement sentence | Answer direction |
 |------|------|
-| "정형 표 데이터 분류·회귀" | XGBoost |
-| "이미지 분류/탐지" | CNN(Image Classification/Object Detection) |
-| "시계열 수요 예측" | DeepAR |
-| "텍스트 분류·임베딩" | BlazingText |
-| "이상 탐지" | Random Cut Forest |
-| "다중 클래스 출력 활성화" | Softmax (이진=Sigmoid) |
-| "검증만 낮음" | 과적합 → 정규화·증강·조기종료 |
-| "적은 예산 효율 튜닝" | 베이지안(AMT) |
-| "대량 오프라인 채점, 엔드포인트 불필요" | Batch Transform |
-| "간헐 트래픽, 콜드스타트 OK" | Serverless Inference |
-| "큰 페이로드·긴 처리 큐잉" | Asynchronous Inference |
-| "사용자 영향 없이 트래픽으로 검증" | Shadow 테스트 |
-| "배포 후 성능 점진 저하/입력 분포 변화" | Model Monitor |
-| "집단 공정성·SHAP 설명" | Clarify |
-| "학습 비용↓·중단 허용" | Managed Spot Training |
-| "워크플로 자동화·재현·CI/CD" | Pipelines + Model Registry |
+| "structured tabular classification/regression" | XGBoost |
+| "image classification/detection" | CNN (Image Classification/Object Detection) |
+| "time-series demand forecasting" | DeepAR |
+| "text classification/embeddings" | BlazingText |
+| "anomaly detection" | Random Cut Forest |
+| "multi-class output activation" | Softmax (binary = Sigmoid) |
+| "only validation is low" | Overfitting → regularization, augmentation, early stopping |
+| "efficient tuning on a small budget" | Bayesian (AMT) |
+| "large-scale offline scoring, no endpoint needed" | Batch Transform |
+| "intermittent traffic, cold start acceptable" | Serverless Inference |
+| "large payload, long processing, queuing" | Asynchronous Inference |
+| "validate with real traffic without affecting users" | Shadow testing |
+| "gradual performance decay / input distribution shift after deployment" | Model Monitor |
+| "group fairness, SHAP explanations" | Clarify |
+| "lower training cost, interruptions acceptable" | Managed Spot Training |
+| "workflow automation, reproducibility, CI/CD" | Pipelines + Model Registry |
 
-> 💡 **관련 이론**: 이 번역표를 관통하는 메타 원칙은 세 가지다. (1) "관리 부담을 누가 지는가"로 서버리스/관리형(Firehose·Glue·Athena·Serverless) vs 직접 제어(Streams·EMR·Real-time)가 갈린다. (2) "데이터 형태"가 알고리즘을 정한다(표=XGBoost, 이미지=CNN, 시퀀스=DeepAR/RNN, 텍스트=BlazingText). (3) "지표는 비즈니스 비용의 번역"이라 FP/FN 중 무엇이 비싼지가 정밀도/재현율/F1을 정한다. 모르는 문제도 이 세 축으로 환원하면 정답 영역이 좁혀진다.
+> 💡 **Related theory**: Three meta-principles run through this translation table. (1) "Who carries the operational burden" splits serverless/managed (Firehose, Glue, Athena, Serverless) from hands-on control (Streams, EMR, Real-time). (2) "The shape of the data" determines the algorithm (tables = XGBoost, images = CNN, sequences = DeepAR/RNN, text = BlazingText). (3) "A metric is a translation of business cost," so whether FP or FN is more expensive decides precision vs. recall vs. F1. Even a question you don't know narrows down once you reduce it to these three axes.
 
-## 자주 틀리는 함정 모음
+## Collected Traps You Get Wrong Most Often
 
-| 함정 | 올바른 판단 |
+| Trap | Correct judgment |
 |------|------|
-| 불균형 데이터에 정확도(Accuracy) | F1 / PR-AUC로 (정확도 금지) |
-| 트리/XGBoost에 표준화 "필수" | 트리는 스케일 불변, 사실상 불필요 |
-| 다중 클래스 출력에 Sigmoid | Softmax가 맞음 |
-| 회귀 출력에 Softmax | 선형(활성화 없음)이 맞음 |
-| Streams vs Firehose 혼동 | 커스텀/저지연=Streams, 완전관리=Firehose |
-| Canary vs Shadow 혼동 | 점진 전환=Canary, 무위험 복제 검증=Shadow |
-| Model Monitor vs CloudWatch | 드리프트=Monitor, 인프라 지표=CloudWatch |
-| Debugger vs Clarify | 학습 과정=Debugger, 편향·설명=Clarify |
-| 대량 오프라인에 Real-time | Batch Transform이 비용 우위 |
-| RMSE를 분류에, F1을 회귀에 | 회귀=RMSE/MAE/R², 분류=정밀도/재현율/F1/AUC |
-| AMT 목적 지표 방향 | 오차=Minimize, 성능=Maximize |
-| 데이터 누수(전처리를 분할 전 전체에) | 학습셋으로 fit, 검증/테스트엔 transform만 |
+| Accuracy on imbalanced data | Use F1 / PR-AUC (accuracy is off the table) |
+| Standardization "required" for trees/XGBoost | Trees are scale-invariant, so it is effectively unnecessary |
+| Sigmoid for multi-class output | Softmax is correct |
+| Softmax for regression output | Linear (no activation) is correct |
+| Confusing Streams with Firehose | Custom/low-latency = Streams, fully managed = Firehose |
+| Confusing Canary with Shadow | Gradual shift = Canary, risk-free mirrored validation = Shadow |
+| Model Monitor vs. CloudWatch | Drift = Monitor, infrastructure metrics = CloudWatch |
+| Debugger vs. Clarify | Training process = Debugger, bias/explainability = Clarify |
+| Real-time for large offline jobs | Batch Transform wins on cost |
+| RMSE for classification, F1 for regression | Regression = RMSE/MAE/R², classification = precision/recall/F1/AUC |
+| Direction of the AMT objective metric | Error = Minimize, performance = Maximize |
+| Data leakage (preprocessing the whole set before the split) | fit on the training set, transform only on validation/test |
 
-> 💡 **관련 이론**: 함정의 절반은 "방향 반대"이고 절반은 "도메인 혼동"이다. 방향 함정(Sigmoid↔Softmax, Maximize↔Minimize, Streams↔Firehose)은 짝을 외워두면 즉시 걸러진다. 데이터 누수는 특히 교묘한데, 스케일러·인코더를 학습/검증을 합친 전체에 fit하면 검증 정보가 새어 평가가 낙관 편향된다. 반드시 학습셋으로만 fit하고 검증·테스트에는 transform만 적용한다 — 이 한 줄이 자주 보기로 위장해 출제된다.
+> 💡 **Related theory**: Half of the traps are "reversed direction" and half are "domain confusion." Direction traps (Sigmoid↔Softmax, Maximize↔Minimize, Streams↔Firehose) get filtered instantly if you memorize them as pairs. Data leakage is especially subtle: if you fit a scaler or encoder on training and validation combined, validation information leaks and your evaluation becomes optimistically biased. Always fit on the training set only and apply transform alone to validation and test — that single line shows up disguised as a plausible answer choice again and again.
 
-## D-Day 체크리스트
+## D-Day Checklist
 
-- 신분증 2종, 시험 시간·장소(또는 온라인 프록터 환경) 사전 확인.
-- 시작 전 화장실·물, 180분 집중 컨디션 정비.
-- 1패스: 확실한 것부터, 헷갈리면 즉답 + 플래그.
-- 복수 정답 문항은 "몇 개 고르라"는 지시를 정확히 읽기.
-- 빈칸 금지 — 시간 부족해도 추정 답 마킹.
-- 마지막 10분 마킹 누락·플래그 재확인.
+- Two forms of ID; confirm the exam time and location (or your online proctoring setup) in advance.
+- Restroom and water before you start; get your condition ready for 180 minutes of focus.
+- Pass 1: start with what you're sure about; if unsure, answer immediately and flag.
+- On multiple-response questions, read the "choose N" instruction exactly.
+- No blanks — mark a best guess even when time is short.
+- Use the last 10 minutes to recheck for unanswered questions and flagged items.
 
-## 정리하며
+## Wrapping Up
 
-12주를 거쳐 데이터 엔지니어링, EDA, 모델링, 구현·운영의 네 도메인을 모두 통과했다. 시험은 결국 "현실 요구사항을 읽고 가장 적합한 기법·서비스로 번역하는" 능력을 65문항으로 측정한다. 비중이 가장 큰 도메인 3(36%)에서의 정확도를 지렛대 삼고, 번역표 세 축(관리부담·데이터형태·비즈니스비용)으로 모르는 문제를 좁히며, 방향·도메인 혼동 함정을 짝으로 외워 걸러내면 된다. 페이스를 지키고, 빈칸을 남기지 말고, 마지막 10분을 검토에 쓰자. 그동안 충분히 준비했다 — 합격을 기원한다.
+Over 12 weeks you have worked through all four domains: data engineering, EDA, modeling, and implementation and operations. In the end, the exam measures — across 65 questions — your ability to "read a real-world requirement and translate it into the most appropriate technique or service." Use accuracy in Domain 3 (36%), the heaviest domain, as your lever; narrow down unfamiliar questions with the translation table's three axes (operational burden, data shape, business cost); and filter out direction and domain-confusion traps by memorizing them in pairs. Protect your pace, leave nothing blank, and spend the last 10 minutes reviewing. You have prepared enough — good luck on the exam.
 
 ---
 
