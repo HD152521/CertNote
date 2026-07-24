@@ -16,6 +16,51 @@ export function detectLanguage(pathname: string): Language {
   return pathname.startsWith('/en') ? 'en' : 'ko';
 }
 
+/** Client-readable cookie holding the user's language preference. */
+export const LANG_COOKIE = 'lang';
+
+/** One year — the preference should outlive a study break. */
+export const LANG_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+// 별도의 영어판 URL을 가진 공개 페이지. 언어가 URL로만 결정돼야 크롤러가 본 것과
+// 사용자가 본 것이 갈리지 않는다. (쿠키로 흔들면 같은 URL이 사람마다 다른 언어로 나와
+// canonical/hreflang이 무의미해진다.)
+//   '/'            ↔ '/en'
+//   '/aws-certs/*' ↔ '/en/*'
+// /pricing·/privacy는 영어판 URL이 없어 여기 없다 — 쿠키가 결정하고, HTML 소스는
+// 한국어로 남아 그대로 색인된다.
+const PUBLIC_KO_PREFIXES = ['/aws-certs'] as const;
+
+function isPublicKoPath(pathname: string): boolean {
+  if (pathname === '/') return true;
+  return PUBLIC_KO_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+/**
+ * Resolve the language for a request.
+ *
+ * Precedence:
+ *  1. `/en/*` — URL wins. These are indexed English content pages.
+ *  2. Indexed Korean pages (`/`, `/aws-certs/*`, `/pricing`, `/privacy`) — always Korean.
+ *  3. Everything else (login-gated app pages, auth screens) — the `lang` cookie.
+ *
+ * Keeping indexed pages URL-deterministic is what lets the cookie exist at all:
+ * crawlers and users always agree on those, so only noindex surfaces vary.
+ */
+export function resolveLanguage(pathname: string, cookieLang: unknown): Language {
+  if (pathname === '/en' || pathname.startsWith('/en/')) return 'en';
+  if (isPublicKoPath(pathname)) return 'ko';
+  return normalizeLanguage(cookieLang);
+}
+
+/**
+ * True when the `lang` cookie — not the URL — decides this page's language.
+ * Derived from `resolveLanguage` itself so the two can never drift apart.
+ */
+export function isLanguageCookieAuthoritative(pathname: string): boolean {
+  return resolveLanguage(pathname, 'en') !== resolveLanguage(pathname, 'ko');
+}
+
 /**
  * Common UI strings (loading, error, confirm, save, etc.)
  * Use t() helper to access: t(lang, 'loading')
