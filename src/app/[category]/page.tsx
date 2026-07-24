@@ -2,15 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
-import { DEFAULT_CATEGORY, EN_CATEGORY, certLevelLabel, isSupportedCategory, langOfCategory } from '@/lib/category';
+import { DEFAULT_CATEGORY, EN_CATEGORY, certLevelLabel, isSupportedCategory, langOfCategory, sectionOfCategory } from '@/lib/category';
 import { listCerts } from '@/lib/content';
-import type { CertLevel, CertMeta } from '@/lib/content';
+import type { CertMeta } from '@/lib/content';
+import { groupCertsByLevel } from '@/lib/levels';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 
 interface PageProps { params: Promise<{ category: string }>; }
-
-// 자격증 허브를 레벨별로 묶는 표시 순서 = 추천 학습 순서.
-const LEVEL_ORDER: CertLevel[] = ['foundational', 'associate', 'professional', 'specialty'];
 
 // 정적 생성 대상은 ko 카테고리(aws-certs)뿐. en 은 정적 라우트(app/en/page.tsx)가 우선 매칭한다.
 export async function generateStaticParams() {
@@ -50,11 +48,8 @@ export default async function CategoryHubPage({ params }: PageProps) {
   const certs = await listCerts(category).catch(() => []);
   if (certs.length === 0) notFound();
 
-  // 레벨별 그룹(추천 순서). 각 그룹 내부는 order 순.
-  const groups = LEVEL_ORDER.map((level) => ({
-    level,
-    items: certs.filter((c) => c.level === level).sort((a, b) => a.order - b.order),
-  })).filter((g) => g.items.length > 0);
+  // 레벨별 그룹(추천 순서, 섹션별 티어). 각 그룹 내부는 order 순.
+  const groups = groupCertsByLevel(certs, sectionOfCategory(category)).map((g) => ({ level: g.level, items: g.certs }));
 
   // 추천 순서를 그대로 담은 ItemList — "자격증 순서" 검색 의도에 맞춘 구조화 데이터.
   const ordered: CertMeta[] = groups.flatMap((g) => g.items);
@@ -70,7 +65,7 @@ export default async function CategoryHubPage({ params }: PageProps) {
     })),
   };
 
-  const levelHint: Record<CertLevel, string> = lang === 'en'
+  const levelHint: Record<string, string> = lang === 'en'
     ? {
         foundational: 'Start here — cloud basics, no prerequisites.',
         associate: 'Core job-ready certs. SAA-C03 is the most in-demand.',

@@ -1,6 +1,6 @@
 import { DEFAULT_CATEGORY, certLevelLabel } from '@/lib/category';
 import { listCerts } from '@/lib/content';
-import type { CertLevel } from '@/lib/content';
+import { groupCertsByLevel } from '@/lib/levels';
 import { CertCard } from '@/components/CertCard';
 import { ContinueCards } from '@/components/ContinueCards';
 import { getCurrentUser } from '@/lib/auth/currentUser';
@@ -13,18 +13,13 @@ import { Landing } from '@/components/marketing/Landing';
 const PAGE_COUNT = 555;
 const QUESTION_COUNT = 3410;
 
-// 홈/랜딩 자격증 그룹 표시 순서.
-const LEVEL_ORDER: CertLevel[] = ['foundational', 'associate', 'professional', 'specialty'];
-
 export default async function HomePage() {
   const session = await getCurrentUser();
   const certs = await listCerts(DEFAULT_CATEGORY);
   // 비로그인 방문자는 마케팅 랜딩, 로그인 사용자는 학습 홈(자격증 그리드).
   if (!session) return <Landing certCount={certs.length} pageCount={PAGE_COUNT} questionCount={QUESTION_COUNT} certs={certs} />;
 
-  const groups = LEVEL_ORDER.map((level) => ({ level, items: certs.filter((c) => c.level === level) })).filter(
-    (g) => g.items.length > 0,
-  );
+  const groups = groupCertsByLevel(certs, 'aws').map((g) => ({ level: g.level, items: g.certs }));
   const starter = await getStarterDay(session.sub);
 
   return (
