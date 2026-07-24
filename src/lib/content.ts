@@ -12,15 +12,18 @@ const indexCache = new Map<string, CategoryIndex>();
 const metaCache = new Map<string, CertMeta>();
 const daysCache = new Map<string, DayRef[]>();
 
-export type CertLevel = 'foundational' | 'associate' | 'professional' | 'specialty';
-// 레벨 표시 라벨은 fs 비의존 모듈(category.ts)에 둔다 — 클라이언트 컴포넌트(SidebarNav)도
-// 안전하게 import 할 수 있도록(content.ts는 node:fs를 쓰므로 클라이언트 번들에 못 들어간다).
+// 섹션별 티어 라벨(자유 문자열). 알려진 값: AWS foundational/associate/professional/specialty,
+// Linux grade-1/grade-2 등. 섹션 확장을 위해 유니온 대신 string으로 넓힌다(라벨/정렬은 levels.ts).
+export type CertLevel = string;
+// 레벨 표시 라벨은 fs 비의존 모듈에 둔다 — 클라이언트 컴포넌트(SidebarNav)도 안전하게 import.
 export { certLevelLabel } from './category';
+import type { Section } from './category';
 
 export interface CertMeta {
   slug: string;
   code: string;
   level: CertLevel;
+  section?: Section; // Phase0 추가(옵셔널·하위호환). Phase1에서 라우팅/그룹핑에 사용.
   name: string;
   weeks: number;
   accent: string;
