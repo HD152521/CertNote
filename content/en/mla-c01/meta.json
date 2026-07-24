@@ -8,5 +8,6 @@
   "order": 8,
   "dayCount": 50,
   "sourceRepo": "AWS_associate_mlEngineer",
-  "syncedAt": "2026-06-24T00:00:00.000Z"
+  "syncedAt": "2026-06-24T00:00:00.000Z",
+  "section": "aws"
 }
