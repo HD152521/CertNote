@@ -1,15 +1,11 @@
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
+import { getManifestMtime } from './contentManifest';
 
-// docs/SEO-indexing-fix-plan.md Step6 — content/ 디렉터리에 대응 파일이 없는 순수 정적 페이지
-// (홈·pricing·privacy 등)의 sitemap lastModified 근거. 소스 파일 자체의 수정시각을 쓴다 —
-// 실제 문구/구성이 바뀔 때만 값이 바뀌므로 매 빌드마다 갱신되는 new Date()보다 안정적이고,
-// "같은 커밋을 두 번 빌드하면 lastmod가 같아야 한다"는 수용 기준을 만족한다(파일이 그대로면
-// mtime도 그대로).
+// docs/SEO-indexing-fix-plan.md Step6 후속 — content/ 디렉터리에 대응 파일이 없는 순수 정적 페이지
+// (홈·pricing·privacy 등)의 sitemap lastModified 근거. 원래 fs.stat(파일 mtime)을 썼으나, git이
+// 파일 mtime을 보존하지 않아 Vercel 체크아웃 시 전부 "빌드 시각"으로 뭉개지는 사고가 났다(실측
+// 확인 — 사이트맵 143개 URL 전부 동일 lastmod). 이제 git 커밋 시각 기반 매니페스트
+// (src/lib/contentManifest.ts, scripts/build-content-manifest.mjs)를 조회한다 — 빌드 환경의
+// mtime과 무관하게 결정적이다. 매니페스트에 없으면 undefined(날짜 추측 금지).
 export async function getSourceFileMtime(relativePath: string): Promise<Date | undefined> {
-  try {
-    return (await fs.stat(path.join(process.cwd(), relativePath))).mtime;
-  } catch {
-    return undefined;
-  }
+  return getManifestMtime(relativePath);
 }

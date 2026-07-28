@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { FREE_WEEK } from './entitlement/policy';
+import { getManifestMtime } from './contentManifest';
 
 const CONTENT_ROOT = path.join(process.cwd(), 'content');
 
@@ -148,27 +149,19 @@ export function previewOf(body: string, max: number = PREVIEW_MAX): string {
   return (lastBreak > max * 0.5 ? cut.slice(0, lastBreak) : cut).trimEnd();
 }
 
-// day 마크다운 파일의 수정시각(sitemap lastModified용). 배포 시 git 체크아웃 시각 ≈ 최신 배포일.
-// 파일이 없으면 undefined(조용히 생략). 캐시하지 않음 — sitemap 생성은 빌드 시 1회.
+// day 마크다운 파일의 마지막 변경 시각(sitemap lastModified · day 페이지 Article dateModified용).
+// 원래 fs.stat(파일 mtime)을 썼으나, git이 파일 mtime을 보존하지 않아 Vercel 체크아웃 시 전부
+// "빌드 시각"으로 뭉개지는 사고가 났다(docs/SEO-indexing-fix-plan.md Step6 후속, 실측 확인).
+// 이제 git 커밋 시각 기반 매니페스트(src/lib/contentManifest.ts)를 조회한다 — 빌드 환경의
+// mtime과 무관하게 결정적이다. 매니페스트에 없으면 undefined(조용히 생략, 날짜 추측 금지).
 export async function getDayMtime(category: string, slug: string, week: number, day: number): Promise<Date | undefined> {
-  try {
-    const p = path.join(CONTENT_ROOT, category, slug, `week${week}`, `day${day}.md`);
-    return (await fs.stat(p)).mtime;
-  } catch {
-    return undefined;
-  }
+  return getManifestMtime(`content/${category}/${slug}/week${week}/day${day}.md`);
 }
 
-// 자격증 허브(meta.json) 수정시각(sitemap lastModified용, Step6). getDayMtime과 동일한 이유로
-// 캐시하지 않는다 — sitemap 생성은 빌드 시 1회뿐이라 캐시 이득이 없고, 오히려 콘텐츠 캐시(metaCache)와
-// 별도 경로로 두어 sitemap 실패가 렌더 경로에 영향을 주지 않게 한다.
+// 자격증 허브(meta.json) 마지막 변경 시각(sitemap lastModified용, Step6). getDayMtime과 동일한
+// 이유로 매니페스트를 조회한다.
 export async function getCertMetaMtime(category: string, slug: string): Promise<Date | undefined> {
-  try {
-    const p = path.join(CONTENT_ROOT, category, slug, 'meta.json');
-    return (await fs.stat(p)).mtime;
-  } catch {
-    return undefined;
-  }
+  return getManifestMtime(`content/${category}/${slug}/meta.json`);
 }
 
 export async function getAllDays(category: string, slug: string): Promise<DayRef[]> {

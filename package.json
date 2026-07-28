@@ -6,6 +6,7 @@
     "dev": "next dev",
     "questions:build": "node scripts/build-questions-index.mjs",
     "exam:build": "node scripts/build-exam-index.mjs",
+    "content:manifest": "node scripts/build-content-manifest.mjs",
     "prebuild": "node scripts/build-questions-index.mjs && node scripts/build-exam-index.mjs",
     "build": "next build",
     "start": "next start",

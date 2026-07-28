@@ -207,8 +207,18 @@ node scripts/sync-content.mjs            # 원본 → content/ 복사
 npm run build                             # 빌드 검증 (354/354 정적 페이지)
 git add content/
 git commit -m "content(week N-M): depth rewrite N day across 5 certs"
+npm run content:manifest                  # 사이트맵 lastmod 매니페스트 갱신(아래 주석 참고)
+git add src/data/content-manifest.json
+git commit -m "chore: update content manifest"
 git push                                  # Vercel 자동 재빌드
 ```
+
+**`content:manifest`는 반드시 콘텐츠 커밋 "이후"에 실행한다.** 이 스크립트는 `git log`로
+파일별 마지막 커밋 시각을 읽으므로, 방금 만든 콘텐츠 커밋이 먼저 존재해야 그 시각을 잡을 수
+있다(커밋 전에 돌리면 직전 커밋의 낡은 시각이 찍힌다). `sync-content.mjs` 내부에 자동으로
+붙이지 않은 이유도 이 순서 문제 때문이다 — sync 스크립트는 git 커밋이 생기기 "전"에 실행되므로
+그 시점엔 아직 정확한 커밋 시각을 알 수 없다. 자세한 배경은
+`docs/SEO-indexing-fix-plan.md` Step6 후속 절 참고.
 
 빌드 실패 시 첫 의심: **MDX format mode**. `webapp/src/lib/mdx.ts`에
 `mdxOptions.format: 'md'` 들어가 있는지 확인. 없으면 `<1`, `<2024` 같은

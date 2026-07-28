@@ -289,6 +289,81 @@ Next.js 문서(`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conv
 비로그인 시 `/login` 으로 redirect 되는 인증 필수 페이지라 색인 대상 콘텐츠가 아니다(robots.txt
 로는 차단하지 않음 — Step 2 에서 이미 자기참조 canonical 부여, sitemap 제출 대상은 아님).
 
+### Step 6 후속 수정 — 프로덕션 사이트맵 lastmod 무력화 (2026-07-28)
+
+**증상(배포본 실측)**: 사이트맵 143개 URL 전부 `lastmod`가 배포 시각(`2026-07-28T07:27`)로
+동일하게 찍혔다. "매 빌드마다 lastmod가 바뀌어 Google이 신호를 불신한다"는 원래 문제가
+그대로 재현된 상태.
+
+**근본 원인**: git은 파일 mtime을 보존하지 않는다. Vercel이 체크아웃하면 모든 파일의 mtime이
+체크아웃(=빌드) 시각으로 리셋되고, `getDayMtime`/`getCertMetaMtime`/`getSourceFileMtime`이
+`fs.stat`으로 그 mtime을 읽어 결국 빌드 시각이 나왔다. 로컬 검증("같은 커밋 2회 빌드 diff")은
+로컬이 mtime을 유지하므로 이 문제를 못 잡았다 — git 체크아웃 환경을 시뮬레이션하지 않은 것이
+검증 공백이었다.
+
+**해법(A안 — 커밋되는 콘텐츠 매니페스트)**: 파일별 마지막 변경 시각을 `git log`(전체 커밋
+히스토리 보유한 로컬에서만 신뢰 가능)로 미리 뽑아 `src/data/content-manifest.json`으로
+git에 커밋하고, 런타임은 파일시스템 대신 이 매니페스트를 읽는다. 빌드 환경의 mtime과
+완전히 무관해진다.
+
+- `scripts/build-content-manifest.mjs`(신규): `git log --format=%H %cI --name-only`를
+  **1회**만 호출해(1346개 대상 파일 전체를 훑어도 156ms) 파일→최신 커밋 시각 맵을 만든다.
+  git 히스토리가 없는 파일(신규/미커밋)만 `fs.stat` 폴백 + 경고 로그. 결정론적 직렬화(키
+  정렬, `generatedAt` 같은 휘발성 필드 없음)로 재생성해도 데이터가 그대로면 바이트 단위로
+  동일한 파일이 나온다(실측 확인).
+- `src/lib/contentManifest.ts`(신규): 매니페스트를 읽는 단일 출처. 매니페스트가 없거나
+  해당 경로가 없으면 `undefined`를 반환한다 — **가짜 날짜(`new Date()`, 고정 폴백 상수)를
+  대신 반환하지 않는다.** 기존 `FALLBACK_LASTMOD = new Date('2025-01-01...')`도 "틀린 날짜를
+  내보낸다"는 점에서 같은 안티패턴이라 완전히 제거했다.
+- `src/lib/content.ts`(`getDayMtime`/`getCertMetaMtime`)와 `src/lib/fileMtime.ts`
+  (`getSourceFileMtime`)는 함수 시그니처를 유지한 채 내부 구현만 매니페스트 조회로 교체했다
+  — `getDayMtime`은 day 페이지 Article JSON-LD의 `dateModified`에도 쓰이는 렌더 경로 함수라
+  (`src/lib/day/structuredData.ts`), 삭제하지 않고 데이터 소스만 고쳐 두 사용처(사이트맵 +
+  구조화 데이터) 모두 한 번에 바로잡았다.
+- `src/app/sitemap.ts`: `maxMtime`이 값이 없으면 `undefined`를 반환하도록 바꾸고, 각 엔트리를
+  `lastModified`가 있을 때만 그 키를 포함하도록 조건부 생성(`sitemapEntry` 헬퍼)했다 —
+  `MetadataRoute.Sitemap`의 `lastModified`는 선택 필드라 생략이 유효하다.
+- **`prebuild`에 넣지 않았다.** Vercel은 얕은 클론이라 빌드 중엔 `git log`로 파일별 히스토리를
+  못 구한다. 매니페스트는 로컬에서 `npm run content:manifest`로 명시적으로 갱신하고 커밋하는
+  산출물이다. `scripts/sync-content.mjs`에도 자동으로 붙이지 않았다 — sync 스크립트는 콘텐츠를
+  git에 커밋하기 **전**에 실행되므로, 그 시점엔 방금 만들 커밋의 시각을 아직 알 수 없다
+  (닭과 달걀 문제). 대신 `RECIPE.md`의 콘텐츠 배포 절차에 "콘텐츠 커밋 → `content:manifest`
+  → 매니페스트 커밋" 순서를 문서화했다.
+
+**핵심 검증 — Vercel 체크아웃 시뮬레이션(실측)**:
+1. `npm run build` → `/sitemap.xml` 저장(143 URL, lastmod 5종 고유값 — `1.` 값 그대로).
+2. `find content src -type f -exec touch {} +`로 전체 파일 mtime을 현재 시각으로 리셋
+   (git 체크아웃이 하는 일과 동일).
+3. 재빌드 → `/sitemap.xml` 재저장.
+4. `diff` 결과: **완전히 동일(바이트 단위 0 diff)**. mtime 리셋 전후로 사이트맵이 전혀
+   흔들리지 않음을 확인 — 매니페스트가 fs mtime을 완전히 대체했다는 직접 증거.
+
+**그 외 검증(전부 통과)**:
+- 사이트맵 143개 URL 전수 200.
+- lastmod 고유값 5개(전부 동일하지 않음 — 실제 콘텐츠 변경 시점 5개 커밋 날짜에 대응).
+- `node scripts/verify-seo.mjs http://localhost:3124`: **26/26 통과**(Step1~6 회귀 없음).
+- 매니페스트 파일(`src/data/content-manifest.json`)을 일시적으로 지우고 재빌드 → 143개 URL
+  전부 `<lastmod>` 태그 자체가 없음(0개) 확인 — 가짜 값 유출 없이 안전하게 생략됨. 확인 후
+  매니페스트 복구(재생성 결과가 백업과 바이트 단위로 동일함을 diff로 재확인).
+
+**회귀 테스트(신규 9개)**:
+- `src/lib/contentManifest.test.ts`(6개) — 매니페스트 존재/부재/손상/경로 미스매치/Windows
+  경로 구분자 정규화/모듈 캐시(1회 로드) 단위 검증.
+- `src/app/sitemap.manifest-absence.test.ts`(1개) — `@/lib/contentManifest`를 목킹해
+  매니페스트 부재 시 143개 엔트리 전부 `lastModified` 키 자체가 없음을 통합 검증(별도 파일
+  — `vi.mock` 파일 단위 호이스팅이 `sitemap.test.ts`의 정상 경로 테스트를 오염시키지
+  않도록 격리).
+- `src/app/sitemap.test.ts`(기존에 2개 추가) — day/홈 `lastModified`가 매니페스트 값과
+  정확히 일치하는지 검증.
+
+`npx tsc --noEmit`: 0 오류. `npm test`: **242/242 통과**(기존 233 + 신규 9).
+
+**예상과 달랐던 점**: `getDayMtime`이 사이트맵뿐 아니라 day 페이지 Article JSON-LD의
+`dateModified`에도 쓰이고 있어(`src/lib/day/structuredData.ts`), 이번 사고가 사이트맵만이
+아니라 **day 페이지 구조화 데이터의 `dateModified`도 똑같이 프로덕션에서 빌드 시각으로
+뭉개지고 있었다**는 뜻이었다. 사용자가 측정한 건 사이트맵뿐이었지만 함수를 공유 구조로
+고치면서 이 렌더 경로 버그도 함께 해결됐다(별도 이슈로 보고하지 않고 이번 수정에 포함).
+
 **GSC 에서 확인해야 할 항목(코드로 해결 불가)**
 
 - "찾을 수 없음(404)" 4건: 사이트맵 143개 URL 전수 curl 검사에서 재현되지 않는다 — 사이트맵 밖의
