@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { DEFAULT_CATEGORY, certLevelLabel } from '@/lib/category';
 import { listCerts } from '@/lib/content';
 import { groupCertsByLevel } from '@/lib/levels';
@@ -12,6 +13,19 @@ import { Landing } from '@/components/marketing/Landing';
 // 자격증 추가로 크게 바뀌면 갱신.
 const PAGE_COUNT = 555;
 const QUESTION_COUNT = 3410;
+
+// 홈 canonical. 과거 루트 레이아웃(src/app/layout.tsx)에 있던 전역 선언을 이곳으로 옮겼다
+// (docs/SEO-indexing-fix-plan.md Step 2) — 다른 라우트로 상속되지 않도록 홈 페이지 자신이 소유한다.
+//
+// hreflang(languages)은 의도적으로 선언하지 않는다(Step 3). 홈(마케팅 랜딩)의 영어판 URL은
+// 존재하지 않는다 — `/en`은 `/aws-certs`(자격증 허브)의 영어판이지 홈의 영어판이 아니다.
+// 예전엔 홈과 `/aws-certs`가 둘 다 `/en`을 자기 짝이라 주장했지만 `/en`은 홈만 되받아,
+// 상호 참조가 성립하지 않는 hreflang 클러스터가 만들어졌다(구글이 클러스터 전체를 무시한다).
+// 언어 쌍은 `/aws-certs` ↔ `/en` 하나로 확정했다 — 세부 근거는
+// docs/SEO-indexing-fix-plan.md Step 3 및 src/app/[category]/page.tsx, src/app/en/page.tsx 참고.
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+};
 
 export default async function HomePage() {
   const session = await getCurrentUser();

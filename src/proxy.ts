@@ -1,6 +1,25 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE, verifySessionToken } from '@/lib/auth/session';
 import { LANG_COOKIE, resolveLanguage } from '@/lib/i18n';
+import { DEFAULT_CATEGORY, EN_CATEGORY } from '@/lib/category';
+import { contentPathExists } from '@/lib/contentExists';
+
+// 어떤 실제 라우트 패턴과도 매칭하지 않는 3세그먼트 마커. docs/SEO-indexing-fix-plan.md Step6 —
+// [category]/[slug]/[week]/[day] 계열은 항상 4세그먼트, [category]/[slug]는 2세그먼트라
+// 3세그먼트는 애초에 존재하지 않는 라우트 형태(실측: /aws-certs/saa-c03/bogus가 이미 진짜 404).
+// 여기로 rewrite하면 Next가 "라우트 없음" 경로를 타 렌더를 시작하지 않고 프리렌더된 not-found를
+// 그대로 내보낸다 — 스트리밍이 시작되지 않으므로 상태코드도 진짜 404로 나간다.
+const NOT_FOUND_MARKER = '/__not-found__/__nf__/__nf__';
+
+// /aws-certs·/en 하위 콘텐츠 존재 검증(day 소프트 404 수정). 이 두 접두사 아래엔 콘텐츠 라우트만
+// 있고 다른 정적 페이지가 전혀 없어(전수 확인) 아래 처리가 /checkout류와 충돌할 위험이 없다.
+async function handleContentRoute(req: NextRequest): Promise<NextResponse> {
+  const exists = await contentPathExists(req.nextUrl.pathname);
+  if (!exists) {
+    return NextResponse.rewrite(new URL(NOT_FOUND_MARKER, req.url));
+  }
+  return NextResponse.next();
+}
 
 // /admin 이하는 admin 역할만. /dashboard·/review·/notebook·/exam·/account 는 로그인 필요.
 // plan(Pro) 판정은 Edge 프록시에서 DB 조회가 안 되므로 여기서 하지 않고,
@@ -11,9 +30,15 @@ import { LANG_COOKIE, resolveLanguage } from '@/lib/i18n';
 // 보호 페이지/라우트의 getCurrentUser()(Node, DB의 token_version 대조)가 권위를 가진다.
 // 프록시는 비로그인 차단용 1차 게이트일 뿐이다.
 export async function proxy(req: NextRequest) {
+  const path = req.nextUrl.pathname;
+
+  const isContentPath = (prefix: string) => path === `/${prefix}` || path.startsWith(`/${prefix}/`);
+  if (isContentPath(DEFAULT_CATEGORY) || isContentPath(EN_CATEGORY)) {
+    return handleContentRoute(req);
+  }
+
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySessionToken(token) : null;
-  const path = req.nextUrl.pathname;
 
   const needsAdmin = path.startsWith('/admin');
   const authorized = needsAdmin ? session?.role === 'admin' : Boolean(session);
@@ -37,5 +62,10 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/dashboard/:path*', '/review/:path*', '/notebook/:path*', '/exam/:path*', '/account/:path*'],
+  matcher: [
+    '/admin/:path*', '/dashboard/:path*', '/review/:path*', '/notebook/:path*', '/exam/:path*', '/account/:path*',
+    // 콘텐츠 존재 검증(docs/SEO-indexing-fix-plan.md Step6). /aws-certs·/en 자체(허브)는
+    // handleContentRoute 내부에서 항상 통과시키므로 여기 포함해도 안전하다.
+    '/aws-certs/:path*', '/en/:path*',
+  ],
 };

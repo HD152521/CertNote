@@ -159,6 +159,18 @@ export async function getDayMtime(category: string, slug: string, week: number, 
   }
 }
 
+// 자격증 허브(meta.json) 수정시각(sitemap lastModified용, Step6). getDayMtime과 동일한 이유로
+// 캐시하지 않는다 — sitemap 생성은 빌드 시 1회뿐이라 캐시 이득이 없고, 오히려 콘텐츠 캐시(metaCache)와
+// 별도 경로로 두어 sitemap 실패가 렌더 경로에 영향을 주지 않게 한다.
+export async function getCertMetaMtime(category: string, slug: string): Promise<Date | undefined> {
+  try {
+    const p = path.join(CONTENT_ROOT, category, slug, 'meta.json');
+    return (await fs.stat(p)).mtime;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function getAllDays(category: string, slug: string): Promise<DayRef[]> {
   const key = `${category}/${slug}`;
   const cached = CONTENT_CACHE ? daysCache.get(key) : undefined;
@@ -195,18 +207,6 @@ export async function listCerts(category: string): Promise<CertMeta[]> {
   const idx = await getCategoryIndex(category);
   const metas = await Promise.all(idx.certs.map((c) => getCertMeta(category, c.slug)));
   return metas.sort((a, b) => a.order - b.order);
-}
-
-export async function getAllDayParams(category: string) {
-  const certs = await listCerts(category);
-  const out: { slug: string; week: string; day: string }[] = [];
-  for (const c of certs) {
-    const days = await getAllDays(category, c.slug);
-    for (const d of days) {
-      out.push({ slug: c.slug, week: `week${d.week}`, day: `day${d.day}` });
-    }
-  }
-  return out;
 }
 
 export async function buildSearchIndex(category: string): Promise<SearchEntry[]> {

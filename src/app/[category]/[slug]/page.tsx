@@ -1,20 +1,44 @@
-import { DEFAULT_CATEGORY, EN_CATEGORY, isSupportedCategory, langOfCategory } from '@/lib/category';
+import { DEFAULT_CATEGORY, EN_CATEGORY, SUPPORTED_CATEGORIES, isSupportedCategory, langOfCategory } from '@/lib/category';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { SITE_NAME, SITE_URL } from '@/lib/site';
+import { hreflangPair } from '@/lib/i18n';
 import { ArrowRight } from 'lucide-react';
 import { getAllDays, getCertMeta, listCerts, certLevelLabel } from '@/lib/content';
 import { getExamInfo } from '@/lib/examInfo';
 import ExamInfoCard from '@/components/ExamInfoCard';
 import { cn } from '@/lib/cn';
+import { JsonLd } from '@/components/JsonLd';
+import { buildCourseLd, buildBreadcrumbLd } from '@/lib/structuredData';
 
 interface PageProps { params: Promise<{ category: string; slug: string }>; }
 
+// ko(aws-certs)뿐 아니라 en도 포함해야 한다 — /en/<slug> 허브도 이 라우트가 서빙한다
+// (src/app/en/page.tsx는 /en 자체만 처리하는 별도 정적 라우트). 빠뜨리면 아래 dynamicParams=false와
+// 만나 /en/<slug> 전체가 즉시 404가 난다(실측으로 확인한 회귀 — 최초 구현 시 en을 빠뜨렸었음).
 export async function generateStaticParams() {
-  const certs = await listCerts(DEFAULT_CATEGORY);
-  return certs.map((c) => ({ category: DEFAULT_CATEGORY, slug: c.slug }));
+  const out: { category: string; slug: string }[] = [];
+  for (const category of SUPPORTED_CATEGORIES) {
+    const certs = await listCerts(category).catch(() => []);
+    for (const c of certs) out.push({ category, slug: c.slug });
+  }
+  return out;
 }
+
+// dynamicParams=false 근거(docs/SEO-indexing-fix-plan.md Step7-A-1, /foo/bar류 소프트 404 수정).
+// 자격증 slug는 코드 상수가 아니라 content/<category>/index.json(scripts/sync-content.mjs로
+// 동기화)에서 온다 — 그러나 이 index.json은 git에 커밋되어(RECIPE.md 콘텐츠 배포 절차: sync →
+// build 검증 → git commit → git push → Vercel 자동 재빌드) "이 빌드가 서빙하는 content/"와
+// "이 generateStaticParams가 읽은 content/"가 항상 동일한 스냅샷이다. getCertMeta()도 같은
+// listCerts()/index.json을 쓰므로, 어떤 slug가 이 목록에 없다면 그 slug는 이 배포에 애초에
+// 존재하지 않는 콘텐츠다(같은 빌드 안에서 "목록엔 없는데 실제로 있는" 경우가 구조적으로 불가능).
+// day 콘텐츠(week1/[day]의 dynamicParams=true, 배포 없이도 즉시 노출되어야 하는 케이스)와 달리
+// 여긴 그런 별도 갱신 경로가 없다 — 신규 자격증 추가는 scripts/sync-content.mjs의 CERTS 배열
+// 자체를 고쳐야 하는 코드 변경이라 항상 재배포를 동반한다(src/lib/category.ts의 SUPPORTED_CATEGORIES
+// 와 동일한 논리, [category]/page.tsx dynamicParams 주석 참고). false로 잠그면 /foo/bar 같은
+// 목록 밖 [category]/[slug] 조합이 Next 라우팅 단계에서 즉시 진짜 404가 나간다(런타임 notFound()는
+// root loading.tsx 스트리밍 때문에 200으로 나가 이 경로로는 못 고친다 — Step6과 동일 메커니즘).
+export const dynamicParams = false;
 
 // 자격증 허브 = "SAA-C03 정리" 류 검색의 랜딩 페이지. 자격증별 제목·요약·canonical.
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -40,10 +64,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const otherCategory = lang === 'en' ? DEFAULT_CATEGORY : EN_CATEGORY;
   const otherExists = await getCertMeta(otherCategory, slug).then(() => true).catch(() => false);
   const languages = otherExists
-    ? {
-        ko: lang === 'en' ? `/${DEFAULT_CATEGORY}/${slug}` : url,
-        en: lang === 'en' ? url : `/${EN_CATEGORY}/${slug}`,
-      }
+    ? hreflangPair(lang === 'en' ? `/${DEFAULT_CATEGORY}/${slug}` : url, lang === 'en' ? url : `/${EN_CATEGORY}/${slug}`)
     : undefined;
   return {
     title,
@@ -67,27 +88,37 @@ export default async function CertIndexPage({ params }: PageProps) {
   }
   const firstDay = days[0];
   const examInfo = getExamInfo(slug);
-  // 구글이 이 페이지를 "강좌"로 이해하게 하는 구조화 데이터(JSON-LD).
-  // 전체 강좌는 유료(Week2+ 페이월)이고 Week1만 무료다. "전부 무료"로 선언하면
-  // 페이월과 불일치 → 구조화 데이터 스팸(수동 조치 사유). hasPart로 무료 파트를 정직하게 명시한다.
-  const courseLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Course',
-    name: `${meta.code} ${meta.name}`,
-    description: `${meta.weeks}주(총 ${meta.dayCount}일) ${meta.code} 자격증 한국어 학습 커리큘럼`,
-    provider: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
-    inLanguage: lang,
-    isAccessibleForFree: false,
-    hasPart: {
-      '@type': 'CreativeWork',
-      name: lang === 'en' ? 'Week 1 (free preview)' : 'Week 1 (무료 미리보기)',
-      isAccessibleForFree: true,
-    },
-    url: `${SITE_URL}/${category}/${slug}`,
-  };
+  // 구글이 이 페이지를 "강좌"로 이해하게 하는 구조화 데이터(JSON-LD). 생성 로직은
+  // src/lib/structuredData.ts(buildCourseLd)로 단일화(Step4) — day 페이지 Article의 isPartOf가
+  // 이 Course를 @id로 참조하므로 값이 한 곳에서만 나와야 한다. isAccessibleForFree 판단 근거는
+  // buildCourseLd 내부 주석 참고(페이월 정직 선언 — 스팸 방지).
+  const courseLd = buildCourseLd({
+    category,
+    slug,
+    code: meta.code,
+    name: meta.name,
+    weeks: meta.weeks,
+    dayCount: meta.dayCount,
+    lang,
+  });
+  // 계층 신호(BreadcrumbList, Step4 4-3). en은 /en 페이지 자체가 "루트 겸 카테고리 허브"
+  // 역할을 겸하므로(app/en/page.tsx 주석 참고) ko보다 한 단계 얕다.
+  const breadcrumbLd = buildBreadcrumbLd(
+    lang === 'en'
+      ? [
+          { name: 'Home', url: `/${EN_CATEGORY}` },
+          { name: meta.code, url: `/${category}/${slug}` },
+        ]
+      : [
+          { name: '홈', url: '/' },
+          { name: 'AWS 자격증', url: `/${DEFAULT_CATEGORY}` },
+          { name: meta.code, url: `/${category}/${slug}` },
+        ],
+  );
   return (
     <div className="mx-auto max-w-3xl space-y-10">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseLd) }} />
+      <JsonLd data={courseLd} />
+      <JsonLd data={breadcrumbLd} />
       <header className="space-y-3">
         <div className="flex items-center gap-2 text-xs text-fg-muted font-mono">
           <Link href={lang === 'en' ? '/en' : '/'} className="hover:text-fg">← {lang === 'en' ? 'All certifications' : '전체 자격증'}</Link>

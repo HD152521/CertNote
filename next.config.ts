@@ -8,6 +8,12 @@ const PRODUCTION_HOST = 'cert.juganlab.com';
 const VERCEL_HOST = 'cert-note.vercel.app';
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // src/app/global-not-found.tsx 활성화(docs/SEO-indexing-fix-plan.md Step6).
+    // 루트 레이아웃을 거치지 않는 전역 404라 홈 title/전역 JSON-LD가 섞여 나가는 소프트 404
+    // 문제를 구조적으로 차단한다. app/not-found.tsx(세그먼트 notFound() 방어선)와 공존한다.
+    globalNotFound: true,
+  },
   async redirects() {
     return [
       {

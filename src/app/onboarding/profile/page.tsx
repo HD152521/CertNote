@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { getCurrentUser } from '@/lib/auth/currentUser';
@@ -6,7 +7,10 @@ import { DEFAULT_CATEGORY } from '@/lib/category';
 import { query } from '@/lib/db';
 import { OnboardingProfileForm } from '@/components/OnboardingProfileForm';
 
-export const metadata = { title: '프로필 등록' };
+// robots.txt disallow 목록(/login, /account 등)에 없어 크롤 가능한 라우트라 자기참조
+// canonical이 필요하다(docs/SEO-indexing-fix-plan.md Step 2). 비로그인 요청은 /login으로
+// 리다이렉트되지만, canonical 자체는 이 URL을 대표해야 한다.
+export const metadata: Metadata = { title: '프로필 등록', alternates: { canonical: '/onboarding/profile' } };
 // 로그인 쿠키·DB를 읽으므로 항상 동적.
 export const dynamic = 'force-dynamic';
 

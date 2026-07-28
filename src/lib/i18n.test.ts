@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { isLanguageCookieAuthoritative, normalizeLanguage, resolveLanguage } from './i18n';
+import { hreflangPair, isLanguageCookieAuthoritative, normalizeLanguage, resolveLanguage } from './i18n';
 
 describe('normalizeLanguage', () => {
   test('accepts en', () => {
@@ -80,5 +80,36 @@ describe('isLanguageCookieAuthoritative', () => {
   test('true on public pages that have no English URL', () => {
     expect(isLanguageCookieAuthoritative('/pricing')).toBe(true);
     expect(isLanguageCookieAuthoritative('/privacy')).toBe(true);
+  });
+});
+
+describe('hreflangPair', () => {
+  // (docs/SEO-indexing-fix-plan.md Step 3) hreflang 상호 참조의 단일 출처.
+  // ko 페이지·en 페이지 양쪽이 반드시 같은 (koUrl, enUrl) 인자로 호출해야 상호 참조가 성립한다.
+  test('ko/en 두 키를 그대로 담는다', () => {
+    expect(hreflangPair('/aws-certs', '/en')).toEqual({ ko: '/aws-certs', en: '/en' });
+  });
+
+  test('x-default를 지정하지 않으면 키 자체가 없다', () => {
+    expect(hreflangPair('/aws-certs', '/en')).not.toHaveProperty('x-default');
+  });
+
+  test('xDefault:true면 항상 ko URL을 가리킨다', () => {
+    expect(hreflangPair('/aws-certs', '/en', { xDefault: true })).toEqual({
+      ko: '/aws-certs',
+      en: '/en',
+      'x-default': '/aws-certs',
+    });
+  });
+
+  test('두 페이지가 같은 인자로 호출하면 결과가 상호 참조·자기참조를 동시에 만족한다', () => {
+    // ko 페이지(/aws-certs)와 en 페이지(/en)가 각자 자기 자신의 generateMetadata에서
+    // 이 함수를 호출한다고 가정 — 인자만 같으면 결과 객체가 완전히 동일해야 한다.
+    const fromKoPage = hreflangPair('/aws-certs', '/en', { xDefault: true });
+    const fromEnPage = hreflangPair('/aws-certs', '/en', { xDefault: true });
+    expect(fromKoPage).toEqual(fromEnPage);
+    // 자기참조: ko 페이지 자신의 URL이 languages.ko에도 있고, en 페이지 자신의 URL이 languages.en에도 있다.
+    expect(fromKoPage.ko).toBe('/aws-certs');
+    expect(fromEnPage.en).toBe('/en');
   });
 });

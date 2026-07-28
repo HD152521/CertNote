@@ -2,18 +2,30 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
-import { DEFAULT_CATEGORY, EN_CATEGORY, certLevelLabel, isSupportedCategory, langOfCategory, sectionOfCategory } from '@/lib/category';
+import { DEFAULT_CATEGORY, EN_CATEGORY, SUPPORTED_CATEGORIES, certLevelLabel, isSupportedCategory, langOfCategory, sectionOfCategory } from '@/lib/category';
 import { listCerts } from '@/lib/content';
 import type { CertMeta } from '@/lib/content';
 import { groupCertsByLevel } from '@/lib/levels';
+import { hreflangPair } from '@/lib/i18n';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
+import { JsonLd } from '@/components/JsonLd';
+import { buildItemListLd, buildBreadcrumbLd } from '@/lib/structuredData';
 
 interface PageProps { params: Promise<{ category: string }>; }
 
-// 정적 생성 대상은 ko 카테고리(aws-certs)뿐. en 은 정적 라우트(app/en/page.tsx)가 우선 매칭한다.
+// 정적 생성 대상은 ko 카테고리(aws-certs)뿐. en 은 정적 라우트(app/en/page.tsx)가 우선 매칭해
+// 이 동적 라우트까지 내려오지 않는다(en도 목록에 넣어두는 이유는 아래 dynamicParams 주석 참고).
 export async function generateStaticParams() {
-  return [{ category: DEFAULT_CATEGORY }];
+  return SUPPORTED_CATEGORIES.map((category) => ({ category }));
 }
+
+// SUPPORTED_CATEGORIES는 코드 상수(src/lib/category.ts)라 콘텐츠 동기화만으로는 늘지 않는다 —
+// 카테고리 추가는 항상 코드 배포를 동반하므로 week1/[day](day 콘텐츠, 배포 없이도 늘 수 있음)와
+// 달리 dynamicParams=false로 잠가도 "새 카테고리가 재배포 전까지 404" 같은 회귀가 생기지 않는다.
+// false로 잠그면 목록 밖 category(예: /totally-bogus-path)는 Next 라우팅 단계에서 즉시
+// "라우트 없음"으로 처리되어 진짜 404가 나간다(docs/SEO-indexing-fix-plan.md Step6 소프트 404 수정
+// — 런타임 notFound()는 root loading.tsx의 스트리밍 때문에 200으로 나가 이 경로로는 못 고친다).
+export const dynamicParams = false;
 
 // "aws 자격증 순서 / 종류" 검색의 착지 페이지. 전 자격증을 레벨별로 나열한 카테고리 허브.
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -30,12 +42,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ? `All ${certs.length} AWS certification tracks by level: Cloud Practitioner → Associate → Professional → Specialty. Week 1 free.`
       : `AWS 자격증 ${certs.length}종을 레벨별로 정리. Cloud Practitioner(기초) → 어소시에이트(SAA·DVA·SOA) → 프로페셔널(SAP·DOP) → 전문분야 순서로 준비하세요. Week 1 무료.`;
   const url = `/${category}`;
+  // 이 허브(ko: /aws-certs)의 영어판은 /en(영어판 홈)이다 — 상호 참조는 src/app/en/page.tsx가
+  // 되받는다(docs/SEO-indexing-fix-plan.md Step 3). x-default(비ko/비en 방문자 대체 URL)는
+  // 사이트 전체에서 이 클러스터 하나에서만 선언한다(홈은 hreflang을 선언하지 않는다).
   return {
     title,
     description,
     alternates: {
       canonical: url,
-      languages: { ko: `/${DEFAULT_CATEGORY}`, en: `/${EN_CATEGORY}` },
+      languages: hreflangPair(`/${DEFAULT_CATEGORY}`, `/${EN_CATEGORY}`, { xDefault: true }),
     },
     openGraph: { title, description, url, type: 'website' },
   };
@@ -53,17 +68,19 @@ export default async function CategoryHubPage({ params }: PageProps) {
 
   // 추천 순서를 그대로 담은 ItemList — "자격증 순서" 검색 의도에 맞춘 구조화 데이터.
   const ordered: CertMeta[] = groups.flatMap((g) => g.items);
-  const itemListLd = {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: lang === 'en' ? 'AWS certifications by recommended order' : 'AWS 자격증 추천 순서',
-    itemListElement: ordered.map((c, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      name: `${c.code} ${c.name}`,
-      url: `${SITE_URL}/${category}/${c.slug}`,
-    })),
-  };
+  const itemListLd = buildItemListLd(
+    lang === 'en' ? 'AWS certifications by recommended order' : 'AWS 자격증 추천 순서',
+    ordered.map((c) => ({ code: c.code, name: c.name, url: `${SITE_URL}/${category}/${c.slug}` })),
+  );
+  // 계층 신호(BreadcrumbList, Step4 4-3). /en 은 이 동적 라우트가 아니라 정적 라우트
+  // (src/app/en/page.tsx)가 우선 매칭해 실제로 서빙하므로(주석 참고) 여기선 ko(aws-certs)만
+  // 선언한다 — en 분기는 실제로 도달하지 않는다.
+  const breadcrumbLd = lang === 'ko'
+    ? buildBreadcrumbLd([
+        { name: '홈', url: '/' },
+        { name: 'AWS 자격증', url: `/${category}` },
+      ])
+    : null;
 
   const levelHint: Record<string, string> = lang === 'en'
     ? {
@@ -81,7 +98,8 @@ export default async function CategoryHubPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-3xl space-y-10 py-6">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }} />
+      <JsonLd data={itemListLd} />
+      {breadcrumbLd && <JsonLd data={breadcrumbLd} />}
       <header className="space-y-4">
         <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">
           {lang === 'en' ? 'AWS Certifications' : 'AWS 자격증'} · {certs.length} tracks

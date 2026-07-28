@@ -1,16 +1,23 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { EN_CATEGORY, certLevelLabel } from '@/lib/category';
+import { DEFAULT_CATEGORY, EN_CATEGORY, certLevelLabel } from '@/lib/category';
 import { listCerts } from '@/lib/content';
+import { hreflangPair } from '@/lib/i18n';
 import { SITE_NAME } from '@/lib/site';
 
 // 영어판 홈. 무료 Week1 영어 트랙의 진입점 — 정적 라우트라 /en 이 [category]보다 우선 매칭된다.
+// 콘텐츠·역할 면에서 이 페이지의 한국어판은 홈(`/`, 마케팅 랜딩)이 아니라 자격증 허브
+// (`/aws-certs`)다 — 둘 다 "전 자격증 트랙을 나열하는 진입 목록" 페이지라는 점에서 같은
+// 역할을 한다. hreflang 짝은 `/aws-certs` ↔ `/en`으로 고정(docs/SEO-indexing-fix-plan.md Step 3).
 export const metadata: Metadata = {
   title: 'AWS Certification Study Notes in English — Week 1 Free',
   description:
     'Daily in-depth study notes for 11 AWS certifications. Week 1 of every track is free in English, with practice questions built in.',
-  alternates: { canonical: `/${EN_CATEGORY}`, languages: { ko: '/', en: `/${EN_CATEGORY}` } },
+  alternates: {
+    canonical: `/${EN_CATEGORY}`,
+    languages: hreflangPair(`/${DEFAULT_CATEGORY}`, `/${EN_CATEGORY}`, { xDefault: true }),
+  },
   openGraph: {
     title: `${SITE_NAME} — AWS Certification Study Notes`,
     description: 'Week 1 free in English for 11 AWS certification tracks.',

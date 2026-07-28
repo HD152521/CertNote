@@ -5,6 +5,9 @@ import { defineConfig, devices } from '@playwright/test';
 // build → start → test 순서를 보장한다.
 export default defineConfig({
   testDir: './e2e',
+  // seo-smoke.spec.ts는 DB 없이 도는 별도 스위트(playwright.seo.config.ts, Step7-B)라 여기서
+  // 중복 실행하지 않는다. 이 config는 계속 auth 의존 흐름(gating.spec.ts 등) 전용으로 둔다.
+  testIgnore: /seo-smoke\.spec\.ts/,
   globalSetup: './e2e/global-setup.ts',
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,

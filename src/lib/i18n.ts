@@ -62,6 +62,36 @@ export function isLanguageCookieAuthoritative(pathname: string): boolean {
 }
 
 /**
+ * generateMetadata의 `alternates.languages`에 넣을 ko/en hreflang 세트.
+ * `x-default`는 선택이며, 있으면 항상 ko URL을 가리킨다(이 사이트의 기본/색인 언어가 한국어).
+ */
+export interface HreflangAlternates {
+  ko: string;
+  en: string;
+  'x-default'?: string;
+  // Next.js의 Metadata['alternates']['languages']는 `${Lowercase<string>}-${string}` 패턴의
+  // 인덱스 시그니처를 요구하는 매핑 타입이라 고정 필드만으로는 대입되지 않는다.
+  [langTag: string]: string | undefined;
+}
+
+/**
+ * ko/en 두 URL이 서로의 번역본임을 선언하는 hreflang 세트를 만드는 단일 출처.
+ *
+ * hreflang은 상호 참조(A→B, B→A)가 성립해야만 구글이 신뢰한다 — 한쪽 페이지에서만 고치면
+ * 곧바로 깨진다. ko 페이지와 en 페이지 양쪽에서 반드시 **같은 koUrl/enUrl 인자**로 이 함수를
+ * 호출하면, 두 페이지의 `languages` 객체가 자동으로 동일해져 상호 참조와 자기참조
+ * (각 페이지가 자기 자신도 hreflang 목록에 포함하는 것)를 동시에 만족한다.
+ *
+ * 영어판이 없는 콘텐츠(예: linux-master-1)는 이 함수를 호출하지 말고 `languages: undefined`를
+ * 반환할 것 — 존재하지 않는 URL을 가리키는 hreflang은 클러스터 전체를 무효화한다.
+ */
+export function hreflangPair(koUrl: string, enUrl: string, options: { xDefault?: boolean } = {}): HreflangAlternates {
+  const languages: HreflangAlternates = { ko: koUrl, en: enUrl };
+  if (options.xDefault) languages['x-default'] = koUrl;
+  return languages;
+}
+
+/**
  * Common UI strings (loading, error, confirm, save, etc.)
  * Use t() helper to access: t(lang, 'loading')
  */
