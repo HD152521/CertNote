@@ -18,65 +18,65 @@ Core reflex: Text expression → Service instant translation. Speed-maker:
 
 | Phrase | Service |
 |---|---|
-| "行为异常·恶意IP通信·数据外泄" | GuardDuty |
-| "根本原因·침해범위·시각화조사" | Detective |
-| "취약점·CVE·패치누락·네트워크노출" | Inspector |
-| "S3 PII·민감데이터발견·분류" | Macie |
-| "외부·교차계정노출정책발견" | IAM Access Analyzer |
-| "finding집약·CIS/PCI/FSBP점수" | Security Hub |
-| "사람개입없이자동대응·교정" | EventBridge → Lambda / SSM |
-| "설정준수·변경이력·드리프트" | AWS Config |
-| "조직권한상한·~못하게" | SCP |
-| "조직WAF/SG/Shield중앙강제" | Firewall Manager |
-| "신규계정가드레일자동·랜딩존" | Control Tower |
-| "인터넷경유없이S3/DynamoDB" | Gateway VPC Endpoint |
-| "인터넷경유없이기타서비스" | Interface Endpoint |
-| "특정IP차단서브넷" | NACL deny |
-| "DB자격증명자동로테이션" | Secrets Manager |
-| "설정값/시크릿로테이션불요" | SSM Parameter Store |
-| "키우리가단독소유FIPS L3" | CloudHSM / KMS custom key store |
-| "키사용감사·정책통제암호화" | SSE-KMS + CloudTrail |
-| "삭제·변조불가·WORM" | S3 Object Lock + MFA Delete |
-| "서드파티안전위임·confused deputy" | AssumeRole + External ID |
-| "온프레미스워크로드IAM역할" | IAM Roles Anywhere |
-| "다계정SSO·SAML페더레이션" | IAM Identity Center |
-| "앱최종사용자인증" | Cognito |
+| "Anomalous behavior · malicious IP communication · data exfiltration" | GuardDuty |
+| "Root cause · blast radius · visual investigation" | Detective |
+| "Vulnerability · CVE · missing patch · network exposure" | Inspector |
+| "S3 PII · sensitive data discovery · classification" | Macie |
+| "Find policies exposed externally or cross-account" | IAM Access Analyzer |
+| "Finding aggregation · CIS/PCI/FSBP score" | Security Hub |
+| "Automated response · remediation with no human intervention" | EventBridge → Lambda / SSM |
+| "Configuration compliance · change history · drift" | AWS Config |
+| "Org-wide permission ceiling · make it impossible to do X" | SCP |
+| "Central org-wide enforcement of WAF/SG/Shield" | Firewall Manager |
+| "Automatic guardrails on new accounts · landing zone" | Control Tower |
+| "Reach S3/DynamoDB without traversing the internet" | Gateway VPC Endpoint |
+| "Reach other services without traversing the internet" | Interface Endpoint |
+| "Block a specific IP range at the subnet" | NACL deny |
+| "Automatic rotation of DB credentials" | Secrets Manager |
+| "Config values/secrets with no rotation needed" | SSM Parameter Store |
+| "We must exclusively own the keys · FIPS L3" | CloudHSM / KMS custom key store |
+| "Audited key usage · policy-controlled encryption" | SSE-KMS + CloudTrail |
+| "Cannot be deleted or altered · WORM" | S3 Object Lock + MFA Delete |
+| "Safe delegation to a third party · confused deputy" | AssumeRole + External ID |
+| "IAM role for an on-premises workload" | IAM Roles Anywhere |
+| "Multi-account SSO · SAML federation" | IAM Identity Center |
+| "Application end-user authentication" | Cognito |
 
 ## Trap Consolidation
 
 > ⚠️ **Logging·Detection**:
-> - CloudTrail관리이벤트는 **S3객체·Lambda데이터접근기록안함** → 데이터이벤트별도활성화.
-> - GuardDuty는로그를 **내부소비**하므로Flow Logs/DNS따로켤필요없음 — 끄지말것.
-> - GuardDuty=위협, Inspector=취약점, Macie=데이터, Detective=조사, SecurityHub=집약. 혼동금지.
-> - VPC Flow Logs는 **페이로드안봄**(허용/거부·메타만). 내용은패킷미러링·앱로그.
+> - CloudTrail management events **do not record S3 object or Lambda data access** → enable data events separately.
+> - GuardDuty **consumes the logs internally**, so you don't need to turn on Flow Logs/DNS logs separately — and don't turn them off.
+> - GuardDuty=threats, Inspector=vulnerabilities, Macie=data, Detective=investigation, SecurityHub=aggregation. Don't confuse them.
+> - VPC Flow Logs **do not see the payload** (allow/deny and metadata only). For content, use packet mirroring or app logs.
 
 > ⚠️ **IAM·Governance**:
-> - **SCP·Permission Boundary는권한부여안함** — 상한만제한.
-> - 평가순서: **명시적Deny최우선**, SCP, Allow, Boundary, 암묵적Deny.
-> - **장기액세스키워크로드에두지말것** → 역할(프로파일/IRSA/실행역할).
-> - 교차계정위임에 **External ID**로confused deputy방지.
-> - IAM역할=직원·워크로드, **Cognito=앱사용자**.
+> - **SCPs and Permission Boundaries grant nothing** — they only cap the ceiling.
+> - Evaluation order: **explicit Deny wins first**, then SCP, Allow, Boundary, implicit Deny.
+> - **Never place long-lived access keys on a workload** → use roles (instance profile/IRSA/execution role).
+> - Prevent the confused deputy problem in cross-account delegation with an **External ID**.
+> - IAM roles=employees and workloads, **Cognito=application users**.
 
 > ⚠️ **Network**:
-> - **NACL은stateless** → 아웃바운드임시포트(1024-65535)별도허용.
-> - SG는 **거부규칙없음**(화이트리스트만). IP차단은NACL deny.
-> - VPC Endpoint만들어도 **엔드포인트/IAM정책이허용해야**통신.
-> - NetworkFirewall은 **라우팅으로트래픽강제통과**시켜야검사됨.
-> - TGW stateful검사시 **appliancemode**누락하면비대칭오작동.
+> - **NACLs are stateless** → allow outbound ephemeral ports (1024-65535) separately.
+> - SGs have **no deny rules** (allow-list only). Blocking an IP is a NACL deny.
+> - Even with a VPC Endpoint created, **the endpoint and IAM policies must allow it** for traffic to flow.
+> - Network Firewall only inspects traffic if you **force it through via routing**.
+> - For stateful inspection through TGW, omitting **appliance mode** causes asymmetric-routing failures.
 
 > ⚠️ **Data Protection**:
-> - **CloudFront용ACM인증서는us-east-1**에만발급.
-> - KMS는 **envelope encryption**(대용량직접암호화안함).
-> - KMS키정책이 **root신뢰해야IAM정책위임가능**.
-> - KMS키삭제는 **7~30일대기** — 그전엔disable로복구가능.
-> - at-rest(SSE/KMS)와in-transit(TLS·`aws:SecureTransport`)은 **별개통제** — 둘다필요.
-> - SSE-S3는키감사·정책통제약함 → 통제필요시 **SSE-KMS**.
+> - **ACM certificates for CloudFront are issued only in us-east-1**.
+> - KMS uses **envelope encryption** (it does not encrypt large objects directly).
+> - The KMS key policy **must trust root for IAM policy delegation to work**.
+> - KMS key deletion has a **7-30 day waiting period** — until then, disable is recoverable.
+> - at-rest (SSE/KMS) and in-transit (TLS · `aws:SecureTransport`) are **separate controls** — you need both.
+> - SSE-S3 is weak on key auditing and policy control → when control is required, use **SSE-KMS**.
 
-> 🎯 **Last 2-Choice Rule**: 두답모두작동하면 — (1)더 *관리형*? (2)더 *자동화*? (3)더 *최소권한*? (4)더 *우회불가능*? (5) *예방>탐지>대응*위계? (6) *조직전체강제*? 이중더많이만족하는쪽.
+> 🎯 **Last 2-Choice Rule**: If both answers work — (1) which is more *managed*? (2) more *automated*? (3) more *least-privilege*? (4) more *impossible to bypass*? (5) higher in the *prevent > detect > respond* hierarchy? (6) enforceable *org-wide*? Pick whichever satisfies more of these.
 
 ## D-Day Mindset
 
-> 🔍 **Deeper**: 12주간쌓은도메인별정신모델 — 탐지·대응신경계(1·2), 경로×권한이중통제(3·4), 암호화×거버넌스전파(5·6) — 를그대로적용하면된다. 아는것을제시간에·함정피해·답으로옮기기. 침착하게, 분해하고, 번역하고, 함정피하면된다. 합격을빈다.
+> 🔍 **Deeper**: Apply the per-domain mental models built over these 12 weeks exactly as they are — the detection and response nervous system (1·2), dual control over path × permission (3·4), and encryption × governance propagation (5·6). Move what you know into answers, on time, avoiding the traps. Stay calm, decompose, translate, dodge the traps. Good luck on the exam.
 
 ---
 

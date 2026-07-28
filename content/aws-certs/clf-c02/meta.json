@@ -8,5 +8,6 @@
   "order": 0,
   "dayCount": 30,
   "sourceRepo": "AWS_foundational_cloudPractitioner",
-  "syncedAt": "2026-06-24T00:00:00.000Z"
+  "syncedAt": "2026-06-24T00:00:00.000Z",
+  "section": "aws"
 }

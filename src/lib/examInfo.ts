@@ -6,10 +6,16 @@ export interface ExamDomain {
   weight: number;
 }
 
+// 시험 정보 페이지 FAQ(FAQPage JSON-LD의 소스). 화면 렌더 텍스트와 1:1이어야 한다.
+export interface ExamFaq {
+  q: string;
+  a: string;
+}
+
 export interface ExamInfo {
   examCode: string;
   fullName: string;
-  level: 'foundational' | 'associate' | 'professional' | 'specialty';
+  level: string; // 섹션별 티어(자유 문자열). 알려진 값: foundational/associate/professional/specialty, grade-1 등
   questionCount: number;
   durationMin: number;
   passingScore: number;
@@ -22,6 +28,10 @@ export interface ExamInfo {
   domains: ExamDomain[];
   officialUrl: string;
   registerUrl: string;
+  faq?: ExamFaq[]; // Phase2에서 오써링(FAQPage 스키마). 없으면 FAQ 미표기.
+  difficulty?: string; // 난이도 한줄(예: '중급 · 실무 1~2년 권장')
+  source?: string; // 정확성 대조용 공식 가이드 URL
+  syncedAt?: string; // 최신성 관리(YYYY-MM-DD)
 }
 
 // AWS 자격증 공통 시험 혜택·꿀팁(전 자격증 동일이라 공유 상수). 출처: AWS 공식 인증 혜택/FAQ 페이지.
@@ -31,6 +41,11 @@ export const AWS_EXAM_TIPS: string[] = [
   '무료 재응시는 없습니다(매 응시 전액 결제). 첫 시도에 붙는 게 가장 저렴하니, 모의고사로 합격선을 넘긴 뒤 응시하세요.',
   '합격하면 Credly 디지털 배지가 발급돼 링크드인·이메일 서명에 붙일 수 있습니다.',
 ];
+
+// 섹션별 시험 꿀팁. AWS는 공통 혜택 팁, 그 외 섹션은 콘텐츠 투입 시 추가(현재 빈 배열).
+export function getExamTips(section?: string): string[] {
+  return section === undefined || section === 'aws' ? AWS_EXAM_TIPS : [];
+}
 
 const EXAM_INFO_ROOT = path.join(process.cwd(), 'content', 'exam-info');
 

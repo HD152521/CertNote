@@ -8,7 +8,8 @@
       "level": "foundational",
       "name": "Cloud Practitioner - Foundational",
       "weeks": 6,
-      "order": 0
+      "order": 0,
+      "section": "aws"
     },
     {
       "slug": "aif-c01",
@@ -16,7 +17,8 @@
       "level": "foundational",
       "name": "AI Practitioner - Foundational",
       "weeks": 6,
-      "order": 9
+      "order": 9,
+      "section": "aws"
     },
     {
       "slug": "dva-c02",
@@ -24,7 +26,8 @@
       "level": "associate",
       "name": "Developer - Associate",
       "weeks": 13,
-      "order": 1
+      "order": 1,
+      "section": "aws"
     },
     {
       "slug": "mla-c01",
@@ -32,7 +35,8 @@
       "level": "associate",
       "name": "Machine Learning Engineer - Associate",
       "weeks": 10,
-      "order": 8
+      "order": 8,
+      "section": "aws"
     },
     {
       "slug": "dea-c01",
@@ -40,7 +44,8 @@
       "level": "associate",
       "name": "Data Engineer - Associate",
       "weeks": 10,
-      "order": 10
+      "order": 10,
+      "section": "aws"
     },
     {
       "slug": "saa-c03",
@@ -48,7 +53,8 @@
       "level": "associate",
       "name": "Solutions Architect - Associate",
       "weeks": 12,
-      "order": 2
+      "order": 2,
+      "section": "aws"
     },
     {
       "slug": "soa-c02",
@@ -56,7 +62,8 @@
       "level": "associate",
       "name": "CloudOps Engineer - Associate",
       "weeks": 12,
-      "order": 3
+      "order": 3,
+      "section": "aws"
     },
     {
       "slug": "sap-c02",
@@ -64,7 +71,8 @@
       "level": "professional",
       "name": "Solutions Architect - Professional",
       "weeks": 16,
-      "order": 4
+      "order": 4,
+      "section": "aws"
     },
     {
       "slug": "dop-c02",
@@ -72,7 +80,8 @@
       "level": "professional",
       "name": "DevOps Engineer - Professional",
       "weeks": 16,
-      "order": 5
+      "order": 5,
+      "section": "aws"
     },
     {
       "slug": "scs-c03",
@@ -80,7 +89,8 @@
       "level": "specialty",
       "name": "Security - Specialty",
       "weeks": 12,
-      "order": 6
+      "order": 6,
+      "section": "aws"
     },
     {
       "slug": "mls-c01",
@@ -88,7 +98,8 @@
       "level": "specialty",
       "name": "Machine Learning - Specialty",
       "weeks": 12,
-      "order": 11
+      "order": 11,
+      "section": "aws"
     }
   ]
 }

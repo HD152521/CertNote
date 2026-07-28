@@ -8,5 +8,6 @@
   "order": 6,
   "dayCount": 60,
   "sourceRepo": "AWS_specialty_security",
-  "syncedAt": "2026-06-24T00:00:00.000Z"
+  "syncedAt": "2026-06-24T00:00:00.000Z",
+  "section": "aws"
 }

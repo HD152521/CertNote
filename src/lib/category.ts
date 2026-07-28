@@ -9,6 +9,36 @@ export const DEFAULT_CATEGORY = 'aws-certs';
 export const EN_CATEGORY = 'en';
 export const SUPPORTED_CATEGORIES = [DEFAULT_CATEGORY, EN_CATEGORY] as const;
 
+// ── 섹션(주제) 축 — Phase0 추가(순수 추가, 아직 라우팅/콘텐츠 미배선) ──────────
+// category(주제+언어 혼재)를 Section(주제) × Language(언어)로 분리하기 위한 단일 출처.
+// 실제 라우팅/콘텐츠 배선은 Phase1(P1-1/P1-3)에서. 여기선 타입·매핑만 도입해 하위호환 유지.
+export type Section = 'aws' | 'kubernetes' | 'terraform' | 'linux';
+
+// 현재 콘텐츠가 존재해 라우팅 활성인 섹션. kubernetes·terraform은 콘텐츠 투입(Phase3) 시 추가.
+export const SECTIONS: readonly Section[] = ['aws', 'linux'];
+
+// 섹션+언어 → 콘텐츠 디렉터리명(=기존 category 폴더). aws는 폴더 이동 없이 'aws-certs' 유지,
+// linux는 Phase1(P1-2)에서 content/linux로 이동 예정. en 트리는 현재 aws Week1만 보유.
+export function contentDirOfSection(section: Section, lang: Lang = 'ko'): string {
+  if (lang === 'en') return EN_CATEGORY; // Phase3(D4)에서 섹션별 en 재편
+  return section === 'aws' ? DEFAULT_CATEGORY : section;
+}
+
+// 레거시 category → Section (역매핑). 'aws-certs'·'en'은 모두 aws 주제.
+export function sectionOfCategory(category: string): Section {
+  if (category === DEFAULT_CATEGORY || category === EN_CATEGORY) return 'aws';
+  return category as Section;
+}
+
+export function sectionLabel(section: Section): string {
+  switch (section) {
+    case 'aws': return 'AWS';
+    case 'kubernetes': return 'Kubernetes';
+    case 'terraform': return 'Terraform';
+    case 'linux': return 'Linux';
+  }
+}
+
 export function isSupportedCategory(category: string): boolean {
   return (SUPPORTED_CATEGORIES as readonly string[]).includes(category);
 }
@@ -18,14 +48,6 @@ export function langOfCategory(category: string): Lang {
   return category === EN_CATEGORY ? 'en' : 'ko';
 }
 
-import type { CertLevel } from './content';
-
-// 레벨 표시 라벨(영문 티어 명칭). fs 비의존이라 클라이언트 컴포넌트에서도 안전하게 import.
-export function certLevelLabel(level: CertLevel): string {
-  switch (level) {
-    case 'foundational': return 'Foundational';
-    case 'associate': return 'Associate';
-    case 'professional': return 'Professional';
-    case 'specialty': return 'Specialty';
-  }
-}
+// 레벨 라벨/티어 로직은 levels.ts로 이관(섹션별 티어). 하위호환 위해 여기서 re-export.
+// (fs 비의존 유지 — SidebarNav 등 클라이언트 컴포넌트가 안전하게 import)
+export { certLevelLabel } from './levels';

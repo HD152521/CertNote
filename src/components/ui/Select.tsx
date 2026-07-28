@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useLanguage } from '@/lib/i18n-client';
+import { pick } from '@/lib/strings/dict';
+import { chromeStrings } from '@/lib/strings/chrome';
 
 export interface SelectOption {
   value: string;
@@ -24,7 +27,9 @@ interface SelectProps {
 // 커스텀 드롭다운. native <select> 팝업이 Windows Chrome에서 OS 테마로 렌더돼
 // 다크모드에서 안 보이던 문제 해결 — 일반 DOM이라 앱 토큰이 그대로 적용된다.
 // 키보드(↑↓/Enter/Esc)·바깥 클릭 닫기·ARIA(listbox/option) 지원.
-export function Select({ value, onChange, options, placeholder = '선택', disabled, className, id, ariaLabel }: SelectProps) {
+export function Select({ value, onChange, options, placeholder, disabled, className, id, ariaLabel }: SelectProps) {
+  const s = pick(chromeStrings, useLanguage());
+  const placeholderText = placeholder ?? s.selectPlaceholder;
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
@@ -82,7 +87,7 @@ export function Select({ value, onChange, options, placeholder = '선택', disab
         onKeyDown={onKey}
         className="flex w-full items-center justify-between gap-2 rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm text-fg outline-none transition focus:border-border-strong disabled:opacity-50"
       >
-        <span className={cn('truncate', !selected && 'text-fg-faint')}>{selected ? selected.label : placeholder}</span>
+        <span className={cn('truncate', !selected && 'text-fg-faint')}>{selected ? selected.label : placeholderText}</span>
         <ChevronDown className={cn('h-4 w-4 shrink-0 text-fg-faint transition', open && 'rotate-180')} />
       </button>
 

@@ -4,6 +4,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { AppShell } from '@/components/AppShell';
+import { HtmlLangSync } from '@/components/HtmlLangSync';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { PostHogProvider } from '@/components/analytics/PostHogProvider';
 import { PromoModal } from '@/components/PromoModal';
@@ -69,6 +70,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body className="min-h-full bg-bg text-fg">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteLd) }} />
         <PostHogProvider>
+          <HtmlLangSync />
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AppShell certs={certs}>{children}</AppShell>
             <PromoModal />

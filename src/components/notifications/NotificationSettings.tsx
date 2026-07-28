@@ -13,23 +13,32 @@ import {
 } from '@/lib/push/client';
 import type { NotifPrefs } from '@/lib/push/types';
 import { Select } from '@/components/ui/Select';
+import { useLanguage } from '@/lib/i18n-client';
+import { fmt, pick } from '@/lib/strings/dict';
+import { accountStrings, type AccountStringKey } from '@/lib/strings/account';
 
-function hourLabel(h: number): string {
-  const period = h < 12 ? '오전' : '오후';
+type Strings = Record<AccountStringKey, string>;
+
+// 12시간제 표기. 한국어는 "오전 9시", 영어는 "9 AM"으로 어순이 뒤집히므로
+// 조각을 이어붙이지 않고 hourPattern 자리표시자로 언어별 순서를 표현한다.
+function hourLabel(s: Strings, h: number): string {
+  const period = h < 12 ? s.amLabel : s.pmLabel;
   const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${period} ${h12}시`;
+  return fmt(s.hourPattern, { period, hour: h12 });
 }
 
-const REASON_MSG: Record<string, string> = {
-  unsupported: '이 브라우저는 알림을 지원하지 않습니다.',
-  denied: '브라우저에서 알림 권한이 차단되어 있어요. 사이트 설정에서 허용해 주세요.',
-  no_key: '서버 알림 설정이 누락되었습니다. 잠시 후 다시 시도해 주세요.',
-  save_failed: '구독 저장에 실패했습니다. 다시 시도해 주세요.',
-  subscribe_failed: '알림 구독에 실패했습니다. 다시 시도해 주세요.',
+// enablePush()가 돌려주는 실패 사유 코드 → 문구 키.
+const REASON_KEY: Record<string, AccountStringKey> = {
+  unsupported: 'reasonUnsupported',
+  denied: 'reasonDenied',
+  no_key: 'reasonNoKey',
+  save_failed: 'reasonSaveFailed',
+  subscribe_failed: 'reasonSubscribeFailed',
 };
 
 // 계정 설정의 알림 섹션. 기기 구독 on/off + 복습/미방문 토글 + 발송 시각.
 export function NotificationSettings() {
+  const s = pick(accountStrings, useLanguage());
   const [supported] = useState(() => (typeof window === 'undefined' ? true : isPushSupported()));
   const [loading, setLoading] = useState(true);
   const [subscribed, setSubscribed] = useState(false);
@@ -55,7 +64,10 @@ export function NotificationSettings() {
     setBusy(true);
     setError(null);
     const res = await enablePush();
-    if (!res.ok) setError(REASON_MSG[res.reason ?? ''] ?? '알림을 켜지 못했습니다.');
+    if (!res.ok) {
+      const key = REASON_KEY[res.reason ?? ''];
+      setError(key ? s[key] : s.enableFailed);
+    }
     await reload();
     setBusy(false);
   }
@@ -85,8 +97,8 @@ export function NotificationSettings() {
   if (!supported) {
     return (
       <section className="space-y-2 rounded-lg border border-border p-4">
-        <h2 className="flex items-center gap-2 text-sm font-medium"><BellOff className="h-4 w-4" /> 학습 알림</h2>
-        <p className="text-sm text-fg-faint">이 브라우저는 푸시 알림을 지원하지 않습니다. iPhone은 홈 화면에 추가한 뒤 사용할 수 있어요.</p>
+        <h2 className="flex items-center gap-2 text-sm font-medium"><BellOff className="h-4 w-4" /> {s.studyNotifications}</h2>
+        <p className="text-sm text-fg-faint">{s.pushUnsupportedDetail}</p>
       </section>
     );
   }
@@ -96,8 +108,8 @@ export function NotificationSettings() {
   return (
     <section className="space-y-4 rounded-lg border border-border p-4">
       <div className="space-y-1">
-        <h2 className="flex items-center gap-2 text-sm font-medium"><BellRing className="h-4 w-4" /> 학습 알림</h2>
-        <p className="text-xs text-fg-faint">복습할 카드가 쌓이면, 또는 한동안 안 들어오면 알려드려요.</p>
+        <h2 className="flex items-center gap-2 text-sm font-medium"><BellRing className="h-4 w-4" /> {s.studyNotifications}</h2>
+        <p className="text-xs text-fg-faint">{s.studyNotificationsDesc}</p>
       </div>
 
       {error && <p className="text-sm text-red-500" role="alert">{error}</p>}
@@ -109,30 +121,30 @@ export function NotificationSettings() {
           disabled={busy || denied}
           className="w-full rounded-md border border-border-strong px-3 py-2 text-sm font-medium transition hover:bg-fg/5 disabled:opacity-50"
         >
-          {busy ? '설정 중…' : '이 기기에서 알림 켜기'}
+          {busy ? s.enablingNotifications : s.enableOnThisDevice}
         </button>
       ) : (
         <div className="space-y-3">
           <ToggleRow
-            label="복습 리마인더"
-            hint="복습할 카드가 있는 날 알림"
+            label={s.reviewReminder}
+            hint={s.reviewReminderHint}
             checked={prefs?.notifyReview ?? true}
             onChange={(v) => patch({ notifyReview: v })}
           />
           <ToggleRow
-            label="복귀 알림"
-            hint="3일 이상 안 들어오면 알림"
+            label={s.comebackReminder}
+            hint={s.comebackReminderHint}
             checked={prefs?.notifyInactive ?? true}
             onChange={(v) => patch({ notifyInactive: v })}
           />
           <label className="flex items-center justify-between gap-3 text-sm">
-            <span className="text-fg">알림 받을 시각</span>
+            <span className="text-fg">{s.reminderTime}</span>
             <Select
               value={String(prefs?.reminderHour ?? 8)}
               onChange={(v) => patch({ reminderHour: Number(v) })}
-              options={Array.from({ length: 24 }, (_, h) => ({ value: String(h), label: hourLabel(h) }))}
+              options={Array.from({ length: 24 }, (_, h) => ({ value: String(h), label: hourLabel(s, h) }))}
               className="w-32"
-              ariaLabel="알림 받을 시각"
+              ariaLabel={s.reminderTime}
             />
           </label>
           <button
@@ -141,7 +153,7 @@ export function NotificationSettings() {
             disabled={busy}
             className="text-xs text-fg-faint underline underline-offset-4 hover:text-fg-muted disabled:opacity-50"
           >
-            이 기기에서 알림 끄기
+            {s.disableOnThisDevice}
           </button>
         </div>
       )}

@@ -273,6 +273,6 @@ D) CloudTrail Data Events
 
 ---
 
-## 정리하며
+## Wrapping Up
 
 Week 10's four services form one cycle: "observe, respond." CloudWatch observes *what* (metrics), X-Ray observes *where* (causal), CloudTrail observes *who* (responsibility), EventBridge *responds*. Traps mostly ask fine details on this unified pipeline — EC2 memory boundary, Data Events default, Annotation indexing, Lambda toggle vs. EC2 daemon. Understanding each tool's coordinate ("what/when") rather than memorizing alone lets you tackle novel scenarios: find its coordinate, deduce the answer.

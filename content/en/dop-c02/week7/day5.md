@@ -112,19 +112,19 @@ Multiple functions share common libraries without duplication. Layer versioning 
 
 | Keyword | Answer |
 |---------|--------|
-| "Lambda version 불변" | Publish version creates immutable snapshot |
-| "Lambda 무중단 배포" | Use Alias with traffic weight |
-| "Lambda 자동 롤백" | CodeDeploy canary + BeforeAllowTraffic hook |
+| "Lambda version is immutable" | Publish version creates immutable snapshot |
+| "Lambda zero-downtime deployment" | Use Alias with traffic weight |
+| "Lambda automatic rollback" | CodeDeploy canary + BeforeAllowTraffic hook |
 | "Serverless infrastructure as code" | AWS SAM templates |
-| "Lambda 의존성 공유" | Lambda Layers |
-| "큰 Lambda 함수 (>50MB)" | Container image package type |
-| "Cold start 제거" | Provisioned Concurrency |
-| "단순 마이크로서비스 API" | HTTP API (비용 저렴) |
-| "복잡 API 변환" | REST API (feature 풍부) |
-| "Event-driven 분리" | SQS or EventBridge |
-| "Pub/Sub 다중 구독자" | SNS topic |
-| "분산 추적 병목 파악" | X-Ray |
-| "Lambda 에러 자동 알림" | CloudWatch Metric Alarm |
+| "Share dependencies across Lambdas" | Lambda Layers |
+| "Large Lambda function (>50MB)" | Container image package type |
+| "Eliminate cold starts" | Provisioned Concurrency |
+| "Simple microservice API" | HTTP API (lower cost) |
+| "Complex API transformation" | REST API (feature-rich) |
+| "Event-driven decoupling" | SQS or EventBridge |
+| "Pub/Sub with multiple subscribers" | SNS topic |
+| "Pinpoint bottlenecks with distributed tracing" | X-Ray |
+| "Automatic alerting on Lambda errors" | CloudWatch Metric Alarm |
 
 ---
 

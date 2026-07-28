@@ -87,6 +87,7 @@ async function main() {
               id: `${slug}-w${week}-d${day}-q${index}`,
               category,
               slug,
+              section: slug === 'linux-master-1' ? 'linux' : 'aws', // P0-8: 섹션 스탬프
               week,
               day,
               number: q.number,

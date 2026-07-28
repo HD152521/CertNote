@@ -17,7 +17,7 @@ Today we review the entire Week 5 using real-world scenario formats from exams. 
 9. **Session Manager = SSH/RDP without keys, port 22 closed, IAM-based, auto-audit sessions**
 10. **Automation Runbook = multi-step workflow** — Config Auto Remediation, EventBridge trigger
 
-> 💡 **Related Theory**: SSM precisely implements "Control Plane vs Data Plane" separation architecture for distributed systems. SSM API layer (command registration, status query) is Control Plane; SSM Agent (actual command execution, heartbeat) is Data Plane. Control Plane failures (SSM service issues) don't impact already-running Agent tasks. This is the "control plane/data plane separation" AWS CTO Werner Vogels emphasizes every re:Invent keynote—and SSM is real implementation.
+> 💡 **Related theory**: SSM is a precise implementation of the "control plane vs. data plane" separation architecture used in distributed systems. The SSM API layer (registering commands, querying status) is the control plane; the SSM Agent (actually executing commands, sending heartbeats) is the data plane. A control plane failure (an SSM service issue) does not affect Agent tasks that are already running. This is exactly the "control plane / data plane separation" that AWS CTO Werner Vogels returns to in every re:Invent keynote — and SSM is a real-world implementation of it.
 
 ## Comparison Table: Clarifying Confusing Concepts
 
@@ -55,7 +55,7 @@ Today we review the entire Week 5 using real-world scenario formats from exams. 
 | MFA enforcement | Difficult | Easy via IAM policy | No |
 | Port forwarding | Yes (manual) | Yes (document support) | No |
 
-> 🔍 **Deeper Dive**: Session Manager's IAM-based access control goes beyond "who can connect" to "which instances, at what time, with which commands only." For example, adding `ssm:resourceTag/Environment=prod` to `ssm:startSession` condition restricts to prod-tagged instances. `aws:MultiFactorAuthPresent: true` condition enforces MFA. Traditional SSH key method makes such granular control very difficult. With IAM Identity Center (SSO) integration, even directory-based access control becomes possible.
+> 🔍 **Going deeper**: Session Manager's IAM-based access control goes beyond "who is allowed to connect" and makes fine-grained policies possible: "to which instances, at what time, running which commands only." For example, adding `ssm:resourceTag/Environment=prod` as a condition on `ssm:startSession` allows sessions only on instances tagged prod. The `aws:MultiFactorAuthPresent: true` condition lets you enforce MFA. That kind of granular control is very hard to achieve with traditional SSH keys. Combined with IAM Identity Center (SSO), you can even drive access control from a central directory.
 
 **Patch Manager Key Comparison:**
 
@@ -67,7 +67,7 @@ Today we review the entire Week 5 using real-world scenario formats from exams. 
 | Deny patches | Not configurable | Explicit BLOCK possible |
 | Multi-OS | Separate default per OS | Separate per OS needed |
 
-> 💡 **Related Theory**: Patch Manager's "Approval Rules → Maintenance Window → Compliance" pipeline automatically satisfies ISO 27001 A.12.6.1 (technical vulnerability management) requirement. ISO 27001 certification audits can directly submit Patch Compliance reports as vulnerability patch process automation proof. CIS Controls v8 Control 7 (vulnerability management) follows same concept. AWS Audit Manager's ISO 27001 and NIST 800-53 frameworks automatically collect Patch Manager data as evidence.
+> 💡 **Related theory**: Patch Manager's "Approval Rules → Maintenance Window → Compliance" pipeline is a structure that automatically satisfies the ISO 27001 A.12.6.1 requirement (technical vulnerability management). In an ISO 27001 certification audit you can submit the Patch Compliance report directly as evidence that the vulnerability-patching process is automated. Control 7 of CIS Controls v8 (vulnerability management) follows the same idea. AWS Audit Manager's ISO 27001 and NIST 800-53 frameworks automatically collect Patch Manager data as evidence.
 
 ## Collection of Common Patch Mistakes
 
@@ -82,7 +82,7 @@ Knowing repeated operational mistakes helps avoid exam trap questions.
 | Think default Baseline includes Important | Security audit findings | Default Baseline = Security/Critical only |
 | Think `ApproveAfterDays=0` means instant apply | Understanding error | =0 means "approve immediately upon release" |
 
-> ⚠️ **Pitfall**: `ApproveAfterDays=0` means "approve from release date." If Patch Manager runs next week and patch released today, it applies immediately. With weekly Maintenance Windows, patch applies up to 7 days post-release. Not "real-time instant apply" but "on next Maintenance Window run, apply all patches post-release."
+> ⚠️ **Pitfall**: `ApproveAfterDays=0` means "approved from the day the patch is released." So the next time Patch Manager runs, any patch that has already been released is applied immediately. If the Maintenance Window runs once a week, the patch lands up to 7 days after release. It does not mean "applied instantly in real time" — it means "on the next Maintenance Window run, apply every patch released on or after its release date."
 
 ## 📝 시나리오 연습 문제
 

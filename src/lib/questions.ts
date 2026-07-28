@@ -8,6 +8,7 @@ export interface IndexedQuestion {
   id: string;
   category: string;
   slug: string;
+  section?: string; // P0-8: aws|kubernetes|terraform|linux. 빌드 인덱스가 스탬프.
   week: number; // day 문제의 주차. 모의고사 문제는 0(주차 없음).
   day: number;  // day 문제의 일차. 모의고사 문제는 0.
   number: number;

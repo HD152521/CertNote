@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CalendarDays, X } from 'lucide-react';
+import { t, useLanguage } from '@/lib/i18n-client';
+import { pick } from '@/lib/strings/dict';
+import { chromeStrings, formatStreakBanner } from '@/lib/strings/chrome';
 
 const DISMISS_KEY = 'cert-notes:exam-nudge-dismissed';
 
@@ -10,6 +13,8 @@ const DISMISS_KEY = 'cert-notes:exam-nudge-dismissed';
 // 리텐션 장치가 /dashboard 안에만 있어 신규 유저가 존재를 모르는 문제 대응.
 // 비로그인(401)·플랜 있음·닫은 적 있음 → 렌더하지 않는다.
 export function ExamDateNudge() {
+  const lang = useLanguage();
+  const s = pick(chromeStrings, lang);
   const [show, setShow] = useState(false);
   const [streak, setStreak] = useState(0);
 
@@ -51,22 +56,22 @@ export function ExamDateNudge() {
       <CalendarDays className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
       <div className="min-w-0 flex-1 space-y-1">
         <p className="text-sm font-medium">
-          {streak > 0 ? `🔥 ${streak}일 연속 학습 중이에요!` : '시험일을 정해두면 완주가 쉬워져요'}
+          {streak > 0 ? formatStreakBanner(lang, streak) : s.examNudgeNoDate}
         </p>
         <p className="text-sm text-fg-muted">
-          시험일을 등록하면 D-day 카운트다운과 매일 학습 분량을 챙겨드려요.
+          {s.examNudgeBody}
         </p>
         <Link
           href="/dashboard"
           className="inline-flex items-center gap-1 text-sm font-medium text-accent underline-offset-4 hover:underline"
         >
-          시험일 등록하기 →
+          {s.examNudgeCta}
         </Link>
       </div>
       <button
         type="button"
         onClick={dismiss}
-        aria-label="닫기"
+        aria-label={t(lang, 'close')}
         className="shrink-0 text-fg-faint transition hover:text-fg"
       >
         <X className="h-4 w-4" />

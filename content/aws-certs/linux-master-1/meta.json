@@ -1,12 +1,13 @@
 {
   "slug": "linux-master-1",
   "code": "리눅스마스터 1급",
-  "level": "professional",
+  "level": "grade-1",
   "name": "리눅스마스터 1급",
   "weeks": 14,
   "accent": "#FCC624",
   "order": 6,
   "dayCount": 70,
   "sourceRepo": "linux-master-1",
-  "syncedAt": "2026-06-05T00:00:00.000Z"
+  "syncedAt": "2026-06-05T00:00:00.000Z",
+  "section": "linux"
 }

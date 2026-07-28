@@ -1,6 +1,6 @@
 # Day 2 - How LLMs Work: Tokens, Embeddings, Context Window, and Inference
 
-Yesterday we learned that LLMs "probabilistically predict the next token." But a model is a computer. Computers don't understand letters. They only understand numbers. So how does a Korean sentence like "오늘 날씨가 좋다" (The weather is nice today) become numbers that go into the model, and how does it come back out as letters?
+Yesterday we learned that LLMs "probabilistically predict the next token." But a model is a computer. Computers don't understand letters. They only understand numbers. So how does a sentence like "The weather is nice today" become numbers that go into the model, and how does it come back out as letters?
 
 Today we'll trace how text is processed inside an LLM using four core concepts: **Token → Embedding → Context Window → Inference**. These four terms appear directly on the AIF exam and are also the keys to understanding cost and performance. Our goal is to understand without formulas—like drawing a picture.
 
@@ -9,8 +9,8 @@ Today we'll trace how text is processed inside an LLM using four core concepts: 
 LLMs don't receive sentences all at once. They cut them into small pieces called **tokens** and process them. A token can be a word, part of a word, or even a single letter.
 
 ```
-"생성형 AI는 멋지다" (Generative AI is amazing)
-→ Tokenization → ["생성", "형", " AI", "는", " 멋", "지다"]   (example)
+"Generative AI is amazing"
+→ Tokenization → ["Gener", "ative", " AI", " is", " amaz", "ing"]   (example)
 
 "unbelievable"
 → ["un", "believ", "able"]   (English is typically broken into word pieces)
@@ -30,12 +30,12 @@ There are two reasons why tokens matter in practice:
 Even though we've cut text into tokens, they're still letters. Now we convert each token into a **numeric vector**. This is called an **embedding**. Embeddings are usually lists of hundreds to thousands of numbers.
 
 ```
-"왕" (king)   → [0.21, -0.47, 0.88, ... ]   (e.g., 1536 numbers)
-"여왕" (queen) → [0.19, -0.42, 0.91, ... ]   (positioned similarly to king)
-"사과" (apple) → [-0.66, 0.13, -0.05, ... ]  (positioned far from king)
+"king"  → [0.21, -0.47, 0.88, ... ]   (e.g., 1536 numbers)
+"queen" → [0.19, -0.42, 0.91, ... ]   (positioned similarly to king)
+"apple" → [-0.66, 0.13, -0.05, ... ]  (positioned far from king)
 ```
 
-The key insight is that **words with similar meanings are positioned close together in vector space**. "왕" (king) and "여왕" (queen) are close, while "왕" (king) and "사과" (apple) are far apart. The model calculates relationships between words in this numeric space. A famous example is the vector arithmetic "왕 (king) - 남자 (man) + 여자 (woman) ≈ 여왕 (queen)."
+The key insight is that **words with similar meanings are positioned close together in vector space**. "king" and "queen" are close, while "king" and "apple" are far apart. The model calculates relationships between words in this numeric space. A famous example is the vector arithmetic "king - man + woman ≈ queen."
 
 The primary applications using this "semantic distance" are **semantic search** and **RAG (Retrieval-Augmented Generation)**. By converting questions to embeddings and pre-embedding documents, you can find documents that are semantically similar, not just keyword-matching.
 
@@ -81,9 +81,9 @@ Besides this, parameters like **Top-P (nucleus sampling)** and **Top-K** adjust 
 ## Seeing the Entire Flow at Once
 
 ```
-User input: "이 메일을 요약해줘: ..." (Summarize this email: ...)
+User input: "Summarize this email: ..."
    │
-   ▼ ① Tokenization   → ["이", " 메일", "을", " 요약", ...]
+   ▼ ① Tokenization   → ["Sum", "mar", "ize", " this", " email", ...]
    │
    ▼ ② Embedding     → Convert each token to a meaning vector
    │
@@ -91,7 +91,7 @@ User input: "이 메일을 요약해줘: ..." (Summarize this email: ...)
    │
    ▼ ④ Inference (repeat next token prediction) — adjust character with temperature
    │
-   ▼ Output: "이 메일은 회의 일정 변경을 알리는 내용입니다." (This email notifies about a meeting schedule change.)
+   ▼ Output: "This email notifies you of a change to the meeting schedule."
 ```
 
 Understanding this flow explains all at once: "Why is a long prompt expensive (tokens ↑)," "Why are answers different to the same question (sampling)," and "Why can't we put all internal documents in (context window limit)."

@@ -8,5 +8,6 @@
   "order": 11,
   "dayCount": 60,
   "sourceRepo": "AWS_specialty_machineLearning",
-  "syncedAt": "2026-06-26T00:00:00.000Z"
+  "syncedAt": "2026-06-26T00:00:00.000Z",
+  "section": "aws"
 }

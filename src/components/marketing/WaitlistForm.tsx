@@ -1,9 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useLanguage } from '@/lib/i18n-client';
+import { pick } from '@/lib/strings/dict';
+import { waitlistStrings } from '@/lib/strings/waitlist';
 
 // 결제 전 대기자 등록 폼. /api/waitlist 호출.
 export function WaitlistForm() {
+  const s = pick(waitlistStrings, useLanguage());
   const [email, setEmail] = useState('');
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
@@ -21,12 +25,12 @@ export function WaitlistForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message ?? '등록에 실패했습니다.');
+        setError(data.message ?? s.submitFailed);
       } else {
         setDone(true);
       }
     } catch {
-      setError('네트워크 오류가 발생했습니다.');
+      setError(s.networkError);
     } finally {
       setBusy(false);
     }
@@ -35,7 +39,7 @@ export function WaitlistForm() {
   if (done) {
     return (
       <p className="rounded-md border border-border bg-bg-subtle px-4 py-3 text-sm text-fg-muted">
-        등록 완료! 출시되면 가장 먼저 알려드릴게요. 🎉
+        {s.joined}
       </p>
     );
   }
@@ -47,7 +51,7 @@ export function WaitlistForm() {
         required
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder="이메일을 입력하세요"
+        placeholder={s.emailPlaceholder}
         className="flex-1 rounded-md border border-border bg-bg px-3 py-2 text-sm"
       />
       <button
@@ -55,7 +59,7 @@ export function WaitlistForm() {
         disabled={busy}
         className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-accent-fg transition hover:opacity-90 disabled:opacity-50"
       >
-        {busy ? '등록 중…' : '출시 알림 받기'}
+        {busy ? s.submitting : s.submit}
       </button>
       {error && <p className="text-xs text-danger sm:w-full">{error}</p>}
     </form>
