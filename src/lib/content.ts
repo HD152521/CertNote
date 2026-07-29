@@ -19,6 +19,9 @@ export type CertLevel = string;
 // 레벨 표시 라벨은 fs 비의존 모듈에 둔다 — 클라이언트 컴포넌트(SidebarNav)도 안전하게 import.
 export { certLevelLabel } from './category';
 import type { Section } from './category';
+// 공개 URL category(섹션 'aws'/'linux' 또는 'en'/레거시 'aws-certs')를 물리 디렉터리로 매핑.
+// 파일 읽기는 모두 이 함수를 통과하고, href/캐시키는 URL category를 그대로 유지한다.
+import { contentDirOf, isSection } from './category';
 
 export interface CertMeta {
   slug: string;
@@ -83,7 +86,7 @@ async function readJson<T>(p: string): Promise<T> {
 export async function getCategoryIndex(category: string): Promise<CategoryIndex> {
   const cached = CONTENT_CACHE ? indexCache.get(category) : undefined;
   if (cached) return cached;
-  const p = path.join(CONTENT_ROOT, category, 'index.json');
+  const p = path.join(CONTENT_ROOT, contentDirOf(category), 'index.json');
   const idx = await readJson<CategoryIndex>(p);
   if (CONTENT_CACHE) indexCache.set(category, idx);
   return idx;
@@ -93,15 +96,21 @@ export async function getCertMeta(category: string, slug: string): Promise<CertM
   const key = `${category}/${slug}`;
   const cached = CONTENT_CACHE ? metaCache.get(key) : undefined;
   if (cached) return cached;
-  const p = path.join(CONTENT_ROOT, category, slug, 'meta.json');
+  const p = path.join(CONTENT_ROOT, contentDirOf(category), slug, 'meta.json');
   const meta = await readJson<CertMeta>(p);
   if (CONTENT_CACHE) metaCache.set(key, meta);
   return meta;
 }
 
 export async function getCertReadme(category: string, slug: string): Promise<string> {
-  const p = path.join(CONTENT_ROOT, category, slug, 'README.md');
+  const p = path.join(CONTENT_ROOT, contentDirOf(category), slug, 'README.md');
   return fs.readFile(p, 'utf8');
+}
+
+// 자격증 메타 → 공개 URL(섹션 세그먼트). 홈·목록 등 "전체 자격증을 한 번에 나열"하는 화면이
+// 자격증마다 올바른 섹션(/aws vs /linux)으로 링크하도록 하는 단일 출처. section 미기록(레거시)은 aws.
+export function certHref(meta: Pick<CertMeta, 'slug' | 'section'>): string {
+  return `/${meta.section ?? 'aws'}/${meta.slug}`;
 }
 
 function extractTitle(body: string, day: number): string {
@@ -155,13 +164,13 @@ export function previewOf(body: string, max: number = PREVIEW_MAX): string {
 // 이제 git 커밋 시각 기반 매니페스트(src/lib/contentManifest.ts)를 조회한다 — 빌드 환경의
 // mtime과 무관하게 결정적이다. 매니페스트에 없으면 undefined(조용히 생략, 날짜 추측 금지).
 export async function getDayMtime(category: string, slug: string, week: number, day: number): Promise<Date | undefined> {
-  return getManifestMtime(`content/${category}/${slug}/week${week}/day${day}.md`);
+  return getManifestMtime(`content/${contentDirOf(category)}/${slug}/week${week}/day${day}.md`);
 }
 
 // 자격증 허브(meta.json) 마지막 변경 시각(sitemap lastModified용, Step6). getDayMtime과 동일한
 // 이유로 매니페스트를 조회한다.
 export async function getCertMetaMtime(category: string, slug: string): Promise<Date | undefined> {
-  return getManifestMtime(`content/${category}/${slug}/meta.json`);
+  return getManifestMtime(`content/${contentDirOf(category)}/${slug}/meta.json`);
 }
 
 export async function getAllDays(category: string, slug: string): Promise<DayRef[]> {
@@ -169,12 +178,14 @@ export async function getAllDays(category: string, slug: string): Promise<DayRef
   const cached = CONTENT_CACHE ? daysCache.get(key) : undefined;
   if (cached) return cached;
   const meta = await getCertMeta(category, slug);
+  const dir = contentDirOf(category);
   const days: DayRef[] = [];
   for (let w = 1; w <= meta.weeks; w++) {
     for (let d = 1; d <= 5; d++) {
-      const p = path.join(CONTENT_ROOT, category, slug, `week${w}`, `day${d}.md`);
+      const p = path.join(CONTENT_ROOT, dir, slug, `week${w}`, `day${d}.md`);
       if (!(await fileExists(p))) continue;
       const body = await fs.readFile(p, 'utf8');
+      // href는 공개 URL category(섹션 세그먼트)를 유지 — 파일 읽기(dir)와 분리한다.
       days.push({ category, slug, week: w, day: d, title: extractTitle(body, d), href: `/${category}/${slug}/week${w}/day${d}` });
     }
   }
@@ -183,7 +194,7 @@ export async function getAllDays(category: string, slug: string): Promise<DayRef
 }
 
 export async function getDay(category: string, slug: string, week: number, day: number): Promise<DayContent | null> {
-  const p = path.join(CONTENT_ROOT, category, slug, `week${week}`, `day${day}.md`);
+  const p = path.join(CONTENT_ROOT, contentDirOf(category), slug, `week${week}`, `day${day}.md`);
   if (!(await fileExists(p))) return null;
   const body = await fs.readFile(p, 'utf8');
   const all = await getAllDays(category, slug);
@@ -199,7 +210,11 @@ export async function getDay(category: string, slug: string, week: number, day: 
 export async function listCerts(category: string): Promise<CertMeta[]> {
   const idx = await getCategoryIndex(category);
   const metas = await Promise.all(idx.certs.map((c) => getCertMeta(category, c.slug)));
-  return metas.sort((a, b) => a.order - b.order);
+  // category가 섹션이면(공개 URL /aws·/linux) 그 섹션 자격증만 노출한다 — aws·linux가 같은
+  // content/aws-certs/ 폴더에 공존하므로 meta.section으로 가른다. 레거시 category('aws-certs'·'en')는
+  // 필터하지 않아(전체 반환) 대시보드·네비 등 13개 소비처의 기존 동작(linux 포함)이 그대로 유지된다.
+  const filtered = isSection(category) ? metas.filter((m) => m.section === category) : metas;
+  return filtered.sort((a, b) => a.order - b.order);
 }
 
 export async function buildSearchIndex(category: string): Promise<SearchEntry[]> {
@@ -226,7 +241,7 @@ export async function buildSearchBodyIndex(category: string): Promise<SearchBody
       // 결제/Pro 본문 검색은 P1에서 인증된 동적 엔드포인트로 제공.
       const includeBody = d.week <= FREE_WEEK;
       const raw = includeBody
-        ? await fs.readFile(path.join(CONTENT_ROOT, category, c.slug, `week${d.week}`, `day${d.day}.md`), 'utf8')
+        ? await fs.readFile(path.join(CONTENT_ROOT, contentDirOf(category), c.slug, `week${d.week}`, `day${d.day}.md`), 'utf8')
         : '';
       out.push({
         category, certSlug: c.slug, certCode: c.code, certName: c.name, certLevel: c.level,

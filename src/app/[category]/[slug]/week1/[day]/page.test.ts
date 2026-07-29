@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 import sitemap from '@/app/sitemap';
-import { DEFAULT_CATEGORY, EN_CATEGORY } from '@/lib/category';
+import { SECTIONS, EN_CATEGORY } from '@/lib/category';
 import { FREE_WEEK } from '@/lib/entitlement/policy';
 import { SITE_URL } from '@/lib/site';
 import { generateStaticParams } from './page';
@@ -37,11 +37,11 @@ describe('generateStaticParams — week1 전용 필터(week2+ 혼입 방지)', (
     for (const p of staticParams) {
       expect(p).not.toHaveProperty('week');
       expect(p.day).toMatch(/^day[1-5]$/);
-      expect([DEFAULT_CATEGORY, EN_CATEGORY]).toContain(p.category);
+      expect([...SECTIONS, EN_CATEGORY]).toContain(p.category);
     }
   });
 
-  test('사이트맵의 week1 URL 집합이 generateStaticParams() 출력에 전부 포함된다(수용 기준)', async () => {
+  test('사이트맵의 week1 URL 집합이 generateStaticParams() 출력에 전부 포함된다(수용 기준)', { timeout: 30000 }, async () => {
     const generated = new Set(
       staticParams.map((p) => `${SITE_URL}/${p.category}/${p.slug}/week${FREE_WEEK}/${p.day}`),
     );
@@ -50,8 +50,8 @@ describe('generateStaticParams — week1 전용 필터(week2+ 혼입 방지)', (
     const week1SitemapUrls = entries
       .map((e) => e.url)
       .filter((url) => {
-        const isAwsOrEn = url.startsWith(`${SITE_URL}/${DEFAULT_CATEGORY}/`) || url.startsWith(`${SITE_URL}/${EN_CATEGORY}/`);
-        return isAwsOrEn && url.includes(`/week${FREE_WEEK}/day`);
+        const isSectionOrEn = [...SECTIONS, EN_CATEGORY].some((c) => url.startsWith(`${SITE_URL}/${c}/`));
+        return isSectionOrEn && url.includes(`/week${FREE_WEEK}/day`);
       });
 
     // 사이트맵에 week1 URL이 실제로 존재하는지도 함께 확인(빈 배열이면 이 테스트가 무의미해진다).

@@ -14,7 +14,9 @@ vi.mock('@/lib/contentManifest', () => ({
 }));
 
 describe('sitemap — 매니페스트 부재 시 안전장치', () => {
-  test('모든 엔트리에 lastModified 필드 자체가 없다(값이 undefined가 아니라 키가 아예 없어야 함)', async () => {
+  // 이 테스트는 sitemap()이 전체 content 디렉터리를 fs로 순회한다(수 초). 전체 스위트를 병렬로
+  // 돌리면 디스크 경합으로 기본 5s 타임아웃을 넘길 수 있어 명시적으로 여유를 준다.
+  test('모든 엔트리에 lastModified 필드 자체가 없다(값이 undefined가 아니라 키가 아예 없어야 함)', { timeout: 30000 }, async () => {
     const { default: sitemap } = await import('./sitemap');
 
     const entries = await sitemap();

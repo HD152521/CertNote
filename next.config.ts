@@ -22,6 +22,32 @@ const nextConfig: NextConfig = {
         destination: `https://${PRODUCTION_HOST}/:path*`,
         permanent: true, // 301 — 구글에 canonical 이전 신호.
       },
+      // ── 레거시 /aws-certs → 섹션 URL 통합(Phase1) ────────────────────────────
+      // 콘텐츠는 물리 이동 없이 content/aws-certs/ 에 공존하되, 공개 URL만 섹션 세그먼트로 바꾼다.
+      // 첫 매치 승리 규칙상 linux 자격증(linux-master-1)의 특수 규칙을 aws 일반 규칙보다 반드시 앞에
+      // 둔다 — 순서가 바뀌면 /aws-certs/linux-master-1/* 가 존재하지 않는 /aws/linux-master-1/* 로
+      // 흡수되어 404가 대량 발생한다(docs/IA-4section-execution.md R3). permanent=true 는 308이며,
+      // 구글은 308을 301과 동등하게(메서드 보존 + canonical 이전) 취급한다(Next 16.2.6 redirects.md).
+      {
+        source: '/aws-certs/linux-master-1/:path*',
+        destination: '/linux/linux-master-1/:path*',
+        permanent: true,
+      },
+      {
+        source: '/aws-certs/linux-master-1',
+        destination: '/linux/linux-master-1',
+        permanent: true,
+      },
+      {
+        source: '/aws-certs/:path*',
+        destination: '/aws/:path*',
+        permanent: true,
+      },
+      {
+        source: '/aws-certs',
+        destination: '/aws',
+        permanent: true,
+      },
     ];
   },
 };

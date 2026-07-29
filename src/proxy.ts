@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE, verifySessionToken } from '@/lib/auth/session';
 import { LANG_COOKIE, resolveLanguage } from '@/lib/i18n';
-import { DEFAULT_CATEGORY, EN_CATEGORY } from '@/lib/category';
+import { DEFAULT_CATEGORY, EN_CATEGORY, SECTIONS } from '@/lib/category';
 import { contentPathExists } from '@/lib/contentExists';
 
 // 어떤 실제 라우트 패턴과도 매칭하지 않는 3세그먼트 마커. docs/SEO-indexing-fix-plan.md Step6 —
@@ -33,7 +33,9 @@ export async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   const isContentPath = (prefix: string) => path === `/${prefix}` || path.startsWith(`/${prefix}/`);
-  if (isContentPath(DEFAULT_CATEGORY) || isContentPath(EN_CATEGORY)) {
+  // 공개 콘텐츠 경로: 섹션(/aws·/linux) + 영어판(/en). 레거시 /aws-certs 는 next.config.ts에서
+  // 301되어 여기 도달하지 않지만(리다이렉트가 미들웨어보다 먼저), 전파 창 동안의 안전을 위해 함께 검사.
+  if (SECTIONS.some((s) => isContentPath(s)) || isContentPath(EN_CATEGORY) || isContentPath(DEFAULT_CATEGORY)) {
     return handleContentRoute(req);
   }
 
@@ -64,8 +66,9 @@ export async function proxy(req: NextRequest) {
 export const config = {
   matcher: [
     '/admin/:path*', '/dashboard/:path*', '/review/:path*', '/notebook/:path*', '/exam/:path*', '/account/:path*',
-    // 콘텐츠 존재 검증(docs/SEO-indexing-fix-plan.md Step6). /aws-certs·/en 자체(허브)는
-    // handleContentRoute 내부에서 항상 통과시키므로 여기 포함해도 안전하다.
-    '/aws-certs/:path*', '/en/:path*',
+    // 콘텐츠 존재 검증(docs/SEO-indexing-fix-plan.md Step6). 섹션 허브(/aws·/linux)·/en 자체는
+    // handleContentRoute 내부에서 항상 통과시키므로 여기 포함해도 안전하다. /aws-certs 는 레거시
+    // 전파 창 대비(정상 흐름에선 next.config 301이 먼저 처리).
+    '/aws/:path*', '/linux/:path*', '/aws-certs/:path*', '/en/:path*',
   ],
 };

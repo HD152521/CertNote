@@ -1,10 +1,11 @@
-import { DEFAULT_CATEGORY, EN_CATEGORY, SUPPORTED_CATEGORIES, isSupportedCategory, langOfCategory } from '@/lib/category';
+import { DEFAULT_CATEGORY, EN_CATEGORY, SUPPORTED_CATEGORIES, isSupportedCategory, langOfCategory, sectionLabel, sectionOfCategory } from '@/lib/category';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { hreflangPair } from '@/lib/i18n';
 import { ArrowRight } from 'lucide-react';
-import { getAllDays, getCertMeta, listCerts, certLevelLabel } from '@/lib/content';
+import { getAllDays, getCertMeta, listCerts, certLevelLabel, certHref } from '@/lib/content';
+import { isHighlightLevel } from '@/lib/levels';
 import { getExamInfo } from '@/lib/examInfo';
 import ExamInfoCard from '@/components/ExamInfoCard';
 import { cn } from '@/lib/cn';
@@ -63,8 +64,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // 반대 언어 허브가 있으면 hreflang 연결(영어판이 없는 자격증은 en 메타가 없어 실패 → 연결 생략).
   const otherCategory = lang === 'en' ? DEFAULT_CATEGORY : EN_CATEGORY;
   const otherExists = await getCertMeta(otherCategory, slug).then(() => true).catch(() => false);
+  // ko 짝의 URL은 섹션 세그먼트(/aws/...)여야 한다 — certHref(meta.section 기반)로 도출한다.
+  // '/aws-certs/...'(레거시)를 쓰면 301되는 URL을 hreflang이 가리켜 클러스터가 무효화된다.
   const languages = otherExists
-    ? hreflangPair(lang === 'en' ? `/${DEFAULT_CATEGORY}/${slug}` : url, lang === 'en' ? url : `/${EN_CATEGORY}/${slug}`)
+    ? hreflangPair(lang === 'en' ? certHref(meta) : url, lang === 'en' ? url : `/${EN_CATEGORY}/${slug}`)
     : undefined;
   return {
     title,
@@ -78,6 +81,7 @@ export default async function CertIndexPage({ params }: PageProps) {
   const { category, slug } = await params;
   if (!isSupportedCategory(category)) notFound();
   const lang = langOfCategory(category);
+  const section = sectionOfCategory(category);
   let meta;
   try { meta = await getCertMeta(category, slug); } catch { notFound(); }
   const days = await getAllDays(category, slug);
@@ -111,7 +115,7 @@ export default async function CertIndexPage({ params }: PageProps) {
         ]
       : [
           { name: '홈', url: '/' },
-          { name: 'AWS 자격증', url: `/${DEFAULT_CATEGORY}` },
+          { name: `${sectionLabel(section)} 자격증`, url: `/${category}` },
           { name: meta.code, url: `/${category}/${slug}` },
         ],
   );
@@ -128,12 +132,12 @@ export default async function CertIndexPage({ params }: PageProps) {
         <h1 className="text-3xl font-semibold tracking-tight">{meta.name}</h1>
         <p className="text-sm text-fg-muted">
           {lang === 'en' ? `${meta.weeks} week${meta.weeks > 1 ? 's' : ''} · ${meta.dayCount} days · ` : `${meta.weeks}주 · 총 ${meta.dayCount}일 · `}
-          <span className={meta.level === 'professional' || meta.level === 'specialty' ? 'text-accent' : ''}>{certLevelLabel(meta.level)}</span>
+          <span className={isHighlightLevel(meta.level, section) ? 'text-accent' : ''}>{certLevelLabel(meta.level, section)}</span>
         </p>
         {lang === 'en' && (
           <p className="text-xs text-fg-faint">
             Week 1 is available in English as a free preview. The full course is currently Korean-only —{' '}
-            <Link href={`/${DEFAULT_CATEGORY}/${slug}`} className="underline underline-offset-4 hover:text-fg">view the Korean track</Link>.
+            <Link href={certHref(meta)} className="underline underline-offset-4 hover:text-fg">view the Korean track</Link>.
           </p>
         )}
         {firstDay && (

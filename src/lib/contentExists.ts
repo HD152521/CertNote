@@ -1,3 +1,4 @@
+import { isSection } from './category';
 import { getAllDays, getCertMeta } from './content';
 
 // docs/SEO-indexing-fix-plan.md Step6 소프트 404 수정용 존재 검증.
@@ -17,11 +18,15 @@ export async function contentPathExists(pathname: string): Promise<boolean> {
   if (segments.length < 2) return true; // /aws-certs, /en 자체는 카테고리 라우트가 별도로 처리.
 
   const [category, slug, weekSeg, daySeg] = segments;
+  let meta;
   try {
-    await getCertMeta(category, slug);
+    meta = await getCertMeta(category, slug);
   } catch {
     return false; // 존재하지 않는 자격증 slug.
   }
+  // 교차 섹션 URL 차단: aws·linux가 같은 폴더에 공존하므로 getCertMeta는 섹션을 안 가린다.
+  // /linux/{aws-slug}/... 같은 조합이 aws 콘텐츠를 렌더하는 중복 색인 구멍을 여기서 막는다.
+  if (isSection(category) && meta.section !== category) return false;
 
   if (segments.length === 2) return true; // 자격증 허브 — slug 존재만 검증.
   if (segments.length !== 4) return true; // 그 외 깊이는 애초에 어떤 라우트도 매칭하지 않는다.

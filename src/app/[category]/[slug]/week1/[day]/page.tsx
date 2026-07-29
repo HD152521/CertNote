@@ -1,4 +1,4 @@
-import { DEFAULT_CATEGORY, EN_CATEGORY, isSupportedCategory, langOfCategory } from '@/lib/category';
+import { SECTIONS, EN_CATEGORY, isSupportedCategory, langOfCategory } from '@/lib/category';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getAllDays, getDay, listCerts } from '@/lib/content';
@@ -23,7 +23,9 @@ interface PageProps { params: Promise<{ category: string; slug: string; day: str
 // 동적 API가 섞여도 빌드가 조용히 통과해버려 회귀를 못 잡는다(auto가 더 정직한 방어).
 export async function generateStaticParams() {
   const out: { category: string; slug: string; day: string }[] = [];
-  for (const category of [DEFAULT_CATEGORY, EN_CATEGORY]) {
+  // 공개 URL category(섹션 세그먼트 + en)로 정적 생성한다. listCerts(section)이 meta.section으로
+  // 걸러 각 섹션 자격증만 반환하므로 /aws/*·/linux/* 무료 Week1 페이지가 각각 생성된다.
+  for (const category of [...SECTIONS, EN_CATEGORY]) {
     // listCerts는 index.json 파싱 실패 시 throw할 수 있다(en 카테고리 콘텐츠 미비 등).
     // sitemap.ts와 동일하게 조용히 건너뛴다 — 한쪽 언어 실패가 반대쪽 빌드까지 막지 않는다.
     const certs = await listCerts(category).catch(() => []);

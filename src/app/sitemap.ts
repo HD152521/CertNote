@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { DEFAULT_CATEGORY, EN_CATEGORY } from '@/lib/category';
+import { EN_CATEGORY, SECTIONS } from '@/lib/category';
 import { getAllDays, getCertMetaMtime, getDayMtime, listCerts } from '@/lib/content';
 import { getSourceFileMtime } from '@/lib/fileMtime';
 import { FREE_WEEK } from '@/lib/entitlement/policy';
@@ -40,36 +40,45 @@ function sitemapEntry(
 // - Week2+ day 페이지는 noindex(프리미엄)라 sitemap에서 제외한다. noindex URL을 제출하면
 //   Search Console에 "제출된 URL이 noindex" 경고가 뜨고 크롤 예산을 낭비한다.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const certs = await listCerts(DEFAULT_CATEGORY);
-
-  // 카테고리 허브(자격증 목록·순서)의 lastModified = 그 카테고리 산하 자격증 meta.json 중 최신값.
-  // 자격증이 추가/개편되면(허브가 실제로 바뀌는 시점) 값이 갱신되고, 그 외엔 결정적으로 고정된다.
-  const certMetaMtimes = await Promise.all(certs.map((c) => getCertMetaMtime(DEFAULT_CATEGORY, c.slug)));
-  const homeLastMod = maxMtime([await getSourceFileMtime('src/app/page.tsx'), ...certMetaMtimes]);
-  const categoryHubLastMod = maxMtime(certMetaMtimes);
+  // 섹션별(공개 URL /aws·/linux) 자격증을 순회한다. 콘텐츠는 content/aws-certs/ 에 공존하지만
+  // listCerts(section)이 meta.section으로 걸러 각 섹션 자격증만 반환한다. 레거시 /aws-certs/* 는
+  // next.config.ts에서 301되므로 사이트맵에 절대 싣지 않는다(GSC "리다이렉트된 URL 제출" 경고 방지).
+  const sections = await Promise.all(
+    SECTIONS.map(async (section) => ({ section, certs: await listCerts(section).catch(() => []) })),
+  );
+  const allCertMetaMtimes = (
+    await Promise.all(
+      sections.flatMap(({ section, certs }) => certs.map((c) => getCertMetaMtime(section, c.slug))),
+    )
+  );
+  const homeLastMod = maxMtime([await getSourceFileMtime('src/app/page.tsx'), ...allCertMetaMtimes]);
 
   const out: MetadataRoute.Sitemap = [
     sitemapEntry(SITE_URL, homeLastMod, 'weekly', 1),
-    // 카테고리 허브 = "aws 자격증 순서/종류" 착지 페이지.
-    sitemapEntry(`${SITE_URL}/${DEFAULT_CATEGORY}`, categoryHubLastMod, 'weekly', 0.9),
     sitemapEntry(`${SITE_URL}/pricing`, await getSourceFileMtime('src/app/pricing/page.tsx'), 'monthly', 0.6),
     sitemapEntry(`${SITE_URL}/privacy`, await getSourceFileMtime('src/app/privacy/PrivacyContent.tsx'), 'yearly', 0.3),
   ];
-  for (const cert of certs) {
-    out.push(
-      sitemapEntry(`${SITE_URL}/${DEFAULT_CATEGORY}/${cert.slug}`, await getCertMetaMtime(DEFAULT_CATEGORY, cert.slug), 'weekly', 0.9),
-    );
-    const days = await getAllDays(DEFAULT_CATEGORY, cert.slug);
-    for (const d of days) {
-      if (d.week > FREE_WEEK) continue; // Week2+ noindex — 색인 대상이 아니므로 제외.
+  for (const { section, certs } of sections) {
+    if (certs.length === 0) continue; // 콘텐츠 없는 섹션(향후 준비중)은 허브도 생략.
+    // 섹션 허브 = "{section} 자격증 순서/종류" 착지 페이지. lastModified = 산하 meta.json 최신값.
+    const sectionMtimes = await Promise.all(certs.map((c) => getCertMetaMtime(section, c.slug)));
+    out.push(sitemapEntry(`${SITE_URL}/${section}`, maxMtime(sectionMtimes), 'weekly', 0.9));
+    for (const cert of certs) {
       out.push(
-        sitemapEntry(
-          `${SITE_URL}${d.href}`,
-          await getDayMtime(DEFAULT_CATEGORY, cert.slug, d.week, d.day),
-          'monthly',
-          0.8, // 무료 Week1은 검색 유입의 정문.
-        ),
+        sitemapEntry(`${SITE_URL}/${section}/${cert.slug}`, await getCertMetaMtime(section, cert.slug), 'weekly', 0.9),
       );
+      const days = await getAllDays(section, cert.slug);
+      for (const d of days) {
+        if (d.week > FREE_WEEK) continue; // Week2+ noindex — 색인 대상이 아니므로 제외.
+        out.push(
+          sitemapEntry(
+            `${SITE_URL}${d.href}`, // d.href 는 이미 /{section}/... (getAllDays가 URL category 유지)
+            await getDayMtime(section, cert.slug, d.week, d.day),
+            'monthly',
+            0.8, // 무료 Week1은 검색 유입의 정문.
+          ),
+        );
+      }
     }
   }
   // 영어판(무료 Week1 트랙). 콘텐츠가 없으면 조용히 생략.

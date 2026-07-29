@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { DEFAULT_CATEGORY } from '@/lib/category';
 
 export const metadata: Metadata = {
   title: '페이지를 찾을 수 없음',
@@ -20,7 +19,7 @@ export default function NotFound() {
         <Link href="/" className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition hover:opacity-90">
           홈으로
         </Link>
-        <Link href={`/${DEFAULT_CATEGORY}`} className="rounded-md border border-border px-4 py-2 text-sm font-medium text-fg transition hover:border-border-strong">
+        <Link href="/aws" className="rounded-md border border-border px-4 py-2 text-sm font-medium text-fg transition hover:border-border-strong">
           AWS 자격증 목록
         </Link>
       </div>

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { DEFAULT_CATEGORY, EN_CATEGORY } from '@/lib/category';
+import { EN_CATEGORY } from '@/lib/category';
 import { getDay } from '@/lib/content';
 import { hreflangPair } from '@/lib/i18n';
 import { excerptOf } from '@/lib/site';
@@ -32,7 +32,10 @@ export async function buildDayMetadata(category: string, slug: string, w: number
   const title = `${content.title} — ${content.certMeta.code}`;
   const description = excerptOf(content.body);
   // 한/영 상호 hreflang: 반대 언어 버전이 실제로 존재할 때만 연결(무료 Week1만 영어판이 있다).
-  const otherCategory = category === EN_CATEGORY ? DEFAULT_CATEGORY : EN_CATEGORY;
+  // en 페이지의 ko 짝은 섹션 URL(/aws/...)이어야 한다 — DEFAULT_CATEGORY('aws-certs')를 쓰면
+  // 301되는 구 URL을 hreflang으로 가리켜 클러스터가 무효화된다. content.certMeta.section으로 도출.
+  const koSection = content.certMeta.section ?? 'aws';
+  const otherCategory = category === EN_CATEGORY ? koSection : EN_CATEGORY;
   const other = w <= FREE_WEEK ? await getDay(otherCategory, slug, w, d).catch(() => null) : null;
   const languages = other
     ? hreflangPair(category === EN_CATEGORY ? other.href : content.href, category === EN_CATEGORY ? content.href : other.href)

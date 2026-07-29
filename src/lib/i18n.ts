@@ -25,11 +25,13 @@ export const LANG_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 // 별도의 영어판 URL을 가진 공개 페이지. 언어가 URL로만 결정돼야 크롤러가 본 것과
 // 사용자가 본 것이 갈리지 않는다. (쿠키로 흔들면 같은 URL이 사람마다 다른 언어로 나와
 // canonical/hreflang이 무의미해진다.)
-//   '/'            ↔ '/en'
-//   '/aws-certs/*' ↔ '/en/*'
+//   '/'                  ↔ '/en'
+//   '/aws/*', '/linux/*' ↔ '/en/*'
+// Phase1에서 공개 URL이 섹션 세그먼트(/aws·/linux)로 바뀌었다. 레거시 '/aws-certs'는
+// next.config.ts에서 301되지만, 리다이렉트 전파 창 동안의 안전을 위해 남겨 둔다(항상 ko).
 // /pricing·/privacy는 영어판 URL이 없어 여기 없다 — 쿠키가 결정하고, HTML 소스는
 // 한국어로 남아 그대로 색인된다.
-const PUBLIC_KO_PREFIXES = ['/aws-certs'] as const;
+const PUBLIC_KO_PREFIXES = ['/aws', '/linux', '/aws-certs'] as const;
 
 function isPublicKoPath(pathname: string): boolean {
   if (pathname === '/') return true;

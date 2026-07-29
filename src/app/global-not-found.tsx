@@ -9,7 +9,6 @@ import './globals.css';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from '@/lib/site';
-import { DEFAULT_CATEGORY } from '@/lib/category';
 
 export const metadata: Metadata = {
   // 루트 레이아웃을 거치지 않아 metadataBase를 상속받지 못한다 — 여기서 직접 지정.
@@ -41,7 +40,7 @@ export default function GlobalNotFound() {
               홈으로
             </Link>
             <Link
-              href={`/${DEFAULT_CATEGORY}`}
+              href="/aws"
               className="rounded-md border border-border px-4 py-2 text-sm font-medium text-fg transition hover:border-border-strong"
             >
               AWS 자격증 목록

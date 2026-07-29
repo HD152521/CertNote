@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
-import { DEFAULT_CATEGORY, EN_CATEGORY, SUPPORTED_CATEGORIES, certLevelLabel, isSupportedCategory, langOfCategory, sectionOfCategory } from '@/lib/category';
+import { EN_CATEGORY, SUPPORTED_CATEGORIES, certLevelLabel, isSupportedCategory, langOfCategory, sectionLabel, sectionOfCategory } from '@/lib/category';
 import { listCerts } from '@/lib/content';
 import type { CertMeta } from '@/lib/content';
 import { groupCertsByLevel } from '@/lib/levels';
@@ -32,25 +32,27 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { category } = await params;
   if (!isSupportedCategory(category)) return {};
   const lang = langOfCategory(category);
+  const section = sectionOfCategory(category);
+  const sectionName = sectionLabel(section);
   const certs = await listCerts(category).catch(() => []);
   const title =
     lang === 'en'
-      ? 'AWS Certifications — Types & Recommended Order (Week 1 Free)'
-      : 'AWS 자격증 종류와 추천 순서 — 11종 한국어 학습 로드맵';
+      ? `${sectionName} Certifications — Types & Recommended Order (Week 1 Free)`
+      : `${sectionName} 자격증 종류와 추천 순서 — ${certs.length}종 한국어 학습 로드맵`;
   const description =
-    lang === 'en'
-      ? `All ${certs.length} AWS certification tracks by level: Cloud Practitioner → Associate → Professional → Specialty. Week 1 free.`
-      : `AWS 자격증 ${certs.length}종을 레벨별로 정리. Cloud Practitioner(기초) → 어소시에이트(SAA·DVA·SOA) → 프로페셔널(SAP·DOP) → 전문분야 순서로 준비하세요. Week 1 무료.`;
+    section === 'aws'
+      ? `AWS 자격증 ${certs.length}종을 레벨별로 정리. Cloud Practitioner(기초) → 어소시에이트(SAA·DVA·SOA) → 프로페셔널(SAP·DOP) → 전문분야 순서로 준비하세요. Week 1 무료.`
+      : `${sectionName} 자격증 ${certs.length}종을 레벨별로 정리하고 추천 순서로 준비하세요. 매일 읽는 심화 노트 + 연습 문제. Week 1 무료.`;
   const url = `/${category}`;
-  // 이 허브(ko: /aws-certs)의 영어판은 /en(영어판 홈)이다 — 상호 참조는 src/app/en/page.tsx가
-  // 되받는다(docs/SEO-indexing-fix-plan.md Step 3). x-default(비ko/비en 방문자 대체 URL)는
-  // 사이트 전체에서 이 클러스터 하나에서만 선언한다(홈은 hreflang을 선언하지 않는다).
+  // aws 허브만 영어판(/en)이 존재해 hreflang을 선언한다. linux 등 다른 섹션은 영어판이 없어
+  // 상호 참조가 성립하지 않으므로 languages를 아예 넣지 않는다(없는 URL을 가리키면 클러스터 무효화).
+  // x-default(비ko/비en 대체 URL)는 사이트 전체에서 이 aws 클러스터 하나에서만 선언한다.
   return {
     title,
     description,
     alternates: {
       canonical: url,
-      languages: hreflangPair(`/${DEFAULT_CATEGORY}`, `/${EN_CATEGORY}`, { xDefault: true }),
+      ...(section === 'aws' ? { languages: hreflangPair(url, `/${EN_CATEGORY}`, { xDefault: true }) } : {}),
     },
     openGraph: { title, description, url, type: 'website' },
   };
@@ -60,34 +62,42 @@ export default async function CategoryHubPage({ params }: PageProps) {
   const { category } = await params;
   if (!isSupportedCategory(category)) notFound();
   const lang = langOfCategory(category);
+  const section = sectionOfCategory(category);
+  const sectionName = sectionLabel(section);
   const certs = await listCerts(category).catch(() => []);
   if (certs.length === 0) notFound();
 
   // 레벨별 그룹(추천 순서, 섹션별 티어). 각 그룹 내부는 order 순.
-  const groups = groupCertsByLevel(certs, sectionOfCategory(category)).map((g) => ({ level: g.level, items: g.certs }));
+  const groups = groupCertsByLevel(certs, section).map((g) => ({ level: g.level, items: g.certs }));
 
   // 추천 순서를 그대로 담은 ItemList — "자격증 순서" 검색 의도에 맞춘 구조화 데이터.
   const ordered: CertMeta[] = groups.flatMap((g) => g.items);
   const itemListLd = buildItemListLd(
-    lang === 'en' ? 'AWS certifications by recommended order' : 'AWS 자격증 추천 순서',
+    lang === 'en' ? `${sectionName} certifications by recommended order` : `${sectionName} 자격증 추천 순서`,
     ordered.map((c) => ({ code: c.code, name: c.name, url: `${SITE_URL}/${category}/${c.slug}` })),
   );
   // 계층 신호(BreadcrumbList, Step4 4-3). /en 은 이 동적 라우트가 아니라 정적 라우트
-  // (src/app/en/page.tsx)가 우선 매칭해 실제로 서빙하므로(주석 참고) 여기선 ko(aws-certs)만
+  // (src/app/en/page.tsx)가 우선 매칭해 실제로 서빙하므로(주석 참고) 여기선 ko(섹션 허브)만
   // 선언한다 — en 분기는 실제로 도달하지 않는다.
   const breadcrumbLd = lang === 'ko'
     ? buildBreadcrumbLd([
         { name: '홈', url: '/' },
-        { name: 'AWS 자격증', url: `/${category}` },
+        { name: `${sectionName} 자격증`, url: `/${category}` },
       ])
     : null;
 
+  // 레벨 힌트(섹션별 티어 설명). 미정의 레벨은 힌트 없이 라벨만 렌더된다.
   const levelHint: Record<string, string> = lang === 'en'
     ? {
         foundational: 'Start here — cloud basics, no prerequisites.',
         associate: 'Core job-ready certs. SAA-C03 is the most in-demand.',
         professional: 'Advanced, 2+ years experience recommended.',
         specialty: 'Deep-dive into a specific domain.',
+      }
+    : section === 'linux'
+    ? {
+        'grade-2': '입문·실무 기초 — 리눅스마스터 2급부터 시작하세요.',
+        'grade-1': '심화·전문가 — 실무 경험과 함께 준비하는 상위 등급.',
       }
     : {
         foundational: '여기서 시작 — 사전지식 없이 클라우드 기초.',
@@ -102,26 +112,26 @@ export default async function CategoryHubPage({ params }: PageProps) {
       {breadcrumbLd && <JsonLd data={breadcrumbLd} />}
       <header className="space-y-4">
         <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">
-          {lang === 'en' ? 'AWS Certifications' : 'AWS 자격증'} · {certs.length} tracks
+          {lang === 'en' ? `${sectionName} Certifications` : `${sectionName} 자격증`} · {certs.length} tracks
         </p>
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
           {lang === 'en' ? (
-            <>AWS certification <span className="text-accent">types & order</span></>
+            <>{sectionName} certification <span className="text-accent">types & order</span></>
           ) : (
-            <>AWS 자격증 <span className="text-accent">종류와 추천 순서</span></>
+            <>{sectionName} 자격증 <span className="text-accent">종류와 추천 순서</span></>
           )}
         </h1>
         <p className="text-fg-muted leading-relaxed">
-          {lang === 'en'
-            ? 'AWS certifications progress by level: Cloud Practitioner (foundational) → Associate (SAA, DVA, SOA) → Professional (SAP, DOP) → Specialty. Pick your target and start with a free Week 1.'
-            : 'AWS 자격증은 기초(Cloud Practitioner) → 어소시에이트(SAA·DVA·SOA) → 프로페셔널(SAP·DOP) → 전문분야 순서로 준비하는 것이 일반적입니다. 목표를 고르고 무료 Week 1부터 시작하세요.'}
+          {section === 'aws'
+            ? 'AWS 자격증은 기초(Cloud Practitioner) → 어소시에이트(SAA·DVA·SOA) → 프로페셔널(SAP·DOP) → 전문분야 순서로 준비하는 것이 일반적입니다. 목표를 고르고 무료 Week 1부터 시작하세요.'
+            : `${sectionName} 자격증을 레벨별로 정리했습니다. 목표를 고르고 무료 Week 1부터 시작하세요.`}
         </p>
       </header>
 
       {groups.map(({ level, items }) => (
         <section key={level} className="space-y-3">
           <div className="space-y-1">
-            <h2 className="text-lg font-semibold">{certLevelLabel(level)}</h2>
+            <h2 className="text-lg font-semibold">{certLevelLabel(level, section)}</h2>
             <p className="text-sm text-fg-muted">{levelHint[level]}</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">

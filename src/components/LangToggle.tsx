@@ -2,23 +2,25 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { DEFAULT_CATEGORY, EN_CATEGORY } from '@/lib/category';
+import { EN_CATEGORY } from '@/lib/category';
 import { cn } from '@/lib/cn';
 import { isLanguageCookieAuthoritative, type Language } from '@/lib/i18n';
 import { setLanguage, useLanguage } from '@/lib/i18n-client';
 
 // 헤더 KO/EN 토글. 동작이 페이지 종류에 따라 갈린다.
 //
-//  - 색인 대상 공개 페이지(/, /aws-certs/*, /en/*): 언어가 URL로 결정되므로 반대 언어 URL로 이동한다.
-//    영어판은 무료 Week1만 있으므로 유료 주차(week2+)에서 EN을 누르면 해당 자격증 영어 허브로 보낸다.
+//  - 색인 대상 공개 페이지(/, /aws/*, /linux/*, /en/*): 언어가 URL로 결정되므로 반대 언어 URL로 이동.
+//    영어판은 aws 무료 Week1만 있으므로 유료 주차(week2+)나 비-aws 섹션에서 EN을 누르면 영어 허브로.
 //  - 로그인 전용 페이지(대시보드 등): 대응 URL이 없으므로 lang 쿠키만 바꾸고 그 자리에 머문다.
 //    예전에는 여기서 /en 홈으로 튕겨내 사용자가 보던 페이지를 잃었다.
 function counterpart(pathname: string, to: Language): string {
-  const koMatch = pathname.match(new RegExp(`^/${DEFAULT_CATEGORY}/([^/]+)(?:/week(\\d+)/day(\\d+))?$`));
+  // ko 공개 경로는 섹션 세그먼트(/aws·/linux). 섹션을 캡처해 영어판 유무를 판정한다.
+  const koMatch = pathname.match(/^\/(aws|linux)\/([^/]+)(?:\/week(\d+)\/day(\d+))?$/);
   const enMatch = pathname.match(new RegExp(`^/${EN_CATEGORY}(?:/([^/]+)(?:/week(\\d+)/day(\\d+))?)?$`));
   if (to === 'en') {
     if (koMatch) {
-      const [, slug, week, day] = koMatch;
+      const [, section, slug, week, day] = koMatch;
+      if (section !== 'aws') return `/${EN_CATEGORY}`; // 영어판은 aws 트랙만 존재.
       if (week && Number(week) === 1) return `/${EN_CATEGORY}/${slug}/week${week}/day${day}`;
       return `/${EN_CATEGORY}/${slug}`;
     }
@@ -26,8 +28,9 @@ function counterpart(pathname: string, to: Language): string {
   }
   if (enMatch) {
     const [, slug, week, day] = enMatch;
-    if (slug && week) return `/${DEFAULT_CATEGORY}/${slug}/week${week}/day${day}`;
-    if (slug) return `/${DEFAULT_CATEGORY}/${slug}`;
+    // 영어판의 ko 짝은 항상 aws 섹션이다(en 트랙 = aws 전용).
+    if (slug && week) return `/aws/${slug}/week${week}/day${day}`;
+    if (slug) return `/aws/${slug}`;
   }
   return '/';
 }

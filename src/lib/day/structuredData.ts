@@ -1,4 +1,4 @@
-import { DEFAULT_CATEGORY, EN_CATEGORY } from '@/lib/category';
+import { EN_CATEGORY, sectionLabel, sectionOfCategory } from '@/lib/category';
 import type { Lang } from '@/lib/category';
 import { getDayMtime } from '@/lib/content';
 import type { DayContent } from '@/lib/content';
@@ -56,7 +56,8 @@ export async function buildDayStructuredData(
         ]
       : [
           { name: '홈', url: '/' },
-          { name: 'AWS 자격증', url: `/${DEFAULT_CATEGORY}` },
+          // 섹션 허브(/aws·/linux). category가 섹션 세그먼트이므로 그대로 URL로 쓰고 라벨만 도출.
+          { name: `${sectionLabel(sectionOfCategory(category))} 자격증`, url: `/${category}` },
           { name: content.certMeta.code, url: `/${category}/${slug}` },
           { name: `Week ${w} Day ${d}`, url: content.href },
         ],

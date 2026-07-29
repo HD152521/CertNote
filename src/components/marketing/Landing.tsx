@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { BookOpen, Timer, RefreshCw, ArrowRight, Check, TrendingUp } from 'lucide-react';
-import { DEFAULT_CATEGORY } from '@/lib/category';
+import { certHref } from '@/lib/content';
 import type { CertMeta } from '@/lib/content';
 import { WaitlistForm } from './WaitlistForm';
 
@@ -116,7 +116,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Link
-              href={`/${DEFAULT_CATEGORY}/${popular[0].slug}`}
+              href={certHref(popular[0])}
               className="group flex flex-col gap-3 rounded-xl border border-border bg-gradient-to-br from-accent/5 to-transparent p-6 transition hover:border-accent hover:from-accent/10"
             >
               <div className="space-y-2">
@@ -200,7 +200,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
             {popular.slice(1).map((cert) => (
               <Link
                 key={cert.slug}
-                href={`/${DEFAULT_CATEGORY}/${cert.slug}`}
+                href={certHref(cert)}
                 className="group flex flex-col gap-2 rounded-xl border border-border p-5 transition hover:border-accent hover:bg-bg-subtle"
               >
                 <span className="font-mono text-xs text-fg-faint">{cert.code}</span>
