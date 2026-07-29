@@ -234,3 +234,25 @@ CREATE INDEX IF NOT EXISTS idx_reviews_cert
    페이즈별 읽기전용 스모크(Phase0: 기존 URL 전수 200 / Phase1: 301·200·canonical·Week2+ noindex 부재)와 순서형 체크리스트(진입조건→원자 배포 단위→사용자 수동작업 정확한 명령→검증→롤백). **완전 독립·병렬**로 1~4와 동시 진행 가능하며, 이후 모든 페이즈의 게이트 도구가 된다.
 
 > 이 5개 완료 후 게이트(`npm run build` + 기존 URL 200 + `tsc --noEmit`)를 통과하면, Phase0 나머지(P0-4/P0-7/P0-8)를 마치고 **Phase0를 프로덕션에 선배포**해 안정화한 뒤 Phase1 원자 커밋을 준비한다.
+---
+
+## 부록 — Phase 1 저리스크 실행 노트 (2026-07-24, 착수 중 도출)
+
+**핵심 통찰: 섹션을 "URL/필터 뷰"로 처리하고 콘텐츠는 물리 이동하지 말 것(P1-2 연기).**
+`listCerts(DEFAULT_CATEGORY)` 소비처가 13곳(대시보드·추천·네비·홈·계정·시험·온보딩 등)인데,
+linux를 content/linux로 물리 이동하면 이 13곳이 전부 linux를 조용히 누락한다(회귀 위험). 그래서:
+
+1. **DEFAULT_CATEGORY='aws-certs' 유지**(내부 콘텐츠 키). 13개 소비처 무변경 → linux 보존.
+2. **콘텐츠 물리 이동 안 함** — aws·linux 모두 `content/aws-certs/`에 공존. 섹션은 `meta.section` 필터로 구분.
+3. `category.ts`: `SUPPORTED_CATEGORIES=[...SECTIONS, EN]`(=['aws','linux','en'], 'aws-certs' 제외 → 301),
+   `isSection(x)`, `contentDirOf(category)`(섹션→'aws-certs', 그 외 그대로), `contentDirOfSection` aws|linux→'aws-certs'.
+4. `content.ts`: 7개 `path.join(CONTENT_ROOT, category, …)` → `contentDirOf(category)` 경유.
+   `listCerts(x)`는 x가 섹션이면 `meta.section===x` 필터, 레거시('aws-certs'/'en')면 전체.
+   href(`/${category}/…`)는 그대로 — 라우트에서 온 category=섹션이라 자동 정합.
+5. **내부 href(대시보드 '오늘학습' 등)는 `/aws-certs/…`로 방출되어 301로 /aws·/linux에 안착**(추가 홉 1회, 인증 페이지라 SEO 무해). 정확 href는 후속 정제.
+6. `next.config.ts` 301: linux 특수(→/linux) **먼저**, aws 일반(→/aws) 나중. `permanent:true`(=308).
+7. `sitemap.ts`: SECTIONS 순회 + 필터 listCerts. `/aws-certs/*` 미포함.
+8. 라우트 generateStaticParams: `[category]`=SECTIONS, `[category]/[slug]`=섹션×cert(필터). OG 하드코딩 버그(C10) 동시 수정. en hreflang은 `/aws`↔`/en`으로.
+
+**결과:** 원자 변경이 ~8파일로 축소, 대시보드/네비/개인화 **무변경**. 물리 분리(P1-2)·en 축 재편(P1-7~10)은 후속 페이즈로 안전 분리.
+**주의:** 여전히 **단일 원자 커밋**(라우트+301+sitemap 동시) + 배포 직후 `verify-migration.mjs --phase=1` + GSC.
