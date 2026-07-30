@@ -14,6 +14,7 @@ import { DayNavigationOverlay } from '@/components/study/DayNavigationOverlay';
 import { DayMeta } from '@/components/DayMeta';
 import { cn } from '@/lib/cn';
 import { JsonLd } from '@/components/JsonLd';
+import { LessonTracker } from '@/components/analytics/LessonTracker';
 import { buildDayStructuredData } from '@/lib/day/structuredData';
 
 export interface DayViewProps {
@@ -46,6 +47,7 @@ export async function DayView({ category, slug, w, d, lang, content, locked, log
     <div className="flex gap-0">
       {articleLd && <JsonLd data={articleLd} />}
       {breadcrumbLd && <JsonLd data={breadcrumbLd} />}
+      <LessonTracker cert={slug} week={w} day={d} locked={locked} loggedIn={loggedIn} />
       {!locked && (
         <MarkAsRead slug={slug} week={w} day={d} title={content.title} href={content.href} />
       )}

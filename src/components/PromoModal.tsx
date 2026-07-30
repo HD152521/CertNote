@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Check, ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n-client';
+import { track } from '@/lib/analytics';
 
 // 얼리버드 혜택: 8월 말까지 가입자에게 3개월 Pro 무료. 마감일은 명시적으로 표기.
 const FREE_MONTHS = 3;
@@ -27,8 +28,11 @@ export function PromoModal() {
     const inPromo = today.getFullYear() === 2026 && (m === 6 || m === 7);
     if (!inPromo) return;
     // 마운트 시 1회: localStorage(클라 전용)를 읽어 최초 방문자에게만 노출.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!localStorage.getItem('promo-modal-seen')) setIsOpen(true);
+    if (!localStorage.getItem('promo-modal-seen')) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsOpen(true);
+      track('promo_shown'); // 프로모 모달 노출(전환 퍼널 상단)
+    }
   }, []);
 
   const dismiss = () => {
@@ -37,6 +41,7 @@ export function PromoModal() {
   };
 
   const goSignup = () => {
+    track('promo_signup_clicked'); // 모달 CTA → 가입. promo_shown→여기→signup_completed 퍼널.
     dismiss();
     router.push('/signup');
   };
@@ -68,7 +73,7 @@ export function PromoModal() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border bg-bg-elevated shadow-2xl">
         <button
-          onClick={dismiss}
+          onClick={() => { track('promo_dismissed'); dismiss(); }}
           className="absolute right-3 top-3 z-10 rounded-full p-1.5 text-accent-fg/80 transition hover:bg-white/15 hover:text-accent-fg"
           aria-label="닫기 / Close"
         >
