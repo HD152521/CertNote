@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { X, Check, ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n-client';
 
-// 얼리버드 혜택: 7월 내 가입자에게 3개월 Pro 무료. 마감일은 명시적으로 표기.
+// 얼리버드 혜택: 8월 말까지 가입자에게 3개월 Pro 무료. 마감일은 명시적으로 표기.
 const FREE_MONTHS = 3;
-const DEADLINE_KO = '2026년 7월 31일';
-const DEADLINE_EN = 'July 31, 2026';
+const DEADLINE_KO = '2026년 8월 31일';
+const DEADLINE_EN = 'August 31, 2026';
 
 // 한국어·영어를 함께 노출("한눈에" 보이게). 사용자 언어를 주 텍스트로, 반대 언어를 보조로.
 function order<T>(en: boolean, ko: T, enVal: T): [T, T] {
@@ -21,10 +21,11 @@ export function PromoModal() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // 7월(가입 마감 달)에만, 그리고 아직 안 본 사용자에게만 노출.
+    // 가입 마감 기간(2026년 7~8월)에만, 그리고 아직 안 본 사용자에게만 노출.
     const today = new Date();
-    const inJuly = today.getFullYear() === 2026 && today.getMonth() === 6;
-    if (!inJuly) return;
+    const m = today.getMonth(); // 6=7월, 7=8월
+    const inPromo = today.getFullYear() === 2026 && (m === 6 || m === 7);
+    if (!inPromo) return;
     // 마운트 시 1회: localStorage(클라 전용)를 읽어 최초 방문자에게만 노출.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!localStorage.getItem('promo-modal-seen')) setIsOpen(true);

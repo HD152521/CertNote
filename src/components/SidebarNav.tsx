@@ -5,7 +5,7 @@ import { useLanguage } from '@/lib/i18n-client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { ChevronRight, ChevronDown, MessageSquareText, Repeat } from 'lucide-react';
+import { ChevronRight, ChevronDown, MessageSquareText } from 'lucide-react';
 import type { CertMeta, DayRef } from '@/lib/content';
 import { cn } from '@/lib/cn';
 
@@ -149,9 +149,9 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
               <div className="mt-1 space-y-1 pl-1">
                 {sectionTrees.map(renderCert)}
 
-                {/* 섹션 공용 공간: 후기 · 문제 복기 (en 모드에선 ko 전용이라 생략) */}
+                {/* 섹션 공용 공간: 합격 후기 (en 모드에선 ko 전용이라 생략) */}
                 {!isEn && (
-                  <div className="mt-1 space-y-0.5 border-t border-border pt-1.5">
+                  <div className="mt-1 border-t border-border pt-1.5">
                     <Link
                       href={`/${section}/reviews`}
                       onClick={onNavigate}
@@ -161,16 +161,6 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
                       )}
                     >
                       <MessageSquareText className="h-3.5 w-3.5 shrink-0" /> 합격 후기
-                    </Link>
-                    <Link
-                      href="/review"
-                      onClick={onNavigate}
-                      className={cn(
-                        'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-bg-subtle',
-                        pathname === '/review' ? 'text-accent' : 'text-fg-muted hover:text-fg',
-                      )}
-                    >
-                      <Repeat className="h-3.5 w-3.5 shrink-0" /> 문제 복기
                     </Link>
                   </div>
                 )}
