@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { EN_CATEGORY, SECTIONS } from '@/lib/category';
 import { getAllDays, getCertMetaMtime, getDayMtime, listCerts } from '@/lib/content';
+import { getRoadmapRoles } from '@/lib/roadmap';
 import { getSourceFileMtime } from '@/lib/fileMtime';
 import { FREE_WEEK } from '@/lib/entitlement/policy';
 import { SITE_URL } from '@/lib/site';
@@ -81,6 +82,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
     }
   }
+
+  // 직무별 자격증 로드맵(정보 페이지). "aws 자격증 순서/추천" 검색 의도의 착지 페이지라 색인 대상.
+  // lastModified 는 로드맵 데이터/페이지 소스에서 도출(둘 다 매니페스트에 없으면 생략).
+  const roadmapRoles = await getRoadmapRoles().catch(() => []);
+  if (roadmapRoles.length > 0) {
+    const roadmapLastMod = maxMtime([
+      await getSourceFileMtime('src/app/roadmap/page.tsx'),
+      await getSourceFileMtime('content/roadmaps.json'),
+    ]);
+    out.push(sitemapEntry(`${SITE_URL}/roadmap`, roadmapLastMod, 'monthly', 0.7));
+    for (const role of roadmapRoles) {
+      out.push(sitemapEntry(`${SITE_URL}/roadmap/${role.slug}`, roadmapLastMod, 'monthly', 0.6));
+    }
+  }
+
   // 영어판(무료 Week1 트랙). 콘텐츠가 없으면 조용히 생략.
   const enCerts = await listCerts(EN_CATEGORY).catch(() => []);
   if (enCerts.length > 0) {

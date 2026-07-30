@@ -28,6 +28,12 @@ export function Header({ certTrees, enCertTrees }: HeaderProps) {
         </Link>
         </div>
         <nav className="flex items-center gap-2">
+          <Link
+            href="/roadmap"
+            className="hidden rounded-md px-2 py-1 text-sm font-medium text-fg-muted transition hover:text-fg sm:inline-block"
+          >
+            {lang === 'en' ? 'Roadmap' : '로드맵'}
+          </Link>
           <LangToggle />
           <SearchButton />
           <ThemeToggle />

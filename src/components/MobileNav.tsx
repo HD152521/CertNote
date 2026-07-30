@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Menu, X } from 'lucide-react';
+import Link from 'next/link';
+import { Menu, X, Route } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n-client';
 import { SidebarNav, type CertTree } from './SidebarNav';
 import { cn } from '@/lib/cn';
@@ -68,6 +69,13 @@ export function MobileNav({ certTrees, enCertTrees }: MobileNavProps) {
             <X className="h-4 w-4" />
           </button>
         </div>
+        <Link
+          href="/roadmap"
+          onClick={() => setOpen(false)}
+          className="mb-3 flex items-center gap-2 rounded-md border border-border bg-bg-subtle px-3 py-2 text-sm font-medium text-fg transition hover:border-border-strong"
+        >
+          <Route className="h-4 w-4 text-accent" /> {lang === 'en' ? 'Certification Roadmap' : '자격증 로드맵'}
+        </Link>
         <SidebarNav certTrees={certTrees} enCertTrees={enCertTrees} onNavigate={() => setOpen(false)} />
       </div>
     </div>

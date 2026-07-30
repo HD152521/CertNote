@@ -24,7 +24,14 @@ const CONTENT_DIR = path.join(ROOT, 'content');
 const OUTPUT = path.join(ROOT, 'src', 'data', 'content-manifest.json');
 
 // 사이트맵이 lastModified 근거로 쓰는, content/ 밖의 소스 파일(src/app/sitemap.ts 참고).
-const SOURCE_FILES = ['src/app/page.tsx', 'src/app/pricing/page.tsx', 'src/app/privacy/PrivacyContent.tsx'];
+// 로드맵(Phase2): 페이지 소스 + 데이터 파일 둘 다 lastmod 근거로 추적한다.
+const SOURCE_FILES = [
+  'src/app/page.tsx',
+  'src/app/pricing/page.tsx',
+  'src/app/privacy/PrivacyContent.tsx',
+  'src/app/roadmap/page.tsx',
+  'content/roadmaps.json',
+];
 
 const DAY_FILE_RE = /week\d+[\\/]day\d+\.md$/;
 const META_FILE_RE = /meta\.json$/;
