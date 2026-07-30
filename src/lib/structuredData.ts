@@ -137,6 +137,52 @@ export function buildBreadcrumbLd(items: BreadcrumbItem[]): Record<string, unkno
   };
 }
 
+// ── Course + AggregateRating/Review (자격증 후기 페이지, Phase2) ────────────
+// 주의(스팸/수동조치 방지): count≥1일 때만 호출하고, 화면에 실제로 렌더되는 후기와 1:1 동일
+// 소스에서만 생성한다(빈 AggregateRating·미노출 리뷰는 금지). itemReviewed는 cert 허브 Course와
+// 같은 @id(courseId)로 묶어 별개 엔티티로 오인되지 않게 한다.
+export interface ReviewLdEntry {
+  rating: number;
+  authorName: string;
+  title: string | null;
+  body: string;
+  datePublished: string; // 'YYYY-MM-DD'
+}
+
+export function buildCourseReviewLd(input: {
+  section: string;
+  slug: string;
+  code: string;
+  name: string;
+  count: number;
+  average: number;
+  reviews: ReviewLdEntry[];
+}): Record<string, unknown> {
+  const { section, slug, code, name, count, average, reviews } = input;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    '@id': courseId(section, slug),
+    name: `${code} ${name}`,
+    provider: organizationRef(),
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: average,
+      reviewCount: count,
+      bestRating: 5,
+      worstRating: 1,
+    },
+    review: reviews.map((r) => ({
+      '@type': 'Review',
+      reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+      author: { '@type': 'Person', name: r.authorName },
+      ...(r.title ? { name: r.title } : {}),
+      reviewBody: r.body,
+      datePublished: r.datePublished,
+    })),
+  };
+}
+
 // ── FAQPage (자격증 시험정보 FAQ, Phase2) ─────────────────────────────────
 // 주의(스팸 방지): 화면에 실제로 렌더되는 <details> 텍스트와 1:1 동일 소스(info.faq)에서만
 // 생성하고, faq.length>0일 때만 호출한다(빈 FAQPage = 구조화데이터 스팸 → 수동조치 사유).

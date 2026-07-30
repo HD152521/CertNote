@@ -47,6 +47,9 @@ export default async function AdminPage() {
         <Link href="/admin/users" className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-medium transition hover:bg-fg/5">
           유저 관리 (대기자 승인 · Pro 부여/해지) →
         </Link>
+        <Link href="/admin/reviews" className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-medium transition hover:bg-fg/5">
+          후기 관리 (숨김/노출) →
+        </Link>
       </nav>
 
       <AdminStats stats={stats} />

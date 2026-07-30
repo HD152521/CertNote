@@ -18,6 +18,21 @@ export async function contentPathExists(pathname: string): Promise<boolean> {
   if (segments.length < 2) return true; // /aws-certs, /en 자체는 카테고리 라우트가 별도로 처리.
 
   const [category, slug, weekSeg, daySeg] = segments;
+  // 섹션 하위의 후기 라우트(/{section}/reviews[/{cert}]) 검증. 이 라우트는 force-dynamic이라
+  // 페이지 내부 notFound()가 스트리밍 때문에 200으로 누수된다(day 라우트와 동일 메커니즘) —
+  // 그래서 존재 여부를 여기(렌더 전)서 판정해 잘못된 cert는 진짜 404 마커로 리라이트한다.
+  if (slug === 'reviews') {
+    if (segments.length === 2) return true; // /{section}/reviews 허브
+    if (segments.length !== 3) return false; // 더 깊은 경로 없음
+    // /{section}/reviews/{cert} — cert가 이 섹션에 실제로 존재해야 한다.
+    try {
+      const rm = await getCertMeta(category, segments[2]);
+      if (isSection(category) && rm.section !== category) return false; // 교차 섹션 차단
+      return true;
+    } catch {
+      return false;
+    }
+  }
   let meta;
   try {
     meta = await getCertMeta(category, slug);

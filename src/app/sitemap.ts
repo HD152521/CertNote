@@ -64,6 +64,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // 섹션 허브 = "{section} 자격증 순서/종류" 착지 페이지. lastModified = 산하 meta.json 최신값.
     const sectionMtimes = await Promise.all(certs.map((c) => getCertMetaMtime(section, c.slug)));
     out.push(sitemapEntry(`${SITE_URL}/${section}`, maxMtime(sectionMtimes), 'weekly', 0.9));
+    // 후기 페이지(/{section}/reviews[/{cert}])는 사이트맵에 싣지 않는다: sitemap은 정적 라우트라
+    // 빌드 시 DB를 못 읽어 후기 유무로 게이팅할 수 없고, 무조건 싣으면 빈 페이지가 제출된다.
+    // 대신 섹션 허브·cert 페이지의 내부 링크로 크롤되게 하고, 자격증별 페이지는 후기 3건 미만이면
+    // noindex라 thin 색인도 방지된다.
     for (const cert of certs) {
       out.push(
         sitemapEntry(`${SITE_URL}/${section}/${cert.slug}`, await getCertMetaMtime(section, cert.slug), 'weekly', 0.9),

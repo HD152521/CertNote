@@ -257,6 +257,31 @@ try {
     );
   `);
   console.log('✓ tutor_explanations 테이블 준비 완료');
+
+  // 사용자 합격 후기(SRS '복습' review와 무관). 언어 컬럼 없음 — 본문은 작성자 언어 그대로 저장,
+  // UI 라벨만 i18n(언어를 행에 넣으면 조합 폭발). 1인 1자격증 1후기 UNIQUE는 도입하지 않는다(사용자 결정).
+  // hidden: 관리자 숨김. 부분 인덱스는 노출 대상(hidden=false)만 인덱싱해 목록/집계 비용을 낮춘다.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id         BIGSERIAL PRIMARY KEY,
+      user_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      section    TEXT   NOT NULL,
+      cert_slug  TEXT   NOT NULL,
+      rating     INT    NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      passed     BOOLEAN,
+      title      TEXT,
+      body       TEXT   NOT NULL,
+      hidden     BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  // 표 선존재 시에도 hidden 보장(멱등).
+  await pool.query('ALTER TABLE reviews ADD COLUMN IF NOT EXISTS hidden BOOLEAN NOT NULL DEFAULT false;');
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_reviews_cert
+      ON reviews (section, cert_slug, created_at DESC) WHERE hidden = false;
+  `);
+  console.log('✓ reviews 테이블 준비 완료');
 } catch (err) {
   console.error('마이그레이션 실패:', err);
   process.exit(1);

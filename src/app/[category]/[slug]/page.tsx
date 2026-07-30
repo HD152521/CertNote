@@ -146,6 +146,11 @@ export default async function CertIndexPage({ params }: PageProps) {
             {lang === 'en' ? 'Start with Week 1' : 'Week 1부터 시작'} <ArrowRight className="h-4 w-4" />
           </Link>
         )}
+        <p>
+          <Link href={`/${category}/reviews/${slug}`} className="text-sm text-fg-muted underline underline-offset-4 hover:text-fg">
+            {lang === 'en' ? `Read ${meta.code} pass reviews →` : `${meta.code} 합격 후기 보기 →`}
+          </Link>
+        </p>
       </header>
       {examInfo && examInfo.faq && examInfo.faq.length > 0 && <JsonLd data={buildFaqPageLd(examInfo.faq)} />}
       {examInfo && <ExamInfoCard info={examInfo} lang={lang} section={section} />}
