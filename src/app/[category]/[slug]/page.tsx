@@ -10,7 +10,7 @@ import { getExamInfo } from '@/lib/examInfo';
 import ExamInfoCard from '@/components/ExamInfoCard';
 import { cn } from '@/lib/cn';
 import { JsonLd } from '@/components/JsonLd';
-import { buildCourseLd, buildBreadcrumbLd } from '@/lib/structuredData';
+import { buildCourseLd, buildBreadcrumbLd, buildFaqPageLd } from '@/lib/structuredData';
 
 interface PageProps { params: Promise<{ category: string; slug: string }>; }
 
@@ -147,7 +147,8 @@ export default async function CertIndexPage({ params }: PageProps) {
           </Link>
         )}
       </header>
-      {examInfo && <ExamInfoCard info={examInfo} lang={lang} />}
+      {examInfo && examInfo.faq && examInfo.faq.length > 0 && <JsonLd data={buildFaqPageLd(examInfo.faq)} />}
+      {examInfo && <ExamInfoCard info={examInfo} lang={lang} section={section} />}
       <section className="space-y-6">
         {[...byWeek.entries()].map(([w, ws]) => (
           <div key={w} className="space-y-2">

@@ -1,10 +1,11 @@
-import { ExternalLink, Lightbulb } from 'lucide-react';
-import { AWS_EXAM_TIPS, type ExamInfo } from '@/lib/examInfo';
+import { ExternalLink, Lightbulb, HelpCircle } from 'lucide-react';
+import { getExamTips, type ExamInfo } from '@/lib/examInfo';
 import type { Language } from '@/lib/i18n-client';
 
 interface ExamInfoCardProps {
   info: ExamInfo;
   lang: Language;
+  section?: string; // 섹션별 꿀팁 분기(aws만 공통 혜택 팁). 미지정 시 aws로 폴백.
 }
 
 interface FactProps {
@@ -35,16 +36,24 @@ function MetaRow({ label, value }: MetaRowProps) {
   );
 }
 
-export default function ExamInfoCard({ info, lang }: ExamInfoCardProps) {
+export default function ExamInfoCard({ info, lang, section }: ExamInfoCardProps) {
+  const tips = getExamTips(section);
 
   return (
     <section
       aria-labelledby="exam-info-heading"
       className="space-y-5 rounded-lg border border-border bg-bg-elevated p-4 sm:p-5"
     >
-      <h2 id="exam-info-heading" className="text-sm font-medium text-fg-muted">
-        {lang === 'en' ? 'Exam Information' : '시험 정보'}
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="exam-info-heading" className="text-sm font-medium text-fg-muted">
+          {lang === 'en' ? 'Exam Information' : '시험 정보'}
+        </h2>
+        {info.difficulty && (
+          <span className="rounded-full border border-border bg-bg-subtle px-2.5 py-0.5 text-xs text-fg-muted">
+            {info.difficulty}
+          </span>
+        )}
+      </div>
 
       {/* 핵심 수치: 모바일 2열, sm 3열, lg 5열로 깔끔하게 줄바꿈 */}
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
@@ -85,20 +94,43 @@ export default function ExamInfoCard({ info, lang }: ExamInfoCardProps) {
         <MetaRow label={lang === 'en' ? 'Languages' : '언어'} value={info.languages.join(', ')} />
       </div>
 
-      {/* 시험 혜택 & 꿀팁 (AWS 공통, 공식 확인) */}
-      <div className="space-y-2 border-t border-border pt-4">
-        <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-fg-faint">
-          <Lightbulb className="h-3.5 w-3.5 text-accent" /> {lang === 'en' ? 'Benefits &amp; Tips' : '혜택 &amp; 꿀팁'}
-        </h3>
-        <ul className="space-y-1.5">
-          {AWS_EXAM_TIPS.map((tip, i) => (
-            <li key={i} className="flex gap-2 text-sm leading-relaxed text-fg-muted">
-              <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" />
-              <span className="min-w-0">{tip}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {/* 시험 혜택 & 꿀팁 (섹션별; aws만 공통 혜택 팁). 팁이 없으면 블록 자체를 숨긴다. */}
+      {tips.length > 0 && (
+        <div className="space-y-2 border-t border-border pt-4">
+          <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-fg-faint">
+            <Lightbulb className="h-3.5 w-3.5 text-accent" /> {lang === 'en' ? 'Benefits & Tips' : '혜택 & 꿀팁'}
+          </h3>
+          <ul className="space-y-1.5">
+            {tips.map((tip, i) => (
+              <li key={i} className="flex gap-2 text-sm leading-relaxed text-fg-muted">
+                <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" />
+                <span className="min-w-0">{tip}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 자주 묻는 질문(FAQ). info.faq 텍스트를 그대로 렌더 — cert 페이지의 FAQPage JSON-LD와 1:1.
+          faq가 없으면(대부분의 초기 상태) 블록 미표기. */}
+      {info.faq && info.faq.length > 0 && (
+        <div className="space-y-2 border-t border-border pt-4">
+          <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-fg-faint">
+            <HelpCircle className="h-3.5 w-3.5 text-accent" /> {lang === 'en' ? 'FAQ' : '자주 묻는 질문'}
+          </h3>
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+            {info.faq.map((f, i) => (
+              <details key={i} className="group bg-bg-subtle/40 open:bg-bg-subtle">
+                <summary className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium text-fg marker:content-none">
+                  <span className="min-w-0">{f.q}</span>
+                  <span aria-hidden className="shrink-0 text-fg-faint transition group-open:rotate-45">+</span>
+                </summary>
+                <p className="px-3 pb-3 text-sm leading-relaxed text-fg-muted">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 외부 링크 버튼: 모바일 풀폭, sm+ 인라인 */}
       <div className="flex flex-col gap-2 sm:flex-row">

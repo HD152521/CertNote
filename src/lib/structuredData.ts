@@ -137,6 +137,26 @@ export function buildBreadcrumbLd(items: BreadcrumbItem[]): Record<string, unkno
   };
 }
 
+// ── FAQPage (자격증 시험정보 FAQ, Phase2) ─────────────────────────────────
+// 주의(스팸 방지): 화면에 실제로 렌더되는 <details> 텍스트와 1:1 동일 소스(info.faq)에서만
+// 생성하고, faq.length>0일 때만 호출한다(빈 FAQPage = 구조화데이터 스팸 → 수동조치 사유).
+export interface FaqEntry {
+  q: string;
+  a: string;
+}
+
+export function buildFaqPageLd(faq: FaqEntry[]): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faq.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  };
+}
+
 // ── LearningResource/Article (무료 day 페이지 전용, Step4 4-1) ─────────────
 export interface DayArticleLdInput {
   /** 사이트 루트 기준 상대 경로(예: /aws-certs/saa-c03/week1/day1) */

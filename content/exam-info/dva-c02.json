@@ -18,5 +18,30 @@
     { "name": "문제 해결 및 최적화", "weight": 18 }
   ],
   "officialUrl": "https://aws.amazon.com/certification/certified-developer-associate/",
-  "registerUrl": "https://www.aws.training/certification"
+  "registerUrl": "https://www.aws.training/certification",
+  "difficulty": "중급 · 관련 실무 1~2년 권장",
+  "source": "https://aws.amazon.com/certification/certified-developer-associate/",
+  "syncedAt": "2026-07-30",
+  "faq": [
+    {
+      "q": "DVA-C02 시험은 몇 문항이고 시험 시간은 얼마나 되나요?",
+      "a": "DVA-C02은 총 65문항이며, 시험 시간은 130분입니다. 문항은 객관식과 복수응답형으로 출제됩니다."
+    },
+    {
+      "q": "합격 점수는 몇 점인가요?",
+      "a": "1000점 만점에 720점 이상이면 합격입니다. 점수는 문항 난이도를 보정한 스케일 점수라 단순 정답률과는 다릅니다."
+    },
+    {
+      "q": "응시료는 얼마이고 어떻게 접수하나요?",
+      "a": "응시료는 미화 $150이며, Pearson VUE를 통해 시험 센터 또는 온라인 감독(프록터드) 시험으로 응시할 수 있습니다. 무료 재응시는 없어 매 응시마다 전액을 결제합니다."
+    },
+    {
+      "q": "자격증은 얼마나 유효한가요? 재인증은 어떻게 하나요?",
+      "a": "합격 후 3년간 유효하며, 만료 전 재인증이 필요합니다. 합격 시 다음 시험 50% 할인 바우처가 제공되어 재인증이나 다른 AWS 자격증 응시에 사용할 수 있습니다."
+    },
+    {
+      "q": "한국어로 응시할 수 있나요?",
+      "a": "네, 한국어를 포함해 총 6개 언어로 제공됩니다. 시험 등록 시 언어를 선택할 수 있습니다."
+    }
+  ]
 }
