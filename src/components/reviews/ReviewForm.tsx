@@ -118,18 +118,30 @@ export default function ReviewForm({ section, certs, lang, lockedCert }: ReviewF
         </div>
       </div>
 
-      <label className="block space-y-1">
+      <div className="space-y-1">
         <span className="text-xs text-fg-faint">{en ? 'Result (optional)' : '합격 여부 (선택)'}</span>
-        <Select
-          value={passed}
-          onChange={(v) => setPassed(v as 'yes' | 'no' | '')}
-          options={[
-            { value: '', label: en ? 'Not specified' : '선택 안 함' },
-            { value: 'yes', label: en ? 'Passed' : '합격' },
-            { value: 'no', label: en ? 'Did not pass' : '불합격' },
-          ]}
-        />
-      </label>
+        <div className="flex flex-wrap gap-2" role="group" aria-label={en ? 'Result' : '합격 여부'}>
+          {([
+            { v: 'yes', label: en ? 'Passed' : '합격' },
+            { v: 'no', label: en ? 'Did not pass' : '불합격' },
+            { v: '', label: en ? 'Not specified' : '선택 안 함' },
+          ] as const).map((opt) => (
+            <button
+              key={opt.v}
+              type="button"
+              aria-pressed={passed === opt.v}
+              onClick={() => setPassed(opt.v)}
+              className={
+                passed === opt.v
+                  ? 'rounded-md border border-accent bg-accent/10 px-3 py-1.5 text-sm font-medium text-accent transition'
+                  : 'rounded-md border border-border px-3 py-1.5 text-sm text-fg-muted transition hover:border-border-strong'
+              }
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <label className="block space-y-1">
         <span className="text-xs text-fg-faint">{en ? 'Title (optional)' : '제목 (선택)'}</span>
