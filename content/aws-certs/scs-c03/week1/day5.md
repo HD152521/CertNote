@@ -14,6 +14,18 @@ Week 1은 SCS-C03의 토대를 깔았다. 공동 책임 모델과 6개 도메인
 | 통제 유형 | 예방(IAM/SCP/SG/KMS) · 탐지(CloudTrail/GuardDuty/Config) · 대응(EventBridge→SSM) |
 | 6 도메인 | 위협탐지14 / 로깅18 / 인프라20 / IAM16 / 데이터18 / 거버넌스14 |
 
+문항의 동사가 통제 유형을 지정한다는 점도 함께 굳혀 둔다.
+
+| 지문의 표현 | 요구 유형 | 정답 후보 |
+|-------------|-----------|-----------|
+| prevent / ensure ... cannot / 막아야 | 예방 | SCP, IAM Deny, 버킷 정책 Deny, Block Public Access |
+| detect / alert / identify | 탐지 | CloudTrail, GuardDuty, Config, Macie, Access Analyzer |
+| respond / automatically remediate | 대응 | EventBridge → Lambda·SSM, 격리, 복원 |
+| least operational overhead | 관리형 우선 | 직접 구현·수동 검토 보기는 탈락 |
+| most secure / most restrictive | 최소 권한 | 와일드카드 좁힘, 임시 자격 증명, 명시적 Deny |
+
+"GuardDuty로 **차단**한다", "Config로 **막는다**" 같은 문장은 서비스는 맞고 동사가 틀린 대표 오답이다.
+
 ### IAM 평가 알고리즘 (Day 2·3)
 
 ```
@@ -40,6 +52,9 @@ Week 1은 SCS-C03의 토대를 깔았다. 공동 책임 모델과 6개 도메인
 
 - Condition 함정: `BoolIfExists`(MFA), `aws:SourceArn`/`SourceAccount`(Confused Deputy), VPC엔 `aws:SourceVpc`
 - ABAC: `aws:PrincipalTag == aws:ResourceTag`로 정책 수 일정 유지
+- 권한을 **주는** 것은 Identity·Resource 정책뿐. SCP·경계·세션 정책은 **천장만** 정한다
+- `NotAction`은 **Deny와만** 결합한다(Allow와 쓰면 새 서비스가 자동으로 허용됨)
+- 리소스 정책 미지원 서비스(EC2·DynamoDB·RDS)의 교차 계정은 **역할을 맡는 방식**으로
 
 ### STS·자격 증명 (Day 4)
 
@@ -59,6 +74,215 @@ Week 1은 SCS-C03의 토대를 깔았다. 공동 책임 모델과 6개 도메인
 4. **함정 제거**: 장기 키 사용 / root 사용 / `Bool` vs `BoolIfExists` / ExternalId 누락 / 단일 통제만
 
 > 🎯 **시나리오**: "개발자에게 admin이 있는데 특정 S3 버킷 접근이 거부된다"는 보고. 4단계로 풀면 — admin은 명시적 Allow(5번 통과). 그런데 거부됐다면 1~4번 필터 어딘가. 가장 흔한 원인은 **SCP 또는 버킷 정책의 명시적 Deny**, 또는 그 버킷이 KMS 암호화인데 **키 정책이 개발자를 허용 안 함**. "권한이 있는데 거부"는 거의 항상 필터(상한)에서 막힌 것이다.
+
+## 케이스 워크스루 — 손으로 따라가 보기
+
+요약표를 읽는 것과 실제로 판정하는 것은 다르다. 아래 세 케이스를 **보기를 보지 않고** 스스로 분해해 본 뒤 풀이를 확인해 보자. 시험장에서 필요한 것은 지식이 아니라 이 분해 절차다.
+
+### 케이스 A — 권한은 있는데 막힌다
+
+> 상황: 데이터팀 역할 `role/DataScience`에 `AmazonS3FullAccess`가 붙어 있다. 같은 계정의 버킷 `s3://research-raw`에서 객체를 읽으려 하면 `AccessDenied`가 난다. 버킷 정책에는 데이터팀을 명시적으로 허용하는 문장이 있고, Deny 문장은 없다. 계정은 Organizations 멤버다.
+
+**분해**
+
+| 단계 | 확인 | 판정 |
+|------|------|------|
+| 요청 분해 | 같은 계정, `s3:GetObject`, 객체 ARN | 교차 계정 아님 → 양쪽 AND 규칙 해당 없음 |
+| 명시적 Deny | 버킷 정책엔 없다. 그러나 **다른 층은 확인되지 않았다** | SCP·권한 경계가 미확인 |
+| 가드레일 | Organizations 멤버 → SCP 존재 가능. 경계 부착 여부 미확인 | 유력 후보 |
+| 명시적 Allow | Identity·Resource 양쪽 모두 있음 | 이 층은 통과 |
+
+**결론**: Allow는 충분한데 막혔으므로 원인은 **상한 쪽**이다. 확인 순서는 ① 오류 메시지에 `explicit deny in a service control policy`가 있는지 ② 역할에 권한 경계가 붙어 있는지 ③ 버킷이 KMS 암호화라면 키 정책이 이 역할을 허용하는지. 세 번째가 특히 자주 빠진다 — `s3:GetObject` 권한이 있어도 **`kms:Decrypt`가 없으면 객체를 읽을 수 없다.** 그리고 KMS는 키 정책이 1차 권위이므로 IAM에 `kms:Decrypt`를 넣는 것만으로는 부족하다.
+
+**여기서 배우는 것**: "권한을 더 준다"는 방향으로 먼저 손대면 원인을 못 찾은 채 권한만 넓어진다. 반드시 **어느 층이 범인인지 특정한 뒤** 그 층만 고친다.
+
+> 🔍 **더 깊이**: 이 케이스에서 KMS가 특히 까다로운 이유를 한 번 더 짚어 둔다. S3나 SQS는 IAM 정책 **또는** 리소스 정책 중 하나만 허용해도 같은 계정 안에서는 통과하지만, KMS는 **키 정책이 먼저 문을 열어야** IAM 정책이 의미를 갖는다. 기본 키 정책에 들어 있는 `"Principal": {"AWS": "arn:aws:iam::ACCOUNT:root"}` 한 줄이 "이 계정의 IAM 정책에게 판단을 위임한다"는 뜻이고, 이 줄이 없는 키는 아무리 넓은 IAM 정책을 가진 주체라도 쓸 수 없다. 그래서 "암호화된 버킷은 읽히는데 다른 암호화된 버킷은 안 읽힌다"는 증상이 나오면 IAM이 아니라 **각 키의 키 정책**을 비교해 봐야 한다. Week 3의 데이터 보호에서 이 성질을 본격적으로 다룬다.
+
+> 💡 **관련 이론**: 케이스 A의 진단 절차는 보안 운영에서 **격리(isolation) 기반 디버깅**이라 부르는 방식이다. 여러 층이 동시에 작동하는 시스템에서 원인을 찾을 때, 한 층씩 배제해 가며 범위를 좁힌다. 반대 방식 — 증상이 사라질 때까지 여기저기 권한을 넓히는 것 — 은 문제를 해결한 것처럼 보이지만 실제로는 **불필요한 권한을 영구히 남긴다.** 그렇게 쌓인 권한은 나중에 누구도 지우지 못한다. "왜 이 권한이 있는지 아무도 모른다"는 상태가 대부분 이렇게 만들어진다. 진단은 빠르게, 수정은 최소 범위로 — 이 원칙이 최소 권한을 시간이 지나도 유지시켜 준다.
+
+### 케이스 B — 위임을 안전하게 설계하기
+
+> 상황: 비용 분석 SaaS에게 우리 조직의 결제·사용량 데이터를 읽을 권한을 주려 한다. SaaS는 자기 AWS 계정에서 우리 계정의 역할을 맡는 방식을 요구한다. 우리 조직에는 계정이 40개 있고, SaaS는 전 계정의 데이터를 봐야 한다.
+
+**분해**
+
+1. **자격 증명 형태** — 액세스 키 발급은 검토 대상이 아니다. 역할 + 임시 자격 증명이 유일한 방향.
+2. **신뢰 경계** — 신뢰 정책의 `Principal`은 SaaS 계정. 여기에 **SaaS가 발급한 `sts:ExternalId`** 조건이 필수다. 없으면 같은 SaaS를 쓰는 다른 고객이 우리 역할을 맡게 유도될 수 있다.
+3. **권한 범위** — 읽기 전용, 필요한 서비스로만. 결제 데이터라면 해당 읽기 액션에 한정한다.
+4. **확장성** — 40개 계정에 손으로 역할을 만들면 누락과 드리프트가 생긴다. IaC(StackSets 등)로 동일한 역할을 배포하고, 이름을 규격화한다.
+5. **관측** — 그 역할의 세션이 언제 무엇을 했는지 CloudTrail로 상시 확인 가능해야 한다. 세션 이름 규칙을 SaaS와 합의해 두면 조사 시 도움이 된다.
+6. **철회 가능성** — 계약이 끝나면 즉시 끊을 수 있어야 한다. 신뢰 정책 한 곳만 고치면 되도록 설계한다.
+
+**결론**: 답은 단일 조치가 아니라 **여섯 항목의 묶음**이다. 시험에서 이런 지문이 나오면 "역할 + ExternalId + 최소 권한"이 모두 들어간 보기 하나가 정답이고, 그중 하나라도 빠진 보기는 오답이다. 특히 ExternalId가 빠진 보기가 가장 그럴듯하게 생겼다.
+
+### 케이스 C — 장기 키를 걷어내기
+
+> 상황: 감사 결과 계정 전체에서 액세스 키 60여 개가 발견됐다. 일부는 3년 넘게 회전되지 않았고, 소유자가 퇴사한 것도 있다. "전부 삭제하라"는 지시가 내려왔다.
+
+**분해**
+
+전부 삭제하는 조치는 **위험하다.** 어떤 키가 무엇을 돌리고 있는지 모르는 상태에서 지우면 운영이 멈추고, 지운 키는 되돌릴 수 없다. 순서는 다음과 같다.
+
+```
+[ 장기 키 정리 절차 — 되돌릴 수 있는 순서로 ]
+
+  ① 자격 증명 보고서로 전수 목록화
+       키 ID · 생성일 · **마지막 사용일** · 마지막 사용 서비스·리전
+        │
+        ▼
+  ② 분류
+       · 최근 미사용 + 소유자 없음  → 즉시 처리 대상
+       · 사용 중                    → 대체 경로 설계 필요
+        │
+        ▼
+  ③ 대체 경로 마련  (여기가 본 작업이다)
+       사람      → IAM Identity Center 로그인
+       EC2·컨테이너 → 인스턴스·태스크 역할
+       CI/CD     → OIDC 페더레이션
+       외부 시스템 → 역할 + ExternalId
+        │
+        ▼
+  ④ **비활성화**  (삭제가 아니다 — 되돌릴 수 있는 상태)
+        │
+        ▼
+  ⑤ 관찰 기간   무엇이 깨지는지 지켜본다
+        │
+        ▼
+  ⑥ 삭제 + 재발 방지
+       · 키 생성 자체를 정책으로 제한
+       · 미사용 키 탐지를 상시 규칙으로
+```
+
+**결론**: 보안 개선 작업도 배포다. **되돌릴 수 있는 단계(비활성화)를 반드시 거치고**, 근본 대체 경로를 먼저 만든 뒤 회수한다. 시험에서 "가장 먼저 해야 할 일"을 물으면 대개 ①(현황 파악)이고, "재발을 막으려면"을 물으면 ⑥(정책으로 강제)이다. 같은 지문이라도 묻는 시점에 따라 정답이 달라진다.
+
+## 헷갈리는 쌍 대조표
+
+Week 1에서 시험이 반복해 노리는 짝만 모았다. 왼쪽과 오른쪽을 바꿔 기억하면 그대로 오답이 되는 것들이다.
+
+| 왼쪽 | 오른쪽 | 결정적 차이 |
+|------|--------|-------------|
+| Identity 정책 | Resource 정책 | `Principal` 요소 유무 / 관리 주체가 다름 |
+| 명시적 Deny | 묵시적 Deny | 오류 메시지에 `explicit`이 있는가 |
+| 권한을 주는 정책 | 상한을 정하는 정책 | SCP·경계·세션은 **권한을 만들지 못한다** |
+| `Bool` | `BoolIfExists` | 키가 없는 요청을 어떻게 처리하는가 |
+| `sts:ExternalId` | `aws:SourceArn` | 대리인이 서드파티 계정인가, AWS 서비스인가 |
+| `AssumeRole` | `GetSessionToken` | 신원을 갈아입는가, 같은 신원에 MFA만 반영하는가 |
+| `RoleSessionName` | `sts:SourceIdentity` | 자유롭게 바뀌는가, 체이닝 내내 고정되는가 |
+| 같은 계정 접근 | 교차 계정 접근 | OR(둘 중 하나) 대 AND(양쪽 모두) |
+| 역할 | 인스턴스 프로파일 | EC2에 붙이는 것은 프로파일 |
+| IAM User | IAM Identity Center | 영구 자격 증명 대 SSO 임시 자격 증명 |
+| SCP 적용 대상 | SCP 예외 | 멤버 계정 root에는 **적용**, 서비스 연결 롤·관리 계정에는 **미적용** |
+| 관리형 정책 조회 | 인라인 정책 조회 | CLI 명령이 다르다 — 인라인을 빠뜨리기 쉽다 |
+
+## 정책 조각 치트시트
+
+시험장에서 눈에 익어 있어야 할 형태들이다. 문법을 외우기보다 **모양을 보고 용도를 즉시 알아채는 것**이 목표다.
+
+```json
+// ① 조직 밖 접근 차단 — 리소스 쪽에서 거는 경계
+{
+  "Effect": "Deny",
+  "Principal": "*",
+  "Action": "s3:*",
+  "Resource": ["arn:aws:s3:::secure-data", "arn:aws:s3:::secure-data/*"],
+  "Condition": {
+    "StringNotEquals": { "aws:PrincipalOrgID": "o-exampleorgid" }
+  }
+}
+
+// ② 평문 전송 차단 — 거의 모든 민감 버킷의 기본 문장
+{
+  "Effect": "Deny",
+  "Principal": "*",
+  "Action": "s3:*",
+  "Resource": ["arn:aws:s3:::secure-data", "arn:aws:s3:::secure-data/*"],
+  "Condition": { "Bool": { "aws:SecureTransport": "false" } }
+}
+
+// ③ MFA 없는 민감 작업 차단 — IfExists 를 쓰는 이유를 기억할 것
+{
+  "Effect": "Deny",
+  "Action": ["iam:*", "kms:ScheduleKeyDeletion", "ec2:TerminateInstances"],
+  "Resource": "*",
+  "Condition": { "BoolIfExists": { "aws:MultiFactorAuthPresent": "false" } }
+}
+
+// ④ 서드파티 위임 신뢰 정책 — ExternalId 가 핵심
+{
+  "Effect": "Allow",
+  "Principal": { "AWS": "arn:aws:iam::VENDOR-ACCOUNT:root" },
+  "Action": "sts:AssumeRole",
+  "Condition": {
+    "StringEquals": { "sts:ExternalId": "vendor-issued-value" }
+  }
+}
+
+// ⑤ AWS 서비스 신뢰 정책 — 출처 조건이 없으면 "전 세계의 그 서비스"다
+{
+  "Effect": "Allow",
+  "Principal": { "Service": "sns.amazonaws.com" },
+  "Action": "sts:AssumeRole",
+  "Condition": {
+    "StringEquals": { "aws:SourceAccount": "111122223333" },
+    "ArnLike": { "aws:SourceArn": "arn:aws:sns:ap-northeast-2:111122223333:alerts" }
+  }
+}
+
+// ⑥ ABAC — 정책 수를 일정하게 유지하는 한 문장
+{
+  "Effect": "Allow",
+  "Action": ["ec2:StartInstances", "ec2:StopInstances"],
+  "Resource": "*",
+  "Condition": {
+    "StringEquals": {
+      "aws:ResourceTag/Project": "${aws:PrincipalTag/Project}"
+    }
+  }
+}
+```
+
+## CLI 치트시트
+
+```bash
+# ── 신원 확인 ────────────────────────────────────────────
+aws sts get-caller-identity                 # 지금 나는 누구인가
+aws organizations describe-organization     # 조직 멤버인가(= SCP 적용 대상인가)
+
+# ── 권한 조사 ────────────────────────────────────────────
+aws iam list-attached-role-policies --role-name AppRole   # 관리형
+aws iam list-role-policies          --role-name AppRole   # 인라인 (빠뜨리기 쉬움)
+aws iam get-role --role-name AppRole --query 'Role.AssumeRolePolicyDocument'
+aws iam get-account-authorization-details > iam-dump.json # 전수 덤프
+
+# ── 검증 ─────────────────────────────────────────────────
+aws iam simulate-principal-policy \
+  --policy-source-arn arn:aws:iam::111122223333:role/AppRole \
+  --action-names s3:GetObject \
+  --resource-arns arn:aws:s3:::research-raw/sample.csv
+aws accessanalyzer validate-policy \
+  --policy-document file://new-policy.json --policy-type IDENTITY_POLICY
+
+# ── 자격 증명 위생 ───────────────────────────────────────
+aws iam generate-credential-report
+aws iam get-credential-report --query Content --output text
+aws iam generate-service-last-accessed-details \
+  --arn arn:aws:iam::111122223333:role/AppRole
+
+# ── 역할 맡기 ────────────────────────────────────────────
+aws sts assume-role \
+  --role-arn arn:aws:iam::444455556666:role/CrossAccountReadRole \
+  --role-session-name audit-2026 \
+  --external-id vendor-issued-value \
+  --source-identity alice@example.com
+```
+
+> ⚠️ **함정**: `simulate-principal-policy`가 `allowed`를 반환해도 실제로는 막힐 수 있다. 이 도구는 **SCP를 평가하지 않고**, 리소스 기반 정책과 VPC 엔드포인트 정책도 완전히 반영하지 못한다. 그래서 시뮬레이터는 "IAM·경계 층에는 문제가 없다"를 **배제하기 위한 도구**로 쓰고, 그래도 막힌다면 조직 가드레일과 리소스 쪽을 본다. 정밀한 진단 절차는 Week 2에서 다룬다.
+
+> 📚 **사례**: 2019년 Capital One 침해는 이번 주에 배운 것이 왜 실무의 중심인지 보여 준다. 공격자는 잘못 구성된 웹 애플리케이션 방화벽을 통해 SSRF로 EC2 인스턴스 메타데이터에 접근했고, 그 인스턴스 역할의 임시 자격 증명을 얻어 S3 데이터를 내려받았다. 미국·캐나다 신용카드 신청자 약 1억 명 규모의 정보가 영향을 받았다. 주목할 점은 **뚫린 것이 전부 고객 책임 영역**이었다는 사실이다 — S3 인프라도, 하이퍼바이저도 무사했다. 그리고 임시 자격 증명을 쓰고 있었음에도 사고가 났다. 임시 자격 증명은 "노출 시 유효 기간이 제한된다"는 방어선일 뿐, **노출 경로를 막는 것(IMDSv2)**과 **탈취돼도 할 수 있는 일을 좁히는 것(최소 권한)**은 별개의 통제다. Week 1의 결론이 여기에 있다.
+
+## 한 줄 요약
+
+Week 1의 모든 내용은 두 질문으로 압축된다. **"이 접근은 IAM 평가의 어느 단계에서 결정되는가"**와 **"이 자격 증명은 임시인가 장기인가, 위임 경계는 안전한가"**다. 평가는 **명시적 Deny 우선 → 가드레일(SCP·권한 경계) 통과 → 명시적 Allow 존재**의 순서이고, 가드레일은 권한을 만들지 못하므로 `AdministratorAccess`도 상한을 넘지 못한다. 같은 계정은 Identity **또는** Resource 정책 하나로 충분하지만 **교차 계정은 양쪽 모두** 필요하며, KMS는 **키 정책이 1차 권위**라 IAM만으로는 키를 못 쓴다. 자격 증명 쪽에서는 장기 액세스 키를 없애는 것이 목표이고, 사람은 Identity Center, 워크로드는 인스턴스·태스크 역할, CI는 OIDC, 외부 벤더는 **역할 + ExternalId**로 해결한다. 위임에는 언제나 **Confused Deputy** 방어가 따라붙는다 — 서드파티에는 `sts:ExternalId`, AWS 서비스에는 `aws:SourceArn`·`aws:SourceAccount`. 그리고 "권한이 있는데 거부된다"는 상황은 거의 예외 없이 **상한 층에서 막힌 것**이므로, 권한을 넓히기 전에 어느 층이 범인인지부터 특정한다.
 
 ---
 
