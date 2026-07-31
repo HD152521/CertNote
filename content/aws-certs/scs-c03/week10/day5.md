@@ -40,6 +40,30 @@ EventBridge 규칙 (패턴 필터 + InputTransformer)
 
 > 🎯 **통합 시나리오 B**: "개발자가 액세스 키를 공개 저장소에 푸시했고, 그 키로 새 IAM 사용자와 추가 키가 생성된 정황. 다계정 조직 환경." 답: (1) 노출 키 즉시 Inactive(봉쇄), (2) CloudTrail/Athena로 키 활동 전수 조사 → 공격자가 만든 IAM 사용자·키·넓힌 정책(백도어) 식별, (3) Detective로 연관 엔티티·이상 행동 그래프 분석, (4) 백도어 근절, (5) Secrets Manager로 비밀 이관·자동 회전, 사람은 SSO 임시 자격증명으로 전환, (6) Security Hub로 조직 전반 유사 위험 점검 + 루트/장기 키 사용 탐지 알람 추가.
 
+## "무엇을 먼저 하는가" 마스터 표
+
+이 주차 출제의 절반은 **순서**를 묻는다. 같은 조치 목록을 주고 배열만 바꿔 보기를 만드는 방식이다. 아래는 상황별 첫 조치와 그 근거를 한자리에 모은 것으로, 근거를 이해하면 변형에도 흔들리지 않는다.
+
+| 상황 | 가장 먼저 하는 것 | 그 이유 | 대표 오답 |
+|---|---|---|---|
+| EC2 침해, ASG 소속 | **ASG·타깃 그룹에서 분리** | 격리하면 헬스체크 실패 → ASG가 스스로 종료해 증거가 사라진다 | 즉시 격리 SG 교체 |
+| EC2 침해, 단독 인스턴스 | **증거 보존(메모리→스냅샷)** | 격리는 종료가 아니라 병행 가능하지만, 종료는 되돌릴 수 없다 | terminate 후 스냅샷 |
+| 인스턴스 역할 토큰 유출 정황 | **세션 폐기 + 프로파일 분리** | 토큰은 인스턴스 밖에서 만료까지 산다 — 격리로는 못 막는다 | 인스턴스만 격리 |
+| 액세스 키 공개 노출(정상 사용 중) | **비활성화** | 가용성보다 유출 차단이 우선. 비활성화는 되돌릴 수 있다 | 삭제 / 회전부터 |
+| 액세스 키 노출, 사용 흔적 불명 | **`get-access-key-last-used` 확인** | 30초 만에 심각도가 갈린다 — 등급이 이후 전부를 좌우 | 곧바로 전수 조사 착수 |
+| 루트 침해 | **복구 채널(이메일·전화) 통제 확인** | 이미 바뀌었다면 기술 대응 자체가 불가능하다 | IAM 정책으로 루트 제한 |
+| CloudTrail 로깅 중지 탐지 | **로깅 복구 + 아카이브 무결성 확인** | 꺼진 동안의 행위는 영원히 알 수 없다 | 눈에 띄는 인스턴스부터 종료 |
+| 공격자가 만든 사용자·키 발견 | **만든 쪽 자격증명부터 무력화** | 원 자격증명이 살아 있으면 즉시 또 만든다 | 새로 생긴 사용자만 삭제 |
+| 진행 중 C2 세션이 안 끊김 | **NACL·ENI로 보조 차단** | SG는 stateful이라 established 연결이 남는다 | SG 규칙을 다시 추가 |
+| 프로덕션 자원 종료 필요 | **승인 게이트 통과 후** | 비가역 조치는 오탐 한 번이 곧 장애다 | 자동 종료 |
+| 다계정에 같은 위험 존재 의심 | **Security Hub로 조직 전역 점검** | 계정 순회는 누락된다 | 계정별 콘솔 확인 |
+
+표 전체를 관통하는 네 문장이 있다. **① 증거를 없애는 조치는 뒤로 민다. ② 가역적 조치는 앞으로 당긴다. ③ 자격증명 회수는 네트워크 격리와 별개로 반드시 한다. ④ 확산을 만드는 원인(원 자격증명, 로깅 중지)을 결과(새 사용자, 인스턴스)보다 먼저 끊는다.**
+
+> 🎯 **시나리오**: Macie가 프로덕션 S3 버킷에서 개인정보가 대량 탐지됐고, 같은 버킷의 정책이 24시간 전에 변경되어 특정 외부 계정에 읽기 권한이 부여된 상태임을 Access Analyzer가 알렸다. 무엇부터 하는가. → 이 사고의 특징은 **인스턴스도 자격증명도 아닌 "리소스 정책"이 침해 경로**라는 점이다. ① **접근 차단이 첫 조치**다 — 버킷 정책의 해당 Statement를 제거하거나 퍼블릭 액세스 차단을 재적용해 유출을 멈춘다. 여기서 버킷을 삭제하거나 객체를 옮기면 안 된다(증거·서비스 양쪽이 깨진다). ② **누가 언제 정책을 바꿨는지**를 CloudTrail의 `PutBucketPolicy`로 확인한다. 사람이 바꿨는지, 탈취된 자격증명이 바꿨는지에 따라 사고의 성격이 완전히 달라진다. ③ 탈취된 자격증명이었다면 그 자격증명을 무력화하고 Day 3의 백도어 헌팅으로 넘어간다. ④ **무엇이 실제로 읽혔는지**를 S3 데이터 이벤트(CloudTrail data events) 또는 서버 액세스 로그로 확인한다 — 이 확인 결과가 통지 의무 판단의 근거가 되므로 추정이 아니라 로그로 답해야 한다. ⑤ 재발 방지는 조직 차원이다: 버킷 정책 변경을 Config 규칙과 EventBridge로 상시 감시하고, 외부 계정 공유를 SCP로 차단하며, 계정 수준 퍼블릭 액세스 차단을 켠다. 순서의 핵심은 **차단 → 변경 주체 규명 → 자격증명 대응 → 읽힌 범위 확정 → 조직 통제**이며, ④를 건너뛰면 "유출됐는지 모르겠다"는 상태로 법적 판단을 해야 하는 최악의 자리에 놓인다.
+
+> 🎯 **시나리오**: 자동 대응 파이프라인을 6개월 운영한 조직이 사후 검토에서 이런 지표를 얻었다 — MTTD는 3일에서 20분으로 줄었는데 MTTR은 4시간에서 3시간 40분으로 거의 그대로다. 어디에 투자해야 하는가. → 지표가 가리키는 병목은 명확하다. **탐지는 개선됐고 대응이 정체돼 있다.** 원인은 대개 셋 중 하나다. ① *자동 조치의 범위가 좁다* — 알림만 자동화하고 실제 조치는 여전히 사람이 콘솔에서 한다. 이 경우 가역적 조치(격리 SG 교체, 키 비활성화, 세션 폐기)부터 런북으로 옮기면 MTTR이 계단식으로 떨어진다. ② *승인 대기가 병목이다* — 승인자가 한 명이거나 야간 경로가 없으면 대기 시간이 대응 시간의 대부분을 차지한다. 해법은 승인자 풀 확대와 타임아웃·에스컬레이션이지, 승인 게이트 제거가 아니다. ③ *조사 단계가 병목이다* — 로그가 여러 계정에 흩어져 있어 범위 확정에 시간이 걸린다. 이 경우는 중앙 로그 집계와 사전 작성된 조사 쿼리가 답이다. **어느 경우든 처방은 "자동화를 더 켠다"가 아니라 "대응 시간을 단계별로 쪼개 어디서 시간이 흐르는지 측정한다"에서 시작한다.** MTTR은 단일 숫자가 아니라 탐지→분류→봉쇄→조사→복구의 합이며, 각 구간을 따로 재지 않으면 개선할 곳을 알 수 없다.
+
 ## 자주 틀리는 구분들
 
 **격리 vs 종료** — 격리는 네트워크 차단(실행 유지, 휘발성 증거 보존), 종료는 증거 파괴. 봉쇄의 첫 수단은 격리.
@@ -68,6 +92,190 @@ EventBridge 규칙 (패턴 필터 + InputTransformer)
 > - 모든 조치를 완전 자동화해 false positive로 prod 파괴.
 > - 증거 스냅샷을 원본 계정에만 두고 chain of custody 미보장.
 
+## 세 장의 비교표로 압축하는 Week 10
+
+### ① 격리 방법
+
+| 축 | 격리 SG 교체 | NACL 차단 | 서브넷/ENI 이동 |
+|---|---|---|---|
+| 적용 단위 | ENI(사실상 인스턴스) | 서브넷 전체 | 인스턴스 |
+| 기존 세션 | stateful — 잠시 유지될 수 있음 | **stateless — 즉시 양방향 차단** | 경로 자체 소멸 |
+| 부수 피해 | 없음 | 같은 서브넷 정상 인스턴스 | 없음 |
+| 되돌리기 | 쉬움(가역 → 자동화 적합) | 쉬움 | 복잡 |
+| 언제 쓰나 | **표준 첫 수단** | SG로 안 끊길 때 보조 | 장기 격리·정밀 분석 |
+
+기억할 한 줄: **새로 만든 SG에는 아웃바운드 전체 허용이 기본으로 붙는다** — 제거하지 않으면 격리가 아니다.
+
+### ② 자격증명 유형별 무력화
+
+| 축 | 액세스 키(`AKIA`) | 역할 세션(`ASIA`) | 루트 |
+|---|---|---|---|
+| 무력화 | `update-access-key --status Inactive` | `aws:TokenIssueTime` Deny | 비밀번호·MFA 재설정, 루트 키 삭제 |
+| 신규 차단 | 비활성화가 곧 차단 | 프로파일 분리 / 신뢰 정책 축소 | 자격증명 재설정 + MFA 재등록 |
+| 추적 축 | `userIdentity.accessKeyId` | 세션 ARN·`ASIA…` | `userIdentity.type = Root` |
+| 자동화 | 적합(가역·기계적) | 적합 | 부적합(사람·조직 대응) |
+| 특유 함정 | 정상 워크로드 동시 사용 | 같은 역할의 정상 세션도 끊김 | **IAM 정책·SCP로 제한 불가**(관리 계정) |
+
+기억할 한 줄: **키는 끄고, 세션은 거부하고, 루트는 되찾는다.**
+
+### ③ 자동 실행 vs 승인 게이트
+
+| 판단 축 | 자동 | 승인 |
+|---|---|---|
+| 가역성 | 격리 SG·키 비활성화·세션 폐기·스냅샷 | 종료·삭제·재배포 |
+| 신호 신뢰도 | 결정적 증거 | 행동 기반 이상 |
+| 영향 범위 | 단일 리소스·비프로덕션 | 공용 인프라·`Environment=prod` |
+| 시간 압박 | 초 단위가 피해량을 좌우 | 분석 품질이 더 중요 |
+
+기억할 한 줄: **가역성이 다른 세 축을 압도한다.** 되돌릴 수 있으면 자동, 없으면 승인.
+
+## 탐지·조사 서비스의 역할 구분
+
+보기에서 서비스 이름만 바꿔 오답을 만드는 유형이 많다. 각 서비스가 답하는 *질문*으로 외우면 헷갈리지 않는다.
+
+| 서비스 | 답하는 질문 | IR 단계 |
+|---|---|---|
+| **GuardDuty** | "지금 위협 *행위*가 벌어지고 있는가" | 탐지 |
+| **Security Hub** | "여러 도구·계정의 핀딩을 한 형태(ASFF)로 어떻게 볼 것인가" | 탐지·집계·자동화 진입점 |
+| **AWS Config** | "구성이 기준에서 벗어났는가, 이 리소스는 언제 어떻게 바뀌었는가" | 탐지·조사(타임라인) |
+| **CloudTrail** | "누가 언제 어떤 API를 호출했는가" | 조사의 기반 |
+| **Athena / CloudTrail Lake** | "그 호출들을 어떻게 대량 질의하는가" | 조사 |
+| **Detective** | "이 엔티티들이 어떻게 연결돼 있고 무엇이 평소와 다른가" | 분석·사후 |
+| **Macie** | "어떤 데이터가 민감하고 어디에 노출돼 있는가" | 탐지(데이터 계층) |
+| **Inspector** | "어떤 취약점·CVE가 남아 있는가" | 준비·근절 |
+| **Access Analyzer** | "무엇이 외부에 열려 있는가" | 준비·백도어 헌팅 |
+| **Systems Manager** | "조치를 어떻게 표준 절차로 실행하는가" | 봉쇄·근절·복구 |
+
+특히 **Config와 CloudTrail의 구분**이 자주 나온다. "이 보안 그룹이 언제 어떤 상태였는가"는 Config(구성 이력), "누가 그 변경 API를 호출했는가"는 CloudTrail(행위 기록)이다. 조사는 대개 둘을 붙여서 한다 — Config로 *언제 변했는지*를 찾고, 그 시각을 축으로 CloudTrail에서 *누가 했는지*를 찾는다.
+
+## 대응 CLI 치트시트
+
+압박 상황에서 검색할 시간은 없다. 이 주차에서 실제로 손이 가야 하는 명령들을 한자리에 모은다.
+
+```bash
+# ── 격리 ────────────────────────────────────────────────────────
+aws autoscaling detach-instances --instance-ids i-0x --auto-scaling-group-name asg \
+  --no-should-decrement-desired-capacity            # ASG 자동 종료 방지 (첫 조치)
+aws elbv2 deregister-targets --target-group-arn <tg> --targets Id=i-0x
+aws ec2 revoke-security-group-egress --group-id $ISO_SG \
+  --ip-permissions 'IpProtocol=-1,IpRanges=[{CidrIp=0.0.0.0/0}]'   # 기본 아웃바운드 제거
+aws ec2 modify-instance-attribute --instance-id i-0x --groups $ISO_SG
+aws ec2 modify-instance-attribute --instance-id i-0x --disable-api-termination
+
+# ── 증거 ────────────────────────────────────────────────────────
+aws ec2 create-snapshots --instance-specification InstanceId=i-0x,ExcludeBootVolume=false \
+  --tag-specifications 'ResourceType=snapshot,Tags=[{Key=IR-Case,Value=INC-0042}]'
+aws ssm send-command --instance-ids i-0x --document-name "AWS-RunShellScript" \
+  --parameters 'commands=["avml /tmp/mem.lime","aws s3 cp /tmp/mem.lime s3://forensic/INC-0042/"]'
+aws ec2 copy-snapshot --source-snapshot-id snap-0x --encrypted \
+  --kms-key-id <forensic-cmk> --source-region ap-northeast-2
+aws ec2 modify-snapshot-attribute --snapshot-id snap-0copy \
+  --attribute createVolumePermission --operation-type add --user-ids 444455556666
+
+# ── 자격증명 ────────────────────────────────────────────────────
+aws iam update-access-key --user-name u --access-key-id AKIA... --status Inactive
+aws iam get-access-key-last-used --access-key-id AKIA...
+aws iam delete-login-profile --user-name u
+aws ec2 disassociate-iam-instance-profile --association-id iip-assoc-0x
+aws iam put-role-policy --role-name r --policy-name AWSRevokeOlderSessions \
+  --policy-document file://revoke-sessions.json
+
+# ── 조사 ────────────────────────────────────────────────────────
+aws cloudtrail lookup-events \
+  --lookup-attributes AttributeKey=AccessKeyId,AttributeValue=AKIA... --start-time <t>
+aws cloudtrail lookup-events \
+  --lookup-attributes AttributeKey=EventName,AttributeValue=StopLogging
+aws accessanalyzer list-findings --analyzer-arn <arn> \
+  --filter '{"status":{"eq":["ACTIVE"]}}'
+
+# ── 자동화 ──────────────────────────────────────────────────────
+aws ssm start-automation-execution --document-name IsolateCompromisedInstance \
+  --parameters '{"InstanceId":["i-0x"],"IsolationSgId":["sg-iso"]}'
+aws ssm describe-automation-step-executions --automation-execution-id <id> --output table
+aws guardduty create-sample-findings --detector-id <id> \
+  --finding-types "UnauthorizedAccess:EC2/MaliciousIPCaller.Custom"
+```
+
+## 정책 조각 치트시트
+
+```json
+// ① 기존 세션 전부 폐기 (역할 인라인 정책)
+{ "Effect": "Deny", "Action": "*", "Resource": "*",
+  "Condition": { "DateLessThan": { "aws:TokenIssueTime": "2026-06-24T10:00:00Z" } } }
+```
+
+```json
+// ② 침해 역할의 신규 발급 차단 (신뢰 정책을 Deny로 대체)
+{ "Version": "2012-10-17",
+  "Statement": [{ "Effect": "Deny", "Principal": { "Service": "ec2.amazonaws.com" },
+                  "Action": "sts:AssumeRole" }] }
+```
+
+```json
+// ③ 자동화 역할에서 비가역 조치를 구조적으로 제거
+{ "Sid": "NeverTerminate", "Effect": "Deny",
+  "Action": ["ec2:TerminateInstances","ec2:StopInstances","ec2:DeleteSnapshot","s3:DeleteObject"],
+  "Resource": "*" }
+```
+
+```json
+// ④ 교차 계정 IR 역할 신뢰 정책 — 계정이 아니라 역할 단위로 좁힌다
+{ "Effect": "Allow",
+  "Principal": { "AWS": "arn:aws:iam::222233334444:role/IR-Orchestrator-Lambda" },
+  "Action": "sts:AssumeRole",
+  "Condition": { "StringEquals": { "sts:ExternalId": "<secrets-manager-value>" } } }
+```
+
+```json
+// ⑤ 멤버 계정 루트 봉쇄 SCP (관리 계정에는 적용되지 않음에 유의)
+{ "Sid": "DenyMemberRoot", "Effect": "Deny", "Action": "*", "Resource": "*",
+  "Condition": { "StringLike": { "aws:PrincipalArn": "arn:aws:iam::*:root" } } }
+```
+
+```json
+// ⑥ 자동 대응 트리거 (Security Hub 단일 진입점, 미처리 핀딩만)
+{ "source": ["aws.securityhub"],
+  "detail-type": ["Security Hub Findings - Imported"],
+  "detail": { "findings": { "Severity": { "Label": ["HIGH","CRITICAL"] },
+                            "Workflow": { "Status": ["NEW"] },
+                            "RecordState": ["ACTIVE"] } } }
+```
+
+## 한 장으로 보는 Week 10
+
+```
+[준비]  조직 CloudTrail · 로그 아카이브 계정 · 포렌식 계정 · 격리 SG/서브넷
+        IR 대응 역할(전 계정 사전 배포) · break-glass · 런북 · game day
+           │  ← 없으면 아래 모든 단계가 실행 시점에 실패한다
+           ▼
+[탐지]  GuardDuty(행위) · Config(상태) · Macie(데이터) · Inspector(취약점)
+           │  모두 Security Hub(ASFF)로 정규화 집계
+           ▼
+[분류]  등급 판정 3문: 데이터가 나갔는가 / 지속성이 있는가 / 통제 평면이 훼손됐는가
+           │  하나라도 예 → 등급 상승, 에스컬레이션 개시
+           ▼
+[라우팅] EventBridge(패턴 필터 + InputTransformer) ── SNS ─▶ 사람(상황 인식 유지)
+           │                                    │
+           ▼                                    ▼
+[실행]  SSM Automation(표준·감사·승인)     Lambda(분기·외부 연동·교차계정)
+           │
+   ┌───────┼────────────────────────────────────────────┐
+   ▼       ▼                    ▼                       ▼
+ 증거 보존  단기 봉쇄            자격증명 회수            비가역 조치
+ (스냅샷·   (격리 SG·           (키 Inactive /          (종료·삭제)
+  메모리)    ASG 분리)           TokenIssueTime Deny /   → aws:approve 게이트
+   │                            프로파일 분리)
+   ▼
+[조사]  CloudTrail/Athena 전수 추적 → 백도어 헌팅 → 2차 엔티티 재귀 조사 → Detective
+           │
+           ▼
+[근절·복구] 백도어 제거 · 패치된 골든 AMI 재배포 · 장기 봉쇄 해제 · 단계적 복귀
+           │
+           ▼
+[사후]  타임라인 재구성 · MTTD/MTTR/dwell time · 규제 통지 · 런북 개선
+           └──────────────────── 준비 단계로 환류 ────────────────────┘
+```
+
 ## 가시성·운영: 대응을 측정하고 개선하라
 
 대응은 *지표로 증명·개선*된다.
@@ -79,9 +287,54 @@ EventBridge 규칙 (패턴 필터 + InputTransformer)
 
 > 🔍 **더 깊이**: 대응 성숙도는 "막았는가"가 아니라 "*일관되게·빠르게·증명 가능하게* 대응하고 그 경험으로 *스스로 개선*하는가"로 갈린다. 자동화로 MTTR을 줄이되(Day 1), 증거 무결성을 지키고(Day 2), 유형별 정확한 무력화를 하며(Day 3), NIST 단계와 자동/사람 경계를 명확히 한다(Day 4). 통제를 켜는 것은 시작이고, *사고에서 배워 준비 단계를 강화하는 순환*이 인시던트 대응의 본체다. 이것이 다음 주제(거버넌스·규정 준수)로 이어진다.
 
+> 📚 **사례**: 이번 주의 개념들이 실제 사건에서 어떻게 어긋났는지를 한 줄씩 대응시켜 보면 기억이 오래 간다. **Code Spaces(2014)** — 공격자가 AWS 콘솔 접근 권한을 쥔 상태에서 운영자가 통제권을 다투는 동안 리소스와 *같은 계정에 있던 백업까지* 삭제돼 회사가 문을 닫았다. → 자격증명 무력화가 봉쇄의 첫 수단이어야 한다는 것, 그리고 증거·백업은 계정 경계 밖에 있어야 한다는 것. **Capital One(2019)** — SSRF로 IMDS에 도달해 인스턴스 역할의 임시 자격증명을 얻고 데이터를 반출했으며, 인지는 외부 제보로 이뤄졌다. → 인스턴스 격리와 자격증명 회수는 별개라는 것, IMDSv2·hop limit이 대응이 아니라 준비 항목이라는 것, 그리고 자체 탐지 루프가 없으면 인지 자체가 늦는다는 것. **Uber(2016~2017)** — 비공개 저장소에 있던 자격증명이 유출 경로가 됐고, 이후 회사가 사고를 공개하지 않고 처리하려 한 **대응 방식 자체가 더 큰 법적 문제**로 번졌다. → 저장소 권한 강화가 아니라 저장소에 비밀을 두지 않는 것이 대책이라는 것, 그리고 IR의 사후 단계에는 기술이 아니라 통지·법무·거버넌스가 들어 있다는 것. **Equifax(2017)** — 패치 누락으로 진입이 이뤄졌고, 트래픽 검사 장비의 인증서가 만료된 채 방치돼 오랜 기간 탐지가 작동하지 않았다. → 통제는 "설치했다"가 아니라 "지금 작동한다"가 확인돼야 한다는 것. 네 사건이 각각 **봉쇄 순서 / 자격증명 / 사후 대응 / 통제 생존**이라는 이번 주의 네 기둥에 정확히 대응한다.
+
+## 보기를 읽는 법: 오답이 만들어지는 다섯 가지 패턴
+
+시험 문항은 대개 정답 하나와 *그럴듯한 오답 셋*으로 구성되며, 이 주차의 오답은 패턴이 좁다. 패턴을 알면 보기를 읽는 속도가 크게 달라진다.
+
+1. **순서를 한 칸 뒤집는다.** "종료 → 스냅샷", "복구 → 근절", "삭제 → 추적"처럼 결과와 원인, 비가역과 가역의 순서를 바꿔 놓는다. → *증거를 없애는 조치가 앞에 있으면 그 보기는 버린다.*
+2. **한쪽만 조치하고 끝낸다.** "인스턴스를 격리한다"까지만 있고 자격증명 회수가 없거나, "키를 비활성화한다"까지만 있고 추적·근절이 없다. → *봉쇄만 있고 추적·근절이 없는 보기는 대개 오답이다.*
+3. **강제력이 없는 수단으로 강제를 요구한다.** "탐지만 하는 도구로 차단한다", "IAM 정책으로 루트를 제한한다", "교육으로 강제한다". → *요구사항의 동사가 차단이면 예방 통제(SCP·정책 Deny)를 고른다.*
+4. **범위를 잘못 잡는다.** "한 리전에 규칙 하나로 전체 보호", "계정마다 사람이 콘솔 확인". → *다계정·다리전이면 Security Hub 집계와 IaC 일관 배포가 정답이다.*
+5. **극단을 제시한다.** "모두 자동화", "모두 수동", "탐지를 끈다", "모든 사용자를 삭제한다". → *극단적 서술은 거의 항상 오답이다.* 이 주차의 정답은 대부분 "가역적인 것은 자동, 비가역적인 것은 승인"처럼 **경계를 나누는** 형태다.
+
+여섯 번째를 하나 더 붙이자면, **"AWS가 알아서 해 준다"는 보기**(자동 격리 정책을 기다린다, 지원팀이 처리해 준다)는 이 영역에서 늘 오답이다. 책임 공유 모델에서 자격증명·구성·데이터는 고객의 영역이기 때문이다.
+
+## 함정 정리
+
+- 침해 인스턴스를 즉시 종료·중지해 메모리·인스턴스 스토어 증거를 파괴한다.
+- ASG·타깃 그룹에서 분리하지 않고 격리해, 헬스체크 실패로 ASG가 인스턴스를 종료한다.
+- 새로 만든 격리 SG의 **기본 아웃바운드 허용 규칙**을 제거하지 않아 유출이 계속된다.
+- 부 ENI를 남겨 격리에 구멍이 생긴다.
+- 아웃바운드를 전부 막아 SSM 경로까지 끊고 메모리 덤프를 못 하게 만든다.
+- 인스턴스만 격리하고 유출된 STS 토큰을 폐기하지 않는다.
+- `TokenIssueTime` Deny만 하고 신규 발급 차단(프로파일 분리·신뢰 정책)을 빠뜨린다.
+- 노출 키를 추적 전에 삭제해 `accessKeyId` 조회 축을 잃는다.
+- 공격자가 만든 2차 자격증명을 축으로 조사를 한 바퀴 더 돌지 않는다.
+- 로그의 *공백 구간*(StopLogging·DeleteTrail)을 신호로 읽지 않는다.
+- IAM 정책·SCP로 루트를 제한하려 한다 — 관리 계정 프린시펄에는 SCP가 적용되지 않는다.
+- 증거·백업을 침해 가능한 계정 안에만 둔다.
+- AWS 관리형 키로 암호화된 스냅샷을 그대로 다른 계정에 공유하려 한다.
+- 근절 없이 복구해 백도어로 재침해된다. 침해 이미지에서 복구해 백도어까지 되살린다.
+- 모든 조치를 완전 자동화해 오탐으로 프로덕션을 중단시킨다.
+- 승인 게이트에 타임아웃·에스컬레이션이 없어 승인자가 없으면 대응이 멈춘다.
+- 자동화가 한 일을 사람에게 통보하지 않아 상황 인식이 사라진다.
+- DLQ·실패 알람이 없어 자동화가 조용히 죽은 상태를 아무도 모른다.
+- 실행해 본 적 없는 런북을 준비됐다고 믿는다.
+- 기술 봉쇄만 하고 통지·법무 경로를 플레이북에 넣지 않는다.
+- 사후 활동을 생략해 교훈이 준비 단계로 환류되지 않는다.
+
 ## 한 줄 요약 체크리스트
 
 - [ ] NIST 4단계(준비→탐지·분석→봉쇄·근절·복구→사후)를 사고에 매핑할 수 있는가
+- [ ] 상황별 "가장 먼저 하는 것"과 **그 근거**를 말로 설명할 수 있는가
+- [ ] 증거를 없애는 조치는 뒤로, 가역적 조치는 앞으로 배치하는가
+- [ ] 확산의 원인(원 자격증명·로깅 중지)을 결과(새 사용자·인스턴스)보다 먼저 끊는가
+- [ ] 격리 SG의 기본 아웃바운드 규칙 제거와 ASG 분리를 잊지 않는가
+- [ ] 기존 세션 무효화와 신규 발급 차단을 한 쌍으로 수행하는가
+- [ ] 탐지·조사 서비스(GuardDuty/Config/CloudTrail/Detective/Macie)를 질문 단위로 구분하는가
+- [ ] 오답 패턴 다섯 가지(순서 뒤집기·반쪽 조치·강제력 없는 수단·범위 오류·극단)를 걸러 내는가
 - [ ] 봉쇄는 격리(실행 유지)로 하고 증거(스냅샷·메모리)를 병행·우선 보존하는가
 - [ ] 자격증명 유형별 무력화(키 Inactive / STS TokenIssueTime Deny / 루트 재설정)를 구분하는가
 - [ ] 무력화 후 CloudTrail/Athena/Detective로 활동·백도어를 추적·근절하는가
