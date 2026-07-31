@@ -292,16 +292,19 @@ D) About 24 months
 
 ---
 
-**문제 6.** Match each workload description to the appropriate instance family.
+**문제 6.** Which mapping of workloads to instance families is correct?
 
-A) Real-time Apache Kafka broker (high disk I/O, low latency needed)  
-B) Deep-learning model pre-training (GPU-intensive)  
-C) SAP BW in-memory analytics (needs 512GB RAM)  
-D) Microservice app server (highly variable traffic)  
+① Real-time Apache Kafka broker (high disk I/O, low latency)
+② Deep-learning model pre-training (GPU-intensive)
+③ SAP BW in-memory analytics (512GB RAM)
+④ Microservice app server (highly variable traffic)
 
-1) T family  2) R family  3) P family  4) I family
+A) ①-I family, ②-P family, ③-R family, ④-T family
+B) ①-I family, ②-G family, ③-R family, ④-T family
+C) ①-R family, ②-P family, ③-I family, ④-T family
+D) ①-T family, ②-P family, ③-R family, ④-I family
 
-**정답: A-4, B-3, C-2, D-1**
+**정답: A**
 해설: A Kafka broker is local NVMe I/O-intensive → I family (i4i). Deep-learning training is GPU-intensive → P family (p4d/p5, NVIDIA A100/H100). SAP BW with 512GB RAM → R family (r6i/r7g). Intermittent microservice traffic → T family (leveraging CPU credit burst). The G family is mainly for ML inference and graphics rendering, while P is training-only.
 
 ---

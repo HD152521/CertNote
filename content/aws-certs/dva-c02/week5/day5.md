@@ -366,7 +366,7 @@ B) VPC 전용 Access Point로 인터넷에서의 접근을 차단할 수 있다
 C) Access Point는 버킷당 최대 1개만 생성 가능해 입구를 단일화한다 — 실제로는 버킷당 수천 개(최대 10,000개) Access Point를 만들 수 있음
 D) 각 Access Point는 자체 독립적인 정책과 DNS 이름을 가진다
 
-**정답: B와 D**
+**정답: B, D**
 해설: Access Point는 새 버킷을 만들지 않고 기존 버킷 위에 가상 입구를 만든다(A 틀림). 버킷당 최대 10,000개의 Access Point를 생성할 수 있다(C 틀림). VPC 전용 Access Point를 설정하면 해당 Access Point로의 접근이 지정한 VPC 내에서만 허용되며 인터넷 접근이 차단된다(B 맞음). 각 Access Point는 고유한 DNS 이름(`<name>-<account-id>.s3-accesspoint.<region>.amazonaws.com`)과 독립적인 버킷 정책을 가진다(D 맞음).
 
 ---

@@ -226,6 +226,34 @@ D) NAT GW Policy
 
 ---
 
+### 추가 시나리오 2문제
+
+**문제 13.** 회사가 Multi-Region Active-Passive DR을 구성했다. Primary 리전 ALB 장애 시 Route 53 Failover가 동작하는데, **DNS TTL 300초 + 일부 ISP의 추가 캐싱**으로 RTO가 7분 이상 걸린다. RTO를 1-2초로 줄이려면?
+
+A) Route 53 레코드의 TTL을 0으로 낮춰 resolver 캐싱을 없애고 페일오버를 즉시 전파
+B) AWS Global Accelerator로 전환 (BGP Anycast로 정적 IP 광고, DNS TTL 우회)
+C) Secondary 리전에 NAT GW를 추가해 페일오버 경로의 아웃바운드 지연을 줄임
+D) ALB를 NLB로 교체해 L4 고정 IP를 확보하고 헬스체크 간격을 단축해 전환을 가속
+
+**정답: B**
+
+해설: DNS TTL은 RFC 1035/2181에 정의된 캐싱 기간이고, 0으로 설정해도 일부 resolver(ISP DNS)가 자체 정책으로 최소 캐싱(보통 30-60초)을 강제하는 경우가 많다. Route 53 Failover의 본질적 한계. Global Accelerator는 다른 모델 — AWS가 BGP Anycast로 2개 정적 IP를 전 세계에 광고하고, 그 IP가 리전별 endpoint로 라우팅된다. Primary 리전이 죽으면 AWS 백본에서 BGP 라우팅 테이블 업데이트로 1-2초 안에 트래픽이 Secondary로 전환되므로 DNS TTL 무관. 엄격한 RTO가 필요한 금융·게임 산업의 표준 패턴.
+
+---
+
+**문제 14.** 운영자가 Transit Gateway에 Prod VPC와 Dev VPC를 attach했다. 정책상 "Prod는 Shared Services VPC와만 통신, Dev VPC와는 격리"가 필요하다. 어떻게 구성하는가?
+
+A) Prod와 Shared 사이에만 VPC Peering을 추가하고 Dev는 TGW에서 떼어내 별도 연결로 격리
+B) TGW Route Table을 분리 — Prod RT(Shared만 propagate), Dev RT(Shared만 propagate), 상호 격리
+C) Prod VPC의 Security Group 인바운드에서 Dev VPC CIDR을 명시적으로 차단해 격리
+D) TGW를 Prod용·Dev용 두 개로 분리하고 Shared VPC를 양쪽 TGW에 각각 attach
+
+**정답: B**
+
+해설: TGW의 핵심 강점이 Route Table 분리로 정책을 hub에서 통제한다는 점. 각 attachment는 하나의 RT에 associate(어느 RT의 경로를 볼지)되고, 여러 RT에 propagate(자기 경로를 어느 RT로 broadcast할지)될 수 있다. Prod attachment를 Prod RT에 associate + Shared attachment를 Prod RT에 propagate하면 Prod는 Shared 경로만 보고 Dev 경로는 안 보인다 → 자동 격리. Dev도 같은 방식으로 구성. SG 차단은 인스턴스 단위 통제라 운영 비용이 크고 휴먼 에러에 취약. TGW 2개는 hub-and-spoke의 단순성을 깨고 비용 2배. 이 RT 분리 패턴이 멀티 계정 환경의 표준 구성이다.
+
+---
+
 ## 통합 결정 트리 — 시나리오별 도구 선택 빠른 참조
 
 운영 환경에서 자주 마주치는 결정을 트리로 정리한다. 시험 시나리오에서도 이 순서로 사고하면 답이 빠르다.
@@ -297,34 +325,6 @@ RTO와 비용의 trade-off?
 └── DNS TTL 영향 없는 빠른 페일오버 필요
     └── Global Accelerator (BGP Anycast, 1-2초 페일오버)
 ```
-
----
-
-## 추가 시나리오 2문제
-
-**문제 13.** 회사가 Multi-Region Active-Passive DR을 구성했다. Primary 리전 ALB 장애 시 Route 53 Failover가 동작하는데, **DNS TTL 300초 + 일부 ISP의 추가 캐싱**으로 RTO가 7분 이상 걸린다. RTO를 1-2초로 줄이려면?
-
-A) Route 53 레코드의 TTL을 0으로 낮춰 resolver 캐싱을 없애고 페일오버를 즉시 전파
-B) AWS Global Accelerator로 전환 (BGP Anycast로 정적 IP 광고, DNS TTL 우회)
-C) Secondary 리전에 NAT GW를 추가해 페일오버 경로의 아웃바운드 지연을 줄임
-D) ALB를 NLB로 교체해 L4 고정 IP를 확보하고 헬스체크 간격을 단축해 전환을 가속
-
-**정답: B**
-
-해설: DNS TTL은 RFC 1035/2181에 정의된 캐싱 기간이고, 0으로 설정해도 일부 resolver(ISP DNS)가 자체 정책으로 최소 캐싱(보통 30-60초)을 강제하는 경우가 많다. Route 53 Failover의 본질적 한계. Global Accelerator는 다른 모델 — AWS가 BGP Anycast로 2개 정적 IP를 전 세계에 광고하고, 그 IP가 리전별 endpoint로 라우팅된다. Primary 리전이 죽으면 AWS 백본에서 BGP 라우팅 테이블 업데이트로 1-2초 안에 트래픽이 Secondary로 전환되므로 DNS TTL 무관. 엄격한 RTO가 필요한 금융·게임 산업의 표준 패턴.
-
----
-
-**문제 14.** 운영자가 Transit Gateway에 Prod VPC와 Dev VPC를 attach했다. 정책상 "Prod는 Shared Services VPC와만 통신, Dev VPC와는 격리"가 필요하다. 어떻게 구성하는가?
-
-A) Prod와 Shared 사이에만 VPC Peering을 추가하고 Dev는 TGW에서 떼어내 별도 연결로 격리
-B) TGW Route Table을 분리 — Prod RT(Shared만 propagate), Dev RT(Shared만 propagate), 상호 격리
-C) Prod VPC의 Security Group 인바운드에서 Dev VPC CIDR을 명시적으로 차단해 격리
-D) TGW를 Prod용·Dev용 두 개로 분리하고 Shared VPC를 양쪽 TGW에 각각 attach
-
-**정답: B**
-
-해설: TGW의 핵심 강점이 Route Table 분리로 정책을 hub에서 통제한다는 점. 각 attachment는 하나의 RT에 associate(어느 RT의 경로를 볼지)되고, 여러 RT에 propagate(자기 경로를 어느 RT로 broadcast할지)될 수 있다. Prod attachment를 Prod RT에 associate + Shared attachment를 Prod RT에 propagate하면 Prod는 Shared 경로만 보고 Dev 경로는 안 보인다 → 자동 격리. Dev도 같은 방식으로 구성. SG 차단은 인스턴스 단위 통제라 운영 비용이 크고 휴먼 에러에 취약. TGW 2개는 hub-and-spoke의 단순성을 깨고 비용 2배. 이 RT 분리 패턴이 멀티 계정 환경의 표준 구성이다.
 
 ---
 

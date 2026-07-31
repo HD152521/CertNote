@@ -226,6 +226,34 @@ Explanation: Endpoint Policy adds extra constraints to endpoint API calls. `aws:
 
 ---
 
+### 2 Additional Scenario Problems
+
+**Problem 13.** Company set up Multi-Region Active-Passive DR. Route 53 Failover on Primary ALB failure works, but due to **DNS TTL 300s + some ISPs additional caching**, RTO exceeds 7 minutes. Reduce RTO to 1-2 seconds?
+
+A) Set Route 53 record TTL to 0, eliminate resolver caching, propagate failover instantly
+B) Switch to AWS Global Accelerator (BGP Anycast static IP, bypasses DNS TTL)
+C) Add NAT GW to Secondary region, reduce failover path outbound latency
+D) Replace ALB with NLB for static IP, shorten health check intervals to accelerate switch
+
+**Answer: B**
+
+Explanation: DNS TTL is RFC 1035/2181 caching period; setting to 0 doesn't stop some resolvers (ISP DNS) enforcing minimum caching (usually 30-60s) by their own policy. Route 53 Failover's fundamental limit. Global Accelerator is different model — AWS BGP Anycast advertises 2 static IPs globally, routing to per-region endpoints. Primary region fails; AWS backbone BGP routing table update redirects traffic in 1-2 seconds, TTL-independent. Strict RTO requirement: standard for finance, gaming.
+
+---
+
+**Problem 14.** Operator attached Prod VPC and Dev VPC to Transit Gateway. Policy requires "Prod communicates with Shared Services VPC only, isolated from Dev." How to configure?
+
+A) Add VPC Peering only between Prod and Shared, detach Dev from TGW for separate connection and isolation
+B) Separate TGW Route Tables — Prod RT (Shared propagates), Dev RT (Shared propagates), mutual isolation
+C) Prod VPC Security Group inbound explicitly deny Dev VPC CIDR for isolation
+D) Split TGW into two (one Prod, one Dev), attach Shared VPC to both
+
+**Answer: B**
+
+Explanation: TGW's core strength is Route Table separation for hub-based policy control. Each attachment associates with one RT (determines route visibility), propagates to multiple RTs (broadcasts own routes). Prod attachment associates Prod RT + Shared attachment propagates to Prod RT means Prod sees Shared routes only, Dev routes absent → auto-isolation. Dev similarly configured. SG blocking is per-instance control — high ops cost, human error prone. Two TGWs breaks hub-and-spoke simplicity, cost 2x. This RT separation pattern is multi-account standard configuration.
+
+---
+
 ## Integrated Decision Tree — Tool Selection Quick Reference by Scenario
 
 Organizing frequent operational decisions as tree. Exam scenarios also follow this logic for faster answers:
@@ -297,34 +325,6 @@ RTO vs Cost trade-off?
 └── Sub-second failover regardless of DNS TTL
     └── Global Accelerator (BGP Anycast, 1-2s failover)
 ```
-
----
-
-## 2 Additional Scenario Problems
-
-**Problem 13.** Company set up Multi-Region Active-Passive DR. Route 53 Failover on Primary ALB failure works, but due to **DNS TTL 300s + some ISPs additional caching**, RTO exceeds 7 minutes. Reduce RTO to 1-2 seconds?
-
-A) Set Route 53 record TTL to 0, eliminate resolver caching, propagate failover instantly
-B) Switch to AWS Global Accelerator (BGP Anycast static IP, bypasses DNS TTL)
-C) Add NAT GW to Secondary region, reduce failover path outbound latency
-D) Replace ALB with NLB for static IP, shorten health check intervals to accelerate switch
-
-**Answer: B**
-
-Explanation: DNS TTL is RFC 1035/2181 caching period; setting to 0 doesn't stop some resolvers (ISP DNS) enforcing minimum caching (usually 30-60s) by their own policy. Route 53 Failover's fundamental limit. Global Accelerator is different model — AWS BGP Anycast advertises 2 static IPs globally, routing to per-region endpoints. Primary region fails; AWS backbone BGP routing table update redirects traffic in 1-2 seconds, TTL-independent. Strict RTO requirement: standard for finance, gaming.
-
----
-
-**Problem 14.** Operator attached Prod VPC and Dev VPC to Transit Gateway. Policy requires "Prod communicates with Shared Services VPC only, isolated from Dev." How to configure?
-
-A) Add VPC Peering only between Prod and Shared, detach Dev from TGW for separate connection and isolation
-B) Separate TGW Route Tables — Prod RT (Shared propagates), Dev RT (Shared propagates), mutual isolation
-C) Prod VPC Security Group inbound explicitly deny Dev VPC CIDR for isolation
-D) Split TGW into two (one Prod, one Dev), attach Shared VPC to both
-
-**Answer: B**
-
-Explanation: TGW's core strength is Route Table separation for hub-based policy control. Each attachment associates with one RT (determines route visibility), propagates to multiple RTs (broadcasts own routes). Prod attachment associates Prod RT + Shared attachment propagates to Prod RT means Prod sees Shared routes only, Dev routes absent → auto-isolation. Dev similarly configured. SG blocking is per-instance control — high ops cost, human error prone. Two TGWs breaks hub-and-spoke simplicity, cost 2x. This RT separation pattern is multi-account standard configuration.
 
 ---
 

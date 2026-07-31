@@ -226,6 +226,7 @@ A) On-Demand로 매 자정 시작·종료해 시간당만 과금 — 유연하�
 B) Reserved Instance 1년 약정으로 시간당 단가를 낮춤 — 하루 수 시간만 쓰는데 24/7 약정이라 대부분 시간이 낭비
 C) Spot Instance + checkpoint를 S3에 정기 저장
 D) Dedicated Host로 물리 서버를 통째로 확보해 안정적 실행 — BYOL 라이선스 전용 옵션이라 가장 비싸 비용 목표에 정반대
+**정답: C**
 해설: 매일 새벽 짧은 시간만 사용 + checkpoint로 회수 대응 가능 → Spot 적합. 90% 절감. 회수 시 2분 사전 통보를 IMDS `/latest/meta-data/spot/instance-action`에서 받아 현재 progress를 S3에 sync하고 graceful shutdown. 다음 실행 때 checkpoint에서 resume. A는 매일 다 비용. B는 짧은 시간 사용에 RI 약정 낭비. D는 BYOL 라이선스 한정 비싸다.
 
 ---

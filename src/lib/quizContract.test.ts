@@ -26,10 +26,9 @@ interface FileQuiz {
   count: number;
   /** 원문에 존재하는 문제 스템 수 — count 와 벌어지면 파서가 조용히 버린 것 */
   rawStems: number;
-  /** 문제별 정답(순서 보존) — 내용이 바뀌었는지 감지 */
-  answers: string[];
-  /** 문제별 보기 개수 — 보기 유실 감지 */
-  choices: number[];
+  /** 문제 '번호' → 정답. 배열 위치가 아니라 번호로 대조한다 —
+   *  중간 문항이 복구되면 뒤 문항이 밀려 위치 비교는 오탐한다(실측). */
+  byNumber: Record<string, { answer: string; choices: number }>;
 }
 
 /** 원문 문제 스템 수. parseQuiz 가 몇 개를 버렸는지 대조하는 기준. */
@@ -63,11 +62,12 @@ async function collect(): Promise<Baseline> {
   for (const f of files) {
     const body = await fs.readFile(f, 'utf8');
     const { questions } = parseQuiz(body);
+    const byNumber: FileQuiz['byNumber'] = {};
+    for (const q of questions) byNumber[String(q.number)] = { answer: q.answer, choices: q.choices.length };
     out[relKey(f)] = {
       count: questions.length,
       rawStems: (body.match(STEM_COUNT_RE) ?? []).length,
-      answers: questions.map((q) => q.answer),
-      choices: questions.map((q) => q.choices.length),
+      byNumber,
     };
   }
   return out;
@@ -105,14 +105,19 @@ describe('콘텐츠 퀴즈 계약(전수)', () => {
           lost.push(`${file}: 문제 ${base.count} → ${cur.count} (${base.count - cur.count}개 유실)`);
           continue;
         }
-        // 기존 문제의 정답·보기수가 그대로인지(앞에서부터 base.count 개까지) 확인.
-        for (let i = 0; i < base.count; i++) {
-          if (cur.answers[i] !== base.answers[i]) {
-            changed.push(`${file}#${i + 1}: 정답 ${base.answers[i]} → ${cur.answers[i]}`);
+        // 기존 문제가 '번호 기준'으로 그대로인지 확인(문항 추가·중간 복구는 허용).
+        for (const [num, b] of Object.entries(base.byNumber)) {
+          const c = cur.byNumber[num];
+          if (!c) {
+            changed.push(`${file}#${num}: 문항 사라짐(정답 ${b.answer})`);
             break;
           }
-          if (cur.choices[i] !== base.choices[i]) {
-            changed.push(`${file}#${i + 1}: 보기수 ${base.choices[i]} → ${cur.choices[i]}`);
+          if (c.answer !== b.answer) {
+            changed.push(`${file}#${num}: 정답 ${b.answer} → ${c.answer}`);
+            break;
+          }
+          if (c.choices !== b.choices) {
+            changed.push(`${file}#${num}: 보기수 ${b.choices} → ${c.choices}`);
             break;
           }
         }

@@ -345,7 +345,7 @@ B) Custom Resource로 만든 외부 시스템(Slack 채널, GitHub webhook 등) 
 C) EC2 인스턴스 타입 변경
 D) RDS 비밀번호 회전
 
-**정약: B**
+**정답: B**
 
 **정답: B**
 

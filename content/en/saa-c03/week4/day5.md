@@ -348,16 +348,19 @@ D) Create the KMS key in a different region
 
 ---
 
-**문제 9.** Match each scenario below with the most suitable solution.
+**문제 9.** Which mapping of scenarios to solutions is correct?
 
-1. On-premises Veritas NetBackup backs up data to a tape library. You want to eliminate physical tape but can't replace the software.
-2. One-time migration of 10TB of on-premises data to S3. There's a 1Gbps Direct Connect connection.
-3. Employees at branch offices keep accessing on-premises NAS server data like S3.
-4. Migrating 500TB of data collected at a remote construction site to AWS. No internet.
+① On-prem Veritas NetBackup writes to a tape library. Physical tape must go, but the backup software cannot be replaced.
+② One-time migration of 10TB from on-prem to S3, with a 1Gbps Direct Connect link available.
+③ Branch staff must keep accessing on-prem NAS data the way they always have.
+④ Move 500TB collected at a remote construction site with no internet connectivity to AWS.
 
-A) Tape Gateway / B) DataSync / C) S3 File Gateway / D) Snowball Edge
+A) ①-Tape Gateway, ②-DataSync, ③-S3 File Gateway, ④-Snowball Edge
+B) ①-DataSync, ②-Tape Gateway, ③-S3 File Gateway, ④-Snowball Edge
+C) ①-Tape Gateway, ②-Snowball Edge, ③-S3 File Gateway, ④-DataSync
+D) ①-S3 File Gateway, ②-DataSync, ③-Tape Gateway, ④-Snowball Edge
 
-**정답: 1-A, 2-B, 3-C, 4-D**
+**정답: A**
 해설: 1. Tape Gateway fools existing backup software with an iSCSI VTL. Backups are stored in S3/Glacier without replacing the software. 2. DataSync migrates quickly via parallel transfer over Direct Connect. Optimal for one-time migration. 3. S3 File Gateway provides an NFS mount so employees keep their existing file-access method. Fast access via a local cache. 4. Snowball Edge collects data on a physical device and ships it to an AWS facility. Essential for large-volume migration in a no-internet environment.
 
 ---

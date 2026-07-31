@@ -348,16 +348,19 @@ D) KMS 키를 다른 리전에 생성
 
 ---
 
-**문제 9.** 다음 시나리오와 가장 적합한 솔루션을 연결하시오.
+**문제 9.** 다음 시나리오와 솔루션의 연결로 올바른 것은?
 
-1. 온프레미스 Veritas NetBackup이 테이프 라이브러리로 데이터를 백업함. 물리 테이프를 없애고 싶지만 소프트웨어 교체는 불가.
-2. 온프레미스 10TB 데이터를 S3로 일회성 이전. 1Gbps Direct Connect 연결 있음.
-3. 온프레미스 NAS 서버 데이터를 직원들이 지사에서 S3처럼 계속 접근.
-4. 오지 건설 현장에서 수집한 500TB 데이터를 AWS로 이전. 인터넷 없음.
+① 온프레미스 Veritas NetBackup이 테이프 라이브러리로 백업. 물리 테이프는 없애고 싶지만 소프트웨어 교체는 불가.
+② 온프레미스 10TB 데이터를 S3로 일회성 이전. 1Gbps Direct Connect 있음.
+③ 온프레미스 NAS 데이터를 지사 직원들이 기존 방식대로 계속 접근.
+④ 인터넷이 없는 오지 건설 현장의 500TB를 AWS로 이전.
 
-A) Tape Gateway / B) DataSync / C) S3 File Gateway / D) Snowball Edge
+A) ①-Tape Gateway, ②-DataSync, ③-S3 File Gateway, ④-Snowball Edge
+B) ①-DataSync, ②-Tape Gateway, ③-S3 File Gateway, ④-Snowball Edge
+C) ①-Tape Gateway, ②-Snowball Edge, ③-S3 File Gateway, ④-DataSync
+D) ①-S3 File Gateway, ②-DataSync, ③-Tape Gateway, ④-Snowball Edge
 
-**정답: 1-A, 2-B, 3-C, 4-D**
+**정답: A**
 해설: 1. Tape Gateway는 iSCSI VTL로 기존 백업 소프트웨어를 속인다. 소프트웨어 교체 없이 S3/Glacier에 백업 저장. 2. DataSync는 Direct Connect를 통해 병렬 전송으로 빠르게 이전. 일회성 마이그레이션에 최적. 3. S3 File Gateway는 NFS 마운트를 제공해 직원들이 기존 파일 접근 방식 유지. 로컬 캐시로 빠른 접근. 4. Snowball Edge는 물리 디바이스로 데이터를 수집해 AWS 시설로 배송. 인터넷 없는 환경의 대용량 이전에 필수.
 
 ---

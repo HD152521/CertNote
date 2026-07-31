@@ -366,7 +366,7 @@ B) A VPC-only Access Point can block access from the internet
 C) Only up to 1 Access Point can be created per bucket, unifying the entrance — in reality, thousands per bucket (up to 10,000) can be created
 D) Each Access Point has its own independent policy and DNS name
 
-**정답: B와 D**
+**정답: B, D**
 해설: An Access Point does not create a new bucket; it creates a virtual entrance on top of an existing bucket (A is wrong). Up to 10,000 Access Points can be created per bucket (C is wrong). Setting a VPC-only Access Point means access via that Access Point is allowed only from within the specified VPC and internet access is blocked (B is right). Each Access Point has a unique DNS name (`<name>-<account-id>.s3-accesspoint.<region>.amazonaws.com`) and an independent bucket policy (D is right).
 
 ---

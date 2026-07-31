@@ -226,6 +226,7 @@ A) On-Demand, starting and stopping at each midnight to bill only by the hour �
 B) A 1-year Reserved Instance commitment to lower the hourly rate — but it's used only a few hours a day while committing to 24/7, so most of the time is wasted
 C) Spot Instance + periodically saving a checkpoint to S3
 D) A Dedicated Host to secure a whole physical server for stable execution — a BYOL-license-only option, the most expensive, exactly opposite to the cost goal
+**정답: C**
 해설: A short window in the early hours each day + checkpoints to handle reclamation → Spot is the fit. 90% savings. On reclamation, catch the 2-minute warning from IMDS `/latest/meta-data/spot/instance-action`, sync current progress to S3, and do a graceful shutdown. On the next run, resume from the checkpoint. A costs full price every day. B wastes an RI commitment on short usage. D is BYOL-license-only and expensive.
 
 ---

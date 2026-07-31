@@ -290,7 +290,7 @@ B) ECS Service Connect
 C) Cloud Map + 수동 클라이언트 LB
 D) ALB per Service
 
-**정약: B**
+**정답: B**
 해설: ECS Service Connect는 ECS Service 옵션 한 블록으로 Envoy 사이드카 자동 주입·Cloud Map 자동 등록·재시도·CloudWatch 메트릭을 기본 제공한다. A는 풀 메시로 운영 부담이 더 큼(Virtual Service·Router·Node 매니페스트 작성). C는 모든 통합을 수동. D는 서비스 30개면 ALB 30개로 비용·운영 부담 큼. 함정: "메시 = App Mesh"라는 단순 매칭. Service Connect는 가벼운 메시로 ECS 표준이다.
 
 ---
