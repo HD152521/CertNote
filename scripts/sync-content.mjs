@@ -93,7 +93,7 @@ async function syncCert(cert) {
   }
 
   for (let w = 1; w <= cert.weeks; w++) {
-    for (let d = 1; d <= 5; d++) {
+    for (let d = 1; d <= 10; d++) {
       const src = path.join(srcRoot, `week${w}`, `day${d}.md`);
       try {
         await fs.access(src);

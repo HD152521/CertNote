@@ -72,7 +72,7 @@ async function main() {
       const weeks = (await listDirs(slugDir)).filter((w) => /^week\d+$/.test(w));
       for (const weekName of weeks) {
         const week = Number.parseInt(weekName.slice(4), 10);
-        for (let day = 1; day <= 5; day++) {
+        for (let day = 1; day <= 10; day++) {
           const file = path.join(slugDir, weekName, `day${day}.md`);
           let body;
           try {

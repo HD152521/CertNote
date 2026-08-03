@@ -58140,6 +58140,216 @@
     "explanation": "`dump`/`restore`는 파일 시스템 레벨에서 동작하며 레벨 0(전체)~9(증분)을 지원하고 ext 계열에 특화돼 있다. `tar`는 파일·디렉터리 단위의 아카이브·압축 도구다. B는 둘의 기능을 잘못 바꿨고, C는 네트워크 전용이 아니며, D는 두 도구의 특성을 뒤섞은 오답이다."
   },
   {
+    "id": "linux-master-1-w7-d6-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-1",
+    "section": "linux",
+    "week": 7,
+    "day": 6,
+    "number": 1,
+    "prompt": "전가상화(Full Virtualization)와 반가상화(Para Virtualization)의 차이로 가장 정확한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "전가상화는 게스트 OS 커널 수정이 필요하고, 반가상화는 필요 없다"
+      },
+      {
+        "label": "B",
+        "text": "전가상화는 게스트 OS를 수정하지 않고 그대로 쓰며, 반가상화는 게스트 커널을 수정해 하이퍼콜로 요청한다"
+      },
+      {
+        "label": "C",
+        "text": "전가상화는 컨테이너 기술이고, 반가상화는 가상 머신 기술이다"
+      },
+      {
+        "label": "D",
+        "text": "두 방식 모두 게스트 OS 없이 동작한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "전가상화는 하이퍼바이저가 특권 명령을 가로채 대신 처리하므로 게스트 OS를 수정하지 않아도 되며, 그래서 Windows처럼 소스를 고칠 수 없는 OS도 돌릴 수 있다. 반가상화는 게스트 커널을 수정해 하이퍼콜로 하이퍼바이저에 직접 요청하므로 오버헤드가 적은 대신 커널 수정이 필요하다. A는 둘을 뒤바꿨고, C·D는 가상화 방식과 무관한 서술이다."
+  },
+  {
+    "id": "linux-master-1-w7-d6-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-1",
+    "section": "linux",
+    "week": 7,
+    "day": 6,
+    "number": 2,
+    "prompt": "Type 1(베어메탈) 하이퍼바이저와 Type 2(호스트형) 하이퍼바이저의 분류가 올바르게 짝지어진 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Type 1: VirtualBox / Type 2: KVM"
+      },
+      {
+        "label": "B",
+        "text": "Type 1: KVM, Xen, VMware ESXi / Type 2: VirtualBox, VMware Workstation"
+      },
+      {
+        "label": "C",
+        "text": "Type 1: Docker / Type 2: Podman"
+      },
+      {
+        "label": "D",
+        "text": "Type 1과 Type 2 모두 호스트 OS 위에서 동작한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Type 1은 하드웨어 바로 위에서 동작하는 베어메탈 방식으로 KVM·Xen·VMware ESXi·Hyper-V가 해당하고, Type 2는 호스트 OS 위에 응용 프로그램처럼 설치하는 방식으로 VirtualBox·VMware Workstation이 해당한다. A는 둘을 뒤바꿨고, C의 Docker·Podman은 하이퍼바이저가 아니라 컨테이너 엔진이며, D는 Type 1의 정의와 모순된다."
+  },
+  {
+    "id": "linux-master-1-w7-d6-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-1",
+    "section": "linux",
+    "week": 7,
+    "day": 6,
+    "number": 3,
+    "prompt": "KVM에 대한 설명으로 옳지 않은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "리눅스 커널 모듈로 동작하며 `lsmod | grep kvm`으로 적재 여부를 확인할 수 있다"
+      },
+      {
+        "label": "B",
+        "text": "CPU·메모리 가상화를 담당하고 디스크·네트워크 등 주변 장치 에뮬레이션은 QEMU가 맡는다"
+      },
+      {
+        "label": "C",
+        "text": "Intel VT-x나 AMD-V 같은 CPU의 하드웨어 가상화 지원을 활용한다"
+      },
+      {
+        "label": "D",
+        "text": "게스트마다 별도의 커널 없이 호스트 커널을 공유하는 컨테이너 기술이다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "D는 컨테이너(Docker·Podman·LXC)에 대한 설명이다. KVM은 가상 머신 기술이므로 게스트마다 자기 커널을 가진 완전한 OS를 부팅한다. A는 KVM이 커널 모듈(kvm, kvm_intel/kvm_amd)이라는 사실, B는 KVM과 QEMU의 분업 관계, C는 하드웨어 가상화 지원 활용으로 모두 옳은 설명이다."
+  },
+  {
+    "id": "linux-master-1-w7-d6-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-1",
+    "section": "linux",
+    "week": 7,
+    "day": 6,
+    "number": 4,
+    "prompt": "실행 중인 가상 머신 `vm1`을 강제로 종료(전원 차단)하는 virsh 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`virsh undefine vm1`"
+      },
+      {
+        "label": "B",
+        "text": "`virsh destroy vm1`"
+      },
+      {
+        "label": "C",
+        "text": "`virsh suspend vm1`"
+      },
+      {
+        "label": "D",
+        "text": "`virsh dumpxml vm1`"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`virsh destroy`는 이름과 달리 도메인을 삭제하는 것이 아니라 전원 코드를 뽑듯 강제로 종료하는 명령이며, 디스크와 정의가 남아 `virsh start`로 다시 켤 수 있다. A의 `undefine`은 도메인 정의를 삭제하고, C의 `suspend`는 메모리를 유지한 채 일시 정지하며, D의 `dumpxml`은 설정을 XML로 내보낸다. 정상 종료는 `virsh shutdown`이다."
+  },
+  {
+    "id": "linux-master-1-w7-d6-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-1",
+    "section": "linux",
+    "week": 7,
+    "day": 6,
+    "number": 5,
+    "prompt": "가상 머신(VM)과 컨테이너의 근본적 차이로 가장 적절한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "VM은 커널을 공유하고 컨테이너는 게스트마다 커널을 갖는다"
+      },
+      {
+        "label": "B",
+        "text": "VM은 게스트마다 별도의 커널과 OS를 부팅하지만, 컨테이너는 호스트 커널을 공유하고 namespace·cgroup으로 격리한다"
+      },
+      {
+        "label": "C",
+        "text": "VM은 리눅스에서만, 컨테이너는 Windows에서만 동작한다"
+      },
+      {
+        "label": "D",
+        "text": "컨테이너는 하이퍼바이저 위에서만 실행된다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "VM은 하이퍼바이저 위에서 게스트 커널을 새로 부팅하므로 무겁지만 격리가 강하고 다른 OS도 돌릴 수 있다. 컨테이너는 호스트 커널을 공유하면서 namespace(시야 격리)와 cgroup(자원 제한)으로 프로세스를 가두므로 가볍고 빠르다. A는 둘을 뒤바꿨고, C는 사실과 다르며, D는 컨테이너가 하이퍼바이저 없이 커널 기능만으로 성립한다는 점과 모순된다."
+  },
+  {
+    "id": "linux-master-1-w7-d6-q6",
+    "category": "aws-certs",
+    "slug": "linux-master-1",
+    "section": "linux",
+    "week": 7,
+    "day": 6,
+    "number": 6,
+    "prompt": "Docker에서 컨테이너를 백그라운드로 실행하면서 호스트의 8080 포트를 컨테이너의 80 포트로 연결하는 명령으로 올바른 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`docker run -d -p 80:8080 nginx`"
+      },
+      {
+        "label": "B",
+        "text": "`docker run -d -p 8080:80 nginx`"
+      },
+      {
+        "label": "C",
+        "text": "`docker run -it -v 8080:80 nginx`"
+      },
+      {
+        "label": "D",
+        "text": "`docker build -d -p 8080:80 nginx`"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`-p` 옵션은 `호스트포트:컨테이너포트` 순서이므로 호스트 8080을 컨테이너 80에 연결하려면 `-p 8080:80`이고, `-d`는 백그라운드(detached) 실행이다. A는 순서를 뒤집었고, C의 `-v`는 볼륨 마운트 옵션이며 `-it`는 대화형 실행이라 요구 조건과 다르다. D의 `docker build`는 이미지를 빌드하는 명령이라 컨테이너 실행에 쓰지 않는다."
+  },
+  {
+    "id": "linux-master-1-w7-d6-q7",
+    "category": "aws-certs",
+    "slug": "linux-master-1",
+    "section": "linux",
+    "week": 7,
+    "day": 6,
+    "number": 7,
+    "prompt": "Docker 명령과 그 역할이 잘못 짝지어진 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`docker images` — 로컬에 저장된 이미지 목록을 본다"
+      },
+      {
+        "label": "B",
+        "text": "`docker exec -it web /bin/bash` — 실행 중인 컨테이너에서 셸을 연다"
+      },
+      {
+        "label": "C",
+        "text": "`docker rmi nginx` — nginx라는 이름의 컨테이너를 삭제한다"
+      },
+      {
+        "label": "D",
+        "text": "`docker logs -f web` — 컨테이너의 출력 로그를 실시간으로 본다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "`docker rmi`는 **이미지(image)**를 삭제하는 명령이고 컨테이너를 삭제하는 명령은 `docker rm`이다. 끝의 `i`가 image를 뜻한다고 기억하면 헷갈리지 않는다. A는 이미지 목록 조회, B는 실행 중인 컨테이너 안에서 명령을 실행하는 `exec`(`-i` 표준입력 유지 + `-t` 유사 터미널), D는 표준출력 로그를 `-f`로 이어 보는 것으로 모두 옳다."
+  },
+  {
     "id": "linux-master-1-w8-d1-q1",
     "category": "aws-certs",
     "slug": "linux-master-1",
@@ -60538,6 +60748,216 @@
     ],
     "answer": "B",
     "explanation": "PC는 먼저 DHCP로 IP·DNS 서버 정보를 임대받고(주소 확보), DNS로 도메인을 IP로 변환한 뒤(이름 해석), 그 IP의 웹 서버(Nginx/Apache)에 접속해 응답을 받는다. NTP는 서버 간 시계 일관성을 위한 보조 인프라로 DNS 동작의 전제 조건은 아니다."
+  },
+  {
+    "id": "linux-master-1-w9-d6-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-1",
+    "section": "linux",
+    "week": 9,
+    "day": 6,
+    "number": 1,
+    "prompt": "RHEL/CentOS 계열에서 MariaDB 서버를 설치한 뒤 부팅 시 자동으로 시작되도록 등록하는 명령으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`systemctl start mariadb-server`"
+      },
+      {
+        "label": "B",
+        "text": "`systemctl enable mariadb`"
+      },
+      {
+        "label": "C",
+        "text": "`service mariadb autostart`"
+      },
+      {
+        "label": "D",
+        "text": "`chkconfig mysqld on --now`"
+      }
+    ],
+    "answer": "B",
+    "explanation": "패키지명은 `mariadb-server`이지만 systemd 서비스(유닛)명은 `mariadb`다. `start`는 지금 시작만 하고, 부팅 시 자동 시작 등록은 `enable`이 담당한다."
+  },
+  {
+    "id": "linux-master-1-w9-d6-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-1",
+    "section": "linux",
+    "week": 9,
+    "day": 6,
+    "number": 2,
+    "prompt": "MySQL/MariaDB 설치 직후 실행해 root 비밀번호 설정, 익명 사용자 제거, 원격 root 로그인 차단, test 데이터베이스 삭제를 한 번에 처리하는 명령은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`mysql_install_db`"
+      },
+      {
+        "label": "B",
+        "text": "`mysql_secure_installation`"
+      },
+      {
+        "label": "C",
+        "text": "`mysqladmin flush-hosts`"
+      },
+      {
+        "label": "D",
+        "text": "`mysqlcheck --auto-repair`"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`mysql_secure_installation`은 대화형으로 초기 보안 항목(root 암호, 익명 계정 제거, 원격 root 차단, test DB 삭제, 권한 재적재)을 정리한다. 이 root는 리눅스 root와 무관한 DB 전용 관리자다."
+  },
+  {
+    "id": "linux-master-1-w9-d6-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-1",
+    "section": "linux",
+    "week": 9,
+    "day": 6,
+    "number": 3,
+    "prompt": "`webdb` 데이터베이스를 `/backup/webdb.sql` 파일로 백업하는 명령으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`mysql -u root -p webdb > /backup/webdb.sql`"
+      },
+      {
+        "label": "B",
+        "text": "`mysqldump -u root -p webdb < /backup/webdb.sql`"
+      },
+      {
+        "label": "C",
+        "text": "`mysqldump -u root -p webdb > /backup/webdb.sql`"
+      },
+      {
+        "label": "D",
+        "text": "`mysqlbackup -u root -p webdb -o /backup/webdb.sql`"
+      }
+    ],
+    "answer": "C",
+    "explanation": "백업은 `mysqldump`가 SQL 텍스트를 표준 출력으로 뽑고 `>`로 파일에 저장한다. 복구는 반대로 `mysql -u root -p webdb < /backup/webdb.sql`처럼 `<`로 흘려 넣는다. 화살표 방향이 바뀐 B는 오답이다."
+  },
+  {
+    "id": "linux-master-1-w9-d6-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-1",
+    "section": "linux",
+    "week": 9,
+    "day": 6,
+    "number": 4,
+    "prompt": "`mysqldump -u root -p webdb > dump.sql`로 뜬 덤프 파일을 복구할 때 주의할 점으로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "덤프에 `CREATE DATABASE` 문이 포함되어 있으므로 DB명을 적으면 안 된다"
+      },
+      {
+        "label": "B",
+        "text": "대상 데이터베이스를 미리 생성한 뒤 `mysql -u root -p webdb < dump.sql`로 복구해야 한다"
+      },
+      {
+        "label": "C",
+        "text": "복구 전에 반드시 `FLUSH PRIVILEGES`를 실행해야 한다"
+      },
+      {
+        "label": "D",
+        "text": "덤프 파일은 바이너리라서 `mysqlimport`로만 복구된다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "DB 이름만 지정한 단일 덤프에는 `CREATE DATABASE` 문이 없다. 복구 대상 DB를 먼저 만들고 DB명을 지정해 넣어야 하며, 그러지 않으면 `Unknown database` 오류가 난다. `--databases`나 `--all-databases` 덤프에는 DB 생성 문이 포함된다."
+  },
+  {
+    "id": "linux-master-1-w9-d6-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-1",
+    "section": "linux",
+    "week": 9,
+    "day": 6,
+    "number": 5,
+    "prompt": "`'web'@'localhost'`와 `'web'@'%'` 계정의 차이로 옳은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "둘은 같은 계정이며 표기만 다르다"
+      },
+      {
+        "label": "B",
+        "text": "`%`는 비밀번호가 없는 계정을 의미한다"
+      },
+      {
+        "label": "C",
+        "text": "`localhost`는 서버 자신에서의 접속만, `%`는 모든 호스트에서의 접속을 허용하는 별개의 계정이다"
+      },
+      {
+        "label": "D",
+        "text": "`localhost`는 읽기 전용, `%`는 읽기·쓰기 계정이다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "계정은 `사용자명@호스트` 쌍으로 식별되므로 이름이 같아도 호스트가 다르면 다른 계정이고 권한도 따로 줘야 한다. `%`는 모든 호스트를 뜻하는 와일드카드이며, 원격 접속을 허용하려면 `'user'@'%'` 형태의 계정이 필요하다."
+  },
+  {
+    "id": "linux-master-1-w9-d6-q6",
+    "category": "aws-certs",
+    "slug": "linux-master-1",
+    "section": "linux",
+    "week": 9,
+    "day": 6,
+    "number": 6,
+    "prompt": "MySQL/MariaDB의 기본 서비스 포트와, 접속을 받을 인터페이스를 지정하는 설정 항목이 바르게 짝지어진 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "3306 / `bind-address`"
+      },
+      {
+        "label": "B",
+        "text": "5432 / `listen_addresses`"
+      },
+      {
+        "label": "C",
+        "text": "3306 / `datadir`"
+      },
+      {
+        "label": "D",
+        "text": "1521 / `bind-address`"
+      }
+    ],
+    "answer": "A",
+    "explanation": "기본 포트는 3306/TCP이며 `my.cnf`의 `[mysqld]` 섹션에 있는 `bind-address`가 수신 인터페이스를 정한다. `127.0.0.1`이면 로컬 전용, `0.0.0.0`이면 모든 인터페이스다. 5432는 PostgreSQL, 1521은 Oracle이며 `datadir`은 데이터 파일 경로다."
+  },
+  {
+    "id": "linux-master-1-w9-d6-q7",
+    "category": "aws-certs",
+    "slug": "linux-master-1",
+    "section": "linux",
+    "week": 9,
+    "day": 6,
+    "number": 7,
+    "prompt": "원격 클라이언트에서 DB 서버로 접속을 시도하니 `Can't connect to MySQL server`로 연결 자체가 실패한다. 우선 점검할 항목으로 가장 거리가 먼 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "데몬이 동작 중인지(`systemctl status mariadb`)"
+      },
+      {
+        "label": "B",
+        "text": "방화벽에서 3306/TCP가 열려 있는지"
+      },
+      {
+        "label": "C",
+        "text": "`bind-address`가 `127.0.0.1`로 묶여 있지 않은지"
+      },
+      {
+        "label": "D",
+        "text": "해당 계정에 `SELECT` 권한이 부여되어 있는지"
+      }
+    ],
+    "answer": "D",
+    "explanation": "`Can't connect to ...`는 연결 자체가 닿지 않은 상태로, 데몬 미동작·방화벽 차단·`bind-address` 제한 같은 네트워크 계층 원인을 먼저 본다. 권한이나 비밀번호 문제는 서버까지 도달한 뒤 거절될 때 나타나는 `Access denied for user ...`로 구분된다."
   },
   {
     "id": "mla-c01-w1-d1-q1",
@@ -108979,7 +109399,7 @@
     "week": 3,
     "day": 5,
     "number": 5,
-    "prompt": "다음 중 보안 그룹과 NACL의 차이를 올바르게 설명한 것을 모두 고른 조합은?\r\n\r\n(가) 보안 그룹은 상태를 추적하고 NACL은 추적하지 않는다\r\n(나) NACL은 명시적 Deny가 가능하지만 보안 그룹은 Allow만 가능하다\r\n(다) 같은 서브넷 내부 통신에는 NACL이 적용되지 않는다\r\n(라) 보안 그룹은 규칙 번호 순서로 첫 매치에서 평가를 종료한다",
+    "prompt": "다음 중 보안 그룹과 NACL의 차이를 올바르게 설명한 것을 모두 고른 조합은?\n\n(가) 보안 그룹은 상태를 추적하고 NACL은 추적하지 않는다\n(나) NACL은 명시적 Deny가 가능하지만 보안 그룹은 Allow만 가능하다\n(다) 같은 서브넷 내부 통신에는 NACL이 적용되지 않는다\n(라) 보안 그룹은 규칙 번호 순서로 첫 매치에서 평가를 종료한다",
     "choices": [
       {
         "label": "A",

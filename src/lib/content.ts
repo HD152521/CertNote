@@ -3,6 +3,9 @@ import path from 'node:path';
 import { FREE_WEEK } from './entitlement/policy';
 import { getManifestMtime } from './contentManifest';
 
+// 주당 day 상한. 대부분 5일이지만 출제기준 보충 등으로 6일 이상이 될 수 있어 여유를 둔다.
+// 존재하지 않는 day 는 fileExists 검사에서 건너뛰므로 상한을 올려도 부작용이 없다.
+const MAX_DAYS_PER_WEEK = 10;
 const CONTENT_ROOT = path.join(process.cwd(), 'content');
 
 // 콘텐츠는 빌드 후 불변이라 프로덕션에선 프로세스 단위로 메모이즈한다(디스크 재독 제거).
@@ -181,7 +184,7 @@ export async function getAllDays(category: string, slug: string): Promise<DayRef
   const dir = contentDirOf(category);
   const days: DayRef[] = [];
   for (let w = 1; w <= meta.weeks; w++) {
-    for (let d = 1; d <= 5; d++) {
+    for (let d = 1; d <= MAX_DAYS_PER_WEEK; d++) {
       const p = path.join(CONTENT_ROOT, dir, slug, `week${w}`, `day${d}.md`);
       if (!(await fileExists(p))) continue;
       const body = await fs.readFile(p, 'utf8');
