@@ -196,9 +196,97 @@ logrotate -f /etc/logrotate.conf      # -f: 강제 즉시 실행
 
 > 🔍 **직접 쳐보기**: `/etc/logrotate.d/`의 기존 파일(예: `syslog`)을 열어 어떤 지시어가 쓰였는지 보고, `logrotate -d`(디버그 모드)로 실제 파일을 건드리지 않고 어떤 동작이 일어날지 시뮬레이션해 보라. 또 `logger -p local0.err "hi"`로 메시지를 만든 뒤 `/var/log/messages`에서 추적해 facility.priority 동작을 눈으로 확인하라.
 
+## 침입 탐지(IDS) — 뚫린 뒤를 알아채는 겹
+
+앞의 세 겹은 "들어오지 못하게" 막고 "흔적을 남기는" 장치다. 그러나 허용된 포트로 정상 접속처럼 들어오는 공격은 막히지 않는다. **IDS**(Intrusion Detection System, 침입 탐지 시스템)는 그다음 겹으로, **이미 일어난 일의 흔적을 보고 침입을 알아채는** 도구다. 무엇을 감시하느냐에 따라 두 갈래로 나뉜다.
+
+| 구분 | NIDS (네트워크 기반) | HIDS (호스트 기반) |
+|------|----------------------|--------------------|
+| 감시 대상 | 네트워크를 지나는 **패킷** | 그 서버 안의 **파일·로그·프로세스** |
+| 설치 위치 | 스위치 미러 포트·게이트웨이 등 트래픽 길목 | 보호할 서버마다 각각 |
+| 잘 잡는 것 | 포트 스캔, 익스플로잇 패킷, 웜 확산 | 시스템 파일 변조, 백도어 설치, 반복 로그인 실패 |
+| 못 보는 것 | **암호화된 트래픽**의 내용 | 자기 호스트 밖에서 벌어지는 일 |
+| 대표 도구 | **snort**, suricata | **tripwire**, **AIDE**, fail2ban(로그 기반) |
+
+### fail2ban: 로그를 보고 자동으로 차단하기
+
+`fail2ban`은 로그 파일을 실시간으로 감시하다가 **정해진 시간 창 안에 실패 패턴이 임계치를 넘으면 그 출발지 IP를 방화벽 규칙으로 일정 시간 차단**한다. SSH 무차별 대입(brute force) 대응의 사실상 표준이다.
+
+감시 단위 하나를 **jail**(감옥)이라 부른다. "어떤 로그를(`logpath`) 어떤 필터로(`filter`) 보고, 몇 번 실패하면(`maxretry`) 얼마 동안(`bantime`) 막을지"를 묶은 한 벌이다.
+
+| 파일 | 역할 |
+|------|------|
+| `/etc/fail2ban/jail.conf` | 배포판이 제공하는 원본. **직접 고치지 말 것**(패키지 갱신 시 덮어씀) |
+| `/etc/fail2ban/jail.local` | 관리자 설정. jail.conf를 덮어쓰며 **여기에 작성하는 것이 원칙** |
+| `/etc/fail2ban/jail.d/*.conf` | 서비스별로 나눠 쓰는 설정 조각 |
+| `/etc/fail2ban/filter.d/*.conf` | 실패 로그를 알아보는 정규식(`failregex`) 정의 |
+| `/etc/fail2ban/action.d/*.conf` | 실제 차단을 수행하는 동작(iptables·firewalld·nftables 등) |
+
+```bash
+# /etc/fail2ban/jail.local
+[DEFAULT]
+bantime  = 3600                       # 차단 유지 시간(초)
+findtime = 600                        # 실패 횟수를 세는 시간 창(초)
+maxretry = 5                          # 이 횟수를 넘으면 차단
+ignoreip = 127.0.0.1/8 192.168.1.0/24 # 절대 차단하지 않을 대역
+
+[sshd]
+enabled  = true
+port     = ssh
+logpath  = /var/log/secure            # 데비안 계열은 /var/log/auth.log
+```
+
+```bash
+systemctl enable --now fail2ban
+fail2ban-client status                       # 활성 jail 목록
+fail2ban-client status sshd                  # 해당 jail의 차단 IP 개수·목록
+fail2ban-client set sshd unbanip 1.2.3.4     # 수동 차단 해제
+fail2ban-client reload                       # 설정 다시 읽기
+```
+
+> ⚠️ **함정**: 설정을 `jail.conf`에 직접 쓰면 패키지 업데이트 때 통째로 덮어써 사라진다 — 반드시 **`jail.local`**(또는 `jail.d/`)에 작성한다. 또 `ignoreip`에 관리 대역을 넣지 않으면 암호 오타 몇 번으로 **관리자 본인이 차단**되고, `logpath`가 배포판과 어긋나면(RHEL 계열 `/var/log/secure` vs 데비안 계열 `/var/log/auth.log`) jail이 떠 있어도 아무것도 잡지 못한다.
+
+### snort: 패킷을 보는 NIDS
+
+`snort`는 네트워크를 지나는 패킷을 룰과 대조해 공격 시그니처를 찾아내는 대표적 오픈소스 NIDS다. 실행 방식이 **세 가지 모드**로 나뉘는 점이 출제 포인트다.
+
+| 모드 | 하는 일 | 예 |
+|------|---------|-----|
+| 스니퍼(sniffer) | 패킷을 잡아 화면에 출력만 | `snort -v` (`-d` 페이로드, `-e` 링크 계층 헤더 추가) |
+| 패킷 로거(packet logger) | 잡은 패킷을 파일로 저장 | `snort -l /var/log/snort` |
+| **NIDS** | 룰과 대조해 경고 발생 | `snort -c /etc/snort/snort.conf` |
+
+룰 한 줄은 **룰 헤더 + 룰 옵션** 두 토막이다.
+
+```
+alert tcp any any -> 192.168.1.0/24 80 (msg:"passwd access"; content:"/etc/passwd"; sid:1000001; rev:1;)
+└─ 헤더: 동작 프로토콜 출발지IP 포트 방향 목적지IP 포트 ─┘ └──────────── 옵션 ────────────┘
+```
+
+- **동작**: `alert`(경고+기록), `log`(기록만), `pass`(무시). 인라인(IPS) 모드에서는 `drop`·`reject`도 쓴다
+- **방향**: `->`(단방향), `<>`(양방향)
+- **옵션**: `msg`(경고 문구), `content`(페이로드에서 찾을 문자열), `sid`(룰 고유 번호, 사용자 정의는 1000000 이상), `rev`(룰 개정 번호)
+
+### tripwire와 AIDE: 파일 무결성을 지키는 HIDS
+
+침입자가 남기는 가장 확실한 흔적은 **시스템 파일의 변조**다(`/bin/ls`가 바꿔치기되거나 `/etc/passwd`에 계정이 몰래 추가되는 식). `tripwire`와 `AIDE`(Advanced Intrusion Detection Environment)는 감시 대상 파일의 크기·권한·소유자·해시를 **기준 데이터베이스**로 떠 두었다가, 이후 검사에서 현재 상태와 비교해 달라진 것을 보고한다.
+
+| 단계 | tripwire | AIDE |
+|------|----------|------|
+| 설정·정책 | `/etc/tripwire/twcfg.txt`, 정책 `twpol.txt` | `/etc/aide.conf` |
+| 기준 DB 생성 | `tripwire --init` | `aide --init` |
+| 무결성 검사 | `tripwire --check` | `aide --check` |
+| 정상 변경 반영 | `tripwire --update` | `aide --update` |
+
+tripwire는 설정·정책을 사이트 키와 로컬 키로 서명해 보관하고(`twadmin`), 검사 리포트는 `twprint`로 읽는다. AIDE는 기준 DB를 `/var/lib/aide/aide.db.gz`에 두며, `--init`이 만든 `aide.db.new.gz`를 관리자가 직접 이름을 바꿔 승격시키는 방식이다.
+
+> ⚠️ **함정**: 기준 DB는 **시스템이 확실히 깨끗할 때(설치 직후) 만들어야** 의미가 있다. 이미 침해된 상태에서 `--init`을 하면 백도어까지 "정상"으로 등록되어 도구가 무력해진다. 또 DB와 설정을 그 서버의 쓰기 가능한 위치에만 두면 침입자가 함께 조작할 수 있으므로 읽기 전용 매체나 외부 저장소에 보관하는 것이 원칙이다.
+
+> 📚 **실무 신호**: 세 도구는 역할이 겹치지 않는다. `fail2ban`은 **로그에 드러난 반복 실패를 즉시 차단**(대응), `snort`는 **네트워크 패킷에서 공격 시그니처를 탐지**(NIDS), `tripwire`/`AIDE`는 **파일이 바뀌었는지 사후 확인**(HIDS)한다. 그래서 실무에서는 셋을 함께 배치한다.
+
 ## 마무리
 
-오늘은 보안의 세 겹을 익혔다. **TCP Wrapper**는 `hosts.allow`(우선) → `hosts.deny` → 기본 허용의 순서로 호스트 단위 접근을 통제한다. **SELinux**는 DAC 위에 MAC를 덧씌워, enforcing/permissive/disabled 세 모드와 `user:role:type:level` 컨텍스트(특히 type)로 동작하며, `getenforce`/`setenforce`/`chcon`/`restorecon`이 핵심 도구다 — `setenforce`로는 disabled로 못 간다는 함정을 기억하라. **로그 관리**는 `/var/log`의 주요 파일(바이너리 wtmp/btmp는 전용 명령), `rsyslog.conf`의 facility.priority 짝(지정 수준 이상 기록), 그리고 `logrotate`의 rotate/compress 지시어가 출제 핵심이다. 내일은 한 주를 종합 복습한다.
+오늘은 보안의 세 겹을 익혔다. **TCP Wrapper**는 `hosts.allow`(우선) → `hosts.deny` → 기본 허용의 순서로 호스트 단위 접근을 통제한다. **SELinux**는 DAC 위에 MAC를 덧씌워, enforcing/permissive/disabled 세 모드와 `user:role:type:level` 컨텍스트(특히 type)로 동작하며, `getenforce`/`setenforce`/`chcon`/`restorecon`이 핵심 도구다 — `setenforce`로는 disabled로 못 간다는 함정을 기억하라. **로그 관리**는 `/var/log`의 주요 파일(바이너리 wtmp/btmp는 전용 명령), `rsyslog.conf`의 facility.priority 짝(지정 수준 이상 기록), 그리고 `logrotate`의 rotate/compress 지시어가 출제 핵심이다. 마지막 겹인 **IDS**는 NIDS(패킷 감시, snort의 스니퍼·패킷로거·NIDS 세 모드)와 HIDS(파일 무결성, tripwire·AIDE의 `--init`→`--check`→`--update` 흐름)로 갈리며, `fail2ban`은 로그 감시로 실패 IP를 자동 차단하되 설정은 `jail.local`에 쓴다는 점을 기억하라. 내일은 한 주를 종합 복습한다.
 
 ## 📝 연습 문제
 

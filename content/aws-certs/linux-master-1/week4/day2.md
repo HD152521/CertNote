@@ -173,6 +173,67 @@ sudo visudo -c                     # sudoers 문법 검사만(편집 안 함)
 groups                             # 내가 sudo/wheel 그룹에 속했는지
 ```
 
+## PAM — 인증을 모듈로 분리하는 틀
+
+`login`·`sshd`·`su`·`sudo`·`passwd`는 모두 "이 사람이 맞는가"를 확인한다. 프로그램마다 shadow를 직접 읽도록 짜면 인증 방식을 하나 바꿀 때 전부를 고쳐야 한다. **PAM**(Pluggable Authentication Modules, 착탈식 인증 모듈)은 **인증 로직을 공유 라이브러리(`.so` 모듈)로 떼어내고 프로그램은 "인증해 달라"고 요청만 하게** 만든 구조다. 설정은 **서비스 이름별 파일**로 `/etc/pam.d/` 아래에 놓인다(구형은 단일 파일 `/etc/pam.conf`). 공통 규칙은 RHEL 계열 `system-auth`, 데비안 계열 `common-auth` 등에 모아 둔다.
+
+```
+모듈타입   제어플래그   모듈               인자
+auth       required     pam_unix.so        nullok
+password   requisite    pam_pwquality.so   retry=3
+session    required     pam_limits.so
+```
+
+**모듈 타입**은 인증의 네 단계다. `auth`는 신원 확인(암호·토큰 검증), `account`는 계정 자체의 사용 가능 여부(만료·시간대·터미널 제한), `password`는 암호를 **변경**할 때의 규칙, `session`은 세션 준비·정리(자원 제한·기록)를 맡는다. 같은 타입의 모듈은 순서대로 쌓여(stack) 실행되고, **제어 플래그**가 각 모듈의 성패를 최종 판정에 반영하는 방식을 정한다.
+
+| 제어 플래그 | 성공 시 | 실패 시 |
+|-------------|---------|---------|
+| `required` | 계속 진행 | **최종 실패 확정**, 나머지 모듈은 끝까지 실행 |
+| `requisite` | 계속 진행 | **즉시 중단**하고 실패 반환 |
+| `sufficient` | 앞선 required 실패가 없으면 **즉시 성공 반환** | 무시하고 계속 진행 |
+| `optional` | 영향 없음 | 영향 없음(그 타입에 하나뿐일 때만 반영) |
+
+| 대표 모듈 | 하는 일 |
+|-----------|---------|
+| `pam_unix.so` | `/etc/passwd`·`/etc/shadow` 기반 전통 인증 |
+| `pam_cracklib.so` → `pam_pwquality.so` | 암호 복잡도 강제. RHEL 7부터 pwquality(`/etc/security/pwquality.conf`) |
+| `pam_tally2.so` → `pam_faillock.so` | 로그인 실패 횟수 누적·계정 잠금. RHEL 8부터 faillock |
+| `pam_limits.so` | `/etc/security/limits.conf`의 자원 제한 적용(`session`) |
+| `pam_wheel.so` / `pam_nologin.so` | `su`를 wheel 그룹만 허용 / `/etc/nologin` 있으면 일반 로그인 차단 |
+
+> ⚠️ **함정**: `sufficient`가 성공하면 **그 아래 같은 타입 모듈은 아예 실행되지 않는다**. 밑에 놓은 실패 횟수 카운터나 추가 검증이 통째로 무력화되므로 스택의 순서가 곧 정책이다. `required`와 `requisite`는 실패 시 결과는 같지만, `required`는 뒤 모듈을 마저 실행해 **어느 단계에서 틀렸는지 노출하지 않고** `requisite`는 즉시 끊는다.
+
+**`/etc/security/limits.conf`**는 `pam_limits.so`가 읽어 적용하는 자원 제한 파일이다. 한 줄은 `대상 종류 항목 값` 네 칸으로, 대상은 사용자명·`@그룹명`·`*`(전체), 종류는 `soft`(현재값)·`hard`(절대 상한, 상향은 root만), 항목은 `nproc`(프로세스 수)·`nofile`(열린 파일 수)·`core`·`fsize`·`cpu`·`maxlogins` 등이다.
+
+```bash
+alice        soft   nproc    200
+@developers  hard   nofile   8192
+*            soft   core     0
+```
+
+> 🔍 **더 깊이**: 현재 셸에 걸린 값은 `ulimit -a`(soft)·`ulimit -Ha`(hard)로 본다. `limits.conf`는 **PAM을 거치는 로그인 세션**에만 적용되므로 systemd가 직접 띄우는 데몬에는 먹지 않는다. 그런 서비스는 유닛 파일의 `LimitNOFILE=` 같은 지시어로 따로 지정해야 한다.
+
+## LDAP — 계정을 서버 한 곳에 모으기
+
+지금까지의 계정은 모두 **그 서버 안의 `/etc/passwd`**에 있었다. 서버가 100대면 계정도 100벌이다. **LDAP**(Lightweight Directory Access Protocol)은 사용자·그룹·조직 정보를 **디렉터리 서버 한 곳에 모아 두고** 여러 시스템이 조회해 쓰게 하는 프로토콜이며, 읽기가 압도적으로 많은 정보(전화번호부 같은 것)에 맞춰 관계형 표가 아니라 **트리**로 저장한다. 각 항목(entry)은 뿌리까지의 경로를 이어 붙인 **DN**으로 식별되고, 자기 계층의 한 조각만 떼면 **RDN**(Relative DN)이다.
+
+```
+dn: cn=alice,ou=people,dc=example,dc=com
+     └─RDN─┘ └컨테이너┘ └─── 베이스 DN ───┘
+```
+
+`dc`(Domain Component)는 도메인 조각(`example.com` → `dc=example,dc=com`), `ou`(Organizational Unit)는 조직 단위·컨테이너(`ou=people`), `cn`(Common Name)은 항목의 이름(사람·그룹 이름), `dn`(Distinguished Name)은 이들을 뿌리까지 이어 붙인 전체 경로다.
+
+리눅스의 표준 구현은 **OpenLDAP**, 데몬은 **`slapd`**(평문 389/tcp, TLS 전용 LDAPS 636/tcp)다. 서버 설정은 예전의 `/etc/openldap/slapd.conf`에서 지금은 동적 설정 디렉터리 `/etc/openldap/slapd.d/`(`cn=config`)로 옮겨졌고, 데이터는 **LDIF** 텍스트로 주고받는다(`slapcat`·`slapadd`, `ldapsearch`·`ldapadd`·`ldappasswd`).
+
+```bash
+ldapsearch -x -H ldap://ldap.example.com -b "dc=example,dc=com" "(uid=alice)"
+```
+
+> 💡 **개념**: 계정 통합에는 **두 축**이 다 필요하다. **"누구인가"(정보 조회)는 NSS**(`/etc/nsswitch.conf`의 `passwd:`/`shadow:`/`group:` 행에 `ldap` 또는 `sss` 추가)가, **"암호가 맞는가"(인증)는 PAM**(`pam_ldap.so`/`pam_sss.so`)이 담당한다. `getent passwd alice`로는 보이는데 로그인이 안 되면 NSS만 붙고 PAM이 빠진 것이다. 요즘은 둘을 묶고 캐시까지 해 주는 **SSSD**(`/etc/sssd/sssd.conf`)가 표준이다.
+
+> ⚠️ **함정**: `nsswitch.conf`는 **먼저 적힌 쪽을 먼저 조회**하므로 `files`를 앞에 두어야 LDAP 서버가 죽어도 로컬 계정으로 들어갈 수 있다. 순서를 뒤집으면 서버 장애 시 아무도 로그인하지 못한다. 또 LDAP은 기본이 **평문**이라 StartTLS나 LDAPS(636)를 반드시 켜야 한다.
+
 ## 한 장 요약 — 명령과 필드의 대응
 
 | 명령 | 주 역할 | 핵심 옵션 |
@@ -184,6 +245,8 @@ groups                             # 내가 sudo/wheel 그룹에 속했는지
 | chage | 수명 정책 | -M -m -W -E -d |
 | groupadd/gpasswd | 그룹·멤버 | -a -d -A |
 | su / sudo | 권한 전환/위임 | su -(로그인셸) / sudo -l |
+| PAM | 인증 모듈 스택 | /etc/pam.d/, required·requisite·sufficient·optional |
+| LDAP | 계정 중앙화 | slapd(389/636), DN·ou·dc, nsswitch.conf + sssd |
 
 `su`는 대상 암호로 "되기", `sudo`는 자기 암호로 "빌리기". 이 한 문장이 권한 상승의 핵심이다.
 
