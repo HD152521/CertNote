@@ -109,9 +109,90 @@ ls /etc/udev/rules.d/                # udev 규칙
 
 > 📚 **유래/사례**: CUPS는 1999년 Michael Sweet가 개발했고 2007년 애플이 인수해 macOS의 인쇄 시스템으로도 쓴다. 그가 IPP를 표준으로 택한 덕에, 같은 명령과 프로토콜로 로컬 USB 프린터부터 네트워크 프린터까지 일관되게 다룰 수 있게 됐다. `lp`/`lpr` 두 계열을 모두 지원한 것도 기존 유닉스 사용자의 습관을 깨지 않으려는 배려였다 — 그래서 오늘날까지 두 명령군이 공존한다.
 
+## 사운드 장치 — ALSA와 PulseAudio
+
+사운드 카드 역시 장치 파일로 표현된다. 다만 `/dev` 바로 아래가 아니라 **`/dev/snd/`** 디렉터리에 `pcmC0D0p`(카드0·장치0·재생), `controlC0`(제어) 같은 이름으로 모여 있다. 리눅스의 소리는 **2층 구조**로 처리된다 — 커널의 **ALSA**가 하드웨어를 직접 다루고, 그 위에서 **사운드 서버**가 여러 프로그램의 소리를 섞는다.
+
+| 계층 | 구성 | 역할 |
+|------|------|------|
+| 커널 | **ALSA** 드라이버(`snd_*` 모듈) | 사운드 카드 제어, `/dev/snd/*` 장치 파일 제공 |
+| 사용자 공간 도구 | alsa-lib, alsa-utils(`aplay`·`amixer`·`alsamixer`) | 재생·녹음·볼륨 조절 |
+| 사운드 서버 | **PulseAudio** / PipeWire | 여러 앱의 소리 믹싱, 출력 장치 전환, 네트워크 전송 |
+
+```bash
+lsmod | grep snd            # 적재된 사운드 모듈(snd_hda_intel 등)
+cat /proc/asound/cards      # 커널이 인식한 사운드 카드 목록
+aplay -l                    # 재생(playback) 장치 목록
+arecord -l                  # 녹음(capture) 장치 목록
+aplay sample.wav            # WAV 파일 재생
+arecord -d 5 test.wav       # 5초간 녹음
+speaker-test -c 2           # 스피커 점검(2채널)
+alsamixer                   # 텍스트 UI 믹서(화살표=볼륨, M=음소거)
+amixer                      # 명령행 믹서(현재 설정 출력)
+amixer set Master 50%       # 마스터 볼륨 50%
+amixer set Master mute      # 음소거(해제는 unmute)
+alsactl store               # 현재 믹서 설정 저장(복원은 alsactl restore)
+```
+
+| 명령 | 용도 |
+|------|------|
+| `aplay` / `arecord` | 재생 / 녹음 (`-l`로 장치 목록 조회) |
+| `alsamixer` | **텍스트 UI**(대화형) 믹서 |
+| `amixer` | **명령행**(비대화형) 믹서 — 스크립트용 |
+| `alsactl` | 믹서 설정 저장(`store`)·복원(`restore`) |
+| `speaker-test` | 스피커 출력 점검 |
+
+> 💡 **개념**: **ALSA**(Advanced Linux Sound Architecture)는 커널 2.6부터 리눅스의 표준 사운드 시스템이다. 그 이전에는 **OSS**(Open Sound System)가 `/dev/dsp`(재생·녹음), `/dev/mixer`(볼륨) 장치 파일로 소리를 다뤘는데, 다중 채널·하드웨어 믹싱·MIDI 지원이 약해 ALSA로 대체됐다. "구형 OSS(`/dev/dsp`) → 현재 ALSA(`/dev/snd/`)"라는 세대 교체를 묻는 문제가 나온다.
+
+> ⚠️ **함정**: **`alsamixer`와 `amixer`**를 혼동하면 안 된다. `alsamixer`는 ncurses 기반 **화면 UI**로 화살표 키를 눌러 조절하는 대화형 도구이고, `amixer`는 인자로 값을 주는 **명령행 도구**라 스크립트·원격 작업에 쓴다. 실기에서 "볼륨을 명령 한 줄로 50%로 맞춰라"면 답은 `amixer set Master 50%`다. 또 `aplay -l`(소문자, 하드웨어 장치 목록)과 `aplay -L`(대문자, PCM 이름 목록)도 구분한다.
+
+> 🔍 **더 깊이**: **PulseAudio**는 ALSA 위에서 도는 **사용자 공간 사운드 서버**다. ALSA만으로는 한 장치를 한 프로그램이 점유하기 쉬운데, PulseAudio가 중간에서 여러 앱의 소리를 섞고 출력 장치를 실시간으로 바꿔 준다. 제어는 `pactl list short sinks`(출력 장치 목록), `pactl set-sink-volume @DEFAULT_SINK@ 50%`(볼륨), `pavucontrol`(GUI)로 한다. 최근 배포판은 PulseAudio 호환 계층을 갖춘 **PipeWire**로 넘어가는 추세다. 일반 사용자가 사운드 장치를 쓰려면 보통 `audio` 그룹에 속해야 하며, 그 권한을 부여하는 것이 앞서 본 udev 규칙이다.
+
+## 스캐너 — SANE
+
+스캐너는 **SANE**(Scanner Access Now Easy)이 표준을 맡는다. CUPS가 프린터에서 하는 역할을 스캐너에서 하는 셈이며, 구조도 닮았다 — 모델별 드라이버인 **백엔드**와 사용자가 쓰는 **프론트엔드**로 나뉜다.
+
+| 구성 | 설명 |
+|------|------|
+| **백엔드(backend)** | 스캐너 모델별 드라이버. 설정은 `/etc/sane.d/*.conf`, 활성 목록은 `dll.conf` |
+| **프론트엔드(frontend)** | 사용자 도구. `scanimage`(명령행), `xsane`·`simple-scan`(GUI) |
+| **saned** | 네트워크 스캐닝 데몬(스캐너를 다른 PC와 공유) |
+
+```bash
+sane-find-scanner            # USB/SCSI 버스를 훑어 스캐너 하드웨어 탐색
+scanimage -L                 # SANE이 인식한(드라이버가 붙은) 스캐너 목록
+scanimage > out.pnm          # 기본 설정으로 스캔해 파일로 저장
+scanimage --format=tiff --resolution 300 > out.tiff   # 형식·해상도 지정
+scanimage -d 'epson2:libusb:001:002' > out.pnm        # 장치 지정(-d)
+ls /etc/sane.d/              # 백엔드 설정 파일들(dll.conf 포함)
+```
+
+> ⚠️ **함정**: **`sane-find-scanner`와 `scanimage -L`은 보는 층이 다르다.** 전자는 USB/SCSI **버스를 직접 훑어** 스캐너처럼 보이는 하드웨어를 찾으므로 드라이버가 없어도 나타난다. 후자는 **SANE 백엔드가 실제로 인식한** 장치만 보여준다. 그래서 "`sane-find-scanner`에는 보이는데 `scanimage -L`에는 안 나온다"면 원인은 케이블이 아니라 **백엔드 미지원 또는 `dll.conf`에서 비활성**이다. 이 진단 흐름이 실기 서술형 소재가 된다.
+
+> 💡 **개념**: 프린터와 스캐너는 구조가 대칭이라 묶어서 외우면 좋다. 인쇄는 **CUPS**(데몬 `cupsd`, 명령 `lp`/`lpr`, 설정 `/etc/cups/`), 스캔은 **SANE**(데몬 `saned`, 명령 `scanimage`, 설정 `/etc/sane.d/`)이 담당한다. 둘 다 표준 인터페이스 뒤에 모델별 드라이버를 감춰, 사용자는 장치가 무엇이든 같은 명령을 쓴다. 스캐너 접근 권한은 배포판에 따라 `scanner` 그룹으로 관리되며 udev 규칙이 이를 부여한다.
+
+패키지 이름은 계열마다 다르다.
+
+```bash
+dnf install alsa-utils sane-backends     # RHEL/CentOS/Rocky 계열
+apt install alsa-utils sane-utils        # Debian/Ubuntu 계열
+```
+
+```bash
+# 직접 쳐보기 — 사운드·스캐너 관찰 (안전: 조회 위주)
+ls /dev/snd/ 2>/dev/null                # 사운드 장치 파일
+cat /proc/asound/cards 2>/dev/null      # 인식된 사운드 카드
+aplay -l 2>/dev/null || echo "ALSA 미설치"
+amixer 2>/dev/null | head               # 현재 믹서 설정
+scanimage -L 2>/dev/null || echo "SANE 미설치"
+ls /etc/sane.d/ 2>/dev/null             # 백엔드 설정
+```
+
 ## 마무리
 
 "모든 것은 파일"이라는 철학 아래, 하드웨어는 `/dev`의 장치 파일로 표현된다. 첫 글자가 `b`면 블록 장치(디스크·USB, 블록 단위 임의 접근, 마운트 가능), `c`면 문자 장치(터미널·키보드, 바이트 순차)다. 크기 자리의 주 번호(드라이버)·부 번호(장치 순번)가 "어느 드라이버의 몇 번째 장치"를 가리킨다. `udev`는 장치 착탈에 맞춰 장치 파일을 동적으로 만들고 규칙으로 지속적 이름을 부여한다. 인쇄는 CUPS가 담당하며 명령이 두 계열로 갈린다 — System V(`lp`/`lpstat`/`cancel`, `-d`)와 BSD(`lpr`/`lpq`/`lprm`, `-P`). 이 계열 구분과 b/c 구분이 실기의 핵심이다.
+
+멀티미디어·이미지 입력 장치도 같은 틀로 정리된다. 소리는 커널의 **ALSA**(`/dev/snd/`, `snd_*` 모듈)가 하드웨어를 잡고 `aplay`·`arecord`로 재생·녹음하며, 볼륨은 대화형 `alsamixer`와 명령행 `amixer`로 조절하고 `alsactl store`로 보존한다. 그 위의 **PulseAudio**(→PipeWire)가 여러 앱의 소리를 섞는다. 스캐너는 **SANE**이 백엔드(드라이버)와 프론트엔드(`scanimage`·`xsane`)로 나뉘어 처리하며, 하드웨어 탐색은 `sane-find-scanner`, 인식된 장치 목록은 `scanimage -L`로 확인한다 — 인쇄의 CUPS와 스캔의 SANE을 대칭으로 묶어 외우면 헷갈리지 않는다.
 
 ## 📝 연습 문제
 
