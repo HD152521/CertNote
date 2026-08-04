@@ -1,12 +1,17 @@
 # Day 3 - 시스템 초기화: init·런레벨에서 systemd·target까지
 
-PID 1번 프로세스는 시스템 전체의 시작점이자 모든 프로세스의 조상이다. 어제 우리는 그 1번이 고아를 입양한다는 것을 배웠다. 오늘은 그 1번이 부팅 직후 **무슨 순서로 시스템을 깨우는지**, 그 초기화(initialization) 체계를 다룬다.
+## 📌 핵심 정리
 
-리눅스 부팅 관리에는 두 세대가 있다. 전통적인 **SysV init**(런레벨 기반)과, 현대 대부분의 배포판이 채택한 **systemd**(target·unit 기반)다. 리눅스마스터 1급은 두 체계를 모두 묻는다 — 특히 옛 **런레벨 숫자**와 새 **target**이 어떻게 대응되는지, 그리고 `systemctl`·`journalctl`·unit 파일의 사용법이 핵심이다.
+- 부팅 관리에는 두 세대가 있다 — 전통 **SysV init**(런레벨 기반)과 현대 **systemd**(unit·target 기반). 1급은 둘 다 묻는다.
+- 런레벨: **0 종료 / 1 단일 사용자(복구) / 3 텍스트+네트워크 / 5 GUI / 6 재부팅.** **0과 6은 절대 기본값으로 두면 안 된다.**
+- target 대응: **2·3·4 → multi-user.target**, **5 → graphical.target**, 1 → rescue, 0 → poweroff, 6 → reboot.
+- `systemctl`에서 **start(지금 한 번)와 enable(부팅마다 자동)은 다르다.** 둘 다 하려면 `enable --now`.
+- unit 파일은 `[Unit]`·`[Service]`·`[Install]` 구조. `/etc/systemd/system`이 `/usr/lib/systemd/system`보다 우선하며, **수정 후 `daemon-reload`가 필수**다. 로그는 `journalctl -u 서비스 -f`.
 
 ## SysV init과 런레벨
 
-전통적 부팅에서는 PID 1번 `init`이 `/etc/inittab` 파일을 읽어 시스템을 어느 **런레벨(runlevel)**로 띄울지 결정했다. 런레벨은 "시스템이 제공하는 서비스의 묶음 상태"를 숫자 0~6으로 나눈 것이다.
+- 전통적 부팅에서는 PID 1번 `init`이 **`/etc/inittab`**을 읽어 시스템을 어느 **런레벨(runlevel)**로 띄울지 결정했다.
+- 런레벨 = "시스템이 제공하는 서비스의 묶음 상태"를 숫자 **0~6**으로 나눈 것.
 
 | 런레벨 | 의미 | 설명 |
 |--------|------|------|
@@ -32,9 +37,10 @@ telinit 5            # init과 동일하게 런레벨 전환
 
 ## systemd의 등장과 target
 
-systemd는 init의 한계(순차적 느린 부팅, 의존성 관리 부족)를 극복하려 등장했다. 서비스를 **병렬로** 띄우고, 의존성을 명시적으로 관리하며, 모든 것을 **unit**이라는 단위로 통일했다. 현대의 RHEL 7+, CentOS 7+, Ubuntu 16.04+, Fedora 등이 모두 systemd를 쓴다.
-
-systemd에서는 런레벨 대신 **target**을 쓴다. 옛 런레벨과의 대응을 외워야 한다.
+- systemd는 init의 한계(**순차적 느린 부팅, 의존성 관리 부족**)를 극복하려 등장했다.
+- 특징: 서비스를 **병렬로** 띄우고, 의존성을 명시적으로 관리하며, 모든 것을 **unit**이라는 단위로 통일했다.
+- 채택 배포판: RHEL 7+, CentOS 7+, Ubuntu 16.04+, Fedora 등 현대 배포판 전부.
+- systemd는 런레벨 대신 **target**을 쓴다. 옛 런레벨과의 대응을 외워야 한다.
 
 | 런레벨 | systemd target | 의미 |
 |--------|----------------|------|
@@ -62,7 +68,7 @@ systemctl poweroff                         # 종료
 
 ## systemctl — 서비스 제어의 만능 도구
 
-systemd 환경에서 서비스(데몬)를 다루는 단일 명령이 `systemctl`이다. 옛 `service`·`chkconfig`를 모두 대체한다.
+- systemd 환경에서 서비스(데몬)를 다루는 **단일 명령이 `systemctl`**이다. 옛 `service`·`chkconfig`를 모두 대체한다.
 
 | 명령 | 동작 | 옛 SysV 대응 |
 |------|------|-------------|
@@ -90,7 +96,7 @@ systemctl is-active sshd      # 동작 중이면 active 출력
 
 ## unit 파일 — 서비스의 설계도
 
-systemd가 관리하는 모든 대상은 **unit**이다. unit에는 여러 종류가 있고, 파일 확장자로 구분된다.
+- systemd가 관리하는 모든 대상은 **unit**이며, 종류는 **파일 확장자로 구분**된다.
 
 | unit 종류 | 확장자 | 대상 |
 |-----------|--------|------|
@@ -101,9 +107,11 @@ systemd가 관리하는 모든 대상은 **unit**이다. unit에는 여러 종�
 | timer | `.timer` | 예약 실행(cron 대체) |
 | device | `.device` | 장치 |
 
-unit 파일은 두 곳에 있다. 패키지가 제공하는 원본은 `/usr/lib/systemd/system/`(또는 `/lib/systemd/system/`)에, 관리자가 수정·추가한 것은 `/etc/systemd/system/`에 둔다. **`/etc`의 것이 `/usr/lib`의 것보다 우선**한다.
-
-서비스 unit 파일의 기본 구조는 세 섹션으로 이루어진다.
+- unit 파일 위치는 두 곳이다.
+  - 패키지가 제공하는 원본 → `/usr/lib/systemd/system/`(또는 `/lib/systemd/system/`)
+  - 관리자가 수정·추가한 것 → `/etc/systemd/system/`
+- **`/etc`의 것이 `/usr/lib`의 것보다 우선**한다.
+- 서비스 unit 파일의 기본 구조는 세 섹션이다.
 
 ```ini
 [Unit]
@@ -119,7 +127,7 @@ User=myuser
 WantedBy=multi-user.target    # enable 시 어느 target에 연결할지
 ```
 
-unit 파일을 새로 만들거나 고친 뒤에는 systemd가 변경을 인식하도록 다시 읽혀야 한다.
+- unit 파일을 새로 만들거나 고친 뒤에는 **systemd가 변경을 인식하도록 다시 읽혀야** 한다.
 
 ```bash
 systemctl daemon-reload       # unit 파일 변경 후 반드시 실행
@@ -133,7 +141,8 @@ systemctl enable myapp        # WantedBy의 target에 자동 시작 등록
 
 ## journalctl — systemd의 통합 로그
 
-systemd는 모든 서비스의 로그를 **journal**이라는 바이너리 형식으로 모아 관리한다. 이것을 조회하는 도구가 `journalctl`이다. 옛날의 `/var/log/messages` 텍스트 로그를 보완(또는 대체)한다.
+- systemd는 모든 서비스의 로그를 **journal**이라는 바이너리 형식으로 모아 관리한다.
+- 이것을 조회하는 도구가 **`journalctl`**이며, 옛날의 `/var/log/messages` 텍스트 로그를 보완(또는 대체)한다.
 
 ```bash
 journalctl                    # 전체 로그(오래된 것부터)
@@ -158,9 +167,18 @@ journalctl -k                 # 커널 메시지(dmesg 격)
 
 > 🔍 **직접 쳐보기**: `journalctl -b -p err`로 이번 부팅에서 발생한 에러만 추려 보자. 시스템에 문제가 있었다면 빨갛게 표시된다. 이어 `journalctl -u sshd --since "today"`로 오늘 SSH 관련 로그만 좁혀 보면, 필터 조합의 위력을 체감할 수 있다.
 
-## 오늘의 정리
+## 📖 용어
 
-전통 init은 `/etc/inittab`을 읽어 런레벨(0~6)로 시스템을 띄웠다 — 0 종료, 1 단일 사용자, 3 텍스트, 5 GUI, 6 재부팅(0·6은 기본값 금지). 현대 systemd는 target으로 대체했고, 2·3·4는 multi-user.target, 5는 graphical.target에 대응한다. 서비스는 `systemctl`로 다루며 start(지금)·enable(부팅 자동)을 구분한다. unit 파일은 `[Unit]`·`[Service]`·`[Install]` 구조로 `/etc/systemd/system`(우선)·`/usr/lib/systemd/system`에 두고, 수정 후 `daemon-reload`가 필수다. 로그는 `journalctl -u -f`로 본다.
+- **런레벨(runlevel)** : SysV init이 쓰던 0~6 숫자 상태. 어떤 서비스 묶음까지 띄울지를 나타낸다.
+- **`/etc/inittab`** : 전통 init이 읽어 기본 런레벨을 결정하던 설정 파일.
+- **단일 사용자 모드(런레벨 1 / rescue.target)** : root만 들어가는 복구·점검용 모드. 네트워크가 없다.
+- **target** : systemd에서 런레벨을 대체하는 "상태 묶음" unit. multi-user는 텍스트, graphical은 GUI.
+- **unit** : systemd가 관리하는 모든 대상의 단위. 확장자로 service·target·socket·mount·timer·device를 구분한다.
+- **`systemctl start` vs `enable`** : 지금 한 번 켜기 vs 부팅할 때마다 자동으로 켜지게 등록하기. 별개 개념이다.
+- **`systemctl isolate`** : 지금 즉시 다른 target으로 전환. 옛 `init N`에 해당한다.
+- **`daemon-reload`** : 디스크의 unit 파일을 systemd가 다시 읽게 하는 명령. 캐시 때문에 수정 후 필수다.
+- **`WantedBy=`** : `[Install]` 섹션 지시어. enable 시 어느 target의 `.wants/`에 링크를 걸지 정한다.
+- **journal** : systemd가 모든 서비스 로그를 모아 두는 바이너리 저장소. `journalctl`로 조회한다.
 
 ## 📝 연습 문제
 

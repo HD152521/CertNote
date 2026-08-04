@@ -1,12 +1,17 @@
 # Day 2 - 네트워크 설정: 인터페이스·게이트웨이·DNS를 손으로 잡기
 
-어제(Day 1) IP 주소와 서브넷이라는 좌표계를 세웠다. 오늘은 그 좌표를 **실제 리눅스 인터페이스에 설정**한다. IP를 부여하고, 게이트웨이로 외부와 연결하고, DNS로 이름을 풀고, hosts 파일로 정적 매핑을 거는 일 — 한 호스트가 네트워크에 살아 있으려면 반드시 갖춰야 할 네 가지다.
+## 📌 핵심 정리
 
-오늘 핵심 통찰: **리눅스 네트워크 설정은 "주소(IP) · 경로(게이트웨이/라우팅) · 이름(DNS/hosts)" 세 축으로 구성된다.** 그리고 이걸 다루는 도구는 시대에 따라 갈린다 — 구식(`ifconfig`/`route`)과 현대식(`ip`/`nmcli`). 시험은 둘 다 묻는다. 명령마다 "임시 설정"인지 "영구 설정"인지를 구분하는 게 합격의 갈림길이다.
+- 네트워크 설정은 세 축이다 — **주소(`ip addr`/IPADDR) · 경로(`ip route`/GATEWAY) · 이름(resolv.conf/hosts).**
+- 도구는 세대로 갈린다: **구식 `ifconfig`·`route`·`arp`** ↔ **현대 `ip`(iproute2)·`nmcli`**. 시험은 1:1 대응표를 묻는다.
+- **최대 함정은 임시 vs 영구.** `ip addr add`·`ifconfig`·resolv.conf 직접 수정은 **임시(또는 덮어쓰기 위험)**, `ifcfg` 파일·`nmcli con mod`는 **영구**다.
+- `ifcfg-eth0`에서 **`ONBOOT=no`면 IP가 다 맞아도 부팅 시 인터페이스가 안 올라온다.** `BOOTPROTO`는 static/dhcp를 가른다.
+- 이름 해석은 `/etc/nsswitch.conf`의 `hosts: files dns` 순서 — **`/etc/hosts`가 DNS보다 먼저** 매칭된다.
 
 ## ip 명령 — 현대 리눅스 네트워크의 표준 도구
 
-과거의 `ifconfig`, `route`, `arp`를 통합해 대체한 것이 `ip` 명령(iproute2 패키지)이다. 현재 모든 주요 배포판의 표준이다.
+- 과거의 `ifconfig`, `route`, `arp`를 **통합해 대체한 것이 `ip` 명령**(iproute2 패키지)이다.
+- 현재 모든 주요 배포판의 표준 도구다.
 
 ```bash
 # 인터페이스와 IP 주소 확인
@@ -34,7 +39,8 @@ ip route show         # 줄여서 ip r
 
 ## ifconfig·route — 알아둬야 할 구식 명령
 
-`net-tools` 패키지의 구식 명령으로, 최신 배포판은 기본 미설치인 경우도 많지만 시험과 레거시 시스템에서 여전히 등장한다.
+- `net-tools` 패키지의 구식 명령들이다. 최신 배포판은 **기본 미설치**인 경우가 많다.
+- 그래도 시험과 레거시 시스템에서 여전히 등장하므로 대응표를 통째로 외우는 게 효율적이다.
 
 | 작업 | 구식(net-tools) | 현대(iproute2) |
 |------|-----------------|----------------|
@@ -57,7 +63,8 @@ ip route add default via 192.168.1.1 dev eth0
 
 ## nmcli — NetworkManager 명령행 제어
 
-Red Hat 계열(RHEL/CentOS/Rocky)과 최신 배포판은 **NetworkManager**가 네트워크를 관리한다. 이를 명령행에서 제어하는 도구가 `nmcli`다. nmcli로 한 설정은 **영구적**으로 저장된다.
+- Red Hat 계열(RHEL/CentOS/Rocky)과 최신 배포판은 **NetworkManager**가 네트워크를 관리한다.
+- 이를 명령행에서 제어하는 도구가 **`nmcli`**이며, nmcli로 한 설정은 **영구적으로 저장**된다.
 
 ```bash
 # 연결(connection)과 장치(device) 상태 확인
@@ -79,7 +86,7 @@ nmcli con mod eth0 ipv4.method auto
 
 ## 설정 파일 — /etc/sysconfig/network-scripts
 
-Red Hat 계열의 전통적 영구 네트워크 설정은 `/etc/sysconfig/network-scripts/ifcfg-<인터페이스>` 파일에 들어간다.
+- Red Hat 계열의 전통적 영구 네트워크 설정은 **`/etc/sysconfig/network-scripts/ifcfg-<인터페이스>`** 파일에 들어간다.
 
 ```bash
 # /etc/sysconfig/network-scripts/ifcfg-eth0 예시 (정적 IP)
@@ -108,7 +115,9 @@ DNS2=8.8.4.4
 
 ## 게이트웨이와 라우팅 — 외부로 나가는 길
 
-같은 네트워크(서브넷) 안의 호스트끼리는 직접 통신하지만, **다른 네트워크로 가려면 게이트웨이(라우터)를 거쳐야 한다.** 라우팅 테이블이 "어느 목적지로 가려면 어느 길로 보낼지"를 정한다.
+- 같은 네트워크(서브넷) 안의 호스트끼리는 **직접 통신**한다.
+- **다른 네트워크로 가려면 게이트웨이(라우터)를 거쳐야 한다.**
+- **라우팅 테이블**이 "어느 목적지로 가려면 어느 길로 보낼지"를 정한다.
 
 ```bash
 # 라우팅 테이블 확인
@@ -130,7 +139,7 @@ ip route del 10.0.0.0/24
 
 ## DNS 설정 — /etc/resolv.conf
 
-이름(도메인)을 IP로 바꾸는 DNS 질의를 어느 서버에 보낼지 지정하는 파일이 `/etc/resolv.conf`다.
+- 이름(도메인)을 IP로 바꾸는 **DNS 질의를 어느 서버에 보낼지** 지정하는 파일이 `/etc/resolv.conf`다.
 
 ```bash
 # /etc/resolv.conf 예시
@@ -149,7 +158,7 @@ search example.com        # 도메인 자동 보완 (호스트명만 입력 시 
 
 ## /etc/hosts — DNS보다 먼저 보는 정적 매핑
 
-DNS 질의 전에 시스템이 먼저 참조하는 정적 호스트명-IP 매핑 파일이 `/etc/hosts`다.
+- DNS 질의 전에 시스템이 **먼저 참조하는 정적 호스트명-IP 매핑 파일**이 `/etc/hosts`다.
 
 ```bash
 # /etc/hosts 예시
@@ -158,7 +167,7 @@ DNS 질의 전에 시스템이 먼저 참조하는 정적 호스트명-IP 매핑
 192.168.1.50  webserver.local webserver
 ```
 
-이름 해석 순서(어느 것을 먼저 볼지)는 `/etc/nsswitch.conf`의 `hosts:` 줄로 정한다.
+- 이름 해석 순서(어느 것을 먼저 볼지)는 **`/etc/nsswitch.conf`의 `hosts:` 줄**로 정한다.
 
 ```bash
 # /etc/nsswitch.conf
@@ -186,11 +195,25 @@ ping -c 3 192.168.1.1
 ping -c 3 google.com
 ```
 
-이 5단계를 순서대로 밟으면 "IP→경로→이름" 축을 따라 어디서 막혔는지 즉시 좁혀진다. ping이 IP로는 되는데 도메인으로 안 되면 DNS 문제, 게이트웨이까지도 안 되면 IP/경로 문제다.
+- 이 5단계를 순서대로 밟으면 **"IP → 경로 → 이름"** 축을 따라 어디서 막혔는지 즉시 좁혀진다.
+- ping이 **IP로는 되는데 도메인으로 안 되면 DNS 문제**, **게이트웨이까지도 안 되면 IP/경로 문제**다.
 
-## 마무리 — 세 축과 임시/영구의 구분
+내일(Day 3)은 이 설정이 제대로 동작하는지 검사하는 진단 명령들을 다룬다.
 
-오늘 한 호스트를 네트워크에 살리는 세 축 — **주소(ip addr/IPADDR), 경로(ip route/GATEWAY), 이름(resolv.conf/hosts)** — 을 손으로 설정했다. 가장 중요한 시험 포인트는 **임시 vs 영구**의 구분이다: `ip addr add`·`ifconfig`·resolv.conf 직접 수정은 임시(또는 덮어쓰기 위험), `ifcfg` 파일·`nmcli con mod`는 영구다. 내일(Day 3)은 이 설정이 제대로 동작하는지 검사하는 진단 명령들을 다룬다.
+## 📖 용어
+
+- **iproute2 / `ip` 명령** : `ifconfig`·`route`·`arp`를 통합한 현대 표준 도구. 객체(addr·link·route·neigh) + 동작(show·add·del·set) 문법을 쓴다.
+- **임시 설정 vs 영구 설정** : 재부팅하면 사라지는 설정(`ip addr add`, `ifconfig`) vs 파일에 기록되어 유지되는 설정(`ifcfg`, `nmcli con mod`).
+- **NetworkManager / `nmcli`** : 네트워크를 관리하는 데몬과 그 명령행 도구. nmcli 설정은 파일에 저장되어 영구 반영된다.
+- **connection vs device** : nmcli가 구분하는 "설정 프로파일"과 "물리 장치". `con mod`로 고치고 `con up`으로 적용한다.
+- **`ipv4.method manual / auto`** : nmcli에서 정적 IP를 쓸지 DHCP를 쓸지 정하는 값.
+- **`BOOTPROTO`** : ifcfg 파일에서 static(정적)인지 dhcp(자동)인지를 정하는 항목.
+- **`ONBOOT`** : 부팅 시 인터페이스를 자동으로 올릴지 정하는 항목. `no`면 설정이 맞아도 네트워크가 안 된다.
+- **기본 게이트웨이 / default 경로** : "그 외 모든 목적지"를 처리하는 출구. 없으면 내부 통신은 되고 인터넷만 안 된다.
+- **정적 경로(static route)** : 특정 목적지 네트워크만 지정한 게이트웨이로 보내는 규칙. `ip route add 망 via 게이트웨이`.
+- **`/etc/resolv.conf`** : DNS 질의를 보낼 서버를 적는 파일. NetworkManager 환경에서는 직접 고쳐도 덮어쓰인다.
+- **`search` 지시어** : 호스트명만 입력했을 때 뒤에 자동으로 붙일 도메인.
+- **`/etc/nsswitch.conf`** : 이름을 어디서 먼저 찾을지 순서를 정하는 파일. `hosts: files dns`면 hosts가 우선이다.
 
 ## 📝 연습 문제
 

@@ -1,8 +1,12 @@
 # Day 5 - Week 9 종합 복습: 이름·주소·시간·웹을 한 장으로
 
-이번 주는 리눅스 **네트워크 서비스**의 5대 기둥을 세웠다. Day 1에서 이름을 주소로 바꾸는 DNS와 BIND를, Day 2에서 주소를 나눠 주는 DHCP와 시간을 맞추는 NTP/chrony를, Day 3에서 콘텐츠를 서비스하는 Apache를, Day 4에서 이벤트 기반 웹 서버 Nginx와 리버스 프록시를 다뤘다. 오늘은 이 다섯 조각을 하나의 그림으로 잇고, 각 서비스의 핵심 설정 파일과 지시어를 표 한 장으로 압축한 뒤, 실기 단골 함정을 복습하고 종합 문제로 점검한다.
+## 📌 핵심 정리
 
-핵심 통찰 하나만 가져가자: **모든 네트워크 서비스는 "설정 파일 어디에, 어떤 지시어로, 무엇을 선언하는가"로 환원된다.** DNS는 zone 파일에 레코드를, DHCP는 dhcpd.conf에 임대 풀을, NTP는 chrony.conf에 시간 소스를, 웹 서버는 httpd.conf/nginx.conf에 문서 루트와 가상 호스트를 선언한다. 이 매핑만 잡으면 어떤 변형 문제도 풀린다.
+- 모든 네트워크 서비스는 **"설정 파일 어디에, 어떤 지시어로, 무엇을 선언하는가"**로 환원된다.
+- 서비스마다 명령만 다를 뿐 리듬은 같다 — **설치 → 설정 → 문법 검사 → 시작/재적용 → 상태 확인**.
+- 포트 즉답: **DNS 53 · DHCP 67/68 · NTP 123 · HTTP 80 · HTTPS 443.** 데몬은 bind→named, dhcp→dhcpd, chrony→chronyd, httpd, nginx.
+- 검사 명령 즉답: **`named-checkconf`(DNS) · `httpd -t`(Apache) · `nginx -t`(Nginx)**.
+- 단골 함정 셋: zone 수정 시 **Serial 증가 필수**, **169.254는 DHCP 실패 신호**, **stratum 0은 기준 시계·16이 미동기**.
 
 ## 5대 서비스 한 표로 — 패키지·데몬·설정·포트
 
@@ -15,6 +19,7 @@
 | Nginx | nginx | nginx | /etc/nginx/nginx.conf | 80/443 |
 
 기억 고정 포인트:
+
 - **포트 번호 즉답**: DNS 53, DHCP 67/68, NTP 123, HTTP 80, HTTPS 443.
 - RHEL 계열에서 Apache의 패키지·데몬은 모두 `httpd`, DNS는 `named`(패키지는 bind).
 - 설정 변경 후 검사 도구: `named-checkconf`(DNS), `httpd -t`(Apache), `nginx -t`(Nginx).
@@ -32,13 +37,14 @@
 | PTR | IP→이름(역방향, in-addr.arpa) |
 | SOA | 영역 권한 시작·갱신 시계(영역당 1개) |
 
-SOA 5타이머 순서: **Serial(일련번호) → Refresh(확인 주기) → Retry(재시도) → Expire(폐기 한계) → Minimum(음수 캐시)**.
+- SOA 5타이머 순서: **Serial(일련번호) → Refresh(확인 주기) → Retry(재시도) → Expire(폐기 한계) → Minimum(음수 캐시)**.
 
 > ⚠️ **함정 복습**: zone 파일에서 이름이 점으로 끝나지 않으면 영역 이름(origin)이 자동 부착된다 — CNAME·NS·MX 대상은 끝점(FQDN)을 붙여야 안전하다. zone을 수정하면 **Serial을 반드시 증가**시켜야 보조 서버가 변경을 받는다. 도메인 꼭대기(@)에는 CNAME을 둘 수 없다.
 
 ## DHCP·NTP 복습 — 주소와 시간
 
-DHCP 4단계는 **DORA**: Discover(탐색) → Offer(제안) → Request(수락) → Ack(확정). 첫 DISCOVER는 IP가 없어 브로드캐스트로 나가며, 라우터 너머는 **릴레이**가 필요하다.
+- DHCP 4단계는 **DORA** — Discover(탐색) → Offer(제안) → Request(수락) → Ack(확정).
+- 첫 DISCOVER는 IP가 없어 **브로드캐스트**로 나가며, 라우터 너머는 **릴레이**가 필요하다.
 
 | dhcpd.conf 지시어 | 역할 |
 |-------------------|------|
@@ -47,7 +53,9 @@ DHCP 4단계는 **DORA**: Discover(탐색) → Offer(제안) → Request(수락)
 | `option domain-name-servers` | DNS 서버 |
 | `hardware ethernet` + `fixed-address` | MAC 기반 고정 IP 예약 |
 
-NTP stratum은 **숫자가 작을수록 정확**(0=기준 시계, 1=1차 서버, 16=미동기). chrony는 `chrony.conf`의 `server`/`pool`로 소스를, `allow`로 클라이언트를 정하고, `chronyc sources`·`chronyc tracking`·`timedatectl`로 상태를 본다.
+- NTP stratum은 **숫자가 작을수록 정확**(0=기준 시계, 1=1차 서버, 16=미동기).
+- chrony는 `chrony.conf`의 **`server`/`pool`로 소스를, `allow`로 클라이언트 범위**를 정한다.
+- 상태는 `chronyc sources`·`chronyc tracking`·`timedatectl`로 본다.
 
 > ⚠️ **함정 복습**: DHCP 미동기 신호는 169.254.x.x(APIPA)다. NTP stratum 0은 미동기가 아니라 기준 시계 자체이며, 16이 미동기다. dhcpd.conf 고정 IP는 동적 `range` 밖에 두는 것이 안전하다.
 
@@ -64,7 +72,8 @@ NTP stratum은 **숫자가 작을수록 정확**(0=기준 시계, 1=1차 서버,
 | 문법 검사 | `httpd -t` | `nginx -t` |
 | 디렉터리 분산 설정 | `.htaccess` 지원 | 미지원(중앙 집중) |
 
-가상 호스트: **이름 기반**(Host 헤더로 구분, IP 1개로 다수 사이트) vs **IP 기반**(IP로 구분, 사이트마다 IP). HTTP/1.1의 Host 헤더 의무화로 이름 기반이 표준이 됐다.
+- 가상 호스트: **이름 기반**(Host 헤더로 구분, IP 1개로 다수 사이트) vs **IP 기반**(IP로 구분, 사이트마다 IP).
+- HTTP/1.1의 **Host 헤더 의무화**로 이름 기반이 표준이 됐다.
 
 > 🔍 **더 깊이**: Apache는 연결당 프로세스(prefork)로 안정적이나 메모리를 많이 쓰고, Nginx는 이벤트 기반 비동기로 동시 접속·정적 서빙에 강하다. 실무에서는 Nginx를 앞단(리버스 프록시·정적·TLS)에, Apache나 앱 서버를 뒤편에 두는 조합이 흔하다. 리버스 프록시는 `upstream`+`proxy_pass`로 구성하며, 정방향 프록시(클라이언트 대행)와 달리 서버 앞단에서 요청을 분배한다.
 
@@ -99,7 +108,7 @@ nginx -s reload                         # 무중단 재적용
 
 ## 통합 시나리오 — 한 요청의 여정
 
-사용자가 브라우저에 `www.example.com`을 친 뒤 페이지를 받기까지, 이번 주 서비스들이 어떻게 협력하는지 한 줄로 잇자.
+- 사용자가 `www.example.com`을 친 뒤 페이지를 받기까지, 이번 주 서비스들이 어떻게 협력하는지 한 줄로 이어 보자.
 
 ```
 1. (DHCP) PC가 부팅 시 IP·게이트웨이·DNS 서버를 임대받음 (DORA)
@@ -109,11 +118,24 @@ nginx -s reload                         # 무중단 재적용
 5. (Apache) 백엔드 Apache가 동적 콘텐츠를 생성해 응답
 ```
 
-이 다섯 단계가 매끄럽게 맞물려야 사용자는 페이지 하나를 본다. 어느 한 칸이 끊기면(DHCP 실패=IP 없음, DNS 실패=이름 못 풂, NTP 어긋남=인증서 오류, 웹 서버 다운=503) 전체가 멈춘다. 네트워크 서비스를 "사슬"로 이해하는 것이 이번 주의 결론이다.
+- 이 다섯 단계가 매끄럽게 맞물려야 사용자는 페이지 하나를 본다.
+- 어느 한 칸이 끊기면 전체가 멈춘다 — **DHCP 실패=IP 없음, DNS 실패=이름 못 풂, NTP 어긋남=인증서 오류, 웹 서버 다운=503**.
+- 네트워크 서비스를 **"사슬"**로 이해하는 것이 이번 주의 결론이다.
 
-## 마무리
+## 📖 용어
 
-Week 9는 리눅스가 네트워크 위에서 실제로 제공하는 서비스들을 한 줄에 꿰었다. **이름(DNS), 주소(DHCP), 시간(NTP), 콘텐츠(Apache·Nginx)** — 이 네 가지가 인터넷 서비스의 토대다. 각 서비스는 고유한 설정 파일과 지시어를 갖지만, "설치→설정→검사→시작→확인"이라는 같은 리듬으로 다룬다. DNS는 레코드와 SOA·끝점, DHCP는 DORA와 range·릴레이, NTP는 stratum과 chronyc, 웹 서버는 문서 루트·가상 호스트·리버스 프록시가 핵심이다. 포트 번호(53·67/68·123·80·443)와 검사 명령(named-checkconf·httpd -t·nginx -t)은 즉답할 수 있어야 한다. 아래 종합 문제로 이번 주를 단단히 마무리하자.
+- **zone 파일** : 한 도메인 영역의 레코드를 모아 둔 파일. SOA 하나로 시작한다.
+- **Serial** : 영역의 일련번호. 수정 후 이 값을 올려야 보조 서버가 변경을 받아 간다.
+- **끝점(trailing dot)** : zone 파일에서 이름 뒤의 점. 없으면 영역 이름이 자동으로 덧붙는다.
+- **DORA** : DHCP의 Discover → Offer → Request → Ack 4단계.
+- **DHCP 릴레이** : 브로드캐스트가 넘지 못하는 라우터 너머로 요청을 대신 전달하는 기능.
+- **`range` vs `fixed-address`** : 동적으로 나눠 줄 IP 풀 / 특정 MAC에 늘 같은 IP를 주는 예약.
+- **stratum** : 기준 시계로부터의 거리. 0은 시계 자체, 1이 1차 서버, 16은 미동기.
+- **`chronyc tracking`** : 현재 기준 서버·오프셋·stratum 등 동기화 품질을 보여 주는 명령.
+- **DocumentRoot / root** : URL 루트가 가리키는 실제 경로. Apache와 Nginx의 같은 개념, 다른 이름.
+- **가상 호스트** : 서버 한 대에서 여러 사이트를 나눠 서비스하는 설정. 이름 기반과 IP 기반이 있다.
+- **리버스 프록시** : 서버 앞단에서 외부 요청을 받아 내부 백엔드로 분배하는 중계. `upstream` + `proxy_pass`.
+- **`.htaccess`** : Apache가 디렉터리마다 두는 분산 설정 파일. Nginx는 지원하지 않는다.
 
 ## 📝 연습 문제
 

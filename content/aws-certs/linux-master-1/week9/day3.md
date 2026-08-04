@@ -1,12 +1,16 @@
 # Day 3 - Apache 웹 서버: httpd.conf와 가상 호스트의 모든 것
 
-웹 브라우저에 주소를 치면 어딘가의 서버가 그 요청을 받아 HTML을 돌려준다. 그 "어딘가의 서버" 소프트웨어 중 가장 오래되고 널리 쓰인 것이 **Apache HTTP Server**다. 한 대의 물리 서버에서 수십 개의 웹사이트를 동시에 서비스하고, 디렉터리별로 접근 권한을 다르게 주며, 모듈을 끼워 기능을 확장하는 이 유연함이 Apache를 25년 넘게 표준으로 만들었다. 오늘은 Apache의 설치와 디렉터리 구조, `httpd.conf`의 핵심 지시어, 그리고 한 서버에서 여러 사이트를 돌리는 **가상 호스트(Virtual Host)**의 이름 기반·IP 기반 방식을 정밀하게 익힌다.
+## 📌 핵심 정리
 
-핵심 통찰: **웹 서버 설정은 "어떤 요청을, 어느 파일로, 누구에게 보여 줄 것인가"를 지시어로 선언하는 일이다.** `DocumentRoot`가 파일의 위치를, `Directory` 블록이 접근 권한을, `VirtualHost`가 사이트별 분기를 정한다. 이 세 축만 잡으면 httpd.conf 전체가 읽힌다.
+- 웹 서버 설정은 **"어떤 요청을, 어느 파일로, 누구에게 보여 줄 것인가"**를 지시어로 선언하는 일이다.
+- 세 축만 잡으면 httpd.conf가 읽힌다 — **`DocumentRoot`(파일 위치) · `<Directory>`(접근 권한) · `<VirtualHost>`(사이트별 분기)**.
+- 가상 호스트는 **이름 기반**(Host 헤더로 구분, IP 하나로 다수 사이트)과 **IP 기반**(사이트마다 IP)으로 나뉜다. HTTP/1.1의 Host 헤더 의무화가 이름 기반을 표준으로 만들었다.
+- 보안 3종: **`User apache`로 권한 낮추기**, 운영에서 **`Options Indexes` 끄기**, Apache 2.4의 **`Require` 문법** 쓰기(2.2는 `Order`/`Allow`).
+- 설정을 고쳤으면 **반드시 `httpd -t`로 문법 검사 후 재시작**. 가상 호스트 목록은 `httpd -S`, 모듈은 `httpd -M`.
 
 ## Apache 설치와 디렉터리 구조
 
-RHEL/CentOS 계열에서 Apache의 패키지·데몬 이름은 모두 **httpd**다(데비안 계열은 `apache2`).
+- RHEL/CentOS 계열에서 Apache의 **패키지·데몬 이름은 모두 `httpd`**다(데비안 계열은 `apache2`).
 
 ```bash
 # 설치
@@ -37,7 +41,7 @@ httpd -S
 
 ## httpd.conf 핵심 지시어
 
-Apache 설정의 단위는 **지시어(Directive)**다. 실기에서 각 지시어의 역할을 단답으로 묻는다.
+- Apache 설정의 단위는 **지시어(Directive)**다. 실기에서 각 지시어의 역할을 단답으로 묻는다.
 
 ```apache
 ServerRoot "/etc/httpd"          # Apache 설치 기준 디렉터리
@@ -69,7 +73,7 @@ LogLevel warn                    # 로그 기록 수준
 
 ## Directory 블록 — 디렉터리별 접근 제어
 
-특정 디렉터리에 대한 권한·옵션은 `<Directory>` 블록으로 지정한다.
+- 특정 디렉터리에 대한 권한·옵션은 **`<Directory>` 블록**으로 지정한다.
 
 ```apache
 <Directory "/var/www/html">
@@ -91,7 +95,7 @@ LogLevel warn                    # 로그 기록 수준
 
 ## 가상 호스트 — 한 서버에서 여러 사이트
 
-물리 서버 한 대로 `site-a.com`과 `site-b.com`을 동시에 서비스하려면 **가상 호스트**를 쓴다. 방식은 두 가지다.
+- 물리 서버 한 대로 `site-a.com`과 `site-b.com`을 동시에 서비스하려면 **가상 호스트**를 쓴다. 방식은 두 가지다.
 
 | 방식 | 구분 기준 | IP 필요량 | 용도 |
 |------|-----------|-----------|------|
@@ -114,7 +118,8 @@ LogLevel warn                    # 로그 기록 수준
 </VirtualHost>
 ```
 
-같은 `*:80`(모든 IP의 80번 포트)을 듣지만, Apache는 클라이언트가 보낸 HTTP **Host 헤더**의 도메인명을 보고 어느 `ServerName`과 일치하는지로 사이트를 가른다.
+- 둘 다 같은 `*:80`(모든 IP의 80번 포트)을 듣는다.
+- Apache는 클라이언트가 보낸 HTTP **Host 헤더**의 도메인명이 어느 `ServerName`과 일치하는지로 사이트를 가른다.
 
 **IP 기반 가상 호스트** — 서버에 여러 IP를 두고 IP로 구분:
 
@@ -136,7 +141,8 @@ LogLevel warn                    # 로그 기록 수준
 
 ## 모듈 — Apache의 확장 구조
 
-Apache는 핵심 기능 외의 것을 **모듈(module)**로 끼워 확장한다. SSL, 재작성(rewrite), PHP 연동 등이 모두 모듈이다.
+- Apache는 핵심 기능 외의 것을 **모듈(module)**로 끼워 확장한다.
+- SSL, 재작성(rewrite), PHP 연동 등이 모두 모듈이다.
 
 ```apache
 LoadModule rewrite_module modules/mod_rewrite.so   # URL 재작성
@@ -159,7 +165,7 @@ httpd -M
 
 ## 로그 — access_log와 error_log
 
-Apache는 두 가지 핵심 로그를 남긴다.
+- Apache는 **두 가지 핵심 로그**를 남긴다.
 
 ```bash
 # 접근 로그: 누가 무엇을 요청했는가
@@ -170,7 +176,8 @@ tail -f /var/log/httpd/access_log
 tail -f /var/log/httpd/error_log
 ```
 
-access_log의 `combined` 형식은 클라이언트 IP, 시각, 요청 줄, **응답 상태 코드(200, 404, 500 등)**, 전송 바이트, 리퍼러, 브라우저 정보를 담는다. 상태 코드만 봐도 정상(2xx)·리다이렉트(3xx)·클라이언트 오류(4xx)·서버 오류(5xx)를 가를 수 있다.
+- access_log의 **`combined` 형식**은 클라이언트 IP, 시각, 요청 줄, **응답 상태 코드**, 전송 바이트, 리퍼러, 브라우저 정보를 담는다.
+- 상태 코드만 봐도 **정상(2xx)·리다이렉트(3xx)·클라이언트 오류(4xx)·서버 오류(5xx)**를 가를 수 있다.
 
 > ⚠️ **함정**: `CustomLog`(또는 access_log)는 모든 요청을 기록하고, `ErrorLog`는 오류·진단 메시지를 기록한다. 둘을 혼동해 "404가 access_log가 아닌 error_log에만 남는다"는 식의 보기는 틀린다 — 404 같은 응답 코드는 access_log에 상태 코드로 남고, 설정 오류·모듈 실패 등은 error_log에 남는다.
 
@@ -195,11 +202,25 @@ httpd -S                          # 정의된 VirtualHost 목록
 tail -f /var/log/httpd/access_log
 ```
 
-`curl -I`로 받은 첫 줄 `HTTP/1.1 200 OK`가 보이면 정상이다. 가상 호스트를 테스트할 때는 `curl -H "Host: www.site-a.com" http://localhost/`처럼 Host 헤더를 지정해 어느 사이트가 응답하는지 확인할 수 있다.
+- `curl -I`로 받은 첫 줄 **`HTTP/1.1 200 OK`**가 보이면 정상이다.
+- 가상 호스트 테스트는 `curl -H "Host: www.site-a.com" http://localhost/`처럼 **Host 헤더를 지정**해 어느 사이트가 응답하는지 확인한다.
 
-## 마무리
+내일은 또 다른 웹 서버의 강자 Nginx로 넘어가, 이벤트 기반 구조와 리버스 프록시, 그리고 Apache와의 비교를 다룬다.
 
-오늘은 Apache 웹 서버를 "요청을 파일로 매핑하는 기계"로 이해했다. **`DocumentRoot`가 URL 루트의 실제 위치를, `<Directory>`가 디렉터리별 접근 권한을, `<VirtualHost>`가 사이트별 분기를 정한다.** 가상 호스트는 이름 기반(Host 헤더로 구분, IP 하나로 다수 사이트)과 IP 기반(IP로 구분, 사이트마다 IP)으로 나뉘며, HTTP/1.1의 Host 헤더 의무화가 이름 기반을 표준으로 만들었다. 보안의 핵심은 `User apache`로 권한을 낮추고, `Options Indexes`를 운영에서 끄며, Apache 2.4의 `Require` 문법을 쓰는 것이다. 설정을 고쳤으면 반드시 `httpd -t`로 검사한 뒤 재시작한다. 내일은 또 다른 웹 서버의 강자 Nginx로 넘어가, 이벤트 기반 구조와 리버스 프록시, 그리고 Apache와의 비교를 다룬다.
+## 📖 용어
+
+- **DocumentRoot** : URL의 루트(`/`)가 실제로 가리키는 파일 시스템 경로. 기본값은 `/var/www/html`.
+- **ServerRoot** : 설정·로그·모듈을 찾는 기준 디렉터리. DocumentRoot와 헷갈리기 쉽다.
+- **DirectoryIndex** : 디렉터리만 요청했을 때 대신 보여 줄 기본 문서(index.html 등).
+- **`Include conf.d/*.conf`** : 사이트별 설정을 별도 파일로 분리해 메인 설정을 깔끔히 유지하는 구조.
+- **권한 강등(privilege drop)** : root로 80번 포트를 연 뒤 요청 처리는 `apache` 계정으로 내려가는 것. `User`/`Group`이 정한다.
+- **`Options Indexes`** : index 파일이 없을 때 디렉터리 목록을 그대로 노출하는 옵션. 운영에서는 보통 끈다.
+- **`AllowOverride`** : 그 디렉터리에서 `.htaccess`로 설정을 덮어쓸 수 있는 범위. `None`이면 .htaccess가 무시된다.
+- **`Require all granted` / `denied`** : Apache 2.4의 접근 허용 / 차단 문법. 2.2의 `Order`·`Allow from`을 대체했다.
+- **가상 호스트(VirtualHost)** : 서버 한 대에서 여러 사이트를 분기해 서비스하는 설정 블록.
+- **Host 헤더** : HTTP/1.1에서 필수가 된 요청 헤더. "어느 도메인을 원하는지"를 담아 이름 기반 가상 호스트를 가능하게 한다.
+- **MPM(Multi-Processing Module)** : Apache의 동작 모델. `prefork`는 프로세스 기반, `worker`·`event`는 스레드 기반이다.
+- **access_log vs error_log** : 모든 요청과 응답 코드를 남기는 로그 / 설정 오류·진단 메시지를 남기는 로그.
 
 ## 📝 연습 문제
 

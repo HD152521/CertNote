@@ -1,8 +1,12 @@
 # Day 4 - Nginx와 리버스 프록시: 이벤트 기반 웹 서버의 설계
 
-2000년대 중반, 한 러시아 엔지니어가 "동시 접속 1만 개를 한 서버에서 감당하기"라는 문제(이른바 C10K 문제)를 풀기 위해 새 웹 서버를 만들었다. 그것이 **Nginx**다. 요청마다 프로세스를 띄우던 Apache의 전통적 방식과 달리, Nginx는 적은 수의 워커가 **이벤트 루프**로 수많은 연결을 비동기 처리한다. 이 설계 덕분에 Nginx는 정적 파일 서빙과 리버스 프록시에서 압도적 효율을 보였고, 오늘날 세계 웹 서버 시장의 한 축을 차지한다. 오늘은 `nginx.conf`의 구조(http/server/location 블록), 리버스 프록시 설정, 로그와 튜닝, 그리고 Apache와의 본질적 차이를 정밀하게 익힌다.
+## 📌 핵심 정리
 
-핵심 통찰: **Nginx 설정은 바깥에서 안으로 좁혀지는 블록의 중첩이다.** `http`(전역) → `server`(가상 호스트) → `location`(URL 경로)으로 범위가 좁아지며, 각 블록은 상위의 설정을 물려받고 필요한 부분만 덮어쓴다. 이 상속 구조만 이해하면 nginx.conf가 한눈에 읽힌다.
+- **Nginx 설정은 바깥에서 안으로 좁혀지는 블록의 중첩** — `http`(전역) → `server`(가상 호스트) → `location`(URL 경로). 안쪽이 바깥을 상속하고 필요한 부분만 덮어쓴다.
+- Apache 대응: **`listen`=Listen, `server_name`=ServerName, `root`=DocumentRoot, `index`=DirectoryIndex.**
+- **리버스 프록시**는 `upstream`으로 백엔드 그룹을 정의하고 `proxy_pass`로 전달한다. 백엔드를 숨기고 부하를 나누며 TLS·캐싱을 한곳에서 처리한다.
+- 처리 모델이 본질적 차이 — **Apache는 연결당 프로세스/스레드, Nginx는 소수 워커의 이벤트 기반 비동기.** Nginx는 `.htaccess`가 없고 중앙 설정만 쓴다.
+- `nginx -t`(문법 검사) → **`nginx -s reload`(무중단 재적용)**. 동시 연결은 `worker_processes × worker_connections`이되 **OS의 fd 한계에 묶인다.**
 
 ## Nginx 설치와 디렉터리 구조
 
@@ -33,7 +37,7 @@ systemctl reload nginx
 
 ## nginx.conf — 블록의 중첩 구조
 
-Nginx 설정의 핵심은 블록(컨텍스트)의 계층이다.
+- Nginx 설정의 핵심은 **블록(컨텍스트)의 계층**이다.
 
 ```nginx
 worker_processes auto;            # 워커 프로세스 수(보통 CPU 코어 수)
@@ -90,7 +94,8 @@ http {
 
 ## 리버스 프록시 — Nginx의 대표 용도
 
-**리버스 프록시(reverse proxy)**는 클라이언트의 요청을 받아 뒤편의 애플리케이션 서버(백엔드)로 전달하고, 그 응답을 다시 클라이언트에게 돌려주는 중계자다. Nginx가 가장 널리 쓰이는 용도가 바로 이것이다.
+- **리버스 프록시(reverse proxy)** : 클라이언트 요청을 받아 뒤편 애플리케이션 서버(백엔드)로 전달하고, 그 응답을 다시 돌려주는 중계자.
+- Nginx가 **가장 널리 쓰이는 용도**가 바로 이것이다.
 
 ```nginx
 http {
@@ -129,7 +134,7 @@ http {
 
 ## 부하 분산 방식
 
-`upstream`에 여러 서버를 두면 Nginx가 요청을 나눠 보낸다. 방식을 지정할 수 있다.
+- `upstream`에 여러 서버를 두면 Nginx가 요청을 나눠 보낸다. **분배 방식을 지정**할 수 있다.
 
 ```nginx
 upstream backend {
@@ -150,7 +155,7 @@ upstream backend {
 
 ## 웹 로그와 튜닝
 
-Nginx 로그도 access와 error 두 가지다.
+- Nginx 로그도 **access와 error 두 가지**다.
 
 ```bash
 # 접근 로그: 요청·상태 코드
@@ -160,7 +165,7 @@ tail -f /var/log/nginx/access.log
 tail -f /var/log/nginx/error.log
 ```
 
-성능 튜닝의 핵심 지시어:
+- 성능 튜닝의 핵심 지시어는 다음과 같다.
 
 ```nginx
 http {
@@ -216,11 +221,26 @@ curl -I http://localhost/ | grep -i server
 tail -f /var/log/nginx/access.log
 ```
 
-리버스 프록시를 테스트하려면 백엔드(예: `python3 -m http.server 8080`)를 띄우고, `proxy_pass http://127.0.0.1:8080;`를 설정한 뒤 Nginx 80번 포트로 접속해 백엔드 응답이 중계되는지 확인한다.
+- 리버스 프록시 테스트: 백엔드(예: `python3 -m http.server 8080`)를 띄우고 `proxy_pass http://127.0.0.1:8080;`를 설정한 뒤, Nginx 80번 포트로 접속해 **백엔드 응답이 중계되는지** 확인한다.
 
-## 마무리
+내일은 이번 주 DNS·DHCP·NTP·Apache·Nginx를 하나로 엮어 종합 복습하고, 연습 문제로 점검한다.
 
-오늘은 Nginx를 "이벤트 기반으로 수많은 연결을 효율적으로 처리하는 웹 서버이자 리버스 프록시"로 이해했다. **설정은 http→server→location으로 좁혀지는 블록의 상속 구조**이며, `listen`/`server_name`/`root`/`index`는 각각 Apache의 Listen/ServerName/DocumentRoot/DirectoryIndex에 대응한다. 리버스 프록시는 `upstream`으로 백엔드 그룹을 정의하고 `proxy_pass`로 요청을 전달해, 백엔드를 숨기고 부하를 분산하며 TLS·캐싱을 한 곳에서 처리한다. Apache가 연결당 프로세스를 쓰는 반면 Nginx는 소수 워커의 비동기 처리로 동시 접속과 정적 서빙에서 앞서고, `.htaccess` 대신 중앙 집중 설정을 쓴다. 두 서버는 경쟁자이자 종종 협력자(Nginx 앞단 + Apache 백엔드)다. 내일은 이번 주 DNS·DHCP·NTP·Apache·Nginx를 하나로 엮어 종합 복습하고, 연습 문제로 점검한다.
+## 📖 용어
+
+- **C10K 문제** : 한 서버에서 동시 접속 1만 개를 감당하는 과제. Nginx가 태어난 이유다.
+- **이벤트 루프** : 적은 수의 워커가 여러 연결을 번갈아 비동기로 처리하는 방식. 연결마다 프로세스를 띄우지 않는다.
+- **`worker_processes` / `worker_connections`** : 띄울 워커 수(보통 CPU 코어 수) / 워커 하나가 감당할 동시 연결 수.
+- **`http` / `server` / `location` 블록** : HTTP 전역 설정 / 가상 호스트 하나 / URL 경로별 처리 규칙.
+- **`try_files`** : 지정한 순서대로 파일을 찾아보고 전부 없으면 정해진 동작(=404 등)을 하는 지시어.
+- **`default_server`** : 매칭되는 `server_name`이 없을 때 요청을 받을 기본 server 블록 표시.
+- **location 매칭 우선순위** : 정확 일치(`=`) → 접두사 일치 → 정규식(`~`) 순. 헷갈리면 엉뚱한 블록이 처리한다.
+- **리버스 프록시 vs 정방향 프록시** : 서버 앞단에서 외부 요청을 받아 내부로 분배 / 클라이언트를 대신해 외부로 나가는 중계.
+- **`upstream`** : 부하를 나눠 보낼 백엔드 서버 묶음을 정의하는 블록.
+- **`proxy_set_header`** : 백엔드로 넘길 때 원래 Host나 실제 클라이언트 IP 같은 정보를 헤더에 실어 주는 지시어.
+- **`ip_hash`** : 클라이언트 IP를 해시해 항상 같은 백엔드로 보내는 세션 고정 방식.
+- **`sendfile` / `gzip`** : 커널이 파일을 직접 전송해 복사를 줄이는 최적화 / 응답을 압축해 대역폭을 줄이는 옵션.
+- **무중단 reload** : 새 설정으로 새 워커를 띄우고 기존 워커는 처리 중인 요청을 마친 뒤 종료하는 방식.
+- **파일 디스크립터 한계** : 프로세스가 열 수 있는 파일·소켓 수 상한. `worker_rlimit_nofile`·`ulimit -n`으로 올린다.
 
 ## 📝 연습 문제
 

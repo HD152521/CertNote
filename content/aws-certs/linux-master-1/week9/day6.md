@@ -1,8 +1,12 @@
 # Day 6 - 데이터베이스 서비스: MySQL/MariaDB 설치부터 백업·복구까지
 
-웹 서버가 "요청을 파일로 바꿔 주는 기계"라면, 데이터베이스는 그 뒤에서 **데이터를 구조화해 보관하고 질의에 답하는 기계**다. 게시글, 회원 정보, 주문 내역 — 웹에서 보이는 거의 모든 동적 콘텐츠는 결국 DB의 한 행(row)에서 나온다. 리눅스 서버의 대표 관계형 DBMS가 **MySQL**과 그 갈래인 **MariaDB**다. 오늘은 설치·기동, 초기 보안, 기본 SQL, 사용자·권한, 설정 파일, `mysqldump` 백업·복구, 접속 실패 진단까지 실기 관점에서 훑는다.
+## 📌 핵심 정리
 
-핵심 통찰: **MySQL/MariaDB에서 "사용자"는 이름 하나가 아니라 `사용자명@호스트` 한 쌍이다.** `'web'@'localhost'`와 `'web'@'%'`는 이름이 같아도 다른 계정이고 권한도 따로 논다. 접속 성패의 절반이 이 한 쌍에서, 나머지 절반이 `bind-address`와 방화벽 3306번 포트에서 갈린다.
+- **"사용자"는 이름 하나가 아니라 `사용자명@호스트` 한 쌍**이다. `'web'@'localhost'`와 `'web'@'%'`는 이름이 같아도 **다른 계정**이고 권한도 따로 논다.
+- 접속 성패는 그 한 쌍과, **`bind-address` + 방화벽 3306번 포트**에서 갈린다.
+- **패키지는 `mariadb-server`, 서비스명은 `mariadb`.** `start`만 하고 `enable`을 빠뜨리면 재부팅 후 안 올라온다.
+- **`-p`는 password, `-P`는 Port.** 백업은 `mysqldump ... > 파일`, 복구는 `mysql ... < 파일` — **화살표 방향**이 핵심이다.
+- **DB 이름만 준 단일 덤프에는 `CREATE DATABASE`가 없다.** 복구 전에 DB를 먼저 만들어야 한다(`--databases`·`--all-databases`는 포함).
 
 ## MySQL과 MariaDB — 왜 이름이 둘인가
 
@@ -16,7 +20,7 @@
 
 ## 설치와 데몬 기동
 
-배포판 계열에 따라 패키지명과 서비스명이 갈리고, 이 차이가 단답으로 나온다.
+- 배포판 계열에 따라 **패키지명과 서비스명이 갈리고**, 이 차이가 단답으로 나온다.
 
 ```bash
 yum install mariadb-server mariadb   # RHEL/CentOS/Rocky (서버 + 클라이언트)
@@ -38,7 +42,8 @@ systemctl restart mariadb      # 설정 변경 후 재시작
 
 ## mysql_secure_installation — 설치 직후의 필수 보안 절차
 
-막 설치한 DB는 비밀번호 없는 root, 익명 사용자, 테스트 DB가 그대로 열려 있다. 이를 한 번에 정리하는 대화형 스크립트가 `mysql_secure_installation`이다.
+- 막 설치한 DB는 **비밀번호 없는 root, 익명 사용자, 테스트 DB**가 그대로 열려 있다.
+- 이를 한 번에 정리하는 대화형 스크립트가 **`mysql_secure_installation`**이다.
 
 | 단계 | 처리 내용 |
 |------|-----------|
@@ -74,7 +79,7 @@ mysql -u root -p -e "SHOW DATABASES;"     # SQL 한 줄 실행 후 종료
 
 > ⚠️ **함정**: **`-p`(소문자)는 비밀번호, `-P`(대문자)는 포트**다. 대소문자를 바꿔 쓰는 보기가 자주 나온다. `-p` 뒤에 비밀번호를 붙일 때는 **공백 없이** `-pMyPass`로 써야 한다(띄우면 MyPass가 DB 이름으로 해석된다). 명령줄의 비밀번호는 `ps`와 셸 히스토리에 남으므로 실무에서는 `-p`만 쓰고 프롬프트에 입력한다.
 
-접속 후 쓰는 기본 SQL은 아래와 같다. SQL 문은 세미콜론(`;`)으로 끝내야 실행된다.
+- 접속 후 쓰는 기본 SQL은 아래와 같다. SQL 문은 **세미콜론(`;`)으로 끝내야** 실행된다.
 
 ```sql
 -- 조회
@@ -127,7 +132,7 @@ CREATE USER 'web'@'192.168.1.%' IDENTIFIED BY 'WebP@ss1';  -- 특정 대역만
 | `'user'@'192.168.1.%'` | 192.168.1.0/24 대역에서만 |
 | `'user'@'192.168.1.50'` | 그 IP 하나에서만 |
 
-권한은 `GRANT`로 주고 `REVOKE`로 회수한다.
+- 권한은 **`GRANT`로 주고 `REVOKE`로 회수**한다.
 
 ```sql
 GRANT ALL PRIVILEGES ON webdb.* TO 'web'@'localhost';            -- 전체 권한
@@ -141,7 +146,11 @@ DROP USER 'web'@'localhost';                -- 계정 삭제
 FLUSH PRIVILEGES;                           -- 권한 테이블 재적재
 ```
 
-`ON` 다음의 대상 표기는 세 가지다. `*.*`는 모든 DB의 모든 테이블, `webdb.*`는 webdb의 모든 테이블, `webdb.members`는 그 테이블 하나만을 뜻한다. 실무에서는 필요한 DB에만 최소 권한을 주는 것이 원칙이다.
+- `ON` 다음의 대상 표기는 세 가지다.
+  - `*.*` : 모든 DB의 모든 테이블
+  - `webdb.*` : webdb의 모든 테이블
+  - `webdb.members` : 그 테이블 하나만
+- 실무 원칙은 **필요한 DB에만 최소 권한**을 주는 것이다.
 
 > ⚠️ **함정**: `FLUSH PRIVILEGES`는 **`mysql.user` 같은 권한 테이블을 `UPDATE`/`INSERT`로 직접 건드렸을 때** 메모리의 권한 정보를 다시 읽어들이는 명령이다. `GRANT`·`REVOKE`·`CREATE USER`로 정상 경로를 거쳤다면 서버가 자동 반영하므로 원칙적으로 필요 없다. 시험은 "권한 변경을 즉시 적용하는 명령"으로 이를 답하게 하는 경우가 많으니 명령 자체는 반드시 외워 두자.
 
@@ -149,14 +158,15 @@ FLUSH PRIVILEGES;                           -- 권한 테이블 재적재
 
 ## 설정 파일 — my.cnf와 bind-address
 
-서버 동작은 `my.cnf`(옵션 파일)로 제어한다. 위치가 계열마다 다르다는 점이 시험 포인트다.
+- 서버 동작은 **`my.cnf`(옵션 파일)**로 제어한다. **위치가 계열마다 다르다**는 점이 시험 포인트다.
 
 | 계열 | 메인 설정 파일 | 추가 설정 디렉터리 |
 |------|----------------|--------------------|
 | RHEL/CentOS | `/etc/my.cnf` | `/etc/my.cnf.d/` |
 | 데비안/우분투 | `/etc/mysql/my.cnf` | `/etc/mysql/mariadb.conf.d/` 또는 `/etc/mysql/mysql.conf.d/` |
 
-파일은 대괄호로 묶인 **섹션** 단위로 읽힌다. 서버 데몬 설정은 `[mysqld]`, `mysql` 클라이언트 설정은 `[client]` 섹션에 쓴다.
+- 파일은 대괄호로 묶인 **섹션** 단위로 읽힌다.
+- 서버 데몬 설정은 **`[mysqld]`**, `mysql` 클라이언트 설정은 **`[client]`** 섹션에 쓴다.
 
 ```ini
 [mysqld]
@@ -188,7 +198,8 @@ mysql -u root -p -e "SHOW VARIABLES LIKE 'datadir';"
 
 ## 백업과 복구 — mysqldump
 
-DB 백업의 표준 도구는 **`mysqldump`**다. 이름 그대로 데이터베이스 내용을 **SQL 문(CREATE TABLE, INSERT …)의 텍스트 파일로 뽑아내는(dump)** 도구다.
+- DB 백업의 표준 도구는 **`mysqldump`**다.
+- 이름 그대로 데이터베이스 내용을 **SQL 문(CREATE TABLE, INSERT …)의 텍스트 파일로 뽑아내는(dump)** 도구다.
 
 ```bash
 mysqldump -u root -p webdb > /backup/webdb.sql             # 단일 DB
@@ -197,7 +208,7 @@ mysqldump -u root -p --databases webdb blogdb > /backup/two.sql   # 여러 DB
 mysqldump -u root -p --all-databases > /backup/all.sql     # 서버 전체
 ```
 
-복구는 별도 명령이 아니라, **덤프된 SQL 파일을 `mysql` 클라이언트에 입력 리다이렉션으로 흘려 넣는 것**이다.
+- 복구는 별도 명령이 아니다 — **덤프된 SQL 파일을 `mysql` 클라이언트에 입력 리다이렉션으로 흘려 넣는 것**이다.
 
 ```bash
 mysql -u root -p -e "CREATE DATABASE webdb;"     # 대상 DB를 먼저 만들고
@@ -212,7 +223,8 @@ mysql -u root -p < /backup/all.sql               # --all-databases 덤프는 DB�
 
 ## 로그와 문제 해결
 
-DB가 안 뜨거나 접속이 안 될 때는 **에러 로그부터** 본다. 경로는 배포판·패키지마다 다르므로 설정값을 직접 확인하는 편이 확실하다.
+- DB가 안 뜨거나 접속이 안 될 때는 **에러 로그부터** 본다.
+- 경로는 배포판·패키지마다 다르므로 **설정값을 직접 확인**하는 편이 확실하다.
 
 ```bash
 mysql -u root -p -e "SHOW VARIABLES LIKE 'log_error';"   # 경로를 직접 확인
@@ -229,7 +241,7 @@ journalctl -u mariadb -n 50              # 데몬이 아예 안 뜰 때
 | 슬로우 질의 로그 | `slow_query_log` | 지정 시간 초과 질의(튜닝용) |
 | 바이너리 로그 | `log_bin` | 변경 이력(복제·시점 복구용) |
 
-원격 접속 실패는 원인이 정해져 있다. 아래 순서로 좁히면 대부분 잡힌다.
+- 원격 접속 실패는 **원인이 정해져 있다.** 아래 순서로 좁히면 대부분 잡힌다.
 
 | 증상·원인 | 확인 방법 | 조치 |
 |-----------|-----------|------|
@@ -286,11 +298,28 @@ mysql -u root -p webdb < /backup/webdb.sql
 mysql -u root -p webdb -e "SELECT * FROM members;"
 ```
 
-4번의 "백업 → DROP → 복구"를 한 번이라도 손으로 해 보면 단일 덤프에 `CREATE DATABASE`가 없다는 사실이 몸에 남는다. 이 감각이 실기 작업형에서 그대로 점수가 된다.
+- 4번의 **"백업 → DROP → 복구"**를 한 번이라도 손으로 해 보면 단일 덤프에 `CREATE DATABASE`가 없다는 사실이 몸에 남는다.
+- 이 감각이 실기 작업형에서 그대로 점수가 된다.
 
-## 마무리
+다음 시간에는 이번 주의 서비스들(DNS, DHCP·NTP, Apache, Nginx, DB)을 묶어 종합 복습으로 마무리한다.
 
-오늘의 뼈대는 이렇다. **패키지 `mariadb-server`를 설치해 서비스 `mariadb`로 띄우고, `mysql_secure_installation`으로 초기 보안을 정리한 뒤, `'사용자'@'호스트'` 쌍으로 계정을 만들어 `GRANT`로 필요한 권한만 준다.** 서버 동작은 `my.cnf`의 `[mysqld]` 섹션이 정하며 RHEL은 `/etc/my.cnf`, 데비안은 `/etc/mysql/my.cnf`에 있고, 포트는 3306/TCP, 데이터는 `/var/lib/mysql`에 쌓인다. 백업은 `mysqldump ... > 파일`, 복구는 `mysql ... < 파일` — 화살표 방향과 "단일 덤프에는 DB 생성 문이 없다"가 실기의 핵심이다. 접속이 안 되면 데몬 · 방화벽 3306 · `bind-address` · 계정 호스트 · 권한 순으로 좁혀 간다. 다음 시간에는 이번 주의 서비스들(DNS, DHCP·NTP, Apache, Nginx, DB)을 묶어 종합 복습으로 마무리한다.
+## 📖 용어
+
+- **MariaDB** : 오라클의 MySQL 인수 후 원 개발자가 포크한 갈래. 명령·SQL이 호환되며 RHEL 계열의 기본 DB다.
+- **DB의 root** : 리눅스 시스템의 root와 **완전히 별개인** 데이터베이스 전용 관리자 계정.
+- **`mysql_secure_installation`** : 설치 직후 root 암호·익명 계정·원격 root·test DB를 한 번에 정리하는 대화형 스크립트.
+- **`-p` vs `-P`** : 소문자는 password(프롬프트), 대문자는 Port. `-p` 뒤에 암호를 붙일 때는 공백 없이 쓴다.
+- **DDL / DML / DCL** : 정의어(CREATE·ALTER·DROP) / 조작어(SELECT·INSERT·UPDATE·DELETE) / 제어어(GRANT·REVOKE·COMMIT).
+- **`DELETE` vs `TRUNCATE`** : WHERE로 골라 지우고 되돌릴 여지가 있는 DML / 테이블을 통째로 비우고 AUTO_INCREMENT까지 초기화하는 DDL.
+- **`'user'@'host'`** : 계정의 식별 단위. 이름이 같아도 호스트가 다르면 다른 계정이다.
+- **`%`(와일드카드)** : 호스트 자리의 "아무 데서나". `'web'@'192.168.1.%'`처럼 대역 지정도 된다.
+- **`GRANT` 대상 표기** : `*.*`(전체) · `webdb.*`(그 DB 전부) · `webdb.members`(테이블 하나).
+- **`FLUSH PRIVILEGES`** : 권한 테이블을 직접 손댔을 때 메모리의 권한 정보를 다시 읽게 하는 명령.
+- **`bind-address`** : 접속을 받을 인터페이스. `127.0.0.1`이면 로컬 전용, `0.0.0.0`이면 모든 인터페이스.
+- **`datadir`** : 실제 데이터베이스 파일이 쌓이는 경로. 보통 `/var/lib/mysql`.
+- **논리 백업 vs 물리 백업** : SQL 텍스트로 뽑아 옮기기 쉬운 `mysqldump` / 데이터 디렉터리를 통째로 묶는 방식(데몬 정지 필수).
+- **`--single-transaction`** : InnoDB에서 서비스를 세우지 않고 일관된 백업을 뜨기 위한 옵션.
+- **`Access denied` vs `Can't connect`** : 서버까지 닿았으나 계정·권한에서 거절 / 연결 자체가 닿지 않음(데몬·방화벽·bind-address).
 
 ## 📝 연습 문제
 
