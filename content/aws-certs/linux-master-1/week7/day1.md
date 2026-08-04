@@ -1,21 +1,25 @@
 # Day 1 - 패키지 관리: RPM·YUM/DNF와 DEB·APT 두 계열을 한 손에
 
-리눅스에서 소프트웨어를 설치한다는 것은 결국 **누군가가 미리 컴파일해 묶어 놓은 파일 꾸러미(패키지)를 시스템의 올바른 자리에 풀어 놓고, 그 사실을 데이터베이스에 기록하는 일**이다. 이 "기록"이 핵심이다. 패키지 관리자가 단순한 압축 해제 도구와 다른 이유는, 무엇이 어디에 설치됐고 어떤 버전인지, 무엇이 무엇에 의존하는지를 추적하기 때문이다. 그래서 같은 파일을 `tar`로 풀면 "설치"가 아니지만, `rpm -i`로 풀면 "설치"가 된다.
+## 📌 핵심 정리
 
-리눅스 배포판은 크게 두 계열로 갈린다. **Red Hat 계열**(RHEL·CentOS·Rocky·Fedora)은 `.rpm` 패키지와 `RPM`/`YUM`/`DNF` 도구를 쓰고, **Debian 계열**(Debian·Ubuntu·Mint)은 `.deb` 패키지와 `dpkg`/`APT` 도구를 쓴다. 리눅스마스터 1급 실기에서는 두 계열의 명령을 **나란히 비교하는 문제**가 끊임없이 나온다. `rpm -ivh`와 `dpkg -i`, `yum install`과 `apt install`을 짝지어 외우는 것이 오늘의 목표다.
-
-핵심 통찰 하나: 각 계열에는 **저수준 도구**(rpm, dpkg)와 **고수준 도구**(yum/dnf, apt)가 있다. 저수준은 단일 패키지 파일을 직접 다루지만 의존성을 자동 해결하지 못하고, 고수준은 저장소(repository)에서 의존성까지 끌어와 자동으로 처리한다. 이 2단 구조를 이해하면 어떤 변형 문제도 풀린다.
+- 패키지 설치는 단순 압축 해제가 아니라 **무엇이 어디에 어떤 버전으로 깔렸는지 DB에 기록**하는 일이다 — 같은 파일도 `tar`로 풀면 설치가 아니고 `rpm -i`로 풀면 설치다.
+- 뼈대는 **2계층 × 2계열**. 저수준(rpm, dpkg)은 단일 패키지 파일만 다루고 의존성을 자동 해결하지 못하며, 고수준(yum/dnf, apt)은 저장소에서 의존성까지 자동 처리한다.
+- Red Hat 계열 = `.rpm` + rpm/yum/dnf, Debian 계열 = `.deb` + dpkg/apt. 명령이 1:1로 대응한다 — `rpm -ivh ↔ dpkg -i`, `yum install ↔ apt install`, `rpm -qa ↔ dpkg -l`.
+- 시험 3대 함정: `apt update`는 설치가 아니라 **목록(인덱스) 갱신**, `rpm -qf`(파일→패키지)와 `rpm -ql`(패키지→파일)의 방향, dpkg `-l`(설치 목록)/`-L`(파일 목록) 대소문자.
+- 삭제도 갈린다 — `dpkg -r`은 설정 파일을 남기고, `dpkg -P`(Purge)는 설정까지 지운다. `rpm -e`에는 이 구분이 없다.
 
 ## RPM — Red Hat 계열의 저수준 패키지 도구
 
-`rpm`(Red Hat Package Manager)은 단일 `.rpm` 파일을 설치·삭제·조회하는 가장 기본 도구다. 패키지 파일 이름 자체가 정보를 담는다.
+- **Red Hat 계열**(RHEL·CentOS·Rocky·Fedora)은 `.rpm` 패키지와 `RPM`/`YUM`/`DNF` 도구를 쓴다.
+- `rpm`(Red Hat Package Manager)은 단일 `.rpm` 파일을 설치·삭제·조회하는 가장 기본 도구다.
+- 패키지 파일 이름 자체가 정보를 담는다.
 
 ```bash
 # httpd-2.4.6-97.el7.x86_64.rpm
 #  └이름  └버전  └릴리스 └배포판 └아키텍처
 ```
 
-설치·삭제·업그레이드는 대문자가 아닌 **소문자 단일 옵션 + 보조 옵션** 조합으로 한다.
+설치·삭제·업그레이드는 **단일 옵션(-i/-U/-F/-e) + 보조 옵션(-v, -h)** 조합으로 한다.
 
 ```bash
 rpm -ivh httpd-2.4.6-97.el7.x86_64.rpm   # 설치(install) + verbose + hash 진행막대
@@ -26,7 +30,7 @@ rpm -e httpd                              # 삭제(erase) — 파일명 아닌 �
 
 > 💡 **개념**: `-i`(install)와 `-U`(Upgrade)의 결정적 차이는 **기존 버전 처리**다. `-i`는 이미 설치돼 있으면 "already installed" 오류를 내며 멈추지만, `-U`는 기존 버전을 지우고 새 버전으로 교체한다. 게다가 `-U`는 설치된 적이 없어도 새로 설치한다. 그래서 실무에서는 `-Uvh`를 가장 많이 쓴다. `-F`(Freshen)는 한 발 더 나아가 **이미 설치된 패키지만** 갱신하고, 미설치 패키지는 건드리지 않는다.
 
-조회(query)는 대문자 `-q`를 기반으로 한다. 여기가 시험 단골이다.
+조회(query)는 `-q`를 앞세운다. 여기가 시험 단골이다.
 
 ```bash
 rpm -qa                # 설치된 모든 패키지 목록(all)
@@ -64,9 +68,9 @@ rpm -qf /bin/ls                # ls는 어느 패키지 소속?
 
 ## YUM / DNF — 의존성을 자동 해결하는 고수준 도구
 
-`rpm`의 의존성 지옥(dependency hell)을 해결하기 위해 등장한 것이 **YUM**(Yellowdog Updater Modified)이고, 그 후속이 **DNF**(Dandified YUM)다. 둘은 명령 체계가 거의 같아 `yum`을 `dnf`로 바꿔도 대부분 동작한다. RHEL 8부터 기본은 DNF이며 `yum`은 dnf의 심볼릭 링크다.
-
-핵심 차이는 **저장소(repository)에서 의존성까지 자동으로 끌어온다**는 점이다. `/etc/yum.repos.d/*.repo`에 정의된 저장소 URL에서 필요한 패키지를 모두 내려받아 한꺼번에 설치한다.
+- **YUM**(Yellowdog Updater Modified): `rpm`의 **의존성 지옥(dependency hell)**을 풀기 위해 등장했다. 후속이 **DNF**(Dandified YUM).
+- 명령 체계가 거의 같아 `yum`을 `dnf`로 바꿔도 대부분 동작한다. RHEL 8부터 기본은 DNF이며 `yum`은 dnf의 심볼릭 링크다.
+- 핵심 차이는 **저장소(repository)에서 의존성까지 자동으로 끌어온다**는 점. `/etc/yum.repos.d/*.repo`에 정의된 저장소 URL에서 필요한 패키지를 모두 내려받아 한꺼번에 설치한다.
 
 ```bash
 yum install httpd          # httpd + 필요한 모든 의존성 자동 설치
@@ -108,7 +112,9 @@ dnf repolist
 
 ## DEB · dpkg — Debian 계열의 저수준 패키지 도구
 
-Debian 계열의 패키지는 `.deb` 확장자를 갖고, 이를 직접 다루는 저수준 도구가 `dpkg`다. RPM의 `rpm`에 대응한다고 보면 된다. `.deb` 파일명도 정보를 담는다.
+- **Debian 계열**(Debian·Ubuntu·Mint)의 패키지는 `.deb` 확장자를 갖는다.
+- 이를 직접 다루는 저수준 도구가 `dpkg` — Red Hat 계열의 `rpm`에 대응한다.
+- `.deb` 파일명도 정보를 담는다.
 
 ```bash
 # nginx_1.18.0-6_amd64.deb
@@ -143,7 +149,8 @@ dpkg -s nginx                       # 패키지 상태·정보(status)
 
 ## APT — Debian 계열의 고수준 도구
 
-`APT`(Advanced Package Tool)는 YUM/DNF에 대응하는 고수준 도구로, 저장소에서 의존성까지 자동으로 끌어온다. 과거 `apt-get`/`apt-cache`로 나뉘어 있던 것을 통합한 `apt` 명령이 현재 표준이다.
+- `APT`(Advanced Package Tool)는 YUM/DNF에 대응하는 고수준 도구로, 저장소에서 의존성까지 자동으로 끌어온다.
+- 과거 `apt-get`/`apt-cache`로 나뉘어 있던 것을 통합한 `apt` 명령이 현재 표준이다.
 
 ```bash
 apt update                  # 저장소 패키지 목록 갱신(설치 아님!)
@@ -172,9 +179,18 @@ apt autoremove              # 더 이상 필요 없는 의존성 정리
 
 > 📚 **유래/사례**: RPM과 DEB는 1990년대 중반 거의 동시에 등장했다. 둘 다 초기엔 "의존성 지옥"으로 악명 높았다 — A를 깔려면 B가, B를 깔려면 C가 필요한데 사용자가 일일이 손으로 받아야 했다. Debian이 1998년 APT로 먼저 자동 의존성 해결을 선보였고, Red Hat 진영은 yum(2003년경 Fedora 채택)으로 따라잡았다. 오늘날 두 계열의 명령이 데칼코마니처럼 대응하는 것은 결국 같은 문제(의존성·저장소·검증)를 각자 풀어낸 결과다. 이 대응 구조를 표로 외워두면 시험의 절반은 자동으로 맞힌다.
 
-## 마무리
+## 📖 용어
 
-오늘 배운 패키지 관리의 뼈대는 **2계층 × 2계열**이다. 저수준(rpm, dpkg)은 단일 파일을 직접 다루되 의존성을 자동 해결하지 못하고, 고수준(yum/dnf, apt)은 저장소에서 의존성까지 자동으로 처리한다. Red Hat 계열은 `.rpm`/rpm/yum, Debian 계열은 `.deb`/dpkg/apt. `rpm -ivh ↔ dpkg -i`, `yum install ↔ apt install`, `rpm -qa ↔ dpkg -l` 같은 대응을 외우면 어떤 비교 문제도 풀린다. 특히 `apt update`가 "설치가 아니라 목록 갱신"이라는 점, `rpm -qf`와 `-ql`의 방향, dpkg `-l`/`-L` 대소문자가 시험의 핵심 함정이다.
+- **패키지(package)** : 미리 컴파일된 프로그램 파일과 설치 정보를 하나로 묶어 놓은 꾸러미.
+- **의존성(dependency)** : 어떤 패키지가 동작하려면 반드시 함께 설치돼야 하는 다른 패키지.
+- **의존성 지옥(dependency hell)** : A를 깔려면 B가, B를 깔려면 C가 필요해 사용자가 손으로 줄줄이 받아야 하는 상황.
+- **저장소(repository)** : 패키지가 모여 있는 인터넷(또는 사내) 서버. 고수준 도구가 여기서 받아 온다.
+- **/etc/yum.repos.d** : YUM/DNF가 쓸 저장소를 `.repo` 파일로 적어 두는 디렉터리.
+- **/etc/apt/sources.list** : APT가 쓸 저장소를 `deb URL 배포판 컴포넌트` 형식으로 적어 두는 파일.
+- **gpgcheck** : 저장소 설정 항목. `1`이면 패키지의 GPG 서명을 검사해 변조·위조된 패키지를 막는다.
+- **인덱스(패키지 목록)** : 저장소에 어떤 패키지의 어떤 버전이 있는지 적힌 목록. `apt update`가 이걸 받아 `/var/lib/apt/lists/`에 저장한다.
+- **Purge(퍼지)** : 프로그램뿐 아니라 `/etc` 아래 설정 파일까지 지우는 완전 삭제. `dpkg -P`, `apt purge`.
+- **Freshen(`-F`)** : 이미 설치된 패키지만 새 버전으로 갱신하고, 안 깔린 패키지는 건드리지 않는 rpm 옵션.
 
 ## 📝 연습 문제
 
