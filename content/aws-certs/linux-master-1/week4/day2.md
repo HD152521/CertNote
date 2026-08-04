@@ -1,12 +1,19 @@
 # Day 2 - 계정 관리 명령과 권한 상승: useradd부터 sudo까지
 
-Day 1에서 우리는 계정이 네 파일에 적힌 한 줄의 레코드라는 것을 배웠다. 그렇다면 그 레코드를 손으로 vi로 편집해야 할까? 그래도 동작은 하지만, 짝 파일(shadow/gshadow) 동기화와 홈 디렉터리 생성·스켈레톤 복사 같은 부수 작업을 빠뜨리기 쉽다. 그래서 리눅스는 **계정 관리 전용 명령 세트**를 제공한다. 이 명령들이 결국 하는 일은 "네 파일을 안전하게, 짝을 맞춰, 빠짐없이 갱신하는 것"이다.
+## 📌 핵심 정리
 
-오늘은 두 갈래를 다룬다. 앞쪽은 **계정·그룹을 만들고 고치고 지우는** 명령(`useradd`, `usermod`, `userdel`, `passwd`, `chage`, `groupadd`, `gpasswd`)이고, 뒤쪽은 **다른 사용자의 권한을 빌리는** 두 방식(`su`와 `sudo`)이다. 실기에서 useradd의 옵션 글자(`-u -g -G -d -s -m`)와 sudoers 문법은 매우 자주 나온다. 옵션 하나하나가 Day 1의 어느 필드를 건드리는지 연결해서 외우면 암기가 무너지지 않는다.
+- 계정 명령이 하는 일은 결국 하나다 — **네 파일을 짝 맞춰 빠짐없이 갱신하기**. 옵션마다 건드리는 필드가 정해져 있다.
+- `-g`는 기본 그룹 **하나**, `-G`는 보조 그룹 **여럿**. `usermod -G`만 쓰면 기존 보조 그룹이 **전부 교체**되니 `-aG`.
+- `chage` 옵션은 shadow 필드와 1:1 — `-M`Max `-m`Min `-W`Warn `-E`Expire `-I`Inactive `-d`마지막변경.
+- **`su`는 대상 암호로 "되기", `sudo`는 자기 암호로 "빌리기"**. sudoers는 반드시 `visudo`로 편집한다.
+- **PAM**은 인증을 모듈 스택으로 분리한 틀(`auth`·`account`·`password`·`session`), **LDAP**은 계정을 서버 한 곳에 모으는 프로토콜이다.
 
 ## useradd — 계정 생성과 옵션이 건드리는 필드
 
-`useradd`는 새 사용자를 만든다. 옵션 없이 실행하면 `/etc/default/useradd`와 `/etc/login.defs`의 기본값을 따른다. 핵심 옵션은 각각 Day 1의 특정 필드에 대응한다.
+계정 레코드를 vi로 직접 편집해도 동작은 하지만, 짝 파일 동기화와 홈 생성·스켈레톤 복사 같은 부수 작업을 빠뜨리기 쉽다. 그래서 전용 명령 세트를 쓴다.
+
+- `useradd`는 새 사용자를 만든다. 옵션 없이 실행하면 `/etc/default/useradd`와 `/etc/login.defs`의 기본값을 따른다.
+- 핵심 옵션은 각각 Day 1의 특정 필드에 대응한다.
 
 ```bash
 useradd -u 1500 -g developers -G wheel,docker -d /home/alice -s /bin/bash -m -c "Alice Kim" alice
@@ -65,7 +72,7 @@ userdel -r alice                   # 홈 디렉터리와 메일 스풀까지 삭
 
 ## passwd / chage — 암호와 수명 정책 관리
 
-`passwd`는 암호를 설정·변경하고, 잠금/해제도 한다. `chage`는 shadow의 수명 필드(3~8번)를 전담한다.
+`passwd`는 암호를 설정·변경하고 잠금/해제도 한다. `chage`는 shadow의 수명 필드(3~8번)를 전담한다.
 
 ```bash
 passwd alice                       # alice 암호 변경(root만 타인 암호 변경 가능)
@@ -175,7 +182,10 @@ groups                             # 내가 sudo/wheel 그룹에 속했는지
 
 ## PAM — 인증을 모듈로 분리하는 틀
 
-`login`·`sshd`·`su`·`sudo`·`passwd`는 모두 "이 사람이 맞는가"를 확인한다. 프로그램마다 shadow를 직접 읽도록 짜면 인증 방식을 하나 바꿀 때 전부를 고쳐야 한다. **PAM**(Pluggable Authentication Modules, 착탈식 인증 모듈)은 **인증 로직을 공유 라이브러리(`.so` 모듈)로 떼어내고 프로그램은 "인증해 달라"고 요청만 하게** 만든 구조다. 설정은 **서비스 이름별 파일**로 `/etc/pam.d/` 아래에 놓인다(구형은 단일 파일 `/etc/pam.conf`). 공통 규칙은 RHEL 계열 `system-auth`, 데비안 계열 `common-auth` 등에 모아 둔다.
+- `login`·`sshd`·`su`·`sudo`·`passwd`는 모두 "이 사람이 맞는가"를 확인한다. 프로그램마다 shadow를 직접 읽도록 짜면 인증 방식 하나 바꿀 때 전부를 고쳐야 한다.
+- **PAM**(Pluggable Authentication Modules, 착탈식 인증 모듈)은 **인증 로직을 공유 라이브러리(`.so` 모듈)로 떼어내고 프로그램은 "인증해 달라"고 요청만 하게** 만든 구조다.
+- 설정은 **서비스 이름별 파일**로 `/etc/pam.d/` 아래에 놓인다(구형은 단일 파일 `/etc/pam.conf`).
+- 공통 규칙은 RHEL 계열 `system-auth`, 데비안 계열 `common-auth` 등에 모아 둔다.
 
 ```
 모듈타입   제어플래그   모듈               인자
@@ -184,7 +194,12 @@ password   requisite    pam_pwquality.so   retry=3
 session    required     pam_limits.so
 ```
 
-**모듈 타입**은 인증의 네 단계다. `auth`는 신원 확인(암호·토큰 검증), `account`는 계정 자체의 사용 가능 여부(만료·시간대·터미널 제한), `password`는 암호를 **변경**할 때의 규칙, `session`은 세션 준비·정리(자원 제한·기록)를 맡는다. 같은 타입의 모듈은 순서대로 쌓여(stack) 실행되고, **제어 플래그**가 각 모듈의 성패를 최종 판정에 반영하는 방식을 정한다.
+- **모듈 타입**은 인증의 네 단계다.
+  - `auth` — 신원 확인(암호·토큰 검증)
+  - `account` — 계정 자체의 사용 가능 여부(만료·시간대·터미널 제한)
+  - `password` — 암호를 **변경**할 때의 규칙
+  - `session` — 세션 준비·정리(자원 제한·기록)
+- 같은 타입의 모듈은 순서대로 쌓여(stack) 실행되고, **제어 플래그**가 각 모듈의 성패를 최종 판정에 반영하는 방식을 정한다.
 
 | 제어 플래그 | 성공 시 | 실패 시 |
 |-------------|---------|---------|
@@ -203,7 +218,11 @@ session    required     pam_limits.so
 
 > ⚠️ **함정**: `sufficient`가 성공하면 **그 아래 같은 타입 모듈은 아예 실행되지 않는다**. 밑에 놓은 실패 횟수 카운터나 추가 검증이 통째로 무력화되므로 스택의 순서가 곧 정책이다. `required`와 `requisite`는 실패 시 결과는 같지만, `required`는 뒤 모듈을 마저 실행해 **어느 단계에서 틀렸는지 노출하지 않고** `requisite`는 즉시 끊는다.
 
-**`/etc/security/limits.conf`**는 `pam_limits.so`가 읽어 적용하는 자원 제한 파일이다. 한 줄은 `대상 종류 항목 값` 네 칸으로, 대상은 사용자명·`@그룹명`·`*`(전체), 종류는 `soft`(현재값)·`hard`(절대 상한, 상향은 root만), 항목은 `nproc`(프로세스 수)·`nofile`(열린 파일 수)·`core`·`fsize`·`cpu`·`maxlogins` 등이다.
+- **`/etc/security/limits.conf`**는 `pam_limits.so`가 읽어 적용하는 자원 제한 파일이다.
+- 한 줄은 `대상 종류 항목 값` 네 칸으로 구성된다.
+  - 대상: 사용자명 · `@그룹명` · `*`(전체)
+  - 종류: `soft`(현재값) · `hard`(절대 상한, 상향은 root만)
+  - 항목: `nproc`(프로세스 수) · `nofile`(열린 파일 수) · `core` · `fsize` · `cpu` · `maxlogins` 등
 
 ```bash
 alice        soft   nproc    200
@@ -215,16 +234,24 @@ alice        soft   nproc    200
 
 ## LDAP — 계정을 서버 한 곳에 모으기
 
-지금까지의 계정은 모두 **그 서버 안의 `/etc/passwd`**에 있었다. 서버가 100대면 계정도 100벌이다. **LDAP**(Lightweight Directory Access Protocol)은 사용자·그룹·조직 정보를 **디렉터리 서버 한 곳에 모아 두고** 여러 시스템이 조회해 쓰게 하는 프로토콜이며, 읽기가 압도적으로 많은 정보(전화번호부 같은 것)에 맞춰 관계형 표가 아니라 **트리**로 저장한다. 각 항목(entry)은 뿌리까지의 경로를 이어 붙인 **DN**으로 식별되고, 자기 계층의 한 조각만 떼면 **RDN**(Relative DN)이다.
+- 지금까지의 계정은 모두 **그 서버 안의 `/etc/passwd`**에 있었다. 서버가 100대면 계정도 100벌이다.
+- **LDAP**(Lightweight Directory Access Protocol)은 사용자·그룹·조직 정보를 **디렉터리 서버 한 곳에 모아 두고** 여러 시스템이 조회해 쓰게 하는 프로토콜이다.
+- 읽기가 압도적으로 많은 정보(전화번호부 같은 것)에 맞춰 관계형 표가 아니라 **트리**로 저장한다.
+- 각 항목(entry)은 뿌리까지의 경로를 이어 붙인 **DN**으로 식별되고, 자기 계층의 한 조각만 떼면 **RDN**(Relative DN)이다.
 
 ```
 dn: cn=alice,ou=people,dc=example,dc=com
      └─RDN─┘ └컨테이너┘ └─── 베이스 DN ───┘
 ```
 
-`dc`(Domain Component)는 도메인 조각(`example.com` → `dc=example,dc=com`), `ou`(Organizational Unit)는 조직 단위·컨테이너(`ou=people`), `cn`(Common Name)은 항목의 이름(사람·그룹 이름), `dn`(Distinguished Name)은 이들을 뿌리까지 이어 붙인 전체 경로다.
+- `dc`(Domain Component) — 도메인 조각(`example.com` → `dc=example,dc=com`)
+- `ou`(Organizational Unit) — 조직 단위·컨테이너(`ou=people`)
+- `cn`(Common Name) — 항목의 이름(사람·그룹 이름)
+- `dn`(Distinguished Name) — 이들을 뿌리까지 이어 붙인 전체 경로
 
-리눅스의 표준 구현은 **OpenLDAP**, 데몬은 **`slapd`**(평문 389/tcp, TLS 전용 LDAPS 636/tcp)다. 서버 설정은 예전의 `/etc/openldap/slapd.conf`에서 지금은 동적 설정 디렉터리 `/etc/openldap/slapd.d/`(`cn=config`)로 옮겨졌고, 데이터는 **LDIF** 텍스트로 주고받는다(`slapcat`·`slapadd`, `ldapsearch`·`ldapadd`·`ldappasswd`).
+- 리눅스의 표준 구현은 **OpenLDAP**, 데몬은 **`slapd`**(평문 389/tcp, TLS 전용 LDAPS 636/tcp)다.
+- 서버 설정은 예전의 `/etc/openldap/slapd.conf`에서 지금은 동적 설정 디렉터리 `/etc/openldap/slapd.d/`(`cn=config`)로 옮겨졌다.
+- 데이터는 **LDIF** 텍스트로 주고받는다(`slapcat`·`slapadd`, `ldapsearch`·`ldapadd`·`ldappasswd`).
 
 ```bash
 ldapsearch -x -H ldap://ldap.example.com -b "dc=example,dc=com" "(uid=alice)"
@@ -248,7 +275,28 @@ ldapsearch -x -H ldap://ldap.example.com -b "dc=example,dc=com" "(uid=alice)"
 | PAM | 인증 모듈 스택 | /etc/pam.d/, required·requisite·sufficient·optional |
 | LDAP | 계정 중앙화 | slapd(389/636), DN·ou·dc, nsswitch.conf + sssd |
 
-`su`는 대상 암호로 "되기", `sudo`는 자기 암호로 "빌리기". 이 한 문장이 권한 상승의 핵심이다.
+- `su`는 대상 암호로 "되기", `sudo`는 자기 암호로 "빌리기". 이 한 문장이 권한 상승의 핵심이다.
+
+## 📖 용어
+
+- **`/etc/skel`** : 새 계정의 홈에 복사되는 기본 설정 파일 모음. `useradd -m`이 이걸 퍼온다.
+- **`-g` vs `-G`** : 기본 그룹 하나를 정하는 옵션과 보조 그룹 여럿을 정하는 옵션.
+- **`usermod -aG`** : 기존 보조 그룹을 유지한 채 추가하는 형태. `-a` 없이 `-G`만 쓰면 통째로 교체된다.
+- **`adduser` vs `useradd`** : 데비안 계열의 대화형 래퍼와, 모든 배포판 공통의 저수준 표준 명령.
+- **`userdel -r`** : 홈 디렉터리와 메일 스풀까지 함께 지우는 옵션.
+- **`find / -nouser`** : 계정이 지워져 주인이 없어진 파일을 찾는 방법.
+- **`passwd -l` vs `passwd -d`** : 해시 앞에 `!`를 붙여 잠그는 것과, 암호를 아예 없애 무암호로 만드는 것.
+- **`chage`** : shadow의 암호·계정 수명 필드를 전담하는 명령. 옵션이 필드와 1:1 대응한다.
+- **`gpasswd`** : 그룹 멤버·관리자를 다루는 명령. group과 gshadow를 동시에 갱신한다.
+- **`su` vs `sudo`** : 대상의 암호로 그 사람이 되는 것과, 자기 암호로 위임받은 권한만 빌리는 것.
+- **`visudo`** : sudoers를 문법 검사와 잠금을 걸고 안전하게 편집하는 전용 명령.
+- **wheel / sudo 그룹** : 레드햇 계열과 데비안 계열의 기본 관리자 그룹.
+- **PAM** : 인증 로직을 모듈(.so)로 떼어내 프로그램들이 공유하게 만든 착탈식 인증 틀.
+- **제어 플래그** : PAM 모듈의 성패를 최종 판정에 반영하는 방식. required·requisite·sufficient·optional.
+- **`limits.conf`** : `pam_limits.so`가 읽는 자원 제한 파일. soft는 현재값, hard는 절대 상한.
+- **LDAP / DN / RDN** : 계정을 트리로 모아 두는 디렉터리 프로토콜과, 항목의 전체 경로 / 한 조각.
+- **NSS vs PAM** : "누구인가"를 조회하는 축(`nsswitch.conf`)과 "암호가 맞는가"를 검증하는 축.
+- **SSSD** : NSS와 PAM을 묶고 캐시까지 해 주는 현대 표준 계정 통합 데몬.
 
 ## 📝 연습 문제
 
