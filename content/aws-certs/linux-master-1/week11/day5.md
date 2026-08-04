@@ -1,29 +1,44 @@
 # Day 5 - Week 11 종합 복습: 공유, 방화벽, 보안의 큰 그림
 
-이번 주는 시스템을 **외부와 연결하고(공유), 외부로부터 지키는(보안)** 두 축을 다뤘다. Samba와 NFS로 파일을 나누는 법을 배우고, iptables와 firewalld로 트래픽을 통제하는 법을 익혔으며, TCP Wrapper·SELinux·로그로 보안을 겹겹이 쌓는 법을 보았다. 네트워크 서비스는 "열어야 쓸모가 있지만, 열린 만큼 위험하다"는 긴장 위에 서 있다. 오늘은 4일간의 내용을 하나의 흐름으로 엮어 복습하고, 자주 헷갈리는 함정을 다시 짚은 뒤 종합 문제로 마무리한다.
+## 📌 핵심 정리
+
+- 이번 주 축은 **연결(공유)과 방어(보안)** — 열어야 쓸모가 있지만, 열린 만큼 위험하다.
+- 공유: 윈도가 섞이면 **Samba**(smbd 139/445, nmbd 137/138, `smb.conf`), 전부 리눅스면 **NFS**(rpcbind 111, `/etc/exports`).
+- 방화벽: iptables는 **테이블→체인(INPUT/OUTPUT/FORWARD)→규칙**, firewalld는 **zone** 단위. 적용 방식과 영속화 방법이 다르다.
+- 접근 제어: TCP Wrapper는 **allow 우선**, SELinux는 DAC 위의 **MAC**(모드 3종 + `type` 컨텍스트).
+- 최다 함정 3종: exports의 **괄호 앞 공백**, firewalld의 **`--permanent` 뒤 `--reload`**, `setenforce`로는 **disabled 불가**.
 
 ## Day 1 복습: Samba — 윈도와의 다리
 
-Samba는 윈도의 **SMB/CIFS** 프로토콜을 리눅스에서 구현해 이종 OS 간 파일·프린터 공유를 가능하게 한다. 두 데몬이 핵심이다.
+- Samba는 윈도의 **SMB/CIFS** 프로토콜을 리눅스에서 구현해 이종 OS 간 파일·프린터 공유를 가능하게 한다.
+- 두 데몬이 핵심이다.
 
 | 데몬 | 역할 | 포트 |
 |------|------|------|
 | `smbd` | 파일 공유·인증 | TCP 139, 445 |
 | `nmbd` | NetBIOS 이름 해석·브라우징 | UDP 137, 138 |
 
-설정은 `/etc/samba/smb.conf`의 섹션 구조로 한다. `[global]`(전역), `[homes]`(홈 자동 공유), `[printers]`(프린터 자동 공유)가 특수 섹션이고, 나머지 섹션 이름이 곧 공유 이름이 된다. 공유 지시어로 `path`, `writable`(=`read only no`), `valid users`(그룹은 `@`), `guest ok`을 기억하자. Samba 계정은 리눅스 계정과 **별개**로 `smbpasswd -a`로 만들며, 그 전에 리눅스 시스템 계정이 먼저 있어야 한다. 검증은 `testparm`, 접속 테스트는 `smbclient -L`이다.
+- 설정은 `/etc/samba/smb.conf`의 섹션 구조로 한다.
+- 특수 섹션: `[global]`(전역), `[homes]`(홈 자동 공유), `[printers]`(프린터 자동 공유). 나머지 섹션 이름이 곧 공유 이름이 된다.
+- 공유 지시어: `path`, `writable`(=`read only no`), `valid users`(그룹은 `@`), `guest ok`.
+- Samba 계정은 리눅스 계정과 **별개**로 `smbpasswd -a`로 만든다. 그 전에 리눅스 시스템 계정이 먼저 있어야 한다.
+- 검증은 `testparm`, 접속 테스트는 `smbclient -L`이다.
 
 > 💡 **한 줄 요약**: Samba는 **이중 권한 관문** — smb.conf의 Samba 권한과 리눅스 파일시스템 권한을 둘 다 통과해야 접근된다.
 
 ## Day 2 복습: NFS — 유닉스 표준 공유
 
-NFS는 **RPC 기반**이라 포트 매퍼 **`rpcbind`(포트 111)**가 반드시 살아 있어야 한다. 서버 설정은 `/etc/exports` 하나로, "디렉터리 클라이언트(옵션)" 형식이다.
+- NFS는 **RPC 기반**이라 포트 매퍼 **`rpcbind`(포트 111)**가 반드시 살아 있어야 한다.
+- 서버 설정은 `/etc/exports` 하나로, "디렉터리 클라이언트(옵션)" 형식이다.
 
 ```
 /srv/share    192.168.1.0/24(rw,sync,no_subtree_check)
 ```
 
-여기서 **클라이언트와 괄호 사이 공백 금지**가 최대 함정이다(공백이 있으면 `*`에 그 옵션이 열림). 주요 옵션은 `ro`/`rw`, `sync`/`async`, `root_squash`(기본·보안)/`no_root_squash`(위험)다. 수정 후 적용은 `exportfs -ra`, 클라이언트는 `showmount -e`로 확인하고 `mount -t nfs 서버:경로 마운트점`으로 붙인다.
+- 여기서 **클라이언트와 괄호 사이 공백 금지**가 최대 함정이다(공백이 있으면 `*`에 그 옵션이 열림).
+- 주요 옵션: `ro`/`rw`, `sync`/`async`, `root_squash`(기본·보안)/`no_root_squash`(위험).
+- 수정 후 적용은 `exportfs -ra`.
+- 클라이언트는 `showmount -e`로 확인하고 `mount -t nfs 서버:경로 마운트점`으로 붙인다.
 
 | 구분 | NFS | Samba |
 |------|-----|-------|
@@ -37,7 +52,9 @@ NFS는 **RPC 기반**이라 포트 매퍼 **`rpcbind`(포트 111)**가 반드시
 
 ## Day 3 복습: 방화벽 — iptables와 firewalld
 
-iptables는 커널 **netfilter**를 제어하며 **테이블→체인→규칙** 구조다. filter 테이블의 세 체인은 방향으로 외운다 — **INPUT(들어옴)·OUTPUT(나감)·FORWARD(통과)**. 규칙은 위에서 아래로 순서대로 매칭되고, 안 걸리면 기본 정책(`-P`)이 적용된다.
+- iptables는 커널 **netfilter**를 제어하며 **테이블→체인→규칙** 구조다.
+- filter 테이블의 세 체인은 방향으로 외운다 — **INPUT(들어옴)·OUTPUT(나감)·FORWARD(통과)**.
+- 규칙은 위에서 아래로 순서대로 매칭되고, 안 걸리면 기본 정책(`-P`)이 적용된다.
 
 | 옵션 | 의미 | / | 타깃 | 의미 |
 |------|------|---|------|------|
@@ -47,17 +64,19 @@ iptables는 커널 **netfilter**를 제어하며 **테이블→체인→규칙**
 | `-P` | 정책 | | `LOG` | 로그 후 통과 |
 | `-j` | 타깃 지정 | | | |
 
-firewalld는 **zone**(drop/block/public/home/trusted)으로 신뢰 수준을 묶어 `firewall-cmd`로 관리한다. 최대 함정은 **런타임 vs `--permanent`** — permanent로 바꾸면 `--reload` 해야 지금 적용된다.
+- firewalld는 **zone**(drop/block/public/home/trusted)으로 신뢰 수준을 묶어 `firewall-cmd`로 관리한다.
+- 최대 함정은 **런타임 vs `--permanent`** — permanent로 바꾸면 `--reload` 해야 지금 적용된다.
 
 > ⚠️ **공통 함정**: iptables 규칙은 메모리에만 있으니 `service iptables save`로 저장해야 재부팅 후 유지된다. 또 원격에서 `-P INPUT DROP` 전에 SSH 허용 규칙을 먼저 넣지 않으면 자기 자신이 끊긴다.
 
 ## Day 4 복습: 접근 제어와 로그
 
-**TCP Wrapper**: `hosts.allow`(우선) → `hosts.deny` → 기본 허용 순서. `서비스 : 호스트` 문법, `ALL`/`LOCAL`/`EXCEPT` 키워드.
-
-**SELinux**: DAC 위의 MAC. 세 모드 **enforcing/permissive/disabled**(`getenforce`/`setenforce`, 단 setenforce로 disabled 불가, 영구는 `/etc/selinux/config`). 컨텍스트 `user:role:type:level`(type이 핵심), `ls -Z`/`chcon`/`restorecon`.
-
-**로그**: `/var/log`의 주요 파일(messages, secure, maillog, cron). 바이너리 wtmp/btmp/lastlog는 `last`/`lastb`/`lastlog` 전용 명령. `rsyslog.conf`는 `facility.priority` 짝(지정 수준 **이상** 기록, `.none` 제외, `=`정확히). `logrotate`는 `rotate N`·`compress`·`daily/weekly`로 로그를 순환·보존.
+- **TCP Wrapper** : `hosts.allow`(우선) → `hosts.deny` → 기본 허용 순서. `서비스 : 호스트` 문법에 `ALL`/`LOCAL`/`EXCEPT` 키워드를 쓴다.
+- **SELinux** : DAC 위의 MAC. 세 모드 **enforcing/permissive/disabled**를 `getenforce`/`setenforce`로 다루되 setenforce로 disabled는 불가, 영구 변경은 `/etc/selinux/config`.
+- **SELinux 컨텍스트** : `user:role:type:level`에서 type이 핵심. `ls -Z`로 보고 `chcon`으로 바꾸며 `restorecon`으로 되돌린다.
+- **로그 파일** : `/var/log`의 messages, secure, maillog, cron. 바이너리 wtmp/btmp/lastlog는 `last`/`lastb`/`lastlog` 전용 명령으로 읽는다.
+- **rsyslog.conf** : `facility.priority` 짝으로 지정 수준 **이상**을 기록. `.none`은 제외, `=`는 그 수준만.
+- **logrotate** : `rotate N`·`compress`·`daily/weekly`로 로그를 순환·보존한다.
 
 > 💡 **보안 디버깅 신호**: "권한은 맞는데 접근이 안 된다" → SELinux 컨텍스트 의심. `setenforce 0`으로 사라지면 SELinux 문제(운영에선 끄지 말고 컨텍스트 수정).
 
@@ -76,9 +95,22 @@ firewalld는 **zone**(drop/block/public/home/trusted)으로 신뢰 수준을 묶
 | setenforce 범위 | enforcing↔permissive만, disabled 불가 |
 | wtmp/btmp 조회 | last / lastb (바이너리, cat 불가) |
 
-## 마무리
+아래 종합 문제로 한 주를 정리하자.
 
-Week 11은 "연결과 방어"의 한 주였다. 공유(Samba/NFS)로 시스템을 외부에 열고, 방화벽(iptables/firewalld)으로 트래픽을 가르고, 접근 제어(TCP Wrapper/SELinux)와 로그로 안쪽을 지키는 다층 방어를 배웠다. 시험에서는 설정 파일의 정확한 지시어(`smb.conf`의 공유 옵션, `exports`의 공백 함정, `rsyslog.conf`의 facility.priority), 명령의 정확한 옵션(`smbpasswd -a`, `exportfs -ra`, `iptables -A/-I/-P/-j`, `firewall-cmd --permanent --reload`, `setenforce`), 그리고 핵심 포트(smbd 139/445, nmbd 137/138, rpcbind 111)를 묻는다. 아래 종합 문제로 한 주를 정리하자.
+## 📖 용어
+
+- **SMB/CIFS** : 윈도의 파일 공유 프로토콜. Samba가 리눅스에서 이것을 구현한다.
+- **smbd / nmbd** : Samba의 공유·인증 데몬(TCP 139/445) / NetBIOS 이름 해석 데몬(UDP 137/138).
+- **rpcbind** : RPC 서비스의 포트를 알려주는 포트 매퍼(111). NFS 동작의 전제 조건이다.
+- **/etc/exports** : NFS 서버가 "어떤 디렉터리를 누구에게 어떤 권한으로" 내보낼지 적는 파일.
+- **root_squash** : NFS에서 클라이언트의 root를 익명 사용자로 강등하는 기본 보안 옵션.
+- **체인(chain)** : iptables에서 패킷 방향별 규칙 묶음. INPUT·OUTPUT·FORWARD 세 가지.
+- **DROP / REJECT** : 응답 없이 조용히 버리는 차단 / 거부 응답을 보내는 차단.
+- **zone(영역)** : firewalld가 신뢰 수준별로 묶어 둔 규칙 세트. public이 기본이다.
+- **--permanent** : firewalld 설정을 재부팅 후에도 유지시키는 옵션. 즉시 반영하려면 `--reload`가 필요하다.
+- **hosts.allow / hosts.deny** : TCP Wrapper의 허용·거부 목록. allow를 먼저 검사한다.
+- **MAC(강제 접근 제어)** : 커널이 정책을 강제해 root조차 벗어날 수 없는 접근 제어. SELinux가 이에 해당한다.
+- **facility.priority** : rsyslog에서 로그의 출처와 심각도를 지정하는 짝. 지정 수준 이상이 기록된다.
 
 ## 📝 연습 문제
 

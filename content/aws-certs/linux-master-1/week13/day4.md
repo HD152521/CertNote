@@ -1,10 +1,19 @@
 # Day 4 - 보안·방화벽·로그 작업형: 규칙을 쓰고 컨텍스트를 바로잡는다
 
-2차 실기 보안 작업형은 "이 포트만 열고 나머지는 막아라", "이 디렉터리의 SELinux 컨텍스트를 고쳐라", "이 로그를 매주 순환·압축하라"처럼 **규칙과 설정을 직접 작성**하게 한다. 오늘은 `iptables`와 `firewall-cmd`로 방화벽 규칙을 세우고, SELinux 컨텍스트를 진단·수정하고, `rsyslog`로 로그를 분류하고 `logrotate`로 순환시키는 전 과정을 손에 익힌다. 핵심은 **명령 옵션과 설정 파일 지시어를 정확히** 쓰는 것 — 방향(INPUT/OUTPUT), 타깃(ACCEPT/DROP), zone, 컨텍스트 type, facility.priority가 한 글자도 틀리면 안 된다.
+## 📌 핵심 정리
+
+- 보안 작업형은 **규칙과 설정을 직접 작성**하게 한다. 방향·타깃·zone·type·facility.priority가 한 글자도 틀리면 안 된다.
+- iptables는 **테이블→체인→규칙**. 규칙은 위→아래 첫 매칭에서 멈추므로 `-A`(끝)와 `-I`(앞)의 위치가 결과를 바꾼다.
+- **원격 작업의 철칙**: `-P INPUT DROP` 전에 SSH(22) 허용 규칙을 먼저 넣는다. 안 그러면 자기 자신이 끊긴다.
+- 휘발 방지: iptables는 `service iptables save`, firewalld는 **`--permanent` + `--reload`**.
+- SELinux는 컨텍스트의 **type**이 핵심. `chcon`(임시) / `restorecon`(정책 기준 복원) / `semanage fcontext`(영구 등록)를 구분한다.
+- rsyslog는 `facility.priority`로 분배하며 **지정 수준 이상**을 기록한다. `.none`은 제외, `.=`는 그 수준만.
+- logrotate는 `주기 + rotate N + compress`가 뼈대. TCP Wrapper는 **allow 우선**, 둘 다 없으면 허용이다.
 
 ## iptables — netfilter를 손으로 제어
 
-iptables는 커널 netfilter를 **테이블→체인→규칙** 구조로 제어한다. filter 테이블의 세 체인을 방향으로 외운다.
+- iptables는 커널 netfilter를 **테이블→체인→규칙** 구조로 제어한다.
+- filter 테이블의 세 체인은 방향으로 외운다.
 
 | 체인 | 방향 | 예 |
 |------|------|----|
@@ -12,7 +21,7 @@ iptables는 커널 netfilter를 **테이블→체인→규칙** 구조로 제어
 | `OUTPUT` | 나감(서버에서) | 내→외부 DNS |
 | `FORWARD` | 통과(라우팅) | 게이트웨이 경유 |
 
-주요 옵션과 타깃:
+- 주요 옵션과 타깃은 다음과 같다.
 
 | 옵션 | 의미 | 타깃 | 의미 |
 |------|------|------|------|
@@ -52,7 +61,8 @@ service iptables save                 # 또는 iptables-save > /etc/sysconfig/ip
 
 ## firewall-cmd — firewalld의 zone 기반 방화벽
 
-firewalld는 신뢰 수준을 **zone**으로 묶어 관리한다. 런타임과 영구 설정이 분리된 것이 핵심.
+- firewalld는 신뢰 수준을 **zone**으로 묶어 관리한다.
+- 런타임과 영구 설정이 분리돼 있다는 점이 핵심이다.
 
 ```bash
 # 상태·기본 정보
@@ -87,7 +97,8 @@ firewall-cmd --reload
 
 ## SELinux — DAC 위의 강제 접근 제어
 
-SELinux는 전통 권한(DAC) 위에 type 기반 강제 제어(MAC)를 얹는다. 세 모드와 컨텍스트가 핵심.
+- SELinux는 전통 권한(DAC) 위에 type 기반 강제 제어(MAC)를 얹는다.
+- 세 모드와 컨텍스트가 핵심이다.
 
 ```bash
 getenforce                    # 현재 모드 (Enforcing/Permissive/Disabled)
@@ -102,7 +113,7 @@ setenforce 1                  # Enforcing로 일시 전환
 | `Permissive` | 위반 허용하되 **로그만** |
 | `Disabled` | SELinux 완전 비활성 |
 
-컨텍스트는 `user:role:type:level`이며 **type이 핵심**이다.
+- 컨텍스트는 `user:role:type:level` 형식이며 **type이 핵심**이다.
 
 ```bash
 ls -Z /var/www/html           # 파일 컨텍스트 확인 (-Z)
@@ -132,7 +143,8 @@ setsebool -P httpd_can_network_connect on    # -P=영구
 
 ## rsyslog — 로그를 facility.priority로 분류
 
-`/etc/rsyslog.conf`(또는 `/etc/rsyslog.d/*.conf`)는 `facility.priority  대상` 형식으로 로그를 분배한다.
+- `/etc/rsyslog.conf`(또는 `/etc/rsyslog.d/*.conf`)가 로그를 분배한다.
+- 형식은 `facility.priority  대상`이다.
 
 ```text
 # facility.priority         대상파일
@@ -154,7 +166,7 @@ local7.*                                    /var/log/boot.log
 | `daemon` | 데몬 | `err`/`error` |
 | `local0~7` | 사용자 정의 | `crit`, `alert`, `emerg` |
 
-priority는 **지정 수준 이상**을 기록한다. 특수 표기:
+- priority는 **지정 수준 이상**을 기록한다. 특수 표기는 다음과 같다.
 
 | 표기 | 의미 |
 |------|------|
@@ -172,7 +184,7 @@ systemctl restart rsyslog
 
 ## logrotate — 로그 순환·압축·보존
 
-`/etc/logrotate.conf`와 `/etc/logrotate.d/*`가 로그가 무한히 커지는 것을 막는다.
+- `/etc/logrotate.conf`와 `/etc/logrotate.d/*`가 로그가 무한히 커지는 것을 막는다.
 
 ```text
 # /etc/logrotate.d/myapp
@@ -209,7 +221,7 @@ logrotate -f /etc/logrotate.d/myapp   # 강제 즉시 순환
 
 ## TCP Wrapper — 서비스 단위 접근 제어
 
-방화벽보다 상위 계층에서, libwrap을 쓰는 서비스(sshd, vsftpd 등)는 두 파일로 접근을 통제한다.
+- 방화벽보다 상위 계층에서, libwrap을 쓰는 서비스(sshd, vsftpd 등)는 두 파일로 접근을 통제한다.
 
 ```text
 # /etc/hosts.allow  (먼저 검사, 일치하면 허용)
@@ -220,7 +232,8 @@ vsftpd: 192.168.1.10
 ALL: ALL
 ```
 
-검사 순서는 **hosts.allow(허용) → hosts.deny(거부) → 둘 다 없으면 기본 허용**이다. 문법은 `서비스 : 호스트`이며 `ALL`/`LOCAL`/`EXCEPT` 키워드를 쓴다.
+- 검사 순서는 **hosts.allow(허용) → hosts.deny(거부) → 둘 다 없으면 기본 허용**이다.
+- 문법은 `서비스 : 호스트`이며 `ALL`/`LOCAL`/`EXCEPT` 키워드를 쓴다.
 
 | 키워드 | 의미 |
 |--------|------|
@@ -254,9 +267,24 @@ ls -Z /var/www/html 2>/dev/null
 logrotate -d /etc/logrotate.conf 2>&1 | head -20
 ```
 
-## 마무리
+작업형은 결국 **정확한 옵션과 지시어**를 묻는다 — 방향 하나, type 하나, `--reload` 하나가 합격을 가른다.
 
-오늘은 보안의 세 기둥을 손으로 세웠다. 방화벽에서는 iptables의 방향(INPUT/OUTPUT/FORWARD)·옵션(`-A`/`-I`/`-P`/`-j`)·타깃(ACCEPT/DROP/REJECT)과 firewalld의 `--permanent --reload` 패턴, 그리고 "원격에선 SSH를 먼저 허용"이라는 철칙을 익혔다. SELinux에서는 세 모드(Enforcing/Permissive/Disabled), 컨텍스트의 type 중심, `chcon`/`restorecon`/`semanage`/`setsebool -P`의 역할 분담을 정리했다. 로그에서는 rsyslog의 `facility.priority`(`.none` 제외, `.=` 정확히)와 logrotate의 `rotate N`·`compress`·주기 지시어를 다뤘다. 작업형은 결국 **정확한 옵션과 지시어**를 묻는다 — 방향 하나, type 하나, `--reload` 하나가 합격을 가른다.
+## 📖 용어
+
+- **netfilter** : 커널에 내장된 패킷 필터링 엔진. iptables와 firewalld 모두 이것을 조작한다.
+- **체인(INPUT/OUTPUT/FORWARD)** : 각각 서버로 들어오는·서버에서 나가는·서버를 통과하는 패킷에 적용되는 규칙 묶음.
+- **-A / -I** : 규칙을 체인 끝에 추가 / 맨 앞에 삽입. 첫 매칭에서 멈추므로 위치가 결과를 바꾼다.
+- **DROP / REJECT** : 응답 없이 조용히 버리기 / 거부 응답을 보내 즉시 알리기.
+- **zone** : firewalld가 신뢰 수준별로 묶어 둔 규칙 세트. 인터페이스나 출발지를 여기에 배정한다.
+- **--permanent / --reload** : 설정을 파일에 영구 저장하는 옵션 / 그 영구 설정을 현재 세션에 반영하는 명령.
+- **rich rule** : firewalld에서 출발지·서비스·동작을 조합해 세밀하게 지정하는 확장 규칙.
+- **SELinux 컨텍스트** : 파일·프로세스에 붙는 `user:role:type:level` 라벨. 판정은 **type**이 좌우한다.
+- **chcon / restorecon / semanage fcontext** : 컨텍스트 임시 변경 / 정책 기준 복원 / 정책에 영구 등록.
+- **SELinux 불리언** : 특정 기능을 켜고 끄는 on/off 스위치. `setsebool -P`로 영구 변경한다.
+- **facility / priority** : 로그를 낸 출처 분류 / 메시지의 심각도. rsyslog는 이 짝으로 로그를 나눈다.
+- **.none / .=** : 그 facility를 기록에서 제외 / 정확히 그 수준만 기록하라는 rsyslog 표기.
+- **rotate N** : logrotate가 보관할 이전 로그 세대 수. 초과분은 삭제된다.
+- **hosts.allow / hosts.deny** : TCP Wrapper의 허용·거부 목록. allow를 먼저 검사하며, 둘 다 없으면 허용된다.
 
 ## 📝 연습 문제
 

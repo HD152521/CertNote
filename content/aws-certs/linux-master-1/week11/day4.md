@@ -1,21 +1,28 @@
 # Day 4 - 접근 제어와 보안: TCP Wrapper, SELinux, 로그 관리
 
-방화벽이 네트워크 계층에서 패킷을 거른다면, 오늘 배우는 세 가지는 그 안쪽에서 시스템을 지키는 보안의 겹겹이다. 첫째 **TCP Wrapper**는 서비스 단위로 접근을 통제하는 호스트 기반 접근 제어다. 둘째 **SELinux**는 표준 리눅스 권한(소유자·그룹·기타) 위에 강제 접근 제어(MAC)를 덧씌워, 침해당한 프로세스조차 정해진 범위 밖을 건드리지 못하게 한다. 셋째 **로그 관리**는 침입·오류의 흔적을 남기고 보존하는 일이다 — `/var/log`, `rsyslog.conf`의 facility.priority 짝, 그리고 로그가 디스크를 가득 채우지 않게 돌려 막는 `logrotate`까지. 보안은 한 겹이 뚫려도 다음 겹이 막아주는 다층 방어가 핵심이다.
+## 📌 핵심 정리
+
+- 보안은 다층 방어다 — 방화벽(네트워크) 안쪽에 **TCP Wrapper**(호스트 접근 제어) · **SELinux**(강제 접근 제어) · **로그 관리** · **IDS**가 겹겹이 놓인다.
+- TCP Wrapper 검사 순서: `hosts.allow` 먼저 → 일치하면 **허용하고 종료**, 없으면 `hosts.deny` → 둘 다 없으면 **기본 허용**.
+- SELinux는 DAC 위의 **MAC**. 모드는 `enforcing`/`permissive`/`disabled`, 컨텍스트는 `user:role:type:level`이며 **type**이 핵심이다. `setenforce`로는 disabled로 갈 수 없다.
+- 로그는 `/var/log`에. `wtmp`·`btmp`·`lastlog`는 **바이너리**라 `last`·`lastb`·`lastlog`로 읽는다. `rsyslog.conf`는 `facility.priority` 짝으로 **그 수준 이상**을 기록한다.
+- IDS는 패킷을 보는 **NIDS**(snort)와 파일 무결성을 보는 **HIDS**(tripwire·AIDE)로 갈린다. `fail2ban`은 로그를 보고 실패 IP를 자동 차단하되 설정은 `jail.local`에 쓴다.
 
 ## TCP Wrapper: hosts.allow와 hosts.deny
 
-TCP Wrapper는 `libwrap` 라이브러리(`tcpd`)를 통해 동작하는 호스트 기반 접근 제어 시스템이다. 서비스가 연결 요청을 받으면, 실제 서비스로 넘기기 전에 두 파일을 검사해 그 출발지 호스트를 허용할지 결정한다.
+- TCP Wrapper는 `libwrap` 라이브러리(`tcpd`)를 통해 동작하는 호스트 기반 접근 제어 시스템이다.
+- 서비스가 연결 요청을 받으면, 실제 서비스로 넘기기 전에 두 파일을 검사해 그 출발지 호스트를 허용할지 결정한다.
 
 | 파일 | 역할 |
 |------|------|
 | `/etc/hosts.allow` | 접근을 **허용**할 호스트 목록 |
 | `/etc/hosts.deny` | 접근을 **거부**할 호스트 목록 |
 
-검사 순서가 가장 중요한 출제 포인트다.
+- 검사 순서가 가장 중요한 출제 포인트다.
 
 > 💡 **검사 순서(절대 암기)**: ① `/etc/hosts.allow`를 먼저 검사 → 일치하면 **허용하고 종료**. ② 없으면 `/etc/hosts.deny`를 검사 → 일치하면 **거부**. ③ 어느 쪽에도 없으면 **기본 허용**. 즉 **allow가 deny보다 우선**하며, 둘 다 해당 없으면 통과한다.
 
-파일의 문법은 `서비스 : 호스트` 형태다.
+- 파일의 문법은 `서비스 : 호스트` 형태다.
 
 ```bash
 # /etc/hosts.deny — 기본적으로 모두 거부
@@ -28,7 +35,7 @@ vsftpd : .example.com
 ALL : 127.0.0.1
 ```
 
-위 조합은 "기본은 전부 거부하되, SSH는 192.168.1.0/24 서브넷에서만, FTP는 example.com 도메인에서만 허용"하는 전형적인 화이트리스트 구성이다.
+- 위 조합은 "기본은 전부 거부하되, SSH는 192.168.1.0/24 서브넷에서만, FTP는 example.com 도메인에서만 허용"하는 전형적인 화이트리스트 구성이다.
 
 | 키워드 | 의미 |
 |--------|------|
@@ -42,9 +49,11 @@ ALL : 127.0.0.1
 
 ## SELinux: 강제 접근 제어(MAC)
 
-표준 리눅스 권한(rwx, 소유자/그룹/기타)은 **임의 접근 제어(DAC)**다. 파일 소유자가 권한을 마음대로 바꿀 수 있고, root는 사실상 모든 것을 할 수 있다. 문제는 웹 서버 같은 프로세스가 침해당하면, 그 프로세스 권한으로 시스템 전체가 위험해진다는 점이다.
-
-**SELinux**(Security-Enhanced Linux)는 그 위에 **강제 접근 제어(MAC)**를 덧씌운다. 모든 프로세스와 파일에 **보안 컨텍스트(security context)**라는 라벨을 붙이고, "이 컨텍스트의 프로세스는 저 컨텍스트의 파일만 건드릴 수 있다"는 정책을 커널이 강제한다. root조차 정책을 벗어날 수 없다.
+- 표준 리눅스 권한(rwx, 소유자/그룹/기타)은 **임의 접근 제어(DAC)**다. 파일 소유자가 권한을 마음대로 바꿀 수 있고, root는 사실상 모든 것을 할 수 있다.
+- 문제: 웹 서버 같은 프로세스가 침해당하면 그 프로세스 권한으로 시스템 전체가 위험해진다.
+- **SELinux**(Security-Enhanced Linux)는 그 위에 **강제 접근 제어(MAC)**를 덧씌운다.
+- 모든 프로세스와 파일에 **보안 컨텍스트(security context)** 라벨을 붙이고, "이 컨텍스트의 프로세스는 저 컨텍스트의 파일만 건드릴 수 있다"는 정책을 커널이 강제한다.
+- root조차 이 정책을 벗어날 수 없다.
 
 ### SELinux의 세 가지 모드
 
@@ -54,7 +63,7 @@ ALL : 127.0.0.1
 | `permissive` | 정책을 **강제하지 않고** 위반을 로그만 남김 (디버깅용) |
 | `disabled` | SELinux **완전 비활성화** |
 
-모드는 명령과 설정 파일로 다룬다.
+- 모드는 명령과 설정 파일로 다룬다.
 
 ```bash
 # 현재 모드 확인
@@ -74,7 +83,8 @@ vi /etc/selinux/config
 
 ### 보안 컨텍스트
 
-SELinux의 핵심은 모든 파일·프로세스에 붙는 **컨텍스트 라벨**이다. `ls -Z`, `ps -Z`로 확인할 수 있다.
+- SELinux의 핵심은 모든 파일·프로세스에 붙는 **컨텍스트 라벨**이다.
+- `ls -Z`(파일), `ps -Z`(프로세스)로 확인할 수 있다.
 
 ```bash
 # 파일의 SELinux 컨텍스트 보기 (-Z)
@@ -84,7 +94,9 @@ ls -Z /var/www/html
 #          └user┘ └role┘  └──── type ────┘      └level┘
 ```
 
-컨텍스트는 `user:role:type:level` 형식이며, 이 중 **type(타입)**이 실제 접근 제어에서 가장 중요하다. 예를 들어 아파치(httpd) 프로세스는 `httpd_t` 타입으로 실행되고, `httpd_sys_content_t` 타입의 파일만 제공할 수 있다. 웹 콘텐츠를 엉뚱한 디렉터리에 두면 타입이 맞지 않아 "권한은 맞는데 접근이 거부되는" 현상이 생긴다.
+- 컨텍스트는 `user:role:type:level` 형식이며, 이 중 **type(타입)**이 실제 접근 제어에서 가장 중요하다.
+- 예: 아파치(httpd) 프로세스는 `httpd_t` 타입으로 실행되고, `httpd_sys_content_t` 타입의 파일만 제공할 수 있다.
+- 웹 콘텐츠를 엉뚱한 디렉터리에 두면 타입이 맞지 않아 "권한은 맞는데 접근이 거부되는" 현상이 생긴다.
 
 ```bash
 # 파일의 컨텍스트(타입) 변경
@@ -104,7 +116,8 @@ setsebool -P httpd_can_network_connect on
 
 ## 로그 관리: /var/log와 rsyslog
 
-시스템에서 일어나는 일은 대부분 로그로 남는다. 침입 분석, 장애 추적의 기본 자료다. 주요 로그 파일은 `/var/log` 아래에 모여 있다.
+- 시스템에서 일어나는 일은 대부분 로그로 남는다. 침입 분석·장애 추적의 기본 자료다.
+- 주요 로그 파일은 `/var/log` 아래에 모여 있다.
 
 | 로그 파일 | 내용 |
 |-----------|------|
@@ -124,7 +137,8 @@ setsebool -P httpd_can_network_connect on
 
 ### rsyslog.conf: facility와 priority
 
-로그를 어디에 어떻게 남길지는 **`/etc/rsyslog.conf`**에서 결정한다. 핵심 문법은 **`facility.priority    동작`** 형태다.
+- 로그를 어디에 어떻게 남길지는 **`/etc/rsyslog.conf`**에서 결정한다.
+- 핵심 문법은 **`facility.priority    동작`** 형태다.
 
 - **facility(서비스 분류)**: 로그를 발생시킨 출처 종류. 예: `auth`(인증), `authpriv`(보안 인증), `cron`, `mail`, `kern`(커널), `daemon`, `user`, `local0`~`local7`(사용자 정의)
 - **priority(심각도)**: 메시지의 중요도. 낮음→높음 순으로 `debug < info < notice < warning < err < crit < alert < emerg`
@@ -140,7 +154,9 @@ cron.*                         /var/log/cron
 kern.*                         /var/log/kern.log
 ```
 
-priority를 지정하면 **그 수준 이상**의 메시지가 모두 기록된다. 예를 들어 `mail.err`는 err, crit, alert, emerg를 모두 잡는다. `mail.*`는 모든 수준, `mail.none`은 해당 facility를 제외한다는 뜻이다.
+- priority를 지정하면 **그 수준 이상**의 메시지가 모두 기록된다.
+- 예: `mail.err`는 err, crit, alert, emerg를 모두 잡는다.
+- `mail.*`는 모든 수준, `mail.none`은 해당 facility를 제외한다는 뜻이다.
 
 > 💡 **핵심 해석**: `*.info;mail.none;authpriv.none /var/log/messages`는 "모든 facility의 info 이상을 messages에 기록하되, mail과 authpriv는 제외"라는 의미다. `=` 기호를 붙이면(예: `mail.=info`) 정확히 그 수준만 잡는다. 이 facility.priority 짝 해석이 실기 단골이다.
 
@@ -154,9 +170,9 @@ logger -p authpriv.notice "test message"
 
 ## logrotate: 로그 순환과 보존
 
-로그는 계속 쌓이면 디스크를 가득 채운다. **`logrotate`**는 로그 파일을 주기적으로 잘라(rotate) 보관하고, 오래된 것은 삭제하거나 압축한다. 보통 cron으로 매일 실행된다.
-
-설정은 `/etc/logrotate.conf`(전역)와 `/etc/logrotate.d/`(서비스별)에 있다.
+- 로그는 계속 쌓이면 디스크를 가득 채운다.
+- **`logrotate`**는 로그 파일을 주기적으로 잘라(rotate) 보관하고, 오래된 것은 삭제하거나 압축한다. 보통 cron으로 매일 실행된다.
+- 설정은 `/etc/logrotate.conf`(전역)와 `/etc/logrotate.d/`(서비스별)에 있다.
 
 ```bash
 # /etc/logrotate.d/myapp 예시
@@ -198,7 +214,10 @@ logrotate -f /etc/logrotate.conf      # -f: 강제 즉시 실행
 
 ## 침입 탐지(IDS) — 뚫린 뒤를 알아채는 겹
 
-앞의 세 겹은 "들어오지 못하게" 막고 "흔적을 남기는" 장치다. 그러나 허용된 포트로 정상 접속처럼 들어오는 공격은 막히지 않는다. **IDS**(Intrusion Detection System, 침입 탐지 시스템)는 그다음 겹으로, **이미 일어난 일의 흔적을 보고 침입을 알아채는** 도구다. 무엇을 감시하느냐에 따라 두 갈래로 나뉜다.
+- 앞의 세 겹은 "들어오지 못하게" 막고 "흔적을 남기는" 장치다.
+- 그러나 허용된 포트로 정상 접속처럼 들어오는 공격은 막히지 않는다.
+- **IDS**(Intrusion Detection System, 침입 탐지 시스템)는 그다음 겹으로, **이미 일어난 일의 흔적을 보고 침입을 알아채는** 도구다.
+- 무엇을 감시하느냐에 따라 두 갈래로 나뉜다.
 
 | 구분 | NIDS (네트워크 기반) | HIDS (호스트 기반) |
 |------|----------------------|--------------------|
@@ -210,9 +229,9 @@ logrotate -f /etc/logrotate.conf      # -f: 강제 즉시 실행
 
 ### fail2ban: 로그를 보고 자동으로 차단하기
 
-`fail2ban`은 로그 파일을 실시간으로 감시하다가 **정해진 시간 창 안에 실패 패턴이 임계치를 넘으면 그 출발지 IP를 방화벽 규칙으로 일정 시간 차단**한다. SSH 무차별 대입(brute force) 대응의 사실상 표준이다.
-
-감시 단위 하나를 **jail**(감옥)이라 부른다. "어떤 로그를(`logpath`) 어떤 필터로(`filter`) 보고, 몇 번 실패하면(`maxretry`) 얼마 동안(`bantime`) 막을지"를 묶은 한 벌이다.
+- `fail2ban`은 로그 파일을 실시간 감시하다가 **정해진 시간 창 안에 실패 패턴이 임계치를 넘으면 그 출발지 IP를 방화벽 규칙으로 일정 시간 차단**한다.
+- SSH 무차별 대입(brute force) 대응의 사실상 표준이다.
+- 감시 단위 하나를 **jail**(감옥)이라 부른다 — "어떤 로그를(`logpath`) 어떤 필터로(`filter`) 보고, 몇 번 실패하면(`maxretry`) 얼마 동안(`bantime`) 막을지"를 묶은 한 벌이다.
 
 | 파일 | 역할 |
 |------|------|
@@ -248,7 +267,8 @@ fail2ban-client reload                       # 설정 다시 읽기
 
 ### snort: 패킷을 보는 NIDS
 
-`snort`는 네트워크를 지나는 패킷을 룰과 대조해 공격 시그니처를 찾아내는 대표적 오픈소스 NIDS다. 실행 방식이 **세 가지 모드**로 나뉘는 점이 출제 포인트다.
+- `snort`는 네트워크를 지나는 패킷을 룰과 대조해 공격 시그니처를 찾아내는 대표적 오픈소스 NIDS다.
+- 실행 방식이 **세 가지 모드**로 나뉘는 점이 출제 포인트다.
 
 | 모드 | 하는 일 | 예 |
 |------|---------|-----|
@@ -256,7 +276,7 @@ fail2ban-client reload                       # 설정 다시 읽기
 | 패킷 로거(packet logger) | 잡은 패킷을 파일로 저장 | `snort -l /var/log/snort` |
 | **NIDS** | 룰과 대조해 경고 발생 | `snort -c /etc/snort/snort.conf` |
 
-룰 한 줄은 **룰 헤더 + 룰 옵션** 두 토막이다.
+- 룰 한 줄은 **룰 헤더 + 룰 옵션** 두 토막이다.
 
 ```
 alert tcp any any -> 192.168.1.0/24 80 (msg:"passwd access"; content:"/etc/passwd"; sid:1000001; rev:1;)
@@ -269,7 +289,9 @@ alert tcp any any -> 192.168.1.0/24 80 (msg:"passwd access"; content:"/etc/passw
 
 ### tripwire와 AIDE: 파일 무결성을 지키는 HIDS
 
-침입자가 남기는 가장 확실한 흔적은 **시스템 파일의 변조**다(`/bin/ls`가 바꿔치기되거나 `/etc/passwd`에 계정이 몰래 추가되는 식). `tripwire`와 `AIDE`(Advanced Intrusion Detection Environment)는 감시 대상 파일의 크기·권한·소유자·해시를 **기준 데이터베이스**로 떠 두었다가, 이후 검사에서 현재 상태와 비교해 달라진 것을 보고한다.
+- 침입자가 남기는 가장 확실한 흔적은 **시스템 파일의 변조**다 — `/bin/ls`가 바꿔치기되거나 `/etc/passwd`에 계정이 몰래 추가되는 식.
+- `tripwire`와 `AIDE`(Advanced Intrusion Detection Environment)는 감시 대상 파일의 크기·권한·소유자·해시를 **기준 데이터베이스**로 떠 둔다.
+- 이후 검사에서 현재 상태와 비교해 달라진 것을 보고한다.
 
 | 단계 | tripwire | AIDE |
 |------|----------|------|
@@ -278,15 +300,28 @@ alert tcp any any -> 192.168.1.0/24 80 (msg:"passwd access"; content:"/etc/passw
 | 무결성 검사 | `tripwire --check` | `aide --check` |
 | 정상 변경 반영 | `tripwire --update` | `aide --update` |
 
-tripwire는 설정·정책을 사이트 키와 로컬 키로 서명해 보관하고(`twadmin`), 검사 리포트는 `twprint`로 읽는다. AIDE는 기준 DB를 `/var/lib/aide/aide.db.gz`에 두며, `--init`이 만든 `aide.db.new.gz`를 관리자가 직접 이름을 바꿔 승격시키는 방식이다.
+- tripwire는 설정·정책을 사이트 키와 로컬 키로 서명해 보관하고(`twadmin`), 검사 리포트는 `twprint`로 읽는다.
+- AIDE는 기준 DB를 `/var/lib/aide/aide.db.gz`에 두며, `--init`이 만든 `aide.db.new.gz`를 관리자가 직접 이름을 바꿔 승격시키는 방식이다.
 
 > ⚠️ **함정**: 기준 DB는 **시스템이 확실히 깨끗할 때(설치 직후) 만들어야** 의미가 있다. 이미 침해된 상태에서 `--init`을 하면 백도어까지 "정상"으로 등록되어 도구가 무력해진다. 또 DB와 설정을 그 서버의 쓰기 가능한 위치에만 두면 침입자가 함께 조작할 수 있으므로 읽기 전용 매체나 외부 저장소에 보관하는 것이 원칙이다.
 
 > 📚 **실무 신호**: 세 도구는 역할이 겹치지 않는다. `fail2ban`은 **로그에 드러난 반복 실패를 즉시 차단**(대응), `snort`는 **네트워크 패킷에서 공격 시그니처를 탐지**(NIDS), `tripwire`/`AIDE`는 **파일이 바뀌었는지 사후 확인**(HIDS)한다. 그래서 실무에서는 셋을 함께 배치한다.
 
-## 마무리
+내일은 한 주를 종합 복습한다.
 
-오늘은 보안의 세 겹을 익혔다. **TCP Wrapper**는 `hosts.allow`(우선) → `hosts.deny` → 기본 허용의 순서로 호스트 단위 접근을 통제한다. **SELinux**는 DAC 위에 MAC를 덧씌워, enforcing/permissive/disabled 세 모드와 `user:role:type:level` 컨텍스트(특히 type)로 동작하며, `getenforce`/`setenforce`/`chcon`/`restorecon`이 핵심 도구다 — `setenforce`로는 disabled로 못 간다는 함정을 기억하라. **로그 관리**는 `/var/log`의 주요 파일(바이너리 wtmp/btmp는 전용 명령), `rsyslog.conf`의 facility.priority 짝(지정 수준 이상 기록), 그리고 `logrotate`의 rotate/compress 지시어가 출제 핵심이다. 마지막 겹인 **IDS**는 NIDS(패킷 감시, snort의 스니퍼·패킷로거·NIDS 세 모드)와 HIDS(파일 무결성, tripwire·AIDE의 `--init`→`--check`→`--update` 흐름)로 갈리며, `fail2ban`은 로그 감시로 실패 IP를 자동 차단하되 설정은 `jail.local`에 쓴다는 점을 기억하라. 내일은 한 주를 종합 복습한다.
+## 📖 용어
+
+- **TCP Wrapper** : `libwrap`을 쓰는 서비스에 한해 출발지 호스트를 검사해 접근을 통제하는 장치.
+- **hosts.allow / hosts.deny** : 각각 허용·거부 호스트 목록. **allow를 먼저 보고**, 둘 다 없으면 통과시킨다.
+- **DAC / MAC** : 소유자가 권한을 마음대로 바꿀 수 있는 임의 접근 제어 / 커널이 정책을 강제해 root도 못 벗어나는 강제 접근 제어.
+- **SELinux 모드** : `enforcing`(차단+기록), `permissive`(기록만), `disabled`(끔). `setenforce`로는 disabled로 못 간다.
+- **보안 컨텍스트** : 파일·프로세스에 붙는 `user:role:type:level` 라벨. 실제 판정은 **type**이 좌우한다.
+- **chcon / restorecon** : 컨텍스트를 직접 바꾸는 임시 명령 / 정책에 정의된 원래 컨텍스트로 되돌리는 명령.
+- **facility.priority** : rsyslog에서 "로그의 출처.심각도"를 지정하는 짝. 지정한 **수준 이상**이 모두 기록된다.
+- **wtmp / btmp / lastlog** : 로그인 성공·실패·마지막 로그인 기록. 바이너리라 `last`·`lastb`·`lastlog`로만 읽는다.
+- **logrotate** : 로그를 주기적으로 잘라 보관·압축·삭제하는 도구. `rotate N`은 보관할 이전 로그 개수다.
+- **NIDS / HIDS** : 네트워크 패킷을 감시하는 침입 탐지(snort) / 호스트의 파일·로그를 감시하는 침입 탐지(tripwire·AIDE).
+- **fail2ban jail** : "어떤 로그를 몇 번 실패까지 봐주고 얼마나 차단할지"를 묶은 감시 단위. 설정은 `jail.local`에 쓴다.
 
 ## 📝 연습 문제
 

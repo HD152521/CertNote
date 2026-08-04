@@ -1,20 +1,43 @@
 # Day 5 - 네트워크·서비스 작업형 모의 + 오답노트
 
-이번 주는 2차 실기의 둘째 축인 **네트워크·서비스 작업형**을 다뤘다. `ip`/`nmcli`로 주소를 세우고(Day 1), 주요 서비스 설정 파일의 핵심 지시어를 외우고(Day 2), 셸 스크립트로 자동화하고(Day 3), 방화벽·SELinux·로그로 보안을 쌓았다(Day 4). 오늘은 한 주를 12문항 모의고사로 압축해 점검한다. 각 문제 뒤의 해설은 단순 정답 확인을 넘어 **왜 다른 보기가 함정인지**까지 짚는 오답노트다. 작업형은 한 글자(옵션·지시어·방향)가 합격을 가르니, 틀린 보기에서 정확히 무엇이 틀렸는지를 가려내는 눈을 기르자.
+## 📌 핵심 정리
+
+- 이번 주 축은 **네트워크·서비스 작업형** — 주소 설정(Day 1), 서비스 설정 지시어(Day 2), 셸 스크립트(Day 3), 보안(Day 4).
+- 오늘은 한 주를 **12문항 모의고사**로 압축해 점검한다. 해설은 왜 다른 보기가 함정인지까지 짚는 오답노트다.
+- 작업형은 **한 글자(옵션·지시어·방향)가 합격을 가른다**. 부분 점수가 박한 영역이다.
+- 보기 4개 중 3개는 방향·옵션·철자 중 하나가 틀린 함정이므로, **틀린 곳을 찾아 지우는 소거법**이 빠르다.
+- 문제를 읽으면 ① 어느 영역인가 ② **임시인가 영구인가** ③ 어느 파일·명령인가를 순서대로 떠올린다.
 
 ## 이번 주 핵심 한눈에 복습
 
-**네트워크 설정**: 임시(`ip addr add`/`ip route add`) vs 영구(`ifcfg-*`의 `BOOTPROTO`/`ONBOOT=yes`/`IPADDR`, `nmcli con`). nmcli 수정 후 `con up`으로 재활성화. 진단 사다리 `ip a → ping gw → ping 8.8.8.8 → dig`. `ss -tuln`으로 포트 확인.
-
-**서비스 설정 파일**: httpd `DocumentRoot`/`Listen`, named `type master`+SOA `Serial`+레코드(A/MX/CNAME/PTR), dhcpd `range`/`fixed-address`, vsftpd `anonymous_enable`/`chroot_local_user`, smb.conf `path`/`writable`, exports 공백 금지/`root_squash`, sshd `PermitRootLogin no`.
-
-**셸 스크립트**: 대입 `=` 공백 금지, `if [ -gt/-eq/-f/-d ]` 대괄호 공백, `for/while/case`(done/done/esac), 함수 괄호 없이 호출, `$(...)`·`$?`, `while read ... done < file`, `sort|uniq -c|sort -rn`.
-
-**보안**: iptables 방향(INPUT/OUTPUT/FORWARD)·`-A/-I/-P/-j`·ACCEPT/DROP/REJECT·`service iptables save`, firewalld `--permanent --reload`, SELinux 모드·`chcon`/`restorecon`, rsyslog `facility.priority`(`.none`/`.=`), logrotate `rotate N`/`compress`.
+- **네트워크 설정** : 임시(`ip addr add`/`ip route add`)와 영구(`ifcfg-*`의 `BOOTPROTO`/`ONBOOT=yes`/`IPADDR`, `nmcli con`)를 가른다.
+- nmcli는 수정 후 `con up`으로 재활성화해야 반영된다.
+- 진단 사다리는 `ip a → ping gw → ping 8.8.8.8 → dig`. 포트 확인은 `ss -tuln`.
+- **서비스 설정 파일** : httpd `DocumentRoot`/`Listen`, named `type master` + SOA `Serial` + 레코드(A/MX/CNAME/PTR).
+- dhcpd `range`/`fixed-address`, vsftpd `anonymous_enable`/`chroot_local_user`, smb.conf `path`/`writable`.
+- exports는 괄호 앞 공백 금지와 `root_squash`, sshd는 `PermitRootLogin no`.
+- **셸 스크립트** : 대입 `=` 공백 금지, `if [ -gt/-eq/-f/-d ]`의 대괄호 안 공백, `for/while/case`(done/done/esac).
+- 함수는 괄호 없이 호출하고, `$(...)`·`$?`·`while read ... done < file`·`sort|uniq -c|sort -rn`을 패턴으로 외운다.
+- **보안** : iptables 방향(INPUT/OUTPUT/FORWARD)·`-A/-I/-P/-j`·ACCEPT/DROP/REJECT·`service iptables save`.
+- firewalld는 `--permanent` 후 `--reload`, SELinux는 모드와 `chcon`/`restorecon`.
+- rsyslog는 `facility.priority`(`.none`/`.=`), logrotate는 `rotate N`/`compress`.
 
 > 💡 **합격 신호**: 작업형은 "이 기능을 하는 정확한 명령/지시어"를 묻는다. 방향·옵션·철자가 정확하면 맞고, 하나라도 틀리면 0점인 영역이다.
 
 > 🔍 **풀이 전략**: 문제를 읽으면 ① 어느 영역인가(네트워크/서비스/스크립트/보안) ② 임시인가 영구인가 ③ 어느 파일·명령인가를 순서대로 떠올린다. 보기 4개 중 3개는 방향·옵션·철자 중 하나가 틀린 함정이므로, 정답을 고르기보다 **틀린 곳을 찾아 지우는** 소거법이 빠르다.
+
+## 📖 용어
+
+- **임시 설정 / 영구 설정** : 재부팅하면 사라지는 설정(`ip`) / 파일에 남아 유지되는 설정(`ifcfg-*`, `nmcli con`).
+- **ONBOOT** : `ifcfg-*`에서 부팅 시 인터페이스를 자동으로 올릴지 정하는 지시어. `yes`가 아니면 안 올라온다.
+- **진단 사다리** : IP → 게이트웨이 → 외부 IP → 도메인 순으로 끊어 보며 어디서 막히는지 좁히는 방법.
+- **SOA Serial** : 존 데이터의 판번호. 올려야 보조(slave) 서버가 변경을 가져간다.
+- **exports 공백 함정** : 클라이언트와 괄호 사이에 공백이 있으면 모든 호스트에 옵션이 열리는 NFS 문법 함정.
+- **PermitRootLogin** : SSH로 root가 직접 로그인할 수 있는지 정하는 지시어. 차단은 `no`.
+- **`done < 파일`** : `while read`가 파일을 한 줄씩 읽도록 입력을 붙이는 리다이렉션. 위치가 `done` 뒤다.
+- **`--permanent` + `--reload`** : firewalld에서 영구 저장 후 현재 세션에 반영하는 두 단계. 하나만 하면 반쪽이다.
+- **SELinux 컨텍스트** : 파일·프로세스에 붙는 라벨. 권한은 맞는데 접근이 막히면 여기를 의심한다.
+- **facility.priority** : rsyslog가 로그를 나누는 "출처.심각도" 짝. `.none`은 제외, `.=`는 그 수준만, 기본은 그 수준 이상.
 
 ## 📝 연습 문제
 

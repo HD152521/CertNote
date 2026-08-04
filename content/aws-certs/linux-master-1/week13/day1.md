@@ -1,23 +1,33 @@
 # Day 1 - 네트워크 설정·진단 작업형: 손으로 IP를 세우고 길을 뚫는다
 
-2차 실기의 네트워크 작업형은 "주어진 조건대로 IP를 설정하고, 경로를 잡고, 안 되면 진단하라"는 형태로 출제된다. GUI 없이 명령 한 줄과 설정 파일 한 글자가 합격을 가른다. 오늘은 현대 리눅스의 표준 도구인 `ip`·`nmcli`로 주소를 부여하고, 정적 라우팅을 추가하고, `ping`·`ss`·`dig`로 연결을 진단하는 전 과정을 손에 익힌다. 또한 RHEL/CentOS 계열의 `ifcfg-*` 설정 파일을 직접 작성해 영구 설정을 만드는 법까지 다룬다. 시험은 **명령 옵션과 파일 지시어를 정확히 쓸 수 있는가**를 본다.
+## 📌 핵심 정리
+
+- 네트워크 설정은 항상 **일시(`ip`, `ifconfig`)와 영구(`ifcfg-*`, `nmcli con`)** 두 층이다. "재부팅 후에도 유지"면 무조건 영구 설정이다.
+- `ip` 명령 문법: `ip addr add 주소/프리픽스 dev 인터페이스`, `ip route add default via 게이트웨이`. `default`가 곧 기본 경로다.
+- `nmcli con modify`로 고쳐도 **`nmcli con up`으로 재활성화해야** 적용된다 — 저장과 적용은 별개다.
+- `ifcfg-*`의 단골 빈칸은 **`BOOTPROTO`**(static/dhcp)와 **`ONBOOT=yes`**. ONBOOT가 no면 재부팅 후 안 올라온다.
+- 진단은 계층별로 끊는다: `ip a` → `ping 게이트웨이` → `ping 8.8.8.8` → `dig`. 끊긴 지점이 곧 원인이다.
+- `ping 8.8.8.8`은 되는데 도메인이 안 되면 **DNS 문제**, 게이트웨이는 되는데 외부가 안 되면 **기본 경로 누락**이다.
 
 ## 네트워크 설정의 두 층: 일시 vs 영구
 
-리눅스 네트워크 설정은 항상 두 층으로 나뉜다는 것을 먼저 머리에 박아야 한다.
+- 리눅스 네트워크 설정은 항상 두 층으로 나뉜다는 것을 먼저 머리에 박아야 한다.
 
 | 층 | 적용 시점 | 대표 도구 | 재부팅 후 |
 |----|----------|----------|----------|
 | 일시(runtime) | 즉시, 메모리에만 | `ip`, `ifconfig` | **사라짐** |
 | 영구(persistent) | 파일에 저장 | `ifcfg-*`, `nmcli con` | **유지됨** |
 
-`ip addr add`로 붙인 주소는 재부팅하면 날아간다. 영구로 남기려면 설정 파일(`/etc/sysconfig/network-scripts/ifcfg-*`)이나 `nmcli connection` 프로파일에 써야 한다. 시험에서 "재부팅 후에도 유지되게"라는 조건이 보이면 무조건 **영구 설정(파일 또는 nmcli con)**을 떠올려야 한다.
+- `ip addr add`로 붙인 주소는 재부팅하면 날아간다.
+- 영구로 남기려면 설정 파일(`/etc/sysconfig/network-scripts/ifcfg-*`)이나 `nmcli connection` 프로파일에 써야 한다.
+- 시험에서 "재부팅 후에도 유지되게"라는 조건이 보이면 무조건 **영구 설정(파일 또는 nmcli con)**을 떠올려야 한다.
 
 > 💡 **핵심 한 줄**: `ip`/`ifconfig`는 임시, `ifcfg-*`/`nmcli con`은 영구. "재부팅 후 유지" = 영구 설정.
 
 ## ip 명령으로 주소·링크·라우팅 다루기
 
-`ifconfig`/`route`는 deprecated이고 현대 표준은 **`ip` 명령(iproute2 패키지)**이다. 객체(object)와 동작으로 구성된다.
+- `ifconfig`/`route`는 deprecated이고 현대 표준은 **`ip` 명령(iproute2 패키지)**이다.
+- 문법은 객체(object)와 동작으로 구성된다.
 
 ```bash
 # 주소(address) 다루기
@@ -38,7 +48,8 @@ ip route add 10.0.0.0/24 via 192.168.10.254  # 특정 네트워크 정적 경로
 ip route del 10.0.0.0/24                      # 경로 삭제
 ```
 
-`/24`처럼 **CIDR 프리픽스로 넷마스크를 함께 지정**하는 게 `ip` 명령의 문법이다. `192.168.10.5 netmask 255.255.255.0` 같은 옛 `ifconfig` 문법과 헷갈리지 말자.
+- `/24`처럼 **CIDR 프리픽스로 넷마스크를 함께 지정**하는 게 `ip` 명령의 문법이다.
+- `192.168.10.5 netmask 255.255.255.0` 같은 옛 `ifconfig` 문법과 헷갈리지 말자.
 
 > 🔍 **암기 포인트**: `ip addr add 주소/프리픽스 dev 인터페이스`, `ip route add default via 게이트웨이`. `default`가 곧 0.0.0.0/0(기본 경로)이다.
 
@@ -53,11 +64,14 @@ route add default gw 192.168.10.1          # 기본 게이트웨이
 route add -net 10.0.0.0 netmask 255.255.255.0 gw 192.168.10.254  # 정적 경로
 ```
 
-`ifconfig`는 넷마스크를 `netmask 255.255.255.0`처럼 점10진수로 쓰고, `route`는 `add default gw`, `add -net ... netmask ... gw`로 쓴다. 두 도구의 문법 차이를 정확히 구분해야 한다.
+- `ifconfig`는 넷마스크를 `netmask 255.255.255.0`처럼 점10진수로 쓴다.
+- `route`는 `add default gw`, `add -net ... netmask ... gw` 형태로 쓴다.
+- 두 도구의 문법 차이를 정확히 구분해야 한다.
 
 ## nmcli — NetworkManager의 명령행 관문
 
-RHEL 7 이후 표준 관리자는 **NetworkManager**이고, 그 CLI가 `nmcli`다. nmcli로 만든 설정은 **영구적**이라는 점이 `ip` 명령과 결정적으로 다르다.
+- RHEL 7 이후 표준 관리자는 **NetworkManager**이고, 그 CLI가 `nmcli`다.
+- nmcli로 만든 설정은 **영구적**이라는 점이 `ip` 명령과 결정적으로 다르다.
 
 ```bash
 # 상태 조회
@@ -81,13 +95,15 @@ nmcli connection up myeth
 nmcli connection down myeth
 ```
 
-핵심 속성은 `ipv4.method`(`manual`=정적 / `auto`=DHCP), `ipv4.addresses`, `ipv4.gateway`, `ipv4.dns`다. **수정 후 `nmcli connection up`(또는 reload)으로 다시 올려야** 적용된다.
+- 핵심 속성: `ipv4.method`(`manual`=정적 / `auto`=DHCP), `ipv4.addresses`, `ipv4.gateway`, `ipv4.dns`.
+- **수정 후 `nmcli connection up`(또는 reload)으로 다시 올려야** 적용된다.
 
 > ⚠️ **함정**: `nmcli con modify`로 바꿔도 즉시 적용 안 된다. `nmcli con up <프로파일>`로 재활성화해야 반영된다. firewalld의 `--reload`와 같은 "저장과 적용은 별개" 패턴.
 
 ## ifcfg-* 파일 직접 작성 (RHEL/CentOS 영구 설정)
 
-`nmcli`가 결국 만들어 내는, 혹은 손으로 쓰는 파일이 `/etc/sysconfig/network-scripts/ifcfg-<인터페이스>`다. 작업형에서 **빈칸으로 자주 출제**되므로 지시어를 정확히 외워야 한다.
+- `nmcli`가 결국 만들어 내는, 혹은 손으로 쓰는 파일이 `/etc/sysconfig/network-scripts/ifcfg-<인터페이스>`다.
+- 작업형에서 **빈칸으로 자주 출제**되므로 지시어를 정확히 외워야 한다.
 
 ```bash
 # /etc/sysconfig/network-scripts/ifcfg-eth0  (정적 IP 예시)
@@ -112,13 +128,15 @@ DNS2=1.1.1.1
 | `GATEWAY` | 기본 게이트웨이 | |
 | `DNS1`/`DNS2` | 네임서버 | |
 
-DHCP로 받을 때는 `BOOTPROTO=dhcp`로 하고 `IPADDR`/`NETMASK`/`GATEWAY`를 비운다. 수정 후 적용은 `nmcli con reload` 후 `nmcli con up eth0`, 또는 `systemctl restart NetworkManager`다.
+- DHCP로 받을 때는 `BOOTPROTO=dhcp`로 하고 `IPADDR`/`NETMASK`/`GATEWAY`를 비운다.
+- 수정 후 적용은 `nmcli con reload` → `nmcli con up eth0`, 또는 `systemctl restart NetworkManager`다.
 
 > 💡 **단골 빈칸**: `BOOTPROTO=____`(static/dhcp), `ONBOOT=____`(yes). `ONBOOT=no`면 재부팅 후 인터페이스가 안 올라온다 — 시험의 전형적 함정.
 
 ### DNS 영구 설정: /etc/resolv.conf
 
-이름 해석용 네임서버는 `/etc/resolv.conf`에 정의된다(단, NetworkManager가 관리하면 ifcfg의 DNS1/DNS2가 이 파일을 채운다).
+- 이름 해석용 네임서버는 `/etc/resolv.conf`에 정의된다.
+- 단, NetworkManager가 관리하면 ifcfg의 `DNS1`/`DNS2`가 이 파일을 채운다.
 
 ```bash
 # /etc/resolv.conf
@@ -129,7 +147,8 @@ search example.com        # 도메인 자동 보완
 
 ## 진단 도구: ping·ss·dig·traceroute
 
-설정을 했으면 "정말 되는가"를 확인하는 진단이 따라온다. 작업형은 **계층별로 끊어 진단**하는 사고를 요구한다.
+- 설정을 했으면 "정말 되는가"를 확인하는 진단이 따라온다.
+- 작업형은 **계층별로 끊어 진단**하는 사고를 요구한다.
 
 ```bash
 # 1) L3 도달성: ping
@@ -152,7 +171,8 @@ nslookup www.example.com           # 대화형/간단 조회
 traceroute 8.8.8.8                 # 홉 단위 경로 추적
 ```
 
-`ss` 옵션은 `-t`(TCP) `-u`(UDP) `-l`(listen) `-n`(숫자) `-p`(프로세스)를 조합한다. `ss -tuln`이 "지금 무슨 포트가 열려 있나"를 보는 단골 명령이다.
+- `ss` 옵션은 `-t`(TCP) `-u`(UDP) `-l`(listen) `-n`(숫자) `-p`(프로세스)를 조합한다.
+- `ss -tuln`이 "지금 무슨 포트가 열려 있나"를 보는 단골 명령이다.
 
 > 🔍 **진단 사다리**: ① `ip a`로 IP 있나 → ② `ping 게이트웨이`로 L2/L3 → ③ `ping 8.8.8.8`로 외부 도달 → ④ `ping 도메인`/`dig`로 DNS. 어디서 끊기는지가 곧 원인이다.
 
@@ -160,7 +180,7 @@ traceroute 8.8.8.8                 # 홉 단위 경로 추적
 
 ## 진단 시나리오: "인터넷이 안 돼요"
 
-작업형 사고 흐름을 한 번에 정리하자.
+- 작업형 사고 흐름을 한 번에 정리하자.
 
 | 증상 | 의심 | 확인 명령 | 조치 |
 |------|------|----------|------|
@@ -174,7 +194,7 @@ traceroute 8.8.8.8                 # 홉 단위 경로 추적
 
 ## 호스트명과 이름 해석 우선순위
 
-네트워크 작업형에서 호스트명 설정과 로컬 이름 해석도 단골이다.
+- 네트워크 작업형에서 호스트명 설정과 로컬 이름 해석도 단골이다.
 
 ```bash
 hostnamectl                          # 현재 호스트명·OS 정보 조회
@@ -182,14 +202,15 @@ hostnamectl set-hostname web01.example.com   # 영구 호스트명 변경
 hostname                             # 현재 호스트명만 출력
 ```
 
-이름 해석은 `/etc/nsswitch.conf`의 `hosts:` 행 순서를 따른다.
+- 이름 해석은 `/etc/nsswitch.conf`의 `hosts:` 행 순서를 따른다.
 
 ```text
 # /etc/nsswitch.conf
 hosts:  files dns         # files(/etc/hosts) 먼저, 그다음 dns
 ```
 
-`files`가 앞이면 `/etc/hosts`에 적은 매핑이 DNS보다 우선한다. 로컬 테스트용 매핑은 `/etc/hosts`에 직접 적는다.
+- `files`가 앞이면 `/etc/hosts`에 적은 매핑이 DNS보다 우선한다.
+- 로컬 테스트용 매핑은 `/etc/hosts`에 직접 적는다.
 
 ```text
 # /etc/hosts
@@ -203,7 +224,7 @@ hosts:  files dns         # files(/etc/hosts) 먼저, 그다음 dns
 
 ## 직접 쳐보기
 
-아래를 직접 실행하며 출력을 눈에 익히자(테스트 머신/가상머신 권장).
+- 아래를 직접 실행하며 출력을 눈에 익히자(테스트 머신·가상머신 권장).
 
 ```bash
 # 현재 주소·경로·소켓 한 번에 파악
@@ -221,9 +242,22 @@ ping -c 3 127.0.0.1          # 루프백(자기 자신 TCP/IP 스택)
 dig +short openai.com
 ```
 
-## 마무리
+손이 기억할 때까지 직접 쳐보는 것이 유일한 합격 비결이다.
 
-오늘은 네트워크 작업형의 토대를 손에 익혔다. **임시 설정(`ip addr add`, `ip route add`)과 영구 설정(`ifcfg-*`의 `BOOTPROTO`/`ONBOOT`/`IPADDR`, `nmcli connection`)**을 명확히 구분하는 것이 첫 번째이고, **진단을 계층별로 끊어 보는 사고(`ip a` → `ping gw` → `ping 8.8.8.8` → `dig`)**가 두 번째다. 시험에서는 `ip`와 `ifconfig`/`route`의 문법 차이, `nmcli`의 속성명(`ipv4.method`/`ipv4.addresses`/`ipv4.gateway`), `ifcfg-*`의 핵심 지시어(`ONBOOT=yes`, `BOOTPROTO=static`), `ss -tuln`·`dig`의 옵션을 정확히 쓸 수 있는지를 묻는다. 손이 기억할 때까지 직접 쳐보는 것이 유일한 합격 비결이다.
+## 📖 용어
+
+- **일시 설정 / 영구 설정** : 메모리에만 남아 재부팅 시 사라지는 설정(`ip`) / 파일에 저장돼 유지되는 설정(`ifcfg-*`, `nmcli con`).
+- **iproute2** : `ifconfig`·`route`를 대체하는 현대 네트워크 도구 모음. 대표 명령이 `ip`다.
+- **CIDR 프리픽스** : `/24`처럼 넷마스크를 비트 수로 적는 표기. `ip` 명령은 이 방식을 쓴다.
+- **기본 게이트웨이(default)** : 목적지를 모르는 모든 패킷을 내보낼 출구. `ip route add default via <IP>`로 설정한다.
+- **NetworkManager / nmcli** : RHEL 7 이후의 표준 네트워크 관리 데몬 / 그 명령행 도구. 만든 설정이 영구적이다.
+- **ipv4.method** : nmcli에서 주소 할당 방식을 정하는 속성. `manual`이 정적, `auto`가 DHCP.
+- **BOOTPROTO** : `ifcfg-*`에서 주소 할당 방식을 정하는 지시어. `static`(또는 `none`)과 `dhcp`.
+- **ONBOOT** : 부팅 시 그 인터페이스를 자동으로 올릴지 정하는 지시어. `yes`가 아니면 재부팅 후 안 올라온다.
+- **ss** : 열린 소켓·포트를 보는 명령(netstat 대체). `-t`TCP `-u`UDP `-l`리스닝 `-n`숫자 `-p`프로세스.
+- **dig** : DNS 서버에 직접 질의해 이름 해석을 확인하는 도구. `+short`로 결과만 볼 수 있다.
+- **nsswitch.conf** : 이름을 `/etc/hosts`(files)로 먼저 볼지 DNS로 먼저 볼지 조회 순서를 정하는 파일.
+- **hostnamectl** : 시스템 호스트명을 조회·변경하는 systemd 명령. `set-hostname`은 영구 적용이다.
 
 ## 📝 연습 문제
 

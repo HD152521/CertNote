@@ -1,10 +1,19 @@
 # Day 2 - 서비스 설정파일 단답: 지시어 하나가 합격을 가른다
 
-2차 실기 단답형의 핵심은 "이 설정 파일에서 이 기능을 켜는 지시어는 무엇인가"를 묻는 것이다. 웹(httpd), DNS(named/zone), DHCP(dhcpd), FTP(vsftpd), Samba(smb.conf), NFS(exports), SSH(sshd_config) — 주요 서비스의 설정 파일에서 **핵심 지시어를 정확한 철자로 쓸 수 있어야** 점수가 된다. 오늘은 각 서비스 설정 파일을 빈칸 채우기 형태로 훑으며, 시험에 가장 자주 나오는 지시어와 그 의미·함정을 정리한다. 명령이 아니라 **파일 안의 단어**를 외우는 날이다.
+## 📌 핵심 정리
+
+- 오늘은 명령이 아니라 **설정 파일 안의 단어**를 외운다. 빈칸은 결국 "이 기능 = 이 지시어"의 1:1 매핑이다.
+- 웹: 문서 루트는 **`DocumentRoot`**, 수신 포트는 **`Listen`**(`Port` 아님), 기본 문서는 `DirectoryIndex`.
+- DNS: `named.conf`(설정) + zone 파일(데이터) 두 축. **존을 고치면 SOA Serial을 반드시 증가**시킨다. 이름→IP는 `A`, IP→이름은 `PTR`.
+- DHCP는 `range`(동적 범위)와 `host`+`hardware ethernet`+`fixed-address`(MAC 고정). FTP는 `anonymous_enable`·`write_enable`·`chroot_local_user`.
+- 공유: Samba는 `path`·`writable`·`valid users`(그룹은 `@`), NFS exports는 **괄호 앞 공백 금지**와 `root_squash`.
+- SSH는 `PermitRootLogin no`가 핵심. 서버 파일은 `sshd_config`, 클라이언트 파일은 `ssh_config`로 서로 다르다.
+- 설정을 고쳤으면 **검증 도구(`testparm`·`named-checkconf`·`httpd -t`·`sshd -t`)로 확인하고 재시작**까지가 한 세트다.
 
 ## Apache httpd.conf — 웹 서버의 심장
 
-설정 파일은 `/etc/httpd/conf/httpd.conf`(RHEL 계열). 단답에 자주 나오는 지시어는 다음과 같다.
+- 설정 파일은 `/etc/httpd/conf/httpd.conf`(RHEL 계열).
+- 단답에 자주 나오는 지시어는 다음과 같다.
 
 ```apache
 ServerRoot "/etc/httpd"        # 설정·로그 기준 디렉터리
@@ -37,7 +46,8 @@ CustomLog "logs/access_log" combined   # 접근 로그
 
 ## BIND named.conf + zone 파일 — DNS의 두 축
 
-DNS 서버 BIND는 **메인 설정(`/etc/named.conf`)**과 **존 데이터(`/var/named/*.zone`)** 두 파일로 동작한다. 둘을 구분하는 것이 핵심이다.
+- DNS 서버 BIND는 **메인 설정(`/etc/named.conf`)**과 **존 데이터(`/var/named/*.zone`)** 두 파일로 동작한다.
+- 둘을 구분하는 것이 핵심이다.
 
 ```text
 // /etc/named.conf
@@ -52,7 +62,7 @@ zone "example.com" IN {
 };
 ```
 
-존 파일(`example.com.zone`)에는 **리소스 레코드(RR)**가 들어간다.
+- 존 파일(`example.com.zone`)에는 **리소스 레코드(RR)**가 들어간다.
 
 ```text
 $TTL 86400
@@ -86,7 +96,8 @@ ftp     IN  CNAME www               ; 별칭
 
 ## DHCP dhcpd.conf — 주소를 빌려주는 규칙
 
-DHCP 서버 설정은 `/etc/dhcp/dhcpd.conf`. subnet 블록 안에 임대 범위와 옵션을 정의한다.
+- DHCP 서버 설정은 `/etc/dhcp/dhcpd.conf`.
+- subnet 블록 안에 임대 범위와 옵션을 정의한다.
 
 ```text
 # /etc/dhcp/dhcpd.conf
@@ -116,7 +127,8 @@ host printer {                                   # 고정 IP 예약
 
 ## vsftpd.conf — FTP 접속 통제
 
-`/etc/vsftpd/vsftpd.conf`. 익명 접속·쓰기 허용·chroot가 단골이다.
+- 설정 파일은 `/etc/vsftpd/vsftpd.conf`.
+- 익명 접속·쓰기 허용·chroot가 단골이다.
 
 ```text
 # /etc/vsftpd/vsftpd.conf
@@ -156,7 +168,8 @@ ftpd_banner=Welcome        # 접속 배너
 /srv/data    192.168.1.0/24(rw,sync,no_subtree_check)
 ```
 
-NFS `exports`의 최대 함정은 **클라이언트와 괄호 사이 공백 금지**(공백이 있으면 모든 호스트에 기본 옵션이 열림). 주요 옵션은 `rw`/`ro`, `sync`/`async`, `root_squash`(기본·안전)/`no_root_squash`(위험)다.
+- NFS `exports`의 최대 함정은 **클라이언트와 괄호 사이 공백 금지**다(공백이 있으면 모든 호스트에 기본 옵션이 열린다).
+- 주요 옵션은 `rw`/`ro`, `sync`/`async`, `root_squash`(기본·안전)/`no_root_squash`(위험)다.
 
 | 파일 | 핵심 지시어 |
 |------|-----------|
@@ -167,7 +180,8 @@ NFS `exports`의 최대 함정은 **클라이언트와 괄호 사이 공백 금�
 
 ## sshd_config — 원격 접속 보안
 
-`/etc/ssh/sshd_config`. 보안 강화 지시어가 단답에 자주 나온다.
+- 설정 파일은 `/etc/ssh/sshd_config`.
+- 보안 강화 지시어가 단답에 자주 나온다.
 
 ```text
 # /etc/ssh/sshd_config
@@ -204,7 +218,8 @@ MaxAuthTries 3                   # 인증 시도 횟수 제한
 
 ## 서비스 기동·확인 — 설정 뒤엔 항상 적용
 
-설정 파일을 고쳤으면 서비스를 재시작하고 상태를 확인하는 것까지가 한 세트다. 각 서비스의 데몬·포트·관리 명령을 정확히 알아야 한다.
+- 설정 파일을 고쳤으면 서비스를 재시작하고 상태를 확인하는 것까지가 한 세트다.
+- 각 서비스의 데몬·포트·관리 명령을 정확히 알아야 한다.
 
 | 서비스 | 데몬(유닛) | 포트 | 재시작 |
 |--------|-----------|------|--------|
@@ -229,7 +244,7 @@ ss -tuln | grep ':53'            # 포트가 실제로 열렸는지 확인
 
 ## 직접 쳐보기
 
-설정 파일을 열어 지시어를 눈으로 확인하고, 문법 검사 도구로 검증하자.
+- 설정 파일을 열어 지시어를 눈으로 확인하고, 문법 검사 도구로 검증하자.
 
 ```bash
 # 각 설정 파일의 핵심 지시어 확인 (주석·빈줄 제외)
@@ -244,9 +259,24 @@ httpd -t                       # apache 설정 검증
 sshd -t                        # sshd 설정 검증
 ```
 
-## 마무리
+지시어는 철자 하나까지 정확해야 점수가 된다. 설정 후 전용 도구로 검증하는 습관도 함께 익히자.
 
-오늘은 명령이 아니라 **설정 파일 안의 단어**를 외웠다. 웹의 `DocumentRoot`/`Listen`, DNS의 `type master`와 SOA `Serial`·레코드(A/MX/CNAME/PTR), DHCP의 `range`와 `fixed-address`, FTP의 `anonymous_enable`/`write_enable`/`chroot_local_user`, Samba의 `path`/`writable`/`valid users`, NFS exports의 공백 함정과 `root_squash`, SSH의 `PermitRootLogin no` — 이 지시어들은 철자 하나까지 정확해야 점수가 된다. 각 서비스는 전용 검증 도구(`testparm`, `named-checkconf`, `httpd -t`, `sshd -t`)가 있으니 설정 후 검증하는 습관도 함께 익히자. 빈칸은 결국 "이 기능 = 이 지시어"의 1:1 매핑이다.
+## 📖 용어
+
+- **DocumentRoot** : Apache가 웹 문서를 찾는 최상위 디렉터리를 지정하는 지시어. 단답 최다 출제.
+- **Listen** : Apache가 요청을 받을 포트를 지정하는 지시어. 옛 `Port` 지시어가 아니다.
+- **AllowOverride** : 그 디렉터리에서 `.htaccess`로 덮어쓸 수 있는 범위. `None`이면 .htaccess가 무시된다.
+- **SOA Serial** : 존 데이터의 판번호. 존을 고칠 때마다 올려야 보조(slave) 서버가 변경을 가져간다.
+- **A 레코드 / PTR 레코드** : 이름을 IP로 바꾸는 정방향 레코드 / IP를 이름으로 바꾸는 역방향 레코드.
+- **MX 레코드** : 그 도메인의 메일을 받을 서버와 우선순위를 지정하는 레코드. 숫자가 작을수록 우선이다.
+- **CNAME** : 다른 이름을 가리키는 별칭 레코드.
+- **range** : DHCP가 동적으로 나눠 줄 IP 주소 범위를 정하는 지시어.
+- **fixed-address** : 특정 MAC(`hardware ethernet`)에 항상 같은 IP를 주기 위한 DHCP 지시어.
+- **chroot_local_user** : vsftpd에서 사용자를 자기 홈 디렉터리에 가둬 상위로 못 나가게 하는 설정.
+- **valid users** : Samba 공유에 접근할 수 있는 계정 목록. 앞에 `@`를 붙이면 그룹을 뜻한다.
+- **root_squash** : NFS에서 클라이언트의 root를 익명 사용자로 강등하는 기본 보안 옵션.
+- **PermitRootLogin** : SSH로 root가 직접 로그인할 수 있는지 정하는 지시어. 보안상 `no`가 권장된다.
+- **sshd_config vs ssh_config** : SSH **서버**(데몬)의 설정 파일 / SSH **클라이언트**의 설정 파일. 이름이 비슷하니 구분해야 한다.
 
 ## 📝 연습 문제
 
