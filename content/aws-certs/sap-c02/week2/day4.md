@@ -198,6 +198,186 @@ aws sso-admin create-account-assignment \
 aws sso-admin list-instances
 ```
 
+## 아키텍처 다이어그램: 사람·기계·파이프라인의 세 갈래 진입로
+
+Pro 시험이 실제로 구분하게 만드는 건 "누가 들어오는가"다. 사람, 온프레미스 서버, CI/CD 파이프라인은 각각 다른 진입로를 써야 한다. 하나의 그림으로 정리하면 이렇다.
+
+```
+ ┌──────────────┐  ┌──────────────────┐  ┌─────────────────┐
+ │ 사람(직원)    │  │ 온프레 서버·장비  │  │ CI/CD 파이프라인 │
+ └──────┬───────┘  └────────┬─────────┘  └────────┬────────┘
+        │                   │                     │
+   SAML/OIDC           X.509 인증서            OIDC 토큰
+        │                   │                     │
+ ┌──────▼───────┐   ┌───────▼────────┐   ┌────────▼─────────┐
+ │ 외부 IdP      │   │ IAM Roles      │   │ IAM OIDC          │
+ │ (Okta/Entra) │   │ Anywhere       │   │ Identity Provider │
+ └──────┬───────┘   │ (Trust Anchor  │   │ (GitHub/GitLab)   │
+        │ SCIM      │  + Profile)    │   └────────┬─────────┘
+        │ (사용자 동기화)└───────┬────────┘            │
+ ┌──────▼────────────────┐     │            AssumeRoleWithWebIdentity
+ │ IAM Identity Center    │     │                     │
+ │ (Management 계정 설치, │  AssumeRole              │
+ │  홈 리전 1곳에 고정)    │     │                     │
+ │  Users / Groups        │     │                     │
+ │  Permission Sets       │     │                     │
+ └──────┬─────────────────┘     │                     │
+        │ Account Assignment    │                     │
+        ▼                       ▼                     ▼
+ ┌──────────────────────────────────────────────────────────┐
+ │  멤버 계정 A / B / C ...                                  │
+ │   AWSReservedSSO_<PS>_<random>   앱 전용 Role   배포 Role │
+ │   (IDC가 자동 생성·자동 회수)     (인증서 기반)  (OIDC 기반)│
+ └──────────────────────────────────────────────────────────┘
+
+  ▼ 세 갈래를 가르는 한 문장
+  사람이 콘솔/CLI로 들어온다      → IAM Identity Center
+  데이터센터의 서버·에이전트다     → IAM Roles Anywhere
+  GitHub Actions 같은 파이프라인다 → OIDC + AssumeRoleWithWebIdentity
+  ※ 셋 다 "장기 Access Key를 만들지 않는다"는 목표는 같다.
+```
+
+> 🔍 **더 깊이**: 세 진입로의 공통 설계 사상은 **장기 자격증명 제거(credential-less)**다. IAM User의 Access Key는 만료가 없어서 한 번 유출되면 회수될 때까지 유효하다. 반면 세 경로 모두 STS의 임시 자격증명(기본 1시간, 최대 12시간)으로 귀결된다. 유출되어도 시간이 지나면 스스로 죽는다. Pro 시험에서 "Access Key를 코드에 저장한다", "IAM User를 CI에 만든다" 같은 보기는 거의 언제나 오답인 이유가 이것이다.
+
+> ⚠️ **함정**: IAM Identity Center 인스턴스는 **홈 리전 한 곳**에 만들어지고, 아이덴티티 스토어도 거기에 산다. 나중에 다른 리전으로 옮기려면 인스턴스를 지우고 다시 만들어야 하며, 그러면 모든 Permission Set 할당이 사라진다. 데이터 주권 요건이 있는 조직은 랜딩존 홈 리전과 IDC 홈 리전을 처음부터 맞춰야 한다.
+
+## 트레이드오프 비교표: 멀티 계정 접근을 푸는 5가지 방법
+
+같은 "80개 계정에 접근시켜라"는 요구도 수단이 다섯이다. Pro 시험은 이 다섯을 나란히 놓고 한정어로 하나를 고르게 한다.
+
+| 방법 | 자격증명 수명 | 운영 부담 | 퇴사 시 회수 속도 | 감사 추적 | 적합 |
+|------|----------------|-----------|-------------------|-----------|------|
+| **계정마다 IAM User** | 무기한(장기 키) | **최악** (계정×인원) | 수동, 누락 위험 | 계정별 분산 | 사실상 안티패턴 |
+| **허브 계정 IAM User + Cross-Account Role** | 임시(AssumeRole) | 중간 (Role 신뢰 관계 관리) | 허브 User 하나만 삭제 | Role별 추적 가능 | 소규모·과도기 |
+| **IAM Identity Center** | 임시(1~12h) | **가장 낮음** | **SCIM으로 수 분 내 자동** | 중앙 집중 | **직원 SSO 표준** |
+| **IAM Roles Anywhere** | 임시 | 중간 (PKI 운영 필요) | 인증서 폐기(CRL) | Role별 추적 | 온프레 서버·장비 |
+| **OIDC 페더레이션** | 임시(잡 단위) | 낮음 | 리포·브랜치 조건으로 즉시 | 잡 단위 추적 | CI/CD 파이프라인 |
+
+> 💡 **암기 팁**: **"사람은 IDC, 기계는 Roles Anywhere, 빌드는 OIDC."** 이 한 줄이면 Pro 시험의 아이덴티티 문항 상당수가 정리된다. 그리고 어느 경우에도 **IAM User + 장기 Access Key**는 정답이 아니다.
+
+> 🎯 **시나리오**: "온프레미스 데이터센터의 백업 에이전트 200대가 S3에 업로드해야 한다. 각 서버에 Access Key를 배포하지 않으면서 자격증명을 자동 회전하고 싶다." — 답: **IAM Roles Anywhere**. 사내 PKI를 Trust Anchor로 등록하고, 각 서버의 X.509 인증서로 STS 임시 자격증명을 받는다. IDC는 사람용이라 200대의 무인 서버에는 맞지 않고, IAM User 200개는 키 회전 운영이 불가능하다.
+
+## IAM User에서 IDC로 넘어가는 전환 순서
+
+"이미 계정마다 IAM User가 흩어져 있다. 무중단으로 IDC로 옮겨라." — 이 전환은 순서를 틀리면 사람들이 콘솔에 못 들어가는 사고가 난다.
+
+```
+1단계  현황 파악 (Inventory)
+   ├── 전 계정 IAM User·Access Key·최근 사용 시각 수집
+   ├── Access Advisor로 각 User가 실제로 쓴 서비스만 추출
+   └── 근거: 기존 권한을 그대로 복사하면 과잉 권한이 그대로 이식된다.
+             실제 사용 이력이 Permission Set 설계의 유일한 근거다.
+
+2단계  Permission Set 설계 (역할의 표준화)
+   ├── 개인별 권한이 아니라 직무별 묶음으로 재설계
+   ├── 세션 길이 차등: Admin 1h / DevOps·Data 4h / ReadOnly 8h
+   └── 근거: IAM User 시절의 "사람마다 다른 정책"을 그대로 옮기면
+             IDC의 이점(그룹 단위 관리)이 사라진다.
+
+3단계  IdP 연결과 SCIM 동기화 (읽기 전용 검증)
+   ├── Okta/Entra ID를 IDC에 연결, SCIM으로 그룹·사용자 동기화
+   ├── 먼저 ReadOnlyAccess Permission Set만 소수 계정에 할당해 검증
+   └── 근거: 인증 경로부터 확인해야 한다. 권한을 크게 주고 시작하면
+             문제 발생 시 원인이 인증인지 권한인지 분리되지 않는다.
+
+4단계  병행 운영 (Dual-run)
+   ├── IAM User와 IDC 접근을 일정 기간 동시에 열어둔다
+   ├── 사용자에게 SSO 포털 URL 안내, CLI 프로파일 전환 가이드 배포
+   └── 근거: CLI·SDK·서드파티 도구가 예상치 못한 곳에서 옛 키를 쓴다.
+             병행 기간 없이 끊으면 배치·모니터링 도구가 함께 죽는다.
+
+5단계  잔여 사용 추적 후 IAM User 비활성화
+   ├── CloudTrail로 "여전히 IAM User로 들어오는 호출" 추적
+   ├── 사람 계정은 삭제, 자동화용은 Role·OIDC로 개별 이관
+   └── 근거: 사람용과 자동화용을 구분하지 않고 일괄 삭제하면
+             야간 배치가 조용히 멈춘다.
+
+6단계  SCP로 되돌아갈 길 차단
+   ├── 멤버 계정에서 iam:CreateUser·CreateAccessKey를 SCP로 Deny
+   └── 근거: 막지 않으면 급할 때 누군가 다시 IAM User를 만든다.
+             전환은 정책으로 고정해야 되돌아가지 않는다.
+```
+
+> ⚠️ **함정**: 5단계에서 가장 많이 놓치는 게 **서드파티 SaaS 연동용 IAM User**다. 모니터링 도구, 비용 분석 SaaS, 백업 벤더가 오래전에 만든 Access Key를 쓰고 있는 경우가 흔하다. 이들은 사람이 아니므로 IDC로 옮길 수 없고, **Cross-Account Role + External ID** 방식으로 개별 전환해야 한다. External ID는 confused deputy 공격을 막는 필수 요소다 — 벤더가 다른 고객의 계정을 자기 Role로 접근하는 것을 방지한다.
+
+## Permission Set 실물: 정책·경계·속성까지
+
+Permission Set은 단순한 관리형 정책 부착 이상이다. 인라인 정책, 고객 관리형 정책 참조, 권한 경계를 모두 조합할 수 있다.
+
+```bash
+# 1) 인라인 정책 부착 — 이 Permission Set에만 적용되는 좁은 권한
+aws sso-admin put-inline-policy-to-permission-set \
+  --instance-arn arn:aws:sso:::instance/ssoins-xxx \
+  --permission-set-arn arn:aws:sso:::permissionSet/ssoins-xxx/ps-yyy \
+  --inline-policy file://data-scientist-inline.json
+
+# 2) 고객 관리형 정책 "참조" — 각 대상 계정에 같은 이름의 정책이 있어야 한다
+aws sso-admin attach-customer-managed-policy-reference-to-permission-set \
+  --instance-arn arn:aws:sso:::instance/ssoins-xxx \
+  --permission-set-arn arn:aws:sso:::permissionSet/ssoins-xxx/ps-yyy \
+  --customer-managed-policy-reference Name=CorpDataAccess,Path=/
+
+# 3) 권한 경계 부착 — 이 Permission Set이 넘을 수 없는 천장
+aws sso-admin put-permissions-boundary-to-permission-set \
+  --instance-arn arn:aws:sso:::instance/ssoins-xxx \
+  --permission-set-arn arn:aws:sso:::permissionSet/ssoins-xxx/ps-yyy \
+  --permissions-boundary \
+    ManagedPolicyArn=arn:aws:iam::aws:policy/PowerUserAccess
+
+# 4) 변경 후에는 반드시 재프로비저닝해야 각 계정 Role에 반영된다
+aws sso-admin provision-permission-set \
+  --instance-arn arn:aws:sso:::instance/ssoins-xxx \
+  --permission-set-arn arn:aws:sso:::permissionSet/ssoins-xxx/ps-yyy \
+  --target-type ALL_PROVISIONED_ACCOUNTS
+```
+
+```json
+// data-scientist-inline.json — 프로젝트 태그가 일치하는 버킷만 읽게 하는 ABAC 정책
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListOwnProjectBuckets",
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket", "s3:GetBucketLocation"],
+      "Resource": "arn:aws:s3:::data-*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Project": "${aws:PrincipalTag/Project}"
+        }
+      }
+    },
+    {
+      "Sid": "ReadOwnProjectObjects",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject"],
+      "Resource": "arn:aws:s3:::data-*/*"
+    }
+  ]
+}
+```
+
+> ⚠️ **함정**: 2번의 **고객 관리형 정책 참조**가 시험과 실무 모두에서 자주 사고를 낸다. Permission Set은 정책의 **이름과 경로만** 참조한다. 그 이름의 정책이 대상 계정에 존재하지 않으면 프로비저닝이 실패한다. 따라서 이 방식을 쓰려면 CloudFormation StackSets나 AFT로 **모든 대상 계정에 같은 이름의 정책을 먼저 배포**해두어야 한다. "각 계정마다 다른 내용의 정책을 같은 이름으로" 둘 수 있다는 게 장점이자 위험이다.
+
+> 🔍 **더 깊이**: 4번의 재프로비저닝을 빼먹는 것도 흔한 실수다. Permission Set을 수정해도 이미 각 계정에 만들어진 `AWSReservedSSO_*` IAM Role은 자동으로 즉시 갱신되지 않는다. `provision-permission-set`을 호출해야 변경분이 각 계정 Role에 반영된다. 콘솔에서는 "Permission set이 변경되었습니다. 재프로비저닝하세요"라는 배너로 알려주지만, API·IaC로 관리하면 이 단계를 명시적으로 넣어야 한다.
+
+## 한정어가 바뀌면 답이 달라진다
+
+"직원이 여러 AWS 계정에 접근해야 한다"는 하나의 요구에, 한정어만 바꿔 보자.
+
+| 한정어 | 정답 방향 | 왜 |
+|--------|-----------|-----|
+| **LEAST operational overhead** | IDC + 외부 IdP + **SCIM** | 사용자 생애주기를 IdP 한 곳에서만 관리. 계정이 늘어도 작업 0 |
+| **FASTEST revocation on termination** | IdP에서 비활성화 + **SCIM 동기화** | JIT 프로비저닝은 다음 로그인까지 반영이 지연된다 |
+| **MOST granular / 프로젝트가 계속 늘어남** | **ABAC** (속성 → 세션 태그 → 리소스 태그) | Permission Set을 프로젝트마다 만들면 관리 대상이 선형 증가 |
+| **MOST cost-effective** | **IDC** (서비스 자체 무과금) | 서드파티 권한 관리 SaaS나 AD Connector 추가는 비용 발생 |
+| **온프레 AD를 계속 권위 소스로 유지** | AD Connector 또는 AWS Managed AD + IDC | 사용자 원본을 AWS로 옮기지 않고 연결만 한다 |
+| **고객(B2C) 로그인** | **Cognito** | IDC는 직원용. 이 한정어가 보이면 즉시 갈린다 |
+
+> 💡 **암기 팁**: **"세션 길이는 권한에 반비례."** Admin은 짧게(1h), ReadOnly는 길게(8h). 시험에서 "관리자 권한 노출을 줄여라"는 요구가 나오면 (1) 세션 단축, (2) MFA 강제, (3) 평시 PowerUser·필요 시 승격(break-glass)의 세 축을 함께 고르는 게 정답 방향이다.
+
+> 🎯 **시나리오**: "전 직원이 IDC로 콘솔에 들어온다. 그런데 감사팀이 'Permission Set이 과잉 권한을 주고 있지 않은지 증명하라'고 요구했다. 어떻게 접근하는가?" — 답: **Organizations 단위 서비스 최종 액세스(service last accessed) 데이터로 실제 사용 서비스를 추출하고, IAM Access Analyzer의 정책 생성으로 최소 권한 정책 초안을 만든 뒤 Permission Set을 재설계**한다. 감으로 권한을 줄이면 반드시 업무가 막힌다. 근거 데이터 없이 축소한 정책은 며칠 안에 예외 요청으로 원래대로 돌아간다.
+
 ## 정리하며
 
 오늘 본 그림은 셋이다. 첫째, **IAM Identity Center는 멀티 계정 SSO의 표준**이고 Permission Set이 IAM Role을 자동 생성한다. 둘째, **외부 IdP는 SCIM으로 자동 동기화**되어 직원 퇴사 즉시 모든 계정 권한 회수. 셋째, **IDC는 직원, Cognito는 고객** — 절대 헷갈리지 말 것.

@@ -184,6 +184,286 @@ CDK: 프로그래밍 언어 → CloudFormation 변환
 
 ---
 
+## 📬 메시징 4종을 가르는 단 하나의 축: 메시지는 소비되면 사라지는가
+
+SQS·SNS·Kinesis·EventBridge를 서비스 설명으로 외우면 시나리오에서 계속 흔들린다. 네 서비스를 한 번에 가르는 축은 **"소비 후 메시지가 사라지는가, 남는가"** 다.
+
+```
+[소비하면 사라진다 — 작업 큐 모델]
+  SQS  ─ 워커가 받고 처리한 뒤 DeleteMessage → 그 메시지는 끝
+         · 여러 워커가 나눠 갖는다(부하 분산)
+         · 같은 메시지를 두 시스템이 각자 처리할 수는 없다
+
+[구독자마다 사본이 간다 — 발행/구독 모델]
+  SNS  ─ 한 번 발행 → 모든 구독자에게 push (팬아웃)
+         · 구독자가 그 순간 없으면 그 사본은 사라진다(재생 불가)
+         · 그래서 SNS → SQS로 받아 두는 조합이 표준
+
+[남아 있고 몇 번이든 다시 읽는다 — 로그/스트림 모델]
+  Kinesis ─ 레코드가 보존 기간(24h~365d) 동안 스트림에 남는다
+         · 여러 Consumer가 각자의 위치(체크포인트)로 독립 소비
+         · 같은 데이터를 실시간 처리 + 배치 재처리 둘 다 가능
+
+[규칙으로 라우팅한다 — 이벤트 버스 모델]
+  EventBridge ─ 이벤트 내용을 규칙으로 매칭해 여러 대상에 전달
+         · AWS 서비스 이벤트·SaaS·커스텀을 한 버스에서
+         · 스키마 레지스트리·아카이브·재생(replay) 지원
+```
+
+이 축 하나로 대부분의 시나리오가 갈린다. "**여러 팀이 같은 데이터를 각자 처리하고, 나중에 다시 돌려 볼 수도 있어야 한다**"면 Kinesis다(SQS는 소비하면 사라지므로 오답). "**한 이벤트로 3개 시스템을 동시에 깨워야 한다**"면 SNS 팬아웃 또는 EventBridge다. "**작업을 뒤로 미루고 워커가 천천히 처리한다**"면 SQS다.
+
+| 항목 | SQS Standard | SQS FIFO | SNS | Kinesis Data Streams |
+|------|-------------|----------|-----|---------------------|
+| 모델 | 작업 큐 | 순서 있는 작업 큐 | 발행/구독 | 스트림(로그) |
+| 순서 | 보장 없음 | **메시지 그룹 단위 보장** | 보장 없음 | **파티션 키 단위 보장** |
+| 중복 | 최소 1회(중복 가능) | 5분 창 내 중복 제거 | 최소 1회 | 재처리 시 중복 가능 |
+| 처리량 | 사실상 무제한 | 배치 없이 300/s, 10개 배치 시 3,000/s | 매우 높음 | **샤드당 1MB/s·1,000 레코드/s** |
+| 보존 | 기본 4일, 최대 **14일** | 동일 | 없음(즉시 전달) | 24시간 ~ **365일** |
+| 재처리 | 불가(삭제되면 끝) | 불가 | 불가 | **가능**(반복 읽기) |
+| 소비자 | 나눠 갖는다 | 나눠 갖는다 | 각자 사본 | 각자 독립 위치 |
+
+> 💡 **관련 이론**: 이 분류는 메시징 미들웨어의 고전적 구분인 **큐(queue)와 로그(log)** 그대로다. 큐는 "작업을 나눠 주는 장치"라 소비가 곧 삭제이고, 로그는 "일어난 일을 순서대로 적어 둔 장부"라 읽어도 지워지지 않고 독자마다 읽은 위치만 다르다. Kafka가 로그 모델로 세상을 바꾼 이유가 바로 이 재생 가능성이다 — 소비자를 새로 붙여 과거부터 다시 읽는 일이 자연스러워진다. AWS에서는 Kinesis가 그 자리이고, Kafka 자체가 필요하면 MSK가 답이 된다. "재처리·다중 소비자"라는 단어가 문제에 등장하는 순간 큐 계열은 후보에서 빠진다.
+
+### SQS를 코드로: 부분 배치 실패라는 함정
+
+Lambda가 SQS를 소비할 때 가장 흔한 사고는 **배치 10건 중 1건만 실패했는데 10건 전부가 다시 돌아오는** 것이다. 성공한 9건이 반복 처리되어 중복이 생긴다.
+
+```python
+def handler(event, context):
+    """SQS 이벤트 소스 매핑 + ReportBatchItemFailures 설정 시 핸들러."""
+    failures = []
+
+    for record in event["Records"]:
+        try:
+            process(json.loads(record["body"]))
+        except Exception as e:
+            print(f"failed messageId={record['messageId']}: {e}")
+            failures.append({"itemIdentifier": record["messageId"]})  # 이것만 되돌린다
+
+    # 실패한 메시지 ID만 반환하면 나머지는 큐에서 삭제된다
+    return {"batchItemFailures": failures}
+```
+
+```bash
+# 이벤트 소스 매핑에 부분 배치 실패 보고를 켠다
+aws lambda update-event-source-mapping \
+  --uuid 12345678-90ab-cdef-1234-567890abcdef \
+  --function-response-types ReportBatchItemFailures
+
+# DLQ 연결: 3번 실패하면 별도 큐로 격리
+aws sqs set-queue-attributes --queue-url "$MAIN_QUEUE_URL" \
+  --attributes '{
+    "RedrivePolicy": "{\"deadLetterTargetArn\":\"arn:aws:sqs:ap-northeast-2:123456789012:orders-dlq\",\"maxReceiveCount\":\"3\"}",
+    "VisibilityTimeout": "180",
+    "ReceiveMessageWaitTimeSeconds": "20"
+  }'
+```
+
+> ⚠️ **함정**: **가시성 타임아웃(Visibility Timeout)이 Lambda 타임아웃보다 짧으면** 아직 처리 중인 메시지가 큐에 다시 나타나 두 번째 워커가 같은 작업을 시작한다. 결제가 두 번 되는 종류의 사고가 여기서 나온다. AWS 권장은 **큐의 가시성 타임아웃을 함수 타임아웃의 6배 이상**으로 두는 것이다. 그리고 `ReceiveMessageWaitTimeSeconds`를 20으로 두는 **롱 폴링**은 빈 응답에 대한 요청 비용을 줄이는 기본 설정인데, 기본값이 0(숏 폴링)이라 명시적으로 켜지 않으면 그냥 돈이 새어 나간다.
+
+### SNS 필터 정책 — 팬아웃을 낭비 없이
+
+팬아웃에서 모든 구독자가 모든 메시지를 받을 필요는 없다. 구독마다 **필터 정책**을 걸면 SNS 쪽에서 걸러 준다 — 필요 없는 Lambda 호출과 SQS 저장을 아예 만들지 않으므로 비용과 부하가 함께 줄어든다.
+
+```json
+// 구독 필터 정책: 한국 지역의 고액 주문만 이 구독으로
+{
+  "eventType": ["order.created"],
+  "region": ["KR"],
+  "amount": [{ "numeric": [">=", 1000000] }]
+}
+```
+
+```
+[주문 서비스] ──publish──▶ ( SNS 토픽: order-events )
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        │ filter: amount>=100만  │ filter: eventType=*    │ filter: region=KR
+        ▼                       ▼                        ▼
+   [SQS: 심사 큐]          [SQS: 분석 큐]           [Lambda: 알림]
+        │                       │
+   [Lambda: 수동심사]      [Firehose → S3]
+        │
+   [SQS DLQ] ← 3회 실패 시 격리
+```
+
+SNS와 Lambda를 직접 연결하지 않고 **중간에 SQS를 두는** 이 모양이 실무의 기본형이다. 이유는 셋이다 — (1) 소비자가 잠시 죽어도 메시지가 큐에 쌓여 유실되지 않고, (2) 소비 속도를 소비자가 정할 수 있어 하류 시스템이 압도되지 않으며(백프레셔), (3) DLQ로 실패를 격리할 자리가 생긴다.
+
+---
+
+## 🔁 Step Functions: 재시도와 보상까지 선언으로
+
+여러 단계를 잇는 작업에서 "Lambda가 Lambda를 직접 호출하는" 구조는 시험에서 언제나 오답이다. 오류 처리·재시도·타임아웃·상태 추적을 전부 손으로 만들어야 하고, 동기 호출 사슬은 앞단 타임아웃에 묶이기 때문이다. 정답은 오케스트레이션을 선언으로 옮기는 것이다.
+
+```json
+{
+  "Comment": "주문 처리 워크플로",
+  "StartAt": "ChargePayment",
+  "States": {
+    "ChargePayment": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-northeast-2:123456789012:function:charge",
+      "TimeoutSeconds": 30,
+      "Retry": [
+        {
+          "ErrorEquals": ["States.Timeout", "Lambda.ServiceException", "Lambda.TooManyRequestsException"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Catch": [
+        { "ErrorEquals": ["States.ALL"], "Next": "RefundAndFail" }
+      ],
+      "Next": "FanOutTasks"
+    },
+    "FanOutTasks": {
+      "Type": "Parallel",
+      "Branches": [
+        { "StartAt": "SendEmail",     "States": { "SendEmail":     { "Type": "Task", "Resource": "arn:aws:states:::sns:publish", "Parameters": { "TopicArn": "arn:aws:sns:ap-northeast-2:123456789012:mail", "Message.$": "$.orderId" }, "End": true } } },
+        { "StartAt": "UpdateStock",   "States": { "UpdateStock":   { "Type": "Task", "Resource": "arn:aws:lambda:ap-northeast-2:123456789012:function:stock", "End": true } } }
+      ],
+      "Next": "Done"
+    },
+    "RefundAndFail": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-northeast-2:123456789012:function:refund",
+      "Next": "Failed"
+    },
+    "Failed": { "Type": "Fail", "Error": "OrderFailed" },
+    "Done":   { "Type": "Succeed" }
+  }
+}
+```
+
+`Retry`의 `IntervalSeconds`·`BackoffRate`는 **지수 백오프**를 선언으로 표현한 것이고, `Catch`는 실패를 보상 단계(`RefundAndFail`)로 흘려보내는 **사가(Saga) 패턴**의 뼈대다. 코드로 짰다면 수십 줄이 필요한 이 로직이 상태 정의 안에 들어간다는 점이 Step Functions의 존재 이유다.
+
+| 구분 | Standard | Express |
+|------|----------|---------|
+| 최대 실행 시간 | **최대 1년** | **최대 5분** |
+| 실행 의미론 | 정확히 한 번 실행 | 최소 한 번(중복 가능) |
+| 이력 | 실행 이력이 서비스에 기록 | CloudWatch Logs로 기록 |
+| 과금 | 상태 전이 횟수 | 실행 횟수·시간·메모리 |
+| 어울리는 곳 | 사람 승인·장기 작업·감사 필요 | 고빈도 짧은 이벤트 처리 |
+
+| 상태 유형 | 역할 |
+|----------|------|
+| `Task` | 실제 작업(Lambda·SDK 통합·서비스 호출) |
+| `Choice` | 조건 분기 |
+| `Parallel` | 고정된 여러 갈래 동시 실행 |
+| `Map` | **배열 각 원소에 같은 처리 반복**(동적 개수) |
+| `Wait` | 지정 시간·시각까지 대기 |
+| `Succeed` / `Fail` | 종료 |
+
+> 🔍 **더 깊이**: 외부 시스템의 응답을 며칠씩 기다려야 하는 워크플로에서는 `.waitForTaskToken` 통합이 답이다. 상태가 **토큰을 발급하고 그대로 멈춰** 있다가, 외부 시스템이 `SendTaskSuccess`/`SendTaskFailure`로 그 토큰을 돌려주면 다시 흐른다. 폴링 루프도, 대기용 Lambda도 필요 없고 대기 중에는 상태 전이가 없으니 과금도 거의 없다. "관리자 승인을 3일 기다린다", "결제사 웹훅을 기다린다" 같은 문장이 나오면 이 패턴을 떠올린다. 대기 자체를 컴퓨팅으로 구현하지 않는다는 발상이 서버리스 설계의 핵심 습관이다.
+
+---
+
+## 📦 컨테이너와 IaC: 권한 시점과 선언의 안전장치
+
+ECS에서 두 역할을 가르는 기준은 **시점**이다.
+
+```
+     [ 태스크 시작 ]                      [ 태스크 실행 중 ]
+          │                                     │
+   executionRole 사용                     taskRole 사용
+   · ECR에서 이미지 pull                   · DynamoDB 읽기/쓰기
+   · CloudWatch Logs 스트림 생성           · S3 업로드
+   · Secrets Manager에서 값 주입           · SQS 폴링
+          │                                     │
+   실패하면 → "태스크가 시작조차 안 됨"    실패하면 → "앱 로그에 AccessDenied"
+```
+
+증상으로 역추적하면 헷갈릴 일이 없다. **컨테이너가 뜨지 못하면 executionRole, 떠서 돌다가 거부당하면 taskRole.**
+
+```json
+// 태스크 정의 발췌 — 두 역할이 나란히 들어간다
+{
+  "family": "orders-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512", "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::123456789012:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::123456789012:role/ordersAppRole",
+  "containerDefinitions": [
+    {
+      "name": "api",
+      "image": "123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/orders:1.4.2",
+      "portMappings": [{ "containerPort": 8080 }],
+      "secrets": [
+        { "name": "DB_PASSWORD", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:prod/orders/db" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": { "awslogs-group": "/ecs/orders", "awslogs-region": "ap-northeast-2", "awslogs-stream-prefix": "api" }
+      }
+    }
+  ]
+}
+```
+
+IaC 쪽에서 시험이 반복해 묻는 것은 **"실수해도 되돌릴 수 있게 만드는 장치"** 들이다.
+
+```yaml
+# SAM 템플릿 — Transform이 없으면 그냥 CloudFormation으로 해석되어 실패한다
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  OrdersTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain          # 스택을 지워도 테이블은 남긴다
+    UpdateReplacePolicy: Retain
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: [{ AttributeName: PK, AttributeType: S }]
+      KeySchema: [{ AttributeName: PK, KeyType: HASH }]
+
+  OrdersApi:
+    Type: AWS::Serverless::Function
+    DependsOn: OrdersTable           # 생성 순서를 명시적으로 강제
+    Properties:
+      Runtime: python3.12
+      Handler: app.handler
+      AutoPublishAlias: prod         # 배포마다 새 버전 + 별칭 이동
+      DeploymentPreference:
+        Type: Canary10Percent5Minutes   # 10%로 5분 지켜본 뒤 전환
+        Alarms: [!Ref ErrorAlarm]       # 알람이 울리면 자동 롤백
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref OrdersTable
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref OrdersTable }
+
+Outputs:
+  TableName:
+    Value: !Ref OrdersTable
+    Export:
+      Name: orders-table-name       # 다른 스택에서 !ImportValue로 참조
+```
+
+| 안전장치 | 막아 주는 사고 |
+|---------|--------------|
+| **Change Set** | 업데이트가 무엇을 바꾸는지 모른 채 실행 (특히 리소스 교체) |
+| **DeletionPolicy: Retain / Snapshot** | 스택 삭제가 프로덕션 DB까지 지움 |
+| **UpdateReplacePolicy** | 속성 변경이 리소스를 새로 만들며 데이터 소실 |
+| **Stack Policy** | 특정 리소스가 업데이트로 건드려짐 |
+| **종료 방지(Termination Protection)** | 스택 자체의 실수 삭제 |
+| **DependsOn** | 참조 관계가 없는 리소스의 생성 순서 뒤엉킴 |
+| **Nested Stack / Stack Set** | 템플릿 중복, 다계정·다리전 수동 배포 |
+
+> ⚠️ **함정**: `DeletionPolicy: Retain`과 `Snapshot`을 같은 것으로 보면 안 된다. **Retain은 리소스를 그대로 남기고**(이후 요금도 계속 발생), **Snapshot은 스냅샷을 뜬 뒤 원본을 지운다**(RDS·EBS처럼 스냅샷을 지원하는 리소스에서만). 또 하나 자주 틀리는 것이 `!Ref`의 반환값이 리소스마다 다르다는 점이다 — DynamoDB 테이블의 `!Ref`는 테이블 이름을, S3 버킷은 버킷 이름을, EC2 인스턴스는 인스턴스 ID를 돌려준다. ARN이 필요하면 `!GetAtt`을 써야 하며, 이 혼동이 "권한 정책이 이상하게 안 먹는" 사고의 흔한 원인이다.
+
+> 📚 **사례**: 컨테이너 배포에서 이미지 태그를 `latest`로 고정해 두는 습관이 실무 사고를 반복해서 만든다. 태스크 정의가 `:latest`를 가리키면 "지금 무엇이 돌고 있는지"를 아무도 확정할 수 없고, 스케일 아웃으로 새로 뜬 태스크만 새 이미지를 받아 **같은 서비스 안에 두 버전이 섞이는** 상황이 벌어진다. 처방은 (1) 커밋 해시나 시맨틱 버전으로 태그를 고정하고, (2) ECR의 **태그 불변성(immutable tag)** 을 켜 같은 태그의 덮어쓰기를 막는 것이다. 배포의 추적 가능성은 롤백 가능성과 같은 말이고, 롤백할 수 없는 배포는 사실상 되돌릴 수 없는 실험이다.
+
+---
+
+## 정리하며
+
+오늘의 세 주제는 "**컴포넌트를 어떻게 느슨하게 이어 붙일 것인가**"라는 한 질문의 서로 다른 대답이다. 메시징은 시간축에서 떼어 놓고(비동기·버퍼링), Step Functions는 흐름의 제어를 코드 밖으로 꺼내며(선언적 오케스트레이션), 컨테이너와 IaC는 실행 환경과 인프라 자체를 버전이 매겨진 산출물로 바꾼다. 그래서 이 영역의 정답 보기에는 일관된 방향이 있다 — **직접 호출보다 중개자, 손으로 만든 재시도보다 선언된 재시도, 소비하면 사라지는 큐와 다시 읽을 수 있는 스트림의 구분, 그리고 언제든 되돌릴 수 있는 배포.** 시나리오에서 "여러 소비자", "재처리", "순서", "장기 대기", "자동 롤백" 같은 단어를 먼저 찾아 표시하면, 선택지는 대개 하나로 좁혀진다.
+
+---
+
 ## 📝 최종 모의고사 - Part 4
 
 **문제 1.** 수백만 사용자의 클릭 이벤트를 실시간으로 수집하고 여러 시스템에서 분석해야 할 때?

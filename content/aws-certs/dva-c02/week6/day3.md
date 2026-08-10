@@ -242,7 +242,151 @@ PITR은 On-Demand Backup과 다르다. On-Demand Backup은 수동으로 특정 �
 
 시험 시나리오: "실수로 대량의 데이터를 삭제했다, 어제 상태로 복원하고 싶다" → PITR. "규정상 백업을 5년 보존해야 한다" → On-Demand Backup + S3 Export.
 
+## 테이블 용량은 어떻게 파티션으로 쪼개지는가
+
+RCU/WCU 계산을 아무리 정확히 해도 스로틀링을 만나는 이유는, **테이블에 설정한 용량이 파티션들에 나뉘어 배분되기 때문**이다. 청구서에 찍히는 숫자는 테이블 단위지만, 실제로 요청을 처리하는 주체는 파티션 하나하나다.
+
+```
+테이블: 프로비저닝 4,000 RCU / 4,000 WCU
+        ↓ DynamoDB가 내부적으로 파티션에 나눔
+   ┌──────────┬──────────┬──────────┬──────────┐
+   │ 파티션 A │ 파티션 B │ 파티션 C │ 파티션 D │
+   │ ~1000RCU │ ~1000RCU │ ~1000RCU │ ~1000RCU │
+   └──────────┴──────────┴──────────┴──────────┘
+        ▲
+        └─ 요청이 여기에만 몰리면?
+           테이블 전체 4,000 RCU 중 900만 쓰고 있어도
+           파티션 A에서만 ProvisionedThroughputExceededException
+
+   파티션 하나의 물리적 상한: 약 3,000 RCU · 1,000 WCU · 10GB
+```
+
+여기서 두 가지 완충 장치를 알아 둬야 한다.
+
+- **버스트 용량(Burst Capacity)**: 최근 **최대 300초(5분)** 동안 쓰지 않고 남긴 용량을 모아 두었다가 순간적인 스파이크에 쓴다. 짧은 튐은 이걸로 넘어간다. 다만 저축이므로 계속 쓸 수는 없고, AWS가 보장하는 자원도 아니다.
+- **적응형 용량(Adaptive Capacity)**: 특정 파티션에 부하가 몰리면 DynamoDB가 다른 파티션의 여유 용량을 그쪽으로 밀어 준다. 자동으로 동작하지만 **편향이 극심하면 이것도 한계**에 부딪힌다.
+
+> ⚠️ **함정**: "스로틀링이 나면 용량을 올린다"는 반사 행동이 가장 비싼 오답이다. 편향이 원인이면 용량을 두 배로 올려도 파티션 하나에 배정되는 몫은 그만큼 늘지 않고, 요금만 두 배가 된다. **CloudWatch에서 소비 용량이 프로비저닝 용량에 한참 못 미치는데도 `ThrottledRequests`가 잡히면 그것은 용량 문제가 아니라 키 설계 문제다.** 이때의 처방은 (1) 파티션 키의 카디널리티를 높이거나, (2) write sharding으로 인위적으로 흩거나, (3) 뜨거운 항목을 DAX·ElastiCache로 앞에서 흡수하는 것이다.
+
+```bash
+# 현재 테이블의 용량 모드·인덱스·크기를 한눈에
+aws dynamodb describe-table --table-name Orders \
+  --query 'Table.{Mode:BillingModeSummary.BillingMode,Items:ItemCount,SizeBytes:TableSizeBytes,GSI:GlobalSecondaryIndexes[].IndexName}'
+
+# 온디맨드로 전환 (24시간에 1회 제한 — 시험 단골 숫자)
+aws dynamodb update-table --table-name Orders --billing-mode PAY_PER_REQUEST
+
+# 프로비저닝으로 되돌리며 GSI 용량도 함께 지정 (GSI를 빠뜨리면 GSI가 병목이 된다)
+aws dynamodb update-table --table-name Orders \
+  --billing-mode PROVISIONED \
+  --provisioned-throughput ReadCapacityUnits=2000,WriteCapacityUnits=2000 \
+  --global-secondary-index-updates '[{"Update":{"IndexName":"StatusIndex",
+      "ProvisionedThroughput":{"ReadCapacityUnits":2000,"WriteCapacityUnits":2000}}}]'
+
+# 스로틀 지표를 먼저 본다 — 로그보다 이쪽이 훨씬 빠르다
+aws cloudwatch get-metric-statistics --namespace AWS/DynamoDB \
+  --metric-name ThrottledRequests --dimensions Name=TableName,Value=Orders \
+  --start-time 2026-06-27T00:00:00Z --end-time 2026-06-27T12:00:00Z \
+  --period 300 --statistics Sum
+```
+
+## 배치 API와 부분 실패 — 조용히 데이터를 잃는 자리
+
+DynamoDB의 배치 API는 "전부 성공 아니면 전부 실패"가 아니다. **일부만 처리되고 나머지를 돌려주는** 구조이며, 이 반환값을 무시하는 코드가 실무에서 데이터 유실을 만든다.
+
+| API | 한 번에 | 성격 | 실패 처리 |
+|-----|--------|------|----------|
+| `GetItem` | 항목 1개 | 키로 정확히 하나 | 예외 |
+| `BatchGetItem` | **최대 100개 · 16MB** | 여러 테이블에서 병렬 조회 | **`UnprocessedKeys` 반환** |
+| `BatchWriteItem` | **최대 25개 · 16MB** | Put/Delete만 (**Update 불가**) | **`UnprocessedItems` 반환** |
+| `TransactWriteItems` | 최대 100개 · 4MB | 전부 성공 or 전부 실패 | 예외(취소 사유 포함), **WCU 2배** |
+| `Query` | 1MB 페이지 | 키 조건으로 범위 조회 | `LastEvaluatedKey` |
+| `Scan` | 1MB 페이지 | 전체 훑기 | `LastEvaluatedKey` |
+
+```python
+import time, random
+from botocore.exceptions import ClientError
+
+def batch_write_all(dynamodb, table_name: str, items: list) -> None:
+    """25개씩 끊어 쓰되, 처리되지 않은 항목은 지수 백오프로 재시도한다."""
+    for i in range(0, len(items), 25):
+        request = {
+            table_name: [{"PutRequest": {"Item": it}} for it in items[i:i + 25]]
+        }
+        attempt = 0
+        while request:
+            response = dynamodb.batch_write_item(RequestItems=request)
+            request = response.get("UnprocessedItems") or {}   # ← 이걸 버리면 데이터가 사라진다
+
+            if request:
+                attempt += 1
+                if attempt > 8:
+                    raise RuntimeError(f"batch write gave up: {len(request[table_name])} items left")
+                # 지수 백오프 + 지터: 재시도가 동시에 몰려 다시 스로틀되는 것을 막는다
+                time.sleep(min(2 ** attempt * 0.05, 5) * (0.5 + random.random()))
+```
+
+`UnprocessedItems`가 비어 있지 않다는 것은 **에러가 아니라 스로틀링의 정상적인 표현**이다. 예외가 던져지지 않으므로 `try/except`만 걸어 둔 코드는 아무 경고 없이 항목을 흘린다. "배치 업로드했는데 몇 건이 없다"는 신고의 1순위 원인이 정확히 이것이다.
+
+| 에러/신호 | 뜻 | 처방 |
+|----------|-----|------|
+| `ProvisionedThroughputExceededException` | 용량 초과 | 지수 백오프 재시도, 용량·키 설계 점검 |
+| `UnprocessedItems` / `UnprocessedKeys` (비어 있지 않음) | 부분 스로틀 | **반드시 재시도** (예외 아님) |
+| `ConditionalCheckFailedException` | 조건 불충족 | 재조회 후 재시도 (설계된 신호) |
+| `TransactionCanceledException` | 트랜잭션 취소 | `CancellationReasons`로 어느 항목이 걸렸는지 확인 |
+| `ValidationException` | 항목 400KB 초과·키 누락·예약어 | 요청 구조 점검 |
+| `ItemCollectionSizeLimitExceededException` | LSI 항목 컬렉션 10GB 초과 | LSI 대신 GSI로 재설계 |
+| `IteratorAge` 지표 상승 | Streams 소비가 뒤처짐 | 병렬화·배치 크기·함수 성능 점검 |
+
+> 💡 **관련 이론**: 지수 백오프에 **지터(jitter, 무작위 흔들림)** 를 섞는 이유는 **동기화된 재시도(thundering herd)** 를 깨기 위해서다. 스로틀을 만난 클라이언트 수백 개가 정확히 같은 간격으로 재시도하면, 그 시각에 다시 부하가 모여 또 스로틀이 나고, 이 진동이 계속된다. 대기 시간에 무작위성을 넣으면 재시도가 시간축에 흩어져 시스템이 스스로 빠져나올 수 있다. AWS SDK는 기본적으로 이 전략을 내장하고 있으므로, 직접 재시도 루프를 짤 때만 신경 쓰면 된다 — "SDK 기본 재시도를 끄고 직접 짠다"는 보기가 시험에서 잘 안 보이는 이유이기도 하다.
+
+## DAX가 오래된 값을 주는 순간
+
+DAX의 Write-Through는 "**DAX를 통해 쓴 경우에만**" 캐시를 갱신한다. 이 전제를 놓치면 원인을 알 수 없는 오래된 데이터를 만난다.
+
+```
+[정상 경로]                          [캐시가 뒤처지는 경로]
+앱 → DAX → DynamoDB                  다른 서비스 → DynamoDB (DAX 우회)
+      └ 캐시 갱신 ✅                         └ DAX는 이 변경을 모른다 ❌
+                                              TTL(기본 5분)이 지나야 새 값
+
+  예) 배치 작업·Lambda·콘솔에서 직접 테이블을 수정
+     → DAX를 쓰는 앱은 최대 TTL 만큼 옛 값을 본다
+```
+
+이 상황의 처방은 세 가지다. (1) **모든 쓰기를 DAX를 통해** 보내도록 경로를 통일하거나, (2) 최신성이 반드시 필요한 읽기는 `ConsistentRead: true`로 요청해 캐시를 우회하거나(대신 DAX의 성능 이득은 포기), (3) TTL을 업무가 감내할 수 있는 수준으로 줄이는 것이다. 어느 쪽이든 "DAX를 붙였으니 자동으로 항상 최신"이라는 기대는 성립하지 않는다.
+
+> 🔍 **더 깊이**: DAX가 굳이 **자체 SDK**를 요구하는 이유는 클라이언트가 클러스터 토폴로지를 알아야 하기 때문이다. DAX SDK는 클러스터의 노드 목록을 받아 읽기를 리드 리플리카들에 분산하고, 쓰기는 프라이머리로 보내며, 노드가 교체되면 목록을 갱신한다. API 시그니처는 DynamoDB와 같아서 코드 변경이 거의 없지만 **연결 계층은 완전히 다른 물건**인 셈이다. 그래서 DAX는 VPC 안에서만 접근 가능하고(클러스터 노드에 ENI가 붙는다), Lambda에서 쓰려면 그 Lambda도 같은 VPC에 배치해야 한다 — "DAX를 붙였는데 Lambda가 타임아웃"의 상당수가 이 VPC 설정 누락이다.
+
+## Streams 소비가 막히는 자리: 독약 메시지
+
+Streams와 Lambda의 조합에서 가장 아픈 장애는 **샤드 블로킹**이다. 순서를 보장하려면 실패한 배치를 건너뛸 수 없으므로, 한 레코드가 계속 실패하면 그 샤드 뒤의 모든 레코드가 멈춘다.
+
+```
+샤드 1: [R1][R2][R3(항상 실패)][R4][R5][R6] ...
+                    ▲
+                    └ 여기서 계속 재시도 → R4 이후는 영원히 처리되지 않음
+                      CloudWatch의 IteratorAge가 계속 상승 = 이 상태의 신호
+```
+
+이벤트 소스 매핑의 설정들은 사실상 전부 이 문제를 다루기 위한 손잡이다.
+
+| 설정 | 하는 일 | 언제 쓰나 |
+|------|--------|----------|
+| `BisectBatchOnFunctionError` | 실패한 배치를 반으로 쪼개 재시도 | 배치 안 어느 레코드가 문제인지 좁힐 때 |
+| `MaximumRetryAttempts` | 재시도 횟수 상한 | 무한 재시도로 샤드가 막히는 것을 방지 |
+| `MaximumRecordAgeInSeconds` | 너무 오래된 레코드는 버림 | 밀린 데이터가 무의미해지는 실시간 처리 |
+| `DestinationConfig`(실패 대상) | 포기한 배치 정보를 SQS/SNS로 | 나중에 사람이 조사하도록 격리 |
+| `ParallelizationFactor` | 샤드 하나를 최대 10개 Lambda로 | 처리량은 늘지만 순서 보장이 복잡해짐 |
+| `BatchSize` | 한 번에 넘길 레코드 수 | 처리량과 실패 폭발 반경의 균형 |
+
+> 📚 **사례**: 주문 테이블의 Streams로 검색 인덱스를 갱신하던 파이프라인이, 어느 날 유니코드 이모지가 포함된 상품명 때문에 인덱싱 라이브러리에서 예외를 던지며 멈춘 사례가 있다. 함수는 그 레코드에서 계속 실패했고, 순서를 지키느라 뒤의 수만 건이 통째로 대기하면서 검색 결과가 몇 시간 동안 옛 상태로 굳었다. 지표상 유일한 신호는 `IteratorAge`의 단조 상승뿐이었다 — 에러율은 낮고(같은 한 건만 실패), 호출 수도 정상으로 보였기 때문이다. 이후 처방은 교과서적이다: **`MaximumRetryAttempts`로 포기 지점을 정하고, `DestinationConfig`로 실패 배치를 SQS에 격리하며, `IteratorAge`에 알람을 건다.** 그리고 핸들러는 개별 레코드를 `try/except`로 감싸 "처리 불가능한 데이터"와 "일시적 장애"를 구분하게 바꿨다. 스트림 처리에서 알람을 걸 지표를 하나만 고르라면 답은 언제나 `IteratorAge`다.
+
 오늘의 핵심 — RCU/WCU 수학은 시험에서 거의 매번 나오는 계산 문제다. 공식을 외우지 말고 "읽기는 4KB 기준, 쓰기는 1KB 기준, ceil로 올림"이라는 원리를 이해하자. DAX는 DynamoDB 읽기를 μs로 줄이는 투명한 캐시이고, Streams는 모든 변경을 24시간 보존하는 변경 로그다.
+
+## 한 줄 요약
+
+DynamoDB의 비용과 장애는 대부분 **"내가 설정한 용량"과 "실제로 부하를 받는 파티션" 사이의 간극**에서 태어난다. 계산은 읽기 4KB·쓰기 1KB·올림이라는 세 단어로 끝나지만, 그 계산이 맞아떨어지려면 트래픽이 파티션에 고르게 퍼져 있어야 한다. DAX는 그 간극을 앞에서 흡수하는 캐시이되 DAX를 우회한 쓰기는 보지 못하고, Streams는 모든 변경을 24시간 순서대로 남기되 실패한 레코드 하나가 샤드를 막을 수 있다. 세 주제 모두 **"평균은 괜찮은데 한 지점이 터진다"** 는 같은 형태의 문제를 다루고 있으며, 시험이 묻는 것도 정확히 그 지점이다.
 
 ## 📝 연습 문제
 

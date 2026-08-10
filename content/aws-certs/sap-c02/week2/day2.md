@@ -230,6 +230,192 @@ aws iam simulate-principal-policy \
   --resource-arns arn:aws:s3:::my-bucket/*
 ```
 
+## SCP가 적용되지 않는 4가지 예외
+
+"SCP는 OU 안의 모든 것을 막는다"는 문장은 정확하지 않다. SCP가 **닿지 못하는 영역**이 명확히 존재하고, Pro 시험은 이 빈틈을 집요하게 묻는다.
+
+| 예외 | 왜 적용 안 되는가 | 실무에서의 보완 |
+|------|-------------------|------------------|
+| **Management 계정의 모든 Principal** | Org 자체를 관리해야 하므로 의도적으로 제외 | 워크로드 배포 금지 + root 봉인 + CloudTrail 알림 |
+| **서비스 연결 역할(Service-Linked Role)** | AWS 서비스가 자기 기능을 수행하기 위해 쓰는 역할 | SLR 자체를 만들지 못하게 `iam:CreateServiceLinkedRole` 제한 |
+| **AWS 서비스 주체(Service Principal)가 대신 호출하는 요청** | 요청자가 IAM Principal이 아니라 서비스 | 해당 서비스를 쓰지 못하게 서비스 단위 Deny |
+| **Org 외부 Principal의 리소스 정책 경유 접근** | SCP는 Org **안의** Principal만 제약 | **RCP** 또는 리소스 정책 조건 |
+
+> ⚠️ **함정**: 네 번째 예외가 특히 자주 틀린다. "우리 OU에 S3 외부 공유 금지 SCP를 걸었으니 안전하다"는 문장은 틀렸다. SCP는 **내 계정의 IAM Principal이 무엇을 할 수 있는가**만 정한다. 외부 계정의 Principal이 우리 버킷 정책의 `Principal: "*"`를 타고 들어오는 경로는 SCP 밖이다. 이 구멍을 메우는 게 2024년의 **RCP**다. 시험에서 "외부 공유 차단"이 나오면 SCP가 아니라 RCP·버킷 정책·S3 Block Public Access를 먼저 떠올려야 한다.
+
+## SCP 문법의 숨은 제약: Allow 문은 조건을 못 쓴다
+
+SCP는 IAM 정책과 문법이 같아 보이지만 **의도적으로 좁혀진 방언**이다. 이 차이를 모르고 IAM 정책을 그대로 복사해 붙이면 정책 생성 자체가 실패하거나, 더 나쁘게는 의도와 다르게 동작한다.
+
+| 항목 | IAM Identity Policy | SCP |
+|------|----------------------|-----|
+| `Allow` 문의 `Condition` | 사용 가능 | **사용 불가** |
+| `Allow` 문의 `NotAction`/`NotResource` | 사용 가능 | **사용 불가** |
+| `Allow` 문의 `Resource` | ARN 지정 가능 | **`"*"`만 가능** |
+| `Deny` 문의 `Condition` | 사용 가능 | 사용 가능 |
+| `Deny` 문의 `NotAction` | 사용 가능 | 사용 가능 |
+| `Principal` 필드 | 없음(Identity Policy) | 없음 |
+| 정책 문서 최대 크기 | 6,144자(관리형 기준) | **5,120자** |
+| 한 대상(Root/OU/계정)에 부착 가능 개수 | — | **최대 5개** |
+
+여기서 나오는 실무 규칙이 하나 있다. **"조건부 제한은 반드시 Deny로 표현하라."** "ap-northeast-2에서만 EC2를 허용"을 Allow + Condition으로 쓰고 싶어도 SCP에서는 불가능하다. 반드시 "그 조건이 **아닐 때** Deny"라는 뒤집힌 형태로 써야 한다. 앞의 패턴 1(리전 제한)이 `Deny` + `StringNotEquals` 형태인 이유가 정확히 이것이다.
+
+> ⚠️ **함정**: 정책 문서 5,120자 제한과 대상당 5개 제한이 합쳐지면, 대규모 조직에서 "SCP를 더 못 붙이는" 벽에 부딪힌다. 이때 흔한 잘못된 해법이 **OU를 더 깊게 파는 것**이다(상위 OU에 5개 + 하위 OU에 5개). 깊이를 늘리면 상속 경로가 복잡해져 디버깅이 어려워진다. 올바른 해법은 (1) 여러 Deny 문을 하나의 정책 문서로 병합, (2) `Action` 배열에 와일드카드를 써서 문자 수 압축, (3) 정말 다른 성격의 규칙만 별도 정책으로 분리다.
+
+## 트레이드오프 비교표: 권한을 좁히는 5가지 수단
+
+같은 "권한을 제한하라"는 요구에도 수단이 다섯 가지다. Pro 시험은 이 다섯을 나란히 놓고 **한정어**로 하나를 고르게 한다.
+
+| 수단 | 적용 대상 | 권한을 부여하는가 | 적용 범위 | 운영 부담 | 대표 용도 |
+|------|-----------|-------------------|-----------|-----------|-----------|
+| **SCP** | OU·계정 안의 모든 Principal(root 포함) | ❌ 천장만 | Org 전체를 한 곳에서 | **가장 낮음** (한 번 부착) | 회사 차원 "절대 금지" |
+| **RCP** | OU·계정 안의 모든 **리소스** | ❌ 천장만 | Org 전체를 한 곳에서 | 낮음 | 외부 노출 구조적 차단 |
+| **Permission Boundary** | 특정 IAM User/Role 하나 | ❌ 천장만 | 그 아이덴티티만 | 중간 (부착 관리 필요) | 권한 위임 시 안전장치 |
+| **IAM Identity Policy** | 특정 IAM User/Role 하나 | ✅ 부여함 | 그 아이덴티티만 | 높음 (수가 많음) | 실제 업무 권한 |
+| **Resource Policy** | 특정 리소스 하나 | ✅ 부여함 | 그 리소스만 | 높음 (리소스마다) | 크로스 계정 공유 |
+
+> 💡 **암기 팁**: **"부여하는 둘, 좁히는 셋"**. 권한을 실제로 주는 건 Identity Policy와 Resource Policy 둘뿐이다. SCP·RCP·Permission Boundary는 셋 다 천장만 낮춘다. 그래서 "SCP로 개발자에게 S3 권한을 주자"는 보기는 언제나 오답이다.
+
+> 🎯 **시나리오**: "한 회사가 각 팀 리드에게 자기 팀의 IAM Role을 직접 만들 권한을 주려 한다. 단, 팀 리드가 만든 Role이 관리자 권한을 갖는 것은 막아야 한다." — 답: **Permission Boundary**. `iam:CreateRole`을 허용하되 `iam:PermissionsBoundary` 조건으로 특정 Boundary 부착을 강제한다. SCP로는 "관리자 권한 Role 생성"만 골라 막기 어렵고, 팀별로 다른 상한을 주기도 어렵다. 권한 **위임**의 안전장치는 Boundary가 정답이다.
+
+## 아키텍처 다이어그램: SCP 상속이 실제로 좁혀지는 모습
+
+```
+                     [Org Root]
+                SCP-A: FullAWSAccess
+                SCP-B: Deny (비승인 리전)
+                SCP-C: Deny (CloudTrail 중지)
+                          │
+        ┌─────────────────┼──────────────────┐
+        │                 │                  │
+   [OU: Security]   [OU: Workloads]     [OU: Sandbox]
+   SCP: FullAccess  SCP: FullAccess      SCP: FullAccess
+                    SCP-D: Deny          SCP-E: Deny (p*/x2*/u-* 인스턴스)
+                    (보안도구 삭제)       SCP-F: Deny (Org 탈퇴·계정 생성)
+                          │
+             ┌────────────┴────────────┐
+        [OU: Prod]                [OU: Non-Prod]
+        SCP-G: Deny               (추가 SCP 없음)
+        (MFA 없는 삭제 작업)
+                │
+        [계정 111111111111]
+        직접 부착 SCP: 없음
+
+  ▼ 이 계정에서 실제로 가능한 액션의 천장
+  FullAWSAccess
+    ─ (비승인 리전)         ← Root에서 상속
+    ─ (CloudTrail 중지)      ← Root에서 상속
+    ─ (보안도구 삭제)         ← Workloads에서 상속
+    ─ (MFA 없는 삭제)        ← Prod에서 상속
+  = 4단계에 걸쳐 좁혀진 교집합
+
+  ※ Sandbox의 SCP-E/F는 이 계정에 전혀 영향 없음
+     (형제 OU의 정책은 상속되지 않는다)
+```
+
+> 🔍 **더 깊이**: 위 그림에서 중요한 건 **"한 번 닫힌 문은 아래에서 열 수 없다"**는 방향성이다. Prod OU에 `Allow: ec2:*`를 아무리 넣어도 Root의 리전 Deny는 그대로 살아 있다. 이유는 명시적 Deny가 IAM 평가 전체에서 최우선이기 때문이다. 반대로 Allow-list 전략에서는 **각 층이 모두 Allow해야** 통과한다 — Root에서 `s3:*`를 Allow하고 하위 OU에서 `ec2:*`만 Allow하면, 그 하위 OU 계정에서는 S3가 안 된다(교집합이 비었다). 이 두 방향의 비대칭이 SCP 디버깅을 어렵게 만드는 근본 원인이다.
+
+## 무중단 SCP 도입 순서: 운영 중인 Org에 Deny-list를 얹기
+
+이미 수십 개 계정이 돌아가는 조직에 SCP를 처음 도입할 때, 곧바로 Root에 붙이면 반드시 사고가 난다. 표준은 5단계다.
+
+```
+1단계  관측(Observe) — 차단하지 않고 데이터부터
+   ├── Organization Trail로 전 계정 CloudTrail을 Log Archive에 집결
+   ├── Athena로 "지난 90일간 실제로 호출된 리전·서비스·액션" 집계
+   └── 근거: 무엇이 실제 사용 중인지 모르면 어떤 Deny도 안전하지 않다
+
+2단계  초안 작성 — Deny 대상을 좁게 시작
+   ├── 1단계 집계에서 "0회 호출된 리전"만 Deny 목록에 넣는다
+   ├── 글로벌 서비스는 NotAction 예외로 반드시 제외
+   └── 근거: 사용 이력이 0인 것부터 막으면 회귀 위험이 0에 가깝다
+
+3단계  PolicyStaging OU에서 검증
+   ├── 실제 워크로드 복제본이 있는 테스트 계정 1개를 이 OU에 배치
+   ├── 배포 파이프라인·배치 잡·야간 작업을 한 사이클(최소 1주) 돌린다
+   └── 근거: 주간 트래픽만 보면 월말 배치·분기 리포트를 놓친다
+
+4단계  Non-Prod OU → Prod OU 순으로 점진 부착
+   ├── Non-Prod에 부착 후 최소 1~2주 관찰
+   ├── CloudTrail errorMessage에 "service control policy" 필터 상시 알람
+   └── 근거: 폭발 반경을 단계적으로 넓혀야 롤백 비용이 작다
+
+5단계  Root로 승격 + 예외 관리 체계 수립
+   ├── 모든 OU에서 문제없음이 확인되면 Root로 올리고 하위 중복 제거
+   ├── 예외 요청은 티켓 → 승인 → IaC PR → 정책 갱신으로 고정
+   └── 근거: 예외가 콘솔 수작업으로 들어가면 drift가 시작된다
+```
+
+> ⚠️ **함정**: 3단계를 "며칠"로 줄이는 게 가장 흔한 실수다. SCP 사고의 대부분은 **주기가 긴 작업**에서 터진다 — 월말 정산 배치, 분기 감사 스크립트, 연 1회 갱신되는 인증서 자동화. 이런 작업은 평일 낮 트래픽에는 전혀 나타나지 않는다. 최소 한 번의 월간 주기를 관찰하는 게 안전하다.
+
+> 📚 **사례**: 리전 제한 SCP를 도입한 조직들이 공통으로 겪는 사고 유형이 있다. us-east-1을 승인 리전에서 빼면 CloudFront용 ACM 인증서 발급이 함께 막힌다 — CloudFront의 인증서는 반드시 us-east-1의 ACM에 있어야 하기 때문이다. 그래서 리전 제한 SCP의 승인 목록에는 주 운영 리전과 함께 **us-east-1을 거의 항상 포함**시키고, 대신 us-east-1에서의 EC2·RDS 생성은 별도 Deny로 막는 이중 구조를 쓴다.
+
+## 실물 정책: 조직 경계를 강제하는 2종 세트
+
+### 1. SCP — Org 탈퇴·계정 폐쇄 차단 (나가는 문을 잠근다)
+
+멤버 계정이 스스로 Org를 떠나면 그 순간 모든 SCP가 무력화된다. 거버넌스의 근간을 지키는 정책이다.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "DenyLeaveOrganization",
+    "Effect": "Deny",
+    "Action": [
+      "organizations:LeaveOrganization",
+      "organizations:DeleteOrganization",
+      "account:CloseAccount"
+    ],
+    "Resource": "*"
+  }]
+}
+```
+
+### 2. RCP — 외부 Principal의 진입 차단 (들어오는 문을 잠근다)
+
+SCP가 "우리 Principal이 무엇을 할 수 있는가"를 정한다면, RCP는 "누가 우리 리소스에 닿을 수 있는가"를 정한다. 두 방향을 모두 닫아야 조직 경계가 완성된다.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "DenyExternalPrincipalAccess",
+    "Effect": "Deny",
+    "Principal": "*",
+    "Action": "s3:*",
+    "Resource": "*",
+    "Condition": {
+      "StringNotEqualsIfExists": {
+        "aws:PrincipalOrgID": "o-exampleorgid"
+      },
+      "BoolIfExists": {
+        "aws:PrincipalIsAWSService": "false"
+      }
+    }
+  }]
+}
+```
+
+> 🔍 **더 깊이**: RCP에는 SCP와 달리 `Principal` 필드가 있다. 리소스 정책 계열이기 때문이다. 그리고 `aws:PrincipalIsAWSService` 예외가 반드시 필요하다 — CloudTrail이 S3에 로그를 쓰거나, Config가 스냅샷을 저장하는 것도 "Org 밖 Principal"로 평가되기 때문이다. 이 조건을 빼면 로깅 파이프라인 전체가 조용히 죽는다. `StringNotEqualsIfExists`를 쓰는 이유도 같다 — 익명 요청처럼 키 자체가 없는 경우까지 안전하게 다루기 위해서다.
+
+## 한정어가 바뀌면 답이 달라진다
+
+같은 시나리오에 **한정어만 바꾼 4가지 변형**을 보자. "모든 멤버 계정에서 승인되지 않은 리전 사용을 막아라"라는 요구다.
+
+| 한정어 | 정답 방향 | 왜 |
+|--------|-----------|-----|
+| **LEAST operational overhead** | Root에 리전 제한 **SCP** 1개 | 한 번 부착으로 전 계정·전 Role·root까지 커버. 계정이 늘어도 추가 작업 0 |
+| **MOST secure / 우회 불가** | SCP + **Control Tower Region Deny 컨트롤** 병행 | 관리형 컨트롤은 drift 감지까지 포함. 수동 변경이 자동 탐지됨 |
+| **MOST cost-effective (도구 비용 0)** | **SCP만** | SCP·Organizations 자체는 추가 과금이 없다. Config Rule은 규칙 평가 건당 과금 |
+| **기존 리소스도 찾아내야 함 / DETECT** | **AWS Config + Config Aggregator** | SCP는 앞으로의 API 호출만 막는다. 이미 만들어진 리소스는 못 본다 |
+
+> 💡 **암기 팁**: **"SCP는 미래만, Config는 과거까지."** SCP를 부착해도 이미 비승인 리전에 떠 있는 EC2는 계속 돌아간다. 문제 지문에 "already running", "existing resources", "identify"가 있으면 SCP 단독은 오답이고 Config·Security Hub·Resource Explorer 계열이 필요하다. 반대로 "prevent", "block", "must not be able to"면 SCP다.
+
+> 🎯 **시나리오**: "규제 감사에서 '비승인 리전에 리소스가 없음을 증명하라'는 요구를 받았다. 앞으로의 생성도 막고, 현재 상태도 보고서로 제출해야 한다. MOST comprehensive한 방법은?" — 답: **SCP(예방) + Config Aggregator + Conformance Pack(증적)**. SCP만으로는 "지금 없다"를 증명할 수 없고, Config만으로는 "앞으로도 없을 것"을 보장할 수 없다. 감사 요구가 예방과 증적을 동시에 요구하면 두 축을 모두 답에 넣어야 한다.
+
+> ⚠️ **함정**: `aws organizations update-policy`는 **부착된 상태 그대로 본문을 교체**한다. 즉 잘못된 정책을 push하면 별도 승인 없이 즉시 전 계정으로 퍼진다(전파에는 수 분이 걸릴 수 있다). 그래서 SCP는 반드시 Git에 두고, PR 리뷰 → PolicyStaging 적용 → 승격이라는 파이프라인을 거치게 만든다. 콘솔에서 직접 편집하는 조직은 예외 없이 사고를 겪는다.
+
 ## 정리하며
 
 오늘 본 그림은 셋이다. 첫째, SCP는 **권한 부여가 아니라 천장**이다. Allow-list로 EC2만 허용하면 IAM 정책이 S3 Allow를 줘도 결과는 Deny. 둘째, **Deny-list가 표준 전략**이고, 자주 쓰이는 6가지 패턴(리전 제한·root 차단·MFA 강제·CloudTrail 비활성화 차단·인스턴스 패밀리 제한·서비스 전체 금지)을 머리에 박아야 한다. 셋째, **RCP**(2024)가 리소스 측 제한을 추가했으므로 회사 외부 노출 방지를 OU 한 곳에서 일괄 처리할 수 있다.

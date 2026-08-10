@@ -253,6 +253,173 @@ DMS는 단순 DB → DB 마이그레이션뿐 아니라 **분석 파이프라인
     └── Oracle 연결 차단 → Aurora 운영 시작
 ```
 
+## 트레이드오프 비교표: 상용 DB를 벗어나는 5가지 경로
+
+"Oracle 라이선스 비용을 줄여라"는 하나의 요구에도 답은 다섯 갈래다. Pro 시험은 이 다섯을 나란히 놓고 **한정어**로 하나를 고르게 한다. 클라우드 마이그레이션의 7R 프레임(Rehost·Replatform·Repurchase·Refactor·Retire·Retain·Relocate)에서 DB는 주로 앞의 네 가지에 걸쳐 있다.
+
+| 경로 | 전환 기간 | 앱 코드 변경 | 라이선스 절감 | 운영 부담 | 위험 |
+|------|-----------|--------------|----------------|-----------|------|
+| **Rehost: EC2에 Oracle (BYOL)** | 가장 짧음 | 없음 | **없음** | 높음 (OS·DB 직접 운영) | 낮음 |
+| **Replatform: RDS for Oracle** | 짧음 | 거의 없음 | 부분 (SE2 라이선스 포함 가능) | 중간 | 낮음 |
+| **Replatform: RDS Custom for Oracle** | 짧음 | 없음 | 없음 (BYOL) | 중간 (OS 접근 가능) | 낮음 |
+| **Refactor: SCT + DMS → Aurora PG** | **가장 김** (수개월) | **큼** (30~40% 수동) | **가장 큼** | 낮음 (관리형) | 높음 |
+| **Refactor: Babelfish (SQL Server 한정)** | 중간 | 거의 없음 | 큼 | 낮음 | 중간 |
+
+> 💡 **암기 팁**: **"빨리 옮기려면 Rehost, 싸게 쓰려면 Refactor."** 이 둘은 정확히 반대 방향의 트레이드오프다. 지문에 "as quickly as possible", "minimal changes to the application"이 있으면 Rehost·Replatform 쪽이고, "eliminate licensing costs", "long-term operational efficiency"가 있으면 SCT+DMS 쪽이다. 두 한정어가 동시에 나오면 **단계적 접근**(먼저 Rehost로 데이터센터를 나오고, 그다음 Refactor)이 정답 방향이다.
+
+> 🔍 **더 깊이**: RDS for Oracle의 **License Included** 옵션은 Standard Edition 2에 한정되고, Enterprise Edition은 BYOL(Bring Your Own License)이다. 그래서 "RDS로 옮기면 라이선스가 해결된다"는 서술은 절반만 맞다. EE 기능(Partitioning, Advanced Security, RAC 등)에 의존하는 워크로드는 RDS로 옮겨도 라이선스 비용이 그대로 남는다. RAC은 RDS for Oracle에서 지원되지 않으므로, RAC 의존 시스템은 단일 인스턴스로 재구성하거나 Aurora로 refactor하는 선택지밖에 없다. 시험에서 "Oracle EE + RAC"라는 조건이 붙으면 선택지가 크게 좁아진다.
+
+> 🎯 **시나리오**: "데이터센터 임대 계약이 6개월 후 종료된다. Oracle EE 기반 핵심 시스템 12개를 그 안에 AWS로 옮겨야 하고, 이후 2년에 걸쳐 라이선스 비용을 없애고 싶다. 어떤 순서인가?" — 답: **1단계 Rehost(EC2 BYOL 또는 RDS Custom)로 기한 내 데이터센터 탈출 → 2단계 SCT+DMS로 Aurora PostgreSQL 순차 Refactor**. 6개월 안에 12개 시스템의 PL/SQL을 전부 변환하는 것은 비현실적이고, 기한 압박 속의 대규모 refactor는 실패 확률이 높다. 기한과 비용이라는 두 제약이 충돌하면 **시간축으로 분리**하는 게 표준 답이다.
+
+## DMS 태스크 설정 실물: 검증·LOB·제어 테이블
+
+DMS의 성패는 콘솔 버튼이 아니라 태스크 설정 JSON에서 갈린다. 아래는 대규모 이종 마이그레이션에서 실제로 쓰는 설정의 핵심 부분이다.
+
+```json
+{
+  "TargetMetadata": {
+    "SupportLobs": true,
+    "FullLobMode": false,
+    "LimitedSizeLobMode": true,
+    "LobMaxSize": 64,
+    "BatchApplyEnabled": true
+  },
+  "FullLoadSettings": {
+    "TargetTablePrepMode": "DO_NOTHING",
+    "MaxFullLoadSubTasks": 8,
+    "CommitRate": 10000,
+    "StopTaskCachedChangesApplied": false
+  },
+  "ValidationSettings": {
+    "EnableValidation": true,
+    "ValidationMode": "ROW_LEVEL",
+    "ThreadCount": 5,
+    "FailureMaxCount": 10000,
+    "TableFailureMaxCount": 1000
+  },
+  "ControlTablesSettings": {
+    "ControlSchema": "dms_control",
+    "HistoryTimeslotInMinutes": 5,
+    "StatusTableEnabled": true,
+    "SuspendedTablesTableEnabled": true,
+    "HistoryTableEnabled": true
+  },
+  "Logging": {
+    "EnableLogging": true
+  }
+}
+```
+
+각 설정이 왜 그 값인지가 핵심이다.
+
+| 설정 | 값 | 근거 |
+|------|-----|------|
+| `FullLobMode: false` + `LimitedSizeLobMode: true` | 제한 모드 | Full LOB 모드는 LOB을 조각내 여러 번 왕복하므로 매우 느리다. 최대 크기를 알면 제한 모드가 압도적으로 빠르다 |
+| `LobMaxSize: 64` (KB) | 실측값 기반 | 이 값을 넘는 LOB은 **잘린다**. 반드시 원본에서 `MAX(LENGTH(col))`을 먼저 측정해야 한다 |
+| `TargetTablePrepMode: DO_NOTHING` | 기존 테이블 유지 | SCT가 만든 스키마(제약·기본값)를 DMS가 덮어쓰지 않게 한다 |
+| `BatchApplyEnabled: true` | 배치 적용 | CDC 변경을 건별이 아니라 묶어서 적용해 처리량을 크게 올린다 |
+| `EnableValidation: true` | 검증 켬 | 행 수만이 아니라 값 단위로 원본·대상을 비교한다 |
+
+> ⚠️ **함정**: `LobMaxSize`를 넘는 LOB이 **경고 없이 잘리는** 것이 이종 마이그레이션의 대표적 데이터 손실 사고다. 계약서 PDF나 이미지가 들어 있는 CLOB/BLOB 컬럼에서 특히 위험하다. 그래서 마이그레이션 사전 작업에 "LOB 컬럼별 최대 크기 실측"이 반드시 들어간다. 크기가 들쭉날쭉하고 상한을 알 수 없다면 성능을 희생하더라도 Full LOB 모드를 쓰거나, 아예 LOB을 S3로 분리하고 DB에는 키만 남기는 재설계를 검토한다.
+
+> 🔍 **더 깊이**: `ValidationSettings`를 켜면 DMS가 대상 DB에 `awsdms_validation_failures_v1` 테이블을 만들고 불일치 행을 기록한다. 여기에 `ControlTablesSettings`로 `awsdms_status`(태스크 상태), `awsdms_suspended_tables`(오류로 중단된 테이블), `awsdms_apply_exceptions`(적용 실패 레코드)까지 남긴다. Cutover 판단은 콘솔의 초록색 표시가 아니라 **이 제어 테이블들이 비어 있는지**로 해야 한다. "행 수가 같다"는 검증은 UPDATE로 값만 바뀐 불일치를 절대 잡지 못한다.
+
+```bash
+# 사전 평가 실행 — 지원되지 않는 데이터 타입·PK 없는 테이블 등을 미리 잡는다
+aws dms start-replication-task-assessment-run \
+  --replication-task-arn arn:aws:dms:ap-northeast-2:111111111111:task:XXXX \
+  --service-access-role-arn arn:aws:iam::111111111111:role/dms-assessment-role \
+  --result-location-bucket dms-assessment-reports \
+  --assessment-run-name preflight-2026-q1 \
+  --include-only unsupported-data-types,table-with-lob-but-no-primary-key
+
+# Full Load + CDC 태스크 생성
+aws dms create-replication-task \
+  --replication-task-identifier oracle-to-aurora-hr \
+  --source-endpoint-arn arn:aws:dms:...:endpoint:SRC \
+  --target-endpoint-arn arn:aws:dms:...:endpoint:TGT \
+  --replication-instance-arn arn:aws:dms:...:rep:INST \
+  --migration-type full-load-and-cdc \
+  --table-mappings file://table-mappings.json \
+  --replication-task-settings file://task-settings.json
+
+# 테이블별 진행률·검증 상태 확인 (Cutover 판단의 근거 데이터)
+aws dms describe-table-statistics \
+  --replication-task-arn arn:aws:dms:...:task:XXXX \
+  --query 'TableStatistics[?ValidationState!=`Validated`]'
+```
+
+> ⚠️ **함정**: DMS는 이종 마이그레이션에서 대상 테이블을 만들 때 **기본 키만 있는 최소 형태**로 생성한다. 보조 인덱스·외래 키·시퀀스·기본값·트리거·저장 프로시저는 만들어주지 않는다. 이것들은 SCT가 생성한 DDL로 별도 적용해야 한다. 그리고 성능을 위해 **Full Load 동안에는 보조 인덱스와 외래 키를 제거했다가 완료 후 다시 만드는** 것이 표준이다. 인덱스가 걸린 채로 수억 건을 적재하면 적재 시간이 몇 배로 늘어난다.
+
+## Cutover와 롤백: 되돌아갈 길을 만드는 순서
+
+DB Cutover가 서버 Cutover보다 무서운 이유는 **되돌리기가 어렵기 때문**이다. 전환 후 새 DB에 쓰기가 시작되면, 원본으로 돌아가는 순간 그 사이의 데이터가 사라진다. 그래서 순서에 역방향 복제가 반드시 들어간다.
+
+```
+[T-2주]  리허설
+   ├── 프로덕션 복제본으로 Cutover 전 과정을 한 번 그대로 수행
+   ├── 소요 시간 실측 → 점검 창(maintenance window) 길이 확정
+   └── 근거: 다운타임을 추정이 아니라 실측으로 정해야 한다
+
+[T-1일]  준비
+   ├── DNS TTL을 60초 이하로 낮춤 (또는 Route 53 가중치 라우팅 준비)
+   ├── 검증 제어 테이블 비어 있음 확인
+   ├── 롤백 판단 기준을 문서로 확정 (예: 30분 내 미해결 시 롤백)
+   └── 근거: 장애 한복판에서 "롤백할까?"를 논의하면 이미 늦다
+
+[T-0]  전환
+   1. 앱을 읽기 전용 모드로 전환 (또는 완전 중단)
+   2. 원본 DB에 더 이상 쓰기가 없음을 확인
+   3. CDC Lag = 0 도달 대기
+   4. 시퀀스·자동 증가 값 동기화  ← 가장 자주 빠지는 단계
+   5. 대상 DB에서 통계 갱신(ANALYZE) 및 보조 인덱스 존재 확인
+   6. 앱 연결 문자열/엔드포인트를 대상 DB로 전환
+   7. 스모크 테스트 (핵심 트랜잭션 5~10개)
+
+[T+0]  안전망 가동
+   ├── 즉시 역방향 CDC 태스크 시작 (Aurora → Oracle)
+   ├── 원본 Oracle을 최소 1~2주 유지 (삭제하지 않는다)
+   └── 근거: 역방향 복제가 살아 있으면 롤백 시점의 데이터 손실이 0에 가깝다
+
+[T+2주]  정리
+   ├── 이상 없음 확인 후 역방향 태스크 중지, 원본 폐기
+   └── DMS Replication Instance 삭제 (계속 과금된다)
+```
+
+> ⚠️ **함정**: 4번 **시퀀스 동기화**를 빼먹는 사고가 매우 흔하다. DMS는 테이블의 행 데이터를 옮기지만 Oracle의 SEQUENCE나 PostgreSQL의 serial/identity 현재값은 옮기지 않는다. 전환 직후 새 INSERT가 1번부터 시작하면서 기본 키 충돌이 폭발한다. Cutover 체크리스트에 "모든 시퀀스의 `last_value`를 원본 최대값 + 여유분으로 설정"을 명시적으로 넣어야 한다.
+
+> 📚 **사례**: 이종 DB Cutover 후 롤백을 실제로 실행한 팀들이 공통으로 지목하는 실패 원인은 데이터가 아니라 **성능**이다. 기능 테스트는 모두 통과했는데, 실제 프로덕션 부하가 들어오자 특정 쿼리의 실행 계획이 Aurora PostgreSQL에서 다르게 잡혀 응답 시간이 수십 배로 늘어난 사례가 반복된다. Oracle의 힌트에 의존하던 쿼리, 상관 서브쿼리, 대용량 조인에서 특히 잘 생긴다. 그래서 Cutover 전 검증에는 반드시 **프로덕션 수준 부하 테스트**와 `EXPLAIN ANALYZE` 기반 실행 계획 비교가 들어가야 한다. 행 수 일치는 최소 조건이지 충분 조건이 아니다.
+
+## 한정어가 바뀌면 답이 달라진다
+
+"온프레미스 Oracle을 AWS로 옮겨라"라는 하나의 요구에, 한정어만 바꿔 보자.
+
+| 한정어 | 정답 방향 | 왜 |
+|--------|-----------|-----|
+| **MINIMAL downtime** | DMS **Full Load + CDC** | 원본을 운영하면서 따라잡고 마지막에만 짧게 멈춘다 |
+| **MINIMAL changes to application** | Rehost(EC2) 또는 RDS for Oracle | 이종 전환은 필연적으로 코드 변경을 부른다 |
+| **LOWEST long-term cost** | SCT + DMS → **Aurora PostgreSQL** | 라이선스 자체를 제거하는 유일한 경로 |
+| **LEAST operational overhead (전환 작업 자체)** | **DMS Serverless** | Replication Instance 사이징·스케일링을 없앤다 |
+| **네트워크 대역폭이 매우 제한적 / 수십 TB** | **Snowball + DMS(SCT 데이터 추출 에이전트)** | 초기 대량 적재는 물리 전송, 이후 변경분만 CDC |
+| **동종 엔진(MySQL → RDS MySQL)** | **DMS만** (SCT 불필요) | 스키마 변환이 필요 없다 |
+| **실시간 분석 파이프라인도 필요** | DMS → **Kinesis / S3** 타깃 | DMS의 타깃은 DB만이 아니다 |
+
+> 💡 **암기 팁**: **"downtime을 물으면 CDC, cost를 물으면 Aurora, bandwidth를 물으면 Snowball, 동종이면 SCT 빼라."** 네 문장이면 DMS 문항의 방향이 대부분 잡힌다.
+
+> 🔍 **더 깊이**: 대역폭 제약 시나리오에서 **SCT 데이터 추출 에이전트(Data Extraction Agent)**의 역할을 정확히 알아둘 필요가 있다. 이 에이전트는 온프레미스에서 원본 데이터를 추출·압축해 로컬 파일로 만들고, 그 파일을 Snowball Edge에 적재해 물리적으로 AWS에 보낸 뒤, S3를 거쳐 대상(특히 Redshift 같은 데이터 웨어하우스)으로 로드한다. 수십~수백 TB 규모의 Teradata·Netezza·Oracle DW를 Redshift로 옮길 때 쓰는 표준 경로다. 이때도 **초기 적재만 물리 전송이고, 그 이후의 변경분은 DMS CDC가 네트워크로 따라잡는다** — 이 조합을 묻는 문항이 자주 나온다.
+
+## 정리하며
+
+오늘 본 그림은 넷이다.
+
+첫째, **CDC는 각 DB 엔진의 트랜잭션 로그를 재활용하는 기술**이다. Oracle은 Redo Log(LogMiner + 보충 로깅), SQL Server는 Transaction Log(CDC 기능), MySQL은 binlog(ROW 포맷), PostgreSQL은 WAL(logical replication)이다. 원본 DB에 어떤 사전 설정이 필요한지가 곧 그 엔진의 CDC 소스가 무엇인지를 묻는 문제다.
+
+둘째, **SCT와 DMS는 역할이 다르다**. SCT는 스키마·코드(구조)를, DMS는 데이터(내용)를 옮긴다. 동종 엔진이면 SCT가 필요 없고, 이종 엔진이면 SCT의 자동 변환율 70~80%를 현실적 목표로 잡고 나머지를 위한 개발 리소스를 프로젝트 계획에 포함해야 한다.
+
+셋째, **무중단의 실체는 Full Load + CDC**다. 전체를 복사하는 동안 쌓인 변경을 CDC가 따라잡고, Lag이 0에 수렴한 순간에만 짧게 멈춘다. 다만 Cutover 체크리스트에서 시퀀스 동기화·보조 인덱스·통계 갱신·역방향 CDC 안전망은 별도로 챙겨야 한다.
+
+넷째, **선택지는 한정어가 결정한다**. 다운타임이면 CDC, 장기 비용이면 Aurora로의 Refactor, 앱 변경 최소화면 Rehost 또는 Babelfish, 대역폭 제약이면 Snowball + 데이터 추출 에이전트다. 여러 선택지가 모두 "동작하는" 것이 Pro 문항의 기본 전제이므로, 무엇이 되는지가 아니라 **무엇이 그 한정어에서 가장 나은지**를 골라야 한다.
+
 ## 📝 연습 문제
 
 **문제 1.** Oracle 50TB DB를 Aurora PostgreSQL로 마이그레이션하려 한다. 다운타임 없이 진행해야 하고 스토어드 프로시저도 변환해야 한다. 어떤 단계가 필요한가?

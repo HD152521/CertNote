@@ -77,6 +77,206 @@ NAT Gateway는 사설 서브넷의 리소스가 인터넷으로 outbound 통신�
 
 > 🎯 **시나리오**: "전 세계 사용자에게 S3의 정적 자산을 제공하면서 전송 비용을 최소화하라." → **CloudFront + S3**. S3 → CloudFront origin fetch는 무료, CloudFront 캐시 히트는 S3 호출과 egress를 모두 줄이고, 사용자에게 가까운 엣지에서 응답해 지연도 준다. S3를 직접 공개하면 egress 단가가 높고 캐싱이 없어 비용·지연 모두 불리하다. Global Accelerator는 정적 IP·TCP/UDP 가속용이지 정적 콘텐츠 캐싱·비용 절감 도구가 아니다.
 
+## 트레이드오프 비교표: 사설 서브넷의 outbound 경로 6가지
+
+"사설 서브넷에서 밖으로 나가야 한다"는 하나의 요구에 경로가 여섯이다. 각각의 요금 구조와 제약이 달라서, 한정어가 바뀌면 정답도 바뀐다.
+
+| 경로 | 고정 요금 | 트래픽 요금 | 가용성 | 온프레미스에서 사용 | 제약 |
+|------|-----------|-------------|--------|---------------------|------|
+| **NAT Gateway** | 시간당(AZ마다) | GB당 처리 | AZ 내 관리형 이중화 | — | 이중 과금, AZ마다 배치 필요 |
+| **NAT Instance(EC2)** | 인스턴스 비용 | **처리 요금 없음** | 직접 구성해야 함 | — | 대역폭이 인스턴스 타입에 종속, 자체 운영 |
+| **Gateway Endpoint** (S3·DynamoDB) | **없음** | **없음** | 라우팅 기반, 관리 불필요 | **불가** | S3·DynamoDB 전용, VPC 내부에서만 |
+| **Interface Endpoint** (PrivateLink) | 시간당(ENI/AZ마다) | GB당 처리 | AZ마다 ENI 배치 | **가능**(DX·VPN 경유) | 서비스마다 별도 엔드포인트 |
+| **Egress-only IGW** (IPv6 전용) | **없음** | 데이터 전송 요금만 | 관리형 | — | IPv6 아웃바운드 전용 |
+| **중앙 집중 egress**(TGW + NAT) | TGW 어태치먼트 + NAT 시간당 | TGW 처리 + NAT 처리 (**중첩**) | 높음 | 가능 | 요금이 두 번 붙는다 |
+
+> ⚠️ **함정**: 표에서 가장 시험에 잘 나오는 칸은 **"Gateway Endpoint는 온프레미스에서 사용 불가"**다. Gateway Endpoint는 VPC 라우팅 테이블에 prefix list를 넣는 방식이라, Direct Connect나 VPN을 타고 들어온 온프레미스 트래픽은 그 라우팅을 쓸 수 없다. 그래서 "온프레미스에서 사설 경로로 S3에 접근하라"는 요구가 나오면 무료인 Gateway Endpoint가 아니라 **S3용 Interface Endpoint**가 정답이다. "S3면 무조건 Gateway"라고 외운 사람이 정확히 여기서 틀린다.
+
+> 🔍 **더 깊이**: NAT Instance는 "처리 요금이 없다"는 이유로 소규모 환경에서 여전히 검토된다. 그러나 트레이드오프가 명확하다. (1) 인스턴스 타입이 대역폭 상한을 결정하므로 트래픽이 늘면 수직 확장이 필요하고, (2) 소스/대상 확인(source/destination check)을 꺼야 하며, (3) 장애 시 자동 대체가 없어 Auto Scaling·라우팅 전환 스크립트를 직접 만들어야 한다. 즉 **처리 요금을 절약하는 대가로 운영 부담을 산다**. 시험에서 "LEAST operational overhead"가 붙으면 NAT Instance는 언제나 오답이고, "MOST cost-effective + 트래픽이 매우 큼 + 운영 인력 있음"이라는 조건이 겹칠 때만 후보가 된다.
+
+## 아키텍처 다이어그램: 멀티 계정 환경에서 egress를 모으는 구조
+
+계정이 수십 개가 되면 "VPC마다 NAT Gateway를 AZ마다"라는 구조가 비용의 주범이 된다. VPC 20개 × AZ 3개 = NAT 60개의 시간당 요금이 트래픽과 무관하게 고정으로 나간다. 그래서 중앙 집중 egress 패턴이 등장한다.
+
+```
+ ┌──────────────────────────────────────────────────────────────┐
+ │  Network 계정 (Infrastructure OU)                             │
+ │                                                              │
+ │   ┌────────────────── Egress VPC ────────────────────┐       │
+ │   │  AZ-a: NAT GW ──┐                                │       │
+ │   │  AZ-b: NAT GW ──┼──► Internet Gateway ──► 인터넷  │       │
+ │   │  AZ-c: NAT GW ──┘                                │       │
+ │   │                                                  │       │
+ │   │  ┌── 중앙 Interface Endpoint (PrivateLink) ──┐    │       │
+ │   │  │   KMS · SQS · SNS · ECR · Logs · SSM      │    │       │
+ │   │  │   + Route 53 Private Hosted Zone 공유      │    │       │
+ │   │  └───────────────────────────────────────────┘    │       │
+ │   └──────────────────────┬───────────────────────────┘       │
+ │                          │                                   │
+ │                  ┌───────▼────────┐                          │
+ │                  │ Transit Gateway│  (RAM으로 타 계정 공유)    │
+ │                  └───┬────────┬───┘                          │
+ └──────────────────────┼────────┼──────────────────────────────┘
+                        │        │
+      ┌─────────────────▼──┐  ┌──▼──────────────────┐
+      │ Workload 계정 A     │  │ Workload 계정 B      │
+      │  Spoke VPC          │  │  Spoke VPC           │
+      │  ┌───────────────┐  │  │  ┌───────────────┐  │
+      │  │ S3 Gateway EP │  │  │  │ S3 Gateway EP │  │  ◄── 무료, VPC마다
+      │  │ (무료·필수)    │  │  │  │ (무료·필수)    │  │      반드시 각자 둔다
+      │  └───────────────┘  │  │  └───────────────┘  │
+      │  기본 라우트 → TGW   │  │  기본 라우트 → TGW   │
+      └─────────────────────┘  └─────────────────────┘
+
+  ▼ 요금이 붙는 지점 (중첩에 주의)
+  Spoke → TGW            : TGW 어태치먼트 시간당 + 처리 GB당
+  TGW → Egress VPC       : (같은 TGW 내부)
+  Egress VPC NAT → 인터넷 : NAT 시간당 + NAT 처리 GB당 + 인터넷 egress
+  ※ S3·DynamoDB 트래픽은 이 경로에 절대 태우지 않는다.
+     각 Spoke VPC에 무료 Gateway Endpoint를 두어 TGW·NAT를 모두 우회시킨다.
+```
+
+> 🔍 **더 깊이**: 중앙 집중 egress는 **무조건 싸지 않다**. TGW를 통과하는 모든 트래픽에 GB당 처리 요금이 붙고, 그 위에 NAT 처리 요금이 또 붙는다. 즉 트래픽 단가는 오히려 올라간다. 이 패턴이 이득인 지점은 **고정 요금 쪽**이다 — VPC 20개 × AZ 3개 = NAT 60개의 시간당 요금이 NAT 3개로 줄어든다. 따라서 판단 기준은 명확하다. **VPC 수가 많고 각 VPC의 트래픽은 적으면 중앙 집중이 유리하고, VPC 수가 적고 트래픽이 매우 크면 분산 NAT가 유리하다.** 여기에 "중앙 집중은 보안 검사(방화벽·IDS)를 한 곳에서 할 수 있다"는 비용 외 이점이 더해져 규제 환경에서는 트래픽 요금을 감수하고도 채택한다.
+
+> ⚠️ **함정**: 중앙 집중 구조를 만들면서 **각 Spoke VPC의 S3 Gateway Endpoint를 빼먹는 것**이 가장 비싼 실수다. Gateway Endpoint는 VPC 단위 리소스라 계정·VPC마다 각자 만들어야 하고 공유가 안 된다. 이걸 빠뜨리면 S3 트래픽이 TGW를 타고(처리 요금) NAT를 거쳐(처리 요금) 나가면서, 원래 0원이어야 할 트래픽에 요금이 두 번 붙는다.
+
+## NAT·전송 비용을 단계적으로 줄이는 순서
+
+비용 절감은 "무엇을 끄자"가 아니라 "무엇부터 보자"의 순서 문제다. 효과 대비 위험이 낮은 것부터 간다.
+
+```
+1단계  측정 — 어디로 새는지부터 확정
+   ├── CUR을 Athena로 쿼리해 NAT 처리량·데이터 전송 항목만 분리
+   ├── VPC Flow Logs로 NAT ENI를 지나는 목적지 상위 IP·포트 집계
+   └── 근거: NAT 요금 청구서는 "얼마"만 알려주고 "어디로"는 알려주지 않는다.
+             Flow Logs 없이는 절감 대상을 특정할 수 없다.
+
+2단계  Gateway Endpoint 추가 (위험 0, 효과 즉시)
+   ├── 모든 VPC에 S3·DynamoDB Gateway Endpoint 존재 여부 점검
+   ├── 라우팅 테이블 추가만으로 적용, 애플리케이션 변경 없음
+   └── 근거: 무료이고 되돌리기 쉬우며 효과가 가장 크다. 언제나 1순위.
+
+3단계  Interface Endpoint 선별 도입 (트래픽 큰 서비스만)
+   ├── 1단계 집계에서 상위를 차지한 AWS 서비스부터
+   ├── ECR·CloudWatch Logs·SSM·KMS가 흔한 상위 항목
+   └── 근거: Interface Endpoint는 ENI 시간당 요금이 있다. 트래픽이 적은
+             서비스까지 전부 만들면 오히려 손해다. 손익분기를 계산하고 넣는다.
+
+4단계  아키텍처 배치 조정 (Cross-AZ 최소화)
+   ├── 같은 AZ 안에서 통신하도록 배치하되 가용성 요구와 저울질
+   ├── NLB의 cross-zone 설정처럼 요금이 걸린 옵션을 개별 검토
+   └── 근거: 여기서부터는 가용성과의 트레이드오프가 생긴다.
+             비용만 보고 한 AZ에 몰면 AZ 장애에 그대로 노출된다.
+
+5단계  대규모 구조 변경 (중앙 집중 egress·CloudFront 도입)
+   ├── VPC·계정 수가 많으면 TGW 기반 중앙 egress 검토
+   ├── 인터넷으로 나가는 대용량 콘텐츠는 CloudFront 뒤로
+   └── 근거: 효과는 크지만 네트워크 구조를 바꾸는 작업이라 위험이 크다.
+             앞의 1~4단계로 얻을 수 있는 절감을 다 얻은 뒤에 착수한다.
+```
+
+> 💡 **암기 팁**: **"측정 → 무료(Gateway EP) → 선별 유료(Interface EP) → 배치 → 구조."** 순서가 곧 위험 대비 효과의 순서다. 시험에서 "즉시·최소 변경으로 비용을 줄여라"는 요구가 나오면 2단계에 해당하는 Gateway Endpoint가 거의 항상 정답이다.
+
+## 실물: Lifecycle 정책과 엔드포인트 정책
+
+### S3 Lifecycle — 계층 이동과 미완료 멀티파트 정리를 한 정책에
+
+```json
+{
+  "Rules": [
+    {
+      "ID": "logs-tiering-and-expiry",
+      "Filter": { "Prefix": "logs/" },
+      "Status": "Enabled",
+      "Transitions": [
+        { "Days": 30,  "StorageClass": "STANDARD_IA" },
+        { "Days": 90,  "StorageClass": "GLACIER_IR" },
+        { "Days": 365, "StorageClass": "DEEP_ARCHIVE" }
+      ],
+      "Expiration": { "Days": 2555 },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 }
+    },
+    {
+      "ID": "cleanup-old-versions",
+      "Filter": { "Prefix": "" },
+      "Status": "Enabled",
+      "NoncurrentVersionTransitions": [
+        { "NoncurrentDays": 30, "StorageClass": "GLACIER_IR" }
+      ],
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 180 }
+    }
+  ]
+}
+```
+
+> ⚠️ **함정**: 두 번째 규칙의 **비현행 버전(noncurrent version) 정리**가 빠져 있는 버킷이 대단히 흔하다. Versioning을 켜두면 덮어쓰기·삭제된 객체의 옛 버전이 그대로 남아 계속 과금된다. 콘솔의 객체 목록에는 보이지 않으므로 "객체 수는 그대로인데 저장 비용만 계속 오르는" 현상으로 나타난다. Versioning을 켰다면 비현행 버전 만료 규칙은 세트로 넣어야 한다.
+
+> 🔍 **더 깊이**: Lifecycle **전환 자체에 요청 요금이 붙는다**(전환 1,000건당 과금). 그래서 수억 개의 작은 객체를 IA로 옮기면 전환 요청 요금이 저장 절감액을 넘어설 수 있다. 여기에 Standard-IA·One Zone-IA의 **최소 청구 객체 크기 128KB** 규칙까지 겹친다 — 10KB짜리 객체를 IA에 넣어도 128KB로 청구된다. 결론은 하나다. **작은 객체는 계층을 내리는 게 아니라 합쳐야 한다.** 로그 조각은 압축·병합해 큰 객체로 만든 뒤 계층을 내리는 게 정석이고, 이 판단 근거는 S3 Storage Lens의 평균 객체 크기 지표에서 나온다.
+
+### VPC Endpoint 생성과 엔드포인트 정책
+
+```bash
+# S3 Gateway Endpoint 생성 — 라우팅 테이블에 붙인다 (무료)
+aws ec2 create-vpc-endpoint \
+  --vpc-id vpc-0abc123 \
+  --vpc-endpoint-type Gateway \
+  --service-name com.amazonaws.ap-northeast-2.s3 \
+  --route-table-ids rtb-private-a rtb-private-b rtb-private-c \
+  --policy-document file://s3-endpoint-policy.json
+
+# ECR용 Interface Endpoint 생성 — 서브넷에 ENI를 심는다 (시간당 + GB당)
+aws ec2 create-vpc-endpoint \
+  --vpc-id vpc-0abc123 \
+  --vpc-endpoint-type Interface \
+  --service-name com.amazonaws.ap-northeast-2.ecr.dkr \
+  --subnet-ids subnet-a subnet-b subnet-c \
+  --security-group-ids sg-endpoint \
+  --private-dns-enabled
+
+# 현재 VPC에 어떤 엔드포인트가 있는지 (절감 점검 1번 항목)
+aws ec2 describe-vpc-endpoints \
+  --filters Name=vpc-id,Values=vpc-0abc123 \
+  --query 'VpcEndpoints[].{Type:VpcEndpointType,Service:ServiceName}' \
+  --output table
+```
+
+```json
+// s3-endpoint-policy.json — 이 엔드포인트로는 우리 조직의 버킷만 접근 가능
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "AllowOwnOrgBucketsOnly",
+    "Effect": "Allow",
+    "Principal": "*",
+    "Action": ["s3:GetObject", "s3:PutObject", "s3:ListBucket"],
+    "Resource": "*",
+    "Condition": {
+      "StringEquals": { "aws:ResourceOrgID": "o-exampleorgid" }
+    }
+  }]
+}
+```
+
+> 📚 **사례**: 엔드포인트 정책은 비용이 아니라 **데이터 반출 차단**에서 진가를 발휘한다. Gateway Endpoint에 위와 같은 정책을 걸어두면, 침해된 인스턴스가 사내 데이터를 공격자 소유의 외부 S3 버킷으로 복사하려 해도 그 요청이 엔드포인트에서 거부된다. NAT를 막아 인터넷 경로를 닫고, 남은 유일한 S3 경로인 엔드포인트에 조직 조건을 걸면 반출 경로가 구조적으로 사라진다. 비용 최적화로 도입한 Gateway Endpoint가 보안 통제 지점으로도 쓰이는, 드물게 양쪽이 다 이득인 설계다.
+
+## 한정어가 바뀌면 답이 달라진다
+
+"사설 서브넷 워크로드가 S3에 접근한다"는 하나의 상황에, 한정어와 조건만 바꿔 보자.
+
+| 조건·한정어 | 정답 방향 | 왜 |
+|--------------|-----------|-----|
+| **MOST cost-effective, VPC 내부에서만** | **S3 Gateway Endpoint** | 완전 무료. 시간당도 GB당도 없다 |
+| **온프레미스에서 DX 경유로 사설 접근** | **S3 Interface Endpoint** | Gateway Endpoint는 온프레미스 트래픽에 적용되지 않는다 |
+| **LEAST operational overhead** | Gateway Endpoint | 라우팅 항목 하나. 관리할 ENI·SG가 없다 |
+| **데이터 반출까지 막아야 함** | Gateway Endpoint + **엔드포인트 정책** | 경로를 좁힌 뒤 그 경로에 조건을 건다 |
+| **글로벌 사용자에게 대량 배포 + 비용↓** | **CloudFront + S3** | origin fetch 무료 + 캐시로 origin 호출·egress 동시 감소 |
+| **다른 리전의 워크로드가 자주 읽음** | CRR 또는 **CloudFront** 검토 | Cross-Region 반복 전송보다 한 번 복제·캐시가 싸질 수 있다 |
+| **대용량 데이터셋을 외부에 공개 공유** | **Requester Pays** | 다운로드 egress 비용을 요청자가 부담하게 전환 |
+
+> 💡 **암기 팁**: **"VPC 안이면 Gateway, 온프레미스면 Interface, 인터넷이면 CloudFront."** 출발지가 어디인지만 지문에서 찾으면 세 갈래가 즉시 갈린다.
+
+> 🎯 **시나리오**: "여러 계정의 워크로드가 각자 CloudWatch Logs와 ECR을 대량으로 호출한다. NAT 처리 요금이 급증했다. MOST cost-effective한 개선은?" — 답: **호출량 상위 서비스에 대해서만 Interface Endpoint를 도입**하고, 계정·VPC가 많다면 Network 계정에 중앙 Interface Endpoint를 두고 Private Hosted Zone으로 공유한다. 여기서 "모든 AWS 서비스에 Interface Endpoint를 만든다"는 보기가 함정이다 — ENI 시간당 요금이 AZ 수만큼 곱해져 트래픽이 적은 서비스에서는 NAT보다 비싸진다. 비용 한정어가 붙은 문항에서 **"전부 다"는 거의 항상 오답**이다.
+
 ## 정리하며
 
 숨은 비용의 3대 축은 **S3 스토리지 계층(접근 빈도 vs 검색 비용), 데이터 전송(방향·경계), NAT Gateway(이중 과금)**이다. S3는 메모리 계층처럼 자주 쓰는 건 빠른 계층에·드문 건 느린 계층에 두되 최소 보관 기간을 지키고, 패턴 불명·큰 객체는 Intelligent-Tiering으로 자동화한다. 데이터 전송은 같은 AZ 무료·Cross-AZ 양방향 과금·인터넷 egress가 가장 비싸며, NAT Gateway는 S3/DynamoDB Gateway Endpoint(무료)와 Interface Endpoint로 우회하고, 인터넷 배포는 CloudFront로 절감한다.
