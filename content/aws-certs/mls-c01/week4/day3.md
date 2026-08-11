@@ -1,99 +1,219 @@
 # Day 3 - Data Visualization: Distribution, Correlation, QuickSight, Insights
 
-After cleaning and dimensionality work, comes **understanding data visually**. Good visualizations reveal distribution shape, outliers, relationships, and clusters that summary statistics hide. MLS-C01 Domain 2 asks both "which chart answers which question?" and "which AWS service handles visualization and BI?"
+## 📌 핵심 정리
 
-Today, we cover **distribution visualization**, **relationship and correlation visualization**, AWS's BI service **Amazon QuickSight**, and **analytical insights** derived from it.
+- **질문이 차트를 결정한다**. 분포는 히스토그램·박스플롯·바이올린, 관계는 산점도·상관 히트맵·페어플롯.
+- **앤스컴의 사중주**: 통계 요약이 같아도 모양은 전혀 다를 수 있다 → 요약값만 믿지 말고 반드시 그려 본다.
+- **피어슨은 선형 관계만** 잡는다. 단조 비선형은 스피어만, 일반적 의존성은 상호정보량으로 확인한다.
+- **QuickSight**는 서버리스 BI다. SPICE(인메모리 엔진), ML Insights(이상 탐지·예측·자동 내러티브), Q(자연어 질의)를 기억한다.
+- 시각화의 목표는 그림이 아니라 **후속 조치**다: 치우침 → 로그 변환, 강한 상관 → 다중공선성 처리.
 
-## Chart Selection: Question Determines Chart
+## 차트 선택: 질문이 차트를 결정한다
 
-| Analysis Goal | Appropriate Chart |
+정제와 차원 작업을 마쳤다면 다음은 **데이터를 눈으로 이해하는 일**이다. 좋은 시각화는 요약 통계가 감추는 분포 모양·이상치·관계·군집을 드러낸다. MLS-C01 Domain 2는 "어떤 질문에 어떤 차트인가"와 "시각화·BI는 어떤 AWS 서비스인가"를 함께 묻는다.
+
+| 분석 목표 | 적절한 차트 |
 |-----------|-------------|
-| Single numeric distribution | Histogram, KDE, boxplot, violin |
-| Category frequencies | Bar chart |
-| Two numeric relationship | Scatter, hexbin |
-| Multiple variable correlation | Correlation heatmap, pairplot |
-| Trend over time | Line graph |
-| Part-to-whole composition | Stacked bar |
+| 단일 수치 변수의 분포 | 히스토그램, KDE, 박스플롯, 바이올린 |
+| 범주별 빈도 | 막대그래프 |
+| 두 수치 변수의 관계 | 산점도, 헥스빈(hexbin) |
+| 여러 변수의 상관 | 상관 히트맵, 페어플롯 |
+| 시간에 따른 추세 | 선 그래프 |
+| 전체 대비 구성비 | 누적 막대 |
 
-Before choosing, ask yourself "what question am I answering?" Wrong charts hide or distort patterns.
+차트를 고르기 전에 "지금 내가 답하려는 질문이 무엇인가"를 먼저 물어야 한다. 잘못된 차트는 패턴을 감추거나 왜곡한다.
 
-> 💡 **Key Theory**: **Anscombe's quartet** demonstrates datasets with identical summary stats (mean, variance, correlation) but entirely different shapes. Four datasets share nearly identical mean, variance, correlation, and regression line, yet scatter plots show one linear, one curved, one dominated by a single outlier. The lesson: "don't trust summary stats alone—always visualize"—why EDA requires visualization.
+### 잘못된 차트가 만드는 오해
 
-## Distribution Visualization
+| 상황 | 잘못된 선택 | 무엇이 잘못되나 | 올바른 선택 |
+|---|---|---|---|
+| 수치 변수의 분포를 보고 싶다 | 파이차트 | 분포 모양·꼬리·이상치가 전부 사라진다 | 히스토그램 + 박스플롯 |
+| 범주가 20개인 구성비 | 파이차트 | 조각이 잘게 쪼개져 비교 불가 | 정렬된 막대그래프 |
+| 두 변수의 관계 | 두 개의 선 그래프 | 각 변수의 추세만 보이고 관계는 안 보인다 | 산점도 |
+| 점이 수십만 개인 산점도 | 산점도 그대로 | 과밀로 점이 뭉개져 밀도를 못 본다 | 헥스빈 또는 샘플링 |
+| 범주별 분포 비교 | 범주별 평균 막대 | 평균이 같아도 분포가 다를 수 있다 | 바이올린 / 박스플롯 |
+
+> ⚠️ **함정**: 같은 데이터도 축을 어떻게 잡느냐에 따라 정반대 인상을 준다. 막대그래프의 y축을 0이 아닌 값에서 시작하면 미미한 차이가 극적으로 보이고, 서로 다른 단위를 이중 축에 겹쳐 그리면 없는 상관이 있는 것처럼 보인다. 차트를 읽을 때도 만들 때도 **축 범위를 먼저 확인**해야 한다.
+
+> 💡 **관련 이론**: **앤스컴의 사중주(Anscombe's quartet)**는 요약 통계(평균, 분산, 상관)가 동일한데도 모양은 전혀 다른 데이터셋들을 보여 준다. 네 데이터셋은 평균·분산·상관·회귀선이 거의 같지만, 산점도로 보면 하나는 선형, 하나는 곡선, 하나는 이상치 하나가 전체를 끌고 간다. 교훈은 "요약 통계만 믿지 말고 항상 시각화하라"이며, 이것이 EDA에 시각화가 반드시 필요한 이유다.
+
+## 분포 시각화
 
 ```python
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 fig, axes = plt.subplots(1, 3, figsize=(15, 4))
-sns.histplot(df["income"], kde=True, ax=axes[0])   # shape + density
-sns.boxplot(x=df["income"], ax=axes[1])             # quartiles, outliers
-sns.violinplot(x=df["region"], y=df["income"], ax=axes[2])  # distribution by category
+sns.histplot(df["income"], kde=True, ax=axes[0])   # 모양 + 밀도
+sns.boxplot(x=df["income"], ax=axes[1])             # 사분위, 이상치
+sns.violinplot(x=df["region"], y=df["income"], ax=axes[2])  # 범주별 분포
 ```
 
-- **Histogram/KDE**: See distribution shape (skew, peaks)
-- **Boxplot**: Quickly spot median, quartiles, outliers via IQR
-- **Violin**: Boxplot + density; strong for comparing distributions across categories
+- **히스토그램/KDE**: 분포 모양(치우침, 봉우리 수)을 본다
+- **박스플롯**: 중앙값·사분위와 IQR 기준 이상치를 빠르게 잡아낸다
+- **바이올린**: 박스플롯 + 밀도. 범주 간 분포 비교에 강하다
 
-For skewed distributions, apply log transformation and re-plot to check normality.
+치우친 분포는 로그 변환 후 다시 그려 정규성에 가까워지는지 확인한다.
 
-## Relationship and Correlation Visualization
+```
+ 정규(대칭)        우편향(오른쪽 꼬리)      이봉(bimodal)        이상치 존재
+   ▁▃▅█▅▃▁           ▂█▆▄▃▂▁▁▁▁            ▃█▄▁▁▄█▃          ▂▅█▅▂       ·  ·
+ 평균 ≈ 중앙값       평균 > 중앙값          봉우리 2개         꼬리에 극단값
+ → 그대로 사용       → log(1+x) 변환        → 숨은 세그먼트    → IQR·도메인 확인
+```
+
+### 분포 진단 → 전처리 처방
+
+| 차트에서 본 것 | 진단 | 후속 전처리 |
+|---|---|---|
+| 오른쪽으로 긴 꼬리 | 우편향(skew) | `log(1+x)` 등 로그 변환, 또는 트리 계열 모델 사용 |
+| 봉우리가 둘 이상 | 하위 집단 혼재 | 세그먼트 변수 추가, 또는 집단별 모델 분리 |
+| 박스플롯 밖 극단값 | 이상치 후보 | 측정 오류인지 실제 신호인지 확인 후 제거·윈저라이즈·robust 모델 |
+| 값이 거의 한 종류 | 상수·준상수 컬럼 | 컬럼 제거(정보 없음) |
+| 스케일이 변수마다 수십 배 차이 | 스케일 불균형 | 표준화(PCA·KNN·신경망 앞에서 필수) |
+| 클래스 막대가 99:1 | 클래스 불균형 | Day 4의 리샘플링·클래스 가중치·PR-AUC |
+
+> ⚠️ **함정**: 히스토그램의 **구간 수(bin)**를 바꾸면 같은 데이터도 전혀 다른 모양으로 보인다. 구간이 너무 적으면 봉우리가 뭉개지고, 너무 많으면 노이즈가 봉우리처럼 보인다. 모양이 애매하면 bin 수를 바꿔 가며 확인하거나 KDE를 함께 그린다.
+
+## 관계·상관 시각화
 
 ```python
-# Correlation heatmap: linear relationships at a glance
+# 상관 히트맵: 선형 관계를 한눈에
 corr = df.select_dtypes("number").corr()
 sns.heatmap(corr, annot=True, cmap="coolwarm", center=0)
 
-# Pairplot: variable pair relationships + diagonal distributions
+# 페어플롯: 변수 쌍 관계 + 대각선 분포
 sns.pairplot(df, hue="target", vars=["age", "income", "score"])
 ```
 
-- Correlation heatmap simultaneously spots multicollinearity candidates (high |r|) and target relationships
-- Pairplot reveals nonlinear relationships, clusters, and outliers in variable pairs
+- 상관 히트맵은 다중공선성 후보(|r|이 큰 쌍)와 타깃과의 관계를 동시에 잡아낸다
+- 페어플롯은 변수 쌍의 비선형 관계·군집·이상치를 드러낸다
 
-> 💡 **Key Theory**: Pearson correlation **captures linear relationships only**. Perfect curved relationship (e.g., y = x²) may yield Pearson r near 0. Monotonic but nonlinear relationships are better captured by **Spearman rank correlation**; general dependence by **mutual information**. So don't assume "low correlation = no relationship"—check scatter plots for shape.
+### 상관·의존성 지표 비교
+
+| 지표 | 잡아내는 관계 | 언제 쓰나 | 한계 |
+|---|---|---|---|
+| 피어슨 상관 | 선형 | 기본 확인, 다중공선성 후보 탐색 | 곡선 관계에서 0에 가깝게 나옴 |
+| 스피어만 순위 상관 | 단조(monotonic) | 비선형이지만 방향이 일정할 때 | 비단조 관계(U자형)는 못 잡음 |
+| 상호정보량 | 일반적 의존성 | 관계 형태를 모를 때 | 값의 절대적 해석이 어렵고 계산 비용 큼 |
+| 산점도(눈으로) | 모든 형태 | 항상 병행 | 변수 쌍이 많으면 일일이 보기 힘듦 |
+
+> 💡 **관련 이론**: 피어슨 상관은 **선형 관계만 포착한다**. 완벽한 곡선 관계(예: y = x²)도 피어슨 r이 0에 가깝게 나올 수 있다. 단조지만 비선형인 관계는 **스피어만 순위 상관**이, 일반적 의존성은 **상호정보량**이 더 잘 잡는다. 그러니 "상관이 낮다 = 관계가 없다"라고 단정하지 말고 산점도로 모양을 확인해야 한다.
+
+> ⚠️ **함정**: 상관 히트맵에서 |r|이 크다고 곧바로 인과를 말할 수 없다. 두 변수가 함께 움직이는 것은 제3의 공통 원인이나 시간 추세 때문일 수 있다. 시각화는 가설을 만드는 도구이지 인과를 증명하는 도구가 아니다.
+
+### 분포 차트 세 종류, 언제 무엇을
+
+| 차트 | 가장 잘 보여 주는 것 | 놓치는 것 | 쓰는 순간 |
+|---|---|---|---|
+| 히스토그램/KDE | 모양(치우침, 봉우리 수) | 정확한 사분위·이상치 경계 | 변수를 처음 볼 때 |
+| 박스플롯 | 중앙값·사분위·IQR 밖 극단값 | 봉우리가 둘인지 여부 | 이상치를 판정할 때 |
+| 바이올린 | 범주별 분포 모양 차이 | 개별 극단값의 정확한 위치 | 범주가 좋은 특성인지 볼 때 |
 
 ## Amazon QuickSight
 
-QuickSight is AWS's **serverless BI service** for creating and sharing dashboards and visualizations.
+QuickSight는 대시보드와 시각화를 만들고 공유하는 AWS의 **서버리스 BI 서비스**다.
 
-| Feature | Description |
+| 기능 | 설명 |
 |------|------|
-| SPICE | In-memory compute engine for fast aggregation and visualization |
-| Data sources | Direct connection to S3, Athena, Redshift, RDS, Aurora, etc. |
-| ML Insights | Anomaly detection, forecasting, automated narratives |
-| Q | Natural language queries ("last month sales by region") generate visuals |
-| Serverless | No infrastructure management, pay-as-you-go |
+| SPICE | 빠른 집계·시각화를 위한 인메모리 연산 엔진 |
+| 데이터 소스 | S3, Athena, Redshift, RDS, Aurora 등에 직접 연결 |
+| ML Insights | 이상 탐지, 예측, 자동 내러티브 |
+| Q | 자연어 질의("지난달 지역별 매출")로 시각화 생성 |
+| 서버리스 | 인프라 관리 불필요, 사용한 만큼 과금 |
 
-QuickSight suits **operational dashboards and business reporting**. For pre-training EDA exploration, notebooks (matplotlib/seaborn) or SageMaker Data Wrangler are closer to workflow.
+QuickSight는 **운영 대시보드와 비즈니스 리포팅**에 적합하다. 학습 전 EDA 탐색에는 노트북(matplotlib/seaborn)이나 SageMaker Data Wrangler가 작업 흐름에 더 가깝다.
 
-> 💡 **Key Theory**: QuickSight's **ML Insights** uses built-in ML to auto-detect anomalies in time series, provide Random Cut Forest-based forecasts, and explain changes in natural language. Analysts don't write models—they get ML insights inside BI dashboards. In exams, "business users without code want anomaly/forecast dashboards" signals QuickSight ML Insights.
+> 💡 **관련 이론**: QuickSight의 **ML Insights**는 내장 ML로 시계열의 이상을 자동 탐지하고, Random Cut Forest 기반 예측을 제공하며, 변화를 자연어로 설명한다. 분석가가 모델을 직접 작성하지 않아도 BI 대시보드 안에서 ML 인사이트를 얻는다. 시험에서 "코드를 작성하지 않는 비즈니스 사용자가 이상 탐지·예측 대시보드를 원한다"는 지문은 QuickSight ML Insights를 가리킨다.
 
-## AWS Visualization and Analytics Tool Comparison
+## AWS 시각화·분석 도구 비교
 
-| Tool | Location | Primary Use |
+| 도구 | 위치 | 주 용도 |
 |------|------|---------|
-| matplotlib/seaborn | SageMaker notebook | Code-based EDA, free-form customization |
-| SageMaker Data Wrangler | SageMaker Studio | Visual data prep + distribution/correlation reports |
-| Amazon QuickSight | Standalone BI service | Dashboards, business reporting, ML Insights |
-| Athena + QuickSight | S3 direct query | Serverless SQL analysis → visualization |
+| matplotlib/seaborn | SageMaker 노트북 | 코드 기반 EDA, 자유로운 커스터마이징 |
+| SageMaker Data Wrangler | SageMaker Studio | 시각적 데이터 준비 + 분포·상관 리포트 |
+| Amazon QuickSight | 독립 BI 서비스 | 대시보드, 비즈니스 리포팅, ML Insights |
+| Athena + QuickSight | S3 직접 질의 | 서버리스 SQL 분석 → 시각화 |
 
-## Deriving Analytical Insights
+### 상황 → 도구 선택
 
-Visualization's goal is not the picture but **actionable insight**.
+| 상황 | 고를 도구 | 이유 |
+|---|---|---|
+| 데이터 과학자가 학습 전 분포·상관을 자유롭게 탐색 | SageMaker 노트북 + seaborn | 코드로 무엇이든 그릴 수 있다 |
+| 코드 없이 전처리하면서 분포·상관 리포트를 보고 싶다 | SageMaker Data Wrangler | 시각적 준비 흐름에 리포트가 내장 |
+| 비즈니스 사용자가 매일 보는 매출 대시보드 | Amazon QuickSight | 서버리스 BI, 공유·구독 중심 |
+| 코드 없이 이상 탐지·예측을 대시보드에 | QuickSight ML Insights | 내장 ML로 이상 탐지·예측·자동 내러티브 |
+| 자연어로 질문해 차트를 얻고 싶다 | QuickSight Q | 자연어 질의로 시각화 생성 |
+| S3의 대용량 데이터를 SQL로 훑고 시각화 | Athena + QuickSight | 서버리스 질의 → 서버리스 BI |
+| 대시보드가 느려 집계를 빠르게 하고 싶다 | SPICE에 적재 | 인메모리 연산 엔진 |
 
-- Skewed distribution → Consider log transformation or robust model
-- Strong correlation pair in heatmap → Address multicollinearity
-- Boxplot outliers → Confirm whether measurement error or real signal
-- Distribution differences across categories → That category may be good feature
-- Time series anomaly → Data collection issue or real event
+## 분석 인사이트 도출
 
-## Summary
+시각화의 목표는 그림이 아니라 **행동 가능한 인사이트**다.
 
-- Choose chart by question; visualize, don't trust summary alone (Anscombe)
-- Distribution: histogram, boxplot, violin / Relationships: scatter, correlation heatmap, pairplot
-- Pearson is linear-only; nonlinearity needs Spearman or mutual information
-- QuickSight: serverless BI, SPICE, ML Insights, Q (natural language)
+| 관찰 | 인사이트 | 다음 행동 |
+|---|---|---|
+| 치우친 분포 | 선형 모델 가정 위배 가능 | 로그 변환 또는 robust 모델 고려 |
+| 히트맵에 강한 상관 쌍 | 다중공선성 후보 | VIF 확인 후 제거·PCA·Ridge |
+| 박스플롯의 이상치 | 측정 오류 또는 실제 신호 | 원인 확인 후 처리 방침 결정 |
+| 범주별 분포 차이가 큼 | 그 범주가 좋은 특성일 수 있음 | 특성으로 채택, 상호작용 항 검토 |
+| 시계열의 급변 지점 | 수집 문제 또는 실제 사건 | 데이터 파이프라인·도메인 확인 |
+| 클래스 막대가 극단적으로 치우침 | 클래스 불균형 | Day 4의 대응 기법으로 연결 |
+
+### EDA 시각화 순서
+
+무엇부터 그릴지 정해 두면 놓치는 게 줄어든다.
+
+```
+[학습셋 확보 — 시각화도 학습셋으로만 한다]
+        │
+  ① 변수 하나씩: 히스토그램 / 박스플롯
+        └→ 치우침 · 이상치 · 상수 컬럼 발견
+        │
+  ② 타깃 분포: 클래스 막대 또는 히스토그램
+        └→ 불균형 여부 확인 (Day 4로 연결)
+        │
+  ③ 변수 ↔ 타깃: 범주별 바이올린 / 산점도
+        └→ 좋은 특성 후보 발견
+        │
+  ④ 변수 ↔ 변수: 상관 히트맵 / 페어플롯
+        └→ 다중공선성 후보 발견 (Day 2로 연결)
+        │
+  ⑤ 시간축이 있으면: 선 그래프
+        └→ 추세 · 계절성 · 급변 지점 확인
+        │
+  ⑥ 발견을 전처리 결정으로 옮긴다 (변환 · 제거 · 특성 추가)
+```
+
+> ⚠️ **함정**: 시각화도 데이터를 들여다보는 행위다. **테스트셋까지 포함해 그림을 보고 전처리를 결정하면** 사람이 매개한 누수가 된다. 분포 확인·이상치 판정·상관 점검은 학습셋에서만 하고, 테스트셋은 마지막 평가까지 열어 보지 않는 것이 원칙이다.
+
+## 지문 단서 → 정답 매핑
+
+| 지문 단서 | 고를 답 | 이유 |
+|---|---|---|
+| "코드를 못 쓰는 비즈니스 사용자, 이상 탐지·예측 대시보드" | QuickSight ML Insights | 코드 없이 대시보드 내 ML |
+| "자연어로 질문해 차트를 얻고 싶다" | QuickSight Q | 자연어 질의 기능 |
+| "S3 데이터를 SQL로 질의하고 서버리스로 시각화" | Athena + QuickSight | 서버리스 분석 표준 조합 |
+| "상관계수는 0인데 산점도는 U자형" | 피어슨은 선형만 측정 | 비선형 관계는 별도 지표로 |
+| "요약 통계만 믿으면 안 된다는 사례" | 앤스컴의 사중주 | 요약값 동일, 모양은 상이 |
+| "단일 수치 변수의 모양과 이상치를 함께" | 히스토그램(KDE) + 박스플롯 | 모양 + 사분위·이상치 |
+| "학습 전 분포·상관 리포트를 코드 없이" | SageMaker Data Wrangler | 시각적 데이터 준비 도구 |
+| "대시보드 집계가 느리다" | SPICE | 인메모리 연산 엔진 |
+
+다음 글에서는 시각화로 드러난 **클래스 불균형**을 실제로 어떻게 다루는지 살펴본다.
+
+## 📖 용어
+
+- **EDA(탐색적 데이터 분석)** : 모델을 만들기 전에 데이터의 모양·관계·이상을 눈과 통계로 훑어보는 과정.
+- **KDE(커널 밀도 추정)** : 히스토그램의 계단을 부드러운 곡선으로 바꿔 분포 모양을 보여 주는 방법.
+- **박스플롯 / IQR** : 중앙값과 사분위를 상자로 그린 그림 / 1사분위와 3사분위 사이 범위. 이상치 판정 기준으로 쓴다.
+- **바이올린 플롯** : 박스플롯에 밀도 곡선을 얹은 차트. 범주별 분포 비교에 좋다.
+- **헥스빈(hexbin)** : 점이 너무 많아 뭉개질 때 육각형 칸의 밀도로 대신 표현하는 산점도 변형.
+- **앤스컴의 사중주** : 평균·분산·상관이 거의 같지만 산점도 모양은 완전히 다른 네 데이터셋. 시각화의 필요성을 보여 주는 고전 예시.
+- **스피어만 순위 상관** : 값 자체가 아니라 순위로 계산하는 상관. 단조롭지만 곡선인 관계를 잡는다.
+- **SPICE** : QuickSight의 인메모리 연산 엔진. 데이터를 미리 올려 두어 집계·시각화를 빠르게 한다.
+- **ML Insights** : QuickSight가 대시보드 안에서 제공하는 자동 이상 탐지·예측·자연어 설명 기능.
+- **QuickSight Q** : "지난달 지역별 매출"처럼 자연어로 물으면 시각화를 만들어 주는 기능.
 
 ## 📝 연습 문제
 

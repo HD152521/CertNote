@@ -1,124 +1,229 @@
 # Day 4 - Validation Design: train/validation/test Split, Cross-Validation, Time Series Split, Stratified Sampling
 
-Yesterday we saw how leakage ruins validation. Today is the mirror image — **designing validation without leakage to honestly estimate model generalization**. Good model selection ultimately comes down to reliably estimating "how well will it perform on unseen data?" and that reliability depends entirely on validation design.
+## 📌 핵심 정리
 
-MLS-C01 repeatedly asks validation strategy selection. When data is small, when classes are imbalanced, when it's time series — what do we use? Today covers **3-way split**, **k-fold cross-validation**, **stratified sampling**, and **time series split**.
+- **테스트셋은 모든 결정이 끝날 때까지 봉인**하고 단 한 번만 본다. 보면서 고치는 순간 테스트셋은 검증셋이 된다.
+- 데이터가 적으면 **k-fold 교차검증**으로 모든 행을 검증에 쓰고 k개 점수의 **평균 ± 표준편차**를 본다(k=5 또는 10이 균형점).
+- 분류, 특히 **클래스 불균형이면 층화(stratified)**가 사실상 필수다. 각 분할에서 원본 클래스 비율을 유지한다.
+- **시계열은 TimeSeriesSplit**. 학습 구간이 항상 검증 구간보다 과거여야 한다(forward-chaining).
+- 같은 사용자·환자의 행이 여럿이면 **GroupKFold**로 그룹 단위로 분할해야 성능이 부풀지 않는다.
 
-## Why Split Into Three: train/validation/test
+## 왜 셋으로 나누는가: train / validation / test
 
-The most basic is splitting data into three parts. Each has a different role.
+어제는 누수가 검증을 어떻게 망치는지 봤다. 오늘은 그 거울상 — **누수 없이 검증을 설계해 모델의 일반화 성능을 정직하게 추정하는 일**이다. 좋은 모델 선택은 결국 "본 적 없는 데이터에서 얼마나 잘할까?"를 믿을 만하게 추정하는 능력이고, 그 신뢰도는 전적으로 검증 설계에 달려 있다.
 
-| Split | Role | Key |
-|------|------|------|
-| **Training** | Learn model parameters | Largest proportion (usually 60-80%) |
-| **Validation** | Hyperparameter tuning, model selection | Checked repeatedly |
-| **Test** | Final performance evaluation **once only** | Sealed until the end |
+가장 기본은 데이터를 셋으로 나누는 것이다. 각각 역할이 다르다.
 
-Core principle: **Test set is sealed until all decisions are made, seen exactly once.** If you look at test scores and modify the model, the test set effectively becomes validation, contaminating the final estimate with optimism.
+| 분할 | 역할 | 핵심 | 사용 횟수 |
+|---|---|---|---|
+| **학습(training)** | 모델 파라미터를 학습 | 보통 60~80%로 가장 큰 비중 | 매 학습마다 |
+| **검증(validation)** | 하이퍼파라미터 튜닝·모델 선택 | 반복해서 본다 | 여러 번 |
+| **테스트(test)** | 최종 성능 평가 | 끝까지 봉인 | **정확히 한 번** |
+
+핵심 원칙: **테스트셋은 모든 결정이 끝날 때까지 봉인하고 정확히 한 번만 본다.** 테스트 점수를 보고 모델을 수정하면 테스트셋이 사실상 검증셋이 되어 최종 추정치가 낙관적으로 오염된다.
 
 ```python
 from sklearn.model_selection import train_test_split
 
-# 1st: train+val vs test (test is sealed)
+# 1차: train+val 대 test (테스트는 봉인)
 X_temp, X_test, y_temp, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
-# 2nd: train vs validation
+# 2차: train 대 validation
 X_train, X_val, y_train, y_val = train_test_split(
     X_temp, y_temp, test_size=0.25, random_state=42, stratify=y_temp
 )
-# Result: 60% / 20% / 20%
+# 결과: 60% / 20% / 20%
 ```
 
-> 💡 **Related Theory**: Separating validation and test sets addresses the **multiple comparisons problem**. When comparing dozens of hyperparameter combinations on validation, by chance we select combinations that fit that particular validation set well, accumulating "selection bias" in the validation score. That score no longer fairly estimates generalization. That's why after all selection is complete, we measure final performance on a test set never used before — only then is the estimate honest.
+> 💡 **개념**: 검증셋과 테스트셋을 분리하는 이유는 **다중 비교 문제(multiple comparisons problem)** 때문이다. 검증셋 위에서 수십 개 하이퍼파라미터 조합을 비교하면, 우연히 그 검증셋에 잘 맞는 조합이 선택되어 검증 점수에 "선택 편향"이 쌓인다. 그 점수는 더 이상 일반화 성능을 공정하게 추정하지 못한다. 그래서 모든 선택이 끝난 뒤, 한 번도 쓰지 않은 테스트셋에서 최종 성능을 잰다. 그때에야 추정이 정직해진다.
 
-## k-fold Cross-Validation: Conserve Data
+### 세 분할의 역할 구분표
 
-Single split is at the mercy of chance. Especially with limited data, which rows end up in validation hugely affects scores. **k-fold cross-validation** divides data into k parts, uses each as validation once while training on the rest, repeats k times, and averages scores.
+| 질문 | 학습셋 | 검증셋 | 테스트셋 |
+|---|---|---|---|
+| 무엇을 결정하는가 | 모델 파라미터(가중치) | 하이퍼파라미터·알고리즘·피처 | 아무것도 결정하지 않는다 |
+| 몇 번 보는가 | 제한 없음 | 여러 번 | 한 번 |
+| 전처리 통계를 여기서 뽑는가 | **그렇다** | 아니다(transform만) | 아니다(transform만) |
+| 점수가 뜻하는 것 | 적합도(과적합 진단용) | 선택을 위한 상대 비교값 | 일반화 성능 추정치 |
+| 오염되면 생기는 일 | 과적합 감지 불가 | 선택 편향 누적 | 최종 보고 수치가 거짓이 된다 |
 
-| Method | Explanation | Suitable For |
-|------|------|------|
-| **k-fold** | k splits, k repetitions (usually k=5,10) | General default |
-| **Stratified k-fold** | Maintain class ratio in each fold | Classification, especially imbalanced |
-| **Leave-One-Out (LOO)** | k = n, validate on one row | Data very limited (expensive) |
-| **Repeated k-fold** | Repeat k-fold multiple times | Further reduce estimate variance |
+## k-fold 교차검증: 데이터를 아낀다
 
-Cross-validation gains: (1) every row is used once in validation, conserving data, (2) we get **mean and variance** of k scores, seeing performance stability.
+단일 분할은 운에 좌우된다. 특히 데이터가 적으면 어떤 행이 검증에 들어가느냐가 점수를 크게 흔든다. **k-fold 교차검증**은 데이터를 k등분해 각각을 한 번씩 검증으로 쓰고 나머지로 학습하며, k번 반복한 점수를 평균한다.
+
+```
+5-fold 교차검증 (■ = 검증 fold, □ = 학습 fold)
+
+Fold 1  ■ □ □ □ □   → score₁
+Fold 2  □ ■ □ □ □   → score₂
+Fold 3  □ □ ■ □ □   → score₃
+Fold 4  □ □ □ ■ □   → score₄
+Fold 5  □ □ □ □ ■   → score₅
+                     ────────────────────
+                     평균 ± 표준편차로 보고
+                     (모든 행이 정확히 한 번 검증에 쓰인다)
+```
+
+| 방식 | 설명 | 적합한 상황 |
+|---|---|---|
+| **k-fold** | k등분, k회 반복(보통 k=5 또는 10) | 일반적인 기본값 |
+| **Stratified k-fold** | 각 fold에서 클래스 비율 유지 | 분류, 특히 불균형 |
+| **Leave-One-Out (LOO)** | k = n, 한 행씩 검증 | 데이터가 극히 적을 때(비용 큼) |
+| **Repeated k-fold** | k-fold를 여러 번 반복 | 추정 분산을 더 줄이고 싶을 때 |
+| **GroupKFold** | 같은 그룹은 한쪽에만 배치 | 사용자·환자 등 그룹 구조 |
+| **Nested CV** | 바깥 fold로 평가, 안쪽 fold로 튜닝 | 튜닝까지 포함한 정직한 성능 추정 |
+
+교차검증의 이득: (1) 모든 행이 한 번씩 검증에 쓰여 데이터를 아끼고, (2) k개 점수의 **평균과 분산**을 얻어 성능의 안정성까지 볼 수 있다.
 
 ```python
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 
 skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 scores = cross_val_score(pipe, X, y, cv=skf, scoring="f1")
-print(f"F1: {scores.mean():.3f} ± {scores.std():.3f}")  # mean ± std
+print(f"F1: {scores.mean():.3f} ± {scores.std():.3f}")  # 평균 ± 표준편차
 ```
 
-> 💡 **Related Theory**: k choice has **bias-variance tradeoff**. Small k (e.g., 2-fold) makes each training set small → estimate is **biased** pessimistically. Large k (LOO with k=n) makes training set almost the whole dataset → small bias but fold results are similar → estimate **variance** is large and computation explodes. Empirically k=5 or 10 balances bias, variance, and cost as widely used.
+> 💡 **개념**: k 선택에는 **편향-분산 트레이드오프**가 있다. k가 작으면(예: 2-fold) 각 학습셋이 작아져 추정이 비관적으로 **편향**된다. k가 매우 크면(LOO, k=n) 학습셋이 거의 전체라 편향은 작지만 fold 결과가 서로 비슷해져 추정 **분산**이 커지고 계산량이 폭발한다. 경험적으로 k=5 또는 10이 편향·분산·비용의 균형점이라 널리 쓰인다.
 
-## Stratified Sampling: Maintain Ratios
+### k 값 트레이드오프표
 
-In classification with **imbalanced** classes (e.g., fraud 1%), random split is risky. Bad luck and validation might have almost no or even zero minority class. **Stratified sampling** maintains **original class ratio in each split**.
+| k | 학습셋 크기 | 편향 | 분산 | 계산 비용 | 언제 |
+|---|---|---|---|---|---|
+| 2~3 | 작다(50~67%) | 비관적으로 크다 | 작다 | 매우 낮음 | 데이터가 아주 많고 빠른 확인만 필요할 때 |
+| **5** | 80% | 작다 | 보통 | 낮음 | **일반적 기본값** |
+| **10** | 90% | 더 작다 | 보통~약간 큼 | 중간 | 데이터가 적당히 적고 정밀한 추정이 필요할 때 |
+| n (LOO) | 거의 전체 | 거의 없음 | 크다 | 매우 높음 | 데이터가 수십~수백 행 수준일 때 |
 
-- `train_test_split(..., stratify=y)`: Maintain ratio during split
-- `StratifiedKFold`: Maintain ratio in each fold
+> ⚠️ **함정**: "k를 키울수록 항상 좋다"는 오답이다. k가 커지면 계산 비용이 k에 비례해 늘고, 학습셋들이 거의 같아져 fold 점수 간 상관이 커지므로 평균 추정의 분산이 오히려 커진다.
 
-Stratification is nearly always recommended for classification, almost essential for imbalanced data. In regression, sometimes stratify target into bins.
+## 층화 표집: 비율을 유지한다
+
+클래스가 **불균형**한 분류(예: 사기 1%)에서 무작위 분할은 위험하다. 운이 나쁘면 검증에 소수 클래스가 거의 없거나 아예 0개일 수 있다. **층화 표집(stratified sampling)**은 **각 분할에서 원본 클래스 비율을 유지**한다.
+
+- `train_test_split(..., stratify=y)`: 분할 시 비율 유지
+- `StratifiedKFold`: 각 fold에서 비율 유지
+
+분류에서는 층화가 거의 항상 권장되며, 불균형 데이터에서는 사실상 필수다. 회귀에서는 타깃을 구간(bin)으로 나눠 층화하기도 한다.
 
 ```python
 from sklearn.model_selection import train_test_split
 
-# stratify=y keeps original class ratio in splits
+# stratify=y로 원본 클래스 비율을 분할에 유지한다
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42
 )
-print(y_train.value_counts(normalize=True))  # verify same ratio as original
+print(y_train.value_counts(normalize=True))  # 원본과 같은 비율인지 확인
 ```
 
-> ⚠️ **Trap**: Splitting imbalanced data randomly (non-stratified) risks some fold having zero minority samples, making F1/recall uncomputable or distorted. If classification shows high accuracy but never catches minority class, check stratified split first.
+> ⚠️ **함정**: 불균형 데이터를 층화 없이 무작위 분할하면 어떤 fold에는 소수 클래스가 0개가 되어 F1·recall이 계산 불가하거나 왜곡된다. 분류에서 accuracy는 높은데 소수 클래스를 전혀 잡지 못한다면 층화 분할부터 확인한다.
 
-## Time Series Split: Don't Reverse Time
+### 불균형 데이터의 지표 해석표
 
-As Day 3 showed, random or general k-fold on time series causes future leaking into past. Time series needs **splits that respect time order**.
+층화로 분할을 고쳐도, 지표를 잘못 고르면 여전히 속는다.
 
-| Method | Explanation |
-|------|------|
-| **Fixed split (holdout)** | Past = train, future = test from cutoff |
-| **Expanding window** | Expand training window, evaluate next window |
-| **Rolling window (sliding)** | Fixed-length training window slides forward, evaluate |
+| 지표 | 무엇을 말하는가 | 우선해야 할 상황 | 함정 |
+|---|---|---|---|
+| Accuracy | 전체적으로 자주 맞힘 | 클래스가 균형일 때만 | **양성 1%면 "전부 음성"으로도 99%** — 불균형에서 무의미 |
+| Precision | 오탐이 적다 | 오탐 비용이 큼(스팸 차단) | 소수만 양성으로 예측하면 쉽게 올라간다 |
+| Recall | 미탐이 적다 | 미탐 비용이 큼(사기·질병) | 전부 양성으로 예측하면 1.0 |
+| F1 | precision·recall의 균형 | 두 비용이 비슷할 때 | 어느 쪽이 문제인지 감춘다 |
+| ROC-AUC | 임계값과 무관한 분별력 | 임계값 미정, 모델 비교 | 극단 불균형에서 지나치게 낙관적 |
+| PR-AUC | 소수 클래스 분별력 | 양성 비율이 매우 낮을 때 | 클래스 비율이 바뀌면 값도 바뀐다 |
+| RMSE | 큰 오차가 적다 | 회귀, 큰 오차를 강하게 벌줄 때 | 이상치에 민감 |
+| MAE | 평균적 오차가 작다 | 회귀, 이상치에 강건해야 할 때 | 큰 오차를 관대하게 본다 |
 
-scikit-learn's `TimeSeriesSplit` implements this forward-chaining. In each split, **training is always before validation**.
+> ⚠️ **함정**: 불균형 데이터에서 accuracy가 함정인 이유는 다수 클래스만 맞혀도 점수가 높기 때문이다. 검증 설계(층화)와 지표 선택(PR-AUC·recall)은 **함께** 고쳐야 한다. 둘 중 하나만 고치면 여전히 잘못된 모델을 고른다.
+
+## 시계열 분할: 시간을 거스르지 않는다
+
+Day 3에서 봤듯 시계열에 무작위 분할이나 일반 k-fold를 쓰면 미래가 과거로 샌다. 시계열에는 **시간 순서를 지키는 분할**이 필요하다.
+
+| 방식 | 설명 | 특징 |
+|---|---|---|
+| **고정 분할(holdout)** | 기준 시점을 정해 과거=학습, 미래=테스트 | 가장 단순, 한 번만 평가 |
+| **확장 윈도(expanding)** | 학습 구간을 늘려가며 다음 구간 평가 | 데이터를 모두 활용, 오래된 패턴도 반영 |
+| **이동 윈도(rolling/sliding)** | 고정 길이 학습 구간을 앞으로 밀며 평가 | 최근 패턴 위주, 분포 변화에 대응 |
+
+scikit-learn의 `TimeSeriesSplit`이 이 forward-chaining을 구현한다. 각 분할에서 **학습은 항상 검증보다 과거**다.
+
+```
+TimeSeriesSplit (확장 윈도, n_splits=4)
+시간축 ──────────────────────────────────────────▶
+
+Split 1  [■■■■]───[▨▨]  ·  ·  ·  ·        ■ 학습  ▨ 검증
+Split 2  [■■■■ ■■]───[▨▨]  ·  ·
+Split 3  [■■■■ ■■ ■■]───[▨▨]  ·
+Split 4  [■■■■ ■■ ■■ ■■]───[▨▨]
+
+  · 학습 구간은 매번 확장되고, 검증 구간은 항상 그 "다음" 시점
+  · 실제 배포(과거 모델로 미래 예측)와 동일한 구조
+```
 
 ```python
 from sklearn.model_selection import TimeSeriesSplit
 
-# Time-ordered split: training always before validation (blocks leakage)
+# 시간 순 분할: 학습이 항상 검증보다 과거 (누수 차단)
 tscv = TimeSeriesSplit(n_splits=5)
 for train_idx, test_idx in tscv.split(X):
-    # train_idx all times < test_idx times
+    # train_idx의 모든 시점 < test_idx의 시점
     X_tr, X_te = X.iloc[train_idx], X.iloc[test_idx]
-    # model train/evaluate ...
+    # 모델 학습/평가 ...
 ```
 
-> 💡 **Related Theory**: Time series validation differs from general cross-validation because **independence of rows assumption breaks**. General k-fold assumes rows are exchangeable, but time series — order is information. `TimeSeriesSplit` always maintains "train on past, evaluate on future," simulating actual deployment (predict future with past model). This alignment makes validation scores resemble actual production performance.
+> 💡 **개념**: 시계열 검증이 일반 교차검증과 다른 이유는 **행 독립성 가정이 깨지기** 때문이다. 일반 k-fold는 행이 서로 교환 가능하다고 가정하지만, 시계열에서는 순서 자체가 정보다. `TimeSeriesSplit`은 항상 "과거로 학습, 미래로 평가"를 유지해 실제 배포 상황(과거 모델로 미래를 예측)을 모사한다. 이 정렬 덕분에 검증 점수가 실제 운영 성능과 닮게 된다.
 
-## Validation Design Decision Summary
+## 검증 전략 선택표
 
-| Data Characteristic | Recommended Validation |
-|------|------|
-| General classification, sufficient data | Stratified train/val/test split |
-| Data limited | Stratified k-fold cross-validation |
-| Data very limited | Leave-One-Out |
-| Class imbalance | Must use stratified |
-| Time series | TimeSeriesSplit / time-ordered holdout |
-| Group structure (users, patients) | GroupKFold (same group only on one side) |
+| 데이터 특성 | 권장 검증 | 이유 |
+|---|---|---|
+| 일반 분류, 데이터 충분 | 층화 train/val/test 분할 | 단순하고 빠르며 비율도 유지된다 |
+| 데이터가 적다 | 층화 k-fold 교차검증 | 모든 행을 검증에 활용, 평균·분산 확보 |
+| 데이터가 매우 적다 | Leave-One-Out | 편향은 최소, 비용을 감수 |
+| 클래스 불균형 | 층화(stratified) 필수 | 소수 클래스가 모든 분할에 들어가야 한다 |
+| 시계열 | TimeSeriesSplit / 시간 순 holdout | 시간 역행 누수를 차단 |
+| 그룹 구조(사용자·환자) | GroupKFold | 같은 그룹이 양쪽에 걸치면 성능이 부풀려진다 |
+| 튜닝까지 포함해 정직하게 평가 | Nested CV | 바깥 fold는 튜닝에 관여하지 않아 선택 편향이 없다 |
+| 회귀이면서 타깃이 크게 치우침 | 타깃을 구간화해 층화 | 극단값이 한쪽 분할에 몰리는 것을 막는다 |
 
-## Summary
+### AWS 서비스 매핑표
 
-Today's essence: (1) **Keep test set sealed until the end, seen exactly once**, (2) limited data → **k-fold cross-validation** conserves data and gives mean/variance of k scores (k=5/10 is balance point), (3) classification/imbalance → **stratified** maintains class ratio, (4) time series → **TimeSeriesSplit** blocks leakage with time-ordered split.
+| 상황 | AWS 서비스·기능 | 이유 |
+|---|---|---|
+| 하이퍼파라미터를 검증 지표 기준으로 자동 탐색 | SageMaker 자동 모델 튜닝(하이퍼파라미터 튜닝 잡) | 목적 지표를 지정하면 여러 학습 잡을 돌려 최적 조합을 찾는다 |
+| 전처리·학습·평가 순서를 코드로 고정 | SageMaker Pipelines | 분할·전처리 순서가 재현돼 누수와 절차 실수를 막는다 |
+| 학습별 지표·파라미터를 비교 추적 | SageMaker Experiments | 검증 점수 비교 이력이 남아 선택 근거를 남길 수 있다 |
+| 학습이 좋아지지 않을 때 조기 종료해 비용 절감 | SageMaker의 조기 종료 설정 | 검증 지표가 개선되지 않는 학습을 일찍 끊는다 |
+| 봉인한 테스트셋으로 대량 채점 | SageMaker 배치 변환 | 엔드포인트를 상시 유지하지 않고 한 번에 평가한다 |
+| 배포 후 실제 성능이 검증과 다른지 감시 | SageMaker Model Monitor | 검증-운영 괴리를 지표로 포착한다 |
 
-Next post reviews this entire week — statistics foundations through validation design — as one integrated flow.
+### 지문 단서 → 정답 매핑표
 
----
+| 지문 표현 | 읽어야 할 신호 | 고를 답 |
+|---|---|---|
+| "시간 순서가 있는 일별 데이터다" | 시계열 | TimeSeriesSplit / 시간 순 holdout |
+| "클래스가 0.5%다" | 극단 불균형 | 층화 분할 + PR-AUC·recall |
+| "데이터가 수백 건뿐이다" | 데이터 부족 | k-fold(또는 LOO) 교차검증 |
+| "같은 환자의 여러 검사 기록" | 그룹 구조 | GroupKFold |
+| "테스트 점수를 보며 모델을 고쳤다" | 테스트셋 오염 | 새 테스트셋 필요, 봉인 원칙 위반 |
+| "fold마다 점수가 크게 다르다" | 추정 분산 큼 | k를 늘리거나 Repeated k-fold |
+| "튜닝 결과까지 포함해 정직한 성능을 보고하라" | 선택 편향 제거 필요 | Nested CV |
+| "정확도는 높은데 소수 클래스를 못 잡는다" | 지표·분할 둘 다 문제 | 층화 + recall/PR-AUC로 전환 |
+
+다음 글에서는 이번 주 전체 — 통계 기초부터 검증 설계까지를 하나의 흐름으로 정리한다.
+
+## 📖 용어
+
+- **검증셋(validation set)** : 하이퍼파라미터 튜닝과 모델 선택에 반복해서 쓰는 데이터. 최종 성능 보고용이 아니다.
+- **테스트셋(test set)** : 모든 결정이 끝난 뒤 딱 한 번만 보는 최종 평가용 데이터.
+- **다중 비교 문제** : 여러 후보를 같은 검증셋으로 비교하면 우연히 잘 맞는 것이 뽑혀 점수가 낙관적으로 편향되는 현상.
+- **k-fold 교차검증** : 데이터를 k등분해 각 조각을 한 번씩 검증으로 쓰며 k번 학습·평가하는 방법.
+- **층화 표집(stratified)** : 각 분할에서 원본 클래스 비율을 그대로 유지하도록 나누는 방식.
+- **GroupKFold** : 같은 그룹(사용자·환자)의 행이 학습과 검증으로 갈라지지 않게 하는 교차검증.
+- **TimeSeriesSplit** : 학습 구간이 항상 검증 구간보다 과거가 되도록 나누는 시계열 전용 교차검증.
+- **Nested CV(중첩 교차검증)** : 안쪽 fold에서 튜닝하고 바깥 fold에서 평가해 선택 편향까지 제거하는 방법.
+- **편향-분산 트레이드오프(k 선택)** : k가 작으면 추정이 비관적으로 편향되고, 매우 크면 분산과 계산 비용이 커지는 관계.
+- **PR-AUC** : precision-recall 곡선 아래 면적. 양성 비율이 매우 낮을 때 ROC-AUC보다 정직한 신호를 준다.
 
 ## 📝 연습 문제
 

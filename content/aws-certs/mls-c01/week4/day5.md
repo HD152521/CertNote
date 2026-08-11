@@ -1,19 +1,27 @@
 # Day 5 - Week 4 Comprehensive Review: Dimensionality, Feature Selection, Visualization, Imbalance
 
-Week 4 covered the second cluster of EDA—**techniques for handling high dimensions and class imbalance**. Today we knit four days into one workflow, review holistically, and highlight exam traps.
+## 📌 핵심 정리
 
-## Week 4 at a Glance
+- Week 4를 관통하는 한 문장: **"분할 먼저, 모든 fit은 학습셋에서만."** 표준화·PCA·특성 선택·SMOTE 전부 여기에 걸린다.
+- **PCA vs 특성 선택**은 "해석이 필요한가"로 갈린다. 설명 의무가 있으면 선택, 없으면 축소.
+- **PCA vs t-SNE**는 "새 데이터를 변환해야 하는가"로 갈린다. t-SNE는 시각화 전용이다.
+- **불균형 3대 함정**: t-SNE 임베딩을 모델 입력으로, 불균형에서 정확도 신뢰, 분할 전 SMOTE.
+- 다중공선성은 **선형 모델에 치명적, 트리에는 무해**하다. 진단은 상관행렬과 VIF(> 5 주의, > 10 심각).
 
-| Day | Topic | Essentials |
-|-----|------|------|
-| 1 | Dimensionality reduction | Curse of dimensionality, PCA (variance preservation, standardization mandatory), t-SNE (visualization only) |
-| 2 | Feature selection | Filter, wrapper, embedded; feature importance; multicollinearity (VIF) |
-| 3 | Data visualization | Distribution, correlation charts; QuickSight; Anscombe's lesson |
-| 4 | Class imbalance | Accuracy paradox; SMOTE, undersampling; class weights; PR-AUC |
+## Week 4 한 장 요약
 
-## Unified Workflow
+Week 4는 EDA의 두 번째 묶음 — **고차원과 클래스 불균형을 다루는 기법들**이었다. 오늘은 나흘치를 하나의 워크플로로 엮고, 헷갈리는 짝을 비교하며, 시험 함정을 정리한다.
 
-Typical EDA and preprocessing order for high-dimensional, imbalanced data.
+| Day | 주제 | 핵심 | 한 줄 판별식 |
+|-----|------|------|---|
+| 1 | 차원 축소 | 차원의 저주, PCA(분산 보존·표준화 필수), t-SNE(시각화 전용) | 새 데이터를 변환해야 하면 PCA |
+| 2 | 특성 선택 | 필터·래퍼·임베디드, 특성 중요도, 다중공선성(VIF) | 변수를 설명해야 하면 선택 |
+| 3 | 데이터 시각화 | 분포·상관 차트, QuickSight, 앤스컴의 교훈 | 코드 없이 대시보드면 QuickSight |
+| 4 | 클래스 불균형 | 정확도 역설, SMOTE·언더샘플링, 클래스 가중치, PR-AUC | 양성이 희소하면 PR-AUC |
+
+## 통합 워크플로
+
+고차원·불균형 데이터의 전형적인 EDA·전처리 순서다.
 
 ```python
 from sklearn.model_selection import train_test_split
@@ -22,15 +30,15 @@ from sklearn.decomposition import PCA
 from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline
 
-# 1) Split first—all fit on train only (prevent leakage)
+# 1) 분할 먼저 — 모든 fit은 학습셋에서만 (누수 방지)
 X_tr, X_te, y_tr, y_te = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42)
 
-# 2) Visualize distribution, correlation, imbalance (on train)
-#    Histograms/boxplots, correlation heatmap, class distribution bar
+# 2) 분포·상관·불균형을 시각화 (학습셋 기준)
+#    히스토그램/박스플롯, 상관 히트맵, 클래스 분포 막대
 
-# 3) Standardize → dimensionality reduce (or feature selection)
-# 4) Resample in train only, within Pipeline
+# 3) 표준화 → 차원 축소 (또는 특성 선택)
+# 4) 리샘플링은 학습셋에서만, Pipeline 안에서
 pipe = Pipeline([
     ("scaler", StandardScaler()),
     ("pca", PCA(n_components=0.95)),
@@ -39,52 +47,197 @@ pipe = Pipeline([
 X_tr_proc, y_tr_proc = pipe.fit_resample(X_tr, y_tr)
 ```
 
-> 💡 **Key Theory**: This workflow's binding principle: "**split first, fit training set only**." Standardization, PCA, SMOTE, feature selection, imputation—all data-dependent transformations must learn statistics/rules from the training set and apply only to test. This one principle threads from Week 3 (cleaning, encoding) through Week 4 (dimensionality, imbalance).
+```
+[원시 데이터]
+     │
+ ① 분할 (stratify=y)  ────────────────→ [테스트셋] 봉인
+     │                                        │
+ ② 시각화 (Day 3)                             │
+     ├ 분포 → 치우침·이상치                    │
+     ├ 상관 히트맵 → 다중공선성 후보           │
+     └ 클래스 막대 → 불균형 확인               │
+     │                                        │
+ ③ 표준화 (fit: 학습셋)                        │
+     │                                        │
+ ④ 차원 처리                                   │
+     ├ 해석 필요 → 특성 선택 (Day 2)           │
+     └ 해석 불필요 → PCA (Day 1)               │
+     │                                        │
+ ⑤ 불균형 대응 (Day 4)                         │
+     ├ 리샘플링 → fold의 학습 부분에서만        │
+     └ 또는 클래스 가중치 (데이터 불변)         │
+     │                                        │
+ ⑥ 학습 → 검증셋에서 임계값 결정                │
+     │                                        │
+ ⑦ 최종 평가 ←──── ③·④에서 학습한 변환을 transform만 적용
+        (PR-AUC / F1 — 정확도 아님)
+```
 
-## Confusing Comparisons
+> 💡 **관련 이론**: 이 워크플로를 묶는 원칙은 "**분할 먼저, 학습셋에서만 fit**"이다. 표준화·PCA·SMOTE·특성 선택·결측 대치 — 데이터에 의존하는 모든 변환은 학습셋에서 통계/규칙을 배우고 테스트에는 적용만 해야 한다. 이 한 원칙이 Week 3(정제·인코딩)부터 Week 4(차원·불균형)까지를 관통한다.
 
-### PCA vs Feature Selection
+### 순서가 왜 이 순서인가
 
-| Distinction | PCA | Feature Selection |
+| 순서 | 왜 앞에 오나 | 뒤바뀌면 |
+|---|---|---|
+| 분할 → 전처리 | 테스트 정보가 변환에 새어 들면 안 됨 | 모든 성능 추정이 낙관적으로 부풀려짐 |
+| 표준화 → PCA | PCA는 분산 기반이라 스케일에 지배됨 | 단위가 큰 변수가 주성분을 독점 |
+| 시각화 → 전처리 결정 | 무엇을 고칠지 알아야 고침 | 근거 없이 변환을 남발 |
+| 차원 처리 → 리샘플링 | 축소된 공간에서 합성해야 일관됨 | 버릴 축까지 포함해 합성 샘플 생성 |
+| 리샘플링 → 학습(같은 fold 내) | 검증 부분은 원래 분포를 유지해야 함 | 합성 양성이 검증셋에 유입 |
+| 학습 → 임계값 결정(검증셋) | 임계값도 학습되는 값 | 테스트셋을 보고 정하면 누수 |
+
+> ⚠️ **함정**: "차원 축소를 했으니 특성 선택은 필요 없다"는 착각. 둘은 목적이 다르다. PCA는 상관된 축을 합쳐 계산과 다중공선성을 정리하지만, **무관한 특성이 만든 노이즈까지 주성분에 섞어 넣는다**. 애초에 쓸모없는 컬럼은 PCA 전에 걸러내는 편이 낫다.
+
+> ⚠️ **함정**: 지문에 "설명 가능해야 한다", "규제 대응", "감사"라는 단어가 보이면 **PCA·t-SNE·오토인코더 계열은 전부 후보에서 내려간다**. 남는 것은 원본 특성을 유지하는 특성 선택, 그리고 기여도를 설명해 주는 SHAP/Clarify다.
+
+## 헷갈리는 짝 비교
+
+### PCA vs 특성 선택
+
+| 구분 | PCA | 특성 선택 |
 |------|-----|-----------|
-| Result features | Synthetic axes (meaning lost) | Original subset (interpretability kept) |
-| Type | Unsupervised | Both supervised and unsupervised |
-| Multicollinearity | Resolved via orthogonal axes | Remove correlated features |
-| Regulated industry | Hard to explain | Explainable, preferred |
+| 결과 특성 | 합성 축(의미 상실) | 원본 부분집합(해석 가능성 유지) |
+| 유형 | 비지도 | 지도·비지도 모두 존재 |
+| 다중공선성 | 직교 축으로 해소 | 상관 특성을 제거해 해소 |
+| 규제 산업 | 설명이 어려움 | 설명 가능, 선호됨 |
+| 새 데이터 | `transform`으로 동일 변환 | 같은 컬럼만 골라 쓰면 됨 |
+| 정보 손실 | 버린 주성분만큼 | 버린 특성만큼 |
 
 ### PCA vs t-SNE
 
-- **PCA**: Linear, preserves global variance, `transform` new data possible, suitable for model preprocessing
-- **t-SNE**: Nonlinear, preserves local structure, requires retraining, **visualization-only**
+- **PCA**: 선형, 전역 분산 보존, 새 데이터 `transform` 가능, 모델 전처리에 적합
+- **t-SNE**: 비선형, 국소 구조 보존, 매번 재학습 필요, **시각화 전용**
 
-### Imbalance Response Choices
+| 물어볼 질문 | PCA | t-SNE |
+|---|---|---|
+| 결과를 모델 입력으로 쓰나 | 그렇다 | 아니다 |
+| 운영 중 새 샘플을 같은 공간에 넣나 | 가능 | 불가능 |
+| 실행할 때마다 같은 결과가 나오나 | 그렇다 | 아니다(seed 의존) |
+| 군집 사이 거리를 해석해도 되나 | 상대적으로 신뢰 | 의미 없음 |
 
-- Data modifiable + diversity needed → **SMOTE**
-- Huge data + speed matters → **Undersampling**
-- Keep data unchanged → **Class weights** / **Threshold tuning**
+### 오버샘플링 vs 클래스 가중치
 
-> 💡 **Key Theory**: Three frequent exam traps: (1) "Use t-SNE embeddings as classifier input" → wrong (visualization only). (2) "Accuracy 99% in imbalanced data is good" → accuracy paradox. (3) "Apply SMOTE/scaling before split" → data leakage. Mastering these three solidifies EDA section scores.
+| 구분 | 오버샘플링(SMOTE) | 클래스 가중치 |
+|---|---|---|
+| 데이터 | 늘어남(합성 샘플 생성) | 그대로 |
+| 적용 위치 | 전처리 단계, 학습셋 한정 | 모델 하이퍼파라미터 |
+| 누수 위험 | 있음(분할·fold 관리 필요) | 없음 |
+| 모델 제약 | 없음(어떤 모델에도) | 모델이 가중치를 지원해야 함 |
+| 범주형 특성 | 기본 SMOTE는 직접 적용 불가 | 영향 없음 |
+| 고차원 | 보간 의미가 옅어짐 | 영향 없음 |
+| 재현성·감사 | 합성 데이터 관리 부담 | 원본 그대로라 유리 |
 
-## AWS Service Mapping Review
+### ROC-AUC vs PR-AUC
 
-| Task | Service/Tool |
+| 구분 | ROC-AUC | PR-AUC |
+|---|---|---|
+| 축 | TPR vs FPR | 정밀도 vs 재현율 |
+| 음성의 영향 | FPR 분모에 음성 전체 → 희석됨 | 음성 수에 직접 좌우되지 않음 |
+| 언제 | 클래스가 비교적 균형 | **양성이 희소할 때** |
+| 함정 | 불균형에서 낙관적으로 보임 | 클래스 비율이 다른 데이터셋 간 비교 불가 |
+
+### 필터 vs 래퍼 vs 임베디드
+
+| 구분 | 필터 | 래퍼 | 임베디드 |
+|---|---|---|---|
+| 모델 학습 | 없음 | 반복적으로 있음 | 한 번(학습에 내장) |
+| 속도 | 가장 빠름 | 가장 느림 | 중간 |
+| 상호작용 포착 | 못 함 | 함 | 부분적으로 함 |
+| 대표 기법 | 상관, 카이제곱, 상호정보량 | 전진 선택, 후진 제거, RFE | Lasso, 트리 중요도 |
+
+## 결정 흐름 한 장
+
+```
+차원이 너무 많다 / 성능이 안 나온다
+   │
+   ├─ 변수 단위 설명이 필요한가?
+   │     예 → 특성 선택 (필터 → 임베디드 → RFE 순으로 좁힌다)
+   │     아니오 ↓
+   ├─ 목적이 "군집이 있는지 눈으로 보기"인가?
+   │     예 → t-SNE (시각화까지만. 모델 입력 금지)
+   │     아니오 ↓
+   ├─ 메모리를 넘는 규모인가?
+   │     예 → SageMaker 내장 PCA (특성 많으면 randomized)
+   │     아니오 → scikit-learn PCA (표준화 후 n_components=0.95)
+   │
+타깃이 심하게 치우쳐 있다
+   │
+   ├─ 데이터를 바꿔도 되는가?
+   │     아니오 → 클래스 가중치 / 임계값 이동
+   │     예 ↓
+   ├─ 데이터가 매우 큰가?
+   │     예 → 무작위 언더샘플링(속도 확보)
+   │     아니오 → SMOTE (fold 내부에서만)
+   │
+   └─ 평가는 무조건 PR-AUC · F1 · 재현율 (정확도 금지)
+```
+
+> 💡 **관련 이론**: 시험에 자주 나오는 세 함정. (1) "t-SNE 임베딩을 분류기 입력으로 쓴다" → 틀림(시각화 전용). (2) "불균형 데이터에서 정확도 99%면 좋다" → 정확도 역설. (3) "분할 전에 SMOTE·스케일링을 적용한다" → 데이터 누수. 이 셋만 확실히 잡아도 EDA 영역 점수가 안정된다.
+
+> ⚠️ **함정**: 불균형 대응과 지표 선택을 따로 묻는 것처럼 보여도 **한 세트로 답해야** 하는 지문이 많다. "SMOTE를 적용했다"까지만 고르고 평가를 정확도로 둔 보기는 오답이다. 리샘플링·가중치·임계값 중 무엇을 쓰든 평가는 PR-AUC·F1·재현율로 간다.
+
+## AWS 서비스 매핑 복습
+
+| 작업 | 서비스/도구 |
 |------|-------------|
-| Large-scale PCA | SageMaker built-in PCA (`randomized` mode) |
-| Visual data prep and distribution reports | SageMaker Data Wrangler |
-| Code-based EDA visualization | SageMaker notebook (seaborn/matplotlib) |
-| BI dashboards and ML Insights | Amazon QuickSight |
-| Serverless SQL analysis on S3 | Amazon Athena (+ QuickSight) |
-| Pre-training bias and distribution check | SageMaker Clarify |
+| 대규모 PCA | SageMaker 내장 PCA(`randomized` 모드) |
+| 시각적 데이터 준비와 분포 리포트 | SageMaker Data Wrangler |
+| 코드 기반 EDA 시각화 | SageMaker 노트북(seaborn/matplotlib) |
+| BI 대시보드와 ML Insights | Amazon QuickSight |
+| S3에 대한 서버리스 SQL 분석 | Amazon Athena(+ QuickSight) |
+| 학습 전 편향·분포 점검 | SageMaker Clarify |
 
-## Exam Prep Summary
+| 지문의 사용자 | 고를 도구 | 이유 |
+|---|---|---|
+| 데이터 과학자, 자유로운 탐색 | SageMaker 노트북 | 코드로 무엇이든 |
+| 코드 없이 전처리하는 분석가 | Data Wrangler | 시각적 준비 + 리포트 |
+| 코드 없는 비즈니스 사용자 | QuickSight(ML Insights, Q) | 대시보드·자연어 질의 |
+| 규제 대응 담당자 | Clarify + 특성 선택 | 편향 점검과 설명 가능성 |
 
-- **Curse of dimensionality**: High dimensions lose distance discriminability → distance-based (KNN, K-means) vulnerable
-- **PCA**: Preserve variance, standardization mandatory, select k by explained variance ratio
-- **t-SNE**: Visualization-only, inter-cluster distance meaningless
-- **Feature selection 3 types**: Filter (fast, independent) / Wrapper (accurate, slow) / Embedded (Lasso, trees)
-- **Multicollinearity**: VIF > 5–10 caution; deadly for linear, ignorable for trees
-- **Visualization**: Don't trust summary stats alone—visualize (Anscombe); Pearson is linear-only
-- **Imbalance**: Accuracy paradox; SMOTE on training set only; PR-AUC; class weights/threshold tuning
+## 지문 단서 → 정답 매핑
+
+| 지문 단서 | 고를 답 | 함께 떠올릴 것 |
+|---|---|---|
+| "어떤 변수가 예측에 쓰였는지 설명해야 한다" | 특성 선택 | PCA는 오답 |
+| "특성이 매우 많고 확장성이 중요하다" | SageMaker 내장 PCA + `randomized` | 표준화 선행 |
+| "군집이 있는지 눈으로 확인" | t-SNE | 모델 입력으로는 금지 |
+| "양성이 0.2%다" | PR-AUC·재현율 + 클래스 가중치/SMOTE | 정확도는 함정 |
+| "정확도 99%인데 소수 클래스를 못 잡는다" | 정확도 역설 | 혼동 행렬부터 확인 |
+| "교차검증에서 SMOTE를 쓴다" | imblearn `Pipeline`, fold 내부 | 분할 전 적용은 누수 |
+| "VIF가 12다" | 다중공선성 심각 → 제거·PCA·Ridge | 트리 모델이면 무시 가능 |
+| "상관이 0인데 산점도는 곡선" | 피어슨은 선형만 | 스피어만·상호정보량 |
+| "코드 없이 이상 탐지 대시보드" | QuickSight ML Insights | Q는 자연어 질의 |
+| "학습 전 클래스 분포와 편향 점검" | SageMaker Clarify | 사전 학습 편향 |
+
+## 오답 노트
+
+| 자주 나오는 진술 | 판정 | 왜 |
+|---|---|---|
+| "t-SNE로 만든 좌표를 그대로 분류기에 넣는다" | ✗ | 새 데이터 변환 불가, 거리에 물리적 의미 없음 |
+| "PCA는 표준화 없이 써도 결과가 같다" | ✗ | 분산 기반이라 스케일 큰 변수가 주성분을 독점 |
+| "PCA는 타깃을 고려해 유용한 축을 고른다" | ✗ | 비지도 변환. 분산이 큰 축 ≠ 예측에 유용한 축 |
+| "불균형에서 정확도 99%면 좋은 모델이다" | ✗ | 정확도 역설. TN이 지표를 지배 |
+| "SMOTE를 분할 전 전체 데이터에 적용한다" | ✗ | 합성 양성이 검증셋에 유입되어 누수 |
+| "SMOTE는 소수 샘플을 복제한다" | ✗ | 복제가 아니라 이웃 사이 보간(복제는 무작위 오버샘플링) |
+| "다중공선성은 모든 모델에 치명적이다" | ✗ | 선형 모델에 치명적, 트리 계열은 둔감 |
+| "불순도 기반 중요도가 가장 신뢰할 만하다" | ✗ | 고카디널리티 편향. 순열 중요도·SHAP이 더 신뢰 |
+| "상관계수가 0이면 두 변수는 독립이다" | ✗ | 피어슨은 선형만 측정. 비선형 관계가 있을 수 있다 |
+| "특성 선택은 원본 특성을 유지해 설명 가능하다" | ✓ | 규제 산업에서 PCA보다 선호되는 이유 |
+| "언더샘플링은 데이터가 매우 클 때 학습을 가속한다" | ✓ | 다수 클래스를 줄여 양과 불균형을 동시에 해결 |
+| "임계값 이동은 재학습 없이 재현율을 올린다" | ✓ | 학습 후·운영 중에도 조정 가능 |
+
+## 📖 용어
+
+- **누수(data leakage)** : 예측 시점에 알 수 없는 정보가 학습에 섞여 성능이 실제보다 좋아 보이는 사고.
+- **`stratify`** : 분할할 때 클래스 비율을 학습셋·테스트셋에 동일하게 유지하는 옵션. 불균형 데이터에서 특히 중요하다.
+- **파이프라인(Pipeline)** : 전처리와 모델을 한 덩어리로 묶어 fold마다 같은 순서로 재현하는 장치. 누수 방지의 표준 도구다.
+- **합성 축 vs 원본 특성** : PCA가 만들어 낸 이름 없는 축 / 이름과 단위가 그대로 살아 있는 원래 컬럼.
+- **국소 구조 보존** : 가까이 있던 점들이 축소 후에도 가까이 남는 성질. t-SNE가 지향하는 목표다.
+- **정확도 역설** : 다수 클래스만 찍어도 정확도가 높게 나와 모델이 좋아 보이는 착시.
+- **PR-AUC** : 정밀도-재현율 곡선 아래 면적. 양성이 희소할 때 ROC-AUC보다 차이를 잘 드러낸다.
+- **VIF(분산 팽창 계수)** : 한 특성이 다른 특성들로 얼마나 잘 예측되는지로 다중공선성을 재는 값. 5 주의, 10 심각.
+- **SageMaker Clarify** : 학습 전 데이터 편향과 클래스 분포를 점검하고, 예측에 대한 특성 기여도를 산출하는 기능.
+- **SPICE** : QuickSight의 인메모리 연산 엔진. 대시보드 집계를 빠르게 만든다.
 
 ## 📝 연습 문제
 

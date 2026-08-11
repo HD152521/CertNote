@@ -1,82 +1,216 @@
 # Day 5 - Week 7 Synthesis: Deep Learning Summary
 
-Week 7 progressed from neural network basics (Day 1) → CNN (Day 2) → RNN/sequences and Transformer (Day 3) → learning techniques and transfer learning (Day 4). Today we consolidate this progression into a single decision map and establish a thought framework for quickly narrowing down answers when encountering deep learning questions in the exam.
+## 📌 핵심 정리
 
-## Deep Learning Map at a Glance
+- **데이터 형태가 구조를 정한다**: 표=트리 앙상블, 이미지=CNN, 시퀀스=RNN/LSTM/GRU 또는 Transformer.
+- **과제 유형이 출력층과 손실을 정한다**: 회귀=선형+MSE, 이진=Sigmoid+BCE, 다중=Softmax+교차 엔트로피.
+- 딥러닝이 항상 정답은 아니다. **소량 정형 데이터에서는 XGBoost가 보통 더 낫다.**
+- 학습 곡선 증상만 보고 처방을 즉시 꺼낼 수 있어야 한다(발산=학습률↓, 과적합=정규화, 과소적합=용량↑).
+- 데이터가 적다는 단서가 보이면 답은 구조 확대가 아니라 **전이학습 + 데이터 증강**이다.
+
+## Week 7 한 장 지도
+
+Week 7은 신경망 기초(Day 1) → CNN(Day 2) → RNN·시퀀스와 Transformer(Day 3) → 학습 기법과 전이학습(Day 4)으로 진행했다. 오늘은 이 흐름을 하나의 결정 지도로 묶고, 시험에서 딥러닝 문제를 만났을 때 빠르게 답을 좁히는 사고 틀을 세운다.
 
 ```text
-Select architecture by data type
-  ├─ Structured/tabular data    → Usually XGBoost first, DNN secondary
-  ├─ Images/video               → CNN (ResNet/SSD/U-Net)
-  ├─ Sequences (time series, text) → RNN/LSTM/GRU, or Transformer
-  └─ Large-scale language/generation → Transformer (BERT/GPT/T5)
+데이터 형태로 구조 선택
+  ├─ 정형/표 데이터        → 보통 XGBoost 먼저, DNN은 차선
+  ├─ 이미지/영상           → CNN (ResNet/SSD/U-Net)
+  ├─ 시퀀스(시계열, 텍스트) → RNN/LSTM/GRU, 또는 Transformer
+  └─ 대규모 언어/생성      → Transformer (BERT/GPT/T5)
 
-Select output and loss by task type
-  ├─ Regression    → Linear output + MSE/MAE
-  ├─ Binary classification → Sigmoid + BCE
-  └─ Multi-class classification → Softmax + categorical cross-entropy
+과제 유형으로 출력과 손실 선택
+  ├─ 회귀      → 선형 출력 + MSE/MAE
+  ├─ 이진 분류 → Sigmoid + BCE
+  └─ 다중 분류 → Softmax + 범주형 교차 엔트로피
 ```
 
-> 💡 **Related Theory**: Deep learning isn't always the answer. On structured tabular data, tree ensembles like XGBoost often outperform with limited data and short training time. Deep learning shines with unstructured data (images, text, speech) and abundant data. Exam questions with "small tabular data" require the caution not to force neural networks.
+```text
+                 ┌──────────────── Week 7 전체 지도 ────────────────┐
+                 │                                                  │
+  [Day 1 기초]   퍼셉트론 → 활성화 → 손실 → 역전파 → 경사하강
+                 │              │                       │
+                 │              │ (이미지로 확장)        │ (순서로 확장)
+                 ▼              ▼                       ▼
+  [Day 2 CNN]   합성곱·풀링   [Day 3 시퀀스] RNN → LSTM/GRU → seq2seq
+                 백본+헤드                    → 어텐션 → Transformer
+                 │                                      │
+                 └──────────────┬───────────────────────┘
+                                ▼
+  [Day 4 학습]  옵티마이저 · 학습률 · 정규화 · 전이학습 · SageMaker 통합
+                                ▼
+                        어떤 구조든 "학습을 굴리는 방법"은 공통
+```
 
-## Day 1 Review: Neural Network Basics
+> 💡 **개념**: 딥러닝이 항상 답은 아니다. 정형 표 데이터에서는 데이터가 제한적이고 학습 시간이 짧을 때 XGBoost 같은 트리 앙상블이 더 좋은 성능을 내는 경우가 많다. 딥러닝은 비정형 데이터(이미지·텍스트·음성)와 데이터가 풍부할 때 빛난다. 시험에서 "소량 정형 데이터" 지문은 신경망을 억지로 밀어붙이지 않는 절제를 요구한다.
 
-- Perceptron = weighted sum + bias + activation. Single perceptron only separates linearly.
-- Without nonlinear activation, stacking depth equals a linear model.
-- Default hidden activation = **ReLU** (mitigates gradient vanishing, watch for dead ReLU).
-- Output activation: binary=Sigmoid, multi=Softmax, regression=linear.
-- Forward pass (prediction) → loss (error) → backprop (gradients) → gradient descent (update).
-- Epochs/batches/iterations: iterations/epoch = data size / batch size.
+## 데이터 형태 → 구조 결정표
 
-## Day 2 Review: CNN
+| 데이터 형태 | 1순위 | 대안 | 이 선택을 피해야 할 때 |
+|---|---|---|---|
+| 정형(표) 소량 | XGBoost 등 트리 앙상블 | 얕은 MLP | 이미지·시퀀스 데이터에 적용 |
+| 정형(표) 대량·복잡한 상호작용 | 트리 앙상블 | DNN | 해석 가능성이 최우선일 때 |
+| 이미지 분류 | CNN(ResNet 등) | 전이학습 + 증강 | 학습 이미지가 수십 장뿐인데 처음부터 학습 |
+| 이미지 위치·개수 | 객체 탐지(SSD/YOLO) | — | 픽셀 단위 정밀도가 필요할 때 |
+| 이미지 픽셀 단위 | 시맨틱 세그멘테이션(U-Net/FCN) | — | 단순 카테고리만 필요할 때 |
+| 시계열 다수 | DeepAR / Amazon Forecast | LSTM | 시계열이 단 하나뿐이고 매우 짧을 때 |
+| 텍스트 분류(전통) | BlazingText | Comprehend(관리형) | 어순이 핵심인 생성 과제 |
+| 텍스트 생성·요약·QA | Transformer(JumpStart/Bedrock) | — | 단순 키워드 추출로 충분한 경우 |
 
-- Three core principles: local receptive fields, weight sharing, translation invariance.
-- Convolution = pattern extraction, pooling = downsampling (no learnable parameters).
-- ResNet's residual connections = solution for very deep learning.
-- Task distinction: classification (labels) / detection (boxes+classes) / segmentation (pixels).
-- SageMaker: Image Classification, Object Detection (SSD), Semantic Segmentation; labeling with Ground Truth.
+## 과제 유형 → 출력층 · 손실 · 지표
 
-## Day 3 Review: RNNs and Sequences
+| 과제 | 출력층 | 손실 | 주로 보는 지표 |
+|---|---|---|---|
+| 회귀 | 선형(활성화 없음) | MSE / MAE | RMSE, MAE |
+| 이진 분류(균형) | Sigmoid 1노드 | BCE | Accuracy, F1, ROC-AUC |
+| 이진 분류(불균형) | Sigmoid 1노드 | BCE(또는 Focal 계열) | **Recall, PR-AUC** |
+| 다중 분류(상호배타) | Softmax K노드 | 범주형 교차 엔트로피 | Accuracy, 매크로 F1 |
+| 다중 레이블 | Sigmoid K노드 | 레이블별 BCE | 레이블별 precision/recall |
 
-- RNN processes sequences via hidden state; suffers from long-term dependency and gradient issues.
-- LSTM (gates+cell state) / GRU (simpler, faster) mitigate these.
-- seq2seq (encoder-decoder) + attention resolves information bottleneck.
-- Transformer = self-attention, parallel and long-range, modern NLP standard (BERT/GPT/T5).
-- AWS: time series=DeepAR/Forecast, text=BlazingText/Comprehend, generation=JumpStart/Bedrock.
+> ⚠️ **함정**: 불균형 데이터에서 accuracy는 함정이다. 양성이 1%면 "전부 음성"만 찍어도 99%가 나온다. 지문에 "결함은 드물다", "사기는 전체의 0.x%"가 보이면 accuracy 보기를 먼저 버리고 recall·PR-AUC를 본다.
 
-## Day 4 Review: Learning Techniques and Transfer Learning
+## Day 1~4 회수
 
-- Loss: regression=MSE, classification=cross-entropy.
-- Optimizer default=Adam, simple and robust=SGD (with Momentum).
-- Learning rate is paramount: too high diverges, too low converges slowly → scheduling, warmup.
-- Prevent overfitting: dropout, weight decay, batch normalization, augmentation, early stopping.
-- Transfer learning: little data→freeze (feature extraction), much data→low learning rate finetuning.
-- SageMaker: Script Mode, DLC, distributed training, JumpStart for TensorFlow/PyTorch integration.
+### Day 1 — 신경망 기초
 
-## Symptom → Prescription Cheat Sheet
+- 퍼셉트론 = 가중합 + 편향 + 활성화. 단일 퍼셉트론은 선형 분리만 가능하다.
+- 비선형 활성화가 없으면 깊이를 쌓아도 선형 모델과 같다.
+- 은닉층 기본 활성화 = **ReLU**(기울기 소실 완화, 죽은 ReLU 주의).
+- 출력 활성화: 이진=Sigmoid, 다중=Softmax, 회귀=선형.
+- 순전파(예측) → 손실(오차) → 역전파(기울기) → 경사하강(갱신).
+- 에폭·배치·이터레이션: 이터레이션/에폭 = 데이터 수 ÷ 배치 크기.
 
-Exams present learning curves/symptoms and ask for remedies. Map them quickly.
+### Day 2 — CNN
 
-| Symptom | Diagnosis | Remedy |
+- 핵심 세 원리: 지역 수용영역, 가중치 공유, 이동 불변성.
+- 합성곱 = 패턴 추출, 풀링 = 다운샘플링(학습 파라미터 없음).
+- ResNet의 잔차 연결 = 초심층 학습의 해법.
+- 과제 구분: 분류(레이블) / 탐지(박스+클래스) / 세그멘테이션(픽셀).
+- SageMaker: Image Classification, Object Detection(SSD), Semantic Segmentation, 라벨링은 Ground Truth.
+
+### Day 3 — RNN과 시퀀스
+
+- RNN은 은닉 상태로 시퀀스를 처리하지만 장기 의존성·기울기 문제를 겪는다.
+- LSTM(게이트+셀 상태) / GRU(더 단순·빠름)가 이를 완화한다.
+- seq2seq(인코더-디코더) + 어텐션이 정보 병목을 해소한다.
+- Transformer = 셀프 어텐션, 병렬·장거리, 현대 NLP 표준(BERT/GPT/T5).
+- AWS: 시계열=DeepAR/Forecast, 텍스트=BlazingText/Comprehend, 생성=JumpStart/Bedrock.
+
+### Day 4 — 학습 기법과 전이학습
+
+- 손실: 회귀=MSE, 분류=교차 엔트로피.
+- 옵티마이저 기본값=Adam, 단순·견고=SGD(+Momentum).
+- 학습률이 최우선: 크면 발산, 작으면 느림 → 스케줄링·워밍업.
+- 과적합 방지: 드롭아웃, 가중치 감쇠, 배치 정규화, 증강, 조기 종료.
+- 전이학습: 데이터 적음→동결(특징 추출), 많음→낮은 학습률 파인튜닝.
+- SageMaker: Script Mode, DLC, 분산 학습, JumpStart로 TensorFlow/PyTorch 통합.
+
+## 헷갈리는 짝 비교
+
+| 짝 | 결정적 차이 | 어느 쪽을 고르나 |
+|---|---|---|
+| **CNN vs RNN** | 공간 구조 vs 순차 구조 | 이미지=CNN, 시계열·텍스트=RNN 계열 |
+| **LSTM vs GRU** | 게이트 3개+셀 상태 vs 게이트 2개 | 장기 기억 중요·자원 충분=LSTM, 경량=GRU |
+| **RNN vs Transformer** | 순차 처리 vs 전체 병렬 처리 | 병렬 학습·장거리 의존성=Transformer |
+| **배치 정규화 vs 드롭아웃** | 학습 안정·가속 vs 과적합 억제 | 불안정=BatchNorm, 과적합=Dropout |
+| **전이학습 vs 처음부터 학습** | 사전 지식 재사용 vs 무작위 초기화 | 데이터 적음=전이학습, 데이터 매우 많고 도메인 상이=처음부터 검토 |
+| **특징 추출 vs 파인튜닝** | 백본 동결 vs 낮은 학습률로 함께 학습 | 데이터 극소=동결, 어느 정도 있음=파인튜닝 |
+| **Adam vs SGD** | 적응적 보폭 vs 고정 비율 | 기본 출발=Adam, 대형 모델 최종 미세조정=SGD |
+| **분류 vs 탐지 vs 세그멘테이션** | 레이블 vs 박스 vs 픽셀 | 지문의 "무엇/어디·몇 개/픽셀 단위" |
+| **어텐션 vs 셀프 어텐션** | 디코더→인코더 참조 vs 같은 시퀀스 내부 참조 | seq2seq 개선=어텐션, Transformer 토대=셀프 어텐션 |
+| **MSE vs 교차 엔트로피** | 회귀용 vs 확률 분류용 | 분류에 MSE는 오답 |
+
+> 💡 **개념**: 이 표의 짝들은 대부분 "무엇을 얻고 무엇을 포기하는가"의 트레이드오프다. GRU는 표현력을 조금 내주고 속도를 얻고, 동결은 유연성을 내주고 과적합 방어를 얻으며, Adam은 최종 일반화를 조금 내주고 튜닝 편의를 얻는다. 시험 지문은 늘 어느 쪽 비용이 더 큰지를 단서로 흘린다 — 데이터 양, 시간 제약, 자원 한계가 그 단서다.
+
+## 증상 → 처방 치트시트
+
+시험은 학습 곡선·증상을 제시하고 처방을 묻는다. 빠르게 매핑하자.
+
+| 증상 | 진단 | 처방 |
 |---------|-----------|--------|
-| Loss diverges/NaN | Learning rate too high | Lower learning rate |
-| Convergence very slow | Learning rate too low | Raise learning rate/scheduling, Adam |
-| Training loss down, validation up | Overfitting | Dropout, regularization, augmentation, early stopping |
-| Both losses high | Underfitting | Increase model capacity, train longer, add features |
-| OOM (out of memory) | Batch/model too large | Reduce batch size, model parallelism |
-| Insufficient data | Poor generalization | Transfer learning, augmentation |
-| Deep network fails to learn | Gradient vanishing | ResNet (residual), batch normalization, ReLU |
+| 손실 발산/NaN | 학습률 과대 | 학습률 낮추기 |
+| 수렴이 매우 느림 | 학습률 과소 | 학습률 상향/스케줄링, Adam |
+| 학습 손실↓ 검증 손실↑ | 과적합 | 드롭아웃, 정규화, 증강, 조기 종료 |
+| 두 손실 모두 높음 | 과소적합 | 모델 용량 확대, 더 오래 학습, 특성 추가 |
+| OOM(메모리 부족) | 배치·모델 과대 | 배치 크기 축소, 모델 병렬 |
+| 데이터 부족 | 일반화 실패 | 전이학습, 데이터 증강 |
+| 깊은 망이 학습되지 않음 | 기울기 소실 | ResNet(잔차), 배치 정규화, ReLU |
+| 손실이 갑자기 폭증 | 기울기 폭발 | 기울기 클리핑, 학습률 축소 |
+| GPU를 늘려도 안 빨라짐 | RNN의 순차 구조 | Transformer 계열로 전환 |
+| 은닉층 출력이 계속 0 | 죽은 ReLU | Leaky ReLU 등으로 교체 |
+| 하이퍼파라미터 조합이 너무 많음 | 수동 탐색 한계 | Automatic Model Tuning |
 
-> 💡 **Related Theory**: SageMaker Automatic Model Tuning (Bayesian optimization) automatically searches hyperparameters like learning rate, batch size, layer count, dropout rate. Monitor training loss curves via CloudWatch; enable early stopping to save time and cost. Exam phrases like "find optimal hyperparameters efficiently" signal AMT as the answer.
+> 💡 **개념**: SageMaker Automatic Model Tuning(베이지안 최적화)은 학습률·배치 크기·층 수·드롭아웃 비율 같은 하이퍼파라미터를 자동으로 탐색한다. 학습 손실 곡선은 CloudWatch로 모니터링하고, 조기 종료를 켜면 시간과 비용을 아낀다. "효율적으로 최적 하이퍼파라미터를 찾아라"는 문구는 AMT를 가리키는 신호다.
 
-## Closing Checklist
+## 지문 단서 → 정답 매핑
 
-After Week 7, you should confidently answer:
+| 지문에 이런 표현이 나오면 | 가리키는 답 |
+|---|---|
+| "표 형태 데이터 수천 행, 학습 시간 제한" | XGBoost 등 트리 앙상블 |
+| "학습 이미지가 수백 장뿐" | 전이학습 + 데이터 증강 |
+| "위치와 개수를 알아야 한다" | 객체 탐지 |
+| "픽셀 단위로 영역을 구분" | 시맨틱 세그멘테이션 |
+| "여러 상품의 수요를 한꺼번에" | DeepAR / Forecast |
+| "ML 전문 인력 없이 빠르게" | 관리형 AI 서비스(Comprehend 등) |
+| "층을 깊게 했더니 학습이 나빠짐" | 잔차(skip) 연결 |
+| "결함/사기는 전체의 1% 미만" | recall · PR-AUC (accuracy 아님) |
+| "최적 하이퍼파라미터를 효율적으로" | Automatic Model Tuning |
+| "자체 PyTorch 스크립트를 관리형으로" | Script Mode |
 
-- Can you pick architecture (CNN/RNN-Transformer/trees) by just seeing data type (images/sequences/tabular)?
-- Can you pair output activation and loss to task type?
-- Can you diagnose learning curve symptoms and decide whether to adjust learning rate, regularization, or transfer learning?
-- Can you select SageMaker built-ins, JumpStart, or Script Mode appropriately?
+## 자주 걸리는 오답 패턴
+
+| 오답 패턴 | 왜 틀리나 | 올바른 사고 |
+|---|---|---|
+| "최신 구조가 항상 정답" | 데이터·시간 제약을 무시 | 소량 정형 데이터면 트리 앙상블 |
+| "데이터가 적으니 모델을 키우자" | 과적합을 키우는 방향 | 전이학습 + 증강이 먼저 |
+| "정확도가 낮으니 에폭을 늘리자" | 과적합이면 악화된다 | 학습·검증 곡선을 먼저 구분 |
+| "분류에도 MSE를 쓸 수 있다" | 학습이 느리고 불안정 | 교차 엔트로피가 표준 |
+| "풀링이 표현력을 높인다" | 학습 파라미터가 없다 | 표현력은 합성곱·Dense가 담당 |
+| "GPU를 늘리면 RNN이 빨라진다" | 순차 구조가 병목 | 병렬성이 필요하면 Transformer |
+| "전이학습은 전부 다시 학습" | 사전 지식을 파괴 | 동결 또는 낮은 학습률 |
+| "accuracy가 높으니 좋은 모델" | 불균형에서 무의미 | recall·PR-AUC로 재확인 |
+
+> ⚠️ **함정**: 제약이 여러 개 겹친 지문에서는 **가장 화려한 기술이 아니라 모든 제약을 동시에 만족하는 선택**이 정답이다. "데이터가 적다 + 시간이 없다 + 도메인이 유사하다"가 함께 나오면 답은 처음부터 학습하는 대형 모델이 아니라 사전학습 백본 동결이다.
+
+## AWS 서비스 총정리
+
+| 상황 | 선택 |
+|---|---|
+| 이미지 분류·탐지·세그멘테이션 학습 | SageMaker 빌트인(Image Classification / Object Detection / Semantic Segmentation) |
+| 라벨링 데이터가 필요 | SageMaker Ground Truth |
+| 시계열 예측 | DeepAR(빌트인) 또는 Amazon Forecast(관리형) |
+| 텍스트 임베딩·분류 | BlazingText |
+| 개체·감성 추출을 학습 없이 | Amazon Comprehend |
+| 사전학습 모델 배포·파인튜닝 | SageMaker JumpStart |
+| 대형 언어 모델 활용 | Amazon Bedrock |
+| 자체 TF/PyTorch 스크립트 학습 | Script Mode + Deep Learning Containers |
+| 하이퍼파라미터 자동 탐색 | Automatic Model Tuning |
+| 대규모 학습 분산 | 데이터 병렬 / 모델 병렬 분산 학습 |
+
+## 자가 점검
+
+Week 7을 마쳤다면 다음에 자신 있게 답할 수 있어야 한다.
+
+| 점검 항목 | 확인 기준 |
+|---|---|
+| 데이터 형태만 보고 구조를 고를 수 있는가 | 이미지=CNN, 시퀀스=RNN/Transformer, 표=트리 |
+| 과제 유형에 출력 활성화와 손실을 짝지을 수 있는가 | 이진=Sigmoid+BCE, 다중=Softmax+교차 엔트로피, 회귀=선형+MSE |
+| 학습 곡선 증상을 진단할 수 있는가 | 학습률 조정 / 정규화 / 전이학습 중 무엇인지 판단 |
+| SageMaker 선택지를 구분할 수 있는가 | 빌트인 · JumpStart · Script Mode의 경계 |
+| 딥러닝을 쓰지 말아야 할 때를 아는가 | 소량 정형 데이터에서는 트리 앙상블 |
+
+## 📖 용어
+
+- **귀납 편향(inductive bias)** : 모델 구조 자체에 새겨 넣은 가정. CNN의 이동 불변성이 대표적이다.
+- **백본 / 헤드** : 특징을 뽑는 앞부분 / 최종 예측을 내는 뒷부분. 전이학습은 백본을 재사용한다.
+- **동결(freeze)** : 사전학습 가중치를 갱신하지 않도록 고정하는 것. 데이터가 매우 적을 때의 기본 전략.
+- **파인튜닝(fine-tuning)** : 사전학습 가중치를 낮은 학습률로 함께 재학습하는 것.
+- **기울기 소실 / 폭발** : 역전파에서 기울기가 0으로 사라지거나 발산하는 현상. 처방이 서로 다르다.
+- **잔차(skip) 연결** : 입력을 출력에 그대로 더해 기울기의 지름길을 만드는 구조. 초심층 학습의 열쇠.
+- **셀프 어텐션** : 한 시퀀스 내부의 모든 위치 쌍이 서로를 참조하는 메커니즘. Transformer의 토대.
+- **글로벌 모델** : 여러 시계열을 하나의 모델로 함께 학습하는 방식. DeepAR이 여기에 해당한다.
+- **Automatic Model Tuning** : 베이지안 최적화로 하이퍼파라미터를 자동 탐색하는 SageMaker 기능.
+- **Script Mode** : 직접 작성한 TensorFlow/PyTorch 스크립트를 SageMaker 학습 컨테이너에서 실행하는 방식.
 
 ## 📝 연습 문제
 

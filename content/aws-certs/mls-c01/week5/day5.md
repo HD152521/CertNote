@@ -1,89 +1,210 @@
 # Day 5 - Week 5 Comprehensive Review: Statistics and Validation Design
 
-This week covered the second half of EDA — **statistical foundation** and **validation design**. Honestly summarizing data (statistics), reading relationships between variables (correlation), avoiding pitfalls that contaminate evaluation (leakage), and reliably estimating generalization performance (validation). These four form the final gate of MLS-C01 Domain 2 and hide the answer to the practical question "why does my model fail in production?" Today we review four days as one integrated flow.
+## 📌 핵심 정리
 
-## One-Page Summary: Statistics → Correlation → Leakage → Validation
+- 이번 주는 결국 한 질문으로 수렴한다 — **"내 검증 점수를 믿어도 되는가?"** 통계·상관·누수·검증 중 하나만 무너져도 점수는 환상이 된다.
+- **분포를 먼저 보고**(왜도·이상치) 강건 통계량을 고른다. 선형 스케일링은 모양을 바꾸지 못한다.
+- **상관은 인과가 아니다.** 교란변수·역인과를 의심하고, 설명 변수끼리의 상관(다중공선성)은 VIF로 진단한다.
+- **누수는 시점 문제다.** "예측하는 순간 이 값을 알 수 있었나?"가 유일한 판별 기준이다.
+- **검증 설계는 데이터 성격이 정한다.** 불균형→층화, 시계열→TimeSeriesSplit, 그룹→GroupKFold, 소량→k-fold.
+
+## 한 장 요약: 통계 → 상관 → 누수 → 검증
+
+이번 주는 EDA의 후반부 — **통계 기초**와 **검증 설계**를 다뤘다. 데이터를 정직하게 요약하고(통계), 변수 간 관계를 읽고(상관), 평가를 오염시키는 함정을 피하고(누수), 일반화 성능을 믿을 만하게 추정하는(검증) 네 가지다. 이 넷은 MLS-C01 Domain 2의 마지막 관문이자 "왜 내 모델이 프로덕션에서 실패하는가"의 답이 숨어 있는 곳이다.
 
 ```text
-[Data]
+[데이터]
    │
-   ├─ 1) Statistical Foundations (Day1)
-   │     Distribution: Check skew/kurtosis first (Anscombe's quartet)
-   │     Center: Median if skewed, mean if symmetric
-   │     Spread: std/IQR, robustness = IQR
-   │     Transform: Linear (standardization) = shape unchanged, log/Box-Cox = reduce skew
-   │     Sample ↔ Population: CLT, suspect representativeness/bias
+   ├─ 1) 통계 기초 (Day1)
+   │     분포: 왜도·첨도부터 확인 (앤스컴의 4중주)
+   │     중심: 치우치면 중앙값, 대칭이면 평균
+   │     산포: 표준편차/IQR, 강건함은 IQR
+   │     변환: 선형(표준화)=모양 불변, 로그/Box-Cox=왜도 완화
+   │     표본 ↔ 모집단: CLT, 대표성·편향 의심
    │
-   ├─ 2) Correlation and Relationships (Day2)
-   │     Pearson (linear) vs Spearman (monotonic, robust)
-   │     Correlation ≠ causation: reverse causation, confounders, chance
-   │     Multicollinearity: VIF>5~10, linear model coefficients unstable (trees robust)
-   │     Categorical: chi-square / Cramér's V
+   ├─ 2) 상관과 관계 (Day2)
+   │     Pearson(선형) vs Spearman(단조·강건)
+   │     상관 ≠ 인과: 역인과, 교란변수, 우연
+   │     다중공선성: VIF>5~10, 선형모델 계수 불안정 (트리는 둔감)
+   │     범주형: 카이제곱 / Cramér's V
    │
-   ├─ 3) Data Leakage (Day3)
-   │     Target leakage: result info enters → splitting misses it, check timing
-   │     Time series leakage: forbid random split, future windows
-   │     Train-test contamination: after split, fit only on training, wrap with Pipeline
+   ├─ 3) 데이터 누수 (Day3)
+   │     타깃 누수: 결과 정보 유입 → 분할로 못 잡음, 시점 확인
+   │     시계열 누수: 무작위 분할·미래 윈도 금지
+   │     train-test 오염: 분할 후 학습 부분만 fit, Pipeline으로 감싼다
    │
-   └─ 4) Validation Design (Day4)
-         3-way split: test sealed until end, seen once only
-         k-fold: conserve data, mean ± std (k=5/10)
-         Stratified: essential for imbalanced classification
-         Time series: TimeSeriesSplit (past → future)
+   └─ 4) 검증 설계 (Day4)
+         3분할: 테스트는 끝까지 봉인, 단 한 번만
+         k-fold: 데이터 절약, 평균 ± 표준편차 (k=5/10)
+         층화: 불균형 분류에 필수
+         시계열: TimeSeriesSplit (과거 → 미래)
+
+   ▼
+[믿을 수 있는 검증 점수] ──▶ 모델 선택·튜닝 결정이 비로소 유효해진다
 ```
 
-## Core Decision-Making Summary
+네 단계는 순서가 있는 파이프라인이 아니라 **서로를 검증하는 관문**이다. 분포를 잘못 읽으면 변환이 틀리고, 변환이 전체 데이터로 이뤄지면 누수가 되고, 누수가 있으면 검증 설계가 아무리 정교해도 점수는 거짓이다.
 
-### Center·Spread: What Do We Report?
+## 헷갈리는 짝 비교표
 
-| Situation | Center | Spread |
-|------|------|------|
-| Symmetric distribution | Mean | Std deviation |
-| Skew, outliers | Median | IQR |
-| Categorical | Mode | — |
+이번 주 내용은 "비슷해 보이는 두 개를 구분하는" 문제로 자주 나온다.
 
-### Transformation: Change the Shape?
+### Pearson vs Spearman
 
-| Treatment | Distribution Shape |
-|------|------|
-| Standardization, min-max (linear) | **Unchanged** (skew preserved) |
-| Log, square root (nonlinear) | Reduce right skew |
-| Box-Cox, Yeo-Johnson | Closer to normal |
+| 항목 | Pearson | Spearman |
+|---|---|---|
+| 측정 대상 | 선형 관계 | 단조 관계(직선일 필요 없음) |
+| 계산 기반 | 실제 값 | 순위(rank) |
+| 이상치 | 매우 민감 | 강건 |
+| U자형 비선형 | r ≈ 0으로 관계를 놓친다 | 단조가 아니면 역시 낮지만, 곡선형 단조는 잡는다 |
+| 고를 단서 | "연속형, 직선 관계" | "이상치 많다", "순위·등급 자료", "비선형이지만 방향은 일정" |
 
-### Correlation Coefficient: What to Use?
+### 표준화 vs 정규화(Min-Max)
 
-| Relationship·Data | Recommended |
-|------|------|
-| Linear, continuous | Pearson |
-| Nonlinear, monotonic, outliers | Spearman |
-| Two categorical | Chi-square / Cramér's V |
-| Multicollinearity diagnosis | Correlation heatmap + VIF |
+| 항목 | 표준화(Z-score) | 정규화(Min-Max) |
+|---|---|---|
+| 변환식 | (x − μ) / σ | (x − min) / (max − min) |
+| 결과 | 평균 0, 표준편차 1 | [0, 1] 범위 |
+| 분포 모양 | **불변** | **불변** |
+| 이상치 | 민감(μ·σ가 끌려감) | 매우 민감(max 하나가 전체를 압축) |
+| 고를 단서 | "선형모델·신경망·PCA 기본" | "입력 범위를 [0,1]로 고정해야 한다" |
 
-### Leakage Prevention: Golden Rules
+두 방법 모두 **왜도를 없애지 못한다.** 왜도를 줄이려면 로그·Box-Cox·Yeo-Johnson 같은 비선형 변환이 필요하다.
 
-| Principle | Implementation |
-|------|------|
-| Split first | Priority over preprocessing |
-| Fit only on training | Scaler, encoder, imputer |
-| Use Pipeline | Auto-isolation per fold |
-| Time series time-ordered | No random split |
-| Audit feature creation | "Knowable at prediction?" |
+### 타깃 누수 vs train-test 오염
 
-### Validation Strategy Selection
+| 항목 | 타깃 누수 | train-test 오염 |
+|---|---|---|
+| 누수 위치 | 피처 자체 | 전처리·분할 절차 |
+| 분할로 잡히나 | **아니다**(모든 분할이 똑같이 오염) | 그렇다(순서만 고치면 해결) |
+| 증상 | 검증·테스트 모두 높고 운영만 낮다 | 검증은 높은데 테스트부터 낮다 |
+| 해결 | 피처 생성 시점 감사, 해당 피처 제거 | 먼저 분할 → 학습 부분만 fit → Pipeline |
 
-| Data Characteristic | Recommended Validation |
-|------|------|
-| General classification, sufficient data | Stratified 3-way split |
-| Data limited | Stratified k-fold |
-| Class imbalance | Must stratify |
-| Time series | TimeSeriesSplit |
-| Group structure (users, patients) | GroupKFold |
+### k-fold vs TimeSeriesSplit
 
-## Most Confusing Exam Points
+| 항목 | k-fold | TimeSeriesSplit |
+|---|---|---|
+| 가정 | 행이 서로 독립·교환 가능 | 순서 자체가 정보 |
+| 분할 방식 | 각 fold를 돌아가며 검증 | 학습은 항상 검증보다 과거 |
+| 데이터 활용 | 모든 행이 한 번씩 검증에 사용 | 초반 구간은 검증에 쓰이지 않는다 |
+| 시계열에 쓰면 | 미래로 과거를 예측하는 누수 발생 | 배포 상황과 동일한 구조 |
 
-> 💡 **Related Theory**: This week's content converges on one question — **"Can I trust my validation score?"** Statistics (distribution, samples) ensure data represents the population, correlation analysis prevents mistaking correlation for causation, leakage checks prevent future/outcome information seeping, and validation design ensures the test set is truly independent. If any one of these four breaks down, validation scores aren't generalization — they're illusions.
+### validation vs test
 
-Integrated checklist:
+| 항목 | 검증셋(validation) | 테스트셋(test) |
+|---|---|---|
+| 목적 | 하이퍼파라미터·모델 선택 | 최종 성능 추정 |
+| 사용 횟수 | 여러 번 | **정확히 한 번** |
+| 오염 시 | 선택 편향이 쌓여 점수가 낙관적 | 보고 수치 자체가 거짓이 된다 |
+| 왜 분리하나 | 다중 비교 문제 때문 | 한 번도 쓰지 않아야 정직하다 |
+
+### 층화 분할 vs GroupKFold
+
+| 항목 | Stratified | GroupKFold |
+|---|---|---|
+| 지키는 것 | 클래스 **비율** | 그룹의 **무결성**(같은 그룹은 한쪽에만) |
+| 쓰는 상황 | 클래스 불균형 분류 | 같은 사용자·환자의 행이 여럿 |
+| 안 쓰면 | 일부 fold에 소수 클래스가 없다 | 같은 개체가 양쪽에 걸려 성능이 부풀려진다 |
+
+## 핵심 의사결정 요약
+
+### 중심·산포: 무엇을 보고할 것인가
+
+| 상황 | 중심 | 산포 |
+|---|---|---|
+| 대칭 분포 | 평균 | 표준편차 |
+| 치우침·이상치 존재 | 중앙값 | IQR |
+| 범주형 | 최빈값 | — |
+
+### 변환: 모양을 바꾸는가
+
+| 처리 | 분포 모양 | 요구 조건 |
+|---|---|---|
+| 표준화, Min-Max (선형) | **불변**(왜도 유지) | 없음 |
+| 로그, 제곱근 (비선형) | 오른쪽 치우침 완화 | x ≥ 0 |
+| Box-Cox | 정규에 근접 | x > 0(양수만) |
+| Yeo-Johnson | 정규에 근접 | 음수·0 허용 |
+
+### 관계 측정: 무엇을 쓸 것인가
+
+| 관계·데이터 | 권장 |
+|---|---|
+| 선형, 연속형 | Pearson |
+| 비선형·단조, 이상치 존재 | Spearman |
+| 범주형 두 개 | 카이제곱 / Cramér's V |
+| 범주형 ↔ 연속형 | 집단 평균 비교(ANOVA)·박스플롯 |
+| 다중공선성 진단 | 상관 히트맵 + VIF(>5~10 경고) |
+
+### 누수 차단: 황금 규칙
+
+| 원칙 | 실행 |
+|---|---|
+| 먼저 분할 | 전처리보다 우선 |
+| 학습 부분만 fit | 스케일러·인코더·대치기 |
+| Pipeline 사용 | fold마다 자동 격리 |
+| 시계열은 시간 순 | 무작위 분할 금지 |
+| 피처 생성 시점 감사 | "예측 시점에 알 수 있나?" |
+| 중복·그룹 정리 | 분할 **전에** 처리 |
+
+### 검증 전략 선택
+
+| 데이터 특성 | 권장 검증 |
+|---|---|
+| 일반 분류, 데이터 충분 | 층화 3분할 |
+| 데이터가 적다 | 층화 k-fold |
+| 클래스 불균형 | 층화 필수 + PR-AUC·recall |
+| 시계열 | TimeSeriesSplit |
+| 그룹 구조(사용자·환자) | GroupKFold |
+| 튜닝까지 정직하게 평가 | Nested CV |
+
+## 지문 단서 → 정답 매핑표
+
+| 지문 표현 | 읽어야 할 신호 | 고를 답 |
+|---|---|---|
+| "시간 순서가 있다 / 일별·월별 데이터" | 시계열 | TimeSeriesSplit, shift 후 rolling |
+| "클래스가 0.5%다" | 극단 불균형 | 층화 분할 + PR-AUC·recall (accuracy 배제) |
+| "데이터가 적다(수백 건)" | 단일 분할 불안정 | k-fold 교차검증, 평균 ± 표준편차 |
+| "소득·가격이 오른쪽으로 늘어졌다" | 양의 왜도 | 로그·Box-Cox, 중앙값 보고 |
+| "표준화했는데도 치우쳐 있다" | 선형 변환은 모양 불변 | 비선형 변환 필요 |
+| "0과 음수가 섞여 있다" | 로그·Box-Cox 불가 | Yeo-Johnson |
+| "VIF가 15다 / 계수 부호가 뒤집혔다" | 다중공선성 | 변수 제거·PCA·Ridge (트리면 무시 가능) |
+| "상관이 높으니 A를 늘리면 B가 는다" | 인과 비약 | 오답. 교란변수·역인과 의심, A/B 필요 |
+| "검증·테스트 모두 높은데 운영만 낮다" | 분할로 안 잡히는 누수 | 타깃 누수 |
+| "전체 데이터로 스케일링 후 분할" | 테스트 통계 유입 | Pipeline으로 fold 내부 fit |
+| "같은 환자의 검사 기록이 여러 건" | 그룹 구조 | GroupKFold |
+| "테스트 점수를 보며 모델을 고쳤다" | 봉인 위반 | 최종 추정치가 오염됨 |
+
+## AWS 서비스 매핑표 (주간 통합)
+
+| 상황 | AWS 서비스·기능 | 이유 |
+|---|---|---|
+| 분포·결측·상관을 코드 없이 탐색하고 변환까지 이어붙임 | SageMaker Data Wrangler | 시각적 분석과 변환을 하나의 흐름으로 남겨 재현할 수 있다 |
+| 전처리를 학습·추론에서 동일하게 고정 | SageMaker Processing Job | 스크립트를 재사용해 training-serving skew와 누수를 함께 줄인다 |
+| 피처 정의를 팀 공용으로 관리 | SageMaker Feature Store | 학습·추론이 같은 정의를 공유해 시점 불일치를 막는다 |
+| 분할·전처리·학습·평가 순서를 코드로 고정 | SageMaker Pipelines | "분할 전 전처리" 같은 절차 실수를 구조적으로 차단 |
+| 학습 전 클래스 불균형·편향 점검, 학습 후 특성 기여도 확인 | SageMaker Clarify | 표본 대표성 문제와 단일 피처 독점(누수 신호)을 함께 본다 |
+| 검증 지표 기준으로 하이퍼파라미터 자동 탐색 | SageMaker 자동 모델 튜닝 | 목적 지표를 지정해 여러 학습 잡을 비교한다 |
+| 배포 후 입력 분포·성능 괴리 감시 | SageMaker Model Monitor | 검증과 운영의 차이를 조기에 포착한다 |
+
+## 오답 노트: 이번 주에 가장 자주 틀리는 것
+
+> 💡 **개념**: 이번 주 내용은 한 질문으로 수렴한다 — **"내 검증 점수를 믿어도 되는가?"** 통계(분포·표본)는 데이터가 모집단을 대표하는지를 보증하고, 상관 분석은 관계를 인과로 착각하지 않게 막고, 누수 점검은 미래·결과 정보가 스며드는 것을 막고, 검증 설계는 테스트셋이 진짜로 독립임을 보장한다. 이 넷 중 하나라도 무너지면 검증 점수는 일반화가 아니라 환상이다.
+
+| 흔한 오해 | 왜 틀렸나 | 올바른 이해 |
+|---|---|---|
+| ① 표준화하면 치우침이 없어진다 | 선형 변환은 위치·척도만 바꾼다 | 모양은 그대로. 로그·Box-Cox가 필요 |
+| ② 상관이 강하면 인과다 | 교란변수·역인과·우연이 있다 | 인과는 실험 설계 또는 교란 통제로만 |
+| ③ 상관이 0이면 관계가 없다 | Pearson은 선형만 본다 | U자형 등 비선형 관계가 숨어 있을 수 있다 |
+| ④ 분할만 잘하면 누수는 없다 | 타깃 누수는 피처 안에 있다 | 피처 생성 시점을 감사해야 한다 |
+| ⑤ 전체 데이터로 스케일링 후 분할해도 된다 | 테스트 통계가 학습에 샌다 | 분할 먼저, 학습 부분만 fit |
+| ⑥ 시계열도 무작위 분할로 충분하다 | 순서가 정보다 | 시간 순 분할(forward-chaining) |
+| ⑦ 불균형 데이터도 무작위 분할이면 된다 | 소수 클래스가 fold에서 사라질 수 있다 | 층화 분할 |
+| ⑧ 불균형에서 accuracy가 높으니 좋은 모델이다 | 다수 클래스만 맞혀도 높다 | PR-AUC·recall로 다시 본다 |
+| ⑨ 테스트셋을 보며 튜닝해도 된다 | 테스트가 검증이 된다 | 봉인, 단 한 번만 |
+| ⑩ k는 클수록 무조건 좋다 | 분산과 계산 비용이 커진다 | k=5~10이 균형점 |
+| ⑪ 다중공선성은 모든 모델에 치명적이다 | 트리 계열은 예측에 둔감하다 | 선형 계열에서만 계수가 무너진다 |
+
+### 통합 체크리스트 코드
 
 ```python
 from sklearn.pipeline import Pipeline
@@ -92,10 +213,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 
-# Block leakage + handle imbalance together: Pipeline + StratifiedKFold
+# 누수 차단 + 불균형 대응을 한 번에: Pipeline + StratifiedKFold
 pipe = Pipeline([
-    ("impute", SimpleImputer(strategy="median")),  # median for skew
-    ("scale", StandardScaler()),                    # fit only on fold training portion
+    ("impute", SimpleImputer(strategy="median")),   # 치우침 대비 중앙값 대치
+    ("scale", StandardScaler()),                     # fold의 학습 부분에서만 fit
     ("clf", LogisticRegression(class_weight="balanced")),
 ])
 skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
@@ -103,17 +224,24 @@ scores = cross_val_score(pipe, X, y, cv=skf, scoring="f1")
 print(f"F1: {scores.mean():.3f} ± {scores.std():.3f}")
 ```
 
-> ⚠️ **Pitfall Summary**: ① Standardization removes skew (no, shape unchanged). ② Strong correlation means causation (no, suspect confounders). ③ Good splitting eliminates leakage (no, target leakage escapes). ④ Scale entire data then split (no, leakage). ⑤ Random split time series (no, time order). ⑥ Random split imbalanced data (no, stratify). ⑦ Tune on test set (no, seal once only).
+> ⚠️ **함정 총정리**: ① 표준화는 왜도를 없앤다(아니다, 모양 불변) ② 강한 상관은 인과다(아니다, 교란변수 의심) ③ 분할만 잘하면 누수가 사라진다(아니다, 타깃 누수는 빠져나간다) ④ 전체 데이터 스케일링 후 분할(아니다, 누수) ⑤ 시계열 무작위 분할(아니다, 시간 순) ⑥ 불균형 데이터 무작위 분할(아니다, 층화) ⑦ 테스트셋으로 튜닝(아니다, 봉인 후 한 번만).
 
-## Next Week Preview
+이번 주를 한 문장으로: **"정직한 검증 점수는 좋은 통계, 관계 이해, 누수 차단, 검증 설계 위에서만 성립한다."**
 
-Next week we move beyond EDA to **Modeling (Domain 3)**. On the foundation of statistics and validation we've built, we'll see how algorithm choice, training, and evaluation work. If you've mastered validation design, you'll be able to judge "should I trust this score?" on your own during modeling.
+다음 주에는 EDA를 넘어 **모델링(Domain 3)**으로 들어가, 지금까지 쌓은 통계·검증 토대 위에서 알고리즘 선택·학습·평가가 어떻게 돌아가는지 본다.
 
-## Summary
+## 📖 용어
 
-This week in one sentence: **"Honest validation scores rest only on good statistics, relationship understanding, leakage blocking, and validation design."** Check distribution first (skew, robust statistics), don't mistake correlation for causation (confounders), audit leakage by timing (target, time series, preprocessing), and design validation matching data (stratification, cross-validation, time series split). When all four are in place, every decision in model selection becomes trustworthy.
-
----
+- **강건 통계량(robust statistic)** : 이상치가 있어도 크게 흔들리지 않는 통계량. 중앙값·IQR이 대표적이다.
+- **선형 변환 불변성** : 표준화·Min-Max처럼 위치·척도만 바꾸는 변환은 분포 모양을 바꾸지 못한다는 성질.
+- **교란변수(confounder)** : 두 변수 모두에 영향을 주어 가짜 상관을 만드는 숨은 변수.
+- **다중공선성** : 설명 변수들끼리 강하게 상관해 회귀 계수 추정이 불안정해지는 현상. VIF 5~10이 경고선.
+- **타깃 누수** : 예측 대상의 결과 정보가 피처에 들어 있는 누수. 어떤 분할로도 잡히지 않는다.
+- **train-test 오염** : 분할 전 전처리로 테스트 정보가 학습에 새는 현상. Pipeline으로 막는다.
+- **층화 표집(stratified)** : 각 분할에서 원본 클래스 비율을 유지하도록 나누는 방식.
+- **GroupKFold** : 같은 그룹의 행이 학습과 검증으로 갈라지지 않게 하는 교차검증.
+- **PR-AUC** : precision-recall 곡선 아래 면적. 양성 비율이 매우 낮을 때 accuracy·ROC-AUC보다 정직하다.
+- **다중 비교 문제** : 같은 검증셋으로 여러 후보를 비교하면 우연히 잘 맞는 것이 뽑혀 점수가 낙관적으로 편향되는 현상.
 
 ## 📝 연습 문제
 

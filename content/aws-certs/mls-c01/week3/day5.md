@@ -206,33 +206,6 @@ Week 3은 "지저분한 원시 데이터"를 "모델이 학습할 수 있는 신
 - **데이터 누수(leakage)** : 학습 시점에 알 수 없었을 정보가 모델에 새어 들어가는 사고.
 - **point-in-time** : 예측 시점에 실제로 알 수 있었던 값만 사용하는 원칙.
 
-## Self-Check Questions
-
-Try to answer these mentally:
-
-1. For right-skewed income with missing values using simple imputation, mean or median? → **Median**
-2. Is feature scaling needed for XGBoost? → **No**
-3. Why is one-hot inappropriate for postal codes (thousands of values)? → **Dimensionality explosion**
-4. What makes hour 23 and hour 0 adjacent? → **Sin/cos transform**
-5. What problem arises when fitting a scaler to all data? → **Data leakage**
-6. For real-time single-record inference, which Feature Store? → **Online**
-
-## Exam Tips
-
-- If the problem names an **algorithm**, preprocessing options narrow (tree → scaling likely wrong).
-- "Millions of unique values" = one-hot is wrong → think target encoding, hashing, or embeddings.
-- "No-code/visual/quick prep" = Data Wrangler; "large-scale custom code" = Processing Job.
-- "Training-inference consistency," "feature reuse," "single-record low-latency lookup" = Feature Store.
-- Any preprocessing that violates the **train fit → test transform** rule is nearly always wrong.
-
-## Summary
-
-Week 3 transformed "dirty raw data" into "trusted features that models can learn from." Cleaning (missing, outliers, duplicates), feature engineering (scaling, encoding, binning, dates, text, high-cardinality), and SageMaker tools for scale—these form a unified workflow. Two principles run through all: **leakage prevention** and **choosing preprocessing to match your model**.
-
-Next week (Week 4) covers the second half of EDA: data visualization, distribution and correlation analysis, dimensionality reduction (PCA), and other analytical and insight-generating techniques.
-
----
-
 ## 📝 연습 문제
 
 **문제 1.** Random Forest 모델을 사용하기로 했다. 다음 전처리 중 이 모델에서 **효과가 가장 작은** 것은?

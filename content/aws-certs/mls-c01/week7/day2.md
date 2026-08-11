@@ -1,103 +1,239 @@
 # Day 2 - CNN: Convolutional Neural Networks and Computer Vision
 
-Images/video have enormous pixel counts — feeding directly to fully connected (Dense) neural nets causes parameter explosion and fails to learn translation invariance. **Convolutional Neural Networks (CNN)** solve this by sliding small filters across the entire image to extract local patterns. MLS-C01 asks not CNN's internal equations but **convolution/pooling roles, image classification vs object detection, SageMaker builtin/architecture choices**.
+## 📌 핵심 정리
 
-## Why Convolution, Not Fully Connected?
+- CNN은 **지역 수용영역 + 가중치 공유 + 이동 불변성** 세 가지로 이미지를 효율적으로 처리한다.
+- 합성곱은 패턴을 추출하고, 풀링은 크기를 줄인다. **풀링에는 학습 파라미터가 없다.**
+- 분류(레이블) / 객체 탐지(박스+클래스) / 시맨틱 세그멘테이션(픽셀)을 정확히 구분해야 한다.
+- ResNet의 **잔차(skip) 연결**은 100층 이상 깊은 망이 학습되지 않던 문제의 해법이다.
+- SageMaker는 Image Classification·Object Detection·Semantic Segmentation 빌트인과 Ground Truth 라벨링을 제공한다.
 
-A 224×224×3 color image flattened to a Dense layer has ~150k input nodes. First hidden layer of 1000 nodes = 150M weights — explosion. CNN solves this with three ideas.
+## 왜 완전연결이 아니라 합성곱인가
 
-- **Local receptive field**: One neuron sees small region, not whole image
-- **Weight sharing**: Reuse same filter across all image locations → parameter collapse
-- **Translation invariance**: Detect cat anywhere with same filter
+이미지·영상은 픽셀 수가 엄청나다. 완전연결(Dense) 신경망에 그대로 넣으면 파라미터가 폭발하고 이동 불변성도 학습하지 못한다. **합성곱 신경망(CNN)** 은 작은 필터를 이미지 전체에 밀어가며 지역 패턴을 뽑아 이 문제를 푼다.
 
-> 💡 **Related Theory**: Weight sharing assumes "cat-ear-detecting filter" works identically anywhere in image. This cuts learnable parameters and generalizes well on limited data. It encodes the property "image meaning preserved under spatial translation" as inductive bias directly into structure.
+- 224×224×3 컬러 이미지를 평탄화해 Dense 층에 넣으면 입력 노드가 약 15만 개다.
+- 첫 은닉층이 1000개 노드면 가중치가 **1억 5천만 개** — 폭발이다.
 
-## Convolution Layer
+| 구분 | 완전연결(Dense) | 합성곱(CNN) |
+|---|---|---|
+| 한 뉴런이 보는 범위 | 이미지 전체 | 작은 지역(수용영역) |
+| 파라미터 | 입력 크기에 비례해 폭증 | 필터 크기 × 필터 수로 고정 |
+| 위치가 바뀐 객체 | 다른 입력으로 취급 | 같은 필터가 그대로 검출 |
+| 학습 데이터 요구량 | 큼 | 상대적으로 작음 |
 
-Slide small **filter (kernel)** over input, compute dot products to create **feature maps**.
+CNN이 쓰는 세 가지 아이디어:
+
+- **지역 수용영역(local receptive field)**: 한 뉴런이 이미지 전체가 아니라 작은 영역만 본다.
+- **가중치 공유(weight sharing)**: 같은 필터를 모든 위치에 재사용해 파라미터를 붕괴시킨다.
+- **이동 불변성(translation invariance)**: 고양이가 어디 있든 같은 필터로 검출한다.
+
+> 💡 **개념**: 가중치 공유는 "고양이 귀를 찾는 필터는 이미지 어느 위치에서든 똑같이 동작한다"는 가정을 깔고 있다. 이 가정 덕분에 학습해야 할 파라미터가 줄고, 제한된 데이터에서도 일반화가 잘 된다. "이미지의 의미는 공간 이동에 대해 보존된다"는 성질을 구조 자체에 **귀납 편향(inductive bias)** 으로 새겨 넣은 것이다.
+
+MLS-C01은 CNN의 내부 수식을 묻지 않는다. **합성곱·풀링의 역할, 이미지 분류 vs 객체 탐지, SageMaker 빌트인·아키텍처 선택**을 묻는다.
+
+## 합성곱 층
+
+작은 **필터(커널)** 를 입력 위로 밀어가며 내적을 계산해 **특성 맵(feature map)** 을 만든다.
 
 ```text
-Input image  *  Filter (e.g., 3x3)  →  Feature maps
-(emphasize edges, texture, shape patterns)
+입력 이미지  *  필터(예: 3x3)  →  특성 맵
+(경계선, 질감, 형태 패턴을 강조)
 ```
 
-Core hyperparameters:
-- **Number of filters**: Output channels = variety of patterns detected
-- **Kernel size**: 3×3, 5×5, etc. Smaller = finer detail
-- **Stride**: Filter movement step. Larger = smaller output
-- **Padding**: Pad edges with 0s to preserve size (`same`) or shrink (`valid`)
+### 합성곱 하이퍼파라미터표
 
-Stacking layers deepens abstraction: low-level (edges) → mid-level (texture, parts) → high-level (whole objects)
+| 하이퍼파라미터 | 무엇을 정하는가 | 출력에 미치는 영향 | 선택 감각 |
+|---|---|---|---|
+| **필터 수** | 검출할 패턴의 종류 수 | 출력 **채널 수**가 필터 수와 같아짐 | 깊어질수록 늘리는 것이 일반적 |
+| **커널 크기** | 한 번에 보는 영역(3×3, 5×5 등) | 클수록 출력이 더 줄고 연산 증가 | 작을수록 미세한 디테일 |
+| **스트라이드** | 필터가 움직이는 보폭 | 클수록 출력 크기가 작아짐 | 다운샘플링 효과 |
+| **패딩** | 가장자리를 0으로 채울지 | `same`=크기 유지, `valid`=축소 | 크기를 지키려면 `same` |
 
-## Pooling Layer
+```text
+스트라이드 1 + same 패딩          스트라이드 2
+┌───────────┐                    ┌───────────┐
+│ ▢▢▢▢▢▢▢▢ │ → 같은 크기 유지    │ ▢▢▢▢▢▢▢▢ │ → 절반 크기로 축소
+└───────────┘                    └───────────┘
+```
 
-Reduce feature map spatial size, lower computation, robust to small position changes.
+층을 쌓을수록 추상화가 깊어진다: 저수준(경계선) → 중간수준(질감, 부분) → 고수준(전체 객체)
 
-| Type | Operation | Feature |
+출력 한 변의 크기는 네 하이퍼파라미터로 결정된다.
+
+```text
+출력 크기 = floor( (입력 크기 + 2×패딩 − 커널 크기) / 스트라이드 ) + 1
+출력 채널 수 = 필터 수
+```
+
+> 💡 **개념**: 층을 쌓을수록 한 뉴런이 원본 이미지에서 보는 영역(**수용영역**)이 넓어진다. 3×3 필터 하나는 3×3만 보지만, 그 위에 3×3을 한 번 더 얹으면 원본 기준 5×5를 본다. 그래서 작은 커널을 깊게 쌓는 VGG식 설계가 큰 커널 하나보다 파라미터는 적으면서 넓은 영역을 볼 수 있다. 풀링과 큰 스트라이드는 이 확장을 더 빠르게 만든다.
+
+- "출력 크기를 그대로 유지하고 싶다"면 답은 `same` 패딩이다. 스트라이드를 키우거나 `valid` 패딩을 고르면 크기가 줄어든다.
+
+## 풀링 층
+
+특성 맵의 공간 크기를 줄여 연산을 낮추고, 작은 위치 변화에 강인하게 만든다.
+
+| 종류 | 연산 | 특징 |
 |------|------|------|
-| **Max Pooling** | Take max in region | Preserve strongest features, most common |
-| **Average Pooling** | Average in region | Smooth downsampling |
-| **Global Average Pooling** | Average all channels | Replace Dense, cut parameters |
+| **Max Pooling** | 영역 내 최댓값 | 가장 강한 특징 보존, 가장 흔함 |
+| **Average Pooling** | 영역 내 평균 | 부드러운 다운샘플링 |
+| **Global Average Pooling** | 채널 전체 평균 | Dense를 대체해 파라미터 축소 |
 
-Pooling has no learnable parameters (fixed operation). Downsampling widens receptive field, reduces overfitting.
+- 풀링은 **학습 파라미터가 없다**(고정 연산).
+- 다운샘플링은 수용영역을 넓히고 과적합을 줄인다.
 
-## Typical CNN Architecture
+> ⚠️ **함정**: "풀링이 표현력을 높이려고 가중치를 추가한다"는 보기는 오답이다. 가중치를 더하는 것은 합성곱·Dense 층의 역할이다.
+
+## 전형적인 CNN 구조
 
 ```text
 [Conv → ReLU → Pool] × N  →  Flatten/GAP  →  Dense  →  Softmax
-   Feature extraction (backbone)          Classification head
+   특징 추출부(백본)                        분류 헤드
 ```
 
-- Front part (conv/pool blocks) = **feature extractor (backbone)**
-- Back part (Dense + Softmax) = **classification head**
-- Transfer learning (Day4) often reuses backbone, trains only head
+```text
+입력 224×224×3
+      │
+      ▼  Conv+ReLU  → 경계선·색 변화 같은 저수준 패턴
+   [특성 맵]
+      │  Pool       → 공간 크기 축소(파라미터 없음)
+      ▼  Conv+ReLU  → 질감·부분(눈, 귀) 같은 중간 패턴
+   [특성 맵]
+      │  Pool
+      ▼  Conv+ReLU  → 전체 객체 수준의 고수준 패턴
+   [특성 맵]
+      │
+      ▼  Flatten 또는 Global Average Pooling
+   [Dense] → [Softmax]  → 클래스 확률
+   └──── 여기만 새로 학습하는 것이 전이학습의 기본형 ────┘
+```
 
-## Representative Architectures
+- 앞부분(conv/pool 블록)이 **특징 추출기(백본)**.
+- 뒷부분(Dense + Softmax)이 **분류 헤드**.
+- 전이학습(Day4)은 백본을 재사용하고 헤드만 학습하는 경우가 많다.
 
-Know names/flow on exam.
+| 블록 | 하는 일 | 학습 파라미터 | 전이학습에서 |
+|---|---|---|---|
+| Conv | 지역 패턴 추출 | 있음(필터 가중치) | 보통 재사용(동결) |
+| ReLU | 비선형성 주입 | 없음 | — |
+| Pool | 공간 축소·강인성 | 없음 | — |
+| Flatten / GAP | 2D 특성 맵을 벡터로 | 없음 | GAP가 파라미터 절감에 유리 |
+| Dense + Softmax | 클래스 판정 | 있음 | 보통 교체·재학습 |
 
-| Architecture | Key Idea |
+- Flatten은 특성 맵을 통째로 펼쳐 Dense에 넣기 때문에 파라미터가 급증한다. "완전연결 층의 파라미터가 너무 많다"는 지문에서는 **Global Average Pooling**으로 대체하는 것이 정답 방향이다.
+
+## 대표 아키텍처
+
+이름과 핵심 아이디어를 알아 두면 지문의 단서가 된다.
+
+| 아키텍처 | 핵심 아이디어 |
 |------|------|
-| **LeNet** | Early CNN (handwritten digits) |
-| **AlexNet** | ReLU, dropout, GPU revived deep learning (2012) |
-| **VGG** | Stack 3×3 filters deep, simple, regular structure |
-| **ResNet** | Residual connections (skip) enable very deep training |
-| **Inception** | Parallel combine multiple kernel sizes |
+| **LeNet** | 초기 CNN(손글씨 숫자 인식) |
+| **AlexNet** | ReLU·드롭아웃·GPU로 딥러닝을 부활시킴(2012) |
+| **VGG** | 3×3 필터를 깊게 쌓은 단순하고 규칙적인 구조 |
+| **ResNet** | 잔차(skip) 연결로 매우 깊은 망의 학습을 가능하게 함 |
+| **Inception** | 여러 커널 크기를 병렬로 조합 |
 
-> 💡 **Related Theory**: Deeper networks showed vanishing gradient paradox — training got worse. ResNet's **residual/skip connection** adds input directly to output (`H(x)=F(x)+x`), creating gradient shortcut, enabling 100+ layer stable training. "Deep network training failure" solution is frequent exam topic.
+> 💡 **개념**: 망을 깊게 할수록 오히려 학습이 나빠지는 역설이 있었다(기울기 소실). ResNet의 **잔차/스킵 연결**은 입력을 출력에 그대로 더해(`H(x)=F(x)+x`) 기울기가 흐를 지름길을 만들어, 100층 이상도 안정적으로 학습되게 했다. "깊은 망이 학습에 실패한다"의 해법으로 시험에 자주 나온다.
 
-## Image Classification vs Object Detection vs Segmentation
+## 이미지 분류 vs 객체 탐지 vs 세그멘테이션
 
-Distinguishing CNN applications precisely is exam core.
+CNN 응용을 정확히 구분하는 것이 시험의 핵심이다.
 
-| Task | Output | Question |
-|------|------|------|
-| **Image Classification** | 1 (or multiple) label per image | "What is this photo?" |
-| **Object Detection** | Class + bounding box for multiple objects | "Where, what, how many?" |
-| **Semantic Segmentation** | Pixel-level class | "Which object does each pixel belong to?" |
+| 과제 | 출력 | 답하는 질문 | 대표 알고리즘 | SageMaker 빌트인 |
+|------|------|------|------|------|
+| **이미지 분류** | 이미지당 레이블 1개(또는 여러 개) | "이 사진은 무엇인가?" | ResNet·VGG 등 일반 CNN | **Image Classification** |
+| **객체 탐지** | 여러 객체의 클래스 + 바운딩 박스 | "어디에, 무엇이, 몇 개?" | **SSD**, **YOLO**, Faster R-CNN | **Object Detection** |
+| **시맨틱 세그멘테이션** | 픽셀 단위 클래스 | "각 픽셀은 어떤 객체인가?" | U-Net, FCN | **Semantic Segmentation** |
 
-Representative algorithms:
-- Classification: General CNN like ResNet/VGG, SageMaker **Image Classification**
-- Detection: **SSD**, **YOLO**, Faster R-CNN, SageMaker **Object Detection**
-- Segmentation: U-Net, FCN, SageMaker **Semantic Segmentation**
+> ⚠️ **함정**: "몇 개가 어디에 있는지"는 탐지, "픽셀 단위로 영역을 구분"은 세그멘테이션이다. 지문의 동사 하나("count/locate" vs "pixel-level")가 정답을 가른다.
 
-## SageMaker Builtins and Data Format
+## SageMaker 빌트인과 데이터 포맷
 
-- **Image Classification**: Single/multi-label classification. ResNet-based. Supports transfer learning mode
-- **Object Detection**: SSD-based. Outputs box + class
-- **Semantic Segmentation**: Pixel classification
-- Input usually **RecordIO (recommended, fast)** or image files + annotations. Large data: **Pipe mode** streaming
-- Labeling: **SageMaker Ground Truth** (provides bounding box, segmentation task templates)
+- **Image Classification**: 단일/다중 레이블 분류. ResNet 기반. 전이학습 모드를 지원한다.
+- **Object Detection**: SSD 기반. 박스 + 클래스를 출력한다.
+- **Semantic Segmentation**: 픽셀 단위 분류.
+- 입력은 보통 **RecordIO(권장, 빠름)** 또는 이미지 파일 + 어노테이션. 대용량이면 **Pipe 모드** 스트리밍.
+- 라벨링: **SageMaker Ground Truth**(바운딩 박스·세그멘테이션 작업 템플릿 제공).
 
-> 💡 **Related Theory**: Limited images → **data augmentation** (rotate, flip, crop, color shift) increases training diversity, reduces overfitting. SageMaker Image Classification/Object Detection have built-in augmentation options. Also, **transfer learning** using ImageNet pre-trained weights beats training from scratch on limited data, shorter time (Day4 connection).
+### 상황 → AWS 선택 매핑표
 
-## Key Summary
+| 상황 | 선택 | 이유 |
+|---|---|---|
+| 사진 1장당 카테고리 하나를 붙인다 | Image Classification | 분류 과제의 표준 빌트인 |
+| 매장 CCTV에서 사람·차량 위치와 개수를 센다 | Object Detection | 박스+클래스 출력이 필요 |
+| 위성 이미지에서 건물 영역을 픽셀로 분리 | Semantic Segmentation | 픽셀 단위 클래스가 필요 |
+| 바운딩 박스 정답 데이터가 없다 | Ground Truth | 라벨링 작업 템플릿·워크포스 제공 |
+| 학습 데이터가 수 TB라 디스크에 다 못 올린다 | Pipe 모드 + RecordIO | S3에서 스트리밍 입력 |
+| 사전학습 가중치로 빠르게 시작 | 전이학습 모드 / JumpStart | 적은 데이터·짧은 시간 |
 
-- CNN = local receptive field + weight sharing + translation invariance for efficient image processing
-- Convolution extracts patterns, pooling downsamples (no parameters)
-- Classification (labels) / Detection (boxes+classes) / Segmentation (pixels) — distinguish precisely
-- ResNet residual connections = solution for very deep network training
-- SageMaker provides Image Classification, Object Detection, Semantic Segmentation builtins + Ground Truth labeling
+## 데이터가 적을 때: 증강과 전이학습
+
+| 기법 | 효과 | 언제 | 주의 |
+|---|---|---|---|
+| **회전·뒤집기** | 방향 다양성 확보 | 방향이 의미 없는 객체 | 글자·숫자는 뒤집으면 의미가 깨짐 |
+| **랜덤 크롭** | 위치·스케일 다양성 | 대부분의 분류 과제 | 대상이 잘려 나가지 않게 |
+| **색상 변형** | 조명 변화에 강인 | 조명 조건이 다양할 때 | 색 자체가 레이블이면 금물 |
+| **전이학습(사전학습 가중치)** | 적은 데이터로 높은 일반화 | 데이터가 적을 때 1순위 | 도메인이 너무 다르면 이득 감소 |
+
+> 💡 **개념**: 이미지가 부족하면 **데이터 증강**(회전·뒤집기·크롭·색상 변형)으로 학습 다양성을 늘려 과적합을 줄인다. SageMaker Image Classification/Object Detection에는 증강 옵션이 내장되어 있다. 또한 ImageNet 사전학습 가중치를 쓰는 **전이학습**은 적은 데이터에서 처음부터 학습하는 것보다 성능이 좋고 시간도 짧다(Day4로 연결).
+
+> ⚠️ **함정**: 증강은 **학습셋에만** 적용한다. 검증·테스트셋을 증강하면 평가가 왜곡된다.
+
+## 분류 성능을 읽는 법 — 지표 해석표
+
+이미지 분류도 결국 분류다. 클래스가 치우쳐 있으면 accuracy는 사람을 속인다.
+
+| 지표 | 무엇을 말하나 | 우선할 상황 | 함정 |
+|---|---|---|---|
+| Accuracy | 전체 중 맞힌 비율 | 클래스가 균형일 때만 | 불량률 1% 검사에서 "전부 정상"도 99% |
+| Precision | 양성이라 한 것 중 진짜 | 오탐 비용이 큼(정상품 폐기) | 소수만 양성 예측하면 쉽게 올라감 |
+| Recall | 실제 양성 중 잡아낸 비율 | 미탐 비용이 큼(불량품 출하) | 전부 양성 예측하면 1.0 |
+| F1 | precision·recall의 균형 | 두 비용이 비슷할 때 | 어느 쪽이 문제인지 감춘다 |
+| ROC-AUC | 임계값 무관 분별력 | 모델끼리 비교할 때 | 극단 불균형에서 낙관적 |
+| PR-AUC | 소수 클래스 분별력 | 결함이 매우 드물 때 | 클래스 비율이 바뀌면 값도 바뀜 |
+
+## 지문 단서 → 정답 매핑
+
+| 지문에 이런 표현이 나오면 | 가리키는 답 |
+|---|---|
+| "각 이미지가 어떤 범주인지 알고 싶다" | 이미지 분류 |
+| "몇 개가 어디에 있는지", "위치와 개수" | 객체 탐지(SSD/YOLO) |
+| "픽셀 단위로", "영역을 정확히 분리" | 시맨틱 세그멘테이션(U-Net/FCN) |
+| "레이블 데이터가 없다", "주석 작업이 필요하다" | Ground Truth |
+| "학습 이미지가 수백 장뿐" | 전이학습 + 데이터 증강 |
+| "망을 깊게 했더니 학습이 안 된다" | ResNet(잔차 연결) |
+| "입력 데이터가 너무 커서 로딩이 느리다" | RecordIO + Pipe 모드 |
+| "완전연결 층의 파라미터가 너무 많다" | Global Average Pooling |
+
+> ⚠️ **함정**: "정확도를 높여라"만 보고 무조건 더 깊은 아키텍처를 고르면 틀린다. 데이터가 적다는 단서가 함께 있으면 정답은 구조 확대가 아니라 **전이학습·증강**이다.
+
+## 증상 → 원인 → 처방
+
+| 증상 | 원인 | 1차 처방 |
+|---|---|---|
+| 학습 정확도만 높고 검증은 낮음 | 데이터 부족 → 과적합 | 데이터 증강 + 전이학습 |
+| 층을 더 쌓았더니 학습이 나빠짐 | 기울기 소실 | 잔차(skip) 연결(ResNet 계열) |
+| GPU 메모리 부족(OOM) | 배치·이미지 해상도 과대 | 배치 크기 축소, 입력 해상도 조정 |
+| 객체 위치를 못 맞힘 | 과제 유형 오선택(분류로 풀고 있음) | 객체 탐지로 전환 |
+| 학습 데이터 로딩이 병목 | 파일 단위 I/O | RecordIO + Pipe 모드 |
+| Dense 헤드 파라미터가 과다 | Flatten 직결 | Global Average Pooling으로 교체 |
+
+다음 글에서는 공간이 아니라 **순서**가 의미를 만드는 데이터 — RNN·LSTM·GRU와 Transformer를 다룬다.
+
+## 📖 용어
+
+- **합성곱(convolution)** : 작은 필터를 입력 위로 밀며 내적을 계산해 지역 패턴을 뽑는 연산.
+- **필터(커널) / 특성 맵** : 합성곱이 학습하는 작은 가중치 격자 / 그 필터를 통과시켜 나온 출력. 필터 수만큼 채널이 생긴다.
+- **스트라이드 / 패딩** : 필터가 움직이는 보폭 / 가장자리를 0으로 채워 출력 크기를 조절하는 설정.
+- **지역 수용영역** : 한 뉴런이 보는 입력의 작은 범위. 층이 깊어질수록 넓어진다.
+- **가중치 공유** : 같은 필터를 이미지 전 위치에 재사용하는 것. 파라미터가 크게 줄어든다.
+- **이동 불변성** : 객체가 이미지 안에서 이동해도 같은 필터로 검출되는 성질.
+- **풀링(pooling)** : 영역의 최댓값·평균으로 특성 맵을 줄이는 연산. 학습 파라미터가 없다.
+- **잔차(skip) 연결** : 입력을 출력에 그대로 더해 기울기가 흐를 지름길을 만드는 구조. ResNet의 핵심.
+- **백본 / 헤드** : 특징을 뽑는 앞부분 / 최종 예측을 내는 뒷부분. 전이학습은 보통 백본을 재사용한다.
+- **RecordIO** : 여러 이미지를 묶어 순차 읽기에 유리하게 만든 SageMaker 권장 입력 포맷. 객체 탐지의 출력인 바운딩 박스 어노테이션과 함께 쓴다.
 
 ## 📝 연습 문제
 

@@ -28,28 +28,28 @@ const QUIZ_HEADER = /^##\s+[^\n]*?(?:(?:연습|練習|連習|연習)\s*(?:문제
 const STEM = /^\*\*(?:문제|Question|Problem|Q)\s*\d+/m;
 
 /**
- * 퀴즈 구간의 시작 오프셋을 찾는다.
- * 우선 퀴즈 제목(h2), 없으면 첫 문제 스템. 둘 다 없으면 null(퀴즈 없는 파일).
+ * 퀴즈 구간의 시작 오프셋을 찾는다. **parseQuiz.ts 의 locateQuizSection 과 동일한 규칙**이어야 한다.
  *
- * 주의: 제목을 먼저 찾되, 그 제목이 첫 스템보다 뒤에 있으면 스템을 택한다
- * (본문에 'Common Problems' 류 제목이 앞서 나오는 경우 방어 — parseQuiz 와 같은 취지).
+ * 규칙: 첫 문제 스템에 앵커를 두고, 그 앞의 **마지막 h2** 가 퀴즈 제목처럼 보일 때만 제목까지 거슬러
+ * 올라간다. 스템이 아예 없으면 그때만 퀴즈 제목 매치로 판단한다.
+ *
+ * ⚠️ 예전 구현은 "파일 내 첫 QUIZ_HEADER 매치"를 우선했는데 **실제 사고를 냈다.**
+ * QUIZ_HEADER 는 영어 Question/Problem 을 포함하므로 본문 제목
+ * (`## Problem Definition …`, `## Self-Check Questions`, `## The Problem MLOps Solves`)이
+ * 퀴즈 제목으로 오인됐고, git 원본에서 그 지점부터 되붙이는 바람에
+ * **본문 섹션이 되살아났다**(mls-c01 week1/day1·week3/day5 에서 발생, 사후 복구).
  */
 function quizStart(text) {
   const stem = text.match(STEM);
-  const stemAt = stem?.index ?? -1;
-  const head = text.match(QUIZ_HEADER);
-  const headAt = head?.index ?? -1;
-
-  if (headAt >= 0 && (stemAt < 0 || headAt < stemAt)) return headAt;
-  if (stemAt >= 0) {
-    // 스템 바로 앞의 마지막 h2 가 퀴즈 제목이면 제목부터 포함한다.
-    const before = text.slice(0, stemAt);
+  if (stem?.index !== undefined) {
+    const stemAt = stem.index;
     let last = null;
-    for (const m of before.matchAll(/^##\s+[^\n]*$/gm)) last = m;
+    for (const m of text.slice(0, stemAt).matchAll(/^##\s+[^\n]*$/gm)) last = m;
     if (last && QUIZ_HEADER.test(last[0])) return last.index;
     return stemAt;
   }
-  return null;
+  const head = text.match(QUIZ_HEADER);
+  return head?.index ?? null;
 }
 
 function gitShow(ref, relPath) {

@@ -1,118 +1,203 @@
 # Day 1 - Statistical Foundations: Distribution, Central Tendency, Dispersion, Transformations, Sample and Population
 
-EDA's final week is about "honestly summarizing data numerically and validating whether that summary is trustworthy." Before MLS-C01 asks about algorithms, it tests **statistical intuition**. Is the distribution skewed? Should you trust mean or median? Does the sample fairly represent the population?—misunderstanding these leads to wrong conclusions, regardless of model choice.
+## 📌 핵심 정리
 
-Today we build EDA's statistical foundation: **distribution**, **central tendency and dispersion**, **how transformations affect distributions**, and **sample versus population**.
+- 평균부터 계산하지 말고 **분포 모양(왜도·첨도)을 먼저 본다**. 요약 통계량이 같아도 실제 모양은 전혀 다를 수 있다.
+- 치우쳤거나 이상치가 있으면 평균·표준편차 대신 **중앙값·IQR** 같은 강건(robust) 통계량을 쓴다.
+- **선형 스케일링(표준화·Min-Max)은 분포 모양을 바꾸지 않는다.** 왜도를 줄이려면 로그·Box-Cox 같은 **비선형 변환**이 필요하다.
+- 손에 든 것은 언제나 **표본(sample)**이다. 모집단을 대표하는지(선택 편향), 표본이 충분한지(CLT)를 항상 의심한다.
+- 분포 진단은 목적이 아니라 **전처리·지표·알고리즘 선택으로 이어지는 처방전**이다. MLS는 진단이 아니라 처방을 묻는다.
 
-## Distribution: See the Shape First
+## 분포: 모양을 먼저 본다
 
-Don't compute means first. **Look at distribution shape** first. Same mean, wildly different shapes.
+EDA 마지막 주는 "데이터를 숫자로 정직하게 요약하고, 그 요약을 믿어도 되는지 검증하는" 일이다. MLS-C01은 알고리즘을 묻기 전에 **통계 직관**을 먼저 묻는다. 분포가 치우쳤는가, 평균과 중앙값 중 무엇을 믿을 것인가, 이 표본이 모집단을 공정하게 대표하는가 — 여기서 어긋나면 어떤 모델을 골라도 결론이 틀린다.
 
-| Distribution Feature | Meaning | EDA Implication |
-|------|------|------|
-| Symmetric | Left-right balance, near normal | Mean/std dev are representative |
-| Right-skewed (positive) | Long right tail (income, prices) | Mean > median; log transform candidate |
-| Left-skewed (negative) | Long left tail (scores near ceiling) | Mean < median |
-| Multimodal | Multiple peaks | Suspect subpopulations mixed |
-| High kurtosis | Peaked, heavy tails | Outliers and extremes frequent |
+평균을 먼저 계산하지 마라. **모양을 먼저 본다.** 평균이 같아도 모양은 천차만별이다.
 
-**Skewness** measures asymmetry; **kurtosis** measures tail weight. Skewness 0 = symmetric; positive = right tail.
+| 분포 특징 | 의미 | EDA 함의 |
+|---|---|---|
+| 대칭(symmetric) | 좌우 균형, 정규분포에 가까움 | 평균·표준편차가 대표성을 가진다 |
+| 오른쪽 치우침(양의 왜도) | 오른쪽 꼬리가 길다(소득·가격) | 평균 > 중앙값, 로그 변환 후보 |
+| 왼쪽 치우침(음의 왜도) | 왼쪽 꼬리가 길다(만점 근처 점수) | 평균 < 중앙값 |
+| 다봉(multimodal) | 봉우리가 여럿 | 하위 집단이 섞여 있는지 의심 |
+| 고첨도(high kurtosis) | 뾰족하고 꼬리가 두껍다 | 이상치·극단값이 자주 나온다 |
+
+- **왜도(skewness)**: 비대칭 정도. 0이면 대칭, 양수면 오른쪽 꼬리.
+- **첨도(kurtosis)**: 꼬리의 두께. 클수록 극단값이 잦다.
+
+```
+  대칭(정규)            오른쪽 꼬리(양의 왜도)       왼쪽 꼬리(음의 왜도)
+    ▁▃▅█▅▃▁              ▂▅█▆▄▃▂▁▁▁                ▁▁▁▂▃▄▆█▅▂
+   평균 = 중앙값            평균 > 중앙값                평균 < 중앙값
+                        (소득·주택가격·체류시간)        (만점 근처 시험점수)
+
+  다봉(multimodal)                      고첨도(heavy tail)
+    ▁▃█▄▁▁▂▅█▃▁                          ▁▁▂▄█▄▂▁▁
+   하위집단 혼재 의심 → 세그먼트 분리        가운데는 뾰족, 꼬리는 두껍다 → 이상치 빈발
+```
 
 ```python
 import pandas as pd
 
 df = pd.read_csv("data/transactions.csv")
 
-# Summarize distribution shape numerically
-print(df["amount"].skew())      # Skewness: positive = right-skewed
-print(df["amount"].kurt())      # Kurtosis: positive = peaked, heavy tails
+# 분포 모양을 숫자로 요약
+print(df["amount"].skew())      # 왜도: 양수면 오른쪽 치우침
+print(df["amount"].kurt())      # 첨도: 양수면 뾰족하고 꼬리가 두껍다
 print(df["amount"].describe())  # count, mean, std, min, 25/50/75%, max
 ```
 
-> 💡 **Key Theory**: The principle "see distribution first" is dramatically illustrated by **Anscombe's Quartet** (1973). Four datasets have identical mean, variance, correlation coefficient, and regression line, yet scatter plots show completely different shapes (linear, curved, point outlier pulling a line, etc.). Trusting summary statistics alone while skipping visualization hides real data structure—why EDA always includes histograms, boxplots, scatter plots.
+> 💡 **개념**: "분포를 먼저 보라"는 원칙을 극적으로 보여 주는 사례가 **앤스컴의 4중주(Anscombe's Quartet, 1973)**다. 네 데이터셋이 평균·분산·상관계수·회귀직선까지 모두 같은데 산점도를 그리면 전혀 다른 모양(직선형, 곡선형, 이상치 하나가 선을 끌어당기는 형태 등)이 나온다. 요약 통계량만 믿고 시각화를 건너뛰면 실제 데이터 구조가 통째로 숨는다. EDA가 히스토그램·박스플롯·산점도를 항상 포함하는 이유다.
 
-## Central Tendency: Mean, Median, Mode
+### 분포 진단 → 처방표
 
-A data's representative "middle value" is **central tendency**.
+시험은 "왜도가 얼마냐"가 아니라 "그래서 무엇을 하느냐"를 묻는다.
 
-- **Mean**: Sum of all values ÷ count. Sensitive to outliers.
-- **Median**: Middle value when sorted. Robust against outliers.
-- **Mode**: Most frequent value. Useful for categorical data.
+| 관찰된 모양 | 진단 신호 | 처방(변환·전처리) | 대표값·지표 |
+|---|---|---|---|
+| 오른쪽으로 긴 꼬리 | skew > 0 (경험칙상 +1 넘으면 뚜렷) | log1p / Box-Cox / Yeo-Johnson | 중앙값으로 보고 |
+| 왼쪽으로 긴 꼬리 | skew < 0 | 제곱·지수 변환, Yeo-Johnson | 중앙값으로 보고 |
+| 극단값 소수 존재 | 최댓값이 Q3+1.5·IQR을 크게 초과 | RobustScaler, 결측 대치는 중앙값 | IQR로 산포 보고 |
+| 봉우리 2개 이상 | 히스토그램 다봉 | 하위 집단을 나눠 각각 분석·모델링 | 세그먼트별 평균 |
+| 값이 한 점에 몰림 | 분산이 거의 0(준상수 컬럼) | 피처 제거 | — |
+| 0·음수가 섞임 | 로그·Box-Cox 적용 불가 | Yeo-Johnson (log1p은 0까지만) | — |
 
-In skewed distributions, mean and median diverge. Right-skewed data pulls the mean up: **mean > median**. Income and home prices, being right-skewed, are better represented by median than mean.
+## 중심경향: 평균·중앙값·최빈값
 
-| Situation | Recommended Central Statistic |
-|------|------|
-| Symmetric distribution | Mean |
-| Skewed/outliers present | Median |
-| Categorical | Mode |
+데이터를 대표하는 "가운데 값"이 중심경향이다.
 
-## Dispersion: How Spread Out Is Data?
+- **평균(mean)**: 전체 합 ÷ 개수. 이상치에 민감하다.
+- **중앙값(median)**: 정렬했을 때 가운데 값. 이상치에 강건하다.
+- **최빈값(mode)**: 가장 자주 나오는 값. 범주형에 유용하다.
 
-Central tendency alone isn't enough. Measure **how scattered** the data is.
+치우친 분포에서는 평균과 중앙값이 벌어진다. 오른쪽 치우침이면 긴 꼬리가 평균을 끌어올려 **평균 > 중앙값**이 된다. 소득·주택가격은 오른쪽으로 치우쳐 있어 평균보다 중앙값이 대표성이 높다.
 
-| Statistic | Definition | Character |
-|------|------|------|
-| Range | Max − min | Extremely outlier-sensitive |
-| Variance | Average squared deviation | Units squared |
-| Standard deviation (std) | Square root of variance | Interpretable in original units |
-| IQR | Q3 − Q1 | Robust against outliers |
-| Coefficient of variation (CV) | Std ÷ mean | Unit-free, relative spread |
+| 상황 | 권장 중심 통계량 | 이유 |
+|---|---|---|
+| 대칭 분포 | 평균 | 모든 값의 정보를 쓰면서도 왜곡이 없다 |
+| 치우침·이상치 존재 | 중앙값 | 극단값이 순위만 바꿀 뿐 가운데 값을 흔들지 못한다 |
+| 범주형 | 최빈값 | 평균·중앙값 자체가 정의되지 않는다 |
+| 결측 대치용 대표값 | 치우쳤으면 중앙값, 대칭이면 평균 | 대치값이 분포 중심을 왜곡하지 않아야 한다 |
 
-Standard deviation tells "how far from mean, on average, in original units." For normal distribution: mean ±1σ contains ~68%; ±2σ ~95%; ±3σ ~99.7% (**68-95-99.7 rule**).
+## 산포: 얼마나 퍼져 있는가
 
-> 💡 **Key Theory**: Computing standard deviation from a sample uses **n−1, not n** (**Bessel's correction**). Sample mean minimizes squared deviations for that sample, systematically underestimating population variance. Reducing degrees of freedom (n−1) corrects this bias. pandas `.std()` defaults to sample (ddof=1); numpy's `np.std()` defaults to population (ddof=0)—results subtly differ, an exam trap.
+중심만으로는 부족하다. **얼마나 흩어져 있는지**를 함께 봐야 한다.
 
-## Transformation Effects on Distribution
+| 통계량 | 정의 | 성격 | 언제 쓰나 |
+|---|---|---|---|
+| 범위(range) | 최댓값 − 최솟값 | 이상치에 극도로 민감 | 값의 물리적 한계 확인 |
+| 분산(variance) | 편차 제곱의 평균 | 단위가 제곱이라 해석이 어렵다 | 이론·계산 중간 단계 |
+| 표준편차(std) | 분산의 제곱근 | 원래 단위로 해석 가능 | 대칭 분포의 기본 산포 |
+| IQR | Q3 − Q1 | 이상치에 강건 | 치우침·이상치가 있을 때 |
+| 변동계수(CV) | 표준편차 ÷ 평균 | 단위가 없어 서로 다른 변수 비교 가능 | 스케일이 다른 변수 간 상대적 변동 비교 |
 
-Scaling vs. transformation differs by whether shape changes.
+표준편차는 "평균에서 평균적으로 얼마나 떨어져 있는가"를 원래 단위로 말해 준다. 정규분포에서는 평균 ±1σ에 약 68%, ±2σ에 약 95%, ±3σ에 약 99.7%가 들어간다(**68-95-99.7 규칙**).
 
-| Treatment | Effect | Distribution Shape |
-|------|------|------|
-| Standardization | Mean 0, std 1 | **Shape unchanged**, location/scale only |
-| Min-max normalization | Compressed to [0,1] | **Shape unchanged**, scale only |
-| Log transformation | Compress large values | Right tail **approaches symmetry** |
-| Square root transform | Gentle compression | Mild skew relief |
-| Box-Cox / Yeo-Johnson | Optimal λ | Approaches normal |
+> 💡 **개념**: 표본에서 표준편차를 구할 때는 n이 아니라 **n−1로 나눈다**(**베셀 보정, Bessel's correction**). 표본 평균은 그 표본에 대해 제곱 편차를 최소화하는 값이라, 그대로 쓰면 모집단 분산을 체계적으로 과소추정한다. 자유도를 하나 줄여(n−1) 이 편향을 보정한다. pandas `.std()`는 표본 기준(ddof=1)이 기본이고 numpy `np.std()`는 모집단 기준(ddof=0)이 기본이라 같은 데이터에서 값이 미묘하게 달라진다. 시험 함정 포인트다.
 
-**Core distinction: Linear scaling (standardization, min-max) doesn't change shape.** Skewness persists. To reduce skewness itself, use **nonlinear transforms like log or Box-Cox**.
+## 변환이 분포에 미치는 영향
+
+스케일링과 변환의 결정적 차이는 **모양이 바뀌는가**다.
+
+| 처리 | 효과 | 분포 모양 |
+|---|---|---|
+| 표준화(Z-score) | 평균 0, 표준편차 1 | **불변**. 위치·척도만 이동 |
+| Min-Max 정규화 | [0,1]로 압축 | **불변**. 척도만 변경 |
+| 로그 변환 | 큰 값을 압축 | 오른쪽 꼬리가 **대칭에 근접** |
+| 제곱근 변환 | 완만한 압축 | 약한 치우침 완화 |
+| Box-Cox / Yeo-Johnson | 최적 λ 탐색 | 정규분포에 근접 |
+
+**핵심 구분: 선형 스케일링(표준화·Min-Max)은 모양을 바꾸지 않는다.** 왜도는 그대로 남는다. 왜도 자체를 줄이려면 **로그·Box-Cox 같은 비선형 변환**이 필요하다.
+
+### 변환 기법 선택표
+
+| 기법 | 방법 | 분포 모양 | 요구 조건 | 대표 용도 | 주의 |
+|---|---|---|---|---|---|
+| 표준화(Z-score) | (x − μ) / σ | 불변 | 없음 | 선형모델·신경망·PCA·거리 기반의 기본 | 이상치에 민감 |
+| Min-Max | (x − min) / (max − min) | 불변 | 범위를 고정해야 할 때 | 이미지 픽셀 등 [0,1] 입력 | 이상치 하나가 나머지를 0 근처로 압축 |
+| RobustScaler | (x − 중앙값) / IQR | 불변 | 없음 | 이상치가 많은 수치형 | 결과 범위가 고정되지 않음 |
+| 로그(log1p) | log(1 + x) | 오른쪽 꼬리 완화 | x ≥ 0 | 금액·조회수·체류시간 | 음수 불가 |
+| 제곱근 | √x | 약한 완화 | x ≥ 0 | 카운트 데이터, 약한 치우침 | 강한 치우침엔 부족 |
+| Box-Cox | 최적 λ 탐색 | 정규에 근접 | **x > 0(양수만)** | 정규성 가정이 필요한 분석 | 0·음수 데이터엔 사용 불가 |
+| Yeo-Johnson | 최적 λ 탐색 | 정규에 근접 | 음수·0 허용 | 0·음수가 섞인 데이터 | 변환 후 값 해석이 어려움 |
 
 ```python
 import numpy as np
 from sklearn.preprocessing import StandardScaler, PowerTransformer
 
-# Standardization: shape unchanged, scale only
+# 표준화: 모양은 그대로, 척도만 바뀐다
 scaler = StandardScaler()
 df["amount_std"] = scaler.fit_transform(df[["amount"]])
-print(df["amount_std"].skew())   # Same as original—shape invariant
+print(df["amount_std"].skew())   # 원본과 동일 — 모양 불변
 
-# Log transform: eases right skew (positive values only)
-df["amount_log"] = np.log1p(df["amount"])  # log(1+x), handles zero
-print(df["amount_log"].skew())   # Closer to zero—more symmetric
+# 로그 변환: 오른쪽 치우침 완화 (양수 전용)
+df["amount_log"] = np.log1p(df["amount"])  # log(1+x), 0을 다룰 수 있다
+print(df["amount_log"].skew())   # 0에 가까워짐 — 더 대칭적
 
-# Box-Cox/Yeo-Johnson: data determines optimal transform
+# Box-Cox / Yeo-Johnson: 데이터가 최적 변환을 정한다
 pt = PowerTransformer(method="yeo-johnson")
 df["amount_yj"] = pt.fit_transform(df[["amount"]])
 ```
 
-> ⚠️ **Pitfall**: Exams ask "does standardization/normalization turn skewed data normal?" **No.** Standardization changes mean/scale only; skewness/kurtosis stay. Approaching normality requires nonlinear transforms like log or Box-Cox. Also, log is undefined for zero and negatives—use `log1p` or Yeo-Johnson instead.
+> ⚠️ **함정**: "표준화·정규화하면 치우친 데이터가 정규분포가 되는가?"라는 질문이 자주 나온다. **아니다.** 표준화는 평균과 척도만 바꾸고 왜도·첨도는 그대로 남는다. 정규성에 가까이 가려면 로그·Box-Cox 같은 비선형 변환이 필요하다. 또한 로그는 0과 음수에서 정의되지 않으므로 `log1p`나 Yeo-Johnson을 써야 한다.
 
-## Sample and Population
+> ⚠️ **함정**: 어떤 변환이든 **학습셋으로만 fit**하고 검증·테스트셋에는 transform만 적용해야 한다. 전체 데이터로 평균·최댓값·λ를 구하면 그 순간 누수(leakage)다. 이 원칙은 Day 3에서 본격적으로 다룬다.
 
-Your data is almost always a **sample**; what you want to understand is the **population**.
+## 표본과 모집단
 
-- **Population**: Entire universe of interest. Parameters use Greek letters: μ (mean), σ (std dev).
-- **Sample**: Subset drawn from population. Statistics use Latin: x̄ (sample mean), s (sample std dev).
+내 데이터는 거의 항상 **표본**이고, 알고 싶은 것은 **모집단**이다.
 
-Good samples represent the population **unbiasedly**. Poor sampling (e.g., collecting only from one region/time) introduces **selection bias**, causing models to learn distributions unlike reality.
+| 구분 | 대상 | 기호 | 성격 |
+|---|---|---|---|
+| 모집단(population) | 관심 있는 전체 집합 | μ(평균), σ(표준편차) | 모수(parameter), 보통 알 수 없다 |
+| 표본(sample) | 모집단에서 뽑은 부분집합 | x̄(표본평균), s(표본표준편차) | 통계량(statistic), 우리가 계산하는 값 |
 
-> 💡 **Key Theory**: Sample mean reliably estimates population mean because of the **Central Limit Theorem (CLT)**. Regardless of population distribution shape, for large enough n, the distribution of sample means approaches normal with standard error σ/√n. Larger samples mean tighter estimates; confidence intervals follow normal. "Is the sample large and representative?" in EDA roots in CLT.
+- 좋은 표본은 모집단을 **편향 없이** 대표한다.
+- 한 지역·한 기간에서만 수집하면 **선택 편향(selection bias)**이 생기고, 모델은 현실과 다른 분포를 학습한다.
+- 표본이 작으면 추정이 흔들리고, 커질수록 표준오차 σ/√n가 줄어 추정이 정밀해진다.
 
-## Summary
+> 💡 **개념**: 표본 평균이 모집단 평균을 믿을 만하게 추정하는 근거는 **중심극한정리(CLT)**다. 모집단 분포 모양과 무관하게 n이 충분히 크면 표본 평균들의 분포가 표준오차 σ/√n인 정규분포에 근사한다. 표본이 클수록 추정이 촘촘해지고 신뢰구간도 정규분포를 따른다. EDA에서 "표본이 충분히 크고 대표성이 있는가"를 묻는 습관이 여기서 나온다.
 
-Today's essentials: (1) Before computing means, examine **distribution shape (skewness, kurtosis)**; (2) For skewed data, use robust statistics like **median and IQR**; (3) **Linear scaling preserves shape; only nonlinear transforms like log/Box-Cox reduce skewness**; (4) Remember: you have a sample, so always ask **whether it fairly represents the population (bias, CLT)**.
+## MLS 관점: 통계 진단이 어디로 이어지는가
 
-Next, we examine relationships between variables—correlation and causation.
+### AWS 서비스 매핑표
+
+| 상황 | AWS 서비스·기능 | 이유 |
+|---|---|---|
+| 코드 없이 분포·결측·이상치를 시각적으로 프로파일링 | SageMaker Data Wrangler | 데이터 임포트 후 내장 분석·시각화로 분포를 확인하고, 적용한 변환을 그대로 처리 흐름으로 내보낼 수 있다 |
+| S3의 대용량 원본을 SQL로 훑어 기초 통계 확인 | Amazon Athena | 서버 준비 없이 S3에 직접 쿼리해 count·평균·분위수를 뽑는다 |
+| 시각적 UI로 프로파일 리포트와 정제 레시피 운영 | AWS Glue DataBrew | 코드 작성 없이 데이터 프로파일링·정제 단계를 재사용 가능한 형태로 관리 |
+| 학습 전 데이터의 클래스 불균형·편향 점검 | SageMaker Clarify | 학습 전(pre-training) 편향 지표를 산출해 표본 대표성 문제를 조기에 잡는다 |
+| 대규모 변환을 재현 가능한 잡으로 고정 | SageMaker Processing Job | 전처리 스크립트를 학습·추론에서 동일하게 재사용해 training-serving skew를 막는다 |
+| 계산한 통계·파생 피처를 팀 공용으로 관리 | SageMaker Feature Store | 학습과 추론이 같은 피처 정의를 공유하게 만든다 |
+
+### 지문 단서 → 정답 매핑표
+
+| 지문 표현 | 읽어야 할 신호 | 고를 답 |
+|---|---|---|
+| "소득 분포가 오른쪽으로 길게 늘어져 있다" | 양의 왜도 | 로그·Box-Cox 변환, 대표값은 중앙값 |
+| "표준화했는데도 여전히 치우쳐 있다" | 선형 변환은 모양 불변 | 비선형 변환이 필요하다 |
+| "극단적으로 비싼 매물이 몇 건 있다" | 이상치 존재 | 중앙값·IQR·RobustScaler |
+| "값에 0과 음수가 섞여 있다" | 로그·Box-Cox 사용 불가 | Yeo-Johnson |
+| "히스토그램에 봉우리가 두 개다" | 하위 집단 혼재 | 세그먼트를 분리해 각각 분석·모델링 |
+| "한 지역, 한 달 데이터만 수집했다" | 선택 편향 | 표본 재설계, 대표성 확보 |
+| "표본을 늘렸더니 평균 추정이 안정됐다" | 표준오차 σ/√n 감소 | 중심극한정리(CLT) |
+| "pandas와 numpy의 표준편차 값이 다르다" | ddof 기본값 차이 | 베셀 보정(표본 ddof=1 vs 모집단 ddof=0) |
+
+내일은 변수 **사이의 관계** — 상관계수와 인과 문제를 다룬다.
+
+## 📖 용어
+
+- **왜도(skewness)** : 분포가 한쪽으로 치우친 정도. 양수면 오른쪽 꼬리가 길다.
+- **첨도(kurtosis)** : 꼬리가 얼마나 두꺼운지를 나타내는 값. 클수록 극단값이 잦다.
+- **강건 통계량(robust statistic)** : 이상치가 있어도 크게 흔들리지 않는 통계량. 중앙값과 IQR이 대표적이다.
+- **IQR(사분위 범위)** : Q3(상위 25% 경계) − Q1(하위 25% 경계). 가운데 절반이 퍼진 폭.
+- **변동계수(CV)** : 표준편차를 평균으로 나눈 값. 단위가 달라 직접 비교가 안 되는 변수들의 변동을 비교할 때 쓴다.
+- **베셀 보정** : 표본 분산을 구할 때 n 대신 n−1로 나눠 과소추정 편향을 바로잡는 방법.
+- **선형 변환 불변성** : 표준화·Min-Max처럼 위치와 척도만 바꾸는 변환은 분포 모양을 바꾸지 못한다는 성질.
+- **Yeo-Johnson 변환** : Box-Cox와 달리 0과 음수가 있어도 쓸 수 있는 정규화 지향 비선형 변환.
+- **선택 편향(selection bias)** : 표본을 모으는 방식 때문에 모집단과 다른 분포가 만들어지는 오류.
+- **중심극한정리(CLT)** : 모집단 모양과 무관하게, 표본이 크면 표본 평균들의 분포가 정규분포에 가까워진다는 정리.
 
 ## 📝 연습 문제
 

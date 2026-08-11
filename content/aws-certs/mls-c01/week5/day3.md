@@ -1,42 +1,59 @@
 # Day 3 - Data Leakage: Causes, Detection, Prevention; Time Series Leakage; Target Leakage
 
-Validation scores look perfect, but in production the model fails miserably. Almost always, there's one culprit — **data leakage**. Leakage occurs when a model gains access to information at training time that it **wouldn't actually have at prediction time**, artificially inflating evaluation scores.
+## 📌 핵심 정리
 
-MLS-C01 obsesses over leakage. Scenarios like "validation is 99% but production is 60%?" are almost always answered by leakage. Today we cover the **causes, detection, and prevention** of leakage, and two most common types: **target leakage** and **time series leakage**.
+- 누수(leakage)는 **예측 시점에 알 수 없었을 정보가 학습에 들어오는 것**이다. 검증 점수만 부풀고 실제 운영에서 무너진다.
+- **타깃 누수**는 결과 정보가 피처 자체에 박혀 있어 **분할을 아무리 잘해도 잡히지 않는다.** 피처 생성 시점을 따져야 한다.
+- **시계열 누수**는 무작위 분할·미래 윈도 집계에서 나온다. 시간 순 분할과 과거만 보는 집계(shift 후 rolling)로 막는다.
+- **train-test 오염**은 분할 전에 전처리를 해서 생긴다. **먼저 분할하고 학습 부분으로만 fit**하며, Pipeline으로 강제한다.
+- 판별 질문은 언제나 하나다 — **"예측하는 그 순간에 이 값을 정말 알 수 있었는가?"** 아니면 누수다.
 
-## What Is Data Leakage?
+## 데이터 누수란 무엇인가
 
-Leakage is "information that a model couldn't possibly have at prediction time leaking into training." There are two main categories.
+검증 점수는 완벽한데 실제 운영에서 모델이 처참하게 실패한다. 범인은 거의 항상 하나 — **데이터 누수**다. 누수는 모델이 학습 시점에 **실제로는 가질 수 없었던 정보**에 접근해 평가 점수가 인위적으로 부풀려지는 현상이다.
 
-| Type | Definition | Result |
-|------|------|------|
-| **Target leakage** | Target information directly/indirectly included in features | Both training and validation unrealistically high |
-| **train-test contamination** | Test information enters training through preprocessing/splitting | Validation high but production low |
+MLS-C01은 누수에 집착한다. "검증은 99%인데 프로덕션은 60%?" 같은 시나리오의 답은 거의 항상 누수다.
 
-The core question is always the same: **"At the moment we make a prediction, could we really know this value?"** If not, it's leakage.
+| 유형 | 정의 | 결과 |
+|---|---|---|
+| **타깃 누수(target leakage)** | 타깃 정보가 직간접적으로 피처에 포함됨 | 학습·검증이 **둘 다** 비현실적으로 높다 |
+| **train-test 오염(contamination)** | 전처리·분할을 통해 테스트 정보가 학습에 유입됨 | 검증은 높은데 프로덕션이 낮다 |
 
-> 💡 **Related Theory**: Leakage is fundamentally like cheating on an exam — the model has already seen the answer key. Statistically, it violates the **independence assumption of the validation set**. For validation scores to estimate generalization on unseen data, the validation set must be completely independent of the training process. With leakage, validation scores measure not generalization but "ability to reproduce already-seen information," contaminating all model selection and hyperparameter tuning decisions.
+핵심 질문은 언제나 같다. **"예측을 내리는 그 시점에, 우리가 이 값을 정말 알 수 있었는가?"** 아니라면 누수다.
 
-## Target Leakage: Future/Result Information Mixing In
+> 💡 **개념**: 누수는 본질적으로 시험 부정행위와 같다 — 모델이 이미 답안지를 본 것이다. 통계적으로는 **검증셋의 독립성 가정**을 위반한다. 검증 점수가 미지의 데이터에 대한 일반화 성능을 추정하려면, 검증셋이 학습 과정과 완전히 독립이어야 한다. 누수가 있으면 검증 점수는 일반화가 아니라 "이미 본 정보를 재현하는 능력"을 재게 되고, 그 위에서 내린 모델 선택·하이퍼파라미터 튜닝 결정이 전부 오염된다.
 
-Target leakage occurs when **information about the target being predicted is included in features**. It's the most subtle and common.
+### 누수 유형 → 증상 → 탐지 → 예방 (핵심 표)
 
-Typical cases:
+| 누수 유형 | 전형적 원인 | 증상 | 탐지 방법 | 예방 |
+|---|---|---|---|---|
+| **타깃 누수** | 결과가 확정된 뒤 생성되는 값이 피처에 포함 | 학습·검증·테스트 모두 높고 운영만 낮다 | 단일 피처 중요도·상관 이상 高, 피처 생성 시점 감사 | 각 피처의 타임스탬프 확인, 예측 시점 이후 데이터 제거 |
+| **시계열 누수** | 무작위 분할, 미래 포함 윈도 집계 | 백테스트는 좋은데 실제 미래 예측이 나쁘다 | 학습 구간이 검증 구간보다 미래인지 확인 | 시간 순 분할, `shift(1)` 후 rolling |
+| **train-test 오염** | 분할 전 스케일링·대치·인코딩 | 검증 점수가 재현되지 않는다 | 전처리 코드가 분할 전인지 확인 | 먼저 분할 → 학습 부분만 fit → Pipeline |
+| **그룹 누수** | 같은 사용자·환자의 행이 학습과 검증에 흩어짐 | 개인화 성능이 과대평가 | 그룹 ID가 양쪽 분할에 모두 있는지 확인 | GroupKFold / 그룹 단위 분할 |
+| **중복 행 누수** | 분할 전 중복 제거 누락 | 같은 레코드가 학습·테스트 양쪽에 존재 | 중복 키 카운트 | 분할 **전에** 중복 제거 |
+| **샘플링 누수** | 분할 전 SMOTE 등 오버샘플링 | 합성 샘플이 양쪽에 걸침 | 리샘플링 시점 확인 | 학습 부분에만 리샘플링 적용 |
 
-| Scenario | Leaking Feature | Why Leakage? |
-|------|------|------|
-| Disease diagnosis prediction | `medication_taken` | Medication only taken **after** diagnosis |
-| Churn prediction | `cancellation_reason_code` | Generated after churn is confirmed |
-| Loan default prediction | `delinquencies_count` (future periods included) | Accumulated after default occurs |
-| Revenue prediction | `current_month_final_revenue` | The target itself |
+## 타깃 누수: 미래·결과 정보가 섞여 든다
 
-Signs of target leakage:
-- A single feature's correlation/importance is **abnormally high** (one variable explains 95% of accuracy)
-- Features are created **at the same time or after** the target
-- Answer to "Can we really know this value at prediction time?" is "No"
+타깃 누수는 **예측하려는 타깃에 관한 정보가 피처에 포함**될 때 일어난다. 가장 은밀하고 흔하다.
+
+| 시나리오 | 누수 피처 | 왜 누수인가 |
+|---|---|---|
+| 질병 진단 예측 | `투약_여부` | 진단이 내려진 **후에야** 투약한다 |
+| 이탈 예측 | `해지_사유_코드` | 이탈이 확정된 뒤 생성된다 |
+| 대출 부도 예측 | `연체_횟수`(미래 기간 포함) | 부도 발생 이후에 누적된다 |
+| 매출 예측 | `당월_최종_매출` | 타깃 그 자체 |
+| 이탈 예측 | `고객센터_해지문의_수` | 해지 의사 표명 이후 발생한 이벤트 |
+
+타깃 누수의 신호:
+
+- 단일 피처의 상관·중요도가 **비정상적으로 높다**(한 변수가 정확도의 95%를 설명).
+- 피처가 타깃과 **동시에 또는 그 이후에** 만들어진다.
+- "예측 시점에 이 값을 정말 알 수 있는가?"의 답이 "아니오"다.
 
 ```python
-# Check suspicion of target leakage: verify single feature explains target
+# 타깃 누수 의심 점검: 단일 피처가 타깃을 지나치게 설명하는지 확인
 import pandas as pd
 
 corr_with_target = (
@@ -45,50 +62,84 @@ corr_with_target = (
     .sort_values(ascending=False)
 )
 print(corr_with_target.head(10))
-# If any feature correlation is 0.95+, suspect "Can we know this at prediction time?"
+# 어떤 피처의 상관이 0.95 이상이면 "예측 시점에 알 수 있는 값인가?"를 먼저 의심한다
 ```
 
-> ⚠️ **Trap**: Target leakage isn't caught even if you split train/validation/test perfectly **because leakage is built into the features themselves**. All splits are equally contaminated. That's why splitting alone isn't enough—you must examine **when each feature is created (timestamp) and its relationship to prediction time** using domain knowledge. "Validation high and test high but production low?" → suspect target leakage as #1.
+> ⚠️ **함정**: 타깃 누수는 train/validation/test를 완벽하게 나눠도 **잡히지 않는다. 누수가 피처 자체에 박혀 있기 때문**이다. 모든 분할이 똑같이 오염된다. 그래서 분할만으로는 부족하고, **각 피처가 언제 만들어지는지(타임스탬프)와 예측 시점과의 관계**를 도메인 지식으로 따져야 한다. "검증도 높고 테스트도 높은데 운영만 낮다?" → 타깃 누수를 1순위로 의심한다.
 
-## Time Series Leakage: Future Leaking Into Past
+### 누수 의심 신호표
 
-The most common leakage in time series data is **future information being used to predict the past**.
+| 관찰 | 해석 | 다음 행동 |
+|---|---|---|
+| 검증 정확도 99%+, 문제가 원래 어려움 | 너무 좋으면 의심하라 | 피처별 중요도부터 확인 |
+| 한 피처를 빼면 성능이 폭락 | 그 피처가 답을 담고 있다 | 그 피처의 생성 시점 감사 |
+| 학습·검증 격차가 거의 0 | 검증이 독립적이지 않을 수 있다 | 분할·전처리 순서 점검 |
+| 검증·테스트 높음, 운영만 낮음 | 타깃 누수 | 피처 타임스탬프 감사 |
+| 검증 높음, 테스트부터 낮음 | train-test 오염 | 전처리 fit 위치 점검 |
+| 백테스트 좋고 실전 미래 예측 나쁨 | 시계열 누수 | 분할 방식·윈도 정의 점검 |
 
-Causes:
-- **Random splitting**: Shuffling time series mixes future data into training, past into testing → predicting past from future
-- **Future window aggregation**: Computing "last 30 days average" including data after prediction time
-- **Using global statistics**: Normalizing by overall average → future information seeps into past rows
-- **lag/rolling boundary errors**: Shifts wrong, putting t+1 value into time t
+## 시계열 누수: 미래가 과거로 새어 든다
+
+시계열 데이터에서 가장 흔한 누수는 **미래 정보로 과거를 예측**하는 것이다.
+
+원인:
+
+- **무작위 분할**: 시계열을 섞으면 미래 데이터가 학습에, 과거가 테스트에 들어간다 → 미래로 과거를 예측
+- **미래 포함 윈도 집계**: "최근 30일 평균"을 예측 시점 이후 데이터까지 포함해 계산
+- **전역 통계 사용**: 전체 평균으로 정규화 → 미래 정보가 과거 행에 스며든다
+- **lag/rolling 경계 오류**: shift를 잘못 걸어 t+1 값이 t 시점에 들어간다
+
+```
+[잘못된 무작위 분할]                    [올바른 시간 순 분할]
+시간축 ──────────────────────▶          시간축 ──────────────────────▶
+ T T V T V T T V T V T T V T             T T T T T T T T | V V V | E E
+ └─ 학습(T)과 검증(V)이 뒤섞임              학습             검증    평가
+    → 모델이 t+1을 보고 t를 "예측"          └── 항상 과거 → 미래 방향 ──┘
+    → 시간 역행 학습 = 누수                  (forward-chaining, 배포 상황과 동일)
+```
 
 ```python
 import pandas as pd
 
 df = df.sort_values("date")
 
-# Correct: rolling that only looks at past (exclude current row with shift)
+# 올바른 방법: 과거만 보는 rolling (shift로 현재 행을 제외)
 df["sales_ma7"] = df["sales"].shift(1).rolling(7).mean()  # t-1 ~ t-7
 
-# Time series needs time-ordered split (no random splitting)
+# 시계열은 시간 순 분할 (무작위 분할 금지)
 cutoff = "2025-01-01"
 train = df[df["date"] < cutoff]
 test = df[df["date"] >= cutoff]
 ```
 
-> 💡 **Related Theory**: Random splitting is fatal in time series because of **temporal dependency**. Regular data assumes rows are independent, but time series have strong correlation between adjacent time points. Random shuffling lets models "predict" t by looking at t+1 patterns — effectively learning impossible time reversal. That's why time series validation must always follow "train on past, evaluate on future (forward-chaining)" principle, leading to Day 4's time series splitting.
+> 💡 **개념**: 시계열에서 무작위 분할이 치명적인 이유는 **시간적 의존성** 때문이다. 일반 데이터는 행이 서로 독립이라고 가정하지만, 시계열은 인접 시점 간 상관이 강하다. 무작위로 섞으면 모델이 t+1의 패턴을 보고 t를 "예측"하게 되어, 현실에서 불가능한 시간 역행을 학습한다. 그래서 시계열 검증은 항상 "과거로 학습하고 미래로 평가(forward-chaining)" 원칙을 따라야 하며, 이것이 Day 4의 시계열 분할로 이어진다.
 
-## train-test Contamination: Leakage Through Preprocessing
+## train-test 오염: 전처리를 통한 누수
 
-Even with correct splitting, if **preprocessing is done on the entire dataset before splitting**, test information leaks into training.
+분할을 제대로 해도 **분할 전에 전체 데이터로 전처리**하면 테스트 정보가 학습으로 샌다.
 
-| Wrong Approach | Leakage Path |
-|------|------|
-| Fit scaler on entire dataset | Test mean·std reflected in training scale |
-| Calculate imputation statistics on entire dataset | Test distribution enters imputation values |
-| Target encoding on entire dataset | Test target average included in encoding |
-| Forget deduplication before splitting | Same record appears in both train and test |
-| Oversample (SMOTE) before splitting | Synthetic samples span train and test |
+| 잘못된 방식 | 누수 경로 |
+|---|---|
+| 전체 데이터로 스케일러 fit | 테스트의 평균·표준편차가 학습 스케일에 반영 |
+| 전체 데이터로 대치 통계 계산 | 테스트 분포가 대치값에 들어간다 |
+| 전체 데이터로 타깃 인코딩 | 테스트의 타깃 평균이 인코딩에 포함 |
+| 분할 전 중복 제거 누락 | 같은 레코드가 학습·테스트 양쪽에 등장 |
+| 분할 전 오버샘플링(SMOTE) | 합성 샘플이 학습과 테스트에 걸친다 |
+| 전체 데이터로 특성 선택 | 테스트 정보를 보고 피처를 골라 선택 편향 발생 |
 
-Solution is **Pipeline that locks preprocessing inside split/cross-validation**.
+해결책은 **전처리를 분할·교차검증 안쪽에 가두는 Pipeline**이다.
+
+```
+[누수가 나는 순서]                     [Pipeline이 막는 방식]
+전체 데이터                             전체 데이터
+   │                                       │
+   ▼ fit(scaler) ← 테스트 통계 포함          ▼ split
+전체 스케일링                            학습 fold │ 검증 fold
+   │                                       │         │
+   ▼ split                            fit+transform  transform만
+학습 │ 테스트                              │         │  (학습 fold 통계만 사용)
+   └─ 이미 오염됨                          └─ 모델 학습 ▶ 평가
+```
 
 ```python
 from sklearn.pipeline import Pipeline
@@ -97,37 +148,81 @@ from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score
 
-# Pipeline: fit only happens in each fold's training portion, blocking leakage
+# Pipeline: 각 fold의 학습 부분에서만 fit이 일어나 누수를 차단한다
 pipe = Pipeline([
     ("impute", SimpleImputer(strategy="median")),
     ("scale", StandardScaler()),
     ("clf", LogisticRegression()),
 ])
 
-# Each fold's preprocessing is fit on training portion only
+# 각 fold의 전처리가 학습 부분에만 fit된다
 scores = cross_val_score(pipe, X, y, cv=5)
 ```
 
-> ⚠️ **Trap**: "Can't we scale on entire data then split?" is a frequent test question. No. If StandardScaler `fit`s on the whole dataset, test statistics leak into training scale, and validation scores become optimistically inflated. You must `fit` only on train portion, `transform` on test only. In cross-validation, Pipeline ensures this rule automatically per fold.
+> ⚠️ **함정**: "전체 데이터로 스케일링한 뒤 분할하면 안 되나?"는 단골 문제다. 안 된다. StandardScaler가 전체 데이터로 `fit`되면 테스트 통계가 학습 스케일에 새어 검증 점수가 낙관적으로 부풀려진다. **학습 부분에만 `fit`, 테스트에는 `transform`만** 적용해야 한다. 교차검증에서는 Pipeline이 이 규칙을 fold마다 자동으로 강제한다.
 
-## Data Leakage Prevention Checklist
+## 누수와 지표: 왜 "너무 좋은 점수"가 위험 신호인가
 
-Consistent procedure to prevent leakage in practice:
+| 관찰된 지표 패턴 | 그럴듯한 원인 | 확인할 것 |
+|---|---|---|
+| 불균형 데이터인데 accuracy 99% | 다수 클래스만 맞히는 착시(누수가 아닐 수도) | PR-AUC·recall로 다시 본다 |
+| PR-AUC·recall까지 전부 완벽 | 누수 가능성 高 | 단일 피처 기여도, 피처 생성 시점 |
+| ROC-AUC ≈ 1.0 | 타깃을 그대로 담은 피처 존재 의심 | 피처-타깃 상관 상위 목록 |
+| 검증 점수 분산이 거의 0 | fold 간 정보 공유(중복·그룹 누수) | 중복 행, 그룹 ID 분포 |
+| 재학습마다 점수가 크게 흔들림 | 누수보다는 데이터 부족·분할 불안정 | k-fold로 평균·분산 확인 |
 
-1. **Split first**: Do train/test split before any preprocessing
-2. **Fit only training**: Scaler/encoder/imputer `fit` on train portion only
-3. **Use Pipeline**: Lock preprocessing inside cross-validation loop
-4. **Time series time-ordered split**: No random splitting, lag/rolling only look at past
-5. **Audit feature generation time**: Confirm each feature is knowable at prediction time
-6. **Suspect high validation**: If scores are too good, suspect leakage first
+> ⚠️ **함정**: 불균형 데이터에서 accuracy가 높은 것은 누수가 아니라 **다수 클래스 편향**일 수 있다. 두 원인을 구분하려면 소수 클래스 지표(recall, PR-AUC)를 봐야 한다. accuracy만 보고 "누수다"라고 단정하는 것도, "정상이다"라고 안심하는 것도 둘 다 틀린다.
 
-## Summary
+## 데이터 누수 예방 체크리스트
 
-Today's essence: (1) Leakage is "information a model couldn't have at prediction time entering training," (2) **Target leakage** is when result information enters features — invisible to splitting and needs time inspection, (3) **Time series leakage** comes from random splitting/future windows → fixed by time-ordered splitting and past-only aggregation, (4) **train-test contamination** is preprocessing on entire data before splitting → fixed by splitting first and fitting only train portion with Pipeline.
+실무에서 누수를 막는 일관된 절차:
 
-Next post covers the principles in practice: **validation design — splitting, cross-validation, stratification, time series splitting**.
+1. **먼저 분할**: 어떤 전처리보다 train/test 분할을 먼저 한다
+2. **학습 부분만 fit**: 스케일러·인코더·대치기는 학습 부분에만 `fit`
+3. **Pipeline 사용**: 교차검증 루프 안쪽에 전처리를 가둔다
+4. **시계열은 시간 순 분할**: 무작위 분할 금지, lag/rolling은 과거만 참조
+5. **피처 생성 시점 감사**: 각 피처가 예측 시점에 알 수 있는 값인지 확인한다
+6. **높은 검증 점수를 의심**: 점수가 너무 좋으면 누수를 먼저 의심한다
+7. **그룹·중복 정리**: 같은 사용자·중복 레코드는 분할 전에 처리한다
 
----
+### AWS 서비스 매핑표
+
+| 상황 | AWS 서비스·기능 | 이유 |
+|---|---|---|
+| 전처리 로직을 학습·추론에서 동일하게 고정 | SageMaker Processing Job + 저장된 전처리 스크립트 | 노트북 즉흥 전처리를 없애 training-serving skew와 누수를 함께 줄인다 |
+| 피처 정의와 값을 중앙에서 관리 | SageMaker Feature Store | 학습·추론이 같은 피처 정의를 공유해 시점 불일치를 줄인다 |
+| 전처리→학습→평가를 단계로 묶어 재현 | SageMaker Pipelines | 단계 순서가 코드로 고정돼 "분할 전 전처리" 실수를 구조적으로 막는다 |
+| 운영 중 입력 분포가 학습 때와 달라졌는지 감시 | SageMaker Model Monitor | 검증-운영 성능 괴리를 조기에 포착한다 |
+| 어떤 피처가 예측을 지배하는지 확인 | SageMaker Clarify (특성 기여도) | 단일 피처가 예측을 독점하면 타깃 누수 신호다 |
+| 데이터 변환 이력을 시각적으로 추적 | SageMaker Data Wrangler | 어떤 변환이 언제 적용됐는지 흐름으로 남겨 감사할 수 있다 |
+
+### 지문 단서 → 정답 매핑표
+
+| 지문 표현 | 읽어야 할 신호 | 고를 답 |
+|---|---|---|
+| "검증도 테스트도 높은데 운영만 낮다" | 분할로 안 잡히는 누수 | 타깃 누수 |
+| "검증은 높은데 테스트부터 낮다" | 전처리 오염 | 분할 후 학습 부분만 fit |
+| "시계열을 섞어서 나눴다" | 시간 역행 | 시간 순 분할(forward-chaining) |
+| "전체 데이터로 스케일링한 뒤 분할했다" | 테스트 통계 유입 | Pipeline으로 fold 내부 fit |
+| "한 피처만 빼면 성능이 무너진다" | 답을 담은 피처 | 그 피처의 생성 시점 감사 |
+| "같은 환자의 여러 검사 기록이 있다" | 그룹 구조 | GroupKFold, 그룹 단위 분할 |
+| "분할 전에 SMOTE로 균형을 맞췄다" | 합성 샘플이 양쪽에 걸침 | 학습 부분에만 리샘플링 |
+| "해지 사유 코드가 가장 중요한 피처다" | 결과 이후 생성 값 | 타깃 누수, 피처 제거 |
+
+다음 글은 이 원칙들의 실전편 — **검증 설계: 분할, 교차검증, 층화, 시계열 분할**을 다룬다.
+
+## 📖 용어
+
+- **데이터 누수(data leakage)** : 예측 시점에는 알 수 없었을 정보가 학습에 흘러들어 성능이 부풀려지는 사고.
+- **타깃 누수(target leakage)** : 예측 대상의 결과 정보가 피처 안에 들어 있는 누수. 분할로는 잡히지 않는다.
+- **train-test 오염** : 분할 전에 전체 데이터로 전처리해 테스트 정보가 학습에 새는 현상.
+- **시계열 누수** : 미래 데이터를 써서 과거를 예측하게 되는 누수. 무작위 분할이 주범이다.
+- **그룹 누수** : 같은 사용자·환자의 행이 학습과 검증에 나뉘어 들어가 성능이 과대평가되는 현상.
+- **forward-chaining** : 항상 과거로 학습하고 미래로 평가하는 시계열 검증 방식.
+- **shift 후 rolling** : 현재 행을 제외하고 과거 값만으로 이동 통계를 계산해 누수를 막는 기법.
+- **Pipeline** : 전처리와 모델을 하나로 묶어, 각 fold의 학습 부분에서만 `fit`이 일어나도록 강제하는 구조.
+- **fit / transform 구분** : 통계를 학습하는 단계(fit)와 그 통계를 적용하는 단계(transform). 테스트에는 transform만 쓴다.
+- **검증셋 독립성** : 검증 점수가 일반화 성능을 추정하려면 검증 데이터가 학습 과정과 완전히 분리돼야 한다는 원칙.
 
 ## 📝 연습 문제
 

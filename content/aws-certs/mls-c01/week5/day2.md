@@ -1,119 +1,220 @@
 # Day 2 - Correlation and Relationships: Correlation Coefficients, Causation vs. Correlation, Multivariate Relationships
 
-Yesterday we examined single-variable distributions. Today we explore **relationships between variables**. Do two variables move together? If so, how strongly and in which direction? And the riskiest question—does moving together imply one **causes** the other?
+## 📌 핵심 정리
 
-MLS-C01 Domain 2 treats correlation analysis as EDA's core tool. Correlation guides feature selection, multicollinearity diagnosis, and "should I include this feature?" decisions. Yet **confusing correlation with causation** is data science's costliest error.
+- **Pearson은 선형, Spearman은 단조 관계**를 본다. 어떤 상관계수든 반드시 **산점도와 함께** 해석한다.
+- **상관은 인과가 아니다.** 역인과·교란변수·우연·선택 편향을 먼저 의심한다. 인과 주장에는 실험 설계(A/B)가 필요하다.
+- 설명 변수끼리 강하게 상관하면 **다중공선성**이다. 선형·로지스틱 회귀의 계수가 불안정해진다(VIF > 5~10이 경고선).
+- **트리 계열은 다중공선성에 둔감**하지만, 상관 변수끼리 중요도를 나눠 가져 개별 중요도가 과소평가된다.
+- 범주형끼리는 상관계수가 아니라 **카이제곱 검정·Cramér's V**, 수치형-범주형은 **집단 평균 비교(ANOVA)·박스플롯**으로 본다.
 
-## Correlation Coefficients: Degree of Joint Movement
+## 상관계수: 함께 움직이는 정도
 
-A **correlation coefficient** quantifies how two variables change together. Types and assumptions differ.
+어제는 변수 하나의 분포를 봤다. 오늘은 **변수 사이의 관계**를 본다. 두 변수가 함께 움직이는가, 그렇다면 얼마나 강하게 어느 방향으로 움직이는가, 그리고 가장 위험한 질문 — 함께 움직인다고 한쪽이 다른 쪽의 **원인**인가?
 
-| Coefficient | Measures | Assumptions | Range |
-|------|------|------|------|
-| **Pearson** | Linear relationship | Continuous, normal preferred, outlier-sensitive | −1 to +1 |
-| **Spearman** | Monotonic relationship | Rank-based, robust to nonlinearity and outliers | −1 to +1 |
-| **Kendall's τ** | Rank concordance | Rank-based, robust to small samples and ties | −1 to +1 |
+MLS-C01 Domain 2는 상관 분석을 EDA의 핵심 도구로 다룬다. 상관은 특성 선택, 다중공선성 진단, "이 피처를 넣어야 하나?" 판단을 이끈다. 그러나 **상관과 인과를 혼동하는 것**은 데이터 과학에서 가장 비싼 실수다.
 
-- **+1**: Perfect positive (one up, other up)
-- **0**: No linear (or monotonic) relationship
-- **−1**: Perfect negative
+**상관계수(correlation coefficient)**는 두 변수가 함께 변하는 정도를 수치화한다. 종류마다 측정 대상과 가정이 다르다.
 
-Pearson captures **linear** relationships only. Strong nonlinear curves (U-shaped) may have Pearson r near 0 yet be strongly associated. Rank-based Spearman is more useful there.
+| 계수 | 측정 대상 | 가정·성질 | 범위 |
+|---|---|---|---|
+| **Pearson** | 선형 관계 | 연속형, 정규성 선호, 이상치에 민감 | −1 ~ +1 |
+| **Spearman** | 단조 관계 | 순위 기반, 비선형·이상치에 강건 | −1 ~ +1 |
+| **Kendall's τ** | 순위 일치도 | 순위 기반, 표본이 작거나 동점이 많을 때 강건 | −1 ~ +1 |
+
+- **+1**: 완전한 양의 관계(하나가 오르면 다른 하나도 오른다)
+- **0**: 선형(또는 단조) 관계 없음
+- **−1**: 완전한 음의 관계
+
+Pearson은 **선형** 관계만 잡는다. U자형처럼 강한 비선형 곡선은 Pearson r이 0 근처여도 실제로는 강하게 연관돼 있다. 그럴 때는 순위 기반 Spearman이 더 유용하다.
+
+```
+ 강한 양의 선형          강한 U자형(비선형)         이상치 하나가 만든 가짜 상관
+    ·                        ·         ·              ·
+      ·                       ·       ·                       ·   ← 이 한 점이
+        ·                       ·   ·                ····         r을 끌어올림
+          ·                       ···                ····
+  r ≈ +0.95 (Pearson OK)   r ≈ 0 (Pearson 실패)     r 높지만 실체 없음
+                            → Spearman·산점도        → 산점도로 확인 필수
+```
 
 ```python
 import pandas as pd
 
 df = pd.read_csv("data/marketing.csv")
 
-# Pearson: linear relationships
+# Pearson: 선형 관계
 print(df[["ad_spend", "revenue"]].corr(method="pearson"))
 
-# Spearman: monotonic (robust to nonlinearity, outliers)
+# Spearman: 단조 관계 (비선형·이상치에 강건)
 print(df[["ad_spend", "revenue"]].corr(method="spearman"))
 
-# Full correlation matrix (feature selection, multicollinearity check)
+# 전체 상관행렬 (특성 선택·다중공선성 점검)
 corr_matrix = df.corr(numeric_only=True)
 ```
 
-> 💡 **Key Theory**: Pearson r is covariance after standardizing both variables, directly linked to regression's R² (simple linear: R² = r²). r = 0.7 means R² = 0.49—one variable explains ~49% of the other's variance. Crucially, r **measures linearity only**—Anscombe's Quartet shows r identical but scatter plots completely different. Always interpret correlation with scatter plots.
+> 💡 **개념**: Pearson r은 두 변수를 표준화한 뒤의 공분산이며, 회귀의 R²와 직접 연결된다(단순 선형 회귀에서 R² = r²). r = 0.7이면 R² = 0.49로, 한 변수가 다른 변수 분산의 약 49%를 설명한다는 뜻이다. 중요한 것은 r이 **선형성만 측정**한다는 점이다. 앤스컴의 4중주는 r이 같아도 산점도가 완전히 다를 수 있음을 보여 준다. 상관계수는 언제나 산점도와 함께 해석해야 한다.
 
-## Correlation ≠ Causation
+### 상관계수 선택표 — 변수 유형별
 
-Data science's costliest mistake is **mistaking correlation for causation**. Joint movement has multiple explanations.
+| 변수 조합 | 관계의 성격 | 권장 방법 | 주의 |
+|---|---|---|---|
+| 연속형 ↔ 연속형 | 선형 | Pearson | 이상치 하나가 값을 크게 흔든다 |
+| 연속형 ↔ 연속형 | 비선형이지만 단조 | Spearman | 곡선의 "모양"까지는 알려 주지 않는다 |
+| 순서형 ↔ 순서형 | 순위 일치 | Spearman / Kendall's τ | 동점이 많으면 Kendall이 안정적 |
+| 범주형 ↔ 범주형 | 독립 여부 | 카이제곱 독립성 검정 | 기대빈도가 너무 작으면 검정이 부정확 |
+| 범주형 ↔ 범주형 | 연관 강도 | Cramér's V (0~1) | 방향(양/음) 개념이 없다 |
+| 범주형 ↔ 연속형 | 집단 간 차이 | ANOVA, 박스플롯, 집단 평균 비교 | 집단 크기 불균형에 유의 |
+| 어떤 조합이든 | 실제 모양 확인 | 산점도·히트맵 시각화 | 계수만 보면 반드시 속는다 |
 
-| Pattern | Explanation | Example |
-|------|------|------|
-| True causation | A actually causes B | Exercise → fitness |
-| Reverse causation | B actually causes A | "Hospital visits ↔ illness": sick people visit |
-| Confounder | Hidden variable Z causes both | Ice cream sales ↔ drownings: heat (Z) causes both |
-| Spurious | Sample/time series coincidence | Unrelated time series both trending up |
-| Selection bias | Sampling method creates false link | Seeing only admitted applicants |
+## 상관 ≠ 인과
 
-To claim causation from correlation needs **randomized controlled trials (A/B tests)** or causal inference techniques, not observational data alone.
+데이터 과학에서 가장 비싼 실수는 **상관을 인과로 착각하는 것**이다. 함께 움직이는 데에는 여러 설명이 있다.
 
-> ⚠️ **Pitfall**: "Ice cream sales correlate with drownings" is classic—a confounder (temperature) is ignored. In exams, "strong correlation observed, so increasing A will increase B" is almost always a trap. Observed correlation alone cannot justify policy or intervention; causation claims need experimental design or confounder control.
+| 패턴 | 설명 | 예시 |
+|---|---|---|
+| 진짜 인과 | A가 실제로 B를 일으킨다 | 운동 → 체력 향상 |
+| 역인과 | 사실은 B가 A를 일으킨다 | "병원 방문 ↔ 질병": 아프기 때문에 병원에 간다 |
+| 교란변수(confounder) | 숨은 변수 Z가 둘 다 일으킨다 | 아이스크림 판매 ↔ 익사 사고: 기온(Z)이 둘 다 올린다 |
+| 우연(spurious) | 표본·시계열의 우연한 일치 | 무관한 두 시계열이 함께 우상향 |
+| 선택 편향 | 표본 추출 방식이 가짜 관계를 만든다 | 합격자만 관찰해서 생기는 관계 |
 
-## Multivariate Relationships and Multicollinearity
+- 상관에서 인과를 주장하려면 관찰 데이터만으로는 부족하다. **무작위 통제 실험(A/B 테스트)**이나 인과추론 기법이 필요하다.
+- 실험이 불가능하면 최소한 교란변수를 **통제**(층화, 회귀 보정)해야 한다.
 
-With three+ variables, relationships become complex. A critical modeling problem is **multicollinearity**—explanatory variables strongly correlating with each other.
+> ⚠️ **함정**: "아이스크림 판매량과 익사 사고가 상관한다"는 교과서적 사례로, 교란변수(기온)를 무시한 결과다. 시험에서 "강한 상관이 관찰되었으므로 A를 늘리면 B가 늘어난다"는 보기는 거의 항상 오답이다. 관찰된 상관만으로는 정책이나 개입을 정당화할 수 없다.
 
-Multicollinearity's problems:
-- In linear/logistic regression, **coefficients become unstable** and interpretation breaks
-- Difficulty isolating which variable truly matters
-- Larger standard errors blur statistical significance
+> ⚠️ **함정**: 상관계수가 0이라고 "관계가 없다"고 결론 내면 안 된다. Pearson 0은 **선형 관계가 없다**는 뜻일 뿐, U자형·주기형 같은 강한 비선형 관계가 숨어 있을 수 있다.
 
-Diagnostic tools:
+## 다변량 관계와 다중공선성
 
-| Tool | Method |
-|------|------|
-| Correlation matrix heatmap | Visually scan variable pair correlations |
-| VIF (Variance Inflation Factor) | Computed from R² when regressing one variable on others. VIF > 5–10 is caution |
-| Dimensionality reduction (PCA) | Compress correlated variables into orthogonal components |
+변수가 셋 이상이면 관계가 복잡해진다. 모델링에서 가장 중요한 문제는 **다중공선성(multicollinearity)** — 설명 변수들끼리 강하게 상관하는 상황이다.
+
+다중공선성의 문제:
+
+- 선형·로지스틱 회귀에서 **계수 추정이 불안정**해지고 해석이 무너진다(부호가 뒤집히기도 한다).
+- 어떤 변수가 진짜로 중요한지 분리하기 어렵다.
+- 표준오차가 커져 통계적 유의성이 흐려진다.
+
+### 다중공선성 진단·처방표
+
+| 도구 | 방법 | 판단 기준 | 처방 |
+|---|---|---|---|
+| 상관행렬 히트맵 | 변수 쌍 상관을 시각적으로 훑는다 | \|r\|이 0.8~0.9 이상인 쌍 주의 | 둘 중 하나를 제거하거나 합친다 |
+| VIF(분산팽창계수) | 한 변수를 나머지로 회귀했을 때의 R²로 계산 | **VIF > 5는 주의, > 10은 강한 다중공선성** | 변수 제거·결합 |
+| 차원 축소(PCA) | 상관된 변수들을 직교 성분으로 압축 | 설명 분산 비율로 성분 수 결정 | 해석 가능성을 잃는 대가 |
+| 정규화(Ridge) | 계수에 L2 패널티를 걸어 안정화 | 교차검증으로 α 선택 | 변수를 남기면서 계수를 안정화 |
+| 도메인 판단 | 중복 의미 변수(노출수·클릭수 등)를 정리 | — | 비율 피처로 재구성 |
 
 ```python
 import seaborn as sns
 import matplotlib.pyplot as plt
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 
-# Correlation heatmap: first-pass multicollinearity scan
+# 상관 히트맵: 다중공선성 1차 스캔
 corr = df.corr(numeric_only=True)
 sns.heatmap(corr, annot=True, cmap="coolwarm", center=0)
 plt.show()
 
-# Quantitative VIF diagnosis
+# 정량 진단: VIF
 X = df[["ad_spend", "impressions", "clicks"]]
 vif = pd.DataFrame({
     "feature": X.columns,
     "VIF": [variance_inflation_factor(X.values, i) for i in range(X.shape[1])],
 })
-print(vif)  # VIF > 10 indicates strong multicollinearity
+print(vif)  # VIF > 10이면 강한 다중공선성
 ```
 
-> 💡 **Key Theory**: Tree-based models (Random Forest, XGBoost) are relatively **insensitive to multicollinearity**. When splitting, one of several correlated variables is selected; prediction performance doesn't degrade severely. However, correlated variables share importance, so individual importance may be underestimated. Linear/logistic regression's coefficient estimation itself becomes unstable—sensitivity to multicollinearity is algorithm-dependent, an exam touchpoint.
+> 💡 **개념**: 트리 기반 모델(Random Forest, XGBoost)은 다중공선성에 **상대적으로 둔감**하다. 분할할 때 상관된 변수들 중 하나만 선택하면 되므로 예측 성능이 크게 떨어지지 않는다. 다만 상관된 변수들이 중요도를 나눠 가져 개별 중요도가 과소평가될 수 있다. 반면 선형·로지스틱 회귀는 계수 추정 자체가 불안정해진다. **다중공선성 민감도는 알고리즘에 따라 다르다**는 점이 시험 포인트다.
 
-## Categorical Variable Relationships
+### 알고리즘별 상관·다중공선성 민감도
 
-Correlation coefficients are for numeric variables. Categorical relationships use different tools.
+| 알고리즘 유형 | 다중공선성 영향 | 예측 성능 | 해석·중요도 | 대응 |
+|---|---|---|---|---|
+| 선형·로지스틱 회귀 | 매우 민감 | 크게 나빠지진 않지만 불안정 | 계수 해석 불가 수준 | 변수 제거, Ridge/Lasso, PCA |
+| Ridge / Lasso | 완화됨 | 안정 | Lasso는 상관 변수 중 하나만 남기는 경향 | 정규화 강도를 교차검증 |
+| KNN / SVM (거리 기반) | 중간 | 상관 변수가 거리를 중복 반영 | — | 스케일링 + 중복 변수 정리 |
+| PCA | 오히려 전제 | — | 성분 해석이 어려움 | 상관 구조를 압축하는 것이 목적 |
+| Decision Tree / RF / XGBoost | 둔감 | 거의 영향 없음 | 중요도가 분산돼 과소평가 | 중요도 해석 시 그룹으로 묶어 본다 |
 
-- **Chi-square test**: Test independence of two categorical variables (contingency table based).
-- **Cramér's V**: Chi-square normalized to 0–1 association strength.
-- **Numeric vs. categorical**: Group mean comparison (ANOVA), boxplots.
+## 범주형 변수의 관계
+
+상관계수는 수치형 변수용이다. 범주형 관계에는 다른 도구를 쓴다.
+
+- **카이제곱 검정(chi-square test)**: 두 범주형 변수가 독립인지 검정한다(교차표 기반).
+- **Cramér's V**: 카이제곱을 0~1로 정규화한 연관 강도 지표.
+- **수치형 vs 범주형**: 집단 평균 비교(ANOVA), 박스플롯으로 분포 차이를 본다.
 
 ```python
 import pandas as pd
 from scipy.stats import chi2_contingency
 
-# Test independence of two categorical variables
+# 두 범주형 변수의 독립성 검정
 table = pd.crosstab(df["region"], df["churned"])
 chi2, p, dof, expected = chi2_contingency(table)
-print(f"chi2={chi2:.2f}, p-value={p:.4f}")  # p < 0.05 indicates association
+print(f"chi2={chi2:.2f}, p-value={p:.4f}")  # p < 0.05면 연관 있음
 ```
 
-## Summary
+## 상관을 특성 선택에 쓸 때
 
-Today's essentials: (1) Use **Pearson for linear, Spearman for monotonic and robust** relationships; always interpret with scatter plots; (2) **Correlation is not causation**—always suspect reverse causation, confounders, and spuriousness; (3) **Multicollinearity** among explanatory variables breaks linear model coefficients—diagnose with VIF and heatmaps, though trees are less affected; (4) Categorical relationships measured by **chi-square and Cramér's V**.
+상관 분석의 실전 용도는 결국 "어떤 피처를 남길 것인가"다. 두 방향을 구분해야 한다.
 
-Next, we tackle EDA and validation's deadliest enemy: **data leakage**.
+| 보는 것 | 의미 | 활용 | 함정 |
+|---|---|---|---|
+| 피처 ↔ 타깃 상관 | 그 피처가 타깃을 얼마나 설명하는가 | 상관이 거의 0인 피처는 후보에서 내린다 | 비선형 관계는 낮게 나온다. 상관 0이라고 무조건 버리면 손해 |
+| 피처 ↔ 피처 상관 | 피처끼리 정보가 겹치는가 | 중복 피처를 정리해 다중공선성을 줄인다 | 한쪽만 남길 때 도메인 의미가 더 나은 쪽을 고른다 |
+| 단일 피처가 타깃과 \|r\| 0.95 이상 | 지나치게 완벽한 설명 | — | **타깃 누수 1순위 신호**(Day 3) |
+
+특성 선택 방식도 셋으로 나뉜다.
+
+| 방식 | 방법 | 장점 | 단점 |
+|---|---|---|---|
+| 필터(filter) | 상관계수·분산·카이제곱으로 사전 선별 | 빠르고 모델과 무관하게 적용 가능 | 피처 조합 효과를 못 본다 |
+| 래퍼(wrapper) | 전진 선택·후진 제거로 실제 성능을 보며 선택 | 조합 효과까지 반영 | 계산 비용이 크다 |
+| 임베디드(embedded) | 학습 중 자동 선택(Lasso, 트리 중요도) | 실용적, 성능과 직접 연결 | 모델 종류에 종속된다 |
+
+> ⚠️ **함정**: 타깃과의 상관이 비정상적으로 높은 피처(\|r\| ≈ 1)를 보고 "좋은 피처를 찾았다"고 좋아하면 안 된다. 예측 시점에 알 수 없는 결과 정보가 섞였을 가능성이 훨씬 크다. "이 값을 예측하는 순간에 정말 알 수 있는가?"를 먼저 묻는다.
+
+## MLS 관점: 상관 분석이 어디로 이어지는가
+
+### AWS 서비스 매핑표
+
+| 상황 | AWS 서비스·기능 | 이유 |
+|---|---|---|
+| 코드 없이 상관·산점도·히스토그램으로 관계 탐색 | SageMaker Data Wrangler | 내장 분석·시각화로 피처 간 관계를 빠르게 훑고 변환을 이어붙일 수 있다 |
+| 상관 낮은 피처를 걸러 학습 비용 절감 | SageMaker 처리 흐름 + 특성 선택 | 불필요한 피처는 학습 시간과 과적합 위험을 함께 키운다 |
+| 상관된 고차원 수치형을 직교 성분으로 압축 | SageMaker 내장 PCA 알고리즘 | 다중공선성을 제거하면서 차원을 줄인다 |
+| 특정 속성(성별·지역)이 타깃과 얽혀 있는지 확인 | SageMaker Clarify | 학습 전 편향 지표로 민감 속성과 레이블의 연관을 점검한다 |
+| 대용량 데이터에서 SQL로 교차표·집계 관계 확인 | Amazon Athena | S3 원본에 직접 쿼리해 범주 간 교차 빈도를 뽑는다 |
+| 학습 후 어떤 피처가 예측에 기여했는지 설명 | SageMaker Clarify (특성 기여도) | 상관과 모델 기여도는 다르므로 사후 설명이 필요하다 |
+
+### 지문 단서 → 정답 매핑표
+
+| 지문 표현 | 읽어야 할 신호 | 고를 답 |
+|---|---|---|
+| "U자형인데 상관계수가 0에 가깝다" | Pearson은 선형만 본다 | Spearman + 산점도로 확인 |
+| "이상치가 많은 두 연속 변수의 관계" | Pearson은 이상치에 민감 | Spearman(순위 기반) |
+| "지역과 이탈 여부가 관련 있는가" | 범주형 ↔ 범주형 | 카이제곱 독립성 검정 / Cramér's V |
+| "VIF가 15로 나왔다" | 강한 다중공선성 | 변수 제거·PCA·Ridge |
+| "회귀 계수 부호가 상식과 반대다" | 다중공선성 징후 | 상관행렬·VIF 점검 |
+| "상관이 높으니 A를 늘리면 B가 늘 것이다" | 인과 비약 | 오답. 교란변수·역인과 의심, A/B 테스트 필요 |
+| "상관된 변수가 많은데 트리 모델을 쓴다" | 트리는 둔감 | 예측 성능은 유지, 다만 중요도 해석에 주의 |
+| "노출수·클릭수·광고비가 서로 강하게 상관" | 중복 정보 | 비율 피처로 재구성하거나 하나만 남긴다 |
+
+다음 글에서는 EDA와 검증의 가장 치명적인 적, **데이터 누수(data leakage)**를 다룬다.
+
+## 📖 용어
+
+- **상관계수(correlation coefficient)** : 두 변수가 함께 움직이는 정도를 −1~+1로 요약한 값.
+- **Pearson 상관** : 직선 관계의 강도를 재는 상관계수. 이상치에 약하다.
+- **Spearman 상관** : 값 대신 순위를 써서 단조 관계를 재는 상관계수. 비선형·이상치에 강건하다.
+- **단조 관계(monotonic)** : 한쪽이 커질 때 다른 쪽이 계속 커지거나 계속 작아지는 관계. 직선일 필요는 없다.
+- **교란변수(confounder)** : 두 변수 모두에 영향을 주어 가짜 상관을 만들어 내는 숨은 변수.
+- **역인과(reverse causation)** : 원인과 결과의 방향을 반대로 해석하는 오류.
+- **다중공선성(multicollinearity)** : 설명 변수들끼리 강하게 상관해 회귀 계수 추정이 불안정해지는 현상.
+- **VIF(분산팽창계수)** : 한 변수가 나머지 변수들로 얼마나 잘 설명되는지 나타내는 다중공선성 지표. 5~10을 넘으면 경고.
+- **카이제곱 독립성 검정** : 두 범주형 변수가 서로 독립인지 교차표로 검정하는 방법.
+- **Cramér's V** : 카이제곱 통계량을 0~1로 정규화해 범주형 변수 간 연관 강도를 나타내는 값.
 
 ## 📝 연습 문제
 

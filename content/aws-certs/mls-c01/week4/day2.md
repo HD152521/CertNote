@@ -1,44 +1,70 @@
 # Day 2 - Feature Selection: Filter, Wrapper, Embedded, Importance, Multicollinearity
 
-If Day 1's dimensionality reduction was "creating new synthetic axes," **feature selection** is "keeping only useful existing features." Both reduce dimensions, but selection preserves the **interpretability of original features**.
+## 📌 핵심 정리
 
-Today we cover three major approaches to selection—**filter, wrapper, and embedded**—feature importance methods, and **multicollinearity**, which complicates selection decisions.
+- **특성 선택은 원본 특성의 부분집합을 남기는 것**이라 해석 가능성이 보존된다. PCA는 새 축을 만들어 의미를 잃는다.
+- 세 접근: **필터**(빠름·모델 무관) / **래퍼**(정확·매우 느림) / **임베디드**(균형, Lasso·트리 중요도).
+- **L1(Lasso)은 계수를 정확히 0으로** 만들어 자동 선택 효과가 있다. L2(Ridge)는 줄이기만 한다.
+- 중요도는 **불순도 기반(MDI)이 고카디널리티 편향**을 갖는다. 순열 중요도·SHAP이 더 신뢰된다.
+- **다중공선성**은 상관행렬(|r| > 0.8~0.9)·**VIF(> 5 주의, > 10 심각)**로 진단한다. 선형 모델에 치명적, 트리는 둔감하다.
 
-## Why Feature Selection?
+## 왜 특성 선택인가
 
-- Reduces overfitting: Irrelevant features train the model on noise
-- Speeds up training and inference
-- Increases interpretability: fewer features make model explanation easier
-- Mitigates curse of dimensionality
+Day 1의 차원 축소가 "새로운 합성 축을 만드는 것"이었다면, **특성 선택(feature selection)**은 "쓸모 있는 기존 특성만 남기는 것"이다. 둘 다 차원을 줄이지만, 선택은 **원본 특성의 해석 가능성**을 보존한다.
 
-> 💡 **Key Theory**: Feature selection and PCA both reduce dimensions but differ philosophically. PCA linearly combines all original features to create new axes, losing physical meaning of results. Selection retains a subset of original features, making it preferred in regulated industries (finance, healthcare) where you must explain "which variables were used in the prediction."
+- **과적합 감소**: 무관한 특성은 모델이 노이즈를 학습하게 만든다
+- **학습·추론 속도 향상**
+- **해석 가능성 상승**: 특성이 적을수록 모델 설명이 쉽다
+- **차원의 저주 완화**
 
-## Three Approaches
+> 💡 **관련 이론**: 특성 선택과 PCA는 둘 다 차원을 줄이지만 철학이 다르다. PCA는 원본 특성 전체를 선형 결합해 새 축을 만들므로 결과의 물리적 의미가 사라진다. 선택은 원본 특성의 부분집합을 그대로 남기므로, "어떤 변수가 예측에 사용되었는가"를 설명해야 하는 규제 산업(금융, 의료)에서 선호된다.
 
-| Approach | How It Works | Strengths | Weaknesses | Examples |
+## 세 가지 접근
+
+| 접근 | 작동 방식 | 강점 | 약점 | 예시 |
 |------|-----------|------|------|------|
-| **Filter** | Score features by statistical metrics independent of model | Fast, model-agnostic | Ignores feature interactions | Correlation, chi-square, variance threshold, mutual information |
-| **Wrapper** | Repeatedly train/evaluate model on feature subsets | Captures interactions, accurate | Very slow, overfitting risk | Forward selection, backward elimination, RFE |
-| **Embedded** | Selection built into model training | Efficient and accurate balance | Model-dependent | Lasso (L1), tree feature importance |
+| **필터(Filter)** | 모델과 무관하게 통계 지표로 특성을 점수화 | 빠르다, 모델 독립 | 특성 간 상호작용을 무시 | 상관계수, 카이제곱, 분산 임계값, 상호정보량 |
+| **래퍼(Wrapper)** | 특성 부분집합으로 모델을 반복 학습·평가 | 상호작용을 포착, 정확 | 매우 느림, 과적합 위험 | 전진 선택, 후진 제거, RFE |
+| **임베디드(Embedded)** | 모델 학습 과정에 선택이 내장 | 효율과 정확도의 균형 | 모델에 종속 | Lasso(L1), 트리 특성 중요도 |
 
-### Filter Methods
+### 어떤 접근을 고를까
 
-Evaluate each feature independently by its relationship to the target. No model training, so it's fastest.
+| 상황 | 고를 접근 | 이유 |
+|---|---|---|
+| 특성이 수천 개, 1차 선별이 목적 | 필터 | 모델 학습 없이 점수화 → 가장 빠름 |
+| 특성이 수십 개, 최고 성능이 목적 | 래퍼(RFE) | 반복 학습 비용을 감당할 수 있는 규모 |
+| 선형 모델에서 자동으로 특성을 줄이고 싶다 | 임베디드(Lasso) | 학습과 선택을 한 번에 |
+| 트리·부스팅을 이미 쓰고 있다 | 임베디드(트리 중요도) | 학습 부산물로 중요도가 나온다 |
+| 관계가 비선형이라 상관계수가 0에 가깝다 | 필터(상호정보량) | 선형에 국한되지 않는 의존성을 측정 |
+
+### 필터 방법
+
+각 특성을 타깃과의 관계로 독립 평가한다. 모델 학습이 없어 가장 빠르다.
 
 ```python
 from sklearn.feature_selection import SelectKBest, f_classif, mutual_info_classif
 
-# Select top k features using ANOVA F-test
+# ANOVA F-검정으로 상위 k개 특성 선택
 selector = SelectKBest(score_func=f_classif, k=20)
 X_filtered = selector.fit_transform(X_train, y_train)
 
-# For nonlinear relationships, use mutual information
+# 비선형 관계라면 상호정보량 사용
 mi_selector = SelectKBest(score_func=mutual_info_classif, k=20)
 ```
 
-### Wrapper Methods: RFE
+필터에서 어떤 통계량을 쓸지는 **특성 타입과 타깃 타입의 조합**으로 결정된다.
 
-RFE (Recursive Feature Elimination) trains the model, removes the weakest feature, and repeats.
+| 특성 타입 | 타깃 타입 | 쓰는 지표 | 비고 |
+|---|---|---|---|
+| 수치형 | 분류 | ANOVA F-검정(`f_classif`) | 그룹 간 평균 차이를 본다 |
+| 범주형 | 분류 | 카이제곱(`chi2`) | 입력이 음수가 아니어야 한다 |
+| 수치형 | 회귀 | 피어슨 상관 / F-회귀(`f_regression`) | 선형 관계 전제 |
+| 임의 | 임의 | 상호정보량(`mutual_info_*`) | 비선형 의존성도 잡는다 |
+| 임의 | 없음(비지도) | 분산 임계값(`VarianceThreshold`) | 상수·준상수 컬럼 제거용 |
+
+### 래퍼 방법: RFE
+
+RFE(Recursive Feature Elimination)는 모델을 학습하고 가장 약한 특성을 제거하는 과정을 반복한다.
 
 ```python
 from sklearn.feature_selection import RFE
@@ -49,48 +75,70 @@ rfe.fit(X_train, y_train)
 selected = X_train.columns[rfe.support_]
 ```
 
-### Embedded Methods: L1 Regularization
+### 임베디드 방법: L1 정규화
 
 ```python
 from sklearn.linear_model import Lasso
 
 lasso = Lasso(alpha=0.01)
 lasso.fit(X_scaled, y_train)
-# Features with coefficient = 0 are automatically removed
+# 계수가 0인 특성은 자동으로 제거된다
 selected = X_train.columns[lasso.coef_ != 0]
 ```
 
-> 💡 **Key Theory**: Lasso achieves feature selection through L1 penalty geometry. The L1 constraint region is diamond-shaped; loss contours are likely to meet at vertices (axes, i.e., coefficient = 0). L2 (Ridge) is circular, shrinking coefficients toward zero but rarely to exactly zero. Hence "sparse solutions need L1."
+```
+      L1 (Lasso) 제약           L2 (Ridge) 제약
+          ╱╲                        ╭───╮
+        ╱    ╲                     │     │
+        ╲    ╱                     │     │
+          ╲╱                        ╰───╯
+   손실 등고선이 꼭짓점에서       접점이 축 위에 오기 어렵다
+   만나기 쉽다 → 계수 = 0        → 0에 가까워질 뿐, 0은 아님
+        (희소 해)                    (축소만)
+```
 
-## Feature Importance
+> 💡 **관련 이론**: Lasso가 특성 선택 효과를 내는 이유는 L1 페널티의 기하 구조 때문이다. L1 제약 영역은 마름모 모양이라 손실 등고선이 꼭짓점(축 위, 즉 계수 = 0)에서 만날 가능성이 높다. L2(Ridge)는 원형이라 계수를 0 쪽으로 줄이기는 해도 정확히 0으로 만드는 일은 드물다. 그래서 "희소 해가 필요하면 L1"이다.
 
-Tree-based models provide feature importance after training.
+> ⚠️ **함정**: Lasso는 계수 크기에 페널티를 걸므로 **스케일링이 선행돼야** 한다. 표준화하지 않으면 단위가 큰 변수의 계수가 작아 보여 먼저 0으로 밀려난다.
 
-| Method | Description | Caution |
+> ⚠️ **함정**: 특성 선택도 **데이터 의존 변환**이다. 전체 데이터에서 상관·중요도를 계산해 특성을 고른 뒤 교차검증하면 검증셋 정보가 선택에 새어 든다. 선택은 파이프라인에 넣어 각 fold의 학습 부분에서만 수행해야 한다.
+
+## 특성 중요도
+
+트리 기반 모델은 학습 후 특성 중요도를 제공한다.
+
+| 방법 | 설명 | 주의 |
 |------|------|--------|
-| Impurity-based (Gini/MDI) | Sum of impurity decrease from splits | Biased toward high-cardinality features |
-| Permutation Importance | Shuffle feature, measure performance drop | Model-agnostic, but double-counts correlated features |
-| SHAP Values | Game theory-based contribution | High computational cost, most consistent |
+| 불순도 기반(Gini/MDI) | 분할로 감소한 불순도의 합 | 고카디널리티 특성에 편향 |
+| 순열 중요도(Permutation) | 특성을 섞어 성능 하락 폭을 측정 | 모델 독립적이나, 상관된 특성을 중복 계산 |
+| SHAP 값 | 게임 이론 기반 기여도 분해 | 계산 비용이 크지만 가장 일관적 |
 
 ```python
 import shap
 explainer = shap.TreeExplainer(model)
 shap_values = explainer.shap_values(X_test)
-shap.summary_plot(shap_values, X_test)   # Visualize feature contributions
+shap.summary_plot(shap_values, X_test)   # 특성 기여도 시각화
 ```
 
-> 💡 **Key Theory**: Impurity-based importance exhibits bias toward high-cardinality features (continuous, multi-category) with many split candidates. Permutation importance randomly shuffles features in a trained model and measures performance drop, avoiding this bias. SHAP additively decomposes feature contributions for each prediction, providing both global and local explanations, but is computationally expensive. For exams, remember: "impurity-based biased toward high-cardinality; permutation and SHAP are more trustworthy."
+| 목적 | 고를 방법 | 이유 |
+|---|---|---|
+| 학습 직후 빠르게 대략 파악 | 불순도 기반(MDI) | 추가 계산 없이 즉시 |
+| 편향 없이 전역 중요도 비교 | 순열 중요도 | 학습된 모델에 대해 실제 성능 하락으로 측정 |
+| 개별 예측을 설명(왜 이 건이 사기인가) | SHAP | 예측 하나하나에 대한 국소 설명 제공 |
+| 모델 종류가 서로 다른데 비교해야 함 | 순열 중요도 / SHAP | 모델 독립적으로 계산 가능 |
 
-## Multicollinearity
+> 💡 **관련 이론**: 불순도 기반 중요도는 분할 후보가 많은 특성(연속형, 다범주형)을 과대평가하는 편향을 보인다. 순열 중요도는 학습된 모델에서 특성을 무작위로 섞어 성능 하락을 측정하므로 이 편향을 피한다. SHAP은 예측마다 특성 기여도를 가법적으로 분해해 전역·국소 설명을 모두 제공하지만 계산 비용이 크다. 시험에서는 "불순도 기반은 고카디널리티에 편향, 순열·SHAP이 더 신뢰된다"를 기억하면 된다.
 
-When two or more features are strongly correlated, **multicollinearity** arises. Linear models suffer unstable coefficients and distorted interpretation.
+## 다중공선성
 
-Diagnostic metrics:
+두 개 이상의 특성이 강하게 상관되면 **다중공선성(multicollinearity)**이 생긴다. 선형 모델은 계수가 불안정해지고 해석이 왜곡된다.
 
-| Metric | Threshold |
+진단 지표:
+
+| 지표 | 임계값 |
 |------|------|
-| Correlation matrix | \|r\| > 0.8–0.9 suspicious |
-| VIF (Variance Inflation Factor) | VIF > 5 (caution), > 10 (severe) |
+| 상관행렬 | \|r\| > 0.8~0.9면 의심 |
+| VIF(분산 팽창 계수) | VIF > 5(주의), > 10(심각) |
 
 ```python
 from statsmodels.stats.outliers_influence import variance_inflation_factor
@@ -101,15 +149,97 @@ vif["feature"] = X.columns
 vif["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
 ```
 
-Remedies: remove one correlated feature, combine via PCA, or soften via L2 regularization (Ridge).
+처방: 상관된 특성 중 하나를 제거하거나, PCA로 합치거나, L2 정규화(Ridge)로 완화한다.
 
-> 💡 **Key Theory**: VIF is calculated as VIF = 1/(1−R²), where R² comes from regressing one feature against all others. As R² approaches 1 (feature nearly perfectly predicted by others), VIF explodes. **Note: Tree-based models are insensitive to multicollinearity**—splits use one feature at a time. Multicollinearity is fatal for linear models where coefficient interpretation matters.
+### 다중공선성 진단 → 처방
 
-## Summary
+| 증상 | 진단 | 처방 |
+|---|---|---|
+| 두 특성의 \|r\|이 0.95 | 상관행렬 | 둘 중 하나 제거(도메인상 덜 중요한 쪽) |
+| VIF가 10을 넘는 특성이 다수 | VIF | PCA로 직교 축으로 합치기 |
+| 계수 부호가 상식과 반대로 뒤집힘 | 계수 불안정 | Ridge(L2)로 계수 분산을 눌러 완화 |
+| 표본을 조금 바꿨더니 계수가 크게 요동 | 재표본 안정성 | 특성 축소 후 재학습 |
+| 예측 성능은 좋은데 해석이 안 됨 | — | 예측만이 목적이면 트리 계열로 전환도 선택지 |
 
-- **Filter** (fast, model-agnostic) / **Wrapper** (accurate, slow) / **Embedded** (balanced, Lasso, trees)
-- **Feature importance**: Impurity-based (biased), Permutation/SHAP (more reliable)
-- **Multicollinearity**: Diagnose via correlation/VIF, deadly for linear models, ignorable for trees
+### 모델별 다중공선성 민감도
+
+| 모델 | 민감도 | 나타나는 결과 |
+|---|---|---|
+| 선형/로지스틱 회귀 | **매우 높음** | 계수 분산 폭증, 부호 반전, 해석 불가 |
+| Ridge / Lasso | 중간 | L2가 계수를 안정화, L1은 상관 그룹 중 하나만 임의로 살림 |
+| SVM(선형 커널) | 중간 | 계수 해석이 흔들림, 예측은 비교적 견딤 |
+| Decision Tree / RF / XGBoost | **낮음** | 분할 시 한 번에 한 특성만 보므로 예측에 큰 영향 없음 |
+| KNN / K-means | 중간 | 상관 특성이 사실상 같은 축을 두 번 세어 거리 가중이 왜곡됨 |
+
+> 💡 **관련 이론**: VIF는 VIF = 1/(1−R²)로 계산하며, 여기서 R²은 한 특성을 나머지 모든 특성으로 회귀했을 때의 결정계수다. R²이 1에 가까워질수록(즉 그 특성이 다른 특성들로 거의 완벽히 예측될수록) VIF가 폭발한다. **주의: 트리 기반 모델은 다중공선성에 둔감하다** — 분할이 한 번에 한 특성만 사용하기 때문이다. 다중공선성은 계수 해석이 중요한 선형 모델에서 치명적이다.
+
+> ⚠️ **함정**: 트리 모델에서 상관된 특성이 둘 있으면 중요도가 두 특성에 나뉘어 각각 낮게 나온다. "중요도가 낮으니 버려도 된다"고 판단하면 실제로는 중요한 신호를 통째로 버릴 수 있다.
+
+## 실무 선택 순서
+
+특성 선택은 한 방에 끝내는 작업이 아니라 값싼 것부터 순서대로 거르는 깔때기다.
+
+```
+[원시 특성 수백~수천 개]
+        │
+  ① 상수 · 준상수 컬럼 제거      (분산 임계값. 정보가 없는 축)
+        │
+  ② ID · 누수 의심 컬럼 제거     (행을 외우게 만드는 컬럼)
+        │
+  ③ 필터: 상관 · F-검정 · 상호정보량으로 점수화 → 상위 k개
+        │
+  ④ 다중공선성 정리              (|r| > 0.8~0.9, VIF > 5~10)
+        │
+  ⑤ 임베디드: Lasso 또는 트리 중요도로 추가 축소
+        │
+  ⑥ (여유가 있으면) 래퍼: RFE로 마지막 미세 조정
+        │
+  ⑦ 교차검증으로 성능 확인 — ③~⑥은 각 fold의 학습 부분에서만 수행
+```
+
+| 단계 | 비용 | 남는 특성 규모(예) |
+|---|---|---|
+| ① 상수 제거 | 거의 0 | 수천 → 수천 |
+| ③ 필터 | 낮음 | 수천 → 수십~수백 |
+| ⑤ 임베디드 | 중간(모델 1회 학습) | 수백 → 수십 |
+| ⑥ 래퍼(RFE) | 높음(모델 반복 학습) | 수십 → 최종 |
+
+## AWS 서비스 매핑
+
+| 상황 | 서비스·기능 | 이유 |
+|---|---|---|
+| 학습 전 분포·상관을 눈으로 보고 특성을 추리고 싶다 | SageMaker Data Wrangler | 시각적 데이터 준비와 분포·상관 리포트 제공 |
+| 모델 예측에 대한 특성 기여도를 설명해야 한다 | SageMaker Clarify | SHAP 기반 특성 기여도(feature attribution) 산출 |
+| 노트북에서 필터·래퍼·Lasso를 직접 실험 | SageMaker 노트북 + scikit-learn | `SelectKBest`, `RFE`, `Lasso` 등 자유 조합 |
+| 특성이 상관돼 있어 직교 축으로 합치고 싶다 | SageMaker 내장 PCA | 해석을 포기하는 대신 다중공선성 해소 |
+
+## 지문 단서 → 정답 매핑
+
+| 지문 단서 | 고를 답 | 이유 |
+|---|---|---|
+| "특성이 수천 개, 가장 빠르게 1차 선별" | 필터(상호정보량·F-검정) | 모델 학습이 필요 없다 |
+| "계수를 정확히 0으로 만들어 자동 선택" | L1(Lasso) | 마름모 제약 → 희소 해 |
+| "계수를 줄이되 0으로 만들지는 않는다" | L2(Ridge) | 원형 제약 → 축소만 |
+| "두 특성 상관 0.95, 계수가 불안정" | VIF 확인 후 하나 제거 | 다중공선성의 전형적 증상 |
+| "고카디널리티 특성의 중요도가 이상하게 높다" | 불순도 기반 편향 → 순열 중요도로 재확인 | MDI의 알려진 편향 |
+| "어떤 변수가 예측에 쓰였는지 설명해야 한다" | 특성 선택(PCA 아님) | 원본 특성 유지 |
+| "상관계수는 0인데 관계가 있어 보인다" | 상호정보량 / Spearman | 피어슨은 선형만 잡는다 |
+| "트리 모델인데 다중공선성 대응이 필요한가" | 대체로 불필요 | 분할이 한 번에 한 특성만 사용 |
+
+다음 글에서는 분포·상관을 눈으로 확인하는 **데이터 시각화**와 AWS의 BI 서비스 QuickSight를 다룬다.
+
+## 📖 용어
+
+- **특성 선택(feature selection)** : 원본 특성 중 쓸모 있는 것만 골라 남기는 차원 축소. 컬럼 이름이 그대로 유지된다.
+- **필터 방법** : 모델을 학습하지 않고 상관계수·카이제곱 같은 통계량만으로 특성을 점수 매겨 고르는 방식.
+- **래퍼 방법** : 특성 조합을 바꿔가며 실제 모델을 학습·평가해 최적 조합을 찾는 방식. 정확하지만 느리다.
+- **임베디드 방법** : 모델이 학습되는 과정에서 선택이 함께 일어나는 방식(Lasso, 트리 중요도).
+- **RFE(재귀적 특성 제거)** : 모델을 학습해 가장 약한 특성을 하나 빼고 다시 학습하는 과정을 반복하는 래퍼 기법.
+- **상호정보량(mutual information)** : 두 변수가 서로 얼마나 정보를 공유하는지 재는 값. 비선형 관계도 잡아낸다.
+- **희소 해(sparse solution)** : 많은 계수가 정확히 0인 해. L1 정규화가 만들어 낸다.
+- **불순도 기반 중요도(MDI)** : 트리가 분할할 때 줄어든 불순도를 합산한 중요도. 분할 후보가 많은 특성을 과대평가한다.
+- **순열 중요도(permutation importance)** : 특성 값을 무작위로 섞은 뒤 성능이 얼마나 떨어지는지로 재는 중요도.
+- **다중공선성 / VIF** : 특성끼리 강하게 상관된 상태 / 그 정도를 재는 지표. 5를 넘으면 주의, 10을 넘으면 심각하다.
 
 ## 📝 연습 문제
 
