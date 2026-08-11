@@ -1,6 +1,42 @@
 # Day 5 - Week 6 종합: 추론 배포 복습
 
-이번 주는 학습된 모델을 실제로 서빙하는 추론 배포를 다뤘다. 핵심 메시지는 하나다. **추론 방식 선택은 알고리즘이 아니라 요청 패턴이 결정한다.** 트래픽이 꾸준한가 간헐적인가, 즉시 응답이 필요한가, 페이로드와 처리시간은 얼마인가, 비용을 어디서 아낄 것인가. 오늘은 Day1~4를 하나의 의사결정 흐름으로 엮어 시험장에서 바로 꺼낼 수 있게 정리한다.
+## 📌 핵심 정리
+
+- **추론 방식은 알고리즘이 아니라 요청 패턴이 결정한다** — 즉시성·트래픽·페이로드·비용 4축.
+- 4옵션: 실시간(꾸준+저지연) / 서버리스(간헐+0스케일) / 비동기(1GB·60분) / 배치(대량 일괄 최저 비용).
+- 비용이 걸리면 — 모델이 많으면 **MME**, 딥러닝이면 **Inferentia**, 유휴가 길면 **0 스케일 옵션**.
+- 한 엔드포인트에 묶는 방식은 MME(같은 컨테이너·다수) / MCE(다른 컨테이너·소수) / 파이프라인(순차 체인).
+- 무중단 배포는 **새 EndpointConfig + `update_endpoint`**(blue/green), 무위험 검증은 **shadow testing**.
+
+## Week 6 전체 지도
+
+이번 주는 학습된 모델을 실제로 서빙하는 추론 배포를 다뤘다. Day1~4를 하나의 의사결정 흐름으로 엮어 시험장에서 바로 꺼낼 수 있게 정리한다.
+
+```text
+                       [ 학습이 끝난 모델 ]
+                                │
+                    ① 어떻게 요청이 들어오는가?   ← Day1
+        ┌───────────────┬───────┴───────┬───────────────┐
+        ▼               ▼               ▼               ▼
+     실시간          서버리스         비동기          배치 변환
+   (꾸준·저지연)    (간헐·0스케일)  (큰 페이로드)   (대량 일괄)
+        │
+        │  ② 엔드포인트를 어떻게 운영하는가?      ← Day2
+        ├─ Model → EndpointConfig → Endpoint
+        ├─ 오토스케일링(InvocationsPerInstance, 최소 1대)
+        ├─ 무중단 배포(update_endpoint, blue/green)
+        └─ A/B(가중치) · Shadow(응답 폐기)
+        │
+        │  ③ 비용·복잡도를 어떻게 줄이는가?       ← Day3
+        ├─ MME(같은 컨테이너 + 수백~수천 모델)
+        ├─ MCE(다른 프레임워크 컨테이너 ≤15)
+        ├─ 추론 파이프라인(전처리→추론→후처리)
+        └─ Inferentia(딥러닝 추론 단가↓, Neuron 컴파일)
+        │
+        │  ④ 대량·간헐은 어떻게 튜닝하는가?       ← Day4
+        ├─ 배치: InstanceCount · SplitType · BatchStrategy
+        └─ 서버리스: MemorySize · MaxConcurrency · Provisioned Concurrency
+```
 
 ## 4가지 추론 옵션 총정리
 
@@ -25,11 +61,33 @@ Day1의 핵심 표를 다시 머릿속에 새기자.
 
 ## 실시간 엔드포인트 복습
 
-실시간은 **3계층 구조**가 핵심이다. Model(아티팩트 + 컨테이너) → EndpointConfig(인스턴스 타입·수, ProductionVariant 가중치) → Endpoint(HTTPS 실체). 이 분리가 무중단 blue/green 배포, A/B 테스트(가중치 분배), shadow testing(응답 폐기 검증)을 가능케 한다.
+- **3계층 구조**: Model(아티팩트 + 컨테이너) → EndpointConfig(인스턴스 타입·수, ProductionVariant 가중치) → Endpoint(HTTPS 실체). 이 분리가 무중단 blue/green 배포, A/B 테스트(가중치 분배), shadow testing(응답 폐기 검증)을 가능케 한다.
+- **오토스케일링**: `SageMakerVariantInvocationsPerInstance` 타깃 추적이 표준, 최소 1대 유지(0 불가). 갑작스러운 스파이크는 오토스케일링이 못 따라가니 **예약 스케일링**이나 높은 `MinCapacity`로 대비한다.
+- **인스턴스 선택**: 전통 ML(XGBoost)=CPU(m5/c5), 딥러닝=GPU(g4dn/g5), 딥러닝 비용 절감=Inferentia(inf1/inf2). 결정이 어려우면 **Inference Recommender**가 부하 테스트로 최적 구성을 추천한다.
 
-**오토스케일링**은 `SageMakerVariantInvocationsPerInstance` 타깃 추적이 표준이고 최소 1대를 유지한다(0 불가). 갑작스러운 스파이크는 오토스케일링이 못 따라가니 **예약 스케일링**이나 높은 `MinCapacity`로 대비한다.
+배포부터 스케일링, 교체까지의 흐름을 코드 한 덩어리로 압축하면 다음과 같다.
 
-**인스턴스 선택**: 전통 ML(XGBoost)=CPU(m5/c5), 딥러닝=GPU(g4dn/g5), 딥러닝 비용 절감=Inferentia(inf1/inf2). 결정이 어려우면 **Inference Recommender**가 부하 테스트로 최적 구성을 추천한다.
+```python
+import boto3
+sm = boto3.client("sagemaker")
+aas = boto3.client("application-autoscaling")
+
+# 1) Config → Endpoint 생성
+sm.create_endpoint_config(EndpointConfigName="cfg-v1", ProductionVariants=[{
+    "VariantName": "AllTraffic", "ModelName": "churn-model",
+    "InstanceType": "ml.m5.xlarge", "InitialInstanceCount": 2}])
+sm.create_endpoint(EndpointName="churn-ep", EndpointConfigName="cfg-v1")
+
+# 2) 오토스케일링 등록 (최소 1대, 0 불가)
+aas.register_scalable_target(
+    ServiceNamespace="sagemaker",
+    ResourceId="endpoint/churn-ep/variant/AllTraffic",
+    ScalableDimension="sagemaker:variant:DesiredInstanceCount",
+    MinCapacity=2, MaxCapacity=10)
+
+# 3) 새 모델로 무중단 교체 — 엔드포인트 이름은 그대로
+sm.update_endpoint(EndpointName="churn-ep", EndpointConfigName="cfg-v2")
+```
 
 > ⚠️ **함정**: 두 가지 단골 오답을 기억하자. ① XGBoost에 GPU를 붙이는 것 — 트리 모델은 GPU 이득이 미미하므로 CPU가 정답. ② 실시간 엔드포인트를 0으로 스케일하려는 것 — 실시간은 최소 1대 유지가 강제이므로 0이 필요하면 서버리스/비동기로 가야 한다.
 
@@ -44,11 +102,29 @@ Day3의 네 패턴을 한 줄씩 구분하자.
 
 > 🔍 **더 깊이**: MME vs MCE는 시험에서 가장 자주 헷갈리는 짝이다. 결정 키워드는 "프레임워크가 같은가/다른가"와 "모델이 수백 개인가/소수인가"다. 같은 컨테이너 + 다수 = MME, 다른 컨테이너 + 소수 = MCE. 추론 파이프라인은 "선택 호출"이 아니라 "순차 실행"이라는 점에서 둘과 다르다. 입력이 한 컨테이너를 거쳐 다음으로 흘러간다.
 
+호출 파라미터 이름만 봐도 어떤 패턴인지 즉시 구분된다.
+
+| 파라미터 / API | 어디에 쓰나 | 의미 |
+|----------------|-------------|------|
+| `TargetModel` | MME 호출 | S3의 어떤 모델 아티팩트를 쓸지 |
+| `TargetContainerHostname` | MCE 호출 | 어떤 컨테이너로 보낼지 |
+| `TargetVariant` | 실시간 엔드포인트 호출 | 가중치를 무시하고 특정 variant 강제 지정 |
+| `InitialVariantWeight` | EndpointConfig | variant별 트래픽 분배 비율 |
+| `InputLocation` | 비동기 호출 | 입력 데이터가 놓인 S3 경로 |
+| `split_type` / `strategy` | 배치 변환 | 입력 분할 단위 / 미니배치 방식 |
+| `join_source` | 배치 변환 | 출력에 원본 입력을 다시 결합 |
+| `MaxConcurrency` | 서버리스 | 동시 처리 가능한 최대 요청 수 |
+
 ## 배치·서버리스 심화 복습
 
-**배치 변환**은 대량 일괄의 최저 비용 옵션이다. 처리량은 `InstanceCount`(병렬), `SplitType=Line`(레코드 분할), `BatchStrategy=MultiRecord`/`MaxPayloadInMB`/`MaxConcurrentTransforms`로 튜닝한다. 입력은 여러 파일로 샤딩하거나 분할 가능하게 둬야 분산이 먹힌다. 예측을 원본 ID와 매칭하려면 `input_filter`/`output_filter`/`join_source`를 쓴다.
-
-**서버리스**는 `MemorySize`(1~6GB) + `MaxConcurrency`만 지정하면 0까지 스케일된다. 콜드 스타트가 문제면 **Provisioned Concurrency**로 미리 워밍(상시 비용 발생). 비용 이점은 "유휴가 많을 때"만 유효하고, 꾸준히 높은 트래픽이면 실시간이 더 싸다.
+- **배치 변환** — 대량 일괄의 최저 비용 옵션.
+  - 처리량 튜닝: `InstanceCount`(병렬), `SplitType=Line`(레코드 분할), `BatchStrategy=MultiRecord`/`MaxPayloadInMB`/`MaxConcurrentTransforms`.
+  - 입력은 여러 파일로 샤딩하거나 분할 가능하게 둬야 분산이 먹힌다.
+  - 예측을 원본 ID와 매칭하려면 `input_filter`/`output_filter`/`join_source`를 쓴다.
+- **서버리스** — `MemorySize`(1~6GB) + `MaxConcurrency`만 지정하면 0까지 스케일된다.
+  - 콜드 스타트가 문제면 **Provisioned Concurrency**로 미리 워밍(상시 비용 발생).
+  - 비용 이점은 "유휴가 많을 때"만 유효하고, 꾸준히 높은 트래픽이면 실시간이 더 싸다.
+  - 인스턴스 타입을 고르지 않으므로 **GPU가 필요한 모델은 배포할 수 없다**.
 
 > 💡 **관련 이론**: 비용 최적화의 큰 그림은 "유휴 비용을 없애는 것"이다. 트래픽이 0으로 떨어지는 구간이 있으면 서버리스·비동기·배치로 그 구간 비용을 0에 가깝게 만들 수 있다. 반대로 트래픽이 항상 차 있으면 실시간 + 오토스케일링 + (다수 모델이면)MME + (딥러닝이면)Inferentia로 단위 비용을 낮춘다. 추론 비용 시나리오는 거의 다 이 두 갈래로 환원된다.
 
@@ -67,13 +143,57 @@ Day3의 네 패턴을 한 줄씩 구분하자.
 - "인스턴스 타입을 데이터로 결정" → Inference Recommender
 - "무중단으로 신모델 배포" → 새 EndpointConfig + update_endpoint(blue/green)
 
-## 정리하며
+## 오답 유발 함정 총정리
 
-Week 6의 한 문장 요약: **요청 패턴이 추론 옵션을 정한다.** 즉시성·트래픽·페이로드·비용 4축으로 4옵션(실시간/서버리스/비동기/배치)을 가르고, 비용이 걸리면 다수 모델은 MME·딥러닝은 Inferentia·유휴 많으면 0 스케일 옵션으로 줄인다. 한 엔드포인트에 무엇을 묶을지는 MME(같은 컨테이너 다수)·MCE(다른 컨테이너 소수)·파이프라인(순차 체인)으로 구분한다. 이 결정 트리와 키워드 매핑을 외우면 추론 영역 문제는 거의 다 풀린다.
+시험에서 반복적으로 등장하는 잘못된 선택지들이다.
+
+| 그럴듯한 오답 | 왜 틀렸나 | 올바른 선택 |
+|---------------|-----------|-------------|
+| XGBoost 추론에 GPU(p4d)를 붙여 비용 절감 | 트리 모델은 GPU 병렬화 이득이 거의 없다 | CPU(m5/c5) |
+| 실시간 엔드포인트를 0대까지 스케일 인 | 실시간은 최소 1대 유지가 강제 | 서버리스 / 비동기 |
+| "비용 절감"만 보고 무조건 서버리스 | 꾸준히 높은 트래픽이면 오히려 비싸진다 | 트래픽 패턴부터 확인 |
+| GPU 딥러닝 모델을 서버리스로 배포 | 서버리스는 GPU 미지원 | 실시간(GPU) / 비동기 |
+| 새 모델 배포를 위해 엔드포인트 삭제 후 재생성 | 주소가 끊겨 다운타임 발생 | 새 Config + `update_endpoint` |
+| 신모델 검증을 A/B 50:50으로 | 사용자 절반이 신모델 응답을 실제로 받는다 | Shadow testing |
+| 프레임워크가 다른 모델들을 MME로 통합 | MME는 컨테이너가 하나뿐 | MCE |
+| 배치가 느려서 인스턴스만 계속 증설 | 입력이 분할 불가면 효과가 없다 | 입력 샤딩 + `split_type` |
+| 200MB·5분짜리 요청을 실시간으로 처리 | 6MB·60초 제약 초과 | 비동기 추론 |
+
+## 증상 → 원인 → 조치 종합
+
+| 증상 | 원인 | 조치 |
+|------|------|------|
+| 평시는 정상인데 이벤트 때만 지연 폭증 | 오토스케일링이 기동 시간을 못 따라감 | 예약 스케일링 / `MinCapacity` 상향 |
+| 유휴 시간에도 추론 비용이 크다 | 실시간 엔드포인트 상시 가동 | 서버리스·비동기·배치로 이전 |
+| 모델은 수백 개인데 엔드포인트 비용 폭발 | 모델마다 엔드포인트를 띄움 | MME로 통합 |
+| 딥러닝 추론 GPU 비용이 감당 안 됨 | 범용 GPU 단가 | Inferentia(inf1/inf2) + Neuron 컴파일 |
+| 운영 정확도가 학습 성능보다 낮다 | 전처리 불일치(training-serving skew) | 추론 파이프라인으로 전처리 동봉 |
+| 첫 호출만 느리다(서버리스·MME) | 콜드 스타트 / 콜드 로드 | Provisioned Concurrency, 메모리 상향 |
+| 배포 후 오류율 상승 | 신모델 회귀 | 카나리·선형 전환 + 알람 기반 자동 롤백 |
+
+## 한 문장 체크리스트
+
+- [ ] 4옵션의 페이로드·처리시간 한계(6MB·4MB·1GB / 60초·60초·60분)를 말할 수 있는가
+- [ ] "실시간은 0으로 못 줄인다"를 근거와 함께 설명할 수 있는가
+- [ ] 무중단 배포 절차(새 Config → `update_endpoint`)를 순서대로 말할 수 있는가
+- [ ] A/B와 shadow의 차이를 "사용자에게 응답이 가는가"로 구분할 수 있는가
+- [ ] MME·MCE·파이프라인을 호출 파라미터 이름으로 구분할 수 있는가
+- [ ] 배치가 느릴 때 가장 먼저 볼 것이 "입력이 분할 가능한가"임을 기억하는가
 
 다음 주에는 배포한 모델을 운영하는 단계 — 오케스트레이션과 모니터링으로 넘어간다.
 
----
+## 📖 용어
+
+- **요청 패턴** : 트래픽이 얼마나 자주·어떤 크기로 들어오는지의 성격. 추론 옵션 선택의 첫 번째 기준이다.
+- **always-on 비용** : 요청이 없어도 인스턴스가 켜져 있어 계속 나가는 고정 비용.
+- **0 스케일(Scale to zero)** : 요청이 없을 때 인스턴스를 아예 0대로 줄여 비용을 없애는 동작.
+- **blue/green 배포** : 새 버전을 따로 띄워 정상 확인 후 트래픽을 옮기고 옛 버전을 내리는 무중단 교체.
+- **카나리 배포** : 아주 적은 트래픽만 신버전에 먼저 흘려 보고 문제없으면 넓히는 방식.
+- **Shadow testing** : 실제 요청의 사본을 신모델에 보내되 응답은 버려서 사용자 영향 없이 검증하는 방법.
+- **MME / MCE** : 각각 "같은 컨테이너 + 다수 모델", "다른 컨테이너 + 소수 모델"을 한 엔드포인트에 두는 방식.
+- **추론 파이프라인** : 전처리→추론→후처리 컨테이너를 순서대로 이어 한 번의 호출로 처리하는 구조.
+- **training-serving skew** : 학습 때와 추론 때 전처리가 달라 성능이 조용히 떨어지는 문제.
+- **예약 스케일링(Scheduled scaling)** : 정해진 시각에 용량을 미리 늘려 두는 스케일링. 예측 가능한 급증에 쓴다.
 
 ## 📝 연습 문제
 
