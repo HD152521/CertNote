@@ -1,8 +1,196 @@
 # Day 1 - ML Lifecycle (Specialty Perspective)
 
-The AWS Certified Machine Learning – Specialty (MLS-C01) exam doesn't ask about SageMaker button locations. Instead, it presents scenarios asking: "To solve this business problem, what data do I need, how should I prepare it, which algorithm should I use, what metrics should I track, and how should I deploy and monitor?" That's why Day 1 reframes the entire lifecycle at Specialty depth. While Associate-level asks "what is each stage?", Specialty asks "what are the trade-offs between stages?"
+## 📌 핵심 정리
 
-Today's goals are to: ① learn how to translate business problems into ML problems, ② understand the circular structure of data → features → model → deployment → monitoring, and ③ develop the mindset to connect offline model metrics to business metrics.
+- MLS-C01은 "SageMaker 버튼 위치"가 아니라 **단계 간 트레이드오프**를 묻는다. 데이터·피처·알고리즘·지표·배포를 한 시나리오로 엮어 낸다.
+- 비즈니스 목표를 ML 문제로 번역할 때 **예측 대상·입력 특성·성공 지표** 세 가지를 먼저 고정한다.
+- 같은 문제도 **레이블 가용성**에 따라 지도학습 분류 ↔ 비지도 이상탐지로 문제 유형이 바뀐다(Specialty 단골 함정).
+- 수명주기는 선형이 아니라 **순환**이다. 운영 중 드리프트가 감지되면 모니터링이 재학습을 트리거해 데이터 단계로 되돌아간다.
+- 오프라인 지표는 **게이트**, 온라인 비즈니스 지표(A/B)는 **최종 판정**이다. accuracy 단독은 불균형 데이터에서 무의미하다.
+
+## 문제 정의: 비즈니스 질문을 ML 문제로 번역하기
+
+가장 흔한 실패는 모델링이 아니라 **문제 정의**에서 난다. "이탈을 줄이고 싶다"는 비즈니스 목표이지 ML 문제가 아니다. 번역하려면 세 가지를 고정해야 한다.
+
+1. **예측 대상(target)**: 무엇을 예측하는가 — 향후 30일 내 이탈 여부(이진 분류)?
+2. **입력 특성(features)**: 어떤 신호로 예측하는가 — 최근 로그인 빈도, 결제 이력, 지원 티켓?
+3. **성공 지표(metric)**: 무엇이 "좋은" 모델인가 — recall ≥ 0.8 조건에서 precision 최대화?
+
+문제 유형을 틀리면 그 뒤 모든 것이 어긋난다. Specialty는 이 매핑을 시나리오로 계속 묻는다.
+
+### 문제 유형 매핑표
+
+| 비즈니스 질문 | ML 문제 유형 | 전형적 출력 | 대표 알고리즘 |
+|---|---|---|---|
+| 이 거래는 사기인가? | 이진 분류 | 0~1 확률 | XGBoost, Linear Learner |
+| 이 고객은 어느 세그먼트인가? | 다중 분류 | 클래스 레이블 | XGBoost, k-NN |
+| 다음 달 매출은 얼마인가? | 회귀 | 연속값 | XGBoost, Linear Learner, DeepAR(시계열) |
+| 어떤 사용자들이 비슷한 그룹인가? | 군집 | 클러스터 ID | K-Means |
+| 이 사용자가 다음에 살 상품은? | 추천 | 랭킹 리스트 | Factorization Machines, Neural Topic 계열 |
+| 이 센서 값은 이상한가? | 이상 탐지 | 이상 점수 | Random Cut Forest |
+| 다음 7일 수요는? | 시계열 예측 | 구간별 예측 | DeepAR |
+
+> 💡 **개념**: 지도학습은 레이블 있는 데이터에서 입력→출력 매핑을 배우고, 비지도학습은 레이블 없이 구조를 찾는다. 사기 탐지는 보통 지도학습 이진 분류지만, 과거 사기 사례(양성 레이블)가 극단적으로 희소하면 비지도 이상 탐지(Random Cut Forest)로 옮겨간다. **같은 비즈니스 문제도 레이블 가용성에 따라 문제 유형이 바뀐다.**
+
+> ⚠️ **함정**: "사기 탐지 = 무조건 분류"로 외우면 레이블이 없는 신규 서비스 시나리오에서 오답을 고른다. 지문에서 "과거 사례가 거의 없다", "레이블링 예산이 없다"는 단서를 찾으면 비지도 이상 탐지가 정답 후보로 올라온다.
+
+## 수명주기는 선형이 아니라 순환이다
+
+ML 시스템은 한 번 만들고 끝나지 않는다. 운영 중 데이터가 변하면(드리프트) 사이클이 다시 시작된다.
+
+```
+1. 데이터   : 수집 → 정제 → 레이블링 → 저장(데이터레이크)
+2. 피처     : 피처 엔지니어링 → 변환 → Feature Store
+3. 모델     : 알고리즘 선택 → 학습 → HPO 튜닝 → 평가
+4. 배포     : 실시간 엔드포인트 / 배치 변환 / 서버리스
+5. 모니터링 : 데이터·모델 품질 드리프트 → 재학습 트리거
+              └──────────(1단계로 되돌아감)──────────┘
+```
+
+- 이번 주(Week 1)는 1단계(데이터)와 그 직전 단계 — 수집·저장·레이블링에 집중한다.
+- Specialty는 데이터 엔지니어링에 **약 20%**의 비중을 둔다.
+- 각 단계를 별도 잡으로 분리하면 재현성과 재실행이 쉬워진다. 정제만 다시 돌리거나, 같은 피처 위에 다른 알고리즘을 얹어 볼 수 있다.
+
+```python
+# 수명주기의 SageMaker SDK 관점 — 단계별 관심사 분리
+import sagemaker
+from sagemaker.processing import ProcessingInput, ProcessingOutput
+from sagemaker.sklearn.processing import SKLearnProcessor
+
+session = sagemaker.Session()
+role = sagemaker.get_execution_role()
+
+# 1~2단계: Processing Job으로 정제 + 피처 엔지니어링
+processor = SKLearnProcessor(
+    framework_version="1.2-1",
+    role=role,
+    instance_type="ml.m5.xlarge",
+    instance_count=1,
+)
+processor.run(
+    code="preprocess.py",
+    inputs=[ProcessingInput(source="s3://my-lake/raw/", destination="/opt/ml/processing/input")],
+    outputs=[ProcessingOutput(source="/opt/ml/processing/train", destination="s3://my-lake/features/train")],
+)
+```
+
+> 💡 **개념**: **training-serving skew**(학습-서빙 불일치)는 학습 때의 피처 변환 로직과 추론 때의 로직이 달라 성능이 떨어지는 현상이다. 전처리를 코드(`preprocess.py`)에 고정해 학습·추론에서 동일하게 재사용하거나, SageMaker Feature Store로 피처를 중앙 관리하면 skew가 줄어든다. 노트북에서 즉흥적으로 만든 피처는 거의 항상 skew를 만든다.
+
+### 배포 형태 선택 (4단계)
+
+같은 모델이라도 트래픽 성격에 따라 배포 형태가 달라진다. Specialty는 이 선택도 시나리오로 묻는다.
+
+| 배포 형태 | 동작 | 적합한 상황 |
+|---|---|---|
+| 실시간 엔드포인트 | 상시 인스턴스, 요청당 즉시 응답 | 밀리초 응답이 필요한 온라인 추론 |
+| 서버리스 추론 | 요청 시 자동 기동, 유휴 시 0 | 트래픽이 간헐적·예측 불가, 콜드스타트 허용 |
+| 비동기 추론 | 요청을 큐에 넣고 결과를 S3로 | 페이로드가 크거나 처리 시간이 긴 추론 |
+| 배치 변환 | 잡을 띄워 대량 데이터를 한 번에 채점 | 야간 일괄 스코어링, 엔드포인트 상시 유지 불필요 |
+
+> ⚠️ **함정**: "비용을 줄여라"만 보고 무조건 서버리스를 고르면 틀린다. 응답 지연(SLA)이 엄격하다는 단서가 있으면 콜드스타트가 있는 서버리스는 오답이고, 실시간 엔드포인트가 답이다.
+
+### 데이터 분할: 무작위가 항상 옳지는 않다
+
+- **일반 정형 데이터**: 무작위 분할(train/validation/test). 클래스 불균형이면 **계층 분할(stratified)**로 비율을 유지한다.
+- **시계열 데이터**: 반드시 **시간순 분할**. 미래 데이터를 학습에 넣으면 실제로는 알 수 없었던 정보를 쓰는 누수가 된다.
+- **그룹형 데이터**(같은 사용자의 여러 행): 사용자 단위로 묶어서 분할해야 한다. 같은 사용자가 학습·검증에 흩어지면 성능이 부풀려진다.
+
+## 오프라인 모델 지표를 비즈니스 지표에 연결하기
+
+Specialty가 가장 깊게 파는 지점이다. accuracy 같은 단일 지표는 사람을 속인다. 사기가 전체 거래의 0.1%라면 "전부 정상"이라고만 예측해도 accuracy 99.9%가 나온다. 그래서 **클래스 불균형**과 **오류 비용**을 함께 봐야 한다.
+
+```python
+# 분류 핵심 지표 (혼동 행렬 기반)
+from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
+
+# precision = TP / (TP + FP)  → "사기라 표시한 것 중 진짜 비율" (오탐 비용)
+# recall    = TP / (TP + FN)  → "실제 사기 중 잡아낸 비율"       (미탐 비용)
+precision = precision_score(y_true, y_pred)
+recall    = recall_score(y_true, y_pred)
+f1        = f1_score(y_true, y_pred)          # precision·recall의 조화평균
+auc       = roc_auc_score(y_true, y_score)    # 임계값 무관, 랭킹 품질
+```
+
+### 지표 해석표 — 어떤 상황에서 무엇을 말하는가
+
+| 지표 | 계산 | 높으면 뜻하는 것 | 우선해야 할 상황 | 함정 |
+|---|---|---|---|---|
+| Accuracy | (TP+TN)/전체 | 전체적으로 자주 맞힘 | 클래스가 균형일 때만 | 불균형이면 "전부 음성"으로도 99%+ |
+| Precision | TP/(TP+FP) | 오탐이 적음 | 오탐 비용이 큼(스팸 차단, 마케팅 발송) | 소수만 예측하면 쉽게 올라감 |
+| Recall | TP/(TP+FN) | 미탐이 적음 | 미탐 비용이 큼(사기, 암 진단) | 전부 양성 예측하면 1.0 |
+| F1 | precision·recall 조화평균 | 둘의 균형이 좋음 | 두 비용이 비슷할 때 | 어느 쪽이 문제인지 감춘다 |
+| ROC-AUC | TPR-FPR 곡선 면적 | 임계값 무관 분별력 | 임계값 미정, 모델 비교 | 극단 불균형에서 과도하게 낙관적 |
+| PR-AUC | precision-recall 곡선 면적 | 소수 클래스 분별력 | 극단 불균형(양성 <1%) | 클래스 비율이 바뀌면 값도 바뀜 |
+| RMSE | 오차 제곱 평균의 제곱근 | 큰 오차가 적음 | 회귀, 큰 오차를 크게 벌주고 싶을 때 | 이상치에 민감 |
+| MAE | 절대오차 평균 | 평균 오차가 작음 | 회귀, 이상치에 강건해야 할 때 | 큰 오차를 관대하게 봄 |
+
+비즈니스 맥락이 어떤 지표를 최적화할지 정한다.
+
+- **사기 탐지 / 암 진단**: 하나 놓치면 치명적 → **recall** 우선
+- **스팸 필터 / 마케팅 타게팅**: 오탐이 비쌈(정상 메일 차단) → **precision** 우선
+- **불균형 + 임계값 미정**: **AUC**나 **PR-AUC**로 모델의 순수 분별력만 비교
+
+> 💡 **개념**: ROC-AUC(TPR-FPR 곡선 면적)는 클래스 불균형에 비교적 둔감하다. 하지만 양성이 0.1% 수준으로 극단적이면 ROC-AUC가 지나치게 낙관적으로 보이므로 **PR-AUC**(precision-recall 곡선 면적)가 더 정직한 신호를 준다. Specialty가 "불균형 데이터의 지표는?"이라고 물으면 답은 대개 PR-AUC이거나, recall/precision 중 비용이 더 큰 쪽이다.
+
+> ⚠️ **함정**: 지표 선택 문제에서 "학습 손실(loss)"은 거의 항상 오답이다. 손실은 최적화 대상일 뿐 비즈니스 비용 구조를 반영하지 않는다.
+
+## A/B 테스트를 통한 온라인 검증
+
+오프라인 지표가 좋다고 실제 사용자 행동(매출, 체류 시간)이 개선된다는 보장은 없다. 그래서 배포는 일회성이 아니라 트래픽을 나눠 검증하는 과정이다. SageMaker는 한 엔드포인트에 여러 variant를 올리고 가중치로 트래픽을 분배한다.
+
+```python
+from sagemaker.session import production_variant
+
+variant_a = production_variant(model_name="model-v1", instance_type="ml.m5.large",
+                               initial_instance_count=1, variant_name="A", initial_weight=90)
+variant_b = production_variant(model_name="model-v2", instance_type="ml.m5.large",
+                               initial_instance_count=1, variant_name="B", initial_weight=10)
+
+session.endpoint_from_production_variants(
+    name="fraud-endpoint", production_variants=[variant_a, variant_b]
+)
+# 신모델(B)에 10%만 보내고 CloudWatch로 비즈니스 지표를 비교한 뒤 가중치 조정
+```
+
+```
+[오프라인 게이트]                    [온라인 판정]
+학습셋/검증셋 지표  ──통과──▶  소량 트래픽 A/B  ──개선 확인──▶  가중치 확대
+   (PR-AUC 등)      │                  │
+                   실패              악화
+                    ▼                  ▼
+                 배포 안 함        롤백(가중치 0)
+```
+
+- 오프라인 지표는 **게이트** — 통과하지 못하면 배포하지 않는다.
+- 온라인 지표는 **최종 판정** — 실제 비즈니스 수치가 답이다.
+- 이 분리가 Specialty가 요구하는 운영 감각이다.
+
+## 시나리오 문제를 푸는 순서
+
+Specialty 지문은 제약을 여러 개 겹쳐 놓는다. 아래 순서대로 읽으면 대부분 풀린다.
+
+1. **무엇을 예측하는가** → 문제 유형(분류/회귀/군집/이상탐지/추천/시계열)을 고정한다.
+2. **레이블이 있는가** → 없으면 지도학습 후보가 전부 탈락한다.
+3. **클래스가 균형인가** → 불균형이면 accuracy 계열 보기를 먼저 버린다.
+4. **오탐과 미탐 중 무엇이 더 비싼가** → precision과 recall 중 우선순위가 정해진다.
+5. **응답 지연·데이터 민감도·비용 제약** → 배포 형태와 운영 방식이 정해진다.
+
+> ⚠️ **함정**: 제약이 충돌하는 지문에서는 **가장 화려한 기술이 아니라 모든 제약을 동시에 만족하는 선택**이 정답이다. 제약을 하나라도 어기면(예: 민감 데이터를 공개 워크포스에) 다른 장점과 무관하게 오답이다.
+
+내일은 이 데이터를 **어디에 어떤 포맷으로 두는가**(S3·EFS·FSx for Lustre, RecordIO·Parquet)를 다룬다.
+
+## 📖 용어
+
+- **레이블(label)** : 데이터에 붙어 있는 정답. "이 거래는 사기였다"처럼 모델이 맞혀야 할 값.
+- **클래스 불균형** : 양성과 음성의 비율이 극단적으로 치우친 상태. 사기 0.1% 같은 경우.
+- **precision(정밀도)** : 양성이라 말한 것 중 진짜 양성의 비율. 오탐 비용을 본다.
+- **recall(재현율)** : 실제 양성 중 잡아낸 비율. 미탐 비용을 본다.
+- **PR-AUC** : precision-recall 곡선 아래 면적. 극단 불균형에서 ROC-AUC보다 정직하다.
+- **ROC-AUC** : 임계값을 바꿔가며 그린 TPR-FPR 곡선의 면적. 모델의 순위 매김 능력.
+- **드리프트(drift)** : 운영 중 입력 데이터 분포나 정답 관계가 변해 모델 성능이 떨어지는 현상.
+- **training-serving skew** : 학습 때 쓴 피처 계산 로직과 추론 때 로직이 달라 성능이 떨어지는 사고.
+- **production variant** : 한 엔드포인트에 올린 모델 버전. 가중치로 트래픽을 나눠 A/B 테스트를 한다.
+- **Random Cut Forest** : SageMaker 내장 비지도 이상 탐지 알고리즘. 레이블 없이 이상 점수를 매긴다.
 
 ## Problem Definition: Translating Business Questions into ML Problems
 

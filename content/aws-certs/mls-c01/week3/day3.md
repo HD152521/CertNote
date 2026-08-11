@@ -1,21 +1,28 @@
 # Day 3 - Time Series, Text Features, and High-Cardinality Categorical Handling
 
-Yesterday we covered numeric and general categorical data. Today we explore feature engineering for two specialized data types—**dates and times (time series)** and **text**—that require custom handling. Finally, we'll address the perpetual challenge in encoding: managing **high-cardinality categorical features** through dimensionality reduction and hashing techniques.
+## 📌 핵심 정리
 
-This topic appears frequently in MLS-C01 exams in the form "which transformation is appropriate for what data?"
+- 날짜는 그대로 넣지 말고 **성분으로 분해**(연/월/일/요일/시/주말·공휴일 플래그, 경과일).
+- 주기형 변수(시·요일·월)는 **사인/코사인 두 축**으로 단위원에 매핑해야 23시와 0시가 인접해진다.
+- 텍스트 벡터화는 **BoW → TF-IDF → 임베딩** 순으로 표현력이 올라간다. TF-IDF는 흔한 단어를 억제한다.
+- 고카디널리티 범주형에 원핫은 차원 폭발. **타깃/빈도 인코딩, 해싱, 임베딩**으로 통제한다.
+- 해싱은 사전이 필요 없어 **미지의 범주·스트리밍에 강하지만 충돌**을 감수한다.
 
-## Derived Features from Dates and Times
+## 날짜·시간에서 파생 피처 만들기
 
-Using a date column as-is (e.g., `2026-06-26 14:30:00`) leaves the model unable to extract meaning. The date must be **decomposed** into meaningful components.
+어제는 수치형과 일반 범주형을 다뤘다. 오늘은 별도 취급이 필요한 두 특수 데이터 — **날짜·시간(시계열)**과 **텍스트** — 의 특성 공학, 그리고 인코딩의 영원한 숙제인 **고카디널리티 범주형** 처리를 본다. MLS-C01은 "어떤 데이터에 어떤 변환이 적절한가" 형태로 이 주제를 자주 낸다.
 
-| Derived Feature | Example | Pattern Captured |
-|------|------|------|
-| year / month / day | 2026, 6, 26 | Long-term trends, seasonality |
-| dayofweek | 0 (Mon) – 6 (Sun) | Day-of-week effects |
-| hour | 0 – 23 | Intra-day patterns |
-| is_weekend | 0/1 | Weekend flag |
-| is_holiday | 0/1 | Holiday effects |
-| days_since_event | 90 | Elapsed time |
+날짜 컬럼을 그대로(`2026-06-26 14:30:00`) 쓰면 모델이 의미를 읽지 못한다. 날짜는 **성분으로 분해**해야 한다.
+
+| 파생 피처 | 예 | 포착하는 패턴 |
+|---|---|---|
+| year / month / day | 2026, 6, 26 | 장기 추세, 계절성 |
+| dayofweek | 0(월) – 6(일) | 요일 효과 |
+| hour | 0 – 23 | 하루 안의 패턴 |
+| is_weekend | 0/1 | 주말 플래그 |
+| is_holiday | 0/1 | 공휴일 효과 |
+| days_since_event | 90 | 경과 시간 |
+| week_of_year / quarter | 26, Q2 | 주·분기 단위 주기 |
 
 ```python
 import pandas as pd
@@ -27,7 +34,7 @@ df["hour"] = df["ts"].dt.hour
 df["is_weekend"] = (df["dayofweek"] >= 5).astype(int)
 ```
 
-Cyclical variables present a hidden challenge. Hour 23 and hour 0 are actually 1 hour apart, but as integers they appear 23 units away. **Sine/cosine transformation** restores the circular structure.
+주기형 변수에는 숨은 함정이 있다. 23시와 0시는 실제로 1시간 차이인데, 정수로 두면 23만큼 떨어져 보인다. **사인/코사인 변환**이 원형 구조를 복원한다.
 
 ```python
 import numpy as np
@@ -36,50 +43,78 @@ df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
 df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
 ```
 
-> 💡 **Key Theory**: The essence of sine/cosine encoding is to "preserve periodic distance." By mapping hours as angles on the unit circle, hour 23 (345°) and hour 0 (0°) become adjacent on the circle—the model now treats them as close. Using only sine creates ambiguity (hours 12 and 0 get the same value), so both sine and cosine are necessary to give all 24 hours unique (x, y) coordinates. This universal technique applies to any periodic variable (days, months, etc.).
+```
+[정수 인코딩]   0 ─ 1 ─ 2 ─ ... ─ 22 ─ 23        23과 0의 거리 = 23 (틀림)
 
-## Text Features: BoW, TF-IDF, Embeddings
+[sin/cos]            0시
+                  23 ╱ ╲ 1              단위원 위에서 23시와 0시가 이웃
+                    │   │
+                  18 ╲ ╱ 6              거리 = 짧음 (맞음)
+                     12시
+```
 
-Converting text to numeric vectors is called **vectorization**. Let's review approaches from simplest to most sophisticated.
+> 💡 **개념**: 사인/코사인 인코딩의 본질은 "**주기적 거리를 보존**"하는 것이다. 시간을 단위원 위의 각도로 매핑하면 23시(345°)와 0시(0°)가 원 위에서 인접해져 모델이 가깝게 취급한다. 사인만 쓰면 12시와 0시가 같은 값이 되는 모호함이 생기므로, 사인과 코사인을 함께 써야 24개 시각이 모두 고유한 (x, y) 좌표를 갖는다. 요일·월 등 모든 주기형 변수에 통용되는 기법이다.
 
-| Technique | Representation | Strengths | Limitations |
-|------|------|------|------|
-| **Bag of Words (BoW)** | Word frequency counts | Simple, fast | Ignores order/meaning; overweights common words |
-| **TF-IDF** | Frequency × sparsity weight | Suppresses common words | Still ignores order/meaning |
-| **N-gram** | Consecutive word groups | Captures some order | Dimensionality explosion |
-| **Word Embedding** | Dense vectors (Word2Vec/GloVe) | Captures semantics and similarity | Requires pretrained models |
-| **Contextual Embedding** | BERT, etc. | Context-aware semantics | Computationally heavy |
+### 시계열 특유의 피처
 
-TF-IDF addresses BoW's fundamental weakness. Words like "the" and "is" appear in all documents but carry no discriminative signal; BoW naively overweights them by counting frequency alone. TF-IDF **reduces weights for words appearing in many documents**, elevating rare but meaningful words.
+- **래그(lag) 피처**: 어제 매출, 7일 전 매출처럼 과거 값을 그대로 피처로 쓴다.
+- **롤링 통계**: 최근 7일 이동평균, 이동표준편차 등 구간 통계.
+- **차분(difference)**: 전날 대비 변화량. 추세를 제거해 정상성을 얻는다.
+- **계절 지표**: 연중 주차, 분기, 프로모션 기간 플래그.
+
+> ⚠️ **함정**: 래그·롤링 피처는 **예측 시점 이후 데이터가 섞이면 즉시 누수**다. "최근 7일 평균"을 만들 때 예측일 당일이나 이후 값을 포함하면 실제 운영에서는 알 수 없었던 정보로 학습한 것이 된다. 시계열은 분할도 반드시 시간순으로 한다.
+
+## 텍스트 피처: BoW, TF-IDF, 임베딩
+
+텍스트를 수치 벡터로 바꾸는 것을 **벡터화(vectorization)**라 한다. 단순한 것부터 정교한 것까지 훑어보자.
+
+| 기법 | 표현 | 강점 | 한계 |
+|---|---|---|---|
+| **Bag of Words (BoW)** | 단어 빈도 카운트 | 단순·빠름 | 순서·의미 무시, 흔한 단어 과대평가 |
+| **TF-IDF** | 빈도 × 희소성 가중 | 흔한 단어 억제 | 여전히 순서·의미 무시 |
+| **N-gram** | 연속된 단어 묶음 | 일부 순서 포착 | 차원 폭발 |
+| **Word Embedding** | 밀집 벡터(Word2Vec/GloVe) | 의미·유사성 포착 | 사전학습 모델 필요 |
+| **Contextual Embedding** | BERT 등 | 문맥 반영 의미 | 연산 비용 큼 |
+
+TF-IDF는 BoW의 근본적 약점을 보완한다. "the", "is" 같은 단어는 모든 문서에 나타나 변별력이 없는데, BoW는 빈도만 세어 이들을 과대평가한다. TF-IDF는 **여러 문서에 나타나는 단어의 가중치를 낮춰** 희귀하지만 의미 있는 단어를 부각한다.
 
 ```python
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 vectorizer = TfidfVectorizer(
-    max_features=5000,      # top 5000 words only
-    ngram_range=(1, 2),     # unigrams + bigrams
-    stop_words="english",   # remove stopwords
+    max_features=5000,      # 상위 5000개 단어만
+    ngram_range=(1, 2),     # 유니그램 + 바이그램
+    stop_words="english",   # 불용어 제거
 )
 X_text = vectorizer.fit_transform(train_texts)
-X_test_text = vectorizer.transform(test_texts)   # transform only
+X_test_text = vectorizer.transform(test_texts)   # transform만
 ```
 
-> 💡 **Key Theory**: TF-IDF's IDF (inverse document frequency) = log(total documents / documents containing that word). Words appearing in all documents have a ratio near 1, making their log approach 0 (weight vanishes); words appearing in few documents get large IDF. This implements an information-theoretic principle ("ignore common, highlight rare") via multiplication. However, TF-IDF treats words independently, missing semantic similarities like "good" and "great." Embeddings overcome this by placing words in dense vector space, where Word2Vec learns by predicting center words from context.
+> 💡 **개념**: TF-IDF의 IDF(역문서빈도) = log(전체 문서 수 / 그 단어를 포함한 문서 수). 모든 문서에 나오는 단어는 비율이 1에 가까워 log가 0에 수렴해 가중치가 사라지고, 소수 문서에만 나오는 단어는 IDF가 커진다. "흔한 것은 무시하고 희귀한 것을 부각한다"는 정보이론적 원리를 곱셈으로 구현한 것이다. 다만 TF-IDF는 단어를 독립적으로 다뤄 "good"과 "great" 같은 의미 유사성을 놓친다. 임베딩은 단어를 밀집 벡터 공간에 배치해 이를 극복한다.
 
-On AWS, instead of vectorizing text directly, you can use **Amazon Comprehend** (entity, sentiment, key phrase extraction) or SageMaker's built-in **BlazingText** (Word2Vec implementation) to generate embeddings.
+AWS에서는 텍스트를 직접 벡터화하는 대신 **Amazon Comprehend**(개체·감성·핵심구 추출)를 쓰거나, SageMaker 내장 **BlazingText**(Word2Vec 구현)로 임베딩을 만들 수 있다.
 
-## High-Cardinality Categorical Handling
+### 텍스트 전처리에서 함께 나오는 것들
 
-Categories with thousands or millions of unique values—cities, product IDs, user IDs—explode in dimensionality if one-hot encoded. Here's the strategy breakdown:
+- **토큰화(tokenization)**: 문장을 단어·서브워드 단위로 자른다.
+- **불용어 제거**: "은/는/이/가", "the/is" 같은 기능어를 뺀다.
+- **표제어 추출(lemmatization)·어간 추출(stemming)**: "running/ran/runs"를 하나로 묶는다.
+- **소문자화·특수문자 정리**: 같은 단어가 여러 형태로 흩어지는 것을 막는다.
 
-| Strategy | Method | Advantage | Drawback |
-|------|------|------|------|
-| **Target/Frequency Encoding** | Replace with target mean or frequency | Maintains single column | Risk of leakage |
-| **Feature Hashing** | Hash function maps to fixed dimensions | Fixed memory, streaming-friendly | Collision |
-| **Embedding Layer** | Neural network learns dense vectors | Captures semantics | Requires training data and network |
-| **Group Rare Categories** | Lump low-frequency categories into "Other" | Simple, reduces dimensions | Information loss |
+> ⚠️ **함정**: 벡터라이저의 어휘 사전(vocabulary)도 **학습셋에서만 fit**해야 한다. 테스트 문서까지 포함해 사전을 만들면 누수다. 테스트에서 처음 보는 단어는 그냥 무시되는 것이 정상 동작이다.
 
-The hashing trick maps categories to fixed-size vectors using a hash function. Since no vocabulary is needed upfront, it's robust to **unseen categories and streaming data**. The tradeoff is collision—different categories may hash to the same slot.
+## 고카디널리티 범주형 처리
+
+도시, 상품 ID, 사용자 ID처럼 고유값이 수천~수백만 개인 범주형은 원핫으로 만들면 차원이 폭발한다. 전략별 정리는 이렇다.
+
+| 전략 | 방법 | 장점 | 단점 |
+|---|---|---|---|
+| **타깃/빈도 인코딩** | 타깃 평균이나 빈도로 치환 | 컬럼 하나 유지 | 누수 위험(타깃), 충돌(빈도) |
+| **Feature Hashing** | 해시 함수로 고정 차원에 매핑 | 메모리 고정, 스트리밍 친화 | 충돌 |
+| **임베딩 레이어** | 신경망이 밀집 벡터 학습 | 의미적 유사성 포착 | 학습 데이터·네트워크 필요 |
+| **희귀 범주 묶기** | 저빈도 범주를 "기타"로 통합 | 단순, 차원 감소 | 정보 손실 |
+
+해싱 트릭은 해시 함수로 범주를 고정 크기 벡터에 매핑한다. 사전을 미리 만들 필요가 없어 **미지의 범주와 스트리밍 데이터에 강하다**. 대가는 충돌 — 서로 다른 범주가 같은 슬롯에 들어갈 수 있다.
 
 ```python
 from sklearn.feature_extraction import FeatureHasher
@@ -88,17 +123,76 @@ hasher = FeatureHasher(n_features=256, input_type="string")
 X_hashed = hasher.transform(df["city"].astype(str).apply(lambda x: [x]))
 ```
 
-> 💡 **Key Theory**: Embeddings learn a mapping from high-dimensional sparse (one-hot) to low-dimensional dense representations. Each category is mapped to, say, a 16-dimensional real vector, which is jointly optimized during model training. The result: "similar-behaving categories" cluster together in vector space (e.g., in recommendation systems, users with similar preferences become adjacent). This mirrors word embeddings and is the standard in deep learning recommendation and NLP. The embedding dimension is often chosen as the fourth root of cardinality by rule of thumb.
+```
+[원핫]     도시 5000개 → 5000 컬럼 (희소, 메모리 폭발)
+[해싱]     도시 5000개 → 256 컬럼 고정 (충돌 감수)
+[타깃]     도시 5000개 → 1 컬럼 (누수 주의)
+[임베딩]   도시 5000개 → 16차원 밀집 벡터 (학습으로 획득)
+```
 
-> ⚠️ **Pitfall**: Blindly applying one-hot encoding to high-cardinality categories causes memory explosion and makes model training difficult due to sparsity. If you see "millions of unique values," one-hot is likely wrong—think target encoding, hashing, or embeddings instead.
+> 💡 **개념**: 임베딩은 고차원 희소(원핫) 표현에서 저차원 밀집 표현으로 가는 매핑을 학습한다. 각 범주가 예컨대 16차원 실수 벡터로 매핑되고, 이 벡터가 모델 학습 과정에서 함께 최적화된다. 결과적으로 "**비슷하게 행동하는 범주끼리 벡터 공간에서 가까워진다**"(예: 추천 시스템에서 취향이 비슷한 사용자끼리 인접). 단어 임베딩과 같은 발상이며 딥러닝 추천·NLP의 표준이다. 임베딩 차원은 경험칙으로 카디널리티의 네제곱근 정도를 자주 쓴다.
 
-## Summary
+> ⚠️ **함정**: 고카디널리티 범주형에 무작정 원핫을 적용하면 메모리가 폭발하고 희소성 때문에 학습도 어려워진다. "고유값이 수백만 개"라는 서술이 보이면 원핫은 오답이고, 타깃 인코딩·해싱·임베딩을 떠올려야 한다.
 
-Key points for specialized data feature engineering: (1) **Dates** are decomposed into components; periodicity uses sine/cosine; (2) **Text** progresses from BoW → TF-IDF → embeddings in rising complexity and expressiveness; TF-IDF suppresses common words; (3) **High-cardinality categories** use target encoding, hashing, or embeddings instead of one-hot to control dimensions.
+## 시계열을 모델에 넣기 전에
 
-Next, we'll see SageMaker tools that automate all these transformations at scale: Data Wrangler, Processing Jobs, and Feature Store.
+날짜 파생 피처와 별개로, 시계열 자체를 다룰 때 알아 둘 개념이 있다.
 
----
+- **추세(trend)**: 장기적으로 오르거나 내리는 성분.
+- **계절성(seasonality)**: 일·주·월·연 단위로 반복되는 성분.
+- **정상성(stationarity)**: 평균과 분산이 시간에 따라 변하지 않는 성질. 많은 전통 시계열 모델이 이를 가정한다.
+- **차분(differencing)**: 이전 값과의 차이를 취해 추세를 제거하고 정상성에 가깝게 만드는 변환.
+
+| 접근 | 방식 | 언제 |
+|---|---|---|
+| 시계열을 지도학습으로 변환 | 래그·롤링 피처를 만들어 회귀 문제로 | 일반 ML 모델(XGBoost 등)을 쓰고 싶을 때 |
+| 전용 시계열 모델 | DeepAR 같은 시계열 알고리즘 | 여러 계열을 함께 학습하고 구간 예측이 필요할 때 |
+
+> ⚠️ **함정**: 시계열 데이터를 무작위로 섞어 학습/검증을 나누는 순간 미래로 과거를 예측하는 셈이 된다. 시계열은 **시간순 분할**이 원칙이고, 교차 검증도 앞에서 뒤로 창을 밀어 가는 방식을 쓴다.
+
+## 텍스트 처리 파이프라인 예
+
+텍스트는 변환 단계가 길어 순서를 잘못 잡기 쉽다. 전형적인 순서는 이렇다.
+
+```
+원문 ─▶ 정규화(소문자·특수문자 정리)
+      ─▶ 토큰화
+      ─▶ 불용어 제거
+      ─▶ 표제어/어간 처리
+      ─▶ 벡터화(TF-IDF 또는 임베딩)   ← 학습셋에서만 fit
+      ─▶ 차원 축소(선택, SVD 등)
+      ─▶ 모델 입력
+```
+
+- 감성 분석처럼 부정어가 중요한 과제에서는 불용어 목록에서 부정어를 빼야 한다.
+- TF-IDF 결과는 매우 희소한 고차원 행렬이라, 필요하면 SVD 같은 차원 축소를 붙인다.
+- 임베딩을 쓰면 이 전처리 상당수가 모델 쪽으로 흡수된다.
+
+## 데이터 유형별 변환 요약
+
+| 데이터 유형 | 1차 변환 | 주의 |
+|---|---|---|
+| 날짜·시간 | 성분 분해 + sin/cos | 래그·롤링은 시점 누수 주의 |
+| 텍스트(짧은 문서) | TF-IDF + n-gram | 어휘 사전은 학습셋에서만 |
+| 텍스트(의미 필요) | 임베딩(BlazingText, 사전학습) | 연산 비용 |
+| 저카디널리티 범주 | One-Hot | 미지 범주 처리 설정 |
+| 고카디널리티 범주 | 타깃/해싱/임베딩 | 누수·충돌 |
+| 이미지 | 리사이즈·정규화·증강 | 레이블 보존 |
+
+다음 글에서는 이런 변환들을 규모 있게 자동화하는 SageMaker 도구 — Data Wrangler, Processing Job, Feature Store를 본다.
+
+## 📖 용어
+
+- **파생 피처(derived feature)** : 원본 컬럼에서 계산해 새로 만든 피처. 날짜 분해가 대표적이다.
+- **주기형 변수** : 시·요일·월처럼 끝과 시작이 이어지는 변수. sin/cos 변환이 필요하다.
+- **래그(lag) 피처** : 과거 시점의 값을 현재 행의 피처로 가져온 것.
+- **벡터화(vectorization)** : 텍스트 같은 비수치 데이터를 숫자 벡터로 바꾸는 작업.
+- **Bag of Words** : 단어 순서를 무시하고 등장 빈도만 세는 가장 단순한 텍스트 표현.
+- **TF-IDF** : 단어 빈도에 문서 희소성 가중을 곱해 흔한 단어를 억제하는 표현.
+- **임베딩(embedding)** : 범주나 단어를 저차원 밀집 벡터로 표현한 것. 학습으로 얻는다.
+- **Feature Hashing(해싱 트릭)** : 해시 함수로 범주를 고정 차원에 매핑하는 인코딩. 사전이 필요 없다.
+- **충돌(collision)** : 서로 다른 범주가 같은 해시 슬롯에 배정되는 현상. 해싱의 대가다.
+- **IDF(역문서빈도)** : 그 단어를 포함한 문서가 적을수록 커지는 가중치. 흔한 단어를 눌러 준다.
 
 ## 📝 연습 문제
 

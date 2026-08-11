@@ -1,35 +1,37 @@
 # Day 4 - Data Storage and Access Optimization: Pipe vs File Mode, FSx for Lustre, Distributed Training
 
-Even if data is well prepared, if the training job reads that data **slowly**, the GPU sits idle waiting for data. Expensive GPU instances becoming idle due to I/O bottlenecks is one of the most common and costly wastes in practice. Therefore, "how data is streamed to the training container" directly impacts performance and cost.
+## 📌 핵심 정리
 
-Today, we cover SageMaker's **input modes (Pipe vs File vs FastFile)**, the high-performance file system **FSx for Lustre**, and the **data sharding** concept for distributed training.
+- 데이터를 잘 준비해도 **읽는 속도가 느리면 GPU가 논다**. I/O 병목은 실무에서 가장 비싼 낭비다.
+- **File**(전체 다운로드 후 시작) / **Pipe**(스트리밍, 즉시 시작) / **FastFile**(스트리밍 + POSIX 접근)의 트레이드오프는 **시작 지연 vs 랜덤 접근 유연성**.
+- **FSx for Lustre**는 대규모 + 반복 읽기 + 저지연 + 분산일 때 값을 한다. 단발성 소규모엔 과하다.
+- 분산 학습은 **데이터 병렬**(모델 복제, 데이터 분할)과 **모델 병렬**(모델 자체를 쪼갬)로 나뉜다.
+- `ShardedByS3Key`는 **데이터가 여러 S3 객체로 나뉘어 있어야** 효과가 난다. 단일 거대 파일엔 무효.
 
-## SageMaker Input Modes
+## SageMaker 입력 모드
 
-SageMaker training jobs have multiple modes for bringing data from S3 to the container.
+SageMaker 학습 잡이 S3의 데이터를 컨테이너로 가져오는 방식은 여러 가지다. "어떻게 학습 컨테이너로 데이터를 흘려보내는가"가 성능과 비용에 직결된다.
 
-### File Mode (Default)
+### File 모드 (기본)
 
-**S3 data is completely downloaded to the container's EBS volume before training starts**, then training begins.
+**학습 시작 전에 S3 데이터를 컨테이너의 EBS 볼륨으로 전부 다운로드**한 다음 학습을 시작한다.
 
-- Advantages: Simple and stable. Treats data like local files. Favorable for repeated reads across multiple epochs.
-- Disadvantages: If data is large, **training cannot start until download completes** (startup delay). EBS capacity must be at least the size of the dataset.
+- 장점: 단순하고 안정적. 데이터를 로컬 파일처럼 다룬다. 여러 에폭 반복 읽기에 유리하다.
+- 단점: 데이터가 크면 **다운로드가 끝날 때까지 학습이 시작되지 않는다**(시작 지연). EBS 용량이 데이터셋 크기 이상이어야 한다.
 
-### Pipe Mode
+### Pipe 모드
 
-Data is not pre-downloaded; instead, it is **streamed directly from S3** during training.
+미리 내려받지 않고 학습 중에 **S3에서 직접 스트리밍**한다.
 
-- Advantages: No download waiting, so **training starts immediately**. Free from disk capacity constraints, and datasets can be larger than disk. High throughput with large data.
-- Disadvantages: Data received as sequential stream makes random access difficult, and specific formats like RecordIO/protobuf are usually required.
+- 장점: 다운로드 대기가 없어 **즉시 학습이 시작된다**. 디스크 용량 제약에서 자유롭고, 디스크보다 큰 데이터셋도 다룬다. 대용량에서 처리량이 높다.
+- 단점: 순차 스트림이라 랜덤 접근이 어렵고, 보통 RecordIO/protobuf 같은 특정 포맷이 필요하다.
 
-> 💡 **Related Theory**: File mode is "receive all then start," Pipe mode is "start while receiving." The core trade-off is **startup delay vs random access flexibility**. For datasets hundreds of GB~TB in size where startup delay and disk cost are concerns, Pipe mode is better; for small data with frequent flexible reads, File mode is better.
+### FastFile 모드
 
-### FastFile Mode
-
-A relatively newer mode that **compromises between File mode's ease of use (POSIX file-like access) and Pipe mode's immediate start**. Files are streamed on demand but handled like local files. It enables random access without waiting for full download, making it frequently recommended for large datasets.
+File 모드의 사용 편의성(POSIX 파일처럼 접근)과 Pipe 모드의 즉시 시작을 **절충**한 비교적 최신 모드다. 파일을 필요할 때 스트리밍으로 가져오되 로컬 파일처럼 다룬다. 전체 다운로드를 기다리지 않으면서 랜덤 접근이 가능해 대용량 데이터셋에 자주 권장된다.
 
 ```python
-# Specifying input mode in SageMaker Estimator (conceptual example)
+# SageMaker Estimator에서 입력 모드 지정 (개념 예시)
 from sagemaker.estimator import Estimator
 from sagemaker.inputs import TrainingInput
 
@@ -43,72 +45,143 @@ estimator = Estimator(
 
 train_input = TrainingInput(
     s3_data="s3://ml-train/clicks/",
-    input_mode="FastFile",   # mode can be re-specified per input
+    input_mode="FastFile",   # 입력별로 모드를 다시 지정할 수 있다
 )
 estimator.fit({"train": train_input})
 ```
 
-> ⚠️ **Pitfall**: The simplification "Pipe mode is always faster" is risky. Pipe mode is a sequential stream, making random access and shuffling difficult, and requires specific formats. For small datasets or those needing random access, File/FastFile is actually more appropriate. Data size, access patterns, and format must all be considered.
+> 💡 **개념**: File 모드는 "다 받고 시작", Pipe 모드는 "받으면서 시작"이다. 핵심 트레이드오프는 **시작 지연 vs 랜덤 접근 유연성**이다. 수백 GB~TB 규모라 시작 지연과 디스크 비용이 걱정이면 Pipe가 낫고, 소규모 데이터를 유연하게 자주 읽으면 File이 낫다.
 
-## FSx for Lustre — Ultra-High-Performance Training File System
+> ⚠️ **함정**: "Pipe 모드가 항상 빠르다"는 단순화는 위험하다. Pipe는 순차 스트림이라 랜덤 접근과 셔플이 어렵고 특정 포맷을 요구한다. 소규모거나 랜덤 접근이 필요한 데이터에는 File/FastFile이 오히려 적합하다. **데이터 크기·접근 패턴·포맷**을 모두 따져야 한다.
 
-When wanting to further reduce S3 direct access latency in large-scale or repeated training, use **Amazon FSx for Lustre**. Lustre is a parallel file system for HPC (High Performance Computing), providing **hundreds of GB/s throughput and sub-millisecond latency**.
+## FSx for Lustre — 초고성능 학습 파일 시스템
 
-Key characteristics:
-- **S3 integration**: Connecting FSx for Lustre to an S3 bucket automatically loads and syncs data. S3 serves as permanent storage, FSx as a high-speed cache and work space.
-- **Strong for repeated training**: When reading the same data repeatedly across multiple epochs and multiple jobs, read quickly from FSx instead of fetching from S3 each time.
-- **Shared storage for distributed training**: Multiple training nodes simultaneously read from the same file system at high speed.
+대규모·반복 학습에서 S3 직접 접근의 지연을 더 줄이고 싶을 때 **Amazon FSx for Lustre**를 쓴다. Lustre는 HPC(고성능 컴퓨팅)용 병렬 파일 시스템으로, 매우 높은 처리량과 낮은 지연을 제공한다.
 
-> 💡 **Related Theory**: FSx for Lustre shines in typical situations where (1) the dataset is large, (2) it is read **repeatedly** in multiple training jobs and epochs, and (3) low latency is important. For one-time or small-scale training, direct S3 access (File/FastFile) is sufficient, and FSx's additional cost and configuration is not justified.
+주요 특징:
 
-| Option | Characteristics | Best For |
-|--------|-----------------|----------|
-| File mode | Full download then start | Small data, repeated reads, simplicity priority |
-| Pipe mode | S3 streaming, immediate start | Very large data, sequential processing, disk saving |
-| FastFile mode | Streaming + POSIX access | Large data + random access convenience |
-| FSx for Lustre | Ultra-fast parallel FS, S3 integration | Large scale + repeated + low latency + distributed |
+- **S3 연동**: FSx for Lustre를 S3 버킷에 연결하면 데이터가 자동으로 로드·동기화된다. S3는 영구 저장소, FSx는 고속 캐시 겸 작업 공간 역할을 한다.
+- **반복 학습에 강함**: 여러 에폭·여러 잡에서 같은 데이터를 반복해서 읽을 때, 매번 S3에서 가져오지 않고 FSx에서 빠르게 읽는다.
+- **분산 학습의 공유 스토리지**: 여러 학습 노드가 같은 파일 시스템을 동시에 고속으로 읽는다.
 
-## Data Sharding and Distributed Training
+> 💡 **개념**: FSx for Lustre가 빛나는 전형적 상황은 (1) 데이터셋이 크고, (2) 여러 학습 잡과 에폭에서 **반복해서** 읽으며, (3) 낮은 지연이 중요한 경우다. 단발성이거나 소규모 학습이라면 S3 직접 접근(File/FastFile)으로 충분하고, FSx의 추가 비용과 설정은 정당화되지 않는다.
 
-When data or models are too large for a single machine, **distributed training** is performed. The key is how to divide data among multiple nodes.
+| 옵션 | 특성 | 적합한 경우 |
+|---|---|---|
+| File 모드 | 전체 다운로드 후 시작 | 소규모, 반복 읽기, 단순함 우선 |
+| Pipe 모드 | S3 스트리밍, 즉시 시작 | 매우 큰 데이터, 순차 처리, 디스크 절약 |
+| FastFile 모드 | 스트리밍 + POSIX 접근 | 큰 데이터 + 랜덤 접근 편의 |
+| FSx for Lustre | 초고속 병렬 FS, S3 연동 | 대규모 + 반복 + 저지연 + 분산 |
+| EFS | 관리형 NFS, 다중 마운트 | 노트북·잡이 공유하는 범용 데이터 |
 
-### Data Parallelism vs Model Parallelism
+## 데이터 샤딩과 분산 학습
 
-- **Data parallelism**: Model replicas are placed on multiple GPUs/nodes, **data is sharded**, each trains on different batches, then gradients are synchronized. Most common approach.
-- **Model parallelism**: When the model itself doesn't fit in a single GPU's memory, **the model is split across multiple GPUs** (large language models, etc.).
+데이터나 모델이 한 대에 담기지 않으면 **분산 학습**을 한다. 핵심은 여러 노드에 어떻게 나누느냐다.
 
-### Sharding (ShardedByS3Key)
+### 데이터 병렬 vs 모델 병렬
 
-In data-parallel training, it's efficient for each node to read **only its own portion of the dataset**. SageMaker controls this with `S3DataDistributionType`.
+| 구분 | 무엇을 나누나 | 언제 쓰나 | 노드 간 통신 |
+|---|---|---|---|
+| **데이터 병렬** | 데이터를 쪼개고 모델은 복제 | 대부분의 경우, 데이터가 클 때 | 그래디언트 동기화 |
+| **모델 병렬** | 모델 자체를 쪼갬 | 모델이 GPU 메모리에 안 들어갈 때(대형 언어모델 등) | 층 간 활성값 전달 |
 
-- **FullyReplicated (default)**: All instances receive the entire dataset.
-- **ShardedByS3Key**: S3 objects (files) are divided among instances; each instance receives **only its share**. In data-parallel training, this eliminates redundant downloads and processing, improving efficiency.
+```
+[데이터 병렬]
+ 데이터  ┌── 샤드1 ──▶ GPU1 (모델 복제본) ─┐
+        ├── 샤드2 ──▶ GPU2 (모델 복제본) ─┼─▶ 그래디언트 동기화 ─▶ 가중치 갱신
+        ├── 샤드3 ──▶ GPU3 (모델 복제본) ─┤
+        └── 샤드4 ──▶ GPU4 (모델 복제본) ─┘
+
+[모델 병렬]
+ 배치 ──▶ GPU1(층 1~4) ──▶ GPU2(층 5~8) ──▶ GPU3(층 9~12) ──▶ 출력
+```
+
+### 샤딩 (ShardedByS3Key)
+
+데이터 병렬 학습에서는 각 노드가 **자기 몫의 데이터만** 읽는 것이 효율적이다. SageMaker는 `S3DataDistributionType`으로 이를 제어한다.
+
+- **FullyReplicated (기본)**: 모든 인스턴스가 전체 데이터셋을 받는다.
+- **ShardedByS3Key**: S3 객체(파일)를 인스턴스별로 나눠 각자 **자기 몫만** 받는다. 데이터 병렬 학습에서 중복 다운로드·중복 처리를 없애 효율을 높인다.
 
 ```python
-# Specifying sharding in distributed data-parallel training (conceptual example)
+# 분산 데이터 병렬 학습에서 샤딩 지정 (개념 예시)
 train_input = TrainingInput(
     s3_data="s3://ml-train/clicks/",
-    distribution="ShardedByS3Key",   # each instance receives only a portion of data
+    distribution="ShardedByS3Key",   # 각 인스턴스가 데이터의 일부만 받는다
 )
 estimator = Estimator(
     image_uri=image, role=role,
-    instance_count=4,                # distributed across 4 nodes
+    instance_count=4,                # 4개 노드로 분산
     instance_type="ml.p3.16xlarge",
 )
 estimator.fit({"train": train_input})
 ```
 
-> 💡 **Related Theory**: For ShardedByS3Key to be effective, data must be **divided into multiple S3 objects (files)**. A single massive file cannot be sharded at the object level, so sharding has no effect. Therefore, for large-scale data, pre-dividing into appropriately sized multiple files (e.g., hundreds of Parquet/RecordIO shards) is distributed-training-friendly.
+> 💡 **개념**: ShardedByS3Key가 효과를 내려면 데이터가 **여러 개의 S3 객체(파일)로 나뉘어** 있어야 한다. 거대한 단일 파일 하나는 객체 수준에서 쪼갤 수 없어 샤딩이 아무 효과도 내지 못한다. 따라서 대규모 데이터는 적당한 크기의 여러 파일(예: 수백 개의 Parquet/RecordIO 샤드)로 미리 나눠 두는 것이 분산 학습 친화적이다.
 
-> 🎯 **Scenario**: "Training several TBs of data across 8 GPU nodes with data parallelism. Each node receives all data, making startup too slow." → Divide data into multiple files and use `ShardedByS3Key` so each node receives only its share; redundant downloads and processing disappear. If there's much repeated reading, attach FSx for Lustre as shared storage to further reduce latency.
+> ⚠️ **함정**: 검증셋까지 `ShardedByS3Key`로 나누면 각 노드가 서로 다른 검증 데이터를 보게 되어 지표가 어긋난다. 검증 채널은 보통 `FullyReplicated`가 맞다.
 
-## Summary
+## 분산 학습을 실제로 켤 때
 
-Today we learned how to efficiently supply data to training. **File mode downloads fully then starts (small data, simplicity), Pipe mode streams immediately (very large data, sequential), FastFile mode compromises (streaming + POSIX access)**. For large-scale, repeated, low-latency, distributed training, **FSx for Lustre** is powerful as a high-speed cache integrated with S3. In distributed data-parallel training, divide data into multiple files and distribute across nodes with **ShardedByS3Key** to eliminate redundancy. The key is ensuring expensive GPUs don't sit idle waiting for I/O.
+분산은 공짜가 아니다. 노드를 늘리면 통신 비용이 붙고, 노드 수에 비례해 선형으로 빨라지지도 않는다.
 
-Tomorrow we will review all of Week 2 (transformation, pipelines, augmentation, storage optimization) as one integrated whole.
+- **SageMaker 분산 라이브러리**: 데이터 병렬용과 모델 병렬용 라이브러리가 각각 제공되어, 프레임워크 코드를 크게 바꾸지 않고 분산을 켤 수 있다.
+- **배치 크기와 학습률**: 노드를 N배 늘리면 실효 배치 크기도 N배가 된다. 학습률을 함께 조정하지 않으면 수렴이 나빠진다.
+- **통신 병목**: 그래디언트 동기화가 매 스텝 일어나므로 노드 간 네트워크 대역폭이 중요하다. 노드 수를 늘렸는데 오히려 느려지면 통신을 의심한다.
+- **체크포인트**: 긴 학습은 중간 체크포인트를 S3에 저장해야 한다. 특히 관리형 스팟 학습을 쓰면 중단 후 체크포인트에서 재개할 수 있다.
 
----
+| 상황 | 선택 |
+|---|---|
+| 데이터가 커서 한 에폭이 너무 오래 걸린다 | 데이터 병렬 + 샤딩 |
+| 모델이 단일 GPU 메모리에 안 들어간다 | 모델 병렬 |
+| 학습이 길고 비용을 줄이고 싶다 | 관리형 스팟 학습 + 체크포인트 |
+| 노드를 늘려도 빨라지지 않는다 | 통신·I/O 병목 점검 |
+
+> ⚠️ **함정**: 체크포인트 없이 스팟 인스턴스로 장시간 학습을 돌리는 구성은 중단 시 처음부터 다시 시작한다. "비용 절감"과 "체크포인트"는 세트로 기억하자.
+
+## I/O 병목을 진단하는 순서
+
+"학습이 느리다"는 지문이 나오면 계산이 아니라 공급 쪽을 먼저 의심하자.
+
+1. **GPU 사용률이 낮은가** → 낮으면 계산이 아니라 데이터 공급이 병목이다.
+2. **시작까지 오래 걸리는가** → File 모드의 전체 다운로드 대기일 가능성이 높다. Pipe/FastFile 검토.
+3. **같은 데이터를 반복해서 읽는가** → FSx for Lustre로 캐시 효과를 얻는다.
+4. **파일이 지나치게 많고 작은가** → 샤드로 통합해 요청 오버헤드를 줄인다.
+5. **노드마다 전체를 받고 있는가** → `ShardedByS3Key`로 분배한다.
+
+> 🎯 **시나리오**: "수 TB 데이터를 8개 GPU 노드로 데이터 병렬 학습하는데, 각 노드가 전체 데이터를 받아 시작이 너무 느리다." → 데이터를 여러 파일로 나누고 `ShardedByS3Key`로 각 노드가 자기 몫만 받게 한다. 중복 다운로드와 중복 처리가 사라진다. 반복 읽기가 많다면 FSx for Lustre를 공유 스토리지로 붙여 지연을 더 줄인다.
+
+## 인스턴스 선택도 데이터 공급의 일부다
+
+같은 데이터 전략도 인스턴스 종류에 따라 결과가 달라진다.
+
+| 인스턴스 계열 | 성격 | 대표 용도 |
+|---|---|---|
+| `ml.m5` / `ml.c5` | 범용 / 컴퓨트 최적화 CPU | 전처리, 가벼운 학습, 배치 변환 |
+| `ml.r5` | 메모리 최적화 | 큰 데이터프레임 전처리, 메모리 집약 작업 |
+| `ml.p3` / `ml.p4d` | GPU | 딥러닝 학습, 대규모 분산 |
+| `ml.g5` | 추론 친화 GPU | 추론, 가벼운 학습 |
+| `ml.inf` 계열 | 추론 전용 가속기 | 대량 추론의 비용 최적화 |
+
+- GPU 인스턴스는 시간당 비용이 크므로 **유휴 시간이 곧 손실**이다. 그래서 I/O 최적화가 곧 비용 최적화다.
+- 전처리는 CPU 인스턴스에서 별도 잡으로 돌리고, GPU 인스턴스는 학습에만 쓰는 분리가 정석이다.
+
+> ⚠️ **함정**: "학습이 느리니 더 큰 GPU로 바꾸자"는 GPU 사용률이 이미 높을 때만 맞다. 사용률이 낮은데 GPU만 키우면 노는 시간이 더 비싸질 뿐이다.
+
+내일은 Week 2 전체(변환·파이프라인·증강·저장 최적화)를 하나로 묶어 종합 복습한다.
+
+## 📖 용어
+
+- **입력 모드(input mode)** : S3 데이터를 학습 컨테이너로 가져오는 방식. File·Pipe·FastFile.
+- **시작 지연(startup delay)** : 학습 잡이 실제 계산을 시작하기까지 데이터 준비에 쓰는 시간.
+- **POSIX 접근** : 일반 파일 시스템처럼 경로로 열고 임의 위치를 읽는 접근 방식.
+- **FSx for Lustre** : HPC용 병렬 파일 시스템. S3를 백엔드로 두고 고속 캐시처럼 동작한다.
+- **데이터 병렬(data parallelism)** : 모델을 복제하고 데이터를 나눠 학습한 뒤 그래디언트를 동기화하는 방식.
+- **모델 병렬(model parallelism)** : 모델 자체를 여러 GPU에 쪼개 올리는 방식. 대형 모델에 쓴다.
+- **그래디언트 동기화** : 각 노드가 계산한 기울기를 합쳐 같은 가중치로 맞추는 과정. 통신 비용이 든다.
+- **ShardedByS3Key** : S3 객체를 인스턴스별로 나눠 각자 다른 조각만 받게 하는 분배 설정.
+- **FullyReplicated** : 모든 인스턴스가 전체 데이터를 동일하게 받는 기본 분배 설정.
+- **체크포인트(checkpoint)** : 학습 도중 모델 상태를 저장해 둔 것. 중단 후 이어서 학습할 수 있게 한다.
 
 ## 📝 연습 문제
 

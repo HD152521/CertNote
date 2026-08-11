@@ -1,72 +1,210 @@
 # Day 5 - Week 3 Comprehensive Review: Cleaning and Feature Engineering
 
-This week, we covered the first half of EDA—**data cleaning** and **feature engineering**. Both are central to MLS-C01 Domain 2 (Exploratory Data Analysis) and are the stages most critical to model performance in practice. Today, we knit together four days of content into one workflow, review it holistically, and clarify the decision points that confuse exam takers most.
+## 📌 핵심 정리
 
-## One-Page Summary: Cleaning → Feature Engineering → Tools
+- Week 3은 EDA의 전반부 — **데이터 정제**와 **특성 공학**을 다뤘다. MLS-C01 Domain 2의 중심이다.
+- 이번 주를 관통하는 원칙 하나는 **데이터 누수 방지**. 모든 변환은 **학습셋으로만 fit**, 나머지는 `transform`.
+- 두 번째 원칙은 **모델에 맞춘 전처리**. 선형 모델은 스케일링·원핫·비닝이 필요하고, 트리 계열은 대부분 불필요하다.
+- 결측은 메커니즘(MCAR/MAR/MNAR), 이상치는 강건 통계(IQR), 중복은 분할 전 정리가 기본기다.
+- 도구 매핑: **시각적 준비 = Data Wrangler**, **대규모 코드 처리 = Processing Job**, **피처 재사용·일관성 = Feature Store**.
+
+## 한 장 요약: 정제 → 특성 공학 → 도구
+
+이번 주는 EDA의 전반부인 **데이터 정제**와 **특성 공학**을 다뤘다. 둘 다 MLS-C01 Domain 2(탐색적 데이터 분석)의 중심이자 실무에서 모델 성능을 가장 크게 좌우하는 단계다.
 
 ```text
-[Raw Data]
+[원시 데이터]
    │
-   ├─ 1) Cleaning (Day 1)
-   │     Missing values: Assess MCAR/MAR/MNAR → Impute (mean/median/KNN/model)
-   │     Outliers: Detect via IQR/Z-score → Delete/clip/transform/keep
-   │     Duplicates & errors: Clean before split (prevent leakage)
+   ├─ 1) 정제 (Day 1)
+   │     결측치: MCAR/MAR/MNAR 판단 → 대치(평균/중앙값/KNN/모델)
+   │     이상치: IQR·Z-score 탐지 → 삭제/클리핑/변환/유지
+   │     중복·오류: 분할 전에 정리 (누수 방지)
    │
-   ├─ 2) Feature Engineering (Day 2–3)
-   │     Scaling: Normalization/Standardization/RobustScaler (trees unnecessary)
-   │     Encoding: Label/One-Hot/Target (decide by order & cardinality)
-   │     Binning: Nonlinearity & interpretability ↔ information loss
-   │     Dates: Decompose components + sin/cos
-   │     Text: BoW → TF-IDF → embeddings
-   │     High-cardinality: Target/hashing/embeddings
+   ├─ 2) 특성 공학 (Day 2–3)
+   │     스케일링: 정규화/표준화/RobustScaler (트리엔 불필요)
+   │     인코딩: Label/One-Hot/Target (순서와 카디널리티로 결정)
+   │     비닝: 비선형성·해석력 ↔ 정보 손실
+   │     날짜: 성분 분해 + sin/cos
+   │     텍스트: BoW → TF-IDF → 임베딩
+   │     고카디널리티: 타깃/해싱/임베딩
    │
-   └─ 3) AWS Tools (Day 4)
-         Data Wrangler (visual) → Processing Job (scale) → Feature Store (reuse)
+   └─ 3) AWS 도구 (Day 4)
+         Data Wrangler (시각적) → Processing Job (규모) → Feature Store (재사용)
 ```
 
-## Key Decision Points
+## 핵심 결정 포인트
 
-### Missing Values: How to Impute?
+### 결측치: 어떻게 대치할 것인가
 
-| Scenario | Recommendation |
-|------|------|
-| Right-skewed numeric | Median imputation |
-| Symmetric numeric | Mean imputation |
-| Categorical | Mode imputation |
-| Strong inter-variable correlation | KNN or model-based |
-| Missing value itself is a signal (MNAR) | Add indicator variable |
+| 상황 | 권장 |
+|---|---|
+| 오른쪽으로 치우친 수치형 | 중앙값 대치 |
+| 대칭 분포 수치형 | 평균 대치 |
+| 범주형 | 최빈값 대치 |
+| 변수 간 상관이 강함 | KNN 또는 모델 기반 |
+| 결측 자체가 신호(MNAR) | 지시 변수 추가 |
+| 결측률이 압도적으로 높음 | 컬럼 제거 또는 플래그만 유지 |
 
-### Scaling: Algorithm-Specific Requirement
+### 스케일링: 알고리즘별 필요 여부
 
-- **Required**: KNN, K-means, linear/logistic regression, SVM, neural networks, PCA, Ridge/Lasso
-- **Unnecessary**: Decision Tree, Random Forest, XGBoost, LightGBM (tree-based)
-- **With many outliers**: RobustScaler
+- **필요**: KNN, K-means, 선형/로지스틱 회귀, SVM, 신경망, PCA, Ridge/Lasso
+- **불필요**: Decision Tree, Random Forest, XGBoost, LightGBM (트리 기반)
+- **이상치가 많으면**: RobustScaler
 
-### Encoding: Decide by Order and Cardinality
+### 인코딩: 순서와 카디널리티로 결정
 
 ```text
-Is there an order?  ── Yes ──→ Ordinal/Label Encoding
+순서가 있는가?  ── 예 ──→ Ordinal/Label Encoding
         │
-        └─ No ──→ Many unique values?
-                        ├─ Few → One-Hot
-                        └─ Many → Target/Frequency/Hashing/Embedding
+        └─ 아니오 ──→ 고유값이 많은가?
+                        ├─ 적음 → One-Hot
+                        └─ 많음 → Target/Frequency/Hashing/Embedding
 ```
 
-> 💡 **Key Theory**: One principle threads through this entire week: **preventing data leakage**. All transformations—imputation statistics (mean, median), scaler parameters (min/max/μ/σ), target encoding statistics, text vectorizer vocabulary—must **fit only on training data**; validation and test sets get only `transform`. Duplicate removal must happen before split; time-series features must respect point-in-time. Leakage inflates offline performance unrealistically and collapses in production—it's a perennial trap in exams and real work alike.
+### 이상치: 탐지와 처리는 별개다
 
-## Confusing Pairs Compared
+| 판단 | 처리 |
+|---|---|
+| 명백한 입력 오류 | 삭제 |
+| 극단 영향만 줄이고 싶음 | 윈저라이징(클리핑) |
+| 오른쪽 긴 꼬리 분포 | 로그 변환 |
+| 이상치가 곧 타깃(사기·고장) | 유지, 이상 탐지로 접근 |
 
-| Pair | Key Difference |
-|------|------|
-| Mean vs median imputation | Median robust to outliers and skew |
-| Z-score vs IQR | IQR is robust without distribution assumptions |
-| Normalization vs standardization | Normalization: fixed [0,1] range; standardization: mean 0, variance 1; outliers: use RobustScaler |
-| Label vs One-Hot | Ordinal → Label; nominal → One-Hot |
-| BoW vs TF-IDF | TF-IDF suppresses common words |
-| Online vs Offline Store | Online: ms single-record inference; Offline: bulk training |
-| Data Wrangler vs Processing Job | Visual EDA vs code-based large-scale processing |
+> 💡 **개념**: 이번 주 전체를 관통하는 원칙이 하나 있다. **데이터 누수 방지**다. 대치 통계량(평균·중앙값), 스케일러 파라미터(min/max/μ/σ), 타깃 인코딩 통계, 텍스트 벡터라이저 어휘 사전 — 이 모든 변환은 **학습 데이터에만 fit**하고 검증·테스트에는 `transform`만 적용해야 한다. 중복 제거는 분할 전에, 시계열 피처는 point-in-time을 지켜야 한다. 누수는 오프라인 성능을 비현실적으로 부풀리고 운영에서 무너뜨리는, 시험과 실무 모두의 단골 함정이다.
 
-> 💡 **Key Theory**: Feature engineering and model choice are inseparable. With identical data, **linear models** need scaling, binning, and one-hot to explicitly capture nonlinearity and scale; **tree/boosting models** don't need scaling and gain little from binning/one-hot because trees capture nonlinearity via splits. The answer to "which preprocessing is correct?" depends on "which model will we use?" Exam questions often exploit this—using the algorithm as a clue to narrow the preprocessing answer.
+## 헷갈리는 짝 비교
+
+| 짝 | 핵심 차이 |
+|---|---|
+| 평균 vs 중앙값 대치 | 중앙값이 이상치·치우침에 강건 |
+| Z-score vs IQR | IQR은 분포 가정 없이 강건 |
+| 정규화 vs 표준화 | 정규화는 [0,1] 고정 범위, 표준화는 평균 0·분산 1, 이상치엔 RobustScaler |
+| Label vs One-Hot | 순서형 → Label, 명목형 → One-Hot |
+| One-Hot vs Target 인코딩 | 저카디널리티 안전 vs 고카디널리티 압축(누수 주의) |
+| Target vs Hashing | 타깃 정보 활용(누수) vs 사전 불필요(충돌) |
+| BoW vs TF-IDF | TF-IDF가 흔한 단어를 억제 |
+| TF-IDF vs 임베딩 | 단어 독립 취급 vs 의미 유사성 포착 |
+| 등폭 vs 등빈도 비닝 | 값 범위 균등 vs 표본 수 균등 |
+| Online vs Offline Store | ms급 단건 추론 vs 대량 학습 조회 |
+| Data Wrangler vs Processing Job | 시각적 EDA vs 코드 기반 대규모 처리 |
+| 삭제 vs 윈저라이징 | 행을 버림 vs 경계값으로 눌러 담아 보존 |
+
+> 💡 **개념**: 특성 공학과 모델 선택은 분리되지 않는다. 같은 데이터라도 **선형 모델**은 비선형성과 스케일을 명시적으로 잡아 주기 위해 스케일링·비닝·원핫이 필요하고, **트리·부스팅 모델**은 스케일링이 필요 없고 비닝·원핫으로 얻는 것도 적다(트리가 분할로 비선형성을 잡기 때문). "어떤 전처리가 맞나?"의 답은 "어떤 모델을 쓸 것인가"에 달려 있다. 시험은 이 점을 자주 이용해 알고리즘을 단서로 전처리 정답을 좁힌다.
+
+## 누수가 생기는 대표 경로
+
+시험에서 "잘못된 절차"를 고르는 문제는 대부분 이 목록 안에 있다.
+
+| 잘못된 절차 | 왜 누수인가 | 올바른 방법 |
+|---|---|---|
+| 전체 데이터로 평균 계산 후 분할 | 테스트 통계가 학습에 섞임 | 분할 후 학습셋에서만 fit |
+| 분할 후 중복 제거 | 같은 레코드가 양쪽에 흩어짐 | 분할 전에 키 기준 정리 |
+| 전체 데이터로 타깃 인코딩 | 정답 정보가 피처에 들어감 | K-fold 타깃 인코딩·스무딩 |
+| 시계열을 무작위 분할 | 미래 데이터로 과거를 예측 | 시간순 분할 |
+| 전체 기간 집계 피처 사용 | 예측 시점 이후 값 포함 | point-in-time 집계 |
+| 테스트 문서까지 포함한 어휘 사전 | 테스트 어휘가 학습에 반영 | 학습셋에서만 vectorizer fit |
+| 전체 데이터로 특성 선택 | 선택 자체가 테스트를 봄 | 학습셋 안에서 선택 |
+
+## Week 3 기법·도구 지도
+
+| 역할 | 기법·도구 | 한 줄 |
+|---|---|---|
+| 결측 진단 | MCAR/MAR/MNAR | 왜 비었는지가 처리 방법을 정한다 |
+| 결측 대치 | 평균·중앙값·최빈값·KNN·MICE | 분포와 변수 간 관계로 선택 |
+| 이상치 탐지 | IQR, Z-score, Isolation Forest | 강건 통계가 기본 |
+| 이상치 처리 | 삭제·클리핑·로그 변환·유지 | 도메인 맥락이 결정한다 |
+| 스케일링 | Standard, MinMax, Robust, MaxAbs | 트리 계열엔 불필요 |
+| 인코딩 | Label, One-Hot, Ordinal, Target, Frequency | 순서와 카디널리티로 결정 |
+| 고카디널리티 | Hashing, Embedding | 사전 불필요(충돌) / 의미 포착 |
+| 구간화 | 등폭·등빈도·도메인 비닝 | 비선형성 ↔ 정보 손실 |
+| 날짜 | 성분 분해, sin/cos, 래그·롤링 | 시점 누수 주의 |
+| 텍스트 | BoW, TF-IDF, N-gram, 임베딩 | 표현력과 비용의 단계 |
+| NLP 서비스 | Amazon Comprehend, BlazingText | 관리형 추출 / 내장 임베딩 |
+| 시각적 준비 | SageMaker Data Wrangler | 300+ 변환, 품질 리포트, 흐름 내보내기 |
+| 대규모 처리 | SageMaker Processing Job | 컨테이너 분산 실행, 자동 종료 |
+| 피처 재사용 | SageMaker Feature Store | Online/Offline, point-in-time |
+| 편향 진단 | SageMaker Clarify | 데이터·모델 편향과 설명 가능성 |
+
+## Week 3 오답 노트
+
+- **전체 데이터로 스케일러·imputer fit** — 가장 흔한 누수. 학습셋에서만 fit이다.
+- **트리 모델에 스케일링을 정답으로 고름** — 트리는 단조 변환에 불변이다.
+- **명목형에 Label Encoding** — 없는 순서를 만들어 선형 모델을 오도한다.
+- **고카디널리티에 One-Hot** — 차원 폭발. 타깃·해싱·임베딩을 본다.
+- **이상치를 무조건 제거** — 사기·고장 탐지에서는 그것이 정답 신호다.
+- **분할 후 중복 제거** — 이미 누수가 발생한 뒤다.
+- **시계열을 무작위 분할** — 미래로 과거를 예측하게 된다.
+- **전체 기간 집계 피처** — 예측 시점 이후 정보가 섞인다.
+- **테스트 문서까지 포함한 어휘 사전** — 벡터라이저도 학습셋에서만 fit이다.
+- **Online/Offline Store 혼동** — 단건 저지연은 Online, 대량 학습은 Offline.
+
+## 스스로 점검하기
+
+머릿속으로 답해 보자.
+
+1. 오른쪽으로 치우친 소득의 결측을 단순 대치한다면 평균? 중앙값? → **중앙값**
+2. XGBoost에 피처 스케일링이 필요한가? → **아니다**
+3. 우편번호(수천 종)에 원핫이 부적절한 이유는? → **차원 폭발**
+4. 23시와 0시를 인접하게 만드는 것은? → **사인/코사인 변환**
+5. 스케일러를 전체 데이터에 fit하면? → **데이터 누수**
+6. 실시간 단건 추론 조회는 어느 Feature Store? → **Online**
+7. 분포 가정 없이 이상치를 탐지하려면? → **IQR**
+8. 사기 탐지에서 극단적 거래 금액은? → **제거하지 않는다(정답 신호)**
+9. 사전 없이 스트리밍 범주형을 고정 메모리로? → **Feature Hashing**
+10. 흔한 단어의 영향을 줄이는 텍스트 표현은? → **TF-IDF**
+11. 사용자 단위 중복은 언제 정리? → **분할 이전**
+12. 학습·추론 피처 정의를 일치시키는 서비스는? → **Feature Store**
+
+## 지문 단서 → 정답 매핑
+
+| 지문의 표현 | 즉시 떠올릴 것 |
+|---|---|
+| "오른쪽으로 치우친 분포" | 중앙값 대치, 로그 변환, RobustScaler |
+| "정규분포를 가정할 수 없다" | IQR 기반 이상치 탐지 |
+| "결측 여부 자체가 의미 있다" | 지시 변수 추가(MNAR) |
+| "XGBoost / Random Forest를 쓴다" | 스케일링 보기는 대체로 오답 |
+| "KNN / SVM / 신경망 / PCA" | 스케일링 필수 |
+| "순서가 있는 등급" | Ordinal Encoding |
+| "순서 없는 색깔·지역" | One-Hot Encoding |
+| "고유값이 수천~수백만" | Target / Hashing / Embedding |
+| "운영 중 새 범주가 계속 생긴다" | Feature Hashing |
+| "23시와 0시가 가까워야 한다" | sin/cos 변환 |
+| "흔한 단어의 영향을 줄이고 싶다" | TF-IDF |
+| "의미가 비슷한 단어를 묶고 싶다" | 임베딩 |
+| "사기 탐지의 극단값" | 제거하지 않는다 |
+| "노코드로 빠르게 준비·진단" | Data Wrangler |
+| "커스텀 코드로 대규모 분산 처리" | Processing Job |
+| "학습·추론 피처 정의 일치" | Feature Store |
+| "ms급 단건 조회" | Feature Store Online |
+| "예측 시점 기준 값만" | point-in-time 조회 |
+
+## 시험 팁
+
+- 문제가 **알고리즘 이름**을 명시하면 전처리 보기가 좁혀진다(트리 → 스케일링은 대체로 오답).
+- "고유값이 수백만 개" = 원핫은 오답 → 타깃 인코딩·해싱·임베딩을 떠올린다.
+- "노코드/시각적/빠른 준비" = Data Wrangler, "대규모 커스텀 코드" = Processing Job.
+- "학습-추론 일관성", "피처 재사용", "단건 저지연 조회" = Feature Store.
+- **학습셋 fit → 테스트 transform** 규칙을 어기는 전처리는 거의 항상 오답이다.
+- "이상치를 전부 제거한다"는 보기는 이상 탐지 맥락에서 항상 오답이다.
+
+## 마무리
+
+Week 3은 "지저분한 원시 데이터"를 "모델이 학습할 수 있는 신뢰할 만한 피처"로 바꾸는 과정이었다. 정제(결측·이상치·중복), 특성 공학(스케일링·인코딩·비닝·날짜·텍스트·고카디널리티), 그리고 이를 규모 있게 실행하는 SageMaker 도구가 하나의 워크플로를 이룬다. 전체를 관통하는 두 원칙은 **누수 방지**와 **모델에 맞춘 전처리 선택**이다.
+
+다음 주(Week 4)는 EDA의 후반부 — 데이터 시각화, 분포·상관 분석, 차원 축소(PCA) 등 분석과 인사이트 도출 기법을 다룬다.
+
+## 📖 용어
+
+- **EDA(탐색적 데이터 분석)** : 모델링 전에 데이터의 분포·결측·이상·관계를 살펴보는 단계.
+- **MCAR / MAR / MNAR** : 완전 무작위 결측 / 관측 변수에 의존하는 결측 / 값 자체에 의존하는 결측.
+- **대치(imputation)** : 결측값을 어떤 값으로 채워 넣는 것.
+- **IQR(사분위 범위)** : Q3 − Q1. 분포 가정 없이 이상치 경계를 정하는 강건한 기준.
+- **표준화 / 정규화** : 평균 0·분산 1로 맞추기 / [0,1] 범위로 눌러 담기.
+- **카디널리티** : 범주형 변수의 고유값 개수. 수천 개면 고카디널리티다.
+- **Target Encoding** : 범주를 그 범주의 타깃 평균으로 바꾸는 인코딩. 누수 주의.
+- **TF-IDF** : 단어 빈도에 문서 희소성 가중을 곱해 흔한 단어를 억제하는 텍스트 표현.
+- **데이터 누수(leakage)** : 학습 시점에 알 수 없었을 정보가 모델에 새어 들어가는 사고.
+- **point-in-time** : 예측 시점에 실제로 알 수 있었던 값만 사용하는 원칙.
 
 ## Self-Check Questions
 
