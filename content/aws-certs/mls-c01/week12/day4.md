@@ -1,73 +1,194 @@
 # Day 4 - Synthesis: 4 Domains + End-to-End Scenarios
 
-Final day: integrate all four domains through **real test scenarios** that blend them.
+## 📌 핵심 정리
 
-## Integration Map: Four Domains as One Pipeline
+- 네 도메인은 별개 과목이 아니라 **하나의 파이프라인**이다. 1이 데이터를 옮기고, 2가 다듬고, 3이 모델을 만들고, 4가 배포·운영한다.
+- 시험 후반 시나리오 문항은 도메인을 **섞어서** 낸다 — 한 지문에서 Streams(D1) + F1(D3) + Canary(D4)를 동시에 고르게 한다.
+- 갈리는 지점은 대부분 **짝(pair)**으로 출제된다: Streams↔Firehose, Glue↔EMR, Canary↔Shadow, Monitor↔Debugger, 정밀도↔재현율.
+- 모르는 문항은 **데이터 형태 → 지연·규모 → 관리 부담 → 비즈니스 비용** 4단 축소로 좁힌다.
+- 12주 전체 지도: 1~4주 데이터·통계, 5~6주 알고리즘 선택, 7~12주 모델링과 구현·운영.
 
-```
-Domain 1: DATA           Domain 2: EDA           Domain 3: MODELING      Domain 4: OPS
-─────────────────────────────────────────────────────────────────────────────────
-Kinesis Streams   →   Clean nulls            Tabular + trees  →      Real-time endpoint
-S3 lake           →   One-Hot encode        XGBoost + AMT            Auto-scale
-Glue ETL          →   Correlation check     Bayesian tuning          Monitor drift
-Athena SQL        →   Distribution plot     F1 (imbalance)           Canary deploy
-                                            Residual plot             Model Registry
-```
-
-Each domain's output flows to next.
-
-## Key Distinctions That Trip Tests
-
-| Pair | When/Why | Example |
-|------|------|------|
-| Streams vs Firehose | Multi-consumer/replay vs managed-drop | Same IoT → Streams (many teams), then copy → Firehose (append log) |
-| Glue vs EMR | Serverless vs cluster control | "Quick ETL" → Glue, "tune Spark" → EMR |
-| XGBoost vs CNN | Tabular vs image | Fraud (Xgb) vs face verify (CNN) |
-| Precision vs Recall | FP vs FN cost | Spam (precision), cancer (recall) |
-| Real-time vs Serverless | Steady vs sparse | API (real-time), internal tool (serverless) |
-| Canary vs Shadow | Risk vs zero-risk | "Production users" → canary, "lab test" → shadow |
-| Model Monitor vs Debugger | Drift vs training | Post-deploy drift → Model Monitor, training issue → Debugger |
-
-## Scenario Walkthrough: Fraud Detection
+## 4도메인 통합 맵: 하나의 파이프라인
 
 ```text
-1. DATA: Daily fraud reports → S3 (lake)
-         Kinesis Streams: real-time fraud flags (multi-team)
-         Glue ETL: daily clean → dedupe, impute
-
-2. EDA:  Explore: 0.5% fraud (extreme imbalance)
-         One-Hot encode merchant_id (high-cardinality)
-         No scaling needed (XGBoost)
-
-3. MODELING: XGBoost binary classification
-             AMT Bayesian: optimize F1 (not accuracy!)
-             Diagnosis: Train 85%, Val 78% (overfitting)
-             → Add dropout, L1 regularization
-             → Final: Train 80%, Val 79% (better)
-
-4. OPS:   Real-time endpoint (user waits)
-          Canary deploy: 5% → 25% → 100%
-          Auto-alarm if recall drops below 70%
-          Model Monitor: daily baseline refresh
-          If drift detected → retrain pipeline
+Domain 1: DATA         Domain 2: EDA         Domain 3: MODELING      Domain 4: OPS
+────────────────────────────────────────────────────────────────────────────────────
+Kinesis Streams   →   결측치 정제       →   표 데이터 + 트리   →   Real-time 엔드포인트
+S3 데이터 레이크  →   One-Hot 인코딩    →   XGBoost + AMT     →   오토스케일링
+Glue ETL          →   상관관계 점검     →   베이지안 튜닝     →   드리프트 모니터링
+Athena SQL        →   분포 시각화       →   F1 (불균형 대응)  →   Canary 배포
+                                        →   잔차 플롯         →   Model Registry
 ```
 
-## Compressed Test Roadmap
+- 각 도메인의 산출물이 그대로 다음 도메인의 입력이 된다.
+- 앞 단계에서 잘못 고르면 뒤가 전부 어긋난다 — 시험이 도메인을 섞어 내는 이유다.
 
-**Question Type → Answer Strategy**
+## 시험에서 갈리는 핵심 대조표
 
-1. **"Which service?"** → Narrow by 3 axes (data type, scale, managed?)
-2. **"Is this leakage?"** → Time? Feature generatable at predict time?
-3. **"Fix overfitting?"** → Regularize, early-stop, more data, drop features
-4. **"Which metric?"** → Imbalance/business cost → F1/Recall/Precision
-5. **"Deploy safely?"** → Shadow (zero risk), Canary (gradual), Real-time (production)
-6. **"Post-deploy fail?"** → Model Monitor (drift), Debugger (train anomaly)
+| 짝 | 갈리는 기준 | 왼쪽 단서 | 오른쪽 단서 | 예시 |
+|---|---|---|---|---|
+| Streams ↔ Firehose | 소비자 제어·재처리 vs 완전관리 적재 | 밀리초, 다중 소비자, 재처리 | 서버리스, 버퍼 후 S3 적재 | 여러 팀이 읽으면 Streams, 로그 사본은 Firehose |
+| Glue ↔ EMR | 서버리스 vs 클러스터 제어 | 빠른 ETL, 스키마 카탈로그 | Spark 버전·라이브러리 튜닝 | "빠른 ETL"=Glue, "Spark 튜닝"=EMR |
+| Athena ↔ Redshift | 애드혹 조회 vs 웨어하우스 | S3 위 서버리스 SQL | 대규모 정형 분석, 상시 BI | 로그 탐색=Athena, 전사 리포팅=Redshift |
+| XGBoost ↔ CNN | 데이터 형태 | 수치·범주 혼합 컬럼 | 픽셀, 사진, 객체 위치 | 사기=XGBoost, 얼굴 검증=CNN |
+| 스케일링 필요 ↔ 불필요 | 거리·경사를 쓰는가 | KNN·SVM·신경망·PCA | 트리·XGBoost | "XGBoost에 표준화 필수"는 함정 |
+| 정밀도 ↔ 재현율 | FP 비용 vs FN 비용 | 오탐이 비싸다 | 미탐이 비싸다 | 스팸=정밀도, 질병 선별=재현율 |
+| 정확도 ↔ F1·PR-AUC | 클래스 균형 여부 | 대체로 균형 | 양성 0.5~5% 극단 불균형 | 사기 0.5%에 정확도 99.5%는 무의미 |
+| Real-time ↔ Serverless | 트래픽이 상시인가 | 상시 낮은 지연 | 간헐 호출, 콜드스타트 OK | 공개 API vs 사내 도구 |
+| Batch ↔ Async | 일괄 vs 요청 단위 큐잉 | 야간 대량 채점, 엔드포인트 불필요 | 큰 페이로드·긴 처리 | 이미지 1천만 장 야간 채점=Batch |
+| Canary ↔ Shadow | 사용자에게 결과가 가는가 | 실제 사용자 일부, 점진 전환 | 트래픽만 복제, 응답 미반환 | "무위험 검증"=Shadow |
+| Monitor ↔ Debugger | 배포 후 vs 학습 중 | 입력 분포 변화, 성능 하락 | 기울기 폭주·소실 | 배포 6주 후 CTR 하락=Monitor |
+| Monitor ↔ CloudWatch | 모델 품질 vs 인프라 | 드리프트, 베이스라인 이탈 | 지연·호출 수·에러율 | API 감사면 둘 다 아니고 CloudTrail |
+| Debugger ↔ Clarify | 학습 과정 vs 편향·설명 | 학습 텐서·기울기 진단 | Disparate Impact, SHAP | 대출 거절 사유 설명=Clarify |
 
-## Summary
+> ⚠️ **함정**: 보기들이 전부 "기술적으로 가능"한 경우가 많다. 묻는 것은 가능성이 아니라 **가장 적합한(MOST appropriate)** 선택이다. 지문이 강조한 축(비용·지연·운영 부담·규제)으로 순위를 매긴다.
 
-All four domains form one pipeline. Domain 1 moves data, Domain 2 preps it, Domain 3 builds models, Domain 4 ships them. Tests blend domains: pick Streams (domain 1) + F1 (domain 3) + canary (domain 4) based on scenario.
+## 엔드투엔드 시나리오 ①: 실시간 사기 탐지
 
-MLS-C01 is over. Weeks 1-4 (data, stats), 5-6 (alg select), 7-12 (modeling + ops).
+```text
+1. DATA:     일별 사기 신고 → S3 (데이터 레이크)
+             Kinesis Data Streams: 실시간 사기 플래그(여러 팀이 독립 소비)
+             Glue ETL: 일 배치 정제 → 중복 제거, 결측 대치
+
+2. EDA:      탐색 결과 사기 비율 0.5% (극단 불균형)
+             merchant_id는 고카디널리티 범주 → One-Hot 인코딩
+             스케일링 불필요 (XGBoost)
+
+3. MODELING: XGBoost 이진 분류
+             AMT 베이지안 튜닝: F1을 최적화(정확도 아님!)
+             진단: 학습 85%, 검증 78% → 과적합
+             → 드롭아웃·L1 정규화 추가
+             → 최종: 학습 80%, 검증 79% (일반화 개선)
+
+4. OPS:      Real-time 엔드포인트 (사용자가 응답을 기다림)
+             Canary 배포: 5% → 25% → 100%
+             재현율이 70% 아래로 떨어지면 자동 알람
+             Model Monitor: 일일 베이스라인 갱신
+             드리프트 감지 시 → 재학습 파이프라인 트리거
+```
+
+| 요구사항 문장 | 도메인 | 선택 | 이유 |
+|---|---|---|---|
+| "여러 팀이 같은 실시간 플래그를 각자 소비, 장애 시 재처리" | 1 | Kinesis Data Streams | 다중 소비자·보존기간 재처리 |
+| "매일 중복 제거·결측 대치" | 1 | S3 + Glue ETL | 레이크 저장 + 서버리스 변환 |
+| "사기 비율이 0.5%다" | 2 | 정확도 폐기, F1·PR-AUC | 불균형에서 정확도는 과대평가 |
+| "merchant_id 값 종류가 매우 많다" | 2 | One-Hot | 순서 없는 범주형 |
+| "정형 표 데이터 이진 분류" | 3 | XGBoost | 표 데이터의 강한 기본값 |
+| "튜닝 예산이 크지 않다" | 3 | AMT 베이지안, F1 Maximize | 이전 시도를 활용한 효율 탐색 |
+| "학습 85% / 검증 78%" | 3 | 과적합 → 정규화·드롭아웃 | 학습-검증 격차가 신호 |
+| "사용자가 결제 화면에서 기다린다" | 4 | Real-time 엔드포인트 | 낮은 지연 요구 |
+| "위험을 줄이며 신모델을 낸다" | 4 | Canary 5%→25%→100% | 사용자 영향을 단계적 통제 |
+| "성능 하락을 자동 감지한다" | 4 | Model Monitor + CloudWatch 알람 | 드리프트 → 재학습 트리거 |
+
+## 엔드투엔드 시나리오 ②: 이미지 품질 검사 배치 채점
+
+공장 라인 카메라가 찍은 제품 이미지를 야간에 한 번에 채점해 불량 후보를 뽑는 케이스다.
+
+```text
+[라인 카메라] → S3(원본 이미지) → Glue 카탈로그(메타데이터)
+                     │
+                     ├─ EDA: 불량 라벨 2% · 조명/각도 편차 → 증강 계획
+                     │
+                     ├─ MODELING: Image Classification(CNN) + 전이학습
+                     │        지표: 재현율 우선(미탐 = 리콜 비용)
+                     │        학습: Managed Spot Training(중단 허용)
+                     │
+                     └─ OPS: 야간 Batch Transform (S3 입력 → S3 출력)
+                              상시 엔드포인트 없음 → 낮 시간 비용 0
+                              주간 재학습: Pipelines + Model Registry
+```
+
+| 요구사항 문장 | 도메인 | 선택 | 이유 |
+|---|---|---|---|
+| "시간당 수십만 장이 쌓인다" | 1 | S3 + Glue 카탈로그 | 대용량 객체 저장·메타데이터 |
+| "불량 표본이 2%뿐이다" | 2 | 데이터 증강·클래스 가중치 | 소수 클래스 보강 |
+| "이미지 데이터다" | 3 | Image Classification (CNN) | 데이터 형태가 알고리즘을 정한다 |
+| "불량을 놓치면 리콜 비용이 크다" | 3 | 재현율 중심 임계값 | FN 비용 > FP 비용 |
+| "야간 전량 채점, 낮에는 호출 없음" | 4 | Batch Transform | 상시 엔드포인트 비용 제거 |
+| "매주 재학습 + 승인 절차" | 4 | Pipelines + Model Registry | 자동화와 버전·승인 거버넌스 |
+
+> ⚠️ **함정**: "실시간(real-time)"이라는 단어가 항상 Real-time Endpoint를 뜻하지는 않는다. 데이터 **수집**의 실시간(Kinesis)과 **추론**의 실시간(엔드포인트)은 다른 층위다. 어느 단계의 요구인지 먼저 구분한다.
+
+## 엔드투엔드 시나리오 ③: 시계열 수요 예측 운영
+
+수천 개 SKU의 주간 수요를 예측해 공급망 시스템에 배치로 넘기는 케이스다.
+
+```text
+[매장 POS / RDS] ─DMS→ S3 ─Glue/Athena→ 일·주 단위 집계 테이블
+                                   │
+                                   ├─ EDA: 결측 주(週), 신규 SKU 콜드스타트
+                                   │        분할은 시점 기준(랜덤 셔플 금지)
+                                   │
+                                   ├─ MODELING: DeepAR (다중 관련 시계열)
+                                   │        프로모션·휴일 = 관련 시계열/범주 피처
+                                   │        지표: RMSE / MAE (분류 지표 금지)
+                                   │
+                                   └─ OPS: 주 1회 Batch Transform → S3 → 공급망 연동
+                                            계절 변화 → Model Monitor + 정기 재학습
+```
+
+| 요구사항 문장 | 도메인 | 선택 | 이유 |
+|---|---|---|---|
+| "판매 이력이 온프레미스 관계형 DB에 있다" | 1 | DMS로 S3 이관 | DB 이관 전용 서비스 |
+| "학습·검증을 어떻게 나누는가" | 2 | 시점 기준 분할 | 시계열에 랜덤 셔플은 누수 |
+| "수천 개 관련 시계열을 함께 학습" | 3 | DeepAR | 다중 시계열 전역 학습에 적합 |
+| "프로모션·휴일 같은 외부 변수" | 3 | 관련 시계열·범주 피처 투입 | 외생 변수 반영 |
+| "예측 오차를 평가한다" | 3 | RMSE / MAE | 회귀 지표(F1은 오답) |
+| "주 1회 결과를 파일로 넘기면 된다" | 4 | Batch Transform → S3 | 상시 엔드포인트 불필요 |
+| "계절에 따라 패턴이 바뀐다" | 4 | Model Monitor + 정기 재학습 | 드리프트 대응 |
+
+> ⚠️ **함정**: 시나리오 문항은 **마지막 한 문장**에 진짜 제약이 숨어 있다. "다만 상시 엔드포인트는 필요 없다", "사용자에게 영향이 없어야 한다" 같은 꼬리 문장이 정답을 뒤집는다.
+
+## 문항 유형 → 풀이 전략표
+
+| 문항 유형 | 먼저 볼 단서 | 배제 규칙 | 대표 정답 후보 |
+|---|---|---|---|
+| "어떤 서비스를 쓰나" | 데이터 형태 · 규모/지연 · 관리 부담 | 요구된 관리 수준과 반대인 보기 제거 | Streams / Firehose / Glue / EMR / Athena |
+| "이건 데이터 누수인가" | 시간 순서, 예측 시점에 만들 수 있는 피처인가 | 미래 정보·타깃 파생 피처 보기 제거 | 시점 기준 분할, 학습셋으로만 fit |
+| "과적합을 고쳐라" | 학습 점수와 검증 점수의 격차 | 둘 다 낮으면 과소적합 → 정규화 강화 제거 | 정규화, 조기 종료, 드롭아웃, 증강 |
+| "어떤 지표를 쓰나" | 클래스 균형, FP/FN 비용, 회귀/분류 | 회귀에 F1·AUC, 분류에 RMSE·R² 제거 | F1 / PR-AUC / 재현율 / 정밀도 / RMSE |
+| "안전하게 배포하라" | 사용자에게 결과가 가도 되는가 | "무위험" 요구에 Canary 제거 | Shadow, Canary, Linear, Blue/Green |
+| "배포 후 성능이 나빠졌다" | 학습 중인가 배포 후인가 | 학습 시점 도구(Debugger) 제거 | Model Monitor + 알람 + 재학습 |
+| "비용을 줄여라" | 트래픽 패턴, 상시 가동 필요 여부 | 상시 Real-time 보기 제거 | Batch, Serverless, Spot, Multi-Model |
+| "설명·공정성을 요구한다" | 규제·감사, 개별 결정의 근거 | 드리프트·로그 도구 제거 | Clarify (SHAP, Disparate Impact) |
+| 복수 정답(택2~3) | 지시 문구의 정답 개수 | 같은 층위에서 중복되는 보기 제거 | 다른 층위의 조합(수집+저장, 배포+감시) |
+
+## 도메인별 출제 비중과 대표 문항 형태
+
+| 도메인 | 비중 | 대표 문항 형태 | 자주 나오는 정답 축 |
+|---|---|---|---|
+| 1. 데이터 엔지니어링 | 20% | 수집·저장·ETL 서비스 선택 | Kinesis 4종, S3/Glue/EMR/Athena/Redshift, DMS |
+| 2. 탐색적 데이터 분석 | 24% | 전처리·인코딩·불균형·누수 판단 | One-Hot, 표준화, SMOTE, PCA, 상관·이상치 |
+| 3. 모델링 | 36% | 알고리즘 선택, 튜닝, 지표, 과적합 진단 | XGBoost/CNN/DeepAR/RCF, AMT, F1·RMSE |
+| 4. ML 구현 및 운영 | 20% | 배포 형태, 안전 출시, 모니터링, 비용 | Batch/Serverless/Async, Canary/Shadow, Clarify |
+
+> ⚠️ **함정**: 도메인이 섞인 문항에서는 "한 도메인만 맞는" 보기가 자주 등장한다. 알고리즘은 맞는데 배포 형태가 틀렸거나, 지표는 맞는데 수집 서비스가 틀린 식이다. 보기는 **문장 전체가 참일 때만** 정답이다.
+
+## 오답을 빠르게 지우는 배제 규칙 체크리스트
+
+- [ ] "완전관리/운영 최소화"인데 클러스터를 직접 띄우는 보기 → 제거
+- [ ] "상시 엔드포인트 불필요"인데 Real-time 상시 가동 → 제거
+- [ ] 불균형이 명시됐는데 정확도(Accuracy) 기반 보기 → 제거
+- [ ] 회귀에 F1·AUC, 분류에 RMSE·R² → 제거
+- [ ] 다중 클래스인데 출력 활성화가 Sigmoid → 제거
+- [ ] 오차 지표를 Maximize / 성능 지표를 Minimize → 제거
+- [ ] t-SNE 결과를 모델 입력·신규 데이터 변환에 사용 → 제거
+- [ ] 드리프트 답으로 CloudTrail(감사)·Elastic Inference → 제거
+- [ ] 배포 후 문제에 Debugger, 학습 중 문제에 Model Monitor → 제거
+
+다음 글에서는 시험 구성과 시간 배분, 요구사항 번역표, 함정 총정리를 한 장으로 묶어 D-Day 운영 매뉴얼을 만든다.
+
+## 📖 용어
+
+- **엔드투엔드 파이프라인** : 데이터 수집부터 모델 배포·모니터링까지를 하나로 이은 전체 흐름.
+- **도메인 교차 문항** : 한 지문에서 수집·전처리·모델링·운영 중 둘 이상을 동시에 고르게 하는 시나리오형 문제.
+- **다중 소비자(multi-consumer)** : 같은 스트림을 여러 애플리케이션이 서로 간섭 없이 각자 읽는 구조. Kinesis Data Streams의 강점.
+- **재처리(replay)** : 보존 기간 안의 과거 레코드를 다시 읽어 처리하는 것. 장애 복구에 쓴다.
+- **고카디널리티(high-cardinality)** : 범주값 종류가 매우 많은 컬럼(예: merchant_id). One-Hot으로 펼치면 차원이 폭발한다.
+- **Canary 배포** : 신모델에 트래픽 일부만 먼저 보내고 문제가 없으면 비율을 올려가는 점진 전환.
+- **Shadow 테스트** : 실제 트래픽을 복제해 신모델에도 보내되 응답은 사용자에게 반환하지 않는 무위험 검증.
+- **드리프트(drift)** : 운영 입력의 분포나 입력-출력 관계가 학습 시점과 달라지는 현상. Model Monitor로 탐지한다.
+- **MOST appropriate** : 여러 보기가 모두 동작 가능할 때, 지문이 강조한 제약에 가장 부합하는 하나를 고르라는 시험 어법.
 
 ## 📝 연습 문제
 
