@@ -1,110 +1,204 @@
 # Day 5 - Week 10 Review: ML Implementation & Operations 1 — Deployment & Inference
 
-This week covered "how to release trained models to production." Inference option selection (Day 1), real-time endpoint operations (Day 2), inference optimization (Day 3), deployment strategies (Day 4) look separate but form one decision flow: which inference mode → which endpoint config → how to optimize → how to deploy safely. Today we compress this flow into one page and organize keywords that split answers on the exam.
+## 📌 핵심 정리
 
-## Week 10 Decision Flow at a Glance
+- Week 10은 "학습된 모델을 어떻게 프로덕션에 내보내는가"를 다뤘다. Day 1~4는 따로 노는 주제가 아니라 **하나의 결정 흐름**이다.
+- 흐름은 **어떤 추론 방식 → 어떤 엔드포인트 구성 → 무엇을 최적화 → 어떻게 안전하게 배포**의 4단계다.
+- 추론 방식은 **지연 요구·트래픽 패턴·페이로드 크기·유휴 비용** 네 축으로 갈린다(Real-time / Serverless / Asynchronous / Batch).
+- 최적화는 **모델을 바꾼다(양자화·프루닝·증류·Neo) / 하드웨어를 바꾼다(Inferentia·EI·인스턴스) / 구조를 바꾼다(파이프라인·배치)**로 나뉜다.
+- 배포 전략은 **사용자 노출 정도**로 갈린다: 섀도(0%) → 카나리(소량→확대) → A/B(분할 비교) → 블루/그린(전량 전환).
+
+## Week 10 결정 흐름 한 장
 
 ```text
-[1] Choose Inference Mode
-    Offline bulk → Batch Transform
-    Online + large payload/long process → Asynchronous
-    Online + sparse traffic → Serverless
-    Online + steady traffic/low latency → Real-time
+[1] 추론 방식 선택
+    오프라인 대량              → Batch Transform
+    온라인 + 큰 페이로드/긴 처리 → Asynchronous
+    온라인 + 간헐적 트래픽      → Serverless
+    온라인 + 지속 트래픽/저지연  → Real-time
         │
-[2] (Real-time) Endpoint Operations
-    Zero-downtime replacement: separate EndpointConfig + UpdateEndpoint
-    Cost/stability: auto-scaling (Target Tracking)
-    Scale: Multi-Model (MME) / Multi-Container (MCE) / inference pipeline
+[2] (Real-time) 엔드포인트 운영
+    무중단 교체 : EndpointConfig 분리 + UpdateEndpoint
+    비용·안정성 : 오토스케일링(Target Tracking)
+    규모 확장   : 멀티모델(MME) / 멀티컨테이너(MCE) / 추론 파이프라인
         │
-[3] Inference Optimization
-    Reduce latency: Neo compilation, faster instances
-    Reduce cost: Elastic Inference, Inferentia, Serverless
-    Increase throughput: batch inference, auto-scale add instances
+[3] 추론 최적화
+    지연 ↓ : Neo 컴파일, 더 빠른 인스턴스
+    비용 ↓ : Elastic Inference, Inferentia, Serverless
+    처리량 ↑: 배치 추론, 오토스케일 아웃, Inferentia
         │
-[4] Safe Deployment
-    Zero-exposure validation: shadow
-    Few→expand + auto rollback: Canary (deployment guardrails)
-    Real-traffic KPI compare: A/B
-    Full switch + fast rollback: Blue/Green
+[4] 안전한 배포
+    노출 0의 검증        : 섀도
+    소량→확대 + 자동 복귀 : 카나리 (배포 가드레일)
+    실트래픽 KPI 비교     : A/B
+    전면 전환 + 빠른 롤백 : 블루/그린
 ```
 
-> 💡 **Related Theory**: Exam questions almost always ask [1]~[4] slots. Key skill: grab keywords from the prompt (traffic pattern, payload size, latency/cost/throughput need, user exposure) and map to the correct slot.
+> 💡 **개념**: 시험 문제는 거의 항상 [1]~[4] 중 하나의 슬롯을 묻는다. 핵심 기술은 지문에서 키워드(트래픽 패턴, 페이로드 크기, 지연·비용·처리량 요구, 사용자 노출 허용 여부)를 집어 올바른 슬롯에 매핑하는 것이다.
 
-## Day 1 Review: Inference Options Essential Table
+## Day 1 복습: 추론 옵션 4종 총정리
+
+| 옵션 | 지연 | 트래픽 패턴 | 페이로드/시간 제한 | 과금·유휴 비용 | 언제 쓰면 안 되나 |
+|---|---|---|---|---|---|
+| **Real-time** | 밀리초 | 지속적·안정적 | 6MB / 60초 | 인스턴스 가동 시간(상시 과금) | 트래픽이 드물 때, 페이로드가 6MB를 넘을 때 |
+| **Serverless** | 초 단위 | 간헐적·변동 큼 | 4MB / 60초 | 요청+지속시간, **유휴 0원** | 엄격한 p99 지연이 필요할 때(콜드 스타트), GPU가 필요할 때 |
+| **Asynchronous** | 준실시간 | 큐잉·큰 페이로드 | 1GB / 최대 1시간 | 인스턴스 시간, **0 스케일 가능** | 사용자가 즉시 응답을 기다릴 때 |
+| **Batch Transform** | 오프라인 | 대량 일괄 처리 | 100MB/레코드, 대용량셋 | 잡 실행 시간만 | 온라인 단건 요청에 응답해야 할 때 |
+
+- 가장 흔한 함정 두 가지: **"간헐적 트래픽인데 Real-time 상시 운영"** → Serverless로 전환, **"500MB 페이로드를 Real-time으로"** → 6MB 한도 초과이므로 Asynchronous.
+- 결정 순서는 **강한 제약부터** 거른다. 페이로드가 1GB면 트래픽 패턴을 따질 필요도 없이 Real-time/Serverless는 물리적으로 탈락한다.
 
 ```text
-Option          Latency  Traffic    Payload/Time   Idle Cost
-Real-time       ms       Continuous 6MB / 60s      Always charged
-Serverless      seconds  Sparse     4MB / 60s      Free (cold start)
-Asynchronous    quasi    Queued/big 1GB / 1 hour   0, scalable
-Batch           Offline  Bulk once  Large          Job time only
+유휴 비용 0원      : Serverless, Asynchronous(0 스케일), Batch Transform
+상시 과금          : Real-time (인스턴스가 켜져 있는 한)
+예측 가능한 고정비  : Real-time (용량을 미리 잡으므로 안정적)
 ```
 
-Most common traps: "sparse traffic with always-on Real-time" → use Serverless; "500MB payload on Real-time" → exceeds 6MB limit, use Asynchronous.
+## Day 2 복습: Real-time 엔드포인트 운영
 
-## Day 2 Review: Endpoint Operations
+| 축 | 핵심 | 시험 포인트 |
+|---|---|---|
+| 3계층 구조 | Model → EndpointConfig → Endpoint | 분리되어 있어 새 Config를 `UpdateEndpoint`로 바꿔 끼우면 **무중단 교체** |
+| 오토스케일링 | Target Tracking + `SageMakerVariantInvocationsPerInstance` | MinCapacity ≥ 1 — **완전 0 스케일은 Serverless/Async만** |
+| 쿨다운 | ScaleOut은 짧게, ScaleIn은 길게 | 트래픽 변동에 오르내리는 플래핑 방지 |
+| 정책 종류 | Target Tracking / Step Scaling / Scheduled | "특정 지표값을 유지" → Target Tracking |
 
-- **3-tier**: Model → EndpointConfig → Endpoint. Separation enables zero-downtime replacement.
-- **Auto-scaling**: Target Tracking + `SageMakerVariantInvocationsPerInstance` default. MinCapacity ≥ 1 (full 0 only for Serverless/Async).
-- **3 Scale Patterns**:
-  - MME = same container, thousands different models dynamically loaded (cost savings)
-  - MCE = different containers (Direct/Serial)
-  - Inference pipeline = preprocess→predict→postprocess serial (prevent training-serving skew)
+### 규모 확장 3패턴 구분
 
-## Day 3 Review: Inference Optimization
+| 패턴 | 정의 | 언제 |
+|---|---|---|
+| **MME**(멀티모델 엔드포인트) | 동일 컨테이너 + 수천 개의 서로 다른 모델 아티팩트를 동적 로딩(LRU 언로드) | 같은 프레임워크 모델이 수백~수천 개, 비용 절감이 목적 |
+| **MCE**(멀티컨테이너 엔드포인트) | 서로 다른 컨테이너 N개. Direct(개별 호출) 또는 Serial 모드 | 프레임워크가 서로 다른 모델을 한 엔드포인트에 |
+| **추론 파이프라인** | 컨테이너를 직렬 연결(전처리→예측→후처리)해 한 요청으로 처리 | 학습-서빙 스큐 방지, 네트워크 왕복 제거 |
+
+> ⚠️ **함정**: MME는 **모델이 오래 호출되지 않으면 메모리에서 언로드**되므로 첫 호출에 콜드 로딩 지연이 생긴다. 모델이 삭제된 것도, 인스턴스가 0으로 줄어든 것도 아니다.
+
+### 운영 모니터링 지표
 
 ```text
-Neo            : Compile for target hardware. Maintain accuracy, improve speed/memory. Edge strong
-Elastic Infer. : Attach partial GPU acceleration to CPU instance (cost savings)
-Inferentia     : Inference-only chip (Inf1/Inf2). High throughput, cost-efficient
-Trainium       : Training-only chip (confusion alert — NOT inference)
-Model lightweighting : Quantization (INT8), pruning, knowledge distillation
+ModelLatency               : 모델 컨테이너가 추론에 쓴 시간
+OverheadLatency            : SageMaker 처리 오버헤드(요청/응답 핸들링)
+Invocations                : 호출 수
+Invocation4XX / 5XX        : 클라이언트 / 서버 오류
+CPU/GPU/Memory Utilization : 자원 사용률 → 스케일링·인스턴스 타입 판단 근거
 ```
 
-Match by need: lower latency→Neo/fast instances, lower cost→EI/Inferentia/Serverless, higher throughput→batch/Inferentia.
+지연이 `ModelLatency`에 몰리면 모델 최적화·인스턴스 상향, `OverheadLatency`에 몰리면 페이로드·직렬화 문제를 의심한다.
 
-## Day 4 Review: Deployment Strategies
+## Day 3 복습: 추론 최적화 수단 총정리
+
+| 수단 | 분류 | 주 효과 | 언제 쓰면 안 되나 |
+|---|---|---|---|
+| **SageMaker Neo** | 모델 변경(컴파일) | 대상 하드웨어용 컴파일. **정확도 유지**하며 속도·메모리 개선. 엣지에 강함 | 정확도 손실 없이 비용을 낮추는 게 목적일 때(하드웨어 선택이 답) |
+| **Elastic Inference** | 하드웨어 | CPU 인스턴스에 **부분 GPU 가속**만 부착해 비용 절감 | 초대규모 고처리량 워크로드(Inferentia가 낫다) |
+| **Inferentia (Inf1/Inf2)** | 하드웨어 | 추론 전용 칩. 고처리량·비용 효율. Neuron SDK로 컴파일 | **학습** 워크로드(그건 Trainium) |
+| **Trainium (Trn1)** | 하드웨어 | **학습 전용** 칩 | 추론에 쓰면 오답 — 시험 단골 오답 보기 |
+| 양자화(INT8) | 모델 변경 | 크기↓ 속도↑, 약간의 정확도 손실 가능 | 정확도 손실이 절대 허용되지 않을 때 |
+| 프루닝 | 모델 변경 | 기여도 낮은 가중치·뉴런 제거로 경량화 | 재학습·검증 비용을 못 낼 때 |
+| 지식 증류 | 모델 변경 | 큰 teacher의 지식을 작은 student로 이전 | 학습 파이프라인을 다시 돌릴 여력이 없을 때 |
+| 배치 추론 | 구조 변경 | 요청을 묶어 **처리량↑**(개별 지연은 일부 희생) | 단건 저지연이 핵심 요구일 때 |
+| 추론 파이프라인 | 구조 변경 | 네트워크 왕복 제거 + 전처리 정합성 | 컨테이너가 하나뿐일 때 |
+
+- 목적별로 매칭한다: **지연 ↓** → Neo·빠른 인스턴스·경량화 / **비용 ↓** → EI·Inferentia·Serverless / **처리량 ↑** → 배치 추론·Inferentia·스케일 아웃.
 
 ```text
-A/B        : Compare KPI of two models on real traffic (need statistical significance)
-Blue/Green : Full switch + blue alive for fast rollback
-Canary     : Few (5%)→gradual expand, deployment guardrails + CloudWatch auto-rollback
-Shadow     : Return responses to users — zero-risk validation
+인스턴스 선택 정리
+  ml.m5 / ml.c5     : CPU. 가벼운 추론, Neo와 궁합 좋음
+  ml.g4dn / ml.g5   : GPU. 딥러닝 추론 표준
+  ml.p3 / ml.p4     : 고사양 GPU. 주로 학습, 무거운 추론
+  ml.inf1 / ml.inf2 : Inferentia. 고처리량·비용 효율 추론
+  + Elastic Inference : CPU 인스턴스에 부분 GPU 부착
 ```
 
-Trickiest distinctions: "zero user exposure + real-traffic validation" = shadow; "small exposure→expand + auto-return" = canary; "split exposure comparison" = A/B.
+## Day 4 복습: 배포 전략 총정리
 
-## Integrated Scenario Approach
+| 전략 | 트래픽 이동 | 사용자 노출 | 롤백 | 대표 키워드 |
+|---|---|---|---|---|
+| **A/B 테스트** | 가중치 고정 분할(50/50 등) | 양쪽 모두 노출 | 가중치 조정 | "클릭률로 어느 모델이 나은지 판정", "통계적 유의성" |
+| **블루/그린** | All-at-once 전량 전환 | 전환 후 100% | 가장 빠름(블루 유지) | "한 번에 전환", "즉시 되돌린다" |
+| **카나리 / Linear** | 소량 → 단계 확대 / 고정 비율 증분 | 초기엔 소수만 | 0%로 자동 복귀 | "5%부터", "알람 시 자동 롤백", "배포 가드레일" |
+| **섀도** | 요청 복제, 응답 미반환 | **0%** | 끄면 끝 | "사용자에게 절대 보여주지 않고 실트래픽 검증" |
 
-When encountering exam prompts, grab keywords in this order:
+- 공통 기반은 하나다 — **한 엔드포인트에 다중 ProductionVariant를 두고 트래픽 가중치를 조정**하는 메커니즘.
+- 자동 롤백 판단은 CloudWatch 알람으로 한다: `Invocation5XX` 급증, `ModelLatency` 상승, 자원 포화 등. 전환 단계 사이에는 **베이크 타임**을 둔다.
+
+> ⚠️ **함정**: 가장 헷갈리는 세 갈래 — "사용자 노출 0 + 실트래픽 검증"은 **섀도**, "소량 노출 → 확대 + 자동 복귀"는 **카나리**, "분할 노출 후 비교"는 **A/B**다. Batch Transform이나 MME는 배포 전략이 아니라 추론·호스팅 방식이므로 이 자리에 오면 오답이다.
+
+## 통합 시나리오 접근법
+
+지문을 만나면 이 순서로 키워드를 집는다.
 
 ```text
-1. Online or offline?                    (need real-time response?)
-2. Payload size and processing time?     (exceed 6MB/60s?)
-3. Traffic pattern?                      (continuous/sparse)
-4. What to reduce?                       (latency/cost/throughput)
-5. Expose new model to users?            (shadow/canary/A-B/blue-green)
+1. 온라인인가 오프라인인가?        (즉시 응답이 필요한가)
+2. 페이로드 크기와 처리 시간은?     (6MB / 60초를 넘는가)
+3. 트래픽 패턴은?                 (지속적인가 간헐적인가)
+4. 무엇을 줄여야 하나?             (지연 / 비용 / 처리량)
+5. 새 모델을 사용자에게 노출하나?    (섀도 / 카나리 / A·B / 블루그린)
 ```
 
-These five questions cover all Week 10 decision slots.
+이 다섯 질문이 Week 10의 모든 결정 슬롯을 덮는다.
 
-## Common Traps Summary
+### 사례로 흐름 굴려보기
+
+> 상황: 고해상도 위성 이미지를 분석하는 신모델을 내보낸다. 입력은 500MB, 처리에 8분이 걸리며, 결과는 즉시가 아니어도 되고 완료 알림이 필요하다. 엣지가 아닌 클라우드에서 돌리며, 비용을 낮추되 정확도는 유지해야 한다. 기존 모델은 이미 운영 중이다.
 
 ```text
-Trap                                     → Correct Fix
-Sparse traffic with always-on Real-time   → Serverless or Async (0-scale)
-Large payload/long process on Real-time   → Asynchronous (1GB/1 hour)
-Different framework models in MME         → MCE (different containers needed)
-Preprocessing consistency issue           → Inference pipeline (serial containers)
-Reduce edge latency                       → Neo compilation
-Training chip mistaken for Inferentia     → Inferentia=inference, Trainium=training
-Validate with zero user impact            → Shadow deployment
-Safe gradual deploy + auto rollback       → Canary/Linear deployment guardrails
+[1] 6MB/60초를 크게 초과 → Real-time·Serverless 탈락 → Asynchronous (1GB/1시간, SNS 알림)
+[2] Asynchronous이므로 0 스케일 가능 → 상시 인스턴스 비용 없음
+[3] "정확도 유지 + 속도·비용" → Neo 컴파일 (양자화는 정확도 손실 여지가 있어 후순위)
+[4] 기존 모델이 이미 운영 중 → 먼저 섀도로 응답·지연 대조 → 이상 없으면 카나리로 확대
 ```
 
-## Wrap-up
+## 자주 틀리는 함정 정리
 
-Week 10 moved beyond "making models work" to "operating them efficiently and safely." If you've internalized the flow (inference option → endpoint operations → optimization → deployment strategy) and how keywords split answers at each stage, you've achieved this week's goal. Next week (Week 11) continues ML implementation and operations' second axis — monitoring, model drift detection, security, and cost governance.
+| 함정 상황 | 올바른 처방 | 왜 |
+|---|---|---|
+| 간헐적 트래픽에 Real-time 상시 운영 | Serverless 또는 Asynchronous | 유휴 과금 제거, 0 스케일 가능 |
+| 큰 페이로드·긴 처리를 Real-time으로 | Asynchronous (1GB / 1시간) | Real-time은 6MB·60초 한도 |
+| 서로 다른 프레임워크 모델을 MME에 | MCE (서로 다른 컨테이너 필요) | MME는 컨테이너를 공유한다 |
+| 학습 때와 추론 때 전처리가 달라짐 | 추론 파이프라인(직렬 컨테이너) | 학습-서빙 스큐 차단 |
+| 엣지 디바이스 지연을 줄여야 함 | Neo 컴파일 | 정확도 유지하며 속도·메모리 개선 |
+| Trainium을 추론 칩으로 착각 | Inferentia=추론, Trainium=학습 | 시험 단골 오답 쌍 |
+| 사용자 영향 0으로 검증하고 싶음 | 섀도 배포 | 응답을 반환하지 않는다 |
+| 안전한 점진 배포 + 자동 롤백 | 배포 가드레일 Canary/Linear | 트래픽 시프팅 + CloudWatch 알람 |
+| 오토스케일링으로 인스턴스를 0까지 | 불가 — MinCapacity ≥ 1 | 완전 0은 Serverless/Async |
+| 엔드포인트를 지웠다 다시 만들어 교체 | 새 EndpointConfig + `UpdateEndpoint` | 삭제·재생성은 다운타임 발생 |
+
+## 지문 단서 → 정답 매핑
+
+| 지문 단서 | 고를 답 | 슬롯 |
+|---|---|---|
+| "매일 밤 전체 고객 일괄 예측, 상시 비용 제거" | Batch Transform | [1] |
+| "500MB 입력, 8분 처리, 완료 시 알림" | Asynchronous + SNS 알림 | [1] |
+| "하루 30회, 불규칙, 유휴 비용 0원, 콜드스타트 허용" | Serverless Inference | [1] |
+| "초당 수천 건, p99 50ms" | Real-time Endpoint | [1] |
+| "무중단으로 새 버전 교체" | 새 EndpointConfig + `UpdateEndpoint` | [2] |
+| "인스턴스당 호출 수를 일정하게 유지" | Target Tracking + `SageMakerVariantInvocationsPerInstance` | [2] |
+| "동일 프레임워크 모델 1만 개를 저비용 호스팅" | 멀티모델 엔드포인트(MME) | [2] |
+| "전처리와 예측을 한 요청으로 묶는다" | 추론 파이프라인 | [2] |
+| "ARM 엣지 디바이스 + 지연·메모리 감소 + 정확도 유지" | SageMaker Neo 컴파일 | [3] |
+| "풀 GPU는 과하고 CPU는 느리다" | Elastic Inference 가속기 부착 | [3] |
+| "추론 전용 커스텀 칩, 고처리량·비용 효율" | Inferentia (Inf1/Inf2) | [3] |
+| "지연이 아니라 처리량을 올려야 한다" | 배치 추론 / 스케일 아웃 | [3] |
+| "사용자에게 응답을 보여주지 않고 검증" | 섀도 배포 | [4] |
+| "5%→25%→100%, 알람 시 자동 복귀" | 배포 가드레일 Canary | [4] |
+| "두 모델을 50/50으로 두고 KPI 비교" | A/B 테스트 | [4] |
+| "한 번에 전환하되 즉시 되돌릴 수 있어야" | 블루/그린 | [4] |
+
+Week 10은 "모델을 동작하게 만드는 단계"에서 "효율적이고 안전하게 운영하는 단계"로 넘어온 주다. 다음 주(Week 11)에서는 ML 구현·운영의 두 번째 축 — 모니터링, 모델 드리프트 탐지, 보안, 비용 거버넌스를 이어서 다룬다.
+
+## 📖 용어
+
+- **추론 옵션(inference option)** : 모델을 호출 가능하게 만드는 네 가지 배포 방식(Real-time / Serverless / Asynchronous / Batch Transform).
+- **콜드 스타트(cold start)** : 유휴 상태에서 첫 요청이 올 때 컨테이너나 모델을 새로 올리느라 생기는 초기 지연.
+- **0 스케일(scale to zero)** : 트래픽이 없을 때 인스턴스를 0까지 줄여 비용을 없애는 것. Serverless와 Asynchronous만 가능하다.
+- **EndpointConfig** : 어떤 모델을 어떤 인스턴스·비중으로 서빙할지 담은 설계도. 이걸 바꿔 끼우는 것이 무중단 교체이자 롤백 수단이다.
+- **Target Tracking** : "이 지표를 이 값으로 유지하라"고만 지정하면 인스턴스 수를 알아서 맞춰주는 오토스케일링 정책.
+- **학습-서빙 스큐(train-serving skew)** : 학습할 때의 전처리와 서빙할 때의 전처리가 달라져 성능이 떨어지는 현상.
+- **LRU 언로드** : MME에서 메모리가 부족할 때 가장 오래 안 쓰인 모델부터 내려놓는 방식.
+- **양자화(quantization)** : FP32 같은 높은 정밀도를 INT8 등으로 낮춰 모델을 가볍고 빠르게 만드는 기법.
+- **지식 증류(distillation)** : 크고 정확한 teacher 모델의 출력을 흉내 내도록 작은 student 모델을 학습시키는 경량화 기법.
+- **배포 가드레일(Deployment Guardrails)** : 트래픽 시프팅 방식(All-at-once/Canary/Linear)과 CloudWatch 알람 기반 자동 롤백을 묶은 SageMaker 안전장치.
 
 ## 📝 연습 문제
 

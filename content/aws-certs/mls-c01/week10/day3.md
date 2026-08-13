@@ -1,95 +1,207 @@
 # Day 3 - Inference Optimization: Neo, Elastic Inference, Inferentia, Inference Pipelines
 
-Operating an endpoint is different from operating it *efficiently*. Unlike training costs, inference costs persist for the entire model lifespan, so optimization directly impacts total cost. SageMaker provides multiple tools to make models faster (lower latency), cheaper (lower cost), and smaller (lighter resource footprint). Today covers SageMaker Neo, Elastic Inference, AWS Inferentia, and throughput strategies like inference pipelines and batching.
+## 📌 핵심 정리
 
-## SageMaker Neo: Train Once, Deploy Optimally Anywhere
+- 추론 비용은 모델 수명 내내 발생하므로, 학습 비용과 달리 최적화가 총비용에 직접 반영된다.
+- **Neo**는 대상 하드웨어에 맞게 컴파일하는 도구다. 모델을 바꾸지 않으므로 **정확도 손실 없이** 속도·메모리를 개선한다. "엣지 배포 + 지연 감소" 단서면 Neo.
+- **Elastic Inference**는 저렴한 CPU 인스턴스에 필요한 만큼의 **부분 GPU 가속기**만 붙이는 비용 절감 방식이다.
+- **Inferentia(Inf1/Inf2)는 추론 전용, Trainium(Trn1)은 학습 전용** — 시험에서 짝지어 헷갈리게 낸다.
+- 최적화는 **모델을 바꾸기**(양자화·프루닝·증류·Neo), **하드웨어를 바꾸기**(Inferentia·EI·인스턴스), **구조를 바꾸기**(추론 파이프라인·배치)로 갈린다.
 
-Neo compiles and optimizes trained models for specific hardware (instances or edge devices). It analyzes the framework model, restructures the compute graph for target hardware, and converts to a lightweight runtime with dependencies removed.
+## 추론 최적화의 세 갈래
+
+엔드포인트를 운영하는 것과 *효율적으로* 운영하는 것은 다르다. 학습 비용은 한 번이지만 추론 비용은 모델이 살아 있는 내내 나가므로, 최적화가 곧 총비용 절감이다. SageMaker는 모델을 더 빠르게(지연↓), 더 싸게(비용↓), 더 가볍게(리소스↓) 만드는 여러 수단을 제공한다.
+
+| 갈래 | 수단 | 무엇을 바꾸나 |
+|---|---|---|
+| 모델을 바꾼다 | 양자화, 프루닝, 증류, Neo 컴파일 | 연산량·모델 크기 |
+| 하드웨어를 바꾼다 | Inferentia, Elastic Inference, 인스턴스 선택 | 실행되는 칩 |
+| 구조를 바꾼다 | 추론 파이프라인, 배치 추론, 모델 캐싱 | 요청이 처리되는 방식 |
+
+## SageMaker Neo: 한 번 학습, 어디서든 최적 배포
+
+Neo는 학습된 모델을 **특정 하드웨어(인스턴스 또는 엣지 디바이스)에 맞게 컴파일·최적화**한다. 프레임워크 모델을 분석해 대상 하드웨어에 맞게 연산 그래프를 재구성하고, 의존성을 걷어낸 경량 런타임으로 변환한다.
 
 ```python
 compiled = model.compile(
-    target_instance_family="ml_c5",   # or ml_inf1, edge: jetson_nano, etc.
+    target_instance_family="ml_c5",   # 또는 ml_inf1, 엣지: jetson_nano 등
     input_shape={"data": [1, 3, 224, 224]},
     output_path="s3://my-bucket/neo-output/",
     framework="pytorch",
 )
 ```
 
-- **Effect**: Maintains accuracy while boosting inference speed by up to several multiples; reduces memory.
-- **Targets**: Cloud instances through ARM-based edge devices (integrates with IoT Greengrass).
-- **Frameworks**: TensorFlow, PyTorch, MXNet, XGBoost, ONNX, and major others.
+```text
+[학습된 모델 아티팩트]  (PyTorch / TF / MXNet / XGBoost / ONNX …)
+        │
+        │  compile(target_instance_family=..., input_shape=..., framework=...)
+        ▼
+[Neo 컴파일]  연산 그래프 재구성 → 의존성 제거 → 경량 런타임
+        │
+        ├─→ 클라우드 인스턴스(ml_c5, ml_inf1 …)에 배포
+        └─→ ARM 기반 엣지 디바이스에 배포 (IoT Greengrass 연동)
+```
 
-> 💡 **Related Theory**: Neo's core value: "Train with familiar frameworks, deploy as hardware-optimized code." Compiler-stage optimization without model changes (no quantization/pruning) yields speed gains without accuracy loss. See "edge device deployment + latency reduction" → think Neo.
+- **효과**: 정확도를 유지하면서 추론 속도를 높이고 메모리 사용을 줄인다.
+- **대상**: 클라우드 인스턴스부터 ARM 기반 엣지 디바이스까지(IoT Greengrass와 연동).
+- **프레임워크**: TensorFlow, PyTorch, MXNet, XGBoost, ONNX 등 주요 프레임워크.
+- **필수 입력**: `input_shape` — 대상 하드웨어에 맞춰 그래프를 고정하려면 입력 형상을 알려줘야 한다.
 
-## Elastic Inference (EI): Attach Only the GPU You Need
+| Neo가 하는 일 | Neo가 하지 않는 일 |
+|---|---|
+| 대상 하드웨어에 맞게 연산 그래프 재구성 | 정밀도 축소(양자화) |
+| 불필요한 의존성을 걷어낸 경량 런타임 생성 | 가중치 제거(프루닝) |
+| 클라우드 인스턴스·엣지 디바이스 양쪽 타깃 | 모델 구조·학습 결과 변경 |
 
-Full GPU instances are expensive, but most inference workloads don't use 100% GPU. Elastic Inference attaches only the needed GPU acceleration (accelerator) to a CPU instance, lowering cost.
+> 💡 **개념**: Neo의 핵심 가치는 "익숙한 프레임워크로 학습하고, 하드웨어에 최적화된 코드로 배포한다"는 것이다. 모델 자체를 건드리지 않는 **컴파일 단계 최적화**(양자화·프루닝이 아니다)라서 정확도 손실 없이 속도를 얻는다. 지문에 "엣지 디바이스 배포 + 지연 감소"가 보이면 Neo를 떠올린다.
+
+## Elastic Inference (EI): 필요한 만큼의 GPU만 붙인다
+
+풀 GPU 인스턴스는 비싸지만, 대부분의 추론 워크로드는 GPU를 100% 쓰지 않는다. Elastic Inference는 CPU 인스턴스에 **필요한 만큼의 GPU 가속(액셀러레이터)만 부착**해 비용을 낮춘다.
 
 ```python
 predictor = model.deploy(
     initial_instance_count=1,
-    instance_type="ml.m5.large",          # Cheap CPU instance
-    accelerator_type="ml.eia2.medium",    # Fractional GPU acceleration attached
+    instance_type="ml.m5.large",          # 저렴한 CPU 인스턴스
+    accelerator_type="ml.eia2.medium",    # 부분 GPU 가속기 부착
 )
 ```
 
-- **When**: Deep learning inference where full GPU instances (ml.p3 etc.) are overkill but CPU-only is too slow.
-- **Effect**: Significantly lower inference cost vs. full GPU.
-- **Note**: AWS has shifted new workloads toward Inferentia/Neo over EI. Exams present it as "attach partial GPU acceleration to CPU instance for cost savings."
+- **언제**: 풀 GPU 인스턴스(ml.p3 등)는 과하고 CPU만으로는 느린 딥러닝 추론.
+- **효과**: 풀 GPU 대비 추론 비용을 크게 낮춘다.
+- **참고**: AWS는 신규 워크로드를 EI보다 Inferentia/Neo 쪽으로 이동시켜 왔다. 시험에서는 "CPU 인스턴스에 부분 GPU 가속을 붙여 비용 절감"이라는 형태로 나온다.
 
-## AWS Inferentia (Inf1/Inf2): Inference-Only Custom Silicon
+> 💡 **개념**: EI의 장점은 **별도 칩용 컴파일 없이** 기존 배포 코드에 `accelerator_type` 한 줄을 더해 비용을 줄인다는 점이다. Inferentia는 Neuron SDK 컴파일 단계가 추가로 필요하다 — "전통적/간편한 비용 절감"이라는 뉘앙스면 EI 쪽이다.
 
-Inferentia is AWS's custom accelerator designed for inference. Deployed on Inf1/Inf2 instances, targeting lower cost and latency than GPUs at comparable throughput.
+## AWS Inferentia (Inf1/Inf2): 추론 전용 커스텀 실리콘
 
-```text
-GPU Instance (p3)     : General training/inference, expensive
-Inferentia (Inf1/Inf2): Inference-only, high throughput/cost-efficiency. Compile with AWS Neuron SDK
-Trainium (Trn1)       : Custom training-only chip (NOT inference — frequently appears as distractor)
-```
-
-- **Workflow**: Compile model with Neuron SDK (or Neo) for Inferentia → deploy on Inf instances.
-- **When**: Large-scale, high-throughput inference where cost/watt efficiency matters more than GPU.
-- **Avoid confusion**: Trainium = training, Inferentia = inference. Exams pair them; distinguish them.
-
-## Model-Level Optimization: Quantization, Pruning, Distillation
-
-Before changing hardware, make models smaller.
+Inferentia는 AWS가 추론용으로 설계한 커스텀 가속기다. Inf1/Inf2 인스턴스에 탑재되며, 동등한 처리량에서 GPU보다 낮은 비용과 지연을 목표로 한다.
 
 ```text
-Quantization : Reduce precision (FP32 → INT8). Shrinks size↓, speeds up, minor accuracy loss possible
-Pruning      : Remove low-contribution weights/neurons for lighter footprint
-Distillation : Transfer knowledge from large teacher model to smaller student
+GPU 인스턴스 (p3)      : 범용 학습/추론, 비싸다
+Inferentia (Inf1/Inf2) : 추론 전용, 고처리량/비용 효율. AWS Neuron SDK로 컴파일
+Trainium (Trn1)        : 학습 전용 커스텀 칩 (추론용 아님 — 오답 보기로 자주 등장)
 ```
 
-These combine with Neo compilation for even faster, smaller models. Critical in resource-constrained environments like edge deployments.
+- **작업 흐름**: Neuron SDK(또는 Neo)로 Inferentia용 컴파일 → Inf 인스턴스에 배포.
+- **언제**: 대규모·고처리량 추론에서 GPU보다 비용/전력 효율이 중요할 때.
+- **혼동 주의**: Trainium = 학습, Inferentia = 추론. 시험은 둘을 나란히 놓고 묻는다.
 
-## Inference Pipelines and Throughput Optimization
+> ⚠️ **함정**: "AWS가 설계한 추론 전용 칩"을 묻는데 `ml.trn1`을 고르면 오답이다. Trainium은 학습 전용이다. `ml.p4`는 범용 GPU, `ml.m5`는 일반 CPU다.
 
-Yesterday's inference pipeline matters beyond consistency—it boosts throughput too.
+## 최적화 수단 선택표
+
+| 수단 | 주 효과 | 언제 쓰나 | 언제 쓰면 안 되나 |
+|---|---|---|---|
+| **Neo 컴파일** | 지연↓, 메모리↓ (정확도 유지) | 엣지 배포, 대상 하드웨어가 정해져 있을 때 | 대상 하드웨어가 계속 바뀌어 재컴파일 부담이 클 때 |
+| **Elastic Inference** | 비용↓ | 풀 GPU는 과하고 CPU는 느린 딥러닝 추론 | 별도 칩 컴파일을 감수하고 최대 처리량을 원할 때(→ Inferentia) |
+| **Inferentia (Inf1/Inf2)** | 처리량↑, 비용↓ | 대규모 고처리량 추론, 비용/전력 효율 우선 | Neuron SDK 컴파일 파이프라인을 감당 못 할 때 |
+| **인스턴스 상향(더 빠른 단일 인스턴스)** | 지연↓ | 단일 요청 지연이 병목일 때 | 병목이 요청 수(처리량)일 때 — 스케일 아웃이 답 |
+| **양자화 / 프루닝 / 증류** | 크기↓, 지연↓ | 리소스 제약이 큰 엣지 환경 | 정확도 손실을 절대 허용할 수 없을 때 |
+| **배치 추론** | 처리량↑ | 단위 시간당 처리량이 목표일 때 | 개별 요청의 즉시 응답이 중요할 때 |
+
+## 모델 수준 최적화: 양자화·프루닝·증류
+
+하드웨어를 바꾸기 전에 모델 자체를 작게 만든다.
 
 ```text
-Inference Pipeline : Chain preprocess/predict/postprocess containers, eliminate network round trips
-Batch Inference    : Group requests, process together (throughput↑, per-request latency partially sacrificed)
-Model Caching (MME): Keep frequently used models resident in memory, eliminate cold-start delays
+양자화(Quantization) : 정밀도 축소(FP32 → INT8). 크기↓, 속도↑, 약간의 정확도 손실 가능
+프루닝(Pruning)      : 기여도가 낮은 가중치/뉴런을 제거해 경량화
+증류(Distillation)   : 큰 teacher 모델의 지식을 작은 student 모델로 이전
 ```
 
-Reduce latency with Neo/Inferentia/EI + model compression. Boost throughput with batching, pipelines, and appropriate horizontal scaling.
+이 기법들은 Neo 컴파일과 결합하면 더 빠르고 더 작은 모델이 된다. 엣지 배포처럼 리소스 제약이 큰 환경에서 특히 중요하다.
 
-> 💡 **Related Theory**: Exam scenarios demand different prescriptions: "reduce latency" vs. "reduce cost" vs. "boost throughput." Lower latency: Neo compile, faster instances. Lower cost: Elastic Inference, Inferentia, Serverless. Higher throughput: batch inference, auto-scale out, Inferentia. Match keywords to tools for points.
+> ⚠️ **함정**: Neo와 양자화를 같은 것으로 묶으면 안 된다. Neo는 모델을 바꾸지 않는 컴파일 최적화라 정확도가 유지되고, 양자화는 정밀도를 낮추는 **모델 변경**이라 정확도 손실이 생길 수 있다. "정확도는 유지하면서"라는 조건이 붙으면 Neo다.
 
-## Instance Selection Summary
+## 추론 파이프라인과 처리량 최적화
+
+어제 본 추론 파이프라인은 정합성 유지만이 아니라 처리량 측면에서도 의미가 있다.
 
 ```text
-ml.m5 / ml.c5      : CPU. Light inference, pairs well with Neo
-ml.g4dn / ml.g5    : GPU. Standard for deep learning inference
-ml.p3 / ml.p4      : High-end GPU. Mostly training, heavy inference
-ml.inf1 / ml.inf2  : Inferentia. High-throughput, cost-efficient inference
-+ Elastic Inference: Fractional GPU on CPU instance
+클라이언트 ──1회 요청──▶ [전처리 컨테이너] ─▶ [예측 컨테이너] ─▶ [후처리 컨테이너] ─▶ 응답
+                         └──────── 같은 엔드포인트 내부, 네트워크 왕복 없음 ────────┘
 ```
 
-## Summary
+```text
+추론 파이프라인   : 전처리/예측/후처리 컨테이너를 연결해 네트워크 왕복 제거
+배치 추론        : 요청을 묶어 한 번에 처리(처리량↑, 개별 요청 지연은 일부 희생)
+모델 캐싱(MME)   : 자주 쓰는 모델을 메모리에 상주시켜 콜드 스타트 지연 제거
+```
 
-Inference optimization splits three ways: "change the model" (quantization, pruning, distillation, Neo), "change the hardware" (Inferentia, Elastic Inference, instance choice), and "change the structure" (inference pipelines, batching). In exams, identify whether cost/latency/throughput is the goal, then match the tool. Tomorrow covers safe deployment: A/B testing, blue/green, canary, shadow, and rollback.
+| 구성 | 요청당 네트워크 왕복 | 전처리 정합성 | 비고 |
+|---|---|---|---|
+| 추론 파이프라인(한 엔드포인트, 컨테이너 직렬) | 1회 | 학습과 동일하게 보장 | 컨테이너를 개별 호출할 수는 없다 |
+| 클라이언트가 엔드포인트 두 개를 순서대로 호출 | 2회 이상 | 클라이언트 구현에 의존 | 지연·정합성 모두 불리 |
+
+지연은 Neo/Inferentia/EI + 모델 압축으로 줄이고, 처리량은 배치·파이프라인·적절한 수평 확장으로 높인다.
+
+> ⚠️ **함정**: 여기서 말하는 **배치 추론**(요청을 묶어 한 엔드포인트에서 처리)과 **Batch Transform**(오프라인 일괄 처리 작업)은 다르다. 온라인 실시간 요청 시나리오에 Batch Transform을 고르는 보기는 오답이다.
+
+## 목표별 처방: 지연 · 비용 · 처리량
+
+> 💡 **개념**: 시험 시나리오는 "지연을 줄여라" / "비용을 줄여라" / "처리량을 높여라"에 따라 서로 다른 처방을 요구한다. 지연↓: Neo 컴파일, 더 빠른 인스턴스. 비용↓: Elastic Inference, Inferentia, Serverless. 처리량↑: 배치 추론, 오토스케일 아웃, Inferentia. 키워드와 도구를 짝지으면 점수가 된다.
+
+| 목표 | 1순위 수단 | 트레이드오프 |
+|---|---|---|
+| **지연 감소** | Neo 컴파일, 더 빠른 인스턴스, 모델 압축 | 압축은 정확도 손실 가능, 인스턴스 상향은 비용↑ |
+| **비용 감소** | Elastic Inference, Inferentia, Serverless | EI/Inferentia는 딥러닝 추론 전제, Serverless는 콜드 스타트 |
+| **처리량 증가** | 배치 추론, 스케일 아웃, Inferentia | 배치는 개별 요청 지연을 일부 희생 |
+| **정합성 보장** | 추론 파이프라인 | 컨테이너를 개별 호출할 수 없다 |
+
+```text
+무엇을 개선해야 하나?
+├─ 개별 요청이 느리다(지연)
+│    ├─ 대상 하드웨어가 정해져 있다 → Neo 컴파일
+│    ├─ 엣지 등 리소스 제약이 크다 → 양자화·프루닝·증류 (+ Neo)
+│    └─ 그래도 느리다 → 더 빠른 인스턴스로 상향
+├─ 비용이 과하다
+│    ├─ 풀 GPU 사용률이 낮다 → Elastic Inference (부분 GPU 부착)
+│    └─ 대규모 추론, 컴파일 감수 가능 → Inferentia (Inf1/Inf2)
+└─ 단위 시간당 처리량이 부족하다
+     ├─ 요청을 묶을 수 있다 → 배치 추론
+     └─ 묶을 수 없다 → 오토스케일 아웃 / Inferentia
+```
+
+## 인스턴스 선택 정리
+
+```text
+ml.m5 / ml.c5       : CPU. 가벼운 추론, Neo와 궁합이 좋다
+ml.g4dn / ml.g5     : GPU. 딥러닝 추론의 표준
+ml.p3 / ml.p4       : 고사양 GPU. 주로 학습, 무거운 추론
+ml.inf1 / ml.inf2   : Inferentia. 고처리량·비용 효율 추론
++ Elastic Inference : CPU 인스턴스에 부분 GPU 부착
+```
+
+> ⚠️ **함정**: 인스턴스 계열을 고르는 문제에서 `ml.p3`/`ml.p4`는 "고사양 GPU = 무조건 정답"이 아니다. 주 용도가 학습 쪽이고 비싸므로, **추론 비용 효율**을 묻는 지문에서는 Inferentia나 EI가 답이 된다.
+
+## 지문 단서 → 정답 매핑
+
+| 지문 단서 | 고를 답 | 이유 |
+|---|---|---|
+| "ARM 엣지 디바이스 배포 + 지연↓ + 메모리↓ + 정확도 유지" | SageMaker Neo 컴파일 | 모델을 바꾸지 않는 하드웨어 대상 컴파일 |
+| "AWS가 설계한 추론 전용 칩" | ml.inf1 / ml.inf2 (Inferentia) | Trainium은 학습, p4는 범용 GPU, m5는 CPU |
+| "풀 GPU는 사용률이 낮아 과하고 CPU는 느리다, 별도 칩 컴파일 없이" | Elastic Inference 액셀러레이터 부착 | 부분 GPU 가속만 붙여 비용 절감 |
+| "처리량 향상이 목적(지연이 아님)" | 배치 추론 | 요청을 묶어 단위 시간당 처리량↑ |
+| "Trainium vs Inferentia 구분" | Trainium=학습, Inferentia=추론 | 뒤바꾸거나 동일시하는 보기는 오답 |
+| "학습과 동일한 전처리를 한 요청으로" | 추론 파이프라인 | 컨테이너 연결로 네트워크 왕복·스큐 제거 |
+| "MME에서 콜드 스타트 지연을 없애고 싶다" | 자주 쓰는 모델의 메모리 상주(모델 캐싱) | 로딩이 지연 원인이므로 상주로 해소 |
+| "모델 크기를 줄여 엣지에 넣어야 한다" | 양자화 / 프루닝 / 증류 (+ Neo) | 모델 수준 경량화가 리소스 제약의 해법 |
+
+다음 글에서는 안전한 배포 — A/B 테스트, 블루/그린, 카나리, 섀도, 롤백을 다룬다.
+
+## 📖 용어
+
+- **SageMaker Neo** : 학습된 모델을 대상 하드웨어에 맞게 컴파일해 더 빠르고 가볍게 만드는 도구. 모델 자체는 바꾸지 않는다.
+- **컴파일 단계 최적화** : 연산 그래프를 대상 칩에 맞게 재구성하는 것. 정밀도를 낮추지 않으므로 정확도가 유지된다.
+- **input_shape** : Neo 컴파일 시 알려주는 입력 텐서 형상. 그래프를 고정해 최적화하기 위해 필요하다.
+- **Elastic Inference** : 저렴한 CPU 인스턴스에 필요한 만큼의 GPU 가속기만 부착해 비용을 낮추는 방식.
+- **Inferentia (Inf1/Inf2)** : AWS가 추론용으로 만든 커스텀 칩과 그것을 탑재한 인스턴스 계열.
+- **Trainium (Trn1)** : AWS의 **학습 전용** 커스텀 칩. Inferentia와 헷갈리게 나오는 단골 오답.
+- **AWS Neuron SDK** : Inferentia에서 돌릴 수 있도록 모델을 컴파일해주는 개발 키트.
+- **양자화(quantization)** : FP32 같은 높은 정밀도를 INT8 등으로 낮춰 모델을 작고 빠르게 만드는 기법.
+- **프루닝(pruning)** : 기여도가 낮은 가중치나 뉴런을 잘라내 모델을 가볍게 만드는 기법.
+- **지식 증류(distillation)** : 큰 teacher 모델이 배운 것을 작은 student 모델에 옮겨 담는 기법.
 
 ## 📝 연습 문제
 

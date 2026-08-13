@@ -1,10 +1,16 @@
 # Day 4 - Deployment Strategies: A/B Testing, Blue/Green, Canary, Shadow, Rollback
 
-New models passing offline tests don't guarantee production wins. Real-world data shifts, latency changes, specific segments fail. Smart deployment risks incrementally, measures, rolls back fast if needed. Today covers **A/B testing** (compare side-by-side), **blue/green** (full swap + rollback), **canary** (gradual ramp), **shadow** (zero-risk test), and **rollback** chains.
+## 📌 핵심 정리
 
-## Foundation: ProductionVariant Traffic Weights
+- 오프라인 평가를 통과한 모델이 프로덕션에서도 이긴다는 보장은 없다. 배포란 **위험을 조금씩만 노출하고, 측정하고, 필요하면 빠르게 되돌리는 절차**다.
+- 모든 전략의 공통 기반은 하나다 — **한 엔드포인트에 여러 ProductionVariant를 두고 트래픽 가중치를 조정**하는 메커니즘.
+- **A/B**는 비즈니스 KPI 비교, **블루/그린**은 전면 전환 + 즉시 롤백, **카나리**는 소량→점진 확대, **섀도**는 사용자 노출 0의 검증이다.
+- 전략의 차이는 결국 두 레버로 환원된다: **새 모델을 몇 %의 사용자가 보는가**, **얼마나 빨리 되돌릴 수 있는가**.
+- 배포 가드레일은 **All-at-once / Canary / Linear** 트래픽 시프팅에 **CloudWatch 알람 기반 자동 롤백**과 베이크 타임을 결합한다.
 
-All strategies rest on one mechanism: **multiple Variants, traffic weights**.
+## 모든 전략의 기반: ProductionVariant 트래픽 가중치
+
+새 모델이 실제 데이터 분포 변화, 지연 증가, 특정 세그먼트 실패로 무너지는 일은 흔하다. 그래서 배포는 "띄우거나 실패하거나"가 아니라 **다중 Variant + 가중치**라는 한 개의 레버 위에서 설계된다.
 
 ```python
 from sagemaker.session import production_variant
@@ -14,96 +20,194 @@ variant_b = production_variant("ModelB", "ml.m5.xlarge", initial_weight=10, init
 session.endpoint_from_production_variants("ab-endpoint", [variant_a, variant_b])
 ```
 
-Weights 90/10 → 90% traffic to A, 10% to B. Adjust 90/10 → 50/50 → 0/100 over time. This simple lever powers all strategies.
-
-> 💡 **Related Theory**: Two levers: (1) what % of users see new model? (2) how fast roll back? A/B tests both. Canary ramps gradually. Shadow risks zero. These differ precisely in exposure degree.
-
-## A/B Testing: Compare Side-by-Side
-
-Run both models simultaneously, collect **business KPIs** (clicks, conversion, retention).
+- 가중치 90/10 → 트래픽의 90%는 A, 10%는 B로 간다.
+- 시간이 지나며 90/10 → 50/50 → 0/100으로 조정한다. 이 단순한 레버가 A/B·카나리·블루그린을 모두 굴린다.
+- `TargetVariant` 파라미터로 특정 호출을 원하는 Variant에 강제 지정할 수 있다(테스트·디버깅용).
 
 ```text
-ModelA (old) 50%  ──┐
-                   ├─ same endpoint, split by weight
-ModelB (new) 50%  ──┘
-→ collect KPI metrics from both → statistical test
+[ProductionVariant 가중치 이동]
+
+          A(구버전)                     B(신버전)
+t0   ████████████████████ 100%   ░ 0%      ← 배포 직전
+t1   ██████████████████ 90%      ██ 10%    ← 카나리 시작
+t2   ██████████ 50%               ██████████ 50%   ← A/B 비교 구간
+t3   ░ 0%                         ████████████████████ 100%  ← 전면 전환
+                    ↑ 어느 시점에서든 가중치를 되돌리면 롤백
 ```
 
-- **Goal**: Statistical significance on business metrics, not just ML metrics
-- **Variant target**: `TargetVariant` param lets specific tests force one model
-- **Duration**: Run long enough for statistical power
+> 💡 **개념**: 배포 전략은 두 개의 레버로 정의된다. (1) 새 모델을 **몇 %의 사용자에게 노출**하는가, (2) 문제 시 **얼마나 빨리 되돌리는가**. A/B는 둘을 동시에 시험하고, 카나리는 노출을 점진적으로 키우며, 섀도는 노출을 0으로 고정한다. 전략들은 정확히 이 "노출 정도"에서만 갈린다.
 
-## Blue/Green Deployment: Full Swap + Fast Rollback
+## A/B 테스트: 나란히 놓고 비교
 
-Blue (running), Green (new version) run in parallel. Green fully validated, then flip all traffic. Rollback just re-flip.
+두 모델을 동시에 운영하며 **비즈니스 KPI**(클릭률, 전환율, 리텐션)를 수집해 통계적으로 우열을 가린다.
 
 ```text
-Blue(v1) 100% ──validate──> Green(v2) 100%   (full switch)
-                             issue
-                Green(v2) ──rollback──> Blue(v1) 100%
+ModelA (구버전) 50%  ──┐
+                      ├─ 같은 엔드포인트, 가중치로 분할
+ModelB (신버전) 50%  ──┘
+→ 양쪽에서 KPI 지표 수집 → 통계 검정
 ```
 
-- **Advantage**: Instant switch, instant rollback (blue still running)
-- **Risk**: 100% traffic hits Green all at once without gradual exposure
-- **SageMaker default**: Typically implements blue/green on UpdateEndpoint
+| 항목 | 내용 |
+|---|---|
+| 목표 | ML 지표가 아니라 **비즈니스 지표의 통계적 유의성** |
+| Variant 지정 | `TargetVariant`로 특정 테스트를 한 모델에 고정 가능 |
+| 기간 | 통계적 검정력을 확보할 만큼 **충분히 길게** 돌린다 |
+| 노출 | 양쪽 모두 실제 사용자에게 응답을 반환한다 |
 
-## Canary Deployment: Gradual Ramp
+> ⚠️ **함정**: A/B의 목적은 "안전한 전환"이 아니라 **비교**다. "어느 쪽이 더 나은지 실사용 지표로 판단하라"가 아니라 단순히 "안전하게 새 버전으로 넘어가라"는 지문이면 A/B가 아니라 카나리·블루그린이 답이다.
 
-New version gets small % (5%) first, expand if healthy → 25% → 50% → 100%.
+## 블루/그린 배포: 전면 전환 + 빠른 롤백
+
+블루(현재 운영)와 그린(새 버전)을 나란히 띄운다. 그린을 완전히 검증한 뒤 트래픽을 한 번에 넘기고, 문제가 생기면 다시 블루로 되돌린다.
 
 ```text
-v2 at 5% → (check metrics) → 25% → 50% → 100%
-         → (metrics fail) → immediate 0% rollback
+Blue(v1) 100% ──검증──> Green(v2) 100%   (전면 전환)
+                          문제 발생
+             Green(v2) ──롤백──> Blue(v1) 100%
 ```
 
-- **Advantage**: Catches problems in small segment
-- **SageMaker deployment guards**: Canary/Linear traffic shift + CloudWatch alarm auto-rollback
+- **장점**: 전환도 즉시, 롤백도 즉시(블루가 아직 살아 있다).
+- **위험**: 단계적 노출 없이 **100% 트래픽이 한꺼번에** 그린으로 몰린다 — 문제가 있으면 전원에게 동시에 드러난다.
+- **SageMaker 기본 동작**: `UpdateEndpoint`는 일반적으로 블루/그린 방식으로 새 플릿을 띄운 뒤 트래픽을 옮긴다.
+- **비용**: 전환 구간 동안 블루와 그린의 인스턴스를 **동시에** 유지하므로 리소스가 일시적으로 두 배가 된다.
+
+## 카나리 배포: 소량부터 점진 확대
+
+새 버전에 먼저 작은 비율(예: 5%)만 보내고, 건강하면 25% → 50% → 100%로 확대한다.
 
 ```text
-Deployment guard traffic shift modes:
-  All-at-once : Full switch (blue/green)
-  Canary      : Small ramp, then rest
-  Linear      : Fixed % increments per period
+v2 5% → (지표 확인) → 25% → 50% → 100%
+      → (지표 악화) → 즉시 0%로 롤백
 ```
 
-## Shadow Deployment: Zero-Risk Test
+- **장점**: 문제가 **작은 세그먼트에서 먼저** 잡힌다. 영향 범위가 제한된다.
+- **SageMaker 배포 가드레일**: Canary/Linear 트래픽 시프팅 + CloudWatch 알람 기반 자동 롤백을 제공한다.
 
-Traffic → both old and new model, but **only old response returns to user**. New model's output logged, not shown.
+### 배포 가드레일 트래픽 시프팅 모드
+
+| 모드 | 트래픽 이동 방식 | 성격 |
+|---|---|---|
+| `All-at-once` | 한 번에 전량 전환 | 블루/그린에 해당. 가장 빠르지만 노출 위험 최대 |
+| `Canary` | 소량 배치 먼저 → 건강하면 나머지 전량 | 초기 위험을 작게 제한 |
+| `Linear` | 일정 주기마다 고정 비율씩 증가 | 완만하고 예측 가능. 전체 전환 시간은 가장 길다 |
+
+## 섀도 배포: 위험 0의 검증
+
+요청을 구버전과 신버전 **양쪽에 보내되, 사용자에게 반환되는 응답은 구버전 것뿐**이다. 신버전 출력은 로그에만 남는다.
 
 ```text
-Request ──> Old model ──> User sees this response
-         └─> New model ──> Logged (user doesn't see)
-                          → compare responses/latency
+요청 ──> 구버전 모델 ──> 이 응답만 사용자에게 반환
+      └─> 신버전 모델 ──> 로그로만 기록 (사용자는 보지 못함)
+                        → 응답 내용 / 지연 / 오류율 비교
 ```
 
-- **When**: Validate new model on real traffic safely before canary
-- **Advantage**: Zero user exposure to new model bugs
-- **SageMaker Shadow Tests**: produ production Variant and shadow Variant side-by-side for log-only comparison
+- **언제**: 카나리로 넘어가기 전, 실제 트래픽 분포에서 신버전을 안전하게 검증할 때.
+- **장점**: 신버전 버그에 대한 **사용자 노출이 0**이다.
+- **SageMaker Shadow Tests**: 프로덕션 Variant와 섀도 Variant를 나란히 두고 로그 기반으로만 비교한다.
+- **비용**: 같은 요청을 두 번 처리하므로 **추론 비용은 두 배**로 든다.
 
-> 💡 **Related Theory**: Canary (real user exposure gradually), Shadow (zero user exposure, log-only) differ precisely in who sees results. A/B (intentional split for comparison), Canary (risk ramp), Shadow (risk none). Choose by tolerance.
+> 💡 **개념**: 카나리(실제 사용자에게 점진 노출)와 섀도(노출 0, 로그만)의 차이는 **누가 결과를 보는가**에 있다. A/B는 비교를 위한 의도적 분할, 카나리는 위험의 단계적 확대, 섀도는 위험 자체를 없앤 검증이다. 감수할 수 있는 위험 수준으로 고르면 된다.
 
-## Rollback and Auto-Guard Rails
+## 롤백과 자동 가드레일
 
-Manual rollback: previous EndpointConfig via UpdateEndpoint (blue alive → instant).
+| 방식 | 동작 | 속도 |
+|---|---|---|
+| 수동 롤백 | 이전 EndpointConfig로 `UpdateEndpoint` 재호출 | 블루가 살아 있으면 즉시 |
+| 자동 롤백 | CloudWatch 알람이 임계 초과 → 배포 가드레일이 전환을 중단하고 되돌림 | 알람 감지 즉시 |
+| 베이크 타임 | 전환 후 다음 단계로 넘어가기 전 지표를 관찰하는 대기 구간 | 문제 조기 발견용 |
 
-Auto-rollback: CloudWatch alarm breach → deployment guard halts, reverts.
+### 어떤 지표를 보고 롤백을 판단하는가
 
-Bake time: Post-switch, observe metrics before next step.
+| CloudWatch 지표 | 악화 시 의미 | 배포 중 해석 |
+|---|---|---|
+| `Invocation5XX` | 서버 오류 급증 | 신버전 컨테이너 자체가 깨졌다 → 즉시 롤백 |
+| `Invocation4XX` | 클라이언트 오류 급증 | 입출력 스키마·직렬화가 바뀌었다 → 계약 불일치 의심 |
+| `ModelLatency` | 모델 컨테이너 추론 시간 증가 | 신버전이 무거워졌다 → 인스턴스 상향 또는 롤백 |
+| `OverheadLatency` | SageMaker 처리 오버헤드 증가 | 페이로드·직렬화 문제 의심 |
+| `CPU/Memory Utilization` | 자원 포화 | 신버전이 더 많은 자원을 쓴다 → 용량 재산정 |
+| 비즈니스 KPI(클릭·전환) | 하락 | 기술적으로는 정상이나 모델 품질이 나쁘다 → A/B로 판정 |
 
-## Deployment Strategy Selector
+> ⚠️ **함정**: 5XX·지연 같은 **기술 지표만 정상이면 배포 성공**이라고 착각하기 쉽다. 모델은 에러 없이 잘 응답하면서도 예측 품질이 나빠질 수 있다. 그래서 비즈니스 KPI 비교(A/B)와 기술 지표 기반 자동 롤백(카나리)은 서로를 대체하지 못한다.
+
+### 롤백 체인이 성립하는 조건
 
 ```text
-Compare models on live KPIs    → A/B Test
-Full switch + instant rollback → Blue/Green
-Gradual ramp + auto-rollback   → Canary (+guards)
-No user risk validation        → Shadow
+[안전한 배포의 전제]
+  ① 이전 EndpointConfig가 남아 있다        → 되돌릴 대상이 존재
+  ② 롤백 판단 기준(알람)이 사전에 정의됐다   → 사람이 눈으로 볼 필요 없음
+  ③ 전환이 단계적이다(또는 블루가 살아 있다) → 되돌릴 시간이 확보됨
+  ④ 각 단계마다 베이크 타임이 있다          → 지연된 증상도 잡힌다
+  ─────────────────────────────────────────
+  하나라도 빠지면 "롤백이 빠르다"는 말은 성립하지 않는다
 ```
 
-## Summary
+## 상황별 전략 배치
 
-Deployment isn't "launch or fail." A/B tests both (comparison). Blue/Green flips all instantly. Canary ramps safely. Shadow validates zero-risk. All use variant weights + traffic splits. Rollback fast — old version still running.
+실전에서는 하나만 고르는 게 아니라 **섀도 → 카나리 → 전면 전환** 순으로 이어 붙이는 경우가 많다.
 
-Next: Post-deployment — monitoring for drift.
+| 상황 | 적합한 전략 | 판단 근거 |
+|---|---|---|
+| 모델 구조가 크게 바뀌어 출력 스키마가 달라졌을 수 있다 | 섀도 | 사용자 노출 전에 응답 형식·지연을 실트래픽으로 대조 |
+| 추천 알고리즘을 교체했고 클릭률로 판정해야 한다 | A/B | 기술 지표로는 우열이 안 나온다. KPI 표본이 필요 |
+| 마이너 버전 업이며 회귀 위험만 관리하면 된다 | 카나리 | 소량 노출로 회귀를 조기 검출, 알람으로 자동 복귀 |
+| 보안 패치라 즉시 전량 반영해야 한다 | 블루/그린 | 점진 노출의 이점보다 전환 속도가 우선 |
+| 트래픽이 적어 5%로는 표본이 안 모인다 | 블루/그린 또는 섀도 | 카나리의 소량 구간이 통계적으로 무의미해진다 |
+
+## 배포 전략 비교표
+
+| 전략 | 트래픽 이동 방식 | 사용자 노출 | 롤백 속도 | 리소스 비용 | 언제 쓰면 안 되나 |
+|---|---|---|---|---|---|
+| **A/B 테스트** | 가중치로 고정 분할(예: 50/50) | 양쪽 모두 노출 | 가중치 조정으로 빠름 | 두 Variant 상시 운영 | 단순 버전 교체가 목적일 때, KPI 표본이 부족해 유의성을 못 낼 때 |
+| **블루/그린** | 한 번에 전량 전환 | 전환 후 100% | **가장 빠름**(블루 유지) | 전환 구간 동안 2배 | 점진 노출로 위험을 제한해야 할 때, 여유 용량이 없을 때 |
+| **카나리** | 소량 → 단계적 확대 | 초기에는 소수만 | 빠름(0%로 되돌림) | 전환 구간 동안 증가 | 즉시 전면 전환이 필요할 때, 소량 트래픽으로 문제가 드러나지 않는 유형일 때 |
+| **섀도** | 요청 복제, 응답 미반환 | **0%** | 롤백 개념 없음(끄면 끝) | 추론 2회분 | 실제 사용자 반응(KPI)을 봐야 할 때, 추론 비용 2배를 감당 못 할 때 |
+
+## 전략 선택 결정 트리
+
+```text
+새 모델을 프로덕션에 넣어야 한다
+├─ 사용자에게 신버전 응답을 조금이라도 보여도 되나?
+│    ├─ 아니오 → 섀도 배포 (요청 복제, 로그만 비교)
+│    └─ 예 ↓
+├─ 목적이 "둘 중 어느 쪽이 나은지 실지표로 판정"인가?
+│    ├─ 예   → A/B 테스트 (가중치 분할 + 충분한 기간 + 통계 검정)
+│    └─ 아니오(교체가 목적) ↓
+├─ 단계적으로 위험을 제한하고 자동 복귀까지 원하나?
+│    ├─ 예   → 카나리 / Linear (배포 가드레일 + CloudWatch 알람 자동 롤백)
+│    └─ 아니오 ↓
+└─ 즉시 전환하고 문제 시 즉시 되돌리면 되나?
+     └─ 예 → 블루/그린 (All-at-once, 블루를 살려둔다)
+```
+
+## 지문 단서 → 정답 매핑
+
+| 지문 단서 | 고를 답 | 이유 |
+|---|---|---|
+| "사용자에게 절대 노출하지 않고 실제 트래픽으로 검증" | 섀도 배포 | 응답을 반환하지 않고 로그만 비교한다 |
+| "5%부터 시작해 단계적으로 확대, 오류율 급증 시 자동 복귀" | 배포 가드레일 Canary + CloudWatch 알람 자동 롤백 | 점진 확대 + 자동 롤백의 정의 |
+| "일정 비율씩 주기적으로 트래픽을 옮긴다" | Linear 트래픽 시프팅 | 고정 비율 증분 방식 |
+| "클릭률 등 비즈니스 KPI로 어느 모델이 나은지 판단" | A/B 테스트 | 실사용 지표 비교가 목적 |
+| "한 번에 전환하되 문제 시 즉시 되돌려야 한다" | 블루/그린 | 블루가 살아 있어 재전환이 즉시 |
+| "가중치를 90/10에서 0/100으로 점진 조정" | 다중 ProductionVariant + 가중치 분할 | 모든 전략의 공통 기반 메커니즘 |
+| "전환 직후 지표를 관찰할 시간을 둔다" | 베이크 타임 | 다음 단계 진행 전 관찰 구간 |
+| "이전 버전 구성으로 되돌린다" | 이전 EndpointConfig로 `UpdateEndpoint` | 수동 롤백의 표준 절차 |
+| "Batch Transform / MME로 안전 배포" | **오답 보기** | 둘 다 배포 전략이 아니라 추론·호스팅 방식이다 |
+
+다음 글에서는 배포 이후의 세계 — 모니터링과 모델 드리프트 탐지를 다룬다.
+
+## 📖 용어
+
+- **ProductionVariant** : 하나의 엔드포인트 안에서 "이 모델을 이 인스턴스로 이만큼의 비중으로 서빙한다"를 정의하는 단위.
+- **트래픽 가중치(InitialVariantWeight)** : 여러 Variant 사이에 요청을 몇 대 몇으로 나눌지 정하는 숫자. 90/10이면 9:1로 나뉜다.
+- **A/B 테스트** : 두 모델을 동시에 노출해 실제 비즈니스 지표로 우열을 가리는 비교 실험.
+- **블루/그린 배포** : 구버전(블루)을 살려둔 채 신버전(그린)을 띄우고 트래픽을 한 번에 넘기는 방식. 되돌리기가 즉시다.
+- **카나리 배포** : 신버전에 소량 트래픽만 먼저 보내 이상이 없으면 비중을 키우는 방식. 이름은 탄광의 카나리아에서 왔다.
+- **섀도 배포(Shadow Test)** : 같은 요청을 신버전에도 보내되 응답은 사용자에게 주지 않고 로그로만 비교하는 검증 방식.
+- **배포 가드레일(Deployment Guardrails)** : 트래픽 시프팅 방식(All-at-once/Canary/Linear)과 자동 롤백을 묶어 제공하는 SageMaker의 안전장치.
+- **베이크 타임(bake time)** : 트래픽을 옮긴 뒤 다음 단계로 넘어가기 전에 지표를 지켜보는 대기 시간.
+- **자동 롤백(auto-rollback)** : CloudWatch 알람이 울리면 배포를 멈추고 이전 구성으로 되돌리는 동작.
+- **EndpointConfig** : 어떤 모델을 어떤 인스턴스·비중으로 띄울지 담은 설계도. 이것을 바꿔 끼우는 것이 무중단 교체이자 롤백 수단이다.
 
 ## 📝 연습 문제
 

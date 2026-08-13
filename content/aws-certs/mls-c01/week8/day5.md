@@ -1,101 +1,211 @@
 # Day 5 - Week 8 Review: Training, Tuning, Generalization
 
-This week covered the latter half of Domain 3 (Modeling) — **how to train models (Day1), tune them (Day2), generalize them (Day3), and make them converge well (Day4)**. Today we tie these four flows into a single decision chain and organize how to narrow answers from clues during the exam.
+## 📌 핵심 정리
 
-## Week Flow at a Glance
+- Week 8은 도메인 3(Modeling) 후반부 — **학습시키고(Day1), 튜닝하고(Day2), 일반화시키고(Day3), 잘 수렴시키는(Day4)** 네 흐름이다.
+- 모든 문제는 **최적화 축**(학습 손실을 잘 줄이는가: 학습률·배치·그래디언트)과 **일반화 축**(새 데이터에 맞는가: 정규화·데이터·검증)으로 갈린다. 증상이 어느 축인지부터 판별하라.
+- **데이터 규모·모델 크기·비용 → 학습 인프라**(입력 모드·분산·Spot), **효율·비용 → 튜닝 전략**(Bayesian/Hyperband/조기종료).
+- **격차 크기 → 과적합/과소적합 처방**, **증상 → 최적화 원인과 도구**(품질=Debugger, 자원=Profiler).
+- 단골 함정: 과적합에 에폭·모델 확대, Spot에 체크포인트 누락(`max_wait >= max_run`), 불균형 데이터에 Accuracy 목표 지표.
+
+## 주간 흐름 한눈에
 
 ```text
-[Day1] Training Runtime Infrastructure
-  Estimator → input modes (File/Pipe/FastFile) → distributed (data/model parallel) → Spot+checkpoints
+[Day1] 학습 실행 기반
+  Estimator → 입력 모드(File/Pipe/FastFile) → 분산(데이터/모델 병렬) → Spot+체크포인트
 
-[Day2] Hyperparameter Tuning (AMT)
-  search space, target metrics → strategies (Bayesian/Random/Grid/Hyperband) → early stopping → warm start
+[Day2] 하이퍼파라미터 튜닝(AMT)
+  탐색 공간·목표 지표 → 전략(Bayesian/Random/Grid/Hyperband) → 조기 종료 → 워밍 스타트
 
-[Day3] Generalization
-  overfit/underfit diagnosis (bias-variance) → regularization (L1/L2/dropout/early-stop) → data augmentation → leakage prevention
+[Day3] 일반화
+  과적합/과소적합 진단(편향-분산) → 정규화(L1/L2/드롭아웃/조기종료) → 데이터 증강 → 누수 방지
 
-[Day4] Training Optimization
-  batch size, learning rate schedule → vanishing/exploding gradients → Debugger (quality) / Profiler (resources)
+[Day4] 학습 최적화
+  배치 크기·학습률 스케줄 → 그래디언트 소실/폭발 → Debugger(품질) / Profiler(자원)
 ```
 
-> 💡 **Related Theory**: The core tension in latter modeling is two axes. (1) Optimization — reducing loss on training data well (learning rate, batch, gradients). (2) Generalization — fits new data well (regularization, data, validation). They differ. Even if optimization succeeds (low training loss), generalization fails (high validation loss) = overfitting. Exam questions are almost always designed to test "is this symptom an optimization problem or generalization problem first?"
+> 💡 **관련 이론**: 모델링 후반부의 핵심 긴장은 두 축이다. (1) **최적화** — 학습 데이터의 손실을 잘 줄이는가(학습률·배치·그래디언트). (2) **일반화** — 새 데이터에 잘 맞는가(정규화·데이터·검증). 이 둘은 다르다. 최적화에 성공해도(학습 손실 낮음) 일반화에 실패하면(검증 손실 높음) 그것이 과적합이다. 시험 문제는 거의 언제나 "이 증상이 최적화 문제인가 일반화 문제인가"를 먼저 묻도록 설계된다.
 
-## Input Mode, Distributed, Spot Quick Reference (Day1)
+## 통합 의사결정 트리
 
-| Signal | Choice |
+```text
+학습 관련 문제가 주어졌다
+├─ ① 아직 학습을 못 돌리는 단계인가? (인프라)
+│    ├─ 데이터가 디스크보다 큼 / 시작 지연을 줄이고 싶다 → Pipe / FastFile
+│    ├─ 전체를 받아 임의 접근                            → File
+│    ├─ 학습이 느림 + 모델은 GPU에 들어감                → 데이터 병렬
+│    ├─ 모델이 단일 GPU 메모리 초과                      → 모델 병렬
+│    └─ 비용 절감(지연 허용)  → Managed Spot + checkpoint_s3_uri
+│                               (max_wait >= max_run 필수)
+├─ ② 학습은 돌아가는데 수렴이 이상한가? (최적화 — Day4)
+│    ├─ NaN·발산·진동      → 학습률↓ + 그래디언트 클리핑
+│    ├─ 앞쪽 층 정지·정체  → 소실 → ReLU·BN·잔차·초기화
+│    ├─ OOM               → 배치↓ / 그래디언트 누적 / 혼합 정밀도
+│    └─ GPU 저활용·느림·비쌈 → Profiler로 병목 진단
+├─ ③ 수렴은 되는데 성능이 나쁜가? (일반화 — Day3)
+│    ├─ 학습↑ 검증↓ 격차 큼 → 과적합 → 정규화↑·데이터↑·증강·드롭아웃·조기종료
+│    ├─ 학습·검증 둘 다 낮음 → 과소적합 → 복잡도↑·특징↑·더 오래 학습
+│    └─ 검증 점수가 비현실적 → 누수 → fit 범위·타깃 파생 특징 점검
+└─ ④ 성능은 되는데 더 짜내야 하나? (튜닝 — Day2)
+     ├─ 적은 평가로 효율적 탐색 → Bayesian
+     ├─ 딥러닝 에폭 반복 + 가지치기 → Hyperband
+     ├─ 튜닝 비용 절감 → 조기 종료(Auto) 또는 Hyperband
+     └─ 이전 튜닝 재활용 → 워밍 스타트
+```
+
+## Day1 요약 — 입력 모드·분산·Spot
+
+| 단서 | 선택 |
 |------|------|
-| Data exceeds disk, reduce startup latency | Pipe / FastFile |
-| Download all then random access | File |
-| Accelerate training, model fits on GPU | Data Parallel |
-| Model exceeds single GPU memory | Model Parallel |
-| Cost savings acceptable (some latency) | Managed Spot + checkpoint_s3_uri |
+| 데이터가 디스크를 초과, 시작 지연 감소 | Pipe / FastFile |
+| 전체를 내려받아 임의 접근 | File |
+| 학습 가속, 모델은 GPU에 들어감 | 데이터 병렬 |
+| 모델이 단일 GPU 메모리 초과 | 모델 병렬 |
+| 비용 절감(약간의 지연 허용) | Managed Spot + `checkpoint_s3_uri` |
 
-Artifacts go to `/opt/ml/model`, Spot requires `max_wait >= max_run` — remember as trap points.
+산출물은 `/opt/ml/model`에 쓴 것만 S3로 올라가고, Spot은 `max_wait >= max_run`이 필수다 — 함정 포인트로 기억한다.
 
-## Tuning Strategies Quick Reference (Day2)
+## Day2 요약 — 튜닝 전략
 
-| Signal | Strategy |
+| 단서 | 전략 |
 |------|------|
-| Efficient exploration with few evaluations | Bayesian |
-| Deep learning epoch iterations, fast pruning | Hyperband |
-| Simple, fully parallel baseline | Random |
-| Few categorical combinations exhaustive | Grid |
-| Reduce tuning cost | Auto early stopping / Hyperband |
-| Continue/reuse previous tuning | Warm start |
+| 적은 평가 횟수로 효율적 탐색 | Bayesian |
+| 딥러닝 에폭 반복, 빠른 가지치기 | Hyperband |
+| 단순·완전 병렬 베이스라인 | Random |
+| 범주형 소수 조합 전수 탐색 | Grid |
+| 튜닝 비용 절감 | 자동 조기 종료 / Hyperband |
+| 이전 튜닝을 이어서 활용 | 워밍 스타트 |
 
-Imbalanced data target metric is F1/AUC, not Accuracy.
+불균형 데이터의 목표 지표는 Accuracy가 아니라 F1/AUC다. 베이지안은 병렬을 과도하게 키우면 이전 결과 활용도가 떨어진다.
 
-## Generalization Diagnosis & Treatment Quick Reference (Day3)
+### 목표 지표 — 무엇을 최적화할 것인가
 
-| Symptom | Diagnosis | Treatment |
+튜닝은 목표 지표가 가리키는 방향으로만 최적화한다. 지표 선택이 틀리면 잘 튜닝된 무의미한 모델이 나온다.
+
+| 상황 | 목표 지표 | 방향 | 왜 |
+|---|---|---|---|
+| 균형 잡힌 분류 | Accuracy, AUC | Maximize | 정확도가 정직하게 움직인다 |
+| **불균형 분류**(사기 탐지 등) | F1, AUC, Recall | Maximize | 양성 1%면 "전부 음성"으로도 정확도 99% — **Accuracy는 함정** |
+| 놓치면 치명적(질병·사기) | Recall | Maximize | 거짓 음성 비용이 더 크다 |
+| 잘못된 경보 비용이 큼 | Precision | Maximize | 거짓 양성이 실무 비용을 만든다 |
+| 회귀 | RMSE, MAE | Minimize | 오차를 줄이는 방향 |
+| 커스텀 스크립트 | `metric_definitions` 정규식 필요 | — | 로그에서 값을 파싱해야 AMT가 비교할 수 있다 |
+
+## Day3 요약 — 일반화 진단과 처방
+
+| 증상 | 진단 | 처방 |
 |------|------|------|
-| Train↑ validation↓ (large gap) | Overfitting (variance↑) | Increase regularization, data, dropout, early-stop, augment |
-| Train & validation both low | Underfitting (bias↑) | Increase complexity, features, train longer |
-| Feature selection / sparse model | — | L1 |
-| Shrink all weights | — | L2 |
+| 학습↑ 검증↓ (격차 큼) | 과적합(분산↑) | 정규화↑, 데이터↑, 드롭아웃, 조기 종료, 증강 |
+| 학습·검증 둘 다 낮음 | 과소적합(편향↑) | 복잡도↑, 특징↑, 더 오래 학습 |
+| 특징 선택 / 희소 모델 필요 | — | L1 |
+| 모든 가중치를 줄이고 싶음 | — | L2 |
 
-Fit scaler only on train — prevent leakage.
+스케일러·인코더는 학습셋으로만 `fit` 한다 — 누수 방지의 기본이다.
 
-## Optimization & Tools Quick Reference (Day4)
+## Day4 요약 — 최적화와 도구
 
-| Symptom | Root Cause | Response |
+| 증상 | 근본 원인 | 대응 |
 |------|------|------|
-| NaN / divergence / oscillation | High learning rate, exploding gradients | Lower learning rate, gradient clipping |
-| Early layers not learning, loss stuck | Vanishing gradients | ReLU, BN, residual connections, initialization |
-| OOM | Oversized batch | Lower batch, gradient accumulation, mixed precision |
-| Quality anomalies auto-detect | — | Debugger |
-| Resource bottleneck, low GPU util | — | Profiler |
+| NaN / 발산 / 진동 | 학습률 과다, 그래디언트 폭발 | 학습률↓, 그래디언트 클리핑 |
+| 앞쪽 층 학습 안 됨, 손실 정체 | 그래디언트 소실 | ReLU, 배치 정규화, 잔차 연결, 초기화 |
+| OOM | 과도한 배치 크기 | 배치↓, 그래디언트 누적, 혼합 정밀도 |
+| 품질 이상 자동 탐지 | — | Debugger |
+| 자원 병목, GPU 저활용 | — | Profiler |
 
-## Integration Scenarios for Thought Exercise
+## 서비스·기능 총정리
 
-> "Text classification model has 96% training accuracy, 75% validation accuracy. Data is scarce and hard to collect more. Want to reduce tuning cost too."
+| 기능 | 무엇을 하나 | 언제 고르나 | 혼동 주의 |
+|---|---|---|---|
+| **Training Job (Estimator)** | 관리형 일회성 학습 실행 | 학습을 컨테이너로 돌릴 때 | 인스턴스는 작업 동안만 존재 |
+| **입력 모드 File/Pipe/FastFile** | S3 → 컨테이너 데이터 전달 방식 | 데이터 크기·시작 지연 요구에 따라 | Pipe=스트리밍, FastFile=지연 로딩+임의 접근 |
+| **데이터 병렬 / 모델 병렬** | 여러 디바이스로 학습 분산 | 속도 문제 vs 모델 크기 문제 | "GPU 메모리 초과"가 모델 때문인지 배치 때문인지 구분 |
+| **Managed Spot Training** | 저렴한 중단 가능 인스턴스 | 비용 절감이 목표, 지연 허용 | 체크포인트 없으면 절감 의미 없음 |
+| **AMT (튜닝 작업)** | 하이퍼파라미터 자동 탐색 | 최적 조합을 찾아야 할 때 | 학습 자체의 수렴 문제는 해결 못 함 |
+| **Debugger** | 학습 중 텐서로 품질 이상 탐지 | 소실·폭발·과적합·손실 정체 | 자원 분석용이 아님 |
+| **Profiler** | CPU/GPU·I/O 자원 병목 분석 | GPU 저활용, 느림, 비용 비효율 | 품질 이상 탐지용이 아님 |
+| **Model Monitor** | 배포된 엔드포인트의 드리프트 감시 | **학습이 아니라 운영 단계** | 학습 중 이상 탐지로 고르면 오답 |
 
-Breakdown:
-1. Large gap → **overfitting** (Day3) → regularization, **data augmentation (back-translation, etc)**, dropout.
-2. Limited data → k-fold cross-validation for stable evaluation.
-3. Reduce tuning cost → **Hyperband** or early stopping (Day2).
+### 설정 값 총정리 — 함정이 숨는 자리
 
-> "Training a large model on 8TB data is too slow and expensive. Single GPU memory is exceeded."
+| 설정 | 어디서 | 놓치면 생기는 일 |
+|---|---|---|
+| `output_path` / `/opt/ml/model` | Estimator | 이 경로에 쓴 것만 S3로 자동 업로드된다 |
+| `input_mode` (File/Pipe/FastFile) | TrainingInput | File은 다운로드가 끝나야 학습이 시작된다 |
+| `instance_count` + `distribution` | Estimator | 인스턴스만 늘리고 분산 전략을 안 고르면 의도대로 안 된다 |
+| `use_spot_instances` + `max_wait` | Estimator | `max_wait >= max_run`이 아니면 Spot 구성이 성립하지 않는다 |
+| `checkpoint_s3_uri` | Estimator | 없으면 Spot 중단 시 처음부터 재학습 |
+| `strategy` / `early_stopping_type` | HyperparameterTuner | Hyperband는 조기 중단을 내장하고 `early_stopping_type`을 무시한다 |
+| `max_jobs` / `max_parallel_jobs` | HyperparameterTuner | 베이지안에서 병렬을 과도하게 키우면 효율이 떨어진다 |
+| `objective_metric_name` | HyperparameterTuner | 불균형 데이터에 Accuracy를 넣으면 튜닝 자체가 헛돈다 |
+| `l1` / `wd` | Linear Learner | `wd`가 곧 L2(weight decay)다 — 이름만 다르다 |
+| `gradient_clipping` / `lr_scheduler` | 학습 하이퍼파라미터 | 폭발·발산 대응의 1차 수단 |
 
-Breakdown:
-1. Data exceeds disk → **Pipe/FastFile** (Day1).
-2. Exceeds single GPU → **model parallel** (Day1).
-3. Cost savings → **Spot + checkpoints** (Day1).
-4. Suspect low GPU utilization → **Profiler** (Day4) to identify bottleneck.
+## 통합 사례로 생각해보기
 
-## Common Traps Summary
+> **사례 A**: 텍스트 분류 모델이 학습 정확도 96%, 검증 정확도 75%다. 데이터가 부족하고 추가 수집도 어렵다. 튜닝 비용도 줄이고 싶다.
 
-- Responding to overfitting with "increase epochs / enlarge model" is usually wrong (worsens overfitting).
-- Distinguish model parallel from gradient accumulation / mixed precision on "GPU memory exceeded": model itself doesn't fit → model parallel; batch-related → accumulation/precision.
-- Debugger vs Profiler: **quality=Debugger, resources=Profiler**. Don't confuse with Model Monitor (drift post-deployment).
-- Spot is meaningless without checkpoints; requires `max_wait >= max_run`.
-- Using Accuracy as target metric on imbalanced data is a trap.
+풀이:
 
-## Summary
+1. 큰 격차 → **과적합**(Day3) → 정규화 강화, **데이터 증강(역번역 등)**, 드롭아웃.
+2. 데이터가 적음 → **k-겹 교차검증**으로 평가를 안정화.
+3. 튜닝 비용 절감 → **Hyperband** 또는 조기 종료(Day2).
 
-Week 8 was about "after choosing a good algorithm (Week 6), actually training, tuning, and generalizing it well." The key is linking symptom → root cause → response quickly. **Data scale, model size, cost inform training infrastructure** (Day1); **efficiency, cost inform tuning strategies** (Day2); **gap size informs overfitting/underfitting treatment** (Day3); **symptom informs optimization root cause and tools** (Day4). Next week we move to Domain 4 — **deploying, operating, monitoring** models.
+> **사례 B**: 8TB 데이터로 대형 모델을 학습하는데 너무 느리고 비싸다. 단일 GPU 메모리도 초과한다.
 
----
+풀이:
+
+1. 데이터가 디스크 초과 → **Pipe/FastFile**(Day1).
+2. 단일 GPU 초과 → **모델 병렬**(Day1).
+3. 비용 절감 → **Spot + 체크포인트**(Day1).
+4. GPU 저활용이 의심되면 → **Profiler**(Day4)로 병목 식별.
+
+## 자주 틀리는 함정
+
+| 함정 | 왜 틀리나 | 올바른 판단 |
+|---|---|---|
+| 과적합에 "에폭 증가 / 모델 확대"로 대응 | 분산을 더 키워 악화시킨다 | 정규화·데이터·증강·조기 종료 |
+| "GPU 메모리 초과 = 모델 병렬"로 반사 | 원인이 배치일 수도 있다 | 모델 자체가 안 들어감 → 모델 병렬 / 배치 때문 → 누적·혼합 정밀도·배치↓ |
+| Debugger와 Profiler를 혼동 | 보는 대상이 다르다 | **품질=Debugger, 자원=Profiler**, 배포 후 드리프트=Model Monitor |
+| Spot을 체크포인트 없이 사용 | 중단 시 처음부터 재학습 → 절감 소멸 | `checkpoint_s3_uri` 설정, `max_wait >= max_run` |
+| 불균형 데이터에 Accuracy를 목표 지표로 | 다수 클래스만 찍어도 높게 나온다 | F1 / AUC / Recall |
+| 검증 세트를 학습에 합쳐 성능을 올림 | 일반화 측정 자체가 불가능해진다 | 검증은 선택용, 테스트는 최종 1회 |
+| 전체 데이터로 스케일러 `fit` | 테스트 정보가 학습에 누수 | 학습셋으로만 `fit`, 나머지는 `transform` |
+| 베이지안에서 병렬을 최대로 설정 | 이전 결과를 못 보고 다음을 정함 | 병렬은 적당히, 완전 병렬은 Random에 적합 |
+
+## 지문 단서 → 정답 매핑
+
+| 지문 단서 | 고를 답 | 어느 Day |
+|---|---|---|
+| "학습 손실은 매우 낮은데 검증 손실이 크게 높다" | 최적화는 성공·일반화 실패 = 과적합 | Day3 |
+| "학습·검증 둘 다 낮고 격차가 작다" | 과소적합 → 복잡도·특징·학습량↑ | Day3 |
+| "데이터가 인스턴스 디스크보다 크다" | Pipe / FastFile 입력 모드 | Day1 |
+| "모델이 단일 GPU 메모리를 초과한다" | 모델 병렬 | Day1 |
+| "비용을 크게 줄이되 지연은 허용한다" | Managed Spot + 체크포인트 | Day1 |
+| "가망 없는 후보를 빠르게 버리며 튜닝 비용 절감" | Hyperband | Day2 |
+| "적은 학습 횟수로 효율적으로 탐색" | Bayesian | Day2 |
+| "지난 튜닝 결과를 이어서 더 탐색" | 워밍 스타트 | Day2 |
+| "사기 탐지처럼 양성이 1%인 데이터의 목표 지표" | F1 / AUC (Accuracy는 함정) | Day2 |
+| "특징을 자동으로 0으로 만들어 희소 모델" | L1 | Day3 |
+| "라벨링 비용이 커서 데이터를 못 늘린다" | 데이터 증강 | Day3 |
+| "손실이 갑자기 NaN으로 발산" | 학습률↓ + 그래디언트 클리핑 | Day4 |
+| "GPU 사용률 30%, 데이터 로딩 병목 의심" | Profiler | Day4 |
+| "소실·과적합·손실 미감소를 자동 탐지·알림" | Debugger | Day4 |
+| "배포 후 입력 분포 변화 감시" | Model Monitor (다음 주 범위) | Week 9 |
+
+다음 주에는 도메인 4로 넘어가 모델을 **배포하고, 운영하고, 모니터링하는** 방법을 다룬다.
+
+## 📖 용어
+
+- **최적화(optimization) / 일반화(generalization)** : 학습 데이터에서 손실을 잘 줄이는 문제(학습률·배치·그래디언트) / 새 데이터에서도 성능이 유지되는 성질(정규화·데이터·검증). 이 두 축의 구분이 Week 8 문제 풀이의 출발점이다.
+- **입력 모드(input mode)** : S3의 학습 데이터를 컨테이너로 전달하는 방식. File(전체 다운로드)·Pipe(스트리밍)·FastFile(지연 로딩).
+- **데이터 병렬 / 모델 병렬** : 같은 모델을 복제해 데이터를 나누는 방식 / 모델 자체를 여러 디바이스에 쪼개는 방식.
+- **Managed Spot Training / 체크포인트** : 중단될 수 있는 저가 인스턴스로 학습해 비용을 줄이는 옵션 / 중단 시 그 지점부터 재개하게 해주는 상태 스냅샷. 둘은 한 세트다.
+- **AMT (Automatic Model Tuning)** : 하이퍼파라미터 조합을 여러 학습 작업으로 자동 탐색해 최적값을 찾는 SageMaker 기능.
+- **Hyperband / 워밍 스타트** : 자원을 차등 배분하며 가망 없는 후보를 조기에 잘라내는 다중 fidelity 전략 / 이전 튜닝 결과에서 출발해 탐색을 이어가는 설정.
+- **목표 지표(objective metric)** : 튜닝이 최대화·최소화할 검증 지표. 무엇을 고르느냐가 곧 무엇을 최적화하느냐이며, 불균형 데이터에서 Accuracy를 고르면 튜닝이 헛돈다.
+- **편향-분산 트레이드오프** : 모델을 단순하게 하면 편향이, 복잡하게 하면 분산이 커지는 관계. 둘의 합이 최소인 지점이 목표다.
+- **Debugger / Profiler** : 학습 중 품질 이상(소실·폭발·과적합)을 잡는 도구 / CPU·GPU·I/O 자원과 병목을 분석하는 도구. 시험에서 가장 자주 섞이는 한 쌍이다.
+- **드리프트(drift)** : 배포 후 실제 입력 분포나 예측 분포가 학습 시점과 달라지는 현상. Model Monitor의 대상이다.
 
 ## 📝 연습 문제
 
