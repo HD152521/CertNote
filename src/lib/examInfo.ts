@@ -47,23 +47,6 @@ export function getExamTips(section?: string): string[] {
   return section === undefined || section === 'aws' ? AWS_EXAM_TIPS : [];
 }
 
-// ── 응시료 원화 환산 ───────────────────────────────────────────────────────────
-// "aws 자격증 가격"류 국내 검색의 실제 의도는 "원화로 얼마"인데 costUsd만으로는 답이 안 된다.
-// 다만 AWS 응시료는 USD로 청구되고 실제 결제액은 결제 시점 환율·카드사 수수료로 달라지므로,
-// 확정 금액이 아니라 '약 N만원'(만원 단위 반올림)으로만 표기하고 기준 시점을 함께 노출한다.
-//
-// !! 이 두 상수가 원화 표기의 유일한 갱신 지점이다. 환율이 크게 움직이면 여기만 고치면 된다.
-export const USD_KRW_RATE = 1400;
-export const USD_KRW_RATE_SYNCED_AT = '2026-08';
-
-// USD 응시료를 '약 N만원' 문자열로. 만원 미만(환산액 5천원 미만)이면 null — 표기하지 않는다.
-export function formatCostKrw(usd: number, rate: number = USD_KRW_RATE): string | null {
-  if (!Number.isFinite(usd) || usd <= 0) return null;
-  const manwon = Math.round((usd * rate) / 10000);
-  if (manwon <= 0) return null;
-  return `약 ${manwon}만원`;
-}
-
 const EXAM_INFO_ROOT = path.join(process.cwd(), 'content', 'exam-info');
 
 // 시험 정보는 빌드 후 불변이라 프로세스 단위로 메모이즈한다(디스크 재독 제거).

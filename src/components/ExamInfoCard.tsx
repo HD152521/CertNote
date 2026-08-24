@@ -1,5 +1,5 @@
 import { ExternalLink, Lightbulb, HelpCircle } from 'lucide-react';
-import { formatCostKrw, getExamTips, USD_KRW_RATE_SYNCED_AT, type ExamInfo } from '@/lib/examInfo';
+import { getExamTips, type ExamInfo } from '@/lib/examInfo';
 import BulletList from '@/components/ui/BulletList';
 import type { Language } from '@/lib/i18n-client';
 
@@ -12,15 +12,13 @@ interface ExamInfoCardProps {
 interface FactProps {
   label: string;
   value: string;
-  sub?: string; // 보조 표기(예: 응시료 원화 환산). 없으면 렌더하지 않는다.
 }
 
-function Fact({ label, value, sub }: FactProps) {
+function Fact({ label, value }: FactProps) {
   return (
     <div className="min-w-0 rounded-lg border border-border bg-bg-subtle px-3 py-2.5">
       <dt className="truncate text-xs text-fg-faint">{label}</dt>
       <dd className="mt-0.5 text-sm font-medium tabular-nums text-fg">{value}</dd>
-      {sub && <dd className="mt-0.5 truncate text-xs tabular-nums text-fg-faint">{sub}</dd>}
     </div>
   );
 }
@@ -41,8 +39,6 @@ function MetaRow({ label, value }: MetaRowProps) {
 
 export default function ExamInfoCard({ info, lang, section }: ExamInfoCardProps) {
   const tips = getExamTips(section);
-  // 원화 환산은 ko에서만 노출한다(en 사용자는 USD가 곧 결제 통화). 한 번만 계산해 재사용.
-  const costKrw = lang === 'en' ? null : formatCostKrw(info.costUsd);
 
   return (
     <section
@@ -60,28 +56,14 @@ export default function ExamInfoCard({ info, lang, section }: ExamInfoCardProps)
         )}
       </div>
 
-      {/* 핵심 수치: 모바일 2열, sm 3열, lg 5열로 깔끔하게 줄바꿈. 원화 각주와 한 묶음이다. */}
-      <div className="space-y-2">
-        <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-          <Fact label={lang === 'en' ? 'Questions' : '문항 수'} value={`${info.questionCount}${lang === 'en' ? '' : '문항'}`} />
-          <Fact label={lang === 'en' ? 'Duration' : '시험 시간'} value={`${info.durationMin}${lang === 'en' ? 'min' : '분'}`} />
-          <Fact label={lang === 'en' ? 'Pass Score' : '합격 점수'} value={`${info.passingScore} / ${info.scoreMax}`} />
-          <Fact
-            label={lang === 'en' ? 'Cost' : '응시료'}
-            value={`$${info.costUsd}`}
-            sub={costKrw ?? undefined}
-          />
-          <Fact label={lang === 'en' ? 'Validity' : '유효기간'} value={`${info.validityYears}${lang === 'en' ? 'y' : '년'}`} />
-        </dl>
-
-        {/* 원화는 환산값이라 기준 시점을 반드시 함께 밝힌다 — 확정 청구액으로 오인되면 안 된다. */}
-        {costKrw && (
-          <p className="text-xs leading-relaxed text-fg-faint">
-            응시료 원화는 {USD_KRW_RATE_SYNCED_AT} 기준 환산값입니다. 응시료는 미국 달러 기준이라
-            실제 청구액은 결제 시점 환율·결제 수단에 따라 달라집니다.
-          </p>
-        )}
-      </div>
+      {/* 핵심 수치: 모바일 2열, sm 3열, lg 5열로 깔끔하게 줄바꿈 */}
+      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        <Fact label={lang === 'en' ? 'Questions' : '문항 수'} value={`${info.questionCount}${lang === 'en' ? '' : '문항'}`} />
+        <Fact label={lang === 'en' ? 'Duration' : '시험 시간'} value={`${info.durationMin}${lang === 'en' ? 'min' : '분'}`} />
+        <Fact label={lang === 'en' ? 'Pass Score' : '합격 점수'} value={`${info.passingScore} / ${info.scoreMax}`} />
+        <Fact label={lang === 'en' ? 'Cost' : '응시료'} value={`$${info.costUsd}`} />
+        <Fact label={lang === 'en' ? 'Validity' : '유효기간'} value={`${info.validityYears}${lang === 'en' ? 'y' : '년'}`} />
+      </dl>
 
       {/* 도메인 비중: 가로 막대 (대시보드 도메인 막대 스타일 재사용) */}
       <div className="space-y-2.5">

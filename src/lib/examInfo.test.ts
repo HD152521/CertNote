@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { getExamInfo, getExamTips, formatCostKrw, AWS_EXAM_TIPS, USD_KRW_RATE, USD_KRW_RATE_SYNCED_AT } from './examInfo';
+import { getExamInfo, getExamTips, AWS_EXAM_TIPS } from './examInfo';
 import { buildFaqPageLd } from './structuredData';
 
 // Phase2 시험정보 FAQ — 데이터 로딩·섹션별 팁·FAQPage JSON-LD 단위 테스트.
@@ -73,29 +73,5 @@ describe('buildFaqPageLd', () => {
     expect(ld.mainEntity).toHaveLength(info.faq!.length);
     expect(ld.mainEntity.map((e) => e.name)).toEqual(info.faq!.map((f) => f.q));
     expect(ld.mainEntity.map((e) => e.acceptedAnswer.text)).toEqual(info.faq!.map((f) => f.a));
-  });
-});
-
-describe('formatCostKrw — 응시료 원화 환산', () => {
-  test('만원 단위로 반올림해 "약 N만원"으로 표기한다', () => {
-    expect(formatCostKrw(150, 1400)).toBe('약 21만원');
-    expect(formatCostKrw(100, 1400)).toBe('약 14만원');
-    expect(formatCostKrw(300, 1400)).toBe('약 42만원');
-  });
-
-  test('금액이 없거나 음수면 표기하지 않는다(null)', () => {
-    expect(formatCostKrw(0)).toBeNull();
-    expect(formatCostKrw(-10)).toBeNull();
-    expect(formatCostKrw(Number.NaN)).toBeNull();
-  });
-
-  test('실데이터(saa-c03) 응시료로 환산값이 나온다', () => {
-    const info = getExamInfo('saa-c03')!;
-    expect(formatCostKrw(info.costUsd)).toMatch(/^약 \d+만원$/);
-  });
-
-  test('환산 기준 상수가 유효하다(기준 시점 없이 원화를 노출하면 안 된다)', () => {
-    expect(USD_KRW_RATE).toBeGreaterThan(0);
-    expect(USD_KRW_RATE_SYNCED_AT).toMatch(/^\d{4}-\d{2}$/);
   });
 });
