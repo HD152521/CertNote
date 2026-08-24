@@ -1,5 +1,6 @@
 import { ExternalLink, Lightbulb, HelpCircle } from 'lucide-react';
 import { getExamTips, type ExamInfo } from '@/lib/examInfo';
+import BulletList from '@/components/ui/BulletList';
 import type { Language } from '@/lib/i18n-client';
 
 interface ExamInfoCardProps {
@@ -100,14 +101,7 @@ export default function ExamInfoCard({ info, lang, section }: ExamInfoCardProps)
           <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-fg-faint">
             <Lightbulb className="h-3.5 w-3.5 text-accent" /> {lang === 'en' ? 'Benefits & Tips' : '혜택 & 꿀팁'}
           </h3>
-          <ul className="space-y-1.5">
-            {tips.map((tip, i) => (
-              <li key={i} className="flex gap-2 text-sm leading-relaxed text-fg-muted">
-                <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" />
-                <span className="min-w-0">{tip}</span>
-              </li>
-            ))}
-          </ul>
+          <BulletList items={tips} />
         </div>
       )}
 

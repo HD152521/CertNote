@@ -7,6 +7,9 @@ import { ArrowRight } from 'lucide-react';
 import { getAllDays, getCertMeta, listCerts, certLevelLabel, certHref } from '@/lib/content';
 import { isHighlightLevel } from '@/lib/levels';
 import { getExamInfo } from '@/lib/examInfo';
+import { getMockExamQuestionCount } from '@/lib/exam/examBankCount';
+import { buildTrackContents } from '@/lib/certTrack';
+import BulletList from '@/components/ui/BulletList';
 import ExamInfoCard from '@/components/ExamInfoCard';
 import { cn } from '@/lib/cn';
 import { JsonLd } from '@/components/JsonLd';
@@ -154,10 +157,39 @@ export default async function CertIndexPage({ params }: PageProps) {
       </header>
       {examInfo && examInfo.faq && examInfo.faq.length > 0 && <JsonLd data={buildFaqPageLd(examInfo.faq)} />}
       {examInfo && <ExamInfoCard info={examInfo} lang={lang} section={section} />}
+
+      {/* 트랙 구성 — 자격증마다 값이 달라지는 '사실 명세'다(홍보 문구가 아니다).
+          이 페이지 본문에는 '모의고사'·'연습문제'라는 단어가 아예 없었고(메타 description에만
+          있었다), 모의고사 화면 /exam 은 robots.ts에서 Disallow라 검색으로 닿을 수 있는 접점이
+          한 곳도 없었다. 문구 생성은 buildTrackContents(수치 없으면 줄 생략)에 위임한다.
+          en 트랙은 Week 1 프리뷰만 있고 모의고사·복습이 한국어 전용이라 ko에서만 렌더한다. */}
+      {lang !== 'en' && (
+        <section aria-labelledby="track-contents-heading" className="space-y-3">
+          <h2 id="track-contents-heading" className="text-sm font-medium text-fg-muted">
+            트랙 구성
+          </h2>
+          <BulletList
+            items={buildTrackContents({
+              dayCount: meta.dayCount,
+              weeks: meta.weeks,
+              mockExamCount: getMockExamQuestionCount(slug),
+            })}
+            className="rounded-lg border border-border bg-bg-elevated p-4 sm:p-5"
+          />
+        </section>
+      )}
+
       <section className="space-y-6">
         {[...byWeek.entries()].map(([w, ws]) => (
           <div key={w} className="space-y-2">
-            <h2 className="font-mono text-xs uppercase tracking-wider text-fg-faint">Week {w}</h2>
+            <h2
+              className={cn(
+                'text-xs uppercase tracking-wider text-fg-faint',
+                lang === 'en' && 'font-mono',
+              )}
+            >
+              {lang === 'en' ? `Week ${w}` : `${w}주차`}
+            </h2>
             <ul className="divide-y divide-border rounded-lg border border-border bg-bg-elevated">
               {ws.map((d) => (
                 <li key={d.href}>
