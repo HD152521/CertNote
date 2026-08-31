@@ -137,74 +137,74 @@ Tomorrow we dive into **IAM**, the region of the above layer that breaks most of
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A SysOps operator wants to change IAM permissions and modify Route 53 records in another region during a us-east-1 outage. Is this operation possible?
+**Question 1.** A SysOps operator wants to change IAM permissions and modify Route 53 records in another region during a us-east-1 outage. Is this operation possible?
 
 A) Yes. IAM and Route 53 are global services, so they're unaffected by any regional outage
 B) Yes. But you must explicitly specify \--region\ in the AWS CLI
 C) No. The control planes of IAM and Route 53 are located in us-east-1, so write operations may be blocked
 D) Yes. But you must wait for CloudFront cache to expire
 
-**정답: C**
-해설: During a us-east-1 outage, write operations like creating IAM users or modifying Route 53 records may be blocked because the control planes of IAM, Route 53 (public zone), CloudFront, and Organizations live in us-east-1. Read operations and data plane calls using already-issued credentials survive. The December 2021 outage demonstrated this architecture clearly. Assuming "global = safe" leads to incidents.
+**Answer: C**
+Explanation: During a us-east-1 outage, write operations like creating IAM users or modifying Route 53 records may be blocked because the control planes of IAM, Route 53 (public zone), CloudFront, and Organizations live in us-east-1. Read operations and data plane calls using already-issued credentials survive. The December 2021 outage demonstrated this architecture clearly. Assuming "global = safe" leads to incidents.
 
 ---
 
-**문제 2.** An operator minimizes costs by having all private subnets in a VPC use only one NAT Gateway in a single AZ. What's wrong with this design?
+**Question 2.** An operator minimizes costs by having all private subnets in a VPC use only one NAT Gateway in a single AZ. What's wrong with this design?
 
 A) NAT GW is a global resource, so there's no issue
 B) If NAT GW in AZ-a dies, private subnets in other AZs also lose internet
 C) If NAT GW in AZ-a dies, only AZ-a private subnets lose internet
 D) NAT GW automatically fails over to another AZ, so there's no issue
 
-**정답: B**
-해설: NAT GW is an AZ-scoped resource with no automatic failover. If private subnet route tables in other AZs point to AZ-a's NAT GW and it dies, traffic from AZ-b and AZ-c also gets blocked. The standard: **one NAT GW per AZ + each private subnet's route table points to its own AZ's NAT GW.** If cost is a concern, Fck-NAT or self-hosted NAT Instances cut the \.045/GB processing fee, but add operational overhead.
+**Answer: B**
+Explanation: NAT GW is an AZ-scoped resource with no automatic failover. If private subnet route tables in other AZs point to AZ-a's NAT GW and it dies, traffic from AZ-b and AZ-c also gets blocked. The standard: **one NAT GW per AZ + each private subnet's route table points to its own AZ's NAT GW.** If cost is a concern, Fck-NAT or self-hosted NAT Instances cut the \.045/GB processing fee, but add operational overhead.
 
 ---
 
-**문제 3.** Which of the following does NOT fall under "customer responsibility"?
+**Question 3.** Which of the following does NOT fall under "customer responsibility"?
 
 A) Minimizing IAM role permissions
 B) Applying security patches to Lambda runtime (Python 3.12)
 C) Setting security group rules for RDS instances
 D) Scanning Lambda function code for vulnerabilities
 
-**정답: B**
-해설: Lambda runtime security patches are AWS's responsibility. However, migrating to a new runtime when an old one is deprecated is yours. The other three are entirely customer responsibility. For RDS: AWS patches the OS and DB engine; you decide when (Maintenance Window), plan traffic handling during that window, and verify connection pool reconnection after Standby failover.
+**Answer: B**
+Explanation: Lambda runtime security patches are AWS's responsibility. However, migrating to a new runtime when an old one is deprecated is yours. The other three are entirely customer responsibility. For RDS: AWS patches the OS and DB engine; you decide when (Maintenance Window), plan traffic handling during that window, and verify connection pool reconnection after Standby failover.
 
 ---
 
-**문제 4.** An operations team wants to prevent credential theft from EC2 metadata via SSRF. What's the most effective combination?
+**Question 4.** An operations team wants to prevent credential theft from EC2 metadata via SSRF. What's the most effective combination?
 
 A) Block 169.254.169.254 in security group
 B) Enforce IMDSv2 + hop limit 1 + Config rule \ec2-imdsv2-check\
 C) Don't attach an IAM role to the instance
 D) Block metadata IP in NACL
 
-**정답: B**
-해설: 169.254.169.254 is a link-local address—security groups and NACLs can't block link-local (the hypervisor handles it before routing tables). IMDSv2 requires a PUT to fetch a session token; SSRF typically only does GET. Hop limit 1 blocks leakage outside the container. Config rule auto-detects non-compliant instances. Removing the IAM role breaks SDK functionality—impractical.
+**Answer: B**
+Explanation: 169.254.169.254 is a link-local address—security groups and NACLs can't block link-local (the hypervisor handles it before routing tables). IMDSv2 requires a PUT to fetch a session token; SSRF typically only does GET. Hop limit 1 blocks leakage outside the container. Config rule auto-detects non-compliant instances. Removing the IAM role breaks SDK functionality—impractical.
 
 ---
 
-**문제 5.** You want to receive AWS Health events via EventBridge for automation and not miss any. What's the operator standard pattern?
+**Question 5.** You want to receive AWS Health events via EventBridge for automation and not miss any. What's the operator standard pattern?
 
 A) Create a rule in us-east-1 only
 B) Create rules in all regions
 C) Create rules in both us-east-1 and us-west-2
 D) Just enable Personal Health Dashboard; events automatically come through
 
-**정답: C**
-해설: AWS Health API runs active-active in us-east-1 and us-west-2 with automatic failover. Create EventBridge rules in both regions to ensure no gaps. For organization-wide visibility, also enable Organizational View in your management account.
+**Answer: C**
+Explanation: AWS Health API runs active-active in us-east-1 and us-west-2 with automatic failover. Create EventBridge rules in both regions to ensure no gaps. For organization-wide visibility, also enable Organizational View in your management account.
 
 ---
 
-**문제 6.** To minimize cross-AZ data transfer costs (at \.01/GB × 2) between two AWS accounts, you want to place EC2 instances in the same AZ. The correct approach is?
+**Question 6.** To minimize cross-AZ data transfer costs (at \.01/GB × 2) between two AWS accounts, you want to place EC2 instances in the same AZ. The correct approach is?
 
 A) Both accounts select \p-northeast-2a\
 B) Match the ZoneId (e.g., \pne2-az1\) identically on both sides
 C) Put both accounts in the same Organization; they auto-match
 D) Share AZs via AWS Resource Access Manager
 
-**정답: B**
-해설: ZoneName (e.g., \p-northeast-2a\) is shuffled per account, so account A's \2a\ might not be the same physical AZ as account B's \2a\. **ZoneId (\pne2-az1\) is identical across all accounts,** so match by ZoneId to avoid cross-AZ costs. You can see both values in \describe-availability-zones\.
+**Answer: B**
+Explanation: ZoneName (e.g., \p-northeast-2a\) is shuffled per account, so account A's \2a\ might not be the same physical AZ as account B's \2a\. **ZoneId (\pne2-az1\) is identical across all accounts,** so match by ZoneId to avoid cross-AZ costs. You can see both values in \describe-availability-zones\.

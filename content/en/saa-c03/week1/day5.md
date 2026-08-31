@@ -183,146 +183,146 @@ Week 1 was about lodging "the coordinate system of the AWS universe" in your hea
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A global game company wants to provide consistent TCP-based game server response times to users worldwide. What is the most suitable solution?
+**Question 1.** A global game company wants to provide consistent TCP-based game server response times to users worldwide. What is the most suitable solution?
 
 A) CloudFront + Lambda@Edge — caches HTTP content at 600+ edge PoPs and even runs Node.js logic, but being L7 HTTP/HTTPS-only it can't accelerate the game's raw TCP sessions
 B) Global Accelerator
 C) Route 53 Latency Routing — returns DNS answers pointing clients to the lowest-latency regional endpoint, but is bound by TTL caching and the actual packets ride the public internet as-is with no backbone acceleration
 D) ElastiCache Global Datastore — merely a cache layer replicating Redis data across regions in under 1 second, unrelated to routing game server TCP traffic
 
-**정답: B**
-해설: For TCP/UDP, it's unconditionally L4 acceleration — Global Accelerator. CloudFront is HTTP L7 only; Route 53 only varies DNS answers with no traffic acceleration; ElastiCache is a cache service and irrelevant. Global Accelerator provides 2 static BGP Anycast IPs, so routing changes independently of DNS TTLs, and by traversing the backbone, packet loss and jitter also decrease. Empirically, a 30-60% reduction in global users' p99 latency is common.
+**Answer: B**
+Explanation: For TCP/UDP, it's unconditionally L4 acceleration — Global Accelerator. CloudFront is HTTP L7 only; Route 53 only varies DNS answers with no traffic acceleration; ElastiCache is a cache service and irrelevant. Global Accelerator provides 2 static BGP Anycast IPs, so routing changes independently of DNS TTLs, and by traversing the backbone, packet loss and jitter also decrease. Empirically, a 30-60% reduction in global users' p99 latency is common.
 
 ---
 
-**문제 2.** A financial company must keep some data inside headquarters under Korean Financial Supervisory Service regulations while operating with AWS APIs. What is the most suitable solution?
+**Question 2.** A financial company must keep some data inside headquarters under Korean Financial Supervisory Service regulations while operating with AWS APIs. What is the most suitable solution?
 
 A) Direct Connect only — connects headquarters and an AWS region with a low-latency dedicated line, but the data itself ends up stored in the AWS region, failing the "keep inside headquarters" regulatory requirement
 B) Local Zones — AWS-operated mini facilities in major cities providing low latency, but as AWS data centers rather than the customer's building, they're unsuitable for data sovereignty requirements
 C) Outposts
 D) Snowball Edge — a one-off device for moving petabyte-scale data offline or short-term edge computing, unsuitable as an always-on AWS API operations platform
 
-**정답: C**
-해설: AWS hardware inside the customer's data center + the same APIs. The correct answer for regulatory scenarios like the Electronic Financial Supervision Regulation and GDPR Schrems II. Local Zones are AWS-operated facilities, Direct Connect is a dedicated line, Snowball Edge is for one-off data migration. Outposts is used for the nearly unique scenario where "my building + AWS APIs" are needed simultaneously — otherwise Direct Connect often suffices. On cost, Outposts tends to run 1.5~2x EC2 on a 3-year commitment, so it's rarely used for non-regulatory reasons.
+**Answer: C**
+Explanation: AWS hardware inside the customer's data center + the same APIs. The correct answer for regulatory scenarios like the Electronic Financial Supervision Regulation and GDPR Schrems II. Local Zones are AWS-operated facilities, Direct Connect is a dedicated line, Snowball Edge is for one-off data migration. Outposts is used for the nearly unique scenario where "my building + AWS APIs" are needed simultaneously — otherwise Direct Connect often suffices. On cost, Outposts tends to run 1.5~2x EC2 on a 3-year commitment, so it's rarely used for non-regulatory reasons.
 
 ---
 
-**문제 3.** A company wants to block use of all regions except us-east-1 across 50 AWS accounts. What is the most efficient method?
+**Question 3.** A company wants to block use of all regions except us-east-1 across 50 AWS accounts. What is the most efficient method?
 
 A) Add IAM policies per account — you'd have to attach the same policy to every user and role in 50 accounts one by one, management explodes, and every new identity risks omission, making it unfit for governance
 B) Organizations SCP with an `aws:RequestedRegion` condition Deny
 C) CloudTrail alerts — only detects and alerts on region usage after the fact via logs; it can't block the API calls themselves, so it isn't preventive
 D) Create VPCs only in us-east-1 — even without a VPC, region-scoped global services and services like S3/DynamoDB can still be called in other regions, so the block is incomplete
 
-**정답: B**
-해설: Multi-account permission ceiling = SCP. An `aws:RequestedRegion` Deny is the standard pattern. But the Management account is exempt from SCPs — hence no production workloads there. Also handle the subtle trap that global services (IAM, CloudFront, Route 53) show `aws:RequestedRegion` as `us-east-1`, requiring exceptions. And after applying the SCP, existing resources remain and only new API calls are blocked, so cleaning up existing resources in other regions is a separate task.
+**Answer: B**
+Explanation: Multi-account permission ceiling = SCP. An `aws:RequestedRegion` Deny is the standard pattern. But the Management account is exempt from SCPs — hence no production workloads there. Also handle the subtle trap that global services (IAM, CloudFront, Route 53) show `aws:RequestedRegion` as `us-east-1`, requiring exceptions. And after applying the SCP, existing resources remain and only new API calls are blocked, so cleaning up existing resources in other regions is a separate task.
 
 ---
 
-**문제 4.** What is the most secure way for EC2 to access S3?
+**Question 4.** What is the most secure way for EC2 to access S3?
 
 A) Store the Access Key in ~/.aws/credentials — long-lived credentials sit in plaintext on disk, are stolen outright if the instance is compromised, and add a manual key rotation burden, making it dangerous
 B) Attach an IAM Role via an Instance Profile + IMDSv2
 C) Use a root Access Key — the top-level credential with unlimited account-wide permissions; exposure spreads damage account-wide, and AWS recommends absolutely never using it
 D) Allow S3 Public Read — lets anyone read objects without authentication, leading directly to data leaks, a setting in the exact opposite direction of EC2 access control
 
-**정답: B**
-해설: Instance Profile + IMDSv2. The SDK automatically refreshes temporary credentials and SSRF is defended too. A risks key leakage, C is absolutely forbidden, D is data exposure. Recall that the direct cause of the Capital One incident was IMDSv1, and it becomes clear "why IMDSv2 must be stated explicitly." The more complete defense is the combination of enforcing `HttpTokens=required` + `HttpPutResponseHopLimit=1` in the EC2 Launch Template and blocking IMDSv1 calls via SCP.
+**Answer: B**
+Explanation: Instance Profile + IMDSv2. The SDK automatically refreshes temporary credentials and SSRF is defended too. A risks key leakage, C is absolutely forbidden, D is data exposure. Recall that the direct cause of the Capital One incident was IMDSv1, and it becomes clear "why IMDSv2 must be stated explicitly." The more complete defense is the combination of enforcing `HttpTokens=required` + `HttpPutResponseHopLimit=1` in the EC2 Launch Template and blocking IMDSv1 calls via SCP.
 
 ---
 
-**문제 5.** To eliminate key rotation burden when GitHub Actions deploys to AWS?
+**Question 5.** To eliminate key rotation burden when GitHub Actions deploys to AWS?
 
 A) Store an IAM User Access Key as a Secret — keeping a long-lived key in GitHub Secrets works, but the periodic manual rotation burden remains, and if leaked via logs it's stolen outright, carrying the same risk as the Travis CI breach
 B) Short-lived Role credentials via OIDC federation
 C) Spin up EC2 with SSH keys — every deployment requires managing separate EC2 and SSH keys, complicating operations, and the key itself becomes another long-lived secret that doesn't eliminate rotation burden
 D) Root credentials — exposing unlimited account-wide permissions to CI, a head-on violation of least privilege and the worst possible choice
 
-**정답: B**
-해설: GitHub OIDC → STS AssumeRoleWithWebIdentity → short-lived tokens. Restrict by `sub` claim in the Trust Policy to repo and branch. The Travis CI breach was the decisive impetus for OIDC standardization. The same pattern is being extended to GitLab, Bitbucket, Buildkite, and others, so it's fair to call it the standard across CI now. For hardening, the orthodox move is locking the trust policy's `token.actions.githubusercontent.com:sub` claim down to the branch, like `repo:org/repo:ref:refs/heads/main`.
+**Answer: B**
+Explanation: GitHub OIDC → STS AssumeRoleWithWebIdentity → short-lived tokens. Restrict by `sub` claim in the Trust Policy to repo and branch. The Travis CI breach was the decisive impetus for OIDC standardization. The same pattern is being extended to GitLab, Bitbucket, Buildkite, and others, so it's fair to call it the standard across CI now. For hardening, the orthodox move is locking the trust policy's `token.actions.githubusercontent.com:sub` claim down to the branch, like `repo:org/repo:ref:refs/heads/main`.
 
 ---
 
-**문제 6.** A SaaS collects CloudWatch logs from our AWS. What is needed for Confused Deputy defense?
+**Question 6.** A SaaS collects CloudWatch logs from our AWS. What is needed for Confused Deputy defense?
 
 A) Cross-Account Role + External ID condition
 B) Grant an Access Key to an IAM User — handing a long-lived Access Key to the SaaS carries heavy leak/rotation burden and does nothing to solve the Confused Deputy problem itself
 C) S3 Public Read — opens the log bucket to anyone, a data-leak configuration that is the exact opposite of safe delegated collection
 D) VPN connection — provides only a network-layer tunnel, unrelated to the identity delegation and permission boundary problem when the SaaS borrows our account's role
 
-**정답: A**
-해설: The External ID is a pre-shared secret that blocks other SaaS customers from borrowing our Role even if they know its ARN. A mandatory requirement of Marketplace ISV certification. Adding `aws:SourceAccount` or `aws:SourceArn` conditions on top of the External ID is safer still. According to AWS's 2022 review of "Confused Deputy" patterns, many ISVs had applied only the External ID and omitted SourceArn, leaving them partially vulnerable.
+**Answer: A**
+Explanation: The External ID is a pre-shared secret that blocks other SaaS customers from borrowing our Role even if they know its ARN. A mandatory requirement of Marketplace ISV certification. Adding `aws:SourceAccount` or `aws:SourceArn` conditions on top of the External ID is safer still. According to AWS's 2022 review of "Confused Deputy" patterns, many ISVs had applied only the External ID and omitted SourceArn, leaving them partially vulnerable.
 
 ---
 
-**문제 7.** A company provisions 10 new AWS accounts every week and wants the same security baseline applied. What is the most suitable method?
+**Question 7.** A company provisions 10 new AWS accounts every week and wants the same security baseline applied. What is the most suitable method?
 
 A) Operators configure manually each time — a human must hand-apply the baseline to 10 accounts weekly, omissions and drift are inevitable, and operations collapse as scale grows
 B) Control Tower Account Factory + StackSets auto-deployment
 C) Run CloudFormation manually in each account — templates are consistent, but a person must run stacks and set up cross-account roles per new account, missing automatic propagation
 D) Run Terraform Apply each time — IaC standardizes things, but without a separate pipeline tying in account creation/registration, a manual trigger is needed every time, falling short of full automation
 
-**정답: B**
-해설: Control Tower auto-generates the standard Landing Zone, and StackSets `SERVICE_MANAGED + auto-deployment Enabled` auto-deploys the baseline to new accounts. Consistency without operator intervention. Larger organizations tie in a GitOps flow with Account Factory for Terraform (AFT). AFT receives new account requests as PRs, and on merge, Terraform Cloud handles account creation, baseline application, and SSO permission grants automatically.
+**Answer: B**
+Explanation: Control Tower auto-generates the standard Landing Zone, and StackSets `SERVICE_MANAGED + auto-deployment Enabled` auto-deploys the baseline to new accounts. Consistency without operator intervention. Larger organizations tie in a GitOps flow with Account Factory for Terraform (AFT). AFT receives new account requests as PRs, and on merge, Terraform Cloud handles account creation, baseline application, and SSO permission grants automatically.
 
 ---
 
-**문제 8.** A company wants to let junior developers freely create IAM Roles but prevent creating AdministratorAccess-grade Roles. What is the most appropriate method?
+**Question 8.** A company wants to let junior developers freely create IAM Roles but prevent creating AdministratorAccess-grade Roles. What is the most appropriate method?
 
 A) After-the-fact detection with CloudTrail — logging Role creation allows retroactive tracing, but it can't prevent overly permissive Roles from being created in the first place, so it isn't preventive control
 B) Specify a Permissions Boundary as a mandatory attachment condition in the policy
 C) Revoke all of the junior's permissions — this strips the Role creation ability itself, directly violating the requirement of "create freely but with only a ceiling"
 D) Use only Organizations SCPs — an account/OU-level ceiling whose granularity is too coarse to enforce different limits per individual Role within the same account, so it's unsuitable
 
-**정답: B**
-해설: Enforce the `iam:PermissionsBoundary` condition on `iam:CreateRole` calls. The created Role's effective permissions are limited to the intersection with the Boundary. SCPs are a larger unit (account/OU), unsuitable for setting different limits per individual Role within the same account. This is the standard pattern for "delegating authority while preventing the delegatee from expanding it," and the core of AWS's official *Delegated Administrator* model.
+**Answer: B**
+Explanation: Enforce the `iam:PermissionsBoundary` condition on `iam:CreateRole` calls. The created Role's effective permissions are limited to the intersection with the Boundary. SCPs are a larger unit (account/OU), unsuitable for setting different limits per individual Role within the same account. This is the standard pattern for "delegating authority while preventing the delegatee from expanding it," and the core of AWS's official *Delegated Administrator* model.
 
 ---
 
-**문제 9.** EC2 goes down in one AZ due to a cooling failure. If the ASG is already configured multi-AZ?
+**Question 9.** EC2 goes down in one AZ due to a cooling failure. If the ASG is already configured multi-AZ?
 
 A) All services down — a multi-AZ ASG replenishes instances in surviving AZs, so the premise that one AZ failure takes everything down contradicts HA design itself
 B) The ASG automatically replenishes instances in other AZs; service continues
 C) RDS Multi-AZ goes down too — RDS Multi-AZ has its standby in another AZ and fails over automatically within 30~60 seconds, so the claim that it goes down permanently alongside is wrong
 D) Manual failover required — ASG health checks and the ELB automatically replace unhealthy instances and redistribute, so no manual operator intervention is needed
 
-**정답: B**
-해설: The exact scenario of the 2019 Tokyo region incident. The ASG drops instances failing health checks and adds new instances in surviving AZs. RDS Multi-AZ fails over automatically to the standby within 30-60 seconds. But if EBS/EFS is pinned to one AZ, that part dies with it, so it's safer to use the EFS Multi-AZ Standard class or move storage toward S3/DynamoDB. ALB also has cross-zone load balancing enabled by default, so traffic automatically redistributes to other AZs.
+**Answer: B**
+Explanation: The exact scenario of the 2019 Tokyo region incident. The ASG drops instances failing health checks and adds new instances in surviving AZs. RDS Multi-AZ fails over automatically to the standby within 30-60 seconds. But if EBS/EFS is pinned to one AZ, that part dies with it, so it's safer to use the EFS Multi-AZ Standard class or move storage toward S3/DynamoDB. ALB also has cross-zone load balancing enabled by default, so traffic automatically redistributes to other AZs.
 
 ---
 
-**문제 10.** Which of the following is NOT AWS's responsibility?
+**Question 10.** Which of the following is NOT AWS's responsibility?
 
 A) Hypervisor security — the virtualization layer including Nitro is the "security of the cloud" domain AWS designs, patches, and isolates, so it's entirely AWS's responsibility
 B) Guest OS patching (EC2)
 C) Physical facility security — physical infrastructure like data center access control, power, and cooling is a hallmark AWS responsibility area handled exclusively by AWS
 D) Inter-AZ network encryption — backbone traffic linking AZs within a region has been automatically encrypted between Nitro instances since 2018, an AWS responsibility requiring no customer action
 
-**정답: B**
-해설: EC2's guest OS is the customer's responsibility. Because of the IaaS abstraction level, everything above the OS is the customer's. Switch to Fargate and OS patching moves to AWS's responsibility. Move the same workload to Lambda and AWS takes responsibility up through the runtime — as abstraction rises, the responsibility boundary moves up. Note that D's inter-AZ traffic encryption has been applied automatically between Nitro instances since 2018, requiring no additional customer action.
+**Answer: B**
+Explanation: EC2's guest OS is the customer's responsibility. Because of the IaaS abstraction level, everything above the OS is the customer's. Switch to Fargate and OS patching moves to AWS's responsibility. Move the same workload to Lambda and AWS takes responsibility up through the runtime — as abstraction rises, the responsibility boundary moves up. Note that D's inter-AZ traffic encryption has been applied automatically between Nitro instances since 2018, requiring no additional customer action.
 
 ---
 
-**문제 11.** A system requires sub-1ms RPO per transaction and operates in only one region. RDS should be?
+**Question 11.** A system requires sub-1ms RPO per transaction and operates in only one region. RDS should be?
 
 A) Single-AZ Standard — with only one instance in a single AZ, there's no replication at all; an AZ failure means data loss until backup restore, failing the 1ms RPO
 B) Multi-AZ Synchronous Replication
 C) Cross-Region Read Replica — inter-region asynchronous replication has lag in the seconds range, far exceeding a 1ms RPO, and it's overkill given the same-region-only requirement
 D) Aurora Global Database — inter-region storage-level async replication (~1 second RPO) risks losing the secondary region's tail, and it's excessive for a single-region-only scenario
 
-**정답: B**
-해설: Same-region synchronous replication gives RPO ≈ 0. Commit acks within the 1-2ms inter-AZ latency. C is async with an RPO in seconds; D is inter-region async. It's also worth knowing that the RDS Multi-AZ standby receives no read traffic (unlike Aurora) — if read distribution is needed, launch a separate Read Replica. Aurora does 6-way replication within the same region automatically at the storage layer, so there's no separate Multi-AZ toggle.
+**Answer: B**
+Explanation: Same-region synchronous replication gives RPO ≈ 0. Commit acks within the 1-2ms inter-AZ latency. C is async with an RPO in seconds; D is inter-region async. It's also worth knowing that the RDS Multi-AZ standby receives no read traffic (unlike Aurora) — if read distribution is needed, launch a separate Read Replica. Aurora does 6-way replication within the same region automatically at the storage layer, so there's no separate Multi-AZ toggle.
 
 ---
 
-**문제 12.** A company within Organizations wants to share the central Networking account's VPC subnets with 30 other workload accounts. What is the most suitable solution?
+**Question 12.** A company within Organizations wants to share the central Networking account's VPC subnets with 30 other workload accounts. What is the most suitable solution?
 
 A) VPC Peering 30 times — a point-to-point connection between the central VPC and each of 30 accounts; it's not sharing subnets but connecting separate-CIDR VPCs, differing from the requirement and carrying non-transitive constraints
 B) Share subnets via AWS RAM
 C) Transit Gateway only — merely a routing hub between VPCs, with each account still operating an independent VPC, failing the requirement of "directly sharing the central VPC's subnets"
 D) Direct Connect — a dedicated-line service connecting on-premises and AWS, entirely unrelated to a cross-account VPC subnet sharing scenario
 
-**정답: B**
-해설: Share subnets via RAM → the receiving accounts can create ENIs/EC2 but can't touch routing or NACLs. A clean separation of network design and workload operations. Peering is point-to-point; TGW is a routing hub, a complement. In real operations, the combination of RAM (subnet sharing) + Transit Gateway (inter-VPC routing hub) is used together most often. RAM applies only within the same Organization (enabling "Resource Sharing Outside Organization" allows external accounts too, but for security reasons it's almost never used).
+**Answer: B**
+Explanation: Share subnets via RAM → the receiving accounts can create ENIs/EC2 but can't touch routing or NACLs. A clean separation of network design and workload operations. Peering is point-to-point; TGW is a routing hub, a complement. In real operations, the combination of RAM (subnet sharing) + Transit Gateway (inter-VPC routing hub) is used together most often. RAM applies only within the same Organization (enabling "Resource Sharing Outside Organization" allows external accounts too, but for security reasons it's almost never used).

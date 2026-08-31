@@ -222,86 +222,86 @@ In the next article we look at the channels where traffic flows on top of the pe
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A company operates 50 accounts in Organizations. In one developer account, IAM User Alice was granted a policy with `s3:GetObject` permission but cannot retrieve objects. CloudTrail records `AccessDenied`. What is the most likely cause?
+**Question 1.** A company operates 50 accounts in Organizations. In one developer account, IAM User Alice was granted a policy with `s3:GetObject` permission but cannot retrieve objects. CloudTrail records `AccessDenied`. What is the most likely cause?
 
 A) The Identity Policy is wrong
 B) An Organizations SCP denies that region or service
 C) The S3 bucket is in another account and the bucket policy does not explicitly allow
 D) MFA is disabled on the IAM User
 
-**정답: C** (B is also possible, depending on the scenario)
-해설: The Identity Policy is set to Allow, so A is out. MFA (D) is irrelevant unless specified as a Condition. B is a plausible SCP suspicion, but there's no information indicating the same region/service works elsewhere. **Cross-account access requires Allow on both the Identity Policy and the Resource Policy**, so C is most likely. Additionally, if the bucket is KMS-encrypted, the KMS Key Policy is also required. Diagnosis: CloudTrail's `errorMessage` explicitly states "explicit deny in a resource policy" or "deny in a service control policy," which identifies it.
+**Answer: C** (B is also possible, depending on the scenario)
+Explanation: The Identity Policy is set to Allow, so A is out. MFA (D) is irrelevant unless specified as a Condition. B is a plausible SCP suspicion, but there's no information indicating the same region/service works elsewhere. **Cross-account access requires Allow on both the Identity Policy and the Resource Policy**, so C is most likely. Additionally, if the bucket is KMS-encrypted, the KMS Key Policy is also required. Diagnosis: CloudTrail's `errorMessage` explicitly states "explicit deny in a resource policy" or "deny in a service control policy," which identifies it.
 
 ---
 
-**문제 2.** A SaaS company needs to collect data from its customers' AWS accounts. What is the safest and most standard method?
+**Question 2.** A SaaS company needs to collect data from its customers' AWS accounts. What is the safest and most standard method?
 
 A) The customer creates an IAM User and provides the Access Key to the SaaS
 B) Create a Cross-Account Role in the customer account and grant the SaaS account AssumeRole + ExternalId
 C) Share the customer's root credentials
 D) Create the SaaS's IAM User directly inside the customer account
 
-**정답: B**
-해설: The keywords are "standard" + "SaaS accessing customer accounts." A's Access Key is static and hard to revoke if leaked. B's Cross-Account Role + ExternalId is the standard pattern that prevents the confused deputy attack (adopted by Datadog, Snowflake, and CloudHealth alike). The ExternalId is a secret the SaaS generates uniquely per customer and includes in the Trust Policy's Condition, preventing one customer from assuming another customer's Role with their own ID.
+**Answer: B**
+Explanation: The keywords are "standard" + "SaaS accessing customer accounts." A's Access Key is static and hard to revoke if leaked. B's Cross-Account Role + ExternalId is the standard pattern that prevents the confused deputy attack (adopted by Datadog, Snowflake, and CloudHealth alike). The ExternalId is a secret the SaaS generates uniquely per customer and includes in the Trust Policy's Condition, preventing one customer from assuming another customer's Role with their own ID.
 
 ---
 
-**문제 3.** A company wants to let developers "freely create their team's Lambda Roles but never be able to grant IAM or Organizations permissions." What is the most suitable method?
+**Question 3.** A company wants to let developers "freely create their team's Lambda Roles but never be able to grant IAM or Organizations permissions." What is the most suitable method?
 
 A) Grant developers IAM Admin permissions + monitoring
 B) Force-attach a Permission Boundary that denies IAM and Organizations APIs
 C) Deny IAM and Organizations APIs with an SCP
 D) A security-team approval workflow for every Role creation
 
-**정답: B**
-해설: B's Permission Boundary sets the permission ceiling for Roles the developer creates. Even if the developer tries to grant admin permissions to their own Role, the boundary blocks it. C's SCP applies to the entire account, blocking not only developers but the security team as well. D carries heavy operational overhead. Typically you apply both — **SCP (account level) + Permission Boundary (delegation level)** — as a double layer.
+**Answer: B**
+Explanation: B's Permission Boundary sets the permission ceiling for Roles the developer creates. Even if the developer tries to grant admin permissions to their own Role, the boundary blocks it. C's SCP applies to the entire account, blocking not only developers but the security team as well. D carries heavy operational overhead. Typically you apply both — **SCP (account level) + Permission Boundary (delegation level)** — as a double layer.
 
 ---
 
-**문제 4.** A company deploys to AWS Lambda from GitHub Actions. The security team demands "do not store long-lived AWS Access Keys in GitHub Secrets." What should they do?
+**Question 4.** A company deploys to AWS Lambda from GitHub Actions. The security team demands "do not store long-lived AWS Access Keys in GitHub Secrets." What should they do?
 
 A) Create an IAM User and rotate the Access Key every 90 days
 B) Configure an AWS OIDC Identity Provider and have GitHub Actions call AssumeRoleWithWebIdentity
 C) Deploy Lambda manually from the console
 D) Upload a ZIP to an S3 bucket and have Lambda trigger
 
-**정답: B**
-해설: B is the standard pattern where GitHub Actions receives an OIDC id_token each time and obtains temporary credentials from STS. AWS only needs the OIDC Provider registered once. A still carries key-rotation burden and leakage risk. Trade-off: when configuring the OIDC trust, you must restrict the GitHub repo and branch via Conditions (another organization could masquerade with the same repo name).
+**Answer: B**
+Explanation: B is the standard pattern where GitHub Actions receives an OIDC id_token each time and obtains temporary credentials from STS. AWS only needs the OIDC Provider registered once. A still carries key-rotation burden and leakage risk. Trade-off: when configuring the OIDC trust, you must restrict the GitHub repo and branch via Conditions (another organization could masquerade with the same repo name).
 
 ---
 
-**문제 5.** A company operates 200 accounts in Organizations, and employees must access multiple accounts via SSO. Active Directory is the identity source. What is the most appropriate solution?
+**Question 5.** A company operates 200 accounts in Organizations, and employees must access multiple accounts via SSO. Active Directory is the identity source. What is the most appropriate solution?
 
 A) Create IAM Users in each account
 B) IAM Identity Center + AD Connector + Permission Sets
 C) Configure a SAML IdP in each account
 D) Consolidate with a Cognito User Pool
 
-**정답: B**
-해설: In B, Identity Center integrates with Organizations, so a single setup automatically deploys Permission Sets to all accounts. AD Connector (or AWS Managed AD) uses the existing AD as the identity source. C requires configuring each of the 200 accounts individually — extreme operational overhead. Trade-off: Identity Center itself is free, but Managed AD has an hourly cost, so for small organizations AD Connector is cheaper.
+**Answer: B**
+Explanation: In B, Identity Center integrates with Organizations, so a single setup automatically deploys Permission Sets to all accounts. AD Connector (or AWS Managed AD) uses the existing AD as the identity source. C requires configuring each of the 200 accounts individually — extreme operational overhead. Trade-off: Identity Center itself is free, but Managed AD has an hourly cost, so for small organizations AD Connector is cheaper.
 
 ---
 
-**문제 6.** A company wants to find every external Principal that can access its S3 buckets cross-account. What is the most efficient method?
+**Question 6.** A company wants to find every external Principal that can access its S3 buckets cross-account. What is the most efficient method?
 
 A) Manually review all bucket policies
 B) Enable IAM Access Analyzer and review External Findings
 C) Grep the CloudTrail logs
 D) Write an AWS Config Custom Rule
 
-**정답: B**
-해설: Since its 2019 launch, Access Analyzer uses a formal verification engine called Zelkova to analyze all Resource Policies and automatically identify external access possibilities. Enabled at the Organizations level, results from all accounts can be viewed in one place.
+**Answer: B**
+Explanation: Since its 2019 launch, Access Analyzer uses a formal verification engine called Zelkova to analyze all Resource Policies and automatically identify external access possibilities. Enabled at the Organizations level, results from all accounts can be viewed in one place.
 
 ---
 
-**문제 7.** In a system, a user cannot retrieve an S3 object. Identity Policy is `s3:*`, the bucket policy Allows, and the KMS key policy is missing. CloudTrail shows `KMS.NotFoundException`. What is the problem?
+**Question 7.** In a system, a user cannot retrieve an S3 object. Identity Policy is `s3:*`, the bucket policy Allows, and the KMS key policy is missing. CloudTrail shows `KMS.NotFoundException`. What is the problem?
 
 A) The S3 bucket policy does not specify the KMS key
 B) The KMS key policy does not grant the user `kms:Decrypt` permission
 C) The S3 bucket is in the wrong region
 D) MFA is disabled on the IAM User
 
-**정답: B**
-해설: When an S3 object is KMS-encrypted, S3 retrieves the object and then attempts to decrypt the data key with KMS. At that point, the user's permissions must **include `kms:Decrypt`**. Cross-account KMS access requires Allow on both sides (IAM policy + KMS key policy). CloudTrail's `KMS.NotFoundException` is a message returned to "make it look as if the KMS key cannot be found due to lack of permission" (security through obscurity).
+**Answer: B**
+Explanation: When an S3 object is KMS-encrypted, S3 retrieves the object and then attempts to decrypt the data key with KMS. At that point, the user's permissions must **include `kms:Decrypt`**. Cross-account KMS access requires Allow on both sides (IAM policy + KMS key policy). CloudTrail's `KMS.NotFoundException` is a message returned to "make it look as if the KMS key cannot be found due to lack of permission" (security through obscurity).

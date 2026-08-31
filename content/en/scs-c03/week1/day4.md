@@ -163,64 +163,64 @@ Tomorrow closes Week 1 with integrated scenarios. "Why is access denied despite 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** STS 임시 자격 증명이 장기 IAM User access key보다 보안상 우수한 가장 본질적인 이유는?
+**Question 1.** STS 임시 자격 증명이 장기 IAM User access key보다 보안상 우수한 가장 본질적인 이유는?
 
 A) 더 긴 무작위 문자열이라 추측이 불가능하기 때문  
 B) 만료 시간이 있어 노출되더라도 피해가 시간적으로 제한되기 때문  
 C) 암호화되어 전송되기 때문  
 D) root 계정에서만 발급할 수 있기 때문  
 
-**정답: B**  
-해설: 임시 자격 증명은 만료 시간(AssumeRole 기본 1시간, 최대 12시간)이 있어, 탈취되더라도 유효 기간 이후에는 무력화되므로 노출 피해가 시간적으로 한정된다. 길이나 전송 암호화는 장기 키와 본질적 차이가 아니고, 임시 자격 증명은 root 전용이 아니라 역할을 맡는 모든 주체가 받는다.
+**Answer: B**  
+Explanation: 임시 자격 증명은 만료 시간(AssumeRole 기본 1시간, 최대 12시간)이 있어, 탈취되더라도 유효 기간 이후에는 무력화되므로 노출 피해가 시간적으로 한정된다. 길이나 전송 암호화는 장기 키와 본질적 차이가 아니고, 임시 자격 증명은 root 전용이 아니라 역할을 맡는 모든 주체가 받는다.
 
 ---
 
-**문제 2.** 서드파티 모니터링 SaaS가 여러 고객의 AWS 계정에 동일한 SaaS 계정으로 AssumeRole 접근한다. 한 고객의 역할을 다른 고객이 SaaS를 통해 맡지 못하게 격리하는 핵심 메커니즘은?
+**Question 2.** 서드파티 모니터링 SaaS가 여러 고객의 AWS 계정에 동일한 SaaS 계정으로 AssumeRole 접근한다. 한 고객의 역할을 다른 고객이 SaaS를 통해 맡지 못하게 격리하는 핵심 메커니즘은?
 
 A) trust policy의 Principal을 root로 지정  
 B) trust policy의 Condition에 서드파티가 고객별로 발급한 `sts:ExternalId`를 명시  
 C) 고객이 임의로 정한 ExternalId를 trust policy에 넣음  
 D) SaaS에 IAM User access key를 발급해 전달  
 
-**정답: B**  
-해설: ExternalId는 서드파티가 고객마다 고유하게 발급한 값을 trust policy 조건에 박아 Confused Deputy 공격을 막는다. 고객이 임의로 정하면 충돌·예측으로 격리가 깨질 수 있어 발급 주체는 서드파티여야 하고, root Principal 지정만으로는 고객 간 격리가 되지 않으며, access key 발급은 장기 자격 증명 노출이라는 더 큰 위험을 만든다.
+**Answer: B**  
+Explanation: ExternalId는 서드파티가 고객마다 고유하게 발급한 값을 trust policy 조건에 박아 Confused Deputy 공격을 막는다. 고객이 임의로 정하면 충돌·예측으로 격리가 깨질 수 있어 발급 주체는 서드파티여야 하고, root Principal 지정만으로는 고객 간 격리가 되지 않으며, access key 발급은 장기 자격 증명 노출이라는 더 큰 위험을 만든다.
 
 ---
 
-**문제 3.** 역할 체이닝(한 역할을 맡은 상태에서 또 다른 역할을 맡음)에 대한 설명으로 옳은 것은?
+**Question 3.** 역할 체이닝(한 역할을 맡은 상태에서 또 다른 역할을 맡음)에 대한 설명으로 옳은 것은?
 
 A) 체이닝된 세션은 원본 역할의 MaxSessionDuration을 그대로 따라 최대 12시간까지 가능하다  
 B) 체이닝 시 세션 최대 시간은 1시간으로 제한된다  
 C) 체이닝은 권한 추적을 단순화하므로 항상 권장된다  
 D) 체이닝에는 trust policy가 필요 없다  
 
-**정답: B**  
-해설: 역할 체이닝으로 발급되는 세션의 최대 시간은 1시간으로 고정되며, 원본 역할의 긴 MaxSessionDuration이 적용되지 않는다. 체이닝은 오히려 권한 추적을 흐리므로 가급적 피하는 것이 권장되고, 모든 AssumeRole과 마찬가지로 대상 역할의 trust policy 허용이 반드시 필요하다.
+**Answer: B**  
+Explanation: 역할 체이닝으로 발급되는 세션의 최대 시간은 1시간으로 고정되며, 원본 역할의 긴 MaxSessionDuration이 적용되지 않는다. 체이닝은 오히려 권한 추적을 흐리므로 가급적 피하는 것이 권장되고, 모든 AssumeRole과 마찬가지로 대상 역할의 trust policy 허용이 반드시 필요하다.
 
 ---
 
-**문제 4.** GitHub Actions가 장기 access key 없이 AWS 역할을 맡도록 구성할 때, 보안상 가장 중요한 trust policy 설정은?
+**Question 4.** GitHub Actions가 장기 access key 없이 AWS 역할을 맡도록 구성할 때, 보안상 가장 중요한 trust policy 설정은?
 
 A) `sub` 조건을 `repo:org/*`로 두어 조직의 모든 repo가 역할을 맡게 한다  
 B) `sub` 조건을 `repo:org/repo:ref:refs/heads/main`처럼 특정 repo·브랜치로 좁힌다  
 C) Principal을 `*`로 설정해 어떤 OIDC 토큰이든 허용한다  
 D) trust policy 없이 permission policy만 넓게 설정한다  
 
-**정답: B**  
-해설: OIDC 페더레이션에서 `token.actions.githubusercontent.com:sub` 조건을 특정 repo와 브랜치로 좁혀야, 그 워크플로만 역할을 맡을 수 있어 안전하다. `repo:org/*`나 Principal `*`는 조직의 임의 repo·토큰이 역할을 탈취할 통로를 열고, trust policy 없이 권한만 넓히는 것은 누구나 역할을 맡을 수 있게 만든다.
+**Answer: B**  
+Explanation: OIDC 페더레이션에서 `token.actions.githubusercontent.com:sub` 조건을 특정 repo와 브랜치로 좁혀야, 그 워크플로만 역할을 맡을 수 있어 안전하다. `repo:org/*`나 Principal `*`는 조직의 임의 repo·토큰이 역할을 탈취할 통로를 열고, trust policy 없이 권한만 넓히는 것은 누구나 역할을 맡을 수 있게 만든다.
 
 ---
 
-**문제 5.** EC2 인스턴스에 부여된 임시 자격 증명이 SSRF 공격으로 탈취된 사고를 예방하기 위해 가장 직접적으로 적용해야 할 통제는?
+**Question 5.** EC2 인스턴스에 부여된 임시 자격 증명이 SSRF 공격으로 탈취된 사고를 예방하기 위해 가장 직접적으로 적용해야 할 통제는?
 
 A) EC2 인스턴스 역할에 AdministratorAccess를 부여해 운영을 단순화한다  
 B) IMDSv2(토큰 기반 메타데이터 서비스)를 강제하고 인스턴스 역할에 최소 권한을 적용한다  
 C) EC2에 장기 IAM User access key를 직접 저장한다  
 D) 임시 자격 증명의 만료 시간을 12시간으로 늘린다  
 
-**정답: B**  
-해설: IMDSv2는 세션 토큰을 요구해 SSRF를 통한 메타데이터·임시 자격 증명 탈취를 크게 어렵게 만들고, 인스턴스 역할 최소 권한은 탈취되더라도 피해 범위를 줄인다. admin 부여는 폭발 반경을 키우고, 장기 키 저장은 더 위험하며, 만료 시간을 늘리면 탈취 자격 증명의 유효 기간만 길어져 오히려 위험이 커진다.
+**Answer: B**  
+Explanation: IMDSv2는 세션 토큰을 요구해 SSRF를 통한 메타데이터·임시 자격 증명 탈취를 크게 어렵게 만들고, 인스턴스 역할 최소 권한은 탈취되더라도 피해 범위를 줄인다. admin 부여는 폭발 반경을 키우고, 장기 키 저장은 더 위험하며, 만료 시간을 늘리면 탈취 자격 증명의 유효 기간만 길어져 오히려 위험이 커진다.
 
 ---

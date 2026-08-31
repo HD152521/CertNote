@@ -253,69 +253,69 @@ The next article wraps up with a Week 1 review + 10 scenario questions. It's pra
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A company runs 100 c5.4xlarge instances for a nightly ETL batch, 4 hours a day. How to maximize cost savings while meeting the SLA (completion by 09:00 the next day)? Note: the job can be restarted even if some instances are reclaimed midway.
+**Question 1.** A company runs 100 c5.4xlarge instances for a nightly ETL batch, 4 hours a day. How to maximize cost savings while meeting the SLA (completion by 09:00 the next day)? Note: the job can be restarted even if some instances are reclaimed midway.
 
 A) 100 On-Demand instances
 B) 100 3-year RIs
 C) Spot Fleet with diverse instance families (c5/c5n/c5a/m5) + price-capacity-optimized
 D) 50 RIs + 50 Spot
 
-**정답: C**
-해설: The keywords are "only 4 hours at night" + "maximum savings" + "SLA has slack" + "restartable." RI (B) assumes 24-hour operation, so it's a loss for night-only use. Mixing diverse families in a Spot Fleet means when one family's capacity runs short, another substitutes — lowering the reclamation rate. `price-capacity-optimized` optimizes price and capacity simultaneously. Using a single family risks mass Spot reclamation when that entire family runs short, threatening the SLA. Trade-off: Spot averages 70% off but can be reclaimed after a 2-minute warning, unsuitable for stateful workloads.
+**Answer: C**
+Explanation: The keywords are "only 4 hours at night" + "maximum savings" + "SLA has slack" + "restartable." RI (B) assumes 24-hour operation, so it's a loss for night-only use. Mixing diverse families in a Spot Fleet means when one family's capacity runs short, another substitutes — lowering the reclamation rate. `price-capacity-optimized` optimizes price and capacity simultaneously. Using a single family risks mass Spot reclamation when that entire family runs short, threatening the SLA. Trade-off: Spot averages 70% off but can be reclaimed after a 2-minute warning, unsuitable for stateful workloads.
 
 ---
 
-**문제 2.** A fintech's production DB runs on RDS io1. How to reduce cost while improving latency?
+**Question 2.** A fintech's production DB runs on RDS io1. How to reduce cost while improving latency?
 
 A) Downgrade to gp3
 B) Switch to io2 Block Express (r5b instance family)
 C) Migrate to Aurora
 D) Switch to gp2
 
-**정답: B**
-해설: io2 Block Express is about 30% cheaper than io1 at the same IOPS + sub-millisecond latency. A new backend based on NVMe over Fabrics. However, it's only enabled on specific instance families like r5b/x2idn, so the instance family must change too. A and D are unsuitable for production DBs due to IOPS limits. C is a large change.
+**Answer: B**
+Explanation: io2 Block Express is about 30% cheaper than io1 at the same IOPS + sub-millisecond latency. A new backend based on NVMe over Fabrics. However, it's only enabled on specific instance families like r5b/x2idn, so the instance family must change too. A and D are unsuitable for production DBs due to IOPS limits. C is a large change.
 
 ---
 
-**문제 3.** A global IoT company receives MQTT (TCP 8883) from 1 million devices. Two static IPs hardcoded into device firmware, failover within seconds on regional failure, p99 latency within 1ms, 1 million packets per second.
+**Question 3.** A global IoT company receives MQTT (TCP 8883) from 1 million devices. Two static IPs hardcoded into device firmware, failover within seconds on regional failure, p99 latency within 1ms, 1 million packets per second.
 
 A) ALB + Route 53 Failover
 B) NLB + Route 53 Health Check
 C) Global Accelerator + NLB (Multi-Region)
 D) CloudFront + Lambda@Edge
 
-**정답: C**
-해설: The keywords are "static IP" + "MQTT (L4)" + "failover within seconds" + "1 million packets per second." GA provides 2 static IPs via BGP Anycast and fails over within seconds, bypassing DNS caches, on regional failure. NLB satisfies L4, millions of packets per second, static IP, and MQTT all at once. A and B have minute-scale failover due to DNS TTL caching. D is L7 HTTP only.
+**Answer: C**
+Explanation: The keywords are "static IP" + "MQTT (L4)" + "failover within seconds" + "1 million packets per second." GA provides 2 static IPs via BGP Anycast and fails over within seconds, bypassing DNS caches, on regional failure. NLB satisfies L4, millions of packets per second, static IP, and MQTT all at once. A and B have minute-scale failover due to DNS TTL caching. D is L7 HTTP only.
 
 ---
 
-**문제 4.** A company's traffic spikes 5x every day at exactly 10:00. The ASG's scale-out takes 5 minutes, so responses lag for the first 5 minutes. How to improve?
+**Question 4.** A company's traffic spikes 5x every day at exactly 10:00. The ASG's scale-out takes 5 minutes, so responses lag for the first 5 minutes. How to improve?
 
 A) Configure Target Tracking more aggressively
 B) Scheduled Scaling to pre-scale-out at 09:55 + maintain a Warm Pool of 200 instances
 C) Apply Step Scaling only
 D) Enable Predictive Scaling only
 
-**정답: B**
-해설: Predictable time-based spike → the Scheduled + Warm Pool combination. Warm Pool keeps stopped instances pre-booted, cutting startup time to tens of seconds. Predictive learns regular patterns, so for a single spike, Scheduled is more reliable. Trade-off: 200 Warm Pool instances still incur EBS storage costs; the sweet spot is 10-20% of the ASG size.
+**Answer: B**
+Explanation: Predictable time-based spike → the Scheduled + Warm Pool combination. Warm Pool keeps stopped instances pre-booted, cutting startup time to tens of seconds. Predictive learns regular patterns, so for a single spike, Scheduled is more reliable. Trade-off: 200 Warm Pool instances still incur EBS storage costs; the sweet spot is 10-20% of the ASG size.
 
 ---
 
-**문제 5.** A company wants to minimize inter-instance latency for an HPC workload (distributed ML training). How to place instances?
+**Question 5.** A company wants to minimize inter-instance latency for an HPC workload (distributed ML training). How to place instances?
 
 A) Spread Placement Group + Multi-AZ
 B) Cluster Placement Group + EFA-enabled p4d/p5
 C) Partition Placement Group
 D) Multi-AZ ASG
 
-**정답: B**
-해설: Bundle in the same AZ and same rack to minimize latency. EFA (Elastic Fabric Adapter) enables RDMA-level communication via OS bypass. 400Gbps NIC. Same AZ means lower availability (HPC is usually stateless and re-runnable). Trade-off: Spread is limited to 7/AZ for isolation/availability; Partition is for rack-aware distributed systems like HDFS and Cassandra.
+**Answer: B**
+Explanation: Bundle in the same AZ and same rack to minimize latency. EFA (Elastic Fabric Adapter) enables RDMA-level communication via OS bypass. 400Gbps NIC. Same AZ means lower availability (HPC is usually stateless and re-runnable). Trade-off: Spread is limited to 7/AZ for isolation/availability; Partition is for rack-aware distributed systems like HDFS and Cassandra.
 
 ---
 
-**문제 6.** What are the constraints of EBS Multi-Attach? (Choose 2)
+**Question 6.** What are the constraints of EBS Multi-Attach? (Choose 2)
 
 A) gp3 is also supported
 B) Only io1/io2 (including io2 Block Express) are supported
@@ -323,29 +323,29 @@ C) Unlimited instances can mount simultaneously
 D) Same AZ only + clustered filesystem (GFS2, OCFS2, OracleRAC) required
 E) Can also be mounted in other regions
 
-**정답: B, D**
-해설: Only io1/io2 Provisioned IOPS are supported. Up to 16 EC2 instances mounted simultaneously. Plain ext4/NTFS risks data corruption; a clustered filesystem is required. Same AZ only (EBS is AZ-local). A distributed lock manager handles synchronization.
+**Answer: B, D**
+Explanation: Only io1/io2 Provisioned IOPS are supported. Up to 16 EC2 instances mounted simultaneously. Plain ext4/NTFS risks data corruption; a clustered filesystem is required. Same AZ only (EBS is AZ-local). A distributed lock manager handles synchronization.
 
 ---
 
-**문제 7.** A company wants to apply authentication behind an ALB. To minimize code changes in the backend (Node.js HTTP API)?
+**Question 7.** A company wants to apply authentication behind an ALB. To minimize code changes in the backend (Node.js HTTP API)?
 
 A) Implement Passport.js + JWT verification directly in the backend
 B) Enable the ALB's Cognito integration + receive the X-Amzn-Oidc-Data header
 C) API Gateway + Lambda Authorizer
 D) JWT verification with Lambda@Edge
 
-**정답: B**
-해설: The ALB handles OIDC/Cognito authentication directly and passes user info to the backend in the X-Amzn-Oidc-Data header. Almost no backend code changes needed (only verify the JWT signature). However, it's only suited to HTTP; gRPC and WebSocket need separate handling. Trade-off: if complex custom claim mapping is needed, a Lambda Authorizer is more flexible.
+**Answer: B**
+Explanation: The ALB handles OIDC/Cognito authentication directly and passes user info to the backend in the X-Amzn-Oidc-Data header. Almost no backend code changes needed (only verify the JWT signature). However, it's only suited to HTTP; gRPC and WebSocket need separate handling. Trade-off: if complex custom claim mapping is needed, a Lambda Authorizer is more flexible.
 
 ---
 
-**문제 8.** A medical imaging company spends $80,000/month on GPU for Llama-2 70B inference on EC2. SaaS APIs are not allowed due to PII data. Goal: cut costs by 60%.
+**Question 8.** A medical imaging company spends $80,000/month on GPU for Llama-2 70B inference on EC2. SaaS APIs are not allowed due to PII data. Goal: cut costs by 60%.
 
 A) p5.48xlarge × On-Demand
 B) p4d.24xlarge × 3-year RI
 C) Inf2.48xlarge + compile the model with the Neuron SDK
 D) SageMaker Endpoint
 
-**정답: C**
-해설: Inferentia2 is an ASIC specialized for LLM inference. inf2.48xlarge has 12 Inferentia2 chips, 384GB HBM, at $13/h. Versus p4d.24xlarge ($32.77/h), same throughput at 60%+ lower price. The Neuron SDK automatically converts PyTorch models. PII data is also processed inside your own VPC. Trade-off: Inferentia requires model compilation time and some operations (custom CUDA kernels) are unsupported.
+**Answer: C**
+Explanation: Inferentia2 is an ASIC specialized for LLM inference. inf2.48xlarge has 12 Inferentia2 chips, 384GB HBM, at $13/h. Versus p4d.24xlarge ($32.77/h), same throughput at 60%+ lower price. The Neuron SDK automatically converts PyTorch models. PII data is also processed inside your own VPC. Trade-off: Inferentia requires model compilation time and some operations (custom CUDA kernels) are unsupported.

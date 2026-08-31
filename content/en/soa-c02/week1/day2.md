@@ -201,74 +201,74 @@ Tomorrow we go deeper with tools operators live with daily—Identity Center fed
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** An IAM user in account A wants to PutObject to account B's S3 bucket. What permission setup is required?
+**Question 1.** An IAM user in account A wants to PutObject to account B's S3 bucket. What permission setup is required?
 
 A) Only account A user's identity policy with `s3:PutObject` Allow
 B) Only account B bucket's Bucket Policy with account A user Allow
 C) Both—account A user identity policy Allow + account B bucket policy Allow
 D) Create an IAM Role in account A and AssumeRole from account B
 
-**정답: C**
-해설: Cross-account access requires Allow from both sides: caller's identity policy AND target's resource policy. One alone = Deny. Same account usually needs only one, but KMS key policy needs both even same-account. For SSE-KMS buckets, also add `kms:GenerateDataKey` to KMS key policy.
+**Answer: C**
+Explanation: Cross-account access requires Allow from both sides: caller's identity policy AND target's resource policy. One alone = Deny. Same account usually needs only one, but KMS key policy needs both even same-account. For SSE-KMS buckets, also add `kms:GenerateDataKey` to KMS key policy.
 
 ---
 
-**문제 2.** An operator wants to delegate IAM Role creation to developers while limiting maximum permissions those Roles can have. What's the best tool?
+**Question 2.** An operator wants to delegate IAM Role creation to developers while limiting maximum permissions those Roles can have. What's the best tool?
 
 A) SCP
 B) Permission Boundary
 C) Session Policy
 D) Inline Policy
 
-**정답: B**
-해설: Permission Boundary is a per-user/role permission ceiling. SCP is account/OU-level—bigger scope. Operator delegates `iam:CreateRole` with `iam:PermissionsBoundary` Condition forcing standard boundary attachment; developer-created Role effective permission = their policy ∩ boundary. Session Policy only applies to STS-issued temp credentials.
+**Answer: B**
+Explanation: Permission Boundary is a per-user/role permission ceiling. SCP is account/OU-level—bigger scope. Operator delegates `iam:CreateRole` with `iam:PermissionsBoundary` Condition forcing standard boundary attachment; developer-created Role effective permission = their policy ∩ boundary. Session Policy only applies to STS-issued temp credentials.
 
 ---
 
-**문제 3.** An EC2 instance's IAM Role has `s3:PutObject Allow`, but PUT to KMS-encrypted bucket throws AccessDenied. Most likely cause?
+**Question 3.** An EC2 instance's IAM Role has `s3:PutObject Allow`, but PUT to KMS-encrypted bucket throws AccessDenied. Most likely cause?
 
 A) Bucket policy lacks PutObject
 B) KMS key policy lacks EC2 Role's `kms:GenerateDataKey`
 C) EC2 IMDSv2 is disabled
 D) S3 SSE algorithm is misconfigured
 
-**정답: B**
-해설: Putting KMS-encrypted objects requires `kms:GenerateDataKey`; GETting requires `kms:Decrypt`. Both must be in IAM Policy AND KMS Key Policy. IAM might pass, but Key Policy denial still blocks. Operator's common trap. KMS deny events log separately in CloudTrail—check that trail too.
+**Answer: B**
+Explanation: Putting KMS-encrypted objects requires `kms:GenerateDataKey`; GETting requires `kms:Decrypt`. Both must be in IAM Policy AND KMS Key Policy. IAM might pass, but Key Policy denial still blocks. Operator's common trap. KMS deny events log separately in CloudTrail—check that trail too.
 
 ---
 
-**문제 4.** An operator wants GitHub Actions deployments to AWS using OIDC federation instead of hardcoded access keys. Which STS API is used?
+**Question 4.** An operator wants GitHub Actions deployments to AWS using OIDC federation instead of hardcoded access keys. Which STS API is used?
 
 A) AssumeRole
 B) AssumeRoleWithSAML
 C) AssumeRoleWithWebIdentity
 D) GetSessionToken
 
-**정답: C**
-해설: GitHub Actions is an OIDC IdP, so `AssumeRoleWithWebIdentity` is called. AWS STS verifies GitHub's OIDC token and issues temp credentials. AssumeRoleWithSAML is for AD FS/Okta; AssumeRole is IAM credential–based. Trust Policy specifies GitHub OIDC provider ARN and repo/branch sub claim.
+**Answer: C**
+Explanation: GitHub Actions is an OIDC IdP, so `AssumeRoleWithWebIdentity` is called. AWS STS verifies GitHub's OIDC token and issues temp credentials. AssumeRoleWithSAML is for AD FS/Okta; AssumeRole is IAM credential–based. Trust Policy specifies GitHub OIDC provider ARN and repo/branch sub claim.
 
 ---
 
-**문제 5.** Why does explicit Deny from anywhere always result in final Deny in IAM policy evaluation?
+**Question 5.** Why does explicit Deny from anywhere always result in final Deny in IAM policy evaluation?
 
 A) Because evaluation follows deny-overrides ABAC model
 B) Because Deny only comes from SCP
 C) Because Permission Boundary auto-prioritizes Deny
 D) Because IAM is RBAC
 
-**정답: A**
-해설: IAM evaluation is deny-overrides ABAC. Any layer (SCP, identity, resource, boundary, session) returning explicit Deny = final Deny. This principle guarantees safety in permission design.
+**Answer: A**
+Explanation: IAM evaluation is deny-overrides ABAC. Any layer (SCP, identity, resource, boundary, session) returning explicit Deny = final Deny. This principle guarantees safety in permission design.
 
 ---
 
-**문제 6.** An operator wants to retrieve IAM Role credentials via SDK on an EC2 instance. Where do they come from?
+**Question 6.** An operator wants to retrieve IAM Role credentials via SDK on an EC2 instance. Where do they come from?
 
 A) /etc/aws/credentials file
 B) IMDS (`http://169.254.169.254/latest/meta-data/iam/security-credentials/`)
 C) Environment variable AWS_ACCESS_KEY_ID
 D) STS GetSessionToken API
 
-**정답: B**
-해설: Temp credentials for an IAM Role attached to EC2 instance profile come from IMDS. AWS SDK automatically polls IMDS and refreshes credentials (default refresh 6 hours before expiry). IMDSv2 requires PUT for session token first. Credentials are STS-issued but from EC2's perspective IMDS is standard.
+**Answer: B**
+Explanation: Temp credentials for an IAM Role attached to EC2 instance profile come from IMDS. AWS SDK automatically polls IMDS and refreshes credentials (default refresh 6 hours before expiry). IMDSv2 requires PUT for session token first. Credentials are STS-issued but from EC2's perspective IMDS is standard.

@@ -90,64 +90,64 @@ If you have this way of thinking in hand, Week 1 is a success. From Week 2 we pu
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** What is the single design principle that runs through all of Week 1, determining every choice of OLTP/OLAP, batch/stream, and row-based/columnar?
+**Question 1.** What is the single design principle that runs through all of Week 1, determining every choice of OLTP/OLAP, batch/stream, and row-based/columnar?
 
 A) Always pick the newest technology first  
 B) The workload (how the data is read and written) determines the design  
 C) Always pick the cheapest service  
 D) Always choose real-time processing  
 
-**정답: B**  
-해설: Whether OLTP or OLAP, batch or stream, row-based or columnar — the answers all come from the workload characteristic of how the data is read and written. You don't fix the technology or cost first and force a fit; you analyze the workload and choose, and real time is not always the right answer either.
+**Answer: B**  
+Explanation: Whether OLTP or OLAP, batch or stream, row-based or columnar — the answers all come from the workload characteristic of how the data is read and written. You don't fix the technology or cost first and force a fit; you analyze the workload and choose, and real time is not always the right answer either.
 
 ---
 
-**문제 2.** Which combination best satisfies the requirement "I want to run large-scale aggregation analysis on the production order DB's data without putting load on it"?
+**Question 2.** Which combination best satisfies the requirement "I want to run large-scale aggregation analysis on the production order DB's data without putting load on it"?
 
 A) Run aggregation queries directly on the production DB  
 B) Replicate changes with DMS CDC to an OLAP environment (Redshift/S3+Athena) and analyze there  
 C) Replace the production DB with DynamoDB  
 D) Connect QuickSight directly to the production DB and aggregate every time  
 
-**정답: B**  
-해설: Running heavy OLAP-style aggregation directly on the OLTP production DB puts load on the service. The standard is to flow only the changes into the analytics environment via DMS CDC and analyze in OLAP. Switching to DynamoDB still leaves you with OLTP and the same problem, and attaching a BI tool directly to the production DB for aggregation causes the same load issue.
+**Answer: B**  
+Explanation: Running heavy OLAP-style aggregation directly on the OLTP production DB puts load on the service. The standard is to flow only the changes into the analytics environment via DMS CDC and analyze in OLAP. Switching to DynamoDB still leaves you with OLTP and the same problem, and attaching a BI tool directly to the production DB for aggregation causes the same load issue.
 
 ---
 
-**문제 3.** Which combination of processing paradigm, ingestion service, and format best fits the requirement "detect fraudulent transactions the moment a payment happens"?
+**Question 3.** Which combination of processing paradigm, ingestion service, and format best fits the requirement "detect fraudulent transactions the moment a payment happens"?
 
 A) Batch / Glue / CSV  
 B) Streaming / Kinesis Data Streams / Avro  
 C) Batch / DMS / Parquet  
 D) Near real-time / Firehose / ORC  
 
-**정답: B**  
-해설: Immediacy is required, so it's streaming; Kinesis Data Streams, suited to low latency and multiple consumers, ingests the events; and row-based Avro, strong at schema evolution, fits event streams. The batch combinations lack immediacy, and Firehose is near-real-time for automatic loading, so Data Streams is the better fit for instant detection.
+**Answer: B**  
+Explanation: Immediacy is required, so it's streaming; Kinesis Data Streams, suited to low latency and multiple consumers, ingests the events; and row-based Avro, strong at schema evolution, fits event streams. The batch combinations lack immediacy, and Firehose is near-real-time for automatic loading, so Data Streams is the better fit for instant detection.
 
 ---
 
-**문제 4.** Which statement most accurately describes the key difference between Kinesis Data Streams and Kinesis Data Firehose?
+**Question 4.** Which statement most accurately describes the key difference between Kinesis Data Streams and Kinesis Data Firehose?
 
 A) Streams is batch-only, Firehose is streaming-only  
 B) Streams is for low latency and multiple consumers, while Firehose is a near-real-time delivery service that automatically loads streams into S3/Redshift and other destinations  
 C) Streams supports SQL and Firehose does not  
 D) The two are functionally identical  
 
-**정답: B**  
-해설: Data Streams is for true streaming where low latency and multiple simultaneous consumers are needed, while Firehose is a managed near-real-time delivery service that receives a stream and automatically loads it into S3, Redshift, and OpenSearch without separate consumer code. Both belong to the streaming family and are not functionally identical.
+**Answer: B**  
+Explanation: Data Streams is for true streaming where low latency and multiple simultaneous consumers are needed, while Firehose is a managed near-real-time delivery service that receives a stream and automatically loads it into S3, Redshift, and OpenSearch without separate consumer code. Both belong to the streaming family and are not functionally identical.
 
 ---
 
-**문제 5.** What is the modern standard pattern that combines the strengths of the data lake and the data warehouse, layering a table format and catalog on top of an S3 data lake to provide warehouse-grade queries?
+**Question 5.** What is the modern standard pattern that combines the strengths of the data lake and the data warehouse, layering a table format and catalog on top of an S3 data lake to provide warehouse-grade queries?
 
 A) Lambda Architecture  
 B) Lakehouse  
 C) OLTP cluster  
 D) Micro-batch  
 
-**정답: B**  
-해설: The lakehouse is the unified pattern that layers a table format (Iceberg, etc.) and a catalog on top of the flexible schema-on-read S3 data lake, providing warehouse-grade queries, transactions, and governance. The Lambda Architecture combines batch/speed layers, an OLTP cluster is for transaction processing, and micro-batch is a near-real-time processing technique — none are storage patterns.
+**Answer: B**  
+Explanation: The lakehouse is the unified pattern that layers a table format (Iceberg, etc.) and a catalog on top of the flexible schema-on-read S3 data lake, providing warehouse-grade queries, transactions, and governance. The Lambda Architecture combines batch/speed layers, an OLTP cluster is for transaction processing, and micro-batch is a near-real-time processing technique — none are storage patterns.
 
 ---

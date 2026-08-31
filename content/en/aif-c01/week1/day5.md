@@ -104,64 +104,64 @@ Compressing this week into one sentence per day:
 
 Starting next week, we go one step further on the foundation learned today. We will expand into how machine learning and deep learning are actually used, and into the concept of **generative AI**, which is drawing the most attention these days. Be sure to consolidate this week's core flow.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** Which statement about the relationship between AI, machine learning, and deep learning and about learning types is correct?
+**Question 1.** Which statement about the relationship between AI, machine learning, and deep learning and about learning types is correct?
 
 A) Deep learning is a broader concept than AI  
 B) Machine learning learns rules from data, and deep learning is the neural network-based approach within it  
 C) Supervised learning trains on data with no answers at all  
 D) Reinforcement learning learns by memorizing answer labels as-is  
 
-**정답: B**  
-해설: Machine learning is a method of learning rules from data, and deep learning is the approach within it that stacks neural networks deeply. Since AI is the broadest concept, the claim that deep learning is broader is wrong; supervised learning trains on data with answers, and reinforcement learning learns from rewards.
+**Answer: B**  
+Explanation: Machine learning is a method of learning rules from data, and deep learning is the approach within it that stacks neural networks deeply. Since AI is the broadest concept, the claim that deep learning is broader is wrong; supervised learning trains on data with answers, and reinforcement learning learns from rewards.
 
 ---
 
-**문제 2.** "Automatically grouping customer data into similar tendencies without answers" and "predicting tomorrow's temperature as a number" are, respectively, which tasks?
+**Question 2.** "Automatically grouping customer data into similar tendencies without answers" and "predicting tomorrow's temperature as a number" are, respectively, which tasks?
 
 A) Both are classification  
 B) Clustering and regression  
 C) Regression and clustering  
 D) Both are reinforcement learning  
 
-**정답: B**  
-해설: Grouping similar data without answers is clustering, an unsupervised learning task, and predicting a continuous numeric value is regression, a supervised learning task. So, in order, they are clustering and regression.
+**Answer: B**  
+Explanation: Grouping similar data without answers is clustering, an unsupervised learning task, and predicting a continuous numeric value is regression, a supervised learning task. So, in order, they are clustering and regression.
 
 ---
 
-**문제 3.** In a certain business task, the rules are very simple and clear ("amount × fixed tax rate"), and the results must always be 100% accurate. Which judgment is most appropriate?
+**Question 3.** In a certain business task, the rules are very simple and clear ("amount × fixed tax rate"), and the results must always be 100% accurate. Which judgment is most appropriate?
 
 A) There is plenty of data, so deep learning must be used no matter what  
 B) Since the rules are simple and complete accuracy is required, traditional programming is more appropriate  
 C) Using clustering solves it most accurately  
 D) Machine learning is always more accurate, so machine learning should be used  
 
-**정답: B**  
-해설: For problems with simple, clear rules that demand 100% accuracy, traditional programming is more accurate and cheaper. Machine learning is not always more accurate, and clustering is unsupervised learning that groups without answers, so it does not fit this problem.
+**Answer: B**  
+Explanation: For problems with simple, clear rules that demand 100% accuracy, traditional programming is more accurate and cheaper. Machine learning is not always more accurate, and clustering is unsupervised learning that groups without answers, so it does not fit this problem.
 
 ---
 
-**문제 4.** A trained model is nearly perfect on the training data but its performance drops sharply on new data. You are also asked for the definitions of feature and label. Which statement is correct?
+**Question 4.** A trained model is nearly perfect on the training data but its performance drops sharply on new data. You are also asked for the definitions of feature and label. Which statement is correct?
 
 A) This state is underfitting, and a feature means the answer  
 B) This state is overfitting; a feature is input information and a label is the answer to get right  
 C) This state is inference, and a label means input information  
 D) This state is an ideal, well-generalized model  
 
-**정답: B**  
-해설: The state of getting only the training data right while performance drops on new data is overfitting. A feature is the input information used for prediction, and a label is the answer the model must get right. Underfitting is a state of low performance even on the training data, and since performance on new data is low, it is not well generalized either.
+**Answer: B**  
+Explanation: The state of getting only the training data right while performance drops on new data is overfitting. A feature is the input information used for prediction, and a label is the answer the model must get right. Underfitting is a state of low performance even on the training data, and since performance on new data is low, it is not well generalized either.
 
 ---
 
-**문제 5.** Putting together what was learned this week, which is the most appropriate judgment for using machine learning well?
+**Question 5.** Putting together what was learned this week, which is the most appropriate judgment for using machine learning well?
 
 A) Apply the most complex deep learning to every problem  
 B) Look at the nature of the problem, the amount of data, and the accuracy requirements, and choose the simplest method that is sufficient  
 C) Include the test data in training to boost accuracy  
 D) Always use clustering on data that has answers  
 
-**정답: B**  
-해설: Good design means weighing the nature of the problem, the quantity and quality of the data, and the required level of accuracy, then choosing the simplest method that is sufficient. Unconditionally using deep learning, mixing test data into training, or using clustering despite having answers are all poor judgments.
+**Answer: B**  
+Explanation: Good design means weighing the nature of the problem, the quantity and quality of the data, and the required level of accuracy, then choosing the simplest method that is sufficient. Unconditionally using deep learning, mixing test data into training, or using clustering despite having answers are all poor judgments.
 
 ---

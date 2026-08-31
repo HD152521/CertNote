@@ -165,86 +165,86 @@ In the next article, we go deep into what sits on top of this: STS (the temporar
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A developer wants to access S3 from an EC2 instance. What is the safest method?
+**Question 1.** A developer wants to access S3 from an EC2 instance. What is the safest method?
 
 A) Put an IAM User's Access Key into EC2 user-data and set it as environment variables
 B) Attach an IAM Role as an EC2 instance profile
 C) Use the AWS root account's keys
 D) Store the keys in a ~/.aws/credentials file inside the EC2 instance
 
-**정답: B**
-해설: When an IAM Role is attached, EC2 automatically receives temporary credentials through IMDS and the SDK automatically refreshes them before expiration. Since long-term keys are stored nowhere, the risk of key leakage disappears. A, C, and D all leave long-term keys inside the EC2 instance, so if the instance is compromised, the keys leak with it. Applying IMDSv2 alongside adds defense against SSRF attacks as well.
+**Answer: B**
+Explanation: When an IAM Role is attached, EC2 automatically receives temporary credentials through IMDS and the SDK automatically refreshes them before expiration. Since long-term keys are stored nowhere, the risk of key leakage disappears. A, C, and D all leave long-term keys inside the EC2 instance, so if the instance is compromised, the keys leak with it. Applying IMDSv2 alongside adds defense against SSRF attacks as well.
 
 ---
 
-**문제 2.** Predict the result of the following policy evaluation. The identity-based policy has an Allow for `s3:GetObject`, and the SCP has a Deny for `s3:*`.
+**Question 2.** Predict the result of the following policy evaluation. The identity-based policy has an Allow for `s3:GetObject`, and the SCP has a Deny for `s3:*`.
 
 A) Allow (the identity-based policy is more specific)
 B) Allow (the SCP only takes effect when there is no Allow)
 C) Deny (Explicit Deny always wins)
 D) Cannot be evaluated
 
-**정답: C**
-해설: The core principle of IAM evaluation is "**an Explicit Deny anywhere blocks unconditionally**". A Deny in the SCP overrides an Allow in the IAM identity. Because of this asymmetry, SCPs are well suited to "making things absolutely impossible at the company level". For example, guardrails like "block all root account actions", "block use of unapproved regions", and "block actions without MFA" are implemented with SCPs. If the SCP has neither a Deny nor an Allow, the result is an implicit deny (not allowed).
+**Answer: C**
+Explanation: The core principle of IAM evaluation is "**an Explicit Deny anywhere blocks unconditionally**". A Deny in the SCP overrides an Allow in the IAM identity. Because of this asymmetry, SCPs are well suited to "making things absolutely impossible at the company level". For example, guardrails like "block all root account actions", "block use of unapproved regions", and "block actions without MFA" are implemented with SCPs. If the SCP has neither a Deny nor an Allow, the result is an implicit deny (not allowed).
 
 ---
 
-**문제 3.** Which of the following is NOT a scenario where an IAM Role should be used?
+**Question 3.** Which of the following is NOT a scenario where an IAM Role should be used?
 
 A) A Lambda function calling DynamoDB
 B) An EC2 instance uploading files to S3
 C) An external SaaS writing backup data to S3 in our AWS account
 D) A person logging in to the AWS console for the first time
 
-**정답: D**
-해설: Console login is done with an IAM User or an SSO (Identity Center) user. A and B are the standard pattern of a service accessing another service, using a Role (instance profile or Lambda execution role). C is a cross-account scenario where the standard approach is for the SaaS's IAM account to assume a Role in our account. AWS requires an **External ID** (a shared secret) when configuring SaaS Roles to prevent the confused deputy problem.
+**Answer: D**
+Explanation: Console login is done with an IAM User or an SSO (Identity Center) user. A and B are the standard pattern of a service accessing another service, using a Role (instance profile or Lambda execution role). C is a cross-account scenario where the standard approach is for the SaaS's IAM account to assume a Role in our account. AWS requires an **External ID** (a shared secret) when configuring SaaS Roles to prevent the confused deputy problem.
 
 ---
 
-**문제 4.** A company wants to give all developers AdministratorAccess but prevent them from using any region other than us-east-1 and ap-northeast-2. What is the most suitable tool?
+**Question 4.** A company wants to give all developers AdministratorAccess but prevent them from using any region other than us-east-1 and ap-northeast-2. What is the most suitable tool?
 
 A) A ReadOnly policy attached to the IAM Users
 B) An SCP in AWS Organizations denying other regions with the `aws:RequestedRegion` condition
 C) Blocking other regions with VPC security groups (impossible)
 D) Restricting regions with a Permission Boundary
 
-**정답: B**
-해설: SCPs apply at the OU/Account level, so they apply uniformly to every IAM Principal inside. Blocking actions in external regions with `"Condition": {"StringNotEquals": {"aws:RequestedRegion": ["us-east-1", "ap-northeast-2"]}}` makes other regions unusable even with AdministratorAccess. D's Permission Boundary is possible too, but requires attaching individually to every User/Role, which is a heavy operational burden. A makes development itself impossible with ReadOnly. C: SGs are not a region-control tool.
+**Answer: B**
+Explanation: SCPs apply at the OU/Account level, so they apply uniformly to every IAM Principal inside. Blocking actions in external regions with `"Condition": {"StringNotEquals": {"aws:RequestedRegion": ["us-east-1", "ap-northeast-2"]}}` makes other regions unusable even with AdministratorAccess. D's Permission Boundary is possible too, but requires attaching individually to every User/Role, which is a heavy operational burden. A makes development itself impossible with ReadOnly. C: SGs are not a region-control tool.
 
 ---
 
-**문제 5.** Cross-account scenario: Alice in account A must access my-bucket in account B. What configuration is required?
+**Question 5.** Cross-account scenario: Alice in account A must access my-bucket in account B. What configuration is required?
 
 A) Add an Allow only to Alice's User policy in account A
 B) Add an Allow only to my-bucket's policy in account B
 C) Add Allows to both Alice's policy in account A and my-bucket's policy in account B
 D) Add account A to account B's Organizations
 
-**정답: C**
-해설: Cross-account access requires "agreement from both sides". Account A's IAM must allow "Alice may access the external resource", and account B's resource policy must allow "external Alice may access". With only one side, it is denied. If my-bucket is KMS-encrypted, cross-account permissions are also needed in the KMS Key Policy (it is common for all three to be required: IAM permissions + KMS Key Policy + S3 Bucket Policy).
+**Answer: C**
+Explanation: Cross-account access requires "agreement from both sides". Account A's IAM must allow "Alice may access the external resource", and account B's resource policy must allow "external Alice may access". With only one side, it is denied. If my-bucket is KMS-encrypted, cross-account permissions are also needed in the KMS Key Policy (it is common for all three to be required: IAM permissions + KMS Key Policy + S3 Bucket Policy).
 
 ---
 
-**문제 6.** Which statement about the relationship between Permission Boundaries and identity-based policies is correct?
+**Question 6.** Which statement about the relationship between Permission Boundaries and identity-based policies is correct?
 
 A) The Permission Boundary overrides the identity-based policy
 B) Only the intersection of what both Allow is actually permitted
 C) If either one Allows, it is permitted
 D) Permission Boundaries apply only to IAM Groups
 
-**정답: B**
-해설: The Permission Boundary is the **upper limit** of permissions, and the identity-based policy is the permissions actually granted. **Both must Allow for the action to actually be permitted** — i.e., the intersection. For example, if the identity-based policy Allows `s3:*` but the Permission Boundary Allows only `s3:GetObject`, the only action actually possible is GetObject. Permission Boundaries are a tool for safely "delegating permissions" in large organizations. A CI/CD system can create IAM Roles for other developers while enforcing, via PB, the upper limit of permissions those created Roles can hold.
+**Answer: B**
+Explanation: The Permission Boundary is the **upper limit** of permissions, and the identity-based policy is the permissions actually granted. **Both must Allow for the action to actually be permitted** — i.e., the intersection. For example, if the identity-based policy Allows `s3:*` but the Permission Boundary Allows only `s3:GetObject`, the only action actually possible is GetObject. Permission Boundaries are a tool for safely "delegating permissions" in large organizations. A CI/CD system can create IAM Roles for other developers while enforcing, via PB, the upper limit of permissions those created Roles can hold.
 
 ---
 
-**문제 7.** A developer complains that "the code returns a ValidationException with 'Cross-account pass role is not allowed'". What is the most likely cause?
+**Question 7.** A developer complains that "the code returns a ValidationException with 'Cross-account pass role is not allowed'". What is the most likely cause?
 
 A) The Lambda function's timeout is too short
 B) The `iam:PassRole` permission is missing, or an attempt was made to pass a Role from another account
 C) The S3 bucket is in a different region
 D) DynamoDB table throttling
 
-**정답: B**
-해설: `iam:PassRole` is a meta-permission meaning "grant this Role to another service". For example, when creating a Lambda function you specify `Role: arn:...`, and the act of "handing over" this Role to Lambda is PassRole. PassRole is only allowed within the same account; it does not work cross-account. A frequent exam trap: for a developer to attach a Role to an EC2 instance, they need not only EC2 permissions but also `iam:PassRole`. To restrict this permission tightly, specify the attachable Role ARNs in `Resource`.
+**Answer: B**
+Explanation: `iam:PassRole` is a meta-permission meaning "grant this Role to another service". For example, when creating a Lambda function you specify `Role: arn:...`, and the act of "handing over" this Role to Lambda is PassRole. PassRole is only allowed within the same account; it does not work cross-account. A frequent exam trap: for a developer to attach a Role to an EC2 instance, they need not only EC2 permissions but also `iam:PassRole`. To restrict this permission tightly, specify the attachable Role ARNs in `Resource`.

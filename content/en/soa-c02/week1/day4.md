@@ -182,74 +182,74 @@ Tomorrow we wrap up Week 1 with 10 scenario questions. A consolidated review of 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** Why shouldn't you put workloads in the Management Account?
+**Question 1.** Why shouldn't you put workloads in the Management Account?
 
 A) The management account costs more
 B) SCPs don't apply to the management account, so there are no security guardrails
 C) The management account is read-only
 D) The management account can only use a single region
 
-**정답: B**
-해설: The management account is not affected by SCPs (it can't restrict itself). So if you put workloads there, the organization's security guardrails don't apply — dangerous. AWS recommends keeping only organization management, billing, and Identity Center in the management account, with workloads in member accounts. The Korean SaaS company incident illustrates this.
+**Answer: B**
+Explanation: The management account is not affected by SCPs (it can't restrict itself). So if you put workloads there, the organization's security guardrails don't apply — dangerous. AWS recommends keeping only organization management, billing, and Identity Center in the management account, with workloads in member accounts. The Korean SaaS company incident illustrates this.
 
 ---
 
-**문제 2.** An operator wants to collect CloudTrail logs from 100 accounts into a single S3 bucket. The most efficient method is?
+**Question 2.** An operator wants to collect CloudTrail logs from 100 accounts into a single S3 bucket. The most efficient method is?
 
 A) Create a trail in each account and configure cross-account S3 permissions
 B) Create an Organization Trail → automatically enabled in all member accounts
 C) Create trails in each account with Lambda
 D) Deploy a trail template with Service Catalog
 
-**정답: B**
-해설: Created once, an Organization Trail is automatically enabled in all member accounts and stores logs in a consolidated S3 bucket. Even if a member account tries to disable it, that can be blocked with an SCP. A core component of the Landing Zone pattern.
+**Answer: B**
+Explanation: Created once, an Organization Trail is automatically enabled in all member accounts and stores logs in a consolidated S3 bucket. Even if a member account tries to disable it, that can be blocked with an SCP. A core component of the Landing Zone pattern.
 
 ---
 
-**문제 3.** A company runs a VPC and NAT Gateway in each of 50 accounts and costs have exploded. To reduce the operational burden?
+**Question 3.** A company runs a VPC and NAT Gateway in each of 50 accounts and costs have exploded. To reduce the operational burden?
 
 A) Merge all accounts' VPCs into one
 B) Create the VPC in a single network account and share subnets via RAM
 C) Consolidate with Direct Connect
 D) Tie the VPCs together with Transit Gateway while keeping each NAT GW
 
-**정답: B**
-해설: Share VPC subnets with other accounts via RAM (Resource Access Manager). Each account launches its own EC2/RDS in the shared subnets, but VPC and NAT GW costs stay in the single network account. Operations are centralized too. However, a network account failure has a larger blast radius, so consider an active-active configuration.
+**Answer: B**
+Explanation: Share VPC subnets with other accounts via RAM (Resource Access Manager). Each account launches its own EC2/RDS in the shared subnets, but VPC and NAT GW costs stay in the single network account. Operations are centralized too. However, a network account failure has a larger blast radius, so consider an active-active configuration.
 
 ---
 
-**문제 4.** You create 5 new accounts every week and want standard SCPs, CloudTrail, and IAM roles applied automatically. What do you use?
+**Question 4.** You create 5 new accounts every week and want standard SCPs, CloudTrail, and IAM roles applied automatically. What do you use?
 
 A) Manual CloudFormation deployment every time
 B) Control Tower + Account Factory
 C) Detect new accounts with Lambda and apply automatically
 D) Deploy as a Service Catalog product
 
-**정답: B**
-해설: Control Tower's Account Factory automatically applies standard OU placement + default SCPs + Trail/Config + Identity Center permissions when creating a new account. Standardized accounts in 5-10 minutes. GitOps-style automation is also possible with AFT (Account Factory for Terraform). On the exam, "new account standardization" is almost always Control Tower.
+**Answer: B**
+Explanation: Control Tower's Account Factory automatically applies standard OU placement + default SCPs + Trail/Config + Identity Center permissions when creating a new account. Standardized accounts in 5-10 minutes. GitOps-style automation is also possible with AFT (Account Factory for Terraform). On the exam, "new account standardization" is almost always Control Tower.
 
 ---
 
-**문제 5.** Which of the following are NOT subject to SCPs? (Choose 2)
+**Question 5.** Which of the following are NOT subject to SCPs? (Choose 2)
 
 A) An IAM User in a Member Account
 B) An IAM Role in a Member Account
 C) An IAM User in the Management Account
 D) A Service-Linked Role
 
-**정답: C, D**
-해설: SCPs don't apply to the management account, and they also don't apply to service-linked roles (AWS-managed). They apply to all other IAM principals inside member accounts. These two exceptions come up often on the exam.
+**Answer: C, D**
+Explanation: SCPs don't apply to the management account, and they also don't apply to service-linked roles (AWS-managed). They apply to all other IAM principals inside member accounts. These two exceptions come up often on the exam.
 
 ---
 
-**문제 6.** A security operator wants to view and manage GuardDuty findings from 100 accounts in one place. The standard pattern is?
+**Question 6.** A security operator wants to view and manage GuardDuty findings from 100 accounts in one place. The standard pattern is?
 
 A) Log into each account's console one by one
 B) Designate a Security Account as GuardDuty's Delegated Administrator
 C) Collect each account's findings with Lambda
 D) Send them to SNS via EventBridge
 
-**정답: B**
-해설: The Delegated Administrator pattern is the standard centralization method for security services like GuardDuty, Security Hub, Inspector, and Macie. It offloads the management account while one security account manages the entire organization. All security services have supported this pattern since 2020.
+**Answer: B**
+Explanation: The Delegated Administrator pattern is the standard centralization method for security services like GuardDuty, Security Hub, Inspector, and Macie. It offloads the management account while one security account manages the entire organization. All security services have supported this pattern since 2020.

@@ -112,64 +112,64 @@ In the next article, we look at what "shape" the data flowing through this pipel
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** Which option correctly orders the four-stage flow that forms the basic skeleton for understanding AWS data pipelines?
+**Question 1.** Which option correctly orders the four-stage flow that forms the basic skeleton for understanding AWS data pipelines?
 
 A) Analytics → Processing → Storage → Ingestion  
 B) Ingestion → Storage → Processing → Analytics  
 C) Storage → Ingestion → Analytics → Processing  
 D) Processing → Ingestion → Analytics → Storage  
 
-**정답: B**  
-해설: Data flows in the order of ingestion from the source (Kinesis/DMS, etc.) → storage that holds it (S3/Redshift) → processing that transforms it (Glue/EMR) → analytics that gets answers (Athena/QuickSight). Governance (Lake Formation/IAM/KMS) wraps across this entire span. The other options scramble the order of the flow.
+**Answer: B**  
+Explanation: Data flows in the order of ingestion from the source (Kinesis/DMS, etc.) → storage that holds it (S3/Redshift) → processing that transforms it (Glue/EMR) → analytics that gets answers (Athena/QuickSight). Governance (Lake Formation/IAM/KMS) wraps across this entire span. The other options scramble the order of the flow.
 
 ---
 
-**문제 2.** You want to continuously replicate changes (CDC) from a live RDS database to the analytics environment (S3/Redshift) without operational load. Which ingestion service is the best fit?
+**Question 2.** You want to continuously replicate changes (CDC) from a live RDS database to the analytics environment (S3/Redshift) without operational load. Which ingestion service is the best fit?
 
 A) AWS DataSync  
 B) AWS DMS  
 C) Kinesis Data Streams  
 D) Amazon QuickSight  
 
-**정답: B**  
-해설: DMS is a database migration and replication service that uses CDC to read only the changes from the transaction log, flowing data into the analytics environment while putting almost no load on OLTP. DataSync is for on-prem file transfer, Kinesis is for real-time event streams, and QuickSight is a BI visualization tool.
+**Answer: B**  
+Explanation: DMS is a database migration and replication service that uses CDC to read only the changes from the transaction log, flowing data into the analytics environment while putting almost no load on OLTP. DataSync is for on-prem file transfer, Kinesis is for real-time event streams, and QuickSight is a BI visualization tool.
 
 ---
 
-**문제 3.** Which service lets you run ad-hoc SQL queries on data in S3 right where it sits — with no separate infrastructure and no data movement — billing only for the amount scanned?
+**Question 3.** Which service lets you run ad-hoc SQL queries on data in S3 right where it sits — with no separate infrastructure and no data movement — billing only for the amount scanned?
 
 A) Amazon Redshift  
 B) Amazon Athena  
 C) Amazon EMR  
 D) AWS Glue  
 
-**정답: B**  
-해설: Athena is a serverless SQL query engine that operates on top of S3, querying data in place without loading or moving it, and charging by the amount of data scanned. Redshift is a warehouse that requires loading data, EMR is a big data cluster, and Glue is an ETL processing engine.
+**Answer: B**  
+Explanation: Athena is a serverless SQL query engine that operates on top of S3, querying data in place without loading or moving it, and charging by the amount of data scanned. Redshift is a warehouse that requires loading data, EMR is a big data cluster, and Glue is an ETL processing engine.
 
 ---
 
-**문제 4.** Which service centrally manages metadata so that multiple analytics engines (Athena, Redshift Spectrum, EMR) share the same data with identical schema definitions?
+**Question 4.** Which service centrally manages metadata so that multiple analytics engines (Athena, Redshift Spectrum, EMR) share the same data with identical schema definitions?
 
 A) AWS Glue Data Catalog  
 B) Amazon S3  
 C) AWS KMS  
 D) Amazon DynamoDB  
 
-**정답: A**  
-해설: The Glue Data Catalog is the unified metadata catalog; table definitions registered by the Crawler are referenced in common by Athena, Redshift Spectrum, EMR, and others. S3 is data storage, KMS is encryption key management, and DynamoDB is a NoSQL database.
+**Answer: A**  
+Explanation: The Glue Data Catalog is the unified metadata catalog; table definitions registered by the Crawler are referenced in common by Athena, Redshift Spectrum, EMR, and others. S3 is data storage, KMS is encryption key management, and DynamoDB is a NoSQL database.
 
 ---
 
-**문제 5.** If IAM controls "whether a bucket can be accessed," which governance service centrally grants fine-grained table, column, and row level access permissions on an S3 data lake?
+**Question 5.** If IAM controls "whether a bucket can be accessed," which governance service centrally grants fine-grained table, column, and row level access permissions on an S3 data lake?
 
 A) AWS KMS  
 B) AWS Lake Formation  
 C) Amazon OpenSearch  
 D) AWS DataSync  
 
-**정답: B**  
-해설: Lake Formation is the governance service that centrally grants fine-grained table, column, and row level permissions on the data lake. Where IAM handles access at the resource (bucket) level, Lake Formation controls the data units within. KMS handles encryption keys, OpenSearch is search analytics, and DataSync is a file transfer tool.
+**Answer: B**  
+Explanation: Lake Formation is the governance service that centrally grants fine-grained table, column, and row level permissions on the data lake. Where IAM handles access at the resource (bucket) level, Lake Formation controls the data units within. KMS handles encryption keys, OpenSearch is search analytics, and DataSync is a file transfer tool.
 
 ---

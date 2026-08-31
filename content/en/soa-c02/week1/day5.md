@@ -132,149 +132,149 @@ You should be able to answer "yes" to all 11 of the following questions before m
 
 ---
 
-## 📝 연습 문제 (시나리오 12문항)
+## 📝 Practice Questions (12 Scenarios)
 
-**문제 1.** A game company serving Korean users operates in ap-northeast-2. The operations team wants to know in advance and prepare for the fact that during a us-east-1 outage, "console login remains possible, but writes such as creating new IAM users or changing Route 53 records may not be." What is the most appropriate additional measure on the SDK/CLI side?
+**Question 1.** A game company serving Korean users operates in ap-northeast-2. The operations team wants to know in advance and prepare for the fact that during a us-east-1 outage, "console login remains possible, but writes such as creating new IAM users or changing Route 53 records may not be." What is the most appropriate additional measure on the SDK/CLI side?
 
 A) Explicitly pin the STS global endpoint (sts.amazonaws.com) and disable regional endpoints in all SDK configurations to unify on a single entry point
 B) Enforce the STS regional endpoint (sts.ap-northeast-2.amazonaws.com), and document in the runbook that global writes like IAM and Route 53 depend on us-east-1
 C) Block the us-east-1 endpoint with Route 53 health checks and automatically shift traffic to an ap-northeast-2 secondary record with a failover routing policy
 D) Create a new IAM Identity Center instance in ap-northeast-2 and move the home Region so all us-east-1 control plane dependencies of IAM and Route 53 disappear
 
-**정답: B**
-해설: The control planes of IAM, Route 53 public zones, CloudFront, and Organizations are structurally in us-east-1. What the operations team can do is know that fact and (a) explicitly set the STS regional endpoint (`sts.ap-northeast-2.amazonaws.com`) so that data-plane operations like credential issuance are handled in ap-northeast-2, and (b) document in runbooks and DR scenarios that global writes depend on us-east-1. The STS global endpoint defaults to a us-east-1 alias, so it is actually tied to a us-east-1 outage. An Identity Center instance's region can be chosen, but that doesn't completely remove the us-east-1 dependency.
+**Answer: B**
+Explanation: The control planes of IAM, Route 53 public zones, CloudFront, and Organizations are structurally in us-east-1. What the operations team can do is know that fact and (a) explicitly set the STS regional endpoint (`sts.ap-northeast-2.amazonaws.com`) so that data-plane operations like credential issuance are handled in ap-northeast-2, and (b) document in runbooks and DR scenarios that global writes depend on us-east-1. The STS global endpoint defaults to a us-east-1 alias, so it is actually tied to a us-east-1 outage. An Identity Center instance's region can be chosen, but that doesn't completely remove the us-east-1 dependency.
 
 ---
 
-**문제 2.** An operations team running a web service on an ASG lost all traffic when AZ-a failed. Root-cause analysis showed the NAT GW existed only in AZ-a, and the private subnet route tables of AZ-b and AZ-c all pointed at the AZ-a NAT GW. What's the answer?
+**Question 2.** An operations team running a web service on an ASG lost all traffic when AZ-a failed. Root-cause analysis showed the NAT GW existed only in AZ-a, and the private subnet route tables of AZ-b and AZ-c all pointed at the AZ-a NAT GW. What's the answer?
 
 A) Move the NAT GW from AZ-a to AZ-b, and point all AZs' private subnet routes at the new AZ-b NAT GW to keep a single management point
 B) Create one NAT GW per AZ, and make each private subnet's route table point to the NAT GW in its own AZ
 C) Replace all NAT GWs with NAT Instances managed by an ASG, and handle AZ failure with a single instance's self-heal
 D) Remove the NAT GW and attach the Internet Gateway directly to the private subnet route tables to simplify the outbound path
 
-**정답: B**
-해설: A NAT GW is an AZ-scoped resource with no automatic failover. If you tie other AZs' private subnet routes to a single-AZ NAT GW, everything goes down when that AZ wobbles. The canonical answer is **one NAT GW per AZ + each private subnet's route table pointing to its own AZ's NAT GW**. If cost is a concern, options include NAT Instances (ASG self-heal) or simplified NAT instances like fck-nat to cut the \$0.045/GB processing fee, but they come with operational burden. An Internet Gateway can't attach to a private subnet (if you attach one, that subnet is no longer private).
+**Answer: B**
+Explanation: A NAT GW is an AZ-scoped resource with no automatic failover. If you tie other AZs' private subnet routes to a single-AZ NAT GW, everything goes down when that AZ wobbles. The canonical answer is **one NAT GW per AZ + each private subnet's route table pointing to its own AZ's NAT GW**. If cost is a concern, options include NAT Instances (ASG self-heal) or simplified NAT instances like fck-nat to cut the \$0.045/GB processing fee, but they come with operational burden. An Internet Gateway can't attach to a private subnet (if you attach one, that subnet is no longer private).
 
 ---
 
-**문제 3.** An EC2 instance attempts a PUT to an S3 bucket encrypted with SSE-KMS using a KMS CMK and gets AccessDenied. The IAM Policy has `s3:PutObject Allow`, and the Bucket Policy also has an Allow. In CloudTrail, both an `s3.amazonaws.com` event and a `kms.amazonaws.com` event are logged as failures. The most likely cause is?
+**Question 3.** An EC2 instance attempts a PUT to an S3 bucket encrypted with SSE-KMS using a KMS CMK and gets AccessDenied. The IAM Policy has `s3:PutObject Allow`, and the Bucket Policy also has an Allow. In CloudTrail, both an `s3.amazonaws.com` event and a `kms.amazonaws.com` event are logged as failures. The most likely cause is?
 
 A) An Organization SCP explicitly Denies `s3:PutObject`, neutralizing the Allows in the IAM and Bucket Policies
 B) The KMS Key Policy doesn't allow the EC2 Role for `kms:GenerateDataKey` and `kms:Decrypt`
 C) The S3 bucket is in a different region, so the cross-region PUT is blocked, and the KMS CMK is region-bound so it fails together
 D) IMDSv2 is disabled and the hop limit dropped to 0, so the instance can't obtain temporary credentials
 
-**정답: B**
-해설: A PUT of an SSE-KMS object requires `kms:GenerateDataKey` (write) / a GET requires `kms:Decrypt` (read), and both the IAM Policy AND the KMS Key Policy must allow them. KMS follows a "deny by default + explicit allow in the Key Policy" model, so if only the IAM Policy exists and the principal isn't in the Key Policy, the request is denied. Both the `kms.amazonaws.com` event and the `s3.amazonaws.com` event failing simultaneously in CloudTrail is the classic symptom. It's one of the traps operators stumble over most often; the answer is to explicitly add the EC2 Role to the KMS Key Policy.
+**Answer: B**
+Explanation: A PUT of an SSE-KMS object requires `kms:GenerateDataKey` (write) / a GET requires `kms:Decrypt` (read), and both the IAM Policy AND the KMS Key Policy must allow them. KMS follows a "deny by default + explicit allow in the Key Policy" model, so if only the IAM Policy exists and the principal isn't in the Key Policy, the request is denied. Both the `kms.amazonaws.com` event and the `s3.amazonaws.com` event failing simultaneously in CloudTrail is the classic symptom. It's one of the traps operators stumble over most often; the answer is to explicitly add the EC2 Role to the KMS Key Policy.
 
 ---
 
-**문제 4.** A company operates 60 AWS accounts with 200 employees. Employees join and leave every week, and the security team is exhausted by access key rotation and missed offboarding. The most efficient change is?
+**Question 4.** A company operates 60 AWS accounts with 200 employees. Employees join and leave every week, and the security team is exhausted by access key rotation and missed offboarding. The most efficient change is?
 
 A) Issue IAM User access keys to all employees, with EventBridge schedules + Lambda automatically rotating every 90 days and revoking inactive keys
 B) Adopt IAM Identity Center + external IdP (Azure AD / Okta) federation + Permission Set-based permission management
 C) Put per-department IAM Users in one master account and configure hub-and-spoke access to the other 59 accounts with Cross-Account Roles + sts:AssumeRole
 D) Store all employees' access keys in Secrets Manager, rotate daily with a rotation Lambda, and audit usage history with CloudTrail
 
-**정답: B**
-해설: With Identity Center, users are managed once in the IdP, and permissions are granted per account/OU via Permission Sets. When an employee leaves, one deactivation in the IdP cuts off access to all accounts. Access keys themselves nearly disappear (only temporary credentials are used). Identity Center has become so standard that since 2024, AWS shows a console warning when you create an IAM User. C is operable, but permanent IAM User credentials remain in the master account. A and D automate rotation, but the permanent access keys themselves never go away, so the fundamental risks of leakage and missed offboarding are not removed.
+**Answer: B**
+Explanation: With Identity Center, users are managed once in the IdP, and permissions are granted per account/OU via Permission Sets. When an employee leaves, one deactivation in the IdP cuts off access to all accounts. Access keys themselves nearly disappear (only temporary credentials are used). Identity Center has become so standard that since 2024, AWS shows a console warning when you create an IAM User. C is operable, but permanent IAM User credentials remain in the master account. A and D automate rotation, but the permanent access keys themselves never go away, so the fundamental risks of leakage and missed offboarding are not removed.
 
 ---
 
-**문제 5.** A company runs 50 accounts under Organizations and wants to prevent all accounts from using any region other than `us-east-1` and `ap-northeast-2`. The goal is data sovereignty compliance. The most efficient method is?
+**Question 5.** A company runs 50 accounts under Organizations and wants to prevent all accounts from using any region other than `us-east-1` and `ap-northeast-2`. The goal is data sovereignty compliance. The most efficient method is?
 
 A) Add an `aws:RequestedRegion` NotResource Deny condition to every IAM Policy in every account, and run a review process forcing the same condition on new policies
 B) Apply an SCP at the root OU, with an `aws:RequestedRegion` Condition denying everything outside the allowed regions + exempting global services like IAM and Route 53 via NotAction
 C) Detect non-compliant resources with the Config Rule `region-restriction`, plus SNS alerts and SSM Automation to automatically terminate violating resources
 D) Deploy a region-deny IAM Policy to all accounts at once with CloudFormation StackSets, and detect changes with drift detection
 
-**정답: B**
-해설: An SCP is an account/OU-level guardrail applied to all accounts at once. Use the `aws:RequestedRegion` condition to Deny everything outside the allowed regions. Global services like IAM / Route 53 / CloudFront / Organizations route internally to us-east-1, so they must be exempted via NotAction (otherwise even creating an IAM User gets blocked). Config can only detect, not block.
+**Answer: B**
+Explanation: An SCP is an account/OU-level guardrail applied to all accounts at once. Use the `aws:RequestedRegion` condition to Deny everything outside the allowed regions. Global services like IAM / Route 53 / CloudFront / Organizations route internally to us-east-1, so they must be exempted via NotAction (otherwise even creating an IAM User gets blocked). Config can only detect, not block.
 
 ---
 
-**문제 6.** An operator wants to delegate IAM Role creation to developers, while enforcing that those Roles' effective permissions cannot exceed the company's standard policy scope. Which combination is correct?
+**Question 6.** An operator wants to delegate IAM Role creation to developers, while enforcing that those Roles' effective permissions cannot exceed the company's standard policy scope. Which combination is correct?
 
 A) Grant developers AdministratorAccess, but detect excessive permission use after the fact with CloudTrail + Config and alert
 B) Grant developers `iam:CreateRole` and `iam:AttachRolePolicy` Allow + an `iam:PermissionsBoundary` Condition enforcing the company's standard boundary
 C) Apply an SCP to the developer accounts' OU to cap the effective permissions of developer-created IAM Roles at the company standard
 D) Allow Role creation only through Service Catalog products, and Deny all `iam:CreateRole` outside approved permission templates
 
-**정답: B**
-해설: This is the Permission Boundary pattern. The effective permission of a developer-created Role = the Role's policies ∩ the boundary. Put an `iam:PermissionsBoundary` condition on the delegation IAM Policy so that CreateRole itself fails if the boundary isn't attached. An SCP applies to the entire account, so it's too broad for constraining only developers. Service Catalog is a possible option, but forcing all everyday Role creation through the catalog slows development.
+**Answer: B**
+Explanation: This is the Permission Boundary pattern. The effective permission of a developer-created Role = the Role's policies ∩ the boundary. Put an `iam:PermissionsBoundary` condition on the delegation IAM Policy so that CreateRole itself fails if the boundary isn't attached. An SCP applies to the entire account, so it's too broad for constraining only developers. Service Catalog is a possible option, but forcing all everyday Role creation through the catalog slows development.
 
 ---
 
-**문제 7.** A company wants to collect CloudTrail logs from 50 member accounts in one place and prevent operators from modifying or deleting those logs. The goal is meeting PCI-DSS requirement 10.5.5. The standard pattern is?
+**Question 7.** A company wants to collect CloudTrail logs from 50 member accounts in one place and prevent operators from modifying or deleting those logs. The goal is meeting PCI-DSS requirement 10.5.5. The standard pattern is?
 
 A) Create individual trails per member account, gather logs into a central S3 bucket via cross-account IAM permissions, then restrict deletion with a bucket policy
 B) Organization Trail + an isolated S3 bucket in the Log Archive Account + S3 Object Lock (Compliance mode, WORM)
 C) CloudWatch Logs Subscription Filters + a Cross-Account Destination to aggregate all accounts' logs in real time into a central Log Group
 D) Back up the trail's S3 bucket daily with AWS Backup, keep it in a separate vault, and restore if tampered
 
-**정답: B**
-해설: The Organization Trail auto-enables in all member accounts (including new ones), loads logs into an isolated S3 bucket in the Log Archive Account, and S3 Object Lock Compliance mode makes them tamper-proof even for operators. It's the standard AWS Landing Zone / Control Tower pattern and precisely satisfies PCI-DSS 10.5.5 ("ensure audit trail integrity"). CloudWatch Logs Subscriptions are good for real-time analysis but fall short of S3 Object Lock for tamper-proofing.
+**Answer: B**
+Explanation: The Organization Trail auto-enables in all member accounts (including new ones), loads logs into an isolated S3 bucket in the Log Archive Account, and S3 Object Lock Compliance mode makes them tamper-proof even for operators. It's the standard AWS Landing Zone / Control Tower pattern and precisely satisfies PCI-DSS 10.5.5 ("ensure audit trail integrity"). CloudWatch Logs Subscriptions are good for real-time analysis but fall short of S3 Object Lock for tamper-proofing.
 
 ---
 
-**문제 8.** An operations team wants to prevent metadata SSRF attacks against EC2 instances. What is the strongest quadruple-defense operational standard?
+**Question 8.** An operations team wants to prevent metadata SSRF attacks against EC2 instances. What is the strongest quadruple-defense operational standard?
 
 A) Block the 169.254.169.254/32 destination with Security Group outbound rules, applied uniformly to all instances
 B) Enforce IMDSv2 + hop limit 1 + block IMDSv1 instance creation with an SCP + detect and auto-remediate existing non-compliant instances with the Config rule `ec2-imdsv2-check`
 C) Don't attach an IAM instance profile to instances, and inject credentials into applications separately via Secrets Manager
 D) Explicitly Deny 169.254.169.254 metadata IP traffic with subnet NACL inbound/outbound rules
 
-**정답: B**
-해설: 169.254.169.254 is a link-local address, so SGs and NACLs can't block it (it's handled at the hypervisor level, not the routing table). The quadruple defense = ① enforce IMDSv2 (PUT session tokens), ② hop limit 1 (metadata can't leak outside containers), ③ SCP Denying `RunInstances` unless `MetadataOptions.HttpTokens=required` (block new creations), ④ Config rule to detect and auto-remediate existing instances. With C, not attaching an IAM role blocks metadata credential exposure, but injecting credentials via Secrets Manager is a heavy operational burden, and other internal endpoints SSRF could target remain — it's only a partial defense.
+**Answer: B**
+Explanation: 169.254.169.254 is a link-local address, so SGs and NACLs can't block it (it's handled at the hypervisor level, not the routing table). The quadruple defense = ① enforce IMDSv2 (PUT session tokens), ② hop limit 1 (metadata can't leak outside containers), ③ SCP Denying `RunInstances` unless `MetadataOptions.HttpTokens=required` (block new creations), ④ Config rule to detect and auto-remediate existing instances. With C, not attaching an IAM role blocks metadata credential exposure, but injecting credentials via Secrets Manager is a heavy operational burden, and other internal endpoints SSRF could target remain — it's only a partial defense.
 
 ---
 
-**문제 9.** An operator wants to see the EC2 instance inventory of 100 accounts at once. The security team wants OS patch status, tags, and instance types. The most efficient method is?
+**Question 9.** An operator wants to see the EC2 instance inventory of 100 accounts at once. The security team wants OS patch status, tags, and instance types. The most efficient method is?
 
 A) Log into each account sequentially via SSO, export the EC2 console list to CSV, and manually merge in a spreadsheet
 B) Resource Explorer multi-account search, or Systems Manager Inventory + Resource Data Sync aggregating into S3 and querying with Athena
 C) A central-account Lambda iterates over 100 accounts daily via cross-account roles, calls describe-instances, and loads results into DynamoDB
 D) Deploy an EC2 metadata collection script to all accounts with CloudFormation StackSets and centrally aggregate results via SNS
 
-**정답: B**
-해설: Enabling Resource Explorer at the organization level lets you query all accounts' resources in one search. To also see OS patches and software inventory, use SSM Inventory + Resource Data Sync to gather all accounts' data into one S3 bucket, then analyze with Athena/QuickSight. Lambda iteration is possible but carries operational burden and throttling problems. Resource Explorer, launched in 2022, is AWS's official answer.
+**Answer: B**
+Explanation: Enabling Resource Explorer at the organization level lets you query all accounts' resources in one search. To also see OS patches and software inventory, use SSM Inventory + Resource Data Sync to gather all accounts' data into one S3 bucket, then analyze with Athena/QuickSight. Lambda iteration is possible but carries operational burden and throttling problems. Resource Explorer, launched in 2022, is AWS's official answer.
 
 ---
 
-**문제 10.** An operations team created an EventBridge `aws.health` rule to receive us-east-1 outage alerts at 3 AM. The standard pattern for receiving all events without gaps is?
+**Question 10.** An operations team created an EventBridge `aws.health` rule to receive us-east-1 outage alerts at 3 AM. The standard pattern for receiving all events without gaps is?
 
 A) Create just one `aws.health` rule in us-east-1 and rely on all global service events flowing into us-east-1
 B) Create identical rules in both us-east-1 and us-west-2, routing to the same SNS topic (remove duplicate alerts with a dedupe key)
 C) Create identical `aws.health` rules in every enabled region, including regions with no workloads, to reduce the chance of gaps to zero
 D) Turn on Organizational Health View in the management account and create the rule once; events from all regions and accounts route automatically
 
-**정답: B**
-해설: The AWS Health API runs active-active in two places — us-east-1 and us-west-2 — with automatic failover. You must create EventBridge `aws.health` source rules in both regions so nothing is missed when one side is down. Turning on Organizational Health View lets the management account receive all accounts' events too, and creating rules in member accounts as well is standard.
+**Answer: B**
+Explanation: The AWS Health API runs active-active in two places — us-east-1 and us-west-2 — with automatic failover. You must create EventBridge `aws.health` source rules in both regions so nothing is missed when one side is down. Turning on Organizational Health View lets the management account receive all accounts' events too, and creating rules in member accounts as well is standard.
 
 ---
 
-**문제 11.** A security operator must separate start/stop permissions for 200 EC2 instances across 5 departments. There are 100 employees and 200 EC2 instances; employees join and leave weekly and department transfers are frequent. The most scalable approach is?
+**Question 11.** A security operator must separate start/stop permissions for 200 EC2 instances across 5 departments. There are 100 employees and 200 EC2 instances; employees join and leave weekly and department transfers are frequent. The most scalable approach is?
 
 A) Create 5 department IAM Groups and write 200 separate IAM Policies specifying each instance's ARN, mapped to the Groups
 B) One ABAC policy that Allows `ec2:StartInstances` and `ec2:StopInstances` only when the employee's IdC `PrincipalTag/Department` matches the EC2's `ResourceTag/Department`
 C) Create 5 shared departmental IAM Users, share the access keys within each department, and just reset the password on department transfers
 D) Wrap departmental EC2 launch/start/stop in Service Catalog products and control permissions with an approval workflow
 
-**정답: B**
-해설: The ABAC (Attribute-Based Access Control) pattern. One policy handles the N×M permission combinations. When an employee's department changes in the IdP, the SAML attribute refreshes automatically and their AWS permissions change automatically too. It's the implementation of the NIST SP 800-162 ABAC standard. Handling this with RBAC means Groups multiply per department/role combination — policy explosion. Shared IAM Users are the gateway to security incidents.
+**Answer: B**
+Explanation: The ABAC (Attribute-Based Access Control) pattern. One policy handles the N×M permission combinations. When an employee's department changes in the IdP, the SAML attribute refreshes automatically and their AWS permissions change automatically too. It's the implementation of the NIST SP 800-162 ABAC standard. Handling this with RBAC means Groups multiply per department/role combination — policy explosion. Shared IAM Users are the gateway to security incidents.
 
 ---
 
-**문제 12.** A security operator wants to see the GuardDuty findings, Security Hub scores, Inspector vulnerabilities, and Macie data classification results of 100 accounts in one place. The standard pattern is?
+**Question 12.** A security operator wants to see the GuardDuty findings, Security Hub scores, Inspector vulnerabilities, and Macie data classification results of 100 accounts in one place. The standard pattern is?
 
 A) Log into each account's console one by one via SSO, check the 4 services' findings, and manually compile a weekly report
 B) Designate a Security Account as the Delegated Administrator for each of GuardDuty / Security Hub / Inspector / Macie, with member accounts auto-enrolled
 C) A central Lambda collects each account's findings hourly via cross-account roles, loads them into a separate RDS/DynamoDB, and serves a dashboard
 D) Send findings from each account's EventBridge rules to a central SNS, then analyze them in a self-built SIEM (OpenSearch)
 
-**정답: B**
-해설: The Delegated Administrator pattern is the standard centralization method for security services like GuardDuty, Security Hub, Inspector, Macie, and Detective. It offloads the management account while one security account manages the entire organization. All security services have supported this pattern since 2020, and it's the standard configuration of AWS Landing Zone / Control Tower. Sending to an external SIEM (Splunk/Datadog) via EventBridge as in D is possible as a complementary pattern.
+**Answer: B**
+Explanation: The Delegated Administrator pattern is the standard centralization method for security services like GuardDuty, Security Hub, Inspector, Macie, and Detective. It offloads the management account while one security account manages the entire organization. All security services have supported this pattern since 2020, and it's the standard configuration of AWS Landing Zone / Control Tower. Sending to an external SIEM (Splunk/Datadog) via EventBridge as in D is possible as a complementary pattern.
 
 ---
 

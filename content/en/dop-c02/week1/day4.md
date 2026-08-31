@@ -347,98 +347,98 @@ The next post wraps up Week 1: we'll comprehensively review the first week's mat
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A company running dev, staging, and prod environments in a single AWS account is moving to multi-account. What is the most essential reason?
+**Question 1.** A company running dev, staging, and prod environments in a single AWS account is moving to multi-account. What is the most essential reason?
 
 A) Because AWS recommends it
 B) Blast radius isolation, service quota separation, overcoming the limits of IAM policies, and compliance requirements
 C) Cost savings
 D) Performance improvement
 
-**정답: B**
-해설: The essential value of multi-account is ① blast radius isolation (minimizing the impact scope of mistakes) ② Service Quota separation (per-account limits) ③ overcoming IAM's limits (complex permissions are hard to express) ④ compliance (PCI-DSS, HIPAA isolation requirements). C — if anything, multi-account can slightly increase cost (shared resources like NAT, Transit Gateway); D is unrelated to performance.
+**Answer: B**
+Explanation: The essential value of multi-account is ① blast radius isolation (minimizing the impact scope of mistakes) ② Service Quota separation (per-account limits) ③ overcoming IAM's limits (complex permissions are hard to express) ④ compliance (PCI-DSS, HIPAA isolation requirements). C — if anything, multi-account can slightly increase cost (shared resources like NAT, Transit Gateway); D is unrelated to performance.
 
 ---
 
-**문제 2.** What is the essential characteristic that distinguishes an SCP from an IAM policy?
+**Question 2.** What is the essential characteristic that distinguishes an SCP from an IAM policy?
 
 A) SCPs have lower priority than IAM
 B) An SCP is a guardrail effective only for deny, and it grants no permissions
 C) SCPs can only be applied per-user
 D) SCPs are a means of granting cross-account permissions
 
-**정답: B**
-해설: An SCP is a **guardrail**, not a permission grant. Even if the SCP says `Allow`, permissions must be granted separately in IAM. The real power of an SCP is `Deny` — even if IAM allows it, an SCP Deny blocks it. A is backwards (SCPs are evaluated before IAM), C is factually wrong (they apply at the OU/account level), D is wrong (cross-account is STS AssumeRole + trust policy).
+**Answer: B**
+Explanation: An SCP is a **guardrail**, not a permission grant. Even if the SCP says `Allow`, permissions must be granted separately in IAM. The real power of an SCP is `Deny` — even if IAM allows it, an SCP Deny blocks it. A is backwards (SCPs are evaluated before IAM), C is factually wrong (they apply at the OU/account level), D is wrong (cross-account is STS AssumeRole + trust policy).
 
 ---
 
-**문제 3.** A company is building multi-account CI/CD. Where should the pipeline live?
+**Question 3.** A company is building multi-account CI/CD. Where should the pipeline live?
 
 A) A separate pipeline in each environment account (dev/staging/prod)
 B) All pipelines in the prod account, deploying to the other accounts
 C) The pipeline in a separate Shared Services account, deploying to each environment account via a cross-account role
 D) A union of the pipelines from all environment accounts
 
-**정답: C**
-해설: The Hub-Spoke model is the standard. Put the pipeline in a Shared Services account (Hub), and each environment account (Spoke) provides a cross-account deploy role that the hub assumes for deployment. Reasons: ① consistency (managed in one place) ② security (minimizing prod account permissions) ③ centralized change management. A breaks consistency, B makes the prod account's permissions too powerful, D is meaningless.
+**Answer: C**
+Explanation: The Hub-Spoke model is the standard. Put the pipeline in a Shared Services account (Hub), and each environment account (Spoke) provides a cross-account deploy role that the hub assumes for deployment. Reasons: ① consistency (managed in one place) ② security (minimizing prod account permissions) ③ centralized change management. A breaks consistency, B makes the prod account's permissions too powerful, D is meaningless.
 
 ---
 
-**문제 4.** Of the three mechanisms for cross-account resource access, which scenario best fits RAM (Resource Access Manager)?
+**Question 4.** Of the three mechanisms for cross-account resource access, which scenario best fits RAM (Resource Access Manager)?
 
 A) Sharing an S3 bucket
 B) Sharing network resources such as Transit Gateways and VPC Subnets
 C) Sharing an IAM Role
 D) Sharing a Lambda function
 
-**정답: B**
-해설: RAM's primary use is **network/shared infrastructure resources** — Transit Gateway, VPC Subnet, License Manager, Route 53 Resolver, Glue Catalog, and so on. S3 is solved with bucket policies, IAM Roles with trust policies, Lambda with resource policies. On the exam, "share a Transit Gateway across multiple accounts" scenarios almost always have RAM as the answer.
+**Answer: B**
+Explanation: RAM's primary use is **network/shared infrastructure resources** — Transit Gateway, VPC Subnet, License Manager, Route 53 Resolver, Glue Catalog, and so on. S3 is solved with bucket policies, IAM Roles with trust policies, Lambda with resource policies. On the exam, "share a Transit Gateway across multiple accounts" scenarios almost always have RAM as the answer.
 
 ---
 
-**문제 5.** What is the essential advantage of an Organization Trail?
+**Question 5.** What is the essential advantage of an Organization Trail?
 
 A) Cost savings
 B) Central storage of every member account's CloudTrail events in one S3 bucket — a single source of truth plus tamper prevention
 C) Faster API calls
 D) Automatic cross-region replication
 
-**정답: B**
-해설: An Organization Trail is a single trail in the management account that captures every member account's API calls and stores them in the Log Archive account's S3 bucket. SCPs block tampering with that bucket, guaranteeing the integrity of the audit trail. No one in a member account can disable or delete their own trail (blocked by SCP). On the exam, the keyword "tamper-proof audit" almost always means this pattern.
+**Answer: B**
+Explanation: An Organization Trail is a single trail in the management account that captures every member account's API calls and stores them in the Log Archive account's S3 bucket. SCPs block tampering with that bucket, guaranteeing the integrity of the audit trail. No one in a member account can disable or delete their own trail (blocked by SCP). On the exam, the keyword "tamper-proof audit" almost always means this pattern.
 
 ---
 
-**문제 6.** Why does ExternalId go into a cross-account role's trust policy?
+**Question 6.** Why does ExternalId go into a cross-account role's trust policy?
 
 A) Faster authentication
 B) To prevent the confused deputy problem — isolating so that other customers of the same SaaS cannot access our resources
 C) IAM cost savings
 D) Enforcing MFA
 
-**정답: B**
-해설: When a SaaS (Datadog, PagerDuty, etc.) accesses multiple customers' AWS accounts cross-account, the same SaaS AWS account becomes the deputy for all customers. If one customer's ExternalId were placed in another customer's role trust policy, improper access would be possible. The ExternalId is issued as a secret known only to that customer. It originates from Norm Hardy's 1988 confused deputy paper. On the exam, the keyword "third-party SaaS integration security" means ExternalId.
+**Answer: B**
+Explanation: When a SaaS (Datadog, PagerDuty, etc.) accesses multiple customers' AWS accounts cross-account, the same SaaS AWS account becomes the deputy for all customers. If one customer's ExternalId were placed in another customer's role trust policy, improper access would be possible. The ExternalId is issued as a secret known only to that customer. It originates from Norm Hardy's 1988 confused deputy paper. On the exam, the keyword "third-party SaaS integration security" means ExternalId.
 
 ---
 
-**문제 7.** Which three accounts are created automatically by Control Tower's Landing Zone?
+**Question 7.** Which three accounts are created automatically by Control Tower's Landing Zone?
 
 A) Management, Dev, Prod
 B) Management, Log Archive, Audit
 C) Management, Backup, DR
 D) Management, Network, Security
 
-**정답: B**
-해설: The Landing Zone's three standard accounts — ① **Management** (the Organizations root) ② **Log Archive** (CloudTrail + Config log aggregation) ③ **Audit** (Security Hub, GuardDuty administrator). These three are the security foundation. Additional accounts are created separately via Account Factory. The Dev/Prod in A belong in the Workload OU; they are not default Landing Zone accounts.
+**Answer: B**
+Explanation: The Landing Zone's three standard accounts — ① **Management** (the Organizations root) ② **Log Archive** (CloudTrail + Config log aggregation) ③ **Audit** (Security Hub, GuardDuty administrator). These three are the security foundation. Additional accounts are created separately via Account Factory. The Dev/Prod in A belong in the Workload OU; they are not default Landing Zone accounts.
 
 ---
 
-**문제 8.** A company applied an SCP to "block all AWS operations outside the ap-northeast-2 region," and then IAM users could no longer create IAM policies in the console. What is the cause?
+**Question 8.** A company applied an SCP to "block all AWS operations outside the ap-northeast-2 region," and then IAM users could no longer create IAM policies in the console. What is the cause?
 
 A) An SCP priority problem
 B) The SCP's Deny also blocked global services (IAM, CloudFront, Route 53)
 C) A Control Tower conflict
 D) MFA required
 
-**정답: B**
-해설: IAM, Route 53, and CloudFront are **global services** with no concept of region. When applying a region restriction in an SCP, if you don't exclude global services via `NotAction`, even IAM operations get blocked. The correct pattern is `NotAction: ["iam:*", "organizations:*", "cloudfront:*", "route53:*", "support:*", "s3:ListAllMyBuckets"]`. A frequent SCP trap on the exam.
+**Answer: B**
+Explanation: IAM, Route 53, and CloudFront are **global services** with no concept of region. When applying a region restriction in an SCP, if you don't exclude global services via `NotAction`, even IAM operations get blocked. The correct pattern is `NotAction: ["iam:*", "organizations:*", "cloudfront:*", "route53:*", "support:*", "s3:ListAllMyBuckets"]`. A frequent SCP trap on the exam.

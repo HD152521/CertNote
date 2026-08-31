@@ -193,86 +193,86 @@ Today's two pictures are IAM's 4 entities (User/Group/Role/Policy) and the polic
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A company operates multiple AWS accounts and wants single sign-on through its corporate Okta. What is the most suitable solution?
+**Question 1.** A company operates multiple AWS accounts and wants single sign-on through its corporate Okta. What is the most suitable solution?
 
 A) Create an IAM User in each account and use the same password
 B) SAML federation with Okta via IAM Identity Center (formerly AWS SSO)
 C) Share root credentials
 D) Create IAM Roles directly and distribute them to Okta users
 
-**정답: B**
-해설: Multi-account + external IdP scenarios almost always point to IAM Identity Center. It integrates with Okta via SAML 2.0 or SCIM, and manages multi-account permissions centrally through Permission Sets. A causes credential sprawl, C heads straight into a security incident, and D is possible but Trust Policy management explodes as users grow. Identity Center simplifies multi-account operations by bundling permissions into an abstraction called Permission Sets.
+**Answer: B**
+Explanation: Multi-account + external IdP scenarios almost always point to IAM Identity Center. It integrates with Okta via SAML 2.0 or SCIM, and manages multi-account permissions centrally through Permission Sets. A causes credential sprawl, C heads straight into a security incident, and D is possible but Trust Policy management explodes as users grow. Identity Center simplifies multi-account operations by bundling permissions into an abstraction called Permission Sets.
 
 ---
 
-**문제 2.** An EC2 instance needs to access S3. What is the most secure method?
+**Question 2.** An EC2 instance needs to access S3. What is the most secure method?
 
 A) Set the Access Key as an environment variable
 B) Hardcode the Access Key in the code
 C) Attach an IAM Role to the EC2 instance
 D) Use root credentials
 
-**정답: C**
-해설: An Instance Profile (the mechanism for attaching an IAM Role to EC2) is the answer. The SDK automatically refreshes temporary credentials via IMDSv2, eliminating key rotation burden. A risks leakage, B is the fastest path to an incident (GitHub scanning bots catch it within minutes), and D is absolutely forbidden. Additionally, enforce IMDSv2 and settings like hop limit 1 to defend against SSRF as well.
+**Answer: C**
+Explanation: An Instance Profile (the mechanism for attaching an IAM Role to EC2) is the answer. The SDK automatically refreshes temporary credentials via IMDSv2, eliminating key rotation burden. A risks leakage, B is the fastest path to an incident (GitHub scanning bots catch it within minutes), and D is absolutely forbidden. Additionally, enforce IMDSv2 and settings like hop limit 1 to defend against SSRF as well.
 
 ---
 
-**문제 3.** Which of the following is correct regarding IAM policy evaluation?
+**Question 3.** Which of the following is correct regarding IAM policy evaluation?
 
 A) If there is even one Allow, access is unconditionally granted
 B) An explicit Deny nullifies all Allows
 C) The default is Allow
 D) Resource-based policies take precedence over Identity policies
 
-**정답: B**
-해설: The core principle of IAM. Deny > Allow > Implicit Deny. A is wrong because an SCP or Permissions Boundary can block it. C is the exact opposite (fail-safe defaults). D is not a simple precedence — within the same account it's a union, and cross-account both must Allow. In the XACML standard too, deny-overrides is the most conservative combining algorithm.
+**Answer: B**
+Explanation: The core principle of IAM. Deny > Allow > Implicit Deny. A is wrong because an SCP or Permissions Boundary can block it. C is the exact opposite (fail-safe defaults). D is not a simple precedence — within the same account it's a union, and cross-account both must Allow. In the XACML standard too, deny-overrides is the most conservative combining algorithm.
 
 ---
 
-**문제 4.** Which statement about Groups is correct?
+**Question 4.** Which statement about Groups is correct?
 
 A) A Group can log in
 B) A Group can be a member of another Group
 C) A Group has no credentials of its own
 D) You can issue Access Keys directly to a Group
 
-**정답: C**
-해설: A Group is a simple container with no credentials and no ability to log in. No nesting either. It's merely a grouping unit for attaching policies efficiently. Because of this, the permission model is generally a one-way "User → Group → Policy" structure; if you need a more complex hierarchy, solve it with SCPs (Organizations) or Permissions Boundaries.
+**Answer: C**
+Explanation: A Group is a simple container with no credentials and no ability to log in. No nesting either. It's merely a grouping unit for attaching policies efficiently. Because of this, the permission model is generally a one-way "User → Group → Policy" structure; if you need a more complex hierarchy, solve it with SCPs (Organizations) or Permissions Boundaries.
 
 ---
 
-**문제 5.** You want to grant a user in another account cross-account access to an S3 bucket. What is required?
+**Question 5.** You want to grant a user in another account cross-account access to an S3 bucket. What is required?
 
 A) Just an Allow in the bucket policy is enough
 B) Just an Allow in the caller account's IAM policy is enough
 C) Allows are needed on both sides
 D) Joining Organizations is mandatory
 
-**정답: C**
-해설: Cross-account requires **explicit Allows in both accounts**: the owning account's Resource Policy + the calling account's Identity Policy. Within the same account either one suffices via union, but cross-account behaves like an intersection. This is the most frequently missed part of IAM evaluation logic.
+**Answer: C**
+Explanation: Cross-account requires **explicit Allows in both accounts**: the owning account's Resource Policy + the calling account's Identity Policy. Within the same account either one suffices via union, but cross-account behaves like an intersection. This is the most frequently missed part of IAM evaluation logic.
 
 ---
 
-**문제 6.** What is the most appropriate way to enforce MFA?
+**Question 6.** What is the most appropriate way to enforce MFA?
 
 A) Ask users to please turn on MFA
 B) Add `aws:MultiFactorAuthPresent: true` to a policy Condition
 C) Use MFA only for root credentials
 D) Shorten the Access Key rotation period
 
-**정답: B**
-해설: A policy Condition is the answer. Use `BoolIfExists` alongside it to correctly handle sessions where the MFA key doesn't exist (service calls, etc.). A has no enforcement power, C doesn't protect regular users, and D is a key rotation policy, not MFA. Security policy must always be implemented through "technical enforcement," not "human goodwill."
+**Answer: B**
+Explanation: A policy Condition is the answer. Use `BoolIfExists` alongside it to correctly handle sessions where the MFA key doesn't exist (service calls, etc.). A has no enforcement power, C doesn't protect regular users, and D is a key rotation policy, not MFA. Security policy must always be implemented through "technical enforcement," not "human goodwill."
 
 ---
 
-**문제 7.** A new junior developer should be able to create new IAM Roles, but you want to prevent attaching broad permissions like `iam:*` or `*:*` to those Roles. What is the most appropriate method?
+**Question 7.** A new junior developer should be able to create new IAM Roles, but you want to prevent attaching broad permissions like `iam:*` or `*:*` to those Roles. What is the most appropriate method?
 
 A) Revoke all of the junior's IAM permissions
 B) Enforce a permission ceiling on Roles with a Permissions Boundary
 C) Promote the junior to root
 D) Detect after the fact with CloudTrail
 
-**정답: B**
-해설: A Permissions Boundary is "the upper bound on permissions this identity can have." If you enforce via policy that a Boundary must be attached whenever the junior creates a Role, the Role's effective permissions are limited to the intersection of the Boundary and the Identity Policy. A halts work, C is a permission explosion, and D is only after-the-fact response, not prevention. This is the standard pattern for achieving autonomy and safety at the same time in practice.
+**Answer: B**
+Explanation: A Permissions Boundary is "the upper bound on permissions this identity can have." If you enforce via policy that a Boundary must be attached whenever the junior creates a Role, the Role's effective permissions are limited to the intersection of the Boundary and the Identity Policy. A halts work, C is a permission explosion, and D is only after-the-fact response, not prevention. This is the standard pattern for achieving autonomy and safety at the same time in practice.

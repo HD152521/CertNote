@@ -104,64 +104,64 @@ Most ML training is **batch** — for example, retraining the model each night o
 
 When solving exam scenarios, ask in order: (1) Is the data a stream or a batch? (2) If a stream, is it simple delivery (Firehose) or custom/multi-consumer (KDS)? (3) Is transformation needed (Glue ETL)? (4) Is the destination a data lake (S3) or analytics (Redshift/OpenSearch)? These four questions solve most ingestion problems.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** An IoT sensor stream just needs to be automatically delivered as-is into an S3 data lake as Parquet, with no separate transformation or code. Which service fits best?
+**Question 1.** An IoT sensor stream just needs to be automatically delivered as-is into an S3 data lake as Parquet, with no separate transformation or code. Which service fits best?
 
 A) Kinesis Data Streams + a custom consumer  
 B) Kinesis Data Firehose  
 C) Kinesis Video Streams  
 D) Glue Crawler  
 
-**정답: B**  
-해설: Firehose is fully managed and specialized in buffering, format-converting (Parquet), and automatically delivering streams to destinations like S3 with no code. Data Streams requires consumer code and shard management, Video Streams is for video, and a Crawler is a schema inference tool, not a delivery mechanism.
+**Answer: B**  
+Explanation: Firehose is fully managed and specialized in buffering, format-converting (Parquet), and automatically delivering streams to destinations like S3 with no code. Data Streams requires consumer code and shard management, Video Streams is for video, and a Crawler is a schema inference tool, not a delivery mechanism.
 
 ---
 
-**문제 2.** A single clickstream must be consumed independently by (1) a real-time dashboard, (2) a fraud detection model, and (3) later reprocessing, and the data must be re-readable after a failure. Which service fits?
+**Question 2.** A single clickstream must be consumed independently by (1) a real-time dashboard, (2) a fraud detection model, and (3) later reprocessing, and the data must be re-readable after a failure. Which service fits?
 
 A) Kinesis Data Firehose  
 B) S3 alone  
 C) Kinesis Data Streams  
 D) Glue ETL Job  
 
-**정답: C**  
-해설: Multiple consumers reading the same stream independently with data retention and replay is the core use case of Data Streams. Firehose is a simple delivery pipe that does not support retention, multiple consumers, or replay, and S3 or a Glue ETL job cannot satisfy the real-time multi-consumer streaming requirement.
+**Answer: C**  
+Explanation: Multiple consumers reading the same stream independently with data retention and replay is the core use case of Data Streams. Firehose is a simple delivery pipe that does not support retention, multiple consumers, or replay, and S3 or a Glue ETL job cannot satisfy the real-time multi-consumer streaming requirement.
 
 ---
 
-**문제 3.** A large volume of JSON logs with unknown schemas has piled up in S3. Before starting SQL exploration with Athena, you want to automatically create the tables and schemas. Which tool do you use?
+**Question 3.** A large volume of JSON logs with unknown schemas has piled up in S3. Before starting SQL exploration with Athena, you want to automatically create the tables and schemas. Which tool do you use?
 
 A) Glue Crawler  
 B) Kinesis Firehose  
 C) SageMaker Ground Truth  
 D) EFS  
 
-**정답: A**  
-해설: A Glue Crawler scans S3, automatically infers the schema, and registers tables in the Glue Data Catalog so Athena can query them with SQL right away. Firehose is for delivery, Ground Truth is for data labeling, and EFS is file storage — none relate to schema inference.
+**Answer: A**  
+Explanation: A Glue Crawler scans S3, automatically infers the schema, and registers tables in the Glue Data Catalog so Athena can query them with SQL right away. Firehose is for delivery, Ground Truth is for data labeling, and EFS is file storage — none relate to schema inference.
 
 ---
 
-**문제 4.** What is the biggest reason most ML model retraining happens in batch rather than streaming?
+**Question 4.** What is the biggest reason most ML model retraining happens in batch rather than streaming?
 
 A) Because streaming is always more expensive  
 B) Because Kinesis does not support training  
 C) Because batch is always more accurate  
 D) Because retraining usually only needs periodic processing of accumulated bulk data, with no need for millisecond-level freshness  
 
-**정답: D**  
-해설: In most cases, model retraining just needs to run periodically over data accumulated daily or hourly, so low latency is unnecessary and batch is the natural fit. Streaming is used in special situations that need real-time features or immediate scores. Cost and accuracy depend on the situation, and Kinesis-collected data can also be used for training.
+**Answer: D**  
+Explanation: In most cases, model retraining just needs to run periodically over data accumulated daily or hourly, so low latency is unnecessary and batch is the natural fit. Streaming is used in special situations that need real-time features or immediate scores. Cost and accuracy depend on the situation, and Kinesis-collected data can also be used for training.
 
 ---
 
-**문제 5.** Which architecture pattern uses the same event data for both real-time feature computation (immediate inference) and periodic model retraining (accurate and complete)?
+**Question 5.** Which architecture pattern uses the same event data for both real-time feature computation (immediate inference) and periodic model retraining (accurate and complete)?
 
 A) Consolidate all processing into a single batch job  
 B) Lambda architecture — run a streaming (speed) layer and a batch layer in parallel  
 C) Use streaming only  
 D) Use a single path without duplicating the data  
 
-**정답: B**  
-해설: The lambda architecture runs a speed layer (streaming, low-latency approximation) and a batch layer (periodic, accurate and complete) in parallel to get both real-time responsiveness and accuracy. In ML, this looks like accumulating to S3 via Firehose for retraining while computing real-time features with KDS+Flink. A single path alone struggles to satisfy both requirements at once.
+**Answer: B**  
+Explanation: The lambda architecture runs a speed layer (streaming, low-latency approximation) and a batch layer (periodic, accurate and complete) in parallel to get both real-time responsiveness and accuracy. In ML, this looks like accumulating to S3 via Firehose for retraining while computing real-time features with KDS+Flink. A single path alone struggles to satisfy both requirements at once.
 
 ---
