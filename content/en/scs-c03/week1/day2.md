@@ -156,62 +156,62 @@ Tomorrow we dig deeper into policies. The subtle interplay between Identity vs R
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 IAM 사용자가 `AdministratorAccess` 관리형 정책을 가지고 있다. 동시에 그 사용자가 속한 계정의 SCP에 `s3:*`에 대한 명시적 `Deny`가 있다. 이 사용자가 S3 객체를 읽으려 하면?
+**Question 1.** An IAM user has the `AdministratorAccess` managed policy. At the same time, the SCP applied to that user's account contains an explicit `Deny` on `s3:*`. What happens when the user tries to read an S3 object?
 
-A) AdministratorAccess가 우선하므로 허용된다  
-B) SCP의 명시적 Deny가 모든 Allow를 이기므로 거부된다  
-C) 두 정책이 충돌하므로 평가 오류가 발생한다  
-D) root 사용자만 S3에 접근할 수 있다  
+A) It is allowed, because AdministratorAccess takes precedence  
+B) It is denied, because an explicit Deny in the SCP beats every Allow  
+C) An evaluation error occurs, because the two policies conflict  
+D) Only the root user can access S3  
 
 **Answer: B**  
-Explanation: 정책 평가의 절대 원칙은 명시적 Deny가 어떤 Allow보다 우선한다는 것이다. SCP는 가드레일로서 해당 Action의 상한을 차단하므로, 사용자 정책에 admin 권한이 있어도 SCP의 Deny에 막혀 거부된다. 평가 충돌로 오류가 나는 것이 아니라 결정론적으로 Deny가 이기며, root 접근 여부는 이 판단과 무관하다.
+Explanation: The absolute rule of policy evaluation is that an explicit Deny wins over any Allow. An SCP acts as a guardrail that caps the permitted actions, so even with admin rights in the user policy the request is blocked by the SCP's Deny. This is not an error caused by conflicting policies — Deny wins deterministically — and whether root can access S3 is irrelevant to this decision.
 
 ---
 
-**Question 2.** 계정 A의 IAM 역할이 계정 B의 S3 버킷에 객체를 쓰려고 한다. 접근이 성공하려면 반드시 충족돼야 하는 조건은?
+**Question 2.** An IAM role in Account A wants to write an object to an S3 bucket in Account B. Which condition must be met for the access to succeed?
 
-A) 계정 A의 신원 기반 정책에만 Allow가 있으면 충분하다  
-B) 계정 B의 버킷 정책에만 Allow가 있으면 충분하다  
-C) 계정 A의 신원 기반 정책과 계정 B의 버킷 정책 양쪽 모두 Allow가 있어야 한다  
-D) 두 계정이 같은 Organization에 속하면 정책 없이 자동 허용된다  
+A) An Allow in Account A's identity-based policy alone is sufficient  
+B) An Allow in Account B's bucket policy alone is sufficient  
+C) Both Account A's identity-based policy and Account B's bucket policy must Allow it  
+D) If both accounts belong to the same Organization, it is allowed automatically without policies  
 
 **Answer: C**  
-Explanation: cross-account 접근은 양쪽 계정에서 각각 평가가 일어나므로, 호출 측(A)의 신원 기반 정책 Allow와 리소스 측(B)의 리소스 기반 정책 Allow가 모두 필요하다. 같은 계정 내에서는 둘 중 하나만 있어도 되지만 계정 경계를 넘으면 둘 다 필수다. 같은 Organization이라는 사실만으로 자동 허용되지 않는다.
+Explanation: Cross-account access is evaluated separately in each account, so you need an Allow in the calling side's identity-based policy (A) and an Allow in the resource side's resource-based policy (B). Within a single account either one is enough, but once you cross an account boundary both are mandatory. Belonging to the same Organization does not grant access by itself.
 
 ---
 
-**Question 3.** IAM Group에 대한 설명으로 옳은 것은?
+**Question 3.** Which statement about IAM Groups is correct?
 
-A) Group은 자체 자격 증명을 가지며 직접 로그인할 수 있다  
-B) Role의 trust policy에서 Group을 Principal로 지정할 수 있다  
-C) Group은 자격 증명이 없는 정책 부착용 컨테이너이며 Principal이 될 수 없다  
-D) Group에 임시 자격 증명을 발급해 cross-account 접근에 사용한다  
+A) A Group has its own credentials and can sign in directly  
+B) A Group can be specified as a Principal in a role's trust policy  
+C) A Group is a container for attaching policies, has no credentials, and cannot be a Principal  
+D) Temporary credentials are issued to a Group and used for cross-account access  
 
 **Answer: C**  
-Explanation: Group은 사용자에게 정책을 일괄 부여하기 위한 컨테이너일 뿐 자격 증명이 없고, 따라서 로그인하거나 Principal로 지정될 수 없다. AssumeRole의 대상이나 trust policy의 Principal로 Group을 쓰면 동작하지 않는다. 임시 자격 증명은 Role을 통해 STS가 발급하며 Group과는 무관하다.
+Explanation: A Group is only a container for granting policies to users in bulk. It has no credentials, so it cannot sign in and cannot be named as a Principal. Using a Group as the target of AssumeRole or as a Principal in a trust policy simply does not work. Temporary credentials are issued by STS through a Role and have nothing to do with Groups.
 
 ---
 
-**Question 4.** 한 개발자에게 `AmazonS3FullAccess`가 부여돼 있지만, 어떤 정책도 명시적으로 허용하지 않은 `dynamodb:GetItem`을 호출하려 한다. 결과와 그 이유로 옳은 것은?
+**Question 4.** A developer has been granted `AmazonS3FullAccess` but tries to call `dynamodb:GetItem`, which no policy explicitly allows. Which outcome and reason are correct?
 
-A) 허용 — 명시적 Deny가 없으므로 기본적으로 허용된다  
-B) 거부 — 어떤 정책도 해당 Action을 Allow하지 않아 암묵적 Deny가 적용된다  
-C) 허용 — S3 권한이 있으면 DynamoDB도 자동으로 허용된다  
-D) 거부 — DynamoDB는 IAM으로 통제되지 않기 때문이다  
+A) Allowed — there is no explicit Deny, so it is permitted by default  
+B) Denied — no policy Allows the action, so the implicit Deny applies  
+C) Allowed — having S3 permissions automatically grants DynamoDB as well  
+D) Denied — because DynamoDB is not controlled by IAM  
 
 **Answer: B**  
-Explanation: IAM의 기본 상태는 암묵적 Deny이며 권한은 명시적으로 부여돼야 한다. S3 권한은 DynamoDB Action과 무관하므로, `dynamodb:GetItem`을 허용하는 명시적 Allow가 없으면 암묵적 Deny로 거부된다. 명시적 Deny가 없다고 자동 허용되는 것은 아니며, DynamoDB도 당연히 IAM으로 통제된다.
+Explanation: IAM's default state is an implicit Deny, and permissions must be granted explicitly. S3 permissions have nothing to do with DynamoDB actions, so without an explicit Allow for `dynamodb:GetItem` the request is denied by the implicit Deny. The absence of an explicit Deny does not mean automatic permission, and DynamoDB is of course governed by IAM.
 
 ---
 
-**Question 5.** 보안팀이 모든 멤버 계정에서 누구도(admin·root 포함) CloudTrail을 비활성화하지 못하게 강제하려 한다. 가장 적절한 방법은?
+**Question 5.** A security team wants to enforce that nobody — including admins and root — can disable CloudTrail in any member account. Which approach is most appropriate?
 
-A) 각 계정의 모든 IAM 사용자 정책에 CloudTrail Deny를 일일이 추가한다  
-B) SCP에 `cloudtrail:StopLogging`과 `cloudtrail:DeleteTrail`에 대한 Deny를 작성해 OU에 적용한다  
-C) CloudTrail에 리소스 기반 정책으로 Deny를 설정한다  
-D) GuardDuty로 CloudTrail 비활성화를 탐지해 알림만 보낸다  
+A) Add a CloudTrail Deny to every IAM user policy in each account, one by one  
+B) Write a Deny on `cloudtrail:StopLogging` and `cloudtrail:DeleteTrail` in an SCP and apply it to the OU  
+C) Set a Deny on CloudTrail through a resource-based policy  
+D) Use GuardDuty to detect CloudTrail being disabled and just send an alert  
 
 **Answer: B**  
-Explanation: SCP의 명시적 Deny는 멤버 계정의 admin과 root에까지 적용되는 조직 가드레일이므로, CloudTrail 중단·삭제 Action을 Deny로 묶으면 누구도 끌 수 없다. 사용자별 정책 추가는 누락 위험이 크고, CloudTrail은 리소스 기반 정책으로 이런 통제를 하지 않으며, GuardDuty 탐지는 사후 알림일 뿐 비활성화 자체를 막지 못한다.
+Explanation: An explicit Deny in an SCP is an organizational guardrail that applies even to the admins and the root user of member accounts, so denying the CloudTrail stop and delete actions means nobody can turn it off. Adding per-user policies risks omissions, CloudTrail does not implement this kind of control through a resource-based policy, and GuardDuty detection is an after-the-fact alert that does not prevent the deactivation itself.
 
 ---

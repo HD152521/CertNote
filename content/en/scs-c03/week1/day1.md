@@ -116,62 +116,62 @@ Starting tomorrow, we enter IAM, the spine of that chain. Once you understand wh
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 회사가 Amazon RDS for PostgreSQL을 사용 중이다. 공동 책임 모델에서 **AWS의 책임**에 해당하는 것은?
+**Question 1.** A company is using Amazon RDS for PostgreSQL. Under the shared responsibility model, which of the following is **AWS's responsibility**?
 
-A) 데이터베이스에 저장되는 PII의 분류와 암호화 활성화 결정  
-B) 데이터베이스 사용자 계정과 IAM 인증 정책 구성  
-C) 데이터베이스 엔진의 보안 패치 적용  
-D) 보안 그룹으로 DB 포트 접근을 제한하는 설정  
+A) Classifying the PII stored in the database and deciding whether to enable encryption  
+B) Configuring database user accounts and IAM authentication policies  
+C) Applying security patches to the database engine  
+D) Restricting access to the DB port with a security group  
 
 **Answer: C**  
-Explanation: RDS는 관리형(PaaS) 서비스라서 엔진·OS의 패치는 AWS가 책임진다(고객은 유지보수 윈도우만 관리). 데이터 분류·암호화 활성화 여부, DB 사용자/IAM 인증, 보안 그룹 설정은 모두 "클라우드 안(in the cloud)"의 고객 책임이다. 데이터와 접근제어는 어떤 서비스 유형에서도 AWS로 넘어가지 않는다는 점이 핵심이다.
+Explanation: RDS is a managed (PaaS) service, so AWS is responsible for patching the engine and the OS (the customer only manages the maintenance window). Data classification, whether encryption is enabled, DB users and IAM authentication, and security group settings are all customer responsibilities "in the cloud." The key point is that responsibility for data and access control never transfers to AWS, no matter the service type.
 
 ---
 
-**Question 2.** 다음 중 **예방(preventive) 통제**가 아닌 것은?
+**Question 2.** Which of the following is **not** a preventive control?
 
-A) SCP로 특정 리전 외 EC2 실행을 deny  
-B) KMS 키 정책으로 특정 계정만 복호화 허용  
-C) GuardDuty로 비정상 API 호출 패턴을 탐지  
-D) 보안 그룹으로 인바운드 트래픽을 443만 허용  
+A) Using an SCP to deny EC2 launches outside a specific Region  
+B) Using a KMS key policy to allow decryption only from specific accounts  
+C) Using GuardDuty to detect anomalous API call patterns  
+D) Using a security group to allow inbound traffic on 443 only  
 
 **Answer: C**  
-Explanation: GuardDuty는 이미 발생한(또는 발생 중인) 위협을 알아채는 탐지(detective) 통제다. SCP·KMS 키 정책·보안 그룹은 모두 행위가 일어나기 전에 막는 예방 통제다. "탐지"는 사고를 막지 못하고 알아챌 뿐이라는 차이가 통제 유형 분류의 핵심이며, 시험에서 "가장 먼저 사고를 막을 방법"을 물으면 예방 통제가 답이 된다.
+Explanation: GuardDuty is a detective control that notices threats that have already happened (or are in progress). SCPs, KMS key policies, and security groups are all preventive controls that block an action before it occurs. The distinction — detection does not stop an incident, it only notices one — is the heart of control-type classification, and when the exam asks for "the way to stop the incident first," the answer is a preventive control.
 
 ---
 
-**Question 3.** SCS-C03 도메인 중 가중치가 가장 높은 영역과, 그 영역이 다루는 주제로 가장 적절한 조합은?
+**Question 3.** Which combination correctly pairs the highest-weighted SCS-C03 domain with the topics it covers?
 
-A) Identity and Access Management — KMS 키 회전 정책  
-B) Infrastructure Security — VPC·보안 그룹·WAF 등 네트워크 경계 방어  
-C) Data Protection — Organizations SCP로 조직 거버넌스  
-D) Threat Detection and Incident Response — CloudTrail 로그 보존 정책  
+A) Identity and Access Management — KMS key rotation policies  
+B) Infrastructure Security — network perimeter defense such as VPC, security groups, and WAF  
+C) Data Protection — organizational governance with Organizations SCPs  
+D) Threat Detection and Incident Response — CloudTrail log retention policies  
 
 **Answer: B**  
-Explanation: 가중치가 가장 높은 도메인은 Infrastructure Security(20%)이고, VPC·보안 그룹·NACL·WAF·Shield 같은 네트워크 경계 방어를 다룬다. KMS는 Data Protection, SCP는 Management and Governance, CloudTrail 보존은 Logging and Monitoring 영역으로, 나머지 보기는 도메인과 주제가 어긋나 있다.
+Explanation: The highest-weighted domain is Infrastructure Security (20%), and it covers network perimeter defense such as VPC, security groups, NACLs, WAF, and Shield. KMS belongs to Data Protection, SCPs to Management and Governance, and CloudTrail retention to Logging and Monitoring — so in every other option the domain and the topic are mismatched.
 
 ---
 
-**Question 4.** 멀티 계정 환경에서 GuardDuty와 Security Hub를 운영할 때 AWS 모범 사례로 가장 적절한 것은?
+**Question 4.** When operating GuardDuty and Security Hub in a multi-account environment, which is the most appropriate AWS best practice?
 
-A) Management 계정에서 직접 GuardDuty와 Security Hub를 운영한다  
-B) 각 워크로드 계정이 독립적으로 GuardDuty를 켜고 개별 관리한다  
-C) 별도의 Security Tooling 계정을 delegated administrator로 지정해 조직 전체를 집계한다  
-D) Log Archive 계정에서 GuardDuty를 운영해 로그와 탐지를 한곳에 둔다  
+A) Operate GuardDuty and Security Hub directly from the management account  
+B) Have each workload account enable and manage GuardDuty independently  
+C) Designate a separate Security Tooling account as the delegated administrator and aggregate across the whole organization  
+D) Operate GuardDuty from the Log Archive account so that logs and detection live in one place  
 
 **Answer: C**  
-Explanation: GuardDuty·Security Hub·Macie·Config는 delegated administrator(위임 관리자) 패턴을 지원하며, 전용 Security Tooling 계정에 위임하는 것이 모범 사례다. Management 계정은 billing·조직 관리만 맡아야 폭발 반경이 작아지고, 워크로드 계정별 개별 운영은 가시성이 파편화된다. Log Archive 계정은 로그 불변 저장 전용이라 보안 운영 도구를 두지 않는다.
+Explanation: GuardDuty, Security Hub, Macie, and Config all support the delegated administrator pattern, and delegating to a dedicated Security Tooling account is the best practice. The management account should handle only billing and organization management so that the blast radius stays small, and running detection per workload account fragments visibility. The Log Archive account is reserved for immutable log storage, so security operations tooling does not belong there.
 
 ---
 
-**Question 5.** S3 버킷의 PII가 외부에 유출되는 사고가 발생했다. 조사 결과 버킷이 public-read로 설정돼 있었다. 공동 책임 모델 관점에서 가장 정확한 판단은?
+**Question 5.** PII in an S3 bucket was leaked externally. The investigation found that the bucket had been set to public-read. From the perspective of the shared responsibility model, which judgment is most accurate?
 
-A) S3 인프라가 뚫린 것이므로 AWS의 책임이다  
-B) 버킷 접근제어 설정은 고객 책임이므로 고객의 구성 오류다  
-C) 데이터 내구성 문제이므로 AWS와 고객이 절반씩 책임진다  
-D) S3는 SaaS이므로 데이터 보호 책임 전부가 AWS에 있다  
+A) The S3 infrastructure was breached, so this is AWS's responsibility  
+B) Bucket access control settings are the customer's responsibility, so this is a customer misconfiguration  
+C) This is a data durability problem, so AWS and the customer share responsibility equally  
+D) S3 is SaaS, so all data protection responsibility lies with AWS  
 
 **Answer: B**  
-Explanation: S3의 내구성·가용성·물리 인프라는 AWS 책임이지만, 버킷 정책·ACL·Block Public Access 같은 접근제어 설정은 100% 고객 책임이다. SaaS 성격이 강한 S3라도 데이터 분류와 접근제어 책임은 절대 AWS로 넘어가지 않는다. 이런 사고를 막기 위해 AWS는 Block Public Access를 기본 통제로 강제하는 방향으로 발전시켰다.
+Explanation: Durability, availability, and physical infrastructure for S3 are AWS's responsibility, but access control settings such as bucket policies, ACLs, and Block Public Access are 100% the customer's. Even for S3, which has strong SaaS characteristics, responsibility for data classification and access control never transfers to AWS. To prevent exactly this kind of incident, AWS evolved toward enforcing Block Public Access as a default control.
 
 ---
