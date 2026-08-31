@@ -1,5 +1,5 @@
 import { ExternalLink, Lightbulb, HelpCircle } from 'lucide-react';
-import { getExamTips, type ExamInfo } from '@/lib/examInfo';
+import { formatCost, getExamTips, type ExamInfo } from '@/lib/examInfo';
 import BulletList from '@/components/ui/BulletList';
 import type { Language } from '@/lib/i18n-client';
 
@@ -39,6 +39,8 @@ function MetaRow({ label, value }: MetaRowProps) {
 
 export default function ExamInfoCard({ info, lang, section }: ExamInfoCardProps) {
   const tips = getExamTips(section);
+  // 도메인 배점 비중은 전부 있거나 전부 없다고 본다(일부만 있으면 막대가 뒤섞여 오해를 부른다).
+  const hasWeights = info.domains.every((d) => typeof d.weight === 'number');
 
   return (
     <section
@@ -56,41 +58,89 @@ export default function ExamInfoCard({ info, lang, section }: ExamInfoCardProps)
         )}
       </div>
 
-      {/* 핵심 수치: 모바일 2열, sm 3열, lg 5열로 깔끔하게 줄바꿈 */}
+      {/* 핵심 수치. 단일 응시 시험(AWS)은 5칸 그리드, 다단계 시험(리눅스마스터 1차/2차)은
+          단계별로 값이 달라 그리드에 넣을 수 없으므로 아래 단계 표로 대체한다.
+          합격 기준·유효기간은 단계와 무관한 값이라 어느 형태든 여기 남는다. */}
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        <Fact label={lang === 'en' ? 'Questions' : '문항 수'} value={`${info.questionCount}${lang === 'en' ? '' : '문항'}`} />
-        <Fact label={lang === 'en' ? 'Duration' : '시험 시간'} value={`${info.durationMin}${lang === 'en' ? 'min' : '분'}`} />
-        <Fact label={lang === 'en' ? 'Pass Score' : '합격 점수'} value={`${info.passingScore} / ${info.scoreMax}`} />
-        <Fact label={lang === 'en' ? 'Cost' : '응시료'} value={`$${info.costUsd}`} />
-        <Fact label={lang === 'en' ? 'Validity' : '유효기간'} value={`${info.validityYears}${lang === 'en' ? 'y' : '년'}`} />
+        {info.questionCount !== undefined && (
+          <Fact label={lang === 'en' ? 'Questions' : '문항 수'} value={`${info.questionCount}${lang === 'en' ? '' : '문항'}`} />
+        )}
+        {info.durationMin !== undefined && (
+          <Fact label={lang === 'en' ? 'Duration' : '시험 시간'} value={`${info.durationMin}${lang === 'en' ? 'min' : '분'}`} />
+        )}
+        <Fact
+          label={lang === 'en' ? 'Passing' : '합격 기준'}
+          value={info.passingCriteria ?? `${info.passingScore} / ${info.scoreMax}`}
+        />
+        {info.costUsd !== undefined && (
+          <Fact label={lang === 'en' ? 'Cost' : '응시료'} value={`$${info.costUsd}`} />
+        )}
+        {/* 갱신 규정이 없는 자격은 이 칸 자체를 내린다 — '정보 없음'을 적는 것보다 정직하다. */}
+        {info.validityYears !== undefined && (
+          <Fact label={lang === 'en' ? 'Validity' : '유효기간'} value={`${info.validityYears}${lang === 'en' ? 'y' : '년'}`} />
+        )}
       </dl>
 
-      {/* 도메인 비중: 가로 막대 (대시보드 도메인 막대 스타일 재사용) */}
-      <div className="space-y-2.5">
-        <h3 className="text-xs font-medium uppercase tracking-wider text-fg-faint">
-          {lang === 'en' ? 'Domain Weights' : '도메인 비중'}
-        </h3>
-        <div className="space-y-2.5">
-          {info.domains.map((d) => (
-            <div key={d.name}>
-              <div className="mb-1 flex items-center justify-between gap-3 text-xs">
-                <span className="min-w-0 flex-1 truncate text-fg">{d.name}</span>
-                <span className="shrink-0 tabular-nums text-fg-muted">{d.weight}%</span>
-              </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-bg-subtle">
-                <div
-                  className="h-full rounded-full bg-accent"
-                  style={{ width: `${d.weight}%` }}
-                />
-              </div>
-            </div>
-          ))}
+      {/* 단계별 상세(다단계 시험 전용). 좁은 화면에서 가로 스크롤되게 감싼다. */}
+      {info.phases && info.phases.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[32rem] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-xs text-fg-faint">
+                <th scope="col" className="pb-2 pr-3 font-medium">{lang === 'en' ? 'Stage' : '단계'}</th>
+                <th scope="col" className="pb-2 pr-3 font-medium">{lang === 'en' ? 'Questions' : '문항'}</th>
+                <th scope="col" className="pb-2 pr-3 font-medium">{lang === 'en' ? 'Duration' : '시간'}</th>
+                <th scope="col" className="pb-2 pr-3 font-medium">{lang === 'en' ? 'Format' : '형식'}</th>
+                <th scope="col" className="pb-2 font-medium">{lang === 'en' ? 'Cost' : '응시료'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {info.phases.map((ph) => (
+                <tr key={ph.name} className="border-b border-border/60 last:border-0 align-top">
+                  <th scope="row" className="py-2 pr-3 text-left font-medium text-fg">{ph.name}</th>
+                  <td className="py-2 pr-3 tabular-nums text-fg-muted">{ph.questionCount}</td>
+                  <td className="py-2 pr-3 tabular-nums text-fg-muted">{ph.durationMin}{lang === 'en' ? 'min' : '분'}</td>
+                  <td className="py-2 pr-3 text-fg-muted">{ph.format}</td>
+                  <td className="py-2 tabular-nums text-fg-muted">{ph.cost ? formatCost(ph.cost) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </div>
+      )}
+
+      {/* 도메인. 배점 비중이 고시된 시험만 막대를 그린다 — 비중을 모르는데 막대를 그리면
+          길이 자체가 거짓 정보가 되므로, 그런 시험은 과목 목록으로만 표기한다. */}
+      {info.domains.length > 0 && (
+        <div className="space-y-2.5">
+          <h3 className="text-xs font-medium uppercase tracking-wider text-fg-faint">
+            {hasWeights
+              ? lang === 'en' ? 'Domain Weights' : '도메인 비중'
+              : lang === 'en' ? 'Subjects' : '과목'}
+          </h3>
+          {hasWeights ? (
+            <div className="space-y-2.5">
+              {info.domains.map((d) => (
+                <div key={d.name}>
+                  <div className="mb-1 flex items-center justify-between gap-3 text-xs">
+                    <span className="min-w-0 flex-1 truncate text-fg">{d.name}</span>
+                    <span className="shrink-0 tabular-nums text-fg-muted">{d.weight}%</span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-bg-subtle">
+                    <div className="h-full rounded-full bg-accent" style={{ width: `${d.weight}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <BulletList items={info.domains.map((d) => d.name)} />
+          )}
+        </div>
+      )}
 
       {/* 형식 / 선수지식 / 언어 */}
       <div className="space-y-2 border-t border-border pt-4">
-        <MetaRow label={lang === 'en' ? 'Format' : '형식'} value={info.format} />
+        {info.format && <MetaRow label={lang === 'en' ? 'Format' : '형식'} value={info.format} />}
         <MetaRow label={lang === 'en' ? 'Prerequisites' : '선수지식'} value={info.prerequisites} />
         <MetaRow label={lang === 'en' ? 'Languages' : '언어'} value={info.languages.join(', ')} />
       </div>
