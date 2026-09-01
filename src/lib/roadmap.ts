@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { DEFAULT_CATEGORY } from './category';
 import { certHref, getCertMeta } from './content';
+import { getExamInfo, type ExamInfo } from './examInfo';
 
 // 직무별 자격증 로드맵. "어떤 직무를 노리느냐에 따라 자격증을 어떤 순서로 딸까"를 안내하는
 // 정보 페이지(사용자 요구: 정보페이지 하나 + 직무별 순서)의 단일 데이터 소스.
@@ -17,10 +18,18 @@ export interface RoadmapRole {
   title: string;
   tagline: string;
   description: string;
+  // 이 순서를 쓰는 이유(역할마다 고유한 산문). 6개 역할 페이지가 서로 중복으로 접히지 않게
+  // 하는 유일한 재료다 — 자격증 목록과 시험 사실은 역할끼리 겹치기 때문에 차별화가 안 된다.
+  // 선택 필드: 없으면 문단을 생략한다(기존 데이터 하위호환).
+  why?: string;
   steps: RoadmapStep[];
 }
 
 // cert 메타를 결합한 렌더용 단계.
+//
+// weeks/dayCount(커리큘럼 분량)와 exam(공식 시험 정보)을 함께 싣는다. 이 값들은 **자격증마다
+// 달라지므로 역할 페이지마다 다른 사실**이 된다 — 6개 역할 페이지가 공통 설명만 나열해 서로
+// 유사해지는 것(중복 색인)을 막는 유일한 재료다. 없는 값을 지어내지 않고 null 로 둔다.
 export interface EnrichedStep {
   slug: string;
   code: string;
@@ -28,6 +37,18 @@ export interface EnrichedStep {
   level: string;
   href: string; // 공개 URL (/aws/<slug> 등)
   note: string;
+  weeks: number;
+  dayCount: number;
+  exam: ExamInfo | null; // content/exam-info/<slug>.json 없으면 null(리눅스 등)
+}
+
+// 역할 단위 합계. 표시용이지 계산의 권위가 아니므로, **하나라도 모르면 합계를 내지 않는다**
+// (모르는 값을 0으로 더하면 화면에 조용히 틀린 총액이 나간다).
+export interface RoadmapTotals {
+  certCount: number;
+  weeks: number;
+  days: number;
+  costUsd: number | null;
 }
 
 export interface EnrichedRole {
@@ -35,7 +56,9 @@ export interface EnrichedRole {
   title: string;
   tagline: string;
   description: string;
+  why?: string;
   steps: EnrichedStep[];
+  totals: RoadmapTotals;
 }
 
 const ROADMAP_FILE = path.join(process.cwd(), 'content', 'roadmaps.json');
@@ -53,6 +76,7 @@ function isRoadmapRole(value: unknown): value is RoadmapRole {
     typeof v.title === 'string' &&
     typeof v.tagline === 'string' &&
     typeof v.description === 'string' &&
+    (v.why === undefined || typeof v.why === 'string') &&
     Array.isArray(v.steps) &&
     v.steps.every(
       (s) =>
@@ -95,12 +119,34 @@ async function enrichRole(role: RoadmapRole): Promise<EnrichedRole> {
         level: meta.level,
         href: certHref(meta),
         note: step.note,
+        weeks: meta.weeks,
+        dayCount: meta.dayCount,
+        exam: getExamInfo(meta.slug),
       });
     } catch {
       // 존재하지 않는 자격증 — 이 단계만 생략.
     }
   }
-  return { slug: role.slug, title: role.title, tagline: role.tagline, description: role.description, steps };
+  return {
+    slug: role.slug,
+    title: role.title,
+    tagline: role.tagline,
+    description: role.description,
+    ...(role.why ? { why: role.why } : {}),
+    steps,
+    totals: totalsOf(steps),
+  };
+}
+
+// 단계 합계. costUsd 는 전 단계의 시험 정보가 있을 때만 낸다(부분 합계는 오해를 부른다).
+export function totalsOf(steps: EnrichedStep[]): RoadmapTotals {
+  const allPriced = steps.length > 0 && steps.every((s) => s.exam !== null);
+  return {
+    certCount: steps.length,
+    weeks: steps.reduce((n, s) => n + s.weeks, 0),
+    days: steps.reduce((n, s) => n + s.dayCount, 0),
+    costUsd: allPriced ? steps.reduce((n, s) => n + (s.exam as ExamInfo).costUsd, 0) : null,
+  };
 }
 
 // 모든 직무 로드맵(enrich 완료). 단계가 하나도 남지 않은 역할은 제외한다.
