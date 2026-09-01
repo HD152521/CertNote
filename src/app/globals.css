@@ -129,3 +129,10 @@ html, body {
 .article blockquote p:first-child { margin-top: 0; }
 .article blockquote p:last-child { margin-bottom: 0; }
 .article blockquote strong:first-child { color: var(--accent); }
+
+/* === 핵심 정리 카드(SummaryCard) 안의 .article — 여백을 카드에 맞게 줄인다 === */
+.article--summary ul, .article--summary ol { margin: 0; padding-left: 1.25rem; }
+.article--summary li { margin: 0.4rem 0; }
+.article--summary li:first-child { margin-top: 0; }
+.article--summary li:last-child { margin-bottom: 0; }
+.article--summary p { margin: 0.4rem 0; }
