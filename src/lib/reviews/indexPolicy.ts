@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { getAggregate } from './reviewsRepository';
+import type { ReviewAggregate } from './types';
 
 // 후기 페이지의 색인 정책 단일 출처.
 //
@@ -22,4 +24,26 @@ export const REVIEW_INDEX_MIN = 3;
  */
 export function reviewRobots(count: number): Pick<Metadata, 'robots'> | Record<string, never> {
   return count < REVIEW_INDEX_MIN ? { robots: { index: false, follow: true } } : {};
+}
+
+/**
+ * generateMetadata 전용 집계 조회. **어떤 에러에서도 던지지 않는다.**
+ *
+ * reviewsRepository 의 graceful 처리는 테이블 부재(42P01)만 삼킨다. 그런데 metadata 경로에서는
+ * 그 밖의 실패(DATABASE_URL 미설정, 커넥션 장애)도 페이지 전체를 죽인다 — 실제로 로컬에서
+ * `DATABASE_URL 환경변수가 설정되지 않았습니다` 로 후기 허브가 렌더되지 않는 것을 확인했다.
+ *
+ * 실패 시 count 0 으로 떨어뜨린다. "모르면 색인하지 않는다"가 안전한 기본값이다 — 후기를
+ * 못 읽는 상태면 본문도 비어 있고, 그대로 색인되면 thin content 가 굳는다. 반대로 기본값을
+ * '색인 허용'으로 두면 DB 장애가 곧 thin 페이지 색인으로 이어진다.
+ *
+ * 리포지토리 자체를 이렇게 바꾸지 않는 이유: 쓰기 경로(createReview)와 관리자 조회는 실패를
+ * 삼키면 안 된다. 관대함은 metadata 경로에만 한정한다.
+ */
+export async function safeAggregate(section: string, certSlug: string | null): Promise<ReviewAggregate> {
+  try {
+    return await getAggregate(section, certSlug);
+  } catch {
+    return { count: 0, average: 0 };
+  }
 }
