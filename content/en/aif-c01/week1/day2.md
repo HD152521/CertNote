@@ -99,64 +99,64 @@ Even with the same "customer data," the learning type differs depending on the o
 - Reinforcement learning learns optimal actions through trial and error driven by rewards.
 - Be sure to remember that the difference between classification and clustering is "the presence or absence of answer labels."
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** Which approach trains a model on input data given together with answers (labels), so that the model learns to predict those answers?
+**Question 1.** Which approach trains a model on input data given together with answers (labels), so that the model learns to predict those answers?
 
 A) Unsupervised learning  
 B) Supervised learning  
 C) Reinforcement learning  
 D) Transfer learning  
 
-**정답: B**  
-해설: The approach in which inputs and answers are given as pairs and the model learns to predict the answers is supervised learning. Unsupervised learning has no answers, and reinforcement learning uses rewards instead of answers.
+**Answer: B**  
+Explanation: The approach in which inputs and answers are given as pairs and the model learns to predict the answers is supervised learning. Unsupervised learning has no answers, and reinforcement learning uses rewards instead of answers.
 
 ---
 
-**문제 2.** You want to take inputs such as a house's floor area and number of rooms and predict its "expected sale price (a numeric amount)." Which task is most appropriate?
+**Question 2.** You want to take inputs such as a house's floor area and number of rooms and predict its "expected sale price (a numeric amount)." Which task is most appropriate?
 
 A) Classification  
 B) Clustering  
 C) Regression  
 D) Dimensionality Reduction  
 
-**정답: C**  
-해설: Since the output is a continuous numeric value — a price — this is regression. Classification is for predicting categories, and clustering and dimensionality reduction are unsupervised learning tasks with no answers.
+**Answer: C**  
+Explanation: Since the output is a continuous numeric value — a price — this is regression. Classification is for predicting categories, and clustering and dimensionality reduction are unsupervised learning tasks with no answers.
 
 ---
 
-**문제 3.** You want to automatically group customers with similar tendencies from customer data that has no answer labels at all. Which task is most suitable?
+**Question 3.** You want to automatically group customers with similar tendencies from customer data that has no answer labels at all. Which task is most suitable?
 
 A) Regression  
 B) Clustering  
 C) Classification  
 D) Reinforcement learning  
 
-**정답: B**  
-해설: Grouping similar data without answers is clustering, an unsupervised learning task. Classification and regression are supervised learning with answers, and reinforcement learning is a reward-based trial-and-error approach.
+**Answer: B**  
+Explanation: Grouping similar data without answers is clustering, an unsupervised learning task. Classification and regression are supervised learning with answers, and reinforcement learning is a reward-based trial-and-error approach.
 
 ---
 
-**문제 4.** Which statement best describes how reinforcement learning works?
+**Question 4.** Which statement best describes how reinforcement learning works?
 
 A) It memorizes prepared answer data as-is  
 B) It learns through trial and error to maximize the rewards received as a result of its actions  
 C) It groups data into similar clusters without answers  
 D) It predicts numeric values by looking at input-answer pairs  
 
-**정답: B**  
-해설: In reinforcement learning, the agent learns an action strategy through trial and error to maximize the rewards received while interacting with the environment. Memorizing answers or learning from input-answer pairs is supervised learning, and grouping into clusters is unsupervised learning.
+**Answer: B**  
+Explanation: In reinforcement learning, the agent learns an action strategy through trial and error to maximize the rewards received while interacting with the environment. Memorizing answers or learning from input-answer pairs is supervised learning, and grouping into clusters is unsupervised learning.
 
 ---
 
-**문제 5.** What is the most essential difference between classification (supervised learning) and clustering (unsupervised learning)?
+**Question 5.** What is the most essential difference between classification (supervised learning) and clustering (unsupervised learning)?
 
 A) Classification predicts numbers, clustering predicts categories  
 B) Classification uses answer labels, while clustering groups by similarity without answers  
 C) Classification uses rewards, clustering uses answers  
 D) There is no difference since both use answer labels  
 
-**정답: B**  
-해설: Classification is supervised learning trained on predefined answer categories, while clustering is unsupervised learning that groups similar data without answers. Both divide things into groups, but the presence or absence of answer labels is the key difference. Predicting numbers is regression, and rewards are a feature of reinforcement learning.
+**Answer: B**  
+Explanation: Classification is supervised learning trained on predefined answer categories, while clustering is unsupervised learning that groups similar data without answers. Both divide things into groups, but the presence or absence of answer labels is the key difference. Predicting numbers is regression, and rewards are a feature of reinforcement learning.
 
 ---

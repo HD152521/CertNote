@@ -206,98 +206,98 @@ In the next article, we reinterpret the Well-Architected Framework from a DevOps
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A company reported the following state: deployment cycle of once per month, average commit-to-prod time of 14 days, incident rate of 28% per deployment, and average incident recovery time of 36 hours. How would you classify this under DORA ratings?
+**Question 1.** A company reported the following state: deployment cycle of once per month, average commit-to-prod time of 14 days, incident rate of 28% per deployment, and average incident recovery time of 36 hours. How would you classify this under DORA ratings?
 
 A) Elite
 B) High
 C) Medium
 D) Low
 
-**정답: D**
-해설: All four metrics fall in the Low range. Deployment frequency of once per month (Low: less than once per month), lead time of 14 days (Low: 1 week ~ 1 month), CFR of 28% (borderline Low/Medium, but with all other metrics at Low, it's Low), MTTR of 36 hours (Low: 1 day ~ 1 week). The more important analysis is "where do you start?" — with Automation. When CALMS's A axis has collapsed, Lean (small batches), Measurement (data), and MTTR improvement are all blocked. Lay down the CodePipeline + CodeBuild + CodeDeploy automation trio first, then add CloudWatch metric collection on top.
+**Answer: D**
+Explanation: All four metrics fall in the Low range. Deployment frequency of once per month (Low: less than once per month), lead time of 14 days (Low: 1 week ~ 1 month), CFR of 28% (borderline Low/Medium, but with all other metrics at Low, it's Low), MTTR of 36 hours (Low: 1 day ~ 1 week). The more important analysis is "where do you start?" — with Automation. When CALMS's A axis has collapsed, Lean (small batches), Measurement (data), and MTTR improvement are all blocked. Lay down the CodePipeline + CodeBuild + CodeDeploy automation trio first, then add CloudWatch metric collection on top.
 
 ---
 
-**문제 2.** Which of the following is furthest from being a consequence of Werner Vogels's "You Build It, You Run It" principle reflected in AWS tool design?
+**Question 2.** Which of the following is furthest from being a consequence of Werner Vogels's "You Build It, You Run It" principle reflected in AWS tool design?
 
 A) CodePipeline lets teams define their own pipelines directly
 B) CloudWatch lets teams build per-service dashboards themselves
 C) On AWS, a central NOC model where a dedicated operations team receives all service alarms is recommended
 D) X-Ray lets developers analyze trace data themselves
 
-**정답: C**
-해설: AWS's default assumption is "the team that built a service also operates it," not "a central NOC receives all alarms." Options on the exam like "establish a dedicated operations team" or "central monitoring team" are almost always traps. In the SRE model there is a separate SRE team, but even there responsibility is shared based on SLOs — the SRE team does not take over all operations.
+**Answer: C**
+Explanation: AWS's default assumption is "the team that built a service also operates it," not "a central NOC receives all alarms." Options on the exam like "establish a dedicated operations team" or "central monitoring team" are almost always traps. In the SRE model there is a separate SRE team, but even there responsibility is shared based on SLOs — the SRE team does not take over all operations.
 
 ---
 
-**문제 3.** A team's Deployment Frequency is at Elite level with 5 deployments per day, but its Change Failure Rate is very high at 45%. What is the highest-priority improvement?
+**Question 3.** A team's Deployment Frequency is at Elite level with 5 deployments per day, but its Change Failure Rate is very high at 45%. What is the highest-priority improvement?
 
 A) Reduce deployment frequency to once per day
 B) Introduce canary deployments + automatic rollback
 C) Enforce manual approval on all deployments
 D) Stop measuring DORA
 
-**정답: B**
-해설: DORA's core finding is that speed and stability are positively correlated, not a trade-off. Reducing frequency is the wrong prescription. A CFR of 45% is a signal that "deployment automation exists but verification automation is lacking," and the answer is canary deployments (Lambda alias + traffic shifting, CodeDeploy Blue/Green) and automatic rollback based on CloudWatch Alarms. Manual approval increases lead time without truly preventing incidents (the approver is also human and makes the same mistakes). Stopping DORA measurement is putting the cart before the horse.
+**Answer: B**
+Explanation: DORA's core finding is that speed and stability are positively correlated, not a trade-off. Reducing frequency is the wrong prescription. A CFR of 45% is a signal that "deployment automation exists but verification automation is lacking," and the answer is canary deployments (Lambda alias + traffic shifting, CodeDeploy Blue/Green) and automatic rollback based on CloudWatch Alarms. Manual approval increases lead time without truly preventing incidents (the approver is also human and makes the same mistakes). Stopping DORA measurement is putting the cart before the horse.
 
 ---
 
-**문제 4.** A company wants to adopt a GitOps model in an EKS environment. Between push-based (CodePipeline deploys to the cluster) and pull-based (ArgoCD polls Git), which model is more advantageous in a multi-account, multi-cluster environment, and why?
+**Question 4.** A company wants to adopt a GitOps model in an EKS environment. Between push-based (CodePipeline deploys to the cluster) and pull-based (ArgoCD polls Git), which model is more advantageous in a multi-account, multi-cluster environment, and why?
 
 A) push-based — central control guarantees consistency
 B) push-based — faster deployment
 C) pull-based — each cluster only needs git read access, minimizing credential exposure
 D) pull-based — unconditionally faster
 
-**정답: C**
-해설: The key advantage of pull-based GitOps is **clarity of the security boundary**. Push-based requires the central CI/CD system to hold admin credentials for every cluster; if these are exposed, every cluster is at risk at once. Pull-based only requires each cluster to have read-only access to Git, and cluster credentials exist only inside the cluster. In multi-account environments, the cross-account IAM boundary also becomes simpler (no push permissions needed from the center to each account). Speed depends on the polling interval but is usually not a big difference. On AWS, EKS + ArgoCD is the most common combination.
+**Answer: C**
+Explanation: The key advantage of pull-based GitOps is **clarity of the security boundary**. Push-based requires the central CI/CD system to hold admin credentials for every cluster; if these are exposed, every cluster is at risk at once. Pull-based only requires each cluster to have read-only access to Git, and cluster credentials exist only inside the cluster. In multi-account environments, the cross-account IAM boundary also becomes simpler (no push permissions needed from the center to each account). Speed depends on the polling interval but is usually not a big difference. On AWS, EKS + ArgoCD is the most common combination.
 
 ---
 
-**문제 5.** Among CALMS's five axes, which other axes are directly affected when "Measurement" is not fulfilled?
+**Question 5.** Among CALMS's five axes, which other axes are directly affected when "Measurement" is not fulfilled?
 
 A) Culture only
 B) Culture and Lean
 C) Automation only
 D) Sharing only
 
-**정답: B**
-해설: Without Measurement, ① Culture becomes based on "gut feeling" instead of data (you can't objectively pin down incident causes, so blameless is hard, and you can't measure who did well), and ② Lean collapses (Lean indicators like WIP and cycle time can't be measured, so you can't prioritize improvements). Sharing is affected too, but not directly; Automation can still be installed as tooling without measurement (you just can't verify its effect). Trap options like "improve operations without data" appear frequently on the exam.
+**Answer: B**
+Explanation: Without Measurement, ① Culture becomes based on "gut feeling" instead of data (you can't objectively pin down incident causes, so blameless is hard, and you can't measure who did well), and ② Lean collapses (Lean indicators like WIP and cycle time can't be measured, so you can't prioritize improvements). Sharing is affected too, but not directly; Automation can still be installed as tooling without measurement (you just can't verify its effect). Trap options like "improve operations without data" appear frequently on the exam.
 
 ---
 
-**문제 6.** What is an appropriate pattern for implementing SRE's Error Budget concept on AWS?
+**Question 6.** What is an appropriate pattern for implementing SRE's Error Budget concept on AWS?
 
 A) CloudWatch Alarm → EventBridge → Lambda → CodePipeline stage disable
 B) Compute the SLO on every build in CodeBuild
 C) Keep an SLO policy file in S3 and have a person check it daily
 D) Block DNS in Route 53 when the SLO is missed
 
-**정답: A**
-해설: The essence of the Error Budget is "**SLO violation automatically leads to a deployment freeze**." Detect SLO violations with a CloudWatch Composite Alarm, receive the event via EventBridge, and have a Lambda disable the CodePipeline deployment stage (or force a Manual Approval). This must be automated to prevent humans from escalating an incident with "just one more time..." B is meaningless (SLOs are time-based, not deployment-based), C is not automated, and D — Route 53 can block traffic but not deployments.
+**Answer: A**
+Explanation: The essence of the Error Budget is "**SLO violation automatically leads to a deployment freeze**." Detect SLO violations with a CloudWatch Composite Alarm, receive the event via EventBridge, and have a Lambda disable the CodePipeline deployment stage (or force a Manual Approval). This must be automated to prevent humans from escalating an incident with "just one more time..." B is meaningless (SLOs are time-based, not deployment-based), C is not automated, and D — Route 53 can block traffic but not deployments.
 
 ---
 
-**문제 7.** As an organization accelerates from "one deployment per quarter → one deployment per day," which AWS tool combination should be laid down first?
+**Question 7.** As an organization accelerates from "one deployment per quarter → one deployment per day," which AWS tool combination should be laid down first?
 
 A) CodePipeline + CodeBuild + CodeDeploy
 B) GuardDuty + Security Hub + Config
 C) X-Ray + CloudWatch + Container Insights
 D) Route 53 + CloudFront + WAF
 
-**정답: A**
-해설: Increasing frequency means strengthening the Automation axis, and on AWS the starting point is the Code* trio. CodePipeline (orchestration) + CodeBuild (build/test) + CodeDeploy (deployment). If you start with X-Ray or GuardDuty before this is in place, you end up with "the monitoring is fancy but deployments are still once per quarter." Scenario-prioritization questions appear frequently on the exam, and the answer is almost always the "start from CALMS's weakest axis" pattern.
+**Answer: A**
+Explanation: Increasing frequency means strengthening the Automation axis, and on AWS the starting point is the Code* trio. CodePipeline (orchestration) + CodeBuild (build/test) + CodeDeploy (deployment). If you start with X-Ray or GuardDuty before this is in place, you end up with "the monitoring is fancy but deployments are still once per quarter." Scenario-prioritization questions appear frequently on the exam, and the answer is almost always the "start from CALMS's weakest axis" pattern.
 
 ---
 
-**문제 8.** Which is the most accurate description of the essential effect of a Blameless Postmortem?
+**Question 8.** Which is the most accurate description of the essential effect of a Blameless Postmortem?
 
 A) It weakens punishment of the person responsible for the incident
 B) It stops people from hiding incidents, making system flaws visible and enabling recurrence prevention
 C) It provides freedom from legal liability
 D) It reduces the frequency of incidents itself
 
-**정답: B**
-해설: The real value of blameless is not "kindness" but "**aligning incentives for information disclosure**." In a blame culture, engineers hide incidents, system flaws stay invisible, and the same incidents repeat. Blameless is a promise to "look at system flaws, not people," so engineers can honestly disclose even their own mistakes, and as a result, system improvement becomes possible. AWS's Correction of Errors (COE) process follows this model exactly. A is secondary, C is not true, and D follows as a result but is not the direct cause.
+**Answer: B**
+Explanation: The real value of blameless is not "kindness" but "**aligning incentives for information disclosure**." In a blame culture, engineers hide incidents, system flaws stay invisible, and the same incidents repeat. Blameless is a promise to "look at system flaws, not people," so engineers can honestly disclose even their own mistakes, and as a result, system improvement becomes possible. AWS's Correction of Errors (COE) process follows this model exactly. A is secondary, C is not true, and D follows as a result but is not the direct cause.

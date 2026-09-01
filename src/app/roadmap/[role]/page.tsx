@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { ArrowRight, Check } from 'lucide-react';
 import { certLevelLabel } from '@/lib/category';
 import { getRoadmapRole, loadRoadmapRoles } from '@/lib/roadmap';
+import { FREE_WEEK } from '@/lib/entitlement/policy';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 import { JsonLd } from '@/components/JsonLd';
 import { buildItemListLd, buildBreadcrumbLd } from '@/lib/structuredData';
@@ -60,6 +61,30 @@ export default async function RoadmapRolePage({ params }: PageProps) {
         <p className="text-fg-muted leading-relaxed">{role.description}</p>
       </header>
 
+      {role.why && (
+        <p className="border-l-2 border-accent/40 pl-4 leading-relaxed text-fg-muted">{role.why}</p>
+      )}
+
+      {/* 역할별 합계 — 자격증 구성이 다르면 값이 전부 달라진다(6개 역할 페이지의 차별화 재료). */}
+      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3">
+        <div className="bg-bg-elevated px-4 py-3">
+          <dt className="text-xs text-fg-muted">자격증</dt>
+          <dd className="mt-0.5 text-lg font-semibold">{role.totals.certCount}개</dd>
+        </div>
+        <div className="bg-bg-elevated px-4 py-3">
+          <dt className="text-xs text-fg-muted">커리큘럼 분량</dt>
+          <dd className="mt-0.5 text-lg font-semibold">
+            {role.totals.weeks}주 <span className="text-sm font-normal text-fg-muted">· {role.totals.days}일</span>
+          </dd>
+        </div>
+        {role.totals.costUsd !== null && (
+          <div className="bg-bg-elevated px-4 py-3">
+            <dt className="text-xs text-fg-muted">응시료 합계</dt>
+            <dd className="mt-0.5 text-lg font-semibold">${role.totals.costUsd}</dd>
+          </div>
+        )}
+      </dl>
+
       <ol className="space-y-3">
         {role.steps.map((step, i) => (
           <li key={step.slug} className="relative">
@@ -83,7 +108,7 @@ export default async function RoadmapRolePage({ params }: PageProps) {
                   <span className="min-w-0">{step.note}</span>
                 </span>
                 <span className="mt-1 flex items-center gap-1 text-xs text-fg-muted transition group-hover:text-accent">
-                  Week 1 무료로 시작 <ArrowRight className="h-3.5 w-3.5" />
+                  Week {FREE_WEEK} 무료로 시작 <ArrowRight className="h-3.5 w-3.5" />
                 </span>
               </span>
             </Link>
@@ -92,7 +117,8 @@ export default async function RoadmapRolePage({ params }: PageProps) {
       </ol>
 
       <p className="text-xs text-fg-faint">
-        각 자격증의 Week 1은 무료입니다. 목표 직무에 맞춰 순서대로 준비해 보세요.
+        각 자격증의 Week {FREE_WEEK}은 무료입니다. 목표 직무에 맞춰 순서대로 준비해 보세요.
+        응시료·문항 수·합격 점수는 AWS 공식 시험 가이드 기준이며 결제 시점 환율과 세금은 별도입니다.
       </p>
       <p className="sr-only">{SITE_NAME}</p>
     </div>

@@ -195,86 +195,86 @@ In the next article, we lay out the full map of AWS's DevOps tools — the Code*
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A company demands "guarantee user response times of 50ms or less, while simultaneously minimizing cost." Which is the most accurate analysis of the W-AF Pillar trade-off in this scenario?
+**Question 1.** A company demands "guarantee user response times of 50ms or less, while simultaneously minimizing cost." Which is the most accurate analysis of the W-AF Pillar trade-off in this scenario?
 
 A) A conflict between Performance and Security
 B) A conflict between Performance and Cost Optimization — guaranteeing 50ms requires CloudFront/Global Accelerator, which incurs additional cost
 C) A conflict between Reliability and Performance
 D) A conflict between Sustainability and Cost
 
-**정답: B**
-해설: "Response time of 50ms" is a Performance Efficiency requirement; "cost minimization" is a Cost Optimization requirement. The two are a trade-off. Guaranteeing 50ms for global users requires CloudFront (edge caching) or Global Accelerator (Anycast), both of which incur additional cost. The compromise is usually "CloudFront only for users in key markets, direct origin access for other regions." If an option claims "a single solution that satisfies both simultaneously," it's a trap.
+**Answer: B**
+Explanation: "Response time of 50ms" is a Performance Efficiency requirement; "cost minimization" is a Cost Optimization requirement. The two are a trade-off. Guaranteeing 50ms for global users requires CloudFront (edge caching) or Global Accelerator (Anycast), both of which incur additional cost. The compromise is usually "CloudFront only for users in key markets, direct origin access for other regions." If an option claims "a single solution that satisfies both simultaneously," it's a trap.
 
 ---
 
-**문제 2.** Which is the most accurate difference between Trusted Advisor and AWS Config Rules?
+**Question 2.** Which is the most accurate difference between Trusted Advisor and AWS Config Rules?
 
 A) Trusted Advisor is real-time, Config Rules are periodic
 B) Trusted Advisor checks best practices defined by AWS; Config Rules check arbitrary compliance rules defined by the customer
 C) Trusted Advisor is free, Config Rules are paid
 D) They are the same tool under different names
 
-**정답: B**
-해설: The essential difference is "**who defines the rules**." Trusted Advisor checks AWS's own 250+ best practices (root without MFA, 0.0.0.0/0 SGs, etc.). Config Rules are defined by the customer for their own environment (e.g., "all EBS volumes must be KMS-encrypted," "all EC2 instances must carry the company prefix tag"). On the exam, "AWS-managed check" means Trusted Advisor; "custom compliance" means Config Rules. A is a wrong classification (both are periodic), and C is also not true (the full Trusted Advisor check set requires Business/Enterprise Support).
+**Answer: B**
+Explanation: The essential difference is "**who defines the rules**." Trusted Advisor checks AWS's own 250+ best practices (root without MFA, 0.0.0.0/0 SGs, etc.). Config Rules are defined by the customer for their own environment (e.g., "all EBS volumes must be KMS-encrypted," "all EC2 instances must carry the company prefix tag"). On the exam, "AWS-managed check" means Trusted Advisor; "custom compliance" means Config Rules. A is a wrong classification (both are periodic), and C is also not true (the full Trusted Advisor check set requires Business/Enterprise Support).
 
 ---
 
-**문제 3.** Which of the W-AF's 6 Pillars explicitly lists "Make frequent, small, reversible changes" as a design principle?
+**Question 3.** Which of the W-AF's 6 Pillars explicitly lists "Make frequent, small, reversible changes" as a design principle?
 
 A) Reliability
 B) Security
 C) Operational Excellence
 D) Performance Efficiency
 
-**정답: C**
-해설: This principle is a design principle of Operational Excellence. It's exactly the same idea as DORA's "small batch size + fast lead time" — the insight that **the smaller the unit of change, the easier debugging and rollback are**. The AWS implementation is automation with CodePipeline + CodeDeploy and separating deployment from release with feature flags. Reliability's representative principle is "Automatically recover from failure," Security's is "Implement security at all layers," and Performance's is "Use serverless architectures."
+**Answer: C**
+Explanation: This principle is a design principle of Operational Excellence. It's exactly the same idea as DORA's "small batch size + fast lead time" — the insight that **the smaller the unit of change, the easier debugging and rollback are**. The AWS implementation is automation with CodePipeline + CodeDeploy and separating deployment from release with feature flags. Reliability's representative principle is "Automatically recover from failure," Security's is "Implement security at all layers," and Performance's is "Use serverless architectures."
 
 ---
 
-**문제 4.** A company ran the W-AF Tool on its environment and got 5 HIGH risks and 12 MEDIUM risks. What is the most appropriate order of prioritization?
+**Question 4.** A company ran the W-AF Tool on its environment and got 5 HIGH risks and 12 MEDIUM risks. What is the most appropriate order of prioritization?
 
 A) Handle all HIGH first, then handle MEDIUM
 B) Among the HIGHs, Security-related ones first, then Reliability, then the rest
 C) Start with the MEDIUMs that cost the least
 D) Start with MEDIUM and work gradually up to HIGH
 
-**정답: B**
-해설: The W-AF only gives HIGH/MEDIUM/LOW scores, but **practical priority differs by Pillar**. A Security HIGH can lead to an immediate incident (exposed IAM, no MFA), a Reliability HIGH leads directly to business interruption (Single-AZ RDS, missing ASG), while a Cost HIGH is wasted money but not an immediate incident. AWS Well-Architected best practice guidance also recommends prioritizing Security/Reliability. C and D are wrong priorities; A looks right at first glance but ignores "prioritization within the HIGHs."
+**Answer: B**
+Explanation: The W-AF only gives HIGH/MEDIUM/LOW scores, but **practical priority differs by Pillar**. A Security HIGH can lead to an immediate incident (exposed IAM, no MFA), a Reliability HIGH leads directly to business interruption (Single-AZ RDS, missing ASG), while a Cost HIGH is wasted money but not an immediate incident. AWS Well-Architected best practice guidance also recommends prioritizing Security/Reliability. C and D are wrong priorities; A looks right at first glance but ignores "prioritization within the HIGHs."
 
 ---
 
-**문제 5.** Which is the most accurate description of the significance of the DevOps Guidance lens being added to the W-AF in 2023?
+**Question 5.** Which is the most accurate description of the significance of the DevOps Guidance lens being added to the W-AF in 2023?
 
 A) DevOps was merged into the Operational Excellence Pillar
 B) DevOps became important enough as a cross-cutting concern spanning all 6 Pillars to need its own separate lens
 C) A DevOps Pillar was newly added, making it 7 Pillars
 D) DevOps is no longer a separate concept
 
-**정답: B**
-해설: DevOps Guidance is not a separate Pillar but a **lens**. A lens is additional guidance that reinterprets the W-AF's 6 Pillars from the perspective of a specific domain (Serverless, ML, DevOps, etc.). The DevOps lens applies cross-cutting across all 6 Pillars through 4 areas (Organizational Adoption, Development Lifecycle, QA, Automated Governance). C is factually wrong (still 6 Pillars), and A is also inaccurate (Operational Excellence still exists as is).
+**Answer: B**
+Explanation: DevOps Guidance is not a separate Pillar but a **lens**. A lens is additional guidance that reinterprets the W-AF's 6 Pillars from the perspective of a specific domain (Serverless, ML, DevOps, etc.). The DevOps lens applies cross-cutting across all 6 Pillars through 4 areas (Organizational Adoption, Development Lifecycle, QA, Automated Governance). C is factually wrong (still 6 Pillars), and A is also inaccurate (Operational Excellence still exists as is).
 
 ---
 
-**문제 6.** A company operates a service for EU users where both GDPR compliance and response-time reduction matter. Which is the most suitable design?
+**Question 6.** A company operates a service for EU users where both GDPR compliance and response-time reduction matter. Which is the most suitable design?
 
 A) Single deployment in us-east-1, accelerated with CloudFront
 B) Deploy in eu-west-1 (Ireland) + CloudFront EU edge, with KMS keys also created in an EU region
 C) Deploy in ap-northeast-2, then Global Accelerator
 D) Deploy in sa-east-1
 
-**정답: B**
-해설: GDPR requires "EU citizens' data stored in the EU or in regions with an adequacy decision" (Security Pillar). For response time, place the origin in an EU region and accelerate with CloudFront EU edges (Performance Pillar). KMS keys must also be in an EU region to satisfy data sovereignty (Security). A stores data in the US, potentially violating GDPR; C is a non-EU region, violating GDPR; D is a South American region. Also, among EU regions, Dublin (eu-west-1) or Stockholm (eu-north-1, 100% renewable energy) satisfies Sustainability as well.
+**Answer: B**
+Explanation: GDPR requires "EU citizens' data stored in the EU or in regions with an adequacy decision" (Security Pillar). For response time, place the origin in an EU region and accelerate with CloudFront EU edges (Performance Pillar). KMS keys must also be in an EU region to satisfy data sovereignty (Security). A stores data in the US, potentially violating GDPR; C is a non-EU region, violating GDPR; D is a South American region. Also, among EU regions, Dublin (eu-west-1) or Stockholm (eu-north-1, 100% renewable energy) satisfies Sustainability as well.
 
 ---
 
-**문제 7.** Which AWS tool combination best fits the Cost Optimization Pillar's "Adopt a consumption model" principle?
+**Question 7.** Which AWS tool combination best fits the Cost Optimization Pillar's "Adopt a consumption model" principle?
 
 A) Reserved Instances + Savings Plans
 B) Lambda + Fargate Spot + S3 Intelligent-Tiering + Aurora Serverless v2
 C) EC2 Dedicated Hosts + Provisioned IOPS EBS
 D) Outposts + Snowball
 
-**정답: B**
-해설: "Consumption model" means **you incur cost only for what you use**. Lambda bills per execution time, Fargate Spot per container run time, S3 Intelligent-Tiering moves objects between tiers automatically, and Aurora Serverless v2 auto-scales in ACU (Aurora Capacity Unit) increments. All of them have near-zero idle cost. A is commitment-based (not consumption), C is dedicated resources, D is on-premises hardware cost. On the exam, the key phrase is "pay-only-for-what-you-use."
+**Answer: B**
+Explanation: "Consumption model" means **you incur cost only for what you use**. Lambda bills per execution time, Fargate Spot per container run time, S3 Intelligent-Tiering moves objects between tiers automatically, and Aurora Serverless v2 auto-scales in ACU (Aurora Capacity Unit) increments. All of them have near-zero idle cost. A is commitment-based (not consumption), C is dedicated resources, D is on-premises hardware cost. On the exam, the key phrase is "pay-only-for-what-you-use."

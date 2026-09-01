@@ -183,86 +183,86 @@ The next article is the Week 1 summary and review.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A company operates 30 AWS accounts. It wants to forbid use of the us-west-1 region across all accounts. What is the most appropriate method?
+**Question 1.** A company operates 30 AWS accounts. It wants to forbid use of the us-west-1 region across all accounts. What is the most appropriate method?
 
 A) Add an IAM policy to each account
 B) Region restriction via Organizations SCP
 C) After-the-fact detection with CloudTrail
 D) Don't create VPCs in us-west-1
 
-**정답: B**
-해설: For a multi-account permission ceiling, SCP is the answer. A Deny with the `aws:RequestedRegion` condition prevents every identity in every account from using that region. A carries the burden of syncing 30 times, C is after-the-fact rather than preventive, and D fails to block non-VPC services (e.g., DynamoDB, S3). Note that the Management account itself is exempt from SCPs — hence no workloads in Management. Additionally, global services (IAM, CloudFront, Route 53, etc.) evaluate `aws:RequestedRegion` as `us-east-1`, so exception handling is needed.
+**Answer: B**
+Explanation: For a multi-account permission ceiling, SCP is the answer. A Deny with the `aws:RequestedRegion` condition prevents every identity in every account from using that region. A carries the burden of syncing 30 times, C is after-the-fact rather than preventive, and D fails to block non-VPC services (e.g., DynamoDB, S3). Note that the Management account itself is exempt from SCPs — hence no workloads in Management. Additionally, global services (IAM, CloudFront, Route 53, etc.) evaluate `aws:RequestedRegion` as `us-east-1`, so exception handling is needed.
 
 ---
 
-**문제 2.** When creating a new account with Control Tower, which is NOT automatically configured?
+**Question 2.** When creating a new account with Control Tower, which is NOT automatically configured?
 
 A) Centralized CloudTrail
 B) Config activation
 C) Per-user passwords
 D) IAM Identity Center permission set assignment
 
-**정답: C**
-해설: Control Tower automates the infrastructure baseline, but user passwords are the IdP's domain. The external IdP (Okta, AD) connected to IAM Identity Center handles authentication. Everything else is applied automatically. Control Tower's value is that "best practices apply automatically without writing governance code every time" — implementing it yourself would take days to weeks.
+**Answer: C**
+Explanation: Control Tower automates the infrastructure baseline, but user passwords are the IdP's domain. The external IdP (Okta, AD) connected to IAM Identity Center handles authentication. Everything else is applied automatically. Control Tower's value is that "best practices apply automatically without writing governance code every time" — implementing it yourself would take days to weeks.
 
 ---
 
-**문제 3.** To share a VPC subnet created in the Networking account with other accounts, use?
+**Question 3.** To share a VPC subnet created in the Networking account with other accounts, use?
 
 A) VPC Peering
 B) AWS RAM
 C) Transit Gateway
 D) PrivateLink
 
-**정답: B**
-해설: RAM is the standard for multi-account resource sharing. After subnet sharing, the receiving account can create ENIs/EC2 but can't touch routing or NACLs. Peering is just a connection between two VPCs, not sharing; TGW is a routing hub; PrivateLink is service endpoint exposure. The four look similar but solve entirely different problems: sharing (RAM), connecting (Peering), routing hub (TGW), service exposure (PrivateLink).
+**Answer: B**
+Explanation: RAM is the standard for multi-account resource sharing. After subnet sharing, the receiving account can create ENIs/EC2 but can't touch routing or NACLs. Peering is just a connection between two VPCs, not sharing; TGW is a routing hub; PrivateLink is service endpoint exposure. The four look similar but solve entirely different problems: sharing (RAM), connecting (Peering), routing hub (TGW), service exposure (PrivateLink).
 
 ---
 
-**문제 4.** Which is correct about the Management account?
+**Question 4.** Which is correct about the Management account?
 
 A) SCPs apply automatically
 B) SCPs don't apply, so it must not hold workloads
 C) It can double as the Audit account
 D) It's suitable for the Log Archive role
 
-**정답: B**
-해설: The Management account isn't subject to SCPs, so all permissions are unguarded. Put production workloads there and an incident has the largest blast radius. AWS's recommendation is an "empty" account doing only billing and Organizations management. Audit and Log Archive are separated into their own accounts. For the same reason, always put a hardware MFA on the Management account's root credentials, and for daily operations, go through IAM Identity Center and borrow Roles in other accounts.
+**Answer: B**
+Explanation: The Management account isn't subject to SCPs, so all permissions are unguarded. Put production workloads there and an incident has the largest blast radius. AWS's recommendation is an "empty" account doing only billing and Organizations management. Audit and Log Archive are separated into their own accounts. For the same reason, always put a hardware MFA on the Management account's root credentials, and for daily operations, go through IAM Identity Center and borrow Roles in other accounts.
 
 ---
 
-**문제 5.** Which is NOT a benefit of Consolidated Billing?
+**Question 5.** Which is NOT a benefit of Consolidated Billing?
 
 A) Aggregated volume discounts
 B) RI/Savings Plan sharing
 C) Consolidated IAM permissions across accounts
 D) A single invoice
 
-**정답: C**
-해설: Consolidated Billing merges only the cost domain; IAM remains completely isolated. That's the core safety net of multi-account. If IAM consolidation is needed, IAM Identity Center or cross-account Roles exist separately. The exam frequently asks about this asymmetry: "costs merge but permissions stay separated."
+**Answer: C**
+Explanation: Consolidated Billing merges only the cost domain; IAM remains completely isolated. That's the core safety net of multi-account. If IAM consolidation is needed, IAM Identity Center or cross-account Roles exist separately. The exam frequently asks about this asymmetry: "costs merge but permissions stay separated."
 
 ---
 
-**문제 6.** To have the same security stack automatically deployed when a new account is added to an OU?
+**Question 6.** To have the same security stack automatically deployed when a new account is added to an OU?
 
 A) Lambda trigger
 B) CloudFormation StackSets with auto-deployment
 C) Document a manual deployment procedure
 D) Run Terraform manually
 
-**정답: B**
-해설: StackSets with `SERVICE_MANAGED` + `auto-deployment Enabled`. When a new account enters the OU, the stack applies automatically. This is the standard pattern for maintaining the baseline without operator intervention in environments with hundreds of accounts. Terraform is possible too, but the AWS-native answer is StackSets. Hybrids combining CDK/Terraform with StackSets are also common — common baseline via StackSets, per-workload differences via IaC.
+**Answer: B**
+Explanation: StackSets with `SERVICE_MANAGED` + `auto-deployment Enabled`. When a new account enters the OU, the stack applies automatically. This is the standard pattern for maintaining the baseline without operator intervention in environments with hundreds of accounts. Terraform is possible too, but the AWS-native answer is StackSets. Hybrids combining CDK/Terraform with StackSets are also common — common baseline via StackSets, per-workload differences via IaC.
 
 ---
 
-**문제 7.** What is the downside of the "Allow List" approach among SCP operating strategies?
+**Question 7.** What is the downside of the "Allow List" approach among SCP operating strategies?
 
 A) It isn't safer
 B) Explicit allowances must be added every time a new AWS service launches
 C) It costs more
 D) Multi-region becomes impossible
 
-**정답: B**
-해설: Allow List removes the default FullAWSAccess and keeps only explicit allows. It's the strictest, but since AWS launches dozens of new services every year, policy updates are needed each time, creating heavy operational burden. Most organizations use Deny List (default allow + Deny only what's dangerous) + core guardrails. Allow List is adopted only in environments with strict change control, like finance and the public sector.
+**Answer: B**
+Explanation: Allow List removes the default FullAWSAccess and keeps only explicit allows. It's the strictest, but since AWS launches dozens of new services every year, policy updates are needed each time, creating heavy operational burden. Most organizations use Deny List (default allow + Deny only what's dangerous) + core guardrails. Allow List is adopted only in environments with strict change control, like finance and the public sector.

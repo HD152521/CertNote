@@ -113,64 +113,64 @@ Next, we'll survey the tools that actually solve these problems — AWS's entire
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** Historical churn labels exist in your data, and you want to predict customer churn. What are this problem's learning approach and output form?
+**Question 1.** Historical churn labels exist in your data, and you want to predict customer churn. What are this problem's learning approach and output form?
 
 A) Unsupervised learning, Clustering  
 B) Supervised learning, Classification  
 C) Reinforcement learning, Regression  
 D) Unsupervised learning, Dimensionality Reduction  
 
-**정답: B**  
-해설: Historical churn/retention labels exist, so it's supervised learning. The output is "churn/retain," discrete categories, so it's classification. Clustering and dimensionality reduction are unsupervised (no labels), and reinforcement learning is reward-based sequential decision-making, which doesn't match this scenario.
+**Answer: B**  
+Explanation: Historical churn/retention labels exist, so it's supervised learning. The output is "churn/retain," discrete categories, so it's classification. Clustering and dimensionality reduction are unsupervised (no labels), and reinforcement learning is reward-based sequential decision-making, which doesn't match this scenario.
 
 ---
 
-**문제 2.** In data where fraud is 0.1% of transactions, your model scores 99.9% accuracy. Why can't this accuracy be trusted?
+**Question 2.** In data where fraud is 0.1% of transactions, your model scores 99.9% accuracy. Why can't this accuracy be trusted?
 
 A) Accuracy is only for regression metrics  
 B) In extremely imbalanced data, saying "all normal" yields 99.9%, so you must check precision and recall  
 C) High accuracy always means overfitting  
 D) Accuracy is independent of threshold  
 
-**정답: B**  
-해설: In data that's only 0.1% fraud, predicting all transactions as normal yields 99.9% accuracy. The model catches the minority class (fraud) not at all yet achieves high accuracy — the accuracy trap in imbalanced data. Focus on precision, recall, F1, and PR-AUC for the positive class. Accuracy is a classification metric; high accuracy doesn't necessarily mean overfitting; and accuracy varies with threshold.
+**Answer: B**  
+Explanation: In data that's only 0.1% fraud, predicting all transactions as normal yields 99.9% accuracy. The model catches the minority class (fraud) not at all yet achieves high accuracy — the accuracy trap in imbalanced data. Focus on precision, recall, F1, and PR-AUC for the positive class. Accuracy is a classification metric; high accuracy doesn't necessarily mean overfitting; and accuracy varies with threshold.
 
 ---
 
-**문제 3.** For a cancer diagnosis classification model, which evaluation metric should take priority, and why?
+**Question 3.** For a cancer diagnosis classification model, which evaluation metric should take priority, and why?
 
 A) Precision — because misclassifying healthy people as patients is unacceptable  
 B) Recall — because falsely labeling actual patients as healthy (False Negative) is fatal  
 C) Accuracy — because the overall ratio of correct classifications matters most  
 D) MAE — because absolute error magnitude matters  
 
-**정답: B**  
-해설: In cancer diagnosis, missing a real patient by marking them "healthy" (FN) is life-threatening, so recall (TP/(TP+FN)) is paramount. Precision reduces false positives (unnecessary follow-up burden), so it's lower priority here. Accuracy misleads in imbalanced situations, and MAE is a regression metric not used for classification.
+**Answer: B**  
+Explanation: In cancer diagnosis, missing a real patient by marking them "healthy" (FN) is life-threatening, so recall (TP/(TP+FN)) is paramount. Precision reduces false positives (unnecessary follow-up burden), so it's lower priority here. Accuracy misleads in imbalanced situations, and MAE is a regression metric not used for classification.
 
 ---
 
-**문제 4.** A model records precision 0.9 and recall 0.1. Why is the F1 score far lower at 0.18 than the arithmetic mean 0.5?
+**Question 4.** A model records precision 0.9 and recall 0.1. Why is the F1 score far lower at 0.18 than the arithmetic mean 0.5?
 
 A) F1 is the product of the two values  
 B) F1 is the harmonic mean, so low values in one dimension severely drag down the score  
 C) The F1 calculation is wrong  
 D) F1 only reflects recall  
 
-**정답: B**  
-해설: F1 is the harmonic mean of precision and recall, so if one is low, the score drops dramatically. This enforces "being strong in just one dimension isn't enough." F1 is not a product; the calculation is correct; and it reflects both metrics equally.
+**Answer: B**  
+Explanation: F1 is the harmonic mean of precision and recall, so if one is low, the score drops dramatically. This enforces "being strong in just one dimension isn't enough." F1 is not a product; the calculation is correct; and it reflects both metrics equally.
 
 ---
 
-**문제 5.** A ROC-AUC value of 0.5 for a classification model means:
+**Question 5.** A ROC-AUC value of 0.5 for a classification model means:
 
 A) It classifies perfectly  
 B) Its discriminative power is equivalent to random guessing  
 C) It's predicting backwards  
 D) It has 100% precision  
 
-**정답: B**  
-해설: AUC 0.5 means the model distinguishes positive/negative at random-guessing level. AUC 1.0 is perfect classification; AUC < 0.5 is backwards prediction. AUC is threshold-independent ranking ability and doesn't directly correspond to a specific precision value.
+**Answer: B**  
+Explanation: AUC 0.5 means the model distinguishes positive/negative at random-guessing level. AUC 1.0 is perfect classification; AUC < 0.5 is backwards prediction. AUC is threshold-independent ranking ability and doesn't directly correspond to a specific precision value.
 
 ---

@@ -278,74 +278,74 @@ Tomorrow: **AWS Organizations and multi-account governance** making all this pos
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** SCP has `Allow: s3:*`, IAM Policy has `Deny: s3:DeleteObject`, Bucket Policy has `Allow: s3:DeleteObject`. Result?
+**Question 1.** SCP has `Allow: s3:*`, IAM Policy has `Deny: s3:DeleteObject`, Bucket Policy has `Allow: s3:DeleteObject`. Result?
 
 A) Allow—Bucket Policy Allow wins
 B) Allow—SCP Allow wins
 C) Deny—IAM explicit Deny wins
 D) Unevaluable—contradictory policies
 
-**정답: C**
-해설: Any layer's explicit Deny = final Deny. SCP is guardrail, not grant—its Allow doesn't override IAM Deny. Same for Bucket Policy.
+**Answer: C**
+Explanation: Any layer's explicit Deny = final Deny. SCP is guardrail, not grant—its Allow doesn't override IAM Deny. Same for Bucket Policy.
 
 ---
 
-**문제 2.** Operator wants developers to create Roles but enforce Role must attach `DevBoundary` policy. Answer?
+**Question 2.** Operator wants developers to create Roles but enforce Role must attach `DevBoundary` policy. Answer?
 
 A) Add `Allow: iam:CreateRole` to SCP
 B) Developer group policy: `iam:CreateRole` Allow + Condition force `iam:PermissionsBoundary`
 C) Attach Permission Boundary via SCP
 D) Use Service-Linked Role
 
-**정답: B**
-해설: Developer group gets `iam:CreateRole`, Condition on `iam:PermissionsBoundary` standard value. Developer-created Role auto-gets boundary, effective permission = boundary-limited.
+**Answer: B**
+Explanation: Developer group gets `iam:CreateRole`, Condition on `iam:PermissionsBoundary` standard value. Developer-created Role auto-gets boundary, effective permission = boundary-limited.
 
 ---
 
-**문제 3.** 200 employees, 50 accounts. Minimize user management burden?
+**Question 3.** 200 employees, 50 accounts. Minimize user management burden?
 
 A) Create 200 IAM Users per account
 B) Master account User + cross-account Roles
 C) IAM Identity Center + Okta/Azure AD federation
 D) Service Catalog auto
 
-**정답: C**
-해설: Identity Center + IdP = single user source, Permission Set per-account permission. Off-board = IdP disable = all accounts instant lock. No access keys. All STS temp.
+**Answer: C**
+Explanation: Identity Center + IdP = single user source, Permission Set per-account permission. Off-board = IdP disable = all accounts instant lock. No access keys. All STS temp.
 
 ---
 
-**문제 4.** Force all accounts: only ap-northeast-2 and us-east-1 allowed. Best tool?
+**Question 4.** Force all accounts: only ap-northeast-2 and us-east-1 allowed. Best tool?
 
 A) IAM Permission Boundary
 B) Service Control Policy
 C) AWS Config Rule
 D) CloudTrail Log
 
-**정답: B**
-해설: SCP applies org-wide. `aws:RequestedRegion` Condition denies all except two regions (NotAction exempts globals). Config only detects, doesn't block.
+**Answer: B**
+Explanation: SCP applies org-wide. `aws:RequestedRegion` Condition denies all except two regions (NotAction exempts globals). Config only detects, doesn't block.
 
 ---
 
-**문제 5.** Auto-created `AWSServiceRoleForECS` from new cluster—modify its permissions?
+**Question 5.** Auto-created `AWSServiceRoleForECS` from new cluster—modify its permissions?
 
 A) Yes, IAM console
 B) Yes, needs SCP pass
 C) No—Service-Linked Role AWS-managed
 D) Yes, root account only
 
-**정답: C**
-해설: SLR auto-created/managed by AWS service. Can't modify policy. Can't delete while in-use. Exam SLR answer almost always "can't modify."
+**Answer: C**
+Explanation: SLR auto-created/managed by AWS service. Can't modify policy. Can't delete while in-use. Exam SLR answer almost always "can't modify."
 
 ---
 
-**문제 6.** Identity Center user gets STS token via CLI. Which command?
+**Question 6.** Identity Center user gets STS token via CLI. Which command?
 
 A) `aws iam create-access-key`
 B) `aws sts assume-role`
 C) `aws sso login`
 D) `aws configure`
 
-**정답: C**
-해설: Identity Center users: `aws configure sso` (profile), then `aws sso login` (browser auth) = auto STS temp creds cached. `aws sts assume-role` is direct Role assumption—not needed for Identity Center.
+**Answer: C**
+Explanation: Identity Center users: `aws configure sso` (profile), then `aws sso login` (browser auth) = auto STS temp creds cached. `aws sts assume-role` is direct Role assumption—not needed for Identity Center.

@@ -66,64 +66,64 @@ Today we covered the core definition of cloud computing — "renting computing r
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** Which of the following best describes the most essential characteristic of cloud computing?
+**Question 1.** Which of the following best describes the most essential characteristic of cloud computing?
 
 A) All servers are installed and managed directly inside the company  
 B) Computing resources are rented over the internet when needed and paid for according to usage  
 C) Once purchased, there are no costs at all  
 D) Resources can be used without limit even without an internet connection  
 
-**정답: B**  
-해설: The cloud is a model where resources are rented on demand over the internet and paid for according to usage. Installing servers directly inside the company is the on-premises approach; the cloud incurs ongoing costs based on usage, and resources are accessed via an internet connection.
+**Answer: B**  
+Explanation: The cloud is a model where resources are rented on demand over the internet and paid for according to usage. Installing servers directly inside the company is the on-premises approach; the cloud incurs ongoing costs based on usage, and resources are accessed via an internet connection.
 
 ---
 
-**문제 2.** Among the six advantages of the cloud, which one best represents "paying only for what you use instead of investing a large sum up front"?
+**Question 2.** Among the six advantages of the cloud, which one best represents "paying only for what you use instead of investing a large sum up front"?
 
 A) Benefit from massive economies of scale  
 B) Trade capital expense for variable expense  
 C) Go global in minutes  
 D) Increase speed and agility  
 
-**정답: B**  
-해설: Paying as you go (variable expense) instead of investing up front (capital expense) is exactly the trade of capital expense for variable expense. Economies of scale refers to lower unit costs thanks to many customers, going global refers to the ease of worldwide expansion, and speed and agility refers to the ability to provision resources quickly.
+**Answer: B**  
+Explanation: Paying as you go (variable expense) instead of investing up front (capital expense) is exactly the trade of capital expense for variable expense. Economies of scale refers to lower unit costs thanks to many customers, going global refers to the ease of worldwide expansion, and speed and agility refers to the ability to provision resources quickly.
 
 ---
 
-**문제 3.** A startup is about to launch a new service where traffic is hard to predict. Which advantage of the cloud directly solves this concern?
+**Question 3.** A startup is about to launch a new service where traffic is hard to predict. Which advantage of the cloud directly solves this concern?
 
 A) Stop spending money running and maintaining data centers  
 B) Stop guessing capacity  
 C) Benefit from massive economies of scale  
 D) Trade capital expense for variable expense  
 
-**정답: B**  
-해설: When demand is hard to predict, the most direct solution is not having to size capacity in advance — scaling up and down according to demand. Lower operating costs and economies of scale are cost-side benefits, and the capital-to-variable-expense trade is about the payment model, which is not the core concern of "handling unpredictable demand."
+**Answer: B**  
+Explanation: When demand is hard to predict, the most direct solution is not having to size capacity in advance — scaling up and down according to demand. Lower operating costs and economies of scale are cost-side benefits, and the capital-to-variable-expense trade is about the payment model, which is not the core concern of "handling unpredictable demand."
 
 ---
 
-**문제 4.** Which deployment model connects a public cloud and a private cloud for combined use?
+**Question 4.** Which deployment model connects a public cloud and a private cloud for combined use?
 
 A) Public cloud  
 B) Private cloud  
 C) Hybrid cloud  
 D) On-premises  
 
-**정답: C**  
-해설: Connecting the two (or including on-premises) and using them together is the hybrid cloud. Public is a provider's cloud shared by many customers, private is a cloud dedicated to one organization, and on-premises is not cloud at all but the traditional model of owning and operating infrastructure yourself.
+**Answer: C**  
+Explanation: Connecting the two (or including on-premises) and using them together is the hybrid cloud. Public is a provider's cloud shared by many customers, private is a cloud dedicated to one organization, and on-premises is not cloud at all but the traditional model of owning and operating infrastructure yourself.
 
 ---
 
-**문제 5.** Which of the following is NOT one of the cloud characteristics defined by NIST?
+**Question 5.** Which of the following is NOT one of the cloud characteristics defined by NIST?
 
 A) On-demand self-service  
 B) Rapid elasticity  
 C) Permanent free usage  
 D) Measured service  
 
-**정답: C**  
-해설: NIST defines on-demand self-service, broad network access, resource pooling, rapid elasticity, and measured service as characteristics of the cloud. Because the cloud meters usage and bills for it, "permanent free usage" is not a characteristic of the cloud.
+**Answer: C**  
+Explanation: NIST defines on-demand self-service, broad network access, resource pooling, rapid elasticity, and measured service as characteristics of the cloud. Because the cloud meters usage and bills for it, "permanent free usage" is not a characteristic of the cloud.
 
 ---

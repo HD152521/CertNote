@@ -90,64 +90,64 @@ That is: know what the cloud is → draw the map of the infrastructure it runs o
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** Which of the following is the most appropriate definition of the cloud as learned in Week 1?
+**Question 1.** Which of the following is the most appropriate definition of the cloud as learned in Week 1?
 
 A) A model of directly owning and operating all resources inside the company  
 B) A model of renting computing resources over the internet and paying according to usage  
 C) A model that provides unlimited resources for free, forever  
 D) A standalone system that operates without the internet  
 
-**정답: B**  
-해설: The cloud is a model where resources are rented on demand over the internet and paid for according to usage. Owning them directly inside the company is on-premises; the cloud is neither free nor unlimited, and it is accessed via the internet.
+**Answer: B**  
+Explanation: The cloud is a model where resources are rented on demand over the internet and paid for according to usage. Owning them directly inside the company is on-premises; the cloud is neither free nor unlimited, and it is accessed via the internet.
 
 ---
 
-**문제 2.** Which of the following correctly describes the structure of AWS global infrastructure?
+**Question 2.** Which of the following correctly describes the structure of AWS global infrastructure?
 
 A) Multiple Regions are contained within an Availability Zone  
 B) A Region contains multiple Availability Zones, and an Availability Zone consists of one or more data centers  
 C) Regions are contained within edge locations  
 D) Multiple Regions exist within a data center  
 
-**정답: B**  
-해설: A Region is a group of multiple Availability Zones, and each Availability Zone consists of one or more data centers. The other choices have the containment relationships reversed and are therefore wrong.
+**Answer: B**  
+Explanation: A Region is a group of multiple Availability Zones, and each Availability Zone consists of one or more data centers. The other choices have the containment relationships reversed and are therefore wrong.
 
 ---
 
-**문제 3.** In the Shared Responsibility Model, which area is always the customer's responsibility no matter which service is used?
+**Question 3.** In the Shared Responsibility Model, which area is always the customer's responsibility no matter which service is used?
 
 A) Physical security of data centers  
 B) Security of the virtualization layer  
 C) Data and access permissions (IAM)  
 D) Server hardware maintenance  
 
-**정답: C**  
-해설: Data and who can access it (IAM) are always the customer's responsibility regardless of the type of service. Data center physical security, the virtualization layer, and hardware maintenance are all infrastructure areas AWS is responsible for.
+**Answer: C**  
+Explanation: Data and who can access it (IAM) are always the customer's responsibility regardless of the type of service. Data center physical security, the virtualization layer, and hardware maintenance are all infrastructure areas AWS is responsible for.
 
 ---
 
-**문제 4.** The activity of "protecting the system through least-privilege grants and data encryption" corresponds to which Well-Architected pillar?
+**Question 4.** The activity of "protecting the system through least-privilege grants and data encryption" corresponds to which Well-Architected pillar?
 
 A) Security  
 B) Cost Optimization  
 C) Performance Efficiency  
 D) Sustainability  
 
-**정답: A**  
-해설: Protecting systems and data through least privilege and data encryption is the core of the Security pillar. Cost Optimization is about reducing spend, Performance Efficiency is about the efficient use of resources, and Sustainability is about reducing environmental impact.
+**Answer: A**  
+Explanation: Protecting systems and data through least privilege and data encryption is the core of the Security pillar. Cost Optimization is about reducing spend, Performance Efficiency is about the efficient use of resources, and Sustainability is about reducing environmental impact.
 
 ---
 
-**문제 5.** Which of the following is NOT one of the six advantages of the cloud?
+**Question 5.** Which of the following is NOT one of the six advantages of the cloud?
 
 A) Trade capital expense for variable expense  
 B) No need to guess capacity in advance  
 C) Permanent free storage of all data  
 D) Go global in minutes  
 
-**정답: C**  
-해설: The six advantages are trading capital expense for variable expense, economies of scale, no capacity guessing, speed and agility, lower operating costs, and global deployment. "Permanent free storage of all data" is not a real item — the cloud incurs costs based on usage.
+**Answer: C**  
+Explanation: The six advantages are trading capital expense for variable expense, economies of scale, no capacity guessing, speed and agility, lower operating costs, and global deployment. "Permanent free storage of all data" is not a real item — the cloud incurs costs based on usage.
 
 ---

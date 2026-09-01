@@ -263,98 +263,98 @@ In the next post we move into multi-account strategy (Organizations, Control Tow
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** What is the mechanism by which one CodePipeline Stage's output is passed to the next Stage?
+**Question 1.** What is the mechanism by which one CodePipeline Stage's output is passed to the next Stage?
 
 A) HTTP POST request
 B) Zip file handoff via the S3 artifact bucket
 C) DynamoDB stream
 D) Kafka topic
 
-**정답: B**
-해설: Every CodePipeline artifact is **stored as a zip in an S3 bucket**, and the next Stage retrieves it with GetObject. This S3 is the "pipeline artifact bucket," encrypted with a KMS key. For a large monorepo, this S3 upload/download time can exceed the build time itself, so artifact size optimization matters. When the exam asks about the "artifact passing mechanism" or "cross-region pipelines," S3 + KMS is the key.
+**Answer: B**
+Explanation: Every CodePipeline artifact is **stored as a zip in an S3 bucket**, and the next Stage retrieves it with GetObject. This S3 is the "pipeline artifact bucket," encrypted with a KMS key. For a large monorepo, this S3 upload/download time can exceed the build time itself, so artifact size optimization matters. When the exam asks about the "artifact passing mechanism" or "cross-region pipelines," S3 + KMS is the key.
 
 ---
 
-**문제 2.** CodeBuild needs to access an RDS instance inside a VPC. What is the most accurate configuration?
+**Question 2.** CodeBuild needs to access an RDS instance inside a VPC. What is the most accurate configuration?
 
 A) CodeBuild always runs inside a VPC, so no extra configuration is needed
 B) Specify a VPC configuration on the CodeBuild project + Security Group + Subnet, noting that ENI creation adds 30-60 seconds to build start
 C) Expose RDS publicly
 D) Access it indirectly through Lambda
 
-**정답: B**
-해설: CodeBuild **runs in an AWS-managed VPC by default**. To access internal VPC resources (RDS, Artifactory), you must specify a VPC configuration on the project, and creating the ENI at build start then takes 30-60 seconds. For "VPC-internal access + minimize build time" exam scenarios, the answer is the ENI warm-up pattern or using a mirror reachable from outside the VPC. C is forbidden for security reasons; D is a workaround anti-pattern.
+**Answer: B**
+Explanation: CodeBuild **runs in an AWS-managed VPC by default**. To access internal VPC resources (RDS, Artifactory), you must specify a VPC configuration on the project, and creating the ENI at build start then takes 30-60 seconds. For "VPC-internal access + minimize build time" exam scenarios, the answer is the ENI warm-up pattern or using a mirror reachable from outside the VPC. C is forbidden for security reasons; D is a workaround anti-pattern.
 
 ---
 
-**문제 3.** What is the biggest advantage of CloudWatch EMF (Embedded Metric Format)?
+**Question 3.** What is the biggest advantage of CloudWatch EMF (Embedded Metric Format)?
 
 A) Reduces Lambda cold starts
 B) Creates custom metrics from stdout output alone, cutting cost by eliminating separate API calls
 C) Automatic integration with X-Ray
 D) Stores metrics in DynamoDB
 
-**정답: B**
-해설: EMF is the mechanism by which CloudWatch automatically extracts metrics when you print a specific JSON format to stdout. With no separate PutMetricData API calls: ① cost savings (no per-metric API call charge) ② logs and metrics are aligned on the same timestamp, making debugging easier ③ prevents metric loss in short-lifecycle environments like Lambda/Fargate. When the exam keyword is "cost-efficient custom metrics from Lambda," EMF is the answer.
+**Answer: B**
+Explanation: EMF is the mechanism by which CloudWatch automatically extracts metrics when you print a specific JSON format to stdout. With no separate PutMetricData API calls: ① cost savings (no per-metric API call charge) ② logs and metrics are aligned on the same timestamp, making debugging easier ③ prevents metric loss in short-lifecycle environments like Lambda/Fargate. When the exam keyword is "cost-efficient custom metrics from Lambda," EMF is the answer.
 
 ---
 
-**문제 4.** What is the typical flow of an automated recovery scenario combining SSM Automation with EventBridge?
+**Question 4.** What is the typical flow of an automated recovery scenario combining SSM Automation with EventBridge?
 
 A) CloudWatch Alarm → EventBridge → SSM Automation Runbook → SNS
 B) Lambda → SSM Parameter Store → CloudWatch
 C) IAM Role → CodePipeline → CodeDeploy
 D) Route 53 → CloudFront → S3
 
-**정답: A**
-해설: The standard automated-recovery pattern: ① a CloudWatch Alarm detects a metric-based anomaly ② the alarm state change emits an event to EventBridge ③ an EventBridge rule matches and invokes an SSM Automation Runbook ④ the runbook automatically executes recovery procedures (EC2 restart, ASG scale-out, etc.) ⑤ results are reported to the ops team via SNS. Every step is defined as code (JSON/YAML) and lives in git. Almost all "automated remediation" exam scenarios follow this pattern.
+**Answer: A**
+Explanation: The standard automated-recovery pattern: ① a CloudWatch Alarm detects a metric-based anomaly ② the alarm state change emits an event to EventBridge ③ an EventBridge rule matches and invokes an SSM Automation Runbook ④ the runbook automatically executes recovery procedures (EC2 restart, ASG scale-out, etc.) ⑤ results are reported to the ops team via SNS. Every step is defined as code (JSON/YAML) and lives in git. Almost all "automated remediation" exam scenarios follow this pattern.
 
 ---
 
-**문제 5.** Which of the following is the most accurate match for a scenario where you must choose between X-Ray and ADOT?
+**Question 5.** Which of the following is the most accurate match for a scenario where you must choose between X-Ray and ADOT?
 
 A) Multi-cloud environment + maintaining the OpenTelemetry standard → X-Ray
 B) AWS-only + fastest way to start → ADOT
 C) Export trace data to both Jaeger and X-Ray → ADOT
 D) Tracing just one Lambda function → both are identical
 
-**정답: C**
-해설: ADOT implements the OpenTelemetry standard, so it can export freely to Jaeger, Tempo, Grafana, and more. Multi-cloud and multi-backend scenarios call for ADOT. X-Ray is AWS-native — the easiest starting point but vendor lock-in. A and B have their matches swapped. D is simply not true — even for the same Lambda, ADOT offers richer export options than X-Ray.
+**Answer: C**
+Explanation: ADOT implements the OpenTelemetry standard, so it can export freely to Jaeger, Tempo, Grafana, and more. Multi-cloud and multi-backend scenarios call for ADOT. X-Ray is AWS-native — the easiest starting point but vendor lock-in. A and B have their matches swapped. D is simply not true — even for the same Lambda, ADOT offers richer export options than X-Ray.
 
 ---
 
-**문제 6.** For which scenario is AWS DevOps Guru the best fit?
+**Question 6.** For which scenario is AWS DevOps Guru the best fit?
 
 A) Manual threshold-based alarms
 B) Automatically detecting anomalies with machine learning, with no user-configured thresholds needed
 C) Cost optimization
 D) Simple log search
 
-**정답: B**
-해설: DevOps Guru runs ML over CloudWatch metrics to automatically detect anomalies. Even without pre-configured thresholds like "CPU > 80%," it detects "patterns different from usual." Its high cost limits real-world adoption, but the keyword "ML-based operational anomaly detection" always means DevOps Guru. A is CloudWatch Alarms, C is Cost Explorer, D is CloudWatch Logs Insights.
+**Answer: B**
+Explanation: DevOps Guru runs ML over CloudWatch metrics to automatically detect anomalies. Even without pre-configured thresholds like "CPU > 80%," it detects "patterns different from usual." Its high cost limits real-world adoption, but the keyword "ML-based operational anomaly detection" always means DevOps Guru. A is CloudWatch Alarms, C is Cost Explorer, D is CloudWatch Logs Insights.
 
 ---
 
-**문제 7.** What is the essential reason for using Lambda in a CodePipeline Custom Action?
+**Question 7.** What is the essential reason for using Lambda in a CodePipeline Custom Action?
 
 A) Lambda is the fastest
 B) To implement in code arbitrary logic that AWS-managed actions cannot express (e.g., external API calls, custom approval flows)
 C) IAM permission separation is easier
 D) It is the cheapest
 
-**정답: B**
-해설: The essence of a custom action (Lambda invoke) is implementing "**workflows that AWS-managed actions alone cannot express**." Examples: automatically creating external ITSM tickets, custom approval algorithms (checking JIRA status), data transformation. The Lambda calls the PutJobSuccessResult / PutJobFailureResult APIs to report results back to CodePipeline. A, C, and D are secondary benefits, not the essential reason.
+**Answer: B**
+Explanation: The essence of a custom action (Lambda invoke) is implementing "**workflows that AWS-managed actions alone cannot express**." Examples: automatically creating external ITSM tickets, custom approval algorithms (checking JIRA status), data transformation. The Lambda calls the PutJobSuccessResult / PutJobFailureResult APIs to report results back to CodePipeline. A, C, and D are secondary benefits, not the essential reason.
 
 ---
 
-**문제 8.** Which way of operating CodePipeline best fits the "Pipeline-as-Code" principle?
+**Question 8.** Which way of operating CodePipeline best fits the "Pipeline-as-Code" principle?
 
 A) Creating it via GUI in the AWS Console
 B) Keeping the pipeline definition in git via CDK / CloudFormation / Terraform
 C) Recreating it each time with the AWS CLI
 D) Generating it dynamically with Lambda
 
-**정답: B**
-해설: The core of Pipeline-as-Code is that "**the pipeline definition itself lives in git as code**." Define it with CDK Pipelines (`@aws-cdk/pipelines`), CloudFormation, or the Terraform aws_codepipeline resource. Changes go through PR + review; rollback is a git revert. A leaves only GUI state, not code (no version control); C is ephemeral; D is dynamic generation, but if the definition doesn't live in git it violates the IaC principle.
+**Answer: B**
+Explanation: The core of Pipeline-as-Code is that "**the pipeline definition itself lives in git as code**." Define it with CDK Pipelines (`@aws-cdk/pipelines`), CloudFormation, or the Terraform aws_codepipeline resource. Changes go through PR + review; rollback is a git revert. A leaves only GUI state, not code (no version control); C is ephemeral; D is dynamic generation, but if the definition doesn't live in git it violates the IaC principle.

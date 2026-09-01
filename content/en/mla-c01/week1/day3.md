@@ -48,64 +48,64 @@ Tomorrow we'll dive deep into the heart of this stack — SageMaker itself.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** For the standard requirement "analyze positive/negative sentiment in English customer review text," which AWS service is most appropriate?
+**Question 1.** For the standard requirement "analyze positive/negative sentiment in English customer review text," which AWS service is most appropriate?
 
 A) Train a sentiment analysis model directly in SageMaker  
 B) Call Amazon Comprehend's sentiment analysis API  
 C) Build a custom model on EC2 GPU instances  
 D) Amazon Polly  
 
-**정답: B**  
-해설: Standard sentiment analysis is solved immediately with a Comprehend API call to a pre-trained model. Training directly in SageMaker or building on EC2 would be overkill, wasting time and cost. Polly converts text to speech (TTS), unrelated to sentiment analysis.
+**Answer: B**  
+Explanation: Standard sentiment analysis is solved immediately with a Comprehend API call to a pre-trained model. Training directly in SageMaker or building on EC2 would be overkill, wasting time and cost. Polly converts text to speech (TTS), unrelated to sentiment analysis.
 
 ---
 
-**문제 2.** Which correctly describes the characteristic as you move up the 3-layer AWS ML stack (toward AI Services)?
+**Question 2.** Which correctly describes the characteristic as you move up the 3-layer AWS ML stack (toward AI Services)?
 
 A) Control increases and more needs direct management  
 B) Abstraction rises making it faster and easier, but control decreases  
 C) Cost is always higher  
 D) More ML expertise is required  
 
-**정답: B**  
-해설: Moving up (toward AI Services) increases abstraction for faster, easier use but reduces control over customization. Control increases going down (toward infrastructure). Cost depends on workload, not layer. ML expertise is less needed for higher layers, not more.
+**Answer: B**  
+Explanation: Moving up (toward AI Services) increases abstraction for faster, easier use but reduces control over customization. Control increases going down (toward infrastructure). Cost depends on workload, not layer. ML expertise is less needed for higher layers, not more.
 
 ---
 
-**문제 3.** An ML engineer minimizing inference cost for massive traffic should consider which AWS custom chip?
+**Question 3.** An ML engineer minimizing inference cost for massive traffic should consider which AWS custom chip?
 
 A) AWS Trainium  
 B) AWS Inferentia  
 C) FSx for Lustre  
 D) Elastic Block Store  
 
-**정답: B**  
-해설: Inferentia (Inf2) is AWS's inference-specific chip designed to lower per-unit inference cost and power. Trainium is for training only. FSx for Lustre is a high-speed training data filesystem, and EBS is block storage — neither addresses inference cost reduction.
+**Answer: B**  
+Explanation: Inferentia (Inf2) is AWS's inference-specific chip designed to lower per-unit inference cost and power. Trainium is for training only. FSx for Lustre is a high-speed training data filesystem, and EBS is block storage — neither addresses inference cost reduction.
 
 ---
 
-**문제 4.** What's the defining difference between SageMaker and AI Services (Rekognition, Comprehend, etc.)?
+**Question 4.** What's the defining difference between SageMaker and AI Services (Rekognition, Comprehend, etc.)?
 
 A) SageMaker only allows API calls  
 B) SageMaker trains and tunes custom models directly on your data and deploys them  
 C) SageMaker doesn't support model training  
 D) AI Services always provide more control than SageMaker  
 
-**정답: B**  
-해설: SageMaker is an ML platform managing the full pipeline — data prep, training, tuning, deployment, monitoring — with custom data. API calls only are AI Services' characteristic. SageMaker's core is training support. AI Services have less control than SageMaker.
+**Answer: B**  
+Explanation: SageMaker is an ML platform managing the full pipeline — data prep, training, tuning, deployment, monitoring — with custom data. API calls only are AI Services' characteristic. SageMaker's core is training support. AI Services have less control than SageMaker.
 
 ---
 
-**문제 5.** What makes it rational to design training and inference chips separately?
+**Question 5.** What makes it rational to design training and inference chips separately?
 
 A) Training and inference have the same computational characteristics  
 B) Training does forward+backward passes for throughput, inference does forward passes only for low latency — different characteristics justify separate chips  
 C) Inference happens far less frequently than training  
 D) To equalize chip prices  
 
-**정답: B**  
-해설: Training includes backward passes for gradient computation, processes large batches for throughput. Inference does forward passes only, serves small batches frequently with low latency. This computational difference justifies Trainium (training) and Inferentia (inference) separation. Inference is actually more frequent (per request), not less. Chip separation optimizes for workload characteristics, not price parity.
+**Answer: B**  
+Explanation: Training includes backward passes for gradient computation, processes large batches for throughput. Inference does forward passes only, serves small batches frequently with low latency. This computational difference justifies Trainium (training) and Inferentia (inference) separation. Inference is actually more frequent (per request), not less. Chip separation optimizes for workload characteristics, not price parity.
 
 ---

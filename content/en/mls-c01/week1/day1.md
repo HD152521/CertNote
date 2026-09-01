@@ -112,64 +112,64 @@ session.endpoint_from_production_variants(
 
 Use offline metrics as a **gate** (no deployment if they fail) and online metrics as the **final verdict**. This separation is the operational sense the Specialty exam demands.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A fintech company is building a fraud detection model on data where only 0.2% of transactions are fraudulent. The cost of a false negative (missing actual fraud) is far greater than that of a false positive. What is the most appropriate combination of evaluation metrics?
+**Question 1.** A fintech company is building a fraud detection model on data where only 0.2% of transactions are fraudulent. The cost of a false negative (missing actual fraud) is far greater than that of a false positive. What is the most appropriate combination of evaluation metrics?
 
 A) Accuracy alone  
 B) Prioritize recall, and use PR-AUC for threshold comparison  
 C) Precision alone  
 D) The training loss value  
 
-**정답: B**  
-해설: Under extreme class imbalance, accuracy is meaningless — predicting "all legitimate" already yields 99.8%. Since the cost of false negatives is high, recall (how much actual fraud is caught) takes priority, and discriminative power across thresholds is assessed with PR-AUC, which is honest under imbalance. Precision alone points in the direction of missing fraud, and training loss does not reflect business cost.
+**Answer: B**  
+Explanation: Under extreme class imbalance, accuracy is meaningless — predicting "all legitimate" already yields 99.8%. Since the cost of false negatives is high, recall (how much actual fraud is caught) takes priority, and discriminative power across thresholds is assessed with PR-AUC, which is honest under imbalance. Precision alone points in the direction of missing fraud, and training loss does not reflect business cost.
 
 ---
 
-**문제 2.** When translating the request "we want to reduce customer churn" into an ML problem, what must be fixed first?
+**Question 2.** When translating the request "we want to reduce customer churn" into an ML problem, what must be fixed first?
 
 A) The three definitions: prediction target, input features, and success metric  
 B) The SageMaker instance type to use  
 C) The model deployment region  
 D) The storage format of the training data  
 
-**정답: A**  
-해설: To translate a business goal into an ML problem, you must first fix what to predict (e.g., churn within 30 days), what signals to predict with, and what makes a good model (the metric). Instance type, region, and storage format are implementation details that come after problem definition.
+**Answer: A**  
+Explanation: To translate a business goal into an ML problem, you must first fix what to predict (e.g., churn within 30 days), what signals to predict with, and what makes a good model (the metric). Instance type, region, and storage format are implementation details that come after problem definition.
 
 ---
 
-**문제 3.** A new payment service wants to start fraud detection but has almost no historical fraud labels. What is the most realistic approach?
+**Question 3.** A new payment service wants to start fraud detection but has almost no historical fraud labels. What is the most realistic approach?
 
 A) Modeling is impossible without labels  
 B) Start with unsupervised anomaly detection such as Random Cut Forest  
 C) Solve it as multiclass classification no matter what  
 D) Predict revenue with regression  
 
-**정답: B**  
-해설: When labels (positive cases) are scarce, supervised binary classification is difficult. In that case, start with unsupervised anomaly detection (e.g., Random Cut Forest), which scores how far something deviates from normal patterns, and switch to supervised learning as labels accumulate. The same problem changes type depending on label availability.
+**Answer: B**  
+Explanation: When labels (positive cases) are scarce, supervised binary classification is difficult. In that case, start with unsupervised anomaly detection (e.g., Random Cut Forest), which scores how far something deviates from normal patterns, and switch to supervised learning as labels accumulate. The same problem changes type depending on label availability.
 
 ---
 
-**문제 4.** A recommendation model showed a large AUC improvement in offline evaluation and was deployed to all traffic immediately — and revenue dropped. What is the most appropriate way to prevent this in advance?
+**Question 4.** A recommendation model showed a large AUC improvement in offline evaluation and was deployed to all traffic immediately — and revenue dropped. What is the most appropriate way to prevent this in advance?
 
 A) Raise the offline AUC even higher  
 B) Increase the training data  
 C) Switch to a larger instance  
 D) Run an A/B test that routes only part of the traffic to the new model and observe real business metrics  
 
-**정답: D**  
-해설: Offline metrics (AUC) and online business metrics (revenue) can diverge, so you should route a small share of traffic to the new model via production variant weights, compare actual behavioral metrics, and then ramp up gradually. Raising AUC or adding data repeats the same trap, and instance size is irrelevant.
+**Answer: D**  
+Explanation: Offline metrics (AUC) and online business metrics (revenue) can diverge, so you should route a small share of traffic to the new model via production variant weights, compare actual behavioral metrics, and then ramp up gradually. Raising AUC or adding data repeats the same trap, and instance size is irrelevant.
 
 ---
 
-**문제 5.** What is the most essential reason to view the ML lifecycle as a "cyclical loop" rather than a "linear pipeline"?
+**Question 5.** What is the most essential reason to view the ML lifecycle as a "cyclical loop" rather than a "linear pipeline"?
 
 A) Because SageMaker forces it that way  
 B) Because model training never finishes in a single run  
 C) Because when the data distribution changes during operation (drift), monitoring triggers retraining and loops back to the data stage  
 D) For cost savings  
 
-**정답: C**  
-해설: Because an ML system's behavior is learned from data, performance degrades when the input distribution changes in production. The feedback in which the monitoring stage detects drift and loops back to the data/retraining stages is the core reason it is cyclical. SDK constraints, number of training runs, and cost are secondary.
+**Answer: C**  
+Explanation: Because an ML system's behavior is learned from data, performance degrades when the input distribution changes in production. The feedback in which the monitoring stage detects drift and loops back to the data/retraining stages is the core reason it is cyclical. SDK constraints, number of training runs, and cost are secondary.
 
 ---

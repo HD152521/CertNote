@@ -115,64 +115,64 @@ In the next article, we weave together the fundamentals covered in Week 1 — ro
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** For an analytical query like `SELECT SUM(amount) FROM orders GROUP BY region`, what is the most fundamental reason a columnar format like Parquet is faster and cheaper than row-based?
+**Question 1.** For an analytical query like `SELECT SUM(amount) FROM orders GROUP BY region`, what is the most fundamental reason a columnar format like Parquet is faster and cheaper than row-based?
 
 A) Because columnar formats encrypt the data  
 B) Because only the needed columns (region, amount) are read, reducing scan I/O, and compression works well  
 C) Because columnar formats are easy for humans to read  
 D) Because columnar is always faster than row-based for every workload  
 
-**정답: B**  
-해설: Columnar storage keeps values of the same column together, enabling column pruning that reads only the columns the query needs, and the homogeneous data compresses well. Since Athena bills by scan volume, cost drops too. It has nothing to do with encryption or readability, and OLTP workloads that read/write entire rows actually favor row-based storage, so "always faster" is wrong.
+**Answer: B**  
+Explanation: Columnar storage keeps values of the same column together, enabling column pruning that reads only the columns the query needs, and the homogeneous data compresses well. Since Athena bills by scan volume, cost drops too. It has nothing to do with encryption or readability, and OLTP workloads that read/write entire rows actually favor row-based storage, so "always faster" is wrong.
 
 ---
 
-**문제 2.** Raw logs are arriving in S3 as JSON. Given that frequent large-scale aggregation analysis with Athena is planned, what is the most effective optimization for the data engineer to take?
+**Question 2.** Raw logs are arriving in S3 as JSON. Given that frequent large-scale aggregation analysis with Athena is planned, what is the most effective optimization for the data engineer to take?
 
 A) Leave it as JSON and scale up the instances  
 B) Convert the JSON to Parquet in the processing stage and load it into the analytics zone  
 C) Convert the JSON to CSV  
 D) Just compress the data  
 
-**정답: B**  
-해설: Converting to columnar Parquet slashes Athena scan volume and query time through column pruning, compression, and predicate pushdown. Ingest as JSON, convert to Parquet for analysis — the typical pattern. Athena is serverless so there are no instances to scale up, and CSV or mere compression is still row-based, gaining none of the columnar advantages.
+**Answer: B**  
+Explanation: Converting to columnar Parquet slashes Athena scan volume and query time through column pruning, compression, and predicate pushdown. Ingest as JSON, convert to Parquet for analysis — the typical pattern. Athena is serverless so there are no instances to scale up, and CSV or mere compression is still row-based, gaining none of the columnar advantages.
 
 ---
 
-**문제 3.** In Kafka/streaming event pipelines where schemas change frequently, which row-based binary format is widely used for its write efficiency and schema evolution support?
+**Question 3.** In Kafka/streaming event pipelines where schemas change frequently, which row-based binary format is widely used for its write efficiency and schema evolution support?
 
 A) Parquet  
 B) Avro  
 C) ORC  
 D) CSV  
 
-**정답: B**  
-해설: Avro is a row-based binary format that is strong at writes, and because it handles data and schema together — designed to stay compatible even when reader/writer schemas differ — it excels at schema evolution. Parquet and ORC are columnar formats for analytics, and CSV is plain text with no schema information, making evolution hard to manage.
+**Answer: B**  
+Explanation: Avro is a row-based binary format that is strong at writes, and because it handles data and schema together — designed to stay compatible even when reader/writer schemas differ — it excels at schema evolution. Parquet and ORC are columnar formats for analytics, and CSV is plain text with no schema information, making evolution hard to manage.
 
 ---
 
-**문제 4.** You are adding a `coupon_code` field to a live order event schema while keeping previously accumulated old data safely readable. What is the safest schema evolution approach?
+**Question 4.** You are adding a `coupon_code` field to a live order event schema while keeping previously accumulated old data safely readable. What is the safest schema evolution approach?
 
 A) Add the new field as required, without a default  
 B) Add the new field with a default value specified  
 C) Rename all existing fields  
 D) Delete all the old data  
 
-**정답: B**  
-해설: When you add a field with a default, reading old data that lacks the field simply fills in the default and nothing breaks (backward compatible). Adding a required field without a default breaks reads of old data, and renaming fields or deleting data are dangerous, compatibility-destroying changes.
+**Answer: B**  
+Explanation: When you add a field with a default, reading old data that lacks the field simply fills in the default and nothing breaks (backward compatible). Adding a required field without a default breaks reads of old data, and renaming fields or deleting data are dangerous, compatibility-destroying changes.
 
 ---
 
-**문제 5.** Which governance mechanism validates compatibility with the existing schema when a producer registers a new one, blocking compatibility-breaking changes before deployment?
+**Question 5.** Which governance mechanism validates compatibility with the existing schema when a producer registers a new one, blocking compatibility-breaking changes before deployment?
 
 A) Glue Crawler  
 B) Schema Registry (e.g., AWS Glue Schema Registry)  
 C) S3 lifecycle policies  
 D) IAM policies  
 
-**정답: B**  
-해설: A schema registry validates compatibility rules (backward/forward/full) when a new schema is registered, blocking changes that break the data contract. AWS Glue Schema Registry plays this role, integrated with Kinesis and MSK. The Crawler infers schemas, lifecycle policies manage storage costs, and IAM handles access permissions.
+**Answer: B**  
+Explanation: A schema registry validates compatibility rules (backward/forward/full) when a new schema is registered, blocking changes that break the data contract. AWS Glue Schema Registry plays this role, integrated with Kinesis and MSK. The Crawler infers schemas, lifecycle policies manage storage costs, and IAM handles access permissions.
 
 ---

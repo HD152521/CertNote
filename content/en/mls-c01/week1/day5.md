@@ -102,64 +102,64 @@ This single scenario contains every concept from Week 1. If you can explain the 
 
 Week 2 is Data Engineering 2: large-scale processing with EMR and Spark, deeper data transformation and cleaning, handling missing values, outliers, and imbalanced data, and the real techniques of feature engineering. It is the week we dig deep into the "Features" stage of the pipeline we consolidated today.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** You are comparing the performance of a fraud detection model where only 0.1% of transactions are fraudulent and false negatives are costly. What is the most honest single metric?
+**Question 1.** You are comparing the performance of a fraud detection model where only 0.1% of transactions are fraudulent and false negatives are costly. What is the most honest single metric?
 
 A) Accuracy  
 B) PR-AUC (area under the precision-recall curve)  
 C) The training loss value  
 D) Processing latency  
 
-**정답: B**  
-해설: Under extreme class imbalance, accuracy is meaningless — an "all legitimate" prediction already scores 99.9% — and even ROC-AUC can look optimistic. PR-AUC directly reflects the precision-recall balance on the positive class, making it the most honest metric on imbalanced data. Training loss and latency are not measures of discriminative power.
+**Answer: B**  
+Explanation: Under extreme class imbalance, accuracy is meaningless — an "all legitimate" prediction already scores 99.9% — and even ROC-AUC can look optimistic. PR-AUC directly reflects the precision-recall balance on the positive class, making it the most honest metric on imbalanced data. Training loss and latency are not measures of discriminative power.
 
 ---
 
-**문제 2.** You are distributing training of hundreds of GB of data across multiple instances, minimizing GPU idle time while having each instance read only a different slice of the data. What do you use?
+**Question 2.** You are distributing training of hundreds of GB of data across multiple instances, minimizing GPU idle time while having each instance read only a different slice of the data. What do you use?
 
 A) Pipe mode + ShardedByS3Key  
 B) File mode + FullyReplicated  
 C) Full replication onto FSx  
 D) FastFile + FullyReplicated  
 
-**정답: A**  
-해설: Pipe mode streams without copying everything to disk, shortening time to first batch and minimizing GPU idle time, while ShardedByS3Key has each instance read only a distinct slice. FullyReplicated variants send the entire dataset to every instance, which is inefficient for distributed training.
+**Answer: A**  
+Explanation: Pipe mode streams without copying everything to disk, shortening time to first batch and minimizing GPU idle time, while ShardedByS3Key has each instance read only a distinct slice. FullyReplicated variants send the entire dataset to every instance, which is inefficient for distributed training.
 
 ---
 
-**문제 3.** You need to label medical data containing PII while also reducing labeling labor costs. What is the most appropriate combination?
+**Question 3.** You need to label medical data containing PII while also reducing labeling labor costs. What is the most appropriate combination?
 
 A) Mechanical Turk + exhaustive labeling  
 B) Automation only, without a Vendor  
 C) Public crowdsourcing + consensus  
 D) Private workforce + active learning (automated labeling)  
 
-**정답: D**  
-해설: Data containing PII requires a Private (or vetted Vendor) workforce for compliance, and active learning sends only ambiguous samples to humans to reduce labor cost. Mechanical Turk and public crowdsourcing are unsuitable for sensitive data, and automation alone does not work without seed labels.
+**Answer: D**  
+Explanation: Data containing PII requires a Private (or vetted Vendor) workforce for compliance, and active learning sends only ambiguous samples to humans to reduce labor cost. Mechanical Turk and public crowdsourcing are unsuitable for sensitive data, and automation alone does not work without seed labels.
 
 ---
 
-**문제 4.** A single event stream must be used independently for a real-time dashboard, a fraud model, and later reprocessing, and replay is needed after failures. Which ingestion service fits?
+**Question 4.** A single event stream must be used independently for a real-time dashboard, a fraud model, and later reprocessing, and replay is needed after failures. Which ingestion service fits?
 
 A) Kinesis Data Firehose  
 B) Glue Crawler  
 C) Kinesis Data Streams  
 D) Amazon EFS  
 
-**정답: C**  
-해설: Multiple consumers consuming the same stream independently with data retention and replay is the core use case of Data Streams. Firehose is a simple delivery pipe with no retention, replay, or multi-consumer support; a Crawler is for schema inference; and EFS is file storage, unrelated to multi-consumer streaming.
+**Answer: C**  
+Explanation: Multiple consumers consuming the same stream independently with data retention and replay is the core use case of Data Streams. Firehose is a simple delivery pipe with no retention, replay, or multi-consumer support; a Crawler is for schema inference; and EFS is file storage, unrelated to multi-consumer streaming.
 
 ---
 
-**문제 5.** When solving a scenario question with multiple simultaneous constraints (sensitive data, extreme imbalance, multi-consumer stream), what is the correct approach?
+**Question 5.** When solving a scenario question with multiple simultaneous constraints (sensitive data, extreme imbalance, multi-consumer stream), what is the correct approach?
 
 A) Pick the newest, highest-performance technology  
 B) Pick the option that satisfies all constraints simultaneously  
 C) Pick the lowest-cost option  
 D) Pick the simplest option  
 
-**정답: B**  
-해설: In constraint-collision scenarios, PII forces the workforce, imbalance forces the metric, and the multi-consumer requirement forces KDS. The correct answer is not the fanciest, cheapest, or simplest — it is the choice that satisfies every constraint at once. Violating even one constraint (e.g., sensitive data on a public workforce) makes an option wrong regardless of its other merits.
+**Answer: B**  
+Explanation: In constraint-collision scenarios, PII forces the workforce, imbalance forces the metric, and the multi-consumer requirement forces KDS. The correct answer is not the fanciest, cheapest, or simplest — it is the choice that satisfies every constraint at once. Violating even one constraint (e.g., sensitive data on a public workforce) makes an option wrong regardless of its other merits.
 
 ---

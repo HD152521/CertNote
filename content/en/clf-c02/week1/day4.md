@@ -66,64 +66,64 @@ Today we covered the **six pillars** of the Well-Architected Framework — the s
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** Which of the following is NOT one of the six pillars of the Well-Architected Framework?
+**Question 1.** Which of the following is NOT one of the six pillars of the Well-Architected Framework?
 
 A) Reliability  
 B) Security  
 C) Compliance  
 D) Cost Optimization  
 
-**정답: C**  
-해설: The six pillars are Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization, and Sustainability. Compliance is a separate governance area — it is addressed within the Security pillar but is not an independent pillar.
+**Answer: C**  
+Explanation: The six pillars are Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization, and Sustainability. Compliance is a separate governance area — it is addressed within the Security pillar but is not an independent pillar.
 
 ---
 
-**문제 2.** The requirement "the service must keep running even if one Availability Zone (AZ) fails" is primarily related to which pillar?
+**Question 2.** The requirement "the service must keep running even if one Availability Zone (AZ) fails" is primarily related to which pillar?
 
 A) Cost Optimization  
 B) Reliability  
 C) Sustainability  
 D) Operational Excellence  
 
-**정답: B**  
-해설: The ability for a service to keep going and recover despite failures is the core of the Reliability pillar. Cost Optimization is about reducing spend, Sustainability is about environmental impact, and Operational Excellence is about operations and automation.
+**Answer: B**  
+Explanation: The ability for a service to keep going and recover despite failures is the core of the Reliability pillar. Cost Optimization is about reducing spend, Sustainability is about environmental impact, and Operational Excellence is about operations and automation.
 
 ---
 
-**문제 3.** The approach of "turning off resources during unused nighttime hours to reduce spend" falls under which pillar?
+**Question 3.** The approach of "turning off resources during unused nighttime hours to reduce spend" falls under which pillar?
 
 A) Security  
 B) Performance Efficiency  
 C) Cost Optimization  
 D) Reliability  
 
-**정답: C**  
-해설: Turning off unused resources to eliminate unnecessary spend is a classic Cost Optimization activity. Security is about protecting data and systems, Performance Efficiency is about the efficient use of resources, and Reliability is about failure recovery.
+**Answer: C**  
+Explanation: Turning off unused resources to eliminate unnecessary spend is a classic Cost Optimization activity. Security is about protecting data and systems, Performance Efficiency is about the efficient use of resources, and Reliability is about failure recovery.
 
 ---
 
-**문제 4.** Which pillar was newly added to the Well-Architected Framework in 2021, becoming the sixth?
+**Question 4.** Which pillar was newly added to the Well-Architected Framework in 2021, becoming the sixth?
 
 A) Sustainability  
 B) Security  
 C) Reliability  
 D) Operational Excellence  
 
-**정답: A**  
-해설: Sustainability was added in 2021 as the sixth pillar and focuses on reducing the environmental impact of cloud usage. The other choices are pillars that existed before then.
+**Answer: A**  
+Explanation: Sustainability was added in 2021 as the sixth pillar and focuses on reducing the environmental impact of cloud usage. The other choices are pillars that existed before then.
 
 ---
 
-**문제 5.** Which of the following is NOT a value a company gains by adopting the cloud?
+**Question 5.** Which of the following is NOT a value a company gains by adopting the cloud?
 
 A) Agility to experiment with and launch ideas quickly  
 B) Elasticity that scales resources up and down with usage  
 C) An increased burden of building and operating data centers yourself  
 D) Global reach that serves the whole world with a few clicks  
 
-**정답: C**  
-해설: The value of cloud adoption includes agility, elasticity, global reach, and relief from the burden of operating data centers. An increased burden of building and operating your own data centers is not a value of the cloud — it is precisely the burden the cloud removes.
+**Answer: C**  
+Explanation: The value of cloud adoption includes agility, elasticity, global reach, and relief from the burden of operating data centers. An increased burden of building and operating your own data centers is not a value of the cloud — it is precisely the burden the cloud removes.
 
 ---

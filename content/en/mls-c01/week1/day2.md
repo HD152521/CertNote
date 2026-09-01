@@ -92,64 +92,64 @@ cols = pd.read_parquet("s3://my-lake/features/train.parquet", columns=["age", "a
 
 Leaving millions of small images or JSON files as-is in S3 slows training due to per-object request overhead. The fix is **sharding**: merging small files into large bundles such as RecordIO, TFRecord, or tar. Make each bundle a few hundred MB so sequential I/O is efficient and it pairs well with Pipe mode.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** You are training 800GB of data across 4 ml.p3 instances in a distributed setup. To minimize the time GPUs sit idle waiting for data copies while having each instance read only a different slice of the data, what should you use?
+**Question 1.** You are training 800GB of data across 4 ml.p3 instances in a distributed setup. To minimize the time GPUs sit idle waiting for data copies while having each instance read only a different slice of the data, what should you use?
 
 A) Pipe mode + ShardedByS3Key  
 B) File mode + FullyReplicated  
 C) File mode + ShardedByS3Key  
 D) FastFile mode + FullyReplicated  
 
-**정답: A**  
-해설: Pipe mode streams without copying everything to disk, reducing time-to-first-batch and thus minimizing GPU idle time, while ShardedByS3Key has each instance read only a distinct slice, reducing duplication and memory. FullyReplicated sends the whole dataset to every instance and is inefficient, and File mode has a long initial copy for large data.
+**Answer: A**  
+Explanation: Pipe mode streams without copying everything to disk, reducing time-to-first-batch and thus minimizing GPU idle time, while ShardedByS3Key has each instance read only a distinct slice, reducing duplication and memory. FullyReplicated sends the whole dataset to every instance and is inefficient, and File mode has a long initial copy for large data.
 
 ---
 
-**문제 2.** You run 200 rounds of hyperparameter tuning on the same ImageNet dataset, and the repeated S3 download time is accumulating into significant cost. What is the most appropriate storage strategy?
+**Question 2.** You run 200 rounds of hyperparameter tuning on the same ImageNet dataset, and the repeated S3 download time is accumulating into significant cost. What is the most appropriate storage strategy?
 
 A) Re-download every time in File mode  
 B) Load it once into FSx for Lustre so all tuning jobs share high-speed access  
 C) Shrink the dataset  
 D) Increase the EBS volume size  
 
-**정답: B**  
-해설: A high-throughput scenario where many jobs repeatedly use the same data is the flagship use case for FSx for Lustre. With S3 as the backend, Lustre acts like a high-speed cache and eliminates the repeated download cost. Re-downloading every time is the very cause of the problem, shrinking the data hurts quality, and expanding EBS does not solve the sharing/throughput problem.
+**Answer: B**  
+Explanation: A high-throughput scenario where many jobs repeatedly use the same data is the flagship use case for FSx for Lustre. With S3 as the backend, Lustre acts like a high-speed cache and eliminates the repeated download cost. Re-downloading every time is the very cause of the problem, shrinking the data hurts quality, and expanding EBS does not solve the sharing/throughput problem.
 
 ---
 
-**문제 3.** In a structured feature table with 50 columns, analytics and ETL read only 3-5 columns each time. Which format reduces both I/O and storage cost at once?
+**Question 3.** In a structured feature table with 50 columns, analytics and ETL read only 3-5 columns each time. Which format reduces both I/O and storage cost at once?
 
 A) CSV  
 B) Uncompressed JSON  
 C) Parquet (columnar)  
 D) Plain text  
 
-**정답: C**  
-해설: Parquet is columnar, so it scans only the needed columns (projection pushdown), and similar values within a column give high compression ratios. CSV, JSON, and plain text are row-based, requiring reads of entire rows, and compress poorly.
+**Answer: C**  
+Explanation: Parquet is columnar, so it scans only the needed columns (projection pushdown), and similar values within a column give high compression ratios. CSV, JSON, and plain text are row-based, requiring reads of entire rows, and compress poorly.
 
 ---
 
-**문제 4.** What is the recommended serialization format when training a SageMaker built-in algorithm on large data with Pipe-mode sequential streaming?
+**Question 4.** What is the recommended serialization format when training a SageMaker built-in algorithm on large data with Pipe-mode sequential streaming?
 
 A) Millions of individual PNG image files  
 B) A separate CSV file per row  
 C) A compressed ZIP archive  
 D) RecordIO-protobuf  
 
-**정답: D**  
-해설: RecordIO-protobuf packs many records into one large binary, optimized for sequential reads and Pipe streaming, which is why SageMaker built-in algorithms recommend it. Millions of small files incur heavy object request overhead, one CSV per row is even worse, and ZIP is unsuitable for streaming training.
+**Answer: D**  
+Explanation: RecordIO-protobuf packs many records into one large binary, optimized for sequential reads and Pipe streaming, which is why SageMaker built-in algorithms recommend it. Millions of small files incur heavy object request overhead, one CSV per row is even worse, and ZIP is unsuitable for streaming training.
 
 ---
 
-**문제 5.** Multiple data scientists' notebooks and multiple processing jobs need to simultaneously share and modify the same medium-sized dataset as a POSIX file system. Which choice is simple to set up and scales elastically?
+**Question 5.** Multiple data scientists' notebooks and multiple processing jobs need to simultaneously share and modify the same medium-sized dataset as a POSIX file system. Which choice is simple to set up and scales elastically?
 
 A) Separate copies on each user's EBS volume  
 B) Amazon EFS  
 C) S3 Glacier  
 D) Local instance store  
 
-**정답: B**  
-해설: EFS is managed NFS that multiple instances mount and share concurrently, with elastic capacity and simple setup, making it well suited to general-purpose data shared by notebooks and jobs. EBS is single-instance only, Glacier is cold archive storage, and instance store is ephemeral and unsuitable for sharing.
+**Answer: B**  
+Explanation: EFS is managed NFS that multiple instances mount and share concurrently, with elastic capacity and simple setup, making it well suited to general-purpose data shared by notebooks and jobs. EBS is single-instance only, Glacier is cold archive storage, and instance store is ephemeral and unsuitable for sharing.
 
 ---

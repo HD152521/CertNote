@@ -95,52 +95,52 @@ In practice, the two approaches are often **used together**. For example, clear 
 - It can be a poor fit when the rules are clear, data is scarce, or 100% accuracy is mandatory.
 - Choosing the simplest method that is sufficient is good design.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** For which of the following problems is traditional programming more appropriate than machine learning?
+**Question 1.** For which of the following problems is traditional programming more appropriate than machine learning?
 
 A) Recognizing cats in millions of photos  
 B) Detecting ever-changing spam email  
 C) Calculating tax by multiplying an input amount by a fixed 10% rate  
 D) Recommending products based on a customer's purchase history  
 
-**정답: C**  
-해설: Multiplying by a fixed tax rate is a clear, simple calculation, so traditional programming is more accurate and cheaper. Image recognition, detecting evolving spam, and recommendations involve rules that are complex or hard to define, making machine learning appropriate.
+**Answer: C**  
+Explanation: Multiplying by a fixed tax rate is a clear, simple calculation, so traditional programming is more accurate and cheaper. Image recognition, detecting evolving spam, and recommendations involve rules that are complex or hard to define, making machine learning appropriate.
 
 ---
 
-**문제 2.** Which statement most accurately describes the input/output relationship of traditional programming and machine learning?
+**Question 2.** Which statement most accurately describes the input/output relationship of traditional programming and machine learning?
 
 A) Both take data and rules as input and output results  
 B) The traditional approach produces results from data + rules, while machine learning produces rules from data + results  
 C) Machine learning takes rules as input and generates data  
 D) The traditional approach produces results without any data  
 
-**정답: B**  
-해설: Traditional programming produces results from human-made rules and data, while machine learning learns rules (a model) from data and answer (result) examples. The key point is that the input/output relationship is reversed between the two.
+**Answer: B**  
+Explanation: Traditional programming produces results from human-made rules and data, while machine learning learns rules (a model) from data and answer (result) examples. The key point is that the input/output relationship is reversed between the two.
 
 ---
 
-**문제 3.** In a certain business task, there are only a handful of historical records available for training, and the results must be legally 100% accurate and fully explainable. Which judgment is most appropriate for this situation?
+**Question 3.** In a certain business task, there are only a handful of historical records available for training, and the results must be legally 100% accurate and fully explainable. Which judgment is most appropriate for this situation?
 
 A) Adopt machine learning immediately, since it is always more accurate even with little data  
 B) Machine learning may be unsuitable due to the lack of data and the requirement for complete accuracy and explainability  
 C) Using reinforcement learning solves it perfectly even without data  
 D) There is no problem since machine learning always guarantees explainability  
 
-**정답: B**  
-해설: A situation with very little training data, no tolerance for error, and a requirement to fully explain every decision can be unsuitable for machine learning, which is probabilistic and sometimes a black box. Claims that machine learning is always more accurate or always explainable are incorrect.
+**Answer: B**  
+Explanation: A situation with very little training data, no tolerance for error, and a requirement to fully explain every decision can be unsuitable for machine learning, which is probabilistic and sometimes a black box. Claims that machine learning is always more accurate or always explainable are incorrect.
 
 ---
 
-**문제 4.** Which of the following is hard to consider a characteristic of problems suited to adopting machine learning?
+**Question 4.** Which of the following is hard to consider a characteristic of problems suited to adopting machine learning?
 
 A) The patterns are so complex that humans struggle to write explicit rules  
 B) Sufficient quantity and quality of training data is available  
 C) Some prediction error is acceptable  
 D) The rules are very simple and unchanging, and a simple calculation suffices  
 
-**정답: D**  
-해설: Problems whose rules are simple, unchanging, and solvable with a simple calculation are better suited to traditional programming. Complex patterns, sufficient data, and tolerance for some error are the typical conditions where machine learning fits.
+**Answer: D**  
+Explanation: Problems whose rules are simple, unchanging, and solvable with a simple calculation are better suited to traditional programming. Complex patterns, sufficient data, and tolerance for some error are the typical conditions where machine learning fits.
 
 ---

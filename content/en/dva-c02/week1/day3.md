@@ -158,33 +158,33 @@ In the next article, we look at the practical use of the AWS CLI, SDKs, and Clou
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A company wants to let an external SaaS backup service write backup data to its S3. What is the safest configuration?
+**Question 1.** A company wants to let an external SaaS backup service write backup data to its S3. What is the safest configuration?
 
 A) Create an IAM User and hand the access key to the SaaS
 B) Create an IAM Role and specify both the SaaS's account ID and an External ID condition in the Trust Policy
 C) Set the S3 bucket to public
 D) Refresh and deliver S3 presigned URLs to the SaaS every hour
 
-**정답: B**
-해설: The External ID prevents the confused deputy problem. If you trust only the SaaS's account ID, the SaaS could mistakenly borrow our Role while processing another customer's request. The External ID verifies "this request is on behalf of our account". A carries long-term key leakage risk, C exposes the data, and D imposes hourly refresh as an operational burden — plus a presigned URL is essentially the same as exposing a key. In practice, make the External ID a random string of 16+ characters and never leave it in plaintext on GitHub or in Jira tickets.
+**Answer: B**
+Explanation: The External ID prevents the confused deputy problem. If you trust only the SaaS's account ID, the SaaS could mistakenly borrow our Role while processing another customer's request. The External ID verifies "this request is on behalf of our account". A carries long-term key leakage risk, C exposes the data, and D imposes hourly refresh as an operational burden — plus a presigned URL is essentially the same as exposing a key. In practice, make the External ID a random string of 16+ characters and never leave it in plaintext on GitHub or in Jira tickets.
 
 ---
 
-**문제 2.** In a Lambda function, `boto3.client('s3').list_buckets()` returned an `ExpiredToken` error. What is the most likely cause?
+**Question 2.** In a Lambda function, `boto3.client('s3').list_buckets()` returned an `ExpiredToken` error. What is the most likely cause?
 
 A) The Lambda function's IAM Role is misconfigured
 B) The Lambda ran for over 8 hours and failed to refresh its STS credentials (Lambda max is 15 minutes)
 C) The Lambda function code called `assume_role` internally and used the returned temporary credentials more than 1 hour later
 D) The S3 bucket is in a different region
 
-**정답: C**
-해설: The credentials a Lambda function receives automatically via an IMDS-like mechanism are automatically refreshed by the SDK before expiration. But temporary credentials obtained by explicitly calling `sts.assume_role()` inside your code are not auto-refreshed. They expire after 1 hour. Solutions: use the SDK's `boto3.Session(profile_name='...')`, specify a longer `DurationSeconds` (up to 12 hours) at `sts.assume_role`, or track the expiration time and re-issue. B is an impossible scenario since Lambda's max execution time is 15 minutes.
+**Answer: C**
+Explanation: The credentials a Lambda function receives automatically via an IMDS-like mechanism are automatically refreshed by the SDK before expiration. But temporary credentials obtained by explicitly calling `sts.assume_role()` inside your code are not auto-refreshed. They expire after 1 hour. Solutions: use the SDK's `boto3.Session(profile_name='...')`, specify a longer `DurationSeconds` (up to 12 hours) at `sts.assume_role`, or track the expiration time and re-issue. B is an impossible scenario since Lambda's max execution time is 15 minutes.
 
 ---
 
-**문제 3.** What does the following Trust Policy mean?
+**Question 3.** What does the following Trust Policy mean?
 ```json
 {"Principal": {"Service": "ec2.amazonaws.com"}, "Action": "sts:AssumeRole"}
 ```
@@ -194,65 +194,65 @@ B) The ec2.amazonaws.com service can assume this Role, so it can be attached to 
 C) IAM permissions are baked into AMIs created by EC2
 D) It is an invalid policy
 
-**정답: B**
-해설: To let an AWS service itself assume a Role, you specify the service name in the Trust Policy's Principal. `ec2.amazonaws.com` means EC2 can attach and use this Role as an instance profile. Similarly, a Lambda execution role uses `lambda.amazonaws.com`, and an ECS Task Role uses `ecs-tasks.amazonaws.com` (note: NOT `ecs.amazonaws.com`).
+**Answer: B**
+Explanation: To let an AWS service itself assume a Role, you specify the service name in the Trust Policy's Principal. `ec2.amazonaws.com` means EC2 can attach and use this Role as an instance profile. Similarly, a Lambda execution role uses `lambda.amazonaws.com`, and an ECS Task Role uses `ecs-tasks.amazonaws.com` (note: NOT `ecs.amazonaws.com`).
 
 ---
 
-**문제 4.** ABAC pattern: every resource carries a `Project` tag, and IAM Principals also have a `Project` tag. Which Condition expresses "access only to resources of one's own project"?
+**Question 4.** ABAC pattern: every resource carries a `Project` tag, and IAM Principals also have a `Project` tag. Which Condition expresses "access only to resources of one's own project"?
 
 A) `"StringEquals": {"aws:ResourceTag/Project": "${aws:PrincipalTag/Project}"}`
 B) `"StringEquals": {"aws:PrincipalTag/Project": "AllProjects"}`
 C) `"StringNotEquals": {"aws:RequestTag/Project": "*"}`
 D) `"Bool": {"aws:PrincipalTag/Project": "true"}`
 
-**정답: A**
-해설: This is the standard ABAC pattern. `aws:ResourceTag/Project` is the tag of the resource being called, and `${aws:PrincipalTag/Project}` substitutes the caller's tag as a variable. The action is allowed only when the two values match. This single policy works even with 1,000 projects and 10,000 users, solving RBAC's role explosion. However, for ABAC to work, consistent tagging must be enforced on all resources (enforced via SCPs or IaC).
+**Answer: A**
+Explanation: This is the standard ABAC pattern. `aws:ResourceTag/Project` is the tag of the resource being called, and `${aws:PrincipalTag/Project}` substitutes the caller's tag as a variable. The action is allowed only when the two values match. This single policy works even with 1,000 projects and 10,000 users, solving RBAC's role explosion. However, for ABAC to work, consistent tagging must be enforced on all resources (enforced via SCPs or IaC).
 
 ---
 
-**문제 5.** What is the risk of using the global endpoint (`sts.amazonaws.com`) instead of the STS regional endpoint (`sts.ap-northeast-2.amazonaws.com`)?
+**Question 5.** What is the risk of using the global endpoint (`sts.amazonaws.com`) instead of the STS regional endpoint (`sts.ap-northeast-2.amazonaws.com`)?
 
 A) It costs more
 B) A us-east-1 outage affects the global endpoint, so workloads in other regions can also fail to obtain credentials
 C) It has lower throughput limits
 D) It cannot be FIPS certified
 
-**정답: B**
-해설: The STS global endpoint is physically located in us-east-1. If an event like the 2017 S3 us-east-1 outage occurs, STS calls through the global endpoint also fail. Since 2018, AWS has recommended that all SDKs use regional endpoints by default (boto3 since 1.18.0; AWS SDK for Java v2 from the start). You can force it with the `AWS_STS_REGIONAL_ENDPOINTS=regional` environment variable. Global-endpoint tokens are valid in all regions, but regional-endpoint tokens are also valid in all regions by default (aside from legacy behavior).
+**Answer: B**
+Explanation: The STS global endpoint is physically located in us-east-1. If an event like the 2017 S3 us-east-1 outage occurs, STS calls through the global endpoint also fail. Since 2018, AWS has recommended that all SDKs use regional endpoints by default (boto3 since 1.18.0; AWS SDK for Java v2 from the start). You can force it with the `AWS_STS_REGIONAL_ENDPOINTS=regional` environment variable. Global-endpoint tokens are valid in all regions, but regional-endpoint tokens are also valid in all regions by default (aside from legacy behavior).
 
 ---
 
-**문제 6.** You want to call AWS APIs from an EKS Pod. What is the safest method?
+**Question 6.** You want to call AWS APIs from an EKS Pod. What is the safest method?
 
 A) Inject an IAM User access key into the Pod's environment variables
 B) Grant all permissions to the worker node's instance profile (shared by all Pods)
 C) Grant a per-Pod Role via IRSA (IAM Roles for Service Accounts) or EKS Pod Identity
 D) Store keys in AWS Secrets Manager and have the Pod download them at boot
 
-**정답: C**
-해설: IRSA grants IAM Roles at the Pod level. Credentials arrive via the Service Account → OIDC token → STS AssumeRoleWithWebIdentity path, so there are no long-term keys. B has every Pod on the same node sharing the same permissions, violating least privilege. A and D ultimately risk long-term key exposure. With EKS Pod Identity released in 2023, the same effect can be achieved with a simpler setup than IRSA (no OIDC configuration required).
+**Answer: C**
+Explanation: IRSA grants IAM Roles at the Pod level. Credentials arrive via the Service Account → OIDC token → STS AssumeRoleWithWebIdentity path, so there are no long-term keys. B has every Pod on the same node sharing the same permissions, violating least privilege. A and D ultimately risk long-term key exposure. With EKS Pod Identity released in 2023, the same effect can be achieved with a simpler setup than IRSA (no OIDC configuration required).
 
 ---
 
-**문제 7.** What is the role of RoleSessionName in an AssumeRole call?
+**Question 7.** What is the role of RoleSessionName in an AssumeRole call?
 
 A) It determines the Role's ARN
 B) It is an identifier for tracing which session it is in CloudTrail audit logs
 C) It is the expiration time of the temporary credentials
 D) It is the verification key of the MFA token
 
-**정답: B**
-해설: RoleSessionName is an identifier recorded verbatim in CloudTrail logs. When one Role is shared by many users, it lets you trace who did what and when. Example: if 50 developers assume the same `DevRole`, each uses a RoleSessionName like `alice@company.com`, `bob@company.com` to identify whose action it was. Looking at CloudTrail's `userIdentity.sessionContext.sessionIssuer.userName` together with `userIdentity.arn` reveals the exact flow.
+**Answer: B**
+Explanation: RoleSessionName is an identifier recorded verbatim in CloudTrail logs. When one Role is shared by many users, it lets you trace who did what and when. Example: if 50 developers assume the same `DevRole`, each uses a RoleSessionName like `alice@company.com`, `bob@company.com` to identify whose action it was. Looking at CloudTrail's `userIdentity.sessionContext.sessionIssuer.userName` together with `userIdentity.arn` reveals the exact flow.
 
 ---
 
-**문제 8.** A user in account A must access an S3 bucket in account B. Which combination of policies is required?
+**Question 8.** A user in account A must access an S3 bucket in account B. Which combination of policies is required?
 
 A) Allowing account A's Principal in account B's bucket policy alone is sufficient
 B) Allowing S3 access in account A's user IAM policy alone is sufficient
 C) Both account A's user IAM policy AND account B's bucket policy must allow (AND)
 D) Apply SCPs to both accounts
 
-**정답: C**
-해설: This is the core principle of cross-account. Even with a resource-based policy, in cross-account scenarios both sides must allow (AND). Within the same account it is OR (either one is enough), but cross-account it is AND. This asymmetry frequently appears as a trap both on the exam and in practice.
+**Answer: C**
+Explanation: This is the core principle of cross-account. Even with a resource-based policy, in cross-account scenarios both sides must allow (AND). Within the same account it is OR (either one is enough), but cross-account it is AND. This asymmetry frequently appears as a trap both on the exam and in practice.

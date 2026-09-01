@@ -64,64 +64,64 @@ Today we drew the map of AWS infrastructure. We covered the three-tier structure
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** Which of the following correctly lists the building blocks of AWS infrastructure from largest to smallest?
+**Question 1.** Which of the following correctly lists the building blocks of AWS infrastructure from largest to smallest?
 
 A) Availability Zone > Region > data center  
 B) Region > Availability Zone > data center  
 C) Data center > Region > Availability Zone  
 D) Edge location > Region > Availability Zone  
 
-**정답: B**  
-해설: A Region is a group of multiple Availability Zones, and an Availability Zone consists of one or more data centers. Therefore Region > Availability Zone > data center is the correct order. Edge locations sit outside this hierarchy and serve as footholds for content delivery.
+**Answer: B**  
+Explanation: A Region is a group of multiple Availability Zones, and an Availability Zone consists of one or more data centers. Therefore Region > Availability Zone > data center is the correct order. Edge locations sit outside this hierarchy and serve as footholds for content delivery.
 
 ---
 
-**문제 2.** What is the most appropriate way to keep a service running even if a failure occurs in one AZ?
+**Question 2.** What is the most appropriate way to keep a service running even if a failure occurs in one AZ?
 
 A) Concentrate all resources in a single AZ  
 B) Distribute the service across two or more AZs  
 C) Place the service only in edge locations  
 D) Change Regions frequently  
 
-**정답: B**  
-해설: Availability Zones are independent of one another, so spreading across two or more AZs keeps the service running in another AZ even if one AZ goes down. Concentrating in one AZ means a failure there takes everything down, edge locations are for content delivery rather than a platform for running services, and changing Regions is not a failure-response method.
+**Answer: B**  
+Explanation: Availability Zones are independent of one another, so spreading across two or more AZs keeps the service running in another AZ even if one AZ goes down. Concentrating in one AZ means a failure there takes everything down, edge locations are for content delivery rather than a platform for running services, and changing Regions is not a failure-response method.
 
 ---
 
-**문제 3.** Which infrastructure component is used to cache content close to users in order to deliver images from a U.S. server to users in Korea more quickly?
+**Question 3.** Which infrastructure component is used to cache content close to users in order to deliver images from a U.S. server to users in Korea more quickly?
 
 A) Availability Zone  
 B) Region  
 C) Edge location  
 D) Data center  
 
-**정답: C**  
-해설: The foothold that pre-caches content near users for fast delivery is the edge location, and CDNs like CloudFront make use of it. Regions and Availability Zones are where data and compute live, and a data center is the physical facility that makes up an Availability Zone.
+**Answer: C**  
+Explanation: The foothold that pre-caches content near users for fast delivery is the edge location, and CDNs like CloudFront make use of it. Regions and Availability Zones are where data and compute live, and a data center is the physical facility that makes up an Availability Zone.
 
 ---
 
-**문제 4.** Which of the following is a global service that operates as a single worldwide entity, independent of Regions?
+**Question 4.** Which of the following is a global service that operates as a single worldwide entity, independent of Regions?
 
 A) EC2  
 B) RDS  
 C) IAM  
 D) EBS  
 
-**정답: C**  
-해설: IAM (user and permission management) is a global service that operates as one entity worldwide across the entire account. EC2 (virtual servers), RDS (databases), and EBS (block storage) are all regional services tied to a specific Region.
+**Answer: C**  
+Explanation: IAM (user and permission management) is a global service that operates as one entity worldwide across the entire account. EC2 (virtual servers), RDS (databases), and EBS (block storage) are all regional services tied to a specific Region.
 
 ---
 
-**문제 5.** Which of the following is NOT a factor to consider when selecting a Region?
+**Question 5.** Which of the following is NOT a factor to consider when selecting a Region?
 
 A) Latency based on distance to users  
 B) Compliance requirements to keep data within the country  
 C) Availability of services offered in that Region  
 D) The color of the Availability Zone  
 
-**정답: D**  
-해설: Region selection is usually based on latency (distance), compliance, service availability, and cost. Something like "the color of the Availability Zone" is not a real concept and cannot be a criterion for choosing a Region.
+**Answer: D**  
+Explanation: Region selection is usually based on latency (distance), compliance, service availability, and cost. Something like "the color of the Availability Zone" is not a real concept and cannot be a criterion for choosing a Region.
 
 ---
