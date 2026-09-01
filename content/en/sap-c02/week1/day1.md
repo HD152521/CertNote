@@ -160,86 +160,86 @@ Apply today's decomposition method as-is to the practice questions of every day.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A company runs a global SaaS and has 200 AWS accounts. The security team wants to "enforce MFA for the root user in all accounts and prohibit S3 public access." How should this be applied **while minimizing operational overhead**?
+**Question 1.** A company runs a global SaaS and has 200 AWS accounts. The security team wants to "enforce MFA for the root user in all accounts and prohibit S3 public access." How should this be applied **while minimizing operational overhead**?
 
 A) Build Lambda automation that deploys separate IAM policies to every account
 B) Apply deny policies at the OU level using SCPs in AWS Organizations
 C) Enable IAM Identity Center in each account
 D) Deploy AWS Config Rules per account to detect non-compliant resources
 
-**정답: B**
-해설: The keywords are "minimize operational overhead" + "apply across all accounts at once." An SCP, applied once at the Organizations level, automatically propagates to all accounts and all OUs with no separate automation or deployment needed. A carries heavy Lambda operational overhead and risks missing newly added accounts. C is merely an SSO tool and is unrelated to enforcing root MFA. D is only after-the-fact detection, not prevention, and carries higher operational overhead. Trade-off: SCPs can only deny and cannot grant permissions, so grants must be combined with separate IAM policies or Permission Sets.
+**Answer: B**
+Explanation: The keywords are "minimize operational overhead" + "apply across all accounts at once." An SCP, applied once at the Organizations level, automatically propagates to all accounts and all OUs with no separate automation or deployment needed. A carries heavy Lambda operational overhead and risks missing newly added accounts. C is merely an SSO tool and is unrelated to enforcing root MFA. D is only after-the-fact detection, not prevention, and carries higher operational overhead. Trade-off: SCPs can only deny and cannot grant permissions, so grants must be combined with separate IAM policies or Permission Sets.
 
 ---
 
-**문제 2.** A fintech startup is growing rapidly and its EC2 instance costs have exceeded $40,000 per month. Traffic concentrates on weekdays 09:00-18:00, and nights/weekends run at about 20%. The business direction may change within a year, so **a 3-year commitment is too burdensome**. What is the most cost-effective combination?
+**Question 2.** A fintech startup is growing rapidly and its EC2 instance costs have exceeded $40,000 per month. Traffic concentrates on weekdays 09:00-18:00, and nights/weekends run at about 20%. The business direction may change within a year, so **a 3-year commitment is too burdensome**. What is the most cost-effective combination?
 
 A) Convert all instances to 3-year All Upfront RIs
 B) A combination of 1-year Compute Savings Plans + Spot + Auto Scaling
 C) 1-year Reserved Capacity commitment + On-Demand
 D) Convert everything to Spot Instances
 
-**정답: B**
-해설: The keywords are "cost efficiency" + "flexibility (3-year burden)" + "traffic variability." A 1-year Compute Savings Plan minimizes commitment and is the most flexible form, applying to EC2, Fargate, and Lambda alike (about 27% discount). Spot adds 70-90% savings for stateless workloads. Auto Scaling handles the nighttime scale-down as well. A is wrong because the 3-year commitment was explicitly rejected. C's Reserved Capacity is fixed to an EC2 instance family, offering low flexibility. D is unsuitable for all of production due to Spot interruption risk. Trade-off: Spot averages 60-80% discounts, but instances can be reclaimed after a 2-minute warning, making it unsuitable for stateful workloads.
+**Answer: B**
+Explanation: The keywords are "cost efficiency" + "flexibility (3-year burden)" + "traffic variability." A 1-year Compute Savings Plan minimizes commitment and is the most flexible form, applying to EC2, Fargate, and Lambda alike (about 27% discount). Spot adds 70-90% savings for stateless workloads. Auto Scaling handles the nighttime scale-down as well. A is wrong because the 3-year commitment was explicitly rejected. C's Reserved Capacity is fixed to an EC2 instance family, offering low flexibility. D is unsuitable for all of production due to Spot interruption risk. Trade-off: Spot averages 60-80% discounts, but instances can be reclaimed after a 2-minute warning, making it unsuitable for stateful workloads.
 
 ---
 
-**문제 3.** A media company provides a real-time game matchmaking service (WebSocket-based) to global users. Users must automatically connect to the nearest region, and on a regional failure, failover to another region must occur **within seconds**. Which combination is most suitable?
+**Question 3.** A media company provides a real-time game matchmaking service (WebSocket-based) to global users. Users must automatically connect to the nearest region, and on a regional failure, failover to another region must occur **within seconds**. Which combination is most suitable?
 
 A) Route 53 Latency-Based Routing + Health Check
 B) CloudFront + Lambda@Edge
 C) Global Accelerator + Application Load Balancer
 D) API Gateway Regional + Custom Domain
 
-**정답: C**
-해설: The keywords are "WebSocket (L4)" + "failover within seconds" + "global routing." Route 53 LBR (A) takes minutes to fail over due to DNS TTL caching. CloudFront (B) handles only L7 HTTP/HTTPS, so WebSocket is possible, but matchmaking's bidirectional traffic is unsuitable for Lambda@Edge. Global Accelerator (C) is based on BGP Anycast, provides 2 static IPs, bypasses DNS caching to enable regional failover **within seconds**, and can accelerate both TCP and UDP. D is a single-region API lacking global routing and failover capability. Trade-off: Global Accelerator adds $0.025 per hour plus data processing costs, so if a failover SLA of minutes is sufficient, Route 53 can be cheaper.
+**Answer: C**
+Explanation: The keywords are "WebSocket (L4)" + "failover within seconds" + "global routing." Route 53 LBR (A) takes minutes to fail over due to DNS TTL caching. CloudFront (B) handles only L7 HTTP/HTTPS, so WebSocket is possible, but matchmaking's bidirectional traffic is unsuitable for Lambda@Edge. Global Accelerator (C) is based on BGP Anycast, provides 2 static IPs, bypasses DNS caching to enable regional failover **within seconds**, and can accelerate both TCP and UDP. D is a single-region API lacking global routing and failover capability. Trade-off: Global Accelerator adds $0.025 per hour plus data processing costs, so if a failover SLA of minutes is sufficient, Route 53 can be cheaper.
 
 ---
 
-**문제 4.** A manufacturer wants to migrate an on-premises Oracle DB (50TB) to AWS. Downtime is limited to under 1 hour, and bidirectional synchronization is needed for a period after migration. **To avoid additional license costs, an engine conversion to PostgreSQL** will be performed at the same time. Which combination is suitable?
+**Question 4.** A manufacturer wants to migrate an on-premises Oracle DB (50TB) to AWS. Downtime is limited to under 1 hour, and bidirectional synchronization is needed for a period after migration. **To avoid additional license costs, an engine conversion to PostgreSQL** will be performed at the same time. Which combination is suitable?
 
 A) AWS DMS Full Load + CDC + Schema Conversion Tool
 B) Move data with Snowball Edge + restore to RDS
 C) Native Oracle Data Pump + S3 + RDS Oracle import
 D) Database Migration Service + Aurora Oracle Compatible
 
-**정답: A**
-해설: The keywords are "engine conversion (Oracle → PostgreSQL)" + "low downtime" + "bidirectional synchronization." DMS minimizes downtime with Full Load (initial data) + CDC (change data capture) while enabling bidirectional sync. SCT (Schema Conversion Tool) automatically converts Oracle schemas and PL/SQL to PostgreSQL. B has too much downtime (Snowball ships by mail). C cannot convert engines (Oracle → Oracle). D's "Aurora Oracle Compatible" is a service that doesn't actually exist (Aurora is only PostgreSQL/MySQL compatible). Trade-off: the DMS+SCT combination requires about 20-30% manual code fixes after automatic conversion (especially PL/SQL functions). Assess the conversion in advance with an SCT Assessment Report.
+**Answer: A**
+Explanation: The keywords are "engine conversion (Oracle → PostgreSQL)" + "low downtime" + "bidirectional synchronization." DMS minimizes downtime with Full Load (initial data) + CDC (change data capture) while enabling bidirectional sync. SCT (Schema Conversion Tool) automatically converts Oracle schemas and PL/SQL to PostgreSQL. B has too much downtime (Snowball ships by mail). C cannot convert engines (Oracle → Oracle). D's "Aurora Oracle Compatible" is a service that doesn't actually exist (Aurora is only PostgreSQL/MySQL compatible). Trade-off: the DMS+SCT combination requires about 20-30% manual code fixes after automatic conversion (especially PL/SQL functions). Assess the conversion in advance with an SCT Assessment Report.
 
 ---
 
-**문제 5.** A global e-commerce company operated only in us-east-1 and, with growing EU users, wants to expand to eu-west-1. Under **data sovereignty** (GDPR), EU user data must remain within the EU. How do you operate both regions from a single codebase while guaranteeing per-user data isolation?
+**Question 5.** A global e-commerce company operated only in us-east-1 and, with growing EU users, wants to expand to eu-west-1. Under **data sovereignty** (GDPR), EU user data must remain within the EU. How do you operate both regions from a single codebase while guaranteeing per-user data isolation?
 
 A) DynamoDB Global Table + per-user PartitionKey
 B) RDS Cross-Region Read Replica + per-user DB routing
 C) Independent DynamoDB per region + Route 53 Geolocation routing + region determination at the user authentication layer
 D) Aurora Global Database + Write Forwarding
 
-**정답: C**
-해설: The keywords are "data sovereignty" + "regional isolation" + "single codebase." A's Global Table replicates automatically between both regions, so data exists on both sides — a potential GDPR violation. B's Cross-Region Read Replica also replicates data to both sides. D's Aurora Global is the same (read replicas bring EU data into us-east-1). C uses independent per-region databases so data never leaves its region, and Route 53 Geolocation plus routing logic at the authentication step keeps a single codebase. Trade-off: if a user connects from another continent while traveling, latency increases, so decide the region once at authentication and include the region information in the token thereafter.
+**Answer: C**
+Explanation: The keywords are "data sovereignty" + "regional isolation" + "single codebase." A's Global Table replicates automatically between both regions, so data exists on both sides — a potential GDPR violation. B's Cross-Region Read Replica also replicates data to both sides. D's Aurora Global is the same (read replicas bring EU data into us-east-1). C uses independent per-region databases so data never leaves its region, and Route 53 Geolocation plus routing logic at the authentication step keeps a single codebase. Trade-off: if a user connects from another continent while traveling, latency increases, so decide the region once at authentication and include the region information in the token thereafter.
 
 ---
 
-**문제 6.** A company is taking the SAP exam for the first time. They score 75% on practice exams but ran out of time at the exam center. What is the most effective improvement strategy?
+**Question 6.** A company is taking the SAP exam for the first time. They score 75% on practice exams but ran out of time at the exam center. What is the most effective improvement strategy?
 
 A) Memorize more services
 B) Drill the 5-step scenario decomposition + 4 elimination patterns into muscle memory
 C) Practice only harder questions
 D) Since English is a burden, use only Korean
 
-**정답: B**
-해설: The root cause of running out of time is taking too long to interpret questions. A 75% accuracy rate signals that knowledge is sufficient; the bottleneck is lack of technique. Rehearsing the 5-step decomposition + 4 elimination patterns + the 3-2-2 rule until they become reflexes reduces time. A is an area already sufficient. C helps with difficulty adaptation but does little to reduce time. D is actually inefficient because when the Korean translation is awkward, toggling to English is faster.
+**Answer: B**
+Explanation: The root cause of running out of time is taking too long to interpret questions. A 75% accuracy rate signals that knowledge is sufficient; the bottleneck is lack of technique. Rehearsing the 5-step decomposition + 4 elimination patterns + the 3-2-2 rule until they become reflexes reduces time. A is an area already sufficient. C helps with difficulty adaptation but does little to reduce time. D is actually inefficient because when the Korean translation is awkward, toggling to English is faster.
 
 ---
 
-**문제 7.** In an SAP-C02 scenario where the keywords "**most cost-effective**" and "**minimize operational overhead**" appear together, which takes precedence?
+**Question 7.** In an SAP-C02 scenario where the keywords "**most cost-effective**" and "**minimize operational overhead**" appear together, which takes precedence?
 
 A) Always cost
 B) Always operational overhead
 C) The keyword mentioned last in the scenario is the stronger constraint
 D) Whichever the majority of the 4 choices satisfies
 
-**정답: C**
-해설: AWS's official exam guide explicitly says to prioritize the "primary requirement." The most important NFR usually sits in the last sentence or two of the scenario, and earlier sentences are secondary constraints. For example, in "We want to reduce costs. Which approach has the least operational overhead?" — operational overhead is primary. However, if both keywords appear together at the end, you must choose an answer satisfying both, which is usually a Serverless combination (Lambda, Fargate, DynamoDB On-Demand).
+**Answer: C**
+Explanation: AWS's official exam guide explicitly says to prioritize the "primary requirement." The most important NFR usually sits in the last sentence or two of the scenario, and earlier sentences are secondary constraints. For example, in "We want to reduce costs. Which approach has the least operational overhead?" — operational overhead is primary. However, if both keywords appear together at the end, you must choose an answer satisfying both, which is usually a Serverless combination (Lambda, Fargate, DynamoDB On-Demand).

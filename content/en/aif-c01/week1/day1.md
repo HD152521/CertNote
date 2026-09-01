@@ -93,52 +93,52 @@ The key point is that **more complex technology is not always better**. Solving 
 - Deep learning is a type of machine learning that "stacks neural networks deeply."
 - All deep learning is machine learning, but not all AI is machine learning.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** Which statement most accurately describes the relationship between Artificial Intelligence (AI), Machine Learning (ML), and Deep Learning (DL)?
+**Question 1.** Which statement most accurately describes the relationship between Artificial Intelligence (AI), Machine Learning (ML), and Deep Learning (DL)?
 
 A) The three concepts are completely independent and do not overlap  
 B) Deep learning is the broadest concept, containing machine learning and AI within it  
 C) AI is the broadest, machine learning is contained within it, and deep learning is contained within machine learning  
 D) Machine learning and deep learning mean the same thing and are unrelated to AI  
 
-**정답: C**  
-해설: AI is the largest category, machine learning is one way of implementing AI, and deep learning is a type of machine learning. Therefore the nested relationship is AI ⊃ ML ⊃ DL. Claims that the three concepts are independent, that deep learning is the broadest, or that machine learning and deep learning are identical all misunderstand this nested relationship.
+**Answer: C**  
+Explanation: AI is the largest category, machine learning is one way of implementing AI, and deep learning is a type of machine learning. Therefore the nested relationship is AI ⊃ ML ⊃ DL. Claims that the three concepts are independent, that deep learning is the broadest, or that machine learning and deep learning are identical all misunderstand this nested relationship.
 
 ---
 
-**문제 2.** Which statement is correct about a system that operates entirely on rules a human wrote by hand, such as "if the subject contains a specific word, process it"?
+**Question 2.** Which statement is correct about a system that operates entirely on rules a human wrote by hand, such as "if the subject contains a specific word, process it"?
 
 A) It learns rules from data, so it is a typical example of machine learning  
 B) It uses a neural network, so it is deep learning  
 C) Since a human created the rules directly, it is hard to consider it machine learning  
 D) It is just ordinary software with no connection to AI at all  
 
-**정답: C**  
-해설: The essence of machine learning is that the machine learns rules on its own from data. A system whose rules were written directly by a human has no learning process, so it is hard to consider it machine learning. It does not use a neural network, so it is not deep learning either. However, a rule-based system that mimics intelligent behavior can still fall within the broad category of AI.
+**Answer: C**  
+Explanation: The essence of machine learning is that the machine learns rules on its own from data. A system whose rules were written directly by a human has no learning process, so it is hard to consider it machine learning. It does not use a neural network, so it is not deep learning either. However, a rule-based system that mimics intelligent behavior can still fall within the broad category of AI.
 
 ---
 
-**문제 3.** Compared with traditional machine learning, what does deep learning generally require more of?
+**Question 3.** Compared with traditional machine learning, what does deep learning generally require more of?
 
 A) Explicit rules written directly by humans  
 B) Large amounts of data and powerful computing resources  
 C) An environment that uses no data at all  
 D) An environment that uses only small amounts of simple tabular data  
 
-**정답: B**  
-해설: Because deep learning stacks neural networks deeply to learn complex patterns, it generally requires large amounts of data and powerful computing resources such as GPUs. Explicit rules written by humans are a characteristic of the rule-based approach, and the claim of using no data contradicts the very nature of machine learning.
+**Answer: B**  
+Explanation: Because deep learning stacks neural networks deeply to learn complex patterns, it generally requires large amounts of data and powerful computing resources such as GPUs. Explicit rules written by humans are a characteristic of the rule-based approach, and the claim of using no data contradicts the very nature of machine learning.
 
 ---
 
-**문제 4.** Which of the following data types does deep learning generally show its greatest strength with?
+**Question 4.** Which of the following data types does deep learning generally show its greatest strength with?
 
 A) Simple calculations easily handled by fixed rules  
 B) Complex, unstructured data such as images, speech, and natural language  
 C) Small-scale environments with almost no data  
 D) Problems where humans can clearly define every rule  
 
-**정답: B**  
-해설: Deep learning is especially powerful with unstructured data where humans struggle to define clear rules and patterns are complex, such as image recognition, speech recognition, and natural language processing. Its advantages are hard to realize on simple problems easily handled by rules or in environments with very little data.
+**Answer: B**  
+Explanation: Deep learning is especially powerful with unstructured data where humans struggle to define clear rules and patterns are complex, such as image recognition, speech recognition, and natural language processing. Its advantages are hard to realize on simple problems easily handled by rules or in environments with very little data.
 
 ---

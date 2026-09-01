@@ -113,64 +113,64 @@ If you can picture this flow in your head, the more complex content in later wee
 - Data is split into training, validation, and test sets, and test data is not used for training.
 - Overfitting is a state of memorizing only the training data; underfitting is a state of insufficient learning.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** What is the process of feeding new input data to a completed model to obtain prediction results called?
+**Question 1.** What is the process of feeding new input data to a completed model to obtain prediction results called?
 
 A) Training  
 B) Inference  
 C) Labeling  
 D) Overfitting  
 
-**정답: B**  
-해설: The process of predicting answers for new data with a trained model is inference. Training is the process of building the model, labeling is the task of attaching answers, and overfitting refers to a problematic state of a model.
+**Answer: B**  
+Explanation: The process of predicting answers for new data with a trained model is inference. Training is the process of building the model, labeling is the task of attaching answers, and overfitting refers to a problematic state of a model.
 
 ---
 
-**문제 2.** In house price prediction, "floor area, number of rooms, location" are used as input, and "actual transaction price" is the answer to get right. Which terms correctly refer to each?
+**Question 2.** In house price prediction, "floor area, number of rooms, location" are used as input, and "actual transaction price" is the answer to get right. Which terms correctly refer to each?
 
 A) Floor area and number of rooms are labels; transaction price is a feature  
 B) Floor area and number of rooms are features; transaction price is the label  
 C) Both are labels  
 D) Both are features  
 
-**정답: B**  
-해설: The input information used for prediction is the feature, and the answer the model must get right is the label. Therefore floor area, number of rooms, and location are features, and the transaction price is the label.
+**Answer: B**  
+Explanation: The input information used for prediction is the feature, and the answer the model must get right is the label. Therefore floor area, number of rooms, and location are features, and the transaction price is the label.
 
 ---
 
-**문제 3.** A model achieves very high accuracy on the training data but its performance drops sharply on new test data. Which term best describes this state?
+**Question 3.** A model achieves very high accuracy on the training data but its performance drops sharply on new test data. Which term best describes this state?
 
 A) Underfitting  
 B) Overfitting  
 C) Inference  
 D) Generalization  
 
-**정답: B**  
-해설: The state of getting the training data right but performing poorly on new data is overfitting. Underfitting is a state of poor performance even on the training data, inference is the prediction process, and generalization is the desirable property of also working well on new data.
+**Answer: B**  
+Explanation: The state of getting the training data right but performing poorly on new data is overfitting. Underfitting is a state of poor performance even on the training data, inference is the prediction process, and generalization is the desirable property of also working well on new data.
 
 ---
 
-**문제 4.** What is the main reason for splitting data into training, validation, and test sets in machine learning?
+**Question 4.** What is the main reason for splitting data into training, validation, and test sets in machine learning?
 
 A) To make the data smaller and save storage space  
 B) To honestly evaluate whether the model also works well on new data  
 C) To use the test data one more time for training  
 D) To remove the labels  
 
-**정답: B**  
-해설: The core reason for splitting data is to objectively measure the model's generalization performance using data not used for training. Reusing test data for training inflates performance, so it is never done.
+**Answer: B**  
+Explanation: The core reason for splitting data is to objectively measure the model's generalization performance using data not used for training. Reusing test data for training inflates performance, so it is never done.
 
 ---
 
-**문제 5.** What is the state in which learning was insufficient, patterns weren't properly captured even on the training data, and performance is also low on new data?
+**Question 5.** What is the state in which learning was insufficient, patterns weren't properly captured even on the training data, and performance is also low on new data?
 
 A) Overfitting  
 B) Underfitting  
 C) Inference  
 D) Validation  
 
-**정답: B**  
-해설: The state of low performance on both training data and new data, where even basic patterns weren't learned, is underfitting. Overfitting is the opposite situation of only getting the training data right, and inference and validation are processes unrelated to over/underfitting.
+**Answer: B**  
+Explanation: The state of low performance on both training data and new data, where even basic patterns weren't learned, is underfitting. Overfitting is the opposite situation of only getting the training data right, and inference and validation are processes unrelated to over/underfitting.
 
 ---

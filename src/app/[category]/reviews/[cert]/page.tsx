@@ -5,6 +5,7 @@ import { Star } from 'lucide-react';
 import { isSection, langOfCategory, sectionLabel, sectionOfCategory } from '@/lib/category';
 import { getCertMeta, listCerts } from '@/lib/content';
 import { getAggregate, listReviews } from '@/lib/reviews/reviewsRepository';
+import { reviewRobots, safeAggregate } from '@/lib/reviews/indexPolicy';
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import ReviewList from '@/components/reviews/ReviewList';
 import ReviewForm from '@/components/reviews/ReviewForm';
@@ -14,10 +15,6 @@ import { buildBreadcrumbLd, buildCourseReviewLd } from '@/lib/structuredData';
 interface PageProps { params: Promise<{ category: string; cert: string }>; }
 
 export const dynamic = 'force-dynamic';
-
-// 자격증별 후기 페이지가 색인되려면 최소 이만큼의 후기가 있어야 한다(thin/중복 색인 방지).
-// 그 미만이면 noindex 하되 페이지 자체는 정상 노출(작성 유도).
-const REVIEW_INDEX_MIN = 3;
 
 async function loadCert(category: string, cert: string) {
   if (!isSection(category)) return null;
@@ -30,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { category, cert } = await params;
   const meta = await loadCert(category, cert);
   if (!meta) return {};
-  const agg = await getAggregate(category, cert);
+  const agg = await safeAggregate(category, cert);
   const name = sectionLabel(sectionOfCategory(category));
   const title = `${meta.code} 합격 후기 — ${name} ${meta.name} 리뷰`;
   const description =
@@ -43,7 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description,
     alternates: { canonical: url },
     // 후기가 충분히 쌓이기 전엔 thin content라 noindex(작성은 계속 가능).
-    ...(agg.count < REVIEW_INDEX_MIN ? { robots: { index: false, follow: true } } : {}),
+    ...reviewRobots(agg.count),
     openGraph: { title, description, url, type: 'website' },
   };
 }

@@ -76,64 +76,64 @@ Today's picture is simple but powerful. **AWS is responsible for the cloud itsel
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** Which of the following best describes the area AWS is responsible for in the Shared Responsibility Model?
+**Question 1.** Which of the following best describes the area AWS is responsible for in the Shared Responsibility Model?
 
 A) Security IN the cloud  
 B) Security OF the cloud  
 C) The customer's data classification  
 D) The customer's IAM permission configuration  
 
-**정답: B**  
-해설: AWS is responsible for security OF the cloud — data centers, hardware, and virtualization. Security IN the cloud, data classification, and IAM permission configuration are all areas of customer responsibility.
+**Answer: B**  
+Explanation: AWS is responsible for security OF the cloud — data centers, hardware, and virtualization. Security IN the cloud, data classification, and IAM permission configuration are all areas of customer responsibility.
 
 ---
 
-**문제 2.** When operating an EC2 virtual server, which of the following is the customer's responsibility?
+**Question 2.** When operating an EC2 virtual server, which of the following is the customer's responsibility?
 
 A) Physical access control for the data center  
 B) Hypervisor (virtualization) security  
 C) Guest operating system (OS) security patching  
 D) Replacing server hardware  
 
-**정답: C**  
-해설: EC2 is IaaS where the customer manages the operating system directly, so guest OS patching is the customer's responsibility. Data center access control, hypervisor security, and hardware replacement are all infrastructure areas that AWS is responsible for.
+**Answer: C**  
+Explanation: EC2 is IaaS where the customer manages the operating system directly, so guest OS patching is the customer's responsibility. Data center access control, hypervisor security, and hardware replacement are all infrastructure areas that AWS is responsible for.
 
 ---
 
-**문제 3.** No matter which AWS service you use, what always remains the customer's responsibility?
+**Question 3.** No matter which AWS service you use, what always remains the customer's responsibility?
 
 A) Hardware maintenance  
 B) Managing data and access permissions (IAM)  
 C) Data center cooling  
 D) Global network infrastructure  
 
-**정답: B**  
-해설: Data and who can access it (IAM) are always the customer's responsibility regardless of the type of service. Hardware maintenance, data center cooling, and global network infrastructure are all areas AWS is responsible for.
+**Answer: B**  
+Explanation: Data and who can access it (IAM) are always the customer's responsibility regardless of the type of service. Hardware maintenance, data center cooling, and global network infrastructure are all areas AWS is responsible for.
 
 ---
 
-**문제 4.** If you move the same workload from EC2 to a fully managed service like Lambda, how does the responsibility boundary change?
+**Question 4.** If you move the same workload from EC2 to a fully managed service like Lambda, how does the responsibility boundary change?
 
 A) The customer's responsibility increases  
 B) The customer's responsibility decreases  
 C) It does not change  
 D) AWS's responsibility disappears  
 
-**정답: B**  
-해설: The more managed the service, the more AWS takes over things like operating system patching, so the customer's responsibility decreases. However, data and permissions still remain the customer's job, and AWS's responsibility does not disappear.
+**Answer: B**  
+Explanation: The more managed the service, the more AWS takes over things like operating system patching, so the customer's responsibility decreases. However, data and permissions still remain the customer's job, and AWS's responsibility does not disappear.
 
 ---
 
-**문제 5.** Which of the following is the customer's responsibility rather than AWS's?
+**Question 5.** Which of the following is the customer's responsibility rather than AWS's?
 
 A) Configuring security groups (firewall rules)  
 B) The data center's fire alarm system  
 C) Security of the server virtualization layer  
 D) Managing network cables between Regions  
 
-**정답: A**  
-해설: Network access rules such as security groups are configured directly by the customer, so they are the customer's responsibility. Data center fire alarms, the virtualization layer's security, and inter-Region networking are all underlying infrastructure managed by AWS.
+**Answer: A**  
+Explanation: Network access rules such as security groups are configured directly by the customer, so they are the customer's responsibility. Data center fire alarms, the virtualization layer's security, and inter-Region networking are all underlying infrastructure managed by AWS.
 
 ---

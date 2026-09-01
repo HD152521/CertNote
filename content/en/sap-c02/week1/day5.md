@@ -117,147 +117,147 @@ Almost all of Week 1's learning is packed into this one scenario. The standard s
 
 ---
 
-**문제 1.** A company operates 100 accounts. The security team wants to "block root user logins entirely in the production OU, and also block IAM calls without MFA." The most suitable method?
+**Question 1.** A company operates 100 accounts. The security team wants to "block root user logins entirely in the production OU, and also block IAM calls without MFA." The most suitable method?
 
 A) Delete the root user password and disable access keys in each account
 B) Apply a deny policy to the production OU via Organizations SCP (Condition: `aws:PrincipalType=Root`, `aws:MultiFactorAuthPresent=false`)
 C) Monitor root login events with Lambda and send SNS alerts
 D) Consolidate all users into IAM Identity Center and prohibit root usage by policy
 
-**정답: B**
-해설: SCP is the only guardrail that also applies to the root user. Block root + enforce MFA via Conditions. A doesn't work because the root password cannot be deleted (recoverable via email). C is only after-the-fact detection, not blocking. D is just an SSO tool, unrelated to blocking root. Trade-off: SCPs don't apply to the management account, so the management account's root needs separate MFA, a hardware token, and email protection.
+**Answer: B**
+Explanation: SCP is the only guardrail that also applies to the root user. Block root + enforce MFA via Conditions. A doesn't work because the root password cannot be deleted (recoverable via email). C is only after-the-fact detection, not blocking. D is just an SSO tool, unrelated to blocking root. Trade-off: SCPs don't apply to the management account, so the management account's root needs separate MFA, a hardware token, and email protection.
 
 ---
 
-**문제 2.** A global SaaS operates in us-east-1 and is expanding to eu-west-1. EU user data must stay in the EU per GDPR. To guarantee data isolation while keeping a single codebase?
+**Question 2.** A global SaaS operates in us-east-1 and is expanding to eu-west-1. EU user data must stay in the EU per GDPR. To guarantee data isolation while keeping a single codebase?
 
 A) DynamoDB Global Table (automatic active-active replication across both regions)
 B) RDS Cross-Region Replica (replicating from the us-east-1 master to eu-west-1)
 C) Independent DB per region + Route 53 Geolocation + region decided at authentication time
 D) Aurora Global Database (primary us-east-1, secondary eu-west-1)
 
-**정답: C**
-해설: A, B, and D all replicate data across both regions → potential GDPR violation. C is complete per-region isolation; at authentication time, decide which region the user belongs to and include a region claim in the JWT. The single codebase is handled with environment variables and configuration. The 2020 EU Schrems II ruling created constraints on using US clouds, and in such scenarios the guarantee that "data never leaves" is what matters most.
+**Answer: C**
+Explanation: A, B, and D all replicate data across both regions → potential GDPR violation. C is complete per-region isolation; at authentication time, decide which region the user belongs to and include a region claim in the JWT. The single codebase is handled with environment variables and configuration. The 2020 EU Schrems II ruling created constraints on using US clouds, and in such scenarios the guarantee that "data never leaves" is what matters most.
 
 ---
 
-**문제 3.** A fintech wants to enforce that no EC2 can use any region other than us-east-1, for PCI-DSS certification. To minimize operational burden?
+**Question 3.** A fintech wants to enforce that no EC2 can use any region other than us-east-1, for PCI-DSS certification. To minimize operational burden?
 
 A) Deploy an AWS Config Custom Rule to every account to detect resources in unauthorized regions
 B) Organizations SCP denying all actions when `aws:RequestedRegion ≠ us-east-1` + NotAction exceptions for global services (IAM, Org, Route53)
 C) Trigger a Lambda via EventBridge to auto-delete resources in unauthorized regions
 D) Add region conditions to each account's IAM policies one by one and manually apply to new accounts
 
-**정답: B**
-해설: SCP applied once at the Organizations level enforces across all accounts, including root. Automatically applies when new accounts are added. Global services route to us-east-1, but there are cases where `RequestedRegion` is global in the SCP, so the NotAction exception is mandatory. C is after-the-fact processing with a window of exposure. A only detects, doesn't block.
+**Answer: B**
+Explanation: SCP applied once at the Organizations level enforces across all accounts, including root. Automatically applies when new accounts are added. Global services route to us-east-1, but there are cases where `RequestedRegion` is global in the SCP, so the NotAction exception is mandatory. C is after-the-fact processing with a window of exposure. A only detects, doesn't block.
 
 ---
 
-**문제 4.** A company accesses S3 from EC2. Traffic goes through a NAT Gateway, costing $30,000/month. A PCI-DSS audit also flagged that "S3 traffic traverses the internet." How to solve?
+**Question 4.** A company accesses S3 from EC2. Traffic goes through a NAT Gateway, costing $30,000/month. A PCI-DSS audit also flagged that "S3 traffic traverses the internet." How to solve?
 
 A) Add an S3 Interface Endpoint (PrivateLink) in every AZ
 B) Add a Gateway Endpoint + automatic prefix-list registration in the Route Table
 C) Connect S3 via a private path using VPC Peering
 D) Connect a dedicated line to S3 via Direct Connect Public VIF
 
-**정답: B**
-해설: For S3 and DynamoDB, a Gateway Endpoint is free + auto-registers a prefix list in the Route Table. Traffic takes a private path without the IGW/NAT. Solves cost + security simultaneously. Interface Endpoints (A) also work but incur hourly costs + data processing costs; Gateway is the standard for S3. Trade-off: Gateway Endpoints cannot access cross-region S3, same region only.
+**Answer: B**
+Explanation: For S3 and DynamoDB, a Gateway Endpoint is free + auto-registers a prefix list in the Route Table. Traffic takes a private path without the IGW/NAT. Solves cost + security simultaneously. Interface Endpoints (A) also work but incur hourly costs + data processing costs; Gateway is the standard for S3. Trade-off: Gateway Endpoints cannot access cross-region S3, same region only.
 
 ---
 
-**문제 5.** A media company runs global game matchmaking (WebSocket). It exposes static IPs externally, needs failover within seconds on regional failure, and handles 1 million packets per second. The suitable combination?
+**Question 5.** A media company runs global game matchmaking (WebSocket). It exposes static IPs externally, needs failover within seconds on regional failure, and handles 1 million packets per second. The suitable combination?
 
 A) ALB + Route 53 Failover routing (Health Check-based DNS failover)
 B) NLB + Route 53 Health Check (latency routing to select the nearest region)
 C) Global Accelerator + NLB (Multi-Region)
 D) CloudFront + Lambda@Edge (WebSocket termination at the edge)
 
-**정답: C**
-해설: GA provides 2 static IPs via BGP Anycast, failing over within seconds on regional failure by bypassing DNS caches. NLB satisfies L4, millions of packets per second, static IP, and WebSocket all at once. A and B fail over on a minute scale due to DNS TTL caching. D is L7 HTTP only.
+**Answer: C**
+Explanation: GA provides 2 static IPs via BGP Anycast, failing over within seconds on regional failure by bypassing DNS caches. NLB satisfies L4, millions of packets per second, static IP, and WebSocket all at once. A and B fail over on a minute scale due to DNS TTL caching. D is L7 HTTP only.
 
 ---
 
-**문제 6.** A company deploys to AWS Lambda from GitHub Actions. The security team requires "no long-lived AWS Access Keys stored in GitHub Secrets." How to solve?
+**Question 6.** A company deploys to AWS Lambda from GitHub Actions. The security team requires "no long-lived AWS Access Keys stored in GitHub Secrets." How to solve?
 
 A) Create a dedicated IAM User and automate 90-day key rotation with Lambda
 B) Register an AWS OIDC Provider + AssumeRoleWithWebIdentity from GitHub Actions, restricting repo/branch via the sub claim in the Trust Policy
 C) GitHub Actions uploads a ZIP to S3 and an S3 event triggers the Lambda deployment
 D) Use CodePipeline + CodeBuild to pull the GitHub source and deploy to Lambda
 
-**정답: B**
-해설: GitHub has supported OIDC since 2021. Register the AWS OIDC Provider once, and GitHub Actions obtains temporary credentials with an OIDC id_token each time. No long-lived keys needed. It is essential to restrict `sub` (e.g., `repo:org/repo:ref:refs/heads/main`) via the Trust Policy's Condition so other repos/branches can't assume the same Role. Otherwise a confused-deputy variant attack is possible.
+**Answer: B**
+Explanation: GitHub has supported OIDC since 2021. Register the AWS OIDC Provider once, and GitHub Actions obtains temporary credentials with an OIDC id_token each time. No long-lived keys needed. It is essential to restrict `sub` (e.g., `repo:org/repo:ref:refs/heads/main`) via the Trust Policy's Condition so other repos/branches can't assume the same Role. Otherwise a confused-deputy variant attack is possible.
 
 ---
 
-**문제 7.** A company runs 100 EC2 instances for 4 hours for a nightly ETL batch (stateless, restartable). Minimize cost + meet the SLA (complete by 09:00 the next day).
+**Question 7.** A company runs 100 EC2 instances for 4 hours for a nightly ETL batch (stateless, restartable). Minimize cost + meet the SLA (complete by 09:00 the next day).
 
 A) 100 On-Demand instances, prioritizing SLA assurance
 B) 100 3-year Standard RIs to minimize the hourly rate
 C) Spot Fleet with diverse instance families (capacity-optimized) + price-capacity-optimized
 D) 50 3-year RI baseline + 50 single-family Spot mix
 
-**정답: C**
-해설: Only 4 hours of use → RI is a loss. Stateless + restartable → Spot fits. Mixing diverse families (c5, c5n, c5a, m5) spreads the risk of a single family's capacity shortage. `price-capacity-optimized` (added 2022, recommended) optimizes price and capacity simultaneously.
+**Answer: C**
+Explanation: Only 4 hours of use → RI is a loss. Stateless + restartable → Spot fits. Mixing diverse families (c5, c5n, c5a, m5) spreads the risk of a single family's capacity shortage. `price-capacity-optimized` (added 2022, recommended) optimizes price and capacity simultaneously.
 
 ---
 
-**문제 8.** A company applies authentication behind an ALB. The backend (Node.js) wants almost no auth code and just wants to receive user info. The most suitable method?
+**Question 8.** A company applies authentication behind an ALB. The backend (Node.js) wants almost no auth code and just wants to receive user info. The most suitable method?
 
 A) Implement Passport.js + JWT verification in the backend
 B) Enable the ALB's Cognito integration + receive the X-Amzn-Oidc-Data header
 C) API Gateway + Lambda Authorizer to validate tokens and forward to the backend
 D) Validate JWTs at CloudFront + Lambda@Edge and forward to the origin
 
-**정답: B**
-해설: The ALB handles OIDC/Cognito authentication directly and passes the JWT to the backend in the X-Amzn-Oidc-Data header. Almost no backend code changes needed. Optimal if HTTP-based. gRPC and WebSocket need separate handling.
+**Answer: B**
+Explanation: The ALB handles OIDC/Cognito authentication directly and passes the JWT to the backend in the X-Amzn-Oidc-Data header. Almost no backend code changes needed. Optimal if HTTP-based. gRPC and WebSocket need separate handling.
 
 ---
 
-**문제 9.** A company runs RDS MySQL in us-east-1 and wants to build DR in ap-northeast-2. RPO within 1 minute, RTO within 5 minutes. The most suitable solution?
+**Question 9.** A company runs RDS MySQL in us-east-1 and wants to build DR in ap-northeast-2. RPO within 1 minute, RTO within 5 minutes. The most suitable solution?
 
 A) RDS Multi-AZ (failover within a single region via synchronous standby)
 B) RDS Cross-Region Read Replica + manual promote
 C) Aurora Global Database (RPO < 1 second, RTO ~1 minute)
 D) Continuous replication to an instance in another region via DMS
 
-**정답: C**
-해설: Aurora Global Database delivers RPO < 1 second, RTO ~1 minute (managed failover). It uses storage-level async replication across regions, but latency is very low. RDS Cross-Region Read Replica (B) has RPO of seconds to tens of seconds and RTO of minutes to tens of minutes (manual promote required). A is the same region, so not DR. D is a migration tool. Trade-off: Aurora Global costs 30%+ more than RDS — an excessive choice for single-region workloads.
+**Answer: C**
+Explanation: Aurora Global Database delivers RPO < 1 second, RTO ~1 minute (managed failover). It uses storage-level async replication across regions, but latency is very low. RDS Cross-Region Read Replica (B) has RPO of seconds to tens of seconds and RTO of minutes to tens of minutes (manual promote required). A is the same region, so not DR. D is a migration tool. Trade-off: Aurora Global costs 30%+ more than RDS — an excessive choice for single-region workloads.
 
 ---
 
-**문제 10.** A SaaS wants to make its service usable via private IPs inside customer VPCs. The standard pattern?
+**Question 10.** A SaaS wants to make its service usable via private IPs inside customer VPCs. The standard pattern?
 
 A) Cross-Region VPC Peering between the customer VPC and the SaaS VPC
 B) Share a Transit Gateway with customers via RAM to connect routing
 C) PrivateLink + NLB + VPC Endpoint Service
 D) Expose the SaaS endpoint via Direct Connect Public VIF
 
-**정답: C**
-해설: With PrivateLink, the SaaS registers its service behind an NLB as an Endpoint Service, and customers access it via Interface Endpoints. No bidirectional data exposure. Adopted by Snowflake, MongoDB Atlas, Datadog, and others. A and B are bidirectional routing, unsuitable for the SaaS security model — the customer VPC must not be able to see the SaaS VPC.
+**Answer: C**
+Explanation: With PrivateLink, the SaaS registers its service behind an NLB as an Endpoint Service, and customers access it via Interface Endpoints. No bidirectional data exposure. Adopted by Snowflake, MongoDB Atlas, Datadog, and others. A and B are bidirectional routing, unsuitable for the SaaS security model — the customer VPC must not be able to see the SaaS VPC.
 
 ---
 
-**문제 11.** A company has an AD with 200 employees. SSO access to 80 accounts in AWS Organizations. When an employee leaves, permissions must be revoked automatically across all accounts. The most suitable solution?
+**Question 11.** A company has an AD with 200 employees. SSO access to 80 accounts in AWS Organizations. When an employee leaves, permissions must be revoked automatically across all accounts. The most suitable solution?
 
 A) Create IAM Users in each account and manually deactivate them in bulk upon departure
 B) IAM Identity Center + AD Connector + SCIM automatic synchronization
 C) Register a SAML IdP in each account and connect via AD federation
 D) Consolidate employees into a Cognito User Pool and map account permissions by group
 
-**정답: B**
-해설: IAM Identity Center integrates with Organizations. Use the existing AD as the identity source via AD Connector. SCIM (RFC 7644) automatically syncs AD changes to AWS. The moment an employee leaves, permissions are revoked across all accounts. Deploy policies in bulk with Permission Sets.
+**Answer: B**
+Explanation: IAM Identity Center integrates with Organizations. Use the existing AD as the identity source via AD Connector. SCIM (RFC 7644) automatically syncs AD changes to AWS. The moment an employee leaves, permissions are revoked across all accounts. Deploy policies in bulk with Permission Sets.
 
 ---
 
-**문제 12.** There are 3 Private Subnets across Multi-AZ, calling external APIs. To secure availability while minimizing cost, how should NAT Gateways be placed?
+**Question 12.** There are 3 Private Subnets across Multi-AZ, calling external APIs. To secure availability while minimizing cost, how should NAT Gateways be placed?
 
 A) A single NAT Gateway in one AZ shared by the 3 subnets (cheapest)
 B) One NAT Gateway per AZ (3 total), each Private Subnet using its own AZ's NAT
 C) Run NAT Instances directly on EC2 per AZ with self-healing via ASG
 D) Route the Private Subnets directly to the IGW for outbound
 
-**정답: B**
-해설: NAT Gateways are AZ-local. A single NAT cuts all outbound when that AZ fails. Place one NAT per AZ + each Private Subnet uses its own AZ's NAT. The added cost is $0.045/hour × 3 = $97/month. Trade-off: a single NAT is acceptable for dev environments. NAT Gateway data processing ($0.045/GB) is the largest cost driver, so bypass it for S3 and DynamoDB with Gateway Endpoints.
+**Answer: B**
+Explanation: NAT Gateways are AZ-local. A single NAT cuts all outbound when that AZ fails. Place one NAT per AZ + each Private Subnet uses its own AZ's NAT. The added cost is $0.045/hour × 3 = $97/month. Trade-off: a single NAT is acceptable for dev environments. NAT Gateway data processing ($0.045/GB) is the largest cost driver, so bypass it for S3 and DynamoDB with Gateway Endpoints.
 
 ## Wrapping Up
 

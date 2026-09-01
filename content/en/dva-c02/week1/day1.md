@@ -144,86 +144,86 @@ In the next article, we look at the four core entities of IAM — User, Group, R
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** When a boto3 client is created with `s3 = boto3.client('s3')`, how is the region determined?
+**Question 1.** When a boto3 client is created with `s3 = boto3.client('s3')`, how is the region determined?
 
 A) It is always fixed to us-east-1
 B) It searches the `AWS_REGION` environment variable → `AWS_DEFAULT_REGION` → the default profile in `~/.aws/config`, in that order
 C) The nearest region is automatically selected
 D) S3 is a global service, so the region is irrelevant
 
-**정답: B**
-해설: If no region is specified, boto3 searches environment variables and configuration files according to a priority order. The exact order is: (1) `region_name` in the client constructor, (2) the `AWS_REGION` environment variable, (3) the `AWS_DEFAULT_REGION` environment variable, (4) the `region` value of the active profile in `~/.aws/config`. If none of these yield a region, it raises `NoRegionError`. S3 bucket names live in a global namespace, but the data is stored in a specific region, so a region specification is required (exceptionally, the `s3.amazonaws.com` global endpoint also exists, but since 2020 region-aware endpoints have been recommended).
+**Answer: B**
+Explanation: If no region is specified, boto3 searches environment variables and configuration files according to a priority order. The exact order is: (1) `region_name` in the client constructor, (2) the `AWS_REGION` environment variable, (3) the `AWS_DEFAULT_REGION` environment variable, (4) the `region` value of the active profile in `~/.aws/config`. If none of these yield a region, it raises `NoRegionError`. S3 bucket names live in a global namespace, but the data is stored in a specific region, so a region specification is required (exceptionally, the `s3.amazonaws.com` global endpoint also exists, but since 2020 region-aware endpoints have been recommended).
 
 ---
 
-**문제 2.** A company is using IAM roles on EC2 instances via IMDSv1. The security team has demanded that IMDSv2 be enforced to defend against SSRF attacks. What is the most accurate action?
+**Question 2.** A company is using IAM roles on EC2 instances via IMDSv1. The security team has demanded that IMDSv2 be enforced to defend against SSRF attacks. What is the most accurate action?
 
 A) Remove the IAM role
 B) Set the instance metadata options to `HttpTokens=required`
 C) Move the instance to a different region
 D) Block 169.254.169.254 in the Security Group
 
-**정답: B**
-해설: Setting `MetadataOptions.HttpTokens=required` rejects any request that has not obtained a token via PUT. Since SSRF attackers can typically only issue GETs, metadata access is blocked. A would prevent the application from using IAM permissions, C is unrelated to the IMDSv1 problem, and D fails because 169.254.169.254 is a link-local address and cannot be controlled by SGs (SGs operate only on ENIs). Additionally, setting `HttpPutResponseHopLimit=1` can also block metadata access from container networks.
+**Answer: B**
+Explanation: Setting `MetadataOptions.HttpTokens=required` rejects any request that has not obtained a token via PUT. Since SSRF attackers can typically only issue GETs, metadata access is blocked. A would prevent the application from using IAM permissions, C is unrelated to the IMDSv1 problem, and D fails because 169.254.169.254 is a link-local address and cannot be controlled by SGs (SGs operate only on ENIs). Additionally, setting `HttpPutResponseHopLimit=1` can also block metadata access from container networks.
 
 ---
 
-**문제 3.** How is the AZ in which a Lambda function runs determined?
+**Question 3.** How is the AZ in which a Lambda function runs determined?
 
 A) The developer specifies the AZ in the function definition
 B) AWS automatically selects among available AZs and the developer has no control
 C) A Lambda attached to a VPC runs in the AZs of the specified subnets, while a non-VPC Lambda is distributed internally by AWS
 D) It always runs in the first AZ of the region
 
-**정답: C**
-해설: Lambda has no option to directly specify an AZ at function creation. A Lambda unrelated to any VPC (the default) is automatically distributed across the AWS-managed multi-AZ Lambda environment. A Lambda attached to a VPC (via `VpcConfig`) runs in the AZs of the subnets where its ENIs were created, so **you must specify subnets in multiple AZs to survive a single-AZ failure**. If you specify only a single-AZ subnet, Lambda invocations fail when that AZ goes down. Before 2019, VPC Lambda cold starts took 10+ seconds due to ENI creation, but with the introduction of Hyperplane ENIs in September 2019, the ENI is created only on the first invocation and reused thereafter.
+**Answer: C**
+Explanation: Lambda has no option to directly specify an AZ at function creation. A Lambda unrelated to any VPC (the default) is automatically distributed across the AWS-managed multi-AZ Lambda environment. A Lambda attached to a VPC (via `VpcConfig`) runs in the AZs of the subnets where its ENIs were created, so **you must specify subnets in multiple AZs to survive a single-AZ failure**. If you specify only a single-AZ subnet, Lambda invocations fail when that AZ goes down. Before 2019, VPC Lambda cold starts took 10+ seconds due to ENI creation, but with the introduction of Hyperplane ENIs in September 2019, the ENI is created only on the first invocation and reused thereafter.
 
 ---
 
-**문제 4.** Between Global Accelerator and CloudFront, which fits the following scenario? "We must provide an MQTT-based IoT messaging service to users worldwide."
+**Question 4.** Between Global Accelerator and CloudFront, which fits the following scenario? "We must provide an MQTT-based IoT messaging service to users worldwide."
 
 A) CloudFront (suitable for accelerating all global traffic)
 B) Global Accelerator (TCP/UDP acceleration; MQTT is TCP-based)
 C) Route 53 Geolocation (geography-based distribution)
 D) Direct Connect (dedicated lines for all users)
 
-**정답: B**
-해설: CloudFront is centered on HTTP/HTTPS L7 caching, so it cannot handle MQTT (TCP 1883/8883). Route 53 Geolocation only branches DNS responses without accelerating the traffic itself, and failover takes minutes due to DNS TTL. Direct Connect is a dedicated line between a specific site and AWS, so it doesn't fit global user distribution. Global Accelerator pulls traffic to the nearest edge via BGP Anycast and forwards it over the AWS backbone, guaranteeing consistent latency for both TCP and UDP. Since two static IPs are guaranteed, it is also well suited for hardcoding IPs into IoT device firmware.
+**Answer: B**
+Explanation: CloudFront is centered on HTTP/HTTPS L7 caching, so it cannot handle MQTT (TCP 1883/8883). Route 53 Geolocation only branches DNS responses without accelerating the traffic itself, and failover takes minutes due to DNS TTL. Direct Connect is a dedicated line between a specific site and AWS, so it doesn't fit global user distribution. Global Accelerator pulls traffic to the nearest edge via BGP Anycast and forwards it over the AWS backbone, guaranteeing consistent latency for both TCP and UDP. Since two static IPs are guaranteed, it is also well suited for hardcoding IPs into IoT device firmware.
 
 ---
 
-**문제 5.** A developer created an S3 bucket in us-east-1, but SDK calls from ap-northeast-2 have latency exceeding 200ms. What is the most appropriate improvement?
+**Question 5.** A developer created an S3 bucket in us-east-1, but SDK calls from ap-northeast-2 have latency exceeding 200ms. What is the most appropriate improvement?
 
 A) Move the S3 bucket from us-east-1 to ap-northeast-2 (impossible)
 B) Create another bucket with the same name in ap-northeast-2 (impossible; globally unique)
 C) Create a replica in ap-northeast-2 with S3 Cross-Region Replication and have clients access the bucket in the nearer region
 D) Enable S3 Transfer Acceleration, which automatically selects the nearest region
 
-**정답: C**
-해설: An S3 bucket's region is fixed at creation and cannot be moved, and names are globally unique so the same name cannot be created in another region. You can create a differently named replica with CRR (Cross-Region Replication), or use **Multi-Region Access Points** (launched December 2020) to have a single global endpoint automatically route to the nearest regional bucket. D's S3 Transfer Acceleration routes through CloudFront edges onto the backbone, so latency improves, but it is not "automatic region selection". It also adds $0.04 per GB on uploads.
+**Answer: C**
+Explanation: An S3 bucket's region is fixed at creation and cannot be moved, and names are globally unique so the same name cannot be created in another region. You can create a differently named replica with CRR (Cross-Region Replication), or use **Multi-Region Access Points** (launched December 2020) to have a single global endpoint automatically route to the nearest regional bucket. D's S3 Transfer Acceleration routes through CloudFront edges onto the backbone, so latency improves, but it is not "automatic region selection". It also adds $0.04 per GB on uploads.
 
 ---
 
-**문제 6.** Which of the following is NOT in the "customer responsibility" area?
+**Question 6.** Which of the following is NOT in the "customer responsibility" area?
 
 A) SQL injection vulnerabilities in Lambda function code
 B) MySQL engine security patches on an RDS instance
 C) S3 bucket policy configuration
 D) Guest OS patching on EC2
 
-**정답: B**
-해설: RDS is PaaS, so patching the DB engine is AWS's responsibility. However, the customer can choose when patches are applied via the maintenance window. A is a code vulnerability, always the customer's responsibility. C is IAM/resource policy, always the customer's responsibility. D: since EC2 is IaaS, OS patching is the customer's responsibility (conversely, if you move the same workload to ECS Fargate, even container host OS patching shifts to AWS). Memorize this pattern as "the higher the abstraction level, the higher the responsibility boundary moves" and you can solve all the variations on the exam.
+**Answer: B**
+Explanation: RDS is PaaS, so patching the DB engine is AWS's responsibility. However, the customer can choose when patches are applied via the maintenance window. A is a code vulnerability, always the customer's responsibility. C is IAM/resource policy, always the customer's responsibility. D: since EC2 is IaaS, OS patching is the customer's responsibility (conversely, if you move the same workload to ECS Fargate, even container host OS patching shifts to AWS). Memorize this pattern as "the higher the abstraction level, the higher the responsibility boundary moves" and you can solve all the variations on the exam.
 
 ---
 
-**문제 7.** You are connecting PrivateLink to a partner via VPC peering. Both accounts placed subnets in `ap-northeast-2a`, yet traffic flows cross-AZ. What is the cause and the fix?
+**Question 7.** You are connecting PrivateLink to a partner via VPC peering. Both accounts placed subnets in `ap-northeast-2a`, yet traffic flows cross-AZ. What is the cause and the fix?
 
 A) It is an AWS bug and you should open a support ticket
 B) `ZoneName` maps to different physical AZs per account, so you must compare and match using `ZoneId` (`apne2-az1`, etc.)
 C) VPC peering always operates cross-AZ
 D) The regions must be made the same (they already are)
 
-**정답: B**
-해설: AWS deliberately shuffles the AZ mapping per account to prevent load concentration from "everyone creating in a first". Account A's `ap-northeast-2a` (`apne2-az1`) and account B's `ap-northeast-2a` (`apne2-az3`) are physically different AZs. Check the ZoneId with `aws ec2 describe-availability-zones` and place subnets in the same ZoneId to land in the same physical AZ. Cross-AZ data transfer costs $0.01 per GB ($0.02 round-trip) and accumulates quickly with high-volume traffic, so recognizing this trap matters in practice.
+**Answer: B**
+Explanation: AWS deliberately shuffles the AZ mapping per account to prevent load concentration from "everyone creating in a first". Account A's `ap-northeast-2a` (`apne2-az1`) and account B's `ap-northeast-2a` (`apne2-az3`) are physically different AZs. Check the ZoneId with `aws ec2 describe-availability-zones` and place subnets in the same ZoneId to land in the same physical AZ. Cross-AZ data transfer costs $0.01 per GB ($0.02 round-trip) and accumulates quickly with high-volume traffic, so recognizing this trap matters in practice.

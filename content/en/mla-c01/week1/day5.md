@@ -109,64 +109,64 @@ Next week (Week 2) we dive deep into the lifecycle's first stage: data collectio
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A deployed churn prediction model's accuracy is slowly declining over months. Input data distribution has shifted from training time. Which lifecycle stage does this correspond to, and the response?
+**Question 1.** A deployed churn prediction model's accuracy is slowly declining over months. Input data distribution has shifted from training time. Which lifecycle stage does this correspond to, and the response?
 
 A) Data prep stage — delete the model  
 B) Monitoring stage detects drift, retrain by cycling through data prep with new data  
 C) Deployment stage — scale up instance types  
 D) Model dev stage — adjust learning rate only  
 
-**정답: B**  
-해설: Performance degradation from time-based data distribution shift (drift) is detected in monitoring, and the response is cycling data prep → retrain on new data. Deleting (A) stops service, scaling instances (C) addresses throughput not accuracy, and tweaking learning rate (D) doesn't solve distribution shift.
+**Answer: B**  
+Explanation: Performance degradation from time-based data distribution shift (drift) is detected in monitoring, and the response is cycling data prep → retrain on new data. Deleting (A) stops service, scaling instances (C) addresses throughput not accuracy, and tweaking learning rate (D) doesn't solve distribution shift.
 
 ---
 
-**문제 2.** Fraud detection model where fraud is 0.1% of transactions. Which metric is most inappropriate and why?
+**Question 2.** Fraud detection model where fraud is 0.1% of transactions. Which metric is most inappropriate and why?
 
 A) Recall — the cost of missing fraud is high  
 B) Accuracy — even predicting all as legitimate hits 99.9%, making it a trap metric  
 C) F1 — balances precision and recall  
 D) AUC-PR — robust to imbalance  
 
-**정답: B**  
-해설: With extreme class imbalance, Accuracy is a trap — predicting all as majority class hits 99.9% and hides the model's real detection power. Recall (catch misses), F1 (balance), AUC-PR (imbalance-robust) all suit imbalanced problems.
+**Answer: B**  
+Explanation: With extreme class imbalance, Accuracy is a trap — predicting all as majority class hits 99.9% and hides the model's real detection power. Recall (catch misses), F1 (balance), AUC-PR (imbalance-robust) all suit imbalanced problems.
 
 ---
 
-**문제 3.** Convert call center recordings to text, then analyze customer complaints for sentiment. Implement fastest without training?
+**Question 3.** Convert call center recordings to text, then analyze customer complaints for sentiment. Implement fastest without training?
 
 A) Train voice and sentiment models directly in SageMaker  
 B) Amazon Transcribe (speech→text) + Amazon Comprehend (sentiment)  
 C) Amazon Rekognition + Amazon Polly  
 D) Amazon Forecast + Amazon Personalize  
 
-**정답: B**  
-해설: Transcribe converts speech to text, Comprehend analyzes sentiment — combined, just API calls, no training. SageMaker training (A) is overkill for standard tasks. Rekognition (image) + Polly (TTS) (C) and Forecast + Personalize (D) don't match speech recognition and sentiment analysis.
+**Answer: B**  
+Explanation: Transcribe converts speech to text, Comprehend analyzes sentiment — combined, just API calls, no training. SageMaker training (A) is overkill for standard tasks. Rekognition (image) + Polly (TTS) (C) and Forecast + Personalize (D) don't match speech recognition and sentiment analysis.
 
 ---
 
-**문제 4.** For regression evaluation, you want to heavily penalize large errors to catch outliers sensitively. Which metric?
+**Question 4.** For regression evaluation, you want to heavily penalize large errors to catch outliers sensitively. Which metric?
 
 A) MAE  
 B) RMSE  
 C) Accuracy  
 D) Silhouette score  
 
-**정답: B**  
-해설: RMSE squares errors, penalizing large ones harder, so it's outlier-sensitive. MAE treats all errors equally (robust). Accuracy is classification, Silhouette is clustering — neither fit regression.
+**Answer: B**  
+Explanation: RMSE squares errors, penalizing large ones harder, so it's outlier-sensitive. MAE treats all errors equally (robust). Accuracy is classification, Silhouette is clustering — neither fit regression.
 
 ---
 
-**문제 5.** "Train a custom classifier on unique manufacturing defect images from our domain."  At the abstraction layer, which choice fits?
+**Question 5.** "Train a custom classifier on unique manufacturing defect images from our domain."  At the abstraction layer, which choice fits?
 
 A) Call Amazon Rekognition API  
 B) Train and deploy directly in SageMaker  
 C) Analyze text with Comprehend  
 D) Translate with Translate  
 
-**정답: B**  
-해설: Domain-specific custom data requires custom training/deployment — SageMaker is the fit. Rekognition (A) is for general image tasks, insufficient for unique defect patterns. Comprehend (C) and Translate (D) are text, unrelated to image classification.
+**Answer: B**  
+Explanation: Domain-specific custom data requires custom training/deployment — SageMaker is the fit. Rekognition (A) is for general image tasks, insufficient for unique defect patterns. Comprehend (C) and Translate (D) are text, unrelated to image classification.
 
 ---

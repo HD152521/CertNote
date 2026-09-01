@@ -111,64 +111,64 @@ Next, we'll enter the "training" stage of this lifecycle, distinguishing supervi
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** What is the core insight emphasized by Google's "Hidden Technical Debt in Machine Learning Systems" paper, which is also reflected in the structure of the MLA-C01 exam?
+**Question 1.** What is the core insight emphasized by Google's "Hidden Technical Debt in Machine Learning Systems" paper, which is also reflected in the structure of the MLA-C01 exam?
 
 A) ML code accounts for 80% or more of ML systems  
 B) ML code is less than 5% of ML systems, while data, serving, monitoring, and infrastructure comprise the majority  
 C) ML systems are easier to maintain than regular software  
 D) Once an ML model is deployed, retraining is unnecessary  
 
-**정답: B**  
-해설: The paper highlights that in real ML systems, model training code comprises less than 5% of the codebase, while the remaining 95% consists of data collection, validation, serving, monitoring, and infrastructure. MLA-C01 allocates over half of the exam to data preparation (28%) and monitoring (24%) for this reason. The claim that training code comprises 80% is the opposite, ML is harder to maintain due to data dependency, and models require retraining due to drift.
+**Answer: B**  
+Explanation: The paper highlights that in real ML systems, model training code comprises less than 5% of the codebase, while the remaining 95% consists of data collection, validation, serving, monitoring, and infrastructure. MLA-C01 allocates over half of the exam to data preparation (28%) and monitoring (24%) for this reason. The claim that training code comprises 80% is the opposite, ML is harder to maintain due to data dependency, and models require retraining due to drift.
 
 ---
 
-**문제 2.** When an ML engineer productionizes a 0.94 accuracy model created by a data scientist in a notebook, the first thing they must ensure is:
+**Question 2.** When an ML engineer productionizes a 0.94 accuracy model created by a data scientist in a notebook, the first thing they must ensure is:
 
 A) Higher accuracy  
 B) Reproducibility of training — fixing data version, hyperparameters, and environment in code  
 C) A larger instance type  
 D) Making the model more complex  
 
-**정답: B**  
-해설: The #1 principle in ML engineering is reproducibility. Code alone cannot reproduce a model; you must fix data version, hyperparameters, and environment (libraries, seeds). Raising accuracy is the data scientist's job. Instance size and model complexity are operational and performance considerations that come after reproducibility is assured.
+**Answer: B**  
+Explanation: The #1 principle in ML engineering is reproducibility. Code alone cannot reproduce a model; you must fix data version, hyperparameters, and environment (libraries, seeds). Raising accuracy is the data scientist's job. Instance size and model complexity are operational and performance considerations that come after reproducibility is assured.
 
 ---
 
-**문제 3.** After deploying a recommendation model with improved offline accuracy, user engagement time actually decreased. What is the most appropriate method for an ML engineer to detect this issue beforehand?
+**Question 3.** After deploying a recommendation model with improved offline accuracy, user engagement time actually decreased. What is the most appropriate method for an ML engineer to detect this issue beforehand?
 
 A) Simply increase offline accuracy further  
 B) Conduct A/B testing by sending only a small amount of traffic to the new model to observe actual business metrics  
 C) Deploy the new model to all traffic immediately  
 D) Reduce training data  
 
-**정답: B**  
-해설: Since offline metrics (accuracy) can diverge from online business metrics (engagement time), an A/B test sending a portion of traffic to the new model should verify actual behavior metrics. Increasing only offline accuracy repeats the same trap; full deployment risks damage; reducing training data is unrelated to the problem.
+**Answer: B**  
+Explanation: Since offline metrics (accuracy) can diverge from online business metrics (engagement time), an A/B test sending a portion of traffic to the new model should verify actual behavior metrics. Increasing only offline accuracy repeats the same trap; full deployment risks damage; reducing training data is unrelated to the problem.
 
 ---
 
-**문제 4.** The phenomenon of many demand forecasting models failing in early 2020 is best described by which term?
+**Question 4.** The phenomenon of many demand forecasting models failing in early 2020 is best described by which term?
 
 A) Overfitting  
 B) Data Drift — production data distribution significantly differs from training data  
 C) Underfitting  
 D) Data Leakage  
 
-**정답: B**  
-해설: This is a textbook example of data drift where the input data distribution at deployment time differs significantly from the training time distribution. Overfitting and underfitting are model complexity issues during training. Data leakage is a separate problem where future information leaks into training. Drift is detected by SageMaker Model Monitor comparing input distribution changes against baseline.
+**Answer: B**  
+Explanation: This is a textbook example of data drift where the input data distribution at deployment time differs significantly from the training time distribution. Overfitting and underfitting are model complexity issues during training. Data leakage is a separate problem where future information leaks into training. Drift is detected by SageMaker Model Monitor comparing input distribution changes against baseline.
 
 ---
 
-**문제 5.** Which two domains of MLA-C01, when combined, constitute over half (52%) of the exam's weight?
+**Question 5.** Which two domains of MLA-C01, when combined, constitute over half (52%) of the exam's weight?
 
 A) Model Development and Deployment  
 B) Data Preparation and Monitoring, Maintenance & Security  
 C) Deployment and Monitoring  
 D) Data Preparation and Model Development  
 
-**정답: B**  
-해설: Data Preparation (28%) and Monitoring, Maintenance & Security (24%) together total 52%, exceeding half the exam. This aligns with the fact that data pipelines and operations form the true core of ML systems, not ML code itself. Other combinations miss one of these two areas and carry less weight.
+**Answer: B**  
+Explanation: Data Preparation (28%) and Monitoring, Maintenance & Security (24%) together total 52%, exceeding half the exam. This aligns with the fact that data pipelines and operations form the true core of ML systems, not ML code itself. Other combinations miss one of these two areas and carry less weight.
 
 ---

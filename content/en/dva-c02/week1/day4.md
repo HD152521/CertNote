@@ -209,98 +209,98 @@ In the next article, we consolidate this Week 1 material into exam questions and
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** Inside an EC2 instance, where does boto3 look for credentials?
+**Question 1.** Inside an EC2 instance, where does boto3 look for credentials?
 
 A) Always and only in `~/.aws/credentials`
 B) Environment variables → ~/.aws/credentials → IMDS (EC2 instance metadata), in that order
 C) Always and only in IMDS
 D) Only access keys embedded in the code
 
-**정답: B**
-해설: boto3's credential provider chain goes: command-line options → environment variables → config files → container/EC2 metadata. If keys exist in environment variables or ~/.aws/credentials, those take priority; otherwise it falls through to IMDS. This order comes up frequently on the exam, and the key idea is "**the most explicit wins**". In practice, if an EC2 has an attached Role but the SDK is using different keys, suspect the environment variables or ~/.aws/credentials.
+**Answer: B**
+Explanation: boto3's credential provider chain goes: command-line options → environment variables → config files → container/EC2 metadata. If keys exist in environment variables or ~/.aws/credentials, those take priority; otherwise it falls through to IMDS. This order comes up frequently on the exam, and the key idea is "**the most explicit wins**". In practice, if an EC2 has an attached Role but the SDK is using different keys, suspect the environment variables or ~/.aws/credentials.
 
 ---
 
-**문제 2.** The command `aws s3 ls --profile prod` is configured so that the `prod` profile uses the dev account's access key to assume a Role in the prod account. What is the flow of this call?
+**Question 2.** The command `aws s3 ls --profile prod` is configured so that the `prod` profile uses the dev account's access key to assume a Role in the prod account. What is the flow of this call?
 
 A) Called directly as an IAM User in the prod account
 B) Calls STS AssumeRole with the dev account's access key → calls S3 with the temporary credentials
 C) Called with the prod account's root account
 D) The AWS CLI automatically grants cross-account permissions
 
-**정답: B**
-해설: The source_profile + role_arn pattern is standard cross-account delegation. The CLI (1) loads the source_profile (dev) credentials, (2) calls `sts:AssumeRole(RoleArn=ProdRoleArn)`, (3) makes the real API calls with the returned temporary credentials. The dev User needs the `sts:AssumeRole` permission, and the prod Role's Trust Policy needs an entry allowing the dev account's User. Both sides must line up for it to work.
+**Answer: B**
+Explanation: The source_profile + role_arn pattern is standard cross-account delegation. The CLI (1) loads the source_profile (dev) credentials, (2) calls `sts:AssumeRole(RoleArn=ProdRoleArn)`, (3) makes the real API calls with the returned temporary credentials. The dev User needs the `sts:AssumeRole` permission, and the prod Role's Trust Policy needs an entry allowing the dev account's User. Both sides must line up for it to work.
 
 ---
 
-**문제 3.** boto3 returned a `SignatureDoesNotMatch` error. What is the most likely cause?
+**Question 3.** boto3 returned a `SignatureDoesNotMatch` error. What is the most likely cause?
 
 A) Insufficient IAM permissions
 B) The client clock lost NTP sync and differs from AWS server time by more than 15 minutes
 C) Network connection dropped
 D) The SDK version is too old
 
-**정답: B**
-해설: The SigV4 signature includes the `X-Amz-Date` header, and AWS servers reject it if this timestamp differs from their own time by more than 15 minutes (900 seconds). This is a replay attack prevention mechanism. Containers that lost NTP sync, Docker containers with broken clocks, and VM clock drift are common causes. Check UTC time with `date -u` and synchronize with `chronyd` or `ntpd` to resolve. A produces `AccessDenied`, a different error.
+**Answer: B**
+Explanation: The SigV4 signature includes the `X-Amz-Date` header, and AWS servers reject it if this timestamp differs from their own time by more than 15 minutes (900 seconds). This is a replay attack prevention mechanism. Containers that lost NTP sync, Docker containers with broken clocks, and VM clock drift are common causes. Check UTC time with `date -u` and synchronize with `chronyd` or `ntpd` to resolve. A produces `AccessDenied`, a different error.
 
 ---
 
-**문제 4.** Why is AWS CLI v2's SSO login (`aws configure sso`) safer than IAM User access keys?
+**Question 4.** Why is AWS CLI v2's SSO login (`aws configure sso`) safer than IAM User access keys?
 
 A) It is faster
 B) Long-term keys are never stored on disk in plain text, expired tokens force browser re-authentication, and credentials are stored encrypted in the OS keyring
 C) AWS provides it for free
 D) MFA is applied automatically
 
-**정답: B**
-해설: The SSO model: (1) the user authenticates with the IdP via the browser, (2) the CLI stores the received OIDC token in the OS keyring, (3) temporary credentials are issued via AssumeRoleWithWebIdentity, (4) when the token expires after 8 hours, browser authentication is required again. No plain-text key ever remains on disk, and if a laptop is lost, the keys aren't exposed unless the OS lock is broken. D: SSO itself doesn't enforce MFA; that is determined by the IdP's policy.
+**Answer: B**
+Explanation: The SSO model: (1) the user authenticates with the IdP via the browser, (2) the CLI stores the received OIDC token in the OS keyring, (3) temporary credentials are issued via AssumeRoleWithWebIdentity, (4) when the token expires after 8 hours, browser authentication is required again. No plain-text key ever remains on disk, and if a laptop is lost, the keys aren't exposed unless the OS lock is broken. D: SSO itself doesn't enforce MFA; that is determined by the IdP's policy.
 
 ---
 
-**문제 5.** How do you customize SDK retry behavior in a Lambda function?
+**Question 5.** How do you customize SDK retry behavior in a Lambda function?
 
 A) Set the Lambda environment variables `AWS_RETRY_MODE=adaptive` and `AWS_MAX_ATTEMPTS=5`
 B) SDK retries are disabled in Lambda
 C) Change the Lambda runtime
 D) Add a retry permission to the IAM policy
 
-**정답: A**
-해설: AWS SDKs in every language recognize the `AWS_RETRY_MODE` (legacy/standard/adaptive) and `AWS_MAX_ATTEMPTS` (total attempts) environment variables. Setting them as Lambda environment variables applies to every SDK call inside the function. Adaptive mode adds client-side rate limiting, but standard is generally recommended. For functions near their Lambda timeout, retries risk running out the clock, so lowering max attempts is safer.
+**Answer: A**
+Explanation: AWS SDKs in every language recognize the `AWS_RETRY_MODE` (legacy/standard/adaptive) and `AWS_MAX_ATTEMPTS` (total attempts) environment variables. Setting them as Lambda environment variables applies to every SDK call inside the function. Adaptive mode adds client-side rate limiting, but standard is generally recommended. For functions near their Lambda timeout, retries risk running out the clock, so lowering max attempts is safer.
 
 ---
 
-**문제 6.** When you run `aws sts get-caller-identity` inside CloudShell, what does the ARN come back as?
+**Question 6.** When you run `aws sts get-caller-identity` inside CloudShell, what does the ARN come back as?
 
 A) An IAM User ARN
 B) An assumed-role ARN (temporary credentials derived from the console login session)
 C) The root account ARN
 D) CloudShell's service ARN
 
-**정답: B**
-해설: CloudShell's credentials are automatically inherited from the console login session. If you logged in to the console as an IAM User, they are temporary credentials from applying STS GetSessionToken to that User; if you logged in via IAM Identity Center, they are the temporary credentials of that SSO Role. Both appear as `assumed-role/...` in `aws sts get-caller-identity`. CloudShell has no instance profile of its own.
+**Answer: B**
+Explanation: CloudShell's credentials are automatically inherited from the console login session. If you logged in to the console as an IAM User, they are temporary credentials from applying STS GetSessionToken to that User; if you logged in via IAM Identity Center, they are the temporary credentials of that SSO Role. Both appear as `assumed-role/...` in `aws sts get-caller-identity`. CloudShell has no instance profile of its own.
 
 ---
 
-**문제 7.** While uploading a 5GB file with `aws s3 cp`, the network dropped momentarily. How does CLI v2 handle this?
+**Question 7.** While uploading a 5GB file with `aws s3 cp`, the network dropped momentarily. How does CLI v2 handle this?
 
 A) Re-uploads from the beginning
 B) Uses multipart upload to automatically retry from the failed part; progress is preserved
 C) Fails immediately
 D) S3 Transfer Acceleration is automatically enabled
 
-**정답: B**
-해설: The AWS CLI automatically handles files above 8MB (the default multipart_threshold) as multipart uploads. Each part is uploaded independently, and on failure only that part is retried. The SDK retry chain kicks in, so transient errors recover automatically. If the CLI process itself terminates, the in-progress multipart upload remains in S3 in an incomplete state — and this is billed — so the standard pattern is to clean it up automatically with a lifecycle rule (`AbortIncompleteMultipartUpload`).
+**Answer: B**
+Explanation: The AWS CLI automatically handles files above 8MB (the default multipart_threshold) as multipart uploads. Each part is uploaded independently, and on failure only that part is retried. The SDK retry chain kicks in, so transient errors recover automatically. If the CLI process itself terminates, the in-progress multipart upload remains in S3 in an incomplete state — and this is billed — so the standard pattern is to clean it up automatically with a lifecycle rule (`AbortIncompleteMultipartUpload`).
 
 ---
 
-**문제 8.** You set a presigned URL's ExpiresIn=86400 (24 hours), but it expires after 1 hour. Why?
+**Question 8.** You set a presigned URL's ExpiresIn=86400 (24 hours), but it expires after 1 hour. Why?
 
 A) S3 does not support 24-hour presigned URLs
 B) The issuer's (EC2 instance profile's) temporary credentials expire after 1 hour, so the presigned URL is also invalidated at that point
 C) An SDK bug
 D) S3 lifecycle configuration
 
-**정답: B**
-해설: A presigned URL is SigV4-signed with the issuer's credentials. When those credentials expire, the URL's signature no longer verifies. The EC2 instance profile automatically refreshes its 1-hour temporary credentials, but the refreshed credentials apply only to newly issued presigned URLs. If you need a 24-hour URL, either (1) sign with an IAM User access key (a security risk), or (2) assume a 12-hour Role for the issuer's credentials and issue from there.
+**Answer: B**
+Explanation: A presigned URL is SigV4-signed with the issuer's credentials. When those credentials expire, the URL's signature no longer verifies. The EC2 instance profile automatically refreshes its 1-hour temporary credentials, but the refreshed credentials apply only to newly issued presigned URLs. If you need a 24-hour URL, either (1) sign with an IAM User access key (a security risk), or (2) assume a 12-hour Role for the issuer's credentials and issue from there.

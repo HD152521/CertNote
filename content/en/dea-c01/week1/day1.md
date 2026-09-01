@@ -120,64 +120,64 @@ In the next article, we look at the two processing paradigms that split based on
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** Which pairing most accurately matches the data engineer's core deliverable with their number-one responsibility?
+**Question 1.** Which pairing most accurately matches the data engineer's core deliverable with their number-one responsibility?
 
 A) Machine learning model — prediction accuracy  
 B) Data pipeline — data quality and reliability  
 C) BI dashboard — visualization design  
 D) Operational database — transaction speed  
 
-**정답: B**  
-해설: A data engineer's deliverable is not a model or a dashboard but the pipeline that turns raw data into an analyzable form, and by the garbage in–garbage out principle, the number-one responsibility is data quality and reliability. Models belong to data scientists, dashboards to analysts, and operational DB transaction speed to backend engineers/DBAs.
+**Answer: B**  
+Explanation: A data engineer's deliverable is not a model or a dashboard but the pipeline that turns raw data into an analyzable form, and by the garbage in–garbage out principle, the number-one responsibility is data quality and reliability. Models belong to data scientists, dashboards to analysts, and operational DB transaction speed to backend engineers/DBAs.
 
 ---
 
-**문제 2.** What is the key background behind ELT becoming widely used in the cloud instead of traditional ETL?
+**Question 2.** What is the key background behind ELT becoming widely used in the cloud instead of traditional ETL?
 
 A) Because transformation logic became simpler  
 B) Because cheap storage like S3 and powerful query engines made it advantageous to load raw data first and transform it inside the destination  
 C) Because data security requirements disappeared  
 D) Because OLTP replaced OLAP  
 
-**정답: B**  
-해설: ELT loads raw data into cheap storage (S3) first, then transforms it inside the destination. Because the raw data is preserved, it can be reprocessed when transformation logic changes without re-calling the source. Transformation did not become simpler, security requirements did not disappear, and OLTP and OLAP still coexist.
+**Answer: B**  
+Explanation: ELT loads raw data into cheap storage (S3) first, then transforms it inside the destination. Because the raw data is preserved, it can be reprocessed when transformation logic changes without re-calling the source. Transformation did not become simpler, security requirements did not disappear, and OLTP and OLAP still coexist.
 
 ---
 
-**문제 3.** You want to run "monthly and regional revenue aggregation for the last three years" directly against a live order-processing system (OLTP). What is the biggest problem with this approach?
+**Question 3.** You want to run "monthly and regional revenue aggregation for the last three years" directly against a live order-processing system (OLTP). What is the biggest problem with this approach?
 
 A) OLTP does not support SQL  
 B) Heavy aggregation that scans massive numbers of rows puts load on transaction processing and slows the service  
 C) OLTP data cannot be encrypted  
 D) Aggregation results are always inaccurate  
 
-**정답: B**  
-해설: OLTP is optimized for transaction processing that reads and writes a small number of rows quickly, so running OLAP-style aggregation that sweeps hundreds of millions of rows directly against it puts load on the production service. That is why data engineers replicate the data into an OLAP environment (Redshift/Athena, etc.) for analysis. OLTP also supports SQL and encryption, and the aggregation results themselves are accurate.
+**Answer: B**  
+Explanation: OLTP is optimized for transaction processing that reads and writes a small number of rows quickly, so running OLAP-style aggregation that sweeps hundreds of millions of rows directly against it puts load on the production service. That is why data engineers replicate the data into an OLAP environment (Redshift/Athena, etc.) for analysis. OLTP also supports SQL and encryption, and the aggregation results themselves are accurate.
 
 ---
 
-**문제 4.** What is the storage pattern that stores structured, semi-structured, and unstructured data in raw form using schema-on-read, and what is its representative AWS configuration?
+**Question 4.** What is the storage pattern that stores structured, semi-structured, and unstructured data in raw form using schema-on-read, and what is its representative AWS configuration?
 
 A) Data warehouse — Redshift  
 B) Data lake — S3 + Glue Data Catalog  
 C) OLTP database — DynamoDB  
 D) In-memory cache — ElastiCache  
 
-**정답: B**  
-해설: A data lake stores data of every shape in raw form in S3 using schema-on-read, applies a schema at read time via the Glue Data Catalog, and queries it with Athena and similar tools. The warehouse (Redshift) accepts only cleansed, structured data via schema-on-write; DynamoDB is for OLTP; ElastiCache is for caching.
+**Answer: B**  
+Explanation: A data lake stores data of every shape in raw form in S3 using schema-on-read, applies a schema at read time via the Glue Data Catalog, and queries it with Athena and similar tools. The warehouse (Redshift) accepts only cleansed, structured data via schema-on-write; DynamoDB is for OLTP; ElastiCache is for caching.
 
 ---
 
-**문제 5.** Which of the four DEA-C01 domains carries the largest weight, demonstrating that it is the core of a data engineer's work?
+**Question 5.** Which of the four DEA-C01 domains carries the largest weight, demonstrating that it is the core of a data engineer's work?
 
 A) Data Security and Governance  
 B) Data Ingestion and Transformation  
 C) Data Operations and Support  
 D) Data Store Management  
 
-**정답: B**  
-해설: Data Ingestion and Transformation carries the largest weight at 34%, reflecting that turning scattered raw data into an analyzable form is the data engineer's core job. Store Management (26%), Operations and Support (22%), and Security and Governance (18%) follow.
+**Answer: B**  
+Explanation: Data Ingestion and Transformation carries the largest weight at 34%, reflecting that turning scattered raw data into an analyzable form is the data engineer's core job. Store Management (26%), Operations and Support (22%), and Security and Governance (18%) follow.
 
 ---

@@ -161,64 +161,64 @@ Tomorrow we shift to STS and temporary credentials. How AssumeRole exactly works
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** 계정 A의 Lambda 함수가 계정 B에서 관리하는 KMS 키로 암호화된 데이터를 복호화해야 한다. 반드시 설정해야 하는 것은?
+**Question 1.** A Lambda function in Account A must decrypt data encrypted with a KMS key managed in Account B. What must be configured?
 
-A) 계정 A의 Lambda 실행 역할에 `kms:Decrypt` 권한만 추가하면 된다  
-B) 계정 B의 KMS 키 정책에 계정 A의 역할을 허용하고, 계정 A 역할에도 `kms:Decrypt`를 부여한다  
-C) 계정 B의 IAM 사용자 정책에만 `kms:Decrypt`를 추가한다  
-D) 두 계정이 같은 리전이면 별도 설정 없이 자동 허용된다  
+A) Adding only the `kms:Decrypt` permission to Account A's Lambda execution role is enough  
+B) Account B's KMS key policy must allow Account A's role, and Account A's role must also be granted `kms:Decrypt`  
+C) Add `kms:Decrypt` only to an IAM user policy in Account B  
+D) If both accounts are in the same Region, it is allowed automatically with no extra configuration  
 
-**정답: B**  
-해설: KMS는 키 정책이 1차 권위를 가지므로, cross-account 사용 시 키 소유 계정(B)의 키 정책이 호출 계정(A)의 주체를 명시적으로 허용해야 하고, 동시에 A 측 신원 정책에도 `kms:Decrypt` Allow가 있어야 한다. 한쪽만으로는 부족하며, 같은 리전이라는 사실은 권한 부여와 무관하다.
+**Answer: B**  
+Explanation: The KMS key policy holds primary authority, so for cross-account use the key-owning account (B) must explicitly allow the calling account's principal in its key policy, and at the same time the identity policy on the A side must Allow `kms:Decrypt`. One side alone is not enough, and being in the same Region has nothing to do with authorization.
 
 ---
 
-**문제 2.** 다음 조건 중 "MFA가 없으면 거부"를 의도했지만, 서비스 간 호출처럼 MFA 키가 아예 없는 정상 요청까지 차단해버릴 위험이 있는 것은?
+**Question 2.** Which of the following conditions is intended to mean "deny if MFA is absent" but risks blocking legitimate requests that have no MFA key at all, such as service-to-service calls?
 
 A) `"BoolIfExists": {"aws:MultiFactorAuthPresent": "false"}`  
 B) `"Bool": {"aws:MultiFactorAuthPresent": "false"}`  
 C) `"Null": {"aws:MultiFactorAuthPresent": "true"}`  
 D) `"BoolIfExists": {"aws:MultiFactorAuthPresent": "true"}`  
 
-**정답: B**  
-해설: `Bool`은 키가 반드시 존재한다고 가정하고 값을 평가하므로, MFA 컨텍스트 키가 없는 서비스 호출에서도 조건이 의도치 않게 매칭돼 정상 요청을 막을 수 있다. `BoolIfExists`는 키가 있을 때만 값을 평가하고 없으면 통과시켜 이런 부작용을 피한다. 이 차이가 MFA 강제 정책 작성의 단골 함정이다.
+**Answer: B**  
+Explanation: `Bool` assumes the key is present and evaluates its value, so on service calls that carry no MFA context key the condition can match unintentionally and block legitimate requests. `BoolIfExists` evaluates the value only when the key exists and lets the request through when it does not, avoiding this side effect. That difference is the classic trap when writing MFA-enforcement policies.
 
 ---
 
-**문제 3.** 한 조직이 팀이 늘 때마다 IAM 정책을 추가하는 운영 부담에 직면했다. 정책 수를 폭증시키지 않고 "주체와 리소스의 팀 태그가 일치할 때만 허용"을 구현하는 가장 적절한 접근은?
+**Question 3.** An organization faces the operational burden of adding an IAM policy every time a team is added. What is the most appropriate way to implement "allow only when the principal's team tag matches the resource's team tag" without an explosion in the number of policies?
 
-A) 팀마다 별도 역할과 전용 정책을 만든다  
-B) 모든 사용자에게 동일한 admin 정책을 주고 신뢰로 운영한다  
-C) `aws:PrincipalTag`와 `aws:ResourceTag`를 비교하는 ABAC 조건으로 정책을 통일한다  
-D) 팀별로 별도 AWS 계정을 만들어 물리적으로 분리한다  
+A) Create a separate role and dedicated policy for each team  
+B) Give every user the same admin policy and operate on trust  
+C) Consolidate into a single policy using ABAC conditions that compare `aws:PrincipalTag` and `aws:ResourceTag`  
+D) Create a separate AWS account per team for physical separation  
 
-**정답: C**  
-해설: ABAC은 주체 태그와 리소스 태그의 일치를 조건으로 표현해 정책 하나로 임의 개수의 팀을 처리하므로, 팀이 늘어도 정책 변경 없이 태그만 부여하면 된다. 팀별 역할·정책 양산은 RBAC의 정책 폭증 문제를 그대로 안고, admin 일괄 부여는 최소 권한 위반이며, 팀별 계정 분리는 과도하고 본 문제의 의도와 다르다.
-
----
-
-**문제 4.** 개발자에게 IAM 역할 생성 권한을 주되, 그가 만든 역할이 부여받은 상한을 넘지 못하게 강제하려 한다. 가장 적절한 메커니즘은?
-
-A) SCP로 `iam:CreateRole` 자체를 Deny한다  
-B) `iam:CreateRole` 허용 시 특정 Permissions Boundary 부착을 조건으로 강제한다  
-C) 개발자에게 `ReadOnlyAccess`만 부여한다  
-D) 생성된 역할을 매일 사람이 검토해 과도하면 삭제한다  
-
-**정답: B**  
-해설: `iam:PermissionsBoundary` 조건으로 역할 생성 시 지정한 boundary 부착을 강제하면, 생성된 역할의 실효 권한이 boundary와의 교집합으로 제한돼 권한 상승을 구조적으로 차단한다. CreateRole을 아예 막으면 위임 자체가 불가능하고, ReadOnly만 주면 역할을 만들 수 없으며, 사람의 사후 검토는 누락과 지연 위험이 크다.
+**Answer: C**  
+Explanation: ABAC expresses the match between principal tags and resource tags as a condition, so one policy handles any number of teams — when a team is added you only assign tags, with no policy change. Mass-producing per-team roles and policies carries the same policy-explosion problem as RBAC, granting admin to everyone violates least privilege, and splitting accounts per team is excessive and not what this question is about.
 
 ---
 
-**문제 5.** S3 버킷에 올라오는 모든 객체가 KMS로 암호화되도록 강제하려 한다. 가장 직접적이고 누락 없는 방법은?
+**Question 4.** You want to grant a developer permission to create IAM roles while enforcing that the roles they create cannot exceed the ceiling they were given. Which mechanism is most appropriate?
 
-A) 업로드하는 모든 애플리케이션 코드에 암호화 헤더를 넣도록 개발 가이드를 배포한다  
-B) 버킷 정책에 `s3:x-amz-server-side-encryption` 조건으로 암호화 헤더가 없는 PutObject를 Deny한다  
-C) GuardDuty로 미암호화 객체를 탐지해 알림을 보낸다  
-D) IAM 사용자별로 암호화 권한을 따로 부여한다  
+A) Deny `iam:CreateRole` entirely with an SCP  
+B) When allowing `iam:CreateRole`, require attaching a specific Permissions Boundary as a condition  
+C) Grant the developer only `ReadOnlyAccess`  
+D) Have a human review created roles daily and delete the excessive ones  
 
-**정답: B**  
-해설: 버킷 정책에서 `s3:x-amz-server-side-encryption` 조건으로 암호화 헤더 없는 PutObject를 명시적으로 Deny하면, 어떤 주체가 올리든 미암호화 업로드가 차단되는 예방 통제가 된다. 개발 가이드는 강제력이 없어 누락되고, GuardDuty 탐지는 사후 알림일 뿐 업로드를 막지 못하며, 사용자별 권한 부여는 암호화 강제와 직접 관련이 없다.
+**Answer: B**  
+Explanation: Using the `iam:PermissionsBoundary` condition to require the designated boundary at role-creation time limits the created role's effective permissions to the intersection with that boundary, structurally blocking privilege escalation. Blocking CreateRole outright makes delegation impossible, granting only ReadOnly means no roles can be created, and after-the-fact human review risks omissions and delay.
+
+---
+
+**Question 5.** You want to enforce that every object uploaded to an S3 bucket is encrypted with KMS. What is the most direct approach with no gaps?
+
+A) Publish a development guide telling every uploading application to include the encryption header  
+B) Use a bucket policy to Deny PutObject without the encryption header via the `s3:x-amz-server-side-encryption` condition  
+C) Use GuardDuty to detect unencrypted objects and send alerts  
+D) Grant encryption permission separately to each IAM user  
+
+**Answer: B**  
+Explanation: Explicitly denying PutObject without the encryption header in the bucket policy, via the `s3:x-amz-server-side-encryption` condition, is a preventive control that blocks unencrypted uploads no matter which principal performs them. A development guide has no enforcement power and will be missed, GuardDuty detection is an after-the-fact alert that cannot stop the upload, and granting per-user permissions is not directly related to enforcing encryption.
 
 ---

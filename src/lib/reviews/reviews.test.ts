@@ -1,4 +1,7 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, test } from 'vitest';
+import { REVIEW_INDEX_MIN, reviewRobots } from './indexPolicy';
 import { maskName } from './reviewsRepository';
 import { buildCourseReviewLd } from '../structuredData';
 import { SITE_URL } from '../site';
@@ -63,5 +66,41 @@ describe('buildCourseReviewLd — 후기 구조화 데이터', () => {
   test('@id가 cert 허브 Course와 동일해 같은 엔티티로 묶인다', () => {
     const ld = buildCourseReviewLd({ ...base, section: 'linux', slug: 'linux-master-1' }) as { '@id': string };
     expect(ld['@id']).toBe(`${SITE_URL}/linux/linux-master-1#course`);
+  });
+});
+
+describe('reviewRobots — 후기 페이지 색인 게이트', () => {
+  test('기준 미만이면 noindex(단, follow 유지 — 하위 크롤 경로를 끊지 않는다)', () => {
+    for (const n of [0, 1, REVIEW_INDEX_MIN - 1]) {
+      expect(reviewRobots(n)).toEqual({ robots: { index: false, follow: true } });
+    }
+  });
+
+  test('기준 이상이면 robots 키를 아예 넣지 않는다(상위 기본값 상속)', () => {
+    for (const n of [REVIEW_INDEX_MIN, REVIEW_INDEX_MIN + 10]) {
+      expect(reviewRobots(n)).toEqual({});
+      expect('robots' in reviewRobots(n)).toBe(false);
+    }
+  });
+});
+
+// 회귀 방지: 예전에 자격증별 페이지에만 게이트가 있고 섹션 허브에는 없어서, 후기 0건인
+// /{section}/reviews 가 색인 대상으로 남아 있었다(사이드바에서 링크되어 크롤은 계속 됐다).
+// 두 라우트가 같은 단일 출처를 쓰는지 소스 수준에서 고정한다.
+describe('후기 라우트가 색인 정책을 공유한다', () => {
+  const routes = [
+    'src/app/[category]/reviews/page.tsx',
+    'src/app/[category]/reviews/[cert]/page.tsx',
+  ];
+
+  test.each(routes)('%s 가 reviewRobots 를 쓴다', (rel) => {
+    const src = readFileSync(path.join(process.cwd(), rel), 'utf8');
+    expect(src).toContain("from '@/lib/reviews/indexPolicy'");
+    expect(src).toContain('reviewRobots(');
+  });
+
+  test.each(routes)('%s 가 자체 기준값을 다시 선언하지 않는다', (rel) => {
+    const src = readFileSync(path.join(process.cwd(), rel), 'utf8');
+    expect(src).not.toMatch(/const\s+REVIEW_INDEX_MIN/);
   });
 });

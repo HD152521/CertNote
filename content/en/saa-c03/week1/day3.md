@@ -222,86 +222,86 @@ Today's core points are three. First, STS is the origin of all temporary credent
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** An external SaaS monitoring tool wants to read CloudWatch logs in my AWS account. What is the most appropriate measure to prevent a Confused Deputy attack?
+**Question 1.** An external SaaS monitoring tool wants to read CloudWatch logs in my AWS account. What is the most appropriate measure to prevent a Confused Deputy attack?
 
 A) Provide an Access Key to the SaaS
 B) Cross-Account Role + adding an External ID condition
 C) Share root credentials
 D) Allow S3 public access
 
-**정답: B**
-해설: The security standard for SaaS integrations. The External ID is a pre-shared secret between us and the SaaS that prevents other SaaS customers from borrowing our Role even if they know its ARN. A has key rotation problems, C heads straight into a security incident, and D is irrelevant. All AWS Marketplace-certified ISVs mandate External IDs. As an additional safety net, there's also the pattern of adding `aws:SourceAccount` or `aws:SourceArn` to the Trust Policy's Condition. In particular, when an AWS service (SNS → Lambda, etc.) is the delegated caller, External ID doesn't apply, so `aws:SourceArn` is the de facto standard there.
+**Answer: B**
+Explanation: The security standard for SaaS integrations. The External ID is a pre-shared secret between us and the SaaS that prevents other SaaS customers from borrowing our Role even if they know its ARN. A has key rotation problems, C heads straight into a security incident, and D is irrelevant. All AWS Marketplace-certified ISVs mandate External IDs. As an additional safety net, there's also the pattern of adding `aws:SourceAccount` or `aws:SourceArn` to the Trust Policy's Condition. In particular, when an AWS service (SNS → Lambda, etc.) is the delegated caller, External ID doesn't apply, so `aws:SourceArn` is the de facto standard there.
 
 ---
 
-**문제 2.** You want to give developers permission to create IAM Roles, but prevent them from creating Roles with `*:*` permissions. How?
+**Question 2.** You want to give developers permission to create IAM Roles, but prevent them from creating Roles with `*:*` permissions. How?
 
 A) Detect after the fact with CloudTrail
 B) Specify a Permissions Boundary as a mandatory attachment condition in the policy
 C) Revoke all developer permissions
 D) Use only Organizations SCPs
 
-**정답: B**
-해설: Enforce the `iam:PermissionsBoundary` condition on `iam:CreateRole` calls, and Roles without that Boundary attached cannot be created. The created Role's effective permissions are automatically limited to the intersection with the Boundary. A is after-the-fact response, not prevention. C halts work. D operates at the account level, which is ill-suited for controlling individual Roles differently. Using SCPs and Boundaries together is safer — SCP is the "big net for the whole account," Boundary the "fine net per Principal"; their roles differ.
+**Answer: B**
+Explanation: Enforce the `iam:PermissionsBoundary` condition on `iam:CreateRole` calls, and Roles without that Boundary attached cannot be created. The created Role's effective permissions are automatically limited to the intersection with the Boundary. A is after-the-fact response, not prevention. C halts work. D operates at the account level, which is ill-suited for controlling individual Roles differently. Using SCPs and Boundaries together is safer — SCP is the "big net for the whole account," Boundary the "fine net per Principal"; their roles differ.
 
 ---
 
-**문제 3.** What is the most secure credential method when deploying to AWS from GitHub Actions?
+**Question 3.** What is the most secure credential method when deploying to AWS from GitHub Actions?
 
 A) Store an IAM User Access Key as a Secret
 B) Temporarily borrow a Role via OIDC federation
 C) Use a root Access Key
 D) Spin up an EC2 instance and deploy with SSH keys
 
-**정답: B**
-해설: OIDC federation borrows an AWS Role using a short-lived token issued by GitHub. With no long-lived credentials, exposure risk is zero. A is the structure where a leaked Secret leaks the key too, as in the Travis CI breach. C and D violate security best practices. Restricting the `sub` claim in the Trust Policy narrows access down to repo and branch, enabling precise permission separation as well. Beyond the exam, OIDC is solidifying as a standard requirement in compliance audits like SOC 2 and ISO 27001.
+**Answer: B**
+Explanation: OIDC federation borrows an AWS Role using a short-lived token issued by GitHub. With no long-lived credentials, exposure risk is zero. A is the structure where a leaked Secret leaks the key too, as in the Travis CI breach. C and D violate security best practices. Restricting the `sub` claim in the Trust Policy narrows access down to repo and branch, enabling precise permission separation as well. Beyond the exam, OIDC is solidifying as a standard requirement in compliance audits like SOC 2 and ISO 27001.
 
 ---
 
-**문제 4.** To access S3 cross-account, what is needed?
+**Question 4.** To access S3 cross-account, what is needed?
 
 A) Allow policies in both accounts
 B) An Allow only in the bucket policy is sufficient
 C) An Allow only in the caller account's policy is sufficient
 D) Joining Organizations is mandatory
 
-**정답: A**
-해설: Cross-account requires explicit Allows on both sides: the owning account's Resource Policy + the calling account's Identity Policy. Same-account is a union, but cross-account is an intersection. Note that KMS is stricter — without explicit delegation in the key policy, no IAM policy strength gets through. For S3, if the Object Ownership setting is `BucketOwnerEnforced`, ACLs are disabled, making policy consolidation cleaner.
+**Answer: A**
+Explanation: Cross-account requires explicit Allows on both sides: the owning account's Resource Policy + the calling account's Identity Policy. Same-account is a union, but cross-account is an intersection. Note that KMS is stricter — without explicit delegation in the key policy, no IAM policy strength gets through. For S3, if the Object Ownership setting is `BucketOwnerEnforced`, ACLs are disabled, making policy consolidation cleaner.
 
 ---
 
-**문제 5.** What is ABAC's biggest advantage?
+**Question 5.** What is ABAC's biggest advantage?
 
 A) Policy count grows proportionally with user count
 B) Dynamic access control via user/resource tags, with the policy count staying constant
 C) Consolidating all permissions into a single Role
 D) Automatically enabling MFA
 
-**정답: B**
-해설: ABAC is the NIST SP 800-162 standard model; it decides permissions by matching attributes like tags, so it scales without policy changes as users and projects grow. The downside is tagging consistency — missing tags mean missing permissions. Monitoring for absent tags with AWS Config Rules is the standard countermeasure. Bundling things via Service Catalog so "users can only create resources with tags force-applied" is another common governance pattern.
+**Answer: B**
+Explanation: ABAC is the NIST SP 800-162 standard model; it decides permissions by matching attributes like tags, so it scales without policy changes as users and projects grow. The downside is tagging consistency — missing tags mean missing permissions. Monitoring for absent tags with AWS Config Rules is the standard countermeasure. Bundling things via Service Catalog so "users can only create resources with tags force-applied" is another common governance pattern.
 
 ---
 
-**문제 6.** A company uses the STS global endpoint (`sts.amazonaws.com`). What happens if us-east-1 has an outage?
+**Question 6.** A company uses the STS global endpoint (`sts.amazonaws.com`). What happens if us-east-1 has an outage?
 
 A) No impact
 B) Issuing new credentials for workloads in other regions may fail
 C) All regions operate normally
 D) STS never has outages
 
-**정답: B**
-해설: The global endpoint routes to us-east-1, so a us-east-1 outage can block new AssumeRole calls. During the 2017 us-east-1 S3 outage, STS actually wobbled too. The best practice is to explicitly use regional endpoints (`sts.ap-northeast-2.amazonaws.com`), enforceable via the SDK environment variable `AWS_STS_REGIONAL_ENDPOINTS=regional`. The same pattern exists for IAM (a global control plane): IAM changes (writing policies, creating users) are affected by us-east-1 outages, but verification of already-issued tokens (the data plane) is independent per region and survives.
+**Answer: B**
+Explanation: The global endpoint routes to us-east-1, so a us-east-1 outage can block new AssumeRole calls. During the 2017 us-east-1 S3 outage, STS actually wobbled too. The best practice is to explicitly use regional endpoints (`sts.ap-northeast-2.amazonaws.com`), enforceable via the SDK environment variable `AWS_STS_REGIONAL_ENDPOINTS=regional`. The same pattern exists for IAM (a global control plane): IAM changes (writing policies, creating users) are affected by us-east-1 outages, but verification of already-issued tokens (the data plane) is independent per region and survives.
 
 ---
 
-**문제 7.** Which is correct regarding granting permissions on a KMS key?
+**Question 7.** Which is correct regarding granting permissions on a KMS key?
 
 A) An IAM policy alone is sufficient
 B) The Key Policy must explicitly delegate authority for IAM policies to take effect
 C) A Resource Policy alone is enough
 D) An SCP alone is sufficient
 
-**정답: B**
-해설: KMS has the distinctive "key policy must allow" model. Without explicit delegation in the Key Policy, no matter how strong the IAM policy, the key can't be used. This is how KMS differs most from other services and a staple exam trap. Day 8 (KMS deep dive) covers this model in detail. The design is intentional — a separation-of-duties mechanism ensuring data encryption keys can't be carelessly opened by an IAM administrator's "management permissions" alone. It connects directly to the key management requirements of PCI-DSS and FIPS 140-2.
+**Answer: B**
+Explanation: KMS has the distinctive "key policy must allow" model. Without explicit delegation in the Key Policy, no matter how strong the IAM policy, the key can't be used. This is how KMS differs most from other services and a staple exam trap. Day 8 (KMS deep dive) covers this model in detail. The design is intentional — a separation-of-duties mechanism ensuring data encryption keys can't be carelessly opened by an IAM administrator's "management permissions" alone. It connects directly to the key management requirements of PCI-DSS and FIPS 140-2.

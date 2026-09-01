@@ -174,74 +174,74 @@ These two pictures form the backdrop for every domain of the SAA exam. In the ne
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A company must run some workloads inside its headquarters data center but also wants to use AWS managed services. What is the most suitable solution?
+**Question 1.** A company must run some workloads inside its headquarters data center but also wants to use AWS managed services. What is the most suitable solution?
 
 A) Wavelength Zone
 B) Local Zones
 C) Outposts
 D) Using a Region directly
 
-**정답: C**
-해설: Outposts places AWS hardware inside the customer's data center and lets you use the same APIs/services. The key signals are regulatory/sovereignty keywords like "inside headquarters" and "data cannot leave the premises." Wavelength is telecom 5G edge (not the customer's DC), Local Zones are city-level mini-regions operated by AWS (not the customer's DC), and using a Region directly sends data out to AWS facilities, failing the regulatory requirement. In practice, also evaluate whether a **Direct Connect + keeping the headquarters data center** combination might be cheaper before adopting Outposts.
+**Answer: C**
+Explanation: Outposts places AWS hardware inside the customer's data center and lets you use the same APIs/services. The key signals are regulatory/sovereignty keywords like "inside headquarters" and "data cannot leave the premises." Wavelength is telecom 5G edge (not the customer's DC), Local Zones are city-level mini-regions operated by AWS (not the customer's DC), and using a Region directly sends data out to AWS facilities, failing the regulatory requirement. In practice, also evaluate whether a **Direct Connect + keeping the headquarters data center** combination might be cheaper before adopting Outposts.
 
 ---
 
-**문제 2.** Which of the following is AWS's responsibility when operating an EC2 instance?
+**Question 2.** Which of the following is AWS's responsibility when operating an EC2 instance?
 
 A) Guest OS patching
 B) Security group configuration
 C) Hypervisor security
 D) Checking application code for vulnerabilities
 
-**정답: C**
-해설: The hypervisor and everything below it are AWS's responsibility. Guest OS patching, SG/NACL, and application code are all the customer's responsibility. The key point is that EC2 is IaaS, so OS patching also falls to the customer. If you moved the same workload to ECS Fargate, container host OS patching would shift to AWS; move it to Lambda and AWS takes responsibility up through the runtime. In other words, understand the principle "as the service abstraction level rises, the responsibility boundary moves up" and every such question becomes solvable.
+**Answer: C**
+Explanation: The hypervisor and everything below it are AWS's responsibility. Guest OS patching, SG/NACL, and application code are all the customer's responsibility. The key point is that EC2 is IaaS, so OS patching also falls to the customer. If you moved the same workload to ECS Fargate, container host OS patching would shift to AWS; move it to Lambda and AWS takes responsibility up through the runtime. In other words, understand the principle "as the service abstraction level rises, the responsibility boundary moves up" and every such question becomes solvable.
 
 ---
 
-**문제 3.** To provide the most consistent global latency for a TCP/UDP-based global game server, you should use?
+**Question 3.** To provide the most consistent global latency for a TCP/UDP-based global game server, you should use?
 
 A) CloudFront + Lambda@Edge
 B) Global Accelerator
 C) Route 53 Geolocation
 D) Direct Connect
 
-**정답: B**
-해설: CloudFront is centered on HTTP/HTTPS L7 caching and can't handle non-HTTP traffic. Lambda@Edge also operates only in an HTTP context. Route 53 Geolocation merely returns different DNS answers based on the user's geographic location — **it does not accelerate the traffic itself** (and failover takes minutes due to DNS TTLs). Direct Connect is a dedicated line between a specific site and AWS, which doesn't fit a globally distributed user scenario. Global Accelerator pulls traffic into the nearest edge via BGP Anycast and forwards it over the AWS backbone, guaranteeing consistent latency for both TCP and UDP.
+**Answer: B**
+Explanation: CloudFront is centered on HTTP/HTTPS L7 caching and can't handle non-HTTP traffic. Lambda@Edge also operates only in an HTTP context. Route 53 Geolocation merely returns different DNS answers based on the user's geographic location — **it does not accelerate the traffic itself** (and failover takes minutes due to DNS TTLs). Direct Connect is a dedicated line between a specific site and AWS, which doesn't fit a globally distributed user scenario. Global Accelerator pulls traffic into the nearest edge via BGP Anycast and forwards it over the AWS backbone, guaranteeing consistent latency for both TCP and UDP.
 
 ---
 
-**문제 4.** Which statement about S3 is correct?
+**Question 4.** Which statement about S3 is correct?
 
 A) S3 buckets are a global service, so data is replicated globally
 B) S3 bucket names are a global namespace, but data is stored in a specific region
 C) S3 data is automatically replicated to all regions
 D) S3 is tied to an Availability Zone
 
-**정답: B**
-해설: Because S3 bucket names resolve as DNS hostnames (`bucket-name.s3.region.amazonaws.com`), **only the name is globally unique**, and the actual data is stored in the region chosen at creation. To replicate data to another region you must separately configure **Cross-Region Replication (CRR)** or a **Multi-Region Access Point**. S3 automatically distributes data across multiple AZs within one region (the secret behind 11 9's durability), but it isn't tied to an AZ — it's abstracted within the region. Note that until 2020, S3 didn't guarantee read-after-write consistency in some scenarios, but since December 2020 it provides **strong read-after-write consistency**.
+**Answer: B**
+Explanation: Because S3 bucket names resolve as DNS hostnames (`bucket-name.s3.region.amazonaws.com`), **only the name is globally unique**, and the actual data is stored in the region chosen at creation. To replicate data to another region you must separately configure **Cross-Region Replication (CRR)** or a **Multi-Region Access Point**. S3 automatically distributes data across multiple AZs within one region (the secret behind 11 9's durability), but it isn't tied to an AZ — it's abstracted within the region. Note that until 2020, S3 didn't guarantee read-after-write consistency in some scenarios, but since December 2020 it provides **strong read-after-write consistency**.
 
 ---
 
-**문제 5.** Which of the following is NOT a pillar of the Well-Architected Framework?
+**Question 5.** Which of the following is NOT a pillar of the Well-Architected Framework?
 
 A) Reliability
 B) Sustainability
 C) Compliance
 D) Operational Excellence
 
-**정답: C**
-해설: The 6 Pillars are Operational Excellence / Security / Reliability / Performance Efficiency / Cost Optimization / Sustainability (added in 2021). Compliance is a separate governance/audit domain; in the W-AF it's only covered within the Security Pillar as data protection and audit traceability, not an independent pillar. In practice, Compliance refers to adherence to external standards like PCI-DSS, HIPAA, and SOC 2, which AWS supports with tools like Artifact, Config, and Audit Manager.
+**Answer: C**
+Explanation: The 6 Pillars are Operational Excellence / Security / Reliability / Performance Efficiency / Cost Optimization / Sustainability (added in 2021). Compliance is a separate governance/audit domain; in the W-AF it's only covered within the Security Pillar as data protection and audit traceability, not an independent pillar. In practice, Compliance refers to adherence to external standards like PCI-DSS, HIPAA, and SOC 2, which AWS supports with tools like Artifact, Config, and Audit Manager.
 
 ---
 
-**문제 6.** A company runs RDS Multi-AZ in the `ap-northeast-2` region and wants to place a read-only replica in a separate region (`ap-northeast-1`). What is the main benefit of this design?
+**Question 6.** A company runs RDS Multi-AZ in the `ap-northeast-2` region and wants to place a read-only replica in a separate region (`ap-northeast-1`). What is the main benefit of this design?
 
 A) Recovery from a single AZ failure
 B) Region-level disaster recovery (DR) + simultaneous read traffic distribution
 C) IAM permission separation
 D) Improved CloudFront cache efficiency
 
-**정답: B**
-해설: The key point is that the two mechanisms protect different dimensions. **Multi-AZ is HA within the same region** (synchronous replication, automatic failover with RTO of 1-2 minutes), while a **Cross-Region Read Replica provides region-level DR + global read traffic distribution** (asynchronous replication, manual promote with RTO of minutes to tens of minutes). AZ isolation (HA) and Region isolation (DR) are separate tools addressing different dimensions of risk. If you want a stricter RPO around 1 second, you should move toward Aurora Global Database. RDS Cross-Region Read Replicas generally have an RPO of seconds to tens of seconds.
+**Answer: B**
+Explanation: The key point is that the two mechanisms protect different dimensions. **Multi-AZ is HA within the same region** (synchronous replication, automatic failover with RTO of 1-2 minutes), while a **Cross-Region Read Replica provides region-level DR + global read traffic distribution** (asynchronous replication, manual promote with RTO of minutes to tens of minutes). AZ isolation (HA) and Region isolation (DR) are separate tools addressing different dimensions of risk. If you want a stricter RPO around 1 second, you should move toward Aurora Global Database. RDS Cross-Region Read Replicas generally have an RPO of seconds to tens of seconds.

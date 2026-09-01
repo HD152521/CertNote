@@ -172,86 +172,86 @@ In the next article we look at EC2, EBS, ELB, and Auto Scaling — the things th
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** A company has 3 Private Subnets across Multi-AZ and calls external APIs. To minimize cost while ensuring availability, how should NAT Gateways be placed?
+**Question 1.** A company has 3 Private Subnets across Multi-AZ and calls external APIs. To minimize cost while ensuring availability, how should NAT Gateways be placed?
 
 A) Place a single NAT Gateway in AZ-a and use it from all subnets
 B) One NAT Gateway per AZ (3 total) + each Private Subnet uses the NAT in its own AZ
 C) Operate NAT Instances yourself
 D) Connect directly via the Internet Gateway
 
-**정답: B**
-해설: The keywords are "availability + cost minimization." A is cheaper but all outbound is cut off on an AZ failure. B adds $0.045/hour × 3 AZs = about $97/month but secures availability. C carries heavy operational burden. D violates the definition of a Private Subnet. Trade-off: to cut costs further, use a single NAT for dev environments and multi-AZ NAT only for production.
+**Answer: B**
+Explanation: The keywords are "availability + cost minimization." A is cheaper but all outbound is cut off on an AZ failure. B adds $0.045/hour × 3 AZs = about $97/month but secures availability. C carries heavy operational burden. D violates the definition of a Private Subnet. Trade-off: to cut costs further, use a single NAT for dev environments and multi-AZ NAT only for production.
 
 ---
 
-**문제 2.** An EC2 instance cannot connect to RDS in the same VPC. The SG allows 3306 inbound on RDS. What else should be checked?
+**Question 2.** An EC2 instance cannot connect to RDS in the same VPC. The SG allows 3306 inbound on RDS. What else should be checked?
 
 A) The EC2 instance's outbound SG rules
 B) Both NACL inbound and outbound, including ephemeral ports
 C) The 0.0.0.0/0 route in the Route Table
 D) Whether an Internet Gateway is attached
 
-**정답: B**
-해설: SGs are stateful so outbound is automatically allowed, making A irrelevant. RDS is VPC-internal communication, so IGW (D) and default route (C) are irrelevant. NACLs are stateless, so ephemeral ports (1024-65535) must also be explicitly allowed outbound. Common trap: when the NACL outbound only allows 80/443, the RDS return SYN-ACK gets blocked.
+**Answer: B**
+Explanation: SGs are stateful so outbound is automatically allowed, making A irrelevant. RDS is VPC-internal communication, so IGW (D) and default route (C) are irrelevant. NACLs are stateless, so ephemeral ports (1024-65535) must also be explicitly allowed outbound. Common trap: when the NACL outbound only allows 80/443, the RDS return SYN-ACK gets blocked.
 
 ---
 
-**문제 3.** A company's S3 traffic goes through a NAT Gateway and incurs cost. The most efficient solution?
+**Question 3.** A company's S3 traffic goes through a NAT Gateway and incurs cost. The most efficient solution?
 
 A) Add an Interface Endpoint
 B) Add a Gateway Endpoint
 C) Set up VPC Peering
 D) Enable S3 Transfer Acceleration
 
-**정답: B**
-해설: S3 and DynamoDB get Gateway Endpoints for free. Interface Endpoints (A) are for other services and have an hourly cost. C is for VPC-to-VPC communication. D is global acceleration, not a private path. Adding a Gateway Endpoint auto-registers a prefix list in the Route Table, switching S3 traffic to a private path.
+**Answer: B**
+Explanation: S3 and DynamoDB get Gateway Endpoints for free. Interface Endpoints (A) are for other services and have an hourly cost. C is for VPC-to-VPC communication. D is global acceleration, not a private path. Adding a Gateway Endpoint auto-registers a prefix list in the Route Table, switching S3 traffic to a private path.
 
 ---
 
-**문제 4.** How can a SaaS make its service usable via private IPs inside customer VPCs?
+**Question 4.** How can a SaaS make its service usable via private IPs inside customer VPCs?
 
 A) Cross-Region VPC Peering
 B) PrivateLink + Network Load Balancer + Endpoint Service
 C) Transit Gateway sharing
 D) Direct Connect Public VIF
 
-**정답: B**
-해설: PrivateLink is the standard pattern: the SaaS registers its service behind an NLB as an Endpoint Service, and customers access it via Interface Endpoints. Snowflake, MongoDB Atlas, and Datadog all use this approach. A and C expose bidirectional routing, making them unsuitable for the SaaS model. D is for on-premises.
+**Answer: B**
+Explanation: PrivateLink is the standard pattern: the SaaS registers its service behind an NLB as an Endpoint Service, and customers access it via Interface Endpoints. Snowflake, MongoDB Atlas, and Datadog all use this approach. A and C expose bidirectional routing, making them unsuitable for the SaaS model. D is for on-premises.
 
 ---
 
-**문제 5.** A company wants to prevent CIDR conflicts across a 200-account environment. The most efficient method?
+**Question 5.** A company wants to prevent CIDR conflicts across a 200-account environment. The most efficient method?
 
 A) Each team decides its own CIDR
 B) Manage the company-wide CIDR pool with AWS IPAM (IP Address Manager)
 C) Manage CIDR allocations in an Excel sheet
 D) Track CIDRs with Route 53
 
-**정답: B**
-해설: IPAM launched in 2021. Integrated with Organizations, it automatically tracks, allocates, and prevents duplication of VPC CIDRs across all accounts. C is manual management prone to mistakes. Trade-off: IPAM has an additional cost (about $0.27 per IP per month), but that's negligible compared to the cost of a CIDR conflict incident in a multi-account environment.
+**Answer: B**
+Explanation: IPAM launched in 2021. Integrated with Organizations, it automatically tracks, allocates, and prevents duplication of VPC CIDRs across all accounts. C is manual management prone to mistakes. Trade-off: IPAM has an additional cost (about $0.27 per IP per month), but that's negligible compared to the cost of a CIDR conflict incident in a multi-account environment.
 
 ---
 
-**문제 6.** A company suspects the outbound traffic of its production VPC. To trace and analyze all packets?
+**Question 6.** A company suspects the outbound traffic of its production VPC. To trace and analyze all packets?
 
 A) Run tcpdump on EC2
 B) Send VPC Flow Logs to S3 and analyze with Athena
 C) Enabling GuardDuty alone is enough
 D) Trace packets with CloudTrail
 
-**정답: B**
-해설: Flow Logs record the 5-tuple and outcome for all ENIs. Analyze with SQL via S3 + Athena. A is hard to apply to 100+ instances one by one. C is pattern matching, not raw data. D traces API calls, not packets.
+**Answer: B**
+Explanation: Flow Logs record the 5-tuple and outcome for all ENIs. Analyze with SQL via S3 + Athena. A is hard to apply to 100+ instances one by one. C is pattern matching, not raw data. D traces API calls, not packets.
 
 ---
 
-**문제 7.** What is the difference between SG ID references and CIDR references?
+**Question 7.** What is the difference between SG ID references and CIDR references?
 
 A) SG ID references only work within the same VPC or Peered VPCs
 B) CIDR references are faster
 C) No difference
 D) SG ID references are only possible for inbound
 
-**정답: A**
-해설: SG ID references work within the same region in the same VPC or Peered VPCs. There are some constraints when crossing a TGW. The reason they carry less operational burden than CIDRs is that even if IPs change, the rules apply automatically as long as the SG stays the same. The standard pattern for 3-tier architectures.
+**Answer: A**
+Explanation: SG ID references work within the same region in the same VPC or Peered VPCs. There are some constraints when crossing a TGW. The reason they carry less operational burden than CIDRs is that even if IPs change, the rules apply automatically as long as the SG stays the same. The standard pattern for 3-tier architectures.

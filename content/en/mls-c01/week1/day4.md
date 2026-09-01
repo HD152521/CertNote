@@ -93,64 +93,64 @@ A metric for measuring label quality is **inter-annotator agreement** (agreement
 
 There are questions to ask before labeling. (1) Can a pretrained model + transfer learning get by with fewer labels? (2) Can data augmentation multiply the existing labels? (3) Can weak supervision provide heuristic labels? The Specialty exam often asks "ways to reduce labeling cost," and active learning and transfer learning show up as correct answers.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** You must label 500,000 patient X-rays. The data is medical information containing PII. What is the most appropriate workforce choice?
+**Question 1.** You must label 500,000 patient X-rays. The data is medical information containing PII. What is the most appropriate workforce choice?
 
 A) A Private workforce (trusted internal group) or a vetted Vendor  
 B) Amazon Mechanical Turk (low cost, large scale)  
 C) Fully automated processing with no workforce  
 D) Post the data on the public internet and crowdsource it  
 
-**정답: A**  
-해설: Sensitive, regulated data such as medical PII cannot be exposed to a public workforce (Mechanical Turk) or public crowdsourcing for compliance reasons. You must use an internal Private workforce or a Vendor with NDAs and expertise. Automation alone cannot handle the initial seed labels or ambiguous cases.
+**Answer: A**  
+Explanation: Sensitive, regulated data such as medical PII cannot be exposed to a public workforce (Mechanical Turk) or public crowdsourcing for compliance reasons. You must use an internal Private workforce or a Vendor with NDAs and expertise. Automation alone cannot handle the initial seed labels or ambiguous cases.
 
 ---
 
-**문제 2.** The labeling budget for 1 million images is tight. Which Ground Truth feature concentrates human labeling effort on the highest-information samples to reduce total cost?
+**Question 2.** The labeling budget for 1 million images is tight. Which Ground Truth feature concentrates human labeling effort on the highest-information samples to reduce total cost?
 
 A) Have humans label every image  
 B) Switch the workforce to Mechanical Turk  
 C) Automated data labeling (active learning) — route only ambiguous samples to humans  
 D) Randomly label only half of the data  
 
-**정답: C**  
-해설: Active learning adopts automatic labels for samples the model is confident about and sends only the ambiguous (high-uncertainty) samples near the decision boundary to humans, concentrating labeling effort where information value is highest and cutting cost. Randomly labeling half ignores information value and loses significant quality, and switching workforces can raise sensitivity and quality problems.
+**Answer: C**  
+Explanation: Active learning adopts automatic labels for samples the model is confident about and sends only the ambiguous (high-uncertainty) samples near the decision boundary to humans, concentrating labeling effort where information value is highest and cutting cost. Randomly labeling half ignores information value and loses significant quality, and switching workforces can raise sensitivity and quality problems.
 
 ---
 
-**문제 3.** To reduce random human error in labeling output, you want multiple workers to label the same object and have the results aggregated. What do you configure in Ground Truth?
+**Question 3.** To reduce random human error in labeling output, you want multiple workers to label the same object and have the results aggregated. What do you configure in Ground Truth?
 
 A) The number of files in input.manifest  
 B) Set NumberOfHumanWorkersPerDataObject to 2-5 and use consensus consolidation  
 C) Increase TaskTimeLimitInSeconds  
 D) Change the S3OutputPath  
 
-**정답: B**  
-해설: Increasing the number of labelers per object (NumberOfHumanWorkersPerDataObject) and aggregating results via annotation consolidation cancels random errors through majority voting and improves label quality. File count, task time limit, and output path have no direct bearing on consensus-based quality improvement.
+**Answer: B**  
+Explanation: Increasing the number of labelers per object (NumberOfHumanWorkersPerDataObject) and aggregating results via annotation consolidation cancels random errors through majority voting and improves label quality. File count, task time limit, and output path have no direct bearing on consensus-based quality improvement.
 
 ---
 
-**문제 4.** Which label quality problem is hard to reduce even with consensus-based labeling?
+**Question 4.** Which label quality problem is hard to reduce even with consensus-based labeling?
 
 A) Systematic bias where all labelers err in the same direction because of ambiguous guidelines  
 B) Random mistakes by some labelers  
 C) Errors caused by one labeler's fatigue  
 D) Minor differences of opinion between labelers  
 
-**정답: A**  
-해설: Consensus cancels mutually independent random errors through majority voting, but systematic bias — where ambiguous guidelines make all labelers err identically — is not caught even by majority vote. That case requires clear guidelines and golden-set validation. The other options are all random errors, which consensus mitigates.
+**Answer: A**  
+Explanation: Consensus cancels mutually independent random errors through majority voting, but systematic bias — where ambiguous guidelines make all labelers err identically — is not caught even by majority vote. That case requires clear guidelines and golden-set validation. The other options are all random errors, which consensus mitigates.
 
 ---
 
-**문제 5.** Which of the following is the LEAST appropriate approach to fundamentally reducing labeling costs for a large-scale image classification model?
+**Question 5.** Which of the following is the LEAST appropriate approach to fundamentally reducing labeling costs for a large-scale image classification model?
 
 A) Use a pretrained model + transfer learning to need fewer labels  
 B) Use active learning to shrink the amount of human labeling itself  
 C) Use data augmentation to multiply existing labels  
 D) Dump sensitive data onto Mechanical Turk unconditionally just to lower the unit price  
 
-**정답: D**  
-해설: Putting sensitive data on a public workforce purely for unit cost is a compliance violation and a quality risk — not a legitimate cost-reduction method. Transfer learning, active learning, and data augmentation are all standard cost-saving strategies that reduce the amount of labels needed or raise efficiency.
+**Answer: D**  
+Explanation: Putting sensitive data on a public workforce purely for unit cost is a compliance violation and a quality risk — not a legitimate cost-reduction method. Transfer learning, active learning, and data augmentation are all standard cost-saving strategies that reduce the amount of labels needed or raise efficiency.
 
 ---

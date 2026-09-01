@@ -111,64 +111,64 @@ Next we'll review the ML fundamentals and AWS stack from this week, wrapping up 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
-**문제 1.** SageMaker Studio's core cost advantage over traditional notebook instances is?
+**Question 1.** SageMaker Studio's core cost advantage over traditional notebook instances is?
 
 A) It's free  
 B) Compute and storage are separated — code stored in EFS permanently, instances attached only at runtime  
 C) Unlimited GPU is always provided  
 D) Training runs on your local PC  
 
-**정답: B**  
-해설: Studio separates code (permanently on EFS) from execution (on-demand kernels), so you only rent expensive GPU when actually computing. Code in CPU, switch to GPU kernel for training, shut down unused kernels. Not free, not unlimited GPU, and training runs on SageMaker-managed instances, not locally.
+**Answer: B**  
+Explanation: Studio separates code (permanently on EFS) from execution (on-demand kernels), so you only rent expensive GPU when actually computing. Code in CPU, switch to GPU kernel for training, shut down unused kernels. Not free, not unlimited GPU, and training runs on SageMaker-managed instances, not locally.
 
 ---
 
-**문제 2.** You want data scientists to have only training permission and ML engineers to have deployment permission in SageMaker Studio. How to implement this?
+**Question 2.** You want data scientists to have only training permission and ML engineers to have deployment permission in SageMaker Studio. How to implement this?
 
 A) Create two separate domains  
 B) Map different IAM roles to different user profiles within the same domain  
 C) Grant all users the same admin role  
 D) Separate VPCs  
 
-**정답: B**  
-해설: Within one domain, map different IAM roles to different user profiles to separate permissions. One domain per team usually suffices; no need to multiply domains for permission separation. Identical admin roles violate least-privilege. VPC separation is network isolation, not user-level permission separation.
+**Answer: B**  
+Explanation: Within one domain, map different IAM roles to different user profiles to separate permissions. One domain per team usually suffices; no need to multiply domains for permission separation. Identical admin roles violate least-privilege. VPC separation is network isolation, not user-level permission separation.
 
 ---
 
-**문제 3.** Why are SageMaker Training Job costs charged only for training time?
+**Question 3.** Why are SageMaker Training Job costs charged only for training time?
 
 A) Training instances are always on  
 B) SageMaker automatically terminates instances when training ends  
 C) Training is free  
 D) Training runs directly in user profiles  
 
-**정답: B**  
-해설: Training jobs spin up instances, run training, save artifacts to S3, then auto-terminate — so GPU costs are charged only for training time. Always-on is characteristic of real-time inference endpoints, not training. Training isn't free, and user profiles don't execute compute themselves.
+**Answer: B**  
+Explanation: Training jobs spin up instances, run training, save artifacts to S3, then auto-terminate — so GPU costs are charged only for training time. Always-on is characteristic of real-time inference endpoints, not training. Training isn't free, and user profiles don't execute compute themselves.
 
 ---
 
-**문제 4.** "Once a day, batch-score all customers on churn prediction" — which inference option fits best?
+**Question 4.** "Once a day, batch-score all customers on churn prediction" — which inference option fits best?
 
 A) Real-time endpoint  
 B) Batch Transform  
 C) Asynchronous inference  
 D) Always-on GPU server  
 
-**정답: B**  
-해설: Batch-scoring bulk data with termination after completion is Batch Transform — no persistent endpoint needed, cost-efficient. Real-time endpoints need constant availability and ongoing costs. Asynchronous inference is for single large jobs with long processing. Always-on GPU servers waste idle costs.
+**Answer: B**  
+Explanation: Batch-scoring bulk data with termination after completion is Batch Transform — no persistent endpoint needed, cost-efficient. Real-time endpoints need constant availability and ongoing costs. Asynchronous inference is for single large jobs with long processing. Always-on GPU servers waste idle costs.
 
 ---
 
-**문제 5.** To solve a binary classification problem on tabular data with SageMaker built-in algorithms, the most standard default choice is?
+**Question 5.** To solve a binary classification problem on tabular data with SageMaker built-in algorithms, the most standard default choice is?
 
 A) K-Means  
 B) XGBoost  
 C) PCA  
 D) DeepAR  
 
-**정답: B**  
-해설: For tabular classification·regression, XGBoost is the standard built-in baseline. K-Means is clustering (unsupervised), PCA is dimensionality reduction, DeepAR is time-series forecasting — all different purposes than tabular classification.
+**Answer: B**  
+Explanation: For tabular classification·regression, XGBoost is the standard built-in baseline. K-Means is clustering (unsupervised), PCA is dimensionality reduction, DeepAR is time-series forecasting — all different purposes than tabular classification.
 
 ---
