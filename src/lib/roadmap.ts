@@ -138,14 +138,22 @@ async function enrichRole(role: RoadmapRole): Promise<EnrichedRole> {
   };
 }
 
-// 단계 합계. costUsd 는 전 단계의 시험 정보가 있을 때만 낸다(부분 합계는 오해를 부른다).
+// 단계 합계. costUsd 는 전 단계가 USD 단일 응시료를 가질 때만 낸다(부분 합계는 오해를 부른다).
+//
+// exam 이 있어도 costUsd 가 없을 수 있다 — 리눅스마스터처럼 원화·다단계(phases) 응시료를 쓰는
+// 시험은 최상위 costUsd 를 두지 않는다(examInfo.ts 의 단일형/다단계형 분기 참조). 그래서
+// 'exam !== null' 만으로 판단하면 그런 단계가 섞였을 때 USD 합계가 성립하지 않는데도 총액을
+// 내보내게 된다. costUsd 의 존재 자체로 판단한다.
 export function totalsOf(steps: EnrichedStep[]): RoadmapTotals {
-  const allPriced = steps.length > 0 && steps.every((s) => s.exam !== null);
+  const prices = steps
+    .map((s) => s.exam?.costUsd)
+    .filter((c): c is number => typeof c === 'number');
+  const allPriced = steps.length > 0 && prices.length === steps.length;
   return {
     certCount: steps.length,
     weeks: steps.reduce((n, s) => n + s.weeks, 0),
     days: steps.reduce((n, s) => n + s.dayCount, 0),
-    costUsd: allPriced ? steps.reduce((n, s) => n + (s.exam as ExamInfo).costUsd, 0) : null,
+    costUsd: allPriced ? prices.reduce((n, c) => n + c, 0) : null,
   };
 }
 
