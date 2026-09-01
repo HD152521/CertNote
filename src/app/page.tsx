@@ -24,6 +24,12 @@ const QUESTION_COUNT = 3410;
 // 언어 쌍은 `/aws-certs` ↔ `/en` 하나로 확정했다 — 세부 근거는
 // docs/SEO-indexing-fix-plan.md Step 3 및 src/app/[category]/page.tsx, src/app/en/page.tsx 참고.
 export const metadata: Metadata = {
+  // 홈 고유 title/description. 예전엔 둘 다 루트 레이아웃 기본값을 그대로 썼는데, 홈은
+  // "aws 자격증 독학/준비" 의도의 착지 페이지라 사이트 전체 기본값과 역할이 다르다.
+  // (GSC 2026-08-31: 홈이 '크롤링됨 - 현재 색인이 생성되지 않음' 에 있었다.)
+  // description 은 네이버 권장 80자 이내를 지킨다.
+  title: 'AWS 자격증 독학 — 하루 30분 한국어 커리큘럼',
+  description: '주차별 커리큘럼으로 AWS 자격증 독학. 심화 노트·연습문제·간격반복 복습. Week 1 무료.',
   alternates: { canonical: '/' },
 };
 
