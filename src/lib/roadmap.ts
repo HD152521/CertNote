@@ -134,13 +134,19 @@ async function enrichRole(role: RoadmapRole): Promise<EnrichedRole> {
     description: role.description,
     ...(role.why ? { why: role.why } : {}),
     steps,
-    totals: totalsOf(steps),
+    totals: totalsOf(steps, role.steps.length),
   };
 }
 
-// 단계 합계. costUsd 는 전 단계의 시험 정보가 있을 때만 낸다(부분 합계는 오해를 부른다).
-export function totalsOf(steps: EnrichedStep[]): RoadmapTotals {
-  const allPriced = steps.length > 0 && steps.every((s) => s.exam !== null);
+// 단계 합계.
+//
+// costUsd 는 **선언된 단계가 하나도 빠지지 않았고 전부 시험 정보를 가질 때만** 낸다.
+// 두 번째 조건만으로는 부족하다 — enrichRole 이 getCertMeta 실패 시 그 단계를 조용히 버리므로,
+// 살아남은 단계만 더하면 "자격증 2개 · 18주 · $450" 처럼 3단계 로드맵의 부분합이 확정된 총액처럼
+// 보인다. declaredSteps 와 대조해 하나라도 유실됐으면 합계를 내지 않는다.
+export function totalsOf(steps: EnrichedStep[], declaredSteps: number = steps.length): RoadmapTotals {
+  const complete = steps.length > 0 && steps.length === declaredSteps;
+  const allPriced = complete && steps.every((s) => s.exam !== null);
   return {
     certCount: steps.length,
     weeks: steps.reduce((n, s) => n + s.weeks, 0),

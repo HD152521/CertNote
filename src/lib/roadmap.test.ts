@@ -118,6 +118,20 @@ describe('totalsOf — 모르는 값은 합계를 내지 않는다', () => {
   test('단계가 없으면 costUsd 는 null', () => {
     expect(totalsOf([]).costUsd).toBeNull();
   });
+
+  // enrichRole 은 getCertMeta 실패 시 그 단계를 조용히 버린다. 살아남은 것만 더하면
+  // 3단계 로드맵이 "자격증 2개 · $250" 이라는 확정된 총액처럼 보인다.
+  test('선언된 단계보다 적게 남으면 costUsd 는 null(부분합 금지)', () => {
+    const survived = [step(6, 30, 100), step(12, 60, 150)];
+    expect(totalsOf(survived, 3).costUsd).toBeNull();
+    expect(totalsOf(survived, 2).costUsd).toBe(250);
+  });
+
+  test('유실이 있어도 certCount/weeks/days 는 남은 것 기준으로 보고한다', () => {
+    const t = totalsOf([step(6, 30, 100), step(12, 60, 150)], 3);
+    expect(t.certCount).toBe(2);
+    expect(t.weeks).toBe(18);
+  });
 });
 
 // 역할 페이지의 중복 색인 방지. 자격증 목록·시험 사실은 역할끼리 겹치므로(CLF-C02 는 6개 역할

@@ -82,7 +82,7 @@ export default async function RoadmapRolePage({ params }: PageProps) {
           // (320px 실측). 마지막 타일이 두 칸을 차지하게 해 빈 칸 자체를 없앤다.
           <div className="col-span-2 bg-bg-elevated px-4 py-3 sm:col-span-1">
             <dt className="text-xs text-fg-muted">응시료 합계</dt>
-            <dd className="mt-0.5 text-lg font-semibold">${role.totals.costUsd}</dd>
+            <dd className="mt-0.5 text-lg font-semibold">${role.totals.costUsd.toLocaleString('en-US')}</dd>
           </div>
         )}
       </dl>
@@ -120,7 +120,7 @@ export default async function RoadmapRolePage({ params }: PageProps) {
 
       <p className="text-xs text-fg-faint">
         각 자격증의 Week {FREE_WEEK}은 무료입니다. 목표 직무에 맞춰 순서대로 준비해 보세요.
-        응시료·문항 수·합격 점수는 AWS 공식 시험 가이드 기준이며 결제 시점 환율과 세금은 별도입니다.
+        응시료는 AWS 공식 시험 가이드 기준이며 결제 시점 환율과 세금은 별도입니다.
       </p>
       <p className="sr-only">{SITE_NAME}</p>
     </div>
