@@ -153,3 +153,41 @@ describe('회귀 — 기존 AWS 시험정보는 단일형 그대로여야 한다
     expect(info!.domains.every((d) => typeof d.weight === 'number')).toBe(true);
   });
 });
+
+describe('linux-master-2 — 2급 시험정보(트랙 뼈대)', () => {
+  test('로드되고 1차·2차 2단계를 갖는다', () => {
+    const info = getExamInfo('linux-master-2');
+    expect(info).not.toBeNull();
+    expect(info!.phases).toHaveLength(2);
+    expect(info!.level).toBe('grade-2');
+  });
+
+  test('배점 비율은 공식 고시에 없으므로 weight 를 비운다(2차 자료의 60/40 미채택)', () => {
+    const info = getExamInfo('linux-master-2')!;
+    expect(info.domains).toHaveLength(3);
+    expect(info.domains.every((d) => d.weight === undefined)).toBe(true);
+  });
+
+  test('1급과 달리 2차에도 응시 자격 제한이 없다', () => {
+    const info = getExamInfo('linux-master-2')!;
+    expect(info.phases![1].eligibility).toBe('제한 없음');
+    // 1급은 2차가 1차 합격자로 제한된다 — 두 급수가 뒤바뀌지 않았는지 함께 고정한다.
+    expect(getExamInfo('linux-master-1')!.phases![1].eligibility).toContain('1차 합격자');
+  });
+
+  test('FAQ 답변의 응시료·시간이 phases 데이터와 일치한다(허구 방지)', () => {
+    const info = getExamInfo('linux-master-2')!;
+    const joined = info.faq!.map((f) => f.a).join(' ');
+    for (const ph of info.phases!) {
+      expect(joined).toContain(String(ph.durationMin));
+      if (ph.cost) expect(joined).toContain(formatCost(ph.cost));
+    }
+  });
+
+  test('입문 트랙이므로 1급보다 응시료가 싸다', () => {
+    const two = getExamInfo('linux-master-2')!.phases!.map((p) => p.cost!.amount);
+    const one = getExamInfo('linux-master-1')!.phases!.map((p) => p.cost!.amount);
+    expect(two[0]).toBeLessThan(one[0]);
+    expect(two[1]).toBeLessThan(one[1]);
+  });
+});

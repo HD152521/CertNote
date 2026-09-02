@@ -38,6 +38,10 @@ export interface CertMeta {
   dayCount: number;
   sourceRepo: string;
   syncedAt: string;
+  // 준비 중인 트랙. content/ 에 뼈대만 있고 index.json 에는 아직 등록하지 않은 상태를 뜻한다.
+  // listCerts 는 index.json 기준이라 draft 트랙은 애초에 보이지 않는다(이 플래그는 의도 표시용).
+  // 공개할 때 이 플래그를 지우고 index.json 에 항목을 넣는다 — contentIndex.test.ts 가 짝을 검사한다.
+  draft?: boolean;
 }
 
 export interface CategoryIndex {
