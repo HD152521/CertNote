@@ -13,7 +13,7 @@ From an operator's perspective, when choosing a region, you need to consider fiv
 | Dimension | Operator Consideration |
 |-----------|------------------------|
 | **Latency** | End user ↔ Region RTT. Measure with CloudPing.info, Route 53 latency record, Global Accelerator dashboard |
-| **Service Availability** | New services roll out in us-east-1 first, then other regions (typically 6 months to 1 year apart). Launch schedules are at \ws.amazon.com/about-aws/global-infrastructure/regional-product-services/\ comparison table |
+| **Service Availability** | New services roll out in us-east-1 first, then other regions (typically 6 months to 1 year apart). Launch schedules are at \aws.amazon.com/about-aws/global-infrastructure/regional-product-services/\ comparison table |
 | **Pricing** | The same EC2 instance costs differently by region. Seoul is typically 10–20% more expensive than Virginia. However, Data Transfer Out also varies by region, and even AZ-to-AZ transfers within the same region incur \.01/GB per direction |
 | **Compliance** | Regulatory certifications vary by region: GDPR (EU regions), K-ISMS (Seoul), PCI-DSS, HIPAA, FedRAMP, IRAP. Download region-specific certificates from AWS Artifact |
 | **Data Sovereignty** | Laws like Article 28-2 of the Personal Information Protection Act (international data transfer), GDPR Article 44, and China's Cybersecurity Law Article 37 restrict data export outside certain regions |
@@ -28,23 +28,23 @@ From an operator's perspective, when choosing a region, you need to consider fiv
 
 ## ZoneId vs ZoneName: A Trap Only Operators Know
 
-When you call \describe-availability-zones\, two identifiers come back:
+When you call `describe-availability-zones`, two identifiers come back:
 
-\\\ash
+```bash
 aws ec2 describe-availability-zones --region ap-northeast-2 \
   --query 'AvailabilityZones[*].[ZoneName,ZoneId]' --output table
-\\\
+```
 
-\\\
+```
 +-------------------+-----------+
 | ap-northeast-2a   | apne2-az1 |
 | ap-northeast-2b   | apne2-az2 |
 | ap-northeast-2c   | apne2-az3 |
 | ap-northeast-2d   | apne2-az4 |
 +-------------------+-----------+
-\\\
+```
 
-**ZoneName is shuffled per account.** Your account's \p-northeast-2a\ might be a different physical AZ than your partner's \p-northeast-2a\. In contrast, **ZoneId (apne2-az1) is identical across all accounts.** Why shuffle? To prevent all traffic from funneling to "zone a" when AWS tells everyone "create resources in zone a first." It forces traffic distribution.
+**ZoneName is shuffled per account.** Your account's `ap-northeast-2a` might be a different physical AZ than your partner's `ap-northeast-2a`. In contrast, **ZoneId (apne2-az1) is identical across all accounts.** Why shuffle? To prevent all traffic from funneling to "zone a" when AWS tells everyone "create resources in zone a first." It forces traffic distribution.
 
 Why does this matter to an operator? **When connecting to another account via VPC Peering or PrivateLink**, if you want to "place instances in the same AZ to save cross-AZ costs and latency," you must match by ZoneId. Matching only by ZoneName means you're actually connecting to different physical AZs, adding an extra ms of latency and incurring data transfer charges. SOA-C02 scenario questions like "how do you minimize cross-AZ transfer costs between two accounts?" test whether you know about ZoneId matching.
 
@@ -80,7 +80,7 @@ What operators actually do daily, weekly, and quarterly:
 
 > 📚 **Case Study**: July 2019, Capital One incident. 106 million credit card application records exposed. The cause wasn't AWS infrastructure—it was **the customer's WAF with an SSRF vulnerability + EC2 metadata v1 (IMDSv1) leaking IAM credentials + overly broad IAM role permissions.** The attacker (former AWS employee Paige Thompson) accessed \http://169.254.169.254/latest/meta-data/iam/security-credentials/\ via SSRF, stole temporary credentials, and extracted 30TB from 700+ S3 buckets. **AWS's responsibility layer had no issues; the incident occurred in the customer responsibility layer (WAF config, IAM permission scope, IMDSv1 usage).** This is the crux. [DOJ charging document.](https://www.justice.gov/usao-edva/press-release/file/1188626/download) AWS released IMDSv2 (session-token based) shortly after (November 2019), and operators now enforce \HttpTokens=required\ on new EC2 instances as standard. Capital One paid \ million in fines to the OCC.
 
-> 🔍 **Deeper Dive**: You enforce IMDSv2 via SSM Document \AWS-EnforceEC2InstanceMetadataServiceV2\ or Launch Template \MetadataOptions.HttpTokens=required\. More aggressively, use an SCP enforcing \ws:RequestTag/MetadataV2=required\ on \RunInstances\, or Config rule \ec2-imdsv2-check\ to flag non-compliant instances. Set **hop limit to 1** simultaneously—metadata traffic can't escape the container (can't cross Docker's default bridge interface docker0). This is a three-layer defense pattern against an operator accidentally launching an IMDSv1 instance.
+> 🔍 **Deeper Dive**: You enforce IMDSv2 via SSM Document `AWS-EnforceEC2InstanceMetadataServiceV2` or Launch Template `MetadataOptions.HttpTokens=required`. More aggressively, use an SCP enforcing `aws:RequestTag/MetadataV2=required` on `RunInstances`, or Config rule `ec2-imdsv2-check` to flag non-compliant instances. Set **hop limit to 1** simultaneously—metadata traffic can't escape the container (can't cross Docker's default bridge interface docker0). This is a three-layer defense pattern against an operator accidentally launching an IMDSv1 instance.
 
 > ⚠️ **Pitfall**: "Managed services handle security too"—a false assumption. Using Lambda or RDS still means **you** own data classification, IAM permissions, encryption key policies, network access controls, and backup policies. AWS patches Lambda's Python runtime and RDS's database engine; you decide when to apply those patches (Maintenance Window), how traffic is handled during that window, and whether client connection pools reconnect after a Standby failover. RDS Snapshots have a default retention of 1–35 days; beyond that, you must export manually—a detail frequently missed.
 
@@ -97,7 +97,7 @@ Health splits into two layers:
 
 Operators wire PHD events into EventBridge for automation:
 
-\\\ash
+```bash
 # Query Health API for ongoing events
 aws health describe-events \
   --filter "eventStatusCodes=open,upcoming" \
@@ -106,15 +106,15 @@ aws health describe-events \
 # Organization-wide events (from management account)
 aws health describe-events-for-organization \
   --filter "eventStatusCodes=open"
-\\\
+```
 
-> 🔍 **Deeper Dive**: AWS Health API is hosted in only two places—us-east-1 and us-west-2—with automatic failover. If us-east-1 goes down, the SDK automatically retries to the us-west-2 endpoint (built into SDKs since 2023). To receive Health events via EventBridge without gaps, create rules for the \ws.health\ source in **both us-east-1 and us-west-2.** For organization-wide visibility, also enable **AWS Health Organizational View** in your management account; that needs a service-linked role (\AWSServiceRoleForHealth_Organizations\). Piping Health events to ServiceNow or PagerDuty follows the EventBridge → SNS → external webhook pattern.
+> 🔍 **Deeper Dive**: AWS Health API is hosted in only two places—us-east-1 and us-west-2—with automatic failover. If us-east-1 goes down, the SDK automatically retries to the us-west-2 endpoint (built into SDKs since 2023). To receive Health events via EventBridge without gaps, create rules for the `aws.health` source in **both us-east-1 and us-west-2.** For organization-wide visibility, also enable **AWS Health Organizational View** in your management account; that needs a service-linked role (`AWSServiceRoleForHealth_Organizations`). Piping Health events to ServiceNow or PagerDuty follows the EventBridge → SNS → external webhook pattern.
 
 ## Operator Scenario Patterns You'll See on the Exam
 
 SOA-C02 prioritizes **situation → which tool to respond with?** over abstract concepts. That's why we'll repeat the same thought flow throughout this 12-week guide.
 
-\\\
+```
 [Symptom]                       [1st Check]          [2nd Check]
 ──────────────────────────────────────────────────────────────────
 EC2 unresponsive               → CloudWatch metric   → EC2 status check
@@ -125,7 +125,7 @@ Cost spike                     → Cost Explorer       → CloudTrail (writes)
 Outage post-deploy             → Deploy history      → Config Timeline
 Suspected security incident    → GuardDuty           → CloudTrail Lake
 Auto-scaling not triggering    → ASG activity        → Scaling policy + metric
-\\\
+```
 
 This table is the skeleton of operator thinking. When an exam question asks "which tool should you check first?", this table is your answer.
 
@@ -142,7 +142,7 @@ Tomorrow we dive into **IAM**, the region of the above layer that breaks most of
 **Question 1.** A SysOps operator wants to change IAM permissions and modify Route 53 records in another region during a us-east-1 outage. Is this operation possible?
 
 A) Yes. IAM and Route 53 are global services, so they're unaffected by any regional outage
-B) Yes. But you must explicitly specify \--region\ in the AWS CLI
+B) Yes. But you must explicitly specify `--region` in the AWS CLI
 C) No. The control planes of IAM and Route 53 are located in us-east-1, so write operations may be blocked
 D) Yes. But you must wait for CloudFront cache to expire
 
@@ -201,10 +201,10 @@ Explanation: AWS Health API runs active-active in us-east-1 and us-west-2 with a
 
 **Question 6.** To minimize cross-AZ data transfer costs (at \.01/GB × 2) between two AWS accounts, you want to place EC2 instances in the same AZ. The correct approach is?
 
-A) Both accounts select \p-northeast-2a\
-B) Match the ZoneId (e.g., \pne2-az1\) identically on both sides
+A) Both accounts select \ap-northeast-2a\
+B) Match the ZoneId (e.g., `apne2-az1`) identically on both sides
 C) Put both accounts in the same Organization; they auto-match
 D) Share AZs via AWS Resource Access Manager
 
 **Answer: B**
-Explanation: ZoneName (e.g., \p-northeast-2a\) is shuffled per account, so account A's \2a\ might not be the same physical AZ as account B's \2a\. **ZoneId (\pne2-az1\) is identical across all accounts,** so match by ZoneId to avoid cross-AZ costs. You can see both values in \describe-availability-zones\.
+Explanation: ZoneName (e.g., `ap-northeast-2a`) is shuffled per account, so account A's `2a` might not be the same physical AZ as account B's `2a`. **ZoneId (`apne2-az1`) is identical across all accounts,** so match by ZoneId to avoid cross-AZ costs. You can see both values in `describe-availability-zones`.
