@@ -17,6 +17,13 @@ const AWS_LABELS: Record<string, string> = {
   specialty: 'Specialty',
 };
 
+// 리눅스마스터는 국가공인 국내 자격이라 티어 표기가 '1급/2급'이다. 이 맵이 없으면
+// titleCase 폴백이 걸려 한국어 페이지에 'Grade 1' 이 찍힌다(실제로 그렇게 나가고 있었다).
+const LINUX_LABELS: Record<string, string> = {
+  'grade-1': '1급',
+  'grade-2': '2급',
+};
+
 function titleCase(s: string): string {
   return s.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -25,6 +32,7 @@ function titleCase(s: string): string {
 // section 생략 시 'aws' 기본 — 기존 호출부(certLevelLabel(level))가 그대로 동작.
 export function certLevelLabel(level: CertLevel, section: Section = 'aws'): string {
   if (section === 'aws' && AWS_LABELS[level]) return AWS_LABELS[level];
+  if (section === 'linux' && LINUX_LABELS[level]) return LINUX_LABELS[level];
   return titleCase(level);
 }
 

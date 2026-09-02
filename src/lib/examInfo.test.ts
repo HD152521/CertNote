@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { getExamInfo, getExamTips, AWS_EXAM_TIPS } from './examInfo';
+import { getExamInfo, getExamTips, formatCost, AWS_EXAM_TIPS } from './examInfo';
+import { readdirSync } from 'node:fs';
 import { buildFaqPageLd } from './structuredData';
 
 // Phase2 시험정보 FAQ — 데이터 로딩·섹션별 팁·FAQPage JSON-LD 단위 테스트.
@@ -73,5 +74,82 @@ describe('buildFaqPageLd', () => {
     expect(ld.mainEntity).toHaveLength(info.faq!.length);
     expect(ld.mainEntity.map((e) => e.name)).toEqual(info.faq!.map((f) => f.q));
     expect(ld.mainEntity.map((e) => e.acceptedAnswer.text)).toEqual(info.faq!.map((f) => f.a));
+  });
+});
+
+describe('formatCost — 통화별 응시료 표기', () => {
+  test('KRW는 천단위 구분 + 원, USD는 $', () => {
+    expect(formatCost({ amount: 55000, currency: 'KRW' })).toBe('55,000원');
+    expect(formatCost({ amount: 77000, currency: 'KRW' })).toBe('77,000원');
+    expect(formatCost({ amount: 150, currency: 'USD' })).toBe('$150');
+  });
+
+  test('천단위 구분은 ICU 비의존 — 빌드 환경이 달라도 같은 문자열이 나온다', () => {
+    expect(formatCost({ amount: 1000, currency: 'KRW' })).toBe('1,000원');
+    expect(formatCost({ amount: 999, currency: 'KRW' })).toBe('999원');
+    expect(formatCost({ amount: 1234567, currency: 'KRW' })).toBe('1,234,567원');
+  });
+});
+
+describe('스키마 확장 — 다단계 시험(리눅스마스터)', () => {
+  test('linux-master-1을 로드한다(신규 스키마가 타입 가드를 통과한다)', () => {
+    const info = getExamInfo('linux-master-1');
+    expect(info).not.toBeNull();
+    expect(info!.phases).toHaveLength(2);
+    expect(info!.passingCriteria).toBeTruthy();
+  });
+
+  test('다단계 시험은 단일형 필드를 갖지 않는다(정본이 갈리면 안 된다)', () => {
+    const info = getExamInfo('linux-master-1')!;
+    expect(info.questionCount).toBeUndefined();
+    expect(info.durationMin).toBeUndefined();
+    expect(info.costUsd).toBeUndefined();
+    expect(info.passingScore).toBeUndefined();
+  });
+
+  test('갱신 규정이 고시되지 않은 자격은 validityYears를 비워둔다(지어내지 않는다)', () => {
+    expect(getExamInfo('linux-master-1')!.validityYears).toBeUndefined();
+  });
+
+  test('배점 비중 미고시 과목은 weight 없이 표기한다', () => {
+    const info = getExamInfo('linux-master-1')!;
+    expect(info.domains).toHaveLength(3);
+    expect(info.domains.every((d) => d.weight === undefined)).toBe(true);
+  });
+
+  test('FAQ 답변의 핵심 수치가 phases 데이터와 일치한다(허구 방지)', () => {
+    const info = getExamInfo('linux-master-1')!;
+    const joined = info.faq!.map((f) => f.a).join(' ');
+    for (const ph of info.phases!) {
+      expect(joined).toContain(String(ph.durationMin));
+      if (ph.cost) expect(joined).toContain(formatCost(ph.cost));
+    }
+    expect(joined).toContain(info.passingCriteria!.replace(/ \(.*$/, ''));
+  });
+});
+
+describe('회귀 — 기존 AWS 시험정보는 단일형 그대로여야 한다', () => {
+  const awsSlugs = readdirSync('content/exam-info')
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => f.replace(/\.json$/, ''))
+    .filter((slug) => !slug.startsWith('linux-'));
+
+  test('AWS 파일이 11개 이상 로드된다', () => {
+    expect(awsSlugs.length).toBeGreaterThanOrEqual(11);
+  });
+
+  test.each(awsSlugs)('%s — 단일형 필드가 그대로 살아있다', (slug) => {
+    const info = getExamInfo(slug);
+    expect(info).not.toBeNull();
+    expect(typeof info!.questionCount).toBe('number');
+    expect(typeof info!.durationMin).toBe('number');
+    expect(typeof info!.costUsd).toBe('number');
+    expect(typeof info!.passingScore).toBe('number');
+    expect(typeof info!.scoreMax).toBe('number');
+    expect(typeof info!.validityYears).toBe('number');
+    expect(typeof info!.format).toBe('string');
+    expect(info!.phases).toBeUndefined();
+    // AWS는 도메인 비중이 고시되므로 막대 렌더 조건을 유지해야 한다.
+    expect(info!.domains.every((d) => typeof d.weight === 'number')).toBe(true);
   });
 });
