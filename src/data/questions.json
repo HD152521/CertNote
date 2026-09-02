@@ -60960,6 +60960,786 @@
     "explanation": "`Can't connect to ...`는 연결 자체가 닿지 않은 상태로, 데몬 미동작·방화벽 차단·`bind-address` 제한 같은 네트워크 계층 원인을 먼저 본다. 권한이나 비밀번호 문제는 서버까지 도달한 뒤 거절될 때 나타나는 `Access denied for user ...`로 구분된다."
   },
   {
+    "id": "linux-master-2-w1-d1-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 1,
+    "number": 1,
+    "prompt": "다음 중 리눅스 커널의 구조에 대한 설명으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "최소한의 기능만 커널에 두는 마이크로커널 구조다"
+      },
+      {
+        "label": "B",
+        "text": "대부분의 기능을 커널에 포함하는 모놀리식 구조다"
+      },
+      {
+        "label": "C",
+        "text": "커널이 존재하지 않고 셸이 하드웨어를 직접 제어한다"
+      },
+      {
+        "label": "D",
+        "text": "응용 프로그램마다 별도의 커널이 하나씩 배정된다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "리눅스는 모놀리식 커널입니다. 대부분의 운영체제 기능이 커널 내부에 포함되어 있어 호출이 빠르지만 크기가 큽니다. 다만 적재 가능 커널 모듈(LKM)을 지원해 필요한 기능을 실행 중에 붙였다 뗄 수 있으므로 \"모듈화된 모놀리식\"이라고도 부릅니다. 마이크로커널의 대표는 MINIX입니다."
+  },
+  {
+    "id": "linux-master-2-w1-d1-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 1,
+    "number": 2,
+    "prompt": "다음 중 셸(Shell)에 대한 설명으로 가장 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "하드웨어를 직접 제어하는 운영체제의 핵심부다"
+      },
+      {
+        "label": "B",
+        "text": "사용자의 명령을 해석해 커널에 전달하는 명령 해석기다"
+      },
+      {
+        "label": "C",
+        "text": "디스크에 파일을 저장하는 파일 시스템의 이름이다"
+      },
+      {
+        "label": "D",
+        "text": "네트워크 패킷을 처리하는 커널의 하위 모듈이다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "셸은 사용자와 커널 사이에서 명령을 해석해 전달하는 명령 해석기입니다. 하드웨어를 직접 제어하는 것은 커널의 역할이며(A), 셸은 커널에 시스템 콜로 요청할 뿐입니다. bash, sh, csh, ksh, zsh 등이 셸에 해당합니다."
+  },
+  {
+    "id": "linux-master-2-w1-d1-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 1,
+    "number": 3,
+    "prompt": "다음 중 커널의 주요 기능으로 거리가 먼 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "프로세스 스케줄링"
+      },
+      {
+        "label": "B",
+        "text": "메모리 할당과 회수"
+      },
+      {
+        "label": "C",
+        "text": "워드프로세서 문서 편집"
+      },
+      {
+        "label": "D",
+        "text": "장치 드라이버를 통한 하드웨어 제어"
+      }
+    ],
+    "answer": "C",
+    "explanation": "문서 편집은 응용 프로그램의 몫입니다. 커널은 프로세스 관리, 메모리 관리, 파일 시스템, 장치 관리, 네트워크라는 다섯 축의 자원 관리를 담당합니다. 응용 프로그램은 커널 위에서 동작하며 필요한 자원을 시스템 콜로 요청합니다."
+  },
+  {
+    "id": "linux-master-2-w1-d1-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 1,
+    "number": 4,
+    "prompt": "응용 프로그램이 하드웨어에 직접 접근하지 못하도록 막고, 커널에 작업을 요청할 때 사용하는 공식적인 통로를 무엇이라 하는가?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "셸 스크립트"
+      },
+      {
+        "label": "B",
+        "text": "시스템 콜"
+      },
+      {
+        "label": "C",
+        "text": "커널 모듈"
+      },
+      {
+        "label": "D",
+        "text": "데몬"
+      }
+    ],
+    "answer": "B",
+    "explanation": "시스템 콜은 응용 프로그램이 커널의 기능을 요청하는 인터페이스입니다. 이 구조 덕분에 프로그램 하나가 잘못되어도 하드웨어나 시스템 전체가 손상되지 않습니다. 커널 모듈은 실행 중 적재 가능한 커널 기능 조각이고, 데몬은 백그라운드에서 상시 동작하는 프로세스입니다."
+  },
+  {
+    "id": "linux-master-2-w1-d1-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 1,
+    "number": 5,
+    "prompt": "다음 중 \"리눅스\"라는 이름에 대한 설명으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "리누스 토르발스가 만든 커널의 이름에서 유래했다"
+      },
+      {
+        "label": "B",
+        "text": "GNU 프로젝트가 만든 셸의 이름에서 유래했다"
+      },
+      {
+        "label": "C",
+        "text": "유닉스를 만든 벨 연구소의 상표명이다"
+      },
+      {
+        "label": "D",
+        "text": "배포판을 관리하는 회사의 이름이다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "리눅스는 1991년 리누스 토르발스가 발표한 커널의 이름입니다. 우리가 사용하는 완성된 운영체제는 이 커널에 GNU 프로젝트의 도구(`ls`, `cp`, `bash` 등)와 여러 소프트웨어를 더한 것이며, 이 때문에 \"GNU/Linux\"라고 부르자는 주장이 있습니다."
+  },
+  {
+    "id": "linux-master-2-w1-d2-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 2,
+    "number": 1,
+    "prompt": "다음 중 유닉스가 널리 퍼질 수 있었던 가장 큰 이유로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "그래픽 사용자 인터페이스를 최초로 도입했기 때문이다"
+      },
+      {
+        "label": "B",
+        "text": "C 언어로 다시 작성되어 이식성이 높아졌기 때문이다"
+      },
+      {
+        "label": "C",
+        "text": "마이크로소프트가 유닉스를 무료로 배포했기 때문이다"
+      },
+      {
+        "label": "D",
+        "text": "커널을 마이크로커널 구조로 설계했기 때문이다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "1973년 데니스 리치의 C 언어로 유닉스를 다시 작성하면서 이식성이 크게 높아졌습니다. 어셈블리로 작성된 프로그램은 CPU가 바뀔 때마다 다시 만들어야 하지만, C로 작성하면 컴파일만 다시 해서 여러 기종에 옮길 수 있습니다."
+  },
+  {
+    "id": "linux-master-2-w1-d2-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 2,
+    "number": 2,
+    "prompt": "다음 중 GNU 프로젝트에 대한 설명으로 알맞지 않은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "1983년 리처드 스톨먼이 시작했다"
+      },
+      {
+        "label": "B",
+        "text": "GCC, bash, Emacs 등의 도구를 만들었다"
+      },
+      {
+        "label": "C",
+        "text": "커널인 HURD를 완성해 독자적인 운영체제를 출시했다"
+      },
+      {
+        "label": "D",
+        "text": "\"GNU is Not Unix\"라는 재귀적 약자에서 이름을 따왔다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "GNU 프로젝트는 컴파일러·셸·편집기 등 운영체제에 필요한 도구를 대부분 완성했지만, 커널인 HURD는 개발이 지연되어 실질적으로 완성되지 못했습니다. 그 빈자리를 1991년 등장한 리눅스 커널이 채우면서 GNU/Linux라는 완성된 운영체제가 만들어졌습니다."
+  },
+  {
+    "id": "linux-master-2-w1-d2-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 2,
+    "number": 3,
+    "prompt": "다음 중 리눅스 커널 개발의 직접적인 계기가 된 운영체제로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "MINIX"
+      },
+      {
+        "label": "B",
+        "text": "Solaris"
+      },
+      {
+        "label": "C",
+        "text": "FreeBSD"
+      },
+      {
+        "label": "D",
+        "text": "Windows NT"
+      }
+    ],
+    "answer": "A",
+    "explanation": "MINIX는 앤드루 타넨바움 교수가 교육용으로 만든 유닉스 계열 운영체제입니다. 리누스 토르발스는 MINIX를 사용하다가 기능적 한계를 느껴 직접 커널을 만들기 시작했고, 그 결과가 1991년의 리눅스 커널 0.01입니다."
+  },
+  {
+    "id": "linux-master-2-w1-d2-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 2,
+    "number": 4,
+    "prompt": "다음 중 System V 계열 유닉스에 해당하는 것으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "FreeBSD"
+      },
+      {
+        "label": "B",
+        "text": "OpenBSD"
+      },
+      {
+        "label": "C",
+        "text": "Solaris"
+      },
+      {
+        "label": "D",
+        "text": "NetBSD"
+      }
+    ],
+    "answer": "C",
+    "explanation": "유닉스는 버클리 대학의 BSD 계열과 AT&T의 System V 계열로 나뉩니다. FreeBSD, OpenBSD, NetBSD는 모두 BSD 계열이며, Solaris를 비롯해 AIX, HP-UX가 System V 계열에 속합니다."
+  },
+  {
+    "id": "linux-master-2-w1-d2-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 2,
+    "number": 5,
+    "prompt": "다음 중 POSIX에 대한 설명으로 가장 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "리눅스 커널의 배포 라이선스를 규정한 문서다"
+      },
+      {
+        "label": "B",
+        "text": "유닉스 계열 운영체제 사이의 호환을 위한 인터페이스 표준이다"
+      },
+      {
+        "label": "C",
+        "text": "리눅스 배포판을 관리하는 비영리 재단의 이름이다"
+      },
+      {
+        "label": "D",
+        "text": "유닉스에서 사용하는 파일 시스템의 종류다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "POSIX는 IEEE가 제정한 표준으로, 유닉스 계열 운영체제가 제공해야 할 시스템 콜·명령어·셸의 동작 방식 등을 규정합니다. 이 표준을 따르면 한 유닉스 계열에서 작성한 프로그램을 다른 계열로 옮기기 쉬워집니다. 라이선스를 규정한 것은 GPL 등의 문서입니다."
+  },
+  {
+    "id": "linux-master-2-w1-d3-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 3,
+    "number": 1,
+    "prompt": "다음 중 리눅스 커널이 채택하고 있는 라이선스로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "BSD"
+      },
+      {
+        "label": "B",
+        "text": "MIT"
+      },
+      {
+        "label": "C",
+        "text": "GPL v2"
+      },
+      {
+        "label": "D",
+        "text": "Apache 2.0"
+      }
+    ],
+    "answer": "C",
+    "explanation": "리눅스 커널은 GPL 버전 2를 따릅니다. 1991년 최초 공개 당시에는 자체 라이선스였으나 이듬해 GPL로 변경했고, 이것이 전 세계 개발자의 참여를 이끈 계기가 되었습니다. GPL v3로는 전환하지 않았습니다."
+  },
+  {
+    "id": "linux-master-2-w1-d3-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 3,
+    "number": 2,
+    "prompt": "다음 중 자유 소프트웨어에 대한 설명으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "반드시 무료로 배포해야 한다"
+      },
+      {
+        "label": "B",
+        "text": "소스 코드를 공개하지 않아도 된다"
+      },
+      {
+        "label": "C",
+        "text": "실행·연구·재배포·개선의 자유가 보장된다"
+      },
+      {
+        "label": "D",
+        "text": "상업적 이용이 전면 금지된다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "자유 소프트웨어의 \"자유\"는 가격이 아니라 사용자의 권리를 뜻합니다. 자유 0(실행), 자유 1(연구·수정), 자유 2(재배포), 자유 3(개선판 배포) 네 가지로 정의되며, 유료 판매나 상업적 이용도 이 자유를 보장하는 한 허용됩니다."
+  },
+  {
+    "id": "linux-master-2-w1-d3-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 3,
+    "number": 3,
+    "prompt": "다음 중 GPL 라이선스의 특징으로 가장 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "파생 저작물도 동일한 라이선스로 공개해야 한다"
+      },
+      {
+        "label": "B",
+        "text": "저작권 표시만 남기면 소스를 공개하지 않아도 된다"
+      },
+      {
+        "label": "C",
+        "text": "학술 목적으로만 사용할 수 있다"
+      },
+      {
+        "label": "D",
+        "text": "수정 자체가 금지되어 있다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "GPL은 카피레프트 라이선스로, GPL 코드를 사용한 결과물을 배포할 때 그 결과물도 GPL로 소스를 공개해야 합니다. 이를 전염성이라고 부릅니다. 저작권 표시만 요구하는 것은 BSD·MIT 같은 퍼미시브 라이선스의 특징입니다."
+  },
+  {
+    "id": "linux-master-2-w1-d3-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 3,
+    "number": 4,
+    "prompt": "다음 중 라이브러리를 링크해서 사용하는 경우 자신의 소스 코드를 공개하지 않아도 되도록 완화한 라이선스로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AGPL"
+      },
+      {
+        "label": "B",
+        "text": "LGPL"
+      },
+      {
+        "label": "C",
+        "text": "GPL v3"
+      },
+      {
+        "label": "D",
+        "text": "MPL"
+      }
+    ],
+    "answer": "B",
+    "explanation": "LGPL(Lesser GPL)은 라이브러리 사용을 위해 만들어진 라이선스로, 해당 라이브러리를 링크만 해서 사용하는 프로그램은 소스를 공개하지 않아도 됩니다. AGPL은 오히려 네트워크 서비스 제공에도 공개 의무를 확장한 라이선스이고, MPL은 수정한 파일 단위로만 공개를 요구합니다."
+  },
+  {
+    "id": "linux-master-2-w1-d3-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 3,
+    "number": 5,
+    "prompt": "다음 중 퍼미시브(permissive) 계열 라이선스로 묶인 것으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "GPL, LGPL, AGPL"
+      },
+      {
+        "label": "B",
+        "text": "BSD, MIT, Apache"
+      },
+      {
+        "label": "C",
+        "text": "GPL v2, GPL v3"
+      },
+      {
+        "label": "D",
+        "text": "AGPL, MPL, LGPL"
+      }
+    ],
+    "answer": "B",
+    "explanation": "퍼미시브 라이선스는 저작권 표시 정도의 최소한의 조건만 요구하며, 상용 제품에 포함해 소스를 공개하지 않아도 됩니다. BSD, MIT, Apache가 대표적입니다. GPL 계열(GPL, LGPL, AGPL)과 MPL은 정도의 차이는 있으나 모두 카피레프트 성격을 가집니다."
+  },
+  {
+    "id": "linux-master-2-w1-d4-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 4,
+    "number": 1,
+    "prompt": "다음 중 데비안 계열 배포판에서 사용하는 패키지 형식으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "RPM"
+      },
+      {
+        "label": "B",
+        "text": "DEB"
+      },
+      {
+        "label": "C",
+        "text": "TGZ"
+      },
+      {
+        "label": "D",
+        "text": "MSI"
+      }
+    ],
+    "answer": "B",
+    "explanation": "데비안과 우분투를 비롯한 데비안 계열은 `.deb` 패키지 형식을 사용하며 `dpkg`(저수준)와 `apt`(고수준) 도구로 관리합니다. RPM은 레드햇 계열과 수세 계열이 사용하는 형식입니다."
+  },
+  {
+    "id": "linux-master-2-w1-d4-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 4,
+    "number": 2,
+    "prompt": "다음 중 배포판과 고수준 패키지 관리 도구의 연결로 알맞지 않은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "우분투 — apt"
+      },
+      {
+        "label": "B",
+        "text": "Rocky Linux — dnf"
+      },
+      {
+        "label": "C",
+        "text": "openSUSE — zypper"
+      },
+      {
+        "label": "D",
+        "text": "데비안 — yum"
+      }
+    ],
+    "answer": "D",
+    "explanation": "데비안은 `apt`를 사용합니다. `yum`(및 후속인 `dnf`)은 레드햇 계열의 고수준 패키지 관리 도구입니다. 수세 계열은 RPM 패키지를 쓰지만 고수준 도구로는 `zypper`를 사용하므로, 계열 구분은 패키지 형식보다 고수준 도구로 하는 것이 정확합니다."
+  },
+  {
+    "id": "linux-master-2-w1-d4-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 4,
+    "number": 3,
+    "prompt": "다음 중 RHEL에 도입할 기술을 먼저 시험하는 성격의 배포판으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Fedora"
+      },
+      {
+        "label": "B",
+        "text": "Ubuntu"
+      },
+      {
+        "label": "C",
+        "text": "Slackware"
+      },
+      {
+        "label": "D",
+        "text": "openSUSE"
+      }
+    ],
+    "answer": "A",
+    "explanation": "페도라는 레드햇이 후원하는 커뮤니티 배포판으로, 새로운 기술을 먼저 도입해 검증하는 실험장 역할을 합니다. 여기서 안정성이 확인된 기능이 상용 배포판인 RHEL에 반영되고, 다시 Rocky Linux·AlmaLinux 같은 호환 배포판으로 이어집니다."
+  },
+  {
+    "id": "linux-master-2-w1-d4-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 4,
+    "number": 4,
+    "prompt": "다음 중 리눅스 배포판의 구성 요소로 거리가 먼 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "리눅스 커널"
+      },
+      {
+        "label": "B",
+        "text": "GNU 도구 모음"
+      },
+      {
+        "label": "C",
+        "text": "패키지 관리자"
+      },
+      {
+        "label": "D",
+        "text": "하드웨어 펌웨어를 대체하는 BIOS"
+      }
+    ],
+    "answer": "D",
+    "explanation": "BIOS(또는 UEFI)는 메인보드에 내장된 펌웨어로 운영체제보다 먼저 동작하며, 배포판이 제공하는 구성 요소가 아닙니다. 배포판은 커널, GNU 도구, 패키지 관리자, 설치 프로그램, 응용 소프트웨어를 하나로 묶은 것입니다."
+  },
+  {
+    "id": "linux-master-2-w1-d4-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 4,
+    "number": 5,
+    "prompt": "다음 중 리눅스 커널을 기반으로 하지만 GNU 도구 대신 자체 라이브러리와 실행 환경을 사용하는 운영체제로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "안드로이드"
+      },
+      {
+        "label": "B",
+        "text": "FreeBSD"
+      },
+      {
+        "label": "C",
+        "text": "Solaris"
+      },
+      {
+        "label": "D",
+        "text": "macOS"
+      }
+    ],
+    "answer": "A",
+    "explanation": "안드로이드는 리눅스 커널을 기반으로 하지만 GNU 도구 모음 대신 구글이 만든 자체 라이브러리와 런타임을 사용합니다. FreeBSD는 BSD 계열, Solaris는 System V 계열 유닉스이며, macOS는 BSD에 뿌리를 둔 별도의 운영체제로 리눅스 커널을 쓰지 않습니다."
+  },
+  {
+    "id": "linux-master-2-w1-d5-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 5,
+    "number": 1,
+    "prompt": "다음 중 리눅스 커널을 처음 개발한 인물과 연도의 연결로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "켄 톰슨 — 1969년"
+      },
+      {
+        "label": "B",
+        "text": "리처드 스톨먼 — 1983년"
+      },
+      {
+        "label": "C",
+        "text": "리누스 토르발스 — 1991년"
+      },
+      {
+        "label": "D",
+        "text": "앤드루 타넨바움 — 1987년"
+      }
+    ],
+    "answer": "C",
+    "explanation": "리눅스 커널은 1991년 핀란드 헬싱키 대학의 리누스 토르발스가 개발했습니다. 켄 톰슨은 1969년 유닉스를, 리처드 스톨먼은 1983년 GNU 프로젝트를, 앤드루 타넨바움은 1987년 MINIX를 만들었습니다."
+  },
+  {
+    "id": "linux-master-2-w1-d5-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 5,
+    "number": 2,
+    "prompt": "다음 중 리눅스와 유닉스의 관계에 대한 설명으로 가장 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "리눅스는 유닉스의 소스 코드를 그대로 물려받은 파생 버전이다"
+      },
+      {
+        "label": "B",
+        "text": "리눅스는 유닉스와 무관하게 만들어진 완전히 다른 체계다"
+      },
+      {
+        "label": "C",
+        "text": "리눅스는 유닉스의 코드가 아니라 동작 방식을 본뜬 유닉스 계열이다"
+      },
+      {
+        "label": "D",
+        "text": "리눅스는 유닉스를 개발한 벨 연구소가 직접 만든 후속작이다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "리눅스 커널은 유닉스의 소스 코드를 물려받지 않고 처음부터 새로 작성되었습니다. 다만 명령 체계와 동작 방식이 유닉스를 본떴기 때문에 \"유닉스 계열(Unix-like)\"이라고 부릅니다. BSD 계열이나 System V 계열의 직접적인 후손은 아닙니다."
+  },
+  {
+    "id": "linux-master-2-w1-d5-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 5,
+    "number": 3,
+    "prompt": "다음 중 GNU 프로젝트와 리눅스 커널의 관계를 가장 정확히 설명한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "GNU가 커널을 만들고 리누스가 도구를 만들었다"
+      },
+      {
+        "label": "B",
+        "text": "GNU는 도구를 완성했으나 커널이 없었고, 그 자리를 리눅스 커널이 채웠다"
+      },
+      {
+        "label": "C",
+        "text": "리눅스 커널은 GNU 프로젝트의 공식 커널인 HURD를 개량한 것이다"
+      },
+      {
+        "label": "D",
+        "text": "두 프로젝트는 서로 경쟁 관계라 결합된 적이 없다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "GNU 프로젝트는 GCC, bash, coreutils 등 운영체제에 필요한 도구를 대부분 완성했지만 커널인 HURD는 완성되지 못했습니다. 1991년 등장한 리눅스 커널이 그 빈자리를 채우면서 완성된 운영체제가 되었고, 이 때문에 GNU/Linux라고 부릅니다. 리눅스 커널은 HURD와 무관하게 독립적으로 개발되었습니다."
+  },
+  {
+    "id": "linux-master-2-w1-d5-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 5,
+    "number": 4,
+    "prompt": "다음 중 카피레프트(copyleft) 성격의 라이선스로만 묶인 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "BSD, MIT"
+      },
+      {
+        "label": "B",
+        "text": "MIT, Apache"
+      },
+      {
+        "label": "C",
+        "text": "GPL, LGPL"
+      },
+      {
+        "label": "D",
+        "text": "BSD, Apache"
+      }
+    ],
+    "answer": "C",
+    "explanation": "카피레프트는 파생 저작물에도 동일한 자유를 강제하는 방식으로 GPL 계열(GPL, LGPL, AGPL)과 MPL이 여기 속합니다. LGPL은 라이브러리 링크에 예외를 둔 약한 카피레프트입니다. BSD, MIT, Apache는 저작권 표시 정도만 요구하는 퍼미시브 라이선스입니다."
+  },
+  {
+    "id": "linux-master-2-w1-d5-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 5,
+    "number": 5,
+    "prompt": "다음 중 배포판과 계열의 연결로 알맞지 않은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Ubuntu — 데비안 계열"
+      },
+      {
+        "label": "B",
+        "text": "Rocky Linux — 레드햇 계열"
+      },
+      {
+        "label": "C",
+        "text": "openSUSE — 데비안 계열"
+      },
+      {
+        "label": "D",
+        "text": "AlmaLinux — 레드햇 계열"
+      }
+    ],
+    "answer": "C",
+    "explanation": "openSUSE는 수세 계열입니다. 수세 계열은 레드햇 계열과 같은 RPM 패키지 형식을 사용하지만 고수준 관리 도구로 `zypper`를 쓴다는 점에서 구분됩니다. Ubuntu는 데비안 기반이고, Rocky Linux와 AlmaLinux는 RHEL 호환을 목표로 하는 레드햇 계열입니다."
+  },
+  {
+    "id": "linux-master-2-w1-d5-q6",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 1,
+    "day": 5,
+    "number": 6,
+    "prompt": "다음 중 현재 시스템에 설치된 배포판의 이름과 버전을 확인하는 방법으로 가장 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`uname -r`"
+      },
+      {
+        "label": "B",
+        "text": "`cat /etc/*-release`"
+      },
+      {
+        "label": "C",
+        "text": "`echo $SHELL`"
+      },
+      {
+        "label": "D",
+        "text": "`cat /proc/cpuinfo`"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`/etc` 아래의 `os-release`, `redhat-release` 같은 파일에 배포판 이름과 버전이 기록되어 있습니다. `uname -r`은 커널 버전만 보여주므로 배포판을 알 수 없고, `echo $SHELL`은 로그인 셸을, `/proc/cpuinfo`는 CPU 정보를 보여줍니다."
+  },
+  {
     "id": "mla-c01-w1-d1-q1",
     "category": "aws-certs",
     "slug": "mla-c01",
