@@ -146,12 +146,15 @@ async function enrichRole(role: RoadmapRole): Promise<EnrichedRole> {
 // 보인다. declaredSteps 와 대조해 하나라도 유실됐으면 합계를 내지 않는다.
 export function totalsOf(steps: EnrichedStep[], declaredSteps: number = steps.length): RoadmapTotals {
   const complete = steps.length > 0 && steps.length === declaredSteps;
-  const allPriced = complete && steps.every((s) => s.exam !== null);
+  // exam-info 는 섹션 중립 스키마라 costUsd 가 optional 이다 — 다단계 시험(리눅스마스터 1차/2차)은
+  // 단계마다 비용이 달라 phases[] 에 들어가고 최상위 costUsd 가 없다. 그런 자격증이 섞이면
+  // 단일 합계 자체가 성립하지 않으므로 합계를 내지 않는다.
+  const allPriced = complete && steps.every((s) => typeof s.exam?.costUsd === 'number');
   return {
     certCount: steps.length,
     weeks: steps.reduce((n, s) => n + s.weeks, 0),
     days: steps.reduce((n, s) => n + s.dayCount, 0),
-    costUsd: allPriced ? steps.reduce((n, s) => n + (s.exam as ExamInfo).costUsd, 0) : null,
+    costUsd: allPriced ? steps.reduce((n, s) => n + (s.exam!.costUsd as number), 0) : null,
   };
 }
 

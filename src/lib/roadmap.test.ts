@@ -69,17 +69,26 @@ describe('로드맵 단계의 시험 사실(역할 페이지 차별화 재료)',
     }
   });
 
-  test('AWS 단계는 공식 시험 정보가 붙는다(문항·시간·합격점·응시료)', async () => {
+  // exam-info 는 섹션 중립 스키마라 수치가 전부 optional 이다(다단계 시험은 phases[] 사용).
+  // 로드맵 합계가 실제로 의존하는 값은 costUsd 하나뿐이므로 그것만 계약으로 고정한다 —
+  // 화면에 렌더하지 않는 값(문항수·합격점)까지 단언하면 쓰지도 않는 데이터를 테스트가 붙잡는다.
+  test('AWS 단계는 단일 응시 비용(costUsd)을 가진다 — 합계의 전제', async () => {
     for (const role of await getRoadmapRoles()) {
       for (const s of role.steps) {
         expect(s.exam, `${role.slug}/${s.slug} 의 exam-info 누락`).not.toBeNull();
-        expect(s.exam!.questionCount).toBeGreaterThan(0);
-        expect(s.exam!.durationMin).toBeGreaterThan(0);
-        expect(s.exam!.passingScore).toBeGreaterThan(0);
-        expect(s.exam!.scoreMax).toBeGreaterThanOrEqual(s.exam!.passingScore);
-        expect(s.exam!.costUsd).toBeGreaterThan(0);
+        expect(typeof s.exam?.costUsd, `${role.slug}/${s.slug} 의 costUsd 없음`).toBe('number');
+        expect(s.exam!.costUsd!).toBeGreaterThan(0);
       }
     }
+  });
+
+  test('costUsd 가 없는 단계가 섞이면 합계를 내지 않는다(다단계 시험 대비)', () => {
+    const priced = { slug: 'a', code: 'A', name: 'n', level: 'associate', href: '/aws/a', note: 'x',
+      weeks: 6, dayCount: 30, exam: { costUsd: 100 } } as unknown as Parameters<typeof totalsOf>[0][number];
+    const unpriced = { slug: 'b', code: 'B', name: 'n', level: 'grade-1', href: '/linux/b', note: 'x',
+      weeks: 10, dayCount: 50, exam: { phases: [{ costKrw: 1 }] } } as unknown as Parameters<typeof totalsOf>[0][number];
+    expect(totalsOf([priced, unpriced]).costUsd).toBeNull();
+    expect(totalsOf([priced]).costUsd).toBe(100);
   });
 
   test('역할마다 합계가 실제로 달라진다(6개 페이지가 같은 숫자를 쓰지 않는다)', async () => {
