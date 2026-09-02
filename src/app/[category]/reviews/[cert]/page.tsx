@@ -5,7 +5,7 @@ import { Star } from 'lucide-react';
 import { isSection, langOfCategory, sectionLabel, sectionOfCategory } from '@/lib/category';
 import { getCertMeta, listCerts } from '@/lib/content';
 import { getAggregate, listReviews } from '@/lib/reviews/reviewsRepository';
-import { reviewRobots, safeAggregate } from '@/lib/reviews/indexPolicy';
+import { reviewRobots } from '@/lib/reviews/indexPolicy';
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import ReviewList from '@/components/reviews/ReviewList';
 import ReviewForm from '@/components/reviews/ReviewForm';
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { category, cert } = await params;
   const meta = await loadCert(category, cert);
   if (!meta) return {};
-  const agg = await safeAggregate(category, cert);
+  const agg = await getAggregate(category, cert);
   const name = sectionLabel(sectionOfCategory(category));
   const title = `${meta.code} 합격 후기 — ${name} ${meta.name} 리뷰`;
   const description =
