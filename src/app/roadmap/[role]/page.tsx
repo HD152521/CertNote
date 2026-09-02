@@ -78,7 +78,9 @@ export default async function RoadmapRolePage({ params }: PageProps) {
           </dd>
         </div>
         {role.totals.costUsd !== null && (
-          <div className="bg-bg-elevated px-4 py-3">
+          // 모바일은 2열 그리드라 타일 3개면 4번째 칸이 비어 bg-border 가 회색 블록으로 노출된다
+          // (320px 실측). 마지막 타일이 두 칸을 차지하게 해 빈 칸 자체를 없앤다.
+          <div className="col-span-2 bg-bg-elevated px-4 py-3 sm:col-span-1">
             <dt className="text-xs text-fg-muted">응시료 합계</dt>
             <dd className="mt-0.5 text-lg font-semibold">${role.totals.costUsd}</dd>
           </div>
