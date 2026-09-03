@@ -6,7 +6,7 @@
   "weeks": 11,
   "accent": "#FCC624",
   "order": 5,
-  "dayCount": 40,
+  "dayCount": 45,
   "sourceRepo": "linux-master-2",
   "syncedAt": "2026-09-02T00:00:00.000Z",
   "section": "linux",
