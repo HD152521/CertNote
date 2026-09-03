@@ -134,12 +134,12 @@ D) BSD, Apache
 
 **문제 5.** 다음 중 배포판과 계열의 연결로 알맞지 않은 것은?
 
-A) Ubuntu — 데비안 계열  
+A) openSUSE — 데비안 계열  
 B) Rocky Linux — 레드햇 계열  
-C) openSUSE — 데비안 계열  
+C) Ubuntu — 데비안 계열  
 D) AlmaLinux — 레드햇 계열  
 
-**정답: C**  
+**정답: A**  
 해설: openSUSE는 수세 계열입니다. 수세 계열은 레드햇 계열과 같은 RPM 패키지 형식을 사용하지만 고수준 관리 도구로 `zypper`를 쓴다는 점에서 구분됩니다. Ubuntu는 데비안 기반이고, Rocky Linux와 AlmaLinux는 RHEL 호환을 목표로 하는 레드햇 계열입니다.
 
 ---
@@ -147,9 +147,9 @@ D) AlmaLinux — 레드햇 계열
 **문제 6.** 다음 중 현재 시스템에 설치된 배포판의 이름과 버전을 확인하는 방법으로 가장 알맞은 것은?
 
 A) `uname -r`  
-B) `cat /etc/*-release`  
+B) `cat /proc/cpuinfo`  
 C) `echo $SHELL`  
-D) `cat /proc/cpuinfo`  
+D) `cat /etc/*-release`  
 
-**정답: B**  
+**정답: D**  
 해설: `/etc` 아래의 `os-release`, `redhat-release` 같은 파일에 배포판 이름과 버전이 기록되어 있습니다. `uname -r`은 커널 버전만 보여주므로 배포판을 알 수 없고, `echo $SHELL`은 로그인 셸을, `/proc/cpuinfo`는 CPU 정보를 보여줍니다.

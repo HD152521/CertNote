@@ -154,9 +154,9 @@ D) MPL
 **문제 5.** 다음 중 퍼미시브(permissive) 계열 라이선스로 묶인 것으로 알맞은 것은?
 
 A) GPL, LGPL, AGPL  
-B) BSD, MIT, Apache  
+B) AGPL, MPL, LGPL  
 C) GPL v2, GPL v3  
-D) AGPL, MPL, LGPL  
+D) BSD, MIT, Apache  
 
-**정답: B**  
+**정답: D**  
 해설: 퍼미시브 라이선스는 저작권 표시 정도의 최소한의 조건만 요구하며, 상용 제품에 포함해 소스를 공개하지 않아도 됩니다. BSD, MIT, Apache가 대표적입니다. GPL 계열(GPL, LGPL, AGPL)과 MPL은 정도의 차이는 있으나 모두 카피레프트 성격을 가집니다.
