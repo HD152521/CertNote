@@ -66420,6 +66420,786 @@
     "explanation": "ALSA는 커널 2.6부터 리눅스의 표준 사운드 시스템으로 자리 잡았으며 여러 프로그램의 동시 출력과 다중 사운드 카드를 지원합니다. OSS는 그 이전에 사용되던 방식이고, SANE은 스캐너, CUPS는 프린터를 담당합니다."
   },
   {
+    "id": "linux-master-2-w8-d1-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 1,
+    "number": 1,
+    "prompt": "다음 중 X 윈도 시스템에서 X 서버에 해당하는 것으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "원격에서 실행 중인 응용 프로그램"
+      },
+      {
+        "label": "B",
+        "text": "화면에 창을 띄우려는 프로그램"
+      },
+      {
+        "label": "C",
+        "text": "디스플레이와 입력장치를 가진 사용자 측 컴퓨터"
+      },
+      {
+        "label": "D",
+        "text": "창의 테두리와 버튼을 그리는 윈도 매니저"
+      }
+    ],
+    "answer": "C",
+    "explanation": "X 윈도에서는 화면과 키보드, 마우스 같은 자원을 제공하는 쪽이 서버입니다. 따라서 사용자가 앉아 있는 컴퓨터가 X 서버가 되고, 무언가를 그려 달라고 요청하는 응용 프로그램이 X 클라이언트가 됩니다. 일반적인 웹 서버 개념과 반대라 혼동하기 쉽습니다."
+  },
+  {
+    "id": "linux-master-2-w8-d1-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 1,
+    "number": 2,
+    "prompt": "다음 중 X 서버 구현의 발전 순서를 바르게 나열한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "XFree86 → X.org Server → Wayland"
+      },
+      {
+        "label": "B",
+        "text": "X.org Server → XFree86 → Wayland"
+      },
+      {
+        "label": "C",
+        "text": "Wayland → XFree86 → X.org Server"
+      },
+      {
+        "label": "D",
+        "text": "XFree86 → Wayland → X.org Server"
+      }
+    ],
+    "answer": "A",
+    "explanation": "PC용 X 구현으로 널리 쓰이던 XFree86이 라이선스 변경 문제로 주도권을 잃으면서 X.org Server가 갈라져 나와 현재의 표준이 되었고, 이후 구조를 새로 설계한 Wayland가 차세대 방식으로 등장했습니다."
+  },
+  {
+    "id": "linux-master-2-w8-d1-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 1,
+    "number": 3,
+    "prompt": "다음 중 X 윈도 시스템에 대한 설명으로 알맞지 **않은** 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "네트워크를 통해 원격 프로그램의 화면을 표시할 수 있다"
+      },
+      {
+        "label": "B",
+        "text": "1984년 MIT에서 개발이 시작되었다"
+      },
+      {
+        "label": "C",
+        "text": "창의 모양이나 조작 방식을 강제하지 않는다"
+      },
+      {
+        "label": "D",
+        "text": "리눅스 커널에 포함되어 있어 제거할 수 없다"
+      }
+    ],
+    "answer": "D",
+    "explanation": "X 윈도는 커널의 일부가 아니라 별도의 응용 프로그램이므로 설치하지 않거나 제거할 수 있으며, 서버 용도의 시스템은 흔히 X 없이 운영합니다. 네트워크 기반 동작과 정책을 강제하지 않는 설계는 X 윈도의 대표적인 특징입니다."
+  },
+  {
+    "id": "linux-master-2-w8-d1-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 1,
+    "number": 4,
+    "prompt": "다음 중 X를 대체하기 위해 설계된 차세대 디스플레이 서버 프로토콜로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "XFree86"
+      },
+      {
+        "label": "B",
+        "text": "Wayland"
+      },
+      {
+        "label": "C",
+        "text": "X11"
+      },
+      {
+        "label": "D",
+        "text": "XCB"
+      }
+    ],
+    "answer": "B",
+    "explanation": "Wayland는 기존 X의 복잡한 구조를 걷어내고 새로 설계한 디스플레이 서버 프로토콜입니다. X의 새 버전이 아니라 대체품이며 기존 X 응용 프로그램은 XWayland라는 호환 계층을 통해 실행합니다. X11은 현재까지 쓰이는 X 윈도의 버전 번호입니다."
+  },
+  {
+    "id": "linux-master-2-w8-d1-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 1,
+    "number": 5,
+    "prompt": "다음 중 원격 컴퓨터에서 실행한 프로그램의 화면을 로컬 컴퓨터와 동일한 방식으로 표시할 수 있는 X 윈도의 특성으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "플랫폼 독립성"
+      },
+      {
+        "label": "B",
+        "text": "모듈 독립성"
+      },
+      {
+        "label": "C",
+        "text": "네트워크 투명성"
+      },
+      {
+        "label": "D",
+        "text": "하드웨어 가속"
+      }
+    ],
+    "answer": "C",
+    "explanation": "네트워크 투명성은 프로그램이 로컬에 있든 원격에 있든 동일한 프로토콜로 화면에 표시되는 X 윈도의 특성입니다. 이 덕분에 서버에서 실행한 그래픽 프로그램의 창을 사용자의 컴퓨터 화면에 띄울 수 있습니다."
+  },
+  {
+    "id": "linux-master-2-w8-d2-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 2,
+    "number": 1,
+    "prompt": "다음 중 X 서버에 가장 가까운 저수준 X 클라이언트 라이브러리로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Qt"
+      },
+      {
+        "label": "B",
+        "text": "XCB"
+      },
+      {
+        "label": "C",
+        "text": "GTK+"
+      },
+      {
+        "label": "D",
+        "text": "FLTK"
+      }
+    ],
+    "answer": "B",
+    "explanation": "XCB는 X protocol C-language Binding의 줄임말로 X 프로토콜을 얇게 감싼 저수준 라이브러리이며 Xlib보다 X 서버에 더 가깝습니다. Qt, GTK+, FLTK는 그보다 상위 계층에서 버튼과 메뉴 같은 위젯을 제공하는 툴킷입니다."
+  },
+  {
+    "id": "linux-master-2-w8-d2-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 2,
+    "number": 2,
+    "prompt": "다음 중 GTK+ 툴킷을 작성하는 데 사용된 프로그래밍 언어로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "C++"
+      },
+      {
+        "label": "B",
+        "text": "Java"
+      },
+      {
+        "label": "C",
+        "text": "C"
+      },
+      {
+        "label": "D",
+        "text": "Python"
+      }
+    ],
+    "answer": "C",
+    "explanation": "GTK+는 C 언어로 작성되었으며 이름은 GIMP Toolkit에서 유래했습니다. 반면 Qt는 C++로 작성되었고 KDE 데스크톱 환경의 기반이 됩니다. 두 툴킷의 개발 언어를 구분하는 문제가 자주 출제됩니다."
+  },
+  {
+    "id": "linux-master-2-w8-d2-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 2,
+    "number": 3,
+    "prompt": "다음 중 KDE 데스크톱 환경의 기반이 되는 툴킷으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Qt"
+      },
+      {
+        "label": "B",
+        "text": "GTK+"
+      },
+      {
+        "label": "C",
+        "text": "Motif"
+      },
+      {
+        "label": "D",
+        "text": "Tk"
+      }
+    ],
+    "answer": "A",
+    "explanation": "KDE는 C++로 작성된 Qt 툴킷을 기반으로 만들어졌습니다. GTK+는 GNOME과 Xfce가 사용하며, Motif는 전통적인 상용 유닉스의 CDE에서 쓰이던 툴킷이고 Tk는 Tcl 언어와 함께 쓰이는 툴킷입니다."
+  },
+  {
+    "id": "linux-master-2-w8-d2-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 2,
+    "number": 4,
+    "prompt": "다음 중 나머지 셋과 계층이 다른 것으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "GTK+"
+      },
+      {
+        "label": "B",
+        "text": "Qt"
+      },
+      {
+        "label": "C",
+        "text": "FLTK"
+      },
+      {
+        "label": "D",
+        "text": "Xlib"
+      }
+    ],
+    "answer": "D",
+    "explanation": "GTK+, Qt, FLTK는 모두 위젯을 제공하는 툴킷 계층에 속하지만 Xlib은 X 프로토콜을 직접 감싼 저수준 라이브러리로 툴킷보다 아래 계층에 있습니다. 같은 계층의 라이브러리로는 XCB가 있습니다."
+  },
+  {
+    "id": "linux-master-2-w8-d2-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 2,
+    "number": 5,
+    "prompt": "다음 중 GTK+ 툴킷 이름의 유래가 된 프로그램으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "GIMP"
+      },
+      {
+        "label": "B",
+        "text": "GNOME"
+      },
+      {
+        "label": "C",
+        "text": "GNU"
+      },
+      {
+        "label": "D",
+        "text": "Gedit"
+      }
+    ],
+    "answer": "A",
+    "explanation": "GTK+는 GIMP Toolkit의 줄임말로, 이미지 편집 프로그램 GIMP를 개발하는 과정에서 만들어진 툴킷이 독립적인 라이브러리로 발전한 것입니다. 이후 GNOME 데스크톱 환경의 기반 툴킷으로 널리 쓰이게 되었습니다."
+  },
+  {
+    "id": "linux-master-2-w8-d3-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 3,
+    "number": 1,
+    "prompt": "다음 중 종류가 나머지 셋과 다른 것으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "KWin"
+      },
+      {
+        "label": "B",
+        "text": "Windowmaker"
+      },
+      {
+        "label": "C",
+        "text": "Afterstep"
+      },
+      {
+        "label": "D",
+        "text": "Xfce"
+      }
+    ],
+    "answer": "D",
+    "explanation": "KWin, Windowmaker, Afterstep은 모두 창의 테두리와 이동을 담당하는 윈도 매니저입니다. 반면 Xfce는 윈도 매니저에 패널과 파일 관리자까지 묶은 데스크톱 환경이며, Xfce가 사용하는 윈도 매니저는 Xfwm입니다."
+  },
+  {
+    "id": "linux-master-2-w8-d3-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 3,
+    "number": 2,
+    "prompt": "다음 중 그래픽 로그인 화면을 제공하는 디스플레이 매니저에 해당하는 것으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Mutter"
+      },
+      {
+        "label": "B",
+        "text": "GDM"
+      },
+      {
+        "label": "C",
+        "text": "Nautilus"
+      },
+      {
+        "label": "D",
+        "text": "Thunar"
+      }
+    ],
+    "answer": "B",
+    "explanation": "GDM은 GNOME Display Manager의 줄임말로 부팅 후 그래픽 로그인 화면을 띄우고 세션을 시작합니다. Mutter는 GNOME의 윈도 매니저이고 Nautilus와 Thunar는 각각 GNOME과 Xfce의 파일 관리자입니다."
+  },
+  {
+    "id": "linux-master-2-w8-d3-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 3,
+    "number": 3,
+    "prompt": "다음 중 KDE 데스크톱 환경에서 사용하는 윈도 매니저로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Mutter"
+      },
+      {
+        "label": "B",
+        "text": "Xfwm"
+      },
+      {
+        "label": "C",
+        "text": "KWin"
+      },
+      {
+        "label": "D",
+        "text": "Openbox"
+      }
+    ],
+    "answer": "C",
+    "explanation": "KDE는 KWin을 윈도 매니저로 사용하며 툴킷은 Qt입니다. Mutter는 GNOME, Xfwm은 Xfce, Openbox는 LXDE에서 사용하는 윈도 매니저입니다."
+  },
+  {
+    "id": "linux-master-2-w8-d3-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 3,
+    "number": 4,
+    "prompt": "다음 중 창의 테두리를 그리고 창의 이동과 크기 조절을 담당하는 것으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "윈도 매니저"
+      },
+      {
+        "label": "B",
+        "text": "디스플레이 매니저"
+      },
+      {
+        "label": "C",
+        "text": "파일 관리자"
+      },
+      {
+        "label": "D",
+        "text": "툴킷"
+      }
+    ],
+    "answer": "A",
+    "explanation": "X 윈도 자체는 창의 모양이나 조작 방식을 정하지 않기 때문에 윈도 매니저가 그 역할을 맡습니다. 디스플레이 매니저는 로그인 화면을, 파일 관리자는 파일과 폴더 탐색을, 툴킷은 버튼과 메뉴 같은 위젯을 담당합니다."
+  },
+  {
+    "id": "linux-master-2-w8-d3-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 3,
+    "number": 5,
+    "prompt": "다음 중 GNOME 데스크톱 환경에서 사용하는 파일 관리자로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Dolphin"
+      },
+      {
+        "label": "B",
+        "text": "Thunar"
+      },
+      {
+        "label": "C",
+        "text": "Nautilus"
+      },
+      {
+        "label": "D",
+        "text": "PCManFM"
+      }
+    ],
+    "answer": "C",
+    "explanation": "GNOME은 Nautilus를 기본 파일 관리자로 사용합니다. Dolphin은 KDE, Thunar는 Xfce, PCManFM은 LXDE의 파일 관리자이며 각 데스크톱 환경이 자신의 툴킷에 맞는 파일 관리자를 함께 제공합니다."
+  },
+  {
+    "id": "linux-master-2-w8-d4-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 4,
+    "number": 1,
+    "prompt": "다음 중 로컬 컴퓨터의 첫 번째 디스플레이와 첫 번째 스크린을 지정하는 `DISPLAY` 값으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": ":0.0"
+      },
+      {
+        "label": "B",
+        "text": "0:0"
+      },
+      {
+        "label": "C",
+        "text": "localhost.0"
+      },
+      {
+        "label": "D",
+        "text": "0.0.1"
+      }
+    ],
+    "answer": "A",
+    "explanation": "`DISPLAY`는 호스트이름:디스플레이번호.스크린번호 형식이며 호스트를 생략하면 로컬을 뜻합니다. 따라서 로컬의 첫 번째 디스플레이와 스크린은 `:0.0`으로 표기하고 스크린 번호를 생략해 `:0`으로 쓰기도 합니다."
+  },
+  {
+    "id": "linux-master-2-w8-d4-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 4,
+    "number": 2,
+    "prompt": "다음 중 텍스트 모드에서 X 윈도 세션을 시작하는 명령으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "xinit -d"
+      },
+      {
+        "label": "B",
+        "text": "xhost"
+      },
+      {
+        "label": "C",
+        "text": "xdpyinfo"
+      },
+      {
+        "label": "D",
+        "text": "startx"
+      }
+    ],
+    "answer": "D",
+    "explanation": "`startx`는 디스플레이 매니저 없이 텍스트로 로그인한 상태에서 X 세션을 실행합니다. `xhost`는 접근 제어, `xdpyinfo`는 X 서버 정보 확인 명령입니다."
+  },
+  {
+    "id": "linux-master-2-w8-d4-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 4,
+    "number": 3,
+    "prompt": "다음 중 보안상 위험해 사용을 피해야 하는 명령으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "xhost -"
+      },
+      {
+        "label": "B",
+        "text": "xhost +"
+      },
+      {
+        "label": "C",
+        "text": "xauth list"
+      },
+      {
+        "label": "D",
+        "text": "ssh -X"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`xhost +`는 모든 호스트에 X 서버 접근을 허용하므로 누구든 화면 내용을 엿보거나 가짜 창을 띄울 수 있습니다. `xhost -`는 반대로 접근을 차단하며, 원격 GUI가 필요하면 암호화된 `ssh -X`를 사용하는 것이 안전합니다."
+  },
+  {
+    "id": "linux-master-2-w8-d4-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 4,
+    "number": 4,
+    "prompt": "다음 중 systemd 환경에서 그래픽 모드로 부팅하도록 지정하는 타깃으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "multi-user.target"
+      },
+      {
+        "label": "B",
+        "text": "rescue.target"
+      },
+      {
+        "label": "C",
+        "text": "graphical.target"
+      },
+      {
+        "label": "D",
+        "text": "emergency.target"
+      }
+    ],
+    "answer": "C",
+    "explanation": "`graphical.target`은 예전의 런레벨 5에 해당하며 그래픽 로그인 화면까지 올라갑니다. `multi-user.target`은 런레벨 3에 해당하는 텍스트 모드이며, `rescue.target`과 `emergency.target`은 복구용 모드입니다."
+  },
+  {
+    "id": "linux-master-2-w8-d4-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 4,
+    "number": 5,
+    "prompt": "다음 중 응답하지 않는 창을 클릭해 강제로 종료시키는 X 명령으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "xwininfo"
+      },
+      {
+        "label": "B",
+        "text": "xrandr"
+      },
+      {
+        "label": "C",
+        "text": "xdpyinfo"
+      },
+      {
+        "label": "D",
+        "text": "xkill"
+      }
+    ],
+    "answer": "D",
+    "explanation": "`xkill`을 실행하면 커서가 X자 모양으로 바뀌고, 클릭한 창의 프로그램이 강제 종료됩니다. `xwininfo`는 창 정보 확인, `xrandr`는 해상도 조정, `xdpyinfo`는 X 서버 정보를 보여 주는 명령입니다."
+  },
+  {
+    "id": "linux-master-2-w8-d5-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 5,
+    "number": 1,
+    "prompt": "다음 중 X 윈도 시스템의 계층에서 가장 아래에 위치해 X 서버와 직접 통신하는 것으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "GTK+"
+      },
+      {
+        "label": "B",
+        "text": "Qt"
+      },
+      {
+        "label": "C",
+        "text": "XCB"
+      },
+      {
+        "label": "D",
+        "text": "GNOME"
+      }
+    ],
+    "answer": "C",
+    "explanation": "X 윈도는 아래에서부터 X 서버, 저수준 라이브러리, 툴킷, 응용 프로그램 순으로 쌓여 있습니다. XCB는 X 프로토콜을 얇게 감싼 저수준 라이브러리로 Xlib보다 X 서버에 더 가깝습니다. GTK+와 Qt는 툴킷, GNOME은 데스크톱 환경입니다."
+  },
+  {
+    "id": "linux-master-2-w8-d5-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 5,
+    "number": 2,
+    "prompt": "다음 중 디스플레이 매니저에 해당하지 **않는** 것으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "KWin"
+      },
+      {
+        "label": "B",
+        "text": "GDM"
+      },
+      {
+        "label": "C",
+        "text": "XDM"
+      },
+      {
+        "label": "D",
+        "text": "LightDM"
+      }
+    ],
+    "answer": "A",
+    "explanation": "KWin은 KDE에서 창의 테두리와 이동을 담당하는 윈도 매니저입니다. GDM, XDM, LightDM은 모두 그래픽 로그인 화면을 제공하는 디스플레이 매니저이며 이름이 DM으로 끝나는 것이 공통된 단서입니다."
+  },
+  {
+    "id": "linux-master-2-w8-d5-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 5,
+    "number": 3,
+    "prompt": "다음 중 Xfce 데스크톱 환경이 사용하는 윈도 매니저로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "KWin"
+      },
+      {
+        "label": "B",
+        "text": "Mutter"
+      },
+      {
+        "label": "C",
+        "text": "Openbox"
+      },
+      {
+        "label": "D",
+        "text": "Xfwm"
+      }
+    ],
+    "answer": "D",
+    "explanation": "Xfce는 Xfwm을 윈도 매니저로 사용하며 이름이 비슷해 혼동하기 쉽습니다. Xfce가 데스크톱 환경이고 Xfwm이 그 안의 윈도 매니저입니다. KWin은 KDE, Mutter는 GNOME, Openbox는 LXDE에서 사용합니다."
+  },
+  {
+    "id": "linux-master-2-w8-d5-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 5,
+    "number": 4,
+    "prompt": "다음 중 X 윈도의 텍스트 모드에 해당하는 런레벨로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "1"
+      },
+      {
+        "label": "B",
+        "text": "3"
+      },
+      {
+        "label": "C",
+        "text": "5"
+      },
+      {
+        "label": "D",
+        "text": "6"
+      }
+    ],
+    "answer": "B",
+    "explanation": "런레벨 3은 네트워크를 포함한 다중 사용자 텍스트 모드이며 systemd의 `multi-user.target`에 대응합니다. 런레벨 5가 그래픽 모드로 `graphical.target`에 해당하고, 1은 단일 사용자 모드, 6은 재부팅입니다."
+  },
+  {
+    "id": "linux-master-2-w8-d5-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 5,
+    "number": 5,
+    "prompt": "다음 중 Qt 툴킷을 기반으로 만들어진 데스크톱 환경으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "KDE"
+      },
+      {
+        "label": "B",
+        "text": "GNOME"
+      },
+      {
+        "label": "C",
+        "text": "Xfce"
+      },
+      {
+        "label": "D",
+        "text": "MATE"
+      }
+    ],
+    "answer": "A",
+    "explanation": "KDE는 C++로 작성된 Qt 툴킷을 기반으로 하며 윈도 매니저로 KWin, 파일 관리자로 Dolphin을 사용합니다. GNOME, Xfce, MATE는 모두 C 언어로 작성된 GTK+ 툴킷을 기반으로 합니다."
+  },
+  {
+    "id": "linux-master-2-w8-d5-q6",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 8,
+    "day": 5,
+    "number": 6,
+    "prompt": "다음 중 원격 컴퓨터의 그래픽 프로그램을 암호화된 통신으로 안전하게 내 화면에 띄우는 방법으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "xhost + 로 모든 접근을 허용한다"
+      },
+      {
+        "label": "B",
+        "text": "ssh -X 로 접속한다"
+      },
+      {
+        "label": "C",
+        "text": "DISPLAY 를 0:0 으로 설정한다"
+      },
+      {
+        "label": "D",
+        "text": "xkill 로 세션을 연결한다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`ssh -X`는 X11 forwarding 기능으로 X 통신을 SSH의 암호화된 터널로 전달하며 `DISPLAY`도 자동으로 설정해 줍니다. `xhost +`는 모든 호스트에 화면을 열어 주므로 위험하고, `xkill`은 창을 강제 종료하는 명령입니다."
+  },
+  {
     "id": "mla-c01-w1-d1-q1",
     "category": "aws-certs",
     "slug": "mla-c01",
