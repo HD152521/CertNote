@@ -64860,6 +64860,786 @@
     "explanation": "`$?`에는 직전 명령의 종료 상태가 들어가며 0이면 정상 종료, 0이 아니면 오류를 뜻합니다. 참을 1로 표현하는 일반적인 관습과 반대여서 혼동하기 쉽습니다. `$$`는 현재 셸의 PID, `$!`는 마지막 백그라운드 작업의 PID입니다."
   },
   {
+    "id": "linux-master-2-w6-d1-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 1,
+    "number": 1,
+    "prompt": "다음 중 vi 편집기를 처음 실행했을 때 놓이는 모드로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "입력 모드"
+      },
+      {
+        "label": "B",
+        "text": "ex 모드"
+      },
+      {
+        "label": "C",
+        "text": "명령 모드"
+      },
+      {
+        "label": "D",
+        "text": "시각 모드"
+      }
+    ],
+    "answer": "C",
+    "explanation": "vi는 실행하면 명령 모드로 시작합니다. 이 상태에서 입력한 글자는 문서에 들어가지 않고 이동이나 삭제 명령으로 해석됩니다. 글자를 입력하려면 `i`, `a`, `o` 등을 눌러 입력 모드로 전환해야 합니다."
+  },
+  {
+    "id": "linux-master-2-w6-d1-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 1,
+    "number": 2,
+    "prompt": "다음 중 vi 편집기에서 변경 내용을 저장하지 않고 강제로 종료하는 명령으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": ":q!"
+      },
+      {
+        "label": "B",
+        "text": ":wq"
+      },
+      {
+        "label": "C",
+        "text": ":w!"
+      },
+      {
+        "label": "D",
+        "text": ":q"
+      }
+    ],
+    "answer": "A",
+    "explanation": "느낌표는 강제 실행을 의미하므로 `:q!`는 수정 사항을 버리고 빠져나옵니다. `:q`만 입력하면 변경된 내용이 있을 때 경고가 나오며 종료되지 않습니다. `:wq`는 저장 후 종료, `:w!`는 강제 저장입니다."
+  },
+  {
+    "id": "linux-master-2-w6-d1-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 1,
+    "number": 3,
+    "prompt": "다음 중 vi 편집기에서 커서가 있는 줄 전체를 삭제하는 명령으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "x"
+      },
+      {
+        "label": "B",
+        "text": "dd"
+      },
+      {
+        "label": "C",
+        "text": "yy"
+      },
+      {
+        "label": "D",
+        "text": "p"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`dd`는 커서가 위치한 줄을 통째로 삭제하며 삭제한 내용은 버퍼에 남아 `p`로 다시 붙여 넣을 수 있습니다. `x`는 한 글자 삭제, `yy`는 한 줄 복사, `p`는 붙여넣기입니다."
+  },
+  {
+    "id": "linux-master-2-w6-d1-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 1,
+    "number": 4,
+    "prompt": "다음 중 vi 편집기를 개발한 사람으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Richard Stallman"
+      },
+      {
+        "label": "B",
+        "text": "Linus Torvalds"
+      },
+      {
+        "label": "C",
+        "text": "Brian Fox"
+      },
+      {
+        "label": "D",
+        "text": "Bill Joy"
+      }
+    ],
+    "answer": "D",
+    "explanation": "vi는 Bill Joy가 개발했으며 같은 사람이 C 셸(csh)도 만들었습니다. Richard Stallman은 emacs와 GNU 프로젝트를, Linus Torvalds는 리눅스 커널을, Brian Fox는 bash를 만들었습니다."
+  },
+  {
+    "id": "linux-master-2-w6-d1-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 1,
+    "number": 5,
+    "prompt": "다음 중 vi 편집기에서 커서 아래에 새로운 줄을 만들면서 입력 모드로 전환하는 키로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "i"
+      },
+      {
+        "label": "B",
+        "text": "a"
+      },
+      {
+        "label": "C",
+        "text": "o"
+      },
+      {
+        "label": "D",
+        "text": "A"
+      }
+    ],
+    "answer": "C",
+    "explanation": "`o`는 커서가 있는 줄 아래에 빈 줄을 하나 만들고 입력 모드로 들어갑니다. 대문자 `O`는 위쪽에 새 줄을 만듭니다. `i`는 커서 앞, `a`는 커서 뒤에 삽입하며 `A`는 줄의 맨 끝으로 이동해 삽입합니다."
+  },
+  {
+    "id": "linux-master-2-w6-d2-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 2,
+    "number": 1,
+    "prompt": "다음 중 vi 편집기에서 파일 전체의 모든 `apple`을 `orange`로 바꾸는 명령으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": ":s/apple/orange/"
+      },
+      {
+        "label": "B",
+        "text": ":%s/apple/orange/g"
+      },
+      {
+        "label": "C",
+        "text": ":s/apple/orange/g"
+      },
+      {
+        "label": "D",
+        "text": ":%s/apple/orange/"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`%`는 파일 전체를 범위로 지정하고 `g`는 한 줄 안의 모든 일치를 바꾸도록 지정합니다. 둘을 함께 써야 문서 전체의 모든 문자열이 치환됩니다. `%` 없이 쓰면 커서가 있는 줄만, `g` 없이 쓰면 각 줄의 첫 번째 것만 바뀝니다."
+  },
+  {
+    "id": "linux-master-2-w6-d2-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 2,
+    "number": 2,
+    "prompt": "다음 중 vi 편집기에서 화면에 줄 번호를 표시하는 명령으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": ":set ai"
+      },
+      {
+        "label": "B",
+        "text": ":set ic"
+      },
+      {
+        "label": "C",
+        "text": ":set nu"
+      },
+      {
+        "label": "D",
+        "text": ":set ts=4"
+      }
+    ],
+    "answer": "C",
+    "explanation": "`:set nu`(number)는 각 줄 앞에 번호를 표시하며 `:set nonu`로 다시 숨길 수 있습니다. `ai`는 자동 들여쓰기, `ic`는 검색 시 대소문자 무시, `ts`는 탭 크기를 지정하는 옵션입니다."
+  },
+  {
+    "id": "linux-master-2-w6-d2-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 2,
+    "number": 3,
+    "prompt": "다음 중 vim의 개인 환경 설정을 저장하는 파일로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "~/.bashrc"
+      },
+      {
+        "label": "B",
+        "text": "/etc/profile"
+      },
+      {
+        "label": "C",
+        "text": "~/.viminfo"
+      },
+      {
+        "label": "D",
+        "text": "~/.vimrc"
+      }
+    ],
+    "answer": "D",
+    "explanation": "사용자별 vim 설정은 홈 디렉터리의 `~/.vimrc`에 저장하며 모든 사용자에게 적용하려면 `/etc/vimrc`에 기록합니다. `~/.bashrc`는 셸 설정 파일이고 `/etc/profile`은 전역 로그인 설정 파일입니다."
+  },
+  {
+    "id": "linux-master-2-w6-d2-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 2,
+    "number": 4,
+    "prompt": "다음 중 편집 모드의 구분이 없어 실행 직후 바로 문자를 입력할 수 있는 편집기로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "nano"
+      },
+      {
+        "label": "B",
+        "text": "vi"
+      },
+      {
+        "label": "C",
+        "text": "vim"
+      },
+      {
+        "label": "D",
+        "text": "ex"
+      }
+    ],
+    "answer": "A",
+    "explanation": "nano는 모드 구분이 없어 실행하자마자 글자를 입력할 수 있고 화면 아래에 주요 단축키가 표시됩니다. vi와 vim은 명령·입력·ex 세 모드를 가지며 실행 직후에는 명령 모드에 놓입니다. ex는 줄 단위로 동작하는 라인 편집기입니다."
+  },
+  {
+    "id": "linux-master-2-w6-d2-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 2,
+    "number": 5,
+    "prompt": "다음 중 nano 편집기에서 작성한 내용을 저장하는 단축키로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Ctrl+X"
+      },
+      {
+        "label": "B",
+        "text": "Ctrl+W"
+      },
+      {
+        "label": "C",
+        "text": "Ctrl+O"
+      },
+      {
+        "label": "D",
+        "text": "Ctrl+S"
+      }
+    ],
+    "answer": "C",
+    "explanation": "nano에서 저장은 `Ctrl+O`(Write Out), 종료는 `Ctrl+X`(Exit)입니다. 화면 아래 도움말에 `^O`처럼 표시되며 여기서 `^` 기호는 Ctrl 키를 뜻합니다. `Ctrl+W`는 문자열 검색 단축키입니다."
+  },
+  {
+    "id": "linux-master-2-w6-d3-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 3,
+    "number": 1,
+    "prompt": "다음 중 부모 프로세스가 종료 상태를 회수하지 않아 프로세스 목록에만 남아 있는 프로세스로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "고아 프로세스"
+      },
+      {
+        "label": "B",
+        "text": "데몬 프로세스"
+      },
+      {
+        "label": "C",
+        "text": "좀비 프로세스"
+      },
+      {
+        "label": "D",
+        "text": "포그라운드 프로세스"
+      }
+    ],
+    "answer": "C",
+    "explanation": "좀비 프로세스는 이미 실행이 끝났지만 부모가 종료 상태를 가져가지 않아 목록의 자리만 차지하는 상태이며 `ps`에서 상태가 `Z`로 표시됩니다. 이미 죽은 상태라 직접 종료할 수 없고 부모 프로세스를 정리해야 사라집니다. 부모가 먼저 죽은 자식은 고아 프로세스라고 합니다."
+  },
+  {
+    "id": "linux-master-2-w6-d3-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 3,
+    "number": 2,
+    "prompt": "다음 중 리눅스에서 모든 프로세스의 조상이 되는 PID 1번 프로세스로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "bash"
+      },
+      {
+        "label": "B",
+        "text": "kernel"
+      },
+      {
+        "label": "C",
+        "text": "sshd"
+      },
+      {
+        "label": "D",
+        "text": "systemd"
+      }
+    ],
+    "answer": "D",
+    "explanation": "부팅 과정에서 커널이 가장 먼저 실행하는 프로세스가 PID 1이며 최근 배포판은 systemd를, 예전 시스템은 init을 사용합니다. 이 프로세스가 이후의 모든 프로세스를 직간접적으로 생성하며 고아 프로세스를 입양하는 역할도 맡습니다."
+  },
+  {
+    "id": "linux-master-2-w6-d3-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 3,
+    "number": 3,
+    "prompt": "다음 중 명령을 처음부터 백그라운드로 실행하기 위해 명령 끝에 붙이는 기호로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "&"
+      },
+      {
+        "label": "B",
+        "text": "|"
+      },
+      {
+        "label": "C",
+        "text": ";"
+      },
+      {
+        "label": "D",
+        "text": ">"
+      }
+    ],
+    "answer": "A",
+    "explanation": "명령 끝에 `&`를 붙이면 셸이 그 명령을 백그라운드로 실행하고 곧바로 프롬프트를 돌려줍니다. `|`는 파이프, `>`는 리다이렉션, `;`는 명령을 순서대로 이어 실행하는 구분자입니다."
+  },
+  {
+    "id": "linux-master-2-w6-d3-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 3,
+    "number": 4,
+    "prompt": "다음 중 실행 중인 포그라운드 작업을 일시 정지시키는 키 조합으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Ctrl+C"
+      },
+      {
+        "label": "B",
+        "text": "Ctrl+Z"
+      },
+      {
+        "label": "C",
+        "text": "Ctrl+D"
+      },
+      {
+        "label": "D",
+        "text": "Ctrl+R"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`Ctrl+Z`는 실행 중인 작업을 정지 상태로 만들며 이후 `bg`로 백그라운드에서 재개하거나 `fg`로 다시 포그라운드로 가져올 수 있습니다. `Ctrl+C`는 작업을 종료하고, `Ctrl+D`는 입력의 끝을 알리며, `Ctrl+R`은 히스토리 검색입니다."
+  },
+  {
+    "id": "linux-master-2-w6-d3-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 3,
+    "number": 5,
+    "prompt": "다음 중 서비스 데몬을 항상 메모리에 상주시켜 요청에 빠르게 응답하도록 하는 실행 방식으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "포그라운드 방식"
+      },
+      {
+        "label": "B",
+        "text": "inetd 방식"
+      },
+      {
+        "label": "C",
+        "text": "standalone 방식"
+      },
+      {
+        "label": "D",
+        "text": "배치 방식"
+      }
+    ],
+    "answer": "C",
+    "explanation": "standalone 방식은 데몬이 계속 메모리에 상주하며 대기하므로 응답이 빠르지만 메모리를 지속적으로 사용합니다. 반면 inetd 방식은 슈퍼 데몬이 대신 대기하다 요청이 올 때 해당 데몬을 띄우므로 메모리를 아끼는 대신 응답이 느립니다."
+  },
+  {
+    "id": "linux-master-2-w6-d4-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 4,
+    "number": 1,
+    "prompt": "다음 중 프로세스를 강제로 종료할 때 사용하는 시그널 번호로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "1"
+      },
+      {
+        "label": "B",
+        "text": "2"
+      },
+      {
+        "label": "C",
+        "text": "15"
+      },
+      {
+        "label": "D",
+        "text": "9"
+      }
+    ],
+    "answer": "D",
+    "explanation": "9번 SIGKILL은 프로세스가 무시할 수 없는 강제 종료 시그널로 커널이 즉시 프로세스를 제거합니다. 15번 SIGTERM은 정상 종료를 요청하는 기본 시그널이며, 1번 SIGHUP은 설정 재적용, 2번 SIGINT는 `Ctrl+C`에 해당합니다."
+  },
+  {
+    "id": "linux-master-2-w6-d4-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 4,
+    "number": 2,
+    "prompt": "다음 중 `crontab` 설정의 다섯 개 필드를 순서대로 바르게 나열한 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "시 분 일 월 요일"
+      },
+      {
+        "label": "B",
+        "text": "분 시 일 월 요일"
+      },
+      {
+        "label": "C",
+        "text": "분 시 월 일 요일"
+      },
+      {
+        "label": "D",
+        "text": "요일 분 시 일 월"
+      }
+    ],
+    "answer": "B",
+    "explanation": "crontab의 필드는 왼쪽부터 분, 시, 일, 월, 요일 순서입니다. 요일은 0부터 7까지 쓰며 0과 7이 모두 일요일을 뜻합니다. 예를 들어 `0 3 * * *`는 매일 새벽 3시에 실행하라는 설정입니다."
+  },
+  {
+    "id": "linux-master-2-w6-d4-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 4,
+    "number": 3,
+    "prompt": "다음 중 프로세스의 우선순위를 나타내는 nice 값의 범위와 가장 높은 우선순위에 해당하는 값으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "0에서 19까지이며 0이 가장 높다"
+      },
+      {
+        "label": "B",
+        "text": "-19에서 20까지이며 20이 가장 높다"
+      },
+      {
+        "label": "C",
+        "text": "-20에서 19까지이며 -20이 가장 높다"
+      },
+      {
+        "label": "D",
+        "text": "-20에서 19까지이며 19가 가장 높다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "nice 값은 -20부터 19까지이며 값이 작을수록 우선순위가 높습니다. 기본값은 0이고, 우선순위를 높이는 음수 지정은 root만 가능하며 일반 사용자는 값을 올려 우선순위를 낮추는 것만 할 수 있습니다."
+  },
+  {
+    "id": "linux-master-2-w6-d4-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 4,
+    "number": 4,
+    "prompt": "다음 중 프로세스의 상태를 실시간으로 갱신하며 보여 주는 명령으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "top"
+      },
+      {
+        "label": "B",
+        "text": "ps"
+      },
+      {
+        "label": "C",
+        "text": "pstree"
+      },
+      {
+        "label": "D",
+        "text": "jobs"
+      }
+    ],
+    "answer": "A",
+    "explanation": "`top`은 화면을 주기적으로 갱신하며 CPU와 메모리 사용률을 실시간으로 보여 줍니다. `ps`는 실행 시점의 목록을 한 번 출력하고 끝나며, `pstree`는 부모 자식 관계를 트리로, `jobs`는 현재 셸의 백그라운드 작업만 보여 줍니다."
+  },
+  {
+    "id": "linux-master-2-w6-d4-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 4,
+    "number": 5,
+    "prompt": "다음 중 지정한 시각에 명령을 한 번만 실행하도록 예약하는 명령으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "cron"
+      },
+      {
+        "label": "B",
+        "text": "at"
+      },
+      {
+        "label": "C",
+        "text": "nice"
+      },
+      {
+        "label": "D",
+        "text": "nohup"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`at`은 지정한 시각에 작업을 한 번만 수행하며 `atq`로 목록을 보고 `atrm`으로 취소합니다. 반복 실행이 필요하면 `cron`을 사용합니다. `nice`는 우선순위 조정, `nohup`은 터미널 종료 후에도 실행을 유지하는 명령입니다."
+  },
+  {
+    "id": "linux-master-2-w6-d5-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 5,
+    "number": 1,
+    "prompt": "다음 중 vi 편집기에서 커서가 있는 줄을 복사하는 명령으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "yy"
+      },
+      {
+        "label": "B",
+        "text": "dd"
+      },
+      {
+        "label": "C",
+        "text": "p"
+      },
+      {
+        "label": "D",
+        "text": "x"
+      }
+    ],
+    "answer": "A",
+    "explanation": "`yy`는 커서가 위치한 줄을 버퍼로 복사하며 원본은 그대로 남습니다. `dd`는 잘라내기라 원본이 사라지고, `p`는 버퍼의 내용을 붙여 넣는 명령이며 `x`는 한 글자를 지웁니다."
+  },
+  {
+    "id": "linux-master-2-w6-d5-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 5,
+    "number": 2,
+    "prompt": "다음 중 `kill` 명령을 시그널 번호 없이 사용했을 때 기본으로 전달되는 시그널로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SIGHUP"
+      },
+      {
+        "label": "B",
+        "text": "SIGKILL"
+      },
+      {
+        "label": "C",
+        "text": "SIGTERM"
+      },
+      {
+        "label": "D",
+        "text": "SIGINT"
+      }
+    ],
+    "answer": "C",
+    "explanation": "`kill PID` 형태로 번호를 생략하면 15번 SIGTERM이 전달되며, 이는 프로세스에게 정리 후 종료하라고 요청하는 신호입니다. 응답하지 않는 경우에만 무시할 수 없는 9번 SIGKILL을 사용하는 것이 올바른 순서입니다."
+  },
+  {
+    "id": "linux-master-2-w6-d5-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 5,
+    "number": 3,
+    "prompt": "다음 중 부모 프로세스가 먼저 종료되어 PID 1번 프로세스에 입양되는 프로세스로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "좀비 프로세스"
+      },
+      {
+        "label": "B",
+        "text": "고아 프로세스"
+      },
+      {
+        "label": "C",
+        "text": "데몬 프로세스"
+      },
+      {
+        "label": "D",
+        "text": "백그라운드 프로세스"
+      }
+    ],
+    "answer": "B",
+    "explanation": "고아 프로세스는 자신은 아직 실행 중인데 부모가 먼저 종료된 경우이며 PID 1번 프로세스가 새 부모가 되어 관리합니다. 반대로 자식이 종료되었는데 부모가 종료 상태를 거두지 않은 경우가 좀비 프로세스입니다."
+  },
+  {
+    "id": "linux-master-2-w6-d5-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 5,
+    "number": 4,
+    "prompt": "다음 중 매일 새벽 3시에 작업을 실행하도록 하는 crontab 설정으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "`3 0 * * *`"
+      },
+      {
+        "label": "B",
+        "text": "`* 3 * * *`"
+      },
+      {
+        "label": "C",
+        "text": "`0 * 3 * *`"
+      },
+      {
+        "label": "D",
+        "text": "`0 3 * * *`"
+      }
+    ],
+    "answer": "D",
+    "explanation": "crontab의 필드는 분, 시, 일, 월, 요일 순서이므로 분에 0, 시에 3을 넣고 나머지를 `*`로 두면 매일 새벽 3시에 실행됩니다. 첫 필드가 시가 아니라 분이라는 점을 혼동하지 않아야 합니다."
+  },
+  {
+    "id": "linux-master-2-w6-d5-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 5,
+    "number": 5,
+    "prompt": "다음 중 편집 모드의 구분을 가지고 있는 편집기로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "vi"
+      },
+      {
+        "label": "B",
+        "text": "nano"
+      },
+      {
+        "label": "C",
+        "text": "emacs"
+      },
+      {
+        "label": "D",
+        "text": "gedit"
+      }
+    ],
+    "answer": "A",
+    "explanation": "모드를 구분하는 편집기는 vi와 그 개선판인 vim입니다. 명령 모드에서 이동과 삭제를, 입력 모드에서 문자 입력을, ex 모드에서 저장과 치환을 수행합니다. nano, emacs, gedit은 모드 없이 곧바로 입력할 수 있습니다."
+  },
+  {
+    "id": "linux-master-2-w6-d5-q6",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 6,
+    "day": 5,
+    "number": 6,
+    "prompt": "다음 중 프로세스의 CPU와 메모리 사용률까지 함께 보여 주는 BSD 방식의 `ps` 명령 표기로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "ps -aux"
+      },
+      {
+        "label": "B",
+        "text": "ps -ef"
+      },
+      {
+        "label": "C",
+        "text": "ps -l"
+      },
+      {
+        "label": "D",
+        "text": "ps aux"
+      }
+    ],
+    "answer": "D",
+    "explanation": "BSD 방식은 옵션 앞에 하이픈을 붙이지 않으므로 `ps aux`로 씁니다. 이 형식은 CPU와 메모리 사용률을 함께 보여 줍니다. `ps -ef`는 System V 방식으로 UID와 PPID 중심의 정보를 출력합니다."
+  },
+  {
     "id": "mla-c01-w1-d1-q1",
     "category": "aws-certs",
     "slug": "mla-c01",
