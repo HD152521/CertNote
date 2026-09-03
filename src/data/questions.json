@@ -62520,6 +62520,1056 @@
     "explanation": "BIND는 Berkeley Internet Name Domain의 줄임말로 가장 널리 쓰이는 DNS 서버 소프트웨어이며 데몬 이름은 `named`입니다. Postfix는 메일 전송 서버, 삼바는 파일 공유, Apache는 웹 서버입니다."
   },
   {
+    "id": "linux-master-2-w11-d1-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 1,
+    "number": 1,
+    "prompt": "다음 중 시스템에 장애가 발생하더라도 서비스가 중단되지 않도록 구성하는 클러스터로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "고계산용 클러스터"
+      },
+      {
+        "label": "B",
+        "text": "고가용성 클러스터"
+      },
+      {
+        "label": "C",
+        "text": "부하분산 클러스터"
+      },
+      {
+        "label": "D",
+        "text": "그리드 컴퓨팅"
+      }
+    ],
+    "answer": "B",
+    "explanation": "고가용성 클러스터는 주 서버에 문제가 생기면 대기 서버가 즉시 역할을 이어받아 서비스가 끊기지 않게 합니다. 성능 향상이 아니라 무중단이 목적이며 이중화와 장애 극복이 핵심 개념입니다."
+  },
+  {
+    "id": "linux-master-2-w11-d1-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 1,
+    "number": 2,
+    "prompt": "다음 중 클러스터의 종류로 보기 어려운 것으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "고계산용 클러스터"
+      },
+      {
+        "label": "B",
+        "text": "부하분산 클러스터"
+      },
+      {
+        "label": "C",
+        "text": "고가용성 클러스터"
+      },
+      {
+        "label": "D",
+        "text": "임베디드 시스템"
+      }
+    ],
+    "answer": "D",
+    "explanation": "임베디드 시스템은 특정 기능을 수행하기 위해 기기 내부에 내장된 시스템으로 여러 컴퓨터를 묶는 클러스터와는 전혀 다른 개념입니다. 클러스터는 목적에 따라 고계산용, 고가용성, 부하분산 세 종류로 구분합니다."
+  },
+  {
+    "id": "linux-master-2-w11-d1-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 1,
+    "number": 3,
+    "prompt": "다음 중 값싼 PC들을 리눅스로 묶어 구성한 대표적인 고계산용 클러스터로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "베어울프 클러스터"
+      },
+      {
+        "label": "B",
+        "text": "LVS"
+      },
+      {
+        "label": "C",
+        "text": "하트비트"
+      },
+      {
+        "label": "D",
+        "text": "그리드"
+      }
+    ],
+    "answer": "A",
+    "explanation": "베어울프 클러스터는 일반 PC를 네트워크로 연결하고 리눅스를 올려 병렬 계산을 수행하도록 만든 고계산용 클러스터입니다. LVS는 부하분산에 사용하는 리눅스 가상 서버이고, 하트비트는 고가용성 구성에서 노드의 생존을 확인하는 방식입니다."
+  },
+  {
+    "id": "linux-master-2-w11-d1-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 1,
+    "number": 4,
+    "prompt": "다음 중 들어오는 요청을 여러 서버에 나누어 보내 처리량을 높이는 클러스터로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "고계산용 클러스터"
+      },
+      {
+        "label": "B",
+        "text": "고가용성 클러스터"
+      },
+      {
+        "label": "C",
+        "text": "부하분산 클러스터"
+      },
+      {
+        "label": "D",
+        "text": "임베디드 클러스터"
+      }
+    ],
+    "answer": "C",
+    "explanation": "부하분산 클러스터는 로드밸런서가 요청을 여러 서버로 나누어 보내 한 대가 감당하기 어려운 트래픽을 처리합니다. 접속이 많은 웹 서비스에서 주로 사용하며 대표적인 구현으로 LVS가 있습니다."
+  },
+  {
+    "id": "linux-master-2-w11-d1-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 1,
+    "number": 5,
+    "prompt": "다음 중 접속량이 많은 웹 서비스를 구성할 때 일반적으로 함께 적용하는 클러스터의 조합으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "고계산용과 고가용성"
+      },
+      {
+        "label": "B",
+        "text": "부하분산과 고가용성"
+      },
+      {
+        "label": "C",
+        "text": "고계산용과 부하분산"
+      },
+      {
+        "label": "D",
+        "text": "고계산용과 그리드"
+      }
+    ],
+    "answer": "B",
+    "explanation": "웹 서비스는 많은 요청을 여러 서버가 나누어 받고, 그중 한 대에 장애가 생겨도 나머지가 계속 처리해야 하므로 부하분산과 고가용성을 함께 구성합니다. 고계산용 클러스터는 하나의 큰 연산을 나누어 푸는 용도라 성격이 다릅니다."
+  },
+  {
+    "id": "linux-master-2-w11-d2-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 2,
+    "number": 1,
+    "prompt": "다음 중 게스트 운영체제의 커널을 수정해야 하는 가상화 방식으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "전가상화"
+      },
+      {
+        "label": "B",
+        "text": "컨테이너"
+      },
+      {
+        "label": "C",
+        "text": "반가상화"
+      },
+      {
+        "label": "D",
+        "text": "에뮬레이션"
+      }
+    ],
+    "answer": "C",
+    "explanation": "반가상화는 게스트 운영체제가 하이퍼바이저에 직접 요청을 보내도록 커널을 수정해야 하며 그 대신 성능이 좋습니다. 전가상화는 하드웨어를 그대로 흉내 내므로 게스트 운영체제를 수정할 필요가 없습니다."
+  },
+  {
+    "id": "linux-master-2-w11-d2-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 2,
+    "number": 2,
+    "prompt": "다음 중 VirtualBox에 대한 설명으로 알맞지 **않은** 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "인텔과 AMD 기반의 반가상화를 지원한다"
+      },
+      {
+        "label": "B",
+        "text": "기본 패키지가 GPL 라이선스로 공개되어 있다"
+      },
+      {
+        "label": "C",
+        "text": "VMware의 VMDK 이미지 형식을 지원한다"
+      },
+      {
+        "label": "D",
+        "text": "마이크로소프트의 VHD 이미지 형식을 지원한다"
+      }
+    ],
+    "answer": "A",
+    "explanation": "VirtualBox는 Intel VT-x와 AMD-V 같은 하드웨어 지원 기능을 활용한 전가상화 제품이며 반가상화 방식을 사용하지 않습니다. 기본 패키지가 GPL로 공개되어 있고 자체 형식인 VDI 외에 VMDK와 VHD 이미지도 지원한다는 설명은 모두 맞습니다."
+  },
+  {
+    "id": "linux-master-2-w11-d2-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 2,
+    "number": 3,
+    "prompt": "다음 중 하드웨어 위에서 직접 동작하는 Type 1 하이퍼바이저에 해당하는 것으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "VirtualBox"
+      },
+      {
+        "label": "B",
+        "text": "VMware Workstation"
+      },
+      {
+        "label": "C",
+        "text": "Docker"
+      },
+      {
+        "label": "D",
+        "text": "KVM"
+      }
+    ],
+    "answer": "D",
+    "explanation": "KVM은 리눅스 커널 자체가 하이퍼바이저 역할을 하므로 하드웨어 위에서 직접 동작하는 Type 1에 해당하며 Xen과 VMware ESXi도 같은 유형입니다. VirtualBox와 VMware Workstation은 운영체제 위에 설치하는 Type 2이고, Docker는 가상화가 아닌 컨테이너 기술입니다."
+  },
+  {
+    "id": "linux-master-2-w11-d2-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 2,
+    "number": 4,
+    "prompt": "다음 중 KVM에 대한 설명으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "게스트 운영체제 없이 애플리케이션만 격리한다"
+      },
+      {
+        "label": "B",
+        "text": "리눅스 커널 자체가 하이퍼바이저 역할을 한다"
+      },
+      {
+        "label": "C",
+        "text": "마이크로소프트가 개발한 윈도 전용 가상화 기술이다"
+      },
+      {
+        "label": "D",
+        "text": "반가상화만 지원하며 게스트 커널 수정이 필수다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "KVM은 Kernel-based Virtual Machine의 줄임말로 커널 모듈을 적재하면 리눅스 자체가 하이퍼바이저가 됩니다. 장치 흉내는 QEMU가 맡고 관리에는 libvirt와 `virsh`를 사용합니다. 애플리케이션만 격리하는 것은 컨테이너 방식입니다."
+  },
+  {
+    "id": "linux-master-2-w11-d2-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 2,
+    "number": 5,
+    "prompt": "다음 중 컨테이너 기술의 특징으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "게스트 운영체제를 각각 따로 설치한다"
+      },
+      {
+        "label": "B",
+        "text": "가상 머신보다 이미지 크기가 크고 무겁다"
+      },
+      {
+        "label": "C",
+        "text": "호스트의 커널을 공유하므로 가볍고 시작이 빠르다"
+      },
+      {
+        "label": "D",
+        "text": "서로 다른 CPU 구조를 흉내 낼 수 있다"
+      }
+    ],
+    "answer": "C",
+    "explanation": "컨테이너는 별도의 게스트 운영체제를 올리지 않고 호스트 커널을 공유하면서 프로세스만 격리하므로 크기가 작고 실행이 빠릅니다. 다른 CPU 구조를 흉내 내는 것은 QEMU 같은 에뮬레이터의 기능입니다."
+  },
+  {
+    "id": "linux-master-2-w11-d3-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 3,
+    "number": 1,
+    "prompt": "다음 중 리눅스 커널을 기반으로 만들어진 모바일 운영체제로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "iOS"
+      },
+      {
+        "label": "B",
+        "text": "윈도 모바일"
+      },
+      {
+        "label": "C",
+        "text": "심비안"
+      },
+      {
+        "label": "D",
+        "text": "안드로이드"
+      }
+    ],
+    "answer": "D",
+    "explanation": "안드로이드는 리눅스 커널 위에 구글이 자체 프레임워크를 올려 만든 모바일 운영체제입니다. iOS는 애플의 Darwin 커널을 기반으로 하며 리눅스 커널과는 계보가 다릅니다. 같은 리눅스 커널 기반으로는 Tizen과 webOS가 있습니다."
+  },
+  {
+    "id": "linux-master-2-w11-d3-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 3,
+    "number": 2,
+    "prompt": "다음 중 임베디드 시스템에 대한 설명으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "여러 대의 컴퓨터를 묶어 하나처럼 사용하는 구성이다"
+      },
+      {
+        "label": "B",
+        "text": "특정 기능을 수행하기 위해 기기 안에 내장된 시스템이다"
+      },
+      {
+        "label": "C",
+        "text": "인터넷을 통해 자원을 빌려 쓰는 서비스 형태다"
+      },
+      {
+        "label": "D",
+        "text": "대용량 데이터를 분산 저장하고 처리하는 기술이다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "임베디드 시스템은 공유기, 스마트TV, 자동차처럼 정해진 기능을 수행하기 위해 기기 내부에 탑재된 시스템입니다. 자원이 제한적이라 필요한 기능만 담아 작게 구성하며, 소스를 줄여 넣을 수 있는 리눅스가 널리 쓰입니다."
+  },
+  {
+    "id": "linux-master-2-w11-d3-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 3,
+    "number": 3,
+    "prompt": "다음 중 정해진 시간 안에 반드시 처리를 완료해야 하는 시스템에 사용되는 운영체제로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "분산 운영체제"
+      },
+      {
+        "label": "B",
+        "text": "다중 사용자 운영체제"
+      },
+      {
+        "label": "C",
+        "text": "실시간 운영체제"
+      },
+      {
+        "label": "D",
+        "text": "일괄 처리 운영체제"
+      }
+    ],
+    "answer": "C",
+    "explanation": "실시간 운영체제(RTOS)는 요청에 대해 정해진 시간 안에 응답하는 것을 보장하며 자동차 제동장치나 의료기기처럼 지연이 허용되지 않는 분야에 사용됩니다. 처리량보다 응답 시간의 예측 가능성을 우선합니다."
+  },
+  {
+    "id": "linux-master-2-w11-d3-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 3,
+    "number": 4,
+    "prompt": "다음 중 대용량 데이터를 여러 서버에 분산 저장하고 처리하는 대표적인 빅데이터 기술로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "하둡"
+      },
+      {
+        "label": "B",
+        "text": "오픈스택"
+      },
+      {
+        "label": "C",
+        "text": "쿠버네티스"
+      },
+      {
+        "label": "D",
+        "text": "도커"
+      }
+    ],
+    "answer": "A",
+    "explanation": "하둡은 HDFS라는 분산 파일 시스템과 MapReduce 처리 방식을 통해 대용량 데이터를 여러 서버에 나누어 저장하고 병렬로 처리합니다. 오픈스택은 클라우드 구축 플랫폼이며 쿠버네티스와 도커는 컨테이너 관련 기술입니다."
+  },
+  {
+    "id": "linux-master-2-w11-d3-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 3,
+    "number": 5,
+    "prompt": "다음 중 서버와 저장소 같은 하드웨어 자원을 빌려 주고 운영체제부터는 사용자가 직접 설치하는 클라우드 서비스 모델로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SaaS"
+      },
+      {
+        "label": "B",
+        "text": "PaaS"
+      },
+      {
+        "label": "C",
+        "text": "DaaS"
+      },
+      {
+        "label": "D",
+        "text": "IaaS"
+      }
+    ],
+    "answer": "D",
+    "explanation": "IaaS는 Infrastructure as a Service의 줄임말로 서버, 저장소, 네트워크 같은 인프라만 제공하며 운영체제와 그 위의 소프트웨어는 사용자가 직접 구성합니다. PaaS는 실행 환경까지, SaaS는 완성된 소프트웨어까지 제공합니다."
+  },
+  {
+    "id": "linux-master-2-w11-d4-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 4,
+    "number": 1,
+    "prompt": "다음 중 리눅스 커널이 배포될 때 적용되는 라이선스로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "GPL"
+      },
+      {
+        "label": "B",
+        "text": "MIT"
+      },
+      {
+        "label": "C",
+        "text": "아파치 라이선스"
+      },
+      {
+        "label": "D",
+        "text": "BSD 라이선스"
+      }
+    ],
+    "answer": "A",
+    "explanation": "리눅스 커널은 GNU General Public License를 따르며, 소스를 수정해 배포할 때 같은 조건으로 소스를 공개해야 합니다. MIT와 BSD는 공개 의무가 약한 허용적 라이선스이고 아파치 라이선스는 특허 조항이 포함된 별도의 라이선스입니다."
+  },
+  {
+    "id": "linux-master-2-w11-d4-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 4,
+    "number": 2,
+    "prompt": "다음 중 리눅스 부팅 과정에서 커널을 메모리에 올리는 역할을 하는 것으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "BIOS"
+      },
+      {
+        "label": "B",
+        "text": "init"
+      },
+      {
+        "label": "C",
+        "text": "부트로더"
+      },
+      {
+        "label": "D",
+        "text": "셸"
+      }
+    ],
+    "answer": "C",
+    "explanation": "전원이 들어오면 BIOS 또는 UEFI가 하드웨어를 점검한 뒤 부트로더를 실행하고, GRUB 같은 부트로더가 커널을 메모리에 적재합니다. 이후 커널이 첫 프로세스인 init 또는 systemd를 실행해 나머지 서비스를 올립니다."
+  },
+  {
+    "id": "linux-master-2-w11-d4-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 4,
+    "number": 3,
+    "prompt": "다음 중 `chmod 640 report.txt` 명령을 실행한 뒤의 권한 상태로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "소유자는 읽기만, 그룹은 읽기와 쓰기가 가능하다"
+      },
+      {
+        "label": "B",
+        "text": "소유자는 읽기와 쓰기, 그룹은 읽기만 가능하며 기타 사용자는 접근할 수 없다"
+      },
+      {
+        "label": "C",
+        "text": "모든 사용자가 읽고 쓸 수 있다"
+      },
+      {
+        "label": "D",
+        "text": "소유자만 읽고 쓰고 실행할 수 있다"
+      }
+    ],
+    "answer": "B",
+    "explanation": "640은 세 자리를 각각 읽으면 6(rw-), 4(r--), 0(---)입니다. 따라서 소유자는 읽기와 쓰기, 그룹은 읽기만 가능하고 기타 사용자에게는 아무 권한도 없습니다."
+  },
+  {
+    "id": "linux-master-2-w11-d4-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 4,
+    "number": 4,
+    "prompt": "umask 값이 002로 설정된 상태에서 새로 만들어지는 디렉터리의 권한으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "664"
+      },
+      {
+        "label": "B",
+        "text": "755"
+      },
+      {
+        "label": "C",
+        "text": "777"
+      },
+      {
+        "label": "D",
+        "text": "775"
+      }
+    ],
+    "answer": "D",
+    "explanation": "디렉터리의 기준값 777에서 umask 002를 빼면 775가 됩니다. 그룹까지 쓰기를 허용하는 설정이라 여러 사용자가 함께 작업하는 환경에서 사용합니다. 같은 umask에서 파일은 666에서 002를 뺀 664가 됩니다."
+  },
+  {
+    "id": "linux-master-2-w11-d4-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 4,
+    "number": 5,
+    "prompt": "다음 중 `find` 명령으로 `/home` 아래에서 크기가 100MB보다 큰 파일을 찾는 명령으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "find /home -size +100M"
+      },
+      {
+        "label": "B",
+        "text": "find -size +100M /home"
+      },
+      {
+        "label": "C",
+        "text": "grep /home -size +100M"
+      },
+      {
+        "label": "D",
+        "text": "find /home +100M"
+      }
+    ],
+    "answer": "A",
+    "explanation": "`find`는 검색을 시작할 경로를 먼저 쓰고 그 뒤에 조건을 지정합니다. 크기 조건은 `-size` 옵션으로 주며 `+`는 그보다 큰 것을 의미합니다. `grep`은 파일 내용을 찾는 명령이라 이 용도에 맞지 않습니다."
+  },
+  {
+    "id": "linux-master-2-w11-d4-q6",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 4,
+    "number": 6,
+    "prompt": "다음 중 디렉터리에 설정했을 때 그 안에 생성되는 파일이 디렉터리의 그룹을 물려받게 하는 특수 권한과 그 값으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "SetUID, 4"
+      },
+      {
+        "label": "B",
+        "text": "Sticky bit, 1"
+      },
+      {
+        "label": "C",
+        "text": "SetGID, 2"
+      },
+      {
+        "label": "D",
+        "text": "SetUID, 2"
+      }
+    ],
+    "answer": "C",
+    "explanation": "SetGID의 값은 2이며 디렉터리에 설정하면 그 안에서 새로 만들어지는 파일의 그룹이 생성자의 기본 그룹이 아니라 디렉터리의 그룹으로 지정됩니다. 여러 사용자가 함께 쓰는 협업 디렉터리에서 그룹을 일관되게 유지할 때 사용합니다."
+  },
+  {
+    "id": "linux-master-2-w11-d4-q7",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 4,
+    "number": 7,
+    "prompt": "다음 중 실행 중인 프로세스에 정상 종료를 요청했으나 응답이 없을 때 마지막으로 사용하는 명령으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "kill -1 PID"
+      },
+      {
+        "label": "B",
+        "text": "kill -2 PID"
+      },
+      {
+        "label": "C",
+        "text": "kill -15 PID"
+      },
+      {
+        "label": "D",
+        "text": "kill -9 PID"
+      }
+    ],
+    "answer": "D",
+    "explanation": "9번 SIGKILL은 프로세스가 무시할 수 없어 커널이 즉시 제거합니다. 다만 마무리 작업을 할 기회가 없어 데이터가 손상될 수 있으므로 먼저 기본값인 15번 SIGTERM으로 정상 종료를 요청하고 응답이 없을 때만 사용합니다."
+  },
+  {
+    "id": "linux-master-2-w11-d4-q8",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 4,
+    "number": 8,
+    "prompt": "다음 중 vi 편집기에서 파일 전체를 대상으로 문자열을 치환하기 위해 지정하는 범위 기호로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "g"
+      },
+      {
+        "label": "B",
+        "text": "%"
+      },
+      {
+        "label": "C",
+        "text": "$"
+      },
+      {
+        "label": "D",
+        "text": "&"
+      }
+    ],
+    "answer": "B",
+    "explanation": "`%`는 파일 전체를 대상 범위로 지정하는 기호이고 끝에 붙이는 `g`는 각 줄 안의 모든 일치를 바꾸도록 하는 옵션입니다. 둘을 함께 쓴 `:%s/A/B/g`가 문서 전체의 모든 문자열을 치환하는 형태입니다."
+  },
+  {
+    "id": "linux-master-2-w11-d4-q9",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 4,
+    "number": 9,
+    "prompt": "다음 중 데비안 계열에서 의존성까지 자동으로 처리하며 패키지를 설치하는 명령으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "apt install"
+      },
+      {
+        "label": "B",
+        "text": "dpkg -i"
+      },
+      {
+        "label": "C",
+        "text": "rpm -ivh"
+      },
+      {
+        "label": "D",
+        "text": "tar -zxvf"
+      }
+    ],
+    "answer": "A",
+    "explanation": "`apt`는 저장소를 이용하는 고수준 도구여서 필요한 의존 패키지까지 함께 내려받아 설치합니다. `dpkg -i`는 같은 데비안 계열이지만 저수준 도구라 의존성을 해결하지 못하고, `rpm`은 레드햇 계열, `tar`는 압축 해제 명령입니다."
+  },
+  {
+    "id": "linux-master-2-w11-d4-q10",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 4,
+    "number": 10,
+    "prompt": "다음 중 파일 시스템별 전체 용량과 사용률을 확인하는 명령과 특정 디렉터리의 사용량 합계를 확인하는 명령을 바르게 짝지은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "du - df"
+      },
+      {
+        "label": "B",
+        "text": "df - fsck"
+      },
+      {
+        "label": "C",
+        "text": "df - du"
+      },
+      {
+        "label": "D",
+        "text": "fsck - du"
+      }
+    ],
+    "answer": "C",
+    "explanation": "`df`는 마운트된 파일 시스템 단위로 전체·사용·잔여 용량을 보여 주고, `du`는 지정한 경로가 실제로 차지하는 용량을 계산하며 `-sh` 옵션으로 합계만 낼 수 있습니다. `fsck`는 파일 시스템의 무결성을 검사하는 명령입니다."
+  },
+  {
+    "id": "linux-master-2-w11-d5-q1",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 5,
+    "number": 1,
+    "prompt": "다음 중 X 윈도에서 GTK+ 툴킷을 사용하는 데스크톱 환경으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "KDE"
+      },
+      {
+        "label": "B",
+        "text": "GNOME"
+      },
+      {
+        "label": "C",
+        "text": "LXQt"
+      },
+      {
+        "label": "D",
+        "text": "CDE"
+      }
+    ],
+    "answer": "B",
+    "explanation": "GNOME은 C 언어로 작성된 GTK+ 툴킷을 기반으로 하며 Xfce와 MATE도 같은 툴킷을 사용합니다. KDE와 LXQt는 C++로 작성된 Qt를, CDE는 전통적인 Motif 툴킷을 사용합니다."
+  },
+  {
+    "id": "linux-master-2-w11-d5-q2",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 5,
+    "number": 2,
+    "prompt": "다음 중 성격이 나머지 셋과 다른 것으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "GDM"
+      },
+      {
+        "label": "B",
+        "text": "SDDM"
+      },
+      {
+        "label": "C",
+        "text": "LightDM"
+      },
+      {
+        "label": "D",
+        "text": "Mutter"
+      }
+    ],
+    "answer": "D",
+    "explanation": "GDM, SDDM, LightDM은 모두 그래픽 로그인 화면을 제공하는 디스플레이 매니저이며 이름이 DM으로 끝납니다. Mutter는 GNOME에서 창의 테두리와 이동을 담당하는 윈도 매니저이므로 역할이 다릅니다."
+  },
+  {
+    "id": "linux-master-2-w11-d5-q3",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 5,
+    "number": 3,
+    "prompt": "다음 중 OSI 7계층에서 포트 번호를 사용해 종단 간 통신을 담당하는 계층으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "전송 계층"
+      },
+      {
+        "label": "B",
+        "text": "네트워크 계층"
+      },
+      {
+        "label": "C",
+        "text": "세션 계층"
+      },
+      {
+        "label": "D",
+        "text": "표현 계층"
+      }
+    ],
+    "answer": "A",
+    "explanation": "4계층인 전송 계층은 포트 번호로 애플리케이션을 구분하며 TCP와 UDP가 여기에 속합니다. 3계층인 네트워크 계층은 IP 주소로 경로를 정하고, 2계층은 MAC 주소를 사용합니다."
+  },
+  {
+    "id": "linux-master-2-w11-d5-q4",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 5,
+    "number": 4,
+    "prompt": "C 클래스 네트워크에서 서브넷마스크가 255.255.255.240일 때 하나의 서브넷에서 사용할 수 있는 호스트 개수로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "16"
+      },
+      {
+        "label": "B",
+        "text": "30"
+      },
+      {
+        "label": "C",
+        "text": "14"
+      },
+      {
+        "label": "D",
+        "text": "62"
+      }
+    ],
+    "answer": "C",
+    "explanation": "256에서 240을 빼면 블록 크기가 16이고, 여기서 네트워크 주소와 브로드캐스트 주소 두 개를 제외하면 14개가 남습니다. 마스크가 224일 때는 30개, 192일 때는 62개가 됩니다."
+  },
+  {
+    "id": "linux-master-2-w11-d5-q5",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 5,
+    "number": 5,
+    "prompt": "다음 중 사용자가 작성한 메일을 자신의 메일 서버로 보내고 그 서버가 상대 서버로 전달할 때 공통으로 사용하는 프로토콜로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "IMAP"
+      },
+      {
+        "label": "B",
+        "text": "POP3"
+      },
+      {
+        "label": "C",
+        "text": "NNTP"
+      },
+      {
+        "label": "D",
+        "text": "SMTP"
+      }
+    ],
+    "answer": "D",
+    "explanation": "SMTP는 사용자가 메일을 발송할 때와 메일 서버끼리 메일을 전달할 때 모두 사용됩니다. POP3와 IMAP은 도착한 메일을 사용자가 가져오거나 열람할 때만 쓰이며, NNTP는 뉴스그룹용 프로토콜입니다."
+  },
+  {
+    "id": "linux-master-2-w11-d5-q6",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 5,
+    "number": 6,
+    "prompt": "다음 중 도메인 이름을 IPv6 주소와 연결하는 DNS 레코드로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AAAA"
+      },
+      {
+        "label": "B",
+        "text": "A"
+      },
+      {
+        "label": "C",
+        "text": "MX"
+      },
+      {
+        "label": "D",
+        "text": "SOA"
+      }
+    ],
+    "answer": "A",
+    "explanation": "128비트인 IPv6 주소는 AAAA 레코드로 연결하며 32비트인 IPv4 주소는 A 레코드를 사용합니다. MX는 메일 서버를, SOA는 영역의 관리자와 갱신 주기 같은 기본 정보를 담습니다."
+  },
+  {
+    "id": "linux-master-2-w11-d5-q7",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 5,
+    "number": 7,
+    "prompt": "다음 중 FTP에서 클라이언트가 데이터 연결을 직접 여는 방식으로 방화벽 환경에서 주로 사용되는 모드로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "능동 모드"
+      },
+      {
+        "label": "B",
+        "text": "수동 모드"
+      },
+      {
+        "label": "C",
+        "text": "바이너리 모드"
+      },
+      {
+        "label": "D",
+        "text": "익명 모드"
+      }
+    ],
+    "answer": "B",
+    "explanation": "수동 모드는 클라이언트가 데이터 연결까지 직접 열기 때문에 클라이언트 쪽 방화벽에 막히지 않습니다. 능동 모드는 서버가 20번 포트에서 클라이언트로 연결을 시도하므로 방화벽 뒤에 있는 환경에서는 실패하기 쉽습니다."
+  },
+  {
+    "id": "linux-master-2-w11-d5-q8",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 5,
+    "number": 8,
+    "prompt": "다음 중 삼바 서버의 동작을 설정하는 파일로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "/etc/exports"
+      },
+      {
+        "label": "B",
+        "text": "/etc/resolv.conf"
+      },
+      {
+        "label": "C",
+        "text": "/etc/samba/smb.conf"
+      },
+      {
+        "label": "D",
+        "text": "/etc/cups/cupsd.conf"
+      }
+    ],
+    "answer": "C",
+    "explanation": "삼바는 `/etc/samba/smb.conf`에 공유할 디렉터리와 접근 권한을 설정하며 `smbd`와 `nmbd` 두 데몬이 동작합니다. `/etc/exports`는 NFS, `/etc/resolv.conf`는 DNS 서버 주소, `cupsd.conf`는 인쇄 시스템의 설정 파일입니다."
+  },
+  {
+    "id": "linux-master-2-w11-d5-q9",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 5,
+    "number": 9,
+    "prompt": "다음 중 하나의 큰 연산을 여러 노드가 나누어 처리하도록 구성한 클러스터로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "부하분산 클러스터"
+      },
+      {
+        "label": "B",
+        "text": "고계산용 클러스터"
+      },
+      {
+        "label": "C",
+        "text": "고가용성 클러스터"
+      },
+      {
+        "label": "D",
+        "text": "하이브리드 클러스터"
+      }
+    ],
+    "answer": "B",
+    "explanation": "고계산용 클러스터는 기상 예측이나 유전자 분석처럼 큰 연산을 여러 노드가 병렬로 나누어 처리합니다. 부하분산은 요청을 나누어 받는 것이고 고가용성은 장애가 나도 서비스가 끊기지 않게 하는 구성이라 목적이 다릅니다."
+  },
+  {
+    "id": "linux-master-2-w11-d5-q10",
+    "category": "aws-certs",
+    "slug": "linux-master-2",
+    "section": "aws",
+    "week": 11,
+    "day": 5,
+    "number": 10,
+    "prompt": "다음 중 게스트 운영체제를 수정하지 않고도 가상 머신에서 실행할 수 있게 하는 가상화 방식으로 알맞은 것은?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "반가상화"
+      },
+      {
+        "label": "B",
+        "text": "컨테이너 방식"
+      },
+      {
+        "label": "C",
+        "text": "에뮬레이션"
+      },
+      {
+        "label": "D",
+        "text": "전가상화"
+      }
+    ],
+    "answer": "D",
+    "explanation": "전가상화는 하이퍼바이저가 하드웨어를 그대로 흉내 내므로 게스트 운영체제를 고칠 필요가 없으며 Intel VT-x와 AMD-V 같은 하드웨어 지원으로 성능도 확보합니다. 반가상화는 게스트 커널을 수정해야 하는 대신 성능이 좋습니다."
+  },
+  {
     "id": "linux-master-2-w2-d1-q1",
     "category": "aws-certs",
     "slug": "linux-master-2",
