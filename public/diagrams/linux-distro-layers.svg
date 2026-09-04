@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 305" width="620" height="305" role="img" aria-labelledby="t d">
+<title id="t">리눅스 배포판을 이루는 계층</title>
+<desc id="d">배포판은 리눅스 커널 위에 GNU 도구, 패키지 관리자, 데스크톱 환경, 응용 소프트웨어를 얹어 하나로 묶은 것이다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="618" height="303" rx="8"/>
+<rect x="14" y="14" width="592" height="277" rx="7" fill="#6cb6ff" fill-opacity=".05" stroke="#6cb6ff" stroke-opacity=".45"/>
+<text class="h" x="30" y="38" fill="#6cb6ff">배포판 (Distribution)</text><rect x="30" y="52" width="560" height="42" rx="4" fill="#22272e" stroke="#373e47"/>
+<text class="t" x="44" y="78" fill="#adbac7">응용 소프트웨어</text><text class="m" x="576" y="78" text-anchor="end">웹 브라우저 · 오피스</text><rect x="30" y="99" width="560" height="42" rx="4" fill="#22272e" stroke="#373e47"/>
+<text class="t" x="44" y="125" fill="#adbac7">데스크톱 환경</text><text class="m" x="576" y="125" text-anchor="end">GNOME · KDE</text><rect x="30" y="146" width="560" height="42" rx="4" fill="#22272e" stroke="#373e47"/>
+<text class="t" x="44" y="172" fill="#adbac7">패키지 관리자</text><text class="m" x="576" y="172" text-anchor="end">rpm/dnf · dpkg/apt</text><rect x="30" y="193" width="560" height="42" rx="4" fill="#22272e" stroke="#373e47"/>
+<text class="t" x="44" y="219" fill="#adbac7">GNU 도구</text><text class="m" x="576" y="219" text-anchor="end">bash · ls · cp · gcc</text><rect x="30" y="240" width="560" height="42" rx="4" fill="#22272e" stroke="#373e47"/>
+<text class="t" x="44" y="266" fill="#f0a35e">리눅스 커널</text><text class="m" x="576" y="266" text-anchor="end">하드웨어를 직접 다룬다</text>
+</svg>

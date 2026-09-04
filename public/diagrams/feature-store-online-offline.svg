@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 240" width="720" height="240" role="img" aria-labelledby="t d">
+<title id="t">Feature Store 의 온라인 스토어와 오프라인 스토어</title>
+<desc id="d">특성 계산 파이프라인이 Feature Store 에 적재하면 온라인 스토어와 오프라인 스토어로 자동 동기화되어 각각 실시간 추론과 학습 데이터셋 생성에 쓰인다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="718" height="238" rx="8"/>
+<marker id="a-545d68" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#545d68"/></marker><rect x="22" y="18" width="676" height="46" rx="6" fill="#6cb6ff" fill-opacity=".12" stroke="#6cb6ff" stroke-opacity=".6"/>
+<text class="h" x="360" y="39" text-anchor="middle">Feature Store</text><text class="m" x="360" y="56" text-anchor="middle">특성 계산 파이프라인이 ingest — 이후 자동 동기화</text><line class="ln" x1="360" y1="64" x2="360" y2="88"/><line class="ln" x1="188" y1="88" x2="532" y2="88"/><line class="ln" x1="188" y1="88" x2="188" y2="116" marker-end="url(#a-545d68)"/>
+<rect x="22" y="122" width="332" height="96" rx="6" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".55"/>
+<text class="t" x="188" y="146" text-anchor="middle" fill="#6cb6ff">온라인 스토어</text><text class="m" x="188" y="164" text-anchor="middle">최신값 1건</text><text class="m" x="188" y="182" text-anchor="middle">GetRecord · 밀리초</text><text class="m" x="188" y="200" text-anchor="middle">→ 실시간 추론 서버</text><line class="ln" x1="532" y1="88" x2="532" y2="116" marker-end="url(#a-545d68)"/>
+<rect x="366" y="122" width="332" height="96" rx="6" fill="#f0a35e" fill-opacity=".1" stroke="#f0a35e" stroke-opacity=".55"/>
+<text class="t" x="532" y="146" text-anchor="middle" fill="#f0a35e">오프라인 스토어</text><text class="m" x="532" y="164" text-anchor="middle">전체 이력 (S3 Parquet)</text><text class="m" x="532" y="182" text-anchor="middle">Athena 대량 조회</text><text class="m" x="532" y="200" text-anchor="middle">→ 학습 데이터셋 생성</text>
+</svg>
