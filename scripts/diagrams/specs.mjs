@@ -457,4 +457,59 @@ export const specs = {
         note: '밴드 밖으로 나가는 순간 알람 — 고정 임계값과 달리 시간대별 패턴을 학습한다',
       }),
   },
+
+  'shared-responsibility-4tier': {
+    src: 'saa-c03/week1/day1 · saa-c03/week1/day5 · dva-c02/week1/day1 (3개 페이지 공용)',
+    svg: () =>
+      stack({
+        title: '관리 수준에 따라 움직이는 공동 책임 경계선',
+        desc: '완전 관리형으로 갈수록 고객이 책임질 범위가 좁아지고, IaaS 로 갈수록 OS와 애플리케이션까지 고객 몫이 된다.',
+        layers: [
+          { label: 'S3 · DynamoDB · Lambda — 완전 관리형', note: '데이터 분류와 IAM 권한만 고객', color: T.ok },
+          { label: 'RDS · ECS Fargate — PaaS', note: '＋ 네트워크·보안그룹 설정 고객', color: T.accent },
+          { label: 'ECS on EC2 · EKS Self-Managed', note: '＋ 컨테이너 런타임·노드 OS 패치 고객', color: T.warn },
+          { label: 'EC2 + EBS — IaaS', note: 'OS·미들웨어·앱 전부 고객', color: T.danger },
+        ],
+      }),
+  },
+
+  's3-cross-account-backup': {
+    src: 'scs-c03/week6/day5',
+    svg: () =>
+      pair({
+        title: '규제 데이터를 다른 계정에 불변으로 보관하기',
+        desc: '운영 계정의 버킷을 교차 계정으로 복제해 백업 계정에 두고, Object Lock 컴플라이언스 모드로 잠가 운영 계정조차 지울 수 없게 만든다.',
+        left: { cap: '프로덕션 계정 A', label: '운영 버킷', lines: ['버전 관리 ON'], color: T.accent },
+        right: { cap: '백업 계정 B — 자격증명 경계 분리', label: '백업 버킷', lines: ['버전 관리 + Object Lock', 'COMPLIANCE + MFA Delete'], color: T.ok },
+        link: '교차 계정 복제 — 계정 A 에는 삭제 권한이 없다',
+      }),
+  },
+
+  'backpropagation': {
+    src: 'mls-c01/week7/day1',
+    svg: () =>
+      cycle({
+        title: '순전파와 역전파',
+        desc: '입력이 은닉층을 거쳐 출력과 손실까지 나아가는 것이 순전파이고, 손실에서 연쇄법칙으로 각 가중치의 기울기를 거슬러 전달하는 것이 역전파다.',
+        steps: ['입력 x', '은닉층 1', '은닉층 2', '출력 ŷ', '손실 L(ŷ, y)'],
+        back: '역전파 — 연쇄법칙으로 ∂L/∂w 를 거슬러 전달, 갱신은 w ← w − η·∂L/∂w',
+      }),
+  },
+
+  'week3-decision-map': {
+    src: 'saa-c03/week3/day5',
+    svg: () =>
+      boxedStack({
+        title: '요구사항에서 아키텍처 선택으로 이어지는 판단 경로',
+        desc: '요구사항의 각 축이 어떤 선택지로 이어지는지를 정리한 표로, 이 매핑을 거쳐 최적 아키텍처가 결정된다.',
+        container: '요구사항 분석 → 최적 아키텍처 선택',
+        layers: [
+          { label: '워크로드 특성', note: '→ 인스턴스 패밀리' },
+          { label: '비용 · 약정', note: '→ 구매 옵션' },
+          { label: '데이터 영속성 · 공유', note: '→ 스토리지 종류' },
+          { label: '트래픽 종류', note: '→ ELB 종류' },
+          { label: '부하 변동 패턴', note: '→ 스케일링 정책' },
+        ],
+      }),
+  },
 };

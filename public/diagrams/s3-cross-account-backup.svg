@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 162" width="660" height="162" role="img" aria-labelledby="t d">
+<title id="t">규제 데이터를 다른 계정에 불변으로 보관하기</title>
+<desc id="d">운영 계정의 버킷을 교차 계정으로 복제해 백업 계정에 두고, Object Lock 컴플라이언스 모드로 잠가 운영 계정조차 지울 수 없게 만든다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="658" height="160" rx="8"/>
+<marker id="a-545d68" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#545d68"/></marker><text class="m" x="149" y="30" text-anchor="middle">프로덕션 계정 A</text>
+<rect x="24" y="46" width="250" height="92" rx="6" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".55"/>
+<text class="h" x="149" y="76" text-anchor="middle" fill="#6cb6ff">운영 버킷</text><text class="m" x="149" y="98" text-anchor="middle">버전 관리 ON</text><text class="m" x="511" y="30" text-anchor="middle">백업 계정 B — 자격증명 경계 분리</text>
+<rect x="386" y="46" width="250" height="92" rx="6" fill="#8ddb8c" fill-opacity=".1" stroke="#8ddb8c" stroke-opacity=".55"/>
+<text class="h" x="511" y="76" text-anchor="middle" fill="#8ddb8c">백업 버킷</text><text class="m" x="511" y="98" text-anchor="middle">버전 관리 + Object Lock</text><text class="m" x="511" y="116" text-anchor="middle">COMPLIANCE + MFA Delete</text><line class="ln" x1="280" y1="92" x2="380" y2="92" marker-end="url(#a-545d68)"/>
+<text class="m" x="330" y="82" text-anchor="middle">교차 계정 복제 — 계정 A 에는 삭제 권한이 없다</text>
+</svg>

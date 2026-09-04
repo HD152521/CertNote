@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 305" width="620" height="305" role="img" aria-labelledby="t d">
+<title id="t">요구사항에서 아키텍처 선택으로 이어지는 판단 경로</title>
+<desc id="d">요구사항의 각 축이 어떤 선택지로 이어지는지를 정리한 표로, 이 매핑을 거쳐 최적 아키텍처가 결정된다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="618" height="303" rx="8"/>
+<rect x="14" y="14" width="592" height="277" rx="7" fill="#6cb6ff" fill-opacity=".05" stroke="#6cb6ff" stroke-opacity=".45"/>
+<text class="h" x="30" y="38" fill="#6cb6ff">요구사항 분석 → 최적 아키텍처 선택</text><rect x="30" y="52" width="560" height="42" rx="4" fill="#22272e" stroke="#373e47"/>
+<text class="t" x="44" y="78" fill="#adbac7">워크로드 특성</text><text class="m" x="576" y="78" text-anchor="end">→ 인스턴스 패밀리</text><rect x="30" y="99" width="560" height="42" rx="4" fill="#22272e" stroke="#373e47"/>
+<text class="t" x="44" y="125" fill="#adbac7">비용 · 약정</text><text class="m" x="576" y="125" text-anchor="end">→ 구매 옵션</text><rect x="30" y="146" width="560" height="42" rx="4" fill="#22272e" stroke="#373e47"/>
+<text class="t" x="44" y="172" fill="#adbac7">데이터 영속성 · 공유</text><text class="m" x="576" y="172" text-anchor="end">→ 스토리지 종류</text><rect x="30" y="193" width="560" height="42" rx="4" fill="#22272e" stroke="#373e47"/>
+<text class="t" x="44" y="219" fill="#adbac7">트래픽 종류</text><text class="m" x="576" y="219" text-anchor="end">→ ELB 종류</text><rect x="30" y="240" width="560" height="42" rx="4" fill="#22272e" stroke="#373e47"/>
+<text class="t" x="44" y="266" fill="#adbac7">부하 변동 패턴</text><text class="m" x="576" y="266" text-anchor="end">→ 스케일링 정책</text>
+</svg>
