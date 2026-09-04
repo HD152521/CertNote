@@ -105,6 +105,11 @@ html, body {
 /* 코드블록은 라이트/다크 무관 항상 다크 카드(github-dark-dimmed 팔레트와 일치). 토큰 색은 shiki 인라인 style. */
 .article pre { background: #22272e; border: 1px solid #373e47; color: #adbac7; border-radius: 8px; padding: 1rem 1.1rem; overflow-x: auto; font-size: 0.875rem; line-height: 1.6; margin: 1.25rem 0; }
 .article pre code { background: transparent; border: 0; padding: 0; font-size: inherit; border-radius: 0; }
+
+/* 다이어그램 SVG. <img> 로 넣으므로 페이지 CSS 변수를 못 읽는다 — SVG 안에서 코드블록과
+   같은 다크 카드 톤을 직접 칠하고 있어서 라이트/다크 모두 동일하게 보인다(.article pre 와 같은 전략).
+   가로 폭이 넘치면 축소되도록 max-width 만 걸고 height 는 auto 로 둔다. */
+.article img { display: block; max-width: 100%; height: auto; margin: 1.25rem 0; border-radius: 8px; }
 .article pre [data-line] { display: block; }
 .article pre [data-highlighted-line] { background: rgba(255, 153, 0, 0.08); }
 /* 표는 래퍼 안에서만 가로 스크롤 — 페이지 전체가 늘어나지 않게. */

@@ -334,7 +334,7 @@
     "content/aws-certs/linux-master-1/week9/day4.md": "2026-08-04T16:21:13+09:00",
     "content/aws-certs/linux-master-1/week9/day5.md": "2026-08-04T16:21:13+09:00",
     "content/aws-certs/linux-master-1/week9/day6.md": "2026-08-04T16:21:13+09:00",
-    "content/aws-certs/linux-master-2/meta.json": "2026-09-03T18:37:59+09:00",
+    "content/aws-certs/linux-master-2/meta.json": "2026-09-04T11:10:26+09:00",
     "content/aws-certs/linux-master-2/week1/day1.md": "2026-09-03T09:11:17+09:00",
     "content/aws-certs/linux-master-2/week1/day2.md": "2026-09-03T09:11:17+09:00",
     "content/aws-certs/linux-master-2/week1/day3.md": "2026-09-03T09:11:17+09:00",
@@ -1403,7 +1403,7 @@
     "content/en/soa-c02/week9/day4.md": "2026-07-15T11:41:12+09:00",
     "content/en/soa-c02/week9/day5.md": "2026-07-15T11:41:12+09:00",
     "content/roadmaps.json": "2026-09-01T09:54:46+09:00",
-    "src/app/page.tsx": "2026-09-01T09:55:15+09:00",
+    "src/app/page.tsx": "2026-09-02T09:34:46+09:00",
     "src/app/pricing/page.tsx": "2026-07-24T12:47:27+09:00",
     "src/app/privacy/PrivacyContent.tsx": "2026-07-24T12:47:27+09:00",
     "src/app/roadmap/page.tsx": "2026-07-30T09:34:33+09:00"
