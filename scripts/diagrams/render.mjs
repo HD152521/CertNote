@@ -306,3 +306,30 @@ export function compareStacks({ title, desc, left, right, w = 660 }) {
   });
   return shell(w, h, body, { title, desc });
 }
+
+/** 나란한 두 상자를 이름 붙인 연결선으로 잇는다. 양방향이면 both:true */
+export function pair({ title, desc, left, right, link, both = false, w = 660 }) {
+  const bw = 250,
+    bh = 92,
+    y = 46;
+  const h = y + bh + 24;
+  const lx = 24,
+    rx = w - 24 - bw;
+  let body = ARROW(T.axis);
+  [
+    [left, lx],
+    [right, rx],
+  ].forEach(([s, x]) => {
+    const c = s.color || T.accent;
+    body += `<text class="m" x="${x + bw / 2}" y="${30}" text-anchor="middle">${esc(s.cap || '')}</text>
+<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="6" fill="${c}" fill-opacity=".1" stroke="${c}" stroke-opacity=".55"/>
+<text class="h" x="${x + bw / 2}" y="${y + 30}" text-anchor="middle" fill="${c}">${esc(s.label)}</text>`;
+    (s.lines || []).slice(0, 2).forEach((ln, k) => {
+      body += `<text class="m" x="${x + bw / 2}" y="${y + 52 + k * 18}" text-anchor="middle">${esc(ln)}</text>`;
+    });
+  });
+  const my = y + bh / 2;
+  body += `<line class="ln" x1="${lx + bw + 6}" y1="${my}" x2="${rx - 6}" y2="${my}" marker-end="url(#a-${T.axis.slice(1)})"${both ? ` marker-start="url(#a-${T.axis.slice(1)})"` : ''}/>
+<text class="m" x="${w / 2}" y="${my - 10}" text-anchor="middle">${esc(link)}</text>`;
+  return shell(w, h, body, { title, desc });
+}

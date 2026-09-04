@@ -111,18 +111,7 @@ EFS(Elastic File System)는 NFSv4.1 프로토콜을 사용하는 완전 관리�
 
 EFS의 내부 구조는 여러 AZ에 걸쳐 분산된 스토리지 서버로 이루어진다. 각 파일은 여러 서버에 분산 저장되어 가용성과 내구성을 확보한다. 클라이언트는 EFS 마운트 타겟(각 AZ에 하나씩 배치)을 통해 접근한다.
 
-```
-[ EFS 아키텍처 ]
-
-     EC2-AZ-a        EC2-AZ-b        EC2-AZ-c
-         │                │                │
-    Mount Target    Mount Target    Mount Target
-    (ap-ne-2a)      (ap-ne-2b)      (ap-ne-2c)
-         └────────────────┴────────────────┘
-                          │
-              [ EFS 분산 스토리지 클러스터 ]
-                  (Multi-AZ 내구성)
-```
+![가용 영역별 마운트 타깃을 거쳐 하나의 EFS 분산 스토리지 클러스터로 모이는 구조](/diagrams/efs-mount-targets.svg)
 
 **성능 모드**:
 - `generalPurpose`: 기본값. 99%의 워크로드에 적합. 메타데이터 연산이 빠르다.

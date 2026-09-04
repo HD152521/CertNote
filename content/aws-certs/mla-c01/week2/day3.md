@@ -69,13 +69,7 @@ WHERE year = '2026';
 
 **Redshift Spectrum**은 둘의 다리다 — Redshift에서 **S3의 데이터를 외부 테이블로 직접 쿼리**할 수 있다. 자주 쓰는 데이터(핫)는 Redshift 내부에, 차가운 데이터는 S3에 두고 Spectrum으로 조인한다.
 
-```
-   [Redshift 클러스터]              [S3 데이터 레이크]
-   ┌──────────────────┐            ┌──────────────────┐
-   │ 최근 3개월 (핫)  │ ──조인──▶ │ 과거 5년 (콜드)  │
-   │ 내부 테이블      │  Spectrum  │ 외부 테이블      │
-   └──────────────────┘            └──────────────────┘
-```
+![Redshift 내부 테이블과 S3 외부 테이블을 Spectrum 으로 조인하는 구조](/diagrams/redshift-spectrum.svg)
 
 ML 통합 측면에서 **Redshift ML**도 알아두자. SQL `CREATE MODEL` 문으로 Redshift 안에서 SageMaker Autopilot을 호출해 모델을 학습·추론할 수 있다. 데이터를 옮기지 않고 SQL만으로 예측 컬럼을 만든다.
 

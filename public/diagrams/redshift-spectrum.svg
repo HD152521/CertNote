@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 162" width="660" height="162" role="img" aria-labelledby="t d">
+<title id="t">Redshift 내부 테이블과 S3 외부 테이블의 조인</title>
+<desc id="d">최근 데이터는 Redshift 클러스터의 내부 테이블에, 오래된 데이터는 S3 데이터 레이크의 외부 테이블에 두고 Spectrum 으로 조인한다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="658" height="160" rx="8"/>
+<marker id="a-545d68" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#545d68"/></marker><text class="m" x="149" y="30" text-anchor="middle">Redshift 클러스터</text>
+<rect x="24" y="46" width="250" height="92" rx="6" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".55"/>
+<text class="h" x="149" y="76" text-anchor="middle" fill="#6cb6ff">최근 3개월 (핫)</text><text class="m" x="149" y="98" text-anchor="middle">내부 테이블</text><text class="m" x="511" y="30" text-anchor="middle">S3 데이터 레이크</text>
+<rect x="386" y="46" width="250" height="92" rx="6" fill="#f0a35e" fill-opacity=".1" stroke="#f0a35e" stroke-opacity=".55"/>
+<text class="h" x="511" y="76" text-anchor="middle" fill="#f0a35e">과거 5년 (콜드)</text><text class="m" x="511" y="98" text-anchor="middle">외부 테이블</text><line class="ln" x1="280" y1="92" x2="380" y2="92" marker-end="url(#a-545d68)"/>
+<text class="m" x="330" y="82" text-anchor="middle">조인 — Redshift Spectrum</text>
+</svg>

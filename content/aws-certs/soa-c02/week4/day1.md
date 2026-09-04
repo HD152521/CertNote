@@ -137,21 +137,7 @@ aws cloudtrail start-logging --name "organization-trail"
 - 멤버 계정 이벤트는 Log Archive Account의 중앙 S3 버킷에 저장됨
 - 경로: `AWSLogs/{org-id}/{member-account-id}/CloudTrail/...`
 
-```
-[관리 계정] Organization Trail 생성
-       │
-       ▼ (자동 수집)
-[멤버 계정 A] [멤버 계정 B] [멤버 계정 C] ...미래 계정들...
-       │           │           │
-       └───────────┴───────────┘
-                   │
-                   ▼
-         [Log Archive Account]
-          중앙 S3 버킷
-          - Object Lock (WORM)
-          - SSE-KMS
-          - Log File Validation
-```
+![관리 계정의 Organization Trail 이 멤버 계정 로그를 모아 중앙 아카이브 계정으로 보내는 구조](/diagrams/org-trail-central.svg)
 
 > 💡 **관련 이론**: 중앙 집중식 로그 아카이브는 AWS Landing Zone(현재 Control Tower)의 핵심 설계 패턴이다. Log Archive Account를 별도로 두는 이유는 "침해된 워크로드 계정에서 공격자가 로그를 삭제하지 못하게" 하기 위함이다. 공격자가 계정 A를 침해해도 Log Archive Account의 S3 버킷에 대한 권한이 없으면 로그를 지울 수 없다. 이것이 Account 분리의 보안 가치다.
 

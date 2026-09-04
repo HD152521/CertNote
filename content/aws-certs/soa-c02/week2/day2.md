@@ -129,15 +129,7 @@ Subscription은 Log Group의 신규 로그를 실시간으로 다른 서비스�
 
 다른 계정의 Log Group을 자기 계정 Kinesis로 받으려면 **Log Destination** 리소스를 만들고 cross-account IAM Trust를 설정.
 
-```
-[Account A: 소스]                  [Account B: 분석 계정]
-  Log Group                         Log Destination (Kinesis)
-    │ Subscription Filter             │
-    └──────────► Kinesis DS ◄─────────┘
-                  │
-                  ▼
-                Lambda/OpenSearch
-```
+![소스 계정과 분석 계정의 로그가 Kinesis 로 모여 Lambda·OpenSearch 로 흐르는 구조](/diagrams/cross-account-subscription.svg)
 
 Account B에 `logs:PutSubscriptionFilter`를 허용하는 Resource Policy를 Destination에 붙여야 한다. 이 패턴이 시험에 자주 나오는 "여러 계정 로그를 중앙 보안 계정에서 실시간 분석" 시나리오의 답.
 

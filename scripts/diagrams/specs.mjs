@@ -1,7 +1,7 @@
 // 다이어그램 스펙. 파일당 하나의 SVG 를 만든다.
 // key = public/diagrams/<key>.svg, src = 원본 ASCII 가 있던 위치(추적용)
 
-import { nest, flowDown, cycle, stack, fanout, boxedStack, columns, merge, compareStacks, T } from './render.mjs';
+import { nest, flowDown, cycle, stack, fanout, boxedStack, columns, merge, compareStacks, pair, T } from './render.mjs';
 
 export const specs = {
   'ai-ml-dl-nesting': {
@@ -202,6 +202,92 @@ export const specs = {
             { label: '하드웨어', color: T.muted },
           ],
         },
+      }),
+  },
+
+  'redshift-spectrum': {
+    src: 'mla-c01/week2/day3',
+    svg: () =>
+      pair({
+        title: 'Redshift 내부 테이블과 S3 외부 테이블의 조인',
+        desc: '최근 데이터는 Redshift 클러스터의 내부 테이블에, 오래된 데이터는 S3 데이터 레이크의 외부 테이블에 두고 Spectrum 으로 조인한다.',
+        left: { cap: 'Redshift 클러스터', label: '최근 3개월 (핫)', lines: ['내부 테이블'], color: T.accent },
+        right: { cap: 'S3 데이터 레이크', label: '과거 5년 (콜드)', lines: ['외부 테이블'], color: T.warn },
+        link: '조인 — Redshift Spectrum',
+      }),
+  },
+
+  'cross-account-subscription': {
+    src: 'soa-c02/week2/day2',
+    svg: () =>
+      merge({
+        title: '계정을 넘어 로그를 모으는 Cross-Account Subscription',
+        desc: '소스 계정의 로그 그룹이 Subscription Filter 로, 분석 계정의 Log Destination 이 함께 Kinesis 로 모여 Lambda 나 OpenSearch 로 흘러간다.',
+        sources: [
+          { label: 'Account A — 소스', lines: ['Log Group', 'Subscription Filter'], color: T.accent },
+          { label: 'Account B — 분석 계정', lines: ['Log Destination'], color: T.violet },
+        ],
+        result: { label: 'Kinesis Data Streams', sub: '→ Lambda · OpenSearch 로 전달' },
+      }),
+  },
+
+  'kms-double-gate': {
+    src: 'mls-c01/week11/day3',
+    svg: () =>
+      merge({
+        title: 'KMS 복호화의 이중 관문 — 키 정책과 IAM 정책',
+        desc: '키 정책과 IAM 권한 정책이 둘 다 허용해야 복호화가 성공한다. 하나라도 허용하지 않으면 실패한다.',
+        sources: [
+          { label: 'KMS 키 정책', lines: ['"이 키를 누가?"'], color: T.warn },
+          { label: 'IAM 권한 정책', lines: ['"이 주체가 뭘?"'], color: T.accent },
+        ],
+        result: { label: '둘 다 Allow 여야 복호화 성공', sub: '하나라도 미허용이면 실패 — IAM 만 열어도 소용없다' },
+      }),
+  },
+
+  'efs-mount-targets': {
+    src: 'saa-c03/week3/day2',
+    svg: () =>
+      merge({
+        title: 'EFS 의 가용 영역별 마운트 타깃',
+        desc: '각 가용 영역의 EC2 가 해당 영역의 마운트 타깃을 거쳐 하나의 EFS 분산 스토리지 클러스터에 접근한다.',
+        sources: [
+          { label: 'EC2 — AZ a', lines: ['Mount Target', 'ap-northeast-2a'] },
+          { label: 'EC2 — AZ b', lines: ['Mount Target', 'ap-northeast-2b'] },
+          { label: 'EC2 — AZ c', lines: ['Mount Target', 'ap-northeast-2c'] },
+        ],
+        result: { label: 'EFS 분산 스토리지 클러스터', sub: 'Multi-AZ 내구성' },
+      }),
+  },
+
+  'org-trail-central': {
+    src: 'soa-c02/week4/day1',
+    svg: () =>
+      fanout({
+        title: 'Organization Trail 로 멀티 계정 감사 로그를 중앙에 모으기',
+        desc: '관리 계정에서 만든 Organization Trail 이 모든 멤버 계정과 앞으로 추가될 계정의 로그까지 자동 수집해 중앙 아카이브 계정으로 보낸다.',
+        source: { label: '관리 계정 — Organization Trail 생성', sub: '멤버 계정의 로그를 자동 수집' },
+        targets: [
+          { label: '멤버 계정 A', lines: ['CloudTrail 이벤트'] },
+          { label: '멤버 계정 B', lines: ['CloudTrail 이벤트'] },
+          { label: '멤버 계정 C', lines: ['CloudTrail 이벤트'] },
+          { label: '미래에 추가될 계정', lines: ['자동 포함'], color: T.muted },
+        ],
+        sink: 'Log Archive 계정 중앙 S3 — Object Lock(WORM) · SSE-KMS · Log File Validation',
+      }),
+  },
+
+  'fsx-lustre-training': {
+    src: 'mls-c01/week1/day2',
+    svg: () =>
+      columns({
+        title: 'S3 와 FSx for Lustre 를 거쳐 학습 노드로 이어지는 I/O 경로',
+        desc: '원본은 S3 에 저렴하게 보관하고, 학습 중에는 FSx for Lustre 를 고속 작업 공간으로 두어 학습 노드가 마운트해 쓴다.',
+        columns: [
+          { label: '영구 보관', items: ['S3 버킷', '원본 · 저렴'] },
+          { label: '고속 작업 공간', items: ['FSx for Lustre', '병렬 FS · 저지연'], color: T.warn },
+          { label: '학습 노드', items: ['ml.p4d × N', '마운트해서 사용'], color: T.ok },
+        ],
       }),
   },
 };
