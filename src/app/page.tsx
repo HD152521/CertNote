@@ -28,7 +28,11 @@ export const metadata: Metadata = {
   // "aws 자격증 독학/준비" 의도의 착지 페이지라 사이트 전체 기본값과 역할이 다르다.
   // (GSC 2026-08-31: 홈이 '크롤링됨 - 현재 색인이 생성되지 않음' 에 있었다.)
   // description 은 네이버 권장 80자 이내를 지킨다.
-  title: 'AWS 자격증 독학 — 하루 30분 한국어 커리큘럼',
+  // ⚠️ 루트 레이아웃의 title.template('%s | Cert Notes')은 **여기에 적용되지 않는다.**
+  // template 은 하위 route segment 에만 붙는데, app/page.tsx 는 app/layout.tsx 와 같은
+  // 세그먼트다(실측: 홈 title 에는 접미사가 없고 /aws/reviews 에는 붙는다).
+  // 따라서 브랜드명을 직접 넣는다. 지우면 SERP 에서 브랜드가 사라진다.
+  title: 'AWS 자격증 독학 — 하루 30분 한국어 커리큘럼 | Cert Notes',
   description: '주차별 커리큘럼으로 AWS 자격증 독학. 심화 노트·연습문제·간격반복 복습. Week 1 무료.',
   alternates: { canonical: '/' },
 };

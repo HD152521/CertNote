@@ -69,21 +69,26 @@ describe('로드맵 단계의 시험 사실(역할 페이지 차별화 재료)',
     }
   });
 
-  test('AWS 단계는 공식 시험 정보가 붙는다(문항·시간·합격점·응시료)', async () => {
+  // exam-info 는 섹션 중립 스키마라 수치가 전부 optional 이다(다단계 시험은 phases[] 사용).
+  // 로드맵 합계가 실제로 의존하는 값은 costUsd 하나뿐이므로 그것만 계약으로 고정한다 —
+  // 화면에 렌더하지 않는 값(문항수·합격점)까지 단언하면 쓰지도 않는 데이터를 테스트가 붙잡는다.
+  test('AWS 단계는 단일 응시 비용(costUsd)을 가진다 — 합계의 전제', async () => {
     for (const role of await getRoadmapRoles()) {
       for (const s of role.steps) {
         expect(s.exam, `${role.slug}/${s.slug} 의 exam-info 누락`).not.toBeNull();
-        expect(s.exam!.questionCount).toBeGreaterThan(0);
-        expect(s.exam!.durationMin).toBeGreaterThan(0);
-        // 로드맵은 AWS 자격증만 담는다 = 전부 단일형(phases 없음). 다단계 시험이 섞였다면
-        // 여기서 undefined 로 잡힌다.
-        const passingScore = s.exam!.passingScore ?? 0;
-        expect(passingScore).toBeGreaterThan(0);
-        expect(s.exam!.scoreMax).toBeGreaterThanOrEqual(passingScore);
-        expect(s.exam!.costUsd).toBeGreaterThan(0);
-        expect(s.exam!.phases).toBeUndefined();
+        expect(typeof s.exam?.costUsd, `${role.slug}/${s.slug} 의 costUsd 없음`).toBe('number');
+        expect(s.exam!.costUsd!).toBeGreaterThan(0);
       }
     }
+  });
+
+  test('costUsd 가 없는 단계가 섞이면 합계를 내지 않는다(다단계 시험 대비)', () => {
+    const priced = { slug: 'a', code: 'A', name: 'n', level: 'associate', href: '/aws/a', note: 'x',
+      weeks: 6, dayCount: 30, exam: { costUsd: 100 } } as unknown as Parameters<typeof totalsOf>[0][number];
+    const unpriced = { slug: 'b', code: 'B', name: 'n', level: 'grade-1', href: '/linux/b', note: 'x',
+      weeks: 10, dayCount: 50, exam: { phases: [{ costKrw: 1 }] } } as unknown as Parameters<typeof totalsOf>[0][number];
+    expect(totalsOf([priced, unpriced]).costUsd).toBeNull();
+    expect(totalsOf([priced]).costUsd).toBe(100);
   });
 
   test('역할마다 합계가 실제로 달라진다(6개 페이지가 같은 숫자를 쓰지 않는다)', async () => {
@@ -122,6 +127,20 @@ describe('totalsOf — 모르는 값은 합계를 내지 않는다', () => {
   test('단계가 없으면 costUsd 는 null', () => {
     expect(totalsOf([]).costUsd).toBeNull();
   });
+
+  // enrichRole 은 getCertMeta 실패 시 그 단계를 조용히 버린다. 살아남은 것만 더하면
+  // 3단계 로드맵이 "자격증 2개 · $250" 이라는 확정된 총액처럼 보인다.
+  test('선언된 단계보다 적게 남으면 costUsd 는 null(부분합 금지)', () => {
+    const survived = [step(6, 30, 100), step(12, 60, 150)];
+    expect(totalsOf(survived, 3).costUsd).toBeNull();
+    expect(totalsOf(survived, 2).costUsd).toBe(250);
+  });
+
+  test('유실이 있어도 certCount/weeks/days 는 남은 것 기준으로 보고한다', () => {
+    const t = totalsOf([step(6, 30, 100), step(12, 60, 150)], 3);
+    expect(t.certCount).toBe(2);
+    expect(t.weeks).toBe(18);
+  });
 });
 
 // 역할 페이지의 중복 색인 방지. 자격증 목록·시험 사실은 역할끼리 겹치므로(CLF-C02 는 6개 역할
@@ -149,42 +168,5 @@ describe('역할별 고유 산문(why)', () => {
     // 스키마 검증이 why 부재를 거부하면 기존 데이터가 통째로 사라진다.
     const roles = loadRoadmapRoles();
     expect(roles.length).toBeGreaterThan(0);
-  });
-});
-
-describe('totalsOf — 원화·다단계 응시료가 섞이면 USD 합계를 내지 않는다', () => {
-  // 회귀 배경: exam-info 스키마가 섹션 중립으로 확장되며 costUsd 가 optional 이 됐다(c200db6).
-  // 그런데 totalsOf 는 'exam !== null' 로만 가격 유무를 판단하고 있어서, 리눅스마스터처럼
-  // exam 은 있지만 costUsd 가 없는(원화·phases) 시험이 섞이면 합계가 성립하지 않는데도
-  // 총액을 내보낼 수 있었다. 타입 에러로만 드러났고 동작 테스트는 없었다.
-  const step = (slug: string, exam: unknown) =>
-    ({ slug, code: slug, name: slug, level: 'associate', href: `/aws/${slug}`, note: '', weeks: 12, dayCount: 60, exam }) as Parameters<typeof totalsOf>[0][number];
-
-  const usdExam = (costUsd: number) => ({ costUsd });
-  // 최상위 costUsd 없이 phases 로 응시료를 갖는 시험(리눅스마스터 형태).
-  const krwExam = { phases: [{ name: '1차', cost: { amount: 55000, currency: 'KRW' } }] };
-
-  test('전 단계가 USD 단일 응시료면 합계를 낸다', () => {
-    const t = totalsOf([step('a', usdExam(150)), step('b', usdExam(300))]);
-    expect(t.costUsd).toBe(450);
-    expect(t.certCount).toBe(2);
-  });
-
-  test('costUsd 없는 단계가 하나라도 섞이면 null 이다(부분 합계 금지)', () => {
-    expect(totalsOf([step('a', usdExam(150)), step('b', krwExam)]).costUsd).toBeNull();
-  });
-
-  test('exam 자체가 없는 단계가 섞여도 null 이다(기존 동작 유지)', () => {
-    expect(totalsOf([step('a', usdExam(150)), step('b', null)]).costUsd).toBeNull();
-  });
-
-  test('단계가 없으면 null 이다', () => {
-    expect(totalsOf([]).costUsd).toBeNull();
-  });
-
-  test('weeks·days 는 가격과 무관하게 항상 합산한다', () => {
-    const t = totalsOf([step('a', usdExam(150)), step('b', krwExam)]);
-    expect(t.weeks).toBe(24);
-    expect(t.days).toBe(120);
   });
 });

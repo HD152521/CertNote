@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { isSection, langOfCategory, sectionLabel, sectionOfCategory } from '@/lib/category';
 import { listCerts } from '@/lib/content';
-import { listReviews } from '@/lib/reviews/reviewsRepository';
-import { reviewRobots, safeAggregate } from '@/lib/reviews/indexPolicy';
+import { getAggregate, listReviews } from '@/lib/reviews/reviewsRepository';
+import { reviewRobots } from '@/lib/reviews/indexPolicy';
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import ReviewList from '@/components/reviews/ReviewList';
 import ReviewForm from '@/components/reviews/ReviewForm';
@@ -25,9 +25,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = `${name} 자격증 합격 후기 — 실제 응시자 리뷰`;
   const description = `${name} 자격증을 취득한 사람들의 합격 후기와 공부법. 별점·합격 여부와 함께 실제 경험을 확인하세요.`;
   // 섹션 전체 후기 수가 기준 미만이면 허브도 thin content라 noindex(자격증별 페이지와 동일 기준).
-  // COUNT 한 번이며, safeAggregate 는 DB 미설정·장애에서도 던지지 않고 0 을 돌려준다
-  // (metadata 가 죽으면 페이지 전체가 죽으므로 이 경로는 반드시 무해해야 한다).
-  const agg = await safeAggregate(category, null);
+  // COUNT 한 번. 테이블·DATABASE_URL 부재는 리포지토리가 0 으로 강등하고, 일시적 장애는 던져서
+  // 5xx 가 나간다(200+noindex 로 색인을 확정해버리지 않기 위해).
+  const agg = await getAggregate(category, null);
   // ?cert= 는 UX 필터라 canonical은 항상 base(/{section}/reviews)로 통합(중복 색인 방지).
   return {
     title,

@@ -134,26 +134,27 @@ async function enrichRole(role: RoadmapRole): Promise<EnrichedRole> {
     description: role.description,
     ...(role.why ? { why: role.why } : {}),
     steps,
-    totals: totalsOf(steps),
+    totals: totalsOf(steps, role.steps.length),
   };
 }
 
-// 단계 합계. costUsd 는 전 단계가 USD 단일 응시료를 가질 때만 낸다(부분 합계는 오해를 부른다).
+// 단계 합계.
 //
-// exam 이 있어도 costUsd 가 없을 수 있다 — 리눅스마스터처럼 원화·다단계(phases) 응시료를 쓰는
-// 시험은 최상위 costUsd 를 두지 않는다(examInfo.ts 의 단일형/다단계형 분기 참조). 그래서
-// 'exam !== null' 만으로 판단하면 그런 단계가 섞였을 때 USD 합계가 성립하지 않는데도 총액을
-// 내보내게 된다. costUsd 의 존재 자체로 판단한다.
-export function totalsOf(steps: EnrichedStep[]): RoadmapTotals {
-  const prices = steps
-    .map((s) => s.exam?.costUsd)
-    .filter((c): c is number => typeof c === 'number');
-  const allPriced = steps.length > 0 && prices.length === steps.length;
+// costUsd 는 **선언된 단계가 하나도 빠지지 않았고 전부 시험 정보를 가질 때만** 낸다.
+// 두 번째 조건만으로는 부족하다 — enrichRole 이 getCertMeta 실패 시 그 단계를 조용히 버리므로,
+// 살아남은 단계만 더하면 "자격증 2개 · 18주 · $450" 처럼 3단계 로드맵의 부분합이 확정된 총액처럼
+// 보인다. declaredSteps 와 대조해 하나라도 유실됐으면 합계를 내지 않는다.
+export function totalsOf(steps: EnrichedStep[], declaredSteps: number = steps.length): RoadmapTotals {
+  const complete = steps.length > 0 && steps.length === declaredSteps;
+  // exam-info 는 섹션 중립 스키마라 costUsd 가 optional 이다 — 다단계 시험(리눅스마스터 1차/2차)은
+  // 단계마다 비용이 달라 phases[] 에 들어가고 최상위 costUsd 가 없다. 그런 자격증이 섞이면
+  // 단일 합계 자체가 성립하지 않으므로 합계를 내지 않는다.
+  const allPriced = complete && steps.every((s) => typeof s.exam?.costUsd === 'number');
   return {
     certCount: steps.length,
     weeks: steps.reduce((n, s) => n + s.weeks, 0),
     days: steps.reduce((n, s) => n + s.dayCount, 0),
-    costUsd: allPriced ? prices.reduce((n, c) => n + c, 0) : null,
+    costUsd: allPriced ? steps.reduce((n, s) => n + (s.exam!.costUsd as number), 0) : null,
   };
 }
 

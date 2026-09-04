@@ -1,4 +1,4 @@
-import { query } from '../db';
+import { MissingDatabaseConfigError, query } from '../db';
 import { AppError } from '../auth/errors';
 import type { AdminReview, CreateReviewInput, Review, ReviewAggregate } from './types';
 
@@ -9,6 +9,22 @@ import type { AdminReview, CreateReviewInput, Review, ReviewAggregate } from './
 // Postgres undefined_table 에러코드는 '42P01'.
 function isMissingTable(err: unknown): boolean {
   return typeof err === 'object' && err !== null && (err as { code?: string }).code === '42P01';
+}
+
+// 읽기 경로에서 빈 결과로 강등해도 되는 실패인가.
+//
+// 두 경우만 해당한다 — 둘 다 **재시도해도 결과가 같은 구조적 부재**다:
+//   1) 테이블 없음(42P01)  : 마이그레이션 미실행
+//   2) DATABASE_URL 없음   : 로컬 개발 / DB 미구성 배포
+//
+// ⚠️ 커넥션 오류·쿼리 오류는 절대 포함하지 않는다. 그건 일시적 장애라 위로 던져 5xx 가 나가야 한다.
+// 5xx 는 구글에 "지금은 판단하지 말고 재크롤하라"는 신호다. 여기서 삼켜 200+빈 목록을 내보내면
+// 이미 색인된 페이지가 thin 으로 재평가되거나 noindex 로 뒤집힐 수 있다.
+//
+// 쓰기 경로(createReview)와 관리자 조회는 이 관대함을 쓰지 않는다 — 실패를 삼키면 사용자가 쓴
+// 후기가 조용히 사라진다.
+function isDegradableRead(err: unknown): boolean {
+  return isMissingTable(err) || err instanceof MissingDatabaseConfigError;
 }
 
 interface ReviewRow {
@@ -70,7 +86,7 @@ export async function listReviews(section: string, certSlug: string | null, limi
     );
     return rows.map(mapRow);
   } catch (err) {
-    if (isMissingTable(err)) return [];
+    if (isDegradableRead(err)) return [];
     throw err;
   }
 }
@@ -91,7 +107,7 @@ export async function getAggregate(section: string, certSlug: string | null): Pr
     const average = avgRaw ? Math.round(Number(avgRaw) * 10) / 10 : 0;
     return { count: cnt, average };
   } catch (err) {
-    if (isMissingTable(err)) return { count: 0, average: 0 };
+    if (isDegradableRead(err)) return { count: 0, average: 0 };
     throw err;
   }
 }
