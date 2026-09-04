@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 324" width="660" height="324" role="img" aria-labelledby="t d">
+<title id="t">멀티모델 엔드포인트의 동적 로드</title>
+<desc id="d">요청한 모델이 인스턴스 메모리 캐시에 있으면 즉시 추론하고, 없으면 S3 에서 내려받아 로드한 뒤 추론한다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="658" height="322" rx="8"/>
+<marker id="a-545d68" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#545d68"/></marker><rect x="24" y="18" width="612" height="52" rx="6" fill="#6cb6ff" fill-opacity=".12" stroke="#6cb6ff" stroke-opacity=".6"/>
+<text class="h" x="330" y="40" text-anchor="middle">invoke(TargetModel=&quot;store-042.tar.gz&quot;)</text><text class="m" x="330" y="58" text-anchor="middle">인스턴스 메모리(모델 캐시)를 먼저 확인</text><line class="ln" x1="330" y1="70" x2="330" y2="100" marker-end="url(#a-545d68)"/>
+<text class="m" x="330" y="122" text-anchor="middle" fill="#f0a35e">캐시에 있는가?</text>
+<line class="ln" x1="158" y1="132" x2="502" y2="132"/><line class="ln" x1="158" y1="132" x2="158" y2="172" marker-end="url(#a-545d68)"/>
+<text class="m" x="158" y="152" text-anchor="middle" fill="#8ddb8c">있음 — warm</text>
+<rect x="24" y="178" width="268" height="62" rx="6" fill="#8ddb8c" fill-opacity=".1" stroke="#8ddb8c" stroke-opacity=".55"/>
+<text class="t" x="158" y="204" text-anchor="middle" fill="#8ddb8c">즉시 추론</text><text class="m" x="158" y="224" text-anchor="middle">메모리의 모델을 그대로 사용</text><line class="ln" x1="502" y1="132" x2="502" y2="172" marker-end="url(#a-545d68)"/>
+<text class="m" x="502" y="152" text-anchor="middle" fill="#f47067">없음 — cold</text>
+<rect x="368" y="178" width="268" height="62" rx="6" fill="#f47067" fill-opacity=".1" stroke="#f47067" stroke-opacity=".55"/>
+<text class="t" x="502" y="204" text-anchor="middle" fill="#f47067">S3 에서 다운로드 후 로드</text><text class="m" x="502" y="224" text-anchor="middle">s3://bkt/models/ — 첫 호출이 느리다</text><line class="ln" x1="158" y1="240" x2="158" y2="258"/>
+<line class="ln" x1="502" y1="240" x2="502" y2="258"/>
+<line class="ln" x1="158" y1="258" x2="502" y2="258"/>
+<line class="ln" x1="330" y1="258" x2="330" y2="268" marker-end="url(#a-545d68)"/>
+<rect x="24" y="270" width="612" height="40" rx="6" fill="#22272e" stroke="#373e47"/>
+<text class="t" x="330" y="295" text-anchor="middle">메모리가 부족하면 오래 안 쓴 모델을 먼저 내린다</text>
+</svg>

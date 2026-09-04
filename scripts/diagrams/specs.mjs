@@ -1,7 +1,7 @@
 // 다이어그램 스펙. 파일당 하나의 SVG 를 만든다.
 // key = public/diagrams/<key>.svg, src = 원본 ASCII 가 있던 위치(추적용)
 
-import { nest, flowDown, cycle, stack, fanout, boxedStack, columns, merge, compareStacks, pair, T } from './render.mjs';
+import { nest, flowDown, cycle, stack, fanout, boxedStack, columns, merge, compareStacks, pair, branch, lineChart, multiChart, T } from './render.mjs';
 
 export const specs = {
   'ai-ml-dl-nesting': {
@@ -377,6 +377,84 @@ export const specs = {
         left: { cap: '온프레미스', label: '원본 서버', lines: ['Disk Block Bitmap', '모든 블록 = Changed'], color: T.warn },
         right: { cap: 'AWS Staging Area', label: 'Replication Server', lines: ['t3.small', 'EBS Volume (동일 크기)'], color: T.accent },
         link: 'TLS 암호화 전송 (443 · 1500) — 대역폭 스로틀링 가능',
+      }),
+  },
+
+  'mme-dynamic-load': {
+    src: 'mla-c01/week6/day3',
+    svg: () =>
+      branch({
+        title: '멀티모델 엔드포인트의 동적 로드',
+        desc: '요청한 모델이 인스턴스 메모리 캐시에 있으면 즉시 추론하고, 없으면 S3 에서 내려받아 로드한 뒤 추론한다.',
+        input: { label: 'invoke(TargetModel="store-042.tar.gz")', sub: '인스턴스 메모리(모델 캐시)를 먼저 확인' },
+        condition: '캐시에 있는가?',
+        yes: { edge: '있음 — warm', label: '즉시 추론', sub: '메모리의 모델을 그대로 사용' },
+        no: { edge: '없음 — cold', label: 'S3 에서 다운로드 후 로드', sub: 's3://bkt/models/ — 첫 호출이 느리다' },
+        tail: '메모리가 부족하면 오래 안 쓴 모델을 먼저 내린다',
+      }),
+  },
+
+  'overfit-underfit': {
+    src: 'mla-c01/week5/day4',
+    svg: () =>
+      multiChart({
+        title: '과소적합·적합·과적합의 학습 곡선 비교',
+        desc: '과소적합은 학습과 검증 손실이 둘 다 높은 채 평평하고, 적합은 둘 다 낮게 수렴하며, 과적합은 학습 손실만 계속 내려가는데 검증 손실이 다시 올라간다.',
+        xLabel: '에폭',
+        yLabel: '손실',
+        panels: [
+          {
+            label: '과소적합',
+            color: '#f0a35e',
+            notes: ['둘 다 높은 채 평평', '모델이 너무 단순하다'],
+            series: [
+              { points: [[0, 0.86], [0.3, 0.8], [0.6, 0.78], [1, 0.77]] },
+              { points: [[0, 0.9], [0.3, 0.84], [0.6, 0.82], [1, 0.81]], dashed: true },
+            ],
+          },
+          {
+            label: '적합',
+            color: '#8ddb8c',
+            notes: ['둘 다 낮게 수렴', '간격이 좁게 유지된다'],
+            series: [
+              { points: [[0, 0.9], [0.25, 0.55], [0.5, 0.33], [0.75, 0.22], [1, 0.18]] },
+              { points: [[0, 0.93], [0.25, 0.6], [0.5, 0.39], [0.75, 0.29], [1, 0.25]], dashed: true },
+            ],
+          },
+          {
+            label: '과적합',
+            color: '#f47067',
+            notes: ['검증만 다시 상승', '이 지점에서 조기 종료'],
+            series: [
+              { points: [[0, 0.9], [0.25, 0.52], [0.5, 0.3], [0.75, 0.16], [1, 0.08]] },
+              { points: [[0, 0.93], [0.25, 0.58], [0.45, 0.36], [0.6, 0.42], [0.8, 0.6], [1, 0.76]], dashed: true },
+            ],
+          },
+        ],
+        note: '학습 손실만 내려가고 검증 손실이 오르기 시작하는 지점이 조기 종료(early stopping) 시점이다',
+      }),
+  },
+
+  'anomaly-detection-band': {
+    src: 'soa-c02/week2/day1',
+    svg: () =>
+      lineChart({
+        title: 'CloudWatch Anomaly Detection 의 동적 베이스라인',
+        desc: '학습된 평균을 중심으로 상한과 하한 밴드가 만들어지고, 실제 메트릭이 이 밴드를 벗어나면 알람이 울린다.',
+        xLabel: '시간 →',
+        yLabel: '메트릭',
+        band: {
+          upper: [[0, 0.78], [0.2, 0.86], [0.4, 0.74], [0.6, 0.88], [0.8, 0.8], [1, 0.84]],
+          lower: [[0, 0.34], [0.2, 0.42], [0.4, 0.3], [0.6, 0.44], [0.8, 0.36], [1, 0.4]],
+        },
+        series: [
+          {
+            label: '실제 메트릭',
+            color: '#f0a35e',
+            points: [[0, 0.55], [0.12, 0.66], [0.25, 0.6], [0.38, 0.5], [0.5, 0.62], [0.62, 0.72], [0.72, 0.97], [0.8, 0.62], [0.9, 0.56], [1, 0.6]],
+          },
+        ],
+        note: '밴드 밖으로 나가는 순간 알람 — 고정 임계값과 달리 시간대별 패턴을 학습한다',
       }),
   },
 };

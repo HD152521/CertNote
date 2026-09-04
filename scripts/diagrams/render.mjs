@@ -333,3 +333,116 @@ export function pair({ title, desc, left, right, link, both = false, w = 660 }) 
 <text class="m" x="${w / 2}" y="${my - 10}" text-anchor="middle">${esc(link)}</text>`;
   return shell(w, h, body, { title, desc });
 }
+
+/** 조건 분기: 입력 -> 판단 -> 두 갈래. 갈래가 다시 합류하면 tail 을 준다 */
+export function branch({ title, desc, input, condition, yes, no, tail, w = 660 }) {
+  const bw = 268,
+    bh = 62;
+  const inY = 18,
+    dY = 106,
+    brY = 178;
+  const h = brY + bh + (tail ? 84 : 20);
+  const lx = 24,
+    rx = w - 24 - bw;
+  let body = ARROW(T.axis);
+  const iw = w - 48; // 입력에는 긴 호출 문자열이 들어가므로 카드 폭을 다 쓴다
+  body += `<rect x="24" y="${inY}" width="${iw}" height="52" rx="6" fill="${T.accent}" fill-opacity=".12" stroke="${T.accent}" stroke-opacity=".6"/>
+<text class="h" x="${w / 2}" y="${inY + 22}" text-anchor="middle">${esc(input.label)}</text>`;
+  if (input.sub)
+    body += `<text class="m" x="${w / 2}" y="${inY + 40}" text-anchor="middle">${esc(input.sub)}</text>`;
+  body += `<line class="ln" x1="${w / 2}" y1="${inY + 52}" x2="${w / 2}" y2="${dY - 6}" marker-end="url(#a-${T.axis.slice(1)})"/>
+<text class="m" x="${w / 2}" y="${dY + 16}" text-anchor="middle" fill="${T.warn}">${esc(condition)}</text>
+<line class="ln" x1="${lx + bw / 2}" y1="${dY + 26}" x2="${rx + bw / 2}" y2="${dY + 26}"/>`;
+  [
+    [yes, lx, T.ok],
+    [no, rx, T.danger],
+  ].forEach(([s, x, c]) => {
+    body += `<line class="ln" x1="${x + bw / 2}" y1="${dY + 26}" x2="${x + bw / 2}" y2="${brY - 6}" marker-end="url(#a-${T.axis.slice(1)})"/>
+<text class="m" x="${x + bw / 2}" y="${dY + 46}" text-anchor="middle" fill="${c}">${esc(s.edge || '')}</text>
+<rect x="${x}" y="${brY}" width="${bw}" height="${bh}" rx="6" fill="${c}" fill-opacity=".1" stroke="${c}" stroke-opacity=".55"/>
+<text class="t" x="${x + bw / 2}" y="${brY + 26}" text-anchor="middle" fill="${c}">${esc(s.label)}</text>`;
+    if (s.sub)
+      body += `<text class="m" x="${x + bw / 2}" y="${brY + 46}" text-anchor="middle">${esc(s.sub)}</text>`;
+  });
+  if (tail) {
+    const ty = brY + bh + 30;
+    body += `<line class="ln" x1="${lx + bw / 2}" y1="${brY + bh}" x2="${lx + bw / 2}" y2="${ty - 12}"/>
+<line class="ln" x1="${rx + bw / 2}" y1="${brY + bh}" x2="${rx + bw / 2}" y2="${ty - 12}"/>
+<line class="ln" x1="${lx + bw / 2}" y1="${ty - 12}" x2="${rx + bw / 2}" y2="${ty - 12}"/>
+<line class="ln" x1="${w / 2}" y1="${ty - 12}" x2="${w / 2}" y2="${ty - 2}" marker-end="url(#a-${T.axis.slice(1)})"/>
+<rect x="24" y="${ty}" width="${w - 48}" height="40" rx="6" fill="${T.bg}" stroke="${T.border}"/>
+<text class="t" x="${w / 2}" y="${ty + 25}" text-anchor="middle">${esc(tail)}</text>`;
+  }
+  return shell(w, h, body, { title, desc });
+}
+
+/** 선 그래프. points 는 0~1 정규화 좌표 [[x,y]...] (y 는 위가 1). band 는 상하한 쌍 */
+export function lineChart({ title, desc, xLabel, yLabel, series, band, note, w = 700, plotH = 190 }) {
+  const L = 62,
+    R = 168,
+    TOP = 26;
+  const pw = w - L - R,
+    ph = plotH;
+  const h = TOP + ph + 62 + (note ? 22 : 0);
+  const X = (t) => L + t * pw;
+  const Y = (v) => TOP + (1 - v) * ph;
+  const path = (pts) => pts.map((p, i) => `${i ? 'L' : 'M'}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ');
+  let body = ARROW(T.axis);
+  if (band) {
+    const up = band.upper.map((p) => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`);
+    const lo = band.lower.slice().reverse().map((p) => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`);
+    body += `<polygon points="${up.concat(lo).join(' ')}" fill="${T.accent}" opacity=".13"/>
+<path d="${path(band.upper)}" fill="none" stroke="${T.accent}" stroke-width="1.4" stroke-dasharray="5 4" opacity=".8"/>
+<path d="${path(band.lower)}" fill="none" stroke="${T.accent}" stroke-width="1.4" stroke-dasharray="5 4" opacity=".8"/>`;
+  }
+  // 축
+  body += `<line class="ln" x1="${L}" y1="${TOP - 6}" x2="${L}" y2="${TOP + ph}"/>
+<line class="ln" x1="${L}" y1="${TOP + ph}" x2="${L + pw + 8}" y2="${TOP + ph}"/>
+<text class="m" x="${L}" y="${TOP - 12}" text-anchor="middle">${esc(yLabel)}</text>
+<text class="m" x="${L + pw + 8}" y="${TOP + ph + 20}" text-anchor="end">${esc(xLabel)}</text>`;
+  series.forEach((s, i) => {
+    const c = s.color || [T.accent, T.warn, T.danger, T.ok][i % 4];
+    body += `<path d="${path(s.points)}" fill="none" stroke="${c}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"${s.dashed ? ' stroke-dasharray="6 4"' : ''}/>`;
+    const last = s.points[s.points.length - 1];
+    body += `<text class="t" x="${X(last[0]) + 10}" y="${Y(last[1]) + 5}" fill="${c}">${esc(s.label)}</text>`;
+  });
+  if (note)
+    body += `<text class="m" x="${L}" y="${TOP + ph + 46}">${esc(note)}</text>`;
+  return shell(w, h, body, { title, desc });
+}
+
+/** 작은 선그래프 여러 개를 나란히. 같은 축을 공유하는 경우를 비교할 때 쓴다 */
+export function multiChart({ title, desc, panels, xLabel, yLabel, note, w = 720 }) {
+  const n = panels.length,
+    gap = 14;
+  const pw = Math.floor((w - 40 - (n - 1) * gap) / n),
+    ph = 132;
+  const top = 44;
+  const h = top + ph + 74 + (note ? 20 : 0);
+  let body = `<text class="m" x="20" y="20">${esc(yLabel)} ↑</text>`;
+  panels.forEach((p, i) => {
+    const ox = 20 + i * (pw + gap);
+    const X = (t) => ox + 10 + t * (pw - 20);
+    const Y = (v) => top + (1 - v) * ph;
+    body += `<text class="t" x="${ox + pw / 2}" y="${top - 12}" text-anchor="middle" fill="${p.color || T.text}">${esc(p.label)}</text>
+<line class="ln" x1="${ox + 6}" y1="${top - 4}" x2="${ox + 6}" y2="${top + ph}"/>
+<line class="ln" x1="${ox + 6}" y1="${top + ph}" x2="${ox + pw - 4}" y2="${top + ph}"/>`;
+    p.series.forEach((s, k) => {
+      const c = s.color || (k === 0 ? T.accent : T.danger);
+      const d = s.points.map((q, j) => `${j ? 'L' : 'M'}${X(q[0]).toFixed(1)},${Y(q[1]).toFixed(1)}`).join(' ');
+      body += `<path d="${d}" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round"${s.dashed ? ' stroke-dasharray="5 4"' : ''}/>`;
+    });
+    (p.notes || []).forEach((t, k) => {
+      body += `<text class="m" x="${ox + pw / 2}" y="${top + ph + 22 + k * 17}" text-anchor="middle">${esc(t)}</text>`;
+    });
+  });
+  // 범례
+  const ly = top + ph + 62;
+  body += `<line x1="20" y1="${ly - 4}" x2="44" y2="${ly - 4}" stroke="${T.accent}" stroke-width="2.2"/>
+<text class="m" x="50" y="${ly}">학습</text>
+<line x1="96" y1="${ly - 4}" x2="120" y2="${ly - 4}" stroke="${T.danger}" stroke-width="2.2" stroke-dasharray="5 4"/>
+<text class="m" x="126" y="${ly}">검증</text>
+<text class="m" x="${w - 20}" y="${ly}" text-anchor="end">${esc(xLabel)} →</text>`;
+  if (note) body += `<text class="m" x="20" y="${ly + 20}">${esc(note)}</text>`;
+  return shell(w, h, body, { title, desc });
+}
