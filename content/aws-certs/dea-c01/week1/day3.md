@@ -6,16 +6,7 @@ AWS의 데이터 관련 서비스는 수십 개다. 처음 콘솔을 열면 Kine
 
 ## 데이터 흐름이 곧 서비스 지도
 
-```
-[수집]      [저장]        [처리]          [분석]
- Kinesis  →  S3       →   Glue        →  Athena
- MSK         Redshift     EMR            Redshift
- DMS         DynamoDB     Lambda         QuickSight
- DataSync                 EMR Serverless OpenSearch
-   │            │            │               │
-   └────────────┴────────────┴───────────────┘
-         [거버넌스] Lake Formation · Glue Catalog · IAM · KMS
-```
+![수집·저장·처리·분석 네 단계별 AWS 서비스 지도와 이를 관통하는 거버넌스](/diagrams/data-pipeline-map.svg)
 
 이 한 장이 DEA-C01 서비스 지식의 뼈대다. 데이터는 왼쪽(수집)에서 오른쪽(분석)으로 흐르고, 아래의 거버넌스 계층이 전 구간의 권한·카탈로그·암호화를 관장한다.
 

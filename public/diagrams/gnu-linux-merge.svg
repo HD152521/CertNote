@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 226" width="660" height="226" role="img" aria-labelledby="t d">
+<title id="t">GNU 와 리눅스 커널이 만나 완성된 운영체제</title>
+<desc id="d">도구는 있으나 커널이 없던 GNU 프로젝트와, 커널은 있으나 도구가 없던 리눅스가 결합해 GNU/Linux 가 되었다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="658" height="224" rx="8"/>
+<marker id="a-545d68" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#545d68"/></marker><rect x="22" y="18" width="299" height="70" rx="6" fill="#f0a35e" fill-opacity=".1" stroke="#f0a35e" stroke-opacity=".55"/>
+<text class="t" x="171.5" y="41" text-anchor="middle" fill="#f0a35e">GNU 프로젝트 (1983~)</text><text class="m" x="171.5" y="59" text-anchor="middle">도구는 다 있는데</text><text class="m" x="171.5" y="77" text-anchor="middle">커널이 없다</text><line class="ln" x1="171.5" y1="88" x2="171.5" y2="114"/><rect x="339" y="18" width="299" height="70" rx="6" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".55"/>
+<text class="t" x="488.5" y="41" text-anchor="middle" fill="#6cb6ff">리눅스 커널 (1991~)</text><text class="m" x="488.5" y="59" text-anchor="middle">커널은 있는데</text><text class="m" x="488.5" y="77" text-anchor="middle">도구가 없다</text><line class="ln" x1="488.5" y1="88" x2="488.5" y2="114"/><line class="ln" x1="171.5" y1="114" x2="488.5" y2="114"/>
+<line class="ln" x1="330" y1="114" x2="330" y2="144" marker-end="url(#a-545d68)"/>
+<rect x="22" y="150" width="616" height="58" rx="6" fill="#8ddb8c" fill-opacity=".12" stroke="#8ddb8c" stroke-opacity=".6"/>
+<text class="h" x="330" y="175" text-anchor="middle" fill="#8ddb8c">GNU/Linux</text><text class="m" x="330" y="194" text-anchor="middle">완성된 운영체제</text>
+</svg>

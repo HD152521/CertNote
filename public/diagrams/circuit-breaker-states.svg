@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 190" width="700" height="190" role="img" aria-labelledby="t d">
+<title id="t">Circuit Breaker 의 세 가지 상태</title>
+<desc id="d">정상 호출을 통과시키는 Closed 에서 실패율이 임계를 넘으면 Open 으로, 타임아웃이 지나면 Half-Open 으로, 시험 호출이 성공하면 다시 Closed 로 돌아온다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="698" height="188" rx="8"/>
+<marker id="a-6cb6ff" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6cb6ff"/></marker><marker id="a-f0a35e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f0a35e"/></marker><rect x="30" y="34" width="196" height="50" rx="6" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".6"/>
+<text class="t" x="128" y="65" text-anchor="middle">Closed — 정상 호출 통과</text><line x1="231" y1="59" x2="247" y2="59" stroke="#6cb6ff" stroke-width="1.8" marker-end="url(#a-6cb6ff)"/><rect x="252" y="34" width="196" height="50" rx="6" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".6"/>
+<text class="t" x="350" y="65" text-anchor="middle">Open — 즉시 실패</text><line x1="453" y1="59" x2="469" y2="59" stroke="#6cb6ff" stroke-width="1.8" marker-end="url(#a-6cb6ff)"/><rect x="474" y="34" width="196" height="50" rx="6" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".6"/>
+<text class="t" x="572" y="65" text-anchor="middle">Half-Open — 시험 호출 1개</text><path d="M572,84 V130 H128 V90" fill="none" stroke="#f0a35e" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#a-f0a35e)"/>
+<text class="m" x="350" y="121" text-anchor="middle" fill="#f0a35e">시험 호출 성공 시 Closed 로 (실패하면 다시 Open)</text>
+</svg>

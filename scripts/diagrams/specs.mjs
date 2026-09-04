@@ -1,7 +1,7 @@
 // 다이어그램 스펙. 파일당 하나의 SVG 를 만든다.
 // key = public/diagrams/<key>.svg, src = 원본 ASCII 가 있던 위치(추적용)
 
-import { nest, flowDown, cycle, stack, fanout, boxedStack, T } from './render.mjs';
+import { nest, flowDown, cycle, stack, fanout, boxedStack, columns, merge, compareStacks, T } from './render.mjs';
 
 export const specs = {
   'ai-ml-dl-nesting': {
@@ -122,6 +122,86 @@ export const specs = {
             color: T.warn,
           },
         ],
+      }),
+  },
+
+  'data-pipeline-map': {
+    src: 'dea-c01/week1/day3',
+    svg: () =>
+      columns({
+        title: '데이터 흐름으로 본 AWS 서비스 지도',
+        desc: '수집, 저장, 처리, 분석 네 단계마다 어떤 AWS 서비스가 쓰이는지 늘어놓고 아래를 거버넌스가 관통한다.',
+        columns: [
+          { label: '수집', items: ['Kinesis', 'MSK', 'DMS', 'DataSync'] },
+          { label: '저장', items: ['S3', 'Redshift', 'DynamoDB'], color: T.violet },
+          { label: '처리', items: ['Glue', 'EMR', 'Lambda', 'EMR Serverless'], color: T.warn },
+          { label: '분석', items: ['Athena', 'Redshift', 'QuickSight', 'OpenSearch'], color: T.ok },
+        ],
+        footer: '거버넌스 — Lake Formation · Glue Catalog · IAM · KMS',
+      }),
+  },
+
+  'circuit-breaker-states': {
+    src: 'dop-c02/week12/day3',
+    svg: () =>
+      cycle({
+        title: 'Circuit Breaker 의 세 가지 상태',
+        desc: '정상 호출을 통과시키는 Closed 에서 실패율이 임계를 넘으면 Open 으로, 타임아웃이 지나면 Half-Open 으로, 시험 호출이 성공하면 다시 Closed 로 돌아온다.',
+        steps: ['Closed — 정상 호출 통과', 'Open — 즉시 실패', 'Half-Open — 시험 호출 1개'],
+        back: '시험 호출 성공 시 Closed 로 (실패하면 다시 Open)',
+      }),
+  },
+
+  'gnu-linux-merge': {
+    src: 'linux-master-2/week1/day2',
+    svg: () =>
+      merge({
+        title: 'GNU 와 리눅스 커널이 만나 완성된 운영체제',
+        desc: '도구는 있으나 커널이 없던 GNU 프로젝트와, 커널은 있으나 도구가 없던 리눅스가 결합해 GNU/Linux 가 되었다.',
+        sources: [
+          { label: 'GNU 프로젝트 (1983~)', lines: ['도구는 다 있는데', '커널이 없다'], color: T.warn },
+          { label: '리눅스 커널 (1991~)', lines: ['커널은 있는데', '도구가 없다'], color: T.accent },
+        ],
+        result: { label: 'GNU/Linux', sub: '완성된 운영체제' },
+      }),
+  },
+
+  'shell-kernel-position': {
+    src: 'linux-master-2/week5/day1',
+    svg: () =>
+      flowDown({
+        title: '사용자와 하드웨어 사이에서 셸이 놓인 자리',
+        desc: '사용자의 명령을 셸이 해석해 시스템 호출로 커널에 전달하고, 커널이 하드웨어를 직접 다룬다.',
+        steps: [
+          { label: '사용자', sub: '명령을 입력한다', color: T.muted, edge: '명령 입력' },
+          { label: '셸 (shell)', sub: '명령을 해석하고 프로그램을 실행시킨다', edge: '시스템 호출' },
+          { label: '커널 (kernel)', sub: '하드웨어를 직접 다룬다', color: T.warn, edge: '' },
+          { label: '하드웨어', sub: 'CPU · 메모리 · 디스크', color: T.ok },
+        ],
+      }),
+  },
+
+  'virtualization-compare': {
+    src: 'linux-master-2/week11/day2',
+    svg: () =>
+      compareStacks({
+        title: '가상화가 없을 때와 있을 때의 구조 비교',
+        desc: '가상화가 없으면 하드웨어 위에 운영체제 하나만 올라가지만, 하이퍼바이저를 두면 여러 게스트 운영체제가 함께 동작한다.',
+        left: {
+          label: '가상화 없이',
+          layers: [
+            { label: '운영체제 하나', color: T.accent },
+            { label: '하드웨어', color: T.muted },
+          ],
+        },
+        right: {
+          label: '가상화',
+          layers: [
+            { label: '게스트 OS — 리눅스 · 윈도 · 리눅스', color: T.violet },
+            { label: '하이퍼바이저', color: T.warn },
+            { label: '하드웨어', color: T.muted },
+          ],
+        },
       }),
   },
 };

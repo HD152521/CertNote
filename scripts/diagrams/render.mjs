@@ -220,3 +220,89 @@ export function boxedStack({ title, desc, container, layers, w = 620 }) {
   });
   return shell(w, h, body, { title, desc });
 }
+
+/** 가로 단계 컬럼: 각 단계가 여러 항목을 갖는다. 아래에 공통 기반(footer)을 둘 수 있다 */
+export function columns({ title, desc, columns: cols, footer, w = 720 }) {
+  const n = cols.length,
+    gap = 10;
+  const bw = Math.floor((w - 44 - (n - 1) * gap) / n);
+  const maxItems = Math.max(...cols.map((c) => c.items.length));
+  const bh = 46 + maxItems * 19;
+  const y = 20;
+  const h = y + bh + (footer ? 66 : 20);
+  let body = ARROW(T.accent);
+  cols.forEach((c, i) => {
+    const x = 22 + i * (bw + gap);
+    const col = c.color || T.accent;
+    body += `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="6" fill="${col}" fill-opacity=".09" stroke="${col}" stroke-opacity=".5"/>
+<text class="h" x="${x + bw / 2}" y="${y + 25}" text-anchor="middle" fill="${col}">${esc(c.label)}</text>`;
+    c.items.forEach((it, k) => {
+      body += `<text class="m" x="${x + bw / 2}" y="${y + 46 + k * 19}" text-anchor="middle">${esc(it)}</text>`;
+    });
+    if (i < n - 1)
+      body += `<line x1="${x + bw + 1}" y1="${y + bh / 2}" x2="${x + bw + gap - 1}" y2="${y + bh / 2}" stroke="${T.accent}" stroke-width="1.6" marker-end="url(#a-${T.accent.slice(1)})"/>`;
+  });
+  if (footer) {
+    const fy = y + bh + 24;
+    body += `<rect x="22" y="${fy}" width="${w - 44}" height="34" rx="5" fill="${T.ok}" fill-opacity=".08" stroke="${T.ok}" stroke-opacity=".45"/>
+<text class="m" x="${w / 2}" y="${fy + 22}" text-anchor="middle" fill="${T.ok}">${esc(footer)}</text>`;
+  }
+  return shell(w, h, body, { title, desc });
+}
+
+/** 합류: 여러 출처가 하나로 모인다(fanout 의 반대) */
+export function merge({ title, desc, sources, result, w = 660 }) {
+  const n = sources.length,
+    gap = 18;
+  const bw = Math.floor((w - 44 - (n - 1) * gap) / n);
+  const sY = 18,
+    maxL = Math.max(...sources.map((s) => (s.lines || []).length));
+  const sH = 34 + maxL * 18;
+  const rY = sY + sH + 62;
+  const h = rY + 58 + 18;
+  let body = ARROW(T.axis);
+  const xs = sources.map((_, i) => 22 + i * (bw + gap) + bw / 2);
+  sources.forEach((s, i) => {
+    const x = 22 + i * (bw + gap);
+    const c = s.color || T.violet;
+    body += `<rect x="${x}" y="${sY}" width="${bw}" height="${sH}" rx="6" fill="${c}" fill-opacity=".1" stroke="${c}" stroke-opacity=".55"/>
+<text class="t" x="${x + bw / 2}" y="${sY + 23}" text-anchor="middle" fill="${c}">${esc(s.label)}</text>`;
+    (s.lines || []).forEach((ln, k) => {
+      body += `<text class="m" x="${x + bw / 2}" y="${sY + 41 + k * 18}" text-anchor="middle">${esc(ln)}</text>`;
+    });
+    body += `<line class="ln" x1="${xs[i]}" y1="${sY + sH}" x2="${xs[i]}" y2="${sY + sH + 26}"/>`;
+  });
+  const busY = sY + sH + 26;
+  body += `<line class="ln" x1="${xs[0]}" y1="${busY}" x2="${xs[n - 1]}" y2="${busY}"/>
+<line class="ln" x1="${w / 2}" y1="${busY}" x2="${w / 2}" y2="${rY - 6}" marker-end="url(#a-${T.axis.slice(1)})"/>
+<rect x="22" y="${rY}" width="${w - 44}" height="58" rx="6" fill="${T.ok}" fill-opacity=".12" stroke="${T.ok}" stroke-opacity=".6"/>
+<text class="h" x="${w / 2}" y="${rY + 25}" text-anchor="middle" fill="${T.ok}">${esc(result.label)}</text>`;
+  if (result.sub)
+    body += `<text class="m" x="${w / 2}" y="${rY + 44}" text-anchor="middle">${esc(result.sub)}</text>`;
+  return shell(w, h, body, { title, desc });
+}
+
+/** 두 구조를 나란히 비교. 각 열은 위에서 아래로 쌓인 계층 */
+export function compareStacks({ title, desc, left, right, w = 660 }) {
+  const colW = (w - 60) / 2,
+    bh = 44,
+    gap = 5,
+    top = 44;
+  const rows = Math.max(left.layers.length, right.layers.length);
+  const h = top + rows * (bh + gap) + 16;
+  let body = '';
+  [
+    [left, 20],
+    [right, 40 + colW],
+  ].forEach(([side, x]) => {
+    body += `<text class="h" x="${x + colW / 2}" y="${28}" text-anchor="middle" fill="${T.muted}">${esc(side.label)}</text>`;
+    const off = rows - side.layers.length; // 아래쪽 기준으로 맞춘다(하드웨어가 바닥)
+    side.layers.forEach((L, i) => {
+      const y = top + (i + off) * (bh + gap);
+      const c = L.color || T.accent;
+      body += `<rect x="${x}" y="${y}" width="${colW}" height="${bh}" rx="5" fill="${c}" fill-opacity=".1" stroke="${c}" stroke-opacity=".5"/>
+<text class="t" x="${x + colW / 2}" y="${y + 27}" text-anchor="middle">${esc(L.label)}</text>`;
+    });
+  });
+  return shell(w, h, body, { title, desc });
+}
