@@ -1,0 +1,13 @@
+{
+  "slug": "linux-master-2",
+  "code": "리눅스마스터 2급",
+  "level": "grade-2",
+  "name": "리눅스마스터 2급",
+  "weeks": 11,
+  "accent": "#FCC624",
+  "order": 5,
+  "dayCount": 55,
+  "sourceRepo": "linux-master-2",
+  "syncedAt": "2026-09-02T00:00:00.000Z",
+  "section": "linux"
+}

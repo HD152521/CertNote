@@ -48,7 +48,7 @@ The largest component is **Init Code**. A Java Spring Boot function can lose 2~3
 
 > 💡 **Related Theory**: CRaC is an official OpenJDK project that standardizes checkpoint and restore of Java JVM process state. It's based on CRIU (Checkpoint/Restore In Userspace), a Linux kernel feature. SnapStart adopted CRaC, first for Java, then extended to Python and .NET in 2024. The core model follows a general distributed systems optimization pattern: **"initialize once, run infinitely."**
 
-> 🔍 **Deeper Dive**: SnapStart is free because AWS benefits from better compute efficiency. Executing init on every cold start costs more CPU, memory, and network than restoring a pre-built snapshot from page cache. However, a pitfall exists: the snapshot **copies memory and disk state identically**, so random seeds, unique IDs, and DB connection TCP states created during init are identical across all restorations. That's why SnapStart guidelines emphasize "don't generate uniqueness state during init," and provide Crac.Resource interface hooks for eforeCheckpoint/fterRestore.
+> 🔍 **Deeper Dive**: SnapStart is free because AWS benefits from better compute efficiency. Executing init on every cold start costs more CPU, memory, and network than restoring a pre-built snapshot from page cache. However, a pitfall exists: the snapshot **copies memory and disk state identically**, so random seeds, unique IDs, and DB connection TCP states created during init are identical across all restorations. That's why SnapStart guidelines emphasize "don't generate uniqueness state during init," and provide Crac.Resource interface hooks for beforeCheckpoint/afterRestore.
 
 > ⚠️ **Trap**: Enabling SnapStart breaks the stateless function assumption. For example, if init generates a UUID.randomUUID() as an instance ID for cache keys, all SnapStart restorations get the same ID, causing cache collisions. The exam doesn't ask directly, but it's a common real-world pitfall worth knowing.
 
@@ -151,7 +151,7 @@ C) 메모리를 10GB로 올림
 D) Function URL로 전환
 
 **정답: B**
-해설: "추가 비용 없이"가 핵심. Provisioned Concurrency(A)는 시간당 과금이 발생한다. SnapStart는 무료이고 Java/Python/.NET 모두 지원한다. CRaC 기반 스냅샷 복원으로 init 시간이 거의 0이 된다. 다만 init에서 uniqueness state(난수 시드, UUID, DB connection의 TCP 상태)를 만들면 모든 복원본에 복제되어 충돌이 생기므로 Crac.Resource 인터페이스로 eforeCheckpoint/fterRestore에서 재초기화해야 한다. C는 비용 증가, D는 콜드 스타트와 무관. 추가 학습: SnapStart는 publish된 버전에만 적용되고  적용 안 됨.
+해설: "추가 비용 없이"가 핵심. Provisioned Concurrency(A)는 시간당 과금이 발생한다. SnapStart는 무료이고 Java/Python/.NET 모두 지원한다. CRaC 기반 스냅샷 복원으로 init 시간이 거의 0이 된다. 다만 init에서 uniqueness state(난수 시드, UUID, DB connection의 TCP 상태)를 만들면 모든 복원본에 복제되어 충돌이 생기므로 Crac.Resource 인터페이스로 beforeCheckpoint/afterRestore에서 재초기화해야 한다. C는 비용 증가, D는 콜드 스타트와 무관. 추가 학습: SnapStart는 publish된 버전에만 적용되고  적용 안 됨.
 
 ---
 

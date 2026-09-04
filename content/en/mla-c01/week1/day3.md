@@ -6,7 +6,7 @@ Today, we'll survey this 3-layer stack — AI Services, ML Platform (SageMaker),
 
 ## AWS ML Stack: The 3-Layer Structure
 
-\\\
+```
 ┌─────────────────────────────────────────────────┐
 │ Top: AI Services (Pre-trained models, API calls only)│
 │   Rekognition, Comprehend, Transcribe,           │
@@ -18,7 +18,7 @@ Today, we'll survey this 3-layer stack — AI Services, ML Platform (SageMaker),
 │ Bottom: ML Infrastructure (Direct compute mgmt)  │
 │   EC2(GPU), Inferentia, Trainium, EKS, ECS, FSx  │
 └─────────────────────────────────────────────────┘
-\\\
+```
 
 The selection principle is the **tradeoff between abstraction level and control**. Go higher and it's faster and easier, but less control. Go lower and you're more free, but you handle more directly. ML engineers choose: "Top for standard tasks that don't need ML expertise, Middle for custom models, Bottom for extreme performance/cost optimization."
 

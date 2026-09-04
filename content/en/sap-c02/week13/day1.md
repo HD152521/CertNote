@@ -31,7 +31,7 @@ As WA became the de facto standard for cloud architecture governance, competing 
 
 The WA Tool is a managed service provided free on the console (or via API). Understanding the workflow precisely is essential for solving exam questions like "what is produced at which stage."
 
-\\\
+```
 [1] Define Workload (name, environment, region, owner)
         ↓
 [2] Select Lens (default AWS Lens + 0~N domain Lenses)
@@ -43,7 +43,7 @@ The WA Tool is a managed service provided free on the console (or via API). Unde
 [5] Generate Improvement Plan (with AWS documentation and solution links)
         ↓
 [6] Save Milestone (point-in-time snapshot) → re-evaluate after improvement → compare trend
-\\\
+```
 
 Two concepts that exams love here are **Milestone** and **Lens**. **Milestone** is a complete snapshot frozen at a specific point in time. If you had 23 HRIs in the first review and reduced it to 8 a quarter later, you can quantitatively demonstrate improvement trends by comparing two Milestones. Like Git's commits and tags — anchoring immutable snapshots (Milestones) to mutable state (current answers) enables time-axis comparison.
 

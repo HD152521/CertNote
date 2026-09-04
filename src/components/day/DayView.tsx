@@ -5,8 +5,10 @@ import { previewOf } from '@/lib/content';
 import type { DayContent } from '@/lib/content';
 import { buildToc } from '@/lib/toc';
 import { readingTimeMinutes } from '@/lib/readingTime';
+import { extractDaySummary } from '@/lib/daySummary';
 import { Article } from '@/components/Article';
 import { Paywall } from '@/components/Paywall';
+import { SummaryCard } from '@/components/day/SummaryCard';
 import { Toc } from '@/components/Toc';
 import { MarkAsRead } from '@/components/MarkAsRead';
 import { ExamDateNudge } from '@/components/study/ExamDateNudge';
@@ -39,9 +41,13 @@ export interface DayViewProps {
 // (src/components/day/**에서 next/headers import 금지)가 회귀를 잡는다.
 export async function DayView({ category, slug, w, d, lang, content, locked, loggedIn }: DayViewProps) {
   const { articleLd, breadcrumbLd } = await buildDayStructuredData(category, slug, w, d, lang, content);
-  const readingMinutes = readingTimeMinutes(content.body);
+  // "## 핵심 정리" 섹션을 본문에서 뽑아 맨 위 카드로 따로 렌더한다(가독성 개선). 아직 이 형식으로
+  // 바뀌지 않은 문서(대다수)는 summary===null이라 카드 없이 기존과 동일하게 렌더된다(안전 요구사항).
+  // TOC·읽기시간은 항상 "카드를 뺀 본문"(body) 기준 — 요약을 목차·읽기시간에 이중으로 반영하지 않는다.
+  const { summary, body } = extractDaySummary(content.body);
+  const readingMinutes = readingTimeMinutes(body);
   // 잠겼으면 미리보기만 렌더(전체 본문은 HTML에 싣지 않음). 열렸으면 전체 TOC.
-  const toc = locked ? [] : buildToc(content.body);
+  const toc = locked ? [] : buildToc(body);
 
   return (
     <div className="flex gap-0">
@@ -64,15 +70,23 @@ export async function DayView({ category, slug, w, d, lang, content, locked, log
           </nav>
           <DayMeta certMeta={content.certMeta} week={w} day={d} readingMinutes={readingMinutes} lang={lang} />
           {locked ? (
+            // 잠긴 문서에서는 요약 카드를 보여주지 않는다: "핵심 정리"는 그 자체로 결론이 응축된
+            // 최고가치 콘텐츠라 카드로 도드라지게 뽑아 무료로 노출하면 본문을 안 읽어도 핵심을 다
+            // 가져가는 우회로가 된다(previewOf가 앞부분만 자르는 것과는 성격이 다른 유출).
+            // previewOf도 summary가 제거된 body를 슬라이스해서, 문서 서두에 있던 고밀도 요약이
+            // 자동 미리보기 텍스트에 그대로 딸려나가는 것도 막는다(기존 동작보다 유출 표면이 준다).
             <>
               <div className="relative max-h-[28rem] overflow-hidden">
-                <Article source={previewOf(content.body)} slug={slug} week={w} day={d} lang={lang} />
+                <Article source={previewOf(body)} slug={slug} week={w} day={d} lang={lang} />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-bg to-transparent" />
               </div>
               <Paywall loggedIn={loggedIn} lang={lang} />
             </>
           ) : (
-            <Article source={content.body} slug={slug} week={w} day={d} lang={lang} />
+            <>
+              {summary && <SummaryCard summary={summary} lang={lang} />}
+              <Article source={body} slug={slug} week={w} day={d} lang={lang} />
+            </>
           )}
           <footer className="mt-12 grid grid-cols-2 gap-3 border-t border-border pt-6">
             {content.prev ? (
