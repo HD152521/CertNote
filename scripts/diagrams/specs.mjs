@@ -290,4 +290,93 @@ export const specs = {
         ],
       }),
   },
+
+  'x-window-layers': {
+    src: 'linux-master-2/week8/day2',
+    svg: () =>
+      stack({
+        title: 'X 윈도의 계층 구조',
+        desc: '응용 프로그램 아래에 툴킷, 그 아래에 저수준 라이브러리가 있고 맨 아래에서 X 서버가 화면을 담당한다.',
+        layers: [
+          { label: '응용 프로그램', note: 'GIMP · Firefox · Konsole', color: T.muted },
+          { label: '툴킷', note: 'GTK+(C) · Qt(C++) · FLTK · Motif · Tk', color: T.violet },
+          { label: '저수준 라이브러리', note: 'Xlib · XCB — XCB 가 더 아래', color: T.accent },
+          { label: 'X 서버', note: 'X 프로토콜로 통신 · 실제 화면 출력', color: T.warn },
+        ],
+      }),
+  },
+
+  'cnn-structure': {
+    src: 'mls-c01/week7/day2',
+    svg: () =>
+      flowDown({
+        title: '전형적인 CNN 구조',
+        desc: '입력 이미지가 합성곱과 풀링을 반복하며 저수준에서 고수준 패턴으로 추상화되고, 마지막 Dense 와 Softmax 에서 클래스 확률이 나온다.',
+        steps: [
+          { label: '입력 224×224×3', sub: '원본 이미지', color: T.muted, edge: 'Conv + ReLU — 경계선·색 변화' },
+          { label: '특성 맵 (저수준)', sub: 'Pool 로 공간 크기 축소', edge: 'Conv + ReLU — 질감·부분(눈·귀)' },
+          { label: '특성 맵 (중간)', sub: 'Pool', edge: 'Conv + ReLU — 전체 객체 수준' },
+          { label: '특성 맵 (고수준)', sub: 'Flatten 또는 Global Average Pooling', edge: '', color: T.warn },
+          { label: 'Dense → Softmax', sub: '클래스 확률 — 전이학습은 보통 여기만 새로 학습', color: T.ok },
+        ],
+      }),
+  },
+
+  's3-data-lake-zones': {
+    src: 'mla-c01/week2/day1',
+    svg: () =>
+      columns({
+        title: 'S3 데이터 레이크의 세 구역',
+        desc: '원본을 불변으로 보관하는 Raw, 검증을 마친 Cleaned, 학습용으로 가공한 Curated 순으로 데이터가 정제된다.',
+        columns: [
+          { label: 'Raw', items: ['소스에서 그대로', '불변 — 절대 덮어쓰지 않음'], color: T.muted },
+          { label: 'Cleaned', items: ['정제 · 검증됨', '스키마 확정'] },
+          { label: 'Curated', items: ['피처화 완료', '학습에 바로 투입'], color: T.ok },
+        ],
+        footer: '변환 로직 버그를 발견하면 Raw 에서 다시 처리한다 — 그래서 Raw 는 불변이어야 한다',
+      }),
+  },
+
+  'shared-responsibility-spectrum': {
+    src: 'clf-c02/week1/day3',
+    svg: () =>
+      stack({
+        title: '서비스 종류에 따라 움직이는 공동 책임 경계선',
+        desc: '완전 관리형으로 갈수록 고객의 책임은 줄고 AWS 의 책임은 늘어난다.',
+        layers: [
+          { label: 'EC2 — 가상 서버 (IaaS)', note: 'OS 패치·앱·설정 모두 고객', color: T.danger },
+          { label: 'RDS — 관리형 데이터베이스', note: 'DB 엔진 패치는 AWS · 데이터와 권한은 고객', color: T.warn },
+          { label: 'S3 · Lambda — 완전 관리형', note: '데이터 분류·권한만 고객 · 나머지 AWS', color: T.ok },
+        ],
+      }),
+  },
+
+  'model-quality-monitor': {
+    src: 'mla-c01/week8/day1',
+    svg: () =>
+      merge({
+        title: '모델 품질 모니터링에 ground truth 가 필요한 이유',
+        desc: '예측 시점에 캡처한 데이터와 며칠에서 몇 주 뒤에 도착하는 실제 정답을 inference_id 로 맞춰야 성능 지표를 계산할 수 있다.',
+        sources: [
+          { label: '캡처 데이터', lines: ['예측값 — 예측 시점'], color: T.accent },
+          { label: 'ground truth', lines: ['실제 정답 — 며칠~몇 주 뒤'], color: T.warn },
+        ],
+        result: {
+          label: 'Merge Job — inference_id 로 매칭',
+          sub: '성능 지표 계산(정확도·F1·AUC) → 베이스라인과 비교해 위반 여부 판단',
+        },
+      }),
+  },
+
+  'drs-initial-sync': {
+    src: 'sap-c02/week6/day2',
+    svg: () =>
+      pair({
+        title: '재해 복구 초기 동기화 단계',
+        desc: '온프레미스 서버의 모든 디스크 블록을 TLS 로 암호화해 AWS 스테이징 영역의 복제 서버와 EBS 볼륨으로 전송한다.',
+        left: { cap: '온프레미스', label: '원본 서버', lines: ['Disk Block Bitmap', '모든 블록 = Changed'], color: T.warn },
+        right: { cap: 'AWS Staging Area', label: 'Replication Server', lines: ['t3.small', 'EBS Volume (동일 크기)'], color: T.accent },
+        link: 'TLS 암호화 전송 (443 · 1500) — 대역폭 스로틀링 가능',
+      }),
+  },
 };

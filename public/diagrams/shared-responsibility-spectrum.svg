@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 174" width="620" height="174" role="img" aria-labelledby="t d">
+<title id="t">서비스 종류에 따라 움직이는 공동 책임 경계선</title>
+<desc id="d">완전 관리형으로 갈수록 고객의 책임은 줄고 AWS 의 책임은 늘어난다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="618" height="172" rx="8"/>
+<rect x="20" y="14" width="580" height="44" rx="5" fill="#f47067" fill-opacity=".1" stroke="#f47067" stroke-opacity=".5"/>
+<text class="h" x="36" y="41">EC2 — 가상 서버 (IaaS)</text><text class="m" x="584" y="41" text-anchor="end">OS 패치·앱·설정 모두 고객</text><rect x="20" y="64" width="580" height="44" rx="5" fill="#f0a35e" fill-opacity=".1" stroke="#f0a35e" stroke-opacity=".5"/>
+<text class="h" x="36" y="91">RDS — 관리형 데이터베이스</text><text class="m" x="584" y="91" text-anchor="end">DB 엔진 패치는 AWS · 데이터와 권한은 고객</text><rect x="20" y="114" width="580" height="44" rx="5" fill="#8ddb8c" fill-opacity=".1" stroke="#8ddb8c" stroke-opacity=".5"/>
+<text class="h" x="36" y="141">S3 · Lambda — 완전 관리형</text><text class="m" x="584" y="141" text-anchor="end">데이터 분류·권한만 고객 · 나머지 AWS</text>
+</svg>

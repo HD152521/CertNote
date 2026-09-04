@@ -26,14 +26,7 @@ AWS에서 ML 데이터의 사실상 단일 진실 공급원(single source of tru
 | Cleaned | Silver | 정제·검증된 데이터 | Parquet | 재처리로 재생성 |
 | Curated | Gold | 피처 엔지니어링 완료, 학습 직전 | Parquet | 재처리로 재생성 |
 
-```
-[소스] ──> ┌─────────┐  정제  ┌──────────┐  피처화 ┌──────────┐
-           │  Raw    │ ─────> │ Cleaned  │ ──────> │ Curated  │ ──> 학습
-           │ (불변)  │        │ (검증됨) │         │ (학습용) │
-           └─────────┘        └──────────┘         └──────────┘
-                │                                        ▲
-                └──── 변환 로직 버그 발견 시 재처리 ──────┘
-```
+![S3 데이터 레이크의 Raw·Cleaned·Curated 세 구역과 재처리 경로](/diagrams/s3-data-lake-zones.svg)
 
 > 💡 **관련 이론**: 이 Bronze/Silver/Gold 계층화는 Databricks가 대중화한 **메달리온 아키텍처(Medallion Architecture)**다. 핵심 발상은 "원본을 절대 덮어쓰지 말고, 각 변환 단계를 별도 존에 보존하라"이다. 이렇게 하면 변환 로직에 버그가 발견됐을 때 Raw로 돌아가 재처리할 수 있고, 데이터 lineage(계보) 추적이 쉬워진다. 불변성(immutability)을 데이터 레이아웃 수준에서 강제하는 패턴이다.
 
