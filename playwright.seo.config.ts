@@ -11,6 +11,10 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   testMatch: /seo-smoke\.spec\.ts/,
+  // 서버가 force-dynamic 페이지를 첫 요청에 콜드 렌더하면(수십 초) 기본 30s 로는 page.goto 가 타임아웃 난다(실측).
+  // 임의 대기가 아니라 상한만 넉넉히 잡는다.
+  timeout: 90_000,
+  expect: { timeout: 15_000 },
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
   reporter: [['list']],
