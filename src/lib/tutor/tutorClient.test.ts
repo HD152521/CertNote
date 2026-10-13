@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyTutorFailure } from './tutorClient';
+import { classifyTutorFailure, tutorFailureMessage, type TutorErrorStrings } from './tutorClient';
 
 describe('classifyTutorFailure — /api/tutor 오류 응답 → 패널 상태', () => {
   it('401 은 로그인 유도', () => {
@@ -29,5 +29,33 @@ describe('classifyTutorFailure — /api/tutor 오류 응답 → 패널 상태', 
 
   it('본문이 비어 있어도 던지지 않는다', () => {
     expect(classifyTutorFailure(500, {})).toEqual({ kind: 'error', code: undefined, message: undefined });
+  });
+});
+
+describe('tutorFailureMessage — 재시도 거절 사유를 문구로', () => {
+  const S: TutorErrorStrings = {
+    tutorRateLimited: 'S:rate',
+    tutorUnavailable: 'S:unavailable',
+    tutorQuestionNotFound: 'S:notfound',
+    tutorGlobalLimit: 'S:global',
+    tutorStreamFailed: 'S:stream',
+    tutorInvalidSelected: 'S:selected',
+    tutorLoadFailed: 'S:load',
+  };
+
+  it.each([
+    [429, 'rate_limited', 'S:rate'],
+    [503, 'global_limit', 'S:global'],
+    [502, 'tutor_failed', 'S:stream'],
+    [503, 'tutor_unavailable', 'S:unavailable'],
+  ])('%i %s 는 현지화 문구를 쓴다', (status, code, expected) => {
+    const f = classifyTutorFailure(status, { error: code, message: 'server' });
+    if (f.kind !== 'error') throw new Error('error 종류여야 한다');
+    expect(tutorFailureMessage(f, S)).toBe(expected);
+  });
+
+  it('모르는 코드는 서버 message, 그것도 없으면 기본 문구', () => {
+    expect(tutorFailureMessage({ kind: 'error', code: 'daily_limit', message: '하루 한도' }, S)).toBe('하루 한도');
+    expect(tutorFailureMessage({ kind: 'error' }, S)).toBe('S:load');
   });
 });
