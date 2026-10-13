@@ -3,7 +3,13 @@ import { metadata as homeMetadata } from './page';
 import { metadata as enHomeMetadata } from './en/page';
 import { generateMetadata as generateCategoryMetadata } from './[category]/page';
 import { generateMetadata as generateCertMetadata } from './[category]/[slug]/page';
-import { generateMetadata as generateDayMetadata } from './[category]/[slug]/[week]/[day]/page';
+import { dayRouteMetadata } from '@/lib/day/dayRoute';
+
+// day 라우트는 category 별 리터럴 폴더로 갈렸다(src/lib/day/dayRoute.tsx). 공유 구현을 category 와 함께 호출한다.
+async function generateDayMetadata({ params }: { params: Promise<{ category: string; slug: string; week: string; day: string }> }) {
+  const { category, ...rest } = await params;
+  return dayRouteMetadata(category, rest);
+}
 
 // SEO 색인 오류 회귀 테스트(docs/SEO-indexing-fix-plan.md Step 3).
 //

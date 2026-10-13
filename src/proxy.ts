@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE, verifySessionToken } from '@/lib/auth/session';
 import { LANG_COOKIE, resolveLanguage } from '@/lib/i18n';
-import { DEFAULT_CATEGORY, EN_CATEGORY, SECTIONS } from '@/lib/category';
+import { classifyPath } from '@/lib/proxyRouting';
 import { contentPathExists } from '@/lib/contentExists';
 
 // 어떤 실제 라우트 패턴과도 매칭하지 않는 3세그먼트 마커. docs/SEO-indexing-fix-plan.md Step6 —
@@ -32,12 +32,11 @@ async function handleContentRoute(req: NextRequest): Promise<NextResponse> {
 export async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
-  const isContentPath = (prefix: string) => path === `/${prefix}` || path.startsWith(`/${prefix}/`);
-  // 공개 콘텐츠 경로: 섹션(/aws·/linux) + 영어판(/en). 레거시 /aws-certs 는 next.config.ts에서
-  // 301되어 여기 도달하지 않지만(리다이렉트가 미들웨어보다 먼저), 전파 창 동안의 안전을 위해 함께 검사.
-  if (SECTIONS.some((s) => isContentPath(s)) || isContentPath(EN_CATEGORY) || isContentPath(DEFAULT_CATEGORY)) {
-    return handleContentRoute(req);
-  }
+  // 경로 분류는 순수 함수(src/lib/proxyRouting.ts)에 있다 — 판정 근거와 단위 테스트는 거기.
+  const decision = classifyPath(path);
+  if (decision === 'content') return handleContentRoute(req);
+  if (decision === 'not-found') return NextResponse.rewrite(new URL(NOT_FOUND_MARKER, req.url));
+  if (decision === 'pass') return NextResponse.next();
 
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySessionToken(token) : null;
@@ -70,5 +69,10 @@ export const config = {
     // handleContentRoute 내부에서 항상 통과시키므로 여기 포함해도 안전하다. /aws-certs 는 레거시
     // 전파 창 대비(정상 흐름에선 next.config 301이 먼저 처리).
     '/aws/:path*', '/linux/:path*', '/aws-certs/:path*', '/en/:path*',
+    // 임의 4세그먼트 경로(/:a/:b/:c/:d) — day 라우트 두 개가 받을 수 있는 유일한 깊이. 어떤 철자든 존재 검증을 거치게
+    // 한다(근거: src/lib/proxyRouting.ts). _next/static·_next/image 에셋은 제외한다.
+    '/:a((?!_next/static/|_next/image)[^/]+)/:b/:c/:d',
+    // 대소문자 변형 접두사(/AWS·/Linux·/EN 허브와 하위). 정규식에 (?i)를 쓸 수 없어 문자 클래스로 쓴다.
+    '/:category([aA][wW][sS])/:path*', '/:category([lL][iI][nN][uU][xX])/:path*', '/:category([eE][nN])/:path*',
   ],
 };

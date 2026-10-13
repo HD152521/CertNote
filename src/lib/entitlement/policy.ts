@@ -3,6 +3,11 @@ import type { Entitlement, EntitlementRecord, Plan } from './types';
 // 구독제(페이월) 스위치. 2026-10 결정: 구독제를 보류하고 전 주차를 공개한다.
 // 모의고사·AI 튜터·마이페이지는 로그인만 요구한다(플랜 무관, 각 라우트가 401로 판정).
 // 되살릴 때는 이 값을 true로 — 아래 판정 함수들이 Week1 무료/Pro 전용 규칙으로 돌아간다.
+//
+// 주의: true 로 되살리려면 src/app/{aws,linux,en}/[slug]/[week]/[day]/page.tsx 세 파일을 다시
+// 동적(force-dynamic)으로 돌려야 한다. 그 라우트는 지금 쿠키를 읽지 않는 전제로 요청 시 렌더 결과를 영구 캐시하므로, 그대로
+// 두면 잠금이 풀린 페이지가 캐시로 모두에게 나가거나 cookies() 호출이 DYNAMIC_SERVER_USAGE 500 을 낸다.
+// (paywallStaticGuard.test.ts 가 이 조합을 실패시킨다.)
 // 단, 화면 문구(랜딩·허브·튜터 안내)와 /pricing 리다이렉트(next.config.ts)는 따로 되돌려야 한다.
 export const PAYWALL_ENABLED: boolean = false;
 

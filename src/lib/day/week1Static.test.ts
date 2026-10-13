@@ -3,7 +3,21 @@ import sitemap from '@/app/sitemap';
 import { SECTIONS, EN_CATEGORY } from '@/lib/category';
 import { FREE_WEEK } from '@/lib/entitlement/policy';
 import { SITE_URL } from '@/lib/site';
-import { generateStaticParams } from './page';
+import * as awsWeek1 from '@/app/aws/[slug]/week1/[day]/page';
+import * as linuxWeek1 from '@/app/linux/[slug]/week1/[day]/page';
+import * as enWeek1 from '@/app/en/[slug]/week1/[day]/page';
+import * as awsDay from '@/app/aws/[slug]/[week]/[day]/page';
+import * as linuxDay from '@/app/linux/[slug]/[week]/[day]/page';
+import * as enDay from '@/app/en/[slug]/[week]/[day]/page';
+
+// category 별 리터럴 week1 라우트의 generateStaticParams 를 합쳐 예전 단일 라우트와 같은 모양으로 만든다.
+async function generateStaticParams() {
+  const out: { category: string; slug: string; day: string }[] = [];
+  for (const [category, route] of [['aws', awsWeek1], ['linux', linuxWeek1], ['en', enWeek1]] as const) {
+    for (const p of await route.generateStaticParams()) out.push({ category, ...p });
+  }
+  return out;
+}
 
 // generateStaticParams()는 전 인증서(ko+en, 20여 개)의 content 디렉터리를 fs로 순회한다.
 // 테스트 환경(NODE_ENV=test)은 프로덕션과 달리 content.ts의 메모이즈 캐시를 쓰지 않으므로
@@ -21,10 +35,10 @@ beforeAll(async () => {
 // 계속 정적 생성하거나, 무료가 된 주차를 정적 생성에서 빠뜨린다 — 둘 다 조용히 깨진다.
 
 describe('FREE_WEEK ↔ week1 폴더명 결합', () => {
-  test('FREE_WEEK는 1이다 — 바꾸려면 src/app/[category]/[slug]/week1/ 폴더명도 함께 바꿔야 한다', () => {
+  test('FREE_WEEK는 1이다 — 바꾸려면 src/app/{category}/[slug]/week1/ 폴더명도 함께 바꿔야 한다', () => {
     expect(
       FREE_WEEK,
-      'FREE_WEEK가 1이 아니면 src/app/[category]/[slug]/week1/[day]/page.tsx의 리터럴 세그먼트 ' +
+      'FREE_WEEK가 1이 아니면 src/app/{category}/[slug]/week1/[day]/page.tsx의 리터럴 세그먼트 ' +
         '폴더명(week1)도 함께 바꿔야 한다. 안 바꾸면 이 정적 라우트가 실제 무료 경계와 어긋난 주차를 ' +
         '정적 생성하거나 무료가 된 주차를 빠뜨린다.',
     ).toBe(1);
@@ -59,5 +73,15 @@ describe('generateStaticParams — week1 전용 필터(week2+ 혼입 방지)', (
     for (const url of week1SitemapUrls) {
       expect(generated.has(url), `사이트맵의 ${url}이 week1 정적 라우트의 generateStaticParams() 출력에 없다`).toBe(true);
     }
+  });
+});
+
+// 렌더 방식 계약(P3 Step 4): week2+ 는 빌드 시 프리렌더 없음 + 요청 시 렌더 후 캐시.
+describe('렌더 방식 — week2+ 온디맨드 정적 캐시', () => {
+  test.each([['aws', awsDay], ['linux', linuxDay], ['en', enDay]] as const)('%s: generateStaticParams 는 [] 이고 dynamicParams=true, dynamic/revalidate 설정 없음', async (_c, route) => {
+    expect(await route.generateStaticParams()).toEqual([]);
+    expect(route.dynamicParams).toBe(true);
+    expect(route).not.toHaveProperty('dynamic');
+    expect(route).not.toHaveProperty('revalidate');
   });
 });

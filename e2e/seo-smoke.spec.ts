@@ -185,6 +185,41 @@ test.describe('존재하지 않는 URL — 소프트 404 회귀 방지', () => {
     const res = await page.goto('/foo/bar');
     expect(res?.status()).toBe(404);
   });
+
+  // day 라우트는 렌더 결과를 URL 단위로 캐시한다 — 존재하지 않는 category·slug·대소문자 변형이 200(소프트 404)으로
+  // 나가면 무한한 캐시 키가 생긴다. 1·2번째 요청 모두 진짜 404여야 한다(2번째가 캐시 HIT 200으로 바뀌지 않는지).
+  for (const url of [
+    '/foo/bar/week2/day1',
+    '/zzz/saa-c03/week5/day3',
+    '/AWS/saa-c03/week2/day1',
+    '/LINUX/linux-master-1/week2/day1',
+    '/aws/SAA-C03/week2/day1',
+    '/aws/saa-c03/week99/day1',
+    '/aws/saa-c03/week02/day1',
+    '/foo/bar/baz/qux',
+    '/foo/bar/Week2/day1',
+    '/foo/bar/week2/Day1',
+    '/foo/bar/week1/x',
+    '/foo/bar/baz/qux/quux',
+    '/api/foo/bar/baz',
+    '/api/auth/google/nope',
+    '/api/x/week2/day1',
+    '/_next/foo/bar/baz',
+    '/_next/static/chunks/nope.js',
+    '/aws/saa-c03/baz/qux',
+    '/aws/saa-c03/week2/day1/extra',
+    '/foo/bar',
+    '/AWS/saa-c03',
+    '/AWS',
+  ]) {
+    test(`${url} 는 1·2번째 요청 모두 실제 HTTP 404다`, async ({ request }) => {
+      for (const attempt of [1, 2]) {
+        const res = await request.get(url);
+        expect(res.status(), `${url} ${attempt}번째 요청`).toBe(404);
+        expect(res.headers()['cache-control'] ?? '', `${url} ${attempt}번째 요청은 CDN 캐시 대상이 아니다`).not.toMatch(/s-maxage=\d{5,}/);
+      }
+    });
+  }
 });
 
 // request(APIRequestContext)로 HEAD 대신 GET만 쏘고 렌더링은 하지 않는다 — page.goto()로
