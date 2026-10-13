@@ -27,6 +27,28 @@
 - **PID 1** 은 커널이 띄우는 **첫 번째 프로세스**다. 예전엔 `init`, 지금은 대부분 `systemd`다.
 - **initramfs**가 필요한 이유: 루트 파일 시스템이 담긴 디스크의 드라이버가 아직 없을 수 있다. 그 드라이버를 담은 임시 파일 시스템을 먼저 메모리에 올린다.
 
+3~5단계에서 읽히는 파일은 모두 **`/boot`** 에 모여 있다. `/boot`를 따로 파티션으로 떼는 이유가 여기 있다.
+
+```text
+$ ls /boot
+config-5.14.0-362.8.1.el9_3.x86_64
+efi
+grub2
+initramfs-5.14.0-362.8.1.el9_3.x86_64.img
+System.map-5.14.0-362.8.1.el9_3.x86_64
+vmlinuz-5.14.0-362.8.1.el9_3.x86_64
+```
+
+| 파일 | 정체 |
+|------|------|
+| `vmlinuz-버전` | **커널 본체**(압축된 실행 이미지). 부트로더가 메모리에 올리는 것이 이 파일이다 |
+| `initramfs-버전.img` | 5단계의 임시 파일 시스템. 데비안 계열에서는 이름이 `initrd.img-버전`이다 |
+| `config-버전` | 이 커널을 만들 때 쓴 설정 |
+| `grub2/` | 부트로더의 파일과 설정 |
+
+- 커널을 업데이트하면 이 파일들이 **버전별로 한 벌씩 더** 생긴다. GRUB 메뉴에 옛 커널 항목이 남아 있어, 새 커널로 부팅이 안 될 때 이전 것을 골라 들어갈 수 있다.
+- 부팅 중 커널이 출력한 메시지는 지나가 버리지만 `dmesg` 명령으로 다시 볼 수 있다. systemd 환경에서는 `journalctl -b`가 이번 부팅의 기록 전체를 보여준다.
+
 ## BIOS와 UEFI
 
 | 구분 | BIOS | UEFI |
@@ -68,6 +90,61 @@ update-grub                                 # 데비안 계열
 - `grub.cfg`는 **자동 생성되는 파일**이다. 직접 고쳐도 다음 갱신 때 덮어써진다.
 - 자주 쓰는 설정: `GRUB_TIMEOUT`(메뉴 대기 시간), `GRUB_DEFAULT`(기본 선택 항목).
 
+```text
+$ cat /etc/default/grub
+GRUB_TIMEOUT=5
+GRUB_DEFAULT=saved
+GRUB_DISABLE_SUBMENU=true
+GRUB_TERMINAL_OUTPUT="console"
+GRUB_CMDLINE_LINUX="crashkernel=auto rhgb quiet"
+GRUB_DISABLE_RECOVERY="true"
+```
+
+| 항목 | 뜻 |
+|------|-----|
+| `GRUB_TIMEOUT=5` | 메뉴를 5초 보여준 뒤 기본 항목으로 부팅한다. 0이면 기다리지 않는다 |
+| `GRUB_DEFAULT=saved` | 지난번에 고른(저장된) 항목을 기본으로 쓴다. `0`이라고 적으면 **첫 번째** 항목이다 |
+| `GRUB_CMDLINE_LINUX` | 커널에 넘길 옵션. `rhgb`는 그래픽 부팅 화면, `quiet`는 부팅 메시지 숨김이다 |
+
+- 부팅이 어디서 막히는지 보고 싶으면 `rhgb quiet`를 지우고 `grub.cfg`를 다시 만든다. 그러면 메시지가 화면에 그대로 흐른다.
+- `grub.cfg`의 위치는 배포판과 펌웨어에 따라 다르다. 데비안 계열은 `/boot/grub/grub.cfg`이고, UEFI로 부팅하는 레드햇 계열은 버전에 따라 `/boot/efi/EFI/` 아래에 두기도 한다. **경로는 달라도 "직접 고치지 않는다"는 원칙은 같다.**
+
+### 부팅 메뉴에서 한 번만 바꾸기
+
+GRUB 메뉴가 떠 있을 때 누르는 키가 있다.
+
+| 키 | 동작 |
+|----|------|
+| `e` | 선택한 항목을 **편집**한다(edit) |
+| `c` | GRUB **명령행**으로 들어간다(command) |
+| `Ctrl`+`x` | (GRUB2) 편집한 내용으로 부팅한다 |
+
+- 여기서 고친 것은 **이번 부팅에만** 적용되고 저장되지 않는다. root 비밀번호를 잊었을 때 커널 옵션을 임시로 바꿔 복구 모드로 들어가는 데 쓴다.
+
+### 옛 GRUB과 LILO의 설정 파일
+
+구형 시스템이나 기출 지문에는 GRUB2 이전의 설정이 나온다.
+
+```text
+# /boot/grub/grub.conf  (GRUB legacy)
+default=0
+timeout=5
+title CentOS (2.6.32-754.el6.x86_64)
+        root (hd0,0)
+        kernel /vmlinuz-2.6.32-754.el6.x86_64 ro root=/dev/sda3 rhgb quiet
+        initrd /initramfs-2.6.32-754.el6.x86_64.img
+```
+
+- `title` 한 덩어리가 메뉴 항목 하나다. `default=0`은 **첫 번째 `title`** 을 기본으로 한다는 뜻 — 번호가 **0부터** 시작한다.
+- `(hd0,0)`은 **첫 번째 디스크의 첫 번째 파티션**이다. 옛 GRUB은 디스크도 파티션도 0부터 센다. 리눅스 장치명으로는 `/dev/sda1`이다.
+- GRUB2에서는 표기가 바뀌어 **디스크는 0부터, 파티션은 1부터** 센다. 같은 파티션이 `(hd0,1)`이다.
+
+| 부트로더 | 설정 파일 | 고친 뒤 할 일 |
+|---------|----------|-------------|
+| LILO | `/etc/lilo.conf` | `lilo` 명령 실행 |
+| GRUB legacy | `/boot/grub/grub.conf` | 없음(파일을 직접 고친다) |
+| GRUB2 | `/etc/default/grub` | `grub2-mkconfig` 또는 `update-grub` |
+
 ## 런레벨과 systemd target
 
 옛 System V 방식의 **런레벨**은 시스템의 동작 모드를 숫자로 나타냈다.
@@ -82,7 +159,72 @@ update-grub                                 # 데비안 계열
 
 - **0=종료, 6=재시작**을 먼저 외우면 나머지가 정리된다. 이 둘을 기본값으로 두면 부팅이 끝나지 않는다.
 - **3과 5의 차이는 X 윈도(GUI)의 유무**다.
-- 2와 4는 배포판마다 쓰임이 다르거나 비워둔다.
+- 2와 4는 배포판마다 쓰임이 다르거나 비워둔다. 레드햇 계열의 전통적인 정의는 **2 = NFS(네트워크 파일 공유)를 뺀 다중 사용자, 4 = 사용하지 않음**이다.
+- systemd에는 `emergency.target`도 있다. `rescue.target`보다 더 최소한의 상태로, 루트 파일 시스템만 읽기 전용으로 붙인 채 셸을 띄운다.
+
+### init 시절에는 어디에 적었나
+
+System V init은 기본 런레벨을 **`/etc/inittab`** 한 줄로 정했다.
+
+```text
+id:3:initdefault:
+│  │      │
+│  │      └── 동작 — initdefault = "기본 런레벨로 삼는다"
+│  └───────── 런레벨
+└──────────── 이 줄의 이름표
+```
+
+- `id:5:initdefault:`로 바꾸면 다음 부팅부터 그래픽 모드다. 여기에 **0이나 6을 적으면** 켜자마자 꺼지거나 끝없이 재시작한다.
+- 런레벨마다 실행할 스크립트는 `/etc/rc.d/rc3.d/` 처럼 **런레벨 번호가 들어간 디렉터리**에 있다. 이름이 **`S`로 시작하면 시작(Start)**, **`K`로 시작하면 종료(Kill)** 스크립트이고, 뒤의 숫자 순서대로 **하나씩 차례로** 실행된다.
+- systemd는 이 방식을 대체했다. 서로 의존하지 않는 서비스를 **동시에(병렬로)** 띄워 부팅이 빠르고, `/etc/inittab` 대신 **`default.target`이라는 링크**가 기본 모드를 가리킨다.
+
+```text
+$ sudo systemctl set-default multi-user.target
+Removed /etc/systemd/system/default.target.
+Created symlink /etc/systemd/system/default.target → /usr/lib/systemd/system/multi-user.target.
+```
+
+- 출력이 말해 주듯 `set-default`가 하는 일은 **심볼릭 링크 하나를 바꿔 다는 것**이 전부다.
+
+### 지금 모드 확인하고 바꾸기
+
+| 하려는 일 | init 방식 | systemd 방식 |
+|----------|----------|-------------|
+| 현재 런레벨 확인 | `runlevel`, `who -r` | `systemctl get-default`(기본값) |
+| **지금 즉시** 전환 | `init 3`, `telinit 3` | `systemctl isolate multi-user.target` |
+| **다음 부팅부터** 변경 | `/etc/inittab` 수정 | `systemctl set-default …` |
+
+```text
+$ runlevel
+N 5
+```
+
+- 앞 글자는 **직전 런레벨**, 뒤 글자가 **현재 런레벨**이다. `N`은 "이전 것이 없다", 곧 부팅 후 한 번도 바꾸지 않았다는 뜻이다.
+- **`isolate`는 지금만, `set-default`는 다음 부팅부터** — 이 둘을 맞바꾼 보기가 단골이다.
+
+### 끄고 다시 켜는 명령
+
+런레벨 0과 6은 평소 명령으로 부른다.
+
+| 명령 | 동작 |
+|------|------|
+| `shutdown -h now` | 지금 종료(halt) |
+| `shutdown -r now` | 지금 재시작(reboot) |
+| `shutdown -h +10` | 10분 뒤 종료. 로그인한 사용자에게 알림이 간다 |
+| `shutdown -c` | 예약한 종료를 취소(cancel) |
+| `poweroff`, `halt` | 종료 |
+| `reboot` | 재시작 |
+| `init 0` / `init 6` | 런레벨을 바꾸는 방식으로 종료 / 재시작 |
+
+## 자주 틀리는 지점
+
+1. **"커널이 부트로더를 불러온다"** → 반대다. 부트로더가 커널을 메모리에 올린다.
+2. **"POST는 커널이 수행한다"** → 펌웨어(BIOS/UEFI)가 한다. 커널은 아직 올라오지도 않았다.
+3. **"GRUB2 설정은 `grub.cfg`를 고친다"** → `/etc/default/grub`을 고치고 `grub.cfg`는 명령으로 다시 만든다.
+4. **"LILO는 설정 파일만 고치면 된다"** → `lilo` 명령을 다시 실행해야 반영된다.
+5. **"런레벨 3이 GUI, 5가 텍스트"** → 3이 텍스트, 5가 GUI다.
+6. **"`systemctl isolate`로 기본 부팅 모드를 바꾼다"** → 지금만 바뀐다. 기본값은 `set-default`다.
+7. **"PID 1은 커널이다"** → 커널이 띄운 **첫 프로세스**(init 또는 systemd)다.
 
 ```bash
 systemctl get-default              # 현재 기본 target

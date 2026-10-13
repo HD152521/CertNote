@@ -19,6 +19,17 @@ interface Me {
 const LINK_CLASS = 'px-2.5 py-1 text-xs rounded-md text-fg-muted hover:bg-bg-subtle hover:text-fg transition';
 const MENU_ITEM = 'block w-full rounded-md px-2 py-1.5 text-left text-sm text-fg-muted hover:bg-bg-subtle hover:text-fg transition';
 
+// 현재 로그인 사용자. 비로그인이거나 조회에 실패하면 null.
+async function fetchMe(): Promise<Me | null> {
+  try {
+    const res = await fetch('/api/auth/me', { cache: 'no-store' });
+    const data = await res.json();
+    return data.user ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthNav() {
   // undefined = 로딩 중, null = 비로그인, Me = 로그인
   const [user, setUser] = useState<Me | null | undefined>(undefined);
@@ -27,18 +38,18 @@ export function AuthNav() {
   const lang = useLanguage();
   const s = pick(shellStrings, lang);
 
-  const refresh = useCallback(async () => {
-    try {
-      const res = await fetch('/api/auth/me', { cache: 'no-store' });
-      const data = await res.json();
-      setUser(data.user ?? null);
-    } catch {
-      setUser(null);
-    }
-  }, []);
+  const refresh = useCallback(() => fetchMe().then(setUser), []);
 
-  // 마운트 + 경로 변경 시 재조회. 경로가 바뀌면 모바일 메뉴는 닫는다.
-  useEffect(() => { refresh(); setMenuOpen(false); }, [refresh, pathname]);
+  // 경로가 바뀌면 모바일 메뉴는 닫는다. effect 에서 닫으면 한 번 더 그리므로 렌더 중에 바로 맞춘다
+  // (React 문서의 "prop 이 바뀔 때 state 조정" 방식).
+  const [menuPathname, setMenuPathname] = useState(pathname);
+  if (menuPathname !== pathname) {
+    setMenuPathname(pathname);
+    setMenuOpen(false);
+  }
+
+  // 마운트 + 경로 변경 시 재조회.
+  useEffect(() => { refresh(); }, [refresh, pathname]);
   useEffect(() => onAuthChange(refresh), [refresh]);
 
   async function handleLogout() {

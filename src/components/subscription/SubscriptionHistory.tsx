@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useLanguage, t } from '@/lib/i18n-client';
 
 interface PaymentRecord {
@@ -14,23 +14,12 @@ interface SubscriptionHistoryProps {
   userId: string;
 }
 
-export function SubscriptionHistory({ userId }: SubscriptionHistoryProps) {
+export function SubscriptionHistory({}: SubscriptionHistoryProps) {
   const lang = useLanguage();
-  const [records, setRecords] = useState<PaymentRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // TODO: /api/payment/history 엔드포인트 구현 후
-    // async function fetchHistory() {
-    //   const res = await fetch('/api/payment/history');
-    //   const data = await res.json();
-    //   setRecords(data);
-    //   setIsLoading(false);
-    // }
-    // fetchHistory();
-
-    setIsLoading(false);
-  }, [userId]);
+  // TODO: /api/payment/history 엔드포인트 구현 후, userId 가 바뀔 때 effect 에서 내역을 받아
+  // records 를 채우고 그동안 isLoading 을 true 로 둔다. 지금은 받아올 곳이 없어 빈 목록·로딩 아님으로 고정.
+  const [records] = useState<PaymentRecord[]>([]);
+  const [isLoading] = useState(false);
 
   const dateFormat = lang === 'en' ? 'en-US' : 'ko-KR';
 

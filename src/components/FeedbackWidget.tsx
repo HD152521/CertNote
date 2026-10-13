@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { MessageSquarePlus, X } from 'lucide-react';
 import { useLanguage, t } from '@/lib/i18n-client';
 import { pick } from '@/lib/strings/dict';
 import { shellStrings } from '@/lib/strings/shell';
+import { cn } from '@/lib/cn';
+import { useOverlapsAd } from '@/lib/ads/useOverlapsAd';
 
 // 플로팅 피드백 위젯: 연락처 + 글을 받고, 보상으로 커피 기프티콘을 안내한다.
 // 보상은 관리자가 피드백을 보고 수동 발송(이 위젯은 수집만).
@@ -17,6 +19,14 @@ export function FeedbackWidget() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 고정 버튼이 광고 위나 바로 옆에 놓이는 동안은 감춘다(애드센스 오클릭 정책 —
+  // docs/P3-adsense-readiness-plan.md Step 10). invisible 은 자리를 유지해 광고가 지나가면 같은 자리에
+  // 다시 나타난다. 이미 열린 패널은 사용자가 연 것이므로 건드리지 않는다. 화면에 광고가 없으면 항상 false.
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const overlapsAd = useOverlapsAd(() => {
+    const button = buttonRef.current;
+    return button ? [button.getBoundingClientRect()] : [];
+  });
 
   async function submit() {
     setBusy(true);
@@ -50,10 +60,14 @@ export function FeedbackWidget() {
     <>
       {!open && (
         <button
+          ref={buttonRef}
           type="button"
           onClick={() => setOpen(true)}
           aria-label={s.feedbackOpen}
-          className="fixed bottom-4 right-4 z-50 inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-accent-fg shadow-lg transition hover:opacity-90"
+          className={cn(
+            'fixed bottom-4 right-4 z-50 inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-accent-fg shadow-lg transition hover:opacity-90',
+            overlapsAd && 'invisible pointer-events-none',
+          )}
         >
           <MessageSquarePlus className="h-4 w-4" /> {s.feedbackButton}
         </button>

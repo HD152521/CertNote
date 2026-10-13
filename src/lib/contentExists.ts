@@ -1,5 +1,7 @@
 import { isSection } from './category';
 import { getAllDays, getCertMeta } from './content';
+import { parseDaySegment } from './day/segment';
+import { FREE_WEEK } from './entitlement/policy';
 
 // docs/SEO-indexing-fix-plan.md Step6 소프트 404 수정용 존재 검증.
 //
@@ -11,8 +13,16 @@ import { getAllDays, getCertMeta } from './content';
 // 실제 404가 나간다 — 렌더 자체를 시작하지 않으므로 스트리밍 문제가 애초에 발생하지 않는다.
 //
 // day(week1) 존재 여부는 검증하지 않는다 — [category]/[slug]/week1/[day]/page.tsx의 주석과
-// 동일한 이유(신규 day 콘텐츠가 재배포 전에도 즉시 열람 가능해야 함). 유료 [week]/[day] 라우트는
-// 애초에 force-dynamic(캐시 없음)이라 이 함수가 매 요청 fresh하게 검증해도 신선도 문제가 없다.
+// 동일한 이유(신규 day 콘텐츠가 재배포 전에도 즉시 열람 가능해야 함).
+//
+// 2주차 이상([week]/[day])은 첫 요청 때 렌더되어 배포까지 캐시된다(docs/P3-step1-day-cache-design.md
+// 4장). proxy 는 캐시된 페이지에도 요청마다 먼저 실행되고, 이 함수의 getAllDays 와 캐시된 본문은
+// 같은 배포에 묶인 content/ 에서 나오며 ISR 캐시도 배포 단위다. 그래서 한 배포 안에서 "캐시에는
+// 있는데 여기서는 없다고 판정" 하거나 그 반대가 생기지 않는다.
+//
+// week·day 세그먼트는 정규형(`week2`, `day10` — 선행 0 없는 10진수)만 존재한다고 본다. 페이지가
+// URL 별로 캐시되므로 "day1abc"·"week02" 같은 변형을 통과시키면 변형마다 본문이 따로 캐시된다.
+// 판정 규칙은 페이지와 같은 parseDaySegment 하나를 쓴다.
 export async function contentPathExists(pathname: string): Promise<boolean> {
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length < 2) return true; // /aws-certs, /en 자체는 카테고리 라우트가 별도로 처리.
@@ -46,12 +56,10 @@ export async function contentPathExists(pathname: string): Promise<boolean> {
   if (segments.length === 2) return true; // 자격증 허브 — slug 존재만 검증.
   if (segments.length !== 4) return true; // 그 외 깊이는 애초에 어떤 라우트도 매칭하지 않는다.
 
-  if (!weekSeg.startsWith('week') || !daySeg.startsWith('day')) return false;
-  if (weekSeg === 'week1') return true; // day 번호는 검증하지 않음(위 주석).
-
-  const week = Number.parseInt(weekSeg.slice('week'.length), 10);
-  const day = Number.parseInt(daySeg.slice('day'.length), 10);
-  if (!Number.isFinite(week) || !Number.isFinite(day)) return false;
+  const week = parseDaySegment(weekSeg, 'week');
+  const day = parseDaySegment(daySeg, 'day');
+  if (week === null || day === null) return false; // 형식이 아니거나 정규형이 아닌 변형.
+  if (week === FREE_WEEK) return true; // week1 은 day 번호의 존재 여부를 검증하지 않음(위 주석).
 
   const days = await getAllDays(category, slug);
   return days.some((d) => d.week === week && d.day === day);

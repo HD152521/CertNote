@@ -1,18 +1,5 @@
 import type { Metadata } from 'next';
-import { DEFAULT_CATEGORY, certLevelLabel } from '@/lib/category';
-import { listCerts } from '@/lib/content';
-import { groupCertsByLevel } from '@/lib/levels';
-import { CertCard } from '@/components/CertCard';
-import { ContinueCards } from '@/components/ContinueCards';
-import { getCurrentUser } from '@/lib/auth/currentUser';
-import { getStarterDay } from '@/lib/study/starter';
-import { ExamDateNudge } from '@/components/study/ExamDateNudge';
-import { Landing } from '@/components/marketing/Landing';
-
-// 학습 페이지/연습 문항 총량(빌드 시점 스냅샷). 큰 questions.json을 root에 import하지 않기 위한 상수.
-// 자격증 추가로 크게 바뀌면 갱신.
-const PAGE_COUNT = 555;
-const QUESTION_COUNT = 3410;
+import { HomeLanding } from '@/components/marketing/HomeLanding';
 
 // 홈 canonical. 과거 루트 레이아웃(src/app/layout.tsx)에 있던 전역 선언을 이곳으로 옮겼다
 // (docs/SEO-indexing-fix-plan.md Step 2) — 다른 라우트로 상속되지 않도록 홈 페이지 자신이 소유한다.
@@ -37,34 +24,13 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
 };
 
-export default async function HomePage() {
-  const session = await getCurrentUser();
-  const certs = await listCerts(DEFAULT_CATEGORY);
-  // 비로그인 방문자는 마케팅 랜딩, 로그인 사용자는 학습 홈(자격증 그리드).
-  if (!session) return <Landing certCount={certs.length} pageCount={PAGE_COUNT} questionCount={QUESTION_COUNT} certs={certs} />;
-
-  const groups = groupCertsByLevel(certs, 'aws').map((g) => ({ level: g.level, items: g.certs }));
-  const starter = await getStarterDay(session.sub);
-
-  return (
-    <div className="mx-auto max-w-3xl space-y-12">
-      <section className="space-y-3">
-        <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">Certification Notes · {certs.length} tracks</p>
-        <h1 className="text-3xl font-semibold tracking-tight">AWS 자격증으로 시작하는 클라우드 네이티브</h1>
-        <p className="text-base text-fg-muted max-w-xl">AWS 클라우드 자격증 11종 + 리눅스마스터 1급. 매일 한 페이지씩 주차별 한국어 노트로 학습. 사이드바에서 자격증을 골라 시작하세요.</p>
-      </section>
-      <ContinueCards certs={certs} starter={starter} />
-      <ExamDateNudge />
-      {groups.map(({ level, items }) => (
-        <section key={level} className="space-y-4">
-          <h2 className="text-sm font-medium text-fg-muted">{certLevelLabel(level)}</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {items.map((c) => (
-              <CertCard key={c.slug} cert={c} />
-            ))}
-          </div>
-        </section>
-      ))}
-    </div>
-  );
+// 홈은 정적으로 프리렌더돼 다음 배포까지 캐시된다(docs/P3-step3-speed-report.md).
+// 예전엔 여기서 getCurrentUser()(cookies())로 로그인 여부를 갈랐는데, 그 한 줄 때문에 홈 전체가
+// 요청마다 렌더됐다(Cache-Control: no-store, 운영 콜드 스타트 4.1초).
+//
+// ⚠️ 이 파일과 HomeLanding/Landing 에서 쿠키·세션·DB 를 읽지 말 것(page.test.ts 가 감시).
+// 로그인 사용자의 학습 홈은 src/proxy.ts 가 세션 쿠키를 보고 /home(src/app/home/page.tsx)으로
+// rewrite 해 렌더한다 — 주소창은 그대로 `/` 이고, 비로그인 랜딩이 먼저 보였다 바뀌는 깜빡임이 없다.
+export default function HomePage() {
+  return <HomeLanding />;
 }

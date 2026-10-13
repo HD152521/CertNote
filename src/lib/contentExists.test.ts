@@ -45,6 +45,33 @@ describe('contentPathExists', () => {
     expect(await contentPathExists('/aws-certs/saa-c03/foo/bar')).toBe(false);
   });
 
+  // [week]/[day] 는 URL 별로 캐시된다(docs/P3-step1-day-cache-design.md). 같은 day 를 가리키는
+  // 변형 URL 을 존재한다고 판정하면 변형마다 본문이 따로 캐시되므로 정규형만 통과시킨다.
+  test('숫자 뒤에 다른 문자가 붙은 week/day 세그먼트는 false', async () => {
+    expect(await contentPathExists('/aws/saa-c03/week2/day1abc')).toBe(false);
+    expect(await contentPathExists('/aws/saa-c03/week2abc/day1')).toBe(false);
+    expect(await contentPathExists('/aws/saa-c03/week2/day1.5')).toBe(false);
+  });
+
+  test('선행 0 이 붙은 week/day 세그먼트는 false', async () => {
+    expect(await contentPathExists('/aws/saa-c03/week02/day1')).toBe(false);
+    expect(await contentPathExists('/aws/saa-c03/week2/day01')).toBe(false);
+    expect(await contentPathExists('/aws/saa-c03/week01/day1')).toBe(false);
+  });
+
+  test('week1 도 day 세그먼트는 정규형이어야 한다(day 번호의 존재 여부만 검증하지 않는다)', async () => {
+    expect(await contentPathExists('/aws/saa-c03/week1/day1')).toBe(true);
+    expect(await contentPathExists('/aws/saa-c03/week1/day1abc')).toBe(false);
+    expect(await contentPathExists('/aws/saa-c03/week1/day01')).toBe(false);
+  });
+
+  test('정규형 섹션 URL(week2 이상)은 기존대로 true, 없는 day 번호는 false', async () => {
+    expect(await contentPathExists('/aws/saa-c03/week2/day1')).toBe(true);
+    expect(await contentPathExists('/en/saa-c03/week2/day1')).toBe(true);
+    expect(await contentPathExists('/aws/saa-c03/week2/day9')).toBe(false);
+    expect(await contentPathExists('/linux/saa-c03/week2/day1')).toBe(false);
+  });
+
   test('3세그먼트(어떤 라우트도 매칭하지 않는 깊이)는 검증 없이 true — 이미 라우트 매칭 단계에서 404 처리됨', async () => {
     expect(await contentPathExists('/aws-certs/saa-c03/bogus')).toBe(true);
   });

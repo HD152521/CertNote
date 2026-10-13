@@ -19,7 +19,8 @@ let pass = 0;
 let fail = 0;
 const log = (ok, msg) => {
   console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`);
-  ok ? pass++ : fail++;
+  if (ok) pass++;
+  else fail++;
 };
 
 // redirect 따라가지 않고 상태·Location 확인.

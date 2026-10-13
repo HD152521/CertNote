@@ -5,8 +5,9 @@ import path from 'node:path';
 // day 렌더 계층 결합도 가드(docs/SEO-indexing-fix-plan.md Step5 A-3).
 //
 // src/components/day/**와 src/lib/day/**는 무료 week1 정적 라우트(app/[category]/[slug]/week1/[day])와
-// 유료 포함 전체 동적 라우트(app/[category]/[slug]/[week]/[day]) 양쪽이 재사용한다. 이 계층에서
-// next/headers(cookies()/headers())를 import하면 정적 라우트가 다시 DYNAMIC_SERVER_USAGE 500을
+// 2주차 이상 라우트(app/[category]/[slug]/[week]/[day]) 양쪽이 재사용한다. 캐시 전환
+// (docs/P3-step1-day-cache-design.md) 뒤로는 두 라우트 모두 정적이라, 이 계층에서
+// next/headers(cookies()/headers())를 import하면 모든 day 페이지가 DYNAMIC_SERVER_USAGE 500을
 // 낸다 — 소스 문자열을 스캔해 실행(렌더) 없이도 검출한다.
 async function collectSourceFiles(dir: string): Promise<string[]> {
   const entries = await fs.readdir(dir, { withFileTypes: true });

@@ -18,6 +18,8 @@ import { cn } from '@/lib/cn';
 import { JsonLd } from '@/components/JsonLd';
 import { LessonTracker } from '@/components/analytics/LessonTracker';
 import { buildDayStructuredData } from '@/lib/day/structuredData';
+import { AdSlot } from '@/components/ads/AdSlot';
+import { resolveAdPlacement, shouldShowDayAds } from '@/lib/ads/adPlacements';
 
 export interface DayViewProps {
   category: string;
@@ -32,7 +34,7 @@ export interface DayViewProps {
 }
 
 // day 페이지 렌더 전용 순수 서버 컴포넌트(docs/SEO-indexing-fix-plan.md Step5 A-0).
-// [category]/[slug]/[week]/[day](전체 동적 라우트)와 [category]/[slug]/week1/[day](무료 전용
+// [category]/[slug]/[week]/[day](2주차 이상, 첫 요청 때 정적 생성)와 [category]/[slug]/week1/[day](빌드 때 생성하는
 // 정적 라우트) 양쪽이 공유한다.
 //
 // 계약: 여기서 cookies()/headers()/getCurrentUser() 등 요청별 동적 API를 절대 호출하지 않는다.
@@ -48,6 +50,12 @@ export async function DayView({ category, slug, w, d, lang, content, locked, log
   const readingMinutes = readingTimeMinutes(body);
   // 잠겼으면 미리보기만 렌더(전체 본문은 HTML에 싣지 않음). 열렸으면 전체 TOC.
   const toc = locked ? [] : buildToc(body);
+  // 광고 슬롯(docs/P3-adsense-readiness-plan.md Step 10). 환경변수(게시자 ID·슬롯 ID)가 없거나 색인에
+  // 내보내지 않는 문서(영어판 2주차 이상)면 null 이라 아래에서 아무것도 렌더하지 않는다 — 그때의
+  // 출력은 광고를 넣기 전과 같다. 빌드에 인라인된 값만 읽으므로 정적 캐시 계약에 영향이 없다.
+  const showAds = shouldShowDayAds({ category, week: w, locked });
+  const adTop = showAds ? resolveAdPlacement('dayTop') : null;
+  const adBottom = showAds ? resolveAdPlacement('dayBottom') : null;
 
   return (
     <div className="flex gap-0">
@@ -85,7 +93,14 @@ export async function DayView({ category, slug, w, d, lang, content, locked, log
           ) : (
             <>
               {summary && <SummaryCard summary={summary} lang={lang} />}
+              {/* 위: 요약 카드와 본문 사이. 위아래가 모두 읽는 글이라 누르는 요소와 붙지 않는다. */}
+              {adTop && <AdSlot {...adTop} className="mb-8" />}
               <Article source={body} slug={slug} week={w} day={d} lang={lang} />
+              {/* 아래: 본문 끝과 이전/다음 내비게이션 사이. 본문은 대개 연습 문제(누르는 선택지)로 끝나므로
+                  오클릭이 나지 않게 위로 64px(mt-16), 아래로는 footer 의 여백·구분선(mt-12 + pt-6)으로 72px 를 띄운다.
+                  연습 문제 앞(본문 중간)에 두지 않은 이유: Article 이 퀴즈를 안에서 갈라 렌더해 그 사이에
+                  끼우려면 Article 을 고쳐야 하고, 선택지 바로 위라 오클릭 위험도 더 크다. */}
+              {adBottom && <AdSlot {...adBottom} className="mt-16" />}
             </>
           )}
           <footer className="mt-12 grid grid-cols-2 gap-3 border-t border-border pt-6">

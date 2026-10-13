@@ -32,3 +32,23 @@ describe('page — 홈의 canonical/hreflang', () => {
     expect(homeMetadata.alternates?.languages).toBeUndefined();
   });
 });
+
+// 홈은 정적으로 프리렌더돼 캐시된다(docs/P3-step3-speed-report.md). 이 파일이나 랜딩이 쿠키·세션을
+// 읽으면 홈 전체가 다시 요청마다 렌더된다(Cache-Control: no-store). 로그인 사용자의 학습 홈은
+// proxy 가 /home 으로 rewrite 해 따로 렌더한다(src/proxy.ts, src/app/home/page.tsx).
+describe('page — 홈은 정적 캐시 대상이다', () => {
+  const FORBIDDEN = ['next/headers', '@/lib/auth/currentUser', '@/lib/db'];
+  const FILES = ['page.tsx', '../components/marketing/HomeLanding.tsx', '../components/marketing/Landing.tsx'];
+
+  test.each(FILES)('%s 가 쿠키·세션·DB 모듈을 import 하지 않는다', (file) => {
+    const source = readFileSync(join(__dirname, file), 'utf-8');
+    for (const specifier of FORBIDDEN) {
+      expect(source.includes(`from '${specifier}'`), `${file} 가 ${specifier} 를 import 함`).toBe(false);
+    }
+  });
+
+  test('page.tsx 가 dynamic 을 강제하지 않는다', () => {
+    const source = readFileSync(join(__dirname, 'page.tsx'), 'utf-8');
+    expect(source).not.toMatch(/export\s+const\s+dynamic\s*=/);
+  });
+});

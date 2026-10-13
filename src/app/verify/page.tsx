@@ -19,11 +19,7 @@ function VerifyInner() {
     if (ran.current) return; // StrictMode 중복 호출 방지(토큰은 1회성).
     ran.current = true;
 
-    if (!token) {
-      setState('error');
-      setMessage(t(lang, 'invalidLink'));
-      return;
-    }
+    if (!token) return; // 토큰 없는 링크는 아래 렌더에서 바로 오류로 보여 준다.
     (async () => {
       try {
         const res = await fetch('/api/auth/verify', {
@@ -46,6 +42,9 @@ function VerifyInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  if (!token) {
+    return <p className="text-sm text-danger">{t(lang, 'invalidLink')}</p>;
+  }
   if (state === 'verifying') {
     return <p className="text-sm text-fg-muted">{t(lang, 'verifyingEmail')}</p>;
   }

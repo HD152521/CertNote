@@ -17,6 +17,7 @@ export function SearchDialog({ index = [], onClose }: SearchDialogProps) {
   const s = pick(chromeStrings, lang);
   const router = useRouter();
   const [q, setQ] = useState('');
+  // 검색어가 바뀌면 선택 줄을 맨 위로 되돌린다(입력 핸들러에서 같이 처리).
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -52,7 +53,6 @@ export function SearchDialog({ index = [], onClose }: SearchDialogProps) {
     return fuse.search(q).slice(0, 25).map((r) => r.item);
   }, [q, fuse, data]);
   useEffect(() => { inputRef.current?.focus(); }, []);
-  useEffect(() => { setActive(0); }, [q]);
   function onKey(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'ArrowDown') { e.preventDefault(); setActive((p) => Math.min(p + 1, results.length - 1)); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((p) => Math.max(p - 1, 0)); }
@@ -72,7 +72,7 @@ export function SearchDialog({ index = [], onClose }: SearchDialogProps) {
       >
         <div className="flex items-center gap-2 border-b border-border px-3.5 py-3">
           <Search className="h-4 w-4 text-fg-muted" />
-          <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKey}
+          <input ref={inputRef} value={q} onChange={(e) => { setQ(e.target.value); setActive(0); }} onKeyDown={onKey}
             placeholder={s.searchPlaceholder}
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-fg-faint"
           />

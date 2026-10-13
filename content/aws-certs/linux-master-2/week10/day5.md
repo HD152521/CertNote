@@ -53,6 +53,80 @@
 
 > **섞어 놓고 "성격이 다른 것"** 을 고르게 하는 문제가 이 주차의 주요 형태다. 위 표를 통째로 익힌다.
 
+### "다른 하나" 고르기 연습
+
+같은 낱말도 **어떤 넷과 함께 나오느냐**에 따라 답이 달라진다. 먼저 **셋을 묶는 공통점**을 찾고, 거기서 벗어난 하나를 고른다.
+
+| 보기 넷 | 다른 하나 | 셋의 공통점 |
+|--------|---------|-----------|
+| SMB · CIFS · NetBIOS · RPC | **RPC** | 삼바의 구성 요소 (RPC는 NFS) |
+| FTP · NFS · Samba · TELNET | **TELNET** | 파일 공유·전송 |
+| TELNET · SSH · rlogin · FTP | **FTP** | 원격 접속 |
+| SMTP · POP3 · IMAP · NNTP | **NNTP** | 메일 프로토콜 (NNTP는 뉴스그룹) |
+| Sendmail · Postfix · qmail · Thunderbird | **Thunderbird** | MTA (Thunderbird는 MUA) |
+| Lynx · Firefox · Chrome · Apache | **Apache** | 웹 브라우저 (Apache는 웹 서버) |
+| A · MX · CNAME · SMTP | **SMTP** | DNS 레코드 |
+| nslookup · dig · host · showmount | **showmount** | DNS 조회 명령 |
+| scp · sftp · rsync · ssh-keygen | **ssh-keygen** | 파일 전송 도구 |
+| Gopher · Archie · WAIS · IRC | **IRC** | 정보 검색 (IRC는 채팅) |
+| HTTPS · SSH · SFTP · TELNET | **TELNET** | 암호화한다 |
+
+- **TELNET은 이 표에 세 번 나왔다.** 둘째 줄에서는 "파일 전송이 아니라서", 셋째 줄에서는 오히려 **묶이는 쪽**, 마지막 줄에서는 "암호화하지 않아서"다. 낱말만 보고 답을 정하지 말고 **묶는 기준부터** 찾는다.
+- 기준은 대개 넷 가운데 하나다 — **하는 일**(접속/전송/검색) · **상대**(유닉스/윈도) · **보안**(평문/암호화) · **종류**(프로토콜/프로그램/레코드).
+
+### 암호화 짝
+
+| 평문 | 암호화한 짝 | 포트 변화 |
+|------|-----------|---------|
+| **HTTP** | **HTTPS** | 80 → 443 |
+| **TELNET** | **SSH** | 23 → 22 |
+| **FTP** | **SFTP**(SSH 기반) · FTPS(SSL 기반) | 21 → 22 (SFTP) |
+| `rcp` | `scp` | → 22 |
+| SMTP | SMTPS | 25 → 465 |
+| POP3 | POP3S | 110 → 995 |
+| IMAP | IMAPS | 143 → 993 |
+
+- **SSH 하나가 TELNET·FTP·rcp 셋의 대안**이다. `ssh`·`sftp`·`scp`가 모두 22번 포트를 쓴다.
+- **이름에 S가 붙는 위치**를 본다. HTTP**S**·POP3**S**·IMAP**S**·FTP**S** 처럼 **뒤에** 붙으면 원래 프로토콜에 SSL/TLS를 씌운 것이고, **S**FTP처럼 **앞에** 붙은 것은 SSH 위에서 도는 별개의 프로토콜이다.
+
+## 누가 묻고 누가 답하나 — 클라이언트와 서버
+
+이번 주의 모든 서비스는 **요청하는 쪽(클라이언트)과 기다리는 쪽(서버)** 으로 나뉜다. 프로그램 이름과 파일이 어느 쪽 것인지 가르면 보기가 정리된다.
+
+| 서비스 | 서버 쪽 (데몬 · 제품) | 클라이언트 쪽 (명령 · 프로그램) |
+|-------|-------------------|--------------------------|
+| 웹 | `httpd` — Apache, Nginx | Firefox, Lynx, `wget`, `curl` |
+| 메일 | Sendmail, Postfix, Dovecot | Thunderbird, Evolution, `mail` |
+| DNS | `named` — BIND | `nslookup`, `dig`, `host` |
+| 원격 접속 | `sshd` — OpenSSH | `ssh` |
+| 파일 전송 | vsftpd, ProFTPD | `ftp`, `sftp`, `scp` |
+| NFS | `nfsd`, `rpcbind` | `mount -t nfs`, `showmount` |
+| 삼바 | `smbd`, `nmbd` | `smbclient`, `mount -t cifs` |
+
+- **끝에 `d`가 붙은 이름은 데몬**, 곧 서버 쪽이다 — `httpd`, `named`, `sshd`, `nfsd`, `smbd`. `d`는 daemon의 머리글자다.
+- **제품 이름과 데몬 이름이 다른 것**을 따로 챙긴다 — Apache는 `httpd`, BIND는 `named`, 삼바는 `smbd`·`nmbd`.
+
+| 파일 | 어느 쪽 것인가 | 무엇을 적나 |
+|------|-------------|-----------|
+| `/etc/resolv.conf` | **클라이언트** | 물어볼 DNS 서버 |
+| `/etc/hosts` | 클라이언트 | 이름 ↔ IP |
+| `~/.ssh/known_hosts` | 클라이언트 | 접속해 본 서버의 키 |
+| `~/.ssh/authorized_keys` | **서버** | 들어와도 되는 공개키 |
+| `/etc/ssh/sshd_config` | 서버 | SSH 서버 설정 |
+| `/etc/exports` | 서버 | NFS로 내보낼 디렉터리 |
+| `/etc/samba/smb.conf` | 서버 | 삼바 공유 설정 |
+
+### TCP인가 UDP인가
+
+| 전송 계층 | 서비스 |
+|---------|-------|
+| **TCP** | HTTP · HTTPS · SMTP · POP3 · IMAP · SSH · TELNET · FTP · NNTP |
+| **UDP** | DHCP · NTP · SNMP · TFTP |
+| 둘 다 | **DNS** — 보통 UDP, 응답이 크거나 영역 전송일 때 TCP |
+
+- 로그인하고, 파일을 받고, 메일을 주고받는 일은 **빠지면 안 되니 TCP**다. 이번 주 서비스의 대부분이 여기 든다.
+- **UDP 쪽은 "짧게 묻고 짧게 답하는" 것들**이다. 주소를 받고(DHCP), 시각을 맞추고(NTP), 장비 상태를 묻는다(SNMP).
+
 ## 포트 번호 총정리
 
 | 포트 | 서비스 |
@@ -101,6 +175,23 @@
 8. **NFS로 윈도와 공유** → 윈도와는 **삼바**다.
 9. **sftp와 FTPS가 같다** → **sftp는 SSH, FTPS는 FTP+SSL** 로 기반이 다르다.
 10. **Gopher가 채팅 서비스** → **메뉴 방식 정보 검색**이다. 채팅은 IRC.
+
+## 상황에서 서비스 고르기
+
+| 이런 상황이면 | 고를 것 | 고르지 않을 것과 그 이유 |
+|------------|-------|-------------------|
+| 윈도 PC와 리눅스 서버가 폴더를 함께 쓴다 | **삼바** | NFS — 유닉스·리눅스끼리 |
+| 리눅스 서버 두 대가 `/data`를 함께 쓴다 | **NFS** | 삼바 — 윈도와 공유할 때 |
+| 원격 서버에 들어가 명령을 친다 | **SSH** | TELNET — 평문이라 위험 |
+| 원격 서버에 파일 하나를 안전하게 복사한다 | **`scp`** | FTP — 암호화하지 않는다 |
+| 큰 디렉터리를 매일 백업하되 바뀐 것만 보낸다 | **`rsync`** | `scp` — 매번 전부 보낸다 |
+| 휴대폰과 PC에서 같은 메일함을 본다 | **IMAP** | POP3 — 내려받으며 서버에서 지운다 |
+| 사내 PC들이 IP를 자동으로 받는다 | **DHCP** | DNS — 이름을 주소로 바꿀 뿐이다 |
+| 서버들의 시계를 똑같이 맞춘다 | **NTP** | NNTP — 뉴스그룹 프로토콜 |
+| 그래픽 환경 없이 웹 문서를 본다 | **Lynx** | Firefox — 그래픽 브라우저 |
+| 도메인의 메일 서버가 어디인지 확인한다 | **`dig 도메인 MX`** | A 레코드 — IP 주소를 줄 뿐이다 |
+
+- 문장에 **"윈도"가 있으면 삼바, "암호화·안전하게"가 있으면 SSH 계열, "여러 기기"가 있으면 IMAP** 이다. 단서 낱말 하나가 답을 정한다.
 
 ## 시험에 그대로 나오는 값
 

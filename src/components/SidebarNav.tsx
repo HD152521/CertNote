@@ -6,13 +6,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { ChevronRight, ChevronDown, MessageSquareText } from 'lucide-react';
-import type { CertMeta, DayRef } from '@/lib/content';
+import { navDayHref, type CertTree, type NavCertMeta } from '@/lib/navTree';
 import { cn } from '@/lib/cn';
 
-export interface CertTree {
-  meta: CertMeta;
-  days: DayRef[];
-}
+// 전송 형식은 src/lib/navTree.ts 에 있다(HTML 크기 때문에 DayRef 를 그대로 넘기지 않는다).
+export type { CertTree };
 
 interface SidebarNavProps {
   certTrees: CertTree[];
@@ -29,7 +27,8 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
   const en = lang === 'en';
   const pathname = usePathname();
   const isEn = pathname === `/${EN_CATEGORY}` || pathname.startsWith(`/${EN_CATEGORY}/`);
-  const trees = isEn && enCertTrees && enCertTrees.length > 0 ? enCertTrees : certTrees;
+  const usesEnTrees = isEn && Boolean(enCertTrees && enCertTrees.length > 0);
+  const trees = usesEnTrees && enCertTrees ? enCertTrees : certTrees;
 
   // 섹션별 그룹핑. en 모드는 aws 트랙(무료 Week1)만 있으므로 단일 그룹.
   const bySection = new Map<string, CertTree[]>();
@@ -54,17 +53,14 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
     activeSlug ? { [activeSlug]: true } : {},
   );
 
-  const certBase = (meta: CertMeta): string => (isEn ? EN_CATEGORY : meta.section ?? 'aws');
+  const certBase = (meta: NavCertMeta): string => (isEn ? EN_CATEGORY : meta.section ?? 'aws');
 
-  function renderCert({ meta, days }: CertTree) {
+  function renderCert({ meta, weeks }: CertTree) {
     const isOpen = openSlugs[meta.slug] ?? false;
     const base = certBase(meta);
+    // day 링크는 트리를 만든 category 를 따른다(영어 트리가 없어 한국어 트리로 폴백하면 섹션 URL).
+    const dayBase = usesEnTrees ? EN_CATEGORY : meta.section ?? 'aws';
     const isActive = activeSlug === meta.slug;
-    const byWeek = new Map<number, DayRef[]>();
-    for (const d of days) {
-      if (!byWeek.has(d.week)) byWeek.set(d.week, []);
-      byWeek.get(d.week)!.push(d);
-    }
     return (
       <div key={meta.slug}>
         <div className={cn('group flex items-center rounded-md transition hover:bg-bg-subtle', isActive && 'bg-bg-subtle')}>
@@ -88,28 +84,29 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
         </div>
         {isOpen && (
           <ul className="mt-1 mb-2 ml-2 space-y-0.5 border-l border-border pl-2">
-            {[...byWeek.entries()].map(([w, ws]) => (
+            {weeks.map(([w, ws]) => (
               <li key={w}>
                 <details open={pathname.includes(`/${base}/${meta.slug}/week${w}/`)}>
                   <summary className="cursor-pointer list-none rounded px-2 py-1 text-xs text-fg-muted hover:bg-bg-subtle hover:text-fg">
                     Week {w}
                   </summary>
                   <ul className="mt-0.5 ml-2 space-y-0.5 border-l border-border pl-2">
-                    {ws.map((d) => {
-                      const active = pathname === d.href;
+                    {ws.map(([day, title]) => {
+                      const href = navDayHref(dayBase, meta.slug, w, day);
+                      const active = pathname === href;
                       return (
-                        <li key={d.href}>
+                        <li key={href}>
                           <Link
-                            href={d.href}
+                            href={href}
                             onClick={onNavigate}
                             className={cn(
                               'block truncate rounded px-2 py-1 text-xs transition',
                               active ? 'bg-accent/10 font-medium text-fg' : 'text-fg-muted hover:bg-bg-subtle hover:text-fg',
                             )}
-                            title={d.title}
+                            title={title}
                           >
-                            <span className="mr-1.5 tabular-nums text-fg-faint">{d.day}.</span>
-                            {d.title.replace(/^Day\s*\d+\s*[-–]\s*/i, '')}
+                            <span className="mr-1.5 tabular-nums text-fg-faint">{day}.</span>
+                            {title.replace(/^Day\s*\d+\s*[-–]\s*/i, '')}
                           </Link>
                         </li>
                       );

@@ -57,6 +57,68 @@
 | **0 / 6** | 런레벨 종료 / 재시작 |
 | **1** | init(systemd)의 PID |
 
+- 2TB와 4개는 **MBR이 512바이트 한 섹터**라는 데서 나온다 — 부트로더 446 + 파티션 테이블 64(16바이트 × 4칸) + 서명 2. 칸이 넷이라 주 파티션 4개, 위치를 32비트로 적어 2TB다.
+
+## 설정 파일과 경로 정리
+
+"어느 파일에 적는가"는 이번 주에서 가장 자주 섞이는 부분이다. **언제 읽히는가**로 가르면 정리된다.
+
+| 파일 | 내용 | 누가 언제 읽나 |
+|------|------|--------------|
+| `/etc/fstab` | 자동으로 마운트할 목록(필드 6개) | 부팅할 때, 그리고 `mount -a` |
+| `/etc/mtab` · `/proc/mounts` | **지금** 마운트된 목록 | 시스템이 기록한다. 사람이 고치는 파일이 아니다 |
+| `/etc/default/grub` | GRUB2 기본 설정 | `grub2-mkconfig`가 읽어 `grub.cfg`를 만든다 |
+| `grub.cfg` | GRUB2가 실제로 읽는 최종 설정 | 부팅할 때 GRUB2. **직접 고치지 않는다** |
+| `/boot/grub/grub.conf` | 옛 GRUB 설정 | 부팅할 때 옛 GRUB. 직접 고친다 |
+| `/etc/lilo.conf` | LILO 설정 | `lilo` 명령을 다시 돌려야 반영된다 |
+| `/etc/inittab` | 기본 런레벨(`id:3:initdefault:`) | init 방식의 부팅 |
+| `/boot/vmlinuz-버전` | 커널 본체 | 부트로더가 메모리에 올린다 |
+| `/boot/initramfs-버전.img` | 임시 루트 파일 시스템 | 커널과 함께 올라간다 |
+
+`/etc/fstab` 한 줄의 여섯 필드는 순서째 외운다.
+
+```text
+/dev/sdb1    /data        ext4    defaults   0      2
+① 장치     ② 마운트 포인트  ③ 종류   ④ 옵션    ⑤ dump  ⑥ fsck 순서
+```
+
+## 단계마다 쓰는 명령 묶음
+
+| 단계 | 일반 파티션 | swap |
+|------|-----------|------|
+| 나누기 | `fdisk /dev/sdb` → `n` → `w` | 같다. `t`로 종류를 82로 |
+| 초기화 | `mkfs.ext4 /dev/sdb1` | `mkswap /dev/sdb2` |
+| 사용 시작 | `mount /dev/sdb1 /data` | `swapon /dev/sdb2` |
+| 사용 중지 | `umount /data` | `swapoff /dev/sdb2` |
+| 확인 | `df -h`, `lsblk` | `free -h`, `swapon -s` |
+
+- `fdisk` 내부 명령: **`p` 보기 · `n` 새로 · `d` 삭제 · `t` 종류 · `w` 저장 후 종료 · `q` 저장 없이 종료**.
+- `fdisk -l`의 `Disklabel type`이 **`dos`면 MBR, `gpt`면 GPT**. `Id`는 **83 리눅스, 82 스왑, 5 확장**.
+- 하드 링크는 `ln`, 심볼릭 링크는 `ln -s`. inode가 같은 쪽이 하드 링크다.
+
+| 지금만 | 다음 부팅에도 |
+|--------|-------------|
+| `mount` | `/etc/fstab` |
+| `swapon` | `/etc/fstab`의 swap 줄 |
+| `systemctl isolate …target` | `systemctl set-default …target` |
+| `init 3` | `/etc/inittab` |
+| GRUB 메뉴에서 `e`로 편집 | `/etc/default/grub` + `grub2-mkconfig` |
+
+## 증상으로 원인 찾기
+
+실무에서도 시험 지문에서도, 개념은 증상의 모습으로 나타난다.
+
+| 증상 | 원인 | 확인·해결 |
+|------|------|----------|
+| USB에 5GB짜리 파일이 복사되지 않는다 | FAT32의 단일 파일 4GB 한계 | exFAT 등으로 다시 만든다 |
+| 3TB 디스크인데 2TB까지만 잡힌다 | MBR 방식으로 나눴다 | GPT로 나눈다(`gdisk`, `parted`) |
+| 용량은 남았는데 "공간 없음" 오류로 파일이 안 만들어진다 | inode가 바닥났다 | `df -i` |
+| 새 디스크를 마운트했는데 재부팅하니 비어 있다 | `/etc/fstab`에 적지 않았다 | 한 줄 추가 후 `mount -a`로 시험 |
+| `umount`가 `target is busy`로 거부된다 | 그 디렉터리를 쓰는 프로세스가 있다 | 그 안에서 `cd`로 빠져나온다 |
+| `/etc/default/grub`을 고쳤는데 그대로다 | `grub.cfg`를 다시 만들지 않았다 | `grub2-mkconfig -o …` |
+| 서버가 그래픽 화면으로 부팅돼 자원을 먹는다 | 기본 target이 `graphical.target` | `systemctl set-default multi-user.target` |
+| 디스크를 추가했더니 마운트가 엉뚱한 곳에 붙는다 | `sdb`·`sdc` 순서가 밀렸다 | `fstab`에 장치명 대신 UUID(`blkid`) |
+
 ## 헷갈리는 짝 대조
 
 | 구분 | A | B | 가르는 기준 |
@@ -69,6 +131,13 @@
 | `mkfs` vs `fsck` | 새로 만든다 | 검사·복구한다 | 만드나 고치나 |
 | BIOS vs UEFI | MBR·2TB | GPT·Secure Boot | 펌웨어 세대 |
 | init vs systemd | 런레벨 숫자 | target 이름 | 부팅 관리 방식 |
+| 슈퍼블록 vs inode | 파일 시스템 **전체** 정보 | 파일 **하나** 정보 | 정보의 범위 |
+| 하드 링크 vs 심볼릭 링크 | inode가 같다 | inode가 따로다 | 원본을 지워도 남는가 |
+| `mkfs` vs `mkswap` | 파일 시스템 생성 | 스왑 영역 생성 | 파일을 담는가 |
+| `fstab` vs `mtab` | 부팅 때 할 일 | 지금 상태 | 사람이 적는가 |
+| `isolate` vs `set-default` | 지금 즉시 | 다음 부팅부터 | 영구성 |
+| DVD 이미지 vs 네트워크 설치 이미지 | 패키지를 담고 있다 | 설치 중 내려받는다 | 인터넷이 필요한가 |
+| Live 이미지 vs 최소 설치 | 설치 없이 실행 | 필요한 것만 설치 | 디스크에 쓰는가 |
 
 ## 자주 틀리는 지점
 
