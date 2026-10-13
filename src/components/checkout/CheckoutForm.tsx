@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLanguage, t } from '@/lib/i18n-client';
 
@@ -155,25 +156,25 @@ export function CheckoutForm({ userId, email }: CheckoutFormProps) {
         {lang === 'en' ? (
           <>
             By continuing, you agree to CertNote&apos;s{' '}
-            <a href="/en/terms" className="underline hover:text-fg">
+            <Link href="/en/terms" className="underline hover:text-fg">
               {t(lang, 'termsOfService')}
-            </a>
+            </Link>
             {' and '}
-            <a href="/en/privacy" className="underline hover:text-fg">
+            <Link href="/en/privacy" className="underline hover:text-fg">
               {t(lang, 'privacyPolicy')}
-            </a>
+            </Link>
             .
           </>
         ) : (
           <>
             계속하면 CertNote의{' '}
-            <a href="/terms" className="underline hover:text-fg">
+            <Link href="/terms" className="underline hover:text-fg">
               {t(lang, 'termsOfService')}
-            </a>
+            </Link>
             과{' '}
-            <a href="/privacy" className="underline hover:text-fg">
+            <Link href="/privacy" className="underline hover:text-fg">
               {t(lang, 'privacyPolicy')}
-            </a>
+            </Link>
             에 동의하는 것입니다.
           </>
         )}

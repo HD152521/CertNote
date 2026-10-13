@@ -13,7 +13,7 @@ export const dynamic = 'error'; // 정적 생성 강제(동적 API 사용 시 �
 export const metadata: Metadata = {
   title: 'AWS 자격증 로드맵 — 직무별 추천 순서',
   description:
-    '솔루션스 아키텍트·개발자·DevOps·데이터·머신러닝·보안 등 목표 직무에 따라 AWS 자격증을 어떤 순서로 준비하면 되는지 정리한 로드맵. 각 단계의 이유와 Week 1 무료 학습으로 바로 연결됩니다.',
+    '솔루션스 아키텍트·개발자·DevOps·데이터·머신러닝·보안 등 목표 직무에 따라 AWS 자격증을 어떤 순서로 준비하면 되는지 정리한 로드맵. 각 단계의 이유와 로그인 없이 무료로 읽는 학습 노트로 바로 연결됩니다.',
   alternates: { canonical: '/roadmap' },
   openGraph: {
     title: 'AWS 자격증 로드맵 — 직무별 추천 순서',

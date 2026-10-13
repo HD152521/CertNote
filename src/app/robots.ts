@@ -22,6 +22,11 @@ export default function robots(): MetadataRoute.Robots {
           '/reset',
           '/verify',
           '/welcome',
+          // 구독제 보류 동안 홈으로 리다이렉트되는 화면과 로그인 뒤에만 쓰는 화면.
+          '/pricing',
+          '/checkout',
+          '/onboarding',
+          '/home',
           '/monitoring',
         ],
       },

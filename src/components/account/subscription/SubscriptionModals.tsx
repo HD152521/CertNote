@@ -4,10 +4,6 @@ import { useState } from 'react';
 import { useLanguage, t } from '@/lib/i18n-client';
 import { X } from 'lucide-react';
 
-interface SubscriptionModalsProps {
-  isPro: boolean;
-}
-
 export function ChangePaymentModal() {
   const lang = useLanguage();
   const [isOpen, setIsOpen] = useState(false);

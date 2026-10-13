@@ -1,17 +1,17 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { Moon, Sun } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useLanguage } from '@/lib/i18n-client';
+import { useMounted } from '@/lib/useMounted';
 import { pick } from '@/lib/strings/dict';
 import { chromeStrings } from '@/lib/strings/chrome';
 
 export function ThemeToggle() {
   const s = pick(chromeStrings, useLanguage());
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  // 저장된 테마는 브라우저만 안다. 서버·하이드레이션 첫 렌더에서는 아이콘 자리를 비워 둔다.
+  const mounted = useMounted();
   const isDark = mounted && resolvedTheme === 'dark';
   return (
     <button
