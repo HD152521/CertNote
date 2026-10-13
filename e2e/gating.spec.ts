@@ -38,6 +38,11 @@ test.describe('비로그인', () => {
     expect(res.status()).toBe(401);
   });
 
+  test('리눅스마스터 2급 허브의 트랙 구성에 모의고사 줄이 보인다', async ({ page }) => {
+    await page.goto('/linux/linux-master-2');
+    await expect(page.getByText(/모의고사 \d+문항/)).toBeVisible();
+  });
+
   test('/pricing은 홈으로 돌려보낸다', async ({ page }) => {
     await page.goto('/pricing');
     await expect(page).toHaveURL(/\/$/);
@@ -56,6 +61,19 @@ test.describe('Free 사용자', () => {
   test('모의고사 API가 허용된다(플랜 무관)', async ({ page }) => {
     const res = await page.request.post('/api/exam/start', { data: EXAM_BODY, ...RETRY_RESET });
     expect(res.status(), `Free exam start: ${res.status()} ${await res.text()}`).toBeLessThan(400);
+  });
+
+  test('리눅스마스터 2급 모의고사를 시작할 수 있다(정답·해설은 내려가지 않는다)', async ({ page }) => {
+    const res = await page.request.post('/api/exam/start', { data: { certSlug: 'linux-master-2', count: 5 }, ...RETRY_RESET });
+    expect(res.status(), `linux-master-2 exam start: ${res.status()} ${await res.text()}`).toBe(200);
+    const { questions } = (await res.json()) as { questions: { questionId: string; slug: string; domain: string; choices: unknown[] }[] };
+    expect(questions).toHaveLength(5);
+    for (const q of questions) {
+      expect(q.slug).toBe('linux-master-2');
+      expect(q.questionId).toMatch(/^exam-linux-master-2-\d+$/);
+      expect(q.choices).toHaveLength(4);
+    }
+    expect(JSON.stringify(questions)).not.toMatch(/"(answer|explanation)"/);
   });
 
   test('모의고사 시작 후 제출하면 채점 결과가 온다', async ({ page }) => {
