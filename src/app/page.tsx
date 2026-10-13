@@ -8,11 +8,8 @@ import { getCurrentUser } from '@/lib/auth/currentUser';
 import { getStarterDay } from '@/lib/study/starter';
 import { ExamDateNudge } from '@/components/study/ExamDateNudge';
 import { Landing } from '@/components/marketing/Landing';
-
-// 학습 페이지/연습 문항 총량(빌드 시점 스냅샷). 큰 questions.json을 root에 import하지 않기 위한 상수.
-// 자격증 추가로 크게 바뀌면 갱신.
-const PAGE_COUNT = 555;
-const QUESTION_COUNT = 3410;
+import { DAILY_STUDY_MINUTES } from '@/lib/studyTime';
+import { buildHomeStats } from '@/lib/homeStats';
 
 // 홈 canonical. 과거 루트 레이아웃(src/app/layout.tsx)에 있던 전역 선언을 이곳으로 옮겼다
 // (docs/SEO-indexing-fix-plan.md Step 2) — 다른 라우트로 상속되지 않도록 홈 페이지 자신이 소유한다.
@@ -32,7 +29,7 @@ export const metadata: Metadata = {
   // template 은 하위 route segment 에만 붙는데, app/page.tsx 는 app/layout.tsx 와 같은
   // 세그먼트다(실측: 홈 title 에는 접미사가 없고 /aws/reviews 에는 붙는다).
   // 따라서 브랜드명을 직접 넣는다. 지우면 SERP 에서 브랜드가 사라진다.
-  title: 'AWS 자격증 독학 — 하루 30분 한국어 커리큘럼 | Cert Notes',
+  title: `AWS 자격증 독학 — 하루 ${DAILY_STUDY_MINUTES}분 한국어 커리큘럼 | Cert Notes`,
   description: '주차별 커리큘럼으로 AWS 자격증 독학. 심화 노트·연습문제·간격반복 복습. 전 과정 무료.',
   alternates: { canonical: '/' },
 };
@@ -41,8 +38,11 @@ export default async function HomePage() {
   const session = await getCurrentUser();
   const certs = await listCerts(DEFAULT_CATEGORY);
   // 비로그인 방문자는 마케팅 랜딩, 로그인 사용자는 학습 홈(자격증 그리드).
-  if (!session) return <Landing certCount={certs.length} pageCount={PAGE_COUNT} questionCount={QUESTION_COUNT} certs={certs} />;
+  if (!session) return <Landing {...buildHomeStats(certs)} certs={certs} />;
 
+  const awsCount = certs.filter((c) => (c.section ?? 'aws') === 'aws').length;
+  const linuxCount = certs.filter((c) => c.section === 'linux').length;
+  const trackSummary = `AWS 클라우드 자격증 ${awsCount}종${linuxCount > 0 ? ` + 리눅스마스터 ${linuxCount}종` : ''}`;
   const groups = groupCertsByLevel(certs, 'aws').map((g) => ({ level: g.level, items: g.certs }));
   const starter = await getStarterDay(session.sub);
 
@@ -51,7 +51,7 @@ export default async function HomePage() {
       <section className="space-y-3">
         <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">Certification Notes · {certs.length} tracks</p>
         <h1 className="text-3xl font-semibold tracking-tight">AWS 자격증으로 시작하는 클라우드 네이티브</h1>
-        <p className="text-base text-fg-muted max-w-xl">AWS 클라우드 자격증 11종 + 리눅스마스터 1급. 매일 한 페이지씩 주차별 한국어 노트로 학습. 사이드바에서 자격증을 골라 시작하세요.</p>
+        <p className="text-base text-fg-muted max-w-xl">{trackSummary}. 매일 한 페이지씩 주차별 한국어 노트로 학습. 사이드바에서 자격증을 골라 시작하세요.</p>
       </section>
       <ContinueCards certs={certs} starter={starter} />
       <ExamDateNudge />
