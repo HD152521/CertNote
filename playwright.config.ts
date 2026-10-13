@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { E2E_TUTOR_DAILY_LIMIT } from './e2e/constants';
+import { E2E_TUTOR_DAILY_LIMIT, E2E_TUTOR_GLOBAL_DAILY_LIMIT } from './e2e/constants';
 
 // 게이팅 E2E는 프로덕션 빌드 기준으로 돌려야 한다(dev 서버는 항상 동적 렌더라
 // 정적/동적 게이팅 충돌을 못 잡는다 — a86f9bb 회귀의 교훈). `npm run test:e2e`가
@@ -31,11 +31,15 @@ export default defineConfig({
   webServer: {
     command: 'npm run start',
     url: 'http://localhost:3000',
-    // 가짜 튜터(E2E_FAKE_TUTOR)와 한도(TUTOR_DAILY_LIMIT)가 이 서버에 설정돼 있어야 gating.spec.ts 가
+    // 가짜 튜터(E2E_FAKE_TUTOR)와 한도(TUTOR_DAILY_LIMIT, TUTOR_GLOBAL_DAILY_LIMIT)가 이 서버에 설정돼 있어야 gating.spec.ts 가
     // 결정적이다. 그래서 이미 떠 있는 서버를 재사용하지 않는다(재사용하면 env 가 빠진 서버를 만날 수 있다).
     // E2E_FAKE_TUTOR 는 Vercel 에서는 무시된다(src/lib/tutor/fakeTutor.ts). 운영 환경변수에 넣지 말 것.
     reuseExistingServer: false,
-    env: { E2E_FAKE_TUTOR: '1', TUTOR_DAILY_LIMIT: String(E2E_TUTOR_DAILY_LIMIT) },
+    env: {
+      E2E_FAKE_TUTOR: '1',
+      TUTOR_DAILY_LIMIT: String(E2E_TUTOR_DAILY_LIMIT),
+      TUTOR_GLOBAL_DAILY_LIMIT: String(E2E_TUTOR_GLOBAL_DAILY_LIMIT),
+    },
     timeout: 120_000,
   },
 });

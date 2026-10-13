@@ -39,6 +39,29 @@ export async function resetTutorState(email: string): Promise<void> {
       [email],
     );
     await pool.query(`DELETE FROM tutor_explanations WHERE content LIKE '[E2E-FAKE]%'`);
+    // 전역 카운터도 비운다 — 안 그러면 e2e 를 돌릴 때마다 오늘 합산이 쌓여 언젠가 503 이 난다.
+    await pool.query(`DELETE FROM tutor_global_usage WHERE day = (now() AT TIME ZONE 'Asia/Seoul')::date`);
+  });
+}
+
+// 오늘(KST) 전역 tutor_global_usage.count 를 지정값으로 만든다(상한 도달 상태를 즉시 재현). 행이 없으면 생성.
+export async function setTutorGlobalCount(count: number): Promise<void> {
+  await withDevPool(async (pool) => {
+    await pool.query(
+      `INSERT INTO tutor_global_usage (day, count) VALUES ((now() AT TIME ZONE 'Asia/Seoul')::date, $1)
+       ON CONFLICT (day) DO UPDATE SET count = $1`,
+      [count],
+    );
+  });
+}
+
+// 오늘(KST) 전역 tutor_global_usage.count. 행이 없으면 0.
+export async function readTutorGlobalCount(): Promise<number> {
+  return withDevPool(async (pool) => {
+    const r = await pool.query<{ count: number }>(
+      `SELECT count FROM tutor_global_usage WHERE day = (now() AT TIME ZONE 'Asia/Seoul')::date`,
+    );
+    return r.rows[0]?.count ?? 0;
   });
 }
 
@@ -52,5 +75,12 @@ export async function readTutorCount(email: string): Promise<number> {
       [email],
     );
     return r.rows[0]?.count ?? 0;
+  });
+}
+
+// 테스트 계정의 이메일 인증 상태를 바꾼다(다른 탭에서 인증을 마친 상황을 재현).
+export async function setEmailVerified(email: string, verified: boolean): Promise<void> {
+  await withDevPool(async (pool) => {
+    await pool.query('UPDATE users SET email_verified = $2 WHERE email = $1', [email, verified]);
   });
 }
