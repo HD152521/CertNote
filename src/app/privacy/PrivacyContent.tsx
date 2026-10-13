@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n-client';
 import { pick } from '@/lib/strings/dict';
 import { privacyStrings } from '@/lib/strings/privacy';
+import { CONTACT_EMAIL } from '@/lib/site';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -55,13 +56,23 @@ export function PrivacyContent() {
         <p>{s.thirdPartyBody}</p>
       </Section>
 
+      <Section title={s.adsTitle}>
+        <p>{s.adsBody}</p>
+        <p className="mt-2">
+          {s.adsOptOut}{' '}
+          <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">
+            google.com/settings/ads
+          </a>
+        </p>
+      </Section>
+
       <Section title={s.rightsTitle}>
         <p>{s.rightsBody}</p>
       </Section>
 
       <Section title={s.contactTitle}>
         <p>
-          {s.contactLabel} <a href="mailto:wkdrndydtlr@gmail.com" className="underline underline-offset-4">wkdrndydtlr@gmail.com</a>
+          {s.contactLabel} <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-4">{CONTACT_EMAIL}</a>
         </p>
       </Section>
 

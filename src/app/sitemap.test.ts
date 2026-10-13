@@ -15,6 +15,13 @@ describe('sitemap', () => {
     expect(privacy).toBeDefined();
   });
 
+  test('소개·문의·이용약관이 사이트맵에 포함된다(운영 주체·정책 페이지)', { timeout: 30000 }, async () => {
+    const urls = (await sitemap()).map((e) => e.url);
+    for (const path of ['/about', '/contact', '/terms']) {
+      expect(urls, path).toContain(`${SITE_URL}${path}`);
+    }
+  });
+
   test('robots.txt로 차단된 라우트는 사이트맵에 없다', { timeout: 30000 }, async () => {
     const entries = await sitemap();
     const blocked = ['/admin', '/account', '/dashboard', '/review', '/notebook', '/exam', '/login', '/signup', '/forgot', '/reset', '/verify', '/welcome'];
