@@ -3,6 +3,7 @@ import type { IndexedQuestion } from '../questions';
 import type { Language } from '@/lib/i18n-client';
 import { buildSystemPrompt, buildUserPrompt } from './prompt';
 import { query } from '../db';
+import { fakeTutorStream, isFakeTutorEnabled } from './fakeTutor';
 
 // 유저별 일일 호출 상한(LLM 비용 보호). env로 조정 가능, 기본 10회.
 export const TUTOR_DAILY_LIMIT = Number(process.env.TUTOR_DAILY_LIMIT) || 3;
@@ -16,7 +17,7 @@ const MAX_TURN_CHARS = 2000;
 let client: Anthropic | null = null;
 
 export function isTutorConfigured(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY);
+  return isFakeTutorEnabled() || Boolean(process.env.ANTHROPIC_API_KEY);
 }
 
 function getClient(): Anthropic {
@@ -92,6 +93,8 @@ export function sanitizeHistory(raw: unknown): TutorTurn[] {
 // 문제 + 사용자가 고른 오답 + (선택)후속 대화로 설명을 스트리밍한다.
 // 반환값은 SDK의 MessageStream(라우트에서 text delta를 그대로 흘려보낸다).
 export function streamTutor(q: IndexedQuestion, selected: string, history: TutorTurn[], language: Language = 'ko') {
+  // E2E 전용 가짜 스트림(fakeTutor.ts). Vercel 에서는 isFakeTutorEnabled()가 항상 false.
+  if (isFakeTutorEnabled()) return fakeTutorStream(selected);
   // messages[0]은 항상 합성된 문제 프롬프트(user). 이후 후속 대화가 alternate로 이어진다.
   const messages = [
     { role: 'user' as const, content: buildUserPrompt(q, selected, language) },

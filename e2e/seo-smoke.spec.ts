@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 // SEO 메타데이터/구조화 데이터 스모크 테스트(docs/SEO-indexing-fix-plan.md Step7-B).
 //
@@ -12,6 +12,24 @@ import { test, expect } from '@playwright/test';
 // 검증한다. 상태코드·robots 메타 중복(Step7-A-2, Next의 자동 NonIndex 주입) 같은 문제는
 // 단위 테스트로는 재현되지 않는다 — 이번 세션에서 실제로 이 방식으로 발견했다.
 
+// 페이지의 모든 JSON-LD 블록을 파싱해 @type 목록과 블록 수를 반환한다.
+async function readJsonLdTypes(page: Page): Promise<{ count: number; types: string[] }> {
+  const blocks = page.locator('script[type="application/ld+json"]');
+  const count = await blocks.count();
+  const types: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const raw = await blocks.nth(i).textContent();
+    expect(raw, `${i}번째 JSON-LD가 JSON.parse에 실패하면 안 된다`).toBeTruthy();
+    const parsed = JSON.parse(raw ?? '');
+    for (const node of Array.isArray(parsed) ? parsed : [parsed]) {
+      const t = node['@type'];
+      if (Array.isArray(t)) types.push(...t);
+      else types.push(t);
+    }
+  }
+  return { count, types };
+}
+
 test.describe('canonical/hreflang — 최상위', () => {
   test('홈은 자기참조 canonical만 있고 hreflang은 없다', async ({ page }) => {
     await page.goto('/');
@@ -20,7 +38,7 @@ test.describe('canonical/hreflang — 최상위', () => {
     expect(await page.locator('link[rel="alternate"][hreflang]').count()).toBe(0);
   });
 
-  test('/aws-certs와 /en이 완전히 동일한 hreflang 집합으로 상호 참조한다', async ({ page }) => {
+  test('/aws와 /en이 완전히 동일한 hreflang 집합으로 상호 참조한다', async ({ page }) => {
     const readHreflangSet = async (url: string) => {
       await page.goto(url);
       const links = page.locator('link[rel="alternate"][hreflang]');
@@ -35,30 +53,30 @@ test.describe('canonical/hreflang — 최상위', () => {
       return pairs;
     };
 
-    const awsHreflang = await readHreflangSet('/aws-certs');
+    const awsHreflang = await readHreflangSet('/aws');
     const enHreflang = await readHreflangSet('/en');
 
     expect(awsHreflang).toEqual(enHreflang);
     expect(awsHreflang).toEqual({
-      ko: 'https://cert.juganlab.com/aws-certs',
+      ko: 'https://cert.juganlab.com/aws',
       en: 'https://cert.juganlab.com/en',
-      'x-default': 'https://cert.juganlab.com/aws-certs',
+      'x-default': 'https://cert.juganlab.com/aws',
     });
   });
 });
 
-test.describe('무료 day — /aws-certs/saa-c03/week1/day1', () => {
-  const url = '/aws-certs/saa-c03/week1/day1';
+test.describe('무료 day — /aws/saa-c03/week1/day1', () => {
+  const url = '/aws/saa-c03/week1/day1';
 
   test('자기참조 canonical + ko/en 상호 hreflang', async ({ page }) => {
     await page.goto(url);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
       'href',
-      'https://cert.juganlab.com/aws-certs/saa-c03/week1/day1',
+      'https://cert.juganlab.com/aws/saa-c03/week1/day1',
     );
     const ko = page.locator('link[rel="alternate"][hreflang="ko"]');
     const en = page.locator('link[rel="alternate"][hreflang="en"]');
-    await expect(ko).toHaveAttribute('href', 'https://cert.juganlab.com/aws-certs/saa-c03/week1/day1');
+    await expect(ko).toHaveAttribute('href', 'https://cert.juganlab.com/aws/saa-c03/week1/day1');
     await expect(en).toHaveAttribute('href', 'https://cert.juganlab.com/en/saa-c03/week1/day1');
   });
 
@@ -89,6 +107,41 @@ test.describe('무료 day — /aws-certs/saa-c03/week1/day1', () => {
   });
 });
 
+// 구독제 보류 이후 한국어 week2+도 색인 대상이다(src/lib/day/indexPolicy.ts isIndexableDay).
+test.describe('색인 대상 week2 day — /aws/saa-c03/week2/day1', () => {
+  const url = '/aws/saa-c03/week2/day1';
+
+  test('본문(h1)이 렌더되고 페이월 문구가 없다', async ({ page }) => {
+    await page.goto(url);
+    await expect(page.locator('h1').first()).toBeVisible();
+    await expect(page.locator('div.article').first()).toBeVisible();
+    await expect(page.getByText('여기부터는 Pro 전용입니다')).toHaveCount(0);
+  });
+
+  test('robots 메타가 없고 자기참조 canonical이 있다', async ({ page }) => {
+    await page.goto(url);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      'https://cert.juganlab.com/aws/saa-c03/week2/day1',
+    );
+    expect(await page.locator('meta[name="robots"]').count()).toBe(0);
+  });
+
+  test('Article + BreadcrumbList JSON-LD를 포함해 총 3개의 JSON-LD 블록이 있다', async ({ page }) => {
+    await page.goto(url);
+    const { count, types } = await readJsonLdTypes(page);
+    expect(count).toBe(3); // 전역 Organization+WebSite(1) + Article(1) + BreadcrumbList(1)
+    expect(types).toEqual(expect.arrayContaining(['Organization', 'WebSite', 'Article', 'BreadcrumbList']));
+  });
+});
+
+// 옛 /aws-certs 주소는 섹션 URL로 영구 이동한다(회귀 방지).
+test('옛 /aws-certs/... 주소는 /aws/... 로 308 이동한다', async ({ request }) => {
+  const res = await request.get('/aws-certs/saa-c03/week1/day1', { maxRedirects: 0 });
+  expect(res.status()).toBe(308);
+  expect(res.headers()['location']).toMatch(/\/aws\/saa-c03\/week1\/day1$/);
+});
+
 // 구독제 보류 이후 noindex로 남는 day는 번역이 덜 된 영어판 week2+뿐이다(src/lib/day/indexPolicy.ts).
 test.describe('noindex day — /en/saa-c03/week2/day1', () => {
   const url = '/en/saa-c03/week2/day1';
@@ -116,7 +169,7 @@ test.describe('noindex day — /en/saa-c03/week2/day1', () => {
 
 test.describe('존재하지 않는 URL — 소프트 404 회귀 방지', () => {
   test('실제 HTTP 404를 반환하고 robots 메타가 정확히 1개(중복 없음)다', async ({ page }) => {
-    const res = await page.goto('/aws-certs/nope/week1/day1');
+    const res = await page.goto('/aws/nope/week1/day1');
     expect(res?.status()).toBe(404);
     const robots = page.locator('meta[name="robots"]');
     expect(await robots.count()).toBe(1); // Step7-A-2 회귀 가드 — Next 자동 noindex와 중복 선언 금지
@@ -124,7 +177,7 @@ test.describe('존재하지 않는 URL — 소프트 404 회귀 방지', () => {
   });
 
   test('JSON-LD가 0개다', async ({ page }) => {
-    await page.goto('/aws-certs/nope/week1/day1');
+    await page.goto('/aws/nope/week1/day1');
     expect(await page.locator('script[type="application/ld+json"]').count()).toBe(0);
   });
 
@@ -137,21 +190,27 @@ test.describe('존재하지 않는 URL — 소프트 404 회귀 방지', () => {
 // request(APIRequestContext)로 HEAD 대신 GET만 쏘고 렌더링은 하지 않는다 — page.goto()로
 // 143개를 전부 순회하면 브라우저 렌더링 비용 때문에 기본 30s 테스트 타임아웃을 넘긴다(실측
 // 확인). 상태코드만 확인하면 되므로 API 요청이 훨씬 빠르고 이 테스트의 목적에도 더 맞는다.
+const SITEMAP_CONCURRENCY = 8;
 test('사이트맵의 모든 URL이 200을 반환한다', async ({ request }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(240_000);
   const res = await request.get('/sitemap.xml');
   expect(res.status()).toBe(200);
   const xml = await res.text();
   const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
   expect(urls.length).toBeGreaterThan(0);
 
-  const results = await Promise.all(
-    urls.map(async (url) => {
+  // 800여 개를 한꺼번에 쏘면 워커가 비정상 종료한다(실측: code=3221226505). 고정 동시성 풀로 나눠 보낸다.
+  const results: { path: string; status: number }[] = [];
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < urls.length) {
+      const url = urls[cursor++];
       const path = url.replace('https://cert.juganlab.com', '') || '/';
       const pageRes = await request.get(path);
-      return { path, status: pageRes.status() };
-    }),
-  );
+      results.push({ path, status: pageRes.status() });
+    }
+  };
+  await Promise.all(Array.from({ length: SITEMAP_CONCURRENCY }, worker));
 
   const failures = results.filter((r) => r.status !== 200);
   expect(failures, `200이 아닌 URL: ${JSON.stringify(failures)}`).toEqual([]);
