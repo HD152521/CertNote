@@ -13,6 +13,20 @@ const NOT_FOUND_MARKER = '/__not-found__/__nf__/__nf__';
 
 // /aws-certs·/en 하위 콘텐츠 존재 검증(day 소프트 404 수정). 이 두 접두사 아래엔 콘텐츠 라우트만
 // 있고 다른 정적 페이지가 전혀 없어(전수 확인) 아래 처리가 /checkout류와 충돌할 위험이 없다.
+// 로그인 사용자의 학습 홈(src/app/home/page.tsx). 공개 URL 이 아니라 홈(/) rewrite 의 목적지다.
+const STUDY_HOME_PATH = '/home';
+
+// 홈(/)은 정적 랜딩으로 캐시된다(docs/P3-step3-speed-report.md). 세션 쿠키가 유효한 요청만
+// 학습 홈으로 rewrite 한다 — 주소창은 `/` 그대로이고, 쿠키 없는 방문자(검색 유입)는 캐시를 받는다.
+// 여기서는 JWT 서명·만료만 본다. token_version 무효화는 학습 홈의 getCurrentUser() 가 판정해
+// 무효 세션에는 랜딩을 보여준다.
+async function handleHome(req: NextRequest): Promise<NextResponse> {
+  const token = req.cookies.get(SESSION_COOKIE)?.value;
+  const session = token ? await verifySessionToken(token) : null;
+  if (!session) return NextResponse.next();
+  return NextResponse.rewrite(new URL(STUDY_HOME_PATH, req.url));
+}
+
 async function handleContentRoute(req: NextRequest): Promise<NextResponse> {
   const exists = await contentPathExists(req.nextUrl.pathname);
   if (!exists) {
@@ -31,6 +45,10 @@ async function handleContentRoute(req: NextRequest): Promise<NextResponse> {
 // 프록시는 비로그인 차단용 1차 게이트일 뿐이다.
 export async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
+
+  if (path === '/') return handleHome(req);
+  // 학습 홈은 rewrite 로만 닿는다. 직접 연 요청은 홈으로 — rewrite 된 요청은 proxy 를 다시 타지 않는다.
+  if (path === STUDY_HOME_PATH) return NextResponse.redirect(new URL('/', req.url));
 
   const isContentPath = (prefix: string) => path === `/${prefix}` || path.startsWith(`/${prefix}/`);
   // 공개 콘텐츠 경로: 섹션(/aws·/linux) + 영어판(/en). 레거시 /aws-certs 는 next.config.ts에서
@@ -65,6 +83,8 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
+    // 홈 분기(handleHome)와 내부 전용 학습 홈 경로.
+    '/', '/home',
     '/admin/:path*', '/dashboard/:path*', '/review/:path*', '/notebook/:path*', '/exam/:path*', '/account/:path*',
     // 콘텐츠 존재 검증(docs/SEO-indexing-fix-plan.md Step6). 섹션 허브(/aws·/linux)·/en 자체는
     // handleContentRoute 내부에서 항상 통과시키므로 여기 포함해도 안전하다. /aws-certs 는 레거시
