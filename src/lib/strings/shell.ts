@@ -28,9 +28,10 @@ type ShellKey =
   | 'tutorOpen'
   | 'tutorHeading'
   | 'tutorThinking'
-  | 'tutorProOnlyTitle'
-  | 'tutorProOnlyBody'
-  | 'tutorSeeProPlans'
+  | 'tutorLoginTitle'
+  | 'tutorLoginBody'
+  | 'tutorSignup'
+  | 'tutorLogin'
   | 'tutorFollowupPlaceholder'
   | 'tutorSendQuestion'
   | 'tutorRateLimited'
@@ -83,9 +84,10 @@ export const shellStrings: Dict<ShellKey> = {
     tutorOpen: 'AI 설명 보기',
     tutorHeading: 'AI 설명',
     tutorThinking: '생각 중…',
-    tutorProOnlyTitle: 'AI 오답 튜터는 Pro 전용이에요',
-    tutorProOnlyBody: '틀린 문제를 AI가 풀어 설명하고, 추가 질문에도 답해드려요.',
-    tutorSeeProPlans: 'Pro 업그레이드 보기',
+    tutorLoginTitle: 'AI 설명은 회원가입 후 이용할 수 있어요',
+    tutorLoginBody: '틀린 문제를 AI가 풀어 설명하고, 추가 질문에도 답해드려요. 무료이며 하루 3번까지 물어볼 수 있습니다.',
+    tutorSignup: '무료 회원가입',
+    tutorLogin: '로그인',
     tutorFollowupPlaceholder: '추가로 궁금한 점을 물어보세요',
     tutorSendQuestion: '질문 보내기',
     tutorRateLimited: '요청이 많아요. 잠시 후 다시 시도해 주세요.',
@@ -138,9 +140,10 @@ export const shellStrings: Dict<ShellKey> = {
     tutorOpen: 'See AI explanation',
     tutorHeading: 'AI explanation',
     tutorThinking: 'Thinking…',
-    tutorProOnlyTitle: 'The AI tutor is Pro-only',
-    tutorProOnlyBody: 'AI walks you through the questions you missed and answers your follow-ups.',
-    tutorSeeProPlans: 'See Pro plans',
+    tutorLoginTitle: 'Sign up to use the AI tutor',
+    tutorLoginBody: 'AI walks you through the questions you missed and answers your follow-ups. Free, up to 3 questions a day.',
+    tutorSignup: 'Sign up free',
+    tutorLogin: 'Log in',
     tutorFollowupPlaceholder: 'Ask a follow-up question',
     tutorSendQuestion: 'Send question',
     tutorRateLimited: 'Too many requests right now. Please try again in a moment.',

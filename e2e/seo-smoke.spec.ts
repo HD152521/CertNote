@@ -89,14 +89,15 @@ test.describe('무료 day — /aws-certs/saa-c03/week1/day1', () => {
   });
 });
 
-test.describe('유료 day — /aws-certs/saa-c03/week2/day1', () => {
-  const url = '/aws-certs/saa-c03/week2/day1';
+// 구독제 보류 이후 noindex로 남는 day는 번역이 덜 된 영어판 week2+뿐이다(src/lib/day/indexPolicy.ts).
+test.describe('noindex day — /en/saa-c03/week2/day1', () => {
+  const url = '/en/saa-c03/week2/day1';
 
   test('자기참조 canonical + noindex,nofollow + hreflang 0개', async ({ page }) => {
     await page.goto(url);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
       'href',
-      'https://cert.juganlab.com/aws-certs/saa-c03/week2/day1',
+      'https://cert.juganlab.com/en/saa-c03/week2/day1',
     );
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
     expect(await page.locator('link[rel="alternate"][hreflang]').count()).toBe(0);

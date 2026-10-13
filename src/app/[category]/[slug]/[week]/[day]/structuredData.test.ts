@@ -96,17 +96,17 @@ describe('buildDayStructuredData — 무료 주차(week1)', () => {
   });
 });
 
-describe('buildDayStructuredData — 유료 주차(week2+, 회귀 방지)', () => {
-  test('Article도 BreadcrumbList도 생성하지 않는다(noindex 페이지에 신규 JSON-LD를 넣지 않는다 — Step4 4-2)', async () => {
-    const content = await getDay('aws-certs', 'saa-c03', 2, 1);
+describe('buildDayStructuredData — week2+', () => {
+  test('한국어 week2+는 색인 대상이라 Article·BreadcrumbList를 만든다(구독제 보류 — 전 주차 공개)', async () => {
+    const content = await getDay('aws', 'saa-c03', 2, 1);
     if (!content) throw new Error('fixture content missing');
-    const result = await buildDayStructuredData('aws-certs', 'saa-c03', 2, 1, 'ko', content);
+    const result = await buildDayStructuredData('aws', 'saa-c03', 2, 1, 'ko', content);
 
-    expect(result.articleLd).toBeNull();
-    expect(result.breadcrumbLd).toBeNull();
+    expect(result.articleLd).toMatchObject({ isAccessibleForFree: true });
+    expect(result.breadcrumbLd).not.toBeNull();
   });
 
-  test('en 유료 주차도 동일하게 둘 다 null이다', async () => {
+  test('영어판 week2+는 noindex라 둘 다 null이다(noindex 페이지에 JSON-LD를 넣지 않는다 — Step4 4-2)', async () => {
     const content = await getDay('en', 'saa-c03', 2, 1);
     if (!content) throw new Error('fixture content missing');
     const result = await buildDayStructuredData('en', 'saa-c03', 2, 1, 'en', content);

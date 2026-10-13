@@ -10,6 +10,7 @@ import type { CertOption } from '@/app/account/AccountPageClient';
 import { NotebookTab } from './tabs/NotebookTab';
 import { ProfileTab } from './tabs/ProfileTab';
 import { BillingTab } from './tabs/BillingTab';
+import { PAYWALL_ENABLED } from '@/lib/entitlement/policy';
 import { SettingsTab } from './tabs/SettingsTab';
 
 type TabId = 'profile' | 'notebook' | 'billing' | 'settings';
@@ -23,12 +24,14 @@ interface AccountTabsProps {
   daysLeft: number | null;
 }
 
-const TABS: Array<{ id: TabId; Icon: LucideIcon; label: { en: string; ko: string } }> = [
+// 구독제 보류 중(policy.ts PAYWALL_ENABLED=false)에는 '구독 & 결제' 탭을 숨긴다.
+const ALL_TABS: Array<{ id: TabId; Icon: LucideIcon; label: { en: string; ko: string } }> = [
   { id: 'profile', Icon: User, label: { en: 'Profile', ko: '프로필' } },
   { id: 'notebook', Icon: NotebookPen, label: { en: 'Notebook', ko: '오답노트' } },
   { id: 'billing', Icon: CreditCard, label: { en: 'Subscription', ko: '구독 & 결제' } },
   { id: 'settings', Icon: Settings, label: { en: 'Settings', ko: '설정' } },
 ];
+const TABS = ALL_TABS.filter((tab) => PAYWALL_ENABLED || tab.id !== 'billing');
 
 const VALID_TABS = new Set<TabId>(TABS.map((tab) => tab.id));
 

@@ -2,10 +2,8 @@ import Link from 'next/link';
 import { BookOpen, Timer, RefreshCw, ArrowRight, Check, TrendingUp } from 'lucide-react';
 import { certHref } from '@/lib/content';
 import type { CertMeta } from '@/lib/content';
-import { FREE_WEEK } from '@/lib/entitlement/policy';
 import { JsonLd } from '@/components/JsonLd';
 import { buildFaqPageLd, type FaqEntry } from '@/lib/structuredData';
-import { WaitlistForm } from './WaitlistForm';
 
 const HIGHLIGHTS = [
   {
@@ -29,7 +27,7 @@ const HIGHLIGHTS = [
 const POPULAR_SLUGS = ['saa-c03', 'clf-c02', 'linux-master-1'];
 
 const COMPARISON = [
-  { feature: '가격 (월)', certnote: '₩9,900', udemy: '₩15-30K', coursera: '₩40-49K', pluralsight: '₩25K' },
+  { feature: '가격 (월)', certnote: '무료', udemy: '₩15-30K', coursera: '₩40-49K', pluralsight: '₩25K' },
   { feature: '한국어', certnote: '✅', udemy: '❌', coursera: '❌', pluralsight: '❌' },
   { feature: 'SRS 복습', certnote: '✅', udemy: '❌', coursera: '❌', pluralsight: '❌' },
   { feature: '주차별 커리큘럼', certnote: '✅', udemy: '❌', coursera: '✅', pluralsight: '❌' },
@@ -54,9 +52,9 @@ interface LandingProps {
 // 다루므로 여기서 반복하지 않는다. 여기 질문은 **사이트·학습 방법 층위**로만 고른다.
 // 12개 허브가 이미 공통 상수를 공유해 유사도가 높은 상태라, 공통 설명을 더 얹으면 중복만 는다.
 //
-// ⚠️ 페이월 정직성: 모의고사는 canTakeExam() 이 Pro 전용으로 막는다. 무료 범위를 말할 때
-// 반드시 함께 밝힌다. 무료 경계는 FREE_WEEK 에서 파생한다(숫자를 박으면 상수만 바뀌고
-// 문구가 조용히 거짓이 된다).
+// ⚠️ 접근 정책 정직성: 구독제 보류(policy.ts PAYWALL_ENABLED=false) 기준 문구다 — 노트는 전부
+// 로그인 없이 열려 있고, 모의고사·AI 설명·복습은 무료 회원가입이 필요하다. 페이월을 되살리면
+// 아래 두 답변부터 고쳐야 한다(문구가 조용히 거짓이 된다).
 function buildFaq(weekSpan: { min: number; max: number } | null): FaqEntry[] {
   const faq: FaqEntry[] = [
     {
@@ -77,11 +75,11 @@ function buildFaq(weekSpan: { min: number; max: number } | null): FaqEntry[] {
   faq.push(
     {
       q: '무료로 어디까지 볼 수 있나요?',
-      a: `모든 자격증 트랙의 Week ${FREE_WEEK}은 로그인 없이 전부 열려 있습니다. 심화 노트와 그 안의 연습 문제까지 포함됩니다. Week ${FREE_WEEK + 1} 이후의 노트와 실전 모의고사는 Pro 구독에서 제공됩니다.`,
+      a: '모든 자격증 트랙의 전 주차 노트가 로그인 없이 열려 있습니다. 심화 노트와 그 안의 연습 문제까지 포함됩니다. 실전 모의고사, AI 오답 설명, 오답 복습과 학습 기록은 무료 회원가입 후 이용할 수 있습니다.',
     },
     {
       q: '연습 문제와 실전 모의고사는 어떻게 다른가요?',
-      a: `연습 문제는 매일 노트 끝에 붙어 있어 그날 배운 내용을 바로 확인하는 용도이고, Week ${FREE_WEEK}에서도 무료로 풀 수 있습니다. 실전 모의고사는 실제 시험처럼 타이머와 합·불 채점으로 진행되는 별도 기능이며 Pro 구독에서 제공됩니다.`,
+      a: '연습 문제는 매일 노트 끝에 붙어 있어 그날 배운 내용을 바로 확인하는 용도이고, 로그인 없이 풀 수 있습니다. 실전 모의고사는 실제 시험처럼 타이머와 합·불 채점으로 진행되는 별도 기능이며 무료 회원가입 후 이용할 수 있습니다.',
     },
   );
   return faq;
@@ -113,7 +111,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
             한국어로 배우는<br />AWS 자격증 합격 가이드
           </h1>
           <p className="max-w-2xl text-xl text-fg-muted">
-            주차별 구조화된 커리큘럼 • 매일 30분 심화 노트 • 연습문제·모의고사·간격반복 복습까지. Week {FREE_WEEK}은 무료.
+            주차별 구조화된 커리큘럼 • 매일 30분 심화 노트 • 연습문제·모의고사·간격반복 복습까지. 전 과정 무료.
           </p>
         </div>
 
@@ -123,17 +121,17 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
             href="/signup"
             className="rounded-lg bg-accent px-6 py-3 font-semibold text-accent-fg transition hover:opacity-90 flex items-center gap-2"
           >
-            무료 1주일 시작하기 <ArrowRight className="h-4 w-4" />
+            무료로 시작하기 <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
-            href="/pricing"
+            href="/aws"
             className="rounded-lg border border-border px-6 py-3 font-semibold transition hover:border-border-strong"
           >
-            가격 보기
+            자격증 둘러보기
           </Link>
         </div>
         <p className="text-sm text-fg-faint">
-          ✓ 신용카드 불필요 • ✓ 언제든 취소 가능 • ✓ Week {FREE_WEEK} 무료
+          ✓ 전 주차 노트 로그인 없이 열람 • ✓ 모의고사·AI 설명은 무료 가입 후 이용
         </p>
       </section>
 
@@ -153,7 +151,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
         </div>
         <div className="text-center">
           <p className="text-3xl font-bold">₩0</p>
-          <p className="text-sm text-fg-muted mt-1">Week {FREE_WEEK} 무료</p>
+          <p className="text-sm text-fg-muted mt-1">전 과정 무료</p>
         </div>
       </section>
 
@@ -183,7 +181,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
                 </ul>
               </div>
               <span className="mt-auto flex items-center gap-2 text-sm font-semibold text-accent group-hover:gap-3">
-                Week {FREE_WEEK} 무료로 시작 <ArrowRight className="h-4 w-4" />
+                Week 1부터 시작 <ArrowRight className="h-4 w-4" />
               </span>
             </Link>
             <div className="space-y-2 rounded-xl border border-border p-6">
@@ -260,7 +258,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
                 <span className="font-mono text-xs text-fg-faint">{cert.code}</span>
                 <span className="font-semibold">{cert.name}</span>
                 <span className="mt-auto flex items-center gap-1 text-xs text-fg-muted transition group-hover:text-accent">
-                  Week {FREE_WEEK} 미리보기 <ArrowRight className="h-3.5 w-3.5" />
+                  Week 1부터 보기 <ArrowRight className="h-3.5 w-3.5" />
                 </span>
               </Link>
             ))}
@@ -288,16 +286,6 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
         </p>
       </section>
       <JsonLd data={buildFaqPageLd(faq)} />
-
-      {/* Waitlist */}
-      <section className="space-y-4 rounded-2xl border border-accent/30 bg-accent/5 p-8">
-        <h2 className="text-2xl font-bold">Pro 계획 알림 받기</h2>
-        <p className="text-lg text-fg-muted">
-          Week 2~16 전체 콘텐츠, 무제한 모의고사, 1:1 코칭이 곧 출시됩니다.<br />
-          가장 먼저 접근할 수 있는 조기 할인 알림을 받으세요.
-        </p>
-        <WaitlistForm />
-      </section>
     </div>
   );
 }

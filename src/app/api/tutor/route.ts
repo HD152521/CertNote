@@ -1,7 +1,6 @@
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { AppError, errorResponse } from '@/lib/auth/errors';
 import { clientIp, rateLimit } from '@/lib/rateLimit';
-import { getEntitlementService } from '@/lib/entitlement/factory';
 import { getQuestionById } from '@/lib/questions';
 import type { Language } from '@/lib/i18n';
 import { getTutorError } from '@/lib/tutor/errors';
@@ -9,6 +8,7 @@ import {
   consumeTutorQuota,
   getCachedExplanation,
   isTutorConfigured,
+  refundTutorQuota,
   sanitizeHistory,
   saveExplanation,
   streamTutor,
@@ -30,7 +30,7 @@ const logError = (context: string, userId: string, error: unknown) => {
   );
 };
 
-// AI 오답 튜터. Pro 전용. 문제+오답을 받아 설명을 text/plain으로 스트리밍한다.
+// AI 오답 튜터. 로그인 사용자 누구나, 계정당 하루 TUTOR_DAILY_LIMIT회. 문제+오답을 받아 설명을 text/plain으로 스트리밍한다.
 export async function POST(req: Request) {
   try {
     // language 파라미터 추출 (기본값: ko)
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     const language: Language = body?.language === 'en' ? 'en' : 'ko';
 
     const user = await getCurrentUser();
-    if (!user) throw new AppError(401, 'unauthorized', getTutorError(language, 'proRequired'));
+    if (!user) throw new AppError(401, 'unauthorized', getTutorError(language, 'unauthorized'));
 
     // 사용자 단위 rate limit(LLM 호출 비용 보호). IP도 함께 키에 섞는다.
     const rl = rateLimit(`tutor:${user.sub}:${clientIp(req)}`, 20, 60_000);
@@ -46,10 +46,6 @@ export async function POST(req: Request) {
       throw new AppError(429, 'rate_limited', getTutorError(language, 'rateLimited'));
     }
 
-    const ent = await getEntitlementService().getEntitlement(user.sub);
-    if (!ent.isPro) {
-      throw new AppError(403, 'pro_required', getTutorError(language, 'proRequired'));
-    }
     if (!isTutorConfigured()) {
       const msg = language === 'en' ? 'AI tutor is not available yet.' : 'AI 튜터가 아직 설정되지 않았습니다.';
       throw new AppError(503, 'tutor_unavailable', msg);
@@ -108,6 +104,14 @@ export async function POST(req: Request) {
         } catch (err) {
           // 스트림 도중 오류는 로그만 — 헤더는 이미 전송돼 상태코드를 못 바꾼다.
           logError('stream_error', user.sub, err);
+          // 설명이 한 글자도 나가지 않은 실패는 사용 횟수로 치지 않는다.
+          if (!full) {
+            try {
+              await refundTutorQuota(user.sub);
+            } catch (e) {
+              logError('quota_refund_failed', user.sub, e);
+            }
+          }
           controller.error(err);
         }
       },

@@ -1,16 +1,27 @@
 import type { Entitlement, EntitlementRecord, Plan } from './types';
 
-// 무료로 열어주는 최대 주차. 마케팅 실험 시 이 상수 하나만 바꾼다.
+// 구독제(페이월) 스위치. 2026-10 결정: 구독제를 보류하고 전 주차를 공개한다.
+// 모의고사·AI 튜터·마이페이지는 로그인만 요구한다(플랜 무관, 각 라우트가 401로 판정).
+// 되살릴 때는 이 값을 true로 — 아래 판정 함수들이 Week1 무료/Pro 전용 규칙으로 돌아간다.
+// 단, 화면 문구(랜딩·허브·튜터 안내)와 /pricing 리다이렉트(next.config.ts)는 따로 되돌려야 한다.
+export const PAYWALL_ENABLED: boolean = false;
+
+// 정적 프리렌더되는 주차(week1/[day] 라우트). 페이월이 켜져 있을 때는 무료 주차의 상한이기도 하다.
 export const FREE_WEEK = 1;
 
-// 해당 주차 콘텐츠를 볼 수 있는가. week1(이하)은 누구나, 그 이상은 Pro만.
-export function canAccessWeek(plan: Plan, week: number): boolean {
-  return week <= FREE_WEEK || plan === 'pro';
+// 페이월에 막히는 주차인가. 페이월이 꺼져 있으면 어떤 주차도 유료가 아니다.
+export function isPaidWeek(week: number): boolean {
+  return PAYWALL_ENABLED && week > FREE_WEEK;
 }
 
-// 모의고사는 Pro 전용.
+// 해당 주차 콘텐츠를 볼 수 있는가.
+export function canAccessWeek(plan: Plan, week: number): boolean {
+  return !isPaidWeek(week) || plan === 'pro';
+}
+
+// 모의고사 응시 가능 여부. 로그인 여부는 라우트가 따로 판정한다.
 export function canTakeExam(plan: Plan): boolean {
-  return plan === 'pro';
+  return !PAYWALL_ENABLED || plan === 'pro';
 }
 
 export function isPro(ent: Entitlement): boolean {

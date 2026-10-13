@@ -37,12 +37,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const certs = await listCerts(category).catch(() => []);
   const title =
     lang === 'en'
-      ? `${sectionName} Certifications — Types & Recommended Order (Week 1 Free)`
+      ? `${sectionName} Certifications — Types & Recommended Order`
       : `${sectionName} 자격증 종류와 추천 순서 — ${certs.length}종 한국어 학습 로드맵`;
   const description =
     section === 'aws'
-      ? `AWS 자격증 ${certs.length}종을 레벨별로 정리. Cloud Practitioner(기초) → 어소시에이트(SAA·DVA·SOA) → 프로페셔널(SAP·DOP) → 전문분야 순서로 준비하세요. Week 1 무료.`
-      : `${sectionName} 자격증 ${certs.length}종을 레벨별로 정리하고 추천 순서로 준비하세요. 매일 읽는 심화 노트 + 연습 문제. Week 1 무료.`;
+      ? `AWS 자격증 ${certs.length}종을 레벨별로 정리. Cloud Practitioner(기초) → 어소시에이트(SAA·DVA·SOA) → 프로페셔널(SAP·DOP) → 전문분야 순서로 준비하세요. 전 과정 무료.`
+      : `${sectionName} 자격증 ${certs.length}종을 레벨별로 정리하고 추천 순서로 준비하세요. 매일 읽는 심화 노트 + 연습 문제. 전 과정 무료.`;
   const url = `/${category}`;
   // aws 허브만 영어판(/en)이 존재해 hreflang을 선언한다. linux 등 다른 섹션은 영어판이 없어
   // 상호 참조가 성립하지 않으므로 languages를 아예 넣지 않는다(없는 URL을 가리키면 클러스터 무효화).
@@ -124,7 +124,7 @@ export default async function CategoryHubPage({ params }: PageProps) {
         <p className="text-fg-muted leading-relaxed">
           {section === 'aws'
             ? 'AWS 자격증은 기초(Cloud Practitioner) → 어소시에이트(SAA·DVA·SOA) → 프로페셔널(SAP·DOP) → 전문분야 순서로 준비하는 것이 일반적입니다. 목표를 고르고 무료 Week 1부터 시작하세요.'
-            : `${sectionName} 자격증을 레벨별로 정리했습니다. 목표를 고르고 무료 Week 1부터 시작하세요.`}
+            : `${sectionName} 자격증을 레벨별로 정리했습니다. 목표를 고르고 Week 1부터 시작하세요.`}
         </p>
         <p>
           <Link href={`/${category}/reviews`} className="text-sm text-accent underline underline-offset-4 hover:text-fg">
@@ -160,9 +160,9 @@ export default async function CategoryHubPage({ params }: PageProps) {
 
       <p className="text-xs text-fg-faint">
         {lang === 'en' ? (
-          <>Week 1 of every track is free. <Link href="/pricing" className="underline underline-offset-4 hover:text-fg">See pricing</Link> for the full course.</>
+          <>Every track is free to read. Mock exams and the AI tutor need a free account.</>
         ) : (
-          <>모든 트랙 Week 1은 무료입니다. 전체 과정은 <Link href="/pricing" className="underline underline-offset-4 hover:text-fg">요금제</Link>에서 확인하세요.</>
+          <>모든 트랙의 노트는 로그인 없이 무료로 볼 수 있습니다. 모의고사와 AI 설명은 무료 회원가입 후 이용할 수 있습니다.</>
         )}
       </p>
       <p className="sr-only">{SITE_NAME}</p>

@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   // 네이버 서치어드바이저 권장 80자 이내(검색 스니펫 잘림 방지). og:description도 이 값을 자동 상속한다.
-  description: 'AWS 자격증 독학 커리큘럼. 하루 30분 한국어 노트로 SAA·DVA·SOA 합격 준비. Week 1 무료.',
+  description: 'AWS 자격증 독학 커리큘럼. 하루 30분 한국어 노트로 SAA·DVA·SOA 합격 준비. 전 과정 무료.',
   // canonical/hreflang은 여기서 선언하지 않는다(docs/SEO-indexing-fix-plan.md Step 2).
   // canonical을 지정하지 않은 모든 하위 라우트가 이 값을 그대로 상속해 /checkout 같은
   // 무관한 페이지까지 홈을 자기 canonical로 선언하는 사고가 있었다. 홈의 canonical/hreflang은

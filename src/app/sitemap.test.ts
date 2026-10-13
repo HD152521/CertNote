@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { FREE_WEEK } from '@/lib/entitlement/policy';
+import { EN_INDEXABLE_WEEK, isIndexableDay } from '@/lib/day/indexPolicy';
 import { SITE_URL } from '@/lib/site';
 import sitemap from './sitemap';
 
@@ -23,18 +23,31 @@ describe('sitemap', () => {
     }
   });
 
-  test('Week2+(유료) day 페이지는 사이트맵에서 제외된다', { timeout: 30000 }, async () => {
+  test('한국어 day는 전 주차가 사이트맵에 실린다(구독제 보류 — 전부 색인 대상)', { timeout: 30000 }, async () => {
     const entries = await sitemap();
-    const paidDay = entries.find((e) => /\/week[2-9]\/day/.test(e.url) || /\/week1[0-9]\/day/.test(e.url));
-    expect(paidDay).toBeUndefined();
+    expect(entries.some((e) => e.url.endsWith('/aws/saa-c03/week2/day1'))).toBe(true);
+    expect(entries.some((e) => /\/linux\/[^/]+\/week2\/day1$/.test(e.url))).toBe(true);
   });
 
-  test('무료 주차 상한(FREE_WEEK) 밖의 URL이 없다 — 정책 상수와 항상 일치', { timeout: 30000 }, async () => {
+  test('사이트맵의 모든 day URL은 isIndexableDay와 일치한다 — noindex 페이지를 제출하지 않는다', { timeout: 30000 }, async () => {
     const entries = await sitemap();
     for (const e of entries) {
-      const m = e.url.match(/\/week(\d+)\/day\d+$/);
-      if (m) expect(Number(m[1])).toBeLessThanOrEqual(FREE_WEEK);
+      const m = e.url.match(/\/([^/]+)\/[^/]+\/week(\d+)\/day\d+$/);
+      if (m) expect(isIndexableDay(m[1], Number(m[2])), e.url).toBe(true);
     }
+  });
+
+  test('영어판은 번역이 끝난 주차만 실린다', { timeout: 30000 }, async () => {
+    const entries = await sitemap();
+    for (const e of entries) {
+      const m = e.url.match(/\/en\/[^/]+\/week(\d+)\/day\d+$/);
+      if (m) expect(Number(m[1])).toBeLessThanOrEqual(EN_INDEXABLE_WEEK);
+    }
+  });
+
+  test('/pricing은 리다이렉트되므로 사이트맵에 없다', { timeout: 30000 }, async () => {
+    const entries = await sitemap();
+    expect(entries.some((e) => e.url.endsWith('/pricing'))).toBe(false);
   });
 
   // 핵심 수용 기준: 같은 커밋을 두 번 빌드하면 lastmod가 같아야 한다. 여기선 같은 프로세스 내에서

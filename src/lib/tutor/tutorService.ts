@@ -5,7 +5,7 @@ import { buildSystemPrompt, buildUserPrompt } from './prompt';
 import { query } from '../db';
 
 // 유저별 일일 호출 상한(LLM 비용 보호). env로 조정 가능, 기본 10회.
-export const TUTOR_DAILY_LIMIT = Number(process.env.TUTOR_DAILY_LIMIT) || 10;
+export const TUTOR_DAILY_LIMIT = Number(process.env.TUTOR_DAILY_LIMIT) || 3;
 
 // 모델은 env로 교체 가능. 기본 Opus 4.8(최고 품질). thinking은 끄고 effort로 깊이를 조절해
 // 지연·비용을 억제한다(Vercel 함수 타임아웃 여유 확보).
@@ -44,6 +44,16 @@ export async function consumeTutorQuota(userId: string): Promise<{ allowed: bool
   );
   const count = rows[0]?.count ?? 1;
   return { allowed: count <= TUTOR_DAILY_LIMIT, count, limit: TUTOR_DAILY_LIMIT };
+}
+
+// 차감한 1회를 되돌린다. LLM 호출이 한 글자도 내보내기 전에 실패했을 때만 호출한다 —
+// 하루 한도가 작아서, 서버 쪽 장애로 사용자의 횟수가 소진되면 안 된다.
+export async function refundTutorQuota(userId: string): Promise<void> {
+  await query(
+    `UPDATE tutor_usage SET count = count - 1
+     WHERE user_id = $1 AND day = (now() AT TIME ZONE 'Asia/Seoul')::date AND count > 0`,
+    [userId],
+  );
 }
 
 // 첫 설명 캐시 조회. (문제, 고른 오답) 기준으로 모든 사용자에게 동일하므로 1회만 생성한다.

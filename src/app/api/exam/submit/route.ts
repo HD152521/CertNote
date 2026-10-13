@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     if (!session) {
       throw new AppError(401, 'unauthorized', '로그인이 필요합니다.');
     }
-    // 모의고사는 Pro 전용.
+    // 플랜 가드. 페이월이 꺼져 있으면 로그인만으로 통과한다(policy.ts).
     await getEntitlementService().assertExamAccess(session.sub);
     const body = await req.json().catch(() => null);
     if (!body || !Array.isArray(body.questionIds) || typeof body.answers !== 'object' || body.answers === null) {

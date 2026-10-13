@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation';
 import { ArrowRight, Check } from 'lucide-react';
 import { certLevelLabel } from '@/lib/category';
 import { getRoadmapRole, loadRoadmapRoles } from '@/lib/roadmap';
-import { FREE_WEEK } from '@/lib/entitlement/policy';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 import { JsonLd } from '@/components/JsonLd';
 import { buildItemListLd, buildBreadcrumbLd } from '@/lib/structuredData';
@@ -110,7 +109,7 @@ export default async function RoadmapRolePage({ params }: PageProps) {
                   <span className="min-w-0">{step.note}</span>
                 </span>
                 <span className="mt-1 flex items-center gap-1 text-xs text-fg-muted transition group-hover:text-accent">
-                  Week {FREE_WEEK} 무료로 시작 <ArrowRight className="h-3.5 w-3.5" />
+                  Week 1부터 시작 <ArrowRight className="h-3.5 w-3.5" />
                 </span>
               </span>
             </Link>
@@ -119,7 +118,7 @@ export default async function RoadmapRolePage({ params }: PageProps) {
       </ol>
 
       <p className="text-xs text-fg-faint">
-        각 자격증의 Week {FREE_WEEK}은 무료입니다. 목표 직무에 맞춰 순서대로 준비해 보세요.
+        각 자격증의 노트는 전 주차 무료입니다. 목표 직무에 맞춰 순서대로 준비해 보세요.
         응시료는 AWS 공식 시험 가이드 기준이며 결제 시점 환율과 세금은 별도입니다.
       </p>
       <p className="sr-only">{SITE_NAME}</p>
