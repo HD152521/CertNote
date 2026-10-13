@@ -102,6 +102,15 @@
       "section": "aws"
     },
     {
+      "slug": "linux-master-2",
+      "code": "리눅스마스터 2급",
+      "level": "grade-2",
+      "name": "리눅스마스터 2급",
+      "weeks": 11,
+      "order": 12,
+      "section": "linux"
+    },
+    {
       "slug": "linux-master-1",
       "code": "리눅스마스터 1급",
       "level": "grade-1",

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 207" width="660" height="207" role="img" aria-labelledby="t d">
+<title id="t">가상화가 없을 때와 있을 때의 구조 비교</title>
+<desc id="d">가상화가 없으면 하드웨어 위에 운영체제 하나만 올라가지만, 하이퍼바이저를 두면 여러 게스트 운영체제가 함께 동작한다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="658" height="205" rx="8"/>
+<text class="h" x="170" y="28" text-anchor="middle" fill="#768390">가상화 없이</text><rect x="20" y="93" width="300" height="44" rx="5" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".5"/>
+<text class="t" x="170" y="120" text-anchor="middle">운영체제 하나</text><rect x="20" y="142" width="300" height="44" rx="5" fill="#768390" fill-opacity=".1" stroke="#768390" stroke-opacity=".5"/>
+<text class="t" x="170" y="169" text-anchor="middle">하드웨어</text><text class="h" x="490" y="28" text-anchor="middle" fill="#768390">가상화</text><rect x="340" y="44" width="300" height="44" rx="5" fill="#dcbdfb" fill-opacity=".1" stroke="#dcbdfb" stroke-opacity=".5"/>
+<text class="t" x="490" y="71" text-anchor="middle">게스트 OS — 리눅스 · 윈도 · 리눅스</text><rect x="340" y="93" width="300" height="44" rx="5" fill="#f0a35e" fill-opacity=".1" stroke="#f0a35e" stroke-opacity=".5"/>
+<text class="t" x="490" y="120" text-anchor="middle">하이퍼바이저</text><rect x="340" y="142" width="300" height="44" rx="5" fill="#768390" fill-opacity=".1" stroke="#768390" stroke-opacity=".5"/>
+<text class="t" x="490" y="169" text-anchor="middle">하드웨어</text>
+</svg>

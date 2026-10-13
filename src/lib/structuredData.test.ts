@@ -89,15 +89,11 @@ describe('buildCourseLd — 자격증 허브', () => {
     expect(ld.provider).toEqual(organizationRef());
   });
 
-  test('페이월 페이지에서도 hasPart로 무료 파트(Week1)만 정직하게 선언한다(전체를 무료로 선언하지 않음)', () => {
+  test('접근 정책과 일치하게 선언한다 — 전 주차 공개 중에는 강좌 전체가 무료', () => {
     const ld = buildCourseLd({ ...base, lang: 'ko' }) as Record<string, unknown>;
-    expect(ld.isAccessibleForFree).toBe(false);
-    expect(ld.hasPart).toMatchObject({ isAccessibleForFree: true });
-  });
-
-  test('en일 때 hasPart.name이 영어 문구다', () => {
-    const ld = buildCourseLd({ ...base, lang: 'en' }) as Record<string, unknown>;
-    expect((ld.hasPart as Record<string, unknown>).name).toBe('Week 1 (free preview)');
+    // 구독제 보류(PAYWALL_ENABLED=false): 전 주차 공개라 강좌 전체가 무료이고 hasPart는 없다.
+    expect(ld.isAccessibleForFree).toBe(true);
+    expect(ld.hasPart).toBeUndefined();
   });
 });
 

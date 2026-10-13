@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 224" width="620" height="224" role="img" aria-labelledby="t d">
+<title id="t">X 윈도의 계층 구조</title>
+<desc id="d">응용 프로그램 아래에 툴킷, 그 아래에 저수준 라이브러리가 있고 맨 아래에서 X 서버가 화면을 담당한다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="618" height="222" rx="8"/>
+<rect x="20" y="14" width="580" height="44" rx="5" fill="#768390" fill-opacity=".1" stroke="#768390" stroke-opacity=".5"/>
+<text class="h" x="36" y="41">응용 프로그램</text><text class="m" x="584" y="41" text-anchor="end">GIMP · Firefox · Konsole</text><rect x="20" y="64" width="580" height="44" rx="5" fill="#dcbdfb" fill-opacity=".1" stroke="#dcbdfb" stroke-opacity=".5"/>
+<text class="h" x="36" y="91">툴킷</text><text class="m" x="584" y="91" text-anchor="end">GTK+(C) · Qt(C++) · FLTK · Motif · Tk</text><rect x="20" y="114" width="580" height="44" rx="5" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".5"/>
+<text class="h" x="36" y="141">저수준 라이브러리</text><text class="m" x="584" y="141" text-anchor="end">Xlib · XCB — XCB 가 더 아래</text><rect x="20" y="164" width="580" height="44" rx="5" fill="#f0a35e" fill-opacity=".1" stroke="#f0a35e" stroke-opacity=".5"/>
+<text class="h" x="36" y="191">X 서버</text><text class="m" x="584" y="191" text-anchor="end">X 프로토콜로 통신 · 실제 화면 출력</text>
+</svg>

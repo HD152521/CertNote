@@ -22,6 +22,13 @@ const nextConfig: NextConfig = {
         destination: `https://${PRODUCTION_HOST}/:path*`,
         permanent: true, // 301 — 구글에 canonical 이전 신호.
       },
+      // ── 구독제 보류(2026-10) ─────────────────────────────────────────────────
+      // 요금제·결제·구독 관리 화면은 전 주차 공개 정책과 모순되므로 임시로 돌려보낸다.
+      // 307(permanent:false) — 구독제를 되살리면 이 블록만 지우면 되고, 검색엔진도 원 URL을 잊지 않는다.
+      { source: '/pricing', destination: '/', permanent: false },
+      { source: '/checkout', destination: '/', permanent: false },
+      { source: '/checkout/:path*', destination: '/', permanent: false },
+      { source: '/account/subscription', destination: '/account', permanent: false },
       // ── 레거시 /aws-certs → 섹션 URL 통합(Phase1) ────────────────────────────
       // 콘텐츠는 물리 이동 없이 content/aws-certs/ 에 공존하되, 공개 URL만 섹션 세그먼트로 바꾼다.
       // 규칙 순서(첫 매치 승리)가 두 가지를 동시에 만족해야 한다:

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 300" width="700" height="300" role="img" aria-labelledby="t d">
+<title id="t">CloudWatch Anomaly Detection 의 동적 베이스라인</title>
+<desc id="d">학습된 평균을 중심으로 상한과 하한 밴드가 만들어지고, 실제 메트릭이 이 밴드를 벗어나면 알람이 울린다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="698" height="298" rx="8"/>
+<marker id="a-545d68" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#545d68"/></marker><polygon points="62.0,67.8 156.0,52.6 250.0,75.4 344.0,48.8 438.0,64.0 532.0,56.4 532.0,140.0 438.0,147.6 344.0,132.4 250.0,159.0 156.0,136.2 62.0,151.4" fill="#6cb6ff" opacity=".13"/>
+<path d="M62.0,67.8 L156.0,52.6 L250.0,75.4 L344.0,48.8 L438.0,64.0 L532.0,56.4" fill="none" stroke="#6cb6ff" stroke-width="1.4" stroke-dasharray="5 4" opacity=".8"/>
+<path d="M62.0,151.4 L156.0,136.2 L250.0,159.0 L344.0,132.4 L438.0,147.6 L532.0,140.0" fill="none" stroke="#6cb6ff" stroke-width="1.4" stroke-dasharray="5 4" opacity=".8"/><line class="ln" x1="62" y1="20" x2="62" y2="216"/>
+<line class="ln" x1="62" y1="216" x2="540" y2="216"/>
+<text class="m" x="62" y="14" text-anchor="middle">메트릭</text>
+<text class="m" x="540" y="236" text-anchor="end">시간 →</text><path d="M62.0,111.5 L118.4,90.6 L179.5,102.0 L240.6,121.0 L297.0,98.2 L353.4,79.2 L400.4,31.7 L438.0,98.2 L485.0,109.6 L532.0,102.0" fill="none" stroke="#f0a35e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><text class="t" x="542" y="107" fill="#f0a35e">실제 메트릭</text><text class="m" x="62" y="262">밴드 밖으로 나가는 순간 알람 — 고정 임계값과 달리 시간대별 패턴을 학습한다</text>
+</svg>

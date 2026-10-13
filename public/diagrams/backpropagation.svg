@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 190" width="700" height="190" role="img" aria-labelledby="t d">
+<title id="t">순전파와 역전파</title>
+<desc id="d">입력이 은닉층을 거쳐 출력과 손실까지 나아가는 것이 순전파이고, 손실에서 연쇄법칙으로 각 가중치의 기울기를 거슬러 전달하는 것이 역전파다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="698" height="188" rx="8"/>
+<marker id="a-6cb6ff" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6cb6ff"/></marker><marker id="a-f0a35e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f0a35e"/></marker><rect x="30" y="34" width="107" height="50" rx="6" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".6"/>
+<text class="t" x="83.5" y="65" text-anchor="middle">입력 x</text><line x1="142" y1="59" x2="158" y2="59" stroke="#6cb6ff" stroke-width="1.8" marker-end="url(#a-6cb6ff)"/><rect x="163" y="34" width="107" height="50" rx="6" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".6"/>
+<text class="t" x="216.5" y="65" text-anchor="middle">은닉층 1</text><line x1="275" y1="59" x2="291" y2="59" stroke="#6cb6ff" stroke-width="1.8" marker-end="url(#a-6cb6ff)"/><rect x="296" y="34" width="107" height="50" rx="6" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".6"/>
+<text class="t" x="349.5" y="65" text-anchor="middle">은닉층 2</text><line x1="408" y1="59" x2="424" y2="59" stroke="#6cb6ff" stroke-width="1.8" marker-end="url(#a-6cb6ff)"/><rect x="429" y="34" width="107" height="50" rx="6" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".6"/>
+<text class="t" x="482.5" y="65" text-anchor="middle">출력 ŷ</text><line x1="541" y1="59" x2="557" y2="59" stroke="#6cb6ff" stroke-width="1.8" marker-end="url(#a-6cb6ff)"/><rect x="562" y="34" width="107" height="50" rx="6" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".6"/>
+<text class="t" x="615.5" y="65" text-anchor="middle">손실 L(ŷ, y)</text><path d="M615.5,84 V130 H83.5 V90" fill="none" stroke="#f0a35e" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#a-f0a35e)"/>
+<text class="m" x="349.5" y="121" text-anchor="middle" fill="#f0a35e">역전파 — 연쇄법칙으로 ∂L/∂w 를 거슬러 전달, 갱신은 w ← w − η·∂L/∂w</text>
+</svg>

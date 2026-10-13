@@ -209,14 +209,14 @@ export async function weakDomainDrill(userId: string, limit = DEFAULT_DRILL_LIMI
     const tm = /^topic:(.+)#(\d+)$/.exec(key);
     if (tm) {
       const week = Number(tm[2]);
-      if (!canAccessWeek(ent.plan, week)) return []; // 무료는 week1까지.
+      if (!canAccessWeek(ent.plan, week)) return []; // 주차 접근 가드(페이월이 꺼져 있으면 통과).
       return getQuestionsByCert(tm[1])
         .filter((q) => q.week === week)
         .map((q) => ({ id: q.id, slug: q.slug, week: q.week, day: q.day, number: q.number, prompt: q.prompt }));
     }
     const dm = /^domain:(.+)$/.exec(key);
     if (dm) {
-      if (!canTakeExam(ent.plan)) return []; // 모의고사 도메인 드릴은 Pro 전용.
+      if (!canTakeExam(ent.plan)) return []; // 플랜 가드(페이월이 꺼져 있으면 통과).
       return getExamQuestionsByDomain(dm[1]).map((q) => ({
         id: q.id,
         slug: q.slug,

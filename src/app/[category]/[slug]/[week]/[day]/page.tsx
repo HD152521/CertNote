@@ -2,29 +2,21 @@ import { isSupportedCategory, langOfCategory } from '@/lib/category';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getDay } from '@/lib/content';
-import { getCurrentUser } from '@/lib/auth/currentUser';
-import { getEntitlementService } from '@/lib/entitlement/factory';
-import { FREE_WEEK } from '@/lib/entitlement/policy';
 import { parseDaySegment } from '@/lib/day/segment';
 import { buildDayMetadata } from '@/lib/day/metadata';
 import { DayView } from '@/components/day/DayView';
 
 interface PageProps { params: Promise<{ category: string; slug: string; week: string; day: string }>; }
 
-// 항상 동적 렌더. 이 라우트는 유료 주차(week2+)를 포함한 전체 주차를 담당하며, 유료 주차에서는
-// 쿠키(로그인)·권한을 읽어 게이팅하므로 정적 생성과 양립 불가하다.
+// 항상 동적 렌더. 구독제 보류(2026-10)로 이 라우트는 더 이상 쿠키·권한을 읽지 않는다 — 전 주차가
+// 누구에게나 열려 있다(policy.ts PAYWALL_ENABLED).
 //
-// 절대 이 라우트에 generateStaticParams 를 추가하지 말 것 — Next.js 16.2.6 소스로 확정된
-// 메커니즘(docs/SEO-indexing-fix-plan.md Step5):
-//   build/templates/app-page.js:350  generateStaticParams 존재 시 세그먼트 전체가 SSG 판정
-//   build/templates/app-page.js:357  목록에 없는 param 요청까지 supportsDynamicResponse=false
-//   server/async-storage/work-store.js:33          → isStaticGeneration=true
-//   server/app-render/dynamic-rendering.js:238      → cookies() 호출 시 DynamicServerError throw
-//   server/app-render/app-render.js:1991            → 500 (동적 렌더로 재시도하는 핸들러 없음)
-// 아래 `dynamic = 'force-dynamic'`이 dynamic-rendering.js:226의 store.forceDynamic 조기 return으로
-// 이 throw를 막는 유일한 방어다. 이 라우트를 절대 force-static/generateStaticParams로 바꾸지 말 것
-// — cookies()가 빈 값을 반환해 유료 구독자가 페이월에 갇힌다.
-// 무료 week1 전용 정적 렌더은 별도 라우트(../week1/[day]/page.tsx)가 담당한다.
+// 그래도 force-dynamic 은 유지한다. generateStaticParams 를 추가해 정적으로 바꾸면 빌드가 day
+// 1,300여 개를 전부 프리렌더하게 되고, 나중에 페이월을 되살려 cookies() 를 다시 읽는 순간
+// DYNAMIC_SERVER_USAGE 500 이 난다(Next.js 16.2.6: generateStaticParams 가 있으면 세그먼트 전체가
+// SSG 판정을 받아 목록 밖 param 요청도 cookies() 에서 throw — docs/SEO-indexing-fix-plan.md Step5).
+// 정적화는 빌드 시간·캐시 무효화를 따로 검증한 뒤 별도 작업으로 한다.
+// week1 전용 정적 렌더는 별도 라우트(../week1/[day]/page.tsx)가 담당한다.
 export const dynamic = 'force-dynamic';
 
 // 페이지별 검색 노출 메타. 제목·요약·canonical이 415개 페이지 각각 달라진다.
@@ -49,18 +41,7 @@ export default async function DayPage({ params }: PageProps) {
   const content = await getDay(category, slug, w, d);
   if (!content) notFound();
 
-  // 무료 주차는 인증을 읽지 않아 정적으로 유지될 수 있다(실제 정적 생성은 week1/[day] 라우트).
-  // 유료 주차에서만 쿠키·권한을 읽어 동적 렌더.
-  let locked = false;
-  let loggedIn = false;
-  if (w > FREE_WEEK) {
-    const session = await getCurrentUser();
-    loggedIn = Boolean(session);
-    const ent = session ? await getEntitlementService().getEntitlement(session.sub) : null;
-    locked = !ent?.isPro;
-  }
-
   return (
-    <DayView category={category} slug={slug} w={w} d={d} lang={lang} content={content} locked={locked} loggedIn={loggedIn} />
+    <DayView category={category} slug={slug} w={w} d={d} lang={lang} content={content} locked={false} loggedIn={false} />
   );
 }

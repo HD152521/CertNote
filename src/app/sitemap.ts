@@ -4,6 +4,7 @@ import { getAllDays, getCertMetaMtime, getDayMtime, listCerts } from '@/lib/cont
 import { getRoadmapRoles } from '@/lib/roadmap';
 import { getSourceFileMtime } from '@/lib/fileMtime';
 import { FREE_WEEK } from '@/lib/entitlement/policy';
+import { isIndexableDay } from '@/lib/day/indexPolicy';
 import { SITE_URL } from '@/lib/site';
 
 // 여러 파일의 lastModified 중 최댓값(가장 최근 변경)을 고른다. undefined는 무시.
@@ -38,8 +39,8 @@ function sitemapEntry(
 // - lastModified는 실제 콘텐츠/코드 변경 시각(git 커밋 시각 기반 매니페스트)에서 도출한다 —
 //   new Date()(매 빌드 갱신)와 fs.stat 파일 mtime(Vercel 체크아웃 시 빌드 시각으로 리셋됨,
 //   Step6 후속 사고) 둘 다 Google이 lastmod 신호를 불신하게 만드는 안티패턴이라 쓰지 않는다.
-// - Week2+ day 페이지는 noindex(프리미엄)라 sitemap에서 제외한다. noindex URL을 제출하면
-//   Search Console에 "제출된 URL이 noindex" 경고가 뜨고 크롤 예산을 낭비한다.
+// - noindex day 페이지(isIndexableDay가 false — 현재는 영어판 Week2+)는 sitemap에서 제외한다.
+//   noindex URL을 제출하면 Search Console에 "제출된 URL이 noindex" 경고가 뜨고 크롤 예산을 낭비한다.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 섹션별(공개 URL /aws·/linux) 자격증을 순회한다. 콘텐츠는 content/aws-certs/ 에 공존하지만
   // listCerts(section)이 meta.section으로 걸러 각 섹션 자격증만 반환한다. 레거시 /aws-certs/* 는
@@ -56,7 +57,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const out: MetadataRoute.Sitemap = [
     sitemapEntry(SITE_URL, homeLastMod, 'weekly', 1),
-    sitemapEntry(`${SITE_URL}/pricing`, await getSourceFileMtime('src/app/pricing/page.tsx'), 'monthly', 0.6),
     sitemapEntry(`${SITE_URL}/privacy`, await getSourceFileMtime('src/app/privacy/PrivacyContent.tsx'), 'yearly', 0.3),
   ];
   for (const { section, certs } of sections) {
@@ -74,13 +74,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       );
       const days = await getAllDays(section, cert.slug);
       for (const d of days) {
-        if (d.week > FREE_WEEK) continue; // Week2+ noindex — 색인 대상이 아니므로 제외.
+        if (!isIndexableDay(section, d.week)) continue; // noindex day는 제출하지 않는다.
         out.push(
           sitemapEntry(
             `${SITE_URL}${d.href}`, // d.href 는 이미 /{section}/... (getAllDays가 URL category 유지)
             await getDayMtime(section, cert.slug, d.week, d.day),
             'monthly',
-            0.8, // 무료 Week1은 검색 유입의 정문.
+            d.week <= FREE_WEEK ? 0.8 : 0.7, // Week1은 각 트랙의 정문.
           ),
         );
       }
@@ -101,7 +101,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  // 영어판(무료 Week1 트랙). 콘텐츠가 없으면 조용히 생략.
+  // 영어판(번역이 끝난 주차만 색인). 콘텐츠가 없으면 조용히 생략.
   const enCerts = await listCerts(EN_CATEGORY).catch(() => []);
   if (enCerts.length > 0) {
     const enCertMetaMtimes = await Promise.all(enCerts.map((c) => getCertMetaMtime(EN_CATEGORY, c.slug)));
@@ -110,7 +110,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       out.push(sitemapEntry(`${SITE_URL}/${EN_CATEGORY}/${cert.slug}`, await getCertMetaMtime(EN_CATEGORY, cert.slug), 'weekly', 0.7));
       const days = await getAllDays(EN_CATEGORY, cert.slug);
       for (const d of days) {
-        if (d.week > FREE_WEEK) continue; // 영어판도 무료 Week1만 색인.
+        if (!isIndexableDay(EN_CATEGORY, d.week)) continue; // 번역 덜 된 주차는 noindex — 제외.
         out.push(
           sitemapEntry(`${SITE_URL}${d.href}`, await getDayMtime(EN_CATEGORY, cert.slug, d.week, d.day), 'monthly', 0.6),
         );

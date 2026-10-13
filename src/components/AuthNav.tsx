@@ -68,25 +68,17 @@ export function AuthNav() {
     ...(user.role === 'admin' ? [{ href: '/admin', label: s.admin }] : []),
   ];
 
-  const badge = user.plan === 'pro' ? (
-    <span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">Pro</span>
-  ) : (
-    <Link href="/pricing" className="rounded-md border border-accent/40 px-2 py-0.5 text-xs font-medium text-accent transition hover:bg-accent/10">{t(lang, 'upgradeButton')}</Link>
-  );
-
   return (
     <div className="flex items-center gap-1">
       {/* 데스크탑: 인라인 메뉴 */}
       <div className="hidden items-center gap-1 sm:flex">
         {links.map((l) => (<Link key={l.href} href={l.href} className={LINK_CLASS}>{l.label}</Link>))}
-        {badge}
         <span className="max-w-[14ch] truncate px-1 text-xs text-fg-faint">{user.email}</span>
         <button type="button" onClick={handleLogout} className={LINK_CLASS}>{t(lang, 'logout')}</button>
       </div>
 
-      {/* 모바일: 배지 + 메뉴 버튼 + 드롭다운 (가로로 펼쳐져 줄바꿈되던 문제 해결) */}
+      {/* 모바일: 메뉴 버튼 + 드롭다운 (가로로 펼쳐져 줄바꿈되던 문제 해결) */}
       <div className="relative flex items-center gap-1 sm:hidden">
-        {badge}
         <button
           type="button"
           onClick={() => setMenuOpen((o) => !o)}

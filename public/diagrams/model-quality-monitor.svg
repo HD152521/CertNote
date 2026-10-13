@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 208" width="660" height="208" role="img" aria-labelledby="t d">
+<title id="t">모델 품질 모니터링에 ground truth 가 필요한 이유</title>
+<desc id="d">예측 시점에 캡처한 데이터와 며칠에서 몇 주 뒤에 도착하는 실제 정답을 inference_id 로 맞춰야 성능 지표를 계산할 수 있다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="658" height="206" rx="8"/>
+<marker id="a-545d68" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#545d68"/></marker><rect x="22" y="18" width="299" height="52" rx="6" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".55"/>
+<text class="t" x="171.5" y="41" text-anchor="middle" fill="#6cb6ff">캡처 데이터</text><text class="m" x="171.5" y="59" text-anchor="middle">예측값 — 예측 시점</text><line class="ln" x1="171.5" y1="70" x2="171.5" y2="96"/><rect x="339" y="18" width="299" height="52" rx="6" fill="#f0a35e" fill-opacity=".1" stroke="#f0a35e" stroke-opacity=".55"/>
+<text class="t" x="488.5" y="41" text-anchor="middle" fill="#f0a35e">ground truth</text><text class="m" x="488.5" y="59" text-anchor="middle">실제 정답 — 며칠~몇 주 뒤</text><line class="ln" x1="488.5" y1="70" x2="488.5" y2="96"/><line class="ln" x1="171.5" y1="96" x2="488.5" y2="96"/>
+<line class="ln" x1="330" y1="96" x2="330" y2="126" marker-end="url(#a-545d68)"/>
+<rect x="22" y="132" width="616" height="58" rx="6" fill="#8ddb8c" fill-opacity=".12" stroke="#8ddb8c" stroke-opacity=".6"/>
+<text class="h" x="330" y="157" text-anchor="middle" fill="#8ddb8c">Merge Job — inference_id 로 매칭</text><text class="m" x="330" y="176" text-anchor="middle">성능 지표 계산(정확도·F1·AUC) → 베이스라인과 비교해 위반 여부 판단</text>
+</svg>

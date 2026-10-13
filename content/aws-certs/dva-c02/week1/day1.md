@@ -86,16 +86,7 @@ CloudFront Functions와 Lambda@Edge도 자주 헷갈린다. **CloudFront Functio
 
 클라우드를 처음 접한 개발자가 가장 자주 하는 오해가 "AWS가 보안까지 알아서 해주겠지"다. 실제는 **AWS = Security OF the Cloud / Customer = Security IN the Cloud**라는 명확한 분담이 있다. 더 중요한 건, **선택한 서비스 추상화 레벨에 따라 책임 경계선이 위아래로 움직인다**는 점이다.
 
-```
-관리형 ↑                                      AWS 책임 ↑
-  ┌─────────────────────────────┐
-  │ S3 / DynamoDB / Lambda      │  ← 데이터 분류, IAM 권한만 고객
-  │ RDS / ECS Fargate           │  ← + 네트워크/SG 설정 고객
-  │ ECS on EC2 / EKS Self       │  ← + 컨테이너 런타임, 노드 OS 패치 고객
-  │ EC2 + EBS (IaaS)            │  ← OS·미들웨어·앱 전부 고객
-  └─────────────────────────────┘
-관리형 ↓                                      고객 책임 ↑
-```
+![완전 관리형에서 IaaS로 갈수록 고객 책임이 늘어나는 공동 책임 경계선](/diagrams/shared-responsibility-4tier.svg)
 
 같은 "DB 쿼리"라도 RDS는 엔진 패치·백업·OS는 AWS, 쿼리 작성·인덱스 설계·SG 설정은 고객이다. EC2에 MySQL을 직접 깐다면 OS 패치까지 고객 책임으로 내려온다. Lambda를 쓰면 런타임 보안 패치까지 AWS 책임이고, 고객은 코드의 취약점과 IAM 권한만 신경 쓰면 된다. **추상화 레벨이 올라갈수록 책임 경계선이 위로 올라간다**는 원칙으로 외우면 시험 문제 절반은 자동으로 풀린다.
 

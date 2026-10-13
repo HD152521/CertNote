@@ -114,16 +114,7 @@ sudo python3 aws-replication-installer-init.py \
 
 Agent 등록 후 즉시 시작된다. Staging Area(t3.small EC2 + 원본 디스크 크기 EBS)가 자동 생성된다.
 
-```
-온프레 서버                            AWS Staging Area (ap-northeast-2)
-[Disk Block Bitmap]                   [Replication Server t3.small]
-  모든 블록 = Changed                  [EBS Volume (동일 크기)]
-       │                                      │
-       │ TLS 암호화 전송 (443, 1500)            │
-       └──────────────────────────────────────┘
-           초기 동기화: 모든 블록 전송
-           대역폭 스로틀링 가능
-```
+![온프레미스 서버의 모든 디스크 블록을 AWS 스테이징 영역으로 암호화 전송하는 초기 동기화](/diagrams/drs-initial-sync.svg)
 
 초기 동기화 중에도 원본 서버는 정상 운영된다. 이 기간의 새 쓰기는 비트맵에 기록됐다가 초기 동기화 완료 후 연속 복제로 전환해 따라잡는다.
 

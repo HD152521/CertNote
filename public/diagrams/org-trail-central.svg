@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" width="720" height="260" role="img" aria-labelledby="t d">
+<title id="t">Organization Trail 로 멀티 계정 감사 로그를 중앙에 모으기</title>
+<desc id="d">관리 계정에서 만든 Organization Trail 이 모든 멤버 계정과 앞으로 추가될 계정의 로그까지 자동 수집해 중앙 아카이브 계정으로 보낸다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="718" height="258" rx="8"/>
+<marker id="a-545d68" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#545d68"/></marker><rect x="22" y="18" width="676" height="46" rx="6" fill="#6cb6ff" fill-opacity=".12" stroke="#6cb6ff" stroke-opacity=".6"/>
+<text class="h" x="360" y="39" text-anchor="middle">관리 계정 — Organization Trail 생성</text><text class="m" x="360" y="56" text-anchor="middle">멤버 계정의 로그를 자동 수집</text><line class="ln" x1="360" y1="64" x2="360" y2="88"/><line class="ln" x1="102" y1="88" x2="618" y2="88"/><line class="ln" x1="102" y1="88" x2="102" y2="116" marker-end="url(#a-545d68)"/>
+<rect x="22" y="122" width="160" height="60" rx="6" fill="#dcbdfb" fill-opacity=".1" stroke="#dcbdfb" stroke-opacity=".55"/>
+<text class="t" x="102" y="146" text-anchor="middle" fill="#dcbdfb">멤버 계정 A</text><text class="m" x="102" y="164" text-anchor="middle">CloudTrail 이벤트</text><line class="ln" x1="274" y1="88" x2="274" y2="116" marker-end="url(#a-545d68)"/>
+<rect x="194" y="122" width="160" height="60" rx="6" fill="#dcbdfb" fill-opacity=".1" stroke="#dcbdfb" stroke-opacity=".55"/>
+<text class="t" x="274" y="146" text-anchor="middle" fill="#dcbdfb">멤버 계정 B</text><text class="m" x="274" y="164" text-anchor="middle">CloudTrail 이벤트</text><line class="ln" x1="446" y1="88" x2="446" y2="116" marker-end="url(#a-545d68)"/>
+<rect x="366" y="122" width="160" height="60" rx="6" fill="#dcbdfb" fill-opacity=".1" stroke="#dcbdfb" stroke-opacity=".55"/>
+<text class="t" x="446" y="146" text-anchor="middle" fill="#dcbdfb">멤버 계정 C</text><text class="m" x="446" y="164" text-anchor="middle">CloudTrail 이벤트</text><line class="ln" x1="618" y1="88" x2="618" y2="116" marker-end="url(#a-545d68)"/>
+<rect x="538" y="122" width="160" height="60" rx="6" fill="#768390" fill-opacity=".1" stroke="#768390" stroke-opacity=".55"/>
+<text class="t" x="618" y="146" text-anchor="middle" fill="#768390">미래에 추가될 계정</text><text class="m" x="618" y="164" text-anchor="middle">자동 포함</text><line class="ln" x1="102" y1="182" x2="102" y2="200"/>
+<line class="ln" x1="618" y1="182" x2="618" y2="200"/>
+<line class="ln" x1="102" y1="200" x2="618" y2="200"/>
+<line class="ln" x1="360" y1="200" x2="360" y2="210" marker-end="url(#a-545d68)"/>
+<rect x="22" y="212" width="676" height="40" rx="6" fill="#8ddb8c" fill-opacity=".1" stroke="#8ddb8c" stroke-opacity=".5"/>
+<text class="t" x="360" y="237" text-anchor="middle" fill="#8ddb8c">Log Archive 계정 중앙 S3 — Object Lock(WORM) · SSE-KMS · Log File Validation</text>
+</svg>

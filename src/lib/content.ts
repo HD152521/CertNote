@@ -38,6 +38,10 @@ export interface CertMeta {
   dayCount: number;
   sourceRepo: string;
   syncedAt: string;
+  // 준비 중인 트랙. content/ 에 뼈대만 있고 index.json 에는 아직 등록하지 않은 상태를 뜻한다.
+  // listCerts 는 index.json 기준이라 draft 트랙은 애초에 보이지 않는다(이 플래그는 의도 표시용).
+  // 공개할 때 이 플래그를 지우고 index.json 에 항목을 넣는다 — contentIndex.test.ts 가 짝을 검사한다.
+  draft?: boolean;
 }
 
 export interface CategoryIndex {
@@ -239,9 +243,8 @@ export async function buildSearchBodyIndex(category: string): Promise<SearchBody
   for (const c of certs) {
     const days = await getAllDays(category, c.slug);
     for (const d of days) {
-      // 유료(Week2+) 본문은 정적 검색 인덱스에 싣지 않는다(이 라우트는 force-static이라
-      // 사용자별 게이팅이 불가 → 누구나 받는다). 무료 Week1만 본문 검색, 나머지는 제목만.
-      // 결제/Pro 본문 검색은 P1에서 인증된 동적 엔드포인트로 제공.
+      // 본문 검색은 Week1만, 나머지 주차는 제목만 싣는다. 전 주차 본문을 실으면 인덱스가
+      // 1MB를 넘겨 검색창을 여는 순간의 다운로드가 무거워진다(페이월과 무관한 용량 제약).
       const includeBody = d.week <= FREE_WEEK;
       const raw = includeBody
         ? await fs.readFile(path.join(CONTENT_ROOT, contentDirOf(category), c.slug, `week${d.week}`, `day${d.day}.md`), 'utf8')

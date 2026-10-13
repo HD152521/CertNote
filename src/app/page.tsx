@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   // 세그먼트다(실측: 홈 title 에는 접미사가 없고 /aws/reviews 에는 붙는다).
   // 따라서 브랜드명을 직접 넣는다. 지우면 SERP 에서 브랜드가 사라진다.
   title: 'AWS 자격증 독학 — 하루 30분 한국어 커리큘럼 | Cert Notes',
-  description: '주차별 커리큘럼으로 AWS 자격증 독학. 심화 노트·연습문제·간격반복 복습. Week 1 무료.',
+  description: '주차별 커리큘럼으로 AWS 자격증 독학. 심화 노트·연습문제·간격반복 복습. 전 과정 무료.',
   alternates: { canonical: '/' },
 };
 

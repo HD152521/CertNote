@@ -100,6 +100,7 @@ KMS 접근은 **키 정책이 1차 권한 원천**이다(IAM과 다른 점). 핵
    ├─ 어디에 민감 데이터가 있나 ──► Macie
    │
    └─ 조직 밖으로 못 나가게 ──────► SCP(나가는 문) + RCP(들어오는 문) + aws:PrincipalOrgID
+```
 
 > 🎯 **통합 시나리오 A**: "규제상 키 자료를 우리가 단독 소유·통제해야 하고, S3 데이터는 그 키로 암호화하며, 누가 키를 썼는지 감사해야 한다." 답: **CloudHSM 기반 KMS custom key store**(키 자료 단독 소유·FIPS L3) → 그 CMK로 **S3 SSE-KMS**(키 정책으로 접근 통제) → **CloudTrail**로 KMS API(`Decrypt`/`GenerateDataKey`) 호출 감사. 키 소유(CloudHSM) + 통제(키 정책) + 감사(CloudTrail) 삼위일체.
 

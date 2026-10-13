@@ -10,12 +10,12 @@ VPC Peering is a technology that creates a **logically direct link** between two
 
 The most critical limitation of VPC Peering is the lack of support for **transitive routing**. Even if VPC A is Peering-connected to VPC B and VPC B is Peering-connected to VPC C, A cannot directly communicate with C. Traffic from A to C is not forwarded by B even if it passes through it. This isn't a design flaw but an intentional security decision. Each Peering connection must be an isolated link between two explicitly authorized VPCs.
 
-`
+```
 [VPC A] ──── Peering ────> [VPC B] ──── Peering ────> [VPC C]
     Direct communication from A to C not possible (B refuses forwarding)
 
 [VPC A] ──────────────── Direct Peering required ────────────────> [VPC C]
-`
+```
 
 > 💡 **Related Theory**: The prohibition of transitive routing stems from the network security **Principle of Least Path**. If a router forwards packets along paths it doesn't explicitly know, unintended traffic flows occur. AWS prevents this by restricting route propagation of Peering connections only to the two participating VPCs. This is similar to RFC 4271 (BGP-4), which by default restricts propagation of paths received from eBGP peers to other eBGP peers.
 
@@ -27,7 +27,7 @@ An additional constraint is that if the CIDR blocks of two Peering VPCs overlap,
 
 AWS Transit Gateway (TGW) was announced at AWS re:Invent in November 2018. At the announcement, AWS Chief Evangelist Jeff Barr explained it as a service to solve the reality that "customers can't keep their network architecture simple because of the mesh complexity of VPC Peering." TGW is AWS's managed service implementation of the **Hub-and-Spoke** topology.
 
-`
+```
                     ┌──────────────────────────┐
                     │      Transit Gateway      │
                     │    (Regional Hub)         │
@@ -47,7 +47,7 @@ AWS Transit Gateway (TGW) was announced at AWS re:Invent in November 2018. At th
                     │ On-Premises │
                     │ (DX / VPN)  │
                     └────────────┘
-`
+```
 
 The core components of TGW are **Attachments** and **Route Tables**. VPCs, VPN connections, Direct Connect Gateways, TGW Peering from other regions, and TGW Connect (SD-WAN) all connect to TGW as Attachments. Each Attachment is associated with one or more Route Tables and learns routes from other Attachments (Propagation) or receives static routes (Association).
 
@@ -63,7 +63,7 @@ The reason TGW Route Table design appears repeatedly in SAP-C02 exams is that th
 
 Development and Production VPCs should not communicate with each other, but both environments need access to shared DNS servers, Active Directory, and patch servers in a Shared VPC.
 
-`
+```
 [TGW Route Table Configuration]
 
 RT-Workload (Dev, Prod are associated):
@@ -74,7 +74,7 @@ RT-Shared (Shared VPC is associated):
   ├── 10.1.0.0/16 → Dev Attachment (Propagation)
   └── 10.2.0.0/16 → Prod Attachment (Propagation)
   ※ Shared knows and can communicate with both Dev and Prod
-`
+```
 
 When a packet from Dev is sent to Prod, the packet arrives at TGW and queries RT-Workload. Since RT-Workload doesn't have Prod's CIDR (10.2.0.0/16), it's treated as blackhole. This is the essence of isolation.
 
@@ -84,7 +84,7 @@ When a packet from Dev is sent to Prod, the packet arrives at TGW and queries RT
 
 NAT Gateways are created per AZ and incur costs. If 50 VPCs each have NAT Gateways, with 2 AZs you accumulate costs for 100 NAT Gateways. With TGW, you can centralize all outbound Internet traffic from all VPCs through a single Egress VPC with NAT Gateways.
 
-`
+```
 [Default route for all spoke VPCs]
 0.0.0.0/0 → TGW
 
@@ -93,7 +93,7 @@ NAT Gateways are created per AZ and incur costs. If 50 VPCs each have NAT Gatewa
 
 [Egress VPC]
 NAT Gateway → Internet Gateway → Internet
-`
+```
 
 > ⚠️ **Pitfall**: When implementing the centralized Egress pattern, hairpinning issues can occur. When traffic from a spoke VPC reaches the Egress VPC through TGW, return traffic must correctly route back to the original VPC through TGW from the Egress VPC's routing table. For this to work, you must explicitly add TGW routes for each spoke VPC's CIDR in the Egress VPC's private subnet route table. Omitting this route causes asymmetric routing and connection failure.
 
@@ -101,12 +101,12 @@ NAT Gateway → Internet Gateway → Internet
 
 Adding a Blackhole route to a specific CIDR in the TGW Route Table explicitly drops traffic destined for that range. This is useful for granular control to block specific traffic even when routes are learned via Propagation.
 
-`ash
+```bash
 aws ec2 create-transit-gateway-route \
   --transit-gateway-route-table-id tgw-rtb-xxx \
   --destination-cidr-block 10.2.0.0/16 \
   --blackhole
-`
+```
 
 > 💡 **Related Theory**: In networks, Null Routes or Blackhole routes are techniques to immediately drop unnecessary packets without CPU processing. They're also used in DDoS attack mitigation. RFC 3882 standardizes BGP-based Blackhole Routing (RTBH, Remotely-Triggered Black Hole). TGW's Blackhole route applies this concept to VPC networking.
 
@@ -163,7 +163,7 @@ There's an important caveat. TGW Inter-Region Peering is also **not transitive**
 
 Large enterprises operate dozens to hundreds of accounts through AWS Organizations. Creating separate TGWs in each account explodes management points. AWS Resource Access Manager (RAM) allows you to share TGW with other accounts in your Organizations, enabling centralized TGW management from a single network account.
 
-`ash
+```bash
 # Share TGW via RAM from network account
 aws ram create-resource-share \
   --name "TGW-Share-Org" \
@@ -176,7 +176,7 @@ aws ec2 create-transit-gateway-vpc-attachment \
   --transit-gateway-id tgw-xxx \  # TGW owned by network account
   --vpc-id vpc-yyy \
   --subnet-ids subnet-aaa subnet-bbb
-`
+```
 
 > 🎯 **Scenario**: A large e-commerce company operates a master account, network account, security account, and 80 workload accounts per business unit through AWS Organizations. The network team creates a single TGW in the network account and shares it organization-wide via RAM. VPCs from workload accounts attach to this TGW. Routing control is managed centrally by the network team. When a new business unit creates an account, they simply attach to the existing TGW, standardizing network onboarding.
 
@@ -184,13 +184,13 @@ aws ec2 create-transit-gateway-vpc-attachment \
 
 Enterprises running Cisco SD-WAN, VMware SD-WAN (VeloCloud), or Aviatrix on premises and expanding to AWS use TGW Connect. TGW Connect runs BGP over GRE (Generic Routing Encapsulation) tunnels to exchange dynamic routing with SD-WAN appliances.
 
-`
+```
 [On-Premises SD-WAN] ──── GRE Tunnel ────> [TGW Connect Attachment]
                          BGP Session                │
                                               [TGW Route Table]
                                                     │
                                             [Spoke VPCs]
-`
+```
 
 > 💡 **Related Theory**: GRE (RFC 2784) is a tunneling technique that encapsulates arbitrary protocol packets in another protocol. In TGW Connect, GRE forms a tunnel between BGP peers. BGP (RFC 4271) is a route exchange protocol between Autonomous Systems. In TGW Connect, a BGP session is established between the SD-WAN appliance and TGW to dynamically learn routes.
 
@@ -202,7 +202,7 @@ Some financial trading systems and media streaming require **multicast** to simu
 
 ## Practical CLI: Implementing TGW Isolation Patterns
 
-`ash
+```bash
 # Create TGW (disable auto-creation of default RT — manual control)
 aws ec2 create-transit-gateway \
   --description "Enterprise Hub" \
@@ -244,7 +244,7 @@ aws ec2 enable-transit-gateway-route-table-propagation \
 aws ec2 enable-transit-gateway-route-table-propagation \
   --transit-gateway-attachment-id tgw-attach-prod \
   --transit-gateway-route-table-id tgw-rtb-shared
-`
+```
 
 In SAP-C02 exams, TGW-related questions typically ask "Which Route Table design satisfies this isolation requirement?" The key is that Association holds routing decision authority and Propagation controls route advertisement. Dev↔Prod isolation is achieved by preventing both Attachments' CIDRs from Propagating to RT-Workload.
 

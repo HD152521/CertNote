@@ -77,23 +77,7 @@ query.run(query_string="SELECT * FROM customer_features WHERE ...",
           output_location='s3://my-bucket/query-results/')
 ```
 
-```
-                 [특성 계산 파이프라인]
-                          │ ingest
-                          v
-                  ┌───────────────┐
-                  │ Feature Store │
-                  └───────┬───────┘
-             자동 동기화   │
-        ┌─────────────────┴─────────────────┐
-        v                                   v
- [온라인 스토어]                     [오프라인 스토어]
-  최신값 1건                          전체 이력(S3 Parquet)
-  GetRecord, 밀리초                   Athena 대량 조회
-        │                                   │
-        v                                   v
-  실시간 추론 서버                     학습 데이터셋 생성
-```
+![Feature Store 가 온라인 스토어와 오프라인 스토어로 동기화되어 각각 실시간 추론과 학습 데이터셋에 쓰이는 구조](/diagrams/feature-store-online-offline.svg)
 
 > ⚠️ **함정**: 온라인 스토어만 활성화하면 학습용 이력이 S3에 쌓이지 않고, 오프라인만 활성화하면 실시간 추론에서 저지연 조회를 못 한다. 대부분의 실제 ML 시스템은 **둘 다 활성화**해서, 같은 특성을 학습(오프라인)과 추론(온라인)에 일관되게 쓴다. 데이터를 ingest하면 SageMaker가 온라인에는 최신값을, 오프라인에는 이력을 자동으로 동기화한다.
 

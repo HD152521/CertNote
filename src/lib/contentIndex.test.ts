@@ -12,6 +12,10 @@ import path from 'node:path';
 // 이 테스트는 "디스크에 있는 트랙이 인덱스에 전부 있는가"를 직접 확인해 그 사고를 막는다.
 const CONTENT_ROOT = path.join(process.cwd(), 'content', 'aws-certs');
 
+interface TrackMeta {
+  draft?: boolean;
+}
+
 interface IndexCert {
   slug: string;
   section?: string;
@@ -24,10 +28,17 @@ const index = JSON.parse(readFileSync(path.join(CONTENT_ROOT, 'index.json'), 'ut
 };
 
 // meta.json 을 가진 디렉터리 = 실제로 존재하는 트랙.
-const onDisk = readdirSync(CONTENT_ROOT, { withFileTypes: true })
+const allDirs = readdirSync(CONTENT_ROOT, { withFileTypes: true })
   .filter((e) => e.isDirectory())
   .map((e) => e.name)
   .filter((name) => existsSync(path.join(CONTENT_ROOT, name, 'meta.json')));
+
+const metaOf = (slug: string): TrackMeta =>
+  JSON.parse(readFileSync(path.join(CONTENT_ROOT, slug, 'meta.json'), 'utf8')) as TrackMeta;
+
+// draft 트랙은 뼈대만 있고 index.json 에 일부러 넣지 않은 상태다(공개 전). 공개 대상에서 제외한다.
+const drafts = allDirs.filter((slug) => metaOf(slug).draft === true);
+const onDisk = allDirs.filter((slug) => !drafts.includes(slug));
 
 describe('content/aws-certs/index.json 무결성', () => {
   test('디스크에 있는 모든 트랙이 인덱스에 있다(sync 덮어쓰기 사고 방지)', () => {
@@ -43,6 +54,11 @@ describe('content/aws-certs/index.json 무결성', () => {
 
   test('모든 항목이 section 을 갖는다 — 없으면 listCerts 필터에서 통째로 누락된다', () => {
     expect(index.certs.filter((c) => !c.section).map((c) => c.slug)).toEqual([]);
+  });
+
+  test('draft 트랙은 인덱스에 없어야 한다 — 있으면 빈 허브가 색인된다', () => {
+    const indexed = new Set(index.certs.map((c) => c.slug));
+    expect(drafts.filter((slug) => indexed.has(slug))).toEqual([]);
   });
 
   test('linux 섹션 트랙이 최소 1개 존재한다', () => {

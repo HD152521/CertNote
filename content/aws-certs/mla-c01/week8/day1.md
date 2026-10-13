@@ -181,18 +181,7 @@ print(last["ProcessingOutputConfig"])   # 위반 리포트가 떨어진 S3 경�
 3. 모델 품질 모니터가 예측과 정답을 병합(merge)해 정확도, F1, AUC 등 성능 지표를 계산한다.
 4. 베이스라인 성능 대비 저하가 임계치를 넘으면 위반으로 표시한다.
 
-```text
-  예측 시점                       며칠~몇 주 뒤
- ┌──────────┐                  ┌──────────────┐
- │ 캡처 데이터 │  inference_id   │  ground truth │
- │ (예측값)   │ ◀────매칭────▶  │  (실제 정답)   │
- └──────────┘                  └──────────────┘
-        └──────────┬───────────────────┘
-                   ▼
-        Merge Job → 성능 지표 계산(정확도·F1·AUC)
-                   ▼
-        베이스라인 성능과 비교 → 위반 여부
-```
+![예측 시점의 캡처 데이터와 나중에 도착한 실제 정답을 매칭해 성능 지표를 계산하는 흐름](/diagrams/model-quality-monitor.svg)
 
 ```python
 from sagemaker.model_monitor import ModelQualityMonitor

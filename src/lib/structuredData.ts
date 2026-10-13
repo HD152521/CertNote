@@ -8,6 +8,7 @@
 // 관리한다.
 import type { Lang } from './category';
 import { SITE_NAME, SITE_URL } from './site';
+import { FREE_WEEK, PAYWALL_ENABLED } from './entitlement/policy';
 
 /**
  * JSON-LD 페이로드를 <script> 태그에 안전하게 주입할 수 있는 문자열로 직렬화한다.
@@ -104,14 +105,19 @@ export function buildCourseLd(input: CourseLdInput): Record<string, unknown> {
     description: `${weeks}주(총 ${dayCount}일) ${code} 자격증 한국어 학습 커리큘럼`,
     provider: organizationRef(),
     inLanguage: lang,
-    // 전체 강좌는 유료(Week2+ 페이월)이고 Week1만 무료다. "전부 무료"로 선언하면
-    // 페이월과 불일치 → 구조화 데이터 스팸(수동 조치 사유). hasPart로 무료 파트를 정직하게 명시한다.
-    isAccessibleForFree: false,
-    hasPart: {
-      '@type': 'CreativeWork',
-      name: lang === 'en' ? 'Week 1 (free preview)' : 'Week 1 (무료 미리보기)',
-      isAccessibleForFree: true,
-    },
+    // 선언은 실제 접근 정책과 일치해야 한다(불일치 = 구조화 데이터 스팸, 수동 조치 사유).
+    // 페이월이 꺼져 있으면 전 주차가 열려 있으므로 강좌 전체가 무료이고, 켜져 있으면 Week1만
+    // 무료라 hasPart로 무료 파트를 따로 밝힌다.
+    ...(PAYWALL_ENABLED
+      ? {
+          isAccessibleForFree: false,
+          hasPart: {
+            '@type': 'CreativeWork',
+            name: lang === 'en' ? `Week ${FREE_WEEK} (free preview)` : `Week ${FREE_WEEK} (무료 미리보기)`,
+            isAccessibleForFree: true,
+          },
+        }
+      : { isAccessibleForFree: true }),
     url: `${SITE_URL}/${category}/${slug}`,
   };
 }
@@ -234,7 +240,7 @@ export function buildDayArticleLd(input: DayArticleLdInput): Record<string, unkn
     headline,
     description,
     inLanguage: lang,
-    // 이 함수는 무료 주차(week <= FREE_WEEK) day에서만 호출된다 — 정직한 선언.
+    // 이 함수는 색인 대상(= 페이월에 막히지 않은) day에서만 호출된다 — 정직한 선언.
     isAccessibleForFree: true,
     learningResourceType: lang === 'en' ? 'Study notes' : '학습 노트',
     isPartOf: {

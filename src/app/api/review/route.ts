@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     if (!body || typeof body.questionId !== 'string' || typeof body.selected !== 'string') {
       throw new AppError(400, 'invalid_body', '요청 형식이 올바르지 않습니다.');
     }
-    // 무료 사용자는 Week1 문제만 복습 가능.
+    // 주차 접근 가드. 페이월이 꺼져 있으면 전 주차 통과(policy.ts).
     await getEntitlementService().assertQuestionAccess(session.sub, body.questionId);
     const result = await getReviewService().review(session.sub, body.questionId, body.selected);
     await recordActivity(session.sub).catch(() => {}); // 스트릭용 활동 기록(실패 무시)

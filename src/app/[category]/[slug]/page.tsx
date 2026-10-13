@@ -57,12 +57,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
   const title =
     lang === 'en'
-      ? `${meta.code} ${meta.name} — Study Notes (Week 1 Free)`
+      ? `${meta.code} ${meta.name} — Study Notes`
       : `${meta.code} ${meta.name} — ${meta.weeks}주 완성 학습 노트`;
   const description =
     lang === 'en'
-      ? `Study ${meta.code} with daily in-depth notes and practice questions. Week 1 is free in English.`
-      : `${meta.code} 시험을 ${meta.weeks}주(총 ${meta.dayCount}일) 한국어 커리큘럼으로 준비하세요. 매일 읽는 심화 노트 + 연습 문제 + 모의고사·복습. Week 1은 무료.`;
+      ? `Study ${meta.code} with daily in-depth notes and practice questions. Free to read; Week 1 is fully translated into English.`
+      : `${meta.code} 시험을 ${meta.weeks}주(총 ${meta.dayCount}일) 한국어 커리큘럼으로 준비하세요. 매일 읽는 심화 노트 + 연습 문제 + 모의고사·복습. 전 과정 무료.`;
   const url = `/${category}/${slug}`;
   // 반대 언어 허브가 있으면 hreflang 연결(영어판이 없는 자격증은 en 메타가 없어 실패 → 연결 생략).
   const otherCategory = lang === 'en' ? DEFAULT_CATEGORY : EN_CATEGORY;
@@ -139,7 +139,7 @@ export default async function CertIndexPage({ params }: PageProps) {
         </p>
         {lang === 'en' && (
           <p className="text-xs text-fg-faint">
-            Week 1 is available in English as a free preview. The full course is currently Korean-only —{' '}
+            Week 1 is fully translated into English. The rest of the course is currently Korean-only —{' '}
             <Link href={certHref(meta)} className="underline underline-offset-4 hover:text-fg">view the Korean track</Link>.
           </p>
         )}

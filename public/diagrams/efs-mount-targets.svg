@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 226" width="660" height="226" role="img" aria-labelledby="t d">
+<title id="t">EFS 의 가용 영역별 마운트 타깃</title>
+<desc id="d">각 가용 영역의 EC2 가 해당 영역의 마운트 타깃을 거쳐 하나의 EFS 분산 스토리지 클러스터에 접근한다.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="658" height="224" rx="8"/>
+<marker id="a-545d68" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#545d68"/></marker><rect x="22" y="18" width="193" height="70" rx="6" fill="#dcbdfb" fill-opacity=".1" stroke="#dcbdfb" stroke-opacity=".55"/>
+<text class="t" x="118.5" y="41" text-anchor="middle" fill="#dcbdfb">EC2 — AZ a</text><text class="m" x="118.5" y="59" text-anchor="middle">Mount Target</text><text class="m" x="118.5" y="77" text-anchor="middle">ap-northeast-2a</text><line class="ln" x1="118.5" y1="88" x2="118.5" y2="114"/><rect x="233" y="18" width="193" height="70" rx="6" fill="#dcbdfb" fill-opacity=".1" stroke="#dcbdfb" stroke-opacity=".55"/>
+<text class="t" x="329.5" y="41" text-anchor="middle" fill="#dcbdfb">EC2 — AZ b</text><text class="m" x="329.5" y="59" text-anchor="middle">Mount Target</text><text class="m" x="329.5" y="77" text-anchor="middle">ap-northeast-2b</text><line class="ln" x1="329.5" y1="88" x2="329.5" y2="114"/><rect x="444" y="18" width="193" height="70" rx="6" fill="#dcbdfb" fill-opacity=".1" stroke="#dcbdfb" stroke-opacity=".55"/>
+<text class="t" x="540.5" y="41" text-anchor="middle" fill="#dcbdfb">EC2 — AZ c</text><text class="m" x="540.5" y="59" text-anchor="middle">Mount Target</text><text class="m" x="540.5" y="77" text-anchor="middle">ap-northeast-2c</text><line class="ln" x1="540.5" y1="88" x2="540.5" y2="114"/><line class="ln" x1="118.5" y1="114" x2="540.5" y2="114"/>
+<line class="ln" x1="330" y1="114" x2="330" y2="144" marker-end="url(#a-545d68)"/>
+<rect x="22" y="150" width="616" height="58" rx="6" fill="#8ddb8c" fill-opacity=".12" stroke="#8ddb8c" stroke-opacity=".6"/>
+<text class="h" x="330" y="175" text-anchor="middle" fill="#8ddb8c">EFS 분산 스토리지 클러스터</text><text class="m" x="330" y="194" text-anchor="middle">Multi-AZ 내구성</text>
+</svg>
