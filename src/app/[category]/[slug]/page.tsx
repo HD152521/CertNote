@@ -14,6 +14,8 @@ import ExamInfoCard from '@/components/ExamInfoCard';
 import { cn } from '@/lib/cn';
 import { JsonLd } from '@/components/JsonLd';
 import { buildCourseLd, buildBreadcrumbLd, buildFaqPageLd } from '@/lib/structuredData';
+import { AdSlot } from '@/components/ads/AdSlot';
+import { resolveAdPlacement } from '@/lib/ads/adPlacements';
 
 interface PageProps { params: Promise<{ category: string; slug: string }>; }
 
@@ -122,6 +124,8 @@ export default async function CertIndexPage({ params }: PageProps) {
           { name: meta.code, url: `/${category}/${slug}` },
         ],
   );
+  // 광고 슬롯 1개(docs/P3-adsense-readiness-plan.md Step 10). 환경변수가 없으면 null — 아무것도 렌더하지 않는다.
+  const adHub = resolveAdPlacement('hub');
   return (
     <div className="mx-auto max-w-3xl space-y-10">
       <JsonLd data={courseLd} />
@@ -178,6 +182,10 @@ export default async function CertIndexPage({ params }: PageProps) {
           />
         </section>
       )}
+
+      {/* 시험 정보·트랙 구성(읽는 글)과 주차 목록 사이. 아래 목록은 줄마다 링크라, 부모의 space-y-10(40px)과
+          주차 제목 한 줄을 사이에 두고 떨어뜨린다. 목록 한가운데나 "Week 1부터 시작" 버튼 옆에는 두지 않는다. */}
+      {adHub && <AdSlot {...adHub} />}
 
       <section className="space-y-6">
         {[...byWeek.entries()].map(([w, ws]) => (

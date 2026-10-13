@@ -137,4 +137,46 @@ describe('AdSlot', () => {
     // 반응형 전체 폭 확장은 auto 형식 전용이다.
     expect(html).not.toContain('data-full-width-responsive');
   });
+
+  test('"광고" 표기는 광고가 채워졌을 때만 보인다 — 차단·미채움이면 빈 칸에 표기만 남지 않게', () => {
+    vi.stubEnv('NEXT_PUBLIC_ADSENSE_CLIENT', CLIENT);
+    setRoute(['aws', 'saa-c03']);
+
+    const html = renderToStaticMarkup(createElement(AdSlot, { slot: '1234567890' }));
+
+    const label = html.match(/<span aria-hidden="true" class="([^"]*)">광고<\/span>/);
+    expect(label).not.toBeNull();
+    const classes = label![1].split(' ');
+    // invisible 은 자리를 차지한 채 감추므로 채워지는 순간에도 높이가 변하지 않는다.
+    expect(classes).toContain('invisible');
+    expect(classes).toContain('group-has-[ins[data-ad-status=filled]]:visible');
+  });
+
+  test('height 를 주면 고정 크기 단위가 된다 — 높이를 인라인 style 로 내고 반응형 속성은 내지 않는다', () => {
+    vi.stubEnv('NEXT_PUBLIC_ADSENSE_CLIENT', CLIENT);
+    setRoute(['aws', 'saa-c03']);
+
+    const html = renderToStaticMarkup(createElement(AdSlot, { slot: '1234567890', height: 100 }));
+
+    // 애드센스는 외부 스타일시트(Tailwind 클래스)로 정한 크기를 공식 지원하지 않는다 — 인라인이어야 한다.
+    expect(html).toContain('<ins class="adsbygoogle" style="display:block;width:100%;height:100px"');
+    expect(html).not.toContain('data-ad-format');
+    expect(html).not.toContain('data-full-width-responsive');
+    // 바깥 영역은 표기 20px + 광고 높이를 미리 차지한다.
+    expect(html).toMatch(/<aside[^>]*style="min-height:120px"/);
+  });
+
+  test('collapseWhenUnfilled 일 때만 광고가 안 채워진 슬롯을 접는 클래스를 단다', () => {
+    vi.stubEnv('NEXT_PUBLIC_ADSENSE_CLIENT', CLIENT);
+    setRoute(['aws', 'saa-c03']);
+    const collapse = 'has-[ins[data-ad-status=unfilled]]:hidden';
+
+    const kept = renderToStaticMarkup(createElement(AdSlot, { slot: '1234567890' }));
+    const collapsed = renderToStaticMarkup(
+      createElement(AdSlot, { slot: '1234567890', collapseWhenUnfilled: true }),
+    );
+
+    expect(kept).not.toContain(collapse);
+    expect(collapsed).toContain(collapse);
+  });
 });
