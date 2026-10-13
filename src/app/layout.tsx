@@ -9,6 +9,7 @@ import { HtmlLangSync } from '@/components/HtmlLangSync';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { PostHogProvider } from '@/components/analytics/PostHogProvider';
 import { PromoModal } from '@/components/PromoModal';
+import { AdSenseLoader } from '@/components/ads/AdSenseLoader';
 import { JsonLd } from '@/components/JsonLd';
 import { listCerts } from '@/lib/content';
 import { buildSiteLd } from '@/lib/structuredData';
@@ -80,6 +81,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="ko" suppressHydrationWarning className={`${inter.variable} ${d2Latin.variable} ${d2Korean.variable} h-full antialiased`}>
       <body className="min-h-full bg-bg text-fg">
         <JsonLd data={siteLd} />
+        {/* 공개 페이지에만 실린다. 게시자 ID 가 없으면 아무것도 그리지 않는다(AdSenseLoader 주석 참고). */}
+        <AdSenseLoader />
         <PostHogProvider>
           <HtmlLangSync />
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
