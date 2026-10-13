@@ -102,7 +102,10 @@ export function buildCourseLd(input: CourseLdInput): Record<string, unknown> {
     // day 페이지 Article의 isPartOf가 이 값으로 이 Course를 가리킨다(Step4 4-4 그래프 연결).
     '@id': courseId(category, slug),
     name: `${code} ${name}`,
-    description: `${weeks}주(총 ${dayCount}일) ${code} 자격증 한국어 학습 커리큘럼`,
+    description:
+      lang === 'en'
+        ? `${weeks}-week (${dayCount} days) ${code} certification study course in English`
+        : `${weeks}주(총 ${dayCount}일) ${code} 자격증 한국어 학습 커리큘럼`,
     provider: organizationRef(),
     inLanguage: lang,
     // 선언은 실제 접근 정책과 일치해야 한다(불일치 = 구조화 데이터 스팸, 수동 조치 사유).

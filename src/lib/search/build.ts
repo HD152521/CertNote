@@ -27,7 +27,7 @@ async function buildOne(base: string, meta: CertMeta): Promise<BuiltShard> {
   const refs: { week: number; day: number }[] = [];
   const perDay: string[][] = [];
   for (const d of await getAllDays(base, meta.slug)) {
-    if (!isIndexableDay(base, d.week)) continue;
+    if (!isIndexableDay(base, meta.slug, d.week)) continue;
     const raw = await readDayRaw(base, meta.slug, d.week, d.day);
     if (raw === null) continue;
     refs.push({ week: d.week, day: d.day });
@@ -70,7 +70,7 @@ export async function buildSearchManifest(scope: SearchScope = 'ko'): Promise<Se
   const built = await buildAll(scope);
   const certs: ManifestCert[] = [];
   for (const { base, meta } of await scopeCerts(scope)) {
-    const days = (await getAllDays(base, meta.slug)).filter((d) => isIndexableDay(base, d.week));
+    const days = (await getAllDays(base, meta.slug)).filter((d) => isIndexableDay(base, meta.slug, d.week));
     certs.push({
       slug: meta.slug, code: meta.code, name: meta.name, level: meta.level, base,
       h: built.get(meta.slug)!.hash,

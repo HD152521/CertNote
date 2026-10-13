@@ -28,7 +28,7 @@ export async function buildDayStructuredData(
   lang: Lang,
   content: DayContent,
 ): Promise<DayStructuredData> {
-  if (!isIndexableDay(category, w)) return { articleLd: null, breadcrumbLd: null };
+  if (!isIndexableDay(category, slug, w)) return { articleLd: null, breadcrumbLd: null };
 
   // sitemap.ts가 lastModified에 쓰는 것과 같은 소스(day 마크다운 파일 mtime).
   // stat 실패 등으로 얻지 못하면 dateModified 자체를 생략한다(추측한 날짜를 내보내지 않음).

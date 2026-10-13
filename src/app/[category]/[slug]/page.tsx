@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { hreflangPair } from '@/lib/i18n';
 import { ArrowRight } from 'lucide-react';
-import { getAllDays, getCertMeta, listCerts, certLevelLabel, certHref } from '@/lib/content';
+import { getCertMeta, getPresentableDays, listCerts, certLevelLabel, certHref } from '@/lib/content';
+import { enPresentableWeek } from '@/lib/day/presentable';
+import { enAvailabilitySentence } from '@/lib/day/enCopy';
 import { isHighlightLevel } from '@/lib/levels';
 import { getExamInfo } from '@/lib/examInfo';
 import { getMockExamQuestionCount } from '@/lib/exam/examBankCount';
@@ -61,7 +63,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : `${meta.code} ${meta.name} — ${meta.weeks}주 완성 학습 노트`;
   const description =
     lang === 'en'
-      ? `Study ${meta.code} with daily in-depth notes and practice questions. Free to read; Week 1 is fully translated into English.`
+      ? `Study ${meta.code} with daily in-depth notes and practice questions. ${enAvailabilitySentence(enPresentableWeek(slug), meta.weeks)}`
       : `${meta.code} 시험을 ${meta.weeks}주(총 ${meta.dayCount}일) 한국어 커리큘럼으로 준비하세요. 매일 읽는 심화 노트 + 연습 문제 + 모의고사·복습. 전 과정 무료.`;
   const url = `/${category}/${slug}`;
   // 반대 언어 허브가 있으면 hreflang 연결(영어판이 없는 자격증은 en 메타가 없어 실패 → 연결 생략).
@@ -87,7 +89,9 @@ export default async function CertIndexPage({ params }: PageProps) {
   const section = sectionOfCategory(category);
   let meta;
   try { meta = await getCertMeta(category, slug); } catch { notFound(); }
-  const days = await getAllDays(category, slug);
+  // 영어판은 한글이 남은 주차를 목록에서 뺀다(getPresentableDays) — 한국어는 전부.
+  const days = await getPresentableDays(category, slug);
+  const shownWeeks = new Set(days.map((d) => d.week)).size;
   const byWeek = new Map<number, typeof days>();
   for (const d of days) {
     if (!byWeek.has(d.week)) byWeek.set(d.week, []);
@@ -104,8 +108,9 @@ export default async function CertIndexPage({ params }: PageProps) {
     slug,
     code: meta.code,
     name: meta.name,
-    weeks: meta.weeks,
-    dayCount: meta.dayCount,
+    // 영어판 강좌는 영어로 읽을 수 있는 범위만 선언한다(숨긴 주차를 강좌 분량으로 광고하지 않는다).
+    weeks: lang === 'en' ? shownWeeks : meta.weeks,
+    dayCount: lang === 'en' ? days.length : meta.dayCount,
     lang,
   });
   // 계층 신호(BreadcrumbList, Step4 4-3). en은 /en 페이지 자체가 "루트 겸 카테고리 허브"
@@ -134,13 +139,13 @@ export default async function CertIndexPage({ params }: PageProps) {
         </div>
         <h1 className="text-3xl font-semibold tracking-tight">{meta.name}</h1>
         <p className="text-sm text-fg-muted">
-          {lang === 'en' ? `${meta.weeks} week${meta.weeks > 1 ? 's' : ''} · ${meta.dayCount} days · ` : `${meta.weeks}주 · 총 ${meta.dayCount}일 · `}
+          {lang === 'en' ? `${shownWeeks} week${shownWeeks === 1 ? '' : 's'} · ${days.length} days in English · ` : `${meta.weeks}주 · 총 ${meta.dayCount}일 · `}
           <span className={isHighlightLevel(meta.level, section) ? 'text-accent' : ''}>{certLevelLabel(meta.level, section)}</span>
         </p>
         {lang === 'en' && (
           <p className="text-xs text-fg-faint">
-            Week 1 is fully translated into English. The rest of the course is currently Korean-only —{' '}
-            <Link href={certHref(meta)} className="underline underline-offset-4 hover:text-fg">view the Korean track</Link>.
+            {enAvailabilitySentence(shownWeeks, meta.weeks)}{' '}
+            <Link href={certHref(meta)} className="underline underline-offset-4 hover:text-fg">Read the full course in Korean</Link>.
           </p>
         )}
         {firstDay && (

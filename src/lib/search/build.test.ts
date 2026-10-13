@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { getAllDays, listCerts } from '@/lib/content';
-import { EN_INDEXABLE_WEEK } from '@/lib/day/indexPolicy';
+import { enPresentableWeek } from '@/lib/day/presentable';
 import { buildSearchManifest, buildSearchShard, isValidShardKey, listShardKeys } from './build';
 
 async function keyOf(slug: string, scope: 'ko' | 'en' = 'ko'): Promise<string> {
@@ -61,10 +61,10 @@ describe('검색 샤드 - 한국어', () => {
   });
 });
 
-describe('검색 인덱스 - 영어판은 EN_INDEXABLE_WEEK 까지만', () => {
-  test('전제: 영어 콘텐츠에는 EN_INDEXABLE_WEEK 보다 뒤 주차 파일이 실제로 있다', async () => {
+describe('검색 인덱스 - 영어판은 자격증별 번역 완료 주차까지만', () => {
+  test('전제: 영어 콘텐츠에는 한도보다 뒤 주차 파일이 실제로 있다', async () => {
     const all = await getAllDays('en', 'saa-c03');
-    expect(all.some((d) => d.week > EN_INDEXABLE_WEEK)).toBe(true);
+    expect(all.some((d) => d.week > enPresentableWeek('saa-c03'))).toBe(true);
   });
 
   test('매니페스트 목록에 뒤 주차가 없다', async () => {
@@ -73,14 +73,14 @@ describe('검색 인덱스 - 영어판은 EN_INDEXABLE_WEEK 까지만', () => {
     for (const c of m.certs) {
       expect(c.base).toBe('en');
       expect(c.days.length).toBeGreaterThan(0);
-      for (const [w] of c.days) expect(w).toBeLessThanOrEqual(EN_INDEXABLE_WEEK);
+      for (const [w] of c.days) expect(w, c.slug).toBeLessThanOrEqual(enPresentableWeek(c.slug));
     }
   });
 
   test('샤드에도 뒤 주차가 없다', async () => {
     const shard = await buildSearchShard(await keyOf('saa-c03', 'en'), 'en');
     expect(shard!.days.length).toBeGreaterThan(0);
-    for (const [w] of shard!.days) expect(w).toBeLessThanOrEqual(EN_INDEXABLE_WEEK);
+    for (const [w] of shard!.days) expect(w).toBeLessThanOrEqual(enPresentableWeek('saa-c03'));
   });
 
   test('영어 샤드 단어 사전에는 한글(U+AC00-U+D7A3)이 없다', async () => {

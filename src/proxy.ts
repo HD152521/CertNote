@@ -3,6 +3,7 @@ import { SESSION_COOKIE, verifySessionToken } from '@/lib/auth/session';
 import { LANG_COOKIE, resolveLanguage } from '@/lib/i18n';
 import { classifyPath } from '@/lib/proxyRouting';
 import { contentPathExists } from '@/lib/contentExists';
+import { unpresentableEnDayRedirect } from '@/lib/day/enRedirect';
 
 // 어떤 실제 라우트 패턴과도 매칭하지 않는 3세그먼트 마커. docs/SEO-indexing-fix-plan.md Step6 —
 // {aws,linux,en}/[slug]/[week]/[day] 계열은 항상 4세그먼트, 허브 [category]/[slug]는 2세그먼트라
@@ -17,6 +18,14 @@ async function handleContentRoute(req: NextRequest): Promise<NextResponse> {
   const exists = await contentPathExists(req.nextUrl.pathname);
   if (!exists) {
     return NextResponse.rewrite(new URL(NOT_FOUND_MARKER, req.url));
+  }
+  // 한글이 남은 영어 day 는 렌더 전에 한국어 같은 day 로 307(임시 — 번역이 끝나면 영어판이 다시 열린다).
+  // 라우트 안의 redirect() 는 스트리밍 때문에 200 이 되어 캐시되므로 여기서 한다(src/lib/day/enRedirect.ts).
+  const koUrl = await unpresentableEnDayRedirect(req.nextUrl.pathname);
+  if (koUrl) {
+    const res = NextResponse.redirect(new URL(koUrl, req.url), 307);
+    res.headers.set('Cache-Control', 'no-store');
+    return res;
   }
   return NextResponse.next();
 }

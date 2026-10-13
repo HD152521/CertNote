@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
 // SEO 메타데이터/구조화 데이터 스모크 테스트(docs/SEO-indexing-fix-plan.md Step7-B).
 //
@@ -142,28 +142,119 @@ test('옛 /aws-certs/... 주소는 /aws/... 로 308 이동한다', async ({ requ
   expect(res.headers()['location']).toMatch(/\/aws\/saa-c03\/week1\/day1$/);
 });
 
-// 구독제 보류 이후 noindex로 남는 day는 번역이 덜 된 영어판 week2+뿐이다(src/lib/day/indexPolicy.ts).
-test.describe('noindex day — /en/saa-c03/week2/day1', () => {
-  const url = '/en/saa-c03/week2/day1';
+// 영어판 day 노출 정책(src/lib/day/presentable.ts): 한글이 남은 영어 day 는 내비게이션에 없고, 직접 들어오면 같은 day 의
+// 한국어 페이지로 307 이동한다. "보여줄 수 있는 영어 day 집합"은 사이트맵과 정확히 같다(단위 테스트가 고정) — 그래서
+// 한도 값을 하드코딩하지 않고 사이트맵의 영어 day 를 기준으로 DOM 을 검사한다.
+const EN_DAY_HREF = /^\/en\/([^/]+)\/week(\d+)\/day(\d+)$/;
 
-  test('자기참조 canonical + noindex,nofollow + hreflang 0개', async ({ page }) => {
-    await page.goto(url);
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
-      'href',
-      'https://cert.juganlab.com/en/saa-c03/week2/day1',
-    );
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
-    expect(await page.locator('link[rel="alternate"][hreflang]').count()).toBe(0);
+async function presentableEnDays(request: APIRequestContext): Promise<Set<string>> {
+  const xml = await (await request.get('/sitemap.xml')).text();
+  const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].replace('https://cert.juganlab.com', ''));
+  return new Set(urls.filter((u) => EN_DAY_HREF.test(u)));
+}
+
+async function enDayHrefsOnPage(page: Page, slug: string): Promise<string[]> {
+  const hrefs = await page.locator(`a[href^="/en/${slug}/week"]`).evaluateAll((els) => els.map((e) => e.getAttribute('href') ?? ''));
+  return [...new Set(hrefs)].filter((h) => EN_DAY_HREF.test(h));
+}
+
+test.describe('영어 day 노출 — 한글이 남은 주차는 내비게이션에 없다', () => {
+  for (const slug of ['saa-c03', 'dea-c01']) {
+    test(`/en/${slug} 허브의 day 목록 = 노출 가능한 day 집합(사이트맵)`, async ({ page, request }) => {
+      const allowed = [...(await presentableEnDays(request))].filter((u) => u.startsWith(`/en/${slug}/`));
+      expect(allowed.length).toBeGreaterThan(0);
+      await page.goto(`/en/${slug}`);
+      const linked = await enDayHrefsOnPage(page, slug);
+      expect(linked.sort()).toEqual(allowed.sort());
+      // 숨긴 주차를 광고하지 않는다 — 안내 문구가 실제 범위를 말한다.
+      await expect(page.getByText(/available in English/).first()).toBeVisible();
+      expect(await page.getByText(/free to read|fully translated/i).count()).toBe(0);
+    });
+
+    test(`/en/${slug} 사이드바(데스크탑·모바일 드로어)에 노출 불가 day 링크가 없다`, async ({ page, request }) => {
+      const allowed = await presentableEnDays(request);
+      await page.goto(`/en/${slug}`);
+      const linked = await enDayHrefsOnPage(page, slug);
+      expect(linked.length).toBeGreaterThan(0);
+      for (const h of linked) expect(allowed.has(h), `${h} 는 노출 불가인데 링크됨`).toBe(true);
+    });
+  }
+
+  test('마지막 노출 day 의 "다음"이 노출 불가 day 로 이어지지 않는다', async ({ page, request }) => {
+    const allowed = await presentableEnDays(request);
+    const saa = [...allowed].filter((u) => u.startsWith('/en/saa-c03/'));
+    const key = (u: string) => { const m = u.match(EN_DAY_HREF)!; return Number(m[2]) * 1000 + Number(m[3]); };
+    const last = saa.sort((a, b) => key(a) - key(b)).at(-1)!;
+    await page.goto(last);
+    const linked = await enDayHrefsOnPage(page, 'saa-c03');
+    for (const h of linked) expect(allowed.has(h), `${last} 에서 ${h} 로 링크됨`).toBe(true);
   });
 
-  test('신규 JSON-LD가 없다 — 전역 Organization/WebSite 블록 1개만 남는다', async ({ page }) => {
-    await page.goto(url);
-    const blocks = page.locator('script[type="application/ld+json"]');
-    expect(await blocks.count()).toBe(1);
-    const raw = await blocks.first().textContent();
-    const parsed = JSON.parse(raw ?? '');
-    const types = (Array.isArray(parsed) ? parsed : [parsed]).map((n: Record<string, unknown>) => n['@type']);
-    expect(types.sort()).toEqual(['Organization', 'WebSite']);
+  test('노출 가능한 week2+ 영어 day(있다면)는 색인 대상이다 — robots 없음·JSON-LD 있음', async ({ page, request }) => {
+    const later = [...(await presentableEnDays(request))].find((u) => Number(u.match(EN_DAY_HREF)![2]) >= 2);
+    test.skip(!later, '현재 week2+ 가 열린 영어 자격증이 없다');
+    const res = await page.goto(later!);
+    expect(res?.status()).toBe(200);
+    expect(await page.locator('meta[name="robots"][content*="noindex"]').count()).toBe(0);
+    const { types } = await readJsonLdTypes(page);
+    expect(types).toEqual(expect.arrayContaining(['Article', 'BreadcrumbList']));
+  });
+});
+
+test.describe('한도 밖 영어 day 직접 접근 — 한국어 같은 day 로 307', () => {
+  for (const [url, ko] of [
+    ['/en/saa-c03/week2/day1', '/aws/saa-c03/week2/day1'],
+    ['/en/saa-c03/week12/day5', '/aws/saa-c03/week12/day5'],
+    ['/en/clf-c02/week4/day3', '/aws/clf-c02/week4/day3'],
+  ]) {
+    test(`${url} → 307 ${ko}, 두 번 모두, 캐시되지 않는다`, async ({ request }) => {
+      for (const attempt of [1, 2]) {
+        const res = await request.get(url, { maxRedirects: 0 });
+        expect(res.status(), `${attempt}번째`).toBe(307);
+        expect(new URL(res.headers()['location'], 'http://localhost:3000').pathname, `${attempt}번째 Location: ${res.headers()['location']}`).toBe(ko);
+        const h = res.headers();
+        expect(h['cache-control'], `${attempt}번째 캐시 헤더`).toBe('no-store');
+        expect(h['x-nextjs-cache'], `${attempt}번째 Next 캐시 기록`).toBeUndefined();
+        expect(h['x-vercel-cache']).toBeUndefined();
+      }
+    });
+  }
+
+  test('브라우저로 따라가면 한국어 day 가 200 으로 열리고 색인 대상이다', async ({ page }) => {
+    const res = await page.goto('/en/saa-c03/week2/day1');
+    expect(new URL(page.url()).pathname).toBe('/aws/saa-c03/week2/day1');
+    expect(res?.status()).toBe(200);
+    expect(await page.locator('meta[name="robots"][content*="noindex"]').count()).toBe(0);
+  });
+
+  for (const url of ['/en/saa-c03/week99/day1', '/en/saa-c03/week2/day99', '/en/nope-c99/week1/day1', '/en/saa-c03/week02/day1']) {
+    test(`${url} (존재하지 않는 영어 day)는 리다이렉트가 아니라 1·2번째 모두 진짜 404다`, async ({ request }) => {
+      for (const attempt of [1, 2]) {
+        const res = await request.get(url, { maxRedirects: 0 });
+        expect(res.status(), `${attempt}번째`).toBe(404);
+        expect(res.headers()['location']).toBeUndefined();
+      }
+    });
+  }
+});
+
+test.describe('KO/EN 토글 — 한국어 week2+ 에서', () => {
+  test('/aws/saa-c03/week2/day1 의 EN 은 영어 허브로 가고(루프·404 없음) 허브에는 week2 링크가 없다', async ({ page, request }) => {
+    await page.goto('/aws/saa-c03/week2/day1');
+    const en = page.getByLabel('Language').getByRole('link', { name: 'EN' });
+    await expect(en).toHaveAttribute('href', '/en/saa-c03');
+    const hub = await request.get('/en/saa-c03', { maxRedirects: 0 });
+    expect(hub.status()).toBe(200);
+    await en.click();
+    await expect(page).toHaveURL(/\/en\/saa-c03$/);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    const allowed = await presentableEnDays(request);
+    for (const h of await enDayHrefsOnPage(page, 'saa-c03')) expect(allowed.has(h), h).toBe(true);
+  });
+
+  test('영어 허브의 KO 는 같은 자격증의 한국어 허브로 간다', async ({ page }) => {
+    await page.goto('/en/saa-c03');
+    await expect(page.getByLabel('Language').getByRole('link', { name: 'KO' })).toHaveAttribute('href', '/aws/saa-c03');
   });
 });
 

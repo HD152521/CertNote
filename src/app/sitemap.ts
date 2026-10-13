@@ -77,7 +77,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       );
       const days = await getAllDays(section, cert.slug);
       for (const d of days) {
-        if (!isIndexableDay(section, d.week)) continue; // noindex day는 제출하지 않는다.
+        if (!isIndexableDay(section, cert.slug, d.week)) continue; // noindex day는 제출하지 않는다.
         out.push(
           sitemapEntry(
             `${SITE_URL}${d.href}`, // d.href 는 이미 /{section}/... (getAllDays가 URL category 유지)
@@ -113,7 +113,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       out.push(sitemapEntry(`${SITE_URL}/${EN_CATEGORY}/${cert.slug}`, await getCertMetaMtime(EN_CATEGORY, cert.slug), 'weekly', 0.7));
       const days = await getAllDays(EN_CATEGORY, cert.slug);
       for (const d of days) {
-        if (!isIndexableDay(EN_CATEGORY, d.week)) continue; // 번역 덜 된 주차는 noindex — 제외.
+        if (!isIndexableDay(EN_CATEGORY, cert.slug, d.week)) continue; // 번역 덜 된 주차는 noindex — 제외.
         out.push(
           sitemapEntry(`${SITE_URL}${d.href}`, await getDayMtime(EN_CATEGORY, cert.slug, d.week, d.day), 'monthly', 0.6),
         );

@@ -1,7 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { EN_INDEXABLE_WEEK, isIndexableDay } from '@/lib/day/indexPolicy';
+import { isIndexableDay } from '@/lib/day/indexPolicy';
+import { enPresentableWeek } from '@/lib/day/presentable';
 import { SITE_URL } from '@/lib/site';
 import sitemap from './sitemap';
 
@@ -39,16 +40,16 @@ describe('sitemap', () => {
   test('사이트맵의 모든 day URL은 isIndexableDay와 일치한다 — noindex 페이지를 제출하지 않는다', { timeout: 30000 }, async () => {
     const entries = await sitemap();
     for (const e of entries) {
-      const m = e.url.match(/\/([^/]+)\/[^/]+\/week(\d+)\/day\d+$/);
-      if (m) expect(isIndexableDay(m[1], Number(m[2])), e.url).toBe(true);
+      const m = e.url.match(/\/([^/]+)\/([^/]+)\/week(\d+)\/day\d+$/);
+      if (m) expect(isIndexableDay(m[1], m[2], Number(m[3])), e.url).toBe(true);
     }
   });
 
   test('영어판은 번역이 끝난 주차만 실린다', { timeout: 30000 }, async () => {
     const entries = await sitemap();
     for (const e of entries) {
-      const m = e.url.match(/\/en\/[^/]+\/week(\d+)\/day\d+$/);
-      if (m) expect(Number(m[1])).toBeLessThanOrEqual(EN_INDEXABLE_WEEK);
+      const m = e.url.match(/\/en\/([^/]+)\/week(\d+)\/day\d+$/);
+      if (m) expect(Number(m[2]), e.url).toBeLessThanOrEqual(enPresentableWeek(m[1]));
     }
   });
 

@@ -11,16 +11,16 @@ import { SITE_NAME } from '@/lib/site';
 // (`/aws`)다 — 둘 다 "전 자격증 트랙을 나열하는 진입 목록" 페이지라는 점에서 같은 역할을 한다.
 // hreflang 짝은 `/aws` ↔ `/en`으로 고정(Phase1: 구 `/aws-certs`는 301되므로 신 URL을 가리킨다).
 export const metadata: Metadata = {
-  title: 'AWS Certification Study Notes in English — Free',
+  title: 'AWS Certification Study Notes in English',
   description:
-    'Daily in-depth study notes for 11 AWS certifications. Free to read, with practice questions built in. Week 1 of every track is fully translated into English.',
+    'Daily in-depth study notes for 11 AWS certifications, with practice questions built in. Week 1 of every track is in English; the rest of each course is in Korean.',
   alternates: {
     canonical: `/${EN_CATEGORY}`,
     languages: hreflangPair('/aws', `/${EN_CATEGORY}`, { xDefault: true }),
   },
   openGraph: {
     title: `${SITE_NAME} — AWS Certification Study Notes`,
-    description: 'Free study notes for 11 AWS certification tracks. Week 1 of every track is in English.',
+    description: 'Study notes for 11 AWS certification tracks. Week 1 of every track is in English.',
     url: `/${EN_CATEGORY}`,
     type: 'website',
   },
@@ -36,12 +36,11 @@ export default async function EnHomePage() {
         </h1>
         <p className="text-fg-muted leading-relaxed">
           In-depth daily study notes for 11 AWS certifications — written to be read on your commute, with practice
-          questions after every lesson. <strong className="text-fg">Everything is free to read, and Week 1 of every track is fully translated into English.</strong>
+          questions after every lesson. <strong className="text-fg">Week 1 of every track is available in English.</strong>
         </p>
         <p className="text-xs text-fg-faint">
-          The full multi-week courses, mock exams, and spaced-repetition review are currently Korean-only.{' '}
-          <Link href="/" className="underline underline-offset-4 hover:text-fg">Switch to the Korean site</Link> for the
-          complete experience.
+          Later weeks, mock exams, and spaced-repetition review are in Korean for now.{' '}
+          <Link href="/" className="underline underline-offset-4 hover:text-fg">Switch to the Korean site</Link> to read the full courses.
         </p>
       </header>
       <section className="grid gap-3 sm:grid-cols-2">

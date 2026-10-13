@@ -24,6 +24,7 @@ import type { Section } from './category';
 // 공개 URL category(섹션 'aws'/'linux' 또는 'en'/레거시 'aws-certs')를 물리 디렉터리로 매핑.
 // 파일 읽기는 모두 이 함수를 통과하고, href/캐시키는 URL category를 그대로 유지한다.
 import { contentDirOf, isSection } from './category';
+import { isPresentableDay } from './day/presentable';
 
 export interface CertMeta {
   slug: string;
@@ -161,6 +162,14 @@ export async function getAllDays(category: string, slug: string): Promise<DayRef
   return days;
 }
 
+// 내비게이션(사이드바·허브 주차 목록·이전/다음)에 노출해도 되는 day. 한국어는 getAllDays 와 같고,
+// 영어판은 한글이 남은 주차를 뺀다(src/lib/day/presentable.ts). 존재 검증(contentExists)·사이트맵 같은
+// "파일이 있는가" 질문은 계속 getAllDays 를 쓴다 — 파일은 있지만 보여주지 않는 day 는 한국어로 리다이렉트해야 하기 때문이다.
+export async function getPresentableDays(category: string, slug: string): Promise<DayRef[]> {
+  const all = await getAllDays(category, slug);
+  return all.filter((r) => isPresentableDay(category, slug, r.week));
+}
+
 export async function getDay(category: string, slug: string, week: number, day: number): Promise<DayContent | null> {
   const p = path.join(CONTENT_ROOT, contentDirOf(category), slug, `week${week}`, `day${day}.md`);
   if (!(await fileExists(p))) return null;
@@ -168,8 +177,10 @@ export async function getDay(category: string, slug: string, week: number, day: 
   const all = await getAllDays(category, slug);
   const idx = all.findIndex((r) => r.week === week && r.day === day);
   const cur = all[idx];
-  const prev = idx > 0 ? all[idx - 1] : null;
-  const next = idx < all.length - 1 ? all[idx + 1] : null;
+  // 이전/다음은 보여줄 수 있는 day 만 — 마지막 번역 완료 day 가 한글 섞인 day 로 "다음"을 잇지 않는다.
+  const shown = (r: DayRef) => isPresentableDay(category, slug, r.week);
+  const prev = all.slice(0, Math.max(idx, 0)).filter(shown).at(-1) ?? null;
+  const next = all.slice(idx + 1).filter(shown)[0] ?? null;
   const weekFirst = all.find((r) => r.week === week && r.day === 1) ?? cur;
   const certMeta = await getCertMeta(category, slug);
   return { ...cur, body, prev, next, weekFirst, certMeta };

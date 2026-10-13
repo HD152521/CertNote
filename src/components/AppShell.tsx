@@ -1,26 +1,16 @@
-import { EN_CATEGORY } from '@/lib/category';
 import type { ReactNode } from 'react';
 import type { CertMeta } from '@/lib/content';
+import { buildNavTrees } from '@/lib/navTrees';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { SearchProvider } from './SearchProvider';
 import { FeedbackWidget } from './FeedbackWidget';
 import { SiteFooter } from './SiteFooter';
-import { getAllDays, listCerts } from '@/lib/content';
 
 interface AppShellProps { certs: CertMeta[]; children: ReactNode; }
 
 export async function AppShell({ certs, children }: AppShellProps) {
-  // 각 자격증의 섹션으로 트리를 만든다 — day href 가 공개 URL(/aws·/linux)로 나오게(레거시
-  // /aws-certs 301 홉 제거). 콘텐츠는 여전히 content/aws-certs/ 에서 읽힌다(contentDirOf 매핑).
-  const certTrees = await Promise.all(
-    certs.map(async (c) => ({ meta: c, days: await getAllDays(c.section ?? 'aws', c.slug) })),
-  );
-  // 영어판 트리(무료 Week1만 존재). 콘텐츠가 없으면 빈 배열 — 사이드바는 한국어 트리로 폴백.
-  const enCerts = await listCerts(EN_CATEGORY).catch(() => [] as CertMeta[]);
-  const enCertTrees = await Promise.all(
-    enCerts.map(async (c) => ({ meta: c, days: await getAllDays(EN_CATEGORY, c.slug) })),
-  );
+  const { certTrees, enCertTrees } = await buildNavTrees(certs);
   // 검색 인덱스는 인라인하지 않는다 — SearchProvider가 검색창 첫 오픈 시 /api/search에서 받아온다.
   return (
     <SearchProvider>

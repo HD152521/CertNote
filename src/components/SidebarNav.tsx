@@ -23,7 +23,7 @@ interface SidebarNavProps {
 }
 
 // 섹션(주제) 우선 네비게이션: AWS / Linux … → 각 섹션 안에서 [자격증 목록 · 합격 후기 · 문제 복기].
-// 데스크탑 Sidebar와 모바일 드로어가 공유한다. /en 경로에서는 영어판 트리(무료 Week1)를 보여준다.
+// 데스크탑 Sidebar와 모바일 드로어가 공유한다. /en 경로에서는 영어판 트리(영어로 읽을 수 있는 주차만 — src/lib/navTrees.ts)를 보여준다.
 export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavProps) {
   const lang = useLanguage();
   const en = lang === 'en';
@@ -31,7 +31,7 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
   const isEn = pathname === `/${EN_CATEGORY}` || pathname.startsWith(`/${EN_CATEGORY}/`);
   const trees = isEn && enCertTrees && enCertTrees.length > 0 ? enCertTrees : certTrees;
 
-  // 섹션별 그룹핑. en 모드는 aws 트랙(무료 Week1)만 있으므로 단일 그룹.
+  // 섹션별 그룹핑. en 모드는 aws 트랙만 있으므로 단일 그룹.
   const bySection = new Map<string, CertTree[]>();
   for (const t of trees) {
     const sec = isEn ? 'aws' : t.meta.section ?? 'aws';
