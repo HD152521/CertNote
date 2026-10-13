@@ -38,6 +38,18 @@ type ShellKey =
   | 'tutorUnavailable'
   | 'tutorQuestionNotFound'
   | 'tutorLoadFailed'
+  | 'tutorGlobalLimit'
+  | 'tutorStreamFailed'
+  | 'tutorInvalidSelected'
+  | 'tutorUnverifiedTitle'
+  | 'tutorUnverifiedBody'
+  | 'tutorResend'
+  | 'tutorResending'
+  | 'tutorResendSent'
+  | 'tutorResendLater'
+  | 'tutorResendFailed'
+  | 'tutorVerifiedRetry'
+  | 'tutorStillUnverified'
   // TutorPanel + FeedbackWidget 공용 (COMMON_STRINGS의 networkError와 어투가 달라 별도 유지)
   | 'networkError'
   // Welcome
@@ -85,7 +97,7 @@ export const shellStrings: Dict<ShellKey> = {
     tutorHeading: 'AI 설명',
     tutorThinking: '생각 중…',
     tutorLoginTitle: 'AI 설명은 회원가입 후 이용할 수 있어요',
-    tutorLoginBody: '틀린 문제를 AI가 풀어 설명하고, 추가 질문에도 답해드려요. 무료이며 하루 3번까지 물어볼 수 있습니다.',
+    tutorLoginBody: '틀린 문제를 AI가 풀어 설명하고, 추가 질문에도 답해드려요. 무료이며, 이메일 인증을 마치면 하루 3번까지 물어볼 수 있습니다.',
     tutorSignup: '무료 회원가입',
     tutorLogin: '로그인',
     tutorFollowupPlaceholder: '추가로 궁금한 점을 물어보세요',
@@ -94,6 +106,18 @@ export const shellStrings: Dict<ShellKey> = {
     tutorUnavailable: 'AI 튜터가 아직 준비 중이에요.',
     tutorQuestionNotFound: '문제 정보를 찾지 못했어요.',
     tutorLoadFailed: '설명을 불러오지 못했어요.',
+    tutorGlobalLimit: '오늘은 AI 설명 이용이 많아 잠시 쉬고 있어요. 내일 다시 이용해 주세요.',
+    tutorStreamFailed: 'AI 설명을 만들지 못했어요. 이번 시도는 횟수에서 차감되지 않았어요. 잠시 후 다시 시도해 주세요.',
+    tutorInvalidSelected: '선택한 보기 형식이 올바르지 않아요.',
+    tutorUnverifiedTitle: 'AI 설명은 이메일 인증 후 이용할 수 있어요',
+    tutorUnverifiedBody: '가입할 때 받은 인증 메일의 링크를 눌러 주세요. 메일이 없다면 아래에서 다시 받을 수 있어요.',
+    tutorResend: '인증 메일 다시 받기',
+    tutorResending: '보내는 중…',
+    tutorResendSent: '인증 메일을 보냈어요. 메일함(스팸함 포함)을 확인해 주세요.',
+    tutorResendLater: '요청이 많아요. 잠시 후 다시 시도해 주세요.',
+    tutorResendFailed: '인증 메일을 보내지 못했어요. 잠시 후 다시 시도해 주세요.',
+    tutorVerifiedRetry: '인증했어요',
+    tutorStillUnverified: '아직 인증이 확인되지 않았어요. 메일의 링크를 눌렀는지 확인해 주세요.',
 
     networkError: '네트워크 오류가 발생했어요.',
 
@@ -141,7 +165,7 @@ export const shellStrings: Dict<ShellKey> = {
     tutorHeading: 'AI explanation',
     tutorThinking: 'Thinking…',
     tutorLoginTitle: 'Sign up to use the AI tutor',
-    tutorLoginBody: 'AI walks you through the questions you missed and answers your follow-ups. Free, up to 3 questions a day.',
+    tutorLoginBody: 'AI walks you through the questions you missed and answers your follow-ups. Free — verify your email to ask up to 3 questions a day.',
     tutorSignup: 'Sign up free',
     tutorLogin: 'Log in',
     tutorFollowupPlaceholder: 'Ask a follow-up question',
@@ -150,6 +174,18 @@ export const shellStrings: Dict<ShellKey> = {
     tutorUnavailable: 'The AI tutor is not ready yet.',
     tutorQuestionNotFound: "We couldn't find that question.",
     tutorLoadFailed: "We couldn't load the explanation.",
+    tutorGlobalLimit: 'The AI tutor has reached its daily capacity. Please try again tomorrow.',
+    tutorStreamFailed: "We couldn't generate the explanation. This attempt did not count against your limit. Please try again shortly.",
+    tutorInvalidSelected: 'The selected answer format is invalid.',
+    tutorUnverifiedTitle: 'Verify your email to use the AI tutor',
+    tutorUnverifiedBody: "Click the link in the verification email we sent when you signed up. If you can't find it, you can get a new one below.",
+    tutorResend: 'Resend verification email',
+    tutorResending: 'Sending…',
+    tutorResendSent: 'Verification email sent. Check your inbox (and spam folder).',
+    tutorResendLater: 'Too many requests. Please try again in a moment.',
+    tutorResendFailed: "We couldn't send the verification email. Please try again shortly.",
+    tutorVerifiedRetry: "I've verified",
+    tutorStillUnverified: "We can't see your verification yet. Make sure you clicked the link in the email.",
 
     networkError: 'A network error occurred.',
 
