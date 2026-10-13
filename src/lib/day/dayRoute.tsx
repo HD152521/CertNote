@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { langOfCategory } from '@/lib/category';
-import { getAllDays, getDay } from '@/lib/content';
+import { isSection, langOfCategory } from '@/lib/category';
+import { getAllDays, getCertMeta, getDay } from '@/lib/content';
 import { FREE_WEEK } from '@/lib/entitlement/policy';
 import { buildDayMetadata } from '@/lib/day/metadata';
 import { parseDaySegment } from '@/lib/day/segment';
@@ -21,10 +21,20 @@ import { DayView } from '@/components/day/DayView';
 export interface DayRouteParams { slug: string; week: string; day: string }
 export interface Week1RouteParams { slug: string; day: string }
 
+// 자격증이 이 URL 섹션(/aws, /linux)에 속하는지. aws·linux 는 같은 content 폴더에 공존하므로 파일 존재만으로는
+// /linux/saa-c03/week2/day1 같은 교차 섹션 URL 을 거르지 못한다(지금은 프록시가 404 로 막는다 — 이쪽은 이중 방어).
+// 섹션이 아닌 category(영어판 'en')는 섹션 축이 없어 검사하지 않는다.
+async function certBelongsToCategory(category: string, slug: string): Promise<boolean> {
+  if (!isSection(category)) return true;
+  const meta = await getCertMeta(category, slug).catch(() => null);
+  return meta !== null && (meta.section ?? 'aws') === category;
+}
+
 export async function dayRouteMetadata(category: string, { slug, week, day }: DayRouteParams): Promise<Metadata> {
   const w = parseDaySegment(week, 'week');
   const d = parseDaySegment(day, 'day');
   if (w === null || d === null) return {};
+  if (!(await certBelongsToCategory(category, slug))) return {};
   return buildDayMetadata(category, slug, w, d);
 }
 
@@ -32,6 +42,7 @@ export async function renderDayRoute(category: string, { slug, week, day }: DayR
   const w = parseDaySegment(week, 'week');
   const d = parseDaySegment(day, 'day');
   if (w === null || d === null) notFound();
+  if (!(await certBelongsToCategory(category, slug))) notFound();
   const content = await getDay(category, slug, w, d);
   if (!content) notFound();
   return (
@@ -42,6 +53,7 @@ export async function renderDayRoute(category: string, { slug, week, day }: DayR
 export async function week1RouteMetadata(category: string, { slug, day }: Week1RouteParams): Promise<Metadata> {
   const d = parseDaySegment(day, 'day');
   if (d === null) return {};
+  if (!(await certBelongsToCategory(category, slug))) return {};
   return buildDayMetadata(category, slug, FREE_WEEK, d);
 }
 

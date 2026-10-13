@@ -5,7 +5,7 @@ import { classifyPath } from '@/lib/proxyRouting';
 import { contentPathExists } from '@/lib/contentExists';
 
 // 어떤 실제 라우트 패턴과도 매칭하지 않는 3세그먼트 마커. docs/SEO-indexing-fix-plan.md Step6 —
-// [category]/[slug]/[week]/[day] 계열은 항상 4세그먼트, [category]/[slug]는 2세그먼트라
+// {aws,linux,en}/[slug]/[week]/[day] 계열은 항상 4세그먼트, 허브 [category]/[slug]는 2세그먼트라
 // 3세그먼트는 애초에 존재하지 않는 라우트 형태(실측: /aws-certs/saa-c03/bogus가 이미 진짜 404).
 // 여기로 rewrite하면 Next가 "라우트 없음" 경로를 타 렌더를 시작하지 않고 프리렌더된 not-found를
 // 그대로 내보낸다 — 스트리밍이 시작되지 않으므로 상태코드도 진짜 404로 나간다.

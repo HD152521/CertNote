@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { dayRouteMetadata } from './dayRoute';
+import { dayRouteMetadata, renderDayRoute, renderWeek1Route, week1RouteMetadata } from './dayRoute';
 
 // SEO 색인 오류 회귀 테스트(docs/SEO-indexing-fix-plan.md Step 1).
 //
@@ -58,5 +58,35 @@ describe('generateMetadata — 무료 주차(week1) day 페이지 (회귀 확인
       ko: '/aws/saa-c03/week1/day1',
       en: '/en/saa-c03/week1/day1',
     });
+  });
+});
+
+// 교차 섹션 URL 방어(P3 Step 5 이월): aws·linux 는 같은 content 폴더에 공존해 파일 존재만으로는
+// /linux/saa-c03/week2/day1 을 거르지 못한다. 지금은 프록시가 404 로 막지만 라우트 로직도 스스로 거부해야 한다.
+describe('교차 섹션 URL — 라우트 로직이 스스로 404', () => {
+  const isNotFound = (e: unknown) => expect((e as { digest?: string }).digest).toContain('404');
+
+  test('aws 자격증을 linux 섹션 아래로 요청하면 notFound', async () => {
+    const err = await renderDayRoute('linux', { slug: 'saa-c03', week: 'week2', day: 'day1' }).catch((e) => e);
+    isNotFound(err);
+  });
+
+  test('linux 자격증을 aws 섹션 아래로 요청하면 notFound(week1 래퍼 포함)', async () => {
+    isNotFound(await renderDayRoute('aws', { slug: 'linux-master-2', week: 'week2', day: 'day1' }).catch((e) => e));
+    isNotFound(await renderWeek1Route('aws', { slug: 'linux-master-2', day: 'day1' }).catch((e) => e));
+  });
+
+  test('올바른 섹션의 같은 day 는 렌더된다(과차단 없음)', async () => {
+    await expect(renderDayRoute('aws', { slug: 'saa-c03', week: 'week2', day: 'day1' })).resolves.toBeTruthy();
+    await expect(renderDayRoute('linux', { slug: 'linux-master-2', week: 'week2', day: 'day1' })).resolves.toBeTruthy();
+  });
+
+  test('교차 섹션 메타데이터는 비어 있다(타 섹션 canonical 을 만들지 않는다)', async () => {
+    expect(await dayRouteMetadata('linux', { slug: 'saa-c03', week: 'week2', day: 'day1' })).toEqual({});
+    expect(await week1RouteMetadata('aws', { slug: 'linux-master-2', day: 'day1' })).toEqual({});
+  });
+
+  test('영어판은 섹션 축이 없어 영향받지 않는다', async () => {
+    await expect(renderDayRoute('en', { slug: 'saa-c03', week: 'week1', day: 'day1' })).resolves.toBeTruthy();
   });
 });

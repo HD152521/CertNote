@@ -22,7 +22,7 @@ const PROTECTED_PREFIXES: readonly string[] = ['admin', 'dashboard', 'review', '
 export const REAL_FOUR_SEGMENT_API_ROUTES: readonly string[] = ['/api/auth/google/callback'];
 // Next 가 직접 서빙하는 내부 에셋 접두사. 이 밖의 /_next/* 는 존재하지 않는다.
 const NEXT_ASSET_PREFIXES: readonly string[] = ['/_next/static/', '/_next/image'];
-// [category]/[slug]/[week]/[day] 계열이 받는 URL 깊이.
+// {aws,linux,en}/[slug]/[week]/[day] 계열(리터럴 category 폴더)이 받는 URL 깊이.
 const DAY_ROUTE_DEPTH = 4;
 
 export function classifyPath(pathname: string): PathDecision {

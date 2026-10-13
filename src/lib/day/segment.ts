@@ -1,6 +1,6 @@
 // day 관련 URL 세그먼트("week1", "day3") 파싱 단일 출처.
 //
-// [category]/[slug]/[week]/[day](전체 라우트)와 [category]/[slug]/week1/[day](week1 전용 정적
+// {aws,linux,en}/[slug]/[week]/[day](전체 라우트)와 {aws,linux,en}/[slug]/week1/[day](week1 전용
 // 라우트) 양쪽이 "day3" 형태의 세그먼트를 정수로 파싱한다. prefix 뒤가 "정규형 양의 정수"
 // (`[1-9]\d*`)가 아니면 null — 호출부가 notFound()로 처리한다.
 //

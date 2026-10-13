@@ -1,6 +1,5 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { FREE_WEEK } from './entitlement/policy';
 import { getManifestMtime } from './contentManifest';
 
 // 주당 day 상한. 대부분 5일이지만 출제기준 보충 등으로 6일 이상이 될 수 있어 여유를 둔다.
@@ -67,24 +66,6 @@ export interface DayContent extends DayRef {
   certMeta: CertMeta;
 }
 
-export interface SearchEntry {
-  category: string;
-  certSlug: string;
-  certCode: string;
-  certName: string;
-  certLevel: CertLevel;
-  week: number;
-  day: number;
-  title: string;
-  href: string;
-}
-
-// 본문까지 검색하기 위한 확장 엔트리. 페이로드가 크므로 모든 페이지에 인라인하지 않고
-// /api/search 에서 온디맨드(정적 캐시)로만 내려준다.
-export interface SearchBodyEntry extends SearchEntry {
-  body: string;
-}
-
 async function readJson<T>(p: string): Promise<T> {
   const raw = await fs.readFile(p, 'utf8');
   return JSON.parse(raw) as T;
@@ -131,26 +112,6 @@ function extractTitle(body: string, day: number): string {
 
 async function fileExists(p: string): Promise<boolean> {
   try { await fs.access(p); return true; } catch { return false; }
-}
-
-const SEARCH_BODY_MAX = 1500;
-
-// 검색용 본문 발췌: 헤딩(개념어)을 앞세우고 마크다운/코드를 제거한 본문 일부를 잇는다.
-// 전문이 아니라 발췌인 이유 — 인덱스 페이로드를 제한하기 위함(헤딩+도입부에 핵심어가 몰림).
-function extractSearchBody(raw: string): string {
-  let s = raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, ''); // frontmatter 제거
-  const headings = (s.match(/^#{1,4}\s+.+$/gm) ?? []).map((h) => h.replace(/^#{1,4}\s+/, '').trim());
-  s = s
-    .replace(/```[\s\S]*?```/g, ' ') // 코드 펜스
-    .replace(/`[^`]*`/g, ' ') // 인라인 코드
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // 이미지
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // 링크 → 텍스트
-    .replace(/^#{1,6}\s+/gm, '') // 헤딩 기호
-    .replace(/[>*_~#|`-]+/g, ' ') // 마크다운 기호
-    .replace(/\s+/g, ' ')
-    .trim();
-  const headingStr = headings.join(' · ');
-  return `${headingStr} ${s.slice(0, SEARCH_BODY_MAX)}`.trim().slice(0, SEARCH_BODY_MAX + 400);
 }
 
 // 잠긴(유료) day의 미리보기. frontmatter 제거 후 앞부분 마크다운 일부만 반환한다.
@@ -224,37 +185,8 @@ export async function listCerts(category: string): Promise<CertMeta[]> {
   return filtered.sort((a, b) => a.order - b.order);
 }
 
-export async function buildSearchIndex(category: string): Promise<SearchEntry[]> {
-  const certs = await listCerts(category);
-  const out: SearchEntry[] = [];
-  for (const c of certs) {
-    const days = await getAllDays(category, c.slug);
-    for (const d of days) {
-      out.push({ category, certSlug: c.slug, certCode: c.code, certName: c.name, certLevel: c.level, week: d.week, day: d.day, title: d.title, href: d.href });
-    }
-  }
-  return out;
-}
-
-// 본문 발췌까지 포함한 검색 인덱스. 무거우므로 /api/search 라우트에서만(정적 캐시) 사용.
-export async function buildSearchBodyIndex(category: string): Promise<SearchBodyEntry[]> {
-  const certs = await listCerts(category);
-  const out: SearchBodyEntry[] = [];
-  for (const c of certs) {
-    const days = await getAllDays(category, c.slug);
-    for (const d of days) {
-      // 본문 검색은 Week1만, 나머지 주차는 제목만 싣는다. 전 주차 본문을 실으면 인덱스가
-      // 1MB를 넘겨 검색창을 여는 순간의 다운로드가 무거워진다(페이월과 무관한 용량 제약).
-      const includeBody = d.week <= FREE_WEEK;
-      const raw = includeBody
-        ? await fs.readFile(path.join(CONTENT_ROOT, contentDirOf(category), c.slug, `week${d.week}`, `day${d.day}.md`), 'utf8')
-        : '';
-      out.push({
-        category, certSlug: c.slug, certCode: c.code, certName: c.name, certLevel: c.level,
-        week: d.week, day: d.day, title: d.title, href: d.href,
-        body: includeBody ? extractSearchBody(raw) : '',
-      });
-    }
-  }
-  return out;
+// day 마크다운 원문(검색 샤드 빌드용). 존재하지 않으면 null.
+export async function readDayRaw(category: string, slug: string, week: number, day: number): Promise<string | null> {
+  const p = path.join(CONTENT_ROOT, contentDirOf(category), slug, `week${week}`, `day${day}.md`);
+  try { return await fs.readFile(p, 'utf8'); } catch { return null; }
 }

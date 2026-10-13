@@ -58,6 +58,7 @@ describe('proxy — 무관한 실제 라우트는 가로채지 않는다(proxy �
     '/api/auth/google/callback', // 4세그먼트 실제 API
     '/api/auth/me',
     '/api/search',
+    '/api/search/saa-c03', // 본문 샤드(3세그먼트라 프록시 4세그먼트 규칙 밖)
     '/_next/static/chunks/abc.js',
     '/_next/image',
     '/_next/static/media/font.woff2',
