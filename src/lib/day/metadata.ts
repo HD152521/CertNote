@@ -6,8 +6,8 @@ import { excerptOf } from '@/lib/site';
 import { isIndexableDay } from '@/lib/day/indexPolicy';
 
 // day 페이지 generateMetadata 본문의 단일 출처(docs/SEO-indexing-fix-plan.md Step5 A-0).
-// [category]/[slug]/[week]/[day](전체 동적 라우트, 유료 포함)와 [category]/[slug]/week1/[day]
-// (무료 전용 정적 라우트) 양쪽의 generateMetadata가 이 함수에 위임한다.
+// [category]/[slug]/[week]/[day](2주차 이상, 첫 요청 때 정적 생성)와 [category]/[slug]/week1/[day]
+// (빌드 때 생성하는 정적 라우트) 양쪽의 generateMetadata가 이 함수에 위임한다.
 //
 // 호출부 책임: isSupportedCategory 검증과 week/day 세그먼트 파싱은 각 라우트의 generateMetadata가
 // 먼저 끝내고, 유효한 category/숫자 w·d만 이 함수에 넘긴다(유효하지 않으면 호출부가 {}를 반환).
