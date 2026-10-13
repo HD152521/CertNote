@@ -11,12 +11,17 @@ interface PageProps { params: Promise<{ category: string; slug: string; day: str
 
 // 무료 주차(week1) 전용 정적 렌더 라우트(docs/SEO-indexing-fix-plan.md Step5).
 //
-// 왜 별도 라우트인가: [week]/[day]에 generateStaticParams를 그대로 추가하면 세그먼트 전체가
-// SSG 판정을 받아, 유료 주차 요청(cookies() 호출 경로)까지 DYNAMIC_SERVER_USAGE 500을 낸다
-// (메커니즘은 ../[week]/[day]/page.tsx 상단 주석 참고 — Next.js 16.2.6 소스로 확정됨). 리터럴
-// week1 세그먼트를 신설하면 이 라우트의 코드 경로에는 애초에 cookies() 호출이 존재하지
-// 않으므로 SSG와 안전하게 양립한다. shared/lib/router/utils/sorted-routes.js에 따라 리터럴
-// 세그먼트가 [week]보다 항상 먼저 매칭되고 specificity가 달라 라우트 충돌(E458)도 없다.
+// 왜 별도 라우트인가: 이 라우트를 만들 당시 [week]/[day]는 유료 주차에서 cookies()를 읽는 동적
+// 라우트였다. 거기에 generateStaticParams를 추가하면 세그먼트 전체가 SSG 판정을 받아 cookies()
+// 호출 경로까지 DYNAMIC_SERVER_USAGE 500을 낸다(Next.js 16.2.6 소스로 확정됨). 리터럴 week1
+// 세그먼트를 신설하면 이 라우트의 코드 경로에는 애초에 cookies() 호출이 존재하지 않으므로 SSG와
+// 안전하게 양립한다. shared/lib/router/utils/sorted-routes.js에 따라 리터럴 세그먼트가 [week]보다
+// 항상 먼저 매칭되고 specificity가 달라 라우트 충돌(E458)도 없다.
+//
+// 지금(구독제 보류, 2026-10)은 [week]/[day]도 쿠키를 읽지 않는 정적 캐시 라우트다 — 빈
+// generateStaticParams로 첫 요청 때 생성한다(docs/P3-step1-day-cache-design.md). 그래도 이 라우트를
+// 남겨 두는 이유: week1은 빌드 때 미리 만들어 두고, 페이월을 되살려 [week]/[day]가 다시 동적으로
+// 돌아가도(같은 문서 3장) week1은 영향 없이 정적으로 남는다.
 //
 // `dynamic`은 의도적으로 선언하지 않는다(auto) — generateStaticParams가 있으므로 자동으로
 // force-static과 동등하게 SSG된다. 여기서 force-static을 명시하면 향후 이 라우트에 실수로
@@ -32,9 +37,9 @@ export async function generateStaticParams() {
     for (const cert of certs) {
       const days = await getAllDays(category, cert.slug);
       for (const dayRef of days) {
-        // week2+ 절대 포함 금지 — 포함하면 이 세그먼트가 유료 주차까지 SSG로 판정해 위 주석의
-        // 500이 재현된다. FREE_WEEK 상수 하나로 무료 경계를 판정해 정책 변경(Step5 A-3 가드)과
-        // 항상 같은 값을 쓴다.
+        // week2+ 절대 포함 금지 — 이 라우트는 URL에 week가 없어 FREE_WEEK 본문만 렌더한다.
+        // 2주차 이상은 ../[week]/[day] 가 첫 요청 때 만든다. FREE_WEEK 상수 하나로 경계를 판정해
+        // 정책 변경(Step5 A-3 가드)과 항상 같은 값을 쓴다.
         if (dayRef.week !== FREE_WEEK) continue;
         out.push({ category, slug: cert.slug, day: `day${dayRef.day}` });
       }

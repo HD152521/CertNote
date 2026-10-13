@@ -4,6 +4,8 @@ import type { Entitlement, EntitlementRecord, Plan } from './types';
 // 모의고사·AI 튜터·마이페이지는 로그인만 요구한다(플랜 무관, 각 라우트가 401로 판정).
 // 되살릴 때는 이 값을 true로 — 아래 판정 함수들이 Week1 무료/Pro 전용 규칙으로 돌아간다.
 // 단, 화면 문구(랜딩·허브·튜터 안내)와 /pricing 리다이렉트(next.config.ts)는 따로 되돌려야 한다.
+// 또 [week]/[day] 라우트가 정적 캐시라 이 값만 켜면 빌드가 실패한다(의도된 가드) — 반드시
+// docs/P3-step1-day-cache-design.md 3장의 되돌림 절차를 같은 커밋으로 수행할 것.
 export const PAYWALL_ENABLED: boolean = false;
 
 // 정적 프리렌더되는 주차(week1/[day] 라우트). 페이월이 켜져 있을 때는 무료 주차의 상한이기도 하다.
