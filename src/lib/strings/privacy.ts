@@ -25,6 +25,9 @@ export type PrivacyKey =
   | 'retentionBody'
   | 'thirdPartyTitle'
   | 'thirdPartyBody'
+  | 'adsTitle'
+  | 'adsBody'
+  | 'adsOptOut'
   | 'rightsTitle'
   | 'rightsBody'
   | 'contactTitle'
@@ -34,9 +37,9 @@ export type PrivacyKey =
 export const privacyStrings: Dict<PrivacyKey> = {
   ko: {
     title: '개인정보처리방침',
-    lastUpdated: '최종 업데이트: 2026-06-25',
+    lastUpdated: '최종 업데이트: 2026-10-13',
     intro:
-      'CertNote(이하 “서비스”)는 이용자의 개인정보를 중요하게 생각하며, 아래와 같이 수집·이용합니다. 본 방침은 서비스 개선을 위한 베타 테스트 단계 기준이며, 정식 출시 시 갱신될 수 있습니다.',
+      '주간랩스가 운영하는 CertNote(이하 “서비스”)는 이용자의 개인정보를 중요하게 생각하며, 아래와 같이 수집·이용합니다. 방침이 바뀌면 이 페이지에 변경 내용과 날짜를 알립니다.',
 
     collectTitle: '1. 수집하는 항목',
     collectRequired: '필수: 이메일, 비밀번호(암호화 저장), 이름, 생년월일, 목표 자격증',
@@ -56,21 +59,27 @@ export const privacyStrings: Dict<PrivacyKey> = {
 
     thirdPartyTitle: '4. 제3자 제공 및 처리 위탁',
     thirdPartyBody:
-      '이용자의 개인정보를 외부에 판매하거나 제공하지 않습니다. 서비스 운영에 필요한 범위에서 인프라·메일·결제 등 처리 위탁이 발생할 수 있으며, 이 경우 수탁자에게 안전조치를 요구합니다.',
+      '이용자의 개인정보를 외부에 판매하거나 제공하지 않습니다. 서비스 운영에 필요한 범위에서 인프라·메일·분석 등 처리 위탁이 발생할 수 있으며, 이 경우 수탁자에게 안전조치를 요구합니다.',
 
-    rightsTitle: '5. 이용자의 권리',
+    adsTitle: '5. 쿠키와 광고',
+    adsBody:
+      '서비스는 로그인 유지와 이용 통계를 위해 쿠키를 사용합니다. 또한 Google을 포함한 제3자 광고 사업자가 서비스에 광고를 게재할 수 있으며, 이들 사업자는 쿠키를 사용해 이용자가 이 사이트나 다른 사이트를 방문한 기록을 바탕으로 광고를 보여줄 수 있습니다. Google은 광고 쿠키를 사용해 자사와 파트너가 이용자의 방문 기록에 맞는 광고를 게재합니다.',
+    adsOptOut:
+      '이용자는 Google 광고 설정에서 맞춤 광고를 끌 수 있고, 브라우저 설정에서 쿠키 저장을 거부할 수 있습니다. 쿠키를 거부하면 로그인 등 일부 기능을 쓸 수 없습니다.',
+
+    rightsTitle: '6. 이용자의 권리',
     rightsBody:
       '이용자는 언제든 본인의 개인정보를 조회·수정하거나(마이페이지), 회원 탈퇴를 통해 삭제를 요청할 수 있습니다.',
 
-    contactTitle: '6. 문의',
+    contactTitle: '7. 문의',
     contactLabel: '개인정보 관련 문의:',
     backToSignup: '← 회원가입으로 돌아가기',
   },
   en: {
     title: 'Privacy Policy',
-    lastUpdated: 'Last updated: 2026-06-25',
+    lastUpdated: 'Last updated: 2026-10-13',
     intro:
-      'CertNote (the “Service”) treats your personal information as something worth protecting, and collects and uses it as described below. This policy reflects the beta testing phase and may be updated at general release.',
+      'CertNote (the “Service”), operated by Jugan Labs (주간랩스), treats your personal information as something worth protecting, and collects and uses it as described below. Changes to this policy are posted on this page with their date.',
 
     collectTitle: '1. What we collect',
     collectRequired: 'Required: email, password (stored encrypted), name, date of birth, target certification',
@@ -93,13 +102,19 @@ export const privacyStrings: Dict<PrivacyKey> = {
 
     thirdPartyTitle: '4. Third-party sharing and processing',
     thirdPartyBody:
-      'We do not sell or hand your personal information to outside parties. Running the service may require entrusting processing to infrastructure, email, or payment providers; in those cases we require the processor to maintain appropriate safeguards.',
+      'We do not sell or hand your personal information to outside parties. Running the service may require entrusting processing to infrastructure, email, or analytics providers; in those cases we require the processor to maintain appropriate safeguards.',
 
-    rightsTitle: '5. Your rights',
+    adsTitle: '5. Cookies and advertising',
+    adsBody:
+      'The Service uses cookies to keep you signed in and to measure usage. Third-party vendors, including Google, may also serve ads on the Service, and they may use cookies to show ads based on your prior visits to this site or other sites. Google’s use of advertising cookies enables it and its partners to serve ads based on your visits to this and other sites.',
+    adsOptOut:
+      'You can turn off personalized advertising in Google Ads Settings, and you can refuse cookies in your browser settings. If you refuse cookies, some features such as sign-in will not work.',
+
+    rightsTitle: '6. Your rights',
     rightsBody:
       'You can view or correct your personal information at any time from My Account, or request its deletion by closing your account.',
 
-    contactTitle: '6. Contact',
+    contactTitle: '7. Contact',
     contactLabel: 'Privacy inquiries:',
     backToSignup: '← Back to sign up',
   },

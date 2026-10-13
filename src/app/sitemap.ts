@@ -58,6 +58,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const out: MetadataRoute.Sitemap = [
     sitemapEntry(SITE_URL, homeLastMod, 'weekly', 1),
     sitemapEntry(`${SITE_URL}/privacy`, await getSourceFileMtime('src/app/privacy/PrivacyContent.tsx'), 'yearly', 0.3),
+    sitemapEntry(`${SITE_URL}/about`, await getSourceFileMtime('src/app/about/page.tsx'), 'yearly', 0.4),
+    sitemapEntry(`${SITE_URL}/contact`, await getSourceFileMtime('src/app/contact/page.tsx'), 'yearly', 0.3),
+    sitemapEntry(`${SITE_URL}/terms`, await getSourceFileMtime('src/app/terms/page.tsx'), 'yearly', 0.3),
   ];
   for (const { section, certs } of sections) {
     if (certs.length === 0) continue; // 콘텐츠 없는 섹션(향후 준비중)은 허브도 생략.

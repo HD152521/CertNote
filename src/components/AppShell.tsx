@@ -5,6 +5,7 @@ import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { SearchProvider } from './SearchProvider';
 import { FeedbackWidget } from './FeedbackWidget';
+import { SiteFooter } from './SiteFooter';
 import { getAllDays, listCerts } from '@/lib/content';
 
 interface AppShellProps { certs: CertMeta[]; children: ReactNode; }
@@ -29,6 +30,7 @@ export async function AppShell({ certs, children }: AppShellProps) {
           <Sidebar certTrees={certTrees} enCertTrees={enCertTrees} />
           <main className="min-w-0 flex-1 py-6 lg:py-10 lg:pl-8">{children}</main>
         </div>
+        <SiteFooter />
       </div>
       <FeedbackWidget />
     </SearchProvider>
