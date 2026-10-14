@@ -244,6 +244,16 @@ try {
   `);
   console.log('✓ tutor_usage 테이블 준비 완료');
 
+  // AI 튜터 전체 사용자 합산 일일 호출 수(KST 날짜 1행). TUTOR_GLOBAL_DAILY_LIMIT 초과 시 LLM 호출 차단.
+  // 계정을 여러 개 만들어 유저별 한도를 우회하는 경우의 비용 천장이다. 증가는 단일 upsert 문(WHERE count < limit)으로 원자적.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tutor_global_usage (
+      day   DATE PRIMARY KEY,
+      count INT NOT NULL DEFAULT 0
+    );
+  `);
+  console.log('✓ tutor_global_usage 테이블 준비 완료');
+
   // AI 튜터 첫 설명 캐시. (문제, 고른 오답)이 같으면 모든 사용자에게 동일하므로
   // 한 번만 생성해 저장하고 이후엔 LLM 호출 없이 재사용(비용·지연 절감).
   await pool.query(`

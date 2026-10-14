@@ -1,22 +1,23 @@
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { AppError, errorResponse } from '@/lib/auth/errors';
 import { clientIp, rateLimit } from '@/lib/rateLimit';
-import { getQuestionById } from '@/lib/questions';
 import type { Language } from '@/lib/i18n';
+import { resolveFakeMode } from '@/lib/tutor/fakeTutor';
 import { getTutorError } from '@/lib/tutor/errors';
+import { parseTutorInput, requireVerifiedEmail, reserveTutorCall, type TutorInput } from '@/lib/tutor/tutorRequest';
 import {
-  consumeTutorQuota,
   getCachedExplanation,
   isTutorConfigured,
-  refundTutorQuota,
-  sanitizeHistory,
   saveExplanation,
   streamTutor,
 } from '@/lib/tutor/tutorService';
+import { pipeTutorText, primeTutorStream } from '@/lib/tutor/tutorStream';
 
 export const runtime = 'nodejs'; // Anthropic SDK는 Node 런타임 필요.
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // 스트리밍 응답 여유(플랜에 따라 상한 적용).
+
+const TEXT_HEADERS = { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' };
 
 // 구조화된 로깅: 타이스탬프, 컨텍스트, 사용자 ID, 에러 메시지
 const logError = (context: string, userId: string, error: unknown) => {
@@ -30,10 +31,47 @@ const logError = (context: string, userId: string, error: unknown) => {
   );
 };
 
-// AI 오답 튜터. 로그인 사용자 누구나, 계정당 하루 TUTOR_DAILY_LIMIT회. 문제+오답을 받아 설명을 text/plain으로 스트리밍한다.
+// LLM 호출 + 첫 텍스트 대기. 첫 텍스트 전에 실패(예외 또는 빈 응답)하면 차감분을 환불하고 502 JSON 오류를 던진다.
+// 첫 텍스트가 나온 뒤에는 스트리밍 응답을 돌려준다(이후 실패는 환불하지 않는다 — 사용자가 이미 일부를 받았다).
+async function streamExplanation(
+  req: Request,
+  userId: string,
+  input: TutorInput,
+  language: Language,
+  refund: () => Promise<void>,
+): Promise<Response> {
+  const isFirstTurn = input.history.length === 0;
+  let primed;
+  try {
+    const source = streamTutor(input.question, input.selected, input.history, language, resolveFakeMode(req.headers));
+    primed = await primeTutorStream(source);
+    if (!primed) throw new Error('LLM 응답에 텍스트가 없습니다.');
+  } catch (err) {
+    logError('stream_failed_before_text', userId, err);
+    await refund().catch((e) => logError('quota_refund_failed', userId, e));
+    throw new AppError(502, 'tutor_failed', getTutorError(language, 'streamFailed'));
+  }
+
+  const body = pipeTutorText(primed, {
+    // 첫 설명이면 캐시에 저장 → 다음 사용자부터 무료·즉시. 저장 실패는 응답에 영향 없음.
+    onComplete: async (full) => {
+      if (!isFirstTurn || !full.trim()) return;
+      try {
+        await saveExplanation(input.questionId, input.selected, full);
+      } catch (e) {
+        logError('cache_save_failed', userId, e);
+      }
+    },
+    // 스트림 도중 오류는 로그만 — 헤더는 이미 전송돼 상태코드를 못 바꾼다.
+    onError: (err) => logError('stream_error', userId, err),
+  });
+  return new Response(body, { headers: TEXT_HEADERS });
+}
+
+// AI 오답 튜터. 이메일 인증된 로그인 사용자 누구나, 계정당 하루 TUTOR_DAILY_LIMIT회(전체 합산은 TUTOR_GLOBAL_DAILY_LIMIT회).
+// 문제+오답을 받아 설명을 text/plain으로 스트리밍한다.
 export async function POST(req: Request) {
   try {
-    // language 파라미터 추출 (기본값: ko)
     const body = await req.json().catch(() => null);
     const language: Language = body?.language === 'en' ? 'en' : 'ko';
 
@@ -46,78 +84,25 @@ export async function POST(req: Request) {
       throw new AppError(429, 'rate_limited', getTutorError(language, 'rateLimited'));
     }
 
+    // 미인증 계정은 캐시 조회·쿼터·LLM 어느 것도 건드리기 전에 막는다.
+    await requireVerifiedEmail(user.sub, language);
+
     if (!isTutorConfigured()) {
-      const msg = language === 'en' ? 'AI tutor is not available yet.' : 'AI 튜터가 아직 설정되지 않았습니다.';
-      throw new AppError(503, 'tutor_unavailable', msg);
+      throw new AppError(503, 'tutor_unavailable', getTutorError(language, 'tutorUnavailable'));
     }
 
-    if (!body || typeof body.questionId !== 'string') {
-      const msg = language === 'en' ? 'Question ID is required.' : '문제 ID가 필요합니다.';
-      throw new AppError(400, 'invalid_body', msg);
-    }
-    const question = getQuestionById(body.questionId);
-    if (!question) throw new AppError(404, 'question_not_found', getTutorError(language, 'invalidQuestion'));
+    const input = parseTutorInput(body, language);
 
-    const selected = typeof body.selected === 'string' ? body.selected : '';
-    const history = sanitizeHistory(body.history);
-    // 첫 설명(후속 대화 없음)만 캐시 대상 — 후속 질문은 사용자마다 달라 라이브 호출.
-    const isFirstTurn = history.length === 0;
-    const textHeaders = { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' };
-
-    // 캐시 히트: (문제, 고른 오답)에 대한 설명이 이미 있으면 LLM·쿼터 없이 즉시 반환.
-    if (isFirstTurn) {
-      const cached = await getCachedExplanation(body.questionId, selected);
-      if (cached) return new Response(cached, { headers: textHeaders });
+    // 캐시 히트: 첫 설명(후속 대화 없음)이 (문제, 고른 오답)에 대해 이미 있으면 LLM·쿼터 없이 즉시 반환.
+    // 후속 질문은 사용자마다 달라 캐시 대상이 아니다.
+    if (input.history.length === 0) {
+      const cached = await getCachedExplanation(input.questionId, input.selected);
+      if (cached) return new Response(cached, { headers: TEXT_HEADERS });
     }
 
-    // 여기부터 실제 LLM 호출 — 일일 한도는 이 시점에만 차감(캐시 히트는 무료).
-    const quota = await consumeTutorQuota(user.sub);
-    if (!quota.allowed) {
-      const msg = language === 'en'
-        ? `Daily limit (${quota.limit} explanations) reached. Try again tomorrow.`
-        : `오늘 AI 설명 한도(${quota.limit}회)를 모두 사용했어요. 내일 다시 이용해 주세요.`;
-      throw new AppError(429, 'daily_limit', msg);
-    }
-
-    const sdkStream = streamTutor(question, selected, history, language);
-    const encoder = new TextEncoder();
-    const questionId = body.questionId;
-    const readable = new ReadableStream<Uint8Array>({
-      async start(controller) {
-        let full = '';
-        try {
-          for await (const event of sdkStream) {
-            if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-              full += event.delta.text;
-              controller.enqueue(encoder.encode(event.delta.text));
-            }
-          }
-          // 첫 설명이면 캐시에 저장 → 다음 사용자부터 무료·즉시. 저장 실패는 응답에 영향 없음.
-          if (isFirstTurn && full.trim()) {
-            try {
-              await saveExplanation(questionId, selected, full);
-            } catch (e) {
-              logError('cache_save_failed', user.sub, e);
-            }
-          }
-          controller.close();
-        } catch (err) {
-          // 스트림 도중 오류는 로그만 — 헤더는 이미 전송돼 상태코드를 못 바꾼다.
-          logError('stream_error', user.sub, err);
-          // 설명이 한 글자도 나가지 않은 실패는 사용 횟수로 치지 않는다.
-          if (!full) {
-            try {
-              await refundTutorQuota(user.sub);
-            } catch (e) {
-              logError('quota_refund_failed', user.sub, e);
-            }
-          }
-          controller.error(err);
-        }
-      },
-    });
-
-    return new Response(readable, { headers: textHeaders });
+    // 여기부터 실제 LLM 호출 — 전역·사용자 일일 한도는 이 시점에만 차감(캐시 히트는 무료).
+    const reservation = await reserveTutorCall(user.sub, language);
+    return await streamExplanation(req, user.sub, input, language, reservation.refund);
   } catch (err) {
     return errorResponse(err);
   }

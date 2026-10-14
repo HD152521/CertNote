@@ -18,36 +18,27 @@ P3 애드센스 대비 고도화(`docs/P3-adsense-readiness-plan.md`)에서 Step
 - [ ] 구글 서치콘솔·네이버에 사이트맵 재제출(URL 151 → 846).
 - [ ] Vercel 환경변수 확인: `TUTOR_MODEL`(없으면 기본이 Opus 라 비싸다), `TUTOR_DAILY_LIMIT`(설정돼 있으면 코드 기본값 3 보다 우선).
 
+## 끝낸 계획 단계 (Step 12~14, 2026-10-14)
+
+- **Step 12 — AI 튜터 이메일 인증 게이트**: 미인증 계정은 403 `email_unverified`(캐시 조회·한도 차감·LLM 호출보다 앞), 튜터 패널에 인증 안내·재발송·재시도. 함께 들어간 것: 기본 모델 `claude-haiku-4-5`, 전체 합산 일일 상한 `TUTOR_GLOBAL_DAILY_LIMIT`(기본 500), `selected` 형식 검증, 거절된 호출은 횟수를 올리지 않음, 환불은 차감한 날짜 기준, 첫 텍스트 전 실패는 JSON 502.
+  - [ ] **배포 전 운영 DB 에 `npm run db:migrate`** — `tutor_global_usage` 테이블을 만든다. 없으면 `/api/tutor` 가 실패한다.
+  - [ ] 비밀번호로 가입하고 이메일 인증을 하지 않은 기존 계정은 인증 전까지 튜터를 쓸 수 없다.
+- **Step 13 — 로그인 흐름 E2E**: `npm run test:e2e` 19개 통과(무료 계정 모의고사 시작·제출, 튜터 한도 초과 429, 실패 시 환불, 미인증 403, 전역 상한 503). 실제 LLM 대신 `E2E_FAKE_TUTOR` 가짜 스트림을 쓰며 `VERCEL` 환경에서는 켜지지 않는다. `e2e/seo-smoke.spec.ts` 의 낡은 `/aws-certs` 기대값과 사이트맵 동시 요청(8개로 제한)도 정리했다. DB 는 `certnote_dev` 를 쓴다(`e2e/db.ts` 가 이름을 검사).
+- **Step 14 — 영어판 번역 상태 감사**: `docs/P3-step14-en-translation-audit.md`. 지금 그대로 색인을 열 수 있는 것은 dea-c01 2~3주차 10개뿐이고, saa-c03·clf-c02 는 퀴즈 표지만 영문화하면 60개가 열린다.
+
 ## 남은 계획 단계
 
-### Step 12 — AI 튜터 이메일 인증 게이트 (미완성, 브랜치에 보관)
-
-AI 튜터가 로그인만으로 열려, 인증하지 않은 계정을 여러 개 만들어 하루 3회 한도를 우회할 수 있다.
-
-- [ ] `/api/tutor` 에서 `email_verified` 가 아닌 계정은 403 `email_unverified` + 인증 안내. 게이트는 캐시 조회·한도 차감·LLM 호출보다 앞.
-- [ ] 튜터 패널에 인증 안내와 인증 메일 재발송 연결.
-- 작업 중이던 코드가 `wip/step12-tutor-gate-quiz-bold` 브랜치(커밋 `0c6bde6`)에 있다. **검증 전이라 그대로 머지하지 말 것.**
-
-### 퀴즈 문항·해설의 굵은 글씨 (미완성, 같은 브랜치)
+### 퀴즈 문항·해설의 굵은 글씨 (미완성)
 
 퀴즈 텍스트는 마크다운 파싱 없이 출력돼 `**운영 부담을 최소화**` 가 별표째 보인다(4,439문항 중 345문항. 예: `/aws/sap-c02/week1/day1` 문제 1).
 
 - [ ] `**…**` 만 `<strong>` 으로 바꾸는 공용 컴포넌트를 Quiz·ReviewSession·NotebookList·ExamRunner 에 적용. 다른 기호(글롭 `**`, `*`, `_`, `~`)는 그대로.
-- 같은 `wip/step12-tutor-gate-quiz-bold` 브랜치에 작업 중이던 코드가 있다(`src/lib/quiz/boldText.ts`, `src/components/QuizText.tsx`).
+- 작업 중이던 코드는 `wip/step12-tutor-gate-quiz-bold` 브랜치(`src/lib/quiz/boldText.ts`, `src/components/QuizText.tsx`)에 있다고 기록돼 있으나, 그 브랜치는 원격에 올라와 있지 않다.
 
-### Step 13 — 로그인 흐름 E2E 검증
+### 영어판 색인을 트랙별로 열기 (Step 14 권고)
 
-- [ ] 테스트용 Postgres(Docker, DB 이름에 `certnote_dev`, 5432·55432 가 아닌 포트)로 `npm run test:e2e` 통과.
-- [ ] 무료 계정 모의고사 응시, AI 튜터 3회 후 차단, 실패 시 횟수 환불을 각각 테스트로.
-- [ ] `e2e/seo-smoke.spec.ts` 정리: `/aws-certs/…` canonical 을 기대하는 낡은 테스트 2건, 사이트맵 전 URL 을 한꺼번에 요청해 타임아웃 나는 테스트(동시 6~8로 제한).
-- 주의: `.env.example` 를 복사할 때 `TUTOR_DAILY_LIMIT` 값, 프로덕션 모드의 `secure` 쿠키가 `http://localhost` 에서 전송되는지.
-
-### Step 14 — 영어판 2주차 이상 번역 상태 감사
-
-영어판 2주차 이상은 `EN_INDEXABLE_WEEK = 1` 때문에 noindex 다.
-
-- [ ] 자격증별 "2주차 이상 파일 수 / 한국어가 남은 파일 수" 표를 문서로. 판정 기준(한글 1자 이상 vs 200자 초과)에 따라 결론이 달라진다 — saa-c03·clf-c02 는 전 파일에 한글이 있지만 200자 넘는 파일은 0개.
-- [ ] 트랙별로 색인을 열 수 있게 `isIndexableDay` 를 바꿀지 권고.
+- [ ] `isIndexableDay` 를 `(category, slug, week)` 트랙별 판정으로 바꾸고 영어 내비게이션을 같은 기준으로 자른다. 구현 초안은 `feat/p3-followup` 의 `300f0ed`(PR #8 이전 구조라 다시 옮겨야 함).
+- [ ] saa-c03·clf-c02 퀴즈 표지 영문화(`scripts/normalize-en-quiz-labels.mjs`).
 
 ## 배포한 작업에서 남긴 것
 

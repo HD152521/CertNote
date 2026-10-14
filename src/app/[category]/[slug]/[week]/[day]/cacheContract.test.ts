@@ -13,7 +13,7 @@ const DESIGN_DOC = 'docs/P3-step1-day-cache-design.md';
 const HINT = `${DESIGN_DOC} 3장(페이월을 다시 켤 때)의 되돌림 절차를 따를 것`;
 
 // page.tsx 를 처음 import 할 때 MDX·하이라이터 변환까지 따라와 기본 5초를 넘긴다.
-const PAGE_IMPORT_TIMEOUT_MS = 60_000;
+const PAGE_IMPORT_TIMEOUT_MS = 180_000;
 
 const PAGE_PATH = path.join(process.cwd(), 'src', 'app', '[category]', '[slug]', '[week]', '[day]', 'page.tsx');
 

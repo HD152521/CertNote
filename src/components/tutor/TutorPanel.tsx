@@ -6,6 +6,8 @@ import { Sparkles, Send } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n-client';
 import { pick } from '@/lib/strings/dict';
 import { shellStrings } from '@/lib/strings/shell';
+import { classifyTutorFailure } from '@/lib/tutor/tutorClient';
+import { TutorUnverifiedNotice } from './TutorUnverifiedNotice';
 
 interface TutorPanelProps {
   questionId: string;
@@ -22,9 +24,13 @@ const ERR_KEY = {
   rate_limited: 'tutorRateLimited',
   tutor_unavailable: 'tutorUnavailable',
   question_not_found: 'tutorQuestionNotFound',
+  global_limit: 'tutorGlobalLimit',
+  tutor_failed: 'tutorStreamFailed',
+  invalid_selected: 'tutorInvalidSelected',
 } as const;
 
-// 오답 직후 노출되는 AI 설명 패널. 로그인 전용(서버 게이팅, 계정당 하루 3회) — 비로그인은 가입 안내로 수렴.
+// 오답 직후 노출되는 AI 설명 패널. 이메일 인증된 로그인 계정 전용(서버 게이팅, 계정당 하루 3회) —
+// 비로그인은 가입 안내로, 미인증은 인증 메일 안내(+재발송)로 수렴한다.
 export function TutorPanel({ questionId, selected }: TutorPanelProps) {
   const language = useLanguage();
   const s = pick(shellStrings, language);
@@ -33,11 +39,15 @@ export function TutorPanel({ questionId, selected }: TutorPanelProps) {
   const [busy, setBusy] = useState(false);
   const [started, setStarted] = useState(false);
   const [needLogin, setNeedLogin] = useState(false);
+  const [needVerify, setNeedVerify] = useState(false);
+  const [stillUnverified, setStillUnverified] = useState(false); // 인증 재시도가 또 거절됨
+  const lastHistory = useRef<Turn[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [followup, setFollowup] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  async function ask(history: Turn[]) {
+  async function ask(history: Turn[], isRetry = false) {
+    lastHistory.current = history;
     setBusy(true);
     setError(null);
     setStreaming('');
@@ -49,14 +59,22 @@ export function TutorPanel({ questionId, selected }: TutorPanelProps) {
       });
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({}));
-        if (res.status === 401) {
+        const failure = classifyTutorFailure(res.status, data);
+        if (failure.kind === 'login') {
           setNeedLogin(true);
           return;
         }
-        const errKey = ERR_KEY[data.error as keyof typeof ERR_KEY];
-        setError((errKey && s[errKey]) || data.message || s.tutorLoadFailed);
+        if (failure.kind === 'verify') {
+          setNeedVerify(true);
+          setStillUnverified(isRetry);
+          return;
+        }
+        const errKey = ERR_KEY[failure.code as keyof typeof ERR_KEY];
+        setError((errKey && s[errKey]) || failure.message || s.tutorLoadFailed);
         return;
       }
+      setNeedVerify(false);
+      setStillUnverified(false);
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let acc = '';
@@ -100,6 +118,10 @@ export function TutorPanel({ questionId, selected }: TutorPanelProps) {
         <Sparkles className="h-4 w-4" /> {s.tutorOpen}
       </button>
     );
+  }
+
+  if (needVerify) {
+    return <TutorUnverifiedNotice onRetry={() => void ask(lastHistory.current, true)} checking={busy} stillUnverified={stillUnverified} />;
   }
 
   if (needLogin) {
