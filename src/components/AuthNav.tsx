@@ -19,26 +19,33 @@ interface Me {
 const LINK_CLASS = 'px-2.5 py-1 text-xs rounded-md text-fg-muted hover:bg-bg-subtle hover:text-fg transition';
 const MENU_ITEM = 'block w-full rounded-md px-2 py-1.5 text-left text-sm text-fg-muted hover:bg-bg-subtle hover:text-fg transition';
 
+async function fetchMe(): Promise<Me | null> {
+  try {
+    const res = await fetch('/api/auth/me', { cache: 'no-store' });
+    const data = await res.json();
+    return data.user ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthNav() {
   // undefined = 로딩 중, null = 비로그인, Me = 로그인
   const [user, setUser] = useState<Me | null | undefined>(undefined);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const [prevPathname, setPrevPathname] = useState(pathname);
   const lang = useLanguage();
   const s = pick(shellStrings, lang);
 
-  const refresh = useCallback(async () => {
-    try {
-      const res = await fetch('/api/auth/me', { cache: 'no-store' });
-      const data = await res.json();
-      setUser(data.user ?? null);
-    } catch {
-      setUser(null);
-    }
-  }, []);
+  const refresh = useCallback(() => fetchMe().then(setUser), []);
 
   // 마운트 + 경로 변경 시 재조회. 경로가 바뀌면 모바일 메뉴는 닫는다.
-  useEffect(() => { refresh(); setMenuOpen(false); }, [refresh, pathname]);
+  useEffect(() => { void refresh(); }, [refresh, pathname]);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setMenuOpen(false);
+  }
   useEffect(() => onAuthChange(refresh), [refresh]);
 
   async function handleLogout() {

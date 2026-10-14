@@ -10,7 +10,7 @@
     "prebuild": "node scripts/build-questions-index.mjs && node scripts/build-exam-index.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint src e2e --max-warnings 0",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:migrate": "node --env-file=.env scripts/db-migrate.mjs",

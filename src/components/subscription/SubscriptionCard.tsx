@@ -1,19 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage, t } from '@/lib/i18n-client';
 import { Entitlement } from '@/lib/entitlement/types';
 
 interface SubscriptionCardProps {
   entitlement: Entitlement;
-  userId: string;
 }
 
-export function SubscriptionCard({ entitlement, userId }: SubscriptionCardProps) {
+export function SubscriptionCard({ entitlement }: SubscriptionCardProps) {
   const lang = useLanguage();
   const isPro = entitlement.isPro;
+  const [now] = useState(() => Date.now());
   const periodEnd = entitlement.periodEnd ? new Date(entitlement.periodEnd) : null;
   const daysRemaining = periodEnd
-    ? Math.ceil((periodEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    ? Math.ceil((periodEnd.getTime() - now) / (1000 * 60 * 60 * 24))
     : null;
 
   const dateFormat = lang === 'en' ? 'en-US' : 'ko-KR';

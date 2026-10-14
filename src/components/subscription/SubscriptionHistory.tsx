@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useLanguage, t } from '@/lib/i18n-client';
 
 interface PaymentRecord {
@@ -10,33 +10,12 @@ interface PaymentRecord {
   createdAt: string;
 }
 
-interface SubscriptionHistoryProps {
-  userId: string;
-}
-
-export function SubscriptionHistory({ userId }: SubscriptionHistoryProps) {
+export function SubscriptionHistory() {
   const lang = useLanguage();
-  const [records, setRecords] = useState<PaymentRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // TODO: /api/payment/history 엔드포인트 구현 후
-    // async function fetchHistory() {
-    //   const res = await fetch('/api/payment/history');
-    //   const data = await res.json();
-    //   setRecords(data);
-    //   setIsLoading(false);
-    // }
-    // fetchHistory();
-
-    setIsLoading(false);
-  }, [userId]);
+  // TODO: /api/payment/history 엔드포인트 구현 후 조회 로직(records/isLoading 상태)을 추가한다.
+  const [records] = useState<PaymentRecord[]>([]);
 
   const dateFormat = lang === 'en' ? 'en-US' : 'ko-KR';
-
-  if (isLoading) {
-    return <div className="text-center text-sm text-fg-secondary">{t(lang, 'loading')}</div>;
-  }
 
   if (records.length === 0) {
     return (

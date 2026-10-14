@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useIsClient } from '@/lib/useIsClient';
 import { useTheme } from 'next-themes';
 import { Moon, Sun } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -10,8 +10,7 @@ import { chromeStrings } from '@/lib/strings/chrome';
 export function ThemeToggle() {
   const s = pick(chromeStrings, useLanguage());
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useIsClient();
   const isDark = mounted && resolvedTheme === 'dark';
   return (
     <button

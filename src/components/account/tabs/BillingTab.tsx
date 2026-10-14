@@ -34,7 +34,7 @@ export function BillingTab({ isPro, periodEnd, daysLeft }: BillingTabProps) {
           {lang === 'en' ? 'Payment History' : '결제 내역'}
         </h2>
         <div className="rounded-lg border border-border bg-bg-elevated p-6">
-          <SubscriptionHistory userId="" />
+          <SubscriptionHistory />
         </div>
       </section> */}
 

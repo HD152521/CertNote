@@ -10,7 +10,7 @@ interface SubscriptionPageClientProps {
   userId: string;
 }
 
-export function SubscriptionPageClient({ entitlement, userId }: SubscriptionPageClientProps) {
+export function SubscriptionPageClient({ entitlement }: SubscriptionPageClientProps) {
   const lang = useLanguage();
 
   return (
@@ -28,10 +28,10 @@ export function SubscriptionPageClient({ entitlement, userId }: SubscriptionPage
       </div>
 
       {/* Current Subscription */}
-      <SubscriptionCard entitlement={entitlement} userId={userId} />
+      <SubscriptionCard entitlement={entitlement} />
 
       {/* Billing History */}
-      <SubscriptionHistory userId={userId} />
+      <SubscriptionHistory />
 
       {/* FAQ */}
       <div className="space-y-4 rounded-lg border border-border-secondary bg-bg-elevated p-6">

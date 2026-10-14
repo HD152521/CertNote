@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useIsClient } from '@/lib/useIsClient';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Menu, X, Route } from 'lucide-react';
@@ -19,10 +20,8 @@ interface MobileNavProps {
 export function MobileNav({ certTrees, enCertTrees }: MobileNavProps) {
   const lang = useLanguage();
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
   // 포털은 클라이언트 마운트 후에만(SSR 안전).
-  useEffect(() => setMounted(true), []);
+  const mounted = useIsClient();
 
   // 열렸을 때만 Esc 닫기 + 배경 스크롤 잠금.
   useEffect(() => {

@@ -71,7 +71,6 @@ export function SearchDialog({ onClose }: SearchDialogProps) {
   const deferredQ = useDeferredValue(q);
   const results = useMemo(() => search(deferredQ), [search, deferredQ]);
   useEffect(() => { inputRef.current?.focus(); }, []);
-  useEffect(() => { setActive(0); }, [q]);
   function onKey(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'ArrowDown') { e.preventDefault(); setActive((p) => Math.min(p + 1, results.length - 1)); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((p) => Math.max(p - 1, 0)); }
@@ -91,7 +90,7 @@ export function SearchDialog({ onClose }: SearchDialogProps) {
       >
         <div className="flex items-center gap-2 border-b border-border px-3.5 py-3">
           <Search className="h-4 w-4 text-fg-muted" />
-          <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKey}
+          <input ref={inputRef} value={q} onChange={(e) => { setQ(e.target.value); setActive(0); }} onKeyDown={onKey}
             placeholder={s.searchPlaceholder}
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-fg-faint"
           />

@@ -2,20 +2,21 @@
 
 
 import { Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { useSearch } from './SearchProvider';
 import { cn } from '@/lib/cn';
 import { useLanguage } from '@/lib/i18n-client';
 import { pick } from '@/lib/strings/dict';
 import { chromeStrings } from '@/lib/strings/chrome';
 
+const subscribeNoop = () => () => {};
+const getIsMac = () => /Mac|iPhone|iPad/.test(navigator.platform);
+const getIsMacServer = () => false;
+
 export function SearchButton() {
   const s = pick(chromeStrings, useLanguage());
   const { open } = useSearch();
-  const [isMac, setIsMac] = useState(false);
-  useEffect(() => {
-    setIsMac(typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform));
-  }, []);
+  const isMac = useSyncExternalStore(subscribeNoop, getIsMac, getIsMacServer);
   return (
     <button type="button" onClick={open}
       className={cn('inline-flex h-9 items-center gap-2 rounded-md border border-border', 'bg-bg-subtle px-2.5 text-fg-muted transition hover:text-fg hover:border-border-strong')}

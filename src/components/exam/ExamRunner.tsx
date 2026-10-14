@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Check, X, Flag, Clock } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Select } from '@/components/ui/Select';
-import { useLanguage, type Language } from '@/lib/i18n-client';
+import { useLanguage } from '@/lib/i18n-client';
 
 interface CertOption { slug: string; code: string; name: string }
 
@@ -93,11 +93,11 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
     } finally {
       setSubmitting(false);
     }
-  }, [submitting, questions, answers]);
+  }, [submitting, questions, answers, lang]);
 
   // 최신 submit을 타이머 콜백에서 참조(스테일 클로저 방지).
   const submitRef = useRef(submit);
-  submitRef.current = submit;
+  useEffect(() => { submitRef.current = submit; }, [submit]);
 
   // 카운트다운 타이머. 0이 되면 자동 제출.
   useEffect(() => {
