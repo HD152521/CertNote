@@ -3,7 +3,12 @@
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
 import { AccountForms } from '@/app/account/AccountForms';
 
-export function SettingsTab() {
+interface SettingsTabProps {
+  hasPassword: boolean;
+  userEmail: string;
+}
+
+export function SettingsTab({ hasPassword, userEmail }: SettingsTabProps) {
   return (
     <div className="space-y-8">
       {/* Notification Settings */}
@@ -13,7 +18,7 @@ export function SettingsTab() {
 
       {/* Security & Account Management */}
       <div>
-        <AccountForms />
+        <AccountForms hasPassword={hasPassword} userEmail={userEmail} />
       </div>
     </div>
   );

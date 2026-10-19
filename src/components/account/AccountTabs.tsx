@@ -12,6 +12,9 @@ import { ProfileTab } from './tabs/ProfileTab';
 import { BillingTab } from './tabs/BillingTab';
 import { PAYWALL_ENABLED } from '@/lib/entitlement/policy';
 import { SettingsTab } from './tabs/SettingsTab';
+import { ResendVerifyButton } from '@/components/auth/ResendVerifyButton';
+import { pick } from '@/lib/strings/dict';
+import { verifyStrings } from '@/lib/strings/verify';
 
 type TabId = 'profile' | 'notebook' | 'billing' | 'settings';
 
@@ -22,6 +25,8 @@ interface AccountTabsProps {
   isPro: boolean;
   periodEnd: string | null;
   daysLeft: number | null;
+  hasPassword: boolean;
+  emailVerified: boolean;
 }
 
 // 구독제 보류 중(policy.ts PAYWALL_ENABLED=false)에는 '구독 & 결제' 탭을 숨긴다.
@@ -42,8 +47,11 @@ export function AccountTabs({
   isPro,
   periodEnd,
   daysLeft,
+  hasPassword,
+  emailVerified,
 }: AccountTabsProps) {
   const lang = useLanguage();
+  const vs = pick(verifyStrings, lang);
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as TabId | null;
   // 구버전 '?tab=dashboard' 북마크 등 미지의 값은 프로필로 폴백.
@@ -80,6 +88,16 @@ export function AccountTabs({
         </div>
       </div>
 
+      {/* 계정 정보(이메일) 바로 아래. 미인증 계정만(서버 값) — 구글 계정은 가입 시 인증된 것으로 저장돼 보이지 않는다.
+          스티키 헤더 밖에 둬 스크롤 중 화면을 가리지 않게 한다. */}
+      {!emailVerified && (
+        <div className="mt-4 rounded-md border border-warning/40 bg-warning/5 px-3 py-2.5">
+          <p className="text-sm font-medium text-fg">{vs.emailNotVerified}</p>
+          <p className="mt-0.5 text-xs text-fg-muted">{vs.emailNotVerifiedHint}</p>
+          <ResendVerifyButton className="mt-2" />
+        </div>
+      )}
+
       {/* Learning status lives in the dashboard — link out instead of duplicating it here. */}
       <Link
         href="/dashboard"
@@ -104,7 +122,7 @@ export function AccountTabs({
         {activeTab === 'profile' && <ProfileTab certs={certs} initial={initial} />}
         {activeTab === 'notebook' && <NotebookTab />}
         {activeTab === 'billing' && <BillingTab isPro={isPro} periodEnd={periodEnd} daysLeft={daysLeft} />}
-        {activeTab === 'settings' && <SettingsTab />}
+        {activeTab === 'settings' && <SettingsTab hasPassword={hasPassword} userEmail={userEmail} />}
       </div>
     </div>
   );

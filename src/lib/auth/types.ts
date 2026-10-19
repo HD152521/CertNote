@@ -9,6 +9,9 @@ export interface UserRecord {
   createdAt: string;
   emailVerified: boolean;
   tokenVersion: number;
+  // 비밀번호로 로그인할 수 있는 계정인가. 구글로 새로 가입한 계정은 false(무작위 해시만 있음) —
+  // 탈퇴·비밀번호 변경에서 "현재 비밀번호" 대신 다른 확인 수단을 쓰는 근거가 된다.
+  hasPassword: boolean;
 }
 
 // 클라이언트로 내보내도 안전한 사용자 정보.
@@ -46,6 +49,9 @@ export interface UserRepository {
   // 소셜 로그인(OAuth) — provider+sub가 외부 계정의 고유 식별자.
   findByOauth(provider: string, sub: string): Promise<UserRecord | null>;
   linkOauth(userId: string, provider: string, sub: string): Promise<void>;
+  // 미인증 계정에 연결할 때: 연결과 동시에 비밀번호를 무작위 해시로 바꾸고(has_password=false)
+  // token_version 을 올려 기존 비밀번호·세션을 끊는다. 갱신된 레코드(새 token_version)를 돌려준다.
+  linkOauthResettingCredentials(userId: string, provider: string, sub: string, passwordHash: string): Promise<UserRecord>;
   createOauthUser(input: {
     email: string;
     passwordHash: string;

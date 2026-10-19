@@ -52,3 +52,6 @@ qa/
 
 # agent worktrees (should never be committed)
 .claude/worktrees/
+
+# has_password 보정 결과(되돌리기용 id 목록, 운영 데이터) — 커밋하지 않는다
+has-password-backfill-*.json

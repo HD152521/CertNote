@@ -2,6 +2,7 @@ import { DEFAULT_CATEGORY } from '@/lib/category';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import localFont from 'next/font/local';
+import { preconnect } from 'react-dom';
 import './globals.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { AppShell } from '@/components/AppShell';
@@ -76,6 +77,10 @@ export const viewport: Viewport = {
 const siteLd = buildSiteLd();
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // 본문 글꼴(Pretendard, globals.css @font-face)의 CDN. CSS 를 받은 뒤에야 글꼴 요청이 시작되므로
+  // 연결(DNS·TLS)만 미리 열어 둔다. 글꼴 요청은 CORS 모드라 crossOrigin 을 맞춰야 같은 연결이 재사용된다.
+  // 요청 정보를 읽지 않는 리소스 힌트라 정적 캐시에 영향이 없다.
+  preconnect('https://cdn.jsdelivr.net', { crossOrigin: 'anonymous' });
   const certs = await listCerts(DEFAULT_CATEGORY);
   return (
     <html lang="ko" suppressHydrationWarning className={`${inter.variable} ${d2Latin.variable} ${d2Korean.variable} h-full antialiased`}>

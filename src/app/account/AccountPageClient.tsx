@@ -16,6 +16,8 @@ interface AccountPageClientProps {
   isPro: boolean;
   periodEnd: string | null;
   daysLeft: number | null;
+  hasPassword: boolean;
+  emailVerified: boolean;
 }
 
 export function AccountPageClient({
@@ -25,6 +27,8 @@ export function AccountPageClient({
   isPro,
   periodEnd,
   daysLeft,
+  hasPassword,
+  emailVerified,
 }: AccountPageClientProps) {
   return (
     <AccountTabs
@@ -34,6 +38,8 @@ export function AccountPageClient({
       isPro={isPro}
       periodEnd={periodEnd}
       daysLeft={daysLeft}
+      hasPassword={hasPassword}
+      emailVerified={emailVerified}
     />
   );
 }

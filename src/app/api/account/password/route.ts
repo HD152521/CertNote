@@ -20,6 +20,17 @@ export async function POST(req: Request) {
     if (!session) {
       throw new AppError(401, 'unauthorized', '로그인이 필요합니다.');
     }
+    const info = await getAccountAuthInfo(session.sub);
+    if (!info) {
+      throw new AppError(401, 'unauthorized', '로그인이 필요합니다.');
+    }
+    // 비밀번호 없는(구글 전용) 계정은 "현재 비밀번호"가 없어 여기서 바꿀 수 없다. 세션만으로 새 비밀번호를
+    // 정하게 하면, 탈취된 세션 하나가 구글 쪽에서 끊어도 남는 영구 로그인 수단으로 바뀐다 — 그래서 설정은
+    // 메일함 소유를 확인하는 설정 링크(/api/account/password/setup)로만 받는다. 판정은 DB 값만 본다.
+    if (!info.hasPassword) {
+      throw new AppError(400, 'password_not_set', '비밀번호가 설정되지 않은 계정입니다. 비밀번호 설정 메일로 먼저 설정해 주세요.');
+    }
+
     const body = await req.json().catch(() => null);
     const currentPassword = typeof body?.currentPassword === 'string' ? body.currentPassword : '';
     const newPassword = typeof body?.newPassword === 'string' ? body.newPassword : '';
@@ -28,11 +39,6 @@ export async function POST(req: Request) {
     }
     if (newPassword.length < MIN_PASSWORD_LENGTH) {
       throw new AppError(400, 'weak_password', `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`);
-    }
-
-    const info = await getAccountAuthInfo(session.sub);
-    if (!info) {
-      throw new AppError(401, 'unauthorized', '로그인이 필요합니다.');
     }
     if (!(await verifyPassword(currentPassword, info.passwordHash))) {
       throw new AppError(400, 'invalid_credentials', '현재 비밀번호가 올바르지 않습니다.');

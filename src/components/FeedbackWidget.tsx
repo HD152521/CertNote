@@ -1,12 +1,14 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { MessageSquarePlus, X } from 'lucide-react';
 import { useLanguage, t } from '@/lib/i18n-client';
 import { pick } from '@/lib/strings/dict';
 import { shellStrings } from '@/lib/strings/shell';
 import { cn } from '@/lib/cn';
 import { useOverlapsAd } from '@/lib/ads/useOverlapsAd';
+import { hidesFeedbackButton } from '@/lib/feedbackVisibility';
 
 // 플로팅 피드백 위젯: 연락처 + 글을 받고, 보상으로 커피 기프티콘을 안내한다.
 // 보상은 관리자가 피드백을 보고 수동 발송(이 위젯은 수집만).
@@ -27,6 +29,9 @@ export function FeedbackWidget() {
     const button = buttonRef.current;
     return button ? [button.getBoundingClientRect()] : [];
   });
+  // 모의고사·복습 세션에서는 그리지 않는다(풀이 버튼과 겹침 — feedbackVisibility 주석). 훅 호출 순서를
+  // 지키려고 모든 훅 뒤에서 판정한다. 버튼이 없으면 buttonRef 가 비어 useOverlapsAd 도 빈 목록을 본다.
+  const pathname = usePathname();
 
   async function submit() {
     setBusy(true);
@@ -55,6 +60,8 @@ export function FeedbackWidget() {
     // 닫을 때 완료 상태/입력 초기화(다음에 새로).
     if (done) { setDone(false); setPhone(''); setMessage(''); }
   }
+
+  if (hidesFeedbackButton(pathname)) return null;
 
   return (
     <>

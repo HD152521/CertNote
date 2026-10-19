@@ -282,6 +282,29 @@ try {
       ON reviews (section, cert_slug, created_at DESC) WHERE hidden = false;
   `);
   console.log('✓ reviews 테이블 준비 완료');
+
+  // 비밀번호로 로그인할 수 있는 계정인가. 구글로 새로 가입한 계정은 무작위 해시만 있어 "현재 비밀번호"를
+  // 요구하는 탈퇴·비밀번호 변경을 쓸 수 없었다 — 이 플래그로 확인 수단을 가른다.
+  // DEFAULT true: 기존 계정은 모두 지금처럼 비밀번호를 요구받는다(모르면 엄격한 쪽).
+  // 기존 구글 전용 계정의 false 보정은 추정이 섞인 데이터 변경이라 여기서 하지 않는다 —
+  // 대상을 눈으로 확인하고 되돌릴 수 있게 수동 스크립트(scripts/backfill-has-password.mjs)로 분리했다.
+  // lock_timeout: ALTER TABLE 은 users 에 배타 잠금을 잡는다. 오래 걸리는 트랜잭션 뒤에서 잠금을 기다리는 동안
+  // 그 뒤의 모든 users 조회(로그인 등)가 줄줄이 막히므로, 5초 안에 못 잡으면 포기하고 나중에 다시 실행한다.
+  {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query("SET LOCAL lock_timeout = '5s'");
+      await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS has_password BOOLEAN NOT NULL DEFAULT true');
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+  console.log('✓ users.has_password 컬럼 준비 완료');
 } catch (err) {
   console.error('마이그레이션 실패:', err);
   process.exit(1);

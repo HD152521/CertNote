@@ -4,11 +4,14 @@ import Link from 'next/link';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLanguage, t } from '@/lib/i18n-client';
+import { pick } from '@/lib/strings/dict';
+import { verifyStrings } from '@/lib/strings/verify';
 
 type State = 'verifying' | 'success' | 'error';
 
 function VerifyInner() {
   const lang = useLanguage();
+  const vs = pick(verifyStrings, lang);
   const params = useSearchParams();
   const token = params.get('token') ?? '';
   const [state, setState] = useState<State>('verifying');
@@ -42,8 +45,19 @@ function VerifyInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  // 재발송 버튼은 로그인 세션이 필요하다 — 이 화면은 로그아웃 상태로 열리는 일이 많아 마이페이지로 보낸다
+  // (비로그인이면 미들웨어가 로그인 후 /account 로 돌려보낸다).
+  const resendLink = (
+    <Link href="/account" className="text-sm text-accent hover:underline">{vs.verifyResendFromAccount}</Link>
+  );
   if (!token) {
-    return <p className="text-sm text-danger">{t(lang, 'invalidLink')}</p>;
+    // 비밀번호 재설정용 invalidLink 문구를 쓰지 않는다 — 이메일 인증 맥락의 안내로.
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-danger">{vs.verifyMissingToken}</p>
+        {resendLink}
+      </div>
+    );
   }
   if (state === 'verifying') {
     return <p className="text-sm text-fg-muted">{t(lang, 'verifyingEmail')}</p>;
@@ -55,7 +69,12 @@ function VerifyInner() {
       </p>
     );
   }
-  return <p className="text-sm text-danger">{message}</p>;
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-danger">{message}</p>
+      {resendLink}
+    </div>
+  );
 }
 
 export default function VerifyPage() {
