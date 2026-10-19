@@ -36,6 +36,21 @@ export type AccountStringKey =
   | 'deleteFailed'
   | 'deleting'
   | 'deletePermanently'
+  // 비밀번호 없는(구글 전용) 계정 — 비밀번호 설정 메일 / 이메일 입력 탈퇴
+  | 'setPasswordTitle'
+  | 'setPasswordDesc'
+  | 'sendSetPasswordEmail'
+  | 'sendingSetPasswordEmail'
+  /** `{email}` 자리표시자를 포함한다. */
+  | 'setPasswordEmailSent'
+  | 'setPasswordEmailFailed'
+  | 'tooManyRequests'
+  /** `{email}` 자리표시자를 포함한다. */
+  | 'deleteConfirmEmailHint'
+  | 'deleteConfirmEmailPlaceholder'
+  | 'deleteRecentLoginHint'
+  | 'reauthRequired'
+  | 'reauthCta'
   // 알림 설정
   | 'studyNotifications'
   | 'studyNotificationsDesc'
@@ -91,6 +106,20 @@ export const accountStrings: Dict<AccountStringKey> = {
     deleting: '삭제 중…',
     deletePermanently: '영구 삭제',
 
+    setPasswordTitle: '비밀번호 설정',
+    setPasswordDesc:
+      '구글로 가입한 계정이라 아직 비밀번호가 없어요. 메일로 받은 링크에서 비밀번호를 정하면 이메일·비밀번호로도 로그인할 수 있어요.',
+    sendSetPasswordEmail: '비밀번호 설정 메일 받기',
+    sendingSetPasswordEmail: '보내는 중…',
+    setPasswordEmailSent: '{email}(으)로 설정 링크를 보냈어요. 1시간 안에 메일의 링크를 열어 주세요.',
+    setPasswordEmailFailed: '메일을 보내지 못했어요. 잠시 후 다시 시도해 주세요.',
+    tooManyRequests: '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.',
+    deleteConfirmEmailHint: '확인을 위해 계정 이메일 주소({email})를 그대로 입력하세요.',
+    deleteConfirmEmailPlaceholder: '계정 이메일 주소',
+    deleteRecentLoginHint: '보안을 위해 최근 10분 안에 로그인한 상태에서만 탈퇴할 수 있어요.',
+    reauthRequired: '보안을 위해 다시 로그인한 뒤 탈퇴해 주세요.',
+    reauthCta: '로그아웃하고 다시 로그인하기',
+
     studyNotifications: '학습 알림',
     studyNotificationsDesc: '복습할 카드가 쌓이면, 또는 한동안 안 들어오면 알려드려요.',
     pushUnsupportedDetail: '이 브라우저는 푸시 알림을 지원하지 않습니다. iPhone은 홈 화면에 추가한 뒤 사용할 수 있어요.',
@@ -143,6 +172,20 @@ export const accountStrings: Dict<AccountStringKey> = {
     deleteFailed: "Couldn't delete your account.",
     deleting: 'Deleting…',
     deletePermanently: 'Delete permanently',
+
+    setPasswordTitle: 'Set a password',
+    setPasswordDesc:
+      "You signed up with Google, so this account has no password yet. Set one from the link we email you and you can also sign in with your email and password.",
+    sendSetPasswordEmail: 'Email me a link to set a password',
+    sendingSetPasswordEmail: 'Sending…',
+    setPasswordEmailSent: 'We sent a link to {email}. Open it within 1 hour.',
+    setPasswordEmailFailed: "Couldn't send the email. Please try again shortly.",
+    tooManyRequests: 'Too many requests. Please try again in a moment.',
+    deleteConfirmEmailHint: 'To confirm, type your account email ({email}) exactly.',
+    deleteConfirmEmailPlaceholder: 'Account email',
+    deleteRecentLoginHint: 'For your security, you can only delete your account within 10 minutes of signing in.',
+    reauthRequired: 'For your security, please sign in again before deleting your account.',
+    reauthCta: 'Sign out and sign in again',
 
     studyNotifications: 'Study reminders',
     studyNotificationsDesc: "We'll nudge you when review cards pile up, or if you've been away for a while.",

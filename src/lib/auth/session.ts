@@ -10,6 +10,10 @@ export interface SessionPayload {
   email: string;
   role: Role;
   ver: number; // token_version — 비번 변경/재설정 시 DB값과 불일치하면 세션 무효(서버 컴포넌트/라우트에서 판정)
+  // 토큰 발급 시각(JWT iat, 초). 읽을 때만 채워진다 — 발급은 createSessionToken 의 setIssuedAt 이 한다.
+  // 로그인(비밀번호·구글)·비밀번호 변경 때만 발급되므로 "마지막으로 본인 확인한 시각"으로 쓴다(구글 전용 계정 탈퇴의 최근 로그인 판정).
+  // 없거나 숫자가 아니면 undefined — 호출부는 "최근 로그인 아님"으로 취급해야 한다.
+  iat?: number;
 }
 
 function getSecret(): Uint8Array {
@@ -36,7 +40,8 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
     const role = payload.role === 'admin' ? 'admin' : 'user';
     // ver 누락(구 토큰)은 0으로 취급 → token_version DEFAULT 0과 일치해 기존 세션이 무효화되지 않는다.
     const ver = typeof payload.ver === 'number' ? payload.ver : 0;
-    return { sub: String(payload.sub ?? ''), email: String(payload.email ?? ''), role, ver };
+    const iat = typeof payload.iat === 'number' ? payload.iat : undefined;
+    return { sub: String(payload.sub ?? ''), email: String(payload.email ?? ''), role, ver, iat };
   } catch {
     return null;
   }

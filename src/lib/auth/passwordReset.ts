@@ -35,9 +35,11 @@ export async function consumeResetToken(token: string): Promise<string | null> {
 
 // 비밀번호 교체 + token_version 증가(기존 세션 전부 무효화). 재설정은 통상 "계정 탈취 의심"
 // 상황이므로 기존 세션을 끊는 것이 안전하다.
+// 구글 전용 계정의 "비밀번호 설정"도 이 경로(메일 링크)로 끝나므로 has_password=true 로 올린다 —
+// 메일함을 가진 사람만 비밀번호를 정할 수 있다는 것이 이 플래그를 올려도 되는 근거다.
 export async function updateUserPassword(userId: string, passwordHash: string): Promise<void> {
   await query(
-    'UPDATE users SET password_hash = $1, token_version = token_version + 1 WHERE id = $2',
+    'UPDATE users SET password_hash = $1, has_password = true, token_version = token_version + 1 WHERE id = $2',
     [passwordHash, userId],
   );
 }

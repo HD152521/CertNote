@@ -15,6 +15,7 @@
     "test:watch": "vitest",
     "db:migrate": "node --env-file=.env scripts/db-migrate.mjs",
     "db:seed": "node --env-file=.env scripts/db-seed-admin.mjs",
+    "db:backfill-has-password": "node --env-file-if-exists=.env scripts/backfill-has-password.mjs",
     "grant:pro": "node --env-file=.env scripts/grant-pro.mjs",
     "qa:questions": "node --env-file=.env scripts/qa-questions.mjs",
     "test:e2e": "npm run build && playwright test",

@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Star } from 'lucide-react';
 import { Select } from '@/components/ui/Select';
 import type { Language } from '@/lib/i18n-client';
+import { ResendVerifyButton } from '@/components/auth/ResendVerifyButton';
+import { pick } from '@/lib/strings/dict';
+import { verifyStrings } from '@/lib/strings/verify';
 
 interface CertOption {
   slug: string;
@@ -34,10 +37,13 @@ export default function ReviewForm({ section, certs, lang, lockedCert }: ReviewF
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  // 서버가 403 email_unverified 로 막았을 때만 재발송 버튼을 보인다(인증 여부의 권위는 서버).
+  const [needsVerify, setNeedsVerify] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    setNeedsVerify(false);
     if (rating < 1) {
       setError(en ? 'Please select a star rating.' : '별점을 선택해 주세요.');
       return;
@@ -72,6 +78,9 @@ export default function ReviewForm({ section, certs, lang, lockedCert }: ReviewF
       const data = await res.json().catch(() => null);
       if (res.status === 401) {
         setError(en ? 'Please log in to write a review.' : '후기를 작성하려면 로그인이 필요합니다.');
+      } else if (res.status === 403 && data?.error === 'email_unverified') {
+        setError(pick(verifyStrings, lang).reviewNeedsVerify);
+        setNeedsVerify(true);
       } else {
         setError(data?.message ?? (en ? 'Failed to submit. Please try again.' : '작성에 실패했어요. 다시 시도해 주세요.'));
       }
@@ -171,6 +180,7 @@ export default function ReviewForm({ section, certs, lang, lockedCert }: ReviewF
       </label>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
+      {needsVerify && <ResendVerifyButton lang={lang} />}
       {done && <p className="text-sm text-accent">{en ? 'Thanks! Your review has been posted.' : '후기가 등록되었어요. 감사합니다!'}</p>}
 
       <button

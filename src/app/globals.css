@@ -2,12 +2,15 @@
 @plugin "@tailwindcss/typography";
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Pretendard 는 jsDelivr npm 경로에 버전을 고정해 받는다. 버전 없는 /gh/orioncactus/pretendard/ 경로는
+   저장소 전체(50MB 초과)를 대상으로 해 jsDelivr 가 403("Package size exceeded")을 돌려줘, 모든 화면이
+   폴백 글꼴로 그려지고 있었다. 버전을 올릴 때는 `npm view pretendard version` 확인 후 이 한 줄만 바꾼다. */
 @font-face {
   font-family: 'Pretendard Variable';
   font-weight: 45 920;
   font-style: normal;
   font-display: swap;
-  src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/woff2/PretendardVariable.woff2')
+  src: url('https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/woff2/PretendardVariable.woff2')
     format('woff2-variations');
 }
 
