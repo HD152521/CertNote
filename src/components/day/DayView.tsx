@@ -116,7 +116,11 @@ export async function DayView({ category, slug, w, d, lang, content, locked, log
               <Link href={linkDayRefHref(content.next)} className={cn('flex flex-col gap-1 rounded-md border border-border p-3 text-right transition', 'hover:border-border-strong')}>
                 <span className="flex items-center justify-end gap-1 text-xs text-fg-muted">{lang === 'en' ? 'Next' : '다음'} <ArrowRight className="h-3 w-3" /></span>
                 <span className="text-sm font-medium truncate">{content.next.title.replace(/^Day\s*\d+\s*[-–]\s*/i, '')}</span>
-                <span className="text-xs text-fg-faint">Week {content.next.week} · Day {content.next.day}</span>
+                <span className="text-xs text-fg-faint">
+                  Week {content.next.week} · Day {content.next.day}
+                  {/* 영어판 마지막 번역 주차의 "다음"은 한국어 원문으로 간다(linkDayHref) — 누르기 전에 알린다. */}
+                  {linkDayRefHref(content.next) !== content.next.href && ' · Korean'}
+                </span>
               </Link>
             ) : (<div />)}
           </footer>

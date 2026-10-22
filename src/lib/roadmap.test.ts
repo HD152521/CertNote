@@ -200,7 +200,7 @@ describe('buildRoleFaq — 역할 페이지 FAQ(본문·FAQPage 구조화 데이
     const last = faq.at(-1)!;
     expect(last.a).toContain(`${role.totals.weeks}주`);
     expect(last.a).toContain(`${role.totals.days}일`);
-    expect(last.a).toContain(`$${role.totals.costUsd}`);
+    expect(last.a).toContain(`$${role.totals.costUsd!.toLocaleString('en-US')}`);
   });
 
   test('응시료 합계를 모르면 금액을 지어내지 않는다', async () => {

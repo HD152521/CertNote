@@ -13,7 +13,6 @@ import BulletList from '@/components/ui/BulletList';
 import ExamInfoCard from '@/components/ExamInfoCard';
 import { cn } from '@/lib/cn';
 import { linkDayRefHref } from '@/lib/navTree';
-import { HtmlLang } from '@/components/HtmlLang';
 import { JsonLd } from '@/components/JsonLd';
 import { buildCourseLd, buildBreadcrumbLd, buildFaqPageLd } from '@/lib/structuredData';
 import { AdSlot } from '@/components/ads/AdSlot';
@@ -130,7 +129,6 @@ export default async function CertIndexPage({ params }: PageProps) {
   const adHub = resolveAdPlacement('hub');
   return (
     <div className="mx-auto max-w-3xl space-y-10">
-      {lang === 'en' && <HtmlLang lang="en" />}
       <JsonLd data={courseLd} />
       <JsonLd data={breadcrumbLd} />
       <header className="space-y-3">
