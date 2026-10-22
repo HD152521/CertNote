@@ -1,6 +1,6 @@
 // day 관련 URL 세그먼트("week1", "day3") 파싱 단일 출처.
 //
-// [category]/[slug]/[week]/[day](2주차 이상), [category]/[slug]/week1/[day](week1 프리렌더),
+// {aws,linux,en}/[slug]/[week]/[day](2주차 이상), {aws,linux,en}/[slug]/week1/[day](week1 프리렌더),
 // 그리고 proxy 의 존재 검증(src/lib/contentExists.ts)이 같은 규칙으로 세그먼트를 정수로 파싱한다
 // (docs/SEO-indexing-fix-plan.md Step5 A-0 — 공유 모듈 추출).
 //

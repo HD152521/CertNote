@@ -15,7 +15,8 @@ const HINT = `${DESIGN_DOC} 3장(페이월을 다시 켤 때)의 되돌림 절�
 // page.tsx 를 처음 import 할 때 MDX·하이라이터 변환까지 따라와 기본 5초를 넘긴다.
 const PAGE_IMPORT_TIMEOUT_MS = 180_000;
 
-const PAGE_PATH = path.join(process.cwd(), 'src', 'app', '[category]', '[slug]', '[week]', '[day]', 'page.tsx');
+// category 별 리터럴 폴더(src/lib/day/dayRoute.tsx 참고). 세 파일 모두 같은 계약을 지켜야 한다.
+const PAGE_PATHS = ['aws', 'linux', 'en'].map((c) => path.join(process.cwd(), 'src', 'app', c, '[slug]', '[week]', '[day]', 'page.tsx'));
 
 const STATIC_PARAMS_EXPORT = /export\s+(?:async\s+)?function\s+generateStaticParams\b|export\s+const\s+generateStaticParams\b/;
 const FORCE_DYNAMIC = /export\s+const\s+dynamic\s*=\s*['"]force-dynamic['"]/;
@@ -23,12 +24,26 @@ const FORCE_STATIC = /export\s+const\s+dynamic\s*=\s*['"]force-static['"]/;
 const FORBIDDEN_IMPORTS = ['next/headers', '@/lib/auth/currentUser', '@/lib/entitlement/factory'];
 
 // 주석 속 설명 문구가 검사에 걸리지 않게 줄 주석을 걷어낸 소스.
-async function readPageSource(): Promise<string> {
-  const raw = await fs.readFile(PAGE_PATH, 'utf8');
+function stripLineComments(raw: string): string {
   return raw
     .split('\n')
     .filter((line) => !line.trimStart().startsWith('//'))
     .join('\n');
+}
+
+async function readPageSources(): Promise<string[]> {
+  const raws = await Promise.all(PAGE_PATHS.map((p) => fs.readFile(p, 'utf8')));
+  return raws.map(stripLineComments);
+}
+
+// 세 파일을 합친 소스. "어느 파일에도 없어야 하는 것"(금지 import·force-dynamic)을 볼 때 쓴다.
+async function readPageSource(): Promise<string> {
+  return (await readPageSources()).join('\n');
+}
+
+// "세 파일 모두에 있어야 하는 것"은 합친 소스로 보면 하나만 있어도 통과해 버리므로 파일별로 본다.
+async function eachPageExportsStaticParams(): Promise<boolean> {
+  return (await readPageSources()).every((source) => STATIC_PARAMS_EXPORT.test(source));
 }
 
 function importsModule(source: string, specifier: string): boolean {
@@ -43,13 +58,12 @@ afterEach(() => {
 
 describe.runIf(!PAYWALL_ENABLED)('[week]/[day] 캐시 계약 — 페이월 꺼짐(정적 캐시 라우트)', () => {
   test('generateStaticParams 를 export 한다', async () => {
-    const source = await readPageSource();
-    expect(STATIC_PARAMS_EXPORT.test(source), `generateStaticParams 가 없으면 매 요청 렌더로 돌아간다 — ${DESIGN_DOC} 2-1`).toBe(true);
+    expect(await eachPageExportsStaticParams(), `generateStaticParams 가 없으면 매 요청 렌더로 돌아간다 — ${DESIGN_DOC} 2-1`).toBe(true);
   });
 
   test('generateStaticParams 는 빈 배열을 돌려준다(빌드 때 한 장도 만들지 않는다)', async () => {
-    const page: Record<string, unknown> = await import('./page');
-    const generateStaticParams = page.generateStaticParams as (() => Promise<unknown[]>) | undefined;
+    const page: Record<string, unknown> = await import('./dayRoute');
+    const generateStaticParams = page.dayStaticParams as (() => Promise<unknown[]>) | undefined;
     expect(typeof generateStaticParams, `generateStaticParams export 없음 — ${DESIGN_DOC} 2-1`).toBe('function');
     await expect(generateStaticParams!()).resolves.toEqual([]);
   }, PAGE_IMPORT_TIMEOUT_MS);
@@ -90,8 +104,8 @@ describe('[week]/[day] 캐시 계약 — 스위치만 켠 경우의 빌드 가�
       ...(await importOriginal<typeof import('@/lib/entitlement/policy')>()),
       PAYWALL_ENABLED: true,
     }));
-    const page: Record<string, unknown> = await import('./page');
-    const generateStaticParams = page.generateStaticParams as (() => Promise<unknown[]>) | undefined;
+    const page: Record<string, unknown> = await import('./dayRoute');
+    const generateStaticParams = page.dayStaticParams as (() => Promise<unknown[]>) | undefined;
     if (generateStaticParams === undefined) return; // 되돌림 절차대로 함수를 지웠다면 가드도 함께 사라진다.
     await expect(
       generateStaticParams(),

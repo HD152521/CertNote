@@ -34,7 +34,7 @@ export interface DayViewProps {
 }
 
 // day 페이지 렌더 전용 순수 서버 컴포넌트(docs/SEO-indexing-fix-plan.md Step5 A-0).
-// [category]/[slug]/[week]/[day](2주차 이상, 첫 요청 때 정적 생성)와 [category]/[slug]/week1/[day](빌드 때 생성하는
+// {aws,linux,en}/[slug]/[week]/[day](2주차 이상, 첫 요청 때 정적 생성)와 {aws,linux,en}/[slug]/week1/[day](빌드 때 생성하는
 // 정적 라우트) 양쪽이 공유한다.
 //
 // 계약: 여기서 cookies()/headers()/getCurrentUser() 등 요청별 동적 API를 절대 호출하지 않는다.

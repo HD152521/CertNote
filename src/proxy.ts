@@ -1,20 +1,15 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE, verifySessionToken } from '@/lib/auth/session';
 import { LANG_COOKIE, resolveLanguage } from '@/lib/i18n';
-import { DEFAULT_CATEGORY, EN_CATEGORY, SECTIONS } from '@/lib/category';
+import { STUDY_HOME_PATH, classifyPath } from '@/lib/proxyRouting';
 import { contentPathExists } from '@/lib/contentExists';
 
 // 어떤 실제 라우트 패턴과도 매칭하지 않는 3세그먼트 마커. docs/SEO-indexing-fix-plan.md Step6 —
-// [category]/[slug]/[week]/[day] 계열은 항상 4세그먼트, [category]/[slug]는 2세그먼트라
+// day 라우트({aws,linux,en}/[slug]/[week]/[day])는 항상 4세그먼트, [category]/[slug]는 2세그먼트라
 // 3세그먼트는 애초에 존재하지 않는 라우트 형태(실측: /aws-certs/saa-c03/bogus가 이미 진짜 404).
 // 여기로 rewrite하면 Next가 "라우트 없음" 경로를 타 렌더를 시작하지 않고 프리렌더된 not-found를
 // 그대로 내보낸다 — 스트리밍이 시작되지 않으므로 상태코드도 진짜 404로 나간다.
 const NOT_FOUND_MARKER = '/__not-found__/__nf__/__nf__';
-
-// /aws-certs·/en 하위 콘텐츠 존재 검증(day 소프트 404 수정). 이 두 접두사 아래엔 콘텐츠 라우트만
-// 있고 다른 정적 페이지가 전혀 없어(전수 확인) 아래 처리가 /checkout류와 충돌할 위험이 없다.
-// 로그인 사용자의 학습 홈(src/app/home/page.tsx). 공개 URL 이 아니라 홈(/) rewrite 의 목적지다.
-const STUDY_HOME_PATH = '/home';
 
 // 홈(/)은 정적 랜딩으로 캐시된다(docs/P3-step3-speed-report.md). 세션 쿠키가 유효한 요청만
 // 학습 홈으로 rewrite 한다 — 주소창은 `/` 그대로이고, 쿠키 없는 방문자(검색 유입)는 캐시를 받는다.
@@ -27,6 +22,7 @@ async function handleHome(req: NextRequest): Promise<NextResponse> {
   return NextResponse.rewrite(new URL(STUDY_HOME_PATH, req.url));
 }
 
+// 콘텐츠 접두사(/aws·/linux·/en·/aws-certs) 아래의 존재 검증. 없는 slug·day 는 렌더 전에 진짜 404 로 보낸다.
 async function handleContentRoute(req: NextRequest): Promise<NextResponse> {
   const exists = await contentPathExists(req.nextUrl.pathname);
   if (!exists) {
@@ -46,16 +42,14 @@ async function handleContentRoute(req: NextRequest): Promise<NextResponse> {
 export async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
-  if (path === '/') return handleHome(req);
+  // 경로 분류는 순수 함수(src/lib/proxyRouting.ts)에 있다 — 판정 근거와 단위 테스트는 거기.
+  const decision = classifyPath(path);
+  if (decision === 'home') return handleHome(req);
   // 학습 홈은 rewrite 로만 닿는다. 직접 연 요청은 홈으로 — rewrite 된 요청은 proxy 를 다시 타지 않는다.
-  if (path === STUDY_HOME_PATH) return NextResponse.redirect(new URL('/', req.url));
-
-  const isContentPath = (prefix: string) => path === `/${prefix}` || path.startsWith(`/${prefix}/`);
-  // 공개 콘텐츠 경로: 섹션(/aws·/linux) + 영어판(/en). 레거시 /aws-certs 는 next.config.ts에서
-  // 301되어 여기 도달하지 않지만(리다이렉트가 미들웨어보다 먼저), 전파 창 동안의 안전을 위해 함께 검사.
-  if (SECTIONS.some((s) => isContentPath(s)) || isContentPath(EN_CATEGORY) || isContentPath(DEFAULT_CATEGORY)) {
-    return handleContentRoute(req);
-  }
+  if (decision === 'study-home') return NextResponse.redirect(new URL('/', req.url));
+  if (decision === 'content') return handleContentRoute(req);
+  if (decision === 'not-found') return NextResponse.rewrite(new URL(NOT_FOUND_MARKER, req.url));
+  if (decision === 'pass') return NextResponse.next();
 
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySessionToken(token) : null;
@@ -90,5 +84,10 @@ export const config = {
     // handleContentRoute 내부에서 항상 통과시키므로 여기 포함해도 안전하다. /aws-certs 는 레거시
     // 전파 창 대비(정상 흐름에선 next.config 301이 먼저 처리).
     '/aws/:path*', '/linux/:path*', '/aws-certs/:path*', '/en/:path*',
+    // 임의 4세그먼트 경로(/:a/:b/:c/:d) — day 라우트가 받는 깊이. 어떤 철자든 분류를 거치게 한다
+    // (근거: src/lib/proxyRouting.ts). _next/static·_next/image 에셋은 제외한다.
+    '/:a((?!_next/static/|_next/image)[^/]+)/:b/:c/:d',
+    // 대소문자 변형 접두사(/AWS·/Linux·/EN 과 하위). 대소문자 무시 호스트에서 소문자 페이지로 풀리는 것을 막는다.
+    '/:category([aA][wW][sS])/:path*', '/:category([lL][iI][nN][uU][xX])/:path*', '/:category([eE][nN])/:path*',
   ],
 };
