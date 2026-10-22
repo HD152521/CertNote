@@ -14,7 +14,7 @@ P3 애드센스 대비 고도화(`docs/P3-adsense-readiness-plan.md`) Step 1~14 
   - `NEXT_PUBLIC_ADSENSE_SLOT_DAY_TOP`
   - `NEXT_PUBLIC_ADSENSE_SLOT_DAY_BOTTOM`
   - `NEXT_PUBLIC_ADSENSE_SLOT_HUB`
-- [ ] **자동 광고(Auto ads)는 켜지 않는다.** 로더가 소프트 404 화면(`/aws/saa-c03/week1/day99` — 200 + noindex)에도 실리기 때문이다.
+- [ ] **자동 광고(Auto ads)는 켜지 않는다.** 처음엔 로더가 소프트 404 화면(200 + noindex)에도 실려서였다. 그 원인은 PR #12 로 고쳤으니, 켤지는 실기기에서 광고 배치를 본 뒤 다시 정한다.
 - [ ] 켠 뒤 확인: `/ads.txt` 200, 실제 광고 크기와 레이아웃 밀림, 실기기 모바일에서 떠 있는 버튼(이전/다음, 피드백)과 광고가 겹치지 않는지.
 - [ ] 구글 서치콘솔·네이버에 사이트맵 재제출(URL 151 → 846).
 - [ ] Vercel 환경변수 확인: `ANTHROPIC_API_KEY`(크레딧 포함), `TUTOR_MODEL`(미설정이면 코드 기본 `claude-haiku-4-5`), `TUTOR_DAILY_LIMIT`(설정돼 있으면 코드 기본값 3 보다 우선), `TUTOR_GLOBAL_DAILY_LIMIT`(기본 500).
@@ -32,9 +32,9 @@ P3 애드센스 대비 고도화(`docs/P3-adsense-readiness-plan.md`) Step 1~14 
 ### `feat/p3-followup` 에서 옮겨 올 작업 (검수 통과, 상세는 HANDOFF 3-1)
 
 - [ ] 랜딩 문구 정정·홈 수치 데이터 파생(`fb8ef83`) — **애드센스 심사 전 권장**
-- [ ] 소프트 404 구조 수정: day 라우트 리터럴 섹션 폴더 + proxy 분류기(`f199edb` 일부) — 자동 광고를 켜려면 필수
+- [x] 소프트 404 구조 수정: day 라우트 리터럴 섹션 폴더 + proxy 분류기 — PR #12
 - [ ] 리눅스마스터 2급 모의고사 60문항(`21d9ced`)
-- [ ] 전 주차 본문 검색(`ebc1265`, 위 소프트 404 이후)
+- [ ] 전 주차 본문 검색(`ebc1265`, PR #12 이후 구조에 맞춰 옮길 것)
 - [ ] 영어판 트랙별 색인(`300f0ed`, 위 두 개 이후)
 
 ### 데이터 결함 (HANDOFF 3-2)
@@ -63,7 +63,7 @@ P3 애드센스 대비 고도화(`docs/P3-adsense-readiness-plan.md`) Step 1~14 
 - [ ] **제목 위 광고**: 본문 위 광고는 제목(h1)보다 위에 온다. 요약 카드가 없는 문서(한국어 752개 중 415개)는 경로 표시 바로 아래가 광고다. 정책 위반은 아니다. 요약 카드가 없으면 위 광고를 끄는 것이 가장 싼 개선(광고 자리는 줄어든다).
 - [ ] **광고 차단기 사용 시 빈칸**: 스크립트가 막히면 위 120px, 아래 300px 빈 자리가 남는다.
 - [ ] **320px 폭**: 광고 폭이 288px 이라 320×100·300×250 이 안 들어간다. 360px 이상 기기는 해당 없다.
-- [ ] **소프트 404**: `/aws/saa-c03/week1/day99`(week1 은 day 번호를 검증하지 않음), `/foo/bar/week2/day1`(proxy matcher 밖)이 200 으로 나가고 캐시된다.
+- [x] **소프트 404**: `/aws/saa-c03/week1/day99`, `/foo/bar/week2/day1` 등이 200 으로 나가고 캐시되던 문제 — PR #12. 배포 후 서치콘솔의 'noindex 태그에 의해 제외됨' 예시 URL 이 404 로 바뀌는지 확인.
 - [ ] **원문 오타로 남은 별표 15곳**(12개 파일): dop-c02 week5/day4·day5, week7/day3, week12/day1 / dva-c02 week2/day3, week8/day1·day3 / scs-c03 week9/day5 / 영어판 4개.
 - [ ] **dea-c01 형식 통일**: week1/day1, week3/day1~4, week5/day1~4 는 아직 옛 형식(도입 문단 + `## 정리`, 요약 카드 없음)이다.
 - [ ] **영어판 퀴즈 해설**: 한국어판에서 고친 해설 오류가 영어판(`content/en/dea-c01` 등)에는 그대로 남아 있다.
