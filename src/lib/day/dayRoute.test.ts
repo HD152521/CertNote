@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { generateMetadata } from './page';
+import type { Metadata } from 'next';
+import { dayRouteMetadata, type DayRouteParams } from './dayRoute';
+
+// 라우트 파일은 category 별 리터럴 폴더에 있고 메타데이터는 dayRouteMetadata 하나가 만든다.
+async function generateMetadata({ params }: { params: Promise<DayRouteParams & { category: string }> }): Promise<Metadata> {
+  const { category, ...rest } = await params;
+  return dayRouteMetadata(category, rest);
+}
 
 // SEO 색인 오류 회귀 테스트(docs/SEO-indexing-fix-plan.md Step 1).
 //

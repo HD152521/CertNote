@@ -3,7 +3,16 @@ import sitemap from '@/app/sitemap';
 import { SECTIONS, EN_CATEGORY } from '@/lib/category';
 import { FREE_WEEK } from '@/lib/entitlement/policy';
 import { SITE_URL } from '@/lib/site';
-import { generateStaticParams } from './page';
+import { week1StaticParams } from './dayRoute';
+
+// category 별 리터럴 폴더 세 곳(src/app/{aws,linux,en}/[slug]/week1/[day])의 generateStaticParams 를 합친 것.
+async function generateStaticParams(): Promise<{ category: string; slug: string; day: string }[]> {
+  const out: { category: string; slug: string; day: string }[] = [];
+  for (const category of [...SECTIONS, EN_CATEGORY]) {
+    for (const p of await week1StaticParams(category)) out.push({ category, ...p });
+  }
+  return out;
+}
 
 // generateStaticParams()는 전 인증서(ko+en, 20여 개)의 content 디렉터리를 fs로 순회한다.
 // 테스트 환경(NODE_ENV=test)은 프로덕션과 달리 content.ts의 메모이즈 캐시를 쓰지 않으므로
@@ -21,10 +30,10 @@ beforeAll(async () => {
 // 계속 정적 생성하거나, 무료가 된 주차를 정적 생성에서 빠뜨린다 — 둘 다 조용히 깨진다.
 
 describe('FREE_WEEK ↔ week1 폴더명 결합', () => {
-  test('FREE_WEEK는 1이다 — 바꾸려면 src/app/[category]/[slug]/week1/ 폴더명도 함께 바꿔야 한다', () => {
+  test('FREE_WEEK는 1이다 — 바꾸려면 src/app/{aws,linux,en}/[slug]/week1/ 폴더명도 함께 바꿔야 한다', () => {
     expect(
       FREE_WEEK,
-      'FREE_WEEK가 1이 아니면 src/app/[category]/[slug]/week1/[day]/page.tsx의 리터럴 세그먼트 ' +
+      'FREE_WEEK가 1이 아니면 src/app/{aws,linux,en}/[slug]/week1/[day]/page.tsx의 리터럴 세그먼트 ' +
         '폴더명(week1)도 함께 바꿔야 한다. 안 바꾸면 이 정적 라우트가 실제 무료 경계와 어긋난 주차를 ' +
         '정적 생성하거나 무료가 된 주차를 빠뜨린다.',
     ).toBe(1);

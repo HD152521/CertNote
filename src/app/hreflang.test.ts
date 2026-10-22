@@ -3,7 +3,14 @@ import { metadata as homeMetadata } from './page';
 import { metadata as enHomeMetadata } from './en/page';
 import { generateMetadata as generateCategoryMetadata } from './[category]/page';
 import { generateMetadata as generateCertMetadata } from './[category]/[slug]/page';
-import { generateMetadata as generateDayMetadata } from './[category]/[slug]/[week]/[day]/page';
+import type { Metadata } from 'next';
+import { dayRouteMetadata } from '@/lib/day/dayRoute';
+
+// day 라우트는 category 별 리터럴 폴더에 있고 메타데이터는 dayRouteMetadata 하나가 만든다.
+async function generateDayMetadata({ params }: { params: Promise<{ category: string; slug: string; week: string; day: string }> }): Promise<Metadata> {
+  const { category, ...rest } = await params;
+  return dayRouteMetadata(category, rest);
+}
 
 // SEO 색인 오류 회귀 테스트(docs/SEO-indexing-fix-plan.md Step 3).
 //

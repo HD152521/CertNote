@@ -185,6 +185,32 @@ test.describe('존재하지 않는 URL — 소프트 404 회귀 방지', () => {
     const res = await page.goto('/foo/bar');
     expect(res?.status()).toBe(404);
   });
+
+  // day 라우트는 첫 요청 때 생성돼 캐시된다. 렌더 도중 notFound()는 스트리밍 때문에 200 이 되므로,
+  // 없는 주소가 한 번이라도 200 으로 나가면 그 응답이 캐시된다 — 두 번 요청해 둘 다 404 인지 본다.
+  const NEVER_200 = [
+    '/aws/saa-c03/week1/day99', // week1 의 없는 day(예전엔 day 번호를 검증하지 않아 200 + noindex)
+    '/aws/saa-c03/week1/day6',
+    '/aws/saa-c03/week2/day9',
+    '/aws/saa-c03/week99/day1',
+    '/aws/saa-c03/week02/day1', // 정규형이 아닌 별칭
+    '/aws/SAA-C03/week2/day1', // slug 대소문자
+    '/AWS/saa-c03/week2/day1', // category 대소문자
+    '/linux/saa-c03/week2/day1', // 교차 섹션
+    '/foo/bar/week2/day1', // 콘텐츠 접두사 밖 4세그먼트
+    '/foo/bar/baz/qux',
+    '/foo/bar/week1/x',
+    '/api/foo/bar/baz',
+    '/_next/foo/bar/baz',
+  ];
+  for (const url of NEVER_200) {
+    test(`${url} 은 두 번 요청해도 404다(캐시된 소프트 404 방지)`, async ({ request }) => {
+      for (let i = 0; i < 2; i++) {
+        const res = await request.get(url, { maxRedirects: 0 });
+        expect(res.status(), `${url} ${i + 1}번째 요청`).toBe(404);
+      }
+    });
+  }
 });
 
 // request(APIRequestContext)로 HEAD 대신 GET만 쏘고 렌더링은 하지 않는다 — page.goto()로
