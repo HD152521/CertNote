@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { getRoadmapRole, getRoadmapRoles, loadRoadmapRoles, totalsOf } from './roadmap';
+import { buildRoleFaq, getRoadmapRole, getRoadmapRoles, loadRoadmapRoles, totalsOf } from './roadmap';
 import type { EnrichedStep } from './roadmap';
 
 // Phase2 직무별 로드맵 — 데이터 검증·enrich·graceful 단위 테스트.
@@ -168,5 +168,45 @@ describe('역할별 고유 산문(why)', () => {
     // 스키마 검증이 why 부재를 거부하면 기존 데이터가 통째로 사라진다.
     const roles = loadRoadmapRoles();
     expect(roles.length).toBeGreaterThan(0);
+  });
+});
+
+describe('역할 페이지의 검색 착지 재료(제목·공부 요령·FAQ)', () => {
+  test('모든 역할이 검색어 제목, 공부 요령 3개 이상, FAQ 3개 이상을 갖고 enrich 후에도 유지된다', async () => {
+    const roles = await getRoadmapRoles();
+    for (const r of roles) {
+      expect(r.seoTitle, r.slug).toMatch(/자격증 순서와 공부법/);
+      expect(r.studyTips?.length ?? 0, r.slug).toBeGreaterThanOrEqual(3);
+      expect(r.faq?.length ?? 0, r.slug).toBeGreaterThanOrEqual(3);
+      for (const f of r.faq ?? []) {
+        expect(f.q.length).toBeGreaterThan(5);
+        expect(f.a.length).toBeGreaterThan(20);
+      }
+    }
+  });
+
+  test('역할끼리 FAQ 질문이 겹치지 않는다(페이지마다 고유한 본문)', async () => {
+    const questions = (await getRoadmapRoles()).flatMap((r) => (r.faq ?? []).map((f) => f.q));
+    expect(new Set(questions).size).toBe(questions.length);
+  });
+});
+
+describe('buildRoleFaq — 역할 페이지 FAQ(본문·FAQPage 구조화 데이터 공용)', () => {
+  test('데이터의 FAQ 뒤에 커리큘럼 분량·응시료 합계 문항을 붙인다(숫자는 totals 에서)', async () => {
+    const role = await getRoadmapRole('sysops-devops');
+    if (!role) throw new Error('fixture missing');
+    const faq = buildRoleFaq(role);
+    expect(faq.slice(0, role.faq!.length)).toEqual(role.faq);
+    const last = faq.at(-1)!;
+    expect(last.a).toContain(`${role.totals.weeks}주`);
+    expect(last.a).toContain(`${role.totals.days}일`);
+    expect(last.a).toContain(`$${role.totals.costUsd!.toLocaleString('en-US')}`);
+  });
+
+  test('응시료 합계를 모르면 금액을 지어내지 않는다', async () => {
+    const role = await getRoadmapRole('sysops-devops');
+    if (!role) throw new Error('fixture missing');
+    const faq = buildRoleFaq({ ...role, totals: { ...role.totals, costUsd: null } });
+    expect(faq.at(-1)!.a).not.toContain('$');
   });
 });

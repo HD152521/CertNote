@@ -33,7 +33,7 @@ describe('toSafeJsonLdString', () => {
   });
 
   test("'<'가 없는 데이터는 일반 JSON.stringify와 바이트가 동일하다(기존 3곳 이관 시 회귀 없음의 근거)", () => {
-    const data = { '@type': 'Organization', name: 'Cert Notes' };
+    const data = { '@type': 'Organization', name: 'CertNote' };
     expect(toSafeJsonLdString(data)).toBe(JSON.stringify(data));
   });
 });

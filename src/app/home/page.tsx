@@ -18,7 +18,7 @@ import { metadata as homeMetadata } from '../page';
 // 닿더라도 홈과 겹치는 사본으로 색인되지 않게 noindex 를 둔다.
 //
 // title 은 absolute 로 고정한다. 이 라우트는 루트의 하위 세그먼트라 title.template 이 붙는데
-// (홈 page.tsx 는 붙지 않는다), 그대로 두면 "… | Cert Notes | Cert Notes" 가 된다.
+// (홈 page.tsx 는 붙지 않는다), 그대로 두면 "… | CertNote | CertNote" 가 된다.
 export const metadata: Metadata = {
   ...homeMetadata,
   title: { absolute: String(homeMetadata.title) },

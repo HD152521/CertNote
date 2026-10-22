@@ -4,7 +4,7 @@ import { ImageResponse } from 'next/og';
 // ImageResponse 기본 폰트는 한글 미지원 → 라틴 텍스트로만 구성한다.
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = 'Cert Notes — AWS Certification Study Notes';
+export const alt = 'CertNote — AWS Certification Study Notes';
 
 export default function OgImage() {
   return new ImageResponse(
@@ -32,7 +32,7 @@ export default function OgImage() {
               display: 'flex',
             }}
           />
-          <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1 }}>Cert Notes</div>
+          <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1 }}>CertNote</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ fontSize: 76, fontWeight: 800, letterSpacing: -2, lineHeight: 1.1 }}>

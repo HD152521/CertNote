@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowRight, Check } from 'lucide-react';
 import { certLevelLabel } from '@/lib/category';
-import { getRoadmapRole, loadRoadmapRoles } from '@/lib/roadmap';
+import { buildRoleFaq, getRoadmapRole, loadRoadmapRoles } from '@/lib/roadmap';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 import { JsonLd } from '@/components/JsonLd';
-import { buildItemListLd, buildBreadcrumbLd } from '@/lib/structuredData';
+import { buildItemListLd, buildBreadcrumbLd, buildFaqPageLd } from '@/lib/structuredData';
 
 interface PageProps { params: Promise<{ role: string }>; }
 
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { role: slug } = await params;
   const role = await getRoadmapRole(slug);
   if (!role) return {};
-  const title = `${role.title} AWS 자격증 로드맵 — 준비 순서`;
+  const title = role.seoTitle ?? `${role.title} AWS 자격증 로드맵 — 준비 순서`;
   const url = `/roadmap/${role.slug}`;
   return {
     title,
@@ -45,11 +45,17 @@ export default async function RoadmapRolePage({ params }: PageProps) {
     { name: '자격증 로드맵', url: '/roadmap' },
     { name: role.title, url: `/roadmap/${role.slug}` },
   ]);
+  // 단일 응시 시험(문항 수·시간이 있는 AWS 시험)만 표로 싣는다. 다단계 시험은 자격증 허브가 보여 준다.
+  const examSteps = role.steps.flatMap((s) =>
+    s.exam?.questionCount != null && s.exam.durationMin != null ? [{ ...s, exam: s.exam }] : [],
+  );
+  const faq = buildRoleFaq(role);
 
   return (
     <div className="mx-auto max-w-3xl space-y-10 py-6">
       <JsonLd data={itemListLd} />
       <JsonLd data={breadcrumbLd} />
+      {faq.length > 0 && <JsonLd data={buildFaqPageLd(faq)} />}
       <header className="space-y-3">
         <div className="flex items-center gap-2 font-mono text-xs text-fg-muted">
           <Link href="/roadmap" className="hover:text-fg">← 전체 로드맵</Link>
@@ -116,6 +122,64 @@ export default async function RoadmapRolePage({ params }: PageProps) {
           </li>
         ))}
       </ol>
+
+      {/* 시험 사실은 content/exam-info(공식 시험 가이드 동기화)에서만 온다 — 여기서 숫자를 쓰지 않는다. */}
+      {examSteps.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold tracking-tight">{role.title} 자격증 시험 한눈에 보기</h2>
+          <div className="overflow-x-auto rounded-xl border border-border">
+            <table className="w-full min-w-[520px] text-left text-sm">
+              <thead className="bg-bg-subtle text-xs text-fg-muted">
+                <tr>
+                  <th className="px-3 py-2 font-medium">시험</th>
+                  <th className="px-3 py-2 font-medium">문항 · 시간</th>
+                  <th className="px-3 py-2 font-medium">합격 점수</th>
+                  <th className="px-3 py-2 font-medium">응시료</th>
+                  <th className="px-3 py-2 font-medium">권장 수준</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border bg-bg-elevated">
+                {examSteps.map(({ slug: certSlug, code, exam }) => (
+                  <tr key={certSlug}>
+                    <td className="px-3 py-2 font-mono text-xs">{code}</td>
+                    <td className="px-3 py-2">{exam.questionCount}문항 · {exam.durationMin}분</td>
+                    <td className="px-3 py-2">
+                      {exam.passingScore != null && exam.scoreMax != null ? `${exam.passingScore} / ${exam.scoreMax}` : (exam.passingCriteria ?? '—')}
+                    </td>
+                    <td className="px-3 py-2">{exam.costUsd != null ? `$${exam.costUsd}` : '—'}</td>
+                    <td className="px-3 py-2 text-fg-muted">{exam.difficulty ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {role.studyTips && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold tracking-tight">{role.title} 자격증 공부법</h2>
+          <ol className="list-decimal space-y-2 pl-5 leading-relaxed text-fg-muted">
+            {role.studyTips.map((tip) => (
+              <li key={tip}>{tip}</li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      {faq.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold tracking-tight">자주 묻는 질문</h2>
+          <dl className="divide-y divide-border rounded-xl border border-border bg-bg-elevated">
+            {faq.map((f) => (
+              <div key={f.q} className="space-y-1 px-4 py-3">
+                <dt className="font-medium">{f.q}</dt>
+                <dd className="text-sm leading-relaxed text-fg-muted">{f.a}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
 
       <p className="text-xs text-fg-faint">
         각 자격증의 노트는 전 주차 무료입니다. 목표 직무에 맞춰 순서대로 준비해 보세요.

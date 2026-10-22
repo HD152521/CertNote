@@ -4,6 +4,7 @@ import { getDayMtime } from '@/lib/content';
 import type { DayContent } from '@/lib/content';
 import { excerptOf } from '@/lib/site';
 import { isIndexableDay } from '@/lib/day/indexPolicy';
+import { dayHeadline } from '@/lib/day/dayTitle';
 import { buildDayArticleLd, buildBreadcrumbLd } from '@/lib/structuredData';
 
 export interface DayStructuredData {
@@ -36,7 +37,7 @@ export async function buildDayStructuredData(
   const articleLd = buildDayArticleLd({
     href: content.href,
     // generateMetadata의 title과 동일한 조합 — 페이지에 보이는 제목과 headline을 맞춘다.
-    headline: `${content.title} — ${content.certMeta.code}`,
+    headline: dayHeadline(content.title, content.certMeta.code),
     // generateMetadata가 이미 excerptOf(content.body)로 만드는 것과 같은 유틸을 재사용한다
     // (별도 요약 로직을 새로 만들지 않음 — Step4 4-1 요구사항).
     description: excerptOf(content.body),

@@ -2,7 +2,7 @@
 // APP_URL(메일 링크에도 쓰는 env)이 있으면 우선, 없으면 프로덕션 도메인.
 // fs 비의존 — 클라 컴포넌트에서 import돼도 안전.
 export const SITE_URL = (process.env.APP_URL ?? 'https://cert.juganlab.com').replace(/\/$/, '');
-export const SITE_NAME = 'Cert Notes';
+export const SITE_NAME = 'CertNote';
 export const SITE_TAGLINE = 'AWS 자격증 · 클라우드 네이티브 학습';
 
 // 마크다운 본문에서 검색 결과용 요약문(meta description)을 뽑는다.
@@ -21,5 +21,5 @@ export function excerptOf(markdown: string, max = 155): string {
 }
 
 // 운영 주체·문의처. 푸터·소개·문의·약관·개인정보처리방침이 공유한다.
-export const OPERATOR_NAME = '주간랩스';
+export const OPERATOR_NAME = '주간실험실';
 export const CONTACT_EMAIL = 'wkdrndydtlr@gmail.com';

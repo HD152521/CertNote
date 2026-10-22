@@ -3,8 +3,8 @@ import type { MetadataRoute } from 'next';
 // PWA 매니페스트. 홈 화면 설치 시 앱 이름·아이콘·전체화면 실행 정보를 제공한다.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Cert Notes — AWS 자격증 출퇴근 노트',
-    short_name: 'Cert Notes',
+    name: 'CertNote — AWS 자격증 출퇴근 노트',
+    short_name: 'CertNote',
     description: 'AWS 자격증 학습 노트와 복습(SRS)을 출퇴근 시간에. 매일 복습 알림으로 꾸준히.',
     start_url: '/',
     scope: '/',

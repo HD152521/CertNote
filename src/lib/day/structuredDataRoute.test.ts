@@ -5,6 +5,7 @@ import { SITE_URL } from '@/lib/site';
 // buildDayStructuredData는 src/lib/day/structuredData.ts로 이동했다(Step5 A-0 — [week]/[day]와
 // week1/[day] 양쪽 라우트가 공유하는 단일 출처).
 import { buildDayStructuredData } from '@/lib/day/structuredData';
+import { dayHeadline } from '@/lib/day/dayTitle';
 
 // day 페이지 구조화 데이터(Article/LearningResource + BreadcrumbList) 회귀 테스트
 // (docs/SEO-indexing-fix-plan.md Step 4).
@@ -71,7 +72,8 @@ describe('buildDayStructuredData — 무료 주차(week1)', () => {
     if (!content) throw new Error('fixture content missing');
     const { articleLd } = await buildDayStructuredData('aws-certs', 'saa-c03', 1, 1, 'ko', content);
 
-    expect(articleLd).toMatchObject({ headline: `${content.title} — ${content.certMeta.code}` });
+    expect(articleLd).toMatchObject({ headline: dayHeadline(content.title, content.certMeta.code) });
+    expect((articleLd as Record<string, unknown>).headline).not.toMatch(/^Day\s*\d/);
     expect(typeof (articleLd as Record<string, unknown>).description).toBe('string');
     expect(((articleLd as Record<string, unknown>).description as string).length).toBeGreaterThan(0);
   });

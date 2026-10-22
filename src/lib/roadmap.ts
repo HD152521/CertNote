@@ -3,6 +3,7 @@ import path from 'node:path';
 import { DEFAULT_CATEGORY } from './category';
 import { certHref, getCertMeta } from './content';
 import { getExamInfo, type ExamInfo } from './examInfo';
+import type { FaqEntry } from './structuredData';
 
 // 직무별 자격증 로드맵. "어떤 직무를 노리느냐에 따라 자격증을 어떤 순서로 딸까"를 안내하는
 // 정보 페이지(사용자 요구: 정보페이지 하나 + 직무별 순서)의 단일 데이터 소스.
@@ -22,6 +23,11 @@ export interface RoadmapRole {
   // 하는 유일한 재료다 — 자격증 목록과 시험 사실은 역할끼리 겹치기 때문에 차별화가 안 된다.
   // 선택 필드: 없으면 문단을 생략한다(기존 데이터 하위호환).
   why?: string;
+  // 검색 착지용 재료(선택). 역할 이름만 있는 짧은 페이지는 "devops 엔지니어 자격증" 같은 검색어를
+  // 받지 못했다(본문 1천여 자). 시험 사실은 exam-info 에서 오므로 여기에는 역할 고유의 글만 둔다.
+  seoTitle?: string; // <title> — 사람들이 실제로 치는 말("… 자격증 순서와 공부법")
+  studyTips?: string[];
+  faq?: FaqEntry[];
   steps: RoadmapStep[];
 }
 
@@ -57,6 +63,9 @@ export interface EnrichedRole {
   tagline: string;
   description: string;
   why?: string;
+  seoTitle?: string;
+  studyTips?: string[];
+  faq?: FaqEntry[];
   steps: EnrichedStep[];
   totals: RoadmapTotals;
 }
@@ -66,6 +75,12 @@ const ROADMAP_FILE = path.join(process.cwd(), 'content', 'roadmaps.json');
 // examInfo/content 와 동일하게 프로덕션에서만 프로세스 단위 메모이즈(정적 파일이라 불변).
 const ROADMAP_CACHE = process.env.NODE_ENV === 'production';
 let rolesCache: RoadmapRole[] | null = null;
+
+function isFaqEntry(value: unknown): value is FaqEntry {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return typeof v.q === 'string' && typeof v.a === 'string';
+}
 
 function isRoadmapRole(value: unknown): value is RoadmapRole {
   if (typeof value !== 'object' || value === null) return false;
@@ -77,6 +92,9 @@ function isRoadmapRole(value: unknown): value is RoadmapRole {
     typeof v.tagline === 'string' &&
     typeof v.description === 'string' &&
     (v.why === undefined || typeof v.why === 'string') &&
+    (v.seoTitle === undefined || typeof v.seoTitle === 'string') &&
+    (v.studyTips === undefined || (Array.isArray(v.studyTips) && v.studyTips.every((t) => typeof t === 'string'))) &&
+    (v.faq === undefined || (Array.isArray(v.faq) && v.faq.every(isFaqEntry))) &&
     Array.isArray(v.steps) &&
     v.steps.every(
       (s) =>
@@ -133,6 +151,9 @@ async function enrichRole(role: RoadmapRole): Promise<EnrichedRole> {
     tagline: role.tagline,
     description: role.description,
     ...(role.why ? { why: role.why } : {}),
+    ...(role.seoTitle ? { seoTitle: role.seoTitle } : {}),
+    ...(role.studyTips?.length ? { studyTips: role.studyTips } : {}),
+    ...(role.faq?.length ? { faq: role.faq } : {}),
     steps,
     totals: totalsOf(steps, role.steps.length),
   };
@@ -172,4 +193,17 @@ export async function getRoadmapRole(slug: string): Promise<EnrichedRole | null>
   if (!role) return null;
   const enriched = await enrichRole(role);
   return enriched.steps.length > 0 ? enriched : null;
+}
+
+// 역할 페이지 FAQ. 데이터의 역할 고유 문답 뒤에 "얼마나 걸리나" 문답을 붙인다. 숫자는 전부 totals
+// (커리큘럼 매니페스트·exam-info 합계)에서 오고, 응시료 합계를 모르면 금액 문장을 빼서 지어내지 않는다.
+// 본문과 FAQPage 구조화 데이터가 같은 배열을 써야 구글이 보는 문답과 화면이 어긋나지 않는다.
+export function buildRoleFaq(role: EnrichedRole): FaqEntry[] {
+  const codes = role.steps.map((s) => s.code).join(' → ');
+  const cost = role.totals.costUsd !== null ? ` 응시료는 모두 합쳐 $${role.totals.costUsd.toLocaleString('en-US')}입니다.` : '';
+  const duration: FaqEntry = {
+    q: `${role.title} 로드맵을 끝내는 데 얼마나 걸리나요?`,
+    a: `${codes} 순서로 CertNote 커리큘럼 기준 ${role.totals.weeks}주(총 ${role.totals.days}일) 분량입니다. 하루 한 일차씩 읽는 속도를 기준으로 잡았고, 실무 경험이 있다면 익숙한 주차는 빠르게 넘어갈 수 있습니다.${cost}`,
+  };
+  return [...(role.faq ?? []), duration];
 }

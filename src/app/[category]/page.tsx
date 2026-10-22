@@ -38,7 +38,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title =
     lang === 'en'
       ? `${sectionName} Certifications — Types & Recommended Order`
-      : `${sectionName} 자격증 종류와 추천 순서 — ${certs.length}종 한국어 학습 로드맵`;
+      : section === 'linux'
+        ? '리눅스마스터 1급·2급 자격증 순서와 공부 방법 — 무료 한국어 학습 노트'
+        : `${sectionName} 자격증 종류와 순서, 공부 방법 — ${certs.length}종 무료 한국어 학습 노트`;
   const description =
     section === 'aws'
       ? `AWS 자격증 ${certs.length}종을 레벨별로 정리. Cloud Practitioner(기초) → 어소시에이트(SAA·DVA·SOA) → 프로페셔널(SAP·DOP) → 전문분야 순서로 준비하세요. 전 과정 무료.`
