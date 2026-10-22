@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { ChevronRight, ChevronDown, MessageSquareText } from 'lucide-react';
-import { navDayHref, type CertTree, type NavCertMeta } from '@/lib/navTree';
+import { linkDayHref, type CertTree, type NavCertMeta } from '@/lib/navTree';
 import { cn } from '@/lib/cn';
 
 // 전송 형식은 src/lib/navTree.ts 에 있다(HTML 크기 때문에 DayRef 를 그대로 넘기지 않는다).
@@ -92,7 +92,7 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
                   </summary>
                   <ul className="mt-0.5 ml-2 space-y-0.5 border-l border-border pl-2">
                     {ws.map(([day, title]) => {
-                      const href = navDayHref(dayBase, meta.slug, w, day);
+                      const href = linkDayHref(dayBase, meta.slug, w, day);
                       const active = pathname === href;
                       return (
                         <li key={href}>

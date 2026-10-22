@@ -4,6 +4,7 @@ import { getDay } from '@/lib/content';
 import { hreflangPair } from '@/lib/i18n';
 import { excerptOf } from '@/lib/site';
 import { isIndexableDay } from '@/lib/day/indexPolicy';
+import { dayHeadline } from '@/lib/day/dayTitle';
 
 // day 페이지 generateMetadata 본문의 단일 출처(docs/SEO-indexing-fix-plan.md Step5 A-0).
 // {aws,linux,en}/[slug]/[week]/[day](2주차 이상, 첫 요청 때 정적 생성)와 {aws,linux,en}/[slug]/week1/[day]
@@ -29,7 +30,7 @@ export async function buildDayMetadata(category: string, slug: string, w: number
   const content = await getDay(category, slug, w, d).catch(() => null);
   if (!content) return {};
   // 주제어(content.title)를 앞세운다. "Week N"은 검색량이 없어 title 자리를 낭비하므로 제외.
-  const title = `${content.title} — ${content.certMeta.code}`;
+  const title = dayHeadline(content.title, content.certMeta.code);
   const description = excerptOf(content.body);
   // 한/영 상호 hreflang: 반대 언어 버전이 실제로 존재하고 색인 대상일 때만 연결한다
   // (noindex 페이지를 hreflang으로 가리키면 클러스터가 무효화된다).

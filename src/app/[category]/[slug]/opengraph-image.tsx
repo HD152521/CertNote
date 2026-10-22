@@ -6,11 +6,11 @@ import { getCertMeta } from '@/lib/content';
 // meta.name은 영문이라 기본 폰트로 안전(한글은 폰트 임베딩 필요해 피한다).
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = 'Cert Notes certification study track';
+export const alt = 'CertNote certification study track';
 
 export default async function OgImage({ params }: { params: Promise<{ category: string; slug: string }> }) {
   const { category, slug } = await params;
-  let code = 'Cert Notes';
+  let code = 'CertNote';
   let name = 'Certification Study Notes';
   let level = '';
   let weeks = 0;
@@ -43,7 +43,7 @@ export default async function OgImage({ params }: { params: Promise<{ category: 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ width: 28, height: 28, borderRadius: 8, background: '#4f7cff', display: 'flex' }} />
-            <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: -1 }}>Cert Notes</div>
+            <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: -1 }}>CertNote</div>
           </div>
           {level ? (
             <div

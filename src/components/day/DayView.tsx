@@ -15,6 +15,7 @@ import { ExamDateNudge } from '@/components/study/ExamDateNudge';
 import { DayNavigationOverlay } from '@/components/study/DayNavigationOverlay';
 import { DayMeta } from '@/components/DayMeta';
 import { cn } from '@/lib/cn';
+import { linkDayRefHref } from '@/lib/navTree';
 import { JsonLd } from '@/components/JsonLd';
 import { LessonTracker } from '@/components/analytics/LessonTracker';
 import { buildDayStructuredData } from '@/lib/day/structuredData';
@@ -66,7 +67,7 @@ export async function DayView({ category, slug, w, d, lang, content, locked, log
         <MarkAsRead slug={slug} week={w} day={d} title={content.title} href={content.href} />
       )}
       {/* Mobile navigation overlay - Click to show arrows */}
-      <DayNavigationOverlay prevHref={content.prev?.href} nextHref={content.next?.href} />
+      <DayNavigationOverlay prevHref={content.prev ? linkDayRefHref(content.prev) : undefined} nextHref={content.next ? linkDayRefHref(content.next) : undefined} />
       <div className="min-w-0 flex-1">
         <div className="mx-auto max-w-2xl">
           <nav className="mb-4 flex items-center gap-2 text-xs text-fg-muted font-mono">
@@ -105,14 +106,14 @@ export async function DayView({ category, slug, w, d, lang, content, locked, log
           )}
           <footer className="mt-12 grid grid-cols-2 gap-3 border-t border-border pt-6">
             {content.prev ? (
-              <Link href={content.prev.href} className={cn('flex flex-col gap-1 rounded-md border border-border p-3 transition', 'hover:border-border-strong')}>
+              <Link href={linkDayRefHref(content.prev)} className={cn('flex flex-col gap-1 rounded-md border border-border p-3 transition', 'hover:border-border-strong')}>
                 <span className="flex items-center gap-1 text-xs text-fg-muted"><ArrowLeft className="h-3 w-3" /> {lang === 'en' ? 'Previous' : '이전'}</span>
                 <span className="text-sm font-medium truncate">{content.prev.title.replace(/^Day\s*\d+\s*[-–]\s*/i, '')}</span>
                 <span className="text-xs text-fg-faint">Week {content.prev.week} · Day {content.prev.day}</span>
               </Link>
             ) : (<div />)}
             {content.next ? (
-              <Link href={content.next.href} className={cn('flex flex-col gap-1 rounded-md border border-border p-3 text-right transition', 'hover:border-border-strong')}>
+              <Link href={linkDayRefHref(content.next)} className={cn('flex flex-col gap-1 rounded-md border border-border p-3 text-right transition', 'hover:border-border-strong')}>
                 <span className="flex items-center justify-end gap-1 text-xs text-fg-muted">{lang === 'en' ? 'Next' : '다음'} <ArrowRight className="h-3 w-3" /></span>
                 <span className="text-sm font-medium truncate">{content.next.title.replace(/^Day\s*\d+\s*[-–]\s*/i, '')}</span>
                 <span className="text-xs text-fg-faint">Week {content.next.week} · Day {content.next.day}</span>

@@ -12,6 +12,8 @@ import { buildTrackContents } from '@/lib/certTrack';
 import BulletList from '@/components/ui/BulletList';
 import ExamInfoCard from '@/components/ExamInfoCard';
 import { cn } from '@/lib/cn';
+import { linkDayRefHref } from '@/lib/navTree';
+import { HtmlLang } from '@/components/HtmlLang';
 import { JsonLd } from '@/components/JsonLd';
 import { buildCourseLd, buildBreadcrumbLd, buildFaqPageLd } from '@/lib/structuredData';
 import { AdSlot } from '@/components/ads/AdSlot';
@@ -60,7 +62,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title =
     lang === 'en'
       ? `${meta.code} ${meta.name} — Study Notes`
-      : `${meta.code} ${meta.name} — ${meta.weeks}주 완성 학습 노트`;
+      : `${meta.code} ${meta.name} 공부 — ${meta.weeks}주 무료 학습 노트`;
   const description =
     lang === 'en'
       ? `Study ${meta.code} with daily in-depth notes and practice questions. Free to read; Week 1 is fully translated into English.`
@@ -128,6 +130,7 @@ export default async function CertIndexPage({ params }: PageProps) {
   const adHub = resolveAdPlacement('hub');
   return (
     <div className="mx-auto max-w-3xl space-y-10">
+      {lang === 'en' && <HtmlLang lang="en" />}
       <JsonLd data={courseLd} />
       <JsonLd data={breadcrumbLd} />
       <header className="space-y-3">
@@ -201,9 +204,11 @@ export default async function CertIndexPage({ params }: PageProps) {
             <ul className="divide-y divide-border rounded-lg border border-border bg-bg-elevated">
               {ws.map((d) => (
                 <li key={d.href}>
-                  <Link href={d.href} className="flex items-center gap-3 px-4 py-3 hover:bg-bg-subtle transition">
+                  <Link href={linkDayRefHref(d)} className="flex items-center gap-3 px-4 py-3 hover:bg-bg-subtle transition">
                     <span className="font-mono text-xs text-fg-faint w-10 shrink-0">Day {d.day}</span>
                     <span className="flex-1 text-sm truncate">{d.title.replace(/^Day\s*\d+\s*[-–]\s*/i, '')}</span>
+                    {/* 번역 전 주차는 한국어 원문으로 연결된다(linkDayHref). 누르기 전에 알 수 있게 표시한다. */}
+                    {linkDayRefHref(d) !== d.href && <span className="font-mono text-[10px] text-fg-faint">KO</span>}
                     <ArrowRight className="h-4 w-4 text-fg-faint" />
                   </Link>
                 </li>

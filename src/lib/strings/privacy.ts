@@ -39,7 +39,7 @@ export const privacyStrings: Dict<PrivacyKey> = {
     title: '개인정보처리방침',
     lastUpdated: '최종 업데이트: 2026-10-13',
     intro:
-      '주간랩스가 운영하는 CertNote(이하 “서비스”)는 이용자의 개인정보를 중요하게 생각하며, 아래와 같이 수집·이용합니다. 방침이 바뀌면 이 페이지에 변경 내용과 날짜를 알립니다.',
+      '주간실험실가 운영하는 CertNote(이하 “서비스”)는 이용자의 개인정보를 중요하게 생각하며, 아래와 같이 수집·이용합니다. 방침이 바뀌면 이 페이지에 변경 내용과 날짜를 알립니다.',
 
     collectTitle: '1. 수집하는 항목',
     collectRequired: '필수: 이메일, 비밀번호(암호화 저장), 이름, 생년월일, 목표 자격증',
@@ -79,7 +79,7 @@ export const privacyStrings: Dict<PrivacyKey> = {
     title: 'Privacy Policy',
     lastUpdated: 'Last updated: 2026-10-13',
     intro:
-      'CertNote (the “Service”), operated by Jugan Labs (주간랩스), treats your personal information as something worth protecting, and collects and uses it as described below. Changes to this policy are posted on this page with their date.',
+      'CertNote (the “Service”), operated by Jugan Lab (주간실험실), treats your personal information as something worth protecting, and collects and uses it as described below. Changes to this policy are posted on this page with their date.',
 
     collectTitle: '1. What we collect',
     collectRequired: 'Required: email, password (stored encrypted), name, date of birth, target certification',

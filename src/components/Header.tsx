@@ -23,7 +23,7 @@ export function Header({ certTrees, enCertTrees }: HeaderProps) {
         <MobileNav certTrees={certTrees} enCertTrees={enCertTrees} />
         <Link href="/" className="flex items-center gap-2 text-sm font-semibold tracking-tight">
           <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-sm bg-accent" />
-          <span>Cert Notes</span>
+          <span>CertNote</span>
           <span className="text-fg-faint font-normal hidden sm:inline">{tagline}</span>
         </Link>
         </div>
