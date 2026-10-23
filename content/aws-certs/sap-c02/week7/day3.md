@@ -19,7 +19,7 @@ Fargate는 vCPU·시간과 메모리·시간을 별도로 청구한다. 대략 u
 [Task 종료]
 ```
 
-> 💡 **관련 이론**: 클라우드 컨테이너 서비스의 과금 모델은 **fine-grained billing**의 한 사례다. EC2는 시간 단위, Lambda는 1ms 단위, Fargate는 초 단위(1분 최소). 이 차이는 워크로드 형태에 따라 결정적이다. 1ms 단위인 Lambda는 짧고 빈번한 호출(요청당 100ms)에 압도적으로 유리하고, 시간 단위인 EC2는 장시간 일정 부하(24/7)에 유리하다. Fargate는 그 사이의 "분~시간 단위로 살아 있다가 사라지는 워크로드"에 최적화되어 있다. 이 과금 모델의 진화는 AWS의 *"Serverless Architectures with AWS Lambda"* 백서와 NSDI 2020 Firecracker 논문에서 잘 다뤄진다.
+클라우드 컨테이너 서비스의 과금 모델은 **fine-grained billing**의 한 사례다. EC2는 시간 단위, Lambda는 1ms 단위, Fargate는 초 단위(1분 최소). 이 차이는 워크로드 형태에 따라 결정적이다. 1ms 단위인 Lambda는 짧고 빈번한 호출(요청당 100ms)에 압도적으로 유리하고, 시간 단위인 EC2는 장시간 일정 부하(24/7)에 유리하다. Fargate는 그 사이의 "분~시간 단위로 살아 있다가 사라지는 워크로드"에 최적화되어 있다. 이 과금 모델의 진화는 AWS의 *"Serverless Architectures with AWS Lambda"* 백서와 NSDI 2020 Firecracker 논문에서 잘 다뤄진다.
 
 ## vCPU·메모리 조합의 이상한 매트릭스
 
@@ -82,9 +82,9 @@ aws ecs put-cluster-capacity-providers \
     'capacityProvider=FARGATE_SPOT,weight=4'
 ```
 
-> 💡 **관련 이론**: Spot 인스턴스의 원리는 **이자율 가격 발견(price discovery)** 메커니즘이다. AWS 데이터센터에는 항상 일정 비율의 유휴 용량(buffer capacity)이 있고, 이걸 정가로 팔면 수요가 부족하다. 그래서 시장 가격(spot price)으로 할인 판매하되, 정가 수요가 갑자기 늘면 회수하는 옵션을 가진다. 회수 알림 시간(SIGTERM 2분)은 사용자가 graceful shutdown을 할 수 있는 최소 시간으로 산정된 것이다. EC2 Spot은 회수율이 평균 5% 이하지만, Fargate Spot은 capacity 풀 자체가 작아 회수율이 약간 더 높을 수 있다(공식 수치 비공개).
+Spot 인스턴스의 원리는 **이자율 가격 발견(price discovery)** 메커니즘이다. AWS 데이터센터에는 항상 일정 비율의 유휴 용량(buffer capacity)이 있고, 이걸 정가로 팔면 수요가 부족하다. 그래서 시장 가격(spot price)으로 할인 판매하되, 정가 수요가 갑자기 늘면 회수하는 옵션을 가진다. 회수 알림 시간(SIGTERM 2분)은 사용자가 graceful shutdown을 할 수 있는 최소 시간으로 산정된 것이다. EC2 Spot은 회수율이 평균 5% 이하지만, Fargate Spot은 capacity 풀 자체가 작아 회수율이 약간 더 높을 수 있다(공식 수치 비공개).
 
-> 📚 **사례**: 2023년 Pinterest는 일부 백엔드 워크로드를 ECS Fargate + Fargate Spot 80% 혼합으로 전환해 컨테이너 인프라 비용을 약 40% 절감했다고 발표했다. Spot 회수에 대비해 `STOPTIMEOUT`을 120초로 설정하고 SIGTERM 핸들러로 in-flight HTTP 요청을 graceful drain, 워커는 SQS message visibility timeout을 재설정하는 패턴을 표준화했다. re:Invent 2023 CON401.
+2023년 Pinterest는 일부 백엔드 워크로드를 ECS Fargate + Fargate Spot 80% 혼합으로 전환해 컨테이너 인프라 비용을 약 40% 절감했다고 발표했다. Spot 회수에 대비해 `STOPTIMEOUT`을 120초로 설정하고 SIGTERM 핸들러로 in-flight HTTP 요청을 graceful drain, 워커는 SQS message visibility timeout을 재설정하는 패턴을 표준화했다. re:Invent 2023 CON401.
 
 ## Compute Savings Plans — Fargate에도 약정 할인을 적용
 
@@ -108,7 +108,7 @@ Compute Savings Plans의 핵심은 **유연성**이다. 1년 약정으로 시간
 
 Spot과 Compute SP는 **별개의 할인 메커니즘**이라 Fargate Spot에는 SP가 추가 적용되지 않는다(Spot 자체 할인만 적용). 하지만 On-Demand 부분에는 SP가 적용된다. 그래서 위의 Capacity Provider 혼합(base=2 On-Demand + Spot 80%)을 쓰면, On-Demand 2개에는 SP 할인이 적용되고 Spot 8개에는 Spot 할인이 적용되는 **이중 할인 패턴**이 된다.
 
-> 🔍 **더 깊이**: Reserved Instance(RI)는 SP보다 더 오래된 제도로 EC2·RDS·ElastiCache 등 별도 제도를 가진다. RI는 인스턴스 타입을 고정하는 대신 capacity reservation도 함께 제공하고, SP는 capacity reservation은 없고 청구 할인만 제공한다. AWS는 2019년 SP를 발표하며 사실상 "RI는 더 이상 권장하지 않음"이라는 신호를 보냈고, 현재 신규 워크로드의 표준은 SP다. SAP 시험에서 "유연성·다중 서비스 할인"이 강조되면 Compute SP, "EC2 인스턴스 고정·최대 할인율"이면 EC2 Instance SP, "스토리지·DB capacity 보장 필요"면 RI가 답이다.
+Reserved Instance(RI)는 SP보다 더 오래된 제도로 EC2·RDS·ElastiCache 등 별도 제도를 가진다. RI는 인스턴스 타입을 고정하는 대신 capacity reservation도 함께 제공하고, SP는 capacity reservation은 없고 청구 할인만 제공한다. AWS는 2019년 SP를 발표하며 사실상 "RI는 더 이상 권장하지 않음"이라는 신호를 보냈고, 현재 신규 워크로드의 표준은 SP다. SAP 시험에서 "유연성·다중 서비스 할인"이 강조되면 Compute SP, "EC2 인스턴스 고정·최대 할인율"이면 EC2 Instance SP, "스토리지·DB capacity 보장 필요"면 RI가 답이다.
 
 ## Graviton(ARM64) — 같은 워크로드를 20% 싸게
 
@@ -135,9 +135,9 @@ docker buildx build \
   -t myrepo/myapp:1 --push .
 ```
 
-> 📚 **사례**: 2022년 Snap(Snapchat 모기업)은 백엔드 마이크로서비스 일부를 Graviton2 Fargate로 옮겨 약 22% 비용 절감을 달성했다. 가장 큰 작업은 종속성 라이브러리(특히 JNI 바인딩 가진 Java 라이브러리, native node-gyp 모듈)의 ARM64 빌드 확보였다. AWS re:Invent 2022 CMP301 발표. 핵심 교훈: Graviton 절감의 80%는 인프라 변경, 20%는 종속성 정리 작업이다.
+2022년 Snap(Snapchat 모기업)은 백엔드 마이크로서비스 일부를 Graviton2 Fargate로 옮겨 약 22% 비용 절감을 달성했다. 가장 큰 작업은 종속성 라이브러리(특히 JNI 바인딩 가진 Java 라이브러리, native node-gyp 모듈)의 ARM64 빌드 확보였다. AWS re:Invent 2022 CMP301 발표. 핵심 교훈: Graviton 절감의 80%는 인프라 변경, 20%는 종속성 정리 작업이다.
 
-> 💡 **관련 이론**: ARM64가 같은 성능에 단가가 낮은 이유는 두 가지다. 첫째, AWS가 직접 설계한 칩이라 Intel·AMD에 라이선스 비용을 안 낸다. 둘째, ARM 아키텍처가 RISC 계열이라 같은 트랜지스터로 더 많은 코어를 넣을 수 있다(Graviton3는 64코어/소켓). 같은 데이터센터 공간·전력에서 더 많은 컴퓨트가 나오는 게 단가 차이의 본질이다. 이 트렌드는 Apple Silicon(M1·M2·M3)과 같은 흐름이고, 향후 클라우드 컴퓨트의 기본값이 ARM으로 바뀌어갈 가능성이 높다.
+ARM64가 같은 성능에 단가가 낮은 이유는 두 가지다. 첫째, AWS가 직접 설계한 칩이라 Intel·AMD에 라이선스 비용을 안 낸다. 둘째, ARM 아키텍처가 RISC 계열이라 같은 트랜지스터로 더 많은 코어를 넣을 수 있다(Graviton3는 64코어/소켓). 같은 데이터센터 공간·전력에서 더 많은 컴퓨트가 나오는 게 단가 차이의 본질이다. 이 트렌드는 Apple Silicon(M1·M2·M3)과 같은 흐름이고, 향후 클라우드 컴퓨트의 기본값이 ARM으로 바뀌어갈 가능성이 높다.
 
 ## 세 가지 할인 레버를 조합한 패턴
 
@@ -182,13 +182,13 @@ ECR ────[manifest + index]────► Task 즉시 실행
 
 SOCI는 ECR이 별도 인덱스를 미리 만들어두는 방식이라 사용자 측 변경이 거의 없다. Fargate Task Definition에서 자동 적용된다.
 
-> 🔍 **더 깊이**: SOCI의 lazy loading 발상은 **demand paging**(OS 가상 메모리)에서 왔다. OS는 프로세스 메모리 전체를 한 번에 로드하지 않고 페이지 폴트가 날 때만 가져온다. 컨테이너 이미지의 파일 시스템도 마찬가지로 실제 읽히는 파일이 전체의 일부일 뿐이라는 관찰에서 출발했다. 학술적으로는 ATC 2016의 "Slacker: Fast Distribution with Lazy Docker Containers" 논문이 같은 발상을 먼저 제안했고, SOCI는 이걸 OCI 표준 위에 구현한 셈이다.
+SOCI의 lazy loading 발상은 **demand paging**(OS 가상 메모리)에서 왔다. OS는 프로세스 메모리 전체를 한 번에 로드하지 않고 페이지 폴트가 날 때만 가져온다. 컨테이너 이미지의 파일 시스템도 마찬가지로 실제 읽히는 파일이 전체의 일부일 뿐이라는 관찰에서 출발했다. 학술적으로는 ATC 2016의 "Slacker: Fast Distribution with Lazy Docker Containers" 논문이 같은 발상을 먼저 제안했고, SOCI는 이걸 OCI 표준 위에 구현한 셈이다.
 
 > ⚠️ **함정**: SOCI는 큰 이미지일수록 효과가 크고, 작은 이미지(100MB 이하)에서는 인덱스 오버헤드가 더 크다. "모든 이미지에 SOCI를 켜라"는 보기는 오답이다. 작은 이미지는 그냥 받는 게 빠르다.
 
 ## Lambda vs Fargate vs EC2의 비용 분기점
 
-같은 워크로드를 세 가지 컴퓨트 옵션 중 어디에 두느냐는 SAP 단골 시나리오다. 분기점은 워크로드의 **수명**, **빈도**, **자원 크기** 세 축으로 결정된다.
+같은 워크로드를 세 가지 컴퓨트 옵션 중 어디에 두느냐는 SAP 시험에 나오는 시나리오다. 분기점은 워크로드의 **수명**, **빈도**, **자원 크기** 세 축으로 결정된다.
 
 | 워크로드 | Lambda | Fargate | EC2 |
 |---------|--------|---------|-----|
@@ -205,7 +205,7 @@ SOCI는 ECR이 별도 인덱스를 미리 만들어두는 방식이라 사용자
 
 Lambda는 2020년부터 메모리 10GB · 6 vCPU · 15분 실행이 가능해져 일부 Fargate 워크로드를 대체 가능해졌다. 그래도 백오피스 API처럼 connection pool을 유지해야 하는 패턴은 여전히 Fargate가 유리하다.
 
-> 📚 **사례**: 2023년 한 로그 분석 회사가 batch 잡 일부를 Fargate에서 Lambda로 옮긴 사례. 처리 시간 평균 3분, 호출 빈도 시간당 200회, 메모리 4GB. Fargate에서는 평균 2개 Task가 항상 떠 있어 유휴 비용이 컸지만, Lambda는 실행 시간만 청구되어 월 비용이 약 60% 줄었다. 다만 Lambda 콜드 스타트(VPC 연결 시 1~2초)를 받아들일 수 있어야 했다.
+2023년 한 로그 분석 회사가 batch 잡 일부를 Fargate에서 Lambda로 옮긴 사례. 처리 시간 평균 3분, 호출 빈도 시간당 200회, 메모리 4GB. Fargate에서는 평균 2개 Task가 항상 떠 있어 유휴 비용이 컸지만, Lambda는 실행 시간만 청구되어 월 비용이 약 60% 줄었다. 다만 Lambda 콜드 스타트(VPC 연결 시 1~2초)를 받아들일 수 있어야 했다.
 
 ## Application Auto Scaling — Fargate의 자동 스케일링 표준
 
@@ -238,9 +238,9 @@ aws application-autoscaling put-scaling-policy \
 
 Target Tracking은 내부적으로 CloudWatch 알람을 자동 생성해 desired count를 조정한다. 동작 원리는 PID controller에 가깝지만 AWS 측 구현은 단순한 비례 제어다. 빠르게 늘리고 느리게 줄이는 패턴이 기본값이라 트래픽 변동에 안정적이다.
 
-> 💡 **관련 이론**: Auto Scaling의 동작은 **제어 이론(control theory)**의 응용이다. 측정값(CPU%)과 목표값(60%)의 차이(error)를 보고 액추에이터(Task count)를 조정한다. 정확한 PID 제어는 적분·미분 항까지 쓰지만 AWS의 Target Tracking은 단순 P 제어에 가깝다. 단순한 만큼 oscillation(진동) 위험이 있어서, scale-in cooldown을 길게 잡는 게 표준이다. Netflix는 이 한계 때문에 **Scryer**라는 predictive auto-scaler를 만들어 트래픽 패턴을 ML로 예측한다.
+Auto Scaling의 동작은 **제어 이론(control theory)**의 응용이다. 측정값(CPU%)과 목표값(60%)의 차이(error)를 보고 액추에이터(Task count)를 조정한다. 정확한 PID 제어는 적분·미분 항까지 쓰지만 AWS의 Target Tracking은 단순 P 제어에 가깝다. 단순한 만큼 oscillation(진동) 위험이 있어서, scale-in cooldown을 길게 잡는 게 표준이다. Netflix는 이 한계 때문에 **Scryer**라는 predictive auto-scaler를 만들어 트래픽 패턴을 ML로 예측한다.
 
-## 정리하며
+## 정리
 
 Fargate는 단가표 위 숫자만으로 비싸 보이지만, Fargate Spot(70%) + Compute SP(66%) + Graviton(20%)을 조합하면 같은 워크로드를 70% 가까이 싸게 돌릴 수 있다. 단가 비교에서 가장 중요한 변수는 **평균 노드 사용률**과 **트래픽 가변성**이다. 사용률 40% 이상으로 일정 24/7이면 EC2 + SP가 우위고, 그 외엔 Fargate가 운영 부담까지 포함해 우위다.
 
