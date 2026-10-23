@@ -33,7 +33,7 @@ Database (논리적 그룹)
 | 파일 포맷·SerDe | 변환 로직 |
 | 파티션 목록 | 쿼리 결과 |
 
-> 💡 **관련 이론**: Glue Data Catalog는 Apache Hive의 **Metastore**를 계승한 개념이다. Hive는 2009년 Facebook이 HDFS 위에서 SQL을 쓰기 위해 만든 시스템인데, 핵심 발상이 "데이터(HDFS 파일)와 스키마(Metastore)를 분리"하는 것이었다. 이 분리가 곧 **schema-on-read**다. 데이터를 쓸 때 스키마를 강제하는 전통 DB(schema-on-write)와 달리, 데이터 레이크는 일단 원본을 저장하고 읽을 때 스키마를 적용한다. 덕분에 다양한 포맷·소스의 데이터를 유연하게 수용할 수 있다.
+Glue Data Catalog는 Apache Hive의 **Metastore**를 계승한 개념이다. Hive는 2009년 Facebook이 HDFS 위에서 SQL을 쓰기 위해 만든 시스템인데, 핵심 발상이 "데이터(HDFS 파일)와 스키마(Metastore)를 분리"하는 것이었다. 이 분리가 곧 **schema-on-read**다. 데이터를 쓸 때 스키마를 강제하는 전통 DB(schema-on-write)와 달리, 데이터 레이크는 일단 원본을 저장하고 읽을 때 스키마를 적용한다. 덕분에 다양한 포맷·소스의 데이터를 유연하게 수용할 수 있다.
 
 | 구분 | schema-on-write (전통 DB) | schema-on-read (데이터 레이크) |
 |------|--------------------------|------------------------------|
@@ -69,7 +69,7 @@ glue.create_crawler(
 glue.start_crawler(Name="transactions-crawler")
 ```
 
-> 🔍 **더 깊이**: 크롤러는 같은 폴더에 스키마가 다른 파일들이 섞여 있으면 **여러 테이블로 쪼개거나 하나로 합치거나** 한다. 이 동작은 크롤러 설정의 "schema change policy"와 "grouping behavior"로 제어한다. 시험 함정: 크롤러를 다시 돌렸을 때 새 컬럼이 추가되면 기본적으로 스키마를 업데이트하지만, 컬럼 삭제는 정책에 따라 무시할 수도 있다. 또한 크롤러가 파티션을 매번 풀스캔하지 않게 "crawl new folders only" 옵션을 쓰면 비용이 준다.
+크롤러는 같은 폴더에 스키마가 다른 파일들이 섞여 있으면 **여러 테이블로 쪼개거나 하나로 합치거나** 한다. 이 동작은 크롤러 설정의 "schema change policy"와 "grouping behavior"로 제어한다. 시험 함정: 크롤러를 다시 돌렸을 때 새 컬럼이 추가되면 기본적으로 스키마를 업데이트하지만, 컬럼 삭제는 정책에 따라 무시할 수도 있다. 또한 크롤러가 파티션을 매번 풀스캔하지 않게 "crawl new folders only" 옵션을 쓰면 비용이 준다.
 
 **새 파티션을 인식시키는 방법은 크롤러만 있는 게 아니다.**
 
@@ -127,7 +127,7 @@ Glue Job의 과금 단위는 **DPU(Data Processing Unit)** — 4 vCPU + 16GB 메
 
 작은 데이터에 Spark Job을 쓰면 클러스터 시작 오버헤드 때문에 느리고 비싸다. 시험에서 "수 MB의 작은 변환"이면 Python Shell이 더 적합하다.
 
-> 💡 **관련 이론**: ETL(Extract-Transform-Load)과 ELT(Extract-Load-Transform)의 차이를 알아두자. 전통 ETL은 변환을 먼저 하고 데이터웨어하우스에 적재한다. 클라우드 데이터 레이크에서는 일단 Raw로 적재(Load)한 뒤 변환(Transform)하는 ELT가 흔하다. S3가 싸고, 컴퓨트를 분리할 수 있기 때문이다. Glue는 둘 다 지원하지만, 데이터 레이크 맥락에서는 ELT 패턴이 자주 쓰인다.
+ETL(Extract-Transform-Load)과 ELT(Extract-Load-Transform)의 차이를 알아 둘 필요가 있다. 전통 ETL은 변환을 먼저 하고 데이터웨어하우스에 적재한다. 클라우드 데이터 레이크에서는 일단 Raw로 적재(Load)한 뒤 변환(Transform)하는 ELT가 흔하다. S3가 싸고, 컴퓨트를 분리할 수 있기 때문이다. Glue는 둘 다 지원하지만, 데이터 레이크 맥락에서는 ELT 패턴이 자주 쓰인다.
 
 ## Glue DataBrew: 노코드 데이터 준비
 
@@ -147,7 +147,7 @@ Glue Job의 과금 단위는 **DPU(Data Processing Unit)** — 4 vCPU + 16GB 메
 | 재사용 단위 | 스크립트 | 레시피(recipe) |
 | 정답 키워드 | "대규모 변환", "커스텀 로직" | "노코드", "비기술 사용자", "프로파일링" |
 
-> 🔍 **더 깊이**: DataBrew의 진짜 가치는 ML 전처리에서의 **데이터 프로파일링**이다. 모델을 만들기 전 "이 컬럼의 결측률이 40%다", "이 피처는 타깃과 상관이 0이다" 같은 사실을 코드 없이 빠르게 발견할 수 있다. 이는 Day 3에서 다룰 EDA(탐색적 데이터 분석)와 직결된다.
+DataBrew의 진짜 가치는 ML 전처리에서의 **데이터 프로파일링**이다. 모델을 만들기 전 "이 컬럼의 결측률이 40%다", "이 피처는 타깃과 상관이 0이다" 같은 사실을 코드 없이 빠르게 발견할 수 있다. 이는 Day 3에서 다룰 EDA(탐색적 데이터 분석)와 직결된다.
 
 ## 전체 그림: 수집 → 카탈로그 → 변환
 
