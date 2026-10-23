@@ -18,11 +18,11 @@ Trusted Advisor의 다섯 카테고리를 그냥 외우면 시험은 통과하�
 
 이 매핑을 알면 시험에서 헷갈리는 함정 하나가 풀린다 — **Compliance(규정 준수)는 다섯 카테고리에 없다.** 규정 준수는 Trusted Advisor가 아니라 AWS Config(커스텀 규칙 평가)와 Audit Manager(감사 보고서)의 영역이다. Trusted Advisor는 "모범 사례를 따르고 있나"를 보지, "특정 규제 조항을 만족하나"를 보지 않는다.
 
-> 💡 **관련 이론**: Trusted Advisor가 작동하는 방식은 소프트웨어 공학의 **정적 분석(static analysis)·린팅(linting)**과 같은 발상이다. ESLint나 SonarQube가 코드를 실행하지 않고도 "여기 SQL 인젝션 위험", "여기 미사용 변수"를 잡아내듯, Trusted Advisor는 계정 설정을 실행해보지 않고도 구성(configuration)을 스캔해 안티패턴을 잡는다. 둘 다 "알려진 나쁜 패턴의 룰셋"을 입력에 대조하는 룰 기반 엔진이다. 차이는 대상이 소스 코드냐 클라우드 리소스 구성이냐일 뿐이다. 이 발상이 클라우드 전반으로 확장된 것이 Policy as Code(OPA, AWS Config Rules)이고, Trusted Advisor는 AWS가 미리 짜둔 룰셋을 관리형으로 제공하는 버전이다.
+Trusted Advisor가 작동하는 방식은 소프트웨어 공학의 **정적 분석(static analysis)·린팅(linting)**과 같은 발상이다. ESLint나 SonarQube가 코드를 실행하지 않고도 "여기 SQL 인젝션 위험", "여기 미사용 변수"를 잡아내듯, Trusted Advisor는 계정 설정을 실행해보지 않고도 구성(configuration)을 스캔해 안티패턴을 잡는다. 둘 다 "알려진 나쁜 패턴의 룰셋"을 입력에 대조하는 룰 기반 엔진이다. 차이는 대상이 소스 코드냐 클라우드 리소스 구성이냐일 뿐이다. 이 발상이 클라우드 전반으로 확장된 것이 Policy as Code(OPA, AWS Config Rules)이고, Trusted Advisor는 AWS가 미리 짜둔 룰셋을 관리형으로 제공하는 버전이다.
 
 ## Support 플랜이 점검 범위를 가르는 이유 — 비즈니스 모델의 경계선
 
-Trusted Advisor에서 가장 자주 출제되는 함정은 "무료 계정은 비용 최적화 체크를 못 본다"는 것이다. 이건 기술적 제약이 아니라 **AWS Support의 비즈니스 모델**이 만든 경계다. Trusted Advisor의 전체 체크는 사실상 컨설팅 서비스이고, AWS는 이 부가가치를 유료 Support 플랜(Business 이상)에 묶어둔다.
+Trusted Advisor에서 가장 출제되는 함정은 "무료 계정은 비용 최적화 체크를 못 본다"는 것이다. 이건 기술적 제약이 아니라 **AWS Support의 비즈니스 모델**이 만든 경계다. Trusted Advisor의 전체 체크는 사실상 컨설팅 서비스이고, AWS는 이 부가가치를 유료 Support 플랜(Business 이상)에 묶어둔다.
 
 | 플랜 | Trusted Advisor 접근 |
 |------|----------------------|
@@ -31,7 +31,7 @@ Trusted Advisor에서 가장 자주 출제되는 함정은 "무료 계정은 비
 
 무료(Basic/Developer)에서 볼 수 있는 핵심 체크는 보안과 서비스 한도에 집중돼 있다 — 이것들은 "방치하면 AWS 플랫폼 전체에 해가 되는" 항목이라 AWS가 무료로라도 경고해준다. 공개된 S3 버킷, 0.0.0.0/0으로 열린 특정 포트, MFA 없는 Root, 공개된 EBS/RDS 스냅샷, 서비스 한도 임박 — 이런 항목은 그대로 두면 보안 사고나 운영 중단으로 이어져 AWS도 손해이기 때문이다. 반면 비용 최적화(미사용 리소스 정리, RI 권장)는 순수하게 고객의 돈을 아끼는 부가가치이므로 유료 영역에 둔다.
 
-> 🔍 **더 깊이**: Trusted Advisor 체크는 **자동 새로고침 주기**가 카테고리마다 다르다. 일부는 자동으로 5분~1주 간격으로 갱신되지만, 일부는 수동 새로고침(`refresh-trusted-advisor-check`)을 해야 즉시 결과가 반영된다. 이게 운영에서 중요한 이유는 "방금 보안 그룹을 고쳤는데 Trusted Advisor가 아직 빨간불"인 상황 때문이다 — 설정은 바꿨지만 체크가 아직 갱신 안 된 것이다. Enterprise Support 고객은 추가로 **Trusted Advisor Priority**를 받는데, 이는 AWS의 TAM(Technical Account Manager)이 큐레이션한 우선순위 권장으로, 수백 개 체크 중 "지금 당장 봐야 할 것"을 사람이 골라준다. 자동 체크 위에 사람의 판단을 얹은 계층이다.
+Trusted Advisor 체크는 **자동 새로고침 주기**가 카테고리마다 다르다. 일부는 자동으로 5분~1주 간격으로 갱신되지만, 일부는 수동 새로고침(`refresh-trusted-advisor-check`)을 해야 즉시 결과가 반영된다. 이게 운영에서 중요한 이유는 "방금 보안 그룹을 고쳤는데 Trusted Advisor가 아직 빨간불"인 상황 때문이다 — 설정은 바꿨지만 체크가 아직 갱신 안 된 것이다. Enterprise Support 고객은 추가로 **Trusted Advisor Priority**를 받는데, 이는 AWS의 TAM(Technical Account Manager)이 큐레이션한 우선순위 권장으로, 수백 개 체크 중 "지금 당장 봐야 할 것"을 사람이 골라준다. 자동 체크 위에 사람의 판단을 얹은 계층이다.
 
 ## 점검을 행동으로 — EventBridge로 자동 대응 파이프라인 만들기
 
@@ -53,7 +53,7 @@ EventBridge Rule (source: aws.trustedadvisor, detail.status: [ERROR, WARN])
 
 여기서 한 가지 설계 판단이 갈린다 — **자동 복구(auto-remediation)를 어디까지 할 것인가.** "0.0.0.0/0 SSH를 자동으로 닫기"는 안전해 보이지만, 만약 그게 의도된 임시 접근이었다면 자동 차단이 운영을 방해한다. 그래서 성숙한 조직은 보통 "위험도 높고 명백한 위반(공개 S3, Root MFA 없음)"만 자동 복구하고, 애매한 항목은 알림 + OpsItem 생성에 그쳐 사람의 판단을 남긴다.
 
-> 📚 **사례**: 2017년 컨설팅 기업 Accenture, 2017년 Verizon, 2019년 미국 통신사 등 수많은 대형 유출 사고의 공통 원인이 **공개로 잘못 설정된 S3 버킷**이었다. 민감 데이터가 담긴 버킷이 인터넷에 노출됐고, 보안 연구자나 공격자가 이를 스캔으로 발견했다. 이 사고들의 교훈은 "설정 실수는 반드시 일어난다"는 것이고, 그래서 Trusted Advisor의 무료 체크에 **공개 S3 버킷 탐지**가 포함된 것이다. 나아가 AWS는 이후 S3 Block Public Access(계정·버킷 레벨 차단), Access Analyzer(외부 접근 분석), Macie(민감 데이터 자동 탐지)를 잇따라 내놨다. Trusted Advisor의 공개 S3 체크는 이 방어 계층의 가장 바깥, 가장 저렴한 첫 그물이다 — EventBridge로 자동 알림까지 걸어두면 노출이 발생한 순간 운영팀이 안다.
+2017년 컨설팅 기업 Accenture, 2017년 Verizon, 2019년 미국 통신사 등 수많은 대형 유출 사고의 공통 원인이 **공개로 잘못 설정된 S3 버킷**이었다. 민감 데이터가 담긴 버킷이 인터넷에 노출됐고, 보안 연구자나 공격자가 이를 스캔으로 발견했다. 이 사고들의 교훈은 "설정 실수는 반드시 일어난다"는 것이고, 그래서 Trusted Advisor의 무료 체크에 **공개 S3 버킷 탐지**가 포함된 것이다. 나아가 AWS는 이후 S3 Block Public Access(계정·버킷 레벨 차단), Access Analyzer(외부 접근 분석), Macie(민감 데이터 자동 탐지)를 잇따라 내놨다. Trusted Advisor의 공개 S3 체크는 이 방어 계층의 가장 바깥, 가장 저렴한 첫 그물이다 — EventBridge로 자동 알림까지 걸어두면 노출이 발생한 순간 운영팀이 안다.
 
 ## Service Limits — 80%에서 울리는 사전 경보의 가치
 
@@ -65,7 +65,7 @@ Trusted Advisor의 Service Limits 체크는 한도의 **80%에 도달하면 미�
 
 ## 비슷한 도구들과의 경계 — 무엇이 어디까지 보나
 
-Trusted Advisor는 광범위하지만 만능이 아니다. 시험은 "이 상황엔 Trusted Advisor가 아니라 X"를 정확히 가르는 문제를 자주 낸다. 핵심은 각 도구의 **고유 영역**을 아는 것이다.
+Trusted Advisor는 광범위하지만 만능이 아니다. 시험은 "이 상황엔 Trusted Advisor가 아니라 X"를 정확히 가르는 문제를 낸다. 각 도구의 **고유 영역**을 아는 것이 중요하다.
 
 | 도구 | 고유 역할 | Trusted Advisor와의 차이 |
 |------|-----------|--------------------------|
@@ -77,17 +77,17 @@ Trusted Advisor는 광범위하지만 만능이 아니다. 시험은 "이 상황
 
 경계를 가르는 질문은 "규칙을 내가 정의해야 하나?"이다. "회사 표준에 맞는 커스텀 규칙(예: 모든 EBS는 암호화 필수)"이면 Config Rule이다. "구성 변경의 시점별 이력과 누가 바꿨나"도 Config다. Trusted Advisor는 AWS가 고정한 룰셋만 제공하므로 커스텀이 안 된다. 반면 "AWS 모범 사례 전반을 한눈에"는 Trusted Advisor가 가장 넓다.
 
-> 💡 **관련 이론**: Trusted Advisor·Config·Security Hub의 관계는 관측가능성(observability)의 **수집-평가-집계** 계층 구조로 볼 수 있다. Config가 리소스 구성의 원천 데이터(시점별 스냅샷)를 수집하고, 그 위에서 Config Rules와 Trusted Advisor가 규칙 평가를 하고, Security Hub가 여러 평가 결과(GuardDuty, Inspector, Macie, Config 등)를 하나의 finding 포맷(ASFF, AWS Security Finding Format)으로 정규화해 집계한다. 이는 로그·메트릭·트레이스를 수집해 상위에서 상관분석하는 옵저버빌리티 파이프라인과 같은 구조다. 각 도구를 따로 외우기보다 "원천(Config) → 평가(TA/Rules) → 집계(Security Hub)"의 흐름으로 이해하면 어느 상황에 무엇이 답인지 자연스럽게 갈린다.
+Trusted Advisor·Config·Security Hub의 관계는 관측가능성(observability)의 **수집-평가-집계** 계층 구조로 볼 수 있다. Config가 리소스 구성의 원천 데이터(시점별 스냅샷)를 수집하고, 그 위에서 Config Rules와 Trusted Advisor가 규칙 평가를 하고, Security Hub가 여러 평가 결과(GuardDuty, Inspector, Macie, Config 등)를 하나의 finding 포맷(ASFF, AWS Security Finding Format)으로 정규화해 집계한다. 이는 로그·메트릭·트레이스를 수집해 상위에서 상관분석하는 옵저버빌리티 파이프라인과 같은 구조다. 각 도구를 따로 외우기보다 "원천(Config) → 평가(TA/Rules) → 집계(Security Hub)"의 흐름으로 이해하면 어느 상황에 무엇이 답인지 자연스럽게 갈린다.
 
 ## 곁가지지만 자주 묶여 나오는 둘 — Health Dashboard와 Cost Anomaly Detection
 
-Trusted Advisor와 함께 운영 점검 맥락에서 자주 출제되는 두 서비스가 있다. **AWS Health Dashboard**는 Trusted Advisor와 방향이 반대다 — Trusted Advisor가 "내 계정 설정의 문제"를 보는 반면, Health Dashboard는 "**AWS 쪽에서 일어나는 일**"을 본다. 공개 Service Health Dashboard는 전체 서비스 장애를 보여주고, **Personal Health Dashboard(PHD)**는 내 계정에 실제로 영향을 주는 이벤트만 추린다 — 내 EC2 호스트의 retirement 예정, 내 EBS 볼륨 성능 저하, 내 RDS의 유지보수 윈도우. 이것도 EventBridge로 받아 사전 대응(미리 인스턴스 마이그레이션)을 자동화한다.
+Trusted Advisor와 함께 운영 점검 맥락에서 출제되는 두 서비스가 있다. **AWS Health Dashboard**는 Trusted Advisor와 방향이 반대다 — Trusted Advisor가 "내 계정 설정의 문제"를 보는 반면, Health Dashboard는 "**AWS 쪽에서 일어나는 일**"을 본다. 공개 Service Health Dashboard는 전체 서비스 장애를 보여주고, **Personal Health Dashboard(PHD)**는 내 계정에 실제로 영향을 주는 이벤트만 추린다 — 내 EC2 호스트의 retirement 예정, 내 EBS 볼륨 성능 저하, 내 RDS의 유지보수 윈도우. 이것도 EventBridge로 받아 사전 대응(미리 인스턴스 마이그레이션)을 자동화한다.
 
 **Cost Anomaly Detection**은 비용 점검의 ML 버전이다. Trusted Advisor의 비용 체크가 "미사용 리소스" 같은 룰 기반 정적 점검이라면, Cost Anomaly Detection은 계정의 비용 패턴을 학습해 **평소와 다른 spike를 통계적으로 탐지**한다. 갑자기 데이터 전송 비용이 평소의 3배가 되면, 어떤 고정 임계값을 넘지 않았어도 "이건 비정상"이라고 알린다. 핵심 구분은 이것이 **탐지(detection)이지 차단(block)이 아니라는** 점이다 — 알림만 줄 뿐 비용 발생을 막지는 않는다. 차단은 다음 글의 Budgets Action 몫이다.
 
 > ⚠️ **함정**: Cost Anomaly Detection과 Budgets를 혼동하면 안 된다. Budgets는 "고정 임계값"(월 $5,000)을 정해두고 넘으면 알리는 룰 기반이고, Cost Anomaly Detection은 "평소 패턴 대비 이상치"를 ML로 잡는다. 정상적으로 점증하는 비용은 Anomaly가 안 잡지만 Budgets는 임계 넘으면 잡고, 반대로 임계 안에서의 갑작스러운 spike는 Budgets가 못 잡지만 Anomaly는 잡는다. 둘은 보완 관계다. 그리고 둘 다 PHD처럼 "탐지·알림"이지 "차단"은 Budgets Action에서만 된다.
 
-## 정리하며
+## 정리
 
 Trusted Advisor는 AWS가 수백만 고객의 실패에서 학습한 모범 사례를 다섯 카테고리의 자동 체크로 코드화한 도구다. 그 다섯이 Well-Architected의 기둥과 포개진다는 것을 알면 본질이 보인다 — 정성적 프레임워크를 자동 점검 가능한 린터로 만든 것이다.
 
