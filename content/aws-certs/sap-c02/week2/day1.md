@@ -23,7 +23,7 @@
 
 > 🔍 **더 깊이**: AWS 계정 경계의 강력함은 API 레벨에서 명시적으로 구현돼 있다. 한 계정의 IAM User는 다른 계정의 리소스를 **기본적으로 절대 못 본다**. 보려면 (1) Cross-Account Role + (2) Resource Policy + (3) STS AssumeRole이라는 세 게이트를 모두 통과해야 한다. 반면 같은 계정 안에서는 IAM 정책 하나만 잘못 쓰면 다른 팀 리소스에 접근 가능. 그래서 "Dev/Prod 분리" 같은 격리는 IAM이 아니라 **계정 분리**로 강제하는 게 표준.
 
-> 📚 **사례**: 2019년 Capital One 사고에서 만약 prod와 staging이 다른 계정이었다면 공격자가 staging의 IAM Role로 prod S3에 접근할 수 없었다. 같은 계정에 있었기에 EC2 IAM Role 하나가 production data까지 가져왔다. 사고 후 Capital One은 "**Account Vending Machine**"이라는 자체 도구로 모든 워크로드 그룹을 별도 계정으로 분리했다. 이 사상이 AWS Control Tower의 Account Factory에 그대로 반영된다.
+> 📚 **사례**: 2019년 Capital One 사고에서는 잘못 구성된 WAF를 통한 SSRF로 탈취된 EC2 IAM Role 하나의 권한으로 많은 S3 버킷의 데이터를 읽을 수 있었다. 데이터가 별도 계정에 격리되고 그 역할의 권한이 좁았다면 폭발 반경은 훨씬 작았을 것이다. 이처럼 워크로드와 데이터를 계정 단위로 격리하는 사상이 AWS Control Tower의 Account Factory에 반영돼 있다.
 
 ## AWS Organizations 구조: Root, OU, Account의 3층
 

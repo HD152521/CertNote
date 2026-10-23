@@ -52,7 +52,7 @@
 
 1. **Management Account에 워크로드 두기**: SCP가 안 통하는 계정인데 EC2·RDS를 띄워두면 root 키 유출 시 무방비. AWS Landing Zone 표준은 management = 결제·org 관리만, 워크로드는 별도 OU의 member 계정.
 2. **단일 AZ에 NAT GW / RDS Single-AZ / NLB 단일 AZ 등록**: 비용을 아끼려다 AZ 하나가 흔들리면 전체 down. NAT GW는 AZ 단위 리소스이고 자동 페일오버가 없다.
-3. **IAM User + access key 영구 발급**: 회전 누락·offboarding 누락이 사고 1순위. 2019년 Capital One, 2022년 Uber 사건 모두 자격증명 관리의 실패였다. 답은 Identity Center + IdP 페더레이션.
+3. **IAM User + access key 영구 발급**: 회전 누락·offboarding 누락이 사고 1순위. 2022년 Uber 사건도 자격증명 관리의 실패였다. 답은 Identity Center + IdP 페더레이션.
 4. **us-east-1 의존성 무시**: IAM·Route 53 public zone·CloudFront·Organizations의 write는 us-east-1 컨트롤 플레인에 의존한다. 글로벌 서비스라고 안심하면 2021년 12월 같은 장애에 휘말린다.
 5. **IMDSv1을 명시적으로 끄지 않음**: 신규 EC2도 launch template / SCP / Config로 강제하지 않으면 운영자가 실수로 v1을 띄울 수 있다. SSRF 공격의 진입점.
 6. **CloudTrail / Config을 member 계정에서 개별 관리**: 누가 비활성화했는지를 그 계정 trail로 확인해야 하는 자기참조 문제. 답은 Organization Trail + Log Archive Account + S3 Object Lock.

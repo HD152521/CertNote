@@ -23,7 +23,7 @@ STS의 핵심 API는 다섯 가지다.
 
 > 🔍 **더 깊이**: AssumeRole이 반환하는 자격증명은 ① AccessKeyId(시작이 `ASIA`로 다름, 영구 키는 `AKIA`), ② SecretAccessKey, ③ **SessionToken**(JWT 비슷한 구조의 base64 문자열) 3종 세트다. SDK가 API를 호출할 때 SigV4 서명에 모든 3개를 사용한다. AWS 서비스는 받은 SessionToken을 STS 공개키로 검증해 만료 여부와 권한을 확인한다. 영구 키와 달리 임시 키는 STS 측에서 즉시 revoke가 가능하다(`aws sts revoke-credentials` 또는 `revoke older sessions` 액션). 더 흥미로운 점은 SessionToken 안에 원래 Role의 권한 스냅샷이 박혀 있어, 발급 이후 Role의 Permission Policy를 바꿔도 그 세션엔 반영되지 않는다. AWS가 검증을 분산할 수 있는 이유다.
 
-> 💡 **관련 이론**: STS의 임시 자격증명은 OAuth 2.0의 access token, Kerberos의 ticket-granting ticket과 같은 계열의 메커니즘이다. 모두 "단기 유효 토큰 + 갱신 메커니즘"이라는 패턴을 공유한다. 보안 측면에서 이 패턴이 우월한 이유는 **유출되어도 자동으로 무효화된다**는 점. 1시간 후 자동 만료되는 토큰을 훔쳐도 다음 시간엔 못 쓴다. 반면 IAM User의 access key는 명시적으로 회전하지 않는 한 영구 유효하다. 이 차이가 Capital One 사고(IMDSv1으로 EC2의 영구 access key를 훔침)와 Twitter 해킹(직원 세션이 1시간으로 제한됐다면 피해 축소) 양쪽의 핵심이다.
+> 💡 **관련 이론**: STS의 임시 자격증명은 OAuth 2.0의 access token, Kerberos의 ticket-granting ticket과 같은 계열의 메커니즘이다. 모두 "단기 유효 토큰 + 갱신 메커니즘"이라는 패턴을 공유한다. 보안 측면에서 이 패턴이 우월한 이유는 **유출되어도 자동으로 무효화된다**는 점. 1시간 후 자동 만료되는 토큰을 훔쳐도 다음 시간엔 못 쓴다. 반면 IAM User의 access key는 명시적으로 회전하지 않는 한 영구 유효하다. 이 차이가 Capital One 사고(SSRF로 IMDSv1에서 EC2 IAM 역할의 임시 자격증명을 훔침 — 임시 자격증명도 탈취 경로가 열려 있으면 안전하지 않다)와 Twitter 해킹(직원 세션이 1시간으로 제한됐다면 피해 축소) 양쪽의 핵심이다.
 
 > 🔍 **더 깊이**: AccessKeyId의 prefix가 자격증명 종류를 알려준다. `AKIA`는 영구 IAM User key, `ASIA`는 STS 임시 키, `AROA`는 Role 식별자, `AGPA`는 Group, `AIDA`는 User. 보안 도구가 GitHub에 키가 노출됐는지 검사할 때 이 prefix로 정규식을 짠다. truffleHog, GitGuardian 같은 도구가 정확히 이 패턴을 본다. `ASIA`로 시작하는 키가 노출되면 정상적으론 곧 만료되지만, 발급 후 12시간 이내라면 여전히 위험하다.
 

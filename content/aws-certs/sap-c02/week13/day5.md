@@ -24,7 +24,7 @@ Well-Architected Framework는 2015년 5 기둥(Ops, Security, Reliability, Perfo
 
 핵심 키워드: **최소 권한**(IAM, ABAC), **암호화**(KMS, ACM, Secrets Manager), **감사**(CloudTrail, Config), **사고 대응**(GuardDuty, Security Hub, Detective), **네트워크 분리**(VPC, Security Group, NACL, AWS Network Firewall).
 
-> 📚 **사례**: 2019년 Capital One 사고는 SSRF 취약점으로 EC2 메타데이터에서 IAM 자격증명을 탈취 → S3에서 1억 명 데이터 유출. AWS의 대응: **IMDSv2** 의무화(token 기반 메타데이터), **GuardDuty**에 자동 탐지 추가. 이후 모든 신규 EC2는 IMDSv2를 권장한다. 핵심 교훈은 책임 공유 모델에서 이 사고가 전적으로 **고객 책임 영역**(잘못 구성된 WAF + 과도한 IAM 권한)에서 발생했다는 점이다 — AWS 인프라 자체는 뚫리지 않았다. Security 기둥의 "최소 권한"과 "모든 계층 보안"이 왜 비협상 원칙인지를 보여준다.
+> 📚 **사례**: 2019년 Capital One 사고는 SSRF 취약점으로 EC2 메타데이터에서 IAM 자격증명을 탈취 → S3에서 1억 명 데이터 유출. AWS의 대응: **IMDSv2** 도입(token 기반 메타데이터), **GuardDuty**에 자동 탐지 추가. 이후 모든 신규 EC2는 IMDSv2를 권장한다. 핵심 교훈은 책임 공유 모델에서 이 사고가 전적으로 **고객 책임 영역**(잘못 구성된 WAF + 과도한 IAM 권한)에서 발생했다는 점이다 — AWS 인프라 자체는 뚫리지 않았다. Security 기둥의 "최소 권한"과 "모든 계층 보안"이 왜 비협상 원칙인지를 보여준다.
 
 > 💡 **관련 이론**: Security 기둥의 진화 방향은 **Zero Trust**(NIST SP 800-207)다. "네트워크 위치를 신뢰 근거로 삼지 않고 모든 요청을 매번 검증"하는 모델로, 전통적 성벽(perimeter) 보안을 대체한다. AWS에서는 IAM 권한 검증, VPC 내부에서도 SG 세분화, IMDSv2의 token 요구, mTLS가 모두 Zero Trust 구현이다. Capital One 사고가 "경계 안에 있다고 신뢰한 메타데이터 엔드포인트"가 공격 표면이 된 사례라는 점에서, Zero Trust 전환의 직접 계기가 됐다.
 
