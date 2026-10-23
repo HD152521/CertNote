@@ -1,45 +1,103 @@
 import Link from 'next/link';
-import { BookOpen, Timer, RefreshCw, ArrowRight, Check, TrendingUp } from 'lucide-react';
+import { BookOpen, Timer, RefreshCw, ArrowRight, Check, TrendingUp, ListChecks, Lock, Unlock } from 'lucide-react';
 import { certHref } from '@/lib/content';
 import type { CertMeta } from '@/lib/content';
 import { JsonLd } from '@/components/JsonLd';
 import { buildFaqPageLd, type FaqEntry } from '@/lib/structuredData';
+import { DAILY_STUDY_MINUTES } from '@/lib/studyTime';
 
-const HIGHLIGHTS = [
-  {
-    icon: BookOpen,
-    title: '한국어 유일의 체계적 커리큘럼',
-    body: '12주 주차별 구조화된 학습. Udemy의 산만함은 없고, Coursera처럼 명확한 끝이 있습니다.',
-  },
-  {
-    icon: RefreshCw,
-    title: '간격반복 복습 (SRS)',
-    body: '틀린 문제를 잊을 때쯤 다시 보여주는 간격반복으로 장기 기억에 남깁니다.',
-  },
-  {
-    icon: Timer,
-    title: '실전 모의고사',
-    body: '실제 시험처럼 타이머와 합/불 채점. 약점을 데이터로 확인하고 보완하세요.',
-  },
-];
+interface WeekSpan {
+  min: number;
+  max: number;
+}
 
-// SAA-C03는 구직공고의 80%에 나타나는 가장 인기있는 자격증. 우선 노출.
+// 주차 범위는 meta.json 에서 파생한다(자격증이 늘거나 커리큘럼이 바뀌면 문구가 따라온다).
+// section 미기재 메타는 aws 로 본다(Phase0 이전 데이터 하위호환 — category.ts 와 동일 규칙).
+function spanOf(list: CertMeta[]): WeekSpan | null {
+  if (list.length === 0) return null;
+  const weeks = list.map((c) => c.weeks);
+  return { min: Math.min(...weeks), max: Math.max(...weeks) };
+}
+
+function formatSpan(span: WeekSpan): string {
+  return span.min === span.max ? `${span.min}주` : `${span.min}~${span.max}주`;
+}
+
+// 하이라이트는 사이트의 **전 트랙**(AWS + 리눅스마스터) 범위를 쓰고, FAQ 의 주차 답변은 문구 그대로
+// "AWS 트랙" 범위만 쓴다. 홈 hero 는 AWS 중심이지만 '자격증 트랙 N개' 통계가 전 트랙 기준이라
+// 하이라이트도 같은 모수를 따른다. 두 범위는 같은 certs 에서 나오므로 어느 한쪽만 낡을 수 없다.
+function buildHighlights(trackSpan: WeekSpan | null) {
+  const curriculumBody = trackSpan
+    ? `트랙마다 ${formatSpan(trackSpan)} 분량으로 나뉘어 있고, 하루에 노트 한 편을 읽는 속도로 짰습니다. 오늘 읽을 분량과 마지막 날이 정해져 있어 끝을 가늠하며 공부할 수 있습니다.`
+    : '트랙마다 주차 단위로 나뉘어 있고, 하루에 노트 한 편을 읽는 속도로 짰습니다. 오늘 읽을 분량과 마지막 날이 정해져 있어 끝을 가늠하며 공부할 수 있습니다.';
+  return [
+    {
+      icon: BookOpen,
+      title: '주차별로 끝이 정해진 커리큘럼',
+      body: curriculumBody,
+    },
+    {
+      icon: RefreshCw,
+      title: '간격반복 복습 (SRS)',
+      body: '틀린 문제를 잊을 때쯤 다시 보여주는 간격반복 방식으로 오답을 모아 복습합니다. 무료 회원가입 후 쓸 수 있습니다.',
+    },
+    {
+      icon: Timer,
+      title: '실전 모의고사',
+      body: '실제 시험처럼 타이머를 두고 풀고, 제출하면 합격/불합격으로 채점합니다. 무료 회원가입 후 쓸 수 있습니다.',
+    },
+  ];
+}
+
+// 대표 트랙으로 먼저 노출할 자격증(순서 = 노출 순서). 인기·점유율 순위가 아니라 편집상의 선택이다.
 const POPULAR_SLUGS = ['saa-c03', 'clf-c02', 'linux-master-1'];
-
-const COMPARISON = [
-  { feature: '가격 (월)', certnote: '무료', udemy: '₩15-30K', coursera: '₩40-49K', pluralsight: '₩25K' },
-  { feature: '한국어', certnote: '✅', udemy: '❌', coursera: '❌', pluralsight: '❌' },
-  { feature: 'SRS 복습', certnote: '✅', udemy: '❌', coursera: '❌', pluralsight: '❌' },
-  { feature: '주차별 커리큘럼', certnote: '✅', udemy: '❌', coursera: '✅', pluralsight: '❌' },
-  { feature: '실전 모의고사', certnote: '✅', udemy: '별도', coursera: '✅', pluralsight: '✅' },
-  { feature: '오답노트 자동복습', certnote: '✅', udemy: '❌', coursera: '❌', pluralsight: '❌' },
-];
 
 interface LandingProps {
   certCount: number;
   pageCount: number;
   questionCount: number;
   certs: CertMeta[];
+}
+
+// "무엇을 받나" 카드. 수치는 props 에서만 온다 — 모의고사·복습처럼 props 로 셀 수 없는 항목에는 숫자를 쓰지 않는다.
+// access: open = 로그인 없이, account = 무료 가입 필요. 접근 정책(policy.ts PAYWALL_ENABLED=false) 기준이며
+// 페이월을 되살리면 FAQ 와 함께 고쳐야 한다.
+type Access = 'open' | 'account';
+
+interface OfferCard {
+  title: string;
+  figure: string | null;
+  body: string;
+  access: Access;
+}
+
+function buildOffers(nf: (n: number) => string, p: Pick<LandingProps, 'certCount' | 'pageCount' | 'questionCount'>): OfferCard[] {
+  return [
+    {
+      title: '심화 노트',
+      figure: `${nf(p.pageCount)}편+`,
+      body: `${nf(p.certCount)}개 트랙의 모든 주차 노트를 로그인 없이 읽을 수 있습니다. 하루 분량마다 개념 설명과 연습 문제를 한 편에 담아 한국어로 정리했습니다.`,
+      access: 'open',
+    },
+    {
+      title: '일일 연습 문제',
+      figure: `${nf(p.questionCount)}문항+`,
+      body: '노트 끝에 그날 배운 내용을 확인하는 문제가 붙어 있습니다. 읽고 바로 풀어 보고 정답과 해설을 확인하는 흐름이며, 로그인 없이 풀 수 있습니다.',
+      access: 'open',
+    },
+    {
+      title: '실전 모의고사',
+      figure: null,
+      body: '타이머를 두고 실제 시험 형식으로 풀고, 제출하면 합격/불합격으로 채점합니다. 모의고사 문제은행이 준비된 트랙에서 응시할 수 있습니다.',
+      access: 'account',
+    },
+    {
+      title: '간격반복 복습',
+      figure: null,
+      body: '틀린 문제는 오답 복습 목록에 쌓이고, 잊을 때쯤 다시 나옵니다. 오답 복습과 학습 기록은 계정에 저장됩니다.',
+      access: 'account',
+    },
+  ];
 }
 
 // 홈 FAQ.
@@ -55,7 +113,11 @@ interface LandingProps {
 // ⚠️ 접근 정책 정직성: 구독제 보류(policy.ts PAYWALL_ENABLED=false) 기준 문구다 — 노트는 전부
 // 로그인 없이 열려 있고, 모의고사·AI 설명·복습은 무료 회원가입이 필요하다. 페이월을 되살리면
 // 아래 두 답변부터 고쳐야 한다(문구가 조용히 거짓이 된다).
-function buildFaq(weekSpan: { min: number; max: number } | null): FaqEntry[] {
+function codesAtWeeks(list: CertMeta[], weeks: number): string {
+  return list.filter((c) => c.weeks === weeks).map((c) => c.code).join('·');
+}
+
+function buildFaq(weekSpan: WeekSpan | null, awsCerts: CertMeta[]): FaqEntry[] {
   const faq: FaqEntry[] = [
     {
       q: 'AWS 자격증, 독학으로 준비할 수 있나요?',
@@ -69,7 +131,7 @@ function buildFaq(weekSpan: { min: number; max: number } | null): FaqEntry[] {
   if (weekSpan) {
     faq.push({
       q: '합격까지 얼마나 걸리나요?',
-      a: `자격증마다 다릅니다. CertNote의 AWS 트랙은 ${weekSpan.min}주에서 ${weekSpan.max}주 분량으로 구성되어 있고, 하루 한 편(30분 안팎)을 기준으로 짜여 있습니다. 기초 자격증이 짧고 프로페셔널·전문 분야 자격증이 깁니다.`,
+      a: `자격증마다 다릅니다. CertNote의 AWS 트랙은 ${weekSpan.min}주에서 ${weekSpan.max}주 분량으로 구성되어 있고, 하루 한 편(${DAILY_STUDY_MINUTES}분 안팎)을 기준으로 짜여 있습니다. 가장 짧은 트랙은 ${codesAtWeeks(awsCerts, weekSpan.min)}(${weekSpan.min}주), 가장 긴 트랙은 ${codesAtWeeks(awsCerts, weekSpan.max)}(${weekSpan.max}주)입니다.`,
     });
   }
   faq.push(
@@ -90,14 +152,11 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
   const popular = POPULAR_SLUGS.map((slug) => certs.find((c) => c.slug === slug)).filter(
     (c): c is CertMeta => Boolean(c),
   );
-  // 주차 범위는 meta.json 에서 파생한다(자격증이 늘거나 커리큘럼이 바뀌면 문구가 따라온다).
-  // section 미기재 메타는 aws 로 본다(Phase0 이전 데이터 하위호환 — category.ts 와 동일 규칙).
   const awsCerts = certs.filter((c) => (c.section ?? 'aws') === 'aws');
-  const weekSpan =
-    awsCerts.length > 0
-      ? { min: Math.min(...awsCerts.map((c) => c.weeks)), max: Math.max(...awsCerts.map((c) => c.weeks)) }
-      : null;
-  const faq = buildFaq(weekSpan);
+  const linuxCount = certs.filter((c) => c.section === 'linux').length;
+  const highlights = buildHighlights(spanOf(certs));
+  const offers = buildOffers(nf, { certCount, pageCount, questionCount });
+  const faq = buildFaq(spanOf(awsCerts), awsCerts);
 
   return (
     <div className="mx-auto max-w-4xl space-y-20 py-12">
@@ -105,13 +164,13 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
       <section className="space-y-6">
         <div className="space-y-3">
           <div className="inline-block rounded-full bg-accent/10 px-3 py-1">
-            <p className="text-xs font-medium text-accent">AWS 자격증은 재시험이 아니라, 일회 합격을 목표로.</p>
+            <p className="text-xs font-medium text-accent">한국어 노트 · 연습문제 · 복습으로 준비하는 AWS 자격증 독학 사이트</p>
           </div>
           <h1 className="text-5xl font-bold leading-tight tracking-tight sm:text-6xl">
             한국어로 배우는<br />AWS 자격증 합격 가이드
           </h1>
           <p className="max-w-2xl text-xl text-fg-muted">
-            주차별 구조화된 커리큘럼 • 매일 30분 심화 노트 • 연습문제·모의고사·간격반복 복습까지. 전 과정 무료.
+            주차별 구조화된 커리큘럼 • 매일 {DAILY_STUDY_MINUTES}분 안팎 심화 노트 • 연습문제·모의고사·간격반복 복습까지. 전 과정 무료.
           </p>
         </div>
 
@@ -131,7 +190,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
           </Link>
         </div>
         <p className="text-sm text-fg-faint">
-          ✓ 전 주차 노트 로그인 없이 열람 • ✓ 모의고사·AI 설명은 무료 가입 후 이용
+          ✓ 전 주차 노트·연습문제 로그인 없이 열람 • ✓ 모의고사·복습·AI 설명은 무료 가입 후 이용
         </p>
       </section>
 
@@ -143,7 +202,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
         </div>
         <div className="text-center">
           <p className="text-3xl font-bold">{nf(pageCount)}+</p>
-          <p className="text-sm text-fg-muted mt-1">강의</p>
+          <p className="text-sm text-fg-muted mt-1">심화 노트</p>
         </div>
         <div className="text-center">
           <p className="text-3xl font-bold">{nf(questionCount)}+</p>
@@ -161,10 +220,10 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-accent" />
-              <span className="text-sm font-semibold text-accent">가장 인기있는 자격증</span>
+              <span className="text-sm font-semibold text-accent">대표 트랙</span>
             </div>
             <h2 className="text-3xl font-bold">AWS Solutions Architect Associate (SAA-C03)</h2>
-            <p className="text-lg text-fg-muted">클라우드 직군에서 가장 널리 요구되는 어소시에이트 자격증</p>
+            <p className="text-lg text-fg-muted">아키텍처 설계 직무를 겨냥한 AWS 어소시에이트 레벨 자격증</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Link
@@ -177,7 +236,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
                 <ul className="space-y-1 text-sm text-fg-muted">
                   <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> {popular[0].weeks}주 · 총 {popular[0].dayCount}일 커리큘럼</li>
                   <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> 매일 심화 노트 + 연습 문제</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> 실전 모의고사 · 간격반복 복습</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> 실전 모의고사 · 간격반복 복습 (무료 가입 후 이용)</li>
                 </ul>
               </div>
               <span className="mt-auto flex items-center gap-2 text-sm font-semibold text-accent group-hover:gap-3">
@@ -188,8 +247,8 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
               <p className="font-semibold">CertNote로 SAA 준비하면</p>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>한국어 심화 노트로 개념부터 탄탄히</span></li>
-                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>매일 한 페이지씩, 출퇴근 15분 학습</span></li>
-                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>틀린 문제는 간격반복으로 자동 복습</span></li>
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>매일 한 편씩, 하루 {DAILY_STUDY_MINUTES}분 안팎 학습</span></li>
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>틀린 문제는 간격반복으로 복습 (무료 가입 후 이용)</span></li>
               </ul>
             </div>
           </div>
@@ -198,9 +257,9 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
 
       {/* Features */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-bold">경쟁사와 다른 이유</h2>
+        <h2 className="text-2xl font-bold">CertNote의 학습 방식</h2>
         <div className="grid gap-4 sm:grid-cols-3">
-          {HIGHLIGHTS.map(({ icon: Icon, title, body }) => (
+          {highlights.map(({ icon: Icon, title, body }) => (
             <div key={title} className="rounded-xl border border-border p-5 space-y-3">
               <Icon className="h-6 w-6 text-accent" />
               <div>
@@ -212,33 +271,39 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
         </div>
       </section>
 
-      {/* Price Comparison */}
+      {/* What you get — 경쟁사 가격표를 대체. 수치는 props 에서만 온다. */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-bold">가격 비교: CertNote vs 경쟁사</h2>
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-bg-subtle">
-                <th className="px-4 py-3 text-left font-semibold">기능</th>
-                <th className="px-4 py-3 text-center font-semibold text-accent">CertNote</th>
-                <th className="px-4 py-3 text-center font-semibold">Udemy</th>
-                <th className="px-4 py-3 text-center font-semibold">Coursera</th>
-                <th className="px-4 py-3 text-center font-semibold">Pluralsight</th>
-              </tr>
-            </thead>
-            <tbody>
-              {COMPARISON.map((row, i) => (
-                <tr key={i} className="border-b border-border">
-                  <td className="px-4 py-3 font-medium">{row.feature}</td>
-                  <td className="px-4 py-3 text-center font-semibold text-accent">{row.certnote}</td>
-                  <td className="px-4 py-3 text-center text-fg-muted">{row.udemy}</td>
-                  <td className="px-4 py-3 text-center text-fg-muted">{row.coursera}</td>
-                  <td className="px-4 py-3 text-center text-fg-muted">{row.pluralsight}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold">CertNote에서 받을 수 있는 것</h2>
+          <p className="text-fg-muted">
+            {nf(certCount)}개 트랙 중 AWS 자격증 {nf(awsCerts.length)}개{linuxCount > 0 ? `, 리눅스마스터 ${nf(linuxCount)}개` : ''}.
+            노트와 연습 문제는 로그인 없이 열려 있고, 모의고사와 복습은 무료 계정이 있으면 쓸 수 있습니다.
+          </p>
         </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {offers.map((o) => (
+            <div key={o.title} className="space-y-3 rounded-xl border border-border p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <ListChecks className="h-5 w-5 shrink-0 text-accent" />
+                  <h3 className="font-semibold">{o.title}</h3>
+                </div>
+                {o.figure && <span className="shrink-0 font-mono text-sm font-semibold text-accent">{o.figure}</span>}
+              </div>
+              <p className="text-sm text-fg-muted">{o.body}</p>
+              <p className="flex items-center gap-1.5 text-xs font-medium text-fg-faint">
+                {o.access === 'open' ? (
+                  <><Unlock className="h-3.5 w-3.5" /> 로그인 없이</>
+                ) : (
+                  <><Lock className="h-3.5 w-3.5" /> 무료 가입 필요</>
+                )}
+              </p>
+            </div>
+          ))}
+        </div>
+        <p className="text-sm text-fg-muted">
+          AI 오답 설명은 이메일 인증을 마친 계정에서 하루 3번까지 쓸 수 있습니다. 모든 기능이 무료입니다.
+        </p>
       </section>
 
       {/* More Certs */}
@@ -246,7 +311,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
         <section className="space-y-4">
           <div className="space-y-2">
             <h2 className="text-2xl font-bold">다른 자격증도 준비하세요</h2>
-            <p className="text-fg-muted">SAA 합격 후, 다음 단계로: DVA (개발자) → SAP (아키텍트) → 전문 분야별</p>
+            <p className="text-fg-muted">입문용 Cloud Practitioner와 리눅스마스터 트랙도 같은 구조(주차별 노트, 하루 한 편, 연습 문제)로 열려 있습니다.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {popular.slice(1).map((cert) => (

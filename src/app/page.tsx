@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { HomeLanding } from '@/components/marketing/HomeLanding';
+import { DAILY_STUDY_MINUTES } from '@/lib/studyTime';
 
 // 홈 canonical. 과거 루트 레이아웃(src/app/layout.tsx)에 있던 전역 선언을 이곳으로 옮겼다
 // (docs/SEO-indexing-fix-plan.md Step 2) — 다른 라우트로 상속되지 않도록 홈 페이지 자신이 소유한다.
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
   // template 은 하위 route segment 에만 붙는데, app/page.tsx 는 app/layout.tsx 와 같은
   // 세그먼트다(실측: 홈 title 에는 접미사가 없고 /aws/reviews 에는 붙는다).
   // 따라서 브랜드명을 직접 넣는다. 지우면 SERP 에서 브랜드가 사라진다.
-  title: 'AWS 자격증 공부·독학 — 하루 30분 무료 한국어 학습 노트 | CertNote',
+  title: `AWS 자격증 공부·독학 — 하루 ${DAILY_STUDY_MINUTES}분 무료 한국어 학습 노트 | CertNote`,
   description: '주차별 커리큘럼으로 AWS 자격증 독학. 심화 노트·연습문제·간격반복 복습. 전 과정 무료.',
   alternates: { canonical: '/' },
 };

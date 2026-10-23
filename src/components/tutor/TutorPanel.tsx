@@ -6,7 +6,7 @@ import { Sparkles, Send } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n-client';
 import { pick } from '@/lib/strings/dict';
 import { shellStrings } from '@/lib/strings/shell';
-import { classifyTutorFailure } from '@/lib/tutor/tutorClient';
+import { classifyTutorFailure, tutorFailureMessage } from '@/lib/tutor/tutorClient';
 import { TutorUnverifiedNotice } from './TutorUnverifiedNotice';
 
 interface TutorPanelProps {
@@ -18,16 +18,6 @@ interface Turn {
   role: 'user' | 'assistant';
   text: string;
 }
-
-// API가 돌려주는 error 코드 → 사전 키. 코드에 없는 값은 서버 message나 기본 문구로 폴백.
-const ERR_KEY = {
-  rate_limited: 'tutorRateLimited',
-  tutor_unavailable: 'tutorUnavailable',
-  question_not_found: 'tutorQuestionNotFound',
-  global_limit: 'tutorGlobalLimit',
-  tutor_failed: 'tutorStreamFailed',
-  invalid_selected: 'tutorInvalidSelected',
-} as const;
 
 // 오답 직후 노출되는 AI 설명 패널. 이메일 인증된 로그인 계정 전용(서버 게이팅, 계정당 하루 3회) —
 // 비로그인은 가입 안내로, 미인증은 인증 메일 안내(+재발송)로 수렴한다.
@@ -61,6 +51,9 @@ export function TutorPanel({ questionId, selected }: TutorPanelProps) {
         const data = await res.json().catch(() => ({}));
         const failure = classifyTutorFailure(res.status, data);
         if (failure.kind === 'login') {
+          // '인증했어요' 재시도 중 세션이 만료돼 401 이 와도 인증 안내(stale '아직 미인증')가 남지 않고 로그인 안내가 뜬다.
+          setNeedVerify(false);
+          setStillUnverified(false);
           setNeedLogin(true);
           return;
         }
@@ -69,8 +62,8 @@ export function TutorPanel({ questionId, selected }: TutorPanelProps) {
           setStillUnverified(isRetry);
           return;
         }
-        const errKey = ERR_KEY[failure.code as keyof typeof ERR_KEY];
-        setError((errKey && s[errKey]) || failure.message || s.tutorLoadFailed);
+        setStillUnverified(false); // 직전 재시도의 '아직 미인증' 문구가 이번 오류를 가리지 않게 한다.
+        setError(tutorFailureMessage(failure, s));
         return;
       }
       setNeedVerify(false);
@@ -88,6 +81,7 @@ export function TutorPanel({ questionId, selected }: TutorPanelProps) {
       setTurns((prev) => [...prev, { role: 'assistant', text: acc }]);
       setStreaming('');
     } catch {
+      setStillUnverified(false);
       setError(s.networkError);
     } finally {
       setBusy(false);
@@ -121,7 +115,12 @@ export function TutorPanel({ questionId, selected }: TutorPanelProps) {
   }
 
   if (needVerify) {
-    return <TutorUnverifiedNotice onRetry={() => void ask(lastHistory.current, true)} checking={busy} stillUnverified={stillUnverified} />;
+    return <TutorUnverifiedNotice
+        onRetry={() => void ask(lastHistory.current, true)}
+        checking={busy}
+        stillUnverified={stillUnverified}
+        retryError={error}
+      />;
   }
 
   if (needLogin) {

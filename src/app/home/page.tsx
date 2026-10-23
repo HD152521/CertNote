@@ -32,6 +32,9 @@ export default async function StudyHomePage() {
   if (!session) return <HomeLanding />;
 
   const certs = await listCerts(DEFAULT_CATEGORY);
+  const awsCount = certs.filter((c) => (c.section ?? 'aws') === 'aws').length;
+  const linuxCount = certs.filter((c) => c.section === 'linux').length;
+  const trackSummary = `AWS 클라우드 자격증 ${awsCount}종${linuxCount > 0 ? ` + 리눅스마스터 ${linuxCount}종` : ''}`;
   const groups = groupCertsByLevel(certs, 'aws').map((g) => ({ level: g.level, items: g.certs }));
   const starter = await getStarterDay(session.sub);
 
@@ -40,7 +43,7 @@ export default async function StudyHomePage() {
       <section className="space-y-3">
         <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">Certification Notes · {certs.length} tracks</p>
         <h1 className="text-3xl font-semibold tracking-tight">AWS 자격증으로 시작하는 클라우드 네이티브</h1>
-        <p className="text-base text-fg-muted max-w-xl">AWS 클라우드 자격증 11종 + 리눅스마스터 1급. 매일 한 페이지씩 주차별 한국어 노트로 학습. 사이드바에서 자격증을 골라 시작하세요.</p>
+        <p className="text-base text-fg-muted max-w-xl">{trackSummary}. 매일 한 페이지씩 주차별 한국어 노트로 학습. 사이드바에서 자격증을 골라 시작하세요.</p>
       </section>
       <ContinueCards certs={certs} starter={starter} />
       <ExamDateNudge />

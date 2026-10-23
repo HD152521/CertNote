@@ -1,4 +1,5 @@
 import type { Dict } from './dict';
+import { DAILY_STUDY_MINUTES } from '../studyTime';
 
 /**
  * 앱 껍데기(shell)에서 쓰는 문자열 — 헤더 계정 메뉴, 플로팅 피드백 위젯,
@@ -126,7 +127,7 @@ export const shellStrings: Dict<ShellKey> = {
     welcomeStep1Title: '① 목표 자격증을 고르세요',
     welcomeStep1Body: '왼쪽 사이드바에서 자격증을 누르면 시험 정보와 주차별 커리큘럼이 열려요.',
     welcomeStep2Title: '② 매일 한 페이지씩',
-    welcomeStep2Body: '하루 분량의 학습 자료를 읽고, 끝의 연습 문제로 바로 확인하세요. 출퇴근 15분이면 충분해요.',
+    welcomeStep2Body: `하루 분량의 학습 자료를 읽고, 끝의 연습 문제로 바로 확인하세요. 하루 ${DAILY_STUDY_MINUTES}분 안팎이면 충분해요.`,
     welcomeStep3Title: '③ 틀린 문제는 자동 복습',
     welcomeStep3Body: '틀린 문항은 복습함에 쌓이고, 잊을 때쯤 다시 나타나요. 알림을 켜두면 매일 챙겨드려요.',
     welcomeStep4Title: '④ 모의고사로 실전 점검',
@@ -196,7 +197,7 @@ export const shellStrings: Dict<ShellKey> = {
       'Tap a certification in the left sidebar to open its exam details and week-by-week curriculum.',
     welcomeStep2Title: '② One page a day',
     welcomeStep2Body:
-      "Read the day's lesson, then check yourself with the practice questions at the end. Fifteen minutes on your commute is enough.",
+      `Read the day's lesson, then check yourself with the practice questions at the end. About ${DAILY_STUDY_MINUTES} minutes a day is enough.`,
     welcomeStep3Title: '③ Missed questions come back on their own',
     welcomeStep3Body:
       "Anything you get wrong lands in your review queue and resurfaces right before you'd forget it. Turn on notifications and we'll remind you every day.",
