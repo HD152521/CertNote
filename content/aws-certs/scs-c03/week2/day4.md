@@ -6,14 +6,14 @@
 
 ## 왜 IAM 사용자를 버려야 하는가
 
-먼저 동기를 확실히 하자. IAM 사용자의 문제점:
+먼저 동기부터 짚는다. IAM 사용자의 문제점:
 
 - **장기 자격증명**: access key는 회전하지 않으면 영구 유효 → 유출 시 치명적
 - **계정마다 중복**: 200개 계정이면 사용자당 200개 IAM 사용자
 - **ID 소스 이중화**: 회사 HR/AD와 AWS가 따로 놀아 퇴사자 권한 잔존
 - **MFA 관리 분산**: 계정마다 따로 설정
 
-> 💡 **관련 이론**: 페더레이션의 핵심은 **신뢰의 단일 출처(single source of truth)**다. ID 관리 이론에서 이를 **identity federation**이라 하며, 한 곳(IdP, Identity Provider)에서 인증하고 그 결과를 여러 서비스(SP, Service Provider/RP, Relying Party)가 신뢰하는 모델이다. 자격증명을 한 곳에서만 관리하므로 퇴사자 비활성화가 즉시 모든 곳에 반영된다. AWS는 이 패턴을 STS의 임시 자격증명으로 구현한다 — 영구 키가 아예 없다.
+페더레이션의 핵심은 **신뢰의 단일 출처(single source of truth)**다. ID 관리 이론에서 이를 **identity federation**이라 하며, 한 곳(IdP, Identity Provider)에서 인증하고 그 결과를 여러 서비스(SP, Service Provider/RP, Relying Party)가 신뢰하는 모델이다. 자격증명을 한 곳에서만 관리하므로 퇴사자 비활성화가 즉시 모든 곳에 반영된다. AWS는 이 패턴을 STS의 임시 자격증명으로 구현한다 — 영구 키가 아예 없다.
 
 ## SAML 2.0 페더레이션의 흐름
 
@@ -48,7 +48,7 @@ AWS 쪽에는 두 가지가 필요하다.
 }
 ```
 
-> ⚠️ **함정**: `sts:AssumeRoleWithSAML`은 신뢰 정책의 `Principal`이 `Federated`로 SAML provider를 가리켜야 한다. 일반 `AssumeRole`(다른 IAM 롤이 전환)이나 `AssumeRoleWithWebIdentity`(OIDC)와 혼동하면 안 된다. 시험에서 세 가지 STS API를 구분하는 문제가 자주 나온다: `AssumeRole`(IAM 주체), `AssumeRoleWithSAML`(엔터프라이즈 SAML IdP), `AssumeRoleWithWebIdentity`(OIDC — 모바일 앱, Cognito, GitHub Actions 등).
+> ⚠️ **함정**: `sts:AssumeRoleWithSAML`은 신뢰 정책의 `Principal`이 `Federated`로 SAML provider를 가리켜야 한다. 일반 `AssumeRole`(다른 IAM 롤이 전환)이나 `AssumeRoleWithWebIdentity`(OIDC)와 혼동하면 안 된다. 시험에는 세 가지 STS API를 구분하는 문제가 나온다: `AssumeRole`(IAM 주체), `AssumeRoleWithSAML`(엔터프라이즈 SAML IdP), `AssumeRoleWithWebIdentity`(OIDC — 모바일 앱, Cognito, GitHub Actions 등).
 
 ### STS API 다섯 개를 한 표로
 
@@ -64,7 +64,7 @@ AWS 쪽에는 두 가지가 필요하다.
 
 앞의 셋과 뒤의 둘 사이에 큰 선이 하나 있다. **`AssumeRole*` 계열은 롤로 신원을 갈아입지만, `GetSessionToken`·`GetFederationToken`은 원래 IAM 사용자의 권한을 벗어나지 못한다.** 그리고 뒤의 둘은 애초에 **IAM 사용자(장기 키)를 전제**하므로, "IAM 사용자를 없애는 것"이 목표인 현대적 설계에서는 등장할 자리가 거의 없다. 보기에 `GetFederationToken`이 있으면 대개 오답이다.
 
-> 🔍 **더 깊이**: `GetSessionToken`과 `GetFederationToken`을 구분하는 실질적 기준은 **"MFA를 통과시키려는가, 남에게 권한을 나눠 주려는가"**다. `GetSessionToken`은 자기 자신의 세션을 MFA로 승격시키는 용도라, 반환된 자격증명은 `aws:MultiFactorAuthPresent`가 참이다. `GetFederationToken`은 자체 인증 시스템(사내 포털 등)이 인증한 사용자에게 짧은 AWS 접근을 넘겨주는 용도이고, 세션 정책으로 권한을 좁힐 수 있다. 다만 반환된 자격증명으로는 대부분의 IAM·STS 작업을 할 수 없다는 제약이 있다. 시험에서 이 둘이 정답이 되는 문항은 "기존 IAM 사용자 기반 환경"이라는 단서가 반드시 붙는다.
+`GetSessionToken`과 `GetFederationToken`을 구분하는 실질적 기준은 **"MFA를 통과시키려는가, 남에게 권한을 나눠 주려는가"**다. `GetSessionToken`은 자기 자신의 세션을 MFA로 승격시키는 용도라, 반환된 자격증명은 `aws:MultiFactorAuthPresent`가 참이다. `GetFederationToken`은 자체 인증 시스템(사내 포털 등)이 인증한 사용자에게 짧은 AWS 접근을 넘겨주는 용도이고, 세션 정책으로 권한을 좁힐 수 있다. 다만 반환된 자격증명으로는 대부분의 IAM·STS 작업을 할 수 없다는 제약이 있다. 시험에서 이 둘이 정답이 되는 문항은 "기존 IAM 사용자 기반 환경"이라는 단서가 반드시 붙는다.
 
 ### SAML Assertion이 실제로 실어 나르는 것
 
@@ -143,7 +143,7 @@ sts:AssumeRoleWithWebIdentity
 
 이렇게 하면 CI/CD에 장기 access key를 저장할 필요가 없어 유출 위험이 사라진다.
 
-> ⚠️ **함정**: OIDC 신뢰 정책에서 **`sub` 조건을 와일드카드로 느슨하게 쓰는 것**이 가장 위험한 실수다. `"StringLike": { "token.actions.githubusercontent.com:sub": "repo:myorg/*" }`처럼 쓰면 그 조직의 *어떤 레포, 어떤 브랜치, 어떤 포크 PR*에서도 롤을 전환할 수 있다. 외부 기여자가 PR을 열어 워크플로우를 돌리는 것만으로 프로덕션 배포 롤을 손에 넣을 수 있다는 뜻이다. 최소한 레포까지는 못 박고, 배포 롤이라면 브랜치나 GitHub Environment까지(`repo:myorg/myrepo:environment:production`) 좁혀야 한다. 더불어 **`aud` 조건을 반드시 함께 검사**한다 — `sub`만 검사하고 `aud`를 빠뜨리면 다른 대상에게 발급된 토큰이 통할 여지가 남는다.
+OIDC 신뢰 정책에서 **`sub` 조건을 와일드카드로 느슨하게 쓰는 것**이 가장 위험한 실수다. `"StringLike": { "token.actions.githubusercontent.com:sub": "repo:myorg/*" }`처럼 쓰면 그 조직의 *어떤 레포, 어떤 브랜치, 어떤 포크 PR*에서도 롤을 전환할 수 있다. 외부 기여자가 PR을 열어 워크플로우를 돌리는 것만으로 프로덕션 배포 롤을 손에 넣을 수 있다는 뜻이다. 최소한 레포까지는 못 박고, 배포 롤이라면 브랜치나 GitHub Environment까지(`repo:myorg/myrepo:environment:production`) 좁혀야 한다. 더불어 **`aud` 조건을 반드시 함께 검사**한다 — `sub`만 검사하고 `aud`를 빠뜨리면 다른 대상에게 발급된 토큰이 통할 여지가 남는다.
 
 ```json
 // 최소 권한형 GitHub OIDC 신뢰 정책 — sub와 aud를 모두 못 박는다
@@ -222,7 +222,7 @@ Identity Center는 위의 복잡한 SAML/OIDC 설정을 매니지드로 묶는�
   → alice가 포털 로그인 시 두 계정 모두 표시, 클릭으로 전환
 ```
 
-> 🔍 **더 깊이**: Identity Center가 계정에 Permission Set을 할당하면, 그 계정에 `AWSReservedSSO_*` 형태의 IAM 롤을 자동 생성한다. 즉 내부적으로는 여전히 STS의 AssumeRole이 작동하지만, 사용자는 롤을 직접 다루지 않는다. SCIM(System for Cross-domain Identity Management) 프로토콜로 IdP의 사용자/그룹 변경이 자동 동기화되어, 퇴사자가 IdP에서 비활성화되면 AWS 접근도 즉시 끊긴다.
+Identity Center가 계정에 Permission Set을 할당하면, 그 계정에 `AWSReservedSSO_*` 형태의 IAM 롤을 자동 생성한다. 즉 내부적으로는 여전히 STS의 AssumeRole이 작동하지만, 사용자는 롤을 직접 다루지 않는다. SCIM(System for Cross-domain Identity Management) 프로토콜로 IdP의 사용자/그룹 변경이 자동 동기화되어, 퇴사자가 IdP에서 비활성화되면 AWS 접근도 즉시 끊긴다.
 
 ```
 [ Identity Center의 실제 배선도 ]
@@ -287,7 +287,7 @@ aws sso-admin create-instance-access-control-attribute-configuration \
 aws identitystore list-groups --identity-store-id d-1234567890
 ```
 
-> 🔍 **더 깊이**: `put-permissions-boundary-to-permission-set`이 존재한다는 사실이 day2와 day4를 잇는 다리다. Identity Center를 쓰면 사람에게 부여되는 권한이 Permission Set 하나로 표준화되지만, 그 Permission Set이 `PowerUserAccess`처럼 넓으면 여전히 권한 상승 여지가 남는다. Permission Set에 **고객 관리형 권한 경계**를 걸면 SSO로 들어온 세션에도 천장이 생긴다. "SSO를 도입했으니 경계는 필요 없다"는 것은 오해다 — 페더레이션은 *신원*을 정리하는 도구이고, 경계는 *권한*을 제한하는 도구라 서로를 대체하지 않는다.
+`put-permissions-boundary-to-permission-set`이 존재한다는 사실이 day2와 day4를 잇는 다리다. Identity Center를 쓰면 사람에게 부여되는 권한이 Permission Set 하나로 표준화되지만, 그 Permission Set이 `PowerUserAccess`처럼 넓으면 여전히 권한 상승 여지가 남는다. Permission Set에 **고객 관리형 권한 경계**를 걸면 SSO로 들어온 세션에도 천장이 생긴다. "SSO를 도입했으니 경계는 필요 없다"는 것은 오해다 — 페더레이션은 *신원*을 정리하는 도구이고, 경계는 *권한*을 제한하는 도구라 서로를 대체하지 않는다.
 
 ### Identity Center vs IAM 사용자 vs 직접 SAML
 
@@ -301,7 +301,7 @@ aws identitystore list-groups --identity-store-id d-1234567890
 | 감사 | 사용자 ARN이 그대로 남음 | 세션 이름 구성에 의존 | 사용자 식별자가 세션에 포함 |
 | 적합한 상황 | 레거시·특수 통합 | 계정 수가 적고 IdP 통제가 이미 강할 때 | **멀티 계정 표준** |
 
-> ⚠️ **함정**: "Identity Center를 켜면 IAM 사용자가 자동으로 사라진다"는 것은 오해다. 기존 IAM 사용자는 그대로 남아 계속 동작한다. IAM 사용자를 실제로 없애려면 **SCP로 `iam:CreateUser`·`iam:CreateAccessKey`를 Deny**해 신규 생성을 봉쇄하고, 자격증명 보고서로 기존 사용자를 찾아 하나씩 정리해야 한다. 시험에서 "조직 전체에서 IAM 사용자 사용을 금지하려면"이 나오면 답은 Identity Center 도입 *그 자체*가 아니라 **SCP 차단과의 조합**이다.
+"Identity Center를 켜면 IAM 사용자가 자동으로 사라진다"는 것은 오해다. 기존 IAM 사용자는 그대로 남아 계속 동작한다. IAM 사용자를 실제로 없애려면 **SCP로 `iam:CreateUser`·`iam:CreateAccessKey`를 Deny**해 신규 생성을 봉쇄하고, 자격증명 보고서로 기존 사용자를 찾아 하나씩 정리해야 한다. 시험에서 "조직 전체에서 IAM 사용자 사용을 금지하려면"이 나오면 답은 Identity Center 도입 *그 자체*가 아니라 **SCP 차단과의 조합**이다.
 
 ## ABAC: 속성 기반 접근 제어
 
@@ -329,9 +329,9 @@ aws identitystore list-groups --identity-store-id d-1234567890
 
 Identity Center와 결합하면 IdP의 사용자 속성(예: AD의 department)이 SAML Assertion을 통해 PrincipalTag로 전달되어, **IdP에서 부서만 바꾸면 AWS 권한이 자동으로 따라온다.**
 
-> 💡 **관련 이론**: ABAC는 NIST SP 800-162에 정의된 접근 제어 모델로, RBAC의 "역할 폭발(role explosion)" 문제를 푼다. RBAC는 (사용자→역할→권한)의 정적 매핑이라 차원이 늘면 역할 수가 곱셈으로 증가한다. ABAC는 (속성 + 정책 규칙)의 동적 평가라 규칙 하나가 무한히 많은 조합을 커버한다. 단점은 디버깅이 어렵고 태그 거버넌스가 필수라는 점 — 태그가 누락되거나 변조되면 접근 제어가 깨진다.
+ABAC는 NIST SP 800-162에 정의된 접근 제어 모델로, RBAC의 "역할 폭발(role explosion)" 문제를 푼다. RBAC는 (사용자→역할→권한)의 정적 매핑이라 차원이 늘면 역할 수가 곱셈으로 증가한다. ABAC는 (속성 + 정책 규칙)의 동적 평가라 규칙 하나가 무한히 많은 조합을 커버한다. 단점은 디버깅이 어렵고 태그 거버넌스가 필수라는 점 — 태그가 누락되거나 변조되면 접근 제어가 깨진다.
 
-> ⚠️ **함정**: ABAC를 쓸 때 사용자가 자기 PrincipalTag를 스스로 바꾸거나, 리소스 생성 시 태그를 임의로 붙일 수 있으면 통제가 무너진다. 그래서 `aws:RequestTag`와 `aws:TagKeys` 조건으로 "생성 시 반드시 자기 팀 태그를 붙이도록" 강제하고, `iam:TagRole`/`sts:TagSession` 권한을 엄격히 제한해야 한다.
+ABAC를 쓸 때 사용자가 자기 PrincipalTag를 스스로 바꾸거나, 리소스 생성 시 태그를 임의로 붙일 수 있으면 통제가 무너진다. 그래서 `aws:RequestTag`와 `aws:TagKeys` 조건으로 "생성 시 반드시 자기 팀 태그를 붙이도록" 강제하고, `iam:TagRole`/`sts:TagSession` 권한을 엄격히 제한해야 한다.
 
 ### RBAC와 ABAC를 나란히 놓고 보기
 
@@ -412,7 +412,7 @@ ABAC 정책 한 줄은 우아하지만, 그 우아함은 **태그가 정확하�
 
 마지막 문장이 가장 중요하다. ABAC에서 `aws:PrincipalTag/Team`은 곧 신원이므로, **자기 태그를 바꿀 수 있으면 신원을 바꿀 수 있다.** day2의 권한 상승 논리가 태그 세계에서 그대로 재현되는 것이다. Identity Center를 쓰면 이 태그가 IdP 속성에서 오므로 AWS 안에서는 바꿀 수 없고, 대신 **IdP의 속성 편집 권한이 곧 AWS 권한 상승 경로**가 된다. 통제 지점이 AWS 밖으로 옮겨 갔을 뿐 사라진 것이 아니다.
 
-> ⚠️ **함정**: `ForAllValues:StringEquals`를 `aws:TagKeys`에 쓸 때 day1의 함정이 그대로 재현된다. 이 연산자는 "요청에 들어온 태그 키가 전부 목록 안에 있는가"를 검사하는데, **태그를 하나도 안 붙이면 조건이 참**이 된다. 그래서 `RequireOwnTeamTagOnCreate`에는 `aws:RequestTag/Team`을 `StringEquals`로 직접 요구하는 문장이 반드시 함께 있어야 한다. `ForAllValues`는 "허용된 키만 쓰라"는 화이트리스트이고, "반드시 쓰라"는 강제가 아니다.
+`ForAllValues:StringEquals`를 `aws:TagKeys`에 쓸 때 day1의 함정이 그대로 재현된다. 이 연산자는 "요청에 들어온 태그 키가 전부 목록 안에 있는가"를 검사하는데, **태그를 하나도 안 붙이면 조건이 참**이 된다. 그래서 `RequireOwnTeamTagOnCreate`에는 `aws:RequestTag/Team`을 `StringEquals`로 직접 요구하는 문장이 반드시 함께 있어야 한다. `ForAllValues`는 "허용된 키만 쓰라"는 화이트리스트이고, "반드시 쓰라"는 강제가 아니다.
 
 > 🎯 **시나리오**: "사내 IdP의 `department` 속성을 AWS 접근 제어에 그대로 쓰기로 했다. Identity Center에서 속성 매핑을 켜고 ABAC 정책을 배포했는데, 인사 시스템에서 부서 코드 체계가 바뀌면서 값이 `payments` → `PAY-001` 형태로 전환됐다. 무슨 일이 벌어지는가?" → 태그 값이 리소스 쪽과 어긋나면서 **접근이 조용히 전부 끊긴다.** ABAC의 구조적 취약점이 여기 있다 — 접근 제어가 AWS 밖 시스템의 데이터 스키마에 결합된다. 실무 대응은 (1) IdP 속성을 그대로 쓰지 않고 매핑 계층을 두어 AWS 쪽 태그 값 어휘를 고정하고, (2) 속성 체계 변경을 배포 변경으로 취급해 사전 통보 절차를 만들고, (3) 태그 불일치로 인한 AccessDenied 급증을 모니터링 지표로 두는 것이다.
 
@@ -425,7 +425,7 @@ ABAC 정책 한 줄은 우아하지만, 그 우아함은 **태그가 정확하�
 - **세션 태그**: `sts:TagSession`으로 ABAC용 속성 전달
 - **로그**: 모든 AssumeRole 호출이 CloudTrail에 기록 → 누가 언제 어떤 롤을 썼는지 추적
 
-> 🔍 **더 깊이**: 페더레이션 세션은 `aws:userid`가 `ROLEID:session-name` 형태로 기록되어, 같은 롤을 여러 사람이 써도 CloudTrail의 `sts:RoleSessionName`으로 실제 개인을 식별할 수 있다. 그래서 페더레이션 설계 시 session name에 직원 식별자(이메일·사번)를 넣도록 IdP를 구성하는 것이 감사 추적의 핵심이다.
+페더레이션 세션은 `aws:userid`가 `ROLEID:session-name` 형태로 기록되어, 같은 롤을 여러 사람이 써도 CloudTrail의 `sts:RoleSessionName`으로 실제 개인을 식별할 수 있다. 그래서 페더레이션 설계 시 session name에 직원 식별자(이메일·사번)를 넣도록 IdP를 구성하는 것이 감사 추적의 핵심이다.
 
 ### 신뢰 정책: 페더레이션의 진짜 통제점
 
@@ -502,9 +502,9 @@ ABAC 정책 한 줄은 우아하지만, 그 우아함은 **태그가 정확하�
 }
 ```
 
-> 💡 **관련 이론**: `sts:ExternalId`와 `aws:SourceArn`은 같은 문제(confused deputy)에 대한 두 가지 답이다. 차이는 **대리인이 누구냐**에 있다. 대리인이 *다른 AWS 계정*(서드파티 SaaS)이면 그 계정이 여러 고객을 섞어 다루므로 고객을 구분할 비밀값(`ExternalId`)이 필요하고, 대리인이 *AWS 서비스*면 서비스는 이미 신뢰되므로 비밀이 아니라 "어느 리소스를 위한 호출인가"(`SourceArn`)만 확인하면 된다. 시험에서 `Principal`이 `Service`인데 보기에 `sts:ExternalId`가 있으면 오답 신호이고, 반대로 `Principal`이 서드파티 계정인데 `aws:SourceArn`을 고르면 역시 어긋난다.
+`sts:ExternalId`와 `aws:SourceArn`은 같은 문제(confused deputy)에 대한 두 가지 답이다. 차이는 **대리인이 누구냐**에 있다. 대리인이 *다른 AWS 계정*(서드파티 SaaS)이면 그 계정이 여러 고객을 섞어 다루므로 고객을 구분할 비밀값(`ExternalId`)이 필요하고, 대리인이 *AWS 서비스*면 서비스는 이미 신뢰되므로 비밀이 아니라 "어느 리소스를 위한 호출인가"(`SourceArn`)만 확인하면 된다. 시험에서 `Principal`이 `Service`인데 보기에 `sts:ExternalId`가 있으면 오답 신호이고, 반대로 `Principal`이 서드파티 계정인데 `aws:SourceArn`을 고르면 역시 어긋난다.
 
-> ⚠️ **함정**: ExternalId는 **비밀이지만 인증 수단은 아니다.** 추측 불가능한 값이어야 하지만(고객사 이름이나 순번은 금지), 그것만으로 강력한 인증이 되지는 않는다. 그래서 서드파티 위임에서는 ExternalId와 함께 *권한 자체를 최소로 좁히고*, 부여한 롤의 사용 내역을 CloudTrail로 계속 관찰하는 것이 정석이다. "ExternalId를 걸었으니 넓은 권한을 줘도 된다"는 것은 잘못된 추론이다.
+ExternalId는 **비밀이지만 인증 수단은 아니다.** 추측 불가능한 값이어야 하지만(고객사 이름이나 순번은 금지), 그것만으로 강력한 인증이 되지는 않는다. 그래서 서드파티 위임에서는 ExternalId와 함께 *권한 자체를 최소로 좁히고*, 부여한 롤의 사용 내역을 CloudTrail로 계속 관찰하는 것이 정석이다. "ExternalId를 걸었으니 넓은 권한을 줘도 된다"는 것은 잘못된 추론이다.
 
 ### 페더레이션에서 막혔을 때
 
@@ -519,15 +519,15 @@ ABAC 정책 한 줄은 우아하지만, 그 우아함은 **태그가 정확하�
 | ABAC 정책이 갑자기 전부 거부 | IdP 속성 값 변경 또는 리소스 태그 누락 |
 | Identity Center 롤을 수정했는데 되돌아감 | Permission Set이 원본이다. 롤을 직접 고치면 안 됨 |
 
-## 정리하며
+## 정리
 
-현대 AWS 접근 관리의 정답은 "IAM 사용자 + access key"가 아니라 "페더레이션 + 임시 자격증명"이다. SAML(엔터프라이즈 IdP), OIDC(모바일·CI/CD), Identity Center(매니지드 통합)의 세 갈래를 구분하고, 각각의 STS API(`AssumeRoleWithSAML`, `AssumeRoleWithWebIdentity`)와 신뢰 정책을 정확히 매핑할 수 있어야 한다. 그리고 ABAC로 태그 기반 접근을 설계하면 역할 폭발 없이 확장 가능한 거버넌스를 얻는다. 단 태그 거버넌스가 무너지면 ABAC도 무너진다는 점을 기억하라.
+현대 AWS 접근 관리의 정답은 "IAM 사용자 + access key"가 아니라 "페더레이션 + 임시 자격증명"이다. SAML(엔터프라이즈 IdP), OIDC(모바일·CI/CD), Identity Center(매니지드 통합)의 세 갈래를 구분하고, 각각의 STS API(`AssumeRoleWithSAML`, `AssumeRoleWithWebIdentity`)와 신뢰 정책을 정확히 매핑할 수 있어야 한다. 그리고 ABAC로 태그 기반 접근을 설계하면 역할 폭발 없이 확장 가능한 거버넌스를 얻는다. 단 태그 거버넌스가 무너지면 ABAC도 무너진다는 점을 기억해 둘 만하다.
 
-> 📚 **사례**: 2019년 Capital One 침해에서 공격자가 손에 넣은 것은 **EC2 인스턴스 역할의 임시 자격증명**이었다. 잘못 구성된 WAF를 통한 SSRF로 인스턴스 메타데이터에 접근해 자격증명을 얻었고, 그것으로 S3 버킷 목록을 조회한 뒤 데이터를 내려받았다. 미국·캐나다 신용카드 신청자 약 1억 명 규모의 정보가 영향을 받았다. 이 사건이 페더레이션 논의에 주는 교훈은 역설적이다 — **임시 자격증명이라고 해서 안전한 것이 아니다.** 임시성은 "유출된 키가 영원히 유효하지 않다"는 것만 보장할 뿐, 유효한 그 시간 동안 할 수 있는 일의 범위는 전혀 좁혀 주지 않는다. 그래서 페더레이션 설계의 완성은 임시 자격증명 도입이 아니라 그 위에 얹는 세션 정책·권한 경계·조건(`aws:SourceVpce`, MFA)이고, 인스턴스 메타데이터 접근 자체를 IMDSv2로 조이는 것(day3의 SCP)이다.
+2019년 Capital One 침해에서 공격자가 손에 넣은 것은 **EC2 인스턴스 역할의 임시 자격증명**이었다. 잘못 구성된 WAF를 통한 SSRF로 인스턴스 메타데이터에 접근해 자격증명을 얻었고, 그것으로 S3 버킷 목록을 조회한 뒤 데이터를 내려받았다. 미국·캐나다 신용카드 신청자 약 1억 명 규모의 정보가 영향을 받았다. 이 사건이 페더레이션 논의에 주는 교훈은 역설적이다 — **임시 자격증명이라고 해서 안전한 것이 아니다.** 임시성은 "유출된 키가 영원히 유효하지 않다"는 것만 보장할 뿐, 유효한 그 시간 동안 할 수 있는 일의 범위는 전혀 좁혀 주지 않는다. 그래서 페더레이션 설계의 완성은 임시 자격증명 도입이 아니라 그 위에 얹는 세션 정책·권한 경계·조건(`aws:SourceVpce`, MFA)이고, 인스턴스 메타데이터 접근 자체를 IMDSv2로 조이는 것(day3의 SCP)이다.
 
-> 📚 **사례**: CI/CD 파이프라인에 저장된 장기 access key가 공개 저장소나 빌드 로그를 통해 노출되는 일은 업계 전반에서 반복돼 왔고, 그래서 GitHub Actions·GitLab·Kubernetes가 잇달아 OIDC 발급자를 내장하는 방향으로 움직였다. 다만 OIDC로 전환한 뒤 새로 생기는 실수 패턴이 있다 — **신뢰 정책의 `sub` 조건을 `repo:org/*`처럼 넓게 쓰는 것.** 키를 없애 유출 위험은 줄였지만, 조직 안 아무 레포에서나 프로덕션 롤을 전환할 수 있게 되어 공격 표면이 오히려 이동한 형태다. "장기 키 제거"는 목표의 절반이고, 나머지 절반은 "그 대신 들어온 신뢰 관계를 최소한으로 좁히는 것"이다.
+CI/CD 파이프라인에 저장된 장기 access key가 공개 저장소나 빌드 로그를 통해 노출되는 일은 업계 전반에서 반복돼 왔고, 그래서 GitHub Actions·GitLab·Kubernetes가 잇달아 OIDC 발급자를 내장하는 방향으로 움직였다. 다만 OIDC로 전환한 뒤 새로 생기는 실수 패턴이 있다 — **신뢰 정책의 `sub` 조건을 `repo:org/*`처럼 넓게 쓰는 것.** 키를 없애 유출 위험은 줄였지만, 조직 안 아무 레포에서나 프로덕션 롤을 전환할 수 있게 되어 공격 표면이 오히려 이동한 형태다. "장기 키 제거"는 목표의 절반이고, 나머지 절반은 "그 대신 들어온 신뢰 관계를 최소한으로 좁히는 것"이다.
 
-## 한 줄 요약
+### 한 줄 요약
 
 IAM 사용자와 장기 키를 없애고 **페더레이션 + STS 임시 자격증명**으로 가는 것이 현대 표준이며, 사람은 SAML/Identity Center, 기계는 OIDC가 기본 경로다. STS API는 `AssumeRole`(AWS 자격증명), `AssumeRoleWithSAML`(XML Assertion), `AssumeRoleWithWebIdentity`(JWT), 그리고 IAM 사용자를 전제하는 `GetSessionToken`·`GetFederationToken`으로 나뉜다. SAML은 `Role`·`RoleSessionName`·`PrincipalTag:` 속성을 실어 나르고 `SAML:aud` 조건이 필수이며, 태그·원본 신원을 쓰려면 신뢰 정책 `Action`에 `sts:TagSession`·`sts:SetSourceIdentity`가 함께 있어야 한다. OIDC는 `sub`와 `aud`를 **둘 다** 못 박아야 하고 `repo:org/*` 같은 와일드카드는 사실상 무제한 위임이다. Identity Center는 Permission Set을 중앙에서 정의해 각 계정에 `AWSReservedSSO_*` 롤로 자동 배포하며 SCIM으로 퇴사자가 즉시 반영되지만, 기존 IAM 사용자를 없애려면 SCP 차단이 함께 필요하다. ABAC는 역할 폭발을 막지만 태그가 곧 신원이므로 자기 태그 변경(`iam:TagRole`)과 남의 리소스 재태깅을 반드시 Deny해야 하고, 신뢰 정책에서는 서드파티에 `sts:ExternalId`, AWS 서비스에 `aws:SourceArn`/`aws:SourceAccount`로 confused deputy를 막는다.
 
