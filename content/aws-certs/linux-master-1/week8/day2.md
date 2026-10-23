@@ -33,7 +33,7 @@ ip link set eth0 down
 ip route show         # 줄여서 ip r
 ```
 
-> 💡 **개념**: `ip` 명령은 객체(addr, link, route, neigh)를 먼저 쓰고 동작(show, add, del, set)을 쓰는 일관된 문법이다. `ip a`=주소, `ip l`=링크, `ip r`=라우팅, `ip neigh`=ARP 테이블. 이 네 줄임말만 익혀도 진단의 80%가 끝난다.
+`ip` 명령은 객체(addr, link, route, neigh)를 먼저 쓰고 동작(show, add, del, set)을 쓰는 일관된 문법이다. `ip a`=주소, `ip l`=링크, `ip r`=라우팅, `ip neigh`=ARP 테이블. 이 네 줄임말만 익혀도 진단의 80%가 끝난다.
 
 > ⚠️ **함정**: `ip addr add`로 부여한 IP는 **임시**다 — 재부팅하면 사라진다. 영구 설정은 아래의 설정 파일(`network-scripts`) 또는 `nmcli`로 해야 한다. 시험에서 "재부팅 후에도 유지되는 설정 방법"을 물으면 절대 `ip addr add`가 답이 아니다.
 
@@ -59,7 +59,7 @@ route add default gw 192.168.1.1 eth0
 ip route add default via 192.168.1.1 dev eth0
 ```
 
-> 🔍 **핵심 구분**: `ifconfig`는 IP 주소만 보여주고 보조 IP(secondary)나 정책 라우팅을 제대로 다루지 못한다. `ip`는 이를 완전히 지원한다. 시험에서 "ifconfig를 대체하는 명령"을 물으면 `ip addr`다. 두 명령의 1:1 대응표를 통째로 외우는 게 효율적이다.
+**핵심 구분**: `ifconfig`는 IP 주소만 보여주고 보조 IP(secondary)나 정책 라우팅을 제대로 다루지 못한다. `ip`는 이를 완전히 지원한다. 시험에서 "ifconfig를 대체하는 명령"을 물으면 `ip addr`다. 두 명령의 1:1 대응표를 통째로 외우는 게 효율적이다.
 
 ## nmcli — NetworkManager 명령행 제어
 
@@ -82,7 +82,7 @@ nmcli con up eth0                        # 변경 사항 적용
 nmcli con mod eth0 ipv4.method auto
 ```
 
-> 💡 **개념**: nmcli는 "connection(설정 프로파일)"과 "device(물리 장치)"를 구분한다. `con mod`로 프로파일을 고치고 `con up`으로 적용한다. `ipv4.method manual`=정적, `auto`=DHCP. nmcli 설정은 설정 파일에 기록되어 재부팅 후에도 유지된다.
+nmcli는 "connection(설정 프로파일)"과 "device(물리 장치)"를 구분한다. `con mod`로 프로파일을 고치고 `con up`으로 적용한다. `ipv4.method manual`=정적, `auto`=DHCP. nmcli 설정은 설정 파일에 기록되어 재부팅 후에도 유지된다.
 
 ## 설정 파일 — /etc/sysconfig/network-scripts
 
@@ -109,9 +109,9 @@ DNS2=8.8.4.4
 | GATEWAY | 기본 게이트웨이 |
 | DNS1 / DNS2 | 네임서버 |
 
-> ⚠️ **함정**: `ONBOOT=no`이면 IP 설정이 다 맞아도 부팅 시 인터페이스가 올라오지 않아 네트워크가 안 된다. "설정은 맞는데 부팅 후 연결 안 됨" 문제의 단골 원인이다. Debian/Ubuntu 계열은 이 파일 대신 `/etc/network/interfaces`나 netplan(`/etc/netplan/*.yaml`)을 쓴다는 점도 기억하라.
+> ⚠️ **함정**: `ONBOOT=no`이면 IP 설정이 다 맞아도 부팅 시 인터페이스가 올라오지 않아 네트워크가 안 된다. "설정은 맞는데 부팅 후 연결 안 됨" 문제의 원인이 된다. Debian/Ubuntu 계열은 이 파일 대신 `/etc/network/interfaces`나 netplan(`/etc/netplan/*.yaml`)을 쓴다.
 
-> 📚 **유래/사례**: `ifcfg-` 파일은 Red Hat이 오래 써 온 방식이고, 최신 RHEL은 내부적으로 NetworkManager의 키파일(`/etc/NetworkManager/system-connections/`)로 옮겨가고 있다. 시험은 여전히 전통적인 `ifcfg-eth0` 형식과 그 안의 항목 의미를 묻는다.
+`ifcfg-` 파일은 Red Hat이 오래 써 온 방식이고, 최신 RHEL은 내부적으로 NetworkManager의 키파일(`/etc/NetworkManager/system-connections/`)로 옮겨가고 있다. 시험은 여전히 전통적인 `ifcfg-eth0` 형식과 그 안의 항목 의미를 묻는다.
 
 ## 게이트웨이와 라우팅 — 외부로 나가는 길
 
@@ -135,7 +135,7 @@ ip route add 10.0.0.0/24 via 192.168.1.254
 ip route del 10.0.0.0/24
 ```
 
-> 🔍 **핵심 구분**: **default(0.0.0.0/0)** 경로가 "그 외 모든 목적지"를 처리하는 기본 게이트웨이다. 라우팅 테이블에 default가 없으면 같은 서브넷끼리는 통신해도 인터넷은 안 된다. "내부 ping은 되는데 외부 ping이 안 됨" = 기본 게이트웨이 설정 문제일 가능성이 높다.
+**핵심 구분**: **default(0.0.0.0/0)** 경로가 "그 외 모든 목적지"를 처리하는 기본 게이트웨이다. 라우팅 테이블에 default가 없으면 같은 서브넷끼리는 통신해도 인터넷은 안 된다. "내부 ping은 되는데 외부 ping이 안 됨" = 기본 게이트웨이 설정 문제일 가능성이 높다.
 
 ## DNS 설정 — /etc/resolv.conf
 
@@ -154,7 +154,7 @@ search example.com        # 도메인 자동 보완 (호스트명만 입력 시 
 | search | 도메인 없이 호스트명만 쓸 때 자동으로 붙일 도메인 |
 | domain | 로컬 도메인 이름 |
 
-> ⚠️ **함정**: NetworkManager가 관리하는 시스템에서는 `/etc/resolv.conf`를 직접 수정해도 **재부팅·재시작 시 덮어쓰여** 사라질 수 있다. 영구 DNS 설정은 `nmcli con mod ... ipv4.dns` 또는 `ifcfg` 파일의 `DNS1/DNS2`로 해야 한다. 이 "직접 수정이 날아가는" 현상이 시험·실무 단골 함정이다.
+NetworkManager가 관리하는 시스템에서는 `/etc/resolv.conf`를 직접 수정해도 **재부팅·재시작 시 덮어쓰여** 사라질 수 있다. 영구 DNS 설정은 `nmcli con mod ... ipv4.dns` 또는 `ifcfg` 파일의 `DNS1/DNS2`로 해야 한다. 이 "직접 수정이 날아가는" 현상이 시험과 실무 모두에서 함정이 된다.
 
 ## /etc/hosts — DNS보다 먼저 보는 정적 매핑
 
@@ -174,7 +174,7 @@ search example.com        # 도메인 자동 보완 (호스트명만 입력 시 
 hosts:  files dns       # files(=/etc/hosts) 먼저, 그다음 dns
 ```
 
-> 💡 **개념**: `files dns` 순서이므로 `/etc/hosts`에 항목이 있으면 DNS보다 **먼저** 매칭된다. 그래서 hosts에 잘못된 IP를 적으면 DNS가 정상이어도 엉뚱한 곳으로 연결된다. 반대로 DNS 없이 소규모 호스트 매핑을 테스트할 때 유용하다.
+`files dns` 순서이므로 `/etc/hosts`에 항목이 있으면 DNS보다 **먼저** 매칭된다. 그래서 hosts에 잘못된 IP를 적으면 DNS가 정상이어도 엉뚱한 곳으로 연결된다. 반대로 DNS 없이 소규모 호스트 매핑을 테스트할 때 유용하다.
 
 ## 직접 쳐보기 — 설정 점검 루틴
 
