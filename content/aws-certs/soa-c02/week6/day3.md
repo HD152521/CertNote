@@ -2,15 +2,15 @@
 
 Amazon 내부에서는 2000년대 중반 "두 피자 팀"(Two-Pizza Team) 원칙이 나왔다. 팀 규모는 피자 두 판을 먹을 수 있는 인원(5~8명)으로 제한하고, 각 팀은 독립적으로 서비스를 소유하고 배포한다. 이 원칙이 마이크로서비스 아키텍처의 씨앗이 됐다.
 
-CloudFormation에서도 같은 고민이 있다. 수천 줄짜리 단일 Template는 "한 팀이 전부 소유하고 이해하는" 범위를 넘어선다. 팀 경계에 따라 IaC를 분리하고, 팀 간에 필요한 정보를 안전하게 공유하며, 조직 전체에 표준을 배포하는 방법이 필요하다. Nested Stack, Cross-Stack Reference, StackSets가 이 문제를 해결한다. 이 세 가지는 각각 "하나의 애플리케이션 내 모듈화", "팀 간 리소스 공유", "조직 전체 표준 배포"라는 서로 다른 규모의 문제를 다룬다.
+CloudFormation에서도 같은 고민이 있다. 수천 줄짜리 단일 템플릿은 "한 팀이 전부 소유하고 이해하는" 범위를 넘어선다. 팀 경계에 따라 IaC를 분리하고, 팀 간에 필요한 정보를 안전하게 공유하며, 조직 전체에 표준을 배포하는 방법이 필요하다. Nested Stack, Cross-Stack Reference, StackSets가 이 문제를 해결한다. 이 세 가지는 각각 "하나의 애플리케이션 내 모듈화", "팀 간 리소스 공유", "조직 전체 표준 배포"라는 서로 다른 규모의 문제를 다룬다.
 
 ## Nested Stack: "레고 블록처럼 조합하는 인프라"
 
-Nested Stack은 하나의 Stack 안에 다른 Stack을 리소스(`AWS::CloudFormation::Stack`)로 포함하는 패턴이다. 큰 Template를 작은 컴포넌트로 분리해 재사용성을 높이고, 각 컴포넌트의 변경 영향 범위를 제한한다.
+Nested Stack은 하나의 스택 안에 다른 스택을 리소스(`AWS::CloudFormation::Stack`)로 포함하는 패턴이다. 큰 템플릿을 작은 컴포넌트로 분리해 재사용성을 높이고, 각 컴포넌트의 변경 영향 범위를 제한한다.
 
 **Nested Stack의 기술적 동작:**
 
-부모 Stack이 `AWS::CloudFormation::Stack` 타입의 리소스를 생성하면, CloudFormation은 해당 S3 URL의 Template를 가져와 별도의 Stack을 생성한다. 부모와 자식 Stack은 별도의 Stack ID를 갖지만, 부모의 라이프사이클에 종속된다. 부모 Stack이 삭제되면 자식 Stack이 역순(의존성의 반대)으로 삭제된다.
+부모 스택이 `AWS::CloudFormation::Stack` 타입의 리소스를 생성하면, CloudFormation은 해당 S3 URL의 템플릿을 가져와 별도의 스택을 생성한다. 부모와 자식 스택은 별도의 Stack ID를 갖지만, 부모의 라이프사이클에 종속된다. 부모 스택이 삭제되면 자식 스택이 역순(의존성의 반대)으로 삭제된다.
 
 **계층 구조 설계 예시:**
 
@@ -30,7 +30,7 @@ Root Stack (parent.yaml)
     └── Inputs: VpcId, PublicSubnetIds, WebSgId, AppSgId, DbEndpoint
 ```
 
-**실전 부모 Template:**
+**실전 부모 템플릿:**
 
 ```yaml
 AWSTemplateFormatVersion: '2010-09-09'
@@ -88,7 +88,7 @@ Outputs:
     Value: !GetAtt AppStack.Outputs.AlbDnsName
 ```
 
-**Template 크기 한도:**
+**템플릿 크기 한도:**
 
 | 방식 | 한도 |
 |------|------|
@@ -96,7 +96,7 @@ Outputs:
 | `--template-url` (S3 URL) | 1 MB |
 | S3 파일 자체 | 최대 1 MB |
 
-Template가 1 MB를 초과하면 Nested Stack으로 분리하거나 CDK로 생성한다.
+템플릿이 1 MB를 초과하면 Nested Stack으로 분리하거나 CDK로 생성한다.
 
 ```bash
 # Template를 S3에 업로드하고 URL 사용
@@ -115,15 +115,15 @@ aws cloudformation update-stack \
   --parameters ParameterKey=VpcCidr,ParameterValue=10.0.0.0/16
 ```
 
-> 💡 **관련 이론**: Nested Stack은 소프트웨어 공학의 "모듈화"(Modularization) 원칙을 인프라에 적용한 것이다. David Parnas가 1972년 논문 "On the Criteria To Be Used in Decomposing Systems into Modules"에서 정의한 "변경이 일어날 가능성이 높은 부분을 한 모듈에 숨긴다"는 원칙이 핵심이다. 네트워크 팀이 VPC CIDR을 변경해도 애플리케이션 팀의 Template에 영향을 주지 않도록, 변경 범위를 NetworkStack 안으로 캡슐화하는 것이다. 이는 객체지향의 정보 은닉(Information Hiding)과 동일한 개념이다. Nested Stack의 `Outputs`는 외부에 공개할 인터페이스이고, 내부 구현(서브넷 분할 방식, NAT GW 개수)은 숨긴다.
+Nested Stack은 소프트웨어 공학의 "모듈화"(Modularization) 원칙을 인프라에 적용한 것이다. David Parnas가 1972년 논문 "On the Criteria To Be Used in Decomposing Systems into Modules"에서 정의한 "변경이 일어날 가능성이 높은 부분을 한 모듈에 숨긴다"는 원칙이 핵심이다. 네트워크 팀이 VPC CIDR을 변경해도 애플리케이션 팀의 템플릿에 영향을 주지 않도록, 변경 범위를 NetworkStack 안으로 캡슐화하는 것이다. 이는 객체지향의 정보 은닉(Information Hiding)과 동일한 개념이다. Nested Stack의 `Outputs`는 외부에 공개할 인터페이스이고, 내부 구현(서브넷 분할 방식, NAT GW 개수)은 숨긴다.
 
-> 🔍 **더 깊이**: Nested Stack의 부모-자식 관계는 의존성 역전 없이 **직접적인 계층 구조**다. 부모가 자식의 Outputs에 접근하는 구조이므로, 자식 Stack의 Output 이름을 변경하면 부모 Template도 수정해야 한다. 이를 방지하려면 자식 Stack의 Output 이름을 "안정적인 인터페이스"로 정의하고 가급적 변경하지 않아야 한다. 실제 배포에서는 S3에 버전 디렉터리를 두는 패턴을 사용한다: `s3://my-bucket/templates/v1.2.0/network.yaml`. 이렇게 하면 Blue-Green 방식으로 새 버전 Template를 배포 전에 S3에 올려두고, 테스트 후 부모 Stack만 업데이트해 전환할 수 있다.
+Nested Stack의 부모-자식 관계는 의존성 역전 없이 **직접적인 계층 구조**다. 부모가 자식의 Outputs에 접근하는 구조이므로, 자식 스택의 Output 이름을 변경하면 부모 템플릿도 수정해야 한다. 이를 방지하려면 자식 스택의 Output 이름을 "안정적인 인터페이스"로 정의하고 가급적 변경하지 않아야 한다. 실제 배포에서는 S3에 버전 디렉터리를 두는 패턴을 사용한다: `s3://my-bucket/templates/v1.2.0/network.yaml`. 이렇게 하면 Blue/Green 방식으로 새 버전 템플릿을 배포 전에 S3에 올려두고, 테스트 후 부모 스택만 업데이트해 전환할 수 있다.
 
-> ⚠️ **함정**: Nested Stack 리소스(`DatabaseStack`)에 설정한 `DeletionPolicy: Retain`은 부모 Stack에서 그 리소스를 지울 때 **자식 Stack을 삭제하지 않고 남기는** 효과뿐이다. 자식 Stack 내부 리소스(RDS, ElastiCache) 각각에 정책이 걸리는 것은 아니므로, 자식 Stack을 직접 삭제하면 그 안의 RDS는 보호되지 않는다. 자식 Stack 내부의 RDS를 보호하려면 자식 Template의 RDS 리소스에도 별도로 `DeletionPolicy: Snapshot`을 설정해야 한다.
+> ⚠️ **함정**: Nested Stack 리소스(`DatabaseStack`)에 설정한 `DeletionPolicy: Retain`은 부모 스택에서 그 리소스를 지울 때 **자식 스택을 삭제하지 않고 남기는** 효과뿐이다. 자식 스택 내부 리소스(RDS, ElastiCache) 각각에 정책이 걸리는 것은 아니므로, 자식 스택을 직접 삭제하면 그 안의 RDS는 보호되지 않는다. 자식 스택 내부의 RDS를 보호하려면 자식 템플릿의 RDS 리소스에도 별도로 `DeletionPolicy: Snapshot`을 설정해야 한다.
 
 ## Cross-Stack Reference: "독립적이지만 연결된"
 
-Cross-Stack Reference는 완전히 독립된 Stack들 사이에서 값을 공유하는 방식이다. Nested Stack과 달리 부모-자식 관계가 없고, 각 Stack이 독립적으로 생성/업데이트/삭제된다. 팀 경계를 넘나드는 리소스 공유에 적합하다.
+Cross-Stack Reference는 완전히 독립된 스택들 사이에서 값을 공유하는 방식이다. Nested Stack과 달리 부모-자식 관계가 없고, 각 스택이 독립적으로 생성/업데이트/삭제된다. 팀 경계를 넘나드는 리소스 공유에 적합하다.
 
 **Export/Import 메커니즘:**
 
@@ -173,7 +173,7 @@ Resources:
 | Import 사용 중인 Export는 값 변경 불가 | Stack B가 살아있는 한 Stack A에서 해당 Output 값 변경 불가 |
 | Import 사용 중인 Stack A를 삭제 불가 | Stack B를 먼저 수정(ImportValue 제거)해야 Stack A 삭제 가능 |
 | `!ImportValue`는 다른 함수와 중첩 불가 | `!Sub '${!ImportValue ...}'` 불가, 중간 변수 없음 |
-| 같은 Template 내 `!If`와 `!ImportValue` 중첩 불가 | 조건부 Import 불가 |
+| 같은 템플릿 내 `!If`와 `!ImportValue` 중첩 불가 | 조건부 Import 불가 |
 
 ```bash
 # 어떤 Stack들이 특정 Export를 사용하는지 확인
@@ -193,21 +193,21 @@ echo "이 Export를 사용하는 Stack: $IMPORTERS"
 # 이 Stack들을 먼저 수정해야 network-stack의 VpcId Export를 변경할 수 있다
 ```
 
-> 🔍 **더 깊이**: Cross-Stack의 "Import 사용 중인 Export 변경 불가" 제약은 분산 시스템의 "breaking change" 문제와 동일하다. API 서버가 클라이언트가 사용 중인 엔드포인트를 변경하지 못하는 것과 같다. 이를 우회하는 방법은 **"버전이 있는 Export 이름" 패턴**이다. `network-stack-VpcId-v1`, `network-stack-VpcId-v2`처럼 버전을 붙이면, 마이그레이션 기간 동안 두 버전을 동시에 Export하고 Consumer Stack들이 새 버전으로 이전한 후 구 버전을 삭제할 수 있다. 이 패턴은 API 버전 관리에서 "Sunset Date" 방식과 동일하다: 새 버전을 공개하고, 구 버전 사용자에게 이전 기간을 주고, 기간 후 구 버전 삭제.
+Cross-Stack의 "Import 사용 중인 Export 변경 불가" 제약은 분산 시스템의 "breaking change" 문제와 동일하다. API 서버가 클라이언트가 사용 중인 엔드포인트를 변경하지 못하는 것과 같다. 이를 우회하는 방법은 **"버전이 있는 Export 이름" 패턴**이다. `network-stack-VpcId-v1`, `network-stack-VpcId-v2`처럼 버전을 붙이면, 마이그레이션 기간 동안 두 버전을 동시에 Export하고 Consumer Stack들이 새 버전으로 이전한 후 구 버전을 삭제할 수 있다. 이 패턴은 API 버전 관리에서 "Sunset Date" 방식과 동일하다: 새 버전을 공개하고, 구 버전 사용자에게 이전 기간을 주고, 기간 후 구 버전 삭제.
 
 **Nested Stack vs Cross-Stack 선택 기준:**
 
 | 상황 | 권장 방식 | 이유 |
 |------|-----------|------|
 | 하나의 애플리케이션을 컴포넌트로 분리 | Nested Stack | 단일 배포 단위, 부모가 전체 조율 |
-| 여러 팀이 공유하는 인프라(VPC, IAM 등) | Cross-Stack Reference | 각 팀 Stack이 독립적 라이프사이클 |
+| 여러 팀이 공유하는 인프라(VPC, IAM 등) | Cross-Stack Reference | 각 팀 스택이 독립적 라이프사이클 |
 | 라이프사이클이 다른 리소스 분리 | Cross-Stack Reference | VPC(영구) vs 앱(주기적 배포) |
-| 재사용 가능한 표준 컴포넌트 라이브러리 | Nested Stack (S3 공용 Template) | 단일 Template 소스, 재사용 용이 |
-| 배포 팀이 여럿이고 독립적으로 릴리스 | Cross-Stack Reference | Stack 간 결합도 최소화 |
+| 재사용 가능한 표준 컴포넌트 라이브러리 | Nested Stack (S3 공용 Template) | 단일 템플릿 소스, 재사용 용이 |
+| 배포 팀이 여럿이고 독립적으로 릴리스 | Cross-Stack Reference | 스택 간 결합도 최소화 |
 
 ## StackSets: "조직 전체에 한 번에"
 
-StackSets는 하나의 Template를 여러 AWS 계정의 여러 리전에 동시에 배포한다. Landing Zone, 보안 Baseline, 모니터링 표준화 같은 조직 전체 표준을 구현할 때 핵심 도구다.
+StackSets는 하나의 템플릿을 여러 AWS 계정의 여러 리전에 동시에 배포한다. Landing Zone, 보안 Baseline, 모니터링 표준화 같은 조직 전체 표준을 구현할 때 핵심 도구다.
 
 **StackSets 아키텍처:**
 
@@ -340,7 +340,7 @@ aws cloudformation update-stack-set \
 | `RegionConcurrencyType` | 리전 배포 방식 | `SEQUENTIAL` (안전) 또는 `PARALLEL` (빠름) |
 | `RegionOrder` | 리전 배포 순서 | 먼저 시범 리전, 후에 주요 리전 |
 
-> 📚 **사례**: 2022년 핀테크 H사가 AWS Organizations로 계정 구조를 개편하면서 StackSets로 "조직 보안 기준선"을 구축했다. 내용은 CloudTrail(모든 API 로깅), Config(기본 규칙 세트), GuardDuty(위협 감지), SecurityHub(통합 보안 대시보드)를 모든 계정에 자동 배포하는 것이었다. Organizations + Service-Managed StackSets + AutoDeployment=true 조합으로, 신규 AWS 계정이 생성되는 즉시 보안 Baseline이 자동 적용됐다. 이전에는 새 계정 보안 설정에 수동으로 1~2일이 소요됐던 것이 0분으로 줄었다. SOC2 Type II 감사에서 "모든 계정에 동일한 보안 통제가 적용됨"을 StackSets 운영 기록으로 증명했다.
+가상의 사례로, 2022년 핀테크 H사가 AWS Organizations로 계정 구조를 개편하면서 StackSets로 "조직 보안 기준선"을 구축했다. 내용은 CloudTrail(모든 API 로깅), Config(기본 규칙 세트), GuardDuty(위협 감지), SecurityHub(통합 보안 대시보드)를 모든 계정에 자동 배포하는 것이었다. Organizations + Service-Managed StackSets + AutoDeployment=true 조합으로, 신규 AWS 계정이 생성되는 즉시 보안 Baseline이 자동 적용됐다. 이전에는 새 계정 보안 설정에 수동으로 1~2일이 소요됐던 것이 0분으로 줄었다. SOC2 Type II 감사에서 "모든 계정에 동일한 보안 통제가 적용됨"을 StackSets 운영 기록으로 증명했다.
 
 **StackSet 운영 관리:**
 
@@ -413,7 +413,7 @@ SSMInterfaceEndpoint:
     PrivateDnsEnabled: true
 ```
 
-> ⚠️ **함정**: `DependsOn`을 남용하면 병렬 생성이 직렬화되어 Stack 생성 시간이 늘어난다. CloudFormation은 의존 관계가 없는 리소스들을 기본적으로 병렬로 생성한다. 불필요한 `DependsOn`은 이 병렬성을 깨뜨린다. `!Ref`나 `!GetAtt`로 표현 가능한 의존성은 `DependsOn`이 불필요하다. 예를 들어 `SecurityGroup` ID를 `!GetAtt SG.GroupId`로 참조하면 CFn이 자동으로 SG 생성 후 EC2를 생성한다. 그 위에 `DependsOn: SG`를 추가로 쓰는 것은 중복이다.
+> ⚠️ **함정**: `DependsOn`을 남용하면 병렬 생성이 직렬화되어 스택 생성 시간이 늘어난다. CloudFormation은 의존 관계가 없는 리소스들을 기본적으로 병렬로 생성한다. 불필요한 `DependsOn`은 이 병렬성을 깨뜨린다. `!Ref`나 `!GetAtt`로 표현 가능한 의존성은 `DependsOn`이 불필요하다. 예를 들어 `SecurityGroup` ID를 `!GetAtt SG.GroupId`로 참조하면 CFn이 자동으로 SG 생성 후 EC2를 생성한다. 그 위에 `DependsOn: SG`를 추가로 쓰는 것은 중복이다.
 
 ## StackSets와 SCP 상호작용: 중요 운영 함정
 
@@ -435,9 +435,9 @@ aws iam simulate-principal-policy \
   --context-entries 'ContextKeyName=aws:RequestedRegion,ContextKeyValues=["ap-northeast-2"],ContextKeyType=string'
 ```
 
-> 💡 **관련 이론**: SCP와 IAM 정책의 조합은 AWS 권한 평가의 "최소 교집합" 원칙을 따른다. 유효 권한 = (SCP가 Allow하는 것) ∩ (Permission Boundary가 Allow하는 것) ∩ (Identity Policy가 Allow하는 것). 이 구조는 집합론의 교집합(Intersection)으로, 어느 하나라도 Deny하면 최종 결과는 Deny다. StackSets 설계 시 배포 대상 리전과 작업이 SCP의 허용 범위 안에 있는지 사전에 시뮬레이션으로 확인하는 것이 필수다. AWS IAM Policy Simulator가 이 교집합 계산을 수행한다.
+SCP와 IAM 정책의 조합은 AWS 권한 평가의 "최소 교집합" 원칙을 따른다. 유효 권한 = (SCP가 Allow하는 것) ∩ (Permission Boundary가 Allow하는 것) ∩ (Identity Policy가 Allow하는 것). 이 구조는 집합론의 교집합(Intersection)으로, 어느 하나라도 Deny하면 최종 결과는 Deny다. StackSets 설계 시 배포 대상 리전과 작업이 SCP의 허용 범위 안에 있는지 사전에 시뮬레이션으로 확인하는 것이 필수다. AWS IAM Policy Simulator가 이 교집합 계산을 수행한다.
 
-> 📚 **사례**: 2023년 금융기관 I사는 Organizations SCP로 ap-northeast-2(서울)와 us-east-1(버지니아) 이외 리전에서의 모든 리소스 생성을 금지했다. 이후 StackSets로 유럽 규제 요구사항을 충족하기 위해 eu-west-1(아일랜드) 배포를 시도했는데, SCP 제약으로 모든 Stack Instance 생성이 실패했다. 수백 개 계정에 배포 시도→실패가 반복되며 CloudTrail 이벤트가 폭발적으로 증가했다. 해결책: eu-west-1 사용이 필요한 계정들을 별도 OU로 분리하고, 해당 OU의 SCP에만 eu-west-1 허용 조건을 추가했다.
+가상의 사례로, 2023년 금융기관 I사는 Organizations SCP로 ap-northeast-2(서울)와 us-east-1(버지니아) 이외 리전에서의 모든 리소스 생성을 금지했다. 이후 StackSets로 유럽 규제 요구사항을 충족하기 위해 eu-west-1(아일랜드) 배포를 시도했는데, SCP 제약으로 모든 Stack Instance 생성이 실패했다. 수백 개 계정에 배포 시도→실패가 반복되며 CloudTrail 이벤트가 폭발적으로 증가했다. 해결책: eu-west-1 사용이 필요한 계정들을 별도 OU로 분리하고, 해당 OU의 SCP에만 eu-west-1 허용 조건을 추가했다.
 
 ## CloudFormation Modules와 Registry: 조직 표준 타입
 

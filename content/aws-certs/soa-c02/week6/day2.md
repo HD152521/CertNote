@@ -10,7 +10,7 @@ Terraform을 써본 운영자라면 `terraform plan`에 익숙할 것이다. Cha
 
 **Change Set의 내부 동작:**
 
-1. 현재 Stack의 Template와 새 Template를 비교
+1. 현재 스택의 템플릿과 새 템플릿을 비교
 2. 각 리소스에 대해 필요한 Action(Add/Modify/Remove)을 계산
 3. Modify인 경우 해당 변경이 Replacement(재생성)를 유발하는지 분석
 4. 실제 리소스는 건드리지 않고 계획만 반환
@@ -136,7 +136,7 @@ aws cloudformation wait stack-update-complete --stack-name $STACK_NAME
 echo "배포 완료"
 ```
 
-> 💡 **관련 이론**: Change Set의 설계는 소프트웨어 공학의 "Preview Before Commit" 원칙을 인프라에 적용한 것이다. Git의 `git diff --staged`가 commit 전 변경 내용을 보여주는 것처럼, Change Set은 인프라 변경의 diff를 보여준다. 두 방식 모두 "인간이 검토할 기회를 제공한 후 실행"한다는 점에서 동일하다. 분산 시스템 이론에서는 이를 "Two-Phase Commit의 단순화"로 볼 수 있다: Phase 1(Prepare = Change Set 생성)에서 변경 계획을 수립하고, Phase 2(Commit = execute-change-set)에서 실제 반영한다. CloudFormation의 Change Set은 중간에 인간 검토를 삽입한 "Human-in-the-loop 2PC"이다.
+Change Set의 설계는 소프트웨어 공학의 "Preview Before Commit" 원칙을 인프라에 적용한 것이다. Git의 `git diff --staged`가 commit 전 변경 내용을 보여주는 것처럼, Change Set은 인프라 변경의 diff를 보여준다. 두 방식 모두 "인간이 검토할 기회를 제공한 후 실행"한다는 점에서 동일하다. 분산 시스템 이론에서는 이를 "Two-Phase Commit의 단순화"로 볼 수 있다: Phase 1(Prepare = Change Set 생성)에서 변경 계획을 수립하고, Phase 2(Commit = execute-change-set)에서 실제 반영한다. CloudFormation의 Change Set은 중간에 인간 검토를 삽입한 "Human-in-the-loop 2PC"이다.
 
 ## Drift Detection: "코드와 현실의 괴리를 찾아라"
 
@@ -144,13 +144,13 @@ echo "배포 완료"
 
 **Drift Detection 동작 원리:**
 
-CloudFormation이 각 Stack 리소스에 대해 현재 실제 리소스 설정을 AWS API로 조회하고, Template에 정의된 원하는 상태(Expected)와 비교한다.
+CloudFormation이 각 스택 리소스에 대해 현재 실제 리소스 설정을 AWS API로 조회하고, 템플릿에 정의된 원하는 상태(Expected)와 비교한다.
 
 | Drift 상태 | 의미 | 운영자 조치 |
 |------------|------|-------------|
-| `IN_SYNC` | Template과 실제 상태 일치 | 정상 |
-| `MODIFIED` | Template에는 있지만 일부 속성이 변경됨 | 변경된 속성 확인 후 CFn으로 교정 또는 Template 업데이트 |
-| `DELETED` | Template에는 있지만 실제 리소스가 삭제됨 | Stack 재배포로 리소스 복원 |
+| `IN_SYNC` | 템플릿과 실제 상태 일치 | 정상 |
+| `MODIFIED` | 템플릿에는 있지만 일부 속성이 변경됨 | 변경된 속성 확인 후 CFn으로 교정 또는 템플릿 업데이트 |
+| `DELETED` | 템플릿에는 있지만 실제 리소스가 삭제됨 | 스택 재배포로 리소스 복원 |
 | `NOT_CHECKED` | Drift Detection이 해당 리소스 타입을 지원하지 않음 | 수동 확인 필요 |
 
 **Drift Detection 실행:**
@@ -211,7 +211,7 @@ aws cloudformation describe-stack-resource-drifts \
   }
 ]
 ```
-이 출력은 `WebServerSG` 보안 그룹에 Template에 없는 SSH(22번 포트, 전체 개방) 규칙이 추가됐음을 보여준다.
+이 출력은 `WebServerSG` 보안 그룹에 템플릿에 없는 SSH(22번 포트, 전체 개방) 규칙이 추가됐음을 보여준다.
 
 **Drift Detection 제한 사항:**
 
@@ -219,9 +219,9 @@ aws cloudformation describe-stack-resource-drifts \
 2. CloudFormation **외부에서 추가된** 리소스는 감지하지 못한다 (Stack이 모르는 리소스)
 3. 삭제·수정된 것만 감지 가능 (Stack 관리 리소스의 외부 변경만 감지)
 4. 비동기 작업이므로 완료 대기가 필요하다
-5. 대규모 Stack(100+ 리소스)은 Drift Detection에 수 분이 걸릴 수 있다
+5. 대규모 스택(100+ 리소스)은 Drift Detection에 수 분이 걸릴 수 있다
 
-> 📚 **사례**: 2023년 핀테크 G사에서 개발자가 긴급 장애 대응 중 CFn으로 관리되는 보안 그룹에 `0.0.0.0/0:22`(전체 SSH 개방) 규칙을 추가했다. 장애는 복구됐지만 이 규칙이 3개월 동안 남아 있었다. 외부 취약점 스캐너가 발견했을 때 이미 개인정보보호법 위반 가능성이 있었다. 만약 매일 Drift Detection이 자동으로 실행되고 있었다면 당일 감지해 즉시 수정됐을 것이다. 이 사건 이후 EventBridge Scheduled Rule + Lambda + Drift Detection + SNS 알림의 자동화 파이프라인을 구축했다. NIST SP 800-53 CM-3(Configuration Change Control)와 CM-6(Configuration Settings) 요구사항을 이 자동화로 충족한다.
+가상의 사례로, 2023년 핀테크 G사에서 개발자가 긴급 장애 대응 중 CFn으로 관리되는 보안 그룹에 `0.0.0.0/0:22`(전체 SSH 개방) 규칙을 추가했다. 장애는 복구됐지만 이 규칙이 3개월 동안 남아 있었다. 외부 취약점 스캐너가 발견했을 때 이미 개인정보보호법 위반 가능성이 있었다. 만약 매일 Drift Detection이 자동으로 실행되고 있었다면 당일 감지해 즉시 수정됐을 것이다. 이 사건 이후 EventBridge Scheduled Rule + Lambda + Drift Detection + SNS 알림의 자동화 파이프라인을 구축했다. NIST SP 800-53 CM-3(Configuration Change Control)와 CM-6(Configuration Settings) 요구사항을 이 자동화로 충족한다.
 
 **자동화 Drift 점검 패턴 (EventBridge + Lambda):**
 
@@ -275,15 +275,15 @@ def handler(event, context):
     return {'drifted_stacks': len(drifted_stacks)}
 ```
 
-> 🔍 **더 깊이**: Drift Detection의 근본 문제는 "코드 → 현실"이 아니라 "현실 → 코드"로의 방향 역전이 필요하다는 것이다. Drift가 감지됐을 때 두 가지 전략이 있다: (1) **Revert**: 실제 리소스를 Template 상태로 되돌린다(재배포). 긴급 수동 변경이 잘못된 경우, (2) **Adopt**: Template를 실제 상태로 업데이트한다. 수동 변경이 의도적이고 옳은 경우. 어떤 전략을 선택할지는 비즈니스 판단이 필요하다. AWS Config와 Drift Detection을 함께 사용하면 "누가 언제 바꿨는가(CloudTrail 연계)"와 "무엇이 어떻게 바뀌었는가(Drift)"를 모두 파악할 수 있다.
+Drift Detection의 근본 문제는 "코드 → 현실"이 아니라 "현실 → 코드"로의 방향 역전이 필요하다는 것이다. Drift가 감지됐을 때 두 가지 전략이 있다: (1) **Revert**: 실제 리소스를 템플릿 상태로 되돌린다(재배포). 긴급 수동 변경이 잘못된 경우, (2) **Adopt**: 템플릿을 실제 상태로 업데이트한다. 수동 변경이 의도적이고 옳은 경우. 어떤 전략을 선택할지는 비즈니스 판단이 필요하다. AWS Config와 Drift Detection을 함께 사용하면 "누가 언제 바꿨는가(CloudTrail 연계)"와 "무엇이 어떻게 바뀌었는가(Drift)"를 모두 파악할 수 있다.
 
 ## Rollback Trigger: "배포 후 10분이 안전 기준"
 
-Rollback Trigger는 Stack 업데이트가 완료된 후 지정된 시간 동안 CloudWatch Alarm을 모니터링하다가 알람이 발생하면 자동으로 이전 상태로 롤백하는 기능이다.
+Rollback Trigger는 스택 업데이트가 완료된 후 지정된 시간 동안 CloudWatch Alarm을 모니터링하다가 알람이 발생하면 자동으로 이전 상태로 롤백하는 기능이다.
 
 **설계 배경:**
 
-Netflix의 "Fail Fast, Recover Faster" 원칙에서 영감을 받은 패턴이다. Martin Fowler가 2010년 정의한 "Canary Release"에서 "새 버전이 문제를 일으키면 즉시 되돌린다"는 개념을 CloudFormation 레벨에서 구현한 것이다. Blue-Green 배포와 다른 점은 인프라를 두 벌 유지하지 않는다는 것이고, 대신 "변경 후 모니터링 기간"으로 안전을 확보한다.
+Netflix의 "Fail Fast, Recover Faster" 원칙에서 영감을 받은 패턴이다. Martin Fowler가 2010년 정의한 "Canary Release"에서 "새 버전이 문제를 일으키면 즉시 되돌린다"는 개념을 CloudFormation 레벨에서 구현한 것이다. Blue/Green 배포와 다른 점은 인프라를 두 벌 유지하지 않는다는 것이고, 대신 "변경 후 모니터링 기간"으로 안전을 확보한다.
 
 **Rollback Trigger 설정:**
 
@@ -368,7 +368,7 @@ Time 0:15 → MonitoringTime 10분 완료, 알람 발생 없음
 
 > ⚠️ **함정**: Rollback Trigger의 모니터링 기간은 업데이트 **완료 후**에만 적용된다. 업데이트 **진행 중**에는 알람 모니터링이 없다. 또한 `MonitoringTimeInMinutes`가 지나면 그 이후의 알람 발생은 자동 롤백을 트리거하지 않는다. 최대 5개 트리거를 설정할 수 있으며, 하나라도 ALARM 상태가 되면 롤백이 시작된다. 알람의 `treat-missing-data`를 `breaching`으로 설정하면 배포 직후 메트릭 데이터가 없을 때도 롤백이 시작될 수 있다. 반드시 `notBreaching`으로 설정한다.
 
-> 💡 **관련 이론**: Rollback Trigger의 "모니터링 후 확정" 패턴은 제어 이론의 **피드백 제어 루프(Feedback Control Loop)**와 동일하다. 시스템 출력(서비스 지표)을 측정하고, 원하는 상태(정상 에러율)와 비교해, 벗어나면 교정 액션(롤백)을 취한다. 이 패턴은 1940년대 Norbert Wiener의 사이버네틱스(Cybernetics) 이론에 뿌리를 둔다. 현대 소프트웨어에서 동일한 패턴을 Kubernetes HPA(Horizontal Pod Autoscaler), AWS Auto Scaling의 Step Scaling Policy에서도 볼 수 있다.
+Rollback Trigger의 "모니터링 후 확정" 패턴은 제어 이론의 **피드백 제어 루프(Feedback Control Loop)**와 동일하다. 시스템 출력(서비스 지표)을 측정하고, 원하는 상태(정상 에러율)와 비교해, 벗어나면 교정 액션(롤백)을 취한다. 이 패턴은 1940년대 Norbert Wiener의 사이버네틱스(Cybernetics) 이론에 뿌리를 둔다. 현대 소프트웨어에서 동일한 패턴을 Kubernetes HPA(Horizontal Pod Autoscaler), AWS Auto Scaling의 Step Scaling Policy에서도 볼 수 있다.
 
 ## Termination Protection: 실수 삭제 방지
 
@@ -406,7 +406,7 @@ aws cloudformation create-stack \
 
 | 보호 메커니즘 | 보호 대상 | 보호 범위 | 우회 방법 | 주요 사용 목적 |
 |---------------|-----------|-----------|-----------|----------------|
-| **Termination Protection** | Stack 자체 삭제 | Stack 레벨 | 보호 해제 후 삭제 | 실수 삭제 방지 |
+| **Termination Protection** | 스택 자체 삭제 | 스택 레벨 | 보호 해제 후 삭제 | 실수 삭제 방지 |
 | **Stack Policy** | 업데이트 시 특정 리소스 수정/삭제 | 리소스 레벨 | 임시 override 정책 | 핵심 리소스 실수 변경 방지 |
 | **IAM 정책** | CloudFormation API 호출 자체 | 사용자/역할 레벨 | 권한 부여 필요 | 사람 레벨의 접근 제어 |
 | **Service Control Policy (SCP)** | 조직 전체 API 호출 | 계정 레벨 | 관리자 계정에서만 변경 | 조직 전체 거버넌스 |
@@ -460,15 +460,15 @@ aws cloudformation execute-change-set \
 ```
 
 **Resource Import 주의사항:**
-- Template의 해당 리소스에 `DeletionPolicy: Retain`이 없으면 Import 거부
-- Import 후 Drift Detection을 바로 실행해 Template와 실제 상태 일치 여부 확인
-- Import된 리소스의 실제 속성과 Template 속성이 다르면 Drift Detection에서 MODIFIED로 표시
+- 템플릿의 해당 리소스에 `DeletionPolicy: Retain`이 없으면 Import 거부
+- Import 후 Drift Detection을 바로 실행해 템플릿과 실제 상태 일치 여부 확인
+- Import된 리소스의 실제 속성과 템플릿 속성이 다르면 Drift Detection에서 MODIFIED로 표시
 
-> 📚 **사례**: 2024년 제조업체 H사는 3년간 콘솔에서 수동으로 구성한 인프라(EC2 50대, RDS 12개, VPC 3개)를 IaC로 전환하는 프로젝트를 시작했다. 전환 전략으로 "삭제 후 재생성" 대신 Resource Import를 선택했다. 총 7주에 걸쳐 단계적으로 Import를 수행했고, Import 후 Drift Detection으로 Template 정확도를 검증했다. 전환 후 EC2 교체 시간이 수 시간(수동)에서 15분(CFn 자동)으로 단축됐다. 핵심 교훈: Import 전 반드시 `cfn-schema validate`로 각 리소스의 필수 속성을 파악해야 한다.
+가상의 사례로, 2024년 제조업체 H사는 3년간 콘솔에서 수동으로 구성한 인프라(EC2 50대, RDS 12개, VPC 3개)를 IaC로 전환하는 프로젝트를 시작했다. 전환 전략으로 "삭제 후 재생성" 대신 Resource Import를 선택했다. 총 7주에 걸쳐 단계적으로 Import를 수행했고, Import 후 Drift Detection으로 템플릿 정확도를 검증했다. 전환 후 EC2 교체 시간이 수 시간(수동)에서 15분(CFn 자동)으로 단축됐다. 핵심 교훈: Import 전 반드시 `cfn-schema validate`로 각 리소스의 필수 속성을 파악해야 한다.
 
-## CFn Guard: Template 정책 검증 (Policy as Code)
+## CFn Guard: 템플릿 정책 검증 (Policy as Code)
 
-CFn Guard(AWS CloudFormation Guard)는 Template가 조직의 정책을 준수하는지 배포 전에 검증하는 DSL 기반 도구다. "퍼블릭 S3 버킷 차단", "암호화되지 않은 EBS 차단" 같은 정책을 자동으로 검증한다.
+CFn Guard(AWS CloudFormation Guard)는 템플릿이 조직의 정책을 준수하는지 배포 전에 검증하는 DSL 기반 도구다. "퍼블릭 S3 버킷 차단", "암호화되지 않은 EBS 차단" 같은 정책을 자동으로 검증한다.
 
 ```bash
 # Guard 설치
@@ -523,7 +523,7 @@ if ! cfn-guard validate --data template.yaml --rules security-rules.guard; then
 fi
 ```
 
-> 💡 **관련 이론**: CFn Guard는 "Policy as Code" 패턴의 구현이다. Open Policy Agent(OPA), HashiCorp Sentinel, Kubernetes OPA Gatekeeper가 같은 개념의 도구들이다. 이 패턴의 핵심은 정책을 사람이 읽는 문서나 절차가 아니라 기계가 실행할 수 있는 코드로 표현하는 것이다. SOC2, PCI-DSS, ISO 27001 같은 컴플라이언스 요구사항을 CFn Guard 규칙으로 표현하면 배포 파이프라인에서 자동으로 검증할 수 있다. AWS는 PCI-DSS, HIPAA, NIST SP 800-53 등에 대한 공식 Guard 규칙 세트를 GitHub에 공개하고 있다.
+CFn Guard는 "Policy as Code" 패턴의 구현이다. Open Policy Agent(OPA), HashiCorp Sentinel, Kubernetes OPA Gatekeeper가 같은 개념의 도구들이다. 이 패턴의 핵심은 정책을 사람이 읽는 문서나 절차가 아니라 기계가 실행할 수 있는 코드로 표현하는 것이다. SOC2, PCI-DSS, ISO 27001 같은 컴플라이언스 요구사항을 CFn Guard 규칙으로 표현하면 배포 파이프라인에서 자동으로 검증할 수 있다. AWS는 PCI-DSS, HIPAA, NIST SP 800-53 등에 대한 공식 Guard 규칙 세트를 GitHub에 공개하고 있다.
 
 ## 전체 안전 배포 패턴
 
