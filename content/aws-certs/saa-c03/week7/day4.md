@@ -2,7 +2,7 @@
 
 Day 1~3에서 본 SQS·SNS·EventBridge는 모두 **메시지 단위**로 동작한다. 한 메시지가 발생 → 라우팅 → 컨슈머가 받아 처리 → 끝. 메시지의 보존은 길어도 14일이고, 컨슈머가 한 번 처리하면 메시지는 사라지거나(SQS) 다시 볼 수 없다(SNS·EventBridge Archive 제외). 그런데 현대 시스템에서 발생하는 데이터 중 큰 부분은 이 모델로 풀 수 없다.
 
-생각해보자. 한 e-commerce 회사가 사용자 클릭 데이터를 초당 50만 건 생성한다. 이 데이터를 ① 실시간 추천 모델이 즉시 처리하고, ② 사기 탐지 시스템이 또 즉시 처리하고, ③ 분석팀이 30분 단위 윈도우로 집계하고, ④ 데이터 웨어하우스에 적재해 다음 주에 다시 분석한다. 같은 데이터를 4번, 서로 다른 시점에, 서로 다른 속도로 소비해야 한다. SQS는 1회 소비 모델이라 적합하지 않고, SNS fanout으로 4개 큐에 복사하면 작동은 하지만 보존이 14일이라 다음 주 재분석이 어려우며, EventBridge는 처리량 quota(account당 ~10K TPS)에 막힌다.
+한 e-commerce 회사가 사용자 클릭 데이터를 초당 50만 건 생성한다. 이 데이터를 ① 실시간 추천 모델이 즉시 처리하고, ② 사기 탐지 시스템이 또 즉시 처리하고, ③ 분석팀이 30분 단위 윈도우로 집계하고, ④ 데이터 웨어하우스에 적재해 다음 주에 다시 분석한다. 같은 데이터를 4번, 서로 다른 시점에, 서로 다른 속도로 소비해야 한다. SQS는 1회 소비 모델이라 적합하지 않고, SNS fanout으로 4개 큐에 복사하면 작동은 하지만 보존이 14일이라 다음 주 재분석이 어려우며, EventBridge는 처리량 quota(account당 ~10K TPS)에 막힌다.
 
 **Kinesis**(2013년 11월 출시)는 이 시나리오에 답한다. 본질적으로 큐가 아니라 **로그(append-only ordered log)** 모델이고, 이 모델은 2011년 LinkedIn의 Jay Kreps가 만든 Apache Kafka에서 처음 검증된 패턴이다. 한 번 쓴 데이터는 보존 기간 동안(최대 365일) 그대로 남고, 여러 컨슈머가 각자의 위치(offset)에서 독립적으로 읽으며, 필요하면 과거 위치로 돌아가 다시 처리할 수 있다. Kinesis 패밀리는 이 로그 모델을 코어로 하면서 자동 적재(Firehose)·실시간 분석(Managed Flink)·Kafka 호환(MSK)으로 확장됐다. 이 글은 Kinesis가 왜 SQS와 다른 도구이며 어떤 시나리오에 어떤 변종을 써야 하는지 본다.
 
@@ -16,11 +16,11 @@ Day 1~3에서 본 SQS·SNS·EventBridge는 모두 **메시지 단위**로 동작
 | **Kinesis Video Streams** | 2017.11 | Video ingest | 비디오 스트림 (SAA 범위 밖) |
 | **MSK (Managed Streaming for Kafka)** | 2018.11 | Managed Apache Kafka | Kafka 마이그레이션, 호환 필요 |
 
-이 네 가지 중 시험과 실무에서 가장 자주 등장하는 분기점은 **KDS vs Firehose**다. 한 줄 요약: KDS는 "내가 컨슈머를 짠다(원시 스트림)", Firehose는 "AWS가 컨슈머를 짠다(자동 적재 파이프라인)". KDS는 실시간성과 다중 컨슈머 + replay가 필요할 때, Firehose는 단순히 데이터를 어딘가에 떨어뜨리는 게 목표일 때.
+이 네 가지 중 시험과 실무에서 핵심이 되는 분기점은 **KDS vs Firehose**다. 한 줄 요약: KDS는 "내가 컨슈머를 짠다(원시 스트림)", Firehose는 "AWS가 컨슈머를 짠다(자동 적재 파이프라인)". KDS는 실시간성과 다중 컨슈머 + replay가 필요할 때, Firehose는 단순히 데이터를 어딘가에 떨어뜨리는 게 목표일 때.
 
-> 💡 **관련 이론**: 로그 기반 시스템의 이론적 기반은 2013년 Jay Kreps의 *The Log: What every software engineer should know about real-time data's unifying abstraction* 글이 정립했다. 핵심 통찰: "데이터베이스의 transaction log, 메시지 큐, pub/sub, change data capture는 모두 같은 추상화(append-only ordered log)의 변종이다." Kafka·Kinesis·Pulsar는 이 추상화를 first-class로 만든 시스템이고, 그래서 "데이터의 source of truth"로 쓰일 수 있다 — 큐로는 불가능한 일이다.
+로그 기반 시스템의 이론적 기반은 2013년 Jay Kreps의 *The Log: What every software engineer should know about real-time data's unifying abstraction* 글이 정립했다. 핵심 통찰: "데이터베이스의 transaction log, 메시지 큐, pub/sub, change data capture는 모두 같은 추상화(append-only ordered log)의 변종이다." Kafka·Kinesis·Pulsar는 이 추상화를 first-class로 만든 시스템이고, 그래서 "데이터의 source of truth"로 쓰일 수 있다 — 큐로는 불가능한 일이다.
 
-> 🔍 **더 깊이**: Kinesis와 Kafka의 핵심 설계 차이는 "샤드(KDS) vs 파티션(Kafka)"에 있다. 둘 다 처리량 단위로 데이터를 분할하지만 KDS의 샤드는 매니지드 서비스의 quota 단위(1MB/s in, 2MB/s out)로 표준화돼 있고, Kafka 파티션은 클러스터 용량에 따라 자유롭다. 그 대가로 KDS는 운영 부담이 거의 0(샤드 split/merge API 호출만)이지만 Kafka는 broker·zookeeper(또는 KRaft) 운영이 필요하다. AWS의 MSK는 Kafka 호환성을 유지하면서 broker만 매니지드로 옮긴 절충안.
+Kinesis와 Kafka의 핵심 설계 차이는 "샤드(KDS) vs 파티션(Kafka)"에 있다. 둘 다 처리량 단위로 데이터를 분할하지만 KDS의 샤드는 매니지드 서비스의 quota 단위(1MB/s in, 2MB/s out)로 표준화돼 있고, Kafka 파티션은 클러스터 용량에 따라 자유롭다. 그 대가로 KDS는 운영 부담이 거의 0(샤드 split/merge API 호출만)이지만 Kafka는 broker·zookeeper(또는 KRaft) 운영이 필요하다. AWS의 MSK는 Kafka 호환성을 유지하면서 broker만 매니지드로 옮긴 절충안.
 
 ## Data Streams: 샤드, 파티션 키, 그리고 Hot Shard 문제
 
@@ -49,7 +49,7 @@ KDS의 모든 처리량은 **샤드(shard)** 단위로 결정된다. 한 샤드�
 
 > ⚠️ **함정**: On-Demand가 "샤드를 신경 안 써도 된다"는 뜻은 아니다. 자동 확장은 5분 단위로 일어나고 폭발적 스파이크에는 따라가지 못해 throttle이 발생할 수 있다. AWS 문서는 "전월 최고 처리량의 2배까지는 즉시 흡수 가능하지만 그 이상은 시간이 걸린다"고 명시한다. 갑작스러운 50배 스파이크가 예상되면 미리 PutRecord로 워밍업하거나 Provisioned 모드로 미리 샤드를 잡는 게 안전하다.
 
-> 🔍 **더 깊이**: KDS의 보존 기간은 24시간(기본)에서 최대 365일까지(2020년 확장 전엔 7일이 최대였다). 365일 보존을 켜면 GB·시간 비용이 크게 늘지만, "실시간 처리 + 장기 replay"가 한 서비스에서 가능해진다. 이게 Kafka 시절엔 어려운 일이었다(Kafka도 무제한 보존이 가능하지만 디스크 비용을 직접 관리). 365일 보존 + Glue Schema Registry + Athena 직접 쿼리(KDS source) 조합은 "스트림 데이터 lake"의 매니지드 구현이다.
+KDS의 보존 기간은 24시간(기본)에서 최대 365일까지(2020년 확장 전엔 7일이 최대였다). 365일 보존을 켜면 GB·시간 비용이 크게 늘지만, "실시간 처리 + 장기 replay"가 한 서비스에서 가능해진다. 이게 Kafka 시절엔 어려운 일이었다(Kafka도 무제한 보존이 가능하지만 디스크 비용을 직접 관리). 365일 보존 + Glue Schema Registry + Athena 직접 쿼리(KDS source) 조합은 "스트림 데이터 lake"의 매니지드 구현이다.
 
 ## Standard Consumer vs Enhanced Fan-out: 컨슈머 모델 두 가지
 
@@ -77,7 +77,7 @@ EFO:
 
 Lambda를 KDS 컨슈머로 쓰면 자동으로 EFO를 선택할 수 있다 (Event Source Mapping의 `StartingPosition` + `MaximumBatchingWindowInSeconds` 등 옵션). 2018년 출시.
 
-> 📚 **사례**: 2019년 Lyft의 엔지니어링 블로그는 실시간 가격 책정(surge pricing) 시스템이 Standard consumer로는 latency가 충분히 낮지 않아 EFO로 전환한 사례를 공개했다. 폴링 간격을 줄이면 throttle이 늘고 안 줄이면 latency가 늘어나는 dilemma를 push 모델이 해결했다. 비용은 ~3배 늘었지만 surge pricing 정확도 개선의 가치가 훨씬 컸다고 평가.
+**사례**: 2019년 Lyft의 엔지니어링 블로그는 실시간 가격 책정(surge pricing) 시스템이 Standard consumer로는 latency가 충분히 낮지 않아 EFO로 전환한 사례를 공개했다. 폴링 간격을 줄이면 throttle이 늘고 안 줄이면 latency가 늘어나는 dilemma를 push 모델이 해결했다. 비용은 ~3배 늘었지만 surge pricing 정확도 개선의 가치가 훨씬 컸다고 평가.
 
 ## Firehose: "AWS가 컨슈머를 짜준다"
 
@@ -132,9 +132,9 @@ aws firehose create-delivery-stream \
 
 이 한 설정으로 Lambda enrichment + Parquet 변환 + S3 동적 파티션 적재 + Glue 카탈로그 등록 + 에러 격리가 다 자동화된다. Athena로 즉시 쿼리 가능한 분석 데이터 레이크가 완성된다.
 
-> 💡 **관련 이론**: "Data Lake에 데이터를 적재할 때 Parquet/ORC 같은 columnar format을 쓴다"는 건 2010년대 빅데이터의 정설이다. Parquet는 2013년 Twitter+Cloudera가 만든 포맷으로, 같은 데이터를 JSON으로 저장한 것 대비 ① 압축률 5-10배, ② 컬럼별 스캔 가능해 쿼리 비용 1/10, ③ predicate pushdown으로 통계 기반 partition pruning. Firehose가 이 변환을 매니지드로 하므로 분석 비용이 극적으로 줄어든다 — Athena는 GB 스캔당 과금이라 Parquet 적용 후 비용이 1/20이 된 사례도 흔하다.
+"Data Lake에 데이터를 적재할 때 Parquet/ORC 같은 columnar format을 쓴다"는 건 2010년대 빅데이터의 정설이다. Parquet는 2013년 Twitter+Cloudera가 만든 포맷으로, 같은 데이터를 JSON으로 저장한 것 대비 ① 압축률 5-10배, ② 컬럼별 스캔 가능해 쿼리 비용 1/10, ③ predicate pushdown으로 통계 기반 partition pruning. Firehose가 이 변환을 매니지드로 하므로 분석 비용이 극적으로 줄어든다 — Athena는 GB 스캔당 과금이라 Parquet 적용 후 비용이 1/20이 된 사례도 흔하다.
 
-> 🔍 **더 깊이**: Firehose의 Dynamic Partitioning(2021년 출시)은 record 안의 필드 값으로 S3 prefix를 만든다. 예를 들어 `customer_tier` 필드 값에 따라 `customer_tier=premium/`이나 `customer_tier=free/`로 자동 분기. 이게 왜 중요하냐면 Athena 쿼리에서 `WHERE customer_tier='premium'`을 쓰면 해당 파티션만 스캔해 비용이 극적으로 줄기 때문이다. 옛날엔 Lambda로 직접 prefix를 만들거나 적재 후 Spark 작업으로 repartition해야 했는데 Firehose가 이걸 적재 시점에 해준다.
+Firehose의 Dynamic Partitioning(2021년 출시)은 record 안의 필드 값으로 S3 prefix를 만든다. 예를 들어 `customer_tier` 필드 값에 따라 `customer_tier=premium/`이나 `customer_tier=free/`로 자동 분기. 이게 왜 중요하냐면 Athena 쿼리에서 `WHERE customer_tier='premium'`을 쓰면 해당 파티션만 스캔해 비용이 극적으로 줄기 때문이다. 옛날엔 Lambda로 직접 prefix를 만들거나 적재 후 Spark 작업으로 repartition해야 했는데 Firehose가 이걸 적재 시점에 해준다.
 
 ## Managed Service for Apache Flink: 진짜 스트림 처리
 
@@ -167,7 +167,7 @@ GROUP BY user_id, TUMBLE(event_time, INTERVAL '1' MINUTE);
 
 이게 SQL 7줄로 표현되지만 직접 구현하면 Lambda 수천 줄 + DynamoDB 상태 관리 + 정확성 보장 코드가 필요하다. Flink는 이걸 매니지드로 푼다.
 
-> 📚 **사례**: 2020년 Uber 엔지니어링 블로그가 자체 데이터 플랫폼에 Flink를 도입한 결과를 공개했다. 가장 큰 변화는 "동일 데이터를 batch + streaming 두 파이프라인으로 운영하던 lambda architecture를 stream-only(kappa architecture)로 단순화"였다. Flink의 exactly-once + event time 의미론이 batch와 동등한 정확성을 보장해줘서 가능했다. AWS 환경에서도 같은 패턴이 가능하지만 Managed Flink가 비싸기 때문에 워크로드 ROI를 따져야 한다.
+**사례**: 2020년 Uber 엔지니어링 블로그가 자체 데이터 플랫폼에 Flink를 도입한 결과를 공개했다. 가장 큰 변화는 "동일 데이터를 batch + streaming 두 파이프라인으로 운영하던 lambda architecture를 stream-only(kappa architecture)로 단순화"였다. Flink의 exactly-once + event time 의미론이 batch와 동등한 정확성을 보장해줘서 가능했다. AWS 환경에서도 같은 패턴이 가능하지만 Managed Flink가 비싸기 때문에 워크로드 ROI를 따져야 한다.
 
 ## MSK: Kafka가 필요할 때
 
@@ -176,7 +176,7 @@ Kafka는 Kinesis의 오픈소스 형제다. API와 운영 모델이 다르지만
 1. **기존 Kafka 자산 보호**: 회사가 이미 Kafka 기반 시스템(Spark Streaming, Flink, Confluent Schema Registry, Debezium CDC)을 가지고 있으면 코드 변경 없이 이동 가능.
 2. **풍부한 생태계**: Kafka Connect(수백 개 connector), Kafka Streams, KSQL, Schema Registry 등 풍부한 에코시스템.
 3. **세밀한 제어**: 파티션 수, replication factor, retention, broker config 직접 제어. Kinesis는 매니지드로 추상화돼 있다.
-4. **MirrorMaker로 멀티 리전**: Kafka의 MirrorMaker2 패턴으로 active-active 멀티 리전 토픽 가능.
+4. **MirrorMaker로 멀티 리전**: Kafka의 MirrorMaker2 패턴으로 Active-Active 멀티 리전 토픽 가능.
 
 MSK의 단점은 **운영 부담이 Kinesis보다 크다**는 것. Broker가 EC2 인스턴스로 실제 존재하고, partition 수 계획·broker scaling·재밸런싱·storage scaling 등을 직접 신경 써야 한다. AWS는 2022년 **MSK Serverless**를 출시해 일부 운영 부담을 줄였지만 여전히 Kinesis보다는 손이 많이 간다.
 
@@ -190,9 +190,9 @@ MSK의 단점은 **운영 부담이 Kinesis보다 크다**는 것. Broker가 EC2
 | 컨슈머 SDK | KCL | Kafka consumer (다양한 언어) | Kafka consumer |
 | 멀티 리전 | 직접 구현 | MirrorMaker2 | 미지원 |
 
-## SQS vs Kinesis: 시험 최빈출 분기점
+## SQS vs Kinesis: 시험의 핵심 분기점
 
-이 비교가 SAA 시험에서 가장 자주 나오는 분기점 중 하나다. 키워드 매핑을 명확히 해둘 필요가 있다.
+이 비교는 SAA 시험의 중요한 분기점이다. 키워드 매핑을 명확히 해둘 필요가 있다.
 
 | 시나리오 키워드 | 답 |
 |--------------|-----|
@@ -224,7 +224,7 @@ MSK의 단점은 **운영 부담이 Kinesis보다 크다**는 것. Broker가 EC2
                                    서빙 레이어
 ```
 
-> 💡 **관련 이론**: Lambda vs Kappa Architecture는 빅데이터 진영의 오래된 논쟁이다. 2011년 Nathan Marz가 *Big Data* 책에서 제안한 Lambda는 batch와 stream을 둘 다 운영하는 패턴이고, 2014년 Jay Kreps가 *Questioning the Lambda Architecture* 글에서 비판하며 "충분히 긴 retention의 로그(=Kafka) 하나로 둘 다 가능하다"는 Kappa를 제안했다. 365일 보존 KDS는 Kappa를 AWS 환경에서 가능하게 만든 핵심 빌딩 블록이다.
+Lambda vs Kappa Architecture는 빅데이터 진영의 오래된 논쟁이다. 2011년 Nathan Marz가 *Big Data* 책에서 제안한 Lambda는 batch와 stream을 둘 다 운영하는 패턴이고, 2014년 Jay Kreps가 *Questioning the Lambda Architecture* 글에서 비판하며 "충분히 긴 retention의 로그(=Kafka) 하나로 둘 다 가능하다"는 Kappa를 제안했다. 365일 보존 KDS는 Kappa를 AWS 환경에서 가능하게 만든 핵심 빌딩 블록이다.
 
 ## 다른 스트리밍 시스템과의 비교
 
@@ -239,7 +239,7 @@ MSK의 단점은 **운영 부담이 Kinesis보다 크다**는 것. Broker가 EC2
 
 KDS는 "AWS에 있고 운영을 안 하고 싶다 + 365일까지 보존이면 충분 + Kafka 생태계가 필요 없다"면 가장 단순한 답이다. MSK는 그 반대 — 기존 Kafka 자산이 있거나 Kafka Streams·KSQL 같은 생태계가 필요할 때.
 
-> 📚 **사례**: 2023년 Netflix는 자체 Keystone 데이터 파이프라인에서 KDS와 자체 Kafka 클러스터를 병행 운영하는 구조를 공개했다. KDS는 "단순한 ingest + S3 적재" 워크로드(트래픽의 70%)에 쓰고, Kafka는 "복잡한 stream processing + 멀티 리전 미러링" 워크로드(30%)에 썼다. 같은 회사 안에서도 워크로드 특성에 따라 골라 쓰는 게 표준이고, "이 회사는 Kafka를 쓴다/안 쓴다" 같은 이분법은 현실과 거리가 있다.
+**사례**: 2023년 Netflix는 자체 Keystone 데이터 파이프라인에서 KDS와 자체 Kafka 클러스터를 병행 운영하는 구조를 공개했다. KDS는 "단순한 ingest + S3 적재" 워크로드(트래픽의 70%)에 쓰고, Kafka는 "복잡한 stream processing + 멀티 리전 미러링" 워크로드(30%)에 썼다. 같은 회사 안에서도 워크로드 특성에 따라 골라 쓰는 게 표준이고, "이 회사는 Kafka를 쓴다/안 쓴다" 같은 이분법은 현실과 거리가 있다.
 
 ## 운영 안티패턴 정리
 
@@ -254,7 +254,7 @@ KDS·Firehose 운영에서 자주 보이는 안티패턴들.
 
 > ⚠️ **함정**: KDS Provisioned 모드에서 샤드 수를 늘리면 처리량이 즉시 N배가 되지만, **데이터 분포가 자동으로 재조정되지는 않는다**. 새 데이터부터 새 샤드 키 공간을 사용하고, 기존 샤드의 데이터는 그대로 남는다. Hot Shard를 해결하려면 split-shard 또는 merge-shard API로 명시적으로 키 공간을 재분배해야 한다.
 
-## 정리하며
+## 정리
 
 Kinesis는 단순한 "더 빠른 SQS"가 아니라 본질적으로 다른 추상화(append-only ordered log)다. 그래서 다중 컨슈머·재생·순서·고처리량 시나리오에 SQS와 SNS가 풀 수 없는 답을 준다. Data Streams는 raw stream, Firehose는 자동 적재, Managed Flink는 stream processing, MSK는 Kafka 호환 — 네 가지가 각자의 자리를 가진다.
 
