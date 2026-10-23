@@ -6,7 +6,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "CloudWatch 에이전트를 설치해 mem_available_percent를 사용자 지정 지표로 게시하고 해당 지표에 경보를 구성한다"
+        "text": "CloudWatch 에이전트로 mem_available_percent를 게시하고 이 지표에 경보를 건다"
       },
       {
         "label": "B",
@@ -14,7 +14,7 @@
       },
       {
         "label": "C",
-        "text": "Lambda 함수가 1분마다 SSH로 접속해 free 명령 결과를 파싱하고 SNS로 알림을 보낸다"
+        "text": "Lambda 함수가 1분마다 SSH로 각 인스턴스에 접속해 free 명령 결과를 파싱하고 SNS로 알림을 보낸다"
       },
       {
         "label": "D",
@@ -56,7 +56,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "CloudTrail 로그를 S3에 저장하고 매일 Athena 쿼리를 돌려 변경을 보고서로 받는다"
+        "text": "CloudTrail 로그를 S3에 저장하고 매일 Athena 쿼리로 보안 그룹 변경 이벤트를 집계해 보안팀에 보고서를 보낸다"
       },
       {
         "label": "B",
@@ -64,11 +64,11 @@
       },
       {
         "label": "C",
-        "text": "CloudTrail이 기록한 AuthorizeSecurityGroupIngress 이벤트를 EventBridge 규칙으로 매칭해 SNS 알림과 교정용 Lambda를 호출한다"
+        "text": "CloudTrail의 보안 그룹 변경 이벤트를 EventBridge로 매칭해 SNS 알림과 교정 Lambda를 호출한다"
       },
       {
         "label": "D",
-        "text": "Config 적합성 팩을 적용하고 분기별 감사 보고서에서 위반을 검토한다"
+        "text": "AWS Config 적합성 팩으로 보안 그룹 규칙을 평가하고 분기별 감사 보고서에서 위반 규칙을 검토해 운영자가 수동으로 되돌린다"
       }
     ],
     "answer": "C",
@@ -81,19 +81,19 @@
     "choices": [
       {
         "label": "A",
-        "text": "ASG의 상태 확인 유예 기간(health check grace period)을 인스턴스 워밍업 시간보다 길게 설정한다"
+        "text": "ASG의 상태 확인 유예 기간을 인스턴스 워밍업 시간보다 길게 설정한다"
       },
       {
         "label": "B",
-        "text": "ASG 상태 확인 유형을 ELB에서 EC2로 변경한다"
+        "text": "ASG 상태 확인 유형을 ELB에서 EC2로 변경해 부팅 중의 ELB 상태 확인 실패를 무시한다"
       },
       {
         "label": "C",
-        "text": "ALB 대상 그룹의 비정상 임계값(unhealthy threshold)을 1로 낮춘다"
+        "text": "ALB 대상 그룹의 비정상 임계값을 1로 낮춰 실패한 인스턴스를 더 빨리 감지·교체하게 한다"
       },
       {
         "label": "D",
-        "text": "ASG 최소 용량을 늘려 교체로 인한 용량 부족을 보완한다"
+        "text": "ASG 최소 용량과 희망 용량을 늘려 교체 중에도 충분한 정상 인스턴스를 확보한다"
       }
     ],
     "answer": "A",
@@ -181,7 +181,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "VPN을 구성한 뒤 SSH 키 기반으로 접속하고 auth 로그를 CloudWatch로 전송한다"
+        "text": "Client VPN을 구성한 뒤 SSH 키 기반으로 접속하고 auth 로그를 CloudWatch Logs로 전송한다"
       },
       {
         "label": "B",
@@ -189,11 +189,11 @@
       },
       {
         "label": "C",
-        "text": "EC2 Instance Connect를 사용하고 접속 기록은 CloudTrail로 확인한다"
+        "text": "EC2 Instance Connect로 임시 SSH 공개 키를 푸시해 접속하고 접속 기록은 CloudTrail로 확인한다"
       },
       {
         "label": "D",
-        "text": "Systems Manager Session Manager를 사용하고 세션 로그를 S3/CloudWatch Logs로 보낸다"
+        "text": "Session Manager를 사용하고 세션 로그를 S3와 CloudWatch Logs로 보낸다"
       }
     ],
     "answer": "D",
@@ -231,15 +231,15 @@
     "choices": [
       {
         "label": "A",
-        "text": "CloudWatch 경보가 EventBridge를 통해 SSM Automation 런북을 호출해 볼륨 확장과 파일시스템 확장을 수행한다"
+        "text": "CloudWatch 경보가 EventBridge로 SSM Automation 런북을 호출해 볼륨과 파일시스템을 확장한다"
       },
       {
         "label": "B",
-        "text": "Auto Scaling 그룹의 시작 템플릿에서 더 큰 EBS 볼륨을 지정하고 인스턴스를 교체한다"
+        "text": "Auto Scaling 그룹 시작 템플릿에서 더 큰 EBS 볼륨을 지정하고 인스턴스 새로 고침으로 교체한다"
       },
       {
         "label": "C",
-        "text": "EventBridge 스케줄로 매시간 Lambda를 실행해 모든 볼륨을 일정 크기로 확장한다"
+        "text": "EventBridge 스케줄로 매시간 Lambda를 실행해 사용률과 무관하게 모든 볼륨을 ModifyVolume으로 일정 크기만큼 늘린다"
       },
       {
         "label": "D",
@@ -256,19 +256,19 @@
     "choices": [
       {
         "label": "A",
-        "text": "GuardDuty를 활성화해 S3 보호 기능으로 퍼블릭 버킷을 탐지하고 알림을 받는다"
+        "text": "GuardDuty S3 보호를 활성화해 퍼블릭 액세스 차단 해제를 탐지하고 EventBridge로 보안팀에 알린다"
       },
       {
         "label": "B",
-        "text": "EventBridge로 PutBucketAcl 이벤트를 받아 보안팀에 SNS 알림만 보낸다"
+        "text": "EventBridge로 PutBucketAcl·PutPublicAccessBlock 이벤트를 받아 보안팀에 SNS 알림만 보낸다"
       },
       {
         "label": "C",
-        "text": "AWS Config 관리형 규칙(s3-bucket-level-public-access-prohibited)에 SSM Automation 자동 교정을 연결한다"
+        "text": "AWS Config 관리형 규칙으로 버킷의 퍼블릭 액세스 차단을 평가하고 SSM Automation 교정을 연결한다"
       },
       {
         "label": "D",
-        "text": "Trusted Advisor의 S3 버킷 권한 점검을 주기적으로 확인한다"
+        "text": "Trusted Advisor의 S3 버킷 권한 점검 결과를 주간으로 받아 퍼블릭 버킷을 운영자가 정리한다"
       }
     ],
     "answer": "C",
@@ -310,15 +310,15 @@
       },
       {
         "label": "B",
-        "text": "Traffic Mirroring으로 패킷을 복제해 별도 분석 어플라이언스로 보낸다"
+        "text": "Traffic Mirroring 세션으로 해당 서브넷 인스턴스 ENI의 패킷을 복제해 NLB 뒤의 별도 분석 어플라이언스로 보낸다"
       },
       {
         "label": "C",
-        "text": "VPC Flow Logs를 활성화해 CloudWatch Logs로 보내고 Logs Insights로 ACCEPT/REJECT 트래픽을 분석한다"
+        "text": "VPC Flow Logs를 CloudWatch Logs로 보내 Logs Insights로 ACCEPT/REJECT를 분석한다"
       },
       {
         "label": "D",
-        "text": "각 인스턴스에서 tcpdump를 상시 실행해 패킷 캡처를 S3에 적재한다"
+        "text": "각 인스턴스에서 tcpdump를 상시 실행해 패킷 캡처 파일을 시간 단위로 S3에 적재하고 필요할 때 Wireshark로 분석한다"
       }
     ],
     "answer": "C",
@@ -335,11 +335,11 @@
       },
       {
         "label": "B",
-        "text": "Route 53 프라이빗 호스팅 영역을 VPC에 연결하고, 온프레미스 영역은 Route 53 Resolver 아웃바운드 엔드포인트와 포워딩 규칙으로 해석한다"
+        "text": "Route 53 프라이빗 호스팅 영역을 VPC에 연결하고, Resolver 아웃바운드 엔드포인트와 포워딩 규칙을 구성한다"
       },
       {
         "label": "C",
-        "text": "온프레미스 DNS 서버 IP를 VPC DHCP 옵션 세트에 지정해 모든 쿼리를 온프레미스로 보낸다"
+        "text": "VPC DHCP 옵션 세트에 온프레미스 DNS 서버 IP를 지정해 내부·온프레미스 이름 쿼리를 모두 Direct Connect 너머로 보낸다"
       },
       {
         "label": "D",
@@ -356,7 +356,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "버킷 정책에서 CloudFront의 퍼블릭 IP 범위만 허용한다"
+        "text": "버킷 정책에서 AWS가 게시하는 CloudFront 엣지 IP 범위만 aws:SourceIp로 허용한다"
       },
       {
         "label": "B",
@@ -368,7 +368,7 @@
       },
       {
         "label": "D",
-        "text": "Origin Access Control(OAC)을 구성하고 S3 버킷 정책에서 해당 CloudFront 배포만 허용한다"
+        "text": "Origin Access Control(OAC)을 구성하고 버킷 정책에서 해당 배포만 허용한다"
       }
     ],
     "answer": "D",
@@ -406,7 +406,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "AWS Budgets로 예산 경보를 설정하면 자동으로 비용이 최적화된다"
+        "text": "AWS Budgets로 계정별 비용 예산과 경보를 설정해 초과 지출을 통보받는다"
       },
       {
         "label": "B",
@@ -414,15 +414,15 @@
       },
       {
         "label": "C",
-        "text": "Cost Explorer로 지출 분석과 Savings Plans 권장을 보고, Compute Optimizer로 인스턴스 적정 크기 권장을 검토한다"
+        "text": "Cost Explorer로 Savings Plans 권장을, Compute Optimizer로 적정 크기를 검토한다"
       },
       {
         "label": "D",
-        "text": "CloudWatch 지표로 CPU 사용률을 보고 낮은 인스턴스를 수동으로 축소한다"
+        "text": "CloudWatch에서 인스턴스별 평균 CPU 사용률을 대시보드로 모아 보고 사용률이 낮은 인스턴스를 수동으로 한 단계씩 축소한다"
       }
     ],
     "answer": "C",
-    "explanation": "Cost Explorer는 지출 추세와 Savings Plans·RI 권장을, Compute Optimizer는 사용 지표 기반 인스턴스 적정 크기 권장을 제공해 두 도구의 조합이 요건을 함께 충족한다. Trusted Advisor 비용 최적화 점검만 쓰는 방식은 일부 비용 점검을 주지만 적정 크기 권장 깊이는 Compute Optimizer가 우월하다. CPU만 보고 수동 축소하는 방식은 메모리·네트워크를 놓치고 확장성이 없다. Budgets는 알림 도구일 뿐 비용을 자동으로 줄이지 않는다."
+    "explanation": "Cost Explorer는 지출 추세와 Savings Plans·RI 권장을, Compute Optimizer는 사용 지표 기반 인스턴스 적정 크기 권장을 제공해 두 도구의 조합이 요건을 함께 충족한다. Trusted Advisor 비용 최적화 점검만 쓰는 방식은 일부 비용 점검을 주지만 적정 크기 권장 깊이는 Compute Optimizer가 우월하다. CPU만 보고 수동 축소하는 방식은 메모리·네트워크를 놓치고 확장성이 없다. Budgets는 예산 대비 지출을 알리는 도구일 뿐 적정 크기나 Savings Plans 권장을 제공하지 않는다."
   },
   {
     "number": 18,
@@ -460,7 +460,7 @@
       },
       {
         "label": "B",
-        "text": "CloudWatch 에이전트로 로그를 CloudWatch Logs에 보내고 지표 필터로 패턴을 카운트한 뒤 경보를 건다"
+        "text": "CloudWatch 에이전트로 로그를 보내고 지표 필터로 패턴을 카운트해 경보를 건다"
       },
       {
         "label": "C",
@@ -531,7 +531,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "평가 기간을 늘리고 'N개 중 M개' 데이터 포인트 조건과 누락 데이터 처리 방식을 적절히 설정한다"
+        "text": "평가 기간을 늘리고 'N개 중 M개' 조건과 누락 데이터 처리를 설정한다"
       },
       {
         "label": "B",
@@ -539,7 +539,7 @@
       },
       {
         "label": "C",
-        "text": "경보의 임계값을 더 높여 스파이크가 임계를 넘지 않게 한다"
+        "text": "경보 임계값을 평소 스파이크 최고치보다 높게 올려 짧은 스파이크가 임계를 넘지 않게 한다"
       },
       {
         "label": "D",
@@ -606,7 +606,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "Lambda를 1분 주기로 실행해 DescribeInstances로 상태를 폴링하고 분기 처리한다"
+        "text": "Lambda를 1분 주기로 실행해 DescribeInstances로 상태를 폴링하고 stopped면 SNS 알림과 복구 절차를 실행한다"
       },
       {
         "label": "B",
@@ -618,36 +618,11 @@
       },
       {
         "label": "D",
-        "text": "EC2 인스턴스 상태 변경 이벤트를 EventBridge 규칙으로 매칭해 SNS와 SSM Automation 런북을 대상으로 지정한다"
+        "text": "EC2 상태 변경 이벤트를 EventBridge 규칙으로 매칭해 SNS와 SSM Automation 런북을 호출한다"
       }
     ],
     "answer": "D",
     "explanation": "EventBridge는 EC2 상태 변경 이벤트를 패턴 매칭해 SNS 알림과 SSM Automation 런북을 동시에 호출할 수 있어 이벤트 기반 자동 대응에 가장 적합하다. StatusCheckFailed 지표에 EC2 복구를 연결하는 방식은 하드웨어 손상 복구용이지 'stopped' 상태 전환 이벤트를 다루지 못한다. Lambda 폴링 방식은 지연·비용이 크고 이벤트 누락 위험이 있다. CloudTrail 이벤트를 S3에 저장해 Athena로 조회하는 방식은 사후 조회용이라 즉시 자동 대응이 아니다."
-  },
-  {
-    "number": 26,
-    "domain": "모니터링·로깅·교정",
-    "prompt": "여러 계정·리전에 분산된 마이크로서비스의 분산 추적(trace)과 지표를 모니터링 계정 한 곳에서 상관 분석하려 한다. 가장 운영 부담이 적은 방법은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "모든 서비스를 단일 계정·단일 리전으로 이전해 추적을 통합한다"
-      },
-      {
-        "label": "B",
-        "text": "계정마다 별도 대시보드를 만들고 운영자가 화면을 전환해 비교한다"
-      },
-      {
-        "label": "C",
-        "text": "각 계정의 X-Ray 데이터를 S3로 내보내 모니터링 계정에서 수동으로 결합한다"
-      },
-      {
-        "label": "D",
-        "text": "CloudWatch 교차 계정 관찰성을 구성해 소스 계정의 지표·로그·X-Ray 추적을 모니터링 계정에 연결한다"
-      }
-    ],
-    "answer": "D",
-    "explanation": "CloudWatch 교차 계정 관찰성은 지표·로그뿐 아니라 X-Ray 추적까지 모니터링 계정에서 통합 상관 분석하게 해 가장 운영 부담이 적다. X-Ray 데이터를 S3로 내보내 수동 결합하는 방식은 직접 파이프라인을 만들어야 한다. 모든 서비스를 단일 계정·리전으로 이전하는 방식은 격리·운영 구조를 흔드는 과도한 변경이다. 계정마다 대시보드를 만들어 화면을 전환하는 방식은 단일 화면 상관 분석이 불가능하다."
   },
   {
     "number": 27,
@@ -681,11 +656,11 @@
     "choices": [
       {
         "label": "A",
-        "text": "ASG에 인스턴스를 넣어 비정상 시 종료·신규 생성으로 대체한다"
+        "text": "인스턴스를 ASG(최소·최대 1)에 넣어 비정상 시 자동 종료하고 새 인스턴스로 대체한다"
       },
       {
         "label": "B",
-        "text": "StatusCheckFailed_System 지표에 EC2 복구(recover) 작업을 연결한 CloudWatch 경보를 만든다"
+        "text": "StatusCheckFailed_System 경보에 EC2 복구 작업을 연결한다"
       },
       {
         "label": "C",
@@ -775,31 +750,6 @@
     "explanation": "AWS Backup은 여러 서비스의 백업을 백업 계획·금고로 중앙 관리하고 교차 리전·교차 계정 복사와 감사 보고서를 제공해 일관성과 규정 준수 요건을 충족한다. 네이티브 백업을 그대로 쓰고 스프레드시트로 추적하는 방식은 일관성·중앙 보고가 없다. DLM은 주로 EBS·AMI 대상이라 RDS·EFS·DynamoDB를 통합 관리하지 못한다. CloudFormation은 배포 도구일 뿐 백업 정책·보존을 통합 관리하지 않는다."
   },
   {
-    "number": 32,
-    "domain": "안정성·비즈니스 연속성",
-    "prompt": "Multi-AZ로 배포된 RDS 인스턴스에서 기본(primary) AZ에 장애가 발생했다. 애플리케이션 연결 문자열은 RDS 엔드포인트를 사용한다. 이때의 동작을 옳게 설명한 것은?",
-    "choices": [
-      {
-        "label": "A",
-        "text": "비동기 복제 지연 때문에 일부 커밋된 트랜잭션이 유실될 수 있다"
-      },
-      {
-        "label": "B",
-        "text": "운영자가 최신 스냅샷에서 새 인스턴스를 복원해 엔드포인트를 수동 변경해야 한다"
-      },
-      {
-        "label": "C",
-        "text": "읽기 전용 복제본 중 하나가 자동으로 기본으로 승격되어 읽기·쓰기를 처리한다"
-      },
-      {
-        "label": "D",
-        "text": "동기 복제된 대기 인스턴스로 자동 페일오버되고, DNS 엔드포인트가 새 기본을 가리켜 연결 문자열 변경이 필요 없다"
-      }
-    ],
-    "answer": "D",
-    "explanation": "Multi-AZ는 대기 인스턴스에 동기 복제하므로 장애 시 자동 페일오버되고 동일 DNS 엔드포인트가 새 기본을 가리켜 연결 문자열을 바꿀 필요가 없다는 설명이 옳다. 읽기 전용 복제본이 승격된다는 설명은 Multi-AZ 페일오버와 별개 메커니즘이라 틀렸다. 스냅샷에서 수동 복원해야 한다는 설명은 Multi-AZ의 자동성에 어긋난다. 동기 복제이므로 커밋된 트랜잭션이 유실될 수 있다는 설명은 전제부터 틀렸다."
-  },
-  {
     "number": 33,
     "domain": "안정성·비즈니스 연속성",
     "prompt": "활성 리전과 대기 리전에 동일 애플리케이션을 운영한다. 기본 리전 엔드포인트가 비정상이면 자동으로 대기 리전으로 트래픽을 전환하고, 정상 복구 시 다시 기본으로 돌아오게 하려 한다. 가장 적합한 구성은?",
@@ -856,15 +806,15 @@
     "choices": [
       {
         "label": "A",
-        "text": "ASG 상태 확인 유형을 EC2로 두어 인스턴스 상태 점검 실패 시 교체한다"
+        "text": "ASG 상태 확인 유형을 EC2로 유지해 인스턴스 상태 점검이 실패하면 자동 교체되게 한다"
       },
       {
         "label": "B",
-        "text": "ASG 상태 확인 유형을 ELB로 설정하고 ALB 대상 그룹 상태 확인이 애플리케이션 헬스 경로를 점검하게 한다"
+        "text": "ASG가 ELB 상태 확인을 쓰고 대상 그룹이 애플리케이션 헬스 경로를 점검하게 한다"
       },
       {
         "label": "C",
-        "text": "CloudWatch 경보로 CPU가 0에 가까우면 인스턴스를 종료한다"
+        "text": "CloudWatch 경보로 인스턴스 CPU가 5분간 0%에 가까우면 EC2 종료 작업을 실행한다"
       },
       {
         "label": "D",
@@ -881,7 +831,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "특정 시점 복구(PITR)로 20분 전 시점의 새 DB 인스턴스를 만들고, 필요한 데이터를 확인 후 전환한다"
+        "text": "PITR로 20분 전 시점의 새 DB 인스턴스를 만들고, 데이터를 확인한 뒤 전환한다"
       },
       {
         "label": "B",
@@ -893,11 +843,11 @@
       },
       {
         "label": "D",
-        "text": "Multi-AZ 페일오버를 강제로 일으켜 대기 인스턴스의 옛 데이터를 가져온다"
+        "text": "재부팅 시 장애 조치로 Multi-AZ 페일오버를 강제해 대기 인스턴스의 옛 데이터를 가져온다"
       }
     ],
     "answer": "A",
-    "explanation": "PITR은 보존 기간 내 임의 시점의 새 인스턴스를 생성하므로 20분 전 상태를 안전하게 복원하고 검증 후 전환할 수 있어 영향이 가장 작다. 스냅샷을 기존 인스턴스 위에 덮어쓰는 방식은 RDS에서 기존 인스턴스 위 복원이 불가능하며 위험하다. 읽기 전용 복제본을 승격하는 방식은 삭제가 동기적으로 복제되므로 옛 데이터가 남아 있지 않다. Multi-AZ 페일오버 역시 동기 복제라 삭제가 그대로 반영되어 복구 수단이 아니다."
+    "explanation": "PITR은 보존 기간 내 임의 시점의 새 인스턴스를 생성하므로 20분 전 상태를 안전하게 복원하고 검증 후 전환할 수 있어 영향이 가장 작다. 스냅샷을 기존 인스턴스 위에 덮어쓰는 방식은 RDS에서 기존 인스턴스 위 복원이 불가능하며 위험하다. 읽기 전용 복제본을 승격하는 방식은 비동기 복제지만 보통 수 초 안에 삭제가 반영되므로 옛 데이터가 남아 있지 않다. Multi-AZ 페일오버 역시 동기 복제라 삭제가 그대로 반영되어 복구 수단이 아니다."
   },
   {
     "number": 37,
@@ -931,7 +881,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "Systems Manager Run Command로 대상 태그를 지정해 명령을 실행하고 출력을 S3/CloudWatch Logs로 수집한다"
+        "text": "Run Command로 태그 대상에 명령을 보내고 출력을 S3/CloudWatch Logs로 수집한다"
       },
       {
         "label": "B",
@@ -943,7 +893,7 @@
       },
       {
         "label": "D",
-        "text": "Patch Manager 유지 관리 기간에 사용자 지정 스크립트를 등록해 실행한다"
+        "text": "Patch Manager 유지 관리 기간에 사용자 지정 스크립트 작업을 등록해 다음 유지 관리 기간에 일괄 실행한다"
       }
     ],
     "answer": "A",
@@ -956,7 +906,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "IAM 정책에서 ssm:StartSession을 리소스 태그 조건(ssm:resourceTag/Team=Payments)으로 제한한다"
+        "text": "IAM 정책에서 ssm:StartSession을 ssm:resourceTag/Team 조건으로 제한한다"
       },
       {
         "label": "B",
@@ -964,15 +914,15 @@
       },
       {
         "label": "C",
-        "text": "팀별로 다른 SSH 키 페어를 배포해 접근을 통제한다"
+        "text": "팀별로 다른 SSH 키 페어를 배포하고 인스턴스 authorized_keys로 접근을 통제한다"
       },
       {
         "label": "D",
-        "text": "각 인스턴스의 보안 그룹을 팀별로 분리한다"
+        "text": "각 팀 인스턴스의 보안 그룹을 팀별로 분리하고 인바운드 규칙을 해당 팀 사무실의 IP 대역으로만 엄격히 제한한다"
       }
     ],
     "answer": "A",
-    "explanation": "Session Manager 접근은 IAM으로 제어되며 StartSession 작업에 리소스 태그 조건을 걸면 특정 태그 인스턴스로 세션을 제한할 수 있어 요건에 맞는다. 보안 그룹을 팀별로 분리하는 방식은 네트워크 포트 제어용이라 Session Manager의 IAM 기반 접근 제한과 무관하다. 팀별 SSM 에이전트 버전을 설치하는 방식은 접근 제어 수단이 아니다. 팀별 SSH 키를 배포하는 방식은 Session Manager를 쓰지 않는 방식이라 전제와 어긋난다."
+    "explanation": "Session Manager 접근은 IAM으로 제어되며 StartSession 작업에 리소스 태그 조건을 걸면 특정 태그 인스턴스로 세션을 제한할 수 있어 요건에 맞는다. 보안 그룹을 팀별로 분리해 인바운드를 제한하는 방식은 네트워크 포트 제어용인데 Session Manager는 인바운드 포트를 쓰지 않으므로 운영자별 접근 제한이 되지 않는다. 팀별 SSM 에이전트 버전을 설치하는 방식은 접근 제어 수단이 아니다. 팀별 SSH 키를 배포하는 방식은 Session Manager를 쓰지 않는 방식이라 전제와 어긋난다."
   },
   {
     "number": 40,
@@ -981,15 +931,15 @@
     "choices": [
       {
         "label": "A",
-        "text": "Lambda가 신규 계정 생성 이벤트를 받아 리소스를 API로 직접 생성한다"
+        "text": "Lambda가 CreateAccount 이벤트를 받아 신규 계정에 IAM 역할과 Config 레코더를 API로 직접 생성한다"
       },
       {
         "label": "B",
-        "text": "CloudFormation StackSets를 서비스 관리형 권한으로 OU에 배포하고 자동 배포(automatic deployment)를 켠다"
+        "text": "StackSets를 서비스 관리형 권한으로 OU에 배포하고 자동 배포를 켠다"
       },
       {
         "label": "C",
-        "text": "CodePipeline으로 계정 목록을 순회하며 템플릿을 배포하는 파이프라인을 만든다"
+        "text": "CodePipeline으로 Organizations 계정 목록을 순회하며 CloudFormation 템플릿을 배포하는 파이프라인을 만든다"
       },
       {
         "label": "D",
@@ -1006,7 +956,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "Lambda 단일 함수에 모든 절차를 작성해 호출한다"
+        "text": "Lambda 단일 함수에 모든 복구 절차와 승인 대기 로직을 작성해 EventBridge로 호출한다"
       },
       {
         "label": "B",
@@ -1014,7 +964,7 @@
       },
       {
         "label": "C",
-        "text": "Systems Manager Automation 런북으로 다단계 절차와 수동 승인 단계를 정의해 실행한다"
+        "text": "SSM Automation 런북으로 다단계 절차와 수동 승인 단계를 정의해 실행한다"
       },
       {
         "label": "D",
@@ -1056,7 +1006,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "EC2 Image Builder로 패키지·구성이 포함된 골든 AMI를 만들고 시작 템플릿이 이를 사용하게 한다"
+        "text": "EC2 Image Builder로 골든 AMI를 만들고 시작 템플릿이 이를 사용하게 한다"
       },
       {
         "label": "B",
@@ -1064,7 +1014,7 @@
       },
       {
         "label": "C",
-        "text": "부팅 후 SSM State Manager가 매번 전체 구성을 다시 적용하게 한다"
+        "text": "부팅 후 SSM State Manager 연결로 매번 전체 패키지 설치와 구성을 다시 적용한다"
       },
       {
         "label": "D",
@@ -1081,11 +1031,11 @@
     "choices": [
       {
         "label": "A",
-        "text": "IAM/SCP 정책으로 CostCenter 태그 없는 RunInstances를 거부하고, Tag Editor로 기존 누락 리소스를 검색해 일괄 태깅한다"
+        "text": "IAM/SCP로 CostCenter 태그 없는 RunInstances를 거부하고, Tag Editor로 기존 리소스를 일괄 태깅한다"
       },
       {
         "label": "B",
-        "text": "EventBridge로 RunInstances 이벤트를 받아 사후에 태그를 추가한다"
+        "text": "EventBridge로 RunInstances 이벤트를 받아 Lambda가 생성자 정보를 조회해 CostCenter 태그를 사후에 자동 추가한다"
       },
       {
         "label": "C",
@@ -1131,11 +1081,11 @@
     "choices": [
       {
         "label": "A",
-        "text": "Organizations SCP로 s3:PutBucketPublicAccessBlock 비활성화와 퍼블릭 ACL/정책 설정을 거부한다"
+        "text": "SCP로 퍼블릭 액세스 차단 해제와 퍼블릭 ACL·정책 설정 API를 거부한다"
       },
       {
         "label": "B",
-        "text": "각 계정에서 S3 계정 수준 퍼블릭 액세스 차단만 켠다"
+        "text": "각 계정에서 S3 계정 수준 퍼블릭 액세스 차단을 켜고 관리자에게 설정 유지를 안내한다"
       },
       {
         "label": "C",
@@ -1143,7 +1093,7 @@
       },
       {
         "label": "D",
-        "text": "버킷마다 명시적 Deny 버킷 정책을 추가한다"
+        "text": "버킷마다 퍼블릭 주체를 명시적으로 Deny하는 버킷 정책을 추가해 노출을 막는다"
       }
     ],
     "answer": "A",
@@ -1181,7 +1131,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "Config 규칙으로 보안 그룹 개방을 평가하고 OS 취약점은 별도 스캐너를 운영한다"
+        "text": "Config 규칙으로 보안 그룹의 0.0.0.0/0 개방을 평가하고 OS 취약점은 별도 서드파티 스캐너를 운영한다"
       },
       {
         "label": "B",
@@ -1189,7 +1139,7 @@
       },
       {
         "label": "C",
-        "text": "Amazon Inspector를 켜서 SSM 에이전트 기반으로 OS 취약점과 네트워크 도달 가능성을 자동 평가한다"
+        "text": "Amazon Inspector로 SSM 에이전트 기반 OS 취약점과 네트워크 도달 가능성을 자동 평가한다"
       },
       {
         "label": "D",
@@ -1206,7 +1156,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "Amazon Macie를 활성화해 민감 데이터 검색 작업을 구성하고 발견 사항을 Security Hub로 보낸다"
+        "text": "Amazon Macie 민감 데이터 검색 작업을 구성하고 발견 사항을 Security Hub로 보낸다"
       },
       {
         "label": "B",
@@ -1214,7 +1164,7 @@
       },
       {
         "label": "C",
-        "text": "Glue 크롤러로 스키마를 추론하고 Athena로 PII 컬럼을 직접 쿼리한다"
+        "text": "Glue 크롤러로 버킷 스키마를 추론하고 Athena로 이름·주민등록번호 같은 PII 컬럼을 직접 쿼리한다"
       },
       {
         "label": "D",
@@ -1256,11 +1206,11 @@
     "choices": [
       {
         "label": "A",
-        "text": "Config 규칙으로 비승인 리전 리소스를 탐지해 자동 삭제한다"
+        "text": "Config 규칙으로 비승인 리전에 생성된 리소스를 탐지하고 SSM Automation으로 자동 삭제한다"
       },
       {
         "label": "B",
-        "text": "Organizations SCP에서 aws:RequestedRegion 조건과 글로벌 서비스 NotAction 예외로 비승인 리전 작업을 거부한다"
+        "text": "SCP로 aws:RequestedRegion이 승인 리전이 아니면 거부하고 글로벌 서비스는 NotAction으로 뺀다"
       },
       {
         "label": "C",
@@ -1268,7 +1218,7 @@
       },
       {
         "label": "D",
-        "text": "각 IAM 사용자에게 리전 제한 정책을 개별 첨부한다"
+        "text": "각 IAM 사용자와 역할마다 aws:RequestedRegion 조건을 건 리전 제한 정책을 개별 첨부하고 주기적으로 점검한다"
       }
     ],
     "answer": "B",
@@ -1281,7 +1231,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "루트 사용자에만 MFA를 활성화한다"
+        "text": "루트 사용자에만 하드웨어 MFA를 활성화하고 루트 사용을 CloudTrail로 감시한다"
       },
       {
         "label": "B",
@@ -1289,11 +1239,11 @@
       },
       {
         "label": "C",
-        "text": "계정 암호 정책에서 최소 길이를 늘리고 회전 주기를 단축한다"
+        "text": "IAM 계정 암호 정책에서 최소 길이를 14자로 늘리고 90일 만료와 최근 24개 암호의 재사용 금지를 적용한다"
       },
       {
         "label": "D",
-        "text": "IAM 정책에 aws:MultiFactorAuthPresent가 false이면 민감 작업을 Deny하는 조건을 추가한다"
+        "text": "IAM 정책에서 aws:MultiFactorAuthPresent가 false인 민감 작업을 Deny한다"
       }
     ],
     "answer": "D",
@@ -1335,11 +1285,11 @@
       },
       {
         "label": "B",
-        "text": "Transit Gateway에 모든 VPC를 연결해 라우팅한다"
+        "text": "모든 VPC를 Transit Gateway에 연결하고 TGW 라우팅 테이블에 공급자 API 서브넷 CIDR만 정적 경로로 추가해 라우팅한다"
       },
       {
         "label": "C",
-        "text": "공급자 측에 AWS PrivateLink로 엔드포인트 서비스(NLB 기반)를 만들고 소비자가 인터페이스 엔드포인트로 연결한다"
+        "text": "공급자가 NLB 기반 PrivateLink 엔드포인트 서비스를 만들고 소비자는 인터페이스 엔드포인트로 연결한다"
       },
       {
         "label": "D",
@@ -1347,7 +1297,7 @@
       }
     ],
     "answer": "C",
-    "explanation": "PrivateLink 엔드포인트 서비스는 단일 서비스만 노출하고 소비자는 인터페이스 엔드포인트로만 접근하므로 다른 리소스 접근을 막고 CIDR 겹침도 문제되지 않아 요건에 가장 부합한다. 소비자 VPC마다 피어링을 맺는 방식과 Transit Gateway로 모든 VPC를 연결하는 방식은 네트워크 전체를 연결해 최소 노출 원칙과 CIDR 겹침 제약에 어긋난다. 공급자 VPC를 인터넷에 노출하는 방식은 사설·최소 노출 요건에 반한다."
+    "explanation": "PrivateLink 엔드포인트 서비스는 단일 서비스만 노출하고 소비자는 인터페이스 엔드포인트로만 접근하므로 다른 리소스 접근을 막고 CIDR 겹침도 문제되지 않아 요건에 가장 부합한다. 소비자 VPC마다 피어링을 맺는 방식과 Transit Gateway로 모든 VPC를 연결하는 방식은 경로를 좁히더라도 라우팅 기반 네트워크 연결이라 CIDR이 겹치면 구성할 수 없고 서비스 단위 최소 노출도 보장하지 못한다. 공급자 VPC를 인터넷에 노출하는 방식은 사설·최소 노출 요건에 반한다."
   },
   {
     "number": 55,
@@ -1360,11 +1310,11 @@
       },
       {
         "label": "B",
-        "text": "PrivateLink로 각 VPC의 서비스를 서로 노출한다"
+        "text": "PrivateLink 엔드포인트 서비스로 각 VPC의 서비스를 서로 노출하고 온프레미스는 Direct Connect로 인터페이스 엔드포인트에 접근한다"
       },
       {
         "label": "C",
-        "text": "AWS Transit Gateway에 VPC와 온프레미스(VPN/Direct Connect)를 연결하고 라우팅 테이블로 세그먼트를 관리한다"
+        "text": "Transit Gateway에 VPC와 VPN·Direct Connect를 연결하고 라우팅 테이블로 세그먼트를 나눈다"
       },
       {
         "label": "D",
@@ -1381,15 +1331,15 @@
     "choices": [
       {
         "label": "A",
-        "text": "서브넷에 연결된 네트워크 ACL(NACL)에서 해당 IP 대역을 거부 규칙으로 추가한다"
+        "text": "서브넷의 네트워크 ACL에 해당 IP 대역의 거부 규칙을 추가한다"
       },
       {
         "label": "B",
-        "text": "보안 그룹에 해당 IP 대역을 거부 규칙으로 추가한다"
+        "text": "인스턴스 보안 그룹에 해당 IP 대역을 거부 규칙으로 추가한다"
       },
       {
         "label": "C",
-        "text": "IAM 정책으로 해당 IP의 API 호출을 거부한다"
+        "text": "IAM 정책의 aws:SourceIp 조건으로 해당 IP 대역의 API 요청을 거부한다"
       },
       {
         "label": "D",
@@ -1410,15 +1360,15 @@
       },
       {
         "label": "B",
-        "text": "CloudFront 배포에 S3와 ALB 두 오리진을 두고 경로별 캐시 동작(behavior)으로 정적은 길게, 동적은 캐싱 비활성 정책을 적용한다"
+        "text": "CloudFront에 S3·ALB 오리진을 두고 경로별 캐시 동작으로 정적은 길게, 동적은 캐싱하지 않는다"
       },
       {
         "label": "C",
-        "text": "ALB와 S3에 각각 별도 도메인을 두고 클라이언트가 콘텐츠 종류에 따라 다른 도메인을 호출한다"
+        "text": "ALB와 S3에 각각 별도 하위 도메인을 두고 클라이언트가 콘텐츠 종류에 따라 서로 다른 도메인을 직접 호출하게 한다"
       },
       {
         "label": "D",
-        "text": "모든 콘텐츠를 단일 캐시 정책으로 동일 TTL을 적용한다"
+        "text": "모든 콘텐츠에 단일 CloudFront 캐시 정책을 적용해 정적·동적 응답에 동일한 TTL을 둔다"
       }
     ],
     "answer": "B",
@@ -1431,7 +1381,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "VPC DHCP 옵션 세트를 온프레미스 DNS로만 지정한다"
+        "text": "VPC DHCP 옵션 세트의 DNS 서버를 온프레미스 DNS로만 지정한다"
       },
       {
         "label": "B",
@@ -1439,11 +1389,11 @@
       },
       {
         "label": "C",
-        "text": "Route 53 Resolver 인바운드 엔드포인트(온프레미스→VPC)와 아웃바운드 엔드포인트+포워딩 규칙(VPC→온프레미스)을 함께 구성한다"
+        "text": "Resolver 인바운드 엔드포인트와, 아웃바운드 엔드포인트+포워딩 규칙을 함께 구성한다"
       },
       {
         "label": "D",
-        "text": "인바운드 엔드포인트만 구성한다"
+        "text": "Route 53 Resolver 인바운드 엔드포인트만 만들어 온프레미스 DNS가 VPC 쿼리를 전달하게 한다"
       }
     ],
     "answer": "C",
@@ -1456,19 +1406,19 @@
     "choices": [
       {
         "label": "A",
-        "text": "NACL은 ENI 수준에, 보안 그룹은 서브넷 수준에 적용된다"
+        "text": "NACL은 인스턴스 ENI 수준에, 보안 그룹은 서브넷 수준에 적용되어 서브넷 내 모든 인스턴스에 공통 적용된다"
       },
       {
         "label": "B",
-        "text": "보안 그룹은 명시적 거부 규칙을 지원하고 NACL은 허용 규칙만 지원한다"
+        "text": "보안 그룹은 허용·거부 규칙을 모두 지원하고, NACL은 허용 규칙만 지원하며 번호 순서로 평가된다"
       },
       {
         "label": "C",
-        "text": "보안 그룹과 NACL 모두 상태 저장이며 응답 트래픽이 자동 허용된다"
+        "text": "보안 그룹과 NACL 모두 상태 저장이므로 허용된 요청의 응답 트래픽은 별도 규칙 없이 자동 허용된다"
       },
       {
         "label": "D",
-        "text": "보안 그룹은 인스턴스(ENI) 수준의 상태 저장 방화벽이라 응답이 자동 허용되고, NACL은 서브넷 수준의 상태 비저장이라 인바운드·아웃바운드를 각각 명시해야 한다"
+        "text": "보안 그룹은 ENI 수준 상태 저장이고, NACL은 서브넷 수준 상태 비저장이라 응답 규칙도 필요하다"
       }
     ],
     "answer": "D",
@@ -1481,7 +1431,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "Application Load Balancer 리스너에 경로 기반·호스트 기반 규칙을 만들어 대상 그룹으로 라우팅한다"
+        "text": "ALB 리스너에 경로 기반·호스트 기반 규칙을 만들어 대상 그룹으로 라우팅한다"
       },
       {
         "label": "B",
@@ -1493,7 +1443,7 @@
       },
       {
         "label": "D",
-        "text": "Network Load Balancer로 TCP 포트에 따라 대상 그룹을 나눈다"
+        "text": "Network Load Balancer 리스너를 TCP 포트별로 만들어 각기 다른 대상 그룹으로 전달한다"
       }
     ],
     "answer": "A",
@@ -1506,11 +1456,11 @@
     "choices": [
       {
         "label": "A",
-        "text": "Trusted Advisor의 저사용 인스턴스 점검 목록을 그대로 적용한다"
+        "text": "Trusted Advisor의 저사용 EC2 인스턴스 점검 결과를 받아 목록의 인스턴스를 그대로 축소한다"
       },
       {
         "label": "B",
-        "text": "AWS Compute Optimizer를 활성화해 인스턴스 적정 크기 권장을 받고, 메모리 권장 정확도를 위해 메모리 지표를 수집한다"
+        "text": "Compute Optimizer 권장을 받고, 정확도를 위해 에이전트로 메모리 지표도 수집한다"
       },
       {
         "label": "C",
@@ -1556,11 +1506,11 @@
     "choices": [
       {
         "label": "A",
-        "text": "볼륨을 gp3로 전환하고 필요한 만큼 IOPS·처리량을 용량과 독립적으로 프로비저닝한다"
+        "text": "gp3로 전환해 IOPS·처리량을 용량과 별도로 프로비저닝한다"
       },
       {
         "label": "B",
-        "text": "io2 볼륨으로 전환하고 매우 높은 IOPS를 항상 프로비저닝한다"
+        "text": "io2 볼륨으로 전환하고 피크에 맞춘 매우 높은 IOPS를 항상 프로비저닝한다"
       },
       {
         "label": "C",
@@ -1606,7 +1556,7 @@
     "choices": [
       {
         "label": "A",
-        "text": "DynamoDB Accelerator(DAX) 클러스터를 앞단에 두고 DAX SDK 클라이언트로 연결한다"
+        "text": "DynamoDB Accelerator(DAX) 클러스터를 두고 DAX 클라이언트로 연결한다"
       },
       {
         "label": "B",
@@ -1618,7 +1568,7 @@
       },
       {
         "label": "D",
-        "text": "ElastiCache를 별도로 운영하며 캐시 무효화 로직을 애플리케이션에 구현한다"
+        "text": "ElastiCache 클러스터를 별도로 운영하며 캐시 조회·무효화 로직을 애플리케이션에 직접 구현한다"
       }
     ],
     "answer": "A",
@@ -1648,31 +1598,6 @@
     ],
     "answer": "D",
     "explanation": "Cost Anomaly Detection은 머신러닝으로 비정상 지출을 자동 탐지하고 근본 원인 요약과 함께 알림을 보내며 임계값을 수동 설정할 필요가 없어 요건에 정확히 맞는다. 서비스별 고정 임계 예산을 만드는 방식과 서비스마다 청구 경보를 만드는 방식은 고정 임계를 직접 정해야 한다. QuickSight로 시각화하는 방식은 운영자가 수동으로 이상치를 찾아야 해 자동 탐지가 아니다."
-  },
-  {
-    "number": 67,
-    "domain": "안정성·비즈니스 연속성",
-    "prompt": "구독 기반 서비스가 매주 월요일 오전에 트래픽이 급증하고, 그 외에도 불규칙한 캠페인으로 갑작스러운 부하가 발생한다. 비용을 통제하면서 두 상황 모두에 자동 대응하도록 Auto Scaling을 구성하려 한다. 적절한 조치 2가지는? (2개 선택)",
-    "choices": [
-      {
-        "label": "A",
-        "text": "모든 조정 정책을 제거하고 운영자가 캠페인마다 수동으로 조정한다"
-      },
-      {
-        "label": "B",
-        "text": "최대 용량을 1로 고정해 비용을 줄인다"
-      },
-      {
-        "label": "C",
-        "text": "대상 추적 정책으로 요청 수 또는 CPU를 목표값으로 유지해 불규칙 부하에 동적으로 대응한다"
-      },
-      {
-        "label": "D",
-        "text": "예약된 조정으로 매주 월요일 오전 직전 희망 용량을 상향한다"
-      }
-    ],
-    "answer": "C, D",
-    "explanation": "예약된 조정은 매주 예측 가능한 월요일 피크에 선제 확장하고, 대상 추적 정책은 요청 수나 CPU를 목표값으로 유지하며 불규칙한 캠페인 부하에 동적 반응해 두 상황을 모두 자동 대응하면서 평상시 축소로 비용을 통제한다. 최대 용량을 1로 고정하는 방식은 확장을 막아 가용성을 해친다. 모든 조정 정책을 제거하고 수동으로 조정하는 방식은 자동 대응 요건에 어긋나고 누락·지연 위험이 크다."
   },
   {
     "number": 68,
