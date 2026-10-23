@@ -3,9 +3,9 @@
 ## 📌 핵심 정리
 
 - 실시간 배포는 **Model → EndpointConfig → Endpoint** 3계층. 이 분리가 무중단 배포·A/B·카나리를 가능케 한다.
-- 새 모델 배포는 **새 EndpointConfig를 만들고 `update_endpoint`** → SageMaker가 blue/green으로 갈아 끼운다.
-- **오토스케일링**은 `SageMakerVariantInvocationsPerInstance` 타깃 추적이 표준. **최소 1대**라 0으로는 못 줄인다.
-- 갑작스러운 스파이크는 오토스케일링이 못 따라간다 → **예약 스케일링**이나 넉넉한 `MinCapacity`로 대비.
+- 새 모델 배포는 **새 EndpointConfig를 만들고 `update_endpoint`** → SageMaker가 Blue/Green으로 갈아 끼운다.
+- **Auto Scaling**은 `SageMakerVariantInvocationsPerInstance` 타깃 추적이 표준. **최소 1대**라 0으로는 못 줄인다.
+- 갑작스러운 스파이크는 Auto Scaling이 못 따라간다 → **예약 스케일링**이나 넉넉한 `MinCapacity`로 대비.
 - 인스턴스는 전통 ML=CPU(m5/c5), 딥러닝=GPU(g4dn/g5), 딥러닝 비용 절감=Inferentia(inf1/inf2).
 
 ## 3계층 구조: Model, EndpointConfig, Endpoint
@@ -50,9 +50,9 @@ sm.create_endpoint_config(
 sm.create_endpoint(EndpointName="churn-endpoint", EndpointConfigName="churn-config")
 ```
 
-> 💡 **관련 이론**: 이 3계층 분리의 진짜 가치는 **무중단 업데이트**에 있다. 새 모델을 배포할 때 새 EndpointConfig를 만들고 `update_endpoint`를 호출하면, SageMaker가 새 인스턴스를 먼저 띄워 헬스 체크를 통과시킨 뒤 트래픽을 옮기고 옛 인스턴스를 내린다(blue/green). 엔드포인트는 그대로 살아 있어 호출자는 다운타임을 겪지 않는다. ProductionVariant의 가중치를 조절하면 같은 엔드포인트에서 두 모델로 트래픽을 나누는 A/B 테스트나 카나리 배포도 가능하다.
+이 3계층 분리의 진짜 가치는 **무중단 업데이트**에 있다. 새 모델을 배포할 때 새 EndpointConfig를 만들고 `update_endpoint`를 호출하면, SageMaker가 새 인스턴스를 먼저 띄워 헬스 체크를 통과시킨 뒤 트래픽을 옮기고 옛 인스턴스를 내린다(Blue/Green). 엔드포인트는 그대로 살아 있어 호출자는 다운타임을 겪지 않는다. ProductionVariant의 가중치를 조절하면 같은 엔드포인트에서 두 모델로 트래픽을 나누는 A/B 테스트나 카나리 배포도 가능하다.
 
-## 무중단 배포 — blue/green 전환 흐름
+## 무중단 배포 — Blue/Green 전환 흐름
 
 새 모델을 올릴 때 엔드포인트를 지웠다 다시 만들면 주소가 끊긴다. 올바른 절차는 **새 EndpointConfig 생성 → `update_endpoint`**다.
 
@@ -128,9 +128,9 @@ A/B 테스트와 shadow testing은 **사용자가 신모델 응답을 받느냐*
 | 사용자 영향 | 있음(일부 사용자) | 없음 |
 | 목적 | 비즈니스 지표 비교 | 무위험 성능·안정성 검증 |
 
-> 🔍 **더 깊이**: SageMaker는 `InvokeEndpoint` 호출 시 `TargetVariant` 파라미터로 특정 variant를 강제 지정할 수도 있다. 이는 가중치와 무관하게 특정 모델만 테스트하고 싶을 때 쓴다. 또 **Shadow testing(섀도 변형)** 기능을 쓰면 프로덕션 트래픽 사본을 신모델에 보내되 응답은 버려서, 실사용자에게 영향 없이 신모델 성능을 검증할 수 있다. A/B(가중치 분배)와 shadow(응답 폐기)의 차이를 구분하자.
+SageMaker는 `InvokeEndpoint` 호출 시 `TargetVariant` 파라미터로 특정 variant를 강제 지정할 수도 있다. 이는 가중치와 무관하게 특정 모델만 테스트하고 싶을 때 쓴다. 또 **Shadow testing(섀도 변형)** 기능을 쓰면 프로덕션 트래픽 사본을 신모델에 보내되 응답은 버려서, 실사용자에게 영향 없이 신모델 성능을 검증할 수 있다. A/B(가중치 분배)와 shadow(응답 폐기)의 차이로 구분한다.
 
-## 오토스케일링 — 트래픽에 맞춰 인스턴스 수 조절
+## Auto Scaling — 트래픽에 맞춰 인스턴스 수 조절
 
 실시간 엔드포인트는 Application Auto Scaling을 붙여 트래픽에 따라 인스턴스 수를 자동 조절한다. 가장 흔한 정책은 **타깃 추적(target tracking)**으로, 특정 지표를 목표값에 맞추도록 인스턴스를 늘리고 줄인다.
 
@@ -174,7 +174,7 @@ aas.put_scaling_policy(
 | 단계(Step) 스케일링 | 알람 임계 구간별로 정해진 만큼 증감 | 구간별로 다른 증감 폭이 필요할 때 |
 | 예약(Scheduled) 스케일링 | 정해진 시각에 용량을 미리 변경 | 세일·이벤트처럼 **예측 가능한** 급증 |
 
-> ⚠️ **함정**: 오토스케일링은 만능이 아니다. 새 인스턴스를 띄우고 모델을 로드해 헬스 체크를 통과하기까지 몇 분이 걸리므로, **갑작스러운 트래픽 스파이크**에는 즉각 대응하지 못한다. 블랙프라이데이처럼 예측 가능한 급증에는 **예약 스케일링(scheduled scaling)**으로 미리 용량을 늘려두거나 충분한 `MinCapacity`를 확보해야 한다. "오토스케일링을 켰는데도 스파이크 때 지연이 튀었다"는 시나리오의 답은 보통 예약 스케일링 또는 더 높은 최소 용량이다.
+> ⚠️ **함정**: Auto Scaling은 만능이 아니다. 새 인스턴스를 띄우고 모델을 로드해 헬스 체크를 통과하기까지 몇 분이 걸리므로, **갑작스러운 트래픽 스파이크**에는 즉각 대응하지 못한다. 블랙프라이데이처럼 예측 가능한 급증에는 **예약 스케일링(scheduled scaling)**으로 미리 용량을 늘려두거나 충분한 `MinCapacity`를 확보해야 한다. "Auto Scaling을 켰는데도 스파이크 때 지연이 튀었다"는 시나리오의 답은 보통 예약 스케일링 또는 더 높은 최소 용량이다.
 
 ## 엔드포인트 모니터링 지표
 
@@ -190,7 +190,7 @@ aas.put_scaling_policy(
 | `Invocation5XXErrors` | 모델·컨테이너 오류 | 추론 코드 예외, OOM 등 |
 | `CPUUtilization` / `MemoryUtilization` | 인스턴스 자원 사용률 | 인스턴스 타입 상향/스케일 아웃 검토 |
 
-> 💡 **개념**: 지연 문제를 볼 때는 `ModelLatency`와 `OverheadLatency`를 **분리해서** 봐야 한다. `ModelLatency`가 높으면 모델 자체가 무겁거나 인스턴스가 부족한 것이라 인스턴스 상향·스케일 아웃·모델 최적화가 답이다. 반면 `OverheadLatency`가 높으면 큰 페이로드 직렬화나 네트워크 구간이 원인일 가능성이 크다. 두 값을 뭉뚱그려 "느리다"로 보면 엉뚱한 조치를 하게 된다.
+지연 문제를 볼 때는 `ModelLatency`와 `OverheadLatency`를 **분리해서** 봐야 한다. `ModelLatency`가 높으면 모델 자체가 무겁거나 인스턴스가 부족한 것이라 인스턴스 상향·스케일 아웃·모델 최적화가 답이다. 반면 `OverheadLatency`가 높으면 큰 페이로드 직렬화나 네트워크 구간이 원인일 가능성이 크다. 두 값을 뭉뚱그려 "느리다"로 보면 엉뚱한 조치를 하게 된다.
 
 ## 인스턴스 선택 — CPU vs GPU vs 가속기
 
@@ -203,7 +203,7 @@ aas.put_scaling_policy(
 | `ml.p3` / `ml.p4` (고성능 GPU) | 대형 학습용 GPU | 매우 큰 모델, 초고처리량 | 비싸다. 추론보다 **학습**에 흔히 쓴다 |
 | `ml.inf1` / `ml.inf2` (Inferentia) | AWS 추론 전용 칩 | 딥러닝 추론(트랜스포머·CNN) | 추론당 비용 절감. **Neuron 컴파일** 단계 필요 |
 
-> 💡 **관련 이론**: 추론 인스턴스 선택은 "지연 목표 × 처리량 × 비용"의 균형이다. 전통 ML(XGBoost)은 CPU로 충분하고 GPU를 붙여도 효과가 미미하다. 반면 트랜스포머·CNN 같은 딥러닝은 GPU나 Inferentia에서 지연이 극적으로 줄어든다. 시험에서 "딥러닝 모델인데 GPU 비용이 부담"이라는 조건이 나오면 Inferentia(inf1/inf2)가 정답 신호다. 반대로 "XGBoost인데 GPU를 써서 비용을 낮추자"는 잘못된 선택지로 자주 출제된다.
+추론 인스턴스 선택은 "지연 목표 × 처리량 × 비용"의 균형이다. 전통 ML(XGBoost)은 CPU로 충분하고 GPU를 붙여도 효과가 미미하다. 반면 트랜스포머·CNN 같은 딥러닝은 GPU나 Inferentia에서 지연이 극적으로 줄어든다. 시험에서 "딥러닝 모델인데 GPU 비용이 부담"이라는 조건이 나오면 Inferentia(inf1/inf2)가 정답 신호다. 반대로 "XGBoost인데 GPU를 써서 비용을 낮추자"는 잘못된 선택지로 쓰이기 쉽다.
 
 ## Inference Recommender — 어떤 인스턴스가 최적인가
 
@@ -223,7 +223,7 @@ sm.create_inference_recommendations_job(
 )
 ```
 
-> 🔍 **더 깊이**: Inference Recommender는 두 모드가 있다. **Default(기본)** 잡은 여러 인스턴스 타입에 빠르게 배포해 광범위하게 비교하고, **Advanced(커스텀)** 잡은 원하는 트래픽 패턴(초당 요청 수, 지연 SLA)을 직접 정의해 정밀 부하 테스트를 한다. "인스턴스 타입을 어떻게 정할지 모르겠다, 데이터로 결정하고 싶다"는 시나리오의 답이 Inference Recommender다.
+Inference Recommender는 두 모드가 있다. **Default(기본)** 잡은 여러 인스턴스 타입에 빠르게 배포해 광범위하게 비교하고, **Advanced(커스텀)** 잡은 원하는 트래픽 패턴(초당 요청 수, 지연 SLA)을 직접 정의해 정밀 부하 테스트를 한다. "인스턴스 타입을 어떻게 정할지 모르겠다, 데이터로 결정하고 싶다"는 시나리오의 답이 Inference Recommender다.
 
 ## 증상 → 원인 → 조치
 
@@ -243,7 +243,7 @@ sm.create_inference_recommendations_job(
 - **모델 아티팩트** : 학습이 끝난 모델의 가중치·구조를 담아 S3에 올려 둔 압축 파일(`model.tar.gz`).
 - **EndpointConfig** : 어떤 모델을 어떤 인스턴스로 몇 대 띄울지 적어 둔 설계도. 엔드포인트와 별개 리소스다.
 - **ProductionVariant** : 한 엔드포인트 안에서 트래픽을 나눠 받는 모델 묶음 하나. 가중치를 줄 수 있다.
-- **blue/green 배포** : 새 버전을 따로 띄워 정상 확인 후 트래픽을 옮기고 옛 버전을 내리는 무중단 교체 방식.
+- **Blue/Green 배포** : 새 버전을 따로 띄워 정상 확인 후 트래픽을 옮기고 옛 버전을 내리는 무중단 교체 방식.
 - **카나리(Canary) 배포** : 아주 적은 비율의 트래픽만 신버전에 먼저 보내 보고 이상 없으면 넓히는 방식.
 - **Shadow testing** : 실제 요청의 사본을 신모델에 보내되 응답은 버려서, 사용자 영향 없이 성능만 재는 검증.
 - **타깃 추적(Target tracking)** : 지표를 목표값에 맞추도록 인스턴스 수를 자동으로 늘리고 줄이는 정책.
