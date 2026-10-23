@@ -5,7 +5,7 @@
 - 웹은 **HTTP(80)** 로 동작하고 암호화된 것이 **HTTPS(443)** 다.
 - 리눅스 웹 서버는 **Apache**와 **Nginx**가 대표다.
 - 메일 프로토콜은 셋이다 — **보낼 때 SMTP(25)**, **받을 때 POP3(110) 또는 IMAP(143)**.
-- **메일 서버끼리 주고받는 것도 SMTP** 다. 이 문제가 자주 나온다.
+- **메일 서버끼리 주고받는 것도 SMTP** 다. 이 점을 묻는 문제가 있다.
 - **POP3는 내려받아 지우고, IMAP은 서버에 남긴다.** 여러 기기를 쓰면 IMAP이다.
 
 ## 웹
@@ -186,7 +186,7 @@ curl -O http://www.example.com/file.tar.gz   # 원래 파일 이름으로 저장
 ```
 
 - **U는 User(사용자), T는 Transfer(전송), D는 Delivery(배달)** 로 가운데 글자를 보면 구분된다.
-- **Sendmail과 Postfix가 대표적인 MTA** 라는 점이 자주 출제된다.
+- **Sendmail과 Postfix가 대표적인 MTA** 라는 점이 출제 범위에 든다.
 - **MIME**(Multipurpose Internet Mail Extensions)은 메일에 **한글·이미지·첨부파일**을 담을 수 있게 하는 규격이다. 원래 메일은 영문 텍스트만 보낼 수 있었다.
 - MIME은 **프로토콜이 아니라 메일 내용을 적는 형식**이다. SMTP·POP3·IMAP과 한 줄에 놓고 "메일을 전송하는 프로토콜이 아닌 것"을 고르게 하면 답이 MIME이다.
 
