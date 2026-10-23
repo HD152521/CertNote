@@ -20,7 +20,7 @@ RDS Proxy는 두 문제를 각각 다른 방식으로 해결한다. Lambda처럼
 | Read Replica | 읽기 확장 | 비동기 (Async) | 수동 Promote | 가능 (별도 엔드포인트) | Replica당 추가 |
 | RDS Proxy | 연결 풀링 | N/A | 페일오버 가속 | N/A | 인스턴스 비용의 일부 |
 
-> 💡 **RDS Multi-AZ 동기 복제가 1-2ms 지연에도 동작하는 이유** — RDS Multi-AZ의 동기 복제가 AZ 간 1-2ms 지연에도 불구하고 잘 동작하는 이유는 데이터베이스 트랜잭션의 commit 패턴에 있다. OLTP 시스템에서 대부분의 트랜잭션은 ms 단위로 완료된다. 1-2ms의 AZ 간 RTT가 추가되더라도 전체 트랜잭션 완료 시간은 수 ms 수준이므로 사용자 체감 지연이 크지 않다. 반면 리전 간 RTT(예: 서울~도쿄 약 35ms)는 OLTP 트랜잭션에 심각한 영향을 준다. 이것이 "리전 간 동기 복제는 불가능하다"는 설계 결정의 근거이고, Aurora Global Database가 스토리지 레이어에서 비동기 복제를 선택한 이유다.
+**RDS Multi-AZ 동기 복제가 1-2ms 지연에도 동작하는 이유** — RDS Multi-AZ의 동기 복제가 AZ 간 1-2ms 지연에도 불구하고 잘 동작하는 이유는 데이터베이스 트랜잭션의 commit 패턴에 있다. OLTP 시스템에서 대부분의 트랜잭션은 ms 단위로 완료된다. 1-2ms의 AZ 간 RTT가 추가되더라도 전체 트랜잭션 완료 시간은 수 ms 수준이므로 사용자 체감 지연이 크지 않다. 반면 리전 간 RTT(예: 서울~도쿄 약 35ms)는 OLTP 트랜잭션에 심각한 영향을 준다. 이것이 "리전 간 동기 복제는 불가능하다"는 설계 결정의 근거이고, Aurora Global Database가 스토리지 레이어에서 비동기 복제를 선택한 이유다.
 
 ### Aurora — 공유 스토리지가 만드는 차이
 
@@ -58,13 +58,13 @@ DynamoDB에서 가장 중요한 단일 개념은 파티션 키 설계다. Hot Pa
 | LSI | 같은 PK, 다른 SK. 생성 시만 추가. 강한 일관성 가능 |
 | GSI | 다른 PK. 언제든 추가. 결과적 일관성만 |
 | DAX | DynamoDB 전용 캐시. SDK 변경만으로 적용. 마이크로초 |
-| Global Tables | 멀티 리전 액티브-액티브. LWW 충돌 해결. ~1초 복제 |
+| Global Tables | 멀티 리전 Active-Active. LWW 충돌 해결. ~1초 복제 |
 | Streams | 24시간 변경 로그. Lambda 이벤트 소스 매핑으로 후속 처리 |
 | On-Demand | 트래픽 예측 불가 시. 요청당 과금 |
 | Provisioned+AS | 안정적 트래픽 시. 비용 최적화 |
 | PITR | 35일 이내 초 단위 복구. 새 테이블로만 복구 |
 
-> 💡 **CAP 정리로 보는 5주차 서비스 선택** — 데이터베이스 선택은 CAP 정리(Brewer, 2000)의 실제 적용이다. RDS Multi-AZ는 같은 리전 내에서 CP(Consistency + Partition Tolerance)를 선택한다. DynamoDB 결과적 일관성은 AP(Availability + Partition Tolerance)를 선택한다. Aurora Global Database의 Primary 리전은 CP, Secondary 리전은 eventual consistency로 AP에 가깝다. MemoryDB for Redis는 내구성 보장(Multi-AZ WAL)으로 C를 강하게 보장한다. 비즈니스 요구에 따라 어떤 트레이드오프를 선택할지가 아키텍처 결정의 핵심이다. "항상 CA"를 만족하는 분산 시스템은 CAP 정리에 의해 불가능하다.
+**CAP 정리로 보는 5주차 서비스 선택** — 데이터베이스 선택은 CAP 정리(Brewer, 2000)의 실제 적용이다. RDS Multi-AZ는 같은 리전 내에서 CP(Consistency + Partition Tolerance)를 선택한다. DynamoDB 결과적 일관성은 AP(Availability + Partition Tolerance)를 선택한다. Aurora Global Database의 Primary 리전은 CP, Secondary 리전은 eventual consistency로 AP에 가깝다. MemoryDB for Redis는 내구성 보장(Multi-AZ WAL)으로 C를 강하게 보장한다. 비즈니스 요구에 따라 어떤 트레이드오프를 선택할지가 아키텍처 결정의 핵심이다. "항상 CA"를 만족하는 분산 시스템은 CAP 정리에 의해 불가능하다.
 
 ### 캐시 선택 — 4가지 도구의 포지셔닝
 
@@ -79,7 +79,7 @@ ElastiCache Redis, Memcached, DAX, MemoryDB가 각각 다른 문제를 푼다.
 
 ## 헷갈리기 쉬운 비교 — 완전 정리
 
-시험에서 가장 자주 혼동되는 쌍들을 한번에 정리한다.
+시험에서 혼동되기 쉬운 쌍들을 한번에 정리한다.
 
 **Multi-AZ vs Read Replica**:
 - HA가 목적이면 Multi-AZ. 자동 페일오버, 동기 복제, Standby는 읽기 안 받음.
@@ -110,7 +110,7 @@ ElastiCache Redis, Memcached, DAX, MemoryDB가 각각 다른 문제를 푼다.
 - 모든 리전에서 쓰기 필요(액티브-액티브), NoSQL → DynamoDB Global Tables
 - 관계형 + 쓰기는 Primary 리전만, 읽기 분산 → Aurora Global DB
 
-> 📚 **Capital One 보안 사고와 DB 아키텍처 교훈** — 2019년 Capital One 데이터 유출 사건(1억 600만 명 개인정보 노출)은 데이터베이스 설계보다 IAM과 EC2 메타데이터 서비스 보안 문제였다. 그러나 이 사건은 RDS 암호화, KMS 키 관리, VPC 내 프라이빗 서브넷 배치, 최소 권한 원칙이 얼마나 중요한지를 상기시켰다. RDS를 퍼블릭 서브넷에 두거나, 과도한 IAM 권한을 부여하거나, 암호화를 비활성화하는 것은 실제 사고의 원인이 됐다. SAA-C03 시험에서도 "DB는 프라이빗 서브넷에, 암호화 활성화, 최소 권한 IAM"이 항상 올바른 보안 답안이다.
+**Capital One 보안 사고와 DB 아키텍처 교훈** — 2019년 Capital One 데이터 유출 사건(1억 600만 명 개인정보 노출)은 데이터베이스 설계보다 IAM과 EC2 메타데이터 서비스 보안 문제였다. 그러나 이 사건은 RDS 암호화, KMS 키 관리, VPC 내 프라이빗 서브넷 배치, 최소 권한 원칙이 얼마나 중요한지를 상기시켰다. RDS를 퍼블릭 서브넷에 두거나, 과도한 IAM 권한을 부여하거나, 암호화를 비활성화하는 것은 실제 사고의 원인이 됐다. SAA-C03 시험에서도 "DB는 프라이빗 서브넷에, 암호화 활성화, 최소 권한 IAM"이 항상 올바른 보안 답안이다.
 
 ## 통합 아키텍처 — 실제로는 이렇게 쓴다
 

@@ -33,11 +33,9 @@ DynamoDB가 단일 자릿수 ms 응답을 보장하는 비결은 파티셔닝이
 - date (`"2025-05-26"` — 오늘 날짜에 쓰기 집중)
 - boolean (`true`/`false`)
 
-> 💡 **관련 이론: Consistent Hashing과 Dynamo 논문** — DynamoDB의 파티셔닝은 Consistent Hashing(일관된 해싱) 알고리즘을 기반으로 한다. Consistent Hashing은 Karger et al.의 1997년 논문 "Consistent Hashing and Random Trees: Distributed Caching Protocols for Relieving Hot Spots on the World Wide Web"(STOC 1997)에서 제안됐다. 일반 해시와 달리 노드 추가/제거 시 데이터 재배치(Rebalancing)를 최소화한다 — N개 노드에서 N+1개로 늘릴 때 전체 키의 약 1/N만 이동된다. 반면 일반 해시 테이블은 거의 모든 키를 재배치해야 한다. DynamoDB가 스토리지 노드를 늘려도 서비스 중단 없이 데이터를 재분배할 수 있는 기반이 이것이다. 2007년 Amazon Dynamo 논문(DeCandia et al.)은 Consistent Hashing + Virtual Nodes(각 물리 노드가 여러 가상 노드를 담당)로 더 균등한 분산을 달성했다고 설명한다.
-
 > ⚠️ **Adaptive Capacity의 한계** — "Adaptive Capacity"는 Hot Partition 문제를 완화하지만 해결하지는 못한다. Adaptive Capacity는 인기 있는 파티션에 자동으로 더 많은 용량을 할당하는 기능이지만, 단일 파티션의 물리적 한계(10GB, 초당 1000 WCU)를 넘어서는 워크로드는 처리할 수 없다. 파티션 키 설계가 근본적으로 잘못됐으면 Adaptive Capacity로도 못 고친다. Hot Partition 대응의 유일한 근본 해결책은 파티션 키를 High-Cardinality + 균등 분포로 재설계하는 것이다.
 
-> 🔍 **Write Sharding 기법** — 불가피하게 특정 값으로 쓰기가 집중될 때(예: 인기 상품의 재고 테이블), Write Sharding을 쓴다. 파티션 키에 랜덤 접미사(`productId#1`, `productId#2`, ..., `productId#N`)를 붙여 N개의 파티션에 분산한 뒤, 읽기 시에는 N개의 파티션을 모두 읽어서 집계한다. 쓰기 성능은 N배, 읽기 비용도 N배. 집계 워크로드가 없으면 합리적인 트레이드오프다.
+**Write Sharding 기법** — 불가피하게 특정 값으로 쓰기가 집중될 때(예: 인기 상품의 재고 테이블), Write Sharding을 쓴다. 파티션 키에 랜덤 접미사(`productId#1`, `productId#2`, ..., `productId#N`)를 붙여 N개의 파티션에 분산한 뒤, 읽기 시에는 N개의 파티션을 모두 읽어서 집계한다. 쓰기 성능은 N배, 읽기 비용도 N배. 집계 워크로드가 없으면 합리적인 트레이드오프다.
 
 ## WCU와 RCU — 용량 계산 방법
 
@@ -69,9 +67,9 @@ DynamoDB의 비용과 성능은 WCU(Write Capacity Unit)와 RCU(Read Capacity Un
 - 1일 평균 주문 100만 건, 각 주문 항목 2.5KB → 하루 초당 평균 100만/86400 ≈ 12건, 피크가 평균의 5배라면 초당 60건. 항목이 2.5KB이므로 1건당 3 WCU(올림) → 피크 WCU = 60 × 3 = 180 WCU
 - 읽기는 초당 1000건, 각 4KB, 결과적 일관성 → 1000 × (4/4) × (1/2) = 500 RCU
 
-> 💡 **On-Demand 모드의 내부 동작** — On-Demand 모드는 RCU/WCU를 미리 설정하지 않고 실제 사용량에 따라 과금한다. 내부적으로 DynamoDB는 테이블의 과거 피크 트래픽의 2배까지 "자동 최대값"을 설정한다. 이 한도를 초과하는 경우 DynamoDB는 초기에는 수용하지만 지속되면 점진적으로 스로틀링할 수 있다. On-Demand에서 갑작스럽게 트래픽이 수십 배 급증하면 초기 수 분간 스로틀링이 발생할 수 있다. Provisioned + Auto Scaling에서는 Auto Scaling 정책이 평활화를 돕지만 스케일링 자체가 몇 분이 걸린다. 신규 테이블에서 트래픽이 폭증할 예정이라면, 시작 전에 한 번 대용량 Provisioned로 설정했다가 On-Demand로 전환하면 "자동 최대값"이 높게 설정되어 있어 안전하다.
+**On-Demand 모드의 내부 동작** — On-Demand 모드는 RCU/WCU를 미리 설정하지 않고 실제 사용량에 따라 과금한다. 내부적으로 DynamoDB는 테이블의 과거 피크 트래픽의 2배까지 "자동 최대값"을 설정한다. 이 한도를 초과하는 경우 DynamoDB는 초기에는 수용하지만 지속되면 점진적으로 스로틀링할 수 있다. On-Demand에서 갑작스럽게 트래픽이 수십 배 급증하면 초기 수 분간 스로틀링이 발생할 수 있다. Provisioned + Auto Scaling에서는 Auto Scaling 정책이 평활화를 돕지만 스케일링 자체가 몇 분이 걸린다. 신규 테이블에서 트래픽이 폭증할 예정이라면, 시작 전에 한 번 대용량 Provisioned로 설정했다가 On-Demand로 전환하면 "자동 최대값"이 높게 설정되어 있어 안전하다.
 
-> 🔍 **트랜잭션 비용이 2배인 이유** — DynamoDB 트랜잭션(TransactWriteItems/TransactGetItems)은 2-Phase Commit(2PC) 유사 프로토콜을 내부적으로 사용한다. 첫 번째 페이즈에서 모든 항목에 대한 잠금/예약을 수행하고, 두 번째 페이즈에서 실제 커밋을 수행한다. 이 두 단계가 각각 용량을 소비하기 때문에 동일한 데이터 크기의 단일 작업 대비 2배의 WCU/RCU가 소비된다. 트랜잭션은 한 번에 최대 25개 항목, 4MB까지 처리 가능하다.
+**트랜잭션 비용이 2배인 이유** — DynamoDB 트랜잭션(TransactWriteItems/TransactGetItems)은 2-Phase Commit(2PC) 유사 프로토콜을 내부적으로 사용한다. 첫 번째 페이즈에서 모든 항목에 대한 잠금/예약을 수행하고, 두 번째 페이즈에서 실제 커밋을 수행한다. 이 두 단계가 각각 용량을 소비하기 때문에 동일한 데이터 크기의 단일 작업 대비 2배의 WCU/RCU가 소비된다. 트랜잭션은 한 번에 최대 25개 항목, 4MB까지 처리 가능하다.
 
 ## LSI와 GSI — 두 가지 보조 인덱스의 차이
 
@@ -123,9 +121,9 @@ DynamoDB의 기본 키로만 조회하면 한계가 있다. 다른 속성으로�
 
 > ⚠️ **GSI에서 강한 일관성 요청의 함정** — GSI에서 `ConsistentRead=true`를 요청하면 API 호출은 성공하지만 내부적으로 결과적 일관성으로 처리된다. 오류가 나는 게 아니라 그냥 결과적 일관성으로 작동한다. 이 사실을 모르면 "GSI에서 강한 일관성을 설정했는데 왜 최신 데이터가 안 보이지?" 하는 버그를 만난다. 최신성이 중요한 조회는 기본 테이블을 직접 쿼리하거나 LSI를 사용해야 한다.
 
-> 💡 **LSI/GSI 일관성 차이의 분산 이론적 배경** — LSI와 GSI의 일관성 차이는 분산 시스템의 "Read-your-writes Consistency"와 관련이 있다. LSI는 테이블과 동일한 파티션 내에 있으므로 쓰기와 읽기가 같은 스토리지 노드에서 이루어져 Read-your-writes가 보장된다. CAP 정리에서 LSI는 Partition 내 CP(Consistency + Partition Tolerance)를 제공한다. GSI는 비동기 복제를 통해 별도의 스토리지로 데이터가 전달되므로 복제 지연(보통 수 밀리초~수 초) 동안 최신 쓰기가 GSI에 반영되지 않을 수 있다. 이는 Eventual Consistency의 전형적인 모습이다.
+**LSI/GSI 일관성 차이의 분산 이론적 배경** — LSI와 GSI의 일관성 차이는 분산 시스템의 "Read-your-writes Consistency"와 관련이 있다. LSI는 테이블과 동일한 파티션 내에 있으므로 쓰기와 읽기가 같은 스토리지 노드에서 이루어져 Read-your-writes가 보장된다. CAP 정리에서 LSI는 Partition 내 CP(Consistency + Partition Tolerance)를 제공한다. GSI는 비동기 복제를 통해 별도의 스토리지로 데이터가 전달되므로 복제 지연(보통 수 밀리초~수 초) 동안 최신 쓰기가 GSI에 반영되지 않을 수 있다. 이는 Eventual Consistency의 전형적인 모습이다.
 
-> 🔍 **GSI Sparse Index 패턴** — GSI의 파티션 키나 정렬 키로 설정된 속성이 해당 테이블 항목에 없으면, 그 항목은 GSI에 포함되지 않는다. 이를 이용한 "Sparse Index 패턴"은 특정 상태의 항목만 인덱싱하는 기법이다. 예: `isActive` 속성이 있는 항목만 GSI에 포함시켜 활성 항목만 효율적으로 조회. 테이블 전체가 아닌 소수의 항목만 GSI를 통해 검색하므로 RCU 비용이 절감된다.
+**GSI Sparse Index 패턴** — GSI의 파티션 키나 정렬 키로 설정된 속성이 해당 테이블 항목에 없으면, 그 항목은 GSI에 포함되지 않는다. 이를 이용한 "Sparse Index 패턴"은 특정 상태의 항목만 인덱싱하는 기법이다. 예: `isActive` 속성이 있는 항목만 GSI에 포함시켜 활성 항목만 효율적으로 조회. 테이블 전체가 아닌 소수의 항목만 GSI를 통해 검색하므로 RCU 비용이 절감된다.
 
 ## DynamoDB Streams — 변경 이벤트의 실시간 파이프라인
 
@@ -156,11 +154,11 @@ Lambda (이벤트 소스 매핑)
        └─── Kinesis Data Firehose → S3 (데이터 레이크)
 ```
 
-> 💡 **Event Sourcing 아키텍처 패턴** — DynamoDB Streams는 Event Sourcing 패턴의 자연스러운 기반이 된다. Event Sourcing은 Martin Fowler가 정의한 패턴으로, 상태 변경을 직접 저장하는 대신 그 상태를 만든 이벤트 시퀀스를 저장하는 방식이다. DynamoDB 테이블은 현재 상태를 저장하고, Streams는 모든 변경 이벤트의 불변 로그 역할을 한다. Lambda ESM(Event Source Mapping)은 이 이벤트를 소비해서 읽기 전용 프로젝션(ElastiCache, OpenSearch, 집계 테이블)을 유지한다. Greg Young이 제안한 CQRS(Command Query Responsibility Segregation)와 결합하면 높은 확장성과 감사 추적(Audit Trail)을 동시에 달성할 수 있다.
+**Event Sourcing 아키텍처 패턴** — DynamoDB Streams는 Event Sourcing 패턴의 자연스러운 기반이 된다. Event Sourcing은 Martin Fowler가 정의한 패턴으로, 상태 변경을 직접 저장하는 대신 그 상태를 만든 이벤트 시퀀스를 저장하는 방식이다. DynamoDB 테이블은 현재 상태를 저장하고, Streams는 모든 변경 이벤트의 불변 로그 역할을 한다. Lambda ESM(Event Source Mapping)은 이 이벤트를 소비해서 읽기 전용 프로젝션(ElastiCache, OpenSearch, 집계 테이블)을 유지한다. Greg Young이 제안한 CQRS(Command Query Responsibility Segregation)와 결합하면 높은 확장성과 감사 추적(Audit Trail)을 동시에 달성할 수 있다.
 
-> 📚 **Amazon Prime Day 사례** — 2021년 Amazon Prime Day 동안 DynamoDB는 초당 8900만 건 이상의 요청을 처리했다고 AWS가 발표했다. 이 중 DynamoDB Streams와 Lambda를 통해 실시간 재고 업데이트, 주문 상태 알림, 사기 탐지 이벤트 처리가 이루어졌다. Streams의 샤드 구조가 동일 항목의 이벤트 순서를 보장하기 때문에, 재고 수량 감소 이벤트가 항상 증가 이벤트 이후에 처리되는 것이 보장됐다. 재고가 음수가 되는 버그를 방지하는 핵심 보장이다.
+**Amazon Prime Day 사례** — 2021년 Amazon Prime Day 동안 DynamoDB는 초당 8900만 건 이상의 요청을 처리했다고 AWS가 발표했다. 이 중 DynamoDB Streams와 Lambda를 통해 실시간 재고 업데이트, 주문 상태 알림, 사기 탐지 이벤트 처리가 이루어졌다. Streams의 샤드 구조가 동일 항목의 이벤트 순서를 보장하기 때문에, 재고 수량 감소 이벤트가 항상 증가 이벤트 이후에 처리되는 것이 보장됐다. 재고가 음수가 되는 버그를 방지하는 핵심 보장이다.
 
-## Global Tables — 멀티 리전 액티브-액티브
+## Global Tables — 멀티 리전 Active-Active
 
 DynamoDB Global Tables는 여러 AWS 리전에 걸쳐 동일한 테이블을 멀티 액티브(Active-Active)로 운영한다. 각 리전의 테이블은 읽기와 쓰기를 모두 처리한다.
 
@@ -171,7 +169,7 @@ DynamoDB Global Tables는 여러 AWS 리전에 걸쳐 동일한 테이블을 멀
 | 항목 | DynamoDB Global Tables | Aurora Global Database |
 |------|----------------------|------------------------|
 | 모델 | NoSQL (Key-Value) | 관계형 (MySQL/PostgreSQL 호환) |
-| 멀티 리전 쓰기 | 액티브-액티브 (모든 리전에서 쓰기) | 액티브-패시브 (Primary만 쓰기) |
+| 멀티 리전 쓰기 | Active-Active (모든 리전에서 쓰기) | Active-Passive (Primary만 쓰기) |
 | 복제 방식 | Streams 기반 비동기 | 스토리지 레이어 비동기 |
 | 복제 지연 | ~1초 | < 1초 |
 | 충돌 해결 | LWW (자동) | 없음 (단일 Writer) |
@@ -179,9 +177,9 @@ DynamoDB Global Tables는 여러 AWS 리전에 걸쳐 동일한 테이블을 멀
 | RPO | ~1초 | < 1초 |
 | RTO | ~0 (다른 리전 이미 서빙) | 수 분 (Promote 후) |
 
-> 🔍 **LWW 충돌 해결의 한계와 대응** — DynamoDB Global Tables의 LWW 충돌 해결은 단순하지만 한계가 있다. 금융 트랜잭션에서 "계좌 잔액을 감소시키는 두 개의 동시 쓰기"가 두 리전에서 발생하면, LWW는 하나의 감소만 유효하게 처리하고 다른 하나를 덮어쓸 수 있다. 이 문제를 해결하려면: (1) Conditional Write + Version Attribute로 낙관적 잠금 구현 — `ConditionExpression: version = :expected_version`으로 버전 불일치 시 ConditionalCheckFailedException을 발생시켜 재시도, (2) 금융 데이터는 특정 리전에서만 쓰기를 허용하는 Active-Passive 패턴으로 운영. Global Tables를 사용하되 쓰기 리전을 한 곳으로 제한하고 다른 리전은 읽기 전용으로 운영한다.
+**LWW 충돌 해결의 한계와 대응** — DynamoDB Global Tables의 LWW 충돌 해결은 단순하지만 한계가 있다. 금융 트랜잭션에서 "계좌 잔액을 감소시키는 두 개의 동시 쓰기"가 두 리전에서 발생하면, LWW는 하나의 감소만 유효하게 처리하고 다른 하나를 덮어쓸 수 있다. 이 문제를 해결하려면: (1) Conditional Write + Version Attribute로 낙관적 잠금 구현 — `ConditionExpression: version = :expected_version`으로 버전 불일치 시 ConditionalCheckFailedException을 발생시켜 재시도, (2) 금융 데이터는 특정 리전에서만 쓰기를 허용하는 Active-Passive 패턴으로 운영. Global Tables를 사용하되 쓰기 리전을 한 곳으로 제한하고 다른 리전은 읽기 전용으로 운영한다.
 
-> ⚠️ **Global Tables 활성화 요건** — DynamoDB Global Tables를 활성화하려면 테이블에 DynamoDB Streams(`NEW_AND_OLD_IMAGES`)가 반드시 활성화되어 있어야 한다. 또한 TTL(Time-To-Live) 속성 이름이 모든 리전에서 동일해야 한다. Global Tables 2019 버전(Version 2019.11.21)부터는 이미 데이터가 있는 테이블에도 Global Tables를 활성화할 수 있다.
+**Global Tables 활성화 요건** — DynamoDB Global Tables를 활성화하려면 테이블에 DynamoDB Streams(`NEW_AND_OLD_IMAGES`)가 반드시 활성화되어 있어야 한다. 또한 TTL(Time-To-Live) 속성 이름이 모든 리전에서 동일해야 한다. Global Tables 2019 버전(Version 2019.11.21)부터는 이미 데이터가 있는 테이블에도 Global Tables를 활성화할 수 있다.
 
 ## DAX — 마이크로초의 세계
 
@@ -204,9 +202,9 @@ DAX가 적합한 경우와 그렇지 않은 경우:
 | 핫 항목(동일 항목 반복 조회) | 스캔 위주의 분석 워크로드 |
 | 게임 리더보드, 소셜 카운터 | Lambda 함수 (VPC 설정 복잡성) |
 
-> 💡 **Write-Through 캐시 전략과 캐시 무효화** — DAX의 캐시 전략은 Write-Through다. 쓰기 시점에 캐시(DAX)와 데이터베이스(DynamoDB) 모두를 동기적으로 업데이트한다. 이 전략은 캐시와 DB 간 불일치를 최소화하지만, 쓰기 지연이 캐시 없는 경우보다 약간 늘어날 수 있다. 반대로 Cache-Aside(Lazy Loading)는 읽기 시점에 캐시 미스가 발생했을 때만 DB에서 읽어와 캐시에 저장하는 전략으로, DAX에서는 기본적으로 지원되지 않는다. Phil Karlton의 유명한 말 "캐시 무효화와 이름 짓기는 컴퓨터 과학에서 가장 어려운 두 가지 문제" — DAX의 Write-Through는 이 문제를 자동으로 처리하도록 설계됐다. 단, TTL(기본 5분)이 지난 항목은 다음 읽기 시 캐시 미스가 발생한다.
+**Write-Through 캐시 전략과 캐시 무효화** — DAX의 캐시 전략은 Write-Through다. 쓰기 시점에 캐시(DAX)와 데이터베이스(DynamoDB) 모두를 동기적으로 업데이트한다. 이 전략은 캐시와 DB 간 불일치를 최소화하지만, 쓰기 지연이 캐시 없는 경우보다 약간 늘어날 수 있다. 반대로 Cache-Aside(Lazy Loading)는 읽기 시점에 캐시 미스가 발생했을 때만 DB에서 읽어와 캐시에 저장하는 전략으로, DAX에서는 기본적으로 지원되지 않는다. Phil Karlton의 유명한 말 "캐시 무효화와 이름 짓기는 컴퓨터 과학에서 가장 어려운 두 가지 문제" — DAX의 Write-Through는 이 문제를 자동으로 처리하도록 설계됐다. 단, TTL(기본 5분)이 지난 항목은 다음 읽기 시 캐시 미스가 발생한다.
 
-> 📚 **Duolingo DAX 도입 사례** — Duolingo(언어 학습 앱)는 2019년 사용자 스트릭(연속 학습일) 카운터와 리더보드 데이터를 DynamoDB에서 DAX로 캐싱하도록 전환했다. 수천만 사용자가 매일 수십억 번 읽는 이 데이터는 DynamoDB 단독으로는 RCU 비용이 천문학적이었다. DAX 도입 후 DynamoDB에 대한 실제 읽기가 95% 이상 감소했고, 읽기 지연이 밀리초에서 마이크로초로 줄어들었다. 리더보드 페이지 로딩 속도가 눈에 띄게 빨라졌고, 비용은 80% 이상 절감됐다.
+**Duolingo DAX 도입 사례** — Duolingo(언어 학습 앱)는 2019년 사용자 스트릭(연속 학습일) 카운터와 리더보드 데이터를 DynamoDB에서 DAX로 캐싱하도록 전환했다. 수천만 사용자가 매일 수십억 번 읽는 이 데이터는 DynamoDB 단독으로는 RCU 비용이 천문학적이었다. DAX 도입 후 DynamoDB에 대한 실제 읽기가 95% 이상 감소했고, 읽기 지연이 밀리초에서 마이크로초로 줄어들었다. 리더보드 페이지 로딩 속도가 눈에 띄게 빨라졌고, 비용은 80% 이상 절감됐다.
 
 ## PITR과 백업 — DynamoDB의 복구 옵션
 
@@ -233,7 +231,7 @@ DAX가 적합한 경우와 그렇지 않은 경우:
 | 트랜잭션 | O (25 항목 한도) | O | O |
 | 인메모리 캐시 | DAX | Memorystore | Azure Cache for Redis |
 
-> 📚 **Lyft의 Cassandra → DynamoDB 마이그레이션** — 2022년 Lyft는 Cassandra에서 DynamoDB로 전환한 경험을 공유했다. 주요 이유는 운영 부담 감소와 Global Tables를 통한 멀티 리전 HA였다. 마이그레이션 과정에서 가장 큰 도전은 파티션 키 재설계였다 — Cassandra에서 분산이 잘 됐던 키 전략이 DynamoDB에서는 Hot Partition을 만들어서 처음부터 다시 설계해야 했다. 또한 Cassandra의 튜너블 일관성(QUORUM, LOCAL_QUORUM 등)에 의존하던 코드가 DynamoDB의 이분법적 일관성(강한/결과적)으로 대체되었다. 이 사례는 "NoSQL 마이그레이션은 데이터 이동이 아니라 모델 재설계"라는 교훈을 준다.
+**Lyft의 Cassandra → DynamoDB 마이그레이션** — 2022년 Lyft는 Cassandra에서 DynamoDB로 전환한 경험을 공유했다. 주요 이유는 운영 부담 감소와 Global Tables를 통한 멀티 리전 HA였다. 마이그레이션 과정에서 가장 큰 도전은 파티션 키 재설계였다 — Cassandra에서 분산이 잘 됐던 키 전략이 DynamoDB에서는 Hot Partition을 만들어서 처음부터 다시 설계해야 했다. 또한 Cassandra의 튜너블 일관성(QUORUM, LOCAL_QUORUM 등)에 의존하던 코드가 DynamoDB의 이분법적 일관성(강한/결과적)으로 대체되었다. 이 사례는 "NoSQL 마이그레이션은 데이터 이동이 아니라 모델 재설계"라는 교훈을 준다.
 
 ## CLI로 DynamoDB 핵심 작업 실습
 
@@ -332,7 +330,7 @@ aws cloudwatch get-metric-statistics \
   --statistics Sum
 ```
 
-## 정리하며
+## 정리
 
 DynamoDB는 파티션 키 설계가 전부다. 잘못된 파티션 키는 Hot Partition을 만들고, Hot Partition은 아무리 비용을 써도 해결이 안 된다. 균등하게 분포되는 High-Cardinality 키를 고르는 것이 DynamoDB 설계의 출발점이다.
 

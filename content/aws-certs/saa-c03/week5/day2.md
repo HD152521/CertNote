@@ -10,7 +10,7 @@
 
 Aurora의 해결책은 스토리지 레이어를 완전히 분리하는 것이었다. 컴퓨팅(인스턴스)과 스토리지를 분리하고, 스토리지는 여러 AZ에 걸친 분산 스토리지 클러스터가 담당한다. 인스턴스는 이 공유 스토리지에서 데이터를 읽고 쓰기만 한다. 2014년 Amazon 내부 논문 "Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases"(SIGMOD 2017)에서 이 아키텍처가 공식 발표됐다.
 
-> 💡 **관련 이론**: Aurora의 Compute-Storage 분리 아키텍처는 클라우드 데이터베이스의 새로운 패러다임을 열었다. 이 설계는 Snowflake의 "Virtual Warehouse + Cloud Storage" 분리, Google Spanner의 "Tablet server + Colossus storage" 분리와 같은 맥락이다. 컴퓨팅을 stateless에 가깝게 만들면 컴퓨팅 노드 추가/제거/교체가 스토리지와 독립적으로 빠르게 이루어질 수 있다. 전통적인 "Shared-Nothing 아키텍처"(각 노드가 자체 스토리지)와 반대되는 "Shared-Storage 아키텍처"다.
+Aurora의 Compute-Storage 분리 아키텍처는 클라우드 데이터베이스의 새로운 패러다임을 열었다. 이 설계는 Snowflake의 "Virtual Warehouse + Cloud Storage" 분리, Google Spanner의 "Tablet server + Colossus storage" 분리와 같은 맥락이다. 컴퓨팅을 stateless에 가깝게 만들면 컴퓨팅 노드 추가/제거/교체가 스토리지와 독립적으로 빠르게 이루어질 수 있다. 전통적인 "Shared-Nothing 아키텍처"(각 노드가 자체 스토리지)와 반대되는 "Shared-Storage 아키텍처"다.
 
 ## 공유 분산 스토리지 — 6 카피와 Quorum의 의미
 
@@ -36,13 +36,11 @@ AZ-a                AZ-b                AZ-c
 
 이 설계의 핵심 이점: Aurora 인스턴스(컴퓨팅)가 장애가 나도 스토리지는 멀쩡히 살아 있다. 새 인스턴스를 스토리지에 붙이면 된다. 스토리지 복제가 이미 되어 있으므로 "Redo Log 재실행" 없이 즉시 최신 상태에서 시작할 수 있다. 이것이 Aurora 페일오버가 30초 이내로 빠른 근본적 이유다.
 
-> 🔍 **더 깊이**: Aurora 스토리지 노드들 사이의 통신은 데이터 페이지 전체가 아니라 Redo Log만 전송한다. Writer 인스턴스는 변경된 데이터를 Redo Log 형태로 스토리지 노드에 보내고, 스토리지 노드들이 자체적으로 Redo를 실행해서 데이터 페이지를 업데이트한다. 이 "Log Applicator" 설계 덕분에 네트워크 트래픽이 크게 감소한다. 전통적 MySQL Multi-AZ가 전체 데이터 블록을 복제하는 것과 대비된다. SIGMOD 2017 논문에서 Aurora 팀은 이 최적화가 네트워크 I/O를 7.7배 감소시켰다고 보고했다.
-
-> 💡 **관련 이론**: 4/6 Quorum 시스템은 분산 시스템의 "Quorum-based Replication" 이론을 구현한다. Leslie Lamport의 Paxos(1989)와 Diego Ongaro의 Raft(2014, USENIX ATC) 알고리즘에서 Quorum은 다수결 원칙으로 일관성을 보장한다. n개 복사본 중 (n/2 + 1)개의 동의가 있어야 커밋하면, 최대 (n/2 - 1)개 노드가 동시에 죽어도 시스템이 동작한다. Aurora의 4/6는 정확히 이 원칙: 6개 중 4개 필요 → 최대 2개 동시 손실 허용.
+Aurora 스토리지 노드들 사이의 통신은 데이터 페이지 전체가 아니라 Redo Log만 전송한다. Writer 인스턴스는 변경된 데이터를 Redo Log 형태로 스토리지 노드에 보내고, 스토리지 노드들이 자체적으로 Redo를 실행해서 데이터 페이지를 업데이트한다. 이 "Log Applicator" 설계 덕분에 네트워크 트래픽이 크게 감소한다. 전통적 MySQL Multi-AZ가 전체 데이터 블록을 복제하는 것과 대비된다. SIGMOD 2017 논문에서 Aurora 팀은 이 최적화가 네트워크 I/O를 7.7배 감소시켰다고 보고했다.
 
 ## Aurora 엔드포인트 — 4종류의 역할
 
-Aurora 클러스터에는 여러 종류의 엔드포인트가 있으며, 각각 다른 목적으로 사용된다. 시험에서 "어떤 엔드포인트를 써야 하는가"를 자주 묻는다.
+Aurora 클러스터에는 여러 종류의 엔드포인트가 있으며, 각각 다른 목적으로 사용된다. 시험에서 "어떤 엔드포인트를 써야 하는가"를 묻는다.
 
 **Cluster Endpoint(Writer Endpoint)**: 항상 현재 Writer 인스턴스를 가리킨다. 쓰기 및 트랜잭션 처리에 사용. 페일오버가 발생하면 자동으로 새 Writer를 가리킨다.
 
@@ -85,11 +83,11 @@ Secondary 리전에서는 읽기 전용으로 사용할 수 있다. 만약 Prima
 | 비용 | 높음 | 보통 |
 | 엔진 | Aurora MySQL / Aurora PG | MySQL / PG / MariaDB / Oracle 등 |
 
-> 🔍 **더 깊이**: Aurora Global Database의 Planned Failover와 Unplanned Failover는 다르다. **Planned Failover(Managed Planned Failover)**는 유지보수나 리전 마이그레이션을 위해 사용하며, Secondary를 새 Primary로 먼저 승격한 다음 원래 Primary를 Secondary로 강등한다. 이 과정에서 데이터 손실(RPO)이 거의 0이다. **Unplanned Failover**는 Primary 리전 장애 시 Secondary를 수동으로 Promote하는 것으로, 복제 Lag에 해당하는 데이터가 손실될 수 있다(보통 수백 ms ~ 1초 이내).
+Aurora Global Database의 Planned Failover와 Unplanned Failover는 다르다. **Planned Failover(Managed Planned Failover)**는 유지보수나 리전 마이그레이션을 위해 사용하며, Secondary를 새 Primary로 먼저 승격한 다음 원래 Primary를 Secondary로 강등한다. 이 과정에서 데이터 손실(RPO)이 거의 0이다. **Unplanned Failover**는 Primary 리전 장애 시 Secondary를 수동으로 Promote하는 것으로, 복제 Lag에 해당하는 데이터가 손실될 수 있다(보통 수백 ms ~ 1초 이내).
 
-> 📚 **사례**: 삼성전자의 B2B SaaS 플랫폼 SmartThings는 전 세계 수억 개의 IoT 디바이스 이벤트를 처리한다. 국내 AWS 고객 사례 세션(AWS Summit Seoul)에서 SmartThings 팀은 Aurora Global Database를 통해 미국, 유럽, 아시아 사용자들이 가장 가까운 리전의 Aurora Secondary에서 디바이스 상태를 읽어가는 구조를 설명했다. 복제 지연이 1초 미만이기 때문에 전 세계 사용자가 거의 동일한 최신 상태를 볼 수 있다.
+**사례**: 삼성전자의 B2B SaaS 플랫폼 SmartThings는 전 세계 수억 개의 IoT 디바이스 이벤트를 처리한다. 국내 AWS 고객 사례 세션(AWS Summit Seoul)에서 SmartThings 팀은 Aurora Global Database를 통해 미국, 유럽, 아시아 사용자들이 가장 가까운 리전의 Aurora Secondary에서 디바이스 상태를 읽어가는 구조를 설명했다. 복제 지연이 1초 미만이기 때문에 전 세계 사용자가 거의 동일한 최신 상태를 볼 수 있다.
 
-## Aurora Serverless v2 — 자동 스케일링의 진짜 의미
+## Aurora Serverless v2 — 자동 스케일링의 의미
 
 Aurora Serverless v2는 기존 Serverless v1의 완전한 재설계 버전이다. v1은 용량이 0으로 줄어들고 다시 올라오는 데 30~60초가 걸려서 실용적인 사용이 어려웠다. v2는 설계 자체를 바꿨다.
 
@@ -106,7 +104,7 @@ v2의 또 다른 특징: 0 ACU로 완전히 꺼지지 않는다. 최소 0.5 ACU�
 - 항상 높은 처리량을 유지해야 하는 안정적 워크로드 (Provisioned가 더 저렴)
 - 특정 ACU 수준에서 최대 성능이 필요한 경우 (스케일링 중 일시적 지연 발생 가능)
 
-> 💡 **관련 이론**: Serverless v2의 스케일링 메커니즘은 "Resource Sharing on Multi-Tenant Infrastructure" 원칙을 따른다. 물리적으로는 대형 서버에서 여러 Aurora Serverless v2 클러스터들이 CPU와 메모리를 공유하지만, 각 클러스터는 완전히 격리된다. 이 방식은 Google의 Borg/Kubernetes 클러스터와 유사하게, 물리 자원 활용률을 높이면서 논리적 격리를 유지한다.
+Serverless v2의 스케일링 메커니즘은 "Resource Sharing on Multi-Tenant Infrastructure" 원칙을 따른다. 물리적으로는 대형 서버에서 여러 Aurora Serverless v2 클러스터들이 CPU와 메모리를 공유하지만, 각 클러스터는 완전히 격리된다. 이 방식은 Google의 Borg/Kubernetes 클러스터와 유사하게, 물리 자원 활용률을 높이면서 논리적 격리를 유지한다.
 
 ## Backtrack과 Fast Clone — 빠른 복구의 두 가지 방법
 
@@ -155,7 +153,7 @@ Aurora는 RDS MySQL/PostgreSQL보다 약 20% 비싸다. 이 추가 비용이 정
 | Fast Clone | 없음 | 있음 (COW) |
 | 비용 | 기준 | 약 20% 높음 |
 
-> 📚 **사례**: 넷플릭스(Netflix)는 AWS 위에 글로벌 스트리밍 서비스를 운영하면서 핵심 데이터를 여러 리전에 걸쳐 복제한다. 공식 기술 블로그(Netflix Tech Blog)에 따르면, 넷플릭스는 "Active-Active" 멀티 리전 전략을 추구하는데 Aurora Global Database가 그 기반 중 하나로 활용된다. 특히 사용자 프로필과 구독 정보 같은 글로벌하게 읽기가 많은 데이터에서 Secondary 리전의 읽기 분산이 지연을 크게 줄였다고 언급한다.
+**사례**: 넷플릭스(Netflix)는 AWS 위에 글로벌 스트리밍 서비스를 운영하면서 핵심 데이터를 여러 리전에 걸쳐 복제한다. 공식 기술 블로그(Netflix Tech Blog)에 따르면, 넷플릭스는 "Active-Active" 멀티 리전 전략을 추구하는데 Aurora Global Database가 그 기반 중 하나로 활용된다. 특히 사용자 프로필과 구독 정보 같은 글로벌하게 읽기가 많은 데이터에서 Secondary 리전의 읽기 분산이 지연을 크게 줄였다고 언급한다.
 
 ## CLI로 Aurora 클러스터 실제로 설정하기
 
@@ -214,11 +212,11 @@ aws rds create-db-instance \
   --db-instance-class db.serverless
 ```
 
-## 정리하며
+## 정리
 
 Aurora는 관계형 DB의 외관을 유지하면서 내부 스토리지 아키텍처를 완전히 재설계한 서비스다. 6 카피 분산 스토리지와 4/6 Quorum 쓰기가 AZ 하나의 완전 손실에도 데이터를 보호하고, 컴퓨팅-스토리지 분리가 빠른 페일오버와 쉬운 Reader 추가를 가능하게 한다. Aurora Global Database는 스토리지 레이어 복제로 1초 미만의 리전 간 지연을 달성하고, Serverless v2는 수 초 만에 용량을 조정한다.
 
-시험 관점에서: "5개 이상 Read Replica", "30초 이내 페일오버", "리전 간 < 1초 복제", "변동 트래픽 자동 스케일링"이 보이면 Aurora 계열이 정답이다. "Backtrack"은 Aurora MySQL만, "PostgreSQL은 PITR"만이 가능하다는 것을 반드시 기억하자.
+시험 관점에서: "5개 이상 Read Replica", "30초 이내 페일오버", "리전 간 < 1초 복제", "변동 트래픽 자동 스케일링"이 보이면 Aurora 계열이 정답이다. "Backtrack"은 Aurora MySQL만, "PostgreSQL은 PITR"만이 가능하다는 점에 유의한다.
 
 다음 날은 스키마가 없는 세계, DynamoDB를 다룬다. 파티션 키가 왜 그렇게 중요한지, Hot Partition이 어떻게 시스템을 죽이는지, 그리고 1 RCU = 4KB가 무엇을 의미하는지를 볼 것이다.
 
