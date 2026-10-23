@@ -1,0 +1,13 @@
+[
+  {"date": "2026-10-23", "cert": "sap-c02", "kind": "exam", "summary": "SAP-C02 시험 안내의 문항당 시간 계산 오류(2분 6초 → 2분 12초)와 도메인 1 비중(29% → 26%) 정정"},
+  {"date": "2026-10-23", "kind": "fact", "summary": "Capital One 사고 서술 정정: 원인(WAF를 통한 SSRF와 과도한 역할 권한), OCC 제재금 8천만 달러와 집단소송 합의금 1억 9천만 달러 구분 (SAA·DVA·SOA·SAP·DOP)"},
+  {"date": "2026-10-23", "kind": "exam", "summary": "SAP-C02·DOP-C02 비채점 문항 수를 10문항으로 통일"},
+  {"date": "2026-10-23", "cert": "mla-c01", "kind": "exam", "summary": "MLA-C01 합격 점수를 정답률로 환산하던 서술 정정(스케일 점수)"},
+  {"date": "2026-10-23", "cert": "dea-c01", "kind": "fact", "summary": "DEA-C01 Airflow 예제의 schedule_interval 을 schedule 로 최신화"},
+  {"date": "2026-10-23", "cert": "soa-c02", "kind": "fact", "summary": "SOA-C02 Nested Stack 의 DeletionPolicy 설명 모순 정정"},
+  {"date": "2026-10-23", "cert": "linux-master-1", "kind": "quiz", "summary": "리눅스마스터 1급 모의고사 26번 복수정답 해소, 학습 일수 표기(70일 → 72일) 정정"},
+  {"date": "2026-10-23", "kind": "quiz", "summary": "AWS 모의고사 11종: 정답 보기만 길던 편향 제거, MLS-C01 정답 글자 쏠림 해소, 문항 수를 실제 시험과 맞춤(SAA·DVA·SOA 65, SAP·DOP 75)"},
+  {"date": "2026-10-23", "kind": "quiz", "summary": "AWS 모의고사 정답 오류 정정: IAM Identity Center 자격 증명 소스(SAP #22), Firehose Parquet 변환(SAP #38), 드리프트 되돌리기(DOP #32), SQS 1 MiB 한도(DVA #20), X-Ray 계측(DVA #14), XKS(SCS #47), FIPS 140-3(SAP #16·SCS #54)"},
+  {"date": "2026-10-23", "kind": "quiz", "summary": "신규 고객에게 닫힌 서비스 반영: S3 Object Lambda(SCS #55), Incident Manager(DOP #62)"},
+  {"date": "2026-10-23", "kind": "copy", "summary": "홈 화면의 확인할 수 없는 비교·최상급 표현 삭제, 수치를 콘텐츠 데이터에서 계산"}
+]

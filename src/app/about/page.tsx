@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
+import { NonAffiliationNotice } from '@/components/legal/NonAffiliationNotice';
 import { CONTACT_EMAIL, OPERATOR_NAME, SITE_NAME } from '@/lib/site';
 
 const TITLE = '소개';
@@ -39,6 +40,15 @@ export default function AboutPage() {
         </ul>
       </LegalSection>
 
+      <LegalSection title="어떻게 만드나요">
+        <p>
+          범위를 정하는 기준, 노트와 문제를 만드는 방식, 검수와 오류 제보 처리 과정은{' '}
+          <Link href="/about/how-we-make" className="underline underline-offset-4 hover:text-fg">제작 방식</Link>
+          에 정리했습니다. 제보와 검수로 고친 오류는{' '}
+          <Link href="/changelog" className="underline underline-offset-4 hover:text-fg">수정 기록</Link>에 공개합니다.
+        </p>
+      </LegalSection>
+
       <LegalSection title="운영 주체">
         <p>
           {SITE_NAME}는 {OPERATOR_NAME}가 운영합니다. 문의와 오류 제보는{' '}
@@ -47,11 +57,7 @@ export default function AboutPage() {
       </LegalSection>
 
       <LegalSection title="알아두실 점">
-        <p>
-          {SITE_NAME}는 Amazon Web Services, 한국정보통신진흥협회(KAIT) 등 시험 주관 기관과 제휴하거나 그 승인을 받은
-          서비스가 아닌 독립적인 학습 자료입니다. 시험 문항을 복원하거나 유출한 자료는 싣지 않으며, 수록한 문제는 모두
-          자체 제작한 것입니다.
-        </p>
+        <NonAffiliationNotice />
         <p>
           시험 범위와 응시 정보는 주관 기관이 수시로 바꿉니다. 응시료·문항 수·합격 기준 같은 수치는 접수 전에 공식
           안내에서 다시 확인해 주세요. 노트에서 틀린 내용을 발견하면{' '}

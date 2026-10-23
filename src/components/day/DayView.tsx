@@ -14,6 +14,8 @@ import { MarkAsRead } from '@/components/MarkAsRead';
 import { ExamDateNudge } from '@/components/study/ExamDateNudge';
 import { DayNavigationOverlay } from '@/components/study/DayNavigationOverlay';
 import { DayMeta } from '@/components/DayMeta';
+import { DaySourceLine } from '@/components/day/DaySourceLine';
+import { getLastReviewedMonth } from '@/lib/trust/reviewLog';
 import { cn } from '@/lib/cn';
 import { linkDayRefHref } from '@/lib/navTree';
 import { JsonLd } from '@/components/JsonLd';
@@ -57,6 +59,8 @@ export async function DayView({ category, slug, w, d, lang, content, locked, log
   const showAds = shouldShowDayAds({ category, week: w, locked });
   const adTop = showAds ? resolveAdPlacement('dayTop') : null;
   const adBottom = showAds ? resolveAdPlacement('dayBottom') : null;
+  // 검수 기록(content/review-log.json, 번들에 정적 import)이 있을 때만 날짜를 싣는다 — 요청별 값이 아니다.
+  const reviewedMonth = getLastReviewedMonth(lang, slug, w, d);
 
   return (
     <div className="flex gap-0">
@@ -77,6 +81,7 @@ export async function DayView({ category, slug, w, d, lang, content, locked, log
             <span className="text-fg-faint">/</span>
             <span className="text-fg">Day {d}</span>
           </nav>
+          <DaySourceLine certMeta={content.certMeta} lang={lang} reviewedMonth={reviewedMonth} pagePath={content.href} />
           <DayMeta certMeta={content.certMeta} week={w} day={d} readingMinutes={readingMinutes} lang={lang} />
           {locked ? (
             // 잠긴 문서에서는 요약 카드를 보여주지 않는다: "핵심 정리"는 그 자체로 결론이 응축된

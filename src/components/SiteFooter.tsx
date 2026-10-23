@@ -6,6 +6,7 @@ import { OPERATOR_NAME, SITE_NAME } from '@/lib/site';
 
 const LINKS = [
   { href: '/about', ko: '소개', en: 'About' },
+  { href: '/changelog', ko: '수정 기록', en: 'Changelog' },
   { href: '/contact', ko: '문의', en: 'Contact' },
   { href: '/terms', ko: '이용약관', en: 'Terms' },
   { href: '/privacy', ko: '개인정보처리방침', en: 'Privacy' },
