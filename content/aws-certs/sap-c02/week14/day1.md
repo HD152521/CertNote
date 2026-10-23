@@ -10,9 +10,9 @@ DR 설계의 출발점은 두 개의 시간 지표다. **RTO(Recovery Time Objec
 
 이 두 숫자는 IT가 임의로 정하는 게 아니라 **BIA(Business Impact Analysis, 비즈니스 영향 분석)**의 산출물이다. "다운타임 1분당 손실액이 얼마인가"를 사업 부서가 명시해야, RTO 1분을 위해 비용 수십 배를 쓰는 게 정당한지 판단할 수 있다.
 
-> 💡 **관련 이론**: RTO/RPO는 ISO 22301(사업 연속성 관리 시스템, BCMS) 국제 표준에서 공식 정의된 용어다. ISO 22301은 BIA를 통해 MTPD(Maximum Tolerable Period of Disruption, 최대 허용 중단 시간)를 도출하고, 그 안에서 RTO를 설정하라고 규정한다. 또 NIST SP 800-34(연방 정보시스템 비상계획 가이드)도 동일한 RTO/RPO/WRT(Work Recovery Time) 체계를 쓴다. AWS WA Framework의 Reliability 기둥 질문(REL13: "재해 복구를 어떻게 계획하는가")이 바로 이 표준 용어를 차용한 것이다. 시험에서 "비즈니스가 허용하는 데이터 손실"은 RPO, "서비스 복구까지 시간"은 RTO로 즉각 매핑해야 한다.
+RTO/RPO는 ISO 22301(사업 연속성 관리 시스템, BCMS) 국제 표준에서 공식 정의된 용어다. ISO 22301은 BIA를 통해 MTPD(Maximum Tolerable Period of Disruption, 최대 허용 중단 시간)를 도출하고, 그 안에서 RTO를 설정하라고 규정한다. 또 NIST SP 800-34(연방 정보시스템 비상계획 가이드)도 동일한 RTO/RPO/WRT(Work Recovery Time) 체계를 쓴다. AWS WA Framework의 Reliability 기둥 질문(REL13: "재해 복구를 어떻게 계획하는가")이 바로 이 표준 용어를 차용한 것이다. 시험에서 "비즈니스가 허용하는 데이터 손실"은 RPO, "서비스 복구까지 시간"은 RTO로 즉각 매핑해야 한다.
 
-> 🔍 **더 깊이**: RTO와 RPO는 독립적이다. RPO가 0(데이터 한 건도 못 잃음)인데 RTO는 1시간(천천히 복구해도 됨)인 시스템이 존재한다 — 예를 들어 야간 배치로 도는 회계 정산 시스템은 모든 거래를 보존해야 하지만(RPO≈0) 다음 영업일 아침까지만 복구되면 된다(RTO 수 시간). 반대로 RTO 0(즉시 복구)인데 RPO는 관대한 경우도 있다 — 읽기 위주 상품 카탈로그는 즉시 떠야 하지만 최근 몇 분의 가격 변경은 다시 동기화하면 된다. 시험은 이 두 숫자를 따로 흔들어 함정을 만든다. "RPO 0"이 보이면 동기 복제 또는 Active-Active, "RTO 수 시간 허용"이 보이면 비용 절감 여지(Backup & Restore)를 떠올려야 한다.
+RTO와 RPO는 독립적이다. RPO가 0(데이터 한 건도 못 잃음)인데 RTO는 1시간(천천히 복구해도 됨)인 시스템이 존재한다 — 예를 들어 야간 배치로 도는 회계 정산 시스템은 모든 거래를 보존해야 하지만(RPO≈0) 다음 영업일 아침까지만 복구되면 된다(RTO 수 시간). 반대로 RTO 0(즉시 복구)인데 RPO는 관대한 경우도 있다 — 읽기 위주 상품 카탈로그는 즉시 떠야 하지만 최근 몇 분의 가격 변경은 다시 동기화하면 된다. 시험은 이 두 숫자를 따로 흔들어 함정을 만든다. "RPO 0"이 보이면 동기 복제 또는 Active-Active, "RTO 수 시간 허용"이 보이면 비용 절감 여지(Backup & Restore)를 떠올려야 한다.
 
 ## 4가지 전략 — "평소 얼마나 켜두느냐"의 스펙트럼
 
@@ -25,13 +25,13 @@ AWS DR 백서(2021 개정판)는 DR을 4단계 스펙트럼으로 정리한다. 
 | **Warm Standby** | 수 분~30분 | 초~분 | ★★★ | 축소판 전체 스택 상시 | 미션 크리티컬 |
 | **Multi-Site Active-Active** | 0~수 초 | 0~수 초 | ★★★★ | 100%·양쪽 트래픽 처리 | 금융·결제·게임 |
 
-> 🔍 **더 깊이**: 네 전략을 외우려 하지 말고 **"capacity와 RTO는 반비례, capacity와 비용은 비례"**라는 한 문장으로 이해하라. Backup/Restore는 DR 리전에 컴퓨트를 0% 켜두므로 가장 싸지만, 장애 시 인프라를 처음부터 프로비저닝해야 해 RTO가 길다. Multi-Site는 100% 켜두므로 비용이 거의 2배지만 트래픽이 이미 흐르고 있어 RTO가 0에 수렴한다. Pilot Light와 Warm Standby의 결정적 차이는 **"앱 서버가 켜져 있느냐"**다 — Pilot Light는 DB만 핫·앱은 콜드(AMI만 준비), Warm Standby는 축소된 앱도 항상 떠 있다. 그래서 Warm Standby는 "스케일 아웃"만 하면 되지만 Pilot Light는 "앱을 처음 시작"해야 해 RTO가 더 길다.
+네 전략은 **"capacity와 RTO는 반비례, capacity와 비용은 비례"**라는 한 문장으로 정리된다. Backup/Restore는 DR 리전에 컴퓨트를 0% 켜두므로 가장 싸지만, 장애 시 인프라를 처음부터 프로비저닝해야 해 RTO가 길다. Multi-Site는 100% 켜두므로 비용이 거의 2배지만 트래픽이 이미 흐르고 있어 RTO가 0에 수렴한다. Pilot Light와 Warm Standby의 결정적 차이는 **"앱 서버가 켜져 있느냐"**다 — Pilot Light는 DB만 핫·앱은 콜드(AMI만 준비), Warm Standby는 축소된 앱도 항상 떠 있다. 그래서 Warm Standby는 "스케일 아웃"만 하면 되지만 Pilot Light는 "앱을 처음 시작"해야 해 RTO가 더 길다.
 
 ### Backup & Restore — 최저 비용의 기준선
 
 정기 스냅샷(EBS Snapshot·RDS Snapshot)과 S3 Cross-Region Replication으로 데이터만 DR 리전에 보내두고, 장애 시 IaC(CloudFormation·Terraform)로 인프라를 통째로 재생성한다. 비용은 사실상 스토리지 비용뿐이지만, 인프라 프로비저닝 + 데이터 복구에 수 시간이 걸린다.
 
-> 📚 **사례**: 2017년 2월 28일 발생한 **AWS S3 us-east-1 대장애**(4시간)는 한 엔지니어의 오타 명령으로 S3 빌링 서브시스템 서버가 대량 제거되며 시작됐다. 이때 백업·DR을 단일 리전 S3에만 의존하던 수많은 서비스(Trello·Quora·Slack 일부 기능 등)가 동시에 멈췄다. 교훈은 명확하다 — **백업은 반드시 다른 리전(또는 다른 계정)에 격리**되어야 한다. 같은 리전·같은 계정에 백업을 두면 그 리전·계정 장애 시 백업도 함께 사라진다. 시험에서 "리전 전체 장애 대비"가 보이면 Cross-Region이 필수 조건이다.
+2017년 2월 28일 발생한 **AWS S3 us-east-1 대장애**(4시간)는 한 엔지니어의 오타 명령으로 S3 빌링 서브시스템 서버가 대량 제거되며 시작됐다. 이때 백업·DR을 단일 리전 S3에만 의존하던 수많은 서비스(Trello·Quora·Slack 일부 기능 등)가 동시에 멈췄다. 교훈은 명확하다 — **백업은 반드시 다른 리전(또는 다른 계정)에 격리**되어야 한다. 같은 리전·같은 계정에 백업을 두면 그 리전·계정 장애 시 백업도 함께 사라진다. 시험에서 "리전 전체 장애 대비"가 보이면 Cross-Region이 필수 조건이다.
 
 ### Pilot Light — DB만 핫, 앱은 콜드
 
@@ -53,9 +53,9 @@ DR 전략의 RPO는 결국 **데이터 복제 방식**이 결정한다. 그리�
 
 **동기 복제(Synchronous)**는 쓰기 요청이 primary와 모든 사본에 도달해 확인(ack)을 받은 뒤에야 클라이언트에 성공을 반환한다. 따라서 RPO가 0이지만, 사본까지의 왕복 지연(RTT)이 모든 쓰기에 더해진다. **비동기 복제(Asynchronous)**는 primary에 쓰면 즉시 성공을 반환하고 사본에는 나중에 보낸다. 쓰기가 빠르지만, primary가 죽으면 아직 못 보낸 데이터가 사라져 RPO > 0이 된다.
 
-여기서 핵심은 **거리**다. us-east-1(버지니아)과 us-west-2(오레곤)는 약 4,000km 떨어져 있고, 빛이 광케이블을 왕복하는 데만 물리적으로 약 40ms가 걸린다. 동기 복제를 리전 간에 걸면 모든 쓰기에 이 40ms가 더해져 처리량이 무너진다. 그래서 **동기 복제는 AZ 간(수 km, 1~2ms)에만 현실적이고, 리전 간 복제는 거의 항상 비동기**다.
+여기서 변수는 **거리**다. us-east-1(버지니아)과 us-west-2(오레곤)는 약 4,000km 떨어져 있고, 빛이 광케이블을 왕복하는 데만 물리적으로 약 40ms가 걸린다. 동기 복제를 리전 간에 걸면 모든 쓰기에 이 40ms가 더해져 처리량이 무너진다. 그래서 **동기 복제는 AZ 간(수 km, 1~2ms)에만 현실적이고, 리전 간 복제는 거의 항상 비동기**다.
 
-> 💡 **관련 이론**: 이것이 분산 시스템의 **CAP 정리**와 **PACELC 정리**가 말하는 트레이드오프의 물리적 뿌리다. CAP은 "네트워크 분할(P) 시 일관성(C)과 가용성(A) 중 하나를 포기하라"고 한다. PACELC은 한 발 더 나가 "분할이 없을 때(Else)도 지연(L)과 일관성(C) 사이에서 골라야 한다"고 명시한다. 리전 간 동기 복제는 강한 일관성(C)을 택해 지연(L)을 감수하는 것이고, 비동기는 지연을 줄이는 대신 일관성을 양보(eventual consistency)한 것이다. Aurora가 리전 간을 비동기(storage-level)로, Multi-AZ를 동기로 설계한 이유가 바로 이 지연-일관성 균형이다. 시험에서 "리전 간 RPO 0"을 요구하면 거의 불가능하거나 큰 지연 대가를 의심해야 한다.
+이것이 분산 시스템의 **CAP 정리**와 **PACELC 정리**가 말하는 트레이드오프의 물리적 뿌리다. CAP은 "네트워크 분할(P) 시 일관성(C)과 가용성(A) 중 하나를 포기하라"고 한다. PACELC은 한 발 더 나가 "분할이 없을 때(Else)도 지연(L)과 일관성(C) 사이에서 골라야 한다"고 명시한다. 리전 간 동기 복제는 강한 일관성(C)을 택해 지연(L)을 감수하는 것이고, 비동기는 지연을 줄이는 대신 일관성을 양보(eventual consistency)한 것이다. Aurora가 리전 간을 비동기(storage-level)로, Multi-AZ를 동기로 설계한 이유가 바로 이 지연-일관성 균형이다. 시험에서 "리전 간 RPO 0"을 요구하면 거의 불가능하거나 큰 지연 대가를 의심해야 한다.
 
 > ⚠️ **함정**: "RPO 0 = 항상 동기 복제"라고 외우면 틀린다. DDB Global Tables는 **비동기** Active-Active이지만 실무적으로 RPO를 거의 0으로 본다 — 모든 리전이 쓰기를 받으므로 한 리전이 죽어도 다른 리전에 이미 쓰인 데이터가 있기 때문이다. 반대로 Aurora Global은 secondary가 read-only라 한 리전 쓰기 구조이고 RPO는 보통 1초 미만(0은 아님)이다. 시험에서 "RPO 0 + 양 리전 쓰기"는 DDB Global Tables, "RPO 1초 + 글로벌 SQL"은 Aurora Global로 갈린다.
 
@@ -71,9 +71,9 @@ DR 전략의 RPO는 결국 **데이터 복제 방식**이 결정한다. 그리�
 | **확장** | 사전 구매한 용량 한계 | 장애 시 Auto Scaling 무한 확장 |
 | **RTO 단축** | 더 많은 하드웨어 구매 필요 | Warm/Multi-Site로 설정만 변경 |
 
-핵심은 **"용량을 추측하지 말라(Stop guessing capacity)"**는 WA 일반 원칙이 DR에서 가장 빛난다는 점이다. 온프레미스는 DR 리전에 production 전체 용량을 미리 사둬야 했지만, 클라우드는 Pilot Light로 평소엔 DB만 켜두고 장애 순간에만 Auto Scaling으로 폭발적으로 확장한다 — 유휴 비용을 거의 0으로 만들면서도 RTO를 지킨다.
+**"용량을 추측하지 말라(Stop guessing capacity)"**는 WA 일반 원칙이 DR에서 가장 잘 드러난다. 온프레미스는 DR 리전에 production 전체 용량을 미리 사둬야 했지만, 클라우드는 Pilot Light로 평소엔 DB만 켜두고 장애 순간에만 Auto Scaling으로 폭발적으로 확장한다 — 유휴 비용을 거의 0으로 만들면서도 RTO를 지킨다.
 
-> 🔍 **더 깊이**: 이 경제학 변화 때문에 클라우드 DR은 **DR 사이트를 "비용 절감의 기회"로 재활용**할 수 있다. 예컨대 Warm Standby의 축소된 DR 스택을 평소엔 배치 처리·분석 워크로드에 쓰거나, Multi-Site의 양 리전을 Latency Routing으로 묶어 사용자에게 더 가까운 리전을 제공해 **DR과 성능 최적화를 동시에 달성**한다. 온프레미스에서는 불가능했던 "DR 자원의 이중 활용"이다. 시험에서 "DR 리전을 평소에도 활용해 비용 효율을 높이려면?"이 보이면 Active-Active 구성을 떠올린다.
+이 경제학 변화 때문에 클라우드 DR은 **DR 사이트를 "비용 절감의 기회"로 재활용**할 수 있다. 예컨대 Warm Standby의 축소된 DR 스택을 평소엔 배치 처리·분석 워크로드에 쓰거나, Multi-Site의 양 리전을 Latency Routing으로 묶어 사용자에게 더 가까운 리전을 제공해 **DR과 성능 최적화를 동시에 달성**한다. 온프레미스에서는 불가능했던 "DR 자원의 이중 활용"이다. 시험에서 "DR 리전을 평소에도 활용해 비용 효율을 높이려면?"이 보이면 Active-Active 구성을 떠올린다.
 
 ## Route 53 기반 Failover 오케스트레이션
 
@@ -86,11 +86,11 @@ DR의 마지막 퍼즐은 "장애를 감지하고 트래픽을 DR로 돌리는" 
 
 > ⚠️ **함정**: DNS Failover에는 **TTL 지연**이라는 숨은 함정이 있다. Route 53가 레코드를 바꿔도 클라이언트·중간 리졸버가 이전 IP를 TTL 동안 캐싱하면 즉시 전환되지 않는다. RTO를 초 단위로 요구한다면 DNS Failover만으로는 부족하고, **Global Accelerator**(애니캐스트 IP·고정 엔드포인트로 DNS 캐싱 우회) 또는 Active-Active 구성이 필요하다. 시험에서 "RTO 0~수 초 + DNS 캐싱 우회"가 보이면 Global Accelerator, "RTO 수 분 허용"이면 Route 53 Failover로 갈린다.
 
-## 정리하며
+## 정리
 
 DR은 **비즈니스가 RTO/RPO를 정의 → 4전략 중 비용 최저로 충족하는 것을 선택 → Route 53·복제로 구현**하는 워크플로다. 4전략(Backup & Restore·Pilot Light·Warm Standby·Multi-Site)은 "DR 리전에 평소 얼마나 켜두느냐"의 스펙트럼이며, capacity와 RTO는 반비례·비용은 비례한다. RPO는 동기(AZ 간·RPO 0)·비동기(리전 간·RPO>0) 복제가 결정하고, 이는 빛의 속도라는 물리 한계와 CAP/PACELC 트레이드오프에 뿌리를 둔다.
 
-SAP 시험 단골 매핑: (1) "RTO 24시간·비용 최소" → **Backup & Restore**, (2) "DB만 항시 복제·앱은 정지" → **Pilot Light**, (3) "축소 스택 상시·수 분 RTO" → **Warm Standby**, (4) "99.99% SLA·양 리전 트래픽" → **Multi-Site Active-Active**, (5) "RPO 0 + 양 리전 쓰기" → **DDB Global Tables**, (6) "글로벌 SQL·RPO 1초" → **Aurora Global**, (7) "DR 트래픽 자동 전환" → **Route 53 Failover + Health Check**, (8) "RTO 초 단위·DNS 캐싱 우회" → **Global Accelerator**. 다음 day는 이 DR을 떠받치는 백업 인프라(AWS Backup·Vault Lock·Cross-Region Copy)를 도구 레벨까지 파고든다.
+SAP 시험 매핑: (1) "RTO 24시간·비용 최소" → **Backup & Restore**, (2) "DB만 항시 복제·앱은 정지" → **Pilot Light**, (3) "축소 스택 상시·수 분 RTO" → **Warm Standby**, (4) "99.99% SLA·양 리전 트래픽" → **Multi-Site Active-Active**, (5) "RPO 0 + 양 리전 쓰기" → **DDB Global Tables**, (6) "글로벌 SQL·RPO 1초" → **Aurora Global**, (7) "DR 트래픽 자동 전환" → **Route 53 Failover + Health Check**, (8) "RTO 초 단위·DNS 캐싱 우회" → **Global Accelerator**. 다음 day는 이 DR을 떠받치는 백업 인프라(AWS Backup·Vault Lock·Cross-Region Copy)를 도구 레벨까지 파고든다.
 
 ---
 
