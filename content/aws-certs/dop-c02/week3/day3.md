@@ -69,7 +69,7 @@ env:
 
 `kms:Decrypt`가 필요한 경우: SecureString 파라미터가 CMK로 암호화된 경우, 또는 Secrets Manager 시크릿이 CMK로 암호화된 경우. AWS 관리형 키(`alias/aws/ssm`, `alias/aws/secretsmanager`)는 서비스 역할에 암묵적으로 허용되어 별도 권한이 필요 없다.
 
-> ⚠️ **함정**: 가장 흔한 실수 — `secretsmanager:GetSecretValue` 권한은 있는데 `kms:Decrypt`가 없어서 `AccessDenied: not authorized to decrypt` 오류. CMK를 쓴다면 KMS 권한을 반드시 별도로 추가해야 한다. 에러 메시지가 "Secrets Manager"를 언급하지만 실제 문제는 KMS에 있다.
+> ⚠️ **함정**: 빠뜨리기 쉬운 권한 — `secretsmanager:GetSecretValue` 권한은 있는데 `kms:Decrypt`가 없어서 `AccessDenied: not authorized to decrypt` 오류. CMK를 쓴다면 KMS 권한을 반드시 별도로 추가해야 한다. 에러 메시지가 "Secrets Manager"를 언급하지만 실제 문제는 KMS에 있다.
 
 ## Secrets Manager 회전 메커니즘: PENDING → CURRENT → PREVIOUS
 
@@ -97,9 +97,9 @@ aws secretsmanager rotate-secret \
   --rotation-lambda-arn arn:aws:lambda:...:function:SecretsManagerRDSPostgreSQLRotationMultiUser
 ```
 
-> 💡 **관련 이론**: Multi-User Rotation은 분산 시스템의 **Blue/Green 배포 패턴**을 자격 증명에 적용한 것이다. 항상 두 개의 유효한 자격 증명이 존재하고, 시스템은 현재 CURRENT를 사용하며, 새 자격 증명이 준비되면 전환한다. 이것은 소프트웨어 배포의 "구 버전과 새 버전이 동시에 존재하는 기간"과 동일한 논리다.
+> Multi-User Rotation은 분산 시스템의 **Blue/Green 배포 패턴**을 자격 증명에 적용한 것이다. 항상 두 개의 유효한 자격 증명이 존재하고, 시스템은 현재 CURRENT를 사용하며, 새 자격 증명이 준비되면 전환한다. 이것은 소프트웨어 배포의 "구 버전과 새 버전이 동시에 존재하는 기간"과 동일한 논리다.
 
-> 📚 **사례**: 2023년 GitLab의 보안 인시던트 보고서에 따르면, 자동 회전이 설정되지 않은 장기 유효 자격 증명이 공격자에게 수개월간 노출된 사례가 있었다. 회전 주기가 30일이었다면 최대 노출 기간이 30일로 제한됐을 것이다. Secrets Manager의 자동 회전은 "최대 노출 기간"을 설정 가능한 숫자로 만드는 핵심 보안 제어다.
+> 2023년 GitLab의 보안 인시던트 보고서에 따르면, 자동 회전이 설정되지 않은 장기 유효 자격 증명이 공격자에게 수개월간 노출된 사례가 있었다. 회전 주기가 30일이었다면 최대 노출 기간이 30일로 제한됐을 것이다. Secrets Manager의 자동 회전은 "최대 노출 기간"을 설정 가능한 숫자로 만드는 핵심 보안 제어다.
 
 ## Parameter Store SecureString: 계층적 네이밍과 경로 권한
 
@@ -135,7 +135,7 @@ aws ssm get-parameters-by-path \
 
 이 정책 하나로 `/myapp/prod/` 아래 모든 파라미터에 접근 가능. `/myapp/dev/*`에는 접근 불가. 환경 분리가 IAM 경로 구조로 자연스럽게 이루어진다.
 
-> 🔍 **더 깊이**: Parameter Store는 내부적으로 DynamoDB 기반으로 동작한다고 알려져 있다(AWS 공식 확인은 없지만 행동 패턴으로 추측). Standard tier는 GetParameter API가 스로틀링되는데 기본 한도가 **40 TPS**(1초에 40번)다. 빌드가 동시에 수십 개 돌아가고 각 빌드가 Parameter Store에서 여러 값을 가져오면 스로틀링이 발생한다. Advanced tier는 1000 TPS까지 지원한다. 대규모 병렬 빌드 환경에서는 이 한도를 확인해야 한다.
+> Parameter Store는 내부적으로 DynamoDB 기반으로 동작한다고 알려져 있다(AWS 공식 확인은 없지만 행동 패턴으로 추측). Standard tier는 GetParameter API가 스로틀링되는데 기본 한도가 **40 TPS**(1초에 40번)다. 빌드가 동시에 수십 개 돌아가고 각 빌드가 Parameter Store에서 여러 값을 가져오면 스로틀링이 발생한다. Advanced tier는 1000 TPS까지 지원한다. 대규모 병렬 빌드 환경에서는 이 한도를 확인해야 한다.
 
 ## Cross-Account 시크릿 공유: 패턴과 필수 요소
 
@@ -216,7 +216,7 @@ Extension은 TTL 기반 캐시를 가진다. 같은 Lambda 실행 환경(warm �
 
 ECS Task Execution Role에 Secrets Manager와 KMS 권한 필요. **단점**: 컨테이너 환경 변수에 평문으로 주입되어, `docker inspect`나 ECS console에서 값이 보인다. 이를 해결하려면 컨테이너 내에서 Extension 패턴을 사용해야 한다.
 
-> 💡 **관련 이론**: Lambda Extension은 **사이드카 패턴(Sidecar Pattern)**의 구현이다. 마이크로서비스에서 메인 서비스와 별도로 실행되는 프로세스가 공통 기능(로깅, 시크릿 관리, 헬스체크)을 담당한다. Kubernetes에서는 사이드카 컨테이너로 구현하고, Lambda에서는 Extension 프로세스로 구현한다. 같은 개념의 다른 형태다.
+> Lambda Extension은 **사이드카 패턴(Sidecar Pattern)**의 구현이다. 마이크로서비스에서 메인 서비스와 별도로 실행되는 프로세스가 공통 기능(로깅, 시크릿 관리, 헬스체크)을 담당한다. Kubernetes에서는 사이드카 컨테이너로 구현하고, Lambda에서는 Extension 프로세스로 구현한다. 같은 개념의 다른 형태다.
 
 ## 비용 최적화: 100개 시크릿의 비용 계산
 
@@ -236,7 +236,7 @@ API 호출 비용:
 
 결론: 자동 회전이 필요한 것만 Secrets Manager, 나머지는 Parameter Store Standard가 비용 최적화의 표준이다.
 
-> 🔍 **더 깊이**: 비용 계산에서 자주 놓치는 것은 **회전 Lambda 호출 비용**이다. 시크릿 100개를 30일마다 회전하면, 한 달에 회전 Lambda가 400회 이상 호출된다(4단계 × 100개). Lambda 호출 비용은 매우 낮지만, 회전 자체가 RDS API 호출, 검증 DB 연결 등을 포함하므로 회전 과정의 전체 비용을 추적하는 것이 좋다. AWS Cost Explorer에서 Secrets Manager 비용을 별도 태그로 추적하면 정확한 파악이 가능하다.
+> 비용 계산에서 자주 놓치는 것은 **회전 Lambda 호출 비용**이다. 시크릿 100개를 30일마다 회전하면, 한 달에 회전 Lambda가 400회 이상 호출된다(4단계 × 100개). Lambda 호출 비용은 매우 낮지만, 회전 자체가 RDS API 호출, 검증 DB 연결 등을 포함하므로 회전 과정의 전체 비용을 추적하는 것이 좋다. AWS Cost Explorer에서 Secrets Manager 비용을 별도 태그로 추적하면 정확한 파악이 가능하다.
 
 ## 빌드 안정성과 회전 충돌: 실제로 어떻게 되는가
 

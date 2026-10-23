@@ -1,6 +1,6 @@
 # Day 1 - ECR: 컨테이너 이미지 레지스트리가 해결하는 문제들
 
-"컨테이너 이미지를 어디에 어떻게 저장할 것인가"는 생각보다 복잡한 문제다. Docker Hub에 올리면 되지 않느냐는 접근은 규모가 커지면 깨진다. Docker Hub의 Rate Limit(인증 없이 6시간에 100 pull, 2020년 기준)이 EKS 클러스터 수백 개 노드의 이미지 pull을 막는 사고가 실제로 있었다. npm 패키지에 숨겨진 악성 코드처럼 외부 레지스트리의 이미지에 백도어가 심어진 공급망 공격도 현실 위협이다. 멀티 리전 배포에서 매번 인터넷을 거쳐 이미지를 pull하면 레이턴시와 비용 문제가 생긴다.
+"컨테이너 이미지를 어디에 어떻게 저장할 것인가"는 생각보다 복잡한 문제다. Docker Hub에 올리면 되지 않느냐는 접근은 규모가 커지면 깨진다. Docker Hub의 Rate Limit(인증 없이 6시간에 100 pull, 2020년 기준)이 EKS 클러스터 수백 개 노드의 이미지 pull을 막는 사고가 실제로 있었다. npm 패키지에 숨겨진 악성 코드처럼 외부 레지스트리의 이미지에 백도어가 심어진 공급망 공격도 현실 위협이다. 멀티 리전 배포에서 매번 인터넷을 거쳐 이미지를 pull하면 지연 시간과 비용 문제가 생긴다.
 
 ECR은 이 문제들을 AWS 생태계 안에서 해결하는 컨테이너 이미지 레지스트리다. 단순한 저장소가 아니라 보안 스캔(취약점), 수명 주기 관리(비용), 복제(가용성), 캐시(외부 의존성 격리)를 하나의 서비스로 제공한다.
 
@@ -32,7 +32,7 @@ OCI Image 구조:
 
 레이어의 content-addressable 저장 방식이 핵심이다. `FROM ubuntu:22.04`를 사용하는 이미지 100개가 ECR에 있어도 ubuntu 레이어는 한 번만 저장된다. 이것이 ECR의 실제 저장 비용이 이미지 파일 총 크기보다 훨씬 작은 이유다.
 
-> 💡 **관련 이론**: OCI 이미지의 레이어 구조는 **Content-Addressable Storage(CAS)**의 구현이다. 파일의 내용(content)으로 주소(digest, sha256 해시)를 결정하는 방식—같은 내용은 항상 같은 주소를 갖는다. Git이 파일을 SHA-1 해시로 저장하는 것과 동일한 원리다. 이 덕분에 레이어 중복이 자동으로 제거되고(Deduplication), 레이어의 무결성 검증이 가능하며(Integrity), 동일 레이어를 여러 이미지가 공유할 수 있다(Sharing).
+> OCI 이미지의 레이어 구조는 **Content-Addressable Storage(CAS)**의 구현이다. 파일의 내용(content)으로 주소(digest, sha256 해시)를 결정하는 방식—같은 내용은 항상 같은 주소를 갖는다. Git이 파일을 SHA-1 해시로 저장하는 것과 동일한 원리다. 이 덕분에 레이어 중복이 자동으로 제거되고(Deduplication), 레이어의 무결성 검증이 가능하며(Integrity), 동일 레이어를 여러 이미지가 공유할 수 있다(Sharing).
 
 **Image Tag vs Digest**:
 - **Tag** (`myapp:v1.2.3`, `myapp:latest`): 가변 포인터. 누군가 같은 태그로 다른 이미지를 push하면 태그가 새 이미지를 가리킨다.
@@ -104,9 +104,9 @@ aws inspector2 list-findings \
   }'
 ```
 
-> 📚 **사례**: 2021년 log4shell(CVE-2021-44228) 취약점 발표 시 Enhanced Scanning의 위력이 드러났다. Log4Shell은 Java 애플리케이션의 Log4j 라이브러리에 있는 원격 코드 실행 취약점이었다. Basic Scanning은 OS 패키지만 보므로 Java 의존성에 있는 Log4j를 발견하지 못했다. Enhanced Scanning은 이미지 내의 Java classpath까지 분석하므로 Log4Shell 영향을 받는 이미지를 자동으로 식별했다. AWS Inspector가 전 세계 수백만 ECR 이미지를 몇 시간 만에 재평가해서 Security Hub로 알림을 보낸 것이 실제 사례로 보고됐다.
+> 2021년 log4shell(CVE-2021-44228) 취약점 발표 시 Enhanced Scanning의 위력이 드러났다. Log4Shell은 Java 애플리케이션의 Log4j 라이브러리에 있는 원격 코드 실행 취약점이었다. Basic Scanning은 OS 패키지만 보므로 Java 의존성에 있는 Log4j를 발견하지 못했다. Enhanced Scanning은 이미지 내의 Java classpath까지 분석하므로 Log4Shell 영향을 받는 이미지를 자동으로 식별했다. AWS Inspector가 전 세계 수백만 ECR 이미지를 몇 시간 만에 재평가해서 Security Hub로 알림을 보낸 것이 실제 사례로 보고됐다.
 
-> 🔍 **더 깊이**: Enhanced Scanning이 언어 의존성을 스캔하는 방법은 소프트웨어 구성 분석(Software Composition Analysis, SCA)이다. 이미지 레이어를 뜯어서 Python의 requirements.txt, site-packages/, Node의 node_modules/, Java의 pom.xml, JAR 파일 MANIFEST.MF 등을 찾아 알려진 취약 버전과 대조한다. SBOM(Software Bill of Materials, 소프트웨어 구성 명세서)을 내부적으로 생성해서 CVE 데이터베이스와 비교한다. SBOM은 EO 14028(2021 미국 대통령 행정명령, 소프트웨어 공급망 보안)에서 의무화된 개념으로, Inspector의 Enhanced Scanning이 이 표준을 AWS 서비스로 구현한 것이다.
+> Enhanced Scanning이 언어 의존성을 스캔하는 방법은 소프트웨어 구성 분석(Software Composition Analysis, SCA)이다. 이미지 레이어를 뜯어서 Python의 requirements.txt, site-packages/, Node의 node_modules/, Java의 pom.xml, JAR 파일 MANIFEST.MF 등을 찾아 알려진 취약 버전과 대조한다. SBOM(Software Bill of Materials, 소프트웨어 구성 명세서)을 내부적으로 생성해서 CVE 데이터베이스와 비교한다. SBOM은 EO 14028(2021 미국 대통령 행정명령, 소프트웨어 공급망 보안)에서 의무화된 개념으로, Inspector의 Enhanced Scanning이 이 표준을 AWS 서비스로 구현한 것이다.
 
 ## Lifecycle Policy: 이미지 비용을 자동으로 통제하는 방법
 
@@ -194,11 +194,11 @@ aws ecr put-image-tag-mutability \
 2. 감사 추적: 특정 태그로 배포된 이미지가 언제나 동일하므로 "prod-v1.2.3이 배포됐을 때 어떤 코드가 실행됐는가"가 명확하다
 3. Supply chain 공격 방어: 외부 공격자가 기존 태그를 악성 이미지로 교체하는 것을 방지한다
 
-> 💡 **관련 이론**: IMMUTABLE 태그는 **Content-Addressable 시스템의 인간 친화적 인터페이스**다. Digest(sha256)가 이미지의 진짜 불변 식별자이지만 사람이 기억하기 어렵다. IMMUTABLE Tag는 사람이 읽을 수 있는 이름(`prod-v1.2.3`)을 불변 Digest에 매핑해서, "이 이름은 항상 이 내용을 가리킨다"는 보장을 만든다. 이것은 DNS의 CNAME vs A 레코드와 유사하다—태그가 CNAME(별명)이고 Digest가 IP 주소(실제 주소)다. MUTABLE 태그는 CNAME이 다른 IP를 가리킬 수 있는 것이고, IMMUTABLE 태그는 한번 설정된 CNAME이 변경 불가한 것과 같다.
+> IMMUTABLE 태그는 **Content-Addressable 시스템의 인간 친화적 인터페이스**다. Digest(sha256)가 이미지의 진짜 불변 식별자이지만 사람이 기억하기 어렵다. IMMUTABLE Tag는 사람이 읽을 수 있는 이름(`prod-v1.2.3`)을 불변 Digest에 매핑해서, "이 이름은 항상 이 내용을 가리킨다"는 보장을 만든다. 이것은 DNS의 CNAME vs A 레코드와 유사하다—태그가 CNAME(별명)이고 Digest가 IP 주소(실제 주소)다. MUTABLE 태그는 CNAME이 다른 IP를 가리킬 수 있는 것이고, IMMUTABLE 태그는 한번 설정된 CNAME이 변경 불가한 것과 같다.
 
 ## Cross-Region Replication: DR과 멀티 리전 아키텍처
 
-ECR Cross-Region Replication은 이미지를 자동으로 다른 리전에 복사한다. DR(재해 복구) 시나리오와 글로벌 멀티 리전 서비스의 배포 레이턴시 감소에 사용된다.
+ECR Cross-Region Replication은 이미지를 자동으로 다른 리전에 복사한다. DR(재해 복구) 시나리오와 글로벌 멀티 리전 서비스의 배포 지연 시간 감소에 사용된다.
 
 ```bash
 aws ecr put-replication-configuration \
@@ -311,7 +311,7 @@ aws ecr create-pull-through-cache-rule \
 
 **Pull Through Cache + Lifecycle Policy 조합**: 캐시된 이미지도 Lifecycle Policy의 적용을 받아 자동 정리된다. 오래된 캐시 버전이 쌓이는 것을 방지한다.
 
-> 📚 **사례**: 2022년 Cloudflare가 Docker Hub Rate Limit으로 인해 내부 CI 파이프라인이 간헐적으로 실패하는 문제를 경험했다. 해결책으로 Cloudflare는 내부 Nexus Repository Manager를 프록시로 사용했지만, AWS 고객들은 ECR Pull Through Cache로 더 단순하게 해결했다. ECR Pull Through Cache는 Docker Hub 인증 정보를 Secrets Manager에 저장해서 Rate Limit을 인증된 계정 한도(무제한 또는 유료 계획)로 확장한다.
+> 2022년 Cloudflare가 Docker Hub Rate Limit으로 인해 내부 CI 파이프라인이 간헐적으로 실패하는 문제를 경험했다. 해결책으로 Cloudflare는 내부 Nexus Repository Manager를 프록시로 사용했지만, AWS 고객들은 ECR Pull Through Cache로 더 단순하게 해결했다. ECR Pull Through Cache는 Docker Hub 인증 정보를 Secrets Manager에 저장해서 Rate Limit을 인증된 계정 한도(무제한 또는 유료 계획)로 확장한다.
 
 ## ECR 권한 모델의 세 계층
 
@@ -368,7 +368,7 @@ notation sign \
 # 서명되지 않은 이미지는 클러스터 진입 차단
 ```
 
-> 💡 **관련 이론**: 컨테이너 이미지 서명은 **PKI(Public Key Infrastructure)와 코드 서명(Code Signing)**의 컨테이너 세계 적용이다. Windows의 코드 서명 인증서, macOS의 Developer Certificate과 동일한 원리다—개인 키로 서명하고 공개 키로 검증한다. OCI Image Signing의 표준이 되어가는 Sigstore(cosign)는 투명성 로그(transparency log, RFC 9162)를 사용해 서명 이벤트를 공개 불변 로그에 기록한다. 이는 CT(Certificate Transparency, RFC 6962)가 HTTPS 인증서 발급을 공개 로그로 추적하는 것과 동일한 방식으로 컨테이너 이미지 공급망의 투명성을 확보한다.
+> 컨테이너 이미지 서명은 **PKI(Public Key Infrastructure)와 코드 서명(Code Signing)**의 컨테이너 세계 적용이다. Windows의 코드 서명 인증서, macOS의 Developer Certificate과 동일한 원리다—개인 키로 서명하고 공개 키로 검증한다. OCI Image Signing의 표준이 되어가는 Sigstore(cosign)는 투명성 로그(transparency log, RFC 9162)를 사용해 서명 이벤트를 공개 불변 로그에 기록한다. 이는 CT(Certificate Transparency, RFC 6962)가 HTTPS 인증서 발급을 공개 로그로 추적하는 것과 동일한 방식으로 컨테이너 이미지 공급망의 투명성을 확보한다.
 
 ## ECR KMS 암호화: 저장 데이터 보호
 
@@ -389,7 +389,7 @@ aws ecr create-repository \
 
 > ⚠️ **함정**: ECR 리포지토리에 CMK를 설정한 후 해당 KMS 키를 비활성화하거나 삭제하면 이미지 pull이 불가능해진다—이미지가 그 키로 암호화되어 있기 때문이다. KMS 키 삭제에는 7-30일의 대기 기간이 있지만, 키 비활성화는 즉시 효과가 있다. CMK 로테이션(`enable-key-rotation`)은 자동 로테이션이므로 이미지 접근에 영향을 주지 않는다. 또한 Cross-Account pull 시 대상 계정의 IAM에 해당 CMK에 대한 `kms:Decrypt` 권한이 필요하다—ECR Repository Policy만으로는 부족하다.
 
-> 💡 **관련 이론**: ECR의 암호화 구조는 S3 서버측 암호화(SSE-KMS)와 동일한 Envelope Encryption 방식이다. 각 이미지 레이어는 Data Key로 암호화되고, Data Key는 CMK로 암호화되어 이미지 메타데이터에 저장된다. pull 요청이 오면 ECR이 CMK로 Data Key를 복호화하고, Data Key로 레이어를 복호화해서 응답한다. 이 과정이 CloudTrail에 `kms:Decrypt` 이벤트로 기록되므로 "어떤 이미지가 언제 pull됐는가"를 KMS 감사 로그로 추적할 수 있다.
+> ECR의 암호화 구조는 S3 서버측 암호화(SSE-KMS)와 동일한 Envelope Encryption 방식이다. 각 이미지 레이어는 Data Key로 암호화되고, Data Key는 CMK로 암호화되어 이미지 메타데이터에 저장된다. pull 요청이 오면 ECR이 CMK로 Data Key를 복호화하고, Data Key로 레이어를 복호화해서 응답한다. 이 과정이 CloudTrail에 `kms:Decrypt` 이벤트로 기록되므로 "어떤 이미지가 언제 pull됐는가"를 KMS 감사 로그로 추적할 수 있다.
 
 ## buildspec.yml에서 ECR까지: 완전한 파이프라인
 
@@ -439,7 +439,7 @@ artifacts:
 
 > 🎯 **시나리오**: 한 보안 팀이 "ECR에 push된 이미지 중 CRITICAL 취약점이 있는 것은 ECS 배포를 자동으로 차단해야 한다"는 요구사항을 제시했다. 구현 방법: (1) Enhanced Scanning 활성화, (2) Inspector Findings를 Security Hub로 전송, (3) EventBridge Rule로 "CRITICAL Inspector Finding + ECR 이미지"를 감지, (4) Lambda가 해당 이미지가 포함된 ECS 서비스의 배포를 차단하거나 CodePipeline을 중단. 더 간단한 접근: CodeBuild post_build에서 Inspector API를 호출해 스캔 결과를 확인하고 CRITICAL이 있으면 `exit 1`로 빌드 실패처리. 두 방법 모두 유효하지만 후자가 구현이 단순하다.
 
-## 정리하며
+## 정리
 
 ECR은 단순한 Docker Hub 대체재가 아니다. OCI 표준 기반의 content-addressable 저장, Enhanced Scanning의 지속적 취약점 모니터링, Lifecycle Policy의 비용 자동 통제, Cross-Region/Account 복제의 가용성, Pull Through Cache의 외부 의존성 격리—이 다섯 가지 기능이 함께 엔터프라이즈 컨테이너 이미지 레지스트리를 만든다. IMMUTABLE 태그는 재현성과 보안의 기초이고, 서명은 공급망 보안의 최전선이다. 시험에서 "의존성 CVE 모니터링"이 나오면 Enhanced Scanning, "Docker Hub Rate Limit"이 나오면 Pull Through Cache, "prod 이미지 재현성"이 나오면 IMMUTABLE 태그가 답이다.
 

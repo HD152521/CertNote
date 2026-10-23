@@ -10,9 +10,9 @@ DOP 시험에서 이 영역은 "수백 개 계정에 동일 베이스라인을 �
 
 이것은 분산 시스템의 **격벽 패턴(bulkhead pattern)**의 조직 단위 적용이다. 배가 침수돼도 격벽이 한 구획만 잠기게 막듯, prod 계정이 침해되거나 한 팀이 서비스 한도를 다 써버려도 그 영향이 다른 계정으로 번지지 않는다. 보안 용어로는 **폭발 반경(blast radius) 축소**다. 한 계정의 IAM 자격 증명이 노출돼도, 그 자격 증명이 닿을 수 있는 범위가 그 계정 안으로 한정된다.
 
-> 💡 **관련 이론**: 계정 경계는 **장애 격리(fault isolation)**의 정수다. Netflix가 2010년대에 정립한 마이크로서비스 회복성 원칙 — 회로 차단기(circuit breaker), 격벽, 백프레셔 — 중 격벽이 인프라 계층으로 내려온 것이 멀티 계정이다. CS 관점에서 이는 **공유 상태 최소화(shared-nothing architecture)**와 같은 사상이다. 데이터베이스 샤딩이 한 샤드의 장애를 다른 샤드와 격리하듯, 계정 샤딩은 한 워크로드의 보안·한도·비용 폭발을 격리한다. 다만 trade-off가 있다: 격리가 강할수록 cross-account 통신·관찰·배포에 명시적 신뢰 관계(AssumeRole, Resource Policy)를 일일이 세워야 한다. 멀티 계정 CI/CD의 복잡성 대부분이 바로 이 "격리해 놓고 다시 안전하게 연결하는" 작업에서 나온다.
+> 계정 경계는 **장애 격리(fault isolation)**의 정수다. Netflix가 2010년대에 정립한 마이크로서비스 회복성 원칙 — 회로 차단기(circuit breaker), 격벽, 백프레셔 — 중 격벽이 인프라 계층으로 내려온 것이 멀티 계정이다. CS 관점에서 이는 **공유 상태 최소화(shared-nothing architecture)**와 같은 사상이다. 데이터베이스 샤딩이 한 샤드의 장애를 다른 샤드와 격리하듯, 계정 샤딩은 한 워크로드의 보안·한도·비용 폭발을 격리한다. 다만 trade-off가 있다: 격리가 강할수록 cross-account 통신·관찰·배포에 명시적 신뢰 관계(AssumeRole, Resource Policy)를 일일이 세워야 한다. 멀티 계정 CI/CD의 복잡성 대부분이 바로 이 "격리해 놓고 다시 안전하게 연결하는" 작업에서 나온다.
 
-> 🔍 **더 깊이**: AWS의 멀티 계정 권고는 2018년 **Landing Zone** 솔루션으로 처음 코드화됐고, 2019년 **Control Tower**가 이를 관리형 서비스로 흡수했다. 그 이전엔 각 조직이 "AWS 계정을 몇 개로, 어떻게 나눌까"를 매번 처음부터 설계했고, 그 결과 일관성 없는 계정 구조가 양산됐다. Control Tower가 제시한 표준 — Management(결제·조직), Log Archive(중앙 로그), Audit(보안 운영) 세 계정을 핵심으로 하고 워크로드를 OU(Organizational Unit)로 묶는 구조 — 은 사실상 업계 de facto 표준이 됐다. 시험에서 "Log Archive 계정은 무엇을 하는가", "Audit 계정이 GuardDuty/Security Hub 위임 관리자인 이유는?" 같은 질문은 모두 이 표준 구조를 전제로 한다.
+> AWS의 멀티 계정 권고는 2018년 **Landing Zone** 솔루션으로 처음 코드화됐고, 2019년 **Control Tower**가 이를 관리형 서비스로 흡수했다. 그 이전엔 각 조직이 "AWS 계정을 몇 개로, 어떻게 나눌까"를 매번 처음부터 설계했고, 그 결과 일관성 없는 계정 구조가 양산됐다. Control Tower가 제시한 표준 — Management(결제·조직), Log Archive(중앙 로그), Audit(보안 운영) 세 계정을 핵심으로 하고 워크로드를 OU(Organizational Unit)로 묶는 구조 — 은 사실상 업계 de facto 표준이 됐다. 시험에서 "Log Archive 계정은 무엇을 하는가", "Audit 계정이 GuardDuty/Security Hub 위임 관리자인 이유는?" 같은 질문은 모두 이 표준 구조를 전제로 한다.
 
 ## 계정 구조 — OU로 정책을 상속시키는 트리
 
@@ -45,7 +45,7 @@ Root
 
 Control Tower의 내장 Account Factory는 Service Catalog 기반이고, 더 강력한 IaC 제어가 필요하면 **AFT(Account Factory for Terraform)**를 쓴다. AFT는 새 계정 요청(예: ServiceNow 티켓 → CodeCommit의 `request.json`)을 받아 파이프라인으로 계정을 프로비저닝하고, 그 위에 표준 베이스라인 — VPC, IAM Role, Config, CloudTrail, GuardDuty, Backup, KMS CMK — 을 자동으로 심는다.
 
-> 💡 **관련 이론**: Account Factory는 **불변 인프라(immutable infrastructure)** 사상을 계정 수준으로 끌어올린 것이다. 서버를 수정하지 않고 새로 찍어내듯, 계정도 "표준 템플릿에서 찍어낸 산출물"로 다룬다. 이는 **선언적(declarative) vs 명령적(imperative)** 패러다임의 문제이기도 하다. 명령적 접근("계정을 만들고, VPC를 만들고, Config를 켜라")은 순서·실패 처리·드리프트를 사람이 챙겨야 하지만, 선언적 접근("이 계정은 이 표준 상태여야 한다")은 도구가 현재 상태와 목표 상태의 차이를 계산해 수렴시킨다(reconciliation loop). Terraform·CloudFormation의 핵심이 이 수렴 루프이며, AFT는 그것을 계정 생성에 적용한다. 결과적으로 "계정의 표준 상태"가 Git에 코드로 남아, 감사·재현·롤백이 가능해진다.
+> Account Factory는 **불변 인프라(immutable infrastructure)** 사상을 계정 수준으로 끌어올린 것이다. 서버를 수정하지 않고 새로 찍어내듯, 계정도 "표준 템플릿에서 찍어낸 산출물"로 다룬다. 이는 **선언적(declarative) vs 명령적(imperative)** 패러다임의 문제이기도 하다. 명령적 접근("계정을 만들고, VPC를 만들고, Config를 켜라")은 순서·실패 처리·드리프트를 사람이 챙겨야 하지만, 선언적 접근("이 계정은 이 표준 상태여야 한다")은 도구가 현재 상태와 목표 상태의 차이를 계산해 수렴시킨다(reconciliation loop). Terraform·CloudFormation의 핵심이 이 수렴 루프이며, AFT는 그것을 계정 생성에 적용한다. 결과적으로 "계정의 표준 상태"가 Git에 코드로 남아, 감사·재현·롤백이 가능해진다.
 
 ## Tooling 계정 Hub-Spoke — 파이프라인을 중앙에 두고 권한만 빌려준다
 
@@ -70,9 +70,9 @@ Tooling Account (Hub)
 
 여기서 권한 설계가 미묘하다. Tooling 계정의 파이프라인은 Spoke의 `CrossAccountDeployRole`을 AssumeRole하고, 그 Role이 다시 `CloudFormationExecutionRole`에 배포를 넘긴다. 이 **이중 Role 구조**가 핵심이다 — 파이프라인 자체는 강력한 배포 권한을 직접 들고 있지 않고, 필요한 순간에만 Spoke의 한정된 Role을 빌린다.
 
-> 🔍 **더 깊이**: KMS 키를 **Multi-Region Key**로 두는 이유가 cross-account 아티팩트 공유의 함정과 직결된다. Tooling 계정의 S3에 KMS로 암호화된 아티팩트를 두면, Spoke 계정의 CloudFormation이 그걸 읽으려면 (1) S3 버킷 정책이 Spoke를 허용하고, (2) KMS 키 정책도 Spoke의 복호화를 허용해야 한다. 둘 중 하나라도 빠지면 "Access Denied"가 나는데, 초심자는 S3 정책만 고치고 KMS를 잊어 배포가 깨진다. 시험에서 "cross-account 파이프라인 배포가 KMS 관련 오류로 실패한다"의 답은 거의 항상 "아티팩트 암호화 키(KMS) 정책에 배포 대상 계정/Role의 복호화 권한을 추가하라"이다. 멀티 리전 DR까지 고려하면 Multi-Region Key로 같은 키 ID를 양쪽 region에서 참조하게 해 정책 관리를 단순화한다.
+> KMS 키를 **Multi-Region Key**로 두는 이유가 cross-account 아티팩트 공유의 함정과 직결된다. Tooling 계정의 S3에 KMS로 암호화된 아티팩트를 두면, Spoke 계정의 CloudFormation이 그걸 읽으려면 (1) S3 버킷 정책이 Spoke를 허용하고, (2) KMS 키 정책도 Spoke의 복호화를 허용해야 한다. 둘 중 하나라도 빠지면 "Access Denied"가 나는데, 초심자는 S3 정책만 고치고 KMS를 잊어 배포가 깨진다. 시험에서 "cross-account 파이프라인 배포가 KMS 관련 오류로 실패한다"의 답은 거의 항상 "아티팩트 암호화 키(KMS) 정책에 배포 대상 계정/Role의 복호화 권한을 추가하라"이다. 멀티 리전 DR까지 고려하면 Multi-Region Key로 같은 키 ID를 양쪽 region에서 참조하게 해 정책 관리를 단순화한다.
 
-> 📚 **사례**: 2017년 **Atlassian**, 2020년대 다수 핀테크 기업이 모놀리식 단일 계정에서 멀티 계정 Hub-Spoke로 이전하며 공통적으로 겪은 교훈은 "파이프라인 계정의 권한을 너무 강하게 주면, 그 계정이 침해될 때 모든 워크로드 계정에 배포 가능한 슈퍼 채널이 된다"였다. 그래서 성숙한 조직은 Tooling 계정의 파이프라인 Role에 **배포 대상 계정 목록을 명시적으로 제한**하고(특정 Spoke Role만 AssumeRole 가능), Spoke 쪽 신뢰 정책에도 `aws:PrincipalArn` 조건으로 "이 특정 파이프라인 Role만 신뢰"를 건다. CI/CD 계정 침해는 공급망 공격(supply chain attack)의 대표 표적이며 — 2020년 SolarWinds 사건이 빌드 파이프라인 침해의 파괴력을 보여줬다 — Tooling 계정의 권한 최소화가 그 방어선이다.
+> 2017년 **Atlassian**, 2020년대 다수 핀테크 기업이 모놀리식 단일 계정에서 멀티 계정 Hub-Spoke로 이전하며 공통적으로 겪은 교훈은 "파이프라인 계정의 권한을 너무 강하게 주면, 그 계정이 침해될 때 모든 워크로드 계정에 배포 가능한 슈퍼 채널이 된다"였다. 그래서 성숙한 조직은 Tooling 계정의 파이프라인 Role에 **배포 대상 계정 목록을 명시적으로 제한**하고(특정 Spoke Role만 AssumeRole 가능), Spoke 쪽 신뢰 정책에도 `aws:PrincipalArn` 조건으로 "이 특정 파이프라인 Role만 신뢰"를 건다. CI/CD 계정 침해는 공급망 공격(supply chain attack)의 대표 표적이며 — 2020년 SolarWinds 사건이 빌드 파이프라인 침해의 파괴력을 보여줬다 — Tooling 계정의 권한 최소화가 그 방어선이다.
 
 ## Service Catalog — 셀프서비스와 표준화를 동시에
 
@@ -86,7 +86,7 @@ Tooling Account (Hub)
 | 새 IAM Role | 개발자 자유 생성 | Permission Boundary 강제 |
 | Console Write 접근 | Just-In-Time 승급 | 기본은 Read-only |
 
-> 💡 **관련 이론**: 이 표가 곧 **Platform Engineering**과 **Golden Path** 개념의 구현이다. Golden Path란 "가장 권장되고, 가장 잘 닦여 있고, 따라가면 보안·관찰성·배포가 공짜로 따라오는 경로"다. 핵심 통찰은 "강제(mandate)보다 유인(incentive)이 강하다"는 것 — 개발자에게 표준을 강요하는 대신, 표준 경로가 가장 쉽고 빠르도록 만들면 개발자가 자발적으로 그 길을 택한다. 이는 행동경제학의 **넛지(nudge)** 이론과 같다. Service Catalog는 Golden Path를 클릭 한 번으로 만들고, Permission Boundary·SCP는 그 경로를 벗어나려는 시도에 가드레일을 친다. "유인 + 가드레일"의 조합이 셀프서비스 거버넌스의 정수다.
+> 이 표가 곧 **Platform Engineering**과 **Golden Path** 개념의 구현이다. Golden Path란 "가장 권장되고, 가장 잘 닦여 있고, 따라가면 보안·관찰성·배포가 공짜로 따라오는 경로"다. 핵심 통찰은 "강제(mandate)보다 유인(incentive)이 강하다"는 것 — 개발자에게 표준을 강요하는 대신, 표준 경로가 가장 쉽고 빠르도록 만들면 개발자가 자발적으로 그 길을 택한다. 이는 행동경제학의 **넛지(nudge)** 이론과 같다. Service Catalog는 Golden Path를 클릭 한 번으로 만들고, Permission Boundary·SCP는 그 경로를 벗어나려는 시도에 가드레일을 친다. "유인 + 가드레일"의 조합이 셀프서비스 거버넌스의 정수다.
 
 ## Permission Boundary — 권한 위임의 안전장치
 
@@ -128,7 +128,7 @@ aws cloudformation create-stack-set \
 
 여기에 GuardDuty·Security Hub·Config는 각각 **위임 관리자(Delegated Administrator)** 패턴으로 Audit 계정에 집계한다 — StackSets로 각 계정에 켜고, Audit 계정에서 모든 Finding을 한눈에 본다. "모든 계정에 동일 보안 도구 + 중앙 집계"의 표준 조합이다.
 
-> 🔍 **더 깊이**: StackSets에는 두 권한 모델이 있다. **Self-Managed**는 각 대상 계정에 `AWSCloudFormationStackSetExecutionRole`을, 관리 계정에 `AWSCloudFormationStackSetAdministrationRole`을 사람이 직접 만들어 신뢰 관계를 세워야 한다 — Organizations를 안 쓰거나 외부 계정에 배포할 때다. **Service-Managed**는 Organizations와 통합해 이 Role들을 AWS가 자동 관리하고, OU 타깃팅과 Auto-Deployment를 지원한다. 시험에서 "Organizations 환경에서 새 계정에도 자동 적용"이라는 단서가 나오면 답은 항상 Service-Managed + Auto-Deployment다. Self-Managed는 비(非)Organizations·레거시·세밀한 Role 제어가 필요할 때만 고른다.
+> StackSets에는 두 권한 모델이 있다. **Self-Managed**는 각 대상 계정에 `AWSCloudFormationStackSetExecutionRole`을, 관리 계정에 `AWSCloudFormationStackSetAdministrationRole`을 사람이 직접 만들어 신뢰 관계를 세워야 한다 — Organizations를 안 쓰거나 외부 계정에 배포할 때다. **Service-Managed**는 Organizations와 통합해 이 Role들을 AWS가 자동 관리하고, OU 타깃팅과 Auto-Deployment를 지원한다. 시험에서 "Organizations 환경에서 새 계정에도 자동 적용"이라는 단서가 나오면 답은 항상 Service-Managed + Auto-Deployment다. Self-Managed는 비(非)Organizations·레거시·세밀한 Role 제어가 필요할 때만 고른다.
 
 ## 거버넌스 게이트 — 파이프라인에 박힌 통제점
 
@@ -153,11 +153,11 @@ Deploy to prod
 
 ## 비용 가시화 — 태그가 곧 회계 단위
 
-60개 계정에서 누가 얼마를 쓰는지 모르면 비용 통제가 불가능하다. 핵심은 **태그 강제 → Cost Allocation Tag → Cost Categories**의 사슬이다. Config Rule로 필수 태그(`team`, `service`, `env`)가 없는 리소스를 비준수로 잡고 Auto-Remediation으로 차단하거나 알린다. 태그가 보장되면 Cost Explorer + Cost Categories로 팀·서비스별 비용을 분류하고, Cost Anomaly Detection이 갑작스러운 비용 급증을 ML로 잡아 알린다.
+60개 계정에서 누가 얼마를 쓰는지 모르면 비용 통제가 불가능하다. 해법은 **태그 강제 → Cost Allocation Tag → Cost Categories**의 사슬이다. Config Rule로 필수 태그(`team`, `service`, `env`)가 없는 리소스를 비준수로 잡고 Auto-Remediation으로 차단하거나 알린다. 태그가 보장되면 Cost Explorer + Cost Categories로 팀·서비스별 비용을 분류하고, Cost Anomaly Detection이 갑작스러운 비용 급증을 ML로 잡아 알린다.
 
-## 정리하며
+## 정리
 
-오늘 본 그림은 다섯 가지다. 첫째, **계정을 쪼개는 것은 격벽·폭발 반경 축소**라는 분산 시스템 회복성 원칙의 조직 적용이며, OU 트리로 SCP를 상속시켜 정책을 한 번에 강제한다. 둘째, **Landing Zone/Account Factory(AFT)가 계정을 코드로 찍어내** 선언적·불변 인프라 사상을 계정 수준으로 끌어올린다. 셋째, **Tooling 계정 Hub-Spoke**가 파이프라인을 중앙화하고 cross-account AssumeRole로 권한만 빌려주며, KMS 키 정책 누락이 가장 흔한 함정이다. 넷째, **Service Catalog(Golden Path) + Permission Boundary + SCP**가 셀프서비스와 거버넌스를 동시에 만족시킨다 — 유인과 가드레일의 조합. 다섯째, **Service-Managed StackSets + Auto-Deployment + 위임 관리자**가 "모든 계정 + 신규 계정"에 보안 베이스라인을 자동 적용하는 정답이다.
+오늘 본 그림은 다섯 가지다. 첫째, **계정을 쪼개는 것은 격벽·폭발 반경 축소**라는 분산 시스템 회복성 원칙의 조직 적용이며, OU 트리로 SCP를 상속시켜 정책을 한 번에 강제한다. 둘째, **Landing Zone/Account Factory(AFT)가 계정을 코드로 찍어내** 선언적·불변 인프라 사상을 계정 수준으로 끌어올린다. 셋째, **Tooling 계정 Hub-Spoke**가 파이프라인을 중앙화하고 cross-account AssumeRole로 권한만 빌려주며, KMS 키 정책 누락이 대표적인 함정이다. 넷째, **Service Catalog(Golden Path) + Permission Boundary + SCP**가 셀프서비스와 거버넌스를 동시에 만족시킨다 — 유인과 가드레일의 조합. 다섯째, **Service-Managed StackSets + Auto-Deployment + 위임 관리자**가 "모든 계정 + 신규 계정"에 보안 베이스라인을 자동 적용하는 정답이다.
 
 다음 글에서는 이 표준을 온프레미스 데이터센터까지 확장하는 **하이브리드 CI/CD**를 깊이 본다.
 

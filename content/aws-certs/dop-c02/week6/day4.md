@@ -61,7 +61,7 @@ aws apprunner create-service \
 
 `InstanceConfiguration.InstanceRoleArn`: 컨테이너 내 애플리케이션 코드가 AWS API를 호출할 때 사용하는 Role. S3 접근, Secrets Manager 읽기, DynamoDB 쿼리 등에 필요한 권한을 부여한다. ECS의 Task Role과 동일한 역할이다.
 
-> 💡 **관련 이론**: App Runner의 두 Role 구분은 ECS의 Task Execution Role과 Task Role 구분과 동일한 패턴이다. "서비스가 이미지를 가져오는 권한"(AccessRole = Task Execution Role)과 "애플리케이션이 AWS 서비스에 접근하는 권한"(InstanceRole = Task Role)을 분리한다. 이 분리가 최소 권한 원칙의 구현이다—이미지 pull 권한이 있는 Role이 DynamoDB를 읽을 수 없어야 하고, DynamoDB를 읽는 Role이 ECR에서 다른 이미지를 pull할 수 없어야 한다.
+> App Runner의 두 Role 구분은 ECS의 Task Execution Role과 Task Role 구분과 동일한 패턴이다. "서비스가 이미지를 가져오는 권한"(AccessRole = Task Execution Role)과 "애플리케이션이 AWS 서비스에 접근하는 권한"(InstanceRole = Task Role)을 분리한다. 이 분리가 최소 권한 원칙의 구현이다—이미지 pull 권한이 있는 Role이 DynamoDB를 읽을 수 없어야 하고, DynamoDB를 읽는 Role이 ECR에서 다른 이미지를 pull할 수 없어야 한다.
 
 ## App Runner Auto Scaling: MaxConcurrency 기반
 
@@ -80,7 +80,7 @@ aws apprunner create-auto-scaling-configuration \
 
 `min-size=0`으로 설정하면 트래픽이 없을 때 인스턴스를 0개로 줄여 비용이 0이 된다—단 첫 요청에 Cold Start 지연이 발생한다. `min-size=1` 이상이면 항상 최소 1개 인스턴스가 준비 상태로 유지되어 Cold Start가 없다.
 
-> 🔍 **더 깊이**: App Runner의 MaxConcurrency 기반 스케일링은 "동시성(Concurrency)"에 특화된 모델이다. 웹 API는 CPU 사용률이 낮아도 동시 요청이 많으면 레이턴시가 증가한다—CPU 50%인데 1,000개 동시 요청을 처리하면 각 요청의 응답 시간이 길어진다. MaxConcurrency는 이 레이턴시 증가를 스케일링 시그널로 사용한다. Go의 goroutine, Node.js의 event loop처럼 I/O-bound 워크로드는 CPU보다 동시성이 더 중요한 지표다. App Runner가 MaxConcurrency를 기본 지표로 선택한 것은 웹 API 워크로드의 특성을 반영한 설계다.
+> App Runner의 MaxConcurrency 기반 스케일링은 "동시성(Concurrency)"에 특화된 모델이다. 웹 API는 CPU 사용률이 낮아도 동시 요청이 많으면 지연 시간이 증가한다—CPU 50%인데 1,000개 동시 요청을 처리하면 각 요청의 응답 시간이 길어진다. MaxConcurrency는 이 지연 시간 증가를 스케일링 시그널로 사용한다. Go의 goroutine, Node.js의 event loop처럼 I/O-bound 워크로드는 CPU보다 동시성이 더 중요한 지표다. App Runner가 MaxConcurrency를 기본 지표로 선택한 것은 웹 API 워크로드의 특성을 반영한 설계다.
 
 ## App Runner VPC 통합: Connector와 Private Ingress
 
@@ -144,9 +144,9 @@ aws apprunner create-vpc-ingress-connection \
 - "단순 웹 API, 운영 부담 최소, 빠른 시작" → App Runner
 - "복잡한 통신, 정책, Stateful, HTTP 외 프로토콜" → EKS
 - "ECS의 완전한 제어권, 상대적으로 단순한 배포" → ECS Fargate
-- "자동 스케일링 없어도 됨, 가장 단순하고 정액제" → Lightsail Containers (시험 함정 답으로 자주 등장, 자동 스케일링 미지원)
+- "자동 스케일링 없어도 됨, 가장 단순하고 정액제" → Lightsail Containers (시험 함정 답으로 쓰이기 쉬움, 자동 스케일링 미지원)
 
-> 📚 **사례**: Notion의 App Runner 도입 경험. Notion은 2022년 내부 마이크로서비스 중 일부를 App Runner로 이전했다. 이유는 소규모 팀이 ECS의 복잡한 설정(Task Definition revision 관리, ALB 규칙, Target Group 연결)에 소비하는 시간을 줄이기 위해서였다. App Runner 도입 후 새 마이크로서비스 배포 시간이 1-2일에서 1-2시간으로 단축됐다. 그러나 복잡한 서비스 메시, 사이드카 컨테이너가 필요한 서비스는 EKS를 유지했다—App Runner는 단일 컨테이너 서비스만 지원하기 때문이다.
+> Notion의 App Runner 도입 경험. Notion은 2022년 내부 마이크로서비스 중 일부를 App Runner로 이전했다. 이유는 소규모 팀이 ECS의 복잡한 설정(Task Definition revision 관리, ALB 규칙, Target Group 연결)에 소비하는 시간을 줄이기 위해서였다. App Runner 도입 후 새 마이크로서비스 배포 시간이 1-2일에서 1-2시간으로 단축됐다. 그러나 복잡한 서비스 메시, 사이드카 컨테이너가 필요한 서비스는 EKS를 유지했다—App Runner는 단일 컨테이너 서비스만 지원하기 때문이다.
 
 ## ECS Copilot CLI: ECS의 사용자 친화 추상화
 
@@ -214,7 +214,7 @@ Copilot이 자동으로 생성하는 것:
 - Security Group
 - CodePipeline + CodeBuild (pipeline init 실행 시)
 
-> 🔍 **더 깊이**: Copilot의 내부 구조는 AWS CDK와 유사한 "Infrastructure as Intent" 패턴이다. 개발자가 "이 서비스는 HTTP API이고 포트 8080에서 실행된다"는 의도를 선언하면, Copilot이 그 의도를 달성하기 위한 구체적인 CloudFormation 리소스를 생성한다. CDK가 TypeScript로 인프라를 정의한다면, Copilot은 YAML Manifest로 정의한다. 중요한 차이는 Copilot이 "ECS 서비스 배포"라는 특정 도메인에 특화되어 있다는 점이다—범용 인프라 정의 도구(CDK, Terraform)보다 ECS 서비스 배포에서 더 적은 코드로 더 많은 것을 자동화한다.
+> Copilot의 내부 구조는 AWS CDK와 유사한 "Infrastructure as Intent" 패턴이다. 개발자가 "이 서비스는 HTTP API이고 포트 8080에서 실행된다"는 의도를 선언하면, Copilot이 그 의도를 달성하기 위한 구체적인 CloudFormation 리소스를 생성한다. CDK가 TypeScript로 인프라를 정의한다면, Copilot은 YAML Manifest로 정의한다. 중요한 차이는 Copilot이 "ECS 서비스 배포"라는 특정 도메인에 특화되어 있다는 점이다—범용 인프라 정의 도구(CDK, Terraform)보다 ECS 서비스 배포에서 더 적은 코드로 더 많은 것을 자동화한다.
 
 Copilot Pipeline 구조:
 ```
@@ -244,7 +244,7 @@ stages:
     requires_approval: true
 ```
 
-> 💡 **관련 이론**: ECS Copilot의 Manifest 방식은 **선언적 배포(Declarative Deployment)**의 구현이다. "무엇을 원하는가"(최종 상태)를 선언하고, 도구가 "어떻게 달성할 것인가"(절차)를 결정한다. Kubernetes의 YAML 매니페스트와 동일한 철학이다. 반대는 명령형 배포(Imperative)—`aws ecs create-service`, `aws elbv2 create-listener` 같은 단계별 API 호출. 선언적 방식은 현재 상태와 원하는 상태의 차이를 자동으로 계산해 필요한 변경만 적용한다. Copilot이 내부적으로 CloudFormation을 사용하는 이유도 CloudFormation 자체가 선언적 IaC 도구이기 때문이다.
+> ECS Copilot의 Manifest 방식은 **선언적 배포(Declarative Deployment)**의 구현이다. "무엇을 원하는가"(최종 상태)를 선언하고, 도구가 "어떻게 달성할 것인가"(절차)를 결정한다. Kubernetes의 YAML 매니페스트와 동일한 철학이다. 반대는 명령형 배포(Imperative)—`aws ecs create-service`, `aws elbv2 create-listener` 같은 단계별 API 호출. 선언적 방식은 현재 상태와 원하는 상태의 차이를 자동으로 계산해 필요한 변경만 적용한다. Copilot이 내부적으로 CloudFormation을 사용하는 이유도 CloudFormation 자체가 선언적 IaC 도구이기 때문이다.
 
 ## App Runner 모니터링과 관찰성
 
@@ -289,13 +289,13 @@ sudo app2container generate app-deployment --application-id java-app-1234
 
 시험에서 "온프레미스 Java 앱을 컨테이너로 마이그레이션"이라는 키워드가 나오면 App2Container가 답이다.
 
-## 정리하며
+## 정리
 
 App Runner는 "단순 웹 API + 운영 부담 최소"의 시나리오에 최적이다. AutoDeploymentsEnabled로 ECR push 시 자동 배포, MaxConcurrency 기반 Auto Scaling, VPC Connector로 RDS 접근을 지원한다. 두 Role(AccessRole = ECR pull용, InstanceRole = 앱 코드의 AWS API 접근용)의 구분이 최소 권한 원칙을 실현한다.
 
 ECS Copilot은 ECS Fargate를 사용하면서 CloudFormation 복잡성을 숨기는 선언적 도구다. 내부적으로 CloudFormation을 생성하므로 Copilot 생성 스택을 직접 수정할 수 있다. `copilot pipeline init`으로 CodePipeline 파이프라인까지 자동 생성된다.
 
-선택 기준: "HTTP API + 운영 최소" → App Runner. "ECS + 단순한 설정" → Copilot. "복잡한 오케스트레이션, 사이드카, 서비스 메시" → EKS. Lightsail Containers는 자동 스케일링이 없어서 시험 함정 답으로 자주 등장한다.
+선택 기준: "HTTP API + 운영 최소" → App Runner. "ECS + 단순한 설정" → Copilot. "복잡한 오케스트레이션, 사이드카, 서비스 메시" → EKS. Lightsail Containers는 자동 스케일링이 없어서 시험 함정 답으로 쓰이기 쉽다.
 
 ---
 

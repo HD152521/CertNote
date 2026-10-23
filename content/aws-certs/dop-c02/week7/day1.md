@@ -10,9 +10,9 @@ SAM Template의 첫 줄 `Transform: AWS::Serverless-2016-10-31`이 모든 마법
 
 왜 새 IaC 도구를 만들지 않고 매크로로 했을까. 답은 **운영 자산 재활용**이다. CloudFormation은 이미 Drift Detection, StackSets, Change Set, Rollback 같은 13년 묵은 엔터프라이즈 기능을 갖추고 있다. SAM이 별도 엔진이었다면 이 모든 걸 처음부터 다시 만들어야 했을 것이다. 매크로 방식 덕분에 SAM 사용자는 자동으로 CloudFormation의 모든 거버넌스 도구(IAM, Service Catalog, Config Rule)와 호환된다.
 
-> 🔍 **더 깊이**: Transform 매크로의 내부 동작은 `aws cloudformation create-change-set --change-set-type CREATE --include-nested-stacks` 시점에 트리거된다. 매크로 Lambda는 원본 템플릿(JSON)을 받아 새 템플릿을 return하고, CFN 서비스는 그 결과를 가지고 ChangeSet을 계산한다. 즉 **`sam deploy`는 결국 `aws cloudformation deploy`의 wrapper**다. 차이는 SAM CLI가 `sam build`로 코드를 빌드하고 S3에 업로드한 후 `CodeUri`를 S3 URI로 치환해주는 단계가 있다는 것뿐이다. CloudFormation 콘솔에서 SAM 스택을 열어보면 "Processed template" 탭에 풀려진 진짜 템플릿이 보인다.
+> Transform 매크로의 내부 동작은 `aws cloudformation create-change-set --change-set-type CREATE --include-nested-stacks` 시점에 트리거된다. 매크로 Lambda는 원본 템플릿(JSON)을 받아 새 템플릿을 return하고, CFN 서비스는 그 결과를 가지고 ChangeSet을 계산한다. 즉 **`sam deploy`는 결국 `aws cloudformation deploy`의 wrapper**다. 차이는 SAM CLI가 `sam build`로 코드를 빌드하고 S3에 업로드한 후 `CodeUri`를 S3 URI로 치환해주는 단계가 있다는 것뿐이다. CloudFormation 콘솔에서 SAM 스택을 열어보면 "Processed template" 탭에 풀려진 진짜 템플릿이 보인다.
 
-> 💡 **관련 이론**: 매크로 패턴은 Lisp의 hygienic macro(Kohlbecker, 1986)나 Scheme의 syntax-rules와 동일한 메타프로그래밍 모델이다. 도메인 특화 언어(DSL)를 호스트 언어(CFN) 위에 얹는 전형적인 "embedded DSL" 접근. 같은 패턴이 Terraform의 모듈, Pulumi의 component resource, Kubernetes의 CRD + Operator에서도 보인다. 공통 원칙은 **사용자가 의도를 선언하면 기계가 저수준 리소스로 풀어준다**는 declarative programming 철학.
+> 매크로 패턴은 Lisp의 hygienic macro(Kohlbecker, 1986)나 Scheme의 syntax-rules와 동일한 메타프로그래밍 모델이다. 도메인 특화 언어(DSL)를 호스트 언어(CFN) 위에 얹는 전형적인 "embedded DSL" 접근. 같은 패턴이 Terraform의 모듈, Pulumi의 component resource, Kubernetes의 CRD + Operator에서도 보인다. 공통 원칙은 **사용자가 의도를 선언하면 기계가 저수준 리소스로 풀어준다**는 declarative programming 철학.
 
 ## SAM과 다른 IaC 도구의 위치
 
@@ -128,9 +128,9 @@ RIE는 실제 Lambda 서비스의 **Lambda Runtime API**(`/2018-06-01/runtime/in
 | **Lambda Insights / X-Ray** | 일부 메타데이터 부재 |
 | **Extension Layer** | 로컬에서도 동작하지만 lifecycle 이벤트 일부 차이 |
 
-> 🔍 **더 깊이**: Lambda Runtime API는 long-poll 방식이다. 함수 런타임이 `GET /next`를 호출하고 무한 대기, 새 invocation이 들어오면 응답으로 payload + requestId가 내려온다. 함수가 처리 후 `POST /response`나 `POST /error`로 결과를 돌려주면 다음 long-poll 사이클로. 이 모델 덕분에 한 컨테이너가 여러 invocation을 순차 처리(reuse)할 수 있고, **execution context 재사용**(컨테이너 변수, DB 연결 풀)이 가능해진다. SAM Local은 이 정확한 API를 재현하므로 코드 호환성은 보장된다.
+> Lambda Runtime API는 long-poll 방식이다. 함수 런타임이 `GET /next`를 호출하고 무한 대기, 새 invocation이 들어오면 응답으로 payload + requestId가 내려온다. 함수가 처리 후 `POST /response`나 `POST /error`로 결과를 돌려주면 다음 long-poll 사이클로. 이 모델 덕분에 한 컨테이너가 여러 invocation을 순차 처리(reuse)할 수 있고, **execution context 재사용**(컨테이너 변수, DB 연결 풀)이 가능해진다. SAM Local은 이 정확한 API를 재현하므로 코드 호환성은 보장된다.
 
-> 📚 **사례**: 2020년 한 핀테크가 `sam local invoke`로 모든 테스트를 통과시킨 후 프로덕션 배포했더니 Lambda가 즉시 throttle됐다. 원인은 함수가 **VPC 내부 RDS Proxy**에 연결하면서 ENI 생성에 8~10초가 걸렸고, API Gateway 30초 timeout이 발동한 것. 로컬에서는 호스트 네트워크를 그대로 쓰므로 이 latency가 없었다. 교훈: 로컬 테스트는 로직 검증, **integration test는 반드시 dev/staging 클라우드 환경**에서.
+> 2020년 한 핀테크가 `sam local invoke`로 모든 테스트를 통과시킨 후 프로덕션 배포했더니 Lambda가 즉시 throttle됐다. 원인은 함수가 **VPC 내부 RDS Proxy**에 연결하면서 ENI 생성에 8~10초가 걸렸고, API Gateway 30초 timeout이 발동한 것. 로컬에서는 호스트 네트워크를 그대로 쓰므로 이 latency가 없었다. 교훈: 로컬 테스트는 로직 검증, **integration test는 반드시 dev/staging 클라우드 환경**에서.
 
 ## sam sync와 hotswap: 개발 가속의 위험한 단축키
 
@@ -188,7 +188,7 @@ parameter_overrides = "Environment=prod UserPoolId=..."
 confirm_changeset = true
 ```
 
-> 💡 **관련 이론**: 환경별 자원 격리는 NIST SP 800-204C(Cloud-Native Application 보안)의 "namespace isolation" 원칙과 연결된다. 권한이 한 환경에서 다른 환경으로 lateral movement 하지 못하도록 가드레일을 친다. AWS Well-Architected Framework의 Security Pillar 중 "Separate workloads using accounts"가 이 원칙의 권고다.
+> 환경별 자원 격리는 NIST SP 800-204C(Cloud-Native Application 보안)의 "namespace isolation" 원칙과 연결된다. 권한이 한 환경에서 다른 환경으로 lateral movement 하지 못하도록 가드레일을 친다. AWS Well-Architected Framework의 Security Pillar 중 "Separate workloads using accounts"가 이 원칙의 권고다.
 
 ## DeploymentPreference: Canary/Linear/AllAtOnce
 
@@ -247,11 +247,11 @@ artifacts:
 
 CodePipeline에서 packaged.yaml을 다음 Deploy Action(CloudFormation deploy)에 넘기면 끝. `sam build --use-container --cached`의 두 플래그가 중요한데, `--use-container`는 Lambda 런타임과 동일한 컨테이너에서 빌드해 native 의존성(C 확장, sharp 등) 호환성을 보장하고, `--cached`는 의존성이 안 바뀌면 재사용해 빌드 시간을 절반 이하로 줄인다.
 
-> 📚 **사례**: 2022년 한 SaaS 팀이 macOS 로컬에서 `sam build`로 만든 Lambda zip을 그대로 prod에 올렸더니 함수가 `Runtime.ImportModuleError: pyodbc.so glibc version mismatch`로 죽었다. 원인은 macOS의 ODBC 라이브러리가 Linux glibc과 호환되지 않는 것. `--use-container` 한 줄이 한 시간짜리 인시던트를 막아준다.
+> 2022년 한 SaaS 팀이 macOS 로컬에서 `sam build`로 만든 Lambda zip을 그대로 prod에 올렸더니 함수가 `Runtime.ImportModuleError: pyodbc.so glibc version mismatch`로 죽었다. 원인은 macOS의 ODBC 라이브러리가 Linux glibc과 호환되지 않는 것. `--use-container` 한 줄이 한 시간짜리 인시던트를 막아준다.
 
-## 정리하며
+## 정리
 
-오늘 본 그림은 세 가지다. 첫째, SAM은 **CloudFormation Macro 위에 얹은 서버리스 DSL**이고, 배포 시점에 평범한 CFN으로 풀어진다. 그래서 CFN의 13년 묵은 거버넌스(StackSets, Drift, ChangeSet) 자산을 그대로 쓸 수 있다. 둘째, `sam local`은 Docker + RIE로 Lambda Runtime API를 정확히 재현하지만 **cold start, IAM, 네트워크 latency는 에뮬레이션되지 않는다**. 셋째, `sam sync --watch`와 `cdk deploy --hotswap`은 개발 가속에는 강력하지만 CloudFormation의 트래킹을 깨므로 프로덕션 금지.
+오늘 본 그림은 세 가지다. 첫째, SAM은 **CloudFormation Macro 위에 얹은 서버리스 DSL**이고, 배포 시점에 평범한 CFN으로 풀어진다. 그래서 CFN의 13년 묵은 거버넌스(StackSets, Drift, ChangeSet) 자산을 그대로 쓸 수 있다. 둘째, `sam local`은 Docker + RIE로 Lambda Runtime API를 정확히 재현하지만 **콜드 스타트, IAM, 네트워크 latency는 에뮬레이션되지 않는다**. 셋째, `sam sync --watch`와 `cdk deploy --hotswap`은 개발 가속에는 강력하지만 CloudFormation의 트래킹을 깨므로 프로덕션 금지.
 
 다음 글에서는 SAM의 대안인 **Serverless Framework**와 **CDK Lambda**를 본다. 셋 중 어느 도구를 골라야 하는지의 기준은 워크로드 성격과 팀 언어, 그리고 거버넌스 요구가 결정한다.
 

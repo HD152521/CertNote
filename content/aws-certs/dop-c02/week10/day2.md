@@ -51,7 +51,7 @@ Filter Pattern은 구독·메트릭 필터 공통 문법인데, 이게 의외로
 - JSON 매칭: `{ $.statusCode = 500 }` — JSON 로그의 특정 키-값
 - 공백 구분 필드: `[ip, id, user, time, request, status_code=5*, ...]` — NGINX 같은 위치 기반 로그
 
-> 🔍 **더 깊이**: 구독 대상 셋의 선택은 처리 모델의 차이다. **Lambda 직접 대상**은 가장 단순하지만 동시성 한도와 로그 폭주 시 throttling 위험이 있다 — 로그가 초당 수만 건 쏟아지면 Lambda가 따라가지 못한다. **Kinesis Data Streams**는 샤드 기반 버퍼로 폭주를 흡수하고 여러 소비자에게 팬아웃하지만 샤드 관리가 필요하다. **Kinesis Firehose**는 완전관리형 버퍼로 S3·OpenSearch에 배치 적재하기 가장 쉽고 샤드 관리가 없지만 분 단위 버퍼링 지연이 있다. 일반 원칙: 단순 변환·라우팅은 Lambda, 고처리량 다중 소비는 Data Streams, 저장소/검색 엔진 적재는 Firehose. 한 Log Group에는 구독 필터를 제한된 개수만 걸 수 있어, 여러 목적지로 보내려면 보통 Data Streams로 한 번 받아 팬아웃한다.
+> 구독 대상 셋의 선택은 처리 모델의 차이다. **Lambda 직접 대상**은 가장 단순하지만 동시성 한도와 로그 폭주 시 throttling 위험이 있다 — 로그가 초당 수만 건 쏟아지면 Lambda가 따라가지 못한다. **Kinesis Data Streams**는 샤드 기반 버퍼로 폭주를 흡수하고 여러 소비자에게 팬아웃하지만 샤드 관리가 필요하다. **Kinesis Firehose**는 완전관리형 버퍼로 S3·OpenSearch에 배치 적재하기 가장 쉽고 샤드 관리가 없지만 분 단위 버퍼링 지연이 있다. 일반 원칙: 단순 변환·라우팅은 Lambda, 고처리량 다중 소비는 Data Streams, 저장소/검색 엔진 적재는 Firehose. 한 Log Group에는 구독 필터를 제한된 개수만 걸 수 있어, 여러 목적지로 보내려면 보통 Data Streams로 한 번 받아 팬아웃한다.
 
 ## Metric Filter — 로그에서 메트릭을 캐내다
 
@@ -70,7 +70,7 @@ aws logs put-metric-filter \
 
 여기서 어제 배운 EMF와의 관계가 중요하다. **새 코드를 직접 짠다면 EMF가 정답**이다 — 로그와 메트릭을 한 번에 통합 게시하니까. 하지만 NGINX·Apache·syslog처럼 **내가 형식을 못 바꾸는 외부 로그**에서 메트릭을 뽑아야 한다면 Metric Filter가 표준이다. EMF는 "내가 짜는 애플리케이션", Metric Filter는 "남이 만든 형식의 로그"라는 역할 분담이다.
 
-> 💡 **관련 이론**: Metric Filter는 로그 스트림을 실시간으로 패턴 매칭해 집계하는 **스트림 처리(stream processing)의 한 형태**다. 무한히 흐르는 로그 이벤트에 패턴(필터)을 적용하고, 매칭되면 카운터를 증가시키는 것은 스트림 위의 윈도우 집계(windowed aggregation)다. 이는 ELK 스택에서 Logstash의 grok 필터 + 메트릭 출력, Splunk의 검색 시 추출(search-time extraction), Fluentd/Fluent Bit의 필터 플러그인과 같은 계보다. 핵심 발상은 **저장 시점 구조화(schema-on-write) vs 읽기 시점 구조화(schema-on-read)**의 절충 — Metric Filter는 적재 시점에 패턴을 평가해 메트릭을 미리 만들어두므로(schema-on-write에 가까움), 사후 Insights 쿼리(schema-on-read)보다 알람이 즉각적이지만 미리 정의한 패턴만 잡는다.
+> Metric Filter는 로그 스트림을 실시간으로 패턴 매칭해 집계하는 **스트림 처리(stream processing)의 한 형태**다. 무한히 흐르는 로그 이벤트에 패턴(필터)을 적용하고, 매칭되면 카운터를 증가시키는 것은 스트림 위의 윈도우 집계(windowed aggregation)다. 이는 ELK 스택에서 Logstash의 grok 필터 + 메트릭 출력, Splunk의 검색 시 추출(search-time extraction), Fluentd/Fluent Bit의 필터 플러그인과 같은 계보다. 핵심 발상은 **저장 시점 구조화(schema-on-write) vs 읽기 시점 구조화(schema-on-read)**의 절충 — Metric Filter는 적재 시점에 패턴을 평가해 메트릭을 미리 만들어두므로(schema-on-write에 가까움), 사후 Insights 쿼리(schema-on-read)보다 알람이 즉각적이지만 미리 정의한 패턴만 잡는다.
 
 ## Logs Insights — 대화형 로그 쿼리 엔진
 
@@ -88,7 +88,7 @@ fields @timestamp, @message
 
 핵심 제약은 두 가지다. **시간 범위를 반드시 지정**해야 하고(전체 로그를 스캔하지 않음), **과금이 스캔한 데이터량 기준**이다. 쿼리가 처리하는 GB당 비용이 붙는다.
 
-> 🔍 **더 깊이**: Logs Insights가 "스캔량 과금"인 것은 엔진이 본질적으로 **분산 풀스캔(distributed full scan)** 이기 때문이다. 미리 만든 역색인(inverted index)으로 검색하는 Elasticsearch/OpenSearch와 달리, Insights는 쿼리 시점에 지정 시간 범위의 로그를 병렬로 읽어 필터·집계한다(Athena가 S3를 스캔하는 것, BigQuery가 컬럼을 스캔하는 것과 같은 모델). 장점은 인덱스 유지 비용이 없고 임의 쿼리가 자유롭다는 것, 단점은 스캔 범위가 클수록 비용·지연이 선형으로 는다는 것이다. 그래서 시간 범위를 좁히고 `filter`를 일찍 거는 것이 성능·비용의 핵심이다. 반대로 상시 빠른 텍스트 검색이 필요하면 로그를 OpenSearch로 흘려 역색인을 쓰는 게 맞다 — 둘은 "인덱스를 미리 만드냐(OpenSearch) 쿼리 때 스캔하냐(Insights)"의 트레이드오프다.
+> Logs Insights가 "스캔량 과금"인 것은 엔진이 본질적으로 **분산 풀스캔(distributed full scan)** 이기 때문이다. 미리 만든 역색인(inverted index)으로 검색하는 Elasticsearch/OpenSearch와 달리, Insights는 쿼리 시점에 지정 시간 범위의 로그를 병렬로 읽어 필터·집계한다(Athena가 S3를 스캔하는 것, BigQuery가 컬럼을 스캔하는 것과 같은 모델). 장점은 인덱스 유지 비용이 없고 임의 쿼리가 자유롭다는 것, 단점은 스캔 범위가 클수록 비용·지연이 선형으로 는다는 것이다. 그래서 시간 범위를 좁히고 `filter`를 일찍 거는 것이 성능·비용의 핵심이다. 반대로 상시 빠른 텍스트 검색이 필요하면 로그를 OpenSearch로 흘려 역색인을 쓰는 게 맞다 — 둘은 "인덱스를 미리 만드냐(OpenSearch) 쿼리 때 스캔하냐(Insights)"의 트레이드오프다.
 
 ## Live Tail — 실시간 디버깅
 
@@ -134,11 +134,11 @@ aws logs put-subscription-filter \
 
 비용 통제의 표준 패턴은 셋이다. 첫째, **retention을 짧게** 잡아 CloudWatch에는 최근 로그만 두고 오래된 건 만료시킨다. 둘째, **장기 보관이 필요한 로그는 Firehose 구독으로 S3에 흘려** 저비용으로 두고, 검색이 필요하면 Athena로 질의한다. 셋째, **구조화 로그로 양 자체를 줄인다** — 한 줄에 모든 컨텍스트를 담은 JSON 한 줄이 산만한 멀티라인 디버그 출력보다 적게 들고 검색도 쉽다.
 
-> 📚 **사례**: 한 SaaS 기업이 모든 마이크로서비스의 DEBUG 레벨 로그를 CloudWatch에 무제한 보존으로 쏟아냈다. 트래픽이 커지자 로그 비용이 컴퓨트 비용을 넘어섰다 — 정작 아무도 6개월 지난 DEBUG 로그를 조회하지 않는데도. 교정은 세 단계였다: (1) 프로덕션 로그 레벨을 INFO로 올려 수집량 자체를 줄이고, (2) Log Group retention을 14일로 통일하며, (3) 컴플라이언스용 장기 보관 로그만 Firehose로 S3에 보내 Glacier로 전환했다. 이후 로그 비용이 1/5로 줄었다. 교훈: **로그 비용의 대부분은 "아무도 안 보는 로그를 비싼 곳에 오래 두는 것"**이고, 해법은 레벨 조정(양) + 짧은 retention(시간) + S3 cold(저장소)의 조합이다.
+> 한 SaaS 기업이 모든 마이크로서비스의 DEBUG 레벨 로그를 CloudWatch에 무제한 보존으로 쏟아냈다. 트래픽이 커지자 로그 비용이 컴퓨트 비용을 넘어섰다 — 정작 아무도 6개월 지난 DEBUG 로그를 조회하지 않는데도. 교정은 세 단계였다: (1) 프로덕션 로그 레벨을 INFO로 올려 수집량 자체를 줄이고, (2) Log Group retention을 14일로 통일하며, (3) 컴플라이언스용 장기 보관 로그만 Firehose로 S3에 보내 Glacier로 전환했다. 이후 로그 비용이 1/5로 줄었다. 교훈: **로그 비용의 대부분은 "아무도 안 보는 로그를 비싼 곳에 오래 두는 것"**이고, 해법은 레벨 조정(양) + 짧은 retention(시간) + S3 cold(저장소)의 조합이다.
 
 > 🎯 **시나리오**: "보안팀이 모든 VPC Flow Log와 애플리케이션 로그를 7년간 보관(컴플라이언스)하되, 평소 운영 조회는 최근 2주만 하면 된다고 한다. CloudWatch에 7년 무제한 보존하면 비용이 감당 안 된다." — 답은 계층 분리다. CloudWatch Logs는 retention 14일로 두어 운영 조회만 담당하고, 동시에 Subscription Filter(빈 패턴 `''`로 전량) → Kinesis Firehose → S3로 모든 로그를 흘려 7년 보관한다. S3는 라이프사이클 정책으로 일정 기간 후 Glacier/Deep Archive로 전환해 보관 비용을 최소화하고, 드물게 필요한 장기 조회는 Athena로 S3를 직접 쿼리한다. "뜨거운 최근 로그는 CloudWatch, 차가운 장기 로그는 S3"라는 핫/콜드 계층화가 핵심이다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 다섯 가지다. 첫째, **Log Group(정책 단위)/Log Stream(순서 보장 단위)의 2단 구조**는 Kafka의 토픽/파티션과 같은, 병렬 쓰기와 순서 보장의 절충이다. 둘째, **기본 retention은 무제한이라 비용 함정**이고, 조직 차원의 자동 retention 강제가 필요하다. 셋째, **Subscription Filter는 로그를 실시간으로 Lambda/Kinesis/Firehose로 라우팅**하며 대상 선택이 처리 모델을 결정한다. 넷째, **Metric Filter는 외부 로그(NGINX 등)에서 메트릭을 추출**하는 schema-on-write 도구로 EMF와 역할을 나눈다. 다섯째, **Logs Insights는 스캔 기반 풀스캔 엔진**(스캔량 과금)이라 시간 범위·조기 필터가 핵심이고, 비용 통제는 짧은 retention + S3 cold + 구조화 로그의 조합이다.
 

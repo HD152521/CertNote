@@ -21,7 +21,7 @@ CodeDeploy는 AWS에서 이 두 전략을 EC2, Lambda, ECS에 걸쳐 일관된 �
 
 > 💡 **관련 이론**: Blue/Green 배포는 **Two-Phase Commit**의 배포 버전이다. 2PC에서 모든 참여자가 준비됐다는 확인을 받고 나서야 커밋하듯, Blue/Green도 Green 환경이 완전히 준비되고 검증된 후에만 트래픽을 전환한다. 전환 전까지는 언제든 "롤백(abort)"이 가능하다. 이것이 In-place보다 본질적으로 안전한 이유다.
 
-> 📚 **사례**: 2017년 Amazon Prime Video 팀이 공개한 배포 개선 사례: In-place 배포에서 Blue/Green으로 전환 후 배포 관련 MTTR이 평균 45분에서 4분으로 줄었다. 핵심은 롤백이 "트래픽 전환 되돌리기"라는 즉각적 작업이 됐다는 것이다. 구 버전 인스턴스가 Termination Wait Time 동안 살아있어 ALB 규칙만 바꾸면 즉시 복원됐다.
+> 2017년 Amazon Prime Video 팀이 공개한 배포 개선 사례: In-place 배포에서 Blue/Green으로 전환 후 배포 관련 MTTR이 평균 45분에서 4분으로 줄었다. 핵심은 롤백이 "트래픽 전환 되돌리기"라는 즉각적 작업이 됐다는 것이다. 구 버전 인스턴스가 Termination Wait Time 동안 살아있어 ALB 규칙만 바꾸면 즉시 복원됐다.
 
 ## Deployment Configuration: 배포 속도와 안전의 수학
 
@@ -45,7 +45,7 @@ CodeDeploy는 AWS에서 이 두 전략을 EC2, Lambda, ECS에 걸쳐 일관된 �
 Canary가 적합한 경우: 빠른 검증이 가능한 워크로드, "Go/No-Go" 판단이 명확한 경우.
 Linear가 적합한 경우: 점진적 부하 증가를 관찰해야 하는 경우, 부하 의존적 버그가 의심되는 경우.
 
-> 💡 **관련 이론**: Canary 배포는 탄광의 카나리아(Canary in a coal mine)에서 유래했다. 독성 가스를 먼저 감지하기 위해 카나리아를 소수 노출시키는 것처럼, 전체 트래픽의 소수를 새 버전에 먼저 노출시켜 문제를 조기 감지한다. Google의 SRE Book은 이를 "progressive delivery"라고 부르며, 배포 실패 폭발 반경(blast radius)을 시간에 따라 통제하는 핵심 메커니즘으로 설명한다.
+> Canary 배포는 탄광의 카나리아(Canary in a coal mine)에서 유래했다. 독성 가스를 먼저 감지하기 위해 카나리아를 소수 노출시키는 것처럼, 전체 트래픽의 소수를 새 버전에 먼저 노출시켜 문제를 조기 감지한다. Google의 SRE Book은 이를 "progressive delivery"라고 부르며, 배포 실패 폭발 반경(blast radius)을 시간에 따라 통제하는 핵심 메커니즘으로 설명한다.
 
 ## AppSpec 파일: 플랫폼마다 다른 언어
 
@@ -121,7 +121,7 @@ Hooks:
   - AfterAllowTraffic: AfterProdHookFn
 ```
 
-> 🔍 **더 깊이**: EC2 AppSpec의 `files` 블록은 rsync와 유사한 방식으로 동작한다. `source: /`는 S3 아티팩트 번들의 루트를 의미하고, `destination`은 EC2 내 경로다. `permissions` 블록은 chmod/chown과 동일하다. Lambda/ECS AppSpec에는 `files`가 없다 — Lambda는 코드 자체가 이미 버전화되어 있고, ECS는 Task Definition이 이미지를 포함하기 때문이다. 배포 모델의 차이가 AppSpec 형식의 차이로 드러난다.
+> EC2 AppSpec의 `files` 블록은 rsync와 유사한 방식으로 동작한다. `source: /`는 S3 아티팩트 번들의 루트를 의미하고, `destination`은 EC2 내 경로다. `permissions` 블록은 chmod/chown과 동일하다. Lambda/ECS AppSpec에는 `files`가 없다 — Lambda는 코드 자체가 이미 버전화되어 있고, ECS는 Task Definition이 이미지를 포함하기 때문이다. 배포 모델의 차이가 AppSpec 형식의 차이로 드러난다.
 
 ## 자동 롤백: 세 가지 트리거
 
@@ -150,7 +150,7 @@ aws deploy update-deployment-group \
 
 알람이 너무 민감하면 정상 배포도 롤백된다(False Positive). 알람이 너무 느슨하면 장애를 못 잡는다. 알람 Threshold와 EvaluationPeriods를 배포 패턴에 맞게 튜닝하는 것이 중요하다.
 
-> 🎯 **시나리오**: "Canary 10% 5분 배포 중 자동 롤백 설계"가 시험에서 자주 나온다. 올바른 설계: (1) CloudWatch Alarm: `Errors > 5 for 2 consecutive 1-minute periods` (너무 민감하지 않게), (2) Deployment Group에 alarm-configuration으로 이 알람 등록, (3) auto-rollback에 `DEPLOYMENT_STOP_ON_ALARM` 추가. Canary 10% 기간(5분) 중 알람이 울리면 자동 롤백 — Alias가 구 Version으로 즉시 복귀.
+> 🎯 **시나리오**: "Canary 10% 5분 배포 중 자동 롤백 설계"가 시험에 나올 수 있다. 올바른 설계: (1) CloudWatch Alarm: `Errors > 5 for 2 consecutive 1-minute periods` (너무 민감하지 않게), (2) Deployment Group에 alarm-configuration으로 이 알람 등록, (3) 자동 롤백에 `DEPLOYMENT_STOP_ON_ALARM` 추가. Canary 10% 기간(5분) 중 알람이 울리면 자동 롤백 — Alias가 구 Version으로 즉시 복귀.
 
 ## EC2 Blue/Green 배포 흐름: 단계별 이해
 

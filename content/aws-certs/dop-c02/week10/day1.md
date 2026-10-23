@@ -1,6 +1,6 @@
 # Day 1 - CloudWatch Metrics: 시계열·차원·알람 평가 모델의 깊은 이야기
 
-서버 한 대의 상태를 보는 일은 쉽다. `top`을 띄우면 CPU가 보이고 `free`로 메모리가 보인다. 그런데 그 한 대가 수백 대가 되고, Lambda 함수 수천 개가 초당 수만 번 돌고, ECS Task가 오토스케일로 떴다 사라지는 순간 "상태를 본다"는 행위 자체가 다른 문제가 된다. 누가 이 수치들을 모으고, 어떻게 시간축에 정렬하고, 어떤 단위로 집계하고, 무엇이 "이상"인지를 어떻게 판단할 것인가. CloudWatch Metrics는 AWS 위에서 도는 거의 모든 것의 수치형 시계열(time series)을 한곳에 모으는 토대이고, 그 위에 알람·오토스케일링·대시보드·이상 탐지가 전부 얹혀 있다.
+서버 한 대의 상태를 보는 일은 쉽다. `top`을 띄우면 CPU가 보이고 `free`로 메모리가 보인다. 그런데 그 한 대가 수백 대가 되고, Lambda 함수 수천 개가 초당 수만 번 돌고, ECS Task가 오토스케일로 떴다 사라지는 순간 "상태를 본다"는 행위 자체가 다른 문제가 된다. 누가 이 수치들을 모으고, 어떻게 시간축에 정렬하고, 어떤 단위로 집계하고, 무엇이 "이상"인지를 어떻게 판단할 것인가. CloudWatch Metrics는 AWS 위에서 도는 거의 모든 것의 수치형 시계열(time series)을 한곳에 모으는 토대이고, 그 위에 알람·Auto Scaling·대시보드·이상 탐지가 전부 얹혀 있다.
 
 오늘은 이 토대를 깊이 판다. 단순히 "PutMetricData로 메트릭을 보낸다"가 아니라, 메트릭이 내부적으로 어떤 자료구조로 저장되는지(namespace·name·dimensions가 왜 합쳐서 하나의 식별자인지), EMF가 왜 PutMetricData보다 비용·구조 양쪽에서 우월한지, 알람의 `evaluation-periods`/`datapoints-to-alarm`/`treat-missing-data`라는 세 손잡이가 어떤 신뢰성 공학 원리를 담고 있는지, Anomaly Detection이 어떤 통계 모델을 쓰는지를 파고든다. DOP 시험에서 CloudWatch는 거의 모든 도메인(모니터링·인시던트·배포 검증)에 스며들어 나오는 기반 서비스라, "알람이 왜 안 울렸나", "비용을 어떻게 줄이나", "임계값을 수동으로 못 정하는 지표는 어떻게 하나" 같은 시나리오가 매 회 출제된다.
 
@@ -21,7 +21,7 @@ aws cloudwatch put-metric-data \
 
 > 💡 **관련 이론**: CloudWatch의 이 모델은 시계열 데이터베이스(TSDB)의 표준 구조 그대로다. Prometheus는 동일한 개념을 `metric_name{label1="v1", label2="v2"}`로 표현하고, 각 고유 레이블 조합을 하나의 "시리즈(series)"라 부른다. InfluxDB는 measurement + tag set, OpenTSDB는 metric + tags로 같은 일을 한다. 핵심 원리는 **dimension(label/tag)이 인덱싱의 단위이자 카디널리티 폭발의 원천**이라는 점이다. TSDB 운영의 절반은 "어떤 차원을 인덱스에 넣고 어떤 것을 넣지 않을지"의 카디널리티 관리다. CloudWatch가 차원당 비용을 매기는 것도 같은 제약에서 나온다.
 
-> 🔍 **더 깊이**: CloudWatch 메트릭에는 **publish 시점에 차원을 정하면 나중에 임의로 집계 차원을 추가할 수 없다**는 제약이 있다. `{Service, Environment}`로 보낸 데이터를 나중에 "Service 무시하고 Environment별로만" 보려면, publish 당시 그 집계 조합(`{Environment}`만 있는 시계열)도 함께 보냈어야 한다. 이것이 EMF의 `Dimensions: [["Service","Environment"], ["Environment"], []]`처럼 차원 조합을 배열로 여러 개 동시에 게시하는 패턴이 존재하는 이유다. PutMetricData로는 한 호출에 차원 조합 하나만 보내므로, 같은 데이터를 여러 집계 관점으로 보려면 여러 번 호출해야 한다 — 이게 EMF가 구조적으로 우월한 지점 중 하나다.
+> CloudWatch 메트릭에는 **publish 시점에 차원을 정하면 나중에 임의로 집계 차원을 추가할 수 없다**는 제약이 있다. `{Service, Environment}`로 보낸 데이터를 나중에 "Service 무시하고 Environment별로만" 보려면, publish 당시 그 집계 조합(`{Environment}`만 있는 시계열)도 함께 보냈어야 한다. 이것이 EMF의 `Dimensions: [["Service","Environment"], ["Environment"], []]`처럼 차원 조합을 배열로 여러 개 동시에 게시하는 패턴이 존재하는 이유다. PutMetricData로는 한 호출에 차원 조합 하나만 보내므로, 같은 데이터를 여러 집계 관점으로 보려면 여러 번 호출해야 한다 — 이게 EMF가 구조적으로 우월한 지점 중 하나다.
 
 ## 사용자 정의 메트릭 — 세 가지 경로와 그 비용 구조
 
@@ -51,9 +51,9 @@ AWS 서비스들은 자동으로 `AWS/EC2`, `AWS/Lambda` 같은 namespace에 메
 
 **셋째, CloudWatch Agent.** EC2·온프레미스의 시스템 메트릭(메모리, 디스크 — 이 둘은 하이퍼바이저 밖이라 EC2 기본 메트릭에 없다)과 로그를 수집한다. StatsD/collectd 프로토콜과 호환되어 기존 애플리케이션 계측을 그대로 받는다.
 
-> 💡 **관련 이론**: EMF의 "로그에 메트릭을 임베드한다"는 발상은 구조화 로깅(structured logging)과 메트릭의 수렴이다. 전통적으로 로그(텍스트, 고카디널리티, 사후 검색)와 메트릭(수치, 저카디널리티, 실시간 집계)은 별개 파이프라인이었다. EMF는 이 둘을 한 이벤트로 통합한다. 이는 옵저버빌리티 업계의 "wide events" 또는 "canonical log lines"(Stripe가 대중화) 철학과 같다 — 요청 하나당 모든 컨텍스트를 담은 넓은 이벤트 하나를 찍고, 거기서 메트릭·로그·추적을 파생시킨다. Honeycomb의 high-cardinality 이벤트 모델, OpenTelemetry의 통합 신호도 같은 방향이다.
+> EMF의 "로그에 메트릭을 임베드한다"는 발상은 구조화 로깅(structured logging)과 메트릭의 수렴이다. 전통적으로 로그(텍스트, 고카디널리티, 사후 검색)와 메트릭(수치, 저카디널리티, 실시간 집계)은 별개 파이프라인이었다. EMF는 이 둘을 한 이벤트로 통합한다. 이는 옵저버빌리티 업계의 "wide events" 또는 "canonical log lines"(Stripe가 대중화) 철학과 같다 — 요청 하나당 모든 컨텍스트를 담은 넓은 이벤트 하나를 찍고, 거기서 메트릭·로그·추적을 파생시킨다. Honeycomb의 high-cardinality 이벤트 모델, OpenTelemetry의 통합 신호도 같은 방향이다.
 
-> 📚 **사례**: 한 핀테크 스타트업이 초당 수천 건 처리하는 결제 Lambda에서 거래마다 PutMetricData를 5개 차원으로 동기 호출했다. CloudWatch API의 throttling(계정·리전당 TPS 한도)에 걸려 일부 호출이 실패했고, 더 나쁘게는 동기 호출의 지연이 Lambda 실행 시간에 더해져 결제 응답이 느려졌다. EMF로 전환하자 메트릭 API 호출이 0이 되면서 throttling이 사라지고, Lambda는 그냥 로그를 찍는 것이라 지연도 제거됐다. "PutMetricData를 핫 패스에서 동기 호출하지 마라"는 EMF가 푸는 전형적 안티패턴이다.
+> 한 핀테크 스타트업이 초당 수천 건 처리하는 결제 Lambda에서 거래마다 PutMetricData를 5개 차원으로 동기 호출했다. CloudWatch API의 throttling(계정·리전당 TPS 한도)에 걸려 일부 호출이 실패했고, 더 나쁘게는 동기 호출의 지연이 Lambda 실행 시간에 더해져 결제 응답이 느려졌다. EMF로 전환하자 메트릭 API 호출이 0이 되면서 throttling이 사라지고, Lambda는 그냥 로그를 찍는 것이라 지연도 제거됐다. "PutMetricData를 핫 패스에서 동기 호출하지 마라"는 EMF가 푸는 전형적 안티패턴이다.
 
 ## High-Resolution Metric — 1초 해상도가 푸는 문제와 그 대가
 
@@ -67,7 +67,7 @@ aws cloudwatch put-metric-data \
 
 `--storage-resolution 1`이 1초 해상도를 켠다(기본은 60). 대가는 비용과 보존이다. 데이터포인트가 60배 많으니 저장 비용도 그만큼 들고, 1초 데이터는 3시간만 보존된다(이후 자동으로 더 거친 해상도로 롤업). 알람도 표준은 최소 60초 평가지만, high-resolution 메트릭은 10초·30초 평가가 가능해 더 빠르게 반응한다.
 
-> 🔍 **더 깊이**: CloudWatch는 메트릭을 **시간이 지나면서 점진적으로 더 거친 해상도로 롤업(rollup)**한다. 1초 데이터는 3시간, 60초 데이터는 15일, 5분 데이터는 63일, 1시간 데이터는 15개월 보존된다. 즉 어제의 1초 스파이크는 오늘 보면 1분 평균으로만 남아 있다. 이는 시계열 저장의 보편적 기법인 **다운샘플링/롤업**이다(RRDtool의 RRA, Prometheus의 recording rule + 장기 저장소, Graphite의 retention schema). 함의는 분명하다: 1초 해상도의 정밀 분석은 사건 발생 후 3시간 안에 해야 한다. 사후 포렌식을 위해 고해상도 원본이 필요하면 Metric Streams로 외부에 따로 보존해야 한다.
+> CloudWatch는 메트릭을 **시간이 지나면서 점진적으로 더 거친 해상도로 롤업(rollup)**한다. 1초 데이터는 3시간, 60초 데이터는 15일, 5분 데이터는 63일, 1시간 데이터는 15개월 보존된다. 즉 어제의 1초 스파이크는 오늘 보면 1분 평균으로만 남아 있다. 이는 시계열 저장의 보편적 기법인 **다운샘플링/롤업**이다(RRDtool의 RRA, Prometheus의 recording rule + 장기 저장소, Graphite의 retention schema). 함의는 분명하다: 1초 해상도의 정밀 분석은 사건 발생 후 3시간 안에 해야 한다. 사후 포렌식을 위해 고해상도 원본이 필요하면 Metric Streams로 외부에 따로 보존해야 한다.
 
 ## 알람 평가 모델 — 세 손잡이에 담긴 신뢰성 공학
 
@@ -99,7 +99,7 @@ aws cloudwatch put-metric-alarm \
 | `missing` | 평가에서 제외 | 데이터 유무로 판단 보류 |
 | `ignore` | 현재 상태 유지 | 상태 플래핑 방지 |
 
-> 💡 **관련 이론**: 알람의 "M out of N" + missing data 처리는 신호 처리의 **디바운싱(debouncing)/히스테리시스(hysteresis)** 와 같은 발상이다. 전기 스위치가 접점에서 미세하게 튀는(chatter) 신호를 그대로 받으면 on/off가 수십 번 반복되므로, 일정 시간 안정된 상태만 인정하는 디바운스를 건다. 알람의 datapoints-to-alarm은 시간축 디바운스, comparison-operator + 별도의 OK 임계는 히스테리시스다. 통계적으로는 거짓 양성(false positive)과 거짓 음성(false negative)의 균형 — 너무 민감하면 노이즈(1종 오류), 너무 둔하면 놓침(2종 오류). 좋은 알람 설계는 이 둘 사이에서 SLO에 맞는 지점을 고르는 일이다.
+> 알람의 "M out of N" + missing data 처리는 신호 처리의 **디바운싱(debouncing)/히스테리시스(hysteresis)** 와 같은 발상이다. 전기 스위치가 접점에서 미세하게 튀는(chatter) 신호를 그대로 받으면 on/off가 수십 번 반복되므로, 일정 시간 안정된 상태만 인정하는 디바운스를 건다. 알람의 datapoints-to-alarm은 시간축 디바운스, comparison-operator + 별도의 OK 임계는 히스테리시스다. 통계적으로는 거짓 양성(false positive)과 거짓 음성(false negative)의 균형 — 너무 민감하면 노이즈(1종 오류), 너무 둔하면 놓침(2종 오류). 좋은 알람 설계는 이 둘 사이에서 SLO에 맞는 지점을 고르는 일이다.
 
 > ⚠️ **함정**: sparse 메트릭(예: 결제 실패 — 평소엔 0이라 데이터포인트 자체가 없음)에 `treat-missing-data: breaching`을 걸면 알람이 영구 ALARM에 갇힌다. 실패가 없어 데이터가 없는데, 데이터 없음을 위반으로 해석하기 때문이다. 반대로 하트비트(살아 있으면 매 분 1을 보내는) 지표에 `notBreaching`을 걸면, 인스턴스가 죽어 하트비트가 끊겨도 "데이터 없음 = 정상"으로 봐서 장애를 놓친다. **지표의 의미(데이터 없음이 좋은 신호냐 나쁜 신호냐)에 따라 정반대를 골라야 한다.** 이 두 가지를 거꾸로 설정하는 것이 알람 오작동의 가장 흔한 원인이다.
 
@@ -116,7 +116,7 @@ aws cloudwatch put-composite-alarm \
 
 이제 "5xx가 높으면서 (지연이 높거나 처리량이 낮을) 때"만 사람을 깨운다. 개별 알람은 통보 액션 없이 신호로만 두고, Composite만 페이지를 보낸다. 알람 노이즈가 극적으로 줄고, "무엇이 진짜 인시던트인가"를 식으로 정의할 수 있다.
 
-> 🔍 **더 깊이**: Composite Alarm은 알람 상태에 대한 **불 대수(Boolean algebra)** 를 제공해 "징후의 상관(correlation)"을 표현한다. 단일 메트릭은 "증상"이지만, 실제 인시던트는 여러 증상의 특정 패턴이다. 이는 모니터링 성숙도에서 **증상 기반 알림(symptom-based alerting)** 으로 가는 길의 일부다 — Google SRE 책이 강조하는 "원인이 아니라 사용자가 느끼는 증상에 알람을 걸어라". Composite로 "5xx AND 지연증가 = 사용자가 실제로 영향받는 중"을 정의하면, 내부 부품 하나가 깜빡였다고 깨우는 원인 기반 알람의 노이즈를 걷어낸다. AND로 거짓 양성을 줄이고, OR로 여러 실패 경로를 한 인시던트로 포괄한다.
+> Composite Alarm은 알람 상태에 대한 **불 대수(Boolean algebra)** 를 제공해 "징후의 상관(correlation)"을 표현한다. 단일 메트릭은 "증상"이지만, 실제 인시던트는 여러 증상의 특정 패턴이다. 이는 모니터링 성숙도에서 **증상 기반 알림(symptom-based alerting)** 으로 가는 길의 일부다 — Google SRE 책이 강조하는 "원인이 아니라 사용자가 느끼는 증상에 알람을 걸어라". Composite로 "5xx AND 지연증가 = 사용자가 실제로 영향받는 중"을 정의하면, 내부 부품 하나가 깜빡였다고 깨우는 원인 기반 알람의 노이즈를 걷어낸다. AND로 거짓 양성을 줄이고, OR로 여러 실패 경로를 한 인시던트로 포괄한다.
 
 ## Anomaly Detection과 Metric Math — 임계값을 학습하고 파생시키다
 
@@ -138,7 +138,7 @@ e1: (errors / invocations) * 100   # 에러율(%)
 
 `Errors`와 `Invocations`라는 원천 메트릭은 절대 수치라 트래픽에 따라 변하지만, 에러율은 트래픽과 무관하게 의미가 일정하다. "에러율 > 1%" 같은 알람은 Metric Math 없이는 못 만든다.
 
-> 💡 **관련 이론**: CloudWatch Anomaly Detection은 내부적으로 시계열의 **계절성(seasonality)을 분해**하는 모델을 쓴다. 시계열을 추세(trend) + 계절(seasonal, 일/주 주기) + 잔차(residual)로 나누는 고전적 분해(STL decomposition, Holt-Winters 지수평활)와 같은 계열이다. 모델이 "이 시각·이 요일의 기대값과 정상 변동폭"을 학습해 밴드를 그리고, 관측값이 밴드 밖이면 이상으로 본다. 통계적 공정 관리(SPC)의 관리도(control chart)에서 ±3σ 관리 한계를 벗어나면 이상으로 보는 것과 같은 원리인데, σ가 고정이 아니라 시간대별로 학습된다는 점이 다르다. 임계값을 사람이 못 정하는 "계절성 있는 비즈니스 지표"가 정확히 이 도구의 적용 대상이다.
+> CloudWatch Anomaly Detection은 내부적으로 시계열의 **계절성(seasonality)을 분해**하는 모델을 쓴다. 시계열을 추세(trend) + 계절(seasonal, 일/주 주기) + 잔차(residual)로 나누는 고전적 분해(STL decomposition, Holt-Winters 지수평활)와 같은 계열이다. 모델이 "이 시각·이 요일의 기대값과 정상 변동폭"을 학습해 밴드를 그리고, 관측값이 밴드 밖이면 이상으로 본다. 통계적 공정 관리(SPC)의 관리도(control chart)에서 ±3σ 관리 한계를 벗어나면 이상으로 보는 것과 같은 원리인데, σ가 고정이 아니라 시간대별로 학습된다는 점이 다르다. 임계값을 사람이 못 정하는 "계절성 있는 비즈니스 지표"가 정확히 이 도구의 적용 대상이다.
 
 ## 메트릭을 외부로 — Metric Streams와 Cross-Account
 
@@ -148,7 +148,7 @@ CloudWatch에 갇힌 메트릭을 외부로 빼는 두 경로가 있다. **Metri
 
 > 🎯 **시나리오**: "조직이 Datadog을 표준 관측 플랫폼으로 쓴다. AWS 메트릭을 Datadog에 통합하되, 수십만 메트릭을 폴링하다 CloudWatch API 한도에 걸리는 현재 방식을 개선하고 싶다." — 답은 Metric Streams다. 기존 통합은 보통 Datadog이 GetMetricData/ListMetrics를 주기적으로 폴링하는데, 메트릭 수가 많으면 API throttling과 지연이 누적된다. Metric Streams는 CloudWatch가 메트릭을 Firehose로 푸시하므로 폴링이 사라지고, 지연이 분 단위에서 수 초로 줄며, API 한도 문제가 근본적으로 없어진다. "폴링 → 푸시 스트리밍"으로의 전환이 핵심이다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 다섯 가지다. 첫째, **메트릭의 정체성은 namespace+name+dimensions 전체 조합**이고, 차원 카디널리티가 곧 메트릭 수이자 비용이다. 둘째, **게시 경로 셋(PutMetricData·EMF·Agent) 중 Lambda/ECS에서는 EMF가 구조적으로 우월**하다 — API 호출 0, 로그/메트릭 통합, 다중 차원 조합 동시 게시. 셋째, **알람은 단순 임계값이 아니라 "M out of N" + missing data 처리**라는 디바운싱 모델이고, 지표의 의미에 따라 missing 처리를 정반대로 골라야 한다. 넷째, **Composite Alarm은 알람의 부울 대수**로 증상 상관을 표현해 노이즈를 줄인다. 다섯째, **Anomaly Detection은 계절성 분해로 임계값을 학습**하고, Metric Math는 비율 같은 파생 지표를 만들며, Metric Streams는 폴링을 푸시로 바꿔 외부 통합을 푼다.
 

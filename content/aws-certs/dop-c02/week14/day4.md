@@ -10,7 +10,7 @@ DOP 시험에서 이 영역은 "감사 증거 자동화 + 민감 데이터 발�
 
 **지속적 컴플라이언스(continuous compliance)**는 이를 **상태(state)**로 바꾼다 — 증거를 상시 자동 수집해, 언제든 "지금 우리는 SOC2를 만족하는가"에 데이터로 답한다. 이는 DevOps가 "릴리스를 이벤트에서 상시 흐름으로" 바꾼 것과 같은 사상의 컴플라이언스 버전이다. Audit Manager가 이 전환의 도구다.
 
-> 💡 **관련 이론**: 지속적 컴플라이언스는 **GRC(Governance, Risk, Compliance)** 분야의 클라우드 네이티브화다. 전통 GRC 도구(Archer, ServiceNow GRC)는 컨트롤·증거·위험을 사람이 입력·관리했다. 클라우드에선 증거가 API로 노출되므로(Config·CloudTrail·Security Hub가 이미 상태를 알고 있음), 증거 수집을 자동화할 수 있다. 핵심 개념이 **컨트롤(control)과 증거(evidence)의 매핑**이다 — 규제 프레임워크(SOC2의 신뢰 서비스 기준, HIPAA의 보안 규칙)는 추상적 컨트롤("접근은 최소 권한이어야 한다")을 정의하고, 그 컨트롤이 충족됨을 보이는 구체적 증거(IAM 정책 스냅샷, 접근 로그)가 자동 수집되어 매핑된다. 이 매핑이 "추상적 규제 → 구체적 기술 증거"의 다리이며, Audit Manager의 Framework가 이 다리를 미리 깔아 둔다.
+> 지속적 컴플라이언스는 **GRC(Governance, Risk, Compliance)** 분야의 클라우드 네이티브화다. 전통 GRC 도구(Archer, ServiceNow GRC)는 컨트롤·증거·위험을 사람이 입력·관리했다. 클라우드에선 증거가 API로 노출되므로(Config·CloudTrail·Security Hub가 이미 상태를 알고 있음), 증거 수집을 자동화할 수 있다. 핵심 개념이 **컨트롤(control)과 증거(evidence)의 매핑**이다 — 규제 프레임워크(SOC2의 신뢰 서비스 기준, HIPAA의 보안 규칙)는 추상적 컨트롤("접근은 최소 권한이어야 한다")을 정의하고, 그 컨트롤이 충족됨을 보이는 구체적 증거(IAM 정책 스냅샷, 접근 로그)가 자동 수집되어 매핑된다. 이 매핑이 "추상적 규제 → 구체적 기술 증거"의 다리이며, Audit Manager의 Framework가 이 다리를 미리 깔아 둔다.
 
 ## AWS Audit Manager — 증거를 컨트롤에 자동 매핑
 
@@ -32,9 +32,9 @@ Macie는 S3 객체에서 **민감 데이터(sensitive data)**를 자동 발견�
 
 핵심 메커니즘은 두 층이다. **결정론적 패턴 매칭**(정규식 + 검증 알고리즘)이 카드번호·SSN 같은 구조화된 식별자를 잡고, **머신러닝·문맥 분석**이 "이 텍스트 블록이 의료 기록처럼 보이는가" 같은 비구조적 판단을 한다.
 
-> 🔍 **더 깊이**: 신용카드 번호 탐지가 단순 "16자리 숫자 찾기"가 아니라는 게 데이터 분류의 정교함을 보여준다. 카드번호는 **Luhn 알고리즘**(1954년 IBM의 한스 페터 룬이 고안한 체크섬, ISO/IEC 7812에 표준화)이라는 검증식을 만족해야 한다 — 마지막 자리가 체크 디지트로, 앞자리들로 계산한 값과 맞아야 유효한 카드번호다. Macie는 16자리 숫자 패턴을 찾은 뒤 Luhn 검증을 돌려 false positive(우연히 16자리인 무작위 숫자, 예: 주문번호)를 걸러낸다. SSN도 단순 9자리가 아니라 발급 규칙(특정 영역·그룹 번호 범위)을 검증한다. 이 "패턴 + 검증" 이중 구조가 데이터 분류의 정확도를 좌우한다 — 패턴만으로는 오탐이 폭발하기 때문이다. 이는 정규식 vs 구조화된 검증이라는 텍스트 처리의 고전적 트레이드오프다.
+> 신용카드 번호 탐지가 단순 "16자리 숫자 찾기"가 아니라는 게 데이터 분류의 정교함을 보여준다. 카드번호는 **Luhn 알고리즘**(1954년 IBM의 한스 페터 룬이 고안한 체크섬, ISO/IEC 7812에 표준화)이라는 검증식을 만족해야 한다 — 마지막 자리가 체크 디지트로, 앞자리들로 계산한 값과 맞아야 유효한 카드번호다. Macie는 16자리 숫자 패턴을 찾은 뒤 Luhn 검증을 돌려 false positive(우연히 16자리인 무작위 숫자, 예: 주문번호)를 걸러낸다. SSN도 단순 9자리가 아니라 발급 규칙(특정 영역·그룹 번호 범위)을 검증한다. 이 "패턴 + 검증" 이중 구조가 데이터 분류의 정확도를 좌우한다 — 패턴만으로는 오탐이 폭발하기 때문이다. 이는 정규식 vs 구조화된 검증이라는 텍스트 처리의 고전적 트레이드오프다.
 
-> 💡 **관련 이론**: Macie가 푸는 문제는 **데이터 거버넌스**에서 말하는 "데이터를 알라(know your data)"다. GDPR(2018), CCPA(캘리포니아), HIPAA 같은 규제는 "개인정보가 어디 있는지 알고, 보호하고, 필요 시 삭제(잊힐 권리)할 수 있어야 한다"를 요구한다. 그런데 페타바이트급 데이터 레이크에서 PII/PHI가 어느 객체에 있는지는 사람이 알 수 없다 — 이것이 **다크 데이터(dark data)** 문제다. Macie는 자동 발견으로 이 어둠을 밝힌다. 핵심 패턴은 "데이터를 보호하기 전에 먼저 분류하라(classify before you protect)" — 무엇이 민감한지 모르면 적절히 보호할 수 없다. Macie의 Finding이 Security Hub로 가서 "퍼블릭 버킷에 SSN이 있다"를 Critical로 띄우는 흐름이 데이터 분류 → 위험 평가 → 대응의 사슬이다.
+> Macie가 푸는 문제는 **데이터 거버넌스**에서 말하는 "데이터를 알라(know your data)"다. GDPR(2018), CCPA(캘리포니아), HIPAA 같은 규제는 "개인정보가 어디 있는지 알고, 보호하고, 필요 시 삭제(잊힐 권리)할 수 있어야 한다"를 요구한다. 그런데 페타바이트급 데이터 레이크에서 PII/PHI가 어느 객체에 있는지는 사람이 알 수 없다 — 이것이 **다크 데이터(dark data)** 문제다. Macie는 자동 발견으로 이 어둠을 밝힌다. 핵심 패턴은 "데이터를 보호하기 전에 먼저 분류하라(classify before you protect)" — 무엇이 민감한지 모르면 적절히 보호할 수 없다. Macie의 Finding이 Security Hub로 가서 "퍼블릭 버킷에 SSN이 있다"를 Critical로 띄우는 흐름이 데이터 분류 → 위험 평가 → 대응의 사슬이다.
 
 ```bash
 aws macie2 enable-macie
@@ -57,15 +57,15 @@ Inspector v2(2021년 재출시)는 EC2·ECR 컨테이너 이미지·Lambda를 �
 
 핵심은 **지속 모니터링**이다 — 한 번 스캔하고 끝이 아니라, 새 CVE가 공개되면 이미 스캔한 자산을 자동 재평가한다. "어제는 안전했던 이미지가 오늘 공개된 CVE로 취약해짐"을 자동으로 잡는다. Finding은 Security Hub로 통합된다.
 
-> 🔍 **더 깊이**: **CVE와 CVSS의 역사**를 알면 취약점 관리의 구조가 보인다. **CVE**는 MITRE가 1999년 시작한 "알려진 취약점에 고유 식별자(CVE-2021-44228 같은)를 부여하는" 사전이다. 그전엔 같은 취약점을 벤더마다 다른 이름으로 불러 혼란스러웠다 — CVE가 "취약점의 공통 언어"를 만들었다. **CVSS**(Day 2에서 본)는 그 취약점의 심각도를 0~10으로 점수화한다. **NVD**(National Vulnerability Database, NIST 운영)는 CVE에 CVSS 점수·영향 분석을 붙인 미국 정부 DB다. Inspector는 이 생태계를 소비한다 — 자산의 패키지 인벤토리를 추출해 CVE 피드와 대조하고, NVD의 CVSS로 심각도를 매겨, ASFF로 Security Hub에 보낸다. 즉 Inspector의 가치는 "스캔 엔진"보다 "끊임없이 갱신되는 CVE 피드 × 내 자산 인벤토리의 상시 교차"에 있다.
+> **CVE와 CVSS의 역사**를 알면 취약점 관리의 구조가 보인다. **CVE**는 MITRE가 1999년 시작한 "알려진 취약점에 고유 식별자(CVE-2021-44228 같은)를 부여하는" 사전이다. 그전엔 같은 취약점을 벤더마다 다른 이름으로 불러 혼란스러웠다 — CVE가 "취약점의 공통 언어"를 만들었다. **CVSS**(Day 2에서 본)는 그 취약점의 심각도를 0~10으로 점수화한다. **NVD**(National Vulnerability Database, NIST 운영)는 CVE에 CVSS 점수·영향 분석을 붙인 미국 정부 DB다. Inspector는 이 생태계를 소비한다 — 자산의 패키지 인벤토리를 추출해 CVE 피드와 대조하고, NVD의 CVSS로 심각도를 매겨, ASFF로 Security Hub에 보낸다. 즉 Inspector의 가치는 "스캔 엔진"보다 "끊임없이 갱신되는 CVE 피드 × 내 자산 인벤토리의 상시 교차"에 있다.
 
-> 📚 **사례**: 2021년 12월 공개된 **Log4Shell(CVE-2021-44228)**은 자바 로깅 라이브러리 Log4j의 원격 코드 실행 취약점으로, CVSS 10.0(최고점)을 받았다. 거의 모든 자바 애플리케이션이 Log4j를 직간접 의존했기에 "인터넷 역사상 가장 광범위한 취약점 중 하나"로 불렸다. 핵심 교훈은 **의존성의 가시성** 문제였다 — 많은 조직이 "우리 어느 서비스가 Log4j를 쓰는지" 즉답하지 못해 대응이 늦어졌다. 이것이 Inspector의 컨테이너/Lambda 의존성 스캔과 **SBOM(Software Bill of Materials, 소프트웨어 부품 명세서)**이 중요해진 배경이다. SBOM은 "이 빌드에 들어간 모든 컴포넌트의 목록"으로, Log4Shell 같은 사고 때 "어디에 취약 컴포넌트가 있나"를 즉시 답하게 한다. 교훈: 취약점 대응 속도는 "내가 무엇을 쓰는지 아는 정도"에 비례한다 — 자산·의존성 인벤토리가 보안의 전제다.
+> 2021년 12월 공개된 **Log4Shell(CVE-2021-44228)**은 자바 로깅 라이브러리 Log4j의 원격 코드 실행 취약점으로, CVSS 10.0(최고점)을 받았다. 거의 모든 자바 애플리케이션이 Log4j를 직간접 의존했기에 "인터넷 역사상 가장 광범위한 취약점 중 하나"로 불렸다. 핵심 교훈은 **의존성의 가시성** 문제였다 — 많은 조직이 "우리 어느 서비스가 Log4j를 쓰는지" 즉답하지 못해 대응이 늦어졌다. 이것이 Inspector의 컨테이너/Lambda 의존성 스캔과 **SBOM(Software Bill of Materials, 소프트웨어 부품 명세서)**이 중요해진 배경이다. SBOM은 "이 빌드에 들어간 모든 컴포넌트의 목록"으로, Log4Shell 같은 사고 때 "어디에 취약 컴포넌트가 있나"를 즉시 답하게 한다. 교훈: 취약점 대응 속도는 "내가 무엇을 쓰는지 아는 정도"에 비례한다 — 자산·의존성 인벤토리가 보안의 전제다.
 
 ```bash
 aws inspector2 enable --resource-types EC2 ECR LAMBDA
 ```
 
-> 🔍 **더 깊이**: Log4Shell 이후 부상한 **SLSA(Supply-chain Levels for Software Artifacts, "살사"로 발음)**는 구글이 2021년 제안한 소프트웨어 공급망 무결성 프레임워크다. 빌드 출처(provenance)를 증명해 "이 아티팩트가 정말 신뢰된 소스에서, 변조 없이 빌드됐는가"를 보장한다(레벨 1~4). ECR은 이미지 서명(AWS Signer), 이미지 불변 태그(immutable tags), Inspector 향상 스캔(enhanced scanning)을 묶어 공급망 보안을 강화한다. DOP 맥락에선 "ECR 푸시 시 자동 CVE 스캔(Inspector enhanced scanning) + 서명 검증 + 불변 태그"가 컨테이너 공급망 보안의 표준 패턴이다.
+> Log4Shell 이후 부상한 **SLSA(Supply-chain Levels for Software Artifacts, "살사"로 발음)**는 구글이 2021년 제안한 소프트웨어 공급망 무결성 프레임워크다. 빌드 출처(provenance)를 증명해 "이 아티팩트가 정말 신뢰된 소스에서, 변조 없이 빌드됐는가"를 보장한다(레벨 1~4). ECR은 이미지 서명(AWS Signer), 이미지 불변 태그(immutable tags), Inspector 향상 스캔(enhanced scanning)을 묶어 공급망 보안을 강화한다. DOP 맥락에선 "ECR 푸시 시 자동 CVE 스캔(Inspector enhanced scanning) + 서명 검증 + 불변 태그"가 컨테이너 공급망 보안의 표준 패턴이다.
 
 ## IAM Access Analyzer — 최소 권한을 데이터로 증명
 
@@ -78,9 +78,9 @@ IAM Access Analyzer는 네 가지 일을 한다.
 | **Policy Validation** | IAM 정책 작성 시 문법·보안 모범 사례 자동 검증 |
 | **Policy Generation** | CloudTrail 활동 로그로 실제 사용된 권한만의 정책 자동 생성 |
 
-> 🔍 **더 깊이**: External Access Findings의 내부 엔진이 흥미롭다. Access Analyzer는 **자동 추론(automated reasoning)** — 수학적 논리로 "이 정책이 외부 접근을 허용하는가"를 증명하는 — 을 쓴다. AWS의 **Zelkova**라는 엔진이 IAM 정책을 SMT(Satisfiability Modulo Theories) 솔버가 풀 수 있는 논리식으로 변환해, "이 정책 하에 외부 주체가 접근 가능한 경우가 존재하는가"를 형식 증명한다. 이는 "정책을 테스트로 때려보는" 경험적 방식이 아니라, 모든 가능한 요청을 수학적으로 추론해 답을 내는 **형식 검증(formal verification)**이다. 그래서 "운 나쁘게 놓친 케이스"가 없다 — 정책이 외부 접근을 허용하면 반드시 발견한다. 자동 추론은 AWS가 S3 Block Public Access, VPC Reachability Analyzer 등 여러 곳에 쓰는 핵심 기술이다(AWS의 "Provable Security" 이니셔티브).
+> External Access Findings의 내부 엔진이 흥미롭다. Access Analyzer는 **자동 추론(automated reasoning)** — 수학적 논리로 "이 정책이 외부 접근을 허용하는가"를 증명하는 — 을 쓴다. AWS의 **Zelkova**라는 엔진이 IAM 정책을 SMT(Satisfiability Modulo Theories) 솔버가 풀 수 있는 논리식으로 변환해, "이 정책 하에 외부 주체가 접근 가능한 경우가 존재하는가"를 형식 증명한다. 이는 "정책을 테스트로 때려보는" 경험적 방식이 아니라, 모든 가능한 요청을 수학적으로 추론해 답을 내는 **형식 검증(formal verification)**이다. 그래서 "운 나쁘게 놓친 케이스"가 없다 — 정책이 외부 접근을 허용하면 반드시 발견한다. 자동 추론은 AWS가 S3 Block Public Access, VPC Reachability Analyzer 등 여러 곳에 쓰는 핵심 기술이다(AWS의 "Provable Security" 이니셔티브).
 
-> 💡 **관련 이론**: Policy Generation과 Unused Access는 **최소 권한 원칙(Principle of Least Privilege)**을 데이터로 구현한다. 최소 권한은 1975년 살처와 슈뢰더(Saltzer & Schroeder)의 고전 논문 *"The Protection of Information in Computer Systems"*가 정립한 8대 보안 설계 원칙 중 하나로, "주체는 작업에 꼭 필요한 권한만 가져야 한다"는 규율이다. 문제는 실무에서 "꼭 필요한 권한"을 사람이 알기 어렵다는 것 — 그래서 보통 넉넉히 주고(권한 비대, privilege creep) 줄이지 못한다. Access Analyzer는 이를 역전한다. Policy Generation은 CloudTrail에 기록된 **실제 사용 권한**만 추출해 정책을 만들고(관측 기반 최소 권한), Unused Access는 **안 쓰는 권한**을 찾아 회수를 유도한다. "추측이 아니라 관측으로 최소 권한을 달성"하는 것이다.
+> Policy Generation과 Unused Access는 **최소 권한 원칙(Principle of Least Privilege)**을 데이터로 구현한다. 최소 권한은 1975년 살처와 슈뢰더(Saltzer & Schroeder)의 고전 논문 *"The Protection of Information in Computer Systems"*가 정립한 8대 보안 설계 원칙 중 하나로, "주체는 작업에 꼭 필요한 권한만 가져야 한다"는 규율이다. 문제는 실무에서 "꼭 필요한 권한"을 사람이 알기 어렵다는 것 — 그래서 보통 넉넉히 주고(권한 비대, privilege creep) 줄이지 못한다. Access Analyzer는 이를 역전한다. Policy Generation은 CloudTrail에 기록된 **실제 사용 권한**만 추출해 정책을 만들고(관측 기반 최소 권한), Unused Access는 **안 쓰는 권한**을 찾아 회수를 유도한다. "추측이 아니라 관측으로 최소 권한을 달성"하는 것이다.
 
 ```bash
 # 조직 단위 분석기
@@ -97,7 +97,7 @@ aws accessanalyzer start-policy-generation \
 
 **CloudTrail Lake**는 CloudTrail 이벤트를 SQL로 질의 가능한 데이터 저장소로, 최대 7년 보존하고 멀티 계정·리전을 통합한다. 보안 사고 조사에서 "3년 전 이 자격 증명으로 무슨 API가 호출됐나"를 SQL로 답한다.
 
-> 💡 **관련 이론**: 이 전체 스택을 NIST의 **사이버보안 프레임워크(CSF)** 5함수 — 식별(Identify)·보호(Protect)·탐지(Detect)·대응(Respond)·복구(Recover) — 에 매핑하면 그림이 완성된다. **식별**: Config(인벤토리)·Macie(데이터 분류)·Access Analyzer(노출/미사용). **보호**: Firewall Manager(WAF/SG)·Conformance Pack. **탐지**: GuardDuty(위협)·Inspector(취약점)·Security Hub(통합). **대응**: EventBridge→SSM/Lambda 자동 수정. **복구**: 스냅샷·백업. 각 AWS 서비스가 CSF의 어느 함수를 채우는지 알면, 시나리오에서 "어느 단계가 비어 있고 무엇으로 채울지"를 빠르게 판단할 수 있다.
+> 이 전체 스택을 NIST의 **사이버보안 프레임워크(CSF)** 5함수 — 식별(Identify)·보호(Protect)·탐지(Detect)·대응(Respond)·복구(Recover) — 에 매핑하면 그림이 완성된다. **식별**: Config(인벤토리)·Macie(데이터 분류)·Access Analyzer(노출/미사용). **보호**: Firewall Manager(WAF/SG)·Conformance Pack. **탐지**: GuardDuty(위협)·Inspector(취약점)·Security Hub(통합). **대응**: EventBridge→SSM/Lambda 자동 수정. **복구**: 스냅샷·백업. 각 AWS 서비스가 CSF의 어느 함수를 채우는지 알면, 시나리오에서 "어느 단계가 비어 있고 무엇으로 채울지"를 빠르게 판단할 수 있다.
 
 ```
 종합 보안 자동화 스택 (NIST CSF 매핑)
@@ -112,7 +112,7 @@ aws accessanalyzer start-policy-generation \
 
 > 🎯 **시나리오**: "핀테크 조직이 ①SOC2·PCI 감사 증거를 상시 자동 수집 ②데이터 레이크 S3의 카드번호·SSN을 자동 발견하되 비용 통제 ③ECR 푸시 시 npm/pip 의존성 CVE 자동 스캔 + 신규 CVE 시 자동 재평가 ④외부 계정에 노출된 S3·역할을 형식 증명으로 발견 ⑤과도하게 부여된 IAM 권한을 실제 사용 기반으로 축소 ⑥7년 보안 사고 조사 SQL을 구축하라." → ① Audit Manager Framework(SOC2·PCI) + Assessment Report, ② Macie 자동 발견(상시 샘플링)+신규/변경 객체만 Discovery Job(비용 통제), ③ Inspector v2 ECR enhanced scanning(지속 모니터링), ④ Access Analyzer External Findings(Zelkova 자동 추론), ⑤ Access Analyzer Policy Generation(CloudTrail 기반)+Unused Access, ⑥ CloudTrail Lake(7년·SQL). 모든 Finding은 ASFF로 Security Hub 통합, 위반은 EventBridge→SSM 자동 수정.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 네 가지다. 첫째, **지속적 컴플라이언스는 감사를 이벤트에서 상태로 바꾸는 GRC의 클라우드화**이고, Audit Manager가 규제 컨트롤에 증거(Config·CloudTrail·Security Hub)를 자동 매핑해 보고서화한다 — "지금 컴플라이언트한가"의 Config와 달리 "컴플라이언트함을 증명할 증거 수집"이 역할이다. 둘째, **Macie는 패턴 매칭(Luhn 검증 등)+ML로 다크 데이터의 PII/PHI를 분류**하며 "보호 전에 분류하라"의 데이터 거버넌스를 구현하되 비용 통제가 함정이다. 셋째, **Inspector v2는 CVE/CVSS/NVD 생태계를 소비**해 EC2·컨테이너·Lambda를 지속 스캔하고, Log4Shell 교훈에서 SBOM·SLSA 공급망 보안이 부상했다. 넷째, **Access Analyzer는 Zelkova 자동 추론(형식 검증)으로 외부 노출을, Policy Generation으로 관측 기반 최소 권한을** 구현하며, Firewall Manager(중앙 정책)·CloudTrail Lake(7년 SQL)와 함께 NIST CSF 5함수를 채운다.
 

@@ -12,7 +12,7 @@ DevOps라는 단어를 처음 들었을 때 대부분은 "Jenkins랑 Ansible 같
 
 > 💡 **관련 이론**: Conway의 법칙(1968) — "시스템 아키텍처는 그 조직의 커뮤니케이션 구조를 반영한다". 즉 Dev팀과 Ops팀이 분리되어 있으면 코드와 운영 인프라가 분리된 형태로 굳어지고, 둘 사이에 "throw it over the wall"이라는 안티패턴이 자연스럽게 생긴다. DevOps는 **역방향 Conway 법칙(Inverse Conway Maneuver)**을 적용해, "원하는 아키텍처에 맞춰 조직을 먼저 재설계"한다. Team Topologies(Skelton & Pais, 2019)는 이 아이디어를 4가지 팀 유형(Stream-aligned, Platform, Enabling, Complicated-subsystem)으로 정형화했다.
 
-> 📚 **사례**: 2010년 Etsy의 John Allspaw가 CTO로 부임하며 "blameless postmortem"(비난 없는 사후 분석) 문화를 정착시켰다. 이는 단순한 친절함이 아니라 SRE의 핵심 원칙이다. 사람을 비난하는 문화에서는 엔지니어가 사고를 숨기고, 시스템 결함이 드러나지 않아 같은 사고가 반복된다. Etsy는 매주 "Postmortem of the Week"를 공유하며 학습 조직 문화를 만들었고, 이게 곧 산업 표준 SRE 프랙티스가 됐다. AWS의 Correction of Errors(COE) 프로세스가 정확히 이 패턴을 차용한다.
+> 2010년 Etsy의 John Allspaw가 CTO로 부임하며 "blameless postmortem"(비난 없는 사후 분석) 문화를 정착시켰다. 이는 단순한 친절함이 아니라 SRE의 핵심 원칙이다. 사람을 비난하는 문화에서는 엔지니어가 사고를 숨기고, 시스템 결함이 드러나지 않아 같은 사고가 반복된다. Etsy는 매주 "Postmortem of the Week"를 공유하며 학습 조직 문화를 만들었고, 이게 곧 산업 표준 SRE 프랙티스가 됐다. AWS의 Correction of Errors(COE) 프로세스가 정확히 이 패턴을 차용한다.
 
 ## CALMS: 다섯 축으로 분해한 DevOps 성숙도
 
@@ -28,9 +28,9 @@ Jez Humble과 Damon Edwards가 2010년경 정리한 CALMS 프레임워크는 "De
 
 이 다섯 축은 독립적이지 않다. **Automation 없이 Lean이 불가능**하고(수동 작업이 많으면 배치를 작게 못 만든다), **Measurement 없이 Culture가 변하지 않는다**(데이터 없이는 "느낌"으로만 싸우게 된다). 그래서 DOP-C02 시나리오에서 "이 회사가 막힌 지점은 무엇인가"를 물으면 보통 한 축의 결손이 다른 축까지 도미노로 끌어내린 상황이다.
 
-> 🔍 **더 깊이**: CALMS의 "Lean"은 도요타 생산방식(TPS)의 직계 후손이다. TPS의 두 기둥인 **Jidoka(자동화에 인간의 지혜를 더함)**와 **Just-in-Time**이 DevOps의 "automation + small batch"로 그대로 번역된다. 특히 TPS의 "Andon cord"(작업자가 라인을 멈출 권한) 개념은 DevOps의 "누구나 배포를 멈출 수 있다"는 원칙으로 이어진다. 이게 Google의 SRE Error Budget으로 형식화되면서, "팀이 정의한 SLO를 깨면 자동으로 배포 동결" 같은 메커니즘이 만들어진다.
+> CALMS의 "Lean"은 도요타 생산방식(TPS)의 직계 후손이다. TPS의 두 기둥인 **Jidoka(자동화에 인간의 지혜를 더함)**와 **Just-in-Time**이 DevOps의 "automation + small batch"로 그대로 번역된다. 특히 TPS의 "Andon cord"(작업자가 라인을 멈출 권한) 개념은 DevOps의 "누구나 배포를 멈출 수 있다"는 원칙으로 이어진다. 이게 Google의 SRE Error Budget으로 형식화되면서, "팀이 정의한 SLO를 깨면 자동으로 배포 동결" 같은 메커니즘이 만들어진다.
 
-> 💡 **관련 이론**: WIP(Work In Progress) 제한은 Kanban의 핵심이다. Little's Law(평균 처리 시간 = WIP / Throughput)에 의하면 WIP가 늘수록 한 작업의 처리 시간(lead time)이 선형으로 증가한다. 그래서 PR이 10개 동시에 떠 있는 팀은 PR 1개씩 머지하는 팀보다 lead time이 길어진다. Trunk-based development가 추구하는 것이 이 Little's Law의 산술적 귀결이다.
+> WIP(Work In Progress) 제한은 Kanban의 핵심이다. Little's Law(평균 처리 시간 = WIP / Throughput)에 의하면 WIP가 늘수록 한 작업의 처리 시간(lead time)이 선형으로 증가한다. 그래서 PR이 10개 동시에 떠 있는 팀은 PR 1개씩 머지하는 팀보다 lead time이 길어진다. Trunk-based development가 추구하는 것이 이 Little's Law의 산술적 귀결이다.
 
 ```
 [ DevOps Maturity Surface — CALMS 5축 ]
@@ -60,9 +60,9 @@ Jez Humble과 Damon Edwards가 2010년경 정리한 CALMS 프레임워크는 "De
 
 DORA가 통계적으로 보여준 가장 큰 발견은 **속도(Deployment Frequency, Lead Time)와 안정성(CFR, MTTR)이 trade-off가 아니라 양의 상관관계**라는 점이다. 자주 배포하는 팀은 동시에 사고도 적고 복구도 빠르다. 직관에 반하지만, 작은 변경을 자주 배포하면 ① 변경 범위가 작아 디버깅이 쉽고 ② 자동화·롤백이 잘 구축되어 있어 복구가 빠르며 ③ 배포가 일상이라 위험 감각이 둔감해지지 않기 때문이다.
 
-> 📚 **사례**: Amazon은 2011년 발표 시점에 평균 **11.6초마다 1회 배포**, 즉 1년에 약 270만 회 배포를 한다고 공개했다(Jon Jenkins, Velocity 2011). 이게 가능한 이유는 마이크로서비스 + 2-Pizza Team(8명 이하) + 완전 자동 파이프라인 조합이다. 같은 시기 평균 엔터프라이즈는 분기 1회였다. 이 격차가 곧 DevOps 운동의 정당화 근거가 됐다.
+> Amazon은 2011년 발표 시점에 평균 **11.6초마다 1회 배포**, 즉 1년에 약 270만 회 배포를 한다고 공개했다(Jon Jenkins, Velocity 2011). 이게 가능한 이유는 마이크로서비스 + 2-Pizza Team(8명 이하) + 완전 자동 파이프라인 조합이다. 같은 시기 평균 엔터프라이즈는 분기 1회였다. 이 격차가 곧 DevOps 운동의 정당화 근거가 됐다.
 
-> 🔍 **더 깊이**: 2021년 DORA 리포트부터 5번째 메트릭 **Reliability**(SLO 달성률)가 추가됐다. 처음엔 "MTTR이 SLO와 비슷하지 않나?"라는 반박이 있었지만, MTTR은 "사고 후 회복"만 보는 반면 Reliability는 "사고가 안 나는 상태"를 본다. 둘은 다른 차원이다. 이게 DOP-C02에서 자주 보이는 "SLO 기반 자동 롤백" 시나리오로 연결된다(예: CloudWatch Alarm → CodeDeploy auto-rollback).
+> 2021년 DORA 리포트부터 5번째 메트릭 **Reliability**(SLO 달성률)가 추가됐다. 처음엔 "MTTR이 SLO와 비슷하지 않나?"라는 반박이 있었지만, MTTR은 "사고 후 회복"만 보는 반면 Reliability는 "사고가 안 나는 상태"를 본다. 둘은 다른 차원이다. 이게 DOP-C02에서 자주 보이는 "SLO 기반 자동 롤백" 시나리오로 연결된다(예: CloudWatch Alarm → CodeDeploy auto-rollback).
 
 > ⚠️ **함정**: DORA 메트릭을 KPI로 강제하면 반드시 게이밍이 발생한다. "Deployment Frequency 늘리려고 의미 없는 commit을 작은 단위로 쪼개기", "MTTR 좋게 보이려고 incident를 incident로 안 부르기" 같은 안티패턴이다. DORA 본인들도 "메트릭은 진단 도구지 평가 도구가 아니다"라고 명시한다. 회사가 DORA를 인사평가에 연결하는 순간 그 데이터는 거짓말이 된다.
 
@@ -102,9 +102,9 @@ DOP-C02 시나리오는 "회사가 X라는 문제를 겪고 있다. 가장 적�
 
 AWS 도구들도 이 철학에 정확히 맞춰져 있다. CodePipeline은 개발자가 자기 파이프라인을 직접 정의하게 하고, CloudWatch는 자기 서비스의 메트릭을 자기 대시보드에 띄우게 하며, X-Ray는 자기 코드의 trace를 자기 콘솔에서 보게 한다. **"플랫폼 팀이 인프라를 관리하고 개발팀은 코드만 짜는" 모델은 AWS의 기본 설계 가정이 아니다.** 시험에서 "전담 운영팀 신설"이 보기로 나오면 거의 다 함정이다.
 
-> 💡 **관련 이론**: Conway's Law + You Build It, You Run It이 합쳐지면 **Service-oriented organization**(서비스 단위 조직)이 된다. Amazon은 1990년대 말 모놀리스를 부수면서 "한 서비스 = 한 팀, 한 팀 = 한 서비스" 1:1 매핑을 강제했고, 그 결과 마이크로서비스 아키텍처가 자연 발생했다. 즉 AWS의 마이크로서비스는 "분산 시스템 책에서 좋다고 해서"가 아니라 "조직 구조의 부산물"로 등장한 것이다.
+> Conway's Law + You Build It, You Run It이 합쳐지면 **Service-oriented organization**(서비스 단위 조직)이 된다. Amazon은 1990년대 말 모놀리스를 부수면서 "한 서비스 = 한 팀, 한 팀 = 한 서비스" 1:1 매핑을 강제했고, 그 결과 마이크로서비스 아키텍처가 자연 발생했다. 즉 AWS의 마이크로서비스는 "분산 시스템 책에서 좋다고 해서"가 아니라 "조직 구조의 부산물"로 등장한 것이다.
 
-> 📚 **사례**: Netflix는 2008년 데이터 센터 장애로 3일간 DVD 배송을 못 한 사건 이후, AWS로 마이그레이션하면서 동시에 **Chaos Monkey**(2010)를 만들었다. 이게 후일 Chaos Engineering이라는 분야로 발전했고, AWS Fault Injection Simulator(FIS)의 직계 조상이다. "사고가 나기 전에 일부러 깨뜨려본다"는 발상은 You Build It, You Run It의 극단적 형태다 — 운영 책임을 진 팀만이 사고를 미리 일으킬 결심을 한다.
+> Netflix는 2008년 데이터 센터 장애로 3일간 DVD 배송을 못 한 사건 이후, AWS로 마이그레이션하면서 동시에 **Chaos Monkey**(2010)를 만들었다. 이게 후일 Chaos Engineering이라는 분야로 발전했고, AWS Fault Injection Simulator(FIS)의 직계 조상이다. "사고가 나기 전에 일부러 깨뜨려본다"는 발상은 You Build It, You Run It의 극단적 형태다 — 운영 책임을 진 팀만이 사고를 미리 일으킬 결심을 한다.
 
 ## SRE와 DevOps의 관계 — 같은 것의 다른 측면
 
@@ -123,9 +123,9 @@ Google이 2003년 Ben Treynor Sloss 주도로 만든 SRE(Site Reliability Engine
 
 DOP-C02 시험은 둘을 명시적으로 구분하진 않지만, "Error Budget", "SLO 기반 자동 롤백", "Toil 제거" 같은 키워드가 나오면 SRE 색깔이 더 강한 문제이고, "CI/CD 파이프라인 설계", "Cross-account 자동화" 같은 키워드는 DevOps 색깔이 강한 문제다.
 
-> 🔍 **더 깊이**: SRE의 Error Budget은 직관적이다. "월 SLO 99.9%면 한 달에 43.2분의 다운타임 예산이 있다. 이 예산을 다 쓰면 그 달은 새 기능 배포 금지, 안정성 작업만." 이게 자동화되면 어떻게 될까? CloudWatch Alarm으로 SLO 위반을 감지하고 → EventBridge → Lambda가 CodePipeline 배포 stage를 disable → Slack에 통보. AWS에서 이 패턴이 자주 시험에 나온다.
+> SRE의 Error Budget은 직관적이다. "월 SLO 99.9%면 한 달에 43.2분의 다운타임 예산이 있다. 이 예산을 다 쓰면 그 달은 새 기능 배포 금지, 안정성 작업만." 이게 자동화되면 어떻게 될까? CloudWatch Alarm으로 SLO 위반을 감지하고 → EventBridge → Lambda가 CodePipeline 배포 stage를 disable → Slack에 통보. AWS에서 이 패턴이 자주 시험에 나온다.
 
-> 💡 **관련 이론**: SLO(Service Level Objective)는 SLA(외부 계약)와 다르다. SLA는 법적 계약(보통 99.9%), SLO는 내부 목표(보통 99.95%, SLA보다 약간 높게 설정). 그 사이 0.05% buffer가 "운영 안전 마진"이다. 그리고 SLI(Indicator)는 SLO를 측정하는 실제 지표 — 예를 들어 "5xx 응답 비율 < 0.1%". AWS CloudWatch Metric Math + Composite Alarm으로 SLI를 계산해 SLO를 모니터링한다.
+> SLO(Service Level Objective)는 SLA(외부 계약)와 다르다. SLA는 법적 계약(보통 99.9%), SLO는 내부 목표(보통 99.95%, SLA보다 약간 높게 설정). 그 사이 0.05% buffer가 "운영 안전 마진"이다. 그리고 SLI(Indicator)는 SLO를 측정하는 실제 지표 — 예를 들어 "5xx 응답 비율 < 0.1%". AWS CloudWatch Metric Math + Composite Alarm으로 SLI를 계산해 SLO를 모니터링한다.
 
 ## Pipeline-as-Code와 GitOps — 자동화의 두 번째 진화
 
@@ -135,9 +135,9 @@ CALMS의 Automation 축이 처음 자리잡을 때 Jenkins UI 기반의 GUI 파�
 
 **GitOps**는 한 발 더 나간다: **운영 환경의 desired state도 Git이 곧 단일 진실의 원천**(Single Source of Truth, SSOT). 누가 prod에 어떤 변경을 했는지가 모두 git commit으로 남고, drift가 발생하면 자동으로 desired state로 reconcile된다. Kubernetes 생태계의 ArgoCD, Flux가 대표적이고, AWS는 EKS + ArgoCD 조합이 가장 흔하다.
 
-> 💡 **관련 이론**: GitOps는 Kubernetes의 **declarative API + control loop** 패러다임에서 자연스럽게 자라났다. K8s 컨트롤러는 "desired state"와 "current state"를 끊임없이 비교하며 reconcile 하는데, 이 desired state를 Git에 두면 git push가 곧 배포가 된다. Pull-based GitOps(ArgoCD)는 클러스터가 git을 polling 하는 방식이라, push-based보다 보안 경계가 명확하다(클러스터 credential을 외부에 노출 안 함).
+> GitOps는 Kubernetes의 **declarative API + control loop** 패러다임에서 자연스럽게 자라났다. K8s 컨트롤러는 "desired state"와 "current state"를 끊임없이 비교하며 reconcile 하는데, 이 desired state를 Git에 두면 git push가 곧 배포가 된다. Pull-based GitOps(ArgoCD)는 클러스터가 git을 polling 하는 방식이라, push-based보다 보안 경계가 명확하다(클러스터 credential을 외부에 노출 안 함).
 
-> 🔍 **더 깊이**: AWS Code* 시리즈는 push-based 모델이다. CodePipeline이 Git/ECR/S3를 감시하다가 변화를 감지하면 push 한다. EKS에 ArgoCD를 같이 쓰면 pull-based로 바뀐다. 두 모델은 보안 trade-off가 다르다 — push는 중앙 파이프라인이 모든 클러스터 credential을 들고 있어야 하고, pull은 각 클러스터가 Git에 read 권한만 있으면 된다. 멀티 클러스터 멀티 계정 환경에서는 pull-based가 거의 항상 이긴다.
+> AWS Code* 시리즈는 push-based 모델이다. CodePipeline이 Git/ECR/S3를 감시하다가 변화를 감지하면 push 한다. EKS에 ArgoCD를 같이 쓰면 pull-based로 바뀐다. 두 모델은 보안 trade-off가 다르다 — push는 중앙 파이프라인이 모든 클러스터 credential을 들고 있어야 하고, pull은 각 클러스터가 Git에 read 권한만 있으면 된다. 멀티 클러스터 멀티 계정 환경에서는 pull-based가 거의 항상 이긴다.
 
 ## AWS DevOps 도구 지도의 4개 축
 
@@ -168,7 +168,7 @@ AWS의 DevOps 도구는 단순히 Code* 시리즈만이 아니다. 다음 4개 �
 
 ## CLI로 보는 DORA 측정의 시작점
 
-이론만 보면 추상적이니까, 실제로 DORA의 "Deployment Frequency"를 측정하려면 어디서 데이터를 뽑는지 보자.
+이론만 보면 추상적이니까, 실제로 DORA의 "Deployment Frequency"를 측정하려면 어디서 데이터를 뽑는지 살펴본다.
 
 ```bash
 # CodePipeline의 실행 이력에서 SUCCEEDED 상태 카운트 — 지난 30일
@@ -195,9 +195,9 @@ aws cloudwatch put-metric-data \
 
 여기서 한 가지 통찰: AWS는 DORA를 "직접 측정해주는 dashboard"를 제공하지 않는다. **DORA는 도구가 아니라 측정 프레임이라서**, 회사가 자기 데이터 소스(CodePipeline, GitHub, Jira, PagerDuty)에서 직접 뽑아 합성해야 한다. 이게 시험에서 "How would you measure DevOps maturity?"가 나올 때의 정답 — CloudWatch Metrics + Custom Metric + QuickSight나 Grafana로 자체 dashboard 구성.
 
-> 📚 **사례**: Google이 2018년 오픈소스로 공개한 **Four Keys** 프로젝트(github.com/GoogleCloudPlatform/fourkeys)는 GitHub/Jira/PagerDuty 데이터를 BigQuery에 모아 DORA 메트릭을 자동 계산하는 reference implementation이다. AWS 환경에서는 같은 패턴을 EventBridge → Firehose → S3 → Athena → QuickSight 파이프라인으로 구축한다. 시험에서 직접 묻진 않지만, 이런 파이프라인의 부품이 시나리오 선지로 자주 등장한다.
+> Google이 2018년 오픈소스로 공개한 **Four Keys** 프로젝트(github.com/GoogleCloudPlatform/fourkeys)는 GitHub/Jira/PagerDuty 데이터를 BigQuery에 모아 DORA 메트릭을 자동 계산하는 reference implementation이다. AWS 환경에서는 같은 패턴을 EventBridge → Firehose → S3 → Athena → QuickSight 파이프라인으로 구축한다. 시험에서 직접 묻진 않지만, 이런 파이프라인의 부품이 시나리오 선지로 등장한다.
 
-## 정리하며 — 시험과 실무의 같은 그림
+## 정리
 
 오늘 본 그림 세 가지를 마음에 새기자. 첫째, DevOps는 **도구가 아니라 운영 모델**이다. CALMS의 5축 중 어느 하나라도 약하면 나머지가 다 끌려가고, 시험 시나리오는 거의 항상 "어느 축이 무너졌고 어떻게 회복하나"를 묻는다. 둘째, **DORA 4 metrics는 측정 가능한 DevOps**다. 속도와 안정성은 trade-off가 아니라 같이 가는 것이며, AWS Code* + CloudWatch 조합이 그 측정의 기반이다. 셋째, AWS의 도구 철학은 "**You Build It, You Run It**" — 개발팀이 자기 코드의 운영까지 책임지는 모델로 일관되게 설계되어 있다.
 

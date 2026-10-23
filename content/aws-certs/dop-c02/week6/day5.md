@@ -29,7 +29,7 @@ Auto Scaling (Capacity Provider / HPA / Karpenter)
 관찰 (Container Insights / Prometheus / Security Hub)
 ```
 
-> 💡 **관련 이론: 추상화 스펙트럼 (Abstraction Spectrum)**
+> **추상화 스펙트럼 (Abstraction Spectrum)**
 >
 > 컨테이너 플랫폼은 추상화 수준에 따라 다음과 같이 배열된다.
 >
@@ -65,7 +65,7 @@ Auto Scaling (Capacity Provider / HPA / Karpenter)
 | Rolling (CodePipeline ECS) | imagedefinitions.json | `[{"name":"app","imageUri":"..."}]` | 단순, downtime 허용 |
 | Blue/Green (CodeDeploy) | taskdef.json + appspec.yaml + imageDetail.json | `<IMAGE1_NAME>` placeholder | Zero-downtime, 트래픽 이전 제어 |
 
-> 💡 **관련 이론: Rolling vs Blue/Green 내부 메커니즘**
+> **Rolling vs Blue/Green 내부 메커니즘**
 >
 > Rolling 배포는 CodePipeline이 ECS Service의 `desired count`를 조작하는 방식으로, 단일 오케스트레이터(ECS)가 직접 Task를 교체한다. 반면 Blue/Green은 CodeDeploy가 ALB Target Group 전환을 제어하는 별도 오케스트레이터 레이어가 존재한다.
 >
@@ -92,7 +92,7 @@ Auto Scaling (Capacity Provider / HPA / Karpenter)
 | CodeDeploy 지원 | 지원 (Blue/Green) | 미지원 |
 | 선호 배포 방식 | CodePipeline + CodeDeploy | GitOps (ArgoCD/Flux) |
 | 권한 관리 | Task Role (IAM) | IRSA / Pod Identity |
-| 오토스케일링 노드 | ECS Capacity Provider | Cluster Autoscaler / Karpenter |
+| Auto Scaling 노드 | ECS Capacity Provider | Cluster Autoscaler / Karpenter |
 | 설정 파일 형식 | imagedefinitions / taskdef | Kubernetes Manifest YAML |
 
 ### 5. App Runner 핵심 구분
@@ -102,7 +102,7 @@ Auto Scaling (Capacity Provider / HPA / Karpenter)
 | ECR 이미지 pull | Access Role | ECR 인증, AWS가 assume |
 | 앱 코드에서 AWS API 호출 | Instance Role | S3/DynamoDB 등 앱 런타임 |
 
-> 💡 **관련 이론: App Runner 두 IAM Role의 분리 원칙**
+> **App Runner 두 IAM Role의 분리 원칙**
 >
 > Access Role은 App Runner 서비스 자체(AWS의 컨트롤 플레인)가 ECR에서 이미지를 내려받을 때 사용한다. 이는 ECS의 Task Execution Role과 동일한 개념이다. Instance Role은 컨테이너 내부에서 실행되는 애플리케이션 코드가 AWS SDK를 호출할 때 사용하며, ECS의 Task Role에 해당한다.
 >
@@ -116,9 +116,9 @@ Auto Scaling (Capacity Provider / HPA / Karpenter)
 | selfHeal | syncPolicy.automated.selfHeal | 기본 활성화 |
 | UI | 웹 대시보드 제공 | CLI 중심 |
 | Image 자동 업데이트 | argocd-image-updater | Flux Image Automation |
-| 시험 선호 | 시나리오 문제 빈출 | 비교 문제 빈출 |
+| 시험 선호 | 시나리오 문제 | 비교 문제 |
 
-> 🔍 **더 깊이: GitOps Pull 모델의 보안 이점**
+> **GitOps Pull 모델의 보안 이점**
 >
 > 전통적인 Push 배포(CI/CD → kubectl apply)에서 파이프라인은 클러스터 API Server에 대한 접근 자격(kubeconfig)을 직접 보유해야 한다. 이는 자격 노출 위험이 있고, 파이프라인 인프라가 침해되면 클러스터 전체가 위험해진다.
 >
@@ -151,7 +151,7 @@ Auto Scaling (Capacity Provider / HPA / Karpenter)
 >
 > 시험 함정: "이미지를 재배포했는데 ECS가 최신 이미지를 가져오지 않는다" → `force-new-deployment`가 필요할 수 있지만, 근본 원인은 태그가 변경되지 않았기 때문이다. IMMUTABLE + 고유 태그가 근본 해결책이다.
 
-> 💡 **관련 이론: ECR Lifecycle Policy와 저장 비용 최적화**
+> **ECR Lifecycle Policy와 저장 비용 최적화**
 >
 > ECR은 GiB당 월 $0.10를 청구한다. CI/CD 파이프라인이 활발한 팀은 매일 수십 개의 이미지를 푸시하므로, Lifecycle Policy 없이는 저장 비용이 선형으로 증가한다.
 >
@@ -180,7 +180,7 @@ Auto Scaling (Capacity Provider / HPA / Karpenter)
 > }
 > ```
 
-> 🔍 **더 깊이: Karpenter vs Cluster Autoscaler 선택 기준**
+> **Karpenter vs Cluster Autoscaler 선택 기준**
 >
 > Cluster Autoscaler는 ASG(Auto Scaling Group)를 단위로 노드를 추가/제거한다. ASG는 사전에 정의된 인스턴스 타입과 가용 영역 조합으로 구성되므로, Pod의 요청이 ASG의 인스턴스 타입과 맞지 않으면 스케일아웃이 실패하거나 비효율적이다.
 >
@@ -196,13 +196,13 @@ Auto Scaling (Capacity Provider / HPA / Karpenter)
 >
 > **시험 선택 기준**: "다양한 인스턴스 타입", "빠른 스케일", "Spot 최적화" → Karpenter. "기존 ASG 재사용", "단순한 구성" → Cluster Autoscaler.
 
-> 📚 **사례: Netflix의 배포 전략 분리**
+> **Netflix의 배포 전략 분리**
 >
 > Netflix는 마이크로서비스의 중요도에 따라 배포 전략을 달리한다. 결제, 사용자 인증 등 Critical Path 서비스는 Blue/Green 배포를 사용하여 롤백 시간을 수 초 이내로 보장한다. 반면 추천 엔진, A/B 테스트 서비스 등 백그라운드 서비스는 Rolling 배포로 비용을 절약한다.
 >
 > 이 전략은 "모든 서비스에 동일한 배포 정책을 적용하는 것은 과도한 비용이나 과소한 안전 중 하나를 선택하는 것"이라는 트레이드오프 분석에서 나온 것이다. 시험에서 "롤백 속도가 중요하다"는 키워드가 보이면 Blue/Green, "비용 절감"이 우선이면 Rolling을 선택한다.
 
-> 📚 **사례: Notion의 App Runner 마이그레이션**
+> **Notion의 App Runner 마이그레이션**
 >
 > Notion은 ECS Fargate에서 App Runner로 일부 내부 마이크로서비스를 이전했다. 이전 동기는 "새 서비스 배포 시 Task Definition, Service, Load Balancer, Target Group, 보안 그룹 등 수십 개의 리소스를 수동으로 구성해야 했던 운영 부담"이었다.
 >
@@ -260,7 +260,7 @@ Auto Scaling (Capacity Provider / HPA / Karpenter)
 
 ## Week 6 핵심 키워드 → 정답 매핑
 
-> 💡 **관련 이론: DOP-C02 시험 키워드 인식 패턴**
+> **DOP-C02 시험 키워드 인식 패턴**
 >
 > DOP-C02 시험은 키워드 패턴 인식이 핵심이다. 지문에서 특정 단어가 보이면 정답 서비스/설정을 즉시 매핑할 수 있어야 한다.
 >
@@ -546,7 +546,7 @@ D) AWS Migration Hub — 마이그레이션 추적 대시보드
 
 ## CloudTrail 기반 컨테이너 CI/CD 트러블슈팅 4단계
 
-> 🔍 **더 깊이: 컨테이너 CI/CD 장애 진단 방법론**
+> **컨테이너 CI/CD 장애 진단 방법론**
 >
 > 컨테이너 CI/CD 파이프라인 장애는 대부분 권한(IAM), 이미지(ECR), 배포 설정(Task Definition/Manifest), 네트워크(VPC/Security Group) 4개 레이어 중 하나다.
 >

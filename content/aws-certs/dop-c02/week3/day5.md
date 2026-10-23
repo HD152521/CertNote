@@ -6,7 +6,7 @@ DOP-C02 시험은 이 요소들을 따로 묻지 않는다. "이 회사에 이�
 
 주간 복습이 단순한 요약이 되면 안 된다. "왜 A이고 왜 B가 아닌지"를 스스로 설명할 수 있는 수준이 목표다. 설명을 못하면 시험장에서 90%가 맞아 보이는 보기 두 개 앞에서 멈춘다.
 
-> 💡 **복습의 목적**: Week 3 각 Day의 내용은 독립적으로 배웠지만, 실제 문제는 이 지식이 섞인다. "VPC 모드 빌드에서 Secrets Manager를 쓰는데 네트워크 에러가 난다" 같은 문제는 VPC + Secrets Manager + 엔드포인트를 동시에 알아야 풀린다. 오늘은 그 연결을 만드는 날이다.
+> **복습의 목적**: Week 3 각 Day의 내용은 독립적으로 배웠지만, 실제 문제는 이 지식이 섞인다. "VPC 모드 빌드에서 Secrets Manager를 쓰는데 네트워크 에러가 난다" 같은 문제는 VPC + Secrets Manager + 엔드포인트를 동시에 알아야 풀린다. 오늘은 그 연결을 만드는 날이다.
 
 ---
 
@@ -51,9 +51,9 @@ cache:
     - '/root/.m2/**/*'
 ```
 
-> 🔍 **더 깊이**: `exported-variables`는 CodePipeline과 통합 시 중요하다. CodeBuild가 생성한 변수(예: `IMAGE_TAG`)를 다음 Action이 참조할 수 있게 한다. ECS Blue/Green 파이프라인에서 CodeBuild가 이미지 URI를 `exported-variables`로 내보내고, Deploy Action이 이를 받아 Task Definition에 주입하는 패턴이 시험에 자주 등장한다.
+> `exported-variables`는 CodePipeline과 통합 시 중요하다. CodeBuild가 생성한 변수(예: `IMAGE_TAG`)를 다음 Action이 참조할 수 있게 한다. ECS Blue/Green 파이프라인에서 CodeBuild가 이미지 URI를 `exported-variables`로 내보내고, Deploy Action이 이를 받아 Task Definition에 주입하는 패턴이 시험에 나온다.
 
-> 💡 **관련 이론**: `finally` 블록은 프로그래밍 언어의 `try-finally` 패턴을 빌드 단계에 적용한 것이다. 실패 시에도 반드시 실행되어야 하는 "정리 작업"을 `finally`에 두는 것은 **Resource Acquisition Is Initialization(RAII)** 원칙과 맥락이 같다 — 자원(로그, 임시 파일, 외부 서비스 상태)은 사용 후 반드시 정리되어야 한다.
+> `finally` 블록은 프로그래밍 언어의 `try-finally` 패턴을 빌드 단계에 적용한 것이다. 실패 시에도 반드시 실행되어야 하는 "정리 작업"을 `finally`에 두는 것은 **Resource Acquisition Is Initialization(RAII)** 원칙과 맥락이 같다 — 자원(로그, 임시 파일, 외부 서비스 상태)은 사용 후 반드시 정리되어야 한다.
 
 ---
 
@@ -87,9 +87,9 @@ cache:
     - LOCAL_SOURCE_CACHE
 ```
 
-> ⚠️ **함정**: `node_modules`를 S3 캐시로 올릴 때 디렉토리가 500MB 이상이면 S3 업로드/다운로드 오버헤드가 `npm install` 시간보다 길어지는 역효과가 난다. 이 경우 Dockerfile에 `npm install` 레이어를 분리하고 BuildKit + ECR Registry Cache를 쓰는 것이 더 효율적이다.
+> ⚠️ **함정**: `node_modules`를 S3 캐시로 올릴 때 디렉터리가 500MB 이상이면 S3 업로드/다운로드 오버헤드가 `npm install` 시간보다 길어지는 역효과가 난다. 이 경우 Dockerfile에 `npm install` 레이어를 분리하고 BuildKit + ECR Registry Cache를 쓰는 것이 더 효율적이다.
 
-> 📚 **사례**: 대형 Java 프로젝트(Maven 의존성 3GB+)에서 S3 캐시를 적용했더니 오히려 빌드가 느려진 사례가 있다. 원인은 3GB S3 다운로드 시간(2분)이 Maven 의존성 해결(40초)보다 길었기 때문이다. 해결책은 S3 캐시 경로를 `~/.m2/repository/com/mycompany/**/*`처럼 내부 아티팩트만 포함하도록 좁히는 것이었다.
+> 대형 Java 프로젝트(Maven 의존성 3GB+)에서 S3 캐시를 적용했더니 오히려 빌드가 느려진 사례가 있다. 원인은 3GB S3 다운로드 시간(2분)이 Maven 의존성 해결(40초)보다 길었기 때문이다. 해결책은 S3 캐시 경로를 `~/.m2/repository/com/mycompany/**/*`처럼 내부 아티팩트만 포함하도록 좁히는 것이었다.
 
 ---
 
@@ -113,9 +113,9 @@ Cross-account 시나리오: 다른 계정의 Secrets Manager에 있는 비밀을
 2. 비밀값을 암호화한 KMS 키에 Grant 추가
 3. CodeBuild Service Role에 `secretsmanager:GetSecretValue` + `kms:Decrypt` 권한
 
-> 💡 **관련 이론**: Secrets Manager의 자동 회전은 **Rotation Lambda**가 실제 교체를 수행하는 구조다. Lambda가 새 비밀을 생성하고(`createSecret`) → DB에 적용하고(`setSecret`) → 검증하고(`testSecret`) → 활성화(`finishSecret`)하는 4단계 프로토콜이다. 이 프로토콜 이해가 "회전 중 서비스 다운타임이 없는 이유"를 설명한다 — `AWSPENDING` 라벨의 새 버전이 준비되고 검증된 후에야 `AWSCURRENT`로 승격된다.
+> Secrets Manager의 자동 회전은 **Rotation Lambda**가 실제 교체를 수행하는 구조다. Lambda가 새 비밀을 생성하고(`createSecret`) → DB에 적용하고(`setSecret`) → 검증하고(`testSecret`) → 활성화(`finishSecret`)하는 4단계 프로토콜이다. 이 프로토콜 이해가 "회전 중 서비스 다운타임이 없는 이유"를 설명한다 — `AWSPENDING` 라벨의 새 버전이 준비되고 검증된 후에야 `AWSCURRENT`로 승격된다.
 
-> 🔍 **더 깊이**: Parameter Store의 40 TPS 제한은 대규모 Lambda 환경에서 실제 병목이 된다. 콜드 스타트 시 수백 개 Lambda가 동시에 Parameter Store에서 설정을 읽으면 `ThrottlingException`이 발생한다. 해결 방법: (1) Parameter Store Advanced로 업그레이드(TPS 한도 증가), (2) Lambda 초기화 시 설정을 메모리에 캐시(같은 실행 환경은 재사용), (3) Secrets Manager(더 높은 TPS 한도) 사용.
+> Parameter Store의 40 TPS 제한은 대규모 Lambda 환경에서 실제 병목이 된다. 콜드 스타트 시 수백 개 Lambda가 동시에 Parameter Store에서 설정을 읽으면 `ThrottlingException`이 발생한다. 해결 방법: (1) Parameter Store Advanced로 업그레이드(TPS 한도 증가), (2) Lambda 초기화 시 설정을 메모리에 캐시(같은 실행 환경은 재사용), (3) Secrets Manager(더 높은 TPS 한도) 사용.
 
 ---
 
@@ -137,7 +137,7 @@ VPC 모드 CodeBuild는 일반 인터넷에 직접 접근할 수 없다. 외부 
 
 > ⚠️ **함정**: "VPC 모드 켰더니 S3 권한 에러가 난다"의 원인은 거의 S3 Gateway Endpoint 미설정이다. Gateway Endpoint는 라우팅 테이블에 자동 추가되지 않는다 — 직접 VPC 설정에서 연결하고, 빌드 서브넷의 라우팅 테이블에 포함해야 한다. Interface Endpoint와 달리 무료이므로 VPC 빌드에서는 항상 설정한다.
 
-> 📚 **사례**: 한 팀이 VPC 모드로 CodeBuild를 마이그레이션한 후 빌드 비용이 월 $200 증가했다. 원인을 추적하니 NAT Gateway를 통해 S3에 접근하는 데이터 전송 비용이었다. S3 Gateway Endpoint를 추가하자 비용이 $0으로 줄었다. ECR Interface Endpoint도 추가해 Docker 레이어 pull 비용도 절감했다. VPC 모드는 네트워크 경로 최적화가 비용에 직결된다.
+> 한 팀이 VPC 모드로 CodeBuild를 마이그레이션한 후 빌드 비용이 월 $200 증가했다. 원인을 추적하니 NAT Gateway를 통해 S3에 접근하는 데이터 전송 비용이었다. S3 Gateway Endpoint를 추가하자 비용이 $0으로 줄었다. ECR Interface Endpoint도 추가해 Docker 레이어 pull 비용도 절감했다. VPC 모드는 네트워크 경로 최적화가 비용에 직결된다.
 
 ---
 
@@ -154,7 +154,7 @@ VPC 모드 CodeBuild는 일반 인터넷에 직접 접근할 수 없다. 외부 
 
 Custom Image의 `imagePullCredentialsType: SERVICE_ROLE`은 CodeBuild Service Role이 ECR에서 이미지를 pull하는 권한을 쓴다는 뜻이다. 이 Role에 `ecr:GetDownloadUrlForLayer`, `ecr:BatchGetImage`, `ecr:GetAuthorizationToken` 권한이 필요하다.
 
-> 💡 **관련 이론**: Custom Image를 쓰는 핵심 이유는 **빌드 재현성(Reproducibility)**이다. 팀이 직접 관리하는 이미지는 "언제 빌드해도 같은 도구 버전으로 같은 결과"를 보장한다. AWS Managed Image는 AWS가 업데이트하면 빌드 결과가 달라질 수 있다 (Python 3.11.1 → 3.11.4 패치 등). 금융·의료 같이 감사 추적이 필요한 환경에서는 Custom Image + 이미지 다이제스트(태그 아닌 SHA256) 지정이 표준이다.
+> Custom Image를 쓰는 핵심 이유는 **빌드 재현성(Reproducibility)**이다. 팀이 직접 관리하는 이미지는 "언제 빌드해도 같은 도구 버전으로 같은 결과"를 보장한다. AWS Managed Image는 AWS가 업데이트하면 빌드 결과가 달라질 수 있다 (Python 3.11.1 → 3.11.4 패치 등). 금융·의료 같이 감사 추적이 필요한 환경에서는 Custom Image + 이미지 다이제스트(태그 아닌 SHA256) 지정이 표준이다.
 
 ---
 
@@ -186,7 +186,7 @@ batch:
 
 이 설정은 2 × 3 = 6개 빌드를 병렬로 실행한다.
 
-> 🔍 **더 깊이**: `build-graph`는 DAG(Directed Acyclic Graph) 의존성을 지원한다. "공통 라이브러리를 먼저 빌드하고, 성공하면 그 아티팩트를 사용하는 서비스 A/B/C를 병렬 빌드"하는 패턴이다. 모노레포에서 특히 유용하다. `depend-on` 필드로 의존성을 선언하면 CodeBuild가 토폴로지 정렬을 자동으로 수행한다.
+> `build-graph`는 DAG(Directed Acyclic Graph) 의존성을 지원한다. "공통 라이브러리를 먼저 빌드하고, 성공하면 그 아티팩트를 사용하는 서비스 A/B/C를 병렬 빌드"하는 패턴이다. 모노레포에서 특히 유용하다. `depend-on` 필드로 의존성을 선언하면 CodeBuild가 토폴로지 정렬을 자동으로 수행한다.
 
 ---
 
@@ -203,7 +203,7 @@ batch:
 - Provisioning 낭비: 하루 300빌드 × 30초 = 2.5시간/일
 - Fleet 고정 비용이 이 2.5시간의 On-Demand 비용보다 낮으면 Fleet이 유리
 
-> 💡 **관련 이론**: Fleet의 경제성은 **고정비 vs 변동비** 선택이다. 수요가 예측 가능하고 지속적이면 고정비(Fleet)가 유리하고, 수요가 불규칙하면 변동비(On-Demand)가 유리하다. AWS의 Reserved Instance와 동일한 논리다. "하루 중 특정 시간에만 집중"하는 빌드 패턴이라면 Fleet 크기를 시간대별로 달리 설정하거나, Auto Scaling이 지원되는 Fleet을 고려한다.
+> Fleet의 경제성은 **고정비 vs 변동비** 선택이다. 수요가 예측 가능하고 지속적이면 고정비(Fleet)가 유리하고, 수요가 불규칙하면 변동비(On-Demand)가 유리하다. AWS의 Reserved Instance와 동일한 논리다. "하루 중 특정 시간에만 집중"하는 빌드 패턴이라면 Fleet 크기를 시간대별로 달리 설정하거나, Auto Scaling이 지원되는 Fleet을 고려한다.
 
 ---
 
@@ -227,13 +227,13 @@ batch:
 **함정 6: "Secrets Manager는 항상 Parameter Store보다 낫다"**
 비용이 다르다. 회전 불필요한 단순 설정값 95개에 Secrets Manager를 쓰면 월 $38이지만, Parameter Store Standard를 쓰면 $0이다. 요구사항(회전 필요 여부)에 따라 도구를 선택한다.
 
-> ⚠️ **함정 종합**: 이 함정들의 공통 패턴은 "요구사항을 보지 않고 도구 이름으로 답을 고른다"는 것이다. 시험 문제에서 요구사항 키워드를 먼저 찾는 습관이 핵심이다. "자동 회전" → Secrets Manager, "호스트 고정" → Local Cache, "ARM 워크로드" → ARM_CONTAINER, "Private 리소스" → VPC 모드 + 엔드포인트.
+> **함정 종합**: 이 함정들의 공통 패턴은 "요구사항을 보지 않고 도구 이름으로 답을 고른다"는 것이다. 시험 문제에서 요구사항 키워드를 먼저 찾는 습관이 핵심이다. "자동 회전" → Secrets Manager, "호스트 고정" → Local Cache, "ARM 워크로드" → ARM_CONTAINER, "Private 리소스" → VPC 모드 + 엔드포인트.
 
 > 🎯 **시나리오**: 한 팀이 "빌드가 느리다"고 보고했다. CloudWatch를 보니 전체 빌드 8분 중 `DOWNLOAD_SOURCE` 2분 + `PRE_BUILD`(npm install) 4분 + 실제 `BUILD` 2분이었다. 어디부터 최적화할까? 정답은 **PRE_BUILD(npm install)**가 최대 병목이므로 S3 Cache 또는 BuildKit + ECR Cache 적용이 첫 번째다. `DOWNLOAD_SOURCE`는 Local Source Cache로 줄일 수 있지만 빌드 호스트가 바뀌면 효과가 없으므로 Git shallow clone 설정도 고려한다. Compute Type 업그레이드는 이 케이스에서 효과 없다.
 
 ---
 
-## 마무리: Week 3 지식의 연결
+## 정리
 
 한 주 동안 배운 내용을 하나의 흐름으로 연결하면:
 
@@ -251,7 +251,7 @@ batch:
 
 **Reserved Fleet** → 고빈도 빌드에서 Provisioning 오버헤드 제거. 고정비와 변동비의 손익분기점 계산이 도입 결정을 만든다.
 
-> 📚 **Week 3 전체 사례**: 어떤 회사가 모노레포에서 10개 마이크로서비스를 빌드한다. 각 서비스는 x86과 ARM 이미지가 필요하고(20개 빌드), DB 마이그레이션 SQL도 실행해야 하며, 모든 비밀번호는 30일마다 회전한다. 네트워크는 Private VPC 안에 있다. 이 시나리오에서의 정답 조합: **Build Batch build-list**(20개 병렬) + **VPC 모드**(Private DB 접근) + **S3 Gateway Endpoint**(artifact 업로드) + **Secrets Manager with Rotation**(DB 비밀번호) + **ARM_CONTAINER + LINUX_CONTAINER 혼합**(멀티 아키텍처) + **Reserved Fleet**(하루 수십 번 빌드) + **ECR Pull Through Cache**(Docker Hub Rate Limit 방지).
+> **Week 3 전체 사례**: 어떤 회사가 모노레포에서 10개 마이크로서비스를 빌드한다. 각 서비스는 x86과 ARM 이미지가 필요하고(20개 빌드), DB 마이그레이션 SQL도 실행해야 하며, 모든 비밀번호는 30일마다 회전한다. 네트워크는 Private VPC 안에 있다. 이 시나리오에서의 정답 조합: **Build Batch build-list**(20개 병렬) + **VPC 모드**(Private DB 접근) + **S3 Gateway Endpoint**(artifact 업로드) + **Secrets Manager with Rotation**(DB 비밀번호) + **ARM_CONTAINER + LINUX_CONTAINER 혼합**(멀티 아키텍처) + **Reserved Fleet**(하루 수십 번 빌드) + **ECR Pull Through Cache**(Docker Hub Rate Limit 방지).
 
 ---
 

@@ -8,7 +8,7 @@
 
 ## 공급망 공격의 실제 사례 — 왜 외부 레지스트리를 직접 쓰면 안 되는가
 
-CodeArtifact의 가치를 이해하려면 "외부 레지스트리를 직접 쓰는 게 왜 위험한가"부터 봐야 한다. 실제 사고를 정리해보자.
+CodeArtifact의 가치를 이해하려면 "외부 레지스트리를 직접 쓰는 게 왜 위험한가"부터 봐야 한다. 실제 사고를 정리하면 다음과 같다.
 
 | 연도 | 사건 | 메커니즘 | 영향 |
 |------|------|---------|------|
@@ -24,11 +24,11 @@ CodeArtifact의 가치를 이해하려면 "외부 레지스트리를 직접 쓰�
 
 이 목록은 단순한 사건 모음이 아니다. **외부 레지스트리에 직접 의존하는 빌드 시스템은 외부 사고를 즉시 흡수한다**는 사실의 누적 증거다. CodeArtifact 같은 중간 캐시 + 통제 계층이 없다면 위 사고들은 모두 빌드 시간에 그대로 들어왔다.
 
-> 📚 **사례 디테일**: 2016년 left-pad 사건은 단 한 줄짜리 결정(저자가 `npm unpublish` 명령)으로 시작됐다. Kik Messenger와 패키지 이름 분쟁에서 npm이 저자 편을 들지 않자 저자는 자신의 모든 패키지를 unpublish 했다. left-pad는 React, Babel, Webpack 등이 transitive하게 의존하던 패키지였고, 결과적으로 전 세계 빌드가 동시에 망가졌다. 이 사건 이후 npm은 24시간 unpublish 윈도우를 도입했고, 많은 조직이 사내 미러를 도입하기 시작했다. CodeArtifact의 Upstream 캐시 원칙은 정확히 이 사고의 교훈이다.
+> **사례 디테일**: 2016년 left-pad 사건은 단 한 줄짜리 결정(저자가 `npm unpublish` 명령)으로 시작됐다. Kik Messenger와 패키지 이름 분쟁에서 npm이 저자 편을 들지 않자 저자는 자신의 모든 패키지를 unpublish 했다. left-pad는 React, Babel, Webpack 등이 transitive하게 의존하던 패키지였고, 결과적으로 전 세계 빌드가 동시에 망가졌다. 이 사건 이후 npm은 24시간 unpublish 윈도우를 도입했고, 많은 조직이 사내 미러를 도입하기 시작했다. CodeArtifact의 Upstream 캐시 원칙은 정확히 이 사고의 교훈이다.
 
 ## Domain과 Repository의 계층 — 왜 두 단계인가
 
-CodeArtifact는 단일 평면이 아니라 **Domain → Repository** 두 계층 구조다. 이 분리는 의도적이고 시험 빈출 포인트다.
+CodeArtifact는 단일 평면이 아니라 **Domain → Repository** 두 계층 구조다. 이 분리는 의도적이고 시험 범위에 드는 포인트다.
 
 ```
 Domain (조직 단위, 보통 1-2개)
@@ -56,9 +56,9 @@ Domain (조직 단위, 보통 1-2개)
 | **Domain** | 자산 저장소 통합 + KMS 단일화. 같은 `lodash@4.17.21`이 여러 Repository에 존재해도 Domain 안에서 한 번만 저장. 비용 모델의 단위. |
 | **Repository** | 권한·Upstream·외부 연결의 단위. 한 Domain에 수십~수백 Repository 가능. |
 
-> 🔍 **더 깊이**: Domain이 KMS 키를 단일화한다는 점은 미묘하지만 중요하다. 같은 Domain 안에서 Repository를 늘려도 새 KMS 키가 필요하지 않다. 하지만 **Domain 간 데이터 이동은 KMS 키가 다르므로 별도 decrypt-encrypt 비용이 든다**. 그래서 한 조직에서 Domain은 보통 1-2개로 작게 유지하고, 환경 분리는 Repository 단위로 한다. 시험에서 "왜 Domain을 더 만들지 않는가" 같은 보기가 나오면 답은 거의 항상 자산 중복 제거 + KMS 단일성.
+> Domain이 KMS 키를 단일화한다는 점은 미묘하지만 중요하다. 같은 Domain 안에서 Repository를 늘려도 새 KMS 키가 필요하지 않다. 하지만 **Domain 간 데이터 이동은 KMS 키가 다르므로 별도 decrypt-encrypt 비용이 든다**. 그래서 한 조직에서 Domain은 보통 1-2개로 작게 유지하고, 환경 분리는 Repository 단위로 한다. 시험에서 "왜 Domain을 더 만들지 않는가" 같은 보기가 나오면 답은 거의 항상 자산 중복 제거 + KMS 단일성.
 
-> 💡 **관련 이론**: 이 두 계층 모델은 **multi-tenancy in storage**(공유 저장소에서 격리된 view 제공) 패턴의 한 사례다. AWS S3가 같은 bucket 안에 여러 prefix를 두는 것, Kubernetes가 한 클러스터에 namespace를 두는 것과 같은 철학. 공유 인프라(저장소)는 하나로 두고, 논리적 격리(권한, view)는 상위 계층에서 처리한다.
+> 이 두 계층 모델은 **multi-tenancy in storage**(공유 저장소에서 격리된 view 제공) 패턴의 한 사례다. AWS S3가 같은 bucket 안에 여러 prefix를 두는 것, Kubernetes가 한 클러스터에 namespace를 두는 것과 같은 철학. 공유 인프라(저장소)는 하나로 두고, 논리적 격리(권한, view)는 상위 계층에서 처리한다.
 
 ## Upstream과 External Connection — 단일 진입점의 가치
 
@@ -98,9 +98,9 @@ production에서 view (자산은 Domain 한 곳에 저장)
 
 > ⚠️ **함정**: External Connection은 **shared-cache 같은 leaf Repository에만 연결**하는 게 표준이다. production Repository에 직접 External Connection을 두면 차단 정책이 무력화된다. 시험에서 "공급망 통제를 위한 표준 CodeArtifact 구조" 보기는 거의 항상 "production → shared → external" 3단 구조다.
 
-> 🔍 **더 깊이**: External Connection으로 연결할 수 있는 공용 레지스트리는 `public:npmjs`, `public:maven-central`, `public:maven-googleandroid`, `public:maven-clojars`, `public:maven-commonsware`, `public:pypi`, `public:nuget-org`, `public:ruby-gems-org` 등이다. Repository당 1개만 연결 가능하고, 1개의 External Connection은 한 패키지 형식만 다룬다. 그래서 멀티 언어 빌드는 형식별 Repository를 따로 둔다.
+> External Connection으로 연결할 수 있는 공용 레지스트리는 `public:npmjs`, `public:maven-central`, `public:maven-googleandroid`, `public:maven-clojars`, `public:maven-commonsware`, `public:pypi`, `public:nuget-org`, `public:ruby-gems-org` 등이다. Repository당 1개만 연결 가능하고, 1개의 External Connection은 한 패키지 형식만 다룬다. 그래서 멀티 언어 빌드는 형식별 Repository를 따로 둔다.
 
-> 📚 **사례**: 한 결제 회사가 2021년 12월 Log4Shell 사태 당시 4시간 안에 사내 모든 빌드를 Log4j 2.17.1로 업그레이드했다. 비결은 CodeArtifact의 shared-cache Repository에 차단 정책을 추가한 것이다 — "Log4j 2.0-2.16 패키지는 ReadFromRepository 거부". 빌드가 자동으로 새 버전을 요청하게 됐고, 모든 환경이 일관되게 업그레이드됐다. CodeArtifact 없이 외부 npm/Maven을 직접 썼다면 이 통제는 불가능했다.
+> 한 결제 회사가 2021년 12월 Log4Shell 사태 당시 4시간 안에 사내 모든 빌드를 Log4j 2.17.1로 업그레이드했다. 비결은 CodeArtifact의 shared-cache Repository에 차단 정책을 추가한 것이다 — "Log4j 2.0-2.16 패키지는 ReadFromRepository 거부". 빌드가 자동으로 새 버전을 요청하게 됐고, 모든 환경이 일관되게 업그레이드됐다. CodeArtifact 없이 외부 npm/Maven을 직접 썼다면 이 통제는 불가능했다.
 
 ## 권한 3계층 — IAM + Repository Policy + Domain Policy의 평가 순서
 
@@ -175,7 +175,7 @@ cross-account인 경우 양쪽(Identity + Resource) 모두 Allow 필요
 }
 ```
 
-> 💡 **관련 이론**: AWS의 정책 평가 모델은 **deny-by-default + explicit Allow + explicit Deny가 최우선**이라는 일관된 규칙을 따른다. Domain Policy + Repository Policy + IAM Identity Policy + KMS Key Policy + SCP가 모두 cross-cut하는 영역이라 디버깅이 어렵다. AWS IAM Policy Simulator 또는 CloudTrail의 `errorCode`를 보면 어느 계층이 거부했는지 식별 가능.
+> AWS의 정책 평가 모델은 **deny-by-default + explicit Allow + explicit Deny가 최우선**이라는 일관된 규칙을 따른다. Domain Policy + Repository Policy + IAM Identity Policy + KMS Key Policy + SCP가 모두 cross-cut하는 영역이라 디버깅이 어렵다. AWS IAM Policy Simulator 또는 CloudTrail의 `errorCode`를 보면 어느 계층이 거부했는지 식별 가능.
 
 ## Dependency Confusion — CodeArtifact가 정확히 막는 공격
 
@@ -197,9 +197,9 @@ Dependency Confusion은 2021년 Alex Birsan이 Microsoft, Apple, PayPal 등 35�
 | **Scoped namespace** | `@company/internal-utils`처럼 organization scope 사용. npmjs.com의 같은 scope에 게시 불가(npm이 차단) |
 | **단일 진입점 + lock 파일** | CodeArtifact production을 유일한 npm registry로 강제. lock 파일(`package-lock.json`)을 git에 커밋해 정확한 hash 고정 |
 
-> 🔍 **더 깊이**: lock 파일이 중요한 이유는 단순히 버전 고정이 아니라 **integrity hash**를 포함하기 때문이다. `package-lock.json`의 `integrity: "sha512-..."` 필드는 패키지의 정확한 콘텐츠 해시다. 중간에서 패키지가 바뀌면 hash 불일치로 npm이 거부한다. yarn의 `yarn.lock`, Python pip의 `--require-hashes` 옵션도 같은 원리.
+> lock 파일이 중요한 이유는 단순히 버전 고정이 아니라 **integrity hash**를 포함하기 때문이다. `package-lock.json`의 `integrity: "sha512-..."` 필드는 패키지의 정확한 콘텐츠 해시다. 중간에서 패키지가 바뀌면 hash 불일치로 npm이 거부한다. yarn의 `yarn.lock`, Python pip의 `--require-hashes` 옵션도 같은 원리.
 
-> 📚 **사례**: Alex Birsan은 2021년 한 달 만에 35개 회사에서 dependency confusion으로 코드 실행에 성공해 130만 달러 bug bounty를 받았다. 가장 큰 회사들조차 lock 파일을 강제하지 않거나 scoped 이름을 안 썼다는 사실이 충격이었다. 시험에서 "Dependency Confusion 방어"가 나오면 항상 ① scoped namespace ② 단일 registry(CodeArtifact) ③ lock 파일 3종 조합이 정답.
+> Alex Birsan은 2021년 한 달 만에 35개 회사에서 dependency confusion으로 코드 실행에 성공해 130만 달러 bug bounty를 받았다. 가장 큰 회사들조차 lock 파일을 강제하지 않거나 scoped 이름을 안 썼다는 사실이 충격이었다. 시험에서 "Dependency Confusion 방어"가 나오면 항상 ① scoped namespace ② 단일 registry(CodeArtifact) ③ lock 파일 3종 조합이 정답.
 
 ## 인증 토큰 — 12시간 수명의 의미와 자동화 패턴
 
@@ -221,9 +221,9 @@ aws codeartifact login --tool npm \
 # 3. always-auth=true 설정
 ```
 
-> 🔍 **더 깊이**: 12시간이라는 수명은 우연이 아니다. CI/CD 빌드의 99%는 1시간 안에 끝나지만, 야간 대규모 빌드나 multi-stage release pipeline은 4-8시간 갈 수 있다. 12시간은 그 모든 경우를 커버하면서 토큰 유출 시 영향을 제한한다. 시험에서 "토큰 수명"의 답은 항상 12시간.
+> 12시간이라는 수명은 우연이 아니다. CI/CD 빌드의 99%는 1시간 안에 끝나지만, 야간 대규모 빌드나 multi-stage release pipeline은 4-8시간 갈 수 있다. 12시간은 그 모든 경우를 커버하면서 토큰 유출 시 영향을 제한한다. 시험에서 "토큰 수명"의 답은 항상 12시간.
 
-> ⚠️ **함정**: 빌드 중간에 토큰이 만료되면 어떻게 되는가? 토큰은 발급 시점부터 12시간이지 빌드 시작 시점부터가 아니다. 따라서 **빌드 직전에 새 토큰을 발급**받는 게 표준. CodeBuild의 `pre_build` 단계, GitHub Actions의 첫 step에서 항상 새로 받는다.
+> 빌드 중간에 토큰이 만료되면 어떻게 되는가? 토큰은 발급 시점부터 12시간이지 빌드 시작 시점부터가 아니다. 따라서 **빌드 직전에 새 토큰을 발급**받는 게 표준. CodeBuild의 `pre_build` 단계, GitHub Actions의 첫 step에서 항상 새로 받는다.
 
 ## SBOM, SLSA, Sigstore — 공급망 보안의 신흥 표준
 
@@ -236,9 +236,9 @@ CodeArtifact는 패키지 저장만 해주고, "이 패키지가 정말 안전�
 | **Sigstore (cosign, fulcio, rekor)** | OIDC 기반 코드 서명. keyless signing | ECR + cosign으로 컨테이너 서명 |
 | **in-toto** | 빌드 단계 무결성 attestation | SLSA framework의 기반 |
 
-> 💡 **관련 이론**: SLSA Framework(2021)는 SolarWinds 사고의 직접적 응답이다. Google이 자사 빌드 시스템 Borg가 어떻게 빌드 무결성을 보장하는지를 표준화한 것. Level 1(빌드 스크립트 문서화) → Level 2(verified provenance) → Level 3(소스/빌드 격리, 비탬퍼) → Level 4(2명 검토 + 재현 가능 빌드). 시험에서 "공급망 무결성을 어떻게 보장"이라는 질문에 SLSA가 보기로 나오면 거의 정답.
+> SLSA Framework(2021)는 SolarWinds 사고의 직접적 응답이다. Google이 자사 빌드 시스템 Borg가 어떻게 빌드 무결성을 보장하는지를 표준화한 것. Level 1(빌드 스크립트 문서화) → Level 2(verified provenance) → Level 3(소스/빌드 격리, 비탬퍼) → Level 4(2명 검토 + 재현 가능 빌드). 시험에서 "공급망 무결성을 어떻게 보장"이라는 질문에 SLSA가 보기로 나오면 거의 정답.
 
-> 📚 **사례**: 2023년 한 SaaS 회사가 SLSA L3 달성을 위해 ① 모든 컨테이너 이미지를 CodeBuild에서만 빌드 + ECR에 cosign으로 서명 ② SBOM을 빌드마다 자동 생성해 S3에 저장 ③ CodeDeploy 배포 직전 cosign verify로 서명 검증 실패 시 배포 차단. 6개월 후 한 npm 의존성이 hijack됐을 때 SBOM diff로 즉시 영향 범위를 파악했다.
+> 2023년 한 SaaS 회사가 SLSA L3 달성을 위해 ① 모든 컨테이너 이미지를 CodeBuild에서만 빌드 + ECR에 cosign으로 서명 ② SBOM을 빌드마다 자동 생성해 S3에 저장 ③ CodeDeploy 배포 직전 cosign verify로 서명 검증 실패 시 배포 차단. 6개월 후 한 npm 의존성이 hijack됐을 때 SBOM diff로 즉시 영향 범위를 파악했다.
 
 ## CodeArtifact vs S3 vs ECR — 무엇을 어디에 두는가
 

@@ -104,9 +104,9 @@ Pipeline
 
 Action 간 데이터는 **artifact**로 전달된다. Source Action이 산출물을 S3에 zip으로 올리고, Build Action이 그 zip을 다운로드해 처리한 뒤 결과를 다시 S3에. 이 S3 bucket이 "pipeline artifact bucket"이고 KMS 키로 암호화된다.
 
-> 🔍 **더 깊이**: Pipeline의 artifact passing은 모두 S3 PutObject/GetObject 호출이다. 그래서 한 stage 결과가 다음 stage로 가는 "전달 시간"은 사실 S3 업로드/다운로드 시간이다. 큰 모노레포(예: 500MB monorepo)는 stage 전이마다 수십 초씩 깎인다. 해결법 1) Artifact를 작게 쪼개기 2) Build Action에서 다음 단계가 쓸 것만 zip으로 묶기 3) CodeBuild local cache 활용 (artifact가 아닌 캐시 형태로).
+> Pipeline의 artifact passing은 모두 S3 PutObject/GetObject 호출이다. 그래서 한 stage 결과가 다음 stage로 가는 "전달 시간"은 사실 S3 업로드/다운로드 시간이다. 큰 모노레포(예: 500MB monorepo)는 stage 전이마다 수십 초씩 깎인다. 해결법 1) Artifact를 작게 쪼개기 2) Build Action에서 다음 단계가 쓸 것만 zip으로 묶기 3) CodeBuild local cache 활용 (artifact가 아닌 캐시 형태로).
 
-> 💡 **관련 이론**: Action provider model은 Jenkins의 plugin model과 본질적으로 같지만, **isolation 모델이 다르다**. Jenkins plugin은 JVM 안에서 같이 돌아 plugin 하나가 죽으면 master 전체에 영향. CodePipeline action은 별도 IAM principal로 실행되며 각자 격리. 보안 측면에서는 CodePipeline이 우월, 유연성에서는 Jenkins가 우월하다는 trade-off.
+> Action provider model은 Jenkins의 plugin model과 본질적으로 같지만, **isolation 모델이 다르다**. Jenkins plugin은 JVM 안에서 같이 돌아 plugin 하나가 죽으면 master 전체에 영향. CodePipeline action은 별도 IAM principal로 실행되며 각자 격리. 보안 측면에서는 CodePipeline이 우월, 유연성에서는 Jenkins가 우월하다는 trade-off.
 
 ## CodeBuild의 내부 — Docker 기반 격리 환경
 
@@ -127,13 +127,13 @@ CodeBuild는 매 빌드마다 **Docker container를 띄워서 buildspec.yml의 p
 
 각 phase는 shell command 시퀀스. 한 command가 실패하면 그 phase가 실패하고, `on-failure` 옵션이 없으면 전체 빌드가 fail.
 
-> 📚 **사례**: 한 회사가 CodeBuild로 Docker 이미지 빌드 시 매번 base image를 다시 pull 하는 문제로 빌드 시간이 20분 걸렸다. 분석 결과 컨테이너가 매번 destroy 되어 Docker layer cache가 사라지는 게 원인. 해결: ① S3 cache로 docker layer 저장 ② Docker Hub pull rate limit 회피 위해 ECR로 base image 이전 ③ Local NVMe SSD cache 옵션 활성화. 결과 빌드 시간 20분 → 4분.
+> 한 회사가 CodeBuild로 Docker 이미지 빌드 시 매번 base image를 다시 pull 하는 문제로 빌드 시간이 20분 걸렸다. 분석 결과 컨테이너가 매번 destroy 되어 Docker layer cache가 사라지는 게 원인. 해결: ① S3 cache로 docker layer 저장 ② Docker Hub pull rate limit 회피 위해 ECR로 base image 이전 ③ Local NVMe SSD cache 옵션 활성화. 결과 빌드 시간 20분 → 4분.
 
 > ⚠️ **함정**: CodeBuild는 기본적으로 **별도 VPC 없이 실행**된다(AWS-managed VPC 사용). 그래서 사내 패키지 저장소(VPC 내부 Artifactory)나 RDS에 접근하려면 별도로 VPC 설정 + ENI 생성이 필요하다. 이 ENI 생성이 빌드 시작 시간을 30-60초 늘린다. 시험에서 "VPC 내부 자원 접근하면서 빌드 시간 최소화" 시나리오의 답은 "VPC 설정 + ENI warm-up" 또는 "VPC 외부에서 접근 가능한 패키지 미러 사용".
 
 ## Systems Manager — DevOps 영역에서 가장 저평가된 무기
 
-Systems Manager(SSM)는 시험에서 가장 깊고 가장 자주 출제되는 서비스 중 하나다. 단순히 "Parameter Store가 있는 곳"이 아니다.
+Systems Manager(SSM)는 시험에서 깊이 다루는 서비스 중 하나다. 단순히 "Parameter Store가 있는 곳"이 아니다.
 
 | 기능 | 용도 | DevOps 시나리오 |
 |------|------|----------------|
@@ -192,7 +192,7 @@ CloudWatch는 한 서비스가 아니라 **10+ 서브 서비스의 묶음**이�
 }
 ```
 
-> 🔍 **더 깊이**: EMF의 핵심 장점은 "metric과 log가 같은 데이터로 함께 저장"된다는 것이다. CloudWatch Logs Insights로 로그를 쿼리하다 "이 시점에 latency가 spike 했네" 싶으면 즉시 같은 데이터의 metric chart로 갈 수 있다. 별도 metric API 호출이 없어 비용도 절감(metric 호출당 $0.01이 아니라 logs 비용으로 통합).
+> EMF의 핵심 장점은 "metric과 log가 같은 데이터로 함께 저장"된다는 것이다. CloudWatch Logs Insights로 로그를 쿼리하다 "이 시점에 latency가 spike 했네" 싶으면 즉시 같은 데이터의 metric chart로 갈 수 있다. 별도 metric API 호출이 없어 비용도 절감(metric 호출당 $0.01이 아니라 logs 비용으로 통합).
 
 ## X-Ray vs ADOT — 분산 추적의 두 갈래
 
@@ -208,7 +208,7 @@ AWS 분산 추적은 두 선택지가 있다.
 - "AWS 전용, 가장 쉽게 시작" → X-Ray
 - "Jaeger/Tempo로 데이터 export" → ADOT
 
-> 💡 **관련 이론**: OpenTelemetry는 OpenTracing(2016)과 OpenCensus(Google, 2018)가 2019년에 CNCF에서 합쳐진 표준이다. W3C의 Trace Context 표준(traceparent header)도 통합. 이게 클라우드 vendor lock-in을 줄이는 핵심 표준이고, AWS는 X-Ray를 deprecating 하지 않으면서도 ADOT을 동시에 밀고 있다. 시험은 둘 다 알아야 한다.
+> OpenTelemetry는 OpenTracing(2016)과 OpenCensus(Google, 2018)가 2019년에 CNCF에서 합쳐진 표준이다. W3C의 Trace Context 표준(traceparent header)도 통합. 이게 클라우드 vendor lock-in을 줄이는 핵심 표준이고, AWS는 X-Ray를 deprecating 하지 않으면서도 ADOT을 동시에 밀고 있다. 시험은 둘 다 알아야 한다.
 
 ## EventBridge — 자동화의 결합 조직
 
@@ -230,7 +230,7 @@ SaaS (PagerDuty)  →                                      SNS / SQS
 2. **Schedule rule**: cron 표현식으로 주기 실행 (CloudWatch Events Cron)
 3. **EventBridge Pipes** (2022): Source → (Filter → Enrich → Target) — Kafka처럼 stream 처리 가능
 
-> 📚 **사례**: 한 회사가 매일 새벽 3시에 RDS 스냅샷 → cross-region 복사 → 7일 후 자동 삭제 워크플로를 구축했다. 도구 조합: ① EventBridge schedule (`cron(0 3 * * ? *)`) → ② Lambda (snapshot 생성) → ③ Lambda (copy to DR region) → ④ EventBridge rule (snapshot complete) → ⑤ SSM Automation runbook (7일 후 삭제 tag). 전부 코드(CDK)로 정의되어 git에 들어간다.
+> 한 회사가 매일 새벽 3시에 RDS 스냅샷 → cross-region 복사 → 7일 후 자동 삭제 워크플로를 구축했다. 도구 조합: ① EventBridge schedule (`cron(0 3 * * ? *)`) → ② Lambda (snapshot 생성) → ③ Lambda (copy to DR region) → ④ EventBridge rule (snapshot complete) → ⑤ SSM Automation runbook (7일 후 삭제 tag). 전부 코드(CDK)로 정의되어 git에 들어간다.
 
 ## DevOps Guru — ML 기반 anomaly detection
 
@@ -255,7 +255,7 @@ Proton은 "내부 개발자 플랫폼(IDP)"을 위한 AWS 도구다. Platform �
 
 이 표가 시험 직전에 머리에 떠올라야 한다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 단순하다. **AWS DevOps는 30+ 서비스의 생태계**이고, 시험은 그 중 어느 조합이 시나리오에 가장 적합한지를 묻는다. Code* 시리즈는 시작점이지 끝이 아니다. SSM Automation, EventBridge, CloudWatch 일족, X-Ray/ADOT, Inspector, Config — 이 모두가 시나리오 풀이의 필수 어휘다.
 

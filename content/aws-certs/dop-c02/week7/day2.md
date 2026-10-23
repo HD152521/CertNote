@@ -62,11 +62,11 @@ plugins:
 
 배포는 `sls deploy --stage prod`로 끝나고, 내부적으로는 SLS가 CloudFormation 템플릿을 생성해 S3에 올린 뒤 `aws cloudformation deploy`를 호출한다. 즉 **SLS도 결국 CloudFormation 위에서 돈다**. 다만 SAM의 매크로 방식과 달리 SLS는 **클라이언트 사이드에서 CFN을 합성**하므로 CFN 콘솔에서는 SAM 같은 "Processed template" 단계가 보이지 않는다.
 
-> 💡 **관련 이론**: SLS의 플러그인 모델은 Babel·Webpack·ESLint 같은 Node 생태계의 표준 패턴이다. 이론적 기반은 1990년대 Erich Gamma의 **Eclipse Plugin Architecture**(Equinox/OSGi)와 같은 "core + extension point" 설계. 코어는 작게 유지하고 기능은 외부 모듈이 등록한다. 장점은 커뮤니티 확장의 폭발적 다양성, 단점은 플러그인 간 호환성 문제와 보안 surface 확장. 실제 2021년 `node-ipc` 사건처럼 npm 의존성 한 줄이 전체 파이프라인을 위협할 수 있다.
+> SLS의 플러그인 모델은 Babel·Webpack·ESLint 같은 Node 생태계의 표준 패턴이다. 이론적 기반은 1990년대 Erich Gamma의 **Eclipse Plugin Architecture**(Equinox/OSGi)와 같은 "core + extension point" 설계. 코어는 작게 유지하고 기능은 외부 모듈이 등록한다. 장점은 커뮤니티 확장의 폭발적 다양성, 단점은 플러그인 간 호환성 문제와 보안 surface 확장. 실제 2021년 `node-ipc` 사건처럼 npm 의존성 한 줄이 전체 파이프라인을 위협할 수 있다.
 
-> 🔍 **더 깊이**: SLS는 `serverless package` 명령으로 `.serverless/` 폴더에 CFN 템플릿(`cloudformation-template-update-stack.json`)을 추출할 수 있다. 이 파일을 열어보면 한 함수가 결국 어떤 CFN 리소스로 풀려졌는지 보이는데, `AWS::Lambda::Function` + `AWS::IAM::Role` + `AWS::Logs::LogGroup` + `AWS::ApiGatewayV2::Integration` + `AWS::ApiGatewayV2::Route`까지 8개 이상의 리소스가 생성된다. SAM 매크로가 서버에서 풀어주는 것을 SLS는 클라이언트에서 한다는 차이만 있을 뿐 결과는 동일.
+> SLS는 `serverless package` 명령으로 `.serverless/` 폴더에 CFN 템플릿(`cloudformation-template-update-stack.json`)을 추출할 수 있다. 이 파일을 열어보면 한 함수가 결국 어떤 CFN 리소스로 풀려졌는지 보이는데, `AWS::Lambda::Function` + `AWS::IAM::Role` + `AWS::Logs::LogGroup` + `AWS::ApiGatewayV2::Integration` + `AWS::ApiGatewayV2::Route`까지 8개 이상의 리소스가 생성된다. SAM 매크로가 서버에서 풀어주는 것을 SLS는 클라이언트에서 한다는 차이만 있을 뿐 결과는 동일.
 
-> 📚 **사례**: 2023년 2월 Serverless Inc.는 SLS v4부터 **연 매출 200만 달러 이상 기업에 상업 라이선스**를 적용하겠다고 발표했다. v3까지는 MIT, v4부터는 "Serverless Framework License" — Apache 2.0 기반이지만 기업 사용에 유료 등록이 필요. 이 발표 직후 GitHub 이슈에 1500개 이상의 비판 댓글이 달렸고, 일부 기업은 SAM/CDK로 마이그레이션을 시작했다. 이는 오픈소스 도구의 비즈니스 모델 전환이 사용자에게 미치는 충격의 좋은 사례다(Terraform이 2023년 8월 BSL로 전환한 것과 같은 패턴).
+> 2023년 2월 Serverless Inc.는 SLS v4부터 **연 매출 200만 달러 이상 기업에 상업 라이선스**를 적용하겠다고 발표했다. v3까지는 MIT, v4부터는 "Serverless Framework License" — Apache 2.0 기반이지만 기업 사용에 유료 등록이 필요. 이 발표 직후 GitHub 이슈에 1500개 이상의 비판 댓글이 달렸고, 일부 기업은 SAM/CDK로 마이그레이션을 시작했다. 이는 오픈소스 도구의 비즈니스 모델 전환이 사용자에게 미치는 충격의 좋은 사례다(Terraform이 2023년 8월 BSL로 전환한 것과 같은 패턴).
 
 ## CDK의 합성 모델: 코드가 곧 인프라
 
@@ -129,7 +129,7 @@ export class OrdersStack extends cdk.Stack {
 }
 ```
 
-이 코드의 가장 흥미로운 줄은 `table.grantReadData(getOrder)`다. SAM Policy Template과 비교해보자.
+이 코드의 가장 흥미로운 줄은 `table.grantReadData(getOrder)`다. SAM Policy Template과 비교하면 차이가 보인다.
 
 | 측면 | SAM Policy Template | CDK grant 메서드 |
 |------|---------------------|-------------------|
@@ -141,9 +141,9 @@ export class OrdersStack extends cdk.Stack {
 
 CDK는 단순히 "이 함수가 이 테이블을 읽는다"는 **의도**만 선언하면, 내부 로직이 (1) 테이블 ARN, (2) GSI/LSI ARN, (3) KMS Key ARN, (4) 적절한 dynamodb:* 액션 목록을 자동으로 IAM Policy로 합성한다. 이게 SAM과의 가장 큰 실용적 차이다.
 
-> 🔍 **더 깊이**: CDK의 Construct Tree는 메모리 자료구조다. `cdk synth` 명령은 (1) 코드 실행 → (2) Construct 객체 그래프 생성 → (3) 그래프 순회하며 `Cfn*` 리소스 추출 → (4) JSON 직렬화 → (5) `cdk.out/` 폴더에 저장 5단계로 진행된다. 이 분리 덕분에 CDK는 **순수한 코드**다. 부작용이 없고, 같은 코드는 항상 같은 템플릿을 만든다. 이게 GitOps와 잘 어울리는 이유. Terraform의 `terraform plan`이 클라우드 상태를 조회한 뒤 diff를 계산하는 것과 본질적으로 다른 모델.
+> CDK의 Construct Tree는 메모리 자료구조다. `cdk synth` 명령은 (1) 코드 실행 → (2) Construct 객체 그래프 생성 → (3) 그래프 순회하며 `Cfn*` 리소스 추출 → (4) JSON 직렬화 → (5) `cdk.out/` 폴더에 저장 5단계로 진행된다. 이 분리 덕분에 CDK는 **순수한 코드**다. 부작용이 없고, 같은 코드는 항상 같은 템플릿을 만든다. 이게 GitOps와 잘 어울리는 이유. Terraform의 `terraform plan`이 클라우드 상태를 조회한 뒤 diff를 계산하는 것과 본질적으로 다른 모델.
 
-> 💡 **관련 이론**: CDK의 L1/L2/L3 계층은 1960년대 Edsger Dijkstra의 **레이어드 아키텍처(THE 시스템)** 원칙의 IaC 버전이다. L1은 CFN과 1:1(`CfnFunction`), L2는 합리적 기본값을 가진 추상화(`Function`), L3는 여러 L2를 묶은 패턴(`ApplicationLoadBalancedFargateService`). 각 계층은 아래 계층의 함수로 정의되며, 사용자는 필요한 추상화 수준만 선택한다. 이 패턴이 React의 컴포넌트 계층, Kubernetes의 Pod→Deployment→Service 추상화와 동형(isomorphic).
+> CDK의 L1/L2/L3 계층은 1960년대 Edsger Dijkstra의 **레이어드 아키텍처(THE 시스템)** 원칙의 IaC 버전이다. L1은 CFN과 1:1(`CfnFunction`), L2는 합리적 기본값을 가진 추상화(`Function`), L3는 여러 L2를 묶은 패턴(`ApplicationLoadBalancedFargateService`). 각 계층은 아래 계층의 함수로 정의되며, 사용자는 필요한 추상화 수준만 선택한다. 이 패턴이 React의 컴포넌트 계층, Kubernetes의 Pod→Deployment→Service 추상화와 동형(isomorphic).
 
 > 🎯 **시나리오**: "팀이 React/TypeScript를 주력으로 쓰는 백엔드 팀이고, Lambda·DynamoDB·OpenSearch·EKS·RDS·SQS를 한 스택에서 관리하며, IAM 권한 실수를 줄이고 싶다. 어떤 IaC를 선택?" — 답은 **CDK with TypeScript**. SAM은 서버리스 6종 외에는 일반 CFN으로 폴백해야 하고, SLS는 Lambda 중심이라 EKS 통합이 약하다. CDK는 모든 AWS 리소스를 L2 Construct로 추상화하고 `grant*`로 IAM이 자동.
 
@@ -245,7 +245,7 @@ new lambda.DockerImageFunction(this, 'MLFn', {
 });
 ```
 
-> 🔍 **더 깊이**: Lambda Container Image는 일반 OCI 이미지가 아니다. AWS가 정의한 **Lambda Container Image Spec**을 따라야 하며, 이미지에 Lambda Runtime Interface Client(RIC)가 포함되어야 한다. AWS 공식 베이스 이미지(`public.ecr.aws/lambda/*`)에는 RIC가 이미 들어있어 `CMD ["app.handler"]`만 하면 동작한다. 자체 베이스 이미지를 쓰려면 RIC를 직접 추가해야 한다. 한편 콜드 스타트 시 Lambda는 이미지 전체를 다운로드하지 않고, **레이어별 lazy load** + **block-level caching**으로 시작에 필요한 부분만 먼저 가져온다(2020 SOSP 논문 "On-demand Container Loading in AWS Lambda" 참고). 그래서 10GB 이미지라도 cold start가 zip 패키지의 2~3배 정도에 머무른다.
+> Lambda Container Image는 일반 OCI 이미지가 아니다. AWS가 정의한 **Lambda Container Image Spec**을 따라야 하며, 이미지에 Lambda Runtime Interface Client(RIC)가 포함되어야 한다. AWS 공식 베이스 이미지(`public.ecr.aws/lambda/*`)에는 RIC가 이미 들어있어 `CMD ["app.handler"]`만 하면 동작한다. 자체 베이스 이미지를 쓰려면 RIC를 직접 추가해야 한다. 한편 콜드 스타트 시 Lambda는 이미지 전체를 다운로드하지 않고, **레이어별 lazy load** + **block-level caching**으로 시작에 필요한 부분만 먼저 가져온다(2020 SOSP 논문 "On-demand Container Loading in AWS Lambda" 참고). 그래서 10GB 이미지라도 콜드 스타트가 zip 패키지의 2~3배 정도에 머무른다.
 
 > ⚠️ **함정**: Container Image Lambda는 **Lambda Layer를 쓸 수 없다**. 모든 의존성이 이미지에 포함되어야 한다. 또 Provisioned Concurrency는 지원하지만 SnapStart는 zip Java만 지원(Container 미지원, 2024년 12월 기준). 시험에서 "ML 모델 5GB를 Lambda에 배포하려면?" 답은 Container Image이지만, "기존 Layer 4개를 그대로 쓰면서 패키지 크기를 줄이려면?" 답은 Layer 유지 + zip 패키지 최적화이지 Container가 아니다.
 
@@ -270,11 +270,11 @@ new lambda.DockerImageFunction(this, 'MLFn', {
 > - **"Lambda·EKS·RDS·OpenSearch·SQS 혼합, TS 팀"** → CDK
 > - **"멀티 클라우드(AWS+GCP+Azure), 기존 Terraform 자산"** → Terraform
 
-> 📚 **사례**: 2022년 Liberty Mutual은 자사 인프라를 CDK로 전환하면서 약 **9000개의 CDK Stack**을 운영하게 됐다. 자체 L3 Construct 라이브러리를 만들어 사내 팀이 보안·태깅·로깅 정책이 자동 적용된 표준 패턴을 5분 만에 배포 가능하게 했다. 이게 CDK의 본질적 가치 — 단순히 코드로 인프라를 쓰는 게 아니라, **재사용 가능한 인프라 추상화 라이브러리**를 만들 수 있다는 점. SAM Policy Template과 비교하면 추상화 도구의 폭이 본질적으로 다르다.
+> 2022년 Liberty Mutual은 자사 인프라를 CDK로 전환하면서 약 **9000개의 CDK Stack**을 운영하게 됐다. 자체 L3 Construct 라이브러리를 만들어 사내 팀이 보안·태깅·로깅 정책이 자동 적용된 표준 패턴을 5분 만에 배포 가능하게 했다. 이게 CDK의 본질적 가치 — 단순히 코드로 인프라를 쓰는 게 아니라, **재사용 가능한 인프라 추상화 라이브러리**를 만들 수 있다는 점. SAM Policy Template과 비교하면 추상화 도구의 폭이 본질적으로 다르다.
 
 ## CDK Aspects: 횡단 관심사의 우아한 처리
 
-큰 CDK 코드베이스에서 모든 Stack에 "필수 태그 강제", "암호화 미설정 차단", "RemovalPolicy RETAIN 강제" 같은 정책을 적용하려면 어떻게 해야 할까. CDK는 **Aspects**라는 visitor 패턴 메커니즘을 제공한다.
+큰 CDK 코드베이스에서 모든 스택에 "필수 태그 강제", "암호화 미설정 차단", "RemovalPolicy RETAIN 강제" 같은 정책을 적용하려면 어떻게 해야 할까. CDK는 **Aspects**라는 visitor 패턴 메커니즘을 제공한다.
 
 ```typescript
 import { IAspect, Tags } from 'aws-cdk-lib';
@@ -307,7 +307,7 @@ cdk.Aspects.of(app).add(new EncryptionAspect());
 cdk.Aspects.of(app).add(new CostCenterTagAspect());
 ```
 
-> 💡 **관련 이론**: Aspects는 1997년 Gregor Kiczales가 제안한 **Aspect-Oriented Programming(AOP)**의 IaC 버전이다. 횡단 관심사(cross-cutting concern) — 로깅, 보안, 태깅 — 를 코어 로직에서 분리해 별도 모듈로 표현. Java의 AspectJ, Spring AOP가 같은 원리. CDK의 visitor 패턴은 Construct Tree를 순회하며 각 노드에 적용할 정책을 결정한다. 이게 SAM의 한계 — SAM은 매크로 한 번만 돌아 정적 YAML을 만들고, 이후 횡단 정책 적용은 외부 도구(cfn-nag, cfn-lint, AWS Config Rules)에 의존해야 한다.
+> Aspects는 1997년 Gregor Kiczales가 제안한 **Aspect-Oriented Programming(AOP)**의 IaC 버전이다. 횡단 관심사(cross-cutting concern) — 로깅, 보안, 태깅 — 를 코어 로직에서 분리해 별도 모듈로 표현. Java의 AspectJ, Spring AOP가 같은 원리. CDK의 visitor 패턴은 Construct Tree를 순회하며 각 노드에 적용할 정책을 결정한다. 이게 SAM의 한계 — SAM은 매크로 한 번만 돌아 정적 YAML을 만들고, 이후 횡단 정책 적용은 외부 도구(cfn-nag, cfn-lint, AWS Config Rules)에 의존해야 한다.
 
 ## CDK Pipelines: Self-mutating CI/CD
 
@@ -356,11 +356,11 @@ pipeline.addStage(new AppStage(this, 'Prod', {
 
 3번이 핵심이다. 파이프라인 자체가 CDK 코드의 일부이므로 stage 추가, 새 환경 추가, 빌드 명령어 변경이 **다음 실행에서 즉시 반영**된다. 이게 GitOps의 IaC 버전.
 
-> 🔍 **더 깊이**: Self-mutating의 위험성 — 파이프라인 정의에 버그가 있으면 self-mutation이 깨진 파이프라인을 deploy하고, 다음 실행은 깨진 파이프라인으로 시작해 다시는 정상으로 못 돌아갈 수 있다. 방어책은 (1) `cdk diff`로 항상 변경 사항 검토, (2) `feature branch`에서 미리 테스트, (3) **break glass** 절차로 콘솔에서 수동 복구 가능하게 IAM 권한 유지. 2021년 Stripe가 비슷한 GitOps 도구로 Production CI를 망가뜨린 사고가 잘 알려져 있다(GitOps anti-pattern).
+> Self-mutating의 위험성 — 파이프라인 정의에 버그가 있으면 self-mutation이 깨진 파이프라인을 deploy하고, 다음 실행은 깨진 파이프라인으로 시작해 다시는 정상으로 못 돌아갈 수 있다. 방어책은 (1) `cdk diff`로 항상 변경 사항 검토, (2) `feature branch`에서 미리 테스트, (3) **break glass** 절차로 콘솔에서 수동 복구 가능하게 IAM 권한 유지. 2021년 Stripe가 비슷한 GitOps 도구로 Production CI를 망가뜨린 사고가 잘 알려져 있다(GitOps anti-pattern).
 
 ## Cold Start: Lambda의 영원한 숙제
 
-Lambda는 invocation이 없으면 컨테이너가 회수되고, 다음 invocation에 새 컨테이너를 띄워야 한다. 이 시작 시간이 cold start이고, 함수 특성에 따라 50ms~10초까지 변동한다.
+Lambda는 invocation이 없으면 컨테이너가 회수되고, 다음 invocation에 새 컨테이너를 띄워야 한다. 이 시작 시간이 콜드 스타트이고, 함수 특성에 따라 50ms~10초까지 변동한다.
 
 | 단계 | 의미 | 영향 요소 | 일반 범위 |
 |------|------|-----------|-----------|
@@ -378,9 +378,9 @@ Lambda는 invocation이 없으면 컨테이너가 회수되고, 다음 invocatio
 | **Top-level import 최소화** | Init code 단축 | - | Python/Node 특히 |
 | **VPC 미사용** | ENI 생성 8~10s 제거 | - | NAT/RDS Proxy 불필요한 함수 |
 
-> 📚 **사례**: 2022년 AWS re:Invent에서 SnapStart가 발표됐는데, 내부 메커니즘이 매우 흥미롭다. Java 함수 init 단계의 **JVM 메모리 스냅샷**을 찍어 S3에 저장하고, 다음 invocation은 스냅샷을 복원해 init을 건너뛴다. 이는 1990년대 Self/Smalltalk의 image-based persistence 개념과 동일. 단 메모리 안의 random seed, DB connection 같은 "uniqueness assumption"이 깨질 수 있어 `Runtime Hook`(`Core.getGlobalRuntime().register(...)`)으로 명시적 재초기화가 필요. 시험에선 "Java cold start 10초를 1초 미만으로 줄이려면?" 답은 SnapStart.
+> 2022년 AWS re:Invent에서 SnapStart가 발표됐는데, 내부 메커니즘이 매우 흥미롭다. Java 함수 init 단계의 **JVM 메모리 스냅샷**을 찍어 S3에 저장하고, 다음 invocation은 스냅샷을 복원해 init을 건너뛴다. 이는 1990년대 Self/Smalltalk의 image-based persistence 개념과 동일. 단 메모리 안의 random seed, DB connection 같은 "uniqueness assumption"이 깨질 수 있어 `Runtime Hook`(`Core.getGlobalRuntime().register(...)`)으로 명시적 재초기화가 필요. 시험에선 "Java 콜드 스타트 10초를 1초 미만으로 줄이려면?" 답은 SnapStart.
 
-> ⚠️ **함정**: Provisioned Concurrency는 **함수 Version에만** 적용 가능, `$LATEST`에는 불가. 그래서 `AutoPublishAlias` + `DeploymentPreference`와 함께 써야 한다. 또 PC를 켠 상태에서 트래픽이 PC 용량을 초과하면 초과분은 일반 cold start로 처리되므로, Application Auto Scaling으로 PC를 동적 조정하는 패턴이 흔히 쓰인다(Scheduled scaling으로 영업시간 동안 PC 증가).
+> ⚠️ **함정**: Provisioned Concurrency는 **함수 Version에만** 적용 가능, `$LATEST`에는 불가. 그래서 `AutoPublishAlias` + `DeploymentPreference`와 함께 써야 한다. 또 PC를 켠 상태에서 트래픽이 PC 용량을 초과하면 초과분은 일반 콜드 스타트로 처리되므로, Application Auto Scaling으로 PC를 동적 조정하는 패턴이 흔히 쓰인다(Scheduled scaling으로 영업시간 동안 PC 증가).
 
 ## Powertools for AWS Lambda: 옵저버빌리티 표준
 
@@ -414,9 +414,9 @@ def handler(event, context):
 
 핵심 가치는 **EMF(Embedded Metric Format)**을 자동 출력한다는 것. CloudWatch Logs에 JSON으로 메트릭이 임베드되면 CloudWatch가 자동으로 별도 Metric으로 집계한다. PutMetricData API 호출 비용 없이 메트릭 생성.
 
-> 💡 **관련 이론**: EMF는 **structured logging**과 **metrics as log**의 결합이다. Logs를 single source of truth로 보고 메트릭을 거기서 파생하는 접근법은 Honeycomb, Datadog의 "Events" 개념과 같은 철학. 전통적으로 metrics와 logs는 별도 파이프라인이었는데, EMF는 한 로그 라인이 두 역할을 동시에 한다. 비용·운영 부담이 감소.
+> EMF는 **structured logging**과 **metrics as log**의 결합이다. Logs를 single source of truth로 보고 메트릭을 거기서 파생하는 접근법은 Honeycomb, Datadog의 "Events" 개념과 같은 철학. 전통적으로 metrics와 logs는 별도 파이프라인이었는데, EMF는 한 로그 라인이 두 역할을 동시에 한다. 비용·운영 부담이 감소.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 세 가지다. 첫째, **Serverless Framework**는 Node 플러그인 생태계가 강점이지만 v4부터 상업 라이선스라 신규 도입은 신중. 둘째, **CDK**는 코드로 모든 AWS 리소스를 추상화하며 `grant*` 메서드의 의도 기반 IAM과 L1/L2/L3 Construct 계층이 본질적 차별점. 셋째, **Lambda Container Image**는 10GB 한도로 ML/큰 의존성에 적합하지만 Layer/SnapStart 호환성 제약 있음.
 

@@ -22,9 +22,9 @@ StackSet (Administration 계정에 정의)
    StackSet은 그들의 정의를 동기화하는 상위 메타데이터
 ```
 
-Stack Instance가 결국 평범한 Stack이라는 게 중요하다. 멤버 계정 안에서는 일반 CloudFormation Stack으로 보이고 콘솔에서 동일하게 다룰 수 있다. **단 멤버 계정의 운영자가 Stack을 임의로 수정하면 곧바로 drift가 발생하고, 다음 StackSet update가 그 변경을 덮어쓴다**. StackSet은 단일 진실의 원천(single source of truth)을 강제하는 동기화 도구이지 협업 도구가 아니다.
+Stack Instance가 결국 평범한 스택이라는 게 중요하다. 멤버 계정 안에서는 일반 CloudFormation Stack으로 보이고 콘솔에서 동일하게 다룰 수 있다. **단 멤버 계정의 운영자가 스택을 임의로 수정하면 곧바로 drift가 발생하고, 다음 StackSet update가 그 변경을 덮어쓴다**. StackSet은 단일 진실의 원천(single source of truth)을 강제하는 동기화 도구이지 협업 도구가 아니다.
 
-> 💡 **관련 이론**: fan-out과 single source of truth의 결합은 GitOps의 핵심 원칙이다. Flux와 ArgoCD가 Git을 진실의 원천으로 두고 N개 Kubernetes 클러스터에 manifest를 reconcile하는 모델이 StackSet과 정확히 같다. 차이는 GitOps가 pull 모델(에이전트가 풀)이고 StackSets는 push 모델(중앙에서 푸시)이라는 점. push 모델은 즉시성이 강한 대신 중앙 장애에 약하고, pull 모델은 분산 회복성이 강한 대신 전파 지연이 있다.
+> fan-out과 single source of truth의 결합은 GitOps의 핵심 원칙이다. Flux와 ArgoCD가 Git을 진실의 원천으로 두고 N개 Kubernetes 클러스터에 manifest를 reconcile하는 모델이 StackSet과 정확히 같다. 차이는 GitOps가 pull 모델(에이전트가 풀)이고 StackSets는 push 모델(중앙에서 푸시)이라는 점. push 모델은 즉시성이 강한 대신 중앙 장애에 약하고, pull 모델은 분산 회복성이 강한 대신 전파 지연이 있다.
 
 ## 두 권한 모델 — Self-managed의 닭과 달걀
 
@@ -47,7 +47,7 @@ aws organizations enable-aws-service-access \
 # 이후 Service-managed로 만든 모든 StackSet이 자동으로 멤버 계정에 IAM 자동 생성
 ```
 
-> 🔍 **더 깊이**: Service-managed의 자동 IAM Role은 **`AWSReservedSSO_*` 패턴이 아닌 AWS 관리형 서비스 연결 역할(Service-Linked Role, SLR)** 메커니즘으로 만들어진다. SLR은 사용자가 삭제할 수 없고(서비스가 의존성 검사), 권한 변경도 제한된다. 이게 보안상 이점인 동시에 제약이다 — 자동 생성된 역할을 임의로 수정하려는 시도는 차단되며, 의도적으로 자체 역할을 쓰려면 Self-managed로 전환해야 한다. 신뢰의 출발점이 Organizations 신뢰 관계(`organizations.amazonaws.com`)에서 시작되므로 Org 외부에서 이 역할로 가장(assume) 불가능.
+> Service-managed의 자동 IAM Role은 **`AWSReservedSSO_*` 패턴이 아닌 AWS 관리형 서비스 연결 역할(Service-Linked Role, SLR)** 메커니즘으로 만들어진다. SLR은 사용자가 삭제할 수 없고(서비스가 의존성 검사), 권한 변경도 제한된다. 이게 보안상 이점인 동시에 제약이다 — 자동 생성된 역할을 임의로 수정하려는 시도는 차단되며, 의도적으로 자체 역할을 쓰려면 Self-managed로 전환해야 한다. 신뢰의 출발점이 Organizations 신뢰 관계(`organizations.amazonaws.com`)에서 시작되므로 Org 외부에서 이 역할로 가장(assume) 불가능.
 
 > ⚠️ **함정**: Self-managed에서 Administration Role의 trust policy에 "Administration 계정 ID"가 박혀 있고, Execution Role의 trust policy에는 "Administration 계정만 신뢰"가 박혀 있다. 회사가 인수합병으로 Administration 계정 자체를 옮기는 순간 모든 멤버 계정의 Execution Role trust를 일괄 갱신해야 한다 — Self-managed의 가장 큰 운영 부담. Service-managed는 Organizations가 신뢰 체인을 추상화해 이 문제가 없다.
 
@@ -67,7 +67,7 @@ aws organizations register-delegated-administrator \
 
 이 패턴이 StackSets뿐 아니라 GuardDuty(Security Account), Config(Audit Account), Security Hub, IAM Access Analyzer 같은 거의 모든 Org-aware 서비스에 동일하게 적용된다. 결과적으로 운영 책임이 도메인별 계정으로 분산되고 Management Account는 "비상 키" 역할로만 남는다.
 
-> 📚 **사례**: 2019년 한 글로벌 기업이 Management Account의 root credential 키 분실 사건을 겪었다. 다행히 침해는 없었지만 root 복구 과정에서 모든 StackSets 운영이 2주간 중단됐다. 이후 회사 표준이 "Management Account는 SCP 변경과 신규 OU 생성만, 나머지는 모두 Delegated Admin"으로 바뀌었다. AWS Control Tower도 이 패턴을 기본으로 강제한다 — Audit/Log Archive 계정이 Delegated Admin이 된다.
+> 2019년 한 글로벌 기업이 Management Account의 root credential 키 분실 사건을 겪었다. 다행히 침해는 없었지만 root 복구 과정에서 모든 StackSets 운영이 2주간 중단됐다. 이후 회사 표준이 "Management Account는 SCP 변경과 신규 OU 생성만, 나머지는 모두 Delegated Admin"으로 바뀌었다. AWS Control Tower도 이 패턴을 기본으로 강제한다 — Audit/Log Archive 계정이 Delegated Admin이 된다.
 
 ## Operation Preferences — 동시성과 실패 허용의 수학
 
@@ -105,7 +105,7 @@ aws cloudformation create-stack-instances \
 
 > 🎯 **시나리오**: "500 계정에 보안 베이스라인을 배포하는데 처음 5개 계정에서 실패가 나면 즉시 전체 중단하고, 그 이후 발생하는 실패는 1%까지 허용". — 답은 두 단계 배포: 1단계 카나리 5 계정에 FailureToleranceCount=0 (한 개라도 실패 시 즉시 중단), 2단계 나머지 495개에 FailureTolerancePercentage=1. CloudFormation StackSets 자체에 카나리 단계가 없으므로 운영자가 두 번 create-stack-instances를 호출해 직접 구성.
 
-> 🔍 **더 깊이**: 실패가 FailureToleranceCount에 도달하면 **이미 진행 중인 Stack Instance는 끝까지 진행한다**. 즉 "20개 동시 처리 + 실패 허용 5개"에서 5번째 실패가 나도 진행 중인 나머지 15개는 멈추지 않는다. 새 Instance만 시작되지 않을 뿐. 그래서 실제 최종 실패 수는 FailureToleranceCount보다 클 수 있다는 게 시험 함정. 운영자는 SNS 알람으로 operation status를 추적하면서 필요하면 stop-stack-set-operation으로 강제 중단해야 한다.
+> 실패가 FailureToleranceCount에 도달하면 **이미 진행 중인 Stack Instance는 끝까지 진행한다**. 즉 "20개 동시 처리 + 실패 허용 5개"에서 5번째 실패가 나도 진행 중인 나머지 15개는 멈추지 않는다. 새 Instance만 시작되지 않을 뿐. 그래서 실제 최종 실패 수는 FailureToleranceCount보다 클 수 있다는 게 시험 함정. 운영자는 SNS 알람으로 operation status를 추적하면서 필요하면 stop-stack-set-operation으로 강제 중단해야 한다.
 
 ## AccountFilterType — 네 가지 집합 연산
 
@@ -144,12 +144,12 @@ aws cloudformation create-stack-set \
 
 `RetainStacksOnAccountRemoval`의 의미가 중요하다. 멤버 계정이 OU를 떠나거나 Org에서 제거될 때 그 계정의 Stack Instance를 어떻게 처리할지의 정책이다.
 
-- `false`: 계정이 OU 떠나면 Stack 자동 삭제 — 가장 일반적, 권한 잔재 제거
-- `true`: 계정이 OU 떠나도 Stack 유지 — M&A로 계정 분리, 워크로드 잔존 처리
+- `false`: 계정이 OU 떠나면 스택 자동 삭제 — 가장 일반적, 권한 잔재 제거
+- `true`: 계정이 OU 떠나도 스택 유지 — M&A로 계정 분리, 워크로드 잔존 처리
 
-기본값은 `false`라 보안 관점에서 안전하지만, **계정 분리 시 Stack에 포함된 RDS/S3 데이터가 함께 사라질 위험이 있다**. 그래서 stateful 리소스를 포함한 StackSet은 (1) 리소스마다 `DeletionPolicy: Retain` 설정, (2) RetainStacksOnAccountRemoval=true 사용 중 하나를 골라야 한다.
+기본값은 `false`라 보안 관점에서 안전하지만, **계정 분리 시 스택에 포함된 RDS/S3 데이터가 함께 사라질 위험이 있다**. 그래서 stateful 리소스를 포함한 StackSet은 (1) 리소스마다 `DeletionPolicy: Retain` 설정, (2) RetainStacksOnAccountRemoval=true 사용 중 하나를 골라야 한다.
 
-> 📚 **사례**: 2021년 한 핀테크가 자회사 매각으로 자회사 AWS 계정 5개를 Org에서 제거했더니 StackSets로 배포된 베이스라인 Stack이 자동 삭제되면서 그 안의 CloudTrail Trail이 사라졌다. 그 결과 매각 직전 90일치 감사 로그가 유실됐다. 이후 회사 표준이 "감사/로깅 리소스가 포함된 StackSet은 RetainStacksOnAccountRemoval=true + 리소스 DeletionPolicy=Retain"으로 바뀌었다.
+> 2021년 한 핀테크가 자회사 매각으로 자회사 AWS 계정 5개를 Org에서 제거했더니 StackSets로 배포된 베이스라인 스택이 자동 삭제되면서 그 안의 CloudTrail Trail이 사라졌다. 그 결과 매각 직전 90일치 감사 로그가 유실됐다. 이후 회사 표준이 "감사/로깅 리소스가 포함된 StackSet은 RetainStacksOnAccountRemoval=true + 리소스 DeletionPolicy=Retain"으로 바뀌었다.
 
 ## StackSets와 Control Tower / Conformance Pack의 경계
 
@@ -168,9 +168,9 @@ aws cloudformation create-stack-set \
 - 평가/모니터링/자동 수정 규칙 → **Config Conformance Pack**
 - 사용자가 self-service로 띄울 표준 제품 → **Service Catalog**
 
-Control Tower는 내부적으로 StackSets를 사용하며 그 결과 멤버 계정에 `AWSControlTower*` 접두사의 Stack이 생성된다. Control Tower가 관리하는 Stack을 직접 수정하면 즉시 drift로 잡히고 다음 Landing Zone update에서 덮어쓰여진다.
+Control Tower는 내부적으로 StackSets를 사용하며 그 결과 멤버 계정에 `AWSControlTower*` 접두사의 스택이 생성된다. Control Tower가 관리하는 스택을 직접 수정하면 즉시 drift로 잡히고 다음 Landing Zone update에서 덮어쓰여진다.
 
-> 💡 **관련 이론**: StackSets(범용)→ Control Tower(landing zone 특화) → AWS Organizations(거버넌스) 계층은 클라우드 거버넌스의 정석 3층 구조다. NIST SP 800-204C와 CIS AWS Foundations Benchmark에서 권장하는 multi-account strategy의 구체화. 한 회사가 처음 AWS에 진입할 때 Control Tower로 빠르게 landing zone 구성, 이후 도메인 특화 추가 자원을 StackSets로 보강, 평가/감사를 Config Conformance Pack으로 분리하는 흐름.
+> StackSets(범용)→ Control Tower(landing zone 특화) → AWS Organizations(거버넌스) 계층은 클라우드 거버넌스의 정석 3층 구조다. NIST SP 800-204C와 CIS AWS Foundations Benchmark에서 권장하는 multi-account strategy의 구체화. 한 회사가 처음 AWS에 진입할 때 Control Tower로 빠르게 landing zone 구성, 이후 도메인 특화 추가 자원을 StackSets로 보강, 평가/감사를 Config Conformance Pack으로 분리하는 흐름.
 
 ## Drift Detection at Scale — 1000 Instance 처리
 
@@ -195,11 +195,11 @@ aws cloudformation list-stack-instances \
 
 대규모에서는 이걸 EventBridge 스케줄로 매일 자동 실행하고 결과를 Security Hub 또는 Slack으로 보낸다. **Drift는 자동 수정되지 않으므로 운영자가 의도 변경(긴급 패치)과 의도하지 않은 변경(실수/공격)을 판단해야 한다**. 자동 수정이 필요한 영역은 Config Rules + SSM Automation Document 조합으로 분리한다.
 
-> 🎯 **시나리오**: "500 계정의 베이스라인 Stack 중 한 계정의 GuardDuty가 꺼져 있다. 자동으로 감지하고 알람을 띄우려면?" — 답은 (1) StackSets Drift Detection을 매일 EventBridge로 실행 → DRIFTED 목록을 SNS로 (감지 측면), (2) Config Rule `guardduty-enabled-centralized`를 Conformance Pack으로 모든 계정에 배포 → Security Hub로 집계 (실시간 측면), (3) 자동 복원이 필요하면 SSM Automation으로 GuardDuty 재활성화 (자동 수정 측면). 세 도구의 역할 분리.
+> 🎯 **시나리오**: "500 계정의 베이스라인 스택 중 한 계정의 GuardDuty가 꺼져 있다. 자동으로 감지하고 알람을 띄우려면?" — 답은 (1) StackSets Drift Detection을 매일 EventBridge로 실행 → DRIFTED 목록을 SNS로 (감지 측면), (2) Config Rule `guardduty-enabled-centralized`를 Conformance Pack으로 모든 계정에 배포 → Security Hub로 집계 (실시간 측면), (3) 자동 복원이 필요하면 SSM Automation으로 GuardDuty 재활성화 (자동 수정 측면). 세 도구의 역할 분리.
 
-## 정리하며
+## 정리
 
-오늘 본 그림은 다섯 가지다. 첫째, **StackSets는 fan-out + single source of truth**의 결합이고 GitOps의 push 모델 변형이다. 둘째, **Self-managed의 닭과 달걀 문제**때문에 현실에서는 Service-managed + Organizations가 표준이다. 셋째, **Delegated Administrator로 Management Account를 일상 운영에서 분리**하는 게 Well-Architected의 최우선 보안 권고. 넷째, **Operation Preferences의 동시성/실패 허용은 규모에 따라 다르고**, 카나리 단계는 운영자가 두 단계 호출로 구성. 다섯째, **StackSets와 Control Tower / Config Conformance Pack의 경계**는 시험에서 자주 묻는 영역으로, 임의 리소스/landing zone/평가규칙의 구분이 핵심.
+오늘 본 그림은 다섯 가지다. 첫째, **StackSets는 fan-out + single source of truth**의 결합이고 GitOps의 push 모델 변형이다. 둘째, **Self-managed의 닭과 달걀 문제**때문에 현실에서는 Service-managed + Organizations가 표준이다. 셋째, **Delegated Administrator로 Management Account를 일상 운영에서 분리**하는 게 Well-Architected의 최우선 보안 권고. 넷째, **Operation Preferences의 동시성/실패 허용은 규모에 따라 다르고**, 카나리 단계는 운영자가 두 단계 호출로 구성. 다섯째, **StackSets와 Control Tower / Config Conformance Pack의 경계**는 시험에서 묻는 영역으로, 임의 리소스/landing zone/평가규칙의 구분이 핵심.
 
 다음 글에서는 CloudFormation의 표현력을 확장하는 Custom Resource와 Module/Hook을 본다. SAM이 Transform Macro로 추상화를 더했다면, Custom Resource는 임의의 Lambda를 CFN의 라이프사이클에 끼워넣는 더 일반적인 메커니즘이다.
 

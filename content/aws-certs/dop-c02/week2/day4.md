@@ -41,16 +41,16 @@
 | **CodeGuru Security** | PR/Build 시 | 다언어 보안 패턴 | Finding (CWE/CVSS 매핑) | ❌ (외부 게이트 필요) |
 | **CodeGuru Profiler** | 런타임 | Java/Python/Node 프로세스 | Flame graph, 비용 최적화 권고 | ❌ (관찰성) |
 
-> 💡 Reviewer와 Security는 2024년부터 통합 강화. Security가 Bedrock LLM 기반으로 더 빠르게 발전. CodeGuru Reviewer Java/Python 분석은 2025년 6월 종료 예정 → CodeGuru Security와 Amazon Q Developer가 후속.
+> Reviewer와 Security는 2024년부터 통합 강화. Security가 Bedrock LLM 기반으로 더 빠르게 발전. CodeGuru Reviewer Java/Python 분석은 2025년 6월 종료 예정 → CodeGuru Security와 Amazon Q Developer가 후속.
 
 **저장소 연결 방법:**
 - CodeCommit / GitHub / GitLab / Bitbucket / S3 저장소를 **Associate** API로 등록
 - PR 생성 시 자동 분석, Webhook 기반
 - Findings는 **Security Hub로 자동 전송** (ASFF 포맷)
 
-> 🔍 **더 깊이**: CodeGuru Reviewer의 분석 엔진은 두 단계로 동작한다. ① **Program analysis**: AST(Abstract Syntax Tree) 기반 데이터 흐름 분석. 예를 들어 SQL Injection 패턴(`request.getParameter()` → `Statement.executeQuery()`)을 taint propagation으로 추적. ② **ML 보강**: Amazon의 내부 코드 베이스 수십억 라인에서 학습한 모델로 "이 코드 형태가 보통 사고로 이어진다"는 패턴 매칭. 단순 grep과 달리 false positive가 낮은 이유다. 하지만 **그래도 LLM 기반이라 100%가 아니다** — 시험에서 "CodeGuru가 모든 보안 문제를 잡는다"는 보기는 항상 함정이다.
+> CodeGuru Reviewer의 분석 엔진은 두 단계로 동작한다. ① **Program analysis**: AST(Abstract Syntax Tree) 기반 데이터 흐름 분석. 예를 들어 SQL Injection 패턴(`request.getParameter()` → `Statement.executeQuery()`)을 taint propagation으로 추적. ② **ML 보강**: Amazon의 내부 코드 베이스 수십억 라인에서 학습한 모델로 "이 코드 형태가 보통 사고로 이어진다"는 패턴 매칭. 단순 grep과 달리 false positive가 낮은 이유다. 하지만 **그래도 LLM 기반이라 100%가 아니다** — 시험에서 "CodeGuru가 모든 보안 문제를 잡는다"는 보기는 항상 함정이다.
 
-> 💡 **관련 이론**: SAST 도구의 정밀도-재현율(Precision-Recall) trade-off. False Positive(잘못된 경보)가 많으면 개발자가 무시하기 시작해(alert fatigue) 진짜 finding도 묻힌다. SonarQube, Checkmarx, Snyk Code, CodeGuru Security 같은 도구들이 다 이 trade-off에서 자기 위치를 정한다. OWASP Benchmark Project(연간 SAST 도구 평가)에서 도구별 Youden Index(TPR - FPR)를 비교한 데이터를 보면 "완벽한 도구는 없다"는 결론이 나온다.
+> SAST 도구의 정밀도-재현율(Precision-Recall) trade-off. False Positive(잘못된 경보)가 많으면 개발자가 무시하기 시작해(alert fatigue) 진짜 finding도 묻힌다. SonarQube, Checkmarx, Snyk Code, CodeGuru Security 같은 도구들이 다 이 trade-off에서 자기 위치를 정한다. OWASP Benchmark Project(연간 SAST 도구 평가)에서 도구별 Youden Index(TPR - FPR)를 비교한 데이터를 보면 "완벽한 도구는 없다"는 결론이 나온다.
 
 ### 2. AWS Signer — 신뢰 체인의 시작점
 
@@ -80,7 +80,7 @@ aws signer put-signing-profile \
 
 > ⚠️ **함정**: `Warn` 모드를 "테스트용"으로 켜놓고 prod에 그대로 두는 사고가 흔하다. Capital One 사후 분석에서도 "보안 도구는 있었지만 차단 모드가 아니었다"는 패턴이 반복적으로 등장. 시험에서 "서명 검증 강제"가 키워드면 반드시 Enforce.
 
-> 🔍 **더 깊이**: AWS Signer의 검증 단계는 두 가지를 본다. ① **서명의 유효성**: Profile의 공개키로 서명을 검증할 수 있는가. ② **Profile의 신뢰**: 이 Profile이 `allowed-publishers` 목록에 있는가. 두 조건 모두 통과해야 통과. Profile version도 함께 확인되므로, 키 회전 후에는 새 Profile version ARN을 `allowed-publishers`에 추가해야 한다(기존 버전은 expire 시점까지 공존).
+> AWS Signer의 검증 단계는 두 가지를 본다. ① **서명의 유효성**: Profile의 공개키로 서명을 검증할 수 있는가. ② **Profile의 신뢰**: 이 Profile이 `allowed-publishers` 목록에 있는가. 두 조건 모두 통과해야 통과. Profile version도 함께 확인되므로, 키 회전 후에는 새 Profile version ARN을 `allowed-publishers`에 추가해야 한다(기존 버전은 expire 시점까지 공존).
 
 ### 3. Inspector — 의존성·이미지·OS 취약점의 자동 스캔
 
@@ -102,9 +102,9 @@ Inspector v2는 세 가지 자원 타입을 자동 스캔한다.
 - Standard(무료): Clair 기반, 푸시 시 1회 스캔, OS layer만
 - Enhanced(Inspector v2): Snyk 기반, 지속 스캔, OS + 언어 의존성, 24h 주기 재스캔
 
-> 🔍 **더 깊이**: ECR Enhanced Scanning이 "24h 주기 재스캔"을 하는 이유는 **CVE는 코드가 변하지 않아도 새로 발견되기 때문**이다. 예를 들어 한 번 빌드해 둔 이미지가 어제는 깨끗했는데, 오늘 새벽 log4j 같은 신규 CVE가 공개되면 같은 이미지가 갑자기 취약해진다. Inspector는 매일 CVE DB와 이미지 manifest를 다시 매칭해 "now-known vulnerability"를 발견한다. 이게 prod에 떠 있는 컨테이너 보안의 핵심 — 빌드 시점 스캔만으로는 부족하다.
+> ECR Enhanced Scanning이 "24h 주기 재스캔"을 하는 이유는 **CVE는 코드가 변하지 않아도 새로 발견되기 때문**이다. 예를 들어 한 번 빌드해 둔 이미지가 어제는 깨끗했는데, 오늘 새벽 log4j 같은 신규 CVE가 공개되면 같은 이미지가 갑자기 취약해진다. Inspector는 매일 CVE DB와 이미지 manifest를 다시 매칭해 "now-known vulnerability"를 발견한다. 이게 prod에 떠 있는 컨테이너 보안의 핵심 — 빌드 시점 스캔만으로는 부족하다.
 
-> 💡 **관련 이론**: 2021년 12월 9일 공개된 Log4Shell(CVE-2021-44228, CVSS 10.0)이 보여준 가장 큰 교훈은 "이미 prod에 떠 있는 워크로드의 의존성을 실시간 추적해야 한다"는 점이다. AWS는 그 다음 달인 2022년 1월에 Lambda 함수 코드 스캔을 Inspector에 추가했고, 이는 우연이 아니다. SBOM이 미국 행정명령 EO 14028(2021)로 사실상 의무화된 것도 같은 흐름.
+> 2021년 12월 9일 공개된 Log4Shell(CVE-2021-44228, CVSS 10.0)이 보여준 가장 큰 교훈은 "이미 prod에 떠 있는 워크로드의 의존성을 실시간 추적해야 한다"는 점이다. AWS는 그 다음 달인 2022년 1월에 Lambda 함수 코드 스캔을 Inspector에 추가했고, 이는 우연이 아니다. SBOM이 미국 행정명령 EO 14028(2021)로 사실상 의무화된 것도 같은 흐름.
 
 ### 4. DevSecOps Shift-Left 파이프라인 — 전체 그림
 
@@ -154,9 +154,9 @@ SLSA(Supply-chain Levels for Software Artifacts)는 Google이 2021년 SolarWinds
 | **L3** | Source/build platform 격리, isolated build, non-falsifiable provenance | VPC CodeBuild + 격리 IAM Role + in-toto attestation |
 | **L4** | 2-person review + hermetic/reproducible build | + Approval Rule Template + 빌드 결정성 보장 |
 
-> 📚 **사례**: 2020년 12월 SolarWinds Orion 사고는 빌드 시스템 자체가 침투당해 정상 코드에 SUNBURST 백도어가 주입된 사건이다. 18,000개 조직이 영향받았고 그중 미국 재무부·국토안보부·Microsoft·FireEye가 포함됐다. 사후 분석 결과: ① 빌드 서버에 직접 접근 가능한 권한이 너무 광범위 ② provenance가 없어 정상 빌드와 침투 빌드 구분 불가 ③ 서명은 있었지만 서명 키 자체가 빌드 서버에 있어서 같이 탈취됨. SLSA L3가 정확히 이 세 가지를 막기 위한 표준이다.
+> 2020년 12월 SolarWinds Orion 사고는 빌드 시스템 자체가 침투당해 정상 코드에 SUNBURST 백도어가 주입된 사건이다. 18,000개 조직이 영향받았고 그중 미국 재무부·국토안보부·Microsoft·FireEye가 포함됐다. 사후 분석 결과: ① 빌드 서버에 직접 접근 가능한 권한이 너무 광범위 ② provenance가 없어 정상 빌드와 침투 빌드 구분 불가 ③ 서명은 있었지만 서명 키 자체가 빌드 서버에 있어서 같이 탈취됨. SLSA L3가 정확히 이 세 가지를 막기 위한 표준이다.
 
-> 🔍 **더 깊이**: SLSA L3의 "non-falsifiable provenance"는 **빌드 서비스 외부의 서명 키**로 provenance를 서명한다는 뜻이다. AWS에서는 CodeBuild가 끝난 후 별도 Lambda가 KMS로 서명한 in-toto attestation을 만들어 ECR OCI artifact의 별도 layer로 push 하는 패턴. AWS Signer for Containers(Notation 기반)가 이를 표준화한다. cosign/Sigstore의 keyless 모드와 비교하면, AWS는 KMS-backed라 키 회전·접근 제어가 더 명확하지만 OIDC keyless의 "키 자체가 없는" 단순함은 없다.
+> SLSA L3의 "non-falsifiable provenance"는 **빌드 서비스 외부의 서명 키**로 provenance를 서명한다는 뜻이다. AWS에서는 CodeBuild가 끝난 후 별도 Lambda가 KMS로 서명한 in-toto attestation을 만들어 ECR OCI artifact의 별도 layer로 push 하는 패턴. AWS Signer for Containers(Notation 기반)가 이를 표준화한다. cosign/Sigstore의 keyless 모드와 비교하면, AWS는 KMS-backed라 키 회전·접근 제어가 더 명확하지만 OIDC keyless의 "키 자체가 없는" 단순함은 없다.
 
 ### 6. 시크릿 누출 방지 — 다층 방어
 
@@ -233,7 +233,7 @@ Developer → CodeBuild 빌드 → S3에 zip 업로드
 
 EKS에서 이미지 정책 강제는 **`ratify` admission webhook**(AWS Signer) 또는 **Sigstore `policy-controller`**(cosign). 둘 다 OPA Gatekeeper / Kyverno로 정책 표현 가능.
 
-> 🔍 **더 깊이**: Sigstore의 keyless 서명은 **단명 X.509 인증서 + 투명성 로그(Rekor)**의 조합이다. 개발자가 GitHub OIDC 토큰을 Fulcio CA에 제출하면 10분짜리 X.509 인증서가 발급되고, 그 인증서로 서명한 뒤 Rekor 투명성 로그에 기록한다. 키 관리가 없어 분실 위험이 없지만, 검증 시점에 Fulcio + Rekor에 의존하는 게 단점. AWS Signer는 키가 KMS에 영구 보관되어 운영 모델이 다르다 — **enterprise 환경 + IAM 일원화**에는 AWS Signer가, **오픈소스 프로젝트 + 분산 신뢰**에는 cosign이 적합.
+> Sigstore의 keyless 서명은 **단명 X.509 인증서 + 투명성 로그(Rekor)**의 조합이다. 개발자가 GitHub OIDC 토큰을 Fulcio CA에 제출하면 10분짜리 X.509 인증서가 발급되고, 그 인증서로 서명한 뒤 Rekor 투명성 로그에 기록한다. 키 관리가 없어 분실 위험이 없지만, 검증 시점에 Fulcio + Rekor에 의존하는 게 단점. AWS Signer는 키가 KMS에 영구 보관되어 운영 모델이 다르다 — **enterprise 환경 + IAM 일원화**에는 AWS Signer가, **오픈소스 프로젝트 + 분산 신뢰**에는 cosign이 적합.
 
 ### CodeGuru Reviewer 비용/효과 + 한계
 
@@ -312,7 +312,7 @@ Shift-Left Security Pipeline (Full)
 
 ---
 
-## ⭐ 핵심 포인트 (시험 출제 빈도 높음)
+## ⭐ 핵심 포인트
 
 1. ⭐ CodeGuru **Reviewer**(코드 품질) vs **Security**(보안 패턴, 다언어) vs **Profiler**(런타임)
 2. ⭐ Lambda Code Signing은 `UntrustedArtifactOnDeployment=Enforce` 일 때만 차단

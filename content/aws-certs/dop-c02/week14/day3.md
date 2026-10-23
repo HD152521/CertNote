@@ -12,7 +12,7 @@ Config의 발상은 새롭지 않다. **형상 관리(Configuration Management)*
 
 AWS Config는 정확히 이 폐루프를 인프라에 건다. **목표 상태**는 Config Rule(정책)이, **측정**은 Configuration Recorder(상태 기록)가, **오차 판정**은 Rule 평가(COMPLIANT/NON_COMPLIANT)가, **조작**은 Remediation(자동 수정)이 맡는다. 드리프트가 생기면 오차가 검출되고, Remediation이 실제 상태를 목표로 되돌린다 — 온도조절기가 방을 설정 온도로 되돌리듯.
 
-> 💡 **관련 이론**: 형상 관리 도구는 크게 **수렴형(convergent)**과 **멱등형(idempotent)** 사상을 공유한다. 멱등성(idempotency)은 "같은 작업을 여러 번 적용해도 결과가 한 번 적용한 것과 같다"는 성질로(수학에서 `f(f(x)) = f(x)`), Ansible의 "이미 목표 상태면 아무것도 안 한다"가 이 원리다. Config의 Remediation도 멱등적이어야 한다 — NON_COMPLIANT를 교정하는 SSM 문서를 여러 번 실행해도 부작용이 없어야 한다. 또 하나의 구분이 **명령형(imperative, "이 명령들을 실행하라") vs 선언형(declarative, "이 상태가 되게 하라")**이다. Config는 철저히 선언형이다 — "S3는 암호화돼 있어야 한다"는 목표만 선언하고, 어떻게 거기 도달할지는 Remediation에 위임한다. 선언형의 장점은 현재 상태가 어떻든 목표로 수렴시킨다는 것이다.
+> 형상 관리 도구는 크게 **수렴형(convergent)**과 **멱등형(idempotent)** 사상을 공유한다. 멱등성(idempotency)은 "같은 작업을 여러 번 적용해도 결과가 한 번 적용한 것과 같다"는 성질로(수학에서 `f(f(x)) = f(x)`), Ansible의 "이미 목표 상태면 아무것도 안 한다"가 이 원리다. Config의 Remediation도 멱등적이어야 한다 — NON_COMPLIANT를 교정하는 SSM 문서를 여러 번 실행해도 부작용이 없어야 한다. 또 하나의 구분이 **명령형(imperative, "이 명령들을 실행하라") vs 선언형(declarative, "이 상태가 되게 하라")**이다. Config는 철저히 선언형이다 — "S3는 암호화돼 있어야 한다"는 목표만 선언하고, 어떻게 거기 도달할지는 Remediation에 위임한다. 선언형의 장점은 현재 상태가 어떻든 목표로 수렴시킨다는 것이다.
 
 ## Configuration Item — 모든 변경의 시점 스냅샷
 
@@ -20,7 +20,7 @@ Config의 토대는 **Configuration Item(CI)**이다. CI는 특정 리소스의 
 
 CI가 강력한 이유는 **시간 축**이다. "이 보안 그룹이 6개월 전 어떤 상태였나", "이 변경 직전 무엇이 바뀌었나"를 되짚을 수 있다. 이것이 사고 조사(forensics)와 변경 감사의 토대가 된다.
 
-> 🔍 **더 깊이**: Config가 리소스 간 **관계(relationship)**를 기록하는 게 단순 속성 기록보다 중요하다. CI는 "EC2 i-xxx는 SG sg-yyy에 연결됨, 서브넷 subnet-zzz에 있음, EBS vol-www를 붙임"처럼 그래프 구조를 담는다. 이 덕분에 Config는 단순 리스트가 아니라 **리소스 의존성 그래프(resource dependency graph)**를 구성한다. "이 SG를 지우면 영향받는 리소스는?", "이 서브넷에 무엇이 들어 있나" 같은 질의가 가능해진다. 이는 CMDB(Configuration Management Database) — ITIL이 정의한 IT 자산·관계의 중앙 저장소 — 의 클라우드 네이티브 구현이다. Advanced Query(뒤에서 볼)가 SQL로 이 그래프를 질의할 수 있는 이유가 여기 있다.
+> Config가 리소스 간 **관계(relationship)**를 기록하는 게 단순 속성 기록보다 중요하다. CI는 "EC2 i-xxx는 SG sg-yyy에 연결됨, 서브넷 subnet-zzz에 있음, EBS vol-www를 붙임"처럼 그래프 구조를 담는다. 이 덕분에 Config는 단순 리스트가 아니라 **리소스 의존성 그래프(resource dependency graph)**를 구성한다. "이 SG를 지우면 영향받는 리소스는?", "이 서브넷에 무엇이 들어 있나" 같은 질의가 가능해진다. 이는 CMDB(Configuration Management Database) — ITIL이 정의한 IT 자산·관계의 중앙 저장소 — 의 클라우드 네이티브 구현이다. Advanced Query(뒤에서 볼)가 SQL로 이 그래프를 질의할 수 있는 이유가 여기 있다.
 
 > ⚠️ **함정**: Config와 CloudTrail을 혼동하면 안 된다. **CloudTrail**은 "누가 무슨 API를 언제 호출했나"(행위·감사 로그)를 기록하고, **Config**는 "리소스가 그 결과 어떤 상태가 됐나"(상태·형상)를 기록한다. "누가 이 SG를 바꿨나"는 CloudTrail, "그 SG가 지금/과거에 어떤 규칙을 가졌나"는 Config다. 둘은 보완 관계로, CI는 변경을 일으킨 CloudTrail 이벤트를 연결해 "누가 → 무엇을 → 어떤 상태로" 전체 그림을 준다. 시험에서 "리소스 상태 변화 추적·컴플라이언스 평가"는 Config, "API 호출 감사·사용자 추적"은 CloudTrail이다.
 
@@ -38,7 +38,7 @@ Config Rule은 리소스가 정책을 지키는지 평가한다. 세 종류가 �
 
 평가 트리거는 두 가지다. **Configuration change 트리거**는 리소스가 바뀔 때마다 평가하고(거의 실시간), **Periodic 트리거**는 정해진 주기(예: 24시간)로 평가한다. 외부 상태에 의존하는 규칙은 주기 평가를, 변경 즉시 잡아야 하는 규칙은 변경 트리거를 쓴다.
 
-> 🔍 **더 깊이**: **Custom Policy Rule의 Guard DSL**이 왜 중요한가. AWS **CloudFormation Guard**는 정책을 선언적으로 표현하는 도메인 특화 언어로(policy-as-code), `Resources.*[ Type == "AWS::S3::Bucket" ] { Properties.BucketEncryption EXISTS }`처럼 "이 리소스 타입은 이 속성을 가져야 한다"를 룰로 쓴다. 이는 Kubernetes 생태계의 **OPA(Open Policy Agent)/Rego**, HashiCorp의 **Sentinel**과 같은 계보의 정책 엔진이다. 핵심 가치는 "Lambda 코드(명령형)로 평가 로직을 짜는 대신, 정책을 선언적으로 기술해 사람이 읽고 검증·버전 관리할 수 있게" 하는 것이다. Guard 룰은 배포 전(CI/CD에서 `cfn-guard validate`로 템플릿 검사)과 배포 후(Config Custom Policy Rule로 실제 리소스 평가) 양쪽에 같은 룰을 재사용할 수 있어, "shift-left"(배포 전 차단)와 "런타임 평가"를 하나의 정책 언어로 통일한다.
+> **Custom Policy Rule의 Guard DSL**이 왜 중요한가. AWS **CloudFormation Guard**는 정책을 선언적으로 표현하는 도메인 특화 언어로(policy-as-code), `Resources.*[ Type == "AWS::S3::Bucket" ] { Properties.BucketEncryption EXISTS }`처럼 "이 리소스 타입은 이 속성을 가져야 한다"를 룰로 쓴다. 이는 Kubernetes 생태계의 **OPA(Open Policy Agent)/Rego**, HashiCorp의 **Sentinel**과 같은 계보의 정책 엔진이다. 핵심 가치는 "Lambda 코드(명령형)로 평가 로직을 짜는 대신, 정책을 선언적으로 기술해 사람이 읽고 검증·버전 관리할 수 있게" 하는 것이다. Guard 룰은 배포 전(CI/CD에서 `cfn-guard validate`로 템플릿 검사)과 배포 후(Config Custom Policy Rule로 실제 리소스 평가) 양쪽에 같은 룰을 재사용할 수 있어, "shift-left"(배포 전 차단)와 "런타임 평가"를 하나의 정책 언어로 통일한다.
 
 ```
 rule s3_bucket_must_be_encrypted {
@@ -70,7 +70,7 @@ aws configservice put-conformance-pack --conformance-pack-name security-baseline
   --template-s3-uri s3://conformance-packs/security-baseline.yaml
 ```
 
-> 🔍 **더 깊이**: Conformance Pack은 **내부적으로 CloudFormation StackSets를 사용**해 조직 전체(OU)에 배포된다. 즉 "규칙 묶음을 정의하면 StackSets가 각 계정·리전에 동일하게 푸시"하는 구조다. 이 때문에 Conformance Pack은 StackSets의 배포 모델(병렬·순차, 실패 허용 임계값)을 물려받는다. 둘의 관계를 정리하면: **StackSets**는 임의의 CloudFormation 리소스를 멀티 계정 배포하는 범용 도구이고, **Conformance Pack**은 그 위에 "Config Rule + Remediation 묶음"이라는 특화 추상을 얹은 것이다. 시험에서 "PCI/NIST 같은 컴플라이언스 묶음을 OU 전체에 배포"는 Conformance Pack, "임의의 인프라 리소스를 멀티 계정 배포"는 StackSets다.
+> Conformance Pack은 **내부적으로 CloudFormation StackSets를 사용**해 조직 전체(OU)에 배포된다. 즉 "규칙 묶음을 정의하면 StackSets가 각 계정·리전에 동일하게 푸시"하는 구조다. 이 때문에 Conformance Pack은 StackSets의 배포 모델(병렬·순차, 실패 허용 임계값)을 물려받는다. 둘의 관계를 정리하면: **StackSets**는 임의의 CloudFormation 리소스를 멀티 계정 배포하는 범용 도구이고, **Conformance Pack**은 그 위에 "Config Rule + Remediation 묶음"이라는 특화 추상을 얹은 것이다. 시험에서 "PCI/NIST 같은 컴플라이언스 묶음을 OU 전체에 배포"는 Conformance Pack, "임의의 인프라 리소스를 멀티 계정 배포"는 StackSets다.
 
 ## Auto-Remediation — 폐루프를 닫는 조작 단계
 
@@ -96,7 +96,7 @@ aws configservice put-remediation-configurations \
 
 > ⚠️ **함정**: 자동 Remediation에는 위험한 시나리오가 있다 — **수정-재위반 루프(flapping)**. 어떤 외부 프로세스가 계속 리소스를 NON_COMPLIANT 상태로 되돌리면(예: 다른 자동화가 SG를 열고, Config가 닫고, 다시 열고…), Config가 무한 수정을 시도해 API 스로틀·비용 폭증·소음을 일으킨다. `MaximumAutomaticAttempts`가 이 루프를 끊는 안전장치다. 또 Remediation이 **파괴적**일 수 있다 — "퍼블릭 버킷을 비공개로 강제"가 정당한 퍼블릭 웹사이트 버킷을 망가뜨릴 수 있다. 그래서 프로덕션에선 중요 리소스에 예외 태그를 두거나, 파괴적 수정은 `Automatic:false`로 사람 승인을 끼운다. 시험에서 "자동 수정이 무한 반복된다"의 답은 보통 "외부에서 계속 위반 상태로 되돌림 + MaximumAutomaticAttempts 미설정"이다.
 
-> 📚 **사례**: 드리프트와 잘못된 수정의 위험을 보여준 유명한 사고로 2017년 GitLab의 데이터베이스 삭제 사건이 있다. 한 엔지니어가 복제 지연 문제를 수습하다 프로덕션 DB 디렉터리를 수동으로 지웠고, 다섯 개의 백업 메커니즘이 모두 작동하지 않아 약 6시간의 데이터가 유실됐다. 핵심 교훈은 "수동 개입은 형상 관리의 적이며, 안전망(백업·검증)이 실제로 작동하는지 상시 확인해야 한다"는 것이다. Config의 가치가 여기 있다 — 백업 설정·암호화·복제 같은 안전망 자체가 켜져 있는지를 규칙으로 상시 평가하고(예: `db-instance-backup-enabled`), 누군가 꺼 두면 NON_COMPLIANT로 잡아 자동 교정한다. "안전망이 켜져 있다고 믿지 말고, 켜져 있음을 상시 증명하라"가 폐루프 컴플라이언스의 정신이다.
+> 드리프트와 잘못된 수정의 위험을 보여준 유명한 사고로 2017년 GitLab의 데이터베이스 삭제 사건이 있다. 한 엔지니어가 복제 지연 문제를 수습하다 프로덕션 DB 디렉터리를 수동으로 지웠고, 다섯 개의 백업 메커니즘이 모두 작동하지 않아 약 6시간의 데이터가 유실됐다. 핵심 교훈은 "수동 개입은 형상 관리의 적이며, 안전망(백업·검증)이 실제로 작동하는지 상시 확인해야 한다"는 것이다. Config의 가치가 여기 있다 — 백업 설정·암호화·복제 같은 안전망 자체가 켜져 있는지를 규칙으로 상시 평가하고(예: `db-instance-backup-enabled`), 누군가 꺼 두면 NON_COMPLIANT로 잡아 자동 교정한다. "안전망이 켜져 있다고 믿지 말고, 켜져 있음을 상시 증명하라"가 폐루프 컴플라이언스의 정신이다.
 
 ## Aggregator — 멀티 계정·리전 통합 조회
 
@@ -137,7 +137,7 @@ Config는 컴플라이언스 상태가 바뀔 때 EventBridge로 이벤트를 �
 
 Config는 **리소스 변경(CI 생성)당 과금**된다. 자주 바뀌는 리소스(예: Auto Scaling으로 끊임없이 뜨고 지는 EC2, 빈번히 갱신되는 메타데이터)는 비용을 키운다. **recordingMode**로 모든 리소스를 기록할지, 특정 타입만 기록할지, 변경 빈도가 높은 리소스를 일별로 묶을지를 조절한다.
 
-> 💡 **관련 이론**: 이 비용 구조는 **관측 가능성(observability)의 근본 트레이드오프** — "더 많이 기록할수록 더 잘 보이지만 더 비싸다" — 의 한 사례다. 분산 추적(distributed tracing)에서 **샘플링(sampling)**으로 일부 트레이스만 저장하는 것과 같은 발상이다. Config에선 "모든 변경을 빠짐없이 기록(완전 감사 가능, 고비용)"과 "중요 리소스만 선택 기록(저비용, 사각지대)" 사이를 골라야 한다. 컴플라이언스가 강제되는 리소스(IAM·S3·SG)는 빠짐없이, 노이즈가 많고 규제 무관한 리소스는 제외하는 식의 선별이 실무 패턴이다. "관측은 공짜가 아니다"라는 원칙이 Config 비용 설계의 핵심이다.
+> 이 비용 구조는 **관측 가능성(observability)의 근본 트레이드오프** — "더 많이 기록할수록 더 잘 보이지만 더 비싸다" — 의 한 사례다. 분산 추적(distributed tracing)에서 **샘플링(sampling)**으로 일부 트레이스만 저장하는 것과 같은 발상이다. Config에선 "모든 변경을 빠짐없이 기록(완전 감사 가능, 고비용)"과 "중요 리소스만 선택 기록(저비용, 사각지대)" 사이를 골라야 한다. 컴플라이언스가 강제되는 리소스(IAM·S3·SG)는 빠짐없이, 노이즈가 많고 규제 무관한 리소스는 제외하는 식의 선별이 실무 패턴이다. "관측은 공짜가 아니다"라는 원칙이 Config 비용 설계의 핵심이다.
 
 ## Config vs Security Hub Standards
 
@@ -151,7 +151,7 @@ Day 2에서 봤듯 Security Hub Standards의 다수 컨트롤은 내부적으로
 
 > 🎯 **시나리오**: "조직 전체(OU)에 ①모든 신규/기존 계정의 S3 버킷이 퍼블릭이 아니고 암호화돼 있어야 하며, 위반 시 사람 없이 즉시 자동 교정 ②EBS는 암호화돼 있어야 함 ③모든 계정·리전의 비준수 리소스를 Audit 계정 한 화면에서 조회 ④자체 정책(태그 필수)은 Lambda 없이 코드로 표현 ⑤자동 수정이 무한 반복되지 않도록 보호하라." → ① S3 퍼블릭·암호화 Managed Rule을 Conformance Pack에 묶어 StackSets 흐름으로 OU 배포 + 각 규칙에 SSM Automation Remediation(`Automatic:true`) 연결, ② `encrypted-volumes` Managed Rule + Remediation, ③ Audit 계정에 Organization Aggregator(AllAwsRegions) + Advanced Query, ④ 태그 필수 정책은 Custom Policy Rule(Guard DSL)로 작성, ⑤ Remediation에 `MaximumAutomaticAttempts`·`RetryAttemptSeconds` 설정 + 정당한 예외 리소스에 제외 태그. 컴플라이언스 변화는 EventBridge(`Config Rules Compliance Change`)로 Slack 알림.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 네 가지다. 첫째, **Config는 폐루프 제어의 인프라 적용**이다 — 목표(Rule)·측정(Recorder)·오차 판정(평가)·조작(Remediation)이라는 온도조절기 모델로, 선언형·멱등 형상 관리의 계보 위에 있다. 둘째, **Configuration Item이 리소스의 시점 상태와 관계 그래프(CMDB)를 기록**하며, 이는 "리소스 상태"를 다루는 점에서 "API 호출"을 다루는 CloudTrail과 보완 관계다. 셋째, **Rule은 Managed/Custom Lambda/Custom Policy(Guard DSL, OPA·Sentinel 계보) 3종**이고, Conformance Pack이 StackSets로 묶음 배포하며, Remediation이 SSM Automation으로 폐루프를 닫되 flapping·파괴적 수정이라는 함정을 `MaximumAutomaticAttempts`·예외 태그로 막는다. 넷째, **Aggregator로 멀티 계정·리전을 통합 조회**하고 Advanced Query로 SQL 질의하며, recordingMode가 관측 가능성의 비용 트레이드오프를 조절하고, Security Hub Standards는 Config를 하위 엔진으로 쓴다.
 

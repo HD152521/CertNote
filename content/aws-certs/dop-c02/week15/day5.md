@@ -27,7 +27,7 @@ Pro 시험의 시나리오 문제는 지식의 양이 아니라 **단서를 읽�
 | "DX must be encrypted" | MACsec / IPSec over DX | Day2 |
 | "EC2 + DC single deploy" | CodeDeploy On-Prem (단일 AppSpec) | Day2 |
 | "burst quickly, diverse instances, Spot" | Karpenter | Day3 |
-| "Git revert rollback" | GitOps (Argo CD/Flux) | Day3 |
+| "Git revert 롤백" | GitOps (Argo CD/Flux) | Day3 |
 | "container cost 30~40% down" | Graviton + Spot/Fargate Spot | Day3 |
 | "auto remediation entry point" | EventBridge → Step Functions/SSM Automation | Day4 |
 | "Runbook >5min, audit" | Step Functions Standard | Day4 |
@@ -35,11 +35,11 @@ Pro 시험의 시나리오 문제는 지식의 양이 아니라 **단서를 읽�
 | "Slack restricted CLI" | AWS Chatbot + 제한된 IAM Role | Day4 |
 | "minimum operational overhead" | Managed 서비스 / Fargate / GitOps | 공통 |
 
-> ⚠️ **함정**: 단서 매핑을 기계적으로 적용하다 **복합 단서**를 놓치면 틀린다. 예: "no static keys"만 보고 IAM Roles Anywhere를 골랐는데, 문제가 EKS 파드 컨텍스트면 답은 Pod Identity/IRSA다. "no internet"만 보고 PrivateLink를 골랐는데, DNS 해석이 안 된다는 추가 단서가 있으면 Route 53 Resolver Endpoint가 진짜 핵심일 수 있다. Pro 문제는 종종 **두 번째 단서가 진짜 변별점**이다 — 첫 단서로 도메인을 좁히고, 두 번째 단서로 그 도메인 안의 정확한 서비스를 고른다. 단서를 하나만 보고 멈추지 말고, 모든 제약 단어를 표시한 뒤 교집합을 찾아라.
+> ⚠️ **함정**: 단서 매핑을 기계적으로 적용하다 **복합 단서**를 놓치면 틀린다. 예: "no static keys"만 보고 IAM Roles Anywhere를 골랐는데, 문제가 EKS 파드 컨텍스트면 답은 Pod Identity/IRSA다. "no internet"만 보고 PrivateLink를 골랐는데, DNS 해석이 안 된다는 추가 단서가 있으면 Route 53 Resolver Endpoint가 진짜 핵심일 수 있다. Pro 문제는 종종 **두 번째 단서가 진짜 변별점**이다 — 첫 단서로 도메인을 좁히고, 두 번째 단서로 그 도메인 안의 정확한 서비스를 고른다. 단서를 하나만 보고 멈추지 말고, 모든 제약 단어를 표시한 뒤 교집합을 찾는다.
 
 ## 매니지드 vs 자체 구축 — Pro의 기본 편향
 
-> 💡 **관련 이론**: Pro 시험이 매니지드 서비스를 선호하는 데는 명확한 운영 철학이 깔려 있다 — **차별화되지 않는 무거운 작업(undifferentiated heavy lifting)의 제거**. AWS Well-Architected의 운영 우수성(Operational Excellence) 기둥은 "비즈니스 가치를 만들지 않는 운영 작업을 매니지드 서비스로 밀어내라"고 권한다. 자체 구축(Jenkins 자가 운영, 자체 오토스케일러, 커스텀 자격 증명 회전)은 동작은 하지만 패치·확장·장애 대응의 toil을 떠안는다. 그래서 "동작하는 두 보기" 중 하나가 매니지드(CodePipeline·Karpenter·Pod Identity·Incident Manager)면 거의 항상 그것이 정답이다. 단, 예외 단서가 있다 — "기존 Jenkins 자산 유지", "특정 커스텀 제어 필요"처럼 명시적 제약이 있으면 점진 이관(CodePipeline + Jenkins Action)이나 EKS 같은 제어 강한 선택이 답이 된다. 기본은 매니지드, 단서가 있으면 예외.
+> Pro 시험이 매니지드 서비스를 선호하는 데는 명확한 운영 철학이 깔려 있다 — **차별화되지 않는 무거운 작업(undifferentiated heavy lifting)의 제거**. AWS Well-Architected의 운영 우수성(Operational Excellence) 기둥은 "비즈니스 가치를 만들지 않는 운영 작업을 매니지드 서비스로 밀어내라"고 권한다. 자체 구축(Jenkins 자가 운영, 자체 오토스케일러, 커스텀 자격 증명 회전)은 동작은 하지만 패치·확장·장애 대응의 toil을 떠안는다. 그래서 "동작하는 두 보기" 중 하나가 매니지드(CodePipeline·Karpenter·Pod Identity·Incident Manager)면 거의 항상 그것이 정답이다. 단, 예외 단서가 있다 — "기존 Jenkins 자산 유지", "특정 커스텀 제어 필요"처럼 명시적 제약이 있으면 점진 이관(CodePipeline + Jenkins Action)이나 EKS 같은 제어 강한 선택이 답이 된다. 기본은 매니지드, 단서가 있으면 예외.
 
 ## 케이스를 가로지르는 공통 축 — 네 도메인을 잇는 다섯 기둥
 
@@ -59,7 +59,7 @@ Week 15의 네 케이스는 표면적으로 달라 보이지만, 실은 같은 �
 - **컨테이너(Day3)**는 파이프라인·관찰성·비용 기둥을 수백 컨테이너 규모로 푸는(Karpenter·GitOps·Container Insights) 스케일 문제다.
 - **서버리스 인시던트(Day4)**는 보안·관찰성 기둥의 신호를 받아 자동 복구로 닫는(EventBridge·Step Functions) 대응 문제다.
 
-> 🔍 **더 깊이**: 이 다섯 기둥이 곧 AWS Well-Architected Framework의 운영 축과 거의 일대일로 대응한다 — IaC·파이프라인은 운영 우수성(Operational Excellence), 보안 집계는 보안(Security), 비용은 비용 최적화(Cost Optimization), 관찰성은 운영 우수성과 신뢰성(Reliability)을 가로지른다. Pro 시험이 특정 서비스 지식만이 아니라 "이 다섯 축을 어떻게 한 시스템에 엮는가"를 묻는 이유가 여기 있다. 그래서 한 문항이 여러 도메인을 동시에 건드릴 때(예: "멀티 계정 환경에서 컨테이너 비용을 모든 계정에 걸쳐 가시화") — 정답은 한 축이 아니라 축의 조합(태그 강제 + Cost Categories + Delegated Admin)이 된다. 단일 서비스만 답하는 보기는 대개 함정이다.
+> 이 다섯 기둥이 곧 AWS Well-Architected Framework의 운영 축과 거의 일대일로 대응한다 — IaC·파이프라인은 운영 우수성(Operational Excellence), 보안 집계는 보안(Security), 비용은 비용 최적화(Cost Optimization), 관찰성은 운영 우수성과 신뢰성(Reliability)을 가로지른다. Pro 시험이 특정 서비스 지식만이 아니라 "이 다섯 축을 어떻게 한 시스템에 엮는가"를 묻는 이유가 여기 있다. 그래서 한 문항이 여러 도메인을 동시에 건드릴 때(예: "멀티 계정 환경에서 컨테이너 비용을 모든 계정에 걸쳐 가시화") — 정답은 한 축이 아니라 축의 조합(태그 강제 + Cost Categories + Delegated Admin)이 된다. 단일 서비스만 답하는 보기는 대개 함정이다.
 
 ## 시간 배분 — 합격은 정답률이 아니라 시간 관리
 

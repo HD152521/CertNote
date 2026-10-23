@@ -2,11 +2,11 @@
 
 Lambda 배포는 인스턴스가 없다. "새 서버를 띄운다"는 개념이 없고, 대신 함수 코드의 **버전**이 있고 그 버전을 가리키는 **Alias**가 있다. Blue/Green의 "트래픽 시프트"가 여기서는 Alias의 가중치(weighted routing) 변경으로 구현된다.
 
-이 단순함이 강점이다. 롤백은 Alias의 가중치를 이전 버전으로 되돌리는 것뿐이다 — 수초면 완료된다. 새 서버를 종료하거나 로드밸런서를 재구성할 필요가 없다. 하지만 이 단순함 뒤에 "정확히 얼마나 트래픽이 어떤 버전으로 가는가"에 대한 수학적 이해가 필요하다. 그것이 Canary와 Linear의 차이이고, 시험에서 가장 자주 혼동되는 부분이다.
+이 단순함이 강점이다. 롤백은 Alias의 가중치를 이전 버전으로 되돌리는 것뿐이다 — 수초면 완료된다. 새 서버를 종료하거나 로드 밸런서를 재구성할 필요가 없다. 하지만 이 단순함 뒤에 "정확히 얼마나 트래픽이 어떤 버전으로 가는가"에 대한 수학적 이해가 필요하다. 그것이 Canary와 Linear의 차이이고, 시험에서 헷갈리기 쉬운 부분이다.
 
 오늘은 Version/Alias 관계, Deployment Configuration 수학, Pre/Post Hook 설계, SAM 통합, Provisioned Concurrency 비용 모델까지 Lambda 배포의 전체 그림을 다룬다.
 
-> 💡 **Day 3의 핵심 프레임**: Lambda 배포 전략 선택은 두 변수의 함수다 — (1) 실패를 감지하는 데 걸리는 시간, (2) 실패 시 영향 범위. 감지가 빠르면 Canary, 점진적 부하 확인이 필요하면 Linear. 이 판단 기준이 있으면 시험 보기 구분이 된다.
+> **Day 3의 핵심 프레임**: Lambda 배포 전략 선택은 두 변수의 함수다 — (1) 실패를 감지하는 데 걸리는 시간, (2) 실패 시 영향 범위. 감지가 빠르면 Canary, 점진적 부하 확인이 필요하면 Linear. 이 판단 기준이 있으면 시험 보기 구분이 된다.
 
 ---
 
@@ -36,7 +36,7 @@ Lambda 배포는 인스턴스가 없다. "새 서버를 띄운다"는 개념이 
 100% 전환  즉시 롤백 (Alias → 구 버전 100%)
 ```
 
-> 🔍 **더 깊이**: Lambda Version은 불변(immutable) 스냅샷이다. `publish-version` 후에는 코드, 런타임, 환경변수, 메모리, 타임아웃이 고정된다. 이 불변성이 "배포 중 다른 변경이 배포를 오염시키지 않는다"는 보장을 준다. 반면 `$LATEST`는 항상 최신 상태를 가리키는 가변 포인터라 배포 중 다른 사람이 코드를 바꾸면 배포 결과가 달라질 수 있다. Canary 배포는 반드시 Version으로만 수행해야 한다.
+> Lambda Version은 불변(immutable) 스냅샷이다. `publish-version` 후에는 코드, 런타임, 환경변수, 메모리, 타임아웃이 고정된다. 이 불변성이 "배포 중 다른 변경이 배포를 오염시키지 않는다"는 보장을 준다. 반면 `$LATEST`는 항상 최신 상태를 가리키는 가변 포인터라 배포 중 다른 사람이 코드를 바꾸면 배포 결과가 달라질 수 있다. Canary 배포는 반드시 Version으로만 수행해야 한다.
 
 ---
 
@@ -83,7 +83,7 @@ arn:aws:lambda:ap-northeast-2:123456789:function:MyFn:live
 
 호출자는 Alias ARN만 알면 된다. Version 전환은 호출자에게 투명하게 일어난다.
 
-> 💡 **관련 이론**: Lambda Alias의 가중 라우팅은 **확률적(stochastic) 분기**다. 각 호출은 독립적으로 난수를 생성해 가중치에 따라 Version을 선택한다. 10% Canary라면 평균적으로 10%가 새 버전으로 가지만, 특정 1000번의 호출 중 정확히 100번이 보장되지는 않는다. 통계적 10%다. 이것이 "Canary 10% 기간 중 정확히 10%의 사용자만 영향받는가?"라는 질문에 "아니오, 통계적으로 10%"가 답인 이유다. 세션 고정(session stickiness)은 기본적으로 없다.
+> Lambda Alias의 가중 라우팅은 **확률적(stochastic) 분기**다. 각 호출은 독립적으로 난수를 생성해 가중치에 따라 Version을 선택한다. 10% Canary라면 평균적으로 10%가 새 버전으로 가지만, 특정 1000번의 호출 중 정확히 100번이 보장되지는 않는다. 통계적 10%다. 이것이 "Canary 10% 기간 중 정확히 10%의 사용자만 영향받는가?"라는 질문에 "아니오, 통계적으로 10%"가 답인 이유다. 세션 고정(session stickiness)은 기본적으로 없다.
 
 > ⚠️ **함정**: `$LATEST`는 Alias에서 routing-config로 사용할 수 없다. `$LATEST`는 항상 최신 코드를 가리키는 가변 포인터라 불변 스냅샷인 Version과 다르다. Canary 배포는 반드시 `publish-version`으로 불변 Version을 만든 후 진행해야 한다. 시험에서 "$LATEST로 Canary 배포"가 보기에 나오면 항상 틀린 답이다.
 
@@ -134,9 +134,9 @@ aws deploy create-deployment-config \
     "type=TimeBasedLinear,timeBasedLinear={linearPercentage=20,linearInterval=5}"
 ```
 
-> 🔍 **더 깊이**: Canary와 Linear의 선택은 **위험 감내(Risk Tolerance)**와 **검증 속도(Validation Speed)**의 트레이드오프다. 금융 거래 함수라면 Canary 10% 30분 동안 충분히 검증하고 싶다 — 작은 트래픽에서 오래 관찰. 정적 콘텐츠 변환 함수라면 Linear 10%/1분으로 10분에 전환 완료해도 충분하다. 워크로드의 "실패 감지에 얼마나 걸리는가"와 "실패 시 영향 범위"를 함께 고려한다. 실패가 즉각 드러나는 함수(동기 API)는 Canary, 실패가 누적되는 함수(배치 처리)는 Linear가 더 적합하다.
+> Canary와 Linear의 선택은 **위험 감내(Risk Tolerance)**와 **검증 속도(Validation Speed)**의 트레이드오프다. 금융 거래 함수라면 Canary 10% 30분 동안 충분히 검증하고 싶다 — 작은 트래픽에서 오래 관찰. 정적 콘텐츠 변환 함수라면 Linear 10%/1분으로 10분에 전환 완료해도 충분하다. 워크로드의 "실패 감지에 얼마나 걸리는가"와 "실패 시 영향 범위"를 함께 고려한다. 실패가 즉각 드러나는 함수(동기 API)는 Canary, 실패가 누적되는 함수(배치 처리)는 Linear가 더 적합하다.
 
-> 📚 **사례**: 2021년 Stripe 엔지니어링: 결제 처리 Lambda에 Canary10Percent30Minutes 배포를 도입했다. 30분 관찰 기간에 실제 결제 트랜잭션의 10%가 새 버전으로 처리된다. 이 기간 CloudWatch에서 `PaymentErrors` 커스텀 메트릭을 모니터링하고, 임계값 초과 시 자동 롤백. 출시 후 4번의 자동 롤백이 발생했고, 모두 30분 내에 자동 복원됐다. 결제 시스템의 실패 비용이 높은 만큼 30분의 긴 관찰 시간이 정당화됐다.
+> 2021년 Stripe 엔지니어링: 결제 처리 Lambda에 Canary10Percent30Minutes 배포를 도입했다. 30분 관찰 기간에 실제 결제 트랜잭션의 10%가 새 버전으로 처리된다. 이 기간 CloudWatch에서 `PaymentErrors` 커스텀 메트릭을 모니터링하고, 임계값 초과 시 자동 롤백. 출시 후 4번의 자동 롤백이 발생했고, 모두 30분 내에 자동 복원됐다. 결제 시스템의 실패 비용이 높은 만큼 30분의 긴 관찰 시간이 정당화됐다.
 
 ---
 
@@ -245,7 +245,7 @@ def handler(event, context):
 
 > ⚠️ **함정**: Hook Lambda의 실행 결과(Lambda invocation 성공/실패)와 `PutLifecycleEventHookExecutionStatus`로 보고하는 결과는 별개다. Hook Lambda가 정상 종료(exit 0)되어도, `PutLifecycleEventHookExecutionStatus`를 호출하지 않으면 CodeDeploy는 Hook 결과를 모른다. 반드시 API 호출로 `Succeeded` 또는 `Failed`를 보고해야 한다. Hook Lambda 실행 타임아웃(15분)이 CodeDeploy Hook Timeout(3600초)보다 짧으므로, Lambda 타임아웃 전에 보고를 완료해야 한다.
 
-> 💡 **관련 이론**: Pre/Post Hook은 **Deployment Gate** 패턴이다. "자동화된 품질 게이트가 통과하지 않으면 다음 단계로 진행하지 않는다"는 원칙이다. CALMS의 Automation 축에서 "검증 자동화"가 여기에 해당한다. 사람이 배포 후 수동으로 확인하는 대신, Hook이 자동으로 검증하고 실패하면 자동 롤백한다. 이 패턴이 DORA의 Change Failure Rate를 줄이는 직접 수단이다.
+> Pre/Post Hook은 **Deployment Gate** 패턴이다. "자동화된 품질 게이트가 통과하지 않으면 다음 단계로 진행하지 않는다"는 원칙이다. CALMS의 Automation 축에서 "검증 자동화"가 여기에 해당한다. 사람이 배포 후 수동으로 확인하는 대신, Hook이 자동으로 검증하고 실패하면 자동 롤백한다. 이 패턴이 DORA의 Change Failure Rate를 줄이는 직접 수단이다.
 
 ---
 
@@ -337,7 +337,7 @@ deployment_group = codedeploy.LambdaDeploymentGroup(self, 'DG',
 )
 ```
 
-> 📚 **사례**: 어떤 팀이 기존에 `$LATEST`를 직접 호출하는 방식으로 Lambda를 배포했다. 배포 중 오류가 발생해도 이미 100% 전환된 상태라 복구에 10분이 걸렸다. SAM `AutoPublishAlias` + Canary10Percent5Minutes로 전환 후, 동일한 오류가 발생했을 때 5분 후 자동 롤백이 일어나 10%의 트래픽만 영향받았다. 나머지 90%는 구 버전으로 정상 처리됐다.
+> 어떤 팀이 기존에 `$LATEST`를 직접 호출하는 방식으로 Lambda를 배포했다. 배포 중 오류가 발생해도 이미 100% 전환된 상태라 복구에 10분이 걸렸다. SAM `AutoPublishAlias` + Canary10Percent5Minutes로 전환 후, 동일한 오류가 발생했을 때 5분 후 자동 롤백이 일어나 10%의 트래픽만 영향받았다. 나머지 90%는 구 버전으로 정상 처리됐다.
 
 ---
 
@@ -379,9 +379,9 @@ aws lambda delete-provisioned-concurrency-config \
   --qualifier 5
 ```
 
-> 💡 **관련 이론**: Provisioned Concurrency + Canary 배포의 비용 모델은 Blue/Green 배포의 "일시적 2배 인스턴스 비용"과 동일한 논리다. 두 버전이 동시에 활성화된 기간에 두 버전 모두 비용이 발생한다. 차이는 EC2는 인스턴스 단위이고, Lambda PC는 "워밍업된 실행 환경" 단위라는 것이다. Canary 기간이 길수록 이 추가 비용이 누적된다. Canary30Minutes면 30분치 PC 추가 비용, Canary5Minutes면 5분치만 추가다.
+> Provisioned Concurrency + Canary 배포의 비용 모델은 Blue/Green 배포의 "일시적 2배 인스턴스 비용"과 동일한 논리다. 두 버전이 동시에 활성화된 기간에 두 버전 모두 비용이 발생한다. 차이는 EC2는 인스턴스 단위이고, Lambda PC는 "워밍업된 실행 환경" 단위라는 것이다. Canary 기간이 길수록 이 추가 비용이 누적된다. Canary30Minutes면 30분치 PC 추가 비용, Canary5Minutes면 5분치만 추가다.
 
-> ⚠️ **함정**: 구 버전의 Provisioned Concurrency는 배포 완료 후 자동으로 해제되지 않는다. 수동으로 `delete-provisioned-concurrency-config`를 실행하거나, Lambda Application Auto Scaling으로 PC를 관리하는 경우 스케줄을 업데이트해야 한다. 이를 잊으면 아무도 쓰지 않는 구 버전 PC가 계속 과금된다.
+> 구 버전의 Provisioned Concurrency는 배포 완료 후 자동으로 해제되지 않는다. 수동으로 `delete-provisioned-concurrency-config`를 실행하거나, Lambda Application Auto Scaling으로 PC를 관리하는 경우 스케줄을 업데이트해야 한다. 이를 잊으면 아무도 쓰지 않는 구 버전 PC가 계속 과금된다.
 
 ---
 
@@ -414,13 +414,13 @@ aws cloudwatch put-composite-alarm \
   --alarm-rule "ALARM(MyFn-live-ErrorRate) OR ALARM(MyFn-live-P99Latency)"
 ```
 
-Composite Alarm을 Deployment Group에 연결하면 "에러율 또는 레이턴시 중 하나라도 기준 초과 시 롤백"이 가능하다.
+Composite Alarm을 Deployment Group에 연결하면 "에러율 또는 지연 시간 중 하나라도 기준 초과 시 롤백"이 가능하다.
 
-> 🔍 **더 깊이**: Lambda 메트릭의 Dimension 설계가 Canary 배포 모니터링의 핵심이다. `FunctionName=MyFn`만 지정하면 Function 전체의 에러가 카운트되고, `FunctionName=MyFn, Resource=MyFn:live`로 지정하면 Alias를 통한 호출만 카운트된다. Canary 10% 상태에서 Alias 단위 에러가 5개 발생했다면, 실제 새 버전 관련 에러는 이 중 통계적으로 약 1개(10%)다. 이 점을 고려해 알람 임계값을 설계해야 한다 — Canary 비율이 낮을수록 새 버전 에러가 Alias 메트릭에서 희석된다.
+> Lambda 메트릭의 Dimension 설계가 Canary 배포 모니터링의 핵심이다. `FunctionName=MyFn`만 지정하면 Function 전체의 에러가 카운트되고, `FunctionName=MyFn, Resource=MyFn:live`로 지정하면 Alias를 통한 호출만 카운트된다. Canary 10% 상태에서 Alias 단위 에러가 5개 발생했다면, 실제 새 버전 관련 에러는 이 중 통계적으로 약 1개(10%)다. 이 점을 고려해 알람 임계값을 설계해야 한다 — Canary 비율이 낮을수록 새 버전 에러가 Alias 메트릭에서 희석된다.
 
 ---
 
-## 마무리: Lambda 배포 판단 트리
+## 정리
 
 ```
 Lambda 배포 전략 선택

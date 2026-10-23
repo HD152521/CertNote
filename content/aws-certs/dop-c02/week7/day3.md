@@ -28,9 +28,9 @@ Version이 게시되는 순간 코드(`CodeSha256`), 환경 변수, 메모리, �
 
 이 불변성이 왜 중요할까. **재현 가능성**과 **롤백 안전성** 때문이다. 어제 배포한 V6를 오늘 다시 호출해도 동일한 코드·환경에서 실행된다는 보장이 있어야, "어제 V6에선 잘 됐는데 오늘 V7에서 망가졌다"는 비교가 가능하다. 만약 Version이 가변이면 디버깅은 지옥이 된다.
 
-> 💡 **관련 이론**: 불변 스냅샷 모델은 함수형 프로그래밍의 **persistent data structure**(Chris Okasaki 1996)와 같은 패턴이다. Git commit, Docker image digest, AWS AMI ID, S3 object version, Kubernetes ReplicaSet 모두 같은 발상. 핵심은 "한 번 만든 것은 절대 안 바꾸고, 변경은 새 객체를 만든다"는 원칙. 이게 깨지면 분산 시스템의 일관성과 디버깅이 무너진다. Lambda Version은 이 원칙을 강제하는 enforcement 메커니즘.
+> 불변 스냅샷 모델은 함수형 프로그래밍의 **persistent data structure**(Chris Okasaki 1996)와 같은 패턴이다. Git commit, Docker image digest, AWS AMI ID, S3 object version, Kubernetes ReplicaSet 모두 같은 발상. 핵심은 "한 번 만든 것은 절대 안 바꾸고, 변경은 새 객체를 만든다"는 원칙. 이게 깨지면 분산 시스템의 일관성과 디버깅이 무너진다. Lambda Version은 이 원칙을 강제하는 enforcement 메커니즘.
 
-> 🔍 **더 깊이**: `$LATEST`는 unversioned mutable working copy다. Version 번호 1부터 양의 정수로 증가하며, 한 번 사용된 번호는 재활용되지 않는다(`delete-function --qualifier 5` 후에도 V5는 영구히 결번). 이게 Git의 commit hash가 한 번 만들어지면 가비지 컬렉션 후에도 재사용되지 않는 것과 동일한 보장. `CodeSha256` 필드는 zip 콘텐츠의 SHA-256으로, 동일 코드를 두 번 게시하면 같은 sha256을 가지지만 Version 번호는 다르다. 이는 CI 재실행 같은 멱등성 검증에 활용 가능.
+> `$LATEST`는 unversioned mutable working copy다. Version 번호 1부터 양의 정수로 증가하며, 한 번 사용된 번호는 재활용되지 않는다(`delete-function --qualifier 5` 후에도 V5는 영구히 결번). 이게 Git의 commit hash가 한 번 만들어지면 가비지 컬렉션 후에도 재사용되지 않는 것과 동일한 보장. `CodeSha256` 필드는 zip 콘텐츠의 SHA-256으로, 동일 코드를 두 번 게시하면 같은 sha256을 가지지만 Version 번호는 다르다. 이는 CI 재실행 같은 멱등성 검증에 활용 가능.
 
 ## Alias: Symbolic Link의 클라우드 버전
 
@@ -129,9 +129,9 @@ ErrorRateAlarm:
     TreatMissingData: notBreaching
 ```
 
-> 🔍 **더 깊이**: Lambda CloudWatch Metric은 기본적으로 `FunctionName` 차원만 갖지만, `Resource` 차원을 추가하면 Alias/Version별 분리 메트릭이 나온다. `MyFn:live`, `MyFn:7` 같은 식. Canary 배포 중 신구 Version의 에러율을 따로 보려면 이 차원이 필수. 추가 비용은 메트릭당 standard rate(처음 10000개 무료, 이후 $0.30/metric). PostTraffic Hook은 종종 이 분리 메트릭을 조회해 신규 Version의 P99 latency가 기존 대비 1.5배 미만인지 확인하는 코드를 작성한다.
+> Lambda CloudWatch Metric은 기본적으로 `FunctionName` 차원만 갖지만, `Resource` 차원을 추가하면 Alias/Version별 분리 메트릭이 나온다. `MyFn:live`, `MyFn:7` 같은 식. Canary 배포 중 신구 Version의 에러율을 따로 보려면 이 차원이 필수. 추가 비용은 메트릭당 standard rate(처음 10000개 무료, 이후 $0.30/metric). PostTraffic Hook은 종종 이 분리 메트릭을 조회해 신규 Version의 P99 latency가 기존 대비 1.5배 미만인지 확인하는 코드를 작성한다.
 
-> 📚 **사례**: 2021년 한 e-commerce 회사가 Canary10Percent5Minutes로 배포 중 5분 안에 Error Alarm이 발동되지 않아 100% 시프트 후 다음 시간대에 메모리 leak이 폭발한 사건이 있었다. 원인은 (1) leak이 단계적이라 5분 안에 임계치 도달하지 못함, (2) Alarm이 1분 평균이라 spike만 잡고 누적 패턴 못 잡음. 이후 팀은 `Canary10Percent30Minutes`로 늘리고 PostTraffic Hook에서 메모리 사용량 trend를 추가 체크하도록 변경. 교훈: Canary 시간은 시나리오의 가장 느린 실패 패턴 기준으로 설정.
+> 2021년 한 e-commerce 회사가 Canary10Percent5Minutes로 배포 중 5분 안에 Error Alarm이 발동되지 않아 100% 시프트 후 다음 시간대에 메모리 leak이 폭발한 사건이 있었다. 원인은 (1) leak이 단계적이라 5분 안에 임계치 도달하지 못함, (2) Alarm이 1분 평균이라 spike만 잡고 누적 패턴 못 잡음. 이후 팀은 `Canary10Percent30Minutes`로 늘리고 PostTraffic Hook에서 메모리 사용량 trend를 추가 체크하도록 변경. 교훈: Canary 시간은 시나리오의 가장 느린 실패 패턴 기준으로 설정.
 
 ## API Gateway가 Alias를 가리키는 두 가지 방식
 
@@ -167,7 +167,7 @@ aws apigatewayv2 create-integration \
 
 이 경우 Integration의 URI 자체가 Alias ARN. 변경하려면 Integration 자체를 업데이트해야 한다.
 
-> ⚠️ **함정**: API Gateway가 Lambda를 호출하려면 Lambda 측에 **자원 정책**(Resource-based Policy)이 필요하고, 이는 `add-permission` API로 추가한다. 핵심은 `--qualifier` 플래그.
+> ⚠️ **함정**: API Gateway가 Lambda를 호출하려면 Lambda 측에 **자원 정책**(Resource-based Policy)이 필요하고, 이는 `add-permission` API로 추가한다. `--qualifier` 플래그가 관건이다.
 
 ```bash
 # ❌ 잘못된 방식 — Function ARN에만 권한
@@ -209,7 +209,7 @@ PC는 **Version 또는 Alias** 수준에서 설정 가능하지만, `$LATEST`에
 | 비용 | 무료 | 활성 시간 비례 ($0.0000041667/GB-s) |
 | Cold Start | 영향 없음 (한도 도달 시 throttle) | 제거 (PC 용량 내) |
 | 적용 단위 | Function | Alias 또는 Version |
-| 한도 도달 시 | 429 Throttle | 일반 cold start로 폴백 (요청은 처리됨) |
+| 한도 도달 시 | 429 Throttle | 일반 콜드 스타트로 폴백 (요청은 처리됨) |
 | Auto Scaling | 불가 | Application Auto Scaling 가능 |
 
 ```bash
@@ -234,9 +234,9 @@ aws application-autoscaling put-scaling-policy \
   }'
 ```
 
-> 🔍 **더 깊이**: PC가 켜진 상태에서 Canary 배포가 일어나면 어떻게 될까. 답은 "**두 Version 모두 PC를 가져야 함**"이다. SAM `DeploymentPreference`가 자동으로 새 Version에 PC를 미리 할당한 뒤 시프트를 시작한다. 만약 자동 할당이 없으면 신규 Version은 트래픽을 받자마자 cold start를 다 겪게 되어 Canary의 의미가 깨진다. 결과는 배포 중 **PC 비용이 일시적으로 2배**가 된다(V5에 PC 10, V6에 PC 10 동시). 비용 민감 워크로드에서는 이 점이 PC를 망설이는 이유가 된다.
+> PC가 켜진 상태에서 Canary 배포가 일어나면 어떻게 될까. 답은 "**두 Version 모두 PC를 가져야 함**"이다. SAM `DeploymentPreference`가 자동으로 새 Version에 PC를 미리 할당한 뒤 시프트를 시작한다. 만약 자동 할당이 없으면 신규 Version은 트래픽을 받자마자 콜드 스타트를 다 겪게 되어 Canary의 의미가 깨진다. 결과는 배포 중 **PC 비용이 일시적으로 2배**가 된다(V5에 PC 10, V6에 PC 10 동시). 비용 민감 워크로드에서는 이 점이 PC를 망설이는 이유가 된다.
 
-> ⚠️ **함정**: PC 사용량이 PC 용량을 초과하면 초과분은 일반 cold start로 처리되며 호출이 거부되지 않는다(이게 Reserved와 다른 점). 그래서 PC 5개를 설정한 함수에 100개 동시 호출이 들어와도 처음 5개는 cold start 없이, 나머지 95개는 일반 cold start로 처리된다. PC가 throttle이 아닌 "워밍 부스트"임을 정확히 이해할 것. 시험 함정으로 "PC가 한도 역할도 한다"는 보기가 자주 등장한다.
+> PC 사용량이 PC 용량을 초과하면 초과분은 일반 콜드 스타트로 처리되며 호출이 거부되지 않는다(이게 Reserved와 다른 점). 그래서 PC 5개를 설정한 함수에 100개 동시 호출이 들어와도 처음 5개는 콜드 스타트 없이, 나머지 95개는 일반 콜드 스타트로 처리된다. PC가 throttle이 아닌 "워밍 부스트"임을 정확히 이해할 것. 시험 함정으로 "PC가 한도 역할도 한다"는 보기가 오답으로 쓰인다.
 
 ## SnapStart: Java의 Cold Start 혁명
 
@@ -262,7 +262,7 @@ aws lambda update-function-configuration \
 2. 메모리·디스크 상태 스냅샷 캡처 → 암호화 후 분산 저장
 3. 이후 invocation은 스냅샷 복원으로 시작 → init 단계 건너뜀
 
-효과는 극적이다. Spring Boot Lambda의 cold start가 5~10초에서 **300~500ms**로 감소한다(약 90% 감축).
+효과는 극적이다. Spring Boot Lambda의 콜드 스타트가 5~10초에서 **300~500ms**로 감소한다(약 90% 감축).
 
 | 항목 | 값 |
 |------|-----|
@@ -272,9 +272,9 @@ aws lambda update-function-configuration \
 | Python/.NET 비용 | $0.0000015625/GB-s (스냅샷 cache) + 복원 시간 과금 |
 | 호환 제약 | Provisioned Concurrency와 동시 사용 불가 |
 
-> 💡 **관련 이론**: SnapStart는 1980년대 Self/Smalltalk의 **image-based persistence**와 동일한 발상이다. 프로그램 실행 상태(메모리 페이지, CPU 레지스터)를 통째로 저장한 뒤 복원해 시작 시간을 건너뛴다. 현대에서는 VMware의 vMotion, Google의 zigzag(스냅샷 기반 cold boot), CRIU(Linux의 Checkpoint/Restore in Userspace)가 같은 패턴. SnapStart는 Firecracker MicroVM의 스냅샷 기능을 Lambda에 노출한 것.
+> SnapStart는 1980년대 Self/Smalltalk의 **image-based persistence**와 동일한 발상이다. 프로그램 실행 상태(메모리 페이지, CPU 레지스터)를 통째로 저장한 뒤 복원해 시작 시간을 건너뛴다. 현대에서는 VMware의 vMotion, Google의 zigzag(스냅샷 기반 cold boot), CRIU(Linux의 Checkpoint/Restore in Userspace)가 같은 패턴. SnapStart는 Firecracker MicroVM의 스냅샷 기능을 Lambda에 노출한 것.
 
-> ⚠️ **함정**: SnapStart로 인한 **uniqueness assumption violation** — 스냅샷 복원이므로 init 단계의 `random.seed()`, `UUID.randomUUID()`, `Instant.now()` 결과가 모든 invocation에서 동일하게 시작된다. 보안상 심각한 문제(예측 가능한 토큰 생성). 해결은 **Runtime Hook**.
+> SnapStart로 인한 **uniqueness assumption violation** — 스냅샷 복원이므로 init 단계의 `random.seed()`, `UUID.randomUUID()`, `Instant.now()` 결과가 모든 invocation에서 동일하게 시작된다. 보안상 심각한 문제(예측 가능한 토큰 생성). 해결은 **Runtime Hook**.
 
 ```java
 import com.amazonaws.services.lambda.runtime.events.snapstart.*;
@@ -335,7 +335,7 @@ new lambda.Function(this, 'F', {
 
 `RemovalPolicy.DESTROY`로 두면 새 배포마다 이전 Version이 삭제된다. 다만 롤백 가능성을 위해 prod는 RETAIN + 별도 cleanup Lambda 권장.
 
-> 📚 **사례**: 2020년 한 SaaS 팀이 함수 하나에 Version 1만 개를 누적시켜 신규 배포가 `CodeStorageExceededException`으로 실패한 사건이 있었다. 한도가 75GB(default)인데 각 Version이 평균 8MB라 9300개 정도에서 한도 도달. AWS Support에 한도 증액 요청 + 긴급 Version cleanup으로 복구. 교훈은 (1) Version 한도 모니터(`CloudWatch FunctionVersions` 메트릭), (2) 자동 prune 파이프라인 필수.
+> 2020년 한 SaaS 팀이 함수 하나에 Version 1만 개를 누적시켜 신규 배포가 `CodeStorageExceededException`으로 실패한 사건이 있었다. 한도가 75GB(default)인데 각 Version이 평균 8MB라 9300개 정도에서 한도 도달. AWS Support에 한도 증액 요청 + 긴급 Version cleanup으로 복구. 교훈은 (1) Version 한도 모니터(`CloudWatch FunctionVersions` 메트릭), (2) 자동 prune 파이프라인 필수.
 
 ## Function URL과 Alias
 
@@ -351,11 +351,11 @@ aws lambda create-function-url-config \
 
 `--qualifier live`로 Alias 단위 URL을 만들 수 있다. 결과 URL은 `https://<unique-id>.lambda-url.ap-northeast-2.on.aws`. 여러 Alias마다 별도 URL을 가질 수 있어 자연스러운 Blue/Green 패턴이 된다.
 
-> 🎯 **시나리오**: "API Gateway 없이 단일 Lambda를 HTTPS로 노출하고, prod와 canary를 별도 URL로 분리하려면?" — 답은 Function URL 두 개를 `prod` Alias, `canary` Alias 각각에 생성. 클라이언트는 두 URL을 weighted DNS(Route 53) 또는 CloudFront origin failover로 분배. API Gateway 대비 cost·latency 절감되지만 API Key, throttling, request validation 같은 기능은 없다.
+> 🎯 **시나리오**: "API Gateway 없이 단일 Lambda를 HTTPS로 노출하고, prod와 canary를 별도 URL로 분리하려면?" — 답은 Function URL 두 개를 `prod` Alias, `canary` Alias 각각에 생성. 클라이언트는 두 URL을 weighted DNS(Route 53) 또는 CloudFront origin 페일오버로 분배. API Gateway 대비 cost·latency 절감되지만 API Key, throttling, request validation 같은 기능은 없다.
 
-## 정리하며
+## 정리
 
-오늘 본 그림은 네 가지다. 첫째, **Version은 불변 스냅샷, Alias는 가변 포인터** — Git의 commit/branch와 동일한 발상으로 재현성과 롤백 안전성을 보장. 둘째, **Alias weighted routing은 primary + 1 secondary** 제약이 CodeDeploy Canary의 "한 번에 한 단계" 구조의 원인. 셋째, **API Gateway 통합에는 qualifier가 필수** — Function ARN 권한만으로는 Alias 호출 거부. 넷째, **Provisioned Concurrency와 SnapStart**는 cold start의 두 표준 해법이지만 서로 호환 안 되고 SnapStart는 uniqueness assumption 주의.
+오늘 본 그림은 네 가지다. 첫째, **Version은 불변 스냅샷, Alias는 가변 포인터** — Git의 commit/branch와 동일한 발상으로 재현성과 롤백 안전성을 보장. 둘째, **Alias weighted routing은 primary + 1 secondary** 제약이 CodeDeploy Canary의 "한 번에 한 단계" 구조의 원인. 셋째, **API Gateway 통합에는 qualifier가 필수** — Function ARN 권한만으로는 Alias 호출 거부. 넷째, **Provisioned Concurrency와 SnapStart**는 콜드 스타트의 두 표준 해법이지만 서로 호환 안 되고 SnapStart는 uniqueness assumption 주의.
 
 다음 글에서는 Step Functions와 EventBridge로 여러 Lambda를 오케스트레이션하는 패턴을 본다. 함수 하나에 모든 로직을 우겨넣던 monolithic Lambda 시대는 끝났고, 이제는 워크플로 엔진이 함수 간의 흐름을 관리하는 시대다.
 
