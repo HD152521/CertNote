@@ -36,9 +36,9 @@ AWS Organizations는 이 멀티 계정 운영의 신경계다. SCP·통합 청�
 | **OU (Organizational Unit)** | 계정의 묶음. 5단계까지 중첩 가능 |
 | **Account** | 실제 AWS 계정. 12자리 ID로 식별 |
 
-운영자가 가장 자주 헷갈리는 게 **Management Account vs Member Account**. 관리 계정은 organization을 만든 계정으로, **SCP 적용 대상이 아니다**(자기 자신을 제한 못함). 그래서 관리 계정에는 워크로드를 절대 두지 않는 게 정석. organization 관리 + 결제 + Identity Center만.
+운영자가 헷갈리기 쉬운 게 **Management Account vs Member Account**. 관리 계정은 organization을 만든 계정으로, **SCP 적용 대상이 아니다**(자기 자신을 제한 못함). 그래서 관리 계정에는 워크로드를 절대 두지 않는 게 정석. organization 관리 + 결제 + Identity Center만.
 
-> 📚 **사례**: 한 한국 SaaS 회사가 management account에 prod EC2와 RDS를 운영했다. 어느 날 IAM 사용자 access key가 GitHub에 유출됐고, 공격자가 그 계정을 침해. SCP로 막아둔 다른 계정과 달리 management account엔 SCP가 통하지 않아 무방비. 결과: 수천 달러 비트코인 채굴 + 데이터베이스 유출. 사고 후 management account는 워크로드 zero로 재구성됐다. AWS가 2024년부터 management account에 워크로드를 띄우면 콘솔에서 노란 배너를 띄워 경고하기 시작한 배경이다.
+가상의 사례로, 한 한국 SaaS 회사가 management account에 prod EC2와 RDS를 운영했다. 어느 날 IAM 사용자 access key가 GitHub에 유출됐고, 공격자가 그 계정을 침해. SCP로 막아둔 다른 계정과 달리 management account엔 SCP가 통하지 않아 무방비. 결과: 수천 달러 비트코인 채굴 + 데이터베이스 유출. 사고 후 management account는 워크로드 zero로 재구성됐다. AWS가 2024년부터 management account에 워크로드를 띄우면 콘솔에서 노란 배너를 띄워 경고하기 시작한 배경이다.
 
 > ⚠️ **함정**: 시험에서 "관리 계정에 SCP를 적용해 보안을 강화" 같은 보기는 함정. 관리 계정엔 SCP가 안 통한다. 또 다른 함정: management account의 root user는 모든 권한을 가지고, MFA 없이 access key를 만들 수 있다. 이게 가장 큰 single point of failure.
 
@@ -51,9 +51,9 @@ Organizations의 가장 즉각적 가치는 통합 결제다. 모든 member acco
 3. **Cost Allocation Tag 일괄 적용**: 부서·프로젝트 단위 태그로 비용 분석을 자동화.
 4. **Cost Anomaly Detection 중앙화**: 100개 계정의 비용 이상치를 한 곳에서 모니터링.
 
-> 🔍 **더 깊이**: RI/SP 공유는 **Sharing Settings**에서 토글. 켜진 OU/계정 사이에서만 매칭. 운영자 패턴은 "RI 구매는 관리 계정 또는 별도 결제 계정 한 곳에 모으고, 사용은 전체 OU에 공유". 이러면 어느 계정에서든 매칭되는 EC2가 RI 할인을 받는다. 반대로 특정 팀이 자기 RI만 쓰게 하려면 sharing을 끄고 그 OU 내부에서만 공유. Savings Plan은 RI보다 유연(인스턴스 타입·OS·테넌시 무관)하지만 같은 sharing 메커니즘.
+RI/SP 공유는 **Sharing Settings**에서 토글. 켜진 OU/계정 사이에서만 매칭. 운영자 패턴은 "RI 구매는 관리 계정 또는 별도 결제 계정 한 곳에 모으고, 사용은 전체 OU에 공유". 이러면 어느 계정에서든 매칭되는 EC2가 RI 할인을 받는다. 반대로 특정 팀이 자기 RI만 쓰게 하려면 sharing을 끄고 그 OU 내부에서만 공유. Savings Plan은 RI보다 유연(인스턴스 타입·OS·테넌시 무관)하지만 같은 sharing 메커니즘.
 
-> 📚 **사례**: 한 미디어 회사가 30개 계정에 각자 EC2 RI를 구매하다 매월 \$50K 낭비(언더유틸라이즈). Organizations + RI 공유로 한 곳 구매·전체 사용 패턴으로 전환, 매칭률이 85% → 99%로 올라 연간 \$1M 절감. 이게 통합 결제의 진짜 가치.
+가상의 사례로, 한 미디어 회사가 30개 계정에 각자 EC2 RI를 구매하다 매월 \$50K 낭비(언더유틸라이즈). Organizations + RI 공유로 한 곳 구매·전체 사용 패턴으로 전환, 매칭률이 85% → 99%로 올라 연간 \$1M 절감. 이게 통합 결제의 진짜 가치.
 
 ## CloudTrail Organization Trail: 모든 계정의 감사 로그를 한 번에
 
@@ -76,7 +76,7 @@ Organizations의 가장 즉각적 가치는 통합 결제다. 모든 member acco
 
 이 패턴 + Log Archive Account 분리가 **AWS 권장 멀티 계정 패턴(Landing Zone)**의 핵심.
 
-> 💡 **관련 이론**: 로그 중앙화의 원칙은 "변조 방지 + 보존 + 분석 용이성". NIST SP 800-92(로그 관리 가이드)에서 명시하는 5대 원칙(완전성, 무결성, 기밀성, 가용성, 추적성)을 클라우드에서 구현한 게 Log Archive Account 패턴. 침투당한 계정의 운영자가 자기 흔적을 지우지 못하게, 로그는 별도 계정의 S3 버킷에 저장하고 그 버킷은 S3 Object Lock(WORM)으로 보호. PCI-DSS 10.5.5 요구사항("로그 무결성 보장")의 표준 구현이기도 하다.
+로그 중앙화의 원칙은 "변조 방지 + 보존 + 분석 용이성". NIST SP 800-92(로그 관리 가이드)에서 명시하는 5대 원칙(완전성, 무결성, 기밀성, 가용성, 추적성)을 클라우드에서 구현한 게 Log Archive Account 패턴. 침투당한 계정의 운영자가 자기 흔적을 지우지 못하게, 로그는 별도 계정의 S3 버킷에 저장하고 그 버킷은 S3 Object Lock(WORM)으로 보호. PCI-DSS 10.5.5 요구사항("로그 무결성 보장")의 표준 구현이기도 하다.
 
 > ⚠️ **함정**: Organization Trail은 member account의 CloudTrail을 "추가"한다. member account가 자기 trail을 별도로 만들 수 있다(이중 비용). 운영자는 SCP로 member account의 `cloudtrail:CreateTrail`을 막거나, Organization Trail만 허용하는 정책을 적용. 또 다른 함정: Organization Trail의 S3 버킷 정책에 service principal `cloudtrail.amazonaws.com`이 PutObject를 가져야 한다(자동 생성되지만 수정 시 깨질 수 있음).
 
@@ -90,7 +90,7 @@ Organizations + SCP + Trail + Identity Center + Account Factory를 모두 한 �
 4. **Account Factory**: 신규 계정을 표준 OU 배치 + 기본 정책 자동 적용으로 5분 안에 생성
 5. **AFT(Account Factory for Terraform)**: GitOps 방식으로 계정 생성·구성 자동화
 
-> 🔍 **더 깊이**: Control Tower의 가드레일은 두 종류. **Preventive(예방)**는 SCP로 액션을 차단(예: "CloudTrail 비활성화 금지"). **Detective(탐지)**는 Config Rule로 비준수를 탐지(예: "S3 버킷이 public이면 알림"). 일부는 둘 다 — `Strongly Recommended` 카테고리 중에는 SCP + Config 양쪽으로 가드. 2023년부터는 **Proactive controls**도 추가됐는데, 이건 CloudFormation 배포 시점에 미리 차단하는 hook 기반 가드(CFN Guard).
+Control Tower의 가드레일은 두 종류. **Preventive(예방)**는 SCP로 액션을 차단(예: "CloudTrail 비활성화 금지"). **Detective(탐지)**는 Config Rule로 비준수를 탐지(예: "S3 버킷이 public이면 알림"). 일부는 둘 다 — `Strongly Recommended` 카테고리 중에는 SCP + Config 양쪽으로 가드. 2023년부터는 **Proactive controls**도 추가됐는데, 이건 CloudFormation 배포 시점에 미리 차단하는 hook 기반 가드(CFN Guard).
 
 ## RAM (Resource Access Manager): 리소스 공유
 
@@ -110,7 +110,7 @@ aws ram create-resource-share \
   --principals 222222222222 333333333333
 ```
 
-> 📚 **사례**: 한 게임 회사가 50개 계정 각각에 VPC + NAT GW를 만들어 운영하다 NAT GW 비용만 월 \$3,000+. VPC 공유 패턴으로 전환해 중앙 1개 VPC + NAT GW 2개로 통일하니 NAT 비용이 90% 감소. 운영 부담도 함께 감소. 단 트레이드오프: 네트워크 계정 장애 시 모든 계정이 영향(blast radius). 그래서 보통 active-active로 2개 네트워크 계정 운영.
+가상의 사례로, 한 게임 회사가 50개 계정 각각에 VPC + NAT GW를 만들어 운영하다 NAT GW 비용만 월 \$3,000+. VPC 공유 패턴으로 전환해 중앙 1개 VPC + NAT GW 2개로 통일하니 NAT 비용이 90% 감소. 운영 부담도 함께 감소. 단 트레이드오프: 네트워크 계정 장애 시 모든 계정이 영향(blast radius). 그래서 보통 Active-Active로 2개 네트워크 계정 운영.
 
 ## Service Quotas와 Usage 모니터링
 
@@ -122,7 +122,7 @@ Organization 단위로 자주 일어나는 운영 사고가 **service quota 도�
 3. **선제적 quota 증가 요청**: 트래픽 캠페인 1-2주 전 신청
 4. **Quota Template**: 신규 계정 생성 시 표준 quota를 자동 적용
 
-> 🔍 **더 깊이**: 일부 quota는 **soft limit**(요청으로 즉시 증가)이지만 일부는 **hard limit**(증가 불가). EC2 vCPU는 soft(평소 1000 vCPU에서 100,000으로 증가 신청 가능). VPC 당 subnet 수 200개는 보통 hard(Architecture로 풀어야 함). 시험에서 "vCPU 한도 도달" 시나리오는 거의 항상 Service Quotas 요청. CloudWatch metric `ResourceCount` (네임스페이스 `AWS/Usage`)으로 quota 추적이 가능하다.
+일부 quota는 **soft limit**(요청으로 즉시 증가)이지만 일부는 **hard limit**(증가 불가). EC2 vCPU는 soft(평소 1000 vCPU에서 100,000으로 증가 신청 가능). VPC 당 subnet 수 200개는 보통 hard(Architecture로 풀어야 함). 시험에서 "vCPU 한도 도달" 시나리오는 거의 항상 Service Quotas 요청. CloudWatch metric `ResourceCount` (네임스페이스 `AWS/Usage`)으로 quota 추적이 가능하다.
 
 ## 멀티 계정 운영의 표준 패턴: AWS Landing Zone
 
@@ -152,7 +152,7 @@ Management Account     ← Organizations, IAM Identity Center, Billing 만
 
 각 OU에 적합한 SCP가 적용되며, Sandbox OU엔 "월 \$100 한도 초과 시 종료" 같은 강한 제약이 붙는다. Production OU엔 리전 잠금 + 변경 제한 + 강제 backup 정책. Deprecated OU는 모든 write 액션을 deny하고 6개월 후 자동 삭제 워크플로 트리거.
 
-> 💡 **관련 이론**: 이 구조는 **Zero Trust Architecture**(NIST SP 800-207)의 클라우드 구현. "Never trust, always verify"를 계정 경계로 확장 — 한 계정의 침해가 다른 계정에 전파되지 않도록 격리. 또한 **Defense in Depth** 원칙 — SCP + Config + GuardDuty + WAF + IAM 등 다층 방어. 군사 보안에서 "concentric rings of defense"라 부르는 개념(미 국방부 DoD CSEC, 2013)을 클라우드에 가져온 것.
+이 구조는 **Zero Trust Architecture**(NIST SP 800-207)의 클라우드 구현. "Never trust, always verify"를 계정 경계로 확장 — 한 계정의 침해가 다른 계정에 전파되지 않도록 격리. 또한 **Defense in Depth** 원칙 — SCP + Config + GuardDuty + WAF + IAM 등 다층 방어. 군사 보안에서 "concentric rings of defense"라 부르는 개념(미 국방부 DoD CSEC, 2013)을 클라우드에 가져온 것.
 
 ## Organizations 활성화되는 통합 서비스
 
@@ -172,9 +172,9 @@ Organizations와 통합되는 서비스가 30개 이상. 자주 쓰는 것:
 | **Backup** | Organization 단위 백업 정책 |
 | **Health** | 전 계정 이벤트 통합 보기 |
 
-> 🔍 **더 깊이**: 이 모든 통합의 핵심은 **Delegated Administrator** 패턴. 보안 계정(보통 Audit Account)을 GuardDuty/Security Hub의 delegated admin으로 지정하면, 그 계정에서 모든 member account의 finding을 관리한다. management account 부담을 분산하면서 중앙화는 유지. 시험에서 "100개 계정의 GuardDuty finding을 한 곳에서 보려면?"의 답은 거의 항상 "Delegated Administrator로 Security Account 지정".
+이 모든 통합의 핵심은 **Delegated Administrator** 패턴. 보안 계정(보통 Audit Account)을 GuardDuty/Security Hub의 delegated admin으로 지정하면, 그 계정에서 모든 member account의 finding을 관리한다. management account 부담을 분산하면서 중앙화는 유지. 시험에서 "100개 계정의 GuardDuty finding을 한 곳에서 보려면?"의 답은 거의 항상 "Delegated Administrator로 Security Account 지정".
 
-## 정리하며
+## 정리
 
 오늘의 핵심: 멀티 계정 운영은 "보안과 비용을 일관되게"의 문제. SCP가 보안 가드레일, 통합 결제가 비용 가드레일, Organization Trail이 감사 가드레일. Control Tower로 이 모두를 자동화하고, Account Factory로 신규 계정을 표준화한다. RAM으로 공통 리소스를 공유해 비용·운영 부담을 줄이고, Delegated Administrator로 보안 서비스 통합을 중앙화한다.
 
