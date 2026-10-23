@@ -2,7 +2,7 @@
 
 6주차의 주제는 "관리형 컴퓨팅"이었다. 서버를 직접 운영하는 부담을 AWS가 점점 더 흡수해가는 방향 — Lambda(완전 서버리스)에서 Fargate(서버리스 컨테이너), ECS/EKS(오케스트레이션)까지 스펙트럼을 따라 각 서비스의 위치와 트레이드오프를 정리한다. SAA-C03 시험에서 이 주제는 "어떤 서비스를 선택하느냐"와 "어떻게 연결하느냐" 두 축으로 출제된다.
 
-> 💡 **운영 부담의 스펙트럼**: EC2(완전 관리) → ECS/EKS + EC2(노드 관리) → ECS/EKS + Fargate(오케스트레이션만) → Lambda(함수만). 오른쪽으로 갈수록 운영 부담은 줄고 AWS 추상화 레이어가 두꺼워진다. 비용 최적화 관점에서는 반드시 오른쪽이 유리하지 않다 — 트래픽이 일정하고 높을수록 EC2나 컨테이너가 Lambda보다 저렴할 수 있다. 선택 기준은 "트래픽 패턴"과 "팀의 운영 역량"이다.
+**운영 부담의 스펙트럼**: EC2(완전 관리) → ECS/EKS + EC2(노드 관리) → ECS/EKS + Fargate(오케스트레이션만) → Lambda(함수만). 오른쪽으로 갈수록 운영 부담은 줄고 AWS 추상화 레이어가 두꺼워진다. 비용 최적화 관점에서는 반드시 오른쪽이 유리하지 않다 — 트래픽이 일정하고 높을수록 EC2나 컨테이너가 Lambda보다 저렴할 수 있다. 선택 기준은 "트래픽 패턴"과 "팀의 운영 역량"이다.
 
 ## 6주차 핵심 서비스 한눈에 보기
 
@@ -22,19 +22,19 @@
 
 ## Lambda 핵심 복습
 
-> 💡 **Lambda 사양 빠른 참조**:
->
-> | 항목 | 값 |
-> |------|-----|
-> | 최대 실행 시간 | 15분 |
-> | 최대 메모리 | 10,240 MB (10 GB) |
-> | 최대 동시 실행 (리전) | 기본 1,000 (증가 가능) |
-> | Burst Concurrency | 500-3,000/분 (리전별 상이) |
-> | 배포 패키지 (ZIP) | 50 MB (압축), 250 MB (압축 해제) |
-> | 배포 패키지 (Container) | 최대 10 GB |
-> | 환경 변수 | 4 KB |
-> | /tmp 저장소 | 512 MB ~ 10 GB |
-> | Provisioned Concurrency | 구성 가능 (워밍된 실행 환경) |
+**Lambda 사양 빠른 참조**:
+
+| 항목 | 값 |
+|------|-----|
+| 최대 실행 시간 | 15분 |
+| 최대 메모리 | 10,240 MB (10 GB) |
+| 최대 동시 실행 (리전) | 기본 1,000 (증가 가능) |
+| Burst Concurrency | 500-3,000/분 (리전별 상이) |
+| 배포 패키지 (ZIP) | 50 MB (압축), 250 MB (압축 해제) |
+| 배포 패키지 (Container) | 최대 10 GB |
+| 환경 변수 | 4 KB |
+| /tmp 저장소 | 512 MB ~ 10 GB |
+| Provisioned Concurrency | 구성 가능 (워밍된 실행 환경) |
 
 **콜드 스타트 해결 전략**: 언어 선택(Python/Node.js 빠름, Java/C# 느림), 메모리 증가(CPU 비례 할당), Provisioned Concurrency(워밍된 환경 유지), Lambda SnapStart(Java 11+ 스냅샷 복원, 최대 10× 개선).
 
@@ -46,43 +46,43 @@
 
 ## API Gateway 유형 선택 기준
 
-> 💡 **API Gateway 3종 비교**:
->
-> | 기능 | REST API | HTTP API | WebSocket API |
-> |------|---------|---------|---------------|
-> | 기본 비용 | 높음 | REST 대비 ~70% 저렴 | 연결 시간 + 메시지 기준 |
-> | API Key + Usage Plan | O | X | X |
-> | Lambda Authorizer | O | O | O |
-> | JWT Authorizer (외부 OIDC) | X | O | X |
-> | Mapping Templates (VTL) | O | X | X |
-> | AWS 서비스 직접 통합 | O (DDB, SNS, SQS 등) | X | X |
-> | Response Caching | O | X | X |
-> | mTLS 클라이언트 인증 | O | X | X |
-> | WebSocket 실시간 | X | X | O |
-> | 최적 용도 | 엔터프라이즈 API, 파트너 통합 | 내부 마이크로서비스, 모바일 백엔드 | 채팅, 게임, 실시간 대시보드 |
+**API Gateway 3종 비교**:
+
+| 기능 | REST API | HTTP API | WebSocket API |
+|------|---------|---------|---------------|
+| 기본 비용 | 높음 | REST 대비 ~70% 저렴 | 연결 시간 + 메시지 기준 |
+| API Key + Usage Plan | O | X | X |
+| Lambda Authorizer | O | O | O |
+| JWT Authorizer (외부 OIDC) | X | O | X |
+| Mapping Templates (VTL) | O | X | X |
+| AWS 서비스 직접 통합 | O (DDB, SNS, SQS 등) | X | X |
+| Response Caching | O | X | X |
+| mTLS 클라이언트 인증 | O | X | X |
+| WebSocket 실시간 | X | X | O |
+| 최적 용도 | 엔터프라이즈 API, 파트너 통합 | 내부 마이크로서비스, 모바일 백엔드 | 채팅, 게임, 실시간 대시보드 |
 
 **Lambda Authorizer 주의**: 캐싱 TTL이 300초가 기본이다. TTL 0으로 설정하면 모든 요청에서 Authorizer Lambda를 호출하므로 비용과 지연이 증가한다. TTL을 적절히 설정하되, 권한이 즉시 취소되어야 하는 경우(토큰 블랙리스트)는 TTL 0이 필요하다 — 이 트레이드오프를 이해해야 한다.
 
 **WebSocket API의 서버 → 클라이언트 푸시**: `$connect`에서 connectionId를 저장하고, 서버가 Callback URL(`execute-api.region.amazonaws.com/{stage}/@connections/{connectionId}`)로 POST하면 클라이언트에 메시지가 push된다. connectionId 없이는 서버 푸시가 불가능하다.
 
-> 🔍 **더 깊이 — REST API vs HTTP API 선택 트리**:
->
-> ```
-> 외부 파트너에게 API Key + 사용량 제한 필요?
->   → REST API (Usage Plan)
->
-> AWS 서비스(DynamoDB, SQS)를 Lambda 없이 직접 통합?
->   → REST API (AWS Service Integration + Mapping Templates)
->
-> 외부 OIDC 제공자(Auth0, Okta) JWT 인증?
->   → HTTP API (JWT Authorizer)
->
-> 단순 Lambda/HTTP 백엔드, 비용 최적화?
->   → HTTP API
->
-> 실시간 양방향 통신?
->   → WebSocket API
-> ```
+**더 깊이 — REST API vs HTTP API 선택 트리**:
+
+```
+외부 파트너에게 API Key + 사용량 제한 필요?
+  → REST API (Usage Plan)
+
+AWS 서비스(DynamoDB, SQS)를 Lambda 없이 직접 통합?
+  → REST API (AWS Service Integration + Mapping Templates)
+
+외부 OIDC 제공자(Auth0, Okta) JWT 인증?
+  → HTTP API (JWT Authorizer)
+
+단순 Lambda/HTTP 백엔드, 비용 최적화?
+  → HTTP API
+
+실시간 양방향 통신?
+  → WebSocket API
+```
 
 ## Step Functions 선택 기준
 
@@ -92,42 +92,42 @@
 - 초당 수천~수십만 건의 고처리량? → Express (100K/s, 1M 동시 실행)
 - 로그를 CloudWatch에 저장하고 비용 최소화? → Express (실행 횟수 과금, 상태 전환 무과금)
 
-> 💡 **waitForTaskToken 패턴 — 사람이 포함된 워크플로**:
->
-> 1. Step Functions가 Task State에서 taskToken을 SQS/SNS/EventBridge로 전달
-> 2. 담당자가 승인/거부 처리
-> 3. 처리 시스템이 `SendTaskSuccess(taskToken)` 또는 `SendTaskFailure(taskToken)` 호출
-> 4. Step Functions가 결과를 받아 다음 상태로 진행
->
-> `HeartbeatSeconds`를 설정하지 않으면 태스크가 무기한 대기한다. 설정하면 HeartbeatSeconds 내에 `SendTaskHeartbeat`가 없을 때 `States.HeartbeatTimeout`으로 실패 — `Catch` 블록으로 처리해야 한다.
+**waitForTaskToken 패턴 — 사람이 포함된 워크플로**:
+
+1. Step Functions가 Task State에서 taskToken을 SQS/SNS/EventBridge로 전달
+2. 담당자가 승인/거부 처리
+3. 처리 시스템이 `SendTaskSuccess(taskToken)` 또는 `SendTaskFailure(taskToken)` 호출
+4. Step Functions가 결과를 받아 다음 상태로 진행
+
+`HeartbeatSeconds`를 설정하지 않으면 태스크가 무기한 대기한다. 설정하면 HeartbeatSeconds 내에 `SendTaskHeartbeat`가 없을 때 `States.HeartbeatTimeout`으로 실패 — `Catch` 블록으로 처리해야 한다.
 
 **Distributed Map의 위력**: 10,000개의 병렬 자식 워크플로를 실행해 S3의 대용량 데이터를 병렬 처리한다. `ToleratedFailurePercentage`로 일부 실패를 허용하고, `ResultWriter`로 결과를 S3에 저장해 256KB 상태 데이터 제한을 우회한다.
 
-> 🔍 **더 깊이 — Saga 패턴과 보상 트랜잭션**: 마이크로서비스 환경에서 여러 서비스에 걸친 분산 트랜잭션은 2PC(2-Phase Commit)를 사용할 수 없다 — 서비스 간 강한 결합이 생기고 가용성이 저하된다. 1987년 Garcia-Molina가 제안한 Saga 패턴은 각 단계가 로컬 트랜잭션으로 처리되고, 실패 시 이미 완료된 단계를 역순으로 보상 트랜잭션으로 취소한다. Step Functions에서는 `Retry`(지수 백오프 재시도)와 `Catch` + `States.ALL`(모든 오류 유형 포착)로 Saga를 구현한다. 보상 트랜잭션 자체도 실패할 수 있으므로 멱등성(idempotency)이 중요하다.
+**더 깊이 — Saga 패턴과 보상 트랜잭션**: 마이크로서비스 환경에서 여러 서비스에 걸친 분산 트랜잭션은 2PC(2-Phase Commit)를 사용할 수 없다 — 서비스 간 강한 결합이 생기고 가용성이 저하된다. 1987년 Garcia-Molina가 제안한 Saga 패턴은 각 단계가 로컬 트랜잭션으로 처리되고, 실패 시 이미 완료된 단계를 역순으로 보상 트랜잭션으로 취소한다. Step Functions에서는 `Retry`(지수 백오프 재시도)와 `Catch` + `States.ALL`(모든 오류 유형 포착)로 Saga를 구현한다. 보상 트랜잭션 자체도 실패할 수 있으므로 멱등성(idempotency)이 중요하다.
 
 ## 컨테이너 서비스 선택 기준
 
-> 💡 **ECS vs EKS vs Fargate 결정 트리**:
->
-> ```
-> Kubernetes 표준 필요 (멀티 클라우드, 오픈소스 생태계)?
->   → EKS
->
-> GPU / 특수 인스턴스 필요?
->   → ECS/EKS + EC2 Launch Type
->
-> 노드 관리 부담 최소화, 단순한 서비스 배포?
->   → ECS + Fargate
->
-> 강한 커널 수준 보안 격리 필요 (규제 산업)?
->   → Fargate (Firecracker MicroVM)
->
-> 복잡한 배포 패턴 (CRD, Operator, Helm)?
->   → EKS
->
-> EKS에서 일부 워크로드만 서버리스 실행?
->   → EKS + Fargate Profiles (단, DaemonSet 불가)
-> ```
+**ECS vs EKS vs Fargate 결정 트리**:
+
+```
+Kubernetes 표준 필요 (멀티 클라우드, 오픈소스 생태계)?
+  → EKS
+
+GPU / 특수 인스턴스 필요?
+  → ECS/EKS + EC2 Launch Type
+
+노드 관리 부담 최소화, 단순한 서비스 배포?
+  → ECS + Fargate
+
+강한 커널 수준 보안 격리 필요 (규제 산업)?
+  → Fargate (Firecracker MicroVM)
+
+복잡한 배포 패턴 (CRD, Operator, Helm)?
+  → EKS
+
+EKS에서 일부 워크로드만 서버리스 실행?
+  → EKS + Fargate Profiles (단, DaemonSet 불가)
+```
 
 **IAM 권한의 두 가지 패턴**:
 - ECS: Task Role(애플리케이션 코드 권한) + Task Execution Role(에이전트 권한)
@@ -180,9 +180,9 @@ EventBridge (스케줄 / 이벤트)
               └─ Distributed Map (S3 대용량 병렬 처리)
 ```
 
-> 📚 **사례 — 전자상거래 주문 처리 시스템**: 전형적인 시나리오로 시험에 자주 등장한다. 주문 생성(API GW → Lambda → DDB) → 결제 처리(Step Functions Standard, Saga 패턴, exactly-once) → 재고 차감(Lambda → DDB) → 배송 요청(SQS → ECS Fargate) → 배송 추적 실시간 업데이트(AppSync Subscription → Mobile App). 각 단계마다 다른 서비스가 최적인 이유가 있다 — 결제는 exactly-once가 필수라 Standard Step Functions, 배송 처리는 배치 특성이 있어 Fargate, 실시간 상태 알림은 AppSync Subscription.
+**사례 — 전자상거래 주문 처리 시스템**: 전형적인 시험 시나리오다. 주문 생성(API GW → Lambda → DDB) → 결제 처리(Step Functions Standard, Saga 패턴, exactly-once) → 재고 차감(Lambda → DDB) → 배송 요청(SQS → ECS Fargate) → 배송 추적 실시간 업데이트(AppSync Subscription → Mobile App). 각 단계마다 다른 서비스가 최적인 이유가 있다 — 결제는 exactly-once가 필수라 Standard Step Functions, 배송 처리는 배치 특성이 있어 Fargate, 실시간 상태 알림은 AppSync Subscription.
 
-> 📚 **사례 — 미디어 처리 파이프라인**: S3에 영상 업로드 → EventBridge → Step Functions Distributed Map (10,000개 청크 병렬 처리, 각 청크를 Lambda로 트랜스코딩) → 처리 완료 결과를 S3에 ResultWriter로 저장 → CloudFront로 CDN 배포. 이 아키텍처에서 Standard Step Functions의 Distributed Map은 AWS Batch나 EMR 없이 대용량 병렬 처리가 가능하고, 처리 실패 시 ToleratedFailurePercentage로 일부 실패를 허용한 뒤 재처리할 수 있다.
+**사례 — 미디어 처리 파이프라인**: S3에 영상 업로드 → EventBridge → Step Functions Distributed Map (10,000개 청크 병렬 처리, 각 청크를 Lambda로 트랜스코딩) → 처리 완료 결과를 S3에 ResultWriter로 저장 → CloudFront로 CDN 배포. 이 아키텍처에서 Standard Step Functions의 Distributed Map은 AWS Batch나 EMR 없이 대용량 병렬 처리가 가능하고, 처리 실패 시 ToleratedFailurePercentage로 일부 실패를 허용한 뒤 재처리할 수 있다.
 
 ## DR 관점 — 6주차 서비스들의 가용성 설계
 
@@ -196,7 +196,7 @@ EventBridge (스케줄 / 이벤트)
 | EKS | 컨트롤 플레인 AWS 관리 HA | 멀티 AZ 노드 그룹, etcd 자동 백업 |
 | ECR | 자동 (S3 기반 내구성) | Cross-Region 복제로 DR 리전에도 이미지 보관 |
 
-> 🔍 **더 깊이 — Lambda Destinations vs DLQ**: 둘 다 Lambda 실패 처리 메커니즘이지만 목적이 다르다. DLQ(Dead Letter Queue)는 비동기 호출 실패 시 실패 이벤트를 SQS나 SNS로 보낸다. Lambda Destinations는 더 강력하다 — 성공과 실패 모두를 처리할 수 있고(DLQ는 실패만), 4가지 대상(SQS, SNS, Lambda, EventBridge)을 지원하며, 원본 이벤트 외에 함수 응답과 컨텍스트 정보도 포함된다. 일반적으로 Lambda Destinations를 DLQ보다 권장한다. Event Source Mapping(SQS, Kinesis, DDB Streams)의 실패 처리는 별도로 설정해야 하며, `ReportBatchItemFailures`로 부분 배치 성공을 지원한다.
+**더 깊이 — Lambda Destinations vs DLQ**: 둘 다 Lambda 실패 처리 메커니즘이지만 목적이 다르다. DLQ(Dead Letter Queue)는 비동기 호출 실패 시 실패 이벤트를 SQS나 SNS로 보낸다. Lambda Destinations는 더 강력하다 — 성공과 실패 모두를 처리할 수 있고(DLQ는 실패만), 4가지 대상(SQS, SNS, Lambda, EventBridge)을 지원하며, 원본 이벤트 외에 함수 응답과 컨텍스트 정보도 포함된다. 일반적으로 Lambda Destinations를 DLQ보다 권장한다. Event Source Mapping(SQS, Kinesis, DDB Streams)의 실패 처리는 별도로 설정해야 하며, `ReportBatchItemFailures`로 부분 배치 성공을 지원한다.
 
 ---
 
