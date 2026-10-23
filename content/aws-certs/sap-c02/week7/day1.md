@@ -10,9 +10,9 @@
 
 2014년 구글이 Borg 시스템의 경험을 오픈소스화한 것이 Kubernetes(K8s)다. AWS는 같은 해 ECS를 출시했는데, K8s가 아직 정식 1.0이 안 나온 시점이라 자체 오케스트레이터로 만들었다. 그 뒤로 K8s가 사실상의 표준이 되자 AWS는 2017년 re:Invent에서 EKS를 발표해 "이제 K8s도 매니지드로 제공한다"고 선언한다. 같은 행사에서 발표된 Fargate는 "노드를 아예 신경 쓰고 싶지 않다"는 시장 요구에 답한 서버리스 데이터 플레인이다.
 
-> 💡 **관련 이론**: 컨테이너 오케스트레이션은 분산 시스템의 **scheduling 문제**다. m개의 잡을 n개의 노드에 어떻게 배치할 것인가 — 이는 NP-hard인 multi-dimensional bin packing 문제로 환원된다. K8s의 기본 스케줄러는 priorityFunction + predicate filter라는 휴리스틱으로 풀고, Karpenter는 한 발 더 나아가 노드 타입까지 동적으로 선택한다. 이론적 배경은 Tannenbaum의 *Distributed Systems* 6.3장과 구글 Borg 논문(2015 EuroSys, "Large-scale cluster management at Google with Borg")에서 확인할 수 있다.
+컨테이너 오케스트레이션은 분산 시스템의 **scheduling 문제**다. m개의 잡을 n개의 노드에 어떻게 배치할 것인가 — 이는 NP-hard인 multi-dimensional bin packing 문제로 환원된다. K8s의 기본 스케줄러는 priorityFunction + predicate filter라는 휴리스틱으로 풀고, Karpenter는 한 발 더 나아가 노드 타입까지 동적으로 선택한다. 이론적 배경은 Tannenbaum의 *Distributed Systems* 6.3장과 구글 Borg 논문(2015 EuroSys, "Large-scale cluster management at Google with Borg")에서 확인할 수 있다.
 
-> 🔍 **더 깊이**: ECS와 K8s의 가장 큰 설계 철학 차이는 **API의 풍부함**이다. K8s는 Pod·Deployment·Service·ConfigMap·Secret·Ingress·CRD 등 30+ 종류의 리소스를 가지고, 모든 게 declarative YAML이다. ECS는 Cluster·Task Definition·Service·Task 4개만 알면 끝난다. 학습 곡선의 차이는 곧 운영 부담의 차이로 이어진다. SAP 시험에서 "운영 부담 최소화" + "AWS 위주" 키워드가 같이 나오면 거의 ECS가 답이고, "이식성" + "K8s 표준" 키워드가 나오면 EKS가 답이다.
+ECS와 K8s의 가장 큰 설계 철학 차이는 **API의 풍부함**이다. K8s는 Pod·Deployment·Service·ConfigMap·Secret·Ingress·CRD 등 30+ 종류의 리소스를 가지고, 모든 게 declarative YAML이다. ECS는 Cluster·Task Definition·Service·Task 4개만 알면 끝난다. 학습 곡선의 차이는 곧 운영 부담의 차이로 이어진다. SAP 시험에서 "운영 부담 최소화" + "AWS 위주" 키워드가 같이 나오면 거의 ECS가 답이고, "이식성" + "K8s 표준" 키워드가 나오면 EKS가 답이다.
 
 ## ECS, EKS, Fargate의 책임 분담 지도
 
@@ -74,9 +74,9 @@ EKS는 본질적으로 매니지드 K8s라서 K8s 개념(Pod, Deployment, Servic
 3. **IRSA / Pod Identity**: K8s ServiceAccount를 IAM Role과 매핑. 자세한 건 다음 day에서.
 4. **EKS Add-ons**: VPC CNI, CoreDNS, kube-proxy, EBS CSI Driver, AWS Load Balancer Controller 등을 매니지드 형태로 설치·업데이트.
 
-EKS의 시간당 $0.10는 월 약 $73이다. 클러스터 하나당이고, 노드 수와 무관하다. "운영팀이 클러스터를 100개 띄우려고 한다"는 시나리오에서는 이 비용이 무시 못 할 수준이 된다(월 $7,300). 그래서 SAP에서는 "수십 개의 작은 워크로드 → 여러 ECS Cluster" vs "통합 EKS 1개 + Namespace로 격리"의 트레이드오프가 자주 등장한다.
+EKS의 시간당 $0.10는 월 약 $73이다. 클러스터 하나당이고, 노드 수와 무관하다. "운영팀이 클러스터를 100개 띄우려고 한다"는 시나리오에서는 이 비용이 무시 못 할 수준이 된다(월 $7,300). 그래서 SAP에서는 "수십 개의 작은 워크로드 → 여러 ECS Cluster" vs "통합 EKS 1개 + Namespace로 격리"의 트레이드오프가 등장한다.
 
-> 📚 **사례**: 2019년 3월 2일, EKS us-east-1에서 일부 클러스터의 API Server가 응답 불능 상태에 빠진 사건이 있다. 원인은 컨트롤 플레인 업그레이드 중 etcd quorum loss. AWS가 자동 복구했지만 약 2시간 동안 일부 클러스터에서 `kubectl` 명령이 실패했다. 이 사건의 교훈은 **데이터 플레인(노드 위의 Pod)은 컨트롤 플레인이 죽어도 계속 동작**한다는 점이다. 이미 스케줄링된 Pod는 노드 위에서 그대로 돌고, 새로 스케줄링·롤링 업데이트만 막힌다. 그래서 production 운영에서는 컨트롤 플레인 장애 동안 "신규 배포 정지, 기존 트래픽 유지" 모드로 버틸 수 있다. [AWS Status History 참고](https://health.aws.amazon.com/health/status).
+2019년 3월 2일, EKS us-east-1에서 일부 클러스터의 API Server가 응답 불능 상태에 빠진 사건이 있다. 원인은 컨트롤 플레인 업그레이드 중 etcd quorum loss. AWS가 자동 복구했지만 약 2시간 동안 일부 클러스터에서 `kubectl` 명령이 실패했다. 이 사건의 교훈은 **데이터 플레인(노드 위의 Pod)은 컨트롤 플레인이 죽어도 계속 동작**한다는 점이다. 이미 스케줄링된 Pod는 노드 위에서 그대로 돌고, 새로 스케줄링·롤링 업데이트만 막힌다. 그래서 production 운영에서는 컨트롤 플레인 장애 동안 "신규 배포 정지, 기존 트래픽 유지" 모드로 버틸 수 있다. [AWS Status History 참고](https://health.aws.amazon.com/health/status).
 
 ## Launch Type: EC2 vs Fargate의 진짜 트레이드오프
 
@@ -94,9 +94,9 @@ EKS의 시간당 $0.10는 월 약 $73이다. 클러스터 하나당이고, 노�
 | 비용 효율 | 일정 사용량·고밀도에 유리 | Spiky 워크로드에 유리 |
 | 사이드카 자유도 | 무제한 | 메모리·CPU 한도 안에서 |
 
-> 🔍 **더 깊이**: Fargate가 매번 micro VM을 부팅하는 이유는 **하드웨어 레벨 격리**가 필요하기 때문이다. AWS는 Firecracker라는 자체 마이크로 VMM(Virtual Machine Monitor)을 만들어서 사용한다. KVM 위에 동작하지만 전통적인 QEMU 대신 minimal device model만 제공해 부팅 시간이 125ms 수준이다. Firecracker 논문(NSDI 2020 — "Firecracker: Lightweight Virtualization for Serverless Applications")이 공개되어 있고, 같은 기술이 Lambda에도 쓰인다. 이 격리 덕분에 Fargate는 멀티테넌트 환경에서도 다른 고객의 컨테이너 옆에서 안전하게 실행된다.
+Fargate가 매번 micro VM을 부팅하는 이유는 **하드웨어 레벨 격리**가 필요하기 때문이다. AWS는 Firecracker라는 자체 마이크로 VMM(Virtual Machine Monitor)을 만들어서 사용한다. KVM 위에 동작하지만 전통적인 QEMU 대신 minimal device model만 제공해 부팅 시간이 125ms 수준이다. Firecracker 논문(NSDI 2020 — "Firecracker: Lightweight Virtualization for Serverless Applications")이 공개되어 있고, 같은 기술이 Lambda에도 쓰인다. 이 격리 덕분에 Fargate는 멀티테넌트 환경에서도 다른 고객의 컨테이너 옆에서 안전하게 실행된다.
 
-> 💡 **관련 이론**: EC2 Launch Type의 비용 효율은 **Bin Packing**의 효과다. 한 m5.xlarge(4 vCPU, 16GB)에 0.25 vCPU Task를 16개 띄우면 노드 단가가 분산된다. Fargate는 Task별 독립 micro VM이라 Bin Packing이 안 되고, 각 Task의 vCPU·메모리를 그대로 청구한다. 그래서 "0.25 vCPU 짜리 Task를 1000개 띄우는 시나리오"는 EC2가 압도적으로 싸지만, "트래픽 가변 + Spiky"는 Fargate가 우위다. 경험적인 분기점은 평균 노드 사용률이 **40%를 넘느냐**다. 40% 이상으로 꾸준히 채울 수 있으면 EC2 + SP, 그 이하면 Fargate가 일반적으로 유리하다.
+EC2 Launch Type의 비용 효율은 **Bin Packing**의 효과다. 한 m5.xlarge(4 vCPU, 16GB)에 0.25 vCPU Task를 16개 띄우면 노드 단가가 분산된다. Fargate는 Task별 독립 micro VM이라 Bin Packing이 안 되고, 각 Task의 vCPU·메모리를 그대로 청구한다. 그래서 "0.25 vCPU 짜리 Task를 1000개 띄우는 시나리오"는 EC2가 압도적으로 싸지만, "트래픽 가변 + Spiky"는 Fargate가 우위다. 경험적인 분기점은 평균 노드 사용률이 **40%를 넘느냐**다. 40% 이상으로 꾸준히 채울 수 있으면 EC2 + SP, 그 이하면 Fargate가 일반적으로 유리하다.
 
 ## 다른 클라우드의 컨테이너 서비스와 비교
 
@@ -113,7 +113,7 @@ AWS ECS·EKS·Fargate가 어떤 위치인지 GCP·Azure와 비교하면 윤곽�
 
 GCP의 GKE Autopilot이 가장 "운영 부담 0" 방향에 가깝고, AWS는 EKS Auto Mode(2024년 말)로 같은 방향으로 따라갔다. Azure AKS는 K8s에 집중하고 독자 오케스트레이터는 만들지 않았다. AWS가 ECS를 계속 유지하는 이유는 "K8s가 너무 무겁다"는 시장 일부 수요 때문이다.
 
-> 📚 **사례**: 2022년 Snapchat 모기업 Snap이 일부 워크로드를 GCP에서 AWS로 마이그레이션할 때, GCP의 GKE에서 EKS로 옮기는 작업이 가장 큰 비용·기간 항목이었다. 매니페스트는 그대로 가져왔지만 IAM 통합(Workload Identity → IRSA), Ingress(GCP Load Balancer → AWS ALB Controller), Persistent Volume(GCP PD → EBS) 매핑을 모두 다시 짜야 했다. K8s가 표준이어도 클라우드 통합 레이어는 표준화되지 않았다는 교훈.
+2022년 Snapchat 모기업 Snap이 일부 워크로드를 GCP에서 AWS로 마이그레이션할 때, GCP의 GKE에서 EKS로 옮기는 작업이 가장 큰 비용·기간 항목이었다. 매니페스트는 그대로 가져왔지만 IAM 통합(Workload Identity → IRSA), Ingress(GCP Load Balancer → AWS ALB Controller), Persistent Volume(GCP PD → EBS) 매핑을 모두 다시 짜야 했다. K8s가 표준이어도 클라우드 통합 레이어는 표준화되지 않았다는 교훈.
 
 ## App Runner: 운영 부담을 더 낮춘 선택지
 
@@ -145,7 +145,7 @@ ECS Fargate조차 "VPC, ALB, Service, Task Definition을 다 만들어야 한다
 
 > 🎯 **시나리오**: "한 제조사가 공장 100개에 산업용 IoT 게이트웨이를 운영한다. 일부 공장은 인터넷이 끊겨도 워크로드가 자율적으로 동작해야 한다. 어느 옵션이 적합한가?" — **EKS Anywhere**. 컨트롤 플레인이 온프레에 있어 에어갭 환경에서도 동작한다. ECS Anywhere는 컨트롤 플레인 호출이 필요하므로 인터넷 단절 시 신규 배포·스케일링이 정지된다.
 
-> 🔍 **더 깊이**: EKS Anywhere는 내부적으로 **EKS Distro (EKS-D)**라는 오픈소스 K8s 배포판을 쓴다. AWS가 EKS에서 검증한 K8s + 컴포넌트(coredns, etcd, kube-proxy, CNI) 조합을 그대로 패키징해 공개한 것. 그래서 같은 K8s 버전·동일 동작을 클라우드와 온프레에서 보장한다. 이 모델은 GCP의 Anthos(GKE on-prem)와 같은 발상이다. Anthos는 GKE를 GCP에서 운영하는 컨트롤 플레인까지 묶어주지만, EKS Anywhere는 컨트롤 플레인까지 온프레에 둔다는 점이 다르다.
+EKS Anywhere는 내부적으로 **EKS Distro (EKS-D)**라는 오픈소스 K8s 배포판을 쓴다. AWS가 EKS에서 검증한 K8s + 컴포넌트(coredns, etcd, kube-proxy, CNI) 조합을 그대로 패키징해 공개한 것. 그래서 같은 K8s 버전·동일 동작을 클라우드와 온프레에서 보장한다. 이 모델은 GCP의 Anthos(GKE on-prem)와 같은 발상이다. Anthos는 GKE를 GCP에서 운영하는 컨트롤 플레인까지 묶어주지만, EKS Anywhere는 컨트롤 플레인까지 온프레에 둔다는 점이 다르다.
 
 ## Capacity Provider: Fargate Spot으로 비용을 70% 줄이기
 
@@ -162,7 +162,7 @@ ECS Service를 만들 때 "이 작업을 어디에 배치할지"를 추상화하
 
 이렇게 하면 최소 2개의 안정적 Task로 가용성을 보장하면서, 나머지는 Spot으로 비용을 60-70% 줄일 수 있다. SAP에서 "비용 효율 + 가용성 둘 다 만족" 시나리오의 가장 흔한 정답 패턴이다.
 
-> 📚 **사례**: 2023년 Pinterest는 일부 백엔드 워크로드를 ECS Fargate + Fargate Spot 80% 혼합으로 전환해 컨테이너 인프라 비용을 약 40% 절감했다고 발표했다. Spot 중단에 대비해 `STOPTIMEOUT` 환경 변수를 60초로 늘리고 SIGTERM 핸들러로 in-flight 요청을 graceful drain하는 패턴을 사용했다. AWS re:Invent 2023 발표.
+2023년 Pinterest는 일부 백엔드 워크로드를 ECS Fargate + Fargate Spot 80% 혼합으로 전환해 컨테이너 인프라 비용을 약 40% 절감했다고 발표했다. Spot 중단에 대비해 `STOPTIMEOUT` 환경 변수를 60초로 늘리고 SIGTERM 핸들러로 in-flight 요청을 graceful drain하는 패턴을 사용했다. AWS re:Invent 2023 발표.
 
 ## ECS Exec: SSH 없이 컨테이너에 들어가기
 
@@ -179,11 +179,11 @@ aws ecs execute-command \
 
 내부 동작은 ECS Agent 안에 SSM Agent를 같이 띄워서, SSM이 SSH 대체 채널 역할을 한다. 모든 세션은 CloudTrail에 기록되고, 옵션으로 S3·CloudWatch Logs에 세션 내용을 풀로 저장할 수 있다. 감사·규제 환경에서 필수.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 한 장의 지도다. **컨트롤 플레인은 ECS(AWS 독자, 무료) 또는 EKS(K8s 표준, 시간당 $0.10)** 중에서 고르고, **데이터 플레인은 EC2(노드 직접 관리, 비용 우위) / Fargate(서버리스, 운영 부담 0) / Anywhere(온프레)** 중에서 고른다. 그리고 더 단순한 PaaS가 필요하면 App Runner가 한 단계 위에 있다.
 
-다음 day에서는 EKS 내부의 노드 그룹, IRSA, Karpenter를 깊이 본다. EKS는 SAP에서 도메인 1·2·3 전반에 흩어져 출제되고, 특히 IRSA와 Karpenter가 단골 출제 영역이다. 오늘 그린 지도가 그 안에서 어떻게 채워지는지가 다음 글의 주제다.
+다음 day에서는 EKS 내부의 노드 그룹, IRSA, Karpenter를 깊이 본다. EKS는 SAP에서 도메인 1·2·3 전반에 흩어져 출제되고, 특히 IRSA와 Karpenter가 출제 범위에 든다. 오늘 그린 지도가 그 안에서 어떻게 채워지는지가 다음 글의 주제다.
 
 ---
 

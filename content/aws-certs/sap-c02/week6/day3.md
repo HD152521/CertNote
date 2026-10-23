@@ -17,9 +17,9 @@ CDC(Change Data Capture)는 데이터베이스의 변경 사항(INSERT, UPDATE, 
 | **Aurora MySQL** | Binary Log | binlog 활성화 |
 | **Aurora PostgreSQL** | WAL | logical replication 활성화 |
 
-> 💡 **관련 이론**: Write-Ahead Logging(WAL)은 데이터베이스 내구성(Durability, ACID의 D)의 기본 메커니즘이다. 실제 데이터 페이지 변경 전에 로그 레코드를 먼저 기록해 시스템 장애 시 복구를 가능하게 한다(Jim Gray의 Shadow Paging 대안으로 1992년 PostgreSQL에서 구현). DMS는 이 WAL을 "정상 복구" 목적이 아닌 "변경 스트림 소비"에 재활용한다. 이것을 Logical Decoding이라 한다(PostgreSQL pg_logical_emit_message).
+Write-Ahead Logging(WAL)은 데이터베이스 내구성(Durability, ACID의 D)의 기본 메커니즘이다. 실제 데이터 페이지 변경 전에 로그 레코드를 먼저 기록해 시스템 장애 시 복구를 가능하게 한다(Jim Gray의 Shadow Paging 대안으로 1992년 PostgreSQL에서 구현). DMS는 이 WAL을 "정상 복구" 목적이 아닌 "변경 스트림 소비"에 재활용한다. 이것을 Logical Decoding이라 한다(PostgreSQL pg_logical_emit_message).
 
-> 🔍 **더 깊이**: Oracle LogMiner의 원리. LogMiner는 Oracle의 Redo Log 파일에서 DML 작업을 SQL 형태로 재구성해주는 Oracle 내장 패키지다(DBMS_LOGMNR). DMS는 LogMiner API를 사용해 Redo Log에서 변경 데이터를 읽는다. 보충 로깅(Supplemental Logging)이 활성화되어야 DELETE된 행의 이전 값도 로그에 포함된다. 이것 없이는 DMS가 어떤 행이 삭제됐는지 알 수 없다.
+Oracle LogMiner의 원리. LogMiner는 Oracle의 Redo Log 파일에서 DML 작업을 SQL 형태로 재구성해주는 Oracle 내장 패키지다(DBMS_LOGMNR). DMS는 LogMiner API를 사용해 Redo Log에서 변경 데이터를 읽는다. 보충 로깅(Supplemental Logging)이 활성화되어야 DELETE된 행의 이전 값도 로그에 포함된다. 이것 없이는 DMS가 어떤 행이 삭제됐는지 알 수 없다.
 
 ## DMS 아키텍처: Replication Instance의 역할
 
@@ -104,7 +104,7 @@ SCT는 원본 DB의 스키마(DDL)와 코드(저장 프로시저, 트리거, 뷰
 
 **SCT Assessment Report**: 자동 변환 가능한 항목과 수동 수정 필요 항목을 색상(녹색/주황/빨강)으로 표시한다. 마이그레이션 사전 평가 단계에서 반드시 실행해야 한다.
 
-> 📚 **사례**: Netflix의 Oracle → Aurora MySQL 마이그레이션 (2015-2016). 넷플릭스는 수십 개의 Oracle DB를 Aurora로 이전했다. SCT가 PL/SQL의 약 65%를 자동 변환하고 나머지 35%는 DBA 팀이 수동 변환했다. 특히 Oracle 패키지와 Nested Table 타입이 문제였다. 교훈: 이종 DB 마이그레이션에서 SCT 자동화율 70-80%를 현실적 목표로 잡고, 나머지 20-30%를 위한 개발 리소스를 프로젝트에 포함해야 한다.
+Netflix의 Oracle → Aurora MySQL 마이그레이션 (2015-2016). 넷플릭스는 수십 개의 Oracle DB를 Aurora로 이전했다. SCT가 PL/SQL의 약 65%를 자동 변환하고 나머지 35%는 DBA 팀이 수동 변환했다. 특히 Oracle 패키지와 Nested Table 타입이 문제였다. 교훈: 이종 DB 마이그레이션에서 SCT 자동화율 70-80%를 현실적 목표로 잡고, 나머지 20-30%를 위한 개발 리소스를 프로젝트에 포함해야 한다.
 
 ## 주요 마이그레이션 패턴
 
@@ -161,7 +161,7 @@ Babelfish는 2021년 AWS가 오픈소스로 출시한 Aurora PostgreSQL 확장�
 | 기간 | 길다 | 짧다 |
 | 장기 이식성 | 완전 PostgreSQL | T-SQL 의존 유지 |
 
-> 💡 **관련 이론**: TDS 프로토콜(Tabular Data Stream)은 SQL Server와 클라이언트 간 통신 프로토콜이다. 1984년 Sybase가 설계하고 Microsoft가 계승해 공개했다(OpenSpec). Babelfish는 이 프로토콜을 PostgreSQL이 직접 처리하도록 구현해, 클라이언트가 Aurora를 SQL Server로 인식하게 만든다. 마치 API 호환 레이어를 추가하는 것이다.
+TDS 프로토콜(Tabular Data Stream)은 SQL Server와 클라이언트 간 통신 프로토콜이다. 1984년 Sybase가 설계하고 Microsoft가 계승해 공개했다(OpenSpec). Babelfish는 이 프로토콜을 PostgreSQL이 직접 처리하도록 구현해, 클라이언트가 Aurora를 SQL Server로 인식하게 만든다. 마치 API 호환 레이어를 추가하는 것이다.
 
 ## DMS의 다양한 대상(Target)
 
@@ -175,7 +175,7 @@ DMS는 단순 DB → DB 마이그레이션뿐 아니라 **분석 파이프라인
 | 데이터 웨어하우스 | SQL Server | Redshift | Full Load + CDC |
 | NoSQL 전환 | MongoDB | DynamoDB | Full Load |
 
-> 🔍 **더 깊이**: DMS → S3 → Athena 패턴. DMS가 운영 DB의 변경을 S3에 Parquet 형식으로 저장하면, Athena가 SQL로 직접 쿼리한다. 이것이 Lake Formation 기반 데이터 레이크의 실시간 수집 경로다. CDC 레코드는 op 컬럼(I=Insert, U=Update, D=Delete)이 포함되어 원본의 변경 이력을 모두 보존한다. 이것을 Schema-on-Read 방식으로 Athena에서 쿼리할 수 있다.
+DMS → S3 → Athena 패턴. DMS가 운영 DB의 변경을 S3에 Parquet 형식으로 저장하면, Athena가 SQL로 직접 쿼리한다. 이것이 Lake Formation 기반 데이터 레이크의 실시간 수집 경로다. CDC 레코드는 op 컬럼(I=Insert, U=Update, D=Delete)이 포함되어 원본의 변경 이력을 모두 보존한다. 이것을 Schema-on-Read 방식으로 Athena에서 쿼리할 수 있다.
 
 ## DMS Fleet Advisor: DB 포트폴리오 자동 발견
 
@@ -265,9 +265,9 @@ DMS는 단순 DB → DB 마이그레이션뿐 아니라 **분석 파이프라인
 | **Refactor: SCT + DMS → Aurora PG** | **가장 김** (수개월) | **큼** (30~40% 수동) | **가장 큼** | 낮음 (관리형) | 높음 |
 | **Refactor: Babelfish (SQL Server 한정)** | 중간 | 거의 없음 | 큼 | 낮음 | 중간 |
 
-> 💡 **암기 팁**: **"빨리 옮기려면 Rehost, 싸게 쓰려면 Refactor."** 이 둘은 정확히 반대 방향의 트레이드오프다. 지문에 "as quickly as possible", "minimal changes to the application"이 있으면 Rehost·Replatform 쪽이고, "eliminate licensing costs", "long-term operational efficiency"가 있으면 SCT+DMS 쪽이다. 두 한정어가 동시에 나오면 **단계적 접근**(먼저 Rehost로 데이터센터를 나오고, 그다음 Refactor)이 정답 방향이다.
+**"빨리 옮기려면 Rehost, 싸게 쓰려면 Refactor."** 이 둘은 정확히 반대 방향의 트레이드오프다. 지문에 "as quickly as possible", "minimal changes to the application"이 있으면 Rehost·Replatform 쪽이고, "eliminate licensing costs", "long-term operational efficiency"가 있으면 SCT+DMS 쪽이다. 두 한정어가 동시에 나오면 **단계적 접근**(먼저 Rehost로 데이터센터를 나오고, 그다음 Refactor)이 정답 방향이다.
 
-> 🔍 **더 깊이**: RDS for Oracle의 **License Included** 옵션은 Standard Edition 2에 한정되고, Enterprise Edition은 BYOL(Bring Your Own License)이다. 그래서 "RDS로 옮기면 라이선스가 해결된다"는 서술은 절반만 맞다. EE 기능(Partitioning, Advanced Security, RAC 등)에 의존하는 워크로드는 RDS로 옮겨도 라이선스 비용이 그대로 남는다. RAC은 RDS for Oracle에서 지원되지 않으므로, RAC 의존 시스템은 단일 인스턴스로 재구성하거나 Aurora로 refactor하는 선택지밖에 없다. 시험에서 "Oracle EE + RAC"라는 조건이 붙으면 선택지가 크게 좁아진다.
+RDS for Oracle의 **License Included** 옵션은 Standard Edition 2에 한정되고, Enterprise Edition은 BYOL(Bring Your Own License)이다. 그래서 "RDS로 옮기면 라이선스가 해결된다"는 서술은 절반만 맞다. EE 기능(Partitioning, Advanced Security, RAC 등)에 의존하는 워크로드는 RDS로 옮겨도 라이선스 비용이 그대로 남는다. RAC은 RDS for Oracle에서 지원되지 않으므로, RAC 의존 시스템은 단일 인스턴스로 재구성하거나 Aurora로 refactor하는 선택지밖에 없다. 시험에서 "Oracle EE + RAC"라는 조건이 붙으면 선택지가 크게 좁아진다.
 
 > 🎯 **시나리오**: "데이터센터 임대 계약이 6개월 후 종료된다. Oracle EE 기반 핵심 시스템 12개를 그 안에 AWS로 옮겨야 하고, 이후 2년에 걸쳐 라이선스 비용을 없애고 싶다. 어떤 순서인가?" — 답: **1단계 Rehost(EC2 BYOL 또는 RDS Custom)로 기한 내 데이터센터 탈출 → 2단계 SCT+DMS로 Aurora PostgreSQL 순차 Refactor**. 6개월 안에 12개 시스템의 PL/SQL을 전부 변환하는 것은 비현실적이고, 기한 압박 속의 대규모 refactor는 실패 확률이 높다. 기한과 비용이라는 두 제약이 충돌하면 **시간축으로 분리**하는 게 표준 답이다.
 
@@ -320,9 +320,9 @@ DMS의 성패는 콘솔 버튼이 아니라 태스크 설정 JSON에서 갈린�
 | `BatchApplyEnabled: true` | 배치 적용 | CDC 변경을 건별이 아니라 묶어서 적용해 처리량을 크게 올린다 |
 | `EnableValidation: true` | 검증 켬 | 행 수만이 아니라 값 단위로 원본·대상을 비교한다 |
 
-> ⚠️ **함정**: `LobMaxSize`를 넘는 LOB이 **경고 없이 잘리는** 것이 이종 마이그레이션의 대표적 데이터 손실 사고다. 계약서 PDF나 이미지가 들어 있는 CLOB/BLOB 컬럼에서 특히 위험하다. 그래서 마이그레이션 사전 작업에 "LOB 컬럼별 최대 크기 실측"이 반드시 들어간다. 크기가 들쭉날쭉하고 상한을 알 수 없다면 성능을 희생하더라도 Full LOB 모드를 쓰거나, 아예 LOB을 S3로 분리하고 DB에는 키만 남기는 재설계를 검토한다.
+`LobMaxSize`를 넘는 LOB이 **경고 없이 잘리는** 것이 이종 마이그레이션의 대표적 데이터 손실 사고다. 계약서 PDF나 이미지가 들어 있는 CLOB/BLOB 컬럼에서 특히 위험하다. 그래서 마이그레이션 사전 작업에 "LOB 컬럼별 최대 크기 실측"이 반드시 들어간다. 크기가 들쭉날쭉하고 상한을 알 수 없다면 성능을 희생하더라도 Full LOB 모드를 쓰거나, 아예 LOB을 S3로 분리하고 DB에는 키만 남기는 재설계를 검토한다.
 
-> 🔍 **더 깊이**: `ValidationSettings`를 켜면 DMS가 대상 DB에 `awsdms_validation_failures_v1` 테이블을 만들고 불일치 행을 기록한다. 여기에 `ControlTablesSettings`로 `awsdms_status`(태스크 상태), `awsdms_suspended_tables`(오류로 중단된 테이블), `awsdms_apply_exceptions`(적용 실패 레코드)까지 남긴다. Cutover 판단은 콘솔의 초록색 표시가 아니라 **이 제어 테이블들이 비어 있는지**로 해야 한다. "행 수가 같다"는 검증은 UPDATE로 값만 바뀐 불일치를 절대 잡지 못한다.
+`ValidationSettings`를 켜면 DMS가 대상 DB에 `awsdms_validation_failures_v1` 테이블을 만들고 불일치 행을 기록한다. 여기에 `ControlTablesSettings`로 `awsdms_status`(태스크 상태), `awsdms_suspended_tables`(오류로 중단된 테이블), `awsdms_apply_exceptions`(적용 실패 레코드)까지 남긴다. Cutover 판단은 콘솔의 초록색 표시가 아니라 **이 제어 테이블들이 비어 있는지**로 해야 한다. "행 수가 같다"는 검증은 UPDATE로 값만 바뀐 불일치를 절대 잡지 못한다.
 
 ```bash
 # 사전 평가 실행 — 지원되지 않는 데이터 타입·PK 없는 테이블 등을 미리 잡는다
@@ -349,7 +349,7 @@ aws dms describe-table-statistics \
   --query 'TableStatistics[?ValidationState!=`Validated`]'
 ```
 
-> ⚠️ **함정**: DMS는 이종 마이그레이션에서 대상 테이블을 만들 때 **기본 키만 있는 최소 형태**로 생성한다. 보조 인덱스·외래 키·시퀀스·기본값·트리거·저장 프로시저는 만들어주지 않는다. 이것들은 SCT가 생성한 DDL로 별도 적용해야 한다. 그리고 성능을 위해 **Full Load 동안에는 보조 인덱스와 외래 키를 제거했다가 완료 후 다시 만드는** 것이 표준이다. 인덱스가 걸린 채로 수억 건을 적재하면 적재 시간이 몇 배로 늘어난다.
+DMS는 이종 마이그레이션에서 대상 테이블을 만들 때 **기본 키만 있는 최소 형태**로 생성한다. 보조 인덱스·외래 키·시퀀스·기본값·트리거·저장 프로시저는 만들어주지 않는다. 이것들은 SCT가 생성한 DDL로 별도 적용해야 한다. 그리고 성능을 위해 **Full Load 동안에는 보조 인덱스와 외래 키를 제거했다가 완료 후 다시 만드는** 것이 표준이다. 인덱스가 걸린 채로 수억 건을 적재하면 적재 시간이 몇 배로 늘어난다.
 
 ## Cutover와 롤백: 되돌아갈 길을 만드는 순서
 
@@ -386,13 +386,13 @@ DB Cutover가 서버 Cutover보다 무서운 이유는 **되돌리기가 어렵�
    └── DMS Replication Instance 삭제 (계속 과금된다)
 ```
 
-> ⚠️ **함정**: 4번 **시퀀스 동기화**를 빼먹는 사고가 매우 흔하다. DMS는 테이블의 행 데이터를 옮기지만 Oracle의 SEQUENCE나 PostgreSQL의 serial/identity 현재값은 옮기지 않는다. 전환 직후 새 INSERT가 1번부터 시작하면서 기본 키 충돌이 폭발한다. Cutover 체크리스트에 "모든 시퀀스의 `last_value`를 원본 최대값 + 여유분으로 설정"을 명시적으로 넣어야 한다.
+4번 **시퀀스 동기화**를 빼먹는 사고가 매우 흔하다. DMS는 테이블의 행 데이터를 옮기지만 Oracle의 SEQUENCE나 PostgreSQL의 serial/identity 현재값은 옮기지 않는다. 전환 직후 새 INSERT가 1번부터 시작하면서 기본 키 충돌이 폭발한다. Cutover 체크리스트에 "모든 시퀀스의 `last_value`를 원본 최대값 + 여유분으로 설정"을 명시적으로 넣어야 한다.
 
-> 📚 **사례**: 이종 DB Cutover 후 롤백을 실제로 실행한 팀들이 공통으로 지목하는 실패 원인은 데이터가 아니라 **성능**이다. 기능 테스트는 모두 통과했는데, 실제 프로덕션 부하가 들어오자 특정 쿼리의 실행 계획이 Aurora PostgreSQL에서 다르게 잡혀 응답 시간이 수십 배로 늘어난 사례가 반복된다. Oracle의 힌트에 의존하던 쿼리, 상관 서브쿼리, 대용량 조인에서 특히 잘 생긴다. 그래서 Cutover 전 검증에는 반드시 **프로덕션 수준 부하 테스트**와 `EXPLAIN ANALYZE` 기반 실행 계획 비교가 들어가야 한다. 행 수 일치는 최소 조건이지 충분 조건이 아니다.
+이종 DB Cutover 후 롤백을 실제로 실행한 팀들이 공통으로 지목하는 실패 원인은 데이터가 아니라 **성능**이다. 기능 테스트는 모두 통과했는데, 실제 프로덕션 부하가 들어오자 특정 쿼리의 실행 계획이 Aurora PostgreSQL에서 다르게 잡혀 응답 시간이 수십 배로 늘어난 사례가 반복된다. Oracle의 힌트에 의존하던 쿼리, 상관 서브쿼리, 대용량 조인에서 특히 잘 생긴다. 그래서 Cutover 전 검증에는 반드시 **프로덕션 수준 부하 테스트**와 `EXPLAIN ANALYZE` 기반 실행 계획 비교가 들어가야 한다. 행 수 일치는 최소 조건이지 충분 조건이 아니다.
 
 ## 한정어가 바뀌면 답이 달라진다
 
-"온프레미스 Oracle을 AWS로 옮겨라"라는 하나의 요구에, 한정어만 바꿔 보자.
+"온프레미스 Oracle을 AWS로 옮겨라"라는 하나의 요구에, 한정어만 바꿔 본다.
 
 | 한정어 | 정답 방향 | 왜 |
 |--------|-----------|-----|
@@ -404,11 +404,11 @@ DB Cutover가 서버 Cutover보다 무서운 이유는 **되돌리기가 어렵�
 | **동종 엔진(MySQL → RDS MySQL)** | **DMS만** (SCT 불필요) | 스키마 변환이 필요 없다 |
 | **실시간 분석 파이프라인도 필요** | DMS → **Kinesis / S3** 타깃 | DMS의 타깃은 DB만이 아니다 |
 
-> 💡 **암기 팁**: **"downtime을 물으면 CDC, cost를 물으면 Aurora, bandwidth를 물으면 Snowball, 동종이면 SCT 빼라."** 네 문장이면 DMS 문항의 방향이 대부분 잡힌다.
+**"downtime을 물으면 CDC, cost를 물으면 Aurora, bandwidth를 물으면 Snowball, 동종이면 SCT 빼라."** 네 문장이면 DMS 문항의 방향이 대부분 잡힌다.
 
-> 🔍 **더 깊이**: 대역폭 제약 시나리오에서 **SCT 데이터 추출 에이전트(Data Extraction Agent)**의 역할을 정확히 알아둘 필요가 있다. 이 에이전트는 온프레미스에서 원본 데이터를 추출·압축해 로컬 파일로 만들고, 그 파일을 Snowball Edge에 적재해 물리적으로 AWS에 보낸 뒤, S3를 거쳐 대상(특히 Redshift 같은 데이터 웨어하우스)으로 로드한다. 수십~수백 TB 규모의 Teradata·Netezza·Oracle DW를 Redshift로 옮길 때 쓰는 표준 경로다. 이때도 **초기 적재만 물리 전송이고, 그 이후의 변경분은 DMS CDC가 네트워크로 따라잡는다** — 이 조합을 묻는 문항이 자주 나온다.
+대역폭 제약 시나리오에서 **SCT 데이터 추출 에이전트(Data Extraction Agent)**의 역할을 정확히 알아둘 필요가 있다. 이 에이전트는 온프레미스에서 원본 데이터를 추출·압축해 로컬 파일로 만들고, 그 파일을 Snowball Edge에 적재해 물리적으로 AWS에 보낸 뒤, S3를 거쳐 대상(특히 Redshift 같은 데이터 웨어하우스)으로 로드한다. 수십~수백 TB 규모의 Teradata·Netezza·Oracle DW를 Redshift로 옮길 때 쓰는 표준 경로다. 이때도 **초기 적재만 물리 전송이고, 그 이후의 변경분은 DMS CDC가 네트워크로 따라잡는다** — 이 조합을 묻는 문항이 나올 수 있다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 넷이다.
 

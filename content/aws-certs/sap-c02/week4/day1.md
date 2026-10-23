@@ -6,7 +6,7 @@
 
 Outposts는 개념적으로 단순하다. AWS가 자신의 하드웨어(Nitro 기반 서버가 탑재된 표준 42U 랙 또는 소형 1U/2U 서버)를 고객 데이터센터에 직접 배송하고 설치한다. 그 하드웨어 위에서 EC2, EBS, S3 on Outposts, RDS, ECS, EKS, EMR 같은 AWS 서비스가 실행된다. 고객은 일반 AWS 리전과 동일한 API, CLI, 콘솔을 사용한다.
 
-> 💡 **관련 이론**: Outposts의 하드웨어는 AWS Nitro System을 기반으로 한다. Nitro는 AWS가 2017년부터 단계적으로 공개한 하이퍼바이저 + 네트워킹 + 스토리지 + 보안을 통합한 커스텀 실리콘 아키텍처다. Nitro Controller(전용 카드)가 VM 격리, 네트워크 처리, EBS I/O를 호스트 CPU와 완전히 분리해 처리한다. 이 아키텍처 덕분에 Outposts 하드웨어가 고객 데이터센터에 있어도 AWS 리전의 EC2와 동일한 성능 특성과 보안 격리를 제공할 수 있다. 고객은 Nitro 펌웨어나 하이퍼바이저에 직접 접근할 수 없다.
+Outposts의 하드웨어는 AWS Nitro System을 기반으로 한다. Nitro는 AWS가 2017년부터 단계적으로 공개한 하이퍼바이저 + 네트워킹 + 스토리지 + 보안을 통합한 커스텀 실리콘 아키텍처다. Nitro Controller(전용 카드)가 VM 격리, 네트워크 처리, EBS I/O를 호스트 CPU와 완전히 분리해 처리한다. 이 아키텍처 덕분에 Outposts 하드웨어가 고객 데이터센터에 있어도 AWS 리전의 EC2와 동일한 성능 특성과 보안 격리를 제공할 수 있다. 고객은 Nitro 펌웨어나 하이퍼바이저에 직접 접근할 수 없다.
 
 ### Outposts 프로비저닝 과정: 랙 하나가 생기기까지
 
@@ -14,7 +14,7 @@ Outposts 랙의 배송과 설치는 알려진 것보다 복잡한 과정을 거�
 
 AWS 현장 기술자가 랙을 설치하고 초기 구성을 마친 후, AWS 리전의 관리 플레인과 **Service Link** 연결을 수립한다. Service Link는 Outposts와 연결된 AWS 리전 간의 암호화된 연결로, Outposts의 관리·제어 작업이 모두 이 링크를 통해 이루어진다.
 
-> 📚 **사례**: 2021년 한 대형 한국 병원 그룹이 Outposts를 도입했다. 의료영상(DICOM) 데이터의 개인정보보호법 요건으로 환자 영상이 병원 건물 외부 서버에 저장되는 것이 법적으로 제한됐다. Outposts 랙을 병원 서버실에 설치하고 EC2와 EBS를 사용해 AI 영상 진단 모델을 운행했다. 영상 데이터는 병원 건물 내 Outposts에 있고, 모델 학습은 AWS 리전 GPU 클러스터에서 이루어졌다. Service Link를 통해 리전의 SageMaker와 Outposts의 추론 인스턴스가 통합됐다.
+2021년 한 대형 한국 병원 그룹이 Outposts를 도입했다. 의료영상(DICOM) 데이터의 개인정보보호법 요건으로 환자 영상이 병원 건물 외부 서버에 저장되는 것이 법적으로 제한됐다. Outposts 랙을 병원 서버실에 설치하고 EC2와 EBS를 사용해 AI 영상 진단 모델을 운행했다. 영상 데이터는 병원 건물 내 Outposts에 있고, 모델 학습은 AWS 리전 GPU 클러스터에서 이루어졌다. Service Link를 통해 리전의 SageMaker와 Outposts의 추론 인스턴스가 통합됐다.
 
 ### Outposts Rack vs Outposts Servers
 
@@ -74,11 +74,11 @@ AWS us-west-2 리전 (오리건)
 
 로스앤젤레스 Local Zone을 예로 들면, LA 사용자가 오리건 리전 EC2에 접근할 때 약 20~30ms가 걸린다. 같은 LA Local Zone EC2에 접근하면 1ms 미만이다. 이 차이가 실시간 비디오 편집, 게임, 라이브 스트리밍 같은 지연 민감 워크로드에서 사용자 경험을 결정한다.
 
-> 💡 **관련 이론**: 지연시간은 두 가지 요소로 구성된다. **전파 지연(Propagation Delay)**: 신호가 물리적으로 이동하는 시간. 빛의 속도 × 거리. **처리 지연(Processing Delay)**: 라우터, 스위치, 서버가 패킷을 처리하는 시간. Local Zone은 물리적 거리를 줄여 전파 지연을 최소화한다. LA Local Zone은 오리건 리전 대비 약 900km 가까이 LA 사용자에게 위치해 약 6ms의 전파 지연 감소 효과가 있다. 처리 지연 최적화는 EC2의 Nitro 아키텍처가 담당한다.
+지연 시간은 두 가지 요소로 구성된다. **전파 지연(Propagation Delay)**: 신호가 물리적으로 이동하는 시간. 빛의 속도 × 거리. **처리 지연(Processing Delay)**: 라우터, 스위치, 서버가 패킷을 처리하는 시간. Local Zone은 물리적 거리를 줄여 전파 지연을 최소화한다. LA Local Zone은 오리건 리전 대비 약 900km 가까이 LA 사용자에게 위치해 약 6ms의 전파 지연 감소 효과가 있다. 처리 지연 최적화는 EC2의 Nitro 아키텍처가 담당한다.
 
 Local Zone에서 지원되는 서비스는 부모 리전보다 제한적이다. EC2, EBS, ALB가 핵심이고 일부 RDS, ElastiCache도 지원된다. 모든 AWS 서비스가 Local Zone에서 동작하지는 않는다.
 
-> 📚 **사례**: Electronic Arts(EA Games)는 2022년 us-west-2-lax-1 Local Zone에 실시간 게임 서버를 배포해 LA 지역 플레이어의 핑을 평균 28ms에서 8ms로 낮췄다. 멀티플레이어 슈팅 게임에서 이 20ms 차이는 플레이어가 체감할 수 있는 수준으로, 반응 속도에 직결된다. EA는 게임 서버를 Local Zone에, 플레이어 데이터와 매치메이킹 서비스는 부모 리전에 유지해 리전의 모든 관리 기능을 그대로 활용했다.
+Electronic Arts(EA Games)는 2022년 us-west-2-lax-1 Local Zone에 실시간 게임 서버를 배포해 LA 지역 플레이어의 핑을 평균 28ms에서 8ms로 낮췄다. 멀티플레이어 슈팅 게임에서 이 20ms 차이는 플레이어가 체감할 수 있는 수준으로, 반응 속도에 직결된다. EA는 게임 서버를 Local Zone에, 플레이어 데이터와 매치메이킹 서비스는 부모 리전에 유지해 리전의 모든 관리 기능을 그대로 활용했다.
 
 ## Wavelength: 5G 네트워크 안의 AWS
 
@@ -99,9 +99,9 @@ Wavelength Zone (통신사 MEC 시설)
 
 일반적으로 5G 디바이스의 데이터는 기지국 → 5G 코어 네트워크(수백 킬로미터 거리의 중앙 데이터센터) → 인터넷 → 클라우드 순으로 이동한다. Wavelength는 이 경로를 기지국 → 통신사 MEC 시설의 Wavelength Zone으로 단축한다.
 
-> 💡 **관련 이론**: MEC(Multi-access Edge Computing)는 ETSI(European Telecommunications Standards Institute)가 2014년부터 표준화한 엣지 컴퓨팅 아키텍처다. ETSI GS MEC 003 표준이 MEC 플랫폼의 참조 아키텍처를 정의한다. Wavelength는 AWS가 이 표준에 맞춰 통신사 MEC 인프라에 AWS 서비스를 통합한 구현체다. 5G 표준(3GPP Release 15 이후)에서 정의한 네트워크 슬라이싱과 UPF(User Plane Function) 분리가 기술적으로 가능하게 한 배경이다.
+MEC(Multi-access Edge Computing)는 ETSI(European Telecommunications Standards Institute)가 2014년부터 표준화한 엣지 컴퓨팅 아키텍처다. ETSI GS MEC 003 표준이 MEC 플랫폼의 참조 아키텍처를 정의한다. Wavelength는 AWS가 이 표준에 맞춰 통신사 MEC 인프라에 AWS 서비스를 통합한 구현체다. 5G 표준(3GPP Release 15 이후)에서 정의한 네트워크 슬라이싱과 UPF(User Plane Function) 분리가 기술적으로 가능하게 한 배경이다.
 
-> 🔍 **더 깊이**: Wavelength Zone은 통신사 파트너(Verizon, KDDI, SK Telecom, Deutsche Telekom 등)의 데이터센터에 AWS 하드웨어를 함께 배치(Co-location)한 형태다. SK Telecom의 경우 서울, 대전, 부산의 5G MEC 시설에 Wavelength Zone이 있다. 자율주행 차량 시나리오에서 차량의 라이다 데이터가 5G로 전송되면 가장 가까운 기지국을 통해 Wavelength Zone의 EC2에서 처리되고, 처리 결과(장애물 감지, 경로 재계산)가 10ms 이내에 차량으로 반환된다.
+Wavelength Zone은 통신사 파트너(Verizon, KDDI, SK Telecom, Deutsche Telekom 등)의 데이터센터에 AWS 하드웨어를 함께 배치(Co-location)한 형태다. SK Telecom의 경우 서울, 대전, 부산의 5G MEC 시설에 Wavelength Zone이 있다. 자율주행 차량 시나리오에서 차량의 라이다 데이터가 5G로 전송되면 가장 가까운 기지국을 통해 Wavelength Zone의 EC2에서 처리되고, 처리 결과(장애물 감지, 경로 재계산)가 10ms 이내에 차량으로 반환된다.
 
 ## 세 서비스 심층 비교
 
@@ -126,7 +126,7 @@ Wavelength Zone (통신사 MEC 시설)
 | 5G 통합 | Wavelength (별도) | Telecom Infra | 파트너 솔루션 |
 | 서비스 범위 | 제한적(EC2/EBS/RDS 등) | 제한적 | 제한적 |
 
-> 📚 **사례**: 제조업체 GE Aerospace는 항공기 엔진 데이터를 실시간 분석하는 시스템에 AWS Outposts를 도입했다. 엔진 센서 데이터는 공장 LAN에서 수집되고, 지연에 민감한 실시간 이상 탐지 모델이 Outposts에서 실행된다. 이상이 감지되면 즉시 라인을 멈추는 신호가 로컬 게이트웨이를 통해 공장 제어 시스템으로 전달된다. 집계 데이터와 모델 재학습은 AWS 리전 클라우드에서 이루어진다. Azure Stack Hub와 비교 검토 시 GE Aerospace가 Outposts를 선택한 주요 이유는 기존 AWS 서비스와의 API 호환성이었다.
+제조업체 GE Aerospace는 항공기 엔진 데이터를 실시간 분석하는 시스템에 AWS Outposts를 도입했다. 엔진 센서 데이터는 공장 LAN에서 수집되고, 지연에 민감한 실시간 이상 탐지 모델이 Outposts에서 실행된다. 이상이 감지되면 즉시 라인을 멈추는 신호가 로컬 게이트웨이를 통해 공장 제어 시스템으로 전달된다. 집계 데이터와 모델 재학습은 AWS 리전 클라우드에서 이루어진다. Azure Stack Hub와 비교 검토 시 GE Aerospace가 Outposts를 선택한 주요 이유는 기존 AWS 서비스와의 API 호환성이었다.
 
 ## 시나리오별 선택 가이드
 

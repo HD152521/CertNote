@@ -22,17 +22,17 @@ PrivateLink는 세 번째 길을 제시한다. **서비스를 네트워크 레�
                                                       App Server
 ```
 
-> 💡 **관련 이론**: PrivateLink의 내부 구현은 **서비스 메시(Service Mesh)** 패턴의 AWS 구현이다. 마이크로서비스 아키텍처에서 서비스 디스커버리와 서비스 간 통신을 추상화하는 것처럼, PrivateLink는 VPC 간 서비스 통신을 IP 라우팅에서 분리한다. Consumer가 Producer의 내부 IP 구조를 알 필요가 없고, Producer의 IP가 변경되어도 Consumer는 영향을 받지 않는다. 이는 Martin Fowler가 정의한 "Strangler Fig" 패턴과 결합하면 레거시 시스템을 점진적으로 서비스화하는 데 활용된다.
+PrivateLink의 내부 구현은 **서비스 메시(Service Mesh)** 패턴의 AWS 구현이다. 마이크로서비스 아키텍처에서 서비스 디스커버리와 서비스 간 통신을 추상화하는 것처럼, PrivateLink는 VPC 간 서비스 통신을 IP 라우팅에서 분리한다. Consumer가 Producer의 내부 IP 구조를 알 필요가 없고, Producer의 IP가 변경되어도 Consumer는 영향을 받지 않는다. 이는 Martin Fowler가 정의한 "Strangler Fig" 패턴과 결합하면 레거시 시스템을 점진적으로 서비스화하는 데 활용된다.
 
 핵심 특성 세 가지: **단방향**(Consumer → Producer만 가능), **CIDR 겹침 허용**, **서비스 단위 접근 제어**.
 
-> 📚 **사례**: Snowflake는 2019년부터 AWS PrivateLink를 통해 고객이 인터넷을 경유하지 않고 Snowflake 데이터 웨어하우스에 접근할 수 있게 했다. 금융 규제기관이 "데이터가 인터넷을 통과하지 않아야 한다"고 요구하는 환경에서, PrivateLink는 Snowflake SaaS를 사설망에서 사용하는 유일한 방법이다. MongoDB Atlas, Datadog, Elastic Cloud도 동일한 방식으로 PrivateLink 접근을 제공한다.
+Snowflake는 2019년부터 AWS PrivateLink를 통해 고객이 인터넷을 경유하지 않고 Snowflake 데이터 웨어하우스에 접근할 수 있게 했다. 금융 규제기관이 "데이터가 인터넷을 통과하지 않아야 한다"고 요구하는 환경에서, PrivateLink는 Snowflake SaaS를 사설망에서 사용하는 유일한 방법이다. MongoDB Atlas, Datadog, Elastic Cloud도 동일한 방식으로 PrivateLink 접근을 제공한다.
 
 ## VPC Endpoint 3종: 선택 기준
 
 ### Gateway Endpoint: S3와 DynamoDB 전용 무료 서비스
 
-Gateway Endpoint는 VPC 라우트 테이블에 특별한 엔트리를 추가해 S3 또는 DynamoDB 트래픽을 AWS 백본으로 직접 보내는 방식이다. ENI가 생성되지 않는다는 점이 Interface Endpoint와 근본적으로 다르다.
+Gateway Endpoint는 VPC 라우팅 테이블에 특별한 엔트리를 추가해 S3 또는 DynamoDB 트래픽을 AWS 백본으로 직접 보내는 방식이다. ENI가 생성되지 않는다는 점이 Interface Endpoint와 근본적으로 다르다.
 
 ```
 VPC Route Table:
@@ -43,7 +43,7 @@ EC2 → S3 패킷 → 라우트 테이블 조회 → S3 프리픽스 리스트 �
                                       → AWS 백본을 통해 S3에 도달
 ```
 
-> 🔍 **더 깊이**: Gateway Endpoint는 내부적으로 **Managed Prefix List**를 사용한다. AWS가 S3 IP 범위를 관리하는 프리픽스 리스트를 자동으로 유지하고, VPC 라우트 테이블의 Gateway Endpoint 항목이 이 프리픽스 리스트를 참조한다. S3 IP가 변경되면 AWS가 자동으로 프리픽스 리스트를 업데이트하고 라우팅이 자동으로 반영된다. 사용자가 직접 S3 IP 목록을 관리할 필요가 없다. 이 메커니즘 덕분에 추가 비용 없이 운영할 수 있다.
+Gateway Endpoint는 내부적으로 **Managed Prefix List**를 사용한다. AWS가 S3 IP 범위를 관리하는 프리픽스 리스트를 자동으로 유지하고, VPC 라우팅 테이블의 Gateway Endpoint 항목이 이 프리픽스 리스트를 참조한다. S3 IP가 변경되면 AWS가 자동으로 프리픽스 리스트를 업데이트하고 라우팅이 자동으로 반영된다. 사용자가 직접 S3 IP 목록을 관리할 필요가 없다. 이 메커니즘 덕분에 추가 비용 없이 운영할 수 있다.
 
 **Gateway Endpoint의 한계**: S3와 DynamoDB만 지원한다. 온프레미스에서는 사용할 수 없다(라우트 테이블 기반이므로 VPC 내부에서만 동작). 다른 리전의 S3에는 동작하지 않는다.
 
@@ -69,7 +69,7 @@ com.amazonaws.ap-northeast-2.ssm
 
 Interface Endpoint의 비용 구조: AZ당 시간당 요금($0.01~) + 데이터 처리 요금(GB당). VPC에 여러 AZ에 걸쳐 Endpoint를 생성하면 각 AZ에 ENI가 생기고 AZ당 시간당 요금이 부과된다.
 
-> 💡 **관련 이론**: Interface Endpoint는 AWS 내부적으로 **Hyperplane**이라는 분산 네트워킹 인프라 위에서 동작한다. Hyperplane은 AWS가 2019년 re:Invent에서 발표한 내부 네트워크 가상화 레이어로, NAT Gateway, PrivateLink, Network Firewall 등의 관리형 네트워크 서비스가 모두 이 위에서 실행된다. Hyperplane은 상태 저장 없이(stateless) 패킷을 처리해 수평 확장이 자동으로 이루어지며, 단일 장애 지점이 없다.
+Interface Endpoint는 AWS 내부적으로 **Hyperplane**이라는 분산 네트워킹 인프라 위에서 동작한다. Hyperplane은 AWS가 2019년 re:Invent에서 발표한 내부 네트워크 가상화 레이어로, NAT Gateway, PrivateLink, Network Firewall 등의 관리형 네트워크 서비스가 모두 이 위에서 실행된다. Hyperplane은 상태 저장 없이(stateless) 패킷을 처리해 수평 확장이 자동으로 이루어지며, 단일 장애 지점이 없다.
 
 ### Gateway Load Balancer Endpoint: 보안 어플라이언스 트래픽 체인
 
@@ -91,7 +91,7 @@ GLB Endpoint는 트래픽을 네트워크 보안 어플라이언스(방화벽, I
 [정상 트래픽, 최종 목적지로 전달]
 ```
 
-> 💡 **관련 이론**: GENEVE(RFC 8926)는 VXLAN(RFC 7348)의 후계 프로토콜로 설계됐다. VXLAN이 고정된 24비트 VNID만 헤더에 포함하는 것과 달리, GENEVE는 가변 길이 헤더와 Type-Length-Value(TLV) 확장을 지원해 네트워크 가상화에 필요한 다양한 메타데이터를 전달할 수 있다. AWS GLB는 GENEVE를 사용해 원본 5-tuple(소스 IP, 목적지 IP, 소스 포트, 목적지 포트, 프로토콜)을 보존한 채 어플라이언스로 전달한다. 어플라이언스는 이 컨텍스트를 기반으로 상태 저장(stateful) 방화벽 규칙을 적용한다.
+GENEVE(RFC 8926)는 VXLAN(RFC 7348)의 후계 프로토콜로 설계됐다. VXLAN이 고정된 24비트 VNID만 헤더에 포함하는 것과 달리, GENEVE는 가변 길이 헤더와 Type-Length-Value(TLV) 확장을 지원해 네트워크 가상화에 필요한 다양한 메타데이터를 전달할 수 있다. AWS GLB는 GENEVE를 사용해 원본 5-tuple(소스 IP, 목적지 IP, 소스 포트, 목적지 포트, 프로토콜)을 보존한 채 어플라이언스로 전달한다. 어플라이언스는 이 컨텍스트를 기반으로 상태 저장(stateful) 방화벽 규칙을 적용한다.
 
 **GLB Endpoint의 핵심 가치**: 중앙화된 보안 검사. 수십 개의 Spoke VPC가 단일 Security VPC의 어플라이언스를 공유한다. 어플라이언스를 교체하거나 업그레이드해도 Spoke VPC의 구성을 변경할 필요가 없다.
 
@@ -122,7 +122,7 @@ Private DNS가 동작하려면 VPC의 두 설정이 모두 활성화되어 있�
 - `enableDnsSupport`: VPC에서 DNS 해석 활성화
 - `enableDnsHostnames`: VPC 내 EC2에 DNS 호스트명 할당
 
-> 🔍 **더 깊이**: Private DNS 활성화는 내부적으로 **Route 53 Private Hosted Zone**을 자동으로 생성하고 VPC에 연결한다. 이 Private Hosted Zone이 서비스 도메인(`*.amazonaws.com`)의 VPC 내 DNS 조회를 ENI IP로 오버라이드한다. VPC DNS 해석기(169.254.169.253)가 이 Private Hosted Zone을 먼저 조회하므로 공인 DNS보다 ENI IP가 우선된다. 이 메커니즘은 VPC 외부에서는 영향을 미치지 않아, 동일한 엔드포인트 URL이 VPC 내부에서는 사설 IP로, 인터넷에서는 공인 IP로 해석된다.
+Private DNS 활성화는 내부적으로 **Route 53 Private Hosted Zone**을 자동으로 생성하고 VPC에 연결한다. 이 Private Hosted Zone이 서비스 도메인(`*.amazonaws.com`)의 VPC 내 DNS 조회를 ENI IP로 오버라이드한다. VPC DNS 해석기(169.254.169.253)가 이 Private Hosted Zone을 먼저 조회하므로 공인 DNS보다 ENI IP가 우선된다. 이 메커니즘은 VPC 외부에서는 영향을 미치지 않아, 동일한 엔드포인트 URL이 VPC 내부에서는 사설 IP로, 인터넷에서는 공인 IP로 해석된다.
 
 > ⚠️ **함정**: 같은 도메인에 대해 이미 커스텀 Route 53 Private Hosted Zone이 있으면 Interface Endpoint의 Private DNS와 충돌할 수 있다. 예를 들어 `amazonaws.com`에 대한 PHZ가 이미 있으면 Endpoint의 Private DNS가 올바르게 동작하지 않을 수 있다. 이를 분리하기 위해 서비스별 세부 도메인(예: `secretsmanager.ap-northeast-2.amazonaws.com`)에만 PHZ를 적용하는 방식이 권장된다.
 
@@ -188,7 +188,7 @@ Endpoint Policy는 VPC Endpoint를 통해 허용되는 API 액션과 리소스�
 }
 ```
 
-> 💡 **관련 이론**: Endpoint Policy는 IAM 정책의 **자원 기반 정책(Resource-based Policy)** 의 특수 형태다. IAM의 평가 논리에서 Endpoint Policy는 VPC Endpoint를 통과하는 요청에 추가적인 제한을 가하는 필터 역할을 한다. IAM 사용자 정책이 허용하더라도 Endpoint Policy가 거부하면 접근이 차단된다(AND 논리). S3 버킷 정책에서 `aws:sourceVpce` 조건을 사용하면 특정 Endpoint를 통한 접근만 허용하는 데이터 격리가 가능하다.
+Endpoint Policy는 IAM 정책의 **자원 기반 정책(Resource-based Policy)** 의 특수 형태다. IAM의 평가 논리에서 Endpoint Policy는 VPC Endpoint를 통과하는 요청에 추가적인 제한을 가하는 필터 역할을 한다. IAM 사용자 정책이 허용하더라도 Endpoint Policy가 거부하면 접근이 차단된다(AND 논리). S3 버킷 정책에서 `aws:sourceVpce` 조건을 사용하면 특정 Endpoint를 통한 접근만 허용하는 데이터 격리가 가능하다.
 
 ## PrivateLink vs Peering vs TGW: 언제 무엇을 쓰는가
 
@@ -197,7 +197,7 @@ Endpoint Policy는 VPC Endpoint를 통해 허용되는 API 액션과 리소스�
 | 연결 모델 | 서비스 단위 | 네트워크 전체 | 네트워크 전체 |
 | 방향 | 단방향 (Consumer → Producer) | 양방향 | 양방향 |
 | CIDR 겹침 | 허용 | 불가 | 불가 |
-| Consumer 측 구성 | Interface Endpoint ENI | 라우트 테이블 | 라우트 테이블 |
+| Consumer 측 구성 | Interface Endpoint ENI | 라우팅 테이블 | 라우팅 테이블 |
 | 접근 범위 | 지정된 서비스만 | 상대 VPC 전체 IP | TGW에 연결된 VPC 전체 |
 | 멀티 계정 | Endpoint Service 허용 목록 | Peering 요청/승인 | RAM 공유 |
 | 비용 | ENI 시간당 + 데이터 | 무료(VPC 내 통신비) | TGW 처리 비용 |
@@ -211,7 +211,7 @@ Endpoint Policy는 VPC Endpoint를 통해 허용되는 API 액션과 리소스�
 
 **Cross-Region** (2024년 지원 추가): Consumer VPC와 Producer VPC가 다른 리전에 있어도 PrivateLink로 연결 가능하다. Consumer 리전의 Interface Endpoint가 AWS 백본을 통해 다른 리전의 Endpoint Service로 연결된다. 단, 리전 간 데이터 전송 비용이 추가된다.
 
-> 🔍 **더 깊이**: Cross-Region PrivateLink가 추가되기 전에는 다른 리전의 서비스에 사설로 접근하려면 TGW Inter-Region Peering + 로컬 NLB의 복잡한 조합이 필요했다. 2024년부터 Interface Endpoint가 직접 다른 리전 Endpoint Service를 참조할 수 있어 멀티 리전 서비스 아키텍처가 단순해졌다. 이는 글로벌 SaaS 서비스가 단일 리전 PrivateLink 인프라로 전 세계 고객에게 사설 접근을 제공할 수 있게 한다.
+Cross-Region PrivateLink가 추가되기 전에는 다른 리전의 서비스에 사설로 접근하려면 TGW Inter-Region Peering + 로컬 NLB의 복잡한 조합이 필요했다. 2024년부터 Interface Endpoint가 직접 다른 리전 Endpoint Service를 참조할 수 있어 멀티 리전 서비스 아키텍처가 단순해졌다. 이는 글로벌 SaaS 서비스가 단일 리전 PrivateLink 인프라로 전 세계 고객에게 사설 접근을 제공할 수 있게 한다.
 
 ## 다른 클라우드의 유사 서비스와 비교
 
@@ -224,7 +224,7 @@ Endpoint Policy는 VPC Endpoint를 통해 허용되는 API 액션과 리소스�
 | DNS 통합 | Private DNS 자동 | Cloud DNS 수동 구성 | Private DNS Zone |
 | 지원 서비스 수 | 130+ AWS 서비스 | 40+ GCP 서비스 | 90+ Azure 서비스 |
 
-> 📚 **사례**: Google Cloud의 Private Service Connect(PSC)는 2021년 출시됐으며 AWS PrivateLink와 동일한 패턴이다. PSC는 NEG(Network Endpoint Group)를 Producer 측에 사용하고, Consumer 측에 PSC Endpoint를 생성한다. GCP VPC가 글로벌 단일 VPC라는 특성상 PSC는 리전 간 연결도 단일 구성으로 처리할 수 있어 AWS보다 구성이 단순하다. Azure Private Link는 2019년 출시돼 세 클라우드 중 가장 먼저 이 패턴을 구현했다.
+Google Cloud의 Private Service Connect(PSC)는 2021년 출시됐으며 AWS PrivateLink와 동일한 패턴이다. PSC는 NEG(Network Endpoint Group)를 Producer 측에 사용하고, Consumer 측에 PSC Endpoint를 생성한다. GCP VPC가 글로벌 단일 VPC라는 특성상 PSC는 리전 간 연결도 단일 구성으로 처리할 수 있어 AWS보다 구성이 단순하다. Azure Private Link는 2019년 출시돼 세 클라우드 중 가장 먼저 이 패턴을 구현했다.
 
 ## 실전: KMS와 Secrets Manager를 사설로 접근하는 패턴
 
@@ -265,7 +265,7 @@ aws ec2 modify-vpc-endpoint \
 
 Security Group은 Interface Endpoint의 ENI에 적용된다. EC2 인스턴스가 KMS Endpoint ENI에 접근하려면 해당 Security Group의 인바운드 규칙이 EC2 Security Group 또는 EC2 IP를 허용해야 한다(포트 443).
 
-> ⚠️ **함정**: Interface Endpoint를 생성할 때 Security Group을 지정하지 않으면 **VPC 기본 Security Group**이 자동으로 연결된다. 기본 SG는 동일 SG 내 모든 트래픽을 허용하므로, VPC 기본 SG가 모든 EC2에 적용되어 있다면 Endpoint에 대한 접근이 과도하게 허용될 수 있다. 항상 명시적인 Security Group을 생성하고 필요한 소스만 443 포트를 허용하도록 구성해야 한다.
+Interface Endpoint를 생성할 때 Security Group을 지정하지 않으면 **VPC 기본 Security Group**이 자동으로 연결된다. 기본 SG는 동일 SG 내 모든 트래픽을 허용하므로, VPC 기본 SG가 모든 EC2에 적용되어 있다면 Endpoint에 대한 접근이 과도하게 허용될 수 있다. 항상 명시적인 Security Group을 생성하고 필요한 소스만 443 포트를 허용하도록 구성해야 한다.
 
 PrivateLink는 AWS 서비스 접근, 내부 서비스 공유, 서드파티 SaaS 통합, 보안 어플라이언스 체인 모두에서 핵심 패턴이다. SAP-C02에서 "CIDR 겹침", "단방향 서비스 노출", "인터넷 없이 SaaS 접근" 키워드가 나오면 PrivateLink가 정답이다.
 

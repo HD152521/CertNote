@@ -19,9 +19,9 @@ AWS Backup 이전에는 서비스마다 백업 방식이 제각각이었다. EBS
 
 지원 서비스는 폭넓다 — EBS·EC2(AMI)·RDS·Aurora·DynamoDB·EFS·FSx·S3·DocumentDB·Neptune·Storage Gateway·Redshift·Timestream·SAP HANA on EC2. **태그 기반 선택(tag-based resource selection)**으로 "Environment=prod 태그가 붙은 모든 리소스"를 한 Plan에 자동 포함시킬 수 있어, 새 리소스가 생겨도 태그만 맞으면 자동으로 백업 대상이 된다.
 
-> 💡 **관련 이론**: AWS Backup의 설계는 **선언적 정책(declarative policy)** 패러다임이다. "이 리소스를 백업하라"는 명령형(imperative)이 아니라, "이 태그를 가진 모든 리소스는 매일 백업되고 35일 보존되며 다른 리전에 복사되어야 한다"는 원하는 상태(desired state)를 선언하면 시스템이 그 상태를 유지한다. Kubernetes의 desired-state reconciliation, Terraform의 선언적 IaC와 같은 사상이다. 이 방식의 강점은 **새로 추가되는 리소스가 자동으로 정책에 편입**된다는 점 — 명령형 백업은 리소스가 생길 때마다 누군가 백업을 켜줘야 하지만, 태그 기반 선언적 정책은 누락을 구조적으로 방지한다. 시험에서 "새 리소스도 자동으로 백업 정책에 포함"이 보이면 태그 기반 선택이 답이다.
+AWS Backup의 설계는 **선언적 정책(declarative policy)** 패러다임이다. "이 리소스를 백업하라"는 명령형(imperative)이 아니라, "이 태그를 가진 모든 리소스는 매일 백업되고 35일 보존되며 다른 리전에 복사되어야 한다"는 원하는 상태(desired state)를 선언하면 시스템이 그 상태를 유지한다. Kubernetes의 desired-state reconciliation, Terraform의 선언적 IaC와 같은 사상이다. 이 방식의 강점은 **새로 추가되는 리소스가 자동으로 정책에 편입**된다는 점 — 명령형 백업은 리소스가 생길 때마다 누군가 백업을 켜줘야 하지만, 태그 기반 선언적 정책은 누락을 구조적으로 방지한다. 시험에서 "새 리소스도 자동으로 백업 정책에 포함"이 보이면 태그 기반 선택이 답이다.
 
-> 🔍 **더 깊이**: AWS Backup과 서비스 네이티브 백업은 공존한다. RDS는 AWS Backup 없이도 자체 자동 백업(최대 35일)과 PITR을 제공하고, EBS는 DLM으로 스냅샷을 관리할 수 있다. 그렇다면 언제 AWS Backup을 쓰는가? **여러 서비스를 가로지르는 중앙 정책·멀티 계정 거버넌스·Vault Lock WORM·Cross-Account Copy가 필요할 때**다. 단일 서비스·단일 계정이면 네이티브 백업으로 충분하지만, "Organization 전체에 일관된 백업 정책을 강제하고 컴플라이언스를 증명"해야 하면 AWS Backup이 정답이다. 시험은 이 경계를 자주 묻는다 — "수십 개 계정의 EBS·RDS·DDB를 통합 정책으로"가 보이면 AWS Backup이다.
+AWS Backup과 서비스 네이티브 백업은 공존한다. RDS는 AWS Backup 없이도 자체 자동 백업(최대 35일)과 PITR을 제공하고, EBS는 DLM으로 스냅샷을 관리할 수 있다. 그렇다면 언제 AWS Backup을 쓰는가? **여러 서비스를 가로지르는 중앙 정책·멀티 계정 거버넌스·Vault Lock WORM·Cross-Account Copy가 필요할 때**다. 단일 서비스·단일 계정이면 네이티브 백업으로 충분하지만, "Organization 전체에 일관된 백업 정책을 강제하고 컴플라이언스를 증명"해야 하면 AWS Backup이 정답이다. 시험은 이 경계를 묻는다 — "수십 개 계정의 EBS·RDS·DDB를 통합 정책으로"가 보이면 AWS Backup이다.
 
 ## Vault Lock — 불가역성의 두 단계
 
@@ -34,9 +34,9 @@ AWS Backup 이전에는 서비스마다 백업 방식이 제각각이었다. EBS
 
 핵심은 **Compliance 모드의 불가역성**이다. Compliance Lock에는 `changeable-for-days`라는 유예(cooling-off) 기간이 있어, 그 기간 동안은 설정을 조정·취소할 수 있지만 일단 유예가 지나 잠금이 확정되면 **그 누구도 — AWS 본사 root 사용자도, 지원팀도 — 백업을 지우거나 보존 기간을 줄일 수 없다**. 이 불가역성이 곧 규제 준수의 법적 증거가 된다.
 
-> 💡 **관련 이론**: Vault Lock Compliance 모드의 "root조차 못 바꾸는" 설계는 보안 공학의 **불변성(immutability)**과 **권한 분리(separation of privilege)** 원칙의 극단적 적용이다. 일반적으로 root는 모든 것을 할 수 있는 최고 권한이지만, WORM 보장을 위해서는 **"가장 강한 권한도 막아야"** 한다 — 그렇지 않으면 root 계정이 탈취되거나 내부자가 악용할 경우 백업이 통째로 사라질 수 있기 때문이다. 이는 랜섬웨어 방어의 핵심이기도 하다: 랜섬웨어가 관리자 권한을 탈취해도 Compliance Lock된 백업은 손댈 수 없어, 몸값을 내지 않고 복구할 최후의 보루가 된다. 동일 철학이 S3 Object Lock Compliance 모드에도 적용된다.
+Vault Lock Compliance 모드의 "root조차 못 바꾸는" 설계는 보안 공학의 **불변성(immutability)**과 **권한 분리(separation of privilege)** 원칙의 극단적 적용이다. 일반적으로 root는 모든 것을 할 수 있는 최고 권한이지만, WORM 보장을 위해서는 **"가장 강한 권한도 막아야"** 한다 — 그렇지 않으면 root 계정이 탈취되거나 내부자가 악용할 경우 백업이 통째로 사라질 수 있기 때문이다. 이는 랜섬웨어 방어의 핵심이기도 하다: 랜섬웨어가 관리자 권한을 탈취해도 Compliance Lock된 백업은 손댈 수 없어, 몸값을 내지 않고 복구할 최후의 보루가 된다. 동일 철학이 S3 Object Lock Compliance 모드에도 적용된다.
 
-> 📚 **사례**: 2021년 미국 최대 송유관 운영사 **Colonial Pipeline 랜섬웨어 사건**에서 회사는 결국 약 440만 달러의 몸값을 비트코인으로 지불했다(일부는 FBI가 추적·회수). 만약 모든 백업이 변경 불가능한 immutable storage에 격리돼 있었다면 몸값 없이 복구가 가능했을 것이다. 이 사건 이후 immutable backup(WORM)은 "있으면 좋은 것"에서 "랜섬웨어 시대의 필수"로 격상됐다. AWS Backup Vault Lock Compliance + Cross-Account Copy 조합이 바로 이 시나리오의 정답 아키텍처다 — 백업을 별도 계정(워크로드 계정이 탈취돼도 접근 불가)에 불가역으로 보관한다. 시험에서 "랜섬웨어 대비·내부자도 삭제 불가"가 보이면 Compliance Lock + Cross-Account가 시그널이다.
+2021년 미국 최대 송유관 운영사 **Colonial Pipeline 랜섬웨어 사건**에서 회사는 결국 약 440만 달러의 몸값을 비트코인으로 지불했다(일부는 FBI가 추적·회수). 만약 모든 백업이 변경 불가능한 immutable storage에 격리돼 있었다면 몸값 없이 복구가 가능했을 것이다. 이 사건 이후 immutable backup(WORM)은 "있으면 좋은 것"에서 "랜섬웨어 시대의 필수"로 격상됐다. AWS Backup Vault Lock Compliance + Cross-Account Copy 조합이 바로 이 시나리오의 정답 아키텍처다 — 백업을 별도 계정(워크로드 계정이 탈취돼도 접근 불가)에 불가역으로 보관한다. 시험에서 "랜섬웨어 대비·내부자도 삭제 불가"가 보이면 Compliance Lock + Cross-Account가 시그널이다.
 
 > ⚠️ **함정**: Governance와 Compliance를 "둘 다 삭제 금지"로 뭉뚱그리면 틀린다. Governance 모드는 **적절한 IAM 권한을 가진 관리자가 잠금을 우회·해제**할 수 있다 — 실수로 인한 삭제는 막지만 악의적 관리자나 탈취된 권한은 막지 못한다. 진짜 규제 WORM(누구도 못 바꿈)은 Compliance 모드뿐이다. 시험에서 "규제 준수·root도 변경 불가·7년 보관"은 Compliance, "실수 방지·관리자는 예외적으로 해제 가능"은 Governance로 정확히 갈린다.
 
@@ -47,7 +47,7 @@ AWS Backup 이전에는 서비스마다 백업 방식이 제각각이었다. EBS
 - **Cross-Region Copy**: 리전 전체 장애 대비. 소스·대상 양쪽 KMS 키 권한 필요.
 - **Cross-Account Copy**: 워크로드 계정과 분리된 전용 **백업 계정**에 보관. 워크로드 계정이 탈취돼도 백업은 안전.
 
-> 🔍 **더 깊이**: Cross-Account Copy에서 가장 자주 막히는 지점이 **KMS 키 권한**이다. 백업은 Vault의 KMS 키로 암호화되는데, 대상 계정의 Vault가 쓰는 KMS 키 정책에 소스 계정이 복호화·복사할 권한을 명시적으로 부여해야 한다. 또 대상 Vault의 액세스 정책(resource-based policy)에도 소스 계정의 복사를 허용해야 한다. 이 권한 체인 중 하나라도 빠지면 복사가 조용히 실패한다. 시험에서 "Cross-Region/Account Copy가 실패한다"는 시나리오의 정답은 거의 항상 "KMS 키 정책 또는 Vault 액세스 정책에 권한 추가"다. 단순 IAM 사용자 권한이 아니라 **리소스 기반 정책(KMS 키 정책·Vault 정책)**이라는 점이 함정이다.
+Cross-Account Copy에서 가장 자주 막히는 지점이 **KMS 키 권한**이다. 백업은 Vault의 KMS 키로 암호화되는데, 대상 계정의 Vault가 쓰는 KMS 키 정책에 소스 계정이 복호화·복사할 권한을 명시적으로 부여해야 한다. 또 대상 Vault의 액세스 정책(resource-based policy)에도 소스 계정의 복사를 허용해야 한다. 이 권한 체인 중 하나라도 빠지면 복사가 조용히 실패한다. 시험에서 "Cross-Region/Account Copy가 실패한다"는 시나리오의 정답은 거의 항상 "KMS 키 정책 또는 Vault 액세스 정책에 권한 추가"다. 단순 IAM 사용자 권한이 아니라 **리소스 기반 정책(KMS 키 정책·Vault 정책)**이라는 점이 함정이다.
 
 ## 멀티 계정 거버넌스 — Organizations Backup Policy
 
@@ -68,9 +68,9 @@ AWS Backup 이전에는 서비스마다 백업 방식이 제각각이었다. EBS
                           [DR Region Vault + Compliance Lock]
 ```
 
-> 💡 **관련 이론**: Organizations Backup Policy는 **SCP(Service Control Policy)**와 같은 정책 상속(policy inheritance) 메커니즘 위에 서 있다. SCP가 "무엇을 할 수 없는가(권한 경계)"를 OU 계층으로 내려보낸다면, Backup Policy는 "무엇을 백업해야 하는가(운영 표준)"를 같은 계층으로 내려보낸다. 둘 다 상위 OU의 정책이 하위에 상속·결합되는 구조라, 멀티 계정 거버넌스의 **중앙 통제 + 분산 실행** 패턴을 따른다. Control Tower로 Landing Zone을 구성하면 이 백업 정책을 가드레일로 자동 배포할 수 있다. 시험에서 "수백 계정에 백업 표준을 일괄 강제"가 보이면 Organizations Backup Policy가 정답이다.
+Organizations Backup Policy는 **SCP(Service Control Policy)**와 같은 정책 상속(policy inheritance) 메커니즘 위에 서 있다. SCP가 "무엇을 할 수 없는가(권한 경계)"를 OU 계층으로 내려보낸다면, Backup Policy는 "무엇을 백업해야 하는가(운영 표준)"를 같은 계층으로 내려보낸다. 둘 다 상위 OU의 정책이 하위에 상속·결합되는 구조라, 멀티 계정 거버넌스의 **중앙 통제 + 분산 실행** 패턴을 따른다. Control Tower로 Landing Zone을 구성하면 이 백업 정책을 가드레일로 자동 배포할 수 있다. 시험에서 "수백 계정에 백업 표준을 일괄 강제"가 보이면 Organizations Backup Policy가 정답이다.
 
-> 🔍 **더 깊이**: 백업이 정책대로 실제로 실행되는지 검증하는 것이 **Backup Audit Manager**다. "모든 prod 리소스는 매일 백업 + 35일 보존 + Cross-Region 복사"라는 컨트롤(rule)을 정의하면, Audit Manager가 실제 백업 상태를 이 컨트롤과 대조해 **미준수 리소스(백업 누락·보존 부족·복사 누락)를 자동 식별**하고 리포트를 생성한다. 위반은 Security Hub로 통합해 중앙에서 알림받을 수 있다. 즉 "정책 정의(Backup Policy) → 실행(Backup Plan) → 검증(Audit Manager) → 알림(Security Hub)"의 폐루프가 완성된다. 시험에서 "백업이 정책대로 되고 있는지 자동 평가·미준수 식별"이 보이면 Backup Audit Manager가 직답이다.
+백업이 정책대로 실제로 실행되는지 검증하는 것이 **Backup Audit Manager**다. "모든 prod 리소스는 매일 백업 + 35일 보존 + Cross-Region 복사"라는 컨트롤(rule)을 정의하면, Audit Manager가 실제 백업 상태를 이 컨트롤과 대조해 **미준수 리소스(백업 누락·보존 부족·복사 누락)를 자동 식별**하고 리포트를 생성한다. 위반은 Security Hub로 통합해 중앙에서 알림받을 수 있다. 즉 "정책 정의(Backup Policy) → 실행(Backup Plan) → 검증(Audit Manager) → 알림(Security Hub)"의 폐루프가 완성된다. 시험에서 "백업이 정책대로 되고 있는지 자동 평가·미준수 식별"이 보이면 Backup Audit Manager가 직답이다.
 
 ## 서비스별 백업·복구 옵션의 차이
 
@@ -87,11 +87,11 @@ AWS Backup 이전에는 서비스마다 백업 방식이 제각각이었다. EBS
 
 > ⚠️ **함정**: S3의 백업·보호는 다른 서비스와 결이 다르다. S3는 **Versioning(버전 관리)·CRR(Cross-Region Replication)·Object Lock(WORM)**이라는 자체 메커니즘이 먼저 있고, AWS Backup의 S3 지원은 비교적 최근에 추가됐다. "S3 객체를 WORM으로 보관"은 AWS Backup이 아니라 **S3 Object Lock Compliance 모드**가 직답이다. 또 "S3 데이터를 다른 리전에 비동기 복제"는 **CRR**이지 AWS Backup이 아니다. 시험에서 S3가 등장하면 먼저 S3 네이티브 기능(Versioning·CRR·Object Lock)을 떠올리고, 그 다음 AWS Backup을 고려해야 한다.
 
-## 정리하며
+## 정리
 
 AWS Backup은 서비스·계정에 파편화된 백업을 **태그 기반 선언적 정책**으로 중앙 통합하는 거버넌스 엔진이다. Vault Lock은 백업의 불가역성을 두 단계로 제공하며, Governance는 권한 있는 관리자가 해제 가능하지만 **Compliance는 root조차 변경 불가**한 진짜 WORM(SEC 17a-4·FINRA·HIPAA 대응)이다. Cross-Region/Account Copy로 백업을 격리하면 리전 장애·랜섬웨어·계정 탈취에도 살아남고, Organizations Backup Policy로 수백 계정에 표준을 강제하며 Backup Audit Manager로 준수를 검증한다.
 
-SAP 시험 단골 매핑: (1) "여러 서비스·계정 통합 백업 정책" → **AWS Backup**, (2) "root도 변경 불가·규제 7년 보관" → **Vault Lock Compliance**, (3) "실수 방지·관리자는 해제 가능" → **Vault Lock Governance**, (4) "랜섬웨어·계정 탈취 대비 백업 격리" → **Cross-Account Copy + Compliance Lock**, (5) "수백 계정에 백업 표준 일괄 강제" → **Organizations Backup Policy**, (6) "백업 정책 준수 자동 평가·미준수 식별" → **Backup Audit Manager**, (7) "S3 객체 WORM" → **S3 Object Lock**, (8) "Cross-Account Copy 실패" → **KMS 키 정책·Vault 액세스 정책 권한**. 다음 day는 백업·복원을 넘어 복원력을 능동적으로 검증하는 도구(Resilience Hub·FIS·DRS)를 파고든다.
+SAP 시험 매핑: (1) "여러 서비스·계정 통합 백업 정책" → **AWS Backup**, (2) "root도 변경 불가·규제 7년 보관" → **Vault Lock Compliance**, (3) "실수 방지·관리자는 해제 가능" → **Vault Lock Governance**, (4) "랜섬웨어·계정 탈취 대비 백업 격리" → **Cross-Account Copy + Compliance Lock**, (5) "수백 계정에 백업 표준 일괄 강제" → **Organizations Backup Policy**, (6) "백업 정책 준수 자동 평가·미준수 식별" → **Backup Audit Manager**, (7) "S3 객체 WORM" → **S3 Object Lock**, (8) "Cross-Account Copy 실패" → **KMS 키 정책·Vault 액세스 정책 권한**. 다음 day는 백업·복원을 넘어 복원력을 능동적으로 검증하는 도구(Resilience Hub·FIS·DRS)를 파고든다.
 
 ---
 

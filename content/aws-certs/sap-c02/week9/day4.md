@@ -10,13 +10,13 @@ SAP-C02 시험에서 이 영역은 "S3 버킷 정책·IAM만으로는 풀 수 �
 
 **AWS Lake Formation**은 이 간극을 메운다. Glue Data Catalog 위에 얹히는 별도의 권한 레이어로, 데이터베이스·테이블뿐 아니라 **컬럼(column)·행(row filter)·셀(cell)** 단위까지 권한을 부여한다. 사용자가 Athena·Redshift Spectrum·EMR로 질의하면, 그 엔진이 Lake Formation에 "이 주체가 이 테이블에서 무엇을 볼 수 있나"를 물어 허용된 컬럼만 반환하고 허용된 행만 필터링한다. IAM이 "문을 열 수 있나"라면, Lake Formation은 "방 안에서 어떤 서랍의 어떤 칸을 볼 수 있나"를 결정한다.
 
-> 💡 **관련 이론**: 행·열 단위 권한은 데이터베이스 보안의 고전 주제인 **Row-Level Security(RLS)**와 **Column-Level Security(CLS)**의 데이터 레이크 구현이다. 전통 RDBMS(PostgreSQL의 RLS 정책, Oracle VPD)는 테이블에 보안 술어(predicate)를 붙여 "이 사용자의 쿼리에 자동으로 `WHERE tenant_id = current_user`를 주입"하는 식으로 행을 거른다. Lake Formation은 같은 개념을 카탈로그 메타데이터 계층에서 구현해, 물리 파일을 복제하거나 뷰를 따로 만들지 않고도 같은 데이터에 사용자별로 다른 행·열을 보여준다. SAP 시험에서 "PII 컬럼만 제외 / 특정 region 행만"은 Lake Formation의 CLS·RLS(데이터 필터)가 정답이다.
+행·열 단위 권한은 데이터베이스 보안의 고전 주제인 **Row-Level Security(RLS)**와 **Column-Level Security(CLS)**의 데이터 레이크 구현이다. 전통 RDBMS(PostgreSQL의 RLS 정책, Oracle VPD)는 테이블에 보안 술어(predicate)를 붙여 "이 사용자의 쿼리에 자동으로 `WHERE tenant_id = current_user`를 주입"하는 식으로 행을 거른다. Lake Formation은 같은 개념을 카탈로그 메타데이터 계층에서 구현해, 물리 파일을 복제하거나 뷰를 따로 만들지 않고도 같은 데이터에 사용자별로 다른 행·열을 보여준다. SAP 시험에서 "PII 컬럼만 제외 / 특정 region 행만"은 Lake Formation의 CLS·RLS(데이터 필터)가 정답이다.
 
 ## LF Tag — ABAC로 권한을 스케일링하다
 
 테이블이 수천 개, 컬럼이 수만 개로 늘면, 권한을 하나하나 부여하는 것은 불가능하다. **LF Tag(Lake Formation Tag) 기반 접근 제어(LF-TBAC)**가 이 스케일 문제를 푼다. 데이터에 태그(예: `classification=PII`, `sensitivity=high`, `domain=finance`)를 붙이고, 사용자/역할에는 "어떤 태그 값에 접근 가능한지"의 태그 권한을 부여한다. 그러면 **새 테이블이나 컬럼이 추가될 때 거기에 태그만 달면 자동으로 알맞은 권한이 적용**된다 — 권한을 다시 손볼 필요가 없다.
 
-> 💡 **관련 이론**: LF Tag는 접근 제어 모델의 **RBAC vs ABAC** 논쟁에서 ABAC(Attribute-Based Access Control) 쪽이다. RBAC(Role-Based)는 "역할에 권한을 묶고 사용자에게 역할을 부여"하는데, 자원이 늘면 역할·권한 매트릭스가 폭발(role explosion)한다. ABAC는 "주체·자원·환경의 속성(attribute)으로 권한을 동적으로 판단"한다. NIST가 SP 800-162에서 정의한 ABAC 모델이 이 접근의 표준 근거다. LF Tag는 자원에 분류 속성을 부여하고 주체에 속성 매칭 권한을 줘, 자원이 늘어도 정책 수가 선형으로만 증가한다. 시험에서 "새 테이블 추가 시 자동 권한 적용 / 운영 부담 최소화 / 대규모 스케일"은 LF Tag(ABAC)가 답이다.
+LF Tag는 접근 제어 모델의 **RBAC vs ABAC** 논쟁에서 ABAC(Attribute-Based Access Control) 쪽이다. RBAC(Role-Based)는 "역할에 권한을 묶고 사용자에게 역할을 부여"하는데, 자원이 늘면 역할·권한 매트릭스가 폭발(role explosion)한다. ABAC는 "주체·자원·환경의 속성(attribute)으로 권한을 동적으로 판단"한다. NIST가 SP 800-162에서 정의한 ABAC 모델이 이 접근의 표준 근거다. LF Tag는 자원에 분류 속성을 부여하고 주체에 속성 매칭 권한을 줘, 자원이 늘어도 정책 수가 선형으로만 증가한다. 시험에서 "새 테이블 추가 시 자동 권한 적용 / 운영 부담 최소화 / 대규모 스케일"은 LF Tag(ABAC)가 답이다.
 
 > ⚠️ **함정**: Lake Formation을 켜도 기존 IAM 권한이 즉시 무력화되지는 않는다. **LF Hybrid Access Mode**가 있어 IAM 권한과 Lake Formation 권한이 한동안 병행한다. 마이그레이션 중 둘이 공존하다 보면 "분명 LF에서 막았는데 IAM 경로로 여전히 접근된다"는 혼란이 생긴다. 점진 이전 시에는 어느 경로가 우세한지(IAM allow가 살아 있는지) 반드시 확인해야 한다. 시험에서 "기존 IAM 기반 레이크를 LF로 점진 이전"은 Hybrid Mode를 인지해야 풀린다.
 
@@ -35,7 +35,7 @@ SAP-C02 시험에서 이 영역은 "S3 버킷 정책·IAM만으로는 풀 수 �
                               Athena / Redshift Spectrum 조회
 ```
 
-> 🔍 **더 깊이**: 이 패턴이 **AWS Organizations·멀티 계정 전략**(SAP의 핵심 주제)과 맞물린다. 중앙 데이터 레이크를 별도의 데이터 계정에 두고, 부서별 계정이 RAM+LF로 필요한 데이터만 공유받는 구조는 "계정 경계로 폭발 반경(blast radius)을 격리하면서 데이터는 중앙 거버넌스로 통제"하는 멀티 계정 데이터 메시(data mesh)의 토대다. Control Tower로 계정을 프로비저닝하고, SCP로 가드레일을 치고, Lake Formation으로 데이터 권한을 중앙 관리하는 조합이 엔터프라이즈 데이터 거버넌스의 정석이다. 시험에서 "여러 계정이 중앙 레이크를 공유 + 행·열 세분 권한"은 RAM + Lake Formation.
+이 패턴이 **AWS Organizations·멀티 계정 전략**(SAP의 핵심 주제)과 맞물린다. 중앙 데이터 레이크를 별도의 데이터 계정에 두고, 부서별 계정이 RAM+LF로 필요한 데이터만 공유받는 구조는 "계정 경계로 폭발 반경(blast radius)을 격리하면서 데이터는 중앙 거버넌스로 통제"하는 멀티 계정 데이터 메시(data mesh)의 토대다. Control Tower로 계정을 프로비저닝하고, SCP로 가드레일을 치고, Lake Formation으로 데이터 권한을 중앙 관리하는 조합이 엔터프라이즈 데이터 거버넌스의 정석이다. 시험에서 "여러 계정이 중앙 레이크를 공유 + 행·열 세분 권한"은 RAM + Lake Formation.
 
 ## AWS DataZone과 Glue Data Quality — 거버넌스의 두 축
 
@@ -43,7 +43,7 @@ Lake Formation이 "누가 무엇을 볼 수 있나(권한)"라면, **DataZone**�
 
 **Glue Data Quality**는 데이터의 정확성을 보장한다. Glue Catalog 테이블에 **DQDL(Data Quality Definition Language)**로 품질 규칙(예: "이 컬럼은 NULL이 5% 미만", "이메일 형식이어야 함", "값이 0~100 범위")을 정의하고, 주기적·자동으로 검사해 위반 시 EventBridge로 알린다. ML로 규칙을 추천하기도 한다. 잘못된 데이터가 파이프라인 하류로 흘러 잘못된 분석·의사결정을 낳는 것을 막는다.
 
-> 💡 **관련 이론**: 데이터 품질·계보(lineage)는 **데이터 거버넌스**의 핵심 기둥이다. 데이터 계보는 "이 지표가 어떤 원천에서 어떤 변환을 거쳐 만들어졌나"를 추적하는데, 잘못된 숫자의 원인을 역추적하거나 규제 감사(GDPR의 데이터 처리 추적, 금융권 데이터 출처 증빙)에 필수다. 업계 표준으로 **OpenLineage**(계보 메타데이터 수집 표준)와 그 구현인 **Marquez**가 있고, AWS는 Glue·DataZone에 계보 기능을 내장한다. 데이터 품질을 파이프라인의 게이트로 두는 패턴(검증 실패 시 하류 차단)은 "garbage in, garbage out"을 방지하는 데이터 엔지니어링의 기본 안티패턴 회피책이다.
+데이터 품질·계보(lineage)는 **데이터 거버넌스**의 핵심 기둥이다. 데이터 계보는 "이 지표가 어떤 원천에서 어떤 변환을 거쳐 만들어졌나"를 추적하는데, 잘못된 숫자의 원인을 역추적하거나 규제 감사(GDPR의 데이터 처리 추적, 금융권 데이터 출처 증빙)에 필수다. 업계 표준으로 **OpenLineage**(계보 메타데이터 수집 표준)와 그 구현인 **Marquez**가 있고, AWS는 Glue·DataZone에 계보 기능을 내장한다. 데이터 품질을 파이프라인의 게이트로 두는 패턴(검증 실패 시 하류 차단)은 "garbage in, garbage out"을 방지하는 데이터 엔지니어링의 기본 안티패턴 회피책이다.
 
 ## MSK — Apache Kafka를 매니지드로
 
@@ -57,9 +57,9 @@ Lake Formation이 "누가 무엇을 볼 수 있나(권한)"라면, **DataZone**�
 
 Kafka의 결정적 특성은 **로그 기반 저장**이다. 메시지를 소비해도 즉시 삭제하지 않고 보존 기간(retention) 동안 디스크에 남긴다. 그래서 여러 소비자 그룹이 같은 스트림을 독립적으로 여러 번 읽을 수 있고(pub/sub + replay), 새 소비자가 과거 데이터를 처음부터 다시 읽을 수도 있다. 이것이 Kafka를 단순 메시지 큐가 아니라 "이벤트의 진실의 원천(source of truth)"으로 만든다.
 
-> 💡 **관련 이론**: Kafka의 설계 철학은 Jay Kreps가 정리한 **"The Log"** 개념이다 — 모든 시스템 상태 변화를 순서 있는 불변 로그(append-only log)로 표현하면, 그 로그를 재생(replay)해 어떤 시점의 상태도 복원하고 여러 시스템을 동기화할 수 있다는 것이다. 이는 데이터베이스의 WAL(Write-Ahead Log), 이벤트 소싱(event sourcing), CDC(Change Data Capture)와 같은 뿌리를 가진다. CAP 정리 관점에서 Kafka는 파티션 내 순서·복제를 통해 일관성과 가용성의 균형을 튜닝(acks 설정, ISR)할 수 있게 설계됐다. 이 "불변 로그 + 오프셋 재생" 모델이 스트리밍 아키텍처(Day 42의 Zero-ETL CDC 포함)의 공통 기반이다.
+Kafka의 설계 철학은 Jay Kreps가 정리한 **"The Log"** 개념이다 — 모든 시스템 상태 변화를 순서 있는 불변 로그(append-only log)로 표현하면, 그 로그를 재생(replay)해 어떤 시점의 상태도 복원하고 여러 시스템을 동기화할 수 있다는 것이다. 이는 데이터베이스의 WAL(Write-Ahead Log), 이벤트 소싱(event sourcing), CDC(Change Data Capture)와 같은 뿌리를 가진다. CAP 정리 관점에서 Kafka는 파티션 내 순서·복제를 통해 일관성과 가용성의 균형을 튜닝(acks 설정, ISR)할 수 있게 설계됐다. 이 "불변 로그 + 오프셋 재생" 모델이 스트리밍 아키텍처(Day 42의 Zero-ETL CDC 포함)의 공통 기반이다.
 
-> 🔍 **더 깊이**: MSK의 인증·인가는 세 가지다. **IAM**(AWS 네이티브, 정책으로 토픽 접근 제어), **SASL/SCRAM**(사용자명·비밀번호, Secrets Manager 연동), **mTLS**(상호 TLS 인증서). 또 전통 Kafka는 메타데이터·리더 선출을 **ZooKeeper**에 의존했는데, 이는 운영 복잡성과 확장 한계의 원인이었다. Kafka는 **KRaft(Raft 합의)**로 ZooKeeper를 제거하는 방향으로 진화했고, MSK도 이를 따라간다. Raft는 분산 합의(consensus) 알고리즘으로, 리더를 선출하고 로그를 복제해 노드 장애에도 일관된 메타데이터를 유지한다. 시험에 KRaft 세부가 직접 나오진 않지만 "ZooKeeper 운영 부담"이 줄어드는 맥락은 알아둘 가치가 있다.
+MSK의 인증·인가는 세 가지다. **IAM**(AWS 네이티브, 정책으로 토픽 접근 제어), **SASL/SCRAM**(사용자명·비밀번호, Secrets Manager 연동), **mTLS**(상호 TLS 인증서). 또 전통 Kafka는 메타데이터·리더 선출을 **ZooKeeper**에 의존했는데, 이는 운영 복잡성과 확장 한계의 원인이었다. Kafka는 **KRaft(Raft 합의)**로 ZooKeeper를 제거하는 방향으로 진화했고, MSK도 이를 따라간다. Raft는 분산 합의(consensus) 알고리즘으로, 리더를 선출하고 로그를 복제해 노드 장애에도 일관된 메타데이터를 유지한다. 시험에 KRaft 세부가 직접 나오진 않지만 "ZooKeeper 운영 부담"이 줄어드는 맥락은 알아둘 가치가 있다.
 
 ## MSK Serverless와 MSK Connect
 
@@ -71,7 +71,7 @@ Kafka의 결정적 특성은 **로그 기반 저장**이다. 메시지를 소비
 
 ## MSK vs Kinesis Data Streams — 이식성 vs 단순성
 
-실시간 스트림에서 가장 자주 나오는 선택이 MSK와 Kinesis Data Streams다.
+실시간 스트림에서 대표적인 선택이 MSK와 Kinesis Data Streams다.
 
 | 항목 | MSK | Kinesis Data Streams |
 |------|-----|---------------------|
@@ -84,7 +84,7 @@ Kafka의 결정적 특성은 **로그 기반 저장**이다. 메시지를 소비
 
 판단 기준: **이미 Kafka를 쓰거나, 멀티클라우드 이식성, 방대한 Kafka 생태계(커넥터·스트림 처리)가 필요하면 MSK**. **빠르게 시작하고, AWS 서비스(Firehose→S3, Lambda 트리거)와 단순하게 통합하고 싶으면 Kinesis**. 시험에서 "Kafka 표준 / 이식성 / 기존 Kafka 마이그레이션"은 MSK, "단순 / AWS 네이티브 / 빠른 시작"은 Kinesis로 갈린다.
 
-> 📚 **사례**: 많은 기업이 온프레미스에서 자체 운영하던 Kafka 클러스터를 AWS로 옮길 때 MSK를 택한다. 자체 Kafka는 브로커 패치·ZooKeeper 운영·디스크 관리·확장에 전담 엔지니어가 붙어야 했는데, MSK로 옮기면 브로커 프로비저닝·패치·복제·모니터링을 AWS가 맡아 운영 부담이 크게 준다. 결정적 이점은 **애플리케이션 코드를 거의 안 바꿔도 된다**는 것 — Kafka API가 그대로이므로 프로듀서·컨슈머 코드와 기존 커넥터(Debezium 등)를 재사용한다. 만약 같은 마이그레이션을 Kinesis로 했다면 SDK·파티셔닝 모델·소비 방식을 전부 다시 짜야 했을 것이다. 이것이 "기존 Kafka 자산 → MSK"가 시험의 정답인 이유다.
+많은 기업이 온프레미스에서 자체 운영하던 Kafka 클러스터를 AWS로 옮길 때 MSK를 택한다. 자체 Kafka는 브로커 패치·ZooKeeper 운영·디스크 관리·확장에 전담 엔지니어가 붙어야 했는데, MSK로 옮기면 브로커 프로비저닝·패치·복제·모니터링을 AWS가 맡아 운영 부담이 크게 준다. 결정적 이점은 **애플리케이션 코드를 거의 안 바꿔도 된다**는 것 — Kafka API가 그대로이므로 프로듀서·컨슈머 코드와 기존 커넥터(Debezium 등)를 재사용한다. 만약 같은 마이그레이션을 Kinesis로 했다면 SDK·파티셔닝 모델·소비 방식을 전부 다시 짜야 했을 것이다. 이것이 "기존 Kafka 자산 → MSK"가 시험의 정답인 이유다.
 
 ## 다른 클라우드와의 비교
 
@@ -97,11 +97,11 @@ Kafka의 결정적 특성은 **로그 기반 저장**이다. 메시지를 소비
 
 Azure Event Hubs가 Kafka 호환 API를 제공한다는 점이 흥미롭다 — Kafka 프로토콜이 사실상 스트리밍의 산업 표준이 되면서, 각 클라우드가 "Kafka 호환"을 내세워 이식성 불안을 달랜다. 이것이 표준(Kafka) 기반 MSK가 이식성에서 강한 근본 이유다.
 
-## 정리하며
+## 정리
 
 데이터 레이크의 거버넌스는 IAM·버킷 정책의 객체 수준을 넘어 **행·열·셀 단위 권한**을 요구하고, 그 답이 Glue Catalog 위에 얹히는 **Lake Formation**이다. LF Tag(ABAC)는 새 자원에 태그만 달면 권한이 자동 적용되어 대규모 스케일을 감당하고, **RAM + Lake Formation**은 멀티 계정 데이터 레이크의 cross-account 공유를 가능하게 한다. DataZone(데이터 마켓플레이스)과 Glue Data Quality(DQDL 규칙)가 거버넌스를 완성한다. 실시간 스트림에서 **MSK**는 Kafka(불변 로그·파티션·오프셋·컨슈머 그룹)를 매니지드로 감싸 이식성과 생태계를, **Kinesis**는 단순성과 AWS 네이티브 통합을 제공한다.
 
-SAP 시험의 단골 매핑: (1) "PII 컬럼 제외 / 특정 행만" → Lake Formation CLS·RLS(데이터 필터), (2) "새 테이블 자동 권한 / 대규모 스케일" → LF Tag(ABAC), (3) "여러 계정이 중앙 레이크 공유 + 세분 권한" → RAM + Lake Formation, (4) "기존 IAM 레이크 점진 이전" → LF Hybrid Mode, (5) "데이터 품질 규칙 자동 검사" → Glue Data Quality(DQDL), (6) "사내 데이터 검색·구독 마켓플레이스" → DataZone, (7) "Kafka 표준 / 이식성 / 기존 Kafka 마이그레이션" → MSK, (8) "사이징 없이 Kafka" → MSK Serverless, (9) "단순·AWS 네이티브 스트림" → Kinesis. 다음 day에서는 Week 9 전체를 종합 시나리오로 복습한다.
+SAP 시험 매핑: (1) "PII 컬럼 제외 / 특정 행만" → Lake Formation CLS·RLS(데이터 필터), (2) "새 테이블 자동 권한 / 대규모 스케일" → LF Tag(ABAC), (3) "여러 계정이 중앙 레이크 공유 + 세분 권한" → RAM + Lake Formation, (4) "기존 IAM 레이크 점진 이전" → LF Hybrid Mode, (5) "데이터 품질 규칙 자동 검사" → Glue Data Quality(DQDL), (6) "사내 데이터 검색·구독 마켓플레이스" → DataZone, (7) "Kafka 표준 / 이식성 / 기존 Kafka 마이그레이션" → MSK, (8) "사이징 없이 Kafka" → MSK Serverless, (9) "단순·AWS 네이티브 스트림" → Kinesis. 다음 day에서는 Week 9 전체를 종합 시나리오로 복습한다.
 
 ---
 

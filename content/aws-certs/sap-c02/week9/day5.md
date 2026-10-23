@@ -46,9 +46,9 @@ Week 9는 "데이터를 어디에 저장하고, 어떻게 처리하고, 누가 �
 
 **이식성 축**: 오픈소스 표준 기반(MSK=Kafka, MWAA=Airflow, EMR=Spark/Hadoop, Iceberg/Hudi/Delta)은 타클라우드·온프렘 이전이 쉽고, AWS 독자(Kinesis, Step Functions, Redshift)는 통합이 깊은 대신 종속된다. 멀티클라우드 전략이 조건이면 표준 쪽으로 기운다.
 
-> 💡 **관련 이론**: 이 세 축의 트레이드오프는 분산 시스템의 **CAP/PACELC**와도 닿는다. PACELC는 "파티션(P) 상황에선 가용성(A)과 일관성(C)을, 정상(E) 상황에선 지연(L)과 일관성(C)을 저울질한다"는 확장 정리다. Zero-ETL·CDC 복제는 운영 DB와 분석 DW 사이에 의도적 지연(eventual consistency)을 두어 가용성·격리를 얻는 선택이고, Federated Query는 일관성(최신성)을 위해 운영 DB 부하라는 비용을 치른다. "신선도 vs 부하 격리"가 곧 일관성 vs 가용성 트레이드오프의 데이터 파이프라인 버전이다.
+이 세 축의 트레이드오프는 분산 시스템의 **CAP/PACELC**와도 닿는다. PACELC는 "파티션(P) 상황에선 가용성(A)과 일관성(C)을, 정상(E) 상황에선 지연(L)과 일관성(C)을 저울질한다"는 확장 정리다. Zero-ETL·CDC 복제는 운영 DB와 분석 DW 사이에 의도적 지연(eventual consistency)을 두어 가용성·격리를 얻는 선택이고, Federated Query는 일관성(최신성)을 위해 운영 DB 부하라는 비용을 치른다. "신선도 vs 부하 격리"가 곧 일관성 vs 가용성 트레이드오프의 데이터 파이프라인 버전이다.
 
-> 🔍 **더 깊이**: SAP 시험은 데이터 영역을 종종 **멀티 계정·멀티 리전** 맥락에 얹어 출제한다. 중앙 데이터 레이크를 별도 데이터 계정에 두고 부서 계정이 RAM+Lake Formation으로 공유받는 구조(데이터 메시), Redshift Data Sharing으로 리전·계정을 넘어 데이터를 복제 없이 공유하는 구조, Glue Catalog를 cross-account로 참조하는 구조가 단골이다. 여기에 Organizations(계정 그룹)·SCP(가드레일)·Control Tower(계정 프로비저닝)가 거버넌스 골격을 이룬다. 데이터 서비스 하나만 보지 말고 "이게 멀티 계정 조직에서 어떻게 공유·격리·통제되는가"를 함께 떠올리는 습관이 Pro 등급 시나리오를 푸는 열쇠다.
+SAP 시험은 데이터 영역을 종종 **멀티 계정·멀티 리전** 맥락에 얹어 출제한다. 중앙 데이터 레이크를 별도 데이터 계정에 두고 부서 계정이 RAM+Lake Formation으로 공유받는 구조(데이터 메시), Redshift Data Sharing으로 리전·계정을 넘어 데이터를 복제 없이 공유하는 구조, Glue Catalog를 cross-account로 참조하는 구조가 나온다. 여기에 Organizations(계정 그룹)·SCP(가드레일)·Control Tower(계정 프로비저닝)가 거버넌스 골격을 이룬다. 데이터 서비스 하나만 보지 말고 "이게 멀티 계정 조직에서 어떻게 공유·격리·통제되는가"를 함께 떠올리는 습관이 Pro 등급 시나리오를 푸는 열쇠다.
 
 > 🎯 **시나리오**: "글로벌 기업이 미국·유럽·아시아 리전에 각각 Redshift를 운영한다. 본사 BI팀이 세 리전의 매출을 복제·이동 없이 통합 분석하고 싶고, 각 리전 클러스터 성능에 영향을 주면 안 된다. 최적은?" — 답은 **Redshift Data Sharing(cross-Region/cross-Account)**. RMS(S3 기반) 덕분에 프로듀서(각 리전)의 데이터를 본사 컨슈머 클러스터가 복사 없이 읽고, 독립 컴퓨팅이라 워크로드가 격리된다. 데이터를 한곳으로 ETL/복제하는 안은 비용·지연·동기화 부담이 크고, Spectrum은 S3 외부 데이터용이라 내부 테이블 공유 메커니즘이 아니다.
 
@@ -58,11 +58,11 @@ Week 9는 "데이터를 어디에 저장하고, 어떻게 처리하고, 누가 �
 
 > ⚠️ **함정**: **"Federated Query = Zero-ETL"** — 둘 다 "ETL 없이 운영 DB 데이터를 Redshift 분석에". 하지만 Federated Query는 운영 DB에 **직접 쿼리해 부하를 주고**, Zero-ETL은 CDC로 **복제해 부하가 없다**. "운영 DB 부하 회피" 한 단어가 정답을 가른다.
 
-> ⚠️ **함정**: **"Spectrum이면 Athena도 되는 거 아닌가"** — 둘 다 S3를 SQL로 직접 질의하고 Glue Catalog를 공유한다. 하지만 Redshift 내부 테이블과 조인해야 하면 Spectrum, 순수 S3만이면 Athena가 단순하다. "이미 Redshift 사용 중 + S3와 조인"이 Spectrum의 자리다.
+**"Spectrum이면 Athena도 되는 거 아닌가"** — 둘 다 S3를 SQL로 직접 질의하고 Glue Catalog를 공유한다. 하지만 Redshift 내부 테이블과 조인해야 하면 Spectrum, 순수 S3만이면 Athena가 단순하다. "이미 Redshift 사용 중 + S3와 조인"이 Spectrum의 자리다.
 
-> ⚠️ **함정**: **"Master/Core도 Spot으로 하면 더 싸다"** — EMR에서 Master를 Spot으로 돌리면 중단 시 클러스터 전체가 죽고, Core를 Spot으로 돌리면 HDFS 데이터가 사라진다. **Spot은 Task 노드만**. 비용 최적은 Task=Spot + Instance Fleets 다중 타입.
+**"Master/Core도 Spot으로 하면 더 싸다"** — EMR에서 Master를 Spot으로 돌리면 중단 시 클러스터 전체가 죽고, Core를 Spot으로 돌리면 HDFS 데이터가 사라진다. **Spot은 Task 노드만**. 비용 최적은 Task=Spot + Instance Fleets 다중 타입.
 
-## 정리하며
+## 정리
 
 Week 9의 한 줄 요약: **데이터를 S3에 표준 포맷(Parquet+파티션)으로 모으고, Glue Catalog로 메타데이터를 통합하고, 워크로드 특성(비용·실시간성·이식성·권한)에 맞는 엔진을 선택한다.** 시험은 서비스 이름이 아니라 "이 제약 아래 무엇이 최적인가"를 묻는다. 아래 12개 시나리오로 경계선을 손에 익힌다. 다음 주(Week 10)는 ML/AI 아키텍처 — SageMaker·Bedrock·MLOps로 넘어간다.
 

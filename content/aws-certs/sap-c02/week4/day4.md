@@ -12,7 +12,7 @@ EKS/ECS Anywhere를 이해하려면 컨테이너 오케스트레이터의 구조
 
 EKS에서 제어 평면은 AWS가 완전 관리한다. 사용자는 워커 노드(EC2, Fargate, 관리형 노드 그룹)만 관리한다. EKS Anywhere에서는 제어 평면도 고객이 자신의 하드웨어에서 직접 운영한다.
 
-> 💡 **관련 이론**: etcd는 분산 키-값 스토어로 Kubernetes 클러스터의 모든 상태를 저장한다. Raft 합의 알고리즘(Diego Ongaro의 논문, 2014)으로 복제를 유지한다. 프로덕션 etcd 클러스터는 최소 3개 노드(1 Leader + 2 Follower)로 구성해 과반수(quorum)를 유지해야 한다. EKS에서는 etcd가 AWS 관리 인프라에 복제되지만, EKS Anywhere에서는 고객이 etcd 노드의 가용성과 백업을 직접 책임진다.
+etcd는 분산 키-값 스토어로 Kubernetes 클러스터의 모든 상태를 저장한다. Raft 합의 알고리즘(Diego Ongaro의 논문, 2014)으로 복제를 유지한다. 프로덕션 etcd 클러스터는 최소 3개 노드(1 Leader + 2 Follower)로 구성해 과반수(quorum)를 유지해야 한다. EKS에서는 etcd가 AWS 관리 인프라에 복제되지만, EKS Anywhere에서는 고객이 etcd 노드의 가용성과 백업을 직접 책임진다.
 
 ## EKS Anywhere: 표준 Kubernetes를 어디서나
 
@@ -56,7 +56,7 @@ EKS Anywhere 클러스터를 운영하려면 모니터링, 로깅, 네트워크 
 - **Cert-Manager**: TLS 인증서 자동화
 - **MetalLB**: 온프레미스 환경의 LoadBalancer 서비스 구현
 
-> 📚 **사례**: 방산 업체 Raytheon Technologies가 EKS Anywhere를 에어갭 네트워크에서 운영한다. 군사 규격 네트워크에서 인터넷 접근이 완전 차단된 상태로 Kubernetes 클러스터를 운영해야 했다. Harbor를 로컬 레지스트리로, Prometheus를 모니터링 스택으로 구성했다. EKS-D를 통해 AWS EKS와 동일한 Kubernetes 버전을 사용하면서도 외부 연결 없이 완전 자체 운영이 가능했다. 가끔 연결이 허용될 때 EKS Connector를 통해 AWS 콘솔에서 클러스터 상태를 확인한다.
+방산 업체 Raytheon Technologies가 EKS Anywhere를 에어갭 네트워크에서 운영한다. 군사 규격 네트워크에서 인터넷 접근이 완전 차단된 상태로 Kubernetes 클러스터를 운영해야 했다. Harbor를 로컬 레지스트리로, Prometheus를 모니터링 스택으로 구성했다. EKS-D를 통해 AWS EKS와 동일한 Kubernetes 버전을 사용하면서도 외부 연결 없이 완전 자체 운영이 가능했다. 가끔 연결이 허용될 때 EKS Connector를 통해 AWS 콘솔에서 클러스터 상태를 확인한다.
 
 ## ECS Anywhere: AWS가 스케줄링, 실행은 온프레미스
 
@@ -85,7 +85,7 @@ ECS Anywhere의 장점은 AWS ECS API와 완전 호환된다는 점이다. `aws 
 
 > ⚠️ **함정**: ECS Anywhere는 항상 AWS와 연결이 필요하다. SSM Agent와 ECS Agent가 주기적으로 AWS와 통신해 태스크 상태를 보고하고 새 태스크 지시를 받는다. 연결이 끊어지면 기존 실행 중인 컨테이너는 계속 실행되지만 새 태스크 시작, 태스크 종료, 상태 모니터링이 불가능해진다. 에어갭 환경에서는 ECS Anywhere가 아닌 EKS Anywhere를 사용해야 한다.
 
-> 💡 **관련 이론**: ECS의 태스크 스케줄링은 **Binpack, Random, Spread** 세 가지 전략을 지원한다. Binpack은 가능한 적은 수의 호스트에 태스크를 집중해 리소스 활용을 최대화한다. Spread는 태스크를 고르게 분산해 단일 호스트 장애 시 영향을 최소화한다. ECS Anywhere에서 External Instance에도 이 스케줄링 전략이 적용되며, 온프레미스 서버의 CPU/메모리 용량을 기반으로 태스크가 배치된다.
+ECS의 태스크 스케줄링은 **Binpack, Random, Spread** 세 가지 전략을 지원한다. Binpack은 가능한 적은 수의 호스트에 태스크를 집중해 리소스 활용을 최대화한다. Spread는 태스크를 고르게 분산해 단일 호스트 장애 시 영향을 최소화한다. ECS Anywhere에서 External Instance에도 이 스케줄링 전략이 적용되며, 온프레미스 서버의 CPU/메모리 용량을 기반으로 태스크가 배치된다.
 
 ## EKS on Outposts: AWS Managed Kubernetes를 고객 시설에
 
@@ -134,7 +134,7 @@ EKS Anywhere 클러스터
 
 Connector는 읽기 전용 가시화를 제공한다. 다른 클라우드의 Kubernetes 클러스터에 AWS 콘솔에서 직접 변경을 가할 수 없다. 멀티클라우드 운영팀이 여러 클러스터를 단일 콘솔에서 모니터링하는 용도다.
 
-> 🔍 **더 깊이**: EKS Connector는 아웃바운드 연결 기반으로 동작한다. 클러스터 내 에이전트가 AWS Systems Manager Session Manager를 통해 AWS에 연결한다. 방화벽이 인바운드 연결을 차단해도 아웃바운드 HTTPS만 허용하면 EKS Connector가 동작한다. 이 패턴은 SSM Agent가 EC2 인스턴스를 Session Manager로 관리하는 것과 동일한 원리다.
+EKS Connector는 아웃바운드 연결 기반으로 동작한다. 클러스터 내 에이전트가 AWS Systems Manager Session Manager를 통해 AWS에 연결한다. 방화벽이 인바운드 연결을 차단해도 아웃바운드 HTTPS만 허용하면 EKS Connector가 동작한다. 이 패턴은 SSM Agent가 EC2 인스턴스를 Session Manager로 관리하는 것과 동일한 원리다.
 
 ## SSM Hybrid: 온프레미스 서버의 AWS 통합 관리
 
@@ -171,7 +171,7 @@ SSM Hybrid로 등록된 온프레미스 서버는 AWS 콘솔의 Fleet Manager에
 | 규제 데이터 주권 | 미충족(AWS 리전) | 충족 가능 | 충족 가능 |
 | Air-gap | 불가 | 불가 | 가능 |
 
-> 💡 **관련 이론**: Fargate의 "Serverless 컨테이너" 모델은 AWS가 2017년 발표한 것으로, 사용자가 노드 관리 없이 CPU와 메모리 크기만 지정하면 AWS가 자동으로 인프라를 할당한다. Fargate는 vCPU 단위로 과금되므로 간헐적 워크로드에서 비용 효율이 높다. 반면 고정 트래픽의 긴 실행 컨테이너는 EC2 노드 그룹이 더 비용 효율적이다. 온프레미스 하드웨어를 이미 소유한 기업에서는 ECS/EKS Anywhere가 하드웨어 비용 없이 추가 오케스트레이션 비용만 지불하는 모델이다.
+Fargate의 "Serverless 컨테이너" 모델은 AWS가 2017년 발표한 것으로, 사용자가 노드 관리 없이 CPU와 메모리 크기만 지정하면 AWS가 자동으로 인프라를 할당한다. Fargate는 vCPU 단위로 과금되므로 간헐적 워크로드에서 비용 효율이 높다. 반면 고정 트래픽의 긴 실행 컨테이너는 EC2 노드 그룹이 더 비용 효율적이다. 온프레미스 하드웨어를 이미 소유한 기업에서는 ECS/EKS Anywhere가 하드웨어 비용 없이 추가 오케스트레이션 비용만 지불하는 모델이다.
 
 ## 다른 클라우드와의 비교
 
@@ -183,7 +183,7 @@ SSM Hybrid로 등록된 온프레미스 서버는 AWS 콘솔의 Fleet Manager에
 | 컨테이너 외 관리 | 제한적 | VM, 데이터베이스 포함 | VM, 데이터 서비스 포함 |
 | 가격 모델 | 구독료 + 오픈소스 | 구독료 | Azure Arc 데이터 서비스 요금 |
 
-> 📚 **사례**: Google Anthos는 2019년 출시돼 AWS EKS Anywhere보다 일찍 시장에 진입했다. Anthos는 Kubernetes뿐만 아니라 VM, 데이터베이스, 서비스 메시(Anthos Service Mesh = Istio)까지 통합 관리하는 더 넓은 플랫폼이다. AWS EKS Anywhere는 컨테이너 오케스트레이션에 집중해 단순성과 EKS 호환성을 강점으로 삼는다. Anthos의 광범위한 서비스 범위가 장점이지만, 그만큼 운영 복잡성도 높다는 평가가 있다.
+Google Anthos는 2019년 출시돼 AWS EKS Anywhere보다 일찍 시장에 진입했다. Anthos는 Kubernetes뿐만 아니라 VM, 데이터베이스, 서비스 메시(Anthos Service Mesh = Istio)까지 통합 관리하는 더 넓은 플랫폼이다. AWS EKS Anywhere는 컨테이너 오케스트레이션에 집중해 단순성과 EKS 호환성을 강점으로 삼는다. Anthos의 광범위한 서비스 범위가 장점이지만, 그만큼 운영 복잡성도 높다는 평가가 있다.
 
 ## 실전 CLI: ECS Anywhere 및 EKS Anywhere 구성
 

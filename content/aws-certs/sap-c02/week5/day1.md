@@ -15,7 +15,7 @@ AWS 멀티 리전을 배우는 진짜 이유는 "이 서비스들을 어떻게 �
 | **데이터 주권** | "GDPR", "EU 데이터는 EU에", "데이터 레지던시" | 리전별 독립 스택, Geolocation 라우팅 |
 | **컴플라이언스** | "금융 규제", "정부 감사", "리전 격리 요구" | 리전별 계정 + SCP |
 
-> 💡 **관련 이론**: CAP Theorem(Brewer, 2000)은 분산 시스템이 일관성(Consistency), 가용성(Availability), 분할 내성(Partition tolerance) 중 동시에 셋 모두를 완벽히 보장할 수 없다는 정리다. 멀티 리전은 네트워크 분단이 필연이므로 P는 항상 유지해야 하고, 결국 C와 A 사이에서 선택한다. DynamoDB Global Tables가 AP(최종 일관성)를 선택한 이유가 여기 있다. Aurora Global Database는 단일 Primary로 CP에 가깝게 유지한다.
+CAP Theorem(Brewer, 2000)은 분산 시스템이 일관성(Consistency), 가용성(Availability), 분할 내성(Partition tolerance) 중 동시에 셋 모두를 완벽히 보장할 수 없다는 정리다. 멀티 리전은 네트워크 분단이 필연이므로 P는 항상 유지해야 하고, 결국 C와 A 사이에서 선택한다. DynamoDB Global Tables가 AP(최종 일관성)를 선택한 이유가 여기 있다. Aurora Global Database는 단일 Primary로 CP에 가깝게 유지한다.
 
 > 🔍 **더 깊이**: 실제로는 CAP의 C(강한 일관성)와 A(가용성)의 이분법보다, PACELC(Abadi, 2012)가 더 현실적이다. PACELC는 Partition 시에는 A vs C, 정상 시에는 Latency vs Consistency의 트레이드오프가 있음을 설명한다. Aurora Global의 복제 지연(1초 미만)은 "Latency 희생으로 Consistency를 높인" PACELC 관점의 선택이다.
 
@@ -30,7 +30,7 @@ DR 전략 4종을 "외우는" 것과 "이해하는" 것의 차이는 시나리�
 | **Warm Standby** | 수분~30분 | 분 단위 | 10~20x | 축소된 풀 스택 상시 운영 |
 | **Multi-Site Active-Active** | ~0 (즉시) | ~0 (실시간) | 50~100x | 양 리전 동시 트래픽 처리 |
 
-> 📚 **사례**: 2017년 Amazon S3 us-east-1 장애. AWS 엔지니어가 점검 스크립트를 실수로 더 큰 서브시스템에 적용해 서버 수가 급격히 감소하며 S3 인덱싱 서비스가 멈췄다. 당시 S3를 Origin으로 쓰던 수많은 서비스가 같이 다운됐다. 이 사고 이후 AWS는 Control Plane 분리와 Pilot Light 패턴의 중요성을 재강조했다. 교훈: 단일 리전에 모든 것을 두면, 예상치 못한 운영 실수가 전체 장애로 이어진다.
+2017년 Amazon S3 us-east-1 장애. AWS 엔지니어가 점검 스크립트를 실수로 더 큰 서브시스템에 적용해 서버 수가 급격히 감소하며 S3 인덱싱 서비스가 멈췄다. 당시 S3를 Origin으로 쓰던 수많은 서비스가 같이 다운됐다. 이 사고 이후 AWS는 Control Plane 분리와 Pilot Light 패턴의 중요성을 재강조했다. 교훈: 단일 리전에 모든 것을 두면, 예상치 못한 운영 실수가 전체 장애로 이어진다.
 
 ### Backup & Restore 내부 동작
 
@@ -60,7 +60,7 @@ Active-Active는 두 리전이 동시에 실제 트래픽을 처리한다. 이�
 - **DNS 계층**: Route 53 Latency 또는 Geolocation 라우팅
 - **세션·상태**: Redis ElastiCache Global Datastore 또는 DynamoDB 세션 저장
 
-> 🔍 **더 깊이**: Active-Active에서 마스터-마스터 쓰기 충돌 문제. DynamoDB Global Tables는 Last-Write-Wins(LWW) 전략을 쓴다. 두 리전에서 동시에 같은 아이템을 수정하면 타임스탬프가 더 늦은 쓰기가 이긴다. 이것이 문제가 되는 케이스: 사용자가 서울에서 잔액 $100 → $80을 쓰고, 도쿄에서 거의 동시에 $100 → $90으로 쓰면, 두 쓰기가 1ms 차이로 충돌할 때 최종값이 $80 또는 $90이 되지만 "어떤 것이 옳은지" 알 수 없다. 금융 시스템이 Global Tables를 직접 쓰지 못하는 이유가 이것이다. 해결책: Aurora Global Database로 단일 Primary 리전에서만 쓰고, Secondary는 읽기만.
+Active-Active에서 마스터-마스터 쓰기 충돌 문제. DynamoDB Global Tables는 Last-Write-Wins(LWW) 전략을 쓴다. 두 리전에서 동시에 같은 아이템을 수정하면 타임스탬프가 더 늦은 쓰기가 이긴다. 이것이 문제가 되는 케이스: 사용자가 서울에서 잔액 $100 → $80을 쓰고, 도쿄에서 거의 동시에 $100 → $90으로 쓰면, 두 쓰기가 1ms 차이로 충돌할 때 최종값이 $80 또는 $90이 되지만 "어떤 것이 옳은지" 알 수 없다. 금융 시스템이 Global Tables를 직접 쓰지 못하는 이유가 이것이다. 해결책: Aurora Global Database로 단일 Primary 리전에서만 쓰고, Secondary는 읽기만.
 
 ## 데이터 복제 서비스별 내부 메커니즘
 
@@ -75,7 +75,7 @@ Active-Active는 두 리전이 동시에 실제 트래픽을 처리한다. 이�
 | **EFS Replication** | 비동기 | ~1분 | 최종 일관성 | 단방향 |
 | **ElastiCache Global Datastore** | 비동기 | ~1초 | 최종 일관성 | Primary 쓰기 |
 
-> 💡 **관련 이론**: Aurora Global Database의 혁신적인 점은 **스토리지 레벨 복제**다. 기존 RDS는 binlog를 Primary에서 Replica로 전송하는 방식(논리적 복제)이라 쿼리 처리 + 로그 생성 + 전송 + 재실행의 4단계를 거쳐 수초의 지연이 생겼다. Aurora Global은 스토리지 노드가 직접 Redo log를 네트워크로 흘려보내 Primary 컴퓨팅 오버헤드를 거의 없애고 전용 복제 네트워크(< 1초)로 전달한다. 이것이 "RPO < 1초"를 가능하게 하는 물리적 이유다.
+Aurora Global Database의 혁신적인 점은 **스토리지 레벨 복제**다. 기존 RDS는 binlog를 Primary에서 Replica로 전송하는 방식(논리적 복제)이라 쿼리 처리 + 로그 생성 + 전송 + 재실행의 4단계를 거쳐 수초의 지연이 생겼다. Aurora Global은 스토리지 노드가 직접 Redo log를 네트워크로 흘려보내 Primary 컴퓨팅 오버헤드를 거의 없애고 전용 복제 네트워크(< 1초)로 전달한다. 이것이 "RPO < 1초"를 가능하게 하는 물리적 이유다.
 
 ## Route 53 ARC (Application Recovery Controller)
 
@@ -100,7 +100,7 @@ ARC의 내부 구조:
 | **CloudFront** | HTTP (L7) | 엣지 캐시 PoP | 즉시 (엣지에서) | ✅ |
 | **Global Accelerator** | BGP Anycast (L4) | 패킷 수준 최단 경로 | 수십 초 | ❌ |
 
-> 💡 **관련 이론**: BGP Anycast는 인터넷의 라우팅 프로토콜인 BGP(Border Gateway Protocol, RFC 4271)를 이용해 같은 IP 주소를 여러 위치에서 광고한다. 인터넷 라우터는 "가장 짧은 AS path"로 라우팅하므로, 사용자 가까이 있는 AWS PoP로 트래픽이 자동 흘러간다. Global Accelerator는 이 원리로 동작한다. 반면 Route 53은 DNS 응답에 특정 IP를 넣어주는 것이므로, 한 번 IP를 캐시한 클라이언트는 TTL 동안 그 IP로 계속 간다.
+BGP Anycast는 인터넷의 라우팅 프로토콜인 BGP(Border Gateway Protocol, RFC 4271)를 이용해 같은 IP 주소를 여러 위치에서 광고한다. 인터넷 라우터는 "가장 짧은 AS path"로 라우팅하므로, 사용자 가까이 있는 AWS PoP로 트래픽이 자동 흘러간다. Global Accelerator는 이 원리로 동작한다. 반면 Route 53은 DNS 응답에 특정 IP를 넣어주는 것이므로, 한 번 IP를 캐시한 클라이언트는 TTL 동안 그 IP로 계속 간다.
 
 ## 글로벌 아키텍처 다이어그램: Active-Active
 
@@ -127,9 +127,9 @@ ARC의 내부 구조:
 
 장애 시: Route 53 Health Check가 ap-northeast-2 ALB를 실패 감지 → 해당 레코드 제외 → 모든 트래픽 eu-west-1로. Aurora는 Secondary를 Primary로 Promote(1분 미만). ARC Safety Rule이 "eu-west-1이 살아있을 때만 ap-northeast-2 비활성화" 강제.
 
-> 📚 **사례**: Netflix의 멀티 리전 전략 (Chaos Engineering, 2011~). Netflix는 Chaos Monkey를 이용해 프로덕션 환경에서 무작위로 인스턴스를 끄는 실험을 했다. 이후 Chaos Kong으로 리전 전체를 끄는 훈련도 진행했다. 이 과정에서 Active-Active의 취약점(DynamoDB 충돌, 세션 스티키 문제, Cassandra 복제 지연)을 발견하고 수정했다. 교훈: 멀티 리전은 설계만으로 완성되지 않는다. 실제 장애 훈련이 있어야 RTO/RPO 수치가 현실이 된다.
+Netflix의 멀티 리전 전략 (Chaos Engineering, 2011~). Netflix는 Chaos Monkey를 이용해 프로덕션 환경에서 무작위로 인스턴스를 끄는 실험을 했다. 이후 Chaos Kong으로 리전 전체를 끄는 훈련도 진행했다. 이 과정에서 Active-Active의 취약점(DynamoDB 충돌, 세션 스티키 문제, Cassandra 복제 지연)을 발견하고 수정했다. 교훈: 멀티 리전은 설계만으로 완성되지 않는다. 실제 장애 훈련이 있어야 RTO/RPO 수치가 현실이 된다.
 
-> 🔍 **더 깊이**: Aurora Global Database의 Managed Planned Failover vs Unplanned Failover. Planned(계획 페일오버): Secondary를 Primary로 승격하기 전에 Primary의 모든 쓰기를 Secondary에 플러시해 RPO=0으로 완료. Unplanned(비계획): Primary가 갑자기 다운 시 Secondary가 약 1초 미만의 Redo log 지연만큼을 잃고 승격. 시험에서 "RPO < 1초"는 Unplanned 기준, "RPO = 0"은 Planned 기준이다.
+Aurora Global Database의 Managed Planned Failover vs Unplanned Failover. Planned(계획 페일오버): Secondary를 Primary로 승격하기 전에 Primary의 모든 쓰기를 Secondary에 플러시해 RPO=0으로 완료. Unplanned(비계획): Primary가 갑자기 다운 시 Secondary가 약 1초 미만의 Redo log 지연만큼을 잃고 승격. 시험에서 "RPO < 1초"는 Unplanned 기준, "RPO = 0"은 Planned 기준이다.
 
 ## Stateful vs Stateless 설계 원칙
 
@@ -138,9 +138,9 @@ ARC의 내부 구조:
 - **Stateless 컴포넌트** (Lambda, ECS Task, EC2 앱 서버): 상태를 직접 갖지 않아 어느 리전에서도 즉시 대체 가능. 멀티 리전 최적.
 - **Stateful 컴포넌트** (RDS, ElastiCache, 로컬 파일시스템): 상태를 다른 리전으로 복제해야 함. 복제 지연이 곧 RPO.
 
-설계 원칙: **상태를 가능한 외부화하라.** 세션은 DynamoDB나 ElastiCache에, 파일은 S3에, 설정은 SSM Parameter Store나 AppConfig에. 컴퓨팅 계층 자체는 완전히 Stateless로 만들어야 멀티 리전 페일오버가 단순해진다.
+설계 원칙: **상태를 가능한 한 외부화한다.** 세션은 DynamoDB나 ElastiCache에, 파일은 S3에, 설정은 SSM Parameter Store나 AppConfig에. 컴퓨팅 계층 자체는 완전히 Stateless로 만들어야 멀티 리전 페일오버가 단순해진다.
 
-> 💡 **관련 이론**: 12-Factor App 방법론(Heroku, 2012)의 Factor VI "Processes": 프로세스는 Stateless여야 하고, 영속 데이터는 외부 Backing Service(DB, 큐, 캐시)에 저장해야 한다. 이 원칙이 Cloud-Native 설계의 기본이며, 멀티 리전 가용성의 전제 조건이다.
+12-Factor App 방법론(Heroku, 2012)의 Factor VI "Processes": 프로세스는 Stateless여야 하고, 영속 데이터는 외부 Backing Service(DB, 큐, 캐시)에 저장해야 한다. 이 원칙이 Cloud-Native 설계의 기본이며, 멀티 리전 가용성의 전제 조건이다.
 
 ## 비용 고려: DR 패턴별 월별 추정
 

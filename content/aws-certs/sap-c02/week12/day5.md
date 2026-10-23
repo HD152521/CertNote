@@ -18,9 +18,9 @@
 
 > 🎯 **시나리오**: "한 회사가 EC2 m5 family를 24시간 가동하고 향후 3년간 family 변경 계획 없음. 현금 여유 있음. 최대 할인은?" — 답: **EC2 Instance Savings Plans 또는 Standard RI (3년 All Upfront)**. family·region 고정이면 유연성을 살 이유가 없으므로 가장 구체적인 약정이 정답. EC2 Instance SP는 같은 family 내 size·OS·AZ까지 자유라 Standard RI보다 한 단계 유연하면서 동일 ~72%.
 
-> 💡 **관련 이론**: 약정 단위의 차이가 SP의 유연성을 만든다. RI는 "인스턴스"를 약정하지만 SP는 "$/시간"을 약정한다 — 이는 CS의 **추상화 계층(abstraction layer)** 사고다. SP는 물리 자원 위에 "정규화된 시간당 비용"이라는 추상 계층을 올려, 그 아래 인스턴스가 m5든 m6i든 약정이 매칭되게 한다. 추상화가 결합도(coupling)를 낮춰 워크로드 현대화 시에도 약정이 깨지지 않는 전형적 패턴이다.
+약정 단위의 차이가 SP의 유연성을 만든다. RI는 "인스턴스"를 약정하지만 SP는 "$/시간"을 약정한다 — 이는 CS의 **추상화 계층(abstraction layer)** 사고다. SP는 물리 자원 위에 "정규화된 시간당 비용"이라는 추상 계층을 올려, 그 아래 인스턴스가 m5든 m6i든 약정이 매칭되게 한다. 추상화가 결합도(coupling)를 낮춰 워크로드 현대화 시에도 약정이 깨지지 않는 전형적 패턴이다.
 
-> 🔍 **더 깊이**: 결제 옵션(All/Partial/No Upfront)도 같은 위험 논리다. All Upfront는 AWS가 현금을 미리 받아(신용 위험 제거 + 화폐의 시간 가치) 가장 큰 할인을 준다. "현금 여유 + 최대 할인"이면 All Upfront, "초기 현금 최소화 + 약정 할인"이면 No Upfront가 정답 신호. 적용 순서는 **Zonal RI → Regional RI → Savings Plans → On-Demand**로, 가장 구체적인 약정부터 사용량을 흡수한다. 그래서 RI를 과도하게 사면 RI가 사용량을 선점해 SP utilization이 떨어진다 — "SP 활용률 저하"의 단골 원인이다.
+결제 옵션(All/Partial/No Upfront)도 같은 위험 논리다. All Upfront는 AWS가 현금을 미리 받아(신용 위험 제거 + 화폐의 시간 가치) 가장 큰 할인을 준다. "현금 여유 + 최대 할인"이면 All Upfront, "초기 현금 최소화 + 약정 할인"이면 No Upfront가 정답 신호. 적용 순서는 **Zonal RI → Regional RI → Savings Plans → On-Demand**로, 가장 구체적인 약정부터 사용량을 흡수한다. 그래서 RI를 과도하게 사면 RI가 사용량을 선점해 SP utilization이 떨어진다 — "SP 활용률 저하"의 대표 원인이다.
 
 ## Spot Instance: 최대 90% 할인 + 회수 위험
 
@@ -38,9 +38,9 @@
 | capacity-optimized-prioritized | 위 + 우선순위 명시 | 낮음 |
 | price-capacity-optimized | 가격·용량 균형 (최신 권장) | 낮음 |
 
-> 📚 **사례**: 한 영상 렌더링 회사가 c5·c5n·c5a·m5·m5n 등 10개 이상 인스턴스 풀을 capacity-optimized로 묶어 사용. 한 풀의 capacity가 부족해지면 자동으로 다른 풀로 대체해 회수율을 5% 이하로 유지하며 비용 약 80% 절감. 교훈: Spot 안정성의 핵심은 "낮은 가격"이 아니라 **풀 다양화(diversification)**다 — 하나의 가장 싼 풀에 몰면 그 풀이 회수될 때 전체가 무너진다.
+(가상 사례) 한 영상 렌더링 회사가 c5·c5n·c5a·m5·m5n 등 10개 이상 인스턴스 풀을 capacity-optimized로 묶어 사용. 한 풀의 capacity가 부족해지면 자동으로 다른 풀로 대체해 회수율을 5% 이하로 유지하며 비용 약 80% 절감. 교훈: Spot 안정성의 핵심은 "낮은 가격"이 아니라 **풀 다양화(diversification)**다 — 하나의 가장 싼 풀에 몰면 그 풀이 회수될 때 전체가 무너진다.
 
-> 💡 **관련 이론**: Spot의 풀 다양화는 금융 포트폴리오 이론의 **분산 투자(diversification)**와 같다. 상관관계가 낮은 여러 풀에 분산하면 한 풀의 회수(개별 위험)가 전체에 미치는 영향이 줄어든다. capacity-optimized는 "수익 극대화(최저가)"보다 "분산 최소화(안정)"를 택한 전략이고, 그래서 미션이 중단에 민감할수록 lowest-price 대신 capacity-optimized/price-capacity-optimized가 정답이다.
+Spot의 풀 다양화는 금융 포트폴리오 이론의 **분산 투자(diversification)**와 같다. 상관관계가 낮은 여러 풀에 분산하면 한 풀의 회수(개별 위험)가 전체에 미치는 영향이 줄어든다. capacity-optimized는 "수익 극대화(최저가)"보다 "분산 최소화(안정)"를 택한 전략이고, 그래서 미션이 중단에 민감할수록 lowest-price 대신 capacity-optimized/price-capacity-optimized가 정답이다.
 
 > 🎯 **시나리오**: "Kubernetes(EKS) 데이터 처리 워커를 비용 최소화하되 중단에 견디게." → **Karpenter 또는 Managed Node Group + Spot(capacity-optimized) + On-Demand 혼합 + 다양한 인스턴스 타입**. Pod Disruption Budget과 graceful drain으로 2분 알림에 대응. 순수 Spot 단일 타입은 회수 시 전체 중단 위험.
 
@@ -53,9 +53,9 @@
 | **Cost Explorer** | 집계 시각화 | 시각화 + 12개월 Forecast + Coverage/Utilization |
 | **CUR** | 원본 사실 테이블 | 시간 단위 ~200컬럼, Athena SQL 단가 분석 |
 
-> 🔍 **더 깊이**: 메모리 권고는 가상화의 **시맨틱 갭**(하이퍼바이저가 게스트 메모리를 못 봄) 때문에 **CloudWatch Agent**가 설치돼야만 나온다. "메모리 권고가 왜 안 나오나"의 정답은 거의 항상 CW Agent 미설치. Compute Optimizer enhanced infrastructure metrics를 켜면 lookback이 14일에서 최대 93일로 늘어 계절성을 반영한다(유료).
+메모리 권고는 가상화의 **시맨틱 갭**(하이퍼바이저가 게스트 메모리를 못 봄) 때문에 **CloudWatch Agent**가 설치돼야만 나온다. "메모리 권고가 왜 안 나오나"의 정답은 거의 항상 CW Agent 미설치. Compute Optimizer enhanced infrastructure metrics를 켜면 lookback이 14일에서 최대 93일로 늘어 계절성을 반영한다(유료).
 
-> 💡 **관련 이론**: Trusted Advisor(룰)와 Compute Optimizer(ML)의 분업은 분류기의 **정밀도-재현율(precision-recall)** 트레이드오프다. 룰은 빠르고 해석 가능하지만 거짓 양성이 많고(배치 spike를 잘못 잡음), ML은 거짓 양성을 줄이지만 학습 데이터·시간이 필요하다. 운영은 TA로 넓게 스크리닝 후 CO로 정밀 분석하는 계층 구조를 쓴다. 다른 클라우드도 동형이다 — Azure Advisor, GCP Recommender가 각각 대응.
+Trusted Advisor(룰)와 Compute Optimizer(ML)의 분업은 분류기의 **정밀도-재현율(precision-recall)** 트레이드오프다. 룰은 빠르고 해석 가능하지만 거짓 양성이 많고(배치 spike를 잘못 잡음), ML은 거짓 양성을 줄이지만 학습 데이터·시간이 필요하다. 운영은 TA로 넓게 스크리닝 후 CO로 정밀 분석하는 계층 구조를 쓴다. 다른 클라우드도 동형이다 — Azure Advisor, GCP Recommender가 각각 대응.
 
 ## Budgets vs Cost Anomaly Detection — 통제 vs 탐지
 
@@ -69,7 +69,7 @@
 
 > ⚠️ **함정**: Budgets Action은 "신규 생성 차단(IAM/SCP Deny)"과 "현재 가동분 정지(EC2/RDS stop)"를 구분해 설계해야 한다. 시나리오 동사가 "막아라"면 Deny, "멈춰라"면 stop이다.
 
-## 숨은 비용 (Pro 시험 단골)
+## 숨은 비용
 
 ### NAT Gateway: 시간 + 처리량 이중 과금
 
@@ -77,16 +77,16 @@
 - 처리량 약 $0.045/GB (리전마다 다름)
 - VPC 안 1TB 인터넷 트래픽 ≈ 처리량만 $45
 
-> 🔍 **더 깊이**: NAT Gateway는 종종 RDS보다 큰 비용 항목이 된다. 특히 Lambda·ECS Task가 private subnet에서 외부·AWS API를 호출하면 모든 트래픽이 NAT를 거쳐 비용이 폭증한다. **S3·DynamoDB는 Gateway Endpoint(무료)**, 그 외 AWS 서비스(SQS·SNS·KMS·ECR·Secrets Manager 등)는 **Interface Endpoint(PrivateLink, 시간당 ~$0.01/AZ + 처리량)**로 NAT를 우회한다. trip-line 경험칙: "한 달 NAT 비용이 Interface Endpoint 시간 요금을 넘으면 Endpoint로 전환." ECR pull, S3 접근이 잦은 컨테이너 환경이 1순위 후보다.
+NAT Gateway는 종종 RDS보다 큰 비용 항목이 된다. 특히 Lambda·ECS Task가 프라이빗 서브넷에서 외부·AWS API를 호출하면 모든 트래픽이 NAT를 거쳐 비용이 폭증한다. **S3·DynamoDB는 Gateway Endpoint(무료)**, 그 외 AWS 서비스(SQS·SNS·KMS·ECR·Secrets Manager 등)는 **Interface Endpoint(PrivateLink, 시간당 ~$0.01/AZ + 처리량)**로 NAT를 우회한다. trip-line 경험칙: "한 달 NAT 비용이 Interface Endpoint 시간 요금을 넘으면 Endpoint로 전환." ECR pull, S3 접근이 잦은 컨테이너 환경이 1순위 후보다.
 
-> 📚 **사례**: 한 SaaS가 ECS Task에서 매일 100GB를 S3에 업로드. NAT Gateway 경유 시 처리량 비용만 월 약 $4,500. **S3 Gateway Endpoint**로 전환 후 해당 트래픽 비용 $0. 단순 라우팅 우회만으로 연 약 $54,000 절감. 교훈: private subnet의 S3·DynamoDB 트래픽이 NAT를 타고 있는지는 가장 먼저 확인할 안티패턴이다.
+(가상 사례) 한 SaaS가 ECS Task에서 매일 100GB를 S3에 업로드. NAT Gateway 경유 시 처리량 비용만 월 약 $4,500. **S3 Gateway Endpoint**로 전환 후 해당 트래픽 비용 $0. 단순 라우팅 우회만으로 연 약 $54,000 절감. 교훈: 프라이빗 서브넷의 S3·DynamoDB 트래픽이 NAT를 타고 있는지는 가장 먼저 확인할 안티패턴이다.
 
 ### AZ 간 트래픽: 양방향 과금
 
 - 같은 리전 다른 AZ 통신: 약 $0.01/GB가 **양쪽 모두** 청구(왕복 ≈ $0.02/GB)
 - Cross-AZ DB replication, ALB→타 AZ 인스턴스, 분산 캐시 동기화 등이 의외로 큰 비용
 
-> 💡 **관련 이론**: 이것은 가용성과 비용의 근본 trade-off다. Multi-AZ는 내결함성(WA Reliability 기둥)을 위해 AZ를 분산하지만 그 대가로 Cross-AZ 트래픽 비용이 발생한다. **읽기 지연 허용 가능**하면 read replica를 같은 AZ에 두거나 토폴로지 인식 라우팅(예: ALB의 cross-zone 설정, 클라이언트의 AZ-affinity)으로 줄인다 — 가용성을 약간 포기하고 비용을 아끼는 의도적 선택이다. "고가용성 유지 + Cross-AZ 비용 최소화"는 본질적으로 양립이 어렵다는 게 Pro 수준의 인식이다.
+이것은 가용성과 비용의 근본 trade-off다. Multi-AZ는 내결함성(WA Reliability 기둥)을 위해 AZ를 분산하지만 그 대가로 Cross-AZ 트래픽 비용이 발생한다. **읽기 지연 허용 가능**하면 read replica를 같은 AZ에 두거나 토폴로지 인식 라우팅(예: ALB의 cross-zone 설정, 클라이언트의 AZ-affinity)으로 줄인다 — 가용성을 약간 포기하고 비용을 아끼는 의도적 선택이다. "고가용성 유지 + Cross-AZ 비용 최소화"는 본질적으로 양립이 어렵다는 게 Pro 수준의 인식이다.
 
 ### Internet Egress vs CloudFront
 
@@ -116,13 +116,13 @@
 - **Lifecycle rule로 7일 후 자동 삭제** 권장(S3 Storage Lens로 누적량 탐지)
 - 대규모 환경에서 수십 TB까지 누적되기도 한다
 
-> 📚 **사례**: 한 기업이 S3 비용이 설명 안 되게 늘어 조사하니, 실패한 멀티파트 업로드 조각이 수년간 쌓여 수십 TB를 차지하고 있었다. 콘솔·일반 리스트에는 안 보여 발견이 늦었다. Storage Lens로 incomplete multipart 누적을 확인하고 lifecycle rule(7일 abort)을 걸어 즉시 정리. 교훈: "보이지 않는 저장 비용"의 1순위 용의자는 incomplete multipart upload와 오래된 버전(versioning)이다.
+(가상 사례) 한 기업이 S3 비용이 설명 안 되게 늘어 조사하니, 실패한 멀티파트 업로드 조각이 수년간 쌓여 수십 TB를 차지하고 있었다. 콘솔·일반 리스트에는 안 보여 발견이 늦었다. Storage Lens로 incomplete multipart 누적을 확인하고 lifecycle rule(7일 abort)을 걸어 즉시 정리. 교훈: "보이지 않는 저장 비용"의 1순위 용의자는 incomplete multipart upload와 오래된 버전(versioning)이다.
 
 ## 멀티 계정·Organization 비용 거버넌스
 
 SAP 시험의 비용 시나리오는 거의 항상 멀티 계정 전제다. 핵심 원리: **약정 할인은 통합 결제(Consolidated Billing)로 Org 전체에 공유**되므로 중앙(관리 계정·전용 결제 계정)에서 일괄 구매하는 게 활용률·관리 양면에서 우월하다. "멤버 계정마다 SP 구매"는 전형적 오답이다.
 
-> 💡 **관련 이론**: Org 차원 약정 풀링은 분산 시스템의 **자원 풀링(resource pooling)** + 통계의 **대수의 법칙**이다. 여러 워크로드를 한 풀로 합치면 개별 spike가 상쇄돼 변동성이 줄고, 사용량 하한(baseline)에 더 타이트하게 약정해도 안전하다. 그래서 풀이 클수록 over-commit 위험 없이 Coverage를 높일 수 있다. 통합 결제는 볼륨 티어 할인도 합산 적용하므로, 비용 분리를 위해 계정을 쪼개되 할인은 공유하는 것이 멀티 계정 비용 설계의 정수다.
+Org 차원 약정 풀링은 분산 시스템의 **자원 풀링(resource pooling)** + 통계의 **대수의 법칙**이다. 여러 워크로드를 한 풀로 합치면 개별 spike가 상쇄돼 변동성이 줄고, 사용량 하한(baseline)에 더 타이트하게 약정해도 안전하다. 그래서 풀이 클수록 over-commit 위험 없이 Coverage를 높일 수 있다. 통합 결제는 볼륨 티어 할인도 합산 적용하므로, 비용 분리를 위해 계정을 쪼개되 할인은 공유하는 것이 멀티 계정 비용 설계의 정수다.
 
 ## 시나리오 키워드 → 정답 매핑 표
 
@@ -134,7 +134,7 @@ SAP 시험의 비용 시나리오는 거의 항상 멀티 계정 전제다. 핵�
 | "용량 보장 + 할인" | Zonal RI 또는 ODCR + SP |
 | "stateless 배치 90% 할인" | Spot Fleet (capacity-optimized) |
 | "Private Lambda/ECS → S3 비용 0" | S3 Gateway Endpoint |
-| "private subnet → SQS/KMS NAT 우회" | Interface Endpoint(PrivateLink) |
+| "프라이빗 서브넷 → SQS/KMS NAT 우회" | Interface Endpoint(PrivateLink) |
 | "S3 접근 패턴 모름 + 큰 객체" | Intelligent-Tiering |
 | "월 예산 초과 시 신규 EC2 차단" | Budgets Action(IAM/SCP Deny) |
 | "예산 절대 초과 불가(하드 캡)" | 예방형 SCP/Service Quotas |
@@ -149,7 +149,7 @@ SAP 시험의 비용 시나리오는 거의 항상 멀티 계정 전제다. 핵�
 | "SP utilization 저하" | RI 과약정이 사용량 선점 |
 | "멤버 계정마다 SP 구매" | 오답(중앙 통합 구매·공유) |
 
-## 정리하며
+## 정리
 
 비용 최적화는 **(약정 + 즉시 할인 + 숨은 비용)**의 3축이며, 그 위에 Well-Architected Cost Optimization 기둥과 FinOps Inform→Optimize→Operate 사이클이 놓인다. SP/RI 적용 순서, Spot 회수·풀 다양화 전략, NAT/AZ/Egress의 hidden cost — 이 셋의 trade-off를 한꺼번에 떠올려야 시험 시나리오를 푼다. 도구는 Compute Optimizer(권고)·CUR(분석)·Budgets(통제)·Anomaly Detection(탐지)의 4단계 워크플로이며, 멀티 계정에서는 통합 결제로 약정을 공유하고 중앙에서 일괄 거버넌스한다.
 

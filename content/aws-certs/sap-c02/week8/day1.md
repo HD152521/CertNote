@@ -1,6 +1,6 @@
 # Day 1 - Lambda 고급: 동시성, 콜드 스타트, SnapStart의 내부 동작
 
-람다 함수를 처음 띄울 때는 모든 게 마법처럼 느껴진다. 코드를 zip으로 올리거나 컨테이너 이미지를 가리키기만 하면 누군가가 알아서 띄우고 알아서 스케일링한다. 그러나 production에서 트래픽이 갑자기 10배로 뛰는 순간, "어제까지 50ms였던 응답이 왜 갑자기 5초가 되었나" 같은 질문이 떠오른다. 그 답은 거의 항상 동시성 한도, 콜드 스타트, VPC ENI 셋 중 하나에 있다.
+Lambda 함수를 처음 띄울 때는 모든 게 마법처럼 느껴진다. 코드를 zip으로 올리거나 컨테이너 이미지를 가리키기만 하면 누군가가 알아서 띄우고 알아서 스케일링한다. 그러나 production에서 트래픽이 갑자기 10배로 뛰는 순간, "어제까지 50ms였던 응답이 왜 갑자기 5초가 되었나" 같은 질문이 떠오른다. 그 답은 거의 항상 동시성 한도, 콜드 스타트, VPC ENI 셋 중 하나에 있다.
 
 SAP-C02 시험에서 Lambda는 서버리스 도메인의 중심축이고, 단순한 "이벤트 → 함수 실행" 수준의 문제는 거의 안 나온다. 대부분의 문제는 "트래픽 스파이크에 대응하는 가장 비용 효율적인 방법", "콜드 스타트를 비용 추가 없이 줄이는 방법", "VPC 안에서 Lambda가 RDS Proxy에 접속할 때 ENI 폭증을 피하는 방법" 같은 운영 관점이다. 오늘은 그 운영 관점을 만드는 내부 동작을 본다.
 
@@ -10,9 +10,9 @@ Lambda를 "컨테이너 서비스"라고 부르는 자료가 많지만, 정확�
 
 왜 컨테이너(cgroups + namespaces)가 아니라 micro VM인가. 핵심은 **멀티테넌트 환경에서의 격리 강도** 때문이다. 한 베어메탈 서버에 수백 명의 고객 함수가 옆에 떠 있을 수 있는데, 컨테이너 격리만으로는 커널 공유로 인한 side-channel 공격(예: Spectre, Meltdown)을 막을 수 없다. Firecracker는 KVM 위에 동작하면서도 device model을 minimal하게 잘라내어, VM 부팅 오버헤드를 컨테이너 수준으로 줄였다.
 
-> 💡 **관련 이론**: Firecracker는 NSDI 2020에 발표된 "Firecracker: Lightweight Virtualization for Serverless Applications" 논문에 자세히 설명되어 있다. 핵심은 minimal VMM(2만 줄 미만의 Rust 코드)으로 attack surface를 최소화했다는 점. 같은 기술이 Fargate에도 쓰여서 "Lambda와 Fargate는 본질적으로 같은 격리 기술 위에 다른 추상화를 얹은 것"이라고 보면 된다. CS적으로 보면 Lambda는 stateless function 추상화, Fargate는 stateful container 추상화로 사용 사례가 갈린다.
+Firecracker는 NSDI 2020에 발표된 "Firecracker: Lightweight Virtualization for Serverless Applications" 논문에 자세히 설명되어 있다. 특징은 minimal VMM(2만 줄 미만의 Rust 코드)으로 attack surface를 최소화했다는 점. 같은 기술이 Fargate에도 쓰여서 "Lambda와 Fargate는 본질적으로 같은 격리 기술 위에 다른 추상화를 얹은 것"이라고 보면 된다. CS적으로 보면 Lambda는 stateless function 추상화, Fargate는 stateful container 추상화로 사용 사례가 갈린다.
 
-> 🔍 **더 깊이**: Firecracker가 매번 새 micro VM을 만드는 건 아니다. AWS는 **Worker(베어메탈 EC2)** 위에 **Slot**이라는 단위로 사전 워밍업된 micro VM 풀을 유지한다. 새 콜드 스타트 요청이 오면 Slot에서 가져와 함수 코드를 주입하고 init을 실행하는 식이다. 즉 콜드 스타트의 시간 분해는 (1) Slot 할당 — 거의 0 (2) 코드 다운로드·압축 해제 — zip/이미지 크기에 비례 (3) 런타임 부팅 — Java JVM이 가장 무거움 (4) Init 코드 실행 — 사용자 책임. 시험 문제에서 "콜드 스타트를 줄이려면" 보기 중 (2)(3)(4)를 공격하는 것이 정답 후보다.
+Firecracker가 매번 새 micro VM을 만드는 건 아니다. AWS는 **Worker(베어메탈 EC2)** 위에 **Slot**이라는 단위로 사전 워밍업된 micro VM 풀을 유지한다. 새 콜드 스타트 요청이 오면 Slot에서 가져와 함수 코드를 주입하고 init을 실행하는 식이다. 즉 콜드 스타트의 시간 분해는 (1) Slot 할당 — 거의 0 (2) 코드 다운로드·압축 해제 — zip/이미지 크기에 비례 (3) 런타임 부팅 — Java JVM이 가장 무거움 (4) Init 코드 실행 — 사용자 책임. 시험 문제에서 "콜드 스타트를 줄이려면" 보기 중 (2)(3)(4)를 공격하는 것이 정답 후보다.
 
 ## 동시성 3종의 차이를 분해하기
 
@@ -26,9 +26,9 @@ Lambda를 "컨테이너 서비스"라고 부르는 자료가 많지만, 정확�
 
 Reserved와 PC는 동시에 쓸 수 있다. 예를 들어 "이 함수는 Reserved=200, PC=50"이라고 설정하면, 평상시 50개는 항상 따뜻하게 유지되고 그 위 트래픽은 150까지 cold scale-out된다. 트래픽이 더 몰리면 그 함수는 200에서 throttle되고, 그 throttle이 다른 함수를 보호한다.
 
-> ⚠️ **함정**: "Reserved Concurrency를 설정하면 그 함수에 N개만 띄울 수 있다"는 표현이 보기에 자주 나온다. 정확히는 **N개의 동시 실행을 보장하면서 동시에 상한**으로 작동한다. Reserved=10이라면 평상시 10개까지만 동시 실행되고, 나머지는 throttle된다. 이걸 격리 목적으로만 보고 "상한"이라는 의미를 빼먹으면 시나리오를 잘못 푼다.
+> ⚠️ **함정**: "Reserved Concurrency를 설정하면 그 함수에 N개만 띄울 수 있다"는 표현이 보기에 나온다. 정확히는 **N개의 동시 실행을 보장하면서 동시에 상한**으로 작동한다. Reserved=10이라면 평상시 10개까지만 동시 실행되고, 나머지는 throttle된다. 이걸 격리 목적으로만 보고 "상한"이라는 의미를 빼먹으면 시나리오를 잘못 푼다.
 
-> 📚 **사례**: 2019년 한 핀테크가 결제 처리용 Lambda 함수가 새벽 배치 작업 함수의 트래픽 스파이크에 휘말려 throttle된 사건이 있다. 두 함수가 같은 계정 동시성 풀(1,000)을 공유했고, 배치 함수가 1시간 동안 950개를 점유하면서 결제 함수가 50개만 받게 되어 결제 거부율이 30% 가까이 치솟았다. 사후 대응은 결제 함수에 Reserved=500을 부여해 격리. SAP 시험의 "한 함수가 다른 함수에 영향을 준다" 시나리오는 정확히 이 패턴이다.
+2019년 한 핀테크가 결제 처리용 Lambda 함수가 새벽 배치 작업 함수의 트래픽 스파이크에 휘말려 throttle된 사건이 있다. 두 함수가 같은 계정 동시성 풀(1,000)을 공유했고, 배치 함수가 1시간 동안 950개를 점유하면서 결제 함수가 50개만 받게 되어 결제 거부율이 30% 가까이 치솟았다. 사후 대응은 결제 함수에 Reserved=500을 부여해 격리. SAP 시험의 "한 함수가 다른 함수에 영향을 준다" 시나리오는 정확히 이 패턴이다.
 
 ## 콜드 스타트 — 원인을 분해하면 해결책이 보인다
 
@@ -46,9 +46,9 @@ Reserved와 PC는 동시에 쓸 수 있다. 예를 들어 "이 함수는 Reserve
 3. 새 콜드 스타트가 오면 init을 다시 실행하지 않고 스냅샷을 **CRaC(Coordinated Restore at Checkpoint)** 메커니즘으로 복원한다.
 4. 복원 후 핸들러가 즉시 실행된다.
 
-> 💡 **관련 이론**: CRaC는 OpenJDK의 공식 프로젝트로, Java JVM 프로세스의 상태를 체크포인트로 저장·복원하는 표준이다. CRIU(Checkpoint/Restore In Userspace)라는 Linux 커널 기능을 기반으로 한다. SnapStart는 CRaC를 채택해 Java에 먼저 적용했고, 2024년 Python·.NET로 확장됐다. 이 모델의 핵심은 **"초기화는 한 번, 실행은 무한"**이라는 분산 시스템의 일반적 최적화 패턴이다.
+CRaC는 OpenJDK의 공식 프로젝트로, Java JVM 프로세스의 상태를 체크포인트로 저장·복원하는 표준이다. CRIU(Checkpoint/Restore In Userspace)라는 Linux 커널 기능을 기반으로 한다. SnapStart는 CRaC를 채택해 Java에 먼저 적용했고, 2024년 Python·.NET로 확장됐다. 이 모델은 **"초기화는 한 번, 실행은 무한"**이라는 분산 시스템의 일반적 최적화 패턴을 따른다.
 
-> 🔍 **더 깊이**: SnapStart가 무료인 이유는 AWS 입장에서도 컴퓨팅 효율이 더 좋기 때문이다. 매 콜드 스타트마다 init을 실행하는 것보다, 한 번 만든 스냅샷을 page cache에서 복원하는 게 CPU·메모리·네트워크 모두 저렴하다. 다만 함정이 있다. 스냅샷은 **메모리·디스크 상태를 그대로 복사**하므로 init 단계에서 생성한 난수 시드, 고유 ID, DB connection의 TCP 상태가 모든 복원본에 동일하게 들어간다. 그래서 SnapStart 가이드는 "init에서 uniqueness state를 만들지 말 것"을 강조하고, `Crac.Resource` 인터페이스로 `beforeCheckpoint`/`afterRestore` 훅을 제공한다.
+SnapStart가 무료인 이유는 AWS 입장에서도 컴퓨팅 효율이 더 좋기 때문이다. 매 콜드 스타트마다 init을 실행하는 것보다, 한 번 만든 스냅샷을 page cache에서 복원하는 게 CPU·메모리·네트워크 모두 저렴하다. 다만 함정이 있다. 스냅샷은 **메모리·디스크 상태를 그대로 복사**하므로 init 단계에서 생성한 난수 시드, 고유 ID, DB connection의 TCP 상태가 모든 복원본에 동일하게 들어간다. 그래서 SnapStart 가이드는 "init에서 uniqueness state를 만들지 말 것"을 강조하고, `Crac.Resource` 인터페이스로 `beforeCheckpoint`/`afterRestore` 훅을 제공한다.
 
 > ⚠️ **함정**: SnapStart로 활성화하면 함수 환경이 stateless라는 가정이 깨진다. 예를 들어 init에서 `UUID.randomUUID()`로 인스턴스 ID를 만들고 캐시 key로 쓰는 코드가 있다면, 모든 SnapStart 복원본이 같은 ID를 갖게 되어 캐시 충돌이 생긴다. 시험에서는 직접 묻지 않지만 실무에서 흔한 함정이라 알아두면 좋다.
 
@@ -64,9 +64,9 @@ AWS는 2019년 9월 **Hyperplane ENI** 아키텍처로 이를 완전히 재설�
 
 이 변화 덕분에 VPC Lambda 콜드 스타트는 비-VPC와 거의 동일한 수준으로 떨어졌다. 시험에서 "Lambda VPC 통합 시 ENI 폭증을 어떻게 피하나" 같은 질문은 이제 거의 안 나오지만, 운영 관점에서 "한 함수당 ENI 개수는 동시성에 비례하지 않는다"는 사실은 알아두어야 한다.
 
-> 🔍 **더 깊이**: Hyperplane은 AWS 내부에서 분산 NAT/LB 역할을 하는 **Andromeda** 같은 SDN 시스템이다. NLB와 PrivateLink, Lambda VPC ENI, NAT Gateway, S3 Gateway Endpoint 모두 Hyperplane 위에서 동작한다. 그래서 Lambda VPC 통합이 "서브넷 내 IP를 쓰지만 실제 트래픽 경로는 Hyperplane을 거친다"는 점이 동작 원리의 핵심이다. AWS re:Invent 2019 "A Serverless Journey: AWS Lambda Under the Hood" 세션이 가장 좋은 1차 자료.
+Hyperplane은 AWS 내부에서 분산 NAT/LB 역할을 하는 **Andromeda** 같은 SDN 시스템이다. NLB와 PrivateLink, Lambda VPC ENI, NAT Gateway, S3 Gateway Endpoint 모두 Hyperplane 위에서 동작한다. 그래서 Lambda VPC 통합이 "서브넷 내 IP를 쓰지만 실제 트래픽 경로는 Hyperplane을 거친다"는 점이 동작 원리의 핵심이다. AWS re:Invent 2019 "A Serverless Journey: AWS Lambda Under the Hood" 세션이 가장 좋은 1차 자료.
 
-> 🎯 **시나리오**: "한 회사가 Lambda 함수에서 VPC 내부 RDS PostgreSQL에 초당 500건 쿼리를 보낸다. 동시 실행이 1,000개로 늘면 RDS의 max_connections=200 한도를 초과해 'too many connections' 오류가 발생한다. 가장 적합한 해결책은?" — 답은 **RDS Proxy**. Lambda → RDS Proxy → RDS 패턴으로 connection multiplexing(pooling)을 적용하면, Lambda 1,000개가 RDS 50개 연결로 묶인다. 추가로 RDS Proxy는 IAM 인증과 fail-over 시 connection holding도 제공한다. 시험에서 "Lambda + RDS + 동시성 + connection 오류" 키워드 조합은 거의 RDS Proxy가 답이다.
+> 🎯 **시나리오**: "한 회사가 Lambda 함수에서 VPC 내부 RDS PostgreSQL에 초당 500건 쿼리를 보낸다. 동시 실행이 1,000개로 늘면 RDS의 max_connections=200 한도를 초과해 'too many connections' 오류가 발생한다. 가장 적합한 해결책은?" — 답은 **RDS Proxy**. Lambda → RDS Proxy → RDS 패턴으로 connection multiplexing(pooling)을 적용하면, Lambda 1,000개가 RDS 50개 연결로 묶인다. 추가로 RDS Proxy는 IAM 인증과 페일오버 시 connection holding도 제공한다. 시험에서 "Lambda + RDS + 동시성 + connection 오류" 키워드 조합은 거의 RDS Proxy가 답이다.
 
 ## 비동기 호출의 재시도 모델과 Destinations
 
@@ -80,7 +80,7 @@ Lambda 호출은 동기/비동기/스트림 3가지가 있고, 각각 재시도 
 
 비동기 호출의 실패 처리는 두 가지가 있다. **DLQ**(legacy, 함수 실행 자체가 실패한 케이스만)와 **Destinations**(2019, 성공/실패 모두 라우팅). Destinations가 권장 방식이고 4가지 타겟(Lambda, SNS, SQS, EventBridge)을 지원한다.
 
-> 📚 **사례**: 2020년 한 e-commerce가 S3 → Lambda(이미지 리사이즈) 파이프라인을 DLQ로 운영하다가, 실패한 이미지에 대해 "어떤 단계에서 어떤 입력으로 실패했는지"를 추적하기 어려워 Destinations로 전환했다. OnFailure → EventBridge로 보내면 실패 이벤트에 원본 입력 + 응답 페이로드 + 실행 컨텍스트가 모두 포함되어 분석이 쉬워졌다. DLQ는 페이로드만 남고 컨텍스트가 없다.
+2020년 한 e-commerce가 S3 → Lambda(이미지 리사이즈) 파이프라인을 DLQ로 운영하다가, 실패한 이미지에 대해 "어떤 단계에서 어떤 입력으로 실패했는지"를 추적하기 어려워 Destinations로 전환했다. OnFailure → EventBridge로 보내면 실패 이벤트에 원본 입력 + 응답 페이로드 + 실행 컨텍스트가 모두 포함되어 분석이 쉬워졌다. DLQ는 페이로드만 남고 컨텍스트가 없다.
 
 ## Function URL — API Gateway를 우회하는 단순 HTTPS
 
@@ -96,7 +96,7 @@ Lambda 호출은 동기/비동기/스트림 3가지가 있고, 각각 재시도 
 - WebSocket·SOAP 같은 비-REST 프로토콜
 - 여러 함수를 하나의 도메인 아래 라우팅해야 할 때
 
-> ⚠️ **함정**: Function URL은 IAM 인증만 지원하고 Cognito User Pool 통합이 없다. JWT 기반 사용자 인증이 필요하면 API GW + Cognito Authorizer를 써야 한다. 시험에서 "Cognito 사용자 인증 + Lambda" 시나리오는 거의 API GW가 답이다.
+Function URL은 IAM 인증만 지원하고 Cognito User Pool 통합이 없다. JWT 기반 사용자 인증이 필요하면 API GW + Cognito Authorizer를 써야 한다. 시험에서 "Cognito 사용자 인증 + Lambda" 시나리오는 거의 API GW가 답이다.
 
 ## Lambda 패키징 — Layer vs Container Image
 
@@ -109,7 +109,7 @@ Lambda 호출은 동기/비동기/스트림 3가지가 있고, 각각 재시도 
 
 Container Image는 ECR Push 후 Lambda가 이미지를 unpack해 micro VM에 주입한다. 10GB 한도는 매우 크지만, 콜드 스타트가 더 길 수 있다(이미지 pull 시간 때문). 대신 Lambda는 이미지를 **레이어 단위 lazy loading**으로 가져와서 첫 실행 시간을 줄인다. 이는 SOSP 2023 "Faster Cold Starts for Lambda with On-Demand Code Loading" 논문에 자세히 설명되어 있다.
 
-> 🔍 **더 깊이**: Lambda는 컨테이너 이미지를 받으면 ECR 원본을 그대로 쓰지 않고, AWS 내부 분산 캐시에 **block-level deduplication**을 적용해 저장한다. 같은 base image(예: `public.ecr.aws/lambda/python:3.11`)를 쓰는 함수가 1만 개 있어도 storage는 한 번만 쓰인다. 콜드 스타트 시에도 이미지 전체를 다운로드하지 않고, 함수 실행에 필요한 블록만 lazy fetch한다. 이 덕분에 10GB 이미지도 200~500ms 안에 첫 호출이 시작된다.
+Lambda는 컨테이너 이미지를 받으면 ECR 원본을 그대로 쓰지 않고, AWS 내부 분산 캐시에 **block-level deduplication**을 적용해 저장한다. 같은 base image(예: `public.ecr.aws/lambda/python:3.11`)를 쓰는 함수가 1만 개 있어도 storage는 한 번만 쓰인다. 콜드 스타트 시에도 이미지 전체를 다운로드하지 않고, 함수 실행에 필요한 블록만 lazy fetch한다. 이 덕분에 10GB 이미지도 200~500ms 안에 첫 호출이 시작된다.
 
 ## Graviton2/3 (ARM) — 거의 공짜로 얻는 20% 절감
 
@@ -133,9 +133,9 @@ Lambda는 동시성 한도(예: 1000)까지 무한정 즉시 스케일링되지 
 
 > 🎯 **시나리오**: "월 1회 발생하는 블랙프라이데이 세일 시작 시 평소의 50배 트래픽이 5분 안에 몰린다. Lambda 함수가 throttle 없이 처리하게 하려면?" — 답은 **Application Auto Scaling으로 Provisioned Concurrency를 스케줄 기반으로 미리 증가**시키는 것. 세일 시작 30분 전부터 PC=2000으로 올려두고, 끝나면 PC=10으로 내린다. 비용은 PC 시간당이지만 throttle 회피와 일관된 latency가 더 가치 있다.
 
-## 정리하며
+## 정리
 
-Lambda는 표면적으로는 "코드만 쓰면 알아서 돈다"는 약속이지만, production 운영에서는 micro VM 격리·Hyperplane ENI·CRaC 스냅샷·동시성 풀 같은 내부 모델이 비용과 latency를 결정한다. 시험에서 자주 등장하는 시나리오는 "콜드 스타트(SnapStart vs PC vs init 최적화)", "동시성 격리(Reserved)", "VPC + DB 연결(RDS Proxy)", "ARM 전환" 네 가지 카테고리에 거의 다 매핑된다.
+Lambda는 표면적으로는 "코드만 쓰면 알아서 돈다"는 약속이지만, production 운영에서는 micro VM 격리·Hyperplane ENI·CRaC 스냅샷·동시성 풀 같은 내부 모델이 비용과 latency를 결정한다. 시험에 나오는 시나리오는 "콜드 스타트(SnapStart vs PC vs init 최적화)", "동시성 격리(Reserved)", "VPC + DB 연결(RDS Proxy)", "ARM 전환" 네 가지 카테고리에 거의 다 매핑된다.
 
 다음 day에서는 Step Functions로 Lambda를 여러 개 묶어 워크플로우를 만드는 방법을 본다. 비동기 호출의 한계(15분 timeout, 재시도 모델의 단순함)를 Step Functions가 어떻게 보완하는지가 다음 글의 핵심이다.
 

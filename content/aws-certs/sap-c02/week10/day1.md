@@ -1,6 +1,6 @@
 # Day 1 - SageMaker 심화: ML 라이프사이클, 추론 엔드포인트 4종, 학습 비용 수학
 
-머신러닝 인프라를 처음 설계하는 엔지니어가 가장 자주 빠지는 함정은 "모델을 EC2에 띄우고 Flask로 서빙하면 되지 않나"라는 생각이다. 실제로 모델 하나를 띄우는 것 자체는 어렵지 않다. 문제는 그 다음이다. 데이터가 바뀌면 모델 성능이 조용히 무너지고(drift), 학습 때 쓴 피처와 추론 때 쓰는 피처가 미묘하게 달라져 정확도가 떨어지고(train-serve skew), 모델을 새로 배포할 때마다 다운타임이 생기고, GPU 인스턴스 비용이 month-end에 청구서로 돌아와 충격을 준다. SageMaker는 이 "모델 이후의 모든 것"을 관리형으로 묶은 플랫폼이다. SAP-C02 시험에서 SageMaker는 단일 기능이 아니라 **"어떤 추론 패턴을 고를 것인가", "학습 비용을 어떻게 90% 줄일 것인가", "재학습을 어떻게 자동화할 것인가"**라는 아키텍처 의사결정으로 출제된다.
+머신러닝 인프라를 처음 설계하는 엔지니어가 빠지기 쉬운 함정은 "모델을 EC2에 띄우고 Flask로 서빙하면 되지 않나"라는 생각이다. 실제로 모델 하나를 띄우는 것 자체는 어렵지 않다. 문제는 그 다음이다. 데이터가 바뀌면 모델 성능이 조용히 무너지고(drift), 학습 때 쓴 피처와 추론 때 쓰는 피처가 미묘하게 달라져 정확도가 떨어지고(train-serve skew), 모델을 새로 배포할 때마다 다운타임이 생기고, GPU 인스턴스 비용이 month-end에 청구서로 돌아와 충격을 준다. SageMaker는 이 "모델 이후의 모든 것"을 관리형으로 묶은 플랫폼이다. SAP-C02 시험에서 SageMaker는 단일 기능이 아니라 **"어떤 추론 패턴을 고를 것인가", "학습 비용을 어떻게 90% 줄일 것인가", "재학습을 어떻게 자동화할 것인가"**라는 아키텍처 의사결정으로 출제된다.
 
 오늘은 SageMaker의 컴포넌트를 나열하는 대신, ML 라이프사이클이 왜 그렇게 생겼는지, 추론 엔드포인트 4종이 각각 어떤 물리적 제약에서 갈라지는지, 그리고 Spot 학습의 비용 수학이 어떻게 성립하는지를 분해한다.
 
@@ -10,7 +10,7 @@
 
 SageMaker의 컴포넌트는 이 순환의 각 단계를 매핑한다. Data Wrangler/Processing Job(피처), Training Job(학습), Model Registry(버전·승인), Endpoint(서빙), Model Monitor(감시), Pipelines(전체 DAG 오케스트레이션). 시험에서 컴포넌트 이름을 외우는 것보다 중요한 건 "이 시나리오는 라이프사이클의 어느 단계 문제인가"를 짚는 것이다.
 
-> 💡 **관련 이론**: ML 시스템의 이 순환은 Google이 2015년 NeurIPS에 발표한 "Hidden Technical Debt in Machine Learning Systems" 논문에서 정립됐다. 핵심 주장은 "ML 코드는 전체 시스템의 5%에 불과하고, 나머지 95%는 데이터 수집·검증·서빙·모니터링 같은 인프라"라는 것. SageMaker, Vertex AI, Azure ML 같은 관리형 ML 플랫폼은 모두 이 95%를 제품화하려는 시도다. SAP 관점에서 "ML 모델을 만들었는데 운영에서 자꾸 깨진다"는 문제의 답이 거의 항상 인프라(Feature Store, Model Monitor, Pipelines)인 이유가 이 논문이 지적한 구조 때문이다.
+ML 시스템의 이 순환은 Google이 2015년 NeurIPS에 발표한 "Hidden Technical Debt in Machine Learning Systems" 논문에서 정립됐다. 핵심 주장은 "ML 코드는 전체 시스템의 5%에 불과하고, 나머지 95%는 데이터 수집·검증·서빙·모니터링 같은 인프라"라는 것. SageMaker, Vertex AI, Azure ML 같은 관리형 ML 플랫폼은 모두 이 95%를 제품화하려는 시도다. SAP 관점에서 "ML 모델을 만들었는데 운영에서 자꾸 깨진다"는 문제의 답이 거의 항상 인프라(Feature Store, Model Monitor, Pipelines)인 이유가 이 논문이 지적한 구조 때문이다.
 
 > 🔍 **더 깊이**: SageMaker는 2017년 re:Invent에서 출시됐다. 그 이전 AWS의 ML은 EMR 위에서 Spark MLlib을 돌리거나 EC2에 직접 프레임워크를 깔아야 했다. SageMaker의 핵심 설계 결정은 **학습과 추론을 컨테이너로 추상화**한 것이다. 모든 학습 작업과 추론 엔드포인트는 ECR의 Docker 이미지로 실행된다. AWS가 제공하는 빌트인 알고리즘 컨테이너(XGBoost, Linear Learner 등)를 쓰거나, TensorFlow/PyTorch 같은 프레임워크 컨테이너에 자기 코드를 넣거나(script mode), 완전히 커스텀 컨테이너를 BYOC(Bring Your Own Container)로 가져올 수 있다. 이 컨테이너 추상화 덕분에 "학습은 GPU 8개로 1시간, 추론은 CPU 1개로 상시"처럼 학습과 서빙의 자원을 완전히 분리해 비용을 최적화할 수 있다.
 
@@ -36,7 +36,7 @@ SageMaker의 추론 옵션이 4종으로 갈라지는 건 마케팅이 아니라
 
 **Multi-Container Endpoint**는 한 엔드포인트에 서로 다른 프레임워크/모델 컨테이너를 올려, 직접 호출(direct invocation)하거나 추론 파이프라인(serial)으로 엮는다.
 
-> 🔍 **더 깊이**: MME가 효율적인 이유는 "긴 꼬리(long-tail) 트래픽" 분포 때문이다. 고객사별 모델 1000개가 있어도 동시에 활발히 쓰이는 건 소수다. 나머지는 가끔 호출된다. 모델마다 전용 인스턴스를 주면 99%의 인스턴스가 놀게 된다. MME는 활발한 모델만 메모리에 두고 나머지는 S3에 두었다가 호출 시 로드하므로, 인스턴스 메모리를 "캐시"처럼 공유한다. 대가는 캐시 미스(콜드 모델 첫 호출) 시 S3 로딩 지연이다. 이 트레이드오프는 CPU 캐시 계층(L1/L2/메모리/디스크)의 동작 원리와 정확히 같다 — 빠른 자원은 작고 비싸니, 자주 쓰는 것만 올려두고 나머지는 느린 계층에 둔다.
+MME가 효율적인 이유는 "긴 꼬리(long-tail) 트래픽" 분포 때문이다. 고객사별 모델 1000개가 있어도 동시에 활발히 쓰이는 건 소수다. 나머지는 가끔 호출된다. 모델마다 전용 인스턴스를 주면 99%의 인스턴스가 놀게 된다. MME는 활발한 모델만 메모리에 두고 나머지는 S3에 두었다가 호출 시 로드하므로, 인스턴스 메모리를 "캐시"처럼 공유한다. 대가는 캐시 미스(콜드 모델 첫 호출) 시 S3 로딩 지연이다. 이 트레이드오프는 CPU 캐시 계층(L1/L2/메모리/디스크)의 동작 원리와 정확히 같다 — 빠른 자원은 작고 비싸니, 자주 쓰는 것만 올려두고 나머지는 느린 계층에 둔다.
 
 ## 학습 비용 수학 — Managed Spot Training이 90%인 이유
 
@@ -46,9 +46,9 @@ ML 학습은 GPU 인스턴스(ml.p3, ml.p4, ml.g5)를 쓰는데, 이게 SageMake
 
 비용 수학을 구체화하면: On-Demand로 10시간 학습 = ml.p3.2xlarge × $3.8 × 10 = $38. Spot으로 같은 학습 = $38 × (1 − 0.7~0.9) ≈ $4~11. 다만 Spot 회수로 재시작이 잦으면 실제 벽시계 시간이 늘어 `max_wait`(대기 포함 최대 시간)를 `max_run`(순수 학습 시간)보다 충분히 크게 잡아야 한다.
 
-> 💡 **관련 이론**: Spot + Checkpoint 패턴은 분산 시스템의 **체크포인팅(checkpoint-restart)** 내고장성 기법이다. HPC(고성능 컴퓨팅)와 슈퍼컴퓨터에서 수십 시간 걸리는 시뮬레이션이 노드 장애로 날아가지 않도록 오래전부터 쓰던 기법이다. 핵심 트레이드오프는 체크포인트 빈도다 — 너무 자주 저장하면 I/O 오버헤드, 너무 드물면 회수 시 잃는 작업량이 커진다. 학습 작업에서는 보통 epoch마다 또는 N step마다 저장한다. 같은 원리가 Flink/Spark Streaming의 상태 체크포인트, 게임의 자동 저장에도 쓰인다.
+Spot + Checkpoint 패턴은 분산 시스템의 **체크포인팅(checkpoint-restart)** 내고장성 기법이다. HPC(고성능 컴퓨팅)와 슈퍼컴퓨터에서 수십 시간 걸리는 시뮬레이션이 노드 장애로 날아가지 않도록 오래전부터 쓰던 기법이다. 핵심 트레이드오프는 체크포인트 빈도다 — 너무 자주 저장하면 I/O 오버헤드, 너무 드물면 회수 시 잃는 작업량이 커진다. 학습 작업에서는 보통 epoch마다 또는 N step마다 저장한다. 같은 원리가 Flink/Spark Streaming의 상태 체크포인트, 게임의 자동 저장에도 쓰인다.
 
-> 📚 **사례**: 한 자율주행 스타트업이 매주 수십 개의 비전 모델을 ml.p3.16xlarge로 재학습하며 월 GPU 비용이 6만 달러를 넘었다. Managed Spot Training으로 전환하되 학습 코드에 epoch마다 S3 체크포인트를 저장하도록 수정하니, Spot 회수가 평균 학습당 1~2회 발생해도 마지막 체크포인트부터 재개되어 작업이 완료됐고 비용이 약 70% 줄었다(월 6만 → 1.8만). 교훈: Spot 학습의 성패는 체크포인트 구현에 달려 있다. 체크포인트 없이 Spot을 쓰면 긴 학습은 거의 완료되지 못한다. SAP 시험에서 "학습 비용 90% 절감 + 중단 복구"는 항상 Managed Spot + Checkpoint 조합이다.
+(가상 사례) 한 자율주행 스타트업이 매주 수십 개의 비전 모델을 ml.p3.16xlarge로 재학습하며 월 GPU 비용이 6만 달러를 넘었다. Managed Spot Training으로 전환하되 학습 코드에 epoch마다 S3 체크포인트를 저장하도록 수정하니, Spot 회수가 평균 학습당 1~2회 발생해도 마지막 체크포인트부터 재개되어 작업이 완료됐고 비용이 약 70% 줄었다(월 6만 → 1.8만). 교훈: Spot 학습의 성패는 체크포인트 구현에 달려 있다. 체크포인트 없이 Spot을 쓰면 긴 학습은 거의 완료되지 못한다. SAP 시험에서 "학습 비용 90% 절감 + 중단 복구"는 항상 Managed Spot + Checkpoint 조합이다.
 
 ## 분산 학습과 전용 칩 — 큰 모델을 빠르고 싸게
 
@@ -56,7 +56,7 @@ ML 학습은 GPU 인스턴스(ml.p3, ml.p4, ml.g5)를 쓰는데, 이게 SageMake
 
 추론·학습 비용은 **전용 칩**으로도 줄인다. **Inferentia(Inf1/Inf2)**는 추론 전용 ASIC으로, 같은 처리량을 GPU보다 싸게 낸다. **Trainium(Trn1)**은 학습 전용 칩이다. 둘 다 AWS가 직접 설계한 칩으로, 범용 GPU(NVIDIA)보다 특정 워크로드에서 가성비가 높다. **SageMaker Neo**는 모델을 특정 하드웨어(Inferentia, 엣지 디바이스)에 맞게 컴파일해 추론 속도를 높인다.
 
-> 🔍 **더 깊이**: AWS가 Inferentia/Trainium 같은 자체 칩을 만든 건 NVIDIA GPU 의존도와 비용 때문이다. 생성형 AI 붐으로 GPU 수요가 폭증하며 공급이 부족하고 단가가 치솟았다. AWS는 Annapurna Labs(2015년 인수)를 통해 Graviton(범용 CPU), Inferentia(추론), Trainium(학습)을 자체 설계해 수직 통합했다. 이는 Google이 TPU를, Apple이 M 시리즈를 만든 것과 같은 전략 — 핵심 워크로드의 칩을 직접 설계해 비용과 성능을 통제하는 것이다. 시험에서 "추론 비용·성능 최적화 칩"은 Inferentia, "학습 전용 칩"은 Trainium, "범용 컴퓨팅 가성비"는 Graviton으로 구분한다.
+AWS가 Inferentia/Trainium 같은 자체 칩을 만든 건 NVIDIA GPU 의존도와 비용 때문이다. 생성형 AI 붐으로 GPU 수요가 폭증하며 공급이 부족하고 단가가 치솟았다. AWS는 Annapurna Labs(2015년 인수)를 통해 Graviton(범용 CPU), Inferentia(추론), Trainium(학습)을 자체 설계해 수직 통합했다. 이는 Google이 TPU를, Apple이 M 시리즈를 만든 것과 같은 전략 — 핵심 워크로드의 칩을 직접 설계해 비용과 성능을 통제하는 것이다. 시험에서 "추론 비용·성능 최적화 칩"은 Inferentia, "학습 전용 칩"은 Trainium, "범용 컴퓨팅 가성비"는 Graviton으로 구분한다.
 
 ## 배포 전략 — A/B, Canary, Shadow
 
@@ -68,11 +68,11 @@ ML 학습은 GPU 인스턴스(ml.p3, ml.p4, ml.g5)를 쓰는데, 이게 SageMake
 
 **Feature Store**는 학습과 추론이 같은 피처를 쓰도록 보장하는 중앙 저장소다. **Online Store**(DynamoDB 기반, 저지연)는 실시간 추론용, **Offline Store**(S3 + Glue)는 학습·배치용이다. 학습 때 쓴 피처 계산 로직과 추론 때 쓴 로직이 다르면 **train-serve skew**가 생겨 모델이 조용히 틀린다 — Feature Store가 이를 막는다. **Data Wrangler**는 노코드 데이터 준비, **Canvas**는 비즈니스 분석가용 노코드 ML, **JumpStart**는 사전 학습 모델 1-click 배포, **Ground Truth**는 데이터 레이블링 도구다.
 
-## 정리하며
+## 정리
 
 SageMaker는 "모델 그 자체"가 아니라 **모델을 둘러싼 라이프사이클 전체**를 관리형으로 묶은 플랫폼이다. 추론 엔드포인트 4종은 페이로드 크기·지연 요구·트래픽 패턴이라는 물리적 제약에서 갈라지고(Real-Time=저지연 동기, Serverless=가변+콜드OK, Async=큰 페이로드+긴 추론, Batch=일괄), 학습 비용은 Managed Spot+Checkpoint로 90%까지 줄이며, 전용 칩(Inferentia/Trainium)으로 추가 최적화한다.
 
-SAP 시험 단골 매핑: (1) "큰 페이로드 + 긴 추론 + 요청별" → Async, (2) "데이터셋 전체 일괄" → Batch Transform, (3) "학습 90% 절감 + 중단 복구" → Managed Spot + Checkpoint, (4) "수천 모델 비용 절감" → Multi-Model Endpoint, (5) "추론 비용 칩" → Inferentia, (6) "사용자 영향 없이 신모델 검증" → Shadow, (7) "학습·추론 피처 일관성" → Feature Store. 다음 day는 Bedrock과 생성형 AI 아키텍처(RAG)를 본다.
+SAP 시험 매핑: (1) "큰 페이로드 + 긴 추론 + 요청별" → Async, (2) "데이터셋 전체 일괄" → Batch Transform, (3) "학습 90% 절감 + 중단 복구" → Managed Spot + Checkpoint, (4) "수천 모델 비용 절감" → Multi-Model Endpoint, (5) "추론 비용 칩" → Inferentia, (6) "사용자 영향 없이 신모델 검증" → Shadow, (7) "학습·추론 피처 일관성" → Feature Store. 다음 day는 Bedrock과 생성형 AI 아키텍처(RAG)를 본다.
 
 ---
 

@@ -73,7 +73,7 @@ MGN Replication Agent를 설치하면 OS 커널에 **I/O 인터셉트 드라이�
            AWS로 TLS 전송
 ```
 
-> 💡 **관련 이론**: Windows의 Filter Driver 아키텍처는 Microsoft가 "I/O Stack"으로 설계한 계층형 드라이버 모델이다. 각 레이어 드라이버가 IRP를 다음 레이어로 전달하기 전에 수정·캡처할 수 있다. Antivirus, Encryption, DLP 솔루션도 동일한 Filter Driver 방식을 쓴다. MGN은 이 표준 확장 포인트를 이용해 커널 레벨에서 모든 I/O를 캡처하므로, 앱이나 DB 엔진을 수정하지 않아도 된다.
+Windows의 Filter Driver 아키텍처는 Microsoft가 "I/O Stack"으로 설계한 계층형 드라이버 모델이다. 각 레이어 드라이버가 IRP를 다음 레이어로 전달하기 전에 수정·캡처할 수 있다. Antivirus, Encryption, DLP 솔루션도 동일한 Filter Driver 방식을 쓴다. MGN은 이 표준 확장 포인트를 이용해 커널 레벨에서 모든 I/O를 캡처하므로, 앱이나 DB 엔진을 수정하지 않아도 된다.
 
 **블록 변경 추적 메커니즘**:
 - 각 블록의 변경 여부를 비트맵(Bitmap)으로 추적
@@ -81,7 +81,7 @@ MGN Replication Agent를 설치하면 OS 커널에 **I/O 인터셉트 드라이�
 - 연속 복제: 변경된 블록만 비트맵에 표시 → 해당 블록만 전송
 - 전송 데이터 압축 및 중복 제거(Deduplication)로 대역폭 최적화
 
-> 🔍 **더 깊이**: MGN의 연속 복제는 CDP(Continuous Data Protection)와 다르다. CDP는 모든 I/O를 저널에 기록해 임의 시점(Point-in-Time)으로 복원이 가능하다. MGN은 현재 상태를 따라가는 것이지 모든 이력을 보관하지 않는다. 따라서 "MGN으로 어제 상태로 롤백"은 불가능하다. 시점 복원이 필요하면 MGN + AWS Backup을 함께 써야 한다. DRS도 마찬가지다 — "수 초 전 상태"를 복구하는 것이지 "어제 오후 3시 상태"를 복구하는 것이 아니다.
+MGN의 연속 복제는 CDP(Continuous Data Protection)와 다르다. CDP는 모든 I/O를 저널에 기록해 임의 시점(Point-in-Time)으로 복원이 가능하다. MGN은 현재 상태를 따라가는 것이지 모든 이력을 보관하지 않는다. 따라서 "MGN으로 어제 상태로 롤백"은 불가능하다. 시점 복원이 필요하면 MGN + AWS Backup을 함께 써야 한다. DRS도 마찬가지다 — "수 초 전 상태"를 복구하는 것이지 "어제 오후 3시 상태"를 복구하는 것이 아니다.
 
 ### Replication Agent 설치 요구사항
 
@@ -162,7 +162,7 @@ Launch Test Instance → 테스트 수행 → Terminate Test Instance
 (Cutover와 무관, 반복 가능)
 ```
 
-> 📚 **사례**: 대규모 마이그레이션 프로젝트에서 Test Launch의 중요성. 국내 한 대형 보험사가 Oracle RAC 기반 핵심 시스템을 MGN으로 이전하려 했다. Initial Sync 완료 후 Test Launch를 했을 때 Oracle RAC의 클러스터웨어(Grid Infrastructure)가 EC2 단일 인스턴스 환경에서 시작을 거부했다. RAC는 멀티 노드 클러스터 전용이라 단일 인스턴스 Oracle로 재구성이 필요했다. Test Launch가 없었다면 실제 Cutover 때 발견됐을 문제를 미리 잡을 수 있었다. MGN에서 Test Launch는 건너뛰면 안 되는 필수 단계다.
+대규모 마이그레이션 프로젝트에서 Test Launch의 중요성. 국내 한 대형 보험사가 Oracle RAC 기반 핵심 시스템을 MGN으로 이전하려 했다. Initial Sync 완료 후 Test Launch를 했을 때 Oracle RAC의 클러스터웨어(Grid Infrastructure)가 EC2 단일 인스턴스 환경에서 시작을 거부했다. RAC는 멀티 노드 클러스터 전용이라 단일 인스턴스 Oracle로 재구성이 필요했다. Test Launch가 없었다면 실제 Cutover 때 발견됐을 문제를 미리 잡을 수 있었다. MGN에서 Test Launch는 건너뛰면 안 되는 필수 단계다.
 
 ### 단계 4: Cutover (실제 컷오버)
 
@@ -199,7 +199,7 @@ Launch Test Instance → 테스트 수행 → Terminate Test Instance
 일반적으로: 2~10분 (디스크 쓰기 속도와 Lag에 따라)
 ```
 
-> 💡 **관련 이론**: Cutover 전략은 데이터베이스 마이그레이션의 "Big Bang vs Trickle" 패턴과 유사하다. MGN의 Cutover는 Big Bang(특정 시점에 전체 전환)이다. Big Bang의 위험을 낮추기 위해 Test Launch + Rollback 계획 + 다운타임 최소화가 핵심이다. 반면 DMS의 CDC는 Trickle(점진적 데이터 이전 후 최소 다운타임으로 전환) 패턴이다.
+Cutover 전략은 데이터베이스 마이그레이션의 "Big Bang vs Trickle" 패턴과 유사하다. MGN의 Cutover는 Big Bang(특정 시점에 전체 전환)이다. Big Bang의 위험을 낮추기 위해 Test Launch + Rollback 계획 + 다운타임 최소화가 핵심이다. 반면 DMS의 CDC는 Trickle(점진적 데이터 이전 후 최소 다운타임으로 전환) 패턴이다.
 
 ## MGN vs DRS: 같은 엔진, 다른 목적
 
@@ -234,7 +234,7 @@ DR 리전 EC2 → DRS Failback 복제 → 온프레 서버 (역방향)
 
 > 🎯 **시나리오**: "온프레 데이터센터를 AWS로 마이그레이션 완료했다. 이제 동일 데이터센터를 AWS 데이터의 DR 사이트로 쓰고 싶다." → AWS EC2 → DRS Agent → 온프레 Staging. DRS는 원본이 AWS EC2이고 DR 대상이 온프레인 역방향도 지원한다. MGN은 이 시나리오에서 쓸 수 없다(마이그레이션 완료 후 관계 종료).
 
-> ⚠️ **함정**: DRS와 MGN을 혼동하는 시나리오. "온프레 서버를 보호하기 위해 AWS를 DR로 쓰고 싶다" → DRS. "온프레 서버를 AWS로 옮기고 싶다" → MGN. 문제의 핵심 키워드: "마이그레이션(한 번)" vs "재해 복구(지속적)".
+DRS와 MGN을 혼동하는 시나리오. "온프레 서버를 보호하기 위해 AWS를 DR로 쓰고 싶다" → DRS. "온프레 서버를 AWS로 옮기고 싶다" → MGN. 문제의 핵심 키워드: "마이그레이션(한 번)" vs "재해 복구(지속적)".
 
 ## DRS RPO/RTO 수학
 
@@ -260,7 +260,7 @@ DR Drill/실제 발동 시:
 총 RTO: 약 5~15분
 ```
 
-> 🔍 **더 깊이**: DRS의 Non-Disruptive DR Drill. MGN의 Test Launch와 동일하게, 원본 서버를 계속 운영하면서 DR 리전에 Recovery Instance를 부팅해 테스트한다. 테스트 후 Recovery Instance를 종료해도 원본 복제에 영향 없다. "DR 훈련 = 실제 서비스 중단"이라는 전통적 DR의 단점을 해결한 기능이다. 정기적 DR Drill(분기 1회, 연 4회)을 Non-Disruptive로 실행해 RTO/RPO를 실측 검증하는 것이 Well-Architected 안정성 Pillar의 권고다.
+DRS의 Non-Disruptive DR Drill. MGN의 Test Launch와 동일하게, 원본 서버를 계속 운영하면서 DR 리전에 Recovery Instance를 부팅해 테스트한다. 테스트 후 Recovery Instance를 종료해도 원본 복제에 영향 없다. "DR 훈련 = 실제 서비스 중단"이라는 전통적 DR의 단점을 해결한 기능이다. 정기적 DR Drill(분기 1회, 연 4회)을 Non-Disruptive로 실행해 RTO/RPO를 실측 검증하는 것이 Well-Architected 안정성 Pillar의 권고다.
 
 ## Migration Hub Orchestrator: Wave 자동화
 
@@ -320,7 +320,7 @@ steps:
     records: [...]
 ```
 
-> 📚 **사례**: SK텔레콤의 대규모 MGN 마이그레이션 (2022~2023). SKT는 온프레 데이터센터에서 500대 이상의 서버를 ap-northeast-2로 이전하면서 Migration Hub Orchestrator로 Wave를 관리했다. 서버 간 의존성을 ADS로 분석해 14개 Wave로 구성하고, 각 Wave의 Test Launch → 승인 → Cutover를 Orchestrator가 자동화했다. 이전 방식(수동 스프레드시트 추적)보다 운영 오류가 60% 감소했다.
+SK텔레콤의 대규모 MGN 마이그레이션 (2022~2023). SKT는 온프레 데이터센터에서 500대 이상의 서버를 ap-northeast-2로 이전하면서 Migration Hub Orchestrator로 Wave를 관리했다. 서버 간 의존성을 ADS로 분석해 14개 Wave로 구성하고, 각 Wave의 Test Launch → 승인 → Cutover를 Orchestrator가 자동화했다. 이전 방식(수동 스프레드시트 추적)보다 운영 오류가 60% 감소했다.
 
 ## Launch Settings와 Post-Launch Actions
 
@@ -335,7 +335,7 @@ MGN Cutover 시 생성될 EC2 인스턴스의 스펙을 사전 정의한다.
 | Security Group | 앱에 맞는 SG 적용 |
 | IAM Instance Profile | EC2에 붙일 IAM 역할 |
 | EBS 암호화 | KMS 키 지정 |
-| Public IP 할당 여부 | Private Subnet이면 False |
+| Public IP 할당 여부 | 프라이빗 서브넷이면 False |
 
 **Right-Sizing 전략**:
 - 마이그레이션 시: 원본 사양과 같거나 유사하게 설정 (안전하게 이전)
@@ -358,7 +358,7 @@ Post-Launch Action 5: 앱 서비스 시작 스크립트 실행
 Post-Launch Action 6: Slack 채널에 "서버 X Cutover 완료" 알림
 ```
 
-> 💡 **관련 이론**: Post-Launch Actions의 자동화는 **Infrastructure as Code의 Day-2 Operations** 원칙이다. 서버가 시작된 직후의 초기 설정(Bootstrap)을 자동화하면 마이그레이션 후 일관성 있는 상태를 보장한다. 수동으로 각 서버에 SSH/RDP해 설정을 완료하는 방식은 누락이 생기고 일관성이 없다. Terraform의 `user_data`나 Ansible의 `post-migration playbook`과 동일한 철학을 SSM Automation으로 구현한다.
+Post-Launch Actions의 자동화는 **Infrastructure as Code의 Day-2 Operations** 원칙이다. 서버가 시작된 직후의 초기 설정(Bootstrap)을 자동화하면 마이그레이션 후 일관성 있는 상태를 보장한다. 수동으로 각 서버에 SSH/RDP해 설정을 완료하는 방식은 누락이 생기고 일관성이 없다. Terraform의 `user_data`나 Ansible의 `post-migration playbook`과 동일한 철학을 SSM Automation으로 구현한다.
 
 ## MGN 비용 최적화
 
