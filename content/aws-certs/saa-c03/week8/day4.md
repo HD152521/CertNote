@@ -57,9 +57,9 @@ WAFv2의 강점은 **AWS Managed Rules** 다. AWS가 OWASP Top 10, 봇, IP reput
 
 **Rate-based Rule** 은 IP당 5분 윈도우 안에 들어온 요청 수가 임계값을 넘으면 자동 차단하는 규칙이다. brute force, scraping, layer-7 DDoS의 1차 방어선이다. 임계값은 정상 트래픽보다 충분히 높되 의심스러운 폭증을 잡을 정도로 설정해야 한다(보통 IP당 5분에 2000~10000).
 
-> 💡 **관련 이론**: WAF는 OSI 7계층(Application)에서 동작하므로 정확한 명칭은 L7 firewall이다. 4계층 firewall(SG, NACL)은 페이로드를 볼 수 없고 5-tuple(src/dst IP, src/dst port, protocol)만 본다. L7 WAF는 HTTP 헤더·메서드·URI·body까지 검사하므로 SQLi, XSS, 경로 traversal, 봇 user-agent 같은 응용 계층 공격을 막을 수 있다. 단 모든 페이로드를 검사하므로 latency가 4계층 방화벽보다 약간 높고(보통 1-2ms), CloudFront 같은 edge에 배치하면 origin 부담을 크게 줄일 수 있다.
+WAF는 OSI 7계층(Application)에서 동작하므로 정확한 명칭은 L7 firewall이다. 4계층 firewall(SG, NACL)은 페이로드를 볼 수 없고 5-tuple(src/dst IP, src/dst port, protocol)만 본다. L7 WAF는 HTTP 헤더·메서드·URI·body까지 검사하므로 SQLi, XSS, 경로 traversal, 봇 user-agent 같은 응용 계층 공격을 막을 수 있다. 단 모든 페이로드를 검사하므로 latency가 4계층 방화벽보다 약간 높고(보통 1-2ms), CloudFront 같은 edge에 배치하면 origin 부담을 크게 줄일 수 있다.
 
-> 🔍 **더 깊이**: WAF Web ACL의 scope는 두 가지다 — `CLOUDFRONT`(글로벌, us-east-1에서만 관리)와 `REGIONAL`(ALB/API Gateway/AppSync 등, 각 region별). CloudFront에 attach하는 WAF는 edge에서 검사해 악성 트래픽이 origin에 도달하기 전에 막으므로 가장 효과적이다. ALB에만 WAF를 두면 트래픽이 이미 region에 들어온 뒤 검사하므로 비용·latency가 더 든다. 베스트 프랙티스는 "CloudFront + WAF를 최전방에, ALB는 두 번째 방어선"이다.
+WAF Web ACL의 scope는 두 가지다 — `CLOUDFRONT`(글로벌, us-east-1에서만 관리)와 `REGIONAL`(ALB/API Gateway/AppSync 등, 각 region별). CloudFront에 attach하는 WAF는 edge에서 검사해 악성 트래픽이 origin에 도달하기 전에 막으므로 가장 효과적이다. ALB에만 WAF를 두면 트래픽이 이미 region에 들어온 뒤 검사하므로 비용·latency가 더 든다. 베스트 프랙티스는 "CloudFront + WAF를 최전방에, ALB는 두 번째 방어선"이다.
 
 ## Shield: L3/L4 DDoS 방어와 Shield Advanced의 비용 보호
 
@@ -102,7 +102,7 @@ WAF Rate-based Rule + AWS Managed Rules
 
 > ⚠️ **함정**: 시험에 "대규모 DDoS + 비용 보호"라는 키워드가 보이면 정답은 무조건 Shield Advanced다. Shield Standard는 무료지만 대규모 공격은 일부만 완화하고 cost protection이 없다. Rate-based Rule(WAF)은 L7만 다루므로 L3/L4 단독 솔루션이 아니다.
 
-> 📚 **사례**: 2020년 2월, AWS Shield가 한 고객을 향한 **2.3Tbps** 의 UDP reflection DDoS를 완화했다. 당시까지 공개된 가장 큰 규모의 DDoS 공격이었고 AWS Shield Threat Landscape Report에 공식 기록됐다. 이런 규모의 공격을 자체 인프라로 막는 건 사실상 불가능하므로, perimeter에 CloudFront + Shield를 두는 패턴이 클라우드 보안의 표준이 됐다.
+**사례**: 2020년 2월, AWS Shield가 한 고객을 향한 **2.3Tbps** 의 UDP reflection DDoS를 완화했다. 당시까지 공개된 가장 큰 규모의 DDoS 공격이었고 AWS Shield Threat Landscape Report에 공식 기록됐다. 이런 규모의 공격을 자체 인프라로 막는 건 사실상 불가능하므로, perimeter에 CloudFront + Shield를 두는 패턴이 클라우드 보안의 표준이 됐다.
 
 ## GuardDuty: 행위 기반 위협 탐지
 
@@ -138,9 +138,9 @@ EventBridge rule (severity >= 7.0)
    └─ Step Functions → Detective 분석 워크플로 시작
 ```
 
-> 🔍 **더 깊이**: GuardDuty는 분석 대상 로그를 직접 활성화하지 않아도 자동으로 받아간다. 사용자가 CloudTrail이나 VPC Flow Logs를 활성화하지 않았어도 GuardDuty 내부에서 별도 stream을 받는다. 이게 GuardDuty의 강점인데, 운영 측면에서 별도 설정이 거의 필요 없고, 데이터 저장 비용도 GuardDuty 가격에 포함된다(분석 후 즉시 폐기). 단 사후 조사용으로 CloudTrail/VPC Flow Logs는 별도 활성화하는 게 표준이다.
+GuardDuty는 분석 대상 로그를 직접 활성화하지 않아도 자동으로 받아간다. 사용자가 CloudTrail이나 VPC Flow Logs를 활성화하지 않았어도 GuardDuty 내부에서 별도 stream을 받는다. 이게 GuardDuty의 강점인데, 운영 측면에서 별도 설정이 거의 필요 없고, 데이터 저장 비용도 GuardDuty 가격에 포함된다(분석 후 즉시 폐기). 단 사후 조사용으로 CloudTrail/VPC Flow Logs는 별도 활성화하는 게 표준이다.
 
-> 📚 **사례**: 2019년 한 핀테크 스타트업이 IAM 키가 GitHub에 잘못 커밋된 사건. 30분 만에 봇이 키를 발견하고 us-east-1에서 EC2를 무차별 생성해 암호화폐 채굴을 시작했다. GuardDuty가 "비정상 region에서 RunInstances 폭증"을 5분 안에 finding으로 잡았고, EventBridge → Lambda로 자동으로 IAM 키 비활성화 + 채굴 인스턴스 종료를 실행해 피해를 $200 수준에서 멈출 수 있었다. 자동 대응이 없었으면 보통 수만~수십만 달러 청구서가 나온다.
+**사례(가상)**: 2019년 한 핀테크 스타트업이 IAM 키가 GitHub에 잘못 커밋된 사건. 30분 만에 봇이 키를 발견하고 us-east-1에서 EC2를 무차별 생성해 암호화폐 채굴을 시작했다. GuardDuty가 "비정상 region에서 RunInstances 폭증"을 5분 안에 finding으로 잡았고, EventBridge → Lambda로 자동으로 IAM 키 비활성화 + 채굴 인스턴스 종료를 실행해 피해를 $200 수준에서 멈출 수 있었다. 자동 대응이 없었으면 보통 수만~수십만 달러 청구서가 나온다.
 
 ## Inspector: 취약점 스캔
 
@@ -156,7 +156,7 @@ Inspector v2의 강점은 "이미 배포된 자원이 새로운 CVE의 영향을
 
 Inspector finding은 severity별로 분류되고 (Critical, High, Medium, Low, Informational), CVSS 점수와 함께 "고친 버전이 있는지", "공격 가능한 네트워크 경로가 있는지" 같은 컨텍스트가 함께 제공된다. **Network Reachability** 분석은 EC2의 경우 "이 인스턴스가 인터넷에서 도달 가능한지"를 자동으로 평가해서, 같은 CVE라도 인터넷 노출 인스턴스가 더 위험하다고 점수를 가중한다.
 
-> ⚠️ **함정**: 시험에 "EC2 OS·패키지 취약점 자동 스캔"이라는 키워드는 Inspector가 답이다. GuardDuty는 행위 기반(예: 악성 IP 통신, 비정상 API 호출)이지 정적 취약점 스캔이 아니다. 둘이 보완 관계이지 대체 관계가 아니라는 점이 시험에 자주 나온다.
+> ⚠️ **함정**: 시험에 "EC2 OS·패키지 취약점 자동 스캔"이라는 키워드는 Inspector가 답이다. GuardDuty는 행위 기반(예: 악성 IP 통신, 비정상 API 호출)이지 정적 취약점 스캔이 아니다. 둘이 보완 관계이지 대체 관계가 아니라는 점이 시험에서 확인된다.
 
 ## Macie: S3 안의 민감 데이터 자동 탐지
 
@@ -176,9 +176,9 @@ Macie가 탐지하는 데이터 유형은 100가지가 넘는다(미국 SSN, EU 
 | HIPAA | 의료 정보(MRN, ICD 코드) 위치 추적 |
 | 한국 개인정보보호법 | 주민번호 노출 탐지 |
 
-> 🔍 **더 깊이**: Macie의 콘텐츠 스캔은 객체 1GB당 약 $1, 인벤토리는 매우 저렴($0.10/계정/월 + 객체당 작은 비용)이다. 그래서 "모든 객체 매일 스캔"은 비용 폭탄이고, 표준 패턴은 ① 인벤토리는 항상 켜고 ② 콘텐츠 스캔은 "새 객체만" 또는 "주기적 샘플링"으로 운영한다. EventBridge로 "S3에 새 객체 업로드 → 즉시 스캔"을 트리거할 수도 있다.
+Macie의 콘텐츠 스캔은 객체 1GB당 약 $1, 인벤토리는 매우 저렴($0.10/계정/월 + 객체당 작은 비용)이다. 그래서 "모든 객체 매일 스캔"은 비용 폭탄이고, 표준 패턴은 ① 인벤토리는 항상 켜고 ② 콘텐츠 스캔은 "새 객체만" 또는 "주기적 샘플링"으로 운영한다. EventBridge로 "S3에 새 객체 업로드 → 즉시 스캔"을 트리거할 수도 있다.
 
-> 📚 **사례**: 2022년 한 헬스케어 회사가 Macie를 도입해서 "환자 의료 기록이 PCI scope 버킷에 잘못 저장된" 케이스를 발견했다. HIPAA와 PCI DSS는 별도 scope여야 하는데 개발자가 실수로 같은 버킷에 저장한 게 6개월간 발견되지 못했다. Macie가 ICD 코드 + 카드 번호 둘 다 같은 버킷에서 탐지해 알람을 울렸고, 즉시 격리 + 컴플라이언스 보고로 처리됐다.
+**사례(가상)**: 2022년 한 헬스케어 회사가 Macie를 도입해서 "환자 의료 기록이 PCI scope 버킷에 잘못 저장된" 케이스를 발견했다. HIPAA와 PCI DSS는 별도 scope여야 하는데 개발자가 실수로 같은 버킷에 저장한 게 6개월간 발견되지 못했다. Macie가 ICD 코드 + 카드 번호 둘 다 같은 버킷에서 탐지해 알람을 울렸고, 즉시 격리 + 컴플라이언스 보고로 처리됐다.
 
 ## Detective와 Security Hub: 분석과 통합
 
@@ -208,7 +208,7 @@ GuardDuty가 finding을 만들면 "이 finding의 근본 원인은 뭔가?"를 �
 
 조직 단위 운영을 위한 **Firewall Manager** 도 빠뜨릴 수 없다. AWS Organizations 전체에 WAF Web ACL, Shield Advanced, Security Group, Network Firewall, Route 53 Resolver DNS Firewall 정책을 일괄 적용하는 도구다. "모든 계정의 ALB에 동일한 WAF Web ACL 강제 적용" 같은 가드레일이 가능하다. 수십~수백 계정을 가진 엔터프라이즈에서 거의 필수다.
 
-> ⚠️ **함정**: 시험에서 "다중 계정 보안 점수 통합"은 Security Hub, "근본 원인 분석"은 Detective, "조직 단위 WAF/Shield 일괄"은 Firewall Manager가 답이다. 세 서비스가 비슷해 보이지만 역할이 다르다.
+**함정**: 시험에서 "다중 계정 보안 점수 통합"은 Security Hub, "근본 원인 분석"은 Detective, "조직 단위 WAF/Shield 일괄"은 Firewall Manager가 답이다. 세 서비스가 비슷해 보이지만 역할이 다르다.
 
 ## CLI로 직접 만져보기
 
@@ -264,11 +264,11 @@ aws events put-rule --name guardduty-high \
   --event-pattern '{"source":["aws.guardduty"],"detail-type":["GuardDuty Finding"],"detail":{"severity":[{"numeric":[">=",7]}]}}'
 ```
 
-## 정리하며
+## 정리
 
-AWS의 보안 서비스 생태계는 "차단 → 탐지 → 분석 → 통합"의 4단 구조를 가진다. **WAF**(L7 응용 계층)와 **Shield**(L3/L4 DDoS)는 차단을, **GuardDuty**(행위)·**Inspector**(취약점)·**Macie**(PII)는 탐지를, **Detective** 는 사후 분석을, **Security Hub** 는 통합·컴플라이언스 점수를 담당한다. 시험에서 가장 자주 헷갈리는 분업은 ① WAF vs Shield(L7 vs L3-L4), ② GuardDuty vs Inspector(행위 vs 취약점), ③ Security Hub vs Detective(통합 점수 vs 근본 원인), ④ Shield Standard vs Advanced(무료 자동 vs 대규모 + cost protection)이고, 키워드 매핑만 정확히 하면 보안 도메인의 시나리오 문제를 빠르게 풀 수 있다. 실무에서는 단일 서비스가 아니라 "탐지(GuardDuty) → EventBridge → 자동 대응(Lambda) → 사후 분석(Detective)"의 파이프라인으로 묶는 게 표준 패턴이다.
+AWS의 보안 서비스 생태계는 "차단 → 탐지 → 분석 → 통합"의 4단 구조를 가진다. **WAF**(L7 응용 계층)와 **Shield**(L3/L4 DDoS)는 차단을, **GuardDuty**(행위)·**Inspector**(취약점)·**Macie**(PII)는 탐지를, **Detective** 는 사후 분석을, **Security Hub** 는 통합·컴플라이언스 점수를 담당한다. 시험에서 헷갈리기 쉬운 분업은 ① WAF vs Shield(L7 vs L3-L4), ② GuardDuty vs Inspector(행위 vs 취약점), ③ Security Hub vs Detective(통합 점수 vs 근본 원인), ④ Shield Standard vs Advanced(무료 자동 vs 대규모 + cost protection)이고, 키워드 매핑만 정확히 하면 보안 도메인의 시나리오 문제를 빠르게 풀 수 있다. 실무에서는 단일 서비스가 아니라 "탐지(GuardDuty) → EventBridge → 자동 대응(Lambda) → 사후 분석(Detective)"의 파이프라인으로 묶는 게 표준 패턴이다.
 
-다음 글에서는 이번 주에 본 보안 서비스들을 시나리오 기반으로 종합한다. KMS·Secrets Manager·Cognito·WAF·GuardDuty가 한 아키텍처 안에서 어떻게 협력하는지, 그리고 SAA 시험의 보안 도메인(30% 비중)에서 가장 자주 나오는 12가지 시나리오를 풀어본다.
+다음 글에서는 이번 주에 본 보안 서비스들을 시나리오 기반으로 종합한다. KMS·Secrets Manager·Cognito·WAF·GuardDuty가 한 아키텍처 안에서 어떻게 협력하는지, 그리고 SAA 시험의 보안 도메인(30% 비중)에서 대표적인 12가지 시나리오를 풀어본다.
 
 ---
 

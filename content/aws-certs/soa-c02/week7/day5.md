@@ -11,12 +11,12 @@ Week 7은 "어떻게 안전하게 배포할 것인가"를 다섯 면에서 봤�
 | 결정 축 | 질문 | Week 7 도구 매핑 |
 |---------|------|------------------|
 | **다운타임 허용?** | 0초여야 하나, 몇 분 OK인가 | All at once vs Rolling vs Immutable |
-| **임시 용량 비용?** | 2배 OK인가, 절감 우선인가 | Rolling vs Immutable vs Blue-Green |
-| **롤백 속도?** | 즉시 vs 재배포 시간 | Immutable·Blue-Green vs Rolling |
+| **임시 용량 비용?** | 2배 OK인가, 절감 우선인가 | Rolling vs Immutable vs Blue/Green |
+| **롤백 속도?** | 즉시 vs 재배포 시간 | Immutable·Blue/Green vs Rolling |
 | **인프라 소유?** | 자동 생성 vs 기존 사용 | Beanstalk vs CodeDeploy vs CloudFormation |
 | **변경 단위?** | 코드만 vs 환경 전체 vs AMI | CodeDeploy vs Beanstalk vs Image Builder |
 
-이 5개 축으로 시나리오를 분해하면 정답이 거의 자동으로 좁혀진다. 예를 들어 "다운타임 0초 + 비용 최소 + 기존 EC2 인프라"라는 시나리오는 CodeDeploy + Blue-Green인지 Beanstalk + Rolling with batch인지 헷갈리지만, "기존 인프라"라는 단서가 CodeDeploy를 가리킨다.
+이 5개 축으로 시나리오를 분해하면 정답이 거의 자동으로 좁혀진다. 예를 들어 "다운타임 0초 + 비용 최소 + 기존 EC2 인프라"라는 시나리오는 CodeDeploy + Blue/Green인지 Beanstalk + Rolling with batch인지 헷갈리지만, "기존 인프라"라는 단서가 CodeDeploy를 가리킨다.
 
 > 💡 **관련 이론**: 이 결정 축 접근은 Architecture Decision Record(ADR)의 표준 양식과 정확히 같다. Michael Nygard가 2011년 제안한 ADR 템플릿은 Context → Decision → Consequences 구조인데, 각 결정에 대한 trade-off를 명시한다. 시험 시나리오를 ADR처럼 분해하는 습관이 클라우드 아키텍트의 핵심 사고 패턴이다.
 
@@ -26,7 +26,7 @@ Week 7은 "어떻게 안전하게 배포할 것인가"를 다섯 면에서 봤�
 |----------|-----------|------------|----------------|
 | **인프라 생성** | 자동 (EC2/ALB/RDS) | 별도 (사용자 책임) | 자동 (모든 리소스) |
 | **코드 배포** | 통합 | 핵심 기능 | 별도 (custom resource) |
-| **롤백 단위** | 환경 전체 | Revision | Stack 전체 |
+| **롤백 단위** | 환경 전체 | Revision | 스택 전체 |
 | **배포 hook** | .ebextensions, .platform | AppSpec hooks (13단계) | UpdatePolicy + WaitCondition |
 | **언어 인식** | 있음 (Node/Python/Java/...) | 없음 (불가지론) | 없음 (불가지론) |
 | **사용 사례** | 단순 웹앱 PaaS | 기존 EC2/Lambda/ECS 함대 | 전체 IaC |
@@ -41,9 +41,9 @@ Week 7은 "어떻게 안전하게 배포할 것인가"를 다섯 면에서 봤�
 | **Rolling** | 없음 | 일시 **감소** | 없음 | 재배포 필요 | 트래픽 spike 없는 prod |
 | **Rolling with batch** | 없음 | 유지 | 배치만큼 | 재배포 필요 | 균형 잡힌 prod |
 | **Immutable** | 없음 | 유지 | **2배** | 빠름 (구 ASG 살아있음) | 안정성 중요한 prod |
-| **Blue-Green (URL Swap)** | 없음 | 유지 | **2배** | 즉시 (CNAME 전환) | 즉시 롤백 필수 |
+| **Blue/Green (URL Swap)** | 없음 | 유지 | **2배** | 즉시 (CNAME 전환) | 즉시 롤백 필수 |
 
-핵심 함정 — "Blue-Green = 즉시 100% 전환"이 아니다. CNAME 전환은 즉시지만 DNS TTL 동안 일부 사용자는 구 환경에 머문다. Beanstalk 기본 CNAME TTL이 60초지만 일부 ISP/사내 DNS가 더 길게 캐싱하므로 실제 100% 전환까지 5-30분 걸릴 수 있다.
+핵심 함정 — "Blue/Green = 즉시 100% 전환"이 아니다. CNAME 전환은 즉시지만 DNS TTL 동안 일부 사용자는 구 환경에 머문다. Beanstalk 기본 CNAME TTL이 60초지만 일부 ISP/사내 DNS가 더 길게 캐싱하므로 실제 100% 전환까지 5-30분 걸릴 수 있다.
 
 ## CodeDeploy 핵심 정리
 
@@ -57,9 +57,9 @@ AfterInstall → ApplicationStart → ValidateService
 ```
 
 Compute platform별 배포 방식:
-- **EC2**: In-place 또는 Blue-Green (ALB Target Group 전환)
+- **EC2**: In-place 또는 Blue/Green (ALB Target Group 전환)
 - **Lambda**: Alias 가중치 점진 조정 (Canary, Linear, AllAtOnce)
-- **ECS**: Blue-Green (Target Group 2개 + Production Listener + Test Listener)
+- **ECS**: Blue/Green (Target Group 2개 + Production Listener + Test Listener)
 
 자동 롤백 트리거 두 가지:
 - **DEPLOYMENT_FAILURE**: hook 실패·타임아웃 (즉시 감지)

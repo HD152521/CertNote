@@ -70,7 +70,7 @@
 | Compiz | 3D 효과 전용 |
 
 - **`twm`(Tab Window Manager)** 은 X에 기본 포함된 가장 단순한 윈도 매니저다.
-- **Windowmaker · Afterstep · Fluxbox · Enlightenment** 는 데스크톱 환경에 딸리지 않고 **단독으로 쓰는** 윈도 매니저다. 이름이 낯설어 보기에 자주 등장한다.
+- **Windowmaker · Afterstep · Fluxbox · Enlightenment** 는 데스크톱 환경에 딸리지 않고 **단독으로 쓰는** 윈도 매니저다. 이름이 낯설어 보기로 쓰이기 쉽다.
 
 ### 이름에 단서가 있는 것과 없는 것
 
@@ -219,7 +219,7 @@
 | `Fluxbox · Openbox · Enlightenment · LXQt` | **LXQt** | 나머지는 윈도 매니저 |
 | `KDE · KDM · KWin · Konsole` 가운데 윈도 매니저 | **KWin** | KDE는 환경, KDM은 로그인, Konsole은 터미널 |
 
-- **같은 머리글자로 시작하는 이름을 한 보기에 모으는** 것이 단골 수법이다. K로 시작하는 넷, X로 시작하는 Xfce·Xfwm·XDM, G로 시작하는 GNOME·GDM·GTK+를 각각 갈라 둔다.
+- **같은 머리글자로 시작하는 이름을 한 보기에 모으는** 수법이 있다. K로 시작하는 넷, X로 시작하는 Xfce·Xfwm·XDM, G로 시작하는 GNOME·GDM·GTK+를 각각 갈라 둔다.
 - **LXDE와 LXDM**도 한 글자 차이다. **E로 끝나면 환경(Environment), M으로 끝나면 매니저**다.
 
 > 내일은 X를 실제로 실행하고 원격 화면을 띄우는 방법을 다룬다.

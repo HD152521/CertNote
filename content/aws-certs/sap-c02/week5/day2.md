@@ -15,9 +15,9 @@ Route 53은 **Authoritative DNS** 역할을 한다. 사용자가 `app.example.co
 
 여기서 중요한 점: **Route 53의 라우팅 정책은 Recursive Resolver의 캐싱에 의해 실시간이 아니다.** TTL이 300초면 5분 동안 같은 IP를 캐시한다. 페일오버 정책으로 전환하더라도 클라이언트가 TTL 만료 전까지는 구 IP로 계속 간다. 이것이 DNS 기반 페일오버의 근본적인 한계다.
 
-> 💡 **관련 이론**: DNS TTL 최적화는 "안정성 vs 변경 속도"의 트레이드오프다. TTL이 길면(3600초) 쿼리 수가 줄고 캐시 효율이 높지만, 레코드 변경 시 전파가 느리다. TTL이 짧으면(10초) 변경이 빠르지만 모든 클라이언트가 자주 쿼리해 비용·지연이 증가한다. 페일오버를 예상한다면 평소 TTL을 낮게 유지(60~120초)하거나, RFC 8767이 권장하는 "급박한 변경 전 TTL을 낮추고 변경 후 다시 올리는" 2단계 전략을 쓴다.
+DNS TTL 최적화는 "안정성 vs 변경 속도"의 트레이드오프다. TTL이 길면(3600초) 쿼리 수가 줄고 캐시 효율이 높지만, 레코드 변경 시 전파가 느리다. TTL이 짧으면(10초) 변경이 빠르지만 모든 클라이언트가 자주 쿼리해 비용·지연이 증가한다. 페일오버를 예상한다면 평소 TTL을 낮게 유지(60~120초)하거나, RFC 8767이 권장하는 "급박한 변경 전 TTL을 낮추고 변경 후 다시 올리는" 2단계 전략을 쓴다.
 
-> 🔍 **더 깊이**: Route 53은 EDNS0 Client Subnet(ECS, RFC 7871)을 지원한다. 일반 DNS 쿼리는 Recursive Resolver의 IP만 전달하지만, ECS는 실제 클라이언트의 서브넷(/24 or /32)까지 Route 53에 알려준다. Latency-Based Routing과 Geolocation이 실제 사용자 위치를 더 정확히 판단하는 기반이 된다. 단 모든 Recursive Resolver가 ECS를 지원하지 않으므로 100% 정확하지는 않다.
+Route 53은 EDNS0 Client Subnet(ECS, RFC 7871)을 지원한다. 일반 DNS 쿼리는 Recursive Resolver의 IP만 전달하지만, ECS는 실제 클라이언트의 서브넷(/24 or /32)까지 Route 53에 알려준다. Latency-Based Routing과 Geolocation이 실제 사용자 위치를 더 정확히 판단하는 기반이 된다. 단 모든 Recursive Resolver가 ECS를 지원하지 않으므로 100% 정확하지는 않다.
 
 ## 라우팅 정책 7종: 알고리즘 수준 이해
 
@@ -39,7 +39,7 @@ Route 53은 **Authoritative DNS** 역할을 한다. 사용자가 `app.example.co
 
 ### 3. Latency-Based Routing (LBR)
 
-Route 53이 **여러 리전의 레이턴시 데이터베이스**를 관리한다. Recursive Resolver의 위치(ECS 사용 시 클라이언트 위치)를 기반으로, 어느 AWS 리전이 가장 지연이 적은지 판단해 해당 리전의 레코드를 반환한다.
+Route 53이 **여러 리전의 지연 시간 데이터베이스**를 관리한다. Recursive Resolver의 위치(ECS 사용 시 클라이언트 위치)를 기반으로, 어느 AWS 리전이 가장 지연이 적은지 판단해 해당 리전의 레코드를 반환한다.
 
 **핵심 오해 교정**: LBR은 지리적 거리가 아니라 **실측된 네트워크 지연**을 기준으로 한다. 도쿄보다 물리적으로 먼 싱가포르가 더 빠를 수도 있다. Route 53은 자체 지연 측정 데이터를 주기적으로 업데이트해 라우팅 결정에 사용한다.
 
@@ -53,7 +53,7 @@ Primary와 Secondary 두 레코드를 만들고 Health Check를 연결한다. Pr
 
 **페일오버 속도 계산**: Health Check 간격 30초 × 실패 임계치 3회 = 최대 90초 후 전환 시작. TTL이 60초라면 DNS 전파까지 최대 90+60=150초(2.5분) 소요.
 
-> 💡 **관련 이론**: TCP SYN 기반 Health Check vs HTTP Health Check. HTTP는 상태 코드까지 확인하므로 앱 계층 장애(200 OK가 아닌 응답)를 감지한다. TCP는 포트 접속 성공만 확인하므로 앱이 죽어도 TCP 스택이 살면 Healthy로 오탐할 수 있다. 중요 시스템은 반드시 HTTP(S) Health Check + 응답 body 검증(String Match)을 쓴다.
+TCP SYN 기반 Health Check vs HTTP Health Check. HTTP는 상태 코드까지 확인하므로 앱 계층 장애(200 OK가 아닌 응답)를 감지한다. TCP는 포트 접속 성공만 확인하므로 앱이 죽어도 TCP 스택이 살면 Healthy로 오탐할 수 있다. 중요 시스템은 반드시 HTTP(S) Health Check + 응답 body 검증(String Match)을 쓴다.
 
 ### 5. Geolocation (지리적 위치)
 
@@ -119,7 +119,7 @@ AWS는 이 제한을 우회하기 위해 **Alias 레코드**를 만들었다. Al
 
 `EvaluateTargetHealth=true`로 설정하면 ALB나 CloudFront가 비정상일 때 Alias가 자동으로 그 레코드를 건너뛴다. Failover 정책과 함께 쓰면 ALB 레벨 장애도 Route 53이 감지할 수 있다.
 
-> 💡 **관련 이론**: RFC 2181에서 DNS는 CNAME이 있는 레코드에 다른 레코드를 추가하는 것을 금지한다("CNAME and other data"). Zone Apex에는 반드시 NS와 SOA가 있어야 하므로 CNAME을 apex에 두면 그 도메인 전체가 broken이 된다. AWS Alias는 이것을 내부적으로 A 레코드처럼 처리해 표준 위반 없이 apex에서 ALB를 가리킬 수 있다.
+RFC 2181에서 DNS는 CNAME이 있는 레코드에 다른 레코드를 추가하는 것을 금지한다("CNAME and other data"). Zone Apex에는 반드시 NS와 SOA가 있어야 하므로 CNAME을 apex에 두면 그 도메인 전체가 broken이 된다. AWS Alias는 이것을 내부적으로 A 레코드처럼 처리해 표준 위반 없이 apex에서 ALB를 가리킬 수 있다.
 
 ## Health Check 4종: 알고리즘과 사용법
 
@@ -146,7 +146,7 @@ Route 53이 직접 폴링할 수 없는 내부 리소스(예: VPC Private Subnet
 
 수동 온/오프 스위치. 엔지니어가 콘솔이나 API로 직접 전환한다. 앞서 Day 21에서 설명한 ARC의 핵심 구성 요소.
 
-> 📚 **사례**: 2021년 Fastly CDN 글로벌 장애. 단일 설정 오류로 Fastly 엣지의 85%가 약 1시간 다운됐다. 이 사건 이후 많은 기업이 CDN 오리진 직접 접근을 위한 Route 53 Failover를 백업으로 구성하기 시작했다. CloudFront Origin Failover + Route 53 Failover를 계층화해 CDN 장애 시 Origin에서 직접 서빙하는 패턴이다. 교훈: 단일 글로벌 CDN도 장애 포인트가 된다.
+2021년 Fastly CDN 글로벌 장애. 단일 설정 오류로 Fastly 엣지의 85%가 약 1시간 다운됐다. 이 사건 이후 많은 기업이 CDN 오리진 직접 접근을 위한 Route 53 Failover를 백업으로 구성하기 시작했다. CloudFront Origin Failover + Route 53 Failover를 계층화해 CDN 장애 시 Origin에서 직접 서빙하는 패턴이다. 교훈: 단일 글로벌 CDN도 장애 포인트가 된다.
 
 ## Route 53 Resolver: 하이브리드 DNS 아키텍처
 
@@ -167,7 +167,7 @@ Route 53 Resolver
 
 **Outbound Endpoint**: VPC 내 EC2가 온프레미스 도메인을 해석해야 할 때, Resolver Rule이 "이 도메인은 온프레미스 DNS IP로 포워딩"하도록 설정한다.
 
-> 🔍 **더 깊이**: VPC 내 DNS는 기본적으로 VPC CIDR의 +2 주소(예: 10.0.0.2)를 쓴다. 이것이 Route 53 Resolver의 기본 엔드포인트다. Outbound Endpoint는 이 기본 해석기를 특정 도메인에 대해 재정의한다. 한 VPC에 여러 Resolver Rule을 쌓을 수 있고, 가장 구체적인 도메인 매칭 규칙이 우선한다.
+VPC 내 DNS는 기본적으로 VPC CIDR의 +2 주소(예: 10.0.0.2)를 쓴다. 이것이 Route 53 Resolver의 기본 엔드포인트다. Outbound Endpoint는 이 기본 해석기를 특정 도메인에 대해 재정의한다. 한 VPC에 여러 Resolver Rule을 쌓을 수 있고, 가장 구체적인 도메인 매칭 규칙이 우선한다.
 
 ## Route 53 DNS Firewall: DNS 계층 보안
 
@@ -177,7 +177,7 @@ DNS Firewall은 VPC 내 아웃바운드 DNS 쿼리를 필터링한다. 악성 �
 
 **Managed Domain List**: AWS가 관리하는 위협 인텔리전스 기반 도메인 목록 (자동 업데이트).
 
-> 💡 **관련 이론**: DNS over HTTPS(DoH, RFC 8484)와 DNS over TLS(DoT, RFC 7858)는 DNS 쿼리를 암호화해 중간 관찰을 막는다. 하지만 기업 환경에서는 이 암호화가 DNS Firewall을 우회하는 문제가 생긴다. AWS DNS Firewall은 VPC의 53번 포트 트래픽을 기본 경유하므로, DoH/DoT를 강제 사용하는 앱은 DNS Firewall를 피해갈 수 있다. VPC Security Group이나 Network Firewall로 443(DoH)/853(DoT) 포트를 특정 DNS 서버로만 허용하는 추가 보안 조치가 필요하다.
+DNS over HTTPS(DoH, RFC 8484)와 DNS over TLS(DoT, RFC 7858)는 DNS 쿼리를 암호화해 중간 관찰을 막는다. 하지만 기업 환경에서는 이 암호화가 DNS Firewall을 우회하는 문제가 생긴다. AWS DNS Firewall은 VPC의 53번 포트 트래픽을 기본 경유하므로, DoH/DoT를 강제 사용하는 앱은 DNS Firewall를 피해갈 수 있다. VPC Security Group이나 Network Firewall로 443(DoH)/853(DoT) 포트를 특정 DNS 서버로만 허용하는 추가 보안 조치가 필요하다.
 
 ## 아키텍처 다이어그램: 계층화된 글로벌 라우팅
 
@@ -216,7 +216,7 @@ Private Hosted Zone은 VPC 내부에서만 해석되는 사설 도메인이다. 
 
 **Cross-Account 공유**: RAM(Resource Access Manager)으로 Resolver Rules를 다른 계정에 공유하거나, VPC Peering + Private Hosted Zone 연결로 크로스 계정 DNS를 구성한다.
 
-> 📚 **사례**: Airbnb의 DNS 기반 서비스 디스커버리 (2016). Airbnb는 Route 53 Private Hosted Zone을 서비스 레지스트리로 사용해, 각 마이크로서비스를 `search-service.internal.airbnb.com`처럼 도메인으로 접근했다. 서비스가 EC2에서 ECS로 이전될 때 IP는 바뀌지만 도메인은 유지돼 다른 서비스의 코드 변경이 불필요했다. 교훈: DNS는 서비스 디스커버리의 단순하고 강력한 레이어다.
+Airbnb의 DNS 기반 서비스 디스커버리 (2016). Airbnb는 Route 53 Private Hosted Zone을 서비스 레지스트리로 사용해, 각 마이크로서비스를 `search-service.internal.airbnb.com`처럼 도메인으로 접근했다. 서비스가 EC2에서 ECS로 이전될 때 IP는 바뀌지만 도메인은 유지돼 다른 서비스의 코드 변경이 불필요했다. 교훈: DNS는 서비스 디스커버리의 단순하고 강력한 레이어다.
 
 ## Traffic Flow: 복잡한 라우팅의 GUI
 

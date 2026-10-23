@@ -10,25 +10,25 @@ SAP-C02 시험에서 이 영역은 "수만 개 노드로 페타바이트를 처�
 
 문제는 MapReduce가 모든 중간 결과를 디스크에 쓴다는 것이었다. 반복(iterative) 알고리즘(머신러닝, 그래프 처리)은 같은 데이터를 수십 번 도는데, 매 단계마다 HDFS에 쓰고 다시 읽으니 디스크 I/O가 병목이 됐다. 2009년 버클리 AMPLab의 Matei Zaharia가 만든 **Spark**가 이를 뒤집었다. Spark는 중간 결과를 메모리에 유지(in-memory computing)하고, 연산을 **RDD(Resilient Distributed Dataset)**라는 불변(immutable) 추상화로 표현한다. RDD는 실제 데이터를 들고 있지 않고 "어떻게 만들어지는지의 계보(lineage)"만 기록한다. 노드가 죽어 일부 파티션이 사라지면, 계보를 따라 그 부분만 다시 계산해 복원한다. 체크포인트 없이도 장애 복구가 되는 이 설계가 Spark를 표준으로 만들었다.
 
-> 💡 **관련 이론**: Spark의 핵심은 **lazy evaluation(지연 평가)**과 **DAG 실행**이다. `map`, `filter` 같은 변환(transformation)은 즉시 실행되지 않고 계보에만 기록된다. `count`, `collect`, `save` 같은 액션(action)이 호출되는 순간에야 Spark가 전체 변환 사슬을 보고 최적 실행 계획(DAG)을 세운 뒤 한 번에 실행한다. 덕분에 불필요한 중간 단계를 합치고(operator fusion) 셔플을 최소화할 수 있다. DataFrame API를 쓰면 여기에 **Catalyst 옵티마이저**와 **Tungsten 실행 엔진**이 더해져, SQL처럼 선언적으로 쓴 코드가 컬럼 프루닝·조건 푸시다운·코드 생성을 거쳐 RDD보다 훨씬 빠르게 돈다. 그래서 실무·시험 모두 "RDD보다 DataFrame/Spark SQL"이 정석이다.
+Spark의 핵심은 **lazy evaluation(지연 평가)**과 **DAG 실행**이다. `map`, `filter` 같은 변환(transformation)은 즉시 실행되지 않고 계보에만 기록된다. `count`, `collect`, `save` 같은 액션(action)이 호출되는 순간에야 Spark가 전체 변환 사슬을 보고 최적 실행 계획(DAG)을 세운 뒤 한 번에 실행한다. 덕분에 불필요한 중간 단계를 합치고(operator fusion) 셔플을 최소화할 수 있다. DataFrame API를 쓰면 여기에 **Catalyst 옵티마이저**와 **Tungsten 실행 엔진**이 더해져, SQL처럼 선언적으로 쓴 코드가 컬럼 프루닝·조건 푸시다운·코드 생성을 거쳐 RDD보다 훨씬 빠르게 돈다. 그래서 실무·시험 모두 "RDD보다 DataFrame/Spark SQL"이 정석이다.
 
-> 🔍 **더 깊이**: **셔플(shuffle)**이 분산 처리의 가장 비싼 연산인 이유. `groupBy`, `join`, `reduceByKey` 같은 와이드 변환(wide transformation)은 같은 키를 같은 노드로 모아야 한다. 이때 모든 노드가 서로에게 데이터를 주고받는 all-to-all 네트워크 통신이 발생하고, 중간 결과를 디스크에 쓴 뒤(shuffle write) 다시 읽는다(shuffle read). 1억 행 조인이 느린 건 연산 자체가 아니라 셔플 때문인 경우가 대부분이다. 그래서 최적화의 핵심은 셔플을 줄이는 것 — 작은 테이블은 **broadcast join**(전 노드에 복제해 셔플 제거), 파티셔닝을 미리 맞춰 co-location 유도, `repartition` 남용 회피. Redshift의 분산 키(Day 42)가 노드 간 셔플을 줄이려는 것과 정확히 같은 원리다.
+**셔플(shuffle)**이 분산 처리의 가장 비싼 연산인 이유. `groupBy`, `join`, `reduceByKey` 같은 와이드 변환(wide transformation)은 같은 키를 같은 노드로 모아야 한다. 이때 모든 노드가 서로에게 데이터를 주고받는 all-to-all 네트워크 통신이 발생하고, 중간 결과를 디스크에 쓴 뒤(shuffle write) 다시 읽는다(shuffle read). 1억 행 조인이 느린 건 연산 자체가 아니라 셔플 때문인 경우가 대부분이다. 그래서 최적화는 셔플을 줄이는 방향으로 간다 — 작은 테이블은 **broadcast join**(전 노드에 복제해 셔플 제거), 파티셔닝을 미리 맞춰 co-location 유도, `repartition` 남용 회피. Redshift의 분산 키(Day 42)가 노드 간 셔플을 줄이려는 것과 정확히 같은 원리다.
 
 ## EMR — Hadoop/Spark 클러스터를 매니지드로
 
-EMR(Elastic MapReduce)은 Hadoop 생태계(Spark, Hive, Presto/Trino, HBase, Flink, Hudi)를 EC2 클러스터로 띄워주는 매니지드 서비스다. 직접 EC2에 Hadoop을 설치·튜닝·패치하던 고통을 없애고, 클릭 몇 번이나 API 한 줄로 수십~수천 노드 클러스터를 분 단위에 만든다. EMR의 구조를 이해하는 핵심은 **세 가지 노드 역할**이다.
+EMR(Elastic MapReduce)은 Hadoop 생태계(Spark, Hive, Presto/Trino, HBase, Flink, Hudi)를 EC2 클러스터로 띄워주는 매니지드 서비스다. 직접 EC2에 Hadoop을 설치·튜닝·패치하던 고통을 없애고, 클릭 몇 번이나 API 한 줄로 수십~수천 노드 클러스터를 분 단위에 만든다. EMR의 구조를 구조는 **세 가지 노드 역할**로 나뉜다.
 
 - **Master(Primary) 노드**: 클러스터를 관리한다. YARN ResourceManager, HDFS NameNode, 잡 스케줄링이 여기 있다. 하나(또는 HA 구성 시 3개)만 존재하며, 죽으면 클러스터 전체가 영향을 받으므로 **Spot으로 돌리면 안 된다**.
 - **Core 노드**: HDFS DataNode 역할(데이터 저장)을 하면서 작업도 실행한다. HDFS 데이터를 들고 있으므로 Spot으로 돌렸다가 중단되면 데이터 일부가 사라지고 복제·복구 부담이 생긴다. 그래서 보통 On-Demand나 신중한 Spot 비율로 운영한다.
-- **Task 노드**: HDFS 없이 순수하게 작업만 실행한다. 데이터를 들고 있지 않으므로 중단돼도 잃을 게 없다 — **Spot의 완벽한 대상**이다. 비용 최적화의 핵심은 "Task 노드를 Spot으로 채우는 것"이다.
+- **Task 노드**: HDFS 없이 순수하게 작업만 실행한다. 데이터를 들고 있지 않으므로 중단돼도 잃을 게 없다 — **Spot의 완벽한 대상**이다. 비용 최적화는 "Task 노드를 Spot으로 채우는 것"으로 시작한다.
 
 이 역할 분리가 EMR 비용 최적화의 출발점이다. Master/Core는 안정적인 On-Demand로 최소 구성하고, 무거운 연산 용량은 값싼 Spot Task 노드로 탄력 확장한다.
 
-> 💡 **관련 이론**: EMR이 데이터를 어디에 두느냐가 아키텍처를 가른다. 전통 Hadoop은 데이터를 HDFS(Core 노드의 로컬 디스크)에 두고 "연산을 데이터가 있는 곳으로 보낸다"는 **data locality**를 추구했다. 그런데 클라우드에서는 **EMRFS**를 통해 데이터를 S3에 두는 패턴이 표준이 됐다. 이러면 컴퓨팅과 스토리지가 분리되어(Day 42의 RA3와 같은 철학), 잡이 끝나면 클러스터를 통째로 내려 비용을 0으로 만들 수 있고(transient cluster), 같은 S3 데이터에 여러 클러스터를 띄울 수 있다. 단점은 S3가 HDFS보다 지연이 크다는 것이지만, EMRFS의 S3 최적화 커미터와 Parquet 컬럼 프루닝이 이를 상당히 메운다. SAP 관점에서 "잡이 끝나면 클러스터를 없애 비용 절감"은 거의 항상 S3(EMRFS) 기반 transient cluster다.
+EMR이 데이터를 어디에 두느냐가 아키텍처를 가른다. 전통 Hadoop은 데이터를 HDFS(Core 노드의 로컬 디스크)에 두고 "연산을 데이터가 있는 곳으로 보낸다"는 **data locality**를 추구했다. 그런데 클라우드에서는 **EMRFS**를 통해 데이터를 S3에 두는 패턴이 표준이 됐다. 이러면 컴퓨팅과 스토리지가 분리되어(Day 42의 RA3와 같은 철학), 잡이 끝나면 클러스터를 통째로 내려 비용을 0으로 만들 수 있고(transient cluster), 같은 S3 데이터에 여러 클러스터를 띄울 수 있다. 단점은 S3가 HDFS보다 지연이 크다는 것이지만, EMRFS의 S3 최적화 커미터와 Parquet 컬럼 프루닝이 이를 상당히 메운다. SAP 관점에서 "잡이 끝나면 클러스터를 없애 비용 절감"은 거의 항상 S3(EMRFS) 기반 transient cluster다.
 
-> 🔍 **더 깊이**: **Instance Fleets vs Instance Groups**. EMR에서 노드를 구성하는 두 방식이다. Instance Groups는 노드 그룹마다 단일 인스턴스 타입을 지정한다 — 단순하지만 그 타입의 Spot 재고가 마르면 용량을 못 채운다. **Instance Fleets**는 한 그룹(예: Task)에 여러 인스턴스 타입(m5.xlarge, m5a.xlarge, m4.xlarge…)을 가중치와 함께 섞고, "총 32 vCPU만 채우면 됨" 식의 목표 용량(target capacity)을 지정한다. EMR이 가장 싸고 가용한 타입 조합으로 알아서 채우고, 어떤 타입의 Spot이 중단되면 다른 타입으로 자동 대체한다. 그래서 시험에서 "Spot 중단에 강건하면서 비용 최적"은 거의 **Instance Fleets + Spot 다중 타입**이 답이다.
+**Instance Fleets vs Instance Groups**. EMR에서 노드를 구성하는 두 방식이다. Instance Groups는 노드 그룹마다 단일 인스턴스 타입을 지정한다 — 단순하지만 그 타입의 Spot 재고가 마르면 용량을 못 채운다. **Instance Fleets**는 한 그룹(예: Task)에 여러 인스턴스 타입(m5.xlarge, m5a.xlarge, m4.xlarge…)을 가중치와 함께 섞고, "총 32 vCPU만 채우면 됨" 식의 목표 용량(target capacity)을 지정한다. EMR이 가장 싸고 가용한 타입 조합으로 알아서 채우고, 어떤 타입의 Spot이 중단되면 다른 타입으로 자동 대체한다. 그래서 시험에서 "Spot 중단에 강건하면서 비용 최적"은 거의 **Instance Fleets + Spot 다중 타입**이 답이다.
 
-> 📚 **사례**: Yelp는 일찍부터 EMR을 대규모로 운영한 회사로, 수백 개 EMR 클러스터를 매일 띄우고 내리며 페타바이트급 로그를 Spark/MapReduce로 처리했다. 핵심 패턴은 "잡별 transient cluster" — 데이터는 S3에 영구 보관하고, 처리할 때만 클러스터를 띄워 Task 노드를 Spot으로 채운 뒤 끝나면 즉시 종료해 컴퓨팅 비용을 최소화했다. 교훈은 두 가지다. (1) 장수(long-running) 클러스터보다 잡 단위 transient 클러스터가 비용·격리 면에서 유리하고, (2) S3를 진실의 원천(source of truth)으로 두면 클러스터는 언제든 죽여도 되는 일회용 자원이 된다. SAP 시험의 "비용 최적 배치 처리"는 이 패턴을 반복해서 묻는다.
+Yelp는 일찍부터 EMR을 대규모로 운영한 회사로, 수백 개 EMR 클러스터를 매일 띄우고 내리며 페타바이트급 로그를 Spark/MapReduce로 처리했다. 핵심 패턴은 "잡별 transient cluster" — 데이터는 S3에 영구 보관하고, 처리할 때만 클러스터를 띄워 Task 노드를 Spot으로 채운 뒤 끝나면 즉시 종료해 컴퓨팅 비용을 최소화했다. 교훈은 두 가지다. (1) 장수(long-running) 클러스터보다 잡 단위 transient 클러스터가 비용·격리 면에서 유리하고, (2) S3를 진실의 원천(source of truth)으로 두면 클러스터는 언제든 죽여도 되는 일회용 자원이 된다. SAP 시험의 "비용 최적 배치 처리"는 이 패턴을 반복해서 묻는다.
 
 ## EMR 배포 모델 — EC2, EKS, Serverless
 
@@ -55,13 +55,13 @@ EMR은 같은 엔진을 세 가지 런타임으로 제공한다. 무엇을 고�
 
 판단 흐름은 이렇다. "SQL로 충분하고 애드혹 질의"면 **Athena**. "정형 ETL인데 클러스터 운영은 싫다"면 **Glue**. "무거운 반복 처리, 커스텀 Spark 튜닝, Hive/HBase/Flink 같은 풀 스택"이 필요하면 **EMR**. 셋이 Glue Data Catalog를 공통 메타스토어로 공유하므로, 같은 테이블 정의를 세 엔진이 모두 본다는 점이 중요하다.
 
-> 🔍 **더 깊이**: **Glue Job Bookmark**가 증분 처리를 하는 원리. 매일 도는 ETL이 어제 처리한 파일을 또 처리하면 비용과 중복이 생긴다. Job Bookmark는 잡 실행마다 "어디까지 처리했는지"의 상태(S3 객체의 마지막 수정 시각·경로, JDBC 소스의 기준 컬럼 값 등)를 체크포인트로 저장한다. 다음 실행은 이 북마크 이후의 새 데이터만 골라 처리한다. 본질적으로 스트리밍의 오프셋(offset) 관리와 같은 발상을 배치에 적용한 것이다. 시험에서 "매일 도는 Glue 잡이 이미 처리한 데이터를 또 처리한다 / 증분만 처리하고 싶다"는 Job Bookmark 활성화가 답이다. (안티패턴: 북마크를 켜고도 잡 로직이 매번 전체를 다시 읽도록 짜면 무의미하다.)
+**Glue Job Bookmark**가 증분 처리를 하는 원리. 매일 도는 ETL이 어제 처리한 파일을 또 처리하면 비용과 중복이 생긴다. Job Bookmark는 잡 실행마다 "어디까지 처리했는지"의 상태(S3 객체의 마지막 수정 시각·경로, JDBC 소스의 기준 컬럼 값 등)를 체크포인트로 저장한다. 다음 실행은 이 북마크 이후의 새 데이터만 골라 처리한다. 본질적으로 스트리밍의 오프셋(offset) 관리와 같은 발상을 배치에 적용한 것이다. 시험에서 "매일 도는 Glue 잡이 이미 처리한 데이터를 또 처리한다 / 증분만 처리하고 싶다"는 Job Bookmark 활성화가 답이다. (안티패턴: 북마크를 켜고도 잡 로직이 매번 전체를 다시 읽도록 짜면 무의미하다.)
 
 ## Glue의 나머지 구성요소 — Crawler, Catalog, DataBrew
 
 Glue는 ETL 잡만이 아니라 데이터 통합 플랫폼이다. **Glue Data Catalog**는 Hive Metastore 호환 메타데이터 저장소로, 테이블 스키마·파티션·위치를 보관하며 Athena·EMR·Redshift Spectrum·Glue가 모두 공유한다(이 영역의 진짜 허브). **Glue Crawler**는 S3·JDBC 소스를 스캔해 스키마를 추론하고 카탈로그에 테이블·파티션을 자동 등록한다. **Glue DataBrew**는 코드 없이 시각적으로 데이터 정제·변환 레시피를 만드는 노코드 도구로, 데이터 분석가가 엔지니어 없이 클렌징을 한다.
 
-> 💡 **관련 이론**: Glue Data Catalog가 **Hive Metastore 호환**이라는 점이 생태계 전체를 묶는 열쇠다. Hive Metastore는 2008년 Hadoop 생태계에서 "테이블이 어떤 컬럼을 갖고 어느 경로의 어떤 포맷 파일인지"를 표준화한 메타데이터 계층이다. AWS가 이 인터페이스를 그대로 구현했기 때문에, S3에 있는 같은 Parquet 파일을 Athena로 SQL 질의하고, EMR Spark로 변환하고, Redshift Spectrum으로 조인하는 것이 모두 "같은 테이블"로 가능하다. 메타데이터를 한 곳에 통합하고 엔진을 갈아끼우는 이 분리가 레이크하우스 아키텍처의 토대다.
+Glue Data Catalog가 **Hive Metastore 호환**이라는 점이 생태계 전체를 묶는 열쇠다. Hive Metastore는 2008년 Hadoop 생태계에서 "테이블이 어떤 컬럼을 갖고 어느 경로의 어떤 포맷 파일인지"를 표준화한 메타데이터 계층이다. AWS가 이 인터페이스를 그대로 구현했기 때문에, S3에 있는 같은 Parquet 파일을 Athena로 SQL 질의하고, EMR Spark로 변환하고, Redshift Spectrum으로 조인하는 것이 모두 "같은 테이블"로 가능하다. 메타데이터를 한 곳에 통합하고 엔진을 갈아끼우는 이 분리가 레이크하우스 아키텍처의 토대다.
 
 ## MWAA — Airflow로 파이프라인을 오케스트레이션하다
 
@@ -69,7 +69,7 @@ Glue는 ETL 잡만이 아니라 데이터 통합 플랫폼이다. **Glue Data Ca
 
 Airflow의 핵심 모델은 **DAG(Directed Acyclic Graph)**다. 워크플로우를 "순환 없는 방향 그래프"로 표현해 작업 간 의존성을 명시한다. 순환이 없다는 제약이 중요한데, A→B→A 같은 순환이 있으면 영원히 끝나지 않는 데드락이 생기기 때문이다. DAG는 Python 코드로 정의하므로, 조건 분기·동적 태스크 생성·외부 시스템 연동을 코드의 표현력으로 자유롭게 짤 수 있다. EMR·Glue·Athena·Step Functions 등을 호출하는 Operator가 풍부해, 한 DAG에서 멀티 서비스 파이프라인을 엮는다.
 
-> 💡 **관련 이론**: DAG는 컴퓨터과학에서 의존성·스케줄링 문제의 보편적 추상화다. 빌드 시스템(Makefile, Bazel), 패키지 의존성 해결, Spark의 실행 계획, 심지어 Git 커밋 그래프가 모두 DAG다. 핵심 연산은 **위상 정렬(topological sort)** — "선행 작업이 끝난 것부터 순서대로" 실행 순서를 정하는 것이다. Airflow 스케줄러가 매 순간 하는 일이 바로 이 위상 정렬이다: 의존성이 모두 충족된(upstream이 성공한) 태스크를 찾아 실행 큐에 넣는다. 순환이 있으면 위상 정렬이 불가능하므로 DAG라는 이름에 "Acyclic"이 붙는다.
+DAG는 컴퓨터과학에서 의존성·스케줄링 문제의 보편적 추상화다. 빌드 시스템(Makefile, Bazel), 패키지 의존성 해결, Spark의 실행 계획, 심지어 Git 커밋 그래프가 모두 DAG다. 핵심 연산은 **위상 정렬(topological sort)** — "선행 작업이 끝난 것부터 순서대로" 실행 순서를 정하는 것이다. Airflow 스케줄러가 매 순간 하는 일이 바로 이 위상 정렬이다: 의존성이 모두 충족된(upstream이 성공한) 태스크를 찾아 실행 큐에 넣는다. 순환이 있으면 위상 정렬이 불가능하므로 DAG라는 이름에 "Acyclic"이 붙는다.
 
 ## MWAA vs Step Functions — 오케스트레이션의 두 철학
 
@@ -102,11 +102,11 @@ AWS에는 오케스트레이션 도구가 둘 있다. MWAA(Airflow)와 Step Func
 
 핵심 통찰: 이 모든 서비스가 같은 오픈소스(Spark, Airflow, Hive Metastore)를 감싸므로, **카탈로그(메타데이터)를 표준 인터페이스로 유지하면 처리 엔진을 비교적 자유롭게 교체**할 수 있다. 멀티클라우드·하이브리드 전략에서 Airflow(MWAA/Composer)와 Iceberg/Hive Metastore 호환 카탈로그를 표준으로 삼는 이유다.
 
-## 정리하며
+## 정리
 
-EMR·Glue·Athena는 경쟁 서비스가 아니라 **같은 Spark/Presto 엔진을 통제력-운영부담 축에서 다르게 감싼 것**이다. EMR은 풀 컨트롤(클러스터), Glue는 서버리스 ETL(DPU), Athena는 SQL(스캔 과금)이다. EMR 비용 최적화의 핵심은 Task 노드를 Spot으로 채우고 Instance Fleets로 중단에 강건하게 만드는 것, 그리고 데이터를 S3(EMRFS)에 두어 transient cluster로 운영하는 것이다. MWAA(Airflow DAG)와 Step Functions(ASL)는 이 파이프라인을 오케스트레이션하는데, 전자는 이식성·복잡 로직·상시 자산, 후자는 서버리스·AWS 통합·운영 0으로 갈린다.
+EMR·Glue·Athena는 경쟁 서비스가 아니라 **같은 Spark/Presto 엔진을 통제력-운영부담 축에서 다르게 감싼 것**이다. EMR은 풀 컨트롤(클러스터), Glue는 서버리스 ETL(DPU), Athena는 SQL(스캔 과금)이다. EMR 비용 최적화는 Task 노드를 Spot으로 채우고 Instance Fleets로 중단에 강건하게 만드는 것, 그리고 데이터를 S3(EMRFS)에 두어 transient cluster로 운영하는 것이다. MWAA(Airflow DAG)와 Step Functions(ASL)는 이 파이프라인을 오케스트레이션하는데, 전자는 이식성·복잡 로직·상시 자산, 후자는 서버리스·AWS 통합·운영 0으로 갈린다.
 
-SAP 시험의 단골 매핑: (1) "EMR Task 비용 최적 + Spot 중단 강건" → Instance Fleets + Spot 다중 타입, (2) "잡 끝나면 클러스터 제거 비용 절감" → S3(EMRFS) transient cluster, (3) "클러스터 없이 가변 Spark" → EMR Serverless, (4) "가벼운 ETL + 클러스터 운영 회피" → Glue, (5) "증분만 처리" → Glue Job Bookmark, (6) "Python DAG·이식성" → MWAA, (7) "서버리스·AWS 통합·운영 0·상시 비용 회피" → Step Functions, (8) "SQL 애드혹" → Athena. 다음 day에서는 데이터 거버넌스(Lake Formation)와 실시간 스트림(MSK)을 본다.
+SAP 시험 매핑: (1) "EMR Task 비용 최적 + Spot 중단 강건" → Instance Fleets + Spot 다중 타입, (2) "잡 끝나면 클러스터 제거 비용 절감" → S3(EMRFS) transient cluster, (3) "클러스터 없이 가변 Spark" → EMR Serverless, (4) "가벼운 ETL + 클러스터 운영 회피" → Glue, (5) "증분만 처리" → Glue Job Bookmark, (6) "Python DAG·이식성" → MWAA, (7) "서버리스·AWS 통합·운영 0·상시 비용 회피" → Step Functions, (8) "SQL 애드혹" → Athena. 다음 day에서는 데이터 거버넌스(Lake Formation)와 실시간 스트림(MSK)을 본다.
 
 ---
 

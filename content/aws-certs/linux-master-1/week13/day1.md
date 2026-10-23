@@ -5,7 +5,7 @@
 - 네트워크 설정은 항상 **일시(`ip`, `ifconfig`)와 영구(`ifcfg-*`, `nmcli con`)** 두 층이다. "재부팅 후에도 유지"면 무조건 영구 설정이다.
 - `ip` 명령 문법: `ip addr add 주소/프리픽스 dev 인터페이스`, `ip route add default via 게이트웨이`. `default`가 곧 기본 경로다.
 - `nmcli con modify`로 고쳐도 **`nmcli con up`으로 재활성화해야** 적용된다 — 저장과 적용은 별개다.
-- `ifcfg-*`의 단골 빈칸은 **`BOOTPROTO`**(static/dhcp)와 **`ONBOOT=yes`**. ONBOOT가 no면 재부팅 후 안 올라온다.
+- `ifcfg-*`에서 빈칸이 되기 쉬운 항목은 **`BOOTPROTO`**(static/dhcp)와 **`ONBOOT=yes`**. ONBOOT가 no면 재부팅 후 안 올라온다.
 - 진단은 계층별로 끊는다: `ip a` → `ping 게이트웨이` → `ping 8.8.8.8` → `dig`. 끊긴 지점이 곧 원인이다.
 - `ping 8.8.8.8`은 되는데 도메인이 안 되면 **DNS 문제**, 게이트웨이는 되는데 외부가 안 되면 **기본 경로 누락**이다.
 
@@ -22,7 +22,7 @@
 - 영구로 남기려면 설정 파일(`/etc/sysconfig/network-scripts/ifcfg-*`)이나 `nmcli connection` 프로파일에 써야 한다.
 - 시험에서 "재부팅 후에도 유지되게"라는 조건이 보이면 무조건 **영구 설정(파일 또는 nmcli con)**을 떠올려야 한다.
 
-> 💡 **핵심 한 줄**: `ip`/`ifconfig`는 임시, `ifcfg-*`/`nmcli con`은 영구. "재부팅 후 유지" = 영구 설정.
+**핵심 한 줄**: `ip`/`ifconfig`는 임시, `ifcfg-*`/`nmcli con`은 영구. "재부팅 후 유지" = 영구 설정.
 
 ## ip 명령으로 주소·링크·라우팅 다루기
 
@@ -49,9 +49,9 @@ ip route del 10.0.0.0/24                      # 경로 삭제
 ```
 
 - `/24`처럼 **CIDR 프리픽스로 넷마스크를 함께 지정**하는 게 `ip` 명령의 문법이다.
-- `192.168.10.5 netmask 255.255.255.0` 같은 옛 `ifconfig` 문법과 헷갈리지 말자.
+- `192.168.10.5 netmask 255.255.255.0` 같은 옛 `ifconfig` 문법과 혼동하기 쉽다.
 
-> 🔍 **암기 포인트**: `ip addr add 주소/프리픽스 dev 인터페이스`, `ip route add default via 게이트웨이`. `default`가 곧 0.0.0.0/0(기본 경로)이다.
+**암기 포인트**: `ip addr add 주소/프리픽스 dev 인터페이스`, `ip route add default via 게이트웨이`. `default`가 곧 0.0.0.0/0(기본 경로)이다.
 
 ### ifconfig·route (구버전, 여전히 출제)
 
@@ -103,7 +103,7 @@ nmcli connection down myeth
 ## ifcfg-* 파일 직접 작성 (RHEL/CentOS 영구 설정)
 
 - `nmcli`가 결국 만들어 내는, 혹은 손으로 쓰는 파일이 `/etc/sysconfig/network-scripts/ifcfg-<인터페이스>`다.
-- 작업형에서 **빈칸으로 자주 출제**되므로 지시어를 정확히 외워야 한다.
+- 작업형에서 **빈칸으로 출제**될 수 있으므로 지시어를 정확히 외워야 한다.
 
 ```bash
 # /etc/sysconfig/network-scripts/ifcfg-eth0  (정적 IP 예시)
@@ -119,7 +119,7 @@ DNS1=8.8.8.8
 DNS2=1.1.1.1
 ```
 
-| 지시어 | 의미 | 자주 틀리는 점 |
+| 지시어 | 의미 | 틀리기 쉬운 점 |
 |--------|------|---------------|
 | `BOOTPROTO` | 주소 할당 방식 | static/none=정적, **dhcp**=자동 |
 | `ONBOOT` | 부팅 시 활성화 | **yes**여야 부팅 후 살아남음 |
@@ -131,7 +131,7 @@ DNS2=1.1.1.1
 - DHCP로 받을 때는 `BOOTPROTO=dhcp`로 하고 `IPADDR`/`NETMASK`/`GATEWAY`를 비운다.
 - 수정 후 적용은 `nmcli con reload` → `nmcli con up eth0`, 또는 `systemctl restart NetworkManager`다.
 
-> 💡 **단골 빈칸**: `BOOTPROTO=____`(static/dhcp), `ONBOOT=____`(yes). `ONBOOT=no`면 재부팅 후 인터페이스가 안 올라온다 — 시험의 전형적 함정.
+**빈칸 예**: `BOOTPROTO=____`(static/dhcp), `ONBOOT=____`(yes). `ONBOOT=no`면 재부팅 후 인터페이스가 안 올라온다 — 시험의 전형적 함정.
 
 ### DNS 영구 설정: /etc/resolv.conf
 
@@ -172,15 +172,15 @@ traceroute 8.8.8.8                 # 홉 단위 경로 추적
 ```
 
 - `ss` 옵션은 `-t`(TCP) `-u`(UDP) `-l`(listen) `-n`(숫자) `-p`(프로세스)를 조합한다.
-- `ss -tuln`이 "지금 무슨 포트가 열려 있나"를 보는 단골 명령이다.
+- `ss -tuln`이 "지금 무슨 포트가 열려 있나"를 보는 대표 명령이다.
 
-> 🔍 **진단 사다리**: ① `ip a`로 IP 있나 → ② `ping 게이트웨이`로 L2/L3 → ③ `ping 8.8.8.8`로 외부 도달 → ④ `ping 도메인`/`dig`로 DNS. 어디서 끊기는지가 곧 원인이다.
+**진단 사다리**: ① `ip a`로 IP 있나 → ② `ping 게이트웨이`로 L2/L3 → ③ `ping 8.8.8.8`로 외부 도달 → ④ `ping 도메인`/`dig`로 DNS. 어디서 끊기는지가 곧 원인이다.
 
 > ⚠️ **헷갈림**: `ping 8.8.8.8`은 되는데 `ping google.com`이 안 되면 **DNS(resolv.conf) 문제**다. IP 도달은 정상이고 이름해석만 실패한 상황.
 
 ## 진단 시나리오: "인터넷이 안 돼요"
 
-- 작업형 사고 흐름을 한 번에 정리하자.
+- 작업형 사고 흐름을 한 번에 정리한다.
 
 | 증상 | 의심 | 확인 명령 | 조치 |
 |------|------|----------|------|
@@ -190,11 +190,11 @@ traceroute 8.8.8.8                 # 홉 단위 경로 추적
 | IP는 되나 도메인 실패 | DNS | `dig`, `cat /etc/resolv.conf` | nameserver 수정 |
 | 포트 접속 안 됨 | 서비스/방화벽 | `ss -tuln` | 서비스 기동·포트 개방 |
 
-> 📚 **시험 빈출**: "ping 게이트웨이 성공 + ping 8.8.8.8 실패" → 기본 라우팅(default route) 누락. `ip route add default via <gw>`.
+**문제 예**: "ping 게이트웨이 성공 + ping 8.8.8.8 실패" → 기본 라우팅(default route) 누락. `ip route add default via <gw>`.
 
 ## 호스트명과 이름 해석 우선순위
 
-- 네트워크 작업형에서 호스트명 설정과 로컬 이름 해석도 단골이다.
+- 네트워크 작업형에서 호스트명 설정과 로컬 이름 해석도 다룬다.
 
 ```bash
 hostnamectl                          # 현재 호스트명·OS 정보 조회
@@ -218,9 +218,9 @@ hosts:  files dns         # files(/etc/hosts) 먼저, 그다음 dns
 192.168.10.50   web01.example.com web01
 ```
 
-> 🔍 **해석 우선순위**: `/etc/hosts`(files) > DNS(`/etc/resolv.conf`)가 기본. `/etc/hosts`에 잘못된 매핑이 있으면 DNS가 정상이어도 엉뚱한 IP로 간다 — 진단 시 함께 확인.
+**해석 우선순위**: `/etc/hosts`(files) > DNS(`/etc/resolv.conf`)가 기본. `/etc/hosts`에 잘못된 매핑이 있으면 DNS가 정상이어도 엉뚱한 IP로 간다 — 진단 시 함께 확인.
 
-> 📚 **DHCP 클라이언트 갱신**: 임대 주소를 다시 받으려면 `dhclient -r`(반납) 후 `dhclient`(재요청), 또는 `nmcli con down/up`. NetworkManager 환경에선 nmcli가 더 일관적이다.
+**DHCP 클라이언트 갱신**: 임대 주소를 다시 받으려면 `dhclient -r`(반납) 후 `dhclient`(재요청), 또는 `nmcli con down/up`. NetworkManager 환경에선 nmcli가 더 일관적이다.
 
 ## 직접 쳐보기
 

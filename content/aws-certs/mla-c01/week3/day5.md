@@ -36,7 +36,7 @@
 | 관리 | Feature Store | 특성 중복 제작, training/serving skew |
 | 점검 | Clarify + 품질 기법 | 편향, 불균형, 누수 |
 
-> 💡 **관련 이론**: 데이터 과학자가 시간의 70~80%를 특성 공학에 쓴다는 통계는 과장이 아니다. Google의 "Hidden Technical Debt in Machine Learning Systems" 논문이 강조하듯, 실제 ML 시스템에서 모델 코드는 작은 부분이고 데이터 수집·검증·특성 추출·일관성 유지가 대부분의 복잡도와 실패 원인을 차지한다. 이번 주 세 도구는 모두 그 데이터 측 복잡도를 길들이는 장치다.
+데이터 과학자가 시간의 70~80%를 특성 공학에 쓴다는 통계는 과장이 아니다. Google의 "Hidden Technical Debt in Machine Learning Systems" 논문이 강조하듯, 실제 ML 시스템에서 모델 코드는 작은 부분이고 데이터 수집·검증·특성 추출·일관성 유지가 대부분의 복잡도와 실패 원인을 차지한다. 이번 주 세 도구는 모두 그 데이터 측 복잡도를 길들이는 장치다.
 
 ## 특성 공학 4대 변환 (Day 1)
 
@@ -49,7 +49,7 @@ raw 데이터를 모델이 읽을 숫자로 바꾸는 핵심 변환을 다시 �
 | 결측치 처리 | 값이 비어 있음 | 평균/중앙값/최빈값 대치, KNN, 삭제 | 이상치 있으면 중앙값, 결측이 의미면 플래그 |
 | 이상치 처리 | 극단값 존재 | IQR·Z-score 탐지, 클리핑, 로그 변환 | 탐지 대상이면 절대 제거 금지 |
 
-판별의 핵심은 알고리즘 의존성이다. 거리·경사 기반(KNN, 신경망, 선형회귀)은 스케일링이 필수지만 트리 기반(XGBoost, Random Forest)은 스케일에 둔감하다.
+판별 기준은 알고리즘 의존성이다. 거리·경사 기반(KNN, 신경망, 선형회귀)은 스케일링이 필수지만 트리 기반(XGBoost, Random Forest)은 스케일에 둔감하다.
 
 ```python
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -77,7 +77,7 @@ X_test_t = preprocessor.transform(X_test)   # test엔 fit 안 함 — 누수 방
 | 분석 | Data Quality 리포트, Quick Model, Target Leakage, Bias, 다중공선성 |
 | 내보내기 | Processing Job, Feature Store, Pipelines, 코드, S3 |
 
-> 🔍 **더 깊이**: Data Wrangler의 가치는 "시각적 탐색"에서 끝나지 않고 그 변환을 **재현 가능한 코드로 내보낸다**는 데 있다. 노트북에서 손으로 짠 변환은 추론 시 재현하기 어렵지만, Data Wrangler flow는 Processing Job으로 내보내 학습·추론에서 같은 변환을 보장한다. 탐색과 운영을 잇는 다리다.
+Data Wrangler의 가치는 "시각적 탐색"에서 끝나지 않고 그 변환을 **재현 가능한 코드로 내보낸다**는 데 있다. 노트북에서 손으로 짠 변환은 추론 시 재현하기 어렵지만, Data Wrangler flow는 Processing Job으로 내보내 학습·추론에서 같은 변환을 보장한다. 탐색과 운영을 잇는 다리다.
 
 > ⚠️ **함정**: 화면에서 보는 데이터는 **샘플**이다. 전체 데이터에 적용하려면 flow를 Processing Job으로 export해 실행해야 한다.
 
@@ -119,7 +119,7 @@ record = featurestore_runtime.get_record(
 | 데이터 분할 | 층화(불균형), 시간 분할(시계열) | 리샘플링·변환보다 먼저 |
 | 최종 평가 | test 셋 | **단 한 번만** |
 
-> 💡 **관련 이론**: 이번 주를 관통하는 한 단어는 "누수(leakage)"다. fit을 test에 하면 변환 누수, 분할 전 리샘플링하면 합성 누수, 미래 값을 특성에 쓰면 미래 누수, Feature Store의 Event Time을 무시하면 look-ahead 누수다. 모든 누수는 "평가는 좋은데 배포는 실패"라는 같은 증상을 낳는다. 특성 공학·데이터 품질의 절반은 누수를 막는 일이다.
+이번 주를 관통하는 한 단어는 "누수(leakage)"다. fit을 test에 하면 변환 누수, 분할 전 리샘플링하면 합성 누수, 미래 값을 특성에 쓰면 미래 누수, Feature Store의 Event Time을 무시하면 look-ahead 누수다. 모든 누수는 "평가는 좋은데 배포는 실패"라는 같은 증상을 낳는다. 특성 공학·데이터 품질의 절반은 누수를 막는 일이다.
 
 ## 누수 유형 총정리
 
@@ -188,7 +188,7 @@ record = featurestore_runtime.get_record(
 [신뢰할 수 있는 학습 데이터셋]
 ```
 
-> ⚠️ **함정**: 이 그림에서 어느 한 화살표라도 손코딩으로 끊기면 재현성과 일관성이 함께 무너진다. "노트북에서만 잘 되는 전처리"는 배포 시점에 반드시 문제를 일으킨다. 시험에서 "재현 가능하게", "학습과 추론이 동일하게"라는 문구가 보이면 export·Feature Store·Pipelines 방향이 정답이다.
+이 그림에서 어느 한 화살표라도 손코딩으로 끊기면 재현성과 일관성이 함께 무너진다. "노트북에서만 잘 되는 전처리"는 배포 시점에 반드시 문제를 일으킨다. 시험에서 "재현 가능하게", "학습과 추론이 동일하게"라는 문구가 보이면 export·Feature Store·Pipelines 방향이 정답이다.
 
 ## Week 3을 한 문장으로
 

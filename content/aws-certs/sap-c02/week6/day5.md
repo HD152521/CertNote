@@ -2,7 +2,7 @@
 
 Week 6은 클라우드 마이그레이션의 전 과정을 다뤘다. 의사결정 프레임워크인 7R(Day 31), 서버 이전의 표준 도구 MGN과 DRS(Day 32), DB 이전의 과학 DMS+SCT(Day 33), 생태계를 완성하는 가속 도구들(Day 34). 이 네 일자의 내용이 SAP-C02 도메인 3(마이그레이션·현대화, 20%)의 핵심이다.
 
-도메인 3에서 자주 나오는 패턴은 "긴 시나리오에 여러 도구가 등장하고, 각 도구의 역할을 정확히 구분해야 정답을 고를 수 있는" 유형이다. 오늘은 각 개념의 핵심을 결정 트리로 압축하고, 복합 시나리오 12문항으로 실전 감각을 완성한다.
+도메인 3의 전형적인 패턴은 "긴 시나리오에 여러 도구가 등장하고, 각 도구의 역할을 정확히 구분해야 정답을 고를 수 있는" 유형이다. 오늘은 각 개념의 핵심을 결정 트리로 압축하고, 복합 시나리오 12문항으로 실전 감각을 완성한다.
 
 ## 7R 결정 트리: 시나리오에서 R을 고르는 법
 
@@ -61,7 +61,7 @@ Week 6은 클라우드 마이그레이션의 전 과정을 다뤘다. 의사결�
 | 대용량 데이터 오프라인 이전 | **Snow Family** | 인터넷 대역폭 부족 시 |
 | 파일/오브젝트 스토리지 이전 | **DataSync** | NFS, SMB, S3, EFS |
 
-> 💡 **관련 이론**: 마이그레이션에서 데이터 정합성(Consistency)은 선택이 아니라 필수다. ACID(Atomicity, Consistency, Isolation, Durability) 특성을 가진 OLTP DB에서는 마이그레이션 중 열린 트랜잭션이 어떻게 처리되는지가 핵심이다. DMS는 DB 엔진의 트랜잭션 로그(Oracle Redo Log, MySQL binlog, SQL Server CDC, PostgreSQL WAL)를 읽어 트랜잭션 단위로 변경을 캡처한다. MGN의 블록 레벨 복제는 트랜잭션 경계를 인식하지 못하기 때문에 DB는 DMS로 이전하는 것이 Best Practice다.
+마이그레이션에서 데이터 정합성(Consistency)은 선택이 아니라 필수다. ACID(Atomicity, Consistency, Isolation, Durability) 특성을 가진 OLTP DB에서는 마이그레이션 중 열린 트랜잭션이 어떻게 처리되는지가 핵심이다. DMS는 DB 엔진의 트랜잭션 로그(Oracle Redo Log, MySQL binlog, SQL Server CDC, PostgreSQL WAL)를 읽어 트랜잭션 단위로 변경을 캡처한다. MGN의 블록 레벨 복제는 트랜잭션 경계를 인식하지 못하기 때문에 DB는 DMS로 이전하는 것이 Best Practice다.
 
 ## 동종 vs 이종 마이그레이션 결정 기준
 
@@ -146,7 +146,7 @@ A2C는 Java, .NET(IIS) 기반 앱을 분석해 Docker 이미지와 ECS/EKS 배�
    └── CodePipeline + CodeBuild 파이프라인 CloudFormation 생성
 ```
 
-> 📚 **사례**: A2C의 한계. 국내 한 SI 회사가 레거시 Java EE 앱(JBoss 4.2 기반)을 A2C로 컨테이너화했을 때, JBoss 4.2의 특정 JMX 설정과 EJB 원격 호출이 컨테이너 환경에서 동작하지 않았다. A2C는 앱을 "그대로" 컨테이너에 넣는 것이지, 컨테이너 친화적으로 만들어주지는 않는다. 서버 상태를 파일에 저장하는 레거시 앱, JVM 힙 설정이 컨테이너 메모리와 충돌하는 케이스가 대표적 A2C 이후 추가 작업 대상이다.
+A2C의 한계. 국내 한 SI 회사가 레거시 Java EE 앱(JBoss 4.2 기반)을 A2C로 컨테이너화했을 때, JBoss 4.2의 특정 JMX 설정과 EJB 원격 호출이 컨테이너 환경에서 동작하지 않았다. A2C는 앱을 "그대로" 컨테이너에 넣는 것이지, 컨테이너 친화적으로 만들어주지는 않는다. 서버 상태를 파일에 저장하는 레거시 앱, JVM 힙 설정이 컨테이너 메모리와 충돌하는 케이스가 대표적 A2C 이후 추가 작업 대상이다.
 
 ## EKS Anywhere vs AWS Outposts: 하이브리드 쿠버네티스
 

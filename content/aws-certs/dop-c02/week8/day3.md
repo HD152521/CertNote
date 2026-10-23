@@ -2,7 +2,7 @@
 
 CloudFormation을 6개월 정도 쓰다 보면 누구나 같은 벽에 부딪힌다. "Slack 채널을 자동 생성하고 싶은데 `AWS::Slack::Channel`이 없네", "GitHub Repo에 webhook을 등록하고 싶은데 CFN 리소스가 없네", "신규 출시된 AWS 서비스가 아직 CFN에서 지원 안 되네." 이 빈틈을 메우려고 2015년에 도입된 게 **Custom Resource**고, 그 위에 2021년 출시된 게 변경 사전 검증 메커니즘인 **CloudFormation Hooks**다. 두 도구는 표면적으로 다른 일을 하지만 본질적으로 같은 철학을 공유한다 — **CloudFormation을 폐쇄된 리소스 집합에서 확장 가능한 워크플로 엔진으로 만든다**는 것.
 
-오늘은 Custom Resource Lambda의 ResponseURL이 왜 그렇게 설계됐는지, PhysicalResourceId가 라이프사이클의 키가 되는 이유, CDK Provider 프레임워크가 isComplete 패턴으로 장시간 작업을 어떻게 다루는지, CloudFormation Hooks가 OPA/Gatekeeper와 어떻게 닮았는지, 그리고 Change Set이 CI/CD에서 manual approval과 어떻게 결합되는지를 본다. 시험에서는 Custom Resource의 "응답 안 보내면 1시간 timeout" 같은 디테일이 자주 출제되므로 내부 동작을 정확히 알아둘 가치가 있다.
+오늘은 Custom Resource Lambda의 ResponseURL이 왜 그렇게 설계됐는지, PhysicalResourceId가 라이프사이클의 키가 되는 이유, CDK Provider 프레임워크가 isComplete 패턴으로 장시간 작업을 어떻게 다루는지, CloudFormation Hooks가 OPA/Gatekeeper와 어떻게 닮았는지, 그리고 Change Set이 CI/CD에서 manual approval과 어떻게 결합되는지를 본다. 시험에서는 Custom Resource의 "응답 안 보내면 1시간 timeout" 같은 디테일이 출제되므로 내부 동작을 정확히 알아둘 가치가 있다.
 
 ## CloudFormation의 한계 — 왜 확장이 필요한가
 
@@ -74,7 +74,7 @@ def handler(event, context):
     urllib.request.urlopen(req)
 ```
 
-> ⚠️ **함정**: Lambda가 어떤 예외에도 응답을 보내지 못하면 CFN은 **기본 1시간**(설정으로 최대 3일까지) 동안 대기한다. 그 동안 Stack 전체가 `CREATE_IN_PROGRESS` 또는 `UPDATE_IN_PROGRESS` 상태로 묶이고, 다른 변경도 막힌다. 그래서 모든 Custom Resource Lambda는 **반드시 try/finally로 응답을 보장**해야 한다. AWS 공식 가이드는 `cfn-response` Python 모듈 또는 `aws-cdk-lib`의 Provider framework 사용을 권장하는데, 둘 다 응답 누락을 방지하는 boilerplate를 추상화한다.
+> ⚠️ **함정**: Lambda가 어떤 예외에도 응답을 보내지 못하면 CFN은 **기본 1시간**(설정으로 최대 3일까지) 동안 대기한다. 그 동안 스택 전체가 `CREATE_IN_PROGRESS` 또는 `UPDATE_IN_PROGRESS` 상태로 묶이고, 다른 변경도 막힌다. 그래서 모든 Custom Resource Lambda는 **반드시 try/finally로 응답을 보장**해야 한다. AWS 공식 가이드는 `cfn-response` Python 모듈 또는 `aws-cdk-lib`의 Provider framework 사용을 권장하는데, 둘 다 응답 누락을 방지하는 boilerplate를 추상화한다.
 
 ## PhysicalResourceId — 리소스 동일성의 키
 
@@ -101,9 +101,9 @@ def handler(event, context):
         physical_id = event['PhysicalResourceId']  # 이전 ID 그대로 사용
 ```
 
-> 🔍 **더 깊이**: PhysicalResourceId 변경 시 CFN의 Delete 호출은 **이전 ID를 사용한다**. 즉 Update의 응답에 PhysicalResourceId="new"를 넣으면 CFN이 "old"로 Delete를 호출한다 — 그래서 Lambda의 Delete 분기는 항상 `event['PhysicalResourceId']`로 들어온 값을 자원 키로 봐야 한다. 새로 생성한 PhysicalResourceId가 아니라. 이 비대칭이 처음엔 직관적이지 않아 자주 사고의 원인이 된다.
+> PhysicalResourceId 변경 시 CFN의 Delete 호출은 **이전 ID를 사용한다**. 즉 Update의 응답에 PhysicalResourceId="new"를 넣으면 CFN이 "old"로 Delete를 호출한다 — 그래서 Lambda의 Delete 분기는 항상 `event['PhysicalResourceId']`로 들어온 값을 자원 키로 봐야 한다. 새로 생성한 PhysicalResourceId가 아니라. 이 비대칭이 처음엔 직관적이지 않아 자주 사고의 원인이 된다.
 
-> 📚 **사례**: 2020년 한 핀테크가 Custom Resource로 외부 결제 게이트웨이 API key를 생성/회전했는데, Update 시 새 API key 생성 후 PhysicalResourceId에 새 키 ID를 반환하도록 짰다. 결과는 매 Stack 업데이트마다 이전 API key가 자동 삭제되면서 진행 중인 결제 트랜잭션이 401로 실패했다. 패치 후 PhysicalResourceId를 외부 자원 이름(예: `payment-gateway-prod`)으로 고정하고 key rotation은 내부 로직으로만 처리하는 식으로 변경.
+> 2020년 한 핀테크가 Custom Resource로 외부 결제 게이트웨이 API key를 생성/회전했는데, Update 시 새 API key 생성 후 PhysicalResourceId에 새 키 ID를 반환하도록 짰다. 결과는 매 스택 업데이트마다 이전 API key가 자동 삭제되면서 진행 중인 결제 트랜잭션이 401로 실패했다. 패치 후 PhysicalResourceId를 외부 자원 이름(예: `payment-gateway-prod`)으로 고정하고 key rotation은 내부 로직으로만 처리하는 식으로 변경.
 
 ## CDK Provider Framework — isComplete 패턴
 
@@ -137,7 +137,7 @@ new CustomResource(this, 'EcrReplica', {
 
 내부적으로 Provider framework는 Step Functions를 자동 생성한다. onEvent가 작업을 시작하면 Step Functions가 isComplete를 주기적으로 호출하면서 polling하고, 완료되면 CFN ResponseURL에 결과를 PUT한다. 운영자는 Step Functions를 직접 만들지 않고 두 Lambda만 작성하면 된다 — **15분 Lambda 한계를 회피하는 가장 깔끔한 패턴**.
 
-> 🎯 **시나리오**: "Custom Resource로 RDS 스냅샷을 다른 리전으로 복사하고 완료될 때까지 Stack을 대기시켜야 한다. 스냅샷 복사는 1시간 이상 걸릴 수 있다." — 답은 CDK Provider framework + isComplete 패턴. onEvent에서 `copy-db-snapshot` 호출하고, isComplete에서 `describe-db-snapshots`로 상태 확인. queryInterval=2분, totalTimeout=2시간. 직접 작성하면 Lambda 15분 한계로 불가능하고, Step Functions를 수동 작성하면 복잡도 증가.
+> 🎯 **시나리오**: "Custom Resource로 RDS 스냅샷을 다른 리전으로 복사하고 완료될 때까지 스택을 대기시켜야 한다. 스냅샷 복사는 1시간 이상 걸릴 수 있다." — 답은 CDK Provider framework + isComplete 패턴. onEvent에서 `copy-db-snapshot` 호출하고, isComplete에서 `describe-db-snapshots`로 상태 확인. queryInterval=2분, totalTimeout=2시간. 직접 작성하면 Lambda 15분 한계로 불가능하고, Step Functions를 수동 작성하면 복잡도 증가.
 
 ## CloudFormation Hooks — Proactive Guardrail
 
@@ -170,9 +170,9 @@ def handler(session, request, callback_context):
 
 Hooks는 Control Tower의 Proactive Guardrails 백엔드로 쓰이며, 같은 메커니즘을 자체적으로 등록해 회사별 정책을 강제할 수 있다. 예를 들면 "모든 RDS는 multi-AZ 강제", "모든 S3는 BlockPublicAccess 강제", "모든 EC2는 IMDSv2만 강제" 같은 규칙을 변경 발생 전에 차단한다.
 
-> 💡 **관련 이론**: Hooks는 Kubernetes의 ValidatingAdmissionWebhook과 같은 패턴이다. K8s가 리소스 생성/업데이트 요청을 받으면 admission controller가 webhook을 호출해 평가하고, 거부되면 요청 자체가 실패한다. OPA(Open Policy Agent) + Gatekeeper가 K8s 생태계의 표준 정책 엔진인 것처럼, CFN Hooks는 AWS 생태계의 변경 사전 검증 표준이다. NIST SP 800-204C의 "policy-as-code with admission control"의 권고 구현.
+> Hooks는 Kubernetes의 ValidatingAdmissionWebhook과 같은 패턴이다. K8s가 리소스 생성/업데이트 요청을 받으면 admission controller가 webhook을 호출해 평가하고, 거부되면 요청 자체가 실패한다. OPA(Open Policy Agent) + Gatekeeper가 K8s 생태계의 표준 정책 엔진인 것처럼, CFN Hooks는 AWS 생태계의 변경 사전 검증 표준이다. NIST SP 800-204C의 "policy-as-code with admission control"의 권고 구현.
 
-> 🔍 **더 깊이**: Hooks는 등록 시 `INVOCATION_POINT`로 어디서 호출될지 결정한다 — `PRE_PROVISION`(자원 생성 전), `PRE_UPDATE`(업데이트 전), `PRE_DELETE`(삭제 전). 각 invocation point에 모드(WARN/FAIL)도 지정 가능 — WARN은 로그만 남기고 진행, FAIL은 차단. 도입 초기엔 WARN으로 베이스라인 측정 후 FAIL로 전환하는 게 표준 패턴(graceful rollout).
+> Hooks는 등록 시 `INVOCATION_POINT`로 어디서 호출될지 결정한다 — `PRE_PROVISION`(자원 생성 전), `PRE_UPDATE`(업데이트 전), `PRE_DELETE`(삭제 전). 각 invocation point에 모드(WARN/FAIL)도 지정 가능 — WARN은 로그만 남기고 진행, FAIL은 차단. 도입 초기엔 WARN으로 베이스라인 측정 후 FAIL로 전환하는 게 표준 패턴(graceful rollout).
 
 ## Change Set + CI/CD — 안전 변경의 표준
 
@@ -244,7 +244,7 @@ Stages:
 
 Pipeline이 Change Set만 만들고 멈춘다 → 운영자가 CFN 콘솔에서 검토 → Approval 누르면 실행. **모든 prod 변경에 사람의 한 단계 확인을 강제하는 거버넌스 패턴**이다. SOC 2, PCI-DSS에서 요구하는 "change management" 통제 요건을 자동화로 충족한다.
 
-> 📚 **사례**: 2021년 한 SaaS가 Change Set 검토 없이 직접 `aws cloudformation deploy`로 prod에 변경을 푸시했다가 RDS Engine을 잘못 수정해 6시간 다운타임을 겪었다. Engine 변경은 Replacement=True를 유발하지만, deploy 명령은 이 정보를 보여주지 않고 바로 실행한다. 이후 회사 표준이 "prod CFN 변경은 무조건 Change Set + Manual Approval"로 바뀌었고, 사고가 같은 패턴으로 재발한 적이 없다.
+> 2021년 한 SaaS가 Change Set 검토 없이 직접 `aws cloudformation deploy`로 prod에 변경을 푸시했다가 RDS Engine을 잘못 수정해 6시간 다운타임을 겪었다. Engine 변경은 Replacement=True를 유발하지만, deploy 명령은 이 정보를 보여주지 않고 바로 실행한다. 이후 회사 표준이 "prod CFN 변경은 무조건 Change Set + Manual Approval"로 바뀌었고, 사고가 같은 패턴으로 재발한 적이 없다.
 
 ## Drift Detection의 진짜 의미와 한계
 
@@ -263,7 +263,7 @@ Pipeline이 Change Set만 만들고 멈춘다 → 운영자가 CFN 콘솔에서 
 
 > 🎯 **시나리오**: "Custom Resource로 만든 Slack 채널의 권한을 누가 직접 Slack에서 바꿨는지 추적하려면?" — 답은 Slack Audit Log Streaming(Enterprise Grid 기능)을 S3 또는 SIEM으로 보내고, EventBridge Rule이나 별도 워크플로로 평가. CFN Drift Detection은 외부 시스템 변경을 못 잡으므로 이 시나리오에서 무의미.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 다섯 가지다. 첫째, **Custom Resource는 CFN의 라이프사이클 엔진 확장**이고 K8s CRD + Operator와 같은 추상화 패턴이다. 둘째, **ResponseURL과 PhysicalResourceId는 비동기성과 동일성**이라는 두 개념을 다룬다 — 응답 안 보내면 1시간 timeout, PhysicalResourceId 바꾸면 자동 재생성. 셋째, **CDK Provider framework의 isComplete 패턴**은 Step Functions를 자동 생성해 15분 Lambda 한계를 우아하게 회피한다. 넷째, **Hooks는 변경 사전 검증(proactive)**으로 Config Rules(reactive)와 보완하며, K8s ValidatingAdmissionWebhook 패턴의 AWS 버전이다. 다섯째, **Change Set + Manual Approval은 SOC 2/PCI 거버넌스 표준**으로 prod 변경의 사람 한 단계 확인을 강제한다.
 

@@ -1,6 +1,6 @@
 # Day 1 - RDS: 관계형 데이터베이스를 클라우드에서 운영한다는 것
 
-관계형 데이터베이스는 1970년 에드거 코드(Edgar F. Codd)가 IBM 연구소에서 발표한 "A Relational Model of Data for Large Shared Data Banks"(CACM, 1970)에서 시작됐다. 그로부터 50여 년이 지난 지금도 OLTP 워크로드의 절대 다수는 여전히 관계형 모델 위에 돌아간다. AWS RDS는 그 오래된 기술을 클라우드에서 운영하는 부담을 크게 줄이는 서비스다. "관리형"이라는 말이 구체적으로 무엇을 뜻하는지, 그리고 Multi-AZ와 Read Replica가 왜 다른 목적으로 만들어졌는지를 깊이 파고들면 SAA-C03 시험의 DB 문제 절반은 자동으로 풀린다.
+관계형 데이터베이스는 1970년 에드거 코드(Edgar F. Codd)가 IBM 연구소에서 발표한 "A Relational Model of Data for Large Shared Data Banks"(CACM, 1970)에서 시작됐다. 그로부터 50여 년이 지난 지금도 OLTP 워크로드의 절대 다수는 여전히 관계형 모델 위에 돌아간다. AWS RDS는 그 오래된 기술을 클라우드에서 운영하는 부담을 크게 줄이는 서비스다. "관리형"이라는 말이 구체적으로 무엇을 뜻하는지, 그리고 Multi-AZ와 Read Replica가 왜 다른 목적으로 만들어졌는지를 깊이 파고들면 SAA-C03 시험의 DB 문제 상당수가 쉽게 풀린다.
 
 ## RDS가 해결하는 문제 — 자체 운영 DB의 무게
 
@@ -8,7 +8,7 @@ EC2에 MySQL을 직접 설치해서 운영해본 사람은 알 것이다. OS 패
 
 RDS가 관리해주는 것: 하드웨어 프로비저닝, 데이터베이스 소프트웨어 설치 및 패치, 자동 백업, 포인트-인-타임 복구, 모니터링 대시보드, Multi-AZ 복제. RDS가 관리하지 않는 것: 쿼리 최적화, 스키마 설계, 인덱스 전략, 애플리케이션 레벨 암호화, IAM 정책 설정. 공동 책임 모델이 여기서도 작동한다.
 
-> 💡 **관련 이론**: RDS는 NIST SP 800-145가 정의하는 PaaS(Platform as a Service)에 해당한다. 고객은 "플랫폼 위의 애플리케이션"만 책임지고, 플랫폼(DB 엔진, OS, 네트워크 인프라)은 AWS 몫이다. EC2 위의 자체 MySQL은 IaaS로, 게스트 OS 패치부터 모든 것이 고객 책임이다. 이 차이가 시험에서 "누구의 책임인가" 문제의 핵심 분기점이 된다.
+RDS는 NIST SP 800-145가 정의하는 PaaS(Platform as a Service)에 해당한다. 고객은 "플랫폼 위의 애플리케이션"만 책임지고, 플랫폼(DB 엔진, OS, 네트워크 인프라)은 AWS 몫이다. EC2 위의 자체 MySQL은 IaaS로, 게스트 OS 패치부터 모든 것이 고객 책임이다. 이 차이가 시험에서 "누구의 책임인가" 문제의 핵심 분기점이 된다.
 
 ## 6개 엔진과 선택 기준
 
@@ -49,11 +49,11 @@ MySQL RDS Multi-AZ는 Amazon의 독점 복제 기술(MySQL의 binlog replication
 
 페일오버가 발생하면 두 가지 일이 일어난다. 첫째, RDS가 Standby를 새로운 Primary로 승격한다. 둘째, DNS CNAME 레코드가 새 Primary의 IP를 가리키도록 변경된다. 이 때문에 애플리케이션이 RDS Endpoint(DNS 이름)를 사용하면 DNS TTL 후에 새 Primary로 자동으로 연결이 전환된다. 만약 IP 주소를 하드코딩하면 페일오버 후에도 죽은 Primary에 계속 연결 시도하는 재앙이 발생한다.
 
-> 💡 **관련 이론**: 이 설계는 분산 시스템의 동기 복제 패턴인 "2PC(Two-Phase Commit)"의 변형과 유사하다. Primary가 Prepare를 하고 Standby의 Acknowledge를 받아야 Commit이 완료되는 구조다. 이 구조는 Consistency를 강력하게 보장하지만 Standby가 느리거나 AZ 간 네트워크가 끊어지면 Primary의 쓰기 지연이 늘어나는 trade-off가 있다. AWS는 AZ 간 전용 저지연 광섬유(보통 1-2ms RTT)로 이 trade-off를 최소화한다. 이것이 Multi-AZ의 RPO가 사실상 0인 이유다 — Standby ACK 없이는 Primary 커밋이 불가능하기 때문이다.
+이 설계는 분산 시스템의 동기 복제 패턴인 "2PC(Two-Phase Commit)"의 변형과 유사하다. Primary가 Prepare를 하고 Standby의 Acknowledge를 받아야 Commit이 완료되는 구조다. 이 구조는 Consistency를 강력하게 보장하지만 Standby가 느리거나 AZ 간 네트워크가 끊어지면 Primary의 쓰기 지연이 늘어나는 trade-off가 있다. AWS는 AZ 간 전용 저지연 광섬유(보통 1-2ms RTT)로 이 trade-off를 최소화한다. 이것이 Multi-AZ의 RPO가 사실상 0인 이유다 — Standby ACK 없이는 Primary 커밋이 불가능하기 때문이다.
 
-> 🔍 **더 깊이**: RDS Multi-AZ Cluster는 2021년 말 출시된 신규 옵션이다. 기존 Multi-AZ(1 Primary + 1 Standby)와 달리, 1 Writer + 2 Readable Standby로 구성된다. Readable Standby는 읽기 트래픽을 처리할 수 있어서 기존 Multi-AZ보다 읽기 성능이 개선되고, 페일오버 시간도 35초 이내로 단축된다. SAA-C03 시험에서는 이 Multi-AZ Cluster를 "Multi-AZ"와 구분해서 출제하는 경우가 있으니 주의해야 한다. 시험 지문에 "readable standby" 또는 "multi-az cluster"가 명시되지 않으면 일반 1+1 구조를 가정하는 것이 안전하다.
+RDS Multi-AZ Cluster는 2021년 말 출시된 신규 옵션이다. 기존 Multi-AZ(1 Primary + 1 Standby)와 달리, 1 Writer + 2 Readable Standby로 구성된다. Readable Standby는 읽기 트래픽을 처리할 수 있어서 기존 Multi-AZ보다 읽기 성능이 개선되고, 페일오버 시간도 35초 이내로 단축된다. SAA-C03 시험에서는 이 Multi-AZ Cluster를 "Multi-AZ"와 구분해서 출제하는 경우가 있으니 주의해야 한다. 시험 지문에 "readable standby" 또는 "multi-az cluster"가 명시되지 않으면 일반 1+1 구조를 가정하는 것이 안전하다.
 
-> 📚 **사례**: 2013년 10월, Dropbox는 Amazon RDS에서 자체 MySQL 클러스터(나중에 Edgestore라고 부른 것)로 마이그레이션했다. 이유 중 하나가 RDS Multi-AZ의 페일오버 동안 발생하는 연결 끊김 시간이 SLA를 맞추기 어려웠다는 것이었다. 이처럼 금융권이나 글로벌 서비스의 경우 RDS Multi-AZ의 60-120초 페일오버가 허용 불가한 수준일 수 있으며, 그런 경우 Aurora(페일오버 30초 이내)나 Aurora Global Database로 넘어가야 한다.
+**사례**: 2013년 10월, Dropbox는 Amazon RDS에서 자체 MySQL 클러스터(나중에 Edgestore라고 부른 것)로 마이그레이션했다. 이유 중 하나가 RDS Multi-AZ의 페일오버 동안 발생하는 연결 끊김 시간이 SLA를 맞추기 어려웠다는 것이었다. 이처럼 금융권이나 글로벌 서비스의 경우 RDS Multi-AZ의 60-120초 페일오버가 허용 불가한 수준일 수 있으며, 그런 경우 Aurora(페일오버 30초 이내)나 Aurora Global Database로 넘어가야 한다.
 
 ## Read Replica — 비동기 복제가 만드는 가능성과 한계
 
@@ -87,9 +87,7 @@ Cross-Region Read Replica는 재해 복구(DR)의 중요한 도구다. 서울 �
 | RTO | 60-120초 (DNS TTL 포함) | 수 분 ~ 수십 분 (수동) |
 | RPO | 거의 0 (동기 복제) | 수 초 ~ 수십 초 (Lag에 따라) |
 
-> 💡 **관련 이론**: Read Replica의 Replication Lag 문제는 분산 시스템의 "Eventual Consistency" 개념과 직결된다. 에릭 브루어(Eric Brewer)의 CAP 정리에서 Read Replica를 포함한 아키텍처는 P(Partition Tolerance)를 유지하면서 A(Availability)를 높이지만, C(Consistency)를 희생한다. 즉, Replica에서 읽는 데이터가 Primary의 최신 상태와 다를 수 있다. "항상 최신 데이터가 필요한 읽기"는 Primary에서 해야 하고, "약간의 지연이 허용되는 읽기(예: 리포트, 통계, 사용자 프로필 조회)"는 Replica에서 해도 된다.
-
-> ⚠️ **함정**: "읽기 트래픽을 Multi-AZ Standby로 분산할 수 있다" — 이것은 일반 Multi-AZ에서는 불가능하다. Multi-AZ Cluster(2021 출시) 에서만 Readable Standby가 가능하다. 시험에서 이 차이를 모르고 Multi-AZ를 Read Replica처럼 사용하려는 함정 선택지가 자주 나온다.
+> ⚠️ **함정**: "읽기 트래픽을 Multi-AZ Standby로 분산할 수 있다" — 이것은 일반 Multi-AZ에서는 불가능하다. Multi-AZ Cluster(2021 출시) 에서만 Readable Standby가 가능하다. 시험에서 이 차이를 모르고 Multi-AZ를 Read Replica처럼 사용하려는 함정 선택지로 나온다.
 
 ## RDS Proxy — Lambda 시대가 만든 문제의 해결책
 
@@ -114,9 +112,9 @@ RDS Proxy는 이 문제를 연결 풀링으로 해결한다. Lambda 수천 개�
 [RDS Primary]  ──────── Standby (Multi-AZ)
 ```
 
-> 🔍 **더 깊이**: RDS Proxy의 내부는 HAProxy와 유사한 역할을 한다. 프로토콜 수준(MySQL 프로토콜, PostgreSQL 프로토콜)에서 파싱을 하기 때문에 쿼리 수준의 라우팅도 가능하다. 예를 들어 SELECT 문은 Read Replica로, 나머지는 Primary로 보내는 설정을 할 수 있다. 이 기능은 애플리케이션 코드 변경 없이 읽기/쓰기를 자동으로 분리한다. 단, 이 기능은 Aurora 클러스터에서 Proxy와 함께 쓸 때 더 효과적이다.
+RDS Proxy의 내부는 HAProxy와 유사한 역할을 한다. 프로토콜 수준(MySQL 프로토콜, PostgreSQL 프로토콜)에서 파싱을 하기 때문에 쿼리 수준의 라우팅도 가능하다. 예를 들어 SELECT 문은 Read Replica로, 나머지는 Primary로 보내는 설정을 할 수 있다. 이 기능은 애플리케이션 코드 변경 없이 읽기/쓰기를 자동으로 분리한다. 단, 이 기능은 Aurora 클러스터에서 Proxy와 함께 쓸 때 더 효과적이다.
 
-> 📚 **사례**: 2020년 핀테크 스타트업 Mable(미국 도매 식료품 플랫폼)은 Lambda 기반 서버리스 아키텍처에서 피크 타임에 RDS max_connections를 계속 초과하는 문제를 겪었다. RDS Proxy 도입 후 DB 연결 수가 95% 감소했으며, "Too many connections" 오류가 사라졌다고 보고했다. (AWS 공식 고객 사례)
+**사례**: 2020년 핀테크 스타트업 Mable(미국 도매 식료품 플랫폼)은 Lambda 기반 서버리스 아키텍처에서 피크 타임에 RDS max_connections를 계속 초과하는 문제를 겪었다. RDS Proxy 도입 후 DB 연결 수가 95% 감소했으며, "Too many connections" 오류가 사라졌다고 보고했다. (AWS 공식 고객 사례)
 
 ## 백업 전략 — PITR과 스냅샷의 차이
 
@@ -130,7 +128,7 @@ Multi-AZ에서 스냅샷은 Standby에서 수행된다. 따라서 Primary 성능
 
 복구 시 주의사항: 스냅샷 복원이든 PITR이든 항상 새 인스턴스를 만들고, 애플리케이션이 새 엔드포인트로 연결을 전환해야 한다. "제자리 복구(in-place restore)"는 없다.
 
-> 💡 **관련 이론**: PITR은 데이터베이스 이론의 "Redo Log"와 "Write-Ahead Logging(WAL)"을 활용한다. WAL은 데이터 변경 전에 로그를 먼저 쓰는 기법으로, InnoDB(MySQL)의 redo log와 PostgreSQL의 WAL이 대표적이다. RDS는 이 로그를 S3에 주기적으로 업로드하고, 복구 시 마지막 스냅샷에서 시작해서 필요한 시점까지 redo log를 재실행한다. 이 원리가 "5분 단위" 복구가 가능한 이유다 — 5분마다 로그 파일을 업로드하기 때문이다.
+PITR은 데이터베이스 이론의 "Redo Log"와 "Write-Ahead Logging(WAL)"을 활용한다. WAL은 데이터 변경 전에 로그를 먼저 쓰는 기법으로, InnoDB(MySQL)의 redo log와 PostgreSQL의 WAL이 대표적이다. RDS는 이 로그를 S3에 주기적으로 업로드하고, 복구 시 마지막 스냅샷에서 시작해서 필요한 시점까지 redo log를 재실행한다. 이 원리가 "5분 단위" 복구가 가능한 이유다 — 5분마다 로그 파일을 업로드하기 때문이다.
 
 ## 보안 — 레이어별 보호
 
@@ -144,7 +142,7 @@ Read Replica의 암호화: Primary가 암호화됐으면 같은 리전의 Replic
 
 **IAM DB 인증**: MySQL과 PostgreSQL에서 지원. IAM 역할에서 임시 토큰을 생성해서 DB 인증에 사용. 비밀번호 없이 인증 가능. 연결이 15분마다 새 토큰으로 갱신된다.
 
-> ⚠️ **함정**: "RDS 인스턴스에 SSH로 접속해서 MySQL 설정 파일을 직접 편집할 수 있다" — 불가능하다. RDS는 관리형 서비스로 게스트 OS 접근이 없다. DB 엔진 파라미터는 Parameter Group을 통해 변경한다. 이것이 EC2 위의 자체 MySQL과 RDS의 가장 큰 운영 차이다.
+**함정**: "RDS 인스턴스에 SSH로 접속해서 MySQL 설정 파일을 직접 편집할 수 있다" — 불가능하다. RDS는 관리형 서비스로 게스트 OS 접근이 없다. DB 엔진 파라미터는 Parameter Group을 통해 변경한다. 이것이 EC2 위의 자체 MySQL과 RDS의 가장 큰 운영 차이다.
 
 다른 클라우드와 비교하면 설계 철학의 차이가 보인다:
 
@@ -157,7 +155,7 @@ Read Replica의 암호화: Primary가 암호화됐으면 같은 리전의 Replic
 | 관리형 Proxy | RDS Proxy | Cloud SQL Proxy | 내장(SQL Database는 없음) |
 | 암호화 | KMS (생성 시) | CMEK | TDE (Azure Key Vault) |
 
-> 🔍 **더 깊이**: RDS의 스토리지는 Amazon EBS(gp2, gp3, io1, io2)를 기반으로 한다. gp3는 gp2 대비 20% 저렴하면서도 기본 3000 IOPS를 제공하며, IOPS를 별도로 구매할 수 있어서 대부분의 새 워크로드는 gp3가 권장된다. io1/io2는 최대 100,000 IOPS가 필요한 매우 I/O 집약적인 워크로드용이다. Storage Auto Scaling을 활성화하면 70% 임계값을 넘었을 때 스토리지가 자동으로 확장된다. 단, 스토리지는 늘릴 수만 있고 줄일 수 없다 — 줄이려면 새 인스턴스로 마이그레이션해야 한다.
+RDS의 스토리지는 Amazon EBS(gp2, gp3, io1, io2)를 기반으로 한다. gp3는 gp2 대비 20% 저렴하면서도 기본 3000 IOPS를 제공하며, IOPS를 별도로 구매할 수 있어서 대부분의 새 워크로드는 gp3가 권장된다. io1/io2는 최대 100,000 IOPS가 필요한 매우 I/O 집약적인 워크로드용이다. Storage Auto Scaling을 활성화하면 70% 임계값을 넘었을 때 스토리지가 자동으로 확장된다. 단, 스토리지는 늘릴 수만 있고 줄일 수 없다 — 줄이려면 새 인스턴스로 마이그레이션해야 한다.
 
 ## CLI로 Multi-AZ와 Read Replica 실제로 만들기
 
@@ -217,9 +215,9 @@ aws cloudwatch get-metric-statistics \
   --statistics Average
 ```
 
-## 정리하며
+## 정리
 
-RDS는 "관계형 DB를 운영하는 부담을 줄이는 서비스"라는 단순한 설명으로 시작했지만, 그 안에 동기 복제와 비동기 복제의 분산 시스템 트레이드오프, 연결 풀링이 필요한 이유, WAL 기반 PITR의 원리까지 깊은 설계 결정들이 담겨 있다. Multi-AZ는 Standby가 트래픽을 처리하지 않는 대신 동기 복제로 데이터 손실 없는 자동 페일오버를 보장한다. Read Replica는 비동기 복제로 읽기 트래픽을 분산하고 Cross-Region DR의 기반을 만든다. 이 두 메커니즘은 다른 목적을 위한 다른 도구이며, 시험에서 가장 자주 혼동을 노리는 포인트다.
+RDS는 "관계형 DB를 운영하는 부담을 줄이는 서비스"라는 단순한 설명으로 시작했지만, 그 안에 동기 복제와 비동기 복제의 분산 시스템 트레이드오프, 연결 풀링이 필요한 이유, WAL 기반 PITR의 원리까지 깊은 설계 결정들이 담겨 있다. Multi-AZ는 Standby가 트래픽을 처리하지 않는 대신 동기 복제로 데이터 손실 없는 자동 페일오버를 보장한다. Read Replica는 비동기 복제로 읽기 트래픽을 분산하고 Cross-Region DR의 기반을 만든다. 이 두 메커니즘은 다른 목적을 위한 다른 도구이며, 시험이 혼동을 노리는 포인트다.
 
 다음 날은 RDS의 기반 위에 서지만 완전히 다른 스토리지 아키텍처를 선택한 Aurora를 다룬다. Aurora가 왜 6개 사본을 쓰는지, 그 Quorum 쓰기가 무엇인지를 이해하면 "Aurora가 왜 Multi-AZ RDS보다 페일오버가 빠른지"도 자연스럽게 따라온다.
 

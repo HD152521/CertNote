@@ -75,7 +75,7 @@ aws ssm put-parameter \
 - `ExpirationNotification`: 만료 N일 전 EventBridge → SNS → 담당자 알림
 - `NoChangeNotification`: N일 동안 값이 변경되지 않으면 알림 (잊혀진 파라미터 감지)
 
-> 💡 **관련 이론**: Parameter Store의 계층 구조와 Policy 개념은 Linux 파일 시스템의 inode 구조와 유사하다. 파일(파라미터)에 메타데이터(Policy)를 부착하고, 디렉토리(경로 계층)로 논리적 그룹화를 한다. POSIX 표준의 "모든 것은 파일이다" 철학처럼, AWS는 "모든 설정은 Parameter"라는 철학으로 운영 설정을 통일한다. 버전 관리(모든 변경 이력 자동 보존)는 Git의 commit 히스토리와 동일한 개념으로 롤백이 가능하다.
+> 💡 **관련 이론**: Parameter Store의 계층 구조와 Policy 개념은 Linux 파일 시스템의 inode 구조와 유사하다. 파일(파라미터)에 메타데이터(Policy)를 부착하고, 디렉터리(경로 계층)로 논리적 그룹화를 한다. POSIX 표준의 "모든 것은 파일이다" 철학처럼, AWS는 "모든 설정은 Parameter"라는 철학으로 운영 설정을 통일한다. 버전 관리(모든 변경 이력 자동 보존)는 Git의 commit 히스토리와 동일한 개념으로 롤백이 가능하다.
 
 **여러 서비스와의 통합:**
 
@@ -142,7 +142,7 @@ db_password = config['password']  # 코드에 하드코딩 없이
                       └── 아니오 → Parameter Store Standard (무료)
 ```
 
-> 📚 **사례**: 스타트업 D사가 초기에 Parameter Store SecureString에 RDS 패스워드를 저장했다. 3개월 후 보안 감사에서 "DB 패스워드 90일 회전" 요구사항이 나왔다. Parameter Store는 자동 회전 기능이 없어, 매 90일마다 수동으로 패스워드를 변경하고 Parameter를 업데이트해야 했다. 결국 Secrets Manager로 마이그레이션했고, 이후 RDS와 Lambda 통합으로 자동 회전이 구성됐다. 초기 아키텍처 선택이 중요한 이유다.
+> 📚 **사례**: 가상의 사례로, 스타트업 D사가 초기에 Parameter Store SecureString에 RDS 패스워드를 저장했다. 3개월 후 보안 감사에서 "DB 패스워드 90일 회전" 요구사항이 나왔다. Parameter Store는 자동 회전 기능이 없어, 매 90일마다 수동으로 패스워드를 변경하고 Parameter를 업데이트해야 했다. 결국 Secrets Manager로 마이그레이션했고, 이후 RDS와 Lambda 통합으로 자동 회전이 구성됐다. 초기 아키텍처 선택이 중요한 이유다.
 
 ## Session Manager: 포트 22 없이 인스턴스 접속
 
@@ -263,7 +263,7 @@ aws ssm update-document \
   --document-version '$LATEST'
 ```
 
-> 🔍 **더 깊이**: Session Manager의 `runAsEnabled`와 `runAsDefaultUser`는 중요한 보안 기능이다. 활성화하면 모든 세션이 `ssm-user`(또는 지정한 사용자)로 실행된다. IAM User와 Linux OS User를 매핑할 수 있는 `RunAsUser` 태그도 지원한다. IAM User가 `SessionManagerRunAs` 태그에 `ec2-user`를 설정하면, 그 사용자의 세션은 `ec2-user`로 실행된다. 이로써 누가(IAM User) 어떤 OS 사용자로 접속했는지 세션 로그에서 추적 가능해진다.
+Session Manager의 `runAsEnabled`와 `runAsDefaultUser`는 중요한 보안 기능이다. 활성화하면 모든 세션이 `ssm-user`(또는 지정한 사용자)로 실행된다. IAM User와 Linux OS User를 매핑할 수 있는 `RunAsUser` 태그도 지원한다. IAM User가 `SessionManagerRunAs` 태그에 `ec2-user`를 설정하면, 그 사용자의 세션은 `ec2-user`로 실행된다. 이로써 누가(IAM User) 어떤 OS 사용자로 접속했는지 세션 로그에서 추적 가능해진다.
 
 **사설 VPC에서 Session Manager:**
 
@@ -486,7 +486,7 @@ def handler(event, context):
         return legacy_checkout_handler(event)
 ```
 
-> 💡 **관련 이론**: AppConfig의 점진 배포 전략은 Netflix가 2012년 설계한 "Simian Army"의 "Canary Analysis" 개념과 같다. 전체 배포 전에 일부 인스턴스/사용자에게 먼저 적용하고, 메트릭을 관찰한 뒤 확대하는 방식이다. 구글의 SRE 책(2016)에서도 같은 패턴을 "gradual rollout"이라 부르며 설정 변경의 표준 방식으로 권장한다. AppConfig가 이 산업 모범 사례를 관리형 서비스로 제공하는 것이다.
+AppConfig의 점진 배포 전략은 Netflix가 2012년 설계한 "Simian Army"의 "Canary Analysis" 개념과 같다. 전체 배포 전에 일부 인스턴스/사용자에게 먼저 적용하고, 메트릭을 관찰한 뒤 확대하는 방식이다. 구글의 SRE 책(2016)에서도 같은 패턴을 "gradual rollout"이라 부르며 설정 변경의 표준 방식으로 권장한다. AppConfig가 이 산업 모범 사례를 관리형 서비스로 제공하는 것이다.
 
 ## Change Manager: 승인 워크플로 포함 변경 제어
 

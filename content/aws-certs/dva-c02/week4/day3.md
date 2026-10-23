@@ -17,7 +17,7 @@ Authorization: AWS4-HMAC-SHA256
 
 API Gateway는 이 헤더를 받아 IAM에 서명 검증을 요청한다. 검증이 통과되면 요청자의 IAM 자격을 확인하고, `execute-api:Invoke` 권한이 있는지 평가한다. 서명에는 날짜가 포함되어 있어 **5분 이상 지난 요청은 자동 거부**된다 — 리플레이 공격 방지다.
 
-> 💡 **관련 이론**: SigV4는 RFC 2104(HMAC)와 NIST FIPS 180-4(SHA-256)를 구현한다. 서명 범위에 날짜·리전·서비스를 포함시켜 서명 값이 다른 서비스나 리전에서 재사용되는 것을 막는 "scoped signing" 방식이다. 동일한 개념이 Azure의 Shared Key Authentication, GCP의 HMAC Signed URL에도 적용된다.
+SigV4는 서명 범위에 날짜·리전·서비스를 포함시켜 서명 값이 다른 서비스나 리전에서 재사용되는 것을 막는다(scoped signing).
 
 IAM 인증은 **AWS 내부 서비스 간 통신**에 최적화되어 있다. Lambda 함수가 다른 AWS 계정의 API Gateway를 호출하거나, EC2 인스턴스의 Instance Role로 API를 호출하는 시나리오가 전형적이다. 반면 외부 사용자(모바일 앱, 서드파티 파트너)에게 SigV4를 강요하는 것은 비현실적이다 — AWS SDK 없이 SigV4를 직접 구현하는 것은 매우 번거롭다.
 
@@ -29,7 +29,7 @@ IAM 인증은 **AWS 내부 서비스 간 통신**에 최적화되어 있다. Lam
 
 Lambda Authorizer는 API Gateway가 백엔드를 호출하기 전, 별도의 Lambda 함수를 실행해 IAM 정책을 동적으로 생성하는 방식이다. 이를 통해 OAuth, JWT, API 토큰, LDAP 등 AWS가 기본 제공하지 않는 모든 인증 방식을 구현할 수 있다.
 
-Lambda Authorizer는 두 가지 타입이 있으며, 이 차이가 시험에서 자주 출제된다.
+Lambda Authorizer는 두 가지 타입이 있으며, 이 차이를 묻는 문제가 시험 범위에 든다.
 
 **TOKEN 타입**: `Authorization` 헤더(또는 설정한 헤더) 하나만 Lambda에 전달된다. 단순 Bearer 토큰 검증에 적합하다.
 
@@ -92,7 +92,7 @@ def lambda_handler(event, context):
         raise Exception("Unauthorized")  # 또는 Deny 정책 반환
 ```
 
-> 🔍 **더 깊이**: Lambda Authorizer가 `raise Exception("Unauthorized")`를 던지면 API Gateway는 **403 Forbidden**을 반환한다. 이는 일반적인 HTTP 관례(401 Unauthorized)와 다르다. 실제 401을 반환하려면 Gateway Response를 커스터마이즈해야 한다. 또한 Deny 정책을 반환하면 API Gateway는 내부적으로 해당 정책을 IAM 엔진에 평가해 403을 반환한다 — 이 과정에서 Authorizer Lambda의 실행 비용은 이미 발생한다.
+Lambda Authorizer가 `raise Exception("Unauthorized")`를 던지면 API Gateway는 **403 Forbidden**을 반환한다. 이는 일반적인 HTTP 관례(401 Unauthorized)와 다르다. 실제 401을 반환하려면 Gateway Response를 커스터마이즈해야 한다. 또한 Deny 정책을 반환하면 API Gateway는 내부적으로 해당 정책을 IAM 엔진에 평가해 403을 반환한다 — 이 과정에서 Authorizer Lambda의 실행 비용은 이미 발생한다.
 
 **Authorizer 결과 캐싱**은 비용 최적화의 핵심이다. API Gateway는 캐시 키(TOKEN 타입: 토큰 값, REQUEST 타입: 지정한 파라미터 조합)를 기준으로 IAM 정책 응답을 메모리에 보관한다. TTL은 0~3600초(기본 300초)로 설정 가능하다.
 
@@ -124,7 +124,7 @@ https://cognito-idp.{region}.amazonaws.com/{userPoolId}/.well-known/jwks.json
 5. 토큰 만료 여부(`exp` 클레임) 확인
 6. 모두 통과 → 백엔드 Lambda 호출
 
-> 💡 **관련 이론**: JWT(JSON Web Token, RFC 7519)는 Header.Payload.Signature 세 부분으로 구성된다. Cognito는 RS256(RSA + SHA-256) 알고리즘으로 서명한다. API Gateway가 JWKS에서 가져온 공개 키로 서명을 검증하기 때문에 Cognito 서버에 토큰 검증 요청을 보내지 않아도 된다 — 이를 "오프라인 검증(offline verification)"이라 한다.
+JWT(JSON Web Token, RFC 7519)는 Header.Payload.Signature 세 부분으로 구성된다. Cognito는 RS256(RSA + SHA-256) 알고리즘으로 서명한다. API Gateway가 JWKS에서 가져온 공개 키로 서명을 검증하기 때문에 Cognito 서버에 토큰 검증 요청을 보내지 않아도 된다 — 이를 "오프라인 검증(offline verification)"이라 한다.
 
 **Cognito Authorizer vs Lambda Authorizer 선택 기준**:
 
@@ -202,7 +202,7 @@ Resource Policy는 API Gateway에 IAM 기반 접근 제어 정책을 직접 부�
 }
 ```
 
-> 🔍 **더 깊이**: Private API(VPC Endpoint 전용)를 만들 때, Resource Policy에서 VPC Endpoint를 Allow해야 할 뿐만 아니라 **VPC Endpoint의 "Enable Private DNS" 설정**도 확인해야 한다. Private DNS가 활성화되면 `{api-id}.execute-api.{region}.amazonaws.com`이 VPC 내에서 Endpoint의 ENI IP로 해석된다. 비활성화 상태에서는 Endpoint DNS 이름을 직접 써야 한다.
+Private API(VPC Endpoint 전용)를 만들 때, Resource Policy에서 VPC Endpoint를 Allow해야 할 뿐만 아니라 **VPC Endpoint의 "Enable Private DNS" 설정**도 확인해야 한다. Private DNS가 활성화되면 `{api-id}.execute-api.{region}.amazonaws.com`이 VPC 내에서 Endpoint의 ENI IP로 해석된다. 비활성화 상태에서는 Endpoint DNS 이름을 직접 써야 한다.
 
 ---
 
@@ -222,8 +222,6 @@ aws apigateway create-domain-name \
   --regional-certificate-arn arn:aws:acm:...
 ```
 
-> 📚 **사례**: 2021년 금융권 오픈 API 생태계(오픈뱅킹)에서 핀테크 서비스와 은행 API 간 연결에 mTLS가 의무화됐다. 한국인터넷진흥원(KISA) 가이드라인은 API 게이트웨이 레벨의 mTLS를 권장한다. AWS API Gateway의 mTLS는 이 요건을 충족하는 관리형 솔루션으로 사용된다.
-
 **WAF(Web Application Firewall)** 통합은 REST API(Edge-Optimized, Regional)에서만 직접 지원된다. HTTP API는 WAF Web ACL을 직접 연결할 수 없고, 앞단에 CloudFront를 두어 CloudFront에 WAF를 붙이는 우회 방식을 써야 한다.
 
 | WAF 규칙 유형 | 용도 |
@@ -238,7 +236,7 @@ aws apigateway create-domain-name \
 
 ## API 키와 사용량 플랜: 식별과 할당량의 메커니즘
 
-API 키(API Key)는 `x-api-key` 헤더로 전달되는 문자열 식별자다. 공식 AWS 문서는 API 키를 "인증(authentication) 수단이 아닌 사용량 추적 수단"으로 명시한다. 이 구분이 시험에서 매우 자주 출제된다.
+API 키(API Key)는 `x-api-key` 헤더로 전달되는 문자열 식별자다. 공식 AWS 문서는 API 키를 "인증(authentication) 수단이 아닌 사용량 추적 수단"으로 명시한다. 이 구분은 오답 보기로 쓰이기 쉽다.
 
 API 키가 인증 수단이 아닌 이유: API 키는 암호화되지 않은 상태로 헤더에 전달된다. HTTPS를 사용해도 중간자 공격이나 로그 노출로 유출될 수 있다. API 키가 유출되면 즉시 폐기하고 재발급해야 한다 — 반면 IAM 자격증명은 세밀한 권한 제어와 자동 교체를 지원한다.
 
@@ -257,7 +255,7 @@ API 키가 인증 수단이 아닌 이유: API 키는 암호화되지 않은 상
 }
 ```
 
-> 💡 **관련 이론**: 사용량 플랜의 스로틀링은 Token Bucket 알고리즘으로 구현된다. 버킷 용량은 `burstLimit`, 충전 속도는 `rateLimit`이다. 버킷이 비어있으면 429를 반환한다. 이는 트래픽이 순간적으로 급등해도 `burstLimit`까지는 흡수할 수 있게 해주는 "burst tolerance" 개념이다. RFC 6585(Additional HTTP Status Codes)는 429 상태 코드를 정의하며, `Retry-After` 헤더로 재시도 시간을 알릴 수 있다.
+사용량 플랜의 스로틀링도 Token Bucket 방식이다. 버킷 용량이 `burstLimit`, 충전 속도가 `rateLimit`이고, 버킷이 비어 있으면 429를 반환한다. 순간적인 트래픽 급등은 `burstLimit`까지 흡수된다.
 
 ```bash
 # API 키 생성 및 사용량 플랜 연결 전체 흐름
@@ -322,7 +320,7 @@ GET /products?category=electronics&page=1
 
 **2. 콘솔/API에서 전체 캐시 플러시**: CloudFormation 배포나 새 스테이지 배포 후 수동으로 캐시를 비울 수 있다.
 
-> ⚠️ **함정**: 캐시는 스테이지 레벨에서 활성화하지만 실제 응답이 캐시되는 것은 **GET 요청**만이다. POST, PUT, DELETE는 캐시되지 않는다. 또한 Lambda Authorizer의 결과 캐시와 API 응답 캐시는 완전히 독립적이다 — 하나를 무효화해도 다른 하나에 영향이 없다.
+캐시는 스테이지 레벨에서 활성화하지만 실제 응답이 캐시되는 것은 **GET 요청**만이다. POST, PUT, DELETE는 캐시되지 않는다. 또한 Lambda Authorizer의 결과 캐시와 API 응답 캐시는 완전히 독립적이다 — 하나를 무효화해도 다른 하나에 영향이 없다.
 
 ---
 
@@ -352,7 +350,7 @@ API Gateway의 스로틀링은 네 개의 독립적인 레이어로 구성된다
 | ap-northeast-2 (서울) | 10,000 | 5,000 |
 | ap-southeast-1 | 10,000 | 5,000 |
 
-> 💡 **관련 이론**: API Gateway의 스로틀링은 **Token Bucket** 알고리즘의 변형이다. 버킷은 `burstLimit`만큼의 토큰을 담을 수 있고, `rateLimit`의 속도로 토큰이 채워진다. 요청이 들어올 때마다 토큰 하나를 소비한다. 버킷이 비어있으면 429가 반환된다. 이와 달리 **Leaky Bucket**은 일정한 속도로 요청을 처리하고 큐가 가득 차면 거부한다. Token Bucket은 버스트를 허용하고 Leaky Bucket은 허용하지 않는다는 점이 핵심 차이다.
+API Gateway의 스로틀링은 **Token Bucket** 알고리즘의 변형이다. 버킷은 `burstLimit`만큼의 토큰을 담을 수 있고, `rateLimit`의 속도로 토큰이 채워진다. 요청이 들어올 때마다 토큰 하나를 소비한다. 버킷이 비어있으면 429가 반환된다. 이와 달리 **Leaky Bucket**은 일정한 속도로 요청을 처리하고 큐가 가득 차면 거부한다. Token Bucket은 버스트를 허용하고 Leaky Bucket은 허용하지 않는다는 점이 핵심 차이다.
 
 ---
 
@@ -392,13 +390,13 @@ API Gateway는 두 종류의 로그를 CloudWatch Logs에 기록한다:
 | `CacheHitCount` | 캐시에서 응답한 요청 수 | 캐시 효율성 |
 | `CacheMissCount` | 캐시에 없어 백엔드를 호출한 요청 수 | 캐시 효율성 |
 
-> 🔍 **더 깊이**: `Latency - IntegrationLatency`의 차이값이 크다면 API Gateway 내부 처리(인증, 매핑, 캐싱 조회 등)가 병목이라는 의미다. 반대로 차이가 작고 `Latency` 자체가 높다면 백엔드(Lambda, DynamoDB 등)가 느린 것이다. 이 두 메트릭의 비교는 트러블슈팅의 첫 번째 단계다. X-Ray를 활성화하면 각 세그먼트별 시간을 더 세밀하게 분석할 수 있다.
+`Latency - IntegrationLatency`의 차이값이 크다면 API Gateway 내부 처리(인증, 매핑, 캐싱 조회 등)가 병목이라는 의미다. 반대로 차이가 작고 `Latency` 자체가 높다면 백엔드(Lambda, DynamoDB 등)가 느린 것이다. 이 두 메트릭의 비교는 트러블슈팅의 첫 번째 단계다. X-Ray를 활성화하면 각 세그먼트별 시간을 더 세밀하게 분석할 수 있다.
 
 **504 Gateway Timeout**은 통합 타임아웃(최대 29초) 초과 시 발생한다. 이는 클라이언트에게 `5XXError`로 잡힌다. Lambda 함수가 29초 내에 응답하지 않으면 무조건 504가 발생한다. Lambda의 최대 실행 시간(15분)과 무관하게 API Gateway 타임아웃이 먼저 끊는다.
 
 ---
 
-## 모든 인증 방식 비교: 시험 빈출 매핑 테이블
+## 모든 인증 방식 비교: 시험 대비 매핑 테이블
 
 | 인증 방식 | 작동 원리 | 주요 사용 사례 | REST API | HTTP API |
 |----------|-----------|---------------|----------|----------|
@@ -412,7 +410,7 @@ API Gateway는 두 종류의 로그를 CloudWatch Logs에 기록한다:
 | mTLS | 클라이언트 인증서 | IoT, B2B | ✅ | ✅ |
 | WAF Web ACL | 패턴 기반 차단 | 웹 공격 방어 | ✅ | ❌(CloudFront 경유) |
 
-> 📚 **사례**: 2022년 트위터 API 사태(유료화 전환)에서 많은 서비스가 API 키 기반 접근 통제의 취약점을 경험했다. 단순 API 키만으로 접근 제어를 하다가 키가 유출되면 모든 사용량 한도를 소진당하는 사례가 있었다. AWS API Gateway 모범 사례는 API 키 + Lambda Authorizer를 조합해 "식별(API Key) + 인증(Authorizer)"을 분리하는 것이다.
+API 키만으로 접근을 통제하면 키가 유출됐을 때 사용량 한도를 소진당할 수 있다. 모범 사례는 API 키(식별)와 Lambda Authorizer(인증)를 분리해 함께 쓰는 것이다.
 
 ---
 

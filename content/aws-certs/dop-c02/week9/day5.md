@@ -24,7 +24,7 @@ Week 9의 도구들을 네 개의 축으로 정리하면 전체 그림이 잡힌
 
 ## 시나리오로 보는 도구 선택의 갈림길
 
-시험에서 가장 자주 헷갈리는 건 "비슷해 보이는 두 도구 중 무엇인가"다. 핵심 갈림길 몇 개를 미리 정리해두면 시나리오가 쉬워진다.
+시험에서 헷갈리기 쉬운 것은 "비슷해 보이는 두 도구 중 무엇인가"다. 핵심 갈림길 몇 개를 미리 정리해두면 시나리오가 쉬워진다.
 
 **Run Command vs State Manager.** 둘 다 인스턴스에 명령을 실행한다. 차이는 시간성이다. Run Command는 **일회성** — 지금 한 번 친다. State Manager는 **정기·지속** — "항상 이 상태여야 한다"를 주기적으로 강제하고 컴플라이언스를 리포팅한다. "지금 긴급 패치 한 번"이면 Run Command, "모든 인스턴스에 CloudWatch Agent가 항상 깔려 있어야 함"이면 State Manager.
 
@@ -32,7 +32,7 @@ Week 9의 도구들을 네 개의 축으로 정리하면 전체 그림이 잡힌
 
 **Secrets Manager vs Parameter Store(SecureString).** 둘 다 비밀을 암호화 저장한다. 차이는 회전이다. 회전이 필요하면 Secrets Manager, 정적이면 Parameter Store. 그리고 비용이 10배 차이다.
 
-**Session Manager vs Bastion.** 둘 다 프라이빗 인스턴스 접속 수단이다. Bastion은 22번 포트를 인터넷에 노출하고 항상 켜둬야 하는 공격 표적이다. Session Manager는 포트 없이 IAM 신원으로 접속하고 세션 전체를 감사한다. 새 설계에서 Bastion을 고르는 건 거의 항상 오답이다.
+**Session Manager vs Bastion.** 둘 다 프라이빗 인스턴스 접속 수단이다. Bastion은 22번 포트를 인터넷에 노출하고 항상 켜둬야 하는 공격 표적이다. Session Manager는 포트 없이 IAM 신원으로 접속하고 세션 전체를 감사한다. 새 설계에서 Bastion을 고르는 것은 오답이다.
 
 **StackSets vs 개별 스택.** 멀티 계정·멀티 리전에 같은 인프라를 배포할 때, 계정마다 스택을 따로 만드는 건 운영 부담이 폭증한다. StackSets는 하나의 템플릿을 여러 계정·리전에 한 번에 배포하고, Organizations와 통합(Service-managed)하면 OU 단위로 다루며 새 계정 자동 배포(Auto-deployment)까지 된다. "조직 차원", "모든 멤버 계정", "새 계정 추가 시 자동"이 단서면 StackSets다.
 
@@ -46,15 +46,15 @@ Week 9의 도구들을 네 개의 축으로 정리하면 전체 그림이 잡힌
 | Session Manager vs Bastion | 포트 노출·감사 | "SSH 키 제거", "세션 감사", "Bastion 없이" → Session Manager |
 | StackSets vs 개별 스택 | 멀티 계정·자동 배포 | "조직 전체", "새 계정 자동" → StackSets |
 
-> 🔍 **더 깊이**: 이 갈림길들의 바닥에는 "운영 부담(operational overhead)"이라는 시험의 숨은 평가 기준이 깔려 있다. DOP 시험은 "동작하는 답"이 아니라 "운영 부담이 가장 적으면서 안전한 답"을 묻는다. 그래서 같은 결과를 내더라도 Lambda를 직접 짜는 답(높은 부담)보다 매니지드 기능(State Manager, --manage-master-user-password, AppConfig 자동 롤백)을 쓰는 답이 거의 항상 정답이다. 보기에서 "Lambda를 작성하여", "스크립트를 cron으로", "EC2를 두어"가 나오면 더 매니지드한 대안이 있는지 먼저 의심하라. 이게 DOP 시나리오를 푸는 메타 전략이다.
+> 이 갈림길들의 바닥에는 "운영 부담(operational overhead)"이라는 시험의 숨은 평가 기준이 깔려 있다. DOP 시험은 "동작하는 답"이 아니라 "운영 부담이 가장 적으면서 안전한 답"을 묻는다. 그래서 같은 결과를 내더라도 Lambda를 직접 짜는 답(높은 부담)보다 매니지드 기능(State Manager, --manage-master-user-password, AppConfig 자동 롤백)을 쓰는 답이 정답일 가능성이 높다. 보기에서 "Lambda를 작성하여", "스크립트를 cron으로", "EC2를 두어"가 나오면 더 매니지드한 대안이 있는지 먼저 의심한다. 이게 DOP 시나리오를 푸는 메타 전략이다.
 
 > 🎯 **시나리오**: "조직 전체 멤버 계정 50개에 동일한 SSM Patch Baseline과 IAM 역할을 자동 배포하고, 새 계정이 OU에 추가되면 자동으로 적용되어야 한다." — 답은 CloudFormation StackSets의 Service-managed 권한 + Auto-deployment다. StackSets가 OU 단위로 스택을 배포하고, AutoDeployment를 켜면 OU에 새 계정이 들어올 때 자동으로 스택이 배포된다. Lambda로 계정 추가를 감지해 배포하는 답(높은 운영 부담)이나 수동 배포는 오답이다. "조직 차원·계정 추가 시 자동"이라는 단서가 나오면 StackSets Auto-deployment를 떠올린다.
 
 > 🎯 **시나리오**: "온프레미스 데이터센터와 AWS를 하이브리드로 운영한다. 두 환경의 비밀번호·접속·패치를 가능한 한 동일한 도구 체계로 관리하고 싶다." — 답은 SSM의 하이브리드 확장을 전면 활용하는 것이다. Hybrid Activation으로 온프레미스 서버를 mi- 관리 인스턴스로 등록하면 Run Command·Session Manager·Patch Manager·Inventory가 EC2와 똑같이 동작하고, 시크릿은 Secrets Manager를 단일 진실 공급원으로 두되 온프레미스 앱은 VPN/Direct Connect 경유로 같은 시크릿을 읽는다. 핵심은 "도구를 두 벌 운영하지 않는다"는 것 — 하이브리드 시나리오에서 별도 온프레미스 전용 도구를 답으로 고르면 거의 오답이다.
 
-## 정리하며 — 시나리오 사고법
+## 정리
 
-Week 9를 관통하는 사고법은 이렇다. 문제를 읽으면 먼저 **4축 중 어디인가**(명령·접속 / 상태 강제 / 앱 구성 / 비밀)를 잡고, 그다음 **시간성(일회성 vs 지속)**, **안전 장치(롤백·검증 필요 여부)**, **운영 부담(매니지드 우선)**, **감사 요구(CloudTrail·세션 로그)**를 순서대로 따진다. 이 네 질문이면 Week 9의 거의 모든 시나리오가 풀린다. 아래 10개 문제로 그 사고를 굳혀보자.
+Week 9를 관통하는 사고법은 이렇다. 문제를 읽으면 먼저 **4축 중 어디인가**(명령·접속 / 상태 강제 / 앱 구성 / 비밀)를 잡고, 그다음 **시간성(일회성 vs 지속)**, **안전 장치(롤백·검증 필요 여부)**, **운영 부담(매니지드 우선)**, **감사 요구(CloudTrail·세션 로그)**를 순서대로 따진다. 이 네 질문이면 Week 9의 거의 모든 시나리오가 풀린다. 아래 10개 문제로 그 사고를 굳힌다.
 
 ---
 

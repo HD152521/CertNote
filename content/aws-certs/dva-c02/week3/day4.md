@@ -21,8 +21,6 @@ Lambda 동시성은 **특정 시점에 동시에 실행 중인 함수 인스턴�
 
 이 공식에서 보이는 것처럼, 실행 시간이 길수록 동시성 소비가 크다. 타임아웃을 15분으로 설정한 Lambda가 100개 동시 실행되고 있다면, 그 15분 동안 1,500 동시성을 차지한다 — 계정 기본 한도(1,000)를 이미 초과한다.
 
-> 💡 **관련 이론**: Lambda의 동시성 소비 계산은 Little's Law(리틀의 법칙, 1961)와 동일하다. `L = λW` — L이 시스템 내 평균 항목 수(동시성), λ가 도착률(RPS), W가 시스템에서 보내는 평균 시간(실행 시간)이다. 이 법칙은 큐 이론(Queueing Theory)의 기반이며, 콜 센터 인력 계산에서 클라우드 용량 계획까지 광범위하게 사용된다. M/M/c 큐 모델로 확장하면 Lambda 스로틀링 확률도 계산할 수 있다.
-
 ## 동시성 네 계층의 완전한 그림
 
 ```
@@ -88,7 +86,7 @@ Lambda는 트래픽 급증 시 자동으로 동시성을 늘린다. 하지만 �
 | ap-northeast-2 (서울) | 500 |
 | 나머지 리전 | 500 |
 
-> 🔍 **더 깊이**: 버스트 한도는 Token Bucket 알고리즘으로 구현된다. 버킷에는 최대 3,000개(리전 버스트 한도)의 토큰이 있고, 분당 500개씩 채워진다. Lambda 호출 시 토큰을 하나 소비한다. 토큰이 없으면 429. 이 알고리즘은 AWS API Gateway, SQS, Kinesis, EC2 API 등 AWS 전반에서 스로틀링 제어에 사용된다. RFC 6585에서 HTTP 429 상태 코드를 정의했다.
+버스트 한도는 Token Bucket 알고리즘으로 구현된다. 버킷에는 최대 3,000개(리전 버스트 한도)의 토큰이 있고, 분당 500개씩 채워진다. Lambda 호출 시 토큰을 하나 소비한다. 토큰이 없으면 429.
 
 ## CloudWatch 메트릭으로 동시성 문제 진단
 
@@ -132,7 +130,7 @@ aws cloudwatch get-metric-statistics \
 
 **ESM 폴링 (SQS, Kinesis, DDB Streams):**
 - SQS: 가시성 타임아웃 후 메시지가 큐로 복귀. `maxReceiveCount` 초과 시 SQS DLQ
-- Kinesis/DDB Streams: 기본 무한 재시도(샤드 블록!). `MaximumRetryAttempts`로 제한 필수
+- Kinesis/DDB Streams: 기본 무한 재시도(샤드 블록 발생). `MaximumRetryAttempts`로 제한 필수
 - Lambda 함수의 DLQ와 SQS 큐의 DLQ는 **완전히 다른 개념**
 
 ```
@@ -162,8 +160,6 @@ S3 업로드 → Lambda 내부 큐 → Lambda 실행 → 에러 발생
                                ↓ (maxReceiveCount 초과)
                      → SQS DLQ (함수 DLQ 아님!)
 ```
-
-> 📚 **사례**: 2020년 한 핀테크 스타트업이 Kinesis + Lambda로 실시간 거래 이상 감지 시스템을 구축했다. 특정 포맷의 이상 거래 레코드가 Lambda 처리를 실패시켰는데, `MaximumRetryAttempts`를 설정하지 않아 샤드 전체가 블록됐다. 수시간 동안 새 거래 데이터가 처리되지 않았고, 이상 거래 알림이 전혀 가지 않았다. `CloudWatch IteratorAge` 메트릭이 치솟고 있었지만 알람이 없어서 늦게 발견됐다. 이후 회사는 `IteratorAge > 300000ms`(5분) 알람을 모든 Kinesis ESM에 필수 설정으로 정책화했다.
 
 ## DLQ vs Lambda Destinations: 정확한 선택 기준
 
@@ -209,7 +205,7 @@ Destinations가 DLQ보다 나은 이유:
 
 ## SQS DLQ vs Lambda DLQ: 같은 이름 다른 개념
 
-시험에서 가장 많이 혼동하는 부분이다.
+시험에서 헷갈리기 쉬운 부분이다.
 
 **SQS DLQ(Dead Letter Queue):**
 - SQS 큐의 **속성**이다
@@ -324,8 +320,6 @@ def lambda_handler(event, context):
         raise
 ```
 
-> 🔍 **더 깊이**: 비즈니스 에러와 시스템 에러를 구분하는 패턴은 Martin Fowler의 "Patterns of Enterprise Application Architecture"(2002)에서 논의된다. 분산 시스템에서는 여기에 **일시적 장애(transient failure)** 개념이 추가된다 — 재시도하면 성공할 수 있는 오류. AWS SDK는 내부적으로 exponential backoff with jitter를 사용해 재시도한다. 이 알고리즘은 AWS "Exponential Backoff And Jitter" 블로그 포스트(2015)에서 공개적으로 설명됐다.
-
 ## 스로틀링 대응 패턴
 
 **동기 호출에서 429를 받는 클라이언트:**
@@ -363,9 +357,7 @@ def invoke_with_retry(function_name, payload, max_retries=3):
 [트래픽 급증] → [SQS 큐] → [Lambda ESM] → 처리 속도 자동 조절
 ```
 
-> 💡 **관련 이론**: 이 패턴은 분산 시스템에서 **백프레셔(Backpressure)** 처리의 전형이다. Reactive Streams 사양(Java 9 Flow API, Project Reactor, RxJava)에서 다운스트림이 처리 가능한 속도로 업스트림을 제어하는 것과 같다. SQS가 업스트림의 속도를 흡수하고, Lambda가 처리할 수 있는 속도로 소비한다.
-
-## 마무리
+## 정리
 
 Lambda 동시성 제어는 네 개의 다른 메커니즘이 중첩된 시스템이다. Reserved는 함수별 격리와 상한선을 제공하고, Provisioned는 콜드 스타트를 제거하며, 버스트 한도는 스케일아웃 속도를 제한하고, 계정 한도는 전체 상한을 정한다. 에러 처리는 호출 방식마다 완전히 다른 계층에서 일어나며, "어디서 재시도하고 어디로 실패 이벤트가 가는지"를 호출 방식별로 정확히 알아야 한다.
 

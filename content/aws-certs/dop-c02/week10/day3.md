@@ -2,7 +2,7 @@
 
 옵저버빌리티(observability)라는 말은 제어 이론에서 왔다. 1960년 칼만(Rudolf Kálmán)이 정의한 개념으로, "시스템의 출력만 보고 내부 상태를 얼마나 추론할 수 있는가"를 뜻한다. 소프트웨어에 옮기면 — 로그·메트릭·추적이라는 외부 출력만으로 "지금 시스템 안에서 무슨 일이 벌어지는가"를 얼마나 알 수 있느냐다. 그런데 워크로드 종류가 다르면 "내부 상태"의 성질도 다르다. 컨테이너는 클러스터·노드·파드의 자원 경쟁이 핵심이고, Lambda는 콜드 스타트와 메모리 한계가 핵심이며, 비즈니스 로직은 주문 수·실패율 같은 도메인 지표가 핵심이다. 한 가지 계측으로 다 덮을 수 없다.
 
-오늘은 이 워크로드별 관찰성을 깊이 본다. Container Insights가 ECS/EKS에서 무엇을 어떻게 수집하는지, Lambda Insights가 왜 별도 Extension/Layer로 동작하는지, EMF의 다중 차원 조합이 내부적으로 어떻게 여러 메트릭을 만드는지, Powertools가 무엇을 표준화하는지, 그리고 모든 관찰성 결정의 그림자인 카디널리티와 비용을 파고든다. DOP 시험에서 이 영역은 "EKS Pod별 메트릭", "콜드 스타트 분석", "Lambda 메트릭 비용 절감", "고카디널리티 비용 폭탄" 같은 시나리오로 자주 나온다.
+오늘은 이 워크로드별 관찰성을 깊이 본다. Container Insights가 ECS/EKS에서 무엇을 어떻게 수집하는지, Lambda Insights가 왜 별도 Extension/Layer로 동작하는지, EMF의 다중 차원 조합이 내부적으로 어떻게 여러 메트릭을 만드는지, Powertools가 무엇을 표준화하는지, 그리고 모든 관찰성 결정의 그림자인 카디널리티와 비용을 파고든다. DOP 시험에서 이 영역은 "EKS Pod별 메트릭", "콜드 스타트 분석", "Lambda 메트릭 비용 절감", "고카디널리티 비용 폭탄" 같은 시나리오로 나온다.
 
 ## 관찰성의 세 기둥과 워크로드별 변주
 
@@ -29,9 +29,9 @@ EKS에서는 보통 **ADOT(AWS Distro for OpenTelemetry) Collector** 또는 Clou
 
 활성화 위치가 시험 포인트다. ECS는 **클러스터 설정**에서 켜고(Task Definition이나 Service가 아니다), EKS는 **수집 에이전트를 클러스터에 배포**한다.
 
-> 🔍 **더 깊이**: EKS에서 Container Insights를 켠다는 건 실제로는 **DaemonSet으로 수집 에이전트를 노드마다 배치**하는 것이다. 왜 DaemonSet인가? 파드 메트릭은 그 파드가 떠 있는 노드의 kubelet/cAdvisor에서 읽어야 하므로, 수집기가 모든 노드에 하나씩 있어야 빠짐없이 긁는다. cAdvisor(Google이 만든 컨테이너 자원 분석기)가 노드 위 컨테이너의 CPU·메모리·네트워크·파일시스템을 측정하고, kubelet이 이를 노출하면, 에이전트(ADOT/CloudWatch Agent/Fluent Bit)가 수집해 CloudWatch로 보낸다. 이는 Prometheus의 node-exporter + kube-state-metrics + cAdvisor 조합이 하는 일과 정확히 같은 계보다. "노드마다 수집기"라는 DaemonSet 패턴은 클러스터 관찰성의 보편 구조다.
+> EKS에서 Container Insights를 켠다는 건 실제로는 **DaemonSet으로 수집 에이전트를 노드마다 배치**하는 것이다. 왜 DaemonSet인가? 파드 메트릭은 그 파드가 떠 있는 노드의 kubelet/cAdvisor에서 읽어야 하므로, 수집기가 모든 노드에 하나씩 있어야 빠짐없이 긁는다. cAdvisor(Google이 만든 컨테이너 자원 분석기)가 노드 위 컨테이너의 CPU·메모리·네트워크·파일시스템을 측정하고, kubelet이 이를 노출하면, 에이전트(ADOT/CloudWatch Agent/Fluent Bit)가 수집해 CloudWatch로 보낸다. 이는 Prometheus의 node-exporter + kube-state-metrics + cAdvisor 조합이 하는 일과 정확히 같은 계보다. "노드마다 수집기"라는 DaemonSet 패턴은 클러스터 관찰성의 보편 구조다.
 
-> 📚 **사례**: 한 팀이 작은 EKS 클러스터(노드 3개)에 Container Insights를 켰는데, 이후 CloudWatch 비용이 컴퓨트 비용에 육박했다. 원인은 Container Insights가 클러스터·노드·파드·컨테이너 차원으로 대량의 메트릭과 성능 로그를 자동 생성하는데, 파드가 자주 떴다 사라지면서(배치 잡) 메트릭 차원이 계속 늘어났기 때문이다. 작은 클러스터에서는 관찰성 데이터가 워크로드 자체보다 비쌀 수 있다. 교훈: Container Insights는 강력하지만 공짜가 아니다 — 클러스터 규모와 파드 수명 패턴에 따라 비용을 먼저 가늠하고, 필요하면 enhanced observability 대신 기본 메트릭만, 또는 핵심 네임스페이스만 켜는 식으로 범위를 좁혀야 한다.
+> 한 팀이 작은 EKS 클러스터(노드 3개)에 Container Insights를 켰는데, 이후 CloudWatch 비용이 컴퓨트 비용에 육박했다. 원인은 Container Insights가 클러스터·노드·파드·컨테이너 차원으로 대량의 메트릭과 성능 로그를 자동 생성하는데, 파드가 자주 떴다 사라지면서(배치 잡) 메트릭 차원이 계속 늘어났기 때문이다. 작은 클러스터에서는 관찰성 데이터가 워크로드 자체보다 비쌀 수 있다. 교훈: Container Insights는 강력하지만 공짜가 아니다 — 클러스터 규모와 파드 수명 패턴에 따라 비용을 먼저 가늠하고, 필요하면 enhanced observability 대신 기본 메트릭만, 또는 핵심 네임스페이스만 켜는 식으로 범위를 좁혀야 한다.
 
 ## Lambda Insights — 콜드 스타트와 메모리의 진실
 
@@ -47,7 +47,7 @@ Lambda Insights는 **Lambda Extension**(별도 레이어)으로 동작한다. �
 
 콜드 스타트 분석이 핵심 가치다. **init duration** 메트릭으로 콜드 스타트가 응답 지연에 얼마나 기여하는지 정량화하고, Provisioned Concurrency를 켰을 때 그 효과를 검증한다. "메모리를 올렸더니 빨라졌다"가 진짜인지(메모리 ∝ CPU라 그럴 수 있다)도 메모리 사용 메트릭으로 확인한다.
 
-> 🔍 **더 깊이**: Lambda Insights가 **Extension(레이어)으로 동작하는 이유**는 Lambda 실행 모델 때문이다. Lambda 함수는 호출이 끝나면 동결(freeze)되고, 다음 호출까지 코드가 멈춘다 — 함수 코드 안에서 백그라운드로 메트릭을 모아 주기적으로 전송하는 게 불가능하다. Extension은 함수 핸들러와 독립된 별도 프로세스라 함수가 동결돼도 init·invoke·shutdown 라이프사이클 훅을 받아 동작할 수 있고, 그래서 콜드 스타트의 init 단계까지 측정한다. 이는 사이드카 패턴(sidecar pattern)의 서버리스 버전이다 — 쿠버네티스에서 애플리케이션 컨테이너 옆에 관찰성/프록시 컨테이너를 붙이듯, Lambda는 함수 옆에 Extension을 붙인다. ADOT, Datadog, New Relic의 Lambda 통합이 모두 이 Extension 메커니즘 위에 서 있다.
+> Lambda Insights가 **Extension(레이어)으로 동작하는 이유**는 Lambda 실행 모델 때문이다. Lambda 함수는 호출이 끝나면 동결(freeze)되고, 다음 호출까지 코드가 멈춘다 — 함수 코드 안에서 백그라운드로 메트릭을 모아 주기적으로 전송하는 게 불가능하다. Extension은 함수 핸들러와 독립된 별도 프로세스라 함수가 동결돼도 init·invoke·shutdown 라이프사이클 훅을 받아 동작할 수 있고, 그래서 콜드 스타트의 init 단계까지 측정한다. 이는 사이드카 패턴(sidecar pattern)의 서버리스 버전이다 — 쿠버네티스에서 애플리케이션 컨테이너 옆에 관찰성/프록시 컨테이너를 붙이듯, Lambda는 함수 옆에 Extension을 붙인다. ADOT, Datadog, New Relic의 Lambda 통합이 모두 이 Extension 메커니즘 위에 서 있다.
 
 ## EMF — 다중 차원 조합의 내부 동작
 
@@ -88,7 +88,7 @@ Lambda Insights는 **Lambda Extension**(별도 레이어)으로 동작한다. �
 
 그리고 `OrderId`는 `Metrics`에도 `Dimensions`에도 없다 — 페이로드 최상위에 있을 뿐이다. 그래서 **메트릭이 되지 않고 로그 필드로만 남아** Logs Insights에서 검색된다. 고카디널리티 식별자를 메트릭에서 빼고 로그로 보내는 이 분리가 EMF 설계의 핵심이다.
 
-> 💡 **관련 이론**: EMF의 다중 차원 조합은 데이터 큐브의 **사전 집계(pre-aggregation / roll-up)** 와 같은 발상이다. OLAP(온라인 분석 처리)에서 데이터 큐브를 만들 때, 모든 차원 조합(`{Service,Environment}`, `{Service}`, `{Environment}`, `{}`)을 미리 계산해두면 어떤 관점의 질의든 빠르게 응답한다. 이를 큐브의 "셀(cell)"이라 하고, 모든 조합을 미리 만드는 것을 full materialization이라 한다. CloudWatch 메트릭은 사후 임의 집계가 안 되므로(스트리밍 시계열의 한계), EMF는 필요한 집계 관점을 publish 시점에 미리 materialize한다. 트레이드오프는 명확하다 — 조합을 많이 넣을수록 질의는 유연하지만 메트릭 수(=비용)가 는다. "어떤 집계 관점이 실제로 필요한가"를 미리 정하는 것이 EMF 설계의 핵심 결정이다.
+> EMF의 다중 차원 조합은 데이터 큐브의 **사전 집계(pre-aggregation / roll-up)** 와 같은 발상이다. OLAP(온라인 분석 처리)에서 데이터 큐브를 만들 때, 모든 차원 조합(`{Service,Environment}`, `{Service}`, `{Environment}`, `{}`)을 미리 계산해두면 어떤 관점의 질의든 빠르게 응답한다. 이를 큐브의 "셀(cell)"이라 하고, 모든 조합을 미리 만드는 것을 full materialization이라 한다. CloudWatch 메트릭은 사후 임의 집계가 안 되므로(스트리밍 시계열의 한계), EMF는 필요한 집계 관점을 publish 시점에 미리 materialize한다. 트레이드오프는 명확하다 — 조합을 많이 넣을수록 질의는 유연하지만 메트릭 수(=비용)가 는다. "어떤 집계 관점이 실제로 필요한가"를 미리 정하는 것이 EMF 설계의 핵심 결정이다.
 
 ## Powertools — 관찰성의 표준화 레이어
 
@@ -114,7 +114,7 @@ def handler(event, context):
 
 세 데코레이터가 자동으로 만들어내는 것: **구조화 JSON 로그 + correlation ID**(요청을 로그·메트릭·추적에 걸쳐 추적), **X-Ray 세그먼트와 메타데이터**, **EMF 메트릭 + 콜드 스타트 메트릭 자동**(`capture_cold_start_metric=True`). 팀이 형식을 고민할 필요 없이 같은 관찰성 표준을 공유한다.
 
-> 🔍 **더 깊이**: Powertools가 강제하는 **correlation ID**(상관 ID)는 분산 추적의 토대다. 한 요청이 API Gateway → Lambda → SQS → 다른 Lambda → DynamoDB를 거칠 때, 같은 요청에서 나온 로그·메트릭·추적을 하나로 묶으려면 공통 ID가 모든 신호에 박혀 있어야 한다. 이는 W3C Trace Context 표준(`traceparent` 헤더)이 정의하는 trace ID·span ID 개념과 같고, Google Dapper 논문(2010)이 대중화한 분산 추적의 핵심 아이디어다. correlation ID 없는 로그는 분산 시스템에서 "어느 요청의 로그인지" 알 수 없어 사실상 디버깅이 불가능하다. Powertools가 이를 데코레이터로 자동 주입하는 것은 "관찰 가능한 시스템의 최소 요건"을 코드에 강제하는 것이다.
+> Powertools가 강제하는 **correlation ID**(상관 ID)는 분산 추적의 토대다. 한 요청이 API Gateway → Lambda → SQS → 다른 Lambda → DynamoDB를 거칠 때, 같은 요청에서 나온 로그·메트릭·추적을 하나로 묶으려면 공통 ID가 모든 신호에 박혀 있어야 한다. 이는 W3C Trace Context 표준(`traceparent` 헤더)이 정의하는 trace ID·span ID 개념과 같고, Google Dapper 논문(2010)이 대중화한 분산 추적의 핵심 아이디어다. correlation ID 없는 로그는 분산 시스템에서 "어느 요청의 로그인지" 알 수 없어 사실상 디버깅이 불가능하다. Powertools가 이를 데코레이터로 자동 주입하는 것은 "관찰 가능한 시스템의 최소 요건"을 코드에 강제하는 것이다.
 
 ## 카디널리티 — 모든 관찰성 결정의 그림자
 
@@ -150,7 +150,7 @@ UserId별 분석이 필요하면 메트릭이 아니라 Logs Insights에서 `fil
 
 > 🎯 **시나리오**: "트래픽이 10배로 늘자 X-Ray와 커스텀 메트릭 비용이 폭증했다. 디버깅 능력은 유지하면서 비용을 잡고 싶다." — 답은 계층적 샘플링 + 카디널리티 점검이다. (1) X-Ray는 고정 비율 샘플링(예: 5%) + 에러/고지연 요청은 별도 규칙으로 높은 비율 수집 — 정상 트래픽은 통계로 충분하고 문제 요청은 놓치지 않는다. (2) 커스텀 메트릭의 차원을 점검해 UserId·OrderId·원본 URL 같은 고카디널리티 차원을 로그 필드로 강등한다. (3) 초당 단위 고해상도 메트릭이 꼭 필요한지 재검토해 표준 60초로 내린다. "전수 수집"에서 "대표 표본 + 예외 전수"로 바꾸는 것이 핵심이다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 다섯 가지다. 첫째, **관찰성의 세 기둥(로그·메트릭·추적)은 워크로드별로 무게중심이 다르고**, EMF/OpenTelemetry는 이를 넓은 이벤트 하나로 통합하려는 흐름이다. 둘째, **Container Insights는 DaemonSet 수집기로 클러스터/노드/파드 자원을 보며**(ECS는 클러스터 설정, EKS는 에이전트 배포), 작은 클러스터에선 관찰성 비용이 워크로드를 넘을 수 있다. 셋째, **Lambda Insights는 Extension(사이드카) 패턴**으로 함수가 동결돼도 콜드 스타트 init까지 측정한다. 넷째, **EMF의 다중 차원 조합은 OLAP의 사전 집계**처럼 필요한 집계 관점을 publish 시점에 materialize하고, 고카디널리티는 로그 필드로 분리한다. 다섯째, **카디널리티는 비용의 핵심 변수**라 차원에는 저카디널리티만 넣고, ID·URL은 정규화하거나 로그로 보내며, Cost vs Visibility는 샘플링+집계로 다룬다.
 

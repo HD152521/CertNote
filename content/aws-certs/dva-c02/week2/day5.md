@@ -1,12 +1,12 @@
 # Day 5 - Week 2 종합: EC2 layer가 한 시스템 안에서 맞물리는 방식
 
-Week 2에서 본 EC2의 모든 layer — Nitro·인스턴스 패밀리·AMI·Security Group·Key Pair·User Data·EBS·Instance Store·ALB·NLB·ASG — 는 따로 외워두면 잘 안 풀리는 시험이다. 시험 문제는 항상 시나리오로 나오고, 그 시나리오에서 "SG는 다 열려 있는데 왜 안 되지?", "왜 새 인스턴스가 ALB에서 안 보이지?", "왜 cross-AZ traffic 비용이 폭발했지?" 같은 질문이 던져진다. 이 질문들은 각 layer를 따로 보면 답이 안 나오고, **layer들이 어떻게 맞물려 동작하는지**를 봐야 풀린다.
+Week 2에서 본 EC2의 모든 layer — Nitro·인스턴스 패밀리·AMI·Security Group·Key Pair·User Data·EBS·Instance Store·ALB·NLB·ASG — 는 따로 외워두면 잘 안 풀리는 시험이다. 시험 문제는 시나리오로 나오고, 그 시나리오에서 "SG는 다 열려 있는데 왜 안 되지?", "왜 새 인스턴스가 ALB에서 안 보이지?", "왜 cross-AZ traffic 비용이 폭발했지?" 같은 질문이 던져진다. 이 질문들은 각 layer를 따로 보면 답이 안 나오고, **layer들이 어떻게 맞물려 동작하는지**를 봐야 풀린다.
 
-오늘은 Week 2의 모든 개념을 한 production-grade 아키텍처 안에 묶고, 그 위에서 자주 만나는 함정과 시험 시나리오를 정리한다. 마지막엔 시나리오 기반 종합 연습 문제 12문항으로 실전 감각을 점검한다.
+오늘은 Week 2의 모든 개념을 한 production-grade 아키텍처 안에 묶고, 그 위에서 헷갈리기 쉬운 함정과 시험 시나리오를 정리한다. 마지막엔 시나리오 기반 종합 연습 문제 12문항으로 실전 감각을 점검한다.
 
 ## 한 시스템 안에서 Week 2 전체가 어떻게 맞물리는가
 
-전형적인 3-tier 웹 서비스를 EC2 위에 짓는다고 가정하자. 사용자 → CloudFront → ALB → ASG(EC2) → RDS Multi-AZ + ElastiCache 구조다. 이 구조 안에서 Week 2의 각 개념이 어디에 위치하는지를 본다.
+전형적인 3-tier 웹 서비스를 EC2 위에 짓는다고 가정한다. 사용자 → CloudFront → ALB → ASG(EC2) → RDS Multi-AZ + ElastiCache 구조다. 이 구조 안에서 Week 2의 각 개념이 어디에 위치하는지를 본다.
 
 ```
                           [Route 53 (DNS, alias to ALB)]
@@ -51,7 +51,7 @@ Week 2에서 본 EC2의 모든 layer — Nitro·인스턴스 패밀리·AMI·Sec
      [ElastiCache Redis Cluster (Multi-AZ, cache-sg)]
 ```
 
-이 아키텍처에서 Week 2 각 개념이 어떻게 작동하는지 따라가 보자.
+이 아키텍처에서 Week 2 각 개념이 어떻게 작동하는지는 아래 흐름과 같다.
 
 **시작점 - 사용자가 https://app.example.com 으로 요청**
 1. Route 53이 DNS query를 받아 ALB의 alias record로 응답
@@ -82,7 +82,7 @@ Week 2에서 본 EC2의 모든 layer — Nitro·인스턴스 패밀리·AMI·Sec
 
 이 시퀀스에 등장한 모든 개념이 Week 2의 시험 범위다. 시험 문제는 이 시퀀스 어딘가에서 한 단계가 망가졌을 때를 시나리오로 묻는다.
 
-## 자주 만나는 함정 정리
+## 헷갈리기 쉬운 함정 정리
 
 ### 함정 1: SG는 다 열려 있는데 connection이 안 된다
 보통 ① NACL의 ephemeral port outbound 누락, ② Endpoint SG(PrivateLink) inbound 누락, ③ conntrack 한도 초과(인스턴스 타입별), ④ Route Table에 IGW/NAT route 누락 중 하나. SG만 보지 말고 패킷 경로 전체를 따라가야 한다.
@@ -198,7 +198,7 @@ DVA는 SAA와 같은 EC2 범위를 다루지만 시험 문제의 시점이 다�
 | Lifecycle hook의 SNS/SQS notification target |
 | EBS Multi-Region snapshot copy 시 KMS Multi-Region Key |
 
-## 정리하며
+## 정리
 
 Week 2는 EC2 layer 전체를 봤다. EC2 자체의 가상화·인스턴스 패밀리·AMI에서 시작해, 그 위의 네트워크 통제(SG, Key Pair, User Data), 디스크 layer(EBS, Instance Store, EFS/FSx), 그리고 트래픽 분산 layer(ALB/NLB, ASG)까지 한 production 아키텍처가 어떻게 짜이는지를 따라왔다. 이 전체가 시험에선 한 시나리오 안에 묶여서 나오므로, 각 layer를 따로 외우는 것보다 "한 인스턴스가 트래픽을 받기까지의 전체 경로"를 머릿속에 그릴 수 있어야 한다.
 

@@ -12,7 +12,7 @@ DOP-C02 시험 문제의 90% 이상은 **멀티 계정 환경을 기본 가정**
 
 단일 계정에서 운영자가 실수로 `aws s3 rb --force` 같은 명령을 prod bucket에 날리면? IAM으로 막을 수 있지만, **권한이 있는 사람이 실수하면** 무력하다. 계정이 다르면 STS AssumeRole이 필요한 명시적 동작이 한 단계 더 들어가 실수 가능성이 낮아진다.
 
-> 📚 **사례**: 2017년 GitLab은 prod DB를 운영하던 SRE가 staging 환경인 줄 알고 `rm -rf` 명령을 prod에서 실행했다. 300GB의 prod DB가 통째로 날아갔고, 백업도 정상 동작하지 않아 6시간 분량의 데이터 손실이 발생했다. 이후 GitLab은 prod/staging 별도 계정 분리를 시작했다. 같은 사고가 AWS 환경에서도 무수히 반복됐고, 이게 멀티 계정 전략의 출발점이다.
+> 2017년 GitLab은 prod DB를 운영하던 SRE가 staging 환경인 줄 알고 `rm -rf` 명령을 prod에서 실행했다. 300GB의 prod DB가 통째로 날아갔고, 백업도 정상 동작하지 않아 6시간 분량의 데이터 손실이 발생했다. 이후 GitLab은 prod/staging 별도 계정 분리를 시작했다. 같은 사고가 AWS 환경에서도 무수히 반복됐고, 이게 멀티 계정 전략의 출발점이다.
 
 ### 이유 2: 서비스 Quota 분리
 
@@ -30,7 +30,7 @@ PCI-DSS, HIPAA, FedRAMP 같은 규제는 "production 워크로드를 다른 환�
 
 IAM 정책은 복잡한 cross-team 권한을 표현하기 어렵다. 계정 자체를 boundary로 쓰면 "이 계정에 들어갈 수 있는 사람"이라는 단순한 모델로 권한 관리.
 
-> 💡 **관련 이론**: 멀티 계정 전략의 본질은 **bulkhead pattern**(격벽 패턴)이다. Resilience4j 라이브러리에서 유명해진 이 패턴은 한 컴포넌트의 장애가 다른 컴포넌트로 전파되지 않게 격리하는 것. 배의 격벽처럼, 한 칸이 침수돼도 다른 칸은 살아남는다. AWS 계정은 그 클라우드 인프라 버전이다.
+> 멀티 계정 전략의 본질은 **bulkhead pattern**(격벽 패턴)이다. Resilience4j 라이브러리에서 유명해진 이 패턴은 한 컴포넌트의 장애가 다른 컴포넌트로 전파되지 않게 격리하는 것. 배의 격벽처럼, 한 칸이 침수돼도 다른 칸은 살아남는다. AWS 계정은 그 클라우드 인프라 버전이다.
 
 ## AWS Organizations — 멀티 계정의 토대
 
@@ -66,7 +66,7 @@ Root
 
 이 구조가 AWS 권장 best practice다. 시험에서 "어느 계정에 무엇을 둬야 하나" 시나리오가 나오면 이 패턴을 기준으로 답.
 
-> 🔍 **더 깊이**: SCP는 **deny에만 효력**이 있는 정책이다. SCP가 `Allow`라고 적어둬도 그것만으로 권한이 부여되는 게 아니라, IAM 정책으로 권한이 있을 때 SCP가 그것을 "허용"한다는 의미. SCP의 진짜 힘은 `Deny`다. 예를 들어 `Deny ec2:RunInstances if region != ap-northeast-2`는 그 OU의 어느 계정에서도 서울 외 리전에서 EC2를 못 만들게 강제한다. IAM 권한이 아무리 넓어도 SCP가 막으면 못 한다.
+> SCP는 **deny에만 효력**이 있는 정책이다. SCP가 `Allow`라고 적어둬도 그것만으로 권한이 부여되는 게 아니라, IAM 정책으로 권한이 있을 때 SCP가 그것을 "허용"한다는 의미. SCP의 진짜 힘은 `Deny`다. 예를 들어 `Deny ec2:RunInstances if region != ap-northeast-2`는 그 OU의 어느 계정에서도 서울 외 리전에서 EC2를 못 만들게 강제한다. IAM 권한이 아무리 넓어도 SCP가 막으면 못 한다.
 
 ### SCP의 평가 순서
 
@@ -97,7 +97,7 @@ Control Tower의 핵심 trade-off:
 - **장점**: 표준 구조를 빠르게 셋업, 신규 계정 자동 거버넌스
 - **단점**: 이미 운영 중인 Organizations를 마이그레이션하기 어려움, 일부 리전만 지원
 
-> 📚 **사례**: 한 대기업이 50개의 기존 AWS 계정을 Control Tower로 통합하려다 6개월간 작업한 사례. 기존 SCP, CloudTrail trail, IAM 정책이 Control Tower의 표준과 충돌해 마이그레이션이 매우 복잡했다. 교훈: **이미 멀티 계정이 운영 중이라면 Control Tower 도입 결정 전에 PoC 필수**. 신규 도입이면 Control Tower로 시작하는 게 훨씬 빠르다.
+> 한 대기업이 50개의 기존 AWS 계정을 Control Tower로 통합하려다 6개월간 작업한 사례. 기존 SCP, CloudTrail trail, IAM 정책이 Control Tower의 표준과 충돌해 마이그레이션이 매우 복잡했다. 교훈: **이미 멀티 계정이 운영 중이라면 Control Tower 도입 결정 전에 PoC 필수**. 신규 도입이면 Control Tower로 시작하는 게 훨씬 빠르다.
 
 ### Landing Zone의 핵심 구성
 
@@ -119,7 +119,7 @@ Control Tower의 guardrail은 두 종류:
 
 각 guardrail은 mandatory(필수), strongly recommended, elective로 분류. 새 계정은 mandatory guardrail이 자동 적용.
 
-> 🔍 **더 깊이**: Preventive와 Detective의 trade-off는 "**자동화 가능성 vs 부작용**"이다. Preventive(SCP)는 동작 자체를 막아 사고 예방이 확실하지만, 잘못 만들면 정상 업무까지 막아버린다(예: 모든 root login 차단인데 emergency access도 막힘). Detective는 사고 후 감지라 부작용이 적지만 사고가 이미 발생한 뒤. 실무에서는 critical은 Preventive, 모니터링성은 Detective.
+> Preventive와 Detective의 trade-off는 "**자동화 가능성 vs 부작용**"이다. Preventive(SCP)는 동작 자체를 막아 사고 예방이 확실하지만, 잘못 만들면 정상 업무까지 막아버린다(예: 모든 root login 차단인데 emergency access도 막힘). Detective는 사고 후 감지라 부작용이 적지만 사고가 이미 발생한 뒤. 실무에서는 critical은 Preventive, 모니터링성은 Detective.
 
 ## IAM Identity Center — 멀티 계정 SSO의 결정판
 
@@ -145,7 +145,7 @@ User → Identity Provider (Okta/AzureAD/AWS Directory)
 
 사용자 입장에서는 https://<your-org>.awsapps.com/start 에 로그인하면 자신이 접근 가능한 모든 계정+role 카드가 보이고, 클릭하면 그 계정 콘솔로 들어간다. CLI는 `aws sso login`으로 토큰을 받는다.
 
-> 💡 **관련 이론**: IAM Identity Center는 본질적으로 **AssumeRole 자동화**다. 사용자가 카드를 클릭하면 IAM Identity Center가 STS AssumeRole을 호출해 임시 자격증명을 받고 그것으로 콘솔/CLI를 띄운다. 모든 자격증명이 임시(보통 1시간 ~ 12시간)라서 정적 IAM 사용자보다 훨씬 안전.
+> IAM Identity Center는 본질적으로 **AssumeRole 자동화**다. 사용자가 카드를 클릭하면 IAM Identity Center가 STS AssumeRole을 호출해 임시 자격증명을 받고 그것으로 콘솔/CLI를 띄운다. 모든 자격증명이 임시(보통 1시간 ~ 12시간)라서 정적 IAM 사용자보다 훨씬 안전.
 
 ### IAM User vs IAM Identity Center
 
@@ -161,7 +161,7 @@ AWS는 명시적으로 "**신규 워크로드는 IAM Identity Center 사용**"�
 
 > ⚠️ **함정**: "IAM Identity Center가 있으면 IAM은 더 이상 안 써도 된다"는 오해. 사람 사용자는 IAM Identity Center로 가지만, **machine principal(EC2, Lambda, ECS task)은 여전히 IAM Role**을 사용한다. IAM은 사라지지 않는다.
 
-## Cross-Account 패턴 — 시험에서 가장 자주 묻는 것
+## Cross-Account 패턴 — 시험에서 묻는 구분
 
 멀티 계정의 핵심은 "**한 계정에서 다른 계정의 자원에 어떻게 접근하나**". 패턴은 3가지.
 
@@ -195,7 +195,7 @@ Account B의 role이 trust policy에 "Account A의 ARN을 신뢰"라고 명시. 
 
 `ExternalId`는 confused deputy 문제 방지용. 외부 SaaS와 통합할 때 특히 중요(예: Datadog, PagerDuty가 우리 계정에 들어올 때).
 
-> 💡 **관련 이론**: Confused deputy problem은 1988년 Norm Hardy가 발견한 보안 문제. "권한 있는 deputy가 권한 없는 주체의 요청을 자기 권한으로 수행"하는 취약점. AWS에서는 SaaS 통합 시 SaaS의 AWS 계정이 deputy가 되어 우리 자원에 접근하는데, 다른 고객이 같은 SaaS를 통해 우리 자원에 접근하지 못하게 `ExternalId`로 격리.
+> Confused deputy problem은 1988년 Norm Hardy가 발견한 보안 문제. "권한 있는 deputy가 권한 없는 주체의 요청을 자기 권한으로 수행"하는 취약점. AWS에서는 SaaS 통합 시 SaaS의 AWS 계정이 deputy가 되어 우리 자원에 접근하는데, 다른 고객이 같은 SaaS를 통해 우리 자원에 접근하지 못하게 `ExternalId`로 격리.
 
 ### 패턴 2: Resource-based Policy (S3 bucket policy, SNS, KMS 등)
 
@@ -218,7 +218,7 @@ AssumeRole 없이도 cross-account 접근 가능. 다만 S3, SNS, SQS, KMS, Lamb
 
 ### 패턴 3: RAM (Resource Access Manager)
 
-VPC, Subnet, Transit Gateway, License Manager 등 일부 자원은 RAM으로 다른 계정과 공유 가능. 시험에서는 "Transit Gateway를 여러 계정이 공유" 시나리오에 자주 등장.
+VPC, Subnet, Transit Gateway, License Manager 등 일부 자원은 RAM으로 다른 계정과 공유 가능. 시험에서는 "Transit Gateway를 여러 계정이 공유" 시나리오로 나온다.
 
 ## CloudTrail Organization Trail — 모든 계정 감사를 한 곳에
 
@@ -238,7 +238,7 @@ All Member Accounts → CloudTrail Events → Organization Trail →
 2. **변조 방지**: Log Archive 계정 외에는 누구도 로그 삭제 못 함 (SCP로 강제)
 3. **검색 효율**: Athena로 한 번 쿼리로 전 조직 감사
 
-> 📚 **사례**: 한 회사가 내부 감사 중 "지난 3개월간 누가 prod IAM policy를 변경했나"를 조사했는데, 멤버 계정별 CloudTrail이 따로따로 저장되어 있어 30개 계정의 로그를 수동으로 모으느라 일주일이 걸렸다. Organization Trail + Log Archive 계정으로 전환 후 같은 쿼리가 Athena로 10분만에 끝났다.
+> 한 회사가 내부 감사 중 "지난 3개월간 누가 prod IAM policy를 변경했나"를 조사했는데, 멤버 계정별 CloudTrail이 따로따로 저장되어 있어 30개 계정의 로그를 수동으로 모으느라 일주일이 걸렸다. Organization Trail + Log Archive 계정으로 전환 후 같은 쿼리가 Athena로 10분만에 끝났다.
 
 ## 멀티 계정 CI/CD 패턴 — 시험의 핵심 시나리오
 
@@ -272,7 +272,7 @@ Shared Services Account (Hub)
 3. **KMS 키 공유**: Artifact S3 bucket의 KMS 키를 spoke 계정과 공유 (key policy)
 4. **로그 중앙 집중**: 모든 배포 로그는 Log Archive 계정
 
-> 🎯 **시나리오**: "회사가 dev/staging/prod 별도 계정을 운영하는데, CodePipeline은 어디에 둬야 하나" 라는 시험 질문이 자주 나온다. 답은 "**별도 Shared Services 계정에 두고 각 환경 계정에 AssumeRole로 배포**". prod 계정 안에 prod 전용 pipeline을 두면 ① prod 계정 권한이 너무 강해짐 ② 환경 간 일관성 깨짐 ③ 변경 관리 분산. Hub-Spoke가 표준.
+> 🎯 **시나리오**: "회사가 dev/staging/prod 별도 계정을 운영하는데, CodePipeline은 어디에 둬야 하나" 라는 시험 질문이 나온다. 답은 "**별도 Shared Services 계정에 두고 각 환경 계정에 AssumeRole로 배포**". prod 계정 안에 prod 전용 pipeline을 두면 ① prod 계정 권한이 너무 강해짐 ② 환경 간 일관성 깨짐 ③ 변경 관리 분산. Hub-Spoke가 표준.
 
 ## SCP의 실전 패턴
 
@@ -314,7 +314,7 @@ Shared Services Account (Hub)
 }
 ```
 
-> ⚠️ **함정**: SCP 1번 예시에서 `NotAction`으로 글로벌 서비스(IAM, CloudFront, Route 53)를 제외하는 게 핵심이다. 이걸 안 빼면 그 계정에서 IAM조차 못 만들어 운영 불가능 상태가 된다. 시험 보기에서 "글로벌 서비스 제외 없이 region 제한"은 함정.
+> SCP 1번 예시에서 `NotAction`으로 글로벌 서비스(IAM, CloudFront, Route 53)를 제외하는 게 핵심이다. 이걸 안 빼면 그 계정에서 IAM조차 못 만들어 운영 불가능 상태가 된다. 시험 보기에서 "글로벌 서비스 제외 없이 region 제한"은 함정.
 
 ## CLI로 보는 Organizations
 
@@ -339,9 +339,9 @@ aws organizations create-account \
 
 신규 계정 생성은 비동기이고 보통 5-10분 소요. 그동안 Control Tower의 Account Factory가 baseline 적용을 진행한다.
 
-## 정리하며
+## 정리
 
-오늘 본 그림 세 가지를 기억하자. 첫째, **멀티 계정은 표준**이다. Blast radius 격리, quota 분리, 컴플라이언스 요구가 그 정당화 근거. 둘째, **Organizations + Control Tower가 토대**다. 표준 OU 구조 + Landing zone + Guardrails. 셋째, **IAM Identity Center가 인증/인가의 결정판**이고 cross-account 자원 접근은 STS AssumeRole + Resource policy + RAM 세 패턴으로 해결.
+오늘 본 그림은 세 가지다. 첫째, **멀티 계정은 표준**이다. Blast radius 격리, quota 분리, 컴플라이언스 요구가 그 정당화 근거. 둘째, **Organizations + Control Tower가 토대**다. 표준 OU 구조 + Landing zone + Guardrails. 셋째, **IAM Identity Center가 인증/인가의 결정판**이고 cross-account 자원 접근은 STS AssumeRole + Resource policy + RAM 세 패턴으로 해결.
 
 다음 글은 Week 1의 마무리로, 시나리오 문제 10개를 통해 첫 주의 내용을 통합적으로 점검한다.
 

@@ -23,7 +23,7 @@ Step Functions는 같은 ASL을 받지만 **완전히 다른 두 엔진**을 가
 | Wait 상태 | ✅ (1년까지) | ✅ (5분 안에서) |
 | Activity 폴링 | ✅ | ❌ |
 
-가격 모델의 차이가 결정적이다. 100ms짜리 짧은 워크플로를 초당 1000회 호출한다고 가정하자.
+가격 모델의 차이가 결정적이다. 100ms짜리 짧은 워크플로를 초당 1000회 호출한다고 가정한다.
 
 - **Standard**: 1 호출당 평균 5 상태 전이 × $0.025/1000 = $0.000125, 초당 1000회 = $0.125/초 = $324K/월. 비현실적.
 - **Express**: 1 호출 $0.000001 + 100ms × 0.064 GB × $0.0000094/GB-s ≈ $0.0000016, 초당 1000회 = $4.1/월. 합리적.
@@ -34,7 +34,7 @@ Step Functions는 같은 ASL을 받지만 **완전히 다른 두 엔진**을 가
 
 > 🎯 **시나리오**: "배포 워크플로가 평균 90분이고, 중간에 사람의 승인 단계가 있으며, 일 100회 실행." — 답은 **Standard**. 90분 > Express 5분 한도, 사람 승인은 TaskToken 필요(Express 미지원). 반대로 "API Gateway 백엔드로 동기 응답, 평균 200ms, 초당 500회 호출"은 **Express + StartSyncExecution**. 시험 시나리오의 핵심 키워드는 "실행 시간", "호출 빈도", "사람 개입 여부", "동기 vs 비동기".
 
-> 🔍 **더 깊이**: Express Workflow 내부 구현은 Standard와 다른 코드 경로를 사용한다. Standard는 모든 상태 전이를 DynamoDB에 기록하지만 Express는 in-memory 처리 + 종료 후 일괄로 CloudWatch Logs에 기록. 이게 비용과 성능 차이의 원인. Express가 도중에 노드 장애가 나면 처음부터 재실행(at-least-once의 정확한 의미). 한 워크플로가 Standard로 "포함된" Express 자식 워크플로를 호출하는 nested pattern으로 두 모델의 장점을 결합 가능 — Distributed Map이 이 패턴을 활용한다.
+> Express Workflow 내부 구현은 Standard와 다른 코드 경로를 사용한다. Standard는 모든 상태 전이를 DynamoDB에 기록하지만 Express는 in-memory 처리 + 종료 후 일괄로 CloudWatch Logs에 기록. 이게 비용과 성능 차이의 원인. Express가 도중에 노드 장애가 나면 처음부터 재실행(at-least-once의 정확한 의미). 한 워크플로가 Standard로 "포함된" Express 자식 워크플로를 호출하는 nested pattern으로 두 모델의 장점을 결합 가능 — Distributed Map이 이 패턴을 활용한다.
 
 ## ASL의 8가지 상태 타입
 
@@ -123,7 +123,7 @@ Fail        워크플로 실패 종료 (Error 정보 포함)
 
 이 예시에 ASL의 모든 패턴이 들어있다. **Retry**가 일시 오류에 백오프 재시도, **Choice**가 분기, **Parallel**이 결제·재고 동시 처리, **Catch**가 실패 시 보상 트랜잭션. 같은 로직을 Lambda로 직접 짜면 함수 5개 + 메시지 큐 + DynamoDB 상태 테이블이 필요한데, ASL로는 한 JSON에 완성.
 
-> 💡 **관련 이론**: Saga 패턴은 1987년 Hector Garcia-Molina & Kenneth Salem의 논문 "Sagas"에서 제안된 분산 트랜잭션 모델이다. ACID의 atomicity를 분산 환경에서 구현하기 어렵기 때문에, 일련의 작업과 각 작업의 **보상 트랜잭션**(compensating transaction)을 짝으로 정의해 실패 시 역순으로 보상을 실행한다. Step Functions의 `Parallel` + `Catch` + 보상 Lambda 패턴이 정확히 Saga 구현체. 마이크로서비스 아키텍처의 결제·주문·재고 같은 다중 서비스 트랜잭션의 표준 해법.
+> Saga 패턴은 1987년 Hector Garcia-Molina & Kenneth Salem의 논문 "Sagas"에서 제안된 분산 트랜잭션 모델이다. ACID의 atomicity를 분산 환경에서 구현하기 어렵기 때문에, 일련의 작업과 각 작업의 **보상 트랜잭션**(compensating transaction)을 짝으로 정의해 실패 시 역순으로 보상을 실행한다. Step Functions의 `Parallel` + `Catch` + 보상 Lambda 패턴이 정확히 Saga 구현체. 마이크로서비스 아키텍처의 결제·주문·재고 같은 다중 서비스 트랜잭션의 표준 해법.
 
 ## AWS SDK Service Integration: Lambda 없는 직접 통합
 
@@ -160,7 +160,7 @@ Fail        워크플로 실패 종료 (Error 정보 포함)
 
 `.sync` suffix는 작업이 완료될 때까지 대기(polling 자동). `.waitForTaskToken`은 외부 콜백 패턴. 아무 suffix 없으면 fire-and-forget.
 
-> 📚 **사례**: 2021년 한 미디어 회사가 비디오 트랜스코딩 워크플로를 Step Functions + Lambda 12개로 운영하고 있었다. SDK Integration 출시 후 12개 Lambda 중 9개를 직접 통합으로 대체 — 워크플로 정의가 1/3로 줄고 cold start가 사라져 P99 latency가 18초에서 4초로 감소. Lambda 코드 유지보수 부담도 사라졌다. 시험에서 "Lambda 호출만 하는 함수가 많아 운영이 복잡"한 시나리오는 SDK Integration이 답.
+> 2021년 한 미디어 회사가 비디오 트랜스코딩 워크플로를 Step Functions + Lambda 12개로 운영하고 있었다. SDK Integration 출시 후 12개 Lambda 중 9개를 직접 통합으로 대체 — 워크플로 정의가 1/3로 줄고 콜드 스타트가 사라져 P99 latency가 18초에서 4초로 감소. Lambda 코드 유지보수 부담도 사라졌다. 시험에서 "Lambda 호출만 하는 함수가 많아 운영이 복잡"한 시나리오는 SDK Integration이 답.
 
 > ⚠️ **함정**: SDK Integration의 IAM은 State Machine의 실행 Role이 가져야 한다. `arn:aws:states:::aws-sdk:cloudformation:createStack`을 호출하려면 Role에 `cloudformation:CreateStack` 권한이 필수. AWS는 자동으로 권한을 부여하지 않으므로 Role 정책에 명시. CDK의 `tasks.CallAwsService`는 `iamResources`/`iamAction`을 받아 자동으로 권한을 합성해주지만 ASL JSON 직접 작성 시 빠뜨리기 쉽다.
 
@@ -226,7 +226,7 @@ def handler(event, context):
     return {'statusCode': 200}
 ```
 
-> 🔍 **더 깊이**: TaskToken은 cryptographic random string이고, Step Functions 서비스 내부의 워크플로 실행 인스턴스에 매핑된다. 토큰을 가진 외부 시스템은 "이 워크플로의 N번째 상태를 깨워라"는 ability를 가지게 되므로 사실상 **capability-based security**의 패턴(Henry Levy 1984). 한 번 사용된 토큰은 재사용 불가, 토큰 유실 시 워크플로는 timeout까지 대기. 1년 대기 비용은 거의 0 (Standard 가격은 상태 전이당이지 대기 시간당이 아님). 이게 Step Functions가 Airflow보다 사람 개입 워크플로에 적합한 구조적 이유.
+> TaskToken은 cryptographic random string이고, Step Functions 서비스 내부의 워크플로 실행 인스턴스에 매핑된다. 토큰을 가진 외부 시스템은 "이 워크플로의 N번째 상태를 깨워라"는 ability를 가지게 되므로 사실상 **capability-based security**의 패턴(Henry Levy 1984). 한 번 사용된 토큰은 재사용 불가, 토큰 유실 시 워크플로는 timeout까지 대기. 1년 대기 비용은 거의 0 (Standard 가격은 상태 전이당이지 대기 시간당이 아님). 이게 Step Functions가 Airflow보다 사람 개입 워크플로에 적합한 구조적 이유.
 
 > 🎯 **시나리오**: "프로덕션 배포 시 보안팀 승인 → DevOps 팀 승인 → 자동 배포의 3단계 검토 워크플로. 각 단계는 Slack 메시지로 통보되고, 7일 안에 응답 없으면 자동 취소." — 답은 Standard Workflow + `.waitForTaskToken` 3번 + `TimeoutSeconds: 604800`. SNS Topic 또는 EventBridge로 Slack 발송. 외부 승인 처리 Lambda가 `SendTaskSuccess/Failure` 호출. CodePipeline의 ManualApprovalAction과 비교하면 Step Functions가 훨씬 더 유연한 통보 채널·승인 워크플로를 표현 가능.
 
@@ -281,7 +281,7 @@ Retry는 순서대로 평가되어 첫 번째 매칭하는 정책 적용. 백오
 
 Catch는 Retry가 모두 실패한 후 매칭. `States.ALL`은 모든 에러, `Lambda.Unknown`은 timeout, custom 에러는 Lambda 함수에서 throw한 에러 이름.
 
-> 💡 **관련 이론**: 지수 백오프 + Jitter는 1995년 Lamport의 분산 시스템 논문과 2015년 AWS Architecture Blog "Exponential Backoff And Jitter" 글에서 표준화됐다. Jitter 없이 같은 백오프 식을 모든 클라이언트가 사용하면 retry가 동기화돼 backend에 burst가 반복된다(thundering herd). Full jitter는 `random(0, interval × backoffRate^attempt)`로 분산. ASL은 `JitterStrategy: "FULL"`(2023+)로 이를 native 지원. 시험에서 "DynamoDB throttle → retry burst"의 해법은 backoff + jitter.
+> 지수 백오프 + Jitter는 1995년 Lamport의 분산 시스템 논문과 2015년 AWS Architecture Blog "Exponential Backoff And Jitter" 글에서 표준화됐다. Jitter 없이 같은 백오프 식을 모든 클라이언트가 사용하면 retry가 동기화돼 backend에 burst가 반복된다(thundering herd). Full jitter는 `random(0, interval × backoffRate^attempt)`로 분산. ASL은 `JitterStrategy: "FULL"`(2023+)로 이를 native 지원. 시험에서 "DynamoDB throttle → retry burst"의 해법은 backoff + jitter.
 
 ## Distributed Map: 1만 + 동시 실행
 
@@ -332,13 +332,13 @@ Catch는 Retry가 모두 실패한 후 매칭. `States.ALL`은 모든 에러, `L
 - **ToleratedFailurePercentage**: 5% 실패까지 허용, 초과 시 부모 실패
 - **ResultWriter**: 결과를 S3에 자동 저장
 
-> 📚 **사례**: 2023년 한 광고 회사가 매일 5000만 클릭 이벤트를 S3에서 처리하는 ETL을 Spark 클러스터로 운영하고 있었다. Spark 클러스터 운영 비용·복잡도 부담으로 Distributed Map + Lambda로 전환 — 클러스터 사라지고 비용 60% 절감, 처리 시간 비슷. 핵심은 (1) Distributed Map이 5000만 객체를 자동 분할, (2) ToleratedFailurePercentage 1%로 부분 실패 허용, (3) Lambda 1만 동시 실행으로 throughput 확보. 시험에서 "수천만 객체 처리 + 부분 실패 허용"은 Distributed Map.
+> 2023년 한 광고 회사가 매일 5000만 클릭 이벤트를 S3에서 처리하는 ETL을 Spark 클러스터로 운영하고 있었다. Spark 클러스터 운영 비용·복잡도 부담으로 Distributed Map + Lambda로 전환 — 클러스터 사라지고 비용 60% 절감, 처리 시간 비슷. 핵심은 (1) Distributed Map이 5000만 객체를 자동 분할, (2) ToleratedFailurePercentage 1%로 부분 실패 허용, (3) Lambda 1만 동시 실행으로 throughput 확보. 시험에서 "수천만 객체 처리 + 부분 실패 허용"은 Distributed Map.
 
-> 🔍 **더 깊이**: Inline Map과 Distributed Map의 architectural 차이 — Inline은 부모 워크플로 내부에서 동기 처리되어 부모의 상태 전이 한도(execution history 25000)에 영향. Distributed는 각 iteration이 별도 child execution(Standard 또는 Express)이라 부모는 child 실행 ID만 추적. 즉 부모가 "10000개 child를 launch했고 9990개 성공" 같은 메타 정보만 가진다. 결과적으로 부모 history는 작게 유지되고 동시성은 child 풀로 확장. 이게 가능했던 이유는 2022년 SF가 child execution을 별도 가격 단위로 분리했기 때문.
+> Inline Map과 Distributed Map의 architectural 차이 — Inline은 부모 워크플로 내부에서 동기 처리되어 부모의 상태 전이 한도(execution history 25000)에 영향. Distributed는 각 iteration이 별도 child execution(Standard 또는 Express)이라 부모는 child 실행 ID만 추적. 즉 부모가 "10000개 child를 launch했고 9990개 성공" 같은 메타 정보만 가진다. 결과적으로 부모 history는 작게 유지되고 동시성은 child 풀로 확장. 이게 가능했던 이유는 2022년 SF가 child execution을 별도 가격 단위로 분리했기 때문.
 
 ## 멀티 리전 순차 배포 워크플로
 
-DOP 시험에서 가장 자주 나오는 Step Functions 시나리오.
+DOP 시험에 나오는 대표적인 Step Functions 시나리오.
 
 ```json
 {
@@ -436,7 +436,7 @@ DOP 시험에서 가장 자주 나오는 Step Functions 시나리오.
 
 이 구조의 가치는 모든 분기·대기·롤백이 **한 JSON에 명시적으로 표현**된다는 점. Lambda로 같은 로직을 짜면 DynamoDB 상태 테이블 + Step 추적 + 에러 처리 + 롤백 순서 보장에 200줄 이상 필요하고 디버깅이 거의 불가능하다.
 
-> 🎯 **시나리오**: "us-east-1 → eu-west-1 → ap-northeast-2 순서로 배포하되, 각 리전에서 30분 모니터링 후 알람 발동 시 그때까지 배포된 모든 리전을 역순으로 롤백." — 답은 위 구조 + AP 리전 추가. 핵심은 (1) Wait + Choice 패턴, (2) ResultPath로 각 리전의 deploymentId 누적, (3) Catch로 역순 롤백 트리거. 비슷한 시나리오가 매년 시험에 등장.
+> 🎯 **시나리오**: "us-east-1 → eu-west-1 → ap-northeast-2 순서로 배포하되, 각 리전에서 30분 모니터링 후 알람 발동 시 그때까지 배포된 모든 리전을 역순으로 롤백." — 답은 위 구조 + AP 리전 추가. 구성 요소는 (1) Wait + Choice 패턴, (2) ResultPath로 각 리전의 deploymentId 누적, (3) Catch로 역순 롤백 트리거다. 비슷한 시나리오가 출제될 수 있다.
 
 ## CDK + Step Functions: 타입 안전한 워크플로
 
@@ -531,7 +531,7 @@ API Gateway의 통합 타입을 `AWS_PROXY` 대신 **AWS service integration**�
 
 > 🎯 **시나리오**: "결제 처리가 검증·인증·차지·기록 4단계로 구성되고, 각 단계는 별개 마이크로서비스. API는 동기 응답이 필요." — 답은 Express + StartSyncExecution. Lambda 함수 하나에 4 호출을 인라인으로 짜는 것보다 워크플로 시각화·재시도·에러 처리가 자동.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 다섯 가지다. 첫째, **Standard vs Express는 호출 빈도×실행 시간**의 곱으로 결정 — 긴 + 적음은 Standard, 짧은 + 많음은 Express. 둘째, **8가지 ASL 상태 타입**(Task/Choice/Parallel/Map/Wait/Pass/Succeed/Fail)의 조합으로 모든 워크플로 표현. 셋째, **AWS SDK Service Integration**으로 200+ 서비스를 Lambda 없이 직접 호출. 넷째, **TaskToken**(`.waitForTaskToken`)으로 외부 시스템·사람 개입을 capability-based로 통합. 다섯째, **Distributed Map**으로 1만 동시 자식 워크플로 + 부분 실패 허용 처리.
 

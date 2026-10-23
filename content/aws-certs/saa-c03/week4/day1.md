@@ -12,15 +12,15 @@ S3는 2006년 AWS 최초의 서비스로 출시됐을 때, 외부 개발자들�
 
 S3의 내부 구조는 2007년 Amazon의 Dynamo 논문(DeCandia et al., SOSP 2007)에서 설명한 분산 키-값 시스템의 원리를 따른다. 버킷 이름과 키가 결합되어 해시 공간에서 위치가 결정되고, 그 위치를 담당하는 스토리지 서버가 데이터를 저장한다. 11개의 9(99.999999999%)라는 내구성은 여러 시설·서버·드라이브에 걸친 복제로 달성된다.
 
-> 💡 **관련 이론**: S3의 내구성 설계는 **Reed-Solomon 에러 정정 코드**와 **일관된 해싱(Consistent Hashing)** 원리를 활용한다. Reed-Solomon은 원본 데이터를 k개의 데이터 청크와 m개의 패리티 청크로 나눠서, m개의 청크가 손실되어도 복구할 수 있다. Dynamo 논문에서 설명하는 가상 노드(Virtual Node) 기반 Consistent Hashing은 스토리지 서버 추가/제거 시 데이터 재배치를 최소화한다. S3는 이를 수백 PB 규모로 운영하고 있다.
+S3의 내구성 설계는 **Reed-Solomon 에러 정정 코드**와 **일관된 해싱(Consistent Hashing)** 원리를 활용한다. Reed-Solomon은 원본 데이터를 k개의 데이터 청크와 m개의 패리티 청크로 나눠서, m개의 청크가 손실되어도 복구할 수 있다. Dynamo 논문에서 설명하는 가상 노드(Virtual Node) 기반 Consistent Hashing은 스토리지 서버 추가/제거 시 데이터 재배치를 최소화한다. S3는 이를 수백 PB 규모로 운영하고 있다.
 
-> 📚 **사례**: 2006년 S3 출시 당시 AWS의 Andy Jassy가 공개한 바에 따르면, 첫 번째 고객 중 하나는 Smugmug(사진 공유 서비스)였다. Smugmug는 기존 NetApp SAN 스토리지를 모두 S3로 이전해 수백만 달러의 스토리지 비용을 절감했다. 이 사례가 "클라우드 스토리지"라는 개념의 실증 사례가 됐다.
+**사례**: 2006년 S3 출시 당시 AWS의 Andy Jassy가 공개한 바에 따르면, 첫 번째 고객 중 하나는 Smugmug(사진 공유 서비스)였다. Smugmug는 기존 NetApp SAN 스토리지를 모두 S3로 이전해 수백만 달러의 스토리지 비용을 절감했다. 이 사례가 "클라우드 스토리지"라는 개념의 실증 사례가 됐다.
 
 ## 버킷·키·객체: 추상화의 의미
 
 **버킷 이름의 글로벌 유일성**은 DNS 호스트네임으로 변환되기 때문이다. S3 객체의 기본 URL은 `https://bucket-name.s3.region.amazonaws.com/key`다. 버킷 이름이 DNS 서브도메인이 되므로 전 세계에서 유일해야 한다. 데이터는 버킷 생성 시 선택한 리전에만 저장된다. "글로벌 이름 + 리전 데이터"라는 이중 구조다.
 
-**키(Key)**는 계층적 경로처럼 보이지만(`data/2025/january/report.csv`) 실제로는 단순한 문자열이다. S3에는 디렉토리 개념이 없다. `/` 문자를 포함한 키를 prefix로 필터링해서 "폴더처럼" 보여주는 것이 콘솔과 SDK가 하는 트릭이다. `ListObjectsV2` API에서 `Delimiter=/`와 `Prefix=data/2025/`를 조합하면 해당 "폴더"의 내용을 볼 수 있다.
+**키(Key)**는 계층적 경로처럼 보이지만(`data/2025/january/report.csv`) 실제로는 단순한 문자열이다. S3에는 디렉터리 개념이 없다. `/` 문자를 포함한 키를 prefix로 필터링해서 "폴더처럼" 보여주는 것이 콘솔과 SDK가 하는 트릭이다. `ListObjectsV2` API에서 `Delimiter=/`와 `Prefix=data/2025/`를 조합하면 해당 "폴더"의 내용을 볼 수 있다.
 
 이 가상 폴더 구조가 S3 성능에 영향을 미쳤던 역사가 있다. 초기 S3는 키를 사전순으로 파티셔닝했다. 모든 키가 `logs/2025-01-01/`로 시작하면 같은 파티션에 몰려 I/O가 집중됐다. 과거 가이드에서 "키에 랜덤 prefix를 추가하라"고 했던 이유다. 그러나 2018년부터 S3는 자동 파티셔닝을 지원하며 초당 3,500 PUT/DELETE와 5,500 GET 요청을 버킷 prefix별로 자동으로 분산한다. 현재는 의도적인 키 분산이 불필요하다.
 
@@ -37,17 +37,15 @@ S3의 내부 구조는 2007년 Amazon의 Dynamo 논문(DeCandia et al., SOSP 200
 - 5GB 초과: 멀티파트 필수
 ```
 
-> 🔍 **더 깊이**: 멀티파트 업로드의 정확한 API 시퀀스는 3단계다. ① `CreateMultipartUpload` → Upload ID 발급. ② `UploadPart` (파트 번호 1-10,000, 각 최소 5MB) × N번, 병렬로 가능. ③ `CompleteMultipartUpload` → 파트 번호 순서와 ETag 목록을 제출하면 S3가 조합. 중간에 실패하면 해당 파트만 재업로드하면 된다. `AbortMultipartUpload`나 수명 주기 정책으로 미완료 파트를 정리해야 한다. 미완료 파트는 완료된 객체처럼 과금된다.
+멀티파트 업로드의 정확한 API 시퀀스는 3단계다. ① `CreateMultipartUpload` → Upload ID 발급. ② `UploadPart` (파트 번호 1-10,000, 각 최소 5MB) × N번, 병렬로 가능. ③ `CompleteMultipartUpload` → 파트 번호 순서와 ETag 목록을 제출하면 S3가 조합. 중간에 실패하면 해당 파트만 재업로드하면 된다. `AbortMultipartUpload`나 수명 주기 정책으로 미완료 파트를 정리해야 한다. 미완료 파트는 완료된 객체처럼 과금된다.
 
 ## S3 일관성 모델의 진화: 왜 2020년이었나
 
 S3 출시부터 2020년 11월까지, S3는 **최종 일관성(Eventually Consistent)** 모델을 사용했다. PUT 후 즉시 GET하면 구버전이 반환될 수 있었고, 삭제 후 LIST에 여전히 객체가 나타날 수 있었다. 개발자들이 삭제 후 "조금 기다리는" 코드를 짜야 했던 이유다.
 
-왜 강한 일관성이 처음부터 불가능했는가. 분산 시스템 이론의 CAP 정리(Brewer, 2000)에 따르면 분산 시스템은 Consistency, Availability, Partition Tolerance 중 두 가지만 동시에 달성할 수 있다. S3는 수백만 명이 동시에 사용하는 글로벌 시스템이므로 Availability와 Partition Tolerance를 우선시했다. 강한 일관성을 제공하려면 쓰기 시 모든 복제본에 동기적으로 반영해야 해서 레이턴시가 높아진다.
+왜 강한 일관성이 처음부터 불가능했는가. 분산 시스템 이론의 CAP 정리(Brewer, 2000)에 따르면 분산 시스템은 Consistency, Availability, Partition Tolerance 중 두 가지만 동시에 달성할 수 있다. S3는 수백만 명이 동시에 사용하는 글로벌 시스템이므로 Availability와 Partition Tolerance를 우선시했다. 강한 일관성을 제공하려면 쓰기 시 모든 복제본에 동기적으로 반영해야 해서 지연 시간이 높아진다.
 
-2020년 12월, AWS는 S3의 **모든 작업에 강한 일관성(Strong Consistency)**을 발표했다. PUT/DELETE 후 즉시 GET하면 최신 데이터를 반환하고, LIST도 최신 상태를 반영한다. 이것이 가능해진 이유는 S3의 내부 인덱스 시스템을 재설계해서 추가 레이턴시 없이 일관성을 보장하는 방법을 찾았기 때문이다.
-
-> 💡 **관련 이론**: S3의 강한 일관성은 PACELC 정리(Abadi, 2012)의 관점에서 "네트워크 파티션이 없을 때 레이턴시(L)를 희생하지 않고 일관성(C)을 달성"한 사례다. 내부적으로는 각 객체의 메타데이터를 담당하는 메타데이터 서비스에서 Paxos 또는 유사한 합의 프로토콜을 사용해 원자적(atomic) 업데이트를 보장하는 것으로 추정된다. AWS는 상세 구현을 공개하지 않았다.
+2020년 12월, AWS는 S3의 **모든 작업에 강한 일관성(Strong Consistency)**을 발표했다. PUT/DELETE 후 즉시 GET하면 최신 데이터를 반환하고, LIST도 최신 상태를 반영한다. 이것이 가능해진 이유는 S3의 내부 인덱스 시스템을 재설계해서 추가 지연 시간 없이 일관성을 보장하는 방법을 찾았기 때문이다.
 
 ## 버전 관리: 내부 동작과 비용 함정
 
@@ -94,7 +92,7 @@ Object Lock은 객체를 **Write Once, Read Many(WORM)** 방식으로 보호한�
 - **Retention Period**: 특정 날짜까지 잠금 (날짜 또는 기간으로 설정)
 - **Legal Hold**: 날짜 없이 무기한 잠금 (소송 홀드, 별도 권한으로 해제)
 
-> 📚 **사례**: 금융 서비스 업계는 SEC Rule 17a-4(미국 증권거래위원회 규정)에 따라 거래 기록을 최소 3-6년간 수정 불가 상태로 보관해야 한다. AWS S3 Object Lock Compliance 모드는 이 요구를 충족하며, Cohasset Associates가 S3 Object Lock이 SEC Rule 17a-4와 CFTC Rule 1.31을 준수함을 인증했다.
+**사례**: 금융 서비스 업계는 SEC Rule 17a-4(미국 증권거래위원회 규정)에 따라 거래 기록을 최소 3-6년간 수정 불가 상태로 보관해야 한다. AWS S3 Object Lock Compliance 모드는 이 요구를 충족하며, Cohasset Associates가 S3 Object Lock이 SEC Rule 17a-4와 CFTC Rule 1.31을 준수함을 인증했다.
 
 ## S3 Replication: CRR과 SRR의 차이
 
@@ -106,7 +104,7 @@ Object Lock은 객체를 **Write Once, Read Many(WORM)** 방식으로 보호한�
 
 **RTC(Replication Time Control)**: 99.99%의 객체를 15분 이내에 복제하는 SLA를 제공한다. 추가 비용이 있지만, "RPO 15분"이라는 명확한 보장이 필요한 규제 환경에서 필수다.
 
-> 💡 **관련 이론**: CRR은 **비동기 복제(Asynchronous Replication)**다. 원본 버킷에 PUT이 성공하면 클라이언트에 즉시 응답하고, 복제는 백그라운드에서 진행된다. 이는 RDS Cross-Region Read Replica와 동일한 원리다. "복제 전에 원본 리전이 완전히 다운되면" RPO > 0이 된다. RTC를 쓰면 그 RPO를 최대 15분으로 제한한다.
+CRR은 **비동기 복제(Asynchronous Replication)**다. 원본 버킷에 PUT이 성공하면 클라이언트에 즉시 응답하고, 복제는 백그라운드에서 진행된다. 이는 RDS Cross-Region Read Replica와 동일한 원리다. "복제 전에 원본 리전이 완전히 다운되면" RPO > 0이 된다. RTC를 쓰면 그 RPO를 최대 15분으로 제한한다.
 
 ## Presigned URL: 서명 메커니즘
 
@@ -143,13 +141,13 @@ url = s3.generate_presigned_url(
 )
 ```
 
-> 🔍 **더 깊이**: Presigned URL을 직접 S3 버킷으로 업로드하는 패턴("Direct Browser Upload")은 서버를 거치지 않아 서버 비용과 대역폭을 절감한다. 클라이언트가 API 서버에 Presigned URL 발급을 요청 → API 서버가 Presigned PUT URL을 반환 → 클라이언트가 그 URL로 S3에 직접 PUT → S3가 완료 후 이벤트 알림으로 처리 파이프라인 트리거. 이 패턴에서 S3 CORS 설정이 필요하다. 브라우저가 `PUT` 전에 `OPTIONS` preflight를 보내기 때문이다.
+Presigned URL을 직접 S3 버킷으로 업로드하는 패턴("Direct Browser Upload")은 서버를 거치지 않아 서버 비용과 대역폭을 절감한다. 클라이언트가 API 서버에 Presigned URL 발급을 요청 → API 서버가 Presigned PUT URL을 반환 → 클라이언트가 그 URL로 S3에 직접 PUT → S3가 완료 후 이벤트 알림으로 처리 파이프라인 트리거. 이 패턴에서 S3 CORS 설정이 필요하다. 브라우저가 `PUT` 전에 `OPTIONS` preflight를 보내기 때문이다.
 
 ## S3 이벤트 알림: EventBridge vs 기본 알림
 
 S3 이벤트는 두 채널로 보낼 수 있다.
 
-**기본 이벤트 알림**: S3 → SNS/SQS/Lambda로 직접 전송. 설정이 간단하고 레이턴시가 낮다. 단, 단일 목적지만 지정 가능하고 필터가 prefix/suffix로만 제한된다.
+**기본 이벤트 알림**: S3 → SNS/SQS/Lambda로 직접 전송. 설정이 간단하고 지연 시간이 낮다. 단, 단일 목적지만 지정 가능하고 필터가 prefix/suffix로만 제한된다.
 
 **EventBridge 통합**: S3 → EventBridge → 여러 목적지. EventBridge의 규칙(Rule)으로 이벤트 유형별로 다른 처리를 정의할 수 있다. Archive, Replay, 여러 타겟, 세밀한 필터링이 가능하다.
 
@@ -271,7 +269,7 @@ aws s3api put-bucket-replication \
   }'
 ```
 
-## 정리하며
+## 정리
 
 S3는 단순한 파일 저장소처럼 보이지만, 내부적으로는 Dynamo 논문에서 영감을 받은 분산 객체 스토리지 시스템이다. 불변 객체 모델이 대규모 분산 복제를 가능하게 하고, 2020년의 일관성 업그레이드로 개발자의 부담이 크게 줄었다.
 

@@ -20,7 +20,7 @@
 
 - 검사 순서가 가장 중요한 출제 포인트다.
 
-> 💡 **검사 순서(절대 암기)**: ① `/etc/hosts.allow`를 먼저 검사 → 일치하면 **허용하고 종료**. ② 없으면 `/etc/hosts.deny`를 검사 → 일치하면 **거부**. ③ 어느 쪽에도 없으면 **기본 허용**. 즉 **allow가 deny보다 우선**하며, 둘 다 해당 없으면 통과한다.
+**검사 순서(절대 암기)**: ① `/etc/hosts.allow`를 먼저 검사 → 일치하면 **허용하고 종료**. ② 없으면 `/etc/hosts.deny`를 검사 → 일치하면 **거부**. ③ 어느 쪽에도 없으면 **기본 허용**. 즉 **allow가 deny보다 우선**하며, 둘 다 해당 없으면 통과한다.
 
 - 파일의 문법은 `서비스 : 호스트` 형태다.
 
@@ -79,7 +79,7 @@ vi /etc/selinux/config
 # SELINUX=enforcing  ← 이 값을 enforcing/permissive/disabled로
 ```
 
-> 💡 **일시 vs 영구**: `setenforce`는 enforcing↔permissive만 **일시적으로** 전환하며 재부팅하면 `/etc/selinux/config`의 값으로 돌아간다. `disabled`로 가거나 영구 변경하려면 `/etc/selinux/config` 파일을 수정하고 재부팅해야 한다. `setenforce`로는 disabled로 갈 수 없다는 점이 함정이다.
+**일시 vs 영구**: `setenforce`는 enforcing↔permissive만 **일시적으로** 전환하며 재부팅하면 `/etc/selinux/config`의 값으로 돌아간다. `disabled`로 가거나 영구 변경하려면 `/etc/selinux/config` 파일을 수정하고 재부팅해야 한다. `setenforce`로는 disabled로 갈 수 없다는 점이 함정이다.
 
 ### 보안 컨텍스트
 
@@ -110,9 +110,9 @@ getsebool -a
 setsebool -P httpd_can_network_connect on
 ```
 
-> 🔍 **chcon vs restorecon**: `chcon`은 컨텍스트를 직접 바꾸지만 임시적이라 `restorecon`이나 파일시스템 재라벨링 시 사라질 수 있다. 영구적으로는 `semanage fcontext`로 정책에 규칙을 등록한 뒤 `restorecon`으로 적용하는 것이 정석이다. `restorecon`은 정책에 정의된 "원래 있어야 할" 컨텍스트로 되돌린다.
+**chcon vs restorecon**: `chcon`은 컨텍스트를 직접 바꾸지만 임시적이라 `restorecon`이나 파일시스템 재라벨링 시 사라질 수 있다. 영구적으로는 `semanage fcontext`로 정책에 규칙을 등록한 뒤 `restorecon`으로 적용하는 것이 정석이다. `restorecon`은 정책에 정의된 "원래 있어야 할" 컨텍스트로 되돌린다.
 
-> 📚 **실무 신호**: "권한(chmod)은 분명 맞는데 서비스가 파일에 접근 못 한다"면 SELinux 컨텍스트를 의심하라. 임시로 `setenforce 0`(permissive)로 바꿔 문제가 사라지면 원인은 SELinux다 — 단, 운영에서는 끄지 말고 컨텍스트를 올바르게 고쳐야 한다.
+"권한(chmod)은 분명 맞는데 서비스가 파일에 접근 못 한다"면 SELinux 컨텍스트를 의심할 수 있다. 임시로 `setenforce 0`(permissive)로 바꿔 문제가 사라지면 원인은 SELinux다 — 단, 운영에서는 끄지 말고 컨텍스트를 올바르게 고쳐야 한다.
 
 ## 로그 관리: /var/log와 rsyslog
 
@@ -133,7 +133,7 @@ setsebool -P httpd_can_network_connect on
 | `/var/log/btmp` | 로그인 실패 기록 (`lastb`로 조회) |
 | `/var/log/lastlog` | 사용자별 마지막 로그인 (`lastlog`로 조회) |
 
-> ⚠️ **바이너리 로그 주의**: `wtmp`, `btmp`, `lastlog`는 텍스트가 아닌 **바이너리** 파일이다. `cat`으로 열면 깨져 보이고, 각각 `last`, `lastb`, `lastlog` 전용 명령으로 읽어야 한다. 시험 단골 함정이다.
+> ⚠️ **바이너리 로그 주의**: `wtmp`, `btmp`, `lastlog`는 텍스트가 아닌 **바이너리** 파일이다. `cat`으로 열면 깨져 보이고, 각각 `last`, `lastb`, `lastlog` 전용 명령으로 읽어야 한다. 함정이 되기 쉽다.
 
 ### rsyslog.conf: facility와 priority
 
@@ -158,7 +158,7 @@ kern.*                         /var/log/kern.log
 - 예: `mail.err`는 err, crit, alert, emerg를 모두 잡는다.
 - `mail.*`는 모든 수준, `mail.none`은 해당 facility를 제외한다는 뜻이다.
 
-> 💡 **핵심 해석**: `*.info;mail.none;authpriv.none /var/log/messages`는 "모든 facility의 info 이상을 messages에 기록하되, mail과 authpriv는 제외"라는 의미다. `=` 기호를 붙이면(예: `mail.=info`) 정확히 그 수준만 잡는다. 이 facility.priority 짝 해석이 실기 단골이다.
+**핵심 해석**: `*.info;mail.none;authpriv.none /var/log/messages`는 "모든 facility의 info 이상을 messages에 기록하되, mail과 authpriv는 제외"라는 의미다. `=` 기호를 붙이면(예: `mail.=info`) 정확히 그 수준만 잡는다. 이 facility.priority 짝 해석이 실기에서 필요하다.
 
 ```bash
 # rsyslog.conf 수정 후 적용
@@ -202,7 +202,7 @@ logger -p authpriv.notice "test message"
 | `size N` | 지정 크기 초과 시 순환 |
 | `postrotate ... endscript` | 순환 후 실행할 스크립트(보통 서비스 reload) |
 
-> 💡 **rotate N의 의미**: `rotate 4` + `weekly`는 "매주 순환하며 최근 4개(약 4주치)를 보관"한다는 뜻이다. 순환되면 `myapp.log`→`myapp.log.1`→`myapp.log.2`...로 밀려나고, 5번째가 되면 가장 오래된 것이 삭제된다. `compress`가 있으면 `.gz`로 압축된다.
+**rotate N의 의미**: `rotate 4` + `weekly`는 "매주 순환하며 최근 4개(약 4주치)를 보관"한다는 뜻이다. 순환되면 `myapp.log`→`myapp.log.1`→`myapp.log.2`...로 밀려나고, 5번째가 되면 가장 오래된 것이 삭제된다. `compress`가 있으면 `.gz`로 압축된다.
 
 ```bash
 # 설정 문법 점검 + 강제 실행(디버그)
@@ -210,7 +210,7 @@ logrotate -d /etc/logrotate.conf      # -d: 디버그(실제 실행 안 함, 시
 logrotate -f /etc/logrotate.conf      # -f: 강제 즉시 실행
 ```
 
-> 🔍 **직접 쳐보기**: `/etc/logrotate.d/`의 기존 파일(예: `syslog`)을 열어 어떤 지시어가 쓰였는지 보고, `logrotate -d`(디버그 모드)로 실제 파일을 건드리지 않고 어떤 동작이 일어날지 시뮬레이션해 보라. 또 `logger -p local0.err "hi"`로 메시지를 만든 뒤 `/var/log/messages`에서 추적해 facility.priority 동작을 눈으로 확인하라.
+**직접 쳐보기**: `/etc/logrotate.d/`의 기존 파일(예: `syslog`)을 열어 어떤 지시어가 쓰였는지 보고, `logrotate -d`(디버그 모드)로 실제 파일을 건드리지 않고 어떤 동작이 일어날지 시뮬레이션해 본다. 또 `logger -p local0.err "hi"`로 메시지를 만든 뒤 `/var/log/messages`에서 추적해 facility.priority 동작을 눈으로 확인한다.
 
 ## 침입 탐지(IDS) — 뚫린 뒤를 알아채는 겹
 
@@ -263,7 +263,7 @@ fail2ban-client set sshd unbanip 1.2.3.4     # 수동 차단 해제
 fail2ban-client reload                       # 설정 다시 읽기
 ```
 
-> ⚠️ **함정**: 설정을 `jail.conf`에 직접 쓰면 패키지 업데이트 때 통째로 덮어써 사라진다 — 반드시 **`jail.local`**(또는 `jail.d/`)에 작성한다. 또 `ignoreip`에 관리 대역을 넣지 않으면 암호 오타 몇 번으로 **관리자 본인이 차단**되고, `logpath`가 배포판과 어긋나면(RHEL 계열 `/var/log/secure` vs 데비안 계열 `/var/log/auth.log`) jail이 떠 있어도 아무것도 잡지 못한다.
+설정을 `jail.conf`에 직접 쓰면 패키지 업데이트 때 통째로 덮어써 사라진다 — 반드시 **`jail.local`**(또는 `jail.d/`)에 작성한다. 또 `ignoreip`에 관리 대역을 넣지 않으면 암호 오타 몇 번으로 **관리자 본인이 차단**되고, `logpath`가 배포판과 어긋나면(RHEL 계열 `/var/log/secure` vs 데비안 계열 `/var/log/auth.log`) jail이 떠 있어도 아무것도 잡지 못한다.
 
 ### snort: 패킷을 보는 NIDS
 
@@ -303,9 +303,9 @@ alert tcp any any -> 192.168.1.0/24 80 (msg:"passwd access"; content:"/etc/passw
 - tripwire는 설정·정책을 사이트 키와 로컬 키로 서명해 보관하고(`twadmin`), 검사 리포트는 `twprint`로 읽는다.
 - AIDE는 기준 DB를 `/var/lib/aide/aide.db.gz`에 두며, `--init`이 만든 `aide.db.new.gz`를 관리자가 직접 이름을 바꿔 승격시키는 방식이다.
 
-> ⚠️ **함정**: 기준 DB는 **시스템이 확실히 깨끗할 때(설치 직후) 만들어야** 의미가 있다. 이미 침해된 상태에서 `--init`을 하면 백도어까지 "정상"으로 등록되어 도구가 무력해진다. 또 DB와 설정을 그 서버의 쓰기 가능한 위치에만 두면 침입자가 함께 조작할 수 있으므로 읽기 전용 매체나 외부 저장소에 보관하는 것이 원칙이다.
+기준 DB는 **시스템이 확실히 깨끗할 때(설치 직후) 만들어야** 의미가 있다. 이미 침해된 상태에서 `--init`을 하면 백도어까지 "정상"으로 등록되어 도구가 무력해진다. 또 DB와 설정을 그 서버의 쓰기 가능한 위치에만 두면 침입자가 함께 조작할 수 있으므로 읽기 전용 매체나 외부 저장소에 보관하는 것이 원칙이다.
 
-> 📚 **실무 신호**: 세 도구는 역할이 겹치지 않는다. `fail2ban`은 **로그에 드러난 반복 실패를 즉시 차단**(대응), `snort`는 **네트워크 패킷에서 공격 시그니처를 탐지**(NIDS), `tripwire`/`AIDE`는 **파일이 바뀌었는지 사후 확인**(HIDS)한다. 그래서 실무에서는 셋을 함께 배치한다.
+세 도구는 역할이 겹치지 않는다. `fail2ban`은 **로그에 드러난 반복 실패를 즉시 차단**(대응), `snort`는 **네트워크 패킷에서 공격 시그니처를 탐지**(NIDS), `tripwire`/`AIDE`는 **파일이 바뀌었는지 사후 확인**(HIDS)한다. 그래서 실무에서는 셋을 함께 배치한다.
 
 내일은 한 주를 종합 복습한다.
 

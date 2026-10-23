@@ -26,9 +26,9 @@ Period=60, EvaluationPeriods=5, DatapointsToAlarm=3이면 "최근 5분 중 3분�
 
 이 설계의 배경에는 **hysteresis**(히스테리시스) 원칙이 있다. 전기공학에서 히스테리시스는 시스템의 이전 상태가 현재 출력에 영향을 미치는 현상이다. 온도 조절기가 설정 온도 정확히 20도에서 켜고 끄면 짧은 주기로 계속 토글된다. 그래서 실제 온도 조절기는 "19도 이하면 켜고, 21도 이상이면 끄는" 이중 임계값을 쓴다. M of N의 M<N 설계가 정확히 같은 목적이다. 일시적 spike는 무시하고 지속적인 위반만 알람으로 만든다.
 
-> 💡 **관련 이론**: 시계열 이상 탐지 분야에서 M of N과 유사한 개념을 "windowed threshold"라고 한다. 슬라이딩 윈도우(sliding window) 위에서 임계값 위반 비율을 계산한다. Holt-Winters 예측 모델(CloudWatch Anomaly Detection의 기반)이나 CUSUM(Cumulative Sum) 알고리즘은 더 정교하지만 해석이 어렵다. M of N은 단순하지만 운영자가 직관적으로 이해하고 튜닝할 수 있어 CloudWatch가 선택한 방식이다. 참고: Chandola et al., "Anomaly Detection: A Survey", ACM Computing Surveys (2009).
+시계열 이상 탐지 분야에서 M of N과 유사한 개념을 "windowed threshold"라고 한다. 슬라이딩 윈도우(sliding window) 위에서 임계값 위반 비율을 계산한다. Holt-Winters 예측 모델(CloudWatch Anomaly Detection의 기반)이나 CUSUM(Cumulative Sum) 알고리즘은 더 정교하지만 해석이 어렵다. M of N은 단순하지만 운영자가 직관적으로 이해하고 튜닝할 수 있어 CloudWatch가 선택한 방식이다. 참고: Chandola et al., "Anomaly Detection: A Survey", ACM Computing Surveys (2009).
 
-시험에서 M of N 패턴은 세 가지 형태로 자주 나온다. "일시적 spike에 알람이 자주 울린다" → M<N으로 설정한다. "알람 반응이 느리다, 사고 발생 후 몇 분 뒤에야 알람이 울린다" → N(EvaluationPeriods)이 너무 크거나 Period가 너무 길다. "5분에 한 번씩 spike가 있는 워크로드에서 정상 트래픽인데도 알람이 울린다" → M of N으로 그 spike를 포용하도록 설계한다.
+시험에서 M of N 패턴은 세 가지 형태로 나온다. "일시적 spike에 알람이 자주 울린다" → M<N으로 설정한다. "알람 반응이 느리다, 사고 발생 후 몇 분 뒤에야 알람이 울린다" → N(EvaluationPeriods)이 너무 크거나 Period가 너무 길다. "5분에 한 번씩 spike가 있는 워크로드에서 정상 트래픽인데도 알람이 울린다" → M of N으로 그 spike를 포용하도록 설계한다.
 
 ## Treat Missing Data: 데이터가 없을 때 알람은 무엇을 해야 하나
 
@@ -43,7 +43,7 @@ Period=60, EvaluationPeriods=5, DatapointsToAlarm=3이면 "최근 5분 중 3분�
 
 > ⚠️ **함정**: 기본값 `missing`은 생각보다 위험하다. EC2 인스턴스가 종료되면 CloudWatch 메트릭 스트림이 끊긴다. 이 경우 알람은 INSUFFICIENT_DATA로 전이되고 영원히 그 상태에 머문다. 종료된 인스턴스에 대한 알람이 ALARM이나 OK가 아닌 INSUFFICIENT_DATA인 것이 맞는가? 설계 의도에 따라 다르다. "인스턴스가 살아 있는 동안 모니터링"이 목적이라면 `notBreaching`이 낫다. "항상 살아 있어야 하는 인스턴스"라면 `breaching`이 맞다.
 
-> 📚 **사례**: 2022년 한 한국 핀테크 스타트업(공개되지 않음)에서 결제 서버 EC2가 OOM으로 강제 종료됐다. 알람의 Treat Missing Data가 기본값 `missing`이었고 EvaluationPeriods=5 중 아직 3개만 누락이었기 때문에 ALARM으로 전이되지 않았다. 결제 서버는 15분 동안 죽어 있었는데 알람은 INSUFFICIENT_DATA로 조용히 있었다. 사고를 발견한 건 알람이 아니라 사용자 민원이었다. 이후 팀은 해당 인스턴스의 알람을 `breaching`으로 변경했다.
+가상의 사례로, 2022년 한 한국 핀테크 스타트업(공개되지 않음)에서 결제 서버 EC2가 OOM으로 강제 종료됐다. 알람의 Treat Missing Data가 기본값 `missing`이었고 EvaluationPeriods=5 중 아직 3개만 누락이었기 때문에 ALARM으로 전이되지 않았다. 결제 서버는 15분 동안 죽어 있었는데 알람은 INSUFFICIENT_DATA로 조용히 있었다. 사고를 발견한 건 알람이 아니라 사용자 민원이었다. 이후 팀은 해당 인스턴스의 알람을 `breaching`으로 변경했다.
 
 ## EC2 Auto Recovery: StatusCheckFailed_System vs Instance
 
@@ -95,9 +95,9 @@ ALARM("RDS-CPU-High") OR ALARM("RDS-Connections-High")
 
 가장 중요한 기능은 **Actions Suppressor**다. 자식 알람의 액션(SNS, PagerDuty 등)을 비활성화하고 Composite Alarm의 액션만 발화하게 한다. 이 기능 덕분에 "15개 자식 알람이 동시에 울릴 때 PagerDuty 알림 1개"가 가능하다.
 
-> 💡 **관련 이론**: Composite Alarm의 설계는 시스템 공학의 **정보 추상화 계층(abstraction hierarchy)** 원칙을 따른다. Jens Rasmussen의 1983년 논문 "Skills, Rules, and Knowledge"에서 제안한 인지 구조 모델처럼, 하위 세부 신호(자식 알람)를 상위 의미 단위(Composite Alarm)로 추상화한다. 운영자는 "어떤 메트릭이 위반됐나"가 아니라 "서비스 X가 저하됐다"는 단일 신호를 받는다. Netflix의 SRE 팀이 사용하는 "Symptom-based alerting" 철학과 동일하다: 원인(cause)이 아닌 증상(symptom) 기준으로 사람을 깨운다.
+Composite Alarm의 설계는 시스템 공학의 **정보 추상화 계층(abstraction hierarchy)** 원칙을 따른다. Jens Rasmussen의 1983년 논문 "Skills, Rules, and Knowledge"에서 제안한 인지 구조 모델처럼, 하위 세부 신호(자식 알람)를 상위 의미 단위(Composite Alarm)로 추상화한다. 운영자는 "어떤 메트릭이 위반됐나"가 아니라 "서비스 X가 저하됐다"는 단일 신호를 받는다. Netflix의 SRE 팀이 사용하는 "Symptom-based alerting" 철학과 동일하다: 원인(cause)이 아닌 증상(symptom) 기준으로 사람을 깨운다.
 
-> 📚 **사례**: Shopify는 2021년 블랙프라이데이 준비 과정에서 수천 개 알람의 노이즈 문제를 Composite Alarm과 유사한 구조로 해결했다고 SRECon 2022에서 발표했다. 핵심은 "사람을 깨우는 알람(paging alert)"과 "로그에만 남기는 알람(logging alert)"을 명확히 분리하는 것이었다. Composite Alarm이 paging 계층, 자식 알람이 logging 계층을 담당했다.
+Shopify는 2021년 블랙프라이데이 준비 과정에서 수천 개 알람의 노이즈 문제를 Composite Alarm과 유사한 구조로 해결했다고 SRECon 2022에서 발표했다. 핵심은 "사람을 깨우는 알람(paging alert)"과 "로그에만 남기는 알람(logging alert)"을 명확히 분리하는 것이었다. Composite Alarm이 paging 계층, 자식 알람이 logging 계층을 담당했다.
 
 ## Metric Math Alarm: 비율 기반 알람의 표준 패턴
 
@@ -126,7 +126,7 @@ aws cloudwatch put-metric-alarm \
 
 `e/r*100`은 5xx 에러 수를 전체 요청 수로 나눠 백분율로 만든다. 이 방식은 절대 수치 알람보다 훨씬 강건하다. 트래픽이 100배 증가해도 에러율 5%는 여전히 5%다. 절대 수치로 "5xx 100개 이상이면 알람"이면 트래픽 폭증 시 정상 상태에서도 알람이 울린다.
 
-> 🔍 **더 깊이**: Metric Math에서 사용 가능한 함수는 AWS 문서 기준 40개 이상이다. `SEARCH()` 함수로 특정 패턴의 모든 메트릭을 가져와 `SUM()`할 수 있다. 예를 들어 `SUM(SEARCH('{AWS/EC2,InstanceId} MetricName="CPUUtilization"', 'Average', 60))`는 계정 내 모든 EC2의 평균 CPU를 합산한다. 알람 하나로 전체 함대의 CPU 부하를 모니터링하는 패턴이다. 단, SEARCH 결과는 알람 메트릭으로 직접 사용할 수 없고 (ReturnData:false 강제) 반드시 다른 표현식이 소비해야 한다.
+Metric Math에서 사용 가능한 함수는 AWS 문서 기준 40개 이상이다. `SEARCH()` 함수로 특정 패턴의 모든 메트릭을 가져와 `SUM()`할 수 있다. 예를 들어 `SUM(SEARCH('{AWS/EC2,InstanceId} MetricName="CPUUtilization"', 'Average', 60))`는 계정 내 모든 EC2의 평균 CPU를 합산한다. 알람 하나로 전체 함대의 CPU 부하를 모니터링하는 패턴이다. 단, SEARCH 결과는 알람 메트릭으로 직접 사용할 수 없고 (ReturnData:false 강제) 반드시 다른 표현식이 소비해야 한다.
 
 ## Anomaly Detection Alarm: ML 기반 동적 임계값
 
@@ -151,9 +151,9 @@ aws cloudwatch put-metric-alarm \
 
 두 번째 파라미터 `2`는 표준편차 배수다. 2면 정상 데이터의 약 95%가 밴드 안에 들어온다(가우시안 분포 가정 시). 1로 좁히면 더 민감, 3으로 넓히면 더 둔감하다. 새벽 트래픽이 낮은 시간대에 낮은 밴드, 점심 피크에 높은 밴드로 자동 조정된다.
 
-> 💡 **관련 이론**: Anomaly Detection의 ML 모델은 최소 2주, 권장 6주 이상의 데이터로 학습한다. 신규 서비스에 즉시 켜면 2주간은 밴드가 불안정하다. 이 학습 기간은 시험 단골 문제다. "Anomaly Detection 알람을 켰는데 첫 주에 알람이 안 울렸다. 문제인가?" → 정상이다. 학습 중이다. 주간 계절성(월-금 패턴)을 캡처하려면 최소 2주가 필요하고, 월간 패턴까지 잡으려면 6주가 필요하다.
+Anomaly Detection의 ML 모델은 최소 2주, 권장 6주 이상의 데이터로 학습한다. 신규 서비스에 즉시 켜면 2주간은 밴드가 불안정하다. 이 학습 기간은 시험 범위 문제다. "Anomaly Detection 알람을 켰는데 첫 주에 알람이 안 울렸다. 문제인가?" → 정상이다. 학습 중이다. 주간 계절성(월-금 패턴)을 캡처하려면 최소 2주가 필요하고, 월간 패턴까지 잡으려면 6주가 필요하다.
 
-> 🔍 **더 깊이**: `GreaterThanUpperThreshold`는 밴드 상단을 초과했을 때만 알람이다. "응답 시간이 평소보다 빠른 건 문제가 아니므로" 단방향 체크가 적합하다. 반면 `LessThanLowerOrGreaterThanUpperThreshold`는 양방향이다. Lambda 호출 수가 갑자기 줄어든 것도 이상(배포 후 트래픽이 안 들어오는 경우)이라면 양방향을 쓴다. `GreaterThanUpperThreshold`, `LessThanLowerThreshold`, `LessThanLowerOrGreaterThanUpperThreshold` 세 가지 연산자를 혼동하지 않는 것이 시험 포인트다.
+`GreaterThanUpperThreshold`는 밴드 상단을 초과했을 때만 알람이다. "응답 시간이 평소보다 빠른 건 문제가 아니므로" 단방향 체크가 적합하다. 반면 `LessThanLowerOrGreaterThanUpperThreshold`는 양방향이다. Lambda 호출 수가 갑자기 줄어든 것도 이상(배포 후 트래픽이 안 들어오는 경우)이라면 양방향을 쓴다. `GreaterThanUpperThreshold`, `LessThanLowerThreshold`, `LessThanLowerOrGreaterThanUpperThreshold` 세 가지 연산자를 혼동하지 않는 것이 시험 포인트다.
 
 ## 다른 모니터링 플랫폼과의 비교
 
@@ -170,7 +170,7 @@ CloudWatch Alarm 설계 철학을 다른 플랫폼과 비교하면 선택의 배
 
 GCP의 Alerting Policy는 조건 창(condition window)에서 집계 후 임계값과 비교하는 방식으로 M of N과 유사하지만 직관성이 떨어진다. Azure의 Dynamic Threshold는 CloudWatch Anomaly Detection과 가장 유사하며 동일하게 ML 기반이다.
 
-> 📚 **사례**: 2023년 Datadog State of DevOps 보고서에 따르면, 고성숙도 SRE 팀의 90%가 Composite Alarm 또는 이에 상응하는 "상위 레벨 집약 알람"을 사용한다. 반면 알람 노이즈가 심한 팀의 78%가 단일 메트릭 알람만 사용한다. 알람 설계 성숙도와 MTTR(Mean Time To Recovery) 사이에 강한 상관관계가 있다는 분석이 포함됐다.
+2023년 Datadog State of DevOps 보고서에 따르면, 고성숙도 SRE 팀의 90%가 Composite Alarm 또는 이에 상응하는 "상위 레벨 집약 알람"을 사용한다. 반면 알람 노이즈가 심한 팀의 78%가 단일 메트릭 알람만 사용한다. 알람 설계 성숙도와 MTTR(Mean Time To Recovery) 사이에 강한 상관관계가 있다는 분석이 포함됐다.
 
 ## High Resolution Alarm과 비용 모델
 
@@ -211,7 +211,7 @@ SOA-C02 시험과 실무에서 자주 보이는 잘못된 설계 패턴이다.
 
 **안티패턴 5: Cross-Region 메트릭에 직접 알람** — CloudWatch 알람은 같은 리전 메트릭만 평가 가능. 다른 리전 메트릭을 보려면 Metric Stream으로 중앙 계정에 복사 후 알람. 이 제약을 모르고 설계하면 멀티 리전 모니터링에 구멍이 생긴다.
 
-## 마무리
+## 정리
 
 CloudWatch Alarm은 단순해 보이지만 M of N, Treat Missing Data, Composite Alarm, Anomaly Detection의 조합이 설계의 품질을 결정한다. 새벽 온콜 엔지니어가 15개 알림에 압도되는 시스템과 1개의 의미 있는 알림을 받는 시스템의 차이는 바로 이 설계 철학의 차이다. 시험에서는 각 파라미터의 의미와 시나리오별 올바른 설정을 묻는다.
 

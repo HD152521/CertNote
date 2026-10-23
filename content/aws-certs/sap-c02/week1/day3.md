@@ -23,7 +23,7 @@ VPC의 첫 결정은 CIDR 블록이다. AWS는 `/16` ~ `/28`을 지원하고, RF
 
 > ⚠️ **함정**: 한 회사가 본사 VPC에 `10.0.0.0/16`을 쓰고, 해외 지사 VPC에도 `10.0.0.0/16`을 그어버린다. 나중에 Transit Gateway로 합치려는 순간 CIDR 충돌로 라우팅이 불가능해진다. AWS는 **CIDR overlap이 있으면 Peering·TGW Attach 자체를 거부**한다. 그래서 Pro 멀티 계정 시나리오에서는 처음부터 **IPAM(IP Address Manager, 2021년 출시)**으로 전사 CIDR 풀을 관리하는 게 정답이다.
 
-> 🔍 **더 깊이**: AWS VPC에서 각 서브넷은 5개의 IP를 예약한다. 예를 들어 `10.0.1.0/24` 서브넷에서 사용 가능한 IP는 256 - 5 = 251개. 예약 IP: `10.0.1.0`(네트워크), `10.0.1.1`(VPC 라우터), `10.0.1.2`(VPC DNS), `10.0.1.3`(미래용 예약), `10.0.1.255`(브로드캐스트). 이걸 모르고 "/28 서브넷에 16개 EC2 띄울 수 있다"고 계산하면 실제로는 11개만 가능해서 의외의 실패가 난다.
+AWS VPC에서 각 서브넷은 5개의 IP를 예약한다. 예를 들어 `10.0.1.0/24` 서브넷에서 사용 가능한 IP는 256 - 5 = 251개. 예약 IP: `10.0.1.0`(네트워크), `10.0.1.1`(VPC 라우터), `10.0.1.2`(VPC DNS), `10.0.1.3`(미래용 예약), `10.0.1.255`(브로드캐스트). 이걸 모르고 "/28 서브넷에 16개 EC2 띄울 수 있다"고 계산하면 실제로는 11개만 가능해서 의외의 실패가 난다.
 
 ### Secondary CIDR과 Egress-Only IGW
 
@@ -48,7 +48,7 @@ VPC (10.0.0.0/16)
     └── Private Subnet 10.0.13.0/24 → Route Table: PrivateRT-C
 ```
 
-Public Subnet과 Private Subnet의 구별은 콘솔에 별도 토글이 있는 게 아니라 **라우팅 테이블이 IGW로 가는지 NAT GW로 가는지**의 차이일 뿐이다.
+퍼블릭 서브넷과 프라이빗 서브넷의 구별은 콘솔에 별도 토글이 있는 게 아니라 **라우팅 테이블이 IGW로 가는지 NAT GW로 가는지**의 차이일 뿐이다.
 
 | 종류 | 정의 | 사용처 |
 |------|------|--------|
@@ -56,11 +56,11 @@ Public Subnet과 Private Subnet의 구별은 콘솔에 별도 토글이 있는 �
 | Private | `0.0.0.0/0 → NAT GW` 또는 라우트 없음 | EC2 App, DB |
 | Isolated | 외부 라우트 없음 (VPC 내부만) | 더 엄격한 DB, ML training |
 
-> 💡 **관련 이론**: 라우팅 테이블은 **longest prefix match** 알고리즘으로 동작한다. 같은 패킷의 목적지에 두 라우트가 있으면, 더 구체적인 prefix(긴 마스크)가 이긴다. 예: `10.0.0.0/16 → VPC local` + `10.0.5.0/24 → TGW`가 있으면 `10.0.5.10`은 TGW로 간다. 이게 BGP·IS-IS 같은 인터넷 라우팅 프로토콜의 기본 원리이고, AWS 라우팅 테이블도 같은 원칙을 따른다.
+라우팅 테이블은 **longest prefix match** 알고리즘으로 동작한다. 같은 패킷의 목적지에 두 라우트가 있으면, 더 구체적인 prefix(긴 마스크)가 이긴다. 예: `10.0.0.0/16 → VPC local` + `10.0.5.0/24 → TGW`가 있으면 `10.0.5.10`은 TGW로 간다. 이게 BGP·IS-IS 같은 인터넷 라우팅 프로토콜의 기본 원리이고, AWS 라우팅 테이블도 같은 원칙을 따른다.
 
 ### 가용 영역 단위 분리: NAT Gateway는 AZ-local
 
-흔히 놓치는 함정. **NAT Gateway는 AZ-local 리소스**라, 한 AZ에 하나씩 두는 게 정공이다. 모든 Private Subnet을 단일 AZ의 NAT Gateway로 라우팅하면, 그 AZ가 죽을 때 모든 outbound가 끊긴다.
+흔히 놓치는 함정. **NAT Gateway는 AZ-local 리소스**라, 한 AZ에 하나씩 두는 게 정공이다. 모든 프라이빗 서브넷을 단일 AZ의 NAT Gateway로 라우팅하면, 그 AZ가 죽을 때 모든 outbound가 끊긴다.
 
 ```
 ✗ 잘못된 설계:
@@ -74,9 +74,9 @@ Public Subnet과 Private Subnet의 구별은 콘솔에 별도 토글이 있는 �
    Private Subnet C → NAT GW (AZ-c)
 ```
 
-> 📚 **사례**: 2017년 한 핀테크 스타트업이 production에서 단일 AZ NAT Gateway만 두고 운영하다가, 새벽에 AZ-a 정전으로 NAT Gateway가 죽으면서 모든 Private Subnet의 외부 API 호출(Stripe·Twilio 등)이 끊겼다. 같은 AZ의 EC2들도 자동 페일오버되지 못해 30분 다운타임. 이후 AZ별 NAT Gateway + Multi-AZ ASG로 전환. 운영 비용은 시간당 $0.045 × 3 AZ = $97.2/월 추가됐지만, 다운타임 비용 대비 무시할 수준.
+2017년 한 핀테크 스타트업이 production에서 단일 AZ NAT Gateway만 두고 운영하다가, 새벽에 AZ-a 정전으로 NAT Gateway가 죽으면서 모든 프라이빗 서브넷의 외부 API 호출(Stripe·Twilio 등)이 끊겼다. 같은 AZ의 EC2들도 자동 페일오버되지 못해 30분 다운타임. 이후 AZ별 NAT Gateway + Multi-AZ ASG로 전환. 운영 비용은 시간당 $0.045 × 3 AZ = $97.2/월 추가됐지만, 다운타임 비용 대비 무시할 수준.
 
-## Security Group vs NACL: 가장 자주 헷갈리는 두 가지
+## Security Group vs NACL: 헷갈리기 쉬운 두 가지
 
 | 항목 | Security Group | NACL (Network ACL) |
 |------|----------------|---------------------|
@@ -86,7 +86,7 @@ Public Subnet과 Private Subnet의 구별은 콘솔에 별도 토글이 있는 �
 | 기본 동작 | inbound deny, outbound allow | inbound deny, outbound deny |
 | 규칙 수 | 60 inbound + 60 outbound (확장 가능) | 20 in + 20 out (소프트 제한 40까지) |
 
-가장 자주 헷갈리는 건 **stateful vs stateless**. SG가 stateful이라는 건, inbound로 들어온 패킷의 return은 outbound 규칙을 검사하지 않고 자동 허용한다는 뜻이다. 반대로 NACL은 stateless라, return 트래픽도 명시적으로 outbound 규칙에 허용해야 한다.
+헷갈리기 쉬운 것은 **stateful vs stateless**다. SG가 stateful이라는 건, inbound로 들어온 패킷의 return은 outbound 규칙을 검사하지 않고 자동 허용한다는 뜻이다. 반대로 NACL은 stateless라, return 트래픽도 명시적으로 outbound 규칙에 허용해야 한다.
 
 ```
 [Client] → TCP SYN  → [EC2:80]
@@ -94,9 +94,9 @@ Public Subnet과 Private Subnet의 구별은 콘솔에 별도 토글이 있는 �
 [Client] → TCP ACK  → [EC2:80]
 ```
 
-> 🔍 **더 깊이**: NACL의 return port range는 **ephemeral port** 범위다. Linux는 32768~60999, Windows는 49152~65535이지만 AWS는 안전하게 **1024-65535** 전체를 권장한다. 만약 NACL outbound가 80·443만 허용되어 있다면, return SYN-ACK가 ephemeral port로 오므로 차단된다 — 이게 "SG는 멀쩡한데 패킷이 안 가는" 현상의 흔한 원인.
+NACL의 return port range는 **ephemeral port** 범위다. Linux는 32768~60999, Windows는 49152~65535이지만 AWS는 안전하게 **1024-65535** 전체를 권장한다. 만약 NACL outbound가 80·443만 허용되어 있다면, return SYN-ACK가 ephemeral port로 오므로 차단된다 — 이게 "SG는 멀쩡한데 패킷이 안 가는" 현상의 흔한 원인.
 
-> 💡 **관련 이론**: stateful 방화벽은 1992년 Check Point가 FireWall-1에서 처음 상용화한 개념이다. 기존 stateless packet filter는 모든 패킷을 개별로 검사해야 했지만, stateful은 TCP 5-tuple(src IP, src port, dst IP, dst port, protocol)로 connection table을 유지해 return 패킷을 자동 매칭한다. AWS SG도 같은 원리. 단 connection table은 메모리를 쓰므로 한 EC2가 동시에 유지할 수 있는 연결 수에 한계가 있다(보통 수십만).
+stateful 방화벽은 1992년 Check Point가 FireWall-1에서 처음 상용화한 개념이다. 기존 stateless packet filter는 모든 패킷을 개별로 검사해야 했지만, stateful은 TCP 5-tuple(src IP, src port, dst IP, dst port, protocol)로 connection table을 유지해 return 패킷을 자동 매칭한다. AWS SG도 같은 원리. 단 connection table은 메모리를 쓰므로 한 EC2가 동시에 유지할 수 있는 연결 수에 한계가 있다(보통 수십만).
 
 > 🎯 **시나리오**: "Custom AMI로 만든 EC2가 외부에서 ping이 안 된다. SG에는 ICMP All Allow가 있다. 무엇이 문제인가?" — 답은 보통 (1) NACL이 ICMP 차단, (2) OS 방화벽(iptables/firewalld)이 차단, (3) 인스턴스 메타데이터로 가는 169.254.169.254가 ICMP를 거부(보안 기능). NACL 누락이 가장 흔하다.
 
@@ -110,9 +110,9 @@ EC2에서 S3로 갈 때 기본적으로 인터넷(IGW)을 거친다. 같은 리�
 | Interface Endpoint | ENI + DNS | 100+ AWS 서비스 | $0.01/시간 + 데이터 |
 | Gateway Load Balancer Endpoint | GLB + ENI | 보안 어플라이언스 | $0.0125/시간 + 데이터 |
 
-> 🔍 **더 깊이**: Gateway Endpoint는 **prefix list**라는 특수 라우팅 항목을 라우팅 테이블에 추가한다. `pl-12345`처럼 표현되며, 내부적으로 S3·DynamoDB의 모든 IP 범위를 자동 추적·업데이트한다. Interface Endpoint는 그와 달리 **PrivateLink** 메커니즘으로 ENI를 VPC에 직접 생성하고, AWS가 Route 53 Private Hosted Zone으로 DNS를 자동 hijack한다(`s3.ap-northeast-2.amazonaws.com`을 ENI IP로 응답).
+Gateway Endpoint는 **prefix list**라는 특수 라우팅 항목을 라우팅 테이블에 추가한다. `pl-12345`처럼 표현되며, 내부적으로 S3·DynamoDB의 모든 IP 범위를 자동 추적·업데이트한다. Interface Endpoint는 그와 달리 **PrivateLink** 메커니즘으로 ENI를 VPC에 직접 생성하고, AWS가 Route 53 Private Hosted Zone으로 DNS를 자동 hijack한다(`s3.ap-northeast-2.amazonaws.com`을 ENI IP로 응답).
 
-> 📚 **사례**: 한 금융사가 EC2 → S3 트래픽이 모두 IGW를 통해 나가는 걸 발견했다. 월 데이터 전송 비용이 $30,000을 넘었다. Gateway Endpoint를 추가한 후 같은 트래픽이 무료가 됐다. 또한 보안팀이 "S3 트래픽이 인터넷을 거쳤다"는 이유로 PCI-DSS 감사에서 지적받던 문제도 해소됐다. 트레이드오프: Interface Endpoint(100+ 서비스)는 시간당 비용이 있어, 트래픽이 적으면 IGW + NAT가 더 저렴할 수 있다. 손익분기점은 보통 월 100-200GB.
+(가상 사례) 한 금융사가 EC2 → S3 트래픽이 모두 IGW를 통해 나가는 걸 발견했다. 월 데이터 전송 비용이 $30,000을 넘었다. Gateway Endpoint를 추가한 후 같은 트래픽이 무료가 됐다. 또한 보안팀이 "S3 트래픽이 인터넷을 거쳤다"는 이유로 PCI-DSS 감사에서 지적받던 문제도 해소됐다. 트레이드오프: Interface Endpoint(100+ 서비스)는 시간당 비용이 있어, 트래픽이 적으면 IGW + NAT가 더 저렴할 수 있다. 손익분기점은 보통 월 100-200GB.
 
 ### PrivateLink와 VPC Endpoint Service
 
@@ -134,7 +134,7 @@ VPC는 두 가지 DNS 옵션이 있다.
 - `enableDnsSupport` (기본 true): VPC 내부에서 AWS DNS 서버(`x.x.x.2`) 사용 가능
 - `enableDnsHostnames` (기본 true for default VPC): EC2에 `ec2-1-2-3-4.ap-northeast-2.compute.amazonaws.com` 같은 public DNS 부여
 
-> ⚠️ **함정**: Custom VPC를 만들 때 `enableDnsHostnames`가 기본 false다. 이걸 안 켜면 Private Hosted Zone(Route 53)이 작동하지 않거나, Interface Endpoint의 자동 DNS hijack이 작동하지 않는다. Pro 시나리오에서 "Endpoint를 만들었는데 EC2가 여전히 public DNS로 응답받는다"는 문제의 절반은 이 토글이다.
+> ⚠️ **함정**: Custom VPC를 만들 때 `enableDnsHostnames`가 기본 false다. 이걸 안 켜면 Private Hosted Zone(Route 53)이 작동하지 않거나, Interface Endpoint의 자동 DNS hijack이 작동하지 않는다. Pro 시나리오에서 "Endpoint를 만들었는데 EC2가 여전히 public DNS로 응답받는다"는 문제에서는 이 토글이 원인일 수 있다.
 
 ## Flow Logs: 보이지 않는 패킷을 보이게
 
@@ -146,7 +146,7 @@ VPC Flow Logs는 ENI를 통과하는 모든 패킷의 5-tuple과 결과(ACCEPT/R
 version       account   src       dst          spt  dpt p pkt byte start      end       action status
 ```
 
-> 🔍 **더 깊이**: Flow Logs는 **샘플링이 아니라 모든 트래픽**을 기록한다. 단 패킷 내용(payload)은 캡처하지 않고 메타데이터만. 또한 1분 단위 aggregation이라 실시간 모니터링이 아니다. 보안 사고 사후 분석·트래픽 패턴 분석에 적합. GuardDuty가 Flow Logs를 분석해 비정상 트래픽을 탐지하는 게 대표 활용.
+Flow Logs는 **샘플링이 아니라 모든 트래픽**을 기록한다. 단 패킷 내용(payload)은 캡처하지 않고 메타데이터만. 또한 1분 단위 aggregation이라 실시간 모니터링이 아니다. 보안 사고 사후 분석·트래픽 패턴 분석에 적합. GuardDuty가 Flow Logs를 분석해 비정상 트래픽을 탐지하는 게 대표 활용.
 
 > 🎯 **시나리오**: "한 회사가 production VPC에서 비정상적인 outbound traffic을 의심한다. 어떻게 진단할까?" — 답: Flow Logs 활성화 → Athena/CloudWatch Insights로 분석 → GuardDuty가 자동 패턴 매칭. 직접 tcpdump로 EC2에서 캡처하면 100개 인스턴스 일일이 봐야 해서 운영 부담 큼.
 
@@ -162,13 +162,13 @@ SG-DB  (RDS가 붙음): inbound 3306 from sg-app   ← chained SG reference
 
 이 패턴이 **3-tier 아키텍처의 표준**이다. EC2가 늘어나도 SG-Web에 속한 모든 ENI가 자동으로 8080 접근 허용되므로 IP 관리가 필요 없다.
 
-> 📚 **사례**: 한 회사가 ALB → EC2 → RDS 구조를 CIDR 기반 SG로 운영하다가, Auto Scaling으로 EC2 IP가 바뀔 때마다 SG를 업데이트해야 했다. SG ID 참조로 바꾸자 운영 부담이 사라졌다. 단 SG ID 참조는 같은 리전·같은 VPC 또는 Peered VPC 안에서만 작동하고, TGW를 거치는 경우 동작하지 않는다(2022년 일부 시나리오에서 가능해졌지만 제약 있음).
+(가상 사례) 한 회사가 ALB → EC2 → RDS 구조를 CIDR 기반 SG로 운영하다가, Auto Scaling으로 EC2 IP가 바뀔 때마다 SG를 업데이트해야 했다. SG ID 참조로 바꾸자 운영 부담이 사라졌다. 단 SG ID 참조는 같은 리전·같은 VPC 또는 Peered VPC 안에서만 작동하고, TGW를 거치는 경우 동작하지 않는다(2022년 일부 시나리오에서 가능해졌지만 제약 있음).
 
-## 정리하며
+## 정리
 
 VPC는 "박스 안에 박스"가 아니라 **8개 결정점의 협력**이다. 패킷 한 통이 흐르려면 SG·NACL·Route Table·IGW/NAT/Endpoint·DNS가 모두 동의해야 한다. CIDR을 처음 그을 때 IPAM으로 전사 관리, NAT GW는 AZ별로, S3·DynamoDB는 Gateway Endpoint로, 그 외 100+ 서비스는 Interface Endpoint로, SG는 ID 참조로 — 이 다섯 가지 원칙이 Pro 시험의 VPC 시나리오 80%를 커버한다.
 
-다음 글에서는 이 네트워크 위에서 실제로 컴퓨팅을 하는 EC2·EBS·ELB·Auto Scaling을 Pro 깊이로 본다. 특히 Auto Scaling의 스케일링 정책 4종은 거의 매 회 출제되니 미리 머리에 박아두자.
+다음 글에서는 이 네트워크 위에서 실제로 컴퓨팅을 하는 EC2·EBS·ELB·Auto Scaling을 Pro 깊이로 본다. 특히 Auto Scaling의 스케일링 정책 4종을 함께 다룬다.
 
 ---
 

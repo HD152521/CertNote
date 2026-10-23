@@ -35,7 +35,7 @@ Application (예: checkout-api)         ← 어떤 앱의 구성인가
 
 이 분리의 핵심은 **알람은 환경에, 검증은 구성 프로필에** 붙는다는 점이다. 같은 구성 프로필(featureflags)을 dev와 prod에 배포하더라도, prod 환경에만 엄격한 5xx 알람을 걸어 자동 롤백을 작동시킬 수 있다. 검증 로직(Validator)은 어느 환경이든 동일하게 적용된다 — 잘못된 형식은 dev든 prod든 막아야 하니까. 변동성의 축이 다른 것을 다른 개념에 분리해 담은 설계다.
 
-> 🔍 **더 깊이**: ConfigurationProfile의 저장 백엔드(Hosted/SSM/S3/Secrets Manager)는 구성의 크기와 성격에 따라 고른다. **Hosted Configuration**은 AppConfig가 직접 버전 관리하는 가장 단순한 선택이고, 작은 피처 플래그/설정에 적합하다. **SSM Parameter**는 이미 Parameter Store를 쓰고 있을 때, **S3**는 10MB 가까운 큰 구성일 때, **Secrets Manager**는 비밀을 포함할 때 쓴다. 중요한 건 어느 백엔드든 AppConfig의 배포 전략·검증·롤백 메커니즘은 동일하게 적용된다는 점이다. AppConfig는 저장소가 아니라 "배포 오케스트레이터"다 — 값을 어디에 두든 그 값을 안전하게 점진 배포하는 게 본업이다.
+> ConfigurationProfile의 저장 백엔드(Hosted/SSM/S3/Secrets Manager)는 구성의 크기와 성격에 따라 고른다. **Hosted Configuration**은 AppConfig가 직접 버전 관리하는 가장 단순한 선택이고, 작은 피처 플래그/설정에 적합하다. **SSM Parameter**는 이미 Parameter Store를 쓰고 있을 때, **S3**는 10MB 가까운 큰 구성일 때, **Secrets Manager**는 비밀을 포함할 때 쓴다. 중요한 건 어느 백엔드든 AppConfig의 배포 전략·검증·롤백 메커니즘은 동일하게 적용된다는 점이다. AppConfig는 저장소가 아니라 "배포 오케스트레이터"다 — 값을 어디에 두든 그 값을 안전하게 점진 배포하는 게 본업이다.
 
 ## Deployment Strategy — 카나리의 수학
 
@@ -50,7 +50,7 @@ aws appconfig create-deployment-strategy \
   --replicate-to NONE
 ```
 
-이 숫자들의 의미를 정확히 보자. `growth-type LINEAR` + `growth-factor 10` + `duration 20`은 "20분에 걸쳐 매 단계 10%씩 선형 증가"를 뜻한다. polling하는 클라이언트 중 어느 비율이 새 구성을 받느냐가 시간에 따라 이렇게 움직인다.
+이 숫자들의 의미는 다음과 같다. `growth-type LINEAR` + `growth-factor 10` + `duration 20`은 "20분에 걸쳐 매 단계 10%씩 선형 증가"를 뜻한다. polling하는 클라이언트 중 어느 비율이 새 구성을 받느냐가 시간에 따라 이렇게 움직인다.
 
 ```
 LINEAR, growth-factor 10, duration 20분:
@@ -71,9 +71,9 @@ T+30분: bake 완료 (이 10분간 알람 감시, 발생 시 자동 롤백)
 | `AppConfig.Linear50PercentEvery30Seconds` | 빠른 2단계 | dev/staging 빠른 검증 |
 | `AppConfig.Canary10Percent20Minutes` | 보수적 점진 | prod 위험 변경 |
 
-> 💡 **관련 이론**: 카나리 배포라는 이름은 탄광의 카나리(canary in a coal mine)에서 왔다. 광부들이 유독가스에 민감한 카나리를 데려가 새가 먼저 쓰러지면 위험을 감지했듯, 일부 트래픽(카나리)에 먼저 새 버전을 노출해 문제를 조기 감지한다. growth-factor와 duration은 "얼마나 천천히 노출 비율을 올릴 것인가"를 수치화한다. 노출 비율을 천천히 올릴수록 문제를 적은 영향으로 발견하지만 배포가 길어진다. 이건 통계적 검정력(statistical power)과도 연결된다 — 더 많은 트래픽이 새 버전을 거쳐야 5xx 같은 드문 이상이 통계적으로 유의하게 드러난다. 카나리 비율과 bake time은 "검출 신뢰도 vs 배포 속도"의 트레이드오프다.
+> 카나리 배포라는 이름은 탄광의 카나리(canary in a coal mine)에서 왔다. 광부들이 유독가스에 민감한 카나리를 데려가 새가 먼저 쓰러지면 위험을 감지했듯, 일부 트래픽(카나리)에 먼저 새 버전을 노출해 문제를 조기 감지한다. growth-factor와 duration은 "얼마나 천천히 노출 비율을 올릴 것인가"를 수치화한다. 노출 비율을 천천히 올릴수록 문제를 적은 영향으로 발견하지만 배포가 길어진다. 이건 통계적 검정력(statistical power)과도 연결된다 — 더 많은 트래픽이 새 버전을 거쳐야 5xx 같은 드문 이상이 통계적으로 유의하게 드러난다. 카나리 비율과 bake time은 "검출 신뢰도 vs 배포 속도"의 트레이드오프다.
 
-> 🔍 **더 깊이**: AppConfig의 점진 롤아웃은 polling 기반이라 CodeDeploy의 트래픽 시프트와 메커니즘이 다르다. CodeDeploy는 로드밸런서 가중치를 조절해 "트래픽의 X%를 새 버전으로" 보낸다. AppConfig는 클라이언트가 polling할 때 "당신은 새 구성 그룹에 속하는가"를 AppConfig 서비스가 결정해 응답한다. 즉 트래픽 분배가 아니라 polling 클라이언트 집합의 분할이다. 그래서 AppConfig 점진 롤아웃은 같은 코드가 도는 여러 인스턴스/Lambda가 서로 다른 구성 값을 받는 상황을 만든다. 애플리케이션이 구성 값의 일시적 불일치(일부는 새 값, 일부는 옛 값)를 견딜 수 있어야 한다는 게 중요한 전제다.
+> AppConfig의 점진 롤아웃은 polling 기반이라 CodeDeploy의 트래픽 시프트와 메커니즘이 다르다. CodeDeploy는 로드 밸런서 가중치를 조절해 "트래픽의 X%를 새 버전으로" 보낸다. AppConfig는 클라이언트가 polling할 때 "당신은 새 구성 그룹에 속하는가"를 AppConfig 서비스가 결정해 응답한다. 즉 트래픽 분배가 아니라 polling 클라이언트 집합의 분할이다. 그래서 AppConfig 점진 롤아웃은 같은 코드가 도는 여러 인스턴스/Lambda가 서로 다른 구성 값을 받는 상황을 만든다. 애플리케이션이 구성 값의 일시적 불일치(일부는 새 값, 일부는 옛 값)를 견딜 수 있어야 한다는 게 중요한 전제다.
 
 ## Validator와 Monitor — 구성 변경을 코드 배포만큼 안전하게
 
@@ -110,7 +110,7 @@ aws appconfig update-environment \
 
 > 🎯 **시나리오**: "마케팅팀이 프로모션 배너를 코드 배포 없이 켜고 끄고 싶어 한다. 단, 잘못된 설정으로 결제 페이지 5xx가 늘면 자동으로 되돌아가야 한다." — 답은 AppConfig Feature Flag 프로필 + JSON Schema Validator(설정 형식 검증) + prod Environment에 5xx 알람 Monitor 등록 + Canary 점진 배포 전략. 마케팅팀은 새 hosted configuration version을 만들고 배포를 시작하면 된다. 형식 오류는 Validator가 사전에, 운영 악화는 Monitor가 사후에 막는다. 코드 배포 권한 없이도 안전하게 동작을 바꾼다.
 
-> 📚 **사례**: 피처 플래그의 위험을 보여준 사건이 2012년 Knight Capital이다(AppConfig 이전 시대지만 교훈은 동일). 재사용된 플래그 비트가 비활성화돼야 할 옛 거래 로직을 깨우면서 45분 만에 4억 4천만 달러를 날렸다. 플래그 변경에 검증·점진 적용·자동 롤백이 없으면 코드 배포보다 더 위험할 수 있다는 교훈이다. AppConfig의 Validator + 점진 배포 + Monitor 자동 롤백은 바로 이런 "플래그 변경이 즉시 전체에 적용되어 폭발하는" 시나리오를 구조적으로 막기 위한 장치다.
+> 피처 플래그의 위험을 보여준 사건이 2012년 Knight Capital이다(AppConfig 이전 시대지만 교훈은 동일). 재사용된 플래그 비트가 비활성화돼야 할 옛 거래 로직을 깨우면서 45분 만에 4억 4천만 달러를 날렸다. 플래그 변경에 검증·점진 적용·자동 롤백이 없으면 코드 배포보다 더 위험할 수 있다는 교훈이다. AppConfig의 Validator + 점진 배포 + Monitor 자동 롤백은 바로 이런 "플래그 변경이 즉시 전체에 적용되어 폭발하는" 시나리오를 구조적으로 막기 위한 장치다.
 
 ## Lambda Extension — localhost:2772의 비용 최적화
 
@@ -144,7 +144,7 @@ def get_config():
 
 폴링 간격은 트레이드오프다. 짧으면 구성 변경이 빨리 반영되지만 AppConfig API 호출(=Configuration Session 비용)과 부하가 늘고, 길면 비용은 줄지만 새 구성 반영이 느려진다. 점진 배포 중에는 폴링 간격이 곧 "각 클라이언트가 새 구성을 받는 해상도"가 되므로, duration보다 충분히 짧게 둬야 점진 곡선이 의도대로 그려진다.
 
-> 🔍 **더 깊이**: AppConfig는 Configuration Session 기준으로 과금한다. Extension의 polling이 곧 session 호출이므로, "폴링 간격 × 동시 실행 환경 수"가 비용을 좌우한다. Lambda는 동시 실행마다 별도 실행 환경(=별도 Extension)을 갖지만, 각 환경 안에서는 Extension이 캐시를 공유해 함수의 매 호출이 API를 두드리지 않는다. 그래서 "함수 호출 1억 번"이 아니라 "동시 실행 환경 수 × (duration / poll-interval)"가 실제 비용에 가깝다. 폴링 간격을 너무 짧게 두면 동시성이 높은 함수에서 비용이 급증한다는 게 시험에도 나오는 함정이다.
+> AppConfig는 Configuration Session 기준으로 과금한다. Extension의 polling이 곧 session 호출이므로, "폴링 간격 × 동시 실행 환경 수"가 비용을 좌우한다. Lambda는 동시 실행마다 별도 실행 환경(=별도 Extension)을 갖지만, 각 환경 안에서는 Extension이 캐시를 공유해 함수의 매 호출이 API를 두드리지 않는다. 그래서 "함수 호출 1억 번"이 아니라 "동시 실행 환경 수 × (duration / poll-interval)"가 실제 비용에 가깝다. 폴링 간격을 너무 짧게 두면 동시성이 높은 함수에서 비용이 급증한다는 게 시험에도 나오는 함정이다.
 
 ## Evidently와의 경계 — 운영 플래그 vs 실험
 
@@ -159,9 +159,9 @@ AppConfig와 자주 비교되는 게 CloudWatch Evidently다. 둘 다 점진적 
 
 AppConfig는 "이 기능을 안전하게 켜고 운영 지표가 나빠지면 되돌린다"는 **운영** 도구다. Evidently는 "버전 A와 B 중 전환율이 통계적으로 유의하게 높은 게 무엇이냐"를 측정하는 **실험** 도구다. 다만 2024년 이후 Evidently는 신규 사용이 권장되지 않는 방향으로 가고 있어, 실험까지 AppConfig + 외부 분석으로 통합하는 흐름이다. 시험에서는 "안전한 점진 배포·자동 롤백 = AppConfig", "통계적 A/B 실험 = Evidently"로 구분하면 된다.
 
-> 💡 **관련 이론**: A/B 테스트는 통계적 가설 검정(hypothesis testing)이다. 두 변형(A/B)의 지표 차이가 우연인지 진짜인지를 p-value와 신뢰구간으로 판단한다. Evidently가 이 통계를 내장한 건 "실험"에는 충분한 표본과 유의성 판정이 본질이기 때문이다. 반면 AppConfig의 점진 배포는 가설 검정이 아니라 위험 관리 — "문제가 생기면 적은 영향으로 발견하고 되돌린다"가 목적이다. 같은 "점진적 노출"이라도 하나는 통계적 학습이, 하나는 안전한 운영이 목표라는 점이 두 서비스를 가르는 본질이다.
+> A/B 테스트는 통계적 가설 검정(hypothesis testing)이다. 두 변형(A/B)의 지표 차이가 우연인지 진짜인지를 p-value와 신뢰구간으로 판단한다. Evidently가 이 통계를 내장한 건 "실험"에는 충분한 표본과 유의성 판정이 본질이기 때문이다. 반면 AppConfig의 점진 배포는 가설 검정이 아니라 위험 관리 — "문제가 생기면 적은 영향으로 발견하고 되돌린다"가 목적이다. 같은 "점진적 노출"이라도 하나는 통계적 학습이, 하나는 안전한 운영이 목표라는 점이 두 서비스를 가르는 본질이다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 다섯 가지다. 첫째, **AppConfig는 configuration as data**로 구성을 코드에서 분리해 배포(deploy)와 출시(release)를 분리하는 피처 플래그의 토대다 — 다만 수명 다한 플래그는 부채가 되니 정리해야 한다. 둘째, **5요소 구조는 변동성의 축을 분리**한 설계로, 알람 Monitor는 Environment에, Validator는 ConfigurationProfile에 붙는다. 셋째, **Deployment Strategy의 growth-factor·duration·bake-time은 카나리의 수학**이고, polling 클라이언트 집합을 분할하는 방식이라 일시적 구성 불일치를 견딜 수 있어야 한다. 넷째, **Validator(사전 형식 검증) + Monitor(사후 알람 자동 롤백)** 두 겹이 구성 변경을 코드 배포만큼 안전하게 만든다. 다섯째, **Lambda Extension은 localhost:2772에서 캐시**를 제공해 폴링 간격으로 비용·신선도를 조절한다.
 

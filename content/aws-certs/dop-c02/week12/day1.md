@@ -18,9 +18,9 @@ AWS 내부 역사로 보면 EventBridge는 2019년 **CloudWatch Events**에서 �
    (연결 폭발)                              (발신자는 수신자를 모름)
 ```
 
-> 💡 **관련 이론**: EventBridge는 EIP의 **Content-Based Router** 패턴의 직접적 구현이다. 전통적 메시지 라우터는 메시지의 헤더나 본문 내용을 검사해 목적지를 정하는데, EventBridge의 Rule이 정확히 이 일을 한다 — 이벤트 JSON의 `source`·`detail-type`·`detail` 내용을 보고 어느 Target으로 보낼지 결정한다. 핵심은 발신자가 라우팅 로직을 모른다는 점이다(EIP에서 이를 "라우터가 메시지 흐름에 대한 지식을 캡슐화한다"고 표현한다). 새 구독자를 추가해도 발신자 코드는 0줄 바뀐다. 이 속성을 **발행자-구독자 분리**(publisher-subscriber decoupling)라 하고, 마이크로서비스의 독립 배포 가능성(independent deployability)을 떠받치는 토대다.
+> EventBridge는 EIP의 **Content-Based Router** 패턴의 직접적 구현이다. 전통적 메시지 라우터는 메시지의 헤더나 본문 내용을 검사해 목적지를 정하는데, EventBridge의 Rule이 정확히 이 일을 한다 — 이벤트 JSON의 `source`·`detail-type`·`detail` 내용을 보고 어느 Target으로 보낼지 결정한다. 핵심은 발신자가 라우팅 로직을 모른다는 점이다(EIP에서 이를 "라우터가 메시지 흐름에 대한 지식을 캡슐화한다"고 표현한다). 새 구독자를 추가해도 발신자 코드는 0줄 바뀐다. 이 속성을 **발행자-구독자 분리**(publisher-subscriber decoupling)라 하고, 마이크로서비스의 독립 배포 가능성(independent deployability)을 떠받치는 토대다.
 
-> 🔍 **더 깊이**: EventBridge와 SNS·SQS를 자주 헷갈리는데, 셋은 메시징 스펙트럼의 다른 지점에 있다. **SQS**는 점대점 큐(point-to-point queue)로, 메시지를 한 컨슈머 그룹이 가져가 소비한다(work queue, competing consumers 패턴). **SNS**는 발행/구독(pub/sub)으로, 한 메시지를 여러 구독자에게 팬아웃하지만 라우팅이 "토픽" 단위로 거칠다(coarse-grained) — 구독자는 토픽 전체를 받거나 못 받거나다(SNS 필터 정책으로 일부 완화). **EventBridge**는 여기에 **콘텐츠 기반 정밀 라우팅**을 더한다 — 같은 버스에 들어온 이벤트를 내용에 따라 서로 다른 Target으로 잘게 나눈다. 처리량(throughput)과 지연(latency)이 최우선이면 SNS/SQS가 빠르고 싸지만, 풍부한 필터링·다수의 AWS 서비스 통합·스키마 관리가 필요하면 EventBridge다. 시험에서 "한 이벤트를 내용에 따라 15개 다른 서비스로 분기"는 EventBridge, "단순 팬아웃"은 SNS, "버퍼링·재시도 큐"는 SQS로 읽으면 된다.
+> EventBridge와 SNS·SQS를 자주 헷갈리는데, 셋은 메시징 스펙트럼의 다른 지점에 있다. **SQS**는 점대점 큐(point-to-point queue)로, 메시지를 한 컨슈머 그룹이 가져가 소비한다(work queue, competing consumers 패턴). **SNS**는 발행/구독(pub/sub)으로, 한 메시지를 여러 구독자에게 팬아웃하지만 라우팅이 "토픽" 단위로 거칠다(coarse-grained) — 구독자는 토픽 전체를 받거나 못 받거나다(SNS 필터 정책으로 일부 완화). **EventBridge**는 여기에 **콘텐츠 기반 정밀 라우팅**을 더한다 — 같은 버스에 들어온 이벤트를 내용에 따라 서로 다른 Target으로 잘게 나눈다. 처리량(throughput)과 지연(latency)이 최우선이면 SNS/SQS가 빠르고 싸지만, 풍부한 필터링·다수의 AWS 서비스 통합·스키마 관리가 필요하면 EventBridge다. 시험에서 "한 이벤트를 내용에 따라 15개 다른 서비스로 분기"는 EventBridge, "단순 팬아웃"은 SNS, "버퍼링·재시도 큐"는 SQS로 읽으면 된다.
 
 ## Event Bus 3종과 멀티 계정 라우팅
 
@@ -47,7 +47,7 @@ aws events put-permission \
 # 송신 측: 다른 계정의 버스를 Target으로 (Rule의 Target ARN을 상대 버스로)
 ```
 
-> 💡 **관련 이론**: 여러 계정의 이벤트를 하나의 **중앙 버스**(central event bus)로 모으는 패턴은 AWS의 멀티 계정 거버넌스(multi-account strategy)와 결합해 **이벤트 메시 **(event mesh) 또는 허브-앤-스포크(hub-and-spoke) 토폴로지를 만든다. 각 워크로드 계정(spoke)이 자기 이벤트를 보안/감사 계정의 중앙 버스(hub)로 보내면, 중앙에서 조직 전체의 이벤트를 한 곳에서 감지·대응할 수 있다. 이는 AWS Organizations의 위임 관리자(delegated administrator) 패턴과 같은 거버넌스 사상이다 — 권한과 관측을 중앙으로 모으되, 워크로드는 계정별로 격리한다.
+> 여러 계정의 이벤트를 하나의 **중앙 버스**(central event bus)로 모으는 패턴은 AWS의 멀티 계정 거버넌스(multi-account strategy)와 결합해 **이벤트 메시 **(event mesh) 또는 허브-앤-스포크(hub-and-spoke) 토폴로지를 만든다. 각 워크로드 계정(spoke)이 자기 이벤트를 보안/감사 계정의 중앙 버스(hub)로 보내면, 중앙에서 조직 전체의 이벤트를 한 곳에서 감지·대응할 수 있다. 이는 AWS Organizations의 위임 관리자(delegated administrator) 패턴과 같은 거버넌스 사상이다 — 권한과 관측을 중앙으로 모으되, 워크로드는 계정별로 격리한다.
 
 ## Event Pattern — 매칭은 비교가 아니라 결정 트리다
 
@@ -76,7 +76,7 @@ EventBridge의 심장은 **Event Pattern** 매칭이다. 들어온 이벤트 JSO
 | `equals-ignore-case` | 대소문자 무시 | |
 | `wildcard` | `*` 와일드카드 | `{"wildcard": "*.prod.*"}` |
 
-> 🔍 **더 깊이**: EventBridge 매칭 엔진은 모든 규칙을 매 이벤트마다 순차 비교하지 않는다. 그렇게 하면 규칙 수에 비례해 느려진다(O(규칙수)). 대신 AWS는 모든 규칙의 패턴을 하나의 **상태 기계(state machine) / 결정 트리**로 컴파일한다 — 여러 규칙이 공유하는 조건(예: `source`가 같은)을 한 노드로 합쳐, 이벤트 하나가 트리를 한 번 통과하면서 매칭되는 모든 규칙을 동시에 찾는다. 이 기법은 이벤트 처리 시스템의 고전인 **Rete 알고리즘**(1979, 규칙 엔진의 패턴 매칭 최적화)이나 정규식 엔진의 NFA→DFA 컴파일과 같은 발상이다. 핵심 이점: 규칙이 수천 개여도 이벤트당 매칭 비용이 패턴 수가 아니라 **이벤트의 복잡도**에 비례한다. AWS가 이 엔진을 오픈소스로 일부 공개한 것이 `quamina`(Go 라이브러리)다 — 내부 동작이 궁금하면 이 코드가 곧 답이다.
+> EventBridge 매칭 엔진은 모든 규칙을 매 이벤트마다 순차 비교하지 않는다. 그렇게 하면 규칙 수에 비례해 느려진다(O(규칙수)). 대신 AWS는 모든 규칙의 패턴을 하나의 **상태 기계(state machine) / 결정 트리**로 컴파일한다 — 여러 규칙이 공유하는 조건(예: `source`가 같은)을 한 노드로 합쳐, 이벤트 하나가 트리를 한 번 통과하면서 매칭되는 모든 규칙을 동시에 찾는다. 이 기법은 이벤트 처리 시스템의 고전인 **Rete 알고리즘**(1979, 규칙 엔진의 패턴 매칭 최적화)이나 정규식 엔진의 NFA→DFA 컴파일과 같은 발상이다. 핵심 이점: 규칙이 수천 개여도 이벤트당 매칭 비용이 패턴 수가 아니라 **이벤트의 복잡도**에 비례한다. AWS가 이 엔진을 오픈소스로 일부 공개한 것이 `quamina`(Go 라이브러리)다 — 내부 동작이 궁금하면 이 코드가 곧 답이다.
 
 > ⚠️ **함정**: Event Pattern은 **부분 일치(subset match)**다. 패턴에 명시한 필드만 검사하고, 이벤트에 그 외 필드가 더 있어도 무시한다. 그래서 `{"detail": {"state": ["FAILED"]}}`는 `state`가 FAILED인 모든 이벤트를 잡되, `state`가 없거나 다른 이벤트는 거른다. 흔한 실수는 이를 "정확히 이 JSON과 같아야 한다"로 오해하는 것이다. 또 하나: 패턴의 값은 **항상 배열**이어야 한다. `"state": "FAILED"`(문자열)는 틀리고 `"state": ["FAILED"]`(배열)가 맞다. 배열이 OR이므로, 단일 값도 1개짜리 배열로 감싼다.
 
@@ -113,7 +113,7 @@ aws scheduler create-schedule \
 
 Scheduler의 차별점은 셋이다. 첫째, **수백만 개 스케줄**을 지원한다(개별 일정을 1급 객체로 취급). 둘째, **Flexible Time Window** — 정확히 그 시각이 아니라 "이 15분 안 어디든"으로 실행을 분산시켜, 새벽 3시 정각에 수만 개 작업이 한꺼번에 터지는 **thundering herd**(쇄도 현상)를 막는다. 셋째, **one-time schedule**(한 번만 실행 후 자동 삭제)을 지원해 "3일 뒤 이 토큰 만료" 같은 지연 작업을 큐 없이 표현한다.
 
-> 💡 **관련 이론**: Flexible Time Window는 분산 시스템에서 **지터(jitter)**를 의도적으로 주입하는 고전 기법이다. 모든 클라이언트가 똑같은 시각(또는 똑같은 백오프 간격)에 행동하면 부하가 한 점에 몰려 다운스트림이 무너진다(thundering herd). 여기에 무작위 시간차를 더하면 부하가 시간축으로 퍼진다. 같은 원리가 재시도 백오프의 "exponential backoff with jitter"(AWS Architecture Blog의 고전), DNS TTL 분산, 캐시 만료 분산(cache stampede 방지)에 쓰인다. Scheduler는 이 패턴을 cron 스케줄링에 내장한 것이다.
+> Flexible Time Window는 분산 시스템에서 **지터(jitter)**를 의도적으로 주입하는 고전 기법이다. 모든 클라이언트가 똑같은 시각(또는 똑같은 백오프 간격)에 행동하면 부하가 한 점에 몰려 다운스트림이 무너진다(thundering herd). 여기에 무작위 시간차를 더하면 부하가 시간축으로 퍼진다. 같은 원리가 재시도 백오프의 "exponential backoff with jitter"(AWS Architecture Blog의 고전), DNS TTL 분산, 캐시 만료 분산(cache stampede 방지)에 쓰인다. Scheduler는 이 패턴을 cron 스케줄링에 내장한 것이다.
 
 ## EventBridge Pipes — 폴링 통합을 코드 없이
 
@@ -133,7 +133,7 @@ Source → Filter → Enrichment → Target
 
 핵심 가치는 **글루 코드(glue code) 제거**다. 과거 "SQS에서 폴링 → 필터 → 외부 API로 보강 → DynamoDB 저장"을 하려면 Lambda를 직접 짜고 폴링 로직·배치·에러 처리를 손으로 관리했다. Pipes는 이 배관(plumbing)을 관리형으로 흡수한다.
 
-> 🔍 **더 깊이**: Pipes는 EIP의 **파이프-필터(pipes and filters)** 아키텍처를 그대로 구현한 이름이다(이름부터 그렇다). 파이프-필터는 데이터를 일련의 처리 단계(필터)에 통과시키되, 각 단계가 파이프로 연결돼 독립적으로 교체·재배치 가능한 구조다 — Unix 셸의 `cat | grep | sort`가 원형이다. Pipes의 4단계(Source-Filter-Enrich-Target)는 각각 독립 구성 가능하고, 한 단계를 바꿔도 나머지는 그대로다. 또한 Pipes의 Filter 단계는 **early filtering**의 경제학을 보여준다 — Enrichment(Lambda 호출, 과금)나 Target 전송 전에 불필요한 이벤트를 버리면, 비싼 다운스트림 작업을 아낀다. "필터를 파이프라인 앞쪽으로 밀어라(predicate pushdown)"는 데이터베이스 쿼리 최적화의 원리와 같다.
+> Pipes는 EIP의 **파이프-필터(pipes and filters)** 아키텍처를 그대로 구현한 이름이다(이름부터 그렇다). 파이프-필터는 데이터를 일련의 처리 단계(필터)에 통과시키되, 각 단계가 파이프로 연결돼 독립적으로 교체·재배치 가능한 구조다 — Unix 셸의 `cat | grep | sort`가 원형이다. Pipes의 4단계(Source-Filter-Enrich-Target)는 각각 독립 구성 가능하고, 한 단계를 바꿔도 나머지는 그대로다. 또한 Pipes의 Filter 단계는 **early filtering**의 경제학을 보여준다 — Enrichment(Lambda 호출, 과금)나 Target 전송 전에 불필요한 이벤트를 버리면, 비싼 다운스트림 작업을 아낀다. "필터를 파이프라인 앞쪽으로 밀어라(predicate pushdown)"는 데이터베이스 쿼리 최적화의 원리와 같다.
 
 ## Archive & Replay — 이벤트 소싱의 그림자
 
@@ -154,7 +154,7 @@ aws events start-replay --replay-name fix-bug-20260601 \
 
 용도는 사고 복구다. "결제 처리 Lambda에 버그가 있어 6월 1일 새벽 이벤트가 잘못 처리됐다 → 버그를 고친 뒤 그 시간대 이벤트를 Replay해 재처리"가 전형적이다.
 
-> 💡 **관련 이론**: Archive/Replay는 **이벤트 소싱**(event sourcing)의 핵심 통찰을 빌렸다 — 상태가 아니라 "일어난 사건의 로그"를 진실의 원천(source of truth)으로 삼으면, 그 로그를 다시 재생해 어떤 시점의 상태든 복원하거나 재처리할 수 있다. 이벤트 소싱에서는 이를 "이벤트 스트림을 리플레이해 read model을 재구축한다"고 부른다. 다만 EventBridge Archive는 완전한 이벤트 소싱 저장소는 아니다 — 순서 보장이 약하고(at-least-once, 순서 비보장) 무기한 보존이 아니다(retention 설정). 그래서 EventBridge Replay는 "감사용 영구 원장"이 아니라 "최근 기간의 사고 복구·재처리"에 맞다. 진짜 이벤트 소싱이 필요하면 Kinesis Data Streams나 전용 이벤트 스토어(예: EventStoreDB)를 쓴다. 시험에서 "장애 후 이벤트 재처리"는 Replay, "영구 감사 원장"은 다른 답이다.
+> Archive/Replay는 **이벤트 소싱**(event sourcing)의 핵심 통찰을 빌렸다 — 상태가 아니라 "일어난 사건의 로그"를 진실의 원천(source of truth)으로 삼으면, 그 로그를 다시 재생해 어떤 시점의 상태든 복원하거나 재처리할 수 있다. 이벤트 소싱에서는 이를 "이벤트 스트림을 리플레이해 read model을 재구축한다"고 부른다. 다만 EventBridge Archive는 완전한 이벤트 소싱 저장소는 아니다 — 순서 보장이 약하고(at-least-once, 순서 비보장) 무기한 보존이 아니다(retention 설정). 그래서 EventBridge Replay는 "감사용 영구 원장"이 아니라 "최근 기간의 사고 복구·재처리"에 맞다. 진짜 이벤트 소싱이 필요하면 Kinesis Data Streams나 전용 이벤트 스토어(예: EventStoreDB)를 쓴다. 시험에서 "장애 후 이벤트 재처리"는 Replay, "영구 감사 원장"은 다른 답이다.
 
 ## 전달 보장과 안전망 — DLQ, 재시도, 멱등성
 
@@ -173,9 +173,9 @@ Target 전달이 실패하면 EventBridge가 지수 백오프로 재시도하고
 
 EventBridge **Schema Registry**는 버스를 지나는 이벤트의 구조를 자동 탐색(discovery)하거나 직접 등록해, 그 스키마로부터 타입 안전한 코드 바인딩(Java/Python/TypeScript)을 생성한다. 이벤트 발신자와 수신자 사이의 **계약(contract)**을 명시화하는 것이다.
 
-> 💡 **관련 이론**: Schema Registry는 분산 시스템에서 **스키마 진화(schema evolution)**와 **계약 우선(contract-first) 설계**의 한 형태다. 발신자가 이벤트 형식을 바꾸면 수신자가 깨지는 문제를, 스키마를 공유 계약으로 명시하고 호환성 규칙(하위 호환 필드 추가만 허용 등)을 강제해 푼다. Confluent Schema Registry(Kafka 생태계의 Avro/Protobuf 스키마 관리)가 같은 사상이며, gRPC의 `.proto`, GraphQL 스키마도 같은 "계약을 코드 생성의 원천으로"라는 발상이다. 이벤트 기반 아키텍처가 커질수록 "누가 어떤 이벤트를 내고 그 형식이 무엇인가"를 추적하는 스키마 거버넌스가 운영 우수성의 핵심이 된다.
+> Schema Registry는 분산 시스템에서 **스키마 진화(schema evolution)**와 **계약 우선(contract-first) 설계**의 한 형태다. 발신자가 이벤트 형식을 바꾸면 수신자가 깨지는 문제를, 스키마를 공유 계약으로 명시하고 호환성 규칙(하위 호환 필드 추가만 허용 등)을 강제해 푼다. Confluent Schema Registry(Kafka 생태계의 Avro/Protobuf 스키마 관리)가 같은 사상이며, gRPC의 `.proto`, GraphQL 스키마도 같은 "계약을 코드 생성의 원천으로"라는 발상이다. 이벤트 기반 아키텍처가 커질수록 "누가 어떤 이벤트를 내고 그 형식이 무엇인가"를 추적하는 스키마 거버넌스가 운영 우수성의 핵심이 된다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 다섯 가지다. 첫째, **EventBridge는 EAI/EIP의 메시지 버스·콘텐츠 기반 라우터 패턴**을 AWS에 구현한 것으로, 발신자가 수신자를 모르게 해 결합도를 끊는다. 둘째, **Event Pattern 매칭은 순차 비교가 아니라 결정 트리/상태 기계로 컴파일**되어 규칙 수에 무관하게 빠르며, 부분 일치 의미론과 배열=OR 규칙을 가진다. 셋째, **Scheduler는 수백만 스케줄과 Flexible Time Window(지터)**로 thundering herd를 막는 CloudWatch cron의 후계자다. 넷째, **Pipes는 파이프-필터 아키텍처**로 폴링 소스의 글루 코드를 관리형으로 흡수하고, early filtering으로 비용을 아낀다. 다섯째, **Archive/Replay는 이벤트 소싱의 재처리 통찰**을 빌렸고, at-least-once 전달이므로 컨슈머는 멱등해야 한다.
 

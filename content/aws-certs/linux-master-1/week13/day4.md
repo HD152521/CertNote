@@ -57,7 +57,7 @@ service iptables save                 # 또는 iptables-save > /etc/sysconfig/ip
 
 > ⚠️ **치명적 함정**: 원격 SSH 중에 `iptables -P INPUT DROP`을 먼저 하면 **자기 자신이 끊긴다**. 반드시 22번 ACCEPT 규칙을 먼저 넣고 정책을 바꿔야 한다.
 
-> 🔍 **순서가 전부**: 규칙은 위→아래로 매칭되고 첫 매칭에서 멈춘다. "모두 DROP"이 위에 있으면 뒤(`-A`)의 ACCEPT는 도달 못 한다 → `-I`로 앞에 삽입해야 효과.
+**순서가 전부**: 규칙은 위→아래로 매칭되고 첫 매칭에서 멈춘다. "모두 DROP"이 위에 있으면 뒤(`-A`)의 ACCEPT는 도달 못 한다 → `-I`로 앞에 삽입해야 효과.
 
 ## firewall-cmd — firewalld의 zone 기반 방화벽
 
@@ -93,7 +93,7 @@ firewall-cmd --reload
 
 > ⚠️ **핵심 함정**: `--permanent`만 쓰면 **지금은 적용 안 된다**. `--reload`를 해야 현재 세션에 반영된다. 반대로 `--reload` 없이 `--add-service`만 하면 재부팅 시 사라진다. "영구 + 즉시" = `--permanent` 후 `--reload`.
 
-> 💡 **iptables vs firewalld 저장**: iptables는 `service iptables save`, firewalld는 `--permanent`. 둘 다 "메모리 규칙은 휘발된다"는 같은 문제를 다르게 해결.
+**iptables vs firewalld 저장**: iptables는 `service iptables save`, firewalld는 `--permanent`. 둘 다 "메모리 규칙은 휘발된다"는 같은 문제를 다르게 해결.
 
 ## SELinux — DAC 위의 강제 접근 제어
 
@@ -137,9 +137,9 @@ setsebool -P httpd_can_network_connect on    # -P=영구
 | `semanage fcontext` | 컨텍스트 영구 정책 등록 |
 | `setsebool -P` | 불리언 영구 변경 |
 
-> 🔍 **진단 신호**: "권한(rwx)은 맞는데 접근이 안 된다" → SELinux 의심. `setenforce 0`으로 되면 SELinux 문제(운영에선 끄지 말고 `restorecon`/`chcon`으로 컨텍스트 수정).
+**진단 신호**: "권한(rwx)은 맞는데 접근이 안 된다" → SELinux 의심. `setenforce 0`으로 되면 SELinux 문제(운영에선 끄지 말고 `restorecon`/`chcon`으로 컨텍스트 수정).
 
-> ⚠️ **chcon vs restorecon**: `chcon`은 직접 지정(재라벨링 시 사라질 수 있음), `restorecon`은 정책 기준 복원, `semanage fcontext`+`restorecon`이 영구적인 정석. setenforce로는 Disabled로 못 간다(영구는 config 파일).
+**chcon vs restorecon**: `chcon`은 직접 지정(재라벨링 시 사라질 수 있음), `restorecon`은 정책 기준 복원, `semanage fcontext`+`restorecon`이 영구적인 정석. setenforce로는 Disabled로 못 간다(영구는 config 파일).
 
 ## rsyslog — 로그를 facility.priority로 분류
 
@@ -180,7 +180,7 @@ local7.*                                    /var/log/boot.log
 systemctl restart rsyslog
 ```
 
-> 📚 **빈칸 단골**: 보안 인증 로그를 `/var/log/secure`에 모으는 설정은 `authpriv.*  /var/log/secure`. `.none`은 제외, `.=`는 정확히 그 수준만.
+보안 인증 로그를 `/var/log/secure`에 모으는 설정은 `authpriv.*  /var/log/secure`. `.none`은 제외, `.=`는 정확히 그 수준만.
 
 ## logrotate — 로그 순환·압축·보존
 
@@ -217,7 +217,7 @@ logrotate -d /etc/logrotate.d/myapp   # 디버그(실제 실행 X, 동작 예측
 logrotate -f /etc/logrotate.d/myapp   # 강제 즉시 순환
 ```
 
-> 💡 **시험 해석**: `weekly` + `rotate 4` + `compress` = 매주 순환, 최근 4개(약 4주치)를 압축 보관, 초과분 삭제. 크기 기준은 `size`, 주기 기준은 `daily/weekly`.
+**시험 해석**: `weekly` + `rotate 4` + `compress` = 매주 순환, 최근 4개(약 4주치)를 압축 보관, 초과분 삭제. 크기 기준은 `size`, 주기 기준은 `daily/weekly`.
 
 ## TCP Wrapper — 서비스 단위 접근 제어
 
@@ -241,7 +241,7 @@ ALL: ALL
 | `LOCAL` | 점(.)이 없는 로컬 호스트 |
 | `EXCEPT` | 예외 지정 |
 
-> 🔍 **순서가 결과를 바꾼다**: allow가 deny보다 우선. `hosts.deny`에 `ALL: ALL`을 두고 `hosts.allow`에 허용할 대상만 화이트리스트로 적는 것이 보안 정석. 둘 다 비면 모두 허용된다.
+**순서가 결과를 바꾼다**: allow가 deny보다 우선. `hosts.deny`에 `ALL: ALL`을 두고 `hosts.allow`에 허용할 대상만 화이트리스트로 적는 것이 보안 정석. 둘 다 비면 모두 허용된다.
 
 ## 방화벽·보안 작업형 한눈에
 
@@ -250,7 +250,7 @@ ALL: ALL
 | 포트 허용 | `-A INPUT -p tcp --dport N -j ACCEPT` | `--permanent --add-port=N/tcp` | 방향·프로토콜 |
 | 차단 | `-j DROP`/`REJECT` | `--remove-service` | DROP=무응답 |
 | 저장 | `service iptables save` | `--permanent --reload` | 휘발 방지 |
-| 정책 | `-P INPUT DROP` | zone 기본값 | SSH 먼저 허용! |
+| 정책 | `-P INPUT DROP` | zone 기본값 | SSH 먼저 허용 |
 
 ## 직접 쳐보기
 

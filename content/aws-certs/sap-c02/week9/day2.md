@@ -12,9 +12,9 @@ Redshift는 이 OLAP 패턴에 두 가지로 대응한다. 첫째, **컬럼 지�
 
 Redshift 클러스터의 구조는 **Leader Node + Compute Node**다. Leader Node는 클라이언트의 SQL을 받아 실행 계획을 세우고, 그 계획을 C++ 코드로 컴파일해 각 Compute Node에 배포한다. Compute Node는 자기가 가진 데이터 조각에 대해 그 코드를 실행하고 중간 결과를 Leader Node로 보내 최종 집계한다. 각 Compute Node는 다시 **Slice**라는 병렬 단위로 나뉜다(노드 타입에 따라 2~16개). 슬라이스가 실제 병렬 실행의 최소 단위이고, 데이터는 슬라이스 단위로 분산된다.
 
-> 💡 **관련 이론**: Redshift의 MPP는 1980~90년대 Teradata, Greenplum이 정립한 shared-nothing 아키텍처의 클라우드 구현이다. shared-nothing은 각 노드가 자기 디스크·메모리·CPU만 쓰고 다른 노드와 자원을 공유하지 않는 구조로, 노드를 추가하면 처리량이 거의 선형으로 늘어난다(linear scalability). 반대로 shared-disk(Oracle RAC)는 디스크를 공유해 노드 간 락 경합이 병목이 된다. Redshift가 shared-nothing을 택한 건 분석 워크로드가 "각 노드가 독립적으로 자기 데이터를 처리하고 마지막에 합치는" map-reduce 패턴과 잘 맞기 때문이다. 다만 RA3에서는 이 원칙이 약간 변형되는데, 뒤에서 본다.
+Redshift의 MPP는 1980~90년대 Teradata, Greenplum이 정립한 shared-nothing 아키텍처의 클라우드 구현이다. shared-nothing은 각 노드가 자기 디스크·메모리·CPU만 쓰고 다른 노드와 자원을 공유하지 않는 구조로, 노드를 추가하면 처리량이 거의 선형으로 늘어난다(linear scalability). 반대로 shared-disk(Oracle RAC)는 디스크를 공유해 노드 간 락 경합이 병목이 된다. Redshift가 shared-nothing을 택한 건 분석 워크로드가 "각 노드가 독립적으로 자기 데이터를 처리하고 마지막에 합치는" map-reduce 패턴과 잘 맞기 때문이다. 다만 RA3에서는 이 원칙이 약간 변형되는데, 뒤에서 본다.
 
-> 🔍 **더 깊이**: Redshift는 쿼리 실행 계획을 **C++로 컴파일**해서 실행한다. 이게 흥미로운 설계 결정이다. 대부분의 DB는 인터프리터 방식으로 실행 계획을 한 연산자씩 해석하며 실행한다(Volcano 모델). Redshift는 쿼리별로 맞춤 C++ 코드를 생성·컴파일해 네이티브 속도로 돌린다. 단점은 처음 보는 쿼리는 컴파일 오버헤드(수백 ms~수 초)가 생긴다는 것. 그래서 Redshift는 컴파일된 코드를 클러스터 간 공유 캐시에 저장해, 같은 패턴의 쿼리는 다음번에 컴파일 없이 즉시 실행한다. 시험에 직접 나오진 않지만 "첫 쿼리가 유독 느리다"는 현상의 원인이 이것이다.
+Redshift는 쿼리 실행 계획을 **C++로 컴파일**해서 실행한다. 이게 흥미로운 설계 결정이다. 대부분의 DB는 인터프리터 방식으로 실행 계획을 한 연산자씩 해석하며 실행한다(Volcano 모델). Redshift는 쿼리별로 맞춤 C++ 코드를 생성·컴파일해 네이티브 속도로 돌린다. 단점은 처음 보는 쿼리는 컴파일 오버헤드(수백 ms~수 초)가 생긴다는 것. 그래서 Redshift는 컴파일된 코드를 클러스터 간 공유 캐시에 저장해, 같은 패턴의 쿼리는 다음번에 컴파일 없이 즉시 실행한다. 시험에 직접 나오진 않지만 "첫 쿼리가 유독 느리다"는 현상의 원인이 이것이다.
 
 ## 분산 스타일(DISTSTYLE) — 데이터를 어디에 흩뿌리느냐가 성능을 결정한다
 
@@ -39,9 +39,9 @@ Redshift 성능의 가장 큰 변수는 **분산 키(distribution key)**다. 데
 - **COMPOUND SORTKEY**: 여러 컬럼을 지정한 순서대로 정렬. 첫 번째 컬럼으로 필터링할 때 가장 효과적. 대부분의 경우 시간 컬럼(event_date)을 첫 정렬 키로 둔다. 시계열 분석이 압도적으로 많기 때문.
 - **INTERLEAVED SORTKEY**: 모든 정렬 키 컬럼에 균등한 가중치. 여러 컬럼으로 다양하게 필터링하는 경우 이론상 유리하지만, VACUUM REINDEX 부담이 크고 유지보수가 까다로워 실무에서 거의 안 쓴다.
 
-> 💡 **관련 이론**: Zone Map은 데이터 레이크의 Parquet row group min/max 통계와 본질적으로 같은 아이디어다(Day 41 참고). 둘 다 "정렬되거나 클러스터링된 데이터의 블록 단위 통계로 불필요한 I/O를 건너뛴다"는 zone map / data skipping 기법이다. 컬럼 지향 + 정렬 + 블록 통계의 조합은 OLAP 시스템(Redshift, BigQuery, Snowflake, ClickHouse)의 공통 최적화 패턴이다. 인덱스(B-tree)가 "특정 행을 빨리 찾기"라면, Zone Map은 "관련 없는 대량 블록을 빨리 버리기"다. OLAP은 후자가 압도적으로 중요하다.
+Zone Map은 데이터 레이크의 Parquet row group min/max 통계와 본질적으로 같은 아이디어다(Day 41 참고). 둘 다 "정렬되거나 클러스터링된 데이터의 블록 단위 통계로 불필요한 I/O를 건너뛴다"는 zone map / data skipping 기법이다. 컬럼 지향 + 정렬 + 블록 통계의 조합은 OLAP 시스템(Redshift, BigQuery, Snowflake, ClickHouse)의 공통 최적화 패턴이다. 인덱스(B-tree)가 "특정 행을 빨리 찾기"라면, Zone Map은 "관련 없는 대량 블록을 빨리 버리기"다. OLAP은 후자가 압도적으로 중요하다.
 
-> 🔍 **더 깊이**: VACUUM과 ANALYZE가 왜 필요한가. Redshift는 행을 DELETE해도 즉시 물리 삭제하지 않고 "삭제됨" 표시만 한다(soft delete). INSERT는 정렬 순서를 깨고 unsorted 영역에 쌓인다. 시간이 지나면 (1) 삭제 표시된 행이 공간을 차지하고 (2) unsorted 영역이 커져 block skipping 효과가 떨어진다. **VACUUM**은 삭제 행을 물리 제거하고 데이터를 정렬 키 순으로 재정렬한다. **ANALYZE**는 통계를 갱신해 쿼리 플래너가 정확한 실행 계획을 세우게 한다. 최신 Redshift는 Auto VACUUM/Auto ANALYZE로 이를 백그라운드 자동화하지만, 대량 적재 후 수동 실행이 필요한 경우가 있다. 시험에서 "대량 INSERT/DELETE 후 쿼리가 느려졌다"는 VACUUM 필요를 시사한다.
+VACUUM과 ANALYZE가 왜 필요한가. Redshift는 행을 DELETE해도 즉시 물리 삭제하지 않고 "삭제됨" 표시만 한다(soft delete). INSERT는 정렬 순서를 깨고 unsorted 영역에 쌓인다. 시간이 지나면 (1) 삭제 표시된 행이 공간을 차지하고 (2) unsorted 영역이 커져 block skipping 효과가 떨어진다. **VACUUM**은 삭제 행을 물리 제거하고 데이터를 정렬 키 순으로 재정렬한다. **ANALYZE**는 통계를 갱신해 쿼리 플래너가 정확한 실행 계획을 세우게 한다. 최신 Redshift는 Auto VACUUM/Auto ANALYZE로 이를 백그라운드 자동화하지만, 대량 적재 후 수동 실행이 필요한 경우가 있다. 시험에서 "대량 INSERT/DELETE 후 쿼리가 느려졌다"는 VACUUM 필요를 시사한다.
 
 ## RA3 — 컴퓨팅과 스토리지를 분리한 진짜 이유
 
@@ -51,9 +51,9 @@ Redshift 성능의 가장 큰 변수는 **분산 키(distribution key)**다. 데
 
 이 분리가 가져온 부수 효과가 중요하다. 데이터가 S3(RMS)에 있으므로 **여러 클러스터가 같은 데이터를 복사 없이 공유**할 수 있다(Data Sharing). 그리고 백업·복원이 빨라지고, 클러스터 크기 조정(resize)이 데이터 이동 없이 메타데이터 변경만으로 가능해진다.
 
-> 🔍 **더 깊이**: RA3의 컴퓨팅-스토리지 분리는 Snowflake가 처음 대중화한 아키텍처를 Redshift가 따라간 것이다. Snowflake는 처음부터 S3(또는 GCS/Blob)에 데이터를 두고 "virtual warehouse"라는 독립 컴퓨팅 클러스터를 띄우는 구조로 시작했다. 같은 데이터에 여러 warehouse를 붙여 워크로드를 격리(ETL용, BI용, 데이터 과학용)할 수 있는 게 강점이었다. Redshift는 RA3 + Data Sharing + Serverless로 이 패턴을 따라잡았다. SAP 관점에서 "여러 팀이 같은 데이터를 보되 서로의 쿼리 성능에 영향 주지 않게 격리"하려면, RA3 + Data Sharing(프로듀서/컨슈머 분리) 또는 Serverless 다중 인스턴스가 답이다.
+RA3의 컴퓨팅-스토리지 분리는 Snowflake가 처음 대중화한 아키텍처를 Redshift가 따라간 것이다. Snowflake는 처음부터 S3(또는 GCS/Blob)에 데이터를 두고 "virtual warehouse"라는 독립 컴퓨팅 클러스터를 띄우는 구조로 시작했다. 같은 데이터에 여러 warehouse를 붙여 워크로드를 격리(ETL용, BI용, 데이터 과학용)할 수 있는 게 강점이었다. Redshift는 RA3 + Data Sharing + Serverless로 이 패턴을 따라잡았다. SAP 관점에서 "여러 팀이 같은 데이터를 보되 서로의 쿼리 성능에 영향 주지 않게 격리"하려면, RA3 + Data Sharing(프로듀서/컨슈머 분리) 또는 Serverless 다중 인스턴스가 답이다.
 
-> 📚 **사례**: 한 소매 기업이 DC2 클러스터를 쓰다가 데이터가 3년간 누적되어 스토리지가 90% 차자, 노드를 계속 추가했다. 컴퓨팅은 충분한데 스토리지 때문에 노드를 늘리니 월 비용이 3배가 됐다. RA3로 마이그레이션하니 데이터는 RMS(S3)로 가고 노드는 실제 컴퓨팅 요구(8개)만 유지해 비용이 40% 줄었다. 추가로 BI팀과 ETL팀이 같은 클러스터에서 경합하던 문제도 Data Sharing으로 컨슈머 클러스터를 분리해 해결했다. SAP 시험에서 "DC2 스토리지 부족 + 비용 증가"는 거의 RA3 마이그레이션이 답이다.
+(가상 사례) 한 소매 기업이 DC2 클러스터를 쓰다가 데이터가 3년간 누적되어 스토리지가 90% 차자, 노드를 계속 추가했다. 컴퓨팅은 충분한데 스토리지 때문에 노드를 늘리니 월 비용이 3배가 됐다. RA3로 마이그레이션하니 데이터는 RMS(S3)로 가고 노드는 실제 컴퓨팅 요구(8개)만 유지해 비용이 40% 줄었다. 추가로 BI팀과 ETL팀이 같은 클러스터에서 경합하던 문제도 Data Sharing으로 컨슈머 클러스터를 분리해 해결했다. SAP 시험에서 "DC2 스토리지 부족 + 비용 증가"는 거의 RA3 마이그레이션이 답이다.
 
 ## DC2 vs RA3 vs Serverless — 무엇을 언제 고르나
 
@@ -73,7 +73,7 @@ Spectrum은 Redshift가 **S3의 데이터를 클러스터로 적재(COPY)하지 
 
 Spectrum의 동작 원리가 중요하다. Spectrum 쿼리가 들어오면 Redshift는 S3 스캔·필터·집계 작업을 **AWS가 관리하는 별도의 Spectrum 노드 풀**로 내려보낸다(pushdown). 이 풀은 Redshift 클러스터와 독립적으로 수천 노드까지 탄력적으로 확장된다. 즉 S3의 페타바이트를 스캔하는 무거운 작업이 Redshift 클러스터 자원을 잡아먹지 않고 별도 컴퓨팅에서 처리된 뒤, 줄어든 결과만 Redshift로 돌아온다. 과금은 Athena처럼 **S3 스캔 데이터당**이다(따라서 Parquet+파티션+압축이 여기서도 비용을 좌우한다).
 
-> 🔍 **더 깊이**: Spectrum vs Athena의 관계가 헷갈린다. 둘 다 S3를 SQL로 직접 쿼리하고 Glue Catalog를 공유하며 스캔량으로 과금된다. 차이는 "어디서 쿼리하느냐"다. Athena는 독립 서버리스 쿼리 서비스(Presto/Trino)이고, Spectrum은 Redshift 클러스터의 확장이다. Redshift 내부 테이블과 S3를 조인해야 하면 Spectrum, 순수하게 S3만 쿼리하면 Athena가 단순하다. 실제로 Spectrum의 S3 스캔 엔진과 Athena는 내부적으로 유사한 기술을 공유한다. SAP 시험에서 "이미 Redshift를 쓰고 있고 S3 과거 데이터와 조인"이면 Spectrum, "Redshift 없이 S3만"이면 Athena.
+Spectrum vs Athena의 관계가 헷갈린다. 둘 다 S3를 SQL로 직접 쿼리하고 Glue Catalog를 공유하며 스캔량으로 과금된다. 차이는 "어디서 쿼리하느냐"다. Athena는 독립 서버리스 쿼리 서비스(Presto/Trino)이고, Spectrum은 Redshift 클러스터의 확장이다. Redshift 내부 테이블과 S3를 조인해야 하면 Spectrum, 순수하게 S3만 쿼리하면 Athena가 단순하다. 실제로 Spectrum의 S3 스캔 엔진과 Athena는 내부적으로 유사한 기술을 공유한다. SAP 시험에서 "이미 Redshift를 쓰고 있고 S3 과거 데이터와 조인"이면 Spectrum, "Redshift 없이 S3만"이면 Athena.
 
 ## Federated Query와 Zero-ETL — 운영 DB를 분석으로 끌어오는 두 방식
 
@@ -83,7 +83,7 @@ Spectrum의 동작 원리가 중요하다. Spectrum 쿼리가 들어오면 Redsh
 
 > 🎯 **시나리오**: "Aurora PostgreSQL OLTP 데이터를 거의 실시간으로 Redshift에서 분석해야 한다. 직접 ETL 파이프라인을 만들고 싶지 않고, 운영 DB에 분석 쿼리 부하를 주고 싶지도 않다. 가장 적합한 구성은?" — 답은 **Aurora PostgreSQL Zero-ETL Integration with Redshift**. Zero-ETL은 CDC로 Aurora 변경을 Redshift에 자동 복제하므로, ETL 코드를 작성·유지하지 않아도 되고(관리형) 운영 DB에 분석 쿼리 부하가 가지 않는다(데이터가 Redshift로 복제됨). Federated Query는 ETL은 없지만 운영 DB에 직접 쿼리해 부하를 주므로 "부하를 주고 싶지 않다"는 조건에 어긋난다. DMS CDC는 가능하지만 파이프라인을 직접 관리해야 한다. Glue 배치는 실시간이 아니다. 함정: "ETL 없이 + 실시간 + 운영 DB 부하 회피"는 Zero-ETL.
 
-> 📚 **사례**: 한 게임 회사가 Aurora MySQL에 플레이어 행동 데이터를 저장하고, 분석팀이 실시간 대시보드를 원했다. 처음엔 DMS CDC로 S3에 복제 후 Glue로 변환해 Redshift에 적재하는 3단계 파이프라인을 운영했는데, 지연이 15~30분이고 파이프라인 장애 대응에 엔지니어 시간이 많이 들었다. Aurora MySQL Zero-ETL with Redshift로 전환하니 지연이 수십 초로 줄고 파이프라인 운영 부담이 사라졌다. 다만 Zero-ETL은 변환(transform) 로직을 넣을 수 없어, 복잡한 정제가 필요하면 Redshift에 도착한 후 Materialized View나 추가 쿼리로 처리해야 한다.
+(가상 사례) 한 게임 회사가 Aurora MySQL에 플레이어 행동 데이터를 저장하고, 분석팀이 실시간 대시보드를 원했다. 처음엔 DMS CDC로 S3에 복제 후 Glue로 변환해 Redshift에 적재하는 3단계 파이프라인을 운영했는데, 지연이 15~30분이고 파이프라인 장애 대응에 엔지니어 시간이 많이 들었다. Aurora MySQL Zero-ETL with Redshift로 전환하니 지연이 수십 초로 줄고 파이프라인 운영 부담이 사라졌다. 다만 Zero-ETL은 변환(transform) 로직을 넣을 수 없어, 복잡한 정제가 필요하면 Redshift에 도착한 후 Materialized View나 추가 쿼리로 처리해야 한다.
 
 ## WLM, Concurrency Scaling, SQA — 동시성 워크로드 관리
 
@@ -93,19 +93,19 @@ Spectrum의 동작 원리가 중요하다. Spectrum 쿼리가 들어오면 Redsh
 
 **SQA(Short Query Acceleration)**는 짧은 쿼리를 별도 전용 공간에서 우선 처리해, 긴 쿼리 뒤에 짧은 쿼리가 줄 서서 막히는 head-of-line blocking을 방지한다.
 
-> ⚠️ **함정**: Concurrency Scaling은 만능이 아니다. 쓰기(INSERT/UPDATE/COPY)가 아니라 주로 읽기 쿼리에 적용되고, 일부 쿼리 패턴(특정 임시 테이블, 특정 함수)은 추가 클러스터로 라우팅되지 않는다. 또 무료 크레딧을 초과하면 비용이 발생하므로, 동시성 폭증이 일상이라면 클러스터 자체를 키우거나 Serverless로 가는 게 나을 수 있다. 시험에서 "큐 대기로 쿼리가 지연된다"는 1차로 Concurrency Scaling, 만성적이면 클러스터 사이징 재검토.
+Concurrency Scaling은 만능이 아니다. 쓰기(INSERT/UPDATE/COPY)가 아니라 주로 읽기 쿼리에 적용되고, 일부 쿼리 패턴(특정 임시 테이블, 특정 함수)은 추가 클러스터로 라우팅되지 않는다. 또 무료 크레딧을 초과하면 비용이 발생하므로, 동시성 폭증이 일상이라면 클러스터 자체를 키우거나 Serverless로 가는 게 나을 수 있다. 시험에서 "큐 대기로 쿼리가 지연된다"는 1차로 Concurrency Scaling, 만성적이면 클러스터 사이징 재검토.
 
 ## Materialized View와 결과 캐싱 — 반복 집계를 미리 계산
 
 BI 대시보드는 같은 집계 쿼리(예: 일별 매출 합계)를 수없이 반복한다. **Materialized View(MV)**는 이 집계 결과를 미리 계산해 저장하고, 원본 데이터가 바뀌면 **증분 갱신(incremental refresh)**한다. 대시보드는 무거운 원본 집계 대신 작은 MV를 읽어 응답이 빨라진다. Auto Refresh를 켜면 Redshift가 백그라운드로 MV를 최신 상태로 유지한다. Spectrum 외부 테이블에 대한 MV도 가능해, S3 레이크의 집계 결과를 Redshift에 캐싱할 수 있다.
 
-> 💡 **관련 이론**: Materialized View는 "비싼 계산을 한 번 하고 결과를 재사용한다"는 캐싱의 DB 버전이다. 핵심 난점은 **캐시 무효화(cache invalidation)** — 원본이 바뀌면 MV를 어떻게 효율적으로 갱신하느냐다. 전체 재계산은 비싸므로 Redshift는 변경된 부분만 반영하는 incremental refresh를 한다. 이는 스트리밍 시스템의 incremental view maintenance 이론과 닿아 있다. 비교하자면 Athena에는 MV가 없고 Result Reuse(동일 쿼리 결과 재사용)만 있어, 반복 집계 최적화는 Redshift MV가 더 강력하다.
+Materialized View는 "비싼 계산을 한 번 하고 결과를 재사용한다"는 캐싱의 DB 버전이다. 핵심 난점은 **캐시 무효화(cache invalidation)** — 원본이 바뀌면 MV를 어떻게 효율적으로 갱신하느냐다. 전체 재계산은 비싸므로 Redshift는 변경된 부분만 반영하는 incremental refresh를 한다. 이는 스트리밍 시스템의 incremental view maintenance 이론과 닿아 있다. 비교하자면 Athena에는 MV가 없고 Result Reuse(동일 쿼리 결과 재사용)만 있어, 반복 집계 최적화는 Redshift MV가 더 강력하다.
 
-## 정리하며
+## 정리
 
 Redshift의 성능과 비용은 SQL 엔진이 아니라 **물리적 데이터 배치(분산 키·정렬 키·압축)와 실행 구조(MPP, 슬라이스, 컴파일 실행)**에서 결정된다. RA3의 컴퓨팅-스토리지 분리(RMS)는 스케일링 유연성과 Data Sharing을 가능하게 했고, Serverless는 가변 워크로드의 탄력성을 제공한다. Spectrum·Federated Query·Zero-ETL은 웨어하우스를 데이터 레이크와 운영 DB로 확장해 레이크하우스를 완성한다.
 
-SAP 시험의 단골 매핑: (1) "큰/작은 테이블 조인 + 네트워크 트래픽" → fact=DISTKEY, dim=ALL, (2) "DC2 스토리지 부족 + 비용" → RA3 마이그레이션, (3) "가변/간헐 워크로드" → Serverless, (4) "S3 과거 데이터와 Redshift 조인" → Spectrum, (5) "ETL 없이 실시간 운영 DB 분석 + 부하 회피" → Zero-ETL, (6) "큐 대기 지연" → Concurrency Scaling, (7) "복제 없이 다중 클러스터 공유" → Data Sharing. 다음 day에서는 실시간 스트리밍 데이터를 다루는 Kinesis 생태계를 본다.
+SAP 시험 매핑: (1) "큰/작은 테이블 조인 + 네트워크 트래픽" → fact=DISTKEY, dim=ALL, (2) "DC2 스토리지 부족 + 비용" → RA3 마이그레이션, (3) "가변/간헐 워크로드" → Serverless, (4) "S3 과거 데이터와 Redshift 조인" → Spectrum, (5) "ETL 없이 실시간 운영 DB 분석 + 부하 회피" → Zero-ETL, (6) "큐 대기 지연" → Concurrency Scaling, (7) "복제 없이 다중 클러스터 공유" → Data Sharing. 다음 day에서는 실시간 스트리밍 데이터를 다루는 Kinesis 생태계를 본다.
 
 ---
 

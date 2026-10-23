@@ -15,13 +15,13 @@ Security Hub의 역할은 두 가지다. 첫째 **CSPM(Cloud Security Posture Ma
 - **PCI DSS** — 카드 결제 산업 보안 표준
 - **NIST SP 800-53** — 미국 연방 보안 통제 프레임워크
 
-> 💡 **관련 이론**: CSPM은 보안 업계에서 정의된 제품 카테고리다. 핵심 임무는 **configuration drift(설정 일탈) 탐지 + 표준 위반 식별** — 클라우드 리소스가 시간이 지나며 안전한 기준선에서 벗어나는 것을 자동으로 잡는다. Security Hub는 AWS 네이티브 CSPM이고, 같은 카테고리의 서드파티로 Wiz, Prisma Cloud, Lacework, Orca가 있다. 멀티클라우드 환경(AWS+Azure+GCP)은 보통 서드파티 CSPM을 함께 쓴다 — 한 콘솔에서 여러 클라우드의 자세를 통합 평가하기 위해서다. 시험에서 "AWS 단일 클라우드 + CIS/PCI 자동 점검 + 통합 대시보드"는 Security Hub가 정답이다.
+CSPM은 보안 업계에서 정의된 제품 카테고리다. 핵심 임무는 **configuration drift(설정 일탈) 탐지 + 표준 위반 식별** — 클라우드 리소스가 시간이 지나며 안전한 기준선에서 벗어나는 것을 자동으로 잡는다. Security Hub는 AWS 네이티브 CSPM이고, 같은 카테고리의 서드파티로 Wiz, Prisma Cloud, Lacework, Orca가 있다. 멀티클라우드 환경(AWS+Azure+GCP)은 보통 서드파티 CSPM을 함께 쓴다 — 한 콘솔에서 여러 클라우드의 자세를 통합 평가하기 위해서다. 시험에서 "AWS 단일 클라우드 + CIS/PCI 자동 점검 + 통합 대시보드"는 Security Hub가 정답이다.
 
-> 🔍 **더 깊이**: Security Hub의 표준 점검 대부분은 내부적으로 **AWS Config Rule**을 실행한다. 예를 들어 "S3 버킷 퍼블릭 액세스 차단 여부" 점검은 Config의 `s3-bucket-public-read-prohibited` 룰로 평가된다. 그래서 Security Hub의 보안 표준을 켜면 연관된 Config Rule들이 자동 배포되고, **Config가 비활성이면 Security Hub의 많은 점검이 작동하지 않는다**. 이 의존성이 시험에 종종 나온다 — "Security Hub 점검이 'No data'로 나온다"의 원인은 보통 Config 미활성화다. Config가 리소스 변경을 기록·평가하는 엔진이고, Security Hub는 그 결과를 보안 관점으로 집계·표준화하는 상위 레이어다.
+Security Hub의 표준 점검 대부분은 내부적으로 **AWS Config Rule**을 실행한다. 예를 들어 "S3 버킷 퍼블릭 액세스 차단 여부" 점검은 Config의 `s3-bucket-public-read-prohibited` 룰로 평가된다. 그래서 Security Hub의 보안 표준을 켜면 연관된 Config Rule들이 자동 배포되고, **Config가 비활성이면 Security Hub의 많은 점검이 작동하지 않는다**. 이 의존성이 시험에 종종 나온다 — "Security Hub 점검이 'No data'로 나온다"의 원인은 보통 Config 미활성화다. Config가 리소스 변경을 기록·평가하는 엔진이고, Security Hub는 그 결과를 보안 관점으로 집계·표준화하는 상위 레이어다.
 
 ## Detective — 그래프로 사건의 인과를 추적한다
 
-GuardDuty가 "악성 IP와 통신함"이라는 Finding을 던졌다고 하자. 그래서 **무슨 일이 일어난 건가?** 그 EC2가 언제부터, 누구의 자격 증명으로, 어떤 리소스와, 얼마나 많이 통신했나? 이 깊이 있는 조사가 **Detective**의 영역이다.
+GuardDuty가 "악성 IP와 통신함"이라는 Finding을 던졌다고 가정한다. 그래서 **무슨 일이 일어난 건가?** 그 EC2가 언제부터, 누구의 자격 증명으로, 어떤 리소스와, 얼마나 많이 통신했나? 이 깊이 있는 조사가 **Detective**의 영역이다.
 
 Detective는 VPC Flow Logs·CloudTrail·GuardDuty Finding·EKS 감사 로그를 **자동으로 수집·연결해 행동 그래프(behavior graph)**를 만든다. Finding을 클릭하면 관련 엔티티(IP·역할·인스턴스·계정)들이 시간축 위에서 어떻게 상호작용했는지 시각화된다. 사람이 여러 로그를 수동으로 조인할 필요 없이, "이 자격 증명의 평소 활동 vs 사건 시점 활동"을 비교해 이상의 맥락을 보여준다.
 
@@ -30,7 +30,7 @@ Detective는 VPC Flow Logs·CloudTrail·GuardDuty Finding·EKS 감사 로그를 
 - **자동 데이터 통합**: 추가 설정 없이 소스 로그를 끌어옴
 - **GuardDuty 연동**: Finding에서 바로 Detective 조사로 점프
 
-> 💡 **관련 이론**: Detective의 그래프 분석은 **그래프 이론(graph theory)**을 보안 조사에 적용한 것이다. 보안 사건은 본질적으로 "엔티티 간 관계의 비정상 패턴"이다 — 평소 연결이 없던 노드(외부 IP)와 갑자기 강하게 연결된 노드(내부 인스턴스), 짧은 시간에 폭증한 엣지(대량 API 호출). 그래프로 모델링하면 이런 이상 연결이 시각적으로 드러난다. 이는 사기 탐지(fraud detection)·소셜 네트워크 분석과 같은 기법 — 개별 이벤트가 아니라 **연결의 구조**를 본다. 단순 로그 나열로는 안 보이는 "공격 경로(attack path)"가 그래프에서는 한눈에 보인다.
+Detective의 그래프 분석은 **그래프 이론(graph theory)**을 보안 조사에 적용한 것이다. 보안 사건은 본질적으로 "엔티티 간 관계의 비정상 패턴"이다 — 평소 연결이 없던 노드(외부 IP)와 갑자기 강하게 연결된 노드(내부 인스턴스), 짧은 시간에 폭증한 엣지(대량 API 호출). 그래프로 모델링하면 이런 이상 연결이 시각적으로 드러난다. 이는 사기 탐지(fraud detection)·소셜 네트워크 분석과 같은 기법 — 개별 이벤트가 아니라 **연결의 구조**를 본다. 단순 로그 나열로는 안 보이는 "공격 경로(attack path)"가 그래프에서는 한눈에 보인다.
 
 > ⚠️ **함정**: Security Hub와 Detective의 경계. Security Hub는 "무엇이 잘못됐나"(Finding 집계·표준 점검)를 보여주지만 "왜·어떻게 일어났나"의 깊은 조사는 하지 못한다. 그 조사가 Detective다. 시험에서 "특정 IAM 사용자의 활동을 시계열로 시각화해 사건의 근본 원인을 조사"는 Detective, "모든 계정의 보안 표준 준수 현황 대시보드"는 Security Hub다. 둘은 대체재가 아니라 보완(탐지·집계 → 조사) 관계다.
 
@@ -43,11 +43,11 @@ Detective는 VPC Flow Logs·CloudTrail·GuardDuty Finding·EKS 감사 로그를 
 - **감사 보고서 생성**: 감사관 제출용 보고서를 자동 패키징
 - **커스텀 프레임워크**: 자사 내부 통제 기준도 정의 가능
 
-> 🔍 **더 깊이**: Audit Manager가 Security Hub와 다른 결정적 지점은 **시점(point-in-time) vs 지속(continuous)**이다. Security Hub는 "지금 이 순간 표준을 지키나"를 실시간으로 본다. Audit Manager는 "감사 기간 동안 지속적으로 지켰음을 증명하는 증거를 시간에 걸쳐 축적"한다. 감사는 "현재 상태"가 아니라 "기간 내 지속 준수"를 요구하기 때문이다 — 감사 전날만 설정을 고쳐선 안 되고, 분기 내내 통제가 작동했다는 타임스탬프 증거가 필요하다. 그래서 Audit Manager는 CloudTrail(누가 언제 무엇을)과 Config(설정이 시간에 따라 어떻게 변했나)를 증거 소스로 삼는다. 시험에서 "감사관 제출용 증거 자동 수집·보고서"는 Audit Manager, "실시간 표준 점검"은 Security Hub다.
+Audit Manager가 Security Hub와 다른 결정적 지점은 **시점(point-in-time) vs 지속(continuous)**이다. Security Hub는 "지금 이 순간 표준을 지키나"를 실시간으로 본다. Audit Manager는 "감사 기간 동안 지속적으로 지켰음을 증명하는 증거를 시간에 걸쳐 축적"한다. 감사는 "현재 상태"가 아니라 "기간 내 지속 준수"를 요구하기 때문이다 — 감사 전날만 설정을 고쳐선 안 되고, 분기 내내 통제가 작동했다는 타임스탬프 증거가 필요하다. 그래서 Audit Manager는 CloudTrail(누가 언제 무엇을)과 Config(설정이 시간에 따라 어떻게 변했나)를 증거 소스로 삼는다. 시험에서 "감사관 제출용 증거 자동 수집·보고서"는 Audit Manager, "실시간 표준 점검"은 Security Hub다.
 
-> 📚 **사례**: 한 헬스케어 SaaS는 HIPAA 감사를 매년 받았는데, 통제별 증거(접근 로그, 암호화 설정, 백업 정책 등 수백 항목)를 엔지니어들이 수동으로 캡처·정리하느라 매번 3~4주를 소모했다. Audit Manager의 HIPAA 프레임워크를 활성화하니, 각 통제에 매핑된 CloudTrail·Config·Security Hub 증거가 **자동으로 수집·타임스탬프와 함께 축적**됐고, 감사 시점에 보고서를 버튼 한 번으로 생성했다. 준비 기간이 3~4주에서 며칠로 줄었다. 교훈: 감사의 비용은 "통제를 지키는 것"보다 "지켰음을 증명하는 증거 수집"에 있고, Audit Manager는 그 증거 파이프라인을 자동화한다.
+(가상 사례) 한 헬스케어 SaaS는 HIPAA 감사를 매년 받았는데, 통제별 증거(접근 로그, 암호화 설정, 백업 정책 등 수백 항목)를 엔지니어들이 수동으로 캡처·정리하느라 매번 3~4주를 소모했다. Audit Manager의 HIPAA 프레임워크를 활성화하니, 각 통제에 매핑된 CloudTrail·Config·Security Hub 증거가 **자동으로 수집·타임스탬프와 함께 축적**됐고, 감사 시점에 보고서를 버튼 한 번으로 생성했다. 준비 기간이 3~4주에서 며칠로 줄었다. 교훈: 감사의 비용은 "통제를 지키는 것"보다 "지켰음을 증명하는 증거 수집"에 있고, Audit Manager는 그 증거 파이프라인을 자동화한다.
 
-> 📚 **사례**: 한 보안 스타트업이 Security Hub만 켜두고 Detective 없이 운영하다 침해를 겪었다. Security Hub는 "GuardDuty가 의심 IAM 활동을 탐지함"이라는 Finding을 보여줬지만, "그래서 그 자격 증명이 정확히 무엇을 했고 어디까지 번졌나"를 알려면 CloudTrail·VPC Flow Log를 며칠간 수동으로 조인해야 했다. 조사가 늦어지는 사이 공격자는 추가 리소스로 횡이동(lateral movement)했다. 이후 Detective를 도입하니 Finding 클릭 한 번으로 자격 증명의 시간축 활동 그래프가 떠 횡이동 경로를 즉시 파악했다. 교훈: Security Hub(탐지·집계)와 Detective(조사)는 대체재가 아니라 순차적 보완이다 — 탐지는 "무엇이"를, 조사는 "어떻게·어디까지"를 답한다.
+(가상 사례) 한 보안 스타트업이 Security Hub만 켜두고 Detective 없이 운영하다 침해를 겪었다. Security Hub는 "GuardDuty가 의심 IAM 활동을 탐지함"이라는 Finding을 보여줬지만, "그래서 그 자격 증명이 정확히 무엇을 했고 어디까지 번졌나"를 알려면 CloudTrail·VPC Flow Log를 며칠간 수동으로 조인해야 했다. 조사가 늦어지는 사이 공격자는 추가 리소스로 횡이동(lateral movement)했다. 이후 Detective를 도입하니 Finding 클릭 한 번으로 자격 증명의 시간축 활동 그래프가 떠 횡이동 경로를 즉시 파악했다. 교훈: Security Hub(탐지·집계)와 Detective(조사)는 대체재가 아니라 순차적 보완이다 — 탐지는 "무엇이"를, 조사는 "어떻게·어디까지"를 답한다.
 
 ## 데이터 근간 — Config와 CloudTrail Lake
 
@@ -57,7 +57,7 @@ Detective는 VPC Flow Logs·CloudTrail·GuardDuty Finding·EKS 감사 로그를 
 
 **CloudTrail Lake**는 CloudTrail 이벤트를 **SQL로 쿼리 가능한 데이터 저장소**로 만든 기능이다. "지난 90일간 특정 IAM 역할이 호출한 모든 `DeleteBucket`을 찾아라" 같은 임의 조사를 SQL로 직접 한다. Detective(그래프 시각화)와 보완 관계 — Lake는 쿼리, Detective는 시각화에 강하다.
 
-> 🔍 **더 깊이**: Config와 CloudTrail은 "무엇을 기록하나"가 근본적으로 다르다. **Config는 리소스의 상태(state)**를 본다 — "이 S3 버킷이 지금 퍼블릭인가, 어제와 비교해 설정이 어떻게 바뀌었나"(설정 스냅샷의 시계열). **CloudTrail은 행위(action)**를 본다 — "누가 언제 어떤 API를 호출했나"(이벤트의 흐름). 보안 조사에는 둘 다 필요하다 — Config로 "지금 잘못된 설정"을 찾고, CloudTrail로 "누가 그 설정을 언제 바꿨나"를 추적한다. 예: S3가 갑자기 퍼블릭이 됐다면, Config가 "퍼블릭 상태 변화"를 플래그하고 CloudTrail이 "누가 `PutBucketAcl`을 호출했나"를 알려준다. 이 상태(Config) + 행위(CloudTrail)의 조합이 모든 상위 보안 서비스의 데이터 토대다.
+Config와 CloudTrail은 "무엇을 기록하나"가 근본적으로 다르다. **Config는 리소스의 상태(state)**를 본다 — "이 S3 버킷이 지금 퍼블릭인가, 어제와 비교해 설정이 어떻게 바뀌었나"(설정 스냅샷의 시계열). **CloudTrail은 행위(action)**를 본다 — "누가 언제 어떤 API를 호출했나"(이벤트의 흐름). 보안 조사에는 둘 다 필요하다 — Config로 "지금 잘못된 설정"을 찾고, CloudTrail로 "누가 그 설정을 언제 바꿨나"를 추적한다. 예: S3가 갑자기 퍼블릭이 됐다면, Config가 "퍼블릭 상태 변화"를 플래그하고 CloudTrail이 "누가 `PutBucketAcl`을 호출했나"를 알려준다. 이 상태(Config) + 행위(CloudTrail)의 조합이 모든 상위 보안 서비스의 데이터 토대다.
 
 > ⚠️ **함정**: CloudTrail Lake vs Athena over S3 logs vs CloudWatch Logs Insights를 혼동하기 쉽다. 셋 다 로그를 쿼리하지만 — **CloudTrail Lake**는 CloudTrail 이벤트 전용 관리형 SQL 저장소(설정 0, 즉시 쿼리)다. **Athena**는 S3에 쌓인 CloudTrail 로그를 쿼리할 수 있지만 테이블·파티션을 직접 구성하는 ETL 부담이 있다. **CloudWatch Logs Insights**는 CloudWatch Logs(애플리케이션·시스템 로그)용이지 CloudTrail 이벤트 저장소가 아니다. 시험에서 "CloudTrail 이벤트를 임의 SQL로 조사"는 가장 직접적인 CloudTrail Lake가 정답이다.
 
@@ -89,11 +89,11 @@ Detective는 VPC Flow Logs·CloudTrail·GuardDuty Finding·EKS 감사 로그를 
    기반 데이터: Config(설정 변경) + CloudTrail/Lake(API 로그)
 ```
 
-## 정리하며
+## 정리
 
 통합 관제는 "현재 · 과거 · 증명"의 세 시제다 — **Security Hub**는 **현재** 보안 자세를 표준(CIS·PCI·NIST)으로 점검하고 모든 Finding을 ASFF로 통합하며, **Detective**는 **과거** 사건을 그래프로 추적해 근본 원인을 조사하고, **Audit Manager**는 컴플라이언스 준수를 **증명**할 증거를 자동 수집한다. 이 모두의 데이터 근간은 Config(설정 평가)와 CloudTrail(API 로그)이며, Security Hub의 표준 점검 다수가 Config Rule로 구현된다.
 
-SAP 시험 단골 매핑: (1) "멀티 계정 CIS·PCI 자동 점검 + 통합 대시보드" → **Security Hub**, (2) "IAM 사용자 활동 시계열 시각화·사건 근본 원인 조사" → **Detective**, (3) "HIPAA·PCI 감사 증거 자동 수집·보고서" → **Audit Manager**, (4) "리소스 비준수 자동 평가" → **Config Rule**, (5) "CloudTrail 이벤트 SQL 쿼리" → **CloudTrail Lake**, (6) "Security Hub 점검이 No data" → Config 미활성화, (7) "Finding을 외부 SIEM으로" → EventBridge → Kinesis/Lambda. 다음 day는 엣지 보안(WAF·Shield·Firewall Manager)을 본다.
+SAP 시험 매핑: (1) "멀티 계정 CIS·PCI 자동 점검 + 통합 대시보드" → **Security Hub**, (2) "IAM 사용자 활동 시계열 시각화·사건 근본 원인 조사" → **Detective**, (3) "HIPAA·PCI 감사 증거 자동 수집·보고서" → **Audit Manager**, (4) "리소스 비준수 자동 평가" → **Config Rule**, (5) "CloudTrail 이벤트 SQL 쿼리" → **CloudTrail Lake**, (6) "Security Hub 점검이 No data" → Config 미활성화, (7) "Finding을 외부 SIEM으로" → EventBridge → Kinesis/Lambda. 다음 day는 엣지 보안(WAF·Shield·Firewall Manager)을 본다.
 
 ---
 

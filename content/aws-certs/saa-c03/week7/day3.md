@@ -35,9 +35,9 @@ EventBridge의 모든 이벤트는 **Bus**라는 논리적 채널을 통해 흐�
 
 이 표준 envelope이 EventBridge의 진짜 가치다. 모든 이벤트가 같은 모양이라 rule pattern을 일관되게 쓸 수 있고, 신규 소스가 추가돼도 라우팅 로직은 동일하다. 이게 2018년 출시된 **CNCF CloudEvents** 표준과 거의 같은 디자인인 것은 우연이 아니다 — EventBridge는 CloudEvents의 명시적 지원도 추가했다.
 
-> 💡 **관련 이론**: 이벤트 envelope 표준화는 분산 시스템에서 매우 중요한 패턴이다. 1996년 *Enterprise Integration Patterns*의 **Canonical Data Model**과 1990년대 EAI(Enterprise Application Integration) 미들웨어인 TIBCO·webMethods가 같은 아이디어로 출발했다. 핵심은 "N개 시스템이 M개 시스템과 통합되려면 N×M개 어댑터가 필요한데, 가운데 표준 envelope을 두면 N+M개로 줄어든다"는 비용 구조. EventBridge는 이 30년 된 아이디어를 매니지드 클라우드 서비스로 구현했다.
+이벤트 envelope 표준화는 분산 시스템에서 매우 중요한 패턴이다. 1996년 *Enterprise Integration Patterns*의 **Canonical Data Model**과 1990년대 EAI(Enterprise Application Integration) 미들웨어인 TIBCO·webMethods가 같은 아이디어로 출발했다. 핵심은 "N개 시스템이 M개 시스템과 통합되려면 N×M개 어댑터가 필요한데, 가운데 표준 envelope을 두면 N+M개로 줄어든다"는 비용 구조. EventBridge는 이 30년 된 아이디어를 매니지드 클라우드 서비스로 구현했다.
 
-> 🔍 **더 깊이**: EventBridge가 CloudWatch Events에서 분리·리브랜딩된 이유는 "이벤트 라우팅"이 모니터링과 별개의 first-class 서비스가 됐다는 신호다. 2016년 CloudWatch Events는 AWS 서비스 이벤트 위주였지만, 2019년 EventBridge는 SaaS·custom까지 확장됐고 2022년 Pipes·Scheduler가 추가되며 통합 허브로 자리잡았다. CloudWatch Events 시절의 API와 rule도 계속 동작하지만(`events.amazonaws.com` 그대로), 신규 기능은 EventBridge 쪽에만 추가된다.
+EventBridge가 CloudWatch Events에서 분리·리브랜딩된 이유는 "이벤트 라우팅"이 모니터링과 별개의 first-class 서비스가 됐다는 신호다. 2016년 CloudWatch Events는 AWS 서비스 이벤트 위주였지만, 2019년 EventBridge는 SaaS·custom까지 확장됐고 2022년 Pipes·Scheduler가 추가되며 통합 허브로 자리잡았다. CloudWatch Events 시절의 API와 rule도 계속 동작하지만(`events.amazonaws.com` 그대로), 신규 기능은 EventBridge 쪽에만 추가된다.
 
 ## Rule과 Event Pattern: 이벤트의 어떤 부분에 반응할지를 선언적으로 쓰기
 
@@ -89,7 +89,7 @@ Target은 무려 30개 이상의 AWS 서비스를 직접 지원한다. Lambda·S
 
 > ⚠️ **함정**: Rule pattern은 JSON 모양 매치라 source/detail-type을 정확히 명시해야 한다. `"source": "aws.s3"`처럼 배열이 아닌 단일 값으로 쓰면 매치 실패다. 또한 `detail` 안의 필드는 정확한 키 경로가 필요한데, AWS 서비스마다 detail 구조가 다르므로 [Events Sample](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-service-event.html) 문서를 보고 작성해야 한다. 운영에서 가장 흔한 버그는 "rule이 안 잡힌다"는 것이고, 99%가 pattern 오타·구조 오해·소스 이름 오기다.
 
-> 🔍 **더 깊이**: EventBridge의 pattern matching engine은 내부적으로 NFA(non-deterministic finite automaton) 기반으로 동작한다는 게 AWS re:Invent 2022 세션(SVS323)에서 공개됐다. 즉 한 이벤트가 들어오면 등록된 모든 rule pattern을 O(1)에 가까운 시간으로 매치할 수 있다는 뜻이고, 그래서 한 bus에 수천 개 rule을 둬도 라우팅 지연이 거의 늘지 않는다. 이건 일반적인 if-else 체인이나 SQL where 절보다 훨씬 빠르고, EventBridge가 "수많은 rule을 한 bus에 올려도 안전"한 이유다.
+EventBridge의 pattern matching engine은 내부적으로 NFA(non-deterministic finite automaton) 기반으로 동작한다는 게 AWS re:Invent 2022 세션(SVS323)에서 공개됐다. 즉 한 이벤트가 들어오면 등록된 모든 rule pattern을 O(1)에 가까운 시간으로 매치할 수 있다는 뜻이고, 그래서 한 bus에 수천 개 rule을 둬도 라우팅 지연이 거의 늘지 않는다. 이건 일반적인 if-else 체인이나 SQL where 절보다 훨씬 빠르고, EventBridge가 "수많은 rule을 한 bus에 올려도 안전"한 이유다.
 
 ## Input Transformation: target마다 다른 모양으로 이벤트 전달
 
@@ -133,7 +133,7 @@ aws events start-replay --replay-name payment-replay-2026-05-26 \
 
 이게 event sourcing의 기본 빌딩 블록이다. 본격적인 event sourcing(EventStoreDB, Kafka)만큼 강력하진 않지만, "감사 추적 + 디버깅 + 부분 재처리" 정도의 시나리오는 충분히 커버한다.
 
-> 📚 **사례**: 2021년 12월 Log4Shell(CVE-2021-44228) 취약점 사고 때 많은 회사가 "지난 N일간 어떤 시스템이 영향받았는가"를 알고 싶어 했다. CloudWatch Logs는 검색이 느렸고 SNS·SQS는 이미 소비된 이벤트라 추적이 불가능했다. EventBridge Archive를 설정해뒀던 회사들은 archive의 모든 이벤트를 분석 Lambda로 replay해 영향 범위를 빠르게 파악했다. 이 사건 이후 "보안 관련 이벤트는 EventBridge Archive를 기본으로 켠다"가 많은 회사의 표준이 됐다.
+**사례**: 2021년 12월 Log4Shell(CVE-2021-44228) 취약점 사고 때 많은 회사가 "지난 N일간 어떤 시스템이 영향받았는가"를 알고 싶어 했다. CloudWatch Logs는 검색이 느렸고 SNS·SQS는 이미 소비된 이벤트라 추적이 불가능했다. EventBridge Archive를 설정해뒀던 회사들은 archive의 모든 이벤트를 분석 Lambda로 replay해 영향 범위를 빠르게 파악했다. 이 사건 이후 "보안 관련 이벤트는 EventBridge Archive를 기본으로 켠다"가 많은 회사의 표준이 됐다.
 
 ## API Destinations와 Connections: 외부 SaaS로 직접 호출
 
@@ -157,7 +157,7 @@ aws events create-api-destination --name slack-alerts \
 
 `invocation-rate-limit-per-second`는 외부 API의 rate limit을 보호한다. 갑작스러운 이벤트 폭증이 외부 API를 죽이지 않도록 EventBridge가 자체 throttle을 한다. 초과 이벤트는 자동으로 retry queue로 들어가고, 최종 실패 시 DLQ로 격리된다.
 
-> 💡 **관련 이론**: API Destinations는 "API Gateway가 inbound라면 outbound 버전"이라 볼 수 있다. 두 가지 모두 인증·rate limit·retry를 매니지드로 처리한다는 점이 같다. 옛날엔 외부 SaaS 호출을 Lambda로 직접 짜야 했고, 그 Lambda 안에서 retry·인증·token refresh·error handling을 다 관리해야 했다. API Destinations는 이걸 모두 인프라 레이어로 옮겨 "코드 0"으로 만든다.
+API Destinations는 "API Gateway가 inbound라면 outbound 버전"이라 볼 수 있다. 두 가지 모두 인증·rate limit·retry를 매니지드로 처리한다는 점이 같다. 옛날엔 외부 SaaS 호출을 Lambda로 직접 짜야 했고, 그 Lambda 안에서 retry·인증·token refresh·error handling을 다 관리해야 했다. API Destinations는 이걸 모두 인프라 레이어로 옮겨 "코드 0"으로 만든다.
 
 ## EventBridge Pipes: Source → Filter → Enrich → Target의 직접 통합
 
@@ -179,9 +179,9 @@ Amazon MQ                                EventBridge Bus     ECS / Batch
 
 특히 **Enrichment 단계**가 강력하다. Source에서 받은 이벤트가 부족하면 Lambda나 API Destination을 호출해 추가 데이터를 가져오고 합쳐서 target에 보낸다. 예를 들어 "DynamoDB Stream에 사용자 ID가 들어오면 → API Destination으로 사용자 프로필을 조회해 합치고 → SNS로 환영 메시지". 이걸 Lambda 한 줄 없이 Pipes로 구성.
 
-> 🔍 **더 깊이**: Pipes는 사실상 AWS 버전의 **Apache Kafka Connect**나 **Confluent ksqlDB**의 일부 기능을 매니지드로 제공한다. Source connector + transform + sink connector라는 패턴은 데이터 통합 업계에서 오래된 표준이고, AWS는 이를 자체 매니지드 서비스(Lambda·SFN·API Destination)로 묶어 운영 부담을 0으로 만들었다. 다만 Kafka Connect만큼 transform library가 풍부하진 않아서 복잡한 변환은 여전히 Lambda enrichment가 필요하다.
+Pipes는 사실상 AWS 버전의 **Apache Kafka Connect**나 **Confluent ksqlDB**의 일부 기능을 매니지드로 제공한다. Source connector + transform + sink connector라는 패턴은 데이터 통합 업계에서 오래된 표준이고, AWS는 이를 자체 매니지드 서비스(Lambda·SFN·API Destination)로 묶어 운영 부담을 0으로 만들었다. 다만 Kafka Connect만큼 transform library가 풍부하진 않아서 복잡한 변환은 여전히 Lambda enrichment가 필요하다.
 
-> 📚 **사례**: 2023년 한 핀테크 회사가 "Kinesis Stream → Lambda(파싱+필터+enrich) → Step Functions"라는 파이프라인을 Lambda 코드 500줄로 운영했는데, Pipes로 옮긴 뒤 코드가 0줄이 되고 운영 사고가 70% 줄었다는 사례를 공개했다. Lambda 콜드 스타트·동시성 관리·에러 처리 같은 문제가 모두 Pipes의 매니지드 레이어로 흡수됐기 때문. 다만 Pipes는 source-target이 1:1이고 fanout이 안 되므로 fanout이 필요하면 여전히 SNS나 bus를 거쳐야 한다.
+**사례(가상)**: 2023년 한 핀테크 회사가 "Kinesis Stream → Lambda(파싱+필터+enrich) → Step Functions"라는 파이프라인을 Lambda 코드 500줄로 운영했는데, Pipes로 옮긴 뒤 코드가 0줄이 되고 운영 사고가 70% 줄었다는 사례를 공개했다. Lambda 콜드 스타트·동시성 관리·에러 처리 같은 문제가 모두 Pipes의 매니지드 레이어로 흡수됐기 때문. 다만 Pipes는 source-target이 1:1이고 fanout이 안 되므로 fanout이 필요하면 여전히 SNS나 bus를 거쳐야 한다.
 
 ## EventBridge Scheduler: 1초 단위 정밀도, 1억 스케줄 규모
 
@@ -225,7 +225,7 @@ aws schemas get-code-binding-source \
 
 Schema Registry는 OpenAPI 3.0 또는 JSONSchema Draft 4 형식으로 스키마를 저장한다. 자체 스키마를 등록하면 구독자들이 같은 스키마를 import해 타입 안전성을 얻고, 변경 시 자동으로 새 버전이 생기며 호환성 검사를 할 수 있다.
 
-> 💡 **관련 이론**: 스키마 진화의 호환성 모드는 Apache Avro에서 정립된 4가지 패턴이 표준이다 — **Backward**(새 reader가 옛 데이터 읽기 가능), **Forward**(옛 reader가 새 데이터 읽기 가능), **Full**(양방향), **None**. 마이크로서비스에서 가장 안전한 모드는 Full이지만 가장 제약이 많다. 보통은 Backward(새 구독자가 옛 producer 데이터를 읽을 수 있어야 함)를 기본으로 잡고, 신규 필드는 optional + default value, 기존 필드 제거·타입 변경 금지가 룰이다. EventBridge Schema Registry는 이 검사를 자동화한다.
+스키마 진화의 호환성 모드는 Apache Avro에서 정립된 4가지 패턴이 표준이다 — **Backward**(새 reader가 옛 데이터 읽기 가능), **Forward**(옛 reader가 새 데이터 읽기 가능), **Full**(양방향), **None**. 마이크로서비스에서 가장 안전한 모드는 Full이지만 가장 제약이 많다. 보통은 Backward(새 구독자가 옛 producer 데이터를 읽을 수 있어야 함)를 기본으로 잡고, 신규 필드는 optional + default value, 기존 필드 제거·타입 변경 금지가 룰이다. EventBridge Schema Registry는 이 검사를 자동화한다.
 
 ## 다른 이벤트 라우팅 시스템과의 비교
 
@@ -243,7 +243,7 @@ EventBridge의 가장 큰 약점은 **처리량**이다. account당 PutEvents �
 
 반대로 EventBridge가 가장 강한 영역은 **SaaS 통합 + 다양한 AWS target + Scheduler**다. Zendesk나 Auth0 이벤트를 받아 Lambda·Step Functions·Slack을 트리거하는 식의 "통합 자동화" 시나리오는 다른 어떤 서비스로도 이만큼 쉽지 않다.
 
-> 📚 **사례**: 2022년 한 e-commerce 회사가 "100개 SaaS 통합"을 자체 Lambda 코드 베이스로 운영하다가 EventBridge Partner Source + Pipes로 옮긴 후 통합 코드가 80% 감소했다. 가장 큰 효용은 "신규 SaaS 통합 시간이 1주에서 1시간으로"였다. 다만 처리량이 큰 워크로드(검색 인덱싱)는 EventBridge 대신 Kinesis로 분리해야 했다 — EventBridge가 만능은 아니다.
+**사례(가상)**: 2022년 한 e-commerce 회사가 "100개 SaaS 통합"을 자체 Lambda 코드 베이스로 운영하다가 EventBridge Partner Source + Pipes로 옮긴 후 통합 코드가 80% 감소했다. 가장 큰 효용은 "신규 SaaS 통합 시간이 1주에서 1시간으로"였다. 다만 처리량이 큰 워크로드(검색 인덱싱)는 EventBridge 대신 Kinesis로 분리해야 했다 — EventBridge가 만능은 아니다.
 
 ## Cross-Account, Cross-Region Bus Forwarding
 
@@ -276,7 +276,7 @@ aws events put-permission --event-bus-name central-audit \
   --action events:PutEvents --principal 444455556666 --statement-id allow-acc-444
 ```
 
-## 정리하며
+## 정리
 
 EventBridge는 SNS·SQS와 같은 메시징 layer이지만 한 차원 다른 추상화다. SNS가 "publish-subscribe", SQS가 "queue", EventBridge가 "**event routing hub**". AWS·SaaS·Custom 이벤트를 하나의 모델로 흡수하고, JSON pattern으로 라우팅하고, 30+ target으로 직접 보내고, archive로 시간 여행을 허용하고, Pipes로 점대점 통합을 코드 없이 만든다. Scheduler는 cron의 차세대 버전이고, Schema Registry는 이벤트 진화 문제에 답한다.
 

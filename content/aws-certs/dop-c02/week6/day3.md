@@ -22,7 +22,7 @@ Push-based 배포에서 CodeBuild나 GitHub Actions는 `aws eks update-kubeconfi
 
 Pull-based GitOps는 신뢰 경계를 Git 저장소 주변으로 재정의한다. 클러스터 오퍼레이터는 Git을 읽을 권한만 있으면 된다. 역방향 — 외부에서 클러스터로 — 의 자격 증명 노출이 사라진다.
 
-💡 **GitOps 핵심 보안 원리**: CI 서버는 클러스터에 직접 쓰지 않는다. "클러스터 상태 = Git 상태"라는 선언만 한다. 클러스터가 자신을 Git에 맞춰 수렴시킨다.
+**GitOps 핵심 보안 원리**: CI 서버는 클러스터에 직접 쓰지 않는다. "클러스터 상태 = Git 상태"라는 선언만 한다. 클러스터가 자신을 Git에 맞춰 수렴시킨다.
 
 ---
 
@@ -57,7 +57,7 @@ ArgoCD 내부 흐름:
 ────────────────────────────────────────────
 ```
 
-🔍 **Kubernetes Controller Pattern**: ArgoCD는 Kubernetes 자체의 컨트롤 루프 철학과 동일한 패턴을 사용한다. kube-controller-manager 내부의 Deployment Controller가 `desired replicas vs actual replicas`를 조정하듯, ArgoCD의 application-controller는 `desired manifests (Git) vs live state (K8s API)`를 조정한다. 이 패턴은 Leslie Lamport가 분산 시스템 이론에서 말하는 "eventual consistency"의 실용적 구현이다.
+**Kubernetes Controller Pattern**: ArgoCD는 Kubernetes 자체의 컨트롤 루프 철학과 동일한 패턴을 사용한다. kube-controller-manager 내부의 Deployment Controller가 `desired replicas vs actual replicas`를 조정하듯, ArgoCD의 application-controller는 `desired manifests (Git) vs live state (K8s API)`를 조정한다. 이 패턴은 Leslie Lamport가 분산 시스템 이론에서 말하는 "eventual consistency"의 실용적 구현이다.
 
 ---
 
@@ -112,7 +112,7 @@ spec:
       namespace: prod
 ```
 
-📚 **Flux vs ArgoCD 선택 기준**: ArgoCD는 UI와 RBAC이 강력하여 여러 팀이 하나의 ArgoCD를 공유하는 multi-tenant 환경에 적합하다. Flux는 더 가볍고, K8s-native하며, "UI가 없어도 되는 플랫폼 팀"에 적합하다. 실무에서는 두 가지를 동시에 사용하거나, ArgoCD 위에 Flux의 image-automation-controller만 사용하는 하이브리드 패턴도 존재한다.
+**Flux vs ArgoCD 선택 기준**: ArgoCD는 UI와 RBAC이 강력하여 여러 팀이 하나의 ArgoCD를 공유하는 multi-tenant 환경에 적합하다. Flux는 더 가볍고, K8s-native하며, "UI가 없어도 되는 플랫폼 팀"에 적합하다. 실무에서는 두 가지를 동시에 사용하거나, ArgoCD 위에 Flux의 image-automation-controller만 사용하는 하이브리드 패턴도 존재한다.
 
 ---
 
@@ -301,7 +301,7 @@ aws eks create-pod-identity-association \
   --role-arn arn:aws:iam::111222333:role/MyAppRole
 ```
 
-🔍 **IRSA vs Pod Identity 시험 포인트**: IRSA는 EKS 1.13부터 지원되며 기존 클러스터에서 널리 사용된다. Pod Identity는 EKS 1.24+ 필요, 더 단순한 설정이 장점. 시험에서는 IRSA의 OIDC Provider 등록 → Trust Policy → ServiceAccount annotation 3단계를 묻는 문제가 자주 출제된다.
+**IRSA vs Pod Identity 시험 포인트**: IRSA는 EKS 1.13부터 지원되며 기존 클러스터에서 널리 사용된다. Pod Identity는 EKS 1.24+ 필요, 더 단순한 설정이 장점. 시험에서는 IRSA의 OIDC Provider 등록 → Trust Policy → ServiceAccount annotation 3단계를 묻는 문제가 나온다.
 
 ---
 
@@ -364,13 +364,13 @@ spec:
 
 Karpenter의 Consolidation 기능은 CA에 없는 독특한 기능이다. 클러스터에 여러 소형 노드가 낮은 사용률로 실행 중일 때, Karpenter는 그 Pod들을 더 적은 수의 노드에 재배치할 수 있는지 시뮬레이션한다. 가능하면 기존 노드를 drain하고 새 노드를 더 효율적으로 프로비저닝한다. 이것은 단순한 스케일 다운이 아니라 빈 자리 채우기 최적화다.
 
-📚 **Karpenter와 Fargate Spot 유사점**: Week 6 Day 2에서 다룬 Fargate Spot의 SIGTERM 2분 warning처럼, Karpenter Spot 노드도 EC2 Spot Interruption Notice를 받으면 노드를 drain하고 Pod을 다른 노드로 재스케줄한다. `karpenter.sh/do-not-disrupt: "true"` annotation을 Pod에 추가하면 Karpenter의 자발적 disruption(Consolidation)을 방지할 수 있다.
+**Karpenter와 Fargate Spot 유사점**: Week 6 Day 2에서 다룬 Fargate Spot의 SIGTERM 2분 warning처럼, Karpenter Spot 노드도 EC2 Spot Interruption Notice를 받으면 노드를 drain하고 Pod을 다른 노드로 재스케줄한다. `karpenter.sh/do-not-disrupt: "true"` annotation을 Pod에 추가하면 Karpenter의 자발적 disruption(Consolidation)을 방지할 수 있다.
 
 ---
 
 ## CodeDeploy가 EKS를 지원하지 않는 이유
 
-이것은 시험에서 함정으로 자주 출제된다. ECS에서 CodeDeploy Blue/Green이 매우 잘 작동하기 때문에, 수험생들은 EKS에서도 동일하게 작동한다고 가정한다. 그러나 CodeDeploy는 EKS를 지원하지 않는다.
+이것은 시험에서 함정으로 쓰인다. ECS에서 CodeDeploy Blue/Green이 매우 잘 작동하기 때문에, 수험생들은 EKS에서도 동일하게 작동한다고 가정한다. 그러나 CodeDeploy는 EKS를 지원하지 않는다.
 
 이유는 설계 철학의 차이에서 온다. CodeDeploy는 AWS가 제공하는 관리형 배포 서비스로, 배포 메커니즘을 CodeDeploy Agent가 담당한다. ECS에서는 ECS 서비스 자체가 CodeDeploy와 통합되어 있다. Kubernetes는 자체적인 Rolling Update, Deployment 롤아웃 메커니즘을 가지며, 이것은 Kubernetes control plane 내부에서 완결된다. CodeDeploy Agent를 K8s 클러스터에 추가하는 것은 이 아키텍처와 맞지 않는다.
 
@@ -442,7 +442,7 @@ Weaveworks가 GitOps 개념을 만든 회사이므로, 자사 프로덕션 환�
 
 2021년 공개된 Codefresh 벤치마크는 ArgoCD와 Flux의 실제 성능 비교를 제공했다. 1000개 Application 기준, ArgoCD는 API 서버와 app-controller의 메모리 사용량이 높았지만, 웹 UI와 RBAC 기능에서 우위였다. Flux는 메모리 효율이 좋았지만 UI가 없었다. 이 벤치마크가 플랫폼 팀에서 "ArgoCD vs Flux" 선택 기준으로 널리 인용된다.
 
-💡 **Spotify 사례**: Spotify는 ArgoCD를 사용하여 1000개 이상의 Kubernetes 서비스를 관리한다. 흥미로운 점은 ArgoCD ApplicationSet — 하나의 템플릿으로 여러 클러스터에 동일한 Application을 생성하는 CRD — 을 사용하여 멀티 리전 배포를 관리한다는 것이다. DOP-C02 시험에서는 ApplicationSet보다 기본 Application과 syncPolicy가 중요하지만, ApplicationSet은 multi-cluster 문제의 실무 해법으로 알아두면 좋다.
+**Spotify 사례**: Spotify는 ArgoCD를 사용하여 1000개 이상의 Kubernetes 서비스를 관리한다. 흥미로운 점은 ArgoCD ApplicationSet — 하나의 템플릿으로 여러 클러스터에 동일한 Application을 생성하는 CRD — 을 사용하여 멀티 리전 배포를 관리한다는 것이다. DOP-C02 시험에서는 ApplicationSet보다 기본 Application과 syncPolicy가 중요하지만, ApplicationSet은 multi-cluster 문제의 실무 해법으로 알아두면 좋다.
 
 ---
 
@@ -481,7 +481,7 @@ spec:
 
 이것은 Week 6 Day 1의 ECR 이미지 서명 (Sigstore, cosign)과 연결된다. ECR에서 서명한 이미지를 Kyverno가 클러스터 진입 시점에 검증하는 것이 End-to-End 이미지 무결성 보장 아키텍처다.
 
-🔍 **DOP-C02 연결점**: 이미지 서명(ECR + cosign) → ECR Enhanced Scanning(Inspector) → Kyverno/OPA Admission Control → ArgoCD/Flux 배포. 이 chain 전체가 "컨테이너 보안 파이프라인"이며, DOP-C02의 Security 도메인 문제로 자주 출제된다.
+**DOP-C02 연결점**: 이미지 서명(ECR + cosign) → ECR Enhanced Scanning(Inspector) → Kyverno/OPA Admission Control → ArgoCD/Flux 배포. 이 chain 전체가 "컨테이너 보안 파이프라인"이며, DOP-C02의 Security 도메인 문제로 나올 수 있다.
 
 ---
 

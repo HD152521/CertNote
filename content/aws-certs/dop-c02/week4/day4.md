@@ -6,7 +6,7 @@ ECS Blue/Green의 물리적 구현은 "두 Target Group + ALB Listener"다. Blue
 
 오늘은 컨트롤러 선택 → 배포 흐름 → AppSpec Hook → CodePipeline 통합 → IMAGE1_NAME 치환 → Fargate/EC2 차이까지 ECS 배포의 전 과정을 다룬다.
 
-> 💡 **Day 4의 핵심 프레임**: ECS Blue/Green 문제에서 "어떤 구성 요소가 어떤 역할을 하는가"를 모르면 보기가 모두 그럴듯해 보인다. Production Listener가 트래픽을 제어하고, Test Listener가 사전 검증을 허용하고, AppSpec Hook Lambda가 각 단계에서 게이트 역할을 한다. 이 세 레이어의 역할 구분이 시험의 핵심이다.
+> **Day 4의 핵심 프레임**: ECS Blue/Green 문제에서 "어떤 구성 요소가 어떤 역할을 하는가"를 모르면 보기가 모두 그럴듯해 보인다. Production Listener가 트래픽을 제어하고, Test Listener가 사전 검증을 허용하고, AppSpec Hook Lambda가 각 단계에서 게이트 역할을 한다. 이 세 레이어의 역할 구분이 시험의 핵심이다.
 
 ---
 
@@ -20,7 +20,7 @@ ECS Blue/Green의 물리적 구현은 "두 Target Group + ALB Listener"다. Blue
 
 **절대 규칙**: ECS Service 생성 시 컨트롤러를 지정하면 **이후 변경 불가능**. Rolling → Blue/Green으로 바꾸려면 Service를 삭제하고 재생성해야 한다. 시험에서 "기존 ECS Service를 Rolling에서 Blue/Green으로 전환하는 방법"이 나오면 "Service 재생성 필요"가 정답이다.
 
-> 🔍 **더 깊이**: `EXTERNAL` 컨트롤러는 AWS가 트래픽 제어에 전혀 개입하지 않는 모드다. Task Set 생성/삭제는 사용자가 직접 API로 수행하고, 트래픽은 App Mesh의 가상 라우터나 Argo Rollouts가 제어한다. 멀티클러스터 서비스 메시 환경이나 고급 Canary(헤더 기반, 사용자 세그먼트 기반)가 필요할 때 사용한다. DOP-C02 시험에서는 주로 `ECS`와 `CODE_DEPLOY` 차이를 묻는다.
+> `EXTERNAL` 컨트롤러는 AWS가 트래픽 제어에 전혀 개입하지 않는 모드다. Task Set 생성/삭제는 사용자가 직접 API로 수행하고, 트래픽은 App Mesh의 가상 라우터나 Argo Rollouts가 제어한다. 멀티클러스터 서비스 메시 환경이나 고급 Canary(헤더 기반, 사용자 세그먼트 기반)가 필요할 때 사용한다. DOP-C02 시험에서는 주로 `ECS`와 `CODE_DEPLOY` 차이를 묻는다.
 
 ---
 
@@ -55,7 +55,7 @@ aws ecs update-service \
 
 다운타임 없지만 일시적으로 EC2(또는 Fargate) 비용이 2배 발생한다.
 
-> 💡 **관련 이론**: Circuit Breaker는 전기 회로 차단기에서 유래한 소프트웨어 패턴이다. Netflix의 Hystrix가 2012년 대중화했고, Martin Fowler가 정의한 세 상태(Closed/Open/Half-Open)가 표준이다. ECS Deployment Circuit Breaker는 이 패턴을 배포 수준에 적용한다. "새 버전이 반복적으로 실패(Open) → 배포 중단 → 이전 버전으로 복원(Closed)"이다. Half-Open 상태는 CloudWatch Alarm 해제 후 다시 시도하는 경우에 해당한다.
+> Circuit Breaker는 전기 회로 차단기에서 유래한 소프트웨어 패턴이다. Netflix의 Hystrix가 2012년 대중화했고, Martin Fowler가 정의한 세 상태(Closed/Open/Half-Open)가 표준이다. ECS Deployment Circuit Breaker는 이 패턴을 배포 수준에 적용한다. "새 버전이 반복적으로 실패(Open) → 배포 중단 → 이전 버전으로 복원(Closed)"이다. Half-Open 상태는 CloudWatch Alarm 해제 후 다시 시도하는 경우에 해당한다.
 
 ---
 
@@ -104,9 +104,9 @@ Step 8: Blue Task Set 종료
 - 내부 테스트 트래픽이 8443 포트로 새 Task Set에 직접 접근
 - 프로덕션 트래픽 노출 전 별도 검증 채널
 
-> ⚠️ **함정**: "Test Listener는 Blue/Green 배포에 필수"라는 보기는 틀리다. Test Listener는 선택 사항이다. 있으면 `AfterAllowTestTraffic` Hook을 쓸 수 있어서 프로덕션 노출 전 별도 검증이 가능해지지만, 없어도 Blue/Green 배포 자체는 정상 동작한다. DOP-C02에서 이 구분을 자주 묻는다.
+> ⚠️ **함정**: "Test Listener는 Blue/Green 배포에 필수"라는 보기는 틀리다. Test Listener는 선택 사항이다. 있으면 `AfterAllowTestTraffic` Hook을 쓸 수 있어서 프로덕션 노출 전 별도 검증이 가능해지지만, 없어도 Blue/Green 배포 자체는 정상 동작한다. DOP-C02는 이 구분을 묻는다.
 
-> 📚 **사례**: 2022년 Lyft 공개 사례: 기존 ECS Rolling Update에서 CODE_DEPLOY Blue/Green으로 전환 후, 배포 롤백 시간이 평균 8분에서 45초로 단축됐다. 핵심은 Termination Wait Time 1시간 설정으로 Blue Task Set이 보존되어 있어, 문제 발견 즉시 CodeDeploy 콘솔에서 Stop+Rollback 한 번으로 복원이 가능했다는 것이다. Rolling Update의 롤백은 이전 Task Definition으로 새 배포를 시작하는 것이라 시간이 걸렸다.
+> 2022년 Lyft 공개 사례: 기존 ECS Rolling Update에서 CODE_DEPLOY Blue/Green으로 전환 후, 배포 롤백 시간이 평균 8분에서 45초로 단축됐다. 핵심은 Termination Wait Time 1시간 설정으로 Blue Task Set이 보존되어 있어, 문제 발견 즉시 CodeDeploy 콘솔에서 Stop+Rollback 한 번으로 복원이 가능했다는 것이다. Rolling Update의 롤백은 이전 Task Definition으로 새 배포를 시작하는 것이라 시간이 걸렸다.
 
 ---
 
@@ -154,7 +154,7 @@ Hooks:
 | `BeforeAllowTraffic` | Production 트래픽 시프트 직전 | 최종 검증, 캐시 워밍 |
 | `AfterAllowTraffic` | Production 트래픽 시프트 완료 후 | 스모크 테스트, 모니터링 확인 |
 
-> 🔍 **더 깊이**: ECS AppSpec의 Hook Lambda는 EC2 AppSpec의 Shell 스크립트와 동일한 역할을 하지만, Lambda의 특성상 타임아웃이 최대 15분으로 제한된다. 15분이 넘는 통합 테스트(예: 데이터베이스 마이그레이션 검증)는 Hook Lambda에서 Step Functions을 트리거하고, 완료 신호를 받아 CodeDeploy에 보고하는 비동기 패턴을 사용한다. 또는 Hook Timeout을 3600초(1시간)로 설정하고 Lambda에서 외부 시스템 완료를 polling하는 방법도 있다.
+> ECS AppSpec의 Hook Lambda는 EC2 AppSpec의 Shell 스크립트와 동일한 역할을 하지만, Lambda의 특성상 타임아웃이 최대 15분으로 제한된다. 15분이 넘는 통합 테스트(예: 데이터베이스 마이그레이션 검증)는 Hook Lambda에서 Step Functions을 트리거하고, 완료 신호를 받아 CodeDeploy에 보고하는 비동기 패턴을 사용한다. 또는 Hook Timeout을 3600초(1시간)로 설정하고 Lambda에서 외부 시스템 완료를 polling하는 방법도 있다.
 
 ---
 
@@ -249,7 +249,7 @@ artifacts:
     - appspec.yaml
 ```
 
-> 🔍 **더 깊이**: ECS는 Task Definition의 `image` 필드에 항상 구체적인 이미지 URI(태그 포함)를 써야 한다. `latest` 태그는 ECS가 새 이미지를 자동으로 pull하지 않기 때문에 사실상 의미가 없다 — 새 배포가 새 이미지를 쓰려면 반드시 새 Task Definition Revision을 등록해야 한다. CodePipeline의 `<IMAGE1_NAME>` 치환 패턴이 이 문제를 자동화한다. 빌드마다 고유한 git SHA 기반 태그가 새 Task Definition에 반영된다.
+> ECS는 Task Definition의 `image` 필드에 항상 구체적인 이미지 URI(태그 포함)를 써야 한다. `latest` 태그는 ECS가 새 이미지를 자동으로 pull하지 않기 때문에 사실상 의미가 없다 — 새 배포가 새 이미지를 쓰려면 반드시 새 Task Definition Revision을 등록해야 한다. CodePipeline의 `<IMAGE1_NAME>` 치환 패턴이 이 문제를 자동화한다. 빌드마다 고유한 git SHA 기반 태그가 새 Task Definition에 반영된다.
 
 > ⚠️ **함정**: `taskdef.json`에서 플레이스홀더는 반드시 `<IMAGE1_NAME>` 형식이어야 한다 (꺾쇠 괄호 포함). 다른 형식(예: `${IMAGE_NAME}`, `IMAGE_PLACEHOLDER`)은 Pipeline Action이 인식하지 못해 치환이 발생하지 않는다. 시험에서 "IMAGE1_NAME이 치환되지 않는 이유"가 나오면 플레이스홀더 형식을 확인하는 것이 첫 번째 체크 항목이다.
 
@@ -296,7 +296,7 @@ aws deploy create-deployment-group \
   --alarm-configuration "enabled=true,alarms=[{name=Prod5xx}]"
 ```
 
-> 💡 **관련 이론**: ECS Blue/Green에서의 트래픽 시프트는 ALB의 **가중 Target Group 라우팅**으로 구현된다. ALB Listener Rule의 `forward` action에 두 Target Group의 가중치를 지정한다. CodeDeploy가 이 가중치를 Canary/Linear 스케줄에 따라 자동으로 업데이트한다. Lambda Alias의 weighted routing과 개념은 같지만, 구현 레이어가 ALB → TG → Task Set으로 한 단계 더 깊다.
+> ECS Blue/Green에서의 트래픽 시프트는 ALB의 **가중 Target Group 라우팅**으로 구현된다. ALB Listener Rule의 `forward` action에 두 Target Group의 가중치를 지정한다. CodeDeploy가 이 가중치를 Canary/Linear 스케줄에 따라 자동으로 업데이트한다. Lambda Alias의 weighted routing과 개념은 같지만, 구현 레이어가 ALB → TG → Task Set으로 한 단계 더 깊다.
 
 ---
 
@@ -326,7 +326,7 @@ CapacityProviderStrategy:
 
 FARGATE_SPOT은 Spot 중단이 발생할 수 있으므로, 배포 중 Green Task Set이 Spot 중단으로 갑자기 줄어들면 Health Check 실패로 이어질 수 있다. Blue/Green에서 중요한 배포라면 `Base: 1`로 최소 1개의 안정적인 FARGATE Task를 보장한다.
 
-> 📚 **사례**: 어떤 팀이 비용 절감을 위해 FARGATE_SPOT만으로 Blue/Green 배포를 구성했다. Canary 10% 시프트 중 Spot 중단이 발생해 Green Task Set이 Health Check 실패로 배포가 자동 롤백됐다. 실제 새 버전에는 문제가 없었지만 인프라 이슈로 배포가 실패한 것이다. 해결책: `Base: 1`로 최소 FARGATE Task를 보장하거나, 중요한 배포에서는 FARGATE_SPOT 비율을 줄인다.
+> 어떤 팀이 비용 절감을 위해 FARGATE_SPOT만으로 Blue/Green 배포를 구성했다. Canary 10% 시프트 중 Spot 중단이 발생해 Green Task Set이 Health Check 실패로 배포가 자동 롤백됐다. 실제 새 버전에는 문제가 없었지만 인프라 이슈로 배포가 실패한 것이다. 해결책: `Base: 1`로 최소 FARGATE Task를 보장하거나, 중요한 배포에서는 FARGATE_SPOT 비율을 줄인다.
 
 ---
 
@@ -352,7 +352,7 @@ aws deploy stop-deployment \
 
 ---
 
-## 마무리: ECS 배포 판단 흐름
+## 정리
 
 ```
 ECS 배포 전략 선택

@@ -1,6 +1,6 @@
 # Day 4 - WebSocket API와 HTTP API: 실시간 연결과 경량 프록시의 내부 동작
 
-API Gateway의 세 가지 API 유형(REST, HTTP, WebSocket)은 단순히 기능 차이가 아니라 근본적으로 다른 네트워킹 패러다임을 구현한다. REST API와 HTTP API는 HTTP/1.1의 요청-응답 모델 위에 구축되고, WebSocket API는 RFC 6455(WebSocket Protocol)의 지속적 양방향 연결을 구현한다. 어떤 API 유형을 선택하느냐는 아키텍처 설계 결정이며, 잘못 선택하면 70% 비용 낭비가 되거나 실시간 기능이 근본적으로 불가능해진다. 이 파일에서는 WebSocket API의 연결 생명주기와 HTTP API가 REST API와 어떻게 다른지를 내부 동작 수준에서 해부한다.
+API Gateway의 세 가지 API 유형(REST, HTTP, WebSocket)은 단순히 기능 차이가 아니라 근본적으로 다른 네트워킹 패러다임을 구현한다. REST API와 HTTP API는 HTTP/1.1의 요청-응답 모델 위에 구축되고, WebSocket API는 RFC 6455(WebSocket Protocol)의 지속적 양방향 연결을 구현한다. 어떤 API 유형을 선택하느냐는 아키텍처 설계 결정이며, 잘못 선택하면 비용을 낭비하거나 실시간 기능이 근본적으로 불가능해진다. 이 파일에서는 WebSocket API의 연결 생명주기와 HTTP API가 REST API와 어떻게 다른지를 내부 동작 수준에서 해부한다.
 
 ---
 
@@ -28,7 +28,7 @@ Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
 
 이 핸드셰이크 이후 TCP 연결은 WebSocket 프레임을 주고받는 양방향 채널이 된다. HTTP 헤더 오버헤드 없이 수 바이트짜리 프레임으로 메시지를 교환할 수 있다.
 
-> 💡 **관련 이론**: `Sec-WebSocket-Accept` 값은 `Sec-WebSocket-Key`에 GUID `258EAFA5-E914-47DA-95CA-C5AB0DC85B11`을 붙여 SHA-1 해시한 Base64 인코딩이다. 이는 WebSocket을 인식하지 못하는 프록시/캐시가 WebSocket 연결을 일반 HTTP 요청으로 착각해 캐싱하는 것을 방지하는 보안 메커니즘이다. 일반 HTTP 캐시는 이 특수한 응답을 해석할 수 없다.
+`Sec-WebSocket-Accept` 값은 `Sec-WebSocket-Key`에 GUID `258EAFA5-E914-47DA-95CA-C5AB0DC85B11`을 붙여 SHA-1 해시한 Base64 인코딩이다. 이는 WebSocket을 인식하지 못하는 프록시/캐시가 WebSocket 연결을 일반 HTTP 요청으로 착각해 캐싱하는 것을 방지하는 보안 메커니즘이다. 일반 HTTP 캐시는 이 특수한 응답을 해석할 수 없다.
 
 API Gateway WebSocket API는 이 프로토콜을 완전 관리형으로 구현한다. 클라이언트는 `wss://` (TLS over WebSocket) 엔드포인트에 연결하고, API Gateway는 각 연결에 고유한 `connectionId`를 부여한다.
 
@@ -171,7 +171,7 @@ def lambda_handler(event, context):
         return {"statusCode": 200}
 ```
 
-> 🔍 **더 깊이**: `GoneException`은 HTTP 410 Gone에 해당한다. RFC 7231은 410을 "리소스가 영구적으로 삭제되었고 복원될 가능성이 없음"을 의미로 정의한다. WebSocket connectionId는 연결이 끊어지면 재사용될 수 없으므로 410이 정확한 의미다. `GoneException`을 받은 즉시 해당 `connectionId`를 DynamoDB에서 삭제해야 한다 — 그렇지 않으면 매 브로드캐스트마다 불필요한 API 호출이 누적된다.
+`GoneException`은 HTTP 410 Gone에 해당한다. RFC 7231은 410을 "리소스가 영구적으로 삭제되었고 복원될 가능성이 없음"을 의미로 정의한다. WebSocket connectionId는 연결이 끊어지면 재사용될 수 없으므로 410이 정확한 의미다. `GoneException`을 받은 즉시 해당 `connectionId`를 DynamoDB에서 삭제해야 한다 — 그렇지 않으면 매 브로드캐스트마다 불필요한 API 호출이 누적된다.
 
 **연결 제한값** — 시험에서 구체적 숫자를 묻는다:
 
@@ -182,7 +182,7 @@ def lambda_handler(event, context):
 | 단일 프레임 최대 크기 | 128 KB |
 | 프레임 누적 최대 크기 | 128 KB (연속 프레임은 별도 처리 필요) |
 
-> 📚 **사례**: Slack은 WebSocket을 사용해 실시간 이벤트(메시지, 리액션, 사용자 상태 변경)를 클라이언트에 전달한다. 2019년 Slack Engineering 블로그에 따르면, 수백만 개의 동시 WebSocket 연결 관리가 핵심 인프라 과제 중 하나였다. AWS 기반에서 이를 구현한다면 API Gateway WebSocket + DynamoDB 연결 레지스트리 패턴이 표준이다. DynamoDB의 `TTL`로 비정상 종료된 stale 연결을 자동 정리하는 것이 필수다.
+연결 ID를 DynamoDB에 저장하는 연결 레지스트리 패턴에서는 `TTL`로 비정상 종료된 stale 연결을 자동 정리하는 것이 필수다.
 
 ---
 
@@ -237,7 +237,7 @@ def send_to_room(room_id: str, message: dict, apigw_client, table):
 
 HTTP API는 2019년 re:Invent에서 "API Gateway v2"로 발표됐다. REST API(v1)의 많은 기능을 제거하는 대신 속도와 비용을 크게 개선했다. 단순히 "REST API의 저가형"이 아니라 다른 사용 사례를 위한 별도 제품이다.
 
-**페이로드 버전(Payload Format Version)**은 HTTP API에서 가장 중요한 함정이다. REST API를 HTTP API로 마이그레이션할 때 80% 이상의 문제가 여기서 발생한다.
+**페이로드 버전(Payload Format Version)**은 HTTP API에서 가장 중요한 함정이다. REST API를 HTTP API로 마이그레이션할 때 문제가 가장 많이 생기는 지점이다.
 
 ```python
 # REST API Lambda Proxy 이벤트 구조 (= HTTP API Payload v1.0)
@@ -322,7 +322,7 @@ HTTP API는 2019년 re:Invent에서 "API Gateway v2"로 발표됐다. REST API(v
 | 비용 (100만 호출) | ~$3.50 | ~$1.00 | 연결 시간·메시지 수 |
 | CORS 자동 설정 | ❌(수동) | ✅ | N/A |
 
-> 🔍 **더 깊이**: HTTP API가 REST API보다 빠른 이유는 처리 파이프라인이 단순하기 때문이다. REST API는 VTL 매핑, 요청 검증, 사용량 플랜 평가, 캐시 조회 등 많은 미들웨어 레이어를 통과한다. HTTP API는 이 레이어들을 제거해 지연 시간을 줄이고 비용을 낮췄다. 이는 소프트웨어 설계의 "선택적 복잡도(accidental complexity)" 제거 원칙과 일치한다 — 필요하지 않은 기능의 오버헤드를 지불하지 않는다.
+HTTP API가 REST API보다 빠른 이유는 처리 파이프라인이 단순하기 때문이다. REST API는 VTL 매핑, 요청 검증, 사용량 플랜 평가, 캐시 조회 등 많은 미들웨어 레이어를 통과하지만, HTTP API는 이 레이어들을 제거해 지연 시간을 줄이고 비용을 낮췄다.
 
 ---
 
@@ -382,7 +382,7 @@ JWT Authorizer의 검증 흐름:
 6. JWT 만료(`exp`) 확인
 7. 모두 통과 → 백엔드 통합 호출
 
-> ⚠️ **함정**: Cognito에서 Access Token과 ID Token은 다르다. JWT Authorizer의 `audience` 설정이 Access Token을 검증하도록 되어 있는데 ID Token을 보내면 `aud` 클레임이 일치하지 않아 401이 반환된다. Cognito Access Token의 `aud`는 클라이언트 ID가 아니라 `"token_use": "access"` 값이 다르게 처리된다. REST API의 Cognito User Pool Authorizer는 Access Token을 처리하도록 설계되어 있지만 HTTP API JWT Authorizer는 ID Token을 기본으로 한다.
+Cognito에서 Access Token과 ID Token은 다르다. JWT Authorizer의 `audience` 설정이 Access Token을 검증하도록 되어 있는데 ID Token을 보내면 `aud` 클레임이 일치하지 않아 401이 반환된다. Cognito Access Token의 `aud`는 클라이언트 ID가 아니라 `"token_use": "access"` 값이 다르게 처리된다. REST API의 Cognito User Pool Authorizer는 Access Token을 처리하도록 설계되어 있지만 HTTP API JWT Authorizer는 ID Token을 기본으로 한다.
 
 ---
 
@@ -430,7 +430,7 @@ aws apigatewayv2 create-integration \
 
 ## Server-Sent Events vs WebSocket: 실시간 통신 방식 선택
 
-실시간 기능이 필요할 때 WebSocket이 항상 정답은 아니다. 트래픽 방향과 복잡도에 따라 SSE(Server-Sent Events)가 더 적합할 수 있다.
+실시간 기능이 필요할 때 WebSocket만이 선택지는 아니다. 트래픽 방향과 복잡도에 따라 SSE(Server-Sent Events)가 더 적합할 수 있다.
 
 | 항목 | WebSocket | SSE | Long Polling |
 |------|-----------|-----|-------------|
@@ -442,7 +442,7 @@ aws apigatewayv2 create-integration \
 | AWS 구현 | WebSocket API | Lambda Response Streaming + Function URL | REST API |
 | 적합한 사용 사례 | 채팅, 게임, 협업 도구 | AI 응답 스트리밍, 알림 | 단순 폴링 |
 
-> 💡 **관련 이론**: SSE는 HTTP/1.1의 `text/event-stream` Content-Type을 사용한 청크 전송(chunked transfer encoding)으로 구현된다. HTTP 연결이 열린 채로 서버가 데이터를 스트리밍한다. Lambda의 Response Streaming과 조합하면 LLM API 응답처럼 긴 텍스트를 점진적으로 클라이언트에 전달할 수 있다. Lambda Function URL은 SSE 패턴을 직접 지원하지만 API Gateway WebSocket은 지원하지 않는다.
+SSE는 HTTP/1.1의 `text/event-stream` Content-Type을 사용한 청크 전송(chunked transfer encoding)으로 구현된다. HTTP 연결이 열린 채로 서버가 데이터를 스트리밍한다. Lambda의 Response Streaming과 조합하면 LLM API 응답처럼 긴 텍스트를 점진적으로 클라이언트에 전달할 수 있다. Lambda Function URL은 SSE 패턴을 직접 지원하지만 API Gateway WebSocket은 지원하지 않는다.
 
 ---
 
@@ -467,7 +467,7 @@ Lambda Function URL은 2022년 출시됐다. 별도의 API Gateway 없이 Lambda
 - API 키 + 사용량 플랜, VTL 변환, 캐싱, WAF, X-Ray → **REST API**
 - 채팅/실시간 양방향 통신 → **WebSocket API**
 
-> 📚 **사례**: Vercel의 Edge Functions, Cloudflare Workers와 같은 서비스는 Function URL과 유사한 "단일 함수 즉시 노출" 패턴을 제공한다. 이 패턴은 2020년 JAMstack 아키텍처의 부상과 함께 인기를 얻었다. AWS에서 Next.js를 서버리스로 배포할 때 각 API Route를 별도 Lambda로 배포하고 Function URL로 노출하는 방식이 일부 사용되지만, 복잡한 프로덕션 환경에서는 API Gateway HTTP API를 앞에 두는 것이 일반적이다.
+Next.js를 서버리스로 배포할 때 API Route마다 Lambda를 두고 Function URL로 노출할 수 있다. 복잡한 프로덕션 환경에서는 API Gateway HTTP API를 앞에 두는 구성을 쓴다.
 
 ---
 

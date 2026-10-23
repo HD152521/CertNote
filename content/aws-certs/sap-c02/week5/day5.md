@@ -2,7 +2,7 @@
 
 Week 5의 5일을 돌아보면 하나의 축이 관통한다. **글로벌 사용자를 어떻게 올바른 리전·엔드포인트로 보내고, 장애 시 어떻게 자동 또는 수동으로 전환하며, 그 모든 것을 비용 안에서 설계하는가.** DR 전략(Day 21), Route 53 라우팅 7종(Day 22), CloudFront 심화(Day 23), Global Accelerator(Day 24), Route 53 Health Check·DNSSEC·Resolver(Day 28). 이 다섯 레이어는 독립적으로 배웠지만 시험장에서는 하나의 시나리오 안에 섞여서 나온다.
 
-오늘은 단순 반복이 아니다. 각 개념의 결정 트리를 압축하고, 가장 자주 틀리는 트레이드오프 비교를 수학 수준으로 정리하고, 복합 엔터프라이즈 시나리오 12문항으로 마무리한다.
+오늘은 단순 반복이 아니다. 각 개념의 결정 트리를 압축하고, 헷갈리기 쉬운 트레이드오프 비교를 수학 수준으로 정리하고, 복합 엔터프라이즈 시나리오 12문항으로 마무리한다.
 
 ## DR 전략 통합: Aurora Global RPO/RTO 수학
 
@@ -36,7 +36,7 @@ aws rds promote-read-replica-db-cluster \
 
 **Replication Lag 모니터링**: `AuroraGlobalDBReplicationLag` CloudWatch 메트릭을 DR 판단 기준으로 사용한다. R53 ARC Safety Rule에서 이 메트릭을 조건으로 걸 수 있다 — "Lag > 5초이면 페일오버 금지".
 
-> 💡 **관련 이론**: Aurora Global Database의 비동기 복제는 **WAL(Write-Ahead Logging)** 기반이다. PostgreSQL 호환 Aurora는 WAL 세그먼트를 Secondary 리전으로 스트리밍한다. 이 스트리밍은 Aurora Storage Layer에서 직접 이루어지므로 DB 엔진 레벨의 복제(binlog 기반 MySQL 복제)보다 오버헤드가 낮고, Lag도 짧다. Aurora Global Database의 1초 미만 Lag이 일반 RDS Cross-Region Read Replica(수 초~수십 초 Lag)보다 뛰어난 이유다.
+Aurora Global Database의 비동기 복제는 **WAL(Write-Ahead Logging)** 기반이다. PostgreSQL 호환 Aurora는 WAL 세그먼트를 Secondary 리전으로 스트리밍한다. 이 스트리밍은 Aurora Storage Layer에서 직접 이루어지므로 DB 엔진 레벨의 복제(binlog 기반 MySQL 복제)보다 오버헤드가 낮고, Lag도 짧다. Aurora Global Database의 1초 미만 Lag이 일반 RDS Cross-Region Read Replica(수 초~수십 초 Lag)보다 뛰어난 이유다.
 
 ### R53 ARC SafetyRule: 자동 페일오버의 안전장치
 
@@ -55,7 +55,7 @@ SafetyRule은 **Gating Control** + **Assertion Control** 두 종류다:
 - Gating Control: 다른 Routing Control을 켜기/끄기 전에 평가되는 선제 조건
 - Assertion Control: 최소/최대 ACTIVE 상태를 보장하는 수량 기반 조건
 
-> 📚 **사례**: Amazon 내부 시스템에서 나온 설계 원칙. 2019년 Amazon Shopping Cart 서비스가 자동 Failover로 인해 Secondary에 데이터 불일치가 발생했다. 이후 Amazon은 "DB Lag을 인간이 확인하고 안전 시 수동 전환"하는 원칙을 도입했고, 이것이 R53 ARC의 설계 철학이 됐다. ARC는 "자동화가 항상 옳지 않다"는 교훈의 산물이다.
+Amazon 내부 시스템에서 나온 설계 원칙. 2019년 Amazon Shopping Cart 서비스가 자동 Failover로 인해 Secondary에 데이터 불일치가 발생했다. 이후 Amazon은 "DB Lag을 인간이 확인하고 안전 시 수동 전환"하는 원칙을 도입했고, 이것이 R53 ARC의 설계 철학이 됐다. ARC는 "자동화가 항상 옳지 않다"는 교훈의 산물이다.
 
 ## CloudFront + Global Accelerator 선택 공식
 
@@ -133,7 +133,7 @@ Compute Savings Plans 3년:
 절감액: $1,382 - ($0.096 × 10 × 720) = $1,382 - $691 = $691/월 절감
 ```
 
-> 💡 **관련 이론**: Savings Plans는 **금융의 선물 계약(Futures Contract)**과 유사한 구조다. 특정 컴퓨팅 사용량을 미래에도 일정 금액으로 구매하겠다고 약정하고, 그 대가로 할인을 받는다. Spot Instance는 반대로 "남는 용량을 현물 시장에서 싸게 구매"하는 스팟 거래다. 비용 최적화에서 이 두 가지를 조합하면 — Savings Plans로 기본 부하를 커버, Spot으로 버스트 처리 — 최적의 비용 구조가 된다.
+Savings Plans는 **금융의 선물 계약(Futures Contract)**과 유사한 구조다. 특정 컴퓨팅 사용량을 미래에도 일정 금액으로 구매하겠다고 약정하고, 그 대가로 할인을 받는다. Spot Instance는 반대로 "남는 용량을 현물 시장에서 싸게 구매"하는 스팟 거래다. 비용 최적화에서 이 두 가지를 조합하면 — Savings Plans로 기본 부하를 커버, Spot으로 버스트 처리 — 최적의 비용 구조가 된다.
 
 ## Well-Architected 6 Pillar 체크리스트: 글로벌 아키텍처 적용
 
@@ -146,7 +146,7 @@ Compute Savings Plans 3년:
 | 비용 최적화 | Savings Plans, Reserved, CloudFront vs AGA 선택 | Cost Explorer, Savings Plans |
 | 지속 가능성 | 최소 필요 리전만 운영, 불필요 리소스 정리 | Trusted Advisor, Compute Optimizer |
 
-> 🔍 **더 깊이**: 2022년 AWS Well-Architected Framework에 6번째 Pillar로 "Sustainability(지속 가능성)"가 추가됐다. SAP-C02는 이 6번째 Pillar를 명시적으로 다룬다. 글로벌 아키텍처에서 지속 가능성 최적화는 "필요 이상의 리전을 운영하지 않는 것"이 핵심이다. Active-Active가 RTO/RPO 요구사항을 초과 충족한다면 Warm Standby로 줄여 리소스 사용량을 낮추는 것이 지속 가능성 관점에서 옳다.
+2022년 AWS Well-Architected Framework에 6번째 Pillar로 "Sustainability(지속 가능성)"가 추가됐다. SAP-C02는 이 6번째 Pillar를 명시적으로 다룬다. 글로벌 아키텍처에서 지속 가능성 최적화는 "필요 이상의 리전을 운영하지 않는 것"이 핵심이다. Active-Active가 RTO/RPO 요구사항을 초과 충족한다면 Warm Standby로 줄여 리소스 사용량을 낮추는 것이 지속 가능성 관점에서 옳다.
 
 ## 핵심 비교 매트릭스 최종판
 

@@ -1,6 +1,6 @@
 # Day 2 - API Gateway: 클라이언트와 백엔드 사이의 중재자
 
-인터넷에서 API를 직접 노출하면 어떤 일이 벌어지는지 생각해보자. 인증 없이 누구나 호출할 수 있고, 악의적인 클라이언트가 초당 수천 건을 보낼 수 있고, 여러 팀의 클라이언트가 각기 다른 버전의 API를 요구한다. API Gateway는 이 모든 교차 관심사(Cross-Cutting Concerns)를 백엔드 코드 밖에서 처리한다. 인증, 스로틀링, 캐싱, 버전 관리, 모니터링 — 이것들을 각 Lambda나 서버 코드에서 직접 구현하는 대신, API Gateway 레이어에서 선언적으로 설정한다.
+인터넷에서 API를 직접 노출하면 어떤 일이 벌어지는지 생각해 본다. 인증 없이 누구나 호출할 수 있고, 악의적인 클라이언트가 초당 수천 건을 보낼 수 있고, 여러 팀의 클라이언트가 각기 다른 버전의 API를 요구한다. API Gateway는 이 모든 교차 관심사(Cross-Cutting Concerns)를 백엔드 코드 밖에서 처리한다. 인증, 스로틀링, 캐싱, 버전 관리, 모니터링 — 이것들을 각 Lambda나 서버 코드에서 직접 구현하는 대신, API Gateway 레이어에서 선언적으로 설정한다.
 
 API Gateway의 탄생 배경에는 마이크로서비스 아키텍처의 급속한 확산이 있었다. 단일 모노리식 애플리케이션을 수십 개의 서비스로 분해하면, 클라이언트가 각 서비스의 엔드포인트를 개별적으로 알아야 하고, 각 서비스가 자체 인증을 구현해야 한다. API Gateway는 이 분산된 복잡성을 단일 진입점으로 통합한다.
 
@@ -68,9 +68,9 @@ WebSocket:    클라이언트 ←──────── 영구 연결 (connect
 | VPC Link 지원 | NLB만 | NLB/ALB | X |
 | mTLS | O | O | X |
 
-> 💡 **API Gateway의 패턴 이론: Gateway 패턴과 Facade 패턴** — API Gateway의 역할은 소프트웨어 아키텍처에서 "Gateway" 또는 "Facade" 패턴과 일치한다. Gang of Four(GoF)의 디자인 패턴 중 Facade는 복잡한 서브시스템 앞에 단순화된 인터페이스를 제공한다. API Gateway는 여러 마이크로서비스(Lambda, ECS 서비스, EC2 앱)를 단일 진입점으로 통합하고, 인증/스로틀링/모니터링이라는 교차 관심사를 중앙에서 처리한다. Chris Richardson이 정의한 마이크로서비스 패턴에서 API Gateway는 "Backend for Frontend(BFF)" 패턴의 구현체이기도 하다 — 모바일 앱, 웹, 파트너용으로 각각 다른 BFF를 API Gateway 레벨에서 분리할 수 있다.
+**API Gateway의 패턴 이론: Gateway 패턴과 Facade 패턴** — API Gateway의 역할은 소프트웨어 아키텍처에서 "Gateway" 또는 "Facade" 패턴과 일치한다. Gang of Four(GoF)의 디자인 패턴 중 Facade는 복잡한 서브시스템 앞에 단순화된 인터페이스를 제공한다. API Gateway는 여러 마이크로서비스(Lambda, ECS 서비스, EC2 앱)를 단일 진입점으로 통합하고, 인증/스로틀링/모니터링이라는 교차 관심사를 중앙에서 처리한다. Chris Richardson이 정의한 마이크로서비스 패턴에서 API Gateway는 "Backend for Frontend(BFF)" 패턴의 구현체이기도 하다 — 모바일 앱, 웹, 파트너용으로 각각 다른 BFF를 API Gateway 레벨에서 분리할 수 있다.
 
-> 🔍 **HTTP API와 REST API의 성능 차이** — HTTP API가 REST API보다 빠른 이유는 내부 처리 경로(Pipeline)가 단순하기 때문이다. REST API는 Mapping Template 처리, 복잡한 요청 변환, AWS 서비스 직접 통합 등을 지원하기 위한 추가 처리 단계가 있다. HTTP API는 이 기능들을 제거한 대신 레이턴시를 수십 ms 줄였다. 일반적으로 REST API의 P50 응답 레이턴시가 5-10ms인 반면, HTTP API는 1-3ms 수준이다. 대규모 트래픽에서 이 차이가 누적 비용 절감과 응답 속도 차이로 나타난다.
+> 🔍 **HTTP API와 REST API의 성능 차이** — HTTP API가 REST API보다 빠른 이유는 내부 처리 경로(Pipeline)가 단순하기 때문이다. REST API는 Mapping Template 처리, 복잡한 요청 변환, AWS 서비스 직접 통합 등을 지원하기 위한 추가 처리 단계가 있다. HTTP API는 이 기능들을 제거한 대신 지연 시간을 수십 ms 줄였다. 일반적으로 REST API의 P50 응답 지연 시간이 5-10ms인 반면, HTTP API는 1-3ms 수준이다. 대규모 트래픽에서 이 차이가 누적 비용 절감과 응답 속도 차이로 나타난다.
 
 ## 인증과 인가 — 4가지 메커니즘
 
@@ -100,7 +100,7 @@ API Gateway는 백엔드 코드가 인증을 직접 처리하지 않아도 되�
 
 > ⚠️ **API Key는 보안 인증 수단이 아니다** — "API Key는 보안 인증 수단이다" — 반은 맞고 반은 틀렸다. API Key는 요청자를 식별하고 사용량을 제한하는 목적이 크다. AWS 문서에서도 API Key를 인증(Authentication)이 아니라 사용량 관리(Usage Management) 수단으로 정의한다. API Key만으로는 완전한 보안이 안 된다 — 반드시 HTTPS 전송과 함께 사용해야 하고, 추가 인증(Cognito 또는 Lambda Authorizer)과 병행하는 것을 권장한다. 시험에서 "누가 API를 호출했는지 인증이 필요"하면 Cognito/Lambda Authorizer를, "월별 호출 한도 제한"이면 Usage Plan을 선택한다.
 
-> 💡 **Lambda Authorizer 캐싱과 성능** — Lambda Authorizer는 모든 요청에 대해 실행되므로, 레이턴시와 비용이 추가된다. 이를 완화하기 위해 Lambda Authorizer 결과를 캐싱할 수 있다. 캐시 TTL을 설정하면 같은 토큰으로 온 요청은 TTL 기간 동안 Authorizer Lambda를 다시 호출하지 않는다. 캐시 키는 토큰 값 또는 요청 파라미터다. 보안 주의사항: TTL을 너무 길게 설정하면 토큰이 취소(revoke)되어도 캐시 기간 동안 접근이 허용될 수 있다. 민감한 리소스에는 짧은 TTL(30-60초)이 권장된다.
+**Lambda Authorizer 캐싱과 성능** — Lambda Authorizer는 모든 요청에 대해 실행되므로, 지연 시간과 비용이 추가된다. 이를 완화하기 위해 Lambda Authorizer 결과를 캐싱할 수 있다. 캐시 TTL을 설정하면 같은 토큰으로 온 요청은 TTL 기간 동안 Authorizer Lambda를 다시 호출하지 않는다. 캐시 키는 토큰 값 또는 요청 파라미터다. 보안 주의사항: TTL을 너무 길게 설정하면 토큰이 취소(revoke)되어도 캐시 기간 동안 접근이 허용될 수 있다. 민감한 리소스에는 짧은 TTL(30-60초)이 권장된다.
 
 ## 스테이지와 배포 — 환경 관리
 
@@ -122,9 +122,9 @@ https://abc123.execute-api.ap-northeast-2.amazonaws.com/prod/orders
 
 이렇게 하면 단일 API Gateway 설정으로 dev 환경은 Lambda dev 별칭을, prod는 Lambda prod 별칭을 자동으로 호출한다. 배포 파이프라인에서 스테이지 변수를 변경하는 것만으로 환경 전환이 가능하다.
 
-**Canary Release**: 새 배포를 전체가 아닌 일부 트래픽(예: 5-10%)에만 먼저 적용해서 안정성을 검증한다. 문제가 없으면 전체로 Promote, 문제가 있으면 즉시 롤백. Blue-Green 배포의 점진적 버전이다.
+**Canary Release**: 새 배포를 전체가 아닌 일부 트래픽(예: 5-10%)에만 먼저 적용해서 안정성을 검증한다. 문제가 없으면 전체로 Promote, 문제가 있으면 즉시 롤백. Blue/Green 배포의 점진적 버전이다.
 
-> 🔍 **Canary Release와 Blue-Green의 차이** — Canary Release는 새 버전이 기존 버전과 동시에 운영되면서 일부 트래픽만 받는 패턴이다. 카나리아 새처럼 먼저 광산(프로덕션)에 투입해서 위험을 감지한다는 비유에서 이름이 왔다. API Gateway Canary Release는 같은 스테이지에서 % 기반으로 트래픽을 분배한다. Blue-Green 배포는 두 개의 독립된 환경(Blue=현재, Green=신규)을 완전히 분리해서 DNS 전환으로 한번에 교체한다. API Gateway에서 두 스테이지를 별도로 만들고 Route 53 가중치 라우팅으로 Blue-Green을 구현할 수도 있다.
+**Canary Release와 Blue/Green의 차이** — Canary Release는 새 버전이 기존 버전과 동시에 운영되면서 일부 트래픽만 받는 패턴이다. 카나리아 새처럼 먼저 광산(프로덕션)에 투입해서 위험을 감지한다는 비유에서 이름이 왔다. API Gateway Canary Release는 같은 스테이지에서 % 기반으로 트래픽을 분배한다. Blue/Green 배포는 두 개의 독립된 환경(Blue=현재, Green=신규)을 완전히 분리해서 DNS 전환으로 한번에 교체한다. API Gateway에서 두 스테이지를 별도로 만들고 Route 53 가중치 라우팅으로 Blue/Green을 구현할 수도 있다.
 
 ## 캐싱 — DB 부하 없이 응답 속도 향상
 
@@ -141,7 +141,7 @@ REST API에서 응답 캐싱을 활성화하면 API Gateway가 응답을 TTL 동
 - 전체 캐시 flush: 콘솔/API에서 스테이지 캐시를 비운다
 - 개별 요청: `Cache-Control: max-age=0` 헤더 (이 권한은 별도 설정 필요)
 
-> 🔍 **API Gateway 캐싱의 내부 구조** — API Gateway 응답 캐싱은 내부적으로 Amazon ElastiCache를 기반으로 알려져 있다. 캐시 크기(0.5GB~237GB)에 따라 비용이 발생하며, 캐시 노드 유형에 따라 성능이 다르다. TTL은 기본 300초(5분)이고 0~3600초 범위에서 설정 가능하다. 캐시를 정적 API 응답(변경이 적은 상품 카탈로그, 설정 데이터)에 적용하면 Lambda 호출 횟수와 DynamoDB RCU를 크게 줄일 수 있다. 단, 캐시 크기 비용(시간당 과금)이 Lambda + DynamoDB 비용 절감보다 크면 오히려 불리하다. 트래픽이 충분히 많고 캐시 히트율이 높아야 효과적이다.
+**API Gateway 캐싱의 내부 구조** — API Gateway 응답 캐싱은 내부적으로 Amazon ElastiCache를 기반으로 알려져 있다. 캐시 크기(0.5GB~237GB)에 따라 비용이 발생하며, 캐시 노드 유형에 따라 성능이 다르다. TTL은 기본 300초(5분)이고 0~3600초 범위에서 설정 가능하다. 캐시를 정적 API 응답(변경이 적은 상품 카탈로그, 설정 데이터)에 적용하면 Lambda 호출 횟수와 DynamoDB RCU를 크게 줄일 수 있다. 단, 캐시 크기 비용(시간당 과금)이 Lambda + DynamoDB 비용 절감보다 크면 오히려 불리하다. 트래픽이 충분히 많고 캐시 히트율이 높아야 효과적이다.
 
 ## Private API와 VPC Link — 내부 서비스 API
 
@@ -162,7 +162,7 @@ Lambda (same VPC) → Interface Endpoint → Private API GW → Lambda
 EC2 (same VPC)    → Interface Endpoint → Private API GW → ECS
 ```
 
-> 📚 **삼성 SmartThings API Gateway 사례** — 2022년 삼성전자 SmartThings 팀은 API Gateway 활용 사례를 AWS Summit에서 공유했다. 수억 개의 IoT 디바이스가 연결된 플랫폼에서 REST API는 파트너 관리용(API Key + Usage Plan), HTTP API는 디바이스-클라우드 통신용(저비용, JWT 인증), WebSocket API는 실시간 상태 업데이트용으로 세 가지를 목적에 따라 분리해서 사용했다. 각 API 타입의 특성을 정확히 활용한 이 분리로 전체 API 비용을 40% 절감했다고 발표했다. 이 사례는 "HTTP API를 기본으로 선택하고 필요할 때만 REST API"라는 설계 원칙의 실제 효과를 보여준다.
+**삼성 SmartThings API Gateway 사례** — 2022년 삼성전자 SmartThings 팀은 API Gateway 활용 사례를 AWS Summit에서 공유했다. 수억 개의 IoT 디바이스가 연결된 플랫폼에서 REST API는 파트너 관리용(API Key + Usage Plan), HTTP API는 디바이스-클라우드 통신용(저비용, JWT 인증), WebSocket API는 실시간 상태 업데이트용으로 세 가지를 목적에 따라 분리해서 사용했다. 각 API 타입의 특성을 정확히 활용한 이 분리로 전체 API 비용을 40% 절감했다고 발표했다. 이 사례는 "HTTP API를 기본으로 선택하고 필요할 때만 REST API"라는 설계 원칙의 실제 효과를 보여준다.
 
 다른 클라우드와의 비교:
 
@@ -268,13 +268,13 @@ aws apigateway put-integration \
   --credentials arn:aws:iam::111:role/api-gw-dynamo-role
 ```
 
-## 정리하며
+## 정리
 
 API Gateway의 세 가지 타입(REST, HTTP, WebSocket)은 각각 다른 요구사항을 위해 만들어졌다. HTTP API가 비용 효율적인 기본 선택이고, 복잡한 변환/캐싱/API Key 관리가 필요할 때만 REST API로 간다. WebSocket은 실시간 양방향 통신이 필요할 때만.
 
 인증은 Cognito JWT가 가장 흔하고, 커스텀 로직이 필요하면 Lambda Authorizer, 내부 AWS 서비스 간이면 IAM SigV4, 외부 OIDC Provider이면 HTTP API + JWT Authorizer를 쓴다.
 
-시험에서 가장 자주 나오는 함정: "API Key + Usage Plan은 HTTP API에서 사용 가능하다" — 불가능하다. REST API에서만 된다. "실시간 채팅은 REST API로 구현 가능하다" — 기술적으로 가능하지만 WebSocket이 훨씬 효율적이고 적합하다.
+시험의 대표적인 함정: "API Key + Usage Plan은 HTTP API에서 사용 가능하다" — 불가능하다. REST API에서만 된다. "실시간 채팅은 REST API로 구현 가능하다" — 기술적으로 가능하지만 WebSocket이 훨씬 효율적이고 적합하다.
 
 내일은 여러 Lambda 함수와 서비스를 하나의 워크플로로 엮는 Step Functions, 그리고 GraphQL의 관리형 서비스인 AppSync를 다룬다.
 

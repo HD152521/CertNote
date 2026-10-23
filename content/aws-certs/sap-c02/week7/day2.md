@@ -34,7 +34,7 @@ EKS 클러스터 하나에는 노드 그룹을 여러 개 섞어서 붙일 수 �
 
 **Fargate Profile**은 노드 자체를 없앤다. namespace + label 셀렉터로 매칭된 Pod는 각자 자기만의 Firecracker micro VM에서 뜬다. 운영 부담은 0에 가깝지만, 노드 개념이 없기 때문에 DaemonSet(노드당 1개 보장)이 동작하지 않고, HostPath 볼륨·GPU·EBS 동적 프로비저닝 일부도 제한된다. 보통은 `kube-system` 같은 시스템 Pod는 MNG에 두고, 비즈니스 워크로드 일부만 Fargate Profile로 넘기는 혼합 패턴을 쓴다.
 
-> 💡 **관련 이론**: Managed Node Group이 노드를 교체할 때 호출하는 흐름은 **K8s의 graceful shutdown 표준**을 그대로 따른다. ① `Cordon`으로 새 Pod 스케줄 막기 → ② `Drain`으로 기존 Pod에 `SIGTERM` 전송 → ③ `preStop` 훅 실행 → ④ `terminationGracePeriodSeconds`(기본 30초) 동안 대기 → ⑤ `SIGKILL`. 이 흐름이 PodDisruptionBudget(PDB) 제약을 만나면 다음 Pod로 넘어가지 않고 대기한다. AWS의 MNG는 이 모든 단계를 자동화하지만, 사용자가 PDB를 잘못 설정하면 노드 교체가 영원히 끝나지 않는 함정이 있다.
+Managed Node Group이 노드를 교체할 때 호출하는 흐름은 **K8s의 graceful shutdown 표준**을 그대로 따른다. ① `Cordon`으로 새 Pod 스케줄 막기 → ② `Drain`으로 기존 Pod에 `SIGTERM` 전송 → ③ `preStop` 훅 실행 → ④ `terminationGracePeriodSeconds`(기본 30초) 동안 대기 → ⑤ `SIGKILL`. 이 흐름이 PodDisruptionBudget(PDB) 제약을 만나면 다음 Pod로 넘어가지 않고 대기한다. AWS의 MNG는 이 모든 단계를 자동화하지만, 사용자가 PDB를 잘못 설정하면 노드 교체가 영원히 끝나지 않는 함정이 있다.
 
 > 🔍 **더 깊이**: EKS Optimized AMI는 두 갈래가 있다. **Amazon Linux 2023(AL2023)** 기반과 **Bottlerocket** 기반이다. Bottlerocket은 AWS가 컨테이너 전용으로 만든 minimal OS인데, SSH가 없고 root 파일시스템이 read-only이며, 업데이트는 atomic 이미지 단위(A/B 파티션)다. 이 설계는 ChromeOS·CoreOS의 영향을 받았다. 컨테이너 호스트를 "범용 서버"가 아니라 "컨테이너만 돌리는 어플라이언스"로 보는 철학이고, 공격 표면이 매우 작다. 보안 규제가 강한 금융·헬스케어에서 점점 더 표준이 되어가고 있다.
 
@@ -78,9 +78,9 @@ spec:
           image: my/app:1
 ```
 
-> 💡 **관련 이론**: AssumeRoleWithWebIdentity는 OAuth 2.0의 **Token Exchange**(RFC 8693)와 같은 계열의 발상이다. 외부 IdP가 발급한 단명 토큰을 내부 권한 토큰과 교환하는 패턴인데, K8s에서는 ServiceAccount Token이 외부 토큰 역할을 한다. K8s 1.21부터 도입된 **Projected ServiceAccount Token**은 audience·expirationSeconds를 지정할 수 있어서, 토큰이 STS 외 다른 서비스에 잘못 전달되어도 거부된다. 이 audience 검증이 IRSA 보안의 핵심이고, OIDC 표준의 `aud` 클레임 검증과 동일한 원리다.
+AssumeRoleWithWebIdentity는 OAuth 2.0의 **Token Exchange**(RFC 8693)와 같은 계열의 발상이다. 외부 IdP가 발급한 단명 토큰을 내부 권한 토큰과 교환하는 패턴인데, K8s에서는 ServiceAccount Token이 외부 토큰 역할을 한다. K8s 1.21부터 도입된 **Projected ServiceAccount Token**은 audience·expirationSeconds를 지정할 수 있어서, 토큰이 STS 외 다른 서비스에 잘못 전달되어도 거부된다. 이 audience 검증이 IRSA 보안의 핵심이고, OIDC 표준의 `aud` 클레임 검증과 동일한 원리다.
 
-> 🔍 **더 깊이**: IRSA가 처음 나왔을 때(2019)는 클러스터마다 OIDC Provider를 IAM에 등록해야 했다. 클러스터 100개면 100개 등록이고, IAM Role의 Trust Policy도 클러스터별로 따로 써야 한다. 2023년 발표된 **EKS Pod Identity**는 OIDC를 빼고, EKS Auth API가 직접 Pod의 신원을 STS에 증명하는 방식이다. Trust Policy가 `pods.eks.amazonaws.com` 단일 principal을 신뢰하면 끝나서, 같은 Role을 여러 클러스터에서 재사용하기 쉽다. 다만 동작 원리는 EKS Auth API에 의존하므로 OIDC Federation의 표준성·이식성은 IRSA가 더 높다. SAP 시험은 둘 다 "Pod별 IAM" 정답으로 인정하지만, 시나리오가 "표준 OIDC"·"멀티 클라우드 호환"을 강조하면 IRSA, "다중 EKS 클러스터 권한 재사용"·"간소화"를 강조하면 Pod Identity가 답이다.
+IRSA가 처음 나왔을 때(2019)는 클러스터마다 OIDC Provider를 IAM에 등록해야 했다. 클러스터 100개면 100개 등록이고, IAM Role의 Trust Policy도 클러스터별로 따로 써야 한다. 2023년 발표된 **EKS Pod Identity**는 OIDC를 빼고, EKS Auth API가 직접 Pod의 신원을 STS에 증명하는 방식이다. Trust Policy가 `pods.eks.amazonaws.com` 단일 principal을 신뢰하면 끝나서, 같은 Role을 여러 클러스터에서 재사용하기 쉽다. 다만 동작 원리는 EKS Auth API에 의존하므로 OIDC Federation의 표준성·이식성은 IRSA가 더 높다. SAP 시험은 둘 다 "Pod별 IAM" 정답으로 인정하지만, 시나리오가 "표준 OIDC"·"멀티 클라우드 호환"을 강조하면 IRSA, "다중 EKS 클러스터 권한 재사용"·"간소화"를 강조하면 Pod Identity가 답이다.
 
 | 항목 | IRSA | Pod Identity |
 |------|------|--------------|
@@ -91,7 +91,7 @@ spec:
 | 도입 시기 | 2019 | 2023 |
 | Fargate 지원 | 가능 | 가능 |
 
-> 📚 **사례**: 2023년 Datadog은 1,000개 이상의 K8s 클러스터를 운영하는데, IRSA의 클러스터별 OIDC 등록이 너무 번거로워 자체 IAM Federation 레이어를 만들어 썼다. EKS Pod Identity 발표 후 일부 클러스터를 마이그레이션해 운영 코드를 절반 가까이 줄였다고 KubeCon 2024에서 공유했다. 다중 클러스터 환경의 권한 재사용성이 Pod Identity의 진짜 가치라는 사례.
+2023년 Datadog은 1,000개 이상의 K8s 클러스터를 운영하는데, IRSA의 클러스터별 OIDC 등록이 너무 번거로워 자체 IAM Federation 레이어를 만들어 썼다. EKS Pod Identity 발표 후 일부 클러스터를 마이그레이션해 운영 코드를 절반 가까이 줄였다고 KubeCon 2024에서 공유했다. 다중 클러스터 환경의 권한 재사용성이 Pod Identity의 진짜 가치라는 사례.
 
 ## Karpenter — ASG를 건너뛴 직접 프로비저닝
 
@@ -155,11 +155,11 @@ spec:
 
 이 NodePool 하나로 "c·m·r 시리즈 중 4·8·16 vCPU, Spot 우선, 노드 활용률 낮으면 통합"이라는 정책을 선언한다. ASG로는 이 유연성을 구현하기 어렵다.
 
-> 💡 **관련 이론**: Karpenter의 인스턴스 선택은 **multi-dimensional bin packing**의 휴리스틱 해법이다. 정확한 최적해는 NP-hard지만, Karpenter는 "충분히 큰 + 가장 싼" 그리디 전략으로 수십 ms 안에 의사결정한다. 구글 Borg의 cell scheduler 논문(EuroSys 2015)에서도 비슷한 그리디 + priority 함수 접근이 쓰였다. 이론적 최적은 아니지만 실용적 sub-optimal로 충분히 좋은 비용 절감을 만들어낸다.
+Karpenter의 인스턴스 선택은 **multi-dimensional bin packing**의 휴리스틱 해법이다. 정확한 최적해는 NP-hard지만, Karpenter는 "충분히 큰 + 가장 싼" 그리디 전략으로 수십 ms 안에 의사결정한다. 구글 Borg의 cell scheduler 논문(EuroSys 2015)에서도 비슷한 그리디 + priority 함수 접근이 쓰였다. 이론적 최적은 아니지만 실용적 sub-optimal로 충분히 좋은 비용 절감을 만들어낸다.
 
-> 🔍 **더 깊이**: Karpenter는 **CNCF Sandbox 프로젝트**이고, AWS가 주도하지만 Azure·GCP에서도 동작 가능한 구조다. 실제로 Azure가 Karpenter Provider for Azure를 2024년에 GA했고, GCP 쪽 구현도 활발히 진행 중이다. 이는 K8s 생태계의 흥미로운 변화로, "오토스케일러도 표준화"라는 방향이다. SAP 시험은 여전히 AWS Provider 시나리오만 출제하지만, 실무에서 Karpenter를 도입하면 멀티 클라우드 마이그레이션의 일부 부담이 줄어든다.
+Karpenter는 **CNCF Sandbox 프로젝트**이고, AWS가 주도하지만 Azure·GCP에서도 동작 가능한 구조다. 실제로 Azure가 Karpenter Provider for Azure를 2024년에 GA했고, GCP 쪽 구현도 활발히 진행 중이다. 이는 K8s 생태계의 흥미로운 변화로, "오토스케일러도 표준화"라는 방향이다. SAP 시험은 여전히 AWS Provider 시나리오만 출제하지만, 실무에서 Karpenter를 도입하면 멀티 클라우드 마이그레이션의 일부 부담이 줄어든다.
 
-> 📚 **사례**: 2023년 Adobe는 EKS 위 워크로드에 Cluster Autoscaler를 쓰다 Karpenter로 전환해 노드 프로비저닝 시간을 평균 3분에서 40초로 줄였다. Spot 혼합으로 컴퓨트 비용을 약 30% 절감했고, Consolidation 덕에 야간 트래픽 감소 시간대에 노드 수를 자동으로 60% 줄였다. AWS re:Invent 2023 CON402 세션 발표.
+2023년 Adobe는 EKS 위 워크로드에 Cluster Autoscaler를 쓰다 Karpenter로 전환해 노드 프로비저닝 시간을 평균 3분에서 40초로 줄였다. Spot 혼합으로 컴퓨트 비용을 약 30% 절감했고, Consolidation 덕에 야간 트래픽 감소 시간대에 노드 수를 자동으로 60% 줄였다. AWS re:Invent 2023 CON402 세션 발표.
 
 | 항목 | Cluster Autoscaler | Karpenter |
 |------|--------------------|-----------|
@@ -189,7 +189,7 @@ kubectl set env daemonset aws-node -n kube-system \
 
 ## EKS Addons — 매니지드 K8s 컴포넌트의 새 세대
 
-K8s는 자체로는 빈 캔버스에 가깝다. DNS·네트워킹·스토리지·로드밸런서를 모두 외부 컴포넌트로 채워야 한다. EKS는 이 컴포넌트들을 **EKS Addons**라는 매니지드 형태로 제공한다.
+K8s는 자체로는 빈 캔버스에 가깝다. DNS·네트워킹·스토리지·로드 밸런서를 모두 외부 컴포넌트로 채워야 한다. EKS는 이 컴포넌트들을 **EKS Addons**라는 매니지드 형태로 제공한다.
 
 | Addon | 역할 | 대안 |
 |-------|------|------|
@@ -211,7 +211,7 @@ aws eks create-addon \
   --service-account-role-arn arn:aws:iam::123:role/eks-ebs-csi
 ```
 
-> 📚 **사례**: 2023년 한 핀테크가 EKS 1.22에서 1.23으로 업그레이드하면서 EBS CSI Driver Addon 설치를 깜빡했다. 기존 Pod은 잘 돌았지만 새 StatefulSet 배포 시 PVC가 영원히 Pending에 머물러 결제 시스템 일부가 지연됐다. AWS 공식 업그레이드 체크리스트에는 "1.23+에서는 EBS CSI 필수"라는 항목이 있지만, 운영팀이 변경 영향 평가를 충분히 안 한 사례. 그 이후 회사는 모든 EKS 클러스터 업그레이드에 ADR(Architecture Decision Record) 검토를 의무화했다.
+2023년 한 핀테크가 EKS 1.22에서 1.23으로 업그레이드하면서 EBS CSI Driver Addon 설치를 깜빡했다. 기존 Pod은 잘 돌았지만 새 StatefulSet 배포 시 PVC가 영원히 Pending에 머물러 결제 시스템 일부가 지연됐다. AWS 공식 업그레이드 체크리스트에는 "1.23+에서는 EBS CSI 필수"라는 항목이 있지만, 운영팀이 변경 영향 평가를 충분히 안 한 사례. 그 이후 회사는 모든 EKS 클러스터 업그레이드에 ADR(Architecture Decision Record) 검토를 의무화했다.
 
 ## EKS 업그레이드 — 마이너 한 단계씩, 노드는 ±1까지
 
@@ -246,7 +246,7 @@ EKS의 위치를 객관적으로 보려면 GCP의 GKE, Azure의 AKS와 비교해
 
 GCP의 GKE Autopilot이 "운영 부담 0" 방향으로 가장 앞서 갔고, AWS는 2024년 EKS Auto Mode로 뒤따라잡았다. Azure는 기본 Free tier로 가격은 가장 친화적이지만, K8s 자체 운영 성숙도는 상대적으로 낮다는 평이 많다.
 
-> 📚 **사례**: 2022년 Spotify는 사내 일부 워크로드를 GKE에서 EKS로 마이그레이션하면서, Workload Identity Federation을 IRSA로 옮기는 작업이 가장 큰 비용 항목이었다. 두 시스템 모두 OIDC 기반이지만 sub claim 포맷이 미묘하게 달라서 ServiceAccount 매니페스트의 annotation을 모두 다시 작성해야 했다. K8s가 표준이어도 클라우드 통합 레이어는 표준화되지 않았다는 일관된 교훈.
+2022년 Spotify는 사내 일부 워크로드를 GKE에서 EKS로 마이그레이션하면서, Workload Identity Federation을 IRSA로 옮기는 작업이 가장 큰 비용 항목이었다. 두 시스템 모두 OIDC 기반이지만 sub claim 포맷이 미묘하게 달라서 ServiceAccount 매니페스트의 annotation을 모두 다시 작성해야 했다. K8s가 표준이어도 클라우드 통합 레이어는 표준화되지 않았다는 일관된 교훈.
 
 ## EKS Anywhere — 컨트롤 플레인까지 온프레로 내려보내기
 
@@ -254,7 +254,7 @@ GCP의 GKE Autopilot이 "운영 부담 0" 방향으로 가장 앞서 갔고, AWS
 
 VMware vSphere, Bare Metal, Snow, Nutanix 위에서 배포 가능하고, 에어갭(완전 격리) 환경도 지원한다. 단점은 운영을 사용자가 다 한다는 점이다(컨트롤 플레인 업그레이드·etcd 백업). 그래서 "공장 100개에 흩어진 게이트웨이"·"방위·금융 격리 환경" 같은 시나리오에서만 의미가 있고, 일반 워크로드에는 EKS(클라우드)가 항상 더 단순하다.
 
-## 정리하며
+## 정리
 
 오늘은 EKS의 데이터 플레인을 셋으로 쪼개 봤다. **노드 그룹**으로 Pod이 실행될 곳을 정하고, **IRSA·Pod Identity**로 Pod별 권한을 안전하게 부여하고, **Karpenter**로 노드 수와 인스턴스 타입을 동적으로 조정한다. 여기에 **VPC CNI Prefix Delegation**으로 IP 슬롯을 늘리고, **EBS CSI Addon**으로 영구 볼륨을 다루는 게 표준 패턴이다.
 

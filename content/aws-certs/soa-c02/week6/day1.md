@@ -23,15 +23,15 @@ CloudFormation의 독특한 위치는 **AWS에 완전히 네이티브**라는 �
 | 출시 연도 | 2011 | 2014 | 2018 | 2019 | 2012 |
 | 오픈소스 | X | O(BSL) | O | O | O |
 
-> 💡 **관련 이론**: CloudFormation의 "Declarative" 방식은 수학의 집합론과 유사하다. "이 집합(인프라)에 이런 원소(리소스)들이 있어야 한다"고 선언하면, 현재 상태와 목표 상태의 차이를 시스템이 계산해 수렴시킨다. 명령형(Imperative) 방식인 Shell 스크립트가 "Step 1: EC2 생성, Step 2: SG 생성..."처럼 절차를 기술하는 것과 대조된다. 선언적 방식의 핵심은 **멱등성(Idempotency)**: 같은 템플릿을 여러 번 적용해도 결과가 동일하다. 이 개념은 Dijkstra의 "분리 가능한 추상화(Separable Abstraction)" 원칙까지 거슬러 올라가며, 1970년대 하드웨어 기술 독립성(machine independence) 논쟁의 소프트웨어 버전이기도 하다.
+CloudFormation의 "Declarative" 방식은 수학의 집합론과 유사하다. "이 집합(인프라)에 이런 원소(리소스)들이 있어야 한다"고 선언하면, 현재 상태와 목표 상태의 차이를 시스템이 계산해 수렴시킨다. 명령형(Imperative) 방식인 Shell 스크립트가 "Step 1: EC2 생성, Step 2: SG 생성..."처럼 절차를 기술하는 것과 대조된다. 선언적 방식의 핵심은 **멱등성(Idempotency)**: 같은 템플릿을 여러 번 적용해도 결과가 동일하다. 이 개념은 Dijkstra의 "분리 가능한 추상화(Separable Abstraction)" 원칙까지 거슬러 올라가며, 1970년대 하드웨어 기술 독립성(machine independence) 논쟁의 소프트웨어 버전이기도 하다.
 
-> 🔍 **더 깊이**: CloudFormation 엔진은 내부적으로 **DAG(Directed Acyclic Graph)** 기반으로 리소스 의존성을 분석한다. `!Ref`와 `!GetAtt`로 리소스 간 의존성이 정의되면 CFn이 자동으로 위상 정렬(Topological Sort)을 수행해 어떤 리소스를 먼저 만들고 병렬로 처리할 수 있는지 결정한다. `DependsOn`을 명시적으로 추가하면 CFn이 자동 감지하지 못하는 암묵적 의존성(예: IAM 권한 전파 지연)을 수동으로 표현할 수 있다. 이 DAG 접근법은 GNU Make의 Makefile 의존성 분석, Apache Airflow의 DAG 스케줄링과 동일한 CS 이론 기반이다.
+CloudFormation 엔진은 내부적으로 **DAG(Directed Acyclic Graph)** 기반으로 리소스 의존성을 분석한다. `!Ref`와 `!GetAtt`로 리소스 간 의존성이 정의되면 CFn이 자동으로 위상 정렬(Topological Sort)을 수행해 어떤 리소스를 먼저 만들고 병렬로 처리할 수 있는지 결정한다. `DependsOn`을 명시적으로 추가하면 CFn이 자동 감지하지 못하는 암묵적 의존성(예: IAM 권한 전파 지연)을 수동으로 표현할 수 있다. 이 DAG 접근법은 GNU Make의 Makefile 의존성 분석, Apache Airflow의 DAG 스케줄링과 동일한 CS 이론 기반이다.
 
 ## CloudFormation 엔진 내부 작동 원리
 
 CloudFormation이 `create-stack`을 받으면 내부적으로 다음 과정을 거친다.
 
-**1단계: Template 파싱과 검증**
+**1단계: 템플릿 파싱과 검증**
 - JSON/YAML 파싱 → 내부 표현으로 변환
 - 10개 섹션 구조 검증
 - Intrinsic Functions 해석 (재귀적 평가)
@@ -54,7 +54,7 @@ CloudFormation이 `create-stack`을 받으면 내부적으로 다음 과정을 �
 - Timeout 초과 시 실패 처리
 - 성공 신호 수신 시 다음 단계 진행
 
-**5단계: Stack 상태 최종화**
+**5단계: 스택 상태 최종화**
 - 모든 리소스 성공 → `CREATE_COMPLETE`
 - 어느 리소스라도 실패 → `ROLLBACK_IN_PROGRESS` 시작
 
@@ -93,7 +93,7 @@ Template YAML
 └─────────────────────────────────────────┘
 ```
 
-## Template 10대 섹션: 운영자가 알아야 할 것만
+## 템플릿 10대 섹션: 운영자가 알아야 할 것만
 
 CloudFormation Template은 최대 10개 섹션으로 구성된다. 필수는 `Resources`만이고 나머지는 선택이다. 이 사실이 시험에서 반복 출제된다.
 
@@ -151,7 +151,7 @@ Rules:              # 선택 - Parameter 간 교차 유효성 검사
 
 ## Parameters: 입력값의 정교한 제어
 
-Parameters는 Template를 재사용 가능하게 만드는 핵심이다. 동일한 Template로 dev, staging, prod 환경을 만들 수 있다.
+Parameters는 템플릿을 재사용 가능하게 만드는 핵심이다. 동일한 템플릿으로 dev, staging, prod 환경을 만들 수 있다.
 
 **Parameter 타입 전체 목록:**
 
@@ -184,7 +184,7 @@ DBPassword2:
   !Sub '{{resolve:ssm-secure:/myapp/prod/database/password}}'
 ```
 
-> 🔍 **더 깊이**: `AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>` 타입은 AWS가 공식적으로 운영하는 SSM 파라미터 경로(`/aws/service/ami-amazon-linux-latest/...`)에서 최신 AMI ID를 자동으로 가져온다. 이 경로의 값은 AWS가 새 AMI를 출시할 때마다 자동으로 업데이트한다. 즉, 같은 Template를 1년 후에 배포해도 항상 최신 Amazon Linux 2 AMI가 사용된다. 하드코딩이나 Mapping으로 AMI ID를 관리할 때 발생하는 "AMI ID가 deprecated됐다" 문제가 사라진다. 주의할 점은 Stack 업데이트 없이 SSM 파라미터 값이 바뀐 경우, Stack을 다시 배포하기 전까지 반영되지 않는다는 것이다. 이는 Drift Detection에서 파라미터 변경이 감지되지 않는 맹점이기도 하다.
+`AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>` 타입은 AWS가 공식적으로 운영하는 SSM 파라미터 경로(`/aws/service/ami-amazon-linux-latest/...`)에서 최신 AMI ID를 자동으로 가져온다. 이 경로의 값은 AWS가 새 AMI를 출시할 때마다 자동으로 업데이트한다. 즉, 같은 템플릿을 1년 후에 배포해도 항상 최신 Amazon Linux 2 AMI가 사용된다. 하드코딩이나 Mapping으로 AMI ID를 관리할 때 발생하는 "AMI ID가 deprecated됐다" 문제가 사라진다. 주의할 점은 스택 업데이트 없이 SSM 파라미터 값이 바뀐 경우, 스택을 다시 배포하기 전까지 반영되지 않는다는 것이다. 이는 Drift Detection에서 파라미터 변경이 감지되지 않는 맹점이기도 하다.
 
 ## 내장 함수 (Intrinsic Functions): 운영자 필수
 
@@ -224,7 +224,7 @@ CidrBlock: !Select
   # VPC CIDR을 6개 /20 서브넷으로 분할, 첫 번째 선택
 ```
 
-## Stack 라이프사이클: 모든 상태를 알아야 트러블슈팅이 된다
+## 스택 라이프사이클: 모든 상태를 알아야 트러블슈팅이 된다
 
 ```
 Stack 상태 전이도:
@@ -256,7 +256,7 @@ UPDATE_COMPLETE ──(delete-stack)──► DELETE_IN_PROGRESS ──► DELET
 
 | 상태 | 원인 | 운영자 조치 |
 |------|------|-------------|
-| `ROLLBACK_COMPLETE` | 최초 Stack 생성 실패 후 롤백 완료 | 삭제 후 재생성. `update-stack` 불가 |
+| `ROLLBACK_COMPLETE` | 최초 스택 생성 실패 후 롤백 완료 | 삭제 후 재생성. `update-stack` 불가 |
 | `UPDATE_ROLLBACK_FAILED` | 업데이트 롤백 중 추가 실패 | `continue-update-rollback` + `resources-to-skip` |
 | `DELETE_FAILED` | 리소스 삭제 실패 (비어있지 않은 S3, 연결된 ENI 등) | `--retain-resources` 로 문제 리소스 보존 후 재삭제 |
 | `IMPORT_ROLLBACK_FAILED` | 기존 리소스 Import 중 실패 | Import 대상 리소스 상태 확인 후 재시도 |
@@ -283,11 +283,11 @@ aws cloudformation describe-stack-events \
   --output table
 ```
 
-> ⚠️ **함정**: `ROLLBACK_COMPLETE` 상태는 **처음 Stack 생성이 실패**한 경우의 최종 상태다. 이 상태에서는 `update-stack`이 불가능하고, 반드시 `delete-stack` 후 재생성해야 한다. 이를 모르고 `update-stack`을 시도하면 "Stack is not in a valid state for UpdateStack" 오류가 발생한다. `continue-update-rollback`은 `UPDATE_ROLLBACK_FAILED` 전용으로, `ROLLBACK_COMPLETE`에는 적용되지 않는다. 시험에서 "Stack을 ROLLBACK_COMPLETE에서 복구하려면?" 문제의 정답은 항상 "삭제 후 재생성"이다.
+> ⚠️ **함정**: `ROLLBACK_COMPLETE` 상태는 **처음 스택 생성이 실패**한 경우의 최종 상태다. 이 상태에서는 `update-stack`이 불가능하고, 반드시 `delete-stack` 후 재생성해야 한다. 이를 모르고 `update-stack`을 시도하면 `Stack is not in a valid state for UpdateStack` 오류가 발생한다. `continue-update-rollback`은 `UPDATE_ROLLBACK_FAILED` 전용으로, `ROLLBACK_COMPLETE`에는 적용되지 않는다. 시험에서 "스택을 ROLLBACK_COMPLETE에서 복구하려면?" 문제의 정답은 항상 "삭제 후 재생성"이다.
 
 ## Resource 속성: DeletionPolicy, UpdateReplacePolicy, CreationPolicy
 
-**DeletionPolicy: Stack 삭제 시 리소스 처리**
+**DeletionPolicy: 스택 삭제 시 리소스 처리**
 
 ```yaml
 MyDatabase:
@@ -308,13 +308,13 @@ MyCacheCluster:
 
 | DeletionPolicy 값 | 동작 | 사용 리소스 |
 |-------------------|------|-------------|
-| `Delete` (기본) | Stack 삭제 시 리소스 삭제 | 임시 리소스 |
-| `Retain` | Stack 삭제 시 리소스 보존 | S3, DynamoDB, 중요 데이터 |
-| `Snapshot` | Stack 삭제 전 스냅샷 생성 후 삭제 | RDS, ElastiCache, EBS |
+| `Delete` (기본) | 스택 삭제 시 리소스 삭제 | 임시 리소스 |
+| `Retain` | 스택 삭제 시 리소스 보존 | S3, DynamoDB, 중요 데이터 |
+| `Snapshot` | 스택 삭제 전 스냅샷 생성 후 삭제 | RDS, ElastiCache, EBS |
 
 **UpdateReplacePolicy: 업데이트 시 리소스 교체가 발생할 때**
 
-UpdateReplacePolicy는 Stack 업데이트 중 리소스 교체(Replacement)가 발생할 때 기존 리소스를 어떻게 처리할지 결정한다. DeletionPolicy는 Stack **삭제** 시 동작하고, UpdateReplacePolicy는 업데이트 시 **교체** 조건에서 동작한다.
+UpdateReplacePolicy는 스택 업데이트 중 리소스 교체(Replacement)가 발생할 때 기존 리소스를 어떻게 처리할지 결정한다. DeletionPolicy는 스택 **삭제** 시 동작하고, UpdateReplacePolicy는 업데이트 시 **교체** 조건에서 동작한다.
 
 ```yaml
 MyDatabase:
@@ -338,7 +338,7 @@ MyDatabase:
 | AWS::DynamoDB::Table | `TableName` | True |
 | AWS::ElastiCache::ReplicationGroup | `NumCacheClusters` | 조건부 |
 
-> 📚 **사례**: 2022년 E커머스 F사에서 CloudFormation 업데이트 중 RDS 인스턴스가 예상치 못하게 교체되는 사고가 발생했다. DB 인스턴스 클래스를 `db.t3.medium`에서 `db.r5.xlarge`로 변경하면서 동시에 `MultiAZ: false`를 `MultiAZ: true`로 변경했다. AWS는 MultiAZ 변경을 Replacement로 처리했고, `UpdateReplacePolicy`가 기본값 `Delete`로 설정되어 있어 기존 DB가 스냅샷 없이 삭제됐다. 최근 수동 스냅샷에서 4시간 치 데이터를 잃었다. 이후 모든 RDS에 `DeletionPolicy: Snapshot`과 `UpdateReplacePolicy: Snapshot`을 표준 정책으로 설정하고, Change Set 검토 시 `Replacement: True` 리소스를 반드시 확인하는 프로세스를 도입했다.
+가상의 사례로, 2022년 E커머스 F사에서 CloudFormation 업데이트 중 RDS 인스턴스가 예상치 못하게 교체되는 사고가 발생했다. DB 인스턴스 클래스를 `db.t3.medium`에서 `db.r5.xlarge`로 변경하면서 동시에 `MultiAZ: false`를 `MultiAZ: true`로 변경했다. AWS는 MultiAZ 변경을 Replacement로 처리했고, `UpdateReplacePolicy`가 기본값 `Delete`로 설정되어 있어 기존 DB가 스냅샷 없이 삭제됐다. 최근 수동 스냅샷에서 4시간 치 데이터를 잃었다. 이후 모든 RDS에 `DeletionPolicy: Snapshot`과 `UpdateReplacePolicy: Snapshot`을 표준 정책으로 설정하고, Change Set 검토 시 `Replacement: True` 리소스를 반드시 확인하는 프로세스를 도입했다.
 
 **CreationPolicy: 리소스 생성 완료 신호 대기**
 
@@ -425,11 +425,11 @@ WebASG:
 | `WaitOnResourceSignals` | cfn-signal 대기 여부 | true면 각 인스턴스의 CreationPolicy 신호 대기 |
 | `SuspendProcesses` | 롤링 중 일시 중지할 ASG 프로세스 | AZRebalance 없으면 불균형 상태 발생 가능 |
 
-> 💡 **관련 이론**: CreationPolicy와 cfn-signal의 패턴은 분산 시스템의 "readiness probe" 개념과 동일하다. Kubernetes의 `readinessProbe`처럼, 애플리케이션이 준비됐다는 외부 신호를 받기 전까지 트래픽을 전달하지 않는다. CloudFormation에서는 이 신호가 `cfn-signal`이고, 신호를 받기 전까지 Stack은 `CREATE_IN_PROGRESS` 상태를 유지하며 다음 리소스 생성으로 넘어가지 않는다. Rolling Update에서 WaitOnResourceSignals=true는 각 배치마다 이 readiness 체크를 반복해, "이 인스턴스가 정말 트래픽을 받을 준비가 됐는가"를 CloudFormation이 직접 확인하는 구조다. Martin Fowler의 "Blue-Green Deployment" 패턴이 클러스터 전체를 교체하는 반면, AutoScalingRollingUpdate는 인스턴스를 점진적으로 교체하는 "Canary Release"에 가깝다.
+CreationPolicy와 cfn-signal의 패턴은 분산 시스템의 "readiness probe" 개념과 동일하다. Kubernetes의 `readinessProbe`처럼, 애플리케이션이 준비됐다는 외부 신호를 받기 전까지 트래픽을 전달하지 않는다. CloudFormation에서는 이 신호가 `cfn-signal`이고, 신호를 받기 전까지 스택은 `CREATE_IN_PROGRESS` 상태를 유지하며 다음 리소스 생성으로 넘어가지 않는다. Rolling Update에서 WaitOnResourceSignals=true는 각 배치마다 이 readiness 체크를 반복해, "이 인스턴스가 정말 트래픽을 받을 준비가 됐는가"를 CloudFormation이 직접 확인하는 구조다. Martin Fowler의 "Blue/Green Deployment" 패턴이 클러스터 전체를 교체하는 반면, AutoScalingRollingUpdate는 인스턴스를 점진적으로 교체하는 "Canary Release"에 가깝다.
 
 ## Stack Policy: 핵심 리소스 업데이트 차단
 
-Stack Policy는 Stack 업데이트 시 특정 리소스를 실수로 수정·삭제하는 것을 방지하는 방화벽이다. IAM 정책이 **사람(Principal)**의 API 접근을 제어하는 것과 달리, Stack Policy는 **CloudFormation이 특정 리소스에 수행할 수 있는 작업**을 제어한다.
+Stack Policy는 스택 업데이트 시 특정 리소스를 실수로 수정·삭제하는 것을 방지하는 방화벽이다. IAM 정책이 **사람(Principal)**의 API 접근을 제어하는 것과 달리, Stack Policy는 **CloudFormation이 특정 리소스에 수행할 수 있는 작업**을 제어한다.
 
 ```json
 {
@@ -462,7 +462,7 @@ Stack Policy는 Stack 업데이트 시 특정 리소스를 실수로 수정·삭
 |--------|------|
 | `Update:Modify` | 기존 리소스의 속성을 In-Place로 수정 |
 | `Update:Replace` | 기존 리소스를 삭제하고 새로 생성 (Replacement) |
-| `Update:Delete` | 리소스를 Stack에서 제거하고 삭제 |
+| `Update:Delete` | 리소스를 스택에서 제거하고 삭제 |
 | `Update:*` | 위 세 가지 모두 |
 
 ```bash
@@ -481,7 +481,7 @@ aws cloudformation update-stack \
 aws cloudformation get-stack-policy --stack-name my-prod-stack
 ```
 
-> 💡 **관련 이론**: Stack Policy의 평가 방식은 IAM 정책과 동일한 **명시적 Deny 우선** 원칙을 따른다. 기본값이 "모든 리소스 업데이트 허용"인 점이 IAM(기본값: 모든 것 거부)과 다르다. Stack Policy가 설정되지 않은 경우 모든 업데이트가 허용된다. 반면 Stack Policy가 한 번 설정되면, 명시적으로 허용(`Effect: Allow`)하지 않은 모든 리소스는 Deny된다. 따라서 특정 리소스만 차단하려면 반드시 "모든 리소스 허용" Statement를 명시적으로 추가해야 한다. 이 패턴은 방화벽 규칙의 "Allow All, Deny Specific"과 동일하다.
+Stack Policy의 평가 방식은 IAM 정책과 동일한 **명시적 Deny 우선** 원칙을 따른다. 기본값이 "모든 리소스 업데이트 허용"인 점이 IAM(기본값: 모든 것 거부)과 다르다. Stack Policy가 설정되지 않은 경우 모든 업데이트가 허용된다. 반면 Stack Policy가 한 번 설정되면, 명시적으로 허용(`Effect: Allow`)하지 않은 모든 리소스는 Deny된다. 따라서 특정 리소스만 차단하려면 반드시 "모든 리소스 허용" Statement를 명시적으로 추가해야 한다. 이 패턴은 방화벽 규칙의 "Allow All, Deny Specific"과 동일하다.
 
 ## Pseudo Parameters: 항상 사용 가능한 내장 변수
 
@@ -537,7 +537,7 @@ aws cloudformation update-stack \
 
 **주의**: `DO_NOTHING`/`--disable-rollback`은 비용이 계속 청구되므로 디버깅 후 반드시 정리한다.
 
-**Template 유효성 검사:**
+**템플릿 유효성 검사:**
 
 ```bash
 # Template 문법 검사 (AWS 서버에서 검증)
@@ -571,9 +571,9 @@ aws cloudformation create-stack \
 ```
 InsufficientCapabilities: Requires capabilities : [CAPABILITY_NAMED_IAM]
 ```
-이 오류는 Template에 `AWS::IAM::Role`, `AWS::IAM::Policy` 등 IAM 리소스가 있는데 CAPABILITY 플래그를 지정하지 않은 경우 발생한다.
+이 오류는 템플릿에 `AWS::IAM::Role`, `AWS::IAM::Policy` 등 IAM 리소스가 있는데 CAPABILITY 플래그를 지정하지 않은 경우 발생한다.
 
-> 📚 **사례**: 2023년 핀테크 스타트업 G사에서 CI/CD 파이프라인에서 CloudFormation 배포가 갑자기 실패하기 시작했다. 오류는 "InsufficientCapabilities". 원인은 템플릿에 `AWS::IAM::Role`을 추가했는데 파이프라인 스크립트에 `--capabilities CAPABILITY_IAM`이 없었다. 수정은 간단했지만 프로덕션 배포가 30분 지연됐다. 이후 모든 파이프라인 스크립트에 `--capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND`를 기본으로 포함했다. CAPABILITY를 최대한 허용해도 CloudFormation이 실제로 IAM 리소스를 생성할 때만 영향을 미치므로 보안 위험이 없다.
+가상의 사례로, 2023년 핀테크 스타트업 G사에서 CI/CD 파이프라인에서 CloudFormation 배포가 갑자기 실패하기 시작했다. 오류는 "InsufficientCapabilities". 원인은 템플릿에 `AWS::IAM::Role`을 추가했는데 파이프라인 스크립트에 `--capabilities CAPABILITY_IAM`이 없었다. 수정은 간단했지만 프로덕션 배포가 30분 지연됐다. 이후 모든 파이프라인 스크립트에 `--capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND`를 기본으로 포함했다. CAPABILITY를 최대한 허용해도 CloudFormation이 실제로 IAM 리소스를 생성할 때만 영향을 미치므로 보안 위험이 없다.
 
 ## Termination Protection과 운영 거버넌스
 
@@ -594,14 +594,14 @@ aws cloudformation update-termination-protection \
   --no-enable-termination-protection
 ```
 
-Termination Protection이 활성화된 Stack을 삭제하려 하면 오류가 발생한다:
+Termination Protection이 활성화된 스택을 삭제하려 하면 오류가 발생한다:
 ```
 TerminationProtection: Stack [my-prod-stack] cannot be deleted while TerminationProtection is enabled
 ```
 
-> 💡 **관련 이론**: Termination Protection은 인간 실수(Human Error) 방어 계층이다. 넷플릭스의 "Defense in Depth" 문화에서 단일 실수가 돌이킬 수 없는 결과를 초래하지 않도록 여러 확인 단계를 두는 원칙이다. CloudFormation에서 운영 거버넌스의 3개 레이어: (1) Stack Policy — CFn 엔진 레벨에서 특정 리소스 수정 차단, (2) Termination Protection — Stack 전체 삭제 차단, (3) IAM Permission Boundary — 사용자/역할이 CFn 스택 자체를 삭제하는 API 호출 차단. 세 레이어가 각각 다른 공격 표면을 방어한다.
+Termination Protection은 인간 실수(Human Error) 방어 계층이다. 넷플릭스의 "Defense in Depth" 문화에서 단일 실수가 돌이킬 수 없는 결과를 초래하지 않도록 여러 확인 단계를 두는 원칙이다. CloudFormation에서 운영 거버넌스의 3개 레이어: (1) Stack Policy — CFn 엔진 레벨에서 특정 리소스 수정 차단, (2) Termination Protection — 스택 전체 삭제 차단, (3) IAM Permission Boundary — 사용자/역할이 CFn 스택 자체를 삭제하는 API 호출 차단. 세 레이어가 각각 다른 공격 표면을 방어한다.
 
-> 🔍 **더 깊이**: CloudFormation에서 가장 위험한 상황은 Replacement를 모르고 수행하는 것이다. EC2 `ImageId` 변경, RDS `MultiAZ` 변경, DynamoDB `TableName` 변경이 모두 Replacement를 트리거한다. Change Set을 실행하면 각 리소스의 변경 유형이 `Replacement: True / False / Conditional`로 표시된다. `Conditional`은 런타임에 결정되는 경우로, 예를 들어 EC2 `InstanceType` 변경은 EBS 최적화 인스턴스 여부에 따라 Replacement가 결정된다. 운영자는 **반드시 Change Set의 Replacement 필드를 확인하고** RDS나 DynamoDB가 `True`이면 `UpdateReplacePolicy: Snapshot`이 설정됐는지 검토해야 한다.
+CloudFormation에서 가장 위험한 상황은 Replacement를 모르고 수행하는 것이다. EC2 `ImageId` 변경, RDS `MultiAZ` 변경, DynamoDB `TableName` 변경이 모두 Replacement를 트리거한다. Change Set을 실행하면 각 리소스의 변경 유형이 `Replacement: True / False / Conditional`로 표시된다. `Conditional`은 런타임에 결정되는 경우로, 예를 들어 EC2 `InstanceType` 변경은 EBS 최적화 인스턴스 여부에 따라 Replacement가 결정된다. 운영자는 **반드시 Change Set의 Replacement 필드를 확인하고** RDS나 DynamoDB가 `True`이면 `UpdateReplacePolicy: Snapshot`이 설정됐는지 검토해야 한다.
 
 ## 전체 흐름 그림
 

@@ -46,7 +46,7 @@ resolved = ResolveChoice.apply(
 )
 ```
 
-> 💡 **관련 이론**: DynamicFrame은 "스키마-온-리드"를 코드 레벨에서 구현한 것이다. 전통적 ETL 도구는 매핑을 사전에 엄격히 정의해야 하지만(스키마-온-라이트적), 데이터 레이크 시대의 ETL은 "일단 받아들이고, 변환 과정에서 정제한다"는 ELT/스키마-온-리드 철학을 따른다. DynamicFrame의 Choice 타입과 ResolveChoice는 이 철학을 Spark 위에서 실현한 장치다. 필요하면 `.toDF()`로 DataFrame으로, `.fromDF()`로 다시 DynamicFrame으로 자유롭게 오갈 수 있다.
+DynamicFrame은 "스키마-온-리드"를 코드 레벨에서 구현한 것이다. 전통적 ETL 도구는 매핑을 사전에 엄격히 정의해야 하지만(스키마-온-라이트적), 데이터 레이크 시대의 ETL은 "일단 받아들이고, 변환 과정에서 정제한다"는 ELT/스키마-온-리드 철학을 따른다. DynamicFrame의 Choice 타입과 ResolveChoice는 이 철학을 Spark 위에서 실현한 장치다. 필요하면 `.toDF()`로 DataFrame으로, `.fromDF()`로 다시 DynamicFrame으로 자유롭게 오갈 수 있다.
 
 ## ETL의 3단계: Source → Transform → Sink
 
@@ -85,7 +85,7 @@ glueContext.write_dynamic_frame.from_options(
 
 `ApplyMapping`은 ETL에서 가장 자주 쓰는 변환이다. 컬럼 이름을 바꾸고, 타입을 변환하고, 불필요한 컬럼을 떨어뜨린다. `write_dynamic_frame`의 `partitionKeys`로 출력 데이터를 파티션 폴더로 자동 분할하면, 다운스트림 쿼리가 프루닝의 이점을 누린다. 출력 형식은 분석에 유리한 **Parquet/ORC(컬럼형 + 압축)**가 정석이다.
 
-> 🔍 **더 깊이**: Glue Job에는 두 가지 실행 타입이 있다. 표준 Spark Job(대용량 분산 처리)과 **Python Shell Job**(단일 노드에서 가벼운 파이썬 스크립트, 작은 데이터/오케스트레이션용)이다. 수 GB 이상 분산 변환이면 Spark Job, 수백 MB 이하의 가벼운 작업이나 API 호출·메타데이터 정리면 Python Shell이 훨씬 싸다. 또한 Glue 3.0/4.0은 Spark 버전이 다르므로, 라이브러리 호환성을 확인해야 한다.
+Glue Job에는 두 가지 실행 타입이 있다. 표준 Spark Job(대용량 분산 처리)과 **Python Shell Job**(단일 노드에서 가벼운 파이썬 스크립트, 작은 데이터/오케스트레이션용)이다. 수 GB 이상 분산 변환이면 Spark Job, 수백 MB 이하의 가벼운 작업이나 API 호출·메타데이터 정리면 Python Shell이 훨씬 싸다. 또한 Glue 3.0/4.0은 Spark 버전이 다르므로, 라이브러리 호환성을 확인해야 한다.
 
 ## Job 북마크: 증분 처리의 핵심
 

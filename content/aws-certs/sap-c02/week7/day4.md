@@ -1,6 +1,6 @@
 # Day 4 - 서비스 메시의 해부 — App Mesh, Service Connect, Cloud Map이 갈리는 지점
 
-마이크로서비스를 10개 띄우는 순간, 새로운 종류의 문제가 시작된다. service-a가 service-b의 IP를 어떻게 알 것인가, service-b가 갑자기 5xx를 뱉으면 service-a는 얼마나 빨리 재시도해야 하는가, 통신을 모두 mTLS로 암호화하려면 인증서는 누가 발급·회전하는가, 새 버전을 10%만 트래픽 받게 하려면 어디서 라우팅을 갈라야 하는가. 이 모든 문제를 애플리케이션 코드 안에서 풀면 코드가 비즈니스 로직보다 인프라 코드로 더 두꺼워진다. 서비스 메시는 이 문제를 코드 밖 사이드카 프록시로 옮긴 답이다. SAP 시험은 AWS의 세 가지 옵션 — Cloud Map·ECS Service Connect·App Mesh — 의 차이를 시나리오로 자주 묻는다.
+마이크로서비스를 10개 띄우는 순간, 새로운 종류의 문제가 시작된다. service-a가 service-b의 IP를 어떻게 알 것인가, service-b가 갑자기 5xx를 뱉으면 service-a는 얼마나 빨리 재시도해야 하는가, 통신을 모두 mTLS로 암호화하려면 인증서는 누가 발급·회전하는가, 새 버전을 10%만 트래픽 받게 하려면 어디서 라우팅을 갈라야 하는가. 이 모든 문제를 애플리케이션 코드 안에서 풀면 코드가 비즈니스 로직보다 인프라 코드로 더 두꺼워진다. 서비스 메시는 이 문제를 코드 밖 사이드카 프록시로 옮긴 답이다. SAP 시험은 AWS의 세 가지 옵션 — Cloud Map·ECS Service Connect·App Mesh — 의 차이를 시나리오로 묻는다.
 
 이 글에서는 서비스 메시가 왜 생겨났는지, 사이드카 프록시가 어떻게 트래픽을 가로채는지, 세 서비스가 책임을 어떻게 나누는지를 본다. 그리고 mTLS·카나리·서킷 브레이커 같은 메시 기능이 실제로 어떻게 구현되는지, App Mesh EOL 발표(2024) 이후 어떤 대안이 표준이 되어가는지를 다룬다. 어제까지 본 ECS·EKS·Fargate 위에 마이크로서비스 10개를 띄웠다면 다음 자연스러운 질문이 "그들 간 통신은 어떻게 안전·관찰 가능하게 만드는가"이고, 오늘이 그 답이다.
 
@@ -22,9 +22,9 @@
    언어 무관, 사이드카가 모든 정책 처리
 ```
 
-> 💡 **관련 이론**: 사이드카 패턴은 **분리(separation of concerns)** 원칙의 인프라 적용이다. 비즈니스 로직(애플리케이션)과 횡단 관심사(인증·재시도·관찰)를 분리하면, 횡단 관심사를 한 번 잘 만들어 모든 서비스에 적용할 수 있다. 같은 발상이 Spring의 AOP, K8s의 Init Container, 자바스크립트의 미들웨어에도 있다. 학술적으로는 Gregor Hohpe의 *Enterprise Integration Patterns* (2003)에서 "Channel Adapter" 패턴으로 정리됐다.
+사이드카 패턴은 **분리(separation of concerns)** 원칙의 인프라 적용이다. 비즈니스 로직(애플리케이션)과 횡단 관심사(인증·재시도·관찰)를 분리하면, 횡단 관심사를 한 번 잘 만들어 모든 서비스에 적용할 수 있다. 같은 발상이 Spring의 AOP, K8s의 Init Container, 자바스크립트의 미들웨어에도 있다. 학술적으로는 Gregor Hohpe의 *Enterprise Integration Patterns* (2003)에서 "Channel Adapter" 패턴으로 정리됐다.
 
-> 🔍 **더 깊이**: Envoy가 표준이 된 이유는 **xDS API**(Envoy Data Service)가 표준화되어 있기 때문이다. 컨트롤 플레인(Istio·App Mesh·Consul)이 xDS gRPC API로 라우팅 규칙·인증서·서비스 디스커버리 정보를 Envoy에 푸시한다. 컨트롤 플레인을 바꿔도 데이터 플레인(Envoy)은 그대로 쓸 수 있는 구조라, 멀티 컨트롤 플레인 환경에서도 마이그레이션이 가능하다. xDS는 CNCF 표준이 되어가는 중이다.
+Envoy가 표준이 된 이유는 **xDS API**(Envoy Data Service)가 표준화되어 있기 때문이다. 컨트롤 플레인(Istio·App Mesh·Consul)이 xDS gRPC API로 라우팅 규칙·인증서·서비스 디스커버리 정보를 Envoy에 푸시한다. 컨트롤 플레인을 바꿔도 데이터 플레인(Envoy)은 그대로 쓸 수 있는 구조라, 멀티 컨트롤 플레인 환경에서도 마이그레이션이 가능하다. xDS는 CNCF 표준이 되어가는 중이다.
 
 ## 세 서비스의 책임 지도
 
@@ -110,7 +110,7 @@ Service Connect의 장점은 **운영 부담이 작다**는 점이다. App Mesh�
 
 단점은 풀 메시 기능이 없다는 점이다. **가중치 기반 카나리·서킷 브레이커·mTLS는 미지원**(2024 기준). 이게 필요하면 App Mesh로 가거나, ECS와 EKS를 같이 쓴다면 EKS + Istio를 쓰는 게 패턴이다.
 
-> 💡 **관련 이론**: 클라이언트 사이드 로드밸런싱은 서버 사이드(ALB)와 비교하면 **추가 hop이 없다**는 장점이 있다. ALB를 거치면 client → ALB → server로 2 hop이고, 클라이언트 사이드는 client → server 1 hop이다. 마이크로서비스 호출 체인이 깊을수록(5~10 서비스) 누적 지연시간 차이가 커진다. 같은 발상이 gRPC의 Round Robin·xDS resolver에도 있다. 단점은 클라이언트가 서버 목록을 직접 알아야 한다는 점인데, 이걸 Cloud Map이 자동 갱신해서 해결한다.
+클라이언트 사이드 로드밸런싱은 서버 사이드(ALB)와 비교하면 **추가 hop이 없다**는 장점이 있다. ALB를 거치면 client → ALB → server로 2 hop이고, 클라이언트 사이드는 client → server 1 hop이다. 마이크로서비스 호출 체인이 깊을수록(5~10 서비스) 누적 지연 시간 차이가 커진다. 같은 발상이 gRPC의 Round Robin·xDS resolver에도 있다. 단점은 클라이언트가 서버 목록을 직접 알아야 한다는 점인데, 이걸 Cloud Map이 자동 갱신해서 해결한다.
 
 ## AWS App Mesh — 풀 기능 메시와 그 EOL
 
@@ -156,9 +156,9 @@ App Mesh(2019)는 Envoy를 데이터 플레인으로 쓰는 풀 서비스 메시
 
 **App Mesh EOL**: 2024년 11월, AWS는 App Mesh를 **2026년 9월 30일에 EOL** 한다고 발표했다. 신규 워크로드는 다른 메시(Istio on EKS, ECS Service Connect)를 검토하도록 권장하고 있다. 시험 출제 시점(SAP-C02 v1.5 기준 2024 시험판)에는 여전히 App Mesh가 정답으로 출제되지만, 실무에서 새로 도입하는 건 권장되지 않는다.
 
-> 📚 **사례**: App Mesh EOL의 배경은 두 가지다. 첫째, AWS 내부에서도 ECS Service Connect가 ECS 사용자 70% 이상의 needs를 커버한다는 데이터가 모였다. 둘째, EKS 사용자는 사실상 Istio/Linkerd를 표준으로 채택하고 있었다. App Mesh가 ECS와 EKS의 중간에서 모호한 위치를 가졌고, 신규 기능 투자도 정체됐다. 같은 패턴이 2023년 발표된 AWS X-Ray와 OpenTelemetry의 통합 흐름에서도 보인다. AWS는 자체 표준을 고집하기보다 CNCF 표준에 합류하는 방향으로 선회 중이다.
+App Mesh EOL의 배경은 두 가지다. 첫째, AWS 내부에서도 ECS Service Connect가 ECS 사용자 70% 이상의 needs를 커버한다는 데이터가 모였다. 둘째, EKS 사용자는 사실상 Istio/Linkerd를 표준으로 채택하고 있었다. App Mesh가 ECS와 EKS의 중간에서 모호한 위치를 가졌고, 신규 기능 투자도 정체됐다. 같은 패턴이 2023년 발표된 AWS X-Ray와 OpenTelemetry의 통합 흐름에서도 보인다. AWS는 자체 표준을 고집하기보다 CNCF 표준에 합류하는 방향으로 선회 중이다.
 
-> 🔍 **더 깊이**: Istio는 컨트롤 플레인(istiod)이 K8s에 깊이 통합되어 ECS와는 잘 안 맞는다. EKS 사용자라면 Istio Add-on(2024년 EKS Marketplace)으로 가볍게 도입 가능하다. Linkerd는 Istio보다 가볍지만 기능이 일부 적다. 멀티 클라우드 표준화가 우선이면 Istio, 단순함이 우선이면 Linkerd가 일반적 권장이다.
+Istio는 컨트롤 플레인(istiod)이 K8s에 깊이 통합되어 ECS와는 잘 안 맞는다. EKS 사용자라면 Istio Add-on(2024년 EKS Marketplace)으로 가볍게 도입 가능하다. Linkerd는 Istio보다 가볍지만 기능이 일부 적다. 멀티 클라우드 표준화가 우선이면 Istio, 단순함이 우선이면 Linkerd가 일반적 권장이다.
 
 ## mTLS와 ACM Private CA — Zero Trust의 핵심
 
@@ -183,18 +183,18 @@ App Mesh는 ACM Private CA와 통합해 mTLS를 거의 자동으로 구현한다
 2. **서비스 ID 검증**: 인증서의 SAN(Subject Alternative Name)에 서비스 식별자를 넣어, "결제 서비스만 주문 서비스를 호출 가능" 같은 정책 구현.
 3. **애플리케이션 코드 무수정**: TLS 처리는 Envoy 사이드카가 전담. 애플리케이션은 평문 HTTP로 호출하고 사이드카가 암호화.
 
-> 💡 **관련 이론**: mTLS의 신뢰 모델은 **PKI(Public Key Infrastructure)**의 X.509 인증서 체인 검증이다. CA가 최상위에서 신뢰의 뿌리(root of trust)가 되고, 그 아래 발급된 인증서들은 CA의 서명으로 진위성이 보장된다. 회사 내부에서만 쓰는 사설 CA는 ACM Private CA(AWS), HashiCorp Vault, GoogleCA(GCP) 등이 제공한다. 인증서 수명을 짧게 잡는 발상은 SPIFFE/SPIRE 프로젝트(CNCF)에서도 같은 방향이고, 만료 회전이 자동이라 키 회전 운영 부담이 0에 가깝다.
+mTLS의 신뢰 모델은 **PKI(Public Key Infrastructure)**의 X.509 인증서 체인 검증이다. CA가 최상위에서 신뢰의 뿌리(root of trust)가 되고, 그 아래 발급된 인증서들은 CA의 서명으로 진위성이 보장된다. 회사 내부에서만 쓰는 사설 CA는 ACM Private CA(AWS), HashiCorp Vault, GoogleCA(GCP) 등이 제공한다. 인증서 수명을 짧게 잡는 발상은 SPIFFE/SPIRE 프로젝트(CNCF)에서도 같은 방향이고, 만료 회전이 자동이라 키 회전 운영 부담이 0에 가깝다.
 
 > 🎯 **시나리오**: "한 금융사가 마이크로서비스 50개 사이의 모든 통신을 mTLS로 암호화하려 한다. 인증서 수동 회전은 운영 부담이 크다. 어떤 조합이 적합한가?" — 답은 **App Mesh + ACM Private CA**(시험 출제 시점 기준). App Mesh가 EOL 예정이라는 점은 실무 관점이지만, SAP 시험은 출제 시점의 정답을 묻는다. 신규 도입이라면 Istio + cert-manager + ACM Private CA가 실무 표준이지만 SAP가 묻는 정답은 여전히 App Mesh다.
 
 ## 카나리 배포 — 가중치 라우팅과 CodeDeploy Blue/Green
 
-새 버전을 일부 트래픽만 받게 하는 카나리 배포는 메시·로드밸런서·CodeDeploy 셋 중 하나로 구현된다.
+새 버전을 일부 트래픽만 받게 하는 카나리 배포는 메시·로드 밸런서·CodeDeploy 셋 중 하나로 구현된다.
 
 | 옵션 | 가중치 단위 | 트래픽 분기 위치 |
 |------|------------|------------------|
 | **App Mesh Virtual Router** | 1% 단위 임의 | 메시(Envoy 사이드카) |
-| **ALB Weighted Target Group** | 1% 단위 | 로드밸런서 |
+| **ALB Weighted Target Group** | 1% 단위 | 로드 밸런서 |
 | **CodeDeploy Blue/Green** | Linear/Canary 정해진 비율 | ALB Target Group 자동 전환 |
 
 App Mesh는 가장 세밀한 제어가 가능하다. 헤더 기반 라우팅까지 결합하면 "내부 직원만 v2 사용" 같은 패턴도 만든다. ALB는 단순한 90:10 weighted target group으로 비슷한 패턴을 만들지만 헤더 기반 분기는 제한적이다. CodeDeploy는 ALB 위에 배포 자동화 레이어를 얹어 "10% → 30% → 100%" 같은 정해진 패턴을 자동 실행한다.
@@ -212,7 +212,7 @@ ECS Service Connect는 가중치 라우팅을 직접 지원하지 않으므로, 
    ▼ 알람 발생 시 자동 롤백
 ```
 
-> 📚 **사례**: 2022년 Airbnb는 결제 서비스 카나리 배포에 Istio 가중치 라우팅 + Prometheus 메트릭 기반 자동 롤백을 결합한 시스템을 사내 표준으로 만들었다. 새 버전의 5xx 비율이 baseline 대비 2배 초과하면 가중치를 즉시 0으로 되돌리는 정책. 이 패턴이 **Progressive Delivery**로 불리며, Flagger·Argo Rollouts 같은 K8s 도구가 표준화하는 중이다.
+2022년 Airbnb는 결제 서비스 카나리 배포에 Istio 가중치 라우팅 + Prometheus 메트릭 기반 자동 롤백을 결합한 시스템을 사내 표준으로 만들었다. 새 버전의 5xx 비율이 baseline 대비 2배 초과하면 가중치를 즉시 0으로 되돌리는 정책. 이 패턴이 **Progressive Delivery**로 불리며, Flagger·Argo Rollouts 같은 K8s 도구가 표준화하는 중이다.
 
 ## ALB·NLB·API Gateway와 메시의 책임 분담
 
@@ -259,9 +259,9 @@ ECS Service Connect는 가중치 라우팅을 직접 지원하지 않으므로, 
 
 GCP는 일찍부터 Istio를 매니지드 메시의 표준으로 잡았다(Anthos Service Mesh). AWS는 자체 App Mesh를 만들었지만 시장 채택이 부족해 EOL을 결정했다. Azure도 Open Service Mesh를 2024년 deprecate하며 Istio Add-on으로 선회했다. 클라우드 메시 시장의 흐름은 명확히 **Istio + Envoy의 단일 표준화**다.
 
-> 🔍 **더 깊이**: Service Mesh Interface(SMI)는 K8s SIG가 만들려 한 메시 표준 API였는데, 2023년 archived 됐다. 표준화 시도가 실패한 이유는 Istio가 사실상 표준이 되어 SMI 같은 추상 레이어가 불필요해졌기 때문이다. 클라우드 네이티브 생태계에서 "표준화"는 종종 추상 표준이 아니라 한 구현체의 사실상 점유로 일어난다. K8s 자체도 그런 패턴이고, Envoy도 같은 흐름이다.
+Service Mesh Interface(SMI)는 K8s SIG가 만들려 한 메시 표준 API였는데, 2023년 archived 됐다. 표준화 시도가 실패한 이유는 Istio가 사실상 표준이 되어 SMI 같은 추상 레이어가 불필요해졌기 때문이다. 클라우드 네이티브 생태계에서 "표준화"는 종종 추상 표준이 아니라 한 구현체의 사실상 점유로 일어난다. K8s 자체도 그런 패턴이고, Envoy도 같은 흐름이다.
 
-## 정리하며
+## 정리
 
 서비스 메시는 마이크로서비스 통신의 횡단 관심사(인증·재시도·관찰·암호화)를 사이드카 프록시로 옮긴 답이다. AWS는 **Cloud Map(레지스트리) / ECS Service Connect(ECS 표준 메시) / App Mesh(풀 메시)** 세 가지 옵션을 가지고, 각각 책임이 다르다. App Mesh는 EOL이 예고된 상태라 신규 도입은 Istio·Service Connect 검토가 표준이지만, SAP 시험은 출제 시점 기준 App Mesh를 여전히 정답으로 인정한다.
 

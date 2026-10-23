@@ -165,7 +165,7 @@ with DAG("ml_retrain", schedule_interval="@daily") as dag:
 - 반대급부는 운영 부담이다. Airflow 환경(스케줄러·워커) 자체가 상시 떠 있어 서버리스인 Step Functions보다 유휴 비용과 관리 포인트가 많다.
 - "새로 시작하는 SageMaker 중심 프로젝트"에 MWAA를 고르는 선택지는 거의 오답이다.
 
-> 💡 **관련 이론**: 오케스트레이터 선택은 "어디까지 묶느냐 + 기존 자산이 무엇이냐"의 문제다. SageMaker 작업만 → Pipelines. 여러 AWS 서비스 서버리스 워크플로 → Step Functions. 이미 Airflow 자산/하이브리드 → MWAA. 단순 트리거/스케줄 → EventBridge. 인프라 정의 → CloudFormation/CDK. 시험은 이 다섯을 시나리오로 갈라 묻는다.
+오케스트레이터 선택은 "어디까지 묶느냐 + 기존 자산이 무엇이냐"의 문제다. SageMaker 작업만 → Pipelines. 여러 AWS 서비스 서버리스 워크플로 → Step Functions. 이미 Airflow 자산/하이브리드 → MWAA. 단순 트리거/스케줄 → EventBridge. 인프라 정의 → CloudFormation/CDK. 시험은 이 다섯을 시나리오로 갈라 묻는다.
 
 ## 다섯 도구 한눈에 정리
 
@@ -177,7 +177,7 @@ with DAG("ml_retrain", schedule_interval="@daily") as dag:
 | **EventBridge** | 트리거 | 스케줄·이벤트로 워크플로 시작 | 매일 새벽, 승인 시, 새 데이터 도착 시 |
 | **MWAA (Airflow)** | 관리형 워크플로 | 기존 Airflow 자산·하이브리드·복잡한 DAG | 이미 Airflow 사용 중, 온프레미스 포함 |
 
-> ⚠️ **함정**: EventBridge를 오케스트레이터로 제시하는 보기를 조심하라. EventBridge는 "언제 시작할지"만 정하고 "무엇을 어떤 순서로 할지"는 모른다. 분기·재시도·의존성이 요구에 들어 있으면 답은 Step Functions나 Pipelines이고, EventBridge는 그 앞에 붙는 방아쇠일 뿐이다.
+> ⚠️ **함정**: EventBridge를 오케스트레이터로 제시하는 보기는 오답이다. EventBridge는 "언제 시작할지"만 정하고 "무엇을 어떤 순서로 할지"는 모른다. 분기·재시도·의존성이 요구에 들어 있으면 답은 Step Functions나 Pipelines이고, EventBridge는 그 앞에 붙는 방아쇠일 뿐이다.
 
 ## 오케스트레이션이 꼬일 때: 증상 → 원인 → 조치
 
@@ -192,7 +192,7 @@ with DAG("ml_retrain", schedule_interval="@daily") as dag:
 | Airflow 환경 비용이 계속 나간다 | MWAA는 상시 실행 환경 | 워크플로 성격이 이벤트성이면 Step Functions 검토 |
 | 파이프라인 정의를 손으로 고쳐 두었더니 다음 배포에 사라졌다 | IaC 관리 대상을 콘솔에서 수정 | 변경은 코드에서만 하고 스택으로 재배포 |
 
-> 💡 **개념**: 다섯 도구는 경쟁 관계가 아니라 **층**이다. 아래에서부터 IaC(무엇이 존재하는가) → 워크플로(무엇을 어떤 순서로) → 트리거(언제 시작하는가)로 쌓인다. 시나리오를 읽을 때 "이건 어느 층 이야기인가"를 먼저 물으면 보기 절반이 자동으로 걸러진다.
+다섯 도구는 경쟁 관계가 아니라 **층**이다. 아래에서부터 IaC(무엇이 존재하는가) → 워크플로(무엇을 어떤 순서로) → 트리거(언제 시작하는가)로 쌓인다. 시나리오를 읽을 때 "이건 어느 층 이야기인가"를 먼저 물으면 보기 일부가 자동으로 걸러진다.
 
 내일은 이번 주에 나온 MLOps 조각들을 하나의 사슬로 묶어 복습한다.
 

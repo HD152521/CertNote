@@ -8,7 +8,7 @@ OIDC 페더레이션은 이 문제를 근본적으로 다른 방향에서 해결
 
 ## OIDC 페더레이션이 동작하는 정확한 순서 — JWT가 STS 자격 증명으로 바뀌는 6단계
 
-GitHub Actions가 AWS API를 호출하는 한 번의 흐름을 슬로우 모션으로 보자.
+GitHub Actions가 AWS API를 호출하는 한 번의 흐름을 슬로우 모션으로 따라간다.
 
 ```
 1. GitHub Actions runner가 워크플로 시작
@@ -57,13 +57,13 @@ GitHub Actions가 AWS API를 호출하는 한 번의 흐름을 슬로우 모션�
    Expiration: "..."
 ```
 
-각 단계의 디테일을 짚어보자.
+각 단계의 디테일은 다음과 같다.
 
-> 🔍 **더 깊이**: 2단계에서 발급되는 JWT는 **RS256**(RSA 서명)으로 서명되고, AWS STS는 GitHub의 JWKS endpoint(`https://token.actions.githubusercontent.com/.well-known/jwks`)에서 공개 키를 가져와 검증한다. AWS IAM Identity Provider 등록 시 thumbprint를 입력하라는 항목이 있었던 이유가 이것이다 — TLS 인증서 thumbprint로 GitHub의 신원을 미리 신뢰해두는 절차. 2023년 7월부터 AWS가 잘 알려진 IdP(GitHub, GitLab 등)의 thumbprint를 자동 검증하기 시작해 사용자가 직접 입력할 필요가 점차 줄어들었다. 이는 thumbprint rotation 시 사고를 미연에 방지하기 위한 변경이다.
+> 2단계에서 발급되는 JWT는 **RS256**(RSA 서명)으로 서명되고, AWS STS는 GitHub의 JWKS endpoint(`https://token.actions.githubusercontent.com/.well-known/jwks`)에서 공개 키를 가져와 검증한다. AWS IAM Identity Provider 등록 시 thumbprint를 입력하라는 항목이 있었던 이유가 이것이다 — TLS 인증서 thumbprint로 GitHub의 신원을 미리 신뢰해두는 절차. 2023년 7월부터 AWS가 잘 알려진 IdP(GitHub, GitLab 등)의 thumbprint를 자동 검증하기 시작해 사용자가 직접 입력할 필요가 점차 줄어들었다. 이는 thumbprint rotation 시 사고를 미연에 방지하기 위한 변경이다.
 
-> 💡 **관련 이론**: OIDC(OpenID Foundation 2014)는 OAuth 2.0(RFC 6749, 2012) 위에 인증 계층을 추가한 표준이다. OAuth 2.0이 "권한 위임"을 다룬다면 OIDC는 "사용자 신원 증명"을 다룬다. 핵심은 **ID Token이라는 JWT(RFC 7519)** 안에 표준 claims(iss, sub, aud, exp, iat, nbf)를 담아 IdP가 발급했음을 자체 검증 가능하게 만든다는 것이다. SAML 2.0(OASIS 2005)도 같은 역할을 하지만 XML 기반이라 모바일/API 환경에는 무겁다. AWS는 양쪽 모두 지원하지만 GitHub Actions 통합은 OIDC만 사용한다.
+> OIDC(OpenID Foundation 2014)는 OAuth 2.0(RFC 6749, 2012) 위에 인증 계층을 추가한 표준이다. OAuth 2.0이 "권한 위임"을 다룬다면 OIDC는 "사용자 신원 증명"을 다룬다. 핵심은 **ID Token이라는 JWT(RFC 7519)** 안에 표준 claims(iss, sub, aud, exp, iat, nbf)를 담아 IdP가 발급했음을 자체 검증 가능하게 만든다는 것이다. SAML 2.0(OASIS 2005)도 같은 역할을 하지만 XML 기반이라 모바일/API 환경에는 무겁다. AWS는 양쪽 모두 지원하지만 GitHub Actions 통합은 OIDC만 사용한다.
 
-> 📚 **사례**: 2022년 한 핀테크가 IAM User access key 사용 정책을 폐기하며 GitHub Actions OIDC로 전환했다. 전환 직후 한 워크플로가 갑자기 동작하지 않았다. 원인: 워크플로 YAML에서 `permissions:` 블록을 깜빡 빠뜨렸고, GitHub은 기본적으로 `id-token: none`이라 OIDC 토큰을 발급하지 않았다. 에러 메시지는 모호했다(`Could not assume role`). 30분간 디버깅 후 발견. 이후 팀은 모든 workflow template에 `permissions: id-token: write, contents: read`를 기본 포함했다. 시험에서 "OIDC가 동작하지 않는다 → 가장 먼저 확인할 것"의 정답은 거의 항상 이 한 줄이다.
+> 2022년 한 핀테크가 IAM User access key 사용 정책을 폐기하며 GitHub Actions OIDC로 전환했다. 전환 직후 한 워크플로가 갑자기 동작하지 않았다. 원인: 워크플로 YAML에서 `permissions:` 블록을 깜빡 빠뜨렸고, GitHub은 기본적으로 `id-token: none`이라 OIDC 토큰을 발급하지 않았다. 에러 메시지는 모호했다(`Could not assume role`). 30분간 디버깅 후 발견. 이후 팀은 모든 workflow template에 `permissions: id-token: write, contents: read`를 기본 포함했다. 시험에서 "OIDC가 동작하지 않는다 → 가장 먼저 확인할 것"의 정답은 거의 항상 이 한 줄이다.
 
 ## Trust Policy의 `sub` 조건 — 보안의 핵심이 여기 있다
 
@@ -99,13 +99,13 @@ Trust Policy 조건을 어떻게 쓰느냐가 보안 수준을 결정한다.
 }
 ```
 
-> ⚠️ **함정**: 패턴 1의 위험은 시험과 실무 양쪽에서 단골이다. 같은 org에 100개 repo가 있고 한 개라도 침해되면 그 repo의 main 브랜치에서 prod Role을 assume할 수 있다. 시험에서 "와일드카드 `repo:org/*` sub 조건의 위험은?"의 정답은 항상 "조직 내 다른 repo가 침해되면 prod 권한을 훔쳐 사용 가능".
+> ⚠️ **함정**: 패턴 1의 위험은 시험과 실무 양쪽에서 문제가 된다. 같은 org에 100개 repo가 있고 한 개라도 침해되면 그 repo의 main 브랜치에서 prod Role을 assume할 수 있다. 시험에서 "와일드카드 `repo:org/*` sub 조건의 위험은?"의 정답은 항상 "조직 내 다른 repo가 침해되면 prod 권한을 훔쳐 사용 가능".
 
-> 🔍 **더 깊이**: 패턴 3의 `environment:production`이 가장 안전한 이유는 GitHub Environment에 **Required Reviewers** 또는 **wait timer**를 설정할 수 있기 때문이다. 워크플로가 `environment: production`을 사용하려면 GitHub이 먼저 그 게이트를 통과시켜야 하고, 그제서야 `sub`이 `environment:production`인 JWT가 발급된다. 즉 AWS Role assumption 자체가 사람 승인 없이는 일어나지 않는다. **AWS IAM 제한 + GitHub Environment 게이트**의 이중 방어가 이렇게 완성된다.
+> 패턴 3의 `environment:production`이 가장 안전한 이유는 GitHub Environment에 **Required Reviewers** 또는 **wait timer**를 설정할 수 있기 때문이다. 워크플로가 `environment: production`을 사용하려면 GitHub이 먼저 그 게이트를 통과시켜야 하고, 그제서야 `sub`이 `environment:production`인 JWT가 발급된다. 즉 AWS Role assumption 자체가 사람 승인 없이는 일어나지 않는다. **AWS IAM 제한 + GitHub Environment 게이트**의 이중 방어가 이렇게 완성된다.
 
-> 💡 **관련 이론**: 이 패턴은 **defense in depth**(다층 방어, NIST SP 800-160)의 교과서적 적용이다. 한 계층(GitHub Environment)이 뚫려도 다음 계층(IAM trust policy sub 조건)이 막는다. 동시에 **최소 권한 원칙(principle of least privilege, Saltzer & Schroeder 1975)**의 OIDC 페더레이션 구현이기도 하다 — Role의 Permission Policy는 prod 리소스에만 닿고, 그 Role을 assume할 수 있는 워크플로 컨텍스트도 좁힌다.
+> 이 패턴은 **defense in depth**(다층 방어, NIST SP 800-160)의 교과서적 적용이다. 한 계층(GitHub Environment)이 뚫려도 다음 계층(IAM trust policy sub 조건)이 막는다. 동시에 **최소 권한 원칙(principle of least privilege, Saltzer & Schroeder 1975)**의 OIDC 페더레이션 구현이기도 하다 — Role의 Permission Policy는 prod 리소스에만 닿고, 그 Role을 assume할 수 있는 워크플로 컨텍스트도 좁힌다.
 
-> 📚 **사례**: 2023년 한 SaaS 회사에서 fork된 PR이 workflow를 트리거하면서 secrets에 접근하는 사고가 발생할 뻔했다. fork PR에서는 secrets가 노출되지 않는 게 GitHub의 기본 동작이지만, 한 개발자가 `pull_request_target` 이벤트를 잘못 사용해 base repo의 secrets에 fork의 코드가 접근할 수 있는 상태로 만들었다. 다행히 OIDC 토큰의 `sub`은 `pull_request`였고, prod IAM Role의 trust policy는 `sub: ref:refs/heads/main`만 허용했기 때문에 fork PR이 Role을 assume하지 못했다. 사고가 차단된 결정적 이유. 이 사례 후 회사는 `pull_request_target` 사용을 조직 차원에서 금지했다.
+> 2023년 한 SaaS 회사에서 fork된 PR이 workflow를 트리거하면서 secrets에 접근하는 사고가 발생할 뻔했다. fork PR에서는 secrets가 노출되지 않는 게 GitHub의 기본 동작이지만, 한 개발자가 `pull_request_target` 이벤트를 잘못 사용해 base repo의 secrets에 fork의 코드가 접근할 수 있는 상태로 만들었다. 다행히 OIDC 토큰의 `sub`은 `pull_request`였고, prod IAM Role의 trust policy는 `sub: ref:refs/heads/main`만 허용했기 때문에 fork PR이 Role을 assume하지 못했다. 사고가 차단된 결정적 이유. 이 사례 후 회사는 `pull_request_target` 사용을 조직 차원에서 금지했다.
 
 ## GitHub Environments — 워크플로 실행 직전의 사람 게이트
 
@@ -134,13 +134,13 @@ jobs:
       - run: ./deploy.sh production
 ```
 
-> 🔍 **더 깊이**: Wait Timer는 흔히 무시되는 기능이지만 실무에서 매우 유용하다. "승인 후 5분 대기"를 두면 그 5분 안에 누군가 "잠깐 멈춰"라고 외칠 수 있다. CodeDeploy의 `BlockTraffic` 같은 자동 hook과 결합하면, 사람 승인 → wait → 자동 검증 → 트래픽 시프트의 4단계 보호가 만들어진다.
+> Wait Timer는 흔히 무시되는 기능이지만 실무에서 매우 유용하다. "승인 후 5분 대기"를 두면 그 5분 안에 누군가 "잠깐 멈춰"라고 외칠 수 있다. CodeDeploy의 `BlockTraffic` 같은 자동 hook과 결합하면, 사람 승인 → wait → 자동 검증 → 트래픽 시프트의 4단계 보호가 만들어진다.
 
-> 💡 **관련 이론**: GitHub Environments + Required Reviewers는 본질적으로 **manual gating**(Google SRE Book, Chapter 16) 패턴이다. 완전 자동화는 빠르지만 실수의 폭이 크고, 완전 수동은 안전하지만 느리다. Gating은 그 사이에서 "사람이 결정할 가치가 있는 지점만 사람에게 묻는다"는 절충이다. AWS CodePipeline의 Manual Approval Action도 같은 철학이다.
+> GitHub Environments + Required Reviewers는 본질적으로 **manual gating**(Google SRE Book, Chapter 16) 패턴이다. 완전 자동화는 빠르지만 실수의 폭이 크고, 완전 수동은 안전하지만 느리다. Gating은 그 사이에서 "사람이 결정할 가치가 있는 지점만 사람에게 묻는다"는 절충이다. AWS CodePipeline의 Manual Approval Action도 같은 철학이다.
 
 ## AWS Code* vs GitHub Actions — 무엇이 어떤 시나리오에 강한가
 
-Pro 시험은 두 도구의 선택 기준을 자주 묻는다. 핵심은 "AWS 네이티브 깊이 vs 다중 클라우드 + 개발자 친화성".
+Pro 시험은 두 도구의 선택 기준을 묻는다. 기준은 "AWS 네이티브 깊이 vs 다중 클라우드 + 개발자 친화성"이다.
 
 | 차원 | GitHub Actions | AWS CodePipeline/CodeBuild |
 |------|----------------|---------------------------|
@@ -187,11 +187,11 @@ Pro 시험은 두 도구의 선택 기준을 자주 묻는다. 핵심은 "AWS �
 | **비용** | EC2/Fargate + 운영 시간 | 빌드 분 단위 |
 | **VPC 통합** | 인스턴스가 VPC 안에 있음 | ENI 부착 방식 |
 | **GitHub 통합 깊이** | 100% (네이티브 GH Actions) | GH webhook + status API |
-| **시작 지연** | runner 항시 가동 시 즉시 | cold start 수십 초 |
+| **시작 지연** | runner 항시 가동 시 즉시 | 콜드 스타트 수십 초 |
 
-> ⚠️ **함정**: Self-hosted Runner를 **public repo**에 연결하면 외부 PR이 runner에서 임의 코드를 실행할 수 있는 위험이 있다. GitHub은 명시적으로 "private repo에만 self-hosted runner를 쓰라"고 경고한다. 시험에서 "public repo + self-hosted runner"의 위험을 묻는 보기는 거의 항상 정답이다.
+> ⚠️ **함정**: Self-hosted Runner를 **public repo**에 연결하면 외부 PR이 runner에서 임의 코드를 실행할 수 있는 위험이 있다. GitHub은 명시적으로 "private repo에만 self-hosted runner를 쓰라"고 경고한다. 시험에서 "public repo + self-hosted runner"의 위험을 묻는 보기는 옳은 서술이다.
 
-> 🔍 **더 깊이**: GitHub Actions Runner Controller(ARC)는 Kubernetes operator로 runner를 동적으로 띄운다. PR 큐가 길어지면 EKS pod로 runner를 늘리고, 끝나면 회수한다. AWS에서는 Karpenter와 결합해 node를 spot으로 즉시 띄우는 패턴이 일반적이다. 이게 self-hosted runner의 운영 비용을 크게 낮춘다.
+> GitHub Actions Runner Controller(ARC)는 Kubernetes operator로 runner를 동적으로 띄운다. PR 큐가 길어지면 EKS pod로 runner를 늘리고, 끝나면 회수한다. AWS에서는 Karpenter와 결합해 node를 spot으로 즉시 띄우는 패턴이 일반적이다. 이게 self-hosted runner의 운영 비용을 크게 낮춘다.
 
 ## Reusable Workflows와 Composite Actions — 100개 repo에 정책을 일관되게 배포
 
@@ -234,23 +234,23 @@ jobs:
       role-arn: arn:aws:iam::222:role/GHA-Production
 ```
 
-> 🔍 **더 깊이**: Reusable workflow의 OIDC `sub` 값이 평소와 다르다는 점이 중요하다. 호출하는 워크플로가 아니라 **호출되는 reusable workflow가 정의된 repo + ref**가 sub에 들어간다. 패턴: `repo:my-org/shared-workflows:job_workflow_ref:my-org/shared-workflows/.github/workflows/shared-deploy.yml@refs/heads/main`. 따라서 Trust Policy 조건도 이걸 기준으로 작성해야 한다. 시험에서 reusable workflow + OIDC 보기가 나오면 거의 이 디테일을 묻는다.
+> Reusable workflow의 OIDC `sub` 값이 평소와 다르다는 점이 중요하다. 호출하는 워크플로가 아니라 **호출되는 reusable workflow가 정의된 repo + ref**가 sub에 들어간다. 패턴: `repo:my-org/shared-workflows:job_workflow_ref:my-org/shared-workflows/.github/workflows/shared-deploy.yml@refs/heads/main`. 따라서 Trust Policy 조건도 이걸 기준으로 작성해야 한다. 시험에서 reusable workflow + OIDC 보기가 나오면 거의 이 디테일을 묻는다.
 
-> 💡 **관련 이론**: Reusable workflow는 본질적으로 **DRY(Don't Repeat Yourself, Hunt & Thomas 1999)**의 CI/CD 적용이다. 100개 repo에 같은 로직을 두면 한 가지 보안 패치(예: AssumeRole region 변경)를 100번 적용해야 한다. Shared workflow는 한 번만 바꾸면 다음 호출에서 자동 적용된다. 이게 CALMS의 Sharing 축이 코드로 표현되는 모습.
+> Reusable workflow는 본질적으로 **DRY(Don't Repeat Yourself, Hunt & Thomas 1999)**의 CI/CD 적용이다. 100개 repo에 같은 로직을 두면 한 가지 보안 패치(예: AssumeRole region 변경)를 100번 적용해야 한다. Shared workflow는 한 번만 바꾸면 다음 호출에서 자동 적용된다. 이게 CALMS의 Sharing 축이 코드로 표현되는 모습.
 
 ## OIDC 통합의 실무 함정 모음
 
-> ⚠️ **함정 1**: `permissions: id-token: write` 누락 — 가장 흔한 실수. 워크플로 또는 job 수준에 명시 필수.
+> **함정 1**: `permissions: id-token: write` 누락 — 빠뜨리기 쉬운 설정. 워크플로 또는 job 수준에 명시 필수.
 
-> ⚠️ **함정 2**: `sub` 조건을 `repo:org/*`로 와일드카드 — 조직 내 어떤 repo가 침해돼도 prod 권한 도달 가능.
+> **함정 2**: `sub` 조건을 `repo:org/*`로 와일드카드 — 조직 내 어떤 repo가 침해돼도 prod 권한 도달 가능.
 
-> ⚠️ **함정 3**: `aud` 변경 시 trust policy 미반영 — `aws-actions/configure-aws-credentials@v4`에서 `audience` 옵션을 바꾸면 trust policy의 `aud` 조건도 같이 바꿔야 함.
+> **함정 3**: `aud` 변경 시 trust policy 미반영 — `aws-actions/configure-aws-credentials@v4`에서 `audience` 옵션을 바꾸면 trust policy의 `aud` 조건도 같이 바꿔야 함.
 
-> ⚠️ **함정 4**: Session duration 12시간 초과 시도 — 기본 1시간, 최대 12시간. Role의 `MaxSessionDuration` 속성을 늘리고 호출 시 `RoleSessionDuration`도 명시.
+> **함정 4**: Session duration 12시간 초과 시도 — 기본 1시간, 최대 12시간. Role의 `MaxSessionDuration` 속성을 늘리고 호출 시 `RoleSessionDuration`도 명시.
 
-> ⚠️ **함정 5**: 같은 workflow_run을 두 번 실행하면 두 번째에서 OIDC가 캐싱된 토큰을 쓴다고 생각하기 — 실제로는 매번 새 토큰. 시험에서 "OIDC 토큰이 캐시되는가" → 아니오.
+> **함정 5**: 같은 workflow_run을 두 번 실행하면 두 번째에서 OIDC가 캐싱된 토큰을 쓴다고 생각하기 — 실제로는 매번 새 토큰. 시험에서 "OIDC 토큰이 캐시되는가" → 아니오.
 
-> ⚠️ **함정 6**: `pull_request` 이벤트에서 secrets 접근 가능 → fork PR이면 secrets 비공개. 그러나 `pull_request_target`은 base repo 컨텍스트로 동작하므로 secrets 접근 가능 → fork에서 악성 코드 실행 위험. 시험 빈출.
+> **함정 6**: `pull_request` 이벤트에서 secrets 접근 가능 → fork PR이면 secrets 비공개. 그러나 `pull_request_target`은 base repo 컨텍스트로 동작하므로 secrets 접근 가능 → fork에서 악성 코드 실행 위험. 시험 범위에 든다.
 
 ## ⭐ 핵심 포인트
 

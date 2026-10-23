@@ -2,7 +2,7 @@
 
 2010년대 중반, 분산 추적은 좋은 아이디어였지만 운영팀에게는 악몽이기도 했다. Zipkin, Jaeger, X-Ray, Datadog, New Relic, Dynatrace — 각자 자기만의 SDK, 자기만의 데이터 포맷, 자기만의 전파 헤더를 가졌다. 한 회사가 X-Ray로 시작했다가 Datadog으로 옮기려면 모든 서비스의 계측 코드를 처음부터 다시 써야 했다. 추적 라이브러리가 비즈니스 코드 깊숙이 박혀 있으니, 도구를 바꾸는 비용이 도구를 쓰는 가치를 넘어섰다. 이 **벤더 락인(vendor lock-in)**이 분산 추적 확산의 가장 큰 걸림돌이었다. OpenTelemetry는 이 문제를 표준화로 풀었고, ADOT는 그 표준의 AWS 공식 배포판이다.
 
-오늘은 ADOT를 단순히 "AWS의 OTel 패키지"로 보지 않고, 표준화가 어떤 정치적·기술적 합종연횡으로 탄생했는지, Collector의 receiver-processor-exporter 파이프라인이 왜 추적 데이터 처리의 보편 아키텍처가 됐는지, ADOT가 X-Ray SDK와 무엇이 근본적으로 다른지를 판다. DOP 시험에서 ADOT는 "멀티 클라우드/멀티 백엔드 관찰성을 표준화하라", "EKS 메트릭을 Prometheus 호환으로 수집하라", "코드 변경 없이 자동 계측하라" 같은 시나리오로 점점 자주 나온다.
+오늘은 ADOT를 단순히 "AWS의 OTel 패키지"로 보지 않고, 표준화가 어떤 정치적·기술적 합종연횡으로 탄생했는지, Collector의 receiver-processor-exporter 파이프라인이 왜 추적 데이터 처리의 보편 아키텍처가 됐는지, ADOT가 X-Ray SDK와 무엇이 근본적으로 다른지를 판다. DOP 시험에서 ADOT는 "멀티 클라우드/멀티 백엔드 관찰성을 표준화하라", "EKS 메트릭을 Prometheus 호환으로 수집하라", "코드 변경 없이 자동 계측하라" 같은 시나리오로 나온다.
 
 ## OpenTelemetry의 탄생 — 두 표준의 합병
 
@@ -58,7 +58,7 @@ ADOT의 심장은 **Collector**다. 그 구조는 세 단계 파이프라인으�
 
 이 셋을 `service.pipelines`에서 신호별(traces/metrics/logs)로 조립한다. 같은 데이터를 **여러 exporter로 동시에 fan-out**할 수 있다 — 위 예시는 trace를 X-Ray와 Jaeger 양쪽에 보낸다(마이그레이션 중 두 도구를 병행할 때 핵심).
 
-> 🔍 **더 깊이**: Collector의 receiver-processor-exporter 파이프라인은 새로운 발명이 아니라 **ETL(Extract-Transform-Load)** 또는 **파이프-필터 아키텍처(pipes and filters)**의 텔레메트리 버전이다. Unix 파이프라인(`cat | grep | sort`), Logstash의 input-filter-output, Fluentd의 source-filter-match, Kafka Connect의 source-transform-sink가 모두 같은 구조다. 핵심 이점은 **조합성(composability)** — 각 단계가 독립적이라 receiver만 바꾸거나 processor를 끼워 넣어도 나머지가 영향받지 않는다. processor 체인에 `attributes` processor를 넣어 PII를 마스킹하거나, `filter`로 헬스체크 trace를 버리거나, `tail_sampling`으로 에러 trace만 남기는 식의 가공을 백엔드와 무관하게 한곳에서 할 수 있다. Collector를 "텔레메트리의 Logstash"로 이해하면 그 역할이 분명해진다.
+> Collector의 receiver-processor-exporter 파이프라인은 새로운 발명이 아니라 **ETL(Extract-Transform-Load)** 또는 **파이프-필터 아키텍처(pipes and filters)**의 텔레메트리 버전이다. Unix 파이프라인(`cat | grep | sort`), Logstash의 input-filter-output, Fluentd의 source-filter-match, Kafka Connect의 source-transform-sink가 모두 같은 구조다. 핵심 이점은 **조합성(composability)** — 각 단계가 독립적이라 receiver만 바꾸거나 processor를 끼워 넣어도 나머지가 영향받지 않는다. processor 체인에 `attributes` processor를 넣어 PII를 마스킹하거나, `filter`로 헬스체크 trace를 버리거나, `tail_sampling`으로 에러 trace만 남기는 식의 가공을 백엔드와 무관하게 한곳에서 할 수 있다. Collector를 "텔레메트리의 Logstash"로 이해하면 그 역할이 분명해진다.
 
 > ⚠️ **함정**: Collector를 **agent 모드**(애플리케이션 옆 사이드카/DaemonSet)와 **gateway 모드**(중앙 집중 Collector 클러스터)로 배치하는 두 패턴을 혼동하면 안 된다. agent 모드는 각 노드/Pod 옆에서 받아 가공하므로 네트워크 지연이 낮지만 인스턴스마다 자원을 쓴다. gateway 모드는 모든 텔레메트리를 중앙 Collector로 모아 일괄 가공(tail-based 샘플링은 같은 trace의 모든 span이 한곳에 모여야 하므로 사실상 gateway가 필요)하지만 단일 장애점이 될 수 있다. 실무 권장은 **agent(수집·1차 가공) + gateway(tail 샘플링·라우팅)의 2계층**이다. tail-based 샘플링을 agent 모드에 두면 한 trace의 span들이 여러 agent에 흩어져 결과 기반 판단을 못 하는 흔한 실수가 생긴다.
 
@@ -85,7 +85,7 @@ Globals:
 
 `AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument`가 마법의 한 줄이다. Lambda는 런타임을 시작하기 전에 이 wrapper 스크립트를 먼저 실행하는데, 이 스크립트가 OTel auto-instrumentation을 런타임에 주입한다. 즉 핸들러 코드는 한 줄도 안 바꾸고 OTel 계측이 붙는다.
 
-> 💡 **관련 이론**: `AWS_LAMBDA_EXEC_WRAPPER`는 Lambda 런타임의 **wrapper script** 기능으로, 실제 런타임 부트스트랩을 가로채 앞단에 코드를 끼워 넣는 **인터셉션 패턴**이다. 같은 발상이 여러 곳에 있다 — JVM의 `-javaagent`(클래스 로딩 가로채기), `LD_PRELOAD`(공유 라이브러리 가로채기), 서블릿 필터 체인(요청 가로채기). 공통 원리는 "본체를 수정하지 않고 경계에서 횡단 관심사(cross-cutting concern, 여기선 계측)를 주입"하는 것 — AOP(관점 지향 프로그래밍)의 인프라 구현이다. 이 덕에 계측이 비즈니스 로직과 물리적으로 분리되어, 계측을 켜고 끄는 것이 배포 설정의 문제가 된다.
+> `AWS_LAMBDA_EXEC_WRAPPER`는 Lambda 런타임의 **wrapper script** 기능으로, 실제 런타임 부트스트랩을 가로채 앞단에 코드를 끼워 넣는 **인터셉션 패턴**이다. 같은 발상이 여러 곳에 있다 — JVM의 `-javaagent`(클래스 로딩 가로채기), `LD_PRELOAD`(공유 라이브러리 가로채기), 서블릿 필터 체인(요청 가로채기). 공통 원리는 "본체를 수정하지 않고 경계에서 횡단 관심사(cross-cutting concern, 여기선 계측)를 주입"하는 것 — AOP(관점 지향 프로그래밍)의 인프라 구현이다. 이 덕에 계측이 비즈니스 로직과 물리적으로 분리되어, 계측을 켜고 끄는 것이 배포 설정의 문제가 된다.
 
 ## ADOT vs X-Ray SDK — 무엇이 근본적으로 다른가
 
@@ -100,7 +100,7 @@ Globals:
 
 근본 차이는 **결합도**다. X-Ray SDK는 코드를 X-Ray에 묶고, ADOT는 코드를 표준에 묶어 백엔드를 자유롭게 한다. 다만 트레이드오프가 있다 — ADOT는 더 많은 구성요소(Collector 운영, propagator 설정)를 다뤄야 하고, X-Ray의 일부 깊은 기능(Insights 등)과의 통합은 X-Ray SDK가 더 매끄러울 수 있다. "지금 AWS만 쓰고 단순하면 X-Ray SDK, 멀티 백엔드·멀티 클라우드·벤더 중립이 필요하면 ADOT"가 결정 기준이다.
 
-> 📚 **사례**: 한 회사가 온프레미스 Kubernetes에서 Jaeger로 추적하다가 AWS EKS로 마이그레이션하면서, "기존 Jaeger 대시보드를 당분간 유지하되 점진적으로 X-Ray로 옮기고 싶다"는 요구가 있었다. X-Ray SDK였다면 모든 서비스를 한 번에 X-Ray로 갈아타야 했지만, ADOT를 도입해 Collector의 trace 파이프라인 exporter에 `awsxray`와 `otlp/jaeger`를 둘 다 넣어 **같은 trace를 양쪽에 동시 전송**했다. 마이그레이션 기간 동안 두 도구를 병행하며 X-Ray 대시보드를 검증한 뒤, Jaeger exporter를 제거하는 무중단 전환을 했다. 교훈: exporter fan-out은 관찰성 도구 마이그레이션의 위험을 극적으로 낮춘다 — 한 번에 갈아타지 않고 병행 검증 후 전환할 수 있다.
+> 한 회사가 온프레미스 Kubernetes에서 Jaeger로 추적하다가 AWS EKS로 마이그레이션하면서, "기존 Jaeger 대시보드를 당분간 유지하되 점진적으로 X-Ray로 옮기고 싶다"는 요구가 있었다. X-Ray SDK였다면 모든 서비스를 한 번에 X-Ray로 갈아타야 했지만, ADOT를 도입해 Collector의 trace 파이프라인 exporter에 `awsxray`와 `otlp/jaeger`를 둘 다 넣어 **같은 trace를 양쪽에 동시 전송**했다. 마이그레이션 기간 동안 두 도구를 병행하며 X-Ray 대시보드를 검증한 뒤, Jaeger exporter를 제거하는 무중단 전환을 했다. 교훈: exporter fan-out은 관찰성 도구 마이그레이션의 위험을 극적으로 낮춘다 — 한 번에 갈아타지 않고 병행 검증 후 전환할 수 있다.
 
 ## EKS 관찰성의 표준 스택 — ADOT + AMP + AMG
 
@@ -119,9 +119,9 @@ EKS Add-on은 ADOT Operator와 `OpenTelemetryCollector` CRD를 설치해, Collec
 
 > 🎯 **시나리오**: "조직이 멀티 클라우드(AWS + 온프레미스)로 가며 관찰성을 표준화하려 한다. 추적 도구를 나중에 자유롭게 바꿀 수 있어야 하고, EKS의 Prometheus 메트릭과 trace를 함께 수집하며, 가능한 한 애플리케이션 코드 변경을 줄이고 싶다. 어떻게 설계하나?" — 답은 OpenTelemetry/ADOT 표준화다. ① 모든 서비스를 OTel API(또는 auto-instrumentation)로 계측해 벤더 중립으로 만든다 — 이후 백엔드는 exporter 설정만으로 바꾼다. ② EKS에 ADOT Collector를 DaemonSet/Add-on으로 배치해 Prometheus scrape(메트릭)와 OTLP(trace)를 함께 받는다. ③ exporter로 X-Ray(trace), AMP(메트릭), 필요시 온프레미스 Jaeger를 동시에 두어 멀티 백엔드. ④ 코드 변경 최소화는 auto-instrumentation(Lambda는 `AWS_LAMBDA_EXEC_WRAPPER`, Java는 `-javaagent`)으로 달성. 핵심은 "계측은 표준으로 한 번, 백엔드는 설정으로 자유롭게"다.
 
-## 정리하며
+## 정리
 
-오늘 본 그림은 다섯 가지다. 첫째, **OpenTelemetry는 OpenTracing과 OpenCensus의 합병(2019)**으로 추적 도구 전쟁을 끝냈고, 핵심은 계측과 백엔드의 분리(의존성 역전)다. 둘째, **OTel은 logs·metrics·traces 세 신호를 OTLP 하나로 통합**해 상관관계를 자동화한다. 셋째, **Collector는 receiver-processor-exporter 파이프라인**(ETL/파이프-필터의 텔레메트리판)으로, 같은 데이터를 여러 백엔드로 fan-out하고 한곳에서 가공(필터·마스킹·tail 샘플링)한다. 넷째, **ADOT는 Lambda Layer·EKS Add-on 등으로 배포**되며 `AWS_LAMBDA_EXEC_WRAPPER` 같은 인터셉션으로 코드 변경 없이 자동 계측한다. 다섯째, **ADOT vs X-Ray SDK의 차이는 결합도** — 표준에 묶어 백엔드를 자유롭게 하느냐, X-Ray에 묶어 단순하게 하느냐이고, EKS 표준 스택은 ADOT + AMP + AMG다.
+오늘 본 그림은 다섯 가지다. 첫째, **OpenTelemetry는 OpenTracing과 OpenCensus의 합병(2019)**으로 추적 도구 전쟁을 끝냈고, 요점은 계측과 백엔드의 분리(의존성 역전)다. 둘째, **OTel은 logs·metrics·traces 세 신호를 OTLP 하나로 통합**해 상관관계를 자동화한다. 셋째, **Collector는 receiver-processor-exporter 파이프라인**(ETL/파이프-필터의 텔레메트리판)으로, 같은 데이터를 여러 백엔드로 fan-out하고 한곳에서 가공(필터·마스킹·tail 샘플링)한다. 넷째, **ADOT는 Lambda Layer·EKS Add-on 등으로 배포**되며 `AWS_LAMBDA_EXEC_WRAPPER` 같은 인터셉션으로 코드 변경 없이 자동 계측한다. 다섯째, **ADOT vs X-Ray SDK의 차이는 결합도** — 표준에 묶어 백엔드를 자유롭게 하느냐, X-Ray에 묶어 단순하게 하느냐이고, EKS 표준 스택은 ADOT + AMP + AMG다.
 
 다음 글에서는 이 텔레메트리가 흘러 들어가는 **백엔드들 — OpenSearch(로그/검색), AMP(Prometheus 메트릭), AMG(Grafana 시각화)**를 깊이 본다. 역인덱스와 시계열 DB가 왜 다른 엔진인지, 어떤 워크로드에 무엇을 골라야 하는지를 판다.
 

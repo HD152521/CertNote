@@ -2,7 +2,7 @@
 
 마이크로서비스가 일정 규모를 넘어가면 클라이언트-서버 간의 데이터 계약이 큰 운영 비용이 된다. 모바일 앱이 "주문 상세 + 사용자 + 배송지 + 결제 수단"을 한 화면에 보여주려면 REST API 4-5개를 동시에 호출하고 클라이언트에서 합쳐야 한다. 화면이 바뀌면 백엔드 API도 바뀐다. 이 결합을 깨는 답이 **GraphQL**이고, AWS에서는 **AppSync**가 그 매니지드 서비스다.
 
-한편 서비스 간 메시징은 SQS·SNS·Kinesis가 오랫동안 표준이었다. 셋은 비슷해 보이지만 본질이 다르다. SQS는 "1회 소비 큐", SNS는 "fan-out pub/sub", Kinesis는 "재처리 가능한 스트림". 시험에서는 이 셋을 구분하는 시나리오가 도메인을 가리지 않고 자주 출제된다. 오늘은 AppSync의 GraphQL 모델과 세 메시징 서비스의 내부 모델을 함께 본다.
+한편 서비스 간 메시징은 SQS·SNS·Kinesis가 오랫동안 표준이었다. 셋은 비슷해 보이지만 본질이 다르다. SQS는 "1회 소비 큐", SNS는 "fan-out pub/sub", Kinesis는 "재처리 가능한 스트림". 시험에서는 이 셋을 구분하는 시나리오가 도메인을 가리지 않고 출제된다. 오늘은 AppSync의 GraphQL 모델과 세 메시징 서비스의 내부 모델을 함께 본다.
 
 ## GraphQL이 REST를 보완한 이유
 
@@ -26,7 +26,7 @@ query GetOrderScreen($id: ID!) {
 
 한 번의 쿼리로 5개 리소스가 한 응답에 합쳐진다. 클라이언트가 화면을 바꾸면 쿼리만 바꾸면 되고, 백엔드 API는 그대로다.
 
-> 💡 **관련 이론**: GraphQL은 SDL(Schema Definition Language)로 타입 시스템을 정의하고, 쿼리는 그 타입에 대한 선언적 traversal이다. 본질적으로 **dependency-typed query language**라고 볼 수 있다. 트레이드오프: REST의 단순 HTTP 캐싱(URL 기반)이 안 되고, query complexity 공격(클라이언트가 무거운 쿼리로 백엔드를 마비)을 막기 위한 depth limit / cost analysis가 필요. Apollo 팀의 *Production-Ready GraphQL*(O'Reilly)이 운영 관점에서 가장 좋은 참고서.
+GraphQL은 SDL(Schema Definition Language)로 타입 시스템을 정의하고, 쿼리는 그 타입에 대한 선언적 traversal이다. 본질적으로 **dependency-typed query language**라고 볼 수 있다. 트레이드오프: REST의 단순 HTTP 캐싱(URL 기반)이 안 되고, query complexity 공격(클라이언트가 무거운 쿼리로 백엔드를 마비)을 막기 위한 depth limit / cost analysis가 필요. Apollo 팀의 *Production-Ready GraphQL*(O'Reilly)이 운영 관점에서 가장 좋은 참고서.
 
 ## AppSync — AWS의 매니지드 GraphQL
 
@@ -59,7 +59,7 @@ export function response(ctx) {
 
 이 resolver는 DynamoDB GetItem을 직접 호출. 100ms 이내에 응답.
 
-> 🔍 **더 깊이**: AppSync resolver는 historically VTL(Velocity Template Language)이었다. Apache Velocity 기반의 옛 템플릿 언어로, 디버깅이 까다롭고 진입 장벽이 높았다. 2022년 **APPSYNC_JS** 런타임이 추가되면서 ES6 JavaScript로 작성 가능해졌고, 이제 거의 모든 신규 프로젝트는 JS resolver를 쓴다. VTL은 legacy 호환 목적으로만 유지.
+AppSync resolver는 historically VTL(Velocity Template Language)이었다. Apache Velocity 기반의 옛 템플릿 언어로, 디버깅이 까다롭고 진입 장벽이 높았다. 2022년 **APPSYNC_JS** 런타임이 추가되면서 ES6 JavaScript로 작성 가능해졌고, 이제 거의 모든 신규 프로젝트는 JS resolver를 쓴다. VTL은 legacy 호환 목적으로만 유지.
 
 ### Real-time Subscription — WebSocket pub/sub
 
@@ -77,7 +77,7 @@ subscription OnOrderUpdate($id: ID!) {
 
 mutation이 발생하면 AppSync가 매칭되는 모든 구독자에게 push. 모바일 채팅, 실시간 알림, 협업 도구(Figma 스타일)의 표준 패턴.
 
-> 📚 **사례**: 2020~2022년 코로나 시기 음식 배달앱 GrubHub은 "주문 상태 실시간 추적"을 AppSync subscription으로 구현했다. 배달원이 위치를 업데이트하면 고객 앱이 WebSocket으로 즉시 받는 구조. 이전에는 long polling + Lambda로 운영했는데, 동시 사용자 100만 명에서 비용이 폭증했다. AppSync는 WebSocket 연결당 비용이 매우 저렴해 80% 절감.
+2020~2022년 코로나 시기 음식 배달앱 GrubHub은 "주문 상태 실시간 추적"을 AppSync subscription으로 구현했다. 배달원이 위치를 업데이트하면 고객 앱이 WebSocket으로 즉시 받는 구조. 이전에는 long polling + Lambda로 운영했는데, 동시 사용자 100만 명에서 비용이 폭증했다. AppSync는 WebSocket 연결당 비용이 매우 저렴해 80% 절감.
 
 ### Authorization 5종 — 시나리오별 선택
 
@@ -109,7 +109,7 @@ SQS는 가장 단순한 메시지 큐다. 발행자가 메시지를 큐에 넣�
 
 FIFO의 throughput 한도(기본 300)는 **High Throughput FIFO** 옵션으로 partition 단위 확장이 가능해 수천 TPS까지. SAP 시험에서는 두 가지의 분기와 함께 "정확히 1회" 키워드 매핑.
 
-> 💡 **관련 이론**: 분산 시스템에서 "exactly-once delivery"는 이론적으로 불가능하다. FLP impossibility(1985) + Two Generals 문제 때문. SQS FIFO의 "exactly-once processing"은 정확히는 "5분 deduplication window 안에서 idempotent processing"이다. 소비자가 메시지를 처리하고 ack 보내기 직전에 죽으면 재전송되어 중복 처리될 수 있다. 그래서 application 레벨 idempotency(예: `idempotencyKey`)가 여전히 필요.
+분산 시스템에서 "exactly-once delivery"는 이론적으로 불가능하다. FLP impossibility(1985) + Two Generals 문제 때문. SQS FIFO의 "exactly-once processing"은 정확히는 "5분 deduplication window 안에서 idempotent processing"이다. 소비자가 메시지를 처리하고 ack 보내기 직전에 죽으면 재전송되어 중복 처리될 수 있다. 그래서 application 레벨 idempotency(예: `idempotencyKey`)가 여전히 필요.
 
 ### Visibility Timeout — 처리 중 잠금
 
@@ -132,7 +132,7 @@ DLQ로 가는 메시지의 원인 분석은:
 - 다운스트림 서비스의 영구 장애
 - 코드 버그로 무한 throw
 
-> 📚 **사례**: 2018년 한 음악 스트리밍 회사가 "결제 처리 SQS 큐의 DLQ에 메시지 5,000건 쌓임" 알림을 받았다. 원인 분석 결과 며칠 전 결제 게이트웨이 SDK 업데이트가 특정 카드 번호 형식을 reject하는 버그를 도입했다. fix 배포 후 DLQ 메시지를 main 큐로 redrive해 5,000건 모두 정상 처리. DLQ가 없었다면 메시지가 영원히 손실됐을 것. SAP 시험 단골 패턴: "처리 실패 메시지 격리 + maxReceiveCount" → DLQ.
+2018년 한 음악 스트리밍 회사가 "결제 처리 SQS 큐의 DLQ에 메시지 5,000건 쌓임" 알림을 받았다. 원인 분석 결과 며칠 전 결제 게이트웨이 SDK 업데이트가 특정 카드 번호 형식을 reject하는 버그를 도입했다. fix 배포 후 DLQ 메시지를 main 큐로 redrive해 5,000건 모두 정상 처리. DLQ가 없었다면 메시지가 영원히 손실됐을 것. SAP 시험 패턴: "처리 실패 메시지 격리 + maxReceiveCount" → DLQ.
 
 ## SNS — Pub/Sub Fan-out의 표준
 
@@ -174,9 +174,9 @@ Topic에 publish된 메시지를 각 subscriber가 모두 받지 않고, 필터 
 
 SNS Topic 정책에 다른 계정 ARN을 허용하면 cross-account subscription. EventBridge처럼 멀티 계정 fan-out에 쓰인다. Cross-region delivery는 subscriber endpoint가 다른 region이면 자동.
 
-> ⚠️ **함정**: "SNS는 메시지 보존을 안 한다"는 사실이 시험에 자주 출제. SNS는 publish 즉시 fan-out하고 저장하지 않는다. Subscriber가 일시적으로 다운돼도 SNS가 retry는 하지만, retry 한도 초과하면 메시지 손실. 보존이 필요하면 SNS → SQS subscription으로 SQS에 버퍼링하거나 EventBridge Archive로 보존.
+> ⚠️ **함정**: "SNS는 메시지 보존을 안 한다"는 사실이 시험 범위에 든다. SNS는 publish 즉시 fan-out하고 저장하지 않는다. Subscriber가 일시적으로 다운돼도 SNS가 retry는 하지만, retry 한도 초과하면 메시지 손실. 보존이 필요하면 SNS → SQS subscription으로 SQS에 버퍼링하거나 EventBridge Archive로 보존.
 
-## SNS Fan-out + SQS — 가장 흔한 패턴
+## SNS Fan-out + SQS — 대표 패턴
 
 ```
 [Publisher]
@@ -213,7 +213,7 @@ Kinesis는 SQS와 본질이 다르다. SQS가 "메시지 1회 소비 후 삭제"
 
 Producer가 record를 보낼 때 partition key를 지정. 같은 key는 같은 shard로 가서 **shard 내 순서 보장**. 예를 들어 user_id를 partition key로 쓰면 한 사용자의 이벤트는 순서대로.
 
-> 🔍 **더 깊이**: Partition key 선택이 핵심이다. 잘못 고르면 **hot shard**가 생긴다. 예: `region`을 key로 쓰면 us-east-1 region 트래픽이 한 shard에 몰림. 일반적으로 user_id, session_id 같이 cardinality가 충분히 높은 키를 선택. AWS는 partition key를 MD5로 해싱해 shard에 매핑하므로 키 분포가 균일하면 자동으로 균등 분산.
+Partition key 선택이 핵심이다. 잘못 고르면 **hot shard**가 생긴다. 예: `region`을 key로 쓰면 us-east-1 region 트래픽이 한 shard에 몰림. 일반적으로 user_id, session_id 같이 cardinality가 충분히 높은 키를 선택. AWS는 partition key를 MD5로 해싱해 shard에 매핑하므로 키 분포가 균일하면 자동으로 균등 분산.
 
 ### Consumer 모델 — Standard vs Enhanced Fan-out
 
@@ -266,7 +266,7 @@ SQS·Kinesis·DDB Streams·MQ·MSK를 Lambda의 source로 연결. Lambda가 자�
 - **ParallelizationFactor**(Kinesis/DDB): shard당 동시 처리 워커 (1~10)
 - **ReportBatchItemFailures**: 배치 내 일부 실패를 정확히 보고 (전체 재시도 방지)
 
-> ⚠️ **함정**: ESM의 **ReportBatchItemFailures** 패턴은 시험에 자주 출제. 기본 동작은 "배치 중 한 개라도 실패하면 전체 배치 재시도"인데, 이는 idempotent하지 않으면 중복 처리 문제. ReportBatchItemFailures를 활성화하고 함수가 실패한 message ID 리스트를 반환하면, Lambda가 그것만 재시도하고 나머지는 ack한다.
+ESM의 **ReportBatchItemFailures** 패턴은 시험 범위에 든다. 기본 동작은 "배치 중 한 개라도 실패하면 전체 배치 재시도"인데, 이는 idempotent하지 않으면 중복 처리 문제. ReportBatchItemFailures를 활성화하고 함수가 실패한 message ID 리스트를 반환하면, Lambda가 그것만 재시도하고 나머지는 ack한다.
 
 ## AppSync + Pipes + EventBridge — 통합 패턴
 
@@ -293,9 +293,9 @@ SQS·Kinesis·DDB Streams·MQ·MSK를 Lambda의 source로 연결. Lambda가 자�
 
 AppSync가 client interface, DDB Streams가 source-of-truth 변경 이벤트, EventBridge가 분배, Step Functions/SNS/Kinesis가 각자 역할.
 
-> 📚 **사례**: 2023년 Goldman Sachs의 내부 트레이딩 플랫폼은 AppSync로 클라이언트 GraphQL을 받고, mutation이 발생하면 DDB Streams → EventBridge로 이벤트 흘러나가 risk engine, audit, downstream alert에 fan-out하는 구조를 발표. 이전 모놀리식 REST + 직접 호출 체인에서 마이크로서비스 EDA로 전환하면서 새 기능 개발 속도가 2배 빨라졌다고 보고.
+2023년 Goldman Sachs의 내부 트레이딩 플랫폼은 AppSync로 클라이언트 GraphQL을 받고, mutation이 발생하면 DDB Streams → EventBridge로 이벤트 흘러나가 risk engine, audit, downstream alert에 fan-out하는 구조를 발표. 이전 모놀리식 REST + 직접 호출 체인에서 마이크로서비스 EDA로 전환하면서 새 기능 개발 속도가 2배 빨라졌다고 보고.
 
-## 정리하며
+## 정리
 
 GraphQL·SQS·SNS·Kinesis·MSK·Firehose는 모두 "데이터를 어떻게 옮기느냐"의 도구지만 본질이 다르다:
 

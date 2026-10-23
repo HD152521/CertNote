@@ -10,9 +10,9 @@ CloudWatch는 2009년 EC2의 CPU·네트워크·디스크 I/O를 보여주는 �
 
 CloudWatch는 한 번에 설계된 일관된 시스템이 아니라 **서로 다른 데이터 모델 위에 붙은 도구들의 연합**이다. Metrics는 time-series DB, Logs는 append-only 저장소, Insights는 그 위의 분산 쿼리 엔진, EMF는 둘을 잇는 다리다. 시나리오 문제가 어려운 이유는 "이 데이터가 메트릭 평면이냐 로그 평면이냐"를 먼저 판단해야 답이 갈리기 때문이다.
 
-> 💡 **관련 이론**: "Three Pillars of Observability" — **Metrics(집계 수치), Logs(이산 이벤트), Traces(분산 경로)**. Peter Bourgon이 2017년 정리한 이 프레임이 OpenTelemetry 표준(CNCF, 2019)의 근간이다. CloudWatch Metrics = 첫째, Logs = 둘째, X-Ray = 셋째 기둥. EMF는 한 줄 로그로 첫째·둘째를 동시에 채우는 다리라서, "비용 0으로 메트릭+로그 통합"이 EMF를 가리킨다.
+"Three Pillars of Observability" — **Metrics(집계 수치), Logs(이산 이벤트), Traces(분산 경로)**. Peter Bourgon이 2017년 정리한 이 프레임이 OpenTelemetry 표준(CNCF, 2019)의 근간이다. CloudWatch Metrics = 첫째, Logs = 둘째, X-Ray = 셋째 기둥. EMF는 한 줄 로그로 첫째·둘째를 동시에 채우는 다리라서, "비용 0으로 메트릭+로그 통합"이 EMF를 가리킨다.
 
-> 🔍 **더 깊이**: "메트릭이냐 로그냐"의 본질은 **카디널리티**다. 메트릭은 사전 정의된 차원 조합을 집계해 카디널리티가 낮아야 싸고 빠르다. 로그는 모든 이벤트를 적재해 카디널리티가 무한해도 되지만 쿼리마다 스캔 비용을 낸다. 그래서 "고카디널리티(user_id, request_id, trace_id)는 로그로, 저카디널리티(service, env, region)는 메트릭으로"라는 규칙이 나온다. 이 한 줄이 Week 2의 절반을 관통한다 — Metric Filter dimension, EMF의 dimension vs 메타데이터, Custom Metric cardinality explosion이 모두 이 변주다.
+"메트릭이냐 로그냐"의 본질은 **카디널리티**다. 메트릭은 사전 정의된 차원 조합을 집계해 카디널리티가 낮아야 싸고 빠르다. 로그는 모든 이벤트를 적재해 카디널리티가 무한해도 되지만 쿼리마다 스캔 비용을 낸다. 그래서 "고카디널리티(user_id, request_id, trace_id)는 로그로, 저카디널리티(service, env, region)는 메트릭으로"라는 규칙이 나온다. 이 한 줄이 Week 2의 절반을 관통한다 — Metric Filter dimension, EMF의 dimension vs 메타데이터, Custom Metric cardinality explosion이 모두 이 변주다.
 
 ## Week 2 핵심 개념 한 줄 요약
 
@@ -39,7 +39,7 @@ CloudWatch는 한 번에 설계된 일관된 시스템이 아니라 **서로 다
 
 **시나리오 C — "일부 사용자가 느리다"**: Average는 거짓말 → p99 Extended Statistic으로 long tail 확인 → 메트릭으로 p99 추이 → 로그로 `filter duration > 1000 | stats count() by uri, user_id` (user_id는 dimension 아닌 로그 필드 — 여기서 빛난다).
 
-> 📚 **사례**: 2017년 2월 28일 AWS **S3 us-east-1 대장애**(약 4시간)는 모니터링 자체의 교훈을 남겼다. Service Health Dashboard가 같은 리전 S3에 호스팅돼 있어, 정작 장애가 나자 상태 페이지를 빨간불로 바꿀 수조차 없었다. 교훈: **모니터링 시스템은 감시 대상과 fault domain을 분리**해야 한다. 핵심 알람의 SNS·대시보드는 워크로드와 다른 계정/리전에 두는 게 정석이고, Cross-Region·Cross-Account Observability가 그래서 중요하다.
+2017년 2월 28일 AWS **S3 us-east-1 대장애**(약 4시간)는 모니터링 자체의 교훈을 남겼다. Service Health Dashboard가 같은 리전 S3에 호스팅돼 있어, 정작 장애가 나자 상태 페이지를 빨간불로 바꿀 수조차 없었다. 교훈: **모니터링 시스템은 감시 대상과 fault domain을 분리**해야 한다. 핵심 알람의 SNS·대시보드는 워크로드와 다른 계정/리전에 두는 게 정석이고, Cross-Region·Cross-Account Observability가 그래서 중요하다.
 
 > ⚠️ **함정**: 시나리오 A에서 곧장 콘솔 그래프부터 뒤지는 것은 안티패턴이다. 메트릭은 *무엇이*(증상), 로그는 *왜*(원인), 트레이스는 *어디서*(위치)를 답한다. 순서를 건너뛰면 "그래프는 빨간데 원인을 모르는" 상태에 빠진다. 시험에서 "원인을 찾으려면 다음 무엇을 봐야 하나"는 거의 항상 한 평면 아래로 내려가라는 뜻이다.
 
@@ -88,11 +88,11 @@ CloudWatch는 한 번에 설계된 일관된 시스템이 아니라 **서로 다
 | 동적 베이스라인 | Anomaly Detection (STL/ARIMA) | 외부 도구 | Watchdog (ML) |
 | pull vs push | push(PutMetricData) | pull(scrape) | push(agent) |
 
-> 🔍 **더 깊이**: Prometheus의 가장 악명 높은 사고 패턴이 CloudWatch cardinality explosion과 동일하다 — `user_id`나 `request_path`를 label로 넣으면 시계열이 메모리에서 폭증해 서버가 OOM으로 죽는다. CloudWatch는 메모리가 아니라 **청구서로** 폭발할 뿐 뿌리는 같다. 둘 다 "label/dimension은 유한한 enum이어야 한다"는 철칙을 어긴 것이다. "사용자별/요청별"이 보이면 메트릭 dimension은 오답 — AWS 특유가 아니라 시계열 모니터링의 보편 원리다.
+Prometheus의 가장 악명 높은 사고 패턴이 CloudWatch cardinality explosion과 동일하다 — `user_id`나 `request_path`를 label로 넣으면 시계열이 메모리에서 폭증해 서버가 OOM으로 죽는다. CloudWatch는 메모리가 아니라 **청구서로** 폭발할 뿐 뿌리는 같다. 둘 다 "label/dimension은 유한한 enum이어야 한다"는 철칙을 어긴 것이다. "사용자별/요청별"이 보이면 메트릭 dimension은 오답 — AWS 특유가 아니라 시계열 모니터링의 보편 원리다.
 
 ## 비용 폭증의 해부: 어디서 새는가
 
-청구서(B)는 SOA-C02 최빈출 유형이다. CloudWatch 비용은 다섯 갈래로 샌다: **Logs Ingestion(\$0.76/GB) + Logs Storage(\$0.033/GB·월) + Metrics(\$0.30/개) + API(\$0.01/천건) + Insights 스캔(\$0.005/GB)**. 핵심은 **각 갈래의 단위 비용이 30배~수백 배 차이**가 난다는 것이다.
+청구서(B)는 비용 시나리오의 대표 유형이다. CloudWatch 비용은 다섯 갈래로 샌다: **Logs Ingestion(\$0.76/GB) + Logs Storage(\$0.033/GB·월) + Metrics(\$0.30/개) + API(\$0.01/천건) + Insights 스캔(\$0.005/GB)**. 갈래마다 **단위 비용이 30배~수백 배 차이**가 난다.
 
 | 데이터 행선지 | 단가 | 비고 |
 |---------------|------|------|
@@ -107,47 +107,47 @@ CloudWatch는 한 번에 설계된 일관된 시스템이 아니라 **서로 다
 1. **고볼륨 로그는 Ingestion 자체를 피한다.** VPC Flow Logs를 S3로 직접 보내면 \$0.76/GB Ingestion을 통째로 회피, 분석은 Athena.
 2. **장기 보존은 Storage 계층을 내린다.** 감사 로그를 CloudWatch Logs(\$0.033/GB·월) 대신 Glacier Deep Archive(\$0.00099/GB·월)로 — 33배 차이.
 
-> 📚 **사례**: 2020년대 초 여러 핀테크·게임사가 "VPC Flow Logs 전량 CloudWatch Logs 전송"으로 월 수만 달러 청구서를 받았다. Flow Log는 ENI당 수십~수백 GB/일을 생성하는데 대부분 알람도 안 걸고 적재만 하다가 \$0.76/GB Ingestion이 누적된다. 해법: (a) 행선지를 S3로, (b) REJECT 트래픽 등 실시간 보안 탐지가 필요한 일부만 CloudWatch로 샘플, (c) 나머지는 S3 + Athena. 70~90% 절감이 흔하다.
+2020년대 초 여러 핀테크·게임사가 "VPC Flow Logs 전량 CloudWatch Logs 전송"으로 월 수만 달러 청구서를 받았다. Flow Log는 ENI당 수십~수백 GB/일을 생성하는데 대부분 알람도 안 걸고 적재만 하다가 \$0.76/GB Ingestion이 누적된다. 해법: (a) 행선지를 S3로, (b) REJECT 트래픽 등 실시간 보안 탐지가 필요한 일부만 CloudWatch로 샘플, (c) 나머지는 S3 + Athena. 70~90% 절감이 흔하다.
 
 > ⚠️ **함정**: "보존 기간을 줄이면 비용이 준다"는 절반만 맞다. 보존 단축은 **Storage**만 줄이고 이미 발생한 **Ingestion**(\$0.76/GB)은 못 줄인다. 고볼륨 로그가 문제면 보존이 아니라 *들어오는 양*을 줄여야 한다(행선지 변경, 로그 레벨, 샘플링). "Ingestion 비용 폭증" 시나리오에 "보존 축소"가 선택지로 나오면 오답 유도다.
 
 ## 메모리·디스크는 왜 Agent가 필요한가 — IaaS의 본질적 경계
 
-복습에서 가장 자주 틀리는 지점이 "EC2 메모리는 Detailed Monitoring을 켜면 나온다"는 오해다. Detailed Monitoring은 **간격을 5분→1분으로 줄일 뿐** 메트릭 종류를 늘리지 않는다.
+복습에서 틀리기 쉬운 지점이 "EC2 메모리는 Detailed Monitoring을 켜면 나온다"는 오해다. Detailed Monitoring은 **간격을 5분→1분으로 줄일 뿐** 메트릭 종류를 늘리지 않는다.
 
 근본 원인은 **측정 위치**다. EC2의 CPU·네트워크·디스크 I/O는 **하이퍼바이저(Nitro System) 레벨**에서 측정된다(`CPUUtilization`, `NetworkIn/Out`, `EBS Read/WriteOps`). 게스트 OS가 hang 돼도 하이퍼바이저는 vCPU 스케줄링과 블록 I/O를 보므로 측정이 계속된다. 그러나 **메모리 사용률·디스크 사용량(df)·swap은 게스트 OS 안의 페이지 테이블·파일시스템 메타데이터**라서 하이퍼바이저가 못 본다(`mem_used_percent`, `disk_used_percent`, `swap_used_percent` → Agent 필요). 본다면 가상화 격리 위반이다.
 
-> 🔍 **더 깊이**: 이 경계는 IaaS와 PaaS/FaaS의 책임 분담선이다. **Lambda·Fargate는 메모리가 표준 메트릭에 포함**된다 — AWS가 게스트 OS까지 운영하므로 OS 내부 통계를 노출할 수 있기 때문. "메모리 메트릭이 표준이냐"는 *누가 OS를 소유하느냐*의 결과다. 그래서 "EC2 메모리"는 Agent, "Lambda/Fargate 메모리"는 표준 메트릭(또는 REPORT의 `maxMemoryUsed`)으로 갈린다.
+이 경계는 IaaS와 PaaS/FaaS의 책임 분담선이다. **Lambda·Fargate는 메모리가 표준 메트릭에 포함**된다 — AWS가 게스트 OS까지 운영하므로 OS 내부 통계를 노출할 수 있기 때문. "메모리 메트릭이 표준이냐"는 *누가 OS를 소유하느냐*의 결과다. 그래서 "EC2 메모리"는 Agent, "Lambda/Fargate 메모리"는 표준 메트릭(또는 REPORT의 `maxMemoryUsed`)으로 갈린다.
 
-> ⚠️ **함정**: "메모리 기반 Auto Scaling이 안 된다" 시나리오. ASG Target Tracking은 표준 메트릭(CPU, ALBRequestCountPerTarget)만 기본 지원하고 메모리는 표준이 아니다. 해결: Agent로 `mem_used_percent`를 custom metric으로 발행 후 그 메트릭에 **custom metric target tracking** 또는 **step scaling**. Agent 없이 메모리 스케일링은 불가능하다.
+"메모리 기반 Auto Scaling이 안 된다" 시나리오. ASG Target Tracking은 표준 메트릭(CPU, ALBRequestCountPerTarget)만 기본 지원하고 메모리는 표준이 아니다. 해결: Agent로 `mem_used_percent`를 custom metric으로 발행 후 그 메트릭에 **custom metric target tracking** 또는 **step scaling**. Agent 없이 메모리 스케일링은 불가능하다.
 
 ## p99의 진실: 평균은 SLO를 망친다
 
-시나리오 C의 핵심은 통계 선택이다. *왜* 평균이 위험한지 이론으로 못박는다.
+시나리오 C는 통계 선택을 묻는다. *왜* 평균이 위험한지 이론으로 못박는다.
 
 latency 분포는 정규분포가 아니라 **오른쪽으로 긴 꼬리(heavy-tail)**를 가진다. 대부분 빠르지만 GC pause, 락 경합, 콜드 캐시, 네트워크 재전송이 소수 요청을 수 배~수십 배 느리게 만든다. 이 분포에서 평균은 다수에 끌려가 long tail을 숨긴다.
 
-> 💡 **관련 이론**: Gil Tene의 **"How NOT to Measure Latency"**(Strange Loop 2015) 필독. (1) **평균·표준편차는 latency에 의미 없다**(정규분포가 아니므로), (2) **Coordinated Omission**: 부하 테스트 도구가 느린 응답을 기다리느라 그 시간의 요청을 못 보내, 가장 나쁜 구간이 측정에서 빠지는 체계적 오류. "1000명 중 10명이 5초"는 p99로만 드러나고 평균(200ms)으론 절대 안 보인다.
+Gil Tene의 **"How NOT to Measure Latency"**(Strange Loop 2015) 필독. (1) **평균·표준편차는 latency에 의미 없다**(정규분포가 아니므로), (2) **Coordinated Omission**: 부하 테스트 도구가 느린 응답을 기다리느라 그 시간의 요청을 못 보내, 가장 나쁜 구간이 측정에서 빠지는 체계적 오류. "1000명 중 10명이 5초"는 p99로만 드러나고 평균(200ms)으론 절대 안 보인다.
 
-> 💡 **관련 이론**: Dean & Barroso **"The Tail at Scale"**(CACM, 2013) — 한 요청이 100개 서비스를 fan-out하면 각 서비스 p99가 1%여도 *최소 하나*가 느릴 확률은 1-(0.99)^100 ≈ 63%. 규모가 커질수록 꼬리가 일반 경험이 되는 게 마이크로서비스에서 p99 모니터링이 필수인 수학적 이유다.
+Dean & Barroso **"The Tail at Scale"**(CACM, 2013) — 한 요청이 100개 서비스를 fan-out하면 각 서비스 p99가 1%여도 *최소 하나*가 느릴 확률은 1-(0.99)^100 ≈ 63%. 규모가 커질수록 꼬리가 일반 경험이 되는 게 마이크로서비스에서 p99 모니터링이 필수인 수학적 이유다.
 
-> ⚠️ **함정**: SLO를 "평균 < 300ms"로 정의하면 사실상 SLO가 없는 셈이다. 평균은 1%의 5초 응답을 완전히 가린다. 표준은 "p99 < N ms"이고 **알람 통계도 SLO와 같은 백분위수로 통일**해야 한다. 알람을 Average, SLO를 p99로 정의하면 알람은 조용한데 SLO는 위반되는 모순이 생긴다. CloudWatch는 ExtendedStatistic으로 p50~p99.9를 지원.
+SLO를 "평균 < 300ms"로 정의하면 사실상 SLO가 없는 셈이다. 평균은 1%의 5초 응답을 완전히 가린다. 표준은 "p99 < N ms"이고 **알람 통계도 SLO와 같은 백분위수로 통일**해야 한다. 알람을 Average, SLO를 p99로 정의하면 알람은 조용한데 SLO는 위반되는 모순이 생긴다. CloudWatch는 ExtendedStatistic으로 p50~p99.9를 지원.
 
 ## forward-only의 함정: Metric Filter가 과거를 못 보는 이유
 
 Metric Filter는 **새로 들어오는 로그에만** 패턴을 적용한다(forward-only). 어제의 에러는 오늘 만든 필터에 안 잡힌다. 버그가 아니라 아키텍처의 결과다.
 
-> 🔍 **더 깊이**: Metric Filter는 로그가 ingest되는 **스트림 처리 시점**에 패턴을 평가해 발행한다. 반면 Logs Insights는 저장된 로그를 **사후 스캔**하는 배치 쿼리다. 이 차이가 forward-only vs 과거 조회의 본질이고, 과거는 Insights로 집계해야 한다. 스트림 vs 배치는 데이터 엔지니어링의 고전적 이분법(Lambda Architecture, Kleppmann *Designing Data-Intensive Applications*)이고 CloudWatch는 둘 다 제공할 뿐이다.
+Metric Filter는 로그가 ingest되는 **스트림 처리 시점**에 패턴을 평가해 발행한다. 반면 Logs Insights는 저장된 로그를 **사후 스캔**하는 배치 쿼리다. 이 차이가 forward-only vs 과거 조회의 본질이고, 과거는 Insights로 집계해야 한다. 스트림 vs 배치는 데이터 엔지니어링의 고전적 이분법(Lambda Architecture, Kleppmann *Designing Data-Intensive Applications*)이고 CloudWatch는 둘 다 제공할 뿐이다.
 
-> ⚠️ **함정**: `DefaultValue`를 안 넣으면 패턴 미매칭 기간엔 **데이터 포인트가 아예 발행되지 않는다**(0이 아니라 결측). 그러면 알람이 INSUFFICIENT_DATA에 머물러 에러 0건일 때 평가 자체가 안 된다. `DefaultValue: 0`을 넣어야 "매치 없음 = 0건"으로 발행돼 정상 동작한다. "Metric Filter 알람이 안 울린다"의 절반은 이 함정이다.
+`DefaultValue`를 안 넣으면 패턴 미매칭 기간엔 **데이터 포인트가 아예 발행되지 않는다**(0이 아니라 결측). 그러면 알람이 INSUFFICIENT_DATA에 머물러 에러 0건일 때 평가 자체가 안 된다. `DefaultValue: 0`을 넣어야 "매치 없음 = 0건"으로 발행돼 정상 동작한다. "Metric Filter 알람이 안 울린다"의 절반은 이 함정이다.
 
-## Anomaly Detection의 ML 내부와 콜드스타트
+## Anomaly Detection의 ML 내부와 콜드 스타트
 
 고정 임계값은 시간대 패턴 메트릭에서 false positive를 양산한다. Anomaly Detection은 그 패턴을 학습해 동적 밴드를 만든다.
 
-> 💡 **관련 이론**: CloudWatch Anomaly Detection은 **STL(Seasonal-Trend decomposition using LOESS)**(Cleveland et al., 1990, *Journal of Official Statistics*)과 **ARIMA** 계열로 시계열을 추세·계절성·잔차로 분해한다. 같은 계열 OSS로 Facebook Prophet(2017), Twitter AnomalyDetection(S-H-ESD, 2015), LinkedIn Luminol, Netflix Surus. 핵심: "화요일 오후 2시 정상값은 얼마인가"를 요일·시간 주기로 학습해 기대값에서 표준편차 N배 벗어나면 anomaly로 표시.
+CloudWatch Anomaly Detection은 **STL(Seasonal-Trend decomposition using LOESS)**(Cleveland et al., 1990, *Journal of Official Statistics*)과 **ARIMA** 계열로 시계열을 추세·계절성·잔차로 분해한다. 같은 계열 OSS로 Facebook Prophet(2017), Twitter AnomalyDetection(S-H-ESD, 2015), LinkedIn Luminol, Netflix Surus. 핵심: "화요일 오후 2시 정상값은 얼마인가"를 요일·시간 주기로 학습해 기대값에서 표준편차 N배 벗어나면 anomaly로 표시.
 
-> ⚠️ **함정**: Anomaly Detection은 **콜드스타트** 문제가 있다. 최소 2일, 안정적으로는 2주치 데이터가 누적돼야 밴드가 의미를 가진다. 신규 메트릭에 즉시 적용하면 밴드가 비정상적으로 넓거나 좁아져 알람이 무의미해진다. "새 서비스에 켰더니 알람 폭증 / 한 번도 안 울림"은 둘 다 데이터 미숙성이 원인이고 답은 "데이터 누적 후 활성화". ML 추천 시스템의 콜드스타트와 같은 문제다.
+Anomaly Detection은 **콜드 스타트** 문제가 있다. 최소 2일, 안정적으로는 2주치 데이터가 누적돼야 밴드가 의미를 가진다. 신규 메트릭에 즉시 적용하면 밴드가 비정상적으로 넓거나 좁아져 알람이 무의미해진다. "새 서비스에 켰더니 알람 폭증 / 한 번도 안 울림"은 둘 다 데이터 미숙성이 원인이고 답은 "데이터 누적 후 활성화". ML 추천 시스템의 콜드 스타트와 같은 문제다.
 
 ## Week 2 자기진단 체크리스트
 

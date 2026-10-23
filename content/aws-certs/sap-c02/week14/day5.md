@@ -11,9 +11,9 @@ DR(Disaster Recovery)을 "백업을 해두는 것"으로 이해하면 SAA 수준
 | Warm Standby | 수 분 ~ 30분 | 초 ~ 분 | ★★★ | 미션 크리티컬 |
 | Multi-Site Active-Active | 0 ~ 수 초 | 0 ~ 수 초 | ★★★★ (가장 비싼) | 금융·결제·게임 매치메이킹 |
 
-> 🔍 **더 깊이**: 4가지 전략은 본질적으로 "DR 환경에 평소 얼마나 자원을 켜두느냐"의 스펙트럼이다. Backup/Restore는 0% 켜둠, Multi-Site는 100% 켜둠. Pilot Light는 DB만 켜두고 앱은 꺼둠(failover 시 시작), Warm Standby는 축소된 capacity로 항상 켜둠(failover 시 확장). 비용은 capacity에 비례, RTO는 capacity에 반비례.
+4가지 전략은 본질적으로 "DR 환경에 평소 얼마나 자원을 켜두느냐"의 스펙트럼이다. Backup/Restore는 0% 켜둠, Multi-Site는 100% 켜둠. Pilot Light는 DB만 켜두고 앱은 꺼둠(failover 시 시작), Warm Standby는 축소된 capacity로 항상 켜둠(failover 시 확장). 비용은 capacity에 비례, RTO는 capacity에 반비례.
 
-> 💡 **관련 이론**: Gartner의 **RTO/RPO 매트릭스**는 비즈니스 영향 분석(BIA, Business Impact Analysis)의 산출물이다. RTO 1분 vs 1시간의 차이는 수십 배 비용이 들 수 있으므로, 비즈니스 부서가 "다운타임 1분당 손실액"을 명시해야 합리적 설계가 가능. AWS는 이를 **WA Tool의 Reliability Pillar 질문**에 포함시켜 워크로드 등록 시 명시하게 한다. 이 RTO/RPO 용어 자체는 ISO 22301(사업 연속성)·NIST SP 800-34(비상계획 가이드)에서 공식 정의된 표준이다.
+Gartner의 **RTO/RPO 매트릭스**는 비즈니스 영향 분석(BIA, Business Impact Analysis)의 산출물이다. RTO 1분 vs 1시간의 차이는 수십 배 비용이 들 수 있으므로, 비즈니스 부서가 "다운타임 1분당 손실액"을 명시해야 합리적 설계가 가능. AWS는 이를 **WA Tool의 Reliability Pillar 질문**에 포함시켜 워크로드 등록 시 명시하게 한다. 이 RTO/RPO 용어 자체는 ISO 22301(사업 연속성)·NIST SP 800-34(비상계획 가이드)에서 공식 정의된 표준이다.
 
 ### Backup & Restore: 최저 비용
 
@@ -21,7 +21,7 @@ DR(Disaster Recovery)을 "백업을 해두는 것"으로 이해하면 SAA 수준
 - 비용 거의 0(스토리지 비용만)
 - RTO 수 시간 이상(인프라 프로비저닝 + 데이터 복구)
 
-> 📚 **사례**: 한 작은 SaaS가 production을 us-east-1에서 운영하며 백업만 us-west-2 S3에 CRR(Cross-Region Replication)로 보낸다. 리전 장애 시 us-west-2에서 CloudFormation으로 인프라 재생성 → 6시간 RTO. 비즈니스 SLA가 24시간이라 충분. 이 패턴의 정당성은 2017년 S3 us-east-1 대장애(4시간)가 증명했다 — 백업이 같은 리전에만 있었다면 그 리전 장애 시 백업도 함께 사라졌을 것이다. 백업은 반드시 다른 리전·계정에 격리되어야 한다.
+(가상 사례) 한 작은 SaaS가 production을 us-east-1에서 운영하며 백업만 us-west-2 S3에 CRR(Cross-Region Replication)로 보낸다. 리전 장애 시 us-west-2에서 CloudFormation으로 인프라 재생성 → 6시간 RTO. 비즈니스 SLA가 24시간이라 충분. 이 패턴의 정당성은 2017년 S3 us-east-1 대장애(4시간)가 증명했다 — 백업이 같은 리전에만 있었다면 그 리전 장애 시 백업도 함께 사라졌을 것이다. 백업은 반드시 다른 리전·계정에 격리되어야 한다.
 
 ### Pilot Light: DB만 핫·앱은 콜드
 
@@ -60,9 +60,9 @@ DR(Disaster Recovery)을 "백업을 해두는 것"으로 이해하면 SAA 수준
 | Governance | IAM 권한 있으면 가능 | 일반·실수 방지 |
 | Compliance | 어떤 권한으로도 불가 | 규제(7년 보관) |
 
-> 🔍 **더 깊이**: Compliance 모드는 한 번 활성화하면 **AWS 본사 root 사용자도 변경 불가**. 백업이 영구 삭제되거나 변경되지 않음을 법적으로 보장. 금융권 SEC Rule 17a-4, FINRA 4511 등 WORM(Write Once Read Many) 요구사항을 만족. S3 Object Lock Compliance 모드와 동일한 철학.
+Compliance 모드는 한 번 활성화하면 **AWS 본사 root 사용자도 변경 불가**. 백업이 영구 삭제되거나 변경되지 않음을 법적으로 보장. 금융권 SEC Rule 17a-4, FINRA 4511 등 WORM(Write Once Read Many) 요구사항을 만족. S3 Object Lock Compliance 모드와 동일한 철학.
 
-> 📚 **사례**: 2021년 Colonial Pipeline 랜섬웨어 사건에서 회사는 약 440만 달러 몸값을 지불했다. 만약 모든 백업이 변경 불가능한 immutable storage(Compliance Lock)에 별도 계정으로 격리돼 있었다면 몸값 없이 복구가 가능했을 것이다. 이 사건 이후 immutable backup은 "있으면 좋은 것"에서 "랜섬웨어 시대의 필수"로 격상됐다. 헬스케어 회사가 HIPAA 준수로 환자 백업을 7년 보관할 때도 Backup Vault Compliance Lock + Cross-Region Copy로 의도적·우발적 삭제를 모두 차단하고 감사관에게 정책 출력본으로 컴플라이언스를 증명한다.
+2021년 Colonial Pipeline 랜섬웨어 사건에서 회사는 약 440만 달러 몸값을 지불했다. 만약 모든 백업이 변경 불가능한 immutable storage(Compliance Lock)에 별도 계정으로 격리돼 있었다면 몸값 없이 복구가 가능했을 것이다. 이 사건 이후 immutable backup은 "있으면 좋은 것"에서 "랜섬웨어 시대의 필수"로 격상됐다. 헬스케어 회사가 HIPAA 준수로 환자 백업을 7년 보관할 때도 Backup Vault Compliance Lock + Cross-Region Copy로 의도적·우발적 삭제를 모두 차단하고 감사관에게 정책 출력본으로 컴플라이언스를 증명한다.
 
 ### Backup Audit Manager
 
@@ -84,7 +84,7 @@ DR(Disaster Recovery)을 "백업을 해두는 것"으로 이해하면 SAA 수준
 - **Stop Condition**: 특정 CloudWatch 알람 발생 시 자동 중단
 - 정기 카오스 테스트로 production 견고성 검증
 
-> 💡 **관련 이론**: **Chaos Engineering**은 Netflix가 2010년 도입한 패러다임. "production은 항상 부분적으로 망가져 있다"는 가정 하에 정기적으로 의도적 장애를 주입해 시스템이 graceful degradation을 하는지 검증. AWS는 2021년 FIS로 관리형 서비스화. Stop Condition이 핵심 차별화 — 의도적 장애가 실제 사고로 번지지 않도록 자동 안전 정지(fail-safe)를 제공한다. 2012년 크리스마스이브 Netflix 대장애(us-east-1 ELB 장애) 이후 Netflix는 전체 리전을 죽이는 "Chaos Kong"까지 만들어 정기 검증했다 — failover는 평소에 연습한 만큼만 실제 위기에서 작동한다.
+**Chaos Engineering**은 Netflix가 2010년 도입한 패러다임. "production은 항상 부분적으로 망가져 있다"는 가정 하에 정기적으로 의도적 장애를 주입해 시스템이 graceful degradation을 하는지 검증. AWS는 2021년 FIS로 관리형 서비스화. Stop Condition이 핵심 차별화 — 의도적 장애가 실제 사고로 번지지 않도록 자동 안전 정지(fail-safe)를 제공한다. 2012년 크리스마스이브 Netflix 대장애(us-east-1 ELB 장애) 이후 Netflix는 전체 리전을 죽이는 "Chaos Kong"까지 만들어 정기 검증했다 — 페일오버는 평소에 연습한 만큼만 실제 위기에서 작동한다.
 
 ### Application Migration Service (MGN) vs Elastic Disaster Recovery (DRS)
 
@@ -97,11 +97,11 @@ DR(Disaster Recovery)을 "백업을 해두는 것"으로 이해하면 SAA 수준
 
 ### Route 53 ARC (Application Recovery Controller)
 
-- **Routing Control**: 사람이 명시적으로 ON/OFF 토글하는 failover (자동 health check와 별개)
+- **Routing Control**: 사람이 명시적으로 ON/OFF 토글하는 페일오버 (자동 health check와 별개)
 - **Zonal Shift**: 문제 AZ를 ALB/NLB에서 즉시 제외 (수동 또는 자동)
 - **Readiness Check**: DR 리전이 항상 production 수준의 readiness를 유지하는지 자동 검증
 
-> 📚 **사례**: 2021년 12월 7일 AWS us-east-1 대장애(약 7시간) 때 일부 기업은 자동 health check가 정상/비정상을 오락가락 판정해 트래픽이 불안정하게 튀는 문제를 겪었다. ARC Routing Control의 데이터 평면은 5개 리전에 분산돼 us-east-1이 죽어도 작동하므로, 운영자가 명시적으로 "지금 us-west-2로 전환"을 결정할 수 있다. 이 장애는 "제어 평면(control plane)이 죽어도 데이터 평면(data plane)은 살게" 설계하라는 교훈을 남겼다.
+2021년 12월 7일 AWS us-east-1 대장애(약 7시간) 때 일부 기업은 자동 health check가 정상/비정상을 오락가락 판정해 트래픽이 불안정하게 튀는 문제를 겪었다. ARC Routing Control의 데이터 평면은 5개 리전에 분산돼 us-east-1이 죽어도 작동하므로, 운영자가 명시적으로 "지금 us-west-2로 전환"을 결정할 수 있다. 이 장애는 "제어 평면(control plane)이 죽어도 데이터 평면(data plane)은 살게" 설계하라는 교훈을 남겼다.
 
 ## 데이터 계층 DR
 
@@ -112,7 +112,7 @@ DR(Disaster Recovery)을 "백업을 해두는 것"으로 이해하면 SAA 수준
 | Multi-AZ Instance | 60-120초 | Replica는 standby, 트래픽 불가 |
 | Multi-AZ Cluster | 35초 | 2개 Replica에 read 트래픽 가능 |
 
-> 🔍 **더 깊이**: Multi-AZ Cluster는 2022년 출시. 기존 Multi-AZ Instance가 "1 primary + 1 standby(트래픽 불가)"였다면, Cluster는 "1 primary + 2 readable replica"로 진화. semi-synchronous replication으로 primary가 2개 중 1개 replica에 데이터 도달 확인 후 commit ack(쿼럼) → 비동기 replication보다 데이터 손실 위험 ↓, 완전 동기보다 빠름.
+Multi-AZ Cluster는 2022년 출시. 기존 Multi-AZ Instance가 "1 primary + 1 standby(트래픽 불가)"였다면, Cluster는 "1 primary + 2 readable replica"로 진화. semi-synchronous replication으로 primary가 2개 중 1개 replica에 데이터 도달 확인 후 commit ack(쿼럼) → 비동기 replication보다 데이터 손실 위험 ↓, 완전 동기보다 빠름.
 
 ### Aurora Global Database
 
@@ -135,7 +135,7 @@ DR(Disaster Recovery)을 "백업을 해두는 것"으로 이해하면 SAA 수준
 - 가장 가까운 리전으로 자동 라우팅
 - Cross-Region Replication과 결합해 read·write를 모두 글로벌 분산
 
-> 💡 **관련 이론**: 데이터 계층 DR의 모든 선택은 결국 **PACELC 정리**(CAP 확장)의 지연-일관성 트레이드오프로 환원된다. AZ 간은 수 km(1~2ms)라 동기 복제(RPO 0)가 가능하지만, 리전 간은 수천 km(40ms+)라 거의 항상 비동기(RPO>0)다. "리전 간 RPO 0"을 요구하면 큰 지연 대가 또는 불가능을 의심해야 한다.
+데이터 계층 DR의 모든 선택은 결국 **PACELC 정리**(CAP 확장)의 지연-일관성 트레이드오프로 환원된다. AZ 간은 수 km(1~2ms)라 동기 복제(RPO 0)가 가능하지만, 리전 간은 수천 km(40ms+)라 거의 항상 비동기(RPO>0)다. "리전 간 RPO 0"을 요구하면 큰 지연 대가 또는 불가능을 의심해야 한다.
 
 ## DR 시나리오 키워드 매핑 표
 
@@ -151,11 +151,11 @@ DR(Disaster Recovery)을 "백업을 해두는 것"으로 이해하면 SAA 수준
 | "운영 중 의도적 장애 + 자동 중단" | FIS + Stop Condition |
 | "DR 격차 자동 식별 + 권고" | Resilience Hub |
 | "AZ만 즉시 트래픽 제외" | Route 53 ARC Zonal Shift |
-| "사람이 명시적 failover 결정" | Route 53 ARC Routing Control |
+| "사람이 명시적 페일오버 결정" | Route 53 ARC Routing Control |
 | "백업 정책 준수 자동 평가" | Backup Audit Manager |
 | "RTO 충족 + 비용 최소" | 충족하는 최저 전략 |
 
-## 정리하며
+## 정리
 
 DR은 **비즈니스 RTO/RPO 정의 → 4전략 중 선택 → 검증 자동화**의 워크플로다. 비용·RTO·RPO는 상호 trade-off이므로 무작정 Multi-Site를 선택하면 안 되고, 비즈니스 임팩트 분석으로 적정 수준을 정해야 한다. AWS Backup, Resilience Hub, FIS, DRS, Route 53 ARC를 조합해 "정의 → 구현 → 검증"의 전체 수명주기를 자동화하는 것이 Pro 수준의 설계.
 

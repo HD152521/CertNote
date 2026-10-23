@@ -2,11 +2,11 @@
 
 Week 8은 VPC라는 가상 데이터센터의 모든 레이어를 따라 내려왔다. 첫 글에선 VPC가 EC2-Classic을 대체하면서 등장한 배경과 SG·NACL의 stateful/stateless 분리를 봤고, 둘째 글에선 Flow Logs·Traffic Mirroring·Reachability Analyzer의 세 추상화로 트래픽을 들여다보는 방법을 봤다. 셋째 글에선 NAT GW·VPC Endpoint·PrivateLink로 외부와 만나는 세 가지 방식, 넷째 글에선 Transit Gateway·VPN·Direct Connect·Route 53으로 여러 VPC와 온프레미스를 묶는 큰 그림이었다.
 
-이 글은 그 네 글을 다시 회상하는 게 아니라, **시험에서 자주 등장하는 시나리오 결정 트리를 12문항으로 정리**한다. 운영자가 실제로 마주치는 결정 — "지금 SG를 늘릴 것인가 NACL을 손볼 것인가", "NAT GW 비용이 폭증했는데 어디부터 끊을 것인가", "DR을 Active-Active로 갈 것인가 Pilot Light로 갈 것인가" — 이 결정들의 트리를 익히는 게 시험 합격과 실무 모두에 도움이 된다.
+이 글은 그 네 글을 다시 회상하는 게 아니라, **시험에서 등장하는 시나리오 결정 트리를 12문항으로 정리**한다. 운영자가 실제로 마주치는 결정 — "지금 SG를 늘릴 것인가 NACL을 손볼 것인가", "NAT GW 비용이 폭증했는데 어디부터 끊을 것인가", "DR을 Active-Active로 갈 것인가 Pilot Light로 갈 것인가" — 이 결정들의 트리를 익히는 게 시험 합격과 실무 모두에 도움이 된다.
 
 ## Week 8 핵심 한 줄 요약
 
-지난 네 글에서 가장 자주 등장한 사실 12가지를 한 줄씩 정리한다.
+지난 네 글에서 등장한 사실 12가지를 한 줄씩 정리한다.
 
 1. **SG = Stateful, NACL = Stateless** — NACL은 ephemeral port(1024-65535) 양방향 명시
 2. **각 서브넷 5개 예약 IP** (/28은 사용 가능 11개)

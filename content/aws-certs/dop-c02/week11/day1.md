@@ -22,7 +22,7 @@ Trace (1 사용자 요청 = 하나의 인과 그래프)
 
 > 💡 **관련 이론**: Dapper 논문이 정의한 분산 추적의 세 가지 설계 목표는 오늘날까지 모든 추적 시스템의 기준이다 — **low overhead**(추적이 본 서비스를 느리게 하면 안 됨), **application-level transparency**(개발자가 일일이 계측하지 않아도 됨, 즉 auto-instrumentation), **scalability**(구글 규모에서 동작). X-Ray의 SDK auto-patching(`patch_all()`이 boto3·requests를 자동 계측), 샘플링(overhead 제어), Daemon의 비동기 배치 전송(low overhead)은 정확히 이 세 목표를 구현한 것이다. Zipkin(트위터), Jaeger(Uber), OpenTelemetry(CNCF)도 모두 Dapper의 직계 후손이며, 같은 trace-span-context propagation 삼각형 위에 서 있다.
 
-> 🔍 **더 깊이**: Trace는 흔히 "트리"로 그려지지만 엄밀히는 **DAG(방향성 비순환 그래프)**에 가깝다. 단순 동기 호출 체인이면 트리지만, 하나의 작업이 여러 다운스트림을 병렬로 호출하면(fan-out) 부모-자식이 1:N이 되고, 비동기 메시징에서는 한 메시지가 여러 컨슈머에 도달하거나(SQS fan-out via SNS) 배치로 묶여 여러 trace가 한 처리 단위에 모이는 **span link**가 생긴다. OpenTelemetry는 이를 위해 부모-자식 관계 외에 "link"라는 별도 엣지 타입을 둔다. X-Ray의 segment는 `parent_id`로 인과를 표현하되, 비동기 경계에서는 인과 사슬이 끊길 수 있다는 점이 실무의 함정이다 — SQS를 거치면 producer trace와 consumer trace가 자동으로 이어지지 않는 경우가 많아 trace context를 메시지 속성에 수동 전파해야 한다.
+> Trace는 흔히 "트리"로 그려지지만 엄밀히는 **DAG(방향성 비순환 그래프)**에 가깝다. 단순 동기 호출 체인이면 트리지만, 하나의 작업이 여러 다운스트림을 병렬로 호출하면(fan-out) 부모-자식이 1:N이 되고, 비동기 메시징에서는 한 메시지가 여러 컨슈머에 도달하거나(SQS fan-out via SNS) 배치로 묶여 여러 trace가 한 처리 단위에 모이는 **span link**가 생긴다. OpenTelemetry는 이를 위해 부모-자식 관계 외에 "link"라는 별도 엣지 타입을 둔다. X-Ray의 segment는 `parent_id`로 인과를 표현하되, 비동기 경계에서는 인과 사슬이 끊길 수 있다는 점이 실무의 함정이다 — SQS를 거치면 producer trace와 consumer trace가 자동으로 이어지지 않는 경우가 많아 trace context를 메시지 속성에 수동 전파해야 한다.
 
 ## Trace ID와 컨텍스트 전파 — 프로세스 경계를 넘는 끈
 
@@ -38,9 +38,9 @@ X-Amzn-Trace-Id: Root=1-65500000-1234abcd5678ef90; Parent=53995c3f42cd8ad8; Samp
 
 Trace ID에 타임스탬프를 박은 설계는 우연이 아니다. X-Ray는 trace를 시각 기반으로 파티셔닝·만료(30일 후 삭제)하는데, ID 자체에 시각이 있으면 별도 인덱스 조회 없이 ID만 보고 어느 시간 버킷에 속하는지 알 수 있다. 이는 KSUID나 ULID 같은 시간 정렬 가능 식별자가 UUIDv4를 대체하는 흐름과 같은 발상이다.
 
-> 💡 **관련 이론**: HTTP 헤더로 trace context를 나르는 방식은 표준화 전쟁을 거쳤다. X-Ray는 `X-Amzn-Trace-Id`, Zipkin은 `X-B3-*`(B3 propagation), Jaeger는 `uber-trace-id`를 썼고, 서로 호환이 안 됐다. 이 혼란을 끝낸 것이 **W3C Trace Context** 표준(2020, `traceparent`/`tracestate` 헤더)이다. `traceparent: 00-{trace-id}-{parent-id}-{flags}` 형식으로 벤더 중립 전파를 정의했다. OpenTelemetry는 기본으로 W3C Trace Context를 쓰고, ADOT(Day 3)는 X-Ray 헤더와 W3C 헤더를 양방향 변환하는 propagator를 제공해 두 세계를 잇는다. "왜 X-Ray와 OTel이 섞이면 trace가 끊기나"의 답이 바로 이 propagation 포맷 불일치다.
+> HTTP 헤더로 trace context를 나르는 방식은 표준화 전쟁을 거쳤다. X-Ray는 `X-Amzn-Trace-Id`, Zipkin은 `X-B3-*`(B3 propagation), Jaeger는 `uber-trace-id`를 썼고, 서로 호환이 안 됐다. 이 혼란을 끝낸 것이 **W3C Trace Context** 표준(2020, `traceparent`/`tracestate` 헤더)이다. `traceparent: 00-{trace-id}-{parent-id}-{flags}` 형식으로 벤더 중립 전파를 정의했다. OpenTelemetry는 기본으로 W3C Trace Context를 쓰고, ADOT(Day 3)는 X-Ray 헤더와 W3C 헤더를 양방향 변환하는 propagator를 제공해 두 세계를 잇는다. "왜 X-Ray와 OTel이 섞이면 trace가 끊기나"의 답이 바로 이 propagation 포맷 불일치다.
 
-> 📚 **사례**: 한 이커머스 회사가 주문 서비스(X-Ray SDK 사용)와 신규 결제 서비스(OpenTelemetry 사용)를 함께 운영했는데, 주문에서 결제로 넘어가는 순간 Service Map에서 trace가 두 동강 났다. 원인은 propagation 헤더 불일치였다 — 주문은 `X-Amzn-Trace-Id`를, 결제는 `traceparent`를 기대했다. ADOT Collector에 X-Ray propagator와 W3C propagator를 둘 다 설정해 헤더를 상호 변환하자 trace가 끝까지 이어졌다. 교훈: 멀티 SDK 환경에서 분산 추적의 첫 번째 실패 지점은 거의 항상 context propagation 포맷 불일치다.
+> 한 이커머스 회사가 주문 서비스(X-Ray SDK 사용)와 신규 결제 서비스(OpenTelemetry 사용)를 함께 운영했는데, 주문에서 결제로 넘어가는 순간 Service Map에서 trace가 두 동강 났다. 원인은 propagation 헤더 불일치였다 — 주문은 `X-Amzn-Trace-Id`를, 결제는 `traceparent`를 기대했다. ADOT Collector에 X-Ray propagator와 W3C propagator를 둘 다 설정해 헤더를 상호 변환하자 trace가 끝까지 이어졌다. 교훈: 멀티 SDK 환경에서 분산 추적의 첫 번째 실패 지점은 거의 항상 context propagation 포맷 불일치다.
 
 ## Active vs Passive Tracing — 누가 trace를 시작하는가
 
@@ -100,7 +100,7 @@ def process(order_id):
     ...
 ```
 
-> 🔍 **더 깊이**: auto-instrumentation의 구현 메커니즘은 언어마다 다르다. Python/Ruby는 런타임에 메서드를 교체하는 **monkey-patching**, Java는 클래스 로딩 시점에 바이트코드를 변형하는 **bytecode instrumentation**(javaagent, ASM/ByteBuddy 기반), .NET은 **CLR Profiler API**를 쓴다. X-Ray SDK는 언어별 SDK 안에 이 패칭 로직을 내장하고, OpenTelemetry는 별도의 instrumentation 라이브러리로 분리했다. 이 차이가 중요한 이유: Java auto-instrumentation은 `-javaagent` 플래그만 추가하면 **소스 코드를 전혀 안 건드려도** 되지만, Python의 monkey-patching은 import 순서에 민감해 `patch_all()`을 다른 import보다 먼저 호출하지 않으면 일부 라이브러리가 패치되지 않는 미묘한 버그가 생긴다.
+> auto-instrumentation의 구현 메커니즘은 언어마다 다르다. Python/Ruby는 런타임에 메서드를 교체하는 **monkey-patching**, Java는 클래스 로딩 시점에 바이트코드를 변형하는 **bytecode instrumentation**(javaagent, ASM/ByteBuddy 기반), .NET은 **CLR Profiler API**를 쓴다. X-Ray SDK는 언어별 SDK 안에 이 패칭 로직을 내장하고, OpenTelemetry는 별도의 instrumentation 라이브러리로 분리했다. 이 차이가 중요한 이유: Java auto-instrumentation은 `-javaagent` 플래그만 추가하면 **소스 코드를 전혀 안 건드려도** 되지만, Python의 monkey-patching은 import 순서에 민감해 `patch_all()`을 다른 import보다 먼저 호출하지 않으면 일부 라이브러리가 패치되지 않는 미묘한 버그가 생긴다.
 
 ## Annotation vs Metadata — 역인덱스의 경제학
 
@@ -116,7 +116,7 @@ tracer.put_metadata(key="RequestBody", value=event_body)  # 검색 불가, 상�
 
 이 설계는 검색 엔진의 근본 트레이드오프 그대로다. 인덱싱된 필드는 빠르게 검색되지만 **역인덱스(inverted index)를 만들고 유지하는 비용**이 든다. 그래서 X-Ray는 인덱싱되는 annotation에 개수 제한을 걸고, 검색이 필요 없는 상세 정보는 인덱싱하지 않는 metadata로 보내라고 강제한다.
 
-> 💡 **관련 이론**: annotation/metadata의 분리는 Day 어제(Week 10) 본 CloudWatch의 메트릭(저카디널리티 집계)과 로그(고카디널리티 상세)의 분리와 정확히 같은 원리다. 일반화하면 옵저버빌리티 데이터는 항상 두 부류로 나뉜다 — **차원/태그/annotation처럼 인덱싱해 검색·집계하는 저카디널리티 키**와, **페이로드/metadata처럼 인덱싱 없이 보관만 하는 고카디널리티 상세**. 역인덱스 비용이 카디널리티에 비례하기 때문이다. `OrderId`(요청마다 고유, 고카디널리티)를 annotation으로 마구 넣으면 인덱스가 폭발하므로, 검색 키로 꼭 필요한 것만 annotation에 두고 나머지는 metadata로 내리는 것이 정석이다. 이는 Honeycomb·Elasticsearch의 "어떤 필드를 인덱싱할지"가 곧 비용 설계인 것과 같다.
+> annotation/metadata의 분리는 Day 어제(Week 10) 본 CloudWatch의 메트릭(저카디널리티 집계)과 로그(고카디널리티 상세)의 분리와 정확히 같은 원리다. 일반화하면 옵저버빌리티 데이터는 항상 두 부류로 나뉜다 — **차원/태그/annotation처럼 인덱싱해 검색·집계하는 저카디널리티 키**와, **페이로드/metadata처럼 인덱싱 없이 보관만 하는 고카디널리티 상세**. 역인덱스 비용이 카디널리티에 비례하기 때문이다. `OrderId`(요청마다 고유, 고카디널리티)를 annotation으로 마구 넣으면 인덱스가 폭발하므로, 검색 키로 꼭 필요한 것만 annotation에 두고 나머지는 metadata로 내리는 것이 정석이다. 이는 Honeycomb·Elasticsearch의 "어떤 필드를 인덱싱할지"가 곧 비용 설계인 것과 같다.
 
 ## Service Map — 인과 그래프를 위상으로 집계하다
 
@@ -134,7 +134,7 @@ tracer.put_metadata(key="RequestBody", value=event_body)  # 검색 불가, 상�
               (p50/p99 latency, error% 가 각 엣지에)
 ```
 
-> 🔍 **더 깊이**: Service Map은 개별 trace의 인과 그래프들을 **위상적으로 합집합(union)**한 것이다. trace 하나는 "이 요청이 거친 경로"지만, Service Map은 "모든 요청이 거친 경로의 합"이라 시스템 전체 구조를 드러낸다. 여기서 핵심은 **에러의 세 분류**다 — `fault`(5xx, 서버 잘못), `error`(4xx, 클라이언트 잘못), `throttle`(429, 속도 제한). Service Map이 빨갛다고 다 같은 빨강이 아니다. throttle이 많으면 용량/스로틀링 문제, fault가 많으면 코드/의존성 장애, error가 많으면 잘못된 요청이 들어오는 것이다. 이 분류를 구분하지 못하면 "빨간 노드"를 보고 엉뚱한 곳을 고치게 된다.
+> Service Map은 개별 trace의 인과 그래프들을 **위상적으로 합집합(union)**한 것이다. trace 하나는 "이 요청이 거친 경로"지만, Service Map은 "모든 요청이 거친 경로의 합"이라 시스템 전체 구조를 드러낸다. 여기서 핵심은 **에러의 세 분류**다 — `fault`(5xx, 서버 잘못), `error`(4xx, 클라이언트 잘못), `throttle`(429, 속도 제한). Service Map이 빨갛다고 다 같은 빨강이 아니다. throttle이 많으면 용량/스로틀링 문제, fault가 많으면 코드/의존성 장애, error가 많으면 잘못된 요청이 들어오는 것이다. 이 분류를 구분하지 못하면 "빨간 노드"를 보고 엉뚱한 곳을 고치게 된다.
 
 ## X-Ray Daemon — 왜 직접 안 보내고 Daemon을 거치나
 
@@ -146,7 +146,7 @@ Lambda는 X-Ray와 자동 통합되어 별도 설정이 없지만, EC2·ECS·EKS
 
 왜 이 간접층을 두는가? Dapper의 "low overhead" 목표 때문이다. 애플리케이션이 매 호출마다 X-Ray API를 동기로 부르면 네트워크 왕복이 본 요청에 더해진다. UDP로 던지면 fire-and-forget이라 애플리케이션은 응답을 기다리지 않고, Daemon이 비동기로 배치 전송·재시도·버퍼링을 떠맡는다. 이는 로깅에서 애플리케이션이 직접 원격 전송하지 않고 로컬 에이전트(Fluent Bit)에 던지는 패턴과 똑같다.
 
-> 💡 **관련 이론**: 애플리케이션과 텔레메트리 백엔드 사이에 로컬 에이전트를 두는 이 패턴은 **사이드카 패턴**(sidecar pattern)의 전형이다. 관심사 분리 — 애플리케이션은 "텔레메트리를 던지는" 책임만 지고, "배치·재시도·압축·인증·라우팅"은 사이드카가 진다. UDP를 쓰는 이유는 **추적 데이터의 손실 허용성**이다. trace는 통계적 표본이라 일부를 잃어도 전체 그림이 크게 흔들리지 않으므로, 신뢰성(TCP)보다 낮은 오버헤드(UDP)를 택한다. 반대로 결제 트랜잭션이라면 절대 UDP를 쓰지 않는다. "데이터의 가치 대비 손실 허용도가 전송 프로토콜을 결정한다"는 일반 원리의 사례다.
+> 애플리케이션과 텔레메트리 백엔드 사이에 로컬 에이전트를 두는 이 패턴은 **사이드카 패턴**(sidecar pattern)의 전형이다. 관심사 분리 — 애플리케이션은 "텔레메트리를 던지는" 책임만 지고, "배치·재시도·압축·인증·라우팅"은 사이드카가 진다. UDP를 쓰는 이유는 **추적 데이터의 손실 허용성**이다. trace는 통계적 표본이라 일부를 잃어도 전체 그림이 크게 흔들리지 않으므로, 신뢰성(TCP)보다 낮은 오버헤드(UDP)를 택한다. 반대로 결제 트랜잭션이라면 절대 UDP를 쓰지 않는다. "데이터의 가치 대비 손실 허용도가 전송 프로토콜을 결정한다"는 일반 원리의 사례다.
 
 ## X-Ray Insights — 자동 이상 탐지
 
@@ -158,7 +158,7 @@ trace를 사람이 계속 들여다볼 수는 없다. **X-Ray Insights**는 Serv
 
 이는 Week 10에서 본 CloudWatch Anomaly Detection과 같은 계열 — 정적 임계값 대신 학습된 정상 패턴에서의 이탈을 탐지한다. 차이는 대상이 메트릭이 아니라 trace 기반 서비스 위상의 건강도라는 점이다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 다섯 가지다. 첫째, **분산 추적은 Dapper(2010)에서 태어난 trace-span-context propagation 모델**이고, X-Ray의 Trace/Segment/Subsegment는 그 AWS판이다. 둘째, **모든 마법은 context propagation 하나에 달려 있다** — Trace ID를 헤더로 전파하며, X-Ray 헤더와 W3C `traceparent`의 불일치가 멀티 SDK 환경에서 trace가 끊기는 첫 번째 원인이다. 셋째, **Active vs Passive는 trace를 시작할 권한**의 차이이고, Active Tracing과 SDK instrumentation은 별개 스위치다. 넷째, **Annotation은 인덱싱(검색 가능, 저카디널리티), Metadata는 비인덱싱(상세)**이며 이는 역인덱스의 경제학이다. 다섯째, **Service Map은 개별 인과 그래프의 위상적 합집합**이고, fault/error/throttle 세 분류를 구분해야 올바른 곳을 고친다.
 

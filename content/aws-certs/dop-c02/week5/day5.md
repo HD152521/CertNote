@@ -62,11 +62,11 @@ CDK Pipelines → self-mutating, crossAccountKeys 자동화, Wave 병렬 배포
 | CAPABILITY_IAM | CAPABILITY_NAMED_IAM | 자동 명명 IAM 리소스 vs 명시적 명명 IAM 리소스 |
 | SERVICE_MANAGED StackSet | SELF_MANAGED StackSet | Organizations 연동 자동화 vs 수동 Role 설정 |
 
-> ⚠️ **함정**: 시험에서 자주 등장하는 "트랩" 선택지 패턴. (1) Cross-Account 배포 KMS 오류 → S3 버킷 정책을 수정하는 선택지가 있어도 KMS Key Policy가 정답인 경우. (2) "15분 초과 작업" → Lambda timeout 연장(불가능, 최대 15분)이 선택지로 등장. (3) "Slack 승인을 시니어 엔지니어만" → Chatbot IAM Role 수정이 선택지로 등장하지만 Chatbot은 사용자별 IAM 매핑 불가. (4) "모든 commit 빌드 + 마지막만 배포" → SUPERSEDED가 선택지로 등장하지만 SUPERSEDED는 이전 commit 빌드를 취소함. 이 트랩을 인식하는 훈련이 필요하다.
+> ⚠️ **함정**: 시험에서 쓰이는 "트랩" 선택지 패턴. (1) Cross-Account 배포 KMS 오류 → S3 버킷 정책을 수정하는 선택지가 있어도 KMS Key Policy가 정답인 경우. (2) "15분 초과 작업" → Lambda timeout 연장(불가능, 최대 15분)이 선택지로 등장. (3) "Slack 승인을 시니어 엔지니어만" → Chatbot IAM Role 수정이 선택지로 등장하지만 Chatbot은 사용자별 IAM 매핑 불가. (4) "모든 commit 빌드 + 마지막만 배포" → SUPERSEDED가 선택지로 등장하지만 SUPERSEDED는 이전 commit 빌드를 취소함. 이 트랩을 인식하는 훈련이 필요하다.
 
-> 🔍 **더 깊이**: 4종 권한 체인 트러블슈팅 방법론. 순서대로 확인한다. (1) AssumeRole 성공 여부 → CloudTrail에서 "AssumeRole" 이벤트, errorCode 필드 확인. (2) S3 접근 성공 여부 → CloudTrail에서 "GetObject" 이벤트, accessDenied 여부. (3) KMS 복호화 성공 여부 → CloudTrail에서 "Decrypt" 이벤트, 에러 여부. (4) CloudFormation API 호출 성공 여부 → CloudTrail에서 "CreateStack/UpdateStack" 이벤트. 에러가 발생한 단계의 이전 단계까지는 권한이 있다. 이 방법론으로 KMS 문제를 3번에서 정확히 찾을 수 있다. CloudTrail의 `errorCode: AccessDenied`와 `errorMessage: User: ... is not authorized to perform: kms:Decrypt`가 명확한 증거다.
+> 4종 권한 체인 트러블슈팅 방법론. 순서대로 확인한다. (1) AssumeRole 성공 여부 → CloudTrail에서 "AssumeRole" 이벤트, errorCode 필드 확인. (2) S3 접근 성공 여부 → CloudTrail에서 "GetObject" 이벤트, accessDenied 여부. (3) KMS 복호화 성공 여부 → CloudTrail에서 "Decrypt" 이벤트, 에러 여부. (4) CloudFormation API 호출 성공 여부 → CloudTrail에서 "CreateStack/UpdateStack" 이벤트. 에러가 발생한 단계의 이전 단계까지는 권한이 있다. 이 방법론으로 KMS 문제를 3번에서 정확히 찾을 수 있다. CloudTrail의 `errorCode: AccessDenied`와 `errorMessage: User: ... is not authorized to perform: kms:Decrypt`가 명확한 증거다.
 
-> 📚 **사례**: 주요 AWS 고객들의 CodePipeline 적용 패턴 요약. Netflix: StackSets + Organizations로 1,500개 계정에 Security Baseline 자동 배포. Goldman Sachs: Account Factory 파이프라인, 신규 계정 온보딩 30분 이내. Stripe: Stage 조건(beforeEntry + onSuccess) 4단계 자동 게이트로 배포 사고 70% 감소. Shopify: 서비스 유형별 Execution Mode 차별화(결제 QUEUED, 프론트엔드 SUPERSEDED, 테스트 환경 PARALLEL). Airbnb: Step Functions WaitForTaskToken으로 Slack 승인 시간 2시간 → 15분 단축. 이 사례들이 DOP-C02 시나리오의 실제 배경 맥락이다.
+> 주요 AWS 고객들의 CodePipeline 적용 패턴 요약. Netflix: StackSets + Organizations로 1,500개 계정에 Security Baseline 자동 배포. Goldman Sachs: Account Factory 파이프라인, 신규 계정 온보딩 30분 이내. Stripe: Stage 조건(beforeEntry + onSuccess) 4단계 자동 게이트로 배포 사고 70% 감소. Shopify: 서비스 유형별 Execution Mode 차별화(결제 QUEUED, 프론트엔드 SUPERSEDED, 테스트 환경 PARALLEL). Airbnb: Step Functions WaitForTaskToken으로 Slack 승인 시간 2시간 → 15분 단축. 이 사례들이 DOP-C02 시나리오의 실제 배경 맥락이다.
 
 ---
 

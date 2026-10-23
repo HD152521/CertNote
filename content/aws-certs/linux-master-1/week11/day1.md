@@ -22,9 +22,9 @@
 
 - `smbd`가 실제 파일 전송과 인증을 담당하는 핵심이다.
 - `nmbd`는 윈도의 "내 네트워크 환경"에 서버 이름이 보이게 해주는 이름 해석 서비스다.
-- 현대 환경에서는 DNS와 445 포트만으로도 동작하지만, 시험에서는 두 데몬의 역할 구분이 단골이다.
+- 현대 환경에서는 DNS와 445 포트만으로도 동작하지만, 시험에서는 두 데몬의 역할 구분을 묻는다.
 
-> 💡 **핵심**: `smbd`는 **파일 공유와 인증**, `nmbd`는 **NetBIOS 이름 해석과 브라우징**. 포트도 짝지어 외워라 — smbd는 139/445(TCP), nmbd는 137/138(UDP).
+`smbd`는 **파일 공유와 인증**, `nmbd`는 **NetBIOS 이름 해석과 브라우징**. 포트도 짝이 있다 — smbd는 139/445(TCP), nmbd는 137/138(UDP).
 
 Samba 패키지를 설치하면 보통 다음 명령으로 서비스를 다룬다.
 
@@ -40,7 +40,7 @@ systemctl enable smb nmb
 service smb start
 ```
 
-> 🔍 **배포판 차이**: 서비스 이름이 배포판마다 다르다. RHEL/CentOS 계열은 `smb`, `nmb`, 데비안/우분투 계열은 `smbd`, `nmbd`가 서비스 이름이다. 설정 파일 위치도 RHEL은 `/etc/samba/smb.conf`로 동일하다.
+**배포판 차이**: 서비스 이름이 배포판마다 다르다. RHEL/CentOS 계열은 `smb`, `nmb`, 데비안/우분투 계열은 `smbd`, `nmbd`가 서비스 이름이다. 설정 파일 위치도 RHEL은 `/etc/samba/smb.conf`로 동일하다.
 
 ## smb.conf: Samba의 모든 것이 담긴 설정 파일
 
@@ -84,7 +84,7 @@ service smb start
 - `[global]`을 제외한 나머지 섹션 이름은 곧 **공유 이름(share name)**이 된다.
 - 예: 윈도에서 `\\LINUXSRV\public`로 접근하면 `[public]` 섹션의 설정이 적용된다.
 
-> 💡 **개념**: `[homes]`는 마법 같은 섹션이다. 사용자 `kim`이 접속하면 Samba가 `[homes]` 정의를 복제해 `[kim]`이라는 가상 공유를 만들어 `kim`의 홈 디렉터리(`/home/kim`)로 연결한다. 그래서 별도로 사용자마다 공유를 정의할 필요가 없다.
+`[homes]`는 마법 같은 섹션이다. 사용자 `kim`이 접속하면 Samba가 `[homes]` 정의를 복제해 `[kim]`이라는 가상 공유를 만들어 `kim`의 홈 디렉터리(`/home/kim`)로 연결한다. 그래서 별도로 사용자마다 공유를 정의할 필요가 없다.
 
 ### [global] 섹션의 주요 지시어
 
@@ -118,7 +118,7 @@ service smb start
 | `create mask` | 새로 만든 파일의 권한 마스크 | `create mask = 0644` |
 | `directory mask` | 새로 만든 디렉터리의 권한 마스크 | `directory mask = 0755` |
 
-> ⚠️ **주의**: `writable = yes`와 `read only = no`는 **같은 뜻**이다. 둘을 동시에 모순되게 쓰면 마지막에 쓴 값이 이긴다. `valid users = @sales`처럼 그룹은 `@`를 앞에 붙인다(그룹 지정 기호 — 시험 단골).
+> ⚠️ **주의**: `writable = yes`와 `read only = no`는 **같은 뜻**이다. 둘을 동시에 모순되게 쓰면 마지막에 쓴 값이 이긴다. `valid users = @sales`처럼 그룹은 `@`를 앞에 붙인다(그룹 지정 기호).
 
 - 다음은 영업팀(`sales` 그룹)만 읽고 쓸 수 있는 공유 예시다.
 
@@ -133,7 +133,7 @@ service smb start
     directory mask = 0770
 ```
 
-> 🔍 **권한의 이중 관문**: Samba 공유 접근은 두 단계 검사를 통과해야 한다. (1) `smb.conf`의 `valid users`/`writable` 같은 **Samba 수준 권한**, (2) 그 디렉터리에 대한 **리눅스 파일시스템 권한(chmod/chown)**. 둘 중 하나라도 막으면 접근이 거부된다. "smb.conf는 맞는데 쓰기가 안 된다"면 십중팔구 리눅스 디렉터리 권한 문제다.
+**권한의 이중 관문**: Samba 공유 접근은 두 단계 검사를 통과해야 한다. (1) `smb.conf`의 `valid users`/`writable` 같은 **Samba 수준 권한**, (2) 그 디렉터리에 대한 **리눅스 파일시스템 권한(chmod/chown)**. 둘 중 하나라도 막으면 접근이 거부된다. "smb.conf는 맞는데 쓰기가 안 된다"면 십중팔구 리눅스 디렉터리 권한 문제다.
 
 ## testparm: 설정 파일 문법 검증
 
@@ -151,7 +151,7 @@ testparm /etc/samba/smb.conf
 - 출력에 `Loaded services file OK.`가 나오면 문법은 정상이다.
 - 이어서 Enter를 누르면 실제로 적용될 모든 설정값을 펼쳐 보여준다.
 
-> 💡 **실무 흐름**: `smb.conf 수정 → testparm으로 검증 → systemctl restart smb → smbclient로 접속 테스트`. 이 순서를 몸에 익혀라.
+`smb.conf 수정 → testparm으로 검증 → systemctl restart smb → smbclient로 접속 테스트`. 이 순서로 작업한다.
 
 ## smbpasswd: Samba 전용 계정 만들기
 
@@ -214,7 +214,7 @@ mount -t cifs //LINUXSRV/sales /mnt/sales -o username=sambauser
 # //LINUXSRV/sales  /mnt/sales  cifs  username=sambauser,password=secret  0 0
 ```
 
-> 📚 **mount 타입 정리**: 윈도/Samba 공유는 `mount -t cifs`(과거엔 `-t smbfs`), 리눅스끼리는 `mount -t nfs`. 시험에서 "윈도 공유 폴더를 리눅스에 마운트하는 타입"을 물으면 `cifs`다.
+**mount 타입 정리**: 윈도/Samba 공유는 `mount -t cifs`(과거엔 `-t smbfs`), 리눅스끼리는 `mount -t nfs`. 시험에서 "윈도 공유 폴더를 리눅스에 마운트하는 타입"을 물으면 `cifs`다.
 
 ## 한눈에 보는 Samba 구축 흐름
 
@@ -247,7 +247,7 @@ firewall-cmd --reload
 smbclient -L //localhost -U sambauser
 ```
 
-> 🔍 **직접 쳐보기**: 가상머신 두 대(또는 로컬 루프백)로 위 ①~⑧을 한 번 따라 해 보라. 특히 ④ `testparm`이 토해내는 경고 메시지를 읽어보면 어떤 지시어가 잘못됐는지 감이 잡힌다. ⑦ 방화벽을 빼먹고 "접속이 안 된다"며 헤매는 게 가장 흔한 실수다.
+**직접 쳐보기**: 가상머신 두 대(또는 로컬 루프백)로 위 ①~⑧을 한 번 따라 해 본다. 특히 ④ `testparm`이 토해내는 경고 메시지를 읽어보면 어떤 지시어가 잘못됐는지 감이 잡힌다. ⑦ 방화벽을 빼먹고 "접속이 안 된다"며 헤매기 쉽다.
 
 내일은 리눅스끼리의 표준 공유인 NFS를 다루며, Samba와 어떻게 다른지 비교한다.
 

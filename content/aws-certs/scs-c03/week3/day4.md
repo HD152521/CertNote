@@ -42,9 +42,9 @@ VPC 엔드포인트는 이 문제를 근본적으로 푼다. AWS 서비스(S3, D
      온프레미스에서 닿을 수 있는 것은 사설 IP뿐이므로 (C)만 가능하다.
 ```
 
-이 그림에서 시험 문제 절반이 나온다. "온프레미스에서 Direct Connect로 S3에 사설 접근"이 Interface Endpoint인 이유는 온프레미스가 **VPC의 라우팅 테이블을 사용하지 않기** 때문이고, Gateway Endpoint는 그 라우팅 테이블에만 존재하는 경로이기 때문이다. 반대로 "VPC 안의 Lambda가 S3에 사설 접근"이 Gateway Endpoint인 이유는, 그 경우엔 라우팅 테이블이 그대로 적용되고 비용이 0이기 때문이다.
+이 그림이 관련 문제의 바탕이다. "온프레미스에서 Direct Connect로 S3에 사설 접근"이 Interface Endpoint인 이유는 온프레미스가 **VPC의 라우팅 테이블을 사용하지 않기** 때문이고, Gateway Endpoint는 그 라우팅 테이블에만 존재하는 경로이기 때문이다. 반대로 "VPC 안의 Lambda가 S3에 사설 접근"이 Gateway Endpoint인 이유는, 그 경우엔 라우팅 테이블이 그대로 적용되고 비용이 0이기 때문이다.
 
-> 💡 **관련 이론**: 둘의 차이는 **구현 레이어**가 다르다는 데서 온다. Gateway Endpoint는 **라우팅 레이어**에서 동작한다 — 라우팅 테이블에 S3용 prefix list(`pl-xxxx`)를 향하는 경로를 추가하면, 그 서비스로 향하는 트래픽이 인터넷이 아닌 AWS 내부로 흐른다. Interface Endpoint는 **ENI 레이어**에서 동작한다 — 서브넷에 실제 네트워크 인터페이스(사설 IP)를 만들어, 그 IP로 서비스에 연결한다. 그래서 Interface는 SG가 붙고 온프레미스에서도 접근 가능한 반면, Gateway는 라우팅이라 VPC 내부에서만 동작한다.
+둘의 차이는 **구현 레이어**가 다르다는 데서 온다. Gateway Endpoint는 **라우팅 레이어**에서 동작한다 — 라우팅 테이블에 S3용 prefix list(`pl-xxxx`)를 향하는 경로를 추가하면, 그 서비스로 향하는 트래픽이 인터넷이 아닌 AWS 내부로 흐른다. Interface Endpoint는 **ENI 레이어**에서 동작한다 — 서브넷에 실제 네트워크 인터페이스(사설 IP)를 만들어, 그 IP로 서비스에 연결한다. 그래서 Interface는 SG가 붙고 온프레미스에서도 접근 가능한 반면, Gateway는 라우팅이라 VPC 내부에서만 동작한다.
 
 ```bash
 # Gateway Endpoint (S3) — 라우팅 테이블에 경로 추가, 무료
@@ -62,13 +62,13 @@ aws ec2 create-vpc-endpoint \
   --private-dns-enabled
 ```
 
-> ⚠️ **함정**: 시험에서 단골인 구분 — "S3와 DynamoDB는 Gateway, 나머지는 모두 Interface"다. "Lambda를 VPC 안에서 S3에 사설 접근"이라면 Gateway Endpoint(무료)가 정답이지 Interface가 아니다. 반대로 "온프레미스에서 DX를 통해 S3에 사설 접근"이라면 Gateway는 VPC 내부 전용이라 안 되고, **S3 Interface Endpoint**(2021년 추가됨)가 필요하다. 즉 S3는 둘 다 지원하지만 용도가 다르다 — VPC 내부면 무료 Gateway, 온프레미스 연동이면 Interface.
+> ⚠️ **함정**: 시험에서 헷갈리기 쉬운 구분 — "S3와 DynamoDB는 Gateway, 나머지는 모두 Interface"다. "Lambda를 VPC 안에서 S3에 사설 접근"이라면 Gateway Endpoint(무료)가 정답이지 Interface가 아니다. 반대로 "온프레미스에서 DX를 통해 S3에 사설 접근"이라면 Gateway는 VPC 내부 전용이라 안 되고, **S3 Interface Endpoint**(2021년 추가됨)가 필요하다. 즉 S3는 둘 다 지원하지만 용도가 다르다 — VPC 내부면 무료 Gateway, 온프레미스 연동이면 Interface.
 
 ## Private DNS: 코드를 바꾸지 않고 사설로 보내기
 
 Interface Endpoint의 핵심 기능이 **Private DNS**다. 기본적으로 애플리케이션은 `kms.us-east-1.amazonaws.com` 같은 공용 도메인을 호출한다. Private DNS를 켜면 이 도메인이 VPC 안에서 엔드포인트의 **사설 IP로 해석(resolve)**된다. 코드 한 줄 바꾸지 않아도 트래픽이 사설 경로로 흐른다.
 
-> 🔍 **더 깊이**: Private DNS가 동작하려면 VPC의 `enableDnsSupport`와 `enableDnsHostnames`가 둘 다 켜져 있어야 한다. 이게 꺼져 있으면 Private DNS를 켜도 도메인이 여전히 공용 IP로 해석돼 트래픽이 인터넷으로 샌다. 트러블슈팅 시 "엔드포인트는 만들었는데 여전히 인터넷으로 나간다"면 (1) Private DNS 활성 여부, (2) VPC DNS 속성 두 개, (3) 엔드포인트 ENI 서브넷이 호출하는 인스턴스와 라우팅상 도달 가능한지를 본다. 온프레미스에서 호출할 때는 공용 도메인이 온프레미스 리졸버에서 엔드포인트 사설 IP로 풀리도록 Route 53 Resolver Inbound Endpoint나 조건부 포워딩이 필요하다.
+Private DNS가 동작하려면 VPC의 `enableDnsSupport`와 `enableDnsHostnames`가 둘 다 켜져 있어야 한다. 이게 꺼져 있으면 Private DNS를 켜도 도메인이 여전히 공용 IP로 해석돼 트래픽이 인터넷으로 샌다. 트러블슈팅 시 "엔드포인트는 만들었는데 여전히 인터넷으로 나간다"면 (1) Private DNS 활성 여부, (2) VPC DNS 속성 두 개, (3) 엔드포인트 ENI 서브넷이 호출하는 인스턴스와 라우팅상 도달 가능한지를 본다. 온프레미스에서 호출할 때는 공용 도메인이 온프레미스 리졸버에서 엔드포인트 사설 IP로 풀리도록 Route 53 Resolver Inbound Endpoint나 조건부 포워딩이 필요하다.
 
 ## 엔드포인트 정책: 유출을 봉쇄하는 핵심
 
@@ -92,7 +92,7 @@ Interface Endpoint의 핵심 기능이 **Private DNS**다. 기본적으로 애�
 
 이 정책의 의미: 이 엔드포인트로는 **오직 `my-company-bucket`에만, 우리 조직(`o-myorg123`) 소속 Principal만** 접근 가능. 침해된 인스턴스가 자격증명을 탈취해 외부 공격자 버킷으로 데이터를 PutObject하려 해도, 그 버킷은 Resource에 없으니 차단된다.
 
-> 💡 **관련 이론**: 이것이 **데이터 경계(Data Perimeter)** 개념이다. AWS가 정립한 모범 사례로, 세 축으로 구성된다 — (1) "신뢰하는 ID만"(`aws:PrincipalOrgID`), (2) "신뢰하는 리소스만"(`aws:ResourceOrgID`), (3) "신뢰하는 네트워크에서만"(`aws:SourceVpce`). 엔드포인트 정책은 이 중 네트워크 축의 핵심 도구다. "우리 VPC 엔드포인트를 거친 요청만 우리 버킷에 허용"을 버킷 정책에서 `aws:SourceVpce` 조건으로 강제하면, 인터넷이나 다른 계정에서의 직접 접근이 차단된다.
+이것이 **데이터 경계(Data Perimeter)** 개념이다. AWS가 정립한 모범 사례로, 세 축으로 구성된다 — (1) "신뢰하는 ID만"(`aws:PrincipalOrgID`), (2) "신뢰하는 리소스만"(`aws:ResourceOrgID`), (3) "신뢰하는 네트워크에서만"(`aws:SourceVpce`). 엔드포인트 정책은 이 중 네트워크 축의 핵심 도구다. "우리 VPC 엔드포인트를 거친 요청만 우리 버킷에 허용"을 버킷 정책에서 `aws:SourceVpce` 조건으로 강제하면, 인터넷이나 다른 계정에서의 직접 접근이 차단된다.
 
 ### 세 축을 실제 정책으로 옮기면
 
@@ -197,7 +197,7 @@ Interface Endpoint의 핵심 기능이 **Private DNS**다. 기본적으로 애�
 
 > 🎯 **시나리오**: "민감 데이터가 담긴 S3 버킷이 있다. 직원이 노트북에서 직접, 혹은 침해된 외부 호스트에서 이 버킷에 접근하는 것을 완전히 막고, 오직 사내 VPC를 거친 요청만 허용하고 싶다." — 답: (1) Gateway Endpoint 생성, (2) **버킷 정책**에 `"Condition": {"StringEquals": {"aws:SourceVpce": "vpce-xxxx"}}`로 그 엔드포인트 경유만 허용, (3) `aws:SourceVpc`나 `aws:PrincipalOrgID`도 추가. 이러면 콘솔·CLI로 인터넷에서 직접 접근하면 AccessDenied. 데이터가 네트워크 경계 안에 갇힌다.
 
-> ⚠️ **함정**: 버킷 정책에 `aws:SourceVpce`만 걸면 **그 외 모든 접근을 막아버려** CloudFront·다른 서비스 연동까지 끊길 수 있다. 또 VPC Endpoint 정책과 버킷 정책, IAM 정책은 **AND로 평가**된다 — 셋 중 하나라도 거부하면 거부, 모두 허용해야 허용. 그래서 엔드포인트 정책을 너무 좁히면 정상 트래픽까지 끊기는 사고가 잦다. 엔드포인트 정책의 기본값은 "전체 허용(full access)"이고, 좁힐 때는 단계적으로 검증한다.
+버킷 정책에 `aws:SourceVpce`만 걸면 **그 외 모든 접근을 막아버려** CloudFront·다른 서비스 연동까지 끊길 수 있다. 또 VPC Endpoint 정책과 버킷 정책, IAM 정책은 **AND로 평가**된다 — 셋 중 하나라도 거부하면 거부, 모두 허용해야 허용. 그래서 엔드포인트 정책을 너무 좁히면 정상 트래픽까지 끊기는 사고가 잦다. 엔드포인트 정책의 기본값은 "전체 허용(full access)"이고, 좁힐 때는 단계적으로 검증한다.
 
 ## "EC2가 S3에 못 붙는다"를 좁히는 순서
 
@@ -262,7 +262,7 @@ aws ec2 describe-prefix-lists \
   --filters "Name=prefix-list-name,Values=com.amazonaws.us-east-1.s3"
 ```
 
-> 🔍 **더 깊이**: Interface Endpoint를 만들 때 **어느 서브넷에 ENI를 둘지**가 가용성과 비용을 동시에 결정한다. AZ 하나에만 ENI를 두면 그 AZ가 흔들릴 때 다른 AZ의 인스턴스가 서비스에 접근하지 못하고, 평상시에도 AZ 간 트래픽이 발생한다. 그래서 워크로드가 있는 모든 AZ에 하나씩 두는 것이 기본이다. 반대로 엔드포인트마다 ENI가 늘어나면 시간당 요금이 곱해지므로, "정말 필요한 서비스"의 목록을 관리하는 일이 실제 비용 관리 작업이 된다. 여기서 조직들이 흔히 택하는 절충이 **중앙 공유 엔드포인트 VPC** — 엔드포인트를 한 VPC에 모아 두고 Transit Gateway나 Route 53 Resolver 규칙으로 다른 VPC가 그것을 쓰게 하는 구성이다. 다만 이 구성은 엔드포인트 정책 하나가 여러 VPC의 트래픽을 동시에 통제하게 되므로, 정책을 좁힐 때의 영향 범위도 함께 커진다는 점을 감안해야 한다.
+Interface Endpoint를 만들 때 **어느 서브넷에 ENI를 둘지**가 가용성과 비용을 동시에 결정한다. AZ 하나에만 ENI를 두면 그 AZ가 흔들릴 때 다른 AZ의 인스턴스가 서비스에 접근하지 못하고, 평상시에도 AZ 간 트래픽이 발생한다. 그래서 워크로드가 있는 모든 AZ에 하나씩 두는 것이 기본이다. 반대로 엔드포인트마다 ENI가 늘어나면 시간당 요금이 곱해지므로, "정말 필요한 서비스"의 목록을 관리하는 일이 실제 비용 관리 작업이 된다. 여기서 조직들이 흔히 택하는 절충이 **중앙 공유 엔드포인트 VPC** — 엔드포인트를 한 VPC에 모아 두고 Transit Gateway나 Route 53 Resolver 규칙으로 다른 VPC가 그것을 쓰게 하는 구성이다. 다만 이 구성은 엔드포인트 정책 하나가 여러 VPC의 트래픽을 동시에 통제하게 되므로, 정책을 좁힐 때의 영향 범위도 함께 커진다는 점을 감안해야 한다.
 
 ## PrivateLink: 서비스 제공자 패턴
 
@@ -278,9 +278,9 @@ Interface Endpoint의 일반화가 **PrivateLink**다. AWS 서비스뿐 아니�
 - 소비자는 Interface Endpoint로 연결. **IP 겹침과 무관**, Peering 불필요.
 - 트래픽이 단방향(소비자→제공자)이고 제공자 VPC 전체가 노출되지 않음.
 
-> 🔍 **더 깊이**: PrivateLink가 VPC Peering보다 보안적으로 우월한 점은 **노출 표면의 차이**다. Peering은 두 VPC를 양방향으로 라우팅 연결해 CIDR 전체가 서로 보인다(SG로 좁혀야 함). PrivateLink는 제공자가 노출한 **단 하나의 서비스(NLB 엔드포인트)**만 보이고, 나머지 제공자 VPC는 완전히 가려진다. 그래서 SaaS 제공자가 다수 고객에게 서비스를 줄 때, 고객 VPC와 자사 VPC를 섞지 않고 격리된 채 연결하는 표준 방식이다. CIDR 충돌도 없다(ENI는 소비자 VPC 주소 사용).
+PrivateLink가 VPC Peering보다 보안적으로 우월한 점은 **노출 표면의 차이**다. Peering은 두 VPC를 양방향으로 라우팅 연결해 CIDR 전체가 서로 보인다(SG로 좁혀야 함). PrivateLink는 제공자가 노출한 **단 하나의 서비스(NLB 엔드포인트)**만 보이고, 나머지 제공자 VPC는 완전히 가려진다. 그래서 SaaS 제공자가 다수 고객에게 서비스를 줄 때, 고객 VPC와 자사 VPC를 섞지 않고 격리된 채 연결하는 표준 방식이다. CIDR 충돌도 없다(ENI는 소비자 VPC 주소 사용).
 
-> 📚 **사례**: Snowflake, Datadog, MongoDB Atlas 같은 SaaS는 모두 PrivateLink로 고객에게 사설 연결을 제공한다. 고객 입장에서는 자사 데이터가 인터넷을 거치지 않고 SaaS로 흐르므로 컴플라이언스(HIPAA, PCI)를 만족하기 쉽다. 만약 Peering이었다면 SaaS 제공자 VPC 전체가 고객에게 노출되는 위험이 있었다. PrivateLink는 "필요한 서비스 하나만 사설로"라는 최소 노출 원칙을 네트워크에 구현한 것이다.
+Snowflake, Datadog, MongoDB Atlas 같은 SaaS는 모두 PrivateLink로 고객에게 사설 연결을 제공한다. 고객 입장에서는 자사 데이터가 인터넷을 거치지 않고 SaaS로 흐르므로 컴플라이언스(HIPAA, PCI)를 만족하기 쉽다. 만약 Peering이었다면 SaaS 제공자 VPC 전체가 고객에게 노출되는 위험이 있었다. PrivateLink는 "필요한 서비스 하나만 사설로"라는 최소 노출 원칙을 네트워크에 구현한 것이다.
 
 ## 정리: 유출을 막는 3겹
 
@@ -290,7 +290,7 @@ Interface Endpoint의 일반화가 **PrivateLink**다. AWS 서비스뿐 아니�
 3. Endpoint Policy + 버킷 정책(aws:SourceVpce) → 어디로/누가만 허용
 ```
 
-> 🔍 **더 깊이**: 가장 강한 격리는 NAT를 완전히 제거하고 모든 AWS 서비스 접근을 Interface/Gateway Endpoint로만 하는 구성이다. 단 이러면 인스턴스가 OS 패치를 인터넷에서 받을 수 없으므로, Systems Manager(SSM Agent)도 Interface Endpoint(`ssm`, `ssmmessages`, `ec2messages`)로 연결하고, 컨테이너 이미지는 ECR Endpoint로, 로그는 CloudWatch Logs Endpoint로 보낸다. 이렇게 "인터넷 0(zero-internet) VPC"를 구성하면 데이터 유출 경로가 사실상 사라진다. 규제 워크로드(금융·의료)에서 채택하는 패턴이다.
+가장 강한 격리는 NAT를 완전히 제거하고 모든 AWS 서비스 접근을 Interface/Gateway Endpoint로만 하는 구성이다. 단 이러면 인스턴스가 OS 패치를 인터넷에서 받을 수 없으므로, Systems Manager(SSM Agent)도 Interface Endpoint(`ssm`, `ssmmessages`, `ec2messages`)로 연결하고, 컨테이너 이미지는 ECR Endpoint로, 로그는 CloudWatch Logs Endpoint로 보낸다. 이렇게 "인터넷 0(zero-internet) VPC"를 구성하면 데이터 유출 경로가 사실상 사라진다. 규제 워크로드(금융·의료)에서 채택하는 패턴이다.
 
 ### zero-internet VPC의 최소 엔드포인트 목록
 
@@ -313,7 +313,7 @@ ECR 줄이 특히 자주 빠진다. **이미지 매니페스트는 ECR API로 �
 
 > 🎯 **시나리오**: "규제 요건상 인터넷 경로가 없는 VPC에 컨테이너 워크로드를 올렸다. 태스크가 시작되지 않고 이미지 pull에서 멈춘다. 무엇이 빠졌나?" — 대개 **S3 Gateway Endpoint**다. ECR 관련 인터페이스 엔드포인트를 둘 다 만들었더라도 레이어 다운로드는 S3를 거치므로, S3 경로가 없으면 매니페스트까지만 되고 그다음이 멈춘다. 여기에 로그 드라이버가 CloudWatch Logs를 쓰고 있다면 `logs` 엔드포인트도 필요하고, 태스크 역할을 쓰면 `sts`도 필요하다. **"엔드포인트가 하나 빠지면 그 기능만 실패한다"** 는 성질 때문에 증상이 부분적으로 나타나고, 그래서 전체 목록을 체크리스트로 갖고 있는 것이 가장 빠른 해법이다.
 
-## 정리하며
+### 정리하며
 
 핵심은 넷이다. 첫째, **Gateway Endpoint는 S3·DynamoDB 전용(무료, 라우팅 기반)**이고 나머지는 모두 **Interface Endpoint(PrivateLink, ENI 기반, 유료)**다. 셋의 차이는 결국 "무엇으로 목적지를 지정하는가"이며 — NAT는 공인 IP, Gateway는 라우팅 경로, Interface는 사설 IP — 온프레미스가 닿을 수 있는 것은 사설 IP뿐이라 그 경우엔 Interface만 답이 된다.
 

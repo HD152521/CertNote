@@ -2,21 +2,21 @@
 
 Week 8을 통과하면서 CloudFormation의 Nested/Cross-Stack, StackSets의 Service-managed, Custom Resource의 ResponseURL 프로토콜, Hooks의 사전 검증, CDK의 Construct Level과 Pipelines self-mutation, Terraform tfstate의 잠금까지 일곱 가지 도구를 봤다. 시험에서 어렵게 출제되는 문제는 이 도구들이 따로 등장하지 않는다. **한 시나리오 안에 셋, 넷이 동시에 얽혀 "어디서 어떤 도구로 풀어야 하는가"를 묻는다**. 오늘은 그 통합 감각을 만든다.
 
-문제를 풀기 전에 한 번 더 정리하자. IaC 도구는 **추상화 계층**, **거버넌스 범위**, **변경 시점**의 세 축으로 구분된다. 추상화는 CFN(YAML) → SAM(매크로) → CDK(코드)로 올라가고, 거버넌스는 단일 Stack → 단일 계정 다 Stack → 멀티 계정(StackSets/Pipelines)으로 확장되며, 변경 시점은 합성 시점(Aspects/cdk-nag) → 배포 전(Hooks) → 배포 중(ChangeSet) → 배포 후(Drift/Config)의 네 단계가 있다. 시험 시나리오는 이 세 축의 어디에 답이 있는지를 묻는다.
+문제를 풀기 전에 한 번 더 정리한다. IaC 도구는 **추상화 계층**, **거버넌스 범위**, **변경 시점**의 세 축으로 구분된다. 추상화는 CFN(YAML) → SAM(매크로) → CDK(코드)로 올라가고, 거버넌스는 단일 스택 → 단일 계정 다 스택 → 멀티 계정(StackSets/Pipelines)으로 확장되며, 변경 시점은 합성 시점(Aspects/cdk-nag) → 배포 전(Hooks) → 배포 중(ChangeSet) → 배포 후(Drift/Config)의 네 단계가 있다. 시험 시나리오는 이 세 축의 어디에 답이 있는지를 묻는다.
 
 ## 통합 비교표 — Week 8 전체 도구
 
 | 도구 | 추상화 | 거버넌스 | 변경 시점 | 한 줄 요약 |
 |------|--------|----------|-----------|------------|
-| **CloudFormation** | 선언적 YAML | Stack 단위 | 배포 시 | 기반 엔진, 13년 묵은 거버넌스 자산 |
-| **SAM** | CFN 매크로 + 서버리스 DSL | Stack | 합성→배포 | 서버리스 보일러플레이트 축약 |
-| **CDK** | 코드(TS/Py/Java) | Stack | 합성→배포 | LLVM IR 패턴, 코드 재사용성 |
+| **CloudFormation** | 선언적 YAML | 스택 단위 | 배포 시 | 기반 엔진, 13년 묵은 거버넌스 자산 |
+| **SAM** | CFN 매크로 + 서버리스 DSL | 스택 | 합성→배포 | 서버리스 보일러플레이트 축약 |
+| **CDK** | 코드(TS/Py/Java) | 스택 | 합성→배포 | LLVM IR 패턴, 코드 재사용성 |
 | **CDK Pipelines** | 코드 | 멀티 환경 | self-mutating CI | 파이프라인도 코드, GitOps 원칙 |
 | **StackSets** | CFN 동기화 | 멀티 계정 멀티 리전 | OU 단위 fan-out | 1000+ 계정의 진실 단일 원천 |
-| **Custom Resource** | Lambda Provider | Stack 내부 확장 | 배포 중 호출 | CFN을 라이프사이클 엔진으로 확장 |
-| **CFN Hooks** | Resource Type Provider | Stack 또는 Org | 변경 사전 차단 | K8s ValidatingAdmissionWebhook 패턴 |
-| **CFN Drift** | 감지 메커니즘 | Stack/StackSet | 배포 후 비교 | 감지만, 자동 수정 X |
-| **Change Set** | 변경 미리보기 | Stack | 배포 전 검토 | Replacement=True 위험 신호 |
+| **Custom Resource** | Lambda Provider | 스택 내부 확장 | 배포 중 호출 | CFN을 라이프사이클 엔진으로 확장 |
+| **CFN Hooks** | Resource Type Provider | 스택 또는 Org | 변경 사전 차단 | K8s ValidatingAdmissionWebhook 패턴 |
+| **CFN Drift** | 감지 메커니즘 | 스택/StackSet | 배포 후 비교 | 감지만, 자동 수정 X |
+| **Change Set** | 변경 미리보기 | 스택 | 배포 전 검토 | Replacement=True 위험 신호 |
 | **Terraform** | HCL | tfstate 단위 | plan→apply | 멀티 클라우드, tfstate 자가 관리 |
 | **CDKTF** | 코드 → HCL | tfstate | 합성 | CDK 구문 + Terraform Provider |
 

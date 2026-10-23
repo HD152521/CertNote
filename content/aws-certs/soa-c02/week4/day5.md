@@ -1,6 +1,6 @@
 # Day 5 - Week 4 복습: CloudTrail·Config·감사 스택 종합
 
-Week 4의 도구들은 CloudWatch와는 다른 질문에 답한다. CloudWatch가 "지금 무슨 일이 일어나고 있는가"를 실시간으로 보여준다면, 이번 주의 도구들은 "과거에 누가 무엇을 했고, 지금 상태가 규정을 준수하며, 그 증거를 외부 감사관에게 어떻게 제출하는가"라는 사후적·규범적 질문을 다룬다. 보안 사고 대응과 컴플라이언스는 실시간 탐지만큼이나 사후 추적과 증거 체계가 중요하다. 오늘은 CloudTrail, CloudTrail Lake, AWS Config, Audit Manager가 어떤 계층을 이루는지 재조명하고, 시험 빈출 시나리오 10개로 마무리한다.
+Week 4의 도구들은 CloudWatch와는 다른 질문에 답한다. CloudWatch가 "지금 무슨 일이 일어나고 있는가"를 실시간으로 보여준다면, 이번 주의 도구들은 "과거에 누가 무엇을 했고, 지금 상태가 규정을 준수하며, 그 증거를 외부 감사관에게 어떻게 제출하는가"라는 사후적·규범적 질문을 다룬다. 보안 사고 대응과 컴플라이언스는 실시간 탐지만큼이나 사후 추적과 증거 체계가 중요하다. 오늘은 CloudTrail, CloudTrail Lake, AWS Config, Audit Manager가 어떤 계층을 이루는지 재조명하고, 출제 시나리오 10개로 마무리한다.
 
 ## Week 4 핵심 개념 연결 지도
 
@@ -74,7 +74,7 @@ Week 4의 도구들은 CloudWatch와는 다른 질문에 답한다. CloudWatch�
 | 운영 부담 | 낮음 (AWS 관리) | 높음 (ETL, 파티션, 스키마 관리) |
 | 중복 비용 | 주의: Trail과 동시 사용 시 이중 청구 | Trail만 사용 시 단일 청구 |
 
-> 💡 **관련 이론**: CloudTrail Lake의 컬럼형 저장소 설계는 OLAP(Online Analytical Processing) 데이터베이스의 표준 접근이다. 로우 기반 저장소(OLTP)가 특정 행의 전체 컬럼을 빠르게 읽는 데 최적화된 반면, 컬럼형 저장소는 특정 컬럼(예: `eventName`, `sourceIPAddress`)만 스캔하는 분석 쿼리에서 I/O와 비용을 크게 줄인다. Apache Parquet, Google BigQuery, Amazon Redshift가 같은 원리다. 감사 쿼리는 대부분 "특정 eventName의 모든 행"을 찾는 컬럼 지향 패턴이므로 Lake의 컬럼형 저장이 유리하다.
+CloudTrail Lake의 컬럼형 저장소 설계는 OLAP(Online Analytical Processing) 데이터베이스의 표준 접근이다. 로우 기반 저장소(OLTP)가 특정 행의 전체 컬럼을 빠르게 읽는 데 최적화된 반면, 컬럼형 저장소는 특정 컬럼(예: `eventName`, `sourceIPAddress`)만 스캔하는 분석 쿼리에서 I/O와 비용을 크게 줄인다. Apache Parquet, Google BigQuery, Amazon Redshift가 같은 원리다. 감사 쿼리는 대부분 "특정 eventName의 모든 행"을 찾는 컬럼 지향 패턴이므로 Lake의 컬럼형 저장이 유리하다.
 
 **Config Rule 평가 트리거 비교**
 
@@ -84,7 +84,7 @@ Week 4의 도구들은 CloudWatch와는 다른 질문에 답한다. CloudWatch�
 | Periodic (1h/3h/6h/12h/24h) | 설정한 주기마다 전체 평가 | `iam-password-policy`, 사용자 목록 기반 Rule |
 | Hybrid (둘 다) | 변경 시 + 주기마다 | 변경 후 드리프트도 잡아야 하는 중요 Rule |
 
-> 🔍 **더 깊이**: Configuration change 트리거는 AWS Config가 CloudTrail 이벤트를 소비해서 리소스 변경을 감지하고 CI(Configuration Item)를 생성한 직후 Rule을 평가한다. 따라서 CloudTrail이 정상 동작하지 않으면 Config Rule의 configuration change 트리거도 지연된다. Periodic 트리거는 이 의존성이 없어 Config 서비스 내부 스케줄러로 동작한다. 외부 시스템 상태(Credential report, IAM 사용자 목록)를 기반으로 하는 Rule은 "설정 변경"이 없어도 점검이 필요해 Periodic이 맞다.
+Configuration change 트리거는 AWS Config가 CloudTrail 이벤트를 소비해서 리소스 변경을 감지하고 CI(Configuration Item)를 생성한 직후 Rule을 평가한다. 따라서 CloudTrail이 정상 동작하지 않으면 Config Rule의 configuration change 트리거도 지연된다. Periodic 트리거는 이 의존성이 없어 Config 서비스 내부 스케줄러로 동작한다. 외부 시스템 상태(Credential report, IAM 사용자 목록)를 기반으로 하는 Rule은 "설정 변경"이 없어도 점검이 필요해 Periodic이 맞다.
 
 **Audit Manager vs Config vs Trusted Advisor**
 
@@ -97,7 +97,7 @@ Week 4의 도구들은 CloudWatch와는 다른 질문에 답한다. CloudWatch�
 | 자동 교정 | Auto Remediation O | 없음 (보고서만) | 없음 |
 | 비용 | CI + Rule 별도 과금 | Assessment당 과금 | Business/Enterprise Support 포함 |
 
-> 💡 **관련 이론**: Audit Manager가 자동화하는 "지속적 컴플라이언스(Continuous Compliance)" 개념은 NIST SP 800-137 "Information Security Continuous Monitoring"에서 이론적 기반을 가진다. 연 1회 점검식 감사(snapshot audit)에서 상시 증거 수집(continuous evidence collection)으로의 전환이 핵심이다. PCI-DSS v4.0(2022년 출시)은 연속 모니터링을 명시적으로 권고하는 방향으로 바뀌었고, Audit Manager의 Assessment 상시 실행이 이 요구사항을 충족하는 표준 구현이다.
+Audit Manager가 자동화하는 "지속적 컴플라이언스(Continuous Compliance)" 개념은 NIST SP 800-137 "Information Security Continuous Monitoring"에서 이론적 기반을 가진다. 연 1회 점검식 감사(snapshot audit)에서 상시 증거 수집(continuous evidence collection)으로의 전환이 핵심이다. PCI-DSS v4.0(2022년 출시)은 연속 모니터링을 명시적으로 권고하는 방향으로 바뀌었고, Audit Manager의 Assessment 상시 실행이 이 요구사항을 충족하는 표준 구현이다.
 
 ## 다른 클라우드 플랫폼과의 비교
 
@@ -111,7 +111,7 @@ Week 4의 도구들은 CloudWatch와는 다른 질문에 답한다. CloudWatch�
 | Organization 감사 | Organization Trail | Org-level Audit Logs | Management Group 정책 |
 | 이상 감지 | CloudTrail Insights | Security Command Center AI | Microsoft Sentinel |
 
-> 🔍 **더 깊이**: GCP의 Cloud Audit Logs는 CloudTrail과 유사하지만 Data Access 로그가 기본 비활성화이고, 활성화 시 Cloud Logging 비용에 포함된다는 점이 다르다. Azure Activity Log는 구독 레벨의 컨트롤 플레인 작업을 90일 보관(기본)하며, 장기 보관은 Log Analytics Workspace나 Storage Account로 내보내야 한다는 점이 CloudTrail S3 Trail과 유사하다. 세 플랫폼 모두 "기본 감사 로그는 있지만 데이터 플레인(객체 접근) 로그는 별도 활성화 + 추가 비용"이라는 구조는 동일하다.
+GCP의 Cloud Audit Logs는 CloudTrail과 유사하지만 Data Access 로그가 기본 비활성화이고, 활성화 시 Cloud Logging 비용에 포함된다는 점이 다르다. Azure Activity Log는 구독 레벨의 컨트롤 플레인 작업을 90일 보관(기본)하며, 장기 보관은 Log Analytics Workspace나 Storage Account로 내보내야 한다는 점이 CloudTrail S3 Trail과 유사하다. 세 플랫폼 모두 "기본 감사 로그는 있지만 데이터 플레인(객체 접근) 로그는 별도 활성화 + 추가 비용"이라는 구조는 동일하다.
 
 ## Organization Trail의 내부 동작과 거버넌스 패턴
 
@@ -128,7 +128,7 @@ Organization Trail이 켜지면 멤버 계정에서 발생하는 모든 이벤�
             └─ Account C: Trail READ-ONLY (신규 계정 자동 적용)
 ```
 
-> 📚 **사례**: 2021년 국내 SI 기업 B사(공개 사례)는 멤버 계정 담당자가 실수로 Trail을 삭제해 2주간의 감사 로그가 없는 상태가 됐다. 외부 보안 감사에서 이 기간 로그 공백이 발견돼 추가 설명 자료를 수동으로 준비하는 데 상당한 인력이 투입됐다. 이후 Organization Trail을 활성화하고 SCP로 `cloudtrail:DeleteTrail`, `cloudtrail:StopLogging` 액션을 멤버 계정에서 Deny하는 정책을 적용했다. Organization Trail이 존재하더라도 추가 SCP로 Trail 조작을 이중으로 차단하는 것이 표준 거버넌스 패턴이다.
+가상의 사례로, 2021년 국내 SI 기업 B사는 멤버 계정 담당자가 실수로 Trail을 삭제해 2주간의 감사 로그가 없는 상태가 됐다. 외부 보안 감사에서 이 기간 로그 공백이 발견돼 추가 설명 자료를 수동으로 준비하는 데 상당한 인력이 투입됐다. 이후 Organization Trail을 활성화하고 SCP로 `cloudtrail:DeleteTrail`, `cloudtrail:StopLogging` 액션을 멤버 계정에서 Deny하는 정책을 적용했다. Organization Trail이 존재하더라도 추가 SCP로 Trail 조작을 이중으로 차단하는 것이 표준 거버넌스 패턴이다.
 
 ## CloudTrail Insights: ML 기반 이상 감지의 한계와 적합한 사용 사례
 
@@ -139,7 +139,7 @@ Insights는 7일간 과거 데이터를 baseline으로 학습하고, 현재 API 
 
 > ⚠️ **함정**: Insights는 **7일 학습 기간이 지나야** 의미 있는 탐지를 한다. 서비스를 막 배포하거나 트래픽 패턴이 완전히 바뀐 직후에는 false positive가 많다. 또한 Insights는 Trail이 활성화된 계정에서만 동작한다. 그리고 Insights 자체도 별도 비용($0.35/100K analyzed events)이다. 소규모 계정에서는 GuardDuty의 CloudTrail 기반 위협 탐지와 비용 효율성을 비교해보는 것이 좋다. GuardDuty는 CloudTrail을 자동으로 분석하고 Findings를 생성한다는 점에서 Insights와 보완 관계다.
 
-> 💡 **관련 이론**: CloudTrail Insights의 ML 알고리즘은 공개되지 않지만, API 호출량 이상 탐지에 적합한 알고리즘은 CUSUM(Cumulative Sum Control Chart)과 EWMA(Exponentially Weighted Moving Average)다. CUSUM은 시계열에서 평균 변화를 누적적으로 감지하는 통계 방법으로, Page(1954)가 제안했다. 소규모 지속적 변화(APT 공격에서 자주 보이는 낮고 느린 데이터 유출)를 감지하는 데 효과적이다. CloudTrail Insights가 밤새 조금씩 이루어진 S3 GetObject 증가를 감지하는 데 이 방식이 쓰일 가능성이 높다.
+CloudTrail Insights의 ML 알고리즘은 공개되지 않지만, API 호출량 이상 탐지에 적합한 알고리즘은 CUSUM(Cumulative Sum Control Chart)과 EWMA(Exponentially Weighted Moving Average)다. CUSUM은 시계열에서 평균 변화를 누적적으로 감지하는 통계 방법으로, Page(1954)가 제안했다. 소규모 지속적 변화(APT 공격에서 자주 보이는 낮고 느린 데이터 유출)를 감지하는 데 효과적이다. CloudTrail Insights가 밤새 조금씩 이루어진 S3 GetObject 증가를 감지하는 데 이 방식이 쓰일 가능성이 높다.
 
 ## Auto Remediation과 SSM Automation의 실패 패턴
 
@@ -149,7 +149,7 @@ Auto Remediation은 Config Rule이 NON_COMPLIANT를 감지했을 때 SSM Automat
 2. **Runbook 파라미터 매핑 오류**: Config Rule의 리소스 ARN이 Runbook의 입력 파라미터로 올바르게 전달되지 않음
 3. **리소스가 이미 삭제됨**: Rule이 평가한 시점과 Runbook이 실행된 시점 사이에 리소스가 없어짐
 
-> 📚 **사례**: 2023년 금융권 C사는 `s3-bucket-public-read-prohibited` Rule에 Auto Remediation을 연결했다. 테스트 환경에서는 잘 동작했는데 프로덕션에서 작동하지 않았다. 조사 결과 AutomationAssumeRole의 S3 버킷 정책 수정 권한(`s3:PutBucketPublicAccessBlock`)이 테스트 환경 버킷에는 있었지만 프로덕션 버킷에는 Resource ARN 패턴이 달라 권한이 없었다. Config 콘솔의 "Remediation Execution Status" 탭에서 "AutomationExecution failed: Access Denied" 메시지로 원인을 특정했다. AutomationAssumeRole에 `Resource: "*"`를 쓰는 것은 최소 권한 원칙에 어긋나지만, ARN 패턴 실수를 방지하기 위해 규칙별 역할을 분리하는 것이 더 안전하다.
+가상의 사례로, 2023년 금융권 C사는 `s3-bucket-public-read-prohibited` Rule에 Auto Remediation을 연결했다. 테스트 환경에서는 잘 동작했는데 프로덕션에서 작동하지 않았다. 조사 결과 AutomationAssumeRole의 S3 버킷 정책 수정 권한(`s3:PutBucketPublicAccessBlock`)이 테스트 환경 버킷에는 있었지만 프로덕션 버킷에는 Resource ARN 패턴이 달라 권한이 없었다. Config 콘솔의 "Remediation Execution Status" 탭에서 "AutomationExecution failed: Access Denied" 메시지로 원인을 특정했다. AutomationAssumeRole에 `Resource: "*"`를 쓰는 것은 최소 권한 원칙에 어긋나지만, ARN 패턴 실수를 방지하기 위해 규칙별 역할을 분리하는 것이 더 안전하다.
 
 ---
 

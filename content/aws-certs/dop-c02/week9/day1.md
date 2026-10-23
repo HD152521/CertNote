@@ -2,7 +2,7 @@
 
 EC2 한 대를 관리하는 일은 쉽다. SSH로 들어가서 명령을 치면 된다. 그런데 그 한 대가 열 대가 되고, 백 대가 되고, 수천 대가 되는 순간 모든 게 무너진다. 키를 어떻게 배포하고 회전할 것인가, 누가 언제 어떤 명령을 쳤는지 어떻게 감사할 것인가, 22번 포트를 인터넷에 열어두는 게 맞는가, 패치를 어떻게 동시에 안전하게 적용할 것인가. AWS Systems Manager(SSM)는 이 "fleet 규모 운영"이라는 문제를 정면으로 다루기 위해 만들어진 도구 묶음이다. 이름이 하나지만 실제로는 Run Command, Session Manager, Patch Manager, State Manager, Inventory, Automation 같은 십여 개의 독립 기능이 한 우산 아래 모여 있다.
 
-오늘은 이 우산 밑에서 가장 자주 쓰이는 세 가지 — 원격 명령 실행(Run Command), 셸 접속(Session Manager), 패치 자동화(Patch Manager) — 를 본다. 단순히 "이런 기능이 있다"가 아니라, 왜 SSH를 버리고 SSM Agent라는 풀(pull) 모델로 갔는지, Session Manager가 어떻게 포트 하나 열지 않고 셸을 띄우는지, Patch Baseline의 승인 지연(approve-after-days)이라는 숫자 하나에 어떤 운영 철학이 담겨 있는지를 파고든다. DOP 시험에서 SSM은 단일 서비스로는 가장 출제 빈도가 높은 영역 중 하나이고, "Bastion 없이 접속", "수천 대 동시 패치", "온프레미스 통합" 같은 시나리오는 거의 매 회 나온다.
+오늘은 이 우산 밑에서 가장 자주 쓰이는 세 가지 — 원격 명령 실행(Run Command), 셸 접속(Session Manager), 패치 자동화(Patch Manager) — 를 본다. 단순히 "이런 기능이 있다"가 아니라, 왜 SSH를 버리고 SSM Agent라는 풀(pull) 모델로 갔는지, Session Manager가 어떻게 포트 하나 열지 않고 셸을 띄우는지, Patch Baseline의 승인 지연(approve-after-days)이라는 숫자 하나에 어떤 운영 철학이 담겨 있는지를 파고든다. DOP 시험에서 SSM은 단일 서비스로는 비중이 큰 영역 중 하나이고, "Bastion 없이 접속", "수천 대 동시 패치", "온프레미스 통합" 같은 시나리오는 거의 매 회 나온다.
 
 ## SSM Agent — 왜 push가 아니라 pull인가
 
@@ -12,9 +12,9 @@ SSM의 모든 기능은 인스턴스 안에서 도는 **SSM Agent**라는 작은
 
 SSM Agent는 정반대로 간다. 에이전트가 주기적으로 SSM 서비스 엔드포인트(`ssm`, `ssmmessages`, `ec2messages`)로 **아웃바운드 HTTPS 롱폴링**을 건다. "나한테 시킬 일 있어?"라고 물으면 SSM 서비스가 큐에 쌓인 명령을 응답으로 돌려준다. 인스턴스는 인바운드 포트를 단 하나도 열 필요가 없다. 보안 그룹의 인바운드 규칙이 완전히 비어 있어도 SSM은 동작한다. 이게 Session Manager가 22번 포트 없이 셸을 띄울 수 있는 근본 이유다.
 
-> 💡 **관련 이론**: push vs pull은 분산 시스템에서 오래된 주제다. 모니터링에서 Prometheus(pull)와 StatsD/푸시게이트웨이(push)의 대립, 구성 관리에서 Puppet/Chef의 에이전트가 마스터로 체크인하는 pull 모델이 같은 축이다. pull 모델의 핵심 장점은 **방화벽 친화성(아웃바운드만 필요)**과 **자기 등록(self-registration)** — 새 노드가 알아서 중앙에 연결하므로 중앙이 모든 노드 IP를 사전에 알 필요가 없다. SSM은 이 pull 모델을 선택해 "인바운드 0개"라는 강력한 보안 자세를 얻었다.
+> push vs pull은 분산 시스템에서 오래된 주제다. 모니터링에서 Prometheus(pull)와 StatsD/푸시게이트웨이(push)의 대립, 구성 관리에서 Puppet/Chef의 에이전트가 마스터로 체크인하는 pull 모델이 같은 축이다. pull 모델의 핵심 장점은 **방화벽 친화성(아웃바운드만 필요)**과 **자기 등록(self-registration)** — 새 노드가 알아서 중앙에 연결하므로 중앙이 모든 노드 IP를 사전에 알 필요가 없다. SSM은 이 pull 모델을 선택해 "인바운드 0개"라는 강력한 보안 자세를 얻었다.
 
-> 🔍 **더 깊이**: SSM Agent가 통신하려면 세 가지가 모두 갖춰져야 한다. (1) **에이전트 자체** — Amazon Linux 2/2023, 최신 Ubuntu, Windows Server 공식 AMI에는 2017년 이후 기본 포함. (2) **IAM Instance Profile** — `AmazonSSMManagedInstanceCore` 관리형 정책이 붙은 역할. 이게 없으면 에이전트가 SSM API를 호출할 권한이 없어 "managed instance"로 등록조차 안 된다. (3) **네트워크 경로** — 퍼블릭 서브넷이면 인터넷 게이트웨이로, 프라이빗이면 NAT 게이트웨이로, 완전 격리 환경이면 `ssm`/`ssmmessages`/`ec2messages` 세 개의 VPC 인터페이스 엔드포인트로 SSM 엔드포인트에 닿아야 한다. 셋 중 하나라도 빠지면 인스턴스가 "관리 대상" 목록에 안 뜬다. 디버깅의 첫 단계는 항상 이 세 가지 체크다.
+> SSM Agent가 통신하려면 세 가지가 모두 갖춰져야 한다. (1) **에이전트 자체** — Amazon Linux 2/2023, 최신 Ubuntu, Windows Server 공식 AMI에는 2017년 이후 기본 포함. (2) **IAM Instance Profile** — `AmazonSSMManagedInstanceCore` 관리형 정책이 붙은 역할. 이게 없으면 에이전트가 SSM API를 호출할 권한이 없어 "managed instance"로 등록조차 안 된다. (3) **네트워크 경로** — 퍼블릭 서브넷이면 인터넷 게이트웨이로, 프라이빗이면 NAT 게이트웨이로, 완전 격리 환경이면 `ssm`/`ssmmessages`/`ec2messages` 세 개의 VPC 인터페이스 엔드포인트로 SSM 엔드포인트에 닿아야 한다. 셋 중 하나라도 빠지면 인스턴스가 "관리 대상" 목록에 안 뜬다. 디버깅의 첫 단계는 항상 이 세 가지 체크다.
 
 > ⚠️ **함정**: 프라이빗 서브넷에서 NAT도 VPC 엔드포인트도 없으면 SSM이 동작하지 않는다. 그런데 더 미묘한 함정은 **VPC 엔드포인트를 만들 때 `ssmmessages`를 빼먹는 경우**다. `ssm` 엔드포인트만 만들면 Run Command의 명령 폴링까지는 되지만 Session Manager가 안 된다. Session Manager는 양방향 메시지 채널인 `ssmmessages`를 별도로 쓰기 때문이다. 마찬가지로 `ec2messages`는 구형 Run Command 채널이라 함께 만들어주는 게 안전하다. "Run Command는 되는데 Session Manager만 안 된다"는 증상은 거의 항상 `ssmmessages` 엔드포인트 누락이다.
 
@@ -36,9 +36,9 @@ aws ssm send-command \
 
 `--targets`는 인스턴스를 고르는 방식인데, 가장 강력한 게 태그 기반(`Key=tag:Environment,Values=prod`)이다. 인스턴스 ID를 일일이 나열하지 않아도 되고, 새로 뜬 인스턴스도 태그만 맞으면 자동으로 포함된다. 이게 fleet이 동적으로 변하는 환경(ASG)에서 결정적이다.
 
-> 💡 **관련 이론**: `max-concurrency` + `max-errors`의 조합은 분산 배포의 **순차적 카나리(progressive rollout)** 그 자체다. Kubernetes의 RollingUpdate `maxSurge`/`maxUnavailable`, CodeDeploy의 배포 구성, 심지어 Erlang/OTP의 supervisor 재시작 강도(restart intensity)까지 같은 아이디어다. "한 번에 일부만 바꾸고, 실패가 임계치를 넘으면 멈춘다." 핵심은 **실패를 빨리 감지하고 전파를 끊는(fail-fast + circuit break)** 것이다. Run Command는 이 패턴을 명령 실행 레벨에 내장했다.
+> `max-concurrency` + `max-errors`의 조합은 분산 배포의 **순차적 카나리(progressive rollout)** 그 자체다. Kubernetes의 RollingUpdate `maxSurge`/`maxUnavailable`, CodeDeploy의 배포 구성, 심지어 Erlang/OTP의 supervisor 재시작 강도(restart intensity)까지 같은 아이디어다. "한 번에 일부만 바꾸고, 실패가 임계치를 넘으면 멈춘다." 목표는 **실패를 빨리 감지하고 전파를 끊는(fail-fast + circuit break)** 것이다. Run Command는 이 패턴을 명령 실행 레벨에 내장했다.
 
-> 📚 **사례**: 운영 현장에서 Run Command를 SSH 루프로 착각해 `--max-concurrency`를 100%로 두는 실수가 흔하다. 한 회사가 긴급 보안 패치를 위해 `sed`로 설정 파일을 일괄 수정하는 명령을 전 fleet에 100% 동시 실행했는데, sed 표현식 한 줄이 설정 파일을 망가뜨려 수백 대 서비스가 동시에 내려간 사례가 있다. 같은 명령을 `--max-concurrency 1 --max-errors 1`로 던졌다면 첫 한 대에서 막혔을 일이다. fleet 명령에는 항상 "처음 한 대로 검증"하는 카나리 습관이 필요하다.
+> 운영 현장에서 Run Command를 SSH 루프로 착각해 `--max-concurrency`를 100%로 두는 실수가 흔하다. 한 회사가 긴급 보안 패치를 위해 `sed`로 설정 파일을 일괄 수정하는 명령을 전 fleet에 100% 동시 실행했는데, sed 표현식 한 줄이 설정 파일을 망가뜨려 수백 대 서비스가 동시에 내려간 사례가 있다. 같은 명령을 `--max-concurrency 1 --max-errors 1`로 던졌다면 첫 한 대에서 막혔을 일이다. fleet 명령에는 항상 "처음 한 대로 검증"하는 카나리 습관이 필요하다.
 
 ## Session Manager — 포트 없는 셸과 Bastion의 종말
 
@@ -73,9 +73,9 @@ Host i-* mi-*
 
 이러면 `ssh ec2-user@i-1234...`가 내부적으로 SSM 채널을 ProxyCommand로 타고 들어간다. 22번 포트는 여전히 인터넷에 닫혀 있고, SSH의 표준 도구는 그대로 쓴다.
 
-> 💡 **관련 이론**: Session Manager의 모델은 제로 트러스트 네트워크 접근(ZTNA)의 한 형태다. "네트워크 경계(perimeter)를 신뢰하지 않고, 모든 접근을 신원(identity) 기반으로 인증·인가·감사한다"는 원칙. 전통 Bastion은 "내부 네트워크에 들어오면 신뢰" 모델인 반면, Session Manager는 매 세션을 IAM 신원으로 인증하고 CloudTrail로 감사한다. Google의 BeyondCorp, HashiCorp Boundary, Teleport가 같은 철학의 도구들이다. AWS는 이 ZTNA를 자체 서비스에 내장해버린 셈이다.
+> Session Manager의 모델은 제로 트러스트 네트워크 접근(ZTNA)의 한 형태다. "네트워크 경계(perimeter)를 신뢰하지 않고, 모든 접근을 신원(identity) 기반으로 인증·인가·감사한다"는 원칙. 전통 Bastion은 "내부 네트워크에 들어오면 신뢰" 모델인 반면, Session Manager는 매 세션을 IAM 신원으로 인증하고 CloudTrail로 감사한다. Google의 BeyondCorp, HashiCorp Boundary, Teleport가 같은 철학의 도구들이다. AWS는 이 ZTNA를 자체 서비스에 내장해버린 셈이다.
 
-> 🔍 **더 깊이**: Session Manager는 포트 포워딩도 한다. `aws ssm start-session --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["3306"],"localPortNumber":["13306"]}'`로 프라이빗 RDS의 3306 포트를 내 로컬 13306으로 터널링할 수 있다. 더 나아가 `AWS-StartPortForwardingSessionToRemoteHost`를 쓰면 인스턴스를 점프 호스트 삼아 그 너머의 RDS 엔드포인트까지 포워딩한다. 즉 Session Manager 하나로 SSH 접속 + 파일 전송(ProxyCommand) + DB 터널링까지 Bastion이 하던 모든 일을 대체한다. 시험에서 "프라이빗 RDS에 로컬 DB 클라이언트로 접속, Bastion 없이"가 나오면 답은 Session Manager 포트 포워딩이다.
+> Session Manager는 포트 포워딩도 한다. `aws ssm start-session --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["3306"],"localPortNumber":["13306"]}'`로 프라이빗 RDS의 3306 포트를 내 로컬 13306으로 터널링할 수 있다. 더 나아가 `AWS-StartPortForwardingSessionToRemoteHost`를 쓰면 인스턴스를 점프 호스트 삼아 그 너머의 RDS 엔드포인트까지 포워딩한다. 즉 Session Manager 하나로 SSH 접속 + 파일 전송(ProxyCommand) + DB 터널링까지 Bastion이 하던 모든 일을 대체한다. 시험에서 "프라이빗 RDS에 로컬 DB 클라이언트로 접속, Bastion 없이"가 나오면 답은 Session Manager 포트 포워딩이다.
 
 > 🎯 **시나리오**: "감사팀이 '운영자가 prod 서버에서 무슨 명령을 쳤는지 전부 기록되어야 한다'고 요구한다. 현재 SSH 키 + Bastion 구조다. 어떻게?" — 답은 Bastion 제거 후 Session Manager로 전환하고 세션 로깅(CloudWatch Logs + S3 + KMS)을 켠다. SSH 환경에서는 셸 히스토리를 사용자가 지울 수 있어 신뢰할 수 없지만, Session Manager는 세션 입출력을 AWS 측에서 변조 불가능하게 기록한다. IAM으로 누가 접속 가능한지, CloudTrail로 누가 언제 세션을 열었는지, 세션 로그로 무엇을 쳤는지 — 3단 감사가 완성된다.
 
@@ -134,9 +134,9 @@ aws ssm register-task-with-maintenance-window \
 | **Scan** | 패치 필요 여부만 확인, 설치 안 함 | 컴플라이언스 리포팅, 사전 점검 |
 | **Install** | 실제 패치 적용, 필요 시 재부팅 | 실제 패치 윈도우 |
 
-> 💡 **관련 이론**: 승인 지연(approve-after-days)은 신뢰성 공학의 **bake time**(숙성 시간) 개념과 같다. 새 변경을 전면 적용하기 전에 일정 기간 관찰하며 회귀(regression)를 발견할 시간을 둔다. 카나리 배포의 bake, AppConfig의 final-bake-time, CodeDeploy의 트래픽 시프트 후 관찰 구간이 모두 같은 원리다. "변경의 위험은 시간이 지나면서 드러난다"는 경험칙을 정책으로 못 박은 것. dev→staging→prod로 승인 지연을 늘리는 건 환경별로 bake time을 차등화하는 것이다.
+> 승인 지연(approve-after-days)은 신뢰성 공학의 **bake time**(숙성 시간) 개념과 같다. 새 변경을 전면 적용하기 전에 일정 기간 관찰하며 회귀(regression)를 발견할 시간을 둔다. 카나리 배포의 bake, AppConfig의 final-bake-time, CodeDeploy의 트래픽 시프트 후 관찰 구간이 모두 같은 원리다. "변경의 위험은 시간이 지나면서 드러난다"는 경험칙을 정책으로 못 박은 것. dev→staging→prod로 승인 지연을 늘리는 건 환경별로 bake time을 차등화하는 것이다.
 
-> 🔍 **더 깊이**: Patch Baseline에는 승인 규칙(approval rules) 외에 **명시적 승인/거부 목록**(approved patches / rejected patches)도 있다. 특정 KB 번호나 패키지를 무조건 거부하거나, 승인 규칙에 안 걸려도 강제로 승인할 수 있다. 예를 들어 "이 커널 패치는 우리 드라이버와 충돌하니 영구 거부"를 rejected patches에 박아두면, 승인 규칙이 아무리 7일 지나도 그 패치는 절대 안 깔린다. 반대로 긴급 제로데이가 터지면 `ApproveAfterDays`를 기다리지 않고 approved patches에 직접 넣어 즉시 적용한다. 승인 규칙은 평시 자동화, 명시적 목록은 예외 처리라는 역할 분담이다.
+> Patch Baseline에는 승인 규칙(approval rules) 외에 **명시적 승인/거부 목록**(approved patches / rejected patches)도 있다. 특정 KB 번호나 패키지를 무조건 거부하거나, 승인 규칙에 안 걸려도 강제로 승인할 수 있다. 예를 들어 "이 커널 패치는 우리 드라이버와 충돌하니 영구 거부"를 rejected patches에 박아두면, 승인 규칙이 아무리 7일 지나도 그 패치는 절대 안 깔린다. 반대로 긴급 제로데이가 터지면 `ApproveAfterDays`를 기다리지 않고 approved patches에 직접 넣어 즉시 적용한다. 승인 규칙은 평시 자동화, 명시적 목록은 예외 처리라는 역할 분담이다.
 
 > ⚠️ **함정**: Patch Group 태그의 키는 정확히 `Patch Group`(공백 포함, 대소문자 정확히)이어야 한다. `PatchGroup`(공백 없음)이나 `patch group`(소문자)으로 붙이면 Patch Manager가 인식하지 못하고, 인스턴스가 default baseline으로 패치되거나 아예 패치 대상에서 빠진다. AWS 문서에 박혀 있는 예약 태그 키라 자유롭게 바꿀 수 없다. "패치가 의도한 baseline 대신 default로 적용된다"는 증상은 거의 항상 이 태그 키 오타다.
 
@@ -172,7 +172,7 @@ aws ssm create-activation \
 
 > 🎯 **시나리오**: "데이터센터에 남은 200대의 물리 서버와 AWS의 EC2 fleet을 하나의 패치 정책으로 통합 관리하고 싶다. 별도 패치 도구를 두 개 운영하기 싫다." — 답은 온프레미스 서버에 SSM Agent를 설치하고 Hybrid Activation으로 등록한 뒤, EC2와 동일한 Patch Baseline·Patch Group·Maintenance Window를 적용한다. `mi-` 인스턴스도 태그 기반 타겟팅과 컴플라이언스 리포팅에 그대로 포함된다. 단일 콘솔에서 하이브리드 fleet의 패치 컴플라이언스를 한눈에 본다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 네 가지다. 첫째, **SSM Agent는 pull 모델**이라 인바운드 포트가 필요 없고, 이 때문에 Session Manager가 22번 포트 없이 동작한다 — 동작하려면 에이전트·IAM·네트워크 경로 세 가지가 다 맞아야 한다. 둘째, **Run Command의 진짜 가치는 `max-concurrency`/`max-errors`**라는 폭발 반경 통제 장치에 있다. 셋째, **Session Manager는 Bastion을 통째로 제거**하는 ZTNA 도구이고, 포트 포워딩으로 DB 터널링까지 대체하며 세션 전체를 변조 불가능하게 감사한다. 넷째, **Patch Manager의 approve-after-days는 bake time**의 정책화이고, Baseline + Patch Group + Maintenance Window 3종이 맞물려 "무엇을·어디에·언제" 패치할지를 나눠 책임진다.
 

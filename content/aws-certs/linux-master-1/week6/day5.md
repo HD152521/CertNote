@@ -68,7 +68,7 @@
 | `enable --now` | 등록 + 즉시 시작 |
 | `status` | active(실행)·enabled(자동) 동시 확인 |
 
-> ⚠️ **함정 복습**: 0·6은 기본 런레벨 금지. 2·3·4가 모두 multi-user.target. `start`(지금 한 번)와 `enable`(부팅 자동)은 별개. unit 파일 수정 후 `daemon-reload` 필수. `[Install] WantedBy=`가 enable 연결 대상. 로그는 `journalctl -u 서비스 -f`.
+0·6은 기본 런레벨 금지. 2·3·4가 모두 multi-user.target. `start`(지금 한 번)와 `enable`(부팅 자동)은 별개. unit 파일 수정 후 `daemon-reload` 필수. `[Install] WantedBy=`가 enable 연결 대상. 로그는 `journalctl -u 서비스 -f`.
 
 ## 작업 예약 복습 (Day 4)
 
@@ -86,7 +86,7 @@
 | 필드 | 5필드 + 명령 | 5필드 + **사용자** + 명령(6) |
 | 관리 | `crontab -e/-l/-r` | `/etc/crontab`, `/etc/cron.d/` |
 
-> ⚠️ **함정 복습**: 순서 "분시일월요". 요일 0·7=일요일. 사용자 crontab은 5필드, /etc/crontab은 6필드. cron=반복, at/batch=1회. allow > deny 우선. `crontab -r`은 전체 삭제 주의. at 목록은 `atq`, 삭제는 `atrm`.
+순서 "분시일월요". 요일 0·7=일요일. 사용자 crontab은 5필드, /etc/crontab은 6필드. cron=반복, at/batch=1회. allow > deny 우선. `crontab -r`은 전체 삭제 주의. at 목록은 `atq`, 삭제는 `atrm`.
 
 ## 자주 엮이는 시나리오 — 통합 사고
 
@@ -117,7 +117,7 @@ crontab -l                             # 등록 확인
 ```
 - 백업 스크립트가 무거우면 `nice`로 양보하거나 `batch`로 한가할 때 실행 — Day 1·2·4 통합.
 
-> 📚 **유래/사례**: 실무 장애 대응의 표준 흐름이 정확히 이 순서다 — `ps`/`top`으로 범인을 찾고(Day 1), 시그널 15→9로 안전하게 멈추고(Day 1), `systemctl`로 서비스를 정상 재기동하며(Day 3), `journalctl`로 원인 로그를 확인하고(Day 3), 재발 방지를 위해 `cron`에 점검 작업을 건다(Day 4). 이번 주 내용은 시험을 넘어 실무 운영의 골격이다.
+실무 장애 대응의 표준 흐름이 정확히 이 순서다 — `ps`/`top`으로 범인을 찾고(Day 1), 시그널 15→9로 안전하게 멈추고(Day 1), `systemctl`로 서비스를 정상 재기동하며(Day 3), `journalctl`로 원인 로그를 확인하고(Day 3), 재발 방지를 위해 `cron`에 점검 작업을 건다(Day 4). 이번 주 내용은 시험을 넘어 실무 운영의 골격이다.
 
 ## 📖 용어
 

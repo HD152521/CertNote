@@ -1,8 +1,8 @@
 # Day 4 - Elastic Beanstalk: AWS가 만든 가장 친절한 PaaS
 
-스타트업이 AWS를 처음 도입할 때 가장 자주 만나는 풍경이 있다. 개발자 두 명, 코드는 Flask 또는 Express, "일단 띄우긴 해야 하는데 ALB는 뭐고 ASG는 뭐고 IAM Role은 또 뭐야". 이런 상황을 해결하기 위해 AWS는 2011년 1월 **Elastic Beanstalk**를 출시했다. "코드만 zip으로 올리면 EC2·ELB·ASG·CloudWatch까지 알아서 만들어주는 PaaS"라는 약속이었다.
+스타트업이 AWS를 처음 도입할 때 흔히 볼 수 있는 풍경이 있다. 개발자 두 명, 코드는 Flask 또는 Express, "일단 띄우긴 해야 하는데 ALB는 뭐고 ASG는 뭐고 IAM Role은 또 뭐야". 이런 상황을 해결하기 위해 AWS는 2011년 1월 **Elastic Beanstalk**를 출시했다. "코드만 zip으로 올리면 EC2·ELB·ASG·CloudWatch까지 알아서 만들어주는 PaaS"라는 약속이었다.
 
-DVA-C02 시험에서 Beanstalk는 ECS, Lambda, App Runner와 함께 "**언제 어떤 컴퓨트를 선택할지**" 시나리오의 한 축으로 꾸준히 출제된다. 특히 6가지 배포 전략의 차이, .ebextensions와 .platform의 구분, 그리고 RDS를 환경 안에 둘 때의 함정이 단골 출제 포인트다. 이번 글은 Beanstalk의 내부 구조 — 사실은 CloudFormation 위에 얹은 추상화 — 부터 시작해, 각 배포 전략이 실제로 어떻게 동작하는지를 정리한다.
+DVA-C02 시험에서 Beanstalk는 ECS, Lambda, App Runner와 함께 "**언제 어떤 컴퓨트를 선택할지**" 시나리오의 한 축으로 나온다. 특히 6가지 배포 전략의 차이, .ebextensions와 .platform의 구분, 그리고 RDS를 환경 안에 둘 때의 함정을 알아야 한다. 이번 글은 Beanstalk의 내부 구조 — 사실은 CloudFormation 위에 얹은 추상화 — 부터 시작해, 각 배포 전략이 실제로 어떻게 동작하는지를 정리한다.
 
 ## Beanstalk가 풀려는 문제: Heroku식 경험을 AWS 위에
 
@@ -10,9 +10,9 @@ Beanstalk가 등장한 2011년은 Heroku(2007 창업, 2010 Salesforce 인수)가
 
 Beanstalk의 약속을 한 줄로 요약하면 "당신의 코드만 신경 쓰세요, EC2·ALB·ASG·CloudWatch·VPC는 우리가 알아서". 그러나 그 약속의 trade-off가 핵심이다 — 추상화가 잘못 새는 순간(예: 특수한 nginx 튜닝, 특정 OS 패키지 필요) Beanstalk는 갑자기 답답해진다.
 
-> 💡 **관련 이론**: PaaS의 추상화가 실제로 잘 동작하는지는 "Joel Spolsky의 Law of Leaky Abstractions"(2002)와 직접 닿아 있다. "모든 비자명한 추상화는 어느 정도 새기 마련"이라는 명제다. Beanstalk는 EC2/ALB의 복잡성을 숨기지만, 운영 중 특수한 요구가 생기면 그 아래 layer를 직접 만져야 하고 그 순간 추상화가 깨진다. .ebextensions와 .platform이 정확히 그 "추상화의 균열"을 메우는 escape hatch다.
+Beanstalk는 EC2/ALB의 복잡성을 숨기지만, 운영 중 특수한 요구가 생기면 그 아래 layer를 직접 만져야 하고 그 순간 추상화가 깨진다. .ebextensions와 .platform이 정확히 그 "추상화의 균열"을 메우는 escape hatch다.
 
-> 🔍 **더 깊이**: Beanstalk는 내부적으로 **CloudFormation 스택**을 생성한다. `eb create` 한 번이면 EC2, ALB, ASG, Security Group, IAM Role, CloudWatch Alarm 등이 정의된 CFN 템플릿이 자동 생성되고 그게 deploy된다. 즉 Beanstalk 환경 = CloudFormation 스택의 friendly UI다. 이 사실을 알면 ① 환경 삭제 시 무엇이 같이 삭제되는지 ② drift detection이 왜 가능한지 ③ Beanstalk가 만든 리소스를 CFN으로 import 가능한지를 모두 설명할 수 있다.
+Beanstalk는 내부적으로 **CloudFormation 스택**을 생성한다. `eb create` 한 번이면 EC2, ALB, ASG, Security Group, IAM Role, CloudWatch Alarm 등이 정의된 CFN 템플릿이 자동 생성되고 그게 deploy된다. 즉 Beanstalk 환경 = CloudFormation 스택의 friendly UI다. 이 사실을 알면 ① 환경 삭제 시 무엇이 같이 삭제되는지 ② drift detection이 왜 가능한지 ③ Beanstalk가 만든 리소스를 CFN으로 import 가능한지를 모두 설명할 수 있다.
 
 ## 두 가지 환경 유형: Web vs Worker
 
@@ -46,7 +46,7 @@ Beanstalk 환경은 두 종류다. 같은 application 안에 둘 다 존재할 �
 [애플리케이션 컨테이너 (포트 80)]
 ```
 
-> 🔍 **더 깊이**: Worker 환경의 마법은 **SQS Daemon**이라는 별도 프로세스다. 이 daemon은 EC2 인스턴스에 미리 설치돼 있고, SQS 큐를 polling해 메시지가 오면 그것을 application의 HTTP endpoint(기본 `/`)에 POST로 변환해 보낸다. 즉 application은 그냥 HTTP 서버로 짜면 되고 SQS SDK를 직접 호출할 필요 없다. 이 패턴은 Heroku의 worker dyno와 같은 사상이고, "이벤트 처리와 HTTP 처리를 동일한 코드 베이스로 통일"한다는 장점이 있다.
+Worker 환경의 특징은 **SQS Daemon**이라는 별도 프로세스다. 이 daemon은 EC2 인스턴스에 미리 설치돼 있고, SQS 큐를 polling해 메시지가 오면 그것을 application의 HTTP endpoint(기본 `/`)에 POST로 변환해 보낸다. 즉 application은 그냥 HTTP 서버로 짜면 되고 SQS SDK를 직접 호출할 필요 없다. 이 패턴은 Heroku의 worker dyno와 같은 사상이고, "이벤트 처리와 HTTP 처리를 동일한 코드 베이스로 통일"한다는 장점이 있다.
 
 ```yaml
 # cron.yaml (Worker 환경에서 정기 작업)
@@ -62,11 +62,11 @@ cron:
 
 SQS Daemon이 cron.yaml을 읽어 자동으로 schedule을 만들고, 시간이 되면 자기 자신의 큐에 메시지를 넣는다. 그 메시지가 다시 application HTTP로 흘러가 처리된다. 외부 cron 서비스 없이 정기 작업을 풀 수 있는 깔끔한 패턴.
 
-> ⚠️ **함정**: Worker 환경은 ALB가 없다. SQS Daemon → EC2 local의 application으로 직접 HTTP 호출. 외부 HTTP 노출이 필요하면 Web Server Environment를 별도로 만들어야 한다. 시험에서 "Worker 환경에 public endpoint가 필요"가 나오면 거의 항상 함정 — Web Server 환경과 혼동시키는 보기다.
+Worker 환경은 ALB가 없다. SQS Daemon → EC2 local의 application으로 직접 HTTP 호출. 외부 HTTP 노출이 필요하면 Web Server Environment를 별도로 만들어야 한다. "Worker 환경에 public endpoint가 필요"라는 보기는 Web Server 환경과 혼동시키는 함정이다.
 
-## 배포 전략 6종: 시험의 단골 표
+## 배포 전략 6종
 
-Beanstalk의 배포 전략 표는 시험에 거의 매번 나오는 핵심이다. 각 전략의 "다운타임 / 배포 속도 / 비용 / 롤백 속도"를 외워두면 시나리오 문제의 70%를 잡을 수 있다.
+Beanstalk의 배포 전략 표는 시험에서 중요하다. 각 전략의 "다운타임 / 배포 속도 / 비용 / 롤백 속도"를 구분할 수 있어야 한다.
 
 | 전략 | 다운타임 | 새 인스턴스 | 추가 비용 | 롤백 시간 | 적합 환경 |
 |------|---------|-------------|----------|----------|----------|
@@ -77,13 +77,14 @@ Beanstalk의 배포 전략 표는 시험에 거의 매번 나오는 핵심이다
 | **Traffic Splitting** (Canary) | 없음 | 새 ASG | 2배 (일시) | 자동 (CloudWatch alarm) | 점진적 검증 |
 | **Blue/Green** (수동) | 없음 | 새 환경 | 2배 | 즉시 (URL swap) | 완전 분리 |
 
-> 💡 **시나리오 빠른 매핑**:
-> - "비용 최소 + 단순" → All at once
-> - "일반 production" → Rolling
-> - "용량 절대 안 떨어져야" → Rolling with additional batch
-> - "production + 즉시 롤백" → Immutable
-> - "10%만 먼저, 자동 검증" → Traffic Splitting
-> - "완전히 분리된 두 환경 + 한 번에 swap" → Blue/Green
+시나리오별 빠른 매핑은 다음과 같다.
+
+- "비용 최소 + 단순" → All at once
+- "일반 production" → Rolling
+- "용량 절대 안 떨어져야" → Rolling with additional batch
+- "production + 즉시 롤백" → Immutable
+- "10%만 먼저, 자동 검증" → Traffic Splitting
+- "완전히 분리된 두 환경 + 한 번에 swap" → Blue/Green
 
 ### Immutable의 동작 흐름
 
@@ -104,7 +105,7 @@ Beanstalk의 배포 전략 표는 시험에 거의 매번 나오는 핵심이다
                                       [EC2 v2] [EC2 v2] [EC2 v2]
 ```
 
-> 🔍 **더 깊이**: Immutable의 핵심은 "단계 1에서 v2 인스턴스 1개를 먼저 띄워 health check를 통과해야 다음 단계로 진행"이라는 안전 게이트다. 만약 v2가 시작 자체가 실패하면 새 ASG가 즉시 삭제되고 기존 ASG는 그대로 — 즉 production에 영향 없음. Rolling과 결정적 차이가 여기 있다. Rolling은 기존 인스턴스를 먼저 죽이고 새 버전을 그 자리에 띄우기 때문에, 새 버전이 실패하면 그 슬롯의 용량이 사라진다.
+Immutable의 핵심은 "단계 1에서 v2 인스턴스 1개를 먼저 띄워 health check를 통과해야 다음 단계로 진행"이라는 안전 게이트다. 만약 v2가 시작 자체가 실패하면 새 ASG가 즉시 삭제되고 기존 ASG는 그대로 — 즉 production에 영향 없음. Rolling과 결정적 차이가 여기 있다. Rolling은 기존 인스턴스를 먼저 죽이고 새 버전을 그 자리에 띄우기 때문에, 새 버전이 실패하면 그 슬롯의 용량이 사라진다.
 
 ### Traffic Splitting (Canary) 동작
 
@@ -122,7 +123,7 @@ Beanstalk의 배포 전략 표는 시험에 거의 매번 나오는 핵심이다
          [ASG v1: 3대]                     트래픽 100%
 ```
 
-> ⚠️ **함정**: Traffic Splitting은 Application Load Balancer의 **weighted target group** 기능을 활용한다. 이 기능이 없는 Classic Load Balancer로 구성된 환경에서는 동작하지 않는다. 또 Network Load Balancer로 구성된 환경도 불가. 시험에서 "Beanstalk + Traffic Splitting" 시나리오가 나오면 ALB 전제가 깔려 있어야 한다.
+> ⚠️ **함정**: Traffic Splitting은 Application Load Balancer의 **weighted target group** 기능을 활용한다. 이 기능이 없는 Classic Load Balancer로 구성된 환경에서는 동작하지 않는다. 또 Network Load Balancer로 구성된 환경도 불가. "Beanstalk + Traffic Splitting" 시나리오는 ALB를 전제로 한다.
 
 ## .ebextensions vs .platform: 추상화 균열을 메우는 두 가지 방식
 
@@ -165,9 +166,9 @@ option_settings:
     ProxyServer: nginx
 ```
 
-> 🔍 **더 깊이**: `.ebextensions` 파일은 **알파벳 순서**로 실행된다. 그래서 보통 `01_xxx.config`, `02_xxx.config`처럼 prefix로 순서를 강제한다. `commands`는 application 코드 압축 풀기 **전**에, `container_commands`는 압축 풀기 **후**에 실행된다는 차이가 있다. DB 마이그레이션처럼 application 코드가 풀려 있어야 가능한 작업은 container_commands에 두는 게 정답.
+`.ebextensions` 파일은 **알파벳 순서**로 실행된다. 그래서 보통 `01_xxx.config`, `02_xxx.config`처럼 prefix로 순서를 강제한다. `commands`는 application 코드 압축 풀기 **전**에, `container_commands`는 압축 풀기 **후**에 실행된다는 차이가 있다. DB 마이그레이션처럼 application 코드가 풀려 있어야 가능한 작업은 container_commands에 두는 게 정답.
 
-> ⚠️ **함정**: `leader_only: true`는 Auto Scaling Group의 인스턴스 중 정확히 한 대에서만 실행되도록 보장한다. DB 마이그레이션을 모든 인스턴스에서 동시에 실행하면 race condition이 나므로 반드시 leader_only를 써야 한다. 단, 이 옵션은 **초기 배포 시점에만 leader가 결정**되고 그 후 새로 추가되는 인스턴스(스케일 아웃)에서는 동작하지 않는다.
+`leader_only: true`는 Auto Scaling Group의 인스턴스 중 정확히 한 대에서만 실행되도록 보장한다. DB 마이그레이션을 모든 인스턴스에서 동시에 실행하면 race condition이 나므로 반드시 leader_only를 써야 한다. 단, 이 옵션은 **초기 배포 시점에만 leader가 결정**되고 그 후 새로 추가되는 인스턴스(스케일 아웃)에서는 동작하지 않는다.
 
 ### .platform (Amazon Linux 2/2023, 권장)
 
@@ -186,11 +187,11 @@ my-app/
         01_warm_cache.sh      # 배포 후
 ```
 
-> 💡 **관련 이론**: Amazon Linux 2 출시(2017) 이후 AWS는 `.ebextensions`의 일부 기능을 폐기하고 `.platform/` 디렉토리 기반으로 재설계했다. 이유는 ① 더 명확한 hook 시점 분리 ② 표준 shell script로 작성 가능 ③ nginx 설정을 통째로 덮어쓰지 않고 일부만 추가 가능. .ebextensions는 여전히 동작하지만 신규 프로젝트는 .platform이 권장. AL2 환경에서는 둘 다 같이 쓸 수도 있다.
+Amazon Linux 2 출시(2017) 이후 AWS는 `.ebextensions`의 일부 기능을 폐기하고 `.platform/` 디렉터리 기반으로 재설계했다. 이유는 ① 더 명확한 hook 시점 분리 ② 표준 shell script로 작성 가능 ③ nginx 설정을 통째로 덮어쓰지 않고 일부만 추가 가능. .ebextensions는 여전히 동작하지만 신규 프로젝트는 .platform이 권장. AL2 환경에서는 둘 다 같이 쓸 수도 있다.
 
 ## RDS 함정: 환경 안에 두면 같이 죽는다
 
-Beanstalk 콘솔에서 "환경 만들 때 RDS도 같이 만들기" 옵션이 있다. 편리해 보이지만 production에서는 거의 항상 안티패턴이다.
+Beanstalk 콘솔에서 "환경 만들 때 RDS도 같이 만들기" 옵션이 있다. 편리해 보이지만 production에서는 안티패턴이다.
 
 ```
 [Beanstalk Environment]
@@ -202,7 +203,7 @@ Beanstalk 콘솔에서 "환경 만들 때 RDS도 같이 만들기" 옵션이 있
 
 이유는 Beanstalk가 RDS를 환경의 CloudFormation 스택에 포함시키기 때문이다. `eb terminate` 또는 콘솔에서 환경 삭제 시 RDS도 함께 삭제된다. 데이터가 날아간다.
 
-> ⚠️ **함정**: 시험에서 "Beanstalk 환경을 삭제했더니 production 데이터가 사라졌다"는 시나리오의 단골 답이 이것이다. 올바른 패턴은 **RDS를 Beanstalk 외부에 별도로 생성**하고, 환경 변수(DB endpoint, credentials)로만 연결하는 것. 그러면 환경을 몇 번 재생성해도 DB는 안전하다.
+> ⚠️ **함정**: "Beanstalk 환경을 삭제했더니 production 데이터가 사라졌다"는 시나리오의 원인이 이것이다. 올바른 패턴은 **RDS를 Beanstalk 외부에 별도로 생성**하고, 환경 변수(DB endpoint, credentials)로만 연결하는 것. 그러면 환경을 몇 번 재생성해도 DB는 안전하다.
 
 ```yaml
 # .ebextensions에서 외부 RDS 연결
@@ -214,7 +215,7 @@ option_settings:
     # 비밀번호는 Secrets Manager 참조
 ```
 
-> 📚 **사례**: AWS re:Invent의 한 customer talk에서 한 SaaS 회사는 Beanstalk 환경을 staging/prod 분리하면서 staging 환경의 RDS를 같이 만든 적이 있었다. 어느 날 staging 환경을 재생성하는 과정에서 RDS가 삭제됐고, 다행히 자동 백업이 있어 복구는 됐지만 2시간 다운타임이 발생했다. 이후 모든 RDS는 Beanstalk 외부에 두는 정책으로 전환.
+가상의 사례로, 한 SaaS 회사가 Beanstalk 환경을 staging/prod로 분리하면서 staging 환경의 RDS를 환경 안에 같이 만들었다. staging 환경을 재생성하는 과정에서 RDS가 삭제됐고, 자동 백업 덕분에 복구는 됐지만 2시간 다운타임이 발생했다. 이후 모든 RDS를 Beanstalk 외부에 두는 정책으로 전환했다.
 
 ## CLI 기반 운영: eb 명령어
 
@@ -225,7 +226,7 @@ eb init --platform "Python 3.11 running on 64bit Amazon Linux 2023" --region ap-
 # 환경 생성
 eb create production-env --instance-type t3.medium --elb-type application
 
-# 새 버전 배포 (현재 디렉토리의 코드를 zip으로 묶어 업로드)
+# 새 버전 배포 (현재 디렉터리의 코드를 zip으로 묶어 업로드)
 eb deploy
 
 # 환경 변수 설정
@@ -255,7 +256,7 @@ eb terminate production-env
 | 데이터베이스 | RDS 외부 권장 | Heroku Postgres add-on | Cloud SQL 분리 | Azure SQL 분리 |
 | Custom runtime | 가능 (.platform) | Buildpack | 가능 (Flexible) | 가능 (Custom Container) |
 
-> 💡 **관련 이론**: Heroku와 Beanstalk의 가장 큰 차이는 **인프라 접근성**이다. Heroku는 "어떻게 인스턴스가 동작하는지는 보지 마라"는 완전 추상화고, Beanstalk는 "원하면 SSH로 들어가서 nginx 설정 직접 만져라"는 escape hatch가 있다. 이 차이가 production에서 디버깅할 때 결정적이 된다 — Heroku에서 "왜 OOM이 나는지" 알기 어렵지만 Beanstalk에서는 `eb ssh`로 들어가 `top`을 칠 수 있다.
+Heroku와 Beanstalk의 가장 큰 차이는 **인프라 접근성**이다. Heroku는 "어떻게 인스턴스가 동작하는지는 보지 마라"는 완전 추상화고, Beanstalk는 "원하면 SSH로 들어가서 nginx 설정 직접 만져라"는 escape hatch가 있다. 이 차이가 production에서 디버깅할 때 결정적이 된다 — Heroku에서 "왜 OOM이 나는지" 알기 어렵지만 Beanstalk에서는 `eb ssh`로 들어가 `top`을 칠 수 있다.
 
 ## Beanstalk를 언제 선택해야 하는가
 
@@ -268,13 +269,15 @@ eb terminate production-env
 | 컨테이너지만 Kubernetes 없이 자동 스케일 + 자동 HTTPS | **App Runner** |
 | HPC, GPU, 특수 인스턴스 | **EC2 직접** |
 
-> 🔍 **더 깊이**: 2021년 출시된 AWS App Runner는 Beanstalk의 후계자 성격이 있다. "컨테이너 이미지나 소스 코드를 주면 자동으로 build + deploy + autoscale + HTTPS까지"가 App Runner의 약속인데, Beanstalk보다 더 단순하고 컨테이너 친화적이다. AWS 내부에서는 Beanstalk를 "deprecated는 아니지만 적극 권장도 아닌" 단계로 두고, 신규 워크로드는 App Runner나 ECS Fargate로 유도하는 분위기.
+2021년 출시된 AWS App Runner는 Beanstalk의 후계자 성격이 있다. "컨테이너 이미지나 소스 코드를 주면 자동으로 build + deploy + autoscale + HTTPS까지"가 App Runner의 약속인데, Beanstalk보다 더 단순하고 컨테이너 친화적이다.
 
-## 정리하며
+## 정리
 
-Beanstalk는 "AWS의 모든 인프라 복잡성을 한 명령어로 추상화"하려는 가장 야심 찬 시도였다. 그 약속은 대체로 잘 지켜졌지만, 추상화의 균열을 메우는 .ebextensions/.platform이 결국 필요했고, RDS 같은 stateful 리소스의 라이프사이클 관리는 여전히 사용자 책임이다.
+Beanstalk는 "AWS의 모든 인프라 복잡성을 한 명령어로 추상화"하려는 야심 찬 시도였다. 그 약속은 대체로 잘 지켜졌지만, 추상화의 균열을 메우는 .ebextensions/.platform이 결국 필요했고, RDS 같은 stateful 리소스의 라이프사이클 관리는 여전히 사용자 책임이다.
 
-DVA-C02 시험 대비로는 6가지 배포 전략의 trade-off, Web vs Worker 환경의 차이, 그리고 "환경 안에 RDS 두면 안 된다"는 단 한 가지 함정만 정확히 외워두면 출제 범위의 80%를 잡는다. 다음 글에서는 이번 주의 마지막 — **CloudFormation의 내부 동작과 SAM/CDK** — 을 본다.
+DVA-C02 시험 대비로는 6가지 배포 전략의 trade-off, Web vs Worker 환경의 차이, 그리고 "환경 안에 RDS를 두면 안 된다"는 함정을 정확히 알아 두어야 한다.
+
+다음 글에서는 이번 주의 마지막 — **CloudFormation의 내부 동작과 SAM/CDK** — 을 본다.
 
 ---
 

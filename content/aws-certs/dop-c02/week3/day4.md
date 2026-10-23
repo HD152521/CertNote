@@ -2,7 +2,7 @@
 
 CodeBuild의 기본 빌드 컨테이너는 퍼블릭 인터넷에 연결된다. npm, pip, Docker Hub에서 패키지를 가져오고, ECR에 이미지를 push한다. 이것은 대부분의 상황에서 충분하다. 하지만 두 가지 상황이 이 가정을 깬다.
 
-첫 번째: 프라이빗 리소스 접근. RDS Aurora가 Private 서브넷에 있고, 빌드가 DB 마이그레이션을 실행해야 한다. 퍼블릭 인터넷에서 Private 서브넷의 DB에는 접근할 수 없다. 빌드가 VPC 안에 있어야 한다.
+첫 번째: 프라이빗 리소스 접근. RDS Aurora가 프라이빗 서브넷에 있고, 빌드가 DB 마이그레이션을 실행해야 한다. 퍼블릭 인터넷에서 프라이빗 서브넷의 DB에는 접근할 수 없다. 빌드가 VPC 안에 있어야 한다.
 
 두 번째: ARM(Graviton) 워크로드. ECS나 EKS 클러스터가 Graviton 인스턴스를 쓴다면, 빌드도 ARM 환경에서 해야 arm64 이미지를 만들 수 있다. x86에서 arm64를 QEMU로 에뮬레이션해 빌드할 수 있지만, 느리고 불안정하다.
 
@@ -13,7 +13,7 @@ CodeBuild의 기본 빌드 컨테이너는 퍼블릭 인터넷에 연결된다. 
 CodeBuild가 VPC 모드로 실행되면, 빌드 시작 시점에 지정된 서브넷에 **ENI(Elastic Network Interface)**를 동적으로 생성한다. 빌드 컨테이너는 이 ENI를 통해 VPC 내부 리소스에 접근한다. 빌드가 끝나면 ENI는 삭제된다.
 
 **VPC 모드가 필요한 상황:**
-- Private 서브넷의 RDS/ElastiCache/EFS 접근
+- 프라이빗 서브넷의 RDS/ElastiCache/EFS 접근
 - Direct Connect/VPN으로 연결된 온프레미스 Nexus/Artifactory
 - VPC Endpoint를 통한 S3/ECR 접근 (NAT 비용 절감)
 - Egress 트래픽 통제가 필요한 보안 정책
@@ -69,7 +69,7 @@ aws codebuild update-project \
 
 ## VPC 내 인터넷 접근: NAT vs VPC Endpoint
 
-Private 서브넷의 빌드 컨테이너가 인터넷(npmjs.com, Docker Hub)에 접근하려면:
+프라이빗 서브넷의 빌드 컨테이너가 인터넷(npmjs.com, Docker Hub)에 접근하려면:
 - **NAT Gateway**: 사설 IP → NAT → 인터넷. 시간당 + 데이터 전송 비용.
 - **VPC Endpoint**: 특정 AWS 서비스로 AWS 내부망을 통해 직접 접근.
 
@@ -83,16 +83,16 @@ Private 서브넷의 빌드 컨테이너가 인터넷(npmjs.com, Docker Hub)에 
 | CloudWatch Logs | Interface Endpoint | 시간당 + 데이터 전송 |
 | Systems Manager | Interface Endpoint | 시간당 + 데이터 전송 |
 
-**S3 Gateway Endpoint는 무조건 추가하라.** 무료이고, CodeBuild가 S3에서 아티팩트와 캐시를 주고받는 트래픽이 NAT를 거치지 않아 NAT 비용이 줄어든다.
+**S3 Gateway Endpoint는 반드시 추가한다.** 무료이고, CodeBuild가 S3에서 아티팩트와 캐시를 주고받는 트래픽이 NAT를 거치지 않아 NAT 비용이 줄어든다.
 
 인터넷 접근이 필요한 경우(npm, pip 등):
-1. NAT Gateway + Private 서브넷 (표준, 비용 발생)
+1. NAT Gateway + 프라이빗 서브넷 (표준, 비용 발생)
 2. CodeArtifact + Upstream Repository (npm, pypi를 내부 저장소로 미러링)
 3. ECR Pull Through Cache (Docker Hub 미러)
 
 옵션 2가 보안과 비용 모두에서 가장 좋다 — 외부 패키지가 내부 저장소를 통하면 공급망 공격도 방어할 수 있다.
 
-> 🔍 **더 깊이**: VPC Endpoint의 Interface Endpoint는 내부적으로 AWS PrivateLink 기술로 구현된다. PrivateLink는 서비스 제공자가 NLB를 앞에 두고, 소비자 VPC에 ENI를 생성해 TCP 레벨 연결을 제공한다. 트래픽이 인터넷을 경유하지 않아 보안이 강화되고, 데이터 전송 비용도 NAT보다 낮다(같은 AZ 내는 무료). VPC Endpoint에 DNS Resolution을 활성화하면 `ecr.dkr.ap-northeast-2.amazonaws.com`이 자동으로 VPC 내부 IP로 해석된다.
+> VPC Endpoint의 Interface Endpoint는 내부적으로 AWS PrivateLink 기술로 구현된다. PrivateLink는 서비스 제공자가 NLB를 앞에 두고, 소비자 VPC에 ENI를 생성해 TCP 레벨 연결을 제공한다. 트래픽이 인터넷을 경유하지 않아 보안이 강화되고, 데이터 전송 비용도 NAT보다 낮다(같은 AZ 내는 무료). VPC Endpoint에 DNS Resolution을 활성화하면 `ecr.dkr.ap-northeast-2.amazonaws.com`이 자동으로 VPC 내부 IP로 해석된다.
 
 ## Custom Container Image: 빌드 환경을 코드로 정의하기
 
@@ -131,7 +131,7 @@ environment:
 
 Cross-account ECR이미지를 pull하려면 `SERVICE_ROLE`이 필요하고, 이미지가 있는 계정의 ECR Repository Policy에서 빌드 계정 Role을 허용해야 한다.
 
-> 📚 **사례**: Airbnb는 2020년 엔지니어링 블로그에서 빌드 환경을 "건설 이미지(builder image)"로 표준화한 사례를 공개했다. 모든 팀이 동일한 버전의 Terraform, kubectl, 내부 도구를 포함한 이미지를 사용함으로써 "내 로컬에서는 됐는데 CI에서 안 됨" 문제가 90% 이상 줄었다. 빌드 환경 자체를 코드(Dockerfile)로 관리하고 버전을 고정하는 것이 핵심이었다.
+> Airbnb는 2020년 엔지니어링 블로그에서 빌드 환경을 "건설 이미지(builder image)"로 표준화한 사례를 공개했다. 모든 팀이 동일한 버전의 Terraform, kubectl, 내부 도구를 포함한 이미지를 사용함으로써 "내 로컬에서는 됐는데 CI에서 안 됨" 문제가 90% 이상 줄었다. 빌드 환경 자체를 코드(Dockerfile)로 관리하고 버전을 고정하는 것이 핵심이었다.
 
 ## ARM/Graviton 빌드: 비용과 성능의 교점
 
@@ -202,7 +202,7 @@ docker buildx build \
 
 `docker buildx`는 내부적으로 QEMU를 사용해 크로스 컴파일한다. Build Batch를 쓰면 각 아키텍처가 자체 환경에서 native 빌드된다 — 더 빠르고 안정적이다.
 
-> 💡 **관련 이론**: Multi-architecture 이미지는 **OCI (Open Container Initiative) Image Specification**의 manifest list 기능을 사용한다. 단일 이미지 URI(`myapp:v1`)가 manifest list를 가리키고, manifest list는 각 플랫폼(linux/amd64, linux/arm64)에 대한 실제 이미지 manifest를 포함한다. Docker pull 시 클라이언트가 자신의 플랫폼에 맞는 이미지를 자동 선택한다. 이것이 `docker pull ubuntu`가 어느 아키텍처에서나 동작하는 이유다.
+> Multi-architecture 이미지는 **OCI (Open Container Initiative) Image Specification**의 manifest list 기능을 사용한다. 단일 이미지 URI(`myapp:v1`)가 manifest list를 가리키고, manifest list는 각 플랫폼(linux/amd64, linux/arm64)에 대한 실제 이미지 manifest를 포함한다. Docker pull 시 클라이언트가 자신의 플랫폼에 맞는 이미지를 자동 선택한다. 이것이 `docker pull ubuntu`가 어느 아키텍처에서나 동작하는 이유다.
 
 ## Docker Hub Rate Limit: ECR Pull Through Cache
 
@@ -244,7 +244,7 @@ aws ecr create-pull-through-cache-rule \
 
 CodeBuild의 ENI 방식은 "필요할 때만 VPC에 참여"하는 on-demand 모델이다. GCP의 Private Pool은 "항상 VPC에 연결된 풀"을 유지하는 reserved 모델이다. 빌드 빈도가 낮으면 CodeBuild가 유리하고, 빈도가 높으면 GCP의 풀 방식이 ENI 생성 오버헤드를 없앤다.
 
-> 📚 **사례**: 한 글로벌 금융기관이 2022년 CodeBuild VPC 모드를 도입한 사례: Private 서브넷의 Oracle DB에 마이그레이션 스크립트를 실행하는 빌드를 구성했다. 초기에 `ENI quota exhausted` 오류가 발생했는데, `/24` 서브넷(256 IP)에서 동시 빌드 50개 × ENI 1개 = 50개 IP 소비. 더 큰 `/22` 서브넷(1024 IP)으로 변경하고, `concurrentBuildLimit`으로 동시 빌드를 30개로 제한해 안정화했다.
+> 한 글로벌 금융기관이 2022년 CodeBuild VPC 모드를 도입한 사례: 프라이빗 서브넷의 Oracle DB에 마이그레이션 스크립트를 실행하는 빌드를 구성했다. 초기에 `ENI quota exhausted` 오류가 발생했는데, `/24` 서브넷(256 IP)에서 동시 빌드 50개 × ENI 1개 = 50개 IP 소비. 더 큰 `/22` 서브넷(1024 IP)으로 변경하고, `concurrentBuildLimit`으로 동시 빌드를 30개로 제한해 안정화했다.
 
 ## 풀 예시: VPC + ARM 매트릭스 + Custom Image
 

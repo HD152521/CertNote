@@ -224,7 +224,7 @@ aws logs start-live-tail \
 
 운영자가 수동 Metric Filter를 안 만들어도 ML이 자동 처리. 단 학습에 최소 며칠~수 주가 필요해 신규 워크로드 즉시 적용은 안 된다. 활성화 후 안정적 베이스라인이 잡힐 때까지 false positive가 있을 수 있다.
 
-> 🔍 **더 깊이**: Logs Anomaly Detection은 내부적으로 **log pattern clustering**(Drain 알고리즘 계열로 추정)으로 비슷한 로그를 하나의 패턴으로 묶은 후, 그 패턴의 빈도·timing의 이상을 STL/ARIMA로 탐지하는 2단 ML 파이프라인. 운영자가 직접 정규식을 안 짜도 ML이 자동으로 "이 로그와 이 로그는 같은 종류"라고 묶어준다.
+Logs Anomaly Detection은 내부적으로 **log pattern clustering**(Drain 알고리즘 계열로 추정)으로 비슷한 로그를 하나의 패턴으로 묶은 후, 그 패턴의 빈도·timing의 이상을 STL/ARIMA로 탐지하는 2단 ML 파이프라인. 운영자가 직접 정규식을 안 짜도 ML이 자동으로 "이 로그와 이 로그는 같은 종류"라고 묶어준다.
 
 ## Embedded Metric Format (EMF): 메트릭과 로그의 통합
 
@@ -264,9 +264,9 @@ EMF는 로그 메시지 안에 JSON으로 메트릭을 임베드하면 CloudWatc
 - user_id, order_id, trace_id는 메트릭이 아닌 로그 필드(고 카디널리티 문제 회피)
 - `PutMetricData` API 호출 0
 
-> 📚 **사례**: 한 회사가 모든 HTTP 요청마다 `PutMetricData`를 3번 호출하니(latency, error_count, order_value) API 비용 월 \$8,000. EMF로 전환 후 API 비용 zero. 로그 비용은 약간 늘었지만(50% 정도) 메트릭 비용 절감이 압도적. 운영자가 시험에서 "비용 효율적 메트릭 발행"이라는 키워드를 만나면 거의 항상 EMF.
+가상의 사례로, 한 회사가 모든 HTTP 요청마다 `PutMetricData`를 3번 호출하니(latency, error_count, order_value) API 비용 월 \$8,000. EMF로 전환 후 API 비용 zero. 로그 비용은 약간 늘었지만(50% 정도) 메트릭 비용 절감이 압도적. 운영자가 시험에서 "비용 효율적 메트릭 발행"이라는 키워드를 만나면 거의 항상 EMF.
 
-> 🔍 **더 깊이**: EMF는 AWS SDK의 **PowerTools**(Python, Java, TypeScript, .NET)에 통합돼 있다. Python의 경우 `from aws_lambda_powertools import Metrics`로 사용. CloudWatch가 EMF JSON을 파싱해 메트릭 발행하는 건 비동기·무료. 단 메트릭이 추출되는 latency는 분 단위(보통 1~2분). 즉각적인 메트릭 반응이 필요한 알람에는 직접 PutMetricData가 더 적합하지만, 그런 경우는 드물다.
+EMF는 AWS SDK의 **PowerTools**(Python, Java, TypeScript, .NET)에 통합돼 있다. Python의 경우 `from aws_lambda_powertools import Metrics`로 사용. CloudWatch가 EMF JSON을 파싱해 메트릭 발행하는 건 비동기·무료. 단 메트릭이 추출되는 latency는 분 단위(보통 1~2분). 즉각적인 메트릭 반응이 필요한 알람에는 직접 PutMetricData가 더 적합하지만, 그런 경우는 드물다.
 
 ## CloudWatch Logs Cross-Account Observability (2022)
 
@@ -283,7 +283,7 @@ EMF는 로그 메시지 안에 JSON으로 메트릭을 임베드하면 CloudWatc
 
 운영자 패턴: 별도 모니터링 계정을 만들고 모든 워크로드 계정에서 sink 연결. 운영자는 한 콘솔에서 전 계정 메트릭·로그·X-Ray trace를 통합 조회. Organization 전체를 자동 enrollment하는 옵션도 있어 새 계정이 추가되면 자동 연결된다.
 
-## 정리하며
+## 정리
 
 Logs Insights는 운영자의 SQL이다. `parse + filter + stats` 3개 명령으로 90%의 디버깅을 푼다. 시간 범위를 좁게 시작, filter를 앞쪽에 두는 게 비용·속도 핵심. EMF로 메트릭·로그를 통합하면 비용·관찰성 양쪽 다 잡힌다. 새벽 3시 알람을 받았을 때 위 9개 패턴 라이브러리가 머리에 박혀 있으면 10분 안에 원인을 좁힐 수 있다.
 

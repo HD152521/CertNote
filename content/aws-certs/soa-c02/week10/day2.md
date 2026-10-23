@@ -14,11 +14,11 @@ AWS Backup의 구성을 처음 보면 용어가 셋이라 복잡해 보인다. *
 
 이 직교 분해의 실익은 명확하다. Vault에 Lock을 걸어 불변으로 만들어도 Plan은 자유롭게 바꿀 수 있고, 대상을 태그로 늘려도 Plan과 Vault는 그대로다. KMS 키를 Vault 단위로 분리하면 "운영 백업 금고"와 "감사 백업 금고"가 서로 다른 키로 암호화돼 한쪽 키가 뚫려도 다른 쪽이 안전하다.
 
-> 💡 **관련 이론**: Vault Access Policy가 IAM과 별개로 존재하는 구조는 Week 9 KMS Key Policy와 정확히 같은 보안 원리다 — 가장 민감한 자산(여기선 백업)에는 **resource-based policy**를 의무화해서, IAM 한 곳이 뚫려도 자산이 자기 방어선을 갖게 한다. IAM(identity-based)은 "이 주체가 무엇을 할 수 있나"를, resource policy는 "이 자원에 누가 접근할 수 있나"를 본다. 둘이 교차 검증되므로 공격자는 IAM 권한만으로는 부족하고 자원 정책의 허용까지 받아야 한다. Cross-Account 백업에서 중앙 금고가 "이 소스 계정만 나에게 복사할 수 있다"를 Vault 정책에 박는 게 이 모델의 핵심 활용이다.
+Vault Access Policy가 IAM과 별개로 존재하는 구조는 Week 9 KMS Key Policy와 정확히 같은 보안 원리다 — 가장 민감한 자산(여기선 백업)에는 **resource-based policy**를 의무화해서, IAM 한 곳이 뚫려도 자산이 자기 방어선을 갖게 한다. IAM(identity-based)은 "이 주체가 무엇을 할 수 있나"를, resource policy는 "이 자원에 누가 접근할 수 있나"를 본다. 둘이 교차 검증되므로 공격자는 IAM 권한만으로는 부족하고 자원 정책의 허용까지 받아야 한다. Cross-Account 백업에서 중앙 금고가 "이 소스 계정만 나에게 복사할 수 있다"를 Vault 정책에 박는 게 이 모델의 핵심 활용이다.
 
 ## Vault Lock — Governance와 Compliance, 그리고 되돌릴 수 없는 3일
 
-Vault Lock은 금고 안의 모든 복구 지점을 **변경·삭제 불가**로 만드는 WORM(Write Once Read Many) 장치다. 핵심은 모드 구분이고, 이게 시험과 실무 양쪽에서 가장 자주 틀리는 지점이다.
+Vault Lock은 금고 안의 모든 복구 지점을 **변경·삭제 불가**로 만드는 WORM(Write Once Read Many) 장치다. 모드 구분이 핵심이고, 이게 시험과 실무 양쪽에서 틀리기 쉬운 지점이다.
 
 **Governance 모드**는 `backup:DeleteRecoveryPoint`나 Lock 해제를 특정 IAM 권한(`backup:PutBackupVaultLockConfiguration` 등)을 가진 주체에게만 허용한다. 실수로 백업을 지우는 걸 막는 가드레일이지만, 충분한 권한을 가진 관리자는 풀 수 있다. **Compliance 모드**는 차원이 다르다. 한번 설정하면 **cooling-off 기간(changeable-for-days, 최소 3일) 동안만** 해제·완화가 가능하고, 그 기간이 지나면 **루트 계정도, AWS도, 그 누구도 풀 수 없다.** min/max 보존 기간이 영구히 고정되고, 그 안의 어떤 복구 지점도 보존 기간 전에는 삭제되지 않는다. 계정을 폐쇄해도 잠금은 유지된다.
 
@@ -35,7 +35,7 @@ cooling-off 3일이 왜 있는지가 설계의 핵심이다. Compliance Lock은 
 
 > ⚠️ **함정**: Compliance 모드의 "절대 못 푼다"는 양날의 검이다. 공격자가 백업을 못 지우는 만큼, 운영자도 실수를 못 되돌린다. min-retention을 너무 길게(예: 7년) 박으면 그 금고의 모든 백업을 7년간 한 건도 지울 수 없어 저장 비용이 영구히 누적된다. 그래서 Compliance Lock은 반드시 cooling-off 기간 동안 테스트 백업으로 동작을 검증한 뒤 영구화해야 한다. 시험에서 "Vault Lock을 적용했는데 후회된다, 풀 수 있나?"는 cooling-off 기간(3일) 내면 가능, 지나면 영구 불가가 정답이다. Governance 모드는 권한자가 언제든 풀 수 있어 이 함정이 없다.
 
-> 🔍 **더 깊이**: AWS Backup Vault Lock은 미국 SEC, FINRA, CFTC가 요구하는 WORM 보관 규정을 **third-party assessor(Cohasset Associates)가 검증**한 컴플라이언스 모드로 제공한다. 이는 단순 기능이 아니라 규제 감사에서 "이 백업은 변조 불가능함"을 법적으로 주장할 수 있는 근거가 된다는 뜻이다. 같은 WORM 모델이 자원별로 세 군데 등장한다 — EBS Snapshot Lock(Day 1), S3 Object Lock(Day 4), 그리고 여기 Backup Vault Lock. 셋의 공통 철학은 "신뢰는 발급자조차 손댈 수 없음을 증명할 때 성립한다"이고, 이는 1990년대 금융권의 물리적 WORM 광디스크(SEC Rule 17a-4)를 소프트웨어로 재현한 것이다.
+AWS Backup Vault Lock은 미국 SEC, FINRA, CFTC가 요구하는 WORM 보관 규정을 **third-party assessor(Cohasset Associates)가 검증**한 컴플라이언스 모드로 제공한다. 이는 단순 기능이 아니라 규제 감사에서 "이 백업은 변조 불가능함"을 법적으로 주장할 수 있는 근거가 된다는 뜻이다. 같은 WORM 모델이 자원별로 세 군데 등장한다 — EBS Snapshot Lock(Day 1), S3 Object Lock(Day 4), 그리고 여기 Backup Vault Lock. 셋의 공통 철학은 "신뢰는 발급자조차 손댈 수 없음을 증명할 때 성립한다"이고, 이는 1990년대 금융권의 물리적 WORM 광디스크(SEC Rule 17a-4)를 소프트웨어로 재현한 것이다.
 
 ## Cross-Account 백업 — 운영 계정이 통째로 털려도 살아남는 사본
 
@@ -68,7 +68,7 @@ aws backup put-backup-vault-access-policy \
 | 리전 단위 장애 | Cross-Region CopyAction |
 | 규제 WORM 요건 | Compliance Lock(Cohasset 검증) |
 
-> 📚 **사례**: 2021년 이후 대형 Ransomware 사건들(Colonial Pipeline 등 인프라 공격 포함)에서 반복된 교훈이 "백업이 운영 네트워크와 같은 도메인·같은 자격증명 아래 있으면 백업도 함께 암호화·삭제된다"였다. 공격자는 도메인 관리자 권한을 얻으면 백업 서버를 1순위로 노린다. AWS의 Cross-Account + Compliance Vault Lock 조합은 이에 대한 클라우드 네이티브 답이다 — 중앙 백업 계정은 멤버 계정의 어떤 권한으로도 접근·삭제할 수 없고, Compliance Lock이 걸린 금고는 중앙 계정의 루트조차 풀 수 없다. 즉 공격자가 모든 멤버 계정 + 중앙 계정 루트까지 장악해도 Compliance Lock이 걸린 복구 지점은 보존 기간 동안 살아남는다. "관리자도 못 지운다"가 곧 "공격자도 못 지운다"다.
+2021년 이후 대형 Ransomware 사건들(Colonial Pipeline 등 인프라 공격 포함)에서 반복된 교훈이 "백업이 운영 네트워크와 같은 도메인·같은 자격증명 아래 있으면 백업도 함께 암호화·삭제된다"였다. 공격자는 도메인 관리자 권한을 얻으면 백업 서버를 1순위로 노린다. AWS의 Cross-Account + Compliance Vault Lock 조합은 이에 대한 클라우드 네이티브 답이다 — 중앙 백업 계정은 멤버 계정의 어떤 권한으로도 접근·삭제할 수 없고, Compliance Lock이 걸린 금고는 중앙 계정의 루트조차 풀 수 없다. 즉 공격자가 모든 멤버 계정 + 중앙 계정 루트까지 장악해도 Compliance Lock이 걸린 복구 지점은 보존 기간 동안 살아남는다. "관리자도 못 지운다"가 곧 "공격자도 못 지운다"다.
 
 ## Continuous Backup과 PITR — 어떻게 "5초 전"으로 돌아가나
 
@@ -86,7 +86,7 @@ aws rds restore-db-instance-to-point-in-time \
 
 PITR이 항상 **새 리소스로 복원**한다는 점이 중요하다. 원본을 덮어쓰지 않고 별도 인스턴스/테이블을 만든다 — 사고 시점을 잘못 짚어도 원본은 그대로라 다시 시도할 수 있다. PITR 윈도우는 RDS 자동 백업 보존 기간(기본 1~35일) 안에서만 작동하고, 그보다 오래된 시점은 Manual Snapshot이나 AWS Backup의 장기 보존으로 따로 잡아둬야 한다.
 
-> 💡 **관련 이론**: PITR의 "스냅샷 + 로그 재생"은 데이터베이스 복구 이론의 **WAL(Write-Ahead Logging)**과 **log-structured recovery**를 그대로 백업에 적용한 것이다. DB는 평상시 모든 변경을 데이터 파일에 쓰기 전에 먼저 로그에 기록한다(write-ahead). 정전 후 재시작하면 마지막 체크포인트(=베이스 스냅샷에 해당)부터 로그를 재생(redo)해 일관된 상태로 복구한다. PITR은 이 메커니즘을 시간 차원으로 확장한 것 — "마지막"이 아니라 "내가 지정한 임의 시점"까지만 로그를 재생한다. 이벤트 소싱(Event Sourcing) 아키텍처가 "상태 = 초기 상태 + 모든 이벤트 재생"으로 임의 시점을 재구성하는 것도 정확히 같은 원리다. 상태를 스냅샷으로, 변화를 로그로 분리하면 시간을 자유롭게 거슬러 오를 수 있다.
+PITR의 "스냅샷 + 로그 재생"은 데이터베이스 복구 이론의 **WAL(Write-Ahead Logging)**과 **log-structured recovery**를 그대로 백업에 적용한 것이다. DB는 평상시 모든 변경을 데이터 파일에 쓰기 전에 먼저 로그에 기록한다(write-ahead). 정전 후 재시작하면 마지막 체크포인트(=베이스 스냅샷에 해당)부터 로그를 재생(redo)해 일관된 상태로 복구한다. PITR은 이 메커니즘을 시간 차원으로 확장한 것 — "마지막"이 아니라 "내가 지정한 임의 시점"까지만 로그를 재생한다. 이벤트 소싱(Event Sourcing) 아키텍처가 "상태 = 초기 상태 + 모든 이벤트 재생"으로 임의 시점을 재구성하는 것도 정확히 같은 원리다. 상태를 스냅샷으로, 변화를 로그로 분리하면 시간을 자유롭게 거슬러 오를 수 있다.
 
 ## Warm·Cold 라이프사이클과 복원 시간 — 비용과 속도의 트레이드오프
 
@@ -124,9 +124,9 @@ aws backup create-framework \
 
 대표 Control들이 묻는 질문은 직설적이다 — "prod 태그 리소스 중 백업 계획에 포함 안 된 게 있나?", "보존 기간이 30일 미만인 백업이 있나?", "Cross-Region 복사가 없는 백업이 있나?", "Vault에 Lock이 걸려 있나?" 위반이 발견되면 비준수 리소스 목록과 함께 컴플라이언스 리포트(CSV)로 떨어진다. 이건 Week 4의 Config·Audit Manager와 같은 "선언적 준수 검증(declarative compliance)" 철학이다 — 원하는 상태를 규칙으로 선언하면, 시스템이 현실이 그 규칙에 맞는지 끊임없이 대조한다.
 
-> 🔍 **더 깊이**: Backup Audit Manager의 Control은 내부적으로 AWS Config의 평가 엔진 위에서 돈다. Config가 리소스 상태 변화를 추적하고, Audit Manager Control이 그 상태를 백업 관점에서 평가하는 구조다. 그래서 "리소스가 백업 계획에 보호되는가"를 거의 실시간으로 감지할 수 있다 — 새 리소스가 생기면 Config가 그 등장을 포착하고, Control이 즉시 "이게 백업 대상에 들어갔나"를 평가한다. 이 계층 덕에 백업 누락이 장애 때가 아니라 리소스 생성 직후 드러난다. 선언적 준수의 힘은 "사고가 난 뒤"가 아니라 "위반이 발생한 순간" 알려준다는 데 있다.
+Backup Audit Manager의 Control은 내부적으로 AWS Config의 평가 엔진 위에서 돈다. Config가 리소스 상태 변화를 추적하고, Audit Manager Control이 그 상태를 백업 관점에서 평가하는 구조다. 그래서 "리소스가 백업 계획에 보호되는가"를 거의 실시간으로 감지할 수 있다 — 새 리소스가 생기면 Config가 그 등장을 포착하고, Control이 즉시 "이게 백업 대상에 들어갔나"를 평가한다. 이 계층 덕에 백업 누락이 장애 때가 아니라 리소스 생성 직후 드러난다. 선언적 준수의 힘은 "사고가 난 뒤"가 아니라 "위반이 발생한 순간" 알려준다는 데 있다.
 
-## 정리하며
+## 정리
 
 AWS Backup의 모든 설계는 "백업을 만든 사람조차 지울 수 없게, 그리고 운영 계정이 통째로 털려도 살아남게"라는 두 목표에서 파생된다. Plan/Vault/Selection을 셋으로 쪼갠 건 정책·저장소·대상을 독립적으로 통제하기 위해서고, Vault Access Policy가 IAM과 별개인 건 백업이 자기 방어선을 갖게 하기 위해서고, Compliance Vault Lock이 발급자조차 못 푸는 건 그게 곧 공격자도 못 푼다는 뜻이기 때문이고, Cross-Account가 표준인 건 다른 보안 경계만이 전면 침해를 견디기 때문이다.
 

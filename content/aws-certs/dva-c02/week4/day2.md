@@ -1,6 +1,6 @@
 # Day 2 - API Gateway 통합 유형과 VTL 매핑 템플릿: Lambda 없이 DynamoDB를 직접 호출하기
 
-API Gateway가 단순히 "Lambda의 HTTP 프록시"라고 생각한다면 절반만 아는 것이다. API Gateway는 Lambda 없이도 DynamoDB, SQS, Kinesis, S3 같은 AWS 서비스를 직접 호출할 수 있다. 이 패턴이 실무에서 의미 있는 이유는 명확하다 — Lambda를 거치지 않으면 레이턴시가 줄고, 비용이 줄고, 관리할 코드가 없어진다.
+API Gateway가 단순히 "Lambda의 HTTP 프록시"라고 생각한다면 절반만 아는 것이다. API Gateway는 Lambda 없이도 DynamoDB, SQS, Kinesis, S3 같은 AWS 서비스를 직접 호출할 수 있다. 이 패턴이 실무에서 의미 있는 이유는 명확하다 — Lambda를 거치지 않으면 지연 시간이 줄고, 비용이 줄고, 관리할 코드가 없어진다.
 
 오늘은 API Gateway의 다섯 가지 통합 유형을 해부하고, VTL(Velocity Template Language) 매핑 템플릿으로 요청·응답을 변환하는 방법을 파고든다. Lambda Proxy vs non-Proxy의 차이를 코드 레벨에서 이해하면 "왜 CORS가 안 되지?", "왜 응답 형식이 깨지지?" 같은 실무 문제가 즉각 해결된다.
 
@@ -25,7 +25,7 @@ API Gateway가 단순히 "Lambda의 HTTP 프록시"라고 생각한다면 절반
               └── AWS (Service Integration) + VTL 매핑
 ```
 
-## AWS_PROXY (Lambda Proxy): 가장 많이 쓰이는 이유
+## AWS_PROXY (Lambda Proxy): 기본 통합으로 쓰는 이유
 
 Lambda Proxy 통합은 API Gateway가 요청을 변환하지 않고 Lambda로 그대로 전달한다. 대신 Lambda가 완전한 HTTP 응답 형식을 반환해야 한다.
 
@@ -161,7 +161,7 @@ Lambda 반환값의 errorType 필드에 정규식 매칭:
 (default)          → 200
 ```
 
-> 💡 **관련 이론**: VTL(Velocity Template Language)은 Apache Velocity 프로젝트(1999)에서 유래한다. Java 웹 개발의 템플릿 엔진으로 시작했고, 구문이 단순하고 로직 표현이 가능해 API Gateway가 채택했다. 하지만 AWS는 2022년 이후 새로운 기능을 REST API의 VTL보다 HTTP API의 단순 변환이나 Lambda Proxy로 방향을 잡는 추세다. 실무에서 VTL을 새로 작성하는 경우는 줄고 있지만, 시험에서는 여전히 핵심 개념이다.
+VTL(Velocity Template Language)은 Apache Velocity 프로젝트에서 유래한 Java 웹 개발용 템플릿 엔진이다. 구문이 단순하고 로직 표현이 가능해 API Gateway가 채택했다. 실무에서 VTL을 새로 작성하는 경우는 줄고 있지만, 시험에서는 여전히 핵심 개념이다.
 
 ## AWS 서비스 직접 통합: Lambda 없이 DynamoDB CRUD
 
@@ -230,7 +230,7 @@ aws apigateway put-integration \
   --request-templates 'application/json={"TableName":"Orders","Key":{"orderId":{"S":"$input.params('"'"'orderId'"'"')"}}}'
 ```
 
-> 📚 **사례**: Pinterest는 2020년 실시간 피드 시스템에서 API Gateway → DynamoDB 직접 통합으로 Lambda를 완전히 제거했다. 단순 GetItem/PutItem 패턴에서 Lambda는 불필요한 중간 레이어였다. 이를 통해 P99 레이턴시를 120ms에서 45ms로 낮추고, Lambda 비용을 0으로 만들었다. 단, 복잡한 비즈니스 로직이 필요한 엔드포인트는 여전히 Lambda를 사용한다.
+단순 GetItem/PutItem 패턴에서는 Lambda가 불필요한 중간 레이어가 된다. API Gateway → DynamoDB 직접 통합으로 Lambda를 제거하면 호출 지연이 줄고 Lambda 비용이 사라진다. 복잡한 비즈니스 로직이 필요한 엔드포인트는 여전히 Lambda를 쓴다.
 
 ## Gateway Response: API Gateway 자체 에러의 커스터마이징
 
@@ -362,7 +362,7 @@ def lambda_handler(event, context):
     }
 ```
 
-> 🔍 **더 깊이**: API Gateway의 Content Negotiation은 HTTP 표준 `Accept` 헤더를 사용한다. 클라이언트가 `Accept: image/jpeg`를 보내고, Binary Media Types에 `image/jpeg`가 등록되어 있으면 API GW가 base64 디코딩해서 바이너리로 전달한다. `Accept: application/json`을 보내면 base64 인코딩된 문자열 그대로 전달한다. 이 협상이 잘못 설정되면 이미지가 깨져 보이는 문제가 발생한다.
+API Gateway의 Content Negotiation은 HTTP 표준 `Accept` 헤더를 사용한다. 클라이언트가 `Accept: image/jpeg`를 보내고, Binary Media Types에 `image/jpeg`가 등록되어 있으면 API GW가 base64 디코딩해서 바이너리로 전달한다. `Accept: application/json`을 보내면 base64 인코딩된 문자열 그대로 전달한다. 이 협상이 잘못 설정되면 이미지가 깨져 보이는 문제가 발생한다.
 
 ## 요청 검증: Lambda 호출 전에 차단하기
 
@@ -447,7 +447,7 @@ aws apigateway put-integration-response \
   }'
 ```
 
-## 마무리
+## 정리
 
 API Gateway 통합 유형을 선택하는 기준은 단순하다. 대부분의 경우는 Lambda Proxy(AWS_PROXY) — 빠르고 단순하다. Lambda 없이 AWS 서비스를 직접 호출하고 싶을 때는 AWS Service Integration + VTL. 요청·응답 변환이 복잡하거나 Lambda 코드를 순수하게 유지하고 싶을 때는 Lambda non-Proxy + VTL. CORS OPTIONS 처리나 개발 단계 목업은 Mock.
 

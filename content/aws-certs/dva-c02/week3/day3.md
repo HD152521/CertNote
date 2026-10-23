@@ -46,8 +46,6 @@ aws lambda create-alias \
 # arn:aws:lambda:ap-northeast-2:123:function:payment-api:prod
 ```
 
-> 💡 **관련 이론**: Lambda 버전의 불변성은 **함수형 프로그래밍**의 immutable value 철학과 정확히 같다. 한 번 생성된 값은 절대 변하지 않는다. 이 원칙이 분산 시스템에서 값지는 이유는 **재현 가능성(reproducibility)** 때문이다. "3주 전 버전 3으로 롤백"이 가능한 것은 그 버전이 불변으로 보존됐기 때문이다. Git의 커밋 해시가 불변인 것과 동일한 논리다.
-
 ## 카나리 배포: 별칭의 트래픽 분할
 
 별칭의 가장 강력한 기능은 **두 버전 간 가중치 기반 트래픽 분할**이다. 새 버전을 전체 트래픽에 즉시 노출하는 대신, 10%만 먼저 보내보고 문제가 없으면 100%로 전환한다.
@@ -79,7 +77,7 @@ aws lambda update-alias \
 
 ## CodeDeploy를 통한 Lambda 자동 배포
 
-별칭의 트래픽 시프트를 수동으로 하는 대신, CodeDeploy가 자동화한다. 배포 전략 이름을 외워두면 시험에서 그대로 나온다.
+별칭의 트래픽 시프트를 수동으로 하는 대신, CodeDeploy가 자동화한다. 배포 전략 이름은 시험 보기에 그대로 쓰인다.
 
 | 배포 전략 | 동작 방식 |
 |-----------|----------|
@@ -109,11 +107,9 @@ Hooks:
   - AfterAllowTraffic: !Ref PostDeploymentCheck    # 배포 완료 후 검증
 ```
 
-> 📚 **사례**: Netflix는 Lambda 함수 배포에 Canary 전략을 사전 요구 사항으로 정했다. 초당 수백만 건의 스트리밍 이벤트를 처리하는 Lambda에서 배포 실수가 발생했을 때, AllAtOnce 전략이었다면 전체 서비스가 다운됐을 것이다. Canary + CloudWatch Alarm 자동 롤백 조합으로 실수를 5분 내에 감지하고 롤백하는 체계를 갖췄다.
-
 ## Lambda Layer: 공유 코드의 불변 버전 관리
 
-레이어는 여러 Lambda 함수가 공통으로 사용하는 라이브러리, ML 모델, 데이터 파일을 공유하는 메커니즘이다. 함수 코드(ZIP)와 분리된 별도 ZIP을 S3에 올리고, 함수가 이를 참조한다. 실행 시 `/opt` 디렉토리에 자동으로 마운트된다.
+레이어는 여러 Lambda 함수가 공통으로 사용하는 라이브러리, ML 모델, 데이터 파일을 공유하는 메커니즘이다. 함수 코드(ZIP)와 분리된 별도 ZIP을 S3에 올리고, 함수가 이를 참조한다. 실행 시 `/opt` 디렉터리에 자동으로 마운트된다.
 
 **레이어 제한:**
 - 함수당 최대 5개 레이어
@@ -157,7 +153,7 @@ aws lambda update-function-configuration \
     arn:aws:lambda:ap-northeast-2:123:layer:common-utils:7
 ```
 
-> 🔍 **더 깊이**: 레이어도 버전 번호가 있으며 불변이다. 삭제된 레이어 버전이라도 이미 그 버전을 참조하고 있는 함수에서는 계속 동작한다(함수 실행 환경에 캐시되어 있기 때문). 레이어를 다른 계정과 공유하려면 `lambda:GetLayerVersion` 권한을 해당 계정 또는 전체에 부여하는 리소스 기반 정책을 레이어에 설정한다.
+레이어도 버전 번호가 있으며 불변이다. 삭제된 레이어 버전이라도 이미 그 버전을 참조하고 있는 함수에서는 계속 동작한다(함수 실행 환경에 캐시되어 있기 때문). 레이어를 다른 계정과 공유하려면 `lambda:GetLayerVersion` 권한을 해당 계정 또는 전체에 부여하는 리소스 기반 정책을 레이어에 설정한다.
 
 ## 환경 변수: 코드와 구성의 분리
 
@@ -185,7 +181,7 @@ aws lambda update-function-configuration \
 
 ## 환경 변수 vs SSM Parameter Store vs Secrets Manager
 
-이 세 가지를 언제 어떻게 쓸지 결정하는 것이 DVA 시험의 단골 시나리오다.
+이 세 가지를 언제 어떻게 쓸지 고르는 문제가 DVA 시험에 시나리오로 나온다.
 
 | 항목 | 환경 변수 | SSM Parameter Store | Secrets Manager |
 |------|----------|---------------------|-----------------|
@@ -204,11 +200,11 @@ aws lambda update-function-configuration \
 - "함수 코드 변경 없이 환경별 설정 분기 (dev/prod)" → **환경 변수 + 별칭**
 - "다른 AWS 계정의 Lambda도 같은 DB 자격증명 사용" → **Secrets Manager (교차 계정 리소스 정책)**
 
-> 💡 **관련 이론**: Secrets Manager의 자동 로테이션은 **Lambda 함수 기반**이다. AWS가 RDS, Redshift, DocumentDB 등 주요 엔진용 로테이션 Lambda를 미리 제공한다. 로테이션 시 Secrets Manager는 두 단계로 비밀을 바꾼다 — 먼저 새 비밀을 만들고(`createSecret`), 검증한 후(`testSecret`) 기존 것을 교체한다(`finishSecret`). 이 패턴은 **Blue-Green 배포**의 비밀 관리 버전이다.
+Secrets Manager의 자동 로테이션은 **Lambda 함수 기반**이다. AWS가 RDS, Redshift, DocumentDB 등 주요 엔진용 로테이션 Lambda를 미리 제공한다. 로테이션 시 Secrets Manager는 두 단계로 비밀을 바꾼다 — 먼저 새 비밀을 만들고(`createSecret`), 검증한 후(`testSecret`) 기존 것을 교체한다(`finishSecret`). 이 패턴은 **Blue/Green 배포**의 비밀 관리 버전이다.
 
 ## AWS Parameters and Secrets Lambda Extension
 
-매 호출마다 Secrets Manager를 직접 호출하면 두 가지 문제가 생긴다. 첫째, API 호출 레이턴시가 추가된다(수십 ms). 둘째, Secrets Manager API 호출 비용이 쌓인다(10,000회당 $0.05).
+매 호출마다 Secrets Manager를 직접 호출하면 두 가지 문제가 생긴다. 첫째, API 호출 지연 시간이 추가된다(수십 ms). 둘째, Secrets Manager API 호출 비용이 쌓인다(10,000회당 $0.05).
 
 AWS Parameters and Secrets Lambda Extension은 로컬 HTTP 서버(localhost:2773)로 캐싱을 제공한다.
 
@@ -246,7 +242,7 @@ Extension의 기본 캐시 TTL은 300초(5분)다. 로테이션된 시크릿이 
 
 ## 레이어를 이용한 의존성 분리 전략
 
-레이어의 실무 활용 패턴 중 가장 효과적인 것은 "공통 레이어 + 얇은 함수 코드" 구조다.
+레이어의 실무 활용 패턴 중 대표적인 것은 "공통 레이어 + 얇은 함수 코드" 구조다.
 
 ```
 레이어 1: 비즈니스 공통 유틸리티 (인증, 로깅, 에러 처리)  → 월 1~2회 업데이트
@@ -258,7 +254,7 @@ Extension의 기본 캐시 TTL은 300초(5분)다. 로테이션된 시크릿이 
 
 이렇게 분리하면 함수 코드 ZIP이 수십 KB로 줄어 배포가 빨라지고, 레이어는 Lambda 서비스가 캐싱해서 매 함수 호출마다 다시 다운로드하지 않는다.
 
-> ⚠️ **함정**: 레이어 총합 250MB 제한에 걸리면 **컨테이너 이미지(최대 10GB)**로 전환해야 한다. ML 모델이 수 GB인 경우가 대표적이다. 단, 컨테이너 이미지를 사용하면 레이어를 쓸 수 없고, SnapStart도 적용된다(Java 런타임 컨테이너 이미지 한정).
+레이어 총합 250MB 제한에 걸리면 **컨테이너 이미지(최대 10GB)**로 전환해야 한다. ML 모델이 수 GB인 경우가 대표적이다. 단, 컨테이너 이미지를 사용하면 레이어를 쓸 수 없고, SnapStart도 적용된다(Java 런타임 컨테이너 이미지 한정).
 
 ## 버전·별칭·레이어의 통합: SAM 템플릿 예시
 
@@ -314,9 +310,9 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
 ```
 
-> 🔍 **더 깊이**: SAM의 `AutoPublishAlias`는 배포할 때마다 자동으로 버전을 발행하고 지정된 별칭이 새 버전을 가리키도록 업데이트한다. `DeploymentPreference`는 CodeDeploy를 자동으로 구성해 지정된 전략으로 트래픽을 이전한다. 내부적으로 SAM 변환기가 CodeDeploy 배포 그룹, 배포 설정, 트리거를 CloudFormation 리소스로 생성한다. 개발자는 몇 줄의 YAML로 엔터프라이즈급 배포 파이프라인을 얻는 셈이다.
+SAM의 `AutoPublishAlias`는 배포할 때마다 자동으로 버전을 발행하고 지정된 별칭이 새 버전을 가리키도록 업데이트한다. `DeploymentPreference`는 CodeDeploy를 자동으로 구성해 지정된 전략으로 트래픽을 이전한다. 내부적으로 SAM 변환기가 CodeDeploy 배포 그룹, 배포 설정, 트리거를 CloudFormation 리소스로 생성한다. 개발자는 몇 줄의 YAML로 엔터프라이즈급 배포 파이프라인을 얻는 셈이다.
 
-## 마무리
+## 정리
 
 버전은 Lambda 배포의 불변 기록이다. 별칭은 그 기록들을 유연하게 라우팅하는 포인터다. CodeDeploy는 포인터 이전을 자동화하고 안전망을 제공한다. 레이어는 여러 함수 간 의존성을 DRY(Don't Repeat Yourself) 원칙으로 관리한다. 그리고 환경 변수 → SSM → Secrets Manager라는 계층 구조는 비밀의 민감도와 요구 사항에 따라 적절한 저장소를 선택하는 가이드다.
 

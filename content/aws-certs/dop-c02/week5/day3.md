@@ -4,7 +4,7 @@ CodePipeline의 Source/Build/Test/Deploy 4종만으로 커버할 수 없는 상�
 
 이 세 가지 Action Provider는 DOP-C02에서 자주 조합 문제로 나온다. "15분이 초과하는 작업", "복잡한 조건 분기", "Slack 승인" 같은 키워드가 나오면 세 Provider 중 어느 것을 쓸지 즉각 판단할 수 있어야 한다. 그 판단 기준을 오늘 잡는다.
 
-> 💡 **관련 이론**: CodePipeline의 Action Provider 확장 모델은 "Open/Closed Principle"의 서비스 레벨 구현이다. 파이프라인 자체는 수정하지 않고(Closed), 새로운 Provider를 추가함으로써 기능을 확장(Open)한다. Lambda Invoke는 이 확장의 가장 강력한 형태—임의 코드를 실행할 수 있는 탈출구(escape hatch)다. 이 설계가 CodePipeline이 수십 가지 서드파티 도구와 통합 가능한 이유이며, AWS가 모든 외부 시스템에 대한 공식 Provider를 만들 필요 없이 Lambda를 통해 "무한 확장"을 허용하는 방식이다.
+> CodePipeline의 Action Provider 확장 모델은 "Open/Closed Principle"의 서비스 레벨 구현이다. 파이프라인 자체는 수정하지 않고(Closed), 새로운 Provider를 추가함으로써 기능을 확장(Open)한다. Lambda Invoke는 이 확장의 가장 강력한 형태—임의 코드를 실행할 수 있는 탈출구(escape hatch)다. 이 설계가 CodePipeline이 수십 가지 서드파티 도구와 통합 가능한 이유이며, AWS가 모든 외부 시스템에 대한 공식 Provider를 만들 필요 없이 Lambda를 통해 "무한 확장"을 허용하는 방식이다.
 
 ## Lambda Invoke Action: "임의의 코드를 파이프라인에 넣기"
 
@@ -120,7 +120,7 @@ def handler(event, context):
     )
 ```
 
-> 💡 **관련 이론**: 비동기 Lambda 패턴은 "Fire and Forget"과 "Callback" 두 가지 변형이 있다. 위 예시는 파이프라인 관점에서 "Fire and Forget"—즉시 성공을 선언하고 비동기 작업의 결과를 파이프라인에 반영하지 않는다. 만약 비동기 작업의 결과로 파이프라인을 계속/중단해야 한다면 Step Functions의 WaitForTaskToken 패턴을 사용해야 한다. 두 패턴의 선택 기준은 "비동기 작업의 실패가 파이프라인을 중단시켜야 하는가"다. 알림(Slack 메시지 발송) 같이 실패해도 배포를 계속해야 하면 Fire and Forget, 외부 승인이나 검증 같이 실패하면 배포를 중단해야 하면 WaitForTaskToken을 쓴다.
+> 비동기 Lambda 패턴은 "Fire and Forget"과 "Callback" 두 가지 변형이 있다. 위 예시는 파이프라인 관점에서 "Fire and Forget"—즉시 성공을 선언하고 비동기 작업의 결과를 파이프라인에 반영하지 않는다. 만약 비동기 작업의 결과로 파이프라인을 계속/중단해야 한다면 Step Functions의 WaitForTaskToken 패턴을 사용해야 한다. 두 패턴의 선택 기준은 "비동기 작업의 실패가 파이프라인을 중단시켜야 하는가"다. 알림(Slack 메시지 발송) 같이 실패해도 배포를 계속해야 하면 Fire and Forget, 외부 승인이나 검증 같이 실패하면 배포를 중단해야 하면 WaitForTaskToken을 쓴다.
 
 ## Step Functions Action: 15분 벽을 넘는 방법
 
@@ -230,7 +230,7 @@ Lambda의 15분 제한을 넘어서는 작업, 또는 if/else 분기, 병렬 실
 }
 ```
 
-> 💡 **관련 이론**: 이 State Machine은 **Saga 패턴**의 구현이다. Saga는 1987년 Hector Garcia-Molina와 Kenneth Salem의 논문에서 유래한 분산 트랜잭션 패턴이다. 단일 ACID 트랜잭션이 불가능한 분산 환경에서, 각 단계가 성공하면 다음 단계로 진행하고, 실패하면 이미 완료된 단계의 보상 트랜잭션(compensating transaction)을 실행한다. 여기서 RollbackKorea가 보상 트랜잭션이다. Saga는 두 변형이 있다: Choreography(각 서비스가 이벤트를 발행/구독해 조율)와 Orchestration(중앙 조율자가 순서 제어). Step Functions의 Saga 구현은 Orchestration 방식이다—State Machine이 중앙 조율자 역할을 한다. 멀티 리전 배포에서 한 리전이 실패했을 때 이미 배포된 다른 리전을 되돌리는 로직이 Saga의 교과서적 구현이다.
+> 이 State Machine은 **Saga 패턴**의 구현이다. Saga는 1987년 Hector Garcia-Molina와 Kenneth Salem의 논문에서 유래한 분산 트랜잭션 패턴이다. 단일 ACID 트랜잭션이 불가능한 분산 환경에서, 각 단계가 성공하면 다음 단계로 진행하고, 실패하면 이미 완료된 단계의 보상 트랜잭션(compensating transaction)을 실행한다. 여기서 RollbackKorea가 보상 트랜잭션이다. Saga는 두 변형이 있다: Choreography(각 서비스가 이벤트를 발행/구독해 조율)와 Orchestration(중앙 조율자가 순서 제어). Step Functions의 Saga 구현은 Orchestration 방식이다—State Machine이 중앙 조율자 역할을 한다. 멀티 리전 배포에서 한 리전이 실패했을 때 이미 배포된 다른 리전을 되돌리는 로직이 Saga의 교과서적 구현이다.
 
 **Step Functions WaitForTaskToken 패턴**: 파이프라인을 외부 승인 시스템과 연결하는 고급 패턴.
 
@@ -255,9 +255,9 @@ Lambda의 15분 제한을 넘어서는 작업, 또는 if/else 분기, 병렬 실
 
 외부 승인 시스템이 `SendTaskSuccess`를 호출하면 State Machine이 다음 단계로 진행한다. Slack 봇, 사내 IT 포털, ServiceNow 등 어떤 시스템도 이 콜백 메커니즘으로 파이프라인에 연결될 수 있다.
 
-> 🔍 **더 깊이**: Step Functions의 Task Token은 고유하게 생성된 불투명한 문자열이다. 이 토큰은 State Machine 실행 컨텍스트를 식별하는 데 사용되며, `$$.Task.Token`으로 현재 Task의 토큰에 접근한다. WaitForTaskToken 패턴의 핵심은 **토큰의 전달 경로**다—State Machine이 토큰을 SQS 메시지에 넣어 외부 시스템으로 전달하고, 외부 시스템이 나중에 이 토큰으로 `SendTaskSuccess`를 호출한다. 토큰의 TTL은 `TimeoutSeconds`로 제어되며, `HeartbeatSeconds`로 외부 시스템이 "아직 처리 중"임을 알리는 heartbeat 주기를 설정할 수 있다. Heartbeat가 이 간격 안에 도달하지 않으면 States.HeartbeatTimeout 오류로 Task가 실패한다. 장시간 대기 중 외부 시스템 장애를 감지하는 메커니즘이다.
+> Step Functions의 Task Token은 고유하게 생성된 불투명한 문자열이다. 이 토큰은 State Machine 실행 컨텍스트를 식별하는 데 사용되며, `$$.Task.Token`으로 현재 Task의 토큰에 접근한다. WaitForTaskToken 패턴의 핵심은 **토큰의 전달 경로**다—State Machine이 토큰을 SQS 메시지에 넣어 외부 시스템으로 전달하고, 외부 시스템이 나중에 이 토큰으로 `SendTaskSuccess`를 호출한다. 토큰의 TTL은 `TimeoutSeconds`로 제어되며, `HeartbeatSeconds`로 외부 시스템이 "아직 처리 중"임을 알리는 heartbeat 주기를 설정할 수 있다. Heartbeat가 이 간격 안에 도달하지 않으면 States.HeartbeatTimeout 오류로 Task가 실패한다. 장시간 대기 중 외부 시스템 장애를 감지하는 메커니즘이다.
 
-> 📚 **사례**: Airbnb의 Deployments as a Service. Airbnb는 수백 개의 마이크로서비스 배포를 중앙 배포 플랫폼으로 통합했는데, 핵심 메커니즘이 Step Functions WaitForTaskToken이었다. 각 서비스 팀이 Slack에서 "approve" 명령을 내리면 Slack 봇이 Step Functions에 SendTaskSuccess를 호출해 배포가 계속 진행됐다. 이전에는 Jenkins Job + 이메일 승인 조합으로 평균 2시간 걸리던 배포 승인 프로세스가 평균 15분으로 단축됐다. 더 중요한 것은 "배포가 Slack에서 보인다"는 가시성이었다—이전에는 Jenkins 콘솔에 들어가야 상태를 알 수 있었지만, Slack 통합 이후 팀 전체가 실시간으로 배포 상태를 볼 수 있게 됐다.
+> Airbnb의 Deployments as a Service. Airbnb는 수백 개의 마이크로서비스 배포를 중앙 배포 플랫폼으로 통합했는데, 핵심 메커니즘이 Step Functions WaitForTaskToken이었다. 각 서비스 팀이 Slack에서 "approve" 명령을 내리면 Slack 봇이 Step Functions에 SendTaskSuccess를 호출해 배포가 계속 진행됐다. 이전에는 Jenkins Job + 이메일 승인 조합으로 평균 2시간 걸리던 배포 승인 프로세스가 평균 15분으로 단축됐다. 더 중요한 것은 "배포가 Slack에서 보인다"는 가시성이었다—이전에는 Jenkins 콘솔에 들어가야 상태를 알 수 있었지만, Slack 통합 이후 팀 전체가 실시간으로 배포 상태를 볼 수 있게 됐다.
 
 ## Manual Approval Action: 사람이 게이트가 되는 방식
 
@@ -309,7 +309,7 @@ Slack에서 직접 승인하려면 Chatbot에 `codepipeline:PutApprovalResult` �
 }
 ```
 
-> 🔍 **더 깊이**: Slack 승인 통합의 보안 고려사항. AWS Chatbot은 Slack 사용자의 IAM을 직접 매핑하지 않는다—Chatbot의 IAM Role이 SNS/CodePipeline 권한을 갖고 있고, Slack 채널에 접근 권한이 있는 모든 사람이 이 Role로 작동한다. 더 세밀한 제어가 필요하면 (예: "시니어 엔지니어만 승인 가능") Slack 봇을 직접 구현해 Slack 사용자 ID를 AWS IAM Identity Center와 매핑하는 로직을 넣어야 한다. Chatbot 기본 설정은 "채널 멤버 전체 = 동일 권한"이지만, Chatbot 설정에서 `channelGuardrailPolicies`로 채널 수준의 권한 상한을 설정할 수 있다. 단순 알림 용도 vs 세밀한 승인 제어의 trade-off를 시험 시나리오에서 판단할 수 있어야 한다.
+> Slack 승인 통합의 보안 고려사항. AWS Chatbot은 Slack 사용자의 IAM을 직접 매핑하지 않는다—Chatbot의 IAM Role이 SNS/CodePipeline 권한을 갖고 있고, Slack 채널에 접근 권한이 있는 모든 사람이 이 Role로 작동한다. 더 세밀한 제어가 필요하면 (예: "시니어 엔지니어만 승인 가능") Slack 봇을 직접 구현해 Slack 사용자 ID를 AWS IAM Identity Center와 매핑하는 로직을 넣어야 한다. Chatbot 기본 설정은 "채널 멤버 전체 = 동일 권한"이지만, Chatbot 설정에서 `channelGuardrailPolicies`로 채널 수준의 권한 상한을 설정할 수 있다. 단순 알림 용도 vs 세밀한 승인 제어의 trade-off를 시험 시나리오에서 판단할 수 있어야 한다.
 
 > ⚠️ **함정**: Manual Approval의 `timeoutInMinutes` 기본값 혼동. 문서에는 기본값이 없다고 명시되어 있지만 실제로는 7일(10,080분) 타임아웃이 적용된다. 긴급 배포가 필요한 상황에서 담당자가 자리를 비워 7일 후 타임아웃이 되면 파이프라인 전체가 실패 상태가 된다. 결제/금융 서비스는 24시간(1,440분) 이하로 설정하고 에스컬레이션 정책(1시간 후 팀장에게 알림 등)을 SNS → Lambda → 이메일/SMS로 구현하는 것이 표준이다. 또한 Manual Approval은 승인자가 AWS 콘솔이나 CLI에 접근해야 하므로, 콘솔 접근이 없는 Spoke 계정 사용자를 승인자로 지정하면 안 된다.
 
@@ -340,7 +340,7 @@ aws codestar-notifications create-notification-rule \
 - `codepipeline-pipeline-manual-approval-needed`
 - `codepipeline-pipeline-manual-approval-succeeded`
 
-> 💡 **관련 이론**: CodeStar Notifications와 EventBridge는 모두 CodePipeline 이벤트를 외부로 내보낼 수 있지만 설계 목적이 다르다. CodeStar Notifications는 **알림(Notification)** 특화 서비스로, SNS와 AWS Chatbot만 대상으로 지원하며 "사람에게 알림"에 최적화되어 있다. EventBridge는 **이벤트 라우팅(Event Routing)** 범용 서비스로, Lambda, SQS, ECS, Step Functions, HTTP Endpoint 등 모든 AWS 서비스와 외부 시스템을 대상으로 지원한다. "Slack 알림 → CodeStar Notifications, 외부 시스템 자동 연동 → EventBridge"가 선택 기준이다. 두 서비스가 내부적으로 EventBridge 이벤트를 공유하지만 CodeStar Notifications는 Developer Tools 이벤트에 특화된 래퍼다.
+> CodeStar Notifications와 EventBridge는 모두 CodePipeline 이벤트를 외부로 내보낼 수 있지만 설계 목적이 다르다. CodeStar Notifications는 **알림(Notification)** 특화 서비스로, SNS와 AWS Chatbot만 대상으로 지원하며 "사람에게 알림"에 최적화되어 있다. EventBridge는 **이벤트 라우팅(Event Routing)** 범용 서비스로, Lambda, SQS, ECS, Step Functions, HTTP Endpoint 등 모든 AWS 서비스와 외부 시스템을 대상으로 지원한다. "Slack 알림 → CodeStar Notifications, 외부 시스템 자동 연동 → EventBridge"가 선택 기준이다. 두 서비스가 내부적으로 EventBridge 이벤트를 공유하지만 CodeStar Notifications는 Developer Tools 이벤트에 특화된 래퍼다.
 
 ## EventBridge 직접 연결: 외부 시스템 통합
 
@@ -402,7 +402,7 @@ def handler(event, context):
         urllib.request.urlopen(req)
 ```
 
-> 💡 **관련 이론**: `dedup_key`를 `execution_id`로 설정하는 이유는 EventBridge의 "at-least-once delivery" 보장 때문이다. EventBridge는 이벤트를 최소 한 번 전달하는데, 재시도 과정에서 같은 이벤트가 두 번 Lambda로 전달될 수 있다. PagerDuty에 두 번 호출이 가면 두 개의 경보가 생성된다. `dedup_key`(PagerDuty의 멱등성 키)를 설정하면 동일 실행 ID의 두 번째 호출이 경보를 새로 만들지 않고 기존 경보를 업데이트한다. 이는 분산 시스템의 **멱등성(Idempotency)** 원칙—같은 요청을 여러 번 보내도 결과가 동일해야 한다—을 API 레벨에서 구현하는 패턴이다.
+> `dedup_key`를 `execution_id`로 설정하는 이유는 EventBridge의 "at-least-once delivery" 보장 때문이다. EventBridge는 이벤트를 최소 한 번 전달하는데, 재시도 과정에서 같은 이벤트가 두 번 Lambda로 전달될 수 있다. PagerDuty에 두 번 호출이 가면 두 개의 경보가 생성된다. `dedup_key`(PagerDuty의 멱등성 키)를 설정하면 동일 실행 ID의 두 번째 호출이 경보를 새로 만들지 않고 기존 경보를 업데이트한다. 이는 분산 시스템의 **멱등성(Idempotency)** 원칙—같은 요청을 여러 번 보내도 결과가 동일해야 한다—을 API 레벨에서 구현하는 패턴이다.
 
 ## Custom Action Provider: 외부 CI 시스템 통합
 
@@ -430,7 +430,7 @@ aws codepipeline poll-for-jobs \
 aws codepipeline put-job-success-result --job-id <job-id>
 ```
 
-Custom Action Provider의 핵심은 **Poll 기반 아키텍처**다. Push 방식(CodePipeline이 외부 시스템을 호출)이 아니라, 외부 에이전트가 주기적으로 CodePipeline에 작업이 있는지 확인하는 방식이다. 내부망의 시스템처럼 인터넷에서 직접 접근할 수 없는 대상에 특히 유용하다.
+Custom Action Provider는 **Poll 기반 아키텍처**로 동작한다. Push 방식(CodePipeline이 외부 시스템을 호출)이 아니라, 외부 에이전트가 주기적으로 CodePipeline에 작업이 있는지 확인하는 방식이다. 내부망의 시스템처럼 인터넷에서 직접 접근할 수 없는 대상에 특히 유용하다.
 
 > 🎯 **시나리오**: 한 제조업 회사가 SAP에서 ERP 배포를 승인받아야만 AWS Lambda 코드를 배포할 수 있는 규정이 있다. SAP에 직접 접근하는 API가 있지만 외부에서 접근이 불가하고, 회사 내부 에이전트만 SAP API를 호출할 수 있다. 이 경우 Custom Action Provider를 사용해 사내 에이전트가 `poll-for-jobs`로 작업을 가져가고, SAP API를 호출해 승인 여부를 확인한 뒤 `put-job-success/failure-result`를 보고하는 패턴이 적절하다. Lambda로는 불가능한 이유는 Lambda가 인터넷을 통해 SAP에 접근해야 하지만 SAP가 내부망에만 있기 때문이다. VPC Lambda를 사용하는 방법도 있지만, 에이전트 머신이 이미 SAP에 접근 가능한 경우 Custom Provider가 더 단순하다.
 
@@ -449,7 +449,7 @@ Custom Action Provider의 핵심은 **Poll 기반 아키텍처**다. Push 방식
 
 선택 규칙: **15분 이하 + 단순 로직 → Lambda. 그 외 → Step Functions.**
 
-> 📚 **사례**: Lyft의 배포 플랫폼 아키텍처. Lyft는 수백 개의 마이크로서비스를 하루에 수백 번 배포하면서 "자동화 + 사람 판단의 조화"를 핵심 원칙으로 삼았다. Lambda로 자동 스모크 테스트를 실행하고, Step Functions로 카나리 트래픽을 점진적으로 올리며, Manual Approval은 "10% 이상 에러율 상승" 같은 자동 감지가 불가한 비즈니스 이벤트에만 제한적으로 사용했다. "사람이 게이트가 되는 것은 자동화가 판단할 수 없을 때만"이라는 원칙이 DOP-C02 시험 시나리오의 답 선택 기준과 정확히 일치한다. Lyft의 배포 속도는 이 자동화 덕분에 40% 향상됐고, 배포 관련 장애는 60% 감소했다.
+> Lyft의 배포 플랫폼 아키텍처. Lyft는 수백 개의 마이크로서비스를 하루에 수백 번 배포하면서 "자동화 + 사람 판단의 조화"를 핵심 원칙으로 삼았다. Lambda로 자동 스모크 테스트를 실행하고, Step Functions로 카나리 트래픽을 점진적으로 올리며, Manual Approval은 "10% 이상 에러율 상승" 같은 자동 감지가 불가한 비즈니스 이벤트에만 제한적으로 사용했다. "사람이 게이트가 되는 것은 자동화가 판단할 수 없을 때만"이라는 원칙이 DOP-C02 시험 시나리오의 답 선택 기준과 정확히 일치한다. Lyft의 배포 속도는 이 자동화 덕분에 40% 향상됐고, 배포 관련 장애는 60% 감소했다.
 
 ## 전체 흐름: 복잡한 파이프라인 예시
 
@@ -476,7 +476,7 @@ EventBridge → Lambda → Datadog (배포 마커 기록)
 
 > 🎯 **시나리오**: 한 전자상거래 회사가 블랙프라이데이 직전 배포 프리즈(freeze) 기간을 파이프라인에서 자동 적용해야 한다. 11월 25-27일 사이에는 Manual Approval이 있어도 누군가 "실수로" 승인하면 배포가 실행된다. 더 강력한 방법이 필요하다. 해결책: EventBridge Scheduler로 11월 25일 0시에 파이프라인 비활성화(`disable-stage-transition` API)를 자동 실행하고, 11월 28일 0시에 다시 활성화(`enable-stage-transition`)를 자동 실행한다. Lambda 함수에서 이 API를 호출하도록 스케줄을 설정하면 사람의 실수 없이 배포 프리즈가 자동 적용된다. Manual Approval은 "사람의 판단이 필요한 상황"에만, 정책 강제는 자동화로.
 
-## 정리하며
+## 정리
 
 Lambda Invoke Action은 임의 코드를 파이프라인에 통합하는 탈출구다. 단, `put_job_success/failure_result` 호출이 필수이고 15분 한도가 있다. Step Functions Invoke Action은 이 한도를 넘어서는 복잡한 워크플로, Saga 패턴, 외부 이벤트 대기(WaitForTaskToken)에 사용된다. Manual Approval은 자동화가 판단할 수 없는 비즈니스 결정을 파이프라인에 통합하며, SNS → Chatbot → Slack 체인으로 Slack 직접 승인이 가능하다. EventBridge는 파이프라인 이벤트를 외부 시스템(PagerDuty, Jira, Datadog)에 연결하는 범용 라우터다.
 

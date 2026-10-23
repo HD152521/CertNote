@@ -12,7 +12,7 @@ EC2 초기에는 모든 스토리지가 인스턴스 스토어였다. 물리 서
 
 EBS의 물리적 구조는 같은 AZ 안의 별도 스토리지 서버들로 이루어진다. 볼륨의 데이터는 여러 스토리지 서버에 분산 저장되어 단일 서버 장애를 견딘다. EC2 인스턴스는 Nitro 카드를 통해 NVMe-over-TCP 프로토콜로 EBS에 접근한다.
 
-> 🔍 **더 깊이**: EBS와 EC2 인스턴스 간 통신은 NVMe over TCP를 사용하지만, 이 경로가 Nitro 카드에 오프로드되어 인스턴스 CPU를 소비하지 않는다. 단, 이 네트워크 경로는 인스턴스의 전체 네트워크 대역폭을 공유하지 않고 별도 최적화된 통로를 쓴다. EBS 전용 대역폭(EBS-Optimized)이 이 경로를 보장한다. m6i.xlarge 기준 최대 4750 Mbps를 EBS에 할당할 수 있다.
+EBS와 EC2 인스턴스 간 통신은 NVMe over TCP를 사용하지만, 이 경로가 Nitro 카드에 오프로드되어 인스턴스 CPU를 소비하지 않는다. 단, 이 네트워크 경로는 인스턴스의 전체 네트워크 대역폭을 공유하지 않고 별도 최적화된 통로를 쓴다. EBS 전용 대역폭(EBS-Optimized)이 이 경로를 보장한다. m6i.xlarge 기준 최대 4750 Mbps를 EBS에 할당할 수 있다.
 
 ## EBS 볼륨 타입: 설계 원리와 숫자의 의미
 
@@ -37,7 +37,7 @@ gp3는 2020년 출시되었고 IOPS와 볼륨 크기를 **완전히 분리**했�
 
 ### io1/io2와 io2 Block Express: 언제 필요한가
 
-gp3의 최대 IOPS는 16,000이다. Oracle DB, MySQL, PostgreSQL의 OLTP 워크로드 중 대부분은 이 안에서 해결된다. 그러나 SAP HANA나 대형 금융 거래 시스템처럼 수십만 IOPS와 극단적으로 낮은 레이턴시(1ms 미만)가 필요하면 io2 Block Express가 필요하다.
+gp3의 최대 IOPS는 16,000이다. Oracle DB, MySQL, PostgreSQL의 OLTP 워크로드 중 대부분은 이 안에서 해결된다. 그러나 SAP HANA나 대형 금융 거래 시스템처럼 수십만 IOPS와 극단적으로 낮은 지연 시간(1ms 미만)가 필요하면 io2 Block Express가 필요하다.
 
 | 타입 | 최대 IOPS | 최대 Throughput | 최대 크기 | latency |
 |------|----------|----------------|----------|---------|
@@ -46,11 +46,11 @@ gp3의 최대 IOPS는 16,000이다. Oracle DB, MySQL, PostgreSQL의 OLTP 워크�
 | io2 | 64,000 | 1,000 MB/s | 16 TB | 1ms 미만 |
 | io2 Block Express | 256,000 | 4,000 MB/s | 64 TB | sub-ms |
 
-io2 Block Express의 256K IOPS는 어떻게 가능한가. 기존 EBS 스택은 Amazon EBS API 레이어를 통하지만, io2 Block Express는 AWS Nitro 하이퍼바이저와 직접 통합된 새로운 스토리지 서버 아키텍처를 사용한다. NVMe-over-Fabric 개념을 AWS 내부 네트워크에 적용해 레이턴시와 처리량을 획기적으로 높였다.
+io2 Block Express의 256K IOPS는 어떻게 가능한가. 기존 EBS 스택은 Amazon EBS API 레이어를 통하지만, io2 Block Express는 AWS Nitro 하이퍼바이저와 직접 통합된 새로운 스토리지 서버 아키텍처를 사용한다. NVMe-over-Fabric 개념을 AWS 내부 네트워크에 적용해 지연 시간과 처리량을 획기적으로 높였다.
 
 **io1/io2 Multi-Attach**는 한 EBS 볼륨을 동시에 여러 EC2 인스턴스에 붙이는 기능이다. 단, 이것은 파일 시스템 레벨의 공유가 아니다. 동시에 여러 인스턴스가 같은 블록에 쓰면 데이터가 깨진다. Multi-Attach는 **Cluster-aware 파일 시스템**(GFS2, OCFS2, Oracle Cluster File System)이나 클러스터 소프트웨어가 쓰기 조율을 관리할 때만 쓴다.
 
-> 💡 **관련 이론**: Multi-Attach에서 발생하는 동시 쓰기 문제는 분산 시스템의 **동시성 제어(Concurrency Control)**와 같은 문제다. 데이터베이스의 MVCC(Multi-Version Concurrency Control)처럼, 클러스터 파일 시스템은 각 노드가 어느 블록을 쓰고 있는지 **분산 잠금(Distributed Lock)**으로 조율한다. GFS2는 이를 위해 GDLM(Global Distributed Lock Manager)을 쓴다.
+Multi-Attach에서 발생하는 동시 쓰기 문제는 분산 시스템의 **동시성 제어(Concurrency Control)**와 같은 문제다. 데이터베이스의 MVCC(Multi-Version Concurrency Control)처럼, 클러스터 파일 시스템은 각 노드가 어느 블록을 쓰고 있는지 **분산 잠금(Distributed Lock)**으로 조율한다. GFS2는 이를 위해 GDLM(Global Distributed Lock Manager)을 쓴다.
 
 ### HDD 타입: st1과 sc1
 
@@ -60,7 +60,7 @@ st1(Throughput Optimized HDD)은 순차적 대용량 읽기/쓰기에 최적화�
 
 sc1(Cold HDD)은 접근 빈도가 매우 낮은 데이터를 가장 저렴하게 보관하기 위한 타입이다. 월 1회 이하로 읽는 아카이브 데이터에 쓴다.
 
-> 💡 **관련 이론**: HDD의 임의 접근 성능이 SSD보다 낮은 이유는 물리적 구조에 있다. HDD는 헤드가 물리적으로 이동해야 하고(Seek Time, 평균 5-10ms), 플래터가 회전해야 한다(Rotational Latency, 평균 2-4ms for 7200 RPM). SSD는 NAND 플래시 셀에 전기 신호로 접근하므로 기계적 움직임 없이 μs 단위 접근이 가능하다. 이 차이가 IOPS 차이(HDD 수백 vs SSD 수십만)로 나타난다.
+HDD의 임의 접근 성능이 SSD보다 낮은 이유는 물리적 구조에 있다. HDD는 헤드가 물리적으로 이동해야 하고(Seek Time, 평균 5-10ms), 플래터가 회전해야 한다(Rotational Latency, 평균 2-4ms for 7200 RPM). SSD는 NAND 플래시 셀에 전기 신호로 접근하므로 기계적 움직임 없이 μs 단위 접근이 가능하다. 이 차이가 IOPS 차이(HDD 수백 vs SSD 수십만)로 나타난다.
 
 ## EBS 스냅샷: 증분 백업의 작동 방식
 
@@ -81,13 +81,13 @@ snap-003 복원 시: A(snap-001) + B'(snap-002) + C'(snap-003) + D(snap-001) + E
 
 **FSR(Fast Snapshot Restore)**은 스냅샷에서 볼륨을 복원할 때 첫 번째 읽기 성능 저하를 제거한다. 일반적으로 복원된 볼륨의 블록은 실제 접근이 있을 때 S3에서 백그라운드로 가져오는 "lazy restore" 방식이다. FSR은 이 pre-initialization을 미리 수행해두어 즉시 고성능을 낸다. 추가 비용이 발생한다.
 
-> 📚 **사례**: 2020년 3월 코로나 초기 재택근무 전환으로 AWS 사용량이 폭증하면서, 많은 기업이 긴급하게 대규모 EBS 볼륨을 스냅샷에서 복원했다. FSR 없이 복원한 볼륨에서 처음 몇 시간 동안 정상 IOPS의 10-20%만 나오는 "스냅샷 성능 저하" 문제를 겪은 사례가 다수 보고됐다. 프로덕션 복원 시나리오에서 FSR은 비용이 추가되더라도 활성화하는 것이 권장된다.
+**사례**: 2020년 3월 코로나 초기 재택근무 전환으로 AWS 사용량이 폭증하면서, 많은 기업이 긴급하게 대규모 EBS 볼륨을 스냅샷에서 복원했다. FSR 없이 복원한 볼륨에서 처음 몇 시간 동안 정상 IOPS의 10-20%만 나오는 "스냅샷 성능 저하" 문제를 겪은 사례가 다수 보고됐다. 프로덕션 복원 시나리오에서 FSR은 비용이 추가되더라도 활성화하는 것이 권장된다.
 
 **EBS Snapshot Archive**는 90일 이상 장기 보관이 필요한 스냅샷을 S3 Glacier로 티어링하는 기능이다. 비용이 75% 절감되지만 복원에 24~72시간이 걸린다. DR 목적으로 "1년에 한 번도 쓸까 말까"인 스냅샷에 적합하다.
 
 ## Instance Store: 빠르지만 믿을 수 없는 스토리지
 
-Instance Store는 EC2 인스턴스가 실행되는 물리 서버에 직접 연결된 NVMe SSD다. 네트워크 경유 없이 PCIe 버스로 직접 접근하므로 수백만 IOPS와 마이크로초 단위 레이턴시를 낸다.
+Instance Store는 EC2 인스턴스가 실행되는 물리 서버에 직접 연결된 NVMe SSD다. 네트워크 경유 없이 PCIe 버스로 직접 접근하므로 수백만 IOPS와 마이크로초 단위 지연 시간을 낸다.
 
 데이터 손실 시나리오를 정확히 알아야 한다.
 
@@ -101,9 +101,9 @@ Instance Store는 EC2 인스턴스가 실행되는 물리 서버에 직접 연�
 
 중지(stop) 시 데이터가 사라지는 이유는 중지 후 재시작 시 같은 물리 호스트가 보장되지 않기 때문이다. 다른 물리 서버에서 시작되면 이전 물리 디스크에 접근할 방법이 없다.
 
-> 💡 **관련 이론**: Instance Store 데이터 손실은 분산 시스템의 **Crash Fault**와 동일하게 취급해야 한다. 고가용성 NoSQL 데이터베이스(예: Cassandra, MongoDB)의 설계에서는 단일 노드의 스토리지 손실을 정상 운영 조건으로 가정하고, 복제(replication)로 내구성을 보장한다. i4i 인스턴스(NVMe, Instance Store)에서 Cassandra를 운영할 때, replication factor=3으로 3개 AZ에 분산해야 단일 인스턴스 손실 시 데이터를 잃지 않는다.
+Instance Store 데이터 손실은 분산 시스템의 **Crash Fault**와 동일하게 취급해야 한다. 고가용성 NoSQL 데이터베이스(예: Cassandra, MongoDB)의 설계에서는 단일 노드의 스토리지 손실을 정상 운영 조건으로 가정하고, 복제(replication)로 내구성을 보장한다. i4i 인스턴스(NVMe, Instance Store)에서 Cassandra를 운영할 때, replication factor=3으로 3개 AZ에 분산해야 단일 인스턴스 손실 시 데이터를 잃지 않는다.
 
-> 📚 **사례**: 넷플릭스는 Cassandra 클러스터의 일부를 i3 인스턴스(Instance Store) 위에서 운영하는 패턴을 사용한다. 인스턴스가 종료되더라도 Cassandra의 3-way 복제로 데이터가 보존된다. 이 구조에서 Instance Store의 극단적 I/O 성능을 활용하면서 EBS 비용을 제거할 수 있다. 단, Cassandra 복구(repair) 작업이 더 자주 필요하다는 운영 오버헤드가 있다.
+**사례**: 넷플릭스는 Cassandra 클러스터의 일부를 i3 인스턴스(Instance Store) 위에서 운영하는 패턴을 사용한다. 인스턴스가 종료되더라도 Cassandra의 3-way 복제로 데이터가 보존된다. 이 구조에서 Instance Store의 극단적 I/O 성능을 활용하면서 EBS 비용을 제거할 수 있다. 단, Cassandra 복구(repair) 작업이 더 자주 필요하다는 운영 오버헤드가 있다.
 
 ## EFS: AWS의 분산 NFS
 
@@ -115,14 +115,14 @@ EFS의 내부 구조는 여러 AZ에 걸쳐 분산된 스토리지 서버로 이
 
 **성능 모드**:
 - `generalPurpose`: 기본값. 99%의 워크로드에 적합. 메타데이터 연산이 빠르다.
-- `maxIO`: 수천 개 이상 클라이언트가 동시 접근하는 고병렬 워크로드. 레이턴시가 약간 높아지지만 처리량 확장성이 뛰어나다.
+- `maxIO`: 수천 개 이상 클라이언트가 동시 접근하는 고병렬 워크로드. 지연 시간이 약간 높아지지만 처리량 확장성이 뛰어나다.
 
 **Throughput 모드**:
 - `Bursting`: 데이터 크기에 비례해 버스트 가능. 기본 100 MB/s + 적립된 크레딧 소모.
 - `Provisioned`: 크기와 무관하게 원하는 처리량을 지정. 적은 데이터에 높은 처리량이 필요할 때.
 - `Elastic`: 실제 사용량에 따라 자동 조정. 예측 불가 트래픽에 가장 편함.
 
-> 💡 **관련 이론**: EFS의 분산 락 구조는 NFS 4.1의 **pNFS(Parallel NFS)** 원칙과 유사하다. pNFS는 RFC 5661에서 정의되었으며, 데이터 서버를 여러 개로 분산해 병렬 읽기/쓰기를 가능하게 한다. EFS는 이를 AWS 내부 구현으로 추상화했다.
+EFS의 분산 락 구조는 NFS 4.1의 **pNFS(Parallel NFS)** 원칙과 유사하다. pNFS는 RFC 5661에서 정의되었으며, 데이터 서버를 여러 개로 분산해 병렬 읽기/쓰기를 가능하게 한다. EFS는 이를 AWS 내부 구현으로 추상화했다.
 
 **EFS 스토리지 클래스**:
 - `Standard`: 자주 접근하는 파일.
@@ -130,7 +130,7 @@ EFS의 내부 구조는 여러 AZ에 걸쳐 분산된 스토리지 서버로 이
 - `One Zone`: 단일 AZ, 저렴하지만 AZ 장애 시 영향.
 - `One Zone-IA`: One Zone + IA. 가장 저렴.
 
-**EFS Access Point**는 특정 POSIX 사용자/그룹 권한과 특정 디렉토리 루트를 적용한 마운트 포인트다. 여러 애플리케이션이 같은 EFS를 공유하되 서로 다른 디렉토리와 권한으로 격리할 때 쓴다. 멀티 테넌트 파일 공유 아키텍처에 적합하다.
+**EFS Access Point**는 특정 POSIX 사용자/그룹 권한과 특정 디렉터리 루트를 적용한 마운트 포인트다. 여러 애플리케이션이 같은 EFS를 공유하되 서로 다른 디렉터리와 권한으로 격리할 때 쓴다. 멀티 테넌트 파일 공유 아키텍처에 적합하다.
 
 ## FSx 4종: 각각의 존재 이유
 
@@ -144,7 +144,7 @@ FSx for Windows는 실제 Windows Server를 관리형으로 실행한다. AWS Ma
 
 Multi-AZ 배포 시 자동 페일오버가 30초 이내에 이루어진다. 스토리지 용량은 SSD 또는 HDD로 선택 가능하다.
 
-> ⚠️ **함정**: "Windows 파일 서버 + Active Directory + SMB"가 보이면 EFS를 선택하면 안 된다. EFS는 Windows 클라이언트에서 NFS 클라이언트를 통해 마운트할 수 있지만, AD 통합, NTFS 권한, SMB 특성은 지원하지 않는다. 시험에서 이 구분은 자주 나온다.
+> ⚠️ **함정**: "Windows 파일 서버 + Active Directory + SMB"가 보이면 EFS를 선택하면 안 된다. EFS는 Windows 클라이언트에서 NFS 클라이언트를 통해 마운트할 수 있지만, AD 통합, NTFS 권한, SMB 특성은 지원하지 않는다. 시험에서 이 구분을 묻는다.
 
 ### FSx for Lustre: HPC와 ML의 병렬 파일 시스템
 
@@ -162,7 +162,7 @@ S3 버킷(학습 데이터) ─── lazy load ──→ FSx for Lustre ──�
                     ←── export ─────────────────────────────────────────────
 ```
 
-> 📚 **사례**: Amazon SageMaker는 공식적으로 FSx for Lustre를 학습 데이터 소스로 지원한다. 수십 TB의 이미지 데이터를 S3에 저장하고, FSx for Lustre를 통해 다수의 GPU 인스턴스에 병렬 제공하면, 데이터 로딩 병목 없이 GPU 활용률을 극대화할 수 있다. S3에서 직접 읽는 것보다 Lustre를 경유하면 I/O 처리량이 10배 이상 향상될 수 있다.
+**사례**: Amazon SageMaker는 공식적으로 FSx for Lustre를 학습 데이터 소스로 지원한다. 수십 TB의 이미지 데이터를 S3에 저장하고, FSx for Lustre를 통해 다수의 GPU 인스턴스에 병렬 제공하면, 데이터 로딩 병목 없이 GPU 활용률을 극대화할 수 있다. S3에서 직접 읽는 것보다 Lustre를 경유하면 I/O 처리량이 10배 이상 향상될 수 있다.
 
 ### FSx for NetApp ONTAP: 온프레미스 NetApp의 AWS 확장
 
@@ -170,7 +170,7 @@ S3 버킷(학습 데이터) ─── lazy load ──→ FSx for Lustre ──�
 
 지원 프로토콜: NFS, SMB, iSCSI. 즉, Linux와 Windows 클라이언트가 동시에 접근할 수 있는 **멀티 프로토콜 파일 시스템**이다. 스냅샷, 복제, 씬 프로비저닝, 중복 제거, 압축 같은 NetApp 고유 기능이 그대로 제공된다.
 
-> 💡 **관련 이론**: ONTAP은 WAFL(Write Anywhere File Layout) 파일 시스템을 사용한다. WAFL은 1994년 NetApp이 개발한 특허 구조로, 모든 쓰기를 새로운 위치에 하고(in-place 덮어쓰기 없음) 스냅샷을 O(1)에 생성할 수 있다. 이것이 NetApp 스냅샷이 거의 순간적으로 이루어지는 이유다. ZFS의 COW(Copy-on-Write) 원리와 유사하다.
+ONTAP은 WAFL(Write Anywhere File Layout) 파일 시스템을 사용한다. WAFL은 1994년 NetApp이 개발한 특허 구조로, 모든 쓰기를 새로운 위치에 하고(in-place 덮어쓰기 없음) 스냅샷을 O(1)에 생성할 수 있다. 이것이 NetApp 스냅샷이 거의 순간적으로 이루어지는 이유다. ZFS의 COW(Copy-on-Write) 원리와 유사하다.
 
 ### FSx for OpenZFS: ZFS의 클라우드 이식
 
@@ -201,7 +201,7 @@ GCP의 Persistent Disk는 EBS와 유사하지만, Regional PD는 두 AZ에 동�
 
 **AWS DataSync**는 온프레미스 또는 다른 클라우드의 파일 시스템 데이터를 AWS로 마이그레이션하거나 동기화하는 서비스다. NFS, SMB, S3, EFS, FSx를 소스/목적지로 지원한다. 병렬 전송으로 최대 10배 빠른 복사 속도를 낸다.
 
-> ⚠️ **함정**: "온프레미스 → AWS 파일 마이그레이션"에서 두 서비스가 헷갈린다. Storage Gateway는 **지속적인 하이브리드 운영**(온프레미스에서 계속 AWS 스토리지를 쓰는 구조), DataSync는 **일회성 또는 주기적 마이그레이션/동기화** 작업에 적합하다. 또한 DataSync는 Storage Gateway보다 최대 10배 빠르다.
+**함정**: "온프레미스 → AWS 파일 마이그레이션"에서 두 서비스가 헷갈린다. Storage Gateway는 **지속적인 하이브리드 운영**(온프레미스에서 계속 AWS 스토리지를 쓰는 구조), DataSync는 **일회성 또는 주기적 마이그레이션/동기화** 작업에 적합하다. 또한 DataSync는 Storage Gateway보다 최대 10배 빠르다.
 
 ## CLI로 이해 굳히기
 
@@ -248,7 +248,7 @@ aws fsx create-file-system \
 aws ec2 enable-ebs-encryption-by-default --region ap-northeast-2
 ```
 
-## 정리하며
+## 정리
 
 스토리지 선택의 핵심은 두 가지 차원이다. 첫째, **접근 패턴**: 단일 EC2인가 다수인가, 블록인가 파일인가. 둘째, **영속성**: 데이터가 인스턴스 수명과 독립적이어야 하는가.
 

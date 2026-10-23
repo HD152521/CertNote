@@ -32,7 +32,7 @@ renice -n 5 -u alice     # alice의 모든 프로세스
 | 0 | 기본값 | 일반 사용자 |
 | +19 | 가장 낮음 | 일반 사용자 |
 
-> 💡 **개념**: nice 값은 **낮을수록 우선순위가 높다**(-20이 최고, +19가 최저). 일반 사용자는 우선순위를 **낮추기만**(양수로) 할 수 있고, 높이려면(음수) root 권한이 필요하다. 새 프로세스는 `nice`, 실행 중인 것은 `renice`다.
+nice 값은 **낮을수록 우선순위가 높다**(-20이 최고, +19가 최저). 일반 사용자는 우선순위를 **낮추기만**(양수로) 할 수 있고, 높이려면(음수) root 권한이 필요하다. 새 프로세스는 `nice`, 실행 중인 것은 `renice`다.
 
 > ⚠️ **함정**: `nice -n 10`은 우선순위를 **낮춘다**(양보한다). 직관과 반대다. "nice할수록(양보할수록) 우선순위가 낮아진다"고 외우면 헷갈리지 않는다. `renice`는 PID에는 `-p`, 사용자에는 `-u` 옵션을 쓴다.
 
@@ -61,7 +61,7 @@ disown %1            # 작업을 셸에서 분리
 | 포그라운드 전환 | `fg %번호` |
 | 로그아웃 후 유지 | `nohup ... &` |
 
-> 📚 **빈출**: `Ctrl + Z`는 작업을 **일시 정지**(멈춤), `Ctrl + C`는 **종료**(SIGINT)다. 멈춘 작업은 `bg`로 백그라운드 재개하거나 `fg`로 다시 불러온다. 작업은 `%번호`로 가리킨다. 로그아웃해도 살아남게 하려면 `nohup`을 앞에 붙이고 `&`로 백그라운드 실행한다.
+`Ctrl + Z`는 작업을 **일시 정지**(멈춤), `Ctrl + C`는 **종료**(SIGINT)다. 멈춘 작업은 `bg`로 백그라운드 재개하거나 `fg`로 다시 불러온다. 작업은 `%번호`로 가리킨다. 로그아웃해도 살아남게 하려면 `nohup`을 앞에 붙이고 `&`로 백그라운드 실행한다.
 
 ## 정기 작업 예약: crontab
 
@@ -83,7 +83,7 @@ crontab -u alice -l  # alice의 crontab 목록
 0 9-18 * * 1-5 /work/poll.sh         # 평일 9~18시 매시 정각
 ```
 
-> 💡 **개념**: `crontab -e`(편집), `crontab -l`(목록), `crontab -r`(전체 삭제)이 핵심 3종이다. `-r`은 확인 없이 전부 지우므로 위험하다. "매일 새벽 3시"는 `0 3 * * *`처럼 분-시-일-월-요일 순으로 적는다.
+`crontab -e`(편집), `crontab -l`(목록), `crontab -r`(전체 삭제)이 핵심 3종이다. `-r`은 확인 없이 전부 지우므로 위험하다. "매일 새벽 3시"는 `0 3 * * *`처럼 분-시-일-월-요일 순으로 적는다.
 
 > ⚠️ **함정**: `crontab -r`은 **확인 없이 모든 작업을 삭제**한다. 편집(`-e`)과 혼동하면 큰일이다. cron 사용 허용/차단은 `/etc/cron.allow`(허용 목록)와 `/etc/cron.deny`(차단 목록)로 제어한다. allow가 있으면 거기 적힌 사용자만, 없으면 deny에 없는 사용자가 쓸 수 있다.
 
@@ -109,7 +109,7 @@ batch                    # 시스템 부하가 낮을 때 실행
 | `at` | 일회성 미래 작업 | 반복 X |
 | `batch` | 부하 낮을 때 한 번 | 반복 X |
 
-> 🔍 **더 깊이**: `at`은 한 번, `cron`은 반복이라는 점이 핵심 구분이다. `at` 작업 목록은 `atq`, 삭제는 `atrm`이다. `at` 사용 권한도 `/etc/at.allow`, `/etc/at.deny`로 제어한다.
+`at`은 한 번, `cron`은 반복이라는 점이 핵심 구분이다. `at` 작업 목록은 `atq`, 삭제는 `atrm`이다. `at` 사용 권한도 `/etc/at.allow`, `/etc/at.deny`로 제어한다.
 
 ## 서비스 관리: systemd / systemctl
 
@@ -144,7 +144,7 @@ systemctl list-unit-files --type=service  # 모든 서비스 + enable 여부
 | 상태 확인 | `systemctl status 서비스` |
 | 설정 reload | `systemctl reload 서비스` |
 
-> 📚 **빈출**: `start`/`stop`은 **지금** 동작, `enable`/`disable`은 **부팅 시** 자동 시작 여부다. 둘은 별개다 — `enable`만 하면 지금은 안 돌고, `start`만 하면 재부팅 후 안 돈다. "부팅 후에도 자동 시작"이 조건이면 반드시 `enable`이 필요하다. 한 번에 하려면 `enable --now`.
+`start`/`stop`은 **지금** 동작, `enable`/`disable`은 **부팅 시** 자동 시작 여부다. 둘은 별개다 — `enable`만 하면 지금은 안 돌고, `start`만 하면 재부팅 후 안 돈다. "부팅 후에도 자동 시작"이 조건이면 반드시 `enable`이 필요하다. 한 번에 하려면 `enable --now`.
 
 ```bash
 # 런레벨 ↔ systemd target
@@ -166,12 +166,12 @@ systemctl poweroff       # 종료
 | 5 | graphical.target | GUI |
 | 6 | reboot.target | 재부팅 |
 
-> 🔍 **더 깊이**: 런레벨 3(텍스트)은 `multi-user.target`, 런레벨 5(GUI)는 `graphical.target`에 대응한다. 기본 부팅 모드는 `systemctl set-default`로 바꾼다. 옛 `init 3`, `init 5`도 systemd가 호환 처리한다.
+런레벨 3(텍스트)은 `multi-user.target`, 런레벨 5(GUI)는 `graphical.target`에 대응한다. 기본 부팅 모드는 `systemctl set-default`로 바꾼다. 옛 `init 3`, `init 5`도 systemd가 호환 처리한다.
 
 ## systemd 유닛 파일
 
 - 서비스 정의는 **유닛 파일**(`.service`)에 담긴다.
-- 위치와 핵심 섹션을 알아두자.
+- 위치와 핵심 섹션을 파악해 둔다.
 
 ```ini
 # /etc/systemd/system/myapp.service
@@ -200,7 +200,7 @@ systemctl restart myapp
 | `/usr/lib/systemd/system/` | 패키지가 설치한 기본 유닛 |
 | `/etc/systemd/system/` | 관리자가 만든/덮어쓴 유닛(우선) |
 
-> ⚠️ **함정**: 유닛 파일을 새로 만들거나 고친 뒤에는 반드시 `systemctl daemon-reload`를 실행해야 systemd가 변경을 인식한다. 이걸 빼면 `start`해도 옛 설정이 적용된다. 또 부팅 자동 시작은 유닛의 `[Install]` 섹션 `WantedBy`와 `systemctl enable`로 완성된다.
+유닛 파일을 새로 만들거나 고친 뒤에는 반드시 `systemctl daemon-reload`를 실행해야 systemd가 변경을 인식한다. 이걸 빼면 `start`해도 옛 설정이 적용된다. 또 부팅 자동 시작은 유닛의 `[Install]` 섹션 `WantedBy`와 `systemctl enable`로 완성된다.
 
 ## 로그 확인: journalctl
 
@@ -213,7 +213,7 @@ journalctl --since "1 hour ago"  # 최근 1시간
 journalctl -p err              # 에러 레벨 이상만
 ```
 
-> 💡 **개념**: systemd 환경의 로그는 `journalctl`로 본다. 특정 서비스는 `-u 서비스명`, 실시간 추적은 `-f`다. 전통적 `/var/log/messages`, `/var/log/syslog`도 여전히 있지만 systemd 서비스 로그는 journal에 모인다.
+systemd 환경의 로그는 `journalctl`로 본다. 특정 서비스는 `-u 서비스명`, 실시간 추적은 `-f`다. 전통적 `/var/log/messages`, `/var/log/syslog`도 여전히 있지만 systemd 서비스 로그는 journal에 모인다.
 
 ## 직접 쳐보기
 
