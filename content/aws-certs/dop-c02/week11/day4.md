@@ -37,7 +37,7 @@ Amazon OpenSearch Service는 2021년 Elasticsearch에서 라이선스 분쟁 끝
 # logs-app-2026.06.02 → 7일 후 UltraWarm → 30일 후 삭제
 ```
 
-> 🔍 **더 깊이**: OpenSearch 운영의 핵심 패턴이 **시간 기반 인덱스(time-based index) + ISM(Index State Management)**이다. 로그를 하나의 거대한 인덱스에 다 넣으면 오래된 데이터 삭제가 비싸다(개별 문서 삭제는 비용이 큼). 대신 `logs-app-2026.06.02`처럼 **날짜별로 인덱스를 분리**하면, 30일 지난 데이터 삭제는 그냥 그 날짜 인덱스를 통째로 drop하면 된다 — 인덱스 삭제는 파일을 지우는 수준으로 싸다. ISM은 이 생명주기를 자동화한다: "생성 후 7일 → UltraWarm 이전, 30일 → 삭제". 이는 시계열 데이터 관리의 보편 패턴인 **롤링 인덱스/파티션 by time**이고, RDBMS의 시간 파티셔닝, S3의 날짜 prefix, Day 1의 X-Ray trace 시각 파티셔닝과 같은 발상이다. "오래된 시계열 데이터는 통째로 버릴 수 있게 시간으로 분할하라"가 핵심이다.
+> OpenSearch 운영의 핵심 패턴이 **시간 기반 인덱스(time-based index) + ISM(Index State Management)**이다. 로그를 하나의 거대한 인덱스에 다 넣으면 오래된 데이터 삭제가 비싸다(개별 문서 삭제는 비용이 큼). 대신 `logs-app-2026.06.02`처럼 **날짜별로 인덱스를 분리**하면, 30일 지난 데이터 삭제는 그냥 그 날짜 인덱스를 통째로 drop하면 된다 — 인덱스 삭제는 파일을 지우는 수준으로 싸다. ISM은 이 생명주기를 자동화한다: "생성 후 7일 → UltraWarm 이전, 30일 → 삭제". 이는 시계열 데이터 관리의 보편 패턴인 **롤링 인덱스/파티션 by time**이고, RDBMS의 시간 파티셔닝, S3의 날짜 prefix, Day 1의 X-Ray trace 시각 파티셔닝과 같은 발상이다. "오래된 시계열 데이터는 통째로 버릴 수 있게 시간으로 분할하라"가 핵심이다.
 
 ## TSDB와 Prometheus — 시계열에 특화된 다른 엔진
 
@@ -56,7 +56,7 @@ sum(rate(http_requests_total{job="api"}[5m])) by (status)
 histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
 ```
 
-> 💡 **관련 이론**: TSDB가 별도 엔진인 이유는 시계열 데이터의 **압축** 특성에 있다. 시계열은 (1) 타임스탬프가 거의 등간격으로 증가하고 (2) 연속한 값이 비슷하다는 강한 규칙성이 있다. Facebook의 **Gorilla** 논문(2015)이 이를 활용한 압축을 제시했다 — 타임스탬프는 **delta-of-delta 인코딩**(간격의 변화량만 저장, 등간격이면 거의 0), 값은 **XOR 인코딩**(이전 값과의 XOR이 대부분 0비트)으로 시계열을 원본의 10분의 1 이하로 압축한다. Prometheus의 TSDB, InfluxDB, TimescaleDB가 모두 이 계열의 압축을 쓴다. 역인덱스(텍스트의 임의 검색에 최적)와 TSDB(규칙적 수치 시계열의 압축·범위 스캔에 최적)는 데이터 특성이 달라 근본적으로 다른 자료구조를 쓴다 — 이것이 OpenSearch와 Prometheus를 한 엔진으로 합칠 수 없는 이유다.
+> TSDB가 별도 엔진인 이유는 시계열 데이터의 **압축** 특성에 있다. 시계열은 (1) 타임스탬프가 거의 등간격으로 증가하고 (2) 연속한 값이 비슷하다는 강한 규칙성이 있다. Facebook의 **Gorilla** 논문(2015)이 이를 활용한 압축을 제시했다 — 타임스탬프는 **delta-of-delta 인코딩**(간격의 변화량만 저장, 등간격이면 거의 0), 값은 **XOR 인코딩**(이전 값과의 XOR이 대부분 0비트)으로 시계열을 원본의 10분의 1 이하로 압축한다. Prometheus의 TSDB, InfluxDB, TimescaleDB가 모두 이 계열의 압축을 쓴다. 역인덱스(텍스트의 임의 검색에 최적)와 TSDB(규칙적 수치 시계열의 압축·범위 스캔에 최적)는 데이터 특성이 달라 근본적으로 다른 자료구조를 쓴다 — 이것이 OpenSearch와 Prometheus를 한 엔진으로 합칠 수 없는 이유다.
 
 > ⚠️ **함정**: Prometheus의 pull 모델은 "**Prometheus가 타깃에 네트워크로 도달할 수 있어야 한다**"는 제약을 만든다. 짧게 살다 사라지는 배치 작업·Lambda·서버리스는 Prometheus가 scrape하러 갔을 때 이미 죽어 있어 메트릭을 놓친다. 그래서 단명 작업은 **Pushgateway**(작업이 메트릭을 push해두면 Prometheus가 거기서 scrape)로 우회한다. 또한 카디널리티 폭발이 Prometheus를 죽이는 가장 흔한 원인이다 — `user_id`처럼 고유값이 수백만인 레이블을 넣으면 시계열이 폭발해 메모리가 터진다(Day 1의 CloudWatch high-cardinality 함정과 동일). pull/push 선택과 레이블 카디널리티 관리가 Prometheus 운영의 두 핵심이다.
 
@@ -94,7 +94,7 @@ aws grafana create-workspace --account-access-type CURRENT_ACCOUNT \
 
 Grafana의 가치는 **백엔드 중립적 시각화 계층**이라는 점이다. 데이터가 어디 있든(AWS든 온프레미스 Prometheus든) 같은 대시보드 문법으로 그린다. 멀티 클라우드 조직이 단일 관찰성 화면을 갖는 핵심이고, Grafana 자체 알람(AWS에 의존하지 않는 멀티 클라우드 알람 단일화)도 제공한다.
 
-> 📚 **사례**: 한 기업이 AWS(EKS)와 온프레미스 Kubernetes를 동시에 운영하며, 두 환경의 메트릭을 별도 도구로 봐서 인시던트 때 두 화면을 오가야 했다. AMG를 도입해 AWS 쪽은 AMP를, 온프레미스 쪽은 자체 Prometheus를 둘 다 Grafana 데이터 소스로 연결하자, 하나의 대시보드에서 두 환경을 나란히 봤다. PromQL이 양쪽 공통 쿼리 언어였기에 가능했다 — 둘 다 Prometheus 호환이라 같은 쿼리·같은 대시보드를 재사용했다. 교훈: 표준(PromQL)을 공유하면 이질적 인프라도 단일 시각화로 통합된다. Grafana의 가치는 데이터 저장이 아니라 백엔드 중립 시각화에 있다.
+> 한 기업이 AWS(EKS)와 온프레미스 Kubernetes를 동시에 운영하며, 두 환경의 메트릭을 별도 도구로 봐서 인시던트 때 두 화면을 오가야 했다. AMG를 도입해 AWS 쪽은 AMP를, 온프레미스 쪽은 자체 Prometheus를 둘 다 Grafana 데이터 소스로 연결하자, 하나의 대시보드에서 두 환경을 나란히 봤다. PromQL이 양쪽 공통 쿼리 언어였기에 가능했다 — 둘 다 Prometheus 호환이라 같은 쿼리·같은 대시보드를 재사용했다. 교훈: 표준(PromQL)을 공유하면 이질적 인프라도 단일 시각화로 통합된다. Grafana의 가치는 데이터 저장이 아니라 백엔드 중립 시각화에 있다.
 
 ## 도구 조합 결정 — 무엇을 언제 고르나
 
@@ -125,7 +125,7 @@ App logs → CloudWatch Logs
 
 Subscription Filter가 로그를 실시간으로 빼내 Firehose에 흘리고, Firehose가 버퍼링·배치·재시도를 맡아 OpenSearch에 적재한다. Fluent Bit/Fluentd로 OpenSearch에 직접 보내는 경로도 있지만, Firehose 경로가 관리 부담이 적고 재시도·백프레셔를 자동 처리한다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 다섯 가지다. 첫째, **옵저버빌리티 저장소 선택은 데이터 본질의 문제** — 임의 텍스트 검색은 역인덱스(OpenSearch), 수치 시계열 집계는 TSDB(Prometheus/AMP)라는 근본적으로 다른 엔진이 푼다. 둘째, **역인덱스는 "단어→문서" 구조 + BM25 관련도**로 텍스트 검색을, **TSDB는 delta-of-delta·XOR 압축**으로 고빈도 시계열을 푼다 — 합칠 수 없는 이유다. 셋째, **OpenSearch는 시간 기반 인덱스 + ISM**으로 오래된 데이터를 통째로 drop해 생명주기를 관리하고, Provisioned(계층화 스토리지)/Serverless(OCU)로 나뉜다. 넷째, **AMP는 관리형 Prometheus**(remote_write·PromQL·SigV4)이고 pull 모델·카디널리티가 운영 핵심이다. 다섯째, **AMG는 백엔드 중립 시각화 계층**으로 이질적 데이터 소스를 단일 대시보드로 묶고, EKS 표준 스택은 ADOT + AMP + AMG다.
 
