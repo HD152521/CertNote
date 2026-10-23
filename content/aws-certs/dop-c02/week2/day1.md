@@ -8,7 +8,7 @@ CodeCommit은 표면적으로는 "AWS가 만든 Git 서버"다. 그러나 이 �
 
 ## CodeCommit이 IAM과 결합되는 방식 — 4종 인증의 내부 동작
 
-GitHub은 OAuth 토큰 또는 SSH 키로 인증한다. GitLab도 비슷하다. 그런데 CodeCommit은 그 어떤 방식으로 인증하든 마지막에는 **STS가 발급한 임시 자격 증명으로 IAM Policy 평가**를 거친다. 이게 무슨 뜻인지부터 보자.
+GitHub은 OAuth 토큰 또는 SSH 키로 인증한다. GitLab도 비슷하다. 그런데 CodeCommit은 그 어떤 방식으로 인증하든 마지막에는 **STS가 발급한 임시 자격 증명으로 IAM Policy 평가**를 거친다. 이 말이 무슨 뜻인지부터 짚는다.
 
 Git protocol(HTTPS 또는 SSH)은 본래 username/password 또는 SSH 키 기반이다. CodeCommit은 이 protocol을 그대로 두면서, 그 안에서 흘러가는 인증 정보를 IAM 평가 엔진으로 우회시킨다. 그래서 같은 `git clone` 명령어를 써도 뒷단에서는 다음 4가지 중 하나가 일어난다.
 
@@ -19,11 +19,11 @@ Git protocol(HTTPS 또는 SSH)은 본래 username/password 또는 SSH 키 기반
 | **HTTPS + AWS CLI Credential Helper** | git이 자격 증명을 요청할 때마다 AWS CLI가 STS GetSessionToken을 호출 → 임시 자격 증명을 SigV4 서명으로 변환해 git에 주입 | EC2/CodeBuild/Lambda. IAM Role 기반. |
 | **HTTPS + git-remote-codecommit (GRC)** | Python 패키지로 설치, `codecommit::region://profile@repo` URL 사용. SigV4로 매 요청 서명. SSO/MFA/페더레이션 환경에서 동작 | 페더레이션 사용자, MFA 강제 조직, AWS SSO 환경 |
 
-> 🔍 **더 깊이**: Git Credentials(첫 번째 방식)는 **IAM User**에만 발급 가능하다. IAM Role에는 발급 불가. 왜냐하면 Role의 자격 증명은 임시(STS)고, Git Credentials는 영구 username/password 형태여야 하기 때문이다. 그래서 EC2/Lambda 같은 Role 기반 환경에서는 Credential Helper나 GRC가 강제된다. 이건 시험에서 "EC2에서 git push 하려면?" 같은 보기에서 정답을 가르는 결정적 단서다.
+> Git Credentials(첫 번째 방식)는 **IAM User**에만 발급 가능하다. IAM Role에는 발급 불가. 왜냐하면 Role의 자격 증명은 임시(STS)고, Git Credentials는 영구 username/password 형태여야 하기 때문이다. 그래서 EC2/Lambda 같은 Role 기반 환경에서는 Credential Helper나 GRC가 강제된다. 이건 시험에서 "EC2에서 git push 하려면?" 같은 보기에서 정답을 가르는 결정적 단서다.
 
-> 💡 **관련 이론**: 이 4종 인증 방식은 본질적으로 "Git이 알고 있는 자격 증명 종류"와 "IAM이 요구하는 자격 증명 종류"의 격차를 메우는 어댑터 패턴(Gamma et al., Design Patterns 1994)이다. Git protocol은 1990년대 말 Linus Torvalds가 BitKeeper 대안으로 설계할 때 username/password 또는 SSH 키만 가정했다. 반면 IAM은 SigV4 서명 + 임시 자격 증명을 표준으로 본다. CodeCommit이 4가지 인증 경로를 모두 지원하는 건, 이 두 모델 사이의 임피던스 불일치(impedance mismatch)를 우회하려는 설계 타협이다.
+> 이 4종 인증 방식은 본질적으로 "Git이 알고 있는 자격 증명 종류"와 "IAM이 요구하는 자격 증명 종류"의 격차를 메우는 어댑터 패턴(Gamma et al., Design Patterns 1994)이다. Git protocol은 1990년대 말 Linus Torvalds가 BitKeeper 대안으로 설계할 때 username/password 또는 SSH 키만 가정했다. 반면 IAM은 SigV4 서명 + 임시 자격 증명을 표준으로 본다. CodeCommit이 4가지 인증 경로를 모두 지원하는 건, 이 두 모델 사이의 임피던스 불일치(impedance mismatch)를 우회하려는 설계 타협이다.
 
-> ⚠️ **함정**: 시험 단골 보기로 "IAM User의 access key를 ~/.aws/credentials에 저장하면 git push 가능"이 나온다. 틀렸다. 그건 AWS CLI를 위한 자격 증명이지 Git protocol이 인식하는 자격 증명이 아니다. Git이 그 자격 증명을 SigV4 서명으로 변환해 보내야 하는데, 그 변환을 해주는 게 바로 **Credential Helper**(`!aws codecommit credential-helper $@`)다. 이 헬퍼를 git config에 등록하지 않으면 IAM 자격 증명만으로는 git이 동작하지 않는다.
+> ⚠️ **함정**: 오답 보기로 "IAM User의 access key를 ~/.aws/credentials에 저장하면 git push 가능"이 나온다. 틀렸다. 그건 AWS CLI를 위한 자격 증명이지 Git protocol이 인식하는 자격 증명이 아니다. Git이 그 자격 증명을 SigV4 서명으로 변환해 보내야 하는데, 그 변환을 해주는 게 바로 **Credential Helper**(`!aws codecommit credential-helper $@`)다. 이 헬퍼를 git config에 등록하지 않으면 IAM 자격 증명만으로는 git이 동작하지 않는다.
 
 ```bash
 # Credential Helper 등록 (EC2/Cloud9/CodeBuild에서 표준)
@@ -32,7 +32,7 @@ git config --global credential.UseHttpPath true
 # 이후 git clone https://git-codecommit.ap-northeast-2.amazonaws.com/v1/repos/MyApp
 ```
 
-> 📚 **사례**: 2020년대 초 한 핀테크 회사가 GitHub Enterprise에서 CodeCommit으로 마이그레이션할 때 "MFA 강제" 정책이 발목을 잡았다. 페더레이션 SSO로 콘솔에 로그인하는 개발자들이 git push에서 막혔다. 이유: HTTPS Git Credentials는 IAM User 전용이라 페더레이션 사용자가 발급받을 수 없었다. 해결: **git-remote-codecommit(GRC)**으로 전환. GRC는 매 git 요청마다 현재 AWS profile의 자격 증명(SSO 토큰 포함)으로 SigV4 서명을 만들어 보내므로 MFA·SSO와 자연스럽게 결합된다. 이 사례는 시험에서 "MFA가 강제된 조직의 CodeCommit 접근" 보기로 자주 변형돼 나온다.
+> 2020년대 초 한 핀테크 회사가 GitHub Enterprise에서 CodeCommit으로 마이그레이션할 때 "MFA 강제" 정책이 발목을 잡았다. 페더레이션 SSO로 콘솔에 로그인하는 개발자들이 git push에서 막혔다. 이유: HTTPS Git Credentials는 IAM User 전용이라 페더레이션 사용자가 발급받을 수 없었다. 해결: **git-remote-codecommit(GRC)**으로 전환. GRC는 매 git 요청마다 현재 AWS profile의 자격 증명(SSO 토큰 포함)으로 SigV4 서명을 만들어 보내므로 MFA·SSO와 자연스럽게 결합된다. 이 사례는 시험에서 "MFA가 강제된 조직의 CodeCommit 접근" 보기로 자주 변형돼 나온다.
 
 ## Git 이벤트가 EventBridge로 흘러나오는 구조 — 자동화의 진입점
 
@@ -48,7 +48,7 @@ CodeCommit이 GitHub과 결정적으로 다른 또 하나의 지점은 **모든 
 | `CodeCommit Comment on Commit` | 커밋 코멘트 추가 | `commentId`, `commitId` |
 | `CodeCommit Approval Rule Override` | Approval Rule을 override할 때 | `pullRequestId`, `overrideStatus` |
 
-이 이벤트들이 EventBridge로 흘러간 뒤의 활용 패턴은 거의 무한하다. 표준 패턴 몇 가지만 보자.
+이 이벤트들이 EventBridge로 흘러간 뒤의 활용 패턴은 거의 무한하다. 표준 패턴 몇 가지는 다음과 같다.
 
 ```json
 // PR 생성 시 자동 빌드 트리거
@@ -75,11 +75,11 @@ CodeCommit이 GitHub과 결정적으로 다른 또 하나의 지점은 **모든 
 }
 ```
 
-> 🔍 **더 깊이**: EventBridge 이벤트의 **at-least-once delivery** 특성을 잊으면 안 된다. 같은 PR 생성 이벤트가 드물게 두 번 전달될 수 있다. PR마다 빌드를 1회만 실행해야 한다면 Lambda에서 `pullRequestId + sourceCommit` 조합으로 idempotency key를 만들고 DynamoDB conditional write로 중복을 막아야 한다. CodePipeline은 자체적으로 같은 source revision에 대해 새 execution을 만들지 않는 동작이 있지만(소스 변경 감지가 비활성/활성 모드에 따라 다름), Lambda 직접 호출 경로는 직접 dedup을 책임져야 한다.
+> EventBridge 이벤트의 **at-least-once delivery** 특성을 잊으면 안 된다. 같은 PR 생성 이벤트가 드물게 두 번 전달될 수 있다. PR마다 빌드를 1회만 실행해야 한다면 Lambda에서 `pullRequestId + sourceCommit` 조합으로 idempotency key를 만들고 DynamoDB conditional write로 중복을 막아야 한다. CodePipeline은 자체적으로 같은 source revision에 대해 새 execution을 만들지 않는 동작이 있지만(소스 변경 감지가 비활성/활성 모드에 따라 다름), Lambda 직접 호출 경로는 직접 dedup을 책임져야 한다.
 
-> 💡 **관련 이론**: EventBridge의 PutEvents는 분산 시스템에서 "exactly-once는 불가능하다"는 Two Generals Problem(1975, Akkoyunlu·Ekanadham·Huber)의 현실적 귀결이다. AWS의 모든 이벤트 버스(SQS, SNS, EventBridge, Kinesis)는 at-least-once를 선택하고 consumer에게 idempotency 책임을 떠넘긴다. 이는 Kafka의 exactly-once semantics(EOS)가 producer-consumer 양쪽에 transactional ID와 시퀀스를 강제하는 무거운 메커니즘을 도입하는 것과 대조적이다.
+> EventBridge의 PutEvents는 분산 시스템에서 "exactly-once는 불가능하다"는 Two Generals Problem(1975, Akkoyunlu·Ekanadham·Huber)의 현실적 귀결이다. AWS의 모든 이벤트 버스(SQS, SNS, EventBridge, Kinesis)는 at-least-once를 선택하고 consumer에게 idempotency 책임을 떠넘긴다. 이는 Kafka의 exactly-once semantics(EOS)가 producer-consumer 양쪽에 transactional ID와 시퀀스를 강제하는 무거운 메커니즘을 도입하는 것과 대조적이다.
 
-> 📚 **사례**: 한 게임 회사가 CodeCommit + Lambda로 "PR 생성 시 자동 슬랙 알림" 시스템을 만들었다. 한 달 후 슬랙에 같은 PR 알림이 두 번씩 오는 경우가 가끔 발생했다. 원인: EventBridge의 at-least-once 전달이 한 달에 한두 번 발생. 해결: Lambda에서 `pullRequestId + eventVersion`을 키로 DynamoDB TTL 5분 conditional put을 추가하고, 이미 존재하면 함수를 즉시 종료. 이 경험으로 팀은 "이벤트 기반 자동화에서 dedup은 옵션이 아니라 필수"라는 원칙을 세웠다.
+> 한 게임 회사가 CodeCommit + Lambda로 "PR 생성 시 자동 슬랙 알림" 시스템을 만들었다. 한 달 후 슬랙에 같은 PR 알림이 두 번씩 오는 경우가 가끔 발생했다. 원인: EventBridge의 at-least-once 전달이 한 달에 한두 번 발생. 해결: Lambda에서 `pullRequestId + eventVersion`을 키로 DynamoDB TTL 5분 conditional put을 추가하고, 이미 존재하면 함수를 즉시 종료. 이 경험으로 팀은 "이벤트 기반 자동화에서 dedup은 옵션이 아니라 필수"라는 원칙을 세웠다.
 
 레거시 트리거 메뉴(저장소 자체의 Triggers 탭)는 SNS와 Lambda만 직접 연결 가능하고, 이벤트 필터링이 제한적이다. **현대적 권장은 EventBridge 단일 경로**이고, AWS 공식 가이드도 신규 자동화는 EventBridge로 통일하라고 명시한다. 시험에서 "최신 권장 패턴"이라는 표현이 나오면 EventBridge가 정답이다.
 
@@ -110,9 +110,9 @@ Approval Rule Template은 다음과 같이 구성된다.
 
 > ⚠️ **함정**: "IAM User ARN을 ApprovalPoolMembers에 넣어도 되나?" 가능하다. 다만 페더레이션/SSO 환경에서는 사용자가 IAM User가 아니라 assumed-role이므로 User ARN은 매칭되지 않는다. 시험 보기에서 "User ARN으로 Approval Pool 구성"이 정답으로 나오는 경우는 거의 없다. 답은 거의 항상 **assumed-role ARN 패턴**.
 
-> 🔍 **더 깊이**: Approval Rule Template은 **저장소가 아닌 계정 수준**에 만들어진다. 만든 후 `AssociateApprovalRuleTemplateWithRepository` API로 저장소에 연결한다. 이 분리는 의도적이다 — 한 계정에 50개 저장소가 있을 때 "main 브랜치는 2명 승인" 같은 표준을 한 템플릿으로 정의하고 모든 저장소에 일괄 적용할 수 있다. 시험에서 "전사적으로 동일한 PR 승인 규칙을 강제하라"는 시나리오의 정답은 **Approval Rule Template + 일괄 association**이지, 저장소별 개별 룰이 아니다.
+> Approval Rule Template은 **저장소가 아닌 계정 수준**에 만들어진다. 만든 후 `AssociateApprovalRuleTemplateWithRepository` API로 저장소에 연결한다. 이 분리는 의도적이다 — 한 계정에 50개 저장소가 있을 때 "main 브랜치는 2명 승인" 같은 표준을 한 템플릿으로 정의하고 모든 저장소에 일괄 적용할 수 있다. 시험에서 "전사적으로 동일한 PR 승인 규칙을 강제하라"는 시나리오의 정답은 **Approval Rule Template + 일괄 association**이지, 저장소별 개별 룰이 아니다.
 
-> 💡 **관련 이론**: 이 패턴은 정책의 **선언적 분리**(declarative separation)다. Kubernetes의 ClusterRole + ClusterRoleBinding, OPA의 policy/data 분리와 같은 철학. 정책 정의는 한 곳에 모으고, 적용은 별도 메커니즘으로 한다. 이 분리가 없으면 50개 저장소에 50번 같은 정책을 복붙해야 하고, 정책 변경 시 drift가 생긴다.
+> 이 패턴은 정책의 **선언적 분리**(declarative separation)다. Kubernetes의 ClusterRole + ClusterRoleBinding, OPA의 policy/data 분리와 같은 철학. 정책 정의는 한 곳에 모으고, 적용은 별도 메커니즘으로 한다. 이 분리가 없으면 50개 저장소에 50번 같은 정책을 복붙해야 하고, 정책 변경 시 drift가 생긴다.
 
 ```bash
 # 계정 수준에 템플릿 정의
@@ -143,11 +143,11 @@ Pro 시험은 도구 비교를 좋아한다. CodeCommit이 다른 Git 호스팅�
 | **신규 가입** | 2024-07-25 중단 | 일반 가입 가능 | 일반 가입 가능 | 일반 가입 가능 |
 | **AWS 통합** | 네이티브 | OIDC + IAM Role (`AssumeRoleWithWebIdentity`) | OIDC | OIDC |
 
-> 🔍 **더 깊이**: 최근 시험 트렌드는 "**GitHub Actions에서 AWS로 OIDC 페더레이션**"을 묻는 보기가 늘었다. 패턴은 정해져 있다. ① AWS IAM Identity Provider에 GitHub OIDC provider(`https://token.actions.githubusercontent.com`) 등록 ② IAM Role 생성, trust policy에 `aud=sts.amazonaws.com` + `sub=repo:org/repo:ref:refs/heads/main` 조건 ③ GitHub Actions workflow에서 `aws-actions/configure-aws-credentials@v4`로 AssumeRoleWithWebIdentity. 이게 정적 access key 저장보다 안전한 이유는 키 자체가 없기 때문이다. 시험에서 "GitHub Actions가 AWS에 안전하게 접근하려면?"의 정답은 거의 항상 OIDC + Role assumption.
+> 최근 시험 트렌드는 "**GitHub Actions에서 AWS로 OIDC 페더레이션**"을 묻는 보기가 늘었다. 패턴은 정해져 있다. ① AWS IAM Identity Provider에 GitHub OIDC provider(`https://token.actions.githubusercontent.com`) 등록 ② IAM Role 생성, trust policy에 `aud=sts.amazonaws.com` + `sub=repo:org/repo:ref:refs/heads/main` 조건 ③ GitHub Actions workflow에서 `aws-actions/configure-aws-credentials@v4`로 AssumeRoleWithWebIdentity. 이게 정적 access key 저장보다 안전한 이유는 키 자체가 없기 때문이다. 시험에서 "GitHub Actions가 AWS에 안전하게 접근하려면?"의 정답은 거의 항상 OIDC + Role assumption.
 
-> 💡 **관련 이론**: OIDC(OpenID Connect, OpenID Foundation 2014)는 OAuth 2.0 위에 인증(authentication) 계층을 추가한 표준이다. 핵심은 ID Token이라는 JWT 안에 claims(iss, sub, aud, exp)를 넣어 신뢰할 수 있는 IdP가 발급했음을 검증한다. AWS의 OIDC federation은 이 JWT를 `AssumeRoleWithWebIdentity`로 변환한다. 정적 access key 대비 **단기성, 비공유성, audit 가능성** 세 측면에서 우월하다.
+> OIDC(OpenID Connect, OpenID Foundation 2014)는 OAuth 2.0 위에 인증(authentication) 계층을 추가한 표준이다. 핵심은 ID Token이라는 JWT 안에 claims(iss, sub, aud, exp)를 넣어 신뢰할 수 있는 IdP가 발급했음을 검증한다. AWS의 OIDC federation은 이 JWT를 `AssumeRoleWithWebIdentity`로 변환한다. 정적 access key 대비 **단기성, 비공유성, audit 가능성** 세 측면에서 우월하다.
 
-> 📚 **사례**: 2023년 초 한 SaaS 회사가 GitHub Actions에서 AWS access key를 정적으로 저장해 쓰다가 PR에 키가 출력 로그로 누출되는 사고를 겪었다. 누군가 fork repo에서 PR을 보냈고, 그 PR의 GitHub Actions가 secrets에 접근하면서 환경 변수가 stdout으로 나왔다(원인: 누군가 디버그용 `echo`를 PR에 넣음). 키 회수 + 회전 + 영향 분석에 36시간이 걸렸다. 이후 회사는 OIDC + IAM Role 패턴으로 전환했고, key 자체가 존재하지 않으니 누출이 불가능해졌다. 시험에서 "fork PR의 secrets 접근 위험"이라는 표현이 나오면 거의 OIDC를 묻는 신호다.
+> 2023년 초 한 SaaS 회사가 GitHub Actions에서 AWS access key를 정적으로 저장해 쓰다가 PR에 키가 출력 로그로 누출되는 사고를 겪었다. 누군가 fork repo에서 PR을 보냈고, 그 PR의 GitHub Actions가 secrets에 접근하면서 환경 변수가 stdout으로 나왔다(원인: 누군가 디버그용 `echo`를 PR에 넣음). 키 회수 + 회전 + 영향 분석에 36시간이 걸렸다. 이후 회사는 OIDC + IAM Role 패턴으로 전환했고, key 자체가 존재하지 않으니 누출이 불가능해졌다. 시험에서 "fork PR의 secrets 접근 위험"이라는 표현이 나오면 거의 OIDC를 묻는 신호다.
 
 ## 크로스 계정 CodeCommit — Hub/Spoke 파이프라인의 표준 구성
 
@@ -202,13 +202,13 @@ Pro 시험은 도구 비교를 좋아한다. CodeCommit이 다른 Git 호스팅�
 }
 ```
 
-> ⚠️ **함정**: 위 구성에서 **KMS 키**가 빠지면 artifact 암호화 단계에서 실패한다. CodePipeline의 artifact bucket은 보통 customer-managed KMS 키로 암호화되는데, cross-account 시나리오에서는 이 키의 **key policy에 Account A의 Role(또는 그 Role을 assume할 Principal)에게 Decrypt/GenerateDataKey 권한**을 줘야 한다. 시험에서 "cross-account 파이프라인이 권한은 다 줬는데 artifact에서 실패한다"는 시나리오의 정답은 거의 항상 KMS 키 정책 누락.
+> 위 구성에서 **KMS 키**가 빠지면 artifact 암호화 단계에서 실패한다. CodePipeline의 artifact bucket은 보통 customer-managed KMS 키로 암호화되는데, cross-account 시나리오에서는 이 키의 **key policy에 Account A의 Role(또는 그 Role을 assume할 Principal)에게 Decrypt/GenerateDataKey 권한**을 줘야 한다. 시험에서 "cross-account 파이프라인이 권한은 다 줬는데 artifact에서 실패한다"는 시나리오의 정답은 거의 항상 KMS 키 정책 누락.
 
-> 🔍 **더 깊이**: CodeCommit의 cross-account 패턴은 **데이터 평면(Git protocol)과 제어 평면(IAM)을 분리**한다는 AWS 설계 철학을 잘 보여준다. Git protocol 자체는 HTTPS endpoint를 그대로 쓰지만(public internet), 인증은 IAM이 처리하므로 네트워크적으로 VPC peering이나 Direct Connect가 필요 없다. 이게 시험에 단골 함정으로 나온다 — "cross-account CodeCommit 접근을 위해 VPC Peering 필요"는 항상 오답.
+> CodeCommit의 cross-account 패턴은 **데이터 평면(Git protocol)과 제어 평면(IAM)을 분리**한다는 AWS 설계 철학을 잘 보여준다. Git protocol 자체는 HTTPS endpoint를 그대로 쓰지만(public internet), 인증은 IAM이 처리하므로 네트워크적으로 VPC peering이나 Direct Connect가 필요 없다. 이 부분이 시험에서 함정으로 쓰인다 — "cross-account CodeCommit 접근을 위해 VPC Peering 필요"는 오답이다.
 
-> 💡 **관련 이론**: Resource Policy + Identity Policy의 **이중 평가**는 IAM의 핵심 원칙이다. Cross-account에서는 두 정책 모두 Allow여야 접근이 허용된다 — "Both policies must allow" 원칙. 같은 계정 내에서는 둘 중 하나만 Allow면 충분(특정 서비스 예외 제외)하지만, cross-account는 항상 양쪽 다 필요하다. 이 비대칭이 헷갈리면 SCP + Permission Boundary + Resource Policy + Identity Policy의 평가 순서를 다시 한 번 점검할 가치가 있다.
+> Resource Policy + Identity Policy의 **이중 평가**는 IAM의 핵심 원칙이다. Cross-account에서는 두 정책 모두 Allow여야 접근이 허용된다 — "Both policies must allow" 원칙. 같은 계정 내에서는 둘 중 하나만 Allow면 충분(특정 서비스 예외 제외)하지만, cross-account는 항상 양쪽 다 필요하다. 이 비대칭이 헷갈리면 SCP + Permission Boundary + Resource Policy + Identity Policy의 평가 순서를 다시 한 번 점검할 가치가 있다.
 
-> 📚 **사례**: 한 미디어 회사가 멀티 계정에서 CodePipeline을 운영하는데, "어떤 PR도 prod 계정의 CodeCommit에 접근 못 하게" 추가 가드레일을 SCP로 만들었다. 그런데 SCP에 `codecommit:GitPull`을 Deny로 박아두고 `NotPrincipal`을 잘못 작성해서 정작 Shared Services의 Pipeline Role까지 차단됐다. 30분간 prod 배포가 막혔다. 교훈: SCP의 Deny + NotPrincipal 조합은 화이트리스트가 까다롭다 — `aws:PrincipalArn` 조건이나 `aws:PrincipalOrgID`로 양성 리스트를 명시하는 게 안전하다.
+> 한 미디어 회사가 멀티 계정에서 CodePipeline을 운영하는데, "어떤 PR도 prod 계정의 CodeCommit에 접근 못 하게" 추가 가드레일을 SCP로 만들었다. 그런데 SCP에 `codecommit:GitPull`을 Deny로 박아두고 `NotPrincipal`을 잘못 작성해서 정작 Shared Services의 Pipeline Role까지 차단됐다. 30분간 prod 배포가 막혔다. 교훈: SCP의 Deny + NotPrincipal 조합은 화이트리스트가 까다롭다 — `aws:PrincipalArn` 조건이나 `aws:PrincipalOrgID`로 양성 리스트를 명시하는 게 안전하다.
 
 ## CodeCommit Sunset — 2024년 7월 25일 이후의 시험 출제 패턴
 
@@ -218,12 +218,12 @@ Pro 시험은 도구 비교를 좋아한다. CodeCommit이 다른 Git 호스팅�
 |------|--------------|
 | 기존 고객은 신규 리포지토리 생성 포함 정상 사용 가능 | "우리 회사는 CodeCommit을 이미 쓰고 있는데 새 마이크로서비스 리포지토리가 필요하다" → "신규 생성 가능"이 정답 |
 | 신규 고객은 가입 불가 | "신규 스타트업이 AWS-native 소스 제어를 원한다" → CodeCommit이 아닌 GitHub + OIDC가 정답 |
-| Pro 시험은 여전히 CodeCommit을 빈출로 다룸 | CodeCommit이 보기에 등장하면 "이미 못 쓴다"고 단정하지 말 것 |
+| Pro 시험은 여전히 CodeCommit을 다룸 | CodeCommit이 보기에 등장하면 "이미 못 쓴다"고 단정하지 말 것 |
 | 마이그레이션 시나리오가 점차 늘어남 | CodeCommit → GitHub 미러링, 점진적 전환 패턴이 새로 출제됨 |
 
-> 🔍 **더 깊이**: CodeCommit이 sunset된 이유는 명시되지 않았지만, 업계 추측은 두 가지다. ① GitHub(Microsoft)/GitLab의 시장 점유율 우세로 신규 채택이 정체 ② AWS 내부의 Amazon Q Developer/CodeWhisperer가 GitHub 통합에 우선순위를 두고 있음. 시험은 정치적 배경을 묻지 않지만, **마이그레이션 패턴**(CodeCommit → GitHub Enterprise → OIDC)은 점점 더 자주 출제된다.
+> CodeCommit이 sunset된 이유는 명시되지 않았지만, 업계 추측은 두 가지다. ① GitHub(Microsoft)/GitLab의 시장 점유율 우세로 신규 채택이 정체 ② AWS 내부의 Amazon Q Developer/CodeWhisperer가 GitHub 통합에 우선순위를 두고 있음. 시험은 정치적 배경을 묻지 않지만, **마이그레이션 패턴**(CodeCommit → GitHub Enterprise → OIDC)은 시나리오로 출제될 수 있다.
 
-> 📚 **사례**: 2024년 하반기 한 대형 금융사가 CodeCommit에서 GitHub Enterprise Cloud로 단계적 마이그레이션을 진행했다. 패턴: ① GitHub repo를 mirror destination으로 추가, EventBridge → Lambda로 모든 push를 양방향 동기화 ② CodePipeline 소스 액션을 단계적으로 GitHub으로 전환 ③ 개발자 도구 체인(Git Credentials → SSH/OIDC) 전환 ④ 마지막에 CodeCommit 저장소를 read-only로 archive. 이 시퀀스가 **dual-write/dual-read 마이그레이션 패턴**의 교과서적 예시다.
+> 2024년 하반기 한 대형 금융사가 CodeCommit에서 GitHub Enterprise Cloud로 단계적 마이그레이션을 진행했다. 패턴: ① GitHub repo를 mirror destination으로 추가, EventBridge → Lambda로 모든 push를 양방향 동기화 ② CodePipeline 소스 액션을 단계적으로 GitHub으로 전환 ③ 개발자 도구 체인(Git Credentials → SSH/OIDC) 전환 ④ 마지막에 CodeCommit 저장소를 read-only로 archive. 이 시퀀스가 **dual-write/dual-read 마이그레이션 패턴**의 교과서적 예시다.
 
 ## 자동 미러링과 DR — CodeCommit이 native cross-region replication을 안 하는 이유
 
@@ -245,11 +245,11 @@ CodeCommit은 다른 리전으로 자동 복제하지 않는다. 이는 의도�
     CodeCommit MyApp-mirror
 ```
 
-> ⚠️ **함정**: `git push --mirror`는 **모든 refs를 강제 푸시**한다(`refs/heads/*`, `refs/tags/*`, `refs/notes/*` 포함). 만약 mirror destination에 사람이 직접 푸시를 했다면 그 변경이 덮어써질 수 있다. 그래서 미러 destination은 반드시 read-only(Resource Policy로 GitPush 차단)로 설정해야 한다.
+> `git push --mirror`는 **모든 refs를 강제 푸시**한다(`refs/heads/*`, `refs/tags/*`, `refs/notes/*` 포함). 만약 mirror destination에 사람이 직접 푸시를 했다면 그 변경이 덮어써질 수 있다. 그래서 미러 destination은 반드시 read-only(Resource Policy로 GitPush 차단)로 설정해야 한다.
 
-> 💡 **관련 이론**: Git의 "분산"이라는 표현은 오해를 부르기 쉽다. Git은 데이터 모델이 분산(merkle DAG)이지만, **워크플로우는 거의 항상 중앙집중**이다(GitHub, GitLab, CodeCommit 등). 진짜 분산 워크플로우(p2p, mesh)는 Linux 커널 같은 극소수만 쓴다. 따라서 "분산이니까 복제 자동" 가정은 깨진다 — 중앙 호스트가 죽으면 개발자 로컬 클론은 살아있어도 CI/CD는 멈춘다.
+> Git의 "분산"이라는 표현은 오해를 부르기 쉽다. Git은 데이터 모델이 분산(merkle DAG)이지만, **워크플로우는 거의 항상 중앙집중**이다(GitHub, GitLab, CodeCommit 등). 진짜 분산 워크플로우(p2p, mesh)는 Linux 커널 같은 극소수만 쓴다. 따라서 "분산이니까 복제 자동" 가정은 깨진다 — 중앙 호스트가 죽으면 개발자 로컬 클론은 살아있어도 CI/CD는 멈춘다.
 
-> 📚 **사례**: 한 글로벌 게임사가 us-east-1에 CodeCommit, 같은 리전에 CodePipeline을 두고 운영하다가 2021년 us-east-1 IAM/STS 장애 시간에 모든 배포가 막혔다. 사후 분석으로 ① CodeCommit을 us-west-2에 미러 ② CodePipeline도 us-west-2에 동일 구성, EventBridge cross-region target으로 둘을 연결 ③ Route 53 health check로 active/passive 페일오버 결정. 이 구조 도입 후 다음 us-east-1 장애에서 평균 8분 RTO로 us-west-2 배포 라인이 자동 active 전환됐다.
+> 한 글로벌 게임사가 us-east-1에 CodeCommit, 같은 리전에 CodePipeline을 두고 운영하다가 2021년 us-east-1 IAM/STS 장애 시간에 모든 배포가 막혔다. 사후 분석으로 ① CodeCommit을 us-west-2에 미러 ② CodePipeline도 us-west-2에 동일 구성, EventBridge cross-region target으로 둘을 연결 ③ Route 53 health check로 active/passive 페일오버 결정. 이 구조 도입 후 다음 us-east-1 장애에서 평균 8분 RTO로 us-west-2 배포 라인이 자동 active 전환됐다.
 
 ## CodeCommit + CodeGuru Reviewer — 코드 리뷰의 자동화 계층
 
@@ -261,15 +261,15 @@ CodeGuru Reviewer는 ML 기반으로 PR을 분석해 자동 코멘트를 다는 
 | **Security Detector** | hardcoded secret, SQL injection 패턴, weak crypto | Java/Python/JavaScript |
 | **CodeGuru Profiler 연계** | 런타임 데이터로 hotspot 식별 | 별도 통합 필요 |
 
-> 🔍 **더 깊이**: 2024년부터 CodeGuru Reviewer는 사실상 Amazon Q Developer Code Review로 통합되는 흐름이다. Pro 시험은 여전히 "CodeGuru Reviewer 연결" 보기를 묻지만, 실무에서는 Amazon Q가 점차 표준이 되고 있다. 시험에서는 "PR 자동 분석" 시 CodeGuru Reviewer를 정답으로 고르되, **2025년 이후 자료에서 Amazon Q Developer가 동일 역할로 등장**할 수 있다는 점을 알아두면 좋다.
+> 2024년부터 CodeGuru Reviewer는 사실상 Amazon Q Developer Code Review로 통합되는 흐름이다. Pro 시험은 여전히 "CodeGuru Reviewer 연결" 보기를 묻지만, 실무에서는 Amazon Q가 점차 표준이 되고 있다. 시험에서는 "PR 자동 분석" 시 CodeGuru Reviewer를 정답으로 고르되, **2025년 이후 자료에서 Amazon Q Developer가 동일 역할로 등장**할 수 있다는 점을 알아두면 좋다.
 
-## 시험에서 자주 묻는 함정과 시나리오 패턴
+## 시험에 나오는 함정과 시나리오 패턴
 
 > 🎯 **시나리오**: 한 회사가 "Production 브랜치(`main`)에 직접 push를 금지하고 PR + 2명 승인만 허용"하려 한다. 답으로 가장 적합한 것은? (a) IAM Policy로 `codecommit:GitPush` Deny + Resource ARN을 main 브랜치로 (b) Approval Rule Template 만들어 main 대상 2명 승인 강제 + Resource Policy로 push 차단 (c) Approval Rule Template + IAM Policy에 `codecommit:GitPush` Deny + Condition `codecommit:References` = `refs/heads/main`. 정답은 **c**. CodeCommit은 IAM Policy의 condition key `codecommit:References`로 특정 브랜치 push를 제어할 수 있고, 이걸 Approval Rule과 조합해야 GitHub의 Branch Protection과 동등한 효과가 나온다.
 
 > 🎯 **시나리오**: 한 회사가 "PR을 만들 때마다 자동으로 빌드 + 코드 커버리지를 PR 코멘트로 단다"는 시스템을 만들고 싶다. EventBridge → CodeBuild → 빌드 종료 후 Lambda → CodeCommit `PostCommentForPullRequest` API. 이 패턴에서 EventBridge 규칙이 트리거해야 할 이벤트는? (a) `pullRequestCreated`만 (b) `pullRequestCreated`와 `pullRequestSourceBranchUpdated` 둘 다 (c) `referenceUpdated`. 정답은 **b**. PR이 처음 생성될 때(`Created`)와 PR 안의 소스 브랜치가 업데이트될 때(`SourceBranchUpdated`) 둘 다 빌드가 재실행돼야 PR이 항상 최신 상태로 검증된다.
 
-> ⚠️ **함정 정리**:
+> **함정 정리**
 > - **함정 1**: IAM User access key를 git에 직접 사용 가능 → 불가능. Git Credentials 또는 GRC/Credential Helper 필요.
 > - **함정 2**: Cross-account에 VPC Peering 필요 → 불필요. IAM/Resource Policy + Pipeline의 roleArn으로 충분.
 > - **함정 3**: CodeCommit이 자동으로 cross-region 복제 → 안 함. Lambda 미러링이 표준.
@@ -277,13 +277,13 @@ CodeGuru Reviewer는 ML 기반으로 PR을 분석해 자동 코멘트를 다는 
 > - **함정 5**: 신규 가입 중단됐으니 기존 고객도 신규 repo 못 만듦 → 만들 수 있음.
 > - **함정 6**: CodeGuru Reviewer는 별도 IAM Role 필요 없음 → service-linked role 자동 생성되지만 Associate 후 분석 트리거는 PR 이벤트 기반.
 
-## ⭐ 핵심 포인트 (시험 출제 빈도 높음)
+## ⭐ 핵심 포인트
 
 1. ⭐ CodeCommit 인증 4종 — Git Credentials(User 전용), SSH(User 전용), Credential Helper(Role 가능), GRC(SSO/MFA). 시나리오의 사용자 유형이 IAM User인지 Role/페더레이션인지에 따라 답이 갈린다.
 2. ⭐ 모든 git 이벤트가 EventBridge에 자동 발행 — 자동화 시작점. Webhook 별도 운영 불필요.
 3. ⭐ Approval Rule Template은 계정 단위, association으로 저장소 적용. `ApprovalPoolMembers`는 assumed-role ARN 패턴.
 4. ⭐ Cross-account = Resource Policy(A) + Identity Policy(B) + Pipeline Source Action의 roleArn + KMS Key Policy. 4개 중 하나라도 빠지면 실패.
-5. ⭐ 2024-07-25 신규 가입 중단, 기존 고객은 신규 repo 생성 포함 정상 사용. 마이그레이션 시나리오 빈출.
+5. ⭐ 2024-07-25 신규 가입 중단, 기존 고객은 신규 repo 생성 포함 정상 사용. 마이그레이션 시나리오로 나올 수 있다.
 6. ⭐ Native cross-region 복제 없음. EventBridge → Lambda → `git push --mirror` 패턴.
 7. ⭐ GitHub Actions → AWS는 OIDC + `AssumeRoleWithWebIdentity`가 정답 패턴.
 
