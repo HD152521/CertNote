@@ -2,7 +2,7 @@
 
 ## 📌 핵심 정리
 
-- Week 9의 한 문장: **기본값을 신뢰하지 말고 명시적으로 좁혀라** — 권한은 최소로, 네트워크는 격리로, 데이터는 암호화로, 비용은 유휴 제거로.
+- Week 9의 한 문장: **기본값을 신뢰하지 말고 명시적으로 좁힌다** — 권한은 최소로, 네트워크는 격리로, 데이터는 암호화로, 비용은 유휴 제거로.
 - **권한**은 두 경로로 갈린다. 작업 **생성** 실패는 사용자 정책(`sagemaker:*`·`iam:PassRole`), 작업 **실행 중** 실패는 실행 역할(S3·ECR·KMS).
 - **네트워크**는 3단계 — VPC 모드(트래픽을 내 VPC로) → VPC 엔드포인트(인터넷 없이 AWS 서비스 도달) → `EnableNetworkIsolation`(모든 아웃바운드 차단).
 - **암호화**는 at-rest(KMS/CMK)·in-transit(TLS·노드 간)·Secrets 세 갈래이고, KMS는 IAM 정책과 키 정책 **양쪽 문**을 다 통과해야 한다.
@@ -12,14 +12,14 @@
 
 "안전하게, 통제 가능하게, 싸게" 운영하는 네 갈래는 따로 보이지만 실제로는 하나의 운영 정책으로 묶인다.
 
-| 축 | 핵심 질문 | 주요 도구 | 대표 설정 키 | 시험 단골 함정 |
+| 축 | 핵심 질문 | 주요 도구 | 대표 설정 키 | 헷갈리기 쉬운 함정 |
 |----|-----------|-----------|--------------|----------------|
 | 권한(Day1) | 누가 무엇을 하나 | 실행 역할, IAM 정책, PassRole | `RoleArn`, `iam:PassRole` | "S3 거부"=실행 역할 문제, PassRole 누락 |
 | 네트워크(Day2) | 트래픽이 어디로 | VPC 모드, 네트워크 격리, VPC 엔드포인트 | `VpcConfig`, `EnableNetworkIsolation` | 엔드포인트 누락=작업 멈춤 |
 | 암호화(Day3) | 데이터·모델 보호 | KMS(CMK), at-rest/in-transit, Secrets | `KmsKeyId`, `VolumeKmsKeyId` | `kms:Decrypt` 누락 |
 | 비용(Day4) | 어떻게 아끼나 | Spot, right-size, 서버리스/배치, 자동종료, 태그 | `EnableManagedSpotTraining`, `Tags` | 안 끈 리소스, Spot은 학습만 |
 
-> 💡 **관련 이론**: 이 네 축은 AWS Well-Architected의 보안·비용 최적화 기둥을 ML에 적용한 것이다. 공통 사상은 "기본값을 신뢰하지 말고 명시적으로 좁혀라". 시험은 "가장 안전한"·"가장 비용 효율적인" 보기를 고르라고 하며, 거의 항상 가장 좁고 명시적인 보기가 정답이다. 네 축은 독립이 아니라 서로 물린다 — 실행 역할은 KMS 키 정책과 STS 엔드포인트에서, 네트워크는 인터페이스 엔드포인트 과금에서 비용과 만난다.
+이 네 축은 AWS Well-Architected의 보안·비용 최적화 기둥을 ML에 적용한 것이다. 공통 사상은 "기본값을 신뢰하지 말고 명시적으로 좁혀라". 시험은 "가장 안전한"·"가장 비용 효율적인" 보기를 고르라고 하며, 거의 항상 가장 좁고 명시적인 보기가 정답이다. 네 축은 독립이 아니라 서로 물린다 — 실행 역할은 KMS 키 정책과 STS 엔드포인트에서, 네트워크는 인터페이스 엔드포인트 과금에서 비용과 만난다.
 
 ## 권한 복습 — 사용자 정책 vs 실행 역할
 
@@ -92,7 +92,7 @@ com.amazonaws.<region>.sts                 (인터페이스) → 역할 assume
 | AWS 관리형 키 vs **CMK** | 설정만 간단하면 되면 관리형, 키 정책 통제·CloudTrail 감사·crypto-shredding이 필요하면 CMK(규제 표준) |
 | **Secrets Manager** vs Parameter Store(SecureString) | **자동 회전**이 필요하면 Secrets Manager, 단순 설정값·토큰이면 Parameter Store(회전 수동) |
 
-> 💡 **관련 이론**: 권한과 암호화는 KMS에서 만난다. 암호화된 데이터를 읽으려면 IAM 정책의 `kms:Decrypt` AND 키 정책의 역할 허용이 둘 다 필요하고, 쓰기는 `kms:GenerateDataKey`가 추가로 필요하다. "S3는 줬는데 안 된다"의 답이 KMS인 이유다.
+권한과 암호화는 KMS에서 만난다. 암호화된 데이터를 읽으려면 IAM 정책의 `kms:Decrypt` AND 키 정책의 역할 허용이 둘 다 필요하고, 쓰기는 `kms:GenerateDataKey`가 추가로 필요하다. "S3는 줬는데 안 된다"의 답이 KMS인 이유다.
 
 ## 비용 복습 — 학습·추론·운영
 
@@ -196,7 +196,7 @@ sm.create_training_job(
 
 절감분은 `describe_training_job` 응답의 `TrainingTimeInSeconds`(실제 학습 시간)와 `BillableTimeInSeconds`(과금 시간) 차이로 확인한다.
 
-> 💡 **개념**: 이 스니펫이 Week 9의 압축판이다 — `RoleArn`(권한) → `VpcConfig`·`EnableNetworkIsolation`(네트워크) → `KmsKeyId`·`VolumeKmsKeyId`(암호화) → `EnableManagedSpotTraining`·`Tags`(비용·거버넌스). 지문을 읽을 때 "이 요구가 어느 파라미터로 떨어지는가"를 떠올리면 보기 판별이 즉시 끝난다.
+이 스니펫이 Week 9의 압축판이다 — `RoleArn`(권한) → `VpcConfig`·`EnableNetworkIsolation`(네트워크) → `KmsKeyId`·`VolumeKmsKeyId`(암호화) → `EnableManagedSpotTraining`·`Tags`(비용·거버넌스). 지문을 읽을 때 "이 요구가 어느 파라미터로 떨어지는가"를 떠올리면 보기 판별이 즉시 끝난다.
 
 이로써 ML 솔루션의 운영 영역까지 한 바퀴를 돌았다. 다음은 그동안 쌓은 지식을 실전 모의고사로 다지는 단계다.
 
