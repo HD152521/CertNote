@@ -55,7 +55,7 @@ Week 5는 AWS Systems Manager라는 거대한 운영 플랫폼 전체를 훑었�
 | MFA 강제 | 어려움 | IAM 정책으로 쉬움 | X |
 | 포트 포워딩 | O (수동) | O (document 지원) | X |
 
-> 🔍 **더 깊이**: Session Manager의 IAM 기반 접근 제어는 단순히 "누가 접속할 수 있는가"를 넘어 "어느 인스턴스에, 어느 시간에, 어떤 명령만" 허용하는 세밀한 정책이 가능하다. 예를 들어 `ssm:startSession` 조건에 `ssm:resourceTag/Environment=prod`를 추가하면 prod 태그 인스턴스에만 세션을 허용한다. `aws:MultiFactorAuthPresent: true` 조건으로 MFA 강제도 가능하다. 기존 SSH 키 방식으로는 이런 세밀한 제어가 매우 어렵다. IAM Identity Center(SSO)와 연계하면 중앙 디렉토리 기반 접근 제어까지 가능하다.
+Session Manager의 IAM 기반 접근 제어는 단순히 "누가 접속할 수 있는가"를 넘어 "어느 인스턴스에, 어느 시간에, 어떤 명령만" 허용하는 세밀한 정책이 가능하다. 예를 들어 `ssm:startSession` 조건에 `ssm:resourceTag/Environment=prod`를 추가하면 prod 태그 인스턴스에만 세션을 허용한다. `aws:MultiFactorAuthPresent: true` 조건으로 MFA 강제도 가능하다. 기존 SSH 키 방식으로는 이런 세밀한 제어가 매우 어렵다. IAM Identity Center(SSO)와 연계하면 중앙 디렉터리 기반 접근 제어까지 가능하다.
 
 **Patch Manager 핵심 비교:**
 
@@ -67,7 +67,7 @@ Week 5는 AWS Systems Manager라는 거대한 운영 플랫폼 전체를 훑었�
 | 거부 패치 | 설정 불가 | 명시적 BLOCK 가능 |
 | 멀티 OS | 각 OS별 별도 기본 Baseline | OS별 별도 생성 필요 |
 
-> 💡 **관련 이론**: Patch Manager의 "Approval Rules → Maintenance Window → Compliance" 파이프라인은 ISO 27001 A.12.6.1(기술적 취약점 관리) 요건을 자동으로 충족하는 구조다. ISO 27001 인증 감사에서 "취약점 패치 프로세스 자동화 증빙"으로 Patch Compliance 보고서를 직접 제출할 수 있다. CIS Controls v8의 Control 7(취약점 관리)도 같은 맥락이다. AWS Audit Manager의 ISO 27001 및 NIST 800-53 프레임워크가 Patch Manager 데이터를 자동으로 증빙으로 수집한다.
+Patch Manager의 "Approval Rules → Maintenance Window → Compliance" 파이프라인은 ISO 27001 A.12.6.1(기술적 취약점 관리) 요건을 자동으로 충족하는 구조다. ISO 27001 인증 감사에서 "취약점 패치 프로세스 자동화 증빙"으로 Patch Compliance 보고서를 직접 제출할 수 있다. CIS Controls v8의 Control 7(취약점 관리)도 같은 맥락이다. AWS Audit Manager의 ISO 27001 및 NIST 800-53 프레임워크가 Patch Manager 데이터를 자동으로 증빙으로 수집한다.
 
 ## 패치 관련 실수 사례 모음
 
