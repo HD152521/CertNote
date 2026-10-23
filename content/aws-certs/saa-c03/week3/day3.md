@@ -8,13 +8,13 @@
 
 로드 밸런서의 핵심 역할은 들어오는 요청을 여러 백엔드 서버 중 하나로 분배하는 것이다. "어느 서버로 보낼지"를 결정하는 기준이 OSI 계층에 따라 달라진다.
 
-**L4(전송 계층) 로드 밸런싱**: TCP/UDP 패킷의 소스 IP, 목적지 IP, 포트만 본다. HTTP 헤더 안을 들여다보지 않는다. 결정이 빠르고 레이턴시가 낮다. 단, "이 요청은 `/api/users`로 가야 하고 저 요청은 `/static/`으로 가야 한다"는 구분이 불가능하다.
+**L4(전송 계층) 로드 밸런싱**: TCP/UDP 패킷의 소스 IP, 목적지 IP, 포트만 본다. HTTP 헤더 안을 들여다보지 않는다. 결정이 빠르고 지연 시간이 낮다. 단, "이 요청은 `/api/users`로 가야 하고 저 요청은 `/static/`으로 가야 한다"는 구분이 불가능하다.
 
 **L7(응용 계층) 로드 밸런싱**: HTTP 헤더, URL 경로, 쿠키, 쿼리 파라미터를 파싱해서 라우팅을 결정한다. 결정에 더 많은 CPU와 시간이 필요하지만, 컨텐츠 기반 라우팅이 가능해진다. 마이크로서비스 아키텍처에서 필수다.
 
 **L3(네트워크 계층) 처리**: IP 패킷 전체를 다른 어플라이언스로 투명하게 전달한다. 방화벽, IDS/IPS, DPI(Deep Packet Inspection) 장비를 체인으로 연결할 때 필요하다.
 
-> 💡 **관련 이론**: L4 로드 밸런싱의 주요 알고리즘은 Round Robin(순서 분배), Least Connections(가장 적은 연결로), IP Hash(클라이언트 IP 기반 고정 분배) 세 가지다. Nginx, HAProxy, AWS NLB 모두 이 알고리즘들의 변형을 사용한다. L7 로드 밸런싱은 URL 해시나 헤더 매칭이 추가된다. AWS ALB의 라우팅 규칙은 최대 100개의 규칙을 우선순위 순서로 평가한다.
+L4 로드 밸런싱의 주요 알고리즘은 Round Robin(순서 분배), Least Connections(가장 적은 연결로), IP Hash(클라이언트 IP 기반 고정 분배) 세 가지다. Nginx, HAProxy, AWS NLB 모두 이 알고리즘들의 변형을 사용한다. L7 로드 밸런싱은 URL 해시나 헤더 매칭이 추가된다. AWS ALB의 라우팅 규칙은 최대 100개의 규칙을 우선순위 순서로 평가한다.
 
 ## ALB: 왜 Application이라 부르는가
 
@@ -41,7 +41,7 @@ ALB가 실제로 처리하는 라우팅 규칙의 범위:
 - `lambda`: Lambda 함수를 HTTP 엔드포인트로 노출. 서버리스 API에 활용.
 - `alb`: ALB를 NLB의 타겟으로 등록 가능 (중첩 구조).
 
-> 🔍 **더 깊이**: ALB는 TLS 종료(Termination)와 재-암호화(Re-encryption)를 지원한다. 클라이언트 ↔ ALB는 HTTPS, ALB ↔ 백엔드는 HTTP(더 단순)로 구성하거나, 양쪽 모두 HTTPS로 구성할 수 있다. ALB에서 ACM(AWS Certificate Manager) 인증서를 사용하면 인증서 갱신이 자동화된다. SNI(Server Name Indication, RFC 6066)를 지원해 하나의 ALB에 여러 도메인의 인증서를 등록할 수 있다. 예전 CLB는 SNI를 지원하지 않아 도메인별 CLB가 필요했다.
+ALB는 TLS 종료(Termination)와 재-암호화(Re-encryption)를 지원한다. 클라이언트 ↔ ALB는 HTTPS, ALB ↔ 백엔드는 HTTP(더 단순)로 구성하거나, 양쪽 모두 HTTPS로 구성할 수 있다. ALB에서 ACM(AWS Certificate Manager) 인증서를 사용하면 인증서 갱신이 자동화된다. SNI(Server Name Indication, RFC 6066)를 지원해 하나의 ALB에 여러 도메인의 인증서를 등록할 수 있다. 예전 CLB는 SNI를 지원하지 않아 도메인별 CLB가 필요했다.
 
 ```
 [ ALB TLS 종료 흐름 ]
@@ -59,13 +59,13 @@ Client ─HTTPS─→ ALB ─HTTPS(re-encrypt)─→ EC2 Target
 
 **gRPC 지원**: ALB는 HTTP/2와 gRPC 프로토콜을 지원한다. 마이크로서비스 간 gRPC 통신을 ALB가 L7에서 라우팅할 수 있다. NLB는 gRPC를 TCP 스트림으로만 보므로 L7 라우팅이 불가능하다.
 
-> 📚 **사례**: Netflix의 Zuul API Gateway는 초기에 자체 운영하는 Java 프로세스였다가, 점차 ALB와 결합한 아키텍처로 진화했다. ALB의 Weighted Target Group을 이용해 서비스 버전 간 A/B 트래픽 분리를 관리하고, Lambda@Edge나 ALB Lambda 타겟을 통해 서버리스 엣지 로직을 구현했다. (Netflix Tech Blog, 2019)
+**사례**: Netflix의 Zuul API Gateway는 초기에 자체 운영하는 Java 프로세스였다가, 점차 ALB와 결합한 아키텍처로 진화했다. ALB의 Weighted Target Group을 이용해 서비스 버전 간 A/B 트래픽 분리를 관리하고, Lambda@Edge나 ALB Lambda 타겟을 통해 서버리스 엣지 로직을 구현했다. (Netflix Tech Blog, 2019)
 
 ## NLB: 왜 L4인데 L7보다 빠른가
 
 NLB는 TCP/UDP 패킷의 헤더만 본다. HTTP 페이로드를 파싱하지 않으므로 처리 시간이 훨씬 짧다. NLB의 대기 시간은 **수십 마이크로초(μs)** 수준이고, ALB는 수밀리초(ms) 수준이다.
 
-그런데 왜 이 레이턴시 차이가 게임이나 금융 시스템에서 중요한가. 초단타 매매(HFT, High-Frequency Trading) 시스템은 시장 데이터를 받고 주문을 내기까지 100μs 미만을 목표로 한다. 멀티플레이어 게임에서 20ms를 넘으면 사용자가 "렉"을 느낀다. 이 환경에서 ALB의 추가 ms 단위 처리 시간도 용납되지 않는다.
+그런데 왜 이 지연 시간 차이가 게임이나 금융 시스템에서 중요한가. 초단타 매매(HFT, High-Frequency Trading) 시스템은 시장 데이터를 받고 주문을 내기까지 100μs 미만을 목표로 한다. 멀티플레이어 게임에서 20ms를 넘으면 사용자가 "렉"을 느낀다. 이 환경에서 ALB의 추가 ms 단위 처리 시간도 용납되지 않는다.
 
 **NLB의 고정 IP**: 각 AZ에 하나의 고정 IP(EIP 할당 가능)를 갖는다. 예를 들어 서울 리전에서 NLB를 3 AZ로 구성하면 3개의 고정 IP가 생긴다. 이 IP들을 파트너사나 보안 팀의 방화벽 화이트리스트에 등록할 수 있다. ALB는 DNS 이름만 있고 IP가 변할 수 있어서 이런 용도로 쓸 수 없다.
 
@@ -85,9 +85,9 @@ NLB는 TCP/UDP 패킷의 헤더만 본다. HTTP 페이로드를 파싱하지 않
 
 **NLB TLS 종료**: NLB도 TLS를 종료할 수 있다. TCP 레벨에서 TLS를 해제하고, 백엔드에는 암호화되지 않은 TCP를 전달한다. 단, ALB 달리 HTTP 헤더를 보지 않으므로 경로 기반 라우팅은 불가능하다.
 
-**NLB + Global Accelerator 조합**: 글로벌 사용자에게 낮은 레이턴시를 제공하려면 Global Accelerator(Anycast IP)와 NLB를 결합한다. Global Accelerator가 가장 가까운 AWS 엣지로 트래픽을 끌어들이고, NLB가 최종 백엔드로 분배한다. 단순히 NLB만으로는 DNS 기반 지역 라우팅이 제한적이다.
+**NLB + Global Accelerator 조합**: 글로벌 사용자에게 낮은 지연 시간을 제공하려면 Global Accelerator(Anycast IP)와 NLB를 결합한다. Global Accelerator가 가장 가까운 AWS 엣지로 트래픽을 끌어들이고, NLB가 최종 백엔드로 분배한다. 단순히 NLB만으로는 DNS 기반 지역 라우팅이 제한적이다.
 
-> 💡 **관련 이론**: NLB의 Connection Tracking은 5-tuple(소스 IP, 소스 포트, 목적지 IP, 목적지 포트, 프로토콜)로 동일 세션의 패킷을 추적한다. TCP 연결이 수립되면 해당 세션의 모든 패킷이 동일 타겟으로 향한다. UDP의 경우 connectionless이므로 Stickiness를 활성화하면 소스 IP + 포트 기반으로 동일 타겟에 보낸다. 이것이 NLB의 "Sticky Session"은 쿠키 기반이 아니라 IP 기반인 이유다.
+NLB의 Connection Tracking은 5-tuple(소스 IP, 소스 포트, 목적지 IP, 목적지 포트, 프로토콜)로 동일 세션의 패킷을 추적한다. TCP 연결이 수립되면 해당 세션의 모든 패킷이 동일 타겟으로 향한다. UDP의 경우 connectionless이므로 Stickiness를 활성화하면 소스 IP + 포트 기반으로 동일 타겟에 보낸다. 이것이 NLB의 "Sticky Session"은 쿠키 기반이 아니라 IP 기반인 이유다.
 
 ## GLB: 보안 어플라이언스 체이닝이 왜 필요한가
 
@@ -112,9 +112,9 @@ GLB Endpoint → 원래 목적지 (VPC A: 앱 VPC)
 - 어플라이언스 벤더 교체 가능 (구조 변경 불필요)
 ```
 
-> 💡 **관련 이론**: GENEVE는 VXLAN의 진화형으로, 헤더에 TLV(Type-Length-Value) 형식의 메타데이터를 담을 수 있어 어플라이언스가 원래 패킷 컨텍스트를 유지한 채 처리할 수 있다. RFC 8926(2020년 확정)은 SDN(Software-Defined Networking) 환경에서 가상화된 네트워크 기능(VNF)을 체이닝하는 표준을 정의한다.
+GENEVE는 VXLAN의 진화형으로, 헤더에 TLV(Type-Length-Value) 형식의 메타데이터를 담을 수 있어 어플라이언스가 원래 패킷 컨텍스트를 유지한 채 처리할 수 있다. RFC 8926(2020년 확정)은 SDN(Software-Defined Networking) 환경에서 가상화된 네트워크 기능(VNF)을 체이닝하는 표준을 정의한다.
 
-> 📚 **사례**: Palo Alto Networks, Fortinet, Check Point 등의 NGFW는 AWS Marketplace에서 GLB 호환 AMI를 제공한다. 금융권에서는 AWS VPC 내 트래픽도 NGFW를 통해 검사해야 한다는 규제 요건이 있어, GLB + Palo Alto 조합이 표준 패턴이 됐다. GLB 출시(2020년 11월) 이전에는 이를 구현하기 위해 매우 복잡한 라우팅 설정이 필요했다.
+**사례**: Palo Alto Networks, Fortinet, Check Point 등의 NGFW는 AWS Marketplace에서 GLB 호환 AMI를 제공한다. 금융권에서는 AWS VPC 내 트래픽도 NGFW를 통해 검사해야 한다는 규제 요건이 있어, GLB + Palo Alto 조합이 표준 패턴이 됐다. GLB 출시(2020년 11월) 이전에는 이를 구현하기 위해 매우 복잡한 라우팅 설정이 필요했다.
 
 ## Target Group, Health Check, 그리고 Slow Start
 
@@ -138,7 +138,7 @@ HealthCheckTimeoutSeconds = 5  (5초 내 응답 없으면 실패)
 
 **Deregistration Delay(Connection Draining)**: ASG가 인스턴스를 종료하기 전, 해당 인스턴스에 진행 중인 요청이 완료될 때까지 기다린다. 기본 300초(5분). 이 시간이 지나면 강제 종료한다. 값을 0으로 설정하면 즉시 종료(예: Spot 인터럽션 처리).
 
-> 🔍 **더 깊이**: ALB의 Sticky Session은 두 종류다. `lb_cookie`는 ALB가 자체 생성하는 쿠키(`AWSALB`)로 클라이언트를 특정 타겟에 묶는다. `app_cookie`는 애플리케이션이 설정한 쿠키를 기준으로 스티키니스를 적용한다. Sticky Session은 세션 상태를 서버 메모리에 저장하는 구형 아키텍처에서 필요하지만, 현대 아키텍처는 세션을 ElastiCache나 DynamoDB에 외부화해서 Sticky Session 없이 어느 서버로 가도 동일하게 처리하는 방식을 선호한다.
+ALB의 Sticky Session은 두 종류다. `lb_cookie`는 ALB가 자체 생성하는 쿠키(`AWSALB`)로 클라이언트를 특정 타겟에 묶는다. `app_cookie`는 애플리케이션이 설정한 쿠키를 기준으로 스티키니스를 적용한다. Sticky Session은 세션 상태를 서버 메모리에 저장하는 구형 아키텍처에서 필요하지만, 현대 아키텍처는 세션을 ElastiCache나 DynamoDB에 외부화해서 Sticky Session 없이 어느 서버로 가도 동일하게 처리하는 방식을 선호한다.
 
 ## Cross-Zone Load Balancing: 왜 기본값이 다른가
 
@@ -266,9 +266,9 @@ aws elbv2 describe-load-balancer-attributes \
   --query 'Attributes[?Key==`load_balancing.cross_zone.enabled`]'
 ```
 
-## 정리하며
+## 정리
 
-ELB의 세 종류는 OSI 계층에서 서로 다른 레벨의 인텔리전스를 제공한다. ALB는 HTTP의 의미를 이해하고 컨텐츠 기반 라우팅을 한다. NLB는 L4에서 수십 마이크로초의 레이턴시와 고정 IP를 제공한다. GLB는 L3에서 보안 어플라이언스를 투명하게 체이닝한다.
+ELB의 세 종류는 OSI 계층에서 서로 다른 레벨의 인텔리전스를 제공한다. ALB는 HTTP의 의미를 이해하고 컨텐츠 기반 라우팅을 한다. NLB는 L4에서 수십 마이크로초의 지연 시간과 고정 IP를 제공한다. GLB는 L3에서 보안 어플라이언스를 투명하게 체이닝한다.
 
 시험 시나리오에서 키워드를 찾는다면: HTTP 경로/호스트/헤더 라우팅이나 WAF가 나오면 ALB, 게임·IoT·금융 트레이딩·UDP·고정 IP·파트너 화이트리스트가 나오면 NLB, NGFW·IPS·DPI·3rd-party 보안 어플라이언스가 나오면 GLB다.
 
