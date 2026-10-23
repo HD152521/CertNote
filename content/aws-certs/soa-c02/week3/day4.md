@@ -172,7 +172,7 @@ aws xray create-sampling-rule \
 
 Priority 1이 먼저 매칭된다. `/health` 엔드포인트는 Priority 2 룰로 0% 샘플링(전혀 추적하지 않음)이 된다. 기본 룰은 Priority 10000으로 모든 사용자 정의 룰보다 낮다.
 
-> 🔍 **더 깊이**: Reservoir 크기는 X-Ray 중앙 샘플링 서비스가 관리한다. 하나의 서비스가 여러 인스턴스로 실행될 때, 각 인스턴스가 독립적으로 "초당 1개"를 수집하면 전체적으로 과잉 수집이 된다. X-Ray SDK는 중앙 샘플링 서비스와 통신해 Reservoir를 분배한다. 인스턴스가 10개면 각각 Reservoir의 1/10씩 배정받는다. 네트워크 분리 등으로 중앙 서비스에 접근 불가한 경우 "fallback 샘플링(고정 5%)"이 적용된다.
+Reservoir 크기는 X-Ray 중앙 샘플링 서비스가 관리한다. 하나의 서비스가 여러 인스턴스로 실행될 때, 각 인스턴스가 독립적으로 "초당 1개"를 수집하면 전체적으로 과잉 수집이 된다. X-Ray SDK는 중앙 샘플링 서비스와 통신해 Reservoir를 분배한다. 인스턴스가 10개면 각각 Reservoir의 1/10씩 배정받는다. 네트워크 분리 등으로 중앙 서비스에 접근 불가한 경우 "fallback 샘플링(고정 5%)"이 적용된다.
 
 ## X-Ray 활성화 방법별 차이
 
@@ -215,7 +215,7 @@ try {
 ServiceLens는 X-Ray Service Map 위에 CloudWatch Metrics와 Logs를 오버레이하는 통합 운영 화면이다. 독립적인 서비스가 아니라 CloudWatch 콘솔 내의 뷰다.
 
 ServiceLens에서 가능한 작업:
-- Service Map 노드 클릭 → 해당 서비스의 p50/p95/p99 레이턴시 및 에러율
+- Service Map 노드 클릭 → 해당 서비스의 p50/p95/p99 지연 시간 및 에러율
 - 노드의 "View traces" → 해당 서비스를 거친 실제 trace 목록
 - Trace 클릭 → trace의 모든 Segment/Subsegment + 소요 시간 waterfall
 - "View logs" → trace_id로 해당 Lambda 실행의 CloudWatch Logs 즉시 점프
@@ -223,7 +223,7 @@ ServiceLens에서 가능한 작업:
 
 이 "Trace ID → Logs 점프" 기능이 가장 강력하다. 5xx 에러가 발생한 특정 요청의 trace를 찾아, 해당 Lambda 함수의 실행 로그를 1초 안에 열 수 있다. 없으면 CloudWatch Logs에서 request_id로 수동 검색해야 하는 과정이다.
 
-> 💡 **관련 이론**: ServiceLens가 구현하는 개념은 **Correlated telemetry(상관 원격 측정)**다. 각 신호(Metrics, Logs, Traces)를 독립적으로 보는 것이 아니라, 같은 요청/사건을 서로 다른 신호로 바라보며 상호 참조하는 방식이다. OpenTelemetry(CNCF, 2019)는 이 상관을 표준화하기 위해 탄생했다. Trace에 log_group_name과 request_id를 correlation attribute로 삽입하면 서로 다른 저장소의 데이터를 하나의 사건으로 연결할 수 있다. AWS는 X-Ray와 CloudWatch Logs를 자체 통합으로 이 상관을 제공한다.
+ServiceLens가 구현하는 개념은 **Correlated telemetry(상관 원격 측정)**다. 각 신호(Metrics, Logs, Traces)를 독립적으로 보는 것이 아니라, 같은 요청/사건을 서로 다른 신호로 바라보며 상호 참조하는 방식이다. OpenTelemetry(CNCF, 2019)는 이 상관을 표준화하기 위해 탄생했다. Trace에 log_group_name과 request_id를 correlation attribute로 삽입하면 서로 다른 저장소의 데이터를 하나의 사건으로 연결할 수 있다. AWS는 X-Ray와 CloudWatch Logs를 자체 통합으로 이 상관을 제공한다.
 
 ## Container Insights: ECS/EKS 전용 모니터링
 
@@ -273,7 +273,7 @@ aws eks update-addon \
      에러 노드 발견 → Trace → Logs 즉시 점프
 ```
 
-## 마무리
+## 정리
 
 Synthetics는 "서비스가 살아있는가"를 24시간 검증한다. RUM은 "실제 사용자가 경험하는 성능이 어떤가"를 측정한다. X-Ray는 "어떤 서비스가 느리게 만드는가"를 분산 추적으로 찾는다. ServiceLens는 이 세 신호를 통합해 "이 에러 trace의 Lambda 로그"를 한 번에 열어준다. 네 도구는 각자의 영역이 있고, 함께 쓸 때 가장 강력하다.
 
