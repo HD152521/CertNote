@@ -25,11 +25,11 @@
 | **파이썬 SDK 기반** | 별도 DSL 없이 SageMaker Python SDK로 정의 |
 | **Registry 연동** | `RegisterModel` 단계로 Model Registry에 바로 버전 등록 |
 
-> 💡 **관련 이론**: Pipelines가 만드는 것은 DAG다. DAG는 "방향이 있고(실행 순서) 순환이 없는(무한 루프 방지)" 그래프로, 데이터 의존성을 노드/엣지로 표현하는 워크플로 오케스트레이션의 표준 모델이다. Airflow, Step Functions도 같은 DAG 모델을 쓴다. 시험에서 "SageMaker 내부에서 학습→평가→배포를 자동화"라면 Pipelines, "여러 AWS 서비스를 폭넓게 오케스트레이션"이면 Step Functions로 갈린다는 점을 기억하라.
+Pipelines가 만드는 것은 DAG다. DAG는 "방향이 있고(실행 순서) 순환이 없는(무한 루프 방지)" 그래프로, 데이터 의존성을 노드/엣지로 표현하는 워크플로 오케스트레이션의 표준 모델이다. Airflow, Step Functions도 같은 DAG 모델을 쓴다. 시험에서 "SageMaker 내부에서 학습→평가→배포를 자동화"라면 Pipelines, "여러 AWS 서비스를 폭넓게 오케스트레이션"이면 Step Functions로 갈린다.
 
 ## 전형적인 파이프라인 DAG
 
-가장 자주 나오는 형태는 전처리 → 학습 → 평가 → 조건 → 등록이다.
+널리 쓰이는 형태는 전처리 → 학습 → 평가 → 조건 → 등록이다.
 
 ```text
 ParameterString(InputData)          ParameterFloat(AccuracyThreshold)
@@ -60,7 +60,7 @@ ProcessingStep "EvaluateModel"    (평가)             │
 
 ## 파이프라인 단계(Step)의 종류
 
-Pipelines는 작업 유형별로 미리 정의된 단계 타입을 제공한다. 자주 출제되는 것들:
+Pipelines는 작업 유형별로 미리 정의된 단계 타입을 제공한다. 주요 단계 타입은 다음과 같다:
 
 | 단계 타입 | 역할 | 전형적 쓰임 |
 |----------|------|-------------|
@@ -181,7 +181,7 @@ step_train = TrainingStep(
 
 ## 조건 단계(Condition Step) — 품질 게이트 만들기
 
-조건 단계는 **평가 결과에 따라 파이프라인을 분기**시킨다. 가장 흔한 패턴은 "모델 정확도가 임계값을 넘으면 등록, 아니면 등록하지 않음"이라는 품질 게이트다.
+조건 단계는 **평가 결과에 따라 파이프라인을 분기**시킨다. 대표적인 패턴은 "모델 정확도가 임계값을 넘으면 등록, 아니면 등록하지 않음"이라는 품질 게이트다.
 
 ```python
 from sagemaker.workflow.conditions import ConditionGreaterThanOrEqualTo
@@ -206,7 +206,7 @@ step_condition = ConditionStep(
 )
 ```
 
-- `conditions`에 여러 조건을 넣으면 **모두 참일 때**만 `if_steps`가 실행된다(정확도 ≥ 0.85 **그리고** 지연시간 ≤ 100ms 같은 복합 게이트).
+- `conditions`에 여러 조건을 넣으면 **모두 참일 때**만 `if_steps`가 실행된다(정확도 ≥ 0.85 **그리고** 지연 시간 ≤ 100ms 같은 복합 게이트).
 - `JsonGet`이 읽는 대상은 평가 단계가 `PropertyFile`로 선언해 둔 JSON 파일이다. 선언하지 않으면 읽을 수 없다.
 - 조건 종류: `ConditionGreaterThanOrEqualTo`, `ConditionLessThanOrEqualTo`, `ConditionEquals`, `ConditionIn`, `ConditionNot` 등.
 
@@ -221,7 +221,7 @@ evaluation_report = PropertyFile(
 )
 ```
 
-> 💡 **관련 이론**: 조건 단계로 만드는 품질 게이트는 MLOps의 핵심 사상인 "사람의 수동 판단을 자동화된 검증으로 대체"의 구현이다. 모델이 기준선(baseline)을 넘지 못하면 자동으로 배포 흐름이 멈추므로, 성능 저하 모델의 프로덕션 유입을 코드 레벨에서 차단한다. 시험에서 "정확도가 일정 수준 이상일 때만 등록/배포하도록 자동화"라는 문장이 나오면 ConditionStep을 떠올려라.
+조건 단계로 만드는 품질 게이트는 MLOps의 핵심 사상인 "사람의 수동 판단을 자동화된 검증으로 대체"의 구현이다. 모델이 기준선(baseline)을 넘지 못하면 자동으로 배포 흐름이 멈추므로, 성능 저하 모델의 프로덕션 유입을 코드 레벨에서 차단한다. 시험에서 "정확도가 일정 수준 이상일 때만 등록/배포하도록 자동화"라는 문장이 나오면 ConditionStep이 답이다.
 
 ## 파이프라인 생성·실행
 
@@ -260,7 +260,7 @@ execution.wait()   # 완료까지 대기
 | 매 실행마다 전처리부터 다시 돌아 느리고 비싸다 | 단계 캐싱 미사용 | 변하지 않는 단계에 `CacheConfig` 활성화 |
 | Studio에 DAG가 안 보인다 | `upsert`가 실패했거나 다른 리전/도메인 | 생성 리전과 실행 역할 권한 확인 |
 
-> 💡 **개념**: 파이프라인 디버깅은 "**정의 문제**인가 **실행 문제**인가"부터 갈라야 한다. DAG 모양이 이상하면 정의(참조·`depends_on`) 문제이고, 모양은 맞는데 특정 단계만 죽으면 그 단계가 실행하는 작업(권한·데이터·컨테이너) 문제다. 앞엣것은 `pipeline.definition()`으로 JSON을 뽑아 보면 바로 드러난다.
+파이프라인 디버깅은 "**정의 문제**인가 **실행 문제**인가"부터 갈라야 한다. DAG 모양이 이상하면 정의(참조·`depends_on`) 문제이고, 모양은 맞는데 특정 단계만 죽으면 그 단계가 실행하는 작업(권한·데이터·컨테이너) 문제다. 앞엣것은 `pipeline.definition()`으로 JSON을 뽑아 보면 바로 드러난다.
 
 내일은 이 파이프라인이 등록한 모델을 버전으로 관리하고 승인을 거쳐 배포로 연결하는 Model Registry를 다룬다.
 
