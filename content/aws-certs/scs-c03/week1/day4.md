@@ -61,9 +61,9 @@
      AccessKeyId(ASIA...) + SecretAccessKey + SessionToken + Expiration
 ```
 
-이 그림에서 읽어야 할 것은 **"장기 키가 등장할 자리가 어디에도 없다"**는 사실이다. 워크로드도, 사람도, 교차 계정도 전부 임시 자격 증명으로 해결된다. 그러므로 시험에서 액세스 키가 등장하는 보기는 거의 항상 오답 후보다.
+이 그림에서 읽어야 할 것은 **"장기 키가 등장할 자리가 어디에도 없다"**는 사실이다. 워크로드도, 사람도, 교차 계정도 전부 임시 자격 증명으로 해결된다. 그러므로 시험에서 액세스 키가 등장하는 보기는 대개 오답 후보다.
 
-> 💡 **관련 이론**: EC2 인스턴스 프로파일, Lambda 실행 역할, ECS task role도 내부적으로 전부 STS AssumeRole이다. EC2의 경우 인스턴스 메타데이터 서비스(IMDS)가 임시 자격 증명을 자동 발급·갱신한다. 그래서 코드에 키를 넣을 필요가 없다. **IMDSv2(토큰 기반)**를 강제해야 SSRF로 메타데이터를 훔치는 공격(Capital One 사고의 핵심 벡터)을 막는다 — 시험 단골이다.
+EC2 인스턴스 프로파일, Lambda 실행 역할, ECS task role도 내부적으로 전부 STS AssumeRole이다. EC2의 경우 인스턴스 메타데이터 서비스(IMDS)가 임시 자격 증명을 자동 발급·갱신한다. 그래서 코드에 키를 넣을 필요가 없다. **IMDSv2(토큰 기반)**를 강제해야 SSRF로 메타데이터를 훔치는 공격(Capital One 사고의 핵심 벡터)을 막는다 — 시험에서 오답 보기로 쓰이기 쉽다.
 
 ## AssumeRole: trust policy와 permission policy의 두 축
 
@@ -146,7 +146,7 @@ cross-account AssumeRole이 성공하려면 **양쪽**이 맞아야 한다.
 
 > ⚠️ **함정**: `{"AWS": "*"}`가 든 신뢰 정책이 보기에 있으면 반사적으로 오답으로 걸러야 한다. 조건이 함께 걸려 있더라도 "누구나 시도해 볼 수 있는 역할"을 만드는 셈이라, 조건 하나만 잘못되면 전 세계에 열린다. IAM Access Analyzer가 외부 접근 발견 사항으로 잡아내는 대표 패턴이기도 하다. 신뢰는 **가장 좁게 시작해서 필요할 때 넓히는 것**이지, 넓게 열고 조건으로 막는 것이 아니다.
 
-> ⚠️ **함정**: trust policy의 Principal에 `"arn:aws:iam::111122223333:root"`를 쓰면 "계정 111122223333 **전체**가 맡을 수 있다"는 뜻이지 root 사용자만이 아니다. 단, 실제로는 그 계정 안에서 `sts:AssumeRole` 권한을 받은 주체만 맡을 수 있다(2번 조건). "root을 Principal로 쓰면 위험"이라는 직관은 절반만 맞다 — 계정 위임은 정상 패턴이지만, 그 계정 내부의 권한 통제는 그 계정에 맡겨진다.
+trust policy의 Principal에 `"arn:aws:iam::111122223333:root"`를 쓰면 "계정 111122223333 **전체**가 맡을 수 있다"는 뜻이지 root 사용자만이 아니다. 단, 실제로는 그 계정 안에서 `sts:AssumeRole` 권한을 받은 주체만 맡을 수 있다(2번 조건). "root을 Principal로 쓰면 위험"이라는 직관은 절반만 맞다 — 계정 위임은 정상 패턴이지만, 그 계정 내부의 권한 통제는 그 계정에 맡겨진다.
 
 ## 페더레이션: 외부 신원을 AWS 자격 증명으로
 
@@ -216,13 +216,13 @@ IAM User를 만들지 않고 기업 디렉터리(AD)나 소셜/OIDC 신원으로
 | SAML 직접 페더레이션 | 기업 IdP | 계정마다 IdP·역할 등록 필요 | 가능하나 설정 부담 |
 | **IAM Identity Center** | 기업 IdP(또는 자체 디렉터리) | permission set을 계정 그룹에 할당 | **표준** |
 
-> 🔍 **더 깊이**: Identity Center가 계정마다 만드는 것도 결국은 **역할**이다. permission set을 계정에 할당하면 그 계정에 `AWSReservedSSO_...`로 시작하는 역할이 자동 생성되고, 사용자는 로그인 후 그 역할을 맡는다. 즉 Identity Center는 새로운 인증 메커니즘이 아니라 **역할 생성과 신뢰 관계 관리를 자동화한 계층**이다. 이 사실을 알면 "Identity Center를 쓰는데 왜 CloudTrail에 assumed-role이 찍히나", "왜 SCP가 여전히 적용되나" 같은 질문이 자연스럽게 풀린다. 아래층은 언제나 IAM이다.
+Identity Center가 계정마다 만드는 것도 결국은 **역할**이다. permission set을 계정에 할당하면 그 계정에 `AWSReservedSSO_...`로 시작하는 역할이 자동 생성되고, 사용자는 로그인 후 그 역할을 맡는다. 즉 Identity Center는 새로운 인증 메커니즘이 아니라 **역할 생성과 신뢰 관계 관리를 자동화한 계층**이다. 이 사실을 알면 "Identity Center를 쓰는데 왜 CloudTrail에 assumed-role이 찍히나", "왜 SCP가 여전히 적용되나" 같은 질문이 자연스럽게 풀린다. 아래층은 언제나 IAM이다.
 
 ### OIDC / Web Identity 페더레이션 (앱·CI/CD)
 
 모바일 앱(Cognito), GitHub Actions, Kubernetes(EKS IRSA) 등은 OIDC로 `AssumeRoleWithWebIdentity`를 쓴다. 특히 **GitHub Actions의 OIDC**는 시험과 실무 모두 중요하다 — 장기 access key를 GitHub secret에 넣는 대신, GitHub의 OIDC 토큰으로 역할을 맡아 키 노출 위험을 없앤다.
 
-> 🔍 **더 깊이**: GitHub Actions OIDC의 trust policy는 `token.actions.githubusercontent.com`을 OIDC provider로 두고, Condition에 `token.actions.githubusercontent.com:sub`로 **특정 repo·브랜치만** 허용한다. 이 sub 조건을 `repo:org/*`처럼 느슨하게 두면 조직의 아무 repo나 역할을 맡을 수 있어 위험하다. `repo:org/repo:ref:refs/heads/main`처럼 좁혀야 한다. EKS의 IRSA도 같은 OIDC 원리로 pod에 역할을 매핑한다.
+GitHub Actions OIDC의 trust policy는 `token.actions.githubusercontent.com`을 OIDC provider로 두고, Condition에 `token.actions.githubusercontent.com:sub`로 **특정 repo·브랜치만** 허용한다. 이 sub 조건을 `repo:org/*`처럼 느슨하게 두면 조직의 아무 repo나 역할을 맡을 수 있어 위험하다. `repo:org/repo:ref:refs/heads/main`처럼 좁혀야 한다. EKS의 IRSA도 같은 OIDC 원리로 pod에 역할을 매핑한다.
 
 ## 역할 체이닝(Role Chaining)과 제약
 
@@ -271,7 +271,7 @@ IAM User를 만들지 않고 기업 디렉터리(AD)나 소셜/OIDC 신원으로
 | 세션 태그(전이 태그) | 호출하는 코드 | 전이 지정 시 유지 | 중간 — 속성 전달용 |
 | `sts:SourceIdentity` | 최초 호출 시 1회 | **끝까지 유지, 변경 불가** | 강함 — 감사 추적의 기준 |
 
-> 💡 **관련 이론**: 역할 체이닝은 권한 추적을 흐리게 만들 수 있어 가급적 피한다. 대신 **session policy**나 직접 AssumeRole이 권장된다. 다만 cross-account에서 "허브 계정의 역할을 거쳐 스포크 계정에 접근"하는 패턴은 정당한 체이닝이다. 추적성은 CloudTrail의 `assumedRole` 세션 이름으로 보완한다(`sts:RoleSessionName`을 의미 있게 설정).
+역할 체이닝은 권한 추적을 흐리게 만들 수 있어 가급적 피한다. 대신 **session policy**나 직접 AssumeRole이 권장된다. 다만 cross-account에서 "허브 계정의 역할을 거쳐 스포크 계정에 접근"하는 패턴은 정당한 체이닝이다. 추적성은 CloudTrail의 `assumedRole` 세션 이름으로 보완한다(`sts:RoleSessionName`을 의미 있게 설정).
 
 ## Confused Deputy 방지: ExternalId와 aws:SourceArn
 
@@ -279,7 +279,7 @@ IAM User를 만들지 않고 기업 디렉터리(AD)나 소셜/OIDC 신원으로
 
 ### 시나리오: 서드파티 SaaS의 cross-account 접근
 
-모니터링 SaaS가 당신의 계정에 AssumeRole로 접근한다고 하자. SaaS는 **모든 고객**에 대해 같은 SaaS 계정으로 역할을 맡는다. 만약 trust policy가 "SaaS 계정이면 허용"만 검사하면, 악의적 사용자가 SaaS에게 "내 역할은 저 ARN이다"라고 남의 역할 ARN을 등록해 SaaS가 대신 그 역할을 맡게 만들 수 있다.
+모니터링 SaaS가 당신의 계정에 AssumeRole로 접근한다고 가정한다. SaaS는 **모든 고객**에 대해 같은 SaaS 계정으로 역할을 맡는다. 만약 trust policy가 "SaaS 계정이면 허용"만 검사하면, 악의적 사용자가 SaaS에게 "내 역할은 저 ARN이다"라고 남의 역할 ARN을 등록해 SaaS가 대신 그 역할을 맡게 만들 수 있다.
 
 이 구도가 왜 위험한지는 **3자 그림**으로 봐야 이해된다. 공격의 주체는 SaaS가 아니라 SaaS를 속이는 제3자이고, SaaS는 "혼동된 대리인"으로서 자기 권한을 남을 위해 행사하게 된다.
 
@@ -392,11 +392,11 @@ SaaS는 당신의 역할을 맡을 때 이 ExternalId를 함께 전달하고, �
 
 `aws:SourceAccount`와 `aws:SourceArn`을 함께 쓰는 이유도 짚어 둘 만하다. `SourceAccount`는 계정 단위로 넓게 거르고, `SourceArn`은 특정 리소스까지 좁힌다. 일부 서비스는 상황에 따라 `SourceArn`을 채우지 못하는 경우가 있어, 계정 조건을 함께 두면 최소한의 방어선이 남는다. **넓은 조건과 좁은 조건을 겹쳐 두는 것**이 이 패턴의 요령이다.
 
-> ⚠️ **함정**: 서비스 주체를 신뢰하는 정책에서 출처 조건을 빼먹는 실수는 놀랄 만큼 흔하다. `{"Service": "s3.amazonaws.com"}`은 "**전 세계의 모든 S3**"를 의미하지 "내 S3"를 의미하지 않는다. 서비스 주체는 계정을 구분하지 않기 때문이다. 그래서 SNS 토픽·SQS 큐·Lambda 함수·KMS 키에 서비스 주체를 허용할 때는 거의 예외 없이 `aws:SourceArn` 또는 `aws:SourceAccount`가 따라붙어야 한다. 시험에서 `Service` 주체가 든 정책 조각이 보이면 **조건 절이 있는지부터** 확인하라.
+서비스 주체를 신뢰하는 정책에서 출처 조건을 빼먹는 실수는 놀랄 만큼 흔하다. `{"Service": "s3.amazonaws.com"}`은 "**전 세계의 모든 S3**"를 의미하지 "내 S3"를 의미하지 않는다. 서비스 주체는 계정을 구분하지 않기 때문이다. 그래서 SNS 토픽·SQS 큐·Lambda 함수·KMS 키에 서비스 주체를 허용할 때는 거의 예외 없이 `aws:SourceArn` 또는 `aws:SourceAccount`가 따라붙어야 한다. 시험에서 `Service` 주체가 든 정책 조각이 보이면 **조건 절이 있는지부터** 확인한다.
 
 > 🎯 **시나리오**: "서드파티 백업 벤더에게 우리 S3에 접근하는 cross-account 역할을 만들어 줘야 한다." 정답 패턴은 ① IAM User access key를 벤더에 주지 않고(절대 금지) ② IAM Role + trust policy에 벤더 계정 + **ExternalId** 명시 ③ permission policy는 필요한 버킷·Action만(최소 권한). ExternalId가 없으면 같은 벤더를 쓰는 다른 고객이 우리 자원에 접근할 수 있는 Confused Deputy 구멍이 남는다. 이 패턴은 Datadog·New Relic·PagerDuty 등 모든 서드파티 통합에 동일하다.
 
-> ⚠️ **함정**: ExternalId는 "비밀번호"가 아니다 — 추측 가능해도 공격을 막는다. 핵심은 **고객이 스스로 ExternalId를 정하지 않고 서드파티가 발급**한다는 점이다. 고객이 임의로 정하면 다른 고객과 충돌하거나 예측돼 격리가 깨진다. 시험에서 "ExternalId를 고객이 자유롭게 설정"이라는 보기는 함정이다.
+ExternalId는 "비밀번호"가 아니다 — 추측 가능해도 공격을 막는다. 중요한 것은 **고객이 스스로 ExternalId를 정하지 않고 서드파티가 발급**한다는 점이다. 고객이 임의로 정하면 다른 고객과 충돌하거나 예측돼 격리가 깨진다. 시험에서 "ExternalId를 고객이 자유롭게 설정"이라는 보기는 함정이다.
 
 ## CLI로 보는 AssumeRole
 
@@ -471,23 +471,23 @@ aws ec2 modify-instance-metadata-options \
   --http-put-response-hop-limit 1
 ```
 
-> 🔍 **더 깊이**: 마지막 명령의 `--http-put-response-hop-limit 1`이 조용히 중요한 옵션이다. 메타데이터 응답이 몇 홉까지 전달될 수 있는지를 제한하는데, 값이 1이면 **인스턴스 자신만** 메타데이터를 읽을 수 있다. 컨테이너가 도는 호스트에서 이 값이 2 이상이면 컨테이너 안에서 호스트의 인스턴스 자격 증명을 읽을 수 있어, 컨테이너 하나가 뚫리면 인스턴스 역할 전체가 노출된다. `--http-tokens required`(IMDSv2 강제)와 홉 제한은 짝으로 걸어야 방어가 완성된다.
+마지막 명령의 `--http-put-response-hop-limit 1`이 조용히 중요한 옵션이다. 메타데이터 응답이 몇 홉까지 전달될 수 있는지를 제한하는데, 값이 1이면 **인스턴스 자신만** 메타데이터를 읽을 수 있다. 컨테이너가 도는 호스트에서 이 값이 2 이상이면 컨테이너 안에서 호스트의 인스턴스 자격 증명을 읽을 수 있어, 컨테이너 하나가 뚫리면 인스턴스 역할 전체가 노출된다. `--http-tokens required`(IMDSv2 강제)와 홉 제한은 짝으로 걸어야 방어가 완성된다.
 
-> ⚠️ **함정**: `--profile`로 역할을 등록해 쓰는 방식이 CLI에서는 편하지만, **`external_id`가 로컬 설정 파일에 평문으로 남는다**는 점을 인지해야 한다. ExternalId는 비밀값이 아니므로 그 자체가 치명적이지는 않으나, 같은 파일에 `aws_secret_access_key`가 함께 들어 있다면 그건 다른 문제다. 원칙은 하나다 — `~/.aws/credentials`에 장기 키를 두지 않는 것. 사람은 Identity Center 로그인으로, 워크로드는 인스턴스·태스크 역할로 자격 증명을 받게 하면 이 파일에 비밀이 남을 이유가 없다.
+`--profile`로 역할을 등록해 쓰는 방식이 CLI에서는 편하지만, **`external_id`가 로컬 설정 파일에 평문으로 남는다**는 점을 인지해야 한다. ExternalId는 비밀값이 아니므로 그 자체가 치명적이지는 않으나, 같은 파일에 `aws_secret_access_key`가 함께 들어 있다면 그건 다른 문제다. 원칙은 하나다 — `~/.aws/credentials`에 장기 키를 두지 않는 것. 사람은 Identity Center 로그인으로, 워크로드는 인스턴스·태스크 역할로 자격 증명을 받게 하면 이 파일에 비밀이 남을 이유가 없다.
 
-> 📚 **사례**: 2019년 Capital One 사고의 본질은 ① WAF(SSRF 방어 미흡) ② **IMDSv1으로 EC2의 임시 자격 증명 탈취** ③ 그 자격 증명으로 S3 접근. 임시 자격 증명 자체는 안전 장치지만, **그것을 훔치는 경로(SSRF → IMDS)**가 열려 있으면 무력화된다. 그래서 IMDSv2 강제 + 최소 권한 인스턴스 역할 + WAF가 한 묶음으로 시험에 나온다. 임시 자격 증명은 "노출 시 시간 제한"이라는 방어선일 뿐, 노출 경로를 막는 건 별개의 통제다.
+2019년 Capital One 사고의 본질은 ① WAF(SSRF 방어 미흡) ② **IMDSv1으로 EC2의 임시 자격 증명 탈취** ③ 그 자격 증명으로 S3 접근. 임시 자격 증명 자체는 안전 장치지만, **그것을 훔치는 경로(SSRF → IMDS)**가 열려 있으면 무력화된다. 그래서 IMDSv2 강제 + 최소 권한 인스턴스 역할 + WAF가 한 묶음으로 시험에 나온다. 임시 자격 증명은 "노출 시 시간 제한"이라는 방어선일 뿐, 노출 경로를 막는 건 별개의 통제다.
 
-## 정리하며 — 임시 자격 증명이 보안의 기본값
+## 정리
 
-오늘의 핵심 세 가지. 첫째, **STS는 만료되는 임시 자격 증명(SessionToken 포함)**을 발급하고, EC2/Lambda/ECS/페더레이션이 모두 그 위에서 동작한다 — 장기 키를 코드·CI에 넣는 안티패턴을 OIDC·인스턴스 역할로 대체하라. 둘째, AssumeRole은 **trust policy(누가)와 permission policy(무엇을)**의 두 축이며 cross-account는 양쪽 허용이 필요하다. 셋째, cross-account 위임에서 **Confused Deputy를 ExternalId(서드파티)·aws:SourceArn(AWS 서비스)**으로 반드시 막아야 한다.
+오늘의 핵심 세 가지. 첫째, **STS는 만료되는 임시 자격 증명(SessionToken 포함)**을 발급하고, EC2/Lambda/ECS/페더레이션이 모두 그 위에서 동작한다 — 장기 키를 코드·CI에 넣는 안티패턴은 OIDC·인스턴스 역할로 대체한다. 둘째, AssumeRole은 **trust policy(누가)와 permission policy(무엇을)**의 두 축이며 cross-account는 양쪽 허용이 필요하다. 셋째, cross-account 위임에서 **Confused Deputy를 ExternalId(서드파티)·aws:SourceArn(AWS 서비스)**으로 반드시 막아야 한다.
 
-> 📚 **사례**: 임시 자격 증명이 유출됐을 때의 대응 순서도 알아 둘 만하다. "만료될 때까지 기다린다"는 답은 틀렸다 — 최대 12시간이 남아 있을 수 있고, 그 사이 공격자는 계속 갱신을 시도한다. 실제 순서는 ① 해당 역할의 권한 정책에 **즉시 전면 Deny 문장을 추가**해 세션을 무력화하고(발급된 세션도 매 요청마다 정책을 다시 평가받으므로 즉시 효과가 있다) ② 그 역할을 맡을 수 있는 경로(신뢰 정책·인스턴스 프로파일)를 차단한 뒤 ③ CloudTrail에서 그 세션이 무엇을 했는지 전수 조사하고 ④ 근본 원인(메타데이터 노출·토큰 유출 경로)을 고친다. **정책은 발급된 세션에도 소급 적용된다**는 성질이 여기서 결정적으로 쓰인다. 이것이 장기 키와의 또 하나의 차이다 — 장기 키는 비활성화가 필요하지만, 역할 세션은 정책 한 줄로 즉시 끌 수 있다.
+임시 자격 증명이 유출됐을 때의 대응 순서도 알아 둘 만하다. "만료될 때까지 기다린다"는 답은 틀렸다 — 최대 12시간이 남아 있을 수 있고, 그 사이 공격자는 계속 갱신을 시도한다. 실제 순서는 ① 해당 역할의 권한 정책에 **즉시 전면 Deny 문장을 추가**해 세션을 무력화하고(발급된 세션도 매 요청마다 정책을 다시 평가받으므로 즉시 효과가 있다) ② 그 역할을 맡을 수 있는 경로(신뢰 정책·인스턴스 프로파일)를 차단한 뒤 ③ CloudTrail에서 그 세션이 무엇을 했는지 전수 조사하고 ④ 근본 원인(메타데이터 노출·토큰 유출 경로)을 고친다. **정책은 발급된 세션에도 소급 적용된다**는 성질이 여기서 결정적으로 쓰인다. 이것이 장기 키와의 또 하나의 차이다 — 장기 키는 비활성화가 필요하지만, 역할 세션은 정책 한 줄로 즉시 끌 수 있다.
 
-> ⚠️ **함정**: "역할 세션을 취소하려면 세션을 삭제하는 API를 호출한다"는 보기는 오답이다. STS에는 개별 세션을 회수하는 API가 없다. 대신 역할의 정책에 발급 시각 기준 조건을 건 Deny를 추가해 **특정 시점 이전에 발급된 세션 전부를 무효화**하는 방식을 쓴다. 콘솔의 "세션 취소(revoke sessions)" 기능도 내부적으로 정확히 이 정책 문장을 자동으로 넣어 주는 것이다. 메커니즘을 알면 왜 그 기능이 역할 정책을 수정하는지 이해된다.
+"역할 세션을 취소하려면 세션을 삭제하는 API를 호출한다"는 보기는 오답이다. STS에는 개별 세션을 회수하는 API가 없다. 대신 역할의 정책에 발급 시각 기준 조건을 건 Deny를 추가해 **특정 시점 이전에 발급된 세션 전부를 무효화**하는 방식을 쓴다. 콘솔의 "세션 취소(revoke sessions)" 기능도 내부적으로 정확히 이 정책 문장을 자동으로 넣어 주는 것이다. 메커니즘을 알면 왜 그 기능이 역할 정책을 수정하는지 이해된다.
 
 내일은 Week 1의 마무리로, 오늘까지 배운 IAM·STS·정책 평가를 종합 시나리오로 엮는다. "권한이 있는데 왜 거부되는가", "서드파티에 안전하게 권한을 위임하라", "장기 키를 임시 자격 증명으로 전환하라" 같은 실전 상황을 통해 Week 1의 사고 프레임을 굳힌다.
 
-## 한 줄 요약
+### 한 줄 요약
 
 STS는 **만료되는 임시 자격 증명 3종**(AccessKeyId `ASIA...` + SecretAccessKey + **SessionToken**)을 발급하며, EC2 인스턴스 프로파일·Lambda 실행 역할·ECS 태스크 역할·EKS IRSA·페더레이션이 전부 이 위에서 돌아간다 — 그래서 장기 키가 등장할 자리가 사실상 없다. 역할은 정책을 두 장 갖는데 **신뢰 정책은 "누가 맡나"(리소스 기반), 권한 정책은 "맡으면 뭘 하나"(Identity 기반)**이고, 교차 계정은 호출 측 `sts:AssumeRole` Allow와 대상 역할 신뢰 정책이 **둘 다** 있어야 한다. "맡을 수 없다"와 "맡았는데 아무것도 못 한다"는 서로 다른 층의 문제다. 신뢰 정책의 `Principal`에 계정 root를 쓰면 그 계정 전체에 위임하는 것이고, `{"AWS": "*"}`는 조건이 있어도 피해야 한다. **Confused Deputy**는 대리인이 서드파티 계정이면 **서드파티가 발급한 `sts:ExternalId`**로, AWS 서비스면 **`aws:SourceArn`·`aws:SourceAccount`**로 막는다 — `{"Service": "s3.amazonaws.com"}`은 "전 세계의 S3"라는 뜻이라 출처 조건 없이는 위험하다. 역할 체이닝은 **세션이 1시간으로 잘리고** 추적성이 흐려지므로 가급적 피하되, 불가피하면 `sts:SourceIdentity`로 최초 신원을 끝까지 붙들어 둔다. 자격 증명 탈취 경로는 별도 통제이며 EC2에서는 **IMDSv2 강제 + 홉 제한 1**이 표준이고, 유출된 세션은 삭제 API가 아니라 **역할 정책의 Deny 추가**로 즉시 무력화한다.
 
