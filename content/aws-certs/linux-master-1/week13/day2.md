@@ -13,7 +13,7 @@
 ## Apache httpd.conf — 웹 서버의 심장
 
 - 설정 파일은 `/etc/httpd/conf/httpd.conf`(RHEL 계열).
-- 단답에 자주 나오는 지시어는 다음과 같다.
+- 단답으로 묻는 지시어는 다음과 같다.
 
 ```apache
 ServerRoot "/etc/httpd"        # 설정·로그 기준 디렉터리
@@ -32,17 +32,17 @@ CustomLog "logs/access_log" combined   # 접근 로그
 </Directory>
 ```
 
-| 지시어 | 의미 | 단골 함정 |
+| 지시어 | 의미 | 함정 |
 |--------|------|----------|
-| `DocumentRoot` | 웹 문서 최상위 경로 | 가장 많이 출제 |
+| `DocumentRoot` | 웹 문서 최상위 경로 | 웹 서버 설정의 기본 항목 |
 | `Listen` | 수신 포트(기본 80) | `Port`가 아님(2.2 이후) |
 | `DirectoryIndex` | 기본 표시 문서 | index.html |
 | `ServerName` | 서버 이름:포트 | |
 | `AllowOverride` | .htaccess 적용 범위 | None이면 .htaccess 무시 |
 
-> 💡 **빈칸 단골**: 웹 문서가 위치하는 최상위 디렉터리를 지정하는 지시어 → **`DocumentRoot`**. 수신 포트는 **`Listen`**(과거 `Port` 아님).
+웹 문서가 위치하는 최상위 디렉터리를 지정하는 지시어 → **`DocumentRoot`**. 수신 포트는 **`Listen`**(과거 `Port` 아님).
 
-> 🔍 **가상호스트**: 한 서버에 여러 사이트는 `<VirtualHost *:80>` 블록에 `ServerName`과 `DocumentRoot`를 각각 지정한다.
+**가상호스트**: 한 서버에 여러 사이트는 `<VirtualHost *:80>` 블록에 `ServerName`과 `DocumentRoot`를 각각 지정한다.
 
 ## BIND named.conf + zone 파일 — DNS의 두 축
 
@@ -90,9 +90,9 @@ ftp     IN  CNAME www               ; 별칭
 | `CNAME` | 별칭(정규이름) | Canonical Name |
 | `PTR` | IP→이름(역방향) | Pointer |
 
-> ⚠️ **단골 함정**: 존 파일을 수정하면 **SOA의 Serial 값을 반드시 증가**시켜야 slave가 변경을 감지한다. Serial을 안 올리면 보조 서버에 갱신이 안 된다.
+> ⚠️ **함정**: 존 파일을 수정하면 **SOA의 Serial 값을 반드시 증가**시켜야 slave가 변경을 감지한다. Serial을 안 올리면 보조 서버에 갱신이 안 된다.
 
-> 📚 **정방향 vs 역방향**: 이름→IP는 `A` 레코드(정방향), IP→이름은 `PTR` 레코드(역방향, `in-addr.arpa` 존). 메일 서버 지정은 `MX`.
+**정방향 vs 역방향**: 이름→IP는 `A` 레코드(정방향), IP→이름은 `PTR` 레코드(역방향, `in-addr.arpa` 존). 메일 서버 지정은 `MX`.
 
 ## DHCP dhcpd.conf — 주소를 빌려주는 규칙
 
@@ -123,12 +123,12 @@ host printer {                                   # 고정 IP 예약
 | `default-lease-time` | 기본 임대 시간(초) |
 | `host`+`hardware ethernet`+`fixed-address` | MAC 기반 고정 IP |
 
-> 💡 **빈칸 단골**: 동적 할당 주소 범위를 지정하는 지시어 → **`range`**. 특정 MAC에 항상 같은 IP를 주려면 `host` 블록의 `hardware ethernet`(MAC) + `fixed-address`(IP).
+동적 할당 주소 범위를 지정하는 지시어 → **`range`**. 특정 MAC에 항상 같은 IP를 주려면 `host` 블록의 `hardware ethernet`(MAC) + `fixed-address`(IP).
 
 ## vsftpd.conf — FTP 접속 통제
 
 - 설정 파일은 `/etc/vsftpd/vsftpd.conf`.
-- 익명 접속·쓰기 허용·chroot가 단골이다.
+- 익명 접속·쓰기 허용·chroot를 다룬다.
 
 ```text
 # /etc/vsftpd/vsftpd.conf
@@ -174,14 +174,14 @@ ftpd_banner=Welcome        # 접속 배너
 | 파일 | 핵심 지시어 |
 |------|-----------|
 | smb.conf | `path`, `writable`, `valid users`, `guest ok` |
-| exports | 경로 + `클라이언트(옵션)` (공백 금지!) |
+| exports | 경로 + `클라이언트(옵션)` (공백 금지) |
 
-> 🔍 **smb.conf 빈칸**: 공유 실제 경로는 `path`, 쓰기 허용은 `writable = yes`(또는 `read only = no`). 그룹 지정은 계정 앞에 `@`.
+**smb.conf 빈칸**: 공유 실제 경로는 `path`, 쓰기 허용은 `writable = yes`(또는 `read only = no`). 그룹 지정은 계정 앞에 `@`.
 
 ## sshd_config — 원격 접속 보안
 
 - 설정 파일은 `/etc/ssh/sshd_config`.
-- 보안 강화 지시어가 단답에 자주 나온다.
+- 보안 강화 지시어는 단답으로 묻는다.
 
 ```text
 # /etc/ssh/sshd_config
@@ -202,7 +202,7 @@ MaxAuthTries 3                   # 인증 시도 횟수 제한
 | `Port` | 기본 22, 변경으로 스캔 회피 |
 | `AllowUsers`/`DenyUsers` | 계정 단위 허용/거부 |
 
-> ⚠️ **단골 함정**: `sshd_config`(서버, 데몬)와 `ssh_config`(클라이언트)는 다른 파일. root 로그인 차단은 서버 파일의 `PermitRootLogin no`. 수정 후 `systemctl restart sshd`로 적용.
+`sshd_config`(서버, 데몬)와 `ssh_config`(클라이언트)는 다른 파일. root 로그인 차단은 서버 파일의 `PermitRootLogin no`. 수정 후 `systemctl restart sshd`로 적용.
 
 ## 한눈에 보는 설정 파일 지도
 
@@ -238,13 +238,13 @@ systemctl is-enabled sshd        # 부팅 자동시작 여부
 ss -tuln | grep ':53'            # 포트가 실제로 열렸는지 확인
 ```
 
-> 💡 **enable vs start**: `start`는 지금만 기동, `enable`은 부팅 시 자동 시작. 둘 다는 `enable --now`. 설정만 고치고 재시작을 안 하면 변경이 반영되지 않는다 — 작업형의 흔한 감점.
+**enable vs start**: `start`는 지금만 기동, `enable`은 부팅 시 자동 시작. 둘 다는 `enable --now`. 설정만 고치고 재시작을 안 하면 변경이 반영되지 않는다 — 작업형의 흔한 감점.
 
-> ⚠️ **NFS는 예외**: exports 수정은 서비스 재시작 없이 `exportfs -ra`(재내보내기)로 즉시 적용할 수 있다. nfs-server는 rpcbind(111)에 의존하므로 둘 다 살아 있어야 한다.
+**NFS는 예외**: exports 수정은 서비스 재시작 없이 `exportfs -ra`(재내보내기)로 즉시 적용할 수 있다. nfs-server는 rpcbind(111)에 의존하므로 둘 다 살아 있어야 한다.
 
 ## 직접 쳐보기
 
-- 설정 파일을 열어 지시어를 눈으로 확인하고, 문법 검사 도구로 검증하자.
+- 설정 파일을 열어 지시어를 눈으로 확인하고, 문법 검사 도구로 검증한다.
 
 ```bash
 # 각 설정 파일의 핵심 지시어 확인 (주석·빈줄 제외)
@@ -259,7 +259,7 @@ httpd -t                       # apache 설정 검증
 sshd -t                        # sshd 설정 검증
 ```
 
-지시어는 철자 하나까지 정확해야 점수가 된다. 설정 후 전용 도구로 검증하는 습관도 함께 익히자.
+지시어는 철자 하나까지 정확해야 점수가 된다. 설정 후 전용 도구로 검증하는 습관도 함께 익힌다.
 
 ## 📖 용어
 
