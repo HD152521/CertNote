@@ -22,7 +22,7 @@ Macie의 본질은 **데이터 분류기(data classifier)**다. S3 버킷의 객
 - **버킷 인벤토리**: 모든 S3 버킷의 암호화·퍼블릭 액세스·공유 상태를 자동 평가한다(데이터가 노출 가능한 구조인지).
 - **Organization 통합**: 위임 관리자 계정에서 전 계정의 S3를 일괄 스캔한다.
 
-> 💡 **관련 이론**: Macie가 "전체 객체를 다 읽지 않고 샘플링한다"는 점이 비용·정확도 트레이드오프의 핵심이다. 페타바이트 버킷의 모든 바이트를 매번 스캔하면 비용이 폭발한다. Macie는 객체 유형·크기에 따라 대표 샘플을 추출해 분류하고, 비용은 **스캔한 데이터량(GB) 단위**로 과금한다. 이것이 통계학의 **표본 추출(sampling)** 원리다 — 모집단(전체 객체) 전수 조사 대신 대표 표본으로 추정한다. 실무에서는 "일회성 전체 스캔으로 베이스라인을 잡고, 이후 신규·변경 객체만 자동 스캔"하는 패턴으로 비용을 통제한다. 시험에서 "Macie 비용 최적화"는 "스캔 범위를 신규/민감 추정 버킷으로 한정"이 정답 방향이다.
+Macie가 "전체 객체를 다 읽지 않고 샘플링한다"는 점이 비용·정확도 트레이드오프의 핵심이다. 페타바이트 버킷의 모든 바이트를 매번 스캔하면 비용이 폭발한다. Macie는 객체 유형·크기에 따라 대표 샘플을 추출해 분류하고, 비용은 **스캔한 데이터량(GB) 단위**로 과금한다. 이것이 통계학의 **표본 추출(sampling)** 원리다 — 모집단(전체 객체) 전수 조사 대신 대표 표본으로 추정한다. 실무에서는 "일회성 전체 스캔으로 베이스라인을 잡고, 이후 신규·변경 객체만 자동 스캔"하는 패턴으로 비용을 통제한다. 시험에서 "Macie 비용 최적화"는 "스캔 범위를 신규/민감 추정 버킷으로 한정"이 정답 방향이다.
 
 > ⚠️ **함정**: "S3에 민감 데이터가 들어있나"는 Macie, "S3에 의심스러운 접근이 있나"는 **GuardDuty S3 Protection**이다. 둘 다 S3를 보지만 차원이 다르다 — Macie는 **객체의 내용**(카드 번호 존재 여부), GuardDuty S3 Protection은 **접근 행동의 이상**(비정상 IP에서 대량 GetObject, 평소 안 쓰던 API). 시험 선택지에 둘이 함께 나오면 "내용 검사 = Macie, 행동 이상 = GuardDuty"로 가른다.
 
@@ -40,11 +40,11 @@ Finding 카테고리: **Recon**(포트 스캔·정찰), **UnauthorizedAccess**(�
 - **RDS Protection**: RDS 로그인 활동의 이상 탐지
 - **Lambda Protection**: Lambda 네트워크 활동 이상
 
-> 🔍 **더 깊이**: GuardDuty의 ML 이상 탐지가 작동하는 방식은 **행동 베이스라이닝(behavioral baselining)**이다. 처음 며칠~몇 주간 계정의 정상 패턴(어느 리전에서, 어느 시간대에, 어떤 API를, 어떤 IAM 주체가 호출하는가)을 학습해 베이스라인을 만든다. 그 후 베이스라인에서 통계적으로 크게 벗어나는 행동(평소 안 쓰던 리전에서 IAM 키 사용, 새벽 3시에 대량 데이터 다운로드)을 "이상"으로 플래그한다. 이것이 시그니처 기반 탐지(알려진 패턴만 잡음)와 다른 **이상 탐지(anomaly detection)**의 강점이다 — 한 번도 본 적 없는 새로운 공격도 "평소와 다름"으로 잡을 수 있다. 트레이드오프: 베이스라인 학습 전이나 정상 행동이 급변할 때 거짓 양성(false positive)이 생긴다.
+GuardDuty의 ML 이상 탐지가 작동하는 방식은 **행동 베이스라이닝(behavioral baselining)**이다. 처음 며칠~몇 주간 계정의 정상 패턴(어느 리전에서, 어느 시간대에, 어떤 API를, 어떤 IAM 주체가 호출하는가)을 학습해 베이스라인을 만든다. 그 후 베이스라인에서 통계적으로 크게 벗어나는 행동(평소 안 쓰던 리전에서 IAM 키 사용, 새벽 3시에 대량 데이터 다운로드)을 "이상"으로 플래그한다. 이것이 시그니처 기반 탐지(알려진 패턴만 잡음)와 다른 **이상 탐지(anomaly detection)**의 강점이다 — 한 번도 본 적 없는 새로운 공격도 "평소와 다름"으로 잡을 수 있다. 트레이드오프: 베이스라인 학습 전이나 정상 행동이 급변할 때 거짓 양성(false positive)이 생긴다.
 
-> 📚 **사례**: 2019년 Capital One 침해는 잘못 구성된 WAF를 통한 SSRF(Server-Side Request Forgery) 공격으로 EC2 인스턴스 메타데이터(IMDS)에서 IAM 역할 자격 증명을 탈취하고, 그 권한으로 S3 버킷 1억 건 이상의 고객 데이터를 유출한 사건이다. 공격자는 탈취한 자격 증명으로 평소 그 역할이 하지 않던 대량 `ListBuckets`·`GetObject`를 수행했다 — 정확히 GuardDuty의 **UnauthorizedAccess:IAMUser/InstanceCredentialExfiltration**과 비정상 데이터 접근 패턴이 잡아낼 수 있는 행동이다. 교훈: 취약점(SSRF)은 Inspector·코드 리뷰가, 자격 증명 탈취 후 비정상 행동은 GuardDuty가 막는 다층 방어가 필요하다. 단일 서비스로는 이 체인을 끊지 못한다. (이후 AWS는 IMDSv2로 SSRF 기반 메타데이터 탈취를 구조적으로 어렵게 만들었다.)
+2019년 Capital One 침해는 잘못 구성된 WAF를 통한 SSRF(Server-Side Request Forgery) 공격으로 EC2 인스턴스 메타데이터(IMDS)에서 IAM 역할 자격 증명을 탈취하고, 그 권한으로 S3 버킷 1억 건 이상의 고객 데이터를 유출한 사건이다. 공격자는 탈취한 자격 증명으로 평소 그 역할이 하지 않던 대량 `ListBuckets`·`GetObject`를 수행했다 — 정확히 GuardDuty의 **UnauthorizedAccess:IAMUser/InstanceCredentialExfiltration**과 비정상 데이터 접근 패턴이 잡아낼 수 있는 행동이다. 교훈: 취약점(SSRF)은 Inspector·코드 리뷰가, 자격 증명 탈취 후 비정상 행동은 GuardDuty가 막는 다층 방어가 필요하다. 단일 서비스로는 이 체인을 끊지 못한다. (이후 AWS는 IMDSv2로 SSRF 기반 메타데이터 탈취를 구조적으로 어렵게 만들었다.)
 
-> 🔍 **더 깊이**: GuardDuty Malware Protection의 "에이전트 불필요" 구현이 영리하다. 전통적 안티바이러스는 각 호스트에 에이전트를 설치해야 하는데(운영 부담·성능 영향), GuardDuty는 의심스러운 Finding이 발생한 EC2의 **EBS 볼륨 스냅샷을 떠서 AWS 관리 환경에서 스캔**한다. 호스트의 CPU를 쓰지 않고, 에이전트 배포·패치도 없으며, 공격자가 호스트에 침투해도 스캔 자체를 방해하기 어렵다(별도 환경에서 검사). 트레이드오프: 실시간이 아니라 스냅샷 시점 검사이고, 스캔할 때마다 스냅샷 비용이 든다.
+GuardDuty Malware Protection의 "에이전트 불필요" 구현이 영리하다. 전통적 안티바이러스는 각 호스트에 에이전트를 설치해야 하는데(운영 부담·성능 영향), GuardDuty는 의심스러운 Finding이 발생한 EC2의 **EBS 볼륨 스냅샷을 떠서 AWS 관리 환경에서 스캔**한다. 호스트의 CPU를 쓰지 않고, 에이전트 배포·패치도 없으며, 공격자가 호스트에 침투해도 스캔 자체를 방해하기 어렵다(별도 환경에서 검사). 트레이드오프: 실시간이 아니라 스냅샷 시점 검사이고, 스캔할 때마다 스냅샷 비용이 든다.
 
 ## Inspector — 소프트웨어의 알려진 결함을 CVE로 매칭한다
 
@@ -55,11 +55,11 @@ Inspector(v2)는 **취약점 평가(vulnerability assessment)** 서비스다. EC
 - **Lambda**: 함수 코드·레이어의 의존성 취약점 + (선택) 코드 자체의 보안 결함.
 - **Risk Score**: CVSS 기본 점수에 환경 컨텍스트(네트워크 노출 여부, 익스플로잇 존재 여부)를 반영해 우선순위 조정.
 
-> 💡 **관련 이론**: CVE는 1999년 MITRE가 시작한 **공개 취약점 식별 체계**다. 각 취약점에 `CVE-연도-순번`(예: CVE-2021-44228, Log4Shell) 고유 ID를 부여해 전 세계가 같은 언어로 취약점을 참조한다. 심각도는 **CVSS(Common Vulnerability Scoring System, 0~10)**로 표준화한다(NIST의 NVD가 점수 관리). Inspector의 가치는 "수천 개 패키지 × 매일 쏟아지는 신규 CVE"를 사람이 일일이 대조할 수 없다는 데서 나온다 — 인벤토리를 자동 수집해 NVD/벤더 피드와 지속 대조한다. 시험에서 "패치 누락·알려진 취약점 자동 탐지"는 Inspector, "탐지된 취약점의 실제 패치 적용"은 Systems Manager Patch Manager(보완 관계)다.
+CVE는 1999년 MITRE가 시작한 **공개 취약점 식별 체계**다. 각 취약점에 `CVE-연도-순번`(예: CVE-2021-44228, Log4Shell) 고유 ID를 부여해 전 세계가 같은 언어로 취약점을 참조한다. 심각도는 **CVSS(Common Vulnerability Scoring System, 0~10)**로 표준화한다(NIST의 NVD가 점수 관리). Inspector의 가치는 "수천 개 패키지 × 매일 쏟아지는 신규 CVE"를 사람이 일일이 대조할 수 없다는 데서 나온다 — 인벤토리를 자동 수집해 NVD/벤더 피드와 지속 대조한다. 시험에서 "패치 누락·알려진 취약점 자동 탐지"는 Inspector, "탐지된 취약점의 실제 패치 적용"은 Systems Manager Patch Manager(보완 관계)다.
 
 > ⚠️ **함정**: "Inspector가 패치를 적용한다"는 오해. Inspector는 **탐지·평가만** 한다("이 인스턴스에 이런 CVE가 있다"). 실제 **패치 적용**은 **Systems Manager Patch Manager**의 일이다. 시험 시나리오가 "취약점을 찾아라"면 Inspector, "찾은 취약점을 자동으로 패치하라"면 Patch Manager(+ EventBridge로 연동)다. 둘은 보완 관계이지 대체재가 아니다.
 
-> 📚 **사례**: 2021년 12월 Log4Shell(CVE-2021-44228)이 터졌을 때, Java의 Log4j 로깅 라이브러리를 쓰는 거의 모든 서버가 원격 코드 실행에 노출됐다. 문제는 "우리 인프라 어디에 취약한 Log4j 버전이 깔려 있는가"를 아는 것 자체였다 — 수천 개 컨테이너 이미지와 EC2, Lambda 의존성에 묻혀 있었다. Inspector v2를 켜둔 조직은 신규 CVE가 NVD에 등록되자 **추가 스캔 없이 자동으로** 영향 받는 모든 리소스(EC2·ECR 이미지·Lambda 레이어)를 식별할 수 있었다. 교훈: 취약점 대응의 첫 단계는 "어디에 있는지 아는 것"이고, 지속 스캔 + 자동 재평가가 0-day 대응 속도를 결정한다.
+2021년 12월 Log4Shell(CVE-2021-44228)이 터졌을 때, Java의 Log4j 로깅 라이브러리를 쓰는 거의 모든 서버가 원격 코드 실행에 노출됐다. 문제는 "우리 인프라 어디에 취약한 Log4j 버전이 깔려 있는가"를 아는 것 자체였다 — 수천 개 컨테이너 이미지와 EC2, Lambda 의존성에 묻혀 있었다. Inspector v2를 켜둔 조직은 신규 CVE가 NVD에 등록되자 **추가 스캔 없이 자동으로** 영향 받는 모든 리소스(EC2·ECR 이미지·Lambda 레이어)를 식별할 수 있었다. 교훈: 취약점 대응의 첫 단계는 "어디에 있는지 아는 것"이고, 지속 스캔 + 자동 재평가가 0-day 대응 속도를 결정한다.
 
 ## 통합 — Security Hub로 모으고 EventBridge로 자동 대응
 
@@ -75,13 +75,13 @@ Inspector Finding ─┘                                                        
 
 > 🎯 **시나리오**: "GuardDuty가 EC2의 자격 증명 탈취 의심(InstanceCredentialExfiltration)을 탐지하면, 사람 개입 없이 즉시 해당 EC2를 격리하고 포렌식용 스냅샷을 떠서 보안팀에 알려라." → **GuardDuty Finding → EventBridge Rule → Lambda**. Lambda가 (1) EC2를 격리 보안 그룹(모든 트래픽 차단)으로 교체, (2) EBS 스냅샷 생성(포렌식 증거 보존), (3) SNS로 보안팀 알림을 수행한다. Security Hub로 Finding을 집계해 가시성을 높이고, 멀티 계정이면 위임 관리자에서 일괄 운영한다. 이 "탐지 → 자동 격리·증거 보존 → 알림"이 클라우드 보안 자동화(SOAR)의 표준 패턴이다.
 
-> 🔍 **더 깊이**: ASFF가 왜 중요한가? GuardDuty·Inspector·Macie·서드파티(F5, Crowdstrike 등)는 각자 다른 형식으로 Finding을 낸다. 이를 SIEM이나 자동화에 넣으려면 형식을 통일해야 하는데, Security Hub가 모두 ASFF(JSON 표준 스키마)로 정규화한다. 덕분에 EventBridge 룰 하나로 출처가 다른 Finding을 일관되게 처리하고, Splunk·외부 SIEM으로 보낼 때도 한 형식만 파싱하면 된다. 이것은 데이터 통합의 **표준 스키마(canonical schema)** 패턴 — N개 소스 × M개 소비자를 N+M 통합으로 줄인다(N×M 어댑터 지옥 회피).
+ASFF가 왜 중요한가? GuardDuty·Inspector·Macie·서드파티(F5, Crowdstrike 등)는 각자 다른 형식으로 Finding을 낸다. 이를 SIEM이나 자동화에 넣으려면 형식을 통일해야 하는데, Security Hub가 모두 ASFF(JSON 표준 스키마)로 정규화한다. 덕분에 EventBridge 룰 하나로 출처가 다른 Finding을 일관되게 처리하고, Splunk·외부 SIEM으로 보낼 때도 한 형식만 파싱하면 된다. 이것은 데이터 통합의 **표준 스키마(canonical schema)** 패턴 — N개 소스 × M개 소비자를 N+M 통합으로 줄인다(N×M 어댑터 지옥 회피).
 
-## 정리하며
+## 정리
 
 탐지 3총사는 "내용 · 행동 · 결함"의 삼각형이다 — **Macie**는 S3 객체의 **내용**(민감 데이터)을 ML로 분류하고, **GuardDuty**는 계정·네트워크의 **행동**(이상·악성 통신)을 위협 인텔과 ML로 잡으며, **Inspector**는 소프트웨어의 **결함**(CVE)을 데이터베이스 매칭으로 평가한다. 데이터 소스가 겹치지 않는다는 점(S3 바이트 vs 로그 vs 인벤토리)이 정답을 가른다. 이들은 Security Hub로 ASFF 통합되고 EventBridge로 자동 대응한다.
 
-SAP 시험 단골 매핑: (1) "S3에 카드 번호·SSN 저장 여부" → **Macie**, (2) "S3 비정상 접근 행동" → **GuardDuty S3 Protection**(Macie 아님), (3) "EC2 ↔ 악성 IP 통신·자격 증명 탈취" → **GuardDuty**, (4) "EC2·컨테이너·Lambda의 CVE 자동 탐지" → **Inspector v2**, (5) "탐지된 취약점 패치 적용" → **Patch Manager**(Inspector 아님), (6) "EKS 런타임 의심 동작" → **GuardDuty EKS Protection**, (7) "에이전트 없이 EC2 멀웨어 스캔" → **GuardDuty Malware Protection**, (8) "모든 계정 Finding 통합" → **Security Hub + 위임 관리자**. 다음 day는 이 Finding들을 모으는 통합 관제(Security Hub·Detective·Audit Manager)를 본다.
+SAP 시험 매핑: (1) "S3에 카드 번호·SSN 저장 여부" → **Macie**, (2) "S3 비정상 접근 행동" → **GuardDuty S3 Protection**(Macie 아님), (3) "EC2 ↔ 악성 IP 통신·자격 증명 탈취" → **GuardDuty**, (4) "EC2·컨테이너·Lambda의 CVE 자동 탐지" → **Inspector v2**, (5) "탐지된 취약점 패치 적용" → **Patch Manager**(Inspector 아님), (6) "EKS 런타임 의심 동작" → **GuardDuty EKS Protection**, (7) "에이전트 없이 EC2 멀웨어 스캔" → **GuardDuty Malware Protection**, (8) "모든 계정 Finding 통합" → **Security Hub + 위임 관리자**. 다음 day는 이 Finding들을 모으는 통합 관제(Security Hub·Detective·Audit Manager)를 본다.
 
 ---
 

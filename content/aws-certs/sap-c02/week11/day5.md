@@ -24,7 +24,7 @@ AWS 보안은 단일 서비스로 끝나지 않는다. 11주차에 본 모든 �
    ── 기반: Config(설정 평가) + CloudTrail(API 로그)
 ```
 
-> 💡 **관련 이론**: 이 4 레이어 구조는 보안의 **defense in depth(다층 방어)** 원칙의 구현이다. NIST SP 800-53과 사이버 킬 체인 모델이 공통으로 강조하는 바 — 단일 통제는 반드시 뚫린다는 전제하에 여러 독립 계층을 쌓아 한 계층이 뚫려도 다음이 막게 한다. 2019년 Capital One 침해가 이를 역설적으로 증명한다: WAF 오설정(L4) → SSRF로 IMDS 자격 증명 탈취 → S3 대량 유출. 만약 GuardDuty(L2, 비정상 행동 탐지)와 더 엄격한 IAM 최소 권한이 함께 작동했다면 체인이 끊겼을 것이다. Pro 시험이 "한 시나리오에 여러 레이어"를 묻는 이유가 이것이다 — 실무 보안은 레이어 하나로 끝나지 않는다.
+이 4 레이어 구조는 보안의 **defense in depth(다층 방어)** 원칙의 구현이다. NIST SP 800-53과 사이버 킬 체인 모델이 공통으로 강조하는 바 — 단일 통제는 반드시 뚫린다는 전제하에 여러 독립 계층을 쌓아 한 계층이 뚫려도 다음이 막게 한다. 2019년 Capital One 침해가 이를 역설적으로 증명한다: WAF 오설정(L4) → SSRF로 IMDS 자격 증명 탈취 → S3 대량 유출. 만약 GuardDuty(L2, 비정상 행동 탐지)와 더 엄격한 IAM 최소 권한이 함께 작동했다면 체인이 끊겼을 것이다. Pro 시험이 "한 시나리오에 여러 레이어"를 묻는 이유가 이것이다 — 실무 보안은 레이어 하나로 끝나지 않는다.
 
 ## Layer 1: 암호화 — KMS · CloudHSM
 
@@ -38,9 +38,9 @@ AWS 보안은 단일 서비스로 끝나지 않는다. 11주차에 본 모든 �
 
 핵심 재확인 — KMS는 **봉투 암호화**로 작동한다. 마스터 키(CMK)는 HSM을 떠나지 않고, `GenerateDataKey`로 받은 DEK가 실제 데이터를 로컬 암호화하며, 암호화된 DEK만 데이터와 함께 저장된다. 권한은 **Key Policy(루트) + IAM 위임 + Grant(임시)**의 3중 체크.
 
-> 🔍 **더 깊이**: KMS 키 종류 선택은 "통제권 vs 운영 부담"의 거래다. AWS Managed Key는 운영 부담 0이지만 정책·회전 통제가 거의 없다. CMK는 완전 통제를 주지만 키당 월 $1과 정책 관리 책임이 따른다. BYOK는 키 출처를 완전히 통제하지만 자동 로테이션을 포기한다. CloudHSM은 단일 테넌트·FIPS L3을 주지만 클러스터 운영(HA·백업·사용자 관리) 부담이 크다. 시험은 이 거래의 균형점을 묻는다 — "정책·감사 통제"면 CMK, "외부 생성+만료"면 BYOK, "단일 테넌트+L3"면 CloudHSM, 특별한 요구가 없으면 기본값이 최선.
+KMS 키 종류 선택은 "통제권 vs 운영 부담"의 거래다. AWS Managed Key는 운영 부담 0이지만 정책·회전 통제가 거의 없다. CMK는 완전 통제를 주지만 키당 월 $1과 정책 관리 책임이 따른다. BYOK는 키 출처를 완전히 통제하지만 자동 로테이션을 포기한다. CloudHSM은 단일 테넌트·FIPS L3을 주지만 클러스터 운영(HA·백업·사용자 관리) 부담이 크다. 시험은 이 거래의 균형점을 묻는다 — "정책·감사 통제"면 CMK, "외부 생성+만료"면 BYOK, "단일 테넌트+L3"면 CloudHSM, 특별한 요구가 없으면 기본값이 최선.
 
-> 📚 **사례**: 한 핀테크가 BYOK으로 자사 HSM에서 생성한 키를 KMS에 import해 사용했다. 장점은 키 머터리얼이 자사 HSM에 영구 보관되어 AWS가 영구 회수 불가(KMS는 캐시만 보관, 만료 시 삭제). 단점은 자동 로테이션이 안 돼 회전 때마다 직접 재import해야 했다. 교훈: BYOK는 통제권을 얻는 대신 운영 부담과 자동 로테이션을 내주는 거래다.
+(가상 사례) 한 핀테크가 BYOK으로 자사 HSM에서 생성한 키를 KMS에 import해 사용했다. 장점은 키 머터리얼이 자사 HSM에 영구 보관되어 AWS가 영구 회수 불가(KMS는 캐시만 보관, 만료 시 삭제). 단점은 자동 로테이션이 안 돼 회전 때마다 직접 재import해야 했다. 교훈: BYOK는 통제권을 얻는 대신 운영 부담과 자동 로테이션을 내주는 거래다.
 
 > ⚠️ **함정**: "IAM Policy만으로 KMS 권한 부여"는 오답이다. Key Policy에 계정 루트로의 IAM 위임이 없으면 IAM 권한이 무효다. 또 "키 즉시 삭제"도 불가 — KMS는 7~30일 PendingDeletion 유예를 강제한다(키 삭제 = 데이터 영구 손실이므로).
 
@@ -56,9 +56,9 @@ AWS 보안은 단일 서비스로 끝나지 않는다. 11주차에 본 모든 �
 
 > 🎯 **시나리오**: "S3 버킷에 신용카드 번호가 저장된 적이 있는지" → **Macie**(콘텐츠 검사). "EC2가 알려진 악성 IP와 통신" → **GuardDuty**(네트워크 행동). "EC2 OS 패치 누락 CVE 스캔" → **Inspector v2**(취약점 DB). "S3에 비정상 접근 행동" → **GuardDuty S3 Protection**(Macie 아님 — 행동이지 내용이 아님).
 
-> 🔍 **더 깊이**: GuardDuty의 Protection 모듈은 옵트인이며 각각 별도 비용이다 — S3 Protection(접근 이상), Malware Protection(EBS 스냅샷 스캔, 에이전트 불필요), EKS Protection(쿠버네티스 감사+런타임), RDS Protection(DB 로그인 이상), Lambda Protection(네트워크 이상). 시험에서 "EKS 런타임 의심 동작"은 EKS Protection, "에이전트 없이 EC2 멀웨어 스캔"은 Malware Protection이 정답이다. GuardDuty가 에이전트 없이 작동하는 비결은 "AWS가 이미 수집하는 로그를 분석"하기 때문이다.
+GuardDuty의 Protection 모듈은 옵트인이며 각각 별도 비용이다 — S3 Protection(접근 이상), Malware Protection(EBS 스냅샷 스캔, 에이전트 불필요), EKS Protection(쿠버네티스 감사+런타임), RDS Protection(DB 로그인 이상), Lambda Protection(네트워크 이상). 시험에서 "EKS 런타임 의심 동작"은 EKS Protection, "에이전트 없이 EC2 멀웨어 스캔"은 Malware Protection이 정답이다. GuardDuty가 에이전트 없이 작동하는 비결은 "AWS가 이미 수집하는 로그를 분석"하기 때문이다.
 
-> 📚 **사례**: 2021년 Log4Shell(CVE-2021-44228)이 터졌을 때, "우리 인프라 어디에 취약한 Log4j가 있나"를 아는 것 자체가 난제였다. Inspector v2를 켜둔 조직은 신규 CVE가 NVD에 등록되자 추가 스캔 없이 영향 받는 EC2·ECR 이미지·Lambda를 자동 식별했다. 교훈: 취약점 대응의 첫 단계는 "어디 있는지 아는 것"이고, 지속 스캔 + 자동 재평가가 0-day 대응 속도를 결정한다. 단, Inspector는 탐지만 하고 패치 적용은 Patch Manager의 일이다.
+2021년 Log4Shell(CVE-2021-44228)이 터졌을 때, "우리 인프라 어디에 취약한 Log4j가 있나"를 아는 것 자체가 난제였다. Inspector v2를 켜둔 조직은 신규 CVE가 NVD에 등록되자 추가 스캔 없이 영향 받는 EC2·ECR 이미지·Lambda를 자동 식별했다. 교훈: 취약점 대응의 첫 단계는 "어디 있는지 아는 것"이고, 지속 스캔 + 자동 재평가가 0-day 대응 속도를 결정한다. 단, Inspector는 탐지만 하고 패치 적용은 Patch Manager의 일이다.
 
 > ⚠️ **함정**: "Inspector가 패치를 적용한다"는 오해. Inspector는 탐지·평가만 한다. 패치 적용은 Systems Manager **Patch Manager**다(보완 관계). "취약점 찾기"=Inspector, "찾은 것 패치"=Patch Manager.
 
@@ -72,11 +72,11 @@ AWS 보안은 단일 서비스로 끝나지 않는다. 11주차에 본 모든 �
 
 Security Hub는 "지금 표준을 지키나", Detective는 "이 사건이 어떻게 일어났나", Audit Manager는 "준수를 어떻게 증명하나". 셋 다 **Config(설정 평가)**와 **CloudTrail(API 로그)**을 데이터 근간으로 삼는다.
 
-> 💡 **관련 이론**: Security Hub는 **CSPM(Cloud Security Posture Management)** 카테고리에 속한다(서드파티: Wiz, Prisma Cloud, Lacework). CSPM의 핵심은 "configuration drift 탐지 + 표준 위반 식별"이다. Security Hub의 표준 점검 다수가 내부적으로 **Config Rule**로 구현되므로, Config가 비활성이면 점검이 "No data"가 된다 — 시험 단골 함정. Config가 평가 엔진이고 Security Hub는 그 위의 보안 집계·표준화 레이어다.
+Security Hub는 **CSPM(Cloud Security Posture Management)** 카테고리에 속한다(서드파티: Wiz, Prisma Cloud, Lacework). CSPM은 "configuration drift 탐지 + 표준 위반 식별"을 맡는다. Security Hub의 표준 점검 다수가 내부적으로 **Config Rule**로 구현되므로, Config가 비활성이면 점검이 "No data"가 된다 — 함정으로 쓰이기 쉽다. Config가 평가 엔진이고 Security Hub는 그 위의 보안 집계·표준화 레이어다.
 
-> 🔍 **더 깊이**: Audit Manager가 Security Hub와 다른 결정적 지점은 **시점 vs 지속**이다. Security Hub는 "지금 이 순간"을 본다. 감사는 "기간 내 지속 준수"를 증거로 요구한다 — 감사 전날만 고쳐선 안 되고, 분기 내내 통제가 작동했다는 타임스탬프 증거가 필요하다. 그래서 Audit Manager는 CloudTrail·Config 증거를 시간에 걸쳐 축적한다. "실시간 점검"=Security Hub, "기간 증거+보고서"=Audit Manager.
+Audit Manager가 Security Hub와 다른 결정적 지점은 **시점 vs 지속**이다. Security Hub는 "지금 이 순간"을 본다. 감사는 "기간 내 지속 준수"를 증거로 요구한다 — 감사 전날만 고쳐선 안 되고, 분기 내내 통제가 작동했다는 타임스탬프 증거가 필요하다. 그래서 Audit Manager는 CloudTrail·Config 증거를 시간에 걸쳐 축적한다. "실시간 점검"=Security Hub, "기간 증거+보고서"=Audit Manager.
 
-> 📚 **사례**: 한 헬스케어 SaaS는 HIPAA 감사 증거를 엔지니어가 수동 캡처하느라 매번 3~4주를 썼다. Audit Manager HIPAA 프레임워크로 통제별 증거가 자동 수집·축적되어 준비가 며칠로 줄었다. 교훈: 감사의 비용은 "통제 준수"가 아니라 "준수 증명(증거 수집)"에 있다.
+(가상 사례) 한 헬스케어 SaaS는 HIPAA 감사 증거를 엔지니어가 수동 캡처하느라 매번 3~4주를 썼다. Audit Manager HIPAA 프레임워크로 통제별 증거가 자동 수집·축적되어 준비가 며칠로 줄었다. 교훈: 감사의 비용은 "통제 준수"가 아니라 "준수 증명(증거 수집)"에 있다.
 
 ## Layer 4: 엣지·DDoS 방어 — 계층으로 막는다
 
@@ -89,13 +89,13 @@ Security Hub는 "지금 표준을 지키나", Detective는 "이 사건이 어떻
 | **Network Firewall** | L3-7 | VPC 내부 | IDS/IPS·TLS Inspection(Suricata) |
 | **DNS Firewall** | DNS | VPC 출발 쿼리 | 악성 도메인 차단(이름 기반) |
 
-> 💡 **관련 이론**: DDoS는 OSI 계층으로 나뉜다 — Volumetric/Protocol(L3/L4, Shield), Application(L7, Shield Advanced+WAF Rate-Based). "낮은 계층에서 막을 것을 높은 계층까지 올리지 말라"는 원칙대로, Shield는 volumetric 공격을 AWS 엣지에서 흡수해 애플리케이션 도달 전에 차단한다. 시험의 첫 질문은 항상 "이 공격은 몇 계층인가"다.
+DDoS는 OSI 계층으로 나뉜다 — Volumetric/Protocol(L3/L4, Shield), Application(L7, Shield Advanced+WAF Rate-Based). "낮은 계층에서 막을 것을 높은 계층까지 올리지 말라"는 원칙대로, Shield는 volumetric 공격을 AWS 엣지에서 흡수해 애플리케이션 도달 전에 차단한다. 시험의 첫 질문은 항상 "이 공격은 몇 계층인가"다.
 
 > 🎯 **시나리오**: "L7 HTTP flood DDoS + 자동 스케일 아웃 요금 폭증 + 공격 중 전문가 부재" → **Shield Advanced**(L7 보호 + Cost Protection 요금 면제 + SRT 24/7). Standard는 L7 미보호 + Cost Protection 없음. WAF 단독은 DDoS 자동 완화·비용 보호 없음.
 
-> 📚 **사례**: 2020년 AWS Shield는 약 2.3 Tbps의 CLDAP 반사 증폭 DDoS를 완화했다(당시 역대 최대급). 이런 초대형 volumetric 공격은 단일 데이터센터로 흡수 불가하고 AWS 글로벌 엣지 용량(수십 Tbps)으로만 막힌다. 교훈: volumetric DDoS 방어의 본질은 "공격보다 큰 흡수 용량"이며, 개별 기업이 자체 구축하기 가장 어려운 영역이다.
+2020년 AWS Shield는 약 2.3 Tbps의 CLDAP 반사 증폭 DDoS를 완화했다(당시 역대 최대급). 이런 초대형 volumetric 공격은 단일 데이터센터로 흡수 불가하고 AWS 글로벌 엣지 용량(수십 Tbps)으로만 막힌다. 교훈: volumetric DDoS 방어의 본질은 "공격보다 큰 흡수 용량"이며, 개별 기업이 자체 구축하기 가장 어려운 영역이다.
 
-> ⚠️ **함정**: Firewall Manager vs SCP vs Config. **Firewall Manager**=보안 정책 능동 배포(WAF/Shield/SG/NWF), **SCP**=행위 금지(거부 가드레일), **Config**=비준수 평가. "Org 전체 WAF 정책 + 신규 계정 자동"은 Firewall Manager.
+Firewall Manager vs SCP vs Config. **Firewall Manager**=보안 정책 능동 배포(WAF/Shield/SG/NWF), **SCP**=행위 금지(거부 가드레일), **Config**=비준수 평가. "Org 전체 WAF 정책 + 신규 계정 자동"은 Firewall Manager.
 
 ## 보안 키워드 → 정답 매핑 (시험 직전 암기표)
 
@@ -129,7 +129,7 @@ Security Hub는 "지금 표준을 지키나", Detective는 "이 사건이 어떻
 | "사람 SSH 없이 EC2 접근" | SSM Session Manager | - |
 | "Secrets 자동 로테이션" | Secrets Manager | - |
 
-## 정리하며
+## 정리
 
 AWS 보안은 4 레이어(암호화 → 탐지 → 통합 관제 → 엣지 방어)의 조합이다. 각 레이어 내에서도 비슷한 이름이 다른 역할을 한다 — Macie(내용) vs GuardDuty(행동) vs Inspector(결함), Security Hub(현재) vs Detective(과거) vs Audit Manager(증명), Shield Standard(L3/4) vs Advanced(L7+비용보호), Network Firewall(VPC 트래픽) vs DNS Firewall(도메인 이름). Pro 시험은 한 시나리오에 여러 레이어가 동시 출현하므로, 키워드 → 정답 매핑을 즉답 수준으로 외우고 4 레이어를 한꺼번에 떠올리는 훈련이 필요하다.
 
