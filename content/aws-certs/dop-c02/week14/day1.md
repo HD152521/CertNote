@@ -12,9 +12,9 @@ DOP 시험에서 GuardDuty는 "위협 탐지 + 자동 대응"의 토대로, "탐
 
 GuardDuty는 이 둘을 섞는다. 위협 인텔리전스 피드(알려진 악성 IP·도메인)로 시그니처 탐지를 하고, CloudTrail·VPC Flow·DNS 로그에 머신러닝과 통계 모델을 돌려 이상 탐지를 한다. "이 계정이 한 번도 쓴 적 없는 region에서 갑자기 IAM 사용자를 대량 생성" 같은 판정은 순수 시그니처로는 불가능하고, 행동 베이스라인이 있어야 가능하다.
 
-> 💡 **관련 이론**: 이상 탐지의 수학적 토대는 **통계적 가설 검정**과 **베이즈 추론**이다. 데닝의 IDES는 각 주체(사용자·프로세스)의 행동을 평균과 분산으로 모델링하고, 관측값이 기대 분포에서 몇 표준편차(σ) 벗어났는지로 이상도를 측정했다. 현대 GuardDuty는 여기에 더 정교한 모델을 쓰지만 원리는 같다 — "이 행동의 사전 확률(prior)은 낮은데, 관측됐다(posterior 급등)면 의심하라." 이 접근의 근본 한계가 **기저율의 오류(base rate fallacy)**다. 침해가 극히 드물면(예: 100만 이벤트당 1건), 탐지기의 정확도가 99%여도 알람의 대다수가 false positive가 된다. GuardDuty의 Severity 점수와 Suppression Rule이 존재하는 이유가 바로 이 기저율 문제 — "탐지는 쉽고, 알람 피로를 안 만들면서 탐지하는 게 어렵다"는 — 를 다루기 위해서다.
+> 이상 탐지의 수학적 토대는 **통계적 가설 검정**과 **베이즈 추론**이다. 데닝의 IDES는 각 주체(사용자·프로세스)의 행동을 평균과 분산으로 모델링하고, 관측값이 기대 분포에서 몇 표준편차(σ) 벗어났는지로 이상도를 측정했다. 현대 GuardDuty는 여기에 더 정교한 모델을 쓰지만 원리는 같다 — "이 행동의 사전 확률(prior)은 낮은데, 관측됐다(posterior 급등)면 의심하라." 이 접근의 근본 한계가 **기저율의 오류(base rate fallacy)**다. 침해가 극히 드물면(예: 100만 이벤트당 1건), 탐지기의 정확도가 99%여도 알람의 대다수가 false positive가 된다. GuardDuty의 Severity 점수와 Suppression Rule이 존재하는 이유가 바로 이 기저율 문제 — "탐지는 쉽고, 알람 피로를 안 만들면서 탐지하는 게 어렵다"는 — 를 다루기 위해서다.
 
-> 🔍 **더 깊이**: GuardDuty가 "에이전트 없이(agentless)" 동작하는 것이 설계의 핵심이다. 전통적 호스트 IDS(HIDS, 예: OSSEC)는 각 서버에 에이전트를 깔아 로그·파일 무결성을 감시한다. GuardDuty는 에이전트를 깔지 않고 **AWS가 이미 수집하는 데이터 평면(data plane) 로그**를 읽는다 — CloudTrail은 API 호출을, VPC Flow Logs는 네트워크 흐름을, Route 53 Resolver는 DNS 쿼리를 이미 기록한다. GuardDuty는 이 로그들의 **복제 스트림을 내부적으로 직접 받아** 분석하므로, 사용자가 이 로그들을 따로 켜거나 저장할 필요조차 없다(VPC Flow Logs를 활성화하지 않아도 GuardDuty는 흐름을 본다). 이것이 "켜기 버튼 하나"의 정체다 — 새 데이터 수집 인프라를 까는 게 아니라, 이미 흐르는 로그에 분석 엔진을 붙이는 것이다. 예외는 EKS/ECS Runtime Monitoring과 EBS Malware Protection으로, 이들은 경량 에이전트나 스냅샷 스캔을 추가로 쓴다.
+> GuardDuty가 "에이전트 없이(agentless)" 동작하는 것이 설계의 핵심이다. 전통적 호스트 IDS(HIDS, 예: OSSEC)는 각 서버에 에이전트를 깔아 로그·파일 무결성을 감시한다. GuardDuty는 에이전트를 깔지 않고 **AWS가 이미 수집하는 데이터 평면(data plane) 로그**를 읽는다 — CloudTrail은 API 호출을, VPC Flow Logs는 네트워크 흐름을, Route 53 Resolver는 DNS 쿼리를 이미 기록한다. GuardDuty는 이 로그들의 **복제 스트림을 내부적으로 직접 받아** 분석하므로, 사용자가 이 로그들을 따로 켜거나 저장할 필요조차 없다(VPC Flow Logs를 활성화하지 않아도 GuardDuty는 흐름을 본다). 이것이 "켜기 버튼 하나"의 정체다 — 새 데이터 수집 인프라를 까는 게 아니라, 이미 흐르는 로그에 분석 엔진을 붙이는 것이다. 예외는 EKS/ECS Runtime Monitoring과 EBS Malware Protection으로, 이들은 경량 에이전트나 스냅샷 스캔을 추가로 쓴다.
 
 ## GuardDuty 데이터 소스 — 무엇을 읽어 무엇을 판정하는가
 
@@ -32,7 +32,7 @@ GuardDuty의 탐지 능력은 결국 "어떤 로그를 보느냐"에서 나온�
 | **RDS Login Activity** | DB 인증 시도 | 무차별 대입, 비정상 로그인 |
 | **Runtime Monitoring** | EKS/ECS/EC2 런타임 행위 | 프로세스 실행, 파일 접근 이상 |
 
-> 🔍 **더 깊이**: **DNS 기반 탐지**가 왜 강력한지를 보면 GuardDuty의 설계 철학이 드러난다. 멀웨어는 C2 서버와 통신하려면 거의 항상 도메인을 해석(resolve)해야 하고, 많은 공격이 **DGA(Domain Generation Algorithm)** — 매일 수천 개의 무작위처럼 보이는 도메인을 생성해 차단을 회피하는 기법(예: Conficker 웜이 2008년 사용) — 를 쓴다. GuardDuty는 DNS 쿼리의 도메인 이름에 엔트로피 분석과 ML을 돌려 "사람이 안 쓸 무작위 문자열" 패턴을 잡고, 알려진 C2 도메인 피드와 대조한다. 또 **DNS 터널링** — DNS 쿼리/응답에 데이터를 인코딩해 방화벽을 우회하는 데이터 유출 기법 — 도 쿼리 길이·빈도·레코드 타입(TXT 남용)으로 탐지한다. 그래서 `CryptoCurrency:EC2/BitcoinTool.B!DNS` 같은 Finding 타입에 `!DNS` 접미사가 붙는다 — DNS 신호로 잡았다는 표시다. 네트워크 페이로드(VPC Flow)와 DNS를 교차하면 암호화된 트래픽도 "어디로 향하는가"로 의심할 수 있다.
+> **DNS 기반 탐지**가 왜 강력한지를 보면 GuardDuty의 설계 철학이 드러난다. 멀웨어는 C2 서버와 통신하려면 거의 항상 도메인을 해석(resolve)해야 하고, 많은 공격이 **DGA(Domain Generation Algorithm)** — 매일 수천 개의 무작위처럼 보이는 도메인을 생성해 차단을 회피하는 기법(예: Conficker 웜이 2008년 사용) — 를 쓴다. GuardDuty는 DNS 쿼리의 도메인 이름에 엔트로피 분석과 ML을 돌려 "사람이 안 쓸 무작위 문자열" 패턴을 잡고, 알려진 C2 도메인 피드와 대조한다. 또 **DNS 터널링** — DNS 쿼리/응답에 데이터를 인코딩해 방화벽을 우회하는 데이터 유출 기법 — 도 쿼리 길이·빈도·레코드 타입(TXT 남용)으로 탐지한다. 그래서 `CryptoCurrency:EC2/BitcoinTool.B!DNS` 같은 Finding 타입에 `!DNS` 접미사가 붙는다 — DNS 신호로 잡았다는 표시다. 네트워크 페이로드(VPC Flow)와 DNS를 교차하면 암호화된 트래픽도 "어디로 향하는가"로 의심할 수 있다.
 
 대표 Finding 타입의 명명 규칙은 `Threat:ResourceType/ThreatFamily.Variant!Source` 형태다. 예를 들어 `Backdoor:EC2/C&CActivity.B!DNS`는 "백도어 위협, EC2 대상, C&C 활동 변종 B, DNS 신호로 탐지"를 뜻한다. 이 구조를 읽을 줄 알면 Finding만 봐도 무엇이 어떻게 잡혔는지 안다.
 
@@ -80,15 +80,15 @@ EventBridge 규칙의 이벤트 패턴이 어떤 Finding을 자동 대응으로 
 }
 ```
 
-> ⚠️ **함정**: 자동 격리 단계의 **순서**가 시험에 나온다. 스냅샷을 가장 먼저 떠야 한다 — 인스턴스를 격리하거나 종료한 뒤엔 메모리·디스크 상태가 오염되거나 사라져 포렌식이 불가능해진다. 또 "격리"는 인스턴스를 **종료(terminate)하는 게 아니라** 격리 SG로 네트워크만 끊는 것이다. 종료하면 공격자가 무엇을 했는지 영영 모른다. 격리 SG는 "모든 아웃바운드 차단 + 포렌식 점프박스에서의 인바운드만 허용"으로, 공격자의 C2 통신을 끊으면서 조사자는 접근하게 한다. "GuardDuty Critical 발견 시 즉시 인스턴스 종료"는 거의 항상 오답이다 — 증거 인멸이기 때문이다.
+> ⚠️ **함정**: 자동 격리 단계의 **순서**가 시험에 나온다. 스냅샷을 가장 먼저 떠야 한다 — 인스턴스를 격리하거나 종료한 뒤엔 메모리·디스크 상태가 오염되거나 사라져 포렌식이 불가능해진다. 또 "격리"는 인스턴스를 **종료(terminate)하는 게 아니라** 격리 SG로 네트워크만 끊는 것이다. 종료하면 공격자가 무엇을 했는지 영영 모른다. 격리 SG는 "모든 아웃바운드 차단 + 포렌식 점프박스에서의 인바운드만 허용"으로, 공격자의 C2 통신을 끊으면서 조사자는 접근하게 한다. "GuardDuty Critical 발견 시 즉시 인스턴스 종료"는 오답이다 — 증거 인멸이기 때문이다.
 
-> 📚 **사례**: 2019년 캐피털 원(Capital One) 침해는 약 1억 명의 신용 정보가 유출된 대형 사고로, 잘못 설정된 WAF가 SSRF(Server-Side Request Forgery) 공격에 악용돼 EC2 인스턴스의 IAM 역할 자격 증명이 탈취되고, 그 자격 증명으로 S3 버킷이 통째로 유출됐다. 핵심 교훈은 두 가지였다. 첫째, **인스턴스의 IAM 역할 자격 증명 탈취 후 비정상 API 호출**(다른 region·대량 S3 접근)은 GuardDuty의 `UnauthorizedAccess:IAMUser/InstanceCredentialExfiltration` 같은 Finding으로 탐지 가능한 패턴이었다 — 탐지가 켜져 있고 자동 대응이 걸려 있었다면 자격 증명 무력화로 피해를 줄일 수 있었다. 둘째, **탐지 후 대응 속도**가 피해 규모를 결정한다 — 침해와 외부 신고 사이에 약 4개월의 공백이 있었다. 이 사고 이후 "탐지(GuardDuty) → 자동 자격 증명 무력화·격리(EventBridge+SSM)"의 자동화 사슬이 업계 표준 권고가 됐다.
+> 2019년 캐피털 원(Capital One) 침해는 약 1억 명의 신용 정보가 유출된 대형 사고로, 잘못 설정된 WAF가 SSRF(Server-Side Request Forgery) 공격에 악용돼 EC2 인스턴스의 IAM 역할 자격 증명이 탈취되고, 그 자격 증명으로 S3 버킷이 통째로 유출됐다. 핵심 교훈은 두 가지였다. 첫째, **인스턴스의 IAM 역할 자격 증명 탈취 후 비정상 API 호출**(다른 region·대량 S3 접근)은 GuardDuty의 `UnauthorizedAccess:IAMUser/InstanceCredentialExfiltration` 같은 Finding으로 탐지 가능한 패턴이었다 — 탐지가 켜져 있고 자동 대응이 걸려 있었다면 자격 증명 무력화로 피해를 줄일 수 있었다. 둘째, **탐지 후 대응 속도**가 피해 규모를 결정한다 — 침해와 외부 신고 사이에 약 4개월의 공백이 있었다. 이 사고 이후 "탐지(GuardDuty) → 자동 자격 증명 무력화·격리(EventBridge+SSM)"의 자동화 사슬이 업계 표준 권고가 됐다.
 
 ## Multi-Account GuardDuty — Organizations로 일괄 적용
 
 수백 개 계정에서 각자 GuardDuty를 켜고 Finding을 따로 보는 건 운영 불가능이다. GuardDuty는 Organizations와 통합해 중앙 집중화한다.
 
-핵심은 **위임 관리자(Delegated Administrator)** 계정이다. 보통 Security OU의 Audit 계정을 위임 관리자로 지정하면, 그 계정이 조직 전체의 GuardDuty를 통제한다. `auto-enable`을 켜면 **기존 멤버 계정은 물론 앞으로 새로 만들어지는 계정도 자동으로 GuardDuty가 활성**된다 — 사람이 새 계정마다 켜는 걸 잊는 사고를 원천 차단한다.
+출발점은 **위임 관리자(Delegated Administrator)** 계정이다. 보통 Security OU의 Audit 계정을 위임 관리자로 지정하면, 그 계정이 조직 전체의 GuardDuty를 통제한다. `auto-enable`을 켜면 **기존 멤버 계정은 물론 앞으로 새로 만들어지는 계정도 자동으로 GuardDuty가 활성**된다 — 사람이 새 계정마다 켜는 걸 잊는 사고를 원천 차단한다.
 
 ```bash
 # Organizations 서비스 접근 허용
@@ -103,13 +103,13 @@ aws guardduty update-organization-configuration \
   --features '[{"Name":"EBS_MALWARE_PROTECTION","AutoEnable":"NEW"},{"Name":"EKS_AUDIT_LOGS","AutoEnable":"ALL"}]'
 ```
 
-> 💡 **관련 이론**: 위임 관리자 패턴은 보안의 **관심사 분리(separation of concerns)**와 **최소 권한** 원칙의 조직 단위 적용이다. 관리 계정(management account)에 모든 권한을 몰아넣는 대신, GuardDuty 운영은 Audit 계정에, 로깅은 Log Archive 계정에 위임한다(AWS의 Landing Zone / Control Tower 권장 구조). 이는 **폭발 반경(blast radius) 축소** — 한 계정이 침해돼도 전체가 무너지지 않게 권한을 분산 — 라는 분산 시스템의 격벽(bulkhead) 패턴을 IAM 거버넌스에 적용한 것이다. 관리 계정은 결제·조직 구조만 다루고 일상 보안 운영에서 빠지므로, 관리 계정 자격 증명이 노출돼도 보안 탐지 기능 자체는 별도 계정에서 계속 돌아간다.
+> 위임 관리자 패턴은 보안의 **관심사 분리(separation of concerns)**와 **최소 권한** 원칙의 조직 단위 적용이다. 관리 계정(management account)에 모든 권한을 몰아넣는 대신, GuardDuty 운영은 Audit 계정에, 로깅은 Log Archive 계정에 위임한다(AWS의 Landing Zone / Control Tower 권장 구조). 이는 **폭발 반경(blast radius) 축소** — 한 계정이 침해돼도 전체가 무너지지 않게 권한을 분산 — 라는 분산 시스템의 격벽(bulkhead) 패턴을 IAM 거버넌스에 적용한 것이다. 관리 계정은 결제·조직 구조만 다루고 일상 보안 운영에서 빠지므로, 관리 계정 자격 증명이 노출돼도 보안 탐지 기능 자체는 별도 계정에서 계속 돌아간다.
 
 ## Finding을 ASFF로 — Security Hub와의 통합
 
 GuardDuty Finding은 자동으로 **ASFF(AWS Security Finding Format)**라는 표준 JSON 스키마로 변환되어 Security Hub로 전송된다. ASFF는 GuardDuty·Inspector·Macie 등 서로 다른 소스의 Finding을 같은 형식으로 정규화하는 공통 언어다. Security Hub가 이를 받아 중복 제거(dedup)하고 우선순위화한다(상세는 Day 2).
 
-> 💡 **관련 이론**: ASFF는 보안 데이터의 **정규화(normalization)** 문제에 대한 답이다. 여러 도구가 각자 다른 형식으로 알람을 내면, SIEM(Security Information and Event Management)은 이를 통합 분석할 수 없다. 업계엔 STIX(Structured Threat Information eXpression, MITRE/OASIS 표준), OCSF(Open Cybersecurity Schema Framework, 2022년 AWS·Splunk 등이 공동 발족) 같은 표준이 경쟁한다. ASFF는 AWS 생태계 내부의 공통 스키마로, "서로 다른 탐지기의 출력을 하나의 파이프라인으로 흘려보낸다"는 **표준 인터페이스(adapter pattern)** 사상의 구현이다. 데이터 형식을 표준화하면 다운스트림(EventBridge 필터·자동 수정 Lambda)을 소스마다 새로 짜지 않아도 된다 — 이것이 통합 보안 자동화의 전제 조건이다.
+> ASFF는 보안 데이터의 **정규화(normalization)** 문제에 대한 답이다. 여러 도구가 각자 다른 형식으로 알람을 내면, SIEM(Security Information and Event Management)은 이를 통합 분석할 수 없다. 업계엔 STIX(Structured Threat Information eXpression, MITRE/OASIS 표준), OCSF(Open Cybersecurity Schema Framework, 2022년 AWS·Splunk 등이 공동 발족) 같은 표준이 경쟁한다. ASFF는 AWS 생태계 내부의 공통 스키마로, "서로 다른 탐지기의 출력을 하나의 파이프라인으로 흘려보낸다"는 **표준 인터페이스(adapter pattern)** 사상의 구현이다. 데이터 형식을 표준화하면 다운스트림(EventBridge 필터·자동 수정 Lambda)을 소스마다 새로 짜지 않아도 된다 — 이것이 통합 보안 자동화의 전제 조건이다.
 
 ## Noise 통제 — Suppression, Trusted IP, Threat IP
 
@@ -119,15 +119,15 @@ GuardDuty Finding은 자동으로 **ASFF(AWS Security Finding Format)**라는 �
 - **Trusted IP List**: 알려진 안전한 IP는 아예 Finding을 만들지 않음(예: 회사 VPN 출구 IP).
 - **Threat IP List**: 사용자 정의 악성 IP 목록 — 이 IP와의 통신을 적극 탐지.
 
-> ⚠️ **함정**: Suppression Rule과 Trusted IP List는 효과가 다르다. **Trusted IP List**는 해당 IP에 대한 Finding 생성 자체를 막으므로, 그 IP가 나중에 침해돼도 GuardDuty가 침묵한다 — 위험한 사각지대가 될 수 있다. **Suppression Rule**은 Finding을 여전히 생성·보존하되 콘솔/알림에서만 숨긴다 — 사후 조사 시 데이터는 남아 있다. 따라서 "잠깐의 false positive 억제"는 Suppression이 안전하고, Trusted IP는 정말 통제된 인프라 IP에만 신중히 써야 한다. 시험에서 "false positive를 줄이되 사후 감사용 기록은 남기고 싶다"의 답은 Trusted IP가 아니라 Suppression Rule이다.
+> Suppression Rule과 Trusted IP List는 효과가 다르다. **Trusted IP List**는 해당 IP에 대한 Finding 생성 자체를 막으므로, 그 IP가 나중에 침해돼도 GuardDuty가 침묵한다 — 위험한 사각지대가 될 수 있다. **Suppression Rule**은 Finding을 여전히 생성·보존하되 콘솔/알림에서만 숨긴다 — 사후 조사 시 데이터는 남아 있다. 따라서 "잠깐의 false positive 억제"는 Suppression이 안전하고, Trusted IP는 정말 통제된 인프라 IP에만 신중히 써야 한다. 시험에서 "false positive를 줄이되 사후 감사용 기록은 남기고 싶다"의 답은 Trusted IP가 아니라 Suppression Rule이다.
 
 ## GuardDuty Malware Protection — 에이전트리스 EBS 스캔
 
-GuardDuty Malware Protection은 위협 Finding이 난 EC2의 EBS 볼륨을 자동으로(또는 on-demand) 스캔해 멀웨어를 찾는다. 핵심은 **인스턴스를 건드리지 않는 스캔 방식**이다 — 대상 EBS의 스냅샷을 떠서 GuardDuty 서비스 계정 측에서 격리된 환경에 마운트해 스캔하므로, 운영 인스턴스의 성능에 영향을 주지 않고 공격자에게도 들키지 않는다(에이전트가 없으니 공격자가 비활성화할 수 없다). 별도 과금이며, 컨테이너 런타임 모니터링(EKS·ECS Fargate)도 제공한다.
+GuardDuty Malware Protection은 위협 Finding이 난 EC2의 EBS 볼륨을 자동으로(또는 on-demand) 스캔해 멀웨어를 찾는다. 특징은 **인스턴스를 건드리지 않는 스캔 방식**이다 — 대상 EBS의 스냅샷을 떠서 GuardDuty 서비스 계정 측에서 격리된 환경에 마운트해 스캔하므로, 운영 인스턴스의 성능에 영향을 주지 않고 공격자에게도 들키지 않는다(에이전트가 없으니 공격자가 비활성화할 수 없다). 별도 과금이며, 컨테이너 런타임 모니터링(EKS·ECS Fargate)도 제공한다.
 
 > 🎯 **시나리오**: "GuardDuty가 EC2에서 `CryptoCurrency:EC2/BitcoinTool.B!DNS`(Severity 8.5)를 탐지했다. 사람 개입 없이 ①포렌식 증거 보존 ②네트워크 격리 ③멀웨어 확인 ④운영팀 알림을 자동화하라." → EventBridge 규칙으로 `severity >= 7` AND `type prefix CryptoCurrency:EC2/`를 필터링 → SSM Automation Runbook 호출: (1) EBS 스냅샷 생성, (2) GuardDuty Malware Protection on-demand 스캔 트리거, (3) 인스턴스 SG를 sg-quarantine으로 교체, (4) 인스턴스에 incident-id 태그, (5) SNS로 Slack/PagerDuty 알림, (6) Lambda로 Jira 티켓 생성. 인스턴스 **종료는 하지 않는다**(증거 보존). 멀티 계정이면 위임 관리자 계정의 EventBridge가 조직 전체 Finding을 받아 소스 계정의 SSM Runbook을 cross-account 역할로 실행한다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 네 가지다. 첫째, **위협 탐지는 시그니처 기반과 이상 탐지 사이의 긴장**이며 GuardDuty는 위협 인텔리전스(시그니처)와 ML 행동 분석(이상 탐지)을 섞고, 그 밑엔 데닝의 통계적 IDS 모델과 기저율 오류라는 근본 제약이 깔려 있다. 둘째, **GuardDuty는 에이전트리스로 AWS가 이미 수집하는 데이터 평면 로그**(CloudTrail·VPC Flow·DNS 등)를 직접 읽어 위협을 판정하며, Finding 타입의 명명 규칙이 무엇을 어떻게 잡았는지 알려준다. 셋째, **자동 격리는 GuardDuty → EventBridge → SSM Runbook 사슬**이고, 단계 순서(스냅샷 먼저, 종료 아닌 격리)와 Severity·타입 필터가 핵심이다 — 캐피털 원 사고가 이 자동화의 가치를 증명했다. 넷째, **Organizations 위임 관리자 + auto-enable로 멀티 계정을 일괄 통제**하고, Suppression/Trusted/Threat 목록으로 noise를 다루며, Finding은 ASFF로 Security Hub에 흘러든다.
 
