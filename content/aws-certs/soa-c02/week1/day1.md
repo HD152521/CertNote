@@ -103,7 +103,7 @@ aws ec2 describe-availability-zones --region ap-northeast-2 \
 | 매분기 | 백업 복원 훈련, DR 시뮬레이션 | AWS Backup, Route 53 ARC |
 | 연 1회 | 보안 감사, 컴플라이언스 인증 갱신 | Audit Manager, Artifact |
 
-> 📚 **사례**: 2019년 7월 Capital One 사건. 1억 600만 명 카드 신청 데이터 유출. 원인은 AWS 인프라가 아니라 **고객 WAF의 SSRF 취약점 + EC2 메타데이터 v1(IMDSv1)의 IAM 자격증명 노출 + 너무 광범위한 IAM 역할 권한**이었다. 공격자(전직 AWS 직원 Paige Thompson)는 `http://169.254.169.254/latest/meta-data/iam/security-credentials/`에 SSRF로 접근해 임시 자격증명을 탈취하고 S3 버킷 700개 이상에서 30TB의 데이터를 빼냈다. **AWS 책임 영역에선 문제가 없었지만 고객 책임 영역(WAF 설정, IAM 권한 범위, IMDSv1 사용)에서 사고**가 났다는 점이 핵심. [DOJ 공소장](https://www.justice.gov/usao-edva/press-release/file/1188626/download). AWS는 이 사건 직후(2019년 11월) IMDSv2(세션 토큰 기반)를 출시했고, 운영자는 신규 EC2부터 `HttpTokens=required`를 강제 적용하는 게 표준이 됐다. Capital One은 \$1.9억 벌금을 OCC에 납부했다.
+> 📚 **사례**: 2019년 7월 Capital One 사건. 1억 600만 명 카드 신청 데이터 유출. 원인은 AWS 인프라가 아니라 **고객 WAF의 SSRF 취약점 + EC2 메타데이터 v1(IMDSv1)의 IAM 자격증명 노출 + 너무 광범위한 IAM 역할 권한**이었다. 공격자(전직 AWS 직원 Paige Thompson)는 `http://169.254.169.254/latest/meta-data/iam/security-credentials/`에 SSRF로 접근해 임시 자격증명을 탈취하고 S3 버킷 700개 이상에서 30TB의 데이터를 빼냈다. **AWS 책임 영역에선 문제가 없었지만 고객 책임 영역(WAF 설정, IAM 권한 범위, IMDSv1 사용)에서 사고**가 났다는 점이 핵심. [DOJ 공소장](https://www.justice.gov/usao-edva/press-release/file/1188626/download). AWS는 이 사건 직후(2019년 11월) IMDSv2(세션 토큰 기반)를 출시했고, 운영자는 신규 EC2부터 `HttpTokens=required`를 강제 적용하는 게 표준이 됐다. 이후 Capital One은 2020년 미국 통화감독청(OCC)으로부터 민사 제재금 8천만 달러를 부과받았고, 2022년에는 집단소송 합의금으로 1억 9천만 달러를 별도로 지급하기로 했다.
 
 > 🔍 **더 깊이**: IMDSv2의 강제는 SSM Document `AWS-EnforceEC2InstanceMetadataServiceV2`나 Launch Template의 `MetadataOptions.HttpTokens=required`로 한다. 더 강하게는 SCP로 `RunInstances`에 `aws:RequestTag/MetadataV2=required` 조건을 강제하거나, Config rule `ec2-imdsv2-check`로 비준수 인스턴스를 탐지한다. 그리고 **hop limit 1**을 같이 설정하면 컨테이너 outside로 메타데이터 트래픽이 못 나간다(Docker 기본 bridge 네트워크의 docker0 인터페이스를 못 건너감). 운영자가 실수로 IMDSv1로 인스턴스를 띄우는 걸 막는 3중 방어 패턴이다.
 
@@ -156,9 +156,9 @@ Lambda 타임아웃              → CloudWatch Logs   → X-Ray
 
 ## 정리하며
 
-오늘 본 그림은 두 개다. 첫째, AWS 인프라는 **Region > AZ > Edge**라는 3층 격리 위에 만들어졌고, 운영자는 어떤 리소스를 어느 층에 배치할지 매일 결정한다. 둘째, 보안과 운영 책임은 **AWS는 하드웨어부터 하이퍼바이저까지, 그 위는 고객**이라는 명확한 경계로 나뉘고, 운영자의 일상은 그 "위" 영역에서 일어난다. Capital One 사건이 보여주듯, AWS가 일을 잘하고 있는데도 우리가 SG·IAM·IMDSv1을 잘못 설정하면 1억 6백만 명의 데이터가 새는 게 클라우드 운영의 현실이다.
+오늘 본 그림은 두 개다. 첫째, AWS 인프라는 **Region > AZ > Edge**라는 3층 격리 위에 만들어졌고, 운영자는 어떤 리소스를 어느 층에 배치할지 매일 결정한다. 둘째, 보안과 운영 책임은 **AWS는 하드웨어부터 하이퍼바이저까지, 그 위는 고객**이라는 명확한 경계로 나뉘고, 운영자의 일상은 그 "위" 영역에서 일어난다. Capital One 사건이 보여주듯, AWS가 일을 잘하고 있는데도 우리가 WAF·IAM·IMDSv1을 잘못 설정하면 1억 6백만 명의 데이터가 새는 게 클라우드 운영의 현실이다.
 
-내일은 그 위 영역 중에서도 가장 자주 깨지고 가장 자주 사고의 원인이 되는 **IAM**으로 들어간다. Capital One 사건의 원인이 결국 IAM의 권한 범위 + IMDSv1이었듯, 운영자가 안 보고 있다가 사고 나는 곳 1순위가 여기다.
+내일은 그 위 영역 중에서도 가장 자주 깨지고 가장 자주 사고의 원인이 되는 **IAM**으로 들어간다. Capital One 사건이 WAF 오설정(SSRF)에서 시작해 IMDSv1과 너무 넓은 IAM 권한 범위 때문에 대형 유출로 커졌듯, 운영자가 안 보고 있다가 사고 나는 곳 1순위가 여기다.
 
 ---
 

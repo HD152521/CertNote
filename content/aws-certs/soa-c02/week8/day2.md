@@ -141,7 +141,7 @@ fields srcAddr, pktSrcAddr, dstAddr, dstPort
 | stats count(*) by pktSrcAddr     # 실제 발신 인스턴스
 ```
 
-> 📚 **사례**: 2019년 Capital One의 데이터 유출 사고에서 공격자가 WAF 우회로 IMDS 자격증명을 탈취해 S3 데이터를 외부로 빼냈다. 당시 Capital One은 Flow Logs가 켜져 있었지만 알람이 없어서 며칠간 발견을 못 했다. 사후에 Logs Insights로 분석하니 평소 대비 비정상적으로 큰 outbound 트래픽이 명확히 보였다. 이 사건 이후 AWS는 GuardDuty의 "Exfiltration" 검사 룰을 강화했고, Flow Logs + GuardDuty 결합이 표준 권장 사항이 됐다. Logs Insights + Metric Filter + CloudWatch Alarm으로 "한 ENI에서 outbound bytes가 baseline의 5배 이상" 같은 알람을 깔아두는 게 첫 단계다.
+> 📚 **사례**: 2019년 Capital One의 데이터 유출 사고에서 공격자가 잘못 구성된 WAF를 통한 SSRF로 IMDS의 IAM 역할 자격증명을 탈취해 S3 데이터를 외부로 빼냈고, 회사가 이를 안 것은 약 4개월 뒤 외부 제보를 통해서였다. 이런 대량 반출은 평소 대비 비정상적으로 큰 outbound 트래픽으로 Flow Logs에 드러나는 유형이라, Flow Logs + GuardDuty 결합이 표준 권장 사항으로 꼽힌다. Logs Insights + Metric Filter + CloudWatch Alarm으로 "한 ENI에서 outbound bytes가 baseline의 5배 이상" 같은 알람을 깔아두는 게 첫 단계다.
 
 ## Traffic Mirroring — Nitro 칩이 만든 새 가능성
 

@@ -130,7 +130,7 @@ Week 2를 한 문장으로 압축하면 이렇다. **VPC 네트워킹의 모든 
 ## 진짜 사고 사례 한 번 더
 
 - **2017년 2월 us-east-1 S3 장애**: 디버깅 명령어 오타로 의도보다 많은 서버가 종료되며 S3가 4시간 다운. 단일 리전 의존이 인터넷 절반을 흔든 사건. AWS Status Page 자체가 S3를 의존한 자기 참조 사고였다. *멀티 리전 + 리전 독립 설계*의 결정적 계기.
-- **2019년 Capital One**: SSRF + IMDSv1 + 과도한 IAM 권한. WAF 우회로 메타데이터 endpoint(169.254.169.254)에서 임시 자격증명을 탈취, S3 1억 건 유출. IMDSv2(토큰 기반) + Endpoint Policy + Permission Boundary 조합이 사후 표준이 됨.
+- **2019년 Capital One**: SSRF + IMDSv1 + 과도한 IAM 권한. 잘못 구성된 WAF를 통한 SSRF로 메타데이터 endpoint(169.254.169.254)에서 임시 자격증명을 탈취, S3 1억 건 유출. IMDSv2(토큰 기반) + Endpoint Policy + Permission Boundary 조합이 사후 표준이 됨.
 - **2020년 Single-AZ NAT 다운**: per-AZ NAT 패턴의 결정적 계기. ALB는 살아있었으나 백엔드가 Stripe·Twilio에 못 닿아 결제 30분 실패.
 - **2021년 4월 Travis CI**: 장기 토큰이 빌드 로그에 노출 → GitHub OIDC 페더레이션(단기 토큰) 표준화의 계기.
 - **2018년 인수합병 CIDR 충돌**: 두 VPC 모두 `10.0.0.0/16` → IPAM 도입의 계기. 6개월 마이그레이션.
@@ -139,7 +139,7 @@ Week 2를 한 문장으로 압축하면 이렇다. **VPC 네트워킹의 모든 
 - **2022년 9월 Uber 침해**: 협력사 직원 MFA 피로 공격 → 내부 시스템·시크릿 매니저 접근. Zero Trust + 최소권한 도입 가속.
 - **2021년 6월 Fastly CDN 장애**: 한 고객의 설정 변경이 잠재 버그를 트리거해 1시간 글로벌 다운. 설정의 결정성이 양날임을 다시 보여줌.
 
-> 📚 **사례**: 2019년 **Capital One**은 시험과 가장 직결되는 사고다. 공격 경로가 정확히 Week 2의 컴포넌트들을 관통한다 — (1) WAF(SSRF 필터 부재)를 우회해 (2) EC2 메타데이터(IMDSv1)에서 (3) 과도한 IAM Role 자격증명을 얻고 (4) S3로 exfiltration. 사후 방어가 정확히 이번 주 함정 정리와 겹친다: IMDSv2 강제, S3 **Endpoint Policy + `aws:PrincipalOrgID`** 로 조직 외 버킷 접근 차단, Permission Boundary로 권한 상한. SAA 시나리오에서 "데이터 유출 방지"가 키워드면 IAM 정책만이 아니라 *네트워크 계층 차단(Endpoint Policy)* 까지 묶어야 정답이다.
+> 📚 **사례**: 2019년 **Capital One**은 시험과 가장 직결되는 사고다. 공격 경로가 정확히 Week 2의 컴포넌트들을 관통한다 — (1) 잘못 구성된 WAF를 SSRF 경로로 삼아 (2) EC2 메타데이터(IMDSv1)에서 (3) 과도한 IAM Role 자격증명을 얻고 (4) S3로 exfiltration. 사후 방어가 정확히 이번 주 함정 정리와 겹친다: IMDSv2 강제, S3 **Endpoint Policy + `aws:PrincipalOrgID`** 로 조직 외 버킷 접근 차단, Permission Boundary로 권한 상한. SAA 시나리오에서 "데이터 유출 방지"가 키워드면 IAM 정책만이 아니라 *네트워크 계층 차단(Endpoint Policy)* 까지 묶어야 정답이다.
 
 ## 비용 vs 가용성 trade-off 표
 

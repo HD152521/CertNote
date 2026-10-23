@@ -64,7 +64,7 @@ Resources:
 
   DatabaseStack:
     Type: AWS::CloudFormation::Stack
-    DeletionPolicy: Retain       # 자식 Stack의 RDS가 실수 삭제되지 않도록
+    DeletionPolicy: Retain       # 부모에서 지워도 자식 Stack 자체는 남김(RDS 개별 보호는 자식 Template에서)
     Properties:
       TemplateURL: !Sub 'https://s3.${AWS::URLSuffix}/${TemplateBucket}/database.yaml'
       Parameters:
@@ -119,7 +119,7 @@ aws cloudformation update-stack \
 
 > 🔍 **더 깊이**: Nested Stack의 부모-자식 관계는 의존성 역전 없이 **직접적인 계층 구조**다. 부모가 자식의 Outputs에 접근하는 구조이므로, 자식 Stack의 Output 이름을 변경하면 부모 Template도 수정해야 한다. 이를 방지하려면 자식 Stack의 Output 이름을 "안정적인 인터페이스"로 정의하고 가급적 변경하지 않아야 한다. 실제 배포에서는 S3에 버전 디렉터리를 두는 패턴을 사용한다: `s3://my-bucket/templates/v1.2.0/network.yaml`. 이렇게 하면 Blue-Green 방식으로 새 버전 Template를 배포 전에 S3에 올려두고, 테스트 후 부모 Stack만 업데이트해 전환할 수 있다.
 
-> ⚠️ **함정**: Nested Stack의 `DeletionPolicy`는 Stack 자체에 적용되는 것이 아니라 자식 Stack 내 리소스에 적용된다. 즉, `DatabaseStack` 리소스에 `DeletionPolicy: Retain`을 설정해도 자식 Stack 자체가 보존되는 것이지, 자식 Stack 내부 리소스(RDS, ElastiCache)가 자동으로 보존되는 것이 아니다. 자식 Stack 내부의 RDS를 보호하려면 자식 Template의 RDS 리소스에도 별도로 `DeletionPolicy: Snapshot`을 설정해야 한다.
+> ⚠️ **함정**: Nested Stack 리소스(`DatabaseStack`)에 설정한 `DeletionPolicy: Retain`은 부모 Stack에서 그 리소스를 지울 때 **자식 Stack을 삭제하지 않고 남기는** 효과뿐이다. 자식 Stack 내부 리소스(RDS, ElastiCache) 각각에 정책이 걸리는 것은 아니므로, 자식 Stack을 직접 삭제하면 그 안의 RDS는 보호되지 않는다. 자식 Stack 내부의 RDS를 보호하려면 자식 Template의 RDS 리소스에도 별도로 `DeletionPolicy: Snapshot`을 설정해야 한다.
 
 ## Cross-Stack Reference: "독립적이지만 연결된"
 

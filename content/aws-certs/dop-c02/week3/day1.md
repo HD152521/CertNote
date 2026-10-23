@@ -127,7 +127,7 @@ CMK를 쓰지 않고 AWS 관리형 키(`aws/secretsmanager`)를 쓰면 `kms:Decr
 
 > 🔍 **더 깊이**: AWS Secrets Manager의 환경 변수 주입은 빌드 시작 시점에 단 1회 일어난다. 빌드가 30분 돌아가는 동안 시크릿이 회전되어도 이미 메모리에 올라간 값은 바뀌지 않는다. 단, 빌드 중에 코드가 SDK로 `GetSecretValue`를 다시 호출하면 새 값을 받는다. 시크릿 회전 주기와 빌드 주기가 겹치는 환경에서는 이 차이가 중요하다.
 
-> 📚 **사례**: 2019년 Capital One 데이터 유출 사고는 EC2 메타데이터 서비스를 통한 자격 증명 탈취가 원인이었다. 이 사고 이후 AWS는 IMDSv2를 의무화하고, Secrets Manager를 "코드에 자격 증명을 절대 두지 않는" 표준으로 더 강하게 밀게 됐다. buildspec의 `env.secrets-manager`는 바로 이 교훈의 실천 도구다 — 개발자가 비밀번호를 직접 buildspec에 쓸 수 없게 만드는 구조적 강제.
+> 📚 **사례**: 2019년 Capital One 데이터 유출 사고는 EC2 메타데이터 서비스를 통한 자격 증명 탈취가 원인이었다. 이 사고 이후 AWS는 IMDSv2를 내놓고, Secrets Manager를 "코드에 자격 증명을 절대 두지 않는" 표준으로 더 강하게 밀게 됐다. buildspec의 `env.secrets-manager`는 바로 이 교훈의 실천 도구다 — 개발자가 비밀번호를 직접 buildspec에 쓸 수 없게 만드는 구조적 강제.
 
 ## Reports 블록: 테스트 결과를 코드와 함께 관리하기
 

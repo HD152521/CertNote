@@ -4,7 +4,7 @@
 
 ## 시험 채점·구조의 내부 메커니즘
 
-> 🔍 **더 깊이**: SAP-C02는 **75문항 / 180분**이고 합격선은 **1000점 만점에 750점**(약 75%)이다. 핵심은 **scaled score(척도 점수)**라는 것 — 단순 정답 비율이 아니라 문항 난이도를 보정한 점수다(IRT, Item Response Theory 기반). 또 75문항 중 일부(약 15문항)는 **채점되지 않는 unscored 문항**으로, 신규 문제의 통계를 수집하는 용도다. 어느 것이 unscored인지 알 수 없으므로 모든 문항을 동일하게 대해야 한다. 부분 점수는 없고, 틀려도 감점은 없다(빈칸 < 추측). 그래서 **모르는 문항도 반드시 찍는다** — 4지선다는 기대값 25%, 2개를 소거하면 50%다.
+> 🔍 **더 깊이**: SAP-C02는 **75문항 / 180분**이고 합격선은 **1000점 만점에 750점**(약 75%)이다. 핵심은 **scaled score(척도 점수)**라는 것 — 단순 정답 비율이 아니라 문항 난이도를 보정한 점수다(IRT, Item Response Theory 기반). 또 75문항 중 10문항은 **채점되지 않는 unscored 문항**으로, 신규 문제의 통계를 수집하는 용도다. 어느 것이 unscored인지 알 수 없으므로 모든 문항을 동일하게 대해야 한다. 부분 점수는 없고, 틀려도 감점은 없다(빈칸 < 추측). 그래서 **모르는 문항도 반드시 찍는다** — 4지선다는 기대값 25%, 2개를 소거하면 50%다.
 
 > 💡 **관련 이론**: 객관식 시험의 오답(distractor) 설계에는 패턴이 있다. **"그럴듯하지만 한 조건을 놓친 답"**, **"맞지만 과한 답(over-engineering)"**, **"맞지만 운영 부담이 큰 답"**이 전형적이다. SAP-C02의 함정 대부분은 셋 중 하나다 — 예: 정답이 Managed 서비스인데 "직접 EC2로 구축"(운영 부담 과다)을 깔거나, SCP가 정답인데 "IAM Policy"(root를 못 막는 조건 누락)를 깐다. 그래서 채점 전략의 핵심은 **선택지를 정답 후보가 아니라 "어떤 조건을 위반하는지"로 소거**하는 것이다.
 
@@ -59,7 +59,7 @@ Pro 시험은 정답을 직접 말하지 않고 **암호화된 키워드**로 �
 
 | 도메인 | 비중 | 핵심 도구 | 정답 반사 |
 |--------|------|----------|----------|
-| 1. 조직 복잡도 | 29% | Org·SCP·Control Tower·TGW·DX·PrivateLink·Outposts | 계정=격리, SCP=천장, TGW=O(N), Snow=대역폭 |
+| 1. 조직 복잡도 | 26% | Org·SCP·Control Tower·TGW·DX·PrivateLink·Outposts | 계정=격리, SCP=천장, TGW=O(N), Snow=대역폭 |
 | 2. 신규 솔루션 | 29% | Lambda·Fargate·Aurora·DynamoDB·EventBridge·Kinesis | CAP/PACELC, 결합도 분리, fan-out |
 | 3. 마이그·현대화 | 20% | MGN·DMS+SCT·Snow·App2Container·Strangler Fig | Rehost 먼저, CDC 무중단, 빅뱅 금지 |
 | 4. 지속 개선 | 25% | CloudWatch·SSM·CodeDeploy·FIS·Compute Optimizer | SRE, Toil 자동화, 점진 배포, FinOps |

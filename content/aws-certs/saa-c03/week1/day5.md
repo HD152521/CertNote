@@ -106,7 +106,7 @@ SAA에서 직접 묻지는 않지만, 시나리오 해석에 결정적이다. �
 
 ![완전 관리형에서 IaaS로 갈수록 고객 책임이 늘어나는 공동 책임 경계선](/diagrams/shared-responsibility-4tier.svg)
 
-서비스 추상화가 올라갈수록 책임 경계선이 위로. **그래도 데이터 분류·IAM·암호화 키 관리는 항상 고객**이라는 점이 핵심. 이 원칙은 Capital One 사고가 가장 명확하게 보여준다 — AWS는 자기 인프라 책임을 다했고, 사고는 고객 영역의 IMDSv1·과한 IAM 권한에서 났다.
+서비스 추상화가 올라갈수록 책임 경계선이 위로. **그래도 데이터 분류·IAM·암호화 키 관리는 항상 고객**이라는 점이 핵심. 이 원칙은 Capital One 사고가 가장 명확하게 보여준다 — AWS는 자기 인프라 책임을 다했고, 사고는 고객 영역의 WAF 오설정(SSRF)·IMDSv1·과한 IAM 권한에서 났다.
 
 > 📚 **사례**: 2022년 6월 Toyota 자회사가 GitHub 공개 저장소에 5년간 액세스 키가 노출된 사고가 있었다. 약 30만 명 고객 데이터가 위험에 노출됐고, 원인은 개발자가 코드와 함께 자격 증명을 푸시한 것이었다. AWS 책임은 0% — 모든 게 고객 책임 영역에서 일어났다. 사후 표준 권고는 ① IAM User 대신 IAM Role + IRSA/Instance Profile, ② Access Key를 발급해야 한다면 IAM Identity Center의 임시 자격 증명, ③ Git pre-commit hook(git-secrets, truffleHog)으로 커밋 차단. 같은 패턴의 사고가 Uber(2016), Imperva(2019), Codecov(2021)에서도 반복됐다.
 
