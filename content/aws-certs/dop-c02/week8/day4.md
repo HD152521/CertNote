@@ -2,7 +2,7 @@
 
 CloudFormation 템플릿이 3000줄을 넘은 어느 순간, 개발자는 같은 질문을 던지기 시작한다. "이게 정말 코드인가?" YAML에는 함수도 없고, 변수 스코프도 없고, 자동완성도 약하고, 50개 마이크로서비스에 같은 패턴을 반복 적용하려면 복붙 외엔 답이 없다. 2018년 AWS가 발표한 **CDK(Cloud Development Kit)**는 정확히 이 한계를 풀려는 시도다. TypeScript/Python/Java/Go/.NET 같은 범용 언어로 인프라를 정의하고 `cdk synth`로 평범한 CloudFormation 템플릿을 합성(synthesize)한다. SAM이 CloudFormation 위에 매크로를 얹었다면, CDK는 한 계단 더 올라가 **언어 자체를 추상화 도구로 쓴다**.
 
-오늘은 CDK Construct의 L1/L2/L3 계층이 왜 존재하는지, `cdk bootstrap`이 만드는 IAM 신뢰 체인의 보안적 의미, CDK Pipelines의 self-mutation이 왜 게임 체인저인지, Terraform과 CDK가 동시에 운영되는 현실의 패턴, CDKTF의 위치, 그리고 CDK Aspects가 cross-cutting concern을 어떻게 다루는지를 본다. DOP 시험에서 CDK 직접 출제는 중간이지만 CDK Pipelines + Multi-Account 시나리오는 자주 나온다.
+오늘은 CDK Construct의 L1/L2/L3 계층이 왜 존재하는지, `cdk bootstrap`이 만드는 IAM 신뢰 체인의 보안적 의미, CDK Pipelines의 self-mutation이 왜 게임 체인저인지, Terraform과 CDK가 동시에 운영되는 현실의 패턴, CDKTF의 위치, 그리고 CDK Aspects가 cross-cutting concern을 어떻게 다루는지를 본다. DOP 시험에서 CDK 직접 출제는 중간이지만 CDK Pipelines + Multi-Account 시나리오는 나온다.
 
 ## CDK의 본질 — 코드로 인프라를 "합성"하는 것
 
@@ -25,7 +25,7 @@ CloudFormation 엔진 (AWS 관리형)
 
 이 구조 덕분에 CDK는 단일 신뢰 source처럼 보이지만 실제로는 **두 단계의 추상화**다. 첫째, CDK 코드에서 Construct 트리로(In-memory object graph). 둘째, Construct 트리에서 CFN 템플릿으로(synth). 그래서 `cdk diff`로 변경 미리보기를 볼 때 두 단계의 결과를 한 번에 봐야 한다 — 어떤 변경은 코드 수준의 의도이고, 어떤 변경은 합성 후의 CFN 변경이다.
 
-> 💡 **관련 이론**: CDK의 합성 모델은 LLVM 컴파일러의 IR(Intermediate Representation) 패턴과 같다. 고수준 언어(C++/Rust)를 IR(LLVM bitcode)로 컴파일하고, IR을 각 타겟(x86, ARM)으로 변환한다. CDK는 TypeScript를 IR(Construct 트리)로 컴파일하고, IR을 CFN 템플릿으로 변환한다. 이 두 단계 덕분에 cdktf(Construct 트리를 Terraform HCL로 변환), cdk8s(Construct 트리를 Kubernetes manifest로 변환) 같은 다른 합성 타겟이 가능했다. 한 번 구축한 추상화가 여러 백엔드로 확장.
+> CDK의 합성 모델은 LLVM 컴파일러의 IR(Intermediate Representation) 패턴과 같다. 고수준 언어(C++/Rust)를 IR(LLVM bitcode)로 컴파일하고, IR을 각 타겟(x86, ARM)으로 변환한다. CDK는 TypeScript를 IR(Construct 트리)로 컴파일하고, IR을 CFN 템플릿으로 변환한다. 이 두 단계 덕분에 cdktf(Construct 트리를 Terraform HCL로 변환), cdk8s(Construct 트리를 Kubernetes manifest로 변환) 같은 다른 합성 타겟이 가능했다. 한 번 구축한 추상화가 여러 백엔드로 확장.
 
 ## Construct Levels L1/L2/L3 — 추상화의 세 계단
 
@@ -108,7 +108,7 @@ cdk bootstrap aws://DEV-ACCT/ap-northeast-2 \
 
 `--trust TOOLING-ACCT`는 Dev 계정의 deploy role이 Tooling 계정의 ID도 가정할 수 있게 trust policy를 설정한다. 이게 CDK Pipelines가 한 Tooling 계정에서 여러 환경 계정에 배포할 수 있는 기반이다.
 
-> 🔍 **더 깊이**: bootstrap은 버전이 있다 — `CdkBootstrap`이라는 SSM Parameter에 현재 버전 번호가 저장되고, `cdk deploy` 시 CDK CLI가 이 버전을 확인해 호환성을 검사한다. 오래된 bootstrap을 사용하면 새 CDK 기능(예: Asset Bucket의 KMS 암호화 강화) 사용 불가. AWS는 정기적으로 bootstrap 버전을 업데이트하므로 운영 표준에 "분기마다 cdk bootstrap 재실행"을 포함하는 게 권장된다.
+> bootstrap은 버전이 있다 — `CdkBootstrap`이라는 SSM Parameter에 현재 버전 번호가 저장되고, `cdk deploy` 시 CDK CLI가 이 버전을 확인해 호환성을 검사한다. 오래된 bootstrap을 사용하면 새 CDK 기능(예: Asset Bucket의 KMS 암호화 강화) 사용 불가. AWS는 정기적으로 bootstrap 버전을 업데이트하므로 운영 표준에 "분기마다 cdk bootstrap 재실행"을 포함하는 게 권장된다.
 
 > ⚠️ **함정**: bootstrap의 cfn-exec-role이 기본 AdministratorAccess라는 게 보안 관점에서 자주 지적된다. prod 환경에는 `--cloudformation-execution-policies`로 더 제한된 정책(예: 회사 표준 PowerUser + 명시적 deny)을 지정해야 한다. 그렇지 않으면 CDK 코드의 어떤 변경도 prod에 전권으로 배포될 수 있어 변경 통제가 무력화된다.
 
@@ -159,7 +159,7 @@ pipeline.addStage(new AppStage(this, 'Prod', {
 
 3번째 단계가 핵심이다. 만약 개발자가 코드에 새 Stage(예: Staging)를 추가하면, 다음 푸시 시 UpdatePipeline 단계가 파이프라인 자체에 Staging Stage를 추가하고, 그 다음 실행부터 새 Stage가 동작한다. **파이프라인 정의 변경에 별도 도구가 필요 없다**.
 
-> 💡 **관련 이론**: self-mutation은 unix의 `make` bootstrap이나 Lisp의 메타 순환 평가기(Meta-circular Evaluator)와 같은 self-modifying code 패턴이다. 시스템이 자기 자신을 정의하고 진화하는 능력. Tekton Pipelines의 Trigger Templates, ArgoCD의 App-of-Apps 패턴, Spinnaker의 Managed Pipeline Templates도 같은 self-modifying 패턴의 변형들. CDK Pipelines가 GitOps의 핵심 원칙(파이프라인도 코드)을 가장 깔끔하게 구현한 AWS 네이티브 도구.
+> self-mutation은 unix의 `make` bootstrap이나 Lisp의 메타 순환 평가기(Meta-circular Evaluator)와 같은 self-modifying code 패턴이다. 시스템이 자기 자신을 정의하고 진화하는 능력. Tekton Pipelines의 Trigger Templates, ArgoCD의 App-of-Apps 패턴, Spinnaker의 Managed Pipeline Templates도 같은 self-modifying 패턴의 변형들. CDK Pipelines가 GitOps의 핵심 원칙(파이프라인도 코드)을 가장 깔끔하게 구현한 AWS 네이티브 도구.
 
 > 🎯 **시나리오**: "한 회사가 매주 새 환경(고객별 sandbox 5개)을 추가하는데 그때마다 운영자가 파이프라인을 손으로 수정해야 한다. 자동화하려면?" — 답은 CDK Pipelines + CDK 코드에서 환경 목록을 동적 생성(for 루프 또는 외부 설정 파일 읽기). Git에 환경 추가 commit만 하면 self-mutation이 다음 실행에 자동 반영. 일반 CodePipeline + CFN으론 별도 도구나 수동 단계 필요.
 
@@ -174,7 +174,7 @@ CodePipeline은 아티팩트(빌드 결과, 소스 코드)를 S3에 저장하는
 3. S3 아티팩트 버킷의 SSE-KMS 설정
 4. 각 환경 계정의 신뢰 체인을 통해 복호화 가능
 
-`crossAccountKeys: false`(기본값)이면 AWS 관리형 KMS 키를 쓰는데, 이 키는 다른 계정에 공유할 수 없어 멀티 계정 배포가 실패한다. 이 함정이 "어제까지 잘 되던 CDK Pipeline이 Prod 계정 추가하니까 KMS 에러가 난다" 같은 시나리오로 자주 출제된다.
+`crossAccountKeys: false`(기본값)이면 AWS 관리형 KMS 키를 쓰는데, 이 키는 다른 계정에 공유할 수 없어 멀티 계정 배포가 실패한다. 이 함정이 "어제까지 잘 되던 CDK Pipeline이 Prod 계정 추가하니까 KMS 에러가 난다" 같은 시나리오로 출제된다.
 
 > ⚠️ **함정**: `crossAccountKeys: true`는 운영자 정의 CMK이므로 **추가 비용**($1/월/key)이 발생한다. 그리고 한 번 켜고 끄면 기존 아티팩트가 복호화 불가하므로 신중하게 결정. 처음부터 멀티 계정 가능성이 있으면 켜고 시작하는 게 표준.
 
@@ -225,13 +225,13 @@ Aspects.of(app).add(new EnforceEncryption());
 | CFN Hook | 배포 시점 | 변경 사전 차단 (proactive) |
 | Config Rules | 배포 후 | 평가/알람/자동 수정 (reactive) |
 
-> 📚 **사례**: 2022년 한 SaaS가 Aspects 대신 cdk-nag 룰셋(NIST 800-53 Rev5)을 통째로 적용했더니 빌드가 1200개 위반으로 실패했다. 한 번에 모든 룰을 켜는 대신 (1) 가장 자주 위반되는 5개 룰만 enforce, (2) 나머지는 warning으로 6개월간 점진 수정, (3) 단계적으로 enforce 전환하는 graceful rollout으로 운영 마비 없이 안착. Hooks와 마찬가지로 거버넌스 도구 도입은 단계적 접근이 필수.
+> 2022년 한 SaaS가 Aspects 대신 cdk-nag 룰셋(NIST 800-53 Rev5)을 통째로 적용했더니 빌드가 1200개 위반으로 실패했다. 한 번에 모든 룰을 켜는 대신 (1) 가장 자주 위반되는 5개 룰만 enforce, (2) 나머지는 warning으로 6개월간 점진 수정, (3) 단계적으로 enforce 전환하는 graceful rollout으로 운영 마비 없이 안착. Hooks와 마찬가지로 거버넌스 도구 도입은 단계적 접근이 필수.
 
 ## Terraform과 CDK의 공존 — CDKTF의 위치
 
 현실의 큰 조직은 한 도구만 쓰지 않는다. **AWS 워크로드는 CDK, 멀티 클라우드 또는 SaaS Provider(GitHub, Datadog, Snowflake)는 Terraform**으로 운영하는 경우가 흔하다. 이 두 도구를 한 시스템에서 다루는 방법이 몇 가지 있다.
 
-1. **물리적 분리**: 디렉토리/팀별로 도구 분리. 가장 단순. 상호 참조는 SSM Parameter Store나 Secret Manager로.
+1. **물리적 분리**: 디렉터리/팀별로 도구 분리. 가장 단순. 상호 참조는 SSM Parameter Store나 Secret Manager로.
 2. **CDKTF**: CDK 구문으로 Terraform HCL 합성. CDK 추상화 + Terraform Provider 생태계.
 3. **Terraform CDK + Provider**: 일부 팀이 Terraform을 메인으로 쓰면서 CDK 구문만 도입.
 
@@ -268,9 +268,9 @@ CDKTF의 장점은 **CDK 코드의 재사용성**과 **Terraform Provider의 풍
 | **CDKTF** | 높음 | ✅ | tfstate | 매우 낮음 |
 | **Pulumi** | 높음 | ✅ | Pulumi Cloud 또는 자체 | 거의 없음 |
 
-> 🔍 **더 깊이**: Terraform tfstate가 사용자 책임이라는 게 운영에서 가장 큰 차이다. tfstate는 모든 리소스의 실제 상태를 기록하고, 잘못 손상되면 Terraform이 "이 자원을 처음 보는 것"으로 인식해 중복 생성 또는 삭제를 시도한다. 그래서 운영 표준은 (1) S3 버킷 + DynamoDB 잠금으로 원격 저장, (2) S3 versioning + 객체 lock으로 변경 이력 보존, (3) 환경별 workspace 또는 별도 backend로 분리. CDK/CFN은 이 부담이 AWS에 위임되므로 운영 단순성이 높다.
+> Terraform tfstate가 사용자 책임이라는 게 운영에서 가장 큰 차이다. tfstate는 모든 리소스의 실제 상태를 기록하고, 잘못 손상되면 Terraform이 "이 자원을 처음 보는 것"으로 인식해 중복 생성 또는 삭제를 시도한다. 그래서 운영 표준은 (1) S3 버킷 + DynamoDB 잠금으로 원격 저장, (2) S3 versioning + 객체 lock으로 변경 이력 보존, (3) 환경별 workspace 또는 별도 backend로 분리. CDK/CFN은 이 부담이 AWS에 위임되므로 운영 단순성이 높다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 다섯 가지다. 첫째, **CDK는 합성 모델**로 코드를 CFN 템플릿으로 변환해 CFN의 모든 거버넌스 자산을 물려받는다 — LLVM IR과 같은 두 단계 추상화 패턴. 둘째, **Construct Level L1/L2/L3는 추상화의 세 계단**이고 실무는 L2 기본 + 자체 L3 추출이 표준. 셋째, **bootstrap은 신뢰 체인 인프라**이고 cfn-exec-role의 권한 범위가 prod 보안의 핵심. 넷째, **CDK Pipelines self-mutation**은 파이프라인 정의 변경을 한 도구로 처리하는 GitOps 원칙의 AWS 구현이고, 멀티 계정에는 `crossAccountKeys: true`가 필수. 다섯째, **Aspects + cdk-nag로 합성 시점 검증**, **Hooks로 배포 시점 차단**, **Config Rules로 배포 후 평가**의 3단 검증 계층.
 
