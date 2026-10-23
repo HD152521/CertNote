@@ -2,7 +2,7 @@
 
 운영자가 매일 만나는 의사결정 중 하나는 "이 정보를 메트릭으로 발행할까, 로그로 남길까". 둘은 동전의 양면이다. 메트릭은 시계열 + 통계로 빠르게 알람·자동 스케일링이 가능하고, 로그는 원본 상세로 디버깅이 가능하다. 메트릭은 분 단위·달러 단위로 비싸고, 로그는 카디널리티에 자유롭지만 검색이 느리다. 두 세계를 잇는 다리가 세 개 있다 — **Metric Filter, EMF, Anomaly Detection**. 오늘은 이 세 도구의 내부 구조를 파고든다.
 
-세 도구를 적재적소에 쓰면 다음이 가능해진다. 코드 수정 없이 기존 로그를 메트릭으로 변환(Metric Filter), 코드 한 줄로 메트릭·로그·trace 통합(EMF), 사람 손 없이 시간대별 정상 패턴 학습 후 이상만 알림(Anomaly Detection). 시험에서 이 세 가지를 시나리오로 헷갈리게 묻는 문제가 자주 나온다.
+세 도구를 적재적소에 쓰면 다음이 가능해진다. 코드 수정 없이 기존 로그를 메트릭으로 변환(Metric Filter), 코드 한 줄로 메트릭·로그·trace 통합(EMF), 사람 손 없이 시간대별 정상 패턴 학습 후 이상만 알림(Anomaly Detection). 시험에서 이 세 가지를 시나리오로 헷갈리게 묻는 문제가 나온다.
 
 ## Metric Filter: 로그를 메트릭으로 변환
 
@@ -71,9 +71,9 @@ MyErrorFilter:
 
 > ⚠️ **함정**: `DefaultValue`를 안 넣으면 매치가 없을 때 메트릭이 발행 안 됨. 알람의 `TreatMissingData=notBreaching`(기본)이면 데이터 없음 = 정상으로 처리해 false negative 발생. 시험에서 "Metric Filter로 만든 메트릭이 알람을 안 울린다" 또는 "TreatMissingData 영향" 시나리오는 거의 항상 이 함정.
 
-> 🔍 **더 깊이**: Metric Filter는 **로그 ingestion 시점에 평가**된다(stream에 들어올 때). 즉 새 로그가 도착할 때만 메트릭 발행. **과거 로그를 retroactive로 다시 평가하지 않음** — 새 Filter를 만든 시점부터의 신규 로그만 카운트. 운영자가 이 사실을 모르고 "어제 ERROR 로그가 많았는데 새로 Filter 만들었으니 어제 메트릭도 보이겠지" 했다가 빈 그래프를 보고 당황하는 일이 흔하다. 과거 로그를 메트릭화하려면 Insights로 별도 분석.
+Metric Filter는 **로그 ingestion 시점에 평가**된다(stream에 들어올 때). 즉 새 로그가 도착할 때만 메트릭 발행. **과거 로그를 retroactive로 다시 평가하지 않음** — 새 Filter를 만든 시점부터의 신규 로그만 카운트. 운영자가 이 사실을 모르고 "어제 ERROR 로그가 많았는데 새로 Filter 만들었으니 어제 메트릭도 보이겠지" 했다가 빈 그래프를 보고 당황하는 일이 흔하다. 과거 로그를 메트릭화하려면 Insights로 별도 분석.
 
-> 💡 **관련 이론**: Metric Filter는 **stream processing의 stateless transformation** 패턴. Apache Kafka Streams, Apache Flink, AWS Kinesis Data Analytics 모두 같은 패러다임. "in-flight" 데이터에만 적용 가능하고 historical batch는 별도 처리.
+Metric Filter는 **stream processing의 stateless transformation** 패턴. Apache Kafka Streams, Apache Flink, AWS Kinesis Data Analytics 모두 같은 패러다임. "in-flight" 데이터에만 적용 가능하고 historical batch는 별도 처리.
 
 ### Metric Filter의 한계와 대안
 
@@ -173,9 +173,9 @@ export const handler = async (event) => {
 };
 ```
 
-> 📚 **사례**: 한 금융 회사가 모든 트랜잭션마다 5개 메트릭(latency, amount, error_count, retry_count, db_calls)을 PutMetricData로 발행. 월 API 호출 100억 회 → API 비용 \$100,000. EMF로 전환 후 API 비용 zero, 로그 비용은 약간 증가했지만(20%) 전체적으로 90% 절감. EMF가 "운영자 비용 절감 1순위"인 이유.
+가상의 사례로, 한 금융 회사가 모든 트랜잭션마다 5개 메트릭(latency, amount, error_count, retry_count, db_calls)을 PutMetricData로 발행. 월 API 호출 100억 회 → API 비용 \$100,000. EMF로 전환 후 API 비용 zero, 로그 비용은 약간 증가했지만(20%) 전체적으로 90% 절감. EMF가 "운영자 비용 절감 1순위"인 이유.
 
-> 💡 **관련 이론**: EMF는 OpenTelemetry(OTel)의 metrics + logs + traces 통합 모델과 같은 철학. 단일 텔레메트리 이벤트에서 메트릭·로그·트레이스를 모두 추출 가능. CNCF의 OpenTelemetry는 2019년 OpenTracing + OpenCensus 통합으로 시작해 2021년 GA, 2024년 현재 분산 시스템 관찰성의 사실상 표준. AWS는 EMF 외에 ADOT(AWS Distro for OpenTelemetry)로 OTel 표준을 직접 지원.
+EMF는 OpenTelemetry(OTel)의 metrics + logs + traces 통합 모델과 같은 철학. 단일 텔레메트리 이벤트에서 메트릭·로그·트레이스를 모두 추출 가능. CNCF의 OpenTelemetry는 2019년 OpenTracing + OpenCensus 통합으로 시작해 2021년 GA, 2024년 현재 분산 시스템 관찰성의 사실상 표준. AWS는 EMF 외에 ADOT(AWS Distro for OpenTelemetry)로 OTel 표준을 직접 지원.
 
 ### EMF의 한계
 
@@ -210,7 +210,7 @@ export const handler = async (event) => {
 
 알람 설정 시 표준편차 배수(n)만 지정. 보통 2(95% 신뢰구간) ~ 3(99.7% 신뢰구간). 메트릭의 노이즈 수준과 false positive 허용도에 따라 선택.
 
-> 💡 **관련 이론**: STL(Seasonal-Trend Decomposition using LOESS)은 시계열을 trend(장기 추세) + seasonal(주기적 패턴) + residual(잔차)로 분해. Cleveland et al.(1990, *Journal of Official Statistics*)에서 발표. ARIMA(AutoRegressive Integrated Moving Average)는 더 일반적인 시계열 모델로 Box-Jenkins 방법론(1970, *Time Series Analysis*). Facebook Prophet(Taylor & Letham, 2017), Twitter AnomalyDetection(2015 GitHub), AWS Forecast 모두 같은 계열. 운영자가 직접 임계값 튜닝하는 부담을 ML이 대체.
+STL(Seasonal-Trend Decomposition using LOESS)은 시계열을 trend(장기 추세) + seasonal(주기적 패턴) + residual(잔차)로 분해. Cleveland et al.(1990, *Journal of Official Statistics*)에서 발표. ARIMA(AutoRegressive Integrated Moving Average)는 더 일반적인 시계열 모델로 Box-Jenkins 방법론(1970, *Time Series Analysis*). Facebook Prophet(Taylor & Letham, 2017), Twitter AnomalyDetection(2015 GitHub), AWS Forecast 모두 같은 계열. 운영자가 직접 임계값 튜닝하는 부담을 ML이 대체.
 
 ### 운영자 적용 시나리오
 
@@ -223,7 +223,7 @@ export const handler = async (event) => {
 | 첫 출시 직후 (학습 데이터 부족) | 부적합 (최소 2일~2주 데이터 필요) | ★ |
 | 24/7 균일 워크로드 | 고정 임계값으로 충분 | ★ |
 
-> 📚 **사례**: 한 e-commerce 회사가 매일 점심 12시·저녁 7시 트래픽 피크 + 주말 평일 다른 패턴. 고정 임계값으로 알람 만들 때 매일 false positive 30건이 새벽 호출로 이어졌다. Anomaly Detection 도입 후 false positive 90% 감소. 운영자 야간 호출 대폭 감소.
+가상의 사례로, 한 e-commerce 회사가 매일 점심 12시·저녁 7시 트래픽 피크 + 주말 평일 다른 패턴. 고정 임계값으로 알람 만들 때 매일 false positive 30건이 새벽 호출로 이어졌다. Anomaly Detection 도입 후 false positive 90% 감소. 운영자 야간 호출 대폭 감소.
 
 ### Math Expression과 Anomaly Detection 결합
 
@@ -262,7 +262,7 @@ e1 > 5%  AND  e1 > e2.upper   # 5% 초과 + 평소보다도 비정상
 
 운영자가 수동 Metric Filter 안 만들어도 ML이 자동 처리. 메트릭 Anomaly와 마찬가지로 학습에 며칠~수 주가 필요. 활성화 후 안정적 베이스라인이 잡힐 때까지 false positive가 있을 수 있다.
 
-> 🔍 **더 깊이**: Logs Anomaly Detection은 내부적으로 **log pattern clustering**(Drain 알고리즘 계열로 추정)으로 비슷한 로그를 하나의 패턴으로 묶은 후, 그 패턴의 빈도·timing의 이상을 STL/ARIMA로 탐지하는 2단 ML 파이프라인. 운영자가 직접 정규식·Metric Filter를 안 짜도 ML이 자동으로 "이 로그와 이 로그는 같은 종류"라고 묶어준다.
+Logs Anomaly Detection은 내부적으로 **log pattern clustering**(Drain 알고리즘 계열로 추정)으로 비슷한 로그를 하나의 패턴으로 묶은 후, 그 패턴의 빈도·timing의 이상을 STL/ARIMA로 탐지하는 2단 ML 파이프라인. 운영자가 직접 정규식·Metric Filter를 안 짜도 ML이 자동으로 "이 로그와 이 로그는 같은 종류"라고 묶어준다.
 
 ## Cross-Account Metric/Log View
 
@@ -308,7 +308,7 @@ e1 > 5%  AND  e1 > e2.upper   # 5% 초과 + 평소보다도 비정상
    └─ 여러 조건 AND/OR? ──── YES ──→ Composite Alarm
 ```
 
-## 정리하며
+## 정리
 
 오늘의 흐름:
 
