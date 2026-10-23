@@ -50,7 +50,7 @@ Config의 기본 데이터 단위는 **Configuration Item(CI)**다. 리소스 �
 - `ResourceDeleted`: 리소스 삭제됨
 - `ResourceDeletedNotRecorded`: 기록 안 되는 리소스 삭제
 
-> 💡 **관련 이론**: CI의 설계는 **Event Sourcing** 패턴과 **Snapshot-based State Tracking**이 결합된 구조다. Martin Fowler(2005)가 정리한 Event Sourcing은 현재 상태 대신 상태 변경 이벤트 시퀀스를 저장한다. Config는 각 변경 시점의 전체 상태(Snapshot)를 저장하므로 엄밀히 Event Sourcing이 아니지만, 타임라인 기반 변경 추적이라는 목적은 동일하다. CI 타임라인은 "3개월 전 이 리소스의 정확한 설정"을 재현하는 감사 증거로 사용된다. 이것이 PCI-DSS나 SOC 2 감사에서 Config가 필수 도구가 된 이유다.
+CI의 설계는 **Event Sourcing** 패턴과 **Snapshot-based State Tracking**이 결합된 구조다. Martin Fowler(2005)가 정리한 Event Sourcing은 현재 상태 대신 상태 변경 이벤트 시퀀스를 저장한다. Config는 각 변경 시점의 전체 상태(Snapshot)를 저장하므로 엄밀히 Event Sourcing이 아니지만, 타임라인 기반 변경 추적이라는 목적은 동일하다. CI 타임라인은 "3개월 전 이 리소스의 정확한 설정"을 재현하는 감사 증거로 사용된다. 이것이 PCI-DSS나 SOC 2 감사에서 Config가 필수 도구가 된 이유다.
 
 ## Configuration Recorder와 비용 구조
 
@@ -161,7 +161,7 @@ Root 계정의 MFA 디바이스 등록/해제는 콘솔에서 이루어지고,
 → 주기적으로 IAM API를 직접 호출해 MFA 상태를 확인 = Periodic 트리거
 ```
 
-> 🔍 **더 깊이**: Config Rule 평가 트리거와 범위(Scope) 설정. Configuration Change 트리거에서 `scope`를 지정하면 특정 리소스 유형 변경 시에만 Rule이 실행된다. 예를 들어 `restricted-ssh` Rule의 scope를 `AWS::EC2::SecurityGroup`으로 지정하면, 다른 리소스(EC2 인스턴스 등) 변경 시에는 Rule이 불필요하게 실행되지 않는다. Scope 미지정 시 모든 리소스 변경에 Rule이 실행돼 평가 비용이 증가할 수 있다.
+Config Rule 평가 트리거와 범위(Scope) 설정. Configuration Change 트리거에서 `scope`를 지정하면 특정 리소스 유형 변경 시에만 Rule이 실행된다. 예를 들어 `restricted-ssh` Rule의 scope를 `AWS::EC2::SecurityGroup`으로 지정하면, 다른 리소스(EC2 인스턴스 등) 변경 시에는 Rule이 불필요하게 실행되지 않는다. Scope 미지정 시 모든 리소스 변경에 Rule이 실행돼 평가 비용이 증가할 수 있다.
 
 ## Custom Rule: Lambda로 맞춤 평가 로직 구현
 
@@ -274,7 +274,7 @@ aws configservice put-config-rule \
   }'
 ```
 
-> 📚 **사례**: 대형 IT 서비스 기업의 태그 정책 자동화. 이 기업은 비용 배분을 위해 모든 EC2, RDS, Lambda에 `Team`, `Project`, `CostCenter` 태그를 필수로 지정했다. Managed Rule에는 태그 Rule이 없어 Custom Rule Lambda를 구현했다. Configuration Change 트리거로 새 리소스 생성 시 즉시 평가하고, NON_COMPLIANT 시 Auto Remediation으로 태그 없는 인스턴스를 Stop 상태로 만드는 규칙을 적용했다. 3개월 만에 무태그 리소스가 23%에서 1.2%로 줄었다.
+가상의 사례로, 대형 IT 서비스 기업의 태그 정책 자동화. 이 기업은 비용 배분을 위해 모든 EC2, RDS, Lambda에 `Team`, `Project`, `CostCenter` 태그를 필수로 지정했다. Managed Rule에는 태그 Rule이 없어 Custom Rule Lambda를 구현했다. Configuration Change 트리거로 새 리소스 생성 시 즉시 평가하고, NON_COMPLIANT 시 Auto Remediation으로 태그 없는 인스턴스를 Stop 상태로 만드는 규칙을 적용했다. 3개월 만에 무태그 리소스가 23%에서 1.2%로 줄었다.
 
 ### configurationItem 파싱 패턴
 
@@ -400,7 +400,7 @@ aws configservice put-organization-conformance-pack \
   --excluded-accounts 999988887777  # 특정 계정 제외 (예: Sandbox)
 ```
 
-> 💡 **관련 이론**: Conformance Pack은 **Policy as Code**의 구현이다. 컴플라이언스 요구사항을 코드(YAML)로 정의하고 버전 관리(Git), 테스트, 배포 파이프라인을 적용하는 것이 현대 클라우드 거버넌스의 표준이다. HashiCorp의 Sentinel, OPA(Open Policy Agent)도 같은 패러다임이다. AWS Config Conformance Pack이 다른 점은 AWS 서비스와 네이티브 통합돼 별도 에이전트나 사이드카 없이 모든 AWS 리소스에 적용된다는 것이다.
+Conformance Pack은 **Policy as Code**의 구현이다. 컴플라이언스 요구사항을 코드(YAML)로 정의하고 버전 관리(Git), 테스트, 배포 파이프라인을 적용하는 것이 현대 클라우드 거버넌스의 표준이다. HashiCorp의 Sentinel, OPA(Open Policy Agent)도 같은 패러다임이다. AWS Config Conformance Pack이 다른 점은 AWS 서비스와 네이티브 통합돼 별도 에이전트나 사이드카 없이 모든 AWS 리소스에 적용된다는 것이다.
 
 ## Auto Remediation: SSM Automation으로 자동 교정
 
@@ -576,7 +576,7 @@ Security Hub Finding 생성
 Security Hub 콘솔 → GuardDuty 위협 + Config 비준수 + Inspector 취약점 통합 뷰
 ```
 
-> 📚 **사례**: 2022년 국내 한 금융 기업의 "Continuous Compliance" 도입 사례. 이 기업은 분기 1회 수동 컴플라이언스 점검을 Config + Auto Remediation으로 대체했다. 도입 전: S3 퍼블릭 노출 평균 탐지-교정 시간 4시간. 도입 후: 3분 이내로 단축. 동시에 6개월간 S3 퍼블릭 노출 사고 0건. SOC 2 감사 시 Config Resource Timeline을 감사 증거로 제출해 "어느 시점에 어느 리소스가 어떤 상태였는가"를 분 단위로 증명했다.
+가상의 사례로, 2022년 국내 한 금융 기업의 "Continuous Compliance" 도입 사례. 이 기업은 분기 1회 수동 컴플라이언스 점검을 Config + Auto Remediation으로 대체했다. 도입 전: S3 퍼블릭 노출 평균 탐지-교정 시간 4시간. 도입 후: 3분 이내로 단축. 동시에 6개월간 S3 퍼블릭 노출 사고 0건. SOC 2 감사 시 Config Resource Timeline을 감사 증거로 제출해 "어느 시점에 어느 리소스가 어떤 상태였는가"를 분 단위로 증명했다.
 
 ## CloudTrail vs Config: 정확한 상호 보완 관계
 
@@ -590,7 +590,7 @@ Security Hub 콘솔 → GuardDuty 위협 + Config 비준수 + Inspector 취약�
 | "퍼블릭 버킷을 자동으로 닫을 수 있나?" | Config Rule + Auto Remediation |
 | "퍼블릭 설정 변경 시 즉각 알림 + 자동 롤백?" | CloudTrail(EventBridge) + Config(Auto Remediation) |
 
-둘 중 하나만 활성화하면 완전한 감사 능력을 갖출 수 없다. "CloudTrail이 있으면 Config가 필요 없다"거나 반대로 생각하는 것이 시험과 실무에서 가장 자주 나오는 오류다.
+둘 중 하나만 활성화하면 완전한 감사 능력을 갖출 수 없다. "CloudTrail이 있으면 Config가 필요 없다"거나 반대로 생각하는 것이 시험과 실무에서 나오는 오류다.
 
 ---
 

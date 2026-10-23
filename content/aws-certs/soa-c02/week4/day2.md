@@ -54,7 +54,7 @@ aws cloudtrail create-event-data-store \
 | `termination-protection-enabled` | true | 실수로 EDS 삭제 방지 (감사 데이터 보호) |
 | `kms-key-id` | CMK ARN | EDS 저장 데이터 암호화 (규제 컴플라이언스) |
 
-> 💡 **관련 이론**: EDS의 `termination-protection`은 데이터베이스의 **Delete Protection** 기능과 동일한 패턴이다. RDS의 `DeletionProtection`, S3의 Object Lock, DynamoDB의 `DeletionProtection`이 모두 같은 원칙을 따른다. 감사 데이터는 "실수로 삭제할 수 없어야 한다"는 요구사항이 규제(PCI-DSS 10.7: 감사 로그 1년 이상 보관, HIPAA §164.312: 최소 6년 보관)에서 나온다. `termination-protection`을 끄려면 별도 비활성화 API를 먼저 호출해야 해 "2단계 삭제"를 강제한다.
+EDS의 `termination-protection`은 데이터베이스의 **Delete Protection** 기능과 동일한 패턴이다. RDS의 `DeletionProtection`, S3의 Object Lock, DynamoDB의 `DeletionProtection`이 모두 같은 원칙을 따른다. 감사 데이터는 "실수로 삭제할 수 없어야 한다"는 요구사항이 규제(PCI-DSS 10.7: 감사 로그 1년 이상 보관, HIPAA §164.312: 최소 6년 보관)에서 나온다. `termination-protection`을 끄려면 별도 비활성화 API를 먼저 호출해야 해 "2단계 삭제"를 강제한다.
 
 ### Advanced Event Selector: 정밀한 이벤트 필터링
 
@@ -96,7 +96,7 @@ aws cloudtrail create-event-data-store \
 | `userIdentity.type` | 호출자 유형 | IAMUser, AssumedRole, Root |
 | `errorCode` | 오류 코드 | AccessDenied, ThrottlingException |
 
-> 🔍 **더 깊이**: Data Events는 기본적으로 비활성화돼 있고, 활성화하면 비용이 크게 늘어난다. S3 Object 레벨 로깅은 대규모 버킷에서 하루 수억 건의 이벤트가 발생할 수 있다. Advanced Event Selector로 "민감 버킷만", "쓰기만", "특정 prefix만"으로 좁히는 것이 비용 제어의 핵심이다. 무분별하게 모든 S3 Data Events를 Lake에 수집하면 월 수천 달러의 Ingest 비용이 발생할 수 있다.
+Data Events는 기본적으로 비활성화돼 있고, 활성화하면 비용이 크게 늘어난다. S3 Object 레벨 로깅은 대규모 버킷에서 하루 수억 건의 이벤트가 발생할 수 있다. Advanced Event Selector로 "민감 버킷만", "쓰기만", "특정 prefix만"으로 좁히는 것이 비용 제어의 핵심이다. 무분별하게 모든 S3 Data Events를 Lake에 수집하면 월 수천 달러의 Ingest 비용이 발생할 수 있다.
 
 ## SQL 쿼리 심화: 실전 감사 시나리오
 
@@ -215,7 +215,7 @@ ORDER BY eventTime ASC
 LIMIT 500;
 ```
 
-> 📚 **사례**: 2024년 국내 한 핀테크 스타트업에서 퇴직 직원의 자격증명이 만료되지 않아 발생한 내부자 위협 사고. 해당 직원은 퇴직 후 3일간 자신의 IAM Access Key로 S3에서 고객 데이터를 다운로드했다. CloudTrail Lake의 "패턴 3"과 유사한 쿼리로 이상 다운로드 행위를 탐지했다. `GetObject` 호출이 퇴직 전 일평균 10건이던 것이 퇴직 당일 갑자기 50,000건으로 급증했다. Insights가 이 이상을 자동 감지하고 EventBridge → Slack 알림을 전달해 15분 이내 IAM Key를 비활성화했다.
+가상의 사례로, 2024년 국내 한 핀테크 스타트업에서 퇴직 직원의 자격증명이 만료되지 않아 발생한 내부자 위협 사고. 해당 직원은 퇴직 후 3일간 자신의 IAM Access Key로 S3에서 고객 데이터를 다운로드했다. CloudTrail Lake의 "패턴 3"과 유사한 쿼리로 이상 다운로드 행위를 탐지했다. `GetObject` 호출이 퇴직 전 일평균 10건이던 것이 퇴직 당일 갑자기 50,000건으로 급증했다. Insights가 이 이상을 자동 감지하고 EventBridge → Slack 알림을 전달해 15분 이내 IAM Key를 비활성화했다.
 
 ### Lake 직접 쿼리 vs Athena 경유: 선택 기준
 
@@ -227,7 +227,7 @@ LIMIT 500;
 | Lake → Athena 데이터 내보내기 | Lake Export → S3 → Athena | Lake 데이터를 외부 분석에 |
 | 실시간 대시보드 (OpenSearch) | Trail → CW Logs → OpenSearch | Lake는 실시간 스트리밍 불가 |
 
-> 🔍 **더 깊이**: CloudTrail Lake의 쿼리 엔진은 Presto/Trino 기반이지만, 쿼리 결과 최대 1,000행 제한이 있다. 더 많은 결과가 필요하면 `LIMIT`을 나눠 페이지네이션하거나, Lake의 "쿼리 결과를 S3로 내보내기" 기능을 사용한다. 쿼리 비용은 스캔된 데이터 양 기준(TB당 $5)이므로 `eventTime` 범위를 좁히고 필요한 컬럼만 SELECT하는 것이 비용 절감의 핵심이다. `SELECT *`보다 필요한 컬럼만 명시하면 컬럼형 저장소의 장점을 최대한 활용한다.
+CloudTrail Lake의 쿼리 엔진은 Presto/Trino 기반이지만, 쿼리 결과 최대 1,000행 제한이 있다. 더 많은 결과가 필요하면 `LIMIT`을 나눠 페이지네이션하거나, Lake의 "쿼리 결과를 S3로 내보내기" 기능을 사용한다. 쿼리 비용은 스캔된 데이터 양 기준(TB당 $5)이므로 `eventTime` 범위를 좁히고 필요한 컬럼만 SELECT하는 것이 비용 절감의 핵심이다. `SELECT *`보다 필요한 컬럼만 명시하면 컬럼형 저장소의 장점을 최대한 활용한다.
 
 ## CloudTrail Insights: ML 기반 이상 탐지 내부 동작
 
@@ -257,7 +257,7 @@ source: aws.cloudtrail
 detail-type: AWS Insight via CloudTrail
 ```
 
-> 💡 **관련 이론**: CloudTrail Insights의 이상 탐지는 **시계열 이상 탐지(Time Series Anomaly Detection)**의 일종이다. 통계적 공정 관리(Statistical Process Control, SPC)의 Shewhart Control Chart(1924)에서 유래한 "정상 변동 범위를 벗어난 관측값을 이상으로 판정"하는 원리를 따른다. 현대 ML에서는 Isolation Forest, LSTM Autoencoder, 또는 CloudWatch Anomaly Detection이 사용하는 Random Cut Forest(Amazon 개발, 2016) 알고리즘이 같은 목적에 사용된다. Insights는 AWS 내부적으로 어떤 알고리즘을 쓰는지 공개하지 않지만, 7일 학습 기간과 분 단위 평가 구조를 보면 시계열 통계 기반임을 알 수 있다.
+CloudTrail Insights의 이상 탐지는 **시계열 이상 탐지(Time Series Anomaly Detection)**의 일종이다. 통계적 공정 관리(Statistical Process Control, SPC)의 Shewhart Control Chart(1924)에서 유래한 "정상 변동 범위를 벗어난 관측값을 이상으로 판정"하는 원리를 따른다. 현대 ML에서는 Isolation Forest, LSTM Autoencoder, 또는 CloudWatch Anomaly Detection이 사용하는 Random Cut Forest(Amazon 개발, 2016) 알고리즘이 같은 목적에 사용된다. Insights는 AWS 내부적으로 어떤 알고리즘을 쓰는지 공개하지 않지만, 7일 학습 기간과 분 단위 평가 구조를 보면 시계열 통계 기반임을 알 수 있다.
 
 ### Insights 활성화 및 비용
 
@@ -387,7 +387,7 @@ ORDER BY iam_changes DESC;
 
 `recipientAccountId` 필드가 어느 계정의 이벤트인지 구분한다.
 
-> 📚 **사례**: 2023년 AWS re:Invent에서 발표된 한 글로벌 금융기관 사례. 50개 AWS 계정을 운영하는 이 기관은 기존에 계정별 S3+Athena로 감사 로그를 분석했다. 보안 사고 조사 시 50개 계정의 Athena를 순차적으로 쿼리하는 데 하루가 걸렸다. Organization-enabled CloudTrail Lake를 도입한 후, 동일한 조사를 단일 SQL 쿼리로 10분 내에 완료할 수 있게 됐다. 평균 사고 조사 시간(MTTR) 75% 단축.
+2023년 AWS re:Invent에서 발표된 한 글로벌 금융기관 사례. 50개 AWS 계정을 운영하는 이 기관은 기존에 계정별 S3+Athena로 감사 로그를 분석했다. 보안 사고 조사 시 50개 계정의 Athena를 순차적으로 쿼리하는 데 하루가 걸렸다. Organization-enabled CloudTrail Lake를 도입한 후, 동일한 조사를 단일 SQL 쿼리로 10분 내에 완료할 수 있게 됐다. 평균 사고 조사 시간(MTTR) 75% 단축.
 
 ## CloudTrail Lake vs Athena: 언제 무엇을 쓰나
 

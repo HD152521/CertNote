@@ -51,9 +51,9 @@ CloudTrail 이벤트 종류
 
 **Data Events**는 리소스 안의 데이터에 접근하는 행위다. S3 버킷의 특정 객체를 다운로드하거나(`GetObject`), Lambda 함수를 호출하거나(`Invoke`), DynamoDB에서 특정 아이템을 읽는(`GetItem`) 것이다. 이 이벤트들은 양이 매우 많아서(프로덕션 S3 버킷에서 초당 수천 건의 GetObject가 발생할 수 있다) 기본으로 꺼져 있고 별도 비용이 발생한다.
 
-> ⚠️ **함정**: "S3 객체 접근을 추적하라"는 요구사항이 나오면 반드시 Data Events 활성화가 답이다. Management Events만으로는 `PutBucketPolicy`(버킷 정책 변경) 같은 설정 변경만 추적되고, 실제 객체 접근(GetObject, PutObject)은 추적되지 않는다. 시험에서 이 구분을 자주 묻는다.
+> ⚠️ **함정**: "S3 객체 접근을 추적하라"는 요구사항이 나오면 반드시 Data Events 활성화가 답이다. Management Events만으로는 `PutBucketPolicy`(버킷 정책 변경) 같은 설정 변경만 추적되고, 실제 객체 접근(GetObject, PutObject)은 추적되지 않는다. 시험에서 이 구분을 묻는 문제가 나올 수 있다.
 
-> 📚 **사례**: 2019년 Capital One 데이터 유출 사건. 전직 AWS 직원이 SSRF 취약점으로 EC2 메타데이터에서 IAM 임시 자격증명을 탈취해 S3 버킷 700개에서 100GB 이상의 데이터를 추출했다. 사후 분석에서 S3 Data Events가 활성화되어 있었다면 `GetObject` 호출 패턴(비정상적으로 많은 양, 비정상적인 IAM 자격증명)으로 수 시간 내 탐지할 수 있었다는 분석이 나왔다. 이 사건 후 AWS는 GuardDuty S3 Data Event 모니터링을 강화했고, CloudTrail Data Events 활성화가 보안 모범 사례에서 필수로 격상됐다.
+2019년 Capital One 데이터 유출 사건. 전직 AWS 직원이 SSRF 취약점으로 EC2 메타데이터에서 IAM 임시 자격증명을 탈취해 S3 버킷 700개에서 100GB 이상의 데이터를 추출했다. 사후 분석에서 S3 Data Events가 활성화되어 있었다면 `GetObject` 호출 패턴(비정상적으로 많은 양, 비정상적인 IAM 자격증명)으로 수 시간 내 탐지할 수 있었다는 분석이 나왔다. 이 사건 후 AWS는 GuardDuty S3 Data Event 모니터링을 강화했고, CloudTrail Data Events 활성화가 보안 모범 사례에서 필수로 격상됐다.
 
 ## Trail의 구조와 Multi-Region 설정
 
@@ -113,7 +113,7 @@ aws cloudtrail validate-logs \
 
 변조가 있으면 "INVALID" 카운트가 올라가고 어떤 파일이 문제인지 알 수 있다.
 
-> 🔍 **더 깊이**: Log File Validation의 해시 알고리즘은 SHA-256이며, 다이제스트 파일 자체는 CloudTrail 서비스의 RSA 프라이빗 키로 서명된다. 검증 시 AWS의 퍼블릭 키로 서명을 확인한다. 이 구조 덕분에 AWS 직원도 다이제스트 파일을 조작하면 서명 불일치로 탐지된다. 단, 다이제스트 파일이 있는 S3 버킷 자체가 삭제되면 검증할 수 없다. 그래서 S3 Object Lock(WORM: Write Once Read Many)과 MFA Delete를 같이 쓰는 것이 표준이다.
+Log File Validation의 해시 알고리즘은 SHA-256이며, 다이제스트 파일 자체는 CloudTrail 서비스의 RSA 프라이빗 키로 서명된다. 검증 시 AWS의 퍼블릭 키로 서명을 확인한다. 이 구조 덕분에 AWS 직원도 다이제스트 파일을 조작하면 서명 불일치로 탐지된다. 단, 다이제스트 파일이 있는 S3 버킷 자체가 삭제되면 검증할 수 없다. 그래서 S3 Object Lock(WORM: Write Once Read Many)과 MFA Delete를 같이 쓰는 것이 표준이다.
 
 ## Organization Trail: 멀티 계정 감사의 표준
 
@@ -139,7 +139,7 @@ aws cloudtrail start-logging --name "organization-trail"
 
 ![관리 계정의 Organization Trail 이 멤버 계정 로그를 모아 중앙 아카이브 계정으로 보내는 구조](/diagrams/org-trail-central.svg)
 
-> 💡 **관련 이론**: 중앙 집중식 로그 아카이브는 AWS Landing Zone(현재 Control Tower)의 핵심 설계 패턴이다. Log Archive Account를 별도로 두는 이유는 "침해된 워크로드 계정에서 공격자가 로그를 삭제하지 못하게" 하기 위함이다. 공격자가 계정 A를 침해해도 Log Archive Account의 S3 버킷에 대한 권한이 없으면 로그를 지울 수 없다. 이것이 Account 분리의 보안 가치다.
+중앙 집중식 로그 아카이브는 AWS Landing Zone(현재 Control Tower)의 핵심 설계 패턴이다. Log Archive Account를 별도로 두는 이유는 "침해된 워크로드 계정에서 공격자가 로그를 삭제하지 못하게" 하기 위함이다. 공격자가 계정 A를 침해해도 Log Archive Account의 S3 버킷에 대한 권한이 없으면 로그를 지울 수 없다. 이것이 Account 분리의 보안 가치다.
 
 ## EventBridge 연동: 실시간 보안 대응
 
@@ -186,7 +186,7 @@ CloudTrail 이벤트는 모두 EventBridge default bus로 자동 전송된다. �
 
 이 Rule에 SNS, Lambda, SSM Automation을 타겟으로 연결하면 탐지 → 대응이 자동화된다.
 
-> 📚 **사례**: 2021년 한 국내 스타트업(익명)에서 인턴 개발자가 실수로 RDS 보안 그룹에 `0.0.0.0/0:3306`(MySQL 전체 허용) 규칙을 추가했다. EventBridge Rule이 `AuthorizeSecurityGroupIngress`를 감지하고 SSM Automation Runbook이 2분 만에 해당 규칙을 자동 제거했다. 인턴은 다음날 슬랙 알림으로 자신의 실수를 알게 됐다. CloudTrail + EventBridge의 "detect and auto-remediate" 패턴이 작동한 사례다.
+가상의 사례로, 2021년 한 국내 스타트업(익명)에서 인턴 개발자가 실수로 RDS 보안 그룹에 `0.0.0.0/0:3306`(MySQL 전체 허용) 규칙을 추가했다. EventBridge Rule이 `AuthorizeSecurityGroupIngress`를 감지하고 SSM Automation Runbook이 2분 만에 해당 규칙을 자동 제거했다. 인턴은 다음날 슬랙 알림으로 자신의 실수를 알게 됐다. CloudTrail + EventBridge의 "detect and auto-remediate" 패턴이 작동한 사례다.
 
 ## S3 Data Events 활성화: 비용 최적화 패턴
 
@@ -271,7 +271,7 @@ aws cloudwatch put-metric-alarm \
 
 GCP는 관리자 활동 로그(Admin Activity)가 기본으로 켜져 있고 무료며 400일 보관되는 점이 CloudTrail의 90일과 차이가 있다. Azure는 구독 레벨의 Activity Log가 90일 무료 보관된다.
 
-## 마무리
+## 정리
 
 CloudTrail은 "사후 분석"만을 위한 도구가 아니다. EventBridge와 연동하면 "실시간 탐지 및 대응"이 가능하고, CloudWatch Logs와 연동하면 "패턴 기반 알람"이 된다. Organization Trail로 멀티 계정을 통합하면 "전사 감사"가 자동화된다. 이 세 가지 역할을 이해하고, 언제 어떤 이벤트 종류(Management vs Data vs Insights)가 필요한지 판단하는 것이 시험의 핵심이다.
 
