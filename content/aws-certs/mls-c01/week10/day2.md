@@ -4,9 +4,9 @@
 
 - 실시간 추론은 **Model → EndpointConfig → Endpoint** 세 리소스로 분리되며, 이 분리가 무중단 교체와 트래픽 분할의 토대다.
 - 무중단 배포는 새 EndpointConfig를 만들고 **UpdateEndpoint**로 갈아끼우는 것. 새 플릿 기동 → 트래픽 이동 → 기존 플릿 종료.
-- 오토스케일링은 Application Auto Scaling의 **변형(variant) 단위**로 걸며, 기본 지표는 `SageMakerVariantInvocationsPerInstance` + **Target Tracking**이다.
+- Auto Scaling은 Application Auto Scaling의 **변형(variant) 단위**로 걸며, 기본 지표는 `SageMakerVariantInvocationsPerInstance` + **Target Tracking**이다.
 - **MinCapacity는 0이 될 수 없다.** 완전한 0 스케일이 필요하면 Serverless나 Async를 쓴다.
-- **MME**(동일 컨테이너·수천 모델 동적 로딩) / **MCE**(서로 다른 컨테이너) / **추론 파이프라인**(전처리→예측 직렬)의 구분이 시험 단골이다.
+- **MME**(동일 컨테이너·수천 모델 동적 로딩) / **MCE**(서로 다른 컨테이너) / **추론 파이프라인**(전처리→예측 직렬)의 구분이 시험 범위에 든다.
 
 ## 엔드포인트의 3계층 구조
 
@@ -55,13 +55,13 @@ model.deploy(
         응답 + CloudWatch 지표 기록
 ```
 
-> 💡 **개념**: 핵심은 **Endpoint와 EndpointConfig가 분리되어 있다**는 점이다. 새 EndpointConfig를 만들고 UpdateEndpoint로 바꿔 끼우면 SageMaker가 새 플릿을 띄우고 트래픽을 옮긴 뒤 기존 플릿을 정리한다 — 다운타임이 없다.
+핵심은 **Endpoint와 EndpointConfig가 분리되어 있다**는 점이다. 새 EndpointConfig를 만들고 UpdateEndpoint로 바꿔 끼우면 SageMaker가 새 플릿을 띄우고 트래픽을 옮긴 뒤 기존 플릿을 정리한다 — 다운타임이 없다.
 
-> 💡 **개념**: 하나의 EndpointConfig는 여러 ProductionVariant를 담을 수 있고, 각 변형에 `InitialVariantWeight`로 트래픽 비율을 지정한다. 이 가중치 기반 분할이 A/B 테스트와 카나리 배포의 토대이며, 내일 다룬다.
+하나의 EndpointConfig는 여러 ProductionVariant를 담을 수 있고, 각 변형에 `InitialVariantWeight`로 트래픽 비율을 지정한다. 이 가중치 기반 분할이 A/B 테스트와 카나리 배포의 토대이며, 내일 다룬다.
 
-> ⚠️ **함정**: "무중단 배포"를 묻는 지문에서 **엔드포인트를 삭제하고 같은 이름으로 재생성**하는 보기는 항상 오답이다. 재생성 구간에 다운타임이 생긴다. S3 아티팩트를 덮어쓰거나 인스턴스에 SSH로 접속해 파일을 바꾸는 보기도 동작하지 않는다.
+> ⚠️ **함정**: "무중단 배포"를 묻는 지문에서 **엔드포인트를 삭제하고 같은 이름으로 재생성**하는 보기는 오답이다. 재생성 구간에 다운타임이 생긴다. S3 아티팩트를 덮어쓰거나 인스턴스에 SSH로 접속해 파일을 바꾸는 보기도 동작하지 않는다.
 
-## 오토스케일링: 트래픽에 인스턴스 수를 맞춘다
+## Auto Scaling: 트래픽에 인스턴스 수를 맞춘다
 
 상시 가동 비용의 함정을 줄이려면 인스턴스 수가 트래픽을 따라 자동으로 움직여야 한다. SageMaker는 Application Auto Scaling을 통해 **변형(variant) 단위** 스케일링을 지원한다.
 
@@ -110,7 +110,7 @@ client.put_scaling_policy(
 | 리소스가 포화인가 | CPU / GPU / Memory Utilization | 스케일 아웃 vs 인스턴스 타입 변경 판단 근거 |
 | 오류가 어디서 나는가 | `Invocation4XX` / `Invocation5XX` | 4XX는 클라이언트 요청 문제, 5XX는 서버·모델 문제 |
 
-> ⚠️ **함정**: "트래픽이 없을 때 비용을 0으로 만들고 싶다"는 지문에 실시간 엔드포인트 + 오토스케일링을 고르면 안 된다. MinCapacity가 0이 될 수 없으므로 **Serverless Inference**나 **Asynchronous Inference**가 답이다.
+> ⚠️ **함정**: "트래픽이 없을 때 비용을 0으로 만들고 싶다"는 지문에 실시간 엔드포인트 + Auto Scaling을 고르면 안 된다. MinCapacity가 0이 될 수 없으므로 **Serverless Inference**나 **Asynchronous Inference**가 답이다.
 
 ## 멀티모델 엔드포인트(MME): 한 엔드포인트에 수천 개 모델
 
@@ -161,7 +161,7 @@ Inference Pipeline            : 컨테이너를 직렬 연결(전처리→예측
 | **MCE (Direct)** | 여러 개 | 서로 다른 프레임워크 모델을 한 엔드포인트에서 **개별 호출** | 전처리→예측을 한 요청으로 묶어야 할 때 |
 | **추론 파이프라인** | 여러 개(직렬) | 전처리+예측을 한 요청에 묶어 학습-서빙 스큐 방지 | 각 컨테이너를 독립적으로 따로 호출해야 할 때 |
 
-> ⚠️ **함정**: MME는 "모델이 많다"는 조건만으로 정답이 되지 않는다. **모든 모델이 같은 프레임워크/컨테이너를 공유**해야 한다는 전제가 붙는다. 지문에 프레임워크가 서로 다르다는 단서가 있으면 MCE 쪽이다. 또한 MME의 인스턴스는 0이 아니며 GPU 전용도 아니다.
+MME는 "모델이 많다"는 조건만으로 정답이 되지 않는다. **모든 모델이 같은 프레임워크/컨테이너를 공유**해야 한다는 전제가 붙는다. 지문에 프레임워크가 서로 다르다는 단서가 있으면 MCE 쪽이다. 또한 MME의 인스턴스는 0이 아니며 GPU 전용도 아니다.
 
 추론 파이프라인의 전형적인 예: Scikit-learn 전처리 컨테이너 → XGBoost 예측 컨테이너를 직렬로 묶어, 추론 시에도 학습과 **동일한 전처리**가 적용되도록 보장한다(학습-서빙 스큐 방지). 클라이언트가 별도 엔드포인트 두 개를 순서대로 호출하는 방식은 네트워크 왕복과 정합성 문제를 남긴다.
 
@@ -176,7 +176,7 @@ Inference Pipeline            : 컨테이너를 직렬 연결(전처리→예측
 └─ 모델이 소수이고 각각 다른 스케일·SLA → 개별 실시간 엔드포인트
 ```
 
-> 💡 **개념**: "수천 개의 유사 모델 + 동일 프레임워크 + 비용 절감" → MME. "전처리와 예측을 한 요청으로 묶어라" → 추론 파이프라인. "서로 다른 프레임워크 모델을 한 엔드포인트에서 따로 호출" → MCE Direct 모드. 이 셋의 구분이 자주 출제된다.
+"수천 개의 유사 모델 + 동일 프레임워크 + 비용 절감" → MME. "전처리와 예측을 한 요청으로 묶어라" → 추론 파이프라인. "서로 다른 프레임워크 모델을 한 엔드포인트에서 따로 호출" → MCE Direct 모드. 이 셋을 구분해야 한다.
 
 ## 운영 모니터링 핵심 지표
 
