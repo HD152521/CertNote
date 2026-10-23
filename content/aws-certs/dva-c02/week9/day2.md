@@ -1,8 +1,8 @@
 # Day 2 - Secrets Manager와 Parameter Store: 비밀을 코드 밖으로 꺼내기
 
-"비밀번호를 코드에 박지 마라"는 모든 개발자가 첫날 배우는 규칙이지만, 정작 그걸 어디 둘지는 아무도 명쾌하게 가르쳐주지 않는다. 환경변수에 넣으면 프로세스 환경을 덤프하는 순간 새고, 설정 파일에 넣으면 그 파일을 또 git에서 빼야 하며, 한 번 새어나간 비밀번호는 모든 서버에서 동시에 바꿔야 하는 운영 악몽이 된다. 게다가 진짜 보안 조직은 "비밀번호를 새지 않게 하는 것"을 넘어 "정기적으로 자동으로 바꾸는 것"을 요구한다. 사람이 90일마다 DB 비밀번호를 손으로 바꾸는 조직은 없다 — 귀찮으니까 안 바꾼다. AWS Secrets Manager와 SSM Parameter Store는 이 "비밀을 코드 밖에 두고, 가능하면 자동으로 회전시킨다"는 문제를 두 가지 다른 무게로 푼다.
+"비밀번호를 코드에 박지 마라"는 모든 개발자가 첫날 배우는 규칙이지만, 정작 그걸 어디 둘지는 아무도 명쾌하게 가르쳐주지 않는다. 환경변수에 넣으면 프로세스 환경을 덤프하는 순간 새고, 설정 파일에 넣으면 그 파일을 또 git에서 빼야 하며, 한 번 새어나간 비밀번호는 모든 서버에서 동시에 바꿔야 하는 운영 악몽이 된다. 게다가 보안 조직은 "비밀번호를 새지 않게 하는 것"을 넘어 "정기적으로 자동으로 바꾸는 것"을 요구한다. 사람이 90일마다 DB 비밀번호를 손으로 바꾸는 조직은 없다 — 귀찮으니까 안 바꾼다. AWS Secrets Manager와 SSM Parameter Store는 이 "비밀을 코드 밖에 두고, 가능하면 자동으로 회전시킨다"는 문제를 두 가지 다른 무게로 푼다.
 
-DVA-C02 시험에서 이 둘은 거의 항상 **비교 문제**로 나온다. "이 시나리오에서 Secrets Manager인가 Parameter Store인가?"를 가르는 기준은 단 세 가지 — 자동 회전이 필요한가, 크기가 8KB를 넘는가, 비용이 최우선인가 — 다. 이번 글은 두 서비스가 각각 어떤 문제를 풀려고 태어났는지, 자동 회전이 내부에서 어떻게 다운타임 없이 동작하는지, 그리고 Lambda Extension으로 호출 비용을 줄이는 실무 패턴까지 본다.
+DVA-C02 시험에서 이 둘은 **비교 문제**로 나온다. "이 시나리오에서 Secrets Manager인가 Parameter Store인가?"를 가르는 기준은 단 세 가지 — 자동 회전이 필요한가, 크기가 8KB를 넘는가, 비용이 최우선인가 — 다. 이번 글은 두 서비스가 각각 어떤 문제를 풀려고 태어났는지, 자동 회전이 내부에서 어떻게 다운타임 없이 동작하는지, 그리고 Lambda Extension으로 호출 비용을 줄이는 실무 패턴까지 본다.
 
 ## 두 서비스가 나뉘어 태어난 이유
 
@@ -19,9 +19,9 @@ DVA-C02 시험에서 이 둘은 거의 항상 **비교 문제**로 나온다. "�
 | RDS 통합 회전 | **네이티브** | 없음 |
 | 크로스 리전 복제 | 지원 | 없음 |
 
-> 💡 **관련 이론**: 이 분리는 소프트웨어 설계의 **관심사 분리(separation of concerns)** 의 클라우드 버전이다. 12-Factor App 방법론은 "설정(config)을 코드에서 분리하라"고 말하지만, 설정 안에서도 "공개해도 되는 설정(타임존, 기능 플래그)"과 "절대 새면 안 되는 비밀(DB 비밀번호, API 키)"은 보호 수준과 수명 관리가 다르다. 회전 주기, 감사 강도, 접근 통제가 다른 두 종류를 하나의 저장소에 욱여넣으면 결국 가장 엄격한 요구에 맞춰 전체를 과보호하거나(비싸짐) 가장 느슨한 쪽으로 새어나간다(위험해짐). AWS는 둘을 분리해 각각에 맞는 비용·기능 곡선을 제공한다.
+설정 안에서도 "공개해도 되는 설정(타임존, 기능 플래그)"과 "절대 새면 안 되는 비밀(DB 비밀번호, API 키)"은 보호 수준과 수명 관리가 다르다. 회전 주기, 감사 강도, 접근 통제가 다른 두 종류를 하나의 저장소에 담으면 가장 엄격한 요구에 맞춰 전체를 과보호하거나(비싸짐) 가장 느슨한 쪽으로 새어나간다(위험해짐). AWS는 둘을 분리해 각각에 맞는 비용·기능 곡선을 제공한다.
 
-> ⚠️ **함정**: "둘 다 KMS 암호화를 지원하는가?"는 시험에 자주 나오는데, 답은 **그렇다**이다. Parameter Store의 SecureString도 내부적으로 KMS로 암호화된다. 그래서 "암호화 지원"만으로는 둘을 못 가른다. 진짜 차이는 **자동 회전**과 **RDS 통합**이다. "DB 비밀번호를 30일마다 자동으로 바꿔야 한다"가 보이면 무조건 Secrets Manager다 — Parameter Store는 회전 기능 자체가 없다.
+"둘 다 KMS 암호화를 지원하는가?"라는 질문의 답은 **그렇다**이다. Parameter Store의 SecureString도 내부적으로 KMS로 암호화된다. 그래서 "암호화 지원"만으로는 둘을 못 가른다. 차이는 **자동 회전**과 **RDS 통합**이다. "DB 비밀번호를 30일마다 자동으로 바꿔야 한다"가 보이면 Secrets Manager다 — Parameter Store는 회전 기능 자체가 없다.
 
 ## 자동 회전: 다운타임 없이 비밀번호를 바꾸는 두 전략
 
@@ -36,9 +36,9 @@ Single-User는 단순하다. 같은 DB 사용자의 비밀번호를 새로 만�
 
 Alternating-Users는 영리하다. `myapp_user`와 `myapp_user_clone` 두 계정을 두고, 회전 시 **현재 안 쓰는 쪽**의 비밀번호를 먼저 바꾼 다음 그쪽으로 전환한다. 옛 계정은 한동안 그대로 두므로 옛 비밀번호를 든 클라이언트도 회전 직후 일정 시간 동안은 여전히 접속된다.
 
-> 🔍 **더 깊이**: Secrets Manager의 회전은 Lambda 함수가 **4단계 스텝**(`createSecret` → `setSecret` → `testSecret` → `finishSecret`)으로 진행한다. ① createSecret: 새 비밀번호를 생성해 `AWSPENDING` 라벨로 저장(아직 DB엔 미적용). ② setSecret: DB에 새 비밀번호를 실제로 설정. ③ testSecret: 새 비밀번호로 실제 접속을 테스트해 동작을 확인. ④ finishSecret: `AWSPENDING` 라벨을 `AWSCURRENT`로 승격(이제 애플리케이션이 받는 기본 버전이 새 비밀번호). 핵심은 ③ **testSecret에서 검증에 실패하면 회전이 중단되고 옛 비밀번호(AWSCURRENT)가 그대로 유지**된다는 점이다. 즉 회전이 깨져도 서비스는 옛 비밀번호로 계속 동작한다 — 이 "검증 후 승격" 구조가 회전을 안전하게 만든다.
+Secrets Manager의 회전은 Lambda 함수가 **4단계 스텝**(`createSecret` → `setSecret` → `testSecret` → `finishSecret`)으로 진행한다. ① createSecret: 새 비밀번호를 생성해 `AWSPENDING` 라벨로 저장(아직 DB엔 미적용). ② setSecret: DB에 새 비밀번호를 실제로 설정. ③ testSecret: 새 비밀번호로 실제 접속을 테스트해 동작을 확인. ④ finishSecret: `AWSPENDING` 라벨을 `AWSCURRENT`로 승격(이제 애플리케이션이 받는 기본 버전이 새 비밀번호). 핵심은 ③ **testSecret에서 검증에 실패하면 회전이 중단되고 옛 비밀번호(AWSCURRENT)가 그대로 유지**된다는 점이다. 즉 회전이 깨져도 서비스는 옛 비밀번호로 계속 동작한다 — 이 "검증 후 승격" 구조가 회전을 안전하게 만든다.
 
-> 📚 **사례**: 한 팀이 RDS 비밀번호 회전을 켰는데 회전 직후 간헐적 인증 실패가 났다. 원인은 애플리케이션이 부팅 시 비밀번호를 한 번 읽어 **메모리에 영구 캐싱**하고 있었기 때문이다. 회전으로 DB 비밀번호가 바뀌었는데 앱은 옛 값을 계속 들고 있었다. 해결은 Alternating-Users 전략으로 바꿔 옛 계정을 한 회전 주기 동안 살려두고, 동시에 앱이 인증 실패 시 Secrets Manager를 다시 읽어 캐시를 갱신하도록 재시도 로직을 넣는 것이었다. 자동 회전을 켜는 것만으로 끝이 아니라 "클라이언트가 비밀을 어떻게 캐싱하는가"까지 함께 봐야 한다는 교훈.
+가상의 사례로, 한 팀이 RDS 비밀번호 회전을 켰는데 회전 직후 간헐적 인증 실패가 났다. 원인은 애플리케이션이 부팅 시 비밀번호를 한 번 읽어 **메모리에 영구 캐싱**하고 있었기 때문이다. 회전으로 DB 비밀번호가 바뀌었는데 앱은 옛 값을 계속 들고 있었다. 해결은 Alternating-Users 전략으로 바꿔 옛 계정을 한 회전 주기 동안 살려두고, 동시에 앱이 인증 실패 시 Secrets Manager를 다시 읽어 캐시를 갱신하도록 재시도 로직을 넣는 것이었다. 교훈은 자동 회전을 켜는 것만으로 끝이 아니라 "클라이언트가 비밀을 어떻게 캐싱하는가"까지 함께 봐야 한다는 것이다.
 
 ```python
 import boto3, json
@@ -59,7 +59,7 @@ conn = connect(
 
 ## RDS 통합 회전: AWS가 회전 Lambda를 대신 만들어준다
 
-비밀 회전 Lambda를 직접 짜는 건 까다롭다 — 위의 4단계를 DB 종류별로 올바르게 구현해야 한다. Secrets Manager의 진짜 강점은 RDS·DocumentDB·Redshift에 대해 **AWS가 검증된 회전 Lambda를 자동 생성**해준다는 점이다.
+비밀 회전 Lambda를 직접 짜는 건 까다롭다 — 위의 4단계를 DB 종류별로 올바르게 구현해야 한다. Secrets Manager의 강점은 RDS·DocumentDB·Redshift에 대해 **AWS가 검증된 회전 Lambda를 자동 생성**해준다는 점이다.
 
 | DB | 회전 방식 |
 |----|-----------|
@@ -95,7 +95,7 @@ aws ssm get-parameter --name /myapp/prod/db-password --with-decryption
 aws ssm get-parameters-by-path --path /myapp/prod --recursive --with-decryption
 ```
 
-> 🔍 **더 깊이**: `--with-decryption` 옵션이 없으면 SecureString은 **암호화된 채로** 반환된다. 이게 의도된 동작이다 — 복호화하려면 호출자가 그 KMS 키에 대한 `kms:Decrypt` 권한을 가져야 하므로, SecureString 조회 권한과 복호화 권한을 분리할 수 있다. 즉 "파라미터 존재는 볼 수 있지만 평문은 못 보는" 역할을 만들 수 있다. 시험에서 "SecureString을 평문으로 가져오려면?"의 답이 `--with-decryption`인 이유다.
+`--with-decryption` 옵션이 없으면 SecureString은 **암호화된 채로** 반환된다. 이는 의도된 동작이다 — 복호화하려면 호출자가 그 KMS 키에 대한 `kms:Decrypt` 권한을 가져야 하므로, SecureString 조회 권한과 복호화 권한을 분리할 수 있다. 즉 "파라미터 존재는 볼 수 있지만 평문은 못 보는" 역할을 만들 수 있다. 시험에서 "SecureString을 평문으로 가져오려면?"의 답이 `--with-decryption`인 이유다.
 
 계층 구조는 Parameter Store의 강력한 무기다. `/myapp/prod/...`, `/myapp/staging/...` 처럼 경로로 환경을 나누고, IAM 정책을 경로 단위로 걸어 권한을 분리한다.
 
@@ -107,7 +107,7 @@ aws ssm get-parameters-by-path --path /myapp/prod --recursive --with-decryption
 }
 ```
 
-> 💡 **관련 이론**: 경로 기반 권한 분리는 파일시스템의 디렉터리 권한 모델과 같다. `/myapp/prod/*`에 prod 운영자만 접근하게 하고 `/myapp/staging/*`은 개발팀에 열어주는 식으로, 자원을 트리로 조직하고 서브트리 단위로 권한을 거는 패턴은 Unix 파일 권한부터 S3 prefix 정책, IAM 리소스 ARN 와일드카드까지 클라우드 전반에 반복된다. 계층을 평면 네이밍(`myapp_prod_db_url`)으로 만들면 이 서브트리 권한을 못 쓰므로, 처음부터 슬래시 경로로 설계하는 게 중요하다.
+경로 기반 권한 분리는 파일시스템의 디렉터리 권한 모델과 같다. `/myapp/prod/*`에 prod 운영자만 접근하게 하고 `/myapp/staging/*`은 개발팀에 열어주는 식으로 서브트리 단위로 권한을 건다. 계층을 평면 네이밍(`myapp_prod_db_url`)으로 만들면 이 방식을 쓸 수 없으므로, 처음부터 슬래시 경로로 설계해야 한다.
 
 Standard와 Advanced 티어의 차이도 시험 포인트다.
 
@@ -132,7 +132,7 @@ CloudFormation에서 이걸 참조하면 AMI ID를 템플릿에 박지 않아도
 
 ## Lambda Extension으로 호출 비용 줄이기
 
-Lambda 함수가 매 호출마다 Secrets Manager나 Parameter Store를 API로 읽으면 ① 호출 비용 ② 콜드/웜 양쪽에서의 레이턴시가 누적된다. AWS의 **Parameters and Secrets Lambda Extension**은 이걸 함수 옆 로컬 HTTP 캐시로 해결한다.
+Lambda 함수가 매 호출마다 Secrets Manager나 Parameter Store를 API로 읽으면 ① 호출 비용 ② 콜드/웜 양쪽에서의 지연 시간이 누적된다. AWS의 **Parameters and Secrets Lambda Extension**은 이걸 함수 옆 로컬 HTTP 캐시로 해결한다.
 
 ```python
 import urllib.request, os, json
@@ -145,7 +145,7 @@ def get_secret(name):
     return json.loads(urllib.request.urlopen(req).read())
 ```
 
-> 🔍 **더 깊이**: 이 Extension은 Lambda 실행 환경 안에 별도 프로세스로 떠서 localhost 포트(기본 2773)에 캐시된 비밀을 서빙한다. 함수 코드는 Secrets Manager SDK 대신 localhost로 HTTP 요청을 보내고, Extension이 캐시 미스일 때만 실제 API를 호출한다. 같은 실행 환경(웜 컨테이너)이 재사용되는 동안 캐시가 유지되므로 호출당 API 요청이 극적으로 줄어든다. TTL은 환경변수로 조절한다. 콜드 스타트 시 첫 1회는 실제 호출이 일어나지만, 이후 웜 호출들은 전부 로컬 캐시 히트라 비용·레이턴시가 모두 내려간다. 비밀을 코드에 캐싱하는 위험한 패턴을 AWS가 관리하는 안전한 캐시로 대체하는 셈이다.
+이 Extension은 Lambda 실행 환경 안에 별도 프로세스로 떠서 localhost 포트(기본 2773)에 캐시된 비밀을 서빙한다. 함수 코드는 Secrets Manager SDK 대신 localhost로 HTTP 요청을 보내고, Extension이 캐시 미스일 때만 실제 API를 호출한다. 같은 실행 환경(웜 컨테이너)이 재사용되는 동안 캐시가 유지되므로 호출당 API 요청이 크게 줄어든다. TTL은 환경변수로 조절한다. 콜드 스타트 시 첫 1회는 실제 호출이 일어나지만, 이후 웜 호출들은 전부 로컬 캐시 히트라 비용·지연 시간이 모두 내려간다. 비밀을 코드에 캐싱하는 위험한 패턴을 AWS가 관리하는 안전한 캐시로 대체하는 셈이다.
 
 ## 비용으로 보는 선택 기준
 
@@ -162,9 +162,9 @@ def get_secret(name):
 
 > ⚠️ **함정**: "비용 최우선 + 자동 회전 불필요 + 8KB 이하"가 모두 만족되면 Parameter Store가 정답이다. 반대로 셋 중 하나라도 회전이 끼면 Secrets Manager로 넘어가야 한다. 시험은 이 결정 트리를 시나리오로 위장해 묻는다: "자동 회전 필요?" → YES면 Secrets Manager, NO면 "크기 8KB 초과?" → YES면 Secrets Manager, NO면 "RDS 통합?" → YES면 Secrets Manager, 전부 NO면 Parameter Store.
 
-## 정리하며
+## 정리
 
-Parameter Store는 "가볍고 계층적인 설정 저장소"로 출발해 SecureString으로 가벼운 비밀까지 담고, Secrets Manager는 "회전·RDS 통합·크로스 리전"이라는 무거운 요구를 위해 따로 태어났다. 둘을 가르는 기준은 자동 회전·크기·비용 세 가지로 압축되며, 회전이 끼면 항상 Secrets Manager다. 회전이 4단계 검증 구조라 깨져도 옛 비밀이 유지된다는 점, SecureString은 `--with-decryption` 없이는 암호문으로 나온다는 점, Lambda Extension으로 호출 비용을 줄인다는 점이 실무·시험 양쪽의 핵심이다.
+Parameter Store는 "가볍고 계층적인 설정 저장소"로 출발해 SecureString으로 가벼운 비밀까지 담고, Secrets Manager는 "회전·RDS 통합·크로스 리전"이라는 무거운 요구를 위해 따로 태어났다. 둘을 가르는 기준은 자동 회전·크기·비용 세 가지로 압축되며, 회전이 필요하면 Secrets Manager다. 회전이 4단계 검증 구조라 깨져도 옛 비밀이 유지된다는 점, SecureString은 `--with-decryption` 없이는 암호문으로 나온다는 점, Lambda Extension으로 호출 비용을 줄인다는 점이 실무·시험 양쪽의 핵심이다.
 
 다음 글에서는 비밀의 다른 측면 — 사용자 인증 자체를 관리하는 Cognito를 본다. 비밀번호를 안전하게 회전하는 것을 넘어, 사용자가 누구인지 증명하고 그 증명을 AWS 리소스 접근 권한으로 바꾸는 흐름이다.
 

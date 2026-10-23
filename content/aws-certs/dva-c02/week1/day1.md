@@ -2,7 +2,7 @@
 
 새 회사에 입사해서 처음 AWS 콘솔을 받았을 때 가장 먼저 부딪치는 건 보통 두 가지다. 하나는 "어느 리전에 만들어야 하지?", 다른 하나는 "이거 우리가 관리해야 되는 거야, AWS가 알아서 해주는 거야?"다. SAA가 이 질문에 "아키텍트로서 어떻게 설계할 것인가"로 답한다면, DVA는 "개발자로서 어떻게 코드와 빌드를 거기에 얹을 것인가"로 답해야 한다. 같은 인프라 지도지만 시점이 다르다.
 
-이 글에서는 AWS의 글로벌 인프라를 개발자가 알아야 할 만큼만, 그러나 SDK 호출과 endpoint 선택이 깊어지는 지점까지 파고든다. 시험 키워드를 외우는 게 목표가 아니라, `boto3` 클라이언트를 만들 때 `region_name`이 왜 필요한지, IAM 역할이 코드 동작에 어떻게 들어오는지, Lambda 함수가 어느 AZ에서 실행되는지를 진짜로 이해하는 게 목표다.
+이 글에서는 AWS의 글로벌 인프라를 개발자가 알아야 할 만큼만, 그러나 SDK 호출과 endpoint 선택이 깊어지는 지점까지 파고든다. 시험 키워드를 외우는 게 목표가 아니라, `boto3` 클라이언트를 만들 때 `region_name`이 왜 필요한지, IAM 역할이 코드 동작에 어떻게 들어오는지, Lambda 함수가 어느 AZ에서 실행되는지를 이해하는 게 목표다.
 
 ## 클라우드 컴퓨팅이 만든 개발 패러다임의 전환
 
@@ -10,9 +10,9 @@
 
 이걸 학술적으로는 NIST SP 800-145(2011)이 클라우드의 5가지 본질적 특성으로 정리한다. ① 온디맨드 셀프서비스, ② 광범위한 네트워크 접근, ③ 자원 풀링, ④ 빠른 탄력성, ⑤ 측정된 서비스. DVA 시험에서 "비용 모델·확장성·민첩성" 같은 키워드가 보이면 이 5가지 중 어느 측면을 묻는지 식별하면 된다.
 
-> 💡 **관련 이론**: "Infrastructure as API"는 분산 시스템 이론에서 보면 **declarative configuration**(Kubernetes, Terraform, CloudFormation)으로 자연스럽게 이어진다. 명령형으로 "서버 N대를 만들어라"가 아니라 선언형으로 "원하는 최종 상태는 N대다"라고 적으면 시스템이 reconciliation loop를 돌며 그 상태로 수렴시킨다. 이 패턴은 1980년대 Prolog 같은 논리 프로그래밍과 1990년대 Cisco IOS 설정에서 출발해, 2014년 Kubernetes가 산업 표준으로 자리잡게 만든다. DVA에서 만나는 CloudFormation·SAM·CDK는 모두 같은 철학의 다른 구현체다.
+"Infrastructure as API"는 분산 시스템 이론에서 보면 **declarative configuration**(Kubernetes, Terraform, CloudFormation)으로 자연스럽게 이어진다. 명령형으로 "서버 N대를 만들어라"가 아니라 선언형으로 "원하는 최종 상태는 N대다"라고 적으면 시스템이 reconciliation loop를 돌며 그 상태로 수렴시킨다. DVA에서 만나는 CloudFormation·SAM·CDK는 모두 같은 철학의 다른 구현체다.
 
-세 가지 배포 모델(Public / Private / Hybrid)도 외워야 하지만, 실제 시험에선 거의 항상 시나리오로 등장한다. "온프레미스의 SAP를 그대로 두고 새 마이크로서비스만 클라우드로"라면 Hybrid다. "전자금융감독규정 때문에 일부 데이터는 외부 못 보냄"이라면 Outposts나 Hybrid가 답이다.
+세 가지 배포 모델(Public / Private / Hybrid)도 외워야 하지만, 실제 시험에선 시나리오로 등장한다. "온프레미스의 SAP를 그대로 두고 새 마이크로서비스만 클라우드로"라면 Hybrid다. "전자금융감독규정 때문에 일부 데이터는 외부 못 보냄"이라면 Outposts나 Hybrid가 답이다.
 
 ## 리전, AZ, Edge: 개발자가 endpoint를 고르는 기준
 
@@ -33,17 +33,17 @@ ddb = boto3.client('dynamodb')
 | 인프라 계층 | 개수(2026) | 개발자 관점 의미 |
 |-----------|------|-----------|
 | **Region** | 34개 | 데이터 위치, 가격, endpoint URL의 결정 단위 |
-| **Availability Zone** | 리전당 3개 이상 | EC2/Lambda 실제 실행 위치, Multi-AZ DB의 fail-over 단위 |
+| **Availability Zone** | 리전당 3개 이상 | EC2/Lambda 실제 실행 위치, Multi-AZ DB의 페일오버 단위 |
 | **Edge Location** | 600+ | CloudFront 캐시, Lambda@Edge 실행 지점 |
 | **Local Zones** | 30+ | 1-2ms 초저지연. 미디어·게임·실시간 ML 추론 |
 | **Wavelength** | 통신사 5G 엣지 | 자율주행, 산업 IoT |
 | **Outposts** | 고객 DC 내 AWS 랙 | 데이터 주권 + AWS API 동시 충족 |
 
-> 🔍 **더 깊이**: AWS 서비스의 endpoint는 크게 세 종류다. **Regional endpoint**(예: `dynamodb.ap-northeast-2.amazonaws.com`)는 가장 흔한 형태로 리전별로 다른 인프라에 라우팅된다. **Global endpoint**(예: `iam.amazonaws.com`, `s3.amazonaws.com`)는 리전 없이 글로벌 서비스에 닿는다. **FIPS endpoint**(예: `dynamodb-fips.us-east-1.amazonaws.com`)는 FIPS 140-2 검증된 암호 모듈을 쓰는 endpoint로, 미국 정부·금융 고객용이다. SDK 환경변수 `AWS_USE_FIPS_ENDPOINT=true`로 자동 전환할 수 있다.
+AWS 서비스의 endpoint는 크게 세 종류다. **Regional endpoint**(예: `dynamodb.ap-northeast-2.amazonaws.com`)는 가장 흔한 형태로 리전별로 다른 인프라에 라우팅된다. **Global endpoint**(예: `iam.amazonaws.com`, `s3.amazonaws.com`)는 리전 없이 글로벌 서비스에 닿는다. **FIPS endpoint**(예: `dynamodb-fips.us-east-1.amazonaws.com`)는 FIPS 140-2 검증된 암호 모듈을 쓰는 endpoint로, 미국 정부·금융 고객용이다. SDK 환경변수 `AWS_USE_FIPS_ENDPOINT=true`로 자동 전환할 수 있다.
 
 2011년 4월 us-east-1 EBS 장애 이후 AWS는 모든 새 리전을 최소 3개 AZ로 짓는다는 원칙을 세웠다. 그 전엔 AZ가 같은 시설 내의 다른 랙 정도였지만, 이 사건으로 "**물리적으로 독립된 전력·냉방·네트워크를 가진 1개 이상의 DC 집합**"이라는 정의가 강제됐다. AZ 간 latency는 보통 1-2ms 이내라서 RDS Multi-AZ 같은 synchronous replication이 가능하지만, 화재나 정전이 번지지는 않을 정도의 거리(수 km ~ 수십 km)를 둔다.
 
-> 📚 **사례**: 2017년 2월 28일 S3 us-east-1 장애. 운영자가 빌링 디버깅 명령에 타이포를 내며 의도보다 많은 서버를 정지시켰고, 인덱스 서브시스템이 완전 재시작에 들어갔다. Stripe·Slack·Trello·IFTTT·Coursera·Quora가 4시간 동안 다운됐고, AWS Status Page 자체도 S3에 의존하고 있어서 "장애 났는데 상태판은 초록불"이라는 상황이 벌어졌다. 이후 AWS는 Status Page를 멀티 리전으로 분리했다. [AWS 공식 회고](https://aws.amazon.com/message/41926/). 개발자 입장에서 교훈은 분명하다. **단일 리전에 의존하는 시스템은 그 리전의 어떤 서비스든 죽으면 같이 죽는다.**
+2017년 2월 28일 S3 us-east-1 장애. 운영자가 빌링 디버깅 명령에 타이포를 내며 의도보다 많은 서버를 정지시켰고, 인덱스 서브시스템이 완전 재시작에 들어갔다. Stripe·Slack·Trello·IFTTT·Coursera·Quora가 4시간 동안 다운됐고, AWS Status Page 자체도 S3에 의존하고 있어서 "장애 났는데 상태판은 초록불"이라는 상황이 벌어졌다. 이후 AWS는 Status Page를 멀티 리전으로 분리했다. [AWS 공식 회고](https://aws.amazon.com/message/41926/). 개발자 입장에서 교훈은 분명하다. **단일 리전에 의존하는 시스템은 그 리전의 어떤 서비스든 죽으면 같이 죽는다.**
 
 ## AZ는 진짜로 어디 있을까: ZoneName과 ZoneId의 차이
 
@@ -64,7 +64,7 @@ aws ec2 describe-availability-zones \
 
 `ZoneId`(`apne2-az1`)는 모든 계정에서 동일한 물리 AZ를 가리킨다. 협력사와 VPC peering이나 PrivateLink로 연결할 때 cross-AZ 데이터 전송 비용을 아끼고 싶다면 `ZoneId`로 매칭해야 한다. ZoneName만 보고 a-a로 묶으면 실제로는 cross-AZ인 경우가 흔하다.
 
-> ⚠️ **함정**: VPC를 만들 때 subnet을 `ap-northeast-2a`에 만들었다고 협력사 PrivateLink도 같은 a에 두면 자동으로 같은 물리 AZ에 붙는다고 생각하기 쉽다. 틀렸다. PrivateLink의 endpoint network interface는 ENI별로 AZ가 할당되는데, 두 계정의 AZ 매핑이 다르면 트래픽이 cross-AZ로 흘러 GB당 $0.01 비용이 추가로 발생한다. RDS Multi-AZ failover 후에도 client가 다른 AZ에 있으면 비슷한 비용이 든다.
+> ⚠️ **함정**: VPC를 만들 때 subnet을 `ap-northeast-2a`에 만들었다고 협력사 PrivateLink도 같은 a에 두면 자동으로 같은 물리 AZ에 붙는다고 생각하기 쉽다. 틀렸다. PrivateLink의 endpoint network interface는 ENI별로 AZ가 할당되는데, 두 계정의 AZ 매핑이 다르면 트래픽이 cross-AZ로 흘러 GB당 $0.01 비용이 추가로 발생한다. RDS Multi-AZ 페일오버 후에도 client가 다른 AZ에 있으면 비슷한 비용이 든다.
 
 ## Edge Location은 단순 캐시가 아니다
 
@@ -78,23 +78,21 @@ aws ec2 describe-availability-zones \
 | 적합한 워크로드 | 정적·동적 웹 콘텐츠 | 게임, MQTT, VoIP, WebRTC |
 | 페일오버 시간 | 수 분 (DNS TTL) | 수 초 (BGP 재라우팅) |
 
-> 💡 **관련 이론**: Global Accelerator가 제공하는 정적 IP 2개는 **BGP Anycast** 기반이다. 같은 IP를 여러 엣지에서 BGP로 광고하면, 클라이언트의 ISP가 AS_PATH 길이와 local preference 등 BGP best-path 알고리즘(RFC 4271)에 따라 가장 가까운 엣지로 라우팅한다. DNS는 클라이언트 resolver의 TTL 캐시 때문에 변경이 분 단위로 전파되지만, BGP는 router 간 KEEPALIVE/UPDATE로 수 초 안에 전파된다. 이게 Global Accelerator가 "초 단위 페일오버"를 보장하는 메커니즘이다.
+Global Accelerator가 제공하는 정적 IP 2개는 **BGP Anycast** 기반이다. 같은 IP를 여러 엣지에서 BGP로 광고하면, 클라이언트의 ISP가 AS_PATH 길이와 local preference 등 BGP best-path 알고리즘(RFC 4271)에 따라 가장 가까운 엣지로 라우팅한다. DNS는 클라이언트 resolver의 TTL 캐시 때문에 변경이 분 단위로 전파되지만, BGP는 router 간 KEEPALIVE/UPDATE로 수 초 안에 전파된다. 이게 Global Accelerator가 "초 단위 페일오버"를 보장하는 메커니즘이다.
 
 CloudFront Functions와 Lambda@Edge도 자주 헷갈린다. **CloudFront Functions**는 600+ 엣지에서 직접 실행되고 콜드 스타트 100μs 미만이지만 메모리 2MB·실행 시간 1ms 제한이 있다. JavaScript ES5.1만 지원하고 외부 API 호출도 못 한다. 단순 viewer request 헤더 수정, A/B 테스트 라우팅 정도가 한계다. **Lambda@Edge**는 13개의 Regional Edge Cache에서 실행되며 Node.js·Python 런타임 전체를 쓸 수 있지만 콜드 스타트가 수십 ms 단위다. DynamoDB 조회나 외부 API 호출이 필요하면 Lambda@Edge로 가야 한다.
 
 ## 공동 책임 모델: 개발자가 자기 코드를 어디까지 책임지는가
 
-클라우드를 처음 접한 개발자가 가장 자주 하는 오해가 "AWS가 보안까지 알아서 해주겠지"다. 실제는 **AWS = Security OF the Cloud / Customer = Security IN the Cloud**라는 명확한 분담이 있다. 더 중요한 건, **선택한 서비스 추상화 레벨에 따라 책임 경계선이 위아래로 움직인다**는 점이다.
+클라우드를 처음 접한 개발자가 흔히 하는 오해가 "AWS가 보안까지 알아서 해주겠지"다. 실제는 **AWS = Security OF the Cloud / Customer = Security IN the Cloud**라는 명확한 분담이 있다. 더 중요한 건, **선택한 서비스 추상화 레벨에 따라 책임 경계선이 위아래로 움직인다**는 점이다.
 
 ![완전 관리형에서 IaaS로 갈수록 고객 책임이 늘어나는 공동 책임 경계선](/diagrams/shared-responsibility-4tier.svg)
 
-같은 "DB 쿼리"라도 RDS는 엔진 패치·백업·OS는 AWS, 쿼리 작성·인덱스 설계·SG 설정은 고객이다. EC2에 MySQL을 직접 깐다면 OS 패치까지 고객 책임으로 내려온다. Lambda를 쓰면 런타임 보안 패치까지 AWS 책임이고, 고객은 코드의 취약점과 IAM 권한만 신경 쓰면 된다. **추상화 레벨이 올라갈수록 책임 경계선이 위로 올라간다**는 원칙으로 외우면 시험 문제 절반은 자동으로 풀린다.
+같은 "DB 쿼리"라도 RDS는 엔진 패치·백업·OS는 AWS, 쿼리 작성·인덱스 설계·SG 설정은 고객이다. EC2에 MySQL을 직접 깐다면 OS 패치까지 고객 책임으로 내려온다. Lambda를 쓰면 런타임 보안 패치까지 AWS 책임이고, 고객은 코드의 취약점과 IAM 권한만 신경 쓰면 된다. **추상화 레벨이 올라갈수록 책임 경계선이 위로 올라간다**는 원칙으로 외우면 책임 소재를 묻는 문제를 풀기 쉽다.
 
-> 📚 **사례**: 2019년 7월 Capital One 데이터 유출. 범인은 전직 AWS 직원 Paige Thompson이었지만, 원인은 AWS 인프라가 아니라 **Capital One이 운영하던 WAF의 SSRF 취약점 + EC2 IMDSv1의 IAM 역할 노출**이었다. 공격자는 SSRF로 `http://169.254.169.254/latest/meta-data/iam/security-credentials/`에 접근해 임시 자격증명을 탈취했고, 그 자격증명으로 S3 버킷에서 1억 600만 명의 카드 신청 데이터를 읽었다. 직접적 결과로 AWS는 2019년 11월 **IMDSv2**(세션 토큰 기반)를 출시했다. [DOJ 공소장](https://www.justice.gov/usao-edva/press-release/file/1188626/download).
+2019년 7월 Capital One 데이터 유출. 범인은 전직 AWS 직원 Paige Thompson이었지만, 원인은 AWS 인프라가 아니라 **Capital One이 운영하던 WAF의 SSRF 취약점 + EC2 IMDSv1의 IAM 역할 노출**이었다. 공격자는 SSRF로 `http://169.254.169.254/latest/meta-data/iam/security-credentials/`에 접근해 임시 자격증명을 탈취했고, 그 자격증명으로 S3 버킷에서 1억 600만 명의 카드 신청 데이터를 읽었다. 직접적 결과로 AWS는 2019년 11월 **IMDSv2**(세션 토큰 기반)를 출시했다. [DOJ 공소장](https://www.justice.gov/usao-edva/press-release/file/1188626/download).
 
 > 🔍 **더 깊이**: IMDSv2는 두 단계로 동작한다. ① `PUT /latest/api/token` 요청에 `X-aws-ec2-metadata-token-ttl-seconds` 헤더로 세션 토큰을 받음. ② 메타데이터 요청 시 `X-aws-ec2-metadata-token` 헤더로 토큰 제시. SSRF 공격자는 보통 HTTP GET만 가능하므로 PUT을 못 보내 토큰을 못 받는다. 또 IMDSv2는 IP TTL을 1(또는 hop limit 1)로 강제해서 컨테이너 네트워크 outside로는 못 빠져나간다. EC2 인스턴스를 만들 때 `MetadataOptions.HttpTokens=required`로 설정하면 IMDSv1을 강제로 비활성화할 수 있다.
-
-> 💡 **관련 이론**: 공동 책임 모델은 NIST SP 800-145의 서비스 모델(IaaS / PaaS / SaaS)과 정확히 맞물린다. NIST CSF의 5개 함수(Identify, Protect, Detect, Respond, Recover) 중 Identify와 Protect는 거의 고객 영역에 남는다. AWS는 그 위에서 GuardDuty, Inspector, Macie 같은 도구를 제공하지만, 켜고 정책을 세우는 건 고객 몫이다. ISO 27017(클라우드 보안)과 ISO 27018(클라우드 개인정보)도 같은 모델 위에 책임 영역을 명문화한다.
 
 ## DVA 시험이 묻는 4개 도메인
 
@@ -127,7 +125,7 @@ aws sts get-caller-identity
 
 `get-caller-identity`는 디버깅의 시작점이다. "왜 권한이 없다고 나오지?" 싶을 때 가장 먼저 쳐봐야 한다. ARN을 보면 IAM 사용자인지, 어떤 역할로 assume했는지, 어느 계정에 있는지가 한눈에 나온다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 두 가지다. 첫째, AWS는 **Region > AZ > Edge** 3층 인프라 위에서 동작하고, 개발자에게 이 구조는 SDK가 어디로 요청을 보내는지와 직결된다. 둘째, 그 위에서 보안·운영의 책임은 **AWS는 콘크리트 바닥부터 하이퍼바이저까지, 그 위는 고객**이고, 어떤 서비스를 선택하느냐에 따라 경계선이 위아래로 움직인다.
 

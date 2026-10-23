@@ -15,11 +15,11 @@ S3 이벤트 알림은 "버킷에서 특정 일이 발생했을 때 누군가에
 
 직접 연결 대상 3종: Lambda 함수, SQS 큐, SNS 주제.
 
-**Amazon EventBridge를 경유하는 방법**이 2021년 추가됐고, 이 방식이 현재 가장 권장된다. 이유는 이벤트 아카이빙, 재생(replay), 18개 이상의 대상(Step Functions, Kinesis, API Gateway, CodePipeline 등), 세밀한 이벤트 패턴 필터링(접두사, 접미사, 크기 조건 등)이 가능하기 때문이다.
+**Amazon EventBridge를 경유하는 방법**이 2021년 추가됐고, 이 방식이 현재 권장된다. 이벤트 아카이빙과 재생(replay)이 가능하고, 대상이 18개 이상(Step Functions, Kinesis, API Gateway, CodePipeline 등)이며, 세밀한 이벤트 패턴 필터링(접두사, 접미사, 크기 조건 등)을 지원하기 때문이다.
 
 직접 연결(Lambda/SQS/SNS)은 대상이 이미 명확하고 간단한 경우, EventBridge는 유연성이 필요한 경우를 선택 기준으로 삼으면 된다.
 
-> 💡 **관련 이론**: S3 이벤트 알림은 이벤트 기반 아키텍처(EDA, Event-Driven Architecture)의 전형적인 구현이다. 2003년 Amazon의 내부 SOA(Service-Oriented Architecture) 전환 이후, AWS 서비스들은 이벤트로 소통하는 것을 기본 설계 원칙으로 삼는다. S3 이벤트는 최소 한 번 전달(at-least-once)을 보장하지만 중복 전달이 가능하다 — Lambda나 SQS 컨슈머에서 멱등성(Idempotency)을 보장해야 하는 이유다.
+S3 이벤트 알림은 이벤트 기반 아키텍처(EDA, Event-Driven Architecture)의 전형적인 구현이다. 2003년 Amazon의 내부 SOA(Service-Oriented Architecture) 전환 이후, AWS 서비스들은 이벤트로 소통하는 것을 기본 설계 원칙으로 삼는다. S3 이벤트는 최소 한 번 전달(at-least-once)을 보장하지만 중복 전달이 가능하다 — Lambda나 SQS 컨슈머에서 멱등성(Idempotency)을 보장해야 하는 이유다.
 
 > ⚠️ **함정**: S3 이벤트 알림은 "최소 한 번(at-least-once)" 전달이지 "정확히 한 번(exactly-once)"이 아니다. 같은 PUT에 대해 Lambda가 두 번 호출될 수 있다. Lambda 내에서 멱등 처리(이미 처리된 파일인지 확인하는 DynamoDB 항목 등)를 구현해야 한다.
 
@@ -74,7 +74,7 @@ response = s3.generate_presigned_post(
 
 PUT Presigned URL 패턴: 서버가 URL을 생성해서 클라이언트에게 전달하고, 클라이언트가 직접 S3에 파일을 업로드한다. 서버는 파일 데이터를 처리하지 않아 대역폭 부하가 없다. 파일 업로드가 완료되면 클라이언트가 서버에 완료 알림을 보내고, 서버는 S3 이벤트나 DynamoDB 메타데이터를 확인한다.
 
-> 🔍 **더 깊이**: Presigned URL의 서명은 AWS SigV4(Signature Version 4) 알고리즘으로 생성된다. SigV4는 HMAC-SHA256을 사용하며 요청의 HTTP 메서드, 버킷/키, 만료 시간, 허용된 헤더 등이 서명에 포함된다. URL을 변조하면 서명 검증에서 실패한다. SDK의 `generate_presigned_url`이 이 복잡한 과정을 추상화해준다.
+Presigned URL의 서명은 AWS SigV4(Signature Version 4) 알고리즘으로 생성된다. SigV4는 HMAC-SHA256을 사용하며 요청의 HTTP 메서드, 버킷/키, 만료 시간, 허용된 헤더 등이 서명에 포함된다. URL을 변조하면 서명 검증에서 실패한다. SDK의 `generate_presigned_url`이 이 복잡한 과정을 추상화해준다.
 
 ## 정적 웹사이트 호스팅 — HTTP만 지원하는 근본 이유
 

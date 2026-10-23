@@ -1,6 +1,6 @@
 # Day 2 - IAM의 4대 엔터티: User, Group, Role, Policy
 
-콘솔에서 처음 IAM 메뉴를 열면 사용자·그룹·역할·정책이라는 네 가지 항목이 나란히 보인다. 신규 개발자에게 이걸 설명할 때 가장 흔한 실수는 "User는 사람, Role은 서버"라고 단순화하는 것이다. 틀린 말은 아니지만, 이 모델로는 "왜 Lambda에 사용자 access key를 박으면 안 되는지", "왜 EC2 인스턴스에 attach한 Role이 SSO 사용자보다 안전한지"를 설명할 수 없다.
+콘솔에서 처음 IAM 메뉴를 열면 사용자·그룹·역할·정책이라는 네 가지 항목이 나란히 보인다. 신규 개발자에게 이걸 설명할 때 "User는 사람, Role은 서버"라고 단순화하기 쉽다. 틀린 말은 아니지만, 이 모델로는 "왜 Lambda에 사용자 access key를 박으면 안 되는지", "왜 EC2 인스턴스에 attach한 Role이 SSO 사용자보다 안전한지"를 설명할 수 없다.
 
 IAM은 클라우드에서 **누가(Principal) 무엇을(Action) 어떤 자원에(Resource) 어떤 조건에서(Condition) 할 수 있는지**를 결정하는 권한 부여(authorization) 엔진이다. 이 한 줄이 IAM 전체의 설계 철학을 압축한다. 오늘 우리가 볼 것은 그 엔진의 네 부품 — User, Group, Role, Policy — 이 어떻게 맞물려 동작하는지다.
 
@@ -12,7 +12,7 @@ IAM은 클라우드에서 **누가(Principal) 무엇을(Action) 어떤 자원에
 
 AWS는 이 세 압력에 대응하며 IAM을 **ABAC**(Attribute-Based Access Control, 2014년 NIST SP 800-162로 표준화) 기반으로 진화시켰다. Condition key로 `aws:RequestTag`, `aws:PrincipalTag` 같은 속성을 검사하면 "Engineering 부서 태그가 붙은 사용자는 Engineering 태그가 붙은 자원에만 접근"이라는 동적 규칙이 가능해진다.
 
-> 💡 **관련 이론**: RBAC vs ABAC의 trade-off는 분명하다. **RBAC**는 단순하고 감사가 쉽지만 자원 수가 늘면 role 폭발(role explosion) 문제가 생긴다(예: 100개 프로젝트 × 5개 역할 = 500개 role). **ABAC**는 정책 개수가 적게 유지되지만 디버깅이 어려워진다("왜 이 사용자가 거부됐는지"가 여러 속성의 조합에 달려 있다). 실무에서는 **상위 권한 구조는 RBAC(Group), 세부 자원 제어는 ABAC(Tag)**로 혼합하는 것이 일반적이다.
+RBAC vs ABAC의 trade-off는 분명하다. **RBAC**는 단순하고 감사가 쉽지만 자원 수가 늘면 role 폭발(role explosion) 문제가 생긴다(예: 100개 프로젝트 × 5개 역할 = 500개 role). **ABAC**는 정책 개수가 적게 유지되지만 디버깅이 어려워진다("왜 이 사용자가 거부됐는지"가 여러 속성의 조합에 달려 있다). 실무에서는 **상위 권한 구조는 RBAC(Group), 세부 자원 제어는 ABAC(Tag)**로 혼합하는 것이 일반적이다.
 
 ## User: 사람이거나, 사람처럼 행동하는 시스템
 
@@ -25,9 +25,7 @@ IAM User는 **장기 자격증명**(long-term credential)을 가진 엔터티다
 | MFA token | 30초 (TOTP) | 자동 | 추가 인증 |
 | STS 임시 자격증명 | 15분 ~ 12시간 | 자동 | Role assume, Federation |
 
-> 🔍 **더 깊이**: IAM User의 access key는 IAM Access Analyzer가 "last used" 정보를 추적한다. `aws iam get-access-key-last-used --access-key-id AKIA...`로 마지막 사용 시간을 확인하고, 90일 이상 미사용 키는 비활성화하는 것이 보안 모범 사례다. AWS 자체 보안 가이드(`IAM Best Practices`)는 **사람용 자격증명을 IAM User 대신 AWS IAM Identity Center(구 SSO)**로 옮기라고 강력히 권장한다. SSO는 ID Provider(Okta, Azure AD 등)와 SAML 2.0 또는 OIDC로 연동하며, 최종적으로는 STS로 임시 자격증명을 발급하므로 장기 키가 아예 존재하지 않는다.
-
-> 📚 **사례**: 2014년 6월 Code Spaces 사건. GitHub 코드 호스팅 회사였던 Code Spaces가 AWS root account 자격증명을 탈취당해 EC2·S3·EBS·AMI·스냅샷이 전부 삭제됐고, 18시간 만에 회사가 폐업했다. 직접 원인은 **MFA 미적용 + 단일 자격증명 의존**이었다. AWS는 이 사건 직후 root account에 MFA 강제, IAM User에 MFA 강제 정책 변수(`aws:MultiFactorAuthPresent`) 같은 안전장치들을 더 적극적으로 권장하기 시작했다.
+IAM User의 access key는 IAM Access Analyzer가 "last used" 정보를 추적한다. `aws iam get-access-key-last-used --access-key-id AKIA...`로 마지막 사용 시간을 확인하고, 90일 이상 미사용 키는 비활성화하는 것이 보안 모범 사례다. AWS 자체 보안 가이드(`IAM Best Practices`)는 **사람용 자격증명을 IAM User 대신 AWS IAM Identity Center(구 SSO)**로 옮기라고 강력히 권장한다. SSO는 ID Provider(Okta, Azure AD 등)와 SAML 2.0 또는 OIDC로 연동하며, 최종적으로는 STS로 임시 자격증명을 발급하므로 장기 키가 아예 존재하지 않는다.
 
 ## Group: 권한 묶음의 단위
 
@@ -46,7 +44,7 @@ Group의 핵심 가치는 **권한의 재사용**과 **감사 가능성**이다.
 
 ## Role: 임시 자격증명의 생산자
 
-IAM Role은 IAM의 가장 강력한 무기이자 가장 자주 시험에 나오는 개념이다. **Role은 누구도 소유하지 않은 권한 묶음이고, 누군가가 그 Role을 "assume"하면 STS가 임시 자격증명을 발급**해준다. 임시 자격증명은 ① Access Key ID, ② Secret Access Key, ③ **Session Token**(이게 핵심) 3종 세트로 구성되며, 기본 1시간 후 자동 만료된다.
+IAM Role은 IAM의 가장 강력한 무기이자 시험에서도 핵심이 되는 개념이다. **Role은 누구도 소유하지 않은 권한 묶음이고, 누군가가 그 Role을 "assume"하면 STS가 임시 자격증명을 발급**해준다. 임시 자격증명은 ① Access Key ID, ② Secret Access Key, ③ **Session Token**(이게 핵심) 3종 세트로 구성되며, 기본 1시간 후 자동 만료된다.
 
 ```
 1. Lambda 함수가 시작됨
@@ -58,7 +56,7 @@ IAM Role은 IAM의 가장 강력한 무기이자 가장 자주 시험에 나오�
 
 EC2 인스턴스에 attach한 Role은 더 미묘하게 동작한다. EC2는 IMDS(인스턴스 메타데이터 서비스)를 통해 자격증명을 노출한다. SDK가 `169.254.169.254/latest/meta-data/iam/security-credentials/<RoleName>`을 GET하면 임시 자격증명이 JSON으로 반환된다. 이 자격증명은 약 6시간 유효하지만 SDK는 만료 15분 전에 자동 갱신한다.
 
-> 🔍 **더 깊이**: AssumeRole의 내부 동작은 다음과 같다. (1) Principal이 `sts:AssumeRole` API를 호출하며 `RoleArn`을 지정한다. (2) STS는 Role의 **Trust Policy**(누가 이 Role을 assume할 수 있는지 정의)를 평가한다. (3) 통과하면 Role의 **Permission Policy**(이 Role이 무엇을 할 수 있는지)를 부여한다. (4) STS가 임시 자격증명을 발급하며 JWT-like 구조의 Session Token에 권한·만료 시간을 서명해 담는다. (5) 이후 API 호출은 Signature V4로 서명되고, AWS는 Session Token을 디코드해 권한을 확인한다. **Trust Policy와 Permission Policy 둘 다 통과해야 한다는 점**이 자주 헷갈리는 부분이다.
+AssumeRole의 내부 동작은 다음과 같다. (1) Principal이 `sts:AssumeRole` API를 호출하며 `RoleArn`을 지정한다. (2) STS는 Role의 **Trust Policy**(누가 이 Role을 assume할 수 있는지 정의)를 평가한다. (3) 통과하면 Role의 **Permission Policy**(이 Role이 무엇을 할 수 있는지)를 부여한다. (4) STS가 임시 자격증명을 발급하며 JWT-like 구조의 Session Token에 권한·만료 시간을 서명해 담는다. (5) 이후 API 호출은 Signature V4로 서명되고, AWS는 Session Token을 디코드해 권한을 확인한다. **Trust Policy와 Permission Policy 둘 다 통과해야 한다는 점**이 자주 헷갈리는 부분이다.
 
 | Role 사용 시나리오 | Trust Policy의 Principal |
 |------|------|
@@ -68,7 +66,7 @@ EC2 인스턴스에 attach한 Role은 더 미묘하게 동작한다. EC2는 IMDS
 | Federation (SAML, OIDC) | `arn:aws:iam::...:saml-provider/...` |
 | AWS Identity Center | `sso.amazonaws.com` |
 
-> 💡 **암기 팁**: User는 "장기 자격증명을 가진 사람", Role은 "임시 자격증명을 발급해주는 권한 묶음". 시험 시나리오에 **"EC2 인스턴스가 S3에 접근"**이 보이면 99% Role 답. **"키를 코드에 하드코딩"**이 보이면 절대 정답이 아니다.
+User는 "장기 자격증명을 가진 사람", Role은 "임시 자격증명을 발급해주는 권한 묶음". 시험 시나리오에 **"EC2 인스턴스가 S3에 접근"**이 보이면 Role이 답이다. **"키를 코드에 하드코딩"**이 보이면 절대 정답이 아니다.
 
 ## Policy: JSON으로 표현된 권한의 명세서
 
@@ -107,9 +105,7 @@ Policy는 권한을 JSON으로 적은 문서다. Effect / Action / Resource / Co
 
 > 🔍 **더 깊이**: AWS IAM 평가 로직은 명확한 우선순위가 있다. (1) **Explicit Deny**가 있으면 무조건 거부(가장 강력). (2) **SCP**(Organizations 수준)에 Allow가 없으면 거부. (3) **Permission Boundary**가 있고 그 안에 Allow가 없으면 거부. (4) **Identity-based 또는 Resource-based 정책**에 Allow가 있어야 허용. 즉 **"Allow는 합집합으로 추가되지만, Deny는 어느 한 곳이라도 있으면 즉시 차단"**이라는 비대칭성이 핵심이다. 이 비대칭 때문에 SCP는 "절대 못 하게 만들기"에 적합하다(예: root user의 액션 차단, 특정 리전 사용 금지).
 
-> ⚠️ **함정**: `"Resource": "*"`와 `"Action": "*"`가 같이 있는 정책은 거의 항상 `AdministratorAccess` 수준이다. CloudFormation 템플릿이나 SAM 정의에서 개발자가 "권한 문제 빨리 해결하려고" 이런 정책을 박는 경우가 흔한데, IAM Access Analyzer가 이걸 감지하고 알림을 보낸다. 시험에서도 "least privilege" 키워드가 보이면 `*` 정책은 거의 항상 오답이다.
-
-> 📚 **사례**: 2017년 Verizon의 DCS(데이터 통합 회사) 협력업체 NICE Systems가 S3 버킷 공개 설정으로 1,400만 명의 통화 기록을 노출시켰다. 버킷 정책에 `"Principal": "*"`와 `"Effect": "Allow"`가 같이 있었다. 이 사고 이후 AWS는 (1) 모든 신규 버킷에 **Block Public Access** 기본 활성화, (2) S3 콘솔에 공개 버킷 빨간 경고 배지, (3) **IAM Access Analyzer**(2019년 12월 출시)로 외부에 노출된 리소스 자동 탐지 등 일련의 안전장치를 추가했다.
+> ⚠️ **함정**: `"Resource": "*"`와 `"Action": "*"`가 같이 있는 정책은 사실상 `AdministratorAccess` 수준이다. CloudFormation 템플릿이나 SAM 정의에서 개발자가 "권한 문제 빨리 해결하려고" 이런 정책을 박는 경우가 흔한데, IAM Access Analyzer가 이걸 감지하고 알림을 보낸다. 시험에서도 "least privilege" 키워드가 보이면 `*` 정책은 오답 보기로 쓰이기 쉽다.
 
 ## Identity-based vs Resource-based: 같은 권한을 두 방향에서
 
@@ -142,7 +138,7 @@ S3·KMS·SQS·SNS·Lambda·Secrets Manager·ECR 등이 Resource-based policy를 
 
 **SCP**(Service Control Policy)는 AWS Organizations의 OU/Account 수준에서 절대 상한선을 정한다. SCP가 "us-east-1, us-west-2 외 리전 거부"라면, 그 OU 안의 어떤 사용자/역할도 다른 리전에서 동작할 수 없다. SCP는 **권한을 부여하지 않고 제한만 한다**(deny-only filter라고 생각하면 정확).
 
-> 💡 **암기 팁**: SCP는 회사 차원의 헌법, Permission Boundary는 개인의 신분증, Identity-based policy는 실제 활동 권한. 어느 하나가 차단하면 활동 불가.
+SCP는 회사 차원의 헌법, Permission Boundary는 개인의 신분증, Identity-based policy는 실제 활동 권한. 어느 하나가 차단하면 활동 불가.
 
 ## CLI로 권한 시뮬레이션
 
@@ -157,7 +153,7 @@ aws iam simulate-principal-policy \
 
 응답에 `EvalDecision: allowed | explicitDeny | implicitDeny`가 나온다. `implicitDeny`는 "어디서도 명시적으로 Allow를 안 줬다"는 뜻이고, `explicitDeny`는 "어딘가에 Deny가 있다"는 뜻이다. 후자는 SCP나 Permission Boundary나 Resource Policy를 살펴야 한다.
 
-## 정리하며
+## 정리
 
 오늘 본 네 부품은 클라우드 권한 모델의 ABC다. **User**는 사람의 장기 자격증명, **Group**은 권한 묶음의 단위, **Role**은 누구든 assume해서 임시 자격증명을 받는 권한 보관소, **Policy**는 JSON으로 표현된 권한의 명세서. 이 네 가지가 IAM 평가 엔진의 입력이 되고, 엔진은 SCP → Permission Boundary → Identity-based → Resource-based → Session Policy 순서로 평가해 결과를 낸다.
 

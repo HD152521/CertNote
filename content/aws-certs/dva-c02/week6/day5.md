@@ -1,6 +1,6 @@
 # Day 5 - Week 6 종합 복습: DynamoDB 전체 지형도
 
-Week 6의 마지막 날이다. DynamoDB는 DVA-C02에서 가장 많은 문제가 쏟아지는 서비스다. 단순 암기로는 변형 문제를 버티기 어렵다. 이 day에서는 한 주간 배운 파티션 키 설계 수학, 읽기 일관성 모델, LSI/GSI 내부 차이, DAX 캐시 계층, Streams + Lambda 연동, 트랜잭션 2PC, TTL 비동기 삭제를 하나의 지형도로 연결하고, 실전 시험 유형의 종합 문제로 마무리한다. DynamoDB를 "파티션 수준에서 어떻게 데이터가 저장되고 읽히는가"라는 관점으로 본 사람과 API 이름만 외운 사람은 같은 문제에서 결과가 전혀 다르다.
+Week 6의 마지막 날이다. DynamoDB는 DVA-C02 범위의 핵심 서비스이고, API 이름만 외워서는 변형 문제를 풀기 어렵다. 이 day에서는 한 주간 배운 내용을 하나의 지형도로 연결한다. 대상은 파티션 키 설계 수학, 읽기 일관성 모델, LSI/GSI 내부 차이, DAX 캐시 계층, Streams + Lambda 연동, 트랜잭션 2PC, TTL 비동기 삭제이고, 마지막에 종합 문제를 푼다. 모든 항목을 "파티션 수준에서 데이터가 어떻게 저장되고 읽히는가"라는 관점으로 본다.
 
 ## DynamoDB 전체 아키텍처 지형도
 
@@ -34,7 +34,7 @@ Week 6의 마지막 날이다. DynamoDB는 DVA-C02에서 가장 많은 문제가
   배치 처리 → BisectBatchOnFunctionError → DLQ
 ```
 
-> 💡 **관련 이론**: DynamoDB의 내부 스토리지는 B-Tree 기반 LSM(Log-Structured Merge-tree)이다. 쓰기 시 먼저 Write-Ahead Log(WAL)에 기록하고, Primary 노드가 쓰기를 인정하면 백그라운드에서 나머지 복제본에 전파한다. Eventually Consistent 읽기는 이 전파가 완료되기 전에 Replica에서 읽을 수 있어 오래된 데이터를 볼 수 있다. Strongly Consistent 읽기는 Primary에서만 읽으므로 항상 최신이지만 RCU를 2배 소비한다.
+DynamoDB의 내부 스토리지는 B-Tree 기반 LSM(Log-Structured Merge-tree)이다. 쓰기 시 먼저 Write-Ahead Log(WAL)에 기록하고, Primary 노드가 쓰기를 인정하면 백그라운드에서 나머지 복제본에 전파한다. Eventually Consistent 읽기는 이 전파가 완료되기 전에 Replica에서 읽을 수 있어 오래된 데이터를 볼 수 있다. Strongly Consistent 읽기는 Primary에서만 읽으므로 항상 최신이지만 RCU를 2배 소비한다.
 
 ## 파티션 키 설계 — 핫 파티션 수학
 
@@ -57,7 +57,7 @@ Write Sharding 패턴:
   → 읽을 때 0~9 모두 Query 후 병합 필요
 ```
 
-> 🔍 **더 깊이**: Adaptive Capacity는 2018년 도입된 기능으로, 한 파티션의 트래픽이 증가하면 다른 파티션의 잉여 용량을 자동으로 이동시켜 핫 파티션이 프로비저닝된 용량을 초과해도 일시적으로 버틸 수 있게 한다. 또한 Burst Capacity는 파티션이 마지막 300초(5분) 동안 사용하지 않은 용량을 최대 300초치 예비로 축적하고, 갑작스러운 스파이크 시 이를 소진한다. Adaptive Capacity와 Burst Capacity는 자동 동작하지만 지속적인 핫 파티션에는 근본 해결책이 되지 않는다.
+Adaptive Capacity는 2018년 도입된 기능으로, 한 파티션의 트래픽이 증가하면 다른 파티션의 잉여 용량을 자동으로 이동시켜 핫 파티션이 프로비저닝된 용량을 초과해도 일시적으로 버틸 수 있게 한다. 또한 Burst Capacity는 파티션이 마지막 300초(5분) 동안 사용하지 않은 용량을 최대 300초치 예비로 축적하고, 갑작스러운 스파이크 시 이를 소진한다. Adaptive Capacity와 Burst Capacity는 자동 동작하지만 지속적인 핫 파티션에는 근본 해결책이 되지 않는다.
 
 ## RCU/WCU 수학 빠른 정리
 
@@ -98,7 +98,7 @@ Write Sharding 패턴:
 | Sparse Index | 지원 | 지원 |
 | 스토리지 구조 | 기본 테이블과 같은 파티션 내 별도 B-Tree | 완전히 별도의 파티션 공간 |
 
-> 💡 **관련 이론**: LSI는 기본 테이블과 동일한 파티션 키를 공유하므로 같은 파티션 내에 함께 저장된다. 이 덕분에 기본 테이블의 Primary 노드가 LSI 데이터도 함께 관리해 Strongly Consistent 읽기가 가능하다. GSI는 완전히 별도의 파티션 공간에 비동기 복제되므로 복제 지연이 존재하고 Eventually Consistent만 지원한다. "GSI는 별개의 테이블"이라고 생각하면 이 차이가 자연스럽다.
+LSI는 기본 테이블과 동일한 파티션 키를 공유하므로 같은 파티션 내에 함께 저장된다. 이 덕분에 기본 테이블의 Primary 노드가 LSI 데이터도 함께 관리해 Strongly Consistent 읽기가 가능하다. GSI는 완전히 별도의 파티션 공간에 비동기 복제되므로 복제 지연이 존재하고 Eventually Consistent만 지원한다. "GSI는 별개의 테이블"이라고 생각하면 이 차이가 자연스럽다.
 
 **Sparse Index 패턴**: 모든 항목이 가지지 않는 속성을 GSI의 파티션 키로 쓰면, 그 속성이 있는 항목만 GSI에 나타난다.
 
@@ -112,7 +112,7 @@ GSI: isPremium-index
   isPremium 없는 일반 사용자는 GSI에 아예 없음 → 저장 비용 절감
 ```
 
-> 📚 **사례**: Airbnb가 DynamoDB Single-Table Design을 도입할 때 예약 상태 관리에 GSI Sparse Index를 활용했다. 예약 상태가 "PENDING"인 항목에만 `pendingAt` 속성을 부여해 GSI의 PK로 사용했다. 예약이 확정되면 `pendingAt`을 삭제해 GSI에서 자동으로 제거된다. 전체 테이블 Scan 없이 "현재 PENDING 예약 전체"를 GSI Query로 O(PENDING 수)에 조회할 수 있다.
+Sparse Index 예시: 예약 상태가 "PENDING"인 항목에만 `pendingAt` 속성을 부여해 GSI의 PK로 쓴다. 예약이 확정되면 `pendingAt`을 삭제해 GSI에서 자동으로 제거된다. 전체 테이블 Scan 없이 "현재 PENDING 예약 전체"를 GSI Query로 O(PENDING 수)에 조회할 수 있다.
 
 ## DAX 캐시 계층 — 언제 우회하는가
 
@@ -150,7 +150,7 @@ Lambda ESM 핵심 설정:
   FilterCriteria:               특정 이벤트 패턴만 Lambda 트리거
 ```
 
-> 💡 **관련 이론**: DynamoDB Streams는 내부적으로 Kinesis 기반 아키텍처로 동작한다. 각 파티션마다 하나의 Stream 샤드가 존재하고, 샤드 내에서는 파티션 키 단위 이벤트 순서가 보장된다. Lambda ESM은 샤드를 폴링하는 방식이다 — Streams가 Lambda를 "push"하는 게 아니라 Lambda가 Streams를 "pull"한다. `ParallelizationFactor=10`으로 설정하면 하나의 샤드를 10개 Lambda가 병렬 처리하지만 같은 파티션 키의 이벤트 순서 보장이 복잡해진다.
+DynamoDB Streams는 내부적으로 Kinesis 기반 아키텍처로 동작한다. 각 파티션마다 하나의 Stream 샤드가 존재하고, 샤드 내에서는 파티션 키 단위 이벤트 순서가 보장된다. Lambda ESM은 샤드를 폴링하는 방식이다 — Streams가 Lambda를 "push"하는 게 아니라 Lambda가 Streams를 "pull"한다. `ParallelizationFactor=10`으로 설정하면 하나의 샤드를 10개 Lambda가 병렬 처리하지만 같은 파티션 키의 이벤트 순서 보장이 복잡해진다.
 
 `FilterCriteria` 예시 — INSERT 이벤트만 처리:
 ```json
@@ -176,7 +176,7 @@ def handler(event, context):
             log_deletion(record['dynamodb']['OldImage'])
 ```
 
-> 📚 **사례**: 2019년 DoorDash 사례. 주문 완료 시 DynamoDB Streams로 이벤트를 받아 ElasticSearch 인덱스를 업데이트하는 파이프라인에서 Lambda가 BatchSize=100으로 설정돼 있었다. 주문 급증 시 처리 지연이 발생하고, Lambda 타임아웃으로 전체 배치가 실패해 같은 100개 레코드를 반복 재시도하는 루프에 빠졌다. `BisectBatchOnFunctionError=true`와 `DestinationConfig`(DLQ)를 설정하지 않아서 문제가 생겼다. 해결 후 독성 메시지(Poison Pill)는 DLQ로 격리하고 정상 레코드는 계속 처리하는 구조로 전환했다.
+가상의 사례로, 주문 완료 시 DynamoDB Streams로 이벤트를 받아 검색 인덱스를 갱신하는 Lambda가 BatchSize=100으로 설정돼 있다. 주문이 급증해 처리가 지연되고 Lambda 타임아웃으로 배치 전체가 실패하면, 같은 100개 레코드를 반복 재시도하는 루프에 빠진다. `BisectBatchOnFunctionError=true`와 `DestinationConfig`(DLQ)를 설정하면 독성 메시지(Poison Pill)는 DLQ로 격리하고 정상 레코드는 계속 처리할 수 있다.
 
 ## 트랜잭션 vs 조건부 쓰기 선택 기준
 
@@ -205,7 +205,7 @@ def handler(event, context):
 | 복원 대상 | 새 테이블로만 | 새 테이블로만 | - |
 | 자동화 | 자동 (활성화 시) | 수동 또는 AWS Backup | 자동 |
 
-> 🔍 **더 깊이**: PITR이 35일 제한인 이유는 AWS 내부적으로 변경 로그(WAL)를 35일 보존하기 때문이다. Kinesis Data Streams for DynamoDB를 추가 연결하면 변경 이력을 최대 365일 보존할 수 있고, Kinesis Firehose → S3로 파이프라인을 구성하면 S3 수명 주기 정책으로 수년간 보존이 가능하다. 장기 감사 로그가 필요하면 Streams + Kinesis가 정석이다.
+PITR이 35일 제한인 이유는 AWS 내부적으로 변경 로그(WAL)를 35일 보존하기 때문이다. Kinesis Data Streams for DynamoDB를 추가 연결하면 변경 이력을 최대 365일 보존할 수 있다. Kinesis Firehose → S3로 파이프라인을 구성하면 S3 수명 주기 정책으로 수년간 보존할 수 있다. 장기 감사 로그가 필요하면 Streams + Kinesis가 정석이다.
 
 ## Global Tables — Active-Active 설계의 함의
 
@@ -218,7 +218,7 @@ def handler(event, context):
 
 Global Tables를 쓸 때 알아야 하는 함정: "글로벌 Strongly Consistent"는 존재하지 않는다. 서울에서 쓴 데이터가 버지니아에 복제되기 전에 버지니아에서 강력한 일관성 읽기를 해도 서울의 최신 데이터를 볼 수 없다. 각 리전은 자신의 로컬 복제본 기준으로만 일관성을 보장한다.
 
-> ⚠️ **함정**: Global Tables에서 두 리전이 동시에 같은 항목을 수정하면 Last Writer Wins로 충돌이 해결된다. 두 리전 모두 성공 응답을 반환했는데 한 쪽의 쓰기가 최종적으로 덮어써진다. 금융 데이터처럼 양쪽 쓰기 모두 영구적이어야 하는 경우 Global Tables의 충돌 해결 정책이 부적합할 수 있다. 이런 경우 단일 "primary" 리전에서만 쓰기를 허용하고 다른 리전은 읽기만 하는 아키텍처를 택해야 한다.
+Global Tables에서 두 리전이 동시에 같은 항목을 수정하면 Last Writer Wins로 충돌이 해결된다. 두 리전 모두 성공 응답을 반환했는데 한 쪽의 쓰기가 최종적으로 덮어써진다. 금융 데이터처럼 양쪽 쓰기 모두 영구적이어야 하는 경우 Global Tables의 충돌 해결 정책이 부적합할 수 있다. 이런 경우 단일 "primary" 리전에서만 쓰기를 허용하고 다른 리전은 읽기만 하는 아키텍처를 택해야 한다.
 
 ## 핵심 수치 암기표
 

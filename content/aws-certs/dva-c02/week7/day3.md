@@ -1,6 +1,6 @@
 # Day 3 - ElastiCache: 인메모리 캐시는 어떻게 DB를 살리는가
 
-캐시는 컴퓨터 시스템 모든 계층에 존재한다. CPU L1/L2/L3, OS 페이지 캐시, 디스크 컨트롤러 캐시, 브라우저 캐시, CDN — 그리고 애플리케이션과 DB 사이에는 **인메모리 캐시**가 들어선다. ElastiCache는 그 자리를 채우는 관리형 서비스로, Redis와 Memcached 두 엔진을 같은 콘솔에서 제공한다. 둘 다 인메모리지만 설계 철학이 정반대다 — Redis는 "데이터 구조 서버"를 표방하고, Memcached는 "단순한 분산 메모리 풀"을 표방한다. 이 차이가 시험과 실무 양쪽에서 가장 자주 묻는 지점이다.
+캐시는 컴퓨터 시스템 모든 계층에 존재한다. CPU L1/L2/L3, OS 페이지 캐시, 디스크 컨트롤러 캐시, 브라우저 캐시, CDN — 그리고 애플리케이션과 DB 사이에는 **인메모리 캐시**가 들어선다. ElastiCache는 그 자리를 채우는 관리형 서비스로, Redis와 Memcached 두 엔진을 같은 콘솔에서 제공한다. 둘 다 인메모리지만 설계 철학이 정반대다 — Redis는 "데이터 구조 서버"를 표방하고, Memcached는 "단순한 분산 메모리 풀"을 표방한다. 이 차이가 시험과 실무 양쪽에서 구분해야 하는 지점이다.
 
 DVA-C02에서 ElastiCache는 보통 두 형태로 나온다. ① "DB 부하가 너무 높다 + 같은 쿼리가 반복된다" → 캐시 도입 ② "여러 EC2/ECS 인스턴스 간 세션 공유" → ElastiCache Redis. 그리고 한 단계 더 들어가면 "왜 캐시가 stale data를 보여주는가" — 즉 cache invalidation 전략을 묻는다. 오늘 다룰 내용은 이 세 층위 전부다.
 
@@ -10,11 +10,17 @@ ElastiCache 같은 외부 캐시가 작동하는 근본 원리는 1960년대 컴
 
 DB 한 번의 디스크 I/O는 SSD라도 100μs ~ 1ms, HDD는 5-10ms. 반면 같은 데이터를 RAM에서 가져오면 100ns 이하. **약 1만~10만 배 차이**다. 한 페이지 렌더링에 100개의 객체가 필요한 SNS 피드를 떠올리면, DB로 100 RTT를 도는 것과 캐시로 100 RTT를 도는 차이는 페이지 응답 시간이 5초 vs 5ms 수준으로 갈린다.
 
-> 💡 **관련 이론**: 캐시 효과를 정량화하는 표준 공식은 평균 접근 시간(Average Memory Access Time, AMAT) = Hit_time + Miss_rate × Miss_penalty이다. Hit_time이 0.5ms, Miss_rate가 5%, Miss_penalty가 50ms(DB 조회 + 캐시 저장)라면 AMAT = 0.5 + 0.05 × 50 = 3ms. Miss_rate를 1%로 낮추면 AMAT = 1ms로 떨어진다. 캐시 hit ratio가 1-2%만 개선돼도 평균 latency가 절반이 되는 이유가 여기 있다. 시험에선 "캐시 도입 후 latency가 줄지 않는다" 시나리오에서 hit ratio를 의심하는 패턴으로 출제된다.
+캐시 효과를 정량화하는 표준 공식은 평균 접근 시간(Average Memory Access Time, AMAT) = Hit_time + Miss_rate × Miss_penalty이다. Hit_time이 0.5ms, Miss_rate가 5%, Miss_penalty가 50ms(DB 조회 + 캐시 저장)라면 AMAT = 0.5 + 0.05 × 50 = 3ms. Miss_rate를 1%로 낮추면 AMAT = 1ms로 떨어진다. 캐시 hit ratio가 1-2%만 개선돼도 평균 latency가 크게 줄 수 있는 이유가 여기 있다. "캐시 도입 후 latency가 줄지 않는다" 시나리오에서는 hit ratio를 의심한다.
 
-## Redis vs Memcached: 1996년 vs 2009년이 만든 차이
+## Redis vs Memcached: 설계 철학의 차이
 
-Memcached는 2003년 LiveJournal의 Brad Fitzpatrick이 만든, 정확히 "분산 메모리 캐시"만 하는 도구다. 데이터 모델은 단순히 키 → 바이트 문자열, TTL 옵션 하나뿐. 멀티스레드로 짜여서 한 노드에 코어가 많을수록 처리량이 선형으로 늘어난다. Redis는 2009년 Salvatore Sanfilippo가 만든, **데이터 구조 서버(data structure server)**를 표방하는 도구다. String 외에도 List, Hash, Set, Sorted Set, Stream, HyperLogLog, Geo, Bitmap — 9가지 자료구조를 in-memory로 제공하고, 각각에 대해 O(log N) 이하의 풍부한 연산을 지원한다. Redis는 **단일 스레드 이벤트 루프**(libevent 기반)로 짜였기 때문에 atomic operation이 자연스럽고, 대신 한 코어 이상 활용하려면 여러 인스턴스/샤드를 둬야 한다.
+Memcached는 2003년 LiveJournal의 Brad Fitzpatrick이 만든, 정확히 "분산 메모리 캐시"만 하는 도구다. 데이터 모델은 단순히 키 → 바이트 문자열, TTL 옵션 하나뿐이다. 멀티스레드로 짜여서 한 노드에 코어가 많을수록 처리량이 선형으로 늘어난다.
+
+Redis는 2009년 Salvatore Sanfilippo가 만든, **데이터 구조 서버(data structure server)**를 표방하는 도구다.
+
+String 외에도 List, Hash, Set, Sorted Set, Stream, HyperLogLog, Geo, Bitmap — 9가지 자료구조를 in-memory로 제공하고, 각각에 대해 O(log N) 이하의 풍부한 연산을 지원한다.
+
+Redis는 **단일 스레드 이벤트 루프**(libevent 기반)로 짜였기 때문에 atomic operation이 자연스럽고, 대신 한 코어 이상 활용하려면 여러 인스턴스/샤드를 둬야 한다.
 
 | 차원 | Redis | Memcached |
 |------|-------|-----------|
@@ -28,7 +34,7 @@ Memcached는 2003년 LiveJournal의 Brad Fitzpatrick이 만든, 정확히 "분�
 | 키 만료 정책 | 다양 (volatile-lru, allkeys-lfu 등 8가지) | LRU 고정 |
 | 최대 값 크기 | 512MB | 1MB(기본) |
 
-> 🔍 **더 깊이**: Redis가 단일 스레드인데도 빠른 이유는 모든 명령이 **메모리 내 O(1) ~ O(log N) 연산**이고, network I/O가 libevent의 epoll 기반 비동기로 처리되기 때문이다. 100,000 QPS를 한 코어로 처리하는 게 가능한 건 한 명령 처리 시간이 마이크로초 수준이라 컨텍스트 스위치 비용이 오히려 손해이기 때문이다. Redis 6.0부터는 network I/O만 별도 스레드 풀로 분리("I/O threading")해서 멀티 코어를 일부 활용하지만, 명령 실행 자체는 여전히 단일 스레드를 유지한다. 이게 atomic 보장과 성능을 동시에 잡는 설계다.
+Redis가 단일 스레드인데도 빠른 이유는 모든 명령이 **메모리 내 O(1) ~ O(log N) 연산**이고, network I/O가 libevent의 epoll 기반 비동기로 처리되기 때문이다. 한 코어로 100,000 QPS를 처리할 수 있는 것은 한 명령의 처리 시간이 마이크로초 수준이라 컨텍스트 스위치 비용이 오히려 손해이기 때문이다. Redis 6.0부터는 network I/O만 별도 스레드 풀로 분리("I/O threading")해서 멀티 코어를 일부 활용하지만, 명령 실행 자체는 여전히 단일 스레드를 유지한다. 이 설계로 atomic 보장과 성능을 함께 얻는다.
 
 | 결정 트리 |
 |----------|
@@ -38,7 +44,7 @@ Memcached는 2003년 LiveJournal의 Brad Fitzpatrick이 만든, 정확히 "분�
 | 단순 key-value + 대용량 + 멀티코어 활용 → **Memcached** |
 | 캐시가 죽어도 상관 없는 무상태 캐시 → **Memcached** (또는 Redis도 가능) |
 
-> ⚠️ **함정**: "ElastiCache로 게임 리더보드 만들기" 시나리오는 무조건 Redis Sorted Set이 답이다. ZADD/ZRANGE/ZREVRANK가 O(log N)에 동작해서 수십만 명 리더보드를 ms 단위로 처리한다. Memcached로는 같은 기능 구현이 불가능에 가깝다(매번 전체 로드해서 정렬해야 함). 시험에서 "leaderboard", "ranking", "real-time score"라는 단어가 보이면 Redis 즉답.
+"ElastiCache로 게임 리더보드 만들기" 시나리오의 답은 Redis Sorted Set이다. ZADD/ZRANGE/ZREVRANK가 O(log N)에 동작해서 수십만 명 리더보드를 ms 단위로 처리한다. Memcached로는 같은 기능을 구현하기 어렵다(매번 전체를 로드해서 정렬해야 함). "leaderboard", "ranking", "real-time score"라는 단어가 보이면 Redis를 고른다.
 
 ## 캐싱 전략 5종 — 같은 도구를 5가지 방식으로 쓰는 법
 
@@ -46,7 +52,7 @@ Memcached는 2003년 LiveJournal의 Brad Fitzpatrick이 만든, 정확히 "분�
 
 ### Lazy Loading (Cache-Aside)
 
-가장 흔한 패턴. **읽기 요청이 올 때만 캐시를 채운다**. 미스가 나면 DB 조회 후 캐시에 저장.
+가장 널리 쓰는 패턴이다. **읽기 요청이 올 때만 캐시를 채운다**. 미스가 나면 DB를 조회한 뒤 캐시에 저장한다.
 
 ```python
 def get_product(product_id):
@@ -80,7 +86,7 @@ def update_product(product_id, data):
 
 - 장점: 쓰기 throughput 매우 높음
 - 단점: 캐시가 죽으면 미반영 데이터 손실. 데이터 정합성 보장이 어려워 ElastiCache로는 직접 구현보다는 Kafka/Kinesis 같은 큐를 사이에 두는 패턴을 권장
-- 시험에선 거의 안 나오지만 안티패턴 인지가 중요
+- 안티패턴으로 알아 두는 것이 중요
 
 ### Read-Through
 
@@ -104,9 +110,9 @@ def update_product(product_id, data):
 | Read-Through | 약 | 낮음 | 높음 | ★★ |
 | Refresh-Ahead | 강 | 중간 | 중간 | ★ |
 
-> 💡 **관련 이론**: Phil Karlton이 남긴 유명한 문장 — "There are only two hard things in Computer Science: cache invalidation and naming things." 캐시 무효화가 어려운 이유는 **분산 시스템에서 데이터의 source of truth가 여러 곳에 복제될 때, 변경을 모든 복제본에 일관되게 전파하는 게 본질적으로 분산 합의(distributed consensus) 문제이기 때문**이다. ElastiCache + RDS 조합에서 "RDS에 직접 UPDATE를 친 데이터는 캐시에서 갱신되지 않는다"는 함정이 실무에서 자주 사고를 낸다. 해결책은 ① 모든 쓰기가 애플리케이션을 통과하도록 강제 ② DDB Streams/Debezium 같은 CDC로 캐시 무효화 이벤트 발행 ③ 짧은 TTL로 stale window를 제한.
+캐시 무효화가 어려운 이유는 **분산 시스템에서 데이터의 source of truth가 여러 곳에 복제될 때, 변경을 모든 복제본에 일관되게 전파하는 게 본질적으로 분산 합의(distributed consensus) 문제이기 때문**이다. ElastiCache + RDS 조합에서 "RDS에 직접 UPDATE를 친 데이터는 캐시에서 갱신되지 않는다"는 함정이 실무 사고로 이어진다. 해결책은 ① 모든 쓰기가 애플리케이션을 통과하도록 강제 ② DDB Streams/Debezium 같은 CDC로 캐시 무효화 이벤트 발행 ③ 짧은 TTL로 stale window를 제한.
 
-> 📚 **사례**: 2010년 Facebook은 자체 Memcached 클러스터에서 thundering herd 문제를 겪었다 — 인기 게시물의 캐시가 만료되는 순간 수천 개의 동시 요청이 DB로 몰려 DB가 다운. 해결책으로 도입한 게 **lease token** 메커니즘(USENIX 2013 "Scaling Memcache at Facebook" 논문)이다. 첫 miss 요청에게만 토큰을 발급하고, 나머지 요청은 잠시 기다리거나 stale 데이터를 사용한다. 이 패턴이 Redis에서는 `SET NX EX`(Distributed lock pattern) 또는 single-flight 패턴으로 구현된다. Lazy Loading만 단순하게 쓰면 인기 콘텐츠 만료 시점에 비슷한 사고가 난다.
+인기 게시물의 캐시가 만료되는 순간 수천 개의 동시 요청이 DB로 몰리는 문제를 thundering herd라고 한다. Facebook은 Memcached 클러스터에서 이 문제를 다루려고 **lease token** 메커니즘을 도입했다("Scaling Memcache at Facebook" 논문, NSDI 2013). 첫 miss 요청에게만 토큰을 발급하고, 나머지 요청은 잠시 기다리거나 stale 데이터를 사용한다. 이 패턴은 Redis에서 `SET NX EX`(분산 락 패턴) 또는 single-flight 패턴으로 구현한다. Lazy Loading만 단순하게 쓰면 인기 콘텐츠 만료 시점에 비슷한 문제가 생긴다.
 
 ## Redis Cluster Mode: 데이터 분산의 16,384 슬롯
 
@@ -126,9 +132,13 @@ ElastiCache Redis는 두 가지 토폴로지를 가진다.
 샤드 3의 primary 노드
 ```
 
-> 🔍 **더 깊이**: 16,384는 임의의 숫자가 아니다. Redis 저자 antirez(Salvatore Sanfilippo)의 설계 노트에 따르면 ① 슬롯 매핑 정보를 모든 노드가 들고 있어야 하는데 16K 슬롯은 ~2KB 비트맵으로 충분 ② Redis 클러스터 최대 노드 수가 1,000개 정도로 설계됐으므로 슬롯/노드 비율이 16:1이면 데이터 분산 균등성이 좋음 ③ 클러스터 메시지를 가십 프로토콜로 교환할 때 메시지 크기에도 영향 — 이 균형점이 16,384다. (참고: GitHub antirez/redis 이슈 #2576)
+16,384는 임의의 숫자가 아니다. Redis 저자 antirez(Salvatore Sanfilippo)의 설계 노트에 따르면 다음 세 가지의 균형점이 16,384다.
 
-Cluster Mode를 켜면 **트랜잭션과 multi-key 연산에 제약**이 생긴다. `MULTI/EXEC`나 `MGET`은 모든 키가 같은 슬롯에 있어야 한다. 해결책은 **hash tag** — 키 이름에 `{...}` 안의 부분만 해싱에 사용되도록 강제. 예: `user:{123}:profile`, `user:{123}:settings`는 둘 다 `{123}` 부분만 해싱되어 같은 슬롯에 위치하므로 `MGET user:{123}:profile user:{123}:settings`가 가능.
+- 슬롯 매핑 정보를 모든 노드가 들고 있어야 하는데, 16K 슬롯은 ~2KB 비트맵으로 충분하다.
+- Redis 클러스터 최대 노드 수가 1,000개 정도로 설계됐으므로 슬롯/노드 비율이 16:1이면 데이터 분산 균등성이 좋다.
+- 클러스터 메시지를 가십 프로토콜로 교환할 때 메시지 크기에도 영향을 준다.
+
+Cluster Mode를 켜면 **트랜잭션과 multi-key 연산에 제약**이 생긴다. `MULTI/EXEC`나 `MGET`은 모든 키가 같은 슬롯에 있어야 한다. 해결책은 **hash tag**로, 키 이름에서 `{...}` 안의 부분만 해싱에 쓰도록 강제한다. 예: `user:{123}:profile`, `user:{123}:settings`는 둘 다 `{123}` 부분만 해싱되어 같은 슬롯에 위치하므로 `MGET user:{123}:profile user:{123}:settings`가 가능하다.
 
 | 모드 | 메모리 한도 | 처리량 | 복잡도 | 시나리오 |
 |------|-------------|--------|--------|---------|
@@ -139,7 +149,7 @@ Cluster Mode를 켜면 **트랜잭션과 multi-key 연산에 제약**이 생긴�
 
 ## Redis 영속성: RDB와 AOF의 trade-off
 
-Redis가 인메모리지만 영속성 옵션을 제공하는 이유는 **재시작 시 캐시 cold start**를 피하기 위해서다. 캐시가 비어 있으면 모든 요청이 DB로 몰려 thundering herd 사고가 난다. 영속성 메커니즘은 두 가지.
+Redis가 인메모리지만 영속성 옵션을 제공하는 이유는 **재시작 시 캐시 콜드 스타트**를 피하기 위해서다. 캐시가 비어 있으면 모든 요청이 DB로 몰려 thundering herd 사고가 난다. 영속성 메커니즘은 두 가지.
 
 **RDB (Redis Database)**: 일정 간격(예: 5분에 100개 키 변경 시)으로 전체 메모리를 **바이너리 스냅샷**으로 디스크에 덤프. 파일 크기 작고 복원 빠름. 단점: 마지막 스냅샷 이후 데이터는 손실.
 
@@ -147,11 +157,13 @@ Redis가 인메모리지만 영속성 옵션을 제공하는 이유는 **재시�
 
 ElastiCache는 **자동 백업**(매일 1회 RDB 스냅샷, S3 저장)과 **수동 백업**을 지원한다. AOF는 ElastiCache Redis Cluster Mode Enabled에서는 비활성화돼 있고 Multi-AZ replica로 대체 권장.
 
-> 🔍 **더 깊이**: ElastiCache가 AOF를 권장하지 않는 이유는 ① fsync 비용으로 처리량이 30-50% 감소 ② Multi-AZ replica로 동일한 내구성 확보 가능 ③ AOF replay 시간 동안 서비스 불가 — 즉 캐시 용도에서는 cost-benefit이 안 맞다. MemoryDB(2021년 출시)는 정확히 이 문제를 해결한 별개 서비스로, **multi-AZ transaction log**(DynamoDB와 유사한 메커니즘)로 strongly consistent + durable Redis를 제공한다. 가격은 ElastiCache의 약 2-3배.
+ElastiCache가 AOF를 권장하지 않는 이유는 ① fsync 비용으로 처리량이 30-50% 감소 ② Multi-AZ replica로 동일한 내구성 확보 가능 ③ AOF replay 시간 동안 서비스 불가. 즉 캐시 용도에서는 cost-benefit이 안 맞다.
+
+MemoryDB(2021년 출시)는 정확히 이 문제를 해결한 별개 서비스로, **multi-AZ transaction log**(DynamoDB와 유사한 메커니즘)로 strongly consistent + durable Redis를 제공한다. 가격은 ElastiCache의 약 2-3배.
 
 ## 세션 관리: ElastiCache의 킬러 유스케이스
 
-스테이트풀 웹 애플리케이션에서 여러 EC2/ECS 인스턴스가 ALB 뒤에 있을 때, 사용자가 매 요청마다 다른 인스턴스로 라우팅되면 **세션 데이터 공유 문제**가 발생한다. 옛날엔 ALB sticky session으로 우회했지만, 이는 ① 인스턴스 다운 시 세션 손실 ② 로드 불균등 ③ 오토스케일링과 충돌이라는 문제가 있다.
+스테이트풀 웹 애플리케이션에서 여러 EC2/ECS 인스턴스가 ALB 뒤에 있을 때, 사용자가 매 요청마다 다른 인스턴스로 라우팅되면 **세션 데이터 공유 문제**가 발생한다. 옛날엔 ALB sticky session으로 우회했지만, 이는 ① 인스턴스 다운 시 세션 손실 ② 로드 불균등 ③ Auto Scaling과 충돌이라는 문제가 있다.
 
 ElastiCache Redis로 세션을 외부화하면 모든 인스턴스가 같은 캐시를 본다. 구현 패턴:
 
@@ -182,7 +194,7 @@ def invalidate_session(sid):
     cache.delete(f'sess:{sid}')  # 로그아웃
 ```
 
-> 📚 **사례**: 2018년 Slack은 ALB sticky session으로 세션을 관리하다가 노드 한 대가 다운되면서 약 40만 명의 사용자가 강제 로그아웃되는 사고를 겪었다. 회고 후 Redis 기반 세션 스토어(자체 운영)로 전환했고, 이후 비슷한 사고가 사라졌다. AWS 환경이라면 ElastiCache Redis가 같은 역할 — Multi-AZ + 자동 페일오버로 인스턴스 다운에도 세션 유지.
+ALB sticky session으로 세션을 관리하면 노드 한 대가 다운될 때 그 노드에 묶인 사용자의 세션이 모두 사라진다. ElastiCache Redis에 세션을 두고 Multi-AZ + 자동 페일오버를 쓰면 인스턴스가 다운돼도 세션이 유지된다.
 
 ## 보안: AUTH, In-Transit Encryption, IAM 통합
 
@@ -196,7 +208,7 @@ ElastiCache의 보안은 세 레이어로 구성된다.
 - In-transit: TLS 활성화 옵션 (생성 시 설정, 사후 변경 시 백업/복원 필요)
 - At-rest: KMS로 EBS 볼륨 암호화
 
-> ⚠️ **함정**: ElastiCache는 **퍼블릭 IP를 가질 수 없다**. 외부에서 접속하려면 ① VPN ② Direct Connect ③ EC2 bastion + SSH tunnel 셋 중 하나. 시험에서 "온프레미스에서 ElastiCache 직접 접근" 시나리오는 거의 항상 VPN/Direct Connect가 답.
+> ⚠️ **함정**: ElastiCache는 **퍼블릭 IP를 가질 수 없다**. 외부에서 접속하려면 ① VPN ② Direct Connect ③ EC2 bastion + SSH tunnel 셋 중 하나. "온프레미스에서 ElastiCache 직접 접근" 시나리오의 답은 VPN/Direct Connect다.
 
 ## ElastiCache Serverless (2023 GA)
 
@@ -223,13 +235,16 @@ MemoryDB는 2021년 출시된 **Redis 호환 in-memory DB**다. ElastiCache와 �
 | 가격 | 기준 | ElastiCache의 2-3배 |
 | 적합 사용 | 캐시, 세션 | 마이크로서비스 주 DB |
 
-> 💡 **실무 패턴**: 신규 마이크로서비스에서 "단일 entity 조회/수정이 주된 워크로드 + ms 단위 응답 필요 + DB-grade durability"라면 RDS보다 MemoryDB가 적합한 경우가 있다. 단가가 비싸지만 DB Proxy/replica/백업 운영을 단순화한다. 시험엔 자주 안 나오지만 "마이크로초 latency + durable"이라는 키워드 조합이 나오면 MemoryDB를 고려.
+신규 마이크로서비스에서 "단일 entity 조회/수정이 주된 워크로드 + ms 단위 응답 필요 + DB-grade durability"라면 RDS보다 MemoryDB가 적합한 경우가 있다. 단가가 비싸지만 DB Proxy/replica/백업 운영을 단순화한다. "마이크로초 latency + durable"이라는 키워드 조합이 나오면 MemoryDB를 고려한다.
 
-## 정리하며
+## 정리
 
-ElastiCache는 단순해 보이지만 **엔진 선택(Redis vs Memcached) → 토폴로지 선택(Cluster Mode On/Off) → 캐싱 전략(Lazy/Write-Through/...) → 무효화 메커니즘** 네 층의 의사결정이 누적된다. 각 층의 선택이 일관성, 성능, 비용을 다르게 잡아당기므로 시험 시나리오는 항상 "주어진 요구사항에서 어느 조합이 최적인가"를 묻는다.
+ElastiCache는 단순해 보이지만 **엔진 선택(Redis vs Memcached) → 토폴로지 선택(Cluster Mode On/Off) → 캐싱 전략(Lazy/Write-Through/...) → 무효화 메커니즘** 네 층의 의사결정이 누적된다. 각 층의 선택이 일관성, 성능, 비용을 다르게 좌우하므로 시험 시나리오는 "주어진 요구사항에서 어느 조합이 최적인가"를 묻는다.
 
-가장 자주 출제되는 결정 두 가지를 다시 정리한다. **① 영속성/Multi-AZ/복잡한 자료구조가 하나라도 필요하면 Redis.** **② 캐시 stale 위험이 있으면 lazy loading 단독 X — TTL 짧게 + 이벤트 기반 무효화 또는 write-through 결합.** 이 두 원칙만 잡고 시나리오를 풀면 80%는 정답을 맞춘다.
+시나리오를 풀 때 쓰는 결정 두 가지를 다시 정리한다.
+
+- **영속성, Multi-AZ, 복잡한 자료구조가 하나라도 필요하면 Redis를 고른다.**
+- **캐시 stale 위험이 있으면 lazy loading을 단독으로 쓰지 않는다.** TTL을 짧게 잡고 이벤트 기반 무효화나 write-through를 결합한다.
 
 다음 글에서는 Aurora — RDS의 호환만 유지하면서 스토리지·복제 레이어를 완전히 재설계한 별개 엔진 — 의 내부 구조와 Aurora Serverless v2를 본다.
 

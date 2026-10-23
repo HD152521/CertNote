@@ -30,8 +30,6 @@ else:
     result = json.loads(response['Payload'].read())
 ```
 
-> 💡 **관련 이론**: 동기 호출의 에러 처리 모델은 분산 시스템의 **Fail-Fast** 패턴이다. 에러를 호출자에게 즉시 돌려주므로 호출자가 회로 차단기(Circuit Breaker, Netflix Hystrix, AWS App Mesh 등)를 구현할 수 있다. 비동기 호출처럼 내부에서 자동 재시도가 일어나지 않으므로 부작용(side effect)이 없고, 멱등성 요구가 낮다.
-
 ## 비동기 호출: Lambda 내부 큐와 재시도 메커니즘
 
 S3 버킷에 파일이 업로드되면 S3가 `InvocationType=Event`로 Lambda를 호출한다. Lambda 서비스는 이벤트를 즉시 내부 이벤트 큐(SQS와 유사하지만 외부에서 보이지 않는 내부 큐)에 넣고 S3에 202 Accepted를 반환한다. S3는 함수가 실제로 실행됐는지, 성공했는지 알지 못한다.
@@ -64,8 +62,6 @@ aws lambda put-function-event-invoke-config \
 
 > ⚠️ **함정**: 비동기 호출에서 Lambda는 같은 이벤트를 최대 3번(원본 + 2회 재시도) 실행할 수 있다. 이는 **at-least-once delivery** 보장이다. 함수가 멱등적(idempotent)이지 않으면 중복 처리 문제가 생긴다. 예를 들어 "사용자에게 이메일 보내기" 함수가 비동기로 호출되고 두 번 성공하면 이메일이 두 통 간다.
 
-> 📚 **사례**: 2021년 Stripe는 웹훅 이벤트 처리를 Lambda 비동기로 구현했다가 중복 처리 문제를 겪었다. 결제 금액이 두 번 차감되는 사고가 발생했고, 이후 Lambda Powertools의 Idempotency 모듈을 도입해 DynamoDB에 이벤트 ID를 저장하고 중복 호출을 차단했다. 이 교훈은 "Lambda 비동기 + 상태 변경 작업 = 반드시 멱등성 구현"으로 정리된다.
-
 ## S3 이벤트: 비동기 호출과 무한 루프 방지
 
 S3 이벤트 알림은 두 가지 방식이 있다.
@@ -74,7 +70,7 @@ S3 이벤트 알림은 두 가지 방식이 있다.
 
 **S3 → EventBridge(현재 권장)**: EventBridge를 경유해 더 세밀한 패턴 매칭, 여러 대상으로 팬아웃, 이벤트 아카이브와 리플레이가 가능하다.
 
-S3 이벤트를 처리할 때 가장 흔한 사고는 무한 루프다.
+S3 이벤트 처리에서 대표적인 사고는 무한 루프다.
 
 ```
 [원본 버킷] 파일 업로드 → Lambda 실행 → 처리 결과를 [같은 버킷]에 저장
@@ -130,7 +126,7 @@ Lambda 서비스는 SQS 큐를 롱 폴링(Long Polling, 최대 20초 대기)으�
 | FunctionResponseTypes | `ReportBatchItemFailures` 활성화 여부 | 비활성 |
 | FilterCriteria | 특정 속성/값 메시지만 처리 | 없음 |
 
-> 🔍 **더 깊이**: SQS ESM의 폴링은 Lambda 서비스가 SQS API `ReceiveMessage`를 주기적으로 호출하는 방식이다. 트래픽이 없을 때는 폴러 수가 줄어들고(최소 1개), 메시지가 쌓이면 폴러가 자동으로 늘어난다. 표준 큐에서는 최대 1,000개의 폴러가 동시에 동작할 수 있어 높은 처리량을 낼 수 있다. FIFO 큐에서는 메시지 그룹 ID당 하나의 Lambda 인스턴스가 처리해 순서를 보장한다.
+SQS ESM의 폴링은 Lambda 서비스가 SQS API `ReceiveMessage`를 주기적으로 호출하는 방식이다. 트래픽이 없을 때는 폴러 수가 줄어들고(최소 1개), 메시지가 쌓이면 폴러가 자동으로 늘어난다. 표준 큐에서는 최대 1,000개의 폴러가 동시에 동작할 수 있어 높은 처리량을 낼 수 있다. FIFO 큐에서는 메시지 그룹 ID당 하나의 Lambda 인스턴스가 처리해 순서를 보장한다.
 
 ## Partial Batch Response: 성공한 메시지는 보존하기
 
@@ -170,7 +166,7 @@ aws lambda create-event-source-mapping \
 
 ## Kinesis Data Streams ESM: 샤드 블록 문제
 
-Kinesis와 Lambda의 통합에서 가장 위험한 함정은 **샤드 블록**이다.
+Kinesis와 Lambda의 통합에서 대표적인 함정은 **샤드 블록**이다.
 
 Kinesis는 샤드(shard) 단위로 데이터를 처리한다. 각 샤드에서 레코드 순서가 보장된다. Lambda ESM은 샤드당 하나의 Lambda 인스턴스를 할당해 순서대로 처리한다.
 
@@ -206,7 +202,7 @@ aws lambda create-event-source-mapping \
   --parallelization-factor 5
 ```
 
-> 💡 **관련 이론**: Kinesis ESM의 파티션 키 단위 순서 보장은 분산 스트림 처리의 **partition-based ordering** 원칙과 같다. Kafka의 파티션 오프셋, Redis Streams의 그룹 소비자와 유사하다. 순서 보장과 병렬 처리는 트레이드오프 관계다 — 완전한 순서 보장을 원하면 샤드당 1개 Lambda로 직렬 처리해야 하고, 높은 처리량을 원하면 순서를 키 단위로만 보장하며 병렬화한다.
+Kinesis ESM의 파티션 키 단위 순서 보장은 분산 스트림 처리의 **partition-based ordering** 원칙과 같다. 순서 보장과 병렬 처리는 트레이드오프 관계다 — 완전한 순서 보장을 원하면 샤드당 1개 Lambda로 직렬 처리해야 하고, 높은 처리량을 원하면 순서를 키 단위로만 보장하며 병렬화한다.
 
 ## DynamoDB Streams ESM: 변경 이벤트 처리
 
@@ -220,7 +216,7 @@ DynamoDB Streams ESM은 Kinesis와 유사하게 동작하지만 차이점이 있
 | 시작 위치 | LATEST, TRIM_HORIZON, AT_TIMESTAMP | LATEST, TRIM_HORIZON |
 | 샤드 관리 | 수동(명시적 샤드 수 설정) | 자동(DynamoDB가 관리) |
 | 스트림 레코드 내용 | 원본 데이터 | 변경 전/후 이미지 선택 가능 |
-| 스케일링 | 수동 리샤딩 | DynamoDB 오토스케일링과 연동 |
+| 스케일링 | 수동 리샤딩 | DynamoDB Auto Scaling과 연동 |
 
 스트림 뷰 타입에 따라 함수가 받는 데이터가 달라진다.
 
@@ -255,8 +251,6 @@ def lambda_handler(event, context):
             print(f"삭제된 항목: {old_item}")
 ```
 
-> 📚 **사례**: Airbnb는 DynamoDB Streams + Lambda 패턴으로 **이벤트 소싱(Event Sourcing)**을 구현했다. 예약 테이블의 모든 변경사항이 Streams에 기록되고, Lambda가 이를 Elasticsearch로 동기화해 검색 인덱스를 최신 상태로 유지했다. 이 패턴은 CQRS(Command Query Responsibility Segregation) 아키텍처의 핵심이기도 하다 — DynamoDB가 Command(쓰기)를, Elasticsearch가 Query(읽기)를 담당한다.
-
 ## EventBridge 스케줄 + Lambda
 
 EventBridge(구 CloudWatch Events)는 두 가지 방식으로 Lambda를 트리거한다.
@@ -277,7 +271,7 @@ aws events put-rule \
   --schedule-expression "rate(5 minutes)"
 ```
 
-> ⚠️ **함정**: AWS EventBridge cron에서 **일(day-of-month)과 요일(day-of-week)은 동시에 지정할 수 없다.** 하나를 지정하면 다른 하나는 반드시 `?`(무관)로 설정해야 한다. `cron(0 9 15 * ? *)` (매월 15일), `cron(0 9 ? * MON-FRI *)` (평일)처럼 사용한다.
+AWS EventBridge cron에서 **일(day-of-month)과 요일(day-of-week)은 동시에 지정할 수 없다.** 하나를 지정하면 다른 하나는 반드시 `?`(무관)로 설정해야 한다. `cron(0 9 15 * ? *)` (매월 15일), `cron(0 9 ? * MON-FRI *)` (평일)처럼 사용한다.
 
 ## 멱등성: at-least-once를 safely-exactly-once로
 
@@ -303,8 +297,6 @@ def lambda_handler(event, context):
 
 내부 동작: 첫 호출 시 이벤트 ID(기본은 이벤트 전체의 해시)를 DynamoDB에 "IN_PROGRESS" 상태로 저장. 성공하면 "COMPLETED"와 결과를 저장. 동일 이벤트 ID로 다시 오면 DynamoDB에서 이전 결과를 꺼내 그대로 반환 — Lambda 코드는 실행되지 않는다.
 
-> 🔍 **더 깊이**: 멱등성은 분산 시스템 이론에서 오래된 개념이다. Lamport의 1978년 논문 "Time, Clocks, and the Ordering of Events in a Distributed System"에서 메시지 전달 의미론을 다룬 이후, **at-most-once, at-least-once, exactly-once**라는 세 가지 전달 보장이 정의됐다. Exactly-once는 분산 시스템에서 달성하기 어렵다 — 분산 트랜잭션이 필요하거나(2PC, Saga), 멱등성 + at-least-once로 사실상 같은 효과를 낸다. Kafka의 정확히-한-번 전달도 idempotent producer + transactional producer 조합으로 구현된다.
-
 ## 호출 유형 종합 비교
 
 | 특성 | 동기(API GW, ALB) | 비동기(S3, SNS) | ESM(SQS, Kinesis) |
@@ -317,7 +309,7 @@ def lambda_handler(event, context):
 | 최대 전달 크기 | 6MB (동기) | 256KB (비동기) | 배치 크기 제한 |
 | DLQ 적용 | ❌ | ✅ Lambda DLQ | SQS 자체 DLQ |
 
-## 마무리
+## 정리
 
 Lambda의 세 가지 호출 방식 — 동기, 비동기, ESM — 은 각각 다른 신뢰성 모델을 가진다. 동기는 단순하지만 호출자가 모든 에러 처리를 책임진다. 비동기는 내구성이 높지만 멱등성 구현이 필수다. ESM은 관리된 폴링으로 편리하지만 Kinesis의 샤드 블록, SQS의 가시성 타임아웃 같은 메커니즘을 이해해야 한다. 이 차이를 명확히 구분하면 "SQS 메시지가 왜 반복 처리되지?", "Kinesis 레코드가 왜 쌓이지?" 같은 운영 질문에 즉시 답할 수 있다.
 

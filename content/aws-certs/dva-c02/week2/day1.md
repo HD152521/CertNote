@@ -1,6 +1,6 @@
 # Day 1 - EC2의 해부학: Nitro, 인스턴스 패밀리, AMI의 내부
 
-EC2는 2006년 8월 25일 베타로 출시된 AWS의 가장 오래된 컴퓨트 서비스다. 처음엔 m1.small 한 종류, 단일 리전(us-east-1), 단순한 launch-and-pray 모델이었다. 20년이 지난 지금 EC2는 750개 이상의 인스턴스 타입, Nitro 하이퍼바이저, Graviton ARM 칩, EBS 직결 스토리지를 갖춘 거대한 컴퓨트 생태계가 됐다. 개발자가 이걸 다 외울 수는 없지만, 인스턴스 패밀리의 명명 규칙과 Nitro의 의미를 이해하면 시험 문제 절반은 풀린다.
+EC2는 2006년 8월 25일 베타로 출시된 AWS의 가장 오래된 컴퓨트 서비스다. 처음엔 m1.small 한 종류, 단일 리전(us-east-1), 단순한 launch-and-pray 모델이었다. 20년이 지난 지금 EC2는 750개 이상의 인스턴스 타입, Nitro 하이퍼바이저, Graviton ARM 칩, EBS 직결 스토리지를 갖춘 거대한 컴퓨트 생태계가 됐다. 개발자가 이걸 다 외울 수는 없지만, 인스턴스 패밀리의 명명 규칙과 Nitro의 의미를 이해하면 시험 문제를 푸는 데 도움이 된다.
 
 오늘은 EC2를 코드가 돌아가는 컨테이너로 보지 말고 **"가상화된 OS를 실행하는 격리된 컴퓨트 단위"**로 본다. 그 격리가 어떻게 가능한지, AMI가 정확히 무엇인지, 왜 t2와 t3가 다르게 동작하는지를 파헤친다.
 
@@ -10,13 +10,9 @@ EC2는 2006년 8월 25일 베타로 출시된 AWS의 가장 오래된 컴퓨트 
 
 AWS는 2013년부터 **Nitro 시스템**을 개발하기 시작해 2017년 c5에서 처음 출시했다. Nitro의 혁신은 **하이퍼바이저 기능을 전용 하드웨어 카드(Nitro Cards)에 오프로드**한 것이다. 네트워크 가상화는 Nitro Network Card, 스토리지 가상화는 Nitro EBS Card, 보안은 Nitro Security Chip이 처리한다. 호스트 OS의 KVM(Linux 커널 내장 하이퍼바이저)은 거의 thin layer로 남고, 게스트 인스턴스는 bare-metal에 가까운 성능을 낸다.
 
-Nitro의 또 다른 효과는 **Firecracker microVM**의 탄생이다. Lambda와 Fargate가 동작하는 그 microVM은 KVM 위에서 125ms 안에 부팅 가능하고, 메모리 footprint는 5MB 미만이다. Firecracker는 Nitro 개발 과정에서 축적된 minimal hypervisor 기술이 만든 산물이며, 같은 호스트에서 수천 개 microVM을 격리 실행할 수 있게 한다. 이게 Lambda의 "함수당 격리"를 가능하게 한 핵심 인프라다. 더 자세한 내용은 Week 4에서 Lambda를 다룰 때 다시 보자.
+Nitro의 또 다른 효과는 **Firecracker microVM**의 탄생이다. Lambda와 Fargate가 동작하는 그 microVM은 KVM 위에서 125ms 안에 부팅 가능하고, 메모리 footprint는 5MB 미만이다. Firecracker는 Nitro 개발 과정에서 축적된 minimal hypervisor 기술이 만든 산물이며, 같은 호스트에서 수천 개 microVM을 격리 실행할 수 있게 한다. 이게 Lambda의 "함수당 격리"를 가능하게 한 핵심 인프라다. 더 자세한 내용은 Week 4에서 Lambda를 다룰 때 다시 다룬다.
 
-> 🔍 **더 깊이**: Nitro Security Chip은 부팅 시점에 펌웨어 무결성을 검증하고, host kernel이 게스트 메모리에 직접 접근하지 못하게 막는다. 이게 2018년 Spectre·Meltdown 사이드채널 공격에서 AWS가 대부분의 인스턴스 타입을 빠르게 패치할 수 있었던 이유 중 하나다. KVM 기반 Nitro 인스턴스는 호스트와 게스트 간 메모리 격리가 하드웨어 수준에서 강제된다. 자세한 아키텍처는 [The Security Design of the AWS Nitro System](https://docs.aws.amazon.com/whitepapers/latest/security-design-of-aws-nitro-system/security-design-of-aws-nitro-system.html) 백서에 정리돼 있다.
-
-> 💡 **관련 이론**: 하이퍼바이저는 Type 1(bare-metal, 호스트 OS 없음 — VMware ESXi, Xen)과 Type 2(host OS 위에서 동작 — VirtualBox, VMware Workstation)로 나뉜다(Popek & Goldberg, 1974). Nitro는 KVM이 Linux 커널의 일부이므로 형식적으로는 Type 2지만, hypervisor 기능 대부분이 별도 하드웨어에 위치하므로 실질적으로는 Type 1에 가깝다. 이 하이브리드 접근이 "성능은 bare-metal, 격리는 가상화"라는 두 요구를 동시에 충족한다. Popek-Goldberg의 가상화 정리(1974)는 가상화 가능한 ISA의 조건을 정의했고, x86이 본격적으로 그 조건을 만족하기 시작한 건 2005년 Intel VT-x 출시 이후다.
-
-> 📚 **사례**: 다른 클라우드도 비슷한 길을 갔다. GCP는 KVM 기반 자체 하이퍼바이저(Borg → gVisor)를, Azure는 Hyper-V 기반 Hypervisor와 Catapult FPGA(SmartNIC)를 쓴다. 셋 다 결국 "하이퍼바이저를 가볍게, 하드웨어 가속을 많이"라는 동일한 방향으로 수렴하고 있다. 차이는 오프로드 칩을 자체 ASIC(AWS Nitro)으로 가는가, FPGA(Azure Catapult)로 가는가, SmartNIC 표준 제품(GCP, 일부 Azure)을 쓰는가다.
+Nitro Security Chip은 부팅 시점에 펌웨어 무결성을 검증하고, host kernel이 게스트 메모리에 직접 접근하지 못하게 막는다. 이게 2018년 Spectre·Meltdown 사이드채널 공격에서 AWS가 대부분의 인스턴스 타입을 빠르게 패치할 수 있었던 이유 중 하나다. KVM 기반 Nitro 인스턴스는 호스트와 게스트 간 메모리 격리가 하드웨어 수준에서 강제된다. 자세한 아키텍처는 [The Security Design of the AWS Nitro System](https://docs.aws.amazon.com/whitepapers/latest/security-design-of-aws-nitro-system/security-design-of-aws-nitro-system.html) 백서에 정리돼 있다.
 
 ## 인스턴스 패밀리: 한 글자가 알려주는 워크로드 적합도
 
@@ -48,9 +44,9 @@ EC2 인스턴스 타입은 `m5.xlarge`처럼 **패밀리 + 세대 + 크기**로 
 | `d` | NVMe instance store 포함 |
 | `e` | extra memory or storage |
 
-> 💡 **암기 팁**: m6g.large는 "범용(m) 6세대 Graviton(g) ARM 칩에 large 크기". 시험에서 비용 최적화 시나리오는 거의 항상 Graviton(g) 답을 유도한다(같은 성능에 약 20% 저렴).
+m6g.large는 "범용(m) 6세대 Graviton(g) ARM 칩에 large 크기". 시험에서 비용 최적화 시나리오는 Graviton(g)이 답이 되기 쉽다(같은 성능에 약 20% 저렴).
 
-> 🔍 **더 깊이**: Graviton의 가격 우위가 가능한 이유는 AWS가 칩을 직접 설계하기 때문이다. 2018년 Graviton1(A1 인스턴스, ARM Neoverse-N1 기반)을 시작으로, 2020년 Graviton2(Arm Neoverse-N1 64코어)는 c6g·m6g·r6g, 2021년 Graviton3는 c7g·m7g·r7g에 들어갔다. 2023년 발표된 Graviton4는 c8g·m8g 시리즈에 96 vCPU로 확장됐다. Intel/AMD 칩을 사 오는 대신 직접 설계해 마진을 절약하고, 그 일부를 고객에 돌려준다. ARM 인스트럭션 세트는 RISC라 같은 와트당 성능이 x86보다 높은 경향이 있다.
+Graviton의 가격 우위가 가능한 이유는 AWS가 칩을 직접 설계하기 때문이다. 2018년 Graviton1(A1 인스턴스, ARM Neoverse-N1 기반)을 시작으로, 2020년 Graviton2(Arm Neoverse-N1 64코어)는 c6g·m6g·r6g, 2021년 Graviton3는 c7g·m7g·r7g에 들어갔다. 2023년 발표된 Graviton4는 c8g·m8g 시리즈에 96 vCPU로 확장됐다. Intel/AMD 칩을 사 오는 대신 직접 설계해 마진을 절약하고, 그 일부를 고객에 돌려준다. ARM 인스트럭션 세트는 RISC라 같은 와트당 성능이 x86보다 높은 경향이 있다.
 
 ## t 시리즈의 비밀: CPU credit 메커니즘
 
@@ -64,11 +60,9 @@ t 시리즈(burstable)는 다른 패밀리와 완전히 다른 과금 모델을 
 | t3.medium | 2 | 20% / vCPU | 24 |
 | t3.large | 2 | 30% / vCPU | 36 |
 
-> 🔍 **더 깊이**: t2와 t3의 가장 큰 차이는 **credit 소진 시 동작**이다. t2는 standard 모드만 있어서 credit이 떨어지면 baseline CPU로 제한된다(스로틀링). t3는 기본이 unlimited 모드로, credit이 떨어져도 추가 비용을 내고 burst를 유지한다. CloudWatch에서 `CPUSurplusCreditBalance` 지표가 0보다 크면 추가 과금이 일어나고 있다는 뜻. 비용 예측이 중요한 워크로드에선 t3를 standard 모드로 명시적 전환하거나 m 시리즈를 쓰는 게 안전하다.
+t2와 t3의 가장 큰 차이는 **credit 소진 시 동작**이다. t2는 standard 모드만 있어서 credit이 떨어지면 baseline CPU로 제한된다(스로틀링). t3는 기본이 unlimited 모드로, credit이 떨어져도 추가 비용을 내고 burst를 유지한다. CloudWatch에서 `CPUSurplusCreditBalance` 지표가 0보다 크면 추가 과금이 일어나고 있다는 뜻. 비용 예측이 중요한 워크로드에선 t3를 standard 모드로 명시적 전환하거나 m 시리즈를 쓰는 게 안전하다.
 
-> ⚠️ **함정**: t3.medium을 "프로덕션 API 서버"로 쓰는 건 시험에서 거의 항상 오답이다. 트래픽이 baseline 30%를 자주 넘으면 credit이 빠르게 소진되고, unlimited 비용이 m5보다 비싸지는 경계점이 있다. AWS Compute Optimizer가 이를 분석해 패밀리 변경을 추천한다.
-
-> 💡 **관련 이론**: t 시리즈의 credit 모델은 token bucket 알고리즘의 변형이다. 토큰(=credit)이 일정 속도로 채워지고, 사용 시 토큰을 소비한다. 토큰이 비면 throttle 또는 추가 과금. TCP traffic shaping, API Gateway throttling, DynamoDB provisioned throughput까지 모두 같은 패턴이다. AWS는 이 알고리즘을 "burstable capacity"라는 이름으로 여러 곳에 재사용한다.
+> ⚠️ **함정**: t3.medium을 "프로덕션 API 서버"로 쓰는 건 시험에서 오답 보기로 쓰이기 쉽다. 트래픽이 baseline 30%를 자주 넘으면 credit이 빠르게 소진되고, unlimited 비용이 m5보다 비싸지는 경계점이 있다. AWS Compute Optimizer가 이를 분석해 패밀리 변경을 추천한다.
 
 ## AMI: 디스크 이미지 + 메타데이터
 
@@ -93,9 +87,7 @@ AMI 종류는 3가지다.
 
 AMI는 **리전 단위**로 존재한다. us-east-1에서 만든 AMI를 ap-northeast-2에서 쓰려면 `CopyImage` API로 복사해야 한다. 복사 시 ID가 바뀌고, EBS 스냅샷도 같이 복사된다(별도 비용).
 
-> 📚 **사례**: 2018년 Twitter 직원이 실수로 internal AMI를 public으로 공유했다. 이 AMI에는 회사의 root CA 인증서와 SSH 키가 포함돼 있어 신속히 비공개 처리됐다. AWS는 이 사건 이후 `EC2 Image Builder`(2019년 출시)를 통해 AMI 빌드 자동화와 보안 스캐닝, **Image Builder의 자동 패치/감사** 등을 강조하기 시작했다.
-
-> 📚 **사례**: 2023년 보안 연구자들이 AWS Marketplace에 등록된 일부 third-party AMI에 SSH backdoor와 unauthorized cron job이 포함된 사실을 발견했다. AWS는 자동 스캔 정책을 강화했지만, 사용자가 직접 AMI fingerprint를 확인하는 게 안전하다. 실무에서는 신뢰할 수 있는 AMI ID를 SSM Parameter Store(`/aws/service/ami-amazon-linux-latest/...`)에서 가져오는 패턴이 표준이다.
+실무에서는 신뢰할 수 있는 AMI ID를 SSM Parameter Store(`/aws/service/ami-amazon-linux-latest/...`)에서 가져오는 패턴이 표준이다.
 
 ## EC2 시작 시퀀스: User Data와 IAM Role
 
@@ -121,9 +113,7 @@ echo "<h1>Hello from $(hostname)</h1>" > /var/www/html/index.html
 systemctl enable --now httpd
 ```
 
-> 🔍 **더 깊이**: user-data는 IMDS의 `http://169.254.169.254/latest/user-data`에서 읽을 수 있다. 그래서 **user-data에 비밀번호나 API key를 박으면 인스턴스 내부 모든 프로세스가 그것을 읽을 수 있다**. IMDSv2 강제, SSM Parameter Store/Secrets Manager 사용, IAM Role 활용이 표준 패턴이다. 시험에 "user-data에 DB 비밀번호를 박았다"는 시나리오가 나오면 거의 항상 오답이고, "Secrets Manager에서 부팅 시 가져오기"가 답이다.
-
-> 💡 **관련 이론**: cloud-init은 RHEL/Ubuntu가 공통으로 사용하는 cloud OS 초기화 프레임워크다. 2009년 Canonical(Ubuntu)이 EC2 부팅을 자동화하기 위해 만들었고, 지금은 AWS, GCP, Azure, OpenStack, 로컬 KVM 등 거의 모든 환경에서 동작한다. user-data를 cloud-config YAML로 쓰면 YAML 선언적 명세로 패키지 설치·사용자 생성·파일 작성을 할 수 있다.
+> 🔍 **더 깊이**: user-data는 IMDS의 `http://169.254.169.254/latest/user-data`에서 읽을 수 있다. 그래서 **user-data에 비밀번호나 API key를 박으면 인스턴스 내부 모든 프로세스가 그것을 읽을 수 있다**. IMDSv2 강제, SSM Parameter Store/Secrets Manager 사용, IAM Role 활용이 표준 패턴이다. 시험에 "user-data에 DB 비밀번호를 박았다"는 시나리오가 나오면 오답이고, "Secrets Manager에서 부팅 시 가져오기"가 답이다.
 
 ## Placement Group: 인스턴스를 어디에 둘지
 
@@ -137,7 +127,7 @@ systemctl enable --now httpd
 
 Cluster placement는 인스턴스 간 10 Gbps full-bisection bandwidth를 제공해 MPI(Message Passing Interface) 같은 워크로드에서 latency를 최소화한다. 단점은 하드웨어 장애 시 모든 인스턴스가 같이 죽을 수 있다는 것.
 
-> 🔍 **더 깊이**: Partition placement는 Cassandra·HBase 같은 분산 시스템의 rack awareness와 동일한 발상이다. 각 파티션은 서로 다른 랙·전원·네트워크 스위치에 매핑된다. 데이터 복제본을 다른 파티션에 두면 한 파티션이 죽어도 데이터가 살아남는다. AWS는 AZ당 최대 7개 파티션을 지원하므로, 7개 복제본까지 자연스럽게 격리할 수 있다.
+Partition placement는 Cassandra·HBase 같은 분산 시스템의 rack awareness와 동일한 발상이다. 각 파티션은 서로 다른 랙·전원·네트워크 스위치에 매핑된다. 데이터 복제본을 다른 파티션에 두면 한 파티션이 죽어도 데이터가 살아남는다. AWS는 AZ당 최대 7개 파티션을 지원하므로, 7개 복제본까지 자연스럽게 격리할 수 있다.
 
 ## 가격 모델 4가지
 
@@ -149,9 +139,9 @@ Cluster placement는 인스턴스 간 10 Gbps full-bisection bandwidth를 제공
 | Spot | 최대 90% 할인 | 2분 사전 통보 후 회수 가능 | fault-tolerant 배치 작업 |
 | Dedicated Host | 고가 | 물리 서버 전용 | BYOL 라이선스, 규제 |
 
-> 💡 **암기 팁**: Spot은 "**아무 때나 죽어도 되는**" 워크로드만. CI 빌드, 배치 분석, fault-tolerant 작업. 시험에 "stateless and can be interrupted"가 보이면 Spot 답.
+Spot은 "**아무 때나 죽어도 되는**" 워크로드만. CI 빌드, 배치 분석, fault-tolerant 작업. 시험에 "stateless and can be interrupted"가 보이면 Spot 답.
 
-> 🔍 **더 깊이**: Spot 가격은 AWS 내부 수요에 따라 동적으로 결정된다. 예전엔 명시적 입찰(maximum bid price)이 필요했지만, 2018년 이후 단순화돼 max price를 명시 안 하면 On-Demand 가격을 상한선으로 자동 적용한다. Spot 회수는 항상 2분 사전 통보(spot interruption notice via IMDS의 `latest/meta-data/spot/instance-action`)와 함께 오므로, 워크로드가 이 신호를 듣고 graceful shutdown 하도록 만든다. Spot Fleet과 EC2 Fleet은 여러 인스턴스 타입·AZ를 혼합해 회수율을 분산시킨다.
+Spot 가격은 AWS 내부 수요에 따라 동적으로 결정된다. 예전엔 명시적 입찰(maximum bid price)이 필요했지만, 2018년 이후 단순화돼 max price를 명시 안 하면 On-Demand 가격을 상한선으로 자동 적용한다. Spot 회수는 항상 2분 사전 통보(spot interruption notice via IMDS의 `latest/meta-data/spot/instance-action`)와 함께 오므로, 워크로드가 이 신호를 듣고 graceful shutdown 하도록 만든다. Spot Fleet과 EC2 Fleet은 여러 인스턴스 타입·AZ를 혼합해 회수율을 분산시킨다.
 
 ## CLI로 EC2 시작
 
@@ -168,11 +158,11 @@ aws ec2 run-instances \
   --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=web-1}]'
 ```
 
-`HttpTokens=required`로 IMDSv2 강제, IAM 인스턴스 프로파일로 자격증명 자동 주입, 태그로 식별. 이 7가지 옵션을 기억하면 실무에서 거의 모든 EC2 시작 시나리오를 다룰 수 있다.
+`HttpTokens=required`로 IMDSv2 강제, IAM 인스턴스 프로파일로 자격증명 자동 주입, 태그로 식별. 이 옵션들을 기억하면 실무의 기본적인 EC2 시작 시나리오를 다룰 수 있다.
 
-## 정리하며
+## 정리
 
-EC2의 핵심은 **Nitro 하이퍼바이저 + 인스턴스 패밀리의 워크로드 적합도 + AMI 라이프사이클**이다. 패밀리 한 글자(t/m/c/r/x/i/d/p/g)로 적합한 워크로드를 식별하고, Graviton(g 접미사)으로 비용을 줄이고, t 시리즈의 credit 모델을 이해하면 시험에서 EC2 관련 문제 대부분이 풀린다.
+EC2의 핵심은 **Nitro 하이퍼바이저 + 인스턴스 패밀리의 워크로드 적합도 + AMI 라이프사이클**이다. 패밀리 한 글자(t/m/c/r/x/i/d/p/g)로 적합한 워크로드를 식별하고, Graviton(g 접미사)으로 비용을 줄이고, t 시리즈의 credit 모델을 이해하면 시험의 EC2 관련 문제를 푸는 기본기가 된다.
 
 다음 글에서는 EC2의 네트워크 통제 — 보안 그룹, 키 페어, user-data 보안 — 를 본다.
 

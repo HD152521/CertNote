@@ -2,7 +2,7 @@
 
 이번 주를 시작할 때만 해도 "Code* 시리즈가 다섯 개나 있다"는 게 부담이었을 텐데, 한 주를 지나고 보면 다섯 서비스가 사실은 한 흐름의 다섯 단계라는 게 보인다. CodeCommit이 코드를 받고, CodeBuild가 빌드하고, CodeDeploy가 배포하고, CodePipeline이 그 전체를 이어 붙이고, Elastic Beanstalk가 모든 걸 한 번에 추상화한다. 이 흐름을 머릿속에서 막힘없이 그릴 수 있으면 DVA-C02의 CI/CD 영역은 사실상 끝난다.
 
-이번 글은 단순 요약이 아니다. **각 서비스를 다시 한 번 깊이 비교**하고, **이번 주에 자주 헷갈렸던 함정들을 일렬로 정리**하고, **실전 시험 유형의 시나리오 문제 12개**로 점검한다. 마지막 점검은 "정답을 맞히는 것"이 아니라 "왜 다른 보기는 틀렸는지를 설명할 수 있는가"의 자체 채점이다.
+이번 글은 단순 요약이 아니다. **각 서비스를 다시 한 번 깊이 비교**하고, **이번 주에 헷갈리기 쉬운 함정들을 일렬로 정리**하고, **실전 시험 유형의 시나리오 문제 12개**로 점검한다. 마지막 점검은 "정답을 맞히는 것"이 아니라 "왜 다른 보기는 틀렸는지를 설명할 수 있는가"의 자체 채점이다.
 
 ## 5개 서비스의 본질을 한 줄로
 
@@ -16,11 +16,11 @@
 | **CodePipeline** | "여러 도구를 순서대로 자동 연결하는 워크플로우 엔진" | 파이프라인 = stage + action |
 | **Elastic Beanstalk** | "코드만 던지면 인프라 전체를 자동 구성하는 PaaS" | 환경 = CloudFormation 스택 |
 
-> 💡 **관련 이론**: 이 다섯 서비스의 분리는 "Single Responsibility Principle"의 시스템 레벨 적용이다. 한 서비스가 모든 걸 하는 monolith를 만드는 대신, 각 서비스가 하나의 책임만 갖고 잘 정의된 인터페이스(IAM, S3 artifact, EventBridge)로 연결되도록 설계했다. 그래서 어느 한 서비스만 별도로 쓰는 것도 가능하다(예: CodeBuild만 쓰고 다른 CI는 Jenkins, 배포는 GitHub Actions). 시험에서 "Code* 시리즈는 반드시 함께 써야 한다"는 보기는 항상 오답이다.
+> 💡 **관련 이론**: 이 다섯 서비스의 분리는 "Single Responsibility Principle"의 시스템 레벨 적용이다. 한 서비스가 모든 걸 하는 monolith를 만드는 대신, 각 서비스가 하나의 책임만 갖고 잘 정의된 인터페이스(IAM, S3 artifact, EventBridge)로 연결되도록 설계했다. 그래서 어느 한 서비스만 별도로 쓰는 것도 가능하다(예: CodeBuild만 쓰고 다른 CI는 Jenkins, 배포는 GitHub Actions). "Code* 시리즈는 반드시 함께 써야 한다"는 보기는 오답이다.
 
 ## 헷갈리기 쉬운 비교 25쌍
 
-이번 주 학습 중 가장 자주 혼동되는 개념 쌍을 모두 정리한다. 시험 직전 마지막 점검용.
+이번 주 학습 중 혼동하기 쉬운 개념 쌍을 모두 정리한다. 시험 직전 마지막 점검용.
 
 | A | B | 핵심 차이 |
 |---|---|----------|
@@ -52,7 +52,7 @@
 
 ## 이번 주의 함정 20가지
 
-시험에서 자주 나오는 미세 함정들을 정리한다. 하나하나가 단독 출제 가능.
+시험에서 구분해야 하는 미세한 함정을 정리한다. 하나하나가 단독 문항이 될 수 있다.
 
 1. **CodeCommit은 2024년 7월부터 신규 가입 불가** — 그러나 기존 고객은 계속 사용, 시험엔 여전히 출제.
 2. **HTTPS Git Credentials는 IAM 콘솔 로그인 비밀번호와 별개** — 별도 발급 필요.
@@ -75,7 +75,7 @@
 19. **Beanstalk 환경 안에 RDS를 만들면 환경 삭제 시 함께 삭제** — production은 외부에.
 20. **Beanstalk Worker는 ALB가 없고 SQS Daemon이 HTTP로 변환** — application은 일반 HTTP 서버.
 
-## DVA-C02 특화 주제: 시험 자주 출제되는 5가지 깊이 포인트
+## DVA-C02 특화 주제: 5가지 깊이 포인트
 
 ### 1. Lambda Firecracker와 CodeBuild Lambda compute
 
@@ -89,7 +89,7 @@ CodeBuild가 결과를 DynamoDB에 저장하는 패턴, 또는 Lambda + DynamoDB
 
 ### 3. API Gateway와 SigV4
 
-API Gateway에 IAM 인증을 설정하면 클라이언트가 모든 요청을 SigV4로 서명해야 한다. CodeBuild에서 API Gateway 호출 시 자동으로 SigV4 서명 가능(boto3/aws-sdk가 처리). 시험에서 "Lambda → API Gateway 호출 시 IAM 인증" 시나리오가 흔하다.
+API Gateway에 IAM 인증을 설정하면 클라이언트가 모든 요청을 SigV4로 서명해야 한다. CodeBuild에서 API Gateway 호출 시 자동으로 SigV4 서명 가능(boto3/aws-sdk가 처리). "Lambda → API Gateway 호출 시 IAM 인증" 시나리오가 있다.
 
 ### 4. SQS at-least-once와 Beanstalk Worker
 
@@ -101,7 +101,7 @@ Beanstalk Worker 환경의 SQS Daemon은 SQS의 **at-least-once delivery**를 �
 
 ## CI/CD 전체 흐름 한 번에 그리기
 
-이번 주의 모든 서비스가 함께 동작하는 production-grade CI/CD를 한 번 그려보자.
+이번 주의 모든 서비스가 함께 동작하는 production-grade CI/CD를 한 번에 그리면 다음과 같다.
 
 ```
 [개발자] git push origin feature/new-api
@@ -152,8 +152,6 @@ Beanstalk Worker 환경의 SQS Daemon은 SQS의 **at-least-once delivery**를 �
                  - CloudWatch Alarm 위반 시 자동 롤백
 ```
 
-> 📚 **사례**: Airbnb는 2019년 InfoQ 발표에서 자체 CI/CD 파이프라인의 변천사를 공유했다. 처음에는 Jenkins monolith → 마이크로서비스화하면서 각 팀이 자체 파이프라인 → 결국 표준화된 "deploy board"라는 추상화로 회귀. 핵심 교훈은 "파이프라인 자체가 너무 다양해지면 운영 부담이 폭증한다, 표준 템플릿이 필수"였다. AWS의 CodePipeline + CloudFormation 조합으로 같은 패턴을 만들 수 있다 — CFN으로 파이프라인 템플릿을 정의해두면 모든 신규 서비스가 같은 모양의 파이프라인을 자동 갖춤.
-
 ## 다른 클라우드의 동등 서비스 매핑
 
 | AWS | GCP | Azure |
@@ -165,13 +163,11 @@ Beanstalk Worker 환경의 SQS Daemon은 SQS의 **at-least-once delivery**를 �
 | Elastic Beanstalk | App Engine / Cloud Run | Azure App Service |
 | CodeArtifact | Artifact Registry | Azure Artifacts |
 
-> 💡 **관련 이론**: GCP는 처음부터 통합 도구(Cloud Build)로 시작해 추후 deploy 도구를 분리했고, Azure는 GitHub 인수 후 GitHub Actions와 Azure Pipelines가 공존하는 어색한 구조다. AWS는 4개 도구를 분리하고 CodePipeline으로 연결하는 모델인데, 이는 "각 도구가 단독으로도 가치 있어야 한다"는 분리 철학과 "조합 시 시너지"라는 통합 철학의 균형이다.
+## 정리
 
-## 정리하며
+CI/CD의 핵심은 "사람이 매번 수동으로 하던 release 절차를, 한 번 정의해두면 그 다음부터는 자동으로 흘러간다"는 한 가지 약속이다. 그 약속의 구체적 구현이 이번 주의 5개 서비스이고, 각 서비스는 자기 자리에서 한 가지 역할만 잘 한다.
 
-CI/CD라는 단어를 너무 신비하게 보지 말자. 핵심은 "사람이 매번 수동으로 하던 release 절차를, 한 번 정의해두면 그 다음부터는 자동으로 흘러간다"는 한 가지 약속이다. 그 약속의 구체적 구현이 이번 주의 5개 서비스이고, 각 서비스는 자기 자리에서 한 가지 역할만 잘 한다.
-
-DVA-C02 시험 직전 점검 포인트: ① 5개 서비스의 역할 1줄 매핑 ② CodeDeploy 배포 전략별 trade-off ③ Lambda 배포 9가지 사전 정의 구성 ④ Beanstalk 6가지 배포 전략 ⑤ CodePipeline V2 신기능. 이 5가지를 자기 언어로 30초 안에 설명할 수 있으면 출제 범위의 80%를 잡는다.
+DVA-C02 시험 직전 점검 포인트: ① 5개 서비스의 역할 1줄 매핑 ② CodeDeploy 배포 전략별 trade-off ③ Lambda 배포 9가지 사전 정의 구성 ④ Beanstalk 6가지 배포 전략 ⑤ CodePipeline V2 신기능. 이 5가지를 자기 언어로 30초 안에 설명할 수 있어야 한다.
 
 다음 주에는 데이터 보안, IAM, KMS, Secrets Manager — DVA-C02의 또 다른 핵심 축인 보안 영역을 본다.
 
