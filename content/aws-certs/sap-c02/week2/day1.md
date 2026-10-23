@@ -17,13 +17,13 @@
 | **규제·감사 (Compliance)** | 데이터 혼재 | 감사 범위 좁힘 (PCI·HIPAA) | NIST SP 800-53 AC-4 |
 | **운영 (Operations)** | IAM 정책 복잡도 폭증 | 계정 단위로 단순화 | DDD Bounded Context |
 
-> 💡 **관련 이론**: **Blast Radius**는 Netflix의 Chaos Engineering 팀이 정착시킨 용어다. Netflix Chaos Monkey가 인스턴스를 무작위로 죽일 때, "한 인스턴스 죽음이 얼마나 많은 사용자에게 영향을 미치는가"를 측정하는 게 blast radius다. 계정은 이 반경의 가장 강한 차단막이다 — AWS는 계정 경계에서 IAM, 네트워크, API 호출이 모두 차단된다. 같은 사상이 Michael Nygard의 *Release It!*(2007)에서 **Bulkhead 패턴**으로 정리됐다. 선박의 격벽처럼 한 칸이 침수돼도 다른 칸은 살아남게 하는 설계.
+**Blast Radius**는 Netflix의 Chaos Engineering 팀이 정착시킨 용어다. Netflix Chaos Monkey가 인스턴스를 무작위로 죽일 때, "한 인스턴스 죽음이 얼마나 많은 사용자에게 영향을 미치는가"를 측정하는 게 blast radius다. 계정은 이 반경의 가장 강한 차단막이다 — AWS는 계정 경계에서 IAM, 네트워크, API 호출이 모두 차단된다. 같은 사상이 Michael Nygard의 『Release It!』(2007)에서 **Bulkhead 패턴**으로 정리됐다. 선박의 격벽처럼 한 칸이 침수돼도 다른 칸은 살아남게 하는 설계.
 
-> 💡 **관련 이론**: **Bounded Context**는 Eric Evans의 *Domain-Driven Design*(2003) 핵심 개념. 서로 다른 도메인 모델이 같은 코드베이스에 섞이면 의미 충돌(Order는 결제팀에서는 청구서지만, 물류팀에서는 배송 단위)이 일어난다. 도메인별로 코드와 데이터를 격리하라는 게 BC의 핵심. AWS 계정은 **인프라 레벨의 Bounded Context**다. 결제 도메인과 물류 도메인이 같은 계정에 살면 IAM 정책이 두 도메인 모두를 고려해 비대해진다. 계정을 나누면 각 계정 안의 IAM은 단순해진다.
+**Bounded Context**는 Eric Evans의 *Domain-Driven Design*(2003) 핵심 개념. 서로 다른 도메인 모델이 같은 코드베이스에 섞이면 의미 충돌(Order는 결제팀에서는 청구서지만, 물류팀에서는 배송 단위)이 일어난다. 도메인별로 코드와 데이터를 격리하라는 게 BC의 핵심. AWS 계정은 **인프라 레벨의 Bounded Context**다. 결제 도메인과 물류 도메인이 같은 계정에 살면 IAM 정책이 두 도메인 모두를 고려해 비대해진다. 계정을 나누면 각 계정 안의 IAM은 단순해진다.
 
-> 🔍 **더 깊이**: AWS 계정 경계의 강력함은 API 레벨에서 명시적으로 구현돼 있다. 한 계정의 IAM User는 다른 계정의 리소스를 **기본적으로 절대 못 본다**. 보려면 (1) Cross-Account Role + (2) Resource Policy + (3) STS AssumeRole이라는 세 게이트를 모두 통과해야 한다. 반면 같은 계정 안에서는 IAM 정책 하나만 잘못 쓰면 다른 팀 리소스에 접근 가능. 그래서 "Dev/Prod 분리" 같은 격리는 IAM이 아니라 **계정 분리**로 강제하는 게 표준.
+AWS 계정 경계의 강력함은 API 레벨에서 명시적으로 구현돼 있다. 한 계정의 IAM User는 다른 계정의 리소스를 **기본적으로 절대 못 본다**. 보려면 (1) Cross-Account Role + (2) Resource Policy + (3) STS AssumeRole이라는 세 게이트를 모두 통과해야 한다. 반면 같은 계정 안에서는 IAM 정책 하나만 잘못 쓰면 다른 팀 리소스에 접근 가능. 그래서 "Dev/Prod 분리" 같은 격리는 IAM이 아니라 **계정 분리**로 강제하는 게 표준.
 
-> 📚 **사례**: 2019년 Capital One 사고에서는 잘못 구성된 WAF를 통한 SSRF로 탈취된 EC2 IAM Role 하나의 권한으로 많은 S3 버킷의 데이터를 읽을 수 있었다. 데이터가 별도 계정에 격리되고 그 역할의 권한이 좁았다면 폭발 반경은 훨씬 작았을 것이다. 이처럼 워크로드와 데이터를 계정 단위로 격리하는 사상이 AWS Control Tower의 Account Factory에 반영돼 있다.
+2019년 Capital One 사고에서는 잘못 구성된 WAF를 통한 SSRF로 탈취된 EC2 IAM Role 하나의 권한으로 많은 S3 버킷의 데이터를 읽을 수 있었다. 데이터가 별도 계정에 격리되고 그 역할의 권한이 좁았다면 폭발 반경은 훨씬 작았을 것이다. 이처럼 워크로드와 데이터를 계정 단위로 격리하는 사상이 AWS Control Tower의 Account Factory에 반영돼 있다.
 
 ## AWS Organizations 구조: Root, OU, Account의 3층
 
@@ -48,9 +48,9 @@ Root
 - **Member Account**: OU 안에 들어가는 일반 계정.
 - **OU (Organizational Unit)**: 계정의 컨테이너. 최대 5단계 중첩.
 
-> 🔍 **더 깊이**: OU의 최대 깊이는 5단계지만 실무에서 3단계 이상 가는 경우는 거의 없다. AWS SRA(Security Reference Architecture) 권장은 2-3단계다. 예: Root → Workloads → Prod → App-A-Prod 계정 (3단계). 깊어질수록 SCP 평가 비용이 늘고 운영 복잡도가 폭증한다.
+OU의 최대 깊이는 5단계지만 실무에서 3단계 이상 가는 경우는 거의 없다. AWS SRA(Security Reference Architecture) 권장은 2-3단계다. 예: Root → Workloads → Prod → App-A-Prod 계정 (3단계). 깊어질수록 SCP 평가 비용이 늘고 운영 복잡도가 폭증한다.
 
-> 🔍 **더 깊이**: Organizations의 백엔드는 **Eventually Consistent**다. SCP 변경이 모든 계정에 전파되는 데 수 분이 걸릴 수 있다. CloudTrail의 OrganizationsAggregator에서 `attachPolicy` 이벤트를 본 후 즉시 효과를 기대하면 안 된다. Pro 시험에서 "SCP를 부착한 직후 Lambda가 즉시 차단해야 한다" 같은 보기가 함정인 이유.
+Organizations의 백엔드는 **Eventually Consistent**다. SCP 변경이 모든 계정에 전파되는 데 수 분이 걸릴 수 있다. CloudTrail의 OrganizationsAggregator에서 `attachPolicy` 이벤트를 본 후 즉시 효과를 기대하면 안 된다. Pro 시험에서 "SCP를 부착한 직후 Lambda가 즉시 차단해야 한다" 같은 보기가 함정인 이유.
 
 > ⚠️ **함정**: Management 계정에는 SCP가 적용되지 않는다(의도된 동작). Management의 root 사용자는 Org 자체를 삭제할 수 있는 유일한 Principal이므로 SCP로도 막을 수 없다. 그래서 Management의 root는 (1) MFA 하드웨어 토큰 강제, (2) 이메일 주소를 root 전용 별도 alias로, (3) 평시 비밀번호 복구 불가능하게 설정한 후 봉인하는 게 표준.
 
@@ -66,7 +66,7 @@ AWS 공식 SRA가 권장하는 OU 구조는 다음 5개를 기본으로 한다.
 | **Sandbox** | 개발자 실험 (제한된 SCP로 격리) | Developer Personal |
 | **PolicyStaging** | SCP 시험용 (선택) | Policy Test |
 
-> 💡 **암기 팁**: OU는 "조직도"가 아니라 **"공통 정책 단위"**로 묶는다. 같은 SCP가 적용될 계정끼리 묶는 게 OU의 본질. 회사 조직도(영업팀·개발팀·인사팀)를 그대로 OU로 만들면 OU 간에 공통 정책이 거의 없어 SCP가 무의미해진다.
+OU는 "조직도"가 아니라 **"공통 정책 단위"**로 묶는다. 같은 SCP가 적용될 계정끼리 묶는 게 OU의 본질. 회사 조직도(영업팀·개발팀·인사팀)를 그대로 OU로 만들면 OU 간에 공통 정책이 거의 없어 SCP가 무의미해진다.
 
 > 🎯 **시나리오**: "한 글로벌 금융사가 미국·유럽·아시아 3개 지역에서 동시 운영한다. 각 지역마다 별도 규제(SOX, GDPR, PCI-K)가 적용된다. OU를 어떻게 설계?" — 답: **지역별 OU(US/EU/APAC) + 각 안에 Prod/Non-Prod 중첩**. 같은 SCP(예: GDPR 데이터 주권)는 EU OU에만 적용. PCI-DSS는 모든 지역의 결제 워크로드에 공통이므로 별도 PCI OU로 또 분리 가능. 핵심: SCP가 공통으로 적용될 단위로 묶는 것.
 
@@ -81,9 +81,9 @@ AWS 공식 SRA가 권장하는 OU 구조는 다음 5개를 기본으로 한다.
 | 마이크로서비스 (100개) | ⚠️ 일부 분리 | 도메인 단위(예: Payment, Inventory)로 |
 | 리전 | ❌ 분리 X | 계정은 글로벌, 리전은 한 계정 안에서 선택 |
 
-> 🔍 **더 깊이**: "마이크로서비스마다 계정"은 흔한 over-engineering이다. 100개 서비스 = 100개 계정으로 가면 (1) IAM Identity Center Permission Set 매핑 폭발, (2) Cross-Account 호출이 모든 곳에서 발생, (3) CloudTrail Org Trail의 이벤트 노이즈 폭증. Netflix·Amazon 같은 빅테크도 도메인(Bounded Context) 단위로 묶고, 각 도메인 안에서 IAM Role로 서비스를 분리한다. Pro 시험에서 "마이크로서비스마다 계정 분리" 보기는 보통 함정.
+"마이크로서비스마다 계정"은 흔한 over-engineering이다. 100개 서비스 = 100개 계정으로 가면 (1) IAM Identity Center Permission Set 매핑 폭발, (2) Cross-Account 호출이 모든 곳에서 발생, (3) CloudTrail Org Trail의 이벤트 노이즈 폭증. Netflix·Amazon 같은 빅테크도 도메인(Bounded Context) 단위로 묶고, 각 도메인 안에서 IAM Role로 서비스를 분리한다. Pro 시험에서 "마이크로서비스마다 계정 분리" 보기는 보통 함정.
 
-> 📚 **사례**: Capital One은 사고 후 약 **2,500개 계정**으로 확장했다(2022 기준). 하지만 모든 계정은 자동화된 vending machine으로 생성되고, 베이스라인이 일관되며, SCM(Source Control)에서 IaC로 관리된다. 즉 계정 수가 많아도 운영 부담이 적은 이유는 **자동화**다. 자동화 없이 계정만 늘리면 운영팀이 무너진다.
+Capital One은 사고 후 약 **2,500개 계정**으로 확장했다(2022 기준). 하지만 모든 계정은 자동화된 vending machine으로 생성되고, 베이스라인이 일관되며, SCM(Source Control)에서 IaC로 관리된다. 즉 계정 수가 많아도 운영 부담이 적은 이유는 **자동화**다. 자동화 없이 계정만 늘리면 운영팀이 무너진다.
 
 ## Management 계정의 위험과 격리 패턴
 
@@ -101,7 +101,7 @@ Management 계정은 Organizations의 본부다. 침해되면 모든 멤버 계�
 
 > ⚠️ **함정**: SCP는 Management 계정에 적용 안 됨. 결제는 Management로 합산되지만 정책은 멤버에만. Pro 시험에서 "Management 계정에서 비인가 리전 사용을 SCP로 차단"이라는 보기는 100% 함정.
 
-> 🔍 **더 깊이**: 2022년 AWS는 **GovCloud / China Regions / 별도 partition** 환경에서 Organizations의 trust 모델을 더 강화하는 업데이트를 했다. Management 계정의 IAM User를 별도 partition으로 옮기거나 break-glass 절차를 자동화하는 패턴이 일반화됐다. 일부 대기업은 Management 계정에 **두 명 동시 로그인 강제**(two-person rule) + 모든 액션을 SNS로 보안팀 전송. 핵 발사 절차와 비슷한 dual control.
+2022년 AWS는 **GovCloud / China Regions / 별도 partition** 환경에서 Organizations의 trust 모델을 더 강화하는 업데이트를 했다. Management 계정의 IAM User를 별도 partition으로 옮기거나 break-glass 절차를 자동화하는 패턴이 일반화됐다. 일부 대기업은 Management 계정에 **두 명 동시 로그인 강제**(two-person rule) + 모든 액션을 SNS로 보안팀 전송. 핵 발사 절차와 비슷한 dual control.
 
 ## 신규 계정 자동 생성: 4가지 옵션
 
@@ -112,7 +112,7 @@ Management 계정은 Organizations의 본부다. 침해되면 모든 멤버 계�
 | **AFT (Account Factory for Terraform)** | IaC 기반, GitOps | Terraform 사용 조직 |
 | **API: `CreateAccount`** | 사용자 정의 자동화 | 자체 vending machine |
 
-> 🔍 **더 깊이**: `CreateAccount` API는 비동기다. 호출하면 `CreateAccountRequestId`만 반환되고, 실제 계정 생성은 백엔드에서 수 분~수 시간 걸린다. `DescribeCreateAccountStatus`로 polling 필요. 일괄 100개를 만들면 quota throttling이 발생할 수 있어 SQS + Step Functions로 직렬화하는 게 표준 패턴.
+`CreateAccount` API는 비동기다. 호출하면 `CreateAccountRequestId`만 반환되고, 실제 계정 생성은 백엔드에서 수 분~수 시간 걸린다. `DescribeCreateAccountStatus`로 polling 필요. 일괄 100개를 만들면 quota throttling이 발생할 수 있어 SQS + Step Functions로 직렬화하는 게 표준 패턴.
 
 ## Consolidated Billing: 결제 통합의 효과
 
@@ -123,15 +123,15 @@ Management 계정은 Organizations의 본부다. 침해되면 모든 멤버 계�
 | **RI·Savings Plans 공유** | Management/Org 단위 공유, 안 쓴 SP를 다른 계정이 사용 |
 | **데이터 전송 등급 할인 합산** | 전체 outbound 합산하여 단계 할인 |
 
-> 💡 **암기 팁**: Org 가입만으로 자동 적용. 별도 설정 불필요. RI/SP 공유는 **Linked Account Sharing** 옵션이 켜져 있어야 함(기본 ON).
+Org 가입만으로 자동 적용. 별도 설정 불필요. RI/SP 공유는 **Linked Account Sharing** 옵션이 켜져 있어야 함(기본 ON).
 
-> ⚠️ **함정**: Cost Explorer는 Management 계정에서만 전체 보기 가능. 멤버 계정은 자기 계정만 본다. 부서별 비용 분리하려면 **Cost Allocation Tag**를 활성화하고 모든 리소스에 태그 부착이 필수.
+Cost Explorer는 Management 계정에서만 전체 보기 가능. 멤버 계정은 자기 계정만 본다. 부서별 비용 분리하려면 **Cost Allocation Tag**를 활성화하고 모든 리소스에 태그 부착이 필수.
 
 ## Trusted Access와 Delegated Administrator
 
 특정 AWS 서비스(CloudFormation StackSets, GuardDuty, Security Hub, Config, IAM Access Analyzer 등)가 Org 단위로 작동하려면 **"Trusted Access"** 활성화 필요. 이 후 **Delegated Administrator**로 위임 가능.
 
-> 🔍 **더 깊이**: Delegated Administrator는 Management 계정이 직접 보안 도구를 운영하는 부담을 줄인다. 예: Management는 결제만, Audit 계정이 GuardDuty Delegated Admin이 되어 모든 멤버의 위협 탐지 결과를 모음. 이게 보안 팀과 결제 팀의 책임 분리를 가능하게 하는 핵심 패턴.
+Delegated Administrator는 Management 계정이 직접 보안 도구를 운영하는 부담을 줄인다. 예: Management는 결제만, Audit 계정이 GuardDuty Delegated Admin이 되어 모든 멤버의 위협 탐지 결과를 모음. 이게 보안 팀과 결제 팀의 책임 분리를 가능하게 하는 핵심 패턴.
 
 ## CLI로 직접 보기
 
@@ -164,11 +164,11 @@ aws organizations list-organizational-units-for-parent --parent-id r-xxxx
 aws organizations list-accounts-for-parent --parent-id ou-yyyy
 ```
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 셋이다. 첫째, 멀티 계정은 **격리·청구·규제·운영** 네 가지 별개 차원을 동시에 푸는 도구다. 둘째, Organizations는 **Root → OU → Account**의 3층 위에서 동작하며 OU는 조직도가 아니라 공통 정책 단위로 묶는다. 셋째, Management 계정은 결제·Org 관리만 두고 워크로드는 절대 배포하지 않으며, 신규 계정은 Account Factory(또는 AFT)로 자동화한다.
 
-이 세 그림이 도메인 1의 출발점이다. 다음 글에서는 OU 위에 부착되는 **Service Control Policy(SCP)**를 본다. SCP는 Pro 시험에서 가장 자주 등장하는 단일 주제이고, "ceiling일 뿐 권한 부여는 아니다"라는 한 줄을 정확히 이해하는 게 합격선의 절반이다.
+이 세 그림이 도메인 1의 출발점이다. 다음 글에서는 OU 위에 부착되는 **Service Control Policy(SCP)**를 본다. SCP는 Pro 시험 범위의 핵심 주제이고, "ceiling일 뿐 권한 부여는 아니다"라는 한 줄을 정확히 이해하는 게 합격선의 절반이다.
 
 ---
 
