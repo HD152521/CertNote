@@ -1,6 +1,6 @@
 # Day 2 - IAM·STS·Federation: 권한이라는 단어를 여섯 층으로 쪼개기
 
-SAA에서 IAM은 "User, Group, Role, Policy"라는 네 단어로 정리할 수 있었다. Pro에서는 이게 안 통한다. 한 시나리오에 IAM User 정책, IAM Role 정책, Resource-based 정책, Permission Boundary, SCP, Session 정책이 동시에 등장하고 — "**이 사용자가 이 액션을 호출할 수 있는가**"를 묻는 문제가 자주 나온다. 답을 맞히려면 권한 평가의 **6단계 우선순위**를 알아야 한다.
+SAA에서 IAM은 "User, Group, Role, Policy"라는 네 단어로 정리할 수 있었다. Pro에서는 이게 안 통한다. 한 시나리오에 IAM User 정책, IAM Role 정책, Resource-based 정책, Permission Boundary, SCP, Session 정책이 동시에 등장하고 — "**이 사용자가 이 액션을 호출할 수 있는가**"를 묻는 문제가 나온다. 답을 맞히려면 권한 평가의 **6단계 우선순위**를 알아야 한다.
 
 이 글에서는 IAM의 표면을 한 번 더 벗기고, 그 아래에서 실제로 결정이 일어나는 평가 엔진을 본다. 그리고 STS와 Federation이 왜 "엔터프라이즈 멀티 계정 환경의 척추"인지, Capital One·Uber 같은 사고에서 무엇이 망가졌었는지를 짚는다.
 
@@ -31,9 +31,9 @@ SAA에서 IAM은 "User, Group, Role, Policy"라는 네 단어로 정리할 수 �
 
 > 🔍 **더 깊이**: SCP와 Permission Boundary는 둘 다 "권한의 최대치"를 설정하는 가드레일이지만 적용 범위가 다르다. **SCP**는 Organizations의 OU·Account 레벨에 붙어 그 계정 안의 **모든 IAM 엔터티**(root 포함)에 적용된다. **Permission Boundary**는 특정 IAM User·Role에만 붙는다. 즉 SCP는 "이 계정에서는 절대 us-east-1 외 리전 못 씀"을 강제하고, Permission Boundary는 "이 개발자 Role은 절대 IAM·Organizations API 못 호출"을 강제한다. 둘 다 Allow가 아니라 **권한 상한선**이다.
 
-> 💡 **관련 이론**: 이 평가 구조는 **Role-Based Access Control (RBAC, NIST RBAC 표준 INCITS 359-2004)**과 **Attribute-Based Access Control (ABAC, NIST SP 800-162)**의 하이브리드다. IAM Policy의 `Condition` 절은 ABAC를 구현하고(`aws:RequestTag/Project=Phoenix`), 정책 첨부는 RBAC를 구현한다. AWS가 2018년 ABAC를 본격 도입한 이유는 **계정 수가 폭증할 때 RBAC만으로는 정책 관리가 폭발**하기 때문이다. 100개 프로젝트 × 4개 환경(dev/stg/prod/test) = 400개 Role이 필요하지만, ABAC라면 1개 Role + 태그 기반 조건으로 끝난다.
+이 평가 구조는 **Role-Based Access Control (RBAC, NIST RBAC 표준 INCITS 359-2004)**과 **Attribute-Based Access Control (ABAC, NIST SP 800-162)**의 하이브리드다. IAM Policy의 `Condition` 절은 ABAC를 구현하고(`aws:RequestTag/Project=Phoenix`), 정책 첨부는 RBAC를 구현한다. AWS가 2018년 ABAC를 본격 도입한 이유는 **계정 수가 폭증할 때 RBAC만으로는 정책 관리가 폭발**하기 때문이다. 100개 프로젝트 × 4개 환경(dev/stg/prod/test) = 400개 Role이 필요하지만, ABAC라면 1개 Role + 태그 기반 조건으로 끝난다.
 
-> 🎯 **시나리오**: "한 데이터 분석가가 S3 버킷에 접근이 안 된다고 호소한다. IAM 정책은 `s3:*` Allow, 버킷 정책도 Allow. 무엇이 원인일까?" — 답은 보통 **SCP가 리전·서비스 제한**을 걸었거나, **Permission Boundary가 s3:GetObject만 허용**하거나, **버킷이 KMS 암호화되어 있는데 KMS 키 정책이 Deny**된 경우다. Pro 시험은 이런 "왜 안 되는가" 디버깅 시나리오를 자주 묻는다.
+> 🎯 **시나리오**: "한 데이터 분석가가 S3 버킷에 접근이 안 된다고 호소한다. IAM 정책은 `s3:*` Allow, 버킷 정책도 Allow. 무엇이 원인일까?" — 답은 보통 **SCP가 리전·서비스 제한**을 걸었거나, **Permission Boundary가 s3:GetObject만 허용**하거나, **버킷이 KMS 암호화되어 있는데 KMS 키 정책이 Deny**된 경우다. Pro 시험은 이런 "왜 안 되는가" 디버깅 시나리오를 묻는다.
 
 ### Cross-Account 접근: 두 쪽 모두 동의해야 한다
 
@@ -60,9 +60,9 @@ SAA에서 IAM은 "User, Group, Role, Policy"라는 네 단어로 정리할 수 �
 | `GetFederationToken` | IAM User | 15분 ~ 36시간 | 외부 사용자에게 임시 권한 |
 | `GetSessionToken` | IAM User | 15분 ~ 36시간 | MFA 기반 세션 강화 |
 
-> 🔍 **더 깊이**: 임시 자격증명의 핵심은 **세션 토큰(Session Token)**이다. 일반 `AccessKeyId` + `SecretAccessKey`만으로 호출하면 무한히 유효한 자격증명이 되지만, `SessionToken`이 추가되면 STS가 발급한 만료 시한이 강제된다. 또 임시 자격증명은 STS가 내부적으로 발급하는 **JWT 유사 구조**로, AWS Signature V4 서명에 SessionToken을 추가 헤더로 포함해 전송한다. 이게 IMDSv2가 SSRF 공격을 막는 메커니즘과 직결된다(EC2 메타데이터 서비스가 임시 자격증명만 발급, IMDSv2는 PUT 토큰을 강제).
+임시 자격증명의 핵심은 **세션 토큰(Session Token)**이다. 일반 `AccessKeyId` + `SecretAccessKey`만으로 호출하면 무한히 유효한 자격증명이 되지만, `SessionToken`이 추가되면 STS가 발급한 만료 시한이 강제된다. 또 임시 자격증명은 STS가 내부적으로 발급하는 **JWT 유사 구조**로, AWS Signature V4 서명에 SessionToken을 추가 헤더로 포함해 전송한다. 이게 IMDSv2가 SSRF 공격을 막는 메커니즘과 직결된다(EC2 메타데이터 서비스가 임시 자격증명만 발급, IMDSv2는 PUT 토큰을 강제).
 
-> 📚 **사례**: 2019년 7월 Capital One 사건. 공격자가 SSRF 취약점으로 `http://169.254.169.254/latest/meta-data/iam/security-credentials/`에 접근해 EC2 Instance Role의 **임시 자격증명을 탈취**했다. 그 자격증명에는 S3 버킷에 광범위한 접근 권한이 있었고, 1억 600만 명의 데이터가 유출됐다. AWS는 이 사건의 직접적 결과로 **IMDSv2**(2019년 11월)와 **IAM Access Analyzer**(2019년 12월)를 출시했고, 2024년부터는 신규 EC2 인스턴스에서 IMDSv2를 기본으로 강제한다. [DOJ 공소장](https://www.justice.gov/usao-edva/press-release/file/1188626/download).
+2019년 7월 Capital One 사건. 공격자가 SSRF 취약점으로 `http://169.254.169.254/latest/meta-data/iam/security-credentials/`에 접근해 EC2 Instance Role의 **임시 자격증명을 탈취**했다. 그 자격증명에는 S3 버킷에 광범위한 접근 권한이 있었고, 1억 600만 명의 데이터가 유출됐다. AWS는 이 사건의 직접적 결과로 **IMDSv2**(2019년 11월)와 **IAM Access Analyzer**(2019년 12월)를 출시했고, 2024년부터는 신규 EC2 인스턴스에서 IMDSv2를 기본으로 강제한다. [DOJ 공소장](https://www.justice.gov/usao-edva/press-release/file/1188626/download).
 
 ### AssumeRole의 신뢰 정책(Trust Policy)
 
@@ -119,7 +119,7 @@ SAML(Security Assertion Markup Language) 2.0은 2005년 OASIS 표준으로 채�
          [AWS Console / API 사용]
 ```
 
-> 💡 **관련 이론**: SAML 2.0은 **XML Digital Signature**(W3C XMLDSIG)와 **XML Encryption**(W3C XMLENC)을 기반으로 한다. IdP가 SAMLResponse를 X.509 인증서의 private key로 서명하고, SP(AWS)가 public key로 검증한다. 단 SAML은 XML 파싱의 복잡성 때문에 **XML Signature Wrapping 공격**이라는 고유의 보안 문제가 있다. 2012년 USENIX 학회에서 11개의 SaaS·SAML 구현에서 이 취약점이 발견됐고, AWS도 그중 하나였다. AWS는 이후 strict XML schema validation으로 패치.
+SAML 2.0은 **XML Digital Signature**(W3C XMLDSIG)와 **XML Encryption**(W3C XMLENC)을 기반으로 한다. IdP가 SAMLResponse를 X.509 인증서의 private key로 서명하고, SP(AWS)가 public key로 검증한다. 단 SAML은 XML 파싱의 복잡성 때문에 **XML Signature Wrapping 공격**이라는 고유의 보안 문제가 있다. 2012년 USENIX 학회에서 11개의 SaaS·SAML 구현에서 이 취약점이 발견됐고, AWS도 그중 하나였다. AWS는 이후 strict XML schema validation으로 패치.
 
 ### OIDC(OpenID Connect) 기반 Federation
 
@@ -135,7 +135,7 @@ OIDC는 OAuth 2.0 위에 인증 레이어를 얹은 표준이다. JSON 기반이
 
 GitHub Actions가 AWS에 배포할 때 이 방식을 쓴다. **OIDC trust**를 한 번 설정해두면 GitHub Actions의 워크플로우가 별도의 long-lived AWS credential 없이 매번 임시 토큰을 받아 배포한다. 2021년 GitHub이 OIDC를 출시한 이후 "AWS Access Key를 GitHub Secrets에 저장하던 관행"이 빠르게 사라졌다.
 
-> 📚 **사례**: 2017년 Uber 데이터 유출 사고는 직원이 GitHub 공개 저장소에 AWS Access Key를 푸시한 게 원인이었다. 5,700만 사용자 데이터가 유출됐다. 이후 GitHub은 secret scanning을 도입했고, AWS는 IAM Access Analyzer로 노출된 키를 자동 탐지한다. 현재 GitHub Actions에서 OIDC를 쓰면 이런 사고 자체가 불가능해진다(static credential이 아예 없으므로).
+2017년 Uber 데이터 유출 사고는 직원이 GitHub 공개 저장소에 AWS Access Key를 푸시한 게 원인이었다. 5,700만 사용자 데이터가 유출됐다. 이후 GitHub은 secret scanning을 도입했고, AWS는 IAM Access Analyzer로 노출된 키를 자동 탐지한다. 현재 GitHub Actions에서 OIDC를 쓰면 이런 사고 자체가 불가능해진다(static credential이 아예 없으므로).
 
 ### IAM Identity Center (구 AWS SSO)
 
@@ -153,7 +153,7 @@ AWS Identity Center는 SAML 기반의 multi-account SSO 솔루션이다. Organiz
 
 **Permission Set**은 Identity Center 고유 개념으로, "여러 계정에 동일한 IAM Role을 일괄 배포"하는 템플릿이다. 예를 들어 "Developer Permission Set"을 정의하면 Identity Center가 모든 dev 계정에 동일한 Role을 자동 생성·유지한다.
 
-> 🔍 **더 깊이**: Identity Center는 내부적으로 **두 가지 ID 소스**를 지원한다. ① **Identity Center 자체 디렉토리** (소규모) ② **외부 IdP** (AD/Okta/Azure AD via SAML 또는 SCIM). SCIM(System for Cross-domain Identity Management, RFC 7644)은 Azure AD 같은 외부 IdP에서 사용자가 추가·삭제되면 자동으로 AWS에 동기화하는 표준 프로토콜이다. 이게 없으면 직원이 퇴사해도 AWS에서 권한이 살아 있는 ghost user 문제가 생긴다.
+Identity Center는 내부적으로 **두 가지 ID 소스**를 지원한다. ① **Identity Center 자체 디렉터리** (소규모) ② **외부 IdP** (AD/Okta/Azure AD via SAML 또는 SCIM). SCIM(System for Cross-domain Identity Management, RFC 7644)은 Azure AD 같은 외부 IdP에서 사용자가 추가·삭제되면 자동으로 AWS에 동기화하는 표준 프로토콜이다. 이게 없으면 직원이 퇴사해도 AWS에서 권한이 살아 있는 ghost user 문제가 생긴다.
 
 ## Permission Boundary: 위임의 안전판
 
@@ -210,9 +210,9 @@ aws iam simulate-principal-policy \
 | 권한 누설 위험 | 정책 복제 시 실수 | 태그 누락 시 |
 | AWS 도입 | 초기부터 | 2018년 ABAC 기능 추가 |
 
-> 🔍 **더 깊이**: AWS ABAC의 핵심 Condition Key는 `aws:RequestTag/key`(요청자가 만들려는 리소스의 태그), `aws:ResourceTag/key`(이미 존재하는 리소스의 태그), `aws:PrincipalTag/key`(요청자 본인의 태그)다. 이 세 가지를 조합하면 "Project=Phoenix 태그를 가진 사용자는 Project=Phoenix 태그를 가진 EC2만 시작·중지할 수 있다"는 정책을 단 하나의 정책으로 표현할 수 있다. 100개 프로젝트라도 정책은 그대로다. 단 태그 누락은 곧 권한 차단이 되므로, Tag Policy(Organizations 기능)와 함께 강제해야 한다.
+AWS ABAC의 핵심 Condition Key는 `aws:RequestTag/key`(요청자가 만들려는 리소스의 태그), `aws:ResourceTag/key`(이미 존재하는 리소스의 태그), `aws:PrincipalTag/key`(요청자 본인의 태그)다. 이 세 가지를 조합하면 "Project=Phoenix 태그를 가진 사용자는 Project=Phoenix 태그를 가진 EC2만 시작·중지할 수 있다"는 정책을 단 하나의 정책으로 표현할 수 있다. 100개 프로젝트라도 정책은 그대로다. 단 태그 누락은 곧 권한 차단이 되므로, Tag Policy(Organizations 기능)와 함께 강제해야 한다.
 
-## 정리하며
+## 정리
 
 IAM은 SAA에서 "정책 = JSON" 정도였지만 Pro에서는 **6층 평가 엔진**이라는 깊이로 다뤄야 한다. SCP·Permission Boundary·Identity Policy·Resource Policy·Session Policy·VPC Endpoint Policy가 동시에 작동하고, explicit deny는 모든 allow를 이기며, cross-account는 양쪽 모두의 동의가 필요하다.
 

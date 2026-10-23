@@ -17,7 +17,7 @@ Pro 시험에서 단일 서비스만 묻는 문제는 사실상 없다. 어떤 �
 1. SAP-C02 = 75문항 / 180분 / 750점 합격, ESL +30분 신청 가능 (총 210분).
 2. 시나리오 5단계 분해: WHO · WHAT · WHY · CONSTRAINTS · KEYWORD. 마지막 문장의 형용사가 정답을 결정.
 3. 보기 4개 소거 4패턴: 과잉설계 / 과소설계 / 자체구현 / 잘못된 조합.
-4. 3-2-2 규칙: 한 문제 3분 이내, 답 변경 2번 이내, 2분 내 안 풀리면 flag.
+4. 3-2-2 규칙: 한 문제 3분 이내, 답 변경 2번 이내, 2분 내 안 풀리면 플래그.
 5. first-instinct fallacy — 통계적으로 바꾼 답이 더 자주 틀린다. 확실한 근거 없으면 첫 직관 유지.
 
 ### IAM·STS·Federation (6-15)
@@ -44,7 +44,7 @@ Pro 시험에서 단일 서비스만 묻는 문제는 사실상 없다. 어떤 �
 22. **PrivateLink**: SaaS가 자기 NLB 뒤 서비스를 Endpoint Service로 노출, 양방향 라우팅 없음.
 23. SG ID 참조는 같은 VPC·Peered VPC에서만 작동, Transit Gateway는 IP CIDR 참조만.
 24. VPC Flow Logs는 ENI 5-tuple + 결과 기록, payload 없음. Traffic Mirroring은 payload 캡처.
-25. Transit Gateway는 BGP 기반 hub-and-spoke, 5000 VPC까지, route table별 segmentation.
+25. Transit Gateway는 BGP 기반 hub-and-spoke, 5000 VPC까지, 라우팅 테이블별 segmentation.
 26. Direct Connect는 dedicated(전용 회선) vs hosted(파트너 공유), VIF 3종(Private/Public/Transit).
 
 ### EC2·EBS·ELB·ASG (27-40)
