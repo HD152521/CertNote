@@ -28,6 +28,7 @@ describe('OfficialRefs — 참고 공식 자료', () => {
 
   test('외부 링크는 새 탭 + noopener', () => {
     expect(render()).toContain('rel="noopener noreferrer"');
+    expect(render()).toContain('(새 탭에서 열림)');
   });
 
   test('영어판은 영어 문서 경로와 영어 문구', () => {

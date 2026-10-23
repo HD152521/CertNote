@@ -40,6 +40,7 @@ export function OfficialRefs({ certMeta, lang, examUrl, services }: OfficialRefs
             >
               {item.label}
               <ExternalLink aria-hidden className="h-3 w-3 shrink-0" />
+              <span className="sr-only">{s.refsNewTab}</span>
             </a>
           </li>
         ))}

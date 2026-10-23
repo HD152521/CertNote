@@ -35,8 +35,8 @@ export const AWS_SERVICE_DOCS: readonly AwsServiceDoc[] = [
   { id: 'vpc', label: 'Amazon VPC', path: 'vpc', pattern: word('VPC') },
   { id: 'directconnect', label: 'AWS Direct Connect', path: 'directconnect', pattern: word('Direct Connect') },
   { id: 'elb', label: 'Elastic Load Balancing', path: 'elasticloadbalancing', pattern: word('ELB|ALB|NLB|Elastic Load Balancing') },
-  { id: 'autoscaling', label: 'Amazon EC2 Auto Scaling', path: 'autoscaling', pattern: word('Auto Scaling') },
-  { id: 'iam', label: 'AWS IAM', path: 'iam', pattern: word('IAM') },
+  { id: 'autoscaling', label: 'Amazon EC2 Auto Scaling', path: 'autoscaling', pattern: word('(?<!(?:Application|DynamoDB|Aurora) )Auto Scaling|ASG') },
+  { id: 'iam', label: 'AWS IAM', path: 'iam', pattern: word('IAM(?! Identity Center)') },
   { id: 'identity-center', label: 'IAM Identity Center', path: 'singlesignon', pattern: word('IAM Identity Center') },
   { id: 'organizations', label: 'AWS Organizations', path: 'organizations', pattern: word('Organizations|SCP') },
   { id: 'controltower', label: 'AWS Control Tower', path: 'controltower', pattern: word('Control Tower') },
@@ -60,7 +60,7 @@ export const AWS_SERVICE_DOCS: readonly AwsServiceDoc[] = [
   { id: 'codedeploy', label: 'AWS CodeDeploy', path: 'codedeploy', pattern: word('CodeDeploy') },
   { id: 'ecs', label: 'Amazon ECS · Fargate', path: 'ecs', pattern: word('ECS|Fargate') },
   { id: 'eks', label: 'Amazon EKS', path: 'eks', pattern: word('EKS') },
-  { id: 'kinesis', label: 'Amazon Kinesis', path: 'kinesis', pattern: word('Kinesis Data Streams|Kinesis') },
+  { id: 'kinesis', label: 'Amazon Kinesis', path: 'kinesis', pattern: word('Kinesis(?! Data Firehose| Firehose)') },
   { id: 'firehose', label: 'Amazon Data Firehose', path: 'firehose', pattern: word('Firehose') },
   { id: 'msk', label: 'Amazon MSK', path: 'msk', pattern: word('MSK') },
   { id: 'glue', label: 'AWS Glue', path: 'glue', pattern: word('Glue') },
@@ -81,13 +81,27 @@ export const AWS_SERVICE_DOCS: readonly AwsServiceDoc[] = [
 // 걸면 노트와 상관없는 문서 목록이 된다.
 const MIN_MENTIONS = 3;
 const MAX_SERVICES = 5;
+// 제목·소제목(# 줄)에 나온 서비스는 그 노트의 주제다. IAM·S3 처럼 거의 모든 노트 본문에 깔리는
+// 서비스가 횟수만으로 5칸을 차지해 정작 주제(예: Macie)를 밀어내지 않게, 제목 줄 언급에 가중치를 준다.
+const HEADING_WEIGHT = 4;
+// ``` 또는 ~~~ 로 열고 같은 표시로 닫는 코드 블록.
+const FENCED_CODE = /^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[^\n]*$/gm;
+
+const countOf = (text: string, pattern: RegExp) => text.match(pattern)?.length ?? 0;
 
 export function detectAwsServices(markdown: string): AwsServiceDoc[] {
   // 코드 블록(CLI 예제 등)의 이름은 주제가 아니므로 뺀다.
-  const prose = markdown.replace(/```[\s\S]*?```/g, ' ').replace(/`[^`\n]*`/g, ' ');
-  return AWS_SERVICE_DOCS.map((doc, order) => ({ doc, order, count: prose.match(doc.pattern)?.length ?? 0 }))
+  const prose = markdown.replace(FENCED_CODE, ' ').replace(/`[^`\n]*`/g, ' ');
+  const headings = prose
+    .split('\n')
+    .filter((line) => /^#{1,6}\s/.test(line))
+    .join('\n');
+  return AWS_SERVICE_DOCS.map((doc, order) => {
+    const count = countOf(prose, doc.pattern);
+    return { doc, order, count, score: count + HEADING_WEIGHT * countOf(headings, doc.pattern) };
+  })
     .filter((x) => x.count >= MIN_MENTIONS)
-    .sort((a, b) => b.count - a.count || a.order - b.order)
+    .sort((a, b) => b.score - a.score || a.order - b.order)
     .slice(0, MAX_SERVICES)
     .map((x) => x.doc);
 }

@@ -14,7 +14,8 @@ export type TrustKey =
   | 'refsHeading'
   | 'refsExamGuide'
   | 'refsExamSyllabus'
-  | 'refsDocsSuffix';
+  | 'refsDocsSuffix'
+  | 'refsNewTab';
 
 export const trustStrings: Dict<TrustKey> = {
   ko: {
@@ -27,6 +28,7 @@ export const trustStrings: Dict<TrustKey> = {
     refsExamGuide: '{exam} 공식 시험 안내',
     refsExamSyllabus: '{exam} 공식 출제 기준',
     refsDocsSuffix: '공식 문서',
+    refsNewTab: '(새 탭에서 열림)',
   },
   en: {
     basisAws: 'Based on the {exam} exam guide',
@@ -38,5 +40,6 @@ export const trustStrings: Dict<TrustKey> = {
     refsExamGuide: '{exam} official exam page',
     refsExamSyllabus: '{exam} official exam syllabus',
     refsDocsSuffix: 'documentation',
+    refsNewTab: '(opens in a new tab)',
   },
 };
