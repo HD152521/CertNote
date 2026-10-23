@@ -2,7 +2,7 @@
 
 이번 주는 AWS의 데이터 계층 3대 축 — **RDS, ElastiCache, Aurora** — 를 통과했다. 각각이 다른 문제를 풀고, 다른 trade-off를 가진다는 걸 봤다. RDS는 관계형 DB의 운영 부담을 AWS에 위임하는 1세대 관리형 DB, Aurora는 그 한 단계 위에서 스토리지·복제 레이어를 클라우드 네이티브로 재설계한 2세대, ElastiCache는 그 둘 위에서 인메모리 캐시 계층을 제공하는 보완재다.
 
-DVA-C02 시험의 데이터 영역 문제 패턴은 거의 정해져 있다 — "이런 요구사항(가용성, latency, 비용, 확장성, 일관성)이 주어졌을 때 어느 서비스를 어떻게 구성하나"를 시나리오로 묻는다. 오늘은 이번 주 내용을 시나리오 중심으로 다시 묶고, 12문항의 실전 시나리오로 종합 점검한다.
+DVA-C02 시험의 데이터 영역 문제는 정해진 틀이 있다. "이런 요구사항(가용성, latency, 비용, 확장성, 일관성)이 주어졌을 때 어느 서비스를 어떻게 구성하나"를 시나리오로 묻는다. 오늘은 이번 주 내용을 시나리오 중심으로 다시 묶고, 12문항의 실전 시나리오로 종합 점검한다.
 
 ## 의사결정 프레임워크: 데이터 계층 선택 5단계
 
@@ -33,8 +33,6 @@ production에서 데이터 계층을 결정할 때 거치는 사고 흐름은 �
   └─ 변동 트래픽                       → Aurora Serverless v2 / DynamoDB On-Demand
   └─ 개발/스테이징                     → Single-AZ + Reserved (or Serverless auto-pause)
 ```
-
-> 💡 **관련 이론**: 이 의사결정 흐름은 본질적으로 **CAP/PACELC 정리의 응용**이다. Eric Brewer의 CAP 정리(2000)는 "분할(Partition) 발생 시 일관성(Consistency)과 가용성(Availability) 중 하나만 선택 가능"을 말했고, Daniel Abadi의 PACELC 정리(2012)는 "분할 없을 때도(Else) 일관성(C)과 latency(L) 사이의 trade-off가 있다"를 추가했다. RDS Multi-AZ는 PC/EC(분할 시 일관성, 평상시 일관성), DynamoDB Global Tables는 PA/EL(분할 시 가용성, 평상시 latency)에 해당한다. Aurora는 quorum 기반으로 PC/EC를 단일 리전에서 달성하면서 cross-region에선 Global Database로 PA/EL로 전환할 수 있는 하이브리드다.
 
 ## RDS·ElastiCache·Aurora 비교: 같은 질문 다른 답
 
@@ -67,7 +65,7 @@ production에서 데이터 계층을 결정할 때 거치는 사고 흐름은 �
 
 ## 시험 함정 15가지 정리
 
-오랫동안 출제된 패턴 중 학습자가 가장 자주 틀리는 함정들. 시험 직전에 꼭 다시 보길 권한다.
+헷갈리기 쉬운 함정을 모았다.
 
 1. **Multi-AZ Standby는 읽기 불가** — 단 Multi-AZ Cluster Deployment(2022~)는 readable standby 2개 제공
 2. **암호화 전환 = 스냅샷 → KMS copy → restore** — direct modify 불가
@@ -75,7 +73,7 @@ production에서 데이터 계층을 결정할 때 거치는 사고 흐름은 �
 4. **IAM DB Auth 토큰 = 15분 SigV4, SSL 필수**
 5. **DB 삭제 시 자동 백업은 함께 삭제 (Final Snapshot 옵션 필수)**, 수동 스냅샷은 유지
 6. **Read Replica 쓰기 직후 조회 = stale data** (Read-Your-Writes 위반 가능)
-7. **Aurora Replica 자동 failover < 30초**, RDS Multi-AZ는 60-120초
+7. **Aurora Replica 자동 페일오버 < 30초**, RDS Multi-AZ는 60-120초
 8. **Aurora 스토리지 = 3 AZ × 2 사본 = 6, W=4 R=3**
 9. **Aurora Serverless v1은 분 단위 + 콜드 스타트**, v2는 초 단위 + 거의 없음
 10. **Redis Cluster Mode Disabled는 단일 샤드** — 한 노드 메모리가 한도
@@ -85,11 +83,11 @@ production에서 데이터 계층을 결정할 때 거치는 사고 흐름은 �
 14. **RDS Proxy = Lambda + RDS connection storm 해결책 1순위**
 15. **Aurora Backtrack = MySQL only, 72시간 in-place** (PITR과 다른 메커니즘)
 
-> ⚠️ **함정 예시 1 — 자동 백업 보존 기간 0일**: 자동 백업을 "끄고 싶다"는 의도로 보존 기간을 0일로 설정하면 그 순간 PITR이 불가능해지고 Read Replica 생성도 막힌다. 시험 문제: "Read Replica 생성 시도가 실패하는 가장 흔한 원인은?" → 자동 백업 비활성화. 해결책: 보존 기간 1일 이상으로 설정.
+> ⚠️ **함정 예시 1 — 자동 백업 보존 기간 0일**: 자동 백업을 "끄고 싶다"는 의도로 보존 기간을 0일로 설정하면 그 순간 PITR이 불가능해지고 Read Replica 생성도 막힌다. 시험 문제: "Read Replica 생성 시도가 실패하는 원인은?" → 자동 백업 비활성화. 해결책: 보존 기간 1일 이상으로 설정.
 
 > ⚠️ **함정 예시 2 — Aurora vs RDS Read Replica 최대 개수**: 2022년 이전 정답은 "Aurora 15개, RDS 5개"였지만, 그 후 RDS도 MySQL/PostgreSQL/MariaDB 한정으로 15개까지 상향. Oracle/SQL Server는 여전히 5개. 시험에서 "RDS Read Replica 최대 개수"라는 단순 문제가 나오면 엔진을 보고 답해야 한다.
 
-## 실전 패턴: 자주 출제되는 시나리오 매핑
+## 실전 패턴: 시나리오 매핑
 
 | 시나리오 키워드 | 답 |
 |----------------|-----|
@@ -141,7 +139,7 @@ DR 도쿄:
   KMS CMK로 스토리지/스냅샷/Secrets 모두 암호화
 ```
 
-이 한 구성에 이번 주 거의 모든 개념이 들어간다. 시험 시나리오의 끝판왕.
+이 한 구성에 이번 주 개념 대부분이 들어간다.
 
 ### 패턴 2: "스타트업 MVP에서 production까지 진화"
 
@@ -162,8 +160,6 @@ Phase 4 (글로벌):
   ElastiCache Replica를 각 region에
 ```
 
-> 📚 **사례**: Coupang이 약 2017~2020년 동안 비슷한 진화 경로를 거쳤다(공개 컨퍼런스 발표 기준). MySQL → Aurora MySQL 전환으로 동일 트래픽에서 인스턴스 클래스 한 단계 축소, replica 수는 5→15로 늘려 분석 워크로드 격리, ElastiCache Redis로 세션/카탈로그 캐시 추가. 이 패턴이 한국 e-commerce의 표준 스택으로 자리 잡았다.
-
 ### 패턴 3: "Compliance 강화 환경"
 
 ```
@@ -176,7 +172,7 @@ Phase 4 (글로벌):
 - CloudTrail 데이터 이벤트 활성화
 ```
 
-HIPAA, PCI-DSS, ISO 27001 같은 인증을 받는 환경의 표준 구성.
+HIPAA, PCI-DSS, ISO 27001 같은 인증을 받는 환경에서 쓰는 구성 예시다.
 
 ## 비용 관점: Reserved Instance와 Serverless의 손익분기
 
@@ -189,7 +185,7 @@ HIPAA, PCI-DSS, ISO 27001 같은 인증을 받는 환경의 표준 구성.
 | Aurora Serverless v2 (안정 트래픽) | 없음 | -20% (오히려 비쌈) |
 | Aurora Serverless v2 (간헐 트래픽) | 없음 | 50-80% (사용 안 할 땐 0 ACU) |
 
-> 💡 **시험 출제**: "비용 최적화" 시나리오에서 트래픽 패턴이 안정적이면 Reserved Instance, 변동적이면 Serverless가 답. 변동의 기준은 "사용량이 시간대별로 5배 이상 차이" 정도. 그 미만이면 RI가 거의 항상 유리.
+"비용 최적화" 시나리오에서는 트래픽 패턴이 안정적이면 Reserved Instance, 변동적이면 Serverless가 답이다. 변동의 기준은 "사용량이 시간대별로 5배 이상 차이" 정도로 보며, 그 미만이면 RI가 유리하다.
 
 ## CLI/SDK 빠른 참조
 
@@ -241,9 +237,12 @@ aws rds create-db-proxy \
   --require-tls
 ```
 
-## 정리하며
+## 정리
 
-이번 주의 핵심은 결국 두 가지로 압축된다. **첫째, "관계형 vs 키-값", "강일관성 vs 최종일관성", "동기 복제 vs 비동기 복제" 같은 분산 시스템의 근본 trade-off가 AWS 데이터 서비스 선택에 그대로 투영된다.** 둘째, **같은 문제(가용성, 확장성, latency)에 RDS/Aurora/ElastiCache가 각자 다른 답을 가지며, 시험은 그 답들 중 "주어진 제약에서 가장 적절한 하나"를 묻는다.**
+이번 주 내용은 두 가지로 압축된다.
+
+- **"관계형 vs 키-값", "강일관성 vs 최종일관성", "동기 복제 vs 비동기 복제" 같은 분산 시스템의 근본 trade-off가 AWS 데이터 서비스 선택에 그대로 투영된다.**
+- **같은 문제(가용성, 확장성, latency)에 RDS/Aurora/ElastiCache가 각자 다른 답을 가지며, 시험은 그 답들 중 "주어진 제약에서 가장 적절한 하나"를 묻는다.**
 
 다음 주는 NoSQL — DynamoDB — 로 넘어간다. DynamoDB는 RDS와 거의 정반대 철학(샤딩 자동, 강일관성 옵션, 무제한 확장, 관계형 모델 포기)을 가진 서비스다. 이번 주 RDS/Aurora를 이해하면 DynamoDB의 "왜 그렇게 다르게 설계됐나"가 훨씬 잘 보인다.
 

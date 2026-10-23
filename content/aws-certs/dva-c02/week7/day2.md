@@ -2,15 +2,17 @@
 
 RDS를 처음 배울 땐 "암호화 체크박스 켜고, 백업 보존 7일로 두고, CloudWatch 알람 몇 개 걸면 끝"이라고 생각하기 쉽다. 그런데 production에서 사고가 나는 지점은 정확히 그 빈틈에 있다. 2019년 7월 Capital One의 1억 600만 건 개인정보 유출은 RDS 자체의 결함이 아니라 **메타데이터 인증·IAM 권한·S3 백업 노출**이라는 운영 면의 빈틈에서 시작됐다. 오늘 다룰 주제 — 암호화, IAM DB 인증, 백업, 모니터링 — 은 모두 그런 사고를 막기 위해 RDS가 진화시켜온 운영 기능들이다.
 
-DVA-C02에서 이 주제는 시나리오 단골이다. "비밀번호를 코드에 안 박고 싶다"고 하면 IAM 인증 또는 Secrets Manager, "5분 단위 복구가 필요하다"면 PITR, "쿼리가 느린 원인을 찾아야 한다"면 Performance Insights — 이런 1:1 매핑이 머릿속에 박혀 있어야 한다.
+DVA-C02에서 이 주제는 시나리오 문제로 나온다. "비밀번호를 코드에 안 박고 싶다"고 하면 IAM 인증 또는 Secrets Manager, "5분 단위 복구가 필요하다"면 PITR, "쿼리가 느린 원인을 찾아야 한다"면 Performance Insights — 이런 1:1 매핑을 알아 두어야 한다.
 
 ## RDS 암호화: 왜 "생성 시"에만 켤 수 있을까
 
-RDS의 저장 데이터 암호화는 AWS KMS(AWS Key Management Service)로 관리되는 키를 사용해 **AES-256-XTS**로 EBS 볼륨, 자동 백업, 읽기 전용 복제본, 스냅샷 전부를 암호화한다. 그런데 이상한 제약이 하나 있다: **이미 만들어진 RDS 인스턴스를 사후에 암호화로 바꿀 수 없다.** 콘솔에도 그 옵션이 없다. 우회 방법은 ① 스냅샷 생성 ② 스냅샷을 "암호화된 상태로 copy" ③ 그 암호화 스냅샷에서 새 인스턴스 복원 — 이렇게 세 단계를 거쳐야 한다.
+RDS의 저장 데이터 암호화는 AWS KMS(AWS Key Management Service)로 관리되는 키를 사용해 **AES-256-XTS**로 EBS 볼륨, 자동 백업, Read Replica, 스냅샷 전부를 암호화한다. 그런데 제약이 하나 있다. **이미 만들어진 RDS 인스턴스를 사후에 암호화로 바꿀 수 없다.** 콘솔에도 그 옵션이 없다. 우회 방법은 ① 스냅샷 생성 ② 스냅샷을 "암호화된 상태로 copy" ③ 그 암호화 스냅샷에서 새 인스턴스 복원 — 이렇게 세 단계를 거쳐야 한다.
 
-> 🔍 **더 깊이**: 왜 이런 제약이 있을까? EBS의 암호화 모델 때문이다. EBS 볼륨은 **생성 시점**에 KMS 데이터 키(Data Encryption Key, DEK)가 한 번 발급되고, 그 키로 모든 블록이 LUKS 비슷한 방식으로 암호화된다. 볼륨이 한 번 만들어지면 그 DEK가 평문으로 디스크에 흩어진 데이터를 다시 암호화해주는 메커니즘이 존재하지 않는다. "라이브 마이그레이션 중에 한 블록씩 재암호화"하는 식의 기능을 만들 수도 있겠지만, 이는 트랜잭션 일관성을 깨뜨리지 않고 구현하기가 매우 까다롭다. 그래서 AWS는 "스냅샷 단계에서 한 번 평문으로 추출되는 순간을 이용해 거기서 암호화 키를 새로 발급"하는 우회 경로만 제공한다. 비슷한 제약이 GCP Persistent Disk에도 있다(CMEK 변경은 새 디스크 생성 필요).
+이런 제약이 있는 이유는 EBS의 암호화 모델 때문이다. EBS 볼륨은 **생성 시점**에 KMS 데이터 키(Data Encryption Key, DEK)가 한 번 발급되고, 그 키로 모든 블록이 LUKS 비슷한 방식으로 암호화된다. 볼륨이 만들어진 뒤에 평문으로 흩어진 데이터를 다시 암호화해 주는 메커니즘은 없다. "라이브 마이그레이션 중에 한 블록씩 재암호화"하는 기능은 트랜잭션 일관성을 깨뜨리지 않고 구현하기가 매우 까다롭다. 그래서 AWS는 "스냅샷 단계에서 한 번 평문으로 추출되는 순간을 이용해 거기서 암호화 키를 새로 발급"하는 우회 경로만 제공한다. 비슷한 제약이 GCP Persistent Disk에도 있다(CMEK 변경은 새 디스크 생성 필요).
 
-암호화를 켰을 때 KMS는 **envelope encryption** 패턴으로 동작한다. 마스터 키(CMK, Customer Master Key)는 KMS 내부 HSM(Hardware Security Module, AWS는 CloudHSM 기반 FIPS 140-2 Level 3 인증)을 떠나지 않고, 데이터를 실제로 암호화하는 건 그 마스터 키로 한 번 더 암호화된 데이터 키다. 데이터 키는 EBS 볼륨 단위로 발급되고, 사용 시점에만 메모리에서 복호화돼 디스크 I/O에 쓰인다. 디스크 어디에도 평문 키가 남지 않는다.
+암호화를 켰을 때 KMS는 **envelope encryption** 패턴으로 동작한다. 마스터 키(CMK, Customer Master Key)는 KMS 내부 HSM(Hardware Security Module, AWS는 CloudHSM 기반 FIPS 140-2 Level 3 인증)을 떠나지 않는다. 데이터를 실제로 암호화하는 건 그 마스터 키로 한 번 더 암호화된 데이터 키다.
+
+데이터 키는 EBS 볼륨 단위로 발급되고, 사용 시점에만 메모리에서 복호화돼 디스크 I/O에 쓰인다. 디스크 어디에도 평문 키가 남지 않는다.
 
 ```
 [KMS CMK (HSM 내부)]
@@ -27,25 +29,27 @@ RDS의 저장 데이터 암호화는 AWS KMS(AWS Key Management Service)로 관�
             데이터 I/O 시 복호화
 ```
 
-> 💡 **관련 이론**: Envelope encryption은 NIST SP 800-57의 "key wrapping" 개념을 클라우드 스케일로 옮긴 패턴이다. 마스터 키로 모든 데이터를 직접 암호화하면 키 사용 빈도가 천문학적으로 늘어나 HSM 성능 병목이 생긴다(KMS는 region별로 초당 키 작업 한도가 있다 — 일반 키 5,500-30,000/초). 그래서 "마스터 키는 데이터 키만 보호하고, 실제 데이터는 데이터 키로 암호화"하는 2단계 구조가 표준이다. AWS S3, EBS, DynamoDB, Secrets Manager 모두 같은 모델을 쓴다.
+Envelope encryption에서는 마스터 키로 모든 데이터를 직접 암호화하면 키 사용 빈도가 크게 늘어 HSM 성능 병목이 생긴다(KMS는 region별로 초당 키 작업 한도가 있다 — 일반 키 5,500-30,000/초). 그래서 "마스터 키는 데이터 키만 보호하고, 실제 데이터는 데이터 키로 암호화"하는 2단계 구조가 표준이다. AWS S3, EBS, DynamoDB, Secrets Manager 모두 같은 모델을 쓴다.
 
-전송 데이터 암호화(in-transit)는 별도 영역이다. RDS는 인스턴스마다 X.509 인증서를 가지고 있고(`rds-ca-2019`, `rds-ca-rsa2048-g1` 등 세대별로 발급), 클라이언트는 이 인증서를 검증하면서 TLS 1.2/1.3 연결을 맺는다. 강제로 SSL만 허용하려면 파라미터 그룹에서 `rds.force_ssl=1`(PostgreSQL) 또는 `require_secure_transport=ON`(MySQL 8)을 켜면 된다. CA 인증서는 주기적으로 회전되므로(2024년 `rds-ca-rsa2048-g1`로 전환), 애플리케이션의 트러스트 스토어 갱신을 잊으면 **CA 만료 당일 대규모 connection 실패 사고**가 난다.
+전송 데이터 암호화(in-transit)는 별도 영역이다. RDS는 인스턴스마다 X.509 인증서를 가지고 있고(`rds-ca-2019`, `rds-ca-rsa2048-g1` 등 세대별로 발급), 클라이언트는 이 인증서를 검증하면서 TLS 1.2/1.3 연결을 맺는다. 강제로 SSL만 허용하려면 파라미터 그룹에서 `rds.force_ssl=1`(PostgreSQL) 또는 `require_secure_transport=ON`(MySQL 8)을 켜면 된다. CA 인증서는 주기적으로 회전되므로(2024년 `rds-ca-rsa2048-g1`로 전환), 애플리케이션의 트러스트 스토어 갱신을 놓치면 **CA 만료 당일에 connection이 대량으로 실패**한다.
 
-> 📚 **사례**: 2020년 3월 5일 AWS가 `rds-ca-2015` 인증서 만료를 앞두고 사전 공지했음에도 많은 고객이 `rds-ca-2019`로 교체하지 못해 일부 서비스에서 connection refused 사고가 났다. AWS는 결국 만료를 1년 연기했고, 이 사건 이후 CA 회전 알림이 AWS Health Dashboard에서 더 강하게 노출되도록 개선됐다. 시험에선 "갑자기 SSL handshake 실패"가 나오면 CA 인증서 만료를 의심하는 시나리오가 가끔 나온다.
+"갑자기 SSL handshake 실패"가 나오는 시나리오에서는 CA 인증서 만료를 의심한다. 예를 들어 `rds-ca-2015` 인증서 만료(2020년 3월)를 앞두고 AWS가 사전 공지했지만, 모든 고객이 `rds-ca-2019`로 교체하지는 못했다.
 
 ## IAM DB Authentication: 비밀번호를 코드에서 지우는 길
 
-전통적인 DB 인증은 user/password 쌍을 애플리케이션에 박는다. 그런데 이 비밀번호가 ① 코드 저장소에 커밋되거나 ② 환경변수에 노출되거나 ③ 로그에 찍히는 사고가 끊임없이 반복됐다. RDS IAM Authentication은 그 비밀번호를 아예 없애는 게 목표다.
+전통적인 DB 인증은 user/password 쌍을 애플리케이션에 박는다. 그런데 이 비밀번호가 ① 코드 저장소에 커밋되거나 ② 환경변수에 노출되거나 ③ 로그에 찍히는 사고가 반복됐다. RDS IAM Authentication은 그 비밀번호를 아예 없애는 것이 목표다.
 
 흐름은 이렇다. ① 애플리케이션이 IAM 역할(EC2 인스턴스 프로필, Lambda 실행 역할, EKS IRSA 등)을 통해 임시 자격증명을 얻는다 ② 그 자격증명으로 `rds:GenerateDBAuthToken` API를 호출해 **SigV4 서명된 토큰**을 만든다 ③ 그 토큰을 DB 패스워드 자리에 넣어 연결한다. 토큰의 유효 시간은 정확히 **15분**이고, 한 번 발급된 토큰은 그 시간 안에 여러 번 connection을 만들 수 있다.
 
-> 🔍 **더 깊이**: IAM 토큰의 실체는 정확히 무엇일까? `aws rds generate-db-auth-token` CLI를 실행하면 나오는 출력은 사실 **AWS Signature Version 4로 서명된 presigned URL의 query string**이다. URL 형식은 다음과 같다(개념):
-> ```
-> mydb.xxxx.rds.amazonaws.com:3306/?Action=connect&DBUser=appuser&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...&X-Amz-Date=...&X-Amz-Expires=900&X-Amz-Signature=...
-> ```
-> RDS 서버는 connection 시 이 토큰을 패스워드로 받아서 ① 만료 시간이 아직 안 지났는지 ② 시그니처가 유효한지 ③ 해당 IAM 주체가 `rds-db:connect` 권한을 가지는지를 검증한다. 즉 토큰 자체에 인증 정보가 자체완결적으로 들어 있어서 RDS 서버는 KMS나 STS에 추가 호출 없이 검증 가능하다. 이게 SigV4의 가장 큰 설계 이점이다(stateless, replay 위험은 15분 내로 한정).
+IAM 토큰의 실체는 `aws rds generate-db-auth-token` CLI가 출력하는 **AWS Signature Version 4로 서명된 presigned URL의 query string**이다. URL 형식은 다음과 같다(개념).
 
-IAM 인증의 제약을 시험이 자주 묻는다:
+```
+mydb.xxxx.rds.amazonaws.com:3306/?Action=connect&DBUser=appuser&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...&X-Amz-Date=...&X-Amz-Expires=900&X-Amz-Signature=...
+```
+
+RDS 서버는 connection 시 이 토큰을 패스워드로 받아 ① 만료 시간이 지나지 않았는지 ② 시그니처가 유효한지 ③ 해당 IAM 주체가 `rds-db:connect` 권한을 가지는지를 검증한다. 토큰 자체에 인증 정보가 들어 있어서 RDS 서버는 KMS나 STS를 추가로 호출하지 않고 검증할 수 있다. 이것이 SigV4의 설계 이점이다(stateless, replay 위험은 15분 내로 한정).
+
+시험에 나오는 IAM 인증의 제약은 다음과 같다.
 
 - **지원 엔진**: MySQL 5.7+, MariaDB 10.4+, PostgreSQL 9.5+ — Oracle/SQL Server는 미지원
 - **TLS 필수**: 토큰을 평문으로 보내면 안 되므로 SSL 연결 강제됨
@@ -78,7 +82,7 @@ class IamDbTokenManager:
             return self._token
 ```
 
-Secrets Manager와의 비교를 시험에서 자주 헷갈린다. Secrets Manager는 **비밀번호 자체를 저장·회전**하는 도구이고, IAM 인증은 **비밀번호를 아예 없애는** 도구다. 두 접근은 trade-off가 있다.
+Secrets Manager와의 비교는 헷갈리기 쉽다. Secrets Manager는 **비밀번호 자체를 저장·회전**하는 도구이고, IAM 인증은 **비밀번호를 아예 없애는** 도구다. 두 접근에는 trade-off가 있다.
 
 | 차원 | IAM DB Auth | Secrets Manager + 비밀번호 | RDS Proxy + Secrets Manager |
 |------|-------------|---------------------------|------------------------------|
@@ -87,7 +91,7 @@ Secrets Manager와의 비교를 시험에서 자주 헷갈린다. Secrets Manage
 | 새 연결 한도 | 200/초 권장 | 엔진 한도 그대로 | Proxy pool 한도 |
 | 적합 시나리오 | 낮은 빈도 + 보안 강조 | 일반적 운영 | 고빈도 Lambda |
 
-## 백업: 자동 백업의 진짜 동작과 PITR의 비밀
+## 백업: 자동 백업의 동작과 PITR
 
 RDS 자동 백업은 사실 **두 가지 다른 메커니즘이 합쳐진** 시스템이다. ① 매일 백업 윈도우 동안 찍히는 **storage volume snapshot**(EBS 스냅샷과 같은 메커니즘 — 첫 번째는 full, 이후는 incremental)과 ② **5분 단위로 S3에 푸시되는 transaction log**. 이 두 가지가 결합돼 Point-in-Time Recovery(PITR)가 가능해진다.
 
@@ -101,9 +105,9 @@ RDS 자동 백업은 사실 **두 가지 다른 메커니즘이 합쳐진** 시�
 복원 시: 가장 가까운 스냅샷 + 그 이후 WAL/binlog를 원하는 시점까지 replay
 ```
 
-> 🔍 **더 깊이**: PITR이 "5분 단위"라고 말하지만 실제로는 더 세밀하다. MySQL이면 binlog의 한 트랜잭션 단위까지, PostgreSQL이면 WAL의 LSN(Log Sequence Number) 단위까지 복원 가능하다. "5분 단위"는 S3로 업로드되는 주기일 뿐이고, RDS는 그 사이의 in-flight log도 가능한 만큼 보존한다. 단, 마지막 5분 안에 인스턴스가 catastrophic failure를 겪으면 그 사이 log는 손실될 수 있어 RPO는 실효 5분 정도로 보는 게 안전하다. 시험에선 "RPO 5분 이내가 필요한 경우 자동 백업 + PITR"로 답하면 된다.
+PITR은 "5분 단위"라고 하지만 실제로는 더 세밀하다. MySQL이면 binlog의 한 트랜잭션 단위까지, PostgreSQL이면 WAL의 LSN(Log Sequence Number) 단위까지 복원 가능하다. "5분 단위"는 S3로 업로드되는 주기일 뿐이고, RDS는 그 사이의 in-flight log도 가능한 만큼 보존한다. 단, 마지막 5분 안에 인스턴스가 catastrophic failure를 겪으면 그 사이 log는 손실될 수 있어 RPO는 실효 5분 정도로 보는 것이 안전하다. "RPO 5분 이내가 필요한 경우"에는 자동 백업 + PITR이 답이다.
 
-자동 백업과 수동 스냅샷은 완전히 다른 객체다. 헷갈리는 지점은 둘 다 결국 S3에 저장된다는 점인데, 차이는 **생명 주기 정책**에 있다.
+자동 백업과 수동 스냅샷은 완전히 다른 객체다. 둘 다 결국 S3에 저장되어 헷갈리기 쉽지만, 차이는 **생명 주기 정책**에 있다.
 
 | 항목 | 자동 백업 | 수동 스냅샷 |
 |------|-----------|-------------|
@@ -115,15 +119,15 @@ RDS 자동 백업은 사실 **두 가지 다른 메커니즘이 합쳐진** 시�
 | 다른 계정 공유 | ❌ | ✅ (암호화된 경우 KMS 키 grant 필요) |
 | PITR | ✅ | ❌ (특정 시점만) |
 
-> 📚 **사례**: 2017년 GitLab의 데이터베이스 운영자가 staging DB와 production DB를 헷갈려 `rm -rf` 명령을 production에 실행, 약 300GB 데이터가 삭제됐다. 사고 직후 복구 시도에서 5개 백업 메커니즘 중 4개가 작동하지 않았고(검증 부재), 마지막 남은 6시간 전 LVM 스냅샷으로 복원해 약 5천 명의 활동 데이터 손실. RDS 자동 백업 + PITR이라면 같은 사고에서 사고 직전까지(분 단위) 복원이 가능했을 시나리오다. 교훈: 백업은 **존재 여부보다 복원 검증이 더 중요**하다. AWS Backup의 cross-account backup vault 잠금(WORM)이 등장한 배경이기도 하다.
+2017년 GitLab에서는 데이터베이스 운영자가 staging DB와 production DB를 헷갈려 `rm -rf` 명령을 production에 실행했다. 사고 직후 복구를 시도했지만 준비해 둔 백업 메커니즘 대부분이 제대로 작동하지 않았고(검증 부재), 마지막 남은 6시간 전 LVM 스냅샷으로 복원해야 했다. RDS 자동 백업 + PITR이라면 같은 사고에서도 사고 직전 시점(분 단위)으로 복원할 수 있었다. 교훈은 백업이 **존재 여부보다 복원 검증이 더 중요**하다는 것이다. AWS Backup의 cross-account backup vault 잠금(WORM)이 등장한 배경이기도 하다.
 
-> ⚠️ **함정**: 자동 백업 보존 기간을 **0일로 설정하면 자동 백업이 비활성화**되고, 그 순간 PITR과 Read Replica 생성이 모두 막힌다. "왜 Read Replica가 안 만들어지나?" 시험 시나리오의 단골 원인. 또한 자동 백업이 활성화돼 있어도 **DB 인스턴스 종료 시 Final Snapshot을 안 만들고 삭제하면 모든 자동 백업이 사라진다** — 보존이 필요한 데이터는 반드시 수동 스냅샷으로 변환 또는 별도 보관.
+> ⚠️ **함정**: 자동 백업 보존 기간을 **0일로 설정하면 자동 백업이 비활성화**되고, 그 순간 PITR과 Read Replica 생성이 모두 막힌다. "왜 Read Replica가 안 만들어지나?" 시나리오의 원인이 된다. 또한 자동 백업이 활성화돼 있어도 **DB 인스턴스 종료 시 Final Snapshot을 안 만들고 삭제하면 모든 자동 백업이 사라진다** — 보존이 필요한 데이터는 반드시 수동 스냅샷으로 변환 또는 별도 보관.
 
 AWS Backup과의 관계도 알아둬야 한다. AWS Backup은 RDS, EBS, DynamoDB, EFS 등을 한 정책으로 묶어 관리하는 메타 서비스다. 백업 vault에 **WORM(Vault Lock)**을 걸면 일정 기간 누구도 삭제 못 한다(랜섬웨어 대응). 시험에서 "랜섬웨어/내부자 위협으로부터 RDS 백업 보호" 시나리오는 AWS Backup Vault Lock이 답이다.
 
 ## 모니터링 3종 세트: CloudWatch, Enhanced Monitoring, Performance Insights
 
-이 세 가지는 데이터 출처가 완전히 다르고, 그래서 답해주는 질문도 다르다. 시험에서 매번 헷갈리게 출제되는 영역이다.
+이 세 가지는 데이터 출처가 완전히 다르고, 그래서 답해 주는 질문도 다르다. 헷갈리기 쉬운 영역이다.
 
 | 도구 | 데이터 출처 | 간격 | 답할 수 있는 질문 |
 |------|-------------|------|-------------------|
@@ -131,11 +135,13 @@ AWS Backup과의 관계도 알아둬야 한다. AWS Backup은 RDS, EBS, DynamoDB
 | **Enhanced Monitoring** | RDS 인스턴스 OS 내부 (CloudWatch Logs Agent) | 1, 5, 10, 15, 30, 60초 | "어떤 OS 프로세스가 CPU를 먹나" |
 | **Performance Insights** | DB 엔진 내부 (Aurora는 native, 다른 엔진은 어댑터) | 1초 (DBLoad) | "어떤 쿼리가 lock 대기 중인가" |
 
-> 🔍 **더 깊이**: CloudWatch가 보는 메트릭은 하이퍼바이저 레벨에서 가상화 계층이 "이 인스턴스는 CPU를 N% 쓰고 있다"를 외부에서 관찰한 값이다. 그래서 **게스트 OS 내부의 정보(프로세스 단위 CPU, 메모리 상세 등)는 볼 수 없다**. Enhanced Monitoring은 RDS OS 안에 작은 에이전트를 띄워 `/proc/stat`, `/proc/meminfo`, `/proc/PID/status` 같은 파일을 1초 단위로 읽어 CloudWatch Logs로 푸시한다. Performance Insights는 한 단계 더 들어가 DB 엔진 내부의 wait event sampling(MySQL의 performance_schema, PostgreSQL의 pg_stat_activity와 유사한 인터페이스)을 통해 "지금 이 순간 어떤 쿼리가 어떤 락을 기다리고 있는가"를 그래프로 보여준다.
+CloudWatch가 보는 메트릭은 하이퍼바이저 레벨에서 가상화 계층이 "이 인스턴스는 CPU를 N% 쓰고 있다"를 외부에서 관찰한 값이다. 그래서 **게스트 OS 내부의 정보(프로세스 단위 CPU, 메모리 상세 등)는 볼 수 없다**. Enhanced Monitoring은 RDS OS 안에 작은 에이전트를 띄워 `/proc/stat`, `/proc/meminfo`, `/proc/PID/status` 같은 파일을 1초 단위로 읽어 CloudWatch Logs로 푸시한다.
 
-> 💡 **관련 이론**: Performance Insights의 **DBLoad** 지표는 "특정 시점에 active session이 몇 개나 어떤 wait event에 묶여 있는지"를 sampling으로 측정한 값으로, Oracle ASH(Active Session History)의 클라우드 변종이다. wait event 카테고리(CPU, IO, Lock, Network 등)별로 색칠된 stacked area chart가 PI 콘솔의 핵심 화면인데, 이는 데이터베이스 성능 분석 표준 기법인 "TIME MODEL + WAIT EVENT analysis"를 그대로 구현한 것이다. Oracle Enterprise Manager의 ASH/AWR 화면을 본 적 있다면 거의 동일한 패러다임이라는 걸 알 수 있다.
+Performance Insights는 한 단계 더 들어가 DB 엔진 내부의 wait event sampling(MySQL의 performance_schema, PostgreSQL의 pg_stat_activity와 유사한 인터페이스)을 통해 "지금 이 순간 어떤 쿼리가 어떤 락을 기다리고 있는가"를 그래프로 보여준다.
 
-자주 보는 CloudWatch 지표와 의미:
+Performance Insights의 **DBLoad** 지표는 "특정 시점에 active session이 몇 개이고 어떤 wait event에 묶여 있는지"를 sampling으로 측정한 값이다. Oracle ASH(Active Session History)와 같은 계열이다. wait event 카테고리(CPU, IO, Lock, Network 등)별로 색을 나눈 stacked area chart가 PI 콘솔의 핵심 화면이다.
+
+주요 CloudWatch 지표와 의미는 다음과 같다.
 
 | 지표 | 임계값 가이드 | 의미 |
 |------|--------------|------|
@@ -147,11 +153,11 @@ AWS Backup과의 관계도 알아둬야 한다. AWS Backup은 RDS, EBS, DynamoDB
 | `BurstBalance` (gp2) | < 20% | I/O burst credit 고갈 직전 |
 | `DiskQueueDepth` | > 32 | I/O 대기 큐 — 처리량 한계 |
 
-> ⚠️ **함정**: gp2 스토리지에서 `BurstBalance` 100% → 0% 추락 시점이 곧 latency spike다. gp3는 burst 개념이 없고 baseline 성능을 항상 보장하므로 신규 인스턴스에 gp3를 쓰면 이 문제가 사라진다. 시험에서 "갑자기 RDS가 느려졌다 + gp2 사용 중" 시나리오는 거의 BurstBalance 고갈이 답.
+gp2 스토리지에서는 `BurstBalance`가 100%에서 0%로 떨어지는 시점이 곧 latency spike다. gp3는 burst 개념이 없고 baseline 성능을 항상 보장하므로 신규 인스턴스에 gp3를 쓰면 이 문제가 사라진다. "갑자기 RDS가 느려졌다 + gp2 사용 중" 시나리오의 원인은 BurstBalance 고갈이다.
 
 ## 매개변수 그룹·옵션 그룹: 엔진 튜닝의 두 축
 
-RDS는 OS 셸 접근이 막혀 있기 때문에 엔진 설정 변경은 모두 **파라미터 그룹**을 통해야 한다. `default.mysql8.0` 같은 기본 그룹은 수정 불가 — 반드시 custom group을 만들어 적용한다. 일부 파라미터(예: `innodb_buffer_pool_size`)는 **dynamic**으로 즉시 반영되고, 다른 일부(예: `binlog_format`)는 **static**이라 인스턴스 재시작이 필요하다. 시험에서 "파라미터를 바꿨는데 적용 안 됨"은 static 파라미터 + 재시작 누락이 답.
+RDS는 OS 셸 접근이 막혀 있기 때문에 엔진 설정 변경은 모두 **파라미터 그룹**을 통해야 한다. `default.mysql8.0` 같은 기본 그룹은 수정 불가 — 반드시 custom group을 만들어 적용한다. 일부 파라미터(예: `innodb_buffer_pool_size`)는 **dynamic**으로 즉시 반영되고, 다른 일부(예: `binlog_format`)는 **static**이라 인스턴스 재시작이 필요하다. "파라미터를 바꿨는데 적용 안 됨" 시나리오의 답은 static 파라미터 + 재시작 누락이다.
 
 옵션 그룹은 파라미터 그룹과 별개로, **엔진의 추가 기능을 활성화**한다. Oracle의 TDE(Transparent Data Encryption), SQL Server Audit, MySQL의 MEMCACHED 인터페이스 등이 옵션 그룹에서 토글된다.
 
@@ -181,7 +187,7 @@ aws rds modify-db-instance \
   --preferred-maintenance-window sun:18:00-sun:18:30
 ```
 
-> 📚 **사례**: 2023년 한 핀테크 스타트업이 Single-AZ로 운영하던 RDS PostgreSQL에 무작위 유지보수 윈도우를 그대로 둔 채 한국 시간 평일 오전 11시(UTC 02:00)에 마이너 패치가 자동 실행됐다. 약 4분간 DB가 다운돼 결제 트랜잭션 수천 건이 실패. 회고 결과 ① Multi-AZ 미적용 ② 유지보수 윈도우를 트래픽 낮은 시간으로 명시하지 않음이 원인이었다. 두 가지 모두 콘솔 토글로 해결되는 사항이라 더 뼈아픈 사고였다.
+가상의 사례로, 한 핀테크 스타트업이 Single-AZ로 운영하던 RDS PostgreSQL에 무작위 유지보수 윈도우를 그대로 둔 채 운영하다가 한국 시간 평일 오전 11시(UTC 02:00)에 마이너 패치가 자동 실행됐다. 약 4분간 DB가 다운돼 결제 트랜잭션 수천 건이 실패했다. 원인은 ① Multi-AZ 미적용 ② 유지보수 윈도우를 트래픽 낮은 시간으로 지정하지 않음이었다. 두 가지 모두 콘솔 토글로 해결되는 사항이다.
 
 ## Secrets Manager + RDS 비밀번호 회전: 어떻게 무중단인가
 
@@ -203,7 +209,7 @@ Secrets Manager는 RDS 비밀번호를 저장하고, AWS가 제공하는 회전 
   - 비번 변경 즉시 다음 connection에서 새 비번 사용
 ```
 
-> 🔍 **더 깊이**: MySQL은 한 사용자에 동시에 두 비밀번호를 가질 수 있는 기능(`ALTER USER ... IDENTIFIED BY ... RETAIN CURRENT PASSWORD`)을 MySQL 8.0부터 제공하는데, Secrets Manager 회전은 이 기능을 활용한다. 두 비밀번호가 잠시 공존하는 동안 기존 connection은 끊기지 않고, 새 connection은 새 비밀번호로 접속한다. 이게 "무중단 회전"의 기술적 근거다. RDS Proxy를 함께 쓰면 Proxy가 새 비밀번호를 자동으로 가져와 backend connection을 갱신하므로 애플리케이션 코드에서 비밀번호 fetch 로직조차 필요 없다.
+MySQL은 한 사용자에 동시에 두 비밀번호를 가질 수 있는 기능(`ALTER USER ... IDENTIFIED BY ... RETAIN CURRENT PASSWORD`)을 MySQL 8.0부터 제공하는데, Secrets Manager 회전은 이 기능을 활용한다. 두 비밀번호가 잠시 공존하는 동안 기존 connection은 끊기지 않고, 새 connection은 새 비밀번호로 접속한다. 이것이 "무중단 회전"의 기술적 근거다. RDS Proxy를 함께 쓰면 Proxy가 새 비밀번호를 자동으로 가져와 backend connection을 갱신하므로 애플리케이션 코드에서 비밀번호 fetch 로직조차 필요 없다.
 
 ## CloudWatch Logs 통합과 감사
 
@@ -218,13 +224,16 @@ fields @timestamp, @message
 | limit 10
 ```
 
-감사가 필요한 환경(HIPAA, PCI-DSS, SOC 2)에서는 Audit log + CloudTrail RDS 데이터 이벤트를 함께 활성화하고, KMS 암호화된 로그 그룹으로 푸시한다. 시험에서 "DB에 누가 무엇을 했는지 추적" 시나리오는 Audit log → CloudWatch Logs → CloudWatch Logs Insights 흐름이 표준 답.
+감사가 필요한 환경(HIPAA, PCI-DSS, SOC 2)에서는 Audit log + CloudTrail RDS 데이터 이벤트를 함께 활성화하고, KMS 암호화된 로그 그룹으로 푸시한다. "DB에 누가 무엇을 했는지 추적" 시나리오의 답은 Audit log → CloudWatch Logs → CloudWatch Logs Insights 흐름이다.
 
-## 정리하며
+## 정리
 
-RDS의 보안·운영 면은 결국 두 가지 원칙으로 정리된다. **① 비밀(키, 비밀번호)을 사람·코드에서 떼어내라 — KMS, IAM Auth, Secrets Manager.** **② 사고는 일어난다고 가정하고 복원 가능성을 미리 검증해라 — 자동 백업, PITR, AWS Backup Vault Lock, 모니터링 3종 세트.** 이 두 원칙 위에서 production RDS의 모든 운영 결정이 갈라진다.
+RDS의 보안·운영은 두 가지 원칙으로 정리된다.
 
-Capital One 사고가 가르친 건 단순하다 — "RDS가 안전한가"가 아니라 "RDS 주변(메타데이터 엔드포인트, IAM 역할, S3 백업 권한)이 안전한가"를 물어야 한다. 시험 시나리오도 이 사고의 패턴을 따라간다: 비밀번호 노출, 백업 보호 부재, 모니터링 부재.
+- **비밀(키, 비밀번호)을 사람·코드에서 떼어낸다** — KMS, IAM Auth, Secrets Manager.
+- **사고는 일어난다고 가정하고 복원 가능성을 미리 검증한다** — 자동 백업, PITR, AWS Backup Vault Lock, 모니터링 3종 세트.
+
+Capital One 사고의 교훈은 "RDS가 안전한가"가 아니라 "RDS 주변(메타데이터 엔드포인트, IAM 역할, S3 백업 권한)이 안전한가"를 물어야 한다는 것이다. 시험 시나리오도 이 사고의 패턴을 따른다. 비밀번호 노출, 백업 보호 부재, 모니터링 부재.
 
 다음 글에서는 RDS 비용 최적화와 트러블슈팅 — Reserved Instance, Aurora Serverless v2, slow query 진단, connection storm 대응 — 으로 한 단계 더 들어간다.
 
