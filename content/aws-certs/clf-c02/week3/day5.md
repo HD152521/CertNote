@@ -286,7 +286,11 @@ EC2 직접  →  CloudFormation  →  Beanstalk  →  Fargate  →  Lambda
 
 이번 주 서비스들이 어떻게 함께 쓰이는지 한 장면으로 묶어 본다. 어느 배달 앱은 주문이 들어오면 **SQS**에 쌓아 결제 서비스가 순서대로 처리하고, 결과는 **SNS**로 알림·정산·배차 시스템에 동시에 뿌린다. 주문 데이터는 **DynamoDB**에, 정산용 집계는 **Redshift**에 들어간다. 전체 상태는 **CloudWatch**로 보고, 부하가 오르면 경보가 **Auto Scaling**을 깨운다. 설정을 누가 바꿨는지는 **CloudTrail**이, 규칙 위반은 **Config**가 잡는다. 그리고 이 구성 전체는 **CloudFormation** 템플릿 한 벌로 다시 만들 수 있다. 개별 서비스를 외우기보다 이렇게 한 장면 안에서 각자의 자리를 기억하는 편이 오래간다.
 
-다음 주에는 보안·요금·지원 등 운영과 거버넌스 영역으로 넘어간다.
+## 정리
+
+핵심 서비스 2를 다시 새기면 이렇다. **데이터베이스**는 RDS/Aurora(관계형)·DynamoDB(NoSQL)·Redshift(분석)로 데이터 모양에 따라 갈리고, **통합**은 SQS(큐)·SNS(팬아웃)·EventBridge(이벤트 라우팅)로 서비스를 느슨하게 잇고, **관리**는 CloudWatch(성능)·CloudTrail(감사)·Config(구성 준수)로 보는 대상이 다르며, **IaC**는 CloudFormation이 인프라를 코드로 재현한다.
+
+시험은 "상황 → 가장 적합한 서비스"로 묻는다는 점을 다시 기억한다. 특히 CloudWatch/CloudTrail/Config 구분과 SQS/SNS 차이는 시험 범위에 든다. 다음 주에는 보안·요금·지원 등 운영과 거버넌스 영역으로 넘어간다.
 
 ---
 
