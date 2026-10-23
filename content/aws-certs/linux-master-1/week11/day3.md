@@ -22,7 +22,7 @@
 | `OUTPUT` | 이 시스템에서 **나가는**(출발지가 나) 패킷 |
 | `FORWARD` | 이 시스템을 **거쳐 가는**(라우터 역할 시) 패킷 |
 
-> 💡 **핵심**: 방향을 정확히 구분하라. 외부에서 우리 서버로 들어오는 접속(웹·SSH 요청 등)을 막거나 허용하는 건 **INPUT** 체인이다. 시험에서 "외부 SSH 접속을 차단" → INPUT 체인 규칙. "이 호스트가 다른 곳으로 나가는 트래픽 제어" → OUTPUT 체인. "게이트웨이를 통과하는 트래픽" → FORWARD 체인.
+방향에 따라 체인이 갈린다. 외부에서 우리 서버로 들어오는 접속(웹·SSH 요청 등)을 막거나 허용하는 건 **INPUT** 체인이다. 시험에서 "외부 SSH 접속을 차단" → INPUT 체인 규칙. "이 호스트가 다른 곳으로 나가는 트래픽 제어" → OUTPUT 체인. "게이트웨이를 통과하는 트래픽" → FORWARD 체인.
 
 - 각 체인의 규칙들은 **위에서 아래로 순서대로** 적용된다.
 - 패킷이 어떤 규칙과 일치하면 그 규칙의 타깃(처리 동작)이 실행된다.
@@ -40,7 +40,7 @@
 | `REJECT` | 패킷을 거부하고 거부 응답을 보낸다 (상대는 즉시 거부됨을 앎) |
 | `LOG` | 패킷 정보를 로그에 남기고 다음 규칙으로 넘어감 |
 
-> 🔍 **DROP vs REJECT**: 둘 다 차단이지만 응답이 다르다. `DROP`은 패킷을 묵묵히 버려서 상대는 타임아웃까지 기다려야 한다(포트 스캔을 방해하는 효과). `REJECT`는 "거부됨"이라는 ICMP 응답을 즉시 보내 상대가 바로 알게 한다. 보안상 외부 노출 포트는 DROP, 내부망은 사용자 편의를 위해 REJECT를 쓰는 식으로 구분하기도 한다.
+**DROP vs REJECT**: 둘 다 차단이지만 응답이 다르다. `DROP`은 패킷을 묵묵히 버려서 상대는 타임아웃까지 기다려야 한다(포트 스캔을 방해하는 효과). `REJECT`는 "거부됨"이라는 ICMP 응답을 즉시 보내 상대가 바로 알게 한다. 보안상 외부 노출 포트는 DROP, 내부망은 사용자 편의를 위해 REJECT를 쓰는 식으로 구분하기도 한다.
 
 ```bash
 # 체인의 기본 정책을 DROP으로 설정 (-P = policy)
@@ -49,7 +49,7 @@ iptables -P FORWARD DROP
 iptables -P OUTPUT ACCEPT
 ```
 
-> ⚠️ **원격 작업의 함정**: 원격 SSH로 접속한 상태에서 `iptables -P INPUT DROP`을 먼저 실행하면, SSH 허용 규칙을 추가하기 전에 **자기 자신이 끊긴다**. 반드시 SSH 허용 규칙(`-A INPUT -p tcp --dport 22 -j ACCEPT`)을 먼저 넣은 뒤 기본 정책을 DROP으로 바꿔야 한다. 실무·시험 모두 단골 함정이다.
+> ⚠️ **원격 작업의 함정**: 원격 SSH로 접속한 상태에서 `iptables -P INPUT DROP`을 먼저 실행하면, SSH 허용 규칙을 추가하기 전에 **자기 자신이 끊긴다**. 반드시 SSH 허용 규칙(`-A INPUT -p tcp --dport 22 -j ACCEPT`)을 먼저 넣은 뒤 기본 정책을 DROP으로 바꿔야 한다. 실무와 시험 모두에서 함정이 된다.
 
 ## 규칙 작성: -A, -j, 그리고 매칭 조건
 
@@ -97,7 +97,7 @@ iptables -A INPUT -i lo -j ACCEPT
 iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 ```
 
-> 💡 **-A vs -I의 순서 차이**: 체인은 위→아래로 매칭하므로 규칙의 위치가 결과를 바꾼다. `-A`는 맨 끝에 붙이고, `-I`는 맨 앞에 끼워 넣는다. 이미 "전부 DROP" 규칙이 위에 있다면, 그 뒤에 `-A`로 ACCEPT를 추가해봐야 이미 DROP에 걸려 도달하지 못한다. 이럴 땐 `-I`로 ACCEPT를 앞에 삽입해야 한다.
+**-A vs -I의 순서 차이**: 체인은 위→아래로 매칭하므로 규칙의 위치가 결과를 바꾼다. `-A`는 맨 끝에 붙이고, `-I`는 맨 앞에 끼워 넣는다. 이미 "전부 DROP" 규칙이 위에 있다면, 그 뒤에 `-A`로 ACCEPT를 추가해봐야 이미 DROP에 걸려 도달하지 못한다. 이럴 땐 `-I`로 ACCEPT를 앞에 삽입해야 한다.
 
 ## 규칙 확인과 저장
 
@@ -135,7 +135,7 @@ service iptables save
 | `home` / `internal` | 신뢰하는 내부망. 대부분 허용 |
 | `trusted` | 모든 트래픽 허용 (가장 개방적) |
 
-> 💡 **zone의 발상**: iptables가 "규칙 한 줄 한 줄"을 다룬다면, firewalld는 "이 네트워크 카드는 공개망(public)이고, 저 카드는 내부망(internal)"처럼 **상황별 규칙 묶음**을 적용한다. 노트북을 공항 와이파이에 연결하면 public, 집에 오면 home zone으로 바꾸는 식의 유연함이 핵심이다.
+**zone의 발상**: iptables가 "규칙 한 줄 한 줄"을 다룬다면, firewalld는 "이 네트워크 카드는 공개망(public)이고, 저 카드는 내부망(internal)"처럼 **상황별 규칙 묶음**을 적용한다. 노트북을 공항 와이파이에 연결하면 public, 집에 오면 home zone으로 바꾸는 식의 유연함이 핵심이다.
 
 ## firewall-cmd: firewalld를 다루는 명령
 
@@ -176,7 +176,7 @@ firewall-cmd --reload
 | `--reload` | 영구 설정을 런타임에 다시 로드 |
 | `--get-services` | 미리 정의된 서비스 목록 보기 |
 
-> ⚠️ **--permanent 함정**: `firewall-cmd --add-service=http --permanent`만 실행하면 설정 파일에는 기록되지만 **지금 당장은 적용되지 않는다**. 반드시 `firewall-cmd --reload`를 이어서 해야 현재 세션에도 반영된다. 반대로 `--permanent` 없이 추가하면 지금은 되지만 재부팅 시 사라진다. "둘 다 하려면 한 번은 런타임, 한 번은 permanent"로 두 번 실행하거나, permanent 후 reload하는 방식을 쓴다.
+**--permanent 함정**: `firewall-cmd --add-service=http --permanent`만 실행하면 설정 파일에는 기록되지만 **지금 당장은 적용되지 않는다**. 반드시 `firewall-cmd --reload`를 이어서 해야 현재 세션에도 반영된다. 반대로 `--permanent` 없이 추가하면 지금은 되지만 재부팅 시 사라진다. "둘 다 하려면 한 번은 런타임, 한 번은 permanent"로 두 번 실행하거나, permanent 후 reload하는 방식을 쓴다.
 
 ## iptables vs firewalld 정리
 
@@ -189,9 +189,9 @@ firewall-cmd --reload
 | 영속화 | `service iptables save` | `--permanent` + `--reload` |
 | 관계 | netfilter를 직접 제어 | 내부적으로 netfilter(nftables)를 사용 |
 
-> 🔍 **둘은 함께 쓰면 안 된다**: firewalld와 iptables 서비스를 동시에 활성화하면 충돌한다. RHEL 7+에서는 firewalld가 기본이며, iptables를 직접 쓰려면 firewalld를 끄고(`systemctl disable firewalld`) iptables 서비스를 활성화해야 한다. 둘 다 결국 커널의 netfilter를 제어하므로 한쪽만 관리자로 써야 한다.
+**둘은 함께 쓰면 안 된다**: firewalld와 iptables 서비스를 동시에 활성화하면 충돌한다. RHEL 7+에서는 firewalld가 기본이며, iptables를 직접 쓰려면 firewalld를 끄고(`systemctl disable firewalld`) iptables 서비스를 활성화해야 한다. 둘 다 결국 커널의 netfilter를 제어하므로 한쪽만 관리자로 써야 한다.
 
-> 🔍 **직접 쳐보기**: 테스트 VM에서 `firewall-cmd --add-service=http`(런타임만)를 한 뒤 `firewall-cmd --list-services`로 확인하고, 재부팅 후 사라지는 걸 보라. 그다음 `--permanent`를 붙여 다시 하고 `--reload`까지 거쳐 영속됨을 확인하면 런타임/영구의 차이가 체감된다. iptables 쪽은 `iptables -L -n --line-numbers`로 줄번호를 본 뒤 `-I`와 `-A`의 위치 차이를 실험해 보라.
+**직접 쳐보기**: 테스트 VM에서 `firewall-cmd --add-service=http`(런타임만)를 한 뒤 `firewall-cmd --list-services`로 확인하고, 재부팅 후 사라지는 것을 확인한다. 그다음 `--permanent`를 붙여 다시 하고 `--reload`까지 거쳐 영속됨을 확인하면 런타임/영구의 차이가 체감된다. iptables 쪽은 `iptables -L -n --line-numbers`로 줄번호를 본 뒤 `-I`와 `-A`의 위치 차이를 실험해 본다.
 
 내일은 TCP Wrapper, SELinux, 그리고 로그 관리로 보안의 폭을 넓힌다.
 
