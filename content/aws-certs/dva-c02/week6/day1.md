@@ -6,11 +6,11 @@
 
 2007년 10월, Amazon의 수석 엔지니어들이 ACM SOSP 학술회의에서 "Dynamo: Amazon's Highly Available Key-value Store"라는 논문을 발표했다. 이 논문은 분산 시스템 역사에서 가장 영향력 있는 논문 중 하나가 됐다.
 
-당시 Amazon의 문제는 이랬다. MySQL 같은 관계형 DB는 트랜잭션을 위해 락(lock)을 사용하고, 분산 확장이 어려우며, 특히 피크 트래픽(블랙 프라이데이, 크리스마스)에서 수십만 TPS를 처리하기 어렵다. Amazon의 수석 과학자 Werner Vogels는 "Amazon의 수많은 서비스가 95% 이상의 쿼리에서 PRIMARY KEY를 사용하며, 복잡한 JOIN이 거의 필요없다"는 분석을 했다. 그렇다면 JOIN을 포기하고 수평 확장에 최적화된 스토리지를 만들면 어떨까?
+당시 Amazon의 문제는 이랬다. MySQL 같은 관계형 DB는 트랜잭션을 위해 락(lock)을 사용하고, 분산 확장이 어려우며, 특히 피크 트래픽(블랙 프라이데이, 크리스마스)에서 수십만 TPS를 처리하기 어렵다. Amazon 내부 서비스 대부분이 기본 키 조회로 충분하고 복잡한 JOIN이 거의 필요하지 않다는 분석이 있었다. 그렇다면 JOIN을 포기하고 수평 확장에 최적화된 스토리지를 만들면 어떨까?
 
 Dynamo 논문은 일관적인 해싱(Consistent Hashing), 벡터 클록(Vector Clock), 가십 프로토콜(Gossip Protocol), 최종 일관성(Eventual Consistency) 같은 분산 시스템 개념을 조합한 Key-Value 스토리지를 설계했다. 이것이 DynamoDB의 이론적 토대다.
 
-> 💡 **관련 이론**: Dynamo 논문은 CAP 정리(Brewer, 2000)를 실용적으로 해석한 대표적 사례다. CAP 정리는 분산 시스템에서 일관성(Consistency), 가용성(Availability), 파티션 내성(Partition Tolerance) 중 두 개만 보장할 수 있다고 한다. Amazon의 Dynamo는 AP(가용성 + 파티션 내성)를 선택하고 일관성을 희생해 "eventual consistency"를 채택했다. DynamoDB는 이 기반 위에서 선택적으로 Strong Consistency를 추가 제공한다.
+CAP 정리에 따르면 분산 시스템은 일관성(Consistency), 가용성(Availability), 파티션 내성(Partition Tolerance) 중 두 개만 보장할 수 있다. Amazon의 Dynamo는 AP(가용성 + 파티션 내성)를 선택하고 일관성을 희생해 "eventual consistency"를 채택했다. DynamoDB는 이 기반 위에서 선택적으로 Strong Consistency를 추가 제공한다.
 
 ## DynamoDB vs RDBMS — 패러다임의 차이
 
@@ -28,7 +28,7 @@ Dynamo 논문은 일관적인 해싱(Consistent Hashing), 벡터 클록(Vector C
 
 RDBMS는 "데이터를 어떻게 저장할까"를 먼저 생각하고, 나중에 다양한 쿼리로 데이터를 뽑는다. DynamoDB는 반대다 — "어떻게 조회할까"를 먼저 결정하고 그에 맞춰 PK와 인덱스를 설계한다. 이 패러다임 전환이 DynamoDB 학습의 첫 번째 관문이다.
 
-> 📚 **사례**: Airbnb는 2019년에 검색 서비스의 일부 데이터 레이어를 MySQL에서 DynamoDB로 전환했다. 이유는 단순했다 — 검색 결과 캐싱과 사용자별 선호 저장 같은 키-값 패턴에서 MySQL의 락 경합이 성능 병목이 됐기 때문이다. DynamoDB 전환 후 p99 지연 시간이 200ms에서 10ms로 줄었다. 단, 검색 필터와 정렬 같은 복잡한 쿼리는 Elasticsearch를 별도로 유지했다 — DynamoDB의 한계를 알고 적재적소에 사용한 사례다.
+키-값 패턴(검색 결과 캐싱, 사용자별 선호 저장)에서 RDBMS의 락 경합이 병목이 되면 DynamoDB로 옮기는 선택이 있다. 반면 검색 필터와 정렬 같은 복잡한 쿼리는 DynamoDB의 한계가 있어 Elasticsearch 같은 별도 검색 엔진을 함께 쓴다. DynamoDB의 한계를 알고 적재적소에 쓰는 것이 요점이다.
 
 ## 파티셔닝 메커니즘 — SHA-256 해시와 파티션 결정
 
@@ -50,11 +50,11 @@ DynamoDB가 PK 값을 받으면 내부적으로 SHA-256 해시를 계산하고, 
 
 10GB를 초과하거나 처리량 한도에 도달하면 S3가 자동으로 파티션을 분할(split)한다. 이 분할은 자동이지만 수 분이 걸릴 수 있으며, 그 사이에 throttling이 발생할 수 있다.
 
-> 🔍 **더 깊이**: DynamoDB의 파티셔닝은 일관적 해싱(Consistent Hashing)의 변형을 사용한다. 일관적 해싱의 핵심 특성은 노드(파티션)가 추가/제거될 때 재배치되는 데이터의 양이 최소화된다는 것이다. 일반 해시(`key % N`)는 N이 변할 때 거의 모든 데이터를 재배치해야 하지만, 일관적 해싱은 1/N의 데이터만 이동한다. DynamoDB가 PB 규모에서도 파티션 추가를 원활하게 처리할 수 있는 이유다.
+DynamoDB의 파티셔닝은 일관적 해싱(Consistent Hashing)의 변형을 사용한다. 일관적 해싱의 핵심 특성은 노드(파티션)가 추가/제거될 때 재배치되는 데이터의 양이 최소화된다는 것이다. 일반 해시(`key % N`)는 N이 변할 때 거의 모든 데이터를 재배치해야 하지만, 일관적 해싱은 1/N의 데이터만 이동한다. DynamoDB가 PB 규모에서도 파티션 추가를 원활하게 처리할 수 있는 이유다.
 
 ## 핫 파티션 문제 — 잘못된 PK 설계의 대가
 
-가장 흔한 DynamoDB 설계 실수가 낮은 카디널리티(cardinality) 값을 파티션 키로 사용하는 것이다. 카디널리티란 고유 값의 수다.
+DynamoDB 설계에서 흔히 하는 실수가 낮은 카디널리티(cardinality) 값을 파티션 키로 사용하는 것이다. 카디널리티란 고유 값의 수다.
 
 ```
 나쁜 PK 예시들:
@@ -102,7 +102,7 @@ DynamoDB는 세 범주의 데이터 유형을 지원한다.
 
 항목 최대 크기는 **400KB**다. 이미지, 동영상 같은 큰 데이터는 S3에 저장하고 DynamoDB에는 S3 URL 또는 키만 저장하는 것이 표준 패턴이다.
 
-> 💡 **관련 이론**: DynamoDB의 Map(`M`) 타입은 JSON과 개념적으로 동일하다. 사실 DynamoDB의 데이터 모델은 JSON을 이진 형식으로 인코딩한 것이다(내부적으로 CBOR과 유사한 형식). `aws dynamodb get-item --output json`을 실행하면 DynamoDB가 반환하는 응답이 타입 어노테이션이 포함된 JSON임을 볼 수 있다. Map 타입의 중첩 깊이에는 이론적 제한이 없지만, 전체 항목 크기 400KB 안에 들어야 한다.
+DynamoDB의 Map(`M`) 타입은 JSON과 개념적으로 동일하다. 사실 DynamoDB의 데이터 모델은 JSON을 이진 형식으로 인코딩한 것이다(내부적으로 CBOR과 유사한 형식). `aws dynamodb get-item --output json`을 실행하면 DynamoDB가 반환하는 응답이 타입 어노테이션이 포함된 JSON임을 볼 수 있다. Map 타입의 중첩 깊이에는 이론적 제한이 없지만, 전체 항목 크기 400KB 안에 들어야 한다.
 
 ## 읽기 일관성 모델 — 분산 시스템의 트레이드오프
 
@@ -171,7 +171,7 @@ response = table.get_item(
 )
 ```
 
-> ⚠️ **함정**: `FilterExpression`은 항목을 읽은 **후에** 필터링한다. 즉, DynamoDB는 먼저 파티션 키 조건에 맞는 모든 항목을 읽고(RCU 소비), 그 다음 FilterExpression을 적용해서 일부를 제거한다. 결과 항목이 10개여도 읽은 항목이 1,000개면 1,000개 기준으로 RCU가 청구된다. RCU를 절감하려면 FilterExpression이 아니라 GSI를 설계해 KeyConditionExpression으로 검색해야 한다.
+`FilterExpression`은 항목을 읽은 **후에** 필터링한다. 즉, DynamoDB는 먼저 파티션 키 조건에 맞는 모든 항목을 읽고(RCU 소비), 그 다음 FilterExpression을 적용해서 일부를 제거한다. 결과 항목이 10개여도 읽은 항목이 1,000개면 1,000개 기준으로 RCU가 청구된다. RCU를 절감하려면 FilterExpression이 아니라 GSI를 설계해 KeyConditionExpression으로 검색해야 한다.
 
 ## Adaptive Capacity와 Burst Capacity
 

@@ -1,6 +1,6 @@
 # Day 2 - DynamoDB: 파티션 키 설계의 수학, LSI/GSI 내부 동작, Single-Table Design
 
-DynamoDB를 처음 배울 때 "파티션 키를 잘 골라야 한다"는 말을 듣지만, "잘 고른다"의 수학적 의미는 잘 가르쳐주지 않는다. 이 day에서는 파티션 키 설계가 왜 수학적 문제인지, LSI와 GSI가 내부적으로 어떻게 다르게 저장되는지, 그리고 수십 개의 마이크로서비스가 사용하던 테이블들을 하나로 합치는 Single-Table Design이 왜 DynamoDB의 표준 패턴인지를 깊이 파고든다.
+DynamoDB를 처음 배울 때 "파티션 키를 잘 골라야 한다"는 말을 듣지만, "잘 고른다"의 수학적 의미는 잘 가르쳐주지 않는다. 이 day에서는 세 가지를 다룬다. 파티션 키 설계가 왜 수학적 문제인지, LSI와 GSI가 내부적으로 어떻게 다르게 저장되는지, 그리고 여러 테이블을 하나로 합치는 Single-Table Design이 왜 DynamoDB의 표준 패턴인지를 짚는다.
 
 ## 파티션 키 카디널리티의 수학
 
@@ -50,7 +50,7 @@ def query_all_shards(date: str, shard_count: int = 10):
 
 Write Sharding의 단점은 읽기 시 **Scatter-Gather** 패턴이 필요하다는 것이다 — 모든 샤드를 쿼리한 후 결과를 합쳐야 한다. 읽기 복잡도가 증가하므로 "핫 파티션이 심각한 쓰기 집중 시나리오"에서만 사용한다.
 
-> 💡 **관련 이론**: Write Sharding은 분산 데이터베이스 이론에서 "horizontal partitioning"의 응용이다. Cassandra의 "wide partitions" 문제를 해결하는 방법과 동일한 원리다. 샤드 수(Fan-out Factor)는 예상 피크 WCU / 파티션당 WCU 한도(1,000)로 계산한다. 피크 WCU가 8,000이면 최소 8개 샤드가 필요하다. 10개로 잡으면 여유분이 생긴다.
+Write Sharding은 분산 데이터베이스 이론에서 "horizontal partitioning"의 응용이다. Cassandra의 "wide partitions" 문제를 해결하는 방법과 동일한 원리다. 샤드 수(Fan-out Factor)는 예상 피크 WCU / 파티션당 WCU 한도(1,000)로 계산한다. 피크 WCU가 8,000이면 최소 8개 샤드가 필요하다. 10개로 잡으면 여유분이 생긴다.
 
 ## LSI vs GSI — 내부 저장 방식의 근본적 차이
 
@@ -110,9 +110,9 @@ GSI는 별도 파티션이므로:
 | 최대 개수 | 5개 | 20개 |
 | 항목 컬렉션 한도 | 10GB (PK 기준) | 해당 없음 |
 
-> 🔍 **더 깊이**: GSI의 비동기 복제 지연은 일반적으로 밀리초 수준이지만, 테이블에 쓰기 부하가 높거나 GSI WCU가 부족하면 수 초까지 늘어날 수 있다. 특히 GSI WCU가 기본 테이블 WCU보다 낮으면 GSI가 쓰기를 따라가지 못해 지연이 증가한다. 심각한 경우 기본 테이블 쓰기 자체가 throttling된다 — 이것이 "GSI WCU ≥ 기본 테이블 WCU"를 유지해야 하는 이유다.
+GSI의 비동기 복제 지연은 일반적으로 밀리초 수준이지만, 테이블에 쓰기 부하가 높거나 GSI WCU가 부족하면 수 초까지 늘어날 수 있다. 특히 GSI WCU가 기본 테이블 WCU보다 낮으면 GSI가 쓰기를 따라가지 못해 지연이 증가한다. 심각한 경우 기본 테이블 쓰기 자체가 throttling된다 — 이것이 "GSI WCU ≥ 기본 테이블 WCU"를 유지해야 하는 이유다.
 
-## GSI Throttling — 가장 자주 보는 DynamoDB 함정
+## GSI Throttling — DynamoDB의 대표적인 함정
 
 GSI WCU가 기본 테이블 WCU보다 낮을 때 발생하는 연쇄 문제:
 
@@ -135,7 +135,7 @@ GSI WCU: 100 (너무 낮음)
 
 온디맨드 모드로 테이블을 설정하면 GSI도 자동으로 온디맨드가 되므로 WCU 불일치 문제가 해결된다. 프로비저닝 모드에서는 GSI WCU를 항상 기본 테이블 WCU 이상으로 유지해야 한다.
 
-> ⚠️ **함정**: 많은 개발자가 기본 테이블 WCU는 충분히 잡지만 GSI WCU를 기본 테이블의 절반 정도로 설정한다. 이것이 "무작위로 발생하는" throttling의 원인인 경우가 많다.
+> ⚠️ **함정**: 기본 테이블 WCU는 충분히 잡지만 GSI WCU를 기본 테이블의 절반 정도로 설정한다. 이것이 "무작위로 발생하는" throttling의 원인인 경우가 많다.
 
 ## GSI Projection — 인덱스에 어떤 속성을 저장할까
 
@@ -214,7 +214,7 @@ ORDER#O001    | STATUS          | status, updatedAt
    Query(PK=PRODUCT#P001, SK begins_with("REVIEW#"))
 ```
 
-> 💡 **관련 이론**: Single-Table Design은 RDBMS의 정규화(Normalization)와 반대되는 역정규화(Denormalization) 전략이다. 정규화는 데이터 중복을 줄이고 일관성을 높이지만 JOIN이 필요하다. 역정규화는 데이터 중복을 허용하지만 JOIN 없이 빠른 조회가 가능하다. DynamoDB는 JOIN 자체가 없으므로 역정규화가 필수다. 이 설계 철학은 Google의 Bigtable 논문(2006)에서도 동일하게 나타나며, "store data how you use it"이라는 원칙으로 요약된다.
+Single-Table Design은 RDBMS의 정규화(Normalization)와 반대되는 역정규화(Denormalization) 전략이다. 정규화는 데이터 중복을 줄이고 일관성을 높이지만 JOIN이 필요하다. 역정규화는 데이터 중복을 허용하지만 JOIN 없이 빠른 조회가 가능하다. DynamoDB는 JOIN 자체가 없으므로 역정규화가 필수다. 이 설계 철학은 Google의 Bigtable 논문(2006)에서도 동일하게 나타나며, "store data how you use it"이라는 원칙으로 요약된다.
 
 ## Sparse Index — 조건부 GSI 인덱싱
 
@@ -264,7 +264,7 @@ FilterExpression 함정:
   10,000개 읽고 8,000개 필터링 → 1,250 RCU 소비 (필터 무관)
 ```
 
-> 📚 **사례**: 2021년 한 한국 핀테크 스타트업이 DynamoDB로 전환 후 첫 달 청구서가 예상의 50배가 나왔다. 원인 분석 결과 Lambda 함수가 매분 Scan 작업으로 미처리 트랜잭션을 찾고 있었다. Query + GSI 패턴으로 교체 후 RCU 소비가 1/50로 줄었고 비용도 정상화됐다. Scan은 "절대 사용 금지"가 아니라 "테이블 마이그레이션이나 데이터 백업처럼 명확한 이유가 있을 때만" 사용해야 한다.
+가상의 사례로, Lambda 함수가 매분 Scan으로 미처리 트랜잭션을 찾게 하면 RCU 소비와 청구 비용이 급증한다. Query + GSI 패턴으로 바꾸면 RCU 소비가 크게 줄어든다. Scan은 "절대 사용 금지"가 아니라 테이블 마이그레이션이나 데이터 백업처럼 명확한 이유가 있을 때만 쓴다.
 
 ## Query의 페이지네이션 처리
 
