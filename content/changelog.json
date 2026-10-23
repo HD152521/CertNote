@@ -1,0 +1,10 @@
+[
+  { "date": "2026-10-23", "cert": "sap-c02", "kind": "exam", "summary": "SAP-C02 문항당 시간 계산 오류 정정" },
+  { "date": "2026-10-23", "kind": "fact", "summary": "Capital One 사고 제재금·합의금 구분 및 원인 서술 정정" },
+  { "date": "2026-10-23", "cert": "linux-master-1", "kind": "quiz", "summary": "리눅스마스터 1급 모의고사 26번 복수정답 수정" },
+  { "date": "2026-10-23", "kind": "exam", "summary": "같은 시험 안 비채점 문항 수·도메인 비중 수치 통일" },
+  { "date": "2026-10-23", "cert": "mla-c01", "kind": "exam", "summary": "MLA-C01 합격 점수 환산 서술 정정" },
+  { "date": "2026-10-23", "cert": "dea-c01", "kind": "fact", "summary": "DEA-C01 Airflow schedule 인자 최신화" },
+  { "date": "2026-10-23", "cert": "soa-c02", "kind": "fact", "summary": "SOA-C02 DeletionPolicy 설명 모순 정정" },
+  { "date": "2026-10-23", "kind": "copy", "summary": "홈 화면의 확인할 수 없는 비교·최상급 표현 삭제" }
+]

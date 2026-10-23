@@ -32,6 +32,8 @@ const SOURCE_FILES = [
   'src/app/about/page.tsx',
   'src/app/about/how-we-make/page.tsx',
   'src/app/contact/page.tsx',
+  'src/app/changelog/page.tsx',
+  'content/changelog.json',
   'src/app/terms/page.tsx',
   'src/app/roadmap/page.tsx',
   'content/roadmaps.json',

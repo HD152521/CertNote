@@ -27,6 +27,11 @@ describe('sitemap', () => {
     expect(urls).toContain(`${SITE_URL}/about/how-we-make`);
   });
 
+  test('수정 기록 페이지가 사이트맵에 포함된다(P4 Step 5b)', { timeout: 30000 }, async () => {
+    const urls = (await sitemap()).map((e) => e.url);
+    expect(urls).toContain(`${SITE_URL}/changelog`);
+  });
+
   test('robots.txt로 차단된 라우트는 사이트맵에 없다', { timeout: 30000 }, async () => {
     const entries = await sitemap();
     const blocked = ['/admin', '/account', '/dashboard', '/review', '/notebook', '/exam', '/login', '/signup', '/forgot', '/reset', '/verify', '/welcome'];
