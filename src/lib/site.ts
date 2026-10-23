@@ -21,5 +21,5 @@ export function excerptOf(markdown: string, max = 155): string {
 }
 
 // 운영 주체·문의처. 푸터·소개·문의·약관·개인정보처리방침이 공유한다.
-export const OPERATOR_NAME = '주간실험실';
+export const OPERATOR_NAME = '주간랩스';
 export const CONTACT_EMAIL = 'wkdrndydtlr@gmail.com';
