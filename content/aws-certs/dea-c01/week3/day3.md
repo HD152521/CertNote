@@ -6,7 +6,7 @@
 
 ## DMS의 세 가지 구성 요소
 
-DMS는 세 부품의 조합으로 동작한다. 이 분해를 이해하면 시험 문제의 절반이 풀린다.
+DMS는 세 부품의 조합으로 동작한다. 이 분해를 이해하면 DMS 문제의 상당수를 풀 수 있다.
 
 ```
 [Source Endpoint] → [Replication Instance] → [Target Endpoint]
@@ -53,7 +53,7 @@ Migration Task는 세 가지 모드 중 하나로 동작한다.
 }
 ```
 
-> ⚠️ **함정**: CDC가 동작하려면 **원본 DB의 변경 로그 접근이 활성화**되어 있어야 한다. MySQL은 binary log(binlog)를 row 형식으로, PostgreSQL은 logical replication(`wal_level=logical`)을, Oracle은 supplemental logging을 켜야 한다. 이 사전 설정을 빠뜨리면 Full Load는 되는데 CDC가 안 되는 증상이 나타난다. 시험 단골 함정이다.
+> ⚠️ **함정**: CDC가 동작하려면 **원본 DB의 변경 로그 접근이 활성화**되어 있어야 한다. MySQL은 binary log(binlog)를 row 형식으로, PostgreSQL은 logical replication(`wal_level=logical`)을, Oracle은 supplemental logging을 켜야 한다. 이 사전 설정을 빠뜨리면 Full Load는 되는데 CDC가 안 되는 증상이 나타난다. 오답 보기로 쓰이기 쉬운 함정이다.
 
 ## CDC는 어떻게 변경을 잡아내는가: 트랜잭션 로그
 
@@ -68,7 +68,7 @@ CDC의 핵심은 DB가 내구성을 위해 이미 기록하는 **트랜잭션 �
 
 이 방식의 큰 장점은 원본 테이블에 트리거를 걸거나 추가 쿼리를 날리지 않는다는 점이다. 이미 존재하는 로그를 읽기만 하므로 원본 워크로드에 미치는 영향이 작다(low-impact).
 
-> 🔍 **더 깊이**: CDC가 추출한 각 변경 레코드에는 연산 종류를 나타내는 메타데이터가 붙는다. DMS는 이를 S3 타깃에 적재할 때 `Op` 컬럼(`I`=insert, `U`=update, `D`=delete)으로 표시할 수 있다(`includeOpForFullLoad`, `cdcInsertsAndUpdates` 설정). 다운스트림에서 이 `Op` 컬럼을 보고 데이터 레이크에 merge/upsert 로직을 구현한다. CDC는 "현재 값"이 아니라 "변화의 흐름"을 전달한다는 점이 핵심이다.
+CDC가 추출한 각 변경 레코드에는 연산 종류를 나타내는 메타데이터가 붙는다. DMS는 이를 S3 타깃에 적재할 때 `Op` 컬럼(`I`=insert, `U`=update, `D`=delete)으로 표시할 수 있다(`includeOpForFullLoad`, `cdcInsertsAndUpdates` 설정). 다운스트림에서 이 `Op` 컬럼을 보고 데이터 레이크에 merge/upsert 로직을 구현한다. CDC는 "현재 값"이 아니라 "변화의 흐름"을 전달한다는 점이 핵심이다.
 
 ## DMS Serverless와 검증
 
@@ -105,7 +105,7 @@ DMS의 타깃이 분석 시스템일 때 흔한 패턴들이 있다.
 
 DMS의 타깃 엔드포인트로 S3, Kinesis Data Streams, Redshift, OpenSearch, DynamoDB 등 분석 친화적 대상을 직접 지정할 수 있다는 점이 데이터 엔지니어링 맥락에서 중요하다. 특히 "운영 DB의 변경을 데이터 레이크에 근실시간으로 반영"은 DEA 시험의 핵심 시나리오다.
 
-> 💡 **관련 이론**: CDC를 스트림으로 흘리는 패턴은 "데이터베이스를 이벤트 스트림으로 본다"는 관점(Kafka 창시자 Jay Kreps의 "Turning the database inside-out")과 맞닿아 있다. 테이블의 현재 상태는 모든 변경 이벤트를 누적 적용한 결과(materialized view)일 뿐이라는 시각이다. CDC는 이 변경 로그를 외부로 노출해, 하나의 변경을 여러 다운스트림(레이크, 검색, 캐시)이 각자 재구성하게 한다.
+CDC를 스트림으로 흘리는 패턴은 "데이터베이스를 이벤트 스트림으로 본다"는 관점(Kafka 창시자 Jay Kreps의 "Turning the database inside-out")과 맞닿아 있다. 테이블의 현재 상태는 모든 변경 이벤트를 누적 적용한 결과(materialized view)일 뿐이라는 시각이다. CDC는 이 변경 로그를 외부로 노출해, 하나의 변경을 여러 다운스트림(레이크, 검색, 캐시)이 각자 재구성하게 한다.
 
 ## 정리: 멈추지 않고 옮기기
 

@@ -2,7 +2,7 @@
 
 지난주까지 본 Glue는 "서버를 신경 쓰지 않는 ETL"이었다. 그런데 데이터 규모가 테라바이트를 넘어가고, 복잡한 머신러닝 전처리나 Hive·HBase·Presto 같은 빅데이터 생태계 도구를 함께 써야 하면, 더 큰 자유도와 제어권이 필요해진다. 그 영역을 책임지는 서비스가 **Amazon EMR(Elastic MapReduce)**다.
 
-EMR은 한마디로 "관리형 하둡/스파크 클러스터"다. EC2 위에 Apache Spark, Hive, Presto, HBase, Flink 같은 오픈소스 빅데이터 프레임워크를 묶어 자동으로 프로비저닝하고 운영한다. Glue가 "추상화된 ETL 함수"라면, EMR은 "내가 직접 다루는 분산 컴퓨팅 클러스터"에 가깝다. 시험에서는 이 둘의 선택 기준이 단골 주제다.
+EMR은 한마디로 "관리형 하둡/스파크 클러스터"다. EC2 위에 Apache Spark, Hive, Presto, HBase, Flink 같은 오픈소스 빅데이터 프레임워크를 묶어 자동으로 프로비저닝하고 운영한다. Glue가 "추상화된 ETL 함수"라면, EMR은 "내가 직접 다루는 분산 컴퓨팅 클러스터"에 가깝다. 시험에서는 이 둘의 선택 기준이 판단 포인트가 된다.
 
 ## EMR 클러스터의 구조: 세 가지 노드 역할
 
@@ -40,7 +40,7 @@ result.write.mode("overwrite").parquet("s3://curated-bucket/sales/")
 
 Spark가 빠른 또 하나의 이유는 **지연 평가(lazy evaluation)**다. `filter`, `groupBy` 같은 변환(transformation)은 즉시 실행되지 않고 실행 계획(DAG)으로만 쌓인다. `write`나 `count` 같은 액션(action)이 호출되는 순간에야 Spark가 전체 DAG를 최적화해 한 번에 실행한다. 덕분에 불필요한 중간 단계를 합치거나 건너뛸 수 있다.
 
-> 🔍 **더 깊이**: Spark의 기반 자료구조는 **RDD(Resilient Distributed Dataset)**다. "Resilient(복원력 있는)"인 이유는 각 RDD가 자신이 어떻게 만들어졌는지 계보(lineage)를 기억하기 때문이다. 노드가 죽어 일부 파티션이 사라져도, 계보를 따라 그 파티션만 다시 계산하면 된다. 전체를 체크포인트하지 않고도 장애를 견디는 영리한 설계다. DataFrame과 SQL은 이 RDD 위에 얹힌 고수준 추상화다.
+Spark의 기반 자료구조는 **RDD(Resilient Distributed Dataset)**다. "Resilient(복원력 있는)"인 이유는 각 RDD가 자신이 어떻게 만들어졌는지 계보(lineage)를 기억하기 때문이다. 노드가 죽어 일부 파티션이 사라져도, 계보를 따라 그 파티션만 다시 계산하면 된다. 전체를 체크포인트하지 않고도 장애를 견디는 영리한 설계다. DataFrame과 SQL은 이 RDD 위에 얹힌 고수준 추상화다.
 
 ## EMR Storage: HDFS vs EMRFS
 
