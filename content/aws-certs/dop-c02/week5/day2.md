@@ -4,7 +4,7 @@
 
 문제는 이 구조가 파이프라인 엔지니어에게 상당한 IAM/S3/KMS 설정을 요구한다는 점이다. 잘못 설정하면 "S3는 되는데 복호화가 안 된다", "AssumeRole이 안 된다", "배포는 됐는데 권한이 너무 넓다" 같은 문제가 생긴다. 오늘은 이 설정의 정확한 구조와 각 요소가 왜 필요한지를 파악한다.
 
-> 💡 **관련 이론**: AWS의 보안 모델에서 계정(Account)은 가장 강력한 격리 경계다. IAM Policy는 같은 계정 내 Principal이 무엇을 할 수 있는지 정의하지만, 계정 경계를 넘는 행동에는 반드시 **양방향 신뢰**가 필요하다. A 계정의 Principal이 B 계정 리소스에 접근하려면 (1) A 계정 IAM Policy에서 해당 행동을 허용하고, (2) B 계정 리소스 정책에서 A 계정 Principal을 허용해야 한다—두 조건이 모두 AND로 충족되어야 한다. 이것이 Cross-Account의 근본 원리이며, 이 구조를 이해하지 못하면 4종 권한 체인 중 어느 하나를 빠뜨리게 된다.
+> AWS의 보안 모델에서 계정(Account)은 가장 강력한 격리 경계다. IAM Policy는 같은 계정 내 Principal이 무엇을 할 수 있는지 정의하지만, 계정 경계를 넘는 행동에는 반드시 **양방향 신뢰**가 필요하다. A 계정의 Principal이 B 계정 리소스에 접근하려면 (1) A 계정 IAM Policy에서 해당 행동을 허용하고, (2) B 계정 리소스 정책에서 A 계정 Principal을 허용해야 한다—두 조건이 모두 AND로 충족되어야 한다. 이것이 Cross-Account의 근본 원리이며, 이 구조를 이해하지 못하면 4종 권한 체인 중 어느 하나를 빠뜨리게 된다.
 
 ## Hub-Spoke 패턴: 책임 분리의 원칙
 
@@ -32,7 +32,7 @@ Prod Account (Spoke) — 가장 엄격한 제어
 └── CloudTrail 중앙 수집
 ```
 
-> 💡 **관련 이론**: SCP(Service Control Policy)는 계정 수준의 최대 권한 상한(Permission Ceiling)을 설정하는 메커니즘이다. Prod OU에 `DenyCreateIAMUser` SCP를 붙이면 Prod 계정 내에서는 IAM User를 아무도 만들 수 없다—루트 계정조차도. IAM Policy는 SCP가 허용한 범위 내에서만 권한을 부여할 수 있다. "SCP = 계정의 헌법, IAM Policy = 개별 법률"이라는 비유가 정확하다. IAM Policy가 아무리 광범위해도 SCP가 막으면 실행되지 않는다.
+> SCP(Service Control Policy)는 계정 수준의 최대 권한 상한(Permission Ceiling)을 설정하는 메커니즘이다. Prod OU에 `DenyCreateIAMUser` SCP를 붙이면 Prod 계정 내에서는 IAM User를 아무도 만들 수 없다—루트 계정조차도. IAM Policy는 SCP가 허용한 범위 내에서만 권한을 부여할 수 있다. "SCP = 계정의 헌법, IAM Policy = 개별 법률"이라는 비유가 정확하다. IAM Policy가 아무리 광범위해도 SCP가 막으면 실행되지 않는다.
 
 이 구조의 운영 비용도 있다. Spoke 계정마다 CrossAccountDeployRole과 CloudFormationExecutionRole을 생성해야 하고, Tooling 계정의 S3 버킷 정책과 KMS Key Policy에 각 Spoke 계정 Role을 명시해야 한다. 계정이 10개를 넘어가면 이 설정을 StackSets로 자동화하지 않으면 관리가 불가능해진다. AWS Control Tower와 Account Factory가 이 자동화를 담당한다.
 
@@ -132,9 +132,9 @@ S3 버킷은 Tooling 계정에 있다. Spoke 계정의 Role이 이 버킷에서 
 }
 ```
 
-> ⚠️ **함정**: S3 버킷 정책(3번)은 주면서 KMS Key Policy(4번)를 빠뜨리는 것이 가장 흔한 실수다. 에러 메시지가 "S3 Access Denied"처럼 보이지 않고 Artifact 추출 단계에서 불명확한 오류로 나타나서 원인을 찾기 어렵다. KMS Key Policy는 S3 버킷 정책과 완전히 별개의 정책 문서다—S3 버킷 정책을 아무리 잘 써도 KMS 복호화 권한이 없으면 암호화된 객체는 열 수 없다. KMS는 Envelope Encryption을 사용하는데, S3 객체 자체가 Data Key로 암호화되어 있고 이 Data Key가 다시 KMS CMK로 암호화되어 있다. 객체를 읽으려면 반드시 KMS CMK로 Data Key를 복호화해야 한다.
+> ⚠️ **함정**: S3 버킷 정책(3번)은 주면서 KMS Key Policy(4번)를 빠뜨리는 것이 대표적인 실수다. 에러 메시지가 "S3 Access Denied"처럼 보이지 않고 Artifact 추출 단계에서 불명확한 오류로 나타나서 원인을 찾기 어렵다. KMS Key Policy는 S3 버킷 정책과 완전히 별개의 정책 문서다—S3 버킷 정책을 아무리 잘 써도 KMS 복호화 권한이 없으면 암호화된 객체는 열 수 없다. KMS는 Envelope Encryption을 사용하는데, S3 객체 자체가 Data Key로 암호화되어 있고 이 Data Key가 다시 KMS CMK로 암호화되어 있다. 객체를 읽으려면 반드시 KMS CMK로 Data Key를 복호화해야 한다.
 
-> 💡 **관련 이론**: KMS Envelope Encryption 원리. 큰 데이터를 직접 KMS API로 암호화하면 API 호출 크기 제한(4KB)에 걸린다. 그래서 KMS는 두 단계로 암호화한다: (1) KMS CMK로 임시 Data Key를 생성(GenerateDataKey), (2) Data Key로 실제 데이터를 로컬 암호화. S3에 저장되는 것은 암호화된 데이터 + 암호화된 Data Key다. 복호화 시 암호화된 Data Key를 KMS CMK로 복호화(Decrypt)하고, 그 결과로 실제 데이터를 복호화한다. Cross-Account에서 `kms:Decrypt`와 `kms:GenerateDataKey` 모두 필요한 이유가 이 두 단계 때문이다.
+> KMS Envelope Encryption 원리. 큰 데이터를 직접 KMS API로 암호화하면 API 호출 크기 제한(4KB)에 걸린다. 그래서 KMS는 두 단계로 암호화한다: (1) KMS CMK로 임시 Data Key를 생성(GenerateDataKey), (2) Data Key로 실제 데이터를 로컬 암호화. S3에 저장되는 것은 암호화된 데이터 + 암호화된 Data Key다. 복호화 시 암호화된 Data Key를 KMS CMK로 복호화(Decrypt)하고, 그 결과로 실제 데이터를 복호화한다. Cross-Account에서 `kms:Decrypt`와 `kms:GenerateDataKey` 모두 필요한 이유가 이 두 단계 때문이다.
 
 ## 두 개의 Role: Action Role과 CFN Execution Role
 
@@ -168,7 +168,7 @@ CloudFormation Deploy Action에서 두 가지 Role이 동시에 등장한다. �
 
 두 Role을 분리하는 이유는 최소 권한 원칙이다. CrossAccountDeployRole은 `cloudformation:CreateStack`, `cloudformation:UpdateStack` 같은 CFN API만 호출할 수 있으면 된다. ECS, EC2, IAM 같은 실제 리소스 생성 권한은 CloudFormationExecutionRole에만 있으면 된다. 이 분리가 없으면 Tooling 계정에서 Prod 계정의 모든 리소스를 직접 조작할 수 있는 광범위한 Role이 필요해진다.
 
-> 🔍 **더 깊이**: AWS CloudFormation의 Role 체계는 OAuth 2.0의 Authorization Code Flow와 구조적으로 유사한 이중 Delegation 패턴이다. CodePipeline(클라이언트)이 CrossAccountDeployRole(access token)을 받아 CloudFormation API를 호출하고, CloudFormation은 다시 CloudFormationExecutionRole(서비스 계정)을 사용해 실제 리소스를 조작한다. 이 이중 Delegation이 "누가 어떤 리소스를 변경했는지"를 CloudTrail에서 정확하게 추적할 수 있게 한다. CloudTrail의 이벤트를 보면 `assumedBy`와 `invokedBy` 필드가 각각 어느 Role이 어떤 행동을 했는지 기록한다. 이 추적성이 보안 감사에서 필수다.
+> AWS CloudFormation의 Role 체계는 OAuth 2.0의 Authorization Code Flow와 구조적으로 유사한 이중 Delegation 패턴이다. CodePipeline(클라이언트)이 CrossAccountDeployRole(access token)을 받아 CloudFormation API를 호출하고, CloudFormation은 다시 CloudFormationExecutionRole(서비스 계정)을 사용해 실제 리소스를 조작한다. 이 이중 Delegation이 "누가 어떤 리소스를 변경했는지"를 CloudTrail에서 정확하게 추적할 수 있게 한다. CloudTrail의 이벤트를 보면 `assumedBy`와 `invokedBy` 필드가 각각 어느 Role이 어떤 행동을 했는지 기록한다. 이 추적성이 보안 감사에서 필수다.
 
 > ⚠️ **함정**: `CAPABILITY_IAM`과 `CAPABILITY_NAMED_IAM`을 혼동하는 실수. CloudFormation 스택이 IAM 리소스를 생성할 때 `CAPABILITY_IAM`이 필요하다. 그런데 **명시적 이름**이 있는 IAM 리소스(이름이 고정된 Role, User)를 생성할 때는 `CAPABILITY_NAMED_IAM`이 필요하다. 이름이 없는 IAM 리소스는 `CAPABILITY_IAM`만으로 충분하다. 두 개를 모두 넣어두면 실패하지 않지만, `CAPABILITY_IAM`만 넣고 명시적 이름의 Role을 생성하려 하면 `InsufficientCapabilitiesException`으로 실패한다.
 
@@ -204,9 +204,9 @@ StackSets는 단일 CloudFormation 템플릿을 여러 계정/리전에 동시�
 
 `SERVICE_MANAGED`는 Organizations 관리 계정 또는 Delegated Admin 계정에서만 사용 가능하다. Organizations가 자동으로 필요한 Role을 생성해주므로 수동 Role 설정이 필요 없다. `OrganizationsAutoDeployment: Enabled`와 함께 사용하면 새 계정이 OU에 추가될 때 자동으로 StackSet 인스턴스를 생성한다—Landing Zone 자동화의 핵심이다.
 
-> 💡 **관련 이론**: StackSets의 배포 전략은 카나리 배포의 조직 수준 버전이다. 단일 서비스의 Canary 배포(트래픽의 1% → 10% → 100%)처럼, StackSets는 "계정의 10% → 50% → 100%" 순서로 배포를 확산시킬 수 있다. `MaxConcurrentPercentage`는 동시에 몇 %의 계정에 배포할지(속도 제어), `FailureTolerancePercentage`는 몇 %가 실패해도 계속 진행할지(안전 제어)다. 100개 계정에서 `MaxConcurrentPercentage=50, FailureTolerancePercentage=20`이면: 동시에 50개 배포, 20개까지 실패해도 계속 진행, 21개 실패 시 전체 중단. AWS Control Tower도 내부적으로 이 메커니즘을 사용한다.
+> StackSets의 배포 전략은 카나리 배포의 조직 수준 버전이다. 단일 서비스의 Canary 배포(트래픽의 1% → 10% → 100%)처럼, StackSets는 "계정의 10% → 50% → 100%" 순서로 배포를 확산시킬 수 있다. `MaxConcurrentPercentage`는 동시에 몇 %의 계정에 배포할지(속도 제어), `FailureTolerancePercentage`는 몇 %가 실패해도 계속 진행할지(안전 제어)다. 100개 계정에서 `MaxConcurrentPercentage=50, FailureTolerancePercentage=20`이면: 동시에 50개 배포, 20개까지 실패해도 계속 진행, 21개 실패 시 전체 중단. AWS Control Tower도 내부적으로 이 메커니즘을 사용한다.
 
-> 📚 **사례**: Goldman Sachs의 Account Factory 자동화. 2021년 re:Invent에서 공개된 사례로, 1,000개 이상의 AWS 계정에 IAM Password Policy, CloudTrail, Config Rules, S3 Block Public Access를 자동 배포하는 "Account Baseline Pipeline"을 구축했다. CodePipeline + StackSets(SERVICE_MANAGED) + Organizations AutoDeployment 조합으로 신규 계정 온보딩 시간을 2-3일에서 30분 이내로 단축했다. 핵심은 Security OU에 `OrganizationsAutoDeployment: Enabled`로 설정한 StackSet—새 계정이 Security OU에 들어오는 순간 Baseline이 자동 적용된다.
+> Goldman Sachs의 Account Factory 자동화. 2021년 re:Invent에서 공개된 사례로, 1,000개 이상의 AWS 계정에 IAM Password Policy, CloudTrail, Config Rules, S3 Block Public Access를 자동 배포하는 "Account Baseline Pipeline"을 구축했다. CodePipeline + StackSets(SERVICE_MANAGED) + Organizations AutoDeployment 조합으로 신규 계정 온보딩 시간을 2-3일에서 30분 이내로 단축했다. 핵심은 Security OU에 `OrganizationsAutoDeployment: Enabled`로 설정한 StackSet—새 계정이 Security OU에 들어오는 순간 Baseline이 자동 적용된다.
 
 ## 멀티 리전 파이프라인: 각 리전에 Artifact Store가 필요한 이유
 
@@ -239,7 +239,7 @@ ArtifactStores:
 
 각 리전에 S3 버킷과 KMS 키가 별도로 필요한 이유는 **KMS의 리전 범위** 특성 때문이다. KMS 키는 생성된 리전에서만 작동한다. 서울(ap-northeast-2) KMS 키로 암호화된 Artifact는 반드시 서울 KMS 엔드포인트로 복호화 API를 호출해야 한다—버지니아(us-east-1) KMS 엔드포인트로는 불가능하다.
 
-> 🔍 **더 깊이**: KMS가 리전 범위인 이유는 HSM(Hardware Security Module)의 물리적 보안 요구사항과 관련이 있다. KMS 키 자료는 해당 리전의 데이터 센터에 있는 HSM에서만 처리된다. 키가 리전을 넘나들면 GDPR(유럽), 개인정보보호법(한국), FIPS 140-2(미국 정부) 등의 데이터 레지던시 요구사항을 충족하기 어려워진다. "이 데이터가 어느 리전에서 암호화/복호화됐는가"는 보안 감사에서 필수 추적 정보이며, KMS의 리전 범위가 이 추적성을 보장한다. 멀티 리전 파이프라인에서 리전별 KMS 키를 별도로 관리하는 것은 단순한 기술 제약이 아니라 컴플라이언스 아키텍처 결정이다. KMS Multi-Region Keys(2021년 출시)는 Primary/Replica 구조로 동일한 키 자료를 여러 리전에 복제할 수 있게 해주지만, 이 경우에도 각 리전에 별도의 Replica Key ARN이 존재한다.
+> KMS가 리전 범위인 이유는 HSM(Hardware Security Module)의 물리적 보안 요구사항과 관련이 있다. KMS 키 자료는 해당 리전의 데이터 센터에 있는 HSM에서만 처리된다. 키가 리전을 넘나들면 GDPR(유럽), 개인정보보호법(한국), FIPS 140-2(미국 정부) 등의 데이터 레지던시 요구사항을 충족하기 어려워진다. "이 데이터가 어느 리전에서 암호화/복호화됐는가"는 보안 감사에서 필수 추적 정보이며, KMS의 리전 범위가 이 추적성을 보장한다. 멀티 리전 파이프라인에서 리전별 KMS 키를 별도로 관리하는 것은 단순한 기술 제약이 아니라 컴플라이언스 아키텍처 결정이다. KMS Multi-Region Keys(2021년 출시)는 Primary/Replica 구조로 동일한 키 자료를 여러 리전에 복제할 수 있게 해주지만, 이 경우에도 각 리전에 별도의 Replica Key ARN이 존재한다.
 
 멀티 리전 파이프라인 Action 정의 예시:
 
@@ -306,9 +306,9 @@ Cross-Account에서 자주 언급되는 보안 취약점이 **Confused Deputy(�
 }
 ```
 
-> 💡 **관련 이론**: Confused Deputy 문제는 1988년 Norm Hardy의 논문에서 처음 기술된 보안 패턴이다. 원래 예시는 OS의 파일 시스템—프로그램이 컴파일러를 통해 자신이 접근할 수 없는 파일을 열게 되는 문제였다. AWS에서는 "신뢰된 서비스(CodePipeline)를 통해 실제로는 권한이 없는 리소스에 접근하는" 시나리오가 이 패턴과 동일하다. `aws:SourceArn`이 AWS의 공식 해결책이다—"이 신뢰받은 서비스가 어떤 특정 리소스(파이프라인 ARN)의 요청을 처리하는 경우에만 허용"이라는 의미다. ExternalId는 서드파티 시스템이 Principal인 경우의 표준 해결책으로, OIDC를 지원하는 외부 CI/CD(GitHub Actions)는 OIDC subject claim 조건이 더 강력한 방어다.
+> Confused Deputy 문제는 1988년 Norm Hardy의 논문에서 처음 기술된 보안 패턴이다. 원래 예시는 OS의 파일 시스템—프로그램이 컴파일러를 통해 자신이 접근할 수 없는 파일을 열게 되는 문제였다. AWS에서는 "신뢰된 서비스(CodePipeline)를 통해 실제로는 권한이 없는 리소스에 접근하는" 시나리오가 이 패턴과 동일하다. `aws:SourceArn`이 AWS의 공식 해결책이다—"이 신뢰받은 서비스가 어떤 특정 리소스(파이프라인 ARN)의 요청을 처리하는 경우에만 허용"이라는 의미다. ExternalId는 서드파티 시스템이 Principal인 경우의 표준 해결책으로, OIDC를 지원하는 외부 CI/CD(GitHub Actions)는 OIDC subject claim 조건이 더 강력한 방어다.
 
-> 🔍 **더 깊이**: IAM Condition Key 선택 기준. `aws:SourceArn`은 AWS 서비스가 다른 계정의 리소스에 접근할 때 "이 서비스가 처리하는 구체적인 리소스 ARN"을 검증한다. `aws:PrincipalTag`는 IAM Role에 붙은 태그를 조건으로 써서 "어떤 태그를 가진 Role인가"를 검증한다. `sts:ExternalId`는 AssumeRole 호출 시 제공된 비밀 값을 검증한다. 세 방법 중 `aws:SourceArn`이 가장 구체적이고 위조가 어렵지만 AWS 서비스가 Principal인 경우에만 유효하다. 서드파티 도구나 자체 서버가 Principal이면 ExternalId 또는 OIDC를 사용해야 한다.
+> IAM Condition Key 선택 기준. `aws:SourceArn`은 AWS 서비스가 다른 계정의 리소스에 접근할 때 "이 서비스가 처리하는 구체적인 리소스 ARN"을 검증한다. `aws:PrincipalTag`는 IAM Role에 붙은 태그를 조건으로 써서 "어떤 태그를 가진 Role인가"를 검증한다. `sts:ExternalId`는 AssumeRole 호출 시 제공된 비밀 값을 검증한다. 세 방법 중 `aws:SourceArn`이 가장 구체적이고 위조가 어렵지만 AWS 서비스가 Principal인 경우에만 유효하다. 서드파티 도구나 자체 서버가 Principal이면 ExternalId 또는 OIDC를 사용해야 한다.
 
 ## 실전 구현: Spoke 계정 Role 생성 자동화
 
@@ -403,11 +403,11 @@ aws iam put-role-policy \
 
 GitHub Actions의 OIDC 방식은 주목할 만하다. GitHub은 OIDC(OpenID Connect) Provider로 동작하고, AWS는 이 Provider를 신뢰하도록 설정한다. GitHub Actions 워크플로우가 실행될 때 GitHub은 JWT 토큰을 발급하고, AWS STS는 이 토큰을 검증해 IAM Role로 교환한다. 장기 자격증명(Access Key) 없이 AssumeRole이 가능한 구조다.
 
-> 📚 **사례**: Netflix의 멀티 계정 배포 아키텍처. Netflix는 100개 이상의 AWS 계정을 운영하면서 Spinnaker(오픈소스 CD 도구)를 Tooling 계정에서 실행한다. 각 Spoke 계정에 SpinnakerDeployRole을 두고 Trust Policy에 Spinnaker의 IAM Role ARN을 명시한다. Netflix가 CodePipeline 대신 Spinnaker를 선택한 이유는 멀티 클라우드 지원과 정교한 Canary 분석(Kayenta) 때문이었다. 그러나 IAM Cross-Account 패턴 자체는 CodePipeline과 동일하다—AssumeRole, S3 버킷 정책, KMS Key Policy의 4종 체인이 필요하다. 도구가 달라도 AWS의 Cross-Account 메커니즘은 동일하게 적용된다.
+> Netflix의 멀티 계정 배포 아키텍처. Netflix는 100개 이상의 AWS 계정을 운영하면서 Spinnaker(오픈소스 CD 도구)를 Tooling 계정에서 실행한다. 각 Spoke 계정에 SpinnakerDeployRole을 두고 Trust Policy에 Spinnaker의 IAM Role ARN을 명시한다. Netflix가 CodePipeline 대신 Spinnaker를 선택한 이유는 멀티 클라우드 지원과 정교한 Canary 분석(Kayenta) 때문이었다. 그러나 IAM Cross-Account 패턴 자체는 CodePipeline과 동일하다—AssumeRole, S3 버킷 정책, KMS Key Policy의 4종 체인이 필요하다. 도구가 달라도 AWS의 Cross-Account 메커니즘은 동일하게 적용된다.
 
-## 정리하며
+## 정리
 
-Cross-Account 파이프라인의 핵심은 **4종 권한 체인의 완전한 구성**이다. Tooling 계정의 Pipeline Service Role이 AssumeRole할 수 있어야 하고(1번), Spoke 계정의 Trust Policy가 이를 허용해야 하며(2번), S3 버킷 정책(3번)과 KMS Key Policy(4번) 모두에 Spoke 계정 Role이 명시되어야 한다. 이 4종 중 하나라도 빠지면 배포가 실패한다. 가장 자주 빠지는 것이 KMS Key Policy다—S3 접근은 성공하지만 암호화된 Artifact 복호화에서 실패한다.
+Cross-Account 파이프라인은 **4종 권한 체인을 모두 갖춰야** 한다. Tooling 계정의 Pipeline Service Role이 AssumeRole할 수 있어야 하고(1번), Spoke 계정의 Trust Policy가 이를 허용해야 하며(2번), S3 버킷 정책(3번)과 KMS Key Policy(4번) 모두에 Spoke 계정 Role이 명시되어야 한다. 이 4종 중 하나라도 빠지면 배포가 실패한다. 빠지기 쉬운 것이 KMS Key Policy다—S3 접근은 성공하지만 암호화된 Artifact 복호화에서 실패한다.
 
 CloudFormation Deploy Action에는 두 Role이 등장한다. Action의 `roleArn`(CrossAccountDeployRole)은 CFN API를 호출하는 주체이고, Configuration의 `RoleArn`(CloudFormationExecutionRole)은 실제 리소스를 생성하는 주체다. 이 분리가 최소 권한 원칙을 실현한다.
 

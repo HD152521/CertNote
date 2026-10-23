@@ -8,11 +8,11 @@ Jenkins가 2004년 허드슨(Hudson)이라는 이름으로 나왔을 때 파이�
 
 파이프라인은 수학적으로 DAG(Directed Acyclic Graph, 방향 비순환 그래프)다. 노드가 작업이고, 엣지가 의존 관계이며, 사이클이 없다는 게 핵심이다. Makefile(1976), Ant(2000), Maven(2004)이 모두 이 아이디어의 변형이다. CI/CD의 현대적 형태인 Pipeline-as-Code도 DAG를 코드로 표현하는 방법의 진화다.
 
-> 💡 **관련 이론**: DAG는 위상 정렬(Topological Sort) 알고리즘을 사용해 실행 순서를 결정한다. Kahn's Algorithm(1962)이나 DFS 기반 방법이 대표적이다. CodePipeline의 runOrder는 이 위상 정렬의 명시적 표현—같은 runOrder를 가진 Action은 병렬(같은 레이어), 다른 runOrder는 직렬(다른 레이어)로 실행된다. GitHub Actions의 `needs:` 키워드, GitLab CI의 `stages:` 키워드도 동일한 DAG 표현의 다른 문법이다.
+> DAG는 위상 정렬(Topological Sort) 알고리즘을 사용해 실행 순서를 결정한다. Kahn's Algorithm(1962)이나 DFS 기반 방법이 대표적이다. CodePipeline의 runOrder는 이 위상 정렬의 명시적 표현—같은 runOrder를 가진 Action은 병렬(같은 레이어), 다른 runOrder는 직렬(다른 레이어)로 실행된다. GitHub Actions의 `needs:` 키워드, GitLab CI의 `stages:` 키워드도 동일한 DAG 표현의 다른 문법이다.
 
 CodePipeline이 Jenkins와 다른 결정적 차이는 **상태를 서비스가 소유한다**는 점이다. Jenkins는 상태를 Jenkins 서버의 파일 시스템에 둔다. 서버가 죽으면 상태가 사라지고, 재현이 어렵다. CodePipeline은 상태를 AWS 서비스(S3 Artifact, DynamoDB 내부 상태)에 둔다. 파이프라인이 실행 중에 누군가 Action의 IAM Role을 바꿔도, 현재 실행 중인 것은 영향을 받지 않는다. 이 내구성과 격리성이 엔터프라이즈 환경에서 CodePipeline을 선택하는 핵심 이유다.
 
-> 🔍 **더 깊이**: Jenkins의 파일시스템 상태 의존성은 2010년대 초반 대형 조직에서 심각한 문제였다. "Jenkins Restart of Death"—Jenkins가 재시작되면 진행 중인 모든 빌드가 사라지는 현상—이 일반적이었다. AWS가 CodePipeline 설계 시 이 교훈을 적용해 모든 상태를 S3와 DynamoDB에 위임한 것이다. 이 설계 결정이 왜 CodePipeline이 "단순히 Jenkins의 클라우드 버전"이 아닌지를 설명한다. 분산 시스템 이론에서 이것을 **State Externalization** 패턴이라 부른다—stateless 실행 엔진이 상태를 외부 내구성 저장소에 위임한다.
+> Jenkins의 파일시스템 상태 의존성은 2010년대 초반 대형 조직에서 심각한 문제였다. "Jenkins Restart of Death"—Jenkins가 재시작되면 진행 중인 모든 빌드가 사라지는 현상—이 일반적이었다. AWS가 CodePipeline 설계 시 이 교훈을 적용해 모든 상태를 S3와 DynamoDB에 위임한 것이다. 이 설계 결정이 왜 CodePipeline이 "단순히 Jenkins의 클라우드 버전"이 아닌지를 설명한다. 분산 시스템 이론에서 이것을 **State Externalization** 패턴이라 부른다—stateless 실행 엔진이 상태를 외부 내구성 저장소에 위임한다.
 
 ## Pipeline 계층 구조: 왜 이렇게 나뉘었나
 
@@ -43,9 +43,9 @@ Pipeline (전체 워크플로 — IAM, Artifact Store, KMS 소유)
 
 **Artifact**는 Stage 사이를 이동하는 데이터 단위다. 소스 코드, 컴파일된 바이너리, 테스트 리포트—이 모든 것이 Artifact로 S3에 저장되고, KMS로 암호화된다. 중요한 것은 **Artifact가 Action의 계약(Contract)이라는 점**이다. Action은 "이름 X의 Artifact를 받아서 이름 Y의 Artifact를 내보낸다"고 선언하고, CodePipeline이 이 이름 기반 연결을 보장한다.
 
-> 💡 **관련 이론**: Artifact 패턴은 함수형 프로그래밍의 순수 함수(Pure Function) 개념과 닮았다. 각 Action은 입력 Artifact → 처리 → 출력 Artifact로 정의되며, 부수 효과(side effect)는 Action 내부로 격리된다. 이 덕분에 파이프라인의 각 단계가 **재현 가능(Reproducible)**하고 **테스트 가능(Testable)**해진다. Jenkins의 "공유 워크스페이스" 방식에서는 한 Job이 다른 Job의 파일을 직접 수정할 수 있어서 재현성이 깨지는 문제가 있었다.
+> Artifact 패턴은 함수형 프로그래밍의 순수 함수(Pure Function) 개념과 닮았다. 각 Action은 입력 Artifact → 처리 → 출력 Artifact로 정의되며, 부수 효과(side effect)는 Action 내부로 격리된다. 이 덕분에 파이프라인의 각 단계가 **재현 가능(Reproducible)**하고 **테스트 가능(Testable)**해진다. Jenkins의 "공유 워크스페이스" 방식에서는 한 Job이 다른 Job의 파일을 직접 수정할 수 있어서 재현성이 깨지는 문제가 있었다.
 
-> 📚 **사례**: 2019년 Capital One이 AWS re:Invent에서 공개한 멀티 계정 파이프라인 사례. 300개 이상의 마이크로서비스를 각각 독립 CodePipeline으로 관리하면서, Artifact S3 버킷과 KMS 키를 중앙 Tooling 계정에 두고 각 Spoke 계정에는 CrossAccountDeployRole만 두는 구조를 사용했다. 이 패턴에서 가장 자주 발생한 문제가 "S3는 되는데 KMS가 안 된다"는 Artifact 복호화 실패였고, 해결책은 KMS Key Policy에 모든 Spoke 계정 Role을 명시적으로 추가하는 것이었다.
+> 2019년 Capital One이 AWS re:Invent에서 공개한 멀티 계정 파이프라인 사례. 300개 이상의 마이크로서비스를 각각 독립 CodePipeline으로 관리하면서, Artifact S3 버킷과 KMS 키를 중앙 Tooling 계정에 두고 각 Spoke 계정에는 CrossAccountDeployRole만 두는 구조를 사용했다. 이 패턴에서 가장 자주 발생한 문제가 "S3는 되는데 KMS가 안 된다"는 Artifact 복호화 실패였고, 해결책은 KMS Key Policy에 모든 Spoke 계정 Role을 명시적으로 추가하는 것이었다.
 
 ## Action 6 카테고리: 분류의 논리
 
@@ -62,7 +62,7 @@ CodePipeline의 6 Action 카테고리(Source/Build/Test/Deploy/Approval/Invoke)�
 
 Source 카테고리가 별도로 있는 이유는 소스 시스템이 CodePipeline 외부에 있고, Webhook/polling으로 변경을 감지해야 하는 특별한 통합 방식이 필요하기 때문이다. Deploy 카테고리에 다양한 Provider가 있는 이유는 "배포"의 의미가 대상에 따라 완전히 다르기 때문이다—EC2에 배포하는 것과 CloudFormation Stack을 업데이트하는 것과 ECS Service를 갱신하는 것은 완전히 다른 API를 호출한다.
 
-> 🔍 **더 깊이**: Invoke 카테고리의 Lambda와 Step Functions는 단순히 "커스텀 로직"을 실행하는 것 이상의 의미가 있다. Lambda는 최대 15분의 제약이 있는 반면 Step Functions은 이론상 1년(365일)까지 실행할 수 있는 워크플로다. AWS의 분산 시스템 논문(Amazon Builders' Library의 "Using sagas for data consistency")에서 소개하는 **Saga 패턴**—복잡한 분산 트랜잭션을 보상 트랜잭션(compensating transaction)으로 처리하는 패턴—이 Step Functions Invoke Action으로 구현된다. 멀티 리전 배포에서 한 리전이 실패하면 이미 완료된 다른 리전을 롤백하는 로직이 대표적 사례다.
+> Invoke 카테고리의 Lambda와 Step Functions는 단순히 "커스텀 로직"을 실행하는 것 이상의 의미가 있다. Lambda는 최대 15분의 제약이 있는 반면 Step Functions은 이론상 1년(365일)까지 실행할 수 있는 워크플로다. AWS의 분산 시스템 논문(Amazon Builders' Library의 "Using sagas for data consistency")에서 소개하는 **Saga 패턴**—복잡한 분산 트랜잭션을 보상 트랜잭션(compensating transaction)으로 처리하는 패턴—이 Step Functions Invoke Action으로 구현된다. 멀티 리전 배포에서 한 리전이 실패하면 이미 완료된 다른 리전을 롤백하는 로직이 대표적 사례다.
 
 ## Artifact 저장소: S3 + KMS의 구체적 동작
 
@@ -84,9 +84,9 @@ s3://tooling-artifacts-bucket/
 
 각 Action이 InputArtifact를 받으면 CodePipeline이 S3에서 해당 zip을 다운로드하고 복호화해서 Action의 실행 환경에 제공한다. Action이 OutputArtifact를 만들면 실행 환경에서 zip으로 압축해 S3에 업로드하고 KMS로 암호화한다. **이 S3 + KMS 조합이 Cross-Account 배포의 핵심 마찰 지점이다.**
 
-> ⚠️ **함정**: Cross-Account 배포에서 가장 흔한 실수는 S3 버킷 정책만 주고 KMS Decrypt를 빠뜨리는 것이다. Spoke 계정의 Role이 S3 GetObject 권한을 가지고 있어도, KMS Decrypt 권한이 없으면 객체를 다운로드할 수는 있지만 복호화가 실패한다. 에러 메시지는 "Access Denied"처럼 보이지만 실제 원인은 KMS Policy다. 트러블슈팅 시 CloudTrail에서 `kms:Decrypt`의 AccessDenied 이벤트를 먼저 확인해야 한다. AWS 관리 키(aws/s3)는 Cross-Account 복호화를 허용하지 않으므로, Cross-Account 파이프라인에는 반드시 CMK(Customer Managed Key)를 사용해야 한다.
+> ⚠️ **함정**: Cross-Account 배포에서 빠뜨리기 쉬운 것은 S3 버킷 정책만 주고 KMS Decrypt를 빠뜨리는 것이다. Spoke 계정의 Role이 S3 GetObject 권한을 가지고 있어도, KMS Decrypt 권한이 없으면 객체를 다운로드할 수는 있지만 복호화가 실패한다. 에러 메시지는 "Access Denied"처럼 보이지만 실제 원인은 KMS Policy다. 트러블슈팅 시 CloudTrail에서 `kms:Decrypt`의 AccessDenied 이벤트를 먼저 확인해야 한다. AWS 관리 키(aws/s3)는 Cross-Account 복호화를 허용하지 않으므로, Cross-Account 파이프라인에는 반드시 CMK(Customer Managed Key)를 사용해야 한다.
 
-> 💡 **관련 이론**: KMS CMK를 Cross-Account에서 사용할 때 두 가지 정책이 모두 일치해야 한다. **KMS Key Policy**(리소스 기반 정책)와 **IAM Identity Policy**(주체 기반 정책). KMS의 독특한 점은 Key Policy에 명시적으로 허용해야만 외부 계정에서 사용 가능하다는 것이다—S3 버킷 정책과 달리 IAM Policy만으로는 다른 계정의 KMS 키를 사용할 수 없다. 이 이중 정책 요구사항이 "권한 줬는데 안 된다"는 혼란의 원인이다.
+> KMS CMK를 Cross-Account에서 사용할 때 두 가지 정책이 모두 일치해야 한다. **KMS Key Policy**(리소스 기반 정책)와 **IAM Identity Policy**(주체 기반 정책). KMS의 독특한 점은 Key Policy에 명시적으로 허용해야만 외부 계정에서 사용 가능하다는 것이다—S3 버킷 정책과 달리 IAM Policy만으로는 다른 계정의 KMS 키를 사용할 수 없다. 이 이중 정책 요구사항이 "권한 줬는데 안 된다"는 혼란의 원인이다.
 
 ## V1 vs V2 Pipeline: 마이그레이션이 필요한 이유
 
@@ -103,7 +103,7 @@ s3://tooling-artifacts-bucket/
 
 V2의 Execution Mode는 특히 중요하다. **SUPERSEDED**(기본)는 새 실행이 시작되면 진행 중인 이전 실행을 무효화한다—빠른 main 브랜치 개발에서 "마지막 commit이 중요하고 이전 것은 버려도 된다"는 가정이 맞을 때. **QUEUED**는 모든 실행을 FIFO 순서로 큐에 넣어 순차 실행한다—감사나 규정 준수상 모든 commit의 배포 이력이 필요할 때. **PARALLEL**은 동시에 여러 실행을 허용한다—PR 브랜치별로 독립된 테스트 환경이 필요할 때.
 
-> 📚 **사례**: Netflix는 2012년 Jenkins 기반 파이프라인에서 여러 브랜치의 빌드가 서로의 Artifact를 덮어쓰는 문제("빌드 오염" 문제)를 겪었다. 해결책으로 각 빌드 실행을 완전히 격리된 Artifact 네임스페이스에 두는 구조로 전환했다. CodePipeline V2의 Execution ID 기반 Artifact 격리가 정확히 이 패턴을 공식 서비스로 제공하는 것이다. PARALLEL 모드에서 두 실행이 동일 Stage를 실행하더라도 Artifact는 Execution ID로 격리된다.
+> Netflix는 2012년 Jenkins 기반 파이프라인에서 여러 브랜치의 빌드가 서로의 Artifact를 덮어쓰는 문제("빌드 오염" 문제)를 겪었다. 해결책으로 각 빌드 실행을 완전히 격리된 Artifact 네임스페이스에 두는 구조로 전환했다. CodePipeline V2의 Execution ID 기반 Artifact 격리가 정확히 이 패턴을 공식 서비스로 제공하는 것이다. PARALLEL 모드에서 두 실행이 동일 Stage를 실행하더라도 Artifact는 Execution ID로 격리된다.
 
 ## EventBridge 기반 트리거: 폴링 vs 이벤트
 
@@ -121,7 +121,7 @@ V1 CodePipeline은 기본적으로 폴링(polling) 기반이었다. CodeCommit �
 }
 ```
 
-> 💡 **관련 이론**: Polling vs Push(Webhook) 패턴의 근본적 차이는 누가 주도권을 가지냐의 문제다. Polling은 수신자(CodePipeline)가 주도권을 가지고 주기적으로 확인한다—새 이벤트가 없어도 불필요한 API 호출이 발생한다(Busy Waiting). Push는 발신자(GitHub)가 이벤트 발생 시 즉시 통보한다—불필요한 API 호출이 없고 지연도 짧다. AWS 내부적으로는 EventBridge가 이벤트 버스 역할을 해서, CodeCommit의 상태 변화가 EventBridge 이벤트로 발행되고 CodePipeline Rule이 이를 수신한다. 이게 CloudTrail → EventBridge → 자동화의 표준 패턴이기도 하다.
+> Polling vs Push(Webhook) 패턴의 근본적 차이는 누가 주도권을 가지냐의 문제다. Polling은 수신자(CodePipeline)가 주도권을 가지고 주기적으로 확인한다—새 이벤트가 없어도 불필요한 API 호출이 발생한다(Busy Waiting). Push는 발신자(GitHub)가 이벤트 발생 시 즉시 통보한다—불필요한 API 호출이 없고 지연도 짧다. AWS 내부적으로는 EventBridge가 이벤트 버스 역할을 해서, CodeCommit의 상태 변화가 EventBridge 이벤트로 발행되고 CodePipeline Rule이 이를 수신한다. 이게 CloudTrail → EventBridge → 자동화의 표준 패턴이기도 하다.
 
 ## IAM Role 구조: Pipeline Service Role과 Action Role
 
@@ -139,9 +139,9 @@ Action Role (Spoke 계정의 CrossAccountDeployRole)
 CloudFormation, ECS, Lambda (Spoke 계정 리소스)
 ```
 
-> 🔍 **더 깊이**: IAM Role의 AssumeRole 체인에는 깊이 제한이 있다. 직접적인 제한은 없지만, STS 토큰의 세션 Duration이 최대 12시간이고, 체인이 깊어질수록 원래 Role의 Permission Boundary가 누적 적용된다. AWS의 보안 모범사례(AWS Well-Architected Framework Security Pillar)는 "최소 권한 원칙(Least Privilege)"을 위해 Action별로 별도 Role을 두고 Permission Boundary로 최대 권한 상한을 설정하도록 권장한다. Pipeline 엔지니어링에서 "왜 Action Role이 따로 있냐"는 질문의 답이 바로 이 최소 권한 원칙이다.
+> IAM Role의 AssumeRole 체인에는 깊이 제한이 있다. 직접적인 제한은 없지만, STS 토큰의 세션 Duration이 최대 12시간이고, 체인이 깊어질수록 원래 Role의 Permission Boundary가 누적 적용된다. AWS의 보안 모범사례(AWS Well-Architected Framework Security Pillar)는 "최소 권한 원칙(Least Privilege)"을 위해 Action별로 별도 Role을 두고 Permission Boundary로 최대 권한 상한을 설정하도록 권장한다. Pipeline 엔지니어링에서 "왜 Action Role이 따로 있냐"는 질문의 답이 바로 이 최소 권한 원칙이다.
 
-> 🎯 **시나리오**: 한 팀이 CodePipeline V1을 쓰다가 "모노레포에서 checkout 서비스와 inventory 서비스를 별도 파이프라인으로 트리거하고 싶다"는 요구가 생겼다. V1으로는 불가능하다—V1은 브랜치 전체를 트리거할 뿐 경로 필터가 없다. V2로 업그레이드하고 각 파이프라인에 `filePaths.includes`를 서비스 디렉토리로 설정하면 된다. 한 commit이 두 서비스 모두 건드리면 두 파이프라인이 동시에 시작된다. 이게 PARALLEL Execution Mode가 아니라—PARALLEL은 같은 파이프라인의 여러 실행이다. 서로 다른 파이프라인은 항상 독립적으로 실행된다.
+> 🎯 **시나리오**: 한 팀이 CodePipeline V1을 쓰다가 "모노레포에서 checkout 서비스와 inventory 서비스를 별도 파이프라인으로 트리거하고 싶다"는 요구가 생겼다. V1으로는 불가능하다—V1은 브랜치 전체를 트리거할 뿐 경로 필터가 없다. V2로 업그레이드하고 각 파이프라인에 `filePaths.includes`를 서비스 디렉터리로 설정하면 된다. 한 commit이 두 서비스 모두 건드리면 두 파이프라인이 동시에 시작된다. 이게 PARALLEL Execution Mode가 아니라—PARALLEL은 같은 파이프라인의 여러 실행이다. 서로 다른 파이프라인은 항상 독립적으로 실행된다.
 
 ## 다른 CI/CD 도구와의 비교
 
@@ -288,11 +288,11 @@ aws codepipeline enable-stage-transition \
   --transition-type Inbound
 ```
 
-> 💡 **관련 이론**: Artifact의 5GB 한도는 단순한 크기 제한이 아니라 설계 철학을 반영한다. 파이프라인 Artifact는 "빌드 결과물의 전달 매체"이지 "대용량 데이터 저장소"가 아니다. 만약 빌드 결과가 수 GB라면, 일반적으로 Artifact에 이미지 URI나 S3 경로 같은 "포인터"만 담고 실제 데이터는 ECR이나 S3에 따로 저장하는 것이 패턴이다. 이 포인터 패턴이 "Configuration as Data" 접근으로, 파이프라인 Artifact는 작고 빠르게 유지하면서 실제 대용량 산출물은 별도 저장소에 두는 분리 원칙이다.
+> Artifact의 5GB 한도는 단순한 크기 제한이 아니라 설계 철학을 반영한다. 파이프라인 Artifact는 "빌드 결과물의 전달 매체"이지 "대용량 데이터 저장소"가 아니다. 만약 빌드 결과가 수 GB라면, 일반적으로 Artifact에 이미지 URI나 S3 경로 같은 "포인터"만 담고 실제 데이터는 ECR이나 S3에 따로 저장하는 것이 패턴이다. 이 포인터 패턴이 "Configuration as Data" 접근으로, 파이프라인 Artifact는 작고 빠르게 유지하면서 실제 대용량 산출물은 별도 저장소에 두는 분리 원칙이다.
 
 > 🎯 **시나리오**: 한 금융 서비스 회사가 "모든 prod 배포는 오전 9시~오후 6시(KST)에만 가능하고, 그 외 시간에는 빌드와 테스트는 계속 실행되어야 한다"는 배포 동결 정책을 구현하려 한다. 구현 방법: (1) Lambda 함수를 EventBridge 스케줄로 실행—오후 6시에 Deploy Stage의 Inbound Transition을 `disable-stage-transition`으로 비활성화하고, 오전 9시에 `enable-stage-transition`으로 다시 활성화. (2) 비활성화 상태에서도 Source/Build/Test Stage는 계속 실행되어 이미 빌드된 Artifact가 Transition 재활성화를 기다린다. 이 패턴에서 Transition이 재활성화되면 대기 중인 가장 최근 Artifact가 자동으로 Deploy Stage로 진행된다.
 
-## 정리하며
+## 정리
 
 오늘의 핵심은 세 가지다. 첫째, CodePipeline의 Stage/Action/Artifact 계층은 임의적인 설계가 아니라 DAG 기반의 명시적 의존성 표현이고, Artifact는 Action 간의 불변 계약이다. 둘째, S3 + KMS 조합은 Artifact의 내구성과 보안을 보장하며, Cross-Account에서는 KMS Key Policy가 반드시 함께 구성돼야 한다. 셋째, V2 Pipeline은 Execution Mode(SUPERSEDED/QUEUED/PARALLEL), Trigger Filter(브랜치/경로), Stage 조건(beforeEntry)으로 모노레포와 엔터프라이즈 요구를 지원하는 모던 표준이다.
 
