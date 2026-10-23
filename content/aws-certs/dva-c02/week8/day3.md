@@ -2,13 +2,13 @@
 
 빌드 도구, 테스트 도구, 배포 도구를 따로 만들었으면 그 다음 문제는 "이걸 어떻게 자동으로 이어 붙일까"다. 한 사람이 매번 손으로 "빌드 끝났으니 테스트 시작", "테스트 통과했으니 배포 시작"을 누르는 건 출시 직전 새벽 3시까지 누군가가 깨어 있어야 하는 비극을 만든다. CodePipeline은 그 비극을 끝내는 도구다. "소스 변경 감지 → 빌드 → 테스트 → 승인 → 배포"라는 흐름을 한 번 정의해두면, 그 다음부터는 코드를 push할 때마다 자동으로 production까지 흘러간다.
 
-DVA-C02 시험에서 CodePipeline 자체의 문법은 많이 묻지 않는다. 대신 **다른 Code* 서비스들과 어떻게 조합되는지**, **수동 승인이 언제 필요한지**, **artifact가 어떻게 단계 간에 흐르는지**, 그리고 2023년 등장한 **V2 파이프라인의 변수와 트리거 필터링**이 출제 포인트다. 이번 글에서는 CodePipeline의 내부 동작 모델, 아티팩트 시스템의 본질, 그리고 크로스 계정/리전 패턴까지 짚는다.
+DVA-C02 시험에서는 CodePipeline 자체의 문법보다 **다른 Code* 서비스들과 어떻게 조합되는지**, **수동 승인이 언제 필요한지**, **artifact가 어떻게 단계 간에 흐르는지**, 그리고 2023년 등장한 **V2 파이프라인의 변수와 트리거 필터링**이 중요하다. 이번 글에서는 CodePipeline의 내부 동작 모델, 아티팩트 시스템의 본질, 그리고 크로스 계정/리전 패턴까지 짚는다.
 
 ## CodePipeline의 본질: workflow engine, not build tool
 
 CodePipeline은 build tool이 아니다. 빌드 자체는 CodeBuild가 하고, 배포는 CodeDeploy/CloudFormation/ECS가 한다. CodePipeline의 역할은 그것들을 **순서대로**, **조건부로**, **병렬로** 실행하는 워크플로우 엔진이다. AWS Step Functions가 일반 비즈니스 워크플로우용이라면, CodePipeline은 CI/CD 워크플로우에 특화된 형태다.
 
-> 💡 **관련 이론**: 워크플로우 엔진의 역사는 1990년대 BPEL(Business Process Execution Language)로 거슬러 올라간다. "여러 시스템을 순차적/병렬적으로 호출하고 그 결과로 다음 단계를 결정한다"는 모델은 거의 모든 워크플로우 도구의 공통 뿌리다. CodePipeline은 그 모델을 CI/CD에 맞게 단순화한 것 — Stage(단계) → Action(액션) → Transition(전이)의 3층 구조이고, 각 Action은 외부 서비스 호출이다. GitHub Actions의 jobs → steps, GitLab CI의 stages → jobs, Jenkins의 stages → steps 모두 같은 추상화다.
+CodePipeline은 Stage(단계) → Action(액션) → Transition(전이)의 3층 구조이고, 각 Action은 외부 서비스 호출이다. GitHub Actions의 jobs → steps, GitLab CI의 stages → jobs, Jenkins의 stages → steps도 같은 추상화다.
 
 CodePipeline의 데이터 모델:
 
@@ -22,7 +22,7 @@ Pipeline (전체 워크플로우)
               └── Role ARN (이 액션이 사용할 IAM 역할)
 ```
 
-> 🔍 **더 깊이**: 한 Stage 안에 여러 Action을 두면 **기본적으로 병렬 실행**된다. 순차 실행을 강제하려면 `runOrder` 속성을 다르게 지정한다(runOrder 1 → 2 → 3). 이게 의외로 시험에 나오는데, "한 stage에서 빌드와 보안 스캔을 동시에 돌리고 둘 다 통과해야 다음 stage" 같은 시나리오에서 정답이다.
+한 Stage 안에 여러 Action을 두면 **기본적으로 병렬 실행**된다. 순차 실행을 강제하려면 `runOrder` 속성을 다르게 지정한다(runOrder 1 → 2 → 3). "한 stage에서 빌드와 보안 스캔을 동시에 돌리고 둘 다 통과해야 다음 stage" 같은 시나리오에서 정답이 되는 개념이다.
 
 ```json
 {
@@ -49,7 +49,7 @@ Pipeline (전체 워크플로우)
 
 ## 액션 카테고리 6종: 각각 무엇을 하나
 
-CodePipeline은 액션을 6가지 카테고리로 분류한다. 시험에서 가끔 "다음 중 Source 카테고리에 속하지 않는 것은?" 같이 카테고리 분류를 직접 묻는다.
+CodePipeline은 액션을 6가지 카테고리로 분류한다. "다음 중 Source 카테고리에 속하지 않는 것은?"처럼 카테고리 분류를 직접 묻는 유형이 있다.
 
 | 카테고리 | 역할 | 대표 Provider |
 |----------|------|--------------|
@@ -60,13 +60,11 @@ CodePipeline은 액션을 6가지 카테고리로 분류한다. 시험에서 가
 | **Deploy** | 배포 실행 | CodeDeploy, CloudFormation, Elastic Beanstalk, ECS, S3, AppConfig, Service Catalog, AWS OpsWorks |
 | **Invoke** | 임의 함수 호출 | Lambda, Step Functions |
 
-> ⚠️ **함정**: "Invoke" 카테고리는 비교적 새로 추가됐는데(2018년 Lambda, 2022년 Step Functions), 시험 문제 중 "임의 검증 로직을 파이프라인 중간에 넣고 싶다"가 나오면 Lambda Invoke가 정답이다. 단순한 검증은 Manual Approval로 사람이 누르지만, "외부 API에서 컴플라이언스 체크 가져오기" 같은 자동화된 검증은 Lambda Invoke를 쓴다.
-
-> 📚 **사례**: Capital One은 internal compliance review를 Lambda Invoke 액션으로 자동화했다고 re:Invent 2019에서 발표했다. 배포 전 ServiceNow의 change ticket 상태를 Lambda가 조회해 "approved" 상태일 때만 다음 단계로 진행. 사람이 매번 ServiceNow 콘솔과 CodePipeline 콘솔을 오가는 비효율을 제거.
+"Invoke" 카테고리는 비교적 새로 추가됐는데(2018년 Lambda, 2022년 Step Functions), "임의 검증 로직을 파이프라인 중간에 넣고 싶다"는 시나리오의 정답은 Lambda Invoke다. 단순한 검증은 Manual Approval로 사람이 누르지만, "외부 API에서 컴플라이언스 체크 가져오기" 같은 자동화된 검증은 Lambda Invoke를 쓴다.
 
 ## 아티팩트: 단계 간 데이터를 어떻게 흘리는가
 
-CodePipeline의 가장 중요한 개념 중 하나가 아티팩트다. Stage A의 출력이 Stage B의 입력이 되는 메커니즘이고, 이게 S3 기반이라는 점이 시험의 단골 포인트다.
+CodePipeline의 가장 중요한 개념 중 하나가 아티팩트다. Stage A의 출력이 Stage B의 입력이 되는 메커니즘이고, 이것이 S3 기반이라는 점이 시험에서 구분해야 할 포인트다.
 
 ```
 [Source Stage]
@@ -83,9 +81,9 @@ CodePipeline의 가장 중요한 개념 중 하나가 아티팩트다. Stage A�
    Input Artifact: "BuildOutput"
 ```
 
-> 🔍 **더 깊이**: 아티팩트는 **계정·리전당 하나의 S3 bucket**에 저장된다(이름: `codepipeline-<region>-<random>`). 파이프라인을 처음 만들 때 AWS가 자동 생성하지만, 명시적으로 다른 bucket을 지정할 수도 있다. 이 bucket의 access를 제대로 통제하지 않으면 빌드 산출물(소스 코드 zip, Docker 이미지 메타데이터)이 노출될 수 있다. AWS Trusted Advisor의 보안 체크 중 "Amazon S3 Bucket Permissions"가 이 bucket을 자주 잡아낸다.
+아티팩트는 **계정·리전당 하나의 S3 bucket**에 저장된다(이름: `codepipeline-<region>-<random>`). 파이프라인을 처음 만들 때 AWS가 자동 생성하지만, 명시적으로 다른 bucket을 지정할 수도 있다. 이 bucket의 access를 제대로 통제하지 않으면 빌드 산출물(소스 코드 zip, Docker 이미지 메타데이터)이 노출될 수 있다.
 
-> ⚠️ **함정**: 아티팩트 bucket은 **반드시 파이프라인과 같은 리전**에 있어야 한다. Cross-Region 배포를 하려면 각 리전마다 별도의 artifact bucket이 필요하고, CodePipeline이 자동으로 복제한다. 이걸 모르고 "us-east-1 artifact를 ap-northeast-2 deploy에 직접 참조"하려고 하면 실패한다.
+> ⚠️ **함정**: 아티팩트 bucket은 **반드시 파이프라인과 같은 리전**에 있어야 한다. Cross-Region 배포를 하려면 각 리전마다 별도의 artifact bucket이 필요하고, CodePipeline이 자동으로 복제한다. 이를 모르고 "us-east-1 artifact를 ap-northeast-2 deploy에 직접 참조"하려고 하면 실패한다.
 
 ```yaml
 # Cross-Region 배포의 artifact bucket 설정 (CloudFormation 발췌)
@@ -105,7 +103,7 @@ Pipeline:
 
 ## 트리거: 파이프라인이 시작되는 4가지 방법
 
-CodePipeline이 어떻게 trigger되는지가 자주 헷갈리는 영역이다. 4가지 방식이 있는데, 권장도와 latency가 다르다.
+CodePipeline이 어떻게 trigger되는지는 헷갈리기 쉬운 영역이다. 4가지 방식이 있는데, 권장도와 latency가 다르다.
 
 | 방식 | Latency | 권장 사용처 | 시험 키워드 |
 |------|---------|-------------|-------------|
@@ -114,7 +112,7 @@ CodePipeline이 어떻게 trigger되는지가 자주 헷갈리는 영역이다. 
 | **Polling** | 최대 1분 | 레거시, 비권장 | "Polling은 비권장" |
 | **수동/CLI** | 즉시 | 디버깅, 핫픽스 | "수동 재시작" |
 
-> 💡 **관련 이론**: 2019년 이전에는 CodePipeline이 기본적으로 polling 모델(매 분마다 S3/GitHub 변경 확인)을 썼다. AWS가 EventBridge 기반 push 모델로 전환한 이유는 ① latency 단축 ② API 호출 비용 절감 ③ GitHub rate limit 회피. Polling은 여전히 가능하지만 비권장으로 명시돼 있고, 시험에서 "가장 효율적인 트리거"가 보이면 EventBridge가 답.
+2019년 이전에는 CodePipeline이 기본적으로 polling 모델(매 분마다 S3/GitHub 변경 확인)을 썼다. AWS가 EventBridge 기반 push 모델로 전환한 이유는 ① latency 단축 ② API 호출 비용 절감 ③ GitHub rate limit 회피. Polling은 여전히 가능하지만 비권장으로 명시돼 있고, 시험에서 "가장 효율적인 트리거"가 보이면 EventBridge가 답.
 
 ## CodePipeline V2: 변수, 트리거 필터, 실행 모드
 
@@ -145,7 +143,7 @@ Source action output: #{SourceVariables.CommitId}
 Build action output:  #{BuildVariables.IMAGE_TAG}     (CodeBuild의 exported-variables)
 ```
 
-> 🔍 **더 깊이**: `#{SourceVariables.CommitId}`는 V1에서도 가능했지만 일부 source에서만 노출됐다. V2는 모든 액션이 일관된 변수 모델을 갖는다. 빌드의 exported-variables가 deploy 단계로 자동 흐르는 게 가장 흔한 패턴 — 빌드 시 결정된 image tag를 deploy의 ECS task definition에 동적으로 주입.
+`#{SourceVariables.CommitId}`는 V1에서도 가능했지만 일부 source에서만 노출됐다. V2는 모든 액션이 일관된 변수 모델을 갖는다. 빌드의 exported-variables가 deploy 단계로 자동으로 흐르는 것이 대표적인 패턴이다. 빌드 시 결정된 image tag를 deploy의 ECS task definition에 동적으로 주입.
 
 ### 2. 트리거 필터링
 
@@ -167,7 +165,7 @@ triggers:
             includes: ["v*.*.*"]
 ```
 
-> ⚠️ **함정**: 트리거 필터는 V2 + CodeStar Source Connection(GitHub, BitBucket, GitLab)에서만 동작. CodeCommit source에는 안 먹는다. 시험에서 "CodeCommit + 특정 브랜치만 트리거"가 나오면 EventBridge rule로 필터링하는 게 정답이지 파이프라인 트리거 필터가 아님.
+> ⚠️ **함정**: 트리거 필터는 V2 + CodeStar Source Connection(GitHub, BitBucket, GitLab)에서만 동작한다. CodeCommit source에는 적용되지 않는다. "CodeCommit + 특정 브랜치만 트리거" 시나리오의 정답은 파이프라인 트리거 필터가 아니라 EventBridge rule 필터링이다.
 
 ### 3. 실행 모드
 
@@ -179,7 +177,7 @@ executionMode: QUEUED        # 들어온 순서대로 하나씩 실행
 executionMode: PARALLEL      # 여러 실행 동시 진행
 ```
 
-> 📚 **사례**: PARALLEL 모드는 2024년 발표된 새 기능이다. 여러 PR을 동시에 검증해야 하는 monorepo 환경에서 유용. 단 deploy 단계가 같은 리소스(예: 동일 ECS service)를 만지면 race condition이 발생하므로 보통 Source/Build/Test까지만 PARALLEL이고 Deploy는 SUPERSEDED나 QUEUED로 별도 파이프라인을 분리하는 게 안전 패턴.
+PARALLEL 모드는 2024년 발표된 새 기능이다. 여러 PR을 동시에 검증해야 하는 monorepo 환경에서 유용. 단 deploy 단계가 같은 리소스(예: 동일 ECS service)를 만지면 race condition이 발생한다. 그래서 Source/Build/Test까지만 PARALLEL로 두고, Deploy는 SUPERSEDED나 QUEUED로 별도 파이프라인을 분리하는 것이 안전한 패턴이다.
 
 ## Manual Approval: 사람이 마지막 게이트가 되는 경우
 
@@ -206,9 +204,9 @@ executionMode: PARALLEL      # 여러 실행 동시 진행
 - **7일 안에 응답 없으면 자동 거부**(timeout)
 - 거부되면 그 stage는 Failed로 표시, 다음 stage 실행 안 됨
 
-> 🔍 **더 깊이**: Manual Approval의 7일 timeout은 변경 불가능한 하드 리밋이다. 더 짧거나 길게 하고 싶으면 EventBridge로 "STARTED" 상태 모니터링 → Lambda로 N시간 후 자동 reject 호출하는 패턴을 쓴다. 또는 Approval action 대신 Lambda Invoke에서 외부 시스템(JIRA, ServiceNow)의 승인 상태를 polling하는 패턴.
+Manual Approval의 7일 timeout은 변경 불가능한 하드 리밋이다. 더 짧거나 길게 하고 싶으면 EventBridge로 "STARTED" 상태 모니터링 → Lambda로 N시간 후 자동 reject 호출하는 패턴을 쓴다. 또는 Approval action 대신 Lambda Invoke에서 외부 시스템(JIRA, ServiceNow)의 승인 상태를 polling하는 패턴.
 
-> ⚠️ **함정**: Manual Approval에 권한이 있는 IAM 사용자가 본인이 만든 변경을 본인이 승인할 수 있는가? **기본적으로는 가능**하지만, IAM Condition `aws:userId`로 "변경한 사람과 승인자가 달라야 한다"는 분리(separation of duties)를 강제하려면 추가 IAM 정책이 필요하다. 컴플라이언스가 중요한 환경에서는 별도 그룹(release manager)에만 승인 권한을 부여하는 게 일반적.
+Manual Approval에 권한이 있는 IAM 사용자가 본인이 만든 변경을 본인이 승인할 수 있는가? **기본적으로는 가능**하지만, IAM Condition `aws:userId`로 "변경한 사람과 승인자가 달라야 한다"는 분리(separation of duties)를 강제하려면 추가 IAM 정책이 필요하다. 컴플라이언스가 중요한 환경에서는 별도 그룹(release manager)에만 승인 권한을 부여한다.
 
 ## Cross-Account/Region 패턴: 멀티 계정 조직의 표준
 
@@ -236,10 +234,6 @@ executionMode: PARALLEL      # 여러 실행 동시 진행
 3. **KMS CMK**: 양쪽 계정에서 사용 가능하도록 Key Policy 설정 (artifact는 KMS로 암호화돼야 cross-account 전달 가능)
 4. **S3 Artifact Bucket**: Bucket policy에 Target 계정 read 권한
 
-> 💡 **관련 이론**: 이 패턴은 AWS의 "Well-Architected Multi-Account Strategy"의 한 부분이다. 2019년 AWS Control Tower 출시 이후 조직 수준에서 표준화됐고, AWS Organizations의 SCP(Service Control Policy)와 결합해 사용된다. "권한은 계정 경계로 분리하고, 자동화는 IAM cross-account role로 명시적 위임"이 핵심 사상.
-
-> 📚 **사례**: AWS re:Invent 2022 session DOP312에서 Liberty Mutual은 350개 이상의 AWS 계정을 운영하면서 CodePipeline cross-account로 단일 source 계정에서 모든 application 계정으로 배포를 통일했다. 핵심은 "계정 boundary로 blast radius를 제한하고, IAM role chain으로 자동화는 그대로 유지"하는 사상.
-
 ## EventBridge 통합: 파이프라인 상태를 외부로 흘리는 표준
 
 CodePipeline의 모든 상태 변경(시작, 단계 진행, 성공, 실패)은 EventBridge로 자동 발행된다. 알림·메트릭·자동화의 표준 hook.
@@ -265,7 +259,7 @@ CodePipeline의 모든 상태 변경(시작, 단계 진행, 성공, 실패)은 E
 - 모든 prod 배포를 보안팀 audit S3 bucket에 기록 (→ Kinesis Firehose)
 - 일별 파이프라인 성공률 메트릭 (→ CloudWatch Custom Metric)
 
-> 🔍 **더 깊이**: CodeStar Notifications는 EventBridge 위에 더 친화적 UI를 얹은 것이다. "이메일/Slack/Chime으로 알림"이 목적이라면 CodeStar Notifications가 빠르고, "복잡한 자동화 분기"가 필요하면 EventBridge rule을 직접 쓰는 게 유연하다. 시험에서 "Slack 알림 + 최소 구성"이면 CodeStar Notifications, "조건부 자동 응답"이면 EventBridge.
+CodeStar Notifications는 EventBridge 위에 더 친화적 UI를 얹은 것이다. "이메일/Slack/Chime으로 알림"이 목적이라면 CodeStar Notifications가 빠르고, "복잡한 자동화 분기"가 필요하면 EventBridge rule을 직접 쓰는 게 유연하다. 시험에서 "Slack 알림 + 최소 구성"이면 CodeStar Notifications, "조건부 자동 응답"이면 EventBridge.
 
 ## Pipeline-as-Code: CloudFormation/CDK로 관리하기
 
@@ -320,9 +314,7 @@ class PipelineStack(Stack):
         )
 ```
 
-> 💡 **관련 이론**: "Pipeline-as-Code"는 GitOps 사상의 일부다. Weaveworks가 2017년 제안한 GitOps는 "운영 환경의 desired state를 git에 두고, 그것과 실제 상태의 차이를 자동 reconcile한다"는 모델. CodePipeline은 그 reconcile loop의 actuator 역할을 한다. ArgoCD/Flux가 K8s 환경에서 같은 역할을 하는 것과 같다.
-
-## 정리하며
+## 정리
 
 CodePipeline은 빌드도 배포도 직접 하지 않는다. 그저 다른 도구들을 정해진 순서와 조건으로 호출하는 지휘자다. 그 단순한 역할이 중요한 이유는 "수동으로 하던 모든 release 절차를 한 번 정의해두면 그 다음부터는 사람 없이 동작한다"는 약속을 가능하게 하기 때문이다. CodePipeline V2의 변수와 트리거 필터링은 그 약속을 더 정교한 워크플로우까지 확장한다.
 
