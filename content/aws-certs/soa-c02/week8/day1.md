@@ -1,6 +1,6 @@
 # Day 1 - VPC라는 가상 데이터센터, 그리고 운영자가 매일 헷갈리는 다섯 가지
 
-VPC 콘솔을 처음 열면 단어가 많다. CIDR 블록, 서브넷, 라우팅 테이블, IGW, NAT, Security Group, NACL, Egress-Only IGW. 익숙해지면 그냥 클릭으로 끝나는 듯하지만 운영하다 보면 같은 사람이 같은 실수를 반복한다. "Private 서브넷인데 왜 외부 API 호출이 안 되지", "NACL을 다 ALLOW로 깔았는데 왜 응답이 끊기지", "/28 서브넷에 16대 띄울 줄 알았는데 11대에서 IP가 모자라네". 매일 누군가가 같은 함정에 빠진다.
+VPC 콘솔을 처음 열면 단어가 많다. CIDR 블록, 서브넷, 라우팅 테이블, IGW, NAT, Security Group, NACL, Egress-Only IGW. 익숙해지면 그냥 클릭으로 끝나는 듯하지만 운영하다 보면 같은 사람이 같은 실수를 반복한다. "프라이빗 서브넷인데 왜 외부 API 호출이 안 되지", "NACL을 다 ALLOW로 깔았는데 왜 응답이 끊기지", "/28 서브넷에 16대 띄울 줄 알았는데 11대에서 IP가 모자라네". 매일 누군가가 같은 함정에 빠진다.
 
 이 글은 VPC의 부품을 외우는 글이 아니라, **왜 그렇게 설계됐는지**를 따라가는 글이다. AWS가 EC2 위에 한 겹의 가상 네트워크 레이어를 더 얹은 이유, Stateful 방화벽과 Stateless 방화벽을 둘 다 제공하는 이유, IPv6에 NAT를 만들지 않은 이유, 서브넷마다 5개 IP를 빼앗아 가는 이유 — 이 결정들을 이해하면 함정에 빠지는 빈도가 줄어든다.
 
@@ -12,9 +12,9 @@ VPC 콘솔을 처음 열면 단어가 많다. CIDR 블록, 서브넷, 라우팅 
 
 2009년 8월 AWS는 VPC를 도입했다. 처음엔 "EC2 안에서 별도로 만드는 격리된 네트워크"였지만, 2013년부터 신규 리전·신규 계정에서는 VPC가 기본이 됐고, 2017년 EC2-Classic은 신규 계정에서 사라졌다(기존 계정에서도 2022년 8월 완전 종료). 이 역사를 알면 시험에서 "왜 모든 EC2가 VPC에 들어가야 하나"에 대한 답이 쉬워진다 — 단지 보안 격리만이 아니라 **사설 IP 통제·VPN 호환·고객별 라우팅** 전부가 EC2-Classic으로는 불가능했기 때문이다.
 
-> 💡 **관련 이론**: VPC의 모델은 사실 새 발명이 아니다. 1999년 RFC 2547에서 정의된 **BGP/MPLS IP VPN**이 같은 아이디어다 — "공용 인프라 위에 고객별 격리된 가상 네트워크를 얹는다". AWS VPC는 이 모델을 SDN(Software-Defined Networking)으로 구현한 것이고, 내부적으로 Mapping Service라는 컴포넌트가 모든 가상 IP를 물리 호스트에 매핑한다. 패킷이 인스턴스를 떠날 때 hypervisor가 가상 IP를 물리 IP로 캡슐화해 보내고, 받는 쪽 hypervisor가 다시 vIP로 디캡슐화한다. 이 방식은 VXLAN과 유사한 overlay network 패턴이다.
+VPC의 모델은 사실 새 발명이 아니다. 1999년 RFC 2547에서 정의된 **BGP/MPLS IP VPN**이 같은 아이디어다 — "공용 인프라 위에 고객별 격리된 가상 네트워크를 얹는다". AWS VPC는 이 모델을 SDN(Software-Defined Networking)으로 구현한 것이고, 내부적으로 Mapping Service라는 컴포넌트가 모든 가상 IP를 물리 호스트에 매핑한다. 패킷이 인스턴스를 떠날 때 hypervisor가 가상 IP를 물리 IP로 캡슐화해 보내고, 받는 쪽 hypervisor가 다시 vIP로 디캡슐화한다. 이 방식은 VXLAN과 유사한 overlay network 패턴이다.
 
-> 🔍 **더 깊이**: AWS는 2017년에 자체 SDN 칩(Nitro Card)을 도입하면서 이 mapping 기능을 hypervisor에서 칩으로 이동시켰다. 그 전엔 Xen hypervisor의 dom0가 가상 네트워킹을 처리했고, 이게 노이지 네이버 문제(다른 인스턴스의 트래픽 폭발이 내 인스턴스의 네트워크 성능에 영향)의 원인이었다. Nitro 이후 네트워크는 호스트 CPU와 완전히 분리됐고, 그래서 같은 시기 도입된 **Traffic Mirroring이 Nitro 인스턴스에서만 동작**한다(다음 글의 주제). 칩이 패킷을 보고 있어야 복사도 가능하다.
+AWS는 2017년에 자체 SDN 칩(Nitro Card)을 도입하면서 이 mapping 기능을 hypervisor에서 칩으로 이동시켰다. 그 전엔 Xen hypervisor의 dom0가 가상 네트워킹을 처리했고, 이게 노이지 네이버 문제(다른 인스턴스의 트래픽 폭발이 내 인스턴스의 네트워크 성능에 영향)의 원인이었다. Nitro 이후 네트워크는 호스트 CPU와 완전히 분리됐고, 그래서 같은 시기 도입된 **Traffic Mirroring이 Nitro 인스턴스에서만 동작**한다(다음 글의 주제). 칩이 패킷을 보고 있어야 복사도 가능하다.
 
 ## CIDR — 5개 예약 IP가 어디로 사라지는가
 
@@ -34,20 +34,20 @@ VPC 콘솔을 처음 열면 단어가 많다. CIDR 블록, 서브넷, 라우팅 
 
 ## Public vs Private — IGW 하나로 갈리는 두 세계
 
-"Public 서브넷"이라는 게 실제로 무엇인지가 자주 혼동된다. **서브넷 자체에는 Public/Private 속성이 없다**. AWS 콘솔이 "Public subnet"이라고 표시하는 것은 그저 "라우팅 테이블에 `0.0.0.0/0 → igw-xxx` 경로가 있는 서브넷"의 라벨일 뿐이다. 같은 서브넷에서 라우팅 테이블만 바꾸면 Public이 Private이 된다.
+"퍼블릭 서브넷"이라는 게 실제로 무엇인지가 자주 혼동된다. **서브넷 자체에는 Public/Private 속성이 없다**. AWS 콘솔이 "퍼블릭 서브넷"이라고 표시하는 것은 그저 "라우팅 테이블에 `0.0.0.0/0 → igw-xxx` 경로가 있는 서브넷"의 라벨일 뿐이다. 같은 서브넷에서 라우팅 테이블만 바꾸면 Public이 Private이 된다.
 
-Public 서브넷의 정의:
+퍼블릭 서브넷의 정의:
 
 1. 서브넷의 라우팅 테이블에 `0.0.0.0/0 → igw-xxx` 경로가 있다
 2. 인스턴스에 public IP나 Elastic IP가 할당돼 있다
 
 두 조건이 **모두** 충족돼야 인터넷 통신이 된다. 라우팅만 있고 public IP가 없으면 외부에서 들어올 수 없고, public IP만 있고 라우팅이 없으면 패킷이 IGW까지 가지 못한다. "내 EC2에 public IP를 줬는데 왜 인터넷이 안 되지"의 90%는 이 두 조건 중 하나가 빠진 경우다.
 
-Private 서브넷의 외부 통신은 NAT Gateway가 담당한다. NAT GW 자체는 Public 서브넷에 있어야 하고(자신은 IGW로 나가야 하니까), Private 서브넷의 라우팅 테이블이 `0.0.0.0/0 → nat-xxx`를 가리킨다. 이때 NAT GW는 자기 자신의 public IP/Elastic IP로 SNAT(Source NAT)를 수행한다 — Private 인스턴스의 사설 IP를 NAT GW의 공인 IP로 바꿔서 외부에 보내고, 응답이 돌아오면 connection tracking 테이블을 보고 원래 인스턴스에 돌려준다.
+프라이빗 서브넷의 외부 통신은 NAT Gateway가 담당한다. NAT GW 자체는 퍼블릭 서브넷에 있어야 하고(자신은 IGW로 나가야 하니까), 프라이빗 서브넷의 라우팅 테이블이 `0.0.0.0/0 → nat-xxx`를 가리킨다. 이때 NAT GW는 자기 자신의 public IP/Elastic IP로 SNAT(Source NAT)를 수행한다 — Private 인스턴스의 사설 IP를 NAT GW의 공인 IP로 바꿔서 외부에 보내고, 응답이 돌아오면 connection tracking 테이블을 보고 원래 인스턴스에 돌려준다.
 
-> 🔍 **더 깊이**: NAT Gateway는 AZ 단위로 설치한다. 멀티 AZ 구성에서 NAT GW를 AZ-a에만 두고 AZ-b의 Private 서브넷도 그걸 가리키게 하면, **AZ-a가 죽으면 AZ-b의 외부 통신도 모두 끊긴다**. 게다가 AZ-b에서 AZ-a로 가는 cross-AZ 데이터 전송 요금($0.01/GB)이 평소에도 청구된다. 운영 환경에서는 NAT GW를 각 AZ에 하나씩 두고, 각 AZ의 Private 서브넷이 자신의 AZ에 있는 NAT GW를 가리키도록 하는 게 표준이다.
+NAT Gateway는 AZ 단위로 설치한다. 멀티 AZ 구성에서 NAT GW를 AZ-a에만 두고 AZ-b의 프라이빗 서브넷도 그걸 가리키게 하면, **AZ-a가 죽으면 AZ-b의 외부 통신도 모두 끊긴다**. 게다가 AZ-b에서 AZ-a로 가는 cross-AZ 데이터 전송 요금($0.01/GB)이 평소에도 청구된다. 운영 환경에서는 NAT GW를 각 AZ에 하나씩 두고, 각 AZ의 프라이빗 서브넷이 자신의 AZ에 있는 NAT GW를 가리키도록 하는 게 표준이다.
 
-> 📚 **사례**: 2020년 슬랙(Slack)이 한 차례 부분 장애를 겪었을 때 원인 중 하나가 NAT Gateway였다. 트래픽이 폭증하면서 단일 NAT GW의 connection tracking 한계(약 55k port per destination)에 부딪혔고, 새 연결이 SYN 단계에서 드롭됐다. 사후 분석에서 슬랙은 "NAT GW 자체는 가용성 99.99%지만, 단일 5-tuple 흐름 수와 destination당 포트 수 한계가 우리 규모에선 병목"이라고 밝혔다. 이후 슬랙은 NAT GW 여러 개 + per-VPC sharding으로 전환했다. AWS는 2021년 NAT GW의 IP당 동시 연결 한계를 IP를 여러 개 붙여 늘릴 수 있게 했다(Multi-IP NAT GW).
+2020년 슬랙(Slack)이 한 차례 부분 장애를 겪었을 때 원인 중 하나가 NAT Gateway였다. 트래픽이 폭증하면서 단일 NAT GW의 connection tracking 한계(약 55k port per destination)에 부딪혔고, 새 연결이 SYN 단계에서 드롭됐다. 사후 분석에서 슬랙은 "NAT GW 자체는 가용성 99.99%지만, 단일 5-tuple 흐름 수와 destination당 포트 수 한계가 우리 규모에선 병목"이라고 밝혔다. 이후 슬랙은 NAT GW 여러 개 + per-VPC sharding으로 전환했다. AWS는 2021년 NAT GW의 IP당 동시 연결 한계를 IP를 여러 개 붙여 늘릴 수 있게 했다(Multi-IP NAT GW).
 
 ## Security Group과 NACL — Stateful과 Stateless를 둘 다 주는 이유
 
@@ -75,7 +75,7 @@ NACL은 **서브넷 단위**의 stateless 방화벽이다. Connection tracking�
 
 셋째, **휴먼 에러 안전망**. SG는 운영자가 실수로 "0.0.0.0/0 22번 ALLOW"를 깔 수 있다. NACL이 서브넷 레벨에서 22번을 사내 IP로만 제한해두면 SG 실수가 즉시 사고로 이어지지 않는다.
 
-> 💡 **관련 이론**: Stateful vs Stateless 방화벽의 trade-off는 1990년대 후반 connection tracking이 도입된 Linux netfilter(`conntrack`)에서 결정됐다. Stateful은 메모리에 연결 상태를 저장하므로 메모리 한계가 있고(NAT GW의 55k 동시 연결 한계와 같은 이유), Stateless는 무한 확장이 가능하지만 규칙이 복잡해진다. AWS는 SG를 Stateful로 둠으로써 운영 편의를, NACL을 Stateless로 둠으로써 무한 확장과 Deny 표현력을 동시에 제공한다.
+Stateful vs Stateless 방화벽의 trade-off는 1990년대 후반 connection tracking이 도입된 Linux netfilter(`conntrack`)에서 결정됐다. Stateful은 메모리에 연결 상태를 저장하므로 메모리 한계가 있고(NAT GW의 55k 동시 연결 한계와 같은 이유), Stateless는 무한 확장이 가능하지만 규칙이 복잡해진다. AWS는 SG를 Stateful로 둠으로써 운영 편의를, NACL을 Stateless로 둠으로써 무한 확장과 Deny 표현력을 동시에 제공한다.
 
 > ⚠️ **함정**: NACL의 ephemeral port 범위를 잘못 잡는 사고가 흔하다. Linux 커널 기본은 32768-60999, Windows는 1024-5000(legacy) 또는 49152-65535(Vista 이후), AWS NAT GW가 받는 응답은 1024-65535를 가정한다. 가장 안전한 건 그냥 **1024-65535를 다 허용**하는 것이다. 더 좁히면 일부 OS·일부 흐름이 끊긴다.
 
@@ -85,7 +85,7 @@ NACL 규칙은 번호 순서대로 평가되고 **첫 매칭이 적용된다**. 
 
 이 패턴은 BASIC 언어의 줄 번호 매기기(`10 PRINT "HELLO" / 20 GOTO 10`)에서 그대로 온 것이다. 1960년대 BASIC도 같은 이유로 10씩 띄워 줄 번호를 썼다 — 사이에 새 줄을 끼워넣기 위해. Cisco IOS의 ACL도 같은 컨벤션을 쓴다. AWS는 이 산업 표준을 그대로 따랐다.
 
-가장 흔한 패턴:
+대표적인 패턴:
 
 ```
 인바운드:
@@ -102,7 +102,7 @@ NACL 규칙은 번호 순서대로 평가되고 **첫 매칭이 적용된다**. 
   120 ALLOW  443 0.0.0.0/0         외부 HTTPS 호출
 ```
 
-> 🔍 **더 깊이**: NACL의 `*` 규칙은 변경할 수 없는 implicit deny다. 모든 사용자 정의 규칙 다음에 평가되고, 어떤 규칙에도 매칭되지 않은 트래픽은 여기서 차단된다. 시험에서 "NACL에서 65535보다 큰 번호의 규칙을 만들 수 있나"가 가끔 나오는데, 사용자 정의는 1-32766까지만 가능하고 그 이상은 AWS가 예약해뒀다.
+NACL의 `*` 규칙은 변경할 수 없는 implicit deny다. 모든 사용자 정의 규칙 다음에 평가되고, 어떤 규칙에도 매칭되지 않은 트래픽은 여기서 차단된다. 시험에서 "NACL에서 65535보다 큰 번호의 규칙을 만들 수 있나"가 가끔 나오는데, 사용자 정의는 1-32766까지만 가능하고 그 이상은 AWS가 예약해뒀다.
 
 ## IPv6 — NAT가 없는 세계의 아름다움
 
@@ -117,9 +117,9 @@ IPv4 Private 서브넷:  NAT GW로 SNAT → IGW
 IPv6 Private 서브넷:  EIGW로 stateful filter → IGW (주소 변환 없음)
 ```
 
-> 💡 **관련 이론**: IPv6와 NAT의 관계는 IETF 내부에서 오랜 논쟁이었다. NAT 옹호자들은 "보안 측면이 있다"고 주장했지만, IETF는 RFC 4864(2007)에서 "NAT는 보안 기능이 아니다. 진짜 보안은 stateful firewall로 해야 한다"고 명시했다. AWS는 이 표준을 따라 IPv6에선 NAT를 만들지 않고 EIGW만 제공한다. EIGW는 내부적으로 stateful connection tracking을 수행한다는 점에서 NAT GW와 비슷하지만, 주소 변환은 하지 않는다.
+IPv6와 NAT의 관계는 IETF 내부에서 오랜 논쟁이었다. NAT 옹호자들은 "보안 측면이 있다"고 주장했지만, IETF는 RFC 4864(2007)에서 "NAT는 보안 기능이 아니다. 진짜 보안은 stateful firewall로 해야 한다"고 명시했다. AWS는 이 표준을 따라 IPv6에선 NAT를 만들지 않고 EIGW만 제공한다. EIGW는 내부적으로 stateful connection tracking을 수행한다는 점에서 NAT GW와 비슷하지만, 주소 변환은 하지 않는다.
 
-> 📚 **사례**: T-Mobile US는 2014년부터 모바일 네트워크를 IPv6-only로 전환하기 시작했고, 2021년엔 자사 코어 네트워크에서 IPv4를 완전히 제거했다. 그들이 본 트래픽의 90% 이상이 IPv6로 흐른다. 이건 AWS의 IPv6 전략에도 영향을 줬다 — 2021년 AWS는 IPv4 주소에 시간당 $0.005 과금을 시작하면서(2024년 본격 시작) "IPv6로 옮겨가라"는 신호를 보냈다. 클라우드의 IPv6 채택이 본격화되는 중이다.
+T-Mobile US는 2014년부터 모바일 네트워크를 IPv6-only로 전환하기 시작했고, 2021년엔 자사 코어 네트워크에서 IPv4를 완전히 제거했다. 그들이 본 트래픽의 90% 이상이 IPv6로 흐른다. 이건 AWS의 IPv6 전략에도 영향을 줬다 — 2021년 AWS는 IPv4 주소에 시간당 $0.005 과금을 시작하면서(2024년 본격 시작) "IPv6로 옮겨가라"는 신호를 보냈다. 클라우드의 IPv6 채택이 본격화되는 중이다.
 
 ## DNS Hostname과 DNS Support — 두 토글의 의미
 
@@ -129,7 +129,7 @@ VPC 속성에 토글 두 개가 있다. `enableDnsSupport`와 `enableDnsHostname
 
 `enableDnsHostnames`(기본 꺼짐, default VPC만 켜짐)는 **AWS가 인스턴스에 public DNS 이름을 자동 부여할지** 여부다. 켜지면 인스턴스에 `ec2-203-0-113-5.compute-1.amazonaws.com` 같은 이름이 붙는다. VPC Endpoint(Interface)나 Private Hosted Zone을 쓰려면 **둘 다 켜져야 한다**.
 
-> ⚠️ **함정**: 운영자가 새 VPC를 직접 만들면 두 토글이 기본 꺼져 있다(정확히는 enableDnsHostnames만). 이 상태에서 VPC Interface Endpoint를 만들면 endpoint는 생성되지만 인스턴스가 endpoint의 DNS 이름을 resolve하지 못해 사실상 못 쓰게 된다. 새 VPC를 만들면 두 토글 켜는 게 반사 행동이 돼야 한다.
+운영자가 새 VPC를 직접 만들면 두 토글이 기본 꺼져 있다(정확히는 enableDnsHostnames만). 이 상태에서 VPC Interface Endpoint를 만들면 endpoint는 생성되지만 인스턴스가 endpoint의 DNS 이름을 resolve하지 못해 사실상 못 쓰게 된다. 새 VPC를 만들면 두 토글 켜는 게 반사 행동이 돼야 한다.
 
 ## 다른 클라우드와의 비교
 
@@ -147,7 +147,7 @@ VPC 속성에 토글 두 개가 있다. `enableDnsSupport`와 `enableDnsHostname
 
 Azure NSG가 SG와 거의 같은 역할이고 Stateless NACL에 해당하는 게 Azure에는 없다 — Azure는 "ASG(Application Security Group)"라는 그룹 단위 추가 도구를 둬서 비슷한 효과를 낸다.
 
-## 정리하며
+## 정리
 
 VPC는 단순한 네트워크 컨테이너가 아니라, 2009년 이후 AWS가 EC2-Classic의 약점을 메우려고 만든 SDN 레이어다. 사설 IP 통제, VPN 호환, 멀티 테넌트 격리 — 이 세 요구를 동시에 풀려고 도입됐고, 그 후 Nitro 칩으로 hypervisor 부담까지 떼어냈다.
 

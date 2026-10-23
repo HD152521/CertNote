@@ -1,12 +1,12 @@
 # Day 3 - NAT Gateway, VPC Endpoint, PrivateLink — VPC가 외부와 만나는 세 가지 방식
 
-VPC를 만들고 인스턴스를 Private 서브넷에 두면 즉시 새 질문이 생긴다. "그럼 이 인스턴스는 어떻게 외부와 통신하지?" 답이 한 가지가 아니라 세 가지인 게 첫 번째 함정이다. 어디로 가는 트래픽이냐에 따라 NAT Gateway, VPC Endpoint, PrivateLink를 골라야 하고, 잘못 고르면 비용이 10배, 보안이 한 단계 약해진다.
+VPC를 만들고 인스턴스를 프라이빗 서브넷에 두면 즉시 새 질문이 생긴다. "그럼 이 인스턴스는 어떻게 외부와 통신하지?" 답이 한 가지가 아니라 세 가지인 게 첫 번째 함정이다. 어디로 가는 트래픽이냐에 따라 NAT Gateway, VPC Endpoint, PrivateLink를 골라야 하고, 잘못 고르면 비용이 10배, 보안이 한 단계 약해진다.
 
 운영자가 가장 자주 받는 청구서 충격이 NAT Gateway 데이터 처리 비용이다. $0.045/GB가 별것 아닌 듯하지만, S3로 일 1TB를 보내는 ETL 환경에선 월 $1,350이 NAT GW로만 빠져나간다. 같은 트래픽을 Gateway Endpoint로 우회하면 그게 0원이 된다. 이 한 가지 사실만 알아도 SOA 시험 시나리오의 30%가 풀린다. 이 글은 세 가지 방식이 왜 각자 존재하는지, 어떤 트래픽이 어디로 가는지, 그리고 비용·보안·운영의 trade-off를 따라간다.
 
 ## 외부 통신의 세 갈래 — 트래픽의 목적지로 결정된다
 
-Private 서브넷 EC2가 외부로 나가는 트래픽은 목적지에 따라 셋으로 나뉜다.
+프라이빗 서브넷 EC2가 외부로 나가는 트래픽은 목적지에 따라 셋으로 나뉜다.
 
 | 목적지 | 도구 | 비용 | 보안 |
 |--------|------|------|------|
@@ -25,7 +25,7 @@ NAT Gateway는 2015년 12월에 등장했다. 그 전엔 NAT Instance(EC2에 NAT
 
 ### AZ 종속의 비밀
 
-NAT GW는 만들 때 서브넷을 지정한다. 그 서브넷이 속한 AZ에 NAT GW가 묶인다. 멀티 AZ Private 서브넷이 있는데 NAT GW를 한 AZ에만 두면 두 가지 문제가 생긴다.
+NAT GW는 만들 때 서브넷을 지정한다. 그 서브넷이 속한 AZ에 NAT GW가 묶인다. 멀티 AZ 프라이빗 서브넷이 있는데 NAT GW를 한 AZ에만 두면 두 가지 문제가 생긴다.
 
 첫째, **AZ 장애 전파**. AZ-a의 NAT GW가 죽으면 AZ-b의 Private 인스턴스도 외부 통신이 끊긴다 — 라우팅 테이블이 AZ-a의 NAT를 가리키고 있으니까. AWS의 "한 AZ가 죽어도 다른 AZ는 살아 있어야 한다"는 다중 AZ 원칙이 깨진다.
 
@@ -33,9 +33,9 @@ NAT GW는 만들 때 서브넷을 지정한다. 그 서브넷이 속한 AZ에 NA
 
 표준 패턴은 **AZ마다 NAT GW 하나 + 각 AZ의 Private 라우팅 테이블이 자기 AZ의 NAT를 가리킨다**. 라우팅 테이블도 AZ당 따로 만들어야 한다(공유하면 안 됨). 이게 시험과 실무 모두에서 가장 자주 확인되는 패턴이다.
 
-> 📚 **사례**: 2020년 Slack의 부분 장애 사후 분석에서 NAT GW의 connection tracking 한계가 화제가 됐다. AWS는 NAT GW의 destination당 동시 연결 수가 약 55,000개로 제한된다고 명시한다(정확히는 source IP × dest IP × dest port 조합 기준 port 사용량 한계). Slack은 단일 NAT GW 뒤에서 같은 외부 서비스로 동시 연결이 너무 많아 한계에 부딪혔고, 새 연결의 SYN이 ENOTCONN 또는 timeout으로 실패했다. 해결은 ① NAT GW를 여러 개로 sharding, ② Multi-IP NAT GW(2021년 도입 — 한 NAT GW에 EIP 여러 개 부여) 사용. 시험에는 이 정도 깊이로 안 나오지만 실무에선 대형 환경의 디버깅 단서가 된다.
+2020년 Slack의 부분 장애 사후 분석에서 NAT GW의 connection tracking 한계가 화제가 됐다. AWS는 NAT GW의 destination당 동시 연결 수가 약 55,000개로 제한된다고 명시한다(정확히는 source IP × dest IP × dest port 조합 기준 port 사용량 한계). Slack은 단일 NAT GW 뒤에서 같은 외부 서비스로 동시 연결이 너무 많아 한계에 부딪혔고, 새 연결의 SYN이 ENOTCONN 또는 timeout으로 실패했다. 해결은 ① NAT GW를 여러 개로 sharding, ② Multi-IP NAT GW(2021년 도입 — 한 NAT GW에 EIP 여러 개 부여) 사용. 시험에는 이 정도 깊이로 안 나오지만 실무에선 대형 환경의 디버깅 단서가 된다.
 
-> ⚠️ **함정**: NAT GW에는 **Security Group을 부착할 수 없다**. NACL은 NAT GW가 있는 서브넷에 적용되니까 NACL로 통제는 가능하지만 SG는 불가. NAT Instance는 EC2라 SG 가능 — 이 차이가 시험 문제로 자주 나온다.
+> ⚠️ **함정**: NAT GW에는 **Security Group을 부착할 수 없다**. NACL은 NAT GW가 있는 서브넷에 적용되니까 NACL로 통제는 가능하지만 SG는 불가. NAT Instance는 EC2라 SG 가능 — 이 차이가 시험 문제로 나온다.
 
 ### NAT Instance — 레거시인데 가끔 답일 때
 
@@ -67,7 +67,7 @@ aws ec2 create-vpc-endpoint \
   --route-table-ids rtb-priv-a rtb-priv-b
 ```
 
-> 🔍 **더 깊이**: Gateway Endpoint를 만들면 라우팅 테이블에 `Destination: pl-78a54011, Target: vpce-1a2b3c4d` 같은 항목이 자동 추가된다. `pl-xxx`는 prefix list — AWS가 관리하는 IP 대역 집합으로, S3나 DynamoDB의 모든 리전 endpoint IP를 묶은 추상화다. AWS가 새 IP 대역을 추가하면 prefix list가 자동 업데이트되고 라우팅도 자동 반영된다. 이 메커니즘은 BGP의 prefix aggregation과 비슷한 발상이다.
+Gateway Endpoint를 만들면 라우팅 테이블에 `Destination: pl-78a54011, Target: vpce-1a2b3c4d` 같은 항목이 자동 추가된다. `pl-xxx`는 prefix list — AWS가 관리하는 IP 대역 집합으로, S3나 DynamoDB의 모든 리전 endpoint IP를 묶은 추상화다. AWS가 새 IP 대역을 추가하면 prefix list가 자동 업데이트되고 라우팅도 자동 반영된다. 이 메커니즘은 BGP의 prefix aggregation과 비슷한 발상이다.
 
 ### Interface Endpoint — ENI에 사설 IP를 박는다
 
@@ -89,7 +89,7 @@ aws ec2 create-vpc-endpoint \
 
 ### SSM Session Manager — 사설 환경의 표준 구성
 
-사설 VPC(인터넷 차단)에서 SSM Session Manager를 쓰려면 **세 개의 Interface Endpoint**가 필요하다. 이게 SOA 시험 단골이다.
+사설 VPC(인터넷 차단)에서 SSM Session Manager를 쓰려면 **세 개의 Interface Endpoint**가 필요하다. 이게 SOA 시험 범위이다.
 
 | Endpoint | 역할 |
 |----------|------|
@@ -99,7 +99,7 @@ aws ec2 create-vpc-endpoint \
 
 세 개가 다 필요한 이유는 SSM의 내부 아키텍처가 세 개의 채널로 분리돼 있어서다. 운영자가 흔히 빠지는 함정은 `ssm`만 만들고 끝낸다는 것 — Session이 안 열린다. 거기에 ECR로 컨테이너 이미지를 풀하려면 `ecr.api`와 `ecr.dkr`도, CloudWatch Logs 보내려면 `logs`도 추가해야 한다. 사설 환경의 엔드포인트 리스트는 보통 5-10개로 길어진다.
 
-> 💡 **관련 이론**: Interface Endpoint의 사설 DNS는 Route 53 Private Hosted Zone을 자동 생성해서 동작한다. 그래서 VPC의 `enableDnsHostnames`와 `enableDnsSupport` 둘 다 켜져 있어야 한다 — Day 1에서 본 그 두 토글의 정확한 사용처가 여기다. 새 VPC를 직접 만들면 `enableDnsHostnames`가 기본 꺼져 있어서 Interface Endpoint를 만들고도 DNS resolve가 안 되는 흔한 사고가 발생한다.
+Interface Endpoint의 사설 DNS는 Route 53 Private Hosted Zone을 자동 생성해서 동작한다. 그래서 VPC의 `enableDnsHostnames`와 `enableDnsSupport` 둘 다 켜져 있어야 한다 — Day 1에서 본 그 두 토글의 정확한 사용처가 여기다. 새 VPC를 직접 만들면 `enableDnsHostnames`가 기본 꺼져 있어서 Interface Endpoint를 만들고도 DNS resolve가 안 되는 흔한 사고가 발생한다.
 
 ## PrivateLink — B2B SaaS의 인터넷 우회
 
@@ -155,7 +155,7 @@ NLB는 L4 pass-through에 가까워서 클라이언트 IP가 그대로 보존된
 
 PrivateLink의 결정적 장점은 **CIDR 충돌에 무관**하다는 점이다. Consumer VPC가 `10.0.0.0/16`, Provider VPC도 `10.0.0.0/16`이어도 정상 동작 — Consumer는 endpoint의 사설 IP(자기 서브넷에서 할당된 IP)로 호출하므로 Provider의 CIDR을 알 필요가 없다. B2B SaaS는 수백 고객의 VPC CIDR을 통제할 수 없으니 이 특성이 결정적이다.
 
-> 📚 **사례**: Snowflake, MongoDB Atlas, Confluent Cloud 같은 대형 SaaS들이 모두 PrivateLink로 고객 VPC와 연결한다. 예전엔 인터넷으로 접근하거나 VPC Peering으로 일일이 연결했는데, 후자는 고객마다 CIDR 충돌 협상이 필요해서 운영이 지옥이었다. PrivateLink 이후 "Endpoint Service 하나 만들고 고객 계정 ID만 화이트리스트에 추가"하면 끝나는 모델이 표준이 됐다. 2024년 기준 PrivateLink 카탈로그에 등록된 서비스가 수천 개에 달한다(AWS Marketplace의 SaaS 통합 표준).
+Snowflake, MongoDB Atlas, Confluent Cloud 같은 대형 SaaS들이 모두 PrivateLink로 고객 VPC와 연결한다. 예전엔 인터넷으로 접근하거나 VPC Peering으로 일일이 연결했는데, 후자는 고객마다 CIDR 충돌 협상이 필요해서 운영이 지옥이었다. PrivateLink 이후 "Endpoint Service 하나 만들고 고객 계정 ID만 화이트리스트에 추가"하면 끝나는 모델이 표준이 됐다. 2024년 기준 PrivateLink 카탈로그에 등록된 서비스가 수천 개에 달한다(AWS Marketplace의 SaaS 통합 표준).
 
 ## Endpoint Policy — 마지막 안전망
 
@@ -193,7 +193,7 @@ Gateway Endpoint와 Interface Endpoint 모두 **Endpoint Policy**를 가질 수 
 
 ECR 함정이 특히 흔한데, 컨테이너 이미지가 보통 100MB-1GB라 클러스터 100대가 같은 이미지를 풀하면 100GB의 NAT 트래픽이 발생한다. ECR Interface Endpoint(시간당 $0.01)는 즉시 비용 절감.
 
-> 🔍 **더 깊이**: ECR의 이미지 풀 트래픽은 두 부분으로 나뉜다. 메타데이터(manifest)는 ECR API로, 실제 이미지 레이어는 S3에서. 그래서 ECR Interface Endpoint만 만들고 S3 Gateway Endpoint를 안 만들면 레이어 다운로드 트래픽이 여전히 NAT GW로 간다. 둘 다 만들어야 완전히 우회된다. AWS 공식 문서에는 "ECR Endpoint를 쓰려면 S3 Endpoint도 필요"라고 명시돼 있는데 운영자들이 자주 놓친다.
+ECR의 이미지 풀 트래픽은 두 부분으로 나뉜다. 메타데이터(manifest)는 ECR API로, 실제 이미지 레이어는 S3에서. 그래서 ECR Interface Endpoint만 만들고 S3 Gateway Endpoint를 안 만들면 레이어 다운로드 트래픽이 여전히 NAT GW로 간다. 둘 다 만들어야 완전히 우회된다. AWS 공식 문서에는 "ECR Endpoint를 쓰려면 S3 Endpoint도 필요"라고 명시돼 있는데 운영자들이 자주 놓친다.
 
 ## 다른 클라우드와의 비교
 
@@ -206,11 +206,11 @@ ECR 함정이 특히 흔한데, 컨테이너 이미지가 보통 100MB-1GB라 �
 
 GCP의 Private Service Connect와 Azure의 Private Link Service는 PrivateLink와 거의 같은 모델로, AWS PrivateLink가 사실상 산업 표준이 됐음을 보여준다. 차이는 AWS만 S3/DynamoDB에 무료 Gateway Endpoint를 제공한다는 점 — 트래픽 비중이 워낙 압도적이라 비용 정책의 차이가 운영 비용 차이로 직결된다.
 
-## 정리하며
+## 정리
 
 VPC가 외부와 만나는 세 방식 — NAT Gateway, VPC Endpoint, PrivateLink — 는 트래픽의 목적지로 결정된다. 외부 인터넷은 NAT GW, AWS 서비스는 Endpoint, 다른 VPC/계정의 서비스는 PrivateLink. 잘못 골라서 NAT GW가 다 받게 두면 비용이 10배가 된다.
 
-세 가지 절대 원칙. ① **NAT GW는 AZ당 하나**, 같은 AZ로 라우팅, ② **S3/DynamoDB는 Gateway Endpoint로 우회**(무료), ③ **SSM 사설 환경엔 3개 Interface Endpoint**. 이 세 가지가 시험과 실무 모두에서 가장 자주 등장한다.
+세 가지 절대 원칙. ① **NAT GW는 AZ당 하나**, 같은 AZ로 라우팅, ② **S3/DynamoDB는 Gateway Endpoint로 우회**(무료), ③ **SSM 사설 환경엔 3개 Interface Endpoint**. 이 세 가지가 시험과 실무 모두에서 등장한다.
 
 다음 글에선 VPC 여러 개를 묶고 온프레미스와 연결하는 — Transit Gateway, VPN, Direct Connect, Route 53 — 큰 그림을 본다. 단일 VPC의 외부 통신을 풀었다면, 다음은 "여러 VPC를 어떻게 한 네트워크처럼 운영할 것인가"다.
 

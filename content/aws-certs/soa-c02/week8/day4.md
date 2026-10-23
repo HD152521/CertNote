@@ -21,7 +21,7 @@
 | 대역폭 | VPC당 무제한 | TGW당 50 Gbps (attachment당) |
 | 적합한 규모 | 2-5개 VPC | 5개 이상 |
 
-> 💡 **관련 이론**: Hub-and-Spoke vs Mesh의 trade-off는 1980년대 통신 네트워크 설계에서 나온 고전적 주제다. AT&T가 1960년대까지 미국 전국 전화망을 mesh로 운영하다가 1970년대 hub-and-spoke + dynamic routing으로 전환한 게 같은 결정 — 연결 수가 N²이 되니 운영 부담이 한계에 부딪힌 거다. 항공망(허브 공항 모델)도 같은 발상이다. AWS Transit Gateway는 이 산업 표준을 클라우드에 그대로 가져왔다. 단점은 hub가 SPOF가 될 수 있다는 점이지만, TGW는 AZ multi-replicated라 단일 AZ 장애엔 견딘다.
+Hub-and-Spoke vs Mesh의 trade-off는 1980년대 통신 네트워크 설계에서 나온 고전적 주제다. AT&T가 1960년대까지 미국 전국 전화망을 mesh로 운영하다가 1970년대 hub-and-spoke + dynamic routing으로 전환한 게 같은 결정 — 연결 수가 N²이 되니 운영 부담이 한계에 부딪힌 거다. 항공망(허브 공항 모델)도 같은 발상이다. AWS Transit Gateway는 이 산업 표준을 클라우드에 그대로 가져왔다. 단점은 hub가 SPOF가 될 수 있다는 점이지만, TGW는 AZ multi-replicated라 단일 AZ 장애엔 견딘다.
 
 ### VPC Peering의 결정적 한계 — Transitive가 아니다
 
@@ -40,7 +40,7 @@ TGW Route Table 구성 예
   Dev VPC ──┴──── "Dev RT" (Shared만 허용, Prod 격리)
 ```
 
-> ⚠️ **함정**: VPC Peering이 transitive가 아니라는 사실은 시험 단골이지만, 실무에선 더 미묘한 함정이 있다. "VPC A가 VPC B의 ALB를 호출"한다고 가정하자. ALB가 internal scheme이면 VPC B의 사설 IP로 응답하므로 peering으로 동작한다. 그런데 ALB가 internet-facing이면 ALB의 public IP가 응답에 박혀서 클라이언트(VPC A)가 인터넷으로 우회해야 한다 — peering으로 안 풀린다. 운영에선 cross-VPC 호출 시 항상 internal ALB와 사설 DNS를 쓰는 게 안전 패턴.
+> ⚠️ **함정**: VPC Peering이 transitive가 아니라는 사실은 시험 범위에 드는 내용이지만, 실무에선 더 미묘한 함정이 있다. "VPC A가 VPC B의 ALB를 호출"한다고 가정한다. ALB가 internal scheme이면 VPC B의 사설 IP로 응답하므로 peering으로 동작한다. 그런데 ALB가 internet-facing이면 ALB의 public IP가 응답에 박혀서 클라이언트(VPC A)가 인터넷으로 우회해야 한다 — peering으로 안 풀린다. 운영에선 cross-VPC 호출 시 항상 internal ALB와 사설 DNS를 쓰는 게 안전 패턴.
 
 ## Transit Gateway 내부 — Route Table과 Propagation
 
@@ -64,7 +64,7 @@ Shared VPC    │ Shared RT     │ Prod RT, Dev RT, Shared RT
 
 이 패턴이 멀티 계정 환경에서 가장 흔한 구성이다 — Shared Services VPC(인증 서버, 패키지 미러, 모니터링)에는 모두 접근, prod와 dev는 서로 격리.
 
-> 🔍 **더 깊이**: TGW는 **BGP**로 라우팅 정보를 교환한다. VPC attachment는 정적이지만 VPN/DXGW attachment는 BGP로 동적 경로를 받는다. AWS 측 BGP ASN은 기본 64512(2-byte private ASN)고, 32-bit ASN을 쓰려면 4200000000-4294967294 범위에서 선택. 온프레미스 라우터와 BGP peer 관계를 맺고, 양쪽이 자기 경로를 광고한다. BGP 운영의 함정 중 하나는 "AS path prepending"으로 경로 선호도를 조작하는 것 — 같은 prefix를 두 회선으로 받을 때 한쪽을 일부러 길게 만들어 다른 쪽을 우선시한다. DX 두 회선의 active-active load balancing을 위한 표준 기법.
+TGW는 **BGP**로 라우팅 정보를 교환한다. VPC attachment는 정적이지만 VPN/DXGW attachment는 BGP로 동적 경로를 받는다. AWS 측 BGP ASN은 기본 64512(2-byte private ASN)고, 32-bit ASN을 쓰려면 4200000000-4294967294 범위에서 선택. 온프레미스 라우터와 BGP peer 관계를 맺고, 양쪽이 자기 경로를 광고한다. BGP 운영의 함정 중 하나는 "AS path prepending"으로 경로 선호도를 조작하는 것 — 같은 prefix를 두 회선으로 받을 때 한쪽을 일부러 길게 만들어 다른 쪽을 우선시한다. DX 두 회선의 Active-Active load balancing을 위한 표준 기법.
 
 ## VPN — 인터넷 위에 만든 암호화 터널
 
@@ -89,9 +89,9 @@ Site-to-Site VPN은 온프레미스 라우터와 AWS의 VGW(또는 TGW) 사이�
 
 ### VPN의 단일 터널 한계
 
-AWS VPN의 단일 터널은 약 1.25 Gbps가 한계다. 두 터널을 active-active로 쓰면 약 2.5 Gbps. 그 이상은 **Multiple VPN connections + ECMP**(Equal-Cost Multi-Path)로 늘릴 수 있는데, TGW가 ECMP를 지원하므로 TGW에 여러 VPN을 attach하면 자동 load balancing. 그래도 Direct Connect의 10/100 Gbps에는 못 미친다.
+AWS VPN의 단일 터널은 약 1.25 Gbps가 한계다. 두 터널을 Active-Active로 쓰면 약 2.5 Gbps. 그 이상은 **Multiple VPN connections + ECMP**(Equal-Cost Multi-Path)로 늘릴 수 있는데, TGW가 ECMP를 지원하므로 TGW에 여러 VPN을 attach하면 자동 load balancing. 그래도 Direct Connect의 10/100 Gbps에는 못 미친다.
 
-> 📚 **사례**: 2020년 코로나로 재택근무가 폭증할 때 많은 회사가 VPN 한계에 부딪혔다. AWS Client VPN(또는 Site-to-Site VPN 위에 얹은 SSL VPN)이 동시 연결 한계로 사용자를 못 받는 사고가 줄을 이었다. AWS의 답은 ECMP + scaling-out — 단일 VPN의 큰 한 개 대신 작은 여러 개로 분산. 이게 시험에는 깊이 안 나오지만 실무에선 VPN 설계의 핵심 결정 사항이다.
+2020년 코로나로 재택근무가 폭증할 때 많은 회사가 VPN 한계에 부딪혔다. AWS Client VPN(또는 Site-to-Site VPN 위에 얹은 SSL VPN)이 동시 연결 한계로 사용자를 못 받는 사고가 줄을 이었다. AWS의 답은 ECMP + scaling-out — 단일 VPN의 큰 한 개 대신 작은 여러 개로 분산. 이게 시험에는 깊이 안 나오지만 실무에선 VPN 설계의 핵심 결정 사항이다.
 
 ## Direct Connect — 전용 회선의 일관성
 
@@ -165,7 +165,7 @@ Failover 라우팅의 동작은 단순하다. Primary record에 Health Check를 
 
 게다가 일부 ISP는 **RFC 2181을 위반하고 TTL을 무시**하고 더 오래 캐싱한다(자기 DNS resolver 부하를 줄이려고). 그래서 "Failover는 즉시"가 아니라 "Failover는 TTL + 일부 사용자에게 추가 지연" 모델로 이해해야 한다.
 
-> 💡 **관련 이론**: DNS TTL과 가용성의 trade-off는 RFC 1035(1987)와 RFC 2181(1997)에서 정의된다. 짧은 TTL은 빠른 변경 전파를 주지만 권위 서버 부하가 늘고, 긴 TTL은 부하가 적지만 변경 반영이 느리다. AWS는 이 한계를 우회하려고 **Global Accelerator**를 만들었다 — DNS 대신 BGP Anycast로 정적 IP를 광고하므로 라우팅 변경이 BGP 업데이트(수 초)로 전파된다. TTL 5분을 기다릴 필요 없이 1-2초 안에 페일오버 완료. DR 요구가 엄격하다면 Route 53 Failover 대신 Global Accelerator를 고려할 가치가 있다.
+DNS TTL과 가용성의 trade-off는 RFC 1035(1987)와 RFC 2181(1997)에서 정의된다. 짧은 TTL은 빠른 변경 전파를 주지만 권위 서버 부하가 늘고, 긴 TTL은 부하가 적지만 변경 반영이 느리다. AWS는 이 한계를 우회하려고 **Global Accelerator**를 만들었다 — DNS 대신 BGP Anycast로 정적 IP를 광고하므로 라우팅 변경이 BGP 업데이트(수 초)로 전파된다. TTL 5분을 기다릴 필요 없이 1-2초 안에 페일오버 완료. DR 요구가 엄격하다면 Route 53 Failover 대신 Global Accelerator를 고려할 가치가 있다.
 
 ### Health Check의 세 종류
 
@@ -192,7 +192,7 @@ Route 53 Health Check는 세 가지 모드를 지원한다.
 
 이 두 개념이 하이브리드 환경의 DNS 문제 대부분을 푼다. 시험에서 "온프레미스에서 VPC 내부 ALB 도메인을 어떻게 resolve하는가"가 나오면 Inbound Endpoint가 답이다.
 
-> 🔍 **더 깊이**: Route 53 Resolver는 내부적으로 VPC의 `.2` IP(AmazonProvidedDNS)와 같은 컴포넌트다. VPC를 만들면 자동으로 활성화되는 그 DNS resolver가 사실 Route 53 Resolver의 인스턴스다. Endpoint를 추가하는 건 "이 resolver가 외부와도 통신할 수 있게 ENI를 노출"하는 것에 가깝다. 그래서 VPC의 `enableDnsSupport`가 꺼져 있으면 Resolver Endpoint도 동작하지 않는다.
+Route 53 Resolver는 내부적으로 VPC의 `.2` IP(AmazonProvidedDNS)와 같은 컴포넌트다. VPC를 만들면 자동으로 활성화되는 그 DNS resolver가 사실 Route 53 Resolver의 인스턴스다. Endpoint를 추가하는 건 "이 resolver가 외부와도 통신할 수 있게 ENI를 노출"하는 것에 가깝다. 그래서 VPC의 `enableDnsSupport`가 꺼져 있으면 Resolver Endpoint도 동작하지 않는다.
 
 ## Multi-Region DR — Active-Active vs Active-Passive
 
@@ -214,9 +214,9 @@ Multi-Region 가용성 전략은 두 패턴으로 나뉜다.
 
 대부분 회사는 비용 때문에 Active-Passive로 시작한다. SLA가 99.99% 이상 요구되거나 글로벌 사용자가 많으면 Active-Active로 진화. 두 전략 모두 Route 53이 라우팅 컴포넌트로 들어가고, Health Check가 페일오버 결정을 한다.
 
-> 📚 **사례**: 2017년 AWS S3 us-east-1 장애 때 많은 회사가 영향을 받았는데, Netflix는 거의 영향이 없었다. 이유는 Netflix가 Multi-Region Active-Active로 운영하면서 Route 53과 Global Accelerator 조합으로 즉시 트래픽을 다른 리전으로 옮겼기 때문. 반면 단일 리전이거나 Active-Passive였던 회사들은 페일오버 자체에 30분-2시간이 걸려 다운타임이 길었다. 이 사건 이후 AWS는 "Region 단위 격리"를 더 강조하기 시작했고, Route 53 Application Recovery Controller(2020년 출시)로 페일오버 자동화를 강화했다.
+2017년 AWS S3 us-east-1 장애 때 많은 회사가 영향을 받았는데, Netflix는 거의 영향이 없었다. 이유는 Netflix가 Multi-Region Active-Active로 운영하면서 Route 53과 Global Accelerator 조합으로 즉시 트래픽을 다른 리전으로 옮겼기 때문. 반면 단일 리전이거나 Active-Passive였던 회사들은 페일오버 자체에 30분-2시간이 걸려 다운타임이 길었다. 이 사건 이후 AWS는 "Region 단위 격리"를 더 강조하기 시작했고, Route 53 Application Recovery Controller(2020년 출시)로 페일오버 자동화를 강화했다.
 
-## 정리하며
+## 정리
 
 멀티 VPC와 하이브리드의 큰 그림은 네 가지 결정으로 압축된다.
 
