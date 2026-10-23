@@ -29,15 +29,15 @@ mkfs.ext4 /dev/myvg/mylv            # 4) 포맷
 mount /dev/myvg/mylv /mnt/data      # 5) 마운트
 ```
 
-> 💡 **개념**: LV의 장치 경로는 두 형태로 나타난다 — `/dev/<VG이름>/<LV이름>`(예: `/dev/myvg/mylv`)과 `/dev/mapper/<VG>-<LV>`(예: `/dev/mapper/myvg-mylv`). 둘은 같은 것을 가리키는 별칭이다. fstab에는 어느 쪽을 써도 되지만 LV 역시 고유 UUID가 있어 `blkid`로 확인 가능하다.
+LV의 장치 경로는 두 형태로 나타난다 — `/dev/<VG이름>/<LV이름>`(예: `/dev/myvg/mylv`)과 `/dev/mapper/<VG>-<LV>`(예: `/dev/mapper/myvg-mylv`). 둘은 같은 것을 가리키는 별칭이다. fstab에는 어느 쪽을 써도 되지만 LV 역시 고유 UUID가 있어 `blkid`로 확인 가능하다.
 
-> 🔍 **더 깊이**: VG는 공간을 **PE(Physical Extent)** 라는 고정 크기 덩어리(기본 4MB)로 쪼개 관리한다. LV의 크기는 사실 PE의 정수배다. `lvcreate -l 100 myvg`처럼 소문자 `-l`을 쓰면 "PE 개수"로, 대문자 `-L 400M`을 쓰면 "용량"으로 지정한다. PE 개념 덕분에 LV가 여러 PV에 흩어져 있어도 연속된 하나의 볼륨처럼 보인다.
+VG는 공간을 **PE(Physical Extent)** 라는 고정 크기 덩어리(기본 4MB)로 쪼개 관리한다. LV의 크기는 사실 PE의 정수배다. `lvcreate -l 100 myvg`처럼 소문자 `-l`을 쓰면 "PE 개수"로, 대문자 `-L 400M`을 쓰면 "용량"으로 지정한다. PE 개념 덕분에 LV가 여러 PV에 흩어져 있어도 연속된 하나의 볼륨처럼 보인다.
 
-> 📚 **유래/사례**: LVM의 진짜 위력은 "디스크를 끄지 않고" 용량을 다룬다는 점이다. 운영 중인 서버의 `/var`가 가득 찼을 때, 새 디스크를 PV로 추가해 VG를 키우고(`vgextend`) LV를 늘린(`lvextend`) 뒤 파일시스템까지 확장하면 — 서비스 중단 없이 공간이 늘어난다. 전통적 파티션으로는 불가능한 이 유연성이 LVM이 서버에서 표준이 된 이유다.
+LVM의 위력은 "디스크를 끄지 않고" 용량을 다룬다는 점이다. 운영 중인 서버의 `/var`가 가득 찼을 때, 새 디스크를 PV로 추가해 VG를 키우고(`vgextend`) LV를 늘린(`lvextend`) 뒤 파일시스템까지 확장하면 — 서비스 중단 없이 공간이 늘어난다. 전통적 파티션으로는 불가능한 이 유연성이 LVM이 서버에서 표준이 된 이유다.
 
 ## LV 확장: lvextend와 resize2fs/xfs_growfs
 
-가장 자주 출제되는 시나리오가 **LV 확장**이다. 두 단계로 나뉘는 게 핵심이다.
+대표 시나리오는 **LV 확장**이다. 두 단계로 나뉘는 게 핵심이다.
 
 1. **LV(컨테이너) 자체를 늘린다** — `lvextend`
 2. **그 위의 파일시스템을 늘린다** — `resize2fs`(ext) 또는 `xfs_growfs`(xfs)
@@ -53,11 +53,11 @@ xfs_growfs /mnt/data               # (마운트포인트 지정, 온라인 확�
 lvextend -r -L +5G /dev/myvg/mylv
 ```
 
-> 💡 **개념**: **LV를 늘려도 그 위 파일시스템은 자동으로 안 커진다.** `lvextend`는 "그릇"을 키울 뿐이고, 그릇 안의 "내용물(파일시스템)"은 `resize2fs`/`xfs_growfs`로 따로 늘려야 한다. 이 2단계를 빠뜨려 "LV는 커졌는데 `df`상 용량은 그대로"인 게 단골 함정이다. 시험: "lvextend 후 ext4 용량 반영 명령은?" → `resize2fs`.
+**LV를 늘려도 그 위 파일시스템은 자동으로 안 커진다.** `lvextend`는 "그릇"을 키울 뿐이고, 그릇 안의 "내용물(파일시스템)"은 `resize2fs`/`xfs_growfs`로 따로 늘려야 한다. 이 2단계를 빠뜨려 "LV는 커졌는데 `df`상 용량은 그대로"인 상황이 함정이다. 시험: "lvextend 후 ext4 용량 반영 명령은?" → `resize2fs`.
 
 > ⚠️ **함정**: `resize2fs`(ext4)는 **온라인(마운트 상태)에서 확장**이 가능하고 **축소는 반드시 언마운트** 후에만 된다. 반면 **xfs는 축소 자체가 불가능**하다(`xfs_growfs`는 확장 전용). 그래서 "xfs LV를 줄이려면?" → 백업 후 재생성밖에 없다. 확장 인자도 다르다 — `resize2fs`는 장치 경로를, `xfs_growfs`는 마운트포인트를 받는다.
 
-> 🔍 **더 깊이**: VG에 여유 공간이 없으면 LV를 늘리기 전에 **VG부터 키워야** 한다. 새 디스크를 `pvcreate`로 PV로 만든 뒤 `vgextend myvg /dev/sdd1`로 VG에 편입하면 VG의 가용 PE가 늘어난다. `vgdisplay myvg`의 "Free PE / Size"로 여유를 확인한다. 전체 순서: pvcreate → vgextend → lvextend → resize2fs.
+VG에 여유 공간이 없으면 LV를 늘리기 전에 **VG부터 키워야** 한다. 새 디스크를 `pvcreate`로 PV로 만든 뒤 `vgextend myvg /dev/sdd1`로 VG에 편입하면 VG의 가용 PE가 늘어난다. `vgdisplay myvg`의 "Free PE / Size"로 여유를 확인한다. 전체 순서: pvcreate → vgextend → lvextend → resize2fs.
 
 ```bash
 # 직접 쳐보기 — LVM 상태 조회 3종
@@ -81,7 +81,7 @@ lsblk                  # 디스크-PV-LV 관계 트리
 
 > ⚠️ **함정**: `lvcreate`에서 `-L`(대문자, 용량: `-L 10G`)과 `-l`(소문자, PE개수/백분율: `-l 100` 또는 `-l 100%FREE`)을 혼동하지 말 것. "VG의 남은 공간 전부로 LV 생성"은 `lvcreate -l 100%FREE -n mylv myvg`다. 그리고 `-n`은 LV 이름 지정 옵션이다.
 
-> 💡 **개념**: LVM 스냅샷(`lvcreate -s`)은 특정 시점의 LV를 "동결"해 백업 중 일관성을 보장한다. CoW(Copy-on-Write)로 변경분만 따로 저장하므로 처음엔 거의 공간을 안 먹는다. 백업 도중 원본이 바뀌어도 스냅샷은 그 순간을 유지한다.
+LVM 스냅샷(`lvcreate -s`)은 특정 시점의 LV를 "동결"해 백업 중 일관성을 보장한다. CoW(Copy-on-Write)로 변경분만 따로 저장하므로 처음엔 거의 공간을 안 먹는다. 백업 도중 원본이 바뀌어도 스냅샷은 그 순간을 유지한다.
 
 ## 스왑(swap) — 디스크를 가상 메모리로
 
@@ -107,18 +107,18 @@ swapon -s          # 또는 cat /proc/swaps
 free -h            # Swap 행에서 총량/사용량 확인
 ```
 
-> 💡 **개념**: `mkswap`은 파일시스템을 만드는 게 아니라 **스왑 시그니처와 헤더를 쓰는** 별도 작업이다. 그래서 스왑은 `mount`가 아니라 `swapon`으로 켠다. "스왑 영역을 초기화하는 명령은?" → `mkswap`, "활성화는?" → `swapon`이 정석 단답.
+`mkswap`은 파일시스템을 만드는 게 아니라 **스왑 시그니처와 헤더를 쓰는** 별도 작업이다. 그래서 스왑은 `mount`가 아니라 `swapon`으로 켠다. "스왑 영역을 초기화하는 명령은?" → `mkswap`, "활성화는?" → `swapon`이 정석 단답.
 
-> ⚠️ **함정**: 스왑을 부팅 시 자동 활성화하려면 fstab에 등록한다. 단 형식이 일반 파일시스템과 다르다 — **마운트포인트 자리에 `none`(또는 `swap`), 타입에 `swap`, 옵션에 `sw`**, pass·dump는 0이다:
-> ```
-> /dev/sdb2  none  swap  sw  0  0
-> /swapfile  none  swap  sw  0  0
-> ```
-> 등록 후 `swapon -a`로 fstab의 모든 스왑을 일괄 활성화한다.
+스왑을 부팅 시 자동 활성화하려면 fstab에 등록한다. 단 형식이 일반 파일시스템과 다르다 — **마운트포인트 자리에 `none`(또는 `swap`), 타입에 `swap`, 옵션에 `sw`**, pass·dump는 0이다:
+```
+/dev/sdb2  none  swap  sw  0  0
+/swapfile  none  swap  sw  0  0
+```
+등록 후 `swapon -a`로 fstab의 모든 스왑을 일괄 활성화한다.
 
-> 🔍 **더 깊이**: 커널이 얼마나 적극적으로 스왑을 쓸지는 `vm.swappiness`(0~100, 기본 60)로 조절한다. 값이 낮으면 RAM을 최대한 쓰고 스왑을 아끼며, 높으면 일찍부터 스왑으로 밀어낸다. `sysctl vm.swappiness=10`으로 임시 변경, `/etc/sysctl.conf`에 적어 영구화한다. 데이터베이스 서버는 스왑 발생 시 성능이 급락하므로 swappiness를 낮게 잡는 경우가 많다.
+커널이 얼마나 적극적으로 스왑을 쓸지는 `vm.swappiness`(0~100, 기본 60)로 조절한다. 값이 낮으면 RAM을 최대한 쓰고 스왑을 아끼며, 높으면 일찍부터 스왑으로 밀어낸다. `sysctl vm.swappiness=10`으로 임시 변경, `/etc/sysctl.conf`에 적어 영구화한다. 데이터베이스 서버는 스왑 발생 시 성능이 급락하므로 swappiness를 낮게 잡는 경우가 많다.
 
-> 📚 **유래/사례**: 스왑 크기는 한때 "RAM의 2배"가 정설이었지만, RAM이 수십 GB인 현대 시스템에선 의미가 옅어졌다. 다만 **하이버네이션(hibernate, RAM 전체를 디스크로 저장)** 을 쓰려면 스왑이 RAM 이상이어야 한다 — RAM 내용을 통째로 담아야 하기 때문이다. 이 예외는 알아둘 만하다.
+스왑 크기는 한때 "RAM의 2배"가 정설이었지만, RAM이 수십 GB인 현대 시스템에선 의미가 옅어졌다. 다만 **하이버네이션(hibernate, RAM 전체를 디스크로 저장)** 을 쓰려면 스왑이 RAM 이상이어야 한다 — RAM 내용을 통째로 담아야 하기 때문이다. 이 예외는 알아둘 만하다.
 
 ```bash
 # 직접 쳐보기 — 스왑 전체 흐름
