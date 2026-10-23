@@ -1,6 +1,6 @@
 # Day 3 - S3 보안: 접근 제어의 계층 구조, 암호화 키 관리, 그리고 데이터 유출 방지
 
-S3 보안 사고의 대부분은 설정 실수에서 온다. 2017년부터 2023년까지 수십 건의 대규모 데이터 유출이 "잘못 설정된 S3 버킷"으로 인해 발생했다. 미국 군 기밀 문서, 대형 항공사 고객 데이터, 수백만 명의 의료 기록이 Public으로 열린 S3 버킷에서 노출됐다. 이 중 많은 경우 버킷 정책에 Allow를 주면서 Block Public Access를 끈 것이 원인이었다.
+S3 보안 사고는 주로 설정 실수에서 시작된다. 2017년부터 2023년까지 수십 건의 대규모 데이터 유출이 "잘못 설정된 S3 버킷"으로 인해 발생했다. 미국 군 기밀 문서, 대형 항공사 고객 데이터, 수백만 명의 의료 기록이 Public으로 열린 S3 버킷에서 노출됐다. 이 중 많은 경우 버킷 정책에 Allow를 주면서 Block Public Access를 끈 것이 원인이었다.
 
 이 글에서는 S3 접근 제어의 5개 계층이 어떻게 평가되는지 내부 로직을 따라가고, 각 암호화 방식의 키 관리 구조와 실제 차이를 다룬다. 또한 VPC Endpoint 정책으로 데이터 유출을 방지하는 패턴과, 멀티 테넌트 환경에서 S3 Access Points를 활용하는 방법까지 다룬다.
 
@@ -49,7 +49,7 @@ S3 요청이 들어오면 AWS는 다음 순서로 접근 허용 여부를 평가
 
 교차 계정 접근의 경우 두 계층이 모두 필요하다. 계정 A의 EC2가 계정 B의 S3 버킷에 접근하려면, 계정 A의 IAM 역할이 s3:GetObject를 허용하고, 계정 B의 버킷 정책이 계정 A의 역할을 신뢰해야 한다. 어느 하나만 있으면 안 된다.
 
-> 💡 **관련 이론**: 이 다층 접근 제어 구조는 정보 보안의 **심층 방어(Defense in Depth)** 원칙을 구현한 것이다. NIST SP 800-53의 "Access Control(AC)" 컨트롤 패밀리에서 강조하는 "최소 권한 원칙(Principle of Least Privilege)"과 "직무 분리(Separation of Duties)"를 계층별로 실현한다. BPA는 실수로 인한 설정 오류를 마지막에 잡는 "Fail-Safe Default" 원칙의 구현이다.
+이 다층 접근 제어 구조는 정보 보안의 **심층 방어(Defense in Depth)** 원칙을 구현한 것이다. NIST SP 800-53의 "Access Control(AC)" 컨트롤 패밀리에서 강조하는 "최소 권한 원칙(Principle of Least Privilege)"과 "직무 분리(Separation of Duties)"를 계층별로 실현한다. BPA는 실수로 인한 설정 오류를 마지막에 잡는 "Fail-Safe Default" 원칙의 구현이다.
 
 ## Block Public Access: 4가지 옵션의 세부 의미
 
@@ -66,7 +66,7 @@ BPA는 4개의 독립적인 스위치로 이루어진다.
 
 BPA를 계정 수준(AWS 계정 전체)에서 활성화하면, 계정 내 모든 버킷에 적용된다. 개별 버킷에서 BPA를 비활성화하더라도 계정 수준 BPA가 있으면 차단된다. 계층 관계다.
 
-> 📚 **사례**: 2019년 Capital One 데이터 유출 사고 이후, AWS는 AWS Config 규칙 `s3-bucket-public-access-prohibited`을 제공해 BPA가 비활성화된 버킷을 자동 감지한다. AWS Security Hub의 "S3 controls" 표준에도 이 검사가 포함된다. 많은 기업이 AWS Organizations SCP로 `s3:PutBucketPublicAccessBlock`의 특정 설정을 강제해서 BPA가 절대 비활성화되지 못하게 한다.
+**사례**: 2019년 Capital One 데이터 유출 사고 이후, AWS는 AWS Config 규칙 `s3-bucket-public-access-prohibited`을 제공해 BPA가 비활성화된 버킷을 자동 감지한다. AWS Security Hub의 "S3 controls" 표준에도 이 검사가 포함된다. 많은 기업이 AWS Organizations SCP로 `s3:PutBucketPublicAccessBlock`의 특정 설정을 강제해서 BPA가 절대 비활성화되지 못하게 한다.
 
 ## S3 암호화: 4종의 키 관리 구조
 
@@ -138,7 +138,7 @@ SSE-C는 AWS가 키를 보관하지 않는다. 고객이 직접 키를 관리하
 
 가장 강력한 보안이지만 애플리케이션 코드 복잡도가 높고, S3의 서버 측 기능(Object Lambda, S3 Select 등)을 사용할 수 없다. FIPS 140-3 Level 3 이상의 HSM이 필요한 최고 규제 환경에서 쓴다.
 
-> 💡 **관련 이론**: 암호화 방식 비교는 **신뢰 경계(Trust Boundary)** 개념으로 정리된다. SSE-S3는 AWS 인프라 전체를 신뢰. SSE-KMS는 AWS 인프라를 신뢰하되 키 접근은 IAM+KMS 정책으로 제한. SSE-C는 S3 서비스를 신뢰하되 키는 절대 AWS에 두지 않음. CSE는 AWS 서비스 자체를 신뢰하지 않음. 이 스펙트럼은 Zero Trust 보안 모델에서 "누구도 기본적으로 신뢰하지 않는다"는 원칙과 연결된다.
+암호화 방식 비교는 **신뢰 경계(Trust Boundary)** 개념으로 정리된다. SSE-S3는 AWS 인프라 전체를 신뢰. SSE-KMS는 AWS 인프라를 신뢰하되 키 접근은 IAM+KMS 정책으로 제한. SSE-C는 S3 서비스를 신뢰하되 키는 절대 AWS에 두지 않음. CSE는 AWS 서비스 자체를 신뢰하지 않음. 이 스펙트럼은 Zero Trust 보안 모델에서 "누구도 기본적으로 신뢰하지 않는다"는 원칙과 연결된다.
 
 ### DSSE-KMS: 이중 암호화
 
@@ -218,7 +218,7 @@ S3는 기본적으로 인터넷을 통해 접근한다. EC2에서 S3에 접근�
 }
 ```
 
-> 📚 **사례**: 금융 서비스 회사들은 종종 이 패턴을 사용해 데이터 분석 인스턴스가 승인된 데이터 버킷에만 접근하고, 개인 S3 계정이나 외부 버킷으로 데이터를 유출하지 못하도록 막는다. VPC Endpoint 정책을 "특정 계정의 버킷만 허용"으로 설정하면 같은 AWS 서비스라도 다른 계정의 S3로 데이터를 보내는 것이 차단된다.
+**사례**: 금융 서비스 회사들은 종종 이 패턴을 사용해 데이터 분석 인스턴스가 승인된 데이터 버킷에만 접근하고, 개인 S3 계정이나 외부 버킷으로 데이터를 유출하지 못하도록 막는다. VPC Endpoint 정책을 "특정 계정의 버킷만 허용"으로 설정하면 같은 AWS 서비스라도 다른 계정의 S3로 데이터를 보내는 것이 차단된다.
 
 ## CORS 설정: 브라우저 보안 정책과의 상호작용
 
@@ -335,7 +335,7 @@ aws s3control put-access-point-policy \
   }'
 ```
 
-## 정리하며
+## 정리
 
 S3 보안은 단일 설정이 아닌 계층적 방어(Defense in Depth)다. BPA가 실수에 의한 퍼블릭 노출을 막고, IAM + 버킷 정책이 정상 접근을 제어하고, VPC Endpoint 정책이 네트워크 경로를 제한하고, KMS가 데이터 자체를 보호한다.
 

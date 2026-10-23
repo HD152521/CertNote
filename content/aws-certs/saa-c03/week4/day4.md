@@ -1,6 +1,6 @@
 # Day 4 - CloudFront와 Storage Gateway: CDN의 내부 구조와 하이브리드 스토리지 패턴
 
-CloudFront는 단순한 캐시 서버가 아니다. 2008년 출시된 이후 400개가 넘는 엣지 PoP(Point of Presence)로 확장됐고, HTTP 캐시를 넘어 엣지 컴퓨팅, TLS 종료, WAF, 서명 인증, 동적 콘텐츠 가속까지 담당한다. Netflix가 1억 명의 동시 시청자에게 비디오를 스트리밍할 수 있는 것, Amazon Prime Video가 전 세계에서 낮은 레이턴시를 유지할 수 있는 것, 모두 CloudFront 아키텍처 덕분이다.
+CloudFront는 단순한 캐시 서버가 아니다. 2008년 출시된 이후 400개가 넘는 엣지 PoP(Point of Presence)로 확장됐고, HTTP 캐시를 넘어 엣지 컴퓨팅, TLS 종료, WAF, 서명 인증, 동적 콘텐츠 가속까지 담당한다. Netflix가 1억 명의 동시 시청자에게 비디오를 스트리밍할 수 있는 것, Amazon Prime Video가 전 세계에서 낮은 지연 시간을 유지할 수 있는 것, 모두 CloudFront 아키텍처 덕분이다.
 
 이 글에서는 CloudFront의 캐시 계층 구조(PoP → Regional Edge Cache → Origin Shield), OAC의 서명 메커니즘, Lambda@Edge와 CloudFront Functions의 실행 위치 차이, Storage Gateway의 4가지 모드의 내부 동작을 다룬다. 그리고 언제 DataSync를 쓰고, 언제 Storage Gateway를 쓰고, 언제 Snow Family를 써야 하는지 판단 기준을 정리한다.
 
@@ -28,9 +28,9 @@ Origin (S3, ALB, EC2 등)
 
 **Origin Shield**: 옵션으로 추가하는 중간 캐시 계층. 특정 AWS 리전에 배치하면 모든 REC의 캐시 미스 요청이 Origin Shield를 거쳐서 오리진으로 간다. 다양한 지역에서 같은 오리진에 접근하는 트래픽을 하나의 경로로 집약해 오리진 동시 요청 수를 최소화한다. 다국적 미디어 회사가 하나의 오리진 서버로 글로벌 배포할 때 특히 효과적이다.
 
-> 💡 **관련 이론**: 이 3계층 캐시 구조는 **계층적 캐싱(Hierarchical Caching)**의 구현이다. CDN 이론에서 계층적 캐시는 L1(소형·빠름·짧은 TTL) → L2(대형·조금 느림·긴 TTL) → Origin의 패턴을 따른다. 각 계층에서 캐시 히트율(Cache Hit Ratio)이 높을수록 오리진 부하와 비용이 줄어든다. CloudFront의 Metrics에서 `CacheHitRate`를 보면 각 계층의 효과를 측정할 수 있다.
+이 3계층 캐시 구조는 **계층적 캐싱(Hierarchical Caching)**의 구현이다. CDN 이론에서 계층적 캐시는 L1(소형·빠름·짧은 TTL) → L2(대형·조금 느림·긴 TTL) → Origin의 패턴을 따른다. 각 계층에서 캐시 히트율(Cache Hit Ratio)이 높을수록 오리진 부하와 비용이 줄어든다. CloudFront의 Metrics에서 `CacheHitRate`를 보면 각 계층의 효과를 측정할 수 있다.
 
-> 📚 **사례**: Airbnb는 CloudFront와 Origin Shield를 통해 전 세계 여행자들에게 숙소 이미지를 제공한다. Origin Shield를 us-east-1에 배치해 모든 글로벌 REC의 미스 요청을 집약했다. 이를 통해 오리진 이미지 서버의 요청 수를 90% 이상 줄이고, 전 세계 페이지 로드 시간을 평균 40% 단축했다. (AWS re:Invent 2021 발표 내용 기반)
+**사례**: Airbnb는 CloudFront와 Origin Shield를 통해 전 세계 여행자들에게 숙소 이미지를 제공한다. Origin Shield를 us-east-1에 배치해 모든 글로벌 REC의 미스 요청을 집약했다. 이를 통해 오리진 이미지 서버의 요청 수를 90% 이상 줄이고, 전 세계 페이지 로드 시간을 평균 40% 단축했다. (AWS re:Invent 2021 발표 내용 기반)
 
 ## 캐시 동작(Cache Behavior): CloudFront의 핵심 설정 단위
 
@@ -65,7 +65,7 @@ Default: /
 
 **Origin Request Policy**: 오리진으로 요청을 보낼 때 어떤 헤더/쿠키/쿼리 파라미터를 포함할지 정의한다. 캐시 키와 독립적으로 오리진 요청을 커스터마이징한다.
 
-> 🔍 **더 깊이**: CloudFront의 TTL 결정은 여러 레이어를 통해 이루어진다. 우선순위: (1) `Cache-Control: no-cache/no-store` 헤더 → 캐시 안 함. (2) `Cache-Control: max-age=X` 또는 `Expires` 헤더 → 해당 값 사용. (3) Cache Policy의 Default TTL → 둘 다 없을 때 사용. Cache Policy에는 Min TTL(오리진이 더 짧은 TTL을 지정해도 이 값 이상), Max TTL(오리진이 더 긴 TTL을 지정해도 이 값 이하), Default TTL(오리진 TTL 없을 때)이 있다.
+CloudFront의 TTL 결정은 여러 레이어를 통해 이루어진다. 우선순위: (1) `Cache-Control: no-cache/no-store` 헤더 → 캐시 안 함. (2) `Cache-Control: max-age=X` 또는 `Expires` 헤더 → 해당 값 사용. (3) Cache Policy의 Default TTL → 둘 다 없을 때 사용. Cache Policy에는 Min TTL(오리진이 더 짧은 TTL을 지정해도 이 값 이상), Max TTL(오리진이 더 긴 TTL을 지정해도 이 값 이하), Default TTL(오리진 TTL 없을 때)이 있다.
 
 ## OAC vs OAI: S3 보호의 진화
 
@@ -155,7 +155,7 @@ Origin
 - 오리진 응답 변환 (JSON → HTML)
 - 이미지 최적화 (Sharp 라이브러리 사용)
 
-> 💡 **관련 이론**: 엣지 컴퓨팅은 **FaaS(Function as a Service)**를 CDN 엣지로 확장한 개념이다. 기존 서버리스(Lambda)는 리전 내에서 동작하지만, Lambda@Edge와 CloudFront Functions는 사용자와 가까운 곳에서 동작해 RTT(Round-Trip Time)를 줄인다. 이는 **Fog Computing**(엣지와 클라우드 사이의 중간 계층) 아키텍처의 클라우드 구현이라 볼 수 있다.
+엣지 컴퓨팅은 **FaaS(Function as a Service)**를 CDN 엣지로 확장한 개념이다. 기존 서버리스(Lambda)는 리전 내에서 동작하지만, Lambda@Edge와 CloudFront Functions는 사용자와 가까운 곳에서 동작해 RTT(Round-Trip Time)를 줄인다. 이는 **Fog Computing**(엣지와 클라우드 사이의 중간 계층) 아키텍처의 클라우드 구현이라 볼 수 있다.
 
 ## Signed URL과 Signed Cookie: 콘텐츠 보호
 
@@ -182,7 +182,7 @@ Origin
 4. 사용자가 Signed URL로 접근 → CloudFront가 서명 검증 → 유효하면 콘텐츠 반환
 ```
 
-> 📚 **사례**: Netflix의 콘텐츠 배포는 CloudFront Signed URL 기반이다. 사용자가 재생 버튼을 누르면 Netflix 백엔드가 해당 사용자의 구독 상태를 확인하고, 유효 시간 내의 Signed URL을 발급한다. 이 URL로 CloudFront에서 비디오 세그먼트를 받아 재생한다. URL 공유로 다른 사람이 무료로 시청하는 것을 막는 핵심 메커니즘이다.
+**사례**: Netflix의 콘텐츠 배포는 CloudFront Signed URL 기반이다. 사용자가 재생 버튼을 누르면 Netflix 백엔드가 해당 사용자의 구독 상태를 확인하고, 유효 시간 내의 Signed URL을 발급한다. 이 URL로 CloudFront에서 비디오 세그먼트를 받아 재생한다. URL 공유로 다른 사람이 무료로 시청하는 것을 막는 핵심 메커니즘이다.
 
 ## CloudFront + WAF: 엣지 보안 통합
 
@@ -261,7 +261,7 @@ File Gateway (VM)
 
 **Snow Family 선택**: 인터넷 대역폭이 너무 좁아서 전송 시간이 수주 이상 걸릴 때. 인터넷 없는 오지, 보안 때문에 인터넷 전송 불가, 페타바이트 이상 대용량. "오프라인 물리 전송"이 핵심.
 
-> 💡 **관련 이론**: Snow Family의 필요성은 **저장의 법칙(Kryder's Law)**과 **네트워크 대역폭 성장률** 사이의 격차에서 온다. HDD 밀도는 연간 40%씩 성장하지만 네트워크 대역폭 성장은 그를 따라가지 못한다. 1PB 데이터를 1Gbps 인터넷으로 전송하면 약 12일이 걸린다. Snowball Edge는 100TB를 배송으로 2-3일에 이전할 수 있다. Jim Gray의 논문(2003, "Distributed Computing Economics")에서 처음 분석된 이 문제가 현재도 유효하다.
+Snow Family의 필요성은 **저장의 법칙(Kryder's Law)**과 **네트워크 대역폭 성장률** 사이의 격차에서 온다. HDD 밀도는 연간 40%씩 성장하지만 네트워크 대역폭 성장은 그를 따라가지 못한다. 1PB 데이터를 1Gbps 인터넷으로 전송하면 약 12일이 걸린다. Snowball Edge는 100TB를 배송으로 2-3일에 이전할 수 있다. Jim Gray의 논문(2003, "Distributed Computing Economics")에서 처음 분석된 이 문제가 현재도 유효하다.
 
 ## 다른 클라우드와의 CloudFront 비교
 
@@ -349,7 +349,7 @@ aws storagegateway create-nfs-file-share \
   --nfs-file-share-defaults ReadOnly=false
 ```
 
-## 정리하며
+## 정리
 
 CloudFront는 3계층 캐시 구조(PoP → REC → Origin Shield)로 글로벌 콘텐츠를 효율적으로 배포한다. S3 보호는 OAC + 사설 버킷이 현재 표준이다. 엣지 컴퓨팅은 경량 URL 조작은 CloudFront Functions, 복잡한 비즈니스 로직은 Lambda@Edge를 선택한다.
 
