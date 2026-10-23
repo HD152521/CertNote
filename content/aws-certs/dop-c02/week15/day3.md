@@ -33,7 +33,7 @@ EKS의 전통적 오토스케일러인 **Cluster Autoscaler(CA)**는 ASG(Auto Sc
 | Spot 처리 | 가능 | 더 유연(중단 처리·다양화) |
 | 빈 노드 정리 | 느림 | 적극적 consolidation |
 
-> 🔍 **더 깊이**: Karpenter의 핵심은 **bin-packing 최적화**다. 이는 CS의 고전 NP-hard 문제 — "크기가 다른 물건들을 최소 개수의 상자에 채워라" — 의 실시간 근사다. Karpenter는 펜딩 파드들의 CPU·메모리·GPU 요구를 보고, "이 파드들을 담을 가장 비용 효율적인 인스턴스 조합"을 휴리스틱으로 푼다. 게다가 **consolidation**으로 시간이 지나며 단편화된 노드를 재배치한다 — 절반만 찬 노드 두 개의 파드를 한 노드로 모으고 빈 노드를 종료해 비용을 줄인다(메모리 컴팩션과 같은 발상). CA가 "ASG 사이즈를 올리고 내리는" 단순 스칼라 제어라면, Karpenter는 "어떤 종류의 노드를 몇 개, 어떻게 배치"까지 푸는 조합 최적화다. 시험에서 "빠른 스케일 + 다양한 인스턴스 동적 선택 + Spot 유연 활용"이라는 단서 조합은 거의 항상 Karpenter를 가리킨다.
+> Karpenter의 핵심은 **bin-packing 최적화**다. 이는 CS의 고전 NP-hard 문제 — "크기가 다른 물건들을 최소 개수의 상자에 채워라" — 의 실시간 근사다. Karpenter는 펜딩 파드들의 CPU·메모리·GPU 요구를 보고, "이 파드들을 담을 가장 비용 효율적인 인스턴스 조합"을 휴리스틱으로 푼다. 게다가 **consolidation**으로 시간이 지나며 단편화된 노드를 재배치한다 — 절반만 찬 노드 두 개의 파드를 한 노드로 모으고 빈 노드를 종료해 비용을 줄인다(메모리 컴팩션과 같은 발상). CA가 "ASG 사이즈를 올리고 내리는" 단순 스칼라 제어라면, Karpenter는 "어떤 종류의 노드를 몇 개, 어떻게 배치"까지 푸는 조합 최적화다. 시험에서 "빠른 스케일 + 다양한 인스턴스 동적 선택 + Spot 유연 활용"이라는 단서 조합은 거의 항상 Karpenter를 가리킨다.
 
 회복성을 위해 **Pod Disruption Budget(PDB)**(동시에 죽일 수 있는 파드 수 제한)과 **Topology Spread Constraints**(파드를 AZ·노드에 고르게 분산)를 함께 건다 — Spot 중단이나 노드 consolidation 중에도 서비스가 끊기지 않게 하는 안전장치다.
 
@@ -49,9 +49,9 @@ GitHub (App Repo)            GitHub (Manifests Repo)
   Build → Image to ECR ─► Manifest의 Image Tag bump ─► EKS에 자동 반영
 ```
 
-핵심은 **빌드와 배포의 분리**다. 애플리케이션 빌드는 CodePipeline/GitHub Actions가 하고 이미지를 ECR에 올린다. 배포는 별도 매니페스트 레포에 Argo CD가 reconcile한다. 롤백은 **Git revert 한 번** — 매니페스트를 이전 커밋으로 되돌리면 Argo CD가 자동으로 클러스터를 그 상태로 되돌린다.
+원칙은 **빌드와 배포의 분리**다. 애플리케이션 빌드는 CodePipeline/GitHub Actions가 하고 이미지를 ECR에 올린다. 배포는 별도 매니페스트 레포에 Argo CD가 reconcile한다. 롤백은 **Git revert 한 번** — 매니페스트를 이전 커밋으로 되돌리면 Argo CD가 자동으로 클러스터를 그 상태로 되돌린다.
 
-> 💡 **관련 이론**: GitOps는 **제어 이론의 폐루프 제어(closed-loop control)**를 배포에 적용한 것이다. 쿠버네티스의 핵심 자체가 reconciliation loop — "현재 상태(observed)와 목표 상태(desired)의 차이를 계산해 0으로 수렴시키는" 제어기 — 이고, GitOps는 그 목표 상태의 출처를 Git으로 끌어올린다. 이는 **선언적(declarative) vs 명령적(imperative)**의 정수다. 명령적 배포(`kubectl apply`, 수동 스크립트)는 "어떻게 바꿀지"의 절차를 사람이 책임지지만, 선언적 GitOps는 "무엇이어야 하는지"만 선언하고 수렴은 시스템이 책임진다. 그 결과 (1) Git이 완전한 감사 로그가 되고(누가·언제·무엇을 PR로), (2) 드리프트가 자동 교정되며(누가 콘솔에서 손으로 바꿔도 Argo가 되돌림), (3) 롤백이 `git revert`라는 일상 동작이 된다. "변경의 출처를 버전 관리로, 수렴을 에이전트로"가 GitOps의 두 기둥이다.
+> GitOps는 **제어 이론의 폐루프 제어(closed-loop control)**를 배포에 적용한 것이다. 쿠버네티스의 핵심 자체가 reconciliation loop — "현재 상태(observed)와 목표 상태(desired)의 차이를 계산해 0으로 수렴시키는" 제어기 — 이고, GitOps는 그 목표 상태의 출처를 Git으로 끌어올린다. 이는 **선언적(declarative) vs 명령적(imperative)**의 정수다. 명령적 배포(`kubectl apply`, 수동 스크립트)는 "어떻게 바꿀지"의 절차를 사람이 책임지지만, 선언적 GitOps는 "무엇이어야 하는지"만 선언하고 수렴은 시스템이 책임진다. 그 결과 (1) Git이 완전한 감사 로그가 되고(누가·언제·무엇을 PR로), (2) 드리프트가 자동 교정되며(누가 콘솔에서 손으로 바꿔도 Argo가 되돌림), (3) 롤백이 `git revert`라는 일상 동작이 된다. "변경의 출처를 버전 관리로, 수렴을 에이전트로"가 GitOps의 두 기둥이다.
 
 ## ECS Fargate 영역 — Blue/Green과 IaC
 
@@ -72,7 +72,7 @@ aws eks create-pod-identity-association \
   --role-arn arn:aws:iam::ACCT:role/BillingPodRole
 ```
 
-> 💡 **관련 이론**: IRSA에서 Pod Identity로의 진화는 **신원의 단명화·간소화**라는 클라우드 신원의 일관된 방향의 한 장면이다(어제 본 IAM Roles Anywhere와 같은 가족). IRSA는 OIDC 신뢰 연합(federation)을 직접 노출해 강력하지만 셋업이 무겁고, IAM Role 신뢰 정책에 클러스터별 OIDC Provider ARN을 일일이 박아야 해 클러스터가 늘면 Role 정책이 복잡해진다. Pod Identity는 이 연합을 AWS가 관리하는 추상화 뒤로 숨겨, 같은 Role을 여러 클러스터에서 재사용하기 쉽게 만든다(신뢰 정책에 `pods.eks.amazonaws.com` 서비스 주체만 두면 됨). 본질은 "정적 노드 자격 증명(인스턴스 프로파일을 모든 파드가 공유) → 파드별 단명 자격 증명"이라는 최소 권한의 입자도(granularity) 향상이며, Pod Identity는 그것을 운영 부담 없이 달성한다. 시험에서 "신규 EKS, OIDC 셋업 없이 파드 IAM"이면 답은 Pod Identity다.
+> IRSA에서 Pod Identity로의 진화는 **신원의 단명화·간소화**라는 클라우드 신원의 일관된 방향의 한 장면이다(어제 본 IAM Roles Anywhere와 같은 가족). IRSA는 OIDC 신뢰 연합(federation)을 직접 노출해 강력하지만 셋업이 무겁고, IAM Role 신뢰 정책에 클러스터별 OIDC Provider ARN을 일일이 박아야 해 클러스터가 늘면 Role 정책이 복잡해진다. Pod Identity는 이 연합을 AWS가 관리하는 추상화 뒤로 숨겨, 같은 Role을 여러 클러스터에서 재사용하기 쉽게 만든다(신뢰 정책에 `pods.eks.amazonaws.com` 서비스 주체만 두면 됨). 본질은 "정적 노드 자격 증명(인스턴스 프로파일을 모든 파드가 공유) → 파드별 단명 자격 증명"이라는 최소 권한의 입자도(granularity) 향상이며, Pod Identity는 그것을 운영 부담 없이 달성한다. 시험에서 "신규 EKS, OIDC 셋업 없이 파드 IAM"이면 답은 Pod Identity다.
 
 ## 컨테이너 관찰성 — 3종 세트
 
@@ -82,7 +82,7 @@ aws eks create-pod-identity-association \
 - **ADOT Collector(AWS Distro for OpenTelemetry)**: DaemonSet으로 떠서 메트릭·트레이스를 CloudWatch·Managed Prometheus로 전송. OpenTelemetry 표준 기반이라 벤더 종속이 약하다.
 - **FireLens(Fluent Bit)**: 사이드카로 컨테이너 로그를 CloudWatch·Kinesis·S3·OpenSearch 등으로 **동시 분기** 라우팅.
 
-> 🔍 **더 깊이**: 이 3종이 곧 관찰성(observability)의 세 기둥 — **메트릭·로그·트레이스** — 의 컨테이너 구현이다. 이 세 신호는 1990년대 SNMP 모니터링에서 출발해, 2010년대 Google의 Dapper 논문(분산 트레이싱)과 Twitter Zipkin·Prometheus가 각각을 발전시켰고, 2019년 **OpenTelemetry**(OpenTracing + OpenCensus 통합)가 트레이스·메트릭을 하나의 표준 SDK·와이어 포맷으로 묶으면서 통합됐다. ADOT가 OpenTelemetry 표준을 쓰는 것이 핵심 — 벤더(CloudWatch·Prometheus·Datadog·Grafana) 종속 없이 같은 계측 코드로 어디든 보낼 수 있다. FireLens가 Fluent Bit(경량 로그 프로세서)를 쓰는 이유도 같다: 로그를 한 곳이 아니라 여러 목적지(실시간 분석은 Kinesis, 장기 보관은 S3, 검색은 OpenSearch)로 동시에 보내는 fan-out 라우팅이 필요하기 때문이다. "메트릭은 무엇이 얼마나, 로그는 무슨 일이, 트레이스는 어디서 느려지는가"를 답한다.
+> 이 3종이 곧 관찰성(observability)의 세 기둥 — **메트릭·로그·트레이스** — 의 컨테이너 구현이다. 이 세 신호는 1990년대 SNMP 모니터링에서 출발해, 2010년대 Google의 Dapper 논문(분산 트레이싱)과 Twitter Zipkin·Prometheus가 각각을 발전시켰고, 2019년 **OpenTelemetry**(OpenTracing + OpenCensus 통합)가 트레이스·메트릭을 하나의 표준 SDK·와이어 포맷으로 묶으면서 통합됐다. ADOT가 OpenTelemetry 표준을 쓰는 것이 핵심 — 벤더(CloudWatch·Prometheus·Datadog·Grafana) 종속 없이 같은 계측 코드로 어디든 보낼 수 있다. FireLens가 Fluent Bit(경량 로그 프로세서)를 쓰는 이유도 같다: 로그를 한 곳이 아니라 여러 목적지(실시간 분석은 Kinesis, 장기 보관은 S3, 검색은 OpenSearch)로 동시에 보내는 fan-out 라우팅이 필요하기 때문이다. "메트릭은 무엇이 얼마나, 로그는 무슨 일이, 트레이스는 어디서 느려지는가"를 답한다.
 
 ## 비용 최적화 — Graviton·Spot이 핵심 레버
 
@@ -97,11 +97,11 @@ aws eks create-pod-identity-association \
 | Fargate Spot | 비핵심 워크로드 적용 | Fargate 단가 ↓ |
 | 가시화 | Kubecost / Cost Categories | 책임 추적 |
 
-> 💡 **관련 이론**: **Graviton(AWS ARM64 프로세서)**이 비용·전력에서 우위인 근본 이유는 ISA(명령어 집합 구조) 철학의 차이다. ARM은 RISC(Reduced Instruction Set Computing) 계열로, 단순·균일한 명령어로 트랜지스터당 전력 효율이 높다 — 본래 모바일에서 배터리 수명을 위해 진화한 특성이 데이터센터에선 와트당 성능과 비용으로 환산된다. AWS가 자체 설계(2018년 Graviton1, 2020년 Graviton2, 이후 3·4)해 마진을 줄이고 가격을 낮췄다. 30~40% 절감의 정체가 이것이다. 다만 함정: ARM64는 x86과 바이너리 호환이 안 되므로 **멀티 아키텍처 이미지 빌드(docker buildx)**가 필요하고, 일부 네이티브 의존성(특정 라이브러리)이 ARM 미지원일 수 있다. **Spot**은 다른 메커니즘 — AWS의 여유 용량을 최대 90% 할인으로 빌리되 2분 통보 후 회수될 수 있다 — 이라, PDB·Topology Spread·Karpenter의 Spot 중단 처리와 함께 써야 안전하다. "비용 30~40% 단일 액션"의 답은 거의 항상 Graviton+Spot 조합이다.
+> **Graviton(AWS ARM64 프로세서)**이 비용·전력에서 우위인 근본 이유는 ISA(명령어 집합 구조) 철학의 차이다. ARM은 RISC(Reduced Instruction Set Computing) 계열로, 단순·균일한 명령어로 트랜지스터당 전력 효율이 높다 — 본래 모바일에서 배터리 수명을 위해 진화한 특성이 데이터센터에선 와트당 성능과 비용으로 환산된다. AWS가 자체 설계(2018년 Graviton1, 2020년 Graviton2, 이후 3·4)해 마진을 줄이고 가격을 낮췄다. 30~40% 절감의 정체가 이것이다. 다만 함정: ARM64는 x86과 바이너리 호환이 안 되므로 **멀티 아키텍처 이미지 빌드(docker buildx)**가 필요하고, 일부 네이티브 의존성(특정 라이브러리)이 ARM 미지원일 수 있다. **Spot**은 다른 메커니즘 — AWS의 여유 용량을 최대 90% 할인으로 빌리되 2분 통보 후 회수될 수 있다 — 이라, PDB·Topology Spread·Karpenter의 Spot 중단 처리와 함께 써야 안전하다. "비용 30~40% 단일 액션"의 답은 거의 항상 Graviton+Spot 조합이다.
 
 > 🎯 **시나리오**: "100+ 마이크로서비스, 피크 10만 RPS, 전년 대비 20% 비용 감축 압박. 결제계는 세밀 제어 필요, 일반계는 단순. 요구: ①트래픽 급변에 초 단위로 다양한 인스턴스를 동적으로 띄우고 Spot 활용 ②매니페스트 롤백을 Git 한 번으로 ③신규 EKS에서 OIDC 없이 파드 IAM ④컨테이너 비용 30%+ 절감." → ① EKS에 Karpenter + Spot/Graviton/On-Demand 혼합(결제계는 On-Demand 비율 유지), PDB·Topology Spread로 안전. ② 매니페스트 레포 + Argo CD GitOps, 롤백은 git revert. ③ EKS Pod Identity Association. ④ Graviton(arm64) 노드 그룹 + Spot + Fargate Spot(비핵심), VPA right-sizing, ECR Lifecycle Policy. 일반계 70%는 ECS Fargate + CodeDeploy Blue/Green. 관찰성은 Container Insights + ADOT + FireLens.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 다섯 가지다. 첫째, **ECS Fargate vs EKS는 추상화 수준의 선택**이며 — 편의 vs 제어 — 워크로드별로 다르게 고르는 혼합이 성숙한 패턴이다. 둘째, **Karpenter가 ASG를 거치지 않고 EC2 직접 + bin-packing 최적화**로 초 단위·동적 인스턴스 선택·consolidation을 달성한다. 셋째, **GitOps가 Git을 단일 진실로 두는 폐루프 제어**로 드리프트 자동 교정과 git revert 롤백을 준다(빌드/배포 분리). 넷째, **Pod Identity가 IRSA의 OIDC 셋업 부담을 없앤** 신원 간소화의 후속 표준이며, ECS는 Blue/Green에 CodeDeploy 컨트롤러가 필요하다. 다섯째, **Container Insights·ADOT·FireLens가 관찰성 3종**(메트릭·로그·트레이스, OpenTelemetry 표준)이고, **Graviton(RISC 전력 효율) + Spot**이 비용 30~40% 절감의 핵심 레버다.
 
