@@ -48,7 +48,7 @@ export function CheckoutPageClient({ userId, email }: CheckoutPageClientProps) {
           <p className="mt-1 text-2xl font-bold">₩9,900<span className="text-sm">/{lang === 'en' ? 'month' : '월'}</span></p>
           <ul className="mt-4 space-y-2 text-sm">
             <li>✓ {lang === 'en' ? 'All certifications, all content' : '모든 자격증 전체 콘텐츠'}</li>
-            <li>✓ {lang === 'en' ? 'Mock exams (65-72 questions per certification)' : '모의고사 (자격증별 65~72문항)'}</li>
+            <li>✓ {lang === 'en' ? 'Mock exams (65-75 questions per certification)' : '모의고사 (자격증별 65~75문항)'}</li>
             <li>✓ {lang === 'en' ? 'Unlimited SRS review' : '무제한 SRS 복습'}</li>
             <li>✓ {lang === 'en' ? 'Incorrect answers note & score analysis' : '오답 노트 & 성적 분석'}</li>
           </ul>

@@ -12,6 +12,7 @@ import {
   streamTutor,
 } from '@/lib/tutor/tutorService';
 import { pipeTutorText, primeTutorStream } from '@/lib/tutor/tutorStream';
+import { tutorCacheKey } from '@/lib/tutor/cacheKey';
 
 export const runtime = 'nodejs'; // Anthropic SDK는 Node 런타임 필요.
 export const dynamic = 'force-dynamic';
@@ -57,7 +58,7 @@ async function streamExplanation(
     onComplete: async (full) => {
       if (!isFirstTurn || !full.trim()) return;
       try {
-        await saveExplanation(input.questionId, input.selected, full);
+        await saveExplanation(tutorCacheKey(input.questionId, input.question), input.selected, full);
       } catch (e) {
         logError('cache_save_failed', userId, e);
       }
@@ -96,7 +97,8 @@ export async function POST(req: Request) {
     // 캐시 히트: 첫 설명(후속 대화 없음)이 (문제, 고른 오답)에 대해 이미 있으면 LLM·쿼터 없이 즉시 반환.
     // 후속 질문은 사용자마다 달라 캐시 대상이 아니다.
     if (input.history.length === 0) {
-      const cached = await getCachedExplanation(input.questionId, input.selected);
+      // 모의고사 문제는 내용 지문을 키에 붙여, 보기 문구·순서가 바뀐 뒤 예전 설명이 나오지 않게 한다(cacheKey.ts).
+      const cached = await getCachedExplanation(tutorCacheKey(input.questionId, input.question), input.selected);
       if (cached) return new Response(cached, { headers: TEXT_HEADERS });
     }
 
