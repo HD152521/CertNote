@@ -28,7 +28,7 @@ AWS에서 ML 데이터의 사실상 단일 진실 공급원(single source of tru
 
 ![S3 데이터 레이크의 Raw·Cleaned·Curated 세 구역과 재처리 경로](/diagrams/s3-data-lake-zones.svg)
 
-> 💡 **관련 이론**: 이 Bronze/Silver/Gold 계층화는 Databricks가 대중화한 **메달리온 아키텍처(Medallion Architecture)**다. 핵심 발상은 "원본을 절대 덮어쓰지 말고, 각 변환 단계를 별도 존에 보존하라"이다. 이렇게 하면 변환 로직에 버그가 발견됐을 때 Raw로 돌아가 재처리할 수 있고, 데이터 lineage(계보) 추적이 쉬워진다. 불변성(immutability)을 데이터 레이아웃 수준에서 강제하는 패턴이다.
+이 Bronze/Silver/Gold 계층화는 Databricks가 대중화한 **메달리온 아키텍처(Medallion Architecture)**다. 핵심 발상은 "원본을 절대 덮어쓰지 말고, 각 변환 단계를 별도 존에 보존하라"이다. 이렇게 하면 변환 로직에 버그가 발견됐을 때 Raw로 돌아가 재처리할 수 있고, 데이터 lineage(계보) 추적이 쉬워진다. 불변성(immutability)을 데이터 레이아웃 수준에서 강제하는 패턴이다.
 
 S3 스토리지 클래스도 ML 맥락에서 중요하다.
 
@@ -51,7 +51,7 @@ s3.upload_file(
 )
 ```
 
-> 🔍 **더 깊이**: 위 Key의 `year=2026/month=06/` 부분이 바로 **Hive 스타일 파티셔닝**이다. Athena와 Glue가 이 `키=값` 디렉터리 구조를 읽어 파티션을 자동 인식한다. 파티셔닝은 Day 4에서 깊게 다룬다.
+위 Key의 `year=2026/month=06/` 부분이 바로 **Hive 스타일 파티셔닝**이다. Athena와 Glue가 이 `키=값` 디렉터리 구조를 읽어 파티션을 자동 인식한다. 파티셔닝은 Day 4에서 깊게 다룬다.
 
 ## Kinesis: 실시간 스트리밍 수집
 
@@ -75,7 +75,7 @@ s3.upload_file(
 | 대상 | 직접 구현 | S3, Redshift, OpenSearch 등 |
 | 전형적 정답 문구 | "저지연", "다중 소비자", "커스텀 처리" | "관리 부담 최소", "코드 없이 S3 적재" |
 
-ML 데이터 수집에서 가장 자주 나오는 조합은 **KDS → Firehose → S3** 또는 단순히 **Firehose → S3**다. Firehose는 버퍼 크기(예: 5MB)나 버퍼 시간(예: 60초) 중 먼저 도달하는 조건에 따라 S3에 배치로 떨군다.
+ML 데이터 수집에서 널리 쓰이는 조합은 **KDS → Firehose → S3** 또는 단순히 **Firehose → S3**다. Firehose는 버퍼 크기(예: 5MB)나 버퍼 시간(예: 60초) 중 먼저 도달하는 조건에 따라 S3에 배치로 떨군다.
 
 ```python
 import boto3, json
@@ -94,9 +94,9 @@ firehose.put_record(
                                  └──> [Firehose] ──버퍼링──> [S3 데이터 레이크]
 ```
 
-> 🔍 **더 깊이**: KDS는 **샤드(shard)** 단위로 처리량을 정한다. 샤드 하나당 쓰기 1MB/s(또는 1,000 레코드/s), 읽기 2MB/s. 처리량이 부족하면 샤드를 늘려야(resharding) 한다. 반면 Firehose는 서버리스라 샤드 관리가 없는 대신, "실시간"이 아니라 버퍼링된 "near-real-time"이다.
+KDS는 **샤드(shard)** 단위로 처리량을 정한다. 샤드 하나당 쓰기 1MB/s(또는 1,000 레코드/s), 읽기 2MB/s. 처리량이 부족하면 샤드를 늘려야(resharding) 한다. 반면 Firehose는 서버리스라 샤드 관리가 없는 대신, "실시간"이 아니라 버퍼링된 "near-real-time"이다.
 
-> 💡 **관련 이론**: Kinesis는 분산 로그(distributed log) 추상화를 따른다. 같은 패러다임의 오픈소스가 Apache Kafka다. 핵심은 데이터를 **append-only 로그**에 순서대로 쓰고, 여러 소비자가 각자의 오프셋(체크포인트)을 들고 독립적으로 읽는 것이다. 이 덕분에 한 스트림을 실시간 대시보드와 ML 피처 파이프라인이 동시에 소비할 수 있다.
+Kinesis는 분산 로그(distributed log) 추상화를 따른다. 같은 패러다임의 오픈소스가 Apache Kafka다. 핵심은 데이터를 **append-only 로그**에 순서대로 쓰고, 여러 소비자가 각자의 오프셋(체크포인트)을 들고 독립적으로 읽는 것이다. 이 덕분에 한 스트림을 실시간 대시보드와 ML 피처 파이프라인이 동시에 소비할 수 있다.
 
 ## 배치 수집: DataSync, Transfer Family, DMS, Glue
 
@@ -110,11 +110,11 @@ firehose.put_record(
 | **AWS Glue (배치 ETL)** | 다양한 소스 → S3 | 변환 포함 정기 수집 (Day 2) | "변환하며 적재" |
 | **Snowball/Snowmobile** | 페타바이트급 물리 이전 | 네트워크로는 비현실적인 규모 | "회선이 느리다·수백 TB" |
 
-> 🔍 **더 깊이**: 시험 단골 계산 — "온프레미스 100TB를 S3로, 인터넷 회선 100Mbps". 100TB를 100Mbps로 보내면 약 92일 걸린다. 이 경우 **Snowball**(물리 디바이스 배송)이 정답이다. 회선이 충분하면 DataSync. DMS는 "관계형 DB의 지속적 복제(CDC, Change Data Capture)"가 키워드일 때 답이다.
+계산 예시 — "온프레미스 100TB를 S3로, 인터넷 회선 100Mbps". 100TB를 100Mbps로 보내면 약 92일 걸린다. 이 경우 **Snowball**(물리 디바이스 배송)이 정답이다. 회선이 충분하면 DataSync. DMS는 "관계형 DB의 지속적 복제(CDC, Change Data Capture)"가 키워드일 때 답이다.
 
 ## 데이터 포맷: Parquet vs CSV vs JSON
 
-ML 학습 성능과 비용을 좌우하는 결정이다. 시험에 매우 자주 나온다.
+ML 학습 성능과 비용을 좌우하는 결정이다. 시험에서 다룬다.
 
 | 포맷 | 저장 방식 | 압축 | 스키마 | 분할 가능 | 적합 |
 |------|------|------|------|----------|------|
@@ -147,7 +147,7 @@ df = pd.read_csv("raw/transactions.csv")
 df.to_parquet("curated/transactions.parquet", compression="snappy", index=False)
 ```
 
-> 💡 **관련 이론**: 열 기반 저장(columnar storage)의 핵심은 **OLAP(분석) 워크로드 최적화**다. 분석 쿼리는 "수백만 행 × 소수 컬럼의 집계"가 전형적인데, 행 기반 저장은 필요 없는 컬럼까지 디스크에서 읽어야 한다. 열 기반은 컬럼을 따로 저장해 필요한 것만 읽고, 같은 타입이 인접해 run-length/dictionary 인코딩으로 압축률도 높다. 반대로 OLTP(트랜잭션)는 "한 행 전체"를 자주 다뤄 행 기반이 유리하다. ML 학습은 대부분 OLAP 성격이라 Parquet이 맞다.
+열 기반 저장(columnar storage)은 **OLAP(분석) 워크로드에 최적화**돼 있다. 분석 쿼리는 "수백만 행 × 소수 컬럼의 집계"가 전형적인데, 행 기반 저장은 필요 없는 컬럼까지 디스크에서 읽어야 한다. 열 기반은 컬럼을 따로 저장해 필요한 것만 읽고, 같은 타입이 인접해 run-length/dictionary 인코딩으로 압축률도 높다. 반대로 OLTP(트랜잭션)는 "한 행 전체"를 자주 다뤄 행 기반이 유리하다. ML 학습은 대부분 OLAP 성격이라 Parquet이 맞다.
 
 > ⚠️ **함정**: JSON은 사람이 읽기 좋고 nested 구조에 강하지만, 학습 데이터 포맷으로는 비효율적이다. 텍스트라 용량이 크고, 매번 파싱 비용이 들며, 컬럼 단위 스킵이 불가능하다. Raw 존에는 JSON으로 받더라도, Cleaned/Curated 존으로 갈 때 Parquet으로 변환하는 게 표준 패턴이다.
 
