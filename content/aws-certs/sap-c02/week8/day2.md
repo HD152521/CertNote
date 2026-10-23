@@ -15,9 +15,9 @@ Step Functions는 이 모든 문제를 "**상태 머신을 인프라로 만든�
 
 Saga는 ACID가 아니라 **eventual consistency**를 받아들이는 대신, 가용성과 확장성을 얻는다. Step Functions의 Catch + 별도 보상 분기 패턴이 정확히 Saga의 코드 매니페스테이션이다.
 
-> 💡 **관련 이론**: Saga의 변형으로 **Orchestration 기반**(중앙 조정자가 단계를 순차 호출)과 **Choreography 기반**(서비스가 이벤트로 자율 협력) 두 가지가 있다. Step Functions는 전형적 Orchestration 모델이고, EventBridge 기반은 Choreography 모델이다. 일반적으로 5단계 이하 단순 흐름은 Choreography가 가볍고, 그 이상 또는 인간 승인이 끼는 흐름은 Orchestration이 가시성과 디버깅에서 우월하다. Chris Richardson의 *Microservices Patterns* 책 4장이 가장 권장되는 참고 자료.
+Saga의 변형으로 **Orchestration 기반**(중앙 조정자가 단계를 순차 호출)과 **Choreography 기반**(서비스가 이벤트로 자율 협력) 두 가지가 있다. Step Functions는 전형적 Orchestration 모델이고, EventBridge 기반은 Choreography 모델이다. 일반적으로 5단계 이하 단순 흐름은 Choreography가 가볍고, 그 이상 또는 인간 승인이 끼는 흐름은 Orchestration이 가시성과 디버깅에서 우월하다. Chris Richardson의 *Microservices Patterns* 책 4장이 가장 권장되는 참고 자료.
 
-> 🔍 **더 깊이**: Step Functions 내부는 **distributed durable state machine**으로 구현되어 있다. 모든 state transition은 AWS 내부 분산 KV에 기록되고, 복원 가능하다. 즉 워크플로우 실행 중에 AZ 하나가 다운돼도 다른 AZ에서 정확히 멈춘 지점부터 재개된다. 사용자는 이 영속성을 무료로 얻는다. 이 모델은 Microsoft의 Durable Functions, Temporal.io(Uber Cadence 후속), Netflix Conductor와 같은 카테고리에 속한다. 차이는 Step Functions가 AWS 서비스 통합(200+ 직접 호출)과 IAM 통합에서 압도적이라는 점.
+Step Functions 내부는 **distributed durable state machine**으로 구현되어 있다. 모든 state transition은 AWS 내부 분산 KV에 기록되고, 복원 가능하다. 즉 워크플로우 실행 중에 AZ 하나가 다운돼도 다른 AZ에서 정확히 멈춘 지점부터 재개된다. 사용자는 이 영속성을 무료로 얻는다. 이 모델은 Microsoft의 Durable Functions, Temporal.io(Uber Cadence 후속), Netflix Conductor와 같은 카테고리에 속한다. 차이는 Step Functions가 AWS 서비스 통합(200+ 직접 호출)과 IAM 통합에서 압도적이라는 점.
 
 ## Standard vs Express — 같은 추상화의 다른 가격 모델
 
@@ -36,7 +36,7 @@ Express는 2019년 출시됐고, 단가가 Standard의 100분의 1 수준이다.
 
 > ⚠️ **함정**: "한 워크플로우의 비용 효율은 항상 Express가 좋다"는 보기는 오답이다. Express는 호출당·시간당 과금이므로 **드물게 실행되지만 긴 워크플로우**에서는 오히려 Standard보다 비싸진다. 시험 시나리오의 두 축은 (1) 실행 시간이 5분 안에 끝나는가, (2) 호출 빈도가 매우 높은가다. 둘 다 yes면 Express, 그 외엔 Standard.
 
-> 📚 **사례**: 2021년 Coca-Cola의 IoT 파이프라인은 자판기에서 초당 수천 건의 이벤트(판매, 재고 변화, 온도 알림)를 처리한다. 처음엔 Standard로 시작했다가 상태 전이 비용이 월 수만 달러로 치솟아 Express로 전환해 90% 이상 절감했다. AWS re:Invent 2022 발표. 핵심 교훈은 "고빈도·짧음"이 Express의 정확한 sweet spot이라는 것.
+2021년 Coca-Cola의 IoT 파이프라인은 자판기에서 초당 수천 건의 이벤트(판매, 재고 변화, 온도 알림)를 처리한다. 처음엔 Standard로 시작했다가 상태 전이 비용이 월 수만 달러로 치솟아 Express로 전환해 90% 이상 절감했다. AWS re:Invent 2022 발표. 핵심 교훈은 "고빈도·짧음"이 Express의 정확한 sweet spot이라는 것.
 
 ## State 종류와 ASL 모델
 
@@ -103,9 +103,9 @@ Step Functions는 200+개의 AWS 서비스 API를 직접 호출할 수 있다. �
 }
 ```
 
-> 🔍 **더 깊이**: `.waitForTaskToken`이 Standard에서만 동작하는 이유는 Express의 단일 실행 시간 한도(5분) 때문이다. Standard는 1년까지 기다릴 수 있어 며칠짜리 승인 워크플로우도 자연스럽게 구현된다. token은 64KB의 opaque 문자열이고, AWS가 워크플로우 인스턴스를 영속 저장하는 분산 KV에 매핑되어 있다. 즉 Step Functions의 워크플로우 인스턴스 자체가 **first-class object**라는 점이 이 패턴을 가능하게 한다.
+`.waitForTaskToken`이 Standard에서만 동작하는 이유는 Express의 단일 실행 시간 한도(5분) 때문이다. Standard는 1년까지 기다릴 수 있어 며칠짜리 승인 워크플로우도 자연스럽게 구현된다. token은 64KB의 opaque 문자열이고, AWS가 워크플로우 인스턴스를 영속 저장하는 분산 KV에 매핑되어 있다. 즉 Step Functions의 워크플로우 인스턴스 자체가 **first-class object**라는 점이 이 패턴을 가능하게 한다.
 
-> 📚 **사례**: 2020년 Capital One은 신용카드 발급 워크플로우를 Step Functions로 전환하면서 "수동 신용 심사 단계"를 `.waitForTaskToken`으로 구현했다. 시스템이 자동 심사를 시도하다 임계치 미만이면 사람 검토자에게 token을 발송하고, 검토자가 결정을 입력하면 워크플로우가 재개된다. 평균 대기 시간은 며칠. 이전에는 별도 큐 + 폴링 서비스를 직접 운영했지만, Step Functions로 단순화하면서 코드 80% 감소를 보고했다.
+2020년 Capital One은 신용카드 발급 워크플로우를 Step Functions로 전환하면서 "수동 신용 심사 단계"를 `.waitForTaskToken`으로 구현했다. 시스템이 자동 심사를 시도하다 임계치 미만이면 사람 검토자에게 token을 발송하고, 검토자가 결정을 입력하면 워크플로우가 재개된다. 평균 대기 시간은 며칠. 이전에는 별도 큐 + 폴링 서비스를 직접 운영했지만, Step Functions로 단순화하면서 코드 80% 감소를 보고했다.
 
 ## Error Handling — Retry와 Catch의 협업
 
@@ -135,7 +135,7 @@ ASL의 에러 처리는 두 레이어로 갈린다.
 
 Catch는 보상 분기(Saga의 보상 트랜잭션)에 쓴다. `ResultPath`로 에러 정보를 워크플로우 입력에 보존하면, 보상 단계가 어디서 무엇이 실패했는지 알 수 있다.
 
-> 💡 **관련 이론**: 지수 백오프 + jitter는 분산 시스템의 표준 패턴이다. AWS 블로그 "Exponential Backoff And Jitter"(2015)가 가장 짧고 명확한 설명. 핵심 통찰은 "재시도하는 클라이언트가 많으면 모두 같은 시간에 다시 몰려와 thundering herd가 생기므로, jitter로 분산해야 한다"는 것. Step Functions의 JitterStrategy는 이를 매니지드로 구현. 2023년 추가된 기능.
+지수 백오프 + jitter는 분산 시스템의 표준 패턴이다. AWS 블로그 "Exponential Backoff And Jitter"(2015)가 가장 짧고 명확한 설명. 핵심 통찰은 "재시도하는 클라이언트가 많으면 모두 같은 시간에 다시 몰려와 thundering herd가 생기므로, jitter로 분산해야 한다"는 것. Step Functions의 JitterStrategy는 이를 매니지드로 구현. 2023년 추가된 기능.
 
 ## Saga의 실전 구현 — 주문 처리 예시
 
@@ -230,7 +230,7 @@ Catch는 보상 분기(Saga의 보상 트랜잭션)에 쓴다. `ResultPath`로 �
 
 Pipes는 다음 day의 주제다. 핵심만 미리 보면, "SQS 큐 → 필터 → Step Functions" 같은 단일 연결을 Lambda 코드 없이 구성하는 도구. 복잡한 흐름이 아니라면 Pipes가 더 가볍다.
 
-> 📚 **사례**: 2023년 Airbnb는 결제 환불 워크플로우(7단계 + 4개의 외부 시스템 + 인간 승인)를 자체 워크플로우 엔진에서 Step Functions Standard로 마이그레이션했다. 가장 큰 효과는 가시성(전체 실행이 콘솔에서 시각화)과 IAM 통합(단계별 최소 권한)이라고 발표. 자체 엔진 유지보수에 들어가던 SRE 인력 2명을 다른 업무로 재배치할 수 있었다.
+2023년 Airbnb는 결제 환불 워크플로우(7단계 + 4개의 외부 시스템 + 인간 승인)를 자체 워크플로우 엔진에서 Step Functions Standard로 마이그레이션했다. 가장 큰 효과는 가시성(전체 실행이 콘솔에서 시각화)과 IAM 통합(단계별 최소 권한)이라고 발표. 자체 엔진 유지보수에 들어가던 SRE 인력 2명을 다른 업무로 재배치할 수 있었다.
 
 ## ASL 입력/출력 가공 — InputPath, ResultPath, OutputPath
 
@@ -246,7 +246,7 @@ ASL의 헷갈리는 부분 중 하나가 state 간 데이터 흐름 가공이다
 ResultSelector 가공 → ResultPath 삽입 → OutputPath 필터 → 다음 state
 ```
 
-> 🔍 **더 깊이**: 이 4-단계 가공이 처음엔 복잡해 보이지만, 핵심은 **immutable transformation pipeline**이다. 함수형 프로그래밍의 `map`/`filter`/`pipe`와 같은 발상. 시험에서는 직접 ASL을 쓰라고 묻지 않지만, "State A의 결과를 State B에 일부만 전달하려면" 같은 시나리오가 가끔 나온다. ResultSelector + ResultPath가 답.
+이 4-단계 가공이 처음엔 복잡해 보이지만, 결국 **immutable transformation pipeline**이다. 함수형 프로그래밍의 `map`/`filter`/`pipe`와 같은 발상. 시험에서는 직접 ASL을 쓰라고 묻지 않지만, "State A의 결과를 State B에 일부만 전달하려면" 같은 시나리오가 가끔 나온다. ResultSelector + ResultPath가 답.
 
 ## Workflow Studio — 비주얼 워크플로우 빌더
 
@@ -254,7 +254,7 @@ ResultSelector 가공 → ResultPath 삽입 → OutputPath 필터 → 다음 sta
 
 큰 워크플로우는 ASL JSON을 직접 작성하고 CDK/Terraform으로 관리하는 게 일반적이다. Workflow Studio에서 비주얼로 생성 후 export → 코드 베이스에 commit하는 hybrid 워크플로우도 흔하다.
 
-## 정리하며
+## 정리
 
 Step Functions는 단순한 "Lambda 호출 체인"이 아니다. 분산 시스템의 영속 상태 머신, Saga 보상 트랜잭션, 외부 콜백 대기, 대규모 병렬 처리 같은 패턴을 매니지드로 제공한다. 시험에서는 시나리오 키워드를 다음과 같이 매핑하면 거의 맞는다:
 
@@ -264,7 +264,7 @@ Step Functions는 단순한 "Lambda 호출 체인"이 아니다. 분산 시스�
 - "ECS Task 완료까지 대기" → **.sync**
 - "S3 100만 객체 병렬 처리" → **Distributed Map + Express child**
 
-다음 day에서는 EventBridge로 이벤트 라우팅을 본다. Step Functions가 "흐름"의 도구라면 EventBridge는 "분배"의 도구다. 두 도구가 함께 쓰이는 패턴이 SAP 시험에서 가장 자주 등장한다.
+다음 day에서는 EventBridge로 이벤트 라우팅을 본다. Step Functions가 "흐름"의 도구라면 EventBridge는 "분배"의 도구다. 두 도구가 함께 쓰이는 패턴이 SAP 시험에 등장한다.
 
 ---
 
