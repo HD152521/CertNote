@@ -30,6 +30,7 @@ const SOURCE_FILES = [
   'src/app/pricing/page.tsx',
   'src/app/privacy/PrivacyContent.tsx',
   'src/app/about/page.tsx',
+  'src/app/about/how-we-make/page.tsx',
   'src/app/contact/page.tsx',
   'src/app/terms/page.tsx',
   'src/app/roadmap/page.tsx',

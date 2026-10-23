@@ -112,3 +112,16 @@ describe('DayView — 광고 슬롯 배치', () => {
     expect(await renderDay({ category: 'aws', w: 2 })).not.toMatch(/adsbygoogle|<ins|<aside/);
   });
 });
+
+// docs/P4-trust-quality-plan.md Step 5a — 메타 줄은 광고와 무관하지만 DayView 를 그대로 렌더하는 곳이 여기라 함께 둔다.
+describe('DayView — 출처·검수 메타 줄', () => {
+  test('본문 앞에 기준·오류 제보 줄을 렌더하고, 검수 기록이 없으면 날짜를 싣지 않는다', async () => {
+    const html = await renderDay({ category: 'aws', w: 2 });
+    const line = html.indexOf('기준: SAA-C03 시험 가이드');
+    expect(line).toBeGreaterThan(-1);
+    expect(line).toBeLessThan(html.indexOf('[[article]]'));
+    expect(html).toContain('오류 제보');
+    // content/review-log.json 은 빈 배열로 시작한다 — 날짜가 표시되는 노트 0개가 정상.
+    expect(html).not.toContain('마지막 검수');
+  });
+});

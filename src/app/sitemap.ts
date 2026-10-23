@@ -59,6 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     sitemapEntry(SITE_URL, homeLastMod, 'weekly', 1),
     sitemapEntry(`${SITE_URL}/privacy`, await getSourceFileMtime('src/app/privacy/PrivacyContent.tsx'), 'yearly', 0.3),
     sitemapEntry(`${SITE_URL}/about`, await getSourceFileMtime('src/app/about/page.tsx'), 'yearly', 0.4),
+    sitemapEntry(`${SITE_URL}/about/how-we-make`, await getSourceFileMtime('src/app/about/how-we-make/page.tsx'), 'yearly', 0.4),
     sitemapEntry(`${SITE_URL}/contact`, await getSourceFileMtime('src/app/contact/page.tsx'), 'yearly', 0.3),
     sitemapEntry(`${SITE_URL}/terms`, await getSourceFileMtime('src/app/terms/page.tsx'), 'yearly', 0.3),
   ];
