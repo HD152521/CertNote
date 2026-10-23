@@ -8,7 +8,7 @@ AWS Patch Manager는 이 "패치 적용 지연" 문제를 구조적으로 해결
 
 패치 관리 문제는 IT 역사만큼 오래됐다. 1988년 Morris Worm이 fingerd 버퍼 오버플로 취약점을 악용했을 때, 운영자들은 수동으로 패치를 배포해야 했다. 2000년대에 Microsoft의 WSUS(Windows Server Update Services), Red Hat의 RHN(Red Hat Network), Ubuntu의 Landscape 같은 도구들이 패치 중앙 관리를 가능하게 했다. 이들은 공통적으로 "어떤 패치를 승인할지"와 "언제 배포할지"를 분리하는 설계를 택했다. AWS Patch Manager도 이 철학을 계승한다.
 
-> 💡 **관련 이론**: 패치 관리는 보안 분야의 "취약점 관리 라이프사이클"(Vulnerability Management Lifecycle)의 핵심 단계다. NIST SP 800-40 Rev.4 "Guide to Enterprise Patch Management Planning"은 패치 관리를 4단계로 정의한다: Identify(CVE 인지) → Evaluate(우선순위 결정) → Remediate(패치 적용) → Verify(결과 확인). AWS Patch Manager의 Baseline(Evaluate) → Maintenance Window(Remediate) → Compliance(Verify) 구조가 이 프레임워크와 정확히 대응한다. CVSS(Common Vulnerability Scoring System, 버전 3.1, 2019)의 0~10 점수 체계가 패치 우선순위 결정의 사실상 표준이다.
+패치 관리는 보안 분야의 "취약점 관리 라이프사이클"(Vulnerability Management Lifecycle)의 핵심 단계다. NIST SP 800-40 Rev.4 "Guide to Enterprise Patch Management Planning"은 패치 관리를 4단계로 정의한다: Identify(CVE 인지) → Evaluate(우선순위 결정) → Remediate(패치 적용) → Verify(결과 확인). AWS Patch Manager의 Baseline(Evaluate) → Maintenance Window(Remediate) → Compliance(Verify) 구조가 이 프레임워크와 정확히 대응한다. CVSS(Common Vulnerability Scoring System, 버전 3.1, 2019)의 0~10 점수 체계가 패치 우선순위 결정의 사실상 표준이다.
 
 ## 다른 클라우드 패치 관리와 비교
 
@@ -25,7 +25,7 @@ AWS Patch Manager는 이 "패치 적용 지연" 문제를 구조적으로 해결
 
 AWS Patch Manager의 차별점은 **Patch Group + ApproveAfterDays 조합으로 구현하는 점진적 환경 롤아웃**(Dev→Stage→Prod 자동화)이다. 이 패턴은 GCP/Azure에 없는 기능이다.
 
-> 💡 **관련 이론**: Patch Manager의 OS별 Patch Baseline은 각 OS 벤더의 패치 메타데이터를 파싱한다. Amazon Linux는 `updateinfo.xml`(RPM Advisories), Ubuntu는 `Origin:Ubuntu,Archive:security` APT 레이블, Windows는 Microsoft Update Catalog의 WSUS 분류를 사용한다. 이 메타데이터는 CVE 번호, CVSS 점수, 패치 분류(Security/Critical/Important 등)를 포함하며, AWS가 각 OS 레포지토리에서 주기적으로 동기화한다. 운영자가 패치 분류를 설정할 때 이 메타데이터 구조를 이해하면 Patch Filter를 정확하게 설계할 수 있다.
+Patch Manager의 OS별 Patch Baseline은 각 OS 벤더의 패치 메타데이터를 파싱한다. Amazon Linux는 `updateinfo.xml`(RPM Advisories), Ubuntu는 `Origin:Ubuntu,Archive:security` APT 레이블, Windows는 Microsoft Update Catalog의 WSUS 분류를 사용한다. 이 메타데이터는 CVE 번호, CVSS 점수, 패치 분류(Security/Critical/Important 등)를 포함하며, AWS가 각 OS 리포지토리에서 주기적으로 동기화한다. 운영자가 패치 분류를 설정할 때 이 메타데이터 구조를 이해하면 Patch Filter를 정확하게 설계할 수 있다.
 
 ## Patch Baseline: "어떤 패치를 승인할 것인가"
 
@@ -56,7 +56,7 @@ AWS는 각 OS별로 기본 베이스라인을 제공한다(`AWS-DefaultPatchBase
 | 4.0 - 6.9 | Medium/Moderate |
 | 0.1 - 3.9 | Low |
 
-> 📚 **사례**: 2023년 금융권 C사의 PCI-DSS 감사에서 "패치 적용 정책 증빙"을 요구받았다. 담당 팀이 수동 관리하던 패치 기록은 엑셀 파일이었고, 일부 서버의 패치 적용 이력이 누락되어 있었다. 이후 Patch Manager와 Compliance를 도입하고 S3에 자동 저장되는 패치 이력을 감사 증빙으로 제출했다. 다음 해 감사에서 "자동화된 패치 관리 프로세스 구축" 항목에서 Good Practice 평가를 받았다. PCI-DSS v4.0 요구사항 6.3.3(모든 시스템 컴포넌트는 보안 취약점으로부터 보호)을 Patch Manager + Compliance 보고서로 직접 충족했다.
+가상의 사례로, 2023년 금융권 C사의 PCI-DSS 감사에서 "패치 적용 정책 증빙"을 요구받았다. 담당 팀이 수동 관리하던 패치 기록은 엑셀 파일이었고, 일부 서버의 패치 적용 이력이 누락되어 있었다. 이후 Patch Manager와 Compliance를 도입하고 S3에 자동 저장되는 패치 이력을 감사 증빙으로 제출했다. 다음 해 감사에서 "자동화된 패치 관리 프로세스 구축" 항목에서 Good Practice 평가를 받았다. PCI-DSS v4.0 요구사항 6.3.3(모든 시스템 컴포넌트는 보안 취약점으로부터 보호)을 Patch Manager + Compliance 보고서로 직접 충족했다.
 
 **커스텀 Patch Baseline 구성:**
 
@@ -130,7 +130,7 @@ aws ssm update-patch-baseline \
 
 Patch Group은 인스턴스를 특정 Patch Baseline에 연결하는 태그 기반 매핑이다.
 
-**핵심 규칙 (시험 빈출):**
+**핵심 규칙 (출제):**
 
 1. 태그 키는 **정확히 `Patch Group`** (대소문자 구분, 공백 포함) — 다른 이름은 인식되지 않는다
 2. 한 인스턴스는 정확히 한 Patch Group에만 속할 수 있다 (단 하나의 값)
@@ -164,7 +164,7 @@ aws ssm register-patch-baseline-for-patch-group \
 
 이 설계로 같은 패치가 자연스럽게 Dev → Stage → Prod 순서로 롤아웃된다.
 
-> 🔍 **더 깊이**: ApproveAfterDays 기반의 점진적 패치 적용은 소프트웨어 배포의 "Canary Release" 패턴을 패치 관리에 적용한 것이다. Martin Fowler가 2010년 정의한 Canary Release는 "변경을 전체 사용자에 즉시 배포하지 않고, 일부 환경/사용자에 먼저 배포해 문제가 없으면 확대"하는 방식이다. 패치 베이스라인의 ApproveAfterDays가 0일(Dev), 3일(Stage), 14일(Prod)로 차이를 두는 것이 이 패턴의 구현이다. 패치로 인한 커널 패닉, 서비스 중단, 호환성 문제가 Dev에서 먼저 발견되고 Prod에는 영향이 없도록 설계된다. 실제로 2024년 7월 CrowdStrike 업데이트 사고처럼 잘못된 소프트웨어 업데이트가 대규모 장애를 야기한 사례에서, 점진 배포가 있었다면 전체 8.5백만 대가 아닌 일부만 영향받았을 것이다.
+ApproveAfterDays 기반의 점진적 패치 적용은 소프트웨어 배포의 "Canary Release" 패턴을 패치 관리에 적용한 것이다. Martin Fowler가 2010년 정의한 Canary Release는 "변경을 전체 사용자에 즉시 배포하지 않고, 일부 환경/사용자에 먼저 배포해 문제가 없으면 확대"하는 방식이다. 패치 베이스라인의 ApproveAfterDays가 0일(Dev), 3일(Stage), 14일(Prod)로 차이를 두는 것이 이 패턴의 구현이다. 패치로 인한 커널 패닉, 서비스 중단, 호환성 문제가 Dev에서 먼저 발견되고 Prod에는 영향이 없도록 설계된다. 실제로 2024년 7월 CrowdStrike 업데이트 사고처럼 잘못된 소프트웨어 업데이트가 대규모 장애를 야기한 사례에서, 점진 배포가 있었다면 전체 8.5백만 대가 아닌 일부만 영향받았을 것이다.
 
 ## Patch 작업: Scan과 Install의 차이
 
@@ -249,7 +249,7 @@ mainSteps:
       Targets: [{"Id": "{{ InstanceId }}"}]
 ```
 
-> 💡 **관련 이론**: ELB Deregister → 패치 → 재부팅 → 재등록 패턴은 분산 시스템 "rolling update" 패턴의 정확한 구현이다. Kubernetes의 RollingUpdate 배포 전략이 Pod를 하나씩 교체하는 것과 동일하다. 핵심은 "Connection Draining"으로, AWS ELB에서는 Deregistration Delay(기본 300초)가 이미 연결된 클라이언트 세션이 완료될 때까지 트래픽을 유지한다. 패치 전 `WaitForDeregistration` 단계가 이 300초 내로 기존 세션이 완료되기를 기다리는 것이다. Connection Draining 없이 즉시 패치하면 진행 중인 HTTP 트랜잭션이 강제 종료된다.
+ELB Deregister → 패치 → 재부팅 → 재등록 패턴은 분산 시스템 "rolling update" 패턴의 정확한 구현이다. Kubernetes의 RollingUpdate 배포 전략이 Pod를 하나씩 교체하는 것과 동일하다. 핵심은 "Connection Draining"으로, AWS ELB에서는 Deregistration Delay(기본 300초)가 이미 연결된 클라이언트 세션이 완료될 때까지 트래픽을 유지한다. 패치 전 `WaitForDeregistration` 단계가 이 300초 내로 기존 세션이 완료되기를 기다리는 것이다. Connection Draining 없이 즉시 패치하면 진행 중인 HTTP 트랜잭션이 강제 종료된다.
 
 ## Patch Compliance: 결과를 수치로
 
@@ -287,7 +287,7 @@ aws ssm describe-instance-patches \
   --filters 'Key=State,Values=Missing'
 ```
 
-> 🔍 **더 깊이**: `InstalledPendingRebootCount`가 올라가는 경우가 시험에 자주 출제된다. 이 상태는 패치 파일이 디스크에 설치됐지만 재부팅 후 커널/시스템에 로드되어야 하는 패치가 있을 때 발생한다. Linux에서는 `needs-restarting -r` 명령으로 재부팅 필요 여부를 확인할 수 있다. Windows에서는 `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired` 레지스트리 키로 확인한다. `RebootIfNeeded` 옵션 없이 `NoReboot`로 패치하거나, ELB deregister 없이 재부팅을 피한 경우 이 상태가 지속된다.
+`InstalledPendingRebootCount`가 올라가는 경우가 시험에 출제된다. 이 상태는 패치 파일이 디스크에 설치됐지만 재부팅 후 커널/시스템에 로드되어야 하는 패치가 있을 때 발생한다. Linux에서는 `needs-restarting -r` 명령으로 재부팅 필요 여부를 확인할 수 있다. Windows에서는 `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired` 레지스트리 키로 확인한다. `RebootIfNeeded` 옵션 없이 `NoReboot`로 패치하거나, ELB deregister 없이 재부팅을 피한 경우 이 상태가 지속된다.
 
 ## Patch Policy (Quick Setup): 멀티 계정 패치 거버넌스
 
@@ -311,7 +311,7 @@ aws ssm create-resource-data-sync \
 # ORDER BY missing_count DESC
 ```
 
-> 📚 **사례**: 2024년, 글로벌 제조업체 D사가 AWS Organizations 기반 멀티 계정 환경(23개 계정, 3개 리전)에서 Patch Policy를 도입했다. Quick Setup에서 Patch Policy를 한 번 설정하자 StackSets가 자동으로 모든 계정·리전에 Patch Baseline, Patch Group 설정, Maintenance Window를 배포했다. 중앙 S3 + Athena 대시보드에서 전사 패치 컴플라이언스율을 실시간으로 확인할 수 있게 됐다. 이전에는 각 계정 팀이 독자적으로 패치를 관리해 전사 컴플라이언스율을 파악하는 데 2주가 걸렸는데, 도입 후 실시간 확인이 가능해졌다. NIST 800-171의 SI-2(Flaw Remediation) 요건을 충족하는 증빙으로 감사관이 이 대시보드를 직접 확인했다.
+가상의 사례로, 2024년, 글로벌 제조업체 D사가 AWS Organizations 기반 멀티 계정 환경(23개 계정, 3개 리전)에서 Patch Policy를 도입했다. Quick Setup에서 Patch Policy를 한 번 설정하자 StackSets가 자동으로 모든 계정·리전에 Patch Baseline, Patch Group 설정, Maintenance Window를 배포했다. 중앙 S3 + Athena 대시보드에서 전사 패치 컴플라이언스율을 실시간으로 확인할 수 있게 됐다. 이전에는 각 계정 팀이 독자적으로 패치를 관리해 전사 컴플라이언스율을 파악하는 데 2주가 걸렸는데, 도입 후 실시간 확인이 가능해졌다. NIST 800-171의 SI-2(Flaw Remediation) 요건을 충족하는 증빙으로 감사관이 이 대시보드를 직접 확인했다.
 
 ## 트러블슈팅: 패치가 적용 안 될 때
 
@@ -366,7 +366,7 @@ aws inspector2 list-findings \
 
 Inspector가 발견한 CVE의 패키지 버전 정보를 Patch Baseline의 Approved Patches에 명시적으로 추가하거나, Inspector 알람을 EventBridge로 받아 Patch Manager를 자동 트리거하는 패턴이 보안 운영의 미래 방향이다.
 
-> 💡 **관련 이론**: Inspector + Patch Manager 통합은 "Risk-Based Patching"의 AWS 구현이다. 전통적 패치 관리가 "모든 패치를 분류 기준으로 적용"하는 정책 기반이라면, Risk-Based Patching은 CVSS Score + 실제 환경 노출도(인터넷 facing 여부, 데이터 민감도)를 고려해 우선순위를 동적으로 결정한다. CISA(미국 사이버보안청)의 KEV(Known Exploited Vulnerabilities) 목록과 Inspector를 연계하면 "실제 공격에 사용되는 취약점"을 최우선으로 패치하는 파이프라인을 구축할 수 있다. Tenable.io, Qualys, Rapid7 등 상용 취약점 스캐너가 같은 원리를 구현한다.
+Inspector + Patch Manager 통합은 "Risk-Based Patching"의 AWS 구현이다. 전통적 패치 관리가 "모든 패치를 분류 기준으로 적용"하는 정책 기반이라면, Risk-Based Patching은 CVSS Score + 실제 환경 노출도(인터넷 facing 여부, 데이터 민감도)를 고려해 우선순위를 동적으로 결정한다. CISA(미국 사이버보안청)의 KEV(Known Exploited Vulnerabilities) 목록과 Inspector를 연계하면 "실제 공격에 사용되는 취약점"을 최우선으로 패치하는 파이프라인을 구축할 수 있다. Tenable.io, Qualys, Rapid7 등 상용 취약점 스캐너가 같은 원리를 구현한다.
 
 ## 전체 흐름 정리
 

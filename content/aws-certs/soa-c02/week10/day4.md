@@ -70,7 +70,7 @@ S3에 올린 데이터는 시간이 지날수록 접근 빈도가 떨어진다. 
 
 여기서 흔한 함정은 **최소 보관 기간**과 **복원 속도**다. Standard-IA는 30일, Glacier는 90일, Deep Archive는 180일의 최소 보관이 있어, 그 전에 지우거나 다른 등급으로 옮겨도 최소 기간만큼 과금된다 — 자주 바뀌는 데이터를 IA에 넣으면 오히려 비싸진다. 그리고 Deep Archive는 가장 싸지만 복원에 12~48시간이 걸려, RTO가 빡빡한 DR 데이터를 여기 넣으면 정작 장애 때 못 꺼낸다. **접근 패턴을 모르겠으면 Intelligent-Tiering**이 자동으로 등급을 옮겨주니 안전한 기본값이다.
 
-> 🔍 **더 깊이**: **S3 Object Lock**은 Day 1의 Snapshot Lock, Day 2의 Vault Lock과 같은 WORM 모델을 객체에 입힌다. Compliance 모드는 retention 기간 동안 루트 계정조차 객체를 삭제·덮어쓸 수 없고, Governance 모드는 특정 권한자가 해제할 수 있다. Object Lock도 Versioning 활성화가 필수인데, 이유는 같다 — 불변성은 "특정 버전을 고정"하는 것이라 버전 추적이 전제다. 금융·의료 규제(SEC 17a-4, HIPAA)의 변경 불가 보관, 그리고 Ransomware·내부자가 데이터를 지우는 시나리오 방어에 쓴다. 세 가지 Lock(Snapshot/Vault/Object)이 자원만 다를 뿐 "발급자조차 못 푼다"는 동일한 신뢰 모델을 공유한다는 게 Week 10 전체를 관통하는 패턴이다.
+**S3 Object Lock**은 Day 1의 Snapshot Lock, Day 2의 Vault Lock과 같은 WORM 모델을 객체에 입힌다. Compliance 모드는 retention 기간 동안 루트 계정조차 객체를 삭제·덮어쓸 수 없고, Governance 모드는 특정 권한자가 해제할 수 있다. Object Lock도 Versioning 활성화가 필수인데, 이유는 같다 — 불변성은 "특정 버전을 고정"하는 것이라 버전 추적이 전제다. 금융·의료 규제(SEC 17a-4, HIPAA)의 변경 불가 보관, 그리고 Ransomware·내부자가 데이터를 지우는 시나리오 방어에 쓴다. 세 가지 Lock(Snapshot/Vault/Object)이 자원만 다를 뿐 "발급자조차 못 푼다"는 동일한 신뢰 모델을 공유한다는 게 Week 10 전체를 관통하는 패턴이다.
 
 ## Storage Gateway — 온프레미스 앱은 그대로, 뒤만 S3로
 
@@ -82,7 +82,7 @@ S3에 올린 데이터는 시간이 지날수록 접근 빈도가 떨어진다. 
 - **Volume Gateway** — iSCSI 블록 볼륨을 제공한다. **Cached 모드**는 자주 쓰는 블록만 로컬, 전체는 S3(로컬 스토리지 절약). **Stored 모드**는 전체를 로컬에 두고 S3로 비동기 백업(저지연 우선 + 클라우드 백업).
 - **Tape Gateway** — 가상 테이프 라이브러리(VTL)를 제공한다. Veritas·NetBackup 같은 기존 백업 SW가 물리 테이프인 줄 알고 쓰지만 실제론 S3→Glacier로 저장된다. 물리 테이프 인프라를 클라우드로 대체하는 데 쓴다.
 
-> 💡 **관련 이론**: Storage Gateway의 로컬 캐시 + 원격 저장 구조는 컴퓨터 시스템 전반의 **캐싱 계층(memory hierarchy)** 원리 그대로다. CPU 캐시가 자주 쓰는 데이터를 빠른 SRAM에 두고 나머지를 느린 메모리/디스크에 두듯, File/Volume Gateway(Cached)는 hot 데이터를 로컬에, cold 데이터를 S3에 둔다. 이게 작동하는 건 데이터 접근에 **지역성(locality of reference)**이 있기 때문 — 최근 쓴 데이터를 또 쓸 확률(temporal locality)이 높아 작은 로컬 캐시로도 대부분의 접근을 빠르게 처리할 수 있다. CDN, OS page cache, DB buffer pool, 그리고 Storage Gateway가 모두 같은 지역성 가정 위에 선다.
+Storage Gateway의 로컬 캐시 + 원격 저장 구조는 컴퓨터 시스템 전반의 **캐싱 계층(memory hierarchy)** 원리 그대로다. CPU 캐시가 자주 쓰는 데이터를 빠른 SRAM에 두고 나머지를 느린 메모리/디스크에 두듯, File/Volume Gateway(Cached)는 hot 데이터를 로컬에, cold 데이터를 S3에 둔다. 이게 작동하는 건 데이터 접근에 **지역성(locality of reference)**이 있기 때문 — 최근 쓴 데이터를 또 쓸 확률(temporal locality)이 높아 작은 로컬 캐시로도 대부분의 접근을 빠르게 처리할 수 있다. CDN, OS page cache, DB buffer pool, 그리고 Storage Gateway가 모두 같은 지역성 가정 위에 선다.
 
 ## Elastic Disaster Recovery (DRS) — 서버 통째로를 분 단위로 켜다
 
@@ -112,9 +112,9 @@ Production Subnet
 
 선택 기준은 단순하다 — 네트워크로 옮길 만한 대용량 전송은 DataSync, 외부와의 표준 프로토콜 파일 교환은 Transfer Family, 네트워크로는 비현실적인 초대용량은 Snow.
 
-> 📚 **사례**: DataSync 같은 전용 전송 도구가 나오기 전엔 대용량 마이그레이션에 `aws s3 sync`나 자체 스크립트를 썼는데, 단일 스레드 전송, 중간 실패 시 처음부터, 검증 부재로 "옮겼는데 일부가 깨졌다"가 흔했다. 수십 TB를 며칠에 걸쳐 옮기다 네트워크가 끊기면 어디까지 갔는지 몰라 다시 시작하는 식이었다. DataSync는 이를 병렬 전송 + 체크섬 검증 + 증분 재시도로 해결했다 — 끊겨도 이어서, 옮긴 뒤 무결성 검증까지 자동이다. "대용량 전송은 직접 짜지 말고 전용 도구를 써라"는 교훈이 도구화된 것으로, 백업·전송 같은 인프라 작업에서 자체 구현보다 검증된 관리형 서비스를 택하는 일반 원칙의 한 사례다.
+DataSync 같은 전용 전송 도구가 나오기 전엔 대용량 마이그레이션에 `aws s3 sync`나 자체 스크립트를 썼는데, 단일 스레드 전송, 중간 실패 시 처음부터, 검증 부재로 "옮겼는데 일부가 깨졌다"가 흔했다. 수십 TB를 며칠에 걸쳐 옮기다 네트워크가 끊기면 어디까지 갔는지 몰라 다시 시작하는 식이었다. DataSync는 이를 병렬 전송 + 체크섬 검증 + 증분 재시도로 해결했다 — 끊겨도 이어서, 옮긴 뒤 무결성 검증까지 자동이다. "대용량 전송은 직접 짜지 말고 전용 도구를 써라"는 교훈이 도구화된 것으로, 백업·전송 같은 인프라 작업에서 자체 구현보다 검증된 관리형 서비스를 택하는 일반 원칙의 한 사례다.
 
-## 정리하며
+## 정리
 
 Day 4의 도구들은 "원본이 사라질 때 어디서 다시 시작하나"를 단위별로 답한다. S3 Replication은 객체를 다른 리전·버킷에 비동기로 한 벌 더 두고(Versioning 필수, 켠 이후 객체만), Storage Gateway는 온프레미스 앱을 건드리지 않고 캐시 뒤를 S3로 잇고, DRS는 서버 전체를 평소 싸게 흘려두다 장애 때 분 단위로 실제 크기로 켠다.
 

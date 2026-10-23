@@ -8,7 +8,7 @@ AWS EC2는 Nitro 하이퍼바이저 위에서 동작한다. Nitro는 CPU 사이�
 
 이것이 EC2 기본 메트릭에 `mem_used_percent`가 없는 이유다. 이 제약은 EC2만의 것이 아니다. GCP Compute Engine도 동일하게 게스트 OS 내부 메트릭은 Ops Agent(구 Stackdriver Agent)를 설치해야 한다. Azure VM도 Azure Monitor Agent가 필요하다.
 
-> 💡 **관련 이론**: 모니터링 방식은 크게 에이전트 기반(agent-based)과 에이전트리스(agentless)로 나뉜다. 에이전트리스는 SNMP, IPMI, 하이퍼바이저 API처럼 외부에서 관찰하는 방식이다. 에이전트 기반은 측정 대상 내부에 소프트웨어를 설치해 더 풍부한 데이터를 수집한다. 클라우드 환경에서는 보통 둘을 혼용한다. 플랫폼 레벨(CPU, 네트워크)은 에이전트리스, OS 레벨(메모리, 디스크, 프로세스)은 에이전트. 이 혼용 구조를 이해해야 "어떤 메트릭이 자동으로 오고 어떤 것은 Agent가 필요한가"를 즉각 답할 수 있다.
+모니터링 방식은 크게 에이전트 기반(agent-based)과 에이전트리스(agentless)로 나뉜다. 에이전트리스는 SNMP, IPMI, 하이퍼바이저 API처럼 외부에서 관찰하는 방식이다. 에이전트 기반은 측정 대상 내부에 소프트웨어를 설치해 더 풍부한 데이터를 수집한다. 클라우드 환경에서는 보통 둘을 혼용한다. 플랫폼 레벨(CPU, 네트워크)은 에이전트리스, OS 레벨(메모리, 디스크, 프로세스)은 에이전트. 이 혼용 구조를 이해해야 "어떤 메트릭이 자동으로 오고 어떤 것은 Agent가 필요한가"를 즉각 답할 수 있다.
 
 ## CloudWatch Agent의 내부 구조
 
@@ -128,7 +128,7 @@ CloudWatch Agent는 Go 언어로 작성된 단일 바이너리다. 내부적으�
 }
 ```
 
-`aggregation_dimensions`는 중요한 고급 기능이다. `[["AutoScalingGroupName"]]`으로 설정하면 ASG 내 모든 인스턴스의 메트릭이 ASG 이름 Dimension으로 집계된다. 인스턴스별 메트릭 외에 "ASG 전체" 메트릭이 추가로 발행된다. 오토스케일링 환경에서 "함대 전체의 평균 메모리"를 보는 데 유용하다.
+`aggregation_dimensions`는 중요한 고급 기능이다. `[["AutoScalingGroupName"]]`으로 설정하면 ASG 내 모든 인스턴스의 메트릭이 ASG 이름 Dimension으로 집계된다. 인스턴스별 메트릭 외에 "ASG 전체" 메트릭이 추가로 발행된다. Auto Scaling 환경에서 "함대 전체의 평균 메모리"를 보는 데 유용하다.
 
 ## procstat 플러그인: 프로세스 레벨 모니터링
 
@@ -153,7 +153,7 @@ CloudWatch Agent는 Go 언어로 작성된 단일 바이너리다. 내부적으�
 
 `memory_rss`는 Resident Set Size(실제 물리 메모리 점유량)이고, `memory_vms`는 Virtual Memory Size(가상 주소 공간 크기)다. 메모리 누수 탐지에는 RSS가 더 의미 있다. `num_fds`(파일 디스크립터 수)가 OS 한도에 근접하면 `Too many open files` 에러가 발생한다. 이를 procstat으로 미리 추적하는 것이 예방적 모니터링이다.
 
-> 📚 **사례**: 2020년 한 SaaS 회사(익명)의 API 서버가 매주 토요일 새벽에 응답 불능이 됐다. EC2 CPU와 메모리는 정상이었다. 원인은 nginx의 `num_fds`가 65535(Linux 기본 ulimit)에 도달한 것이었다. procstat으로 `num_fds`를 모니터링하고 80% 임계값 알람을 걸었더라면 토요일 새벽 장애를 예방할 수 있었다. 이 사례 이후 팀은 모든 서버에 procstat의 `num_fds` + `num_threads` 모니터링을 표준으로 추가했다.
+가상의 사례로, 2020년 한 SaaS 회사(익명)의 API 서버가 매주 토요일 새벽에 응답 불능이 됐다. EC2 CPU와 메모리는 정상이었다. 원인은 nginx의 `num_fds`가 65535(Linux 기본 ulimit)에 도달한 것이었다. procstat으로 `num_fds`를 모니터링하고 80% 임계값 알람을 걸었더라면 토요일 새벽 장애를 예방할 수 있었다. 이 사례 이후 팀은 모든 서버에 procstat의 `num_fds` + `num_threads` 모니터링을 표준으로 추가했다.
 
 ## StatsD와 collectd: 애플리케이션 커스텀 메트릭 통합
 
@@ -187,7 +187,7 @@ def process_payment(amount):
 
 collectd는 2005년부터 개발된 시스템 통계 수집 데몬이다. 기존에 collectd로 모니터링하던 온프레미스 서버를 CloudWatch로 통합할 때 Agent의 collectd 지원이 유용하다. 마이그레이션 과정에서 기존 collectd 설정을 그대로 유지하면서 데이터만 CloudWatch로 보낼 수 있다.
 
-> 🔍 **더 깊이**: Embedded Metrics Format(EMF)은 StatsD/collectd와 다른 접근이다. EMF는 CloudWatch Logs에 특별한 JSON 형식으로 메트릭 데이터를 삽입하면 CloudWatch가 이를 파싱해 자동으로 메트릭으로 변환한다. Lambda나 ECS Task처럼 에이전트를 실행하기 어려운 환경에서 유용하다. `aws-embedded-metrics` 라이브러리가 이를 추상화한다. EMF는 로그와 메트릭을 동시에 남기므로 "메트릭 발생 당시의 로그 컨텍스트"를 함께 보존할 수 있다는 장점이 있다. SOA-C02에서 EMF는 서버리스 환경의 커스텀 메트릭 표준 패턴으로 나온다.
+Embedded Metrics Format(EMF)은 StatsD/collectd와 다른 접근이다. EMF는 CloudWatch Logs에 특별한 JSON 형식으로 메트릭 데이터를 삽입하면 CloudWatch가 이를 파싱해 자동으로 메트릭으로 변환한다. Lambda나 ECS Task처럼 에이전트를 실행하기 어려운 환경에서 유용하다. `aws-embedded-metrics` 라이브러리가 이를 추상화한다. EMF는 로그와 메트릭을 동시에 남기므로 "메트릭 발생 당시의 로그 컨텍스트"를 함께 보존할 수 있다는 장점이 있다. SOA-C02에서 EMF는 서버리스 환경의 커스텀 메트릭 표준 패턴으로 나온다.
 
 ## 다른 플랫폼과의 비교
 
@@ -252,7 +252,7 @@ aws ssm create-association \
 
 State Manager Association의 핵심은 **주기적 강제 적용(desired state enforcement)**이다. 누군가 실수로 인스턴스에서 Agent를 중지하거나 설정을 변경해도, 24시간 이내에 원래 설정으로 자동 복구된다. 신규 인스턴스가 `Role=web-prod` 태그를 달고 시작되면 다음 Association 실행 주기에 자동으로 설정이 적용된다.
 
-> 💡 **관련 이론**: SSM State Manager가 구현하는 개념은 **Infrastructure as Desired State**다. Puppet, Chef, Ansible의 "멱등성(idempotent) 실행" 철학과 동일하다. 원하는 상태(desired state)를 선언하면 에이전트가 현재 상태(actual state)를 계속 맞춰간다. 단순히 "한 번 배포"와 "지속적으로 유지"의 차이가 운영 안정성을 결정한다.
+SSM State Manager가 구현하는 개념은 **Infrastructure as Desired State**다. Puppet, Chef, Ansible의 "멱등성(idempotent) 실행" 철학과 동일하다. 원하는 상태(desired state)를 선언하면 에이전트가 현재 상태(actual state)를 계속 맞춰간다. 단순히 "한 번 배포"와 "지속적으로 유지"의 차이가 운영 안정성을 결정한다.
 
 ## IAM 권한과 트러블슈팅
 
@@ -318,9 +318,9 @@ aws cloudwatch put-metric-alarm \
 
 메모리 메트릭은 EC2가 종료되면 당연히 들어오지 않는다. `notBreaching`을 쓰면 종료된 인스턴스의 알람이 ALARM으로 전이되지 않고 OK를 유지한다. 가용성 모니터링(인스턴스가 살아 있어야 함)이 목적이라면 별도로 `StatusCheckFailed_System` 알람을 추가한다.
 
-## 마무리
+## 정리
 
-CloudWatch Agent는 단순한 설치 후 망각하는 도구가 아니다. procstat으로 프로세스 레벨을 추적하고, StatsD/collectd로 애플리케이션 커스텀 메트릭을 통합하고, State Manager로 설정 드리프트를 방지하는 완전한 운영 자동화 파이프라인의 핵심이다. 시험에서는 "메모리가 필요하면 Agent", "IAM 권한이 먼저", "Parameter Store + State Manager가 대규모 배포 표준"이 빈출 패턴이다.
+CloudWatch Agent는 단순한 설치 후 망각하는 도구가 아니다. procstat으로 프로세스 레벨을 추적하고, StatsD/collectd로 애플리케이션 커스텀 메트릭을 통합하고, State Manager로 설정 드리프트를 방지하는 완전한 운영 자동화 파이프라인의 핵심이다. 시험에서는 "메모리가 필요하면 Agent", "IAM 권한이 먼저", "Parameter Store + State Manager가 대규모 배포 표준"이 출제 패턴이다.
 
 ---
 

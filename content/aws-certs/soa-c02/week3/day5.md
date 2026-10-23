@@ -2,7 +2,7 @@
 
 Week 3에서 다룬 CloudWatch 도구들은 각각 독립적이지만, 실제 운영에서는 하나의 관측 가능성 파이프라인을 이룬다. Alarm이 "무언가 잘못됐다"를 감지하면, Dashboard가 "어느 범위에서 얼마나"를 보여주고, Agent가 "게스트 OS 내부"를 들여다보게 하고, Synthetics가 "사용자 관점"을 유지하고, X-Ray가 "어떤 서비스의 어떤 호출"이 원인인지 추적한다. 이 파이프라인이 모두 맞물려야 장애 탐지에서 원인 분석까지의 MTTD·MTTK(Mean Time To Know)가 줄어든다.
 
-오늘은 이 다섯 도구가 실제로 어떻게 연결되는지 구조를 재조명하고, 각 도구의 내부 설계 원칙을 비교표로 정리한 뒤, 시험에서 가장 자주 나오는 시나리오 10개를 풀어본다.
+오늘은 이 다섯 도구가 실제로 어떻게 연결되는지 구조를 재조명하고, 각 도구의 내부 설계 원칙을 비교표로 정리한 뒤, 시험에서 다루는 시나리오 10개를 풀어본다.
 
 ## Week 3 핵심 개념 연결 지도
 
@@ -54,7 +54,7 @@ M of N은 "얼마나 지속돼야 알람인가"를 제어한다. Treat Missing D
 | 비용 모델 | canary당 실행 횟수 | RUM 이벤트 수 | Trace 수 |
 | 새벽 무트래픽 탐지 | O | X | X |
 
-> 💡 **관련 이론**: 이 세 도구의 구분은 소프트웨어 품질 측정 이론에서 **외부 품질(external quality)**과 **내부 품질(internal quality)**의 차이에 대응한다. Synthetics와 RUM은 사용자가 경험하는 외부 품질을 측정하고, X-Ray는 시스템 내부의 구조적 품질(어떤 컴포넌트가 어떤 레이턴시를 추가하는가)을 측정한다. Google SRE의 "Golden Signals"(지연, 트래픽, 에러, 포화)는 이 두 관점을 합친 프레임워크로, Synthetics는 가용성을 포함한 외부 지연과 에러를 측정하고 X-Ray는 내부 컴포넌트별 지연과 포화를 측정한다.
+이 세 도구의 구분은 소프트웨어 품질 측정 이론에서 **외부 품질(external quality)**과 **내부 품질(internal quality)**의 차이에 대응한다. Synthetics와 RUM은 사용자가 경험하는 외부 품질을 측정하고, X-Ray는 시스템 내부의 구조적 품질(어떤 컴포넌트가 어떤 레이턴시를 추가하는가)을 측정한다. Google SRE의 "Golden Signals"(지연, 트래픽, 에러, 포화)는 이 두 관점을 합친 프레임워크로, Synthetics는 가용성을 포함한 외부 지연과 에러를 측정하고 X-Ray는 내부 컴포넌트별 지연과 포화를 측정한다.
 
 **Composite Alarm vs Metric Math Alarm**
 
@@ -66,7 +66,7 @@ M of N은 "얼마나 지속돼야 알람인가"를 제어한다. Treat Missing D
 | Actions Suppressor | O (자식 알람 액션 비활성화) | X |
 | 비용 | Composite Alarm + 자식 알람 각각 과금 | 알람 1개 과금 |
 
-> 💡 **관련 이론**: Composite Alarm의 Boolean 표현식 설계는 논리 회로(Logic Circuit) 이론과 동일한 구조를 가진다. AND/OR/NOT 게이트를 조합해 복합 조건을 표현하는 것이 디지털 회로 설계의 기본이듯, 알람을 논리 게이트로 조합해 "서비스 전체가 저하됐는가"를 판단한다. 이 추상화 계층은 Jens Rasmussen(1983)의 "Skills, Rules, Knowledge" 모델에서 설명하는 인지적 계층화와 일치한다: 하위 신호(자식 알람)를 상위 의미 단위(서비스 상태)로 추상화한다.
+Composite Alarm의 Boolean 표현식 설계는 논리 회로(Logic Circuit) 이론과 동일한 구조를 가진다. AND/OR/NOT 게이트를 조합해 복합 조건을 표현하는 것이 디지털 회로 설계의 기본이듯, 알람을 논리 게이트로 조합해 "서비스 전체가 저하됐는가"를 판단한다. 이 추상화 계층은 Jens Rasmussen(1983)의 "Skills, Rules, Knowledge" 모델에서 설명하는 인지적 계층화와 일치한다: 하위 신호(자식 알람)를 상위 의미 단위(서비스 상태)로 추상화한다.
 
 **CloudWatch Agent 수집 메트릭 종류**
 
@@ -79,7 +79,7 @@ M of N은 "얼마나 지속돼야 알람인가"를 제어한다. Treat Missing D
 | 프로세스별 CPU | /proc/[pid]/stat | CWAgent (커스텀) | 필요 (procstat) |
 | 애플리케이션 커스텀 | StatsD UDP 8125 | 커스텀 지정 | 필요 (StatsD 서버) |
 
-> 🔍 **더 깊이**: CloudWatch Agent가 Linux에서 `/proc/meminfo`를 읽는 방식과 Windows에서 WMI(Windows Management Instrumentation) Performance Counter를 읽는 방식은 근본적으로 다르다. Linux는 procfs라는 가상 파일 시스템을 통해 커널이 메모리 통계를 실시간으로 노출하는데, `MemTotal`, `MemFree`, `Buffers`, `Cached` 필드를 조합해 `mem_used_percent`를 계산한다. 계산식은 `(MemTotal - MemFree - Buffers - Cached) / MemTotal × 100`이다. `free -m` 명령의 `used` 컬럼과 일치하는 값이다. Windows에서는 `\Memory\% Committed Bytes In Use` 카운터를 사용한다.
+CloudWatch Agent가 Linux에서 `/proc/meminfo`를 읽는 방식과 Windows에서 WMI(Windows Management Instrumentation) Performance Counter를 읽는 방식은 근본적으로 다르다. Linux는 procfs라는 가상 파일 시스템을 통해 커널이 메모리 통계를 실시간으로 노출하는데, `MemTotal`, `MemFree`, `Buffers`, `Cached` 필드를 조합해 `mem_used_percent`를 계산한다. 계산식은 `(MemTotal - MemFree - Buffers - Cached) / MemTotal × 100`이다. `free -m` 명령의 `used` 컬럼과 일치하는 값이다. Windows에서는 `\Memory\% Committed Bytes In Use` 카운터를 사용한다.
 
 **X-Ray Sampling: Reservoir + Fixed Rate 흐름**
 
@@ -96,7 +96,7 @@ M of N은 "얼마나 지속돼야 알람인가"를 제어한다. Treat Missing D
           총 초당 약 109개 Trace 전송
 ```
 
-> 💡 **관련 이론**: X-Ray의 Reservoir + Fixed Rate 설계는 네트워크 트래픽 제어의 **토큰 버킷(Token Bucket)** 알고리즘과 구조적으로 동일하다. Reservoir가 버킷 크기(burst capacity)이고, Fixed Rate가 지속 처리율(sustained rate)이다. RFC 2697(srTCM, Single Rate Three Color Marker)과 RFC 2698(trTCM)이 이 패턴을 표준화한다. 저트래픽 구간(새벽)에는 Reservoir만으로 충분히 샘플링되고, 고트래픽 구간(점심)에는 Fixed Rate로 비용을 통제하는 자동 조절 메커니즘이다.
+X-Ray의 Reservoir + Fixed Rate 설계는 네트워크 트래픽 제어의 **토큰 버킷(Token Bucket)** 알고리즘과 구조적으로 동일하다. Reservoir가 버킷 크기(burst capacity)이고, Fixed Rate가 지속 처리율(sustained rate)이다. RFC 2697(srTCM, Single Rate Three Color Marker)과 RFC 2698(trTCM)이 이 패턴을 표준화한다. 저트래픽 구간(새벽)에는 Reservoir만으로 충분히 샘플링되고, 고트래픽 구간(점심)에는 Fixed Rate로 비용을 통제하는 자동 조절 메커니즘이다.
 
 ## 실무 운영 안티패턴 종합
 
@@ -127,7 +127,7 @@ Week 3에서 배운 각 도구의 안티패턴을 한 번에 정리한다.
 - Sampling Rule 우선순위 미설정 → 중요 결제 API와 헬스체크가 동일 샘플링률
 - Fault vs Error 혼동 → Fault(5xx, AWS 책임 가능성)와 Error(4xx, 클라이언트 문제) 구분이 근본 원인 분석에서 중요
 
-> 📚 **사례**: 2023년 대형 이커머스 A사(공개 사례)는 블랙프라이데이 준비 과정에서 X-Ray 100% 샘플링을 켜두다 하루 $8,000의 예상치 못한 X-Ray 청구를 받았다. 트래픽 폭증 구간에 고정된 Reservoir + 낮은 Fixed Rate(1%)로 전환하자 비용이 $40/일로 감소하면서도 에러 추적은 별도 Priority 1 Rule로 100% 유지했다. Sampling Rule 설계의 ROI가 매우 높은 최적화 포인트다.
+가상의 사례로, 2023년 대형 이커머스 A사는 블랙프라이데이 준비 과정에서 X-Ray 100% 샘플링을 켜두다 하루 $8,000의 예상치 못한 X-Ray 청구를 받았다. 트래픽 폭증 구간에 고정된 Reservoir + 낮은 Fixed Rate(1%)로 전환하자 비용이 $40/일로 감소하면서도 에러 추적은 별도 Priority 1 Rule로 100% 유지했다. Sampling Rule 설계의 ROI가 매우 높은 최적화 포인트다.
 
 > ⚠️ **함정**: ServiceLens는 CloudWatch, X-Ray, Synthetics Canary 데이터를 통합하는 뷰지만, 세 서비스가 각각 정상 동작 중이어야 한다. Lambda Active Tracing이 꺼져 있으면 ServiceLens Service Map에 Lambda가 나타나지 않는다. X-Ray SDK로 AWS SDK를 wrap하지 않으면 DynamoDB, SQS 등 하위 서비스가 Map에서 사라진다. ServiceLens 화면이 비어 보이면 X-Ray SDK 설정과 Active Tracing 여부를 먼저 확인한다.
 
@@ -144,7 +144,7 @@ Week 3에서 배운 각 도구의 안티패턴을 한 번에 정리한다.
 | 크로스 계정 | OAM Sink+Link | Workspace 기반 | Resource scope |
 | 대시보드 | CloudWatch Dashboard | Cloud Monitoring Dashboard | Azure Dashboard |
 
-> 🔍 **더 깊이**: GCP의 Ops Agent는 CloudWatch Agent와 구조적으로 유사하지만, 내부 파이프라인으로 OpenTelemetry Collector를 사용한다. CloudWatch Agent는 자체 Go 바이너리로 동작한다. Azure Monitor Agent는 DCR(Data Collection Rules)로 수집 정책을 중앙에서 정의한다는 점이 다르다. CloudWatch Agent는 SSM Parameter Store로 설정을 중앙화하는 방식이 이에 대응한다. 세 플랫폼 모두 에이전트 없이 수집 가능한 메트릭(하이퍼바이저 레이어)과 에이전트가 필요한 메트릭(OS 레이어)이 명확히 나뉜다는 점은 동일하다.
+GCP의 Ops Agent는 CloudWatch Agent와 구조적으로 유사하지만, 내부 파이프라인으로 OpenTelemetry Collector를 사용한다. CloudWatch Agent는 자체 Go 바이너리로 동작한다. Azure Monitor Agent는 DCR(Data Collection Rules)로 수집 정책을 중앙에서 정의한다는 점이 다르다. CloudWatch Agent는 SSM Parameter Store로 설정을 중앙화하는 방식이 이에 대응한다. 세 플랫폼 모두 에이전트 없이 수집 가능한 메트릭(하이퍼바이저 레이어)과 에이전트가 필요한 메트릭(OS 레이어)이 명확히 나뉜다는 점은 동일하다.
 
 ## 장애 대응 흐름: 도구 연결 순서
 
@@ -165,7 +165,7 @@ Week 3에서 배운 각 도구의 안티패턴을 한 번에 정리한다.
 6. Synthetics Canary 결과 → 사용자 엔드포인트 가용성 현황 확인
 ```
 
-> 💡 **관련 이론**: 이 대응 순서는 "Breadth-First Search → Depth-First" 전략이다. 처음에는 넓게(대시보드, 전체 서비스 맵) 보다가, 범위를 좁혀(특정 서비스 Trace) 깊이 파고든다(Subsegment, 로그). 이것이 Google SRE가 권고하는 "structured troubleshooting"의 핵심: 증상에서 원인으로, 넓은 가설에서 좁은 가설로.
+이 대응 순서는 "Breadth-First Search → Depth-First" 전략이다. 처음에는 넓게(대시보드, 전체 서비스 맵) 보다가, 범위를 좁혀(특정 서비스 Trace) 깊이 파고든다(Subsegment, 로그). 이것이 Google SRE가 권고하는 "structured troubleshooting"의 핵심: 증상에서 원인으로, 넓은 가설에서 좁은 가설로.
 
 ---
 

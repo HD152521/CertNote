@@ -29,7 +29,7 @@ CloudWatch는 이 세 기둥을 모두 다룬다. CloudWatch Metrics(계량 가�
 | **Text** | 섹션 제목, 설명, 링크 | 과도한 설명 텍스트는 공간 낭비 |
 | **Custom (iframe)** | Grafana 패널, 외부 시각화 | CORS, 보안 정책 제약 주의 |
 
-> 💡 **관련 이론**: Edward Tufte의 *The Visual Display of Quantitative Information* (1983)은 데이터 시각화의 고전이다. Tufte의 "데이터-잉크 비율(data-ink ratio)" 원칙: 잉크의 최대 비율이 실제 데이터를 나타내야 한다. 불필요한 격자선, 과도한 3D 효과, 장식은 데이터 전달을 방해한다. CloudWatch 대시보드 설계에도 동일하게 적용된다. 위젯마다 제목, 단위, Y축 범위를 명확히 표시하는 것이 기본.
+Edward Tufte의 *The Visual Display of Quantitative Information* (1983)은 데이터 시각화의 고전이다. Tufte의 "데이터-잉크 비율(data-ink ratio)" 원칙: 잉크의 최대 비율이 실제 데이터를 나타내야 한다. 불필요한 격자선, 과도한 3D 효과, 장식은 데이터 전달을 방해한다. CloudWatch 대시보드 설계에도 동일하게 적용된다. 위젯마다 제목, 단위, Y축 범위를 명확히 표시하는 것이 기본.
 
 ## 대시보드 JSON 구조와 IaC 관리
 
@@ -138,9 +138,9 @@ aws oam create-link \
 }
 ```
 
-> 🔍 **더 깊이**: OAM의 내부 구현은 IAM 역할 기반 위임이다. Monitoring Account의 CloudWatch 서비스가 Source Account에 미리 생성된 서비스 연결 역할(service-linked role)을 Assume해 데이터를 읽는다. 이 때 실제 데이터 이동(replication)은 없다. 대신 Monitoring Account의 CloudWatch 콘솔이 Source Account의 CloudWatch API를 직접 호출한다. 따라서 Source Account의 데이터는 Source Account에만 저장되고, Monitoring Account는 "읽기 전용 투명 뷰"를 제공한다. 이 차이가 Metrics Stream(데이터를 물리적으로 복사)과 OAM(읽기 위임)의 근본 차이다.
+OAM의 내부 구현은 IAM 역할 기반 위임이다. Monitoring Account의 CloudWatch 서비스가 Source Account에 미리 생성된 서비스 연결 역할(service-linked role)을 Assume해 데이터를 읽는다. 이 때 실제 데이터 이동(replication)은 없다. 대신 Monitoring Account의 CloudWatch 콘솔이 Source Account의 CloudWatch API를 직접 호출한다. 따라서 Source Account의 데이터는 Source Account에만 저장되고, Monitoring Account는 "읽기 전용 투명 뷰"를 제공한다. 이 차이가 Metrics Stream(데이터를 물리적으로 복사)과 OAM(읽기 위임)의 근본 차이다.
 
-> 📚 **사례**: 한국의 한 대형 커머스 플랫폼(공개 사례 아님)은 30개 이상의 AWS 계정을 운영한다. 운영팀이 각 계정에 별도로 로그인해 모니터링하다가 2021년에 통합 Monitoring Account로 마이그레이션했다. OAM 도입 후 장애 탐지 시간(MTTD)이 평균 8분에서 3분으로 줄었다고 사내 발표에서 공유했다. 단일 대시보드에서 전 계정 알람을 볼 수 있게 되면서, 한 계정에서 시작된 장애가 다른 계정으로 전파되는 패턴을 훨씬 빨리 포착하게 됐다.
+가상의 사례로, 한국의 한 대형 커머스 플랫폼은 30개 이상의 AWS 계정을 운영한다. 운영팀이 각 계정에 별도로 로그인해 모니터링하다가 2021년에 통합 Monitoring Account로 마이그레이션했다. OAM 도입 후 장애 탐지 시간(MTTD)이 평균 8분에서 3분으로 줄었다고 사내 발표에서 공유했다. 단일 대시보드에서 전 계정 알람을 볼 수 있게 되면서, 한 계정에서 시작된 장애가 다른 계정으로 전파되는 패턴을 훨씬 빨리 포착하게 됐다.
 
 ## 다른 플랫폼과의 비교
 
@@ -167,7 +167,7 @@ Google SRE Book(2016)의 4장은 **Four Golden Signals**를 제안한다: Latenc
 - 대시보드 1개, 위젯 10개 이하
 
 **2계층 — Service Dashboard (Golden Signals)**
-- 서비스별 p50/p95/p99 레이턴시
+- 서비스별 p50/p95/p99 지연 시간
 - 요청 수 & 에러율
 - 주요 리소스 포화도 (CPU, 메모리, 큐 깊이)
 - 서비스당 대시보드 1개
@@ -226,7 +226,7 @@ Variables는 대시보드를 동적으로 만드는 기능이다. 드롭다운�
 
 `${InstanceId}`처럼 변수를 메트릭 Dimension 값에 삽입한다. SEARCH 표현식으로 Variables를 자동 채우면 새 인스턴스가 생겨도 대시보드 수정 없이 드롭다운에 자동 추가된다.
 
-> 🔍 **더 깊이**: Variables의 `search` 타입은 CloudWatch SEARCH 함수를 활용해 현재 계정/리전의 메트릭 Dimension 값을 동적으로 채운다. Pattern 타입을 쓰면 메트릭 이름 자체를 변수로 만들 수도 있다. 예를 들어 `{AWS/EC2,InstanceId}` 네임스페이스에서 `MetricName`을 패턴으로 잡으면 CPUUtilization/NetworkIn/DiskReadOps 등을 드롭다운으로 선택할 수 있는 "만능 EC2 대시보드"가 만들어진다. 단, SEARCH 기반 Variables는 결과를 동적으로 가져오므로 대시보드 로드 시간이 약간 늘 수 있다.
+Variables의 `search` 타입은 CloudWatch SEARCH 함수를 활용해 현재 계정/리전의 메트릭 Dimension 값을 동적으로 채운다. Pattern 타입을 쓰면 메트릭 이름 자체를 변수로 만들 수도 있다. 예를 들어 `{AWS/EC2,InstanceId}` 네임스페이스에서 `MetricName`을 패턴으로 잡으면 CPUUtilization/NetworkIn/DiskReadOps 등을 드롭다운으로 선택할 수 있는 "만능 EC2 대시보드"가 만들어진다. 단, SEARCH 기반 Variables는 결과를 동적으로 가져오므로 대시보드 로드 시간이 약간 늘 수 있다.
 
 ## Automatic Dashboards와 Container Insights
 
@@ -251,9 +251,9 @@ Container Insights는 ECS/EKS 환경의 자동 대시보드다. 클러스터, �
 
 50개 팀이 각각 대시보드를 만들면 월 $141의 대시보드 비용이 발생한다. 무시할 수 있는 금액이지만 "대시보드 거버넌스" 없이 운영하다 보면 수백 개의 중복 대시보드가 생기는 경우가 많다. CloudFormation으로 대시보드를 코드로 관리하면 중복 방지와 비용 추적이 된다.
 
-> 💡 **관련 이론**: Amazon의 "Two-Pizza Team" 원칙(Jeff Bezos)처럼, 대시보드도 "팀당 하나의 서비스 대시보드 + 하나의 운영 대시보드"가 적정 수준이다. Dashboard fatigue는 Alert fatigue와 같은 현상이다. 너무 많은 대시보드가 있으면 "어느 대시보드를 봐야 하는지 모르는" 상황이 된다. Netflix의 SRE 팀은 "대시보드는 질문에 답하기 위해 만들어야 한다, 그냥 만들면 안 된다"는 원칙으로 대시보드 수를 관리한다.
+Amazon의 "Two-Pizza Team" 원칙(Jeff Bezos)처럼, 대시보드도 "팀당 하나의 서비스 대시보드 + 하나의 운영 대시보드"가 적정 수준이다. Dashboard fatigue는 Alert fatigue와 같은 현상이다. 너무 많은 대시보드가 있으면 "어느 대시보드를 봐야 하는지 모르는" 상황이 된다. Netflix의 SRE 팀은 "대시보드는 질문에 답하기 위해 만들어야 한다, 그냥 만들면 안 된다"는 원칙으로 대시보드 수를 관리한다.
 
-## 마무리
+## 정리
 
 대시보드는 "관측의 도구"이지 "해결의 도구"가 아니다. 대시보드에서 이상을 발견하면 알람과 자동화가 대응하고, 대시보드는 그 맥락을 추가로 보여주는 역할이다. 운영자가 새벽에 일어나 TV 대시보드를 직접 보며 판단하는 구조는 지속 가능하지 않다. 알람이 "무언가 잘못됐다"를 탐지하고, 대시보드는 "얼마나 잘못됐고 다른 무엇과 연관됐는지"를 보여주는 분업이 올바른 설계다.
 

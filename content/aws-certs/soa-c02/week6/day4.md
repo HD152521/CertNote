@@ -18,7 +18,7 @@ Service Catalog의 해법은 **Launch Constraint Role**이다. 개발자는 카�
 |------|------|-------------|
 | **Product** | CloudFormation Template(버전 관리됨) | 플랫폼팀이 승인한 인프라 패턴 |
 | **Portfolio** | Product 묶음 + 사용자/그룹 권한 | 팀 또는 역할별 접근 제어 |
-| **Provisioned Product** | 사용자가 실제 만든 Stack 인스턴스 | 각 팀이 소유한 운영 리소스 |
+| **Provisioned Product** | 사용자가 실제 만든 스택 인스턴스 | 각 팀이 소유한 운영 리소스 |
 | **Launch Constraint** | 프로비저닝 시 사용할 IAM Role | 사용자 권한 우회, 표준 강제 |
 | **Notification Constraint** | SNS로 프로비저닝 이벤트 알림 | 감사, 변경 추적 |
 | **Tag Constraint** | 강제 태그 + 허용 태그 목록 | 비용 할당, 자원 분류 강제 |
@@ -119,7 +119,7 @@ LaunchRole:
               Resource: '*'
 ```
 
-> 🔍 **더 깊이**: Service Catalog + Permission Boundary의 조합은 AWS에서 가장 정교한 권한 위임 패턴 중 하나다. 구조는 이렇다: (1) 개발자(IAM User/Role)는 Service Catalog API를 호출할 권한만 갖는다. (2) Service Catalog가 Launch Role을 Assume한다. (3) Launch Role의 실제 권한 = (Launch Role의 IAM Policy) ∩ (Permission Boundary). Permission Boundary가 없으면 Launch Role이 무제한 권한을 가질 수 있어, 개발자가 Service Catalog를 통해 Admin 권한으로 임의 리소스를 만들 수 있다. 이를 "권한 에스컬레이션(Privilege Escalation)"이라 부르며, Permission Boundary가 이를 차단하는 가드레일이다.
+Service Catalog + Permission Boundary의 조합은 AWS에서 가장 정교한 권한 위임 패턴 중 하나다. 구조는 이렇다: (1) 개발자(IAM User/Role)는 Service Catalog API를 호출할 권한만 갖는다. (2) Service Catalog가 Launch Role을 Assume한다. (3) Launch Role의 실제 권한 = (Launch Role의 IAM Policy) ∩ (Permission Boundary). Permission Boundary가 없으면 Launch Role이 무제한 권한을 가질 수 있어, 개발자가 Service Catalog를 통해 Admin 권한으로 임의 리소스를 만들 수 있다. 이를 "권한 에스컬레이션(Privilege Escalation)"이라 부르며, Permission Boundary가 이를 차단하는 가드레일이다.
 
 **멀티 계정 Portfolio 공유:**
 
@@ -147,7 +147,7 @@ aws servicecatalog associate-principal-with-portfolio \
   --principal-type IAM
 ```
 
-> 📚 **사례**: 2023년 대형 제조업체 J사는 15개 사업부가 각각 AWS 계정을 운영하고 있었다. 각 사업부 개발팀이 독립적으로 EC2, RDS 등을 프로비저닝하다 보니 보안 그룹 설정이 제각각이었고, 일부 팀은 0.0.0.0/0으로 RDS를 열어두는 사태가 발생했다. 해결책으로 중앙 Platform Engineering 계정에서 "승인된 데이터베이스 패키지" 제품을 만들어 15개 사업부 계정에 Portfolio를 공유했다. 이후 어떤 사업부도 표준 패키지 밖의 RDS를 만들 수 없게 됐다. 6개월 후 보안 감사에서 "모든 RDS가 표준 구성을 준수함"을 확인했다.
+가상의 사례로, 2023년 대형 제조업체 J사는 15개 사업부가 각각 AWS 계정을 운영하고 있었다. 각 사업부 개발팀이 독립적으로 EC2, RDS 등을 프로비저닝하다 보니 보안 그룹 설정이 제각각이었고, 일부 팀은 0.0.0.0/0으로 RDS를 열어두는 사태가 발생했다. 해결책으로 중앙 Platform Engineering 계정에서 "승인된 데이터베이스 패키지" 제품을 만들어 15개 사업부 계정에 Portfolio를 공유했다. 이후 어떤 사업부도 표준 패키지 밖의 RDS를 만들 수 없게 됐다. 6개월 후 보안 감사에서 "모든 RDS가 표준 구성을 준수함"을 확인했다.
 
 ## AppConfig: 코드 재배포 없는 설정 변경의 과학
 
@@ -315,7 +315,7 @@ def handler(event, context):
         return process_legacy_checkout(event)
 ```
 
-> 💡 **관련 이론**: AppConfig의 점진적 배포(Progressive Delivery)는 Martin Fowler가 2010년 정의한 "Feature Toggle" 패턴의 AWS 관리형 구현이다. Fowler는 Feature Toggle을 4가지 타입으로 분류했다: (1) Release Toggles(배포 중 임시), (2) Experiment Toggles(A/B 테스트), (3) Ops Toggles(운영 스위치), (4) Permission Toggles(계층별 접근). AppConfig는 주로 Release Toggles와 Ops Toggles를 지원한다. 자동 롤백은 제어 이론의 피드백 제어 루프다: CloudWatch Alarm이 에러율 임계값을 감지하면 AppConfig가 교정 액션(롤백)을 실행한다.
+AppConfig의 점진적 배포(Progressive Delivery)는 Martin Fowler가 2010년 정의한 "Feature Toggle" 패턴의 AWS 관리형 구현이다. Fowler는 Feature Toggle을 4가지 타입으로 분류했다: (1) Release Toggles(배포 중 임시), (2) Experiment Toggles(A/B 테스트), (3) Ops Toggles(운영 스위치), (4) Permission Toggles(계층별 접근). AppConfig는 주로 Release Toggles와 Ops Toggles를 지원한다. 자동 롤백은 제어 이론의 피드백 제어 루프다: CloudWatch Alarm이 에러율 임계값을 감지하면 AppConfig가 교정 액션(롤백)을 실행한다.
 
 **AppConfig Validator 심화:**
 
@@ -415,14 +415,14 @@ aws servicecatalog-appregistry list-associated-resources \
 **Application Manager 통합 뷰에서 볼 수 있는 것:**
 
 - 애플리케이션에 속한 모든 CloudFormation Stack 상태
-- Stack 내 각 리소스의 운영 상태
+- 스택 내 각 리소스의 운영 상태
 - CloudWatch Alarms (애플리케이션 레벨 집계)
 - CloudWatch Logs (관련 로그 그룹)
 - OpsCenter OpsItems (운영 이슈)
 - Cost Explorer (애플리케이션별 비용)
 - Config 규정 준수 상태
 
-> 🔍 **더 깊이**: AppRegistry의 "Application as a First-Class Citizen" 접근은 DORA(DevOps Research and Assessment) 지표의 "Deployment Frequency"와 "Change Failure Rate"를 측정하는 단위가 개별 리소스가 아니라 "서비스(Application)"이어야 한다는 통찰에서 나왔다. 운영 관점에서 "EC2 i-abc123이 CPU 90%"는 정보가 적지만, "OrderService의 CPU가 90%"는 즉각적인 비즈니스 영향도를 알 수 있다. AppRegistry는 이 추상화를 AWS 레벨에서 공식적으로 지원한다.
+AppRegistry의 "Application as a First-Class Citizen" 접근은 DORA(DevOps Research and Assessment) 지표의 "Deployment Frequency"와 "Change Failure Rate"를 측정하는 단위가 개별 리소스가 아니라 "서비스(Application)"이어야 한다는 통찰에서 나왔다. 운영 관점에서 "EC2 i-abc123이 CPU 90%"는 정보가 적지만, "OrderService의 CPU가 90%"는 즉각적인 비즈니스 영향도를 알 수 있다. AppRegistry는 이 추상화를 AWS 레벨에서 공식적으로 지원한다.
 
 ## 세 서비스의 통합 패턴
 
@@ -464,7 +464,7 @@ Service Catalog, AppConfig, AppRegistry는 각각 독립적으로 사용할 수 
     └── Service Catalog Provisioned Products로 표준 준수 감사
 ```
 
-> 📚 **사례**: 2024년 전자상거래 K사는 50개 마이크로서비스를 운영하며 두 가지 문제가 있었다. 첫째, 각 팀이 다른 방식으로 인프라를 구성해 보안 감사 시 "표준 미준수" 항목이 항상 나왔다. 둘째, 새 기능을 배포할 때마다 전체 서비스를 다운시켰다. 해결책: (1) Service Catalog로 5가지 표준 인프라 패턴(웹, 데이터, 배치, 실시간, 분석)을 제품화하고 모든 팀이 이 중에서만 선택하도록 했다. (2) AppConfig Feature Flags로 새 기능을 코드에 포함시키되 비활성화 상태로 배포, 이후 점진적으로 활성화했다. (3) AppRegistry로 50개 서비스의 자산을 Application 단위로 정리해 OpsCenter에서 서비스별 운영 이슈를 추적했다. 결과: 보안 감사 "표준 미준수" 0건, 배포 관련 장애 67% 감소.
+가상의 사례로, 2024년 전자상거래 K사는 50개 마이크로서비스를 운영하며 두 가지 문제가 있었다. 첫째, 각 팀이 다른 방식으로 인프라를 구성해 보안 감사 시 "표준 미준수" 항목이 항상 나왔다. 둘째, 새 기능을 배포할 때마다 전체 서비스를 다운시켰다. 해결책: (1) Service Catalog로 5가지 표준 인프라 패턴(웹, 데이터, 배치, 실시간, 분석)을 제품화하고 모든 팀이 이 중에서만 선택하도록 했다. (2) AppConfig Feature Flags로 새 기능을 코드에 포함시키되 비활성화 상태로 배포, 이후 점진적으로 활성화했다. (3) AppRegistry로 50개 서비스의 자산을 Application 단위로 정리해 OpsCenter에서 서비스별 운영 이슈를 추적했다. 결과: 보안 감사 "표준 미준수" 0건, 배포 관련 장애 67% 감소.
 
 ## SOA-C02 시험 관점 핵심 정리
 

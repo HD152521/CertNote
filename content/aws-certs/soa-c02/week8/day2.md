@@ -2,7 +2,7 @@
 
 VPC를 만들고 인스턴스를 띄우면 트래픽이 흐르기 시작한다. 그런데 "지금 무엇이 흐르고 있는지"를 보려고 하면 갑자기 막막해진다. 운영자가 가장 자주 묻는 질문은 셋이다 — ① 누가 누구와 얼마나 통신하고 있나, ② 의심스러운 패킷의 실제 내용은 무엇인가, ③ 이 인스턴스가 저 RDS에 정말로 닿을 수 있나. AWS는 이 세 질문에 각각 다른 도구를 준다. Flow Logs, Traffic Mirroring, Reachability Analyzer. 이름만 보면 비슷해 보이지만 본질이 완전히 다르다.
 
-이 글에선 세 도구가 왜 따로 만들어졌는지, 각자 어떤 데이터 추상화 레벨에서 작동하는지, 그리고 운영자가 "어느 도구를 먼저 켜야 하는지" 결정하는 기준을 따라간다. 시험 관점에선 Flow Logs의 미기록 트래픽(169.254.x.x 함정)이 가장 빈출이지만, 실무에선 세 도구를 언제 같이 쓰는지가 더 중요하다.
+이 글에선 세 도구가 왜 따로 만들어졌는지, 각자 어떤 데이터 추상화 레벨에서 작동하는지, 그리고 운영자가 "어느 도구를 먼저 켜야 하는지" 결정하는 기준을 따라간다. 시험 관점에선 Flow Logs의 미기록 트래픽(169.254.x.x 함정)이 가장 출제이지만, 실무에선 세 도구를 언제 같이 쓰는지가 더 중요하다.
 
 ## 메타데이터 vs 패킷 vs 시뮬레이션 — 세 가지 추상화
 
@@ -32,7 +32,7 @@ Flow Logs는 ENI를 통과하는 모든 트래픽 흐름의 **요약**을 기록
 
 ### 미기록 트래픽 함정
 
-시험에서 가장 자주 나오는 함정이 "Flow Logs에 안 기록되는 트래픽". 정확히 다섯 종류다.
+시험에서 다루는 함정이 "Flow Logs에 안 기록되는 트래픽". 정확히 다섯 종류다.
 
 - AWS DNS resolver (`169.254.169.253`) — VPC가 제공하는 DNS 트래픽
 - Instance Metadata Service (`169.254.169.254`) — IMDS v1/v2
@@ -42,7 +42,7 @@ Flow Logs는 ENI를 통과하는 모든 트래픽 흐름의 **요약**을 기록
 
 이게 왜 빠져 있나? **AWS 인프라 내부 트래픽**이라 hypervisor가 ENI 큐로 보내지 않고 mapping service에서 직접 처리한다. ENI를 통과하지 않으니 ENI 단위로 캡처하는 Flow Logs도 못 본다. 운영자가 "왜 IMDS 호출이 안 보이지"를 디버깅하다가 한참 헤매는 케이스가 흔한데, 이건 버그가 아니라 설계다.
 
-> ⚠️ **함정**: 169.254.x.x 트래픽이 안 보인다는 사실은 시험 단골이지만, **TCP RST와 SYN-only 패킷도 보이지 않는 경우가 있다**. 정확히는 ENI에서 hypervisor가 즉시 거부한 패킷(예: 매칭되는 listening socket이 없어서 OS가 RST를 보내기 전에 hypervisor가 차단한 경우)은 일부 누락된다. 이건 시험 범위는 아니지만 실무에서 디버깅 시 알아두면 시간 절약된다.
+> ⚠️ **함정**: 169.254.x.x 트래픽이 안 보인다는 사실은 시험 범위에 드는 내용이지만, **TCP RST와 SYN-only 패킷도 보이지 않는 경우가 있다**. 정확히는 ENI에서 hypervisor가 즉시 거부한 패킷(예: 매칭되는 listening socket이 없어서 OS가 RST를 보내기 전에 hypervisor가 차단한 경우)은 일부 누락된다. 이건 시험 범위는 아니지만 실무에서 디버깅 시 알아두면 시간 절약된다.
 
 ### 저장소 — CloudWatch Logs vs S3
 
@@ -58,7 +58,7 @@ Flow Logs를 어디 보낼지가 운영 비용과 분석 속도를 결정한다.
 
 규모 큰 환경에선 보통 **S3 Parquet + Athena**가 압도적으로 저렴하다. 1TB의 Flow Logs를 한 달 보관할 때 CloudWatch Logs는 약 $530, S3 Parquet은 약 $25. 게다가 Parquet은 컬럼형 압축이라 Athena 쿼리가 스캔하는 바이트가 row-based 텍스트보다 5-10배 작다 — 쿼리 비용도 그만큼 줄어든다.
 
-> 🔍 **더 깊이**: Parquet 포맷이 Athena에 유리한 이유는 두 가지다. 첫째, **컬럼 단위 압축**(snappy/gzip/zstd)으로 압축률이 좋다. 둘째, **predicate pushdown** — `WHERE action='REJECT'` 쿼리를 실행하면 Athena는 Parquet 메타데이터를 보고 action 컬럼이 모두 ACCEPT인 파일은 아예 열지 않는다. 게다가 AWS Flow Logs의 Parquet 포맷은 **Hive-compatible partitioning**(year=YYYY/month=MM/day=DD/hour=HH)을 지원해서 `WHERE year=2026 AND month=05`로 시간 범위 쿼리 시 다른 날짜 파티션은 아예 스캔하지 않는다. 잘 설계된 쿼리는 1TB 데이터에서 1MB만 스캔하기도 한다.
+Parquet 포맷이 Athena에 유리한 이유는 두 가지다. 첫째, **컬럼 단위 압축**(snappy/gzip/zstd)으로 압축률이 좋다. 둘째, **predicate pushdown** — `WHERE action='REJECT'` 쿼리를 실행하면 Athena는 Parquet 메타데이터를 보고 action 컬럼이 모두 ACCEPT인 파일은 아예 열지 않는다. 게다가 AWS Flow Logs의 Parquet 포맷은 **Hive-compatible partitioning**(year=YYYY/month=MM/day=DD/hour=HH)을 지원해서 `WHERE year=2026 AND month=05`로 시간 범위 쿼리 시 다른 날짜 파티션은 아예 스캔하지 않는다. 잘 설계된 쿼리는 1TB 데이터에서 1MB만 스캔하기도 한다.
 
 ### Logs Insights vs Athena — 어느 쪽?
 
@@ -141,7 +141,7 @@ fields srcAddr, pktSrcAddr, dstAddr, dstPort
 | stats count(*) by pktSrcAddr     # 실제 발신 인스턴스
 ```
 
-> 📚 **사례**: 2019년 Capital One의 데이터 유출 사고에서 공격자가 잘못 구성된 WAF를 통한 SSRF로 IMDS의 IAM 역할 자격증명을 탈취해 S3 데이터를 외부로 빼냈고, 회사가 이를 안 것은 약 4개월 뒤 외부 제보를 통해서였다. 이런 대량 반출은 평소 대비 비정상적으로 큰 outbound 트래픽으로 Flow Logs에 드러나는 유형이라, Flow Logs + GuardDuty 결합이 표준 권장 사항으로 꼽힌다. Logs Insights + Metric Filter + CloudWatch Alarm으로 "한 ENI에서 outbound bytes가 baseline의 5배 이상" 같은 알람을 깔아두는 게 첫 단계다.
+2019년 Capital One의 데이터 유출 사고에서 공격자가 잘못 구성된 WAF를 통한 SSRF로 IMDS의 IAM 역할 자격증명을 탈취해 S3 데이터를 외부로 빼냈고, 회사가 이를 안 것은 약 4개월 뒤 외부 제보를 통해서였다. 이런 대량 반출은 평소 대비 비정상적으로 큰 outbound 트래픽으로 Flow Logs에 드러나는 유형이라, Flow Logs + GuardDuty 결합이 표준 권장 사항으로 꼽힌다. Logs Insights + Metric Filter + CloudWatch Alarm으로 "한 ENI에서 outbound bytes가 baseline의 5배 이상" 같은 알람을 깔아두는 게 첫 단계다.
 
 ## Traffic Mirroring — Nitro 칩이 만든 새 가능성
 
@@ -168,7 +168,7 @@ Traffic Mirroring은 **트래픽을 복제해서 보내는 비용**이 따로 �
 
 운영 권장 패턴: ① Mirror Filter로 의심스러운 프로토콜만(예: TCP/445 SMB) 좁히기, ② 단기간만 활성화 후 비활성화, ③ 분석 인스턴스에 처리 한계가 있으므로 source 트래픽 양 사전 측정.
 
-> 🔍 **더 깊이**: Traffic Mirroring이 패킷을 복사할 때 **VXLAN 캡슐화**를 한다. 원본 패킷이 그대로 가는 게 아니라 VXLAN 헤더(8 bytes) + UDP 헤더(8 bytes) + IP 헤더(20 bytes) = 36 bytes 오버헤드가 추가된다. 그래서 MTU가 작은 환경에선 미러링된 패킷이 fragmentation을 겪을 수 있다. 분석 인스턴스의 OS가 VXLAN을 decap해야 원본 패킷을 볼 수 있는데, 보통 Suricata/Zeek는 이걸 자동으로 처리하지만, 직접 만든 캡처 도구는 명시적 구성이 필요하다.
+Traffic Mirroring이 패킷을 복사할 때 **VXLAN 캡슐화**를 한다. 원본 패킷이 그대로 가는 게 아니라 VXLAN 헤더(8 bytes) + UDP 헤더(8 bytes) + IP 헤더(20 bytes) = 36 bytes 오버헤드가 추가된다. 그래서 MTU가 작은 환경에선 미러링된 패킷이 fragmentation을 겪을 수 있다. 분석 인스턴스의 OS가 VXLAN을 decap해야 원본 패킷을 볼 수 있는데, 보통 Suricata/Zeek는 이걸 자동으로 처리하지만, 직접 만든 캡처 도구는 명시적 구성이 필요하다.
 
 ## Reachability Analyzer — 패킷 없이 답을 얻는다
 
@@ -197,7 +197,7 @@ NAA는 **Access Scope**라는 쿼리를 정의한다 — "Source = IGW, Destinat
 
 대형 환경에서 NAA를 정기 실행하면 "어제까지 안전했는데 오늘 새 SG 추가로 IGW 노출된 인스턴스"가 자동으로 탐지된다. Config Rule이나 Lambda 정기 실행과 결합하는 게 일반적이다.
 
-> 💡 **관련 이론**: Reachability Analyzer의 알고리즘은 학술계의 **Network Verification** 분야에서 발전한 기법이다. 2010년대 초 Stanford의 Header Space Analysis(HSA)와 그 후속 NetKAT(Cornell), Batfish(Princeton/Intentionet)가 같은 문제를 풀었다 — "네트워크 정책을 SMT solver나 BDD로 모델링해서 도달성 결정". AWS는 이 학술 기법을 SDN 컨트롤 플레인에 통합해 상품화했다. 이 분야 논문 한 편을 추천한다면 "A General Approach to Network Configuration Analysis"(Fogel et al., NSDI 2015) — Batfish의 원조 논문이고 Reachability Analyzer가 비슷한 방향이다.
+Reachability Analyzer의 알고리즘은 학술계의 **Network Verification** 분야에서 발전한 기법이다. 2010년대 초 Stanford의 Header Space Analysis(HSA)와 그 후속 NetKAT(Cornell), Batfish(Princeton/Intentionet)가 같은 문제를 풀었다 — "네트워크 정책을 SMT solver나 BDD로 모델링해서 도달성 결정". AWS는 이 학술 기법을 SDN 컨트롤 플레인에 통합해 상품화했다. 이 분야 논문 한 편을 추천한다면 "A General Approach to Network Configuration Analysis"(Fogel et al., NSDI 2015) — Batfish의 원조 논문이고 Reachability Analyzer가 비슷한 방향이다.
 
 ## IPAM — 멀티 계정의 IP 거버넌스
 
@@ -216,11 +216,11 @@ IPAM Top Pool: 10.0.0.0/8
 
 IPAM은 **사용량 추적**도 한다 — "현재 pool의 70%가 사용 중, prod region의 다음 VPC는 자동 거부될 예정". 이건 IP 고갈을 사전에 알려준다. Slack의 2020년 NAT 사고처럼, IP 한계 문제는 보통 사고가 터진 후에 알게 되는데 IPAM은 사전 알람을 가능하게 한다.
 
-## 정리하며
+## 정리
 
 VPC 트래픽을 들여다보는 세 도구 — Flow Logs, Traffic Mirroring, Reachability Analyzer — 는 각각 **메타데이터, 패킷, 시뮬레이션**이라는 다른 추상화 레벨에서 작동한다. 운영자가 어떤 질문에 답하려는지 먼저 정하고, 그에 맞는 도구를 골라야 한다. "누가 누구와 통신하나"는 Flow Logs, "무엇이 흐르는가"는 Traffic Mirroring, "닿을 수 있나"는 Reachability Analyzer.
 
-함정 두 개만 기억하자. ① Flow Logs는 169.254.x.x AWS 내부 트래픽을 안 본다 — 이건 ENI를 거치지 않는 hypervisor 직접 처리 때문. ② Traffic Mirroring은 Nitro 인스턴스만 지원한다 — SDN 칩이 패킷을 보고 있어야 복사도 가능하다는 아키텍처 결과.
+함정은 두 개다. ① Flow Logs는 169.254.x.x AWS 내부 트래픽을 안 본다 — 이건 ENI를 거치지 않는 hypervisor 직접 처리 때문. ② Traffic Mirroring은 Nitro 인스턴스만 지원한다 — SDN 칩이 패킷을 보고 있어야 복사도 가능하다는 아키텍처 결과.
 
 다음 글에선 VPC가 외부와 통신하는 방법들 — NAT Gateway, VPC Endpoint, PrivateLink — 를 본다. Flow Logs로 NAT GW 비용 폭증을 발견했다면, 다음 단계는 "어떤 트래픽을 NAT 우회시킬지" 결정하는 것이다.
 

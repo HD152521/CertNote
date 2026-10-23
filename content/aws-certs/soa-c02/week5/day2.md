@@ -17,7 +17,7 @@ Run Command는 단순해 보이지만 내부적으로 정교한 분산 시스템
 7. **에러 평가**: 현재까지 에러율이 Error Threshold를 초과하면 나머지 배치 실행 중단
 8. **다음 배치**: 에러가 임계값 미만이면 다음 15대를 실행
 
-> 💡 **관련 이론**: Run Command의 Concurrency 제어는 분산 시스템의 "circuit breaker pattern"과 "bulkhead pattern"을 결합한 설계다. Michael Nygard의 *Release It!*(2007)에서 circuit breaker는 장애 전파를 막는 패턴으로, Error Threshold 초과 시 나머지 실행을 중단하는 것이 정확한 구현이다. Bulkhead(격벽)는 동시 실행 수를 제한해 실패가 전체로 번지지 않도록 격리한다. 운영자가 `--max-concurrency 10%`를 설정하는 것은 이 두 패턴을 동시에 적용하는 것이다. Google SRE Book(Beyer et al., 2016) 13장 "Emergency Response"는 같은 원칙을 "rate limiting"으로 표현한다.
+Run Command의 Concurrency 제어는 분산 시스템의 "circuit breaker pattern"과 "bulkhead pattern"을 결합한 설계다. Michael Nygard의 「Release It!」(2007)에서 circuit breaker는 장애 전파를 막는 패턴으로, Error Threshold 초과 시 나머지 실행을 중단하는 것이 정확한 구현이다. Bulkhead(격벽)는 동시 실행 수를 제한해 실패가 전체로 번지지 않도록 격리한다. 운영자가 `--max-concurrency 10%`를 설정하는 것은 이 두 패턴을 동시에 적용하는 것이다. Google SRE Book(Beyer et al., 2016) 13장 "Emergency Response"는 같은 원칙을 "rate limiting"으로 표현한다.
 
 ## Rate Control의 수학: 언제 퍼센트, 언제 절대값?
 
@@ -36,7 +36,7 @@ Run Command의 `--max-concurrency`와 `--max-errors`는 퍼센트(%）또는 절
 - 150대, max-errors=5%: 7대(ceil(150 × 0.05)) 이상 실패 시 중단
 - 실패 7대가 첫 배치(15대)에서 발생하면, 나머지 135대는 실행되지 않는다
 
-> 🔍 **더 깊이**: `--max-errors "0"`으로 설정하면 단 1개의 실패도 허용하지 않아 즉시 중단된다. 이는 "zero-tolerance rollout"으로, 새 크리티컬 패치가 특정 OS 버전과 호환성 문제가 있는지 모르는 상황에서 한두 대에 먼저 테스트하는 용도로 적합하다. 반면 `--max-errors "100%"`는 모든 실패를 무시하고 전체 대상에 강제 실행하는 것으로, 이미 알려진 일부 비준수 인스턴스가 있어도 전체를 업데이트해야 할 때 사용한다.
+`--max-errors "0"`으로 설정하면 단 1개의 실패도 허용하지 않아 즉시 중단된다. 이는 "zero-tolerance rollout"으로, 새 크리티컬 패치가 특정 OS 버전과 호환성 문제가 있는지 모르는 상황에서 한두 대에 먼저 테스트하는 용도로 적합하다. 반면 `--max-errors "100%"`는 모든 실패를 무시하고 전체 대상에 강제 실행하는 것으로, 이미 알려진 일부 비준수 인스턴스가 있어도 전체를 업데이트해야 할 때 사용한다.
 
 ## SSM Document: 명령의 정의
 
@@ -63,7 +63,7 @@ AWS-UpdateSSMAgent          - SSM Agent 자동 업데이트
 AmazonCloudWatch-ManageAgent - CloudWatch Agent 관리
 ```
 
-> 🔍 **더 깊이**: SSM Document는 버전 관리를 지원한다. Document의 특정 버전을 `$LATEST`, `$DEFAULT`, 또는 숫자(1, 2, 3...)로 지정할 수 있다. `$LATEST`는 항상 최신 버전이고, `$DEFAULT`는 운영자가 안정 버전으로 지정한 것이다. 운영 환경에서는 항상 `$DEFAULT`나 특정 버전 번호를 명시해 예상치 못한 Document 업데이트로 인한 동작 변화를 막아야 한다. AWS 관리형 Document(`AWS-*`)는 AWS가 업데이트하며 버전 고정이 중요하다. 커스텀 Document는 Git처럼 의미 있는 버전 관리를 적용하고, CI/CD 파이프라인에서 `create-document`→테스트→`update-document-default-version`으로 Blue-Green 배포하는 패턴이 표준이다.
+SSM Document는 버전 관리를 지원한다. Document의 특정 버전을 `$LATEST`, `$DEFAULT`, 또는 숫자(1, 2, 3...)로 지정할 수 있다. `$LATEST`는 항상 최신 버전이고, `$DEFAULT`는 운영자가 안정 버전으로 지정한 것이다. 운영 환경에서는 항상 `$DEFAULT`나 특정 버전 번호를 명시해 예상치 못한 Document 업데이트로 인한 동작 변화를 막아야 한다. AWS 관리형 Document(`AWS-*`)는 AWS가 업데이트하며 버전 고정이 중요하다. 커스텀 Document는 Git처럼 의미 있는 버전 관리를 적용하고, CI/CD 파이프라인에서 `create-document`→테스트→`update-document-default-version`으로 Blue/Green 배포하는 패턴이 표준이다.
 
 ## Run Command 실전 패턴
 
@@ -179,7 +179,7 @@ aws ssm create-association \
 2. 누군가 CW Agent 설정을 인스턴스에서 직접 변경(drift) → 다음 스케줄 실행(최대 1일 후)에 자동 교정
 3. CW Agent가 충돌로 종료 → 스케줄 실행 시 `optionalRestart: yes`로 자동 재시작
 
-> 📚 **사례**: 2023년, 대형 이커머스 플랫폼 B사가 State Manager로 CloudWatch Agent 설정 표준화를 구현했다. 이전에는 새 인스턴스가 스케일아웃될 때마다 개발팀이 수동으로 CW Agent를 설정해 메트릭 수집이 누락되는 일이 잦았다. State Manager Association 도입 후 6개월 동안 "메트릭 수집 누락" 인시던트가 0건이었다. 또한 누군가 실수로 Agent 설정을 변경했을 때 24시간 내 자동 복구되는 것도 확인했다. 컴플라이언스 대시보드에서 Association 실패 인스턴스를 실시간으로 파악할 수 있어 운영 가시성도 높아졌다.
+가상의 사례로, 2023년, 대형 이커머스 플랫폼 B사가 State Manager로 CloudWatch Agent 설정 표준화를 구현했다. 이전에는 새 인스턴스가 스케일아웃될 때마다 개발팀이 수동으로 CW Agent를 설정해 메트릭 수집이 누락되는 일이 잦았다. State Manager Association 도입 후 6개월 동안 "메트릭 수집 누락" 인시던트가 0건이었다. 또한 누군가 실수로 Agent 설정을 변경했을 때 24시간 내 자동 복구되는 것도 확인했다. 컴플라이언스 대시보드에서 Association 실패 인스턴스를 실시간으로 파악할 수 있어 운영 가시성도 높아졌다.
 
 **Association의 즉시 실행 (ApplyOnlyAtCronInterval 제어):**
 
@@ -198,7 +198,7 @@ aws ssm start-associations-once \
   --association-ids "asc-0123456789abcdef0"
 ```
 
-> 💡 **관련 이론**: State Manager의 "desired state convergence" 개념은 제어 이론의 "feedback control loop"와 동일하다. 목표 상태(setpoint)와 현재 상태(process variable)의 차이(error)를 감지하고 수정 작업(control action)을 적용한다. Kubernetes의 Reconciler 패턴, Puppet의 Catalog 적용, AWS Config의 자동 교정 모두 같은 원리다. State Manager는 스케줄을 "sampling interval"로 사용해 drift를 정기적으로 감지·교정하는 discrete-time 제어 루프를 구현한다.
+State Manager의 "desired state convergence" 개념은 제어 이론의 "feedback control loop"와 동일하다. 목표 상태(setpoint)와 현재 상태(process variable)의 차이(error)를 감지하고 수정 작업(control action)을 적용한다. Kubernetes의 Reconciler 패턴, Puppet의 Catalog 적용, AWS Config의 자동 교정 모두 같은 원리다. State Manager는 스케줄을 "sampling interval"로 사용해 drift를 정기적으로 감지·교정하는 discrete-time 제어 루프를 구현한다.
 
 **Pseudo Parameters로 동적 Document:**
 
@@ -251,7 +251,7 @@ Maintenance Window (시간대 정의)
 
 **Cutoff의 중요성:** Duration 4시간, Cutoff 1시간이면 실제 새 작업을 시작할 수 있는 시간은 3시간이다. 03:00에 이미 시작한 작업은 04:00이 되어도 계속 실행된다. Cutoff는 "Window가 끝나기 직전에 새 작업이 시작되어 미완료 상태로 끊기는" 상황을 방지한다.
 
-> 💡 **관련 이론**: Maintenance Window의 Cutoff 개념은 운영 시스템에서 "graceful shutdown" 패턴과 동일하다. TCP 연결의 FIN/ACK 과정처럼, 새 작업 접수를 먼저 차단하고 진행 중인 작업이 완료되길 기다린다. 쿠버네티스의 `terminationGracePeriodSeconds`도 같은 원리다. 분산 시스템에서 "진행 중인 작업은 완료시키되 새 작업은 받지 않는다"는 원칙은 데이터 무결성의 기본이다. POSIX의 SIGTERM → SIGKILL 시퀀스도 같은 graceful shutdown 철학을 구현한다.
+Maintenance Window의 Cutoff 개념은 운영 시스템에서 "graceful shutdown" 패턴과 동일하다. TCP 연결의 FIN/ACK 과정처럼, 새 작업 접수를 먼저 차단하고 진행 중인 작업이 완료되길 기다린다. 쿠버네티스의 `terminationGracePeriodSeconds`도 같은 원리다. 분산 시스템에서 "진행 중인 작업은 완료시키되 새 작업은 받지 않는다"는 원칙은 데이터 무결성의 기본이다. POSIX의 SIGTERM → SIGKILL 시퀀스도 같은 graceful shutdown 철학을 구현한다.
 
 ## CRON 표현식 완전 정복
 
@@ -348,7 +348,7 @@ aws ssm describe-maintenance-window-executions \
   --output table
 ```
 
-> 📚 **사례**: 2022년 의료 SaaS 기업 C사가 HIPAA 컴플라이언스를 위한 패치 자동화를 구현했다. Maintenance Window를 월 2회(1일, 15일 KST 새벽 2시)로 설정하고 Task 순서를 EBS 스냅샷(Priority 1) → ELB Deregister(Priority 2) → 패치(Priority 3) → Health Check(Priority 4) → ELB Register(Priority 5)로 구성했다. max-concurrency=10%, max-errors=5%로 설정해 패치 실패가 연쇄되지 않도록 했다. 도입 전에는 패치 담당자가 매주 토요일 새벽에 출근했는데, 도입 후 완전 무인 자동화로 전환됐다. HIPAA 164.312(c)(2) 요구사항(패치 검증 절차)을 S3 저장 패치 로그로 충족했다.
+가상의 사례로, 2022년 의료 SaaS 기업 C사가 HIPAA 컴플라이언스를 위한 패치 자동화를 구현했다. Maintenance Window를 월 2회(1일, 15일 KST 새벽 2시)로 설정하고 Task 순서를 EBS 스냅샷(Priority 1) → ELB Deregister(Priority 2) → 패치(Priority 3) → Health Check(Priority 4) → ELB Register(Priority 5)로 구성했다. max-concurrency=10%, max-errors=5%로 설정해 패치 실패가 연쇄되지 않도록 했다. 도입 전에는 패치 담당자가 매주 토요일 새벽에 출근했는데, 도입 후 완전 무인 자동화로 전환됐다. HIPAA 164.312(c)(2) 요구사항(패치 검증 절차)을 S3 저장 패치 로그로 충족했다.
 
 ## Compliance: 패치와 Association의 통합 대시보드
 
@@ -383,7 +383,7 @@ aws ssm put-compliance-items \
   --items '[{"Id":"SSL_CERT_EXPIRY","Title":"SSL cert valid","Severity":"CRITICAL","Status":"COMPLIANT","Details":{"expiry":"2027-01-01"}}]'
 ```
 
-> 🔍 **더 깊이**: Compliance의 `Custom:*` 유형을 활용하면 SSM 밖의 보안 검사 결과도 중앙 대시보드에 통합할 수 있다. 예를 들어 CIS Benchmark 스캔 결과, SSL 인증서 만료 여부, 커스텀 애플리케이션 설정 검증 결과를 Lambda에서 `put-compliance-items`로 보고하면 Compliance 대시보드에 통합된다. 이 데이터는 Security Hub나 Audit Manager로도 집계 가능하다. AWS는 이 패턴을 "operational data aggregation"이라고 부르며, 멀티 계정 환경에서는 Organizations + Resource Data Sync로 중앙 계정에 모든 계정의 컴플라이언스 데이터를 집계하는 구조가 표준이다.
+Compliance의 `Custom:*` 유형을 활용하면 SSM 밖의 보안 검사 결과도 중앙 대시보드에 통합할 수 있다. 예를 들어 CIS Benchmark 스캔 결과, SSL 인증서 만료 여부, 커스텀 애플리케이션 설정 검증 결과를 Lambda에서 `put-compliance-items`로 보고하면 Compliance 대시보드에 통합된다. 이 데이터는 Security Hub나 Audit Manager로도 집계 가능하다. AWS는 이 패턴을 "operational data aggregation"이라고 부르며, 멀티 계정 환경에서는 Organizations + Resource Data Sync로 중앙 계정에 모든 계정의 컴플라이언스 데이터를 집계하는 구조가 표준이다.
 
 ## Run Command vs State Manager vs Maintenance Window: 언제 무엇을?
 

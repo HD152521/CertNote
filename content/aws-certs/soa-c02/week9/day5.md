@@ -54,9 +54,9 @@
 | 데이터 소스 | Flow Logs/CloudTrail/DNS | OS 패키지/이미지/코드 | S3 객체 내용 | ASFF finding |
 | 과금 기준 | 분석 이벤트량 | 스캔 리소스 수 | 스캔 데이터 바이트 | finding 수 |
 
-> 🔍 **더 깊이**: 비교표를 외울 때 "왜 이 차이가 생기는가"를 붙이면 변형 문제에 강해진다. 예로 Secrets Manager만 자동 회전을 지원하는 건 그것이 회전을 위한 4단계 lifecycle(createSecret → setSecret → testSecret → finishSecret)을 Lambda로 오케스트레이션하도록 설계됐기 때문이고, Parameter Store는 단순 키-값 저장소라 그 오케스트레이션 개념 자체가 없다. Macie만 데이터 바이트로 과금하는 건 유일하게 객체 본문을 읽기 때문이고(나머지는 메타데이터만 봄), 그래서 대용량 스캔 비용 통제가 Macie 특유의 시험 포인트가 된다.
+비교표를 외울 때 "왜 이 차이가 생기는가"를 붙이면 변형 문제에 강해진다. 예로 Secrets Manager만 자동 회전을 지원하는 건 그것이 회전을 위한 4단계 lifecycle(createSecret → setSecret → testSecret → finishSecret)을 Lambda로 오케스트레이션하도록 설계됐기 때문이고, Parameter Store는 단순 키-값 저장소라 그 오케스트레이션 개념 자체가 없다. Macie만 데이터 바이트로 과금하는 건 유일하게 객체 본문을 읽기 때문이고(나머지는 메타데이터만 봄), 그래서 대용량 스캔 비용 통제가 Macie 특유의 시험 포인트가 된다.
 
-> ⚠️ **함정**: 비교표에서 가장 자주 틀리는 두 지점. 첫째, "DB 비밀번호를 무료로 자동 회전"은 모순 선택지다 — 자동 회전은 Secrets Manager($0.40/월)만 가능하므로 "무료(Parameter Store)"와 "자동 회전"이 한 선택지에 같이 있으면 오답이다. 둘째, "GuardDuty로 OS 취약점 스캔" 또는 "Inspector로 악성 도메인 통신 탐지"처럼 도구의 층위를 바꿔치기한 선택지. GuardDuty는 행동을, Inspector는 소프트웨어 약점을 본다 — 이 경계를 흐리는 선택지가 단골 오답이다.
+> ⚠️ **함정**: 비교표에서 틀리기 쉬운 두 지점. 첫째, "DB 비밀번호를 무료로 자동 회전"은 모순 선택지다 — 자동 회전은 Secrets Manager($0.40/월)만 가능하므로 "무료(Parameter Store)"와 "자동 회전"이 한 선택지에 같이 있으면 오답이다. 둘째, "GuardDuty로 OS 취약점 스캔" 또는 "Inspector로 악성 도메인 통신 탐지"처럼 도구의 층위를 바꿔치기한 선택지. GuardDuty는 행동을, Inspector는 소프트웨어 약점을 본다 — 이 경계를 흐리는 선택지가 오답으로 쓰이기 쉽다.
 
 ## 시나리오 12문제
 

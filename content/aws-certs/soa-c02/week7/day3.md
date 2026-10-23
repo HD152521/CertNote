@@ -12,9 +12,9 @@
 
 이 철학을 산업화한 사람이 Mitchell Hashimoto이고, 그게 2013년 출시된 Packer다. Packer는 다양한 클라우드의 이미지(AMI, GCP Image, VHD)를 같은 HCL 정의로 빌드한다. AWS Image Builder(2019년 12월 출시)는 Packer와 비슷한 자리에 있지만 **AWS 네이티브 통합**에 강점이 있다 — VPC·IAM·KMS·SSM Parameter·CloudWatch Logs·Inspector가 모두 native로 연결된다.
 
-> 💡 **관련 이론**: Immutable infrastructure는 함수형 프로그래밍의 immutable data structure와 정확히 같은 개념이다. Clojure의 persistent vector, Rust의 ownership system, React의 immutable state 업데이트가 모두 같은 원리다 — "수정하지 말고 새로 만들어라". 분산 시스템에서는 이 원칙이 더 강력하다. 같은 AMI ID에서 만들어진 100대의 EC2가 (User Data를 제외하면) 비트 단위로 동일하다는 보장은 운영 사고 추적을 극단적으로 단순화한다.
+Immutable infrastructure는 함수형 프로그래밍의 immutable data structure와 정확히 같은 개념이다. Clojure의 persistent vector, Rust의 ownership system, React의 immutable state 업데이트가 모두 같은 원리다 — "수정하지 말고 새로 만들어라". 분산 시스템에서는 이 원칙이 더 강력하다. 같은 AMI ID에서 만들어진 100대의 EC2가 (User Data를 제외하면) 비트 단위로 동일하다는 보장은 운영 사고 추적을 극단적으로 단순화한다.
 
-> 🔍 **더 깊이**: Image Builder는 내부적으로 SSM Automation Document와 SSM Run Command를 활용한다. 빌드 인스턴스에 SSM Agent가 미리 설치돼 있어서, Image Builder는 빌드 인스턴스에 SSH 키를 심지 않고 SSM Session으로 명령을 실행한다. 그래서 빌드 인스턴스는 **인터넷 in-bound가 전혀 필요 없다** — SSM endpoint만 도달 가능하면 된다. Packer가 빌드 인스턴스에 SSH로 접속하는 모델보다 보안적으로 우수한 이유가 여기 있다. CloudTrail에 모든 빌드 명령이 SSM 호출로 기록되는 부가 효과도 있다.
+Image Builder는 내부적으로 SSM Automation Document와 SSM Run Command를 활용한다. 빌드 인스턴스에 SSM Agent가 미리 설치돼 있어서, Image Builder는 빌드 인스턴스에 SSH 키를 심지 않고 SSM Session으로 명령을 실행한다. 그래서 빌드 인스턴스는 **인터넷 in-bound가 전혀 필요 없다** — SSM endpoint만 도달 가능하면 된다. Packer가 빌드 인스턴스에 SSH로 접속하는 모델보다 보안적으로 우수한 이유가 여기 있다. CloudTrail에 모든 빌드 명령이 SSM 호출로 기록되는 부가 효과도 있다.
 
 ## Recipe·Component·Pipeline: 세 레이어의 책임 분리
 
@@ -65,9 +65,9 @@ Golden AMI를 만들고 끝이 아니다. 만들어진 AMI를 운영 ASG가 사�
 
 `{{resolve:ssm:...}}` 구문은 CloudFormation 동적 참조 문법인데, Launch Template에도 적용된다. 또 다른 형태로 `{{resolve:ssm:/golden-ami/al2/latest:label}}` 같이 SSM Parameter의 특정 label을 가리킬 수도 있어 "production에 prod label, canary에 canary label" 같은 패턴이 가능하다.
 
-> 💡 **관련 이론**: 이 간접화 패턴은 OS의 동적 링킹(dynamic linking)과 정확히 같다. 실행 파일이 라이브러리 함수를 직접 참조하지 않고 PLT/GOT를 거쳐 참조하면 라이브러리 버전 업그레이드가 가능하다. SSM Parameter가 AMI에 대한 PLT 역할을 한다. Kubernetes의 Service → Pod 간 간접 참조도 같은 원리다. 분산 시스템에서 "이름을 통한 참조"가 거의 항상 "주소를 통한 참조"를 이긴다.
+이 간접화 패턴은 OS의 동적 링킹(dynamic linking)과 정확히 같다. 실행 파일이 라이브러리 함수를 직접 참조하지 않고 PLT/GOT를 거쳐 참조하면 라이브러리 버전 업그레이드가 가능하다. SSM Parameter가 AMI에 대한 PLT 역할을 한다. Kubernetes의 Service → Pod 간 간접 참조도 같은 원리다. 분산 시스템에서 "이름을 통한 참조"가 거의 항상 "주소를 통한 참조"를 이긴다.
 
-> 📚 **사례**: Netflix는 자체 도구 Aminator로 매일 수천 개의 AMI를 빌드했다. 한 사건에서 새 AMI에 버그가 포함된 채 ASG에 흘러 들어가 약 30분 동안 서비스 일부가 죽었다. 사후 조치로 "AMI promotion gate"를 도입했다 — Image Builder가 만든 AMI는 먼저 `staging-latest` SSM Parameter로만 들어가고, 24시간 staging 환경에서 검증된 후에야 별도 Lambda가 `prod-latest`로 promote한다. 이 패턴은 이제 Spinnaker의 표준 워크플로다.
+Netflix는 자체 도구 Aminator로 매일 수천 개의 AMI를 빌드했다. 한 사건에서 새 AMI에 버그가 포함된 채 ASG에 흘러 들어가 약 30분 동안 서비스 일부가 죽었다. 사후 조치로 "AMI promotion gate"를 도입했다 — Image Builder가 만든 AMI는 먼저 `staging-latest` SSM Parameter로만 들어가고, 24시간 staging 환경에서 검증된 후에야 별도 Lambda가 `prod-latest`로 promote한다. 이 패턴은 이제 Spinnaker의 표준 워크플로다.
 
 ## EC2 Instance Refresh: ASG가 AMI를 교체하는 방식
 
@@ -86,7 +86,7 @@ aws autoscaling start-instance-refresh \
 
 `CheckpointPercentages`가 흥미로운 기능이다. 20% 교체 후 10분 대기, 50%까지 교체 후 10분 대기, 마지막으로 100%까지 — 같은 ASG 안에서 자체 canary 배포가 된다. 검증 단계에서 CloudWatch Alarm이 울리면 자동 롤백된다(이전 Launch Template 버전으로 되돌림).
 
-> 🔍 **더 깊이**: Instance Refresh는 내부적으로 Lifecycle Hook을 활용한다. 기존 인스턴스를 종료할 때 `Terminating:Wait` 상태로 잠시 멈추고, 새 인스턴스를 띄울 때 `Pending:Wait`로 멈춘다. 이 hook 동안 운영팀이 CodeDeploy로 코드 배포를 동시에 진행하거나, ALB Target Group 전환을 정확히 동기화할 수 있다. AWS re:Invent 2020 COM301 세션에서 자세히 다루는 패턴이다.
+Instance Refresh는 내부적으로 Lifecycle Hook을 활용한다. 기존 인스턴스를 종료할 때 `Terminating:Wait` 상태로 잠시 멈추고, 새 인스턴스를 띄울 때 `Pending:Wait`로 멈춘다. 이 hook 동안 운영팀이 CodeDeploy로 코드 배포를 동시에 진행하거나, ALB Target Group 전환을 정확히 동기화할 수 있다. AWS re:Invent 2020 COM301 세션에서 자세히 다루는 패턴이다.
 
 ## DLM: 백업이 아니라 EBS Snapshot 라이프사이클
 
@@ -151,7 +151,7 @@ aws kms put-key-policy \
   --policy file://key-policy-with-cross-account.json
 ```
 
-> 📚 **사례**: 한 핀테크 회사가 PCI-DSS 컴플라이언스를 위해 운영 AMI를 분기마다 deprecate하는 정책을 도입했다. 자동화 스크립트가 90일 지난 AMI를 일괄 deregister하기 시작하자, 다른 계정에서 사용 중이던 ASG가 갑자기 scale-out 실패를 일으켰다 — Launch Template이 deprecated AMI를 참조하고 있었던 것. 사후 조치로 `aws ec2 enable-image-deprecation`을 먼저 적용하고(이건 새 launch는 막지만 기존 참조는 유지), 30일 grace period 후 deregister하는 단계를 추가했다. AWS는 2022년 EC2 Image Deprecation 기능을 정식 지원하기 시작했다.
+가상의 사례로, 한 핀테크 회사가 PCI-DSS 컴플라이언스를 위해 운영 AMI를 분기마다 deprecate하는 정책을 도입했다. 자동화 스크립트가 90일 지난 AMI를 일괄 deregister하기 시작하자, 다른 계정에서 사용 중이던 ASG가 갑자기 scale-out 실패를 일으켰다 — Launch Template이 deprecated AMI를 참조하고 있었던 것. 사후 조치로 `aws ec2 enable-image-deprecation`을 먼저 적용하고(이건 새 launch는 막지만 기존 참조는 유지), 30일 grace period 후 deregister하는 단계를 추가했다. AWS는 2022년 EC2 Image Deprecation 기능을 정식 지원하기 시작했다.
 
 ## Image Builder vs Packer: 언제 무엇을 쓸까
 
@@ -167,7 +167,7 @@ aws kms put-key-policy \
 
 AWS 단일 클라우드 환경이라면 Image Builder가 더 매끄럽다. 멀티 클라우드라면 Packer가 강제 선택이다. 흥미로운 패턴은 **둘을 조합**하는 것 — Packer로 베이스 AMI를 만들어 멀티 클라우드 호환성을 확보하고, Image Builder로 그 위에 AWS 전용 에이전트(SSM, CloudWatch, Inspector)를 얹는 2단계 빌드. 실제로 Lyft·HashiCorp 자체가 이 패턴을 쓴다.
 
-> 💡 **관련 이론**: 이 2단계 빌드는 Docker의 multi-stage build와 정확히 같은 패턴이다. base stage(공통 의존성) → application stage(앱 특화)의 layering으로 캐시 재사용과 보안 격리를 동시에 얻는다. Image Builder의 Recipe도 Parent Image + Components의 layered 구조로 같은 효과를 낸다.
+이 2단계 빌드는 Docker의 multi-stage build와 정확히 같은 패턴이다. base stage(공통 의존성) → application stage(앱 특화)의 layering으로 캐시 재사용과 보안 격리를 동시에 얻는다. Image Builder의 Recipe도 Parent Image + Components의 layered 구조로 같은 효과를 낸다.
 
 ## Image Builder + Inspector 통합: 빌드 시 취약점 스캔
 
@@ -188,11 +188,11 @@ phases:
 
 이 단계가 통과해야만 Distribution Configuration이 실행돼 다른 리전·계정에 AMI가 복제된다. 컴플라이언스 감사 관점에서도 강력하다 — "운영 환경의 모든 AMI는 빌드 시 Inspector 통과"라는 attestation을 자동으로 만들 수 있다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 두 가지다. 첫째, Image Builder는 단순한 AMI 자동화가 아니라 immutable infrastructure 철학의 AWS 네이티브 구현이다. Recipe·Component·Pipeline의 분리는 재사용성과 변경 빈도 차이를 반영한 의도적 설계다. 둘째, SSM Parameter + Launch Template의 `{{resolve:ssm:...}}` 간접 참조는 "AMI를 만들었다"와 "운영 ASG가 사용한다" 사이의 시간 간격을 자연스럽게 풀어준다.
 
-다음 글에서는 인프라 자체를 코드로 다루는 또 다른 도구, OpsWorks와 그 후속인 Systems Manager Application Manager를 본다. Chef/Puppet 기반 OpsWorks가 왜 deprecate됐는지, 그리고 SSM이 어떻게 그 자리를 다르게 채우는지 — "configuration management"라는 카테고리 자체가 어떻게 진화했는지 따라가보자.
+다음 글에서는 인프라 자체를 코드로 다루는 또 다른 도구, OpsWorks와 그 후속인 Systems Manager Application Manager를 본다. Chef/Puppet 기반 OpsWorks가 왜 deprecate됐는지, 그리고 SSM이 어떻게 그 자리를 다르게 채우는지 — "configuration management"라는 카테고리 자체가 어떻게 진화했는지 살펴본다.
 
 ---
 

@@ -12,9 +12,9 @@ Access Analyzer는 근본적으로 다른 접근을 쓴다. **Automated Reasonin
 
 차이가 결정적이다. 패턴 매칭은 "내가 아는 위험 패턴에 안 걸렸다"까지만 말할 수 있다 — 모르는 우회가 있을 수 있다. 형식 증명은 "외부 접근이 가능한 입력이 논리적으로 존재하지 않는다"를 단언한다 — 거짓 음성(false negative)이 원리적으로 없다. AWS는 이 기술을 사내 Automated Reasoning Group이 개발한 Zelkova라는 엔진으로 구현했고, Access Analyzer·S3 Block Public Access·일부 IAM 검증이 모두 이 엔진 위에서 돈다.
 
-> 💡 **관련 이론**: SMT 솔버는 SAT(boolean satisfiability) 문제를 정수·문자열·집합 같은 풍부한 이론으로 확장한 것이다. SAT는 "이 논리식을 참으로 만드는 변수 할당이 있는가"를 푸는 NP-complete 문제인데, 1962년 DPLL 알고리즘 이후 실용적 솔버(Z3, CVC 등)가 발전해 수백만 변수 규모도 초 단위로 푼다. IAM 정책 분석에 SMT를 쓴다는 건, "이 정책을 만족하는 (Principal, Action, Resource, Condition) 조합 중 Zone of Trust 밖의 것이 존재하는가"를 충족 가능성 문제로 환원한다는 뜻이다. 같은 기술이 하드웨어 검증(CPU 회로가 사양을 만족하는지 증명)과 프로그램 검증에 쓰인다 — Access Analyzer는 클라우드 권한에 정리 증명(theorem proving)을 적용한 사례다.
+SMT 솔버는 SAT(boolean satisfiability) 문제를 정수·문자열·집합 같은 풍부한 이론으로 확장한 것이다. SAT는 "이 논리식을 참으로 만드는 변수 할당이 있는가"를 푸는 NP-complete 문제인데, 1962년 DPLL 알고리즘 이후 실용적 솔버(Z3, CVC 등)가 발전해 수백만 변수 규모도 초 단위로 푼다. IAM 정책 분석에 SMT를 쓴다는 건, "이 정책을 만족하는 (Principal, Action, Resource, Condition) 조합 중 Zone of Trust 밖의 것이 존재하는가"를 충족 가능성 문제로 환원한다는 뜻이다. 같은 기술이 하드웨어 검증(CPU 회로가 사양을 만족하는지 증명)과 프로그램 검증에 쓰인다 — Access Analyzer는 클라우드 권한에 정리 증명(theorem proving)을 적용한 사례다.
 
-> 🔍 **더 깊이**: Zelkova 엔진은 IAM 정책 두 개를 비교해 "정책 A가 정책 B보다 더 많은 접근을 허용하는가(A ⊇ B)"도 판정할 수 있다. 이게 Policy Validation의 "이 변경이 권한을 넓히는가"를 검사하는 기반이고, S3 Block Public Access가 "이 버킷 정책이 public 접근을 허용하는가"를 즉시 판정하는 원리다. 핵심은 두 정책의 허용 집합을 논리식으로 표현해 포함 관계를 증명하는 것 — 무한히 많은 요청을 일일이 대입하지 않고 집합의 포함 관계를 한 번에 판정한다. 이 때문에 Access Analyzer는 "스캔 주기"가 따로 없고 정책이 바뀌면 거의 실시간으로 재평가한다.
+Zelkova 엔진은 IAM 정책 두 개를 비교해 "정책 A가 정책 B보다 더 많은 접근을 허용하는가(A ⊇ B)"도 판정할 수 있다. 이게 Policy Validation의 "이 변경이 권한을 넓히는가"를 검사하는 기반이고, S3 Block Public Access가 "이 버킷 정책이 public 접근을 허용하는가"를 즉시 판정하는 원리다. 핵심은 두 정책의 허용 집합을 논리식으로 표현해 포함 관계를 증명하는 것 — 무한히 많은 요청을 일일이 대입하지 않고 집합의 포함 관계를 한 번에 판정한다. 이 때문에 Access Analyzer는 "스캔 주기"가 따로 없고 정책이 바뀌면 거의 실시간으로 재평가한다.
 
 ## Zone of Trust — "외부"를 어떻게 정의하는가
 
@@ -36,7 +36,7 @@ Unused Access Analyzer는 이 엔트로피를 측정한다. CloudTrail 활동 �
 
 이게 왜 보안에 중요한가? **최소 권한 원칙(Principle of Least Privilege)**의 실천이 사실상 불가능했던 이유가 여기 있다. 최소 권한이 옳다는 건 누구나 알지만, "실제로 무엇이 최소인가"를 사람이 알 방법이 없었다. 권한을 좁히려다 멀쩡한 기능을 깨뜨릴까 봐 아무도 손대지 않는다. Unused Access Analyzer는 실제 사용 데이터로 "이건 90일간 안 썼으니 빼도 된다"는 근거를 제공해, 추측이 아닌 데이터 기반으로 권한을 줄이게 한다.
 
-> 💡 **관련 이론**: 최소 권한 원칙은 1975년 Saltzer와 Schroeder의 고전 논문 "The Protection of Information in Computer Systems"에서 정립된 8대 보안 설계 원칙 중 하나다. "모든 프로그램과 모든 사용자는 작업을 완수하는 데 필요한 최소한의 권한으로만 동작해야 한다." 이유는 단순하다 — 권한이 적을수록 그 주체가 침해됐을 때의 피해(폭발 반경)가 작고, 우발적 사고의 가능성도 낮다. 50년 된 이 원칙이 클라우드에서 새삼 어려워진 건 권한의 종류와 양이 폭증했기 때문이다. Unused Access Analyzer + Policy Generation은 이 오래된 원칙을 자동화로 다시 실천 가능하게 만든 도구다.
+최소 권한 원칙은 1975년 Saltzer와 Schroeder의 고전 논문 "The Protection of Information in Computer Systems"에서 정립된 8대 보안 설계 원칙 중 하나다. "모든 프로그램과 모든 사용자는 작업을 완수하는 데 필요한 최소한의 권한으로만 동작해야 한다." 이유는 단순하다 — 권한이 적을수록 그 주체가 침해됐을 때의 피해(폭발 반경)가 작고, 우발적 사고의 가능성도 낮다. 50년 된 이 원칙이 클라우드에서 새삼 어려워진 건 권한의 종류와 양이 폭증했기 때문이다. Unused Access Analyzer + Policy Generation은 이 오래된 원칙을 자동화로 다시 실천 가능하게 만든 도구다.
 
 ## Policy Generation — "일단 넓게, 나중에 좁힌다"의 자동화
 
@@ -46,9 +46,9 @@ Policy Generation은 이 "나중에 좁히기"를 자동화한다. 역할을 지
 
 이 흐름이 우아한 건 **이론과 현실의 순서를 뒤집기** 때문이다. 전통적 접근은 "필요한 권한을 미리 설계 → 정책 작성 → 배포"인데, 현실에선 필요 권한을 미리 알 수 없어 실패한다. Policy Generation은 "일단 넓게 배포 → 실제 사용 관찰 → 사용 데이터로 정책 역산"이라는, 현실에 맞는 순서를 자동화한다. 추측으로 설계하는 대신 관측된 행동에서 정책을 끌어낸다.
 
-> 🔍 **더 깊이**: Policy Generation이 정확하려면 CloudTrail이 충분히 오래(이상적으로 90일) 켜져 있어야 하고, 분석 기간 동안 그 역할의 **모든 정상 경로가 실행됐어야** 한다. 분기 말에만 도는 배치 작업이 분석 기간에 안 돌았다면 그 권한이 생성된 정책에서 누락돼, 정책 교체 후 분기 말에 그 배치가 깨진다. 그래서 Policy Generation으로 만든 정책은 즉시 적용하지 말고, 우선 IAM Access Advisor(서비스 마지막 접근 정보)와 교차 검증하거나, 분석 기간을 충분히 길게(드물게 도는 작업까지 포함되도록) 잡아야 한다. 자동 생성은 출발점이지 그대로 믿을 최종 답이 아니다.
+Policy Generation이 정확하려면 CloudTrail이 충분히 오래(이상적으로 90일) 켜져 있어야 하고, 분석 기간 동안 그 역할의 **모든 정상 경로가 실행됐어야** 한다. 분기 말에만 도는 배치 작업이 분석 기간에 안 돌았다면 그 권한이 생성된 정책에서 누락돼, 정책 교체 후 분기 말에 그 배치가 깨진다. 그래서 Policy Generation으로 만든 정책은 즉시 적용하지 말고, 우선 IAM Access Advisor(서비스 마지막 접근 정보)와 교차 검증하거나, 분석 기간을 충분히 길게(드물게 도는 작업까지 포함되도록) 잡아야 한다. 자동 생성은 출발점이지 그대로 믿을 최종 답이 아니다.
 
-> 📚 **사례**: 권한 크리프가 일으킨 대표적 사고가 2019년 Capital One 데이터 유출이다. 한 WAF 역할에 부여된 과도한 S3 권한이 SSRF(Server-Side Request Forgery) 공격과 결합해, 공격자가 그 역할의 임시 자격증명으로 1억 건 이상의 고객 정보가 든 S3 버킷을 읽어냈다. 핵심 교훈 중 하나가 "그 역할은 그렇게 넓은 S3 권한이 필요 없었다"는 것 — 최소 권한이었다면 침해된 역할로 읽을 수 있는 데이터가 훨씬 적었을 것이다. Policy Generation과 Unused Access Analyzer는 정확히 이런 "쓰지도 않는데 들고 있는 넓은 권한"을 찾아 줄이기 위한 도구다.
+권한 크리프가 일으킨 대표적 사고가 2019년 Capital One 데이터 유출이다. 한 WAF 역할에 부여된 과도한 S3 권한이 SSRF(Server-Side Request Forgery) 공격과 결합해, 공격자가 그 역할의 임시 자격증명으로 1억 건 이상의 고객 정보가 든 S3 버킷을 읽어냈다. 핵심 교훈 중 하나가 "그 역할은 그렇게 넓은 S3 권한이 필요 없었다"는 것 — 최소 권한이었다면 침해된 역할로 읽을 수 있는 데이터가 훨씬 적었을 것이다. Policy Generation과 Unused Access Analyzer는 정확히 이런 "쓰지도 않는데 들고 있는 넓은 권한"을 찾아 줄이기 위한 도구다.
 
 ## Policy Validation — 작성 시점에 막는 100가지 검사
 
@@ -58,7 +58,7 @@ Access Analyzer는 사후 탐지만 하는 게 아니라 정책 **작성 시점*
 
 Custom Policy Checks(유료)는 한 단계 더 나아가, 회사 고유의 가드레일을 코드로 강제한다. "어떤 정책도 `s3:DeleteBucket`을 허용해선 안 된다", "이 변경이 기존보다 권한을 넓혀선 안 된다" 같은 규칙을 CI/CD 파이프라인에 넣어, 정책 변경 PR이 가드레일을 위반하면 머지를 막는다. 이건 위에서 본 Zelkova의 정책 비교(A ⊇ B 판정) 능력을 활용한 것으로, "이 PR이 권한을 확대하는가"를 형식적으로 증명해 차단한다.
 
-> 💡 **관련 이론**: 시프트 레프트는 소프트웨어 품질 공학에서 "결함은 발견이 늦을수록 수정 비용이 기하급수적으로 증가한다"는 경험칙(Boehm의 비용 곡선)에서 나왔다. 설계 단계 결함을 고치는 비용을 1이라 하면, 코딩 단계는 ~6배, 테스트 단계는 ~15배, 프로덕션은 ~100배에 이른다는 고전적 추정이다. Policy Validation(작성 시점)과 Custom Policy Checks(CI/CD)는 보안 결함을 가장 왼쪽(작성·머지 시점)에서 잡아, 프로덕션에서 finding으로 발견해 사고 대응하는 비싼 경로를 피한다. "보안을 파이프라인에 넣는다(DevSecOps)"는 흐름의 구체적 구현이다.
+시프트 레프트는 소프트웨어 품질 공학에서 "결함은 발견이 늦을수록 수정 비용이 기하급수적으로 증가한다"는 경험칙(Boehm의 비용 곡선)에서 나왔다. 설계 단계 결함을 고치는 비용을 1이라 하면, 코딩 단계는 ~6배, 테스트 단계는 ~15배, 프로덕션은 ~100배에 이른다는 고전적 추정이다. Policy Validation(작성 시점)과 Custom Policy Checks(CI/CD)는 보안 결함을 가장 왼쪽(작성·머지 시점)에서 잡아, 프로덕션에서 finding으로 발견해 사고 대응하는 비싼 경로를 피한다. "보안을 파이프라인에 넣는다(DevSecOps)"는 흐름의 구체적 구현이다.
 
 ## Trusted Advisor — 모범 사례를 자동으로 채점하는 시스템
 
@@ -72,11 +72,11 @@ Access Analyzer가 권한의 형식 검증이라면, Trusted Advisor는 계정 �
 | Fault Tolerance | Multi-AZ 없음, RDS 백업 비활성, 단일 AZ ASG | 가용성 약점 |
 | Service Limits | 한도의 80% 도달 | 한도 초과 사전 경고 |
 
-Service Limits 점검이 특히 운영에 유용하다. AWS의 많은 리소스에는 계정·리전별 한도가 있고(EC2 인스턴스 수, EIP 수, VPC 수 등), 한도에 부딪히면 새 리소스 생성이 실패한다 — 트래픽 급증으로 오토스케일링이 인스턴스를 더 띄우려는데 한도에 막혀 확장이 멈추는 사고가 대표적이다. Trusted Advisor가 한도의 80%에 도달하면 미리 경고해, 한도 증액 요청을 사고 전에 넣을 수 있게 한다.
+Service Limits 점검이 특히 운영에 유용하다. AWS의 많은 리소스에는 계정·리전별 한도가 있고(EC2 인스턴스 수, EIP 수, VPC 수 등), 한도에 부딪히면 새 리소스 생성이 실패한다 — 트래픽 급증으로 Auto Scaling이 인스턴스를 더 띄우려는데 한도에 막혀 확장이 멈추는 사고가 대표적이다. Trusted Advisor가 한도의 80%에 도달하면 미리 경고해, 한도 증액 요청을 사고 전에 넣을 수 있게 한다.
 
 핵심 제약은 **Support 플랜에 따라 접근 범위가 다르다**는 것이다. Basic/Developer 플랜은 7개 핵심 보안 점검과 서비스 한도만 볼 수 있고, 100개 이상의 전체 점검은 Business($100/월) 또는 Enterprise 플랜에서만 열린다. 시험에서 "Trusted Advisor 전체 점검을 쓰려면?"의 답은 항상 "Business 이상 Support"다.
 
-> 🔍 **더 깊이**: Trusted Advisor는 콘솔에서 눈으로 보는 도구를 넘어 API(`describe-trusted-advisor-checks`, `describe-trusted-advisor-check-result`)와 EventBridge 통합을 제공한다. 점검 결과가 바뀌면(예: 새 public S3 버킷이 생기면) EventBridge 이벤트를 발행해 SNS 알림이나 Lambda 자동 대응을 트리거할 수 있다. `refresh-trusted-advisor-check`로 즉시 재점검도 가능하다. 다만 Trusted Advisor는 "권장 사항"을 줄 뿐 자동으로 고치지 않는다 — 자동 교정은 AWS Config의 remediation action이나 별도 Lambda로 구현한다. Trusted Advisor는 "무엇이 잘못됐는지" 알려주는 진단기이지 치료기가 아니다.
+Trusted Advisor는 콘솔에서 눈으로 보는 도구를 넘어 API(`describe-trusted-advisor-checks`, `describe-trusted-advisor-check-result`)와 EventBridge 통합을 제공한다. 점검 결과가 바뀌면(예: 새 public S3 버킷이 생기면) EventBridge 이벤트를 발행해 SNS 알림이나 Lambda 자동 대응을 트리거할 수 있다. `refresh-trusted-advisor-check`로 즉시 재점검도 가능하다. 다만 Trusted Advisor는 "권장 사항"을 줄 뿐 자동으로 고치지 않는다 — 자동 교정은 AWS Config의 remediation action이나 별도 Lambda로 구현한다. Trusted Advisor는 "무엇이 잘못됐는지" 알려주는 진단기이지 치료기가 아니다.
 
 ## Access Analyzer vs Trusted Advisor vs Config — 겹쳐 보이는 셋의 분업
 
@@ -98,7 +98,7 @@ Access Analyzer는 "이 리소스가 외부에 열려 있나"라는 권한 질�
 
 > ⚠️ **함정**: "컴플라이언스 보고서가 필요하다"는 시나리오에서 AWS Artifact와 Audit Manager를 헷갈리기 쉽다. AWS Artifact는 **AWS가 준수하는** SOC/PCI 등의 보고서를 받는 곳(AWS의 책임 영역 증빙)이고, Audit Manager는 **고객 자신의** 환경이 표준을 준수함을 증거로 모아 감사 보고서를 만드는 도구(고객의 책임 영역 증빙)다. 공유 책임 모델에서 Artifact는 "AWS 쪽", Audit Manager는 "고객 쪽"을 증명한다.
 
-## 정리하며
+## 정리
 
 이 글의 도구들은 모두 "사람의 눈으로는 안정적으로 답할 수 없는 질문"을 자동화한다. Access Analyzer는 권한의 외부 노출을 패턴 매칭이 아닌 형식 증명(automated reasoning)으로 판정해 거짓 음성을 원리적으로 없애고, Unused Access와 Policy Generation은 50년 된 최소 권한 원칙을 실제 사용 데이터로 실천 가능하게 만들고, Policy Validation은 시프트 레프트로 위험을 작성 시점에 막고, Trusted Advisor는 AWS의 축적된 모범 사례로 계정 전반을 채점한다.
 

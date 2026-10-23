@@ -22,7 +22,7 @@ effective_permission(U, X) =
 
 이 구조의 운영자 가치는 **권한 위임 시 안전망**이다. 보안 팀이 SCP와 Boundary로 가드레일을 짜두고, 개발자에게는 그 안에서 마음껏 IAM Role을 만들게 위임할 수 있다.
 
-> 💡 **관련 이론**: 이 모델은 capability-based security(권한 토큰 기반 보안)와 attribute-based access control(ABAC)의 결합. Saltzer & Schroeder의 "The Protection of Information in Computer Systems" (1975, CACM)에서 정의된 최소 권한 원칙(Principle of Least Privilege)을 분산 시스템 규모로 구현한 결과물. 정책의 교집합으로 효과 권한을 정의하는 건 lattice-based access control(Denning, 1976)의 변형이기도 하다. Bell-LaPadula 모델(1973)이 군사 보안의 mandatory access control을 정의한 이래, 이 "여러 정책의 교집합" 패러다임은 분산 시스템 보안의 표준이 됐다.
+이 모델은 capability-based security(권한 토큰 기반 보안)와 attribute-based access control(ABAC)의 결합. Saltzer & Schroeder의 "The Protection of Information in Computer Systems" (1975, CACM)에서 정의된 최소 권한 원칙(Principle of Least Privilege)을 분산 시스템 규모로 구현한 결과물. 정책의 교집합으로 효과 권한을 정의하는 건 lattice-based access control(Denning, 1976)의 변형이기도 하다. Bell-LaPadula 모델(1973)이 군사 보안의 mandatory access control을 정의한 이래, 이 "여러 정책의 교집합" 패러다임은 분산 시스템 보안의 표준이 됐다.
 
 ## SCP의 운영자 패턴 6가지
 
@@ -133,13 +133,13 @@ S3 PutObject 시 SSE 헤더가 없으면 거부. 2023년부터 S3는 기본 SSE-
 
 > ⚠️ **함정**: SCP는 **권한을 허용하지 않는다**. SCP에 `Allow: s3:*` 있어도 IAM Policy에 그 권한이 없으면 거부. SCP는 가드레일(상한선)이지 권한 부여가 아니다. 또 SCP는 service-linked role에는 적용되지 않으며, AWS service principal(예: `lambda.amazonaws.com`)이 자기 서비스 동작으로 호출하는 API에도 적용되지 않는다.
 
-> 🔍 **더 깊이**: SCP의 `FullAWSAccess`(기본 첨부 정책)을 제거하면 그 계정에서는 아무것도 못한다. OU에 SCP를 첨부하면 그 OU 아래 모든 계정에 적용. 따라서 운영 패턴은 **OU 계층으로 환경 분리(prod, dev, sandbox) → 각 OU에 적합한 SCP 첨부**. Sandbox OU엔 "EC2 t3.medium 이하만", Prod OU엔 "리전 잠금 + IAM 변경 제한" 같은 식. SCP는 계정당 최대 5개까지 직접 첨부 가능하고, 정책 문서 크기는 5120자 제한. 운영자는 여러 SCP를 OU 계층에 분산 첨부해 합성하는 게 표준.
+SCP의 `FullAWSAccess`(기본 첨부 정책)을 제거하면 그 계정에서는 아무것도 못한다. OU에 SCP를 첨부하면 그 OU 아래 모든 계정에 적용. 따라서 운영 패턴은 **OU 계층으로 환경 분리(prod, dev, sandbox) → 각 OU에 적합한 SCP 첨부**. Sandbox OU엔 "EC2 t3.medium 이하만", Prod OU엔 "리전 잠금 + IAM 변경 제한" 같은 식. SCP는 계정당 최대 5개까지 직접 첨부 가능하고, 정책 문서 크기는 5120자 제한. 운영자는 여러 SCP를 OU 계층에 분산 첨부해 합성하는 게 표준.
 
-> 📚 **사례**: 2023년 한 SaaS 회사에서 GitHub Actions의 OIDC role이 너무 넓은 권한을 가졌다가 PR 작성자의 코드 injection으로 IAM admin 권한을 탈취당했다. 그러나 production OU의 SCP가 `iam:CreateUser`, `iam:CreateAccessKey`를 deny하고 있어서 공격자가 영구 자격증명을 만들 수 없었고, 24시간 후 STS 토큰 만료로 자동 차단됐다. SCP가 사고 확산 차단의 마지막 보루였던 사례.
+가상의 사례로, 2023년 한 SaaS 회사에서 GitHub Actions의 OIDC role이 너무 넓은 권한을 가졌다가 PR 작성자의 코드 injection으로 IAM admin 권한을 탈취당했다. 그러나 production OU의 SCP가 `iam:CreateUser`, `iam:CreateAccessKey`를 deny하고 있어서 공격자가 영구 자격증명을 만들 수 없었고, 24시간 후 STS 토큰 만료로 자동 차단됐다. SCP가 사고 확산 차단의 마지막 보루였던 사례.
 
 ## Permission Boundary 패턴
 
-SCP가 계정 전체의 상한선이라면, Permission Boundary는 **특정 User/Role의 상한선**이다. 가장 흔한 패턴은 "개발자에게 IAM Role 생성 권한을 위임"하면서 boundary로 가드레일 강제.
+SCP가 계정 전체의 상한선이라면, Permission Boundary는 **특정 User/Role의 상한선**이다. 대표적인 패턴은 "개발자에게 IAM Role 생성 권한을 위임"하면서 boundary로 가드레일 강제.
 
 ```json
 // 개발자 그룹에 첨부할 정책
@@ -164,7 +164,7 @@ SCP가 계정 전체의 상한선이라면, Permission Boundary는 **특정 User
 
 CDK·Terraform 같은 IaC 도구가 자동으로 IAM Role을 생성하는 경우에도 같은 패턴이 적용된다. Terraform의 `aws_iam_role` 리소스에 `permissions_boundary` 속성을 강제로 넣고, 그 boundary policy를 회사가 관리.
 
-> 📚 **사례**: 2022년 한 핀테크 회사에서 개발자가 `AdministratorAccess`를 가진 Lambda Role을 만들고, 그 Lambda 코드가 SSRF로 침투당해 회사 RDS 데이터 전체가 유출됐다. 사고 후 도입된 게 boundary 패턴 — `iam:CreateRole`은 허용하되 boundary로 RDS·KMS write 권한을 제거하고, 운영 환경 변경은 운영 팀 Role을 assume 해야만 가능하게. Lambda Role의 effective permission이 boundary로 제한되어, 침투당해도 RDS는 못 만지게 됐다.
+가상의 사례로, 2022년 한 핀테크 회사에서 개발자가 `AdministratorAccess`를 가진 Lambda Role을 만들고, 그 Lambda 코드가 SSRF로 침투당해 회사 RDS 데이터 전체가 유출됐다. 사고 후 도입된 게 boundary 패턴 — `iam:CreateRole`은 허용하되 boundary로 RDS·KMS write 권한을 제거하고, 운영 환경 변경은 운영 팀 Role을 assume 해야만 가능하게. Lambda Role의 effective permission이 boundary로 제한되어, 침투당해도 RDS는 못 만지게 됐다.
 
 > ⚠️ **함정**: Permission Boundary는 **Allow의 상한선**이지 Deny를 추가하지 않는다. boundary에 `Allow: s3:*`만 있으면, identity policy에 다른 권한이 있어도 S3만 통과한다. 또 boundary는 identity 측에만 적용되고 resource policy의 cross-account allow는 boundary로 막을 수 없다는 미묘한 차이가 있다.
 
@@ -210,9 +210,9 @@ PermissionSet: AdministratorAccess
 
 운영자는 사용자가 어떤 Permission Set을 어떤 계정에 가지는지만 관리. 사용자가 콘솔에 로그인하면 자신이 접근 가능한 계정 목록이 보이고, 클릭하면 그 계정의 STS 임시 자격증명을 받아 콘솔이 열린다. CLI에서는 `aws configure sso`로 프로파일을 만들고 `aws sso login`으로 브라우저 인증.
 
-> 🔍 **더 깊이**: Identity Center가 발급하는 자격증명도 STS 임시 자격증명. 세션 길이는 Permission Set에서 1-12시간 설정 가능(콘솔 세션은 별도, IAM Role의 MaxSessionDuration). 사용자는 access key를 영구 보유하지 않는다. CLI에서도 `aws sso login` 명령으로 브라우저 인증을 거치고 임시 자격증명을 받는다. `~/.aws/sso/cache/`에 캐시된 토큰은 SSO 세션 기간(최대 90일) 동안 유효하지만, 매번 사용 시 STS 임시 자격증명을 새로 발급받는다. 이게 모든 자동화의 표준이 돼야 한다.
+Identity Center가 발급하는 자격증명도 STS 임시 자격증명. 세션 길이는 Permission Set에서 1-12시간 설정 가능(콘솔 세션은 별도, IAM Role의 MaxSessionDuration). 사용자는 access key를 영구 보유하지 않는다. CLI에서도 `aws sso login` 명령으로 브라우저 인증을 거치고 임시 자격증명을 받는다. `~/.aws/sso/cache/`에 캐시된 토큰은 SSO 세션 기간(최대 90일) 동안 유효하지만, 매번 사용 시 STS 임시 자격증명을 새로 발급받는다. 이게 모든 자동화의 표준이 돼야 한다.
 
-> 📚 **사례**: 한 회사가 200명 직원에 100개 AWS 계정을 운영하던 시절, 직원당 평균 8개의 access key를 가지고 있었다. 회전·offboarding 누락으로 매월 보안 알람 수십 건. Identity Center 도입 후 access key는 거의 사라지고, 직원이 퇴사하면 IdP에서 한 번 비활성화로 모든 계정 접근이 즉시 차단됐다. 추가로 IdP에서 그룹 단위로 권한을 부여(예: "data-engineers 그룹은 모든 dev 계정에서 PowerUser, prod 계정에서 ReadOnly")해 권한 변경 부담도 사라졌다.
+가상의 사례로, 한 회사가 200명 직원에 100개 AWS 계정을 운영하던 시절, 직원당 평균 8개의 access key를 가지고 있었다. 회전·offboarding 누락으로 매월 보안 알람 수십 건. Identity Center 도입 후 access key는 거의 사라지고, 직원이 퇴사하면 IdP에서 한 번 비활성화로 모든 계정 접근이 즉시 차단됐다. 추가로 IdP에서 그룹 단위로 권한을 부여(예: "data-engineers 그룹은 모든 dev 계정에서 PowerUser, prod 계정에서 ReadOnly")해 권한 변경 부담도 사라졌다.
 
 ## ABAC: 태그 기반 권한 부여
 
@@ -233,7 +233,7 @@ PermissionSet: AdministratorAccess
 
 이 정책 하나로 "직원은 자기 부서가 태그된 EC2만 시작/중지 가능"이 표현된다. 100명의 직원 × 1000개 EC2의 모든 권한 조합을 정책 폭증 없이 단 하나의 정책으로 처리. Identity Center의 경우 IdP의 사용자 속성(예: AD의 department)을 PrincipalTag로 자동 매핑할 수 있어, IdP 단에서 직원 부서를 바꾸면 AWS 권한도 자동 변경된다.
 
-> 💡 **관련 이론**: ABAC는 NIST SP 800-162에서 표준화. RBAC가 N×M(role × permission) 매트릭스의 폭증으로 어려워지는 문제를 attribute의 동적 평가로 해결. IAM은 ABAC의 모든 핵심 요소(subject attribute, resource attribute, environment attribute)를 Condition으로 표현 가능. Google Zanzibar(2019)도 같은 문제를 ReBAC(Relationship-Based)으로 풀었는데, 이건 "이 리소스가 어떤 그룹의 멤버인가"를 그래프로 표현한다. AWS는 태그 기반 ABAC, Google은 관계 그래프, Microsoft Azure는 Resource Hierarchy 기반으로 같은 문제에 다른 답을 낸다.
+ABAC는 NIST SP 800-162에서 표준화. RBAC가 N×M(role × permission) 매트릭스의 폭증으로 어려워지는 문제를 attribute의 동적 평가로 해결. IAM은 ABAC의 모든 핵심 요소(subject attribute, resource attribute, environment attribute)를 Condition으로 표현 가능. Google Zanzibar(2019)도 같은 문제를 ReBAC(Relationship-Based)으로 풀었는데, 이건 "이 리소스가 어떤 그룹의 멤버인가"를 그래프로 표현한다. AWS는 태그 기반 ABAC, Google은 관계 그래프, Microsoft Azure는 Resource Hierarchy 기반으로 같은 문제에 다른 답을 낸다.
 
 ## Service-Linked Role: 운영자가 만들지 못하는 특수 Role
 
@@ -245,7 +245,7 @@ AWS의 일부 서비스(ECS, Auto Scaling, ELB, Lex, GuardDuty 등)는 자기 �
 - **Trust policy도 고정**: 해당 서비스만 assume 가능
 - **서비스가 그 Role을 사용 안 할 때만 삭제 가능**
 
-> ⚠️ **함정**: 운영자가 SLR을 삭제하려고 하면 의존성 검사 후 사용 중이면 거부됨. 시험에서 "ECS 클러스터를 만들었는데 자동으로 생성된 Role을 수정하려고 한다"는 시나리오는 SLR을 묻는 것 — 답은 "수정 불가, 서비스가 관리". SCP로도 SLR의 동작은 막지 못한다(service principal 호출이라 정책 평가 우회).
+운영자가 SLR을 삭제하려고 하면 의존성 검사 후 사용 중이면 거부됨. 시험에서 "ECS 클러스터를 만들었는데 자동으로 생성된 Role을 수정하려고 한다"는 시나리오는 SLR을 묻는 것 — 답은 "수정 불가, 서비스가 관리". SCP로도 SLR의 동작은 막지 못한다(service principal 호출이라 정책 평가 우회).
 
 ## CloudTrail에서 IAM 디버깅하는 운영자의 사고
 
@@ -270,9 +270,9 @@ LIMIT 100;
 3. **eventName + requestParameters**: 어떤 액션을 어떤 리소스에
 4. **errorMessage**: AccessDenied의 정확한 이유(어떤 정책에 막혔는지)
 
-> 🔍 **더 깊이**: errorMessage가 "explicit deny in identity-based policy"라고 적혀 있으면 identity policy에서 Deny. "explicit deny in resource-based policy"는 resource policy(bucket policy 등). "implicit deny"는 어디에도 Allow가 없음. "explicit deny in service control policy"는 SCP. 이 한 줄로 어디를 봐야 할지 정해진다. 이 메시지는 2022년부터 표준화돼 모든 거부 응답에 포함된다.
+errorMessage가 "explicit deny in identity-based policy"라고 적혀 있으면 identity policy에서 Deny. "explicit deny in resource-based policy"는 resource policy(bucket policy 등). "implicit deny"는 어디에도 Allow가 없음. "explicit deny in service control policy"는 SCP. 이 한 줄로 어디를 봐야 할지 정해진다. 이 메시지는 2022년부터 표준화돼 모든 거부 응답에 포함된다.
 
-## 정리하며
+## 정리
 
 오늘의 그림은 IAM 권한이 **다층 가드레일**로 짜여진다는 것. SCP가 계정 차원, Boundary가 User/Role 차원, Identity Policy가 실제 권한 부여, Resource Policy가 대상 측 허용. 어느 한 층의 Deny가 모두를 이긴다. Identity Center는 이 위에 인증·SSO를 얹어 사용자 관리의 N개 계정 폭증을 해결.
 
