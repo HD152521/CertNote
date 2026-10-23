@@ -116,7 +116,7 @@ pipeline.start()
 - **캐싱**: `CacheConfig(enable_caching=True, expire_after="30d")`를 Step에 붙이면 동일 입력의 Step을 재실행하지 않아 시간·비용을 아낀다.
 - **평가 지표 전달**: 평가 Step이 쓴 JSON을 `PropertyFile`로 선언하고 `JsonGet`으로 특정 경로를 읽어 조건에 넣는다.
 
-> 💡 **관련 이론**: ConditionStep은 MLOps 품질 게이트의 심장이다. "평가 AUC가 0.80 미만이면 등록하지 않는다"처럼, 나쁜 모델이 자동으로 프로덕션에 흘러드는 것을 막는다. 시험에서 **"기준 미달 모델의 배포를 자동으로 차단하라"** 는 지문은 ConditionStep + Model Registry 승인 게이트 조합으로 매핑된다.
+ConditionStep은 MLOps 품질 게이트의 심장이다. "평가 AUC가 0.80 미만이면 등록하지 않는다"처럼, 나쁜 모델이 자동으로 프로덕션에 흘러드는 것을 막는다. 시험에서 **"기준 미달 모델의 배포를 자동으로 차단하라"** 는 지문은 ConditionStep + Model Registry 승인 게이트 조합으로 매핑된다.
 
 ## Model Registry: 버전과 승인 거버넌스
 
@@ -170,7 +170,7 @@ churn-models (Model Package Group)
 
 - Lineage Tracking은 데이터·처리·학습·모델을 Artifact/Action/Context와 Association으로 자동 연결한다. 덕분에 "이 예측을 낸 모델은 어떤 데이터로, 누가 승인해 배포됐나"에 답할 수 있다.
 
-> 💡 **관련 이론**: Model Registry는 "어떤 모델 아티팩트가 어떤 학습 Job·지표·데이터에서 왔는가"를 묶는 계보의 중심이다. 승인 상태(Approved/Rejected/Pending)는 사람 또는 자동화가 거버넌스를 강제하는 스위치이며, 롤백은 새 배포가 아니라 **이전 Approved 버전의 재배포**로 이뤄진다.
+Model Registry는 "어떤 모델 아티팩트가 어떤 학습 Job·지표·데이터에서 왔는가"를 묶는 계보의 중심이다. 승인 상태(Approved/Rejected/Pending)는 사람 또는 자동화가 거버넌스를 강제하는 스위치이며, 롤백은 새 배포가 아니라 **이전 Approved 버전의 재배포**로 이뤄진다.
 
 ## SageMaker Projects와 CI/CD
 
