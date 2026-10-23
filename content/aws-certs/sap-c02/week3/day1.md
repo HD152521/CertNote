@@ -4,9 +4,9 @@
 
 ## VPC Peering의 설계 철학과 기술적 한계
 
-VPC Peering은 두 VPC 사이에 **논리적 직결 링크**를 만드는 기술이다. AWS 내부적으로는 두 VPC의 라우터가 상대방 VPC의 CIDR 블록으로 향하는 트래픽을 AWS 백본 네트워크를 통해 직접 전달한다. 별도의 게이트웨이나 프록시가 없으므로 지연시간이 매우 낮고, 대역폭은 VPC 내부 통신과 동일한 수준이다.
+VPC Peering은 두 VPC 사이에 **논리적 직결 링크**를 만드는 기술이다. AWS 내부적으로는 두 VPC의 라우터가 상대방 VPC의 CIDR 블록으로 향하는 트래픽을 AWS 백본 네트워크를 통해 직접 전달한다. 별도의 게이트웨이나 프록시가 없으므로 지연 시간이 매우 낮고, 대역폭은 VPC 내부 통신과 동일한 수준이다.
 
-> 💡 **관련 이론**: 네트워크 토폴로지 이론에서 N개 노드를 모두 직접 연결하는 **완전 메시(Full Mesh)** 구조는 N(N-1)/2개의 링크를 필요로 한다. 10개 VPC면 45개, 50개 VPC면 1,225개, 100개 VPC면 4,950개의 Peering 연결이 필요하다. 링크 수가 O(N²)으로 증가하므로, 운영 복잡성은 실질적으로 관리 불가능 수준에 도달한다. 인터넷이 완전 메시 대신 BGP 기반 계층 라우팅을 채택한 이유도 동일하다.
+네트워크 토폴로지 이론에서 N개 노드를 모두 직접 연결하는 **완전 메시(Full Mesh)** 구조는 N(N-1)/2개의 링크를 필요로 한다. 10개 VPC면 45개, 50개 VPC면 1,225개, 100개 VPC면 4,950개의 Peering 연결이 필요하다. 링크 수가 O(N²)으로 증가하므로, 운영 복잡성은 실질적으로 관리 불가능 수준에 도달한다. 인터넷이 완전 메시 대신 BGP 기반 계층 라우팅을 채택한 이유도 동일하다.
 
 VPC Peering의 가장 결정적인 한계는 **전이적 라우팅(Transitive Routing) 미지원**이다. VPC A가 VPC B와 Peering 연결되어 있고, VPC B가 VPC C와 Peering 연결되어 있어도, A는 C로 직접 통신할 수 없다. A→C 트래픽은 B를 경유해도 B가 이를 포워딩하지 않는다. 이는 설계 결함이 아니라 의도적인 보안 결정이다. 각 Peering 연결은 명시적으로 승인된 두 VPC 사이의 격리된 링크여야 한다는 원칙이 전이적 라우팅을 차단한다.
 
@@ -17,11 +17,11 @@ VPC Peering의 가장 결정적인 한계는 **전이적 라우팅(Transitive Ro
 [VPC A] ──────────────── 직접 Peering 필요 ────────────────> [VPC C]
 ```
 
-> 💡 **관련 이론**: 전이적 라우팅 금지는 네트워크 보안의 **최소 경로 원칙(Principle of Least Path)**에서 비롯된다. 라우터가 자신이 명시적으로 알지 못하는 경로로 패킷을 포워딩하면 의도치 않은 트래픽 흐름이 발생한다. AWS는 이를 방지하기 위해 Peering 연결의 라우트 전파를 양 당사자 VPC로만 제한했다. RFC 4271(BGP-4)에서도 eBGP peer로부터 받은 경로를 다른 eBGP peer에 전파하는 것을 기본적으로 제한하는 것과 유사한 철학이다.
+전이적 라우팅 금지는 네트워크 보안의 **최소 경로 원칙(Principle of Least Path)**에서 비롯된다. 라우터가 자신이 명시적으로 알지 못하는 경로로 패킷을 포워딩하면 의도치 않은 트래픽 흐름이 발생한다. AWS는 이를 방지하기 위해 Peering 연결의 라우트 전파를 양 당사자 VPC로만 제한했다. RFC 4271(BGP-4)에서도 eBGP peer로부터 받은 경로를 다른 eBGP peer에 전파하는 것을 기본적으로 제한하는 것과 유사한 철학이다.
 
 추가적인 제약으로 Peering된 두 VPC의 CIDR 블록이 겹치면 연결 자체가 불가능하다. 대규모 조직에서 CIDR 계획 없이 성장하다 보면 서브넷 충돌이 발생하고, 그 순간 Peering은 선택지에서 사라진다.
 
-> 📚 **사례**: 2019년 한 글로벌 미디어 회사(공개 포스트모텀 기준)는 부서별로 독립적으로 AWS 계정을 운영하면서 동일한 10.0.0.0/8 대역을 중복 할당했다. 초기에는 각 부서가 독립적으로 운영되어 문제가 없었지만, 데이터 분석 플랫폼을 구축하면서 모든 계정의 데이터를 중앙 계정으로 모아야 했다. CIDR 충돌로 Peering이 불가능해지자, 비상 대책으로 NAT 레이어를 추가해 IP를 변환하는 임시 방편을 썼다. 이 경험이 이후 Transit Gateway 도입과 IP 주소 관리(IPAM) 체계화의 직접적인 계기가 됐다.
+2019년 한 글로벌 미디어 회사(공개 포스트모텀 기준)는 부서별로 독립적으로 AWS 계정을 운영하면서 동일한 10.0.0.0/8 대역을 중복 할당했다. 초기에는 각 부서가 독립적으로 운영되어 문제가 없었지만, 데이터 분석 플랫폼을 구축하면서 모든 계정의 데이터를 중앙 계정으로 모아야 했다. CIDR 충돌로 Peering이 불가능해지자, 비상 대책으로 NAT 레이어를 추가해 IP를 변환하는 임시 방편을 썼다. 이 경험이 이후 Transit Gateway 도입과 IP 주소 관리(IPAM) 체계화의 직접적인 계기가 됐다.
 
 ## Transit Gateway: 허브-앤-스포크의 구현
 
@@ -51,15 +51,15 @@ AWS Transit Gateway(TGW)는 2018년 11월 AWS re:Invent에서 발표됐다. 발�
 
 TGW의 핵심 구성 요소는 **Attachment(부착)**과 **Route Table(라우트 테이블)**이다. VPC, VPN 연결, Direct Connect Gateway, 다른 리전 TGW 피어링, TGW Connect(SD-WAN)가 모두 Attachment로 TGW에 연결된다. 각 Attachment는 하나 이상의 Route Table에 연관되고, 다른 Attachment의 라우트를 학습(Propagation)하거나 정적 라우트를 수신(Association)한다.
 
-> 💡 **관련 이론**: TGW는 내부적으로 **ECMP(Equal-Cost Multi-Path)** 라우팅을 지원한다. 동일한 목적지로 향하는 여러 VPN 또는 DX 경로가 있을 때 트래픽을 분산시켜 대역폭을 선형으로 확장한다. RFC 2992는 ECMP 구현의 기본 원칙을 정의한다. AWS의 TGW ECMP는 VPN over TGW에서 최대 50Gbps(VPN 터널 당 1.25Gbps × 40 터널)의 집계 대역폭을 달성할 수 있다.
+TGW는 내부적으로 **ECMP(Equal-Cost Multi-Path)** 라우팅을 지원한다. 동일한 목적지로 향하는 여러 VPN 또는 DX 경로가 있을 때 트래픽을 분산시켜 대역폭을 선형으로 확장한다. RFC 2992는 ECMP 구현의 기본 원칙을 정의한다. AWS의 TGW ECMP는 VPN over TGW에서 최대 50Gbps(VPN 터널 당 1.25Gbps × 40 터널)의 집계 대역폭을 달성할 수 있다.
 
-> 🔍 **더 깊이**: TGW의 내부 데이터 플레인은 AWS의 **Nitro 네트워킹 스택**을 기반으로 한다. 각 Availability Zone 내에 분산된 TGW 인스턴스들이 있으며, VPC Attachment는 각 AZ의 서브넷에 ENI(Elastic Network Interface)를 생성해 연결된다. 이 분산 아키텍처 덕분에 단일 AZ 장애 시에도 다른 AZ를 통한 트래픽이 지속된다. TGW 자체는 AWS가 완전 관리하므로 사용자가 AZ 이중화를 별도로 구성할 필요가 없다.
+TGW의 내부 데이터 플레인은 AWS의 **Nitro 네트워킹 스택**을 기반으로 한다. 각 Availability Zone 내에 분산된 TGW 인스턴스들이 있으며, VPC Attachment는 각 AZ의 서브넷에 ENI(Elastic Network Interface)를 생성해 연결된다. 이 분산 아키텍처 덕분에 단일 AZ 장애 시에도 다른 AZ를 통한 트래픽이 지속된다. TGW 자체는 AWS가 완전 관리하므로 사용자가 AZ 이중화를 별도로 구성할 필요가 없다.
 
 ## TGW Route Table 격리 패턴 (시험 핵심)
 
 TGW의 Route Table 설계가 SAP-C02 시험에서 반복적으로 등장하는 이유는, 이 기능이 대규모 엔터프라이즈 네트워크의 논리적 분리 요구사항을 충족하는 핵심 메커니즘이기 때문이다. 기본 개념은 두 가지다: **Association**(어느 Route Table의 라우팅 결정을 받을지)과 **Propagation**(어떤 Route Table에 자신의 CIDR을 광고할지).
 
-### 패턴 1: 공유 서비스 격리 (시험 최빈출)
+### 패턴 1: 공유 서비스 격리
 
 개발 VPC와 프로덕션 VPC는 서로 통신하지 않아야 하지만, 두 환경 모두 공유 DNS 서버, Active Directory, 패치 서버가 있는 Shared VPC에는 접근해야 한다.
 
@@ -95,7 +95,7 @@ NAT Gateway는 AZ당 생성되고 비용이 발생한다. 50개 VPC가 각자 NA
 NAT Gateway → Internet Gateway → 인터넷
 ```
 
-> ⚠️ **함정**: 중앙화 Egress 패턴을 구현할 때 헤어피닝(Hairpinning) 문제가 발생할 수 있다. 스포크 VPC에서 Egress VPC로 트래픽이 TGW를 통해 도달했을 때, Egress VPC의 라우트 테이블에서 리턴 트래픽이 올바르게 TGW를 통해 원래 VPC로 돌아가야 한다. 이를 위해 Egress VPC의 프라이빗 서브넷 라우트 테이블에 각 스포크 VPC의 CIDR에 대한 TGW 라우트를 명시적으로 추가해야 한다. 이 라우트를 빠뜨리면 비대칭 라우팅으로 연결이 실패한다.
+> ⚠️ **함정**: 중앙화 Egress 패턴을 구현할 때 헤어피닝(Hairpinning) 문제가 발생할 수 있다. 스포크 VPC에서 Egress VPC로 트래픽이 TGW를 통해 도달했을 때, Egress VPC의 라우팅 테이블에서 리턴 트래픽이 올바르게 TGW를 통해 원래 VPC로 돌아가야 한다. 이를 위해 Egress VPC의 프라이빗 서브넷 라우팅 테이블에 각 스포크 VPC의 CIDR에 대한 TGW 라우트를 명시적으로 추가해야 한다. 이 라우트를 빠뜨리면 비대칭 라우팅으로 연결이 실패한다.
 
 ### 패턴 3: Blackhole 라우트를 이용한 명시적 차단
 
@@ -108,24 +108,24 @@ aws ec2 create-transit-gateway-route \
   --blackhole
 ```
 
-> 💡 **관련 이론**: 네트워크에서 Null Route 또는 Blackhole 라우트는 불필요한 패킷을 CPU 처리 없이 즉시 드롭하는 기법이다. DDoS 공격 완화에도 사용된다. RFC 3882는 BGP를 이용한 Blackhole 라우팅(RTBH, Remotely-Triggered Black Hole)을 표준화했다. TGW의 Blackhole 라우트는 이 개념을 VPC 네트워킹에 적용한 것이다.
+네트워크에서 Null Route 또는 Blackhole 라우트는 불필요한 패킷을 CPU 처리 없이 즉시 드롭하는 기법이다. DDoS 공격 완화에도 사용된다. RFC 3882는 BGP를 이용한 Blackhole 라우팅(RTBH, Remotely-Triggered Black Hole)을 표준화했다. TGW의 Blackhole 라우트는 이 개념을 VPC 네트워킹에 적용한 것이다.
 
 ## TGW 내부 동작 원리: 패킷의 여정
 
 TGW가 실제로 패킷을 어떻게 처리하는지 이해하면 라우팅 문제를 디버깅할 때 훨씬 빨리 원인을 찾을 수 있다.
 
-VPC-Dev(10.1.0.0/16)의 EC2 인스턴스가 VPC-Shared(10.99.0.0/16)의 DNS 서버로 패킷을 보낸다고 가정하자.
+VPC-Dev(10.1.0.0/16)의 EC2 인스턴스가 VPC-Shared(10.99.0.0/16)의 DNS 서버로 패킷을 보낸다고 가정한다.
 
-1. EC2의 VPC 라우트 테이블: `10.99.0.0/16 → tgw-xxx` 항목이 있어야 한다. 없으면 로컬 라우트로 처리되어 실패한다.
+1. EC2의 VPC 라우팅 테이블: `10.99.0.0/16 → tgw-xxx` 항목이 있어야 한다. 없으면 로컬 라우트로 처리되어 실패한다.
 2. 패킷이 TGW에 도달한다. TGW는 패킷의 소스 Attachment(Dev VPC Attachment)를 확인한다.
 3. Dev VPC Attachment가 Association된 Route Table(RT-Workload)을 조회한다.
 4. RT-Workload에 `10.99.0.0/16 → Shared Attachment` 라우트가 있으면 Shared Attachment로 전달한다.
-5. Shared VPC의 서브넷 라우트 테이블에서 `10.99.x.x` 목적지가 로컬로 처리된다.
-6. 리턴 패킷: Shared의 DNS 서버가 응답할 때, Shared VPC 라우트 테이블에 `10.1.0.0/16 → tgw-xxx`가 있어야 한다.
+5. Shared VPC의 서브넷 라우팅 테이블에서 `10.99.x.x` 목적지가 로컬로 처리된다.
+6. 리턴 패킷: Shared의 DNS 서버가 응답할 때, Shared VPC 라우팅 테이블에 `10.1.0.0/16 → tgw-xxx`가 있어야 한다.
 7. 리턴 패킷이 TGW에 도달하고, Shared VPC Attachment가 Association된 RT-Shared를 조회한다.
 8. RT-Shared에 `10.1.0.0/16 → Dev Attachment`가 있으면 Dev VPC로 전달된다.
 
-> 🔍 **더 깊이**: TGW의 라우팅 결정은 **Association 기반**이다. 즉, 패킷이 들어온 Attachment의 Association된 Route Table이 라우팅 결정권을 갖는다. 반면 Propagation은 자신의 CIDR을 다른 Route Table에 광고하는 것이다. 이 비대칭성을 이해하지 못하면 라우팅 구성이 복잡해질수록 디버깅이 불가능해진다. VPC Flow Logs와 TGW Flow Logs를 조합해 패킷 경로를 추적할 수 있다.
+TGW의 라우팅 결정은 **Association 기반**이다. 즉, 패킷이 들어온 Attachment의 Association된 Route Table이 라우팅 결정권을 갖는다. 반면 Propagation은 자신의 CIDR을 다른 Route Table에 광고하는 것이다. 이 비대칭성을 이해하지 못하면 라우팅 구성이 복잡해질수록 디버깅이 불가능해진다. VPC Flow Logs와 TGW Flow Logs를 조합해 패킷 경로를 추적할 수 있다.
 
 ## TGW Inter-Region Peering과 Cloud WAN
 
@@ -142,9 +142,9 @@ VPC-Dev(10.1.0.0/16)의 EC2 인스턴스가 VPC-Shared(10.99.0.0/16)의 DNS 서�
 | 운영 복잡성 | 중간 | 높음 | 낮음(정책 기반) |
 | 비용 | 리전 내 처리 비용 | 데이터 전송 비용 추가 | Core Network Edge 비용 |
 
-> 💡 **관련 이론**: Cloud WAN의 설계는 **Software-Defined WAN(SD-WAN)**의 중앙집중형 제어 평면 철학을 반영한다. SD-WAN은 데이터 플레인(실제 패킷 전송)과 제어 평면(라우팅 결정)을 분리해 중앙에서 정책을 배포한다. Cloud WAN의 "Global Network Policy"가 제어 평면이고, 각 리전의 Core Network Edge가 데이터 플레인이다. 이는 BGP 기반의 분산 라우팅(TGW)과는 근본적으로 다른 접근법이다.
+Cloud WAN의 설계는 **Software-Defined WAN(SD-WAN)**의 중앙집중형 제어 평면 철학을 반영한다. SD-WAN은 데이터 플레인(실제 패킷 전송)과 제어 평면(라우팅 결정)을 분리해 중앙에서 정책을 배포한다. Cloud WAN의 "Global Network Policy"가 제어 평면이고, 각 리전의 Core Network Edge가 데이터 플레인이다. 이는 BGP 기반의 분산 라우팅(TGW)과는 근본적으로 다른 접근법이다.
 
-> 📚 **사례**: Netflix는 글로벌 스트리밍 인프라를 위해 us-east-1, eu-west-1, ap-northeast-1 등 여러 리전에 TGW를 두고 Inter-Region Peering으로 연결했다. 그러나 피어링 구성의 복잡성이 증가하자(각 TGW 쌍에 대한 정적 라우트 관리), Cloud WAN 도입을 검토했다. Cloud WAN의 정책 기반 관리는 라우팅 구성 오류를 크게 줄였다는 후기가 2023년 AWS re:Invent에서 발표됐다.
+Netflix는 글로벌 스트리밍 인프라를 위해 us-east-1, eu-west-1, ap-northeast-1 등 여러 리전에 TGW를 두고 Inter-Region Peering으로 연결했다. 그러나 피어링 구성의 복잡성이 증가하자(각 TGW 쌍에 대한 정적 라우트 관리), Cloud WAN 도입을 검토했다. Cloud WAN의 정책 기반 관리는 라우팅 구성 오류를 크게 줄였다는 후기가 2023년 AWS re:Invent에서 발표됐다.
 
 ## 다른 클라우드와의 비교
 
@@ -157,7 +157,7 @@ VPC-Dev(10.1.0.0/16)의 EC2 인스턴스가 VPC-Shared(10.99.0.0/16)의 DNS 서�
 | 멀티 리전 | TGW Peering or Cloud WAN | 리전별 VPC + Interconnect | Virtual WAN 글로벌 |
 | 최대 연결 수 | VPC 5,000개/TGW | Peering 25개/VPC | 제한 있음 |
 
-> 🔍 **더 깊이**: GCP의 VPC는 글로벌 단일 VPC 개념이라 AWS처럼 리전 간 Peering 문제가 없다. GCP VPC 내 서브넷은 리전에 종속되지만 VPC는 글로벌하므로, 같은 VPC 내 도쿄와 뉴욕 서브넷이 자동으로 통신한다. AWS의 VPC는 리전 스코프여서 리전 간 연결에 별도 메커니즘이 필요하다. 이 아키텍처 차이가 두 플랫폼의 멀티 리전 네트워킹 복잡성 차이를 만든다.
+GCP의 VPC는 글로벌 단일 VPC 개념이라 AWS처럼 리전 간 Peering 문제가 없다. GCP VPC 내 서브넷은 리전에 종속되지만 VPC는 글로벌하므로, 같은 VPC 내 도쿄와 뉴욕 서브넷이 자동으로 통신한다. AWS의 VPC는 리전 스코프여서 리전 간 연결에 별도 메커니즘이 필요하다. 이 아키텍처 차이가 두 플랫폼의 멀티 리전 네트워킹 복잡성 차이를 만든다.
 
 ## RAM을 이용한 TGW 멀티 계정 공유
 
@@ -192,13 +192,13 @@ aws ec2 create-transit-gateway-vpc-attachment \
                                             [스포크 VPC들]
 ```
 
-> 💡 **관련 이론**: GRE(RFC 2784)는 임의의 프로토콜 패킷을 다른 프로토콜로 캡슐화하는 터널링 기법이다. TGW Connect에서 GRE는 BGP 피어 간의 터널을 형성하는 용도로 사용된다. BGP(RFC 4271)는 AS(Autonomous System) 간의 경로 교환 프로토콜로, TGW Connect에서는 SD-WAN 어플라이언스와 TGW 간에 BGP 세션을 맺어 동적으로 라우트를 학습한다.
+GRE(RFC 2784)는 임의의 프로토콜 패킷을 다른 프로토콜로 캡슐화하는 터널링 기법이다. TGW Connect에서 GRE는 BGP 피어 간의 터널을 형성하는 용도로 사용된다. BGP(RFC 4271)는 AS(Autonomous System) 간의 경로 교환 프로토콜로, TGW Connect에서는 SD-WAN 어플라이언스와 TGW 간에 BGP 세션을 맺어 동적으로 라우트를 학습한다.
 
 ## TGW Multicast: 금융·미디어 특화
 
 일부 금융 거래 시스템이나 미디어 스트리밍에서는 단일 소스에서 다수 수신자에게 동시에 동일한 데이터를 전달하는 **멀티캐스트**가 필요하다. TGW는 멀티캐스트 도메인을 지원해 이러한 워크로드를 AWS로 이전할 수 있게 한다.
 
-> 🔍 **더 깊이**: 인터넷 멀티캐스트는 IGMP(Internet Group Management Protocol)와 PIM(Protocol Independent Multicast)을 기반으로 한다. AWS TGW의 멀티캐스트는 IGMP v2/v3을 지원하고, 멀티캐스트 그룹 멤버십을 TGW가 관리한다. 금융 시세 데이터(시장 데이터 피드)는 수천 개의 수신자에게 동일한 데이터를 실시간으로 전달해야 하므로 유니캐스트로는 대역폭이 선형으로 증가하지만 멀티캐스트로는 소스 대역폭이 일정하다.
+인터넷 멀티캐스트는 IGMP(Internet Group Management Protocol)와 PIM(Protocol Independent Multicast)을 기반으로 한다. AWS TGW의 멀티캐스트는 IGMP v2/v3을 지원하고, 멀티캐스트 그룹 멤버십을 TGW가 관리한다. 금융 시세 데이터(시장 데이터 피드)는 수천 개의 수신자에게 동일한 데이터를 실시간으로 전달해야 하므로 유니캐스트로는 대역폭이 선형으로 증가하지만 멀티캐스트로는 소스 대역폭이 일정하다.
 
 ## 실전 CLI: TGW 격리 패턴 구현
 
@@ -250,9 +250,9 @@ SAP-C02 시험에서 TGW 관련 문제는 주로 "어떤 Route Table 설계가 �
 
 > ⚠️ **함정**: TGW를 생성할 때 `DefaultRouteTableAssociation=enable`과 `DefaultRouteTablePropagation=enable`이 기본값이다. 이 설정으로 생성하면 모든 새 Attachment가 기본 RT에 자동으로 Association되고 CIDR을 기본 RT에 Propagation한다. 격리 패턴을 구현하려면 반드시 두 옵션을 모두 `disable`로 설정하고 수동으로 RT를 관리해야 한다. 기존 TGW에서 변경하면 이미 Association된 Attachment들이 기본 RT에 남아 있으므로 주의가 필요하다.
 
-## 정리하며
+## 정리
 
-VPC Peering은 CIDR이 겹치지 않는 두 VPC를 직접 연결할 때 여전히 유효한 선택이다. 지연시간이 가장 낮고 추가 비용이 없다. 그러나 VPC가 세 개 이상이고 격리 요구사항이 있거나, VPN/Direct Connect를 포함한 하이브리드 토폴로지가 필요하다면 TGW가 올바른 선택이다. 글로벌 멀티 리전 네트워크라면 Cloud WAN이 운영 복잡성을 크게 줄여준다. 이 세 가지 선택지의 트레이드오프를 명확히 이해하는 것이 SAP-C02 네트워크 도메인의 출발점이다.
+VPC Peering은 CIDR이 겹치지 않는 두 VPC를 직접 연결할 때 여전히 유효한 선택이다. 지연 시간이 가장 낮고 추가 비용이 없다. 그러나 VPC가 세 개 이상이고 격리 요구사항이 있거나, VPN/Direct Connect를 포함한 하이브리드 토폴로지가 필요하다면 TGW가 올바른 선택이다. 글로벌 멀티 리전 네트워크라면 Cloud WAN이 운영 복잡성을 크게 줄여준다. 이 세 가지 선택지의 트레이드오프를 명확히 이해하는 것이 SAP-C02 네트워크 도메인의 출발점이다.
 
 ---
 

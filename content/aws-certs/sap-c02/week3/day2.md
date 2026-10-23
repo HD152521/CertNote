@@ -6,11 +6,11 @@
 
 Direct Connect는 온프레미스 장비와 AWS DX Location(물리적 코로케이션 시설)을 **전용 광섬유 케이블**로 연결한다. 이 케이블은 공유 인터넷 인프라를 전혀 통과하지 않는다. AWS DX Location에서 AWS 네트워크로의 연결은 AWS가 직접 운영하는 백본을 통해 이루어진다.
 
-> 💡 **관련 이론**: 광섬유 전송에서 DWDM(Dense Wavelength Division Multiplexing, RFC 6241 참조)은 단일 광섬유에 서로 다른 파장(색깔)의 빛을 다중화해 수십 개의 독립 채널을 운용한다. AWS DX의 100Gbps 회선은 DWDM 기술로 단일 물리 케이블에 10Gbps 채널 10개를 묶는 방식을 사용한다. 이것이 "같은 케이블 경로"를 공유하는 DX 회선이 공통 장애 지점이 될 수 있는 이유다.
+광섬유 전송에서 DWDM(Dense Wavelength Division Multiplexing, RFC 6241 참조)은 단일 광섬유에 서로 다른 파장(색깔)의 빛을 다중화해 수십 개의 독립 채널을 운용한다. AWS DX의 100Gbps 회선은 DWDM 기술로 단일 물리 케이블에 10Gbps 채널 10개를 묶는 방식을 사용한다. 이것이 "같은 케이블 경로"를 공유하는 DX 회선이 공통 장애 지점이 될 수 있는 이유다.
 
 DX 연결의 프로비저닝 과정은 다음과 같다. AWS 콘솔에서 연결을 요청하면 DX Location에서 LOA-CFA(Letter of Authorization — Connecting Facility Assignment) 문서를 받는다. 이 문서를 DX Location 운영 업체(코로케이션 시설)에 제출하면 교차 연결(Cross Connect)이 설치된다. 이후 온프레미스 라우터에서 DX Location까지의 물리 회선을 별도 통신사(AT&T, Verizon, KT 등)가 구성한다. 전체 과정이 **수주에서 수개월**이 걸리는 이유가 이 물리적 공사 과정 때문이다.
 
-> 📚 **사례**: 2020년 한 대형 금융기관이 코어 뱅킹 시스템을 AWS로 이전하면서 Direct Connect 프로비저닝 지연으로 일정이 6주 밀렸다. LOA-CFA 발급은 1주일 만에 됐지만 코로케이션 시설의 교차 연결 설치 대기열이 3주, 통신사의 최종 마일 광섬유 공사가 2주였다. 이 경험으로 조직은 이후 프로젝트에서 DX 프로비저닝을 주 크리티컬 패스에 넣고 6개월 전에 시작하는 프로세스를 수립했다.
+2020년 한 대형 금융기관이 코어 뱅킹 시스템을 AWS로 이전하면서 Direct Connect 프로비저닝 지연으로 일정이 6주 밀렸다. LOA-CFA 발급은 1주일 만에 됐지만 코로케이션 시설의 교차 연결 설치 대기열이 3주, 통신사의 최종 마일 광섬유 공사가 2주였다. 이 경험으로 조직은 이후 프로젝트에서 DX 프로비저닝을 주 크리티컬 패스에 넣고 6개월 전에 시작하는 프로세스를 수립했다.
 
 ## VIF(Virtual Interface) 3종: 선택의 기준
 
@@ -39,7 +39,7 @@ Private VIF의 결정적 한계는 **단일 VGW만 연결**할 수 있다는 것
 
 Public VIF는 인터넷을 경유하지 않고 S3, DynamoDB, SQS, ECR 같은 AWS 공개 엔드포인트에 접근할 때 사용한다. Public VIF를 통해 AWS는 자신이 소유한 전체 IPv4/IPv6 공개 주소 범위를 BGP로 광고한다.
 
-> 🔍 **더 깊이**: Public VIF를 활성화하면 BGP 세션을 통해 수만 개의 AWS 공개 IP 프리픽스가 온프레미스 라우터에 광고된다. 온프레미스 라우터가 이 경로들을 수용하려면 **BGP 라우팅 테이블 용량**이 충분해야 한다. 일부 엔터프라이즈 라우터는 기본 BGP 테이블 크기 제한이 있어 Public VIF 활성화 시 라우터 CPU 과부하가 발생한 사례가 있다. 실무에서는 BGP 필터(prefix-list, route-map)로 필요한 서비스의 IP 범위만 수용하도록 제한한다.
+Public VIF를 활성화하면 BGP 세션을 통해 수만 개의 AWS 공개 IP 프리픽스가 온프레미스 라우터에 광고된다. 온프레미스 라우터가 이 경로들을 수용하려면 **BGP 라우팅 테이블 용량**이 충분해야 한다. 일부 엔터프라이즈 라우터는 기본 BGP 테이블 크기 제한이 있어 Public VIF 활성화 시 라우터 CPU 과부하가 발생한 사례가 있다. 실무에서는 BGP 필터(prefix-list, route-map)로 필요한 서비스의 IP 범위만 수용하도록 제한한다.
 
 ### Transit VIF: TGW를 통한 멀티 VPC·멀티 리전 접근
 
@@ -72,7 +72,7 @@ DX Location ──────────────────────�
 
 DX Gateway(DXGW)는 AWS 글로벌 서비스로, 특정 리전에 귀속되지 않는다. 단일 DX 연결에서 DXGW를 통해 여러 리전의 TGW에 연결하면 온프레미스에서 모든 리전의 VPC에 단일 물리 회선으로 접근할 수 있다.
 
-> 💡 **관련 이론**: DXGW는 AWS 내부적으로 **분산 라우팅 플레인**으로 구현된다. 물리적으로 특정 리전에 있는 것이 아니라 AWS 글로벌 백본 전체에 분산된 라우팅 상태를 유지한다. 온프레미스에서 광고된 CIDR이 DXGW에 도달하면, DXGW는 연결된 TGW들에게 이 경로를 BGP로 전달한다. 각 TGW는 이 경로를 자신에게 연결된 VPC의 라우트 테이블에 주입한다. 이 과정이 비동기적으로 일어나므로, DXGW와 TGW를 연결한 직후 라우트가 VPC에 완전히 전파되기까지 수 분이 걸릴 수 있다.
+DXGW는 AWS 내부적으로 **분산 라우팅 플레인**으로 구현된다. 물리적으로 특정 리전에 있는 것이 아니라 AWS 글로벌 백본 전체에 분산된 라우팅 상태를 유지한다. 온프레미스에서 광고된 CIDR이 DXGW에 도달하면, DXGW는 연결된 TGW들에게 이 경로를 BGP로 전달한다. 각 TGW는 이 경로를 자신에게 연결된 VPC의 라우팅 테이블에 주입한다. 이 과정이 비동기적으로 일어나므로, DXGW와 TGW를 연결한 직후 라우트가 VPC에 완전히 전파되기까지 수 분이 걸릴 수 있다.
 
 ## LAG(Link Aggregation Group): 대역폭과 이중화의 결합
 
@@ -86,7 +86,7 @@ Bond 인터페이스 ─┐
                                  └── (포트 1 장애 시 포트 2가 자동으로 모든 트래픽 처리)
 ```
 
-> 💡 **관련 이론**: LACP(RFC 4127)는 협상 기반의 링크 집합 프로토콜이다. 양쪽 장비가 LACP PDU(Protocol Data Unit)를 교환해 집합에 참여할 포트를 협상한다. AWS DX의 LAG는 같은 DX Location의 같은 AWS 디바이스에 있는 포트만 묶을 수 있다. 최대 4개 포트, 동일 대역폭 조건이 있다. 즉 10Gbps 포트 4개로 최대 40Gbps 논리 인터페이스를 만들 수 있다. 단, LACP는 물리적 장애(포트 손상, 케이블 단선)에는 빠르게 반응하지만, 경로 장애(DX Location 전체 다운)에는 BGP와 BFD가 필요하다.
+LACP(RFC 4127)는 협상 기반의 링크 집합 프로토콜이다. 양쪽 장비가 LACP PDU(Protocol Data Unit)를 교환해 집합에 참여할 포트를 협상한다. AWS DX의 LAG는 같은 DX Location의 같은 AWS 디바이스에 있는 포트만 묶을 수 있다. 최대 4개 포트, 동일 대역폭 조건이 있다. 즉 10Gbps 포트 4개로 최대 40Gbps 논리 인터페이스를 만들 수 있다. 단, LACP는 물리적 장애(포트 손상, 케이블 단선)에는 빠르게 반응하지만, 경로 장애(DX Location 전체 다운)에는 BGP와 BFD가 필요하다.
 
 LAG의 제약을 이해하는 것이 중요하다. LAG는 **같은 DX Location** 내에서만 작동한다. 서로 다른 DX Location의 회선은 LAG로 묶을 수 없다. 따라서 LAG는 대역폭 증설과 단일 포트 장애 방어에는 효과적이지만, DX Location 전체 장애(시설 화재, 네트워크 장비 전체 다운) 시나리오에는 무력하다.
 
@@ -146,7 +146,7 @@ DX 경로: AS Path 짧게 (예: 65000)
 VPN 경로: AS Path Prepending (예: 65000 65000 65000) → AS Path 길수록 덜 선호
 ```
 
-> 💡 **관련 이론**: BGP 경로 선택 알고리즘(RFC 4271)은 여러 속성을 순서대로 비교한다. 가장 높은 우선순위부터: Local Preference(높을수록 선호) → AS Path 길이(짧을수록 선호) → Origin(IGP > EGP > Incomplete) → MED(낮을수록 선호) → eBGP vs iBGP → IGP 메트릭. AWS는 DX와 VPN 간의 경로 선택에서 주로 Local Preference와 AS Path Prepending을 활용한다. AWS 측 BGP의 Local Preference는 DX가 VPN보다 높게 설정되어 있어, 특별히 조작하지 않아도 DX가 기본적으로 우선된다.
+BGP 경로 선택 알고리즘(RFC 4271)은 여러 속성을 순서대로 비교한다. 가장 높은 우선순위부터: Local Preference(높을수록 선호) → AS Path 길이(짧을수록 선호) → Origin(IGP > EGP > Incomplete) → MED(낮을수록 선호) → eBGP vs iBGP → IGP 메트릭. AWS는 DX와 VPN 간의 경로 선택에서 주로 Local Preference와 AS Path Prepending을 활용한다. AWS 측 BGP의 Local Preference는 DX가 VPN보다 높게 설정되어 있어, 특별히 조작하지 않아도 DX가 기본적으로 우선된다.
 
 ### 온프레미스 → AWS 방향 (아웃바운드 트래픽 제어)
 
@@ -171,7 +171,7 @@ BGP 기본 설정에서 keepalive 간격은 60초, hold time은 180초다. 즉 �
 
 BFD(Bidirectional Forwarding Detection, RFC 5880)는 이를 **1초 미만**으로 단축한다. BFD는 BGP와 독립적으로 100ms 간격으로 hello 패킷을 교환하고, 3번 연속 실패하면 300ms 후 링크 다운을 선언하고 BGP에 통보한다. BGP는 BFD의 통보를 받는 즉시 대안 경로로 전환한다.
 
-> 🔍 **더 깊이**: BFD는 두 가지 모드로 동작한다. **Asynchronous Mode**: 양쪽이 주기적으로 BFD 패킷을 보내고 수신 실패 시 링크 다운 선언. **Echo Mode**: 한쪽이 BFD 패킷을 보내면 상대방이 데이터 플레인에서 바로 돌려보내는 루프백 방식으로, 단일 방향 지연 측정이 가능하다. AWS DX에서 BFD는 Asynchronous Mode를 사용하며, 최소 BFD 타이머는 300ms다. 온프레미스 라우터에서도 같은 타이머를 설정해야 협상된다.
+BFD는 두 가지 모드로 동작한다. **Asynchronous Mode**: 양쪽이 주기적으로 BFD 패킷을 보내고 수신 실패 시 링크 다운 선언. **Echo Mode**: 한쪽이 BFD 패킷을 보내면 상대방이 데이터 플레인에서 바로 돌려보내는 루프백 방식으로, 단일 방향 지연 측정이 가능하다. AWS DX에서 BFD는 Asynchronous Mode를 사용하며, 최소 BFD 타이머는 300ms다. 온프레미스 라우터에서도 같은 타이머를 설정해야 협상된다.
 
 ## MACsec: L2 암호화
 
@@ -179,7 +179,7 @@ DX는 사설망이지만 물리적으로 코로케이션 시설을 통과하므�
 
 MACsec(IEEE 802.1AE)은 이더넷 프레임 레벨(L2)에서 암호화를 적용한다. AWS DX에서는 10Gbps와 100Gbps Dedicated Connection에서 MACsec을 지원한다. 1Gbps 회선이나 Hosted Connection은 미지원이다.
 
-> 💡 **관련 이론**: MACsec(IEEE 802.1AE)은 GCM-AES-128 또는 GCM-AES-256으로 이더넷 페이로드를 암호화한다. IPsec(L3)이 IP 패킷을 암호화하는 것과 달리, MACsec은 이더넷 프레임 전체를 암호화해 MAC 주소 기반의 트래픽 분석도 불가능하게 만든다. 레이턴시 오버헤드는 하드웨어 가속 덕분에 마이크로초 수준이다.
+MACsec(IEEE 802.1AE)은 GCM-AES-128 또는 GCM-AES-256으로 이더넷 페이로드를 암호화한다. IPsec(L3)이 IP 패킷을 암호화하는 것과 달리, MACsec은 이더넷 프레임 전체를 암호화해 MAC 주소 기반의 트래픽 분석도 불가능하게 만든다. 지연 시간 오버헤드는 하드웨어 가속 덕분에 마이크로초 수준이다.
 
 MACsec은 DX 회선 자체의 암호화에 집중한다. 반면 IPsec VPN over DX는 DX 위에 터널을 올려 L3 암호화를 추가한다. 규제가 "전송 중 암호화(Encryption in Transit)"를 요구한다면 MACsec으로 충족 가능하다.
 
@@ -196,7 +196,7 @@ MACsec은 DX 회선 자체의 암호화에 집중한다. 반면 IPsec VPN over D
 | 프로비저닝 기간 | 수주~수개월 | 수주~수개월 | 수주~수개월 |
 | SLA | 99.99%(Maximum) | 99.99%(이중화) | 99.95%(기본) |
 
-> 🔍 **더 깊이**: Azure ExpressRoute와 AWS DX의 결정적 차이는 글로벌 범위다. AWS DX는 연결된 DX Location에서 DXGW를 통해 전 세계 리전에 접근할 수 있다. Azure ExpressRoute는 기본적으로 특정 지역에 귀속되며, 다른 리전 연결에는 Global Reach를 별도로 활성화해야 한다. GCP의 경우 VPC 자체가 글로벌이므로 Cloud Interconnect 연결 하나로 모든 리전 서브넷에 접근 가능하다.
+Azure ExpressRoute와 AWS DX의 결정적 차이는 글로벌 범위다. AWS DX는 연결된 DX Location에서 DXGW를 통해 전 세계 리전에 접근할 수 있다. Azure ExpressRoute는 기본적으로 특정 지역에 귀속되며, 다른 리전 연결에는 Global Reach를 별도로 활성화해야 한다. GCP의 경우 VPC 자체가 글로벌이므로 Cloud Interconnect 연결 하나로 모든 리전 서브넷에 접근 가능하다.
 
 ## SiteLink: DX 백본으로 온프레미스 간 연결
 
@@ -255,9 +255,9 @@ DX는 MTU 1500(기본)과 9001 바이트(점보 프레임)를 지원한다. 대�
 
 > ⚠️ **함정**: TGW를 경유할 때 TGW는 8500 MTU를 지원한다. 따라서 DX에서 9001 MTU를 사용해도 TGW를 경유하는 경우 TGW가 8500으로 제한한다. VPC ENI는 9001 MTU를 지원하지만, TGW 경유 시 8500이 실질적 제한이다. 이를 모르고 9001로 설정하면 TGW 경유 트래픽에서 단편화가 발생해 성능 저하가 일어난다.
 
-## 정리하며
+## 정리
 
-Direct Connect는 AWS와 온프레미스를 연결하는 가장 강력하고 안정적인 방법이지만, 그 복잡성도 그만큼 높다. VIF 종류 선택(Private/Public/Transit), 이중화 레벨(Maximum/High/Development), BGP 우선순위 제어(MED, AS Path Prepending, Local Preference), 빠른 페일오버(BFD), L2 암호화(MACsec)까지 각 레이어에서 의사결정이 필요하다. SAP-C02 시험에서 DX 문제의 핵심은 시나리오의 규모와 복원력 요구사항을 파악해 올바른 VIF와 이중화 구성을 선택하는 것이다. 다음 장에서는 DX의 백업 또는 대안으로 자주 활용되는 Site-to-Site VPN을 깊이 다룬다.
+Direct Connect는 AWS와 온프레미스를 연결하는 가장 강력하고 안정적인 방법이지만, 그 복잡성도 그만큼 높다. VIF 종류 선택(Private/Public/Transit), 이중화 레벨(Maximum/High/Development), BGP 우선순위 제어(MED, AS Path Prepending, Local Preference), 빠른 페일오버(BFD), L2 암호화(MACsec)까지 각 레이어에서 의사결정이 필요하다. SAP-C02 시험에서 DX 문제는 시나리오의 규모와 복원력 요구사항을 파악해 올바른 VIF와 이중화 구성을 고르는 문제다. 다음 장에서는 DX의 백업 또는 대안으로 자주 활용되는 Site-to-Site VPN을 깊이 다룬다.
 
 ---
 

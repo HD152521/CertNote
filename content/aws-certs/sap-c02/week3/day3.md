@@ -1,6 +1,6 @@
 # Day 3 - Site-to-Site VPN과 Client VPN: IPsec 터널의 모든 것
 
-인터넷 위에 암호화 터널을 올리는 VPN은 1990년대 후반부터 기업 네트워킹의 핵심이었다. AWS가 2011년 Site-to-Site VPN을 출시했을 때 대부분의 기업은 이미 IPsec 기반 VPN에 익숙했다. 그러나 AWS의 VPN은 단순한 IP 터널 그 이상이다. TGW와 결합한 ECMP로 대역폭을 선형으로 확장하고, Global Accelerator와 연동해 전 세계 어디서든 낮은 지연을 보장하며, BGP로 온프레미스 라우팅 변경을 자동으로 반영한다. 오늘은 Site-to-Site VPN의 내부 동작 원리부터 ECMP를 활용한 대역폭 확장, Accelerated VPN, Client VPN의 인증 흐름까지 SAP-C02 수준의 깊이로 다룬다.
+인터넷 위에 암호화 터널을 올리는 VPN은 1990년대 후반부터 기업 네트워킹의 핵심이었다. AWS가 2011년 Site-to-Site VPN을 출시했을 때 많은 기업은 이미 IPsec 기반 VPN에 익숙했다. 그러나 AWS의 VPN은 단순한 IP 터널 그 이상이다. TGW와 결합한 ECMP로 대역폭을 선형으로 확장하고, Global Accelerator와 연동해 전 세계 어디서든 낮은 지연을 보장하며, BGP로 온프레미스 라우팅 변경을 자동으로 반영한다. 오늘은 Site-to-Site VPN의 내부 동작 원리부터 ECMP를 활용한 대역폭 확장, Accelerated VPN, Client VPN의 인증 흐름까지 SAP-C02 수준의 깊이로 다룬다.
 
 ## IPsec의 구조: VPN의 기반 기술
 
@@ -12,7 +12,7 @@ AWS Site-to-Site VPN은 IPsec(IP Security) 프로토콜을 기반으로 한다. 
 
 IPsec은 두 가지 모드로 동작한다. **Transport Mode**는 원본 IP 헤더를 유지하고 페이로드만 암호화한다. **Tunnel Mode**는 원본 IP 패킷 전체를 암호화하고 새로운 IP 헤더로 캡슐화한다. AWS Site-to-Site VPN은 항상 **Tunnel Mode**를 사용한다.
 
-> 💡 **관련 이론**: IPsec에서 보안 연결을 수립하는 프로토콜이 IKE(Internet Key Exchange)다. IKEv1(RFC 2409)은 두 단계(Phase 1: 보안 채널 수립, Phase 2: IPsec SA 협상)로 구성되고, IKEv2(RFC 7296)는 이를 단순화하고 NAT Traversal, 재인증, MOBIKE 같은 기능을 추가했다. AWS VPN은 IKEv1과 IKEv2를 모두 지원하지만, **IKEv2를 권장**한다. IKEv2는 핸드쉐이크 메시지 수가 적어 터널 수립이 빠르고, Dead Peer Detection(DPD)이 기본 내장되어 있어 장애 감지가 신뢰성 있다.
+IPsec에서 보안 연결을 수립하는 프로토콜이 IKE(Internet Key Exchange)다. IKEv1(RFC 2409)은 두 단계(Phase 1: 보안 채널 수립, Phase 2: IPsec SA 협상)로 구성되고, IKEv2(RFC 7296)는 이를 단순화하고 NAT Traversal, 재인증, MOBIKE 같은 기능을 추가했다. AWS VPN은 IKEv1과 IKEv2를 모두 지원하지만, **IKEv2를 권장**한다. IKEv2는 핸드쉐이크 메시지 수가 적어 터널 수립이 빠르고, Dead Peer Detection(DPD)이 기본 내장되어 있어 장애 감지가 신뢰성 있다.
 
 ## AWS Site-to-Site VPN 아키텍처
 
@@ -32,7 +32,7 @@ AWS Site-to-Site VPN은 Customer Gateway(CGW, 온프레미스 라우터)와 AWS 
 
 두 터널은 동시에 활성 상태로 유지될 수 있다. BGP를 사용하면 두 터널에서 동일한 경로를 광고하고 트래픽을 나눌 수 있다(Active-Active). Static Route를 사용하면 AWS가 한 터널을 기본으로 선택하고 다른 터널은 백업으로 둔다(Active-Passive).
 
-> 🔍 **더 깊이**: AWS VPN의 터널 내부 IP(Inside CIDR)는 169.254.0.0/16 범위에서 할당된다. 이는 링크-로컬 주소(RFC 3927)로 인터넷 라우팅이 불가능하다. BGP 세션은 이 링크-로컬 주소 사이에서 맺어진다. AWS VPN에서 사용 가능한 Inside CIDR은 169.254.0.0/30 ~ 169.254.255.252/30 범위에서 AWS가 예약한 일부 서브넷을 제외한 범위다. 기업이 여러 VPN 연결을 관리할 때 Inside CIDR 충돌이 발생하지 않도록 체계적으로 할당해야 한다.
+AWS VPN의 터널 내부 IP(Inside CIDR)는 169.254.0.0/16 범위에서 할당된다. 이는 링크-로컬 주소(RFC 3927)로 인터넷 라우팅이 불가능하다. BGP 세션은 이 링크-로컬 주소 사이에서 맺어진다. AWS VPN에서 사용 가능한 Inside CIDR은 169.254.0.0/30 ~ 169.254.255.252/30 범위에서 AWS가 예약한 일부 서브넷을 제외한 범위다. 기업이 여러 VPN 연결을 관리할 때 Inside CIDR 충돌이 발생하지 않도록 체계적으로 할당해야 한다.
 
 ## Static vs BGP: 시험이 원하는 답
 
@@ -44,7 +44,7 @@ AWS Site-to-Site VPN은 정적 라우팅과 BGP 동적 라우팅을 모두 지�
 
 > ⚠️ **함정**: BGP를 사용해도 두 터널이 자동으로 Active-Active ECMP가 되는 것은 아니다. VGW에 연결된 VPN은 두 터널 중 하나만 활성(Active-Passive)으로 동작한다. **TGW에 연결하고 ECMP를 명시적으로 활성화**해야 두 터널이 동시에 활성으로 트래픽을 분담한다. SAP-C02에서 "대역폭을 늘려야 한다"는 시나리오에서 VGW를 TGW로 교체하는 것이 정답인 경우가 있다.
 
-SAP-C02에서 BGP가 거의 항상 정답이다. "페일오버 자동화", "라우트 변경 자동 반영", "동적 라우팅" 키워드가 있으면 BGP다.
+SAP-C02에서 BGP가 정답 쪽이다. "페일오버 자동화", "라우트 변경 자동 반영", "동적 라우팅" 키워드가 있으면 BGP다.
 
 ## TGW + ECMP: VPN 대역폭의 선형 확장
 
@@ -62,13 +62,13 @@ ECMP(Equal-Cost Multi-Path)는 동일한 목적지로 향하는 여러 경로가
 실제 활용 가능: 약 8~10Gbps (ECMP 해시 불균등 감안)
 ```
 
-> 💡 **관련 이론**: ECMP의 트래픽 분산은 **플로우 해시(Flow Hash)** 기반이다. 소스 IP, 목적지 IP, 소스 포트, 목적지 포트, 프로토콜의 조합으로 해시 값을 계산하고, 이 값으로 경로를 선택한다. 동일한 플로우(같은 5-tuple)는 항상 같은 경로를 사용하므로 패킷 순서가 보장된다. 단, 플로우 수가 적은 경우(예: 단일 FTP 전송) ECMP의 효과가 미미하다. 이는 ECMP의 근본적 한계로, RFC 2992가 이를 다룬다.
+ECMP의 트래픽 분산은 **플로우 해시(Flow Hash)** 기반이다. 소스 IP, 목적지 IP, 소스 포트, 목적지 포트, 프로토콜의 조합으로 해시 값을 계산하고, 이 값으로 경로를 선택한다. 동일한 플로우(같은 5-tuple)는 항상 같은 경로를 사용하므로 패킷 순서가 보장된다. 단, 플로우 수가 적은 경우(예: 단일 FTP 전송) ECMP의 효과가 미미하다. 이는 ECMP의 근본적 한계로, RFC 2992가 이를 다룬다.
 
 > 🎯 **시나리오**: 미디어 스트리밍 회사가 온프레미스 렌더링 팜에서 AWS의 S3로 매일 밤 100GB의 렌더링 결과물을 전송한다. 현재 1개 VPN 연결로 최대 2.5Gbps를 사용하지만 전송 시간이 너무 길다. DX는 프로비저닝에 몇 달이 걸린다. 즉시 해결책은 TGW로 마이그레이션하고 VPN 연결 4개를 ECMP로 구성해 이론상 10Gbps까지 확장하는 것이다. 비용은 VPN 연결 4개 시간당 요금이 추가되지만 DX 구축 기간보다 훨씬 빠르다.
 
 ## Accelerated Site-to-Site VPN: 글로벌 백본 활용
 
-일반 Site-to-Site VPN은 온프레미스 라우터에서 인터넷을 통해 AWS VPN 엔드포인트까지 공개 인터넷 경로를 이용한다. 한국에서 us-east-1의 VPN 엔드포인트까지 수많은 ISP 홉을 거치면 지연시간이 불안정해진다.
+일반 Site-to-Site VPN은 온프레미스 라우터에서 인터넷을 통해 AWS VPN 엔드포인트까지 공개 인터넷 경로를 이용한다. 한국에서 us-east-1의 VPN 엔드포인트까지 수많은 ISP 홉을 거치면 지연 시간이 불안정해진다.
 
 **Accelerated Site-to-Site VPN**은 AWS Global Accelerator의 Anycast IP를 VPN 터널의 AWS 측 엔드포인트로 사용한다. 온프레미스에서 인터넷으로 나가는 트래픽이 가장 가까운 AWS 에지 로케이션에 도달하는 순간 AWS 글로벌 백본으로 진입한다. 이후 AWS 백본을 통해 목적지 리전의 TGW로 전달된다.
 
@@ -81,7 +81,7 @@ ECMP(Equal-Cost Multi-Path)는 동일한 목적지로 향하는 여러 경로가
                   (홉 많고 지연 변동 큼)
 ```
 
-> 💡 **관련 이론**: Global Accelerator는 BGP Anycast를 사용한다. AWS는 전 세계 여러 에지 로케이션에서 동일한 두 개의 정적 IPv4 주소를 광고한다. 인터넷 라우터는 BGP의 최단 경로 알고리즘으로 가장 가까운 에지 로케이션을 선택한다. 이는 DNS 기반 라우팅(Route 53)과 달리 TTL 캐시가 없어 즉각적인 경로 변경이 가능하다. Accelerated VPN은 이 메커니즘을 IPsec 터널 엔드포인트에 적용한 것이다.
+Global Accelerator는 BGP Anycast를 사용한다. AWS는 전 세계 여러 에지 로케이션에서 동일한 두 개의 정적 IPv4 주소를 광고한다. 인터넷 라우터는 BGP의 최단 경로 알고리즘으로 가장 가까운 에지 로케이션을 선택한다. 이는 DNS 기반 라우팅(Route 53)과 달리 TTL 캐시가 없어 즉각적인 경로 변경이 가능하다. Accelerated VPN은 이 메커니즘을 IPsec 터널 엔드포인트에 적용한 것이다.
 
 Accelerated VPN의 제약: **TGW에 연결된 VPN만 지원**한다. VGW에 연결된 VPN에는 사용할 수 없다. 추가 비용(Global Accelerator 시간당 요금 + 데이터 처리 요금)이 발생한다.
 
@@ -89,7 +89,7 @@ Accelerated VPN의 제약: **TGW에 연결된 VPN만 지원**한다. VGW에 연�
 
 IKEv2에 내장된 DPD(RFC 3706)는 VPN 피어의 생존 여부를 주기적으로 확인한다. AWS VPN의 기본 DPD 타임아웃은 30초다. DPD 패킷에 응답이 없으면 IKE 세션을 종료하고 터널을 재수립하거나 대안 터널로 전환한다.
 
-> 🔍 **더 깊이**: DPD는 "On-Demand" 모드와 "Periodic" 모드로 동작한다. On-Demand는 트래픽이 없는 상태에서 일정 시간 후에만 DPD 패킷을 보내는 방식이다. Periodic은 항상 주기적으로 보낸다. AWS VPN은 On-Demand DPD를 사용한다. 이 때문에 트래픽이 전혀 없는 터널에서 피어 장애 감지가 느려질 수 있다. 항상 트래픽을 유지하거나 Periodic DPD를 지원하는 온프레미스 라우터 설정이 권장된다.
+DPD는 "On-Demand" 모드와 "Periodic" 모드로 동작한다. On-Demand는 트래픽이 없는 상태에서 일정 시간 후에만 DPD 패킷을 보내는 방식이다. Periodic은 항상 주기적으로 보낸다. AWS VPN은 On-Demand DPD를 사용한다. 이 때문에 트래픽이 전혀 없는 터널에서 피어 장애 감지가 느려질 수 있다. 항상 트래픽을 유지하거나 Periodic DPD를 지원하는 온프레미스 라우터 설정이 권장된다.
 
 ## VPN 이중화 패턴: 무엇이 어디를 방어하는가
 
@@ -111,7 +111,7 @@ IKEv2에 내장된 DPD(RFC 3706)는 VPN 피어의 생존 여부를 주기적으�
 Router-A 장애 → Tunnel 1, 2 중단 → BGP가 Tunnel 3, 4로 자동 전환
 ```
 
-> 📚 **사례**: 2021년 한 글로벌 제조업체가 온프레미스 → AWS VPN 연결 중 온프레미스 BGP 라우터가 소프트웨어 버그로 재시작됐다. 단일 CGW 구성이었기 때문에 VPN이 완전히 단절됐고, 재수립까지 약 4분이 걸렸다. 이 4분 동안 생산 라인 제어 시스템과 AWS의 통신이 끊어져 알람이 발생했다. 이후 회사는 2개 CGW 구성으로 변경하고 BGP ECMP로 운영해 단일 라우터 재시작 시 트래픽이 다른 CGW로 즉시 전환되도록 했다.
+2021년 한 글로벌 제조업체가 온프레미스 → AWS VPN 연결 중 온프레미스 BGP 라우터가 소프트웨어 버그로 재시작됐다. 단일 CGW 구성이었기 때문에 VPN이 완전히 단절됐고, 재수립까지 약 4분이 걸렸다. 이 4분 동안 생산 라인 제어 시스템과 AWS의 통신이 끊어져 알람이 발생했다. 이후 회사는 2개 CGW 구성으로 변경하고 BGP ECMP로 운영해 단일 라우터 재시작 시 트래픽이 다른 CGW로 즉시 전환되도록 했다.
 
 ## Client VPN: 원격 직원의 VPC 접근
 
@@ -127,7 +127,7 @@ Client VPN은 **OpenVPN 프로토콜** 기반이다. 클라이언트는 AWS가 �
 
 **3. 상호 인증서 인증 (Mutual TLS)**: 서버 인증서와 클라이언트 인증서 모두 검증. 사용자 ID/PW 없이 인증서만으로 인증한다. 가장 강력한 인증이지만 인증서 관리 부담이 있다.
 
-> 💡 **관련 이론**: mTLS(Mutual TLS, RFC 8446)는 TLS 핸드쉐이크에서 서버가 클라이언트에게도 인증서를 요청하는 방식이다. 일반 TLS는 서버만 인증서를 제시하고 클라이언트는 ID/PW로 인증한다. mTLS는 클라이언트 인증서가 탈취되지 않은 장치에서만 연결이 가능하므로, BYOD 환경에서 미승인 기기의 접근을 차단하는 효과가 있다. X.509 인증서(RFC 5280)를 PKI(Public Key Infrastructure)로 관리한다.
+mTLS(Mutual TLS, RFC 8446)는 TLS 핸드쉐이크에서 서버가 클라이언트에게도 인증서를 요청하는 방식이다. 일반 TLS는 서버만 인증서를 제시하고 클라이언트는 ID/PW로 인증한다. mTLS는 클라이언트 인증서가 탈취되지 않은 장치에서만 연결이 가능하므로, BYOD 환경에서 미승인 기기의 접근을 차단하는 효과가 있다. X.509 인증서(RFC 5280)를 PKI(Public Key Infrastructure)로 관리한다.
 
 ### Client VPN 비용 구조
 
@@ -160,7 +160,7 @@ AWS Client VPN은 OpenVPN(SSL/TLS 기반)을 사용한다. AWS Site-to-Site VPN�
 | 성능 | 높음 | 중간 |
 | 사용 사례 | 사이트 간 고정 연결 | 원격 개인 사용자 |
 
-> 🔍 **더 깊이**: OpenVPN은 UDP 1194 또는 TCP 443으로 동작한다. 기업 방화벽이 UDP를 차단해도 TCP 443은 HTTPS와 동일한 포트라 거의 모든 네트워크에서 허용된다. AWS Client VPN은 TCP 443을 기본으로 사용한다. 반면 IPsec은 IKE에 UDP 500, NAT 환경에서 UDP 4500(NAT-T)을 사용한다. 엄격한 방화벽 환경에서는 OpenVPN이 더 통과하기 쉽다.
+OpenVPN은 UDP 1194 또는 TCP 443으로 동작한다. 기업 방화벽이 UDP를 차단해도 TCP 443은 HTTPS와 동일한 포트라 거의 모든 네트워크에서 허용된다. AWS Client VPN은 TCP 443을 기본으로 사용한다. 반면 IPsec은 IKE에 UDP 500, NAT 환경에서 UDP 4500(NAT-T)을 사용한다. 엄격한 방화벽 환경에서는 OpenVPN이 더 통과하기 쉽다.
 
 ## 다른 클라우드 VPN과의 비교
 
@@ -173,7 +173,7 @@ AWS Client VPN은 OpenVPN(SSL/TLS 기반)을 사용한다. AWS Site-to-Site VPN�
 | 글로벌 가속 | Accelerated VPN | 기본 글로벌 백본 | ExpressRoute + VPN |
 | 프로토콜 | IKEv1/v2 | IKEv2 | IKEv2 |
 
-> 📚 **사례**: 한 SaaS 기업이 AWS와 GCP를 동시에 사용하는 멀티클라우드 환경을 구축했다. AWS의 Site-to-Site VPN과 GCP Cloud VPN 사이에 IPsec 터널을 연결했다. 두 클라우드 모두 IKEv2와 BGP를 지원하므로 상호 연동이 가능했다. 단, GCP의 HA VPN은 터널당 3Gbps를 지원해 AWS의 1.25Gbps보다 높아 AWS 측 ECMP 구성이 필요했다.
+(가상 사례) 한 SaaS 기업이 AWS와 GCP를 동시에 사용하는 멀티클라우드 환경을 구축했다. AWS의 Site-to-Site VPN과 GCP Cloud VPN 사이에 IPsec 터널을 연결했다. 두 클라우드 모두 IKEv2와 BGP를 지원하므로 상호 연동이 가능했다. 단, GCP의 HA VPN은 터널당 3Gbps를 지원해 AWS의 1.25Gbps보다 높아 AWS 측 ECMP 구성이 필요했다.
 
 ## 실전 CLI: VPN 완전 구성
 
