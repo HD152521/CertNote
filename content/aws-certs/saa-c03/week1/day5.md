@@ -38,9 +38,9 @@
 
 이 세 영역이 Week 1의 결론이고, Week 2 ~ Week 12의 모든 서비스가 이 세 평면 위에 얹어진다고 보면 정확하다. 네트워킹은 AZ 위, 보안은 IAM 위, 다계정 패턴은 Organizations 위에서 동작한다. 그리고 이 세 평면의 교집합 — "어느 계정의 어느 리전 어느 AZ에 있는 리소스에 누가 무엇을 할 수 있는가" — 가 결국 모든 SAA 시나리오의 좌표계가 된다.
 
-> 💡 **관련 이론**: 이 3층 모델은 사실 분산 시스템 보안의 고전적인 3축 — *Where*(위치), *Who*(신원), *What*(자원) — 을 클라우드 운영에 매핑한 것이다. 1985년 NIST가 정의한 보안 3요소(Confidentiality / Integrity / Availability)에 더해, 2003년 NIST SP 800-53이 명문화한 Access Control(AC), Audit & Accountability(AU), System and Communications Protection(SC) 세 영역이 거의 일대일로 매칭된다. AC는 IAM, AU는 CloudTrail/Config, SC는 VPC/네트워크 컨트롤로 구현된다.
+이 3층 모델은 사실 분산 시스템 보안의 고전적인 3축 — *Where*(위치), *Who*(신원), *What*(자원) — 을 클라우드 운영에 매핑한 것이다. 1985년 NIST가 정의한 보안 3요소(Confidentiality / Integrity / Availability)에 더해, 2003년 NIST SP 800-53이 명문화한 Access Control(AC), Audit & Accountability(AU), System and Communications Protection(SC) 세 영역이 거의 일대일로 매칭된다. AC는 IAM, AU는 CloudTrail/Config, SC는 VPC/네트워크 컨트롤로 구현된다.
 
-> 🔍 **더 깊이**: 이 3층은 실제 AWS의 권한 평가 엔진에서도 그대로 반영된다. AWS Zelkova(IAM 정형 검증)와 Tiros(네트워크 정형 검증)는 각각 IAM/SCP 정책과 VPC 라우팅을 SMT 제약으로 변환해서 "이 요청이 도달 가능한가"를 푼다. 2018년 USENIX Security 논문 "Semantic-based Automated Reasoning for AWS Access Policies"가 Zelkova의 기반이고, 같은 해 발표된 "Reachability Analysis for AWS-based Networks"가 Tiros의 기반이다. Access Analyzer, Reachability Analyzer, IAM Access Advisor가 모두 이 위에서 돌아간다.
+이 3층은 실제 AWS의 권한 평가 엔진에서도 그대로 반영된다. AWS Zelkova(IAM 정형 검증)와 Tiros(네트워크 정형 검증)는 각각 IAM/SCP 정책과 VPC 라우팅을 SMT 제약으로 변환해서 "이 요청이 도달 가능한가"를 푼다. 2018년 USENIX Security 논문 "Semantic-based Automated Reasoning for AWS Access Policies"가 Zelkova의 기반이고, 같은 해 발표된 "Reachability Analysis for AWS-based Networks"가 Tiros의 기반이다. Access Analyzer, Reachability Analyzer, IAM Access Advisor가 모두 이 위에서 돌아간다.
 
 ## 시나리오 키워드 매핑
 
@@ -72,8 +72,6 @@
 
 이 표는 시험 전날 30분이면 통독되고, 같은 매핑을 5번 이상 반복해서 보면 시험장에서 시나리오 첫 줄만 보고 후보 답이 떠오른다. 키워드 → 솔루션 매핑은 SAA의 "패턴 인식 시험"적 성격을 가장 잘 보여준다.
 
-> 💡 **관련 이론**: 이런 패턴 매핑 방식은 인지심리학의 *Recognition-Primed Decision Making*(RPD, Gary Klein 1989) 모델과 정확히 같다. 응급실 의사, 소방관, 체스 마스터가 "초보자처럼 모든 옵션을 계산"하지 않고 "이 상황은 X패턴, 그러니 Y해법"으로 즉시 가는 사고방식. AWS SAA도 결국 200개 정도의 시나리오 패턴을 분류하는 시험이다. Daniel Kahneman의 *Thinking, Fast and Slow*(2011)에서 말한 System 1(직관)과 System 2(분석)로 보면, SAA 시험은 System 1을 패턴화시켜 빠르게 후보를 좁힌 뒤 System 2로 검증하는 흐름이 가장 효율적이다.
-
 > ⚠️ **함정**: 같은 키워드가 다른 답으로 가는 경우도 많다. "암호화"는 KMS인가 CloudHSM인가? 단일 회사 사용이면 KMS, FIPS 140-2 Level 3 규제(FedRAMP High, 일부 금융)면 CloudHSM. "DR"은 Multi-AZ인가 Cross-Region인가? AZ 단위 격리는 Multi-AZ, 리전 단위 격리는 Cross-Region. 키워드만 보지 말고 "이 시나리오의 위협 모델이 무엇이냐"를 함께 봐야 한다.
 
 ## CAP/PACELC와 AWS 서비스 매핑
@@ -94,13 +92,11 @@ SAA에서 직접 묻지는 않지만, 시나리오 해석에 결정적이다. �
 | FSx for Lustre | Strong (POSIX) | CP |
 | Neptune | Strong (single writer) | CP |
 
-> 💡 **관련 이론**: CAP 정리(Brewer 2000, Gilbert & Lynch 2002)는 네트워크 분할이 있을 때 Consistency와 Availability 중 하나를 골라야 한다고 말한다. PACELC(Abadi 2012)는 그 위에 "분할이 없을 때도 Latency vs Consistency의 trade-off가 있다"고 덧붙인다. AWS의 거의 모든 글로벌 서비스가 PA/EL(분할 시 가용성, 평상시 지연시간) 쪽으로 기울어 있다. 2020년 12월 S3가 strong read-after-write consistency를 갖게 된 건 분산 시스템 역사상 큰 사건이다. 그 전까지는 새 객체는 즉시 보였지만 update/delete 후에는 eventual이라 SAA 시험 함정 단골이었다. 지금은 모든 S3 작업이 strong consistent다 — 단 객체 메타데이터 캐싱(CloudFront, ALB origin) 레이어는 여전히 eventual.
+DynamoDB의 strong consistency는 단일 리전 안에서만 옵션으로 제공되고(`ConsistentRead=true`), Global Table은 항상 eventual이다. Global Table의 충돌 해결은 **Last-Writer-Wins**(LWW) 기반이라 동시 쓰기 시 데이터 손실 가능성이 있다. 그래서 멀티 마스터 글로벌 쓰기가 필요하면 DynamoDB Global Table을 쓰되 "타임스탬프 충돌이 비즈니스적으로 허용 가능한가"를 먼저 따져야 한다. 더 엄격한 일관성이 필요하면 CRDT(Conflict-free Replicated Data Type)나 Paxos/Raft 기반 합의 알고리즘이 필요한데, AWS는 이를 Aurora의 quorum-based replication(6-way write across 3 AZ, 4/6 read, 3/6 write 쿼럼)으로 일부 제공한다. Aurora 논문 *Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases*(SIGMOD 2017)가 이 아키텍처의 정수다.
 
-> 🔍 **더 깊이**: DynamoDB의 strong consistency는 단일 리전 안에서만 옵션으로 제공되고(`ConsistentRead=true`), Global Table은 항상 eventual이다. Global Table의 충돌 해결은 **Last-Writer-Wins**(LWW) 기반이라 동시 쓰기 시 데이터 손실 가능성이 있다. 그래서 멀티 마스터 글로벌 쓰기가 필요하면 DynamoDB Global Table을 쓰되 "타임스탬프 충돌이 비즈니스적으로 허용 가능한가"를 먼저 따져야 한다. 더 엄격한 일관성이 필요하면 CRDT(Conflict-free Replicated Data Type)나 Paxos/Raft 기반 합의 알고리즘이 필요한데, AWS는 이를 Aurora의 quorum-based replication(6-way write across 3 AZ, 4/6 read, 3/6 write 쿼럼)으로 일부 제공한다. Aurora 논문 *Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases*(SIGMOD 2017)가 이 아키텍처의 정수다.
+**사례**: 2015년 GitHub은 자체 MySQL 클러스터 분할 사고로 24시간 동안 데이터 일관성이 깨졌다. 두 데이터센터 간 네트워크 분할이 발생했고, 양쪽 모두 자신이 primary라고 판단해 쓰기를 받아버린 split-brain 사건이다. 사후 분석 보고서에서 GitHub은 "분할 시 우리는 CP를 선택하고 가용성을 포기한다"고 명시했다. 이런 사례는 CAP의 trade-off가 추상적 이론이 아니라 매일 운영자가 마주하는 결정임을 보여준다. AWS는 RDS Multi-AZ에서 같은 결정을 내렸고, 그래서 페일오버 동안 60초 정도 가용성이 끊긴다.
 
-> 📚 **사례**: 2015년 GitHub은 자체 MySQL 클러스터 분할 사고로 24시간 동안 데이터 일관성이 깨졌다. 두 데이터센터 간 네트워크 분할이 발생했고, 양쪽 모두 자신이 primary라고 판단해 쓰기를 받아버린 split-brain 사건이다. 사후 분석 보고서에서 GitHub은 "분할 시 우리는 CP를 선택하고 가용성을 포기한다"고 명시했다. 이런 사례는 CAP의 trade-off가 추상적 이론이 아니라 매일 운영자가 마주하는 결정임을 보여준다. AWS는 RDS Multi-AZ에서 같은 결정을 내렸고, 그래서 failover 동안 60초 정도 가용성이 끊긴다.
-
-> ⚠️ **함정**: "Aurora는 strong consistent이므로 글로벌 DB도 같다"고 가정하면 틀린다. Aurora Global Database는 **storage-level async replication**(보통 1초 RPO)이고 secondary 리전은 read-only다. 글로벌 쓰기를 원하면 DynamoDB Global Table을 써야 하지만 그건 LWW의 충돌 위험을 받아들여야 한다. 또 "ElastiCache Redis Cluster Mode는 ASync replication이지만 multi-AZ failover로 가용성 보장"이라고 보는 것도 부분적으로 틀리다 — failover 시 ack되지 않은 쓰기는 손실될 수 있다.
+> ⚠️ **함정**: "Aurora는 strong consistent이므로 글로벌 DB도 같다"고 가정하면 틀린다. Aurora Global Database는 **storage-level async replication**(보통 1초 RPO)이고 secondary 리전은 read-only다. 글로벌 쓰기를 원하면 DynamoDB Global Table을 써야 하지만 그건 LWW의 충돌 위험을 받아들여야 한다. 또 "ElastiCache Redis Cluster Mode는 ASync replication이지만 multi-AZ 페일오버로 가용성 보장"이라고 보는 것도 부분적으로 틀리다 — 페일오버 시 ack되지 않은 쓰기는 손실될 수 있다.
 
 ## 공동 책임 모델 재정리
 
@@ -108,9 +104,9 @@ SAA에서 직접 묻지는 않지만, 시나리오 해석에 결정적이다. �
 
 서비스 추상화가 올라갈수록 책임 경계선이 위로. **그래도 데이터 분류·IAM·암호화 키 관리는 항상 고객**이라는 점이 핵심. 이 원칙은 Capital One 사고가 가장 명확하게 보여준다 — AWS는 자기 인프라 책임을 다했고, 사고는 고객 영역의 WAF 오설정(SSRF)·IMDSv1·과한 IAM 권한에서 났다.
 
-> 📚 **사례**: 2022년 6월 Toyota 자회사가 GitHub 공개 저장소에 5년간 액세스 키가 노출된 사고가 있었다. 약 30만 명 고객 데이터가 위험에 노출됐고, 원인은 개발자가 코드와 함께 자격 증명을 푸시한 것이었다. AWS 책임은 0% — 모든 게 고객 책임 영역에서 일어났다. 사후 표준 권고는 ① IAM User 대신 IAM Role + IRSA/Instance Profile, ② Access Key를 발급해야 한다면 IAM Identity Center의 임시 자격 증명, ③ Git pre-commit hook(git-secrets, truffleHog)으로 커밋 차단. 같은 패턴의 사고가 Uber(2016), Imperva(2019), Codecov(2021)에서도 반복됐다.
+**사례**: 2022년 6월 Toyota 자회사가 GitHub 공개 저장소에 5년간 액세스 키가 노출된 사고가 있었다. 약 30만 명 고객 데이터가 위험에 노출됐고, 원인은 개발자가 코드와 함께 자격 증명을 푸시한 것이었다. AWS 책임은 0% — 모든 게 고객 책임 영역에서 일어났다. 사후 표준 권고는 ① IAM User 대신 IAM Role + IRSA/Instance Profile, ② Access Key를 발급해야 한다면 IAM Identity Center의 임시 자격 증명, ③ Git pre-commit hook(git-secrets, truffleHog)으로 커밋 차단. 같은 패턴의 사고가 Uber(2016), Imperva(2019), Codecov(2021)에서도 반복됐다.
 
-> 🔍 **더 깊이**: 공동 책임 모델은 서비스마다 미묘하게 다르다. RDS는 DB 엔진 패치(minor version)는 AWS, major version 업그레이드는 고객 선택. Lambda는 런타임 패치는 AWS, 런타임 EOL 후 마이그레이션은 고객(Node 14 → 18 등). ECS Fargate는 컨테이너 OS·런타임은 AWS, 이미지 안의 OS 패키지 패치는 고객. 이 미묘한 차이가 시험 함정에 자주 등장한다. AWS Trusted Advisor와 AWS Security Hub의 Foundational Security Best Practices(FSBP)가 이런 책임 경계를 자동 점검해준다.
+공동 책임 모델은 서비스마다 미묘하게 다르다. RDS는 DB 엔진 패치(minor version)는 AWS, major version 업그레이드는 고객 선택. Lambda는 런타임 패치는 AWS, 런타임 EOL 후 마이그레이션은 고객(Node 14 → 18 등). ECS Fargate는 컨테이너 OS·런타임은 AWS, 이미지 안의 OS 패키지 패치는 고객. 이 미묘한 차이가 시험 함정으로 쓰인다. AWS Trusted Advisor와 AWS Security Hub의 Foundational Security Best Practices(FSBP)가 이런 책임 경계를 자동 점검해준다.
 
 ## 정책 평가 결정 트리
 
@@ -123,11 +119,11 @@ SAA에서 직접 묻지는 않지만, 시나리오 해석에 결정적이다. �
 
 같은 계정 = 합집합, 교차 계정 = 교집합, KMS = Key Policy 명시 위임 필수. 이 세 줄이 IAM 평가 로직의 전부다. 면접에서 "AWS IAM 평가 로직을 1분 안에 설명해보라"는 질문을 받았다면 이 세 줄이 답이다.
 
-> ⚠️ **함정**: "Resource Policy만 Allow하면 Cross-Account가 된다"는 게 가장 흔한 오답. 같은 계정이면 그게 맞지만, 교차 계정에서는 호출자 계정의 Identity Policy에서도 Allow가 있어야 한다. 시험 단골 함정. 또 KMS는 별격이다 — Key Policy에서 명시적으로 IAM에게 위임("Enable IAM User Permissions" statement)하지 않으면 IAM 정책에서 Allow를 줘도 KMS 키를 못 쓴다. 이는 KMS가 "키 소유자가 최종 권한자"라는 모델이기 때문이다.
+**함정**: "Resource Policy만 Allow하면 Cross-Account가 된다"는 보기는 오답이다. 같은 계정이면 그게 맞지만, 교차 계정에서는 호출자 계정의 Identity Policy에서도 Allow가 있어야 한다. 또 KMS는 별격이다 — Key Policy에서 명시적으로 IAM에게 위임("Enable IAM User Permissions" statement)하지 않으면 IAM 정책에서 Allow를 줘도 KMS 키를 못 쓴다. 이는 KMS가 "키 소유자가 최종 권한자"라는 모델이기 때문이다.
 
-> 🔍 **더 깊이**: 정책 평가는 사실 6개 정책 타입의 교차로 결정된다 — SCP, Resource Policy, Identity Policy, Permissions Boundary, Session Policy, VPC Endpoint Policy. AWS 공식 문서의 "Policy Evaluation Logic" 흐름도가 가장 정확한 레퍼런스다. 각 정책 타입의 "Allow 필요 vs 선택"이 시나리오마다 다르다. 한 마디 요약: **명시 Deny는 항상 최종, Allow는 모든 경계를 통과해야**.
+정책 평가는 사실 6개 정책 타입의 교차로 결정된다 — SCP, Resource Policy, Identity Policy, Permissions Boundary, Session Policy, VPC Endpoint Policy. AWS 공식 문서의 "Policy Evaluation Logic" 흐름도가 가장 정확한 레퍼런스다. 각 정책 타입의 "Allow 필요 vs 선택"이 시나리오마다 다르다. 한 마디 요약: **명시 Deny는 항상 최종, Allow는 모든 경계를 통과해야**.
 
-> 💡 **관련 이론**: 이 모델은 보안 이론의 *Mandatory Access Control*(MAC)과 *Discretionary Access Control*(DAC)의 혼합이다. SCP와 Permissions Boundary는 MAC(상위 권한자가 강제하는 한도), Identity/Resource Policy는 DAC(소유자가 자유롭게 설정). 미국 군사 보안 표준 *Bell-LaPadula Model*(1973)의 multilevel security 개념과 유사하다. AWS가 정책 평가를 SMT solver로 푸는 것도 이 모델이 형식 검증 가능한 구조를 갖기 때문.
+이 모델은 보안 이론의 *Mandatory Access Control*(MAC)과 *Discretionary Access Control*(DAC)의 혼합이다. SCP와 Permissions Boundary는 MAC(상위 권한자가 강제하는 한도), Identity/Resource Policy는 DAC(소유자가 자유롭게 설정). 미국 군사 보안 표준 *Bell-LaPadula Model*(1973)의 multilevel security 개념과 유사하다. AWS가 정책 평가를 SMT solver로 푸는 것도 이 모델이 형식 검증 가능한 구조를 갖기 때문.
 
 ## 다계정 표준 토폴로지
 
@@ -145,9 +141,9 @@ SAA에서 직접 묻지는 않지만, 시나리오 해석에 결정적이다. �
 
 이 토폴로지는 AWS Security Reference Architecture(SRA) 문서에 권장 형태로 명시되어 있다. 모든 대기업 고객이 이 변형을 쓴다고 보면 정확하다. Netflix, Capital One, Airbnb, Slack 등의 공개 발표 자료를 보면 거의 같은 패턴이 반복된다.
 
-> 📚 **사례**: 2019년 Netflix Tech Blog는 자사 다계정 전략을 공개했는데, 1,000개 이상의 AWS 계정을 운영하면서 워크로드별·팀별·환경별로 계정을 잘게 쪼개는 "Account per Workload" 패턴을 표준화했다고 밝혔다. 이유는 ① 블래스트 반경 제한, ② 비용·태그 자동화, ③ IAM 권한 단순화. 같은 패턴을 Spotify, Lyft, Stripe도 채택했고, 이게 SRA가 권장하는 토폴로지의 실제 모델이다. 2023년 기준 큰 회사는 보통 100~5,000 계정을 운영하고, AWS Organizations의 한도(10,000 계정/Org)가 사실상 상한이다.
+**사례**: 2019년 Netflix Tech Blog는 자사 다계정 전략을 공개했는데, 1,000개 이상의 AWS 계정을 운영하면서 워크로드별·팀별·환경별로 계정을 잘게 쪼개는 "Account per Workload" 패턴을 표준화했다고 밝혔다. 이유는 ① 블래스트 반경 제한, ② 비용·태그 자동화, ③ IAM 권한 단순화. 같은 패턴을 Spotify, Lyft, Stripe도 채택했고, 이게 SRA가 권장하는 토폴로지의 실제 모델이다. 2023년 기준 큰 회사는 보통 100~5,000 계정을 운영하고, AWS Organizations의 한도(10,000 계정/Org)가 사실상 상한이다.
 
-> 🔍 **더 깊이**: 다계정 운영의 실무 핵심은 두 가지 자동화다. ① 계정 발급 자동화 — Control Tower의 Account Factory 또는 Account Factory for Terraform(AFT)으로 새 계정 생성 → 베이스라인 적용 → 권한 부여 → 알림이 GitOps 흐름으로 묶인다. ② 베이스라인 자동 배포 — CloudFormation StackSets의 `SERVICE_MANAGED + auto-deployment=Enabled` 옵션으로 새 계정에 자동으로 보안 베이스라인(GuardDuty, Config Rules, IAM Password Policy, S3 BPA 등)이 들어간다. 이 두 자동화가 없으면 100계정 운영은 사람으로 불가능하다.
+다계정 운영의 실무 핵심은 두 가지 자동화다. ① 계정 발급 자동화 — Control Tower의 Account Factory 또는 Account Factory for Terraform(AFT)으로 새 계정 생성 → 베이스라인 적용 → 권한 부여 → 알림이 GitOps 흐름으로 묶인다. ② 베이스라인 자동 배포 — CloudFormation StackSets의 `SERVICE_MANAGED + auto-deployment=Enabled` 옵션으로 새 계정에 자동으로 보안 베이스라인(GuardDuty, Config Rules, IAM Password Policy, S3 BPA 등)이 들어간다. 이 두 자동화가 없으면 100계정 운영은 사람으로 불가능하다.
 
 ## 자주 헷갈리는 핵심 비교
 
@@ -158,17 +154,17 @@ SAA에서 직접 묻지는 않지만, 시나리오 해석에 결정적이다. �
 | IAM User | 영구 자격 증명 | IAM Identity Center: 임시 SSO | 다계정·외부 IdP면 IC |
 | ZoneName | 계정별 셔플 | ZoneId: 계정 무관 동일 | 다계정 동기화는 ZoneId |
 | Permissions Boundary | 신원 권한 상한 | SCP: 계정 권한 상한 | 적용 단위가 다름 |
-| Cross-Region Read Replica | Async, 수동 promote | Aurora Global DB: Async + Fast failover (~1분) | RPO·RTO 차이 |
+| Cross-Region Read Replica | Async, 수동 promote | Aurora Global DB: Async + Fast 페일오버 (~1분) | RPO·RTO 차이 |
 | CloudFront Functions | 엣지 PoP, 1ms 제약 | Lambda@Edge: Regional Edge, 더 무거움 | 위치·런타임 차이 |
 | KMS | 멀티 테넌트 HSM | CloudHSM: 단독 HSM, FIPS 140-2 L3 | 규제 강도 |
 | STS AssumeRole | 일반 cross-account | AssumeRoleWithWebIdentity: OIDC | 외부 IdP 페더레이션 |
 | Resource Policy Allow | Same-account 충분 | Cross-account: 양쪽 Allow 필요 | 평가 로직 |
 
-> ⚠️ **함정**: ZoneName vs ZoneId는 시험에 자주 안 나오지만, 실무에서는 "다른 계정과 같은 AZ 쓰기"를 묻는 보안·비용 시나리오에서 결정적이다. CloudFront vs Global Accelerator는 시험 단골이고, 키워드 "TCP/UDP", "게임", "VoIP", "MQTT", "WebRTC 시그널링"이 보이면 무조건 GA. CloudFront Functions vs Lambda@Edge도 같은 비교 축인데, "수 ms 미만 응답"이면 Functions, "Node.js/Python 런타임 풀 사용"이면 Lambda@Edge.
+**함정**: ZoneName vs ZoneId는 시험에 자주 안 나오지만, 실무에서는 "다른 계정과 같은 AZ 쓰기"를 묻는 보안·비용 시나리오에서 결정적이다. CloudFront vs Global Accelerator는 시험에서 자주 비교되는 짝이고, 키워드 "TCP/UDP", "게임", "VoIP", "MQTT", "WebRTC 시그널링"이 보이면 무조건 GA. CloudFront Functions vs Lambda@Edge도 같은 비교 축인데, "수 ms 미만 응답"이면 Functions, "Node.js/Python 런타임 풀 사용"이면 Lambda@Edge.
 
-> 🔍 **더 깊이**: AWS는 같은 기능을 여러 서비스로 제공할 때 항상 trade-off 축이 다르다. KMS vs CloudHSM은 **추상화 vs 격리도**, ALB vs NLB는 **L7 기능 vs L4 throughput**, SQS vs SNS vs EventBridge는 **point-to-point vs fanout vs schema-routing**. SAA 시험은 항상 "어느 축에서 trade-off를 묻고 있느냐"를 식별해야 한다. 이 사고법을 익히면 모르는 새 서비스도 동일한 축 위에 매핑해서 후보 답을 좁힐 수 있다.
+AWS는 같은 기능을 여러 서비스로 제공할 때 항상 trade-off 축이 다르다. KMS vs CloudHSM은 **추상화 vs 격리도**, ALB vs NLB는 **L7 기능 vs L4 throughput**, SQS vs SNS vs EventBridge는 **point-to-point vs fanout vs schema-routing**. SAA 시험은 항상 "어느 축에서 trade-off를 묻고 있느냐"를 식별해야 한다. 이 사고법을 익히면 모르는 새 서비스도 동일한 축 위에 매핑해서 후보 답을 좁힐 수 있다.
 
-## 정리하며
+## 정리
 
 Week 1은 "AWS라는 우주의 좌표계"를 머리에 박는 시간이었다. Region/AZ/Edge의 격리 모델, IAM의 정책 평가, 다계정의 거버넌스. 이 셋이 나머지 11주 모든 주제의 배경이 된다. 다음 주는 그 위에 **네트워킹**(VPC, 서브넷, 라우팅)을 얹는다. 한 번에 다 이해하려 하지 말고, 시나리오 문제 풀 때마다 이 표를 다시 펴서 매핑하는 습관을 들이면 시험 직전엔 키워드 → 솔루션 매핑이 자동 반사로 박힌다. 그리고 그 자동 반사가 SAA 합격뿐 아니라 실무 설계에서도 "30분 미팅 안에 솔루션 후보 3개를 그릴 수 있는" 시니어 엔지니어의 핵심 역량이다.
 

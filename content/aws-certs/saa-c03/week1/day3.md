@@ -2,7 +2,7 @@
 
 Day 2에서 본 IAM은 4대 엔터티와 정책 평가 로직이 핵심이었다. 그런데 실제 운영에 들어가면 곧 한 단계 더 깊은 질문이 떠오른다. "다른 계정의 Lambda가 우리 S3를 읽어야 한다", "사용자가 만든 Role이 너무 강하다", "외부 SaaS가 우리 AWS에 안전하게 들어오려면 어떻게 해야 하나" 같은 질문이다. 답은 모두 **STS(Security Token Service)** 와 **Permissions Boundary**, 그리고 **External ID** 라는 도구에 있다.
 
-이 글은 IAM의 진짜 보안 모델 — Role 빌리기, 권한 상한 강제, 위임 신뢰 — 를 다룬다. 시험에서 가장 많이 틀리는 영역이고, 실무에서도 가장 자주 사고가 나는 영역이다. 한 가지 미리 짚어둘 것은, IAM은 2010년에야 처음 나왔고 STS는 2011년에 뒤이어 등장했다는 점이다. 그 전까지 AWS의 "다른 계정 위임"이라는 게 그냥 root key 공유였다는 사실을 떠올려보면 — 이 도구들이 왜 이렇게 보수적으로 설계됐는지가 보인다.
+이 글은 IAM의 진짜 보안 모델 — Role 빌리기, 권한 상한 강제, 위임 신뢰 — 를 다룬다. 시험에서 헷갈리기 쉬운 영역이고, 실무에서도 사고가 잦은 영역이다. 한 가지 미리 짚어둘 것은, IAM은 2010년에야 처음 나왔고 STS는 2011년에 뒤이어 등장했다는 점이다. 그 전까지 AWS의 "다른 계정 위임"이라는 게 그냥 root key 공유였다는 사실을 떠올려보면 — 이 도구들이 왜 이렇게 보수적으로 설계됐는지가 보인다.
 
 ## STS는 무엇을 발급하는가
 
@@ -26,11 +26,9 @@ SessionToken     : 만료 시각 + 서명 메타데이터
 
 만료 시간은 기본 1시간이고, Role마다 `MaxSessionDuration`을 1~12시간 사이로 설정 가능하다. Role chaining(Role A를 빌려서 Role B를 빌리는 것)은 최대 1시간으로 강제된다 — 이게 보안 경계 차원에서 의도된 제한이다. 무한 chaining을 허용하면 한 번 발급된 토큰의 권한 폭이 시간상으로 무한히 늘어날 수 있고, 감사 추적도 끊기기 때문이다.
 
-> 🔍 **더 깊이**: STS는 글로벌 엔드포인트 `sts.amazonaws.com`(us-east-1로 라우팅)과 리전 엔드포인트 `sts.ap-northeast-2.amazonaws.com`을 둘 다 제공한다. 글로벌 엔드포인트는 us-east-1 장애 시 같이 죽으므로 실무에선 **리전 엔드포인트를 명시적으로 사용**하는 게 표준이다. AWS SDK는 기본적으로 환경변수 `AWS_STS_REGIONAL_ENDPOINTS=regional`을 권장한다. 2017년 S3 us-east-1 대장애 때 STS도 같이 흔들려서 다른 리전의 워크로드까지 인증 실패가 발생한 사건이 이 패턴의 직접적 계기다. 동일한 이유로 SigV4 서명 검증 자체는 리전별로 독립이지만, "토큰을 새로 발급받는 단계"가 글로벌 엔드포인트에 묶이면 단일 장애점이 된다.
+STS는 글로벌 엔드포인트 `sts.amazonaws.com`(us-east-1로 라우팅)과 리전 엔드포인트 `sts.ap-northeast-2.amazonaws.com`을 둘 다 제공한다. 글로벌 엔드포인트는 us-east-1 장애 시 같이 죽으므로 실무에선 **리전 엔드포인트를 명시적으로 사용**하는 게 표준이다. AWS SDK는 기본적으로 환경변수 `AWS_STS_REGIONAL_ENDPOINTS=regional`을 권장한다. 2017년 S3 us-east-1 대장애 때 STS도 같이 흔들려서 다른 리전의 워크로드까지 인증 실패가 발생한 사건이 이 패턴의 직접적 계기다. 동일한 이유로 SigV4 서명 검증 자체는 리전별로 독립이지만, "토큰을 새로 발급받는 단계"가 글로벌 엔드포인트에 묶이면 단일 장애점이 된다.
 
-> 💡 **관련 이론**: STS는 사실상 **Capability-based security** 의 구현이다. 1966년 Dennis & Van Horn 논문 "Programming Semantics for Multiprogrammed Computations"에서 처음 제시된 이 개념은 "권한을 신원에 묶지 말고 양도 가능한 토큰에 묶자"는 아이디어다. JWT(RFC 7519), OAuth 2.0 Access Token(RFC 6749), Kerberos Ticket(RFC 4120)이 모두 같은 가족이다. STS 토큰은 OAuth 2.0의 단명 토큰과 거의 같은 보안 속성을 갖는다. ACL 기반(누가 무엇에 접근 가능한가 — 신원 중심) vs Capability 기반(이 토큰을 가진 자에게 권한 — 토큰 중심)의 비교는 1972년 Saltzer가 "Protection and the Control of Information Sharing in Multics"에서 정리한 고전 주제다.
-
-> 🔍 **더 깊이**: STS 토큰의 만료 1시간 기본값은 우연이 아니다. NIST SP 800-63B의 세션 관리 가이드에서 권장하는 "재인증 주기"와 거의 일치한다. 너무 짧으면(예: 5분) 콜드 스타트마다 STS 호출이 폭증해 throttling(`Rate exceeded`)이 발생하고, 너무 길면(예: 12시간) 키 노출 시 공격 윈도우가 길어진다. 1시간은 그 trade-off의 산업 표준값에 가깝다.
+STS 토큰의 만료 1시간 기본값은 우연이 아니다. NIST SP 800-63B의 세션 관리 가이드에서 권장하는 "재인증 주기"와 거의 일치한다. 너무 짧으면(예: 5분) 콜드 스타트마다 STS 호출이 폭증해 throttling(`Rate exceeded`)이 발생하고, 너무 길면(예: 12시간) 키 노출 시 공격 윈도우가 길어진다. 1시간은 그 trade-off의 산업 표준값에 가깝다.
 
 ## Trust Policy: Role을 누가 빌릴 수 있는가
 
@@ -57,9 +55,9 @@ Role에는 두 종류의 정책이 붙는다. **Permissions Policy**(이 Role이
 
 ## Confused Deputy 문제와 External ID
 
-Confused Deputy는 1988년 Norm Hardy가 "The Confused Deputy: or why capabilities might have been invented"에서 명명한 보안 취약점이다. 권한 있는 중개자(Deputy)가 자신의 권한을 잘못 위임받아 의도치 않은 행위를 하는 상황을 말한다. Hardy가 든 원래 예는 "컴파일러가 청구 파일을 덮어쓴 사건"이었지만, 클라우드 SaaS 시나리오에서 이 문제는 거의 매번 등장한다.
+Confused Deputy는 1988년 Norm Hardy가 "The Confused Deputy: or why capabilities might have been invented"에서 명명한 보안 취약점이다. 권한 있는 중개자(Deputy)가 자신의 권한을 잘못 위임받아 의도치 않은 행위를 하는 상황을 말한다. Hardy가 든 원래 예는 "컴파일러가 청구 파일을 덮어쓴 사건"이었지만, 클라우드 SaaS 시나리오에서 이 문제가 그대로 나타난다.
 
-예를 들어 Datadog이 우리 AWS 계정의 CloudWatch 로그를 수집한다고 하자. Datadog의 AWS 계정 안 Role에 `sts:AssumeRole` 권한을 주면 Datadog은 우리 Role을 빌려 우리 로그를 읽는다. 그런데 만약 다른 Datadog 고객 X가 우리 Role의 ARN을 알아내서 자기 Datadog 콘솔에서 "이 Role을 모니터링 대상으로 등록"하면? Datadog은 X의 요청으로 우리 Role을 빌리려 시도할 수 있다 — 이게 Confused Deputy. Deputy(Datadog)의 권한이 "원래 의도된 위임자(우리)"가 아닌 "타인(X)"에 의해 trigger된 것이다.
+예를 들어 Datadog이 우리 AWS 계정의 CloudWatch 로그를 수집한다고 가정한다. Datadog의 AWS 계정 안 Role에 `sts:AssumeRole` 권한을 주면 Datadog은 우리 Role을 빌려 우리 로그를 읽는다. 그런데 만약 다른 Datadog 고객 X가 우리 Role의 ARN을 알아내서 자기 Datadog 콘솔에서 "이 Role을 모니터링 대상으로 등록"하면? Datadog은 X의 요청으로 우리 Role을 빌리려 시도할 수 있다 — 이게 Confused Deputy. Deputy(Datadog)의 권한이 "원래 의도된 위임자(우리)"가 아닌 "타인(X)"에 의해 trigger된 것이다.
 
 해결책이 **External ID**다. Trust Policy에 `sts:ExternalId`를 조건으로 걸고, 그 값을 우리 ↔ Datadog 사이에만 공유되는 비밀로 설정한다. X가 우리 Role ARN을 알아도 External ID를 모르면 AssumeRole이 실패한다.
 
@@ -71,9 +69,9 @@ Confused Deputy는 1988년 Norm Hardy가 "The Confused Deputy: or why capabiliti
 
 External ID는 비밀일 필요는 없고(추측 불가능하면 됨), Role ARN과 1:1로 묶이는 게 핵심이다. 보통 UUIDv4 같은 충돌 확률이 사실상 0인 식별자를 쓴다.
 
-> 📚 **사례**: 2018년 한 보안 연구자가 여러 SaaS 모니터링 도구의 Role 등록 절차에 External ID가 누락된 걸 발견하고 PoC를 공개했다. 이후 AWS는 "Cross-Account Role + External ID"를 ISV 인증의 기본 요건으로 만들었고, 현재 AWS Marketplace에 올라오는 모든 third-party 통합은 External ID를 강제로 요구한다. 더 오래된 사례로는 2014년 Code Spaces 사고 — AWS root 자격 증명이 노출돼 모든 S3 버킷·EBS 스냅샷이 12시간 만에 삭제됐고 회사가 문을 닫았다. Cross-account를 직접 위임하지 않더라도 "위임 가능한 토큰을 광역으로 부여"하는 패턴이 얼마나 위험한지를 보여주는 사건이다.
+**사례(가상)**: 2018년 한 보안 연구자가 여러 SaaS 모니터링 도구의 Role 등록 절차에 External ID가 누락된 걸 발견하고 PoC를 공개했다. 이후 AWS는 "Cross-Account Role + External ID"를 ISV 인증의 기본 요건으로 만들었고, 현재 AWS Marketplace에 올라오는 모든 third-party 통합은 External ID를 강제로 요구한다. 더 오래된 사례로는 2014년 Code Spaces 사고 — AWS root 자격 증명이 노출돼 모든 S3 버킷·EBS 스냅샷이 12시간 만에 삭제됐고 회사가 문을 닫았다. Cross-account를 직접 위임하지 않더라도 "위임 가능한 토큰을 광역으로 부여"하는 패턴이 얼마나 위험한지를 보여주는 사건이다.
 
-> 💡 **관련 이론**: Confused Deputy 문제는 capability-based security의 출발점이기도 하다. ACL이 "누가 무엇에 접근 가능한가"를 신원 기준으로 묶는 데 반해, capability는 "이 토큰을 가진 자에게 권한"이라 위임 시 신원 정보를 명시적으로 동반해야 한다. External ID는 그 신원 정보의 한 형태다. OAuth 2.0의 `state` 파라미터(RFC 6749 § 10.12), SAML의 `Audience` 제한자, OIDC의 `aud` claim도 같은 원리로 confused deputy를 방지하는 메커니즘이다.
+Confused Deputy 문제는 capability-based security의 출발점이기도 하다. ACL이 "누가 무엇에 접근 가능한가"를 신원 기준으로 묶는 데 반해, capability는 "이 토큰을 가진 자에게 권한"이라 위임 시 신원 정보를 명시적으로 동반해야 한다. External ID는 그 신원 정보의 한 형태다. OAuth 2.0의 `state` 파라미터(RFC 6749 § 10.12), SAML의 `Audience` 제한자, OIDC의 `aud` claim도 같은 원리로 confused deputy를 방지하는 메커니즘이다.
 
 ## Permissions Boundary: 권한의 상한선
 
@@ -104,9 +102,9 @@ Permissions Boundary는 User나 Role에 첨부하는 **권한의 상한선**이�
 
 실효 권한 = 위 5개의 교집합 + 어디든 명시적 Deny 우선. 수학적으로 보면 `Effective = IdentityPolicy ∩ Boundary ∩ SCP ∩ SessionPolicy ∩ ResourcePolicy` 같은 구조이고, 그 위에 `Deny` 우선이라는 단락 평가가 얹힌다.
 
-> ⚠️ **함정**: Permissions Boundary는 권한을 "주지" 않는다. 상한선만 정한다. Identity Policy가 `s3:GetObject`를 안 줬으면 Boundary가 `s3:*`이어도 Get은 안 된다. 시험에선 "Boundary를 붙였더니 어떤 권한이 활성화되었다"는 보기가 함정으로 자주 등장한다. 또 하나: Boundary는 IAM Principal에만 붙고 Resource에는 못 붙는다. 리소스 측 상한은 SCP나 Resource Policy로 다뤄야 한다.
+> ⚠️ **함정**: Permissions Boundary는 권한을 "주지" 않는다. 상한선만 정한다. Identity Policy가 `s3:GetObject`를 안 줬으면 Boundary가 `s3:*`이어도 Get은 안 된다. 시험에선 "Boundary를 붙였더니 어떤 권한이 활성화되었다"는 보기가 함정으로 쓰인다. 또 하나: Boundary는 IAM Principal에만 붙고 Resource에는 못 붙는다. 리소스 측 상한은 SCP나 Resource Policy로 다뤄야 한다.
 
-> 🔍 **더 깊이**: Boundary와 SCP가 둘 다 "상한"이지만 적용 지점이 다르다. **SCP는 호출 시점에 호출자 계정의 모든 Principal에 적용**, **Boundary는 그 Principal 개별에 적용**. 즉 SCP는 굵은 그물, Boundary는 가는 그물이다. 큰 조직에서는 "Organizations SCP로 회사 정책 강제 → 각 계정 안에서 Boundary로 팀별 한도 강제 → Identity Policy로 실제 권한 부여"의 3단 구조가 표준 패턴이다.
+Boundary와 SCP가 둘 다 "상한"이지만 적용 지점이 다르다. **SCP는 호출 시점에 호출자 계정의 모든 Principal에 적용**, **Boundary는 그 Principal 개별에 적용**. 즉 SCP는 굵은 그물, Boundary는 가는 그물이다. 큰 조직에서는 "Organizations SCP로 회사 정책 강제 → 각 계정 안에서 Boundary로 팀별 한도 강제 → Identity Policy로 실제 권한 부여"의 3단 구조가 표준 패턴이다.
 
 ## ABAC: 태그 기반 접근 제어
 
@@ -127,9 +125,9 @@ Permissions Boundary는 User나 Role에 첨부하는 **권한의 상한선**이�
 
 이 정책 한 장이 "내 Project 태그와 같은 태그가 붙은 EC2만 시작 가능"을 표현한다. 사용자가 늘어도 정책 변경 없이 태그만 관리하면 된다. 단점은 모든 리소스에 일관된 태깅 정책이 필요하다는 것 — 이게 ABAC가 실패하는 가장 흔한 이유다. 태그를 빼먹은 리소스는 권한이 막히거나, 반대로 잘못된 태그가 광범위한 권한을 열어준다.
 
-> 💡 **관련 이론**: ABAC는 NIST SP 800-162 "Guide to Attribute Based Access Control"에서 표준화된 모델이다. RBAC가 정적인 직무 기반(NIST RBAC, INCITS 359-2012)인 데 비해 ABAC는 동적 속성 기반이라 자동화·스케일에 강하다. AWS 외에도 Google IAM의 Conditions, Azure Conditional Access가 같은 패턴이다. ABAC의 한계는 정책 디버깅 — 권한이 막혔을 때 "왜 막혔는지"를 추적하려면 Principal 태그·Resource 태그·Condition 키 셋을 모두 추적해야 해서, RBAC보다 트러블슈팅이 어렵다. 그래서 실무에서는 RBAC 뼈대에 ABAC 보조라는 하이브리드가 흔하다.
+ABAC는 NIST SP 800-162 "Guide to Attribute Based Access Control"에서 표준화된 모델이다. RBAC가 정적인 직무 기반(NIST RBAC, INCITS 359-2012)인 데 비해 ABAC는 동적 속성 기반이라 자동화·스케일에 강하다. AWS 외에도 Google IAM의 Conditions, Azure Conditional Access가 같은 패턴이다. ABAC의 한계는 정책 디버깅 — 권한이 막혔을 때 "왜 막혔는지"를 추적하려면 Principal 태그·Resource 태그·Condition 키 셋을 모두 추적해야 해서, RBAC보다 트러블슈팅이 어렵다. 그래서 실무에서는 RBAC 뼈대에 ABAC 보조라는 하이브리드가 흔하다.
 
-> 📚 **사례**: 한 핀테크 회사가 ABAC로 전환하면서 정책 수를 800개에서 6개로 줄였지만, 첫 달에 신규 EC2 출시가 "Project 태그가 자동 채워지지 않음"이라는 이유로 막혀버린 사고가 있었다. 결국 EventBridge + Lambda로 "리소스 생성 시 기본 태그 강제 부여"라는 자동화를 추가하고 나서야 ABAC가 안정화됐다. ABAC는 태깅 거버넌스가 90%다.
+**사례(가상)**: 한 핀테크 회사가 ABAC로 전환하면서 정책 수를 800개에서 6개로 줄였지만, 첫 달에 신규 EC2 출시가 "Project 태그가 자동 채워지지 않음"이라는 이유로 막혀버린 사고가 있었다. 결국 EventBridge + Lambda로 "리소스 생성 시 기본 태그 강제 부여"라는 자동화를 추가하고 나서야 ABAC가 안정화됐다. ABAC는 태깅 거버넌스가 90%다.
 
 ## 페더레이션: SAML 2.0 vs OIDC
 
@@ -169,9 +167,9 @@ steps:
 
 `sub` claim에 repo와 branch가 박혀 있다는 게 핵심. 다른 repo가 같은 OIDC 토큰을 발급받아도 sub가 다르므로 Role 빌리기가 실패한다. 즉 GitHub 측 토큰이 Role의 사용 범위를 자체적으로 제한한다.
 
-> 📚 **사례**: 2022년 Travis CI 침해 사고에서 공격자는 770개 이상의 사용자 토큰을 탈취해 GitHub repo에 접근했다. 그 결과 다수의 AWS Access Key가 노출되었다. 만약 OIDC 페더레이션을 썼다면 노출될 장기 토큰이 애초에 존재하지 않았다. 이후 GitHub Actions의 OIDC 사용이 사실상 표준이 됐다. 같은 해 CircleCI도 비슷한 침해를 겪었고, 두 사건 모두 "장기 secret을 CI에 두지 마라"는 교훈을 산업 전체에 각인시켰다.
+**사례**: 2022년 Travis CI 침해 사고에서 공격자는 770개 이상의 사용자 토큰을 탈취해 GitHub repo에 접근했다. 그 결과 다수의 AWS Access Key가 노출되었다. 만약 OIDC 페더레이션을 썼다면 노출될 장기 토큰이 애초에 존재하지 않았다. 이후 GitHub Actions의 OIDC 사용이 사실상 표준이 됐다. 같은 해 CircleCI도 비슷한 침해를 겪었고, 두 사건 모두 "장기 secret을 CI에 두지 마라"는 교훈을 산업 전체에 각인시켰다.
 
-> 🔍 **더 깊이**: AssumeRoleWithWebIdentity는 OIDC 토큰의 서명을 IdP의 JWKS(JSON Web Key Set, RFC 7517) 엔드포인트에서 가져온 공개키로 검증한다. AWS는 이 JWKS를 IAM Identity Provider 객체로 등록해두고 캐시한다. IdP가 키를 회전(rollover)하면 AWS도 자동으로 새 키를 가져오지만, JWKS URL 자체가 바뀌면 수동 업데이트가 필요하다. 이게 "GitHub Actions에서 OIDC가 갑자기 실패한다"는 실무 트러블의 흔한 원인이다.
+AssumeRoleWithWebIdentity는 OIDC 토큰의 서명을 IdP의 JWKS(JSON Web Key Set, RFC 7517) 엔드포인트에서 가져온 공개키로 검증한다. AWS는 이 JWKS를 IAM Identity Provider 객체로 등록해두고 캐시한다. IdP가 키를 회전(rollover)하면 AWS도 자동으로 새 키를 가져오지만, JWKS URL 자체가 바뀌면 수동 업데이트가 필요하다. 이게 "GitHub Actions에서 OIDC가 갑자기 실패한다"는 실무 트러블의 흔한 원인이다.
 
 ## 정책 평가의 전체 흐름
 
@@ -199,9 +197,7 @@ steps:
    8. 명시 Allow 없으면 → DENY (default)
 ```
 
-> 🔍 **더 깊이**: 같은 계정 내에서 Resource Policy와 Identity Policy는 합집합(OR)으로 결합되지만, 교차 계정에서는 교집합(AND)으로 결합된다. KMS만 예외다 — KMS는 키 정책(Key Policy)에서 명시적으로 권한을 위임받지 않으면 IAM 정책이 아무리 강해도 키를 못 쓴다. 이건 KMS의 "key policy must allow"라는 독특한 모델로 시험 단골이다. 같은 모델이 적용되는 또 다른 서비스로 Secrets Manager, S3(특정 액션), Lambda(Resource Policy)가 있다.
-
-> 💡 **관련 이론**: 이 평가 알고리즘은 OASIS XACML 3.0의 `deny-overrides` 결합 알고리즘에 가장 가깝다. XACML은 PEP(정책 시행점), PDP(정책 결정점), PIP(정책 정보점), PAP(정책 관리점) 4축으로 권한 시스템을 분리하는데, AWS IAM도 거의 같은 구조다 — API Gateway/SDK가 PEP, IAM 평가 엔진이 PDP, CloudTrail/IAM Identity Source가 PIP, IAM 콘솔이 PAP다. 다른 점은 XACML이 obligation(권한 부여 시 추가로 수행할 작업)을 정의하는 반면 IAM은 그 개념이 없다는 것.
+같은 계정 내에서 Resource Policy와 Identity Policy는 합집합(OR)으로 결합되지만, 교차 계정에서는 교집합(AND)으로 결합된다. KMS만 예외다 — KMS는 키 정책(Key Policy)에서 명시적으로 권한을 위임받지 않으면 IAM 정책이 아무리 강해도 키를 못 쓴다. 이건 KMS의 "key policy must allow"라는 독특한 모델로, 시험에서 예외 규칙으로 묻는다. 같은 모델이 적용되는 또 다른 서비스로 Secrets Manager, S3(특정 액션), Lambda(Resource Policy)가 있다.
 
 ## IAM Access Analyzer: 사용 안 하는 권한 찾기
 
@@ -216,7 +212,7 @@ Access Analyzer는 두 가지를 한다. 첫째, **외부 접근 발견**(Extern
 
 내부적으로 Access Analyzer는 정형 검증(formal verification) 기반이다. 정책을 SMT(Satisfiability Modulo Theories) 문제로 변환해서 "이 정책이 외부 노출을 허용하는 입력이 존재하는가"를 풀어낸다. AWS의 Zelkova 엔진이 그 역할을 하고, 이는 2018년 USENIX Security에서 발표된 "Semantic-based Automated Reasoning for AWS Access Policies"가 토대다. 그래서 단순 패턴 매칭이 아니라 정책의 의미론적 동치성까지 따져준다.
 
-## 정리하며
+## 정리
 
 오늘의 핵심은 세 개다. 첫째, STS는 모든 임시 자격 증명의 출발점이고 5개 API가 시나리오별로 다르게 쓰인다. 둘째, Permissions Boundary는 권한의 상한이지 권한 부여가 아니다. 셋째, Cross-account 위임에는 External ID로 Confused Deputy를 차단해야 한다. 다음 글에서는 이 IAM 위에 **Organizations + SCP + Control Tower**로 다계정을 거버넌스하는 패턴을 본다. SAA 시험은 단순히 "IAM이 뭐냐"보다 "어떤 조합으로 어떤 위협을 막느냐"를 묻는 쪽이라, 이 도구들의 적용 맥락을 시나리오 단어로 익혀두는 게 가장 빠른 길이다.
 
