@@ -40,7 +40,7 @@ Simplest strategy. Regularly back up data (EBS snapshots, RDS backups, AWS Backu
 - RPO: Backup interval (daily backup = max 24-hour loss).
 - Fit: Tier 3 non-critical workloads; cost minimization priority.
 
-> 🔍 **Deeper**: A modern twist: Backup & Restore is "slow but, if IaC is good, surprisingly fast." Historically, reconstructing DR environment manually took days. With **CloudFormation/Terraform encoding the entire infrastructure**, "stack deploy → backup restore" can automate to hours RTO. This is where IaC meets DR—infrastructure-as-code means "data + code" alone lets you rebuild anytime (immutable infrastructure philosophy). So in exams, "minimize cost while automating recovery via IaC" often makes Backup & Restore the right answer.
+> A modern twist: Backup & Restore is "slow but, if IaC is good, surprisingly fast." Historically, reconstructing DR environment manually took days. With **CloudFormation/Terraform encoding the entire infrastructure**, "stack deploy → backup restore" can automate to hours RTO. This is where IaC meets DR—infrastructure-as-code means "data + code" alone lets you rebuild anytime (immutable infrastructure philosophy). So in exams, "minimize cost while automating recovery via IaC" often makes Backup & Restore the right answer.
 
 ## Pilot Light—Keep Just the Spark Burning
 
@@ -75,7 +75,7 @@ Warm Standby keeps a **scaled-down version of production in the DR region, alway
 - RPO: Seconds–minutes (DB real-time replication).
 - Fit: Tier 1; RTO 5 minutes.
 
-> 💡 **Related Theory**: The Warm Standby vs. Pilot Light difference is clearest as **"path validation"** presence/absence. Software reliability has a maxim: "unused code paths rot"—failover paths never exercised silently break, then fail when needed. Warm Standby, though scaled down, always runs real traffic (health checks, partial reads), keeping failover paths "warm" and continually validated. This touches AWS Well-Architected's "static stability" principle: on failure, don't start new behavior—let already-validated state keep running. You pay more to reduce "it won't work when we need it" risk.
+> The Warm Standby vs. Pilot Light difference is clearest as **"path validation"** presence/absence. Software reliability has a maxim: "unused code paths rot"—failover paths never exercised silently break, then fail when needed. Warm Standby, though scaled down, always runs real traffic (health checks, partial reads), keeping failover paths "warm" and continually validated. This touches AWS Well-Architected's "static stability" principle: on failure, don't start new behavior—let already-validated state keep running. You pay more to reduce "it won't work when we need it" risk.
 
 ## Multi-Site Active-Active—Failover is Just Traffic Shift
 
@@ -85,7 +85,7 @@ Most expensive, most instant strategy. **Both regions handle production traffic 
 - RPO: ~0 (real-time bidirectional replication).
 - Fit: Tier 0 mission-critical.
 
-> 🔍 **Deeper**: Active-Active's near-zero RTO is because "there's nothing to recover"—both are alive, so just remove the dead one from the pool. But the costs are three-fold. First, **2x cost** (both regions at full capacity). Second, **data conflicts** (Day 2's multi-leader LWW issue—if both regions write, same-item simultaneous updates collide). Third, **capacity planning trap**—each region normally takes 50% traffic; if one dies, the survivor must take 100%. So each region must be sized for **100% traffic, not 50%** (else the survivor cascades after failover). "Can half the system dying mean the rest absorbs all load?" is the core validation question for Active-Active design.
+> Active-Active's near-zero RTO is because "there's nothing to recover"—both are alive, so just remove the dead one from the pool. But the costs are three-fold. First, **2x cost** (both regions at full capacity). Second, **data conflicts** (Day 2's multi-leader LWW issue—if both regions write, same-item simultaneous updates collide). Third, **capacity planning trap**—each region normally takes 50% traffic; if one dies, the survivor must take 100%. So each region must be sized for **100% traffic, not 50%** (else the survivor cascades after failover). "Can half the system dying mean the rest absorbs all load?" is the core validation question for Active-Active design.
 
 ## AWS Backup—Unify and Centralize Backups
 
@@ -111,7 +111,7 @@ aws backup create-backup-plan --backup-plan '{
 - Cross-Region Copy + Cross-Account Copy (defend against disaster AND account compromise).
 - Tag-based auto-selection (new resource with tag automatically included).
 
-> 💡 **Related Theory**: AWS Backup's tag-based selection is **policy-based management**—not imperative "register each resource one-by-one," but declarative "back up anything tagged Backup=prod," applied instantly when a new resource gets that tag. Same philosophy as Kubernetes label selectors, IAM's tag-based ABAC. Governance becomes "cannot accidentally miss"—if developers forget backup registration, the tag policy is a safety net.
+> AWS Backup's tag-based selection is **policy-based management**—not imperative "register each resource one-by-one," but declarative "back up anything tagged Backup=prod," applied instantly when a new resource gets that tag. Same philosophy as Kubernetes label selectors, IAM's tag-based ABAC. Governance becomes "cannot accidentally miss"—if developers forget backup registration, the tag policy is a safety net.
 
 ## Backup Vault Lock—Immutable Backups Against Ransomware
 
@@ -126,9 +126,9 @@ aws backup put-backup-vault-lock-configuration \
 
 `--changeable-for-days 3` is a **cooling-off period**: you can release the lock within 3 days to fix mistakes, but after that, **Compliance Mode locks completely**—no one can release it.
 
-> 📚 **Case Study**: The 2021 Colonial Pipeline ransomware incident (DarkSide group) shut down about 45% of U.S. East Coast fuel supply for days; the company paid ~$4.4M ransom (some later recovered). One lesson: "if backups live in the same permission boundary, they fall together." WORM (Write Once Read Many)—write once, read many, no modify—based immutable backup is ransomware recovery's last resort. Vault Lock Compliance Mode implements exactly this (same philosophy as S3 Object Lock Compliance Mode, SEC 17a-4 compliance storage). Lesson: backups aren't "there" unless "attackers can't delete them."
+> The 2021 Colonial Pipeline ransomware incident (DarkSide group) shut down about 45% of U.S. East Coast fuel supply for days; the company paid ~$4.4M ransom (some later recovered). One lesson: "if backups live in the same permission boundary, they fall together." WORM (Write Once Read Many)—write once, read many, no modify—based immutable backup is ransomware recovery's last resort. Vault Lock Compliance Mode implements exactly this (same philosophy as S3 Object Lock Compliance Mode, SEC 17a-4 compliance storage). Lesson: backups aren't "there" unless "attackers can't delete them."
 
-> 🔍 **Deeper**: Vault Lock's two modes: **Governance Mode** lets certain IAM-privileged users bypass/delete the lock (mistake prevention level), while **Compliance Mode** makes it unbreakable even by root before retention expires (true immutability, regulatory defense). The distinction separates "prevent accidents" from "defend against regulation and ransomware." In exams, "regulate that backups never delete" = Compliance Mode; "let admins override after approval" = Governance Mode. This same distinction applies to S3 Object Lock.
+> Vault Lock's two modes: **Governance Mode** lets certain IAM-privileged users bypass/delete the lock (mistake prevention level), while **Compliance Mode** makes it unbreakable even by root before retention expires (true immutability, regulatory defense). The distinction separates "prevent accidents" from "defend against regulation and ransomware." In exams, "regulate that backups never delete" = Compliance Mode; "let admins override after approval" = Governance Mode. This same distinction applies to S3 Object Lock.
 
 ## Automate DR Activation—Runbook as Code
 
@@ -143,7 +143,7 @@ DR Runbook (Step Functions)
    └─ 5. Slack/SNS notify + Resilience Hub validate
 ```
 
-## Closing Thoughts
+## 정리
 
 Four pictures emerge today. First, **DR is not "how fast" but an economics problem: BIA defines RTO/RPO, weighed against cost** (ISO 22301); the four strategies are a mapping table. Second, **the four strategies are a spectrum of "keep running normally"**: Backup & Restore (nothing; cheapest/slowest, but IaC speeds it up) → Pilot Light (data only, app off) → Warm Standby (scaled-down replica always, path validated) → Active-Active (full capacity both, RTO≈0, expensive, conflict/capacity-planning challenges). Third, **AWS Backup unifies backups via tag-based policy governance** and Cross-Region/Account Copy defends against disaster AND account compromise. Fourth, **Vault Lock Compliance Mode's WORM-immutable backups block ransomware's "delete backups first" tactic** (Colonial Pipeline lesson); DR activation must be code-driven (Step Functions/SSM Runbooks) and periodically validated via drills.
 
