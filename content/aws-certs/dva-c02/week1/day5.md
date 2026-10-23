@@ -1,8 +1,8 @@
 # Day 5 - Week 1 종합: 인프라와 IAM이 만드는 신뢰의 사슬
 
-지난 4일간 본 것들을 한 줄로 묶으면 "AWS에서 무언가가 동작하려면 ① 어디서(Region/AZ) ② 누가(Principal) ③ 무엇을(Action) ④ 어디에(Resource) ⑤ 어떤 조건(Condition)에서 할 수 있는지가 모두 맞아야 한다"는 문장이 된다. 이게 DVA 시험에서 보안·문제 해결 도메인(합치면 44%)의 90% 답을 결정한다.
+지난 4일간 본 것들을 한 줄로 묶으면 "AWS에서 무언가가 동작하려면 ① 어디서(Region/AZ) ② 누가(Principal) ③ 무엇을(Action) ④ 어디에(Resource) ⑤ 어떤 조건(Condition)에서 할 수 있는지가 모두 맞아야 한다"는 문장이 된다. 이 문장이 DVA 시험에서 보안·문제 해결 도메인(합치면 44%) 문제를 푸는 기본 틀이 된다.
 
-오늘은 1주차의 키 개념들을 시나리오 기반으로 다시 묶고, 시험에 자주 나오는 함정 패턴들을 분류한다. 진도가 아니라 정리 회차이므로 문제와 해설을 더 깊게 둔다. 실제 시험 직전에 다시 한 번 훑기 좋은 형태로 정리한다.
+오늘은 1주차의 키 개념들을 시나리오 기반으로 다시 묶고, 시험에서 헷갈리기 쉬운 함정 패턴들을 분류한다. 진도가 아니라 정리 회차이므로 문제와 해설을 더 깊게 둔다. 실제 시험 직전에 다시 한 번 훑기 좋은 형태로 정리한다.
 
 ## 1주차의 큰 그림
 
@@ -21,13 +21,13 @@
 
 이 사슬에서 어느 하나라도 끊기면 호출이 실패한다. 시험 시나리오를 풀 때 어느 고리가 문제인지 식별하는 게 빠른 답으로 가는 길이다.
 
-다시 한 번 강조하자면, AWS의 모든 보안 모델은 **deny-by-default**다. 어떤 자원에 대해서도 명시적 Allow가 없으면 거부된다. SCP 같은 상위 가드레일이 추가로 차단할 수는 있지만 권한을 생성하지는 못한다. 이 모델을 받아들이고 나면 "왜 권한이 안 되지?"라는 질문은 항상 "어디서 Allow가 누락됐나?"의 검색으로 풀린다.
+AWS의 모든 보안 모델은 **deny-by-default**다. 어떤 자원에 대해서도 명시적 Allow가 없으면 거부된다. SCP 같은 상위 가드레일이 추가로 차단할 수는 있지만 권한을 생성하지는 못한다. 이 모델을 받아들이고 나면 "왜 권한이 안 되지?"라는 질문은 항상 "어디서 Allow가 누락됐나?"의 검색으로 풀린다.
 
-## 자주 출제되는 함정 패턴
+## 헷갈리기 쉬운 함정 패턴
 
 ### 1. "EC2가 S3에 접근 못 함"의 5가지 원인
 
-가장 흔한 시나리오. 단순히 "IAM Role을 attach해라"가 항상 답은 아니다. 가능한 원인을 다 짚어보자.
+대표적인 시나리오다. 단순히 "IAM Role을 attach해라"가 항상 답은 아니다. 가능한 원인은 다음과 같다.
 
 | 원인 | 증상 | 해결 |
 |------|------|------|
@@ -35,12 +35,12 @@
 | Role 정책에 S3 권한 없음 | `AccessDenied` | s3:GetObject 등 추가 |
 | S3 버킷 정책의 Explicit Deny | `AccessDenied` | bucket policy 검토 |
 | S3 Block Public Access + 잘못된 정책 | `AccessDenied` | BPA 또는 정책 재구성 |
-| VPC Endpoint 없이 private subnet | timeout | S3 Gateway Endpoint 추가 |
+| VPC Endpoint 없이 프라이빗 서브넷 | timeout | S3 Gateway Endpoint 추가 |
 | KMS 키로 암호화된 객체 + KMS 권한 없음 | `AccessDenied` (KMS) | KMS Key Policy + IAM kms:Decrypt |
 
-> ⚠️ **함정**: SSE-KMS로 암호화된 S3 객체는 IAM의 `s3:GetObject`만으로는 못 읽는다. 같은 Principal에 `kms:Decrypt`도 있어야 하고, KMS Key Policy의 grant 항목에도 그 Principal이 있어야 한다. 시험에서 "S3 권한은 있는데 GetObject가 실패"라는 시나리오는 거의 KMS가 답이다.
+> ⚠️ **함정**: SSE-KMS로 암호화된 S3 객체는 IAM의 `s3:GetObject`만으로는 못 읽는다. 같은 Principal에 `kms:Decrypt`도 있어야 하고, KMS Key Policy의 grant 항목에도 그 Principal이 있어야 한다. 시험에서 "S3 권한은 있는데 GetObject가 실패"라는 시나리오에서는 KMS 권한을 먼저 의심한다.
 
-> 🔍 **더 깊이**: VPC Endpoint 시나리오는 네트워크 레이어의 문제라 IAM 디버깅으로는 안 풀린다. private subnet의 EC2가 S3에 접근할 때 (1) NAT Gateway 경유로 인터넷 통해 가거나, (2) S3 Gateway Endpoint(라우팅 테이블에 prefix-list 추가) 또는 Interface Endpoint(PrivateLink)로 AWS 내부망에서 가야 한다. NAT를 안 쓰고 Endpoint도 없으면 timeout이 난다. AccessDenied가 아니라 timeout이라는 점이 진단의 단서.
+VPC Endpoint 시나리오는 네트워크 레이어의 문제라 IAM 디버깅으로는 안 풀린다. 프라이빗 서브넷의 EC2가 S3에 접근할 때 (1) NAT Gateway 경유로 인터넷 통해 가거나, (2) S3 Gateway Endpoint(라우팅 테이블에 prefix-list 추가) 또는 Interface Endpoint(PrivateLink)로 AWS 내부망에서 가야 한다. NAT를 안 쓰고 Endpoint도 없으면 timeout이 난다. AccessDenied가 아니라 timeout이라는 점이 진단의 단서.
 
 ### 2. "Lambda가 다른 계정 자원 접근 못 함"
 
@@ -73,7 +73,7 @@ s3.list_objects_v2(Bucket='other-account-bucket')
 
 Permission Boundary는 IAM User/Role의 효과적 최대 권한을 정의하는 메커니즘이다. **Boundary에 없는 액션은 Identity Policy에 있어도 차단된다**. 흔히 "관리자가 개발자에게 IAM 관리 권한을 위임하면서 너무 큰 권한이 새어 나가지 않도록" 사용한다. 예: 개발자가 만들 수 있는 모든 Role에 Boundary를 강제하면, 그 Role들이 IAM 자체를 건드릴 수 없게 막을 수 있다.
 
-> ⚠️ **함정**: SCP, Permission Boundary, Session Policy의 차이는 시험에 단골이다. **SCP**는 계정 전체에 적용되는 Organizations 가드레일, **Permission Boundary**는 특정 IAM Entity의 최대 권한 상한, **Session Policy**는 AssumeRole 호출 시 inline으로 한 번만 좁히는 일회성 가드레일. 셋 다 "권한을 부여하지 않고 차감만 한다"는 공통점이 있다.
+> ⚠️ **함정**: SCP, Permission Boundary, Session Policy의 차이는 시험에서 헷갈리기 쉬운 짝이다. **SCP**는 계정 전체에 적용되는 Organizations 가드레일, **Permission Boundary**는 특정 IAM Entity의 최대 권한 상한, **Session Policy**는 AssumeRole 호출 시 inline으로 한 번만 좁히는 일회성 가드레일. 셋 다 "권한을 부여하지 않고 차감만 한다"는 공통점이 있다.
 
 ## 도메인별 시험 출제 비중과 1주차 매핑
 
@@ -84,11 +84,11 @@ Permission Boundary는 IAM User/Role의 효과적 최대 권한을 정의하는 
 | 배포 (Deployment) | 24% | (아직 안 다룸) |
 | 문제 해결 (Troubleshooting) | 18% | IAM 정책 시뮬레이션, `--debug`, get-caller-identity |
 
-1주차의 중요도는 시험에서 보안 26% + 문제해결 18%의 절반 이상이 IAM 관련이라는 점에서 압도적이다. **1주차를 완벽하게 이해하면 시험의 30% 이상은 거저 푸는 셈**이다.
+1주차의 IAM 내용은 보안 26%와 문제 해결 18% 도메인의 바탕이 된다. IAM은 보안과 문제 해결 도메인 문제를 푸는 바탕이 된다.
 
 ## 알아둬야 할 ARN 패턴
 
-ARN(Amazon Resource Name)은 `arn:partition:service:region:account-id:resource` 형식이다. 시험에 자주 나오는 패턴을 외워두자.
+ARN(Amazon Resource Name)은 `arn:partition:service:region:account-id:resource` 형식이다. 시험에서 알아야 할 패턴은 다음과 같다.
 
 | 자원 | ARN 예시 |
 |------|------|
@@ -105,13 +105,13 @@ ARN(Amazon Resource Name)은 `arn:partition:service:region:account-id:resource` 
 | Secrets Manager | `arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:Name-randomSuffix` |
 | Parameter Store | `arn:aws:ssm:ap-northeast-2:123456789012:parameter/path/to/param` |
 
-> 💡 **암기 팁**: S3와 IAM은 글로벌 서비스라 ARN에 region이 비어 있다(`arn:aws:s3:::`). 다른 서비스는 region이 채워진다. 또 IAM은 account-id가 들어가지만 S3는 안 들어간다(버킷 이름 자체가 글로벌 unique). 그리고 partition은 일반 AWS는 `aws`, GovCloud는 `aws-us-gov`, 중국 리전은 `aws-cn`이다. 정책을 cross-partition으로 복사하면 partition prefix를 바꾸지 않아 fail하는 경우가 있다.
+S3와 IAM은 글로벌 서비스라 ARN에 region이 비어 있다(`arn:aws:s3:::`). 다른 서비스는 region이 채워진다. 또 IAM은 account-id가 들어가지만 S3는 안 들어간다(버킷 이름 자체가 글로벌 unique). 그리고 partition은 일반 AWS는 `aws`, GovCloud는 `aws-us-gov`, 중국 리전은 `aws-cn`이다. 정책을 cross-partition으로 복사하면 partition prefix를 바꾸지 않아 fail하는 경우가 있다.
 
-## 정리하며
+## 정리
 
 1주차는 AWS의 "기반"을 깐다. 인프라 지도 위에 IAM이라는 신뢰의 사슬이 얹혀 있고, 그 사슬에 코드의 SDK 호출이 묶인다. 다음 주부터는 이 위에 진짜 컴퓨트(EC2, Lambda, ECS), 데이터(S3, DynamoDB, RDS), 통합(API Gateway, SQS, EventBridge), 배포(CodePipeline 등)가 올라간다.
 
-기억해야 할 핵심 마인드셋: AWS에서 "이게 왜 안 되지?"라는 질문은 거의 항상 "어떤 IAM 평가 단계에서 막혔나?"로 환원된다. SCP, Resource Policy, Identity Policy, Permission Boundary, Session Policy, Explicit Deny — 이 6개 레이어 중 하나가 답이다. 그리고 그 답을 찾는 출발점은 `aws sts get-caller-identity`와 IAM Policy Simulator다.
+기억해야 할 핵심 마인드셋: AWS에서 "이게 왜 안 되지?"라는 질문은 대개 "어떤 IAM 평가 단계에서 막혔나?"로 좁혀진다. SCP, Resource Policy, Identity Policy, Permission Boundary, Session Policy, Explicit Deny — 이 6개 레이어 중 하나가 답이다. 그리고 그 답을 찾는 출발점은 `aws sts get-caller-identity`와 IAM Policy Simulator다.
 
 ---
 
