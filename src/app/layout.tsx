@@ -9,7 +9,6 @@ import { AppShell } from '@/components/AppShell';
 import { HtmlLangSync } from '@/components/HtmlLangSync';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { PostHogProvider } from '@/components/analytics/PostHogProvider';
-import { PromoModal } from '@/components/PromoModal';
 import { AdSenseLoader } from '@/components/ads/AdSenseLoader';
 import { JsonLd } from '@/components/JsonLd';
 import { listCerts } from '@/lib/content';
@@ -93,7 +92,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <HtmlLangSync />
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AppShell certs={certs}>{children}</AppShell>
-            <PromoModal />
           </ThemeProvider>
           <ServiceWorkerRegister />
         </PostHogProvider>
