@@ -148,7 +148,7 @@
 
 ## 이 사람은 무엇을 할 수 있나
 
-권한 문항의 절반은 "누가 어느 칸을 적용받는가"다. `alice`와 `bob`은 `dev` 그룹, `carol`은 아니다.
+권한 문항은 "누가 어느 칸을 적용받는가"를 가려내는 것이 관건이다. `alice`와 `bob`은 `dev` 그룹, `carol`은 아니다.
 
 ```text
    drwxrwx--T  2 root  dev   /project
