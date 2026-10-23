@@ -5,15 +5,15 @@
 - 이번 주 전 범위(명령어 옵션 · 설정 파일 · 디스크/LVM/권한 · 프로세스/스케줄링/systemd)를 **12문항 모의고사**로 점검한다.
 - 작업형은 "이 작업에 어떤 **명령 / 옵션 / 경로**인가"를 즉답할 수 있느냐의 싸움이다.
 - 정답만 보지 말고 **왜 다른 보기가 틀렸는지** 오답 해설까지 읽어 헷갈리는 지점을 메운다.
-- 문제의 절반은 **"지금 동작" vs "영구 설정"**을 가르는 문제다 — `start`/`mount`/`at` 대 `enable`/`fstab`/`crontab`.
+- 상당수 문제는 **"지금 동작" vs "영구 설정"**을 가르는 문제다 — `start`/`mount`/`at` 대 `enable`/`fstab`/`crontab`.
 - 틀린 문제는 반드시 해당 Day 본문으로 돌아가 표를 다시 외운다.
 
 ## 시험 전략 한 줄 정리
 
-- **권한 8진수**: rwx=7, rw-=6, r-x=5, r--=4 — `chmod 755`=rwxr-xr-x를 즉답하라.
+- **권한 8진수**: rwx=7, rw-=6, r-x=5, r--=4 — `chmod 755`=rwxr-xr-x처럼 바로 변환할 수 있어야 한다.
 - **재귀는 대문자 -R** (chmod/chown), grep 재귀는 `-r`.
 - **kill -9**=강제 종료, **kill -1(HUP)**=설정 재읽기, **kill -15**=정상 종료(기본).
-- **passwd 7필드 / shadow 9필드 / fstab 6필드** — 필드 개수와 순서를 외워라.
+- **passwd 7필드 / shadow 9필드 / fstab 6필드** — 필드 개수와 순서를 알아야 한다.
 - **디스크**: fdisk → mkfs → mount → fstab. **LVM**: pvcreate → vgcreate → lvcreate, 확장은 lvextend + resize2fs.
 - **특수 권한**: SetUID 4000, SetGID 2000, Sticky 1000.
 - **enable=부팅 자동 시작, start=지금 시작** — 둘은 별개다.
