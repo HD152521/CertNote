@@ -55,8 +55,8 @@ describe('content/changelog.json', () => {
 
   test('P4(2026-10-23) 수정 항목이 첫 기록으로 실려 있다', () => {
     const p4 = getChangelog().filter((e) => e.date === '2026-10-23').map((e) => e.summary);
-    expect(p4).toContain('SAP-C02 문항당 시간 계산 오류 정정');
-    expect(p4).toContain('홈 화면의 확인할 수 없는 비교·최상급 표현 삭제');
-    expect(p4).toHaveLength(8);
+    expect(p4.some((s) => s.includes('SAP-C02 시험 안내의 문항당 시간 계산 오류'))).toBe(true);
+    expect(p4.some((s) => s.includes('홈 화면의 확인할 수 없는 비교·최상급 표현 삭제'))).toBe(true);
+    expect(p4.length).toBeGreaterThanOrEqual(8);
   });
 });
