@@ -112,10 +112,10 @@
 | "회귀 성능 평가" | RMSE / MAE / R² |
 | "학습 중 기울기 폭주·소실 진단" | Debugger |
 | "대량 오프라인 채점, 엔드포인트 불필요" | Batch Transform |
-| "간헐 트래픽, 콜드스타트 OK" | Serverless Inference |
+| "간헐 트래픽, 콜드 스타트 OK" | Serverless Inference |
 | "큰 페이로드·긴 처리 큐잉" | Asynchronous Inference |
 | "상시 낮은 지연" | Real-time Endpoint |
-| "트래픽 변동 대응" | 엔드포인트 오토스케일링 |
+| "트래픽 변동 대응" | 엔드포인트 Auto Scaling |
 | "여러 모델을 한 엔드포인트에" | Multi-Model Endpoint |
 | "사용자 영향 없이 트래픽으로 검증" | Shadow 테스트 |
 | "위험을 줄이며 점진 전환" | Canary / Linear |
@@ -127,7 +127,7 @@
 | "워크플로 자동화·재현·CI/CD" | Pipelines + Model Registry |
 | "저장·전송 암호화, 접근 통제" | KMS + IAM |
 
-> 💡 **관련 이론**: 이 번역표를 관통하는 메타 원칙은 세 가지다. (1) "관리 부담을 누가 지는가"로 서버리스/관리형(Firehose·Glue·Athena·Serverless) vs 직접 제어(Streams·EMR·Real-time)가 갈린다. (2) "데이터 형태"가 알고리즘을 정한다(표=XGBoost, 이미지=CNN, 시퀀스=DeepAR/RNN, 텍스트=BlazingText). (3) "지표는 비즈니스 비용의 번역"이라 FP/FN 중 무엇이 비싼지가 정밀도/재현율/F1을 정한다. 모르는 문제도 이 세 축으로 환원하면 정답 영역이 좁혀진다.
+이 번역표를 관통하는 메타 원칙은 세 가지다. (1) "관리 부담을 누가 지는가"로 서버리스/관리형(Firehose·Glue·Athena·Serverless) vs 직접 제어(Streams·EMR·Real-time)가 갈린다. (2) "데이터 형태"가 알고리즘을 정한다(표=XGBoost, 이미지=CNN, 시퀀스=DeepAR/RNN, 텍스트=BlazingText). (3) "지표는 비즈니스 비용의 번역"이라 FP/FN 중 무엇이 비싼지가 정밀도/재현율/F1을 정한다. 모르는 문제도 이 세 축으로 환원하면 정답 영역이 좁혀진다.
 
 ## 헷갈리는 짝 대조표
 
@@ -171,7 +171,7 @@
 | 장시간 학습 잡을 Lambda로 실행 | SageMaker 학습 잡 / Pipelines |
 | 복수 정답 문항에서 개수 무시 | "두 개를 고르시오" 지시를 정확히 셀 것 |
 
-> 💡 **관련 이론**: 함정의 절반은 "방향 반대"이고 절반은 "도메인 혼동"이다. 방향 함정(Sigmoid↔Softmax, Maximize↔Minimize, Streams↔Firehose)은 짝을 외워두면 즉시 걸러진다. 데이터 누수는 특히 교묘한데, 스케일러·인코더를 학습/검증을 합친 전체에 fit하면 검증 정보가 새어 평가가 낙관 편향된다. 반드시 학습셋으로만 fit하고 검증·테스트에는 transform만 적용한다 — 이 한 줄이 자주 보기로 위장해 출제된다.
+함정의 절반은 "방향 반대"이고 절반은 "도메인 혼동"이다. 방향 함정(Sigmoid↔Softmax, Maximize↔Minimize, Streams↔Firehose)은 짝을 외워두면 즉시 걸러진다. 데이터 누수는 특히 교묘한데, 스케일러·인코더를 학습/검증을 합친 전체에 fit하면 검증 정보가 새어 평가가 낙관 편향된다. 반드시 학습셋으로만 fit하고 검증·테스트에는 transform만 적용한다 — 이 한 줄이 자주 보기로 위장해 출제된다.
 
 ## 시험 직전 60초 리마인더
 
@@ -204,8 +204,6 @@ ETL    : 서버리스=Glue · 클러스터 제어=EMR · DB 이관=DMS
 - 복수 정답 문항은 "몇 개 고르라"는 지시를 정확히 읽기.
 - 빈칸 금지 — 시간 부족해도 추정 답 마킹.
 - 마지막 10분 마킹 누락·플래그 재확인.
-
-12주를 거쳐 데이터 엔지니어링, EDA, 모델링, 구현·운영의 네 도메인을 모두 통과했다. 그동안 충분히 준비했다 — 합격을 기원한다.
 
 ## 📖 용어
 
