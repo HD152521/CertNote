@@ -15,6 +15,9 @@ import { ExamDateNudge } from '@/components/study/ExamDateNudge';
 import { DayNavigationOverlay } from '@/components/study/DayNavigationOverlay';
 import { DayMeta } from '@/components/DayMeta';
 import { DaySourceLine } from '@/components/day/DaySourceLine';
+import { OfficialRefs } from '@/components/day/OfficialRefs';
+import { detectAwsServices } from '@/lib/day/officialRefs';
+import { getExamInfo } from '@/lib/examInfo';
 import { getLastReviewedMonth } from '@/lib/trust/reviewLog';
 import { cn } from '@/lib/cn';
 import { linkDayRefHref } from '@/lib/navTree';
@@ -129,6 +132,15 @@ export async function DayView({ category, slug, w, d, lang, content, locked, log
               </Link>
             ) : (<div />)}
           </footer>
+          {/* 이전/다음 아래(페이지 끝). 아래쪽 광고와 이 외부 링크 목록 사이에 내비게이션이 있어 붙지 않는다. */}
+          {!locked && (
+            <OfficialRefs
+              certMeta={content.certMeta}
+              lang={lang}
+              examUrl={getExamInfo(slug)?.officialUrl ?? null}
+              services={content.certMeta.section === 'linux' ? [] : detectAwsServices(content.body)}
+            />
+          )}
           {/* 학습을 마친 접점에서 시험일 등록(D-day·일일 분량)을 안내. 잠긴 페이지·영어판에선 생략(위젯이 한국어 전용). */}
           {!locked && lang === 'ko' && (
             <div className="mt-6">
