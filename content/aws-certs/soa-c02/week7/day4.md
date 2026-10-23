@@ -22,9 +22,9 @@
 
 핵심 트렌드는 "도구 통합"이다. 같은 EC2에 Chef 에이전트 + SSM 에이전트 + CloudWatch 에이전트가 함께 도는 운영 환경은 복잡도가 높다. 에이전트가 줄어들고 SSM 하나로 수렴하면 디버깅·보안·업데이트 모두 단순해진다.
 
-> 💡 **관련 이론**: 이 통합 트렌드는 분산 시스템의 "sidecar proliferation" 문제와 정확히 같은 맥락이다. Service Mesh 초기에는 Envoy + Istio + Prometheus + Jaeger + ... 사이드카가 너무 많아 운영 부담이 폭증했다. 그 답이 eBPF 기반 통합 데이터 플레인(Cilium, Pixie)이다. AWS도 같은 답을 SSM Agent로 냈다 — 하나의 에이전트로 명령 실행·상태 관리·패치·세션 접속·인벤토리·취약점 보고를 모두 처리한다.
+이 통합 트렌드는 분산 시스템의 "sidecar proliferation" 문제와 정확히 같은 맥락이다. Service Mesh 초기에는 Envoy + Istio + Prometheus + Jaeger + ... 사이드카가 너무 많아 운영 부담이 폭증했다. 그 답이 eBPF 기반 통합 데이터 플레인(Cilium, Pixie)이다. AWS도 같은 답을 SSM Agent로 냈다 — 하나의 에이전트로 명령 실행·상태 관리·패치·세션 접속·인벤토리·취약점 보고를 모두 처리한다.
 
-> 🔍 **더 깊이**: SSM State Manager는 OpsWorks Stacks의 "Chef Solo 주기 실행" 모델과 정확히 같은 일을 한다. SSM Document(JSON/YAML)를 "association"이라는 형태로 EC2 group에 연결하면, SSM이 cron 주기(예: 30분)마다 그 인스턴스에서 document를 실행해 desired state를 유지한다. Document 안에는 `aws:runShellScript`, `aws:applyAnsiblePlaybooks`, `aws:applyChefRecipes` 액션이 모두 있어 **기존 Chef cookbook도 SSM Document 안에서 그대로 실행 가능**하다. OpsWorks → SSM 마이그레이션이 점진적일 수 있는 이유.
+SSM State Manager는 OpsWorks Stacks의 "Chef Solo 주기 실행" 모델과 정확히 같은 일을 한다. SSM Document(JSON/YAML)를 "association"이라는 형태로 EC2 group에 연결하면, SSM이 cron 주기(예: 30분)마다 그 인스턴스에서 document를 실행해 desired state를 유지한다. Document 안에는 `aws:runShellScript`, `aws:applyAnsiblePlaybooks`, `aws:applyChefRecipes` 액션이 모두 있어 **기존 Chef cookbook도 SSM Document 안에서 그대로 실행 가능**하다. OpsWorks → SSM 마이그레이션이 점진적일 수 있는 이유.
 
 ## OpsWorks Stacks EOL이 시사하는 것
 
@@ -37,7 +37,7 @@ AWS의 권장 마이그레이션 경로는 이 패러다임 차이를 그대로 
 1. **Run Command + State Manager + Patch Manager**: mutable infrastructure를 유지하면서 도구만 SSM으로 갈아탐. 기존 Chef cookbook 자산이 많은 팀이 선택.
 2. **EC2 Image Builder + Launch Template + ASG Instance Refresh**: immutable infrastructure로 전환. 새 인스턴스 교체로 변경 적용. 장기적으로 권장되는 path.
 
-> 📚 **사례**: Slack은 2014년부터 Chef로 수만 대 EC2를 관리했지만, 2020년경 Spotify가 만든 Backstage(Internal Developer Platform)와 EC2 Image Builder 기반 immutable infrastructure로 전환했다. 사후 보고에 따르면 "configuration drift 사고가 90% 감소"했고, 보안 패치 적용 시간이 평균 7일에서 1일로 단축됐다. 같은 패턴을 Lyft, Pinterest, Airbnb 모두 따라갔다.
+Slack은 2014년부터 Chef로 수만 대 EC2를 관리했지만, 2020년경 Spotify가 만든 Backstage(Internal Developer Platform)와 EC2 Image Builder 기반 immutable infrastructure로 전환했다. 사후 보고에 따르면 "configuration drift 사고가 90% 감소"했고, 보안 패치 적용 시간이 평균 7일에서 1일로 단축됐다. 같은 패턴을 Lyft, Pinterest, Airbnb 모두 따라갔다.
 
 ## Launch Configuration vs Launch Template: 왜 LC는 죽었는가
 
@@ -97,11 +97,11 @@ MixedInstancesPolicy:
 | **price-capacity-optimized** | 가격 + capacity 균형 (2022년 추가) | 비용 최적화 강조 |
 | **lowest-price** (legacy) | 가장 싼 풀 N개 — 회수 위험 높음 | 단순 비용 최적 (권장 X) |
 
-`capacity-optimized` 또는 `price-capacity-optimized`가 거의 항상 정답이다. `lowest-price`는 가장 싼 풀에 몰리면 그 풀의 capacity가 빨리 소진되어 Spot 회수율이 폭증한다.
+`capacity-optimized` 또는 `price-capacity-optimized`가 보통 알맞다. `lowest-price`는 가장 싼 풀에 몰리면 그 풀의 capacity가 빨리 소진되어 Spot 회수율이 폭증한다.
 
-> 📚 **사례**: Pinterest가 2021년 ML 학습 워크로드를 lowest-price → capacity-optimized로 전환한 후 Spot 회수율이 12%에서 1.4%로 줄었다는 보고가 있다. 같은 비용 절감을 유지하면서 학습 작업의 평균 완료 시간이 4시간에서 1.5시간으로 단축됐다. 회수가 줄어드니 재시작 비용이 사라진 효과다. ["Capacity-Optimized Allocation Strategy"](https://aws.amazon.com/blogs/compute/introducing-the-capacity-optimized-allocation-strategy-for-amazon-ec2-spot-instances/) AWS 공식 블로그.
+Pinterest가 2021년 ML 학습 워크로드를 lowest-price → capacity-optimized로 전환한 후 Spot 회수율이 12%에서 1.4%로 줄었다는 보고가 있다. 같은 비용 절감을 유지하면서 학습 작업의 평균 완료 시간이 4시간에서 1.5시간으로 단축됐다. 회수가 줄어드니 재시작 비용이 사라진 효과다. ["Capacity-Optimized Allocation Strategy"](https://aws.amazon.com/blogs/compute/introducing-the-capacity-optimized-allocation-strategy-for-amazon-ec2-spot-instances/) AWS 공식 블로그.
 
-> 🔍 **더 깊이**: Spot 회수 2분 알림은 EC2 메타데이터 서비스(IMDS)에 `/latest/meta-data/spot/instance-action` 경로로도 노출된다. 인스턴스 내부에서 `curl http://169.254.169.254/latest/meta-data/spot/instance-action`를 1초 polling하면 회수 예정을 가장 빨리 감지할 수 있다. EventBridge는 약 10초 지연이 있어 시간이 critical한 경우 IMDS polling이 더 빠르다. 실제로 Netflix는 컨테이너 스케줄러가 IMDS polling으로 회수를 감지해 다른 노드로 Pod를 사전 마이그레이션한다.
+Spot 회수 2분 알림은 EC2 메타데이터 서비스(IMDS)에 `/latest/meta-data/spot/instance-action` 경로로도 노출된다. 인스턴스 내부에서 `curl http://169.254.169.254/latest/meta-data/spot/instance-action`를 1초 polling하면 회수 예정을 가장 빨리 감지할 수 있다. EventBridge는 약 10초 지연이 있어 시간이 critical한 경우 IMDS polling이 더 빠르다. 실제로 Netflix는 컨테이너 스케줄러가 IMDS polling으로 회수를 감지해 다른 노드로 Pod를 사전 마이그레이션한다.
 
 ## Auto Scaling 알고리즘: 4가지 정책의 내부 동작
 
@@ -142,7 +142,7 @@ aws autoscaling put-scaling-policy \
   }'
 ```
 
-> 💡 **관련 이론**: Target Tracking의 PID controller는 1890년대부터 industrial control system에서 쓰던 알고리즘이다. 자동차 cruise control, HVAC 온도 조절, 비행기 autopilot 모두 PID 기반이다. AWS는 이를 클라우드 capacity 관리에 그대로 적용했고, 같은 패러다임을 Kubernetes Horizontal Pod Autoscaler가 채택했다. control theory의 안정성 정리(stability theorem)가 cooldown period의 수학적 정당화다 — 너무 짧으면 oscillation, 너무 길면 response delay.
+Target Tracking의 PID controller는 1890년대부터 industrial control system에서 쓰던 알고리즘이다. 자동차 cruise control, HVAC 온도 조절, 비행기 autopilot 모두 PID 기반이다. AWS는 이를 클라우드 capacity 관리에 그대로 적용했고, 같은 패러다임을 Kubernetes Horizontal Pod Autoscaler가 채택했다. control theory의 안정성 정리(stability theorem)가 cooldown period의 수학적 정당화다 — 너무 짧으면 oscillation, 너무 길면 response delay.
 
 > ⚠️ **함정**: Predictive Scaling은 최소 24시간(권장 14일) 메트릭이 누적돼야 forecast가 의미 있다. 새 ASG에서 즉시 활성화하면 첫 며칠은 Target Tracking과 똑같이 reactive하게 동작한다. 또 `Mode=ForecastOnly`로 두면 예측만 하고 capacity는 안 바꾼다 — 실제 변경 전 예측 품질을 검증하는 단계로 권장된다.
 
@@ -190,7 +190,7 @@ aws autoscaling put-lifecycle-hook \
 
 `default-result`가 `CONTINUE`인지 `ABANDON`인지가 운영상 중요하다. `CONTINUE`는 timeout 시 종료 진행, `ABANDON`은 timeout 시 인스턴스를 다시 운영 상태로 되돌린다. graceful shutdown이 timeout 안에 못 끝나는 경우 어느 쪽이 안전한지에 따라 선택.
 
-> 📚 **사례**: Datadog Agent는 ASG Lifecycle Hook을 적극 활용한다. 종료 hook에서 Datadog Agent가 인스턴스 내 누적된 메트릭을 강제 flush한 후 종료 신호를 보낸다. Hook 없이 SIGTERM만 받으면 최근 1분 메트릭이 손실되는 문제가 있었다. AWS Well-Architected Framework의 Operational Excellence Pillar에서 "Graceful instance termination"이 명시되어 있는 이유.
+Datadog Agent는 ASG Lifecycle Hook을 적극 활용한다. 종료 hook에서 Datadog Agent가 인스턴스 내 누적된 메트릭을 강제 flush한 후 종료 신호를 보낸다. Hook 없이 SIGTERM만 받으면 최근 1분 메트릭이 손실되는 문제가 있었다. AWS Well-Architected Framework의 Operational Excellence Pillar에서 "Graceful instance termination"이 명시되어 있는 이유.
 
 ## Proton vs Service Catalog: 두 자가 서비스 도구의 위치
 
@@ -204,7 +204,7 @@ AWS는 사내 자가 서비스(self-service provisioning)를 위해 두 도구�
 | **CI/CD 통합** | 없음 (별도) | 내장 (CodePipeline) |
 | **추상화 단위** | Product (단일 stack) | Environment + Service |
 | **사용 흐름** | "VPC 만들어주세요" 같은 일반 인프라 요청 | "내 마이크로서비스 컴파일 + 빌드 + 배포 파이프라인 받고 싶다" |
-| **롤백** | Stack rollback | 버전 + 자동 rollout 관리 |
+| **롤백** | 스택 롤백 | 버전 + 자동 rollout 관리 |
 
 Service Catalog는 **인프라 요청** 도구다. "표준 VPC 한 개 만들어주세요"라는 요청을 자가 서비스로 처리한다. Proton은 **풀스택 워크플로** 도구다. 개발자가 Git push만 하면 인프라 + 빌드 + 배포 + 모니터링이 모두 자동 구성된다.
 
@@ -215,9 +215,9 @@ Proton의 추상화 핵심은 **Environment Template**과 **Service Template**�
 
 이 분리가 의미하는 바는 "**개발자는 Service만 인스턴스화, Environment는 안 만진다**"이다. 표준 환경에서 벗어난 별난 인프라를 못 만들게 강제해 standardization을 보장한다.
 
-> 💡 **관련 이론**: Proton의 모델은 Spotify의 Backstage가 만든 "Internal Developer Platform(IDP)" 카테고리의 AWS 네이티브 구현이다. CNCF의 platform working group이 정의한 reference architecture와 거의 동일하다 — Platform Engineer가 golden path를 제공하고, Developer는 그 path 안에서 자가 서비스로 일한다. Humanitec, Backstage, Crossplane이 같은 카테고리의 경쟁 도구.
+Proton의 모델은 Spotify의 Backstage가 만든 "Internal Developer Platform(IDP)" 카테고리의 AWS 네이티브 구현이다. CNCF의 platform working group이 정의한 reference architecture와 거의 동일하다 — Platform Engineer가 golden path를 제공하고, Developer는 그 path 안에서 자가 서비스로 일한다. Humanitec, Backstage, Crossplane이 같은 카테고리의 경쟁 도구.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 세 가지다. 첫째, OpsWorks Stacks의 EOL은 단순 서비스 종료가 아니라 mutable infrastructure에서 immutable + SSM 통합으로 가는 패러다임 전환의 마지막 신호다. 둘째, Launch Configuration → Launch Template으로의 전환은 버전 관리·Mixed Instances·신규 기능 지원이라는 명확한 가치 차이가 만든 자연스러운 마이그레이션이다. 셋째, Mixed Instances Policy + capacity-optimized Spot은 비용 절감과 가용성 보장을 동시에 달성하는 거의 표준 패턴이 됐다.
 
