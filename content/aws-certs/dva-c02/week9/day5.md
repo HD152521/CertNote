@@ -57,7 +57,7 @@ WAF와 Shield는 둘 다 "외부의 악의적 트래픽"을 막지만 노리는 
 | 대응팀 | 없음 | SRT(Shield Response Team) 24/7 |
 | WAF 연동 | 별도 | 통합·자동 규칙 |
 
-2020년 2월 AWS는 분당 2.3Tbps에 달하는, 당시 기록상 최대 규모의 DDoS 공격을 Shield로 흡수했다고 공개했다. 이 공격은 CLDAP(Connection-less LDAP) 리플렉션 기법으로 증폭됐는데, 공격자가 출발지 IP를 피해자로 위조해 LDAP 서버에 작은 요청을 보내면 서버가 수십 배 큰 응답을 피해자에게 쏟아붓는 방식이다. 핵심 교훈은 이런 볼류메트릭 공격은 **개별 애플리케이션이 자력으로 막을 수 없다** 는 점이다 — AWS 백본 수준의 흡수 용량이 필요하다. 이게 Shield가 EC2가 아니라 CloudFront·ALB·Route 53 같은 엣지 서비스 앞단에 붙는 이유이고, "엣지에 트래픽을 모아 흡수하라"는 DDoS 방어의 기본 원칙이기도 하다.
+2020년 2월 AWS는 최고 2.3Tbps에 달하는, 당시 기록상 최대 규모의 DDoS 공격을 Shield로 흡수했다고 공개했다. 이 공격은 CLDAP(Connection-less LDAP) 리플렉션 기법으로 증폭됐는데, 공격자가 출발지 IP를 피해자로 위조해 LDAP 서버에 작은 요청을 보내면 서버가 수십 배 큰 응답을 피해자에게 쏟아붓는 방식이다. 핵심 교훈은 이런 볼류메트릭 공격은 **개별 애플리케이션이 자력으로 막을 수 없다** 는 점이다 — AWS 백본 수준의 흡수 용량이 필요하다. 이게 Shield가 EC2가 아니라 CloudFront·ALB·Route 53 같은 엣지 서비스 앞단에 붙는 이유이고, "엣지에 트래픽을 모아 흡수하라"는 DDoS 방어의 기본 원칙이기도 하다.
 
 WAF의 **rate-based rule** 은 5분 슬라이딩 윈도우로 같은 IP의 요청 수를 세어 임계치를 넘으면 차단한다. 여기서 자주 놓치는 점은, WAF가 **HTTP API(API Gateway v2)에는 직접 붙지 않는다** 는 것이다 — REST API(v1), ALB, CloudFront, AppSync에는 붙지만 HTTP API는 지원 대상이 아니다. 그래서 HTTP API를 WAF로 보호하려면 앞에 CloudFront를 두는 우회가 필요하다. 또 WAF 규칙 액션에는 Block 외에 **Count** 모드가 있는데, 차단 없이 매칭 건수만 기록해 새 규칙을 프로덕션에 적용하기 전에 오탐(false positive)을 안전하게 측정하는 용도다.
 
