@@ -378,11 +378,11 @@ JWT Authorizer의 검증 흐름:
 2. JWT의 `iss`(issuer) 클레임이 설정된 issuer URL과 일치하는지 확인
 3. issuer의 JWKS 엔드포인트에서 공개 키 조회(캐시됨)
 4. JWT 서명 검증
-5. JWT의 `aud`(audience) 클레임이 설정된 audience 목록에 포함되는지 확인
+5. JWT의 `aud`(audience) 클레임이 설정된 audience 목록에 포함되는지 확인(`aud`가 없으면 `client_id`로 확인)
 6. JWT 만료(`exp`) 확인
 7. 모두 통과 → 백엔드 통합 호출
 
-Cognito에서 Access Token과 ID Token은 다르다. JWT Authorizer의 `audience` 설정이 Access Token을 검증하도록 되어 있는데 ID Token을 보내면 `aud` 클레임이 일치하지 않아 401이 반환된다. Cognito Access Token의 `aud`는 클라이언트 ID가 아니라 `"token_use": "access"` 값이 다르게 처리된다. REST API의 Cognito User Pool Authorizer는 Access Token을 처리하도록 설계되어 있지만 HTTP API JWT Authorizer는 ID Token을 기본으로 한다.
+Cognito에서 Access Token과 ID Token은 클레임 구성이 다르다. ID Token은 `aud`에 앱 클라이언트 ID를 담는다. Access Token은 앱 클라이언트 ID를 `client_id` 클레임에 담고, `aud`는 기본적으로 없다(리소스 바인딩을 요청한 경우에만 API URL이 들어간다). 그래서 JWT Authorizer의 `audience`에 앱 클라이언트 ID를 넣으면 ID Token은 `aud`로, Access Token은 `client_id`로 통과한다. 두 토큰을 구분하려면 `token_use` 클레임(`id`/`access`)을 보거나, 라우트에 scope를 요구한다. ID Token에는 scope가 없어 scope를 요구하는 라우트를 통과하지 못한다.
 
 ---
 
