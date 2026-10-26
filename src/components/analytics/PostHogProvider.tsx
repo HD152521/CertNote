@@ -10,9 +10,12 @@ import { onAuthChange } from '@/lib/auth/authEvents';
 const KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com';
 // 프로덕션 + 키가 있을 때만 활성화(개발 중 데이터 오염 방지, 미설정 시 완전 no-op).
-const ENABLED = typeof window !== 'undefined' && !!KEY && process.env.NODE_ENV === 'production';
+// 렌더 분기에 쓰는 값이라 서버와 브라우저에서 같아야 한다. 예전엔 `typeof window` 를 섞어서
+// 서버는 children 만, 브라우저는 Provider+Suspense 를 그려 모든 페이지에서 하이드레이션이
+// 어긋났다(React #418, 운영에서만 재현). 브라우저 전용인 것은 init 하나뿐이다.
+const ENABLED = !!KEY && process.env.NODE_ENV === 'production';
 
-if (ENABLED && !posthog.__loaded) {
+if (ENABLED && typeof window !== 'undefined' && !posthog.__loaded) {
   posthog.init(KEY as string, {
     api_host: HOST,
     person_profiles: 'identified_only', // 로그인(식별)된 사용자만 person으로 집계 → 비용 절감

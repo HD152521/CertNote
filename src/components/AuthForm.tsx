@@ -5,11 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { BellRing } from 'lucide-react';
 import { emitAuthChange } from '@/lib/auth/authEvents';
+import { safeNext } from '@/lib/auth/safeNext';
+import { oauthErrorMessage } from '@/lib/auth/oauthErrors';
 import { track } from '@/lib/analytics';
 import { enablePush, isPushSupported } from '@/lib/push/client';
 import { OCCUPATION_OPTIONS, PURPOSE_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profileOptions';
 import { useLanguage, t } from '@/lib/i18n-client';
 import { Select } from '@/components/ui/Select';
+
 
 type Mode = 'login' | 'signup';
 
@@ -37,8 +40,8 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  // OAuth 콜백 실패 시 /login?error=google 로 돌아온다.
-  const oauthError = params.get('error') === 'google' ? (lang === 'en' ? 'Google login failed. Please try again.' : '구글 로그인에 실패했습니다. 다시 시도해 주세요.') : null;
+  // 구글 로그인 시작·콜백이 실패하면 /login?error=<code> 로 돌아온다(api/auth/google/*).
+  const oauthError = oauthErrorMessage(params.get('error'), lang === 'en');
   // 회원가입 프로필(테스터 데이터 수집)
   const [name, setName] = useState('');
   const [birthdate, setBirthdate] = useState('');
@@ -62,9 +65,8 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
   }
 
   function goNext() {
-    const next = params.get('next');
-    // 신규 가입자는 첫 방문 온보딩으로(명시적 next가 없을 때).
-    router.push(next || (mode === 'signup' ? '/welcome' : '/'));
+    // 신규 가입자는 첫 방문 온보딩으로(명시적 next가 없을 때). 외부 주소는 기본값으로 돌린다.
+    router.push(safeNext(params.get('next'), mode === 'signup' ? '/welcome' : '/'));
     router.refresh();
   }
 

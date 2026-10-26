@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { track } from '@/lib/analytics';
+import { safeNext } from '@/lib/auth/safeNext';
 import { EXPERIENCE_OPTIONS, OCCUPATION_OPTIONS, PURPOSE_OPTIONS } from '@/lib/profileOptions';
 import type { CertOption } from '@/components/AuthForm';
 import { Select } from '@/components/ui/Select';
@@ -31,8 +32,7 @@ export function OnboardingProfileForm({ certs, initialName }: OnboardingProfileF
   const s = pick(accountStrings, lang);
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get('next') || '/welcome';
-  const dest = next.startsWith('/') && !next.startsWith('//') ? next : '/welcome';
+  const dest = safeNext(params.get('next'), '/welcome');
 
   const [name, setName] = useState(initialName);
   const [birthdate, setBirthdate] = useState('');
