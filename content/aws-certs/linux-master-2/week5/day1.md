@@ -252,7 +252,7 @@ C) tcsh
 D) ksh  
 
 **정답: A**  
-해설: bash는 Bourne Again SHell의 줄임말로 GNU 프로젝트에서 Brian Fox가 개발했으며 대부분의 리눅스 배포판에서 기본 셸로 채택하고 있습니다. ksh는 David Korn이 만든 Korn shell, csh는 Bill Joy가 만든 C shell이며 tcsh는 csh의 개선판입니다.
+해설: bash는 Bourne Again SHell의 줄임말로 GNU 프로젝트에서 Brian Fox가 개발했으며 대부분의 리눅스 배포판에서 기본 셸로 채택하고 있다. ksh는 David Korn이 만든 Korn shell, csh는 Bill Joy가 만든 C shell이며 tcsh는 csh의 개선판이다.
 
 ---
 
@@ -264,7 +264,7 @@ C) tcsh
 D) dash  
 
 **정답: C**  
-해설: 셸은 Bourne 계열과 C 계열로 나뉘며 C 계열에 속하는 것은 csh와 그 개선판인 tcsh 두 가지입니다. bash, ksh, dash, zsh는 모두 Bourne shell에서 갈라져 나온 Bourne 계열입니다.
+해설: 셸은 Bourne 계열과 C 계열로 나뉘며 C 계열에 속하는 것은 csh와 그 개선판인 tcsh 두 가지이다. bash, ksh, dash, zsh는 모두 Bourne shell에서 갈라져 나온 Bourne 계열이다.
 
 ---
 
@@ -276,7 +276,7 @@ C) Stephen Bourne
 D) Brian Fox  
 
 **정답: B**  
-해설: Korn shell은 이름 그대로 David Korn이 개발했으며 Bourne shell과 호환되면서 C shell의 편의 기능을 함께 담았습니다. Stephen Bourne은 sh를, Bill Joy는 csh를, Brian Fox는 bash를 만들었습니다.
+해설: Korn shell은 이름 그대로 David Korn이 개발했으며 Bourne shell과 호환되면서 C shell의 편의 기능을 함께 담았다. Stephen Bourne은 sh를, Bill Joy는 csh를, Brian Fox는 bash를 만들었다.
 
 ---
 
@@ -288,7 +288,7 @@ C) /etc/bashrc
 D) /etc/shells  
 
 **정답: D**  
-해설: `/etc/shells`에는 그 시스템에서 로그인 셸로 사용할 수 있는 셸의 절대 경로가 나열되어 있습니다. `chsh` 명령은 이 목록에 등록된 셸로만 변경을 허용합니다. `/etc/passwd`는 각 사용자에게 지정된 셸을 마지막 필드에 담고 있습니다.
+해설: `/etc/shells`에는 그 시스템에서 로그인 셸로 사용할 수 있는 셸의 절대 경로가 나열되어 있다. `chsh` 명령은 이 목록에 등록된 셸로만 변경을 허용한다. `/etc/passwd`는 각 사용자에게 지정된 셸을 마지막 필드에 담고 있다.
 
 ---
 
@@ -300,4 +300,4 @@ C) chown
 D) chgrp  
 
 **정답: A**  
-해설: `chsh`(change shell)는 `/etc/passwd`의 마지막 필드에 기록된 로그인 셸을 변경하며 다음 로그인부터 적용됩니다. `chmod`는 권한, `chown`은 소유자, `chgrp`는 그룹을 바꾸는 명령입니다.
+해설: `chsh`(change shell)는 `/etc/passwd`의 마지막 필드에 기록된 로그인 셸을 변경하며 다음 로그인부터 적용된다. `chmod`는 권한, `chown`은 소유자, `chgrp`는 그룹을 바꾸는 명령이다.

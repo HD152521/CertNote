@@ -245,7 +245,7 @@ C) Afterstep
 D) Xfce  
 
 **정답: D**  
-해설: KWin, Windowmaker, Afterstep은 모두 창의 테두리와 이동을 담당하는 윈도 매니저입니다. 반면 Xfce는 윈도 매니저에 패널과 파일 관리자까지 묶은 데스크톱 환경이며, Xfce가 사용하는 윈도 매니저는 Xfwm입니다.
+해설: KWin, Windowmaker, Afterstep은 모두 창의 테두리와 이동을 담당하는 윈도 매니저이다. 반면 Xfce는 윈도 매니저에 패널과 파일 관리자까지 묶은 데스크톱 환경이며, Xfce가 사용하는 윈도 매니저는 Xfwm이다.
 
 ---
 
@@ -257,7 +257,7 @@ C) Nautilus
 D) Thunar  
 
 **정답: B**  
-해설: GDM은 GNOME Display Manager의 줄임말로 부팅 후 그래픽 로그인 화면을 띄우고 세션을 시작합니다. Mutter는 GNOME의 윈도 매니저이고 Nautilus와 Thunar는 각각 GNOME과 Xfce의 파일 관리자입니다.
+해설: GDM은 GNOME Display Manager의 줄임말로 부팅 후 그래픽 로그인 화면을 띄우고 세션을 시작한다. Mutter는 GNOME의 윈도 매니저이고 Nautilus와 Thunar는 각각 GNOME과 Xfce의 파일 관리자이다.
 
 ---
 
@@ -269,7 +269,7 @@ C) KWin
 D) Openbox  
 
 **정답: C**  
-해설: KDE는 KWin을 윈도 매니저로 사용하며 툴킷은 Qt입니다. Mutter는 GNOME, Xfwm은 Xfce, Openbox는 LXDE에서 사용하는 윈도 매니저입니다.
+해설: KDE는 KWin을 윈도 매니저로 사용하며 툴킷은 Qt이다. Mutter는 GNOME, Xfwm은 Xfce, Openbox는 LXDE에서 사용하는 윈도 매니저이다.
 
 ---
 
@@ -281,7 +281,7 @@ C) 파일 관리자
 D) 툴킷  
 
 **정답: A**  
-해설: X 윈도 자체는 창의 모양이나 조작 방식을 정하지 않기 때문에 윈도 매니저가 그 역할을 맡습니다. 디스플레이 매니저는 로그인 화면을, 파일 관리자는 파일과 폴더 탐색을, 툴킷은 버튼과 메뉴 같은 위젯을 담당합니다.
+해설: X 윈도 자체는 창의 모양이나 조작 방식을 정하지 않기 때문에 윈도 매니저가 그 역할을 맡는다. 디스플레이 매니저는 로그인 화면을, 파일 관리자는 파일과 폴더 탐색을, 툴킷은 버튼과 메뉴 같은 위젯을 담당한다.
 
 ---
 
@@ -293,4 +293,4 @@ C) Nautilus
 D) PCManFM  
 
 **정답: C**  
-해설: GNOME은 Nautilus를 기본 파일 관리자로 사용합니다. Dolphin은 KDE, Thunar는 Xfce, PCManFM은 LXDE의 파일 관리자이며 각 데스크톱 환경이 자신의 툴킷에 맞는 파일 관리자를 함께 제공합니다.
+해설: GNOME은 Nautilus를 기본 파일 관리자로 사용한다. Dolphin은 KDE, Thunar는 Xfce, PCManFM은 LXDE의 파일 관리자이며 각 데스크톱 환경이 자신의 툴킷에 맞는 파일 관리자를 함께 제공한다.
