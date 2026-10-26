@@ -67,6 +67,9 @@ describe('proxy — 무관한 실제 라우트는 가로채지 않는다(proxy �
     '/login',
     '/sitemap.xml',
     '/icons/apple-touch-icon.png',
+    '/icon.svg', // app/icon.svg 파일 규칙
+    '/apple-icon.png', // app/apple-icon.png 파일 규칙
+    '/favicon.ico',
     '/monitoring',
   ])('%s', (p) => {
     if (reachesProxy(p)) expect(['pass', 'auth']).toContain(classifyPath(p));

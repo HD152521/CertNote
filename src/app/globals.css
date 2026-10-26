@@ -24,8 +24,10 @@
   --fg-faint: #a3a3a3;
   --border: #e5e5e5;
   --border-strong: #d4d4d4;
-  --accent: #ff9900;
-  --accent-fg: #1f1300;
+  /* 강조색은 로고(B안) 청록 계열. 글자로도 쓰이므로(text-accent) 배경 대비 4.5:1 이상인 단계를 쓴다:
+     라이트 #0f766e(흰 배경 5.5:1), 다크 #2dd4bf. 로고 마크 자체의 청록은 src/lib/brand.ts 의 BRAND_TEAL. */
+  --accent: #0f766e;
+  --accent-fg: #ffffff;
   --success: #16a34a;
   --warning: #d97706;
   --danger: #dc2626;
@@ -42,8 +44,8 @@
   --fg-faint: #525252;
   --border: #262626;
   --border-strong: #404040;
-  --accent: #ff9900;
-  --accent-fg: #1f1300;
+  --accent: #2dd4bf;
+  --accent-fg: #042f2e;
   --success: #22c55e;
   --warning: #f59e0b;
   --danger: #ef4444;

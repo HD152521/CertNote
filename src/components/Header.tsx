@@ -7,6 +7,7 @@ import { SearchButton } from './SearchButton';
 import { AuthNav } from './AuthNav';
 import { MobileNav } from './MobileNav';
 import { LangToggle } from './LangToggle';
+import { LogoMark } from './brand/LogoMark';
 import type { CertTree } from './SidebarNav';
 
 interface HeaderProps { certTrees: CertTree[]; enCertTrees?: CertTree[]; }
@@ -22,7 +23,7 @@ export function Header({ certTrees, enCertTrees }: HeaderProps) {
         <div className="flex items-center gap-1 sm:gap-2">
         <MobileNav certTrees={certTrees} enCertTrees={enCertTrees} />
         <Link href="/" className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-          <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-sm bg-accent" />
+          <LogoMark className="h-6 w-6 shrink-0" />
           <span>CertNote</span>
           <span className="text-fg-faint font-normal hidden sm:inline">{tagline}</span>
         </Link>
