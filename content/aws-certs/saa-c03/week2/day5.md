@@ -126,7 +126,7 @@ SG의 stateful은 *connection tracking*(conntrack)을 통해 구현된다. Linux
 ## 진짜 사고 사례 한 번 더
 
 - **2017년 2월 us-east-1 S3 장애**: 디버깅 명령어 오타로 의도보다 많은 서버가 종료되며 S3가 4시간 다운. 단일 리전 의존이 인터넷 절반을 흔든 사건. AWS Status Page 자체가 S3를 의존한 자기 참조 사고였다. *멀티 리전 + 리전 독립 설계*의 결정적 계기.
-- **2019년 Capital One**: SSRF + IMDSv1 + 과도한 IAM 권한. 잘못 구성된 WAF를 통한 SSRF로 메타데이터 endpoint(169.254.169.254)에서 임시 자격증명을 탈취, S3 1억 건 유출. IMDSv2(토큰 기반) + Endpoint Policy + Permission Boundary 조합이 사후 표준이 됨.
+- **2019년 Capital One**: SSRF + IMDSv1 + 과도한 IAM 권한. 잘못 구성된 WAF를 통한 SSRF로 메타데이터 endpoint(169.254.169.254)에서 임시 자격증명을 탈취, S3에서 약 1억 600만 명의 데이터 유출. IMDSv2(토큰 기반) + Endpoint Policy + Permission Boundary 조합이 사후 표준이 됨.
 - **2020년 Single-AZ NAT 다운**: per-AZ NAT 패턴의 결정적 계기. ALB는 살아있었으나 백엔드가 Stripe·Twilio에 못 닿아 결제 30분 실패.
 - **2021년 4월 Travis CI**: 장기 토큰이 빌드 로그에 노출 → GitHub OIDC 페더레이션(단기 토큰) 표준화의 계기.
 - **2018년 인수합병 CIDR 충돌**: 두 VPC 모두 `10.0.0.0/16` → IPAM 도입의 계기. 6개월 마이그레이션.
