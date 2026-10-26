@@ -233,7 +233,7 @@ C) STS 페더레이션 토큰 직접 발급
 D) VPC 엔드포인트 정책  
 
 **정답: B**  
-해설: 위치를 Lake Formation에 register하면, 지정된 서비스 역할로 Lake Formation이 임시 자격 증명을 벤딩해 사용자를 대신해 S3에 접근합니다. 분석가에게 S3 직접 권한이 없어도 됩니다. 나머지는 권한 일원화 메커니즘과 다릅니다.
+해설: 위치를 Lake Formation에 register하면, 지정된 서비스 역할로 Lake Formation이 임시 자격 증명을 벤딩해 사용자를 대신해 S3에 접근한다. 분석가에게 S3 직접 권한이 없어도 된다. 나머지는 권한 일원화 메커니즘과 다르다.
 
 ---
 
@@ -245,7 +245,7 @@ C) LF-Tags 기반 TBAC
 D) IAM 인라인 정책  
 
 **정답: C**  
-해설: LF-Tags 기반 TBAC는 태그 조건으로 권한을 부여해 리소스가 많아도 정책 폭증 없이 관리됩니다. 명명형은 리소스를 일일이 지정해야 하고, S3 ACL/IAM 인라인 정책은 세분화·확장성 면에서 부적합합니다.
+해설: LF-Tags 기반 TBAC는 태그 조건으로 권한을 부여해 리소스가 많아도 정책 폭증 없이 관리된다. 명명형은 리소스를 일일이 지정해야 하고, S3 ACL/IAM 인라인 정책은 세분화·확장성 면에서 부적합하다.
 
 ---
 
@@ -257,7 +257,7 @@ C) 블루프린트
 D) 워크그룹  
 
 **정답: B**  
-해설: 행 수준 보안은 데이터 필터(data cells filter)의 RowFilter 표현식으로 구현합니다. 컬럼 와일드카드는 컬럼 선택, 블루프린트는 수집 워크플로우 생성, 워크그룹은 Athena 비용·격리 개념입니다.
+해설: 행 수준 보안은 데이터 필터(data cells filter)의 RowFilter 표현식으로 구현한다. 컬럼 와일드카드는 컬럼 선택, 블루프린트는 수집 워크플로우 생성, 워크그룹은 Athena 비용·격리 개념이다.
 
 ---
 
@@ -269,7 +269,7 @@ C) Log file 블루프린트
 D) Streaming 블루프린트  
 
 **정답: A**  
-해설: Incremental database 블루프린트는 북마크 컬럼 기준 증분 적재 워크플로우를 만듭니다. Database snapshot은 전체 스냅샷, Log file은 로그 적재용이며, Streaming은 표준 블루프린트 유형이 아닙니다.
+해설: Incremental database 블루프린트는 북마크 컬럼 기준 증분 적재 워크플로우를 만든다. Database snapshot은 전체 스냅샷, Log file은 로그 적재용이며, Streaming은 표준 블루프린트 유형이 아니다.
 
 ---
 
@@ -281,6 +281,6 @@ C) KMS 키 정책만
 D) IAM 권한(Athena/Glue API)과 Lake Formation 데이터 권한 모두  
 
 **정답: D**  
-해설: Lake Formation 권한과 IAM 권한은 함께 평가됩니다. Athena/Glue API 호출용 IAM 권한과 데이터 접근용 Lake Formation 권한을 모두 가져야 쿼리가 성공합니다. 어느 한쪽만으로는 부족합니다.
+해설: Lake Formation 권한과 IAM 권한은 함께 평가된다. Athena/Glue API 호출용 IAM 권한과 데이터 접근용 Lake Formation 권한을 모두 가져야 쿼리가 성공한다. 어느 한쪽만으로는 부족하다.
 
 ---

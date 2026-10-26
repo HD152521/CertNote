@@ -92,7 +92,7 @@ def lambda_handler(event, context):
         raise Exception("Unauthorized")  # 또는 Deny 정책 반환
 ```
 
-Lambda Authorizer가 `raise Exception("Unauthorized")`를 던지면 API Gateway는 **403 Forbidden**을 반환한다. 이는 일반적인 HTTP 관례(401 Unauthorized)와 다르다. 실제 401을 반환하려면 Gateway Response를 커스터마이즈해야 한다. 또한 Deny 정책을 반환하면 API Gateway는 내부적으로 해당 정책을 IAM 엔진에 평가해 403을 반환한다 — 이 과정에서 Authorizer Lambda의 실행 비용은 이미 발생한다.
+Lambda Authorizer가 `raise Exception("Unauthorized")`처럼 정확히 "Unauthorized" 메시지로 실패하면 API Gateway는 **401 Unauthorized**를 반환한다. 다른 메시지로 실패하면 500이 된다. Deny 정책을 반환하면 API Gateway가 그 정책을 평가해 **403 Forbidden**을 반환한다. 401·403 응답 본문은 Gateway Response로 커스터마이즈한다 — 이 과정에서 Authorizer Lambda의 실행 비용은 이미 발생한다.
 
 **Authorizer 결과 캐싱**은 비용 최적화의 핵심이다. API Gateway는 캐시 키(TOKEN 타입: 토큰 값, REQUEST 타입: 지정한 파라미터 조합)를 기준으로 IAM 정책 응답을 메모리에 보관한다. TTL은 0~3600초(기본 300초)로 설정 가능하다.
 
@@ -120,7 +120,7 @@ https://cognito-idp.{region}.amazonaws.com/{userPoolId}/.well-known/jwks.json
 1. 클라이언트가 Cognito에 로그인 → ID Token(JWT) 발급
 2. 클라이언트가 `Authorization: {ID Token}` 헤더와 함께 API 호출
 3. API Gateway가 Cognito JWKS에서 공개 키 조회 → JWT 서명 검증
-4. JWT의 `aud`(Audience) 클레임이 설정한 Client ID와 일치하는지 확인
+4. 토큰이 Authorizer에 지정한 User Pool이 발급한 것인지 확인
 5. 토큰 만료 여부(`exp` 클레임) 확인
 6. 모두 통과 → 백엔드 Lambda 호출
 

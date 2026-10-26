@@ -362,7 +362,7 @@ D) Lambda가 매일 Log Group을 조회해 압축 후 별도 S3 버킷에 백업
 
 ## 다음 주 예고 (Week 3)
 
-Week 3는 모니터링 심화 — **Alarms, Dashboards, Agent, Synthetics·RUM·X-Ray** 입니다.
+Week 3는 모니터링 심화 — **Alarms, Dashboards, Agent, Synthetics·RUM·X-Ray** 이다.
 
 - Day 1: Alarms 심화 — Composite, Anomaly 알람, M of N 평가, Treat Missing Data, Action Suppressor
 - Day 2: Dashboards & 자동 새로고침, Cross-Account / Cross-Region 위젯, Live View
@@ -370,4 +370,4 @@ Week 3는 모니터링 심화 — **Alarms, Dashboards, Agent, Synthetics·RUM·
 - Day 4: Synthetics Canary, RUM, ServiceLens, X-Ray trace, Application Signals
 - Day 5: Week 3 복습 + 시나리오 10문제
 
-Week 2가 "데이터 수집"이라면 Week 3는 "알림과 가시화". SOA-C02에서 시나리오가 가장 많이 나오는 영역입니다. 오늘 정리한 메트릭/로그 평면 구분, 비용 다섯 갈래, p99 우선 원칙이 그대로 Week 3 알람·대시보드 설계의 토대가 됩니다.
+Week 2가 "데이터 수집"이라면 Week 3는 "알림과 가시화". SOA-C02에서 시나리오가 가장 많이 나오는 영역이다. 오늘 정리한 메트릭/로그 평면 구분, 비용 다섯 갈래, p99 우선 원칙이 그대로 Week 3 알람·대시보드 설계의 토대가 된다.

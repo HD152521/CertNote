@@ -153,39 +153,39 @@ D) Inspector를 활성화한다
 
 ---
 
-**문제 3.** GuardDuty가 DNS 기반 데이터 유출(DNS exfiltration) 핀딩을 전혀 생성하지 않는다. 조사 결과 해당 VPC는 커스텀 외부 DNS resolver를 사용한다. 원인은?
+**문제 3.** GuardDuty가 DNS 기반 데이터 유출(DNS exfiltration) 탐지 결과를 전혀 생성하지 않는다. 조사 결과 해당 VPC는 커스텀 외부 DNS resolver를 사용한다. 원인은?
 
 A) GuardDuty는 DNS를 분석하지 않는다  
 B) DNS 기반 탐지는 VPC 기본 Route 53 Resolver를 사용할 때만 동작하므로, 외부 resolver 사용 시 사각지대가 된다  
-C) DNS exfiltration 핀딩은 유료 플랜에만 있다  
+C) DNS exfiltration 결과는 유료 플랜에만 있다  
 D) Trusted IP 리스트에 모든 IP가 등록되어 있다  
 
 **정답: B**  
-해설: GuardDuty의 DNS 쿼리 분석은 VPC 기본 DNS(Route 53 Resolver)를 통과하는 질의에만 적용된다. 커스텀/외부 DNS resolver를 사용하면 GuardDuty가 DNS 질의를 볼 수 없어 DNS 기반 핀딩이 누락된다. GuardDuty는 기초 소스로 DNS를 분석하므로 A는 틀리고, DNS exfiltration은 기초 핀딩이며, 모든 IP를 신뢰 목록에 넣는 비정상 구성은 시나리오와 무관하다.
+해설: GuardDuty의 DNS 쿼리 분석은 VPC 기본 DNS(Route 53 Resolver)를 통과하는 질의에만 적용된다. 커스텀/외부 DNS resolver를 사용하면 GuardDuty가 DNS 질의를 볼 수 없어 DNS 기반 결과가 누락된다. GuardDuty는 기초 소스로 DNS를 분석하므로 A는 틀리고, DNS exfiltration은 기초 결과이며, 모든 IP를 신뢰 목록에 넣는 비정상 구성은 시나리오와 무관하다.
 
 ---
 
-**문제 4.** `CryptoCurrency:EC2/BitcoinTool.B!DNS` 핀딩이 발생했다. 이 핀딩이 알려주는 것과 가장 적절한 1차 대응은?
+**문제 4.** `CryptoCurrency:EC2/BitcoinTool.B!DNS` 결과가 발생했다. 이 결과가 알려주는 것과 가장 적절한 1차 대응은?
 
 A) EC2가 비트코인 채굴/통신 활동을 보이며, EventBridge로 해당 인스턴스 격리·스냅샷 자동화를 트리거한다  
-B) 단순 정보성 핀딩이므로 무시한다  
+B) 단순 정보성 결과이므로 무시한다  
 C) S3 버킷이 공개되었다는 의미다  
 D) IAM 사용자의 권한이 과도하다는 의미다  
 
 **정답: A**  
-해설: 핀딩 명명 규칙상 ThreatPurpose가 CryptoCurrency, 대상이 EC2, DNS 기반 탐지(`.B!DNS`)이므로 인스턴스가 암호화폐 채굴/관련 도메인과 통신 중임을 뜻한다 — 흔히 침해의 강한 신호다. 적절한 대응은 핀딩을 EventBridge로 받아 인스턴스 격리·포렌식 스냅샷·티켓팅을 자동화하는 것이다. 무시는 위험하고, S3 공개나 IAM 과다 권한은 다른 핀딩 유형(Policy:S3, Recon:IAMUser 등)이다.
+해설: 결과 명명 규칙상 ThreatPurpose가 CryptoCurrency, 대상이 EC2, DNS 기반 탐지(`.B!DNS`)이므로 인스턴스가 암호화폐 채굴/관련 도메인과 통신 중임을 뜻한다 — 흔히 침해의 강한 신호다. 적절한 대응은 결과를 EventBridge로 받아 인스턴스 격리·포렌식 스냅샷·티켓팅을 자동화하는 것이다. 무시는 위험하고, S3 공개나 IAM 과다 권한은 다른 결과 유형(Policy:S3, Recon:IAMUser 등)이다.
 
 ---
 
 **문제 5.** GuardDuty의 Trusted IP list에 대한 설명으로 옳은 것은?
 
 A) 등록된 IP로부터의 접근을 네트워크 수준에서 허용(allow)한다  
-B) 등록된 IP의 활동에 대해 GuardDuty가 핀딩을 생성하지 않도록 억제하지만, 접근 자체를 허용하는 통제는 아니다  
+B) 등록된 IP의 활동에 대해 GuardDuty가 결과를 생성하지 않도록 억제하지만, 접근 자체를 허용하는 통제는 아니다  
 C) 등록된 IP와의 통신을 무조건 차단한다  
 D) 멤버 계정마다 자유롭게 추가할 수 있다  
 
 **정답: B**  
-해설: Trusted IP list는 해당 IP의 활동에 대한 핀딩 생성을 억제하는 탐지 측 설정일 뿐, 접근 허용/차단 같은 네트워크 예방 통제가 아니다. 접근 통제는 SG/NACL/WAF의 역할이다. 통신을 차단하는 것은 Threat IP list의 핀딩 생성과도 다른 개념이며, 조직 모드에서 이 리스트는 위임 관리자가 중앙 관리하므로 멤버가 임의 추가하지 못한다.
+해설: Trusted IP list는 해당 IP의 활동에 대한 결과 생성을 억제하는 탐지 측 설정일 뿐, 접근 허용/차단 같은 네트워크 예방 통제가 아니다. 접근 통제는 SG/NACL/WAF의 역할이다. 통신을 차단하는 것은 Threat IP list의 결과 생성과도 다른 개념이며, 조직 모드에서 이 리스트는 위임 관리자가 중앙 관리하므로 멤버가 임의 추가하지 못한다.
 
 ---
 

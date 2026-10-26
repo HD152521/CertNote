@@ -1,6 +1,6 @@
 # Day 4 - Parameter Store, Session Manager, Automation Runbook: SSM 자동화 심화
 
-2019년 7월 공개된 사건에서, 전직 AWS 엔지니어 Paige Thompson이 Capital One에서 1억 6백만 명의 카드 신청 데이터를 탈취했다. 공격 경로는 이랬다. WAF의 SSRF 취약점으로 `http://169.254.169.254/latest/meta-data/iam/security-credentials/`에 접근해 EC2의 IAM 임시 자격증명을 탈취했다. 이 자격증명으로 S3 버킷 700개에서 30TB의 데이터를 빼냈다. 문제의 근원 중 하나는 **IMDSv1(인증 없이 메타데이터 접근)** 이었다. 오늘 다루는 Session Manager는 SSH 키나 IMDSv1 없이도 인스턴스에 안전하게 접근하는 방법을 제공하고, Parameter Store는 자격증명을 코드에 하드코딩하지 않는 방법을 제공한다.
+2019년 7월 공개된 사건에서, 전직 AWS 엔지니어 Paige Thompson이 Capital One에서 1억 600만 명의 카드 신청 데이터를 탈취했다. 공격 경로는 이랬다. WAF의 SSRF 취약점으로 `http://169.254.169.254/latest/meta-data/iam/security-credentials/`에 접근해 EC2의 IAM 임시 자격증명을 탈취했다. 이 자격증명으로 S3 버킷의 데이터를 빼냈다. 문제의 근원 중 하나는 **IMDSv1(인증 없이 메타데이터 접근)** 이었다. 오늘 다루는 Session Manager는 SSH 키나 IMDSv1 없이도 인스턴스에 안전하게 접근하는 방법을 제공하고, Parameter Store는 자격증명을 코드에 하드코딩하지 않는 방법을 제공한다.
 
 오늘은 SSM의 "자동화 심화" 3종 세트를 다룬다. Parameter Store로 설정을 중앙화하고, Session Manager로 SSH/RDP를 대체하며, Automation Runbook으로 복잡한 운영 워크플로를 자동화한다.
 

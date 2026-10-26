@@ -1,6 +1,6 @@
-# Day 4 - EventBridge 보안 자동화: 핀딩 라우팅, 알림 파이프라인, 보안 데이터 레이크 개념
+# Day 4 - EventBridge 보안 자동화: 결과 라우팅, 알림 파이프라인, 보안 데이터 레이크 개념
 
-탐지(GuardDuty), 집계(Security Hub), 분석(Athena/OpenSearch)을 갖췄어도, 사람이 모든 핀딩을 손으로 분류·대응하면 운영은 곧 붕괴한다. 보안 자동화의 신경계가 **Amazon EventBridge**다 — AWS 전역에서 일어나는 이벤트를 *규칙(rule)*으로 필터링해 *대상(target)*으로 라우팅하는 이벤트 버스. 보안 시험에서 EventBridge는 "핀딩 → 적절한 대응 액션"을 잇는 라우터이자, 탐지-대응 루프(detection-response loop)를 *닫는* 메커니즘이다. 여기에 더해 조직 전체의 보안 로그를 정규화·통합하는 상위 개념인 **Security Lake**를 오늘 함께 다룬다.
+탐지(GuardDuty), 집계(Security Hub), 분석(Athena/OpenSearch)을 갖췄어도, 사람이 모든 결과를 손으로 분류·대응하면 운영은 곧 붕괴한다. 보안 자동화의 신경계가 **Amazon EventBridge**다 — AWS 전역에서 일어나는 이벤트를 *규칙(rule)*으로 필터링해 *대상(target)*으로 라우팅하는 이벤트 버스. 보안 시험에서 EventBridge는 "결과 → 적절한 대응 액션"을 잇는 라우터이자, 탐지-대응 루프(detection-response loop)를 *닫는* 메커니즘이다. 여기에 더해 조직 전체의 보안 로그를 정규화·통합하는 상위 개념인 **Security Lake**를 오늘 함께 다룬다.
 
 ## EventBridge의 구조: Bus, Rule, Target
 
@@ -62,12 +62,12 @@ EventBridge는 EDA(Event-Driven Architecture)의 *content-based router* 패턴 �
 }
 ```
 
-## 핀딩 라우팅: 이벤트 패턴 정밀하게 쓰기
+## 결과 라우팅: 이벤트 패턴 정밀하게 쓰기
 
-보안 자동화의 출발점은 "어떤 핀딩을 잡을지"를 이벤트 패턴으로 정밀하게 기술하는 것이다. GuardDuty와 Security Hub 핀딩 라우팅을 비교한다.
+보안 자동화의 출발점은 "어떤 결과를 잡을지"를 이벤트 패턴으로 정밀하게 기술하는 것이다. GuardDuty와 Security Hub 결과 라우팅을 비교한다.
 
 ```json
-// GuardDuty 핀딩 중 심각도 7.0 이상(HIGH/CRITICAL)만 라우팅
+// GuardDuty 결과 중 심각도 7.0 이상(HIGH/CRITICAL)만 라우팅
 {
   "source": ["aws.guardduty"],
   "detail-type": ["GuardDuty Finding"],
@@ -78,7 +78,7 @@ EventBridge는 EDA(Event-Driven Architecture)의 *content-based router* 패턴 �
 ```
 
 ```json
-// Security Hub로 집계된 핀딩 중 특정 타입 + NEW 상태만
+// Security Hub로 집계된 결과 중 특정 타입 + NEW 상태만
 {
   "source": ["aws.securityhub"],
   "detail-type": ["Security Hub Findings - Imported"],
@@ -96,7 +96,7 @@ EventBridge는 EDA(Event-Driven Architecture)의 *content-based router* 패턴 �
 - 정확 매칭(값 배열), `prefix`, `suffix`, `cidr`(IP 범위), `numeric`(비교), `exists`, `anything-but`(부정), `equals-ignore-case`.
 - 중첩 필드는 객체로 표현. 매칭은 "패턴에 있는 키만" 검사하므로 패턴에 없는 필드는 무시된다(부분 매칭).
 
-> ⚠️ **함정**: GuardDuty의 `severity`는 *숫자*(0.1~8.9)이고 Security Hub의 `Severity.Label`은 *문자열*(LOW/MEDIUM/HIGH/CRITICAL)이다. GuardDuty 핀딩을 직접 잡을 때 `"severity": ["HIGH"]`라고 쓰면 절대 매칭되지 않는다 — 숫자 비교(`numeric`)를 써야 한다. 같은 위협이라도 *직접 GuardDuty 버스에서 잡느냐*, *Security Hub 집계 후 잡느냐*에 따라 패턴 스키마가 다르다는 점이 놓치기 쉬운 함정이다.
+> ⚠️ **함정**: GuardDuty의 `severity`는 *숫자*(0.1~8.9)이고 Security Hub의 `Severity.Label`은 *문자열*(LOW/MEDIUM/HIGH/CRITICAL)이다. GuardDuty 결과를 직접 잡을 때 `"severity": ["HIGH"]`라고 쓰면 절대 매칭되지 않는다 — 숫자 비교(`numeric`)를 써야 한다. 같은 위협이라도 *직접 GuardDuty 버스에서 잡느냐*, *Security Hub 집계 후 잡느냐*에 따라 패턴 스키마가 다르다는 점이 놓치기 쉬운 함정이다.
 
 ### 연산자를 실제로 쓰는 모양
 
@@ -170,7 +170,7 @@ EventBridge는 EDA(Event-Driven Architecture)의 *content-based router* 패턴 �
 }
 ```
 
-공개 저장소에 실수로 커밋된 AWS 액세스 키가 **아주 짧은 시간 안에** 발견되어 악용되는 현상은 보안 업계에서 오래 관찰·보고돼 온 패턴이다. 공격자 쪽이 공개 코드 저장소를 상시 스캔하는 자동화를 돌리고 있기 때문이며, 유출된 키는 대개 사람이 알아차리기 전에 채굴 인스턴스 생성이나 데이터 접근에 쓰인다. 이 사실이 오늘 내용에 주는 함의는 냉정하다 — **공격 쪽은 이미 자동화되어 있다.** 방어가 "핀딩을 사람이 보고 판단한 뒤 조치"라는 루프에 머물러 있으면, 그 루프의 시간 상수가 공격의 시간 상수보다 훨씬 크다. 자동 대응이 필요한 이유는 인력 절감이 아니라 **속도의 대칭을 회복하는 것**이다. 동시에 같은 이유로 자동 대응의 오작동 피해도 자동화된 속도로 확산되므로, 가역성 판단과 최소 권한이 그 어느 영역보다 엄격해야 한다.
+공개 저장소에 실수로 커밋된 AWS 액세스 키가 **아주 짧은 시간 안에** 발견되어 악용되는 현상은 보안 업계에서 오래 관찰·보고돼 온 패턴이다. 공격자 쪽이 공개 코드 저장소를 상시 스캔하는 자동화를 돌리고 있기 때문이며, 유출된 키는 대개 사람이 알아차리기 전에 채굴 인스턴스 생성이나 데이터 접근에 쓰인다. 이 사실이 오늘 내용에 주는 함의는 냉정하다 — **공격 쪽은 이미 자동화되어 있다.** 방어가 "결과를 사람이 보고 판단한 뒤 조치"라는 루프에 머물러 있으면, 그 루프의 시간 상수가 공격의 시간 상수보다 훨씬 크다. 자동 대응이 필요한 이유는 인력 절감이 아니라 **속도의 대칭을 회복하는 것**이다. 동시에 같은 이유로 자동 대응의 오작동 피해도 자동화된 속도로 확산되므로, 가역성 판단과 최소 권한이 그 어느 영역보다 엄격해야 한다.
 
 ## 자동 대응 파이프라인: 세 가지 전형
 
@@ -190,7 +190,7 @@ Rule(CRITICAL GuardDuty: EC2 침해)
         └─ 5) (승인 후) 인스턴스 종료
 ```
 
-> 🎯 **시나리오**: "GuardDuty가 EC2 인스턴스의 암호화폐 채굴(CryptoCurrency)을 탐지하면 자동으로 인스턴스를 격리하고 보안팀에 알림"은 전형적인 자동화 시나리오다. 정답 경로: GuardDuty 핀딩 → EventBridge 규칙(severity·type 매칭) → Step Functions 또는 Lambda(격리 SG 적용 + EBS 스냅샷 + SNS 알림). 단순 알림만이면 SNS 하나로 충분하지만 *격리·보존*이 요구되면 Step Functions/Lambda 오케스트레이션이 필요하다.
+> 🎯 **시나리오**: "GuardDuty가 EC2 인스턴스의 암호화폐 채굴(CryptoCurrency)을 탐지하면 자동으로 인스턴스를 격리하고 보안팀에 알림"은 전형적인 자동화 시나리오다. 정답 경로: GuardDuty 결과 → EventBridge 규칙(severity·type 매칭) → Step Functions 또는 Lambda(격리 SG 적용 + EBS 스냅샷 + SNS 알림). 단순 알림만이면 SNS 하나로 충분하지만 *격리·보존*이 요구되면 Step Functions/Lambda 오케스트레이션이 필요하다.
 
 자동 대응 Lambda/SSM에 부여하는 IAM 권한이 과도하면 그 자체가 공격 표면이 된다. 격리용 역할은 "보안 그룹 교체·스냅샷·종료" 등 *필요한 액션만* 갖고, 가능하면 리소스 조건(태그·계정)으로 범위를 좁혀야 한다. "자동 대응을 위해 PowerUser/Admin을 붙인다"는 오답 선택지다.
 
@@ -332,7 +332,7 @@ aws events create-archive \
 
 크로스계정 전달에는 **양쪽 권한이 모두** 필요하다. 중앙 버스의 리소스 정책이 `PutEvents`를 허용해야 하고, *동시에* 멤버 계정의 규칙 대상에 지정한 **역할이 `events:PutEvents` 권한을 가져야** 한다. 한쪽만 설정하고 "이벤트가 안 온다"고 하는 것이 가장 흔한 증상이며, 더 나쁜 것은 **실패가 조용하다**는 점이다. 그래서 크로스계정 전달에는 반드시 DLQ를 붙이고, DLQ에 메시지가 쌓이는지 자체를 알람으로 감시해야 한다.
 
-아카이브와 재생(replay)이 보안에서 갖는 가치는 흔히 과소평가된다. 자동 대응 핸들러에 버그가 있어 3일치 CRITICAL 핀딩이 잘못 처리됐다고 가정한다. 핸들러를 고쳐도 **이미 지나간 이벤트는 돌아오지 않는다** — 탐지기가 같은 핀딩을 다시 만들어 주지 않기 때문이다. 아카이브가 있으면 기간을 지정해 재생할 수 있고, 이때 핸들러가 멱등하다면 재생은 안전하다. **멱등성이 단지 중복 전달 대비가 아니라 "재생 가능성"의 전제**라는 점이 핵심이다. 멱등하지 않은 핸들러는 재생이 불가능하고, 재생이 불가능하면 버그의 영향 범위를 복구할 방법이 없다.
+아카이브와 재생(replay)이 보안에서 갖는 가치는 흔히 과소평가된다. 자동 대응 핸들러에 버그가 있어 3일치 CRITICAL 결과가 잘못 처리됐다고 가정한다. 핸들러를 고쳐도 **이미 지나간 이벤트는 돌아오지 않는다** — 탐지기가 같은 결과를 다시 만들어 주지 않기 때문이다. 아카이브가 있으면 기간을 지정해 재생할 수 있고, 이때 핸들러가 멱등하다면 재생은 안전하다. **멱등성이 단지 중복 전달 대비가 아니라 "재생 가능성"의 전제**라는 점이 핵심이다. 멱등하지 않은 핸들러는 재생이 불가능하고, 재생이 불가능하면 버그의 영향 범위를 복구할 방법이 없다.
 
 ## 알림 피로 관리: 자동화가 만드는 새로운 소음
 
@@ -340,7 +340,7 @@ aws events create-archive \
 
 ```
  [ 발생 ]        [ 라우팅 ]        [ 집계 ]           [ 도달 ]
- 핀딩 ──────▶ EventBridge ──┬──▶ 즉시 경로 ──────▶ 온콜(CRITICAL만)
+ 결과 ──────▶ EventBridge ──┬──▶ 즉시 경로 ──────▶ 온콜(CRITICAL만)
                             │
                             ├──▶ SQS 집계 큐 ──▶ Lambda(배치) ──▶ 일일 요약
                             │      (윈도 동안 모았다가 한 번에)
@@ -354,9 +354,9 @@ aws events create-archive \
 | **중복 제거(dedupe)** | 같은 리소스의 같은 문제 반복 | 리소스ID+유형을 키로 잡아 티켓/알림 재사용 |
 | **집계 윈도** | 알림의 *개수* | SQS로 모았다가 배치로 한 번 발송 |
 | **억제 목록** | 승인된 예외의 반복 알림 | Security Hub 자동화 규칙(day2) 또는 패턴 제외 |
-| **티켓 단위 변경** | 핀딩당 티켓 폭증 | **핀딩당이 아니라 리소스당** 티켓 |
+| **티켓 단위 변경** | 결과당 티켓 폭증 | **결과 단위가 아니라 리소스당** 티켓 |
 
-마지막 항목이 실무에서 가장 큰 차이를 만든다. 핀딩 하나에 티켓 하나를 만들면 리소스 200개짜리 컨트롤이 실패할 때 티켓이 200개 생긴다. **"이 리소스를 고쳐라"는 티켓 하나에 핀딩 200개를 붙이는 구조**로 바꾸면 담당자가 실제로 처리할 수 있는 단위가 된다.
+마지막 항목이 실무에서 가장 큰 차이를 만든다. 결과 하나에 티켓 하나를 만들면 리소스 200개짜리 컨트롤이 실패할 때 티켓이 200개 생긴다. **"이 리소스를 고쳐라"는 티켓 하나에 결과 200개를 붙이는 구조**로 바꾸면 담당자가 실제로 처리할 수 있는 단위가 된다.
 
 집계 윈도를 도입할 때 **모든 등급에 똑같이 적용하는 것**이 함정이다. CRITICAL을 15분 윈도에 넣으면 대응이 15분 늦어진다. 올바른 설계는 **등급별로 다른 시간 축**을 쓰는 것이다 — CRITICAL은 윈도 없이 즉시, HIGH는 짧은 윈도, MEDIUM 이하는 일 단위 요약. 시험에서 "알림을 줄이면서 중대한 위협의 대응 시간은 유지"라는 조건이 붙으면 이 계층적 시간 축이 정답의 형태다.
 
@@ -388,8 +388,8 @@ aws scheduler create-schedule \
 자동화·분석이 성숙하면 "조직 전역의 보안 로그를 *정규화된 단일 저장소*로 모으자"는 요구가 생긴다. **Amazon Security Lake**가 이를 관리형으로 제공한다.
 
 핵심 개념:
-- **목적**: 여러 계정·리전·소스(CloudTrail, VPC Flow, Route 53, Security Hub 핀딩, 서드파티)의 보안 로그를 *중앙 S3 데이터 레이크*로 자동 수집·정규화.
-- **OCSF(Open Cybersecurity Schema Framework)**: Security Lake가 데이터를 정규화하는 *오픈 표준 스키마*. ASFF가 Security Hub *내부* 핀딩 포맷이라면, OCSF는 *업계 공통* 보안 이벤트 스키마다. 벤더 종속을 줄인다.
+- **목적**: 여러 계정·리전·소스(CloudTrail, VPC Flow, Route 53, Security Hub 결과, 서드파티)의 보안 로그를 *중앙 S3 데이터 레이크*로 자동 수집·정규화.
+- **OCSF(Open Cybersecurity Schema Framework)**: Security Lake가 데이터를 정규화하는 *오픈 표준 스키마*. ASFF가 Security Hub *내부* 결과 포맷이라면, OCSF는 *업계 공통* 보안 이벤트 스키마다. 벤더 종속을 줄인다.
 - **저장**: S3에 **Parquet**(컬럼형)로, OCSF 스키마로 정리되어 저장 → Athena/OpenSearch/서드파티 SIEM이 바로 질의.
 - **Subscriber 모델**: 데이터를 소비하는 주체(분석 도구·계정)를 subscriber로 등록해 *쿼리 접근* 또는 *데이터 접근*을 부여.
 
@@ -401,9 +401,9 @@ Security Hub┤        (다계정·다리전 자동 수집·정규화)
 서드파티     ┘
 ```
 
-Security Lake는 Day 3에서 본 "로그가 흩어져 있어 분석 도구마다 다른 스키마를 마주한다"는 문제의 *조직 차원 해법*이다. 정규화를 적재 시점에 OCSF로 통일해두면, 분석 도구(Athena/OpenSearch/SIEM)는 소스별 변환 없이 동일 스키마로 질의한다. 즉 Security Hub가 *핀딩*을 ASFF로 정규화한다면, Security Lake는 *원시 로그 전반*을 OCSF로 정규화한다 — 두 정규화 계층의 역할 분담을 구분하는 것이 시험 포인트다.
+Security Lake는 Day 3에서 본 "로그가 흩어져 있어 분석 도구마다 다른 스키마를 마주한다"는 문제의 *조직 차원 해법*이다. 정규화를 적재 시점에 OCSF로 통일해두면, 분석 도구(Athena/OpenSearch/SIEM)는 소스별 변환 없이 동일 스키마로 질의한다. 즉 Security Hub가 *결과*를 ASFF로 정규화한다면, Security Lake는 *원시 로그 전반*을 OCSF로 정규화한다 — 두 정규화 계층의 역할 분담을 구분하는 것이 시험 포인트다.
 
-Security Lake와 Security Hub를 혼동하지 말 것. Security Hub는 *핀딩(탐지 결과)*의 집계·점수·컴플라이언스 대시보드이고, Security Lake는 *원시 보안 로그*의 정규화 저장소(분석용 데이터 레이크)다. "여러 소스의 로그를 OCSF로 정규화해 SIEM에서 질의"면 Security Lake, "여러 탐지기의 핀딩을 한 대시보드에서 보고 점수화"면 Security Hub다.
+Security Lake와 Security Hub를 혼동하지 말 것. Security Hub는 *탐지 결과**의 집계·점수·컴플라이언스 대시보드이고, Security Lake는 *원시 보안 로그*의 정규화 저장소(분석용 데이터 레이크)다. "여러 소스의 로그를 OCSF로 정규화해 SIEM에서 질의"면 Security Lake, "여러 탐지기의 탐지 결과를 한 대시보드에서 보고 점수화"면 Security Hub다.
 
 ### 구독자(subscriber)의 두 종류: 이 구분이 시험 포인트다
 
@@ -435,7 +435,7 @@ aws securitylake create-subscriber \
   --sources '[{"awsLogSource":{"sourceName":"VPC_FLOW","sourceVersion":"2.0"}}]'
 ```
 
-Security Lake의 **롤업 리전(rollup Region)** 개념이 Security Hub의 집계 리전과 헷갈린다. 둘 다 "여러 리전을 한 곳에서"이지만 대상이 다르다 — Security Hub 집계 리전은 *핀딩*을 복사해 오고, Security Lake 롤업 리전은 *정규화된 로그 데이터*를 모은다. 그리고 후자는 리전 간 데이터 전송이 발생하므로 **비용과 데이터 주권(data residency) 양쪽에서 판단이 필요**하다. "규제상 데이터가 특정 리전을 벗어나면 안 된다"는 조건이 붙으면 롤업 리전 구성이 그대로 위반이 될 수 있고, 이 경우 리전별로 레이크를 분리하고 질의만 연합하는 설계가 답이 된다.
+Security Lake의 **롤업 리전(rollup Region)** 개념이 Security Hub의 집계 리전과 헷갈린다. 둘 다 "여러 리전을 한 곳에서"이지만 대상이 다르다 — Security Hub 집계 리전은 *결과*를 복사해 오고, Security Lake 롤업 리전은 *정규화된 로그 데이터*를 모은다. 그리고 후자는 리전 간 데이터 전송이 발생하므로 **비용과 데이터 주권(data residency) 양쪽에서 판단이 필요**하다. "규제상 데이터가 특정 리전을 벗어나면 안 된다"는 조건이 붙으면 롤업 리전 구성이 그대로 위반이 될 수 있고, 이 경우 리전별로 레이크를 분리하고 질의만 연합하는 설계가 답이 된다.
 
 Security Lake는 **커스텀 소스(custom source)**를 받아 사내 로그나 온프레미스 데이터도 OCSF로 넣을 수 있다. 여기서 오해가 생긴다 — Security Lake가 *자동으로 변환해 주는 것이 아니라*, 넣는 쪽이 **OCSF 형식으로 만들어서 넣어야** 한다. "온프레미스 방화벽 로그를 Security Lake에 넣으면 알아서 정규화된다"는 서술은 틀렸다. AWS 네이티브 소스만 자동 정규화되고, 그 밖은 변환 책임이 소비자 쪽에 있다.
 
@@ -445,14 +445,14 @@ Security Lake는 **커스텀 소스(custom source)**를 받아 사내 로그나 
 
 | 축 | CloudWatch 알람 | Security Hub 자동화 규칙 | EventBridge 규칙 |
 |----|-----------------|--------------------------|-----------------|
-| 입력 | 메트릭(숫자) | 들어오는 핀딩 | 이벤트 |
-| 조건 | 임계·통계 | 핀딩 필드(계정·태그·심각도) | 이벤트 패턴 |
-| 할 수 있는 일 | SNS·SSM OpsItem·EC2/ASG 액션 | **핀딩 필드 갱신만**(억제·심각도 조정) | **외부 리소스 조작 전부** |
+| 입력 | 메트릭(숫자) | 들어오는 결과 | 이벤트 |
+| 조건 | 임계·통계 | 결과 필드(계정·태그·심각도) | 이벤트 패턴 |
+| 할 수 있는 일 | SNS·SSM OpsItem·EC2/ASG 액션 | **결과 필드 갱신만**(억제·심각도 조정) | **외부 리소스 조작 전부** |
 | 할 수 없는 일 | 이벤트 원본 맥락 활용 | **외부 리소스 변경** | 임계·집계(횟수 세기) |
-| 소급 적용 | 불가 | **불가**(과거 핀딩은 별도 API) | 불가(아카이브 재생은 가능) |
-| 전형적 용도 | "N회 이상 발생하면 알려라" | "이 계정의 이 유형은 접어라" | "이 핀딩이 오면 격리해라" |
+| 소급 적용 | 불가 | **불가**(과거 결과는 별도 API) | 불가(아카이브 재생은 가능) |
+| 전형적 용도 | "N회 이상 발생하면 알려라" | "이 계정의 이 유형은 접어라" | "이 결과가 오면 격리해라" |
 
-"Security Hub 자동화 규칙으로 노출된 보안 그룹을 수정한다"는 보기는 오답이다. 자동화 규칙은 **Security Hub 안에서 핀딩의 필드만** 바꾼다. 실제 리소스를 고치는 것은 EventBridge → Lambda/SSM Automation의 일이다. 반대로 "EventBridge로 로그인 실패 5회를 세어 알린다"도 오답이다 — EventBridge는 개별 이벤트를 라우팅할 뿐 횟수를 세지 않으며, 집계는 CloudWatch 알람의 일이다. **"필드를 바꾸는가 / 리소스를 바꾸는가 / 횟수를 세는가"** 세 질문이 이 삼각형을 가른다.
+"Security Hub 자동화 규칙으로 노출된 보안 그룹을 수정한다"는 보기는 오답이다. 자동화 규칙은 **Security Hub 안에서 결과의 필드만** 바꾼다. 실제 리소스를 고치는 것은 EventBridge → Lambda/SSM Automation의 일이다. 반대로 "EventBridge로 로그인 실패 5회를 세어 알린다"도 오답이다 — EventBridge는 개별 이벤트를 라우팅할 뿐 횟수를 세지 않으며, 집계는 CloudWatch 알람의 일이다. **"필드를 바꾸는가 / 리소스를 바꾸는가 / 횟수를 세는가"** 세 질문이 이 삼각형을 가른다.
 
 ## 정리
 
@@ -465,7 +465,7 @@ EventBridge는 탐지 신호를 의미에 따라 알림·교정·오케스트레
 3. **조용한 실패를 감시한다.** 크로스계정 권한 누락, DLQ 적체, 주기 작업 중단 — 셋 다 아무 오류 없이 파이프라인을 멈춘다.
 4. **알림은 등급별로 다른 시간 축을 갖는다.** 집계 윈도를 일괄 적용하면 중대한 위협의 대응이 그만큼 늦어진다.
 
-그리고 Security Lake는 이 자동화 위에 얹히는 **저장·분석 계층의 표준화**다. Security Hub가 *핀딩*을 ASFF로 통일한다면 Security Lake는 *원시 로그*를 OCSF로 통일한다 — 두 정규화의 대상이 다르다는 것이 시험에서 가장 자주 확인되는 구분이다. day5에서 week8의 네 날을 하나의 파이프라인으로 다시 통과시킨다.
+그리고 Security Lake는 이 자동화 위에 얹히는 **저장·분석 계층의 표준화**다. Security Hub가 *결과*를 ASFF로 통일한다면 Security Lake는 *원시 로그*를 OCSF로 통일한다 — 두 정규화의 대상이 다르다는 것이 시험에서 가장 자주 확인되는 구분이다. day5에서 week8의 네 날을 하나의 파이프라인으로 다시 통과시킨다.
 
 ### 한 줄 요약 체크리스트
 
@@ -477,14 +477,14 @@ EventBridge는 탐지 신호를 의미에 따라 알림·교정·오케스트레
 - [ ] 모든 대상에 재시도 정책과 DLQ를 붙였고, DLQ 적체를 알람으로 감시하는가
 - [ ] 아카이브를 켜서 핸들러 수정 후 재생이 가능하게 해 두었는가(그리고 핸들러는 멱등한가)
 - [ ] 등급별로 다른 시간 축(즉시/짧은 윈도/일 단위 요약)을 적용했는가
-- [ ] 티켓을 핀딩당이 아니라 **리소스당** 만들고 있는가
+- [ ] 티켓을 결과 단위가 아니라 **리소스당** 만들고 있는가
 - [ ] Security Lake 구독자에게 세분화 권한이 필요하면 Lake Formation 기반 쿼리 접근을 썼는가
 
 ---
 
 ## 📝 연습 문제
 
-**문제 1.** GuardDuty 핀딩을 EventBridge 규칙으로 직접 잡으려는데 `"detail": { "severity": ["HIGH"] }` 패턴이 한 번도 매칭되지 않는다. 원인은?
+**문제 1.** GuardDuty 결과를 EventBridge 규칙으로 직접 잡으려는데 `"detail": { "severity": ["HIGH"] }` 패턴이 한 번도 매칭되지 않는다. 원인은?
 
 A) GuardDuty는 EventBridge로 이벤트를 보내지 않는다  
 B) GuardDuty의 severity는 숫자(0.1~8.9)이므로 numeric 비교 연산자를 써야 하며 문자열 "HIGH"로는 매칭되지 않는다  
@@ -492,7 +492,7 @@ C) 규칙에 대상이 없어서다
 D) default bus가 아닌 custom bus를 써야 한다  
 
 **정답: B**  
-해설: GuardDuty 핀딩의 severity는 숫자 값이므로 `{ "numeric": [">=", 7.0] }` 형태로 매칭해야 한다. 문자열 라벨(HIGH/CRITICAL)은 Security Hub로 집계된 핀딩의 `Severity.Label`에서 쓰는 형식이다. GuardDuty는 default bus로 이벤트를 보내며, 대상 유무는 매칭 여부와 무관하다.
+해설: GuardDuty 결과의 severity는 숫자 값이므로 `{ "numeric": [">=", 7.0] }` 형태로 매칭해야 한다. 문자열 라벨(HIGH/CRITICAL)은 Security Hub로 집계된 결과의 `Severity.Label`에서 쓰는 형식이다. GuardDuty는 default bus로 이벤트를 보내며, 대상 유무는 매칭 여부와 무관하다.
 
 ---
 
@@ -540,6 +540,6 @@ C) Amazon Macie
 D) AWS Config  
 
 **정답: B**  
-해설: 다계정·다리전 원시 보안 로그를 OCSF 표준으로 정규화해 S3 데이터 레이크(Parquet)로 자동 수집하고 subscriber가 단일 스키마로 질의하게 하는 서비스는 Security Lake다. Security Hub는 핀딩을 ASFF로 집계·점수화하는 대시보드, Macie는 S3 민감데이터 발견, Config는 리소스 구성 평가로 역할이 다르다.
+해설: 다계정·다리전 원시 보안 로그를 OCSF 표준으로 정규화해 S3 데이터 레이크(Parquet)로 자동 수집하고 subscriber가 단일 스키마로 질의하게 하는 서비스는 Security Lake다. Security Hub는 결과를 ASFF로 집계·점수화하는 대시보드, Macie는 S3 민감데이터 발견, Config는 리소스 구성 평가로 역할이 다르다.
 
 ---

@@ -111,20 +111,19 @@ Provisioned Concurrency는 자동 확장과도 연동된다. Application Auto Sc
 
 | 항목 | 한도 | 비고 |
 |------|------|------|
-| 메모리 | 128MB ~ 10,240MB | 64MB 단위 증가 |
+| 메모리 | 128MB ~ 10,240MB | 1MB 단위 증가 |
 | vCPU | 메모리에 비례 | 1,769MB = 1 vCPU |
 | 타임아웃 | 1초 ~ 900초 | 15분 |
 | /tmp 스토리지 | 512MB ~ 10,240MB | |
 | 환경 변수 전체 크기 | 4KB | |
 | 동기 페이로드 (요청/응답) | 6MB | |
-| 비동기 페이로드 | 256KB | |
-| Response Streaming | 20MB | Function URL 또는 APIGW |
+| 비동기 페이로드 | 1MB | 2025년 10월 256KB에서 상향 |
+| Response Streaming | 200MB | 2025년 7월 20MB에서 상향 |
 | ZIP 직접 업로드 | 50MB | |
 | ZIP S3 경유 | 250MB (압축 해제) | |
 | 컨테이너 이미지 | 10GB | |
 | 계정/리전 동시성 기본 | 1,000 | 증가 요청 가능 |
-| 초기 버스트 한도 | 500~3,000 | 리전별 상이 |
-| 분당 추가 가능 동시성 | +500 | |
+| 함수별 스케일링 속도 | 10초마다 +1,000 | 실행 환경 기준, 함수마다 따로 적용 |
 | 레이어 최대 개수 | 5개 | |
 | 레이어+코드 합계 | 250MB | 압축 해제 기준 |
 
@@ -193,11 +192,11 @@ gVisor는 Google이 만든 컨테이너 샌드박스로, 앱과 Linux 커널 사
 
 ## Response Streaming: TTFB 최적화
 
-2023년 출시된 Lambda Response Streaming은 함수가 응답을 다 만들고 한번에 보내는 게 아니라, 청크 단위로 스트리밍하게 한다. HTTP chunked transfer encoding을 기반으로 하며, 최대 20MB까지 스트리밍 가능하다.
+2023년 출시된 Lambda Response Streaming은 함수가 응답을 다 만들고 한번에 보내는 게 아니라, 청크 단위로 스트리밍하게 한다. HTTP chunked transfer encoding을 기반으로 하며, 최대 200MB까지 스트리밍 가능하다(2025년 7월 20MB에서 상향). 첫 6MB 뒤로는 초당 2MB로 대역폭이 제한된다.
 
 **사용 사례**: LLM API 호출 후 토큰 단위 스트리밍(OpenAI처럼), 대용량 JSON 파일 다운로드, 비디오 변환 진행 상황 알림.
 
-**제한**: Function URL 또는 API Gateway HTTP API(payload v2.0)에서만 지원. REST API는 지원 안 된다.
+**호출 경로**: Function URL, `InvokeWithResponseStream` API, API Gateway의 Lambda 프록시 통합(응답 전송 모드 stream)으로 스트리밍한다. 관리형 런타임은 Node.js만 지원하고, 다른 언어는 커스텀 런타임이나 Lambda Web Adapter를 쓴다.
 
 ```python
 import json

@@ -260,5 +260,3 @@ D) EC2는 CloudTrail로 API 호출을 trace화하고 Lambda는 X-Ray API를 직�
 **인시던트 대응 자동화 — EventBridge, SSM Automation, Chatbot, Incident Manager**
 
 Week 11에서 본 옵저버빌리티(이상을 어떻게 보느냐)는 다음 질문으로 이어진다 — **이상을 발견한 뒤 어떻게 자동으로 대응하느냐.** X-Ray Insights·CloudWatch Anomaly Detection이 만든 신호를 EventBridge가 받아 SSM Automation으로 자동 복구하고, Incident Manager로 온콜을 조율하며, Chatbot으로 ChatOps를 엮는 — 탐지에서 대응까지의 자동화 사슬을 Week 12에서 깊이 판다.
-
-> 💪 Week 11 완료 — 옵저버빌리티의 추적·텔레메트리·백엔드를 하나의 의사결정 체계로 엮었다. Dapper의 trace 모델에서 OTel의 표준화, 역인덱스와 TSDB의 두 세계, Grafana의 중립 시각화까지. 다음은 이 신호들을 자동 대응으로 연결하는 인시던트 자동화다.

@@ -1,31 +1,31 @@
-# Day 2 - Multi-Region Resilience: Distributed Principles of DNS Routing, Global Replication, and Encryption Boundaries
+# Day 2 - 멀티 리전 복원력: DNS 라우팅, 글로벌 복제, 암호화 경계의 분산 시스템 원리
 
-Within a single region using multiple AZs, you survive a burning data center. But what if an entire region—say us-east-1—fails? The major us-east-1 S3 outage in 2017, the us-east-1 Kinesis/API failures in 2021—these happen rarely but really. Multi-region architecture answers the "entire region disappears" scenario. Yet the moment you cross regions, physics intrudes: the speed of light. Round-trip latency between Seoul and Virginia exceeds 200ms, making synchronous replication (possible in single-region millisecond timescales) essentially impossible across regions. So all multi-region design reduces to: "Accept asynchronous replication and decide how you'll handle the resulting data inconsistency."
+단일 리전 안에서 여러 AZ를 쓰면 데이터센터 하나가 불타도 살아남는다. 그러나 us-east-1 같은 리전 전체가 무너지면 어떻게 되는가. 2017년 us-east-1의 대규모 S3 장애, 2021년 us-east-1의 Kinesis/API 장애처럼 드물지만 실제로 일어난다. 멀티 리전 아키텍처는 "리전 전체가 사라지는" 시나리오에 대한 답이다. 하지만 리전을 넘는 순간 물리 법칙, 즉 빛의 속도가 끼어든다. 서울과 버지니아 사이의 왕복 지연은 200ms를 넘으므로, 단일 리전에서는 밀리초 단위로 가능했던 동기 복제가 리전 간에는 사실상 불가능하다. 그래서 모든 멀티 리전 설계는 "비동기 복제를 받아들이고, 그 결과로 생기는 데이터 불일치를 어떻게 다룰지 정하는 것"으로 귀결된다.
 
-Today we examine four pillars underpinning multi-region—**Route 53 routing** (deciding which region to send traffic to, and the DNS/health check mechanics underneath), **Aurora Global / DynamoDB Global Tables / S3 CRR** (replicating data across regions), and **KMS Multi-Region Key** (bridging encryption boundaries. Multi-region appears in DOP exams as "automatic failover on region failure," "lowest latency to global users," "decrypt replicated encrypted data across regions." The skill is reading whether each choice implies active-active or active-passive, sync or async.
+오늘은 멀티 리전을 떠받치는 네 기둥을 본다. 트래픽을 어느 리전으로 보낼지 정하는 **Route 53 라우팅**(그 밑의 DNS와 헬스 체크 메커니즘 포함), 데이터를 리전 간에 복제하는 **Aurora Global / DynamoDB Global Tables / S3 CRR**, 암호화 경계를 잇는 **KMS Multi-Region Key**다. 멀티 리전은 DOP 시험에서 "리전 장애 시 자동 페일오버", "전 세계 사용자에게 최저 지연", "리전 간에 복제된 암호화 데이터 복호화" 같은 형태로 나온다. 핵심 역량은 각 선택지가 Active-Active인지 Active-Passive인지, 동기인지 비동기인지를 읽어내는 것이다.
 
-## How DNS Decides Routing—Inside Route 53
+## DNS는 어떻게 라우팅을 결정하는가 — Route 53의 내부
 
-Route 53 is not a simple DNS server but a **global traffic director combining health checks and policies**. When a user queries `api.example.com`, Route 53 dynamically decides which IP/endpoint to return based on configured routing policy. Two mechanisms sit underneath: DNS itself (name→address translation) and health checks (periodic verification that endpoints are alive).
+Route 53은 단순한 DNS 서버가 아니라 **헬스 체크와 정책을 결합한 글로벌 트래픽 지휘자**다. 사용자가 `api.example.com`을 조회하면 Route 53은 설정된 라우팅 정책에 따라 어떤 IP/엔드포인트를 돌려줄지 동적으로 결정한다. 그 밑에는 두 가지 메커니즘이 있다. DNS 자체(이름→주소 변환)와 헬스 체크(엔드포인트가 살아 있는지 주기적으로 확인)다.
 
-| Policy | Decision Basis | Typical Use |
+| 정책 | 결정 기준 | 대표 용도 |
 |--------|--------|-----------|
-| **Simple** | Return single record | No failover, simple mapping |
-| **Weighted** | Distribute by weight ratio | Canary deployments, A/B testing |
-| **Latency** | Lowest-latency region to user | Global performance optimization |
-| **Failover** | Primary, Secondary on failure | Active-Passive DR |
-| **Geolocation** | User's country/continent | Data sovereignty, regional content |
-| **Geoproximity** | Geography + bias tuning (Traffic Flow required) | Fine-tuned traffic control |
-| **Multi-Value Answer** | Return multiple IPs passing health check | Simple client-side distribution |
-| **IP-based** (2023+) | Map user IP blocks | ISP/CDN optimization |
+| **Simple** | 단일 레코드 반환 | 페일오버 없는 단순 매핑 |
+| **Weighted** | 가중치 비율로 분산 | 카나리 배포, A/B 테스트 |
+| **Latency** | 사용자에게 지연이 가장 낮은 리전 | 글로벌 성능 최적화 |
+| **Failover** | Primary, 장애 시 Secondary | Active-Passive DR |
+| **Geolocation** | 사용자의 국가/대륙 | 데이터 주권, 지역별 콘텐츠 |
+| **Geoproximity** | 지리 + 바이어스 조정(Traffic Flow 필요) | 세밀한 트래픽 제어 |
+| **Multi-Value Answer** | 헬스 체크를 통과한 여러 IP 반환 | 단순한 클라이언트 측 분산 |
+| **IP-based** (2023+) | 사용자 IP 대역 매핑 | ISP/CDN 최적화 |
 
-> 💡 **Related Theory**: Route 53 routing is fundamentally **DNS-based Global Server Load Balancing (GSLB)**. DNS, defined in RFC 1034/1035 (1987), is a distributed hierarchical database originally for static name resolution. GSLB adds: "dynamically change responses based on client location and server health." Yet DNS routing has a fundamental limit: **DNS is cached.** Resolvers, the OS, and browsers cache responses for the TTL duration, so even if failover is signaled, the old answer lives on until the cache expires. This is why Latency/Failover routing's failover is not "instant." For instant region-switch, the answer is not DNS but **Global Accelerator using fixed anycast IPs** (compared below).
+> 💡 **관련 이론**: Route 53 라우팅은 본질적으로 **DNS 기반 글로벌 서버 로드 밸런싱(GSLB, Global Server Load Balancing)**이다. RFC 1034/1035(1987)에 정의된 DNS는 정적인 이름 해석을 위한 분산 계층형 데이터베이스였다. GSLB는 여기에 "클라이언트 위치와 서버 상태에 따라 응답을 동적으로 바꾼다"를 더한다. 그러나 DNS 라우팅에는 근본적 한계가 있다. **DNS는 캐시된다.** 리졸버, OS, 브라우저가 TTL 동안 응답을 캐시하므로, 페일오버 신호가 나가도 캐시가 만료될 때까지 옛 답이 살아 있다. Latency/Failover 라우팅의 페일오버가 "즉시"가 아닌 이유다. 즉각적인 리전 전환의 답은 DNS가 아니라 **고정 anycast IP를 쓰는 Global Accelerator**다(아래에서 비교한다).
 
-> Route 53's health checks are not simple pings but **simultaneous checks from multiple global locations (checkers), judged by quorum**—relying on a single checker could misinterpret temporary network glitches as failures, so at least 18% of checkers must report healthy for the check to be deemed healthy (global consensus prevents false positives). Three types exist: **Endpoint** checks (HTTP/HTTPS/TCP direct probe), **Calculated** checks (combine multiple checks with AND/OR—"database AND cache both alive for healthy"), and **CloudWatch Alarm-based** checks (convert metric alarms to health—for resources you can't probe directly or for composite metrics). This mix can catch "endpoint returns 200 but is actually broken."
+> Route 53의 헬스 체크는 단순한 핑이 아니라 **전 세계 여러 위치(checker)에서 동시에 확인하고 쿼럼으로 판정**한다. checker 하나에만 의존하면 일시적인 네트워크 문제를 장애로 오판할 수 있으므로, checker의 18% 이상이 정상으로 보고해야 정상으로 판정한다(글로벌 합의로 오탐을 막는다). 유형은 세 가지다. **Endpoint** 체크(HTTP/HTTPS/TCP 직접 프로브), **Calculated** 체크(여러 체크를 AND/OR로 결합 — "데이터베이스와 캐시가 모두 살아 있어야 정상"), **CloudWatch Alarm 기반** 체크(메트릭 경보를 헬스로 변환 — 직접 프로브할 수 없는 리소스나 복합 메트릭용)다. 이 조합으로 "엔드포인트는 200을 반환하지만 실제로는 고장 난" 상태를 잡을 수 있다.
 
-## Active-Active and Active-Passive—Two Modes of Multi-Region
+## Active-Active와 Active-Passive — 멀티 리전의 두 운영 모드
 
-Multi-region splits into two operational modes. **Active-Passive**: only one region (Primary) takes traffic; others (Secondary) wait and promote on failure (typical: Route 53 Failover Routing + health checks). **Active-Active**: both regions handle traffic simultaneously (typical: Route 53 Latency Routing + bidirectional replication). Active-Active approaches RTO=0 (both already running, just shift traffic) but must resolve **data conflicts** from bidirectional writes.
+멀티 리전은 두 가지 운영 모드로 나뉜다. **Active-Passive**는 한 리전(Primary)만 트래픽을 받고 나머지(Secondary)는 대기하다가 장애 시 승격한다(대표: Route 53 Failover 라우팅 + 헬스 체크). **Active-Active**는 두 리전이 동시에 트래픽을 처리한다(대표: Route 53 Latency 라우팅 + 양방향 복제). Active-Active는 RTO=0에 가깝지만(둘 다 이미 실행 중이므로 트래픽만 옮기면 된다), 양방향 쓰기에서 생기는 **데이터 충돌**을 해결해야 한다.
 
 ```
 Active-Active (Latency Routing)
@@ -50,79 +50,79 @@ Active-Active (Latency Routing)
    └─ KMS Multi-Region Key: Encryption boundary bridging
 ```
 
-## Aurora Global Database—Single-Writer Asynchronous Global Replication
+## Aurora Global Database — 단일 Writer 비동기 글로벌 복제
 
-Aurora Global ties one Primary region and up to 5 Secondary regions. The key insight: **writes happen only in the Primary region**; Secondaries are read-only (single-writer). Replication is asynchronous but, over AWS's private infrastructure (storage-layer replication), typically achieves **sub-1-second lag**.
+Aurora Global은 Primary 리전 하나와 최대 5개의 Secondary 리전을 묶는다. 핵심은 **쓰기는 Primary 리전에서만 일어나고** Secondary는 읽기 전용(단일 Writer)이라는 점이다. 복제는 비동기이지만, AWS의 프라이빗 인프라(스토리지 계층 복제)를 타므로 보통 **1초 미만의 지연**을 달성한다.
 
-On region failure, promote a Secondary **to standalone primary** (usually within a minute). Note: to return to a global configuration post-failover, you must wait for the old Primary to recover, then reconfigure it as the new Secondary—it doesn't auto-reverse bidirectionally.
+리전 장애가 나면 Secondary를 **독립 Primary로 승격**한다(보통 1분 이내). 주의할 점은 페일오버 후 다시 글로벌 구성으로 돌아가려면 옛 Primary가 복구되기를 기다린 뒤 새 Secondary로 재구성해야 한다는 것이다. 양방향으로 자동 복귀하지 않는다.
 
-> Aurora Global's insistence on "single writer + read-only secondary" exists to **eliminate distributed write conflicts by construction**. If multiple regions write to the same row simultaneously, conflict resolution logic is needed, but reconciling transaction/foreign-key/constraint semantics with conflict resolution is hard (distributed consensus cost). So Aurora Global adopts the **single-leader replication** model—"writes in one place, reads everywhere"—keeping consistency straightforward. The opposite extreme is DynamoDB Global Tables' **multi-leader**. Single-leader is easy on consistency but couples write availability to the Primary; multi-leader can write anywhere but must handle conflicts—this tradeoff is the essence of choosing between these two services.
+> Aurora Global이 "단일 Writer + 읽기 전용 Secondary"를 고집하는 것은 **분산 쓰기 충돌을 구조적으로 없애기** 위해서다. 여러 리전이 같은 행에 동시에 쓰면 충돌 해결 로직이 필요한데, 트랜잭션·외래 키·제약 조건의 의미를 충돌 해결과 맞추는 일은 어렵다(분산 합의 비용). 그래서 Aurora Global은 "쓰기는 한 곳, 읽기는 어디서나"인 **단일 리더 복제(single-leader replication)** 모델을 택해 일관성을 단순하게 유지한다. 반대편 극단이 DynamoDB Global Tables의 **다중 리더(multi-leader)**다. 단일 리더는 일관성이 쉽지만 쓰기 가용성이 Primary에 묶이고, 다중 리더는 어디서든 쓸 수 있지만 충돌을 처리해야 한다. 이 트레이드오프가 두 서비스 중 하나를 고르는 일의 본질이다.
 
-## DynamoDB Global Tables—True Multi-Master and Last-Write-Wins
+## DynamoDB Global Tables — 진짜 멀티 마스터와 Last-Write-Wins
 
-DynamoDB Global Tables is the opposite of Aurora Global: **every region can read AND write in true multi-master fashion**. Write to one region, and it auto-replicates bidirectionally to all others (usually <1 second). Write from anywhere, so write availability is high, but if two regions update the same item nearly simultaneously, conflicts arise. DynamoDB resolves this via **Last Write Wins (LWW)**—the write with the later timestamp wins.
+DynamoDB Global Tables는 Aurora Global의 반대다. **모든 리전이 진짜 멀티 마스터로 읽고 쓸 수 있다.** 한 리전에 쓰면 다른 모든 리전으로 양방향 자동 복제된다(보통 1초 미만). 어디서든 쓸 수 있어 쓰기 가용성이 높지만, 두 리전이 거의 동시에 같은 아이템을 갱신하면 충돌이 생긴다. DynamoDB는 이를 **Last Write Wins(LWW)**로 해결한다. 타임스탬프가 더 늦은 쓰기가 이긴다.
 
-> LWW is the simplest conflict-resolution strategy but carries risk. The "later" in "last write wins" is judged by **wall-clock timestamp**, yet in distributed systems, different nodes' clocks never sync perfectly (clock skew). If clocks drift, a write that truly happened first can be timestamped "later" and win anyway, causing **silent lost updates**. This limitation is why distributed systems theory uses more sophisticated resolution like **vector clocks** (Lamport's logical clock extension) or **CRDT (Conflict-free Replicated Data Type)**—merge conflicts based on causality, not clocks. DynamoDB chose LWW for simplicity/performance, so "update the same key from multiple regions simultaneously" is an anti-pattern. Partition keys by region or use it on low-conflict workloads.
+> LWW는 가장 단순한 충돌 해결 전략이지만 위험이 있다. "마지막 쓰기가 이긴다"의 "마지막"은 **벽시계 타임스탬프**로 판정하는데, 분산 시스템에서 노드마다 시계는 완벽하게 맞지 않는다(clock skew). 시계가 어긋나면 실제로 먼저 일어난 쓰기가 "더 늦은" 타임스탬프를 받아 이길 수 있고, 그 결과 **조용한 갱신 손실(silent lost update)**이 생긴다. 이 한계 때문에 분산 시스템 이론은 **벡터 시계(vector clock)**(Lamport 논리 시계의 확장)나 **CRDT(Conflict-free Replicated Data Type)**처럼 더 정교한 해결책을 쓴다. 시계가 아니라 인과 관계로 충돌을 병합한다. DynamoDB는 단순성과 성능을 위해 LWW를 택했으므로 "여러 리전에서 같은 키를 동시에 갱신"하는 것은 안티패턴이다. 파티션 키를 리전별로 나누거나 충돌이 적은 워크로드에 쓴다.
 
-> The original Amazon Dynamo paper (DeCandia et al., SOSP 2007) handled shopping-cart conflicts not with LWW but by **preserving both versions** so applications could merge—in carts, "don't lose added items" mattered more than "latest state." This teaches: "conflict resolution needs domain knowledge." Lesson: LWW is not universal; depending on data semantics, "last wins" can mean data loss, so multi-master requires examining conflict scenarios rigorously.
+> 원조 Amazon Dynamo 논문(DeCandia et al., SOSP 2007)은 장바구니 충돌을 LWW가 아니라 **두 버전을 모두 보존**해 애플리케이션이 병합하도록 처리했다. 장바구니에서는 "최신 상태"보다 "담은 상품을 잃지 않는 것"이 중요했기 때문이다. 여기서 "충돌 해결에는 도메인 지식이 필요하다"는 교훈을 얻는다. LWW는 만능이 아니며, 데이터 의미에 따라 "마지막이 이긴다"는 곧 데이터 손실일 수 있다. 그래서 멀티 마스터는 충돌 시나리오를 엄밀히 검토해야 한다.
 
-| Item | Aurora Global | DynamoDB Global Tables |
+| 항목 | Aurora Global | DynamoDB Global Tables |
 |------|---------------|------------------------|
-| Write model | Single-leader (Primary only) | Multi-master (all regions write) |
-| Conflicts | None (writes in one place) | Resolved via LWW |
-| Consistency | Secondary is eventual read | Eventual (cross-region) |
-| Failover | Secondary promote (~1 min) | Inherently distributed, failover concept weak |
-| Data model | Relational (SQL) | Key-value/document (NoSQL) |
-| CAP position | Closer to CP (single-leader) | AP (availability/latency-first) |
+| 쓰기 모델 | 단일 리더 (Primary만) | 멀티 마스터 (모든 리전에서 쓰기) |
+| 충돌 | 없음 (쓰기는 한 곳) | LWW로 해결 |
+| 일관성 | Secondary는 최종적 일관성 읽기 | 최종적 일관성 (리전 간) |
+| 페일오버 | Secondary 승격 (약 1분) | 본질적으로 분산 구조라 페일오버 개념이 약함 |
+| 데이터 모델 | 관계형 (SQL) | 키-값/문서 (NoSQL) |
+| CAP 위치 | CP에 가까움 (단일 리더) | AP (가용성/지연 우선) |
 
-## S3 Cross-Region Replication—Asynchronous Object Replication
+## S3 Cross-Region Replication — 비동기 객체 복제
 
-S3 CRR (Cross-Region Replication) automatically replicates objects from one bucket to another in a different region. **Both buckets must enable versioning**—version IDs track replication. Replication is unidirectional by default; for bidirectional, configure CRR in both directions. The replication role (IAM) needs read on source + write on destination.
+S3 CRR(Cross-Region Replication)은 한 버킷의 객체를 다른 리전의 버킷으로 자동 복제한다. **두 버킷 모두 버저닝을 활성화해야 한다.** 버전 ID로 복제를 추적하기 때문이다. 복제는 기본적으로 단방향이며, 양방향이 필요하면 양쪽에 CRR을 설정한다. 복제 역할(IAM)에는 원본 읽기와 대상 쓰기 권한이 필요하다.
 
-- **RTC (Replication Time Control)**: Guarantees 99.99% of objects replicate within 15 minutes (SLA). Plain CRR is best-effort.
-- **Selective replication**: Replicate by prefix/tags, to different storage classes, to a different account.
-- **Pre-existing objects**: CRR by default replicates only new objects created after enabling (old objects need S3 Batch Replication).
+- **RTC (Replication Time Control)**: 객체의 99.99%를 15분 이내에 복제하도록 보장한다(SLA). 일반 CRR은 최선 노력(best-effort)이다.
+- **선택적 복제**: 프리픽스/태그 기준으로 복제하고, 다른 스토리지 클래스나 다른 계정으로 복제할 수 있다.
+- **기존 객체**: CRR은 기본적으로 활성화 이후에 생성된 새 객체만 복제한다(기존 객체는 S3 Batch Replication이 필요하다).
 
-> ⚠️ **Pitfall**: CRR **replicates only new objects created after versioning is enabled**, a frequent gotcha. "I turned on CRR but old objects aren't in the destination bucket" is not a bug—it's design. To replicate pre-existing objects, run S3 Batch Operations (Batch Replication) separately. Also, delete marker replication is optional; deleting in one region may not delete the object in another by default.
+> ⚠️ **함정**: CRR은 **버저닝을 활성화한 이후에 생성된 새 객체만 복제한다.** 자주 걸리는 함정이다. "CRR을 켰는데 옛 객체가 대상 버킷에 없다"는 버그가 아니라 설계다. 기존 객체를 복제하려면 S3 Batch Operations(Batch Replication)를 따로 실행해야 한다. 또한 삭제 마커(delete marker) 복제는 선택 사항이라, 기본적으로는 한 리전에서 삭제해도 다른 리전의 객체는 삭제되지 않을 수 있다.
 
-## KMS Multi-Region Key—Bridging Encryption Boundaries Across Regions
+## KMS Multi-Region Key — 리전을 넘어 암호화 경계를 잇다
 
-A hidden pitfall in multi-region data is encryption. When S3 CRR replicates encrypted objects to another region, or Aurora Global/DDB Global Tables replicate data, **if the KMS key used for encryption doesn't exist in that region, decryption is impossible.** A single-region KMS key is locked to its region and unusable elsewhere.
+멀티 리전 데이터에는 숨은 함정이 있다. 바로 암호화다. S3 CRR이 암호화된 객체를 다른 리전으로 복제하거나 Aurora Global/DDB Global Tables가 데이터를 복제할 때, **암호화에 쓴 KMS 키가 그 리전에 없으면 복호화할 수 없다.** 단일 리전 KMS 키는 그 리전에 묶여 다른 곳에서 쓸 수 없다.
 
-**Multi-Region Key (MRK)** solves this. Create a Primary MRK in one region, replicate Replica MRKs to others, and they **share the same key material and key ID (mrk- prefix)**. So data encrypted with an MRK in region A can be decrypted with the replica MRK in region B—ciphertext is valid across region boundaries.
+**Multi-Region Key(MRK)**가 이 문제를 푼다. 한 리전에 Primary MRK를 만들고 다른 리전에 Replica MRK를 복제하면, 이들은 **같은 키 머티리얼과 같은 키 ID(mrk- 접두사)를 공유**한다. 그래서 리전 A에서 MRK로 암호화한 데이터를 리전 B의 Replica MRK로 복호화할 수 있다. 암호문이 리전 경계를 넘어서도 유효하다.
 
 ```bash
 aws kms create-key --multi-region   # Create Primary MRK
 aws kms replicate-key --key-id mrk-abc --replica-region us-east-1  # Replicate
 ```
 
-> Sharing "the same key material across multiple regions" is cryptographically subtle. Normally, keys are confined to one place (minimize key exposure surface), but MRK intentionally replicates key material to gain **portability of ciphertext**—while key material is shared, access controls (policies, grants) are managed independently per region (same material, regional permissions). This works with **envelope encryption**: data is encrypted with a data key (DEK), and the DEK is encrypted with a KMS key (KEK). MRK makes the KEK layer shareable across regions, so encrypted DEKs accompanying replicated ciphertext can be decrypted in the destination region. In exams, "replicated encrypted data can't be decrypted in another region" almost always answers to "no MRK" or "missing key policy permission."
+> "같은 키 머티리얼을 여러 리전에서 공유"하는 것은 암호학적으로 미묘한 일이다. 보통 키는 한 곳에 가둬 노출 면적을 최소화하지만, MRK는 **암호문의 이식성**을 얻기 위해 의도적으로 키 머티리얼을 복제한다. 키 머티리얼은 공유되어도 접근 제어(정책, 그랜트)는 리전마다 독립적으로 관리된다(같은 머티리얼, 리전별 권한). 이는 **봉투 암호화(envelope encryption)**와 함께 동작한다. 데이터는 데이터 키(DEK)로 암호화하고, DEK는 KMS 키(KEK)로 암호화한다. MRK는 KEK 계층을 리전 간에 공유 가능하게 만들어, 복제된 암호문에 딸린 암호화된 DEK를 대상 리전에서 복호화할 수 있게 한다. 시험에서 "복제된 암호화 데이터를 다른 리전에서 복호화할 수 없다"의 답은 거의 항상 "MRK가 없다" 또는 "키 정책 권한이 빠졌다"이다.
 
-## Global Accelerator vs CloudFront—Two Routes Around DNS Limitations
+## Global Accelerator vs CloudFront — DNS 한계를 우회하는 두 경로
 
-Two services bypass Route 53 DNS routing's limitation (slow failover due to cache TTL), but they serve different purposes.
+두 서비스는 Route 53 DNS 라우팅의 한계(캐시 TTL 때문에 페일오버가 느림)를 우회하지만 목적이 다르다.
 
-| Item | Global Accelerator | CloudFront |
+| 항목 | Global Accelerator | CloudFront |
 |--------|---------------------|------------|
-| Protocol | TCP/UDP (L4) | HTTP/HTTPS (L7) |
-| IP | Fixed anycast 2 IPs | Dynamic edge IPs |
-| Caching | None (proxy/routing) | Strong (content cache) |
-| Failover | Health-check-based instant (DNS cache irrelevant) | Origin Failover |
-| Typical use | Games, IoT, VoIP, non-HTTP | Web/static content delivery |
+| 프로토콜 | TCP/UDP (L4) | HTTP/HTTPS (L7) |
+| IP | 고정 anycast IP 2개 | 동적 엣지 IP |
+| 캐싱 | 없음 (프록시/라우팅) | 강력함 (콘텐츠 캐시) |
+| 페일오버 | 헬스 체크 기반 즉시 (DNS 캐시와 무관) | Origin Failover |
+| 대표 용도 | 게임, IoT, VoIP, 비HTTP | 웹/정적 콘텐츠 전송 |
 
-> Global Accelerator's instant failover secret is **anycast**. Anycast is a routing technique advertising the same IP address from multiple edge locations worldwide (via BGP); user packets automatically route to the nearest edge. Clients only ever know two fixed IPs; if a backend region dies, GA instantly reroutes to the healthy region—**regardless of client DNS cache** (the IP doesn't change). Route 53, by contrast, changes the IP itself on failover, so delay is at least one DNS cache TTL. "Instant cross-region failover for non-HTTP" → GA; "global caching of static content" → CloudFront; "simple weighted/latency routing" → Route 53.
+> Global Accelerator가 즉각 페일오버할 수 있는 비결은 **anycast**다. Anycast는 같은 IP 주소를 전 세계 여러 엣지 로케이션에서 (BGP로) 광고하는 라우팅 기법으로, 사용자 패킷이 자동으로 가장 가까운 엣지로 향한다. 클라이언트는 고정된 IP 2개만 알고 있고, 백엔드 리전이 죽으면 GA가 즉시 정상 리전으로 경로를 바꾼다. IP가 바뀌지 않으므로 **클라이언트 DNS 캐시와 무관**하다. 반면 Route 53은 페일오버 때 IP 자체를 바꾸므로 지연이 최소 DNS 캐시 TTL만큼 생긴다. "비HTTP의 즉각적인 리전 간 페일오버"는 GA, "정적 콘텐츠의 글로벌 캐싱"은 CloudFront, "단순한 가중치/지연 라우팅"은 Route 53이다.
 
-## Route 53 ARC—Making DR Failover Safe by Code
+## Route 53 ARC — DR 페일오버를 코드로 안전하게
 
-Relying solely on health-check-driven failover risks misinterpreting health or partial outages, triggering wrong failover. **Route 53 Application Recovery Controller (ARC)** treats failover as **explicit control (Routing Control)**—operators or automation safely toggle "route traffic to region B now" via code/API. Concurrently, **Readiness Check** continuously verifies "is the Secondary region truly ready?" (capacity, configuration, replication state).
+헬스 체크가 주도하는 페일오버에만 의존하면 헬스를 잘못 해석하거나 부분 장애를 만났을 때 잘못된 페일오버가 일어날 위험이 있다. **Route 53 Application Recovery Controller(ARC)**는 페일오버를 **명시적 제어(Routing Control)**로 다룬다. 운영자나 자동화가 코드/API로 "지금 트래픽을 리전 B로 보낸다"를 안전하게 토글한다. 동시에 **Readiness Check**가 "Secondary 리전이 정말 준비되어 있는가"(용량, 구성, 복제 상태)를 지속적으로 검증한다.
 
-> ARC's core value is enabling **safe DR drills** (tested failover). A plague of DR plans: "untested failover paths fail when disasters strike" (code rot from disuse). ARC Routing Control is distributed across 5 independent region data planes, so even if the main control plane fails, failover can be toggled (control/data plane separation—fewer dependent systems on failure, per the "static stability" principle). This commercializes the Well-Architected principle: "regularly test recovery procedures." Validating this failover via FIS chaos experiments is a pattern from Day 4.
+> ARC의 핵심 가치는 **안전한 DR 훈련**(테스트된 페일오버)을 가능하게 한다는 것이다. DR 계획의 고질병은 "테스트하지 않은 페일오버 경로는 재해가 닥칠 때 실패한다"는 것이다(방치된 코드의 부패). ARC Routing Control은 5개의 독립된 리전 데이터 플레인에 분산되어 있어, 메인 컨트롤 플레인이 죽어도 페일오버를 토글할 수 있다(컨트롤/데이터 플레인 분리 — 장애 시 의존하는 시스템이 적을수록 좋다는 "정적 안정성(static stability)" 원칙). Well-Architected의 "복구 절차를 정기적으로 테스트하라"는 원칙을 상용화한 것이다. 이 페일오버를 FIS 카오스 실험으로 검증하는 것은 Day 4의 패턴이다.
 
 ## 정리
 
-Four pictures emerge today. First, **multi-region must accept asynchronous replication due to the speed of light, and handling resulting inconsistency/conflicts is the core**. Second, **Route 53 is DNS-based GSLB** combining 7 routing policies and quorum health checks, but DNS cache TTL is a fundamental delay; **instant failover falls to anycast-based Global Accelerator**. Third, **data replication trades off single-leader (Aurora Global, no conflicts) against multi-leader (DDB Global Tables, LWW)**; LWW risks silent lost updates from clock skew. Fourth, **KMS Multi-Region Key bridges encryption boundaries**, letting replicated ciphertext be decrypted in other regions; **S3 CRR replicates only new post-versioning objects**; **Route 53 ARC makes failover safe code** via control/data plane separation.
+오늘은 네 장의 그림이 나왔다. 첫째, **멀티 리전은 빛의 속도 때문에 비동기 복제를 받아들여야 하며, 그 결과로 생기는 불일치와 충돌을 다루는 것이 핵심**이다. 둘째, **Route 53은 DNS 기반 GSLB**로 8개 라우팅 정책과 쿼럼 헬스 체크를 결합하지만 DNS 캐시 TTL이 근본적인 지연이며, **즉각 페일오버는 anycast 기반의 Global Accelerator의 몫**이다. 셋째, **데이터 복제는 단일 리더(Aurora Global, 충돌 없음)와 다중 리더(DDB Global Tables, LWW) 사이의 트레이드오프**이며, LWW는 clock skew로 인한 조용한 갱신 손실 위험이 있다. 넷째, **KMS Multi-Region Key는 암호화 경계를 이어** 복제된 암호문을 다른 리전에서 복호화할 수 있게 하고, **S3 CRR은 버저닝 이후의 새 객체만 복제하며**, **Route 53 ARC는 컨트롤/데이터 플레인 분리로 페일오버를 안전한 코드로 만든다.**
 
-Next, we explore the four DR strategies—Backup & Restore, Pilot Light, Warm Standby, Active-Active—and their RTO/RPO/cost tradeoffs.
+다음에는 네 가지 DR 전략인 Backup & Restore, Pilot Light, Warm Standby, Active-Active와 각각의 RTO/RPO/비용 트레이드오프를 살펴본다.
 
 ---
 
@@ -242,4 +242,4 @@ D) CloudFront Origin Failover
 
 ## 📌 오늘의 요약
 
-오늘 본 핵심은 네 가지다. 첫째, 멀티 리전은 빛의 속도라는 물리 한계로 비동기 복제를 받아들여야 하며 그 결과인 충돌·불일치를 다루는 게 본질이다. 둘째, Route 53은 DNS 기반 GSLB로 7종 라우팅 정책과 정족수 헬스 체크(여러 checker 합의로 false positive 방지)를 결합하지만 DNS 캐시 TTL이라는 지연 한계가 있어, 즉각 페일오버는 anycast 고정 IP 기반 Global Accelerator가 맡는다(CloudFront는 HTTP 콘텐츠 캐싱). 셋째, 데이터 복제는 단일 리더(Aurora Global, 쓰기 한 곳이라 충돌 없음, secondary promote ~1분)와 멀티 마스터(DynamoDB Global Tables, LWW 충돌 해결)의 트레이드오프이며 LWW는 clock skew로 silent lost update 위험을 품는다. 넷째, KMS Multi-Region Key가 같은 키 자료를 리전 간 공유해 복제 암호문의 리전 이식성을 주고(봉투 암호화 KEK 공유), S3 CRR은 버전 관리 필수·새 객체만 복제이며, Route 53 ARC가 컨트롤/데이터 플레인 분리로 안전한 DR 페일오버 토글을 제공한다.
+오늘 본 핵심은 네 가지다. 첫째, 멀티 리전은 빛의 속도라는 물리 한계로 비동기 복제를 받아들여야 하며 그 결과인 충돌·불일치를 다루는 게 본질이다. 둘째, Route 53은 DNS 기반 GSLB로 8종 라우팅 정책과 정족수 헬스 체크(여러 checker 합의로 false positive 방지)를 결합하지만 DNS 캐시 TTL이라는 지연 한계가 있어, 즉각 페일오버는 anycast 고정 IP 기반 Global Accelerator가 맡는다(CloudFront는 HTTP 콘텐츠 캐싱). 셋째, 데이터 복제는 단일 리더(Aurora Global, 쓰기 한 곳이라 충돌 없음, secondary promote ~1분)와 멀티 마스터(DynamoDB Global Tables, LWW 충돌 해결)의 트레이드오프이며 LWW는 clock skew로 silent lost update 위험을 품는다. 넷째, KMS Multi-Region Key가 같은 키 자료를 리전 간 공유해 복제 암호문의 리전 이식성을 주고(봉투 암호화 KEK 공유), S3 CRR은 버전 관리 필수·새 객체만 복제이며, Route 53 ARC가 컨트롤/데이터 플레인 분리로 안전한 DR 페일오버 토글을 제공한다.

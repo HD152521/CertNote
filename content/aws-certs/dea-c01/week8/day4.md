@@ -214,7 +214,7 @@ C) Cost Allocation Tags를 일관되게 달고 청구 콘솔에서 활성화
 D) CloudTrail 데이터 이벤트 활성화  
 
 **정답: C**  
-해설: 비용 할당 태그(Project, Environment 등)를 일관되게 달고 활성화하면 Cost Explorer에서 태그별로 비용을 분해할 수 있습니다. 계정 통합·Spot 전환은 분해 가시화와 무관하고, CloudTrail 데이터 이벤트는 비용 분석이 아니라 API 감사 용도입니다.
+해설: 비용 할당 태그(Project, Environment 등)를 일관되게 달고 활성화하면 Cost Explorer에서 태그별로 비용을 분해할 수 있다. 계정 통합·Spot 전환은 분해 가시화와 무관하고, CloudTrail 데이터 이벤트는 비용 분석이 아니라 API 감사 용도이다.
 
 ---
 
@@ -226,7 +226,7 @@ C) Partition Projection
 D) DynamicFrame  
 
 **정답: A**  
-해설: Glue Auto Scaling(`--enable-auto-scaling`)은 잡 실행 중 워크로드에 맞춰 워커를 동적으로 조절하고 최대 워커 수만 상한으로 지정합니다. Job Bookmark는 증분 처리 상태, Partition Projection은 Athena 파티션 계산, DynamicFrame은 데이터 추상화입니다.
+해설: Glue Auto Scaling(`--enable-auto-scaling`)은 잡 실행 중 워크로드에 맞춰 워커를 동적으로 조절하고 최대 워커 수만 상한으로 지정한다. Job Bookmark는 증분 처리 상태, Partition Projection은 Athena 파티션 계산, DynamicFrame은 데이터 추상화이다.
 
 ---
 
@@ -238,7 +238,7 @@ C) 코어 노드를 Spot, 태스크 노드를 On-Demand
 D) 코어 노드는 On-Demand/약정, 태스크 노드는 Spot  
 
 **정답: D**  
-해설: HDFS 데이터를 보유하는 코어 노드는 안정적인 On-Demand/약정으로 두고, 상태가 없는 태스크 노드를 Spot으로 구성하면 회수되어도 데이터 손실 없이 비용을 절감합니다. 코어를 Spot으로 두면 회수 시 데이터 손실 위험이 큽니다.
+해설: HDFS 데이터를 보유하는 코어 노드는 안정적인 On-Demand/약정으로 두고, 상태가 없는 태스크 노드를 Spot으로 구성하면 회수되어도 데이터 손실 없이 비용을 절감한다. 코어를 Spot으로 두면 회수 시 데이터 손실 위험이 크다.
 
 ---
 
@@ -250,7 +250,7 @@ C) 쿼리를 더 자주 실행
 D) 결과를 항상 JSON으로 출력  
 
 **정답: B**  
-해설: Athena/Spectrum은 스캔한 바이트로 과금되므로, 컬럼 포맷(Parquet)·압축·파티션 프루닝으로 읽는 데이터양을 줄이면 비용이 직접 감소합니다. CSV/JSON은 스캔량을 늘리고, 쿼리를 자주 실행하면 비용이 증가합니다.
+해설: Athena/Spectrum은 스캔한 바이트로 과금되므로, 컬럼 포맷(Parquet)·압축·파티션 프루닝으로 읽는 데이터양을 줄이면 비용이 직접 감소한다. CSV/JSON은 스캔량을 늘리고, 쿼리를 자주 실행하면 비용이 증가한다.
 
 ---
 
@@ -262,6 +262,6 @@ C) Compute Optimizer
 D) Cost Anomaly Detection  
 
 **정답: D**  
-해설: Cost Anomaly Detection은 ML로 비용 패턴을 학습해 비정상적 급증을 자동 탐지·통보합니다. Budgets는 사전 설정한 임계값 기반 알림, Trusted Advisor는 모범사례 점검, Compute Optimizer는 리소스 사이징 권고로 동적 이상 탐지와는 다릅니다.
+해설: Cost Anomaly Detection은 ML로 비용 패턴을 학습해 비정상적 급증을 자동 탐지·통보한다. Budgets는 사전 설정한 임계값 기반 알림, Trusted Advisor는 모범사례 점검, Compute Optimizer는 리소스 사이징 권고로 동적 이상 탐지와는 다르다.
 
 ---

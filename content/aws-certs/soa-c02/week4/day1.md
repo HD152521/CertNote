@@ -53,7 +53,7 @@ CloudTrail 이벤트 종류
 
 > ⚠️ **함정**: "S3 객체 접근을 추적하라"는 요구사항이 나오면 반드시 Data Events 활성화가 답이다. Management Events만으로는 `PutBucketPolicy`(버킷 정책 변경) 같은 설정 변경만 추적되고, 실제 객체 접근(GetObject, PutObject)은 추적되지 않는다. 시험에서 이 구분을 묻는 문제가 나올 수 있다.
 
-2019년 Capital One 데이터 유출 사건. 전직 AWS 직원이 SSRF 취약점으로 EC2 메타데이터에서 IAM 임시 자격증명을 탈취해 S3 버킷 700개에서 100GB 이상의 데이터를 추출했다. 사후 분석에서 S3 Data Events가 활성화되어 있었다면 `GetObject` 호출 패턴(비정상적으로 많은 양, 비정상적인 IAM 자격증명)으로 수 시간 내 탐지할 수 있었다는 분석이 나왔다. 이 사건 후 AWS는 GuardDuty S3 Data Event 모니터링을 강화했고, CloudTrail Data Events 활성화가 보안 모범 사례에서 필수로 격상됐다.
+2019년 Capital One 데이터 유출 사건. 전직 AWS 직원이 SSRF 취약점으로 EC2 메타데이터에서 IAM 임시 자격증명을 탈취해 S3 버킷의 데이터를 대량으로 내려받았다. S3 Data Events를 켜 두면 이런 `GetObject` 호출 패턴(비정상적으로 많은 양, 평소와 다른 IAM 자격증명)을 기록으로 남겨 탐지 근거로 쓸 수 있다. 2020년 GuardDuty에 S3 데이터 이벤트를 분석하는 S3 보호 기능이 추가됐다.
 
 ## Trail의 구조와 Multi-Region 설정
 

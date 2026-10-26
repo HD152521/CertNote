@@ -170,7 +170,7 @@ CloudWatch Alarm 설계 철학을 다른 플랫폼과 비교하면 선택의 배
 
 GCP의 Alerting Policy는 조건 창(condition window)에서 집계 후 임계값과 비교하는 방식으로 M of N과 유사하지만 직관성이 떨어진다. Azure의 Dynamic Threshold는 CloudWatch Anomaly Detection과 가장 유사하며 동일하게 ML 기반이다.
 
-2023년 Datadog State of DevOps 보고서에 따르면, 고성숙도 SRE 팀의 90%가 Composite Alarm 또는 이에 상응하는 "상위 레벨 집약 알람"을 사용한다. 반면 알람 노이즈가 심한 팀의 78%가 단일 메트릭 알람만 사용한다. 알람 설계 성숙도와 MTTR(Mean Time To Recovery) 사이에 강한 상관관계가 있다는 분석이 포함됐다.
+단일 메트릭 알람만 쌓으면 알람 노이즈가 커지기 쉽다. 여러 신호를 묶은 상위 수준 알람(Composite Alarm 등)으로 사용자 영향이 있을 때만 호출하도록 설계하는 것이 알람 피로를 줄이는 일반적인 방법이다.
 
 ## High Resolution Alarm과 비용 모델
 

@@ -20,9 +20,9 @@ S3 URL에는 두 가지 형식이 공존한다. 가상 호스팅 스타일(`http
 
 ## 11 nines 내구성의 비밀 — 분산 복제와 erasure coding
 
-"99.999999999% 내구성"은 S3 마케팅의 핵심이다. 이 숫자가 구체적으로 무엇을 의미하는지 이해해야 시험 문제를 정확히 풀 수 있다. 내구성이란 데이터 손실 확률이다. 11 nines는 1년에 1,000만 개를 저장했을 때 평균 하나를 잃을까 말까 한 확률이다. 이 수준의 내구성은 어떻게 달성되는가?
+"99.999999999% 내구성"은 S3 마케팅의 핵심이다. 이 숫자가 구체적으로 무엇을 의미하는지 이해해야 시험 문제를 정확히 풀 수 있다. 내구성이란 데이터 손실 확률이다. 객체당 연간 손실 확률이 0.000000001%라는 뜻이라, 객체 1,000만 개를 저장하면 평균 1만 년에 한 개를 잃는 수준이다. 이 수준의 내구성은 어떻게 달성되는가?
 
-S3 Standard는 데이터를 **최소 3개의 AZ에 걸쳐** 저장한다. 단순히 3벌 복사(replication)가 아니라, **erasure coding** 기법을 사용한다. 데이터를 k개의 조각으로 나눠 m개의 패리티 조각을 추가로 만들면, k+m개 중 임의의 m개가 손상되어도 k개로 원본 복구가 가능하다. S3는 Reed-Solomon 기반 erasure coding을 써서 스토리지 오버헤드를 최소화하면서 내구성을 극대화한다. 3벌 복사라면 300% 오버헤드지만, erasure coding은 50~67% 오버헤드로 더 높은 내구성을 달성한다.
+S3 Standard는 데이터를 **최소 3개의 AZ에 걸쳐** 저장한다. 단순히 3벌 복사(replication)가 아니라, **erasure coding** 기법을 사용한다. 데이터를 k개의 조각으로 나눠 m개의 패리티 조각을 추가로 만들면, k+m개 중 임의의 m개가 손상되어도 k개로 원본 복구가 가능하다. erasure coding은 같은 내구성을 단순 복제보다 적은 저장 공간으로 얻는 기법이다. S3가 쓰는 구체적인 부호화 방식과 오버헤드 비율은 공개되지 않았다.
 
 ## One Zone-IA는 왜 11 nines인가 — 가용성과 내구성의 차이
 
@@ -43,25 +43,25 @@ One Zone-IA는 단일 AZ에만 데이터를 저장한다. 그 AZ 안에서는 er
 | Standard-IA | 3+ | 99.9% | 30일/128KB | 즉시 | 월 1회 미만 접근, 빠른 복구 필요 |
 | One Zone-IA | 1 | 99.5% | 30일/128KB | 즉시 | 재생성 가능한 데이터, 비용 최적화 |
 | Glacier Instant Retrieval | 3+ | 99.9% | 90일/128KB | 즉시 | 분기 1회 접근, 즉시 복구 |
-| Glacier Flexible Retrieval | 3+ | 99.99% | 90일/40KB | 1분~12시간 | 연 1~2회 접근, 복구 시간 허용 |
-| Glacier Deep Archive | 3+ | 99.99% | 180일/40KB | 12~48시간 | 규제 아카이브, 7~10년 보존 |
-| Express One Zone | 1 | — | 1시간 | <1ms | AI/ML 학습, HPC 임시 스토리지 |
+| Glacier Flexible Retrieval | 3+ | 99.99% | 90일 (객체당 40KB 메타데이터 추가 과금) | 1분~12시간 | 연 1~2회 접근, 복구 시간 허용 |
+| Glacier Deep Archive | 3+ | 99.99% | 180일 (객체당 40KB 메타데이터 추가 과금) | 12~48시간 | 규제 아카이브, 7~10년 보존 |
+| Express One Zone | 1 | 99.95% | 없음 | 한 자릿수 ms | AI/ML 학습, HPC 임시 스토리지 |
 
 최소 저장 기간은 중요한 시험 포인트다. Standard-IA에 데이터를 15일 저장 후 삭제해도 **30일치 요금이 청구**된다. 실제 삭제는 됐지만 AWS는 30일 최소 기간에 해당하는 저장 비용을 청구한다. Glacier Deep Archive의 최소 저장 기간은 180일이므로, 아카이브 데이터를 규정 보존 기간 없이 마구 집어넣으면 오히려 비용이 올라간다.
 
 접근 빈도가 낮을수록 저장 단가는 낮아지지만 실제로 접근할 때의 복구 비용은 높아진다. Glacier Deep Archive의 저장 비용은 Standard의 1/23이지만, Bulk 검색 시 GB당 $0.0025가 추가된다. 자주 접근하는 데이터를 Glacier에 넣으면 총 비용이 오히려 높아질 수 있다.
 
-## S3 Intelligent-Tiering — 머신러닝으로 자동 분류
+## S3 Intelligent-Tiering — 접근 패턴으로 자동 분류
 
 Intelligent-Tiering은 2018년에 출시된 스토리지 클래스로, 객체의 접근 패턴을 S3가 자동으로 모니터링하여 최적 티어로 이동시킨다. 추가 검색 비용 없이 자동화된다는 것이 핵심이다.
 
-Intelligent-Tiering의 내부 구조를 보면 5개 티어로 구성된다. **Frequent Access** 티어(Standard와 동일), **Infrequent Access** 티어(30일 미접근 시 자동 이동, Standard-IA와 동일), **Archive Instant Access** 티어(90일 미접근, Glacier Instant와 동일)가 기본이다. **Archive Access** 티어(90~270일)와 **Deep Archive Access** 티어(180~730일)는 선택 활성화한다. 주의할 점은 **객체당 월 $0.0025의 모니터링 비용**이 발생한다는 것이다. 128KB 미만의 작은 객체는 모니터링 비용이 저장 비용보다 더 많이 나올 수 있으므로 Intelligent-Tiering을 쓰면 안 된다.
+Intelligent-Tiering의 내부 구조를 보면 5개 티어로 구성된다. **Frequent Access** 티어(Standard와 동일), **Infrequent Access** 티어(30일 미접근 시 자동 이동, Standard-IA와 동일), **Archive Instant Access** 티어(90일 미접근, Glacier Instant와 동일)가 기본이다. **Archive Access** 티어(최소 90일, 최대 730일까지 설정)와 **Deep Archive Access** 티어(최소 180일, 최대 730일까지 설정)는 선택 활성화한다. 주의할 점은 객체 수에 비례하는 **월 모니터링·자동화 요금**이 붙는다는 것이다. 128KB 미만 객체는 모니터링 대상이 아니라 이 요금이 없는 대신 자동 티어링도 되지 않고 항상 Frequent Access 티어에 머문다. 그래서 작은 객체가 대부분인 버킷은 Intelligent-Tiering으로 얻는 절감이 거의 없다.
 
-S3 Intelligent-Tiering은 실제로 S3 내부의 ML 기반 접근 패턴 분석기가 각 객체의 마지막 접근 시간을 추적한다. 이 정보는 객체 메타데이터에 저장되며, Lambda 함수나 S3 API로는 직접 조회할 수 없다. 접근 패턴을 직접 분석하고 싶다면 **S3 Storage Class Analysis**를 사용해야 한다 — 이 도구는 Standard와 Standard-IA 간의 전환 시점을 추천해주고, Intelligent-Tiering이 적합한지도 알려준다.
+S3 Intelligent-Tiering은 각 객체의 마지막 접근 시점을 S3가 추적해 티어를 정한다. 내부 구현은 공개되지 않았고, 이 추적 정보를 S3 API로 직접 조회할 수는 없다. 접근 패턴을 직접 분석하고 싶다면 **S3 Storage Class Analysis**를 사용해야 한다 — 이 도구는 Standard와 Standard-IA 간의 전환 시점을 추천해주고, Intelligent-Tiering이 적합한지도 알려준다.
 
 ## S3 Express One Zone — 2023년의 새로운 카테고리
 
-2023년 re:Invent에서 발표된 Express One Zone은 기존 S3 클래스와 근본적으로 다르다. 일반 S3가 **General Purpose Bucket**을 사용하는 반면, Express One Zone은 **Directory Bucket**이라는 새로운 버킷 유형을 사용한다. 1밀리초 미만의 접근 지연은 AI/ML 학습 중 반복적으로 같은 데이터셋에 접근할 때 극적인 차이를 만든다. GPU가 데이터를 기다리는 시간을 줄이는 것이 학습 비용을 줄이는 핵심이기 때문이다.
+2023년 re:Invent에서 발표된 Express One Zone은 기존 S3 클래스와 근본적으로 다르다. 일반 S3가 **General Purpose Bucket**을 사용하는 반면, Express One Zone은 **Directory Bucket**이라는 새로운 버킷 유형을 사용한다. Standard보다 최대 10배 빠른 한 자릿수 밀리초 접근 지연은 AI/ML 학습 중 반복적으로 같은 데이터셋에 접근할 때 극적인 차이를 만든다. GPU가 데이터를 기다리는 시간을 줄이는 것이 학습 비용을 줄이는 핵심이기 때문이다.
 
 단, 단일 AZ에만 저장되므로 영구 보존이 필요한 데이터에는 적합하지 않다. AI 학습용 임시 데이터, HPC 중간 결과물, 분석 중에만 필요한 스테이징 데이터가 주요 사용 사례다.
 
@@ -182,7 +182,7 @@ C) 3개월에 한 번 분석하는 대용량 데이터셋
 D) 접근 패턴을 예측하기 어려운 사용자 업로드 파일
 
 **정답: B**
-해설: S3 Intelligent-Tiering은 객체당 월 $0.0025의 모니터링 비용이 발생한다. 50KB 파일의 한 달 저장 비용은 약 $0.0000115(Standard 기준)인데, 모니터링 비용 $0.0025가 저장 비용의 200배 이상이다. AWS 자체도 공식 문서에서 128KB 미만의 객체는 Intelligent-Tiering에 부적합하다고 명시한다. 나머지 선택지는 모두 Intelligent-Tiering의 이상적인 사용 사례다.
+해설: S3 Intelligent-Tiering은 128KB 미만 객체를 모니터링하지 않고 자동 계층화 대상에서도 뺀다. 이런 객체는 항상 Frequent Access 계층 요금으로 과금되므로, 평균 50KB 파일 수백만 개를 넣어도 비용 절감 효과가 없다. 나머지 선택지는 접근 패턴이 불규칙하거나 예측하기 어려운 큰 객체라 Intelligent-Tiering의 전형적인 사용 사례다.
 
 ---
 
@@ -202,10 +202,10 @@ D) 최대 100MB, Multipart Upload 사용
 
 A) 여러 AZ에 데이터를 분산 저장하여 11 nines 내구성을 보장한다
 B) 일반 S3 버킷과 동일한 API로 사용할 수 있다
-C) Directory Bucket 유형을 사용하며 1ms 미만의 지연 시간을 제공한다
+C) Directory Bucket 유형을 사용하며 한 자릿수 밀리초의 지연 시간을 제공한다
 D) 모든 리전에서 사용 가능하다
 
 **정답: C**
-해설: S3 Express One Zone은 일반 General Purpose Bucket이 아닌 Directory Bucket이라는 새로운 유형을 사용한다. 단일 AZ에만 데이터를 저장하므로 AZ 장애 시 데이터 접근이 불가능하고, 2023년 기준 제한된 리전에서만 제공된다. 1ms 미만의 접근 지연은 Standard의 수십~수백ms보다 약 10배 빠르다. AI/ML 학습, HPC 워크로드처럼 반복적 데이터 접근이 필요한 경우에 최적화되어 있다.
+해설: S3 Express One Zone은 일반 General Purpose Bucket이 아닌 Directory Bucket이라는 새로운 유형을 사용한다. 단일 AZ에만 데이터를 저장하므로 AZ 장애 시 데이터 접근이 불가능하고, 2023년 기준 제한된 리전에서만 제공된다. 한 자릿수 밀리초의 일관된 지연으로, S3 Standard보다 최대 10배 빠른 데이터 접근을 제공한다. AI/ML 학습, HPC 워크로드처럼 반복적 데이터 접근이 필요한 경우에 최적화되어 있다.
 
 ---

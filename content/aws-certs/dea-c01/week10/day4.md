@@ -195,7 +195,7 @@ C) Amazon Kinesis Data Streams
 D) Amazon SQS FIFO  
 
 **정답: C**  
-해설: Kinesis Data Streams는 샤드 기반으로 여러 컨슈머가 독립적으로 읽고 보존 기간 내 재처리(re-read)가 가능합니다. Firehose는 직접 소비·재처리 개념이 없고, SNS/SQS는 스트림 재처리 모델이 아닙니다.
+해설: Kinesis Data Streams는 샤드 기반으로 여러 컨슈머가 독립적으로 읽고 보존 기간 내 재처리(re-read)가 가능하다. Firehose는 직접 소비·재처리 개념이 없고, SNS/SQS는 스트림 재처리 모델이 아니다.
 
 ---
 
@@ -207,7 +207,7 @@ C) Amazon Macie
 D) AWS Config  
 
 **정답: B**  
-해설: CloudTrail은 계정의 API 호출(주체·시각·액션)을 기록하는 감사 서비스입니다. CloudWatch Logs는 애플리케이션 로그, Macie는 민감정보 탐지, Config는 리소스 구성 변경 추적으로 API 호출 감사가 주목적이 아닙니다.
+해설: CloudTrail은 계정의 API 호출(주체·시각·액션)을 기록하는 감사 서비스이다. CloudWatch Logs는 애플리케이션 로그, Macie는 민감정보 탐지, Config는 리소스 구성 변경 추적으로 API 호출 감사가 주목적이 아니다.
 
 ---
 
@@ -219,7 +219,7 @@ C) Amazon Athena
 D) EC2에 직접 설치한 Hive  
 
 **정답: C**  
-해설: Athena는 서버리스로 상시 인프라 없이 S3를 즉석 SQL 조회하며 스캔량만 과금해 임시·간헐 분석에 가장 적합합니다. Redshift 상시 클러스터·EMR·EC2 Hive는 운영 부담과 비용이 큽니다.
+해설: Athena는 서버리스로 상시 인프라 없이 S3를 즉석 SQL 조회하며 스캔량만 과금해 임시·간헐 분석에 가장 적합하다. Redshift 상시 클러스터·EMR·EC2 Hive는 운영 부담과 비용이 크다.
 
 ---
 
@@ -231,7 +231,7 @@ C) AWS Lambda
 D) Amazon Athena  
 
 **정답: A**  
-해설: EMR은 관리형 Hadoop/Spark 클러스터로 인스턴스 플릿·Spot·세밀한 튜닝과 기존 Spark/Hive 코드 재사용에 적합합니다. Glue는 서버리스라 세밀한 클러스터 제어가 제한적이고, Lambda·Athena는 대규모 배치 처리 엔진이 아닙니다.
+해설: EMR은 관리형 Hadoop/Spark 클러스터로 인스턴스 플릿·Spot·세밀한 튜닝과 기존 Spark/Hive 코드 재사용에 적합하다. Glue는 서버리스라 세밀한 클러스터 제어가 제한적이고, Lambda·Athena는 대규모 배치 처리 엔진이 아니다.
 
 ---
 
@@ -243,6 +243,6 @@ C) AWS WAF
 D) Amazon Inspector  
 
 **정답: B**  
-해설: Macie는 ML로 S3 내 PII·금융정보 등 민감 데이터를 발견·분류합니다. GuardDuty는 위협·침해 탐지, WAF는 웹 공격 차단, Inspector는 취약점 평가로 데이터 분류 기능이 없습니다.
+해설: Macie는 ML로 S3 내 PII·금융정보 등 민감 데이터를 발견·분류한다. GuardDuty는 위협·침해 탐지, WAF는 웹 공격 차단, Inspector는 취약점 평가로 데이터 분류 기능이 없다.
 
 ---

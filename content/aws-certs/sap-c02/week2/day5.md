@@ -24,7 +24,7 @@ AWS Organizations가 GA된 것은 **2017년 2월**이다. 그 전에는 **Consol
 
 멀티 계정 설계는 보안의 **최소 권한 원칙(Principle of Least Privilege)**과 **권한 분리(Separation of Duties, SoD)**를 구조로 강제한 것이다. SoD는 회계·감사 분야에서 1970년대부터 내려온 통제 원칙으로, NIST SP 800-53 AC-5에 명문화돼 있다. 로그를 적재하는 계정(Log Archive)과 그것을 분석하는 계정(Audit)을 나누는 것, 결제만 하는 Management 계정에 워크로드를 두지 않는 것 모두 SoD의 클라우드 구현이다.
 
-**Capital One(2019년 7월)** — SSRF 취약점으로 EC2 메타데이터에서 과도한 권한의 IAM Role 자격증명이 탈취되어 1억 6백만 명의 데이터가 유출됐다. 직접 원인은 WAF 설정과 과도한 S3 접근 권한이었지만, 사후 분석에서 "데이터 계정과 애플리케이션 계정이 충분히 분리되지 않아 한 Role이 너무 많은 버킷에 접근할 수 있었다"는 점이 지적됐다. 교훈: 계정·Role 경계를 좁게 나누면 한 자격증명이 탈취돼도 blast radius가 제한된다. 이 사고 후 AWS는 IMDSv2(2019)를 출시하고 SRA(Security Reference Architecture)에서 계정 분리를 강하게 권고했다.
+**Capital One(2019년 7월)** — SSRF 취약점으로 EC2 메타데이터에서 과도한 권한의 IAM Role 자격증명이 탈취되어 1억 600만 명의 데이터가 유출됐다. 직접 원인은 WAF 설정과 과도한 S3 접근 권한이었지만, 사후 분석에서 "데이터 계정과 애플리케이션 계정이 충분히 분리되지 않아 한 Role이 너무 많은 버킷에 접근할 수 있었다"는 점이 지적됐다. 교훈: 계정·Role 경계를 좁게 나누면 한 자격증명이 탈취돼도 blast radius가 제한된다. 이 사고 후 AWS는 IMDSv2(2019)를 출시하고 SRA(Security Reference Architecture)에서 계정 분리를 강하게 권고했다.
 
 ## 다른 클라우드의 멀티 계정/조직 거버넌스
 

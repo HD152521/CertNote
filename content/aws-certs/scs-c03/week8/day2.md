@@ -1,4 +1,4 @@
-# Day 2 - Security Hub: 보안 표준(CIS/FSBP), 통합 점수, 핀딩 집계·정규화(ASFF), 자동 대응
+# Day 2 - Security Hub: 보안 표준(CIS/FSBP), 통합 점수, 결과 집계·정규화(ASFF), 자동 대응
 
 탐지기를 여러 개 켜면 곧 새로운 문제가 생긴다 — GuardDuty는 GuardDuty 포맷으로, Inspector는 Inspector 포맷으로, Macie는 또 다른 포맷으로 경보를 쏟아내고, 거기에 IAM·S3·CloudTrail의 설정 점검 결과까지 더해지면 운영자는 "지금 우리 계정이 안전한가?"라는 단 하나의 질문에 답할 수 없게 된다. **AWS Security Hub**는 이 파편화를 해결하는 집계·정규화·점수화 평면이다. 보안 시험에서 Security Hub의 본질은 "탐지를 *하는* 도구"가 아니라 "여러 탐지기의 결과를 *모으고 표준화하고 우선순위화하는* 메타 도구"라는 점이다.
 
@@ -7,19 +7,19 @@
 Security Hub가 하는 일은 명확히 셋으로 나뉜다.
 
 1. **보안 표준 점검(Security Standards)**: 계정·리소스 설정을 모범 기준(CIS, FSBP, PCI DSS, NIST 등)과 자동으로 대조해 합격/불합격 컨트롤을 만든다. 내부적으로 **AWS Config** 규칙을 사용한다.
-2. **핀딩 집계·정규화(Aggregation)**: GuardDuty, Inspector, Macie, IAM Access Analyzer, Firewall Manager 등 통합 서비스와 서드파티의 핀딩을 **ASFF**라는 단일 포맷으로 받아 한곳에 모은다.
-3. **자동 대응(Automation)**: 핀딩을 EventBridge로 흘려보내거나 Automation Rule로 자동 처리·억제한다.
+2. **결과 집계·정규화(Aggregation)**: GuardDuty, Inspector, Macie, IAM Access Analyzer, Firewall Manager 등 통합 서비스와 서드파티의 결과를 **ASFF**라는 단일 포맷으로 받아 한곳에 모은다.
+3. **자동 대응(Automation)**: 결과를 EventBridge로 흘려보내거나 Automation Rule로 자동 처리·억제한다.
 
 > ⚠️ **함정**: "Security Hub가 위협을 탐지한다"는 표현은 부정확하다. 위협 *탐지*는 GuardDuty가, 취약점 *스캔*은 Inspector가, 민감데이터 *발견*은 Macie가 한다. Security Hub는 이들의 결과를 *집계*하고, 별도로 *설정 점검(컴플라이언스)*을 수행한다. 시험에서 "실시간 악성 행위 탐지"를 물으면 GuardDuty, "여러 보안 서비스 결과를 한 대시보드로"를 물으면 Security Hub다.
 
-이 세 가지 중 오늘 무게를 싣는 곳은 **1번과 3번**이다. 2번(핀딩 집계와 ASFF 스키마의 해부, 다계정 탐지 베이스라인)은 week9에서 탐지 서비스들을 다 배운 뒤 한 그림으로 묶는다. 오늘의 질문은 다르다 — **"우리 계정의 구성이 기준에 맞는가"를 어떻게 지속적으로 측정하고, 그 측정값을 어떻게 조직 전체에 강제하며, 쏟아지는 컨트롤 핀딩을 어떻게 운영 가능한 크기로 유지하는가.**
+이 세 가지 중 오늘 무게를 싣는 곳은 **1번과 3번**이다. 2번(결과 집계와 ASFF 스키마의 해부, 다계정 탐지 베이스라인)은 week9에서 탐지 서비스들을 다 배운 뒤 한 그림으로 묶는다. 오늘의 질문은 다르다 — **"우리 계정의 구성이 기준에 맞는가"를 어떻게 지속적으로 측정하고, 그 측정값을 어떻게 조직 전체에 강제하며, 쏟아지는 컨트롤 결과를 어떻게 운영 가능한 크기로 유지하는가.**
 
 ```
 [ 표준 점검 파이프라인: 구성이 점수가 되는 경로 ]
 
   리소스 변경                구성 기록              컨트롤 평가            집계·표현
  ┌──────────┐          ┌───────────────┐      ┌──────────────┐    ┌──────────────┐
- │ S3 버킷   │          │  AWS Config   │      │ Security Hub │    │ 컨트롤 핀딩   │
+ │ S3 버킷   │          │  AWS Config   │      │ Security Hub │    │ 컨트롤 결과   │
  │ IAM 정책  │──변경──▶ │  구성 레코더   │──▶  │ 표준 컨트롤   │──▶ │ (ASFF +      │
  │ SG/EC2   │          │ (리소스 스냅샷)│      │ = Config 규칙 │    │  Compliance) │
  └──────────┘          └───────────────┘      └──────────────┘    └──────┬───────┘
@@ -73,7 +73,7 @@ Security Hub의 표준 점검은 "탐지적 통제(detective control)"이자 "�
 
 ### 어느 표준을 켤 것인가: 선택의 축
 
-표준을 전부 켜면 컨트롤이 중복되고 핀딩이 몇 배로 늘어난다. 반대로 하나만 켜면 사각지대가 남는다. 실무의 선택 기준은 **"이 표준이 답하려는 질문이 무엇인가"**다.
+표준을 전부 켜면 컨트롤이 중복되고 결과가 몇 배로 늘어난다. 반대로 하나만 켜면 사각지대가 남는다. 실무의 선택 기준은 **"이 표준이 답하려는 질문이 무엇인가"**다.
 
 | 표준 | 답하려는 질문 | 범위 | 켜는 시점 |
 |------|--------------|------|-----------|
@@ -106,7 +106,7 @@ Security Hub는 활성화된 표준의 컨트롤 합격률을 **보안 점수(%)
 ```
 
 - 비활성/데이터 없음(`NOT_AVAILABLE`, `DISABLED`) 컨트롤은 분모에서 제외된다.
-- 컨트롤마다 여러 리소스가 평가되며, 한 리소스라도 불합격이면 해당 컨트롤은 `FAILED`로 본다(컨트롤 상태는 리소스 핀딩의 집계).
+- 컨트롤마다 여러 리소스가 평가되며, 한 리소스라도 불합격이면 해당 컨트롤은 `FAILED`로 본다(컨트롤 상태는 리소스 결과의 집계).
 
 이 점수는 "지금 얼마나 베이스라인을 지키고 있나"의 한눈 지표이며, 조직 단위로 집계할 수도 있다.
 
@@ -155,7 +155,7 @@ aws securityhub get-findings \
 
 ### (1) 컨트롤 비활성화 — 사유를 남기는 것이 핵심
 
-우리 환경에 해당하지 않는 컨트롤(예: 쓰지 않는 서비스)은 끄는 것이 맞다. 끄면 점수 계산에서 빠지고 핀딩도 생성되지 않는다.
+우리 환경에 해당하지 않는 컨트롤(예: 쓰지 않는 서비스)은 끄는 것이 맞다. 끄면 점수 계산에서 빠지고 결과도 생성되지 않는다.
 
 ```bash
 aws securityhub update-standards-control \
@@ -178,9 +178,9 @@ aws securityhub update-security-control \
 
 끄기와 조정하기의 차이는 감사 관점에서 결정적이다. **끈 컨트롤은 "우리는 이것을 보지 않는다"이고, 조정한 컨트롤은 "우리는 이것을 다른 기준으로 본다"**이다. 후자는 정책 문서로 방어할 수 있고, 전자는 방어할 근거가 훨씬 좁다.
 
-### (3) 통합 컨트롤 핀딩(Consolidated control findings)
+### (3) 통합 컨트롤 결과(Consolidated control findings)
 
-CIS와 FSBP를 동시에 켜면 같은 점검(예: "루트 계정에 MFA")이 두 표준 모두에 존재해 **핀딩이 두 배로 생긴다.** 통합 컨트롤 핀딩을 켜면 표준과 무관하게 **보안 컨트롤 ID 하나당 핀딩 하나**만 생성된다.
+CIS와 FSBP를 동시에 켜면 같은 점검(예: "루트 계정에 MFA")이 두 표준 모두에 존재해 **결과가 두 배로 생긴다.** 통합 컨트롤 결과를 켜면 표준과 무관하게 **보안 컨트롤 ID 하나당 결과 하나**만 생성된다.
 
 ```bash
 aws securityhub update-security-hub-configuration \
@@ -189,10 +189,10 @@ aws securityhub update-security-hub-configuration \
 
 | 축 | `STANDARD_CONTROL`(기본) | `SECURITY_CONTROL`(통합) |
 |----|--------------------------|--------------------------|
-| 핀딩 생성 단위 | 표준 × 컨트롤 | 보안 컨트롤 ID |
+| 결과 생성 단위 | 표준 × 컨트롤 | 보안 컨트롤 ID |
 | 표준 3개 동시 활성 시 중복 | 최대 3배 | 없음 |
 | 컨트롤 관리 | 표준별로 각각 켜고 끔 | **한 번 끄면 모든 표준에서 반영** |
-| 핀딩 볼륨 | 많음 | 적음 |
+| 결과 볼륨 | 많음 | 적음 |
 
 통합을 켜면 컨트롤 활성/비활성이 **표준 경계를 넘어 적용**된다. "PCI 표준에서는 켜고 CIS에서는 끄고 싶다"는 요구는 통합 모드에서 성립하지 않는다. 반대로 통합을 켜지 않은 채 표준 세 개를 켜면 같은 문제를 세 번 보게 되어 알림 피로가 곧바로 발생한다. **표준을 여럿 켠다면 통합도 함께 켜는 것이 사실상 기본 설정**이라고 기억하면 된다.
 
@@ -252,9 +252,9 @@ aws securityhub start-configuration-policy-association \
 
 중앙 구성은 **위임 관리자의 홈 리전에서 관리**되며, 로컬 구성(각 계정이 스스로 설정)과 배타적이다. 중앙 구성을 켜는 순간 멤버 계정의 로컬 설정은 정책에 의해 덮인다. "중앙에서 배포했는데 멤버가 그대로 유지되지 않는다"는 문제는 대개 로컬 구성 모드로 남아 있거나 연결(association)이 해당 OU까지 내려오지 않은 경우다.
 
-## ASFF: 모든 핀딩의 공통 언어
+## ASFF: 모든 결과의 공통 언어
 
-Security Hub의 가장 중요한 개념이 **ASFF(AWS Security Finding Format)**다. 출처가 GuardDuty든 Inspector든 서드파티든, 모든 핀딩은 이 JSON 스키마로 정규화되어 들어온다. 덕분에 운영자는 출처별 포맷을 외울 필요 없이 *하나의 필드 체계*로 검색·필터·라우팅할 수 있다.
+Security Hub의 가장 중요한 개념이 **ASFF(AWS Security Finding Format)**다. 출처가 GuardDuty든 Inspector든 서드파티든, 모든 결과는 이 JSON 스키마로 정규화되어 들어온다. 덕분에 운영자는 출처별 포맷을 외울 필요 없이 *하나의 필드 체계*로 검색·필터·라우팅할 수 있다.
 
 ASFF의 핵심 필드:
 
@@ -280,18 +280,18 @@ ASFF의 핵심 필드:
 정규화에서 특히 중요한 두 축:
 
 - **Severity.Normalized**: 0~100의 정규화 심각도. 출처마다 다른 심각도 표현을 한 척도로 통일한다. 라벨(`INFORMATIONAL`/`LOW`/`MEDIUM`/`HIGH`/`CRITICAL`)과 매핑된다.
-- **Workflow.Status**: 핀딩의 *처리 상태* — `NEW` → `NOTIFIED` → `RESOLVED` / `SUPPRESSED`. 운영자가 다루는 워크플로 상태다.
-- **RecordState**: 핀딩의 *생존* 상태 — `ACTIVE` / `ARCHIVED`. 문제가 사라지면 ARCHIVED로 바뀐다.
+- **Workflow.Status**: 결과의 *처리 상태* — `NEW` → `NOTIFIED` → `RESOLVED` / `SUPPRESSED`. 운영자가 다루는 워크플로 상태다.
+- **RecordState**: 결과의 *생존* 상태 — `ACTIVE` / `ARCHIVED`. 문제가 사라지면 ARCHIVED로 바뀐다.
 
-`Workflow.Status`와 `RecordState`를 혼동하면 안 된다. `RecordState=ARCHIVED`는 "근본 문제가 해소되어 핀딩이 더 이상 유효하지 않음"(시스템이 판단), `Workflow.Status=RESOLVED`는 "운영자가 처리했다고 표시"(사람/자동화가 판단)다. 또 `SUPPRESSED`는 "보긴 했지만 의도적으로 무시"라 점수·알림에서 빠지지만 기록은 남는다.
+`Workflow.Status`와 `RecordState`를 혼동하면 안 된다. `RecordState=ARCHIVED`는 "근본 문제가 해소되어 결과가 더 이상 유효하지 않음"(시스템이 판단), `Workflow.Status=RESOLVED`는 "운영자가 처리했다고 표시"(사람/자동화가 판단)다. 또 `SUPPRESSED`는 "보긴 했지만 의도적으로 무시"라 점수·알림에서 빠지지만 기록은 남는다.
 
-(ASFF 각 필드의 해부와 커스텀 핀딩 주입, 그리고 여러 탐지 서비스를 한 그림으로 묶는 다계정 베이스라인은 week9에서 탐지 도구들을 모두 배운 뒤 다시 다룬다. 오늘 필요한 것은 **컨트롤 핀딩이 위협 핀딩과 다른 필드를 갖고, 다른 수명주기를 갖는다**는 사실 하나다.)
+(ASFF 각 필드의 해부와 커스텀 결과 주입, 그리고 여러 탐지 서비스를 한 그림으로 묶는 다계정 베이스라인은 week9에서 탐지 도구들을 모두 배운 뒤 다시 다룬다. 오늘 필요한 것은 **컨트롤 결과가 위협 결과와 다른 필드를 갖고, 다른 수명주기를 갖는다**는 사실 하나다.)
 
-### 컨트롤 핀딩의 수명주기는 위협 핀딩과 다르다
+### 컨트롤 결과의 수명주기는 위협 결과와 다르다
 
-같은 ASFF를 쓰지만 두 부류의 핀딩은 **사라지는 방식**이 정반대다. 이 차이를 모르면 운영이 어긋난다.
+같은 ASFF를 쓰지만 두 부류의 결과는 **사라지는 방식**이 정반대다. 이 차이를 모르면 운영이 어긋난다.
 
-| 축 | 위협 핀딩(GuardDuty 등) | 컨트롤 핀딩(표준 점검) |
+| 축 | 위협 결과(GuardDuty 등) | 컨트롤 결과(표준 점검) |
 |----|------------------------|------------------------|
 | 무엇을 말하나 | "사건이 일어났다" | "구성이 기준을 벗어났다" |
 | 결정 필드 | `Types`, `Severity` | `Compliance.Status`, `SecurityControlId` |
@@ -300,16 +300,16 @@ ASFF의 핵심 필드:
 | RESOLVED로 표시하면 | 종결됨 | **다음 평가에서 다시 NEW로 돌아온다** |
 | 적정 지표 | 사건 수·평균 대응 시간 | 준수율·FAILED 리소스 추세 |
 
-다섯 번째 행이 실무에서 사고를 만든다. 컨트롤 핀딩을 "확인했으니 처리 완료"로 표시해도 **리소스가 그대로면 다음 Config 평가에서 같은 핀딩이 다시 살아난다.** 이것은 버그가 아니라 설계다 — 태세 핀딩은 *현재 상태의 반영*이지 *과거 사건의 기록*이 아니기 때문이다. 컨트롤 핀딩을 조용하게 만드는 방법은 셋뿐이다: **고치거나, 컨트롤을 끄거나, 억제(SUPPRESSED)하거나.** 그리고 뒤의 둘은 반드시 사유가 남아야 한다.
+다섯 번째 행이 실무에서 사고를 만든다. 컨트롤 결과를 "확인했으니 처리 완료"로 표시해도 **리소스가 그대로면 다음 Config 평가에서 같은 결과가 다시 살아난다.** 이것은 버그가 아니라 설계다 — 태세 결과는 *현재 상태의 반영*이지 *과거 사건의 기록*이 아니기 때문이다. 컨트롤 결과를 조용하게 만드는 방법은 셋뿐이다: **고치거나, 컨트롤을 끄거나, 억제(SUPPRESSED)하거나.** 그리고 뒤의 둘은 반드시 사유가 남아야 한다.
 
-## 핀딩 집계와 통합(Integrations)
+## 결과 집계와 통합(Integrations)
 
-Security Hub에 핀딩을 *보내는* 통합과, Security Hub의 핀딩을 *받아가는* 통합이 있다.
+Security Hub에 결과를 *보내는* 통합과, Security Hub의 결과를 *받아가는* 통합이 있다.
 
 - **수신 통합(→ Security Hub)**: GuardDuty, Inspector, Macie, IAM Access Analyzer, Firewall Manager, Config, Health, 그리고 다수의 서드파티(Palo Alto, Splunk 등). 켜면 자동으로 ASFF로 들어온다.
-- **송신/응답 통합(Security Hub →)**: EventBridge(모든 핀딩이 자동으로 이벤트로 발행됨), 티켓팅(Jira/ServiceNow), SIEM.
+- **송신/응답 통합(Security Hub →)**: EventBridge(모든 결과가 자동으로 이벤트로 발행됨), 티켓팅(Jira/ServiceNow), SIEM.
 
-다계정 환경에서는 **Organizations 통합**으로 위임 관리자(delegated administrator) 계정을 지정해 모든 멤버의 핀딩을 한곳으로 모으고, **Cross-Region Aggregation**으로 여러 리전의 핀딩을 단일 집계 리전으로 통합한다.
+다계정 환경에서는 **Organizations 통합**으로 위임 관리자(delegated administrator) 계정을 지정해 모든 멤버의 결과를 한곳으로 모으고, **Cross-Region Aggregation**으로 여러 리전의 결과를 단일 집계 리전으로 통합한다.
 
 > 🎯 **시나리오**: "조직 전체(수백 개정·여러 리전)의 보안 상태를 단일 화면에서 보고 일관된 표준을 강제"라는 요구가 나오면, 정답 조합은 (1) Organizations에서 Security Hub 위임 관리자 지정 → (2) Central Configuration으로 표준·컨트롤을 멤버에 일괄 배포 → (3) Cross-Region Aggregation으로 한 리전에 집계 → (4) 각 멤버 계정의 Config 활성화 보장. 멤버마다 수동 설정이 아니라 *중앙 구성*이 핵심 키워드다.
 
@@ -317,11 +317,11 @@ Security Hub에 핀딩을 *보내는* 통합과, Security Hub의 핀딩을 *받�
 
 Security Hub는 두 가지 자동화 경로를 제공한다.
 
-1. **Security Hub Automation Rules**: Security Hub *내부*에서 핀딩이 들어올 때 조건(예: 특정 컨트롤 ID + 계정)에 맞으면 필드를 자동 갱신(심각도 상향/하향, Workflow.Status를 SUPPRESSED로 등). 외부 액션은 못 하지만 *노이즈 정리·우선순위 조정*에 강하다.
-2. **EventBridge 기반 대응**: 모든 핀딩은 자동으로 EventBridge에 발행된다. EventBridge 규칙으로 특정 핀딩 패턴을 잡아 Lambda/Step Functions/SSM Automation을 실행해 *실제 교정*을 한다(예: 공개된 S3 버킷의 퍼블릭 액세스 차단).
+1. **Security Hub Automation Rules**: Security Hub *내부*에서 결과가 들어올 때 조건(예: 특정 컨트롤 ID + 계정)에 맞으면 필드를 자동 갱신(심각도 상향/하향, Workflow.Status를 SUPPRESSED로 등). 외부 액션은 못 하지만 *노이즈 정리·우선순위 조정*에 강하다.
+2. **EventBridge 기반 대응**: 모든 결과는 자동으로 EventBridge에 발행된다. EventBridge 규칙으로 특정 결과 패턴을 잡아 Lambda/Step Functions/SSM Automation을 실행해 *실제 교정*을 한다(예: 공개된 S3 버킷의 퍼블릭 액세스 차단).
 
 ```json
-// EventBridge 규칙: CRITICAL GuardDuty 핀딩만 잡아 대응
+// EventBridge 규칙: CRITICAL GuardDuty 결과만 잡아 대응
 {
   "source": ["aws.securityhub"],
   "detail-type": ["Security Hub Findings - Imported"],
@@ -335,14 +335,14 @@ Security Hub는 두 가지 자동화 경로를 제공한다.
 }
 ```
 
-Security Hub + EventBridge + 자동 교정의 조합은 SOAR(Security Orchestration, Automation and Response)의 AWS 네이티브 구현이다. AWS는 이를 위한 사전 제작 솔루션 **Automated Security Response on AWS(ASR, 구 SHARR)**를 제공한다 — Security Hub 핀딩을 받아 SSM Automation 문서로 자동 교정하는 플레이북 모음이다. 시험에서 "Security Hub 핀딩에 대한 자동 교정 솔루션"을 물으면 EventBridge → SSM Automation 경로(또는 ASR)를 떠올려야 한다.
+Security Hub + EventBridge + 자동 교정의 조합은 SOAR(Security Orchestration, Automation and Response)의 AWS 네이티브 구현이다. AWS는 이를 위한 사전 제작 솔루션 **Automated Security Response on AWS(ASR, 구 SHARR)**를 제공한다 — Security Hub 결과를 받아 SSM Automation 문서로 자동 교정하는 플레이북 모음이다. 시험에서 "Security Hub 결과에 대한 자동 교정 솔루션"을 물으면 EventBridge → SSM Automation 경로(또는 ASR)를 떠올려야 한다.
 
 ### Security Hub가 EventBridge로 보내는 세 종류의 이벤트
 
-핀딩 라우팅을 정확히 쓰려면 `detail-type`이 셋이라는 것을 알아야 한다. 시험에서 "수동 검토 후 대응을 트리거"라는 요구가 나오면 세 번째가 답이다.
+결과 라우팅을 정확히 쓰려면 `detail-type`이 셋이라는 것을 알아야 한다. 시험에서 "수동 검토 후 대응을 트리거"라는 요구가 나오면 세 번째가 답이다.
 
 ```json
-// (1) 모든 핀딩이 자동 발행 — 자동 대응의 기본 경로
+// (1) 모든 결과가 자동 발행 — 자동 대응의 기본 경로
 {
   "source": ["aws.securityhub"],
   "detail-type": ["Security Hub Findings - Imported"],
@@ -380,41 +380,41 @@ Security Hub + EventBridge + 자동 교정의 조합은 SOAR(Security Orchestrat
 # 사용자 지정 작업 만들기 — 콘솔 버튼 하나가 EventBridge 이벤트가 된다
 aws securityhub create-action-target \
   --name "Create Jira Ticket" \
-  --description "선택한 핀딩으로 이슈를 생성" \
+  --description "선택한 결과로 이슈를 생성" \
   --id CreateJiraTicket
 ```
 
-사용자 지정 작업(custom action)이 있는 이유는 **모든 대응이 자동화되어야 하는 것은 아니기 때문**이다. 자동 대응은 조건이 명확하고 조치가 가역적일 때만 안전하고, 그 밖의 상황에서는 *사람의 판단 + 기계의 실행*이 최선의 조합이다. 사용자 지정 작업은 정확히 그 지점을 메운다 — 분석가가 핀딩을 보고 판단한 뒤 버튼을 누르면, 그 이후의 실행(티켓 생성·격리·증거 수집)은 자동화가 맡는다. 시험에서 "자동 vs 수동"의 이분법으로 보이는 보기들 사이에 이 **반자동(human-in-the-loop)** 선택지가 정답인 경우가 있다.
+사용자 지정 작업(custom action)이 있는 이유는 **모든 대응이 자동화되어야 하는 것은 아니기 때문**이다. 자동 대응은 조건이 명확하고 조치가 가역적일 때만 안전하고, 그 밖의 상황에서는 *사람의 판단 + 기계의 실행*이 최선의 조합이다. 사용자 지정 작업은 정확히 그 지점을 메운다 — 분석가가 결과를 보고 판단한 뒤 버튼을 누르면, 그 이후의 실행(티켓 생성·격리·증거 수집)은 자동화가 맡는다. 시험에서 "자동 vs 수동"의 이분법으로 보이는 보기들 사이에 이 **반자동(human-in-the-loop)** 선택지가 정답인 경우가 있다.
 
 ### 억제의 세 층위: 어디서 줄일 것인가
 
-컨트롤 핀딩은 리소스가 늘어날수록 선형으로 늘어난다. 노이즈를 줄여야 하는데, 줄이는 지점에 따라 잃는 것이 다르다. **어디서 자를지가 곧 무엇을 포기할지**를 결정한다.
+컨트롤 결과는 리소스가 늘어날수록 선형으로 늘어난다. 노이즈를 줄여야 하는데, 줄이는 지점에 따라 잃는 것이 다르다. **어디서 자를지가 곧 무엇을 포기할지**를 결정한다.
 
 ```
  [ 생성 ]           [ 저장 ]              [ 라우팅 ]            [ 도달 ]
-컨트롤 평가 ──▶ Security Hub 핀딩 ──▶ EventBridge 규칙 ──▶ SNS/티켓/온콜
+컨트롤 평가 ──▶ Security Hub 결과 ──▶ EventBridge 규칙 ──▶ SNS/티켓/온콜
     │                   │                    │                   │
     ①                   ②                    ③                   │
 컨트롤 비활성화     자동화 규칙 억제      패턴으로 필터링      등급별 채널 분리
     │                   │                    │
 잃는 것:            잃는 것:              잃는 것:
 평가 자체·점수      알림·점수 반영        해당 대응만
-(사각지대 발생)     (핀딩·기록은 남음)    (핀딩·점수는 그대로)
+(사각지대 발생)     (결과·기록은 남음)    (결과·점수는 그대로)
 ```
 
 | 층위 | 언제 쓰나 | 남는 것 | 위험 |
 |------|----------|---------|------|
 | ① 컨트롤 비활성화 | 해당 서비스를 아예 안 쓸 때 | 사유 기록만 | **평가 자체가 없어진다.** 나중에 그 서비스를 쓰기 시작하면 사각지대 |
-| ② 자동화 규칙 억제 | 예외가 승인된 특정 리소스·계정 | 핀딩·감사 기록 | 억제 범위를 넓게 잡으면 조용한 사각지대 |
-| ③ EventBridge 필터 | 대응만 안 하고 대시보드에는 남길 때 | 핀딩·점수·대시보드 | 가장 안전. 다만 사람이 대시보드를 봐야 함 |
+| ② 자동화 규칙 억제 | 예외가 승인된 특정 리소스·계정 | 결과·감사 기록 | 억제 범위를 넓게 잡으면 조용한 사각지대 |
+| ③ EventBridge 필터 | 대응만 안 하고 대시보드에는 남길 때 | 결과·점수·대시보드 | 가장 안전. 다만 사람이 대시보드를 봐야 함 |
 
 **기본 원칙은 "가능한 한 오른쪽에서 자른다"**이다. 오른쪽에서 자를수록 잃는 것이 적고 되돌리기 쉽다. ①은 최후의 수단이며, 쓸 때는 반드시 사유와 재검토 시점을 남긴다.
 
-"핀딩이 너무 많으니 표준을 끄자"는 보기는 시험에서 오답이다. 같은 이유로 "노이즈가 심하니 Security Hub 통합을 비활성화한다"도 오답이다. 정답의 형태는 언제나 **핀딩은 다 받되 억제·라우팅으로 접는다**이며, 이때 억제한 것이 무엇인지 추적 가능해야 한다. 반대로 "모든 핀딩을 전부 온콜에 보낸다"도 오답인데, 이는 기술적으로는 안전해 보이지만 운영적으로는 **아무도 보지 않게 만들어 결과적으로 탐지를 끈 것과 같아지기** 때문이다.
+"탐지 결과가 너무 많으니 표준을 끄자"는 보기는 시험에서 오답이다. 같은 이유로 "노이즈가 심하니 Security Hub 통합을 비활성화한다"도 오답이다. 정답의 형태는 언제나 **탐지 결과는 다 받되 억제·라우팅으로 접는다**이며, 이때 억제한 것이 무엇인지 추적 가능해야 한다. 반대로 "모든 탐지 결과를 전부 온콜에 보낸다"도 오답인데, 이는 기술적으로는 안전해 보이지만 운영적으로는 **아무도 보지 않게 만들어 결과적으로 탐지를 끈 것과 같아지기** 때문이다.
 
-## Custom Insights: 핀딩을 질문으로
+## Custom Insights: 결과를 질문으로
 
-Security Hub는 핀딩을 그룹화·필터링한 저장된 뷰인 **Insight**를 제공한다. 기본 제공 인사이트(예: "퍼블릭 접근 가능한 리소스", "가장 핀딩이 많은 리소스") 외에 ASFF 필드로 커스텀 인사이트를 만들 수 있다. 인사이트는 *grouping attribute*(예: 리소스 ID, 계정) 기준으로 핀딩을 모아 "어디에 위험이 집중됐나"를 드러낸다.
+Security Hub는 결과를 그룹화·필터링한 저장된 뷰인 **Insight**를 제공한다. 기본 제공 인사이트(예: "퍼블릭 접근 가능한 리소스", "탐지 결과가 가장 많은 리소스") 외에 ASFF 필드로 커스텀 인사이트를 만들 수 있다. 인사이트는 *grouping attribute*(예: 리소스 ID, 계정) 기준으로 결과를 모아 "어디에 위험이 집중됐나"를 드러낸다.
 
 ```bash
 # "어느 계정이 CRITICAL FAILED를 가장 많이 갖고 있나" — 개선 대상 계정 우선순위
@@ -427,14 +427,14 @@ aws securityhub create-insight \
     "RecordState":      [{"Value":"ACTIVE","Comparison":"EQUALS"}]
   }'
 
-# 조사 완료 건 일괄 종결 (위협 핀딩에 한함 — 컨트롤 핀딩은 리소스를 고쳐야 한다)
+# 조사 완료 건 일괄 종결 (위협 결과에 한함 — 컨트롤 결과는 리소스를 고쳐야 한다)
 aws securityhub batch-update-findings \
   --finding-identifiers '[{"Id":"<finding-id>","ProductArn":"<product-arn>"}]' \
   --workflow Status=RESOLVED \
   --note 'Text=INC-2026-0412 조사 완료,UpdatedBy=soc-analyst'
 ```
 
-인사이트의 실제 값어치는 대시보드가 아니라 **그룹화 축의 선택**에 있다. 같은 핀딩 더미를 `AwsAccountId`로 묶으면 "어느 팀을 도와야 하나"가 보이고, `ResourceId`로 묶으면 "어느 리소스를 없애야 하나"가 보이며, `SecurityControlId`로 묶으면 "어느 기본값을 바꿔야 하나"가 보인다. **세 축은 각각 다른 조직적 행동을 유발한다** — 태세 개선이 정체될 때는 대개 축을 잘못 고른 것이다.
+인사이트의 실제 값어치는 대시보드가 아니라 **그룹화 축의 선택**에 있다. 같은 결과 더미를 `AwsAccountId`로 묶으면 "어느 팀을 도와야 하나"가 보이고, `ResourceId`로 묶으면 "어느 리소스를 없애야 하나"가 보이며, `SecurityControlId`로 묶으면 "어느 기본값을 바꿔야 하나"가 보인다. **세 축은 각각 다른 조직적 행동을 유발한다** — 태세 개선이 정체될 때는 대개 축을 잘못 고른 것이다.
 
 ## 정리
 
@@ -444,7 +444,7 @@ CloudWatch가 단일 신호의 임계 탐지라면, Security Hub는 *여러 신�
 
 1. **Config 없이는 표준이 없다.** 그리고 Config 기록 범위가 좁으면 평가가 조용히 사라지며, 그때 점수는 *올라가 보인다.*
 2. **점수는 컨트롤 단위, 개선은 리소스 단위.** 한 리소스가 컨트롤 전체를 FAILED로 만든다.
-3. **컨트롤 핀딩은 고쳐야 사라진다.** RESOLVED 표시는 다음 평가에서 되살아난다.
+3. **컨트롤 결과는 고쳐야 사라진다.** RESOLVED 표시는 다음 평가에서 되살아난다.
 4. **조직 강제는 스크립트나 SCP가 아니라 중앙 구성.** 상속과 예외를 동시에 표현할 수 있는 유일한 수단이다.
 
 그리고 이 모든 것 위에 놓이는 판단이 하나 있다. **태세 관리의 목표는 점수가 아니라 기본값의 개선**이다. 같은 컨트롤이 수백 건 실패하고 있다면 그것은 수백 개의 실수가 아니라 하나의 잘못된 기본값이며, 개별 교정이 아니라 계정 수준 설정·서비스 제어 정책·IaC 템플릿을 고쳐야 다시 늘어나지 않는다. 탐지가 아무리 정교해도 **생성 속도가 교정 속도보다 빠르면 태세는 나빠진다** — 이것이 CSPM 운영의 유일한 산수다.
@@ -453,7 +453,7 @@ CloudWatch가 단일 신호의 임계 탐지라면, Security Hub는 *여러 신�
 
 - [ ] 각 리전·각 계정에서 AWS Config 레코더가 켜져 있고 필요한 리소스 유형을 기록하는가
 - [ ] CIS로 시작해 FSBP로 넓혔는가(처음부터 전 표준을 켜지 않았는가)
-- [ ] 통합 컨트롤 핀딩(`SECURITY_CONTROL`)으로 표준 간 중복을 제거했는가
+- [ ] 통합 컨트롤 결과(`SECURITY_CONTROL`)으로 표준 간 중복을 제거했는가
 - [ ] 끈 컨트롤마다 `--disabled-reason`에 사유·승인·재검토 시점을 남겼는가
 - [ ] 끄기 전에 "파라미터 조정으로 해결되는가"를 먼저 확인했는가
 - [ ] 중앙 구성 + OU 연결로 조직 표준을 강제하고 예외를 명시적으로 표현했는가
@@ -477,7 +477,7 @@ D) AWS Shield Advanced
 
 ---
 
-**문제 2.** GuardDuty, Inspector, Macie의 서로 다른 핀딩 포맷을 단일 체계로 다루기 위해 Security Hub가 사용하는 정규화 포맷은?
+**문제 2.** GuardDuty, Inspector, Macie의 서로 다른 결과 포맷을 단일 체계로 다루기 위해 Security Hub가 사용하는 정규화 포맷은?
 
 A) CloudTrail 이벤트 스키마  
 B) ASFF(AWS Security Finding Format)  
@@ -485,11 +485,11 @@ C) VPC Flow Logs 포맷
 D) OCSF 원본 포맷만 그대로 보관  
 
 **정답: B**  
-해설: Security Hub는 모든 통합 소스의 핀딩을 ASFF라는 단일 JSON 스키마로 정규화해 출처와 무관하게 같은 필드(Severity.Normalized, Workflow.Status 등)로 검색·라우팅할 수 있게 한다. CloudTrail/VPC Flow 포맷은 다른 데이터이고, OCSF는 Security Lake의 포맷이다.
+해설: Security Hub는 모든 통합 소스의 결과를 ASFF라는 단일 JSON 스키마로 정규화해 출처와 무관하게 같은 필드(Severity.Normalized, Workflow.Status 등)로 검색·라우팅할 수 있게 한다. CloudTrail/VPC Flow 포맷은 다른 데이터이고, OCSF는 Security Lake의 포맷이다.
 
 ---
 
-**문제 3.** 운영자가 특정 핀딩을 검토한 뒤 "의도적으로 무시하되 기록은 남기고 보안 점수·알림에서 제외"하려 한다. ASFF에서 설정할 값은?
+**문제 3.** 운영자가 특정 결과를 검토한 뒤 "의도적으로 무시하되 기록은 남기고 보안 점수·알림에서 제외"하려 한다. ASFF에서 설정할 값은?
 
 A) RecordState를 ARCHIVED로  
 B) Workflow.Status를 SUPPRESSED로  
@@ -501,11 +501,11 @@ D) Compliance.Status를 PASSED로
 
 ---
 
-**문제 4.** 수백 개의 멤버 계정과 여러 리전에 걸쳐 Security Hub 표준을 일관되게 적용하고 모든 핀딩을 단일 화면에서 보려 한다. 가장 적절한 접근은?
+**문제 4.** 수백 개의 멤버 계정과 여러 리전에 걸쳐 Security Hub 표준을 일관되게 적용하고 모든 결과를 단일 화면에서 보려 한다. 가장 적절한 접근은?
 
 A) 각 계정·리전에서 개별적으로 Security Hub를 수동 설정  
 B) Organizations에서 위임 관리자를 지정하고 Central Configuration으로 표준을 배포한 뒤 Cross-Region Aggregation으로 한 리전에 집계  
-C) 모든 핀딩을 이메일로 전달하도록 SNS만 구성  
+C) 모든 결과를 이메일로 전달하도록 SNS만 구성  
 D) GuardDuty만 켜면 자동으로 통합된다  
 
 **정답: B**  
@@ -513,14 +513,14 @@ D) GuardDuty만 켜면 자동으로 통합된다
 
 ---
 
-**문제 5.** Security Hub의 CRITICAL 핀딩이 들어올 때 자동으로 실제 교정(예: 노출된 보안 그룹 규칙 회수)을 수행하려 한다. 표준 아키텍처는?
+**문제 5.** Security Hub의 CRITICAL 결과가 들어올 때 자동으로 실제 교정(예: 노출된 보안 그룹 규칙 회수)을 수행하려 한다. 표준 아키텍처는?
 
 A) Security Hub Automation Rule로 보안 그룹을 직접 수정  
-B) 핀딩이 EventBridge에 자동 발행되므로, EventBridge 규칙으로 패턴을 매칭해 SSM Automation/Lambda로 교정  
+B) 결과가 EventBridge에 자동 발행되므로, EventBridge 규칙으로 패턴을 매칭해 SSM Automation/Lambda로 교정  
 C) Config 규칙이 자동으로 교정한다  
 D) Macie가 교정한다  
 
 **정답: B**  
-해설: 모든 Security Hub 핀딩은 EventBridge로 자동 발행되므로, EventBridge 규칙으로 CRITICAL 패턴을 잡아 SSM Automation 문서나 Lambda로 실제 교정을 실행하는 것이 표준 패턴(AWS의 ASR 솔루션도 이 경로)이다. Automation Rule은 핀딩 필드 갱신·억제만 할 뿐 외부 리소스를 직접 바꾸지 못하고, Config 자동 교정은 Config 규칙 차원이며, Macie는 데이터 발견 도구다.
+해설: 모든 Security Hub 결과는 EventBridge로 자동 발행되므로, EventBridge 규칙으로 CRITICAL 패턴을 잡아 SSM Automation 문서나 Lambda로 실제 교정을 실행하는 것이 표준 패턴(AWS의 ASR 솔루션도 이 경로)이다. Automation Rule은 결과 필드 갱신·억제만 할 뿐 외부 리소스를 직접 바꾸지 못하고, Config 자동 교정은 Config 규칙 차원이며, Macie는 데이터 발견 도구다.
 
 ---

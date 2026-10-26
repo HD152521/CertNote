@@ -276,5 +276,3 @@ D) S3에 이벤트를 쓰고 PagerDuty가 버킷을 주기적으로 폴링해 �
 **복원력 - DR, Multi-Region**
 
 Week 12가 "한 리전 안에서 장애를 감지·복구·협응"하는 신경계였다면, Week 13은 그 신경계가 리전 전체를 잃었을 때를 다룬다 — RTO/RPO의 수학, Backup·Pilot Light·Warm Standby·Multi-Site Active/Active의 비용-복구시간 트레이드오프, Route 53 페일오버, 그리고 리전 간 데이터 복제의 일관성 문제. Week 12의 자동 복구가 "노드 단위"였다면 Week 13은 "리전 단위"의 복구다.
-
-> 💪 Week 12 완료! 자동화의 다섯 층 — 탐지·라우팅·대응·알림·학습 — 을 하나의 MAPE-K 피드백 루프로 묶었다. 멱등성·blast radius 제한·비가역 동작 게이트, 이 세 안전 원칙을 기억하라.

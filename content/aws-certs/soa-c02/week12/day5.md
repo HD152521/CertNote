@@ -349,12 +349,9 @@ A) Security Hub  B) Audit Manager  C) Config  D) Artifact
 
 ---
 
-## 📌 최종 요약 & 응원
+## 📌 최종 요약
 
-1. **12주 완주를 축하합니다** — 꾸준함이 가장 큰 자산이었다
-2. **CloudOps는 "운영자 관점" 시험** — 어떤 장애에 어떤 관리형 도구로 대응할지를 묻는다
-3. **헷갈리는 쌍 마지막 점검**: SG/NACL, CloudTrail/Config, SP/RI, Multi-AZ/Read Replica, OAC/OAI
-4. **시간 = 자원, Flag = 비동기 큐** — 한 문항에 매몰되지 말고 침착하게 배분
-5. **D-1은 change freeze** — 새 공부 금지, 푹 자고 가벼운 컨디션으로
-
-> 🏆 **합격을 기원합니다. 12주간 정말 수고 많으셨습니다. Fighting!**
+1. **CloudOps는 "운영자 관점" 시험** — 어떤 장애에 어떤 관리형 도구로 대응할지를 묻는다
+2. **헷갈리는 쌍 마지막 점검**: SG/NACL, CloudTrail/Config, SP/RI, Multi-AZ/Read Replica, OAC/OAI
+3. **시간 = 자원, Flag = 비동기 큐** — 한 문항에 매몰되지 말고 침착하게 배분
+4. **D-1은 change freeze** — 새 공부 금지, 푹 자고 가벼운 컨디션으로

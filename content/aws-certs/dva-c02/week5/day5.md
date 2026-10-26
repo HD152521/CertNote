@@ -68,7 +68,7 @@ response = s3.generate_presigned_post(
 
 **Presigned URL의 핵심 특성들:**
 
-만료 시간: IAM 사용자 기반이면 최대 7일, **IAM 역할(STS 임시 자격증명) 기반이면 최대 12시간**(STS 토큰 만료 시간에 제한됨). 시험에서 "최대 7일"이 아닌 "최대 1시간"이 맞는 경우가 있는데 — IAM 역할로 Lambda나 EC2에서 생성했다면 STS 토큰 TTL(최대 12시간)이 제한이 된다.
+만료 시간: IAM 사용자 장기 자격증명(SigV4)이면 최대 7일이다. 콘솔에서 만들면 1분~12시간 사이로 정한다. **임시 자격증명(IAM 역할, STS)으로 만들면 그 자격증명이 만료될 때 URL도 함께 만료된다**. 더 긴 만료 시간을 지정해도 마찬가지다. AssumeRole 세션은 기본 1시간, EC2 인스턴스 프로파일 자격증명은 보통 최대 6시간 정도라, Lambda나 EC2에서 만든 URL이 지정한 시간보다 일찍 끊기는 원인이 된다.
 
 생성자 권한: URL을 생성한 시점에 생성자가 해당 작업 권한을 가지고 있어야 한다. 생성 시점에 권한이 있었더라도, 이후 IAM 정책 변경으로 권한이 제거되면 URL도 작동을 멈춘다.
 
@@ -189,7 +189,7 @@ EventBridge 경유: 유연, 18개+ 대상, 아카이빙, 재생, 세밀한 필�
 3. **S3는 2020년부터 Strong Consistency** — "eventual"이라고 하면 틀림
 4. **One Zone-IA는 AZ 장애 시 데이터 손실 가능** — 재생성 가능 데이터만
 5. **최소 보관 기간은 조기 삭제해도 과금** — IA 30일, Glacier 90일, Deep Archive 180일
-6. **Glacier Deep Archive 최소 객체 크기 40KB** — IA는 128KB
+6. **Glacier Flexible·Deep Archive는 객체당 40KB 메타데이터 추가 과금** — IA·Glacier Instant는 최소 과금 크기 128KB
 7. **버전 관리 비활성화 불가** — Suspended로만 가능
 8. **삭제 = 삭제 마커** — 영구 삭제는 버전 ID 명시 필요
 9. **MFA Delete = 루트 계정만** — 관리자 IAM 사용자도 불가

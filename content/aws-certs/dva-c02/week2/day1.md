@@ -46,7 +46,7 @@ EC2 인스턴스 타입은 `m5.xlarge`처럼 **패밀리 + 세대 + 크기**로 
 
 m6g.large는 "범용(m) 6세대 Graviton(g) ARM 칩에 large 크기". 시험에서 비용 최적화 시나리오는 Graviton(g)이 답이 되기 쉽다(같은 성능에 약 20% 저렴).
 
-Graviton의 가격 우위가 가능한 이유는 AWS가 칩을 직접 설계하기 때문이다. 2018년 Graviton1(A1 인스턴스, ARM Neoverse-N1 기반)을 시작으로, 2020년 Graviton2(Arm Neoverse-N1 64코어)는 c6g·m6g·r6g, 2021년 Graviton3는 c7g·m7g·r7g에 들어갔다. 2023년 발표된 Graviton4는 c8g·m8g 시리즈에 96 vCPU로 확장됐다. Intel/AMD 칩을 사 오는 대신 직접 설계해 마진을 절약하고, 그 일부를 고객에 돌려준다. ARM 인스트럭션 세트는 RISC라 같은 와트당 성능이 x86보다 높은 경향이 있다.
+Graviton의 가격 우위가 가능한 이유는 AWS가 칩을 직접 설계하기 때문이다. 2018년 Graviton1(A1 인스턴스, Arm Cortex-A72 코어 16개)을 시작으로, 2020년 Graviton2(Arm Neoverse-N1 64코어)는 c6g·m6g·r6g, 2021년 발표된 Graviton3는 c7g·m7g·r7g에 들어갔다. 2023년 발표된 Graviton4는 칩당 코어가 96개로 늘었고, 2024년 r8g를 시작으로 c8g·m8g에 들어갔다. Intel/AMD 칩을 사 오는 대신 직접 설계해 마진을 절약하고, 그 일부를 고객에 돌려준다. ARM 인스트럭션 세트는 RISC라 같은 와트당 성능이 x86보다 높은 경향이 있다.
 
 ## t 시리즈의 비밀: CPU credit 메커니즘
 

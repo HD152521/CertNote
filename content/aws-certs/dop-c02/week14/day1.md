@@ -82,7 +82,7 @@ EventBridge 규칙의 이벤트 패턴이 어떤 Finding을 자동 대응으로 
 
 > ⚠️ **함정**: 자동 격리 단계의 **순서**가 시험에 나온다. 스냅샷을 가장 먼저 떠야 한다 — 인스턴스를 격리하거나 종료한 뒤엔 메모리·디스크 상태가 오염되거나 사라져 포렌식이 불가능해진다. 또 "격리"는 인스턴스를 **종료(terminate)하는 게 아니라** 격리 SG로 네트워크만 끊는 것이다. 종료하면 공격자가 무엇을 했는지 영영 모른다. 격리 SG는 "모든 아웃바운드 차단 + 포렌식 점프박스에서의 인바운드만 허용"으로, 공격자의 C2 통신을 끊으면서 조사자는 접근하게 한다. "GuardDuty Critical 발견 시 즉시 인스턴스 종료"는 오답이다 — 증거 인멸이기 때문이다.
 
-> 2019년 캐피털 원(Capital One) 침해는 약 1억 명의 신용 정보가 유출된 대형 사고로, 잘못 설정된 WAF가 SSRF(Server-Side Request Forgery) 공격에 악용돼 EC2 인스턴스의 IAM 역할 자격 증명이 탈취되고, 그 자격 증명으로 S3 버킷이 통째로 유출됐다. 핵심 교훈은 두 가지였다. 첫째, **인스턴스의 IAM 역할 자격 증명 탈취 후 비정상 API 호출**(다른 region·대량 S3 접근)은 GuardDuty의 `UnauthorizedAccess:IAMUser/InstanceCredentialExfiltration` 같은 Finding으로 탐지 가능한 패턴이었다 — 탐지가 켜져 있고 자동 대응이 걸려 있었다면 자격 증명 무력화로 피해를 줄일 수 있었다. 둘째, **탐지 후 대응 속도**가 피해 규모를 결정한다 — 침해와 외부 신고 사이에 약 4개월의 공백이 있었다. 이 사고 이후 "탐지(GuardDuty) → 자동 자격 증명 무력화·격리(EventBridge+SSM)"의 자동화 사슬이 업계 표준 권고가 됐다.
+> 2019년 캐피털 원(Capital One) 침해는 약 1억 600만 명의 신용카드 신청 정보가 유출된 대형 사고로, 잘못 설정된 WAF가 SSRF(Server-Side Request Forgery) 공격에 악용돼 EC2 인스턴스의 IAM 역할 자격 증명이 탈취되고, 그 자격 증명으로 S3 버킷이 통째로 유출됐다. 핵심 교훈은 두 가지였다. 첫째, **인스턴스의 IAM 역할 자격 증명 탈취 후 비정상 API 호출**(다른 region·대량 S3 접근)은 GuardDuty의 `UnauthorizedAccess:IAMUser/InstanceCredentialExfiltration` 같은 Finding으로 탐지 가능한 패턴이었다 — 탐지가 켜져 있고 자동 대응이 걸려 있었다면 자격 증명 무력화로 피해를 줄일 수 있었다. 둘째, **탐지 후 대응 속도**가 피해 규모를 결정한다 — 침해와 외부 신고 사이에 약 4개월의 공백이 있었다. 이 사고 이후 "탐지(GuardDuty) → 자동 자격 증명 무력화·격리(EventBridge+SSM)"의 자동화 사슬이 업계 표준 권고가 됐다.
 
 ## Multi-Account GuardDuty — Organizations로 일괄 적용
 

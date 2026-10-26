@@ -45,7 +45,7 @@ CodeDeploy는 AWS에서 이 두 전략을 EC2, Lambda, ECS에 걸쳐 일관된 �
 Canary가 적합한 경우: 빠른 검증이 가능한 워크로드, "Go/No-Go" 판단이 명확한 경우.
 Linear가 적합한 경우: 점진적 부하 증가를 관찰해야 하는 경우, 부하 의존적 버그가 의심되는 경우.
 
-> Canary 배포는 탄광의 카나리아(Canary in a coal mine)에서 유래했다. 독성 가스를 먼저 감지하기 위해 카나리아를 소수 노출시키는 것처럼, 전체 트래픽의 소수를 새 버전에 먼저 노출시켜 문제를 조기 감지한다. Google의 SRE Book은 이를 "progressive delivery"라고 부르며, 배포 실패 폭발 반경(blast radius)을 시간에 따라 통제하는 핵심 메커니즘으로 설명한다.
+> Canary 배포는 탄광의 카나리아(Canary in a coal mine)에서 유래했다. 독성 가스를 먼저 감지하기 위해 카나리아를 소수 노출시키는 것처럼, 전체 트래픽의 소수를 새 버전에 먼저 노출시켜 문제를 조기 감지한다. Google의 SRE Workbook 16장(Canarying Releases)은 카나리를 서비스 변경의 부분적이고 시간이 제한된 배포와 그 평가로 정의한다. 결함이 나도 영향받는 사용자를 일부로 묶어 두는 것, 즉 폭발 반경(blast radius)을 줄이는 것이 핵심이다. 점진적으로 노출 범위를 넓히는 배포를 통칭하는 "progressive delivery"라는 말은 업계에서 쓰는 용어이고 SRE 책의 용어는 아니다.
 
 ## AppSpec 파일: 플랫폼마다 다른 언어
 

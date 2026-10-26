@@ -204,7 +204,7 @@ B) KMS API 호출 한도 초과 (스로틀링)
 C) 암호화 성능 저하  
 D) 버킷 크기 제한  
 
-**정답: B** - 대용량 트래픽에서 SSE-KMS는 모든 객체 접근 시 KMS API를 호출하므로 KMS 호출 한도에 도달할 수 있습니다.
+**정답: B** - 대용량 트래픽에서 SSE-KMS는 모든 객체 접근 시 KMS API를 호출하므로 KMS 호출 한도에 도달할 수 있다.
 
 ---
 
@@ -215,7 +215,7 @@ B) HTTP 통합 타입
 C) AWS_PROXY (Lambda Proxy) 통합  
 D) MOCK 통합  
 
-**정답: C** - Lambda Proxy는 원래 HTTP 요청의 모든 정보(메서드, 헤더, 쿼리, 바디)를 Lambda event 객체로 전달합니다.
+**정답: C** - Lambda Proxy는 원래 HTTP 요청의 모든 정보(메서드, 헤더, 쿼리, 바디)를 Lambda event 객체로 전달한다.
 
 ---
 
@@ -226,7 +226,7 @@ B) 순서 보장
 C) 메시지 보존 기간이 있음  
 D) 처리량 무제한  
 
-**정답: C** - 두 서비스 모두 메시지/레코드 보존 기간이 있습니다 (SQS 최대 14일, Kinesis 최대 365일).
+**정답: C** - 두 서비스 모두 메시지/레코드 보존 기간이 있다 (SQS 최대 14일, Kinesis 최대 365일).
 
 ---
 
@@ -237,7 +237,7 @@ B) 자동 롤백
 C) 수동 롤백 필요  
 D) 알람 발생  
 
-**정답: B** - ValidateService 단계 실패 시 CodeDeploy는 자동으로 이전 버전으로 롤백합니다.
+**정답: B** - ValidateService 단계 실패 시 CodeDeploy는 자동으로 이전 버전으로 롤백한다.
 
 ---
 
@@ -248,7 +248,7 @@ B) Metric Filter
 C) CloudTrail  
 D) EventBridge  
 
-**정답: B** - Metric Filter를 사용하면 로그 패턴을 CloudWatch 지표로 변환하고 알람을 설정할 수 있습니다.
+**정답: B** - Metric Filter를 사용하면 로그 패턴을 CloudWatch 지표로 변환하고 알람을 설정할 수 있다.
 
 ---
 
@@ -259,7 +259,7 @@ B) 5분
 C) 15분 (처리 시간보다 길게)  
 D) 12시간  
 
-**정답: C** - Visibility Timeout은 처리 시간보다 길게 설정해야 합니다. 10분 처리라면 15분 이상으로 설정합니다.
+**정답: C** - Visibility Timeout은 처리 시간보다 길게 설정해야 한다. 10분 처리라면 15분 이상으로 설정한다.
 
 ---
 
@@ -270,7 +270,7 @@ B) User Pool (소셜 제공자 통합)
 C) SAML 연동  
 D) OpenID Connect  
 
-**정답: B** - Cognito User Pool은 Facebook, Google, Apple 등 소셜 로그인을 직접 통합할 수 있습니다.
+**정답: B** - Cognito User Pool은 Facebook, Google, Apple 등 소셜 로그인을 직접 통합할 수 있다.
 
 ---
 
@@ -281,7 +281,7 @@ B) RPO < 1초, RTO < 1분
 C) RPO < 1시간, RTO < 4시간  
 D) RPO = 0, RTO = 0  
 
-**정답: B** - Aurora 글로벌 데이터베이스는 1초 미만의 복제 지연(RPO)과 1분 미만의 Failover 시간(RTO)을 제공합니다.
+**정답: B** - Aurora 글로벌 데이터베이스는 1초 미만의 복제 지연(RPO)과 1분 미만의 Failover 시간(RTO)을 제공한다.
 
 ---
 
@@ -292,7 +292,7 @@ B) Lambda를 VPC에 구성, RDS와 같은 VPC 또는 피어링된 VPC
 C) NAT 게이트웨이 필수  
 D) VPN 연결 필요  
 
-**정답: B** - Lambda를 VPC에 구성하고 RDS와 통신할 수 있는 보안 그룹과 서브넷을 설정해야 합니다.
+**정답: B** - Lambda를 VPC에 구성하고 RDS와 통신할 수 있는 보안 그룹과 서브넷을 설정해야 한다.
 
 ---
 
@@ -303,7 +303,7 @@ B) 멀티파트 업로드
 C) PUT 프리사인 URL  
 D) S3 게이트웨이 엔드포인트  
 
-**정답: C** - PUT 프리사인 URL을 Lambda에서 생성하여 클라이언트에 전달하면, 클라이언트가 서버 없이 S3에 직접 업로드할 수 있습니다.
+**정답: C** - PUT 프리사인 URL을 Lambda에서 생성하여 클라이언트에 전달하면, 클라이언트가 서버 없이 S3에 직접 업로드할 수 있다.
 
 ---
 
@@ -314,7 +314,7 @@ B) 상태 코드
 C) 높은 카디널리티 (UserId, UUID 등)  
 D) 국가 코드  
 
-**정답: C** - 파티션 키는 높은 카디널리티를 가져야 데이터와 트래픽이 고르게 분산되어 핫 파티션을 방지합니다.
+**정답: C** - 파티션 키는 높은 카디널리티를 가져야 데이터와 트래픽이 고르게 분산되어 핫 파티션을 방지한다.
 
 ---
 
@@ -325,7 +325,7 @@ B) DeletionPolicy: Retain 설정
 C) S3 버전 관리 활성화  
 D) 버킷 정책으로 삭제 거부  
 
-**정답: B** - `DeletionPolicy: Retain`을 리소스에 설정하면 스택 삭제 시 해당 리소스는 삭제되지 않고 유지됩니다.
+**정답: B** - `DeletionPolicy: Retain`을 리소스에 설정하면 스택 삭제 시 해당 리소스는 삭제되지 않고 유지된다.
 
 ---
 
@@ -336,7 +336,7 @@ B) Wait 상태
 C) Parallel 상태  
 D) Map 상태  
 
-**정답: C** - Parallel 상태는 여러 브랜치를 동시에 실행하고 모든 브랜치가 완료된 후 다음 상태로 이동합니다.
+**정답: C** - Parallel 상태는 여러 브랜치를 동시에 실행하고 모든 브랜치가 완료된 후 다음 상태로 이동한다.
 
 ---
 
@@ -347,7 +347,7 @@ B) rate: 0.05, fixed_target: 1
 C) SamplingRate: 100%  
 D) X-Ray에서 불가능  
 
-**정답: A** - `fixed_target: 0, rate: 1.0`으로 설정하면 모든 요청을 추적합니다 (비용 주의).
+**정답: A** - `fixed_target: 0, rate: 1.0`으로 설정하면 모든 요청을 추적한다 (비용 주의).
 
 ---
 
@@ -358,7 +358,7 @@ B) {"statusCode": ..., "headers": ..., "body": ...}
 C) HTTP 응답 객체 직접 반환  
 D) JSON 바디만 반환  
 
-**정답: B** - Lambda Proxy 통합 시 Lambda는 `{statusCode, headers, body}` 형식의 응답 객체를 반환해야 합니다.
+**정답: B** - Lambda Proxy 통합 시 Lambda는 `{statusCode, headers, body}` 형식의 응답 객체를 반환해야 한다.
 
 ---
 
@@ -369,7 +369,7 @@ B) Redis - 영속성, 만약 세션 데이터 손실을 방지해야 할 경우
 C) 둘 다 동일  
 D) RDS를 대신 사용  
 
-**정답: B** - 세션 데이터 손실을 방지하고 영속성이 필요하다면 Redis를 선택합니다. 단순 캐시면 Memcached도 가능합니다.
+**정답: B** - 세션 데이터 손실을 방지하고 영속성이 필요하다면 Redis를 선택한다. 단순 캐시면 Memcached도 가능하다.
 
 ---
 
@@ -380,7 +380,7 @@ B) GitHub webhook을 통한 이벤트 기반
 C) 수동 트리거  
 D) S3 이벤트  
 
-**정답: B** - CodePipeline은 GitHub webhook을 통해 push 이벤트가 발생하면 즉시 파이프라인을 시작합니다.
+**정답: B** - CodePipeline은 GitHub webhook을 통해 push 이벤트가 발생하면 즉시 파이프라인을 시작한다.
 
 ---
 
@@ -391,7 +391,7 @@ B) DynamoDB 읽기 용량 단위(RCU) 증가 또는 온디맨드 모드로 전�
 C) Lambda 동시성 증가  
 D) API Gateway 캐시 활성화  
 
-**정답: B** - 이 오류는 DynamoDB의 읽기 처리량 한계 초과이므로 RCU를 증가시키거나 온디맨드 모드로 전환해야 합니다.
+**정답: B** - 이 오류는 DynamoDB의 읽기 처리량 한계 초과이므로 RCU를 증가시키거나 온디맨드 모드로 전환해야 한다.
 
 ---
 
@@ -402,7 +402,7 @@ B) 7-30일의 대기 기간 후 삭제
 C) 영구 삭제 불가  
 D) AWS 승인 필요  
 
-**정답: B** - CMK 삭제는 7-30일의 예약 삭제 기간이 있으며, 이 기간 동안 취소가 가능합니다.
+**정답: B** - CMK 삭제는 7-30일의 예약 삭제 기간이 있으며, 이 기간 동안 취소가 가능하다.
 
 ---
 
@@ -413,7 +413,7 @@ B) MessageDeduplicationId 사용
 C) VisibilityTimeout 설정  
 D) DLQ 설정  
 
-**정답: B** - FIFO 큐의 MessageDeduplicationId는 5분 내에 동일한 ID를 가진 메시지를 중복 처리하지 않습니다.
+**정답: B** - FIFO 큐의 MessageDeduplicationId는 5분 내에 동일한 ID를 가진 메시지를 중복 처리하지 않는다.
 
 ---
 
@@ -424,7 +424,7 @@ B) DependsOn 속성 사용
 C) 별도 스택으로 분리  
 D) 순서 제어 불가  
 
-**정답: B** - `DependsOn` 속성을 사용하면 특정 리소스가 먼저 생성된 후에 현재 리소스를 생성하도록 순서를 제어할 수 있습니다.
+**정답: B** - `DependsOn` 속성을 사용하면 특정 리소스가 먼저 생성된 후에 현재 리소스를 생성하도록 순서를 제어할 수 있다.
 
 ---
 
@@ -435,7 +435,7 @@ B) X-Ray 서비스 맵과 트레이스에서 외부 HTTP 서브세그먼트 시�
 C) API Gateway 로그 확인  
 D) Lambda 환경 변수 확인  
 
-**정답: B** - X-Ray SDK는 외부 HTTP 호출을 자동으로 세그먼트로 기록하여 서비스 맵에서 지연 시간을 시각화합니다.
+**정답: B** - X-Ray SDK는 외부 HTTP 호출을 자동으로 세그먼트로 기록하여 서비스 맵에서 지연 시간을 시각화한다.
 
 ---
 
@@ -446,7 +446,7 @@ B) 배포 중 전체 용량 유지
 C) 롤백 가장 쉬움  
 D) 비용 가장 적음  
 
-**정답: B** - Rolling with Additional Batch는 배포 중 추가 인스턴스를 생성하여 전체 용량을 유지하면서 롤링 배포합니다.
+**정답: B** - Rolling with Additional Batch는 배포 중 추가 인스턴스를 생성하여 전체 용량을 유지하면서 롤링 배포한다.
 
 ---
 
@@ -457,7 +457,7 @@ B) Firehose는 완전 관리형 전달(Near RT), Streams는 직접 처리(실시
 C) Streams가 더 비쌈  
 D) Firehose만 여러 Consumer 지원  
 
-**정답: B** - Firehose는 서버리스로 S3/Redshift 등에 자동 전달하고, Streams는 여러 Consumer가 직접 실시간으로 처리합니다.
+**정답: B** - Firehose는 서버리스로 S3/Redshift 등에 자동 전달하고, Streams는 여러 Consumer가 직접 실시간으로 처리한다.
 
 ---
 
@@ -468,7 +468,7 @@ B) 어느 엔티티가 이 역할을 수임할 수 있는지 정의
 C) 역할의 권한 범위 정의  
 D) 역할 비용 제어  
 
-**정답: B** - 신뢰 정책(Trust Policy)은 이 역할을 수임(AssumeRole)할 수 있는 엔티티(서비스, 사용자, 계정)를 정의합니다.
+**정답: B** - 신뢰 정책(Trust Policy)은 이 역할을 수임(AssumeRole)할 수 있는 엔티티(서비스, 사용자, 계정)를 정의한다.
 
 ---
 
@@ -479,7 +479,7 @@ B) 환경(dev/staging/prod)별로 다른 Lambda 함수나 엔드포인트 지정
 C) 캐싱 설정  
 D) 인증 설정  
 
-**정답: B** - Stage Variable은 각 스테이지(dev, staging, prod)마다 다른 Lambda 별칭이나 엔드포인트를 지정하여 동일 API 구조로 다른 환경에 배포합니다.
+**정답: B** - Stage Variable은 각 스테이지(dev, staging, prod)마다 다른 Lambda 별칭이나 엔드포인트를 지정하여 동일 API 구조로 다른 환경에 배포한다.
 
 ---
 
@@ -490,7 +490,7 @@ B) VisibilityTimeout 후 큐에 다시 나타남
 C) 삭제됨  
 D) 처리 중으로 영원히 유지  
 
-**정답: B** - Lambda가 SQS 메시지 처리에 실패(타임아웃 포함)하면 VisibilityTimeout이 지난 후 메시지가 큐에 다시 나타납니다.
+**정답: B** - Lambda가 SQS 메시지 처리에 실패(타임아웃 포함)하면 VisibilityTimeout이 지난 후 메시지가 큐에 다시 나타난다.
 
 ---
 
@@ -501,7 +501,7 @@ B) SQS, SNS, EventBridge 등 메시징 서비스 활용
 C) 모든 서비스를 하나의 Lambda에 통합  
 D) RDS로 서비스 간 데이터 공유  
 
-**정답: B** - SQS, SNS, EventBridge와 같은 메시징 서비스를 통해 서비스 간 직접 의존성을 줄이고 느슨한 결합을 구현합니다.
+**정답: B** - SQS, SNS, EventBridge와 같은 메시징 서비스를 통해 서비스 간 직접 의존성을 줄이고 느슨한 결합을 구현한다.
 
 ---
 
@@ -535,12 +535,12 @@ D) RDS로 서비스 간 데이터 공유
 
 ```
 Lambda     메모리 10240MB · 타임아웃 15분 · /tmp 10GB · Layer 5개 · ZIP 250MB · 컨테이너 10GB
-           동시성 1000 (기본) · 비동기 재시도 2회 · 동기 payload 6MB · 비동기 256KB · 스트리밍 20MB
+           동시성 1000 (기본) · 비동기 재시도 2회 · 동기 payload 6MB · 비동기 1MB · 스트리밍 200MB
 DynamoDB   항목 400KB · 트랜잭션 100개·4MB · LSI 5개·생성시만 · GSI 20개·언제든
            Streams 24h · Burst 5분 · 파티션당 3000 RCU + 1000 WCU
 S3         객체 5TB · 단일 PUT 5GB · 멀티파트 파트 5MB~5GB · 파트수 10000
            Glacier 최소 90일 · Deep Archive 180일 · IA 30일 · IA 객체 최소 128KB
-SQS        메시지 256KB · 보존 1m~14d · VT 0~12h · FIFO 300/s (고처리량 70k)
+SQS        메시지 1MiB · 보존 1m~14d · VT 0~12h · FIFO 300/s (고처리량 70k)
 Kinesis    샤드 쓰기 1MB/s·1000 RPS · 읽기 2MB/s · 보존 24h~365d · On-Demand 200MB/s
 EC2        UserData 16KB · Spot 2분 알림 · SG 60 규칙 · 1 인스턴스 5 SG
 STS        AssumeRole 1h~12h · 체인 1h · GetSessionToken 36h

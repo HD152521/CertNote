@@ -62,7 +62,7 @@ SAA에서 IAM은 "User, Group, Role, Policy"라는 네 단어로 정리할 수 �
 
 임시 자격증명의 핵심은 **세션 토큰(Session Token)**이다. 일반 `AccessKeyId` + `SecretAccessKey`만으로 호출하면 무한히 유효한 자격증명이 되지만, `SessionToken`이 추가되면 STS가 발급한 만료 시한이 강제된다. 또 임시 자격증명은 STS가 내부적으로 발급하는 **JWT 유사 구조**로, AWS Signature V4 서명에 SessionToken을 추가 헤더로 포함해 전송한다. 이게 IMDSv2가 SSRF 공격을 막는 메커니즘과 직결된다(EC2 메타데이터 서비스가 임시 자격증명만 발급, IMDSv2는 PUT 토큰을 강제).
 
-2019년 7월 Capital One 사건. 공격자가 SSRF 취약점으로 `http://169.254.169.254/latest/meta-data/iam/security-credentials/`에 접근해 EC2 Instance Role의 **임시 자격증명을 탈취**했다. 그 자격증명에는 S3 버킷에 광범위한 접근 권한이 있었고, 1억 600만 명의 데이터가 유출됐다. AWS는 이 사건의 직접적 결과로 **IMDSv2**(2019년 11월)와 **IAM Access Analyzer**(2019년 12월)를 출시했고, 2024년부터는 신규 EC2 인스턴스에서 IMDSv2를 기본으로 강제한다. [DOJ 공소장](https://www.justice.gov/usao-edva/press-release/file/1188626/download).
+2019년 7월 Capital One 사건. 공격자가 SSRF 취약점으로 `http://169.254.169.254/latest/meta-data/iam/security-credentials/`에 접근해 EC2 Instance Role의 **임시 자격증명을 탈취**했다. 그 자격증명에는 S3 버킷에 광범위한 접근 권한이 있었고, 1억 600만 명의 데이터가 유출됐다. AWS는 이 사건의 직접적 결과로 **IMDSv2**(2019년 11월)와 **IAM Access Analyzer**(2019년 12월)를 출시했고, 2023년 11월에는 2024년 중반 이후 새로 출시되는 인스턴스 유형을 IMDSv2 전용 기본값으로 바꾸겠다고 발표했다. [DOJ 공소장](https://www.justice.gov/usao-edva/press-release/file/1188626/download).
 
 ### AssumeRole의 신뢰 정책(Trust Policy)
 

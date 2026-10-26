@@ -34,7 +34,7 @@ Week 6의 마지막 날이다. DynamoDB는 DVA-C02 범위의 핵심 서비스이
   배치 처리 → BisectBatchOnFunctionError → DLQ
 ```
 
-DynamoDB의 내부 스토리지는 B-Tree 기반 LSM(Log-Structured Merge-tree)이다. 쓰기 시 먼저 Write-Ahead Log(WAL)에 기록하고, Primary 노드가 쓰기를 인정하면 백그라운드에서 나머지 복제본에 전파한다. Eventually Consistent 읽기는 이 전파가 완료되기 전에 Replica에서 읽을 수 있어 오래된 데이터를 볼 수 있다. Strongly Consistent 읽기는 Primary에서만 읽으므로 항상 최신이지만 RCU를 2배 소비한다.
+AWS가 2022년 USENIX ATC에 낸 DynamoDB 논문에 따르면, 각 파티션의 복제본은 Write-Ahead Log(WAL)와 키-값 데이터를 담는 B-tree로 구성된다. 쓰기 요청이 오면 리더(Primary) 복제본이 WAL 레코드를 만들어 다른 복제본에 보내고, 쿼럼(과반) 복제본이 그 레코드를 각자의 WAL에 영속화하면 애플리케이션에 성공을 응답한다. 나머지 복제본은 그 뒤에 따라온다. Eventually Consistent 읽기는 어느 복제본이든 처리할 수 있어, 아직 최신 쓰기를 반영하지 않은 복제본에서 오래된 데이터를 볼 수 있다. Strongly Consistent 읽기는 Primary에서만 읽으므로 항상 최신이지만 RCU를 2배 소비한다.
 
 ## 파티션 키 설계 — 핫 파티션 수학
 
@@ -96,7 +96,7 @@ Adaptive Capacity는 2018년 도입된 기능으로, 한 파티션의 트래픽�
 | 일관성 모델 | Eventually + **Strongly** 모두 지원 | Eventually Consistent만 |
 | 용량 | 기본 테이블 용량 공유 | **별도 RCU/WCU 설정** |
 | Sparse Index | 지원 | 지원 |
-| 스토리지 구조 | 기본 테이블과 같은 파티션 내 별도 B-Tree | 완전히 별도의 파티션 공간 |
+| 스토리지 구조 | 기본 테이블과 같은 파티션에 함께 저장 | 완전히 별도의 파티션 공간 |
 
 LSI는 기본 테이블과 동일한 파티션 키를 공유하므로 같은 파티션 내에 함께 저장된다. 이 덕분에 기본 테이블의 Primary 노드가 LSI 데이터도 함께 관리해 Strongly Consistent 읽기가 가능하다. GSI는 완전히 별도의 파티션 공간에 비동기 복제되므로 복제 지연이 존재하고 Eventually Consistent만 지원한다. "GSI는 별개의 테이블"이라고 생각하면 이 차이가 자연스럽다.
 

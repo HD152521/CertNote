@@ -29,7 +29,7 @@ GuardDuty의 finding은 이름 자체가 정보다. `위협유형:리소스/세�
 
 DNS 기반 finding(`!DNS` 접미사)은 VPC의 기본 DNS 리졸버(Route 53 Resolver, AmazonProvidedDNS)를 거치는 쿼리만 본다. 인스턴스가 `/etc/resolv.conf`를 8.8.8.8 같은 외부 DNS로 바꿔놓으면 그 쿼리는 Route 53 Resolver를 안 거치므로 GuardDuty가 못 본다. 정교한 멀웨어가 일부러 외부 DNS나 DNS-over-HTTPS(DoH)를 쓰는 이유가 이것이다. 그래서 Route 53 Resolver DNS Firewall로 외부 DNS 사용 자체를 차단하는 것이 GuardDuty의 사각지대를 막는 보완책이 된다. 또 하나, GuardDuty는 finding을 만들 때 같은 위협이 반복되면 새 finding을 계속 만들지 않고 기존 finding을 업데이트한다 — 이 묶음 주기를 finding aggregation이라 하고, 같은 종류 위협의 알림 폭주를 막는다.
 
-2019년 Capital One 침해는 약 1억 건의 신용 신청 데이터가 유출된 미국 최대급 금융 침해였다. 원인은 잘못 구성된 WAF가 SSRF(Server-Side Request Forgery) 공격에 악용되어 EC2 인스턴스의 메타데이터 서비스(IMDSv1)에서 IAM 역할 자격증명을 탈취당하고, 그 자격증명으로 S3 버킷을 통째로 읽힌 것이었다. 주목할 점은 침해 자체보다 탐지 실패였다 — 공격은 2019년 3월에 일어났지만 회사가 인지한 건 4개월 뒤인 7월, 그것도 외부 제보를 통해서였다. 만약 GuardDuty의 `Exfiltration:S3/AnomalousBehavior`(비정상적 대량 S3 접근)나 Recon finding이 활성화되어 EventBridge로 알림이 갔다면 탐지 시간이 며칠로 줄었을 것이다. 이 사건 이후 AWS는 IMDSv2(세션 토큰 필수)를 강하게 권장하기 시작했다.
+2019년 Capital One 침해는 약 1억 600만 명의 신용카드 신청 데이터가 유출된 미국 최대급 금융 침해였다. 원인은 잘못 구성된 WAF가 SSRF(Server-Side Request Forgery) 공격에 악용되어 EC2 인스턴스의 메타데이터 서비스(IMDSv1)에서 IAM 역할 자격증명을 탈취당하고, 그 자격증명으로 S3 버킷을 통째로 읽힌 것이었다. 주목할 점은 침해 자체보다 탐지 실패였다 — 공격은 2019년 3월에 일어났지만 회사가 인지한 건 4개월 뒤인 7월, 그것도 외부 제보를 통해서였다. 만약 GuardDuty의 `Exfiltration:S3/AnomalousBehavior`(비정상적 대량 S3 접근)나 Recon finding이 활성화되어 EventBridge로 알림이 갔다면 탐지 시간이 며칠로 줄었을 것이다. 이 사건 이후 AWS는 IMDSv2(세션 토큰 필수)를 강하게 권장하기 시작했다.
 
 ## Inspector — CVE 데이터베이스와 소프트웨어를 대조하는 법
 

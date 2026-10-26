@@ -136,7 +136,7 @@ jobs:
 
 > Wait Timer는 흔히 무시되는 기능이지만 실무에서 매우 유용하다. "승인 후 5분 대기"를 두면 그 5분 안에 누군가 "잠깐 멈춰"라고 외칠 수 있다. CodeDeploy의 `BlockTraffic` 같은 자동 hook과 결합하면, 사람 승인 → wait → 자동 검증 → 트래픽 시프트의 4단계 보호가 만들어진다.
 
-> GitHub Environments + Required Reviewers는 본질적으로 **manual gating**(Google SRE Book, Chapter 16) 패턴이다. 완전 자동화는 빠르지만 실수의 폭이 크고, 완전 수동은 안전하지만 느리다. Gating은 그 사이에서 "사람이 결정할 가치가 있는 지점만 사람에게 묻는다"는 절충이다. AWS CodePipeline의 Manual Approval Action도 같은 철학이다.
+> GitHub Environments + Required Reviewers는 본질적으로 **manual gating** 패턴이다. 완전 자동화는 빠르지만 실수의 폭이 크고, 완전 수동은 안전하지만 느리다. Gating은 그 사이에서 "사람이 결정할 가치가 있는 지점만 사람에게 묻는다"는 절충이다. AWS CodePipeline의 Manual Approval Action도 같은 철학이다.
 
 ## AWS Code* vs GitHub Actions — 무엇이 어떤 시나리오에 강한가
 

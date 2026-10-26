@@ -139,7 +139,7 @@ Target Tracking이 켜져 있으면 매번 metric을 보고 desired를 다시 �
 | Cluster PG | Partition PG | 단일 그룹 vs 여러 파티션(Cassandra rack-awareness) |
 | Target Tracking | Step Scaling | 자동 목표값 추적 vs 명시적 임계값 step |
 | gp3 | gp2 | IOPS·throughput 독립 설정 vs 크기 종속 |
-| io1 | io2 | 99.9% vs 99.999% durability + IOPS:GB 1:50 vs 1:500 |
+| io1 | io2 | 99.8-99.9% vs 99.999% durability + GiB당 최대 IOPS 50 vs 1,000 (io2는 모두 Block Express) |
 | EBS | EFS | block 단일 인스턴스 vs NFS 다중 인스턴스 |
 | EFS | FSx for Lustre | 일반 NFS vs HPC 병렬 FS |
 | Cross-Zone ALB | Cross-Zone NLB | 기본 ON·무료 vs 기본 OFF·켜면 cross-AZ data transfer 비용 |
@@ -239,7 +239,7 @@ C) web-sg의 outbound 규칙에서 169.254.169.254/32가 차단됨 — link-loca
 D) subnet NACL이 169.254.0.0/16 link-local 트래픽을 deny rule로 차단 — link-local은 NACL 적용 대상이 아니라 원인 불가
 
 **정답: B**
-해설: 2024년 이후 새 인스턴스는 기본이 IMDSv2 required. 토큰 없이 GET하면 401. 정확한 방법:
+해설: IMDSv2가 required로 설정된 인스턴스(Amazon Linux 2023 기본값, 2024년 중반 이후 출시된 인스턴스 유형의 기본값)는 토큰 없이 GET하면 401을 반환한다. 정확한 방법:
 ```bash
 TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" \
   -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")

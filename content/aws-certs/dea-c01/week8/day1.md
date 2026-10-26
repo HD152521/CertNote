@@ -234,7 +234,7 @@ C) WriteProvisionedThroughputExceeded
 D) PutRecord.Success  
 
 **정답: B**  
-해설: IteratorAgeMilliseconds는 컨슈머가 현재 읽고 있는 레코드의 나이를 나타내며, 값이 계속 커지면 컨슈머가 뒤처지고 있다는 핵심 신호입니다. IncomingBytes는 유입량, WriteProvisionedThroughputExceeded는 쓰기 스로틀링, PutRecord.Success는 생산자 성공률로 컨슈머 지연을 직접 나타내지 않습니다.
+해설: IteratorAgeMilliseconds는 컨슈머가 현재 읽고 있는 레코드의 나이를 나타내며, 값이 계속 커지면 컨슈머가 뒤처지고 있다는 핵심 신호이다. IncomingBytes는 유입량, WriteProvisionedThroughputExceeded는 쓰기 스로틀링, PutRecord.Success는 생산자 성공률로 컨슈머 지연을 직접 나타내지 않는다.
 
 ---
 
@@ -246,7 +246,7 @@ C) DynamicFrame
 D) Continuous Logging(연속 로깅)  
 
 **정답: D**  
-해설: 연속 로깅을 활성화하면 잡 완료 전에도 드라이버·익스큐터 로그가 실시간으로 CloudWatch Logs로 전송됩니다. Job Bookmark는 재처리 시 중복 방지용 상태, Partition Projection은 Athena 파티션 계산, DynamicFrame은 Glue의 데이터 추상화로 실시간 로깅과 무관합니다.
+해설: 연속 로깅을 활성화하면 잡 완료 전에도 드라이버·익스큐터 로그가 실시간으로 CloudWatch Logs로 전송된다. Job Bookmark는 재처리 시 중복 방지용 상태, Partition Projection은 Athena 파티션 계산, DynamicFrame은 Glue의 데이터 추상화로 실시간 로깅과 무관하다.
 
 ---
 
@@ -258,7 +258,7 @@ C) EMF(Embedded Metric Format)
 D) CloudTrail 데이터 이벤트  
 
 **정답: C**  
-해설: EMF는 구조화된 JSON 로그를 출력하면 CloudWatch가 자동으로 커스텀 지표를 추출하는 방식으로, 별도 API 호출 없이 지표와 컨텍스트를 동시에 기록합니다. PutMetricData 동기 호출은 지연·비용 부담이 크고, X-Ray는 추적, CloudTrail은 API 감사 용도입니다.
+해설: EMF는 구조화된 JSON 로그를 출력하면 CloudWatch가 자동으로 커스텀 지표를 추출하는 방식으로, 별도 API 호출 없이 지표와 컨텍스트를 동시에 기록한다. PutMetricData 동기 호출은 지연·비용 부담이 크고, X-Ray는 추적, CloudTrail은 API 감사 용도이다.
 
 ---
 
@@ -270,7 +270,7 @@ C) Anomaly Detection
 D) Dashboard Widget  
 
 **정답: A**  
-해설: 복합 알람은 여러 알람의 상태를 불리언 식으로 결합해 단일 알람으로 평가하므로 알람 폭주를 줄이고 의미 있는 상황에서만 통보할 수 있습니다. Metric Math는 지표 계산, Anomaly Detection은 동적 임계값, Dashboard는 시각화 용도입니다.
+해설: 복합 알람은 여러 알람의 상태를 불리언 식으로 결합해 단일 알람으로 평가하므로 알람 폭주를 줄이고 의미 있는 상황에서만 통보할 수 있다. Metric Math는 지표 계산, Anomaly Detection은 동적 임계값, Dashboard는 시각화 용도이다.
 
 ---
 
@@ -282,6 +282,6 @@ C) AppsRunning
 D) IncomingRecords  
 
 **정답: A**  
-해설: IsIdle은 클러스터가 유휴 상태인지 나타내어 비용 절감을 위한 자동 종료 판단에 사용됩니다. ContainerPendingRatio는 리소스 부족, AppsRunning은 실행 중 앱 수를 나타내며, IncomingRecords는 Kinesis 지표로 EMR과 무관합니다.
+해설: IsIdle은 클러스터가 유휴 상태인지 나타내어 비용 절감을 위한 자동 종료 판단에 사용된다. ContainerPendingRatio는 리소스 부족, AppsRunning은 실행 중 앱 수를 나타내며, IncomingRecords는 Kinesis 지표로 EMR과 무관하다.
 
 ---

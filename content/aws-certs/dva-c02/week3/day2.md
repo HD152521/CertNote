@@ -306,7 +306,7 @@ def lambda_handler(event, context):
 | 재시도 | 호출자 책임 | 자동 0~2회 | 설정 가능 |
 | 에러 처리 | 호출자 직접 처리 | DLQ / Destinations | SQS DLQ, On Failure |
 | 순서 보장 | 없음 | 없음 | 샤드/파티션 단위 |
-| 최대 전달 크기 | 6MB (동기) | 256KB (비동기) | 배치 크기 제한 |
+| 최대 전달 크기 | 6MB (동기) | 1MB (비동기) | 배치 크기 제한 |
 | DLQ 적용 | ❌ | ✅ Lambda DLQ | SQS 자체 DLQ |
 
 ## 정리
