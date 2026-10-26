@@ -219,7 +219,7 @@ C) `tar tzvf data.tar.gz data/`
 D) `tar cjvf data.tar.gz data/`
 
 **정답: B**
-해설: `c`는 생성, `z`는 gzip 압축, `v`는 자세히, `f`는 파일명 지정이다. A의 `x`는 풀기, C의 `t`는 목록 보기이며, D의 `j`는 bzip2 압축이라 `.gz` 확장자와 맞지 않다.
+해설: `c`는 생성, `z`는 gzip 압축, `v`는 자세히, `f`는 파일명 지정이다. A의 `x`는 풀기, C의 `t`는 목록 보기이며, D의 `j`는 bzip2 압축이라 `.gz` 확장자와 맞지 않는다.
 
 ---
 
