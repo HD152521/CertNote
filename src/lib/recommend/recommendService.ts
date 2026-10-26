@@ -6,6 +6,8 @@ import { getExamQuestionsByDomain } from '../exam/examBank';
 import { loadStudyContext, type StudyContext } from '../personalization/context';
 import { getQuestionById, getQuestionsByCert } from '../questions';
 import { computeToday } from '../study/plan';
+import { kstToday } from '../study/activity';
+import { pickFocusPlan } from '../study/focusPlan';
 
 const DEFAULT_DRILL_LIMIT = 5;
 
@@ -239,9 +241,9 @@ export async function nextUp(userId: string, limit = 1, ctx?: StudyContext): Pro
 
   const gate = (d: DayRef): boolean => canAccessWeek(ent.plan, d.week);
 
-  // 목표 자격증 우선, 없으면 가장 임박한 플랜.
+  // 목표 자격증 우선, 없으면 가장 가까운 시험(대시보드의 다른 카드와 같은 pickFocusPlan).
   const target = profile.targetCert;
-  const plan = (target && plans.find((p) => p.certSlug === target)) || plans[0] || null;
+  const plan = pickFocusPlan(plans, target, kstToday());
 
   let todayItems: DayRef[] = [];
   if (plan) {

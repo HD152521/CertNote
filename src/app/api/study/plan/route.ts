@@ -4,6 +4,7 @@ import { AppError, errorResponse } from '@/lib/auth/errors';
 import { clearPlan, listPlans, normalizeGoals, setPlan, setPlanGoals } from '@/lib/study/plan';
 import { kstToday } from '@/lib/study/activity';
 import { listCerts } from '@/lib/content';
+import { setTargetCert } from '@/lib/profile/profileService';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +20,8 @@ export async function GET() {
   }
 }
 
-// 시험일 설정/변경. body: { certSlug, examDate('YYYY-MM-DD') }
+// 시험일 설정/변경. body: { certSlug, examDate('YYYY-MM-DD'), targetAccuracy?, dailyMinutesGoal?, focus? }
+// 목표 정하기 화면은 한 번에 저장한다: 목표 값이 오면 함께 저장하고, focus 면 프로필 목표 자격증도 이 자격증으로 맞춘다.
 export async function PUT(req: Request) {
   try {
     const user = await getCurrentUser();
@@ -42,6 +44,19 @@ export async function PUT(req: Request) {
       throw new AppError(400, 'unknown_cert', '존재하지 않는 자격증입니다.');
     }
     await setPlan(user.sub, certSlug, examDate);
+    if (body.targetAccuracy !== undefined || body.dailyMinutesGoal !== undefined) {
+      // 한쪽만 보내도 다른 쪽이 기본값으로 덮이지 않게 기존 값과 합친다.
+      const current = (await listPlans(user.sub)).find((p) => p.certSlug === certSlug);
+      await setPlanGoals(
+        user.sub,
+        certSlug,
+        normalizeGoals({
+          targetAccuracy: body.targetAccuracy ?? current?.targetAccuracy,
+          dailyMinutesGoal: body.dailyMinutesGoal !== undefined ? body.dailyMinutesGoal : current?.dailyMinutesGoal,
+        }),
+      );
+    }
+    if (body.focus === true) await setTargetCert(user.sub, certSlug);
     return Response.json({ ok: true, plans: await listPlans(user.sub) });
   } catch (err) {
     return errorResponse(err);

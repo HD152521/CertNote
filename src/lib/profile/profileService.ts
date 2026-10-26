@@ -30,6 +30,12 @@ export function toLearnerProfile(row: ProfileRow | undefined): LearnerProfile {
   };
 }
 
+// 목표 자격증만 바꾼다. 목표 정하기 화면에서 플랜을 저장할 때 프로필 목표도 같은 자격증으로 맞춘다
+// (둘이 다르면 추천·합격 예측이 서로 다른 자격증을 볼 수 있었다). certSlug 검증은 호출측이 한다.
+export async function setTargetCert(userId: string, certSlug: string): Promise<void> {
+  await query('UPDATE users SET target_cert = $2 WHERE id = $1', [userId, certSlug]);
+}
+
 // 로그인 사용자의 학습자 프로필 조회(읽기 전용).
 export async function getLearnerProfile(userId: string): Promise<LearnerProfile> {
   const rows = await query<ProfileRow>(
