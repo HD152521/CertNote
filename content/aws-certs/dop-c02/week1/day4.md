@@ -343,7 +343,7 @@ aws organizations create-account \
 
 오늘 본 그림은 세 가지다. 첫째, **멀티 계정은 표준**이다. Blast radius 격리, quota 분리, 컴플라이언스 요구가 그 정당화 근거. 둘째, **Organizations + Control Tower가 토대**다. 표준 OU 구조 + Landing zone + Guardrails. 셋째, **IAM Identity Center가 인증/인가의 결정판**이고 cross-account 자원 접근은 STS AssumeRole + Resource policy + RAM 세 패턴으로 해결.
 
-다음 글은 Week 1의 마무리로, 시나리오 문제 10개를 통해 첫 주의 내용을 통합적으로 점검한다.
+다음 글은 Week 1의 마무리로, 시나리오 문제 12개를 통해 첫 주의 내용을 통합적으로 점검한다.
 
 ---
 
