@@ -129,15 +129,15 @@ Security Hub publishes all integrated service findings to a single EventBridge s
 
 ## 📝 연습 문제
 
-**문제 1.** 보안팀이 GuardDuty, Inspector, Macie의 핀딩을 서로 다른 형식 때문에 따로따로 보고 있어 상관 분석과 자동화가 어렵다. 이들을 표준 형식으로 한곳에 모으고 단일 자동화로 대응하려면?
+**문제 1.** 보안팀이 GuardDuty, Inspector, Macie의 결과를 서로 다른 형식 때문에 따로따로 보고 있어 상관 분석과 자동화가 어렵다. 이들을 표준 형식으로 한곳에 모으고 단일 자동화로 대응하려면?
 
 A) 각 서비스의 콘솔을 북마크해 번갈아 본다  
-B) Security Hub를 활성화해 핀딩을 ASFF로 정규화·집계하고 EventBridge로 대응을 단일화한다  
-C) Detective로 모든 핀딩을 조사한다  
-D) CloudWatch Logs에 모든 핀딩을 저장한다  
+B) Security Hub를 활성화해 결과를 ASFF로 정규화·집계하고 EventBridge로 대응을 단일화한다  
+C) Detective로 모든 결과를 조사한다  
+D) CloudWatch Logs에 모든 결과를 저장한다  
 
 **정답: B**  
-해설: Security Hub는 통합 서비스들의 핀딩을 공통 스키마인 ASFF로 정규화해 한 화면에 집계하고, 단일 EventBridge 스트림으로 발행해 하나의 자동화로 여러 탐지기를 커버한다. 콘솔 북마크는 통합이 아니고, Detective는 집계가 아닌 심층 조사 도구이며, 단순 로그 저장은 표준화·상관·자동화를 제공하지 않는다.
+해설: Security Hub는 통합 서비스들의 결과를 공통 스키마인 ASFF로 정규화해 한 화면에 집계하고, 단일 EventBridge 스트림으로 발행해 하나의 자동화로 여러 탐지기를 커버한다. 콘솔 북마크는 통합이 아니고, Detective는 집계가 아닌 심층 조사 도구이며, 단순 로그 저장은 표준화·상관·자동화를 제공하지 않는다.
 
 ---
 
@@ -153,27 +153,27 @@ D) 워크로드 계정마다 개별로 모든 서비스를 켜고 따로 관리�
 
 ---
 
-**문제 3.** 멀티리전으로 운영하는 조직이 한 리전 Security Hub 콘솔만 보다가 다른 리전의 critical 핀딩을 놓쳤다. 올바른 구성은?
+**문제 3.** 멀티리전으로 운영하는 조직이 한 리전 Security Hub 콘솔만 보다가 다른 리전의 critical 결과를 놓쳤다. 올바른 구성은?
 
 A) 모든 워크로드를 한 리전으로 이전한다  
-B) Security Hub aggregation Region을 지정해 여러 리전의 핀딩을 단일 리전에 크로스리전 집계한다  
+B) Security Hub aggregation Region을 지정해 여러 리전의 결과를 단일 리전에 크로스리전 집계한다  
 C) 리전마다 별도 보안팀을 둔다  
 D) GuardDuty만 멀티리전으로 켠다  
 
 **정답: B**  
-해설: Security Hub 핀딩은 리전별로 존재하므로, aggregation Region(집계 리전)을 지정해 여러 리전의 핀딩을 단일 리전에서 통합 조회·관리해야 멀티리전 사각지대를 없앤다. 워크로드 이전은 비현실적이고, 리전별 팀 분리는 통합 가시성을 주지 못하며, GuardDuty만 켜는 것은 Security Hub 집계 문제를 해결하지 못한다.
+해설: Security Hub 결과는 리전별로 존재하므로, aggregation Region(집계 리전)을 지정해 여러 리전의 결과를 단일 리전에서 통합 조회·관리해야 멀티리전 사각지대를 없앤다. 워크로드 이전은 비현실적이고, 리전별 팀 분리는 통합 가시성을 주지 못하며, GuardDuty만 켜는 것은 Security Hub 집계 문제를 해결하지 못한다.
 
 ---
 
 **문제 4.** Security Hub의 역할에 대한 설명으로 가장 정확한 것은?
 
 A) 네트워크 트래픽을 직접 검사해 악성 연결을 차단한다  
-B) 통합된 탐지 서비스들의 핀딩을 ASFF로 표준화·집계하고 상관·자동화를 오케스트레이션하는 허브이며, 표준 규정 준수 컨트롤도 평가한다  
+B) 통합된 탐지 서비스들의 결과를 ASFF로 표준화·집계하고 상관·자동화를 오케스트레이션하는 허브이며, 표준 규정 준수 컨트롤도 평가한다  
 C) S3의 PII를 분류한다  
 D) EBS 볼륨에서 멀웨어를 스캔한다  
 
 **정답: B**  
-해설: Security Hub는 GuardDuty·Inspector·Macie 등의 핀딩을 ASFF 공통 스키마로 정규화해 집계하고, Insights·automation rules·EventBridge로 상관과 대응 자동화를 오케스트레이션하며, CIS·FSBP 같은 표준 컨트롤도 평가한다. 트래픽 차단·PII 분류(Macie)·멀웨어 스캔(GuardDuty Malware Protection)은 다른 서비스의 역할이다.
+해설: Security Hub는 GuardDuty·Inspector·Macie 등의 결과를 ASFF 공통 스키마로 정규화해 집계하고, Insights·automation rules·EventBridge로 상관과 대응 자동화를 오케스트레이션하며, CIS·FSBP 같은 표준 컨트롤도 평가한다. 트래픽 차단·PII 분류(Macie)·멀웨어 스캔(GuardDuty Malware Protection)은 다른 서비스의 역할이다.
 
 ---
 

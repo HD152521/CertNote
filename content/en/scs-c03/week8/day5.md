@@ -133,15 +133,15 @@ D) Security Lake
 
 ---
 
-**문제 3.** 여러 탐지 서비스(GuardDuty, Inspector, Macie)의 핀딩을 단일 포맷으로 집계하고 CIS/FSBP 표준 합격률을 보안 점수로 보려 한다. 그리고 별개로, 조직 전역 *원시 로그*를 OCSF 표준으로 정규화해 SIEM이 질의하게 하려 한다. 각각의 서비스는?
+**문제 3.** 여러 탐지 서비스(GuardDuty, Inspector, Macie)의 결과를 단일 포맷으로 집계하고 CIS/FSBP 표준 합격률을 보안 점수로 보려 한다. 그리고 별개로, 조직 전역 *원시 로그*를 OCSF 표준으로 정규화해 SIEM이 질의하게 하려 한다. 각각의 서비스는?
 
 A) 둘 다 Security Hub  
-B) 핀딩 집계·점수는 Security Hub(ASFF), 원시 로그 OCSF 정규화는 Security Lake  
-C) 핀딩 집계는 Security Lake, 원시 로그는 Security Hub  
+B) 결과 집계·점수는 Security Hub(ASFF), 원시 로그 OCSF 정규화는 Security Lake  
+C) 결과 집계는 Security Lake, 원시 로그는 Security Hub  
 D) 둘 다 AWS Config  
 
 **정답: B**  
-해설: 탐지기 핀딩의 집계·정규화(ASFF)·표준 점검·보안 점수는 Security Hub, 원시 보안 로그의 OCSF 정규화 데이터 레이크는 Security Lake다. 포맷 이름(ASFF vs OCSF)과 대상(핀딩 vs 원시 로그)이 구분 단서이며, Config는 구성 평가 엔진으로 둘 다 아니다.
+해설: 탐지기 결과의 집계·정규화(ASFF)·표준 점검·보안 점수는 Security Hub, 원시 보안 로그의 OCSF 정규화 데이터 레이크는 Security Lake다. 포맷 이름(ASFF vs OCSF)과 대상(결과 vs 원시 로그)이 구분 단서이며, Config는 구성 평가 엔진으로 둘 다 아니다.
 
 ---
 
@@ -162,10 +162,10 @@ D) OpenSearch 인덱스 상태와 파티션
 A) 자동 대응 역할에 Administrator 부여, 핸들러는 단발 실행 가정  
 B) 핸들러를 멱등하게 설계, 대상 실패 시 DLQ로 보존, 최소 권한 역할 + 리소스 조건  
 C) EventBridge 대신 매분 폴링하는 cron  
-D) 모든 핀딩을 무시 처리(SUPPRESSED)  
+D) 모든 결과를 무시 처리(SUPPRESSED)  
 
 **정답: B**  
-해설: EventBridge는 at-least-once 전달이라 핸들러는 멱등해야 하고, 대상 호출 실패 대비 DLQ로 이벤트를 보존하며, 자동 대응 역할은 최소 권한과 리소스 조건으로 공격 표면을 줄여야 한다. Administrator 부여·단발 가정은 위험하고, 폴링 cron은 비효율·지연이며, 핀딩 일괄 억제는 탐지를 무력화한다.
+해설: EventBridge는 at-least-once 전달이라 핸들러는 멱등해야 하고, 대상 호출 실패 대비 DLQ로 이벤트를 보존하며, 자동 대응 역할은 최소 권한과 리소스 조건으로 공격 표면을 줄여야 한다. Administrator 부여·단발 가정은 위험하고, 폴링 cron은 비효율·지연이며, 결과 일괄 억제는 탐지를 무력화한다.
 
 ---
 

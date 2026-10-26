@@ -336,7 +336,7 @@ C) 631
 D) 8080  
 
 **정답: C**  
-해설: CUPS는 631번 포트에서 웹 관리 인터페이스를 제공하며 `http://localhost:631`로 접속해 프린터를 등록하고 대기열을 관리할 수 있습니다. 631번은 IPP 프로토콜의 표준 포트이기도 합니다. 22번은 SSH, 80번은 HTTP입니다.
+해설: CUPS는 631번 포트에서 웹 관리 인터페이스를 제공하며 `http://localhost:631`로 접속해 프린터를 등록하고 대기열을 관리할 수 있다. 631번은 IPP 프로토콜의 표준 포트이기도 한다. 22번은 SSH, 80번은 HTTP이다.
 
 ---
 
@@ -348,7 +348,7 @@ C) Automatic Linux Sound Adapter
 D) Applied Linux System Audio  
 
 **정답: B**  
-해설: ALSA는 Advanced Linux Sound Architecture의 줄임말로 커널 2.6부터 리눅스의 표준 사운드 시스템으로 자리 잡았습니다. 그 이전에 쓰이던 OSS는 Open Sound System이며 현재는 호환 계층으로만 남아 있습니다.
+해설: ALSA는 Advanced Linux Sound Architecture의 줄임말로 커널 2.6부터 리눅스의 표준 사운드 시스템으로 자리 잡았다. 그 이전에 쓰이던 OSS는 Open Sound System이며 현재는 호환 계층으로만 남아 있다.
 
 ---
 
@@ -360,7 +360,7 @@ C) LPRng
 D) SANE  
 
 **정답: D**  
-해설: SANE은 Scanner Access Now Easy의 줄임말로 스캐너를 다루는 표준 API와 도구 모음입니다. 명령줄에서는 `scanimage`, 그래픽 환경에서는 `xsane`을 사용합니다. CUPS는 인쇄, ALSA는 사운드를 담당합니다.
+해설: SANE은 Scanner Access Now Easy의 줄임말로 스캐너를 다루는 표준 API와 도구 모음이다. 명령줄에서는 `scanimage`, 그래픽 환경에서는 `xsane`을 사용한다. CUPS는 인쇄, ALSA는 사운드를 담당한다.
 
 ---
 
@@ -372,7 +372,7 @@ C) lprm
 D) cancel  
 
 **정답: A**  
-해설: `lpq`는 현재 인쇄 대기열에 어떤 작업이 있는지 보여 주는 BSD 계열 명령이며 System V 계열의 `lpstat`에 대응합니다. `lpr`은 출력 요청, `lprm`은 작업 취소이고 `cancel`은 System V 계열의 취소 명령입니다.
+해설: `lpq`는 현재 인쇄 대기열에 어떤 작업이 있는지 보여 주는 BSD 계열 명령이며 System V 계열의 `lpstat`에 대응한다. `lpr`은 출력 요청, `lprm`은 작업 취소이고 `cancel`은 System V 계열의 취소 명령이다.
 
 ---
 
@@ -384,4 +384,4 @@ C) /etc/cups/printers.conf
 D) /var/spool/cups  
 
 **정답: B**  
-해설: `cupsd.conf`는 CUPS 데몬의 동작과 접근 권한을 정의하는 주 설정 파일입니다. `printers.conf`는 등록된 프린터의 정보를 담고 있으며, `/var/spool/cups`는 인쇄 작업이 대기하는 스풀 디렉터리입니다.
+해설: `cupsd.conf`는 CUPS 데몬의 동작과 접근 권한을 정의하는 주 설정 파일이다. `printers.conf`는 등록된 프린터의 정보를 담고 있으며, `/var/spool/cups`는 인쇄 작업이 대기하는 스풀 디렉터리이다.

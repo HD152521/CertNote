@@ -244,7 +244,7 @@ C) FTP
 D) Gopher  
 
 **정답: B**  
-해설: NFS는 Network File System의 줄임말로 서버가 내보낸 디렉터리를 클라이언트가 마운트해 로컬 디렉터리처럼 사용합니다. 설정은 `/etc/exports`에 하며 RPC를 기반으로 동작합니다. 삼바는 윈도와의 공유에 사용합니다.
+해설: NFS는 Network File System의 줄임말로 서버가 내보낸 디렉터리를 클라이언트가 마운트해 로컬 디렉터리처럼 사용한다. 설정은 `/etc/exports`에 하며 RPC를 기반으로 동작한다. 삼바는 윈도와의 공유에 사용한다.
 
 ---
 
@@ -256,7 +256,7 @@ C) Usenet
 D) Samba  
 
 **정답: D**  
-해설: 삼바는 윈도가 사용하는 SMB/CIFS 프로토콜을 리눅스에서 구현해 서로 파일과 프린터를 공유할 수 있게 합니다. 설정 파일은 `/etc/samba/smb.conf`이며 `smbd`와 `nmbd` 두 데몬이 동작합니다.
+해설: 삼바는 윈도가 사용하는 SMB/CIFS 프로토콜을 리눅스에서 구현해 서로 파일과 프린터를 공유할 수 있게 한다. 설정 파일은 `/etc/samba/smb.conf`이며 `smbd`와 `nmbd` 두 데몬이 동작한다.
 
 ---
 
@@ -268,7 +268,7 @@ C) RPC
 D) CIFS  
 
 **정답: C**  
-해설: 삼바는 SMB 프로토콜과 이를 확장한 CIFS를 사용하며 이름 관리는 NetBIOS가 담당합니다. RPC는 원격 프로시저 호출 방식으로 NFS가 사용하는 것이므로 삼바의 구성 요소로 보기 어렵습니다.
+해설: 삼바는 SMB 프로토콜과 이를 확장한 CIFS를 사용하며 이름 관리는 NetBIOS가 담당한다. RPC는 원격 프로시저 호출 방식으로 NFS가 사용하는 것이므로 삼바의 구성 요소로 보기 어렵다.
 
 ---
 
@@ -280,7 +280,7 @@ C) IRC
 D) NFS  
 
 **정답: A**  
-해설: Gopher는 하이퍼링크 대신 계층적인 메뉴를 따라 내려가며 정보를 찾는 서비스로 WWW의 전신에 해당합니다. Usenet은 주제별 뉴스그룹, IRC는 실시간 채팅, NFS는 파일 공유 서비스입니다.
+해설: Gopher는 하이퍼링크 대신 계층적인 메뉴를 따라 내려가며 정보를 찾는 서비스로 WWW의 전신에 해당한다. Usenet은 주제별 뉴스그룹, IRC는 실시간 채팅, NFS는 파일 공유 서비스이다.
 
 ---
 
@@ -292,4 +292,4 @@ C) HTTP
 D) NNTP  
 
 **정답: D**  
-해설: NNTP는 Network News Transfer Protocol의 줄임말로 Usenet 뉴스그룹의 글을 주고받는 데 사용합니다. SMTP와 IMAP은 메일, HTTP는 웹 통신에 쓰이는 프로토콜입니다.
+해설: NNTP는 Network News Transfer Protocol의 줄임말로 Usenet 뉴스그룹의 글을 주고받는 데 사용한다. SMTP와 IMAP은 메일, HTTP는 웹 통신에 쓰이는 프로토콜이다.

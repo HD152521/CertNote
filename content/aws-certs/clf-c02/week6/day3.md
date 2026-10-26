@@ -250,7 +250,7 @@ C) 페일오버
 D) 다중 테넌시  
 
 **정답: B**  
-해설: 탄력성은 수요 변화에 따라 리소스를 자동으로 늘리고 줄이는 능력으로, Auto Scaling이 대표적입니다. 내구성은 데이터 손실 방지 정도, 페일오버는 장애 시 대체 전환, 다중 테넌시는 여러 고객이 인프라를 공유하는 개념입니다.
+해설: 탄력성은 수요 변화에 따라 리소스를 자동으로 늘리고 줄이는 능력으로, Auto Scaling이 대표적이다. 내구성은 데이터 손실 방지 정도, 페일오버는 장애 시 대체 전환, 다중 테넌시는 여러 고객이 인프라를 공유하는 개념이다.
 
 ---
 
@@ -262,7 +262,7 @@ C) AWS WAF
 D) AWS KMS  
 
 **정답: C**  
-해설: AWS WAF는 웹 애플리케이션 방화벽으로 SQL 인젝션과 XSS 같은 계층 7 공격을 필터링합니다. Shield는 DDoS 방어, GuardDuty는 위협 탐지, KMS는 암호화 키 관리 서비스입니다.
+해설: AWS WAF는 웹 애플리케이션 방화벽으로 SQL 인젝션과 XSS 같은 계층 7 공격을 필터링한다. Shield는 DDoS 방어, GuardDuty는 위협 탐지, KMS는 암호화 키 관리 서비스이다.
 
 ---
 
@@ -274,7 +274,7 @@ C) Amazon Redshift
 D) Amazon Aurora  
 
 **정답: B**  
-해설: DynamoDB는 완전관리형 서버리스 NoSQL로 일관된 한 자릿수 밀리초 성능을 제공합니다. RDS와 Aurora는 관계형 데이터베이스, Redshift는 분석용 데이터 웨어하우스로 용도가 다릅니다.
+해설: DynamoDB는 완전관리형 서버리스 NoSQL로 일관된 한 자릿수 밀리초 성능을 제공한다. RDS와 Aurora는 관계형 데이터베이스, Redshift는 분석용 데이터 웨어하우스로 용도가 다르다.
 
 ---
 
@@ -286,7 +286,7 @@ C) Amazon CloudFront
 D) Amazon VPC  
 
 **정답: C**  
-해설: CloudFront는 콘텐츠 전송 네트워크(CDN)로 엣지 로케이션에 콘텐츠를 캐싱하여 지연 시간을 줄입니다. Route 53은 DNS, Direct Connect는 전용 회선, VPC는 격리된 가상 네트워크입니다.
+해설: CloudFront는 콘텐츠 전송 네트워크(CDN)로 엣지 로케이션에 콘텐츠를 캐싱하여 지연 시간을 줄인다. Route 53은 DNS, Direct Connect는 전용 회선, VPC는 격리된 가상 네트워크이다.
 
 ---
 
@@ -298,7 +298,7 @@ C) Savings Plans
 D) AWS Cost Explorer  
 
 **정답: A**  
-해설: AWS Organizations의 통합 결제는 여러 계정의 사용량을 합산해 단일 청구서로 만들고 볼륨 기반 할인을 공유합니다. Budgets는 예산 알림, Savings Plans는 사용량 약정 할인, Cost Explorer는 비용 분석 도구입니다.
+해설: AWS Organizations의 통합 결제는 여러 계정의 사용량을 합산해 단일 청구서로 만들고 볼륨 기반 할인을 공유한다. Budgets는 예산 알림, Savings Plans는 사용량 약정 할인, Cost Explorer는 비용 분석 도구이다.
 
 ---
 
@@ -310,7 +310,7 @@ C) AWS Elastic Beanstalk
 D) Amazon ECS  
 
 **정답: C**  
-해설: Elastic Beanstalk는 코드를 업로드하면 인프라 구성과 확장을 자동 처리하는 PaaS 서비스입니다. EC2는 사용자가 직접 관리하는 IaaS, Lambda는 함수 단위 서버리스, ECS는 컨테이너 오케스트레이션입니다.
+해설: Elastic Beanstalk는 코드를 업로드하면 인프라 구성과 확장을 자동 처리하는 PaaS 서비스이다. EC2는 사용자가 직접 관리하는 IaaS, Lambda는 함수 단위 서버리스, ECS는 컨테이너 오케스트레이션이다.
 
 ---
 
@@ -322,7 +322,7 @@ C) AWS Trusted Advisor
 D) AWS CloudTrail  
 
 **정답: B**  
-해설: AWS Artifact는 SOC, PCI DSS 등 AWS의 규정 준수 보고서를 온디맨드로 제공하는 포털입니다. Config는 리소스 구성 추적, Trusted Advisor는 모범 사례 점검, CloudTrail은 API 감사 로그 서비스입니다.
+해설: AWS Artifact는 SOC, PCI DSS 등 AWS의 규정 준수 보고서를 온디맨드로 제공하는 포털이다. Config는 리소스 구성 추적, Trusted Advisor는 모범 사례 점검, CloudTrail은 API 감사 로그 서비스이다.
 
 ---
 
@@ -334,6 +334,6 @@ C) 예약 인스턴스
 D) 전용 인스턴스  
 
 **정답: C**  
-해설: 예약 인스턴스(또는 Savings Plans)는 1~3년 사용을 약정하는 대가로 큰 할인을 제공하여 지속적이고 예측 가능한 워크로드에 적합합니다. 온디맨드는 약정·할인이 없고, 스팟은 중단 가능한 작업용, 전용 인스턴스는 격리 요건용입니다.
+해설: 예약 인스턴스(또는 Savings Plans)는 1~3년 사용을 약정하는 대가로 큰 할인을 제공하여 지속적이고 예측 가능한 워크로드에 적합하다. 온디맨드는 약정·할인이 없고, 스팟은 중단 가능한 작업용, 전용 인스턴스는 격리 요건용이다.
 
 ---

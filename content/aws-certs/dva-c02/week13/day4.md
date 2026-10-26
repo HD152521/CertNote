@@ -479,7 +479,7 @@ B) SNS
 C) Kinesis Data Streams  
 D) EventBridge  
 
-**정답: C** - Kinesis Data Streams는 대용량 실시간 스트리밍을 지원하고 여러 Consumer가 동시에 동일 스트림을 읽을 수 있습니다.
+**정답: C** - Kinesis Data Streams는 대용량 실시간 스트리밍을 지원하고 여러 Consumer가 동시에 동일 스트림을 읽을 수 있다.
 
 ---
 
@@ -490,7 +490,7 @@ B) Lambda A → SQS → Lambda B
 C) API Gateway 직접 연결  
 D) DynamoDB를 통한 데이터 공유  
 
-**정답: B** - SQS를 통한 비동기 통신은 두 서비스를 느슨하게 결합하고 Lambda A가 응답을 기다리지 않아도 됩니다.
+**정답: B** - SQS를 통한 비동기 통신은 두 서비스를 느슨하게 결합하고 Lambda A가 응답을 기다리지 않아도 된다.
 
 ---
 
@@ -501,7 +501,7 @@ B) taskRoleArn에 권한 추가
 C) 환경 변수에 하드코딩  
 D) CloudFormation 파라미터로 주입  
 
-**정답: B** - taskRole은 컨테이너 내 애플리케이션 코드가 AWS 서비스에 접근하는 데 사용합니다.
+**정답: B** - taskRole은 컨테이너 내 애플리케이션 코드가 AWS 서비스에 접근하는 데 사용한다.
 
 ---
 
@@ -512,7 +512,7 @@ B) Lambda 체인 (Lambda에서 Lambda 직접 호출)
 C) Step Functions  
 D) Kinesis  
 
-**정답: C** - Step Functions는 순차 실행, 오류 처리, 자동 재시도를 시각적으로 관리할 수 있습니다.
+**정답: C** - Step Functions는 순차 실행, 오류 처리, 자동 재시도를 시각적으로 관리할 수 있다.
 
 ---
 
@@ -523,7 +523,7 @@ B) Outputs에서 Export 후 !ImportValue로 참조
 C) 동일 스택에 모두 포함  
 D) 크로스 스택 참조 불가  
 
-**정답: B** - Outputs 섹션에서 Export 이름을 지정하고 다른 스택에서 !ImportValue로 참조합니다.
+**정답: B** - Outputs 섹션에서 Export 이름을 지정하고 다른 스택에서 !ImportValue로 참조한다.
 
 ---
 
@@ -534,7 +534,7 @@ B) S3 → SNS → 여러 SQS → 각 Lambda
 C) S3 → Kinesis → Lambda  
 D) S3 → EventBridge → Lambda 3개  
 
-**정답: B 또는 D** - 팬아웃 패턴입니다. SNS를 중간에 두고 각 SQS로 분기하거나(B), EventBridge로 여러 Lambda를 동시에 트리거합니다(D).
+**정답: B 또는 D** - 팬아웃 패턴이다. SNS를 중간에 두고 각 SQS로 분기하거나(B), EventBridge로 여러 Lambda를 동시에 트리거한다(D).
 
 ---
 
@@ -545,7 +545,7 @@ B) Rolling
 C) Immutable  
 D) Blue/Green  
 
-**정답: C** - Immutable 배포는 새 ASG에 새 버전을 배포하고 검증 후 교체하므로 가장 안전합니다.
+**정답: C** - Immutable 배포는 새 ASG에 새 버전을 배포하고 검증 후 교체하므로 가장 안전하다.
 
 ---
 
@@ -556,7 +556,7 @@ B) CloudFormation 스택
 C) ECS 태스크  
 D) Lambda 레이어  
 
-**정답: B** - CDK는 cdk deploy 시 코드를 CloudFormation 템플릿으로 변환하고 CloudFormation 스택을 생성합니다.
+**정답: B** - CDK는 cdk deploy 시 코드를 CloudFormation 템플릿으로 변환하고 CloudFormation 스택을 생성한다.
 
 ---
 
