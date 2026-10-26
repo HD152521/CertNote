@@ -209,7 +209,7 @@ C) 수동 S3 업로드 + 일반 Hive Parquet 테이블
 D) S3 Replication + One Zone-IA  
 
 **정답: B**  
-해설: 증분 적재는 Incremental database 블루프린트가, 행 수준 DELETE/MERGE는 Iceberg 같은 오픈 테이블 포맷이 담당합니다. snapshot+CSV나 일반 Hive Parquet은 행 수준 DML이 어렵고, Replication/One Zone-IA는 요구사항과 무관합니다.
+해설: 증분 적재는 Incremental database 블루프린트가, 행 수준 DELETE/MERGE는 Iceberg 같은 오픈 테이블 포맷이 담당한다. snapshot+CSV나 일반 Hive Parquet은 행 수준 DML이 어렵고, Replication/One Zone-IA는 요구사항과 무관하다.
 
 ---
 
@@ -221,7 +221,7 @@ C) 파티션 프로젝션 + 수명주기 정책
 D) Storage Lens + Object Lock  
 
 **정답: A**  
-해설: 컬럼 보안은 GRANT의 컬럼 선택/제외로, 행 보안은 데이터 필터(RowFilter)로 구현합니다. 나머지는 비용·가시성·스토리지 기능으로 세분화 접근 제어와 무관합니다.
+해설: 컬럼 보안은 GRANT의 컬럼 선택/제외로, 행 보안은 데이터 필터(RowFilter)로 구현한다. 나머지는 비용·가시성·스토리지 기능으로 세분화 접근 제어와 무관하다.
 
 ---
 
@@ -233,7 +233,7 @@ C) curated는 One Zone-IA, raw는 Standard
 D) 둘 다 Standard-IA 고정  
 
 **정답: B**  
-해설: 자주 읽는 curated는 검색 비용이 없는 Standard가, 드물게 접근하는 raw는 수명주기로 IA→Glacier 전환이 비용 효율적입니다. 자주 읽는 데이터를 IA/Glacier에 두면 검색 비용이, 안 읽는 데이터를 Standard에 두면 저장 비용이 낭비됩니다.
+해설: 자주 읽는 curated는 검색 비용이 없는 Standard가, 드물게 접근하는 raw는 수명주기로 IA→Glacier 전환이 비용 효율적이다. 자주 읽는 데이터를 IA/Glacier에 두면 검색 비용이, 안 읽는 데이터를 Standard에 두면 저장 비용이 낭비된다.
 
 ---
 
@@ -245,7 +245,7 @@ C) 컬럼형 포맷만 저장할 수 있다
 D) 데이터를 원본 그대로 저장하고 쿼리 시점에 스키마를 적용한다  
 
 **정답: D**  
-해설: schema-on-read는 데이터를 원본 형태로 저장한 뒤 읽을 때 스키마를 부여하는 방식으로, 정형/반정형/비정형을 유연하게 수용합니다. 적재 전 스키마 강제는 schema-on-write(데이터웨어하우스)이며 나머지는 사실과 다릅니다.
+해설: schema-on-read는 데이터를 원본 형태로 저장한 뒤 읽을 때 스키마를 부여하는 방식으로, 정형/반정형/비정형을 유연하게 수용한다. 적재 전 스키마 강제는 schema-on-write(데이터웨어하우스)이며 나머지는 사실과 다르다.
 
 ---
 
@@ -257,6 +257,6 @@ C) 테이블을 CSV로 변환
 D) 버킷 버전 관리 활성화  
 
 **정답: A**  
-해설: 파티션 프로젝션은 테이블 속성의 범위·포맷 규칙으로 파티션을 계산해 카탈로그 등록·조회 병목을 제거합니다. 단일 파일 병합은 프루닝을 해치고, CSV 변환·버전 관리는 파티션 병목과 무관합니다.
+해설: 파티션 프로젝션은 테이블 속성의 범위·포맷 규칙으로 파티션을 계산해 카탈로그 등록·조회 병목을 제거한다. 단일 파일 병합은 프루닝을 해치고, CSV 변환·버전 관리는 파티션 병목과 무관하다.
 
 ---

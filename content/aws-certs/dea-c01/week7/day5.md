@@ -226,7 +226,7 @@ C) Amazon Aurora
 D) Amazon DynamoDB  
 
 **정답: B**  
-해설: Athena는 서버리스로 S3 데이터를 SQL로 직접 쿼리하고 스캔량으로 과금되어, 간헐적·애드혹 분석에 인프라 운영 없이 적합합니다. 프로비저닝 Redshift는 상시 클러스터, Aurora는 OLTP, DynamoDB는 키 조회용입니다.
+해설: Athena는 서버리스로 S3 데이터를 SQL로 직접 쿼리하고 스캔량으로 과금되어, 간헐적·애드혹 분석에 인프라 운영 없이 적합하다. 프로비저닝 Redshift는 상시 클러스터, Aurora는 OLTP, DynamoDB는 키 조회용이다.
 
 ---
 
@@ -238,7 +238,7 @@ C) 두 테이블 모두 INTERLEAVED SORTKEY
 D) 한 테이블만 DISTSTYLE ALL (둘 다 대형)  
 
 **정답: A**  
-해설: 동일 컬럼을 DISTKEY로 지정하면 같은 키 값이 같은 슬라이스에 배치되어 재분배 없는 co-located join이 됩니다. EVEN은 재분배, INTERLEAVED는 정렬 다축이며 분산과 무관하고, 대형 테이블에 ALL은 비용이 과합니다.
+해설: 동일 컬럼을 DISTKEY로 지정하면 같은 키 값이 같은 슬라이스에 배치되어 재분배 없는 co-located join이 된다. EVEN은 재분배, INTERLEAVED는 정렬 다축이며 분산과 무관하고, 대형 테이블에 ALL은 비용이 과하다.
 
 ---
 
@@ -250,7 +250,7 @@ C) Streams/S3 export로 S3·Redshift에 옮겨 Athena/Redshift로 분석
 D) LSI를 추가해 집계 전용 축을 만든다  
 
 **정답: C**  
-해설: DynamoDB는 대량 집계·애드혹 분석에 부적합하므로, Streams나 S3 export로 변경분을 분석 스토어(S3+Athena/Redshift)로 옮겨 분석하는 CQRS형 분리가 정석입니다. 풀 스캔·과도한 인덱스는 비용·성능 면에서 부적절합니다.
+해설: DynamoDB는 대량 집계·애드혹 분석에 부적합하므로, Streams나 S3 export로 변경분을 분석 스토어(S3+Athena/Redshift)로 옮겨 분석하는 CQRS형 분리가 정석이다. 풀 스캔·과도한 인덱스는 비용·성능 면에서 부적절하다.
 
 ---
 
@@ -262,7 +262,7 @@ C) Athena 페더레이션 쿼리
 D) Redshift Spectrum 외부 스키마  
 
 **정답: B**  
-해설: 제로 ETL 통합은 AWS 관리형 CDC로 Aurora 데이터를 코드리스·거의 실시간으로 Redshift에 복제합니다. DMS는 인스턴스 운영 부담이 있고, 페더레이션·Spectrum은 적재 없이 외부를 쿼리하는 방식으로 요구와 다릅니다.
+해설: 제로 ETL 통합은 AWS 관리형 CDC로 Aurora 데이터를 코드리스·거의 실시간으로 Redshift에 복제한다. DMS는 인스턴스 운영 부담이 있고, 페더레이션·Spectrum은 적재 없이 외부를 쿼리하는 방식으로 요구와 다르다.
 
 ---
 
@@ -274,6 +274,6 @@ C) 파티션 프로젝션(Partition Projection)
 D) 모든 파일을 CSV로 변환  
 
 **정답: C**  
-해설: 파티션 프로젝션은 파티션을 카탈로그에 등록하지 않고 범위·포맷 규칙으로 계산해 대량 파티션 환경의 조회 병목을 제거합니다. 동시성 스케일링·DISTSTYLE은 Redshift 개념이고, CSV 전환은 스캔량을 늘려 역효과입니다.
+해설: 파티션 프로젝션은 파티션을 카탈로그에 등록하지 않고 범위·포맷 규칙으로 계산해 대량 파티션 환경의 조회 병목을 제거한다. 동시성 스케일링·DISTSTYLE은 Redshift 개념이고, CSV 전환은 스캔량을 늘려 역효과이다.
 
 ---

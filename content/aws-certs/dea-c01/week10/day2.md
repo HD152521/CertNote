@@ -268,7 +268,7 @@ C) AWS Batch
 D) Amazon MWAA  
 
 **정답: D**  
-해설: Amazon MWAA(Managed Workflows for Apache Airflow)는 관리형 Airflow로 기존 DAG을 거의 그대로 운영할 수 있습니다. Step Functions는 상태 기계 기반으로 DAG 문법이 다르고, EventBridge·Batch는 Airflow 호환 워크플로 엔진이 아닙니다.
+해설: Amazon MWAA(Managed Workflows for Apache Airflow)는 관리형 Airflow로 기존 DAG을 거의 그대로 운영할 수 있다. Step Functions는 상태 기계 기반으로 DAG 문법이 다르고, EventBridge·Batch는 Airflow 호환 워크플로 엔진이 아니다.
 
 ---
 
@@ -280,7 +280,7 @@ C) AWS X-Ray
 D) Amazon Macie  
 
 **정답: B**  
-해설: CloudTrail은 계정 내 API 호출(누가·언제·무엇을)을 기록하는 감사 로그 서비스입니다. CloudWatch Alarm은 지표 임계치 알림, X-Ray는 분산 추적, Macie는 민감정보 탐지로 목적이 다릅니다.
+해설: CloudTrail은 계정 내 API 호출(누가·언제·무엇을)을 기록하는 감사 로그 서비스이다. CloudWatch Alarm은 지표 임계치 알림, X-Ray는 분산 추적, Macie는 민감정보 탐지로 목적이 다르다.
 
 ---
 
@@ -292,7 +292,7 @@ C) SSE-KMS(고객 관리 KMS 키)
 D) 클라이언트가 평문으로 업로드 후 IAM으로만 보호  
 
 **정답: C**  
-해설: SSE-KMS의 고객 관리 키(CMK)는 키 정책으로 접근을 통제하고 자동 회전을 지원하며 CloudTrail로 키 사용을 감사할 수 있습니다. SSE-S3는 키 통제·감사가 제한적이고, 나머지는 암호화 요구를 충족하지 못합니다.
+해설: SSE-KMS의 고객 관리 키(CMK)는 키 정책으로 접근을 통제하고 자동 회전을 지원하며 CloudTrail로 키 사용을 감사할 수 있다. SSE-S3는 키 통제·감사가 제한적이고, 나머지는 암호화 요구를 충족하지 못한다.
 
 ---
 
@@ -304,7 +304,7 @@ C) Amazon GuardDuty
 D) AWS Trusted Advisor  
 
 **정답: A**  
-해설: Amazon Macie는 머신러닝으로 S3 내 PII·금융정보 등 민감 데이터를 자동 발견·분류합니다. Config는 리소스 구성 추적, GuardDuty는 위협 탐지, Trusted Advisor는 모범 사례 점검으로 민감정보 분류 기능이 없습니다.
+해설: Amazon Macie는 머신러닝으로 S3 내 PII·금융정보 등 민감 데이터를 자동 발견·분류한다. Config는 리소스 구성 추적, GuardDuty는 위협 탐지, Trusted Advisor는 모범 사례 점검으로 민감정보 분류 기능이 없다.
 
 ---
 
@@ -316,6 +316,6 @@ C) Redshift VACUUM
 D) Glue Data Quality 규칙(DQDL)  
 
 **정답: D**  
-해설: Glue Data Quality는 DQDL로 완전성(IsComplete)·유효성(ColumnValues)·고유성(Uniqueness) 등 규칙을 정의해 검증하고 위반 데이터를 격리할 수 있습니다. 나머지는 로그 조회·스토리지 관리·테이블 정리 용도로 품질 검증 기능이 아닙니다.
+해설: Glue Data Quality는 DQDL로 완전성(IsComplete)·유효성(ColumnValues)·고유성(Uniqueness) 등 규칙을 정의해 검증하고 위반 데이터를 격리할 수 있다. 나머지는 로그 조회·스토리지 관리·테이블 정리 용도로 품질 검증 기능이 아니다.
 
 ---

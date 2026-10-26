@@ -228,7 +228,7 @@ C) Amazon Aurora
 D) Amazon OpenSearch  
 
 **정답: C**  
-해설: Aurora(및 RDS)는 행 기반 관계형 OLTP로 정규화 스키마·트랜잭션·소량 행 처리에 최적입니다. Redshift는 컬럼형 OLAP, Athena는 S3 서버리스 분석, OpenSearch는 검색·로그 분석용입니다.
+해설: Aurora(및 RDS)는 행 기반 관계형 OLTP로 정규화 스키마·트랜잭션·소량 행 처리에 최적이다. Redshift는 컬럼형 OLAP, Athena는 S3 서버리스 분석, OpenSearch는 검색·로그 분석용이다.
 
 ---
 
@@ -240,7 +240,7 @@ C) Redshift Spectrum
 D) Athena 페더레이션 쿼리  
 
 **정답: A**  
-해설: 제로 ETL 통합은 AWS가 CDC 복제를 관리형으로 수행해 Aurora 데이터를 코드리스로 Redshift에 거의 실시간 반영합니다. Streams는 DynamoDB 변경 캡처, Spectrum은 S3 외부 테이블 쿼리, 페더레이션은 Athena의 이종 소스 조인입니다.
+해설: 제로 ETL 통합은 AWS가 CDC 복제를 관리형으로 수행해 Aurora 데이터를 코드리스로 Redshift에 거의 실시간 반영한다. Streams는 DynamoDB 변경 캡처, Spectrum은 S3 외부 테이블 쿼리, 페더레이션은 Athena의 이종 소스 조인이다.
 
 ---
 
@@ -252,7 +252,7 @@ C) DynamoDB로 마이그레이션한다
 D) 정렬 키를 추가한다  
 
 **정답: B**  
-해설: 읽기 복제본으로 분석·리포팅 쿼리를 분리하면 쓰기 트랜잭션 성능 저하를 막을 수 있는 1차 패턴입니다. 대규모 집계가 지속되면 Redshift로 옮기는 것이 다음 단계입니다. 비정규화·DynamoDB 이전·정렬 키는 부적절하거나 관계없습니다.
+해설: 읽기 복제본으로 분석·리포팅 쿼리를 분리하면 쓰기 트랜잭션 성능 저하를 막을 수 있는 1차 패턴이다. 대규모 집계가 지속되면 Redshift로 옮기는 것이 다음 단계이다. 비정규화·DynamoDB 이전·정렬 키는 부적절하거나 관계없다.
 
 ---
 
@@ -264,7 +264,7 @@ C) Athena CTAS
 D) Kinesis Data Firehose  
 
 **정답: B**  
-해설: DMS는 이종 DB 간 마이그레이션과 지속 복제(CDC)를 지원하며 Oracle→Aurora 같은 폭넓은 소스/타깃 조합을 다룹니다. 제로 ETL은 운영 데이터를 Redshift 같은 분석 대상으로 복제하는 기능이라 DB 간 마이그레이션 용도가 아니고, CTAS·Firehose는 마이그레이션 용도가 아닙니다.
+해설: DMS는 이종 DB 간 마이그레이션과 지속 복제(CDC)를 지원하며 Oracle→Aurora 같은 폭넓은 소스/타깃 조합을 다룬다. 제로 ETL은 운영 데이터를 Redshift 같은 분석 대상으로 복제하는 기능이라 DB 간 마이그레이션 용도가 아니고, CTAS·Firehose는 마이그레이션 용도가 아니다.
 
 ---
 
@@ -276,6 +276,6 @@ C) Amazon DynamoDB
 D) Amazon Athena  
 
 **정답: C**  
-해설: 키 기반 초저지연 조회, 대규모 동시성, 온디맨드 서버리스 운영은 DynamoDB의 핵심 강점입니다. Redshift/Athena는 분석 OLAP, Aurora는 관계형 트랜잭션 워크로드에 적합합니다.
+해설: 키 기반 초저지연 조회, 대규모 동시성, 온디맨드 서버리스 운영은 DynamoDB의 핵심 강점이다. Redshift/Athena는 분석 OLAP, Aurora는 관계형 트랜잭션 워크로드에 적합하다.
 
 ---
