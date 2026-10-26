@@ -425,7 +425,7 @@ B) aws:SecureTransport = false → Deny
 C) s3:ssl = required  
 D) aws:RequestedRegion 설정  
 
-**정답: B** - `aws:SecureTransport=false`인 요청을 Deny하면 HTTP 요청을 거부하여 HTTPS만 허용됩니다.
+**정답: B** - `aws:SecureTransport=false`인 요청을 Deny하면 HTTP 요청을 거부하여 HTTPS만 허용된다.
 
 ---
 
@@ -436,7 +436,7 @@ B) 가능, RDS에서 인덱스 추가 가능
 C) DynamoDB GSI는 운영 중에도 추가 가능  
 D) 새 테이블로 마이그레이션 필요  
 
-**정답: C** - DynamoDB GSI(Global Secondary Index)는 테이블 생성 후에도 언제든지 추가/삭제 가능합니다.
+**정답: C** - DynamoDB GSI(Global Secondary Index)는 테이블 생성 후에도 언제든지 추가/삭제 가능하다.
 
 ---
 
@@ -447,7 +447,7 @@ B) 모든 쓰기 작업에 캐시 업데이트 비용 추가
 C) Cache Miss 빈도 증가  
 D) 구현 복잡도  
 
-**정답: B** - Write-Through는 모든 쓰기 시 DB와 캐시 모두 업데이트하므로 쓰기 지연과 추가 비용이 발생합니다.
+**정답: B** - Write-Through는 모든 쓰기 시 DB와 캐시 모두 업데이트하므로 쓰기 지연과 추가 비용이 발생한다.
 
 ---
 
@@ -458,7 +458,7 @@ B) 버전 관리 활성화 필수
 C) Transfer Acceleration 필요  
 D) S3 Sync 도구 필요  
 
-**정답: B** - CRR/SRR 모두 소스와 대상 버킷에 버전 관리가 활성화되어 있어야 합니다.
+**정답: B** - CRR/SRR 모두 소스와 대상 버킷에 버전 관리가 활성화되어 있어야 한다.
 
 ---
 
@@ -469,7 +469,7 @@ B) 간헐적이고 예측 불가능한 트래픽
 C) 다중 리전 서비스  
 D) 읽기 부하가 매우 높은 서비스  
 
-**정답: B** - Aurora Serverless는 트래픽이 없을 때 자동으로 0으로 스케일 다운하므로 간헐적 사용에 비용 효율적입니다.
+**정답: B** - Aurora Serverless는 트래픽이 없을 때 자동으로 0으로 스케일 다운하므로 간헐적 사용에 비용 효율적이다.
 
 ---
 
@@ -480,7 +480,7 @@ B) 1시간
 C) 최대 48시간  
 D) 7일  
 
-**정답: C** - TTL은 만료 후 48시간 이내에 비동기적으로 삭제됩니다.
+**정답: C** - TTL은 만료 후 48시간 이내에 비동기적으로 삭제된다.
 
 ---
 
@@ -491,7 +491,7 @@ B) 30일
 C) 90일  
 D) 180일  
 
-**정답: C** - S3 Glacier는 최소 90일 보존 요구 사항이 있습니다.
+**정답: C** - S3 Glacier는 최소 90일 보존 요구 사항이 있다.
 
 ---
 

@@ -390,7 +390,7 @@ B) Envelope Encryption (GenerateDataKey)
 C) S3 SSE-S3 사용  
 D) 불가능  
 
-**정답: B** - KMS 직접 암호화는 4KB 제한이 있으므로 100MB 파일은 Envelope Encryption을 사용해야 합니다.
+**정답: B** - KMS 직접 암호화는 4KB 제한이 있으므로 100MB 파일은 Envelope Encryption을 사용해야 한다.
 
 ---
 
@@ -401,7 +401,7 @@ B) CloudTrail
 C) X-Ray  
 D) VPC Flow Logs  
 
-**정답: C** - X-Ray 분산 추적은 각 서비스의 실행 시간을 세그먼트로 기록하여 병목 위치를 파악합니다.
+**정답: C** - X-Ray 분산 추적은 각 서비스의 실행 시간을 세그먼트로 기록하여 병목 위치를 파악한다.
 
 ---
 
@@ -412,7 +412,7 @@ B) CodeDeploy Canary 또는 Linear
 C) CloudFormation 업데이트  
 D) 수동 배포  
 
-**정답: B** - CodeDeploy의 Canary나 Linear 전략은 트래픽을 점진적으로 전환하고 오류 감지 시 자동으로 이전 버전으로 롤백합니다.
+**정답: B** - CodeDeploy의 Canary나 Linear 전략은 트래픽을 점진적으로 전환하고 오류 감지 시 자동으로 이전 버전으로 롤백한다.
 
 ---
 
@@ -423,7 +423,7 @@ B) CloudTrail + EventBridge + SNS
 C) GuardDuty  
 D) Config 규칙  
 
-**정답: B** - CloudTrail에서 root 로그인 이벤트를 감지하고 EventBridge에서 SNS로 즉시 알림을 보내는 패턴입니다.
+**정답: B** - CloudTrail에서 root 로그인 이벤트를 감지하고 EventBridge에서 SNS로 즉시 알림을 보내는 패턴이다.
 
 ---
 
@@ -434,7 +434,7 @@ B) ssm:GetParameter API with --with-decryption 옵션
 C) KMS decrypt API 직접 호출  
 D) Secrets Manager API 사용  
 
-**정답: B** - SSM GetParameter API에 `--with-decryption` 옵션을 사용하면 KMS로 복호화된 값을 반환합니다.
+**정답: B** - SSM GetParameter API에 `--with-decryption` 옵션을 사용하면 KMS로 복호화된 값을 반환한다.
 
 ---
 
@@ -445,7 +445,7 @@ B) 환경 변수로 평문 설정
 C) Secrets Manager ARN을 secrets-manager 섹션에 참조  
 D) S3에 파일로 저장 후 다운로드  
 
-**정답: C** - buildspec.yml의 `env.secrets-manager` 섹션에 Secrets Manager ARN을 참조하면 빌드 시 안전하게 주입됩니다.
+**정답: C** - buildspec.yml의 `env.secrets-manager` 섹션에 Secrets Manager ARN을 참조하면 빌드 시 안전하게 주입된다.
 
 ---
 
@@ -456,7 +456,7 @@ B) .ebextensions에서 option_settings으로 환경 변수 설정
 C) S3에 설정 파일 저장  
 D) 코드 내 하드코딩  
 
-**정답: B** - `.ebextensions/*.config`의 `option_settings`에서 환경별로 다른 환경 변수를 설정할 수 있습니다.
+**정답: B** - `.ebextensions/*.config`의 `option_settings`에서 환경별로 다른 환경 변수를 설정할 수 있다.
 
 ---
 
@@ -467,7 +467,7 @@ B) Annotation에 orderId 저장
 C) 로그에 orderId 출력  
 D) CloudWatch 대시보드 사용  
 
-**정답: B** - X-Ray에서 Annotation은 인덱싱되어 필터링에 사용할 수 있습니다. Metadata는 인덱싱되지 않아 필터링 불가합니다.
+**정답: B** - X-Ray에서 Annotation은 인덱싱되어 필터링에 사용할 수 있다. Metadata는 인덱싱되지 않아 필터링 불가하다.
 
 ---
 
