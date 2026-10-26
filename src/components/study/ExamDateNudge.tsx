@@ -62,7 +62,7 @@ export function ExamDateNudge() {
           {s.examNudgeBody}
         </p>
         <Link
-          href="/dashboard"
+          href="/dashboard/goal"
           className="inline-flex items-center gap-1 text-sm font-medium text-accent underline-offset-4 hover:underline"
         >
           {s.examNudgeCta}

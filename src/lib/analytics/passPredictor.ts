@@ -22,10 +22,10 @@ export interface PassPrediction {
   hasSchedule: boolean; // 시험일이 설정돼 시간 기반 계산이 유효한가
 }
 
-const MINUTES_PER_QUESTION = 2; // 문제당 평균 소요(추정)
-const FEASIBLE_DAILY_QUESTIONS = 20; // 하루 현실적 소화량 상한(초과 시 시간압박 페널티)
-const DEFAULT_TARGET_COVERAGE = 90;
-const DEFAULT_TARGET_ACCURACY = 70;
+export const MINUTES_PER_QUESTION = 2; // 문제당 평균 소요(추정)
+export const FEASIBLE_DAILY_QUESTIONS = 20; // 하루 현실적 소화량 상한(초과 시 시간압박 페널티)
+export const DEFAULT_TARGET_COVERAGE = 90;
+export const DEFAULT_TARGET_ACCURACY = 70;
 
 const clamp = (n: number, lo = 0, hi = 100): number => Math.max(lo, Math.min(hi, n));
 

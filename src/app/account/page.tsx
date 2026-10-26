@@ -24,11 +24,14 @@ interface ProfileRow {
   email_verified: boolean | null;
 }
 
-export default async function AccountPage() {
+export default async function AccountPage({ searchParams }: { searchParams: Promise<{ tab?: string | string[] }> }) {
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login?next=/account');
   }
+  // 탭을 없앴다. 예전 북마크·알림 메일의 ?tab=notebook 은 오답노트 페이지로 보낸다.
+  const { tab } = await searchParams;
+  if (tab === 'notebook') redirect('/notebook');
 
   const [rows, metas, authInfo] = await Promise.all([
     query<ProfileRow>(

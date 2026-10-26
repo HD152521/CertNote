@@ -6,18 +6,15 @@ import { getStreak, kstToday, listRecentActivity } from '@/lib/study/activity';
 import { getAttemptService, ATTEMPT_HISTORY_LIMIT } from '@/lib/quiz/attemptService';
 import { getQuestionById } from '@/lib/questions';
 import { listCerts } from '@/lib/content';
+import { getLearnerProfile } from '@/lib/profile/profileService';
+import { countCompletedDays, pickFocusPlan } from '@/lib/study/focusPlan';
 
 const CALENDAR_DAYS = 12 * 7; // 히트맵 12주.
 
 // 해당 자격증에서 실제로 완료한 day 수(퀴즈를 푼 distinct week#day). 뒤처짐 판정용.
 async function completedDaysFor(userId: string, slug: string): Promise<number> {
   const attempts = await getAttemptService().list(userId, ATTEMPT_HISTORY_LIMIT);
-  const done = new Set<string>();
-  for (const a of attempts) {
-    const q = getQuestionById(a.questionId);
-    if (q && q.slug === slug && q.week > 0) done.add(`${q.week}#${q.day}`);
-  }
-  return done.size;
+  return countCompletedDays(attempts, getQuestionById, slug);
 }
 
 export const dynamic = 'force-dynamic';
@@ -28,17 +25,18 @@ export async function GET() {
     const user = await getCurrentUser();
     if (!user) throw new AppError(401, 'unauthorized', '로그인이 필요합니다.');
 
-    const [plans, streak, activity] = await Promise.all([
+    const [plans, streak, activity, profile] = await Promise.all([
       listPlans(user.sub),
       getStreak(user.sub),
       listRecentActivity(user.sub, CALENDAR_DAYS),
+      getLearnerProfile(user.sub),
     ]);
     const today = kstToday();
     if (plans.length === 0) {
       return Response.json({ streak, portion: null, activity, today });
     }
-    // listPlans는 시험일 오름차순 → 아직 안 지난 가장 가까운 시험, 없으면 첫 번째.
-    const target = plans.find((p) => p.examDate >= today) ?? plans[0];
+    // 대시보드·합격 예측과 같은 플랜: 목표 자격증 → 아직 안 지난 가장 가까운 시험 → 첫 번째.
+    const target = pickFocusPlan(plans, profile.targetCert, today) ?? plans[0];
     const completedDays = await completedDaysFor(user.sub, target.certSlug);
     const portion = await computeToday(target, completedDays);
 
