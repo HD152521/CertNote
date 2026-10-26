@@ -35,10 +35,8 @@ export function OgLogo({ fontSize }: OgLogoProps) {
           strokeLinejoin="round"
         />
       </svg>
-      <div style={{ display: 'flex', fontSize, fontWeight: 700, letterSpacing: -1 }}>
-        <span>Cert</span>
-        <span style={{ color: OG_ACCENT }}>Note</span>
-      </div>
+      {/* satori 는 인접한 span 사이에 간격을 넣어 "Cert Note" 처럼 보이므로 한 덩어리로 쓴다. */}
+      <div style={{ display: 'flex', fontSize, fontWeight: 700, letterSpacing: -1 }}>CertNote</div>
     </div>
   );
 }
