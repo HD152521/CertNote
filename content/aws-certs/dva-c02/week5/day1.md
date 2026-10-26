@@ -182,7 +182,7 @@ C) 3개월에 한 번 분석하는 대용량 데이터셋
 D) 접근 패턴을 예측하기 어려운 사용자 업로드 파일
 
 **정답: B**
-해설: S3 Intelligent-Tiering은 객체당 월 $0.0025의 모니터링 비용이 발생한다. 50KB 파일의 한 달 저장 비용은 약 $0.0000115(Standard 기준)인데, 모니터링 비용 $0.0025가 저장 비용의 200배 이상이다. AWS 자체도 공식 문서에서 128KB 미만의 객체는 Intelligent-Tiering에 부적합하다고 명시한다. 나머지 선택지는 모두 Intelligent-Tiering의 이상적인 사용 사례다.
+해설: S3 Intelligent-Tiering은 128KB 미만 객체를 모니터링하지 않고 자동 계층화 대상에서도 뺀다. 이런 객체는 항상 Frequent Access 계층 요금으로 과금되므로, 평균 50KB 파일 수백만 개를 넣어도 비용 절감 효과가 없다. 나머지 선택지는 접근 패턴이 불규칙하거나 예측하기 어려운 큰 객체라 Intelligent-Tiering의 전형적인 사용 사례다.
 
 ---
 
@@ -202,10 +202,10 @@ D) 최대 100MB, Multipart Upload 사용
 
 A) 여러 AZ에 데이터를 분산 저장하여 11 nines 내구성을 보장한다
 B) 일반 S3 버킷과 동일한 API로 사용할 수 있다
-C) Directory Bucket 유형을 사용하며 1ms 미만의 지연 시간을 제공한다
+C) Directory Bucket 유형을 사용하며 한 자릿수 밀리초의 지연 시간을 제공한다
 D) 모든 리전에서 사용 가능하다
 
 **정답: C**
-해설: S3 Express One Zone은 일반 General Purpose Bucket이 아닌 Directory Bucket이라는 새로운 유형을 사용한다. 단일 AZ에만 데이터를 저장하므로 AZ 장애 시 데이터 접근이 불가능하고, 2023년 기준 제한된 리전에서만 제공된다. 1ms 미만의 접근 지연은 Standard의 수십~수백ms보다 약 10배 빠르다. AI/ML 학습, HPC 워크로드처럼 반복적 데이터 접근이 필요한 경우에 최적화되어 있다.
+해설: S3 Express One Zone은 일반 General Purpose Bucket이 아닌 Directory Bucket이라는 새로운 유형을 사용한다. 단일 AZ에만 데이터를 저장하므로 AZ 장애 시 데이터 접근이 불가능하고, 2023년 기준 제한된 리전에서만 제공된다. 한 자릿수 밀리초의 일관된 지연으로, S3 Standard보다 최대 10배 빠른 데이터 접근을 제공한다. AI/ML 학습, HPC 워크로드처럼 반복적 데이터 접근이 필요한 경우에 최적화되어 있다.
 
 ---

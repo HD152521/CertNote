@@ -535,12 +535,12 @@ D) RDS로 서비스 간 데이터 공유
 
 ```
 Lambda     메모리 10240MB · 타임아웃 15분 · /tmp 10GB · Layer 5개 · ZIP 250MB · 컨테이너 10GB
-           동시성 1000 (기본) · 비동기 재시도 2회 · 동기 payload 6MB · 비동기 256KB · 스트리밍 20MB
+           동시성 1000 (기본) · 비동기 재시도 2회 · 동기 payload 6MB · 비동기 1MB · 스트리밍 200MB
 DynamoDB   항목 400KB · 트랜잭션 100개·4MB · LSI 5개·생성시만 · GSI 20개·언제든
            Streams 24h · Burst 5분 · 파티션당 3000 RCU + 1000 WCU
 S3         객체 5TB · 단일 PUT 5GB · 멀티파트 파트 5MB~5GB · 파트수 10000
            Glacier 최소 90일 · Deep Archive 180일 · IA 30일 · IA 객체 최소 128KB
-SQS        메시지 256KB · 보존 1m~14d · VT 0~12h · FIFO 300/s (고처리량 70k)
+SQS        메시지 1MiB · 보존 1m~14d · VT 0~12h · FIFO 300/s (고처리량 70k)
 Kinesis    샤드 쓰기 1MB/s·1000 RPS · 읽기 2MB/s · 보존 24h~365d · On-Demand 200MB/s
 EC2        UserData 16KB · Spot 2분 알림 · SG 60 규칙 · 1 인스턴스 5 SG
 STS        AssumeRole 1h~12h · 체인 1h · GetSessionToken 36h

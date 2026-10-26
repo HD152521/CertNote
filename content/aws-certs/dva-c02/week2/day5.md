@@ -239,7 +239,7 @@ C) web-sg의 outbound 규칙에서 169.254.169.254/32가 차단됨 — link-loca
 D) subnet NACL이 169.254.0.0/16 link-local 트래픽을 deny rule로 차단 — link-local은 NACL 적용 대상이 아니라 원인 불가
 
 **정답: B**
-해설: 2024년 이후 새 인스턴스는 기본이 IMDSv2 required. 토큰 없이 GET하면 401. 정확한 방법:
+해설: IMDSv2가 required로 설정된 인스턴스(Amazon Linux 2023 기본값, 2024년 중반 이후 출시된 인스턴스 유형의 기본값)는 토큰 없이 GET하면 401을 반환한다. 정확한 방법:
 ```bash
 TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" \
   -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
