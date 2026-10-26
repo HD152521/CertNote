@@ -280,4 +280,4 @@ D) Lambda 라우팅 스크립트 + Pilot Light
 - Week 13-14: Well-Architected · DR
 - Week 15-16: 케이스 스터디 · 도메인 종합 · 모의고사
 
-**합격을 기원합니다. 시험 후엔 Specialty(Security·Networking·DB·ML) 또는 실무 깊이 우선으로 다음 목표를 정하세요.**
+**시험 후에는 Specialty(Security·Networking·DB·ML) 또는 실무 깊이 중 하나를 다음 목표로 정한다.**
