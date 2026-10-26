@@ -4,7 +4,7 @@ P3 애드센스 대비 고도화(`docs/P3-adsense-readiness-plan.md`) Step 1~14 
 배경·작업 방식·아직 main 에 없는 검수 통과 코드(`feat/p3-followup`)의 위치는 `docs/HANDOFF-2026-10-14.md` 에 있다.
 아래는 남은 일이다.
 
-P4 신뢰·품질 개선(`docs/P4-trust-quality-plan.md`)은 PR #15~#20으로 올렸다(2026-10-23). #15·#16·#17·#19 머지, #18·#20 대기.
+P4 신뢰·품질 개선(`docs/P4-trust-quality-plan.md`)은 PR #15~#20으로 올렸다(2026-10-23). 모두 머지했다(#18·#20은 2026-10-26).
 결과·머지 순서·남은 일은 `docs/HANDOFF-2026-10-23-P4.md`에 있다.
 
 ## 광고를 켜기 전에 (사용자 작업)
