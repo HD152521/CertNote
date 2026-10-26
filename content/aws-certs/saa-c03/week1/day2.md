@@ -172,7 +172,7 @@ curl -H "X-aws-ec2-metadata-token: $TOKEN" \
 
 이때 반환되는 자격 증명은 보통 1시간마다 자동 갱신된다. SDK는 만료 5분 전부터 미리 새 토큰을 받아오므로 애플리케이션 코드에서 신경 쓸 필요가 없다.
 
-**사례**: Capital One 사고(Day 1에서 봤음)의 직접 원인이 바로 이 IMDS의 IMDSv1 버전이었다. IMDSv1은 단순 GET이어서 SSRF로 외부 공격자가 접근 가능했다. IMDSv2는 PUT으로 토큰을 먼저 받아야 GET이 동작하므로 거의 대부분의 SSRF가 무력화된다. 2022년부터 모든 신규 EC2 AMI는 기본적으로 IMDSv2를 요구하도록 권장된다.
+**사례**: Capital One 사고(Day 1에서 봤음)의 직접 원인이 바로 이 IMDS의 IMDSv1 버전이었다. IMDSv1은 단순 GET이어서 SSRF로 외부 공격자가 접근 가능했다. IMDSv2는 PUT으로 토큰을 먼저 받아야 GET이 동작하므로 거의 대부분의 SSRF가 무력화된다. 2023년 3월 출시된 Amazon Linux 2023은 기본으로 IMDSv2만 허용하고, AWS는 2024년 중반 이후 새로 출시되는 인스턴스 유형을 IMDSv2 전용 기본값으로 바꾸겠다고 2023년 11월 발표했다. 그 밖의 경우는 `HttpTokens=required`로 직접 강제한다.
 
 ## 실무 베스트 프랙티스 정리
 

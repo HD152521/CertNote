@@ -177,7 +177,7 @@ runcmd:
 
 ## IMDSv2 강제: 보안 강화
 
-Capital One 사고(2019)는 SSRF로 IMDSv1을 노출시켜 IAM 역할 자격증명을 탈취한 사건이다. AWS는 그 직접적 결과로 2019년 11월 IMDSv2(session token 기반)를 도입했고, 2024년부터 새 EC2 인스턴스의 기본값을 IMDSv2 required로 바꿨다.
+Capital One 사고(2019)는 SSRF로 IMDSv1을 노출시켜 IAM 역할 자격증명을 탈취한 사건이다. AWS는 그 직접적 결과로 2019년 11월 IMDSv2(session token 기반)를 도입했다. 2023년 3월 출시된 Amazon Linux 2023은 기본으로 IMDSv2만 허용하고, 2023년 11월에는 2024년 중반 이후 새로 출시되는 인스턴스 유형은 기본으로 IMDSv2만 쓰도록 하겠다고 발표했다. 기존 인스턴스 유형과 다른 AMI는 여전히 `HttpTokens=required`를 직접 설정해 강제한다.
 
 ```bash
 # 인스턴스 시작 시 IMDSv2 강제 + hop limit 1로 컨테이너 차단
