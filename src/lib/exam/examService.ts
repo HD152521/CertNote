@@ -102,7 +102,10 @@ export async function gradeExam(
   const items: ExamResultItem[] = [];
   let correct = 0;
   let answered = 0;
-  for (const id of questionIds) {
+  // 같은 id 를 반복해 보내 점수를 부풀리거나 요청 하나로 DB 쓰기를 수만 건 일으키지 못하게,
+  // 중복을 지우고 출제 상한(MAX_COUNT)까지만 채점한다.
+  const ids = [...new Set(questionIds)].slice(0, MAX_COUNT);
+  for (const id of ids) {
     const q = getExamQuestionById(id);
     if (!q) continue;
     const raw = answers[id];

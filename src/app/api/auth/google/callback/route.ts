@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { exchangeGoogleCode, OAUTH_STATE_COOKIE } from '@/lib/auth/oauth/google';
 import { getAuthService } from '@/lib/auth/factory';
+import { safeNext } from '@/lib/auth/safeNext';
 import { createSessionToken, SESSION_COOKIE, sessionCookieOptions } from '@/lib/auth/session';
 
 // 구글 콜백: state 대조 → 코드 교환·id_token 검증 → 계정 찾기/연결/생성 → 세션 발급.
@@ -45,7 +46,7 @@ export async function GET(req: Request) {
       ver: user.tokenVersion,
     });
 
-    const next = saved.next && saved.next.startsWith('/') && !saved.next.startsWith('//') ? saved.next : '/';
+    const next = safeNext(saved.next);
     // 신규 가입자는 프로필 보완 온보딩으로(원래 목적지는 완료/건너뛰기 후 이동).
     const dest = isNew
       ? `/onboarding/profile${next !== '/' ? `?next=${encodeURIComponent(next)}` : ''}`
