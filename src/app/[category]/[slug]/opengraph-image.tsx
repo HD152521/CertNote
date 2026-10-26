@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { OG_ACCENT, OG_BACKGROUND, OgLogo } from '@/components/brand/OgLogo';
 import { certLevelLabel, sectionOfCategory } from '@/lib/category';
 import { getCertMeta } from '@/lib/content';
 
@@ -35,23 +36,20 @@ export default async function OgImage({ params }: { params: Promise<{ category: 
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: 72,
-          background: 'linear-gradient(135deg, #0a0f1c 0%, #101c36 60%, #16295a 100%)',
+          background: OG_BACKGROUND,
           color: '#f3f5f9',
           fontFamily: 'sans-serif',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: '#4f7cff', display: 'flex' }} />
-            <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: -1 }}>CertNote</div>
-          </div>
+          <OgLogo fontSize={34} />
           {level ? (
             <div
               style={{
                 display: 'flex',
                 fontSize: 26,
-                color: '#7ea2ff',
-                border: '2px solid #33508f',
+                color: OG_ACCENT,
+                border: '2px solid rgba(45, 212, 191, 0.45)',
                 borderRadius: 999,
                 padding: '10px 26px',
               }}

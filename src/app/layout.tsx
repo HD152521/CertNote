@@ -63,8 +63,8 @@ export const metadata: Metadata = {
   },
   twitter: { card: 'summary_large_image' },
   // 매니페스트(app/manifest.ts)는 Next가 자동 링크하지만, iOS 홈화면 설치 동작은 아래 메타가 담당.
+  // 아이콘은 파일 규칙(app/icon.svg·apple-icon.png·favicon.ico, scripts/gen-icons.mjs 가 생성)으로 링크된다.
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'CertNote' },
-  icons: { apple: '/icons/apple-touch-icon.png' },
 };
 
 export const viewport: Viewport = {

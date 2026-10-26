@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { OG_ACCENT, OG_BACKGROUND, OgLogo } from '@/components/brand/OgLogo';
 
 // 사이트 기본 OG 카드(카톡·트위터 등 링크 미리보기). 하위 세그먼트는 자격증별 카드로 덮어쓴다.
 // ImageResponse 기본 폰트는 한글 미지원 → 라틴 텍스트로만 구성한다.
@@ -17,28 +18,17 @@ export default function OgImage() {
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: 72,
-          background: 'linear-gradient(135deg, #0a0f1c 0%, #101c36 60%, #16295a 100%)',
+          background: OG_BACKGROUND,
           color: '#f3f5f9',
           fontFamily: 'sans-serif',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 8,
-              background: '#4f7cff',
-              display: 'flex',
-            }}
-          />
-          <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1 }}>CertNote</div>
-        </div>
+        <OgLogo fontSize={36} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ fontSize: 76, fontWeight: 800, letterSpacing: -2, lineHeight: 1.1 }}>
             AWS Certification
           </div>
-          <div style={{ fontSize: 76, fontWeight: 800, letterSpacing: -2, lineHeight: 1.1, color: '#7ea2ff' }}>
+          <div style={{ fontSize: 76, fontWeight: 800, letterSpacing: -2, lineHeight: 1.1, color: OG_ACCENT }}>
             Study Notes
           </div>
           <div style={{ fontSize: 30, color: '#aeb9cf', marginTop: 8 }}>
