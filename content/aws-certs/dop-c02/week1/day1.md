@@ -12,7 +12,7 @@ DevOps라는 단어를 처음 들었을 때 대부분은 "Jenkins랑 Ansible 같
 
 > 💡 **관련 이론**: Conway의 법칙(1968) — "시스템 아키텍처는 그 조직의 커뮤니케이션 구조를 반영한다". 즉 Dev팀과 Ops팀이 분리되어 있으면 코드와 운영 인프라가 분리된 형태로 굳어지고, 둘 사이에 "throw it over the wall"이라는 안티패턴이 자연스럽게 생긴다. DevOps는 **역방향 Conway 법칙(Inverse Conway Maneuver)**을 적용해, "원하는 아키텍처에 맞춰 조직을 먼저 재설계"한다. Team Topologies(Skelton & Pais, 2019)는 이 아이디어를 4가지 팀 유형(Stream-aligned, Platform, Enabling, Complicated-subsystem)으로 정형화했다.
 
-> 2010년 Etsy의 John Allspaw가 CTO로 부임하며 "blameless postmortem"(비난 없는 사후 분석) 문화를 정착시켰다. 이는 단순한 친절함이 아니라 SRE의 핵심 원칙이다. 사람을 비난하는 문화에서는 엔지니어가 사고를 숨기고, 시스템 결함이 드러나지 않아 같은 사고가 반복된다. Etsy는 매주 "Postmortem of the Week"를 공유하며 학습 조직 문화를 만들었고, 이게 곧 산업 표준 SRE 프랙티스가 됐다. AWS의 Correction of Errors(COE) 프로세스가 정확히 이 패턴을 차용한다.
+> Etsy의 John Allspaw는 2012년 Etsy 기술 블로그(Code as Craft)에 "Blameless PostMortems and a Just Culture"를 써서 비난 없는 사후 분석(blameless postmortem)을 널리 알렸다. 이는 단순한 친절함이 아니라 SRE의 핵심 원칙이다. 사람을 비난하는 문화에서는 엔지니어가 사고를 숨기고, 시스템 결함이 드러나지 않아 같은 사고가 반복된다. 이 방식은 이후 업계의 표준 SRE 프랙티스로 자리 잡았고, AWS의 Correction of Errors(COE) 프로세스도 같은 방향이다.
 
 ## CALMS: 다섯 축으로 분해한 DevOps 성숙도
 
@@ -119,7 +119,7 @@ Google이 2003년 Ben Treynor Sloss 주도로 만든 SRE(Site Reliability Engine
 | 책임 경계 | You build it, you run it | SLO 기반 책임 분담 |
 | 자동화 정의 | Pipeline-as-Code | Toil < 50% 강제 |
 
-핵심 통찰은 Ben Treynor의 한마디: "**Class SRE implements DevOps**". 즉 DevOps는 추상 인터페이스(원칙)이고, SRE는 그 구체적 구현체다. 두 운동은 충돌하지 않고, AWS 도구 생태계는 두 패러다임 모두를 지원한다.
+핵심 통찰은 Google Cloud의 Liz Fong-Jones와 Seth Vargo가 2018년 영상 시리즈에서 쓴 비유 "**class SRE implements DevOps**"다. 즉 DevOps는 추상 인터페이스(원칙)이고, SRE는 그 구체적 구현체다. 두 운동은 충돌하지 않고, AWS 도구 생태계는 두 패러다임 모두를 지원한다.
 
 DOP-C02 시험은 둘을 명시적으로 구분하진 않지만, "Error Budget", "SLO 기반 자동 롤백", "Toil 제거" 같은 키워드가 나오면 SRE 색깔이 더 강한 문제이고, "CI/CD 파이프라인 설계", "Cross-account 자동화" 같은 키워드는 DevOps 색깔이 강한 문제다.
 
