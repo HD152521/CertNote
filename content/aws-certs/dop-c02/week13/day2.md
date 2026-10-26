@@ -120,7 +120,7 @@ aws kms replicate-key --key-id mrk-abc --replica-region us-east-1  # Replicate
 
 ## 정리
 
-오늘은 네 장의 그림이 나왔다. 첫째, **멀티 리전은 빛의 속도 때문에 비동기 복제를 받아들여야 하며, 그 결과로 생기는 불일치와 충돌을 다루는 것이 핵심**이다. 둘째, **Route 53은 DNS 기반 GSLB**로 7개 라우팅 정책과 쿼럼 헬스 체크를 결합하지만 DNS 캐시 TTL이 근본적인 지연이며, **즉각 페일오버는 anycast 기반의 Global Accelerator의 몫**이다. 셋째, **데이터 복제는 단일 리더(Aurora Global, 충돌 없음)와 다중 리더(DDB Global Tables, LWW) 사이의 트레이드오프**이며, LWW는 clock skew로 인한 조용한 갱신 손실 위험이 있다. 넷째, **KMS Multi-Region Key는 암호화 경계를 이어** 복제된 암호문을 다른 리전에서 복호화할 수 있게 하고, **S3 CRR은 버저닝 이후의 새 객체만 복제하며**, **Route 53 ARC는 컨트롤/데이터 플레인 분리로 페일오버를 안전한 코드로 만든다.**
+오늘은 네 장의 그림이 나왔다. 첫째, **멀티 리전은 빛의 속도 때문에 비동기 복제를 받아들여야 하며, 그 결과로 생기는 불일치와 충돌을 다루는 것이 핵심**이다. 둘째, **Route 53은 DNS 기반 GSLB**로 8개 라우팅 정책과 쿼럼 헬스 체크를 결합하지만 DNS 캐시 TTL이 근본적인 지연이며, **즉각 페일오버는 anycast 기반의 Global Accelerator의 몫**이다. 셋째, **데이터 복제는 단일 리더(Aurora Global, 충돌 없음)와 다중 리더(DDB Global Tables, LWW) 사이의 트레이드오프**이며, LWW는 clock skew로 인한 조용한 갱신 손실 위험이 있다. 넷째, **KMS Multi-Region Key는 암호화 경계를 이어** 복제된 암호문을 다른 리전에서 복호화할 수 있게 하고, **S3 CRR은 버저닝 이후의 새 객체만 복제하며**, **Route 53 ARC는 컨트롤/데이터 플레인 분리로 페일오버를 안전한 코드로 만든다.**
 
 다음에는 네 가지 DR 전략인 Backup & Restore, Pilot Light, Warm Standby, Active-Active와 각각의 RTO/RPO/비용 트레이드오프를 살펴본다.
 
@@ -242,4 +242,4 @@ D) CloudFront Origin Failover
 
 ## 📌 오늘의 요약
 
-오늘 본 핵심은 네 가지다. 첫째, 멀티 리전은 빛의 속도라는 물리 한계로 비동기 복제를 받아들여야 하며 그 결과인 충돌·불일치를 다루는 게 본질이다. 둘째, Route 53은 DNS 기반 GSLB로 7종 라우팅 정책과 정족수 헬스 체크(여러 checker 합의로 false positive 방지)를 결합하지만 DNS 캐시 TTL이라는 지연 한계가 있어, 즉각 페일오버는 anycast 고정 IP 기반 Global Accelerator가 맡는다(CloudFront는 HTTP 콘텐츠 캐싱). 셋째, 데이터 복제는 단일 리더(Aurora Global, 쓰기 한 곳이라 충돌 없음, secondary promote ~1분)와 멀티 마스터(DynamoDB Global Tables, LWW 충돌 해결)의 트레이드오프이며 LWW는 clock skew로 silent lost update 위험을 품는다. 넷째, KMS Multi-Region Key가 같은 키 자료를 리전 간 공유해 복제 암호문의 리전 이식성을 주고(봉투 암호화 KEK 공유), S3 CRR은 버전 관리 필수·새 객체만 복제이며, Route 53 ARC가 컨트롤/데이터 플레인 분리로 안전한 DR 페일오버 토글을 제공한다.
+오늘 본 핵심은 네 가지다. 첫째, 멀티 리전은 빛의 속도라는 물리 한계로 비동기 복제를 받아들여야 하며 그 결과인 충돌·불일치를 다루는 게 본질이다. 둘째, Route 53은 DNS 기반 GSLB로 8종 라우팅 정책과 정족수 헬스 체크(여러 checker 합의로 false positive 방지)를 결합하지만 DNS 캐시 TTL이라는 지연 한계가 있어, 즉각 페일오버는 anycast 고정 IP 기반 Global Accelerator가 맡는다(CloudFront는 HTTP 콘텐츠 캐싱). 셋째, 데이터 복제는 단일 리더(Aurora Global, 쓰기 한 곳이라 충돌 없음, secondary promote ~1분)와 멀티 마스터(DynamoDB Global Tables, LWW 충돌 해결)의 트레이드오프이며 LWW는 clock skew로 silent lost update 위험을 품는다. 넷째, KMS Multi-Region Key가 같은 키 자료를 리전 간 공유해 복제 암호문의 리전 이식성을 주고(봉투 암호화 KEK 공유), S3 CRR은 버전 관리 필수·새 객체만 복제이며, Route 53 ARC가 컨트롤/데이터 플레인 분리로 안전한 DR 페일오버 토글을 제공한다.
