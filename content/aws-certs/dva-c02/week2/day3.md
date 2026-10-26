@@ -25,7 +25,7 @@ EBS는 한 AZ 안에서 자동으로 **3-way replication**을 한다. 그래서 
 
 Nitro 인스턴스의 경우 EBS는 **Nitro EBS Card**라는 전용 PCIe 카드를 통해 액세스된다. 호스트 OS의 CPU를 거의 안 거치고 카드가 직접 네트워크 패킷을 처리하므로, 같은 인스턴스 타입에서 non-Nitro 대비 약 2배의 EBS throughput이 나온다. 또 EBS-Optimized 옵션이 무료로 기본 활성화돼 있어, EC2의 일반 네트워크 대역과 EBS 대역이 분리된다(예전엔 옵션이었고 추가 요금).
 
-EBS의 "11 nines durability"(io2/io2 Block Express)는 한 AZ 안의 3-way replication 위에 background scrubbing(체크섬 검사 후 손상 시 재복제), erasure coding 일부 적용, 정기적 fault detection으로 달성된다. gp3는 11 nines가 아니라 99.8-99.9% durability(연간 0.1-0.2% volume이 영구 데이터 손실 가능성). 그래서 critical workload에는 gp3보다 io2가 권장된다. 다만 실무에선 어떤 EBS 타입이든 application-level backup(snapshot, RDS automated backup, Aurora continuous backup)이 항상 권장된다.
+io2 Block Express의 설계 내구성은 99.999%(five nines, 연간 고장률 0.001% 이하)다. S3의 11 nines(99.999999999%)와 혼동하지 않는다. 내부 복제 방식은 AWS가 세부를 공개하지 않는다. gp3·gp2·io1은 99.8-99.9% durability(연간 고장률 0.2% 이하, 1,000개 볼륨 중 연간 최대 2개 고장)다. 그래서 critical workload에는 gp3보다 io2가 권장된다. 다만 실무에선 어떤 EBS 타입이든 application-level backup(snapshot, RDS automated backup, Aurora continuous backup)이 항상 권장된다.
 
 ## EBS volume type 깊이 분석
 
@@ -33,19 +33,18 @@ EBS의 "11 nines durability"(io2/io2 Block Express)는 한 AZ 안의 3-way repli
 
 | 타입 | 미디어 | 기본 IOPS / 최대 IOPS | 처리량 | 가격(GB/월, ap-northeast-2 기준) | 대표 워크로드 |
 |------|-------|----------|--------|----------|----------|
-| **gp3** | SSD | 3,000 / 16,000 | 125-1,000 MB/s | $0.0912 | 부팅 볼륨, 일반 DB, 웹서버 |
+| **gp3** | SSD | 3,000 / 80,000 (최대 500:1) | 125-2,000 MiB/s | $0.0912 | 부팅 볼륨, 일반 DB, 웹서버 |
 | **gp2** | SSD | 100-16,000 (GB×3) | 250 MB/s | $0.114 | gp3 이전 세대 (마이그레이션 권장) |
-| **io1** | SSD | 100-64,000 (1:50 비율) | 1,000 MB/s | $0.1425 + IOPS | 고성능 DB |
-| **io2** | SSD | 100-64,000 (1:500 비율) | 1,000 MB/s | $0.1425 + IOPS | 미션 크리티컬 DB |
-| **io2 Block Express** | SSD | 100-256,000 (1:1000) | 4,000 MB/s | $0.1425 + IOPS | SAP HANA, 대형 OLTP |
+| **io1** | SSD | 100-64,000 (최대 50:1) | 1,000 MiB/s | $0.1425 + IOPS | 고성능 DB (이전 세대) |
+| **io2 Block Express** | SSD | 100-256,000 (최대 1,000:1) | 4,000 MiB/s | $0.1425 + IOPS | 미션 크리티컬 DB, SAP HANA, 대형 OLTP |
 | **st1** | HDD | 40-500 (baseline) | 250-500 MB/s | $0.051 | 빅데이터 ETL, 로그 |
 | **sc1** | HDD | 12-250 (baseline) | 80-250 MB/s | $0.0174 | 콜드 아카이브 |
 
 **gp3가 gp2를 대체하는 이유**: gp2는 IOPS가 볼륨 크기에 묶여 있어(1GB당 3 IOPS, 최대 16,000) 100GB 볼륨에 5,000 IOPS가 필요하면 1,667GB까지 키워야 했다. gp3는 IOPS와 throughput을 **크기와 독립적으로** 설정 가능하다(추가 비용 있음). 같은 100GB 볼륨에 5,000 IOPS와 250 MB/s를 설정해도 gp2보다 약 20% 저렴하다.
 
-**io1 vs io2의 차이**: io2가 늦게 나온 만큼 더 좋다. ① durability가 io1의 99.9%에서 io2는 99.999%(=11 nines)로 4 nines 더 높음. ② 같은 가격에 IOPS:GB 비율이 io1의 1:50에서 io2는 1:500으로 10배. 즉 100GB io2는 5,000 IOPS까지 가능, 100GB io1은 50 IOPS까지만 보장. 그래서 새 워크로드에 io1을 쓰는 것은 오답 보기로 쓰이기 쉽다.
+**io1 vs io2의 차이**: 2025년 4월 30일부터 새로 만들든 기존이든 모든 io2 볼륨은 io2 Block Express다. ① durability가 io1의 99.8-99.9%에서 io2는 99.999%(five nines)로 높다. ② GiB당 프로비저닝 가능한 IOPS가 io1은 최대 50, io2는 최대 1,000이다. 즉 100GiB io1은 최대 5,000 IOPS, 100GiB io2는 최대 100,000 IOPS까지 설정한다. 그래서 새 워크로드에 io1을 쓰는 것은 오답 보기로 쓰이기 쉽다.
 
-**io2 Block Express**: 2021년 출시. NVMe over Fabrics 프로토콜 기반으로 EBS 네트워크 스택을 새로 짰다. 256K IOPS, 4 GB/s throughput, sub-millisecond latency, 64TB까지 확장. SAP HANA 같은 인메모리 DB의 영구 스토리지 layer에 쓰인다. r5b 같은 io2 Block Express 호환 인스턴스에서만 동작.
+**io2 Block Express**: 2021년 정식 출시. 차세대 EBS 스토리지 서버 구조 위에서 Nitro 카드와 SRD(Scalable Reliable Datagram) 네트워크 프로토콜로 통신한다. 최대 256,000 IOPS, 4,000 MiB/s throughput, 16KiB I/O 기준 평균 500마이크로초 미만 latency, 64TiB까지 확장한다. SAP HANA 같은 인메모리 DB의 영구 스토리지 layer에 쓰인다. 256,000 IOPS는 Nitro 기반 인스턴스에서 나오고, 그 밖의 인스턴스는 최대 32,000 IOPS까지 낸다.
 
 > ⚠️ **함정**: 시험에서 "데이터베이스에 가장 적합한 EBS 타입"이 보이면 io2 또는 io2 Block Express가 답이다. gp3도 "일반 DB"엔 충분하지만, "지연 시간 민감"이나 "미션 크리티컬"이라는 키워드가 붙으면 io2 답. 또 "HDD를 부팅 볼륨으로"라는 보기는 오답이다. st1과 sc1은 부팅 불가.
 

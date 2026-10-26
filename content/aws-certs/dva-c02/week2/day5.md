@@ -139,7 +139,7 @@ Target Tracking이 켜져 있으면 매번 metric을 보고 desired를 다시 �
 | Cluster PG | Partition PG | 단일 그룹 vs 여러 파티션(Cassandra rack-awareness) |
 | Target Tracking | Step Scaling | 자동 목표값 추적 vs 명시적 임계값 step |
 | gp3 | gp2 | IOPS·throughput 독립 설정 vs 크기 종속 |
-| io1 | io2 | 99.9% vs 99.999% durability + IOPS:GB 1:50 vs 1:500 |
+| io1 | io2 | 99.8-99.9% vs 99.999% durability + GiB당 최대 IOPS 50 vs 1,000 (io2는 모두 Block Express) |
 | EBS | EFS | block 단일 인스턴스 vs NFS 다중 인스턴스 |
 | EFS | FSx for Lustre | 일반 NFS vs HPC 병렬 FS |
 | Cross-Zone ALB | Cross-Zone NLB | 기본 ON·무료 vs 기본 OFF·켜면 cross-AZ data transfer 비용 |
