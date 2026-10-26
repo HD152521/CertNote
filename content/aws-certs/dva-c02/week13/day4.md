@@ -28,7 +28,7 @@ AppSync: GraphQL, 실시간 구독, 오프라인 지원
 
 ### 핵심 숫자
 ```
-SQS: 256KB, 14일, FIFO 300/s, VisibilityTimeout 30초
+SQS: 1MiB(2025년 8월 256KB에서 상향), 14일, FIFO 300/s, VisibilityTimeout 30초
 Kinesis: 샤드 1MB/s 쓰기, 2MB/s 읽기, 24시간 기본 보존
 SNS: 여러 구독 대상, Push 방식
 ```
