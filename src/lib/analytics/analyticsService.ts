@@ -5,7 +5,8 @@ import { getAttemptService, ATTEMPT_HISTORY_LIMIT } from '../quiz/attemptService
 import type { AttemptRecord } from '../quiz/attemptRepository';
 import { getQuestionById } from '../questions';
 import { computeToday, listPlans, type StudyPlan } from '../study/plan';
-import { predictPass, type PassPrediction } from './passPredictor';
+import { pickFocusPlan } from '../study/focusPlan';
+import { predictPass, type PassPrediction, type PassPredictorInput } from './passPredictor';
 import { buildDailyTrend, type TrendPoint } from './trend';
 
 const RECENT_WINDOW = 20; // 최근 정답률(추세) 표본 크기.
@@ -17,6 +18,8 @@ export interface AnalyticsData {
   examDate: string | null;
   dday: number | null;
   targetCert: string | null;
+  /** 예측에 넣은 값. 합격 준비도 화면이 "이렇게 하면 이만큼"을 같은 함수로 다시 계산할 때 쓴다. */
+  inputs: PassPredictorInput;
 }
 
 // attemptedAt(ISO/timestamp) → KST 'YYYY-MM-DD'.
@@ -59,9 +62,9 @@ export async function getAnalytics(
     ]);
   }
 
-  // 목표 자격증의 시험일 우선, 없으면 가장 임박한 플랜.
+  // 대시보드의 다른 카드와 같은 플랜(pickFocusPlan)을 본다.
   const target = profile.targetCert;
-  const plan: StudyPlan | null = (target && plans.find((p) => p.certSlug === target)) || plans[0] || null;
+  const plan: StudyPlan | null = pickFocusPlan(plans, target, kstDay(new Date().toISOString()));
   let dday: number | null = null;
   let examDate: string | null = null;
   if (plan) {
@@ -92,7 +95,7 @@ export async function getAnalytics(
   const recentAccuracy =
     recent.length > 0 ? Math.round((recent.filter((a) => a.correct).length / recent.length) * 100) : null;
 
-  const prediction = predictPass({
+  const inputs: PassPredictorInput = {
     coverage,
     accuracy,
     recentAccuracy,
@@ -100,12 +103,13 @@ export async function getAnalytics(
     attemptedQuestions: scopedAttempted,
     dday,
     targetAccuracy: plan?.targetAccuracy, // M4: 사용자 목표 정확도를 예측 임계값으로.
-  });
+  };
+  const prediction = predictPass(inputs);
 
   const trend = buildDailyTrend(
     attempts.map((a) => ({ day: kstDay(a.attemptedAt), correct: a.correct })),
     recentDays(trendDays),
   );
 
-  return { prediction, trend, examDate, dday, targetCert: predictCert };
+  return { prediction, trend, examDate, dday, targetCert: predictCert, inputs };
 }

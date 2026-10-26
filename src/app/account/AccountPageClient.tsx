@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProfileValues } from '@/components/account/ProfileSection';
-import { AccountTabs } from '@/components/account/AccountTabs';
+import { AccountSections } from '@/components/account/AccountSections';
 
 export interface CertOption {
   slug: string;
@@ -31,7 +31,7 @@ export function AccountPageClient({
   emailVerified,
 }: AccountPageClientProps) {
   return (
-    <AccountTabs
+    <AccountSections
       userEmail={userEmail}
       certs={certs}
       initial={initial}

@@ -22,10 +22,18 @@ const { default: AccountPage } = await import('./page');
 
 describe('마이페이지 SSR — has_password 컬럼 부재', () => {
   test('컬럼이 없어도 데이터 로드가 성공하고 비밀번호 계정(엄격한 쪽)으로 그린다', async () => {
-    const el = (await AccountPage()) as { props: Record<string, unknown> };
+    const el = (await AccountPage({ searchParams: Promise.resolve({}) })) as { props: Record<string, unknown> };
     expect(el.props.hasPassword).toBe(true);
     expect(el.props.emailVerified).toBe(false);
     expect(el.props.userEmail).toBe('me@example.com');
     expect(query.mock.calls.every(([sql]) => !/has_password/.test(String(sql)))).toBe(true);
+  });
+});
+
+describe('마이페이지 — 없앤 탭 주소', () => {
+  test('예전 ?tab=notebook 은 오답노트 페이지로 보낸다', async () => {
+    await expect(AccountPage({ searchParams: Promise.resolve({ tab: 'notebook' }) })).rejects.toMatchObject({
+      digest: expect.stringMatching(/^NEXT_REDIRECT;[a-z]+;\/notebook;/),
+    });
   });
 });

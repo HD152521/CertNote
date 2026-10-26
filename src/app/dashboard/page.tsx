@@ -1,298 +1,86 @@
-import { DEFAULT_CATEGORY } from '@/lib/category';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 import { headers } from 'next/headers';
+import { Flame } from 'lucide-react';
 import { getCurrentUser } from '@/lib/auth/currentUser';
-import { getDashboardData, type CertProgress } from '@/lib/dashboard/dashboardService';
-import { listCerts } from '@/lib/content';
-import { nextUp, weakDomainDrill } from '@/lib/recommend/recommendService';
-import { getAnalytics } from '@/lib/analytics/analyticsService';
-import { loadStudyContext } from '@/lib/personalization/context';
-import { StudyPlanWidget } from '@/components/study/StudyPlanWidget';
-import { PassProbability } from '@/components/dashboard/PassProbability';
-import { TrendChart } from '@/components/dashboard/TrendChart';
+import { loadDashboardOverview } from '@/lib/dashboard/overview';
+import { mergeWeakSpots } from '@/lib/dashboard/weakSpots';
+import { readinessState } from '@/lib/analytics/readiness';
+import { canAccessWeek } from '@/lib/entitlement/policy';
+import { getQuestionById } from '@/lib/questions';
+import { nextUp } from '@/lib/recommend/recommendService';
+import { getStreak } from '@/lib/study/activity';
+import { countCompletedDays } from '@/lib/study/focusPlan';
+import { computeToday } from '@/lib/study/plan';
+import { TodayCard, type TodayPlanView } from '@/components/dashboard/TodayCard';
+import { ProgressCard } from '@/components/dashboard/ProgressCard';
+import { WeakSpotsCard } from '@/components/dashboard/WeakSpotsCard';
 import type { Language } from '@/lib/i18n-client';
+import { pick } from '@/lib/strings/dict';
+import { dashboardStrings } from '@/lib/strings/dashboard';
+import { fmt } from '@/lib/strings/study';
 
 export const dynamic = 'force-dynamic';
 
-function relTime(iso: string, lang: Language): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return lang === 'en' ? 'just now' : '방금 전';
-  if (min < 60) return lang === 'en' ? `${min}m ago` : `${min}분 전`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return lang === 'en' ? `${hr}h ago` : `${hr}시간 전`;
-  const day = Math.floor(hr / 24);
-  if (day < 30) return lang === 'en' ? `${day}d ago` : `${day}일 전`;
-  return lang === 'en' ? `${Math.floor(day / 30)}mo ago` : `${Math.floor(day / 30)}개월 전`;
-}
-
-function StatTile({ label, value, suffix, tone }: { label: string; value: number | string; suffix?: string; tone?: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-bg-elevated px-4 py-4">
-      <p className="text-xs text-fg-muted">{label}</p>
-      <p className={`mt-1 text-2xl font-semibold tabular-nums tracking-tight ${tone ?? 'text-fg'}`}>
-        {value}
-        {suffix && <span className="ml-0.5 text-sm font-normal text-fg-faint">{suffix}</span>}
-      </p>
-    </div>
-  );
-}
-
-function CertRow({ c, lang }: { c: CertProgress; lang: Language }) {
-  const pct = c.totalQuestions > 0 ? Math.round((c.attemptedQuestions / c.totalQuestions) * 100) : 0;
-  const acc = c.attempts > 0 ? Math.round((c.correct / c.attempts) * 100) : null;
-  return (
-    <Link
-      href={`/${DEFAULT_CATEGORY}/${c.slug}`}
-      className="block rounded-lg border border-border bg-bg-elevated px-4 py-3 transition hover:border-border-strong"
-    >
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <span className="font-mono text-[11px] text-fg-faint">{c.code}</span>
-          <span className="ml-2 text-sm text-fg">{c.name}</span>
-        </div>
-        <span className="shrink-0 text-xs text-fg-muted tabular-nums">
-          {acc === null ? (lang === 'en' ? 'Not started' : '미시작') : (lang === 'en' ? `${acc}% accuracy` : `정답률 ${acc}%`)}
-        </span>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-bg-subtle">
-          <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: c.accent }} />
-        </div>
-        <span className="shrink-0 text-[11px] text-fg-faint tabular-nums">
-          {c.attemptedQuestions}/{c.totalQuestions}
-        </span>
-      </div>
-    </Link>
-  );
-}
-
+// 학습 대시보드: ① 오늘 할 일 ② 목표 자격증 진행·합격 준비도 ③ 약한 곳 3개.
+// 숫자 타일·추이·전체 약점 목록·최근 기록은 /dashboard/stats, 예측 근거는 /dashboard/readiness 로 나눴다.
 export default async function DashboardPage() {
   const headersList = await headers();
   const lang = (headersList.get('x-language') || 'ko') as Language;
+  const s = pick(dashboardStrings, lang);
 
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/dashboard');
 
-  // 공유 원시 데이터를 1회 로드해 개인화 함수들에 주입(attempts/certs/plans 중복 조회 제거).
-  const ctx = await loadStudyContext(user.sub);
-  const data = await getDashboardData(user.sub, ctx);
-  const [recNext, recDrill, analytics] = await Promise.all([
-    nextUp(user.sub, 3, ctx),
-    weakDomainDrill(user.sub, 5, ctx),
-    getAnalytics(user.sub, 14, { ctx, dash: data }),
+  const { ctx, data, analytics, focusPlan, focusCert } = await loadDashboardOverview(user.sub);
+  const gate = (week: number) => canAccessWeek(ctx.entitlement.plan, week);
+
+  const [streak, portion, starter] = await Promise.all([
+    getStreak(user.sub),
+    focusPlan ? computeToday(focusPlan, countCompletedDays(ctx.attempts, getQuestionById, focusPlan.certSlug)) : null,
+    focusPlan ? [] : nextUp(user.sub, 1, ctx),
   ]);
-  const hasActivity = data.attempts > 0 || data.review.total > 0;
-  const hasRecommend = recNext.length > 0 || recDrill.length > 0;
-  const certOptions = (await listCerts(DEFAULT_CATEGORY)).map((c) => ({ slug: c.slug, name: c.name, code: c.code }));
+
+  let plan: TodayPlanView | null = null;
+  if (focusPlan && portion) {
+    const meta = ctx.certs.find((c) => c.slug === focusPlan.certSlug);
+    plan = {
+      certCode: meta?.code ?? focusPlan.certSlug,
+      certName: meta?.name ?? '',
+      examDate: portion.examDate,
+      dday: portion.dday,
+      items: portion.items.filter((d) => gate(d.week)),
+      finished: portion.finished,
+      perDay: portion.catchUp?.perDay ?? portion.items.length,
+      catchUp: portion.catchUp,
+    };
+  }
+
+  const readiness = {
+    state: readinessState(analytics.prediction, analytics.inputs.attemptedQuestions),
+    probability: analytics.prediction.probability,
+  };
+  const others = data.certs.filter((c) => c.attempts > 0 && c.slug !== focusCert?.slug);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8 py-10">
-      <header className="space-y-1">
-        <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">{lang === 'en' ? 'Dashboard' : 'Dashboard'}</p>
-        <h1 className="text-2xl font-semibold tracking-tight">{lang === 'en' ? 'Learning Dashboard' : '학습 대시보드'}</h1>
-        <p className="text-sm text-fg-muted">{lang === 'en' ? `${user.email}'s learning status` : `${user.email}님의 학습 현황`}</p>
+    <div className="mx-auto max-w-3xl space-y-6 py-10">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-1">
+          <p className="font-mono text-xs uppercase tracking-wider text-fg-muted">{s.eyebrow}</p>
+          <h1 className="text-2xl font-bold tracking-tight">{s.title}</h1>
+        </div>
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold ${
+            streak.current > 0 ? 'bg-accent/10 text-accent' : 'bg-bg-subtle text-fg-muted'
+          }`}
+        >
+          <Flame className="h-3.5 w-3.5" aria-hidden />
+          {streak.current > 0 ? fmt(s.streak, { n: streak.current }) : s.noStreak}
+        </span>
       </header>
 
-      {/* 합격 플랜 + 스트릭 — 활동 유무와 무관하게 상단에 노출 */}
-      <StudyPlanWidget certs={certOptions} />
-
-      {/* 오늘의 추천 — 다음 학습(플랜 분량/콜드스타트) + 약점 드릴. 활동 유무와 무관하게 상단. */}
-      {hasRecommend && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-medium text-fg-muted">{lang === 'en' ? "Today's Recommendation" : '오늘의 추천'}</h2>
-
-          {recNext.map((n) => (
-            <Link
-              key={`next-${n.slug}-${n.week}-${n.day}`}
-              href={n.href}
-              className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 transition hover:border-accent"
-            >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-base">
-                {n.reason === 'start' ? '🚀' : '📘'}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[11px] font-medium text-accent">
-                  {n.reason === 'start'
-                    ? lang === 'en' ? 'Start here' : '여기서 시작'
-                    : lang === 'en' ? "Today's portion" : '오늘 분량'}
-                </span>
-                <span className="block truncate text-sm text-fg">{n.title}</span>
-              </span>
-              <span className="shrink-0 text-xs text-fg-faint">→</span>
-            </Link>
-          ))}
-
-          {recDrill.length > 0 && (
-            <div className="rounded-xl border border-border bg-bg-elevated px-4 py-3">
-              <p className="mb-2 text-xs font-medium text-fg-muted">
-                {lang === 'en' ? `Weak-area drill · ${recDrill.length} questions` : `약점 드릴 · ${recDrill.length}문제`}
-              </p>
-              <ul className="space-y-1.5">
-                {recDrill.map((d) => (
-                  <li key={`drill-${d.id}`}>
-                    <Link
-                      href={d.href}
-                      className="flex items-center gap-3 rounded-lg border border-border px-3 py-2 transition hover:border-border-strong"
-                    >
-                      <span className="shrink-0 rounded bg-danger/10 px-1.5 py-0.5 font-mono text-[10px] text-danger">
-                        {d.bucketLabel}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-sm text-fg">{d.prompt}</span>
-                      <span className="shrink-0 text-xs text-fg-faint">→</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </section>
-      )}
-
-      {!hasActivity ? (
-        <div className="rounded-xl border border-border bg-bg-elevated p-8 text-center">
-          <p className="mb-2 text-2xl">📊</p>
-          <p className="mb-1 font-medium text-fg">{lang === 'en' ? 'No practice records yet' : '아직 풀이 기록이 없어요'}</p>
-          <p className="mb-4 text-sm text-fg-muted">
-            {lang === 'en'
-              ? 'Choose a certification and solve practice problems to see your progress, accuracy, and review status here.'
-              : '자격증을 골라 연습 문제를 풀면 여기에 진도·정답률·복습 현황이 쌓입니다.'}
-          </p>
-          <Link href="/" className="text-sm text-accent underline underline-offset-4">
-            {lang === 'en' ? 'Start Learning' : '학습 시작하기'}
-          </Link>
-        </div>
-      ) : (
-        <>
-          {/* 핵심 지표: 정답률을 히어로로, 나머지는 보조 타일 */}
-          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="col-span-2 row-span-1 rounded-xl border border-accent/30 bg-accent/5 px-5 py-5 sm:col-span-2">
-              <p className="text-xs text-fg-muted">{lang === 'en' ? 'Overall Accuracy' : '전체 정답률'}</p>
-              <p className="mt-1 text-4xl font-semibold tabular-nums tracking-tight text-fg">
-                {data.accuracy}<span className="text-xl font-normal text-fg-faint">%</span>
-              </p>
-              <p className="mt-1 text-xs text-fg-faint tabular-nums">
-                {lang === 'en' ? `${data.correct} / ${data.attempts} correct` : `${data.correct} / ${data.attempts}문제 정답`}
-              </p>
-            </div>
-            <StatTile label={lang === 'en' ? 'Questions Solved' : '푼 문제'} value={data.attemptedQuestions} suffix={`/ ${data.totalQuestions}`} />
-            <StatTile label={lang === 'en' ? 'Coverage' : '진도(커버리지)'} value={data.coverage} suffix="%" />
-            <StatTile label={lang === 'en' ? 'Review Due' : '복습 필요'} value={data.review.due} tone={data.review.due > 0 ? 'text-danger' : 'text-fg'} />
-            <StatTile label={lang === 'en' ? 'Mastered' : '마스터'} value={data.review.mastered} tone="text-success" />
-          </section>
-
-          {/* 합격 예측(추정) + 학습 추이 */}
-          <section className="grid gap-3 sm:grid-cols-2">
-            <PassProbability
-              prediction={analytics.prediction}
-              dday={analytics.dday}
-              examDate={analytics.examDate}
-              lang={lang}
-              certLabel={data.certs.find((c) => c.slug === analytics.targetCert)?.code}
-            />
-            <TrendChart trend={analytics.trend} lang={lang} />
-          </section>
-
-          {/* 자격증별 진행 */}
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-medium text-fg-muted">{lang === 'en' ? 'Progress by Certification' : '자격증별 진행'}</h2>
-              {data.review.due > 0 && (
-                <Link href="/review" className="text-xs text-accent underline underline-offset-4">
-                  {lang === 'en' ? `Start Review (${data.review.due})` : `복습 시작 (${data.review.due})`}
-                </Link>
-              )}
-            </div>
-            <div className="space-y-2">
-              {data.certs.map((c) => <CertRow key={c.slug} c={c} lang={lang} />)}
-            </div>
-          </section>
-
-          {/* 도메인별 약점 — 모의고사 풀이가 쌓이면 채워진다(정답률 낮은 순) */}
-          <section className="space-y-3">
-            <h2 className="text-sm font-medium text-fg-muted">{lang === 'en' ? 'Domain Weaknesses' : '도메인별 약점'}</h2>
-            {data.domains.length === 0 ? (
-              <p className="rounded-lg border border-border bg-bg-elevated px-4 py-3 text-sm text-fg-faint">
-                {lang === 'en'
-                  ? `Take mock exams to see your accuracy by domain. We'll show your weak areas first.`
-                  : '모의고사를 풀면 시험 도메인별 정답률이 여기에 쌓여요. 약한 영역부터 보여드릴게요.'}
-              </p>
-            ) : (
-              <div className="space-y-2 rounded-lg border border-border bg-bg-elevated px-4 py-3">
-                {data.domains.map((d) => {
-                  const tone = d.accuracy < 60 ? '#ef4444' : d.accuracy < 80 ? '#f59e0b' : '#22c55e';
-                  return (
-                    <div key={d.domain}>
-                      <div className="mb-1 flex items-center justify-between gap-3 text-xs">
-                        <span className="min-w-0 truncate text-fg">{d.domain}</span>
-                        <span className="shrink-0 tabular-nums text-fg-muted">{d.accuracy}% · {d.correct}/{d.attempts}</span>
-                      </div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-bg-subtle">
-                        <div className="h-full rounded-full" style={{ width: `${d.accuracy}%`, backgroundColor: tone }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
-          {/* 주차별 약점 — day 퀴즈 정답률(자격증·주차별, 약점순). 모의고사 없이도 채워진다. */}
-          {data.topics.length > 0 && (
-            <section className="space-y-3">
-              <h2 className="text-sm font-medium text-fg-muted">{lang === 'en' ? 'Weak Areas by Week' : '주차별 약점'}</h2>
-              <div className="space-y-2 rounded-lg border border-border bg-bg-elevated px-4 py-3">
-                {data.topics.slice(0, 6).map((t) => {
-                  const tone = t.accuracy < 60 ? '#ef4444' : t.accuracy < 80 ? '#f59e0b' : '#22c55e';
-                  const label = lang === 'en' ? `${t.code} · Week ${t.week}` : `${t.code} · ${t.week}주차`;
-                  return (
-                    <div key={`${t.slug}-${t.week}`}>
-                      <div className="mb-1 flex items-center justify-between gap-3 text-xs">
-                        <span className="min-w-0 truncate text-fg">{label}</span>
-                        <span className="shrink-0 tabular-nums text-fg-muted">{t.accuracy}% · {t.correct}/{t.attempts}</span>
-                      </div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-bg-subtle">
-                        <div className="h-full rounded-full" style={{ width: `${t.accuracy}%`, backgroundColor: tone }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
-          {/* 최근 학습 */}
-          {data.recent.length > 0 && (
-            <section className="space-y-3">
-              <h2 className="text-sm font-medium text-fg-muted">{lang === 'en' ? 'Recent Activity' : '최근 학습'}</h2>
-              <ul className="space-y-1.5">
-                {data.recent.map((r, i) => (
-                  <li key={`${r.questionId}-${i}`}>
-                    <Link
-                      href={r.week > 0 ? `/${DEFAULT_CATEGORY}/${r.slug}/week${r.week}/day${r.day}` : `/${DEFAULT_CATEGORY}/${r.slug}`}
-                      className="flex items-center gap-3 rounded-lg border border-border bg-bg-elevated px-3 py-2 transition hover:border-border-strong"
-                    >
-                      <span
-                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs ${
-                          r.correct ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'
-                        }`}
-                      >
-                        {r.correct ? '✓' : '✗'}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-sm text-fg">{r.prompt}</span>
-                      <span className="hidden sm:inline shrink-0 font-mono text-[10px] uppercase text-fg-faint">
-                        {r.week > 0 ? `${r.slug} W${r.week}D${r.day}` : `${r.slug} ${lang === 'en' ? 'Mock Exam' : '모의고사'}`}
-                      </span>
-                      <span className="shrink-0 text-[11px] text-fg-faint">{relTime(r.attemptedAt, lang)}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </>
-      )}
+      <TodayCard lang={lang} plan={plan} starter={starter[0] ?? null} reviewDue={data.review.due} />
+      <ProgressCard lang={lang} focus={focusCert} readiness={readiness} others={others} />
+      <WeakSpotsCard lang={lang} spots={mergeWeakSpots(data.domains, data.topics)} />
     </div>
   );
 }
