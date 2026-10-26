@@ -296,7 +296,7 @@ ORDER BY eventtime;
 [강화] 장기 키 → 역할/Secrets Manager, MFA 강제, 탐지 통제 추가
 ```
 
-자격증명 유출 대응은 *부분 자동화*가 매우 효과적인 영역이다. GuardDuty의 `UnauthorizedAccess:IAMUser/*`, `CredentialAccess:*` 핀딩 → EventBridge → Lambda로 즉시 키 비활성화·세션 폐기를 자동화하면(Day 1) 평균 대응 시간(MTTR)을 분 단위에서 초 단위로 줄인다. 다만 *추적·근절·회전*은 영향 분석이 필요해 사람의 판단이 들어가는 경우가 많다 — 자동화(즉시 봉쇄)와 사람(영향 분석·복구)의 경계 설정이 핵심이다(Day 4). 또한 근본 해법은 *장기 자격증명을 아예 없애는 것*이다: 사람은 IAM Identity Center(SSO)로 임시 자격증명, 워크로드는 역할/IRSA로, 머신 비밀은 Secrets Manager 자동 회전. 무력화할 장기 키가 없으면 이 유형의 사고 자체가 줄어든다.
+자격증명 유출 대응은 *부분 자동화*가 매우 효과적인 영역이다. GuardDuty의 `UnauthorizedAccess:IAMUser/*`, `CredentialAccess:*` 결과 → EventBridge → Lambda로 즉시 키 비활성화·세션 폐기를 자동화하면(Day 1) 평균 대응 시간(MTTR)을 분 단위에서 초 단위로 줄인다. 다만 *추적·근절·회전*은 영향 분석이 필요해 사람의 판단이 들어가는 경우가 많다 — 자동화(즉시 봉쇄)와 사람(영향 분석·복구)의 경계 설정이 핵심이다(Day 4). 또한 근본 해법은 *장기 자격증명을 아예 없애는 것*이다: 사람은 IAM Identity Center(SSO)로 임시 자격증명, 워크로드는 역할/IRSA로, 머신 비밀은 Secrets Manager 자동 회전. 무력화할 장기 키가 없으면 이 유형의 사고 자체가 줄어든다.
 
 ### 백도어 헌팅: 무엇을 찾아야 하는지 알아야 찾는다
 
@@ -306,7 +306,7 @@ ORDER BY eventtime;
 |---|---|---|
 | 새 IAM 사용자·키 생성 | `CreateUser`, `CreateAccessKey` | 자격증명 보고서에서 최근 생성 사용자 |
 | 기존 사용자에 콘솔 로그인 부여 | `CreateLoginProfile`, `UpdateLoginProfile` | 프로그래매틱 전용 사용자에 로그인 프로파일이 생겼는지 |
-| 역할 신뢰 정책에 외부 계정 추가 | `UpdateAssumeRolePolicy` | **IAM Access Analyzer의 외부 접근 핀딩** |
+| 역할 신뢰 정책에 외부 계정 추가 | `UpdateAssumeRolePolicy` | **IAM Access Analyzer의 외부 접근 결과** |
 | 정책에 새 버전 삽입 후 기본 지정 | `CreatePolicyVersion`, `SetDefaultPolicyVersion` | 정책 버전 이력 비교 |
 | Lambda·EventBridge 백도어 | `CreateFunction`, `PutRule`, `AddPermission` | 최근 생성 함수와 그 실행 역할 |
 | S3·KMS 리소스 정책 개방 | `PutBucketPolicy`, `PutKeyPolicy`, `CreateGrant` | Access Analyzer + 퍼블릭 액세스 상태 |

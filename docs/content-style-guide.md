@@ -171,6 +171,7 @@
 | read replica | Read Replica | 리드 레플리카, 읽기 복제본, 읽기 전용 복제본 | Read Replica 199 / 읽기 복제본 22 / 읽기 전용 복제본 11. 입문 트랙은 첫 등장에 "Read Replica(읽기 전용 복제본)"로 병기 |
 | microservice | 마이크로서비스 | microservice(s) | 마이크로서비스 160 / microservice 3 |
 | rollback | 롤백 | 롤 백, rollback(소문자) | 롤백 444 / rollback 39 |
+| finding | 결과 (헷갈리면 탐지 결과) | 핀딩, 파인딩 | AWS 한국어 문서(GuardDuty·Security Hub·Inspector·Macie·Access Analyzer) "결과". 2026-10-26 SCS 핀딩 오기 약 530곳 교정. 영문 식별자 `Finding`·`FindingType`·API 이름은 그대로 |
 
 ### 정하지 않은 용어 (검사하지 않음)
 

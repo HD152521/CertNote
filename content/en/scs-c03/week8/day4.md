@@ -152,7 +152,7 @@ EventBridge is the router distributing detection signals to alerts, remediation,
 
 ## 📝 연습 문제
 
-**문제 1.** GuardDuty 핀딩을 EventBridge 규칙으로 직접 잡으려는데 `"detail": { "severity": ["HIGH"] }` 패턴이 한 번도 매칭되지 않는다. 원인은?
+**문제 1.** GuardDuty 결과를 EventBridge 규칙으로 직접 잡으려는데 `"detail": { "severity": ["HIGH"] }` 패턴이 한 번도 매칭되지 않는다. 원인은?
 
 A) GuardDuty는 EventBridge로 이벤트를 보내지 않는다  
 B) GuardDuty의 severity는 숫자(0.1~8.9)이므로 numeric 비교 연산자를 써야 하며 문자열 "HIGH"로는 매칭되지 않는다  
@@ -160,7 +160,7 @@ C) 규칙에 대상이 없어서다
 D) default bus가 아닌 custom bus를 써야 한다  
 
 **정답: B**  
-해설: GuardDuty 핀딩의 severity는 숫자 값이므로 `{ "numeric": [">=", 7.0] }` 형태로 매칭해야 한다. 문자열 라벨(HIGH/CRITICAL)은 Security Hub로 집계된 핀딩의 `Severity.Label`에서 쓰는 형식이다. GuardDuty는 default bus로 이벤트를 보내며, 대상 유무는 매칭 여부와 무관하다.
+해설: GuardDuty 결과의 severity는 숫자 값이므로 `{ "numeric": [">=", 7.0] }` 형태로 매칭해야 한다. 문자열 라벨(HIGH/CRITICAL)은 Security Hub로 집계된 결과의 `Severity.Label`에서 쓰는 형식이다. GuardDuty는 default bus로 이벤트를 보내며, 대상 유무는 매칭 여부와 무관하다.
 
 ---
 
@@ -208,7 +208,7 @@ C) Amazon Macie
 D) AWS Config  
 
 **정답: B**  
-해설: 다계정·다리전 원시 보안 로그를 OCSF 표준으로 정규화해 S3 데이터 레이크(Parquet)로 자동 수집하고 subscriber가 단일 스키마로 질의하게 하는 서비스는 Security Lake다. Security Hub는 핀딩을 ASFF로 집계·점수화하는 대시보드, Macie는 S3 민감데이터 발견, Config는 리소스 구성 평가로 역할이 다르다.
+해설: 다계정·다리전 원시 보안 로그를 OCSF 표준으로 정규화해 S3 데이터 레이크(Parquet)로 자동 수집하고 subscriber가 단일 스키마로 질의하게 하는 서비스는 Security Lake다. Security Hub는 결과를 ASFF로 집계·점수화하는 대시보드, Macie는 S3 민감데이터 발견, Config는 리소스 구성 평가로 역할이 다르다.
 
 ---
 

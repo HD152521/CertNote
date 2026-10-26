@@ -21,7 +21,7 @@
 같은 신호도 *어느 단계에서 무엇을 하느냐*가 대응 품질을 좌우한다.
 
 ```
-GuardDuty 핀딩
+GuardDuty 결과
    ▼ [탐지·분석] severity·type으로 분류, 영향 범위 판단
 EventBridge 규칙 (패턴 필터 + InputTransformer)
    ├─► SNS → IR팀 호출 (사람, 상황 인식 유지)
@@ -36,7 +36,7 @@ EventBridge 규칙 (패턴 필터 + InputTransformer)
 
 핵심 통찰: **자동화는 시간을 벌고(봉쇄·증거 보존), 사람은 판단에 집중한다(영향 분석·비가역 결정·근본 원인).** 둘은 경쟁이 아니라 분업이다.
 
-> 🎯 **통합 시나리오 A**: "프로덕션 EC2가 GuardDuty에서 암호화폐 채굴(CryptoCurrency:EC2/BitcoinTool) 탐지. 인스턴스 역할로 S3에 접근한 흔적도 있다." 답: (1) EventBridge가 핀딩을 받아 SNS로 IR팀 호출 + SSM 런북 시작, (2) 런북이 EBS 스냅샷·메모리 덤프로 증거 보존(실행 유지), (3) 격리 SG로 봉쇄 + 인스턴스 역할에 aws:TokenIssueTime Deny로 세션 폐기, (4) CloudTrail/Athena로 역할이 접근한 S3 객체·생성 리소스 추적, (5) prod 인스턴스 종료는 aws:approve로 IR 리드 승인 후, (6) 패치된 골든 AMI로 재배포. 이번 주 모든 메커니즘이 한 흐름에 협력한다.
+> 🎯 **통합 시나리오 A**: "프로덕션 EC2가 GuardDuty에서 암호화폐 채굴(CryptoCurrency:EC2/BitcoinTool) 탐지. 인스턴스 역할로 S3에 접근한 흔적도 있다." 답: (1) EventBridge가 결과를 받아 SNS로 IR팀 호출 + SSM 런북 시작, (2) 런북이 EBS 스냅샷·메모리 덤프로 증거 보존(실행 유지), (3) 격리 SG로 봉쇄 + 인스턴스 역할에 aws:TokenIssueTime Deny로 세션 폐기, (4) CloudTrail/Athena로 역할이 접근한 S3 객체·생성 리소스 추적, (5) prod 인스턴스 종료는 aws:approve로 IR 리드 승인 후, (6) 패치된 골든 AMI로 재배포. 이번 주 모든 메커니즘이 한 흐름에 협력한다.
 
 > 🎯 **통합 시나리오 B**: "개발자가 액세스 키를 공개 저장소에 푸시했고, 그 키로 새 IAM 사용자와 추가 키가 생성된 정황. 다계정 조직 환경." 답: (1) 노출 키 즉시 Inactive(봉쇄), (2) CloudTrail/Athena로 키 활동 전수 조사 → 공격자가 만든 IAM 사용자·키·넓힌 정책(백도어) 식별, (3) Detective로 연관 엔티티·이상 행동 그래프 분석, (4) 백도어 근절, (5) Secrets Manager로 비밀 이관·자동 회전, 사람은 SSO 임시 자격증명으로 전환, (6) Security Hub로 조직 전반 유사 위험 점검 + 루트/장기 키 사용 탐지 알람 추가.
 
@@ -78,7 +78,7 @@ EventBridge 규칙 (패턴 필터 + InputTransformer)
 
 **봉쇄 vs 근절 vs 복구** — 확산 차단 / 위협 완전 제거 / 정상 운영 복원. 순서를 지켜야 재침해·증거 손실을 막는다.
 
-**GuardDuty vs Security Hub vs Detective** — 위협 탐지 / 핀딩 집계·정규화(ASFF) / 연관 관계·근본 원인 그래프 조사.
+**GuardDuty vs Security Hub vs Detective** — 위협 탐지 / 결과 집계·정규화(ASFF) / 연관 관계·근본 원인 그래프 조사.
 
 **자동화 적합 vs 사람 필요** — 명백·가역·저영향·고속은 자동, 모호·비가역·고영향은 사람 승인.
 
@@ -136,7 +136,7 @@ EventBridge 규칙 (패턴 필터 + InputTransformer)
 | 서비스 | 답하는 질문 | IR 단계 |
 |---|---|---|
 | **GuardDuty** | "지금 위협 *행위*가 벌어지고 있는가" | 탐지 |
-| **Security Hub** | "여러 도구·계정의 핀딩을 한 형태(ASFF)로 어떻게 볼 것인가" | 탐지·집계·자동화 진입점 |
+| **Security Hub** | "여러 도구·계정의 결과를 한 형태(ASFF)로 어떻게 볼 것인가" | 탐지·집계·자동화 진입점 |
 | **AWS Config** | "구성이 기준에서 벗어났는가, 이 리소스는 언제 어떻게 바뀌었는가" | 탐지·조사(타임라인) |
 | **CloudTrail** | "누가 언제 어떤 API를 호출했는가" | 조사의 기반 |
 | **Athena / CloudTrail Lake** | "그 호출들을 어떻게 대량 질의하는가" | 조사 |
@@ -233,7 +233,7 @@ aws guardduty create-sample-findings --detector-id <id> \
 ```
 
 ```json
-// ⑥ 자동 대응 트리거 (Security Hub 단일 진입점, 미처리 핀딩만)
+// ⑥ 자동 대응 트리거 (Security Hub 단일 진입점, 미처리 결과만)
 { "source": ["aws.securityhub"],
   "detail-type": ["Security Hub Findings - Imported"],
   "detail": { "findings": { "Severity": { "Label": ["HIGH","CRITICAL"] },

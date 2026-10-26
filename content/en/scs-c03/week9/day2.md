@@ -111,7 +111,7 @@ Modern Detective offers **Automated Investigations** for IAM users/roles. Specif
 
 ## 📝 연습 문제
 
-**문제 1.** GuardDuty가 IAM 역할에 대한 비정상 API 호출 핀딩을 생성했다. 보안 분석가는 "이 자격증명이 언제부터 새 지역에서 활동했고, 어떤 리소스까지 접근했는지" 근본 원인과 영향 범위를 빠르게 파악하려 한다. 가장 적절한 도구는?
+**문제 1.** GuardDuty가 IAM 역할에 대한 비정상 API 호출 결과를 생성했다. 보안 분석가는 "이 자격증명이 언제부터 새 지역에서 활동했고, 어떤 리소스까지 접근했는지" 근본 원인과 영향 범위를 빠르게 파악하려 한다. 가장 적절한 도구는?
 
 A) Amazon Inspector  
 B) Amazon Detective  
@@ -119,7 +119,7 @@ C) AWS Config
 D) Amazon Macie  
 
 **정답: B**  
-해설: 핀딩의 근본 원인·영향 범위를 동작 그래프로 시각화해 "최초 발생 시점, 새 지역·IP, 연관 엔티티"를 추적하는 것은 Detective의 정확한 용도다. Inspector는 취약점 스캔, Config는 리소스 구성 이력, Macie는 S3 민감 데이터 분류로 모두 행위 기반 인시던트 조사와는 다른 목적이다.
+해설: 결과의 근본 원인·영향 범위를 동작 그래프로 시각화해 "최초 발생 시점, 새 지역·IP, 연관 엔티티"를 추적하는 것은 Detective의 정확한 용도다. Inspector는 취약점 스캔, Config는 리소스 구성 이력, Macie는 S3 민감 데이터 분류로 모두 행위 기반 인시던트 조사와는 다른 목적이다.
 
 ---
 
@@ -137,17 +137,17 @@ D) 위임 관리자를 지정하지 않았기 때문이다
 
 **문제 3.** Amazon Detective의 역할에 대한 설명으로 옳은 것은?
 
-A) 자체적으로 새로운 위협 핀딩을 생성하고 악성 트래픽을 차단한다  
-B) 기존 핀딩과 로그를 동작 그래프로 연결해 조사·근본원인 분석을 돕지만, 핀딩 생성이나 차단은 하지 않는다  
+A) 자체적으로 새로운 위협 결과를 생성하고 악성 트래픽을 차단한다  
+B) 기존 결과와 로그를 동작 그래프로 연결해 조사·근본원인 분석을 돕지만, 결과 생성이나 차단은 하지 않는다  
 C) S3 버킷의 PII를 자동 분류한다  
 D) EC2와 ECR의 CVE를 스캔한다  
 
 **정답: B**  
-해설: Detective는 조사 전용 도구로, GuardDuty가 만든 핀딩과 로그를 그래프로 묶어 "왜·어디까지·어떻게"를 분석한다. 핀딩 생성은 GuardDuty, 차단은 WAF/SG, PII 분류는 Macie, CVE 스캔은 Inspector의 역할이다. Detective를 탐지/차단 도구로 오인하는 것이 대표적 함정이다.
+해설: Detective는 조사 전용 도구로, GuardDuty가 만든 결과와 로그를 그래프로 묶어 "왜·어디까지·어떻게"를 분석한다. 결과 생성은 GuardDuty, 차단은 WAF/SG, PII 분류는 Macie, CVE 스캔은 Inspector의 역할이다. Detective를 탐지/차단 도구로 오인하는 것이 대표적 함정이다.
 
 ---
 
-**문제 4.** SOC 분석가들이 GuardDuty 핀딩 폭증으로 경보 피로를 겪는다. Detective의 어떤 기능이 관련 핀딩·엔티티를 단일 조사 단위로 묶어 신호 대 잡음비를 높여 주는가?
+**문제 4.** SOC 분석가들이 GuardDuty 결과 폭증으로 경보 피로를 겪는다. Detective의 어떤 기능이 관련 결과·엔티티를 단일 조사 단위로 묶어 신호 대 잡음비를 높여 주는가?
 
 A) Trusted IP list  
 B) Finding groups  
@@ -155,7 +155,7 @@ C) Malware Protection
 D) Macie 분류  
 
 **정답: B**  
-해설: Detective의 finding groups는 같은 자격증명·IP 등 공통 엔티티를 공유하는 다수 핀딩을 하나의 조사 단위로 자동 그룹핑해 경보 피로를 줄인다. Trusted IP list는 GuardDuty의 핀딩 억제 설정이고, Malware Protection은 멀웨어 스캔, Macie는 데이터 분류로 핀딩 그룹핑과 무관하다.
+해설: Detective의 finding groups는 같은 자격증명·IP 등 공통 엔티티를 공유하는 다수 결과를 하나의 조사 단위로 자동 그룹핑해 경보 피로를 줄인다. Trusted IP list는 GuardDuty의 결과 억제 설정이고, Malware Protection은 멀웨어 스캔, Macie는 데이터 분류로 결과 그룹핑과 무관하다.
 
 ---
 

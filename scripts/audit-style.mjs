@@ -120,6 +120,7 @@ export const TERMS = [
   { use: 'Blue/Green', hint: /lue|블루/i, avoid: [/[Bb]lue-[Gg]reen|blue\/green|블루\s?[/-]?\s?그린/gu] },
   { use: 'Read Replica', hint: /레플리카|복제본/i, avoid: [/리드 레플리카|읽기 (?:전용 )?복제본/gu] },
   { use: '마이크로서비스', hint: /microservice/i, avoid: [/(?<![A-Za-z])microservices?(?![A-Za-z])/gu] },
+  { use: '결과', hint: /핀딩|파인딩/i, avoid: [/핀딩|파인딩/gu] },
   { use: '롤백', hint: /롤 백|rollback/i, avoid: [/롤 백|(?<![A-Za-z])rollback(?![A-Za-z])/gu] },
 ];
 

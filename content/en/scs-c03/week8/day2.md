@@ -145,7 +145,7 @@ D) AWS Shield Advanced
 
 ---
 
-**문제 2.** GuardDuty, Inspector, Macie의 서로 다른 핀딩 포맷을 단일 체계로 다루기 위해 Security Hub가 사용하는 정규화 포맷은?
+**문제 2.** GuardDuty, Inspector, Macie의 서로 다른 결과 포맷을 단일 체계로 다루기 위해 Security Hub가 사용하는 정규화 포맷은?
 
 A) CloudTrail 이벤트 스키마  
 B) ASFF(AWS Security Finding Format)  
@@ -153,11 +153,11 @@ C) VPC Flow Logs 포맷
 D) OCSF 원본 포맷만 그대로 보관  
 
 **정답: B**  
-해설: Security Hub는 모든 통합 소스의 핀딩을 ASFF라는 단일 JSON 스키마로 정규화해 출처와 무관하게 같은 필드(Severity.Normalized, Workflow.Status 등)로 검색·라우팅할 수 있게 한다. CloudTrail/VPC Flow 포맷은 다른 데이터이고, OCSF는 Security Lake의 포맷이다.
+해설: Security Hub는 모든 통합 소스의 결과를 ASFF라는 단일 JSON 스키마로 정규화해 출처와 무관하게 같은 필드(Severity.Normalized, Workflow.Status 등)로 검색·라우팅할 수 있게 한다. CloudTrail/VPC Flow 포맷은 다른 데이터이고, OCSF는 Security Lake의 포맷이다.
 
 ---
 
-**문제 3.** 운영자가 특정 핀딩을 검토한 뒤 "의도적으로 무시하되 기록은 남기고 보안 점수·알림에서 제외"하려 한다. ASFF에서 설정할 값은?
+**문제 3.** 운영자가 특정 결과를 검토한 뒤 "의도적으로 무시하되 기록은 남기고 보안 점수·알림에서 제외"하려 한다. ASFF에서 설정할 값은?
 
 A) RecordState를 ARCHIVED로  
 B) Workflow.Status를 SUPPRESSED로  
@@ -169,11 +169,11 @@ D) Compliance.Status를 PASSED로
 
 ---
 
-**문제 4.** 수백 개의 멤버 계정과 여러 리전에 걸쳐 Security Hub 표준을 일관되게 적용하고 모든 핀딩을 단일 화면에서 보려 한다. 가장 적절한 접근은?
+**문제 4.** 수백 개의 멤버 계정과 여러 리전에 걸쳐 Security Hub 표준을 일관되게 적용하고 모든 결과를 단일 화면에서 보려 한다. 가장 적절한 접근은?
 
 A) 각 계정·리전에서 개별적으로 Security Hub를 수동 설정  
 B) Organizations에서 위임 관리자를 지정하고 Central Configuration으로 표준을 배포한 뒤 Cross-Region Aggregation으로 한 리전에 집계  
-C) 모든 핀딩을 이메일로 전달하도록 SNS만 구성  
+C) 모든 결과를 이메일로 전달하도록 SNS만 구성  
 D) GuardDuty만 켜면 자동으로 통합된다  
 
 **정답: B**  
@@ -181,15 +181,15 @@ D) GuardDuty만 켜면 자동으로 통합된다
 
 ---
 
-**문제 5.** Security Hub의 CRITICAL 핀딩이 들어올 때 자동으로 실제 교정(예: 노출된 보안 그룹 규칙 회수)을 수행하려 한다. 표준 아키텍처는?
+**문제 5.** Security Hub의 CRITICAL 결과가 들어올 때 자동으로 실제 교정(예: 노출된 보안 그룹 규칙 회수)을 수행하려 한다. 표준 아키텍처는?
 
 A) Security Hub Automation Rule로 보안 그룹을 직접 수정  
-B) 핀딩이 EventBridge에 자동 발행되므로, EventBridge 규칙으로 패턴을 매칭해 SSM Automation/Lambda로 교정  
+B) 결과가 EventBridge에 자동 발행되므로, EventBridge 규칙으로 패턴을 매칭해 SSM Automation/Lambda로 교정  
 C) Config 규칙이 자동으로 교정한다  
 D) Macie가 교정한다  
 
 **정답: B**  
-해설: 모든 Security Hub 핀딩은 EventBridge로 자동 발행되므로, EventBridge 규칙으로 CRITICAL 패턴을 잡아 SSM Automation 문서나 Lambda로 실제 교정을 실행하는 것이 표준 패턴(AWS의 ASR 솔루션도 이 경로)이다. Automation Rule은 핀딩 필드 갱신·억제만 할 뿐 외부 리소스를 직접 바꾸지 못하고, Config 자동 교정은 Config 규칙 차원이며, Macie는 데이터 발견 도구다.
+해설: 모든 Security Hub 결과는 EventBridge로 자동 발행되므로, EventBridge 규칙으로 CRITICAL 패턴을 잡아 SSM Automation 문서나 Lambda로 실제 교정을 실행하는 것이 표준 패턴(AWS의 ASR 솔루션도 이 경로)이다. Automation Rule은 결과 필드 갱신·억제만 할 뿐 외부 리소스를 직접 바꾸지 못하고, Config 자동 교정은 Config 규칙 차원이며, Macie는 데이터 발견 도구다.
 
 ---
 
