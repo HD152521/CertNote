@@ -257,8 +257,6 @@ D) ①Config ②Macie ③GuardDuty ④Audit Manager ⑤Inspector ⑥Config ⑦In
 5. **자동화 3갈래**: Custom Action(수동 HITL) / Automation Rule(필드 갱신만) / Imported→Lambda·SSM(실제 리소스 수정)
 6. **거버넌스**: Firewall Manager(중앙 WAF/Shield) / CloudTrail Lake(7년 SQL) / NIST CSF 5함수로 스택 진단
 
-> 💪 Week 14 완료! 핵심은 "역할 경계를 정확히 구분하고, 작업의 위험도·가역성에 따라 자동화 수준을 고르는 것"이다.
-
 > 🎯 **시나리오 (종합 진단 연습)**: 한 SaaS 기업이 "보안 도구는 다 켰는데 사고가 났다"고 한다. 조사해 보니 GuardDuty·Security Hub·Config가 모두 활성이고 Finding도 쌓이는데, 아무런 자동 대응이 없어 운영자가 수천 개 알림에 묻혀 진짜 Critical을 놓쳤다. CSF로 진단하면 **탐지(Detect)는 충분하나 대응(Respond)이 비어 있다**. 처방: ① Security Hub Automation Rule로 저위험 Finding을 자동 억제해 노이즈를 줄이고(알람 피로·기저율 오류 완화), ② Critical+특정 타입은 EventBridge→SSM Runbook으로 완전 자동 격리, ③ 파괴적 작업은 Custom Action으로 HITL, ④ Macie로 어느 버킷에 PII가 있는지 먼저 식별(Identify)해 우선순위를 정한다. "도구를 켜는 것"과 "탐지를 대응으로 잇는 것"은 다른 일이며, 후자가 빠지면 탐지는 소음일 뿐이다.
 
 ## 🔜 Week 15 예고

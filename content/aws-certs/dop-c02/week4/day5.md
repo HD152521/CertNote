@@ -452,6 +452,6 @@ CodeDeploy가 "배포 실행기"라면, CodePipeline은 "배포를 포함한 전
 - **Day 2**: 멀티 계정 파이프라인 + Cross-Account IAM Role 위임
 - **Day 3**: Action Providers — Lambda, Step Functions, Manual Approval, CloudFormation
 - **Day 4**: V2 Pipeline + Variables + 고급 Trigger 필터
-- **Day 5**: CodePipeline 통합 시나리오 문제 10개
+- **Day 5**: CodePipeline 통합 시나리오 문제 12개
 
 배포 전략이 "어디에 배포할까"의 문제였다면, 파이프라인은 "어떤 순서로, 어떤 조건에서, 어떤 계정에 배포할까"의 문제다. Week 4에서 쌓은 배포 전략 지식이 Week 5에서 더 큰 그림 안에 통합된다.

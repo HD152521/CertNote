@@ -1,14 +1,14 @@
-# Day 3 - Four DR Strategies: Tradeoffs of RTO, RPO, Cost and Their Economics
+# Day 3 - DR 4종 전략: RTO, RPO, 비용의 트레이드오프와 경제학
 
-A common pitfall in designing Disaster Recovery for the first time is the ambition: "make recovery as fast as possible." But applying RTO=0 (instant recovery) to every workload explodes costs—you'd need identical infrastructure running in two regions permanently. The real skill in DR isn't "how fast" but **"if this workload stops, how much do we lose per minute?", then weighing that against cost to pick the right point**. A payments system might lose millions per minute, making RTO=0 worth buying; an internal analytics dashboard down for half a day is just a postponed meeting, so the cheapest backup-restore strategy suffices.
+재해 복구(Disaster Recovery)를 처음 설계할 때 흔히 빠지는 함정은 "복구를 가능한 한 빠르게 하겠다"는 욕심이다. 그러나 모든 워크로드에 RTO=0(즉시 복구)을 적용하면 비용이 폭발한다. 똑같은 인프라를 두 리전에 상시 띄워 두어야 하기 때문이다. DR의 진짜 역량은 "얼마나 빠르게"가 아니라 **"이 워크로드가 멈추면 분당 얼마를 잃는가"를 먼저 따지고 비용과 저울질해 알맞은 지점을 고르는 것**이다. 결제 시스템은 분당 수백만 원을 잃을 수 있으니 RTO=0을 살 만하다. 사내 분석 대시보드가 반나절 멈추는 것은 회의가 미뤄지는 정도라 가장 저렴한 백업-복원 전략으로 충분하다.
 
-AWS standardized this tradeoff into four strategies: **Backup & Restore, Pilot Light, Warm Standby, Multi-Site Active-Active.** These four are points on three axes—RTO (how fast), RPO (how little data lost), and cost—and moving left-to-right, you get faster and safer but pricier. Today we examine what economic logic each strategy rests on, which AWS service implements it, and how to make backups themselves immutable to even stop ransomware.
+AWS는 이 트레이드오프를 네 가지 전략으로 표준화했다. **Backup & Restore, Pilot Light, Warm Standby, Multi-Site Active-Active**다. 이 넷은 RTO(얼마나 빠른가), RPO(데이터를 얼마나 적게 잃는가), 비용이라는 세 축 위의 점이며, 왼쪽에서 오른쪽으로 갈수록 더 빠르고 안전하지만 더 비싸다. 오늘은 각 전략이 어떤 경제적 논리 위에 서 있는지, 어떤 AWS 서비스로 구현하는지, 그리고 백업 자체를 불변으로 만들어 랜섬웨어까지 막는 방법을 본다.
 
-DR strategy appears in almost every DOP exam—"RTO 5 min, RPO seconds, mid-range cost: which strategy?", "block ransomware from encrypting backups too?", "automate Pilot Light failover?" The key is reading scenario numbers (RTO/RPO) and cost constraints, mapping to one of the four points.
+DR 전략은 거의 모든 DOP 시험에 나온다. "RTO 5분, RPO 수 초, 중간 비용: 어떤 전략인가", "백업까지 암호화하는 랜섬웨어를 막으려면", "Pilot Light 페일오버를 자동화하려면" 같은 문제다. 시나리오의 숫자(RTO/RPO)와 비용 제약을 읽어 네 지점 중 하나에 대응시키는 것이 핵심이다.
 
-## RTO and RPO—Two Axes Defining DR
+## RTO와 RPO — DR을 정의하는 두 축
 
-All DR discussion begins with two numbers. **RTO (Recovery Time Objective)** is "allowed time from failure to recovery complete"—how fast must we be back? **RPO (Recovery Point Objective)** is "time window of acceptable data loss"—how recent must the last backup/replica be?
+모든 DR 논의는 두 숫자에서 시작한다. **RTO(Recovery Time Objective)**는 "장애에서 복구 완료까지 허용되는 시간", 즉 얼마나 빨리 돌아와야 하는가다. **RPO(Recovery Point Objective)**는 "허용되는 데이터 손실의 시간 범위", 즉 마지막 백업/복제본이 얼마나 최신이어야 하는가다.
 
 ```
         Past ────────────────[Failure]──────────────→ Now
@@ -17,34 +17,34 @@ All DR discussion begins with two numbers. **RTO (Recovery Time Objective)** is 
        (acceptable data loss)     (tolerable downtime)
 ```
 
-RPO is determined by replication frequency (daily backup = 24h RPO; real-time replication = seconds RPO). RTO is determined by how much standby infrastructure you pre-run. Both shrink with cost—RPO shrinks by replicating more often/in real-time; RTO shrinks by pre-running more standby infrastructure.
+RPO는 복제 빈도로 정해진다(일일 백업이면 RPO 24시간, 실시간 복제면 RPO 수 초). RTO는 대기 인프라를 미리 얼마나 띄워 두느냐로 정해진다. 둘 다 비용을 들일수록 줄어든다. RPO는 더 자주/실시간으로 복제할수록, RTO는 대기 인프라를 더 많이 미리 띄울수록 줄어든다.
 
-> 💡 **Related Theory**: RTO/RPO originate from 1970s mainframe-era Business Continuity Planning (BCP), formally defined in ISO 22301 (Business Continuity Management standard). The core insight: "recovery objectives are set by **Business Impact Analysis (BIA)**, not technology." First, ask "if this system stops, how much per hour do we lose, what regulatory/contract violations occur?", then set RTO/RPO and choose technology accordingly. Conversely, applying "the fastest technically possible recovery" to all systems without BIA is burning money—an anti-pattern. AWS's four strategies are a mapping table translating BIA results (workload tiers) into technology.
+> 💡 **관련 이론**: RTO/RPO는 1970년대 메인프레임 시대의 업무 연속성 계획(BCP, Business Continuity Planning)에서 비롯되었고, ISO 22301(업무 연속성 관리 표준)에 공식 정의되어 있다. 핵심 통찰은 "복구 목표는 기술이 아니라 **업무 영향 분석(BIA, Business Impact Analysis)**이 정한다"는 것이다. 먼저 "이 시스템이 멈추면 시간당 얼마를 잃고 어떤 규제/계약 위반이 생기는가"를 묻고, 그에 따라 RTO/RPO를 정한 다음 기술을 고른다. 반대로 BIA 없이 모든 시스템에 "기술적으로 가능한 가장 빠른 복구"를 적용하는 것은 돈을 태우는 안티패턴이다. AWS의 네 전략은 BIA 결과(워크로드 등급)를 기술로 옮기는 매핑 표다.
 
-## Four-Strategy Matrix—Left is Cheap, Right is Fast
+## 4종 전략 매트릭스 — 왼쪽은 싸고, 오른쪽은 빠르다
 
-| Strategy | RTO | RPO | Relative Cost | Core Structure |
+| 전략 | RTO | RPO | 상대 비용 | 핵심 구조 |
 |--------|-----|-----|-----------|-----------|
-| **Backup & Restore** | Hours–days | Hours | Low | Only backups kept; provision new environment on failure |
-| **Pilot Light** | 10–50 minutes | Minutes | Medium | Data layer always (DB read replica, AMI ready); app tier off |
-| **Warm Standby** | Minutes | Seconds–minutes | High | Scaled-down replica always running; expand on failover |
-| **Multi-Site Active-Active** | ~0 | ~0 | Highest | Both regions handle production traffic simultaneously |
+| **Backup & Restore** | 수 시간~수 일 | 수 시간 | 낮음 | 백업만 보관, 장애 시 새 환경을 프로비저닝 |
+| **Pilot Light** | 10~50분 | 수 분 | 중간 | 데이터 계층은 상시 유지(DB Read Replica, AMI 준비), 앱 계층은 꺼 둠 |
+| **Warm Standby** | 수 분 | 수 초~수 분 | 높음 | 축소된 복제 환경을 상시 실행, 페일오버 시 확장 |
+| **Multi-Site Active-Active** | 약 0 | 약 0 | 가장 높음 | 두 리전이 동시에 운영 트래픽을 처리 |
 
-One principle cuts through all rows: **"how much you keep running normally determines both RTO and cost."** Keep nothing running (Backup & Restore) = cheapest but slowest (must build everything on failure). Keep everything running (Active-Active) = instant recovery but expensive. Pilot Light and Warm Standby are two compromise points in between.
+모든 행을 관통하는 원칙이 하나 있다. **"평상시에 얼마나 띄워 두느냐가 RTO와 비용을 모두 결정한다."** 아무것도 띄우지 않으면(Backup & Restore) 가장 싸지만 가장 느리다(장애 시 전부 새로 만들어야 한다). 전부 띄우면(Active-Active) 즉시 복구되지만 비싸다. Pilot Light와 Warm Standby는 그 사이의 두 타협점이다.
 
-## Backup & Restore—Cheapest and Slowest Insurance
+## Backup & Restore — 가장 싸고 가장 느린 보험
 
-Simplest strategy. Regularly back up data (EBS snapshots, RDS backups, AWS Backup) and copy to another region. **In the DR region, run zero infrastructure during normal times.** On failure, provision the infrastructure (via IaC stack deployment) and restore data from backup.
+가장 단순한 전략이다. 데이터를 정기적으로 백업하고(EBS 스냅샷, RDS 백업, AWS Backup) 다른 리전으로 복사한다. **DR 리전에는 평상시에 인프라를 전혀 띄우지 않는다.** 장애가 나면 (IaC 스택 배포로) 인프라를 프로비저닝하고 백업에서 데이터를 복원한다.
 
-- RTO: Hours to days (build entire environment + restore).
-- RPO: Backup interval (daily backup = max 24-hour loss).
-- Fit: Tier 3 non-critical workloads; cost minimization priority.
+- RTO: 수 시간~수 일 (환경 전체 구축 + 복원).
+- RPO: 백업 주기 (일일 백업이면 최대 24시간 손실).
+- 적합: 3등급 비핵심 워크로드, 비용 최소화가 우선인 경우.
 
-> A modern twist: Backup & Restore is "slow but, if IaC is good, surprisingly fast." Historically, reconstructing DR environment manually took days. With **CloudFormation/Terraform encoding the entire infrastructure**, "stack deploy → backup restore" can automate to hours RTO. This is where IaC meets DR—infrastructure-as-code means "data + code" alone lets you rebuild anytime (immutable infrastructure philosophy). So in exams, "minimize cost while automating recovery via IaC" often makes Backup & Restore the right answer.
+> 현대적 반전이 하나 있다. Backup & Restore는 "느리지만, IaC가 잘 갖춰져 있으면 놀랄 만큼 빠르다." 예전에는 DR 환경을 수동으로 재구축하는 데 며칠이 걸렸다. **CloudFormation/Terraform으로 인프라 전체를 코드화**하면 "스택 배포 → 백업 복원"을 자동화해 RTO를 수 시간으로 줄일 수 있다. IaC와 DR이 만나는 지점이다. 인프라를 코드로 두면 "데이터 + 코드"만으로 언제든 재구축할 수 있다(불변 인프라 철학). 그래서 시험에서 "IaC로 복구를 자동화하면서 비용을 최소화"라면 Backup & Restore가 정답인 경우가 많다.
 
-## Pilot Light—Keep Just the Spark Burning
+## Pilot Light — 불씨만 살려 두기
 
-The name—Pilot Light, like a gas stove's ignition spark—explains the strategy. In the DR region, **keep data layer alive always** (DB read replica receiving continuous replication, AMI/Launch Template ready), but **shut down app tier** (ASG desired=0). On failure, "light the spark"—promote Read Replica to standalone primary, raise ASG desired capacity to spin up app servers, failover DNS.
+이름의 Pilot Light는 가스레인지의 점화용 불씨를 뜻하며, 이것이 전략을 설명해 준다. DR 리전에서 **데이터 계층은 항상 살려 두고**(지속적으로 복제를 받는 DB Read Replica, AMI/Launch Template 준비) **앱 계층은 꺼 둔다**(ASG desired=0). 장애가 나면 "불을 붙인다". Read Replica를 독립 Primary로 승격하고, ASG의 desired capacity를 올려 앱 서버를 띄우고, DNS를 페일오버한다.
 
 ```bash
 # DR region: Read Replica always replicating (data spark)
@@ -61,35 +61,35 @@ aws autoscaling set-desired-capacity --auto-scaling-group-name prod-dr --desired
 # Route 53 failover (Day 2)
 ```
 
-- RTO: App startup time (~10–50 minutes).
-- RPO: DB real-time replication, so minutes (or seconds).
-- Fit: Tier 2; 30-minute RTO acceptable.
+- RTO: 앱 기동 시간 (약 10~50분).
+- RPO: DB를 실시간 복제하므로 수 분(또는 수 초).
+- 적합: 2등급, RTO 30분을 허용하는 경우.
 
-> ⚠️ **Pitfall**: Pilot Light's hidden risk: "**while the app tier is off, nobody verifies it can actually boot**." Old AMI can't start, IAM permissions might be missing, security group misconfigured—all unknown until failure, when you first try to launch and it fails. So Pilot Light *must* be validated via regular DR drills (quarterly/monthly): "does the spark light?" Warm Standby is safer partly because "the scaled-down environment is always running, always validated."
+> ⚠️ **함정**: Pilot Light의 숨은 위험은 "**앱 계층이 꺼져 있는 동안 정말 부팅되는지 아무도 검증하지 않는다**"는 점이다. 오래된 AMI가 기동하지 않을 수 있고, IAM 권한이 빠졌을 수 있고, 보안 그룹이 잘못 설정되었을 수 있다. 이 모든 것이 장애가 나서 처음 띄워 볼 때까지 알려지지 않다가 그때 실패한다. 그래서 Pilot Light는 정기적인 DR 훈련(분기/월 단위)으로 "불씨가 붙는가"를 *반드시* 검증해야 한다. Warm Standby가 더 안전한 이유의 일부도 "축소된 환경이 항상 실행되어 항상 검증되기" 때문이다.
 
-## Warm Standby—Always-On Scaled-Down Replica
+## Warm Standby — 상시 가동되는 축소 복제 환경
 
-Warm Standby keeps a **scaled-down version of production in the DR region, always running** (e.g., 1 ALB + 2 EC2 + DB Replica). Normally it takes no traffic or read-only traffic, but the infrastructure is alive and functioning. On failure, immediately shift traffic here and Auto Scale to full capacity.
+Warm Standby는 DR 리전에 **운영 환경의 축소판을 상시 실행**한다(예: ALB 1개 + EC2 2대 + DB Replica). 평상시에는 트래픽을 받지 않거나 읽기 전용 트래픽만 받지만 인프라는 살아서 동작한다. 장애가 나면 즉시 트래픽을 이쪽으로 옮기고 Auto Scaling으로 전체 용량까지 확장한다.
 
-- RTO: Minutes (environment already up; just traffic shift + scale).
-- RPO: Seconds–minutes (DB real-time replication).
-- Fit: Tier 1; RTO 5 minutes.
+- RTO: 수 분 (환경이 이미 떠 있으므로 트래픽 전환 + 확장만 하면 됨).
+- RPO: 수 초~수 분 (DB 실시간 복제).
+- 적합: 1등급, RTO 5분.
 
-> The Warm Standby vs. Pilot Light difference is clearest as **"path validation"** presence/absence. Software reliability has a maxim: "unused code paths rot"—failover paths never exercised silently break, then fail when needed. Warm Standby, though scaled down, always runs real traffic (health checks, partial reads), keeping failover paths "warm" and continually validated. This touches AWS Well-Architected's "static stability" principle: on failure, don't start new behavior—let already-validated state keep running. You pay more to reduce "it won't work when we need it" risk.
+> Warm Standby와 Pilot Light의 차이는 **"경로 검증"**의 유무로 가장 선명하게 드러난다. 소프트웨어 신뢰성에는 "쓰지 않는 코드 경로는 썩는다"는 격언이 있다. 한 번도 실행되지 않은 페일오버 경로는 조용히 망가졌다가 필요할 때 실패한다. Warm Standby는 축소되어 있어도 항상 실제 트래픽(헬스 체크, 일부 읽기)을 처리하므로 페일오버 경로가 "따뜻하게" 유지되고 계속 검증된다. 이는 AWS Well-Architected의 "정적 안정성(static stability)" 원칙과 닿아 있다. 장애가 났을 때 새로운 동작을 시작하지 말고, 이미 검증된 상태가 계속 실행되게 하라는 것이다. "필요할 때 동작하지 않을" 위험을 줄이기 위해 비용을 더 낸다.
 
-## Multi-Site Active-Active—Failover is Just Traffic Shift
+## Multi-Site Active-Active — 페일오버가 곧 트래픽 이동
 
-Most expensive, most instant strategy. **Both regions handle production traffic at full capacity simultaneously.** Replicate data across both regions via Aurora Global / DynamoDB Global Tables; distribute users with Route 53 Latency Routing. If one region dies—there's no separate "failover" operation. Traffic simply shifts to the living region.
+가장 비싸고 가장 즉각적인 전략이다. **두 리전이 동시에 전체 용량으로 운영 트래픽을 처리한다.** Aurora Global / DynamoDB Global Tables로 두 리전 사이에 데이터를 복제하고, Route 53 Latency 라우팅으로 사용자를 분산한다. 한 리전이 죽어도 별도의 "페일오버" 작업은 없다. 트래픽이 살아 있는 리전으로 옮겨 갈 뿐이다.
 
-- RTO: ~0 (both already handling it; just shift).
-- RPO: ~0 (real-time bidirectional replication).
-- Fit: Tier 0 mission-critical.
+- RTO: 약 0 (둘 다 이미 처리 중이므로 전환만 하면 됨).
+- RPO: 약 0 (실시간 양방향 복제).
+- 적합: 0등급 미션 크리티컬.
 
-> Active-Active's near-zero RTO is because "there's nothing to recover"—both are alive, so just remove the dead one from the pool. But the costs are three-fold. First, **2x cost** (both regions at full capacity). Second, **data conflicts** (Day 2's multi-leader LWW issue—if both regions write, same-item simultaneous updates collide). Third, **capacity planning trap**—each region normally takes 50% traffic; if one dies, the survivor must take 100%. So each region must be sized for **100% traffic, not 50%** (else the survivor cascades after failover). "Can half the system dying mean the rest absorbs all load?" is the core validation question for Active-Active design.
+> Active-Active의 RTO가 0에 가까운 것은 "복구할 것이 없기" 때문이다. 둘 다 살아 있으니 죽은 쪽을 풀에서 빼기만 하면 된다. 그러나 비용은 세 겹이다. 첫째, **2배 비용**(두 리전 모두 전체 용량). 둘째, **데이터 충돌**(Day 2의 다중 리더 LWW 문제 — 두 리전이 쓰면 같은 아이템의 동시 갱신이 충돌한다). 셋째, **용량 계획의 함정**이다. 평상시 각 리전이 트래픽의 50%를 받다가 한 리전이 죽으면 생존 리전이 100%를 받아야 한다. 따라서 각 리전은 50%가 아니라 **100% 트래픽 기준**으로 크기를 잡아야 한다(그렇지 않으면 페일오버 후 생존 리전이 연쇄 장애를 일으킨다). "시스템의 절반이 죽어도 나머지가 전체 부하를 흡수할 수 있는가"가 Active-Active 설계의 핵심 검증 질문이다.
 
-## AWS Backup—Unify and Centralize Backups
+## AWS Backup — 백업을 통합하고 중앙화하다
 
-If each service backs up differently (EBS snapshots, RDS native backups, DynamoDB PITR...), management fragments. **AWS Backup** unifies them under one policy and vault. Define schedule, retention, and region-copy in a backup plan; select resources by tags.
+서비스마다 백업 방식이 다르면(EBS 스냅샷, RDS 네이티브 백업, DynamoDB PITR...) 관리가 파편화된다. **AWS Backup**은 이를 하나의 정책과 볼트(vault)로 통합한다. 백업 계획(backup plan)에 스케줄, 보존 기간, 리전 복사를 정의하고 태그로 리소스를 선택한다.
 
 ```bash
 aws backup create-backup-plan --backup-plan '{
@@ -107,15 +107,15 @@ aws backup create-backup-plan --backup-plan '{
 }'
 ```
 
-- Unified support: EBS, EFS, RDS, Aurora, DynamoDB, S3, FSx, Storage Gateway, Neptune, DocumentDB, Redshift, etc.
-- Cross-Region Copy + Cross-Account Copy (defend against disaster AND account compromise).
-- Tag-based auto-selection (new resource with tag automatically included).
+- 통합 지원: EBS, EFS, RDS, Aurora, DynamoDB, S3, FSx, Storage Gateway, Neptune, DocumentDB, Redshift 등.
+- Cross-Region Copy + Cross-Account Copy (재해와 계정 탈취를 모두 방어).
+- 태그 기반 자동 선택 (태그가 붙은 새 리소스는 자동으로 포함).
 
-> AWS Backup's tag-based selection is **policy-based management**—not imperative "register each resource one-by-one," but declarative "back up anything tagged Backup=prod," applied instantly when a new resource gets that tag. Same philosophy as Kubernetes label selectors, IAM's tag-based ABAC. Governance becomes "cannot accidentally miss"—if developers forget backup registration, the tag policy is a safety net.
+> AWS Backup의 태그 기반 선택은 **정책 기반 관리**다. "리소스를 하나씩 등록한다"는 명령형이 아니라 "Backup=prod 태그가 붙은 것은 전부 백업한다"는 선언형이며, 새 리소스에 그 태그가 붙는 즉시 적용된다. Kubernetes 레이블 셀렉터, IAM의 태그 기반 ABAC와 같은 철학이다. 거버넌스는 "실수로 빠뜨릴 수 없는" 상태가 된다. 개발자가 백업 등록을 잊어도 태그 정책이 안전망이 된다.
 
-## Backup Vault Lock—Immutable Backups Against Ransomware
+## Backup Vault Lock — 랜섬웨어에 맞서는 불변 백업
 
-Backups are useless if attackers steal admin rights and **delete or encrypt the backups too**. Ransomware's playbook: "delete backups first, then encrypt the main system." **Backup Vault Lock** makes backups **immutable**—once locked, backups cannot be deleted or modified, not even by root, during the retention period.
+공격자가 관리자 권한을 탈취해 **백업까지 삭제하거나 암호화**하면 백업은 쓸모없다. 랜섬웨어의 공격 절차는 "백업을 먼저 지우고 나서 본 시스템을 암호화한다"이다. **Backup Vault Lock**은 백업을 **불변(immutable)**으로 만든다. 한 번 잠그면 보존 기간 동안 root조차 백업을 삭제하거나 수정할 수 없다.
 
 ```bash
 aws backup put-backup-vault-lock-configuration \
@@ -124,15 +124,15 @@ aws backup put-backup-vault-lock-configuration \
   --changeable-for-days 3
 ```
 
-`--changeable-for-days 3` is a **cooling-off period**: you can release the lock within 3 days to fix mistakes, but after that, **Compliance Mode locks completely**—no one can release it.
+`--changeable-for-days 3`은 **유예 기간(cooling-off period)**이다. 3일 안에는 실수를 고치려고 잠금을 해제할 수 있지만, 그 뒤에는 **Compliance Mode가 완전히 잠긴다.** 누구도 해제할 수 없다.
 
-> The 2021 Colonial Pipeline ransomware incident (DarkSide group) shut down about 45% of U.S. East Coast fuel supply for days; the company paid ~$4.4M ransom (some later recovered). One lesson: "if backups live in the same permission boundary, they fall together." WORM (Write Once Read Many)—write once, read many, no modify—based immutable backup is ransomware recovery's last resort. Vault Lock Compliance Mode implements exactly this (same philosophy as S3 Object Lock Compliance Mode, SEC 17a-4 compliance storage). Lesson: backups aren't "there" unless "attackers can't delete them."
+> 2021년 Colonial Pipeline 랜섬웨어 사건(DarkSide 그룹)은 미국 동부 해안 연료 공급의 약 45%를 며칠간 멈춰 세웠고, 회사는 약 440만 달러의 몸값을 지불했다(일부는 나중에 회수되었다). 교훈 하나는 "백업이 같은 권한 경계 안에 있으면 같이 무너진다"는 것이다. WORM(Write Once Read Many) 즉 한 번 쓰고 여러 번 읽되 수정할 수 없는 방식의 불변 백업이 랜섬웨어 복구의 마지막 보루다. Vault Lock Compliance Mode가 정확히 이를 구현한다(S3 Object Lock Compliance Mode, SEC 17a-4 컴플라이언스 스토리지와 같은 철학이다). 백업은 "공격자가 지울 수 없을 때"에야 비로소 "존재한다."
 
-> Vault Lock's two modes: **Governance Mode** lets certain IAM-privileged users bypass/delete the lock (mistake prevention level), while **Compliance Mode** makes it unbreakable even by root before retention expires (true immutability, regulatory defense). The distinction separates "prevent accidents" from "defend against regulation and ransomware." In exams, "regulate that backups never delete" = Compliance Mode; "let admins override after approval" = Governance Mode. This same distinction applies to S3 Object Lock.
+> Vault Lock의 두 모드는 다음과 같다. **Governance Mode**는 특정 IAM 권한을 가진 사용자가 잠금을 우회/삭제할 수 있다(실수 방지 수준). **Compliance Mode**는 보존 기간이 끝나기 전에는 root도 깨뜨릴 수 없다(진정한 불변성, 규제 대응). 이 구분은 "사고 예방"과 "규제 및 랜섬웨어 방어"를 가른다. 시험에서 "백업이 절대 삭제되지 않도록 규제"는 Compliance Mode, "승인 후 관리자가 해제할 수 있게"는 Governance Mode다. 같은 구분이 S3 Object Lock에도 적용된다.
 
-## Automate DR Activation—Runbook as Code
+## DR 활성화 자동화 — 코드로서의 런북
 
-Manual, console-driven DR activation is slow and error-prone. Encode the activation procedure in **Step Functions workflows or SSM Automation Runbooks**—"promote Read Replica → expand ASG → failover Route 53 → validate alert" in one execution. Coded this way, **regular drills can repeatedly validate**, preventing Pilot Light/Warm Standby's "path rot" risk.
+콘솔로 수동 진행하는 DR 활성화는 느리고 실수하기 쉽다. 활성화 절차를 **Step Functions 워크플로 또는 SSM Automation Runbook**으로 코드화한다. "Read Replica 승격 → ASG 확장 → Route 53 페일오버 → 검증 알림"을 한 번의 실행으로 처리한다. 이렇게 코드화하면 **정기 훈련으로 반복 검증**할 수 있어 Pilot Light/Warm Standby의 "경로 부패" 위험을 막는다.
 
 ```
 DR Runbook (Step Functions)
@@ -145,9 +145,9 @@ DR Runbook (Step Functions)
 
 ## 정리
 
-Four pictures emerge today. First, **DR is not "how fast" but an economics problem: BIA defines RTO/RPO, weighed against cost** (ISO 22301); the four strategies are a mapping table. Second, **the four strategies are a spectrum of "keep running normally"**: Backup & Restore (nothing; cheapest/slowest, but IaC speeds it up) → Pilot Light (data only, app off) → Warm Standby (scaled-down replica always, path validated) → Active-Active (full capacity both, RTO≈0, expensive, conflict/capacity-planning challenges). Third, **AWS Backup unifies backups via tag-based policy governance** and Cross-Region/Account Copy defends against disaster AND account compromise. Fourth, **Vault Lock Compliance Mode's WORM-immutable backups block ransomware's "delete backups first" tactic** (Colonial Pipeline lesson); DR activation must be code-driven (Step Functions/SSM Runbooks) and periodically validated via drills.
+오늘은 네 장의 그림이 나왔다. 첫째, **DR은 "얼마나 빠르게"가 아니라 경제학 문제**다. BIA가 RTO/RPO를 정하고 이를 비용과 저울질한다(ISO 22301). 네 전략은 그 매핑 표다. 둘째, **네 전략은 "평상시에 얼마나 띄워 두는가"의 스펙트럼**이다. Backup & Restore(아무것도 없음, 가장 싸고 느리지만 IaC로 빨라짐) → Pilot Light(데이터만, 앱은 꺼 둠) → Warm Standby(축소 복제 환경 상시 가동, 경로 검증됨) → Active-Active(양쪽 전체 용량, RTO≈0, 비싸고 충돌/용량 계획 과제가 있음)다. 셋째, **AWS Backup은 태그 기반 정책 거버넌스로 백업을 통합**하며, Cross-Region/Account Copy는 재해와 계정 탈취를 모두 방어한다. 넷째, **Vault Lock Compliance Mode의 WORM 불변 백업은 랜섬웨어의 "백업부터 지운다" 전술을 막고**(Colonial Pipeline의 교훈), DR 활성화는 코드(Step Functions/SSM Runbook)로 구동하고 훈련으로 주기적으로 검증해야 한다.
 
-Next, we verify these DR strategies actually work: **Resilience Hub measures RTO/RPO, and FIS automates chaos engineering** to test failover repeatedly.
+다음에는 이 DR 전략이 실제로 동작하는지 검증한다. **Resilience Hub가 RTO/RPO를 측정하고, FIS가 카오스 엔지니어링을 자동화**해 페일오버를 반복 테스트한다.
 
 ---
 

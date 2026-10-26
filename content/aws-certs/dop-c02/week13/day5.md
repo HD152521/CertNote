@@ -236,5 +236,3 @@ D) Global Accelerator(anycast IP) + S3 CRR로 즉각 페일오버하고 데이�
 ## 🔜 Week 14 예고
 
 **보안 자동화 — GuardDuty, Security Hub, Config, Audit Manager**
-
-> 💪 Week 13 완료! 장애를 두려워하지 않고, 장애를 설계의 전제로 삼는 사고방식을 손에 넣었다.

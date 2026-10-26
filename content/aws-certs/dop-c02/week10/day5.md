@@ -296,5 +296,3 @@ D) 멀티 리전 메트릭을 단일 리전으로 통합해 cross-region 폴링 
 **관찰성 심화 - X-Ray, ADOT, OpenSearch/Prometheus**
 
 이번 주가 "신호를 모으고 보는" 기초였다면, Week 11은 분산 추적(X-Ray)으로 요청의 인과를 따라가고, OpenTelemetry(ADOT)로 벤더 중립 계측을 표준화하며, OpenSearch/Prometheus로 대규모 로그·메트릭 분석을 다룬다. 오늘 본 correlation ID(W3C Trace Context), pull 대 push, 카디널리티 관리, 세 기둥이 거기서 본격적으로 확장된다.
-
-> 💪 Week 10 완료! 메트릭·로그·워크로드·사용자 경험을 한 줄기로 엮었다.

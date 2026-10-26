@@ -1,45 +1,45 @@
-# Day 4 - Resilience Verification: Chaos Engineering via Resilience Hub and FIS
+# Day 4 - 복원력 검증: Resilience Hub와 FIS로 하는 카오스 엔지니어링
 
-Even with the best-designed DR strategy, "does it actually work?" is separate. The 5-minute RTO on paper can become 30 minutes when real disaster strikes, and systems touted as "Multi-AZ, so we're fine" crumble when an AZ actually dies. The uncomfortable truth of software reliability: "untested recovery doesn't work." Enter **Chaos Engineering**—intentionally injecting failures into healthy systems to surface weaknesses before they strike for real.
+아무리 잘 설계한 DR 전략이라도 "실제로 동작하는가"는 별개의 문제다. 문서상 5분이던 RTO가 진짜 재해가 닥치면 30분이 될 수 있고, "Multi-AZ니까 괜찮다"고 자랑하던 시스템도 AZ 하나가 실제로 죽으면 무너진다. 소프트웨어 신뢰성의 불편한 진실은 "테스트하지 않은 복구는 동작하지 않는다"는 것이다. 여기서 **카오스 엔지니어링(Chaos Engineering)**이 등장한다. 멀쩡한 시스템에 의도적으로 장애를 주입해, 진짜 장애가 터지기 전에 약점을 드러내는 방법이다.
 
-AWS commercialized this via two services. **Resilience Hub** analyzes workloads to measure and evaluate "given your RTO/RPO targets, how much can you actually tolerate?" **FIS (Fault Injection Service, formerly Fault Injection Simulator)** actually injects failures—EC2 terminations, network latency, API throttles. The key is combining both to automate the "measure → experiment → improve" loop. Today we explore chaos engineering's origin (Netflix), its scientific methodology, how FIS's safety mechanisms (Stop Conditions) prevent operational catastrophes, and how to automate all this periodically.
+AWS는 이를 두 서비스로 상용화했다. **Resilience Hub**는 워크로드를 분석해 "설정한 RTO/RPO 목표 대비 실제로 얼마나 견딜 수 있는가"를 측정하고 평가한다. **FIS(Fault Injection Service, 이전 이름 Fault Injection Simulator)**는 EC2 종료, 네트워크 지연, API 스로틀 같은 장애를 실제로 주입한다. 핵심은 둘을 결합해 "측정 → 실험 → 개선" 루프를 자동화하는 것이다. 오늘은 카오스 엔지니어링의 기원(Netflix)과 과학적 방법론, FIS의 안전장치(Stop Condition)가 운영 참사를 막는 방식, 그리고 이 모두를 주기적으로 자동화하는 방법을 본다.
 
-In DOP exams, this area appears as "how to verify/automate resilience?", "what safety guards prevent chaos from destroying operations?", "periodically validate DR failover?" scenarios.
+DOP 시험에서 이 영역은 "복원력을 어떻게 검증/자동화하는가", "카오스가 운영을 망치지 않게 하는 안전장치는 무엇인가", "DR 페일오버를 주기적으로 검증하려면" 같은 시나리오로 나온다.
 
-## Where Chaos Engineering Came From—Netflix and Chaos Monkey
+## 카오스 엔지니어링은 어디서 왔나 — Netflix와 Chaos Monkey
 
-Chaos engineering originated around 2010 at Netflix. As Netflix migrated from its own data centers to AWS, it faced the reality: "in the cloud, instances die anytime (failure is normal)." Traditional thinking was "prevent failures." Netflix flipped it: **"Failures will happen. So let's intentionally cause some normally, forcing our system to tolerate them."** That tool became **Chaos Monkey** (2011, publicly released)—a program randomly killing instances in production.
+카오스 엔지니어링은 2010년 무렵 Netflix에서 시작되었다. Netflix는 자체 데이터센터에서 AWS로 옮겨 가며 "클라우드에서는 인스턴스가 언제든 죽는다(장애는 정상이다)"라는 현실에 직면했다. 전통적 사고는 "장애를 막자"였다. Netflix는 이를 뒤집었다. **"장애는 일어난다. 그러니 일부러 평소에 일으켜서 시스템이 견디도록 강제하자."** 그 도구가 **Chaos Monkey**(2011년 공개)로, 운영 환경에서 인스턴스를 무작위로 죽이는 프로그램이다.
 
-Chaos Monkey soon expanded into the **Simian Army**—Latency Monkey (inject latency), Conformity Monkey (terminate non-conforming instances), Chaos Gorilla (simulate whole AZ failure), Chaos Kong (simulate whole region failure). FIS commercializes this Simian Army philosophy as a managed AWS service, with reinforced safety guards.
+Chaos Monkey는 곧 **Simian Army**로 확장되었다. Latency Monkey(지연 주입), Conformity Monkey(규격에 맞지 않는 인스턴스 종료), Chaos Gorilla(AZ 전체 장애 시뮬레이션), Chaos Kong(리전 전체 장애 시뮬레이션)이다. FIS는 이 Simian Army의 철학을 안전장치를 강화한 AWS 관리형 서비스로 상용화한 것이다.
 
-> Chaos engineering isn't just "throw failures" but applies **scientific method** to system reliability. Netflix et al., codifying *Principles of Chaos Engineering* (2015), make this explicit: (1) define steady state as measurable metrics (e.g., 99.9% success rate), (2) form a **hypothesis**: "the system will maintain steady state even under X failure," (3) actually inject the failure to test the hypothesis, (4) if steady state breaks, that's a discovered weakness. This resembles Karl Popper's falsifiability—"we believe the system tolerates X," so we try to disprove it via experiment; if disproven, we fix; if not disproven, confidence grows. The key shift: "belief" becomes "validated evidence" for resilience.
+> 카오스 엔지니어링은 단순히 "장애를 던지는 것"이 아니라 시스템 신뢰성에 **과학적 방법**을 적용하는 것이다. Netflix 등이 정리한 *Principles of Chaos Engineering*(2015)이 이를 분명히 한다. (1) 정상 상태(steady state)를 측정 가능한 지표로 정의한다(예: 성공률 99.9%). (2) "X 장애가 나도 시스템은 정상 상태를 유지한다"는 **가설**을 세운다. (3) 가설을 검증하려고 실제로 장애를 주입한다. (4) 정상 상태가 깨지면 그것이 발견된 약점이다. 이는 Karl Popper의 반증 가능성과 닮았다. "시스템이 X를 견딘다고 믿는다"면 실험으로 반증을 시도하고, 반증되면 고치고, 반증되지 않으면 확신이 커진다. 핵심 전환은 복원력에 대한 "믿음"이 "검증된 증거"가 된다는 것이다.
 
-## Five Principles of Chaos Engineering
+## 카오스 엔지니어링의 5대 원칙
 
-Principles to follow when designing FIS experiments.
+FIS 실험을 설계할 때 따를 원칙이다.
 
-1. **Hypothesis**: Start with a testable claim like "this system maintains 99.9% success even if one AZ dies."
-2. **Steady State Definition**: Metrics (success rate, P99 latency, throughput) measured pre/post-experiment, fixed quantitatively.
-3. **Small Blast Radius to Start**: Begin small—1 instance, 5% traffic; expand gradually as confidence grows.
-4. **Environment Like Operations**: Validate in Staging, but ultimately in production (or production-like)—production reveals unique weaknesses.
-5. **Stop Condition Always**: Experiment must have a safety net to stop immediately if it gets dangerous.
+1. **가설(Hypothesis)**: "AZ 하나가 죽어도 이 시스템은 99.9% 성공률을 유지한다"처럼 검증 가능한 주장으로 시작한다.
+2. **정상 상태 정의(Steady State Definition)**: 실험 전후에 측정하는 지표(성공률, P99 지연, 처리량)를 정량적으로 고정한다.
+3. **작은 폭발 반경(Blast Radius)으로 시작**: 작게 시작한다. 인스턴스 1개, 트래픽 5%에서 출발해 확신이 쌓이면 점진적으로 넓힌다.
+4. **운영과 같은 환경**: Staging에서 검증하되 최종적으로는 운영(또는 운영과 유사한 환경)에서 한다. 운영 환경에만 있는 약점이 있다.
+5. **항상 Stop Condition**: 실험이 위험해지면 즉시 멈추는 안전망을 반드시 둔다.
 
-> "Blast radius" (experiment's scope of impact) is chaos engineering's core concept. Starting small isn't just caution but **learning efficiency**—large experiments carry high accident risk but teach fast; small ones are safe but teach slow. Mature orgs use **progressive exposure**: start tiny, confirm safety, then expand. Like Canary deployments (expose new code to 5% to contain risk), Chaos also "confines failures to small ranges" for risk control. FIS's SelectionMode (PERCENT/COUNT) is precisely this blast radius control dial.
+> "폭발 반경(blast radius)"(실험이 미치는 영향 범위)은 카오스 엔지니어링의 핵심 개념이다. 작게 시작하는 것은 단순한 조심이 아니라 **학습 효율**의 문제다. 큰 실험은 사고 위험이 높지만 빨리 배우고, 작은 실험은 안전하지만 느리게 배운다. 성숙한 조직은 **점진적 노출(progressive exposure)**을 쓴다. 아주 작게 시작해 안전을 확인한 뒤 넓힌다. 새 코드를 5%에만 노출해 위험을 가두는 Canary 배포처럼, 카오스도 "장애를 좁은 범위에 가둬서" 위험을 통제한다. FIS의 SelectionMode(PERCENT/COUNT)가 바로 이 폭발 반경 조절 다이얼이다.
 
-## AWS FIS—Managed Chaos Injection
+## AWS FIS — 관리형 카오스 주입
 
-FIS defines and runs **Experiment Templates**. A template has three components: **Targets** (where), **Actions** (what), **Stop Conditions** (when to stop).
+FIS는 **Experiment Template**을 정의하고 실행한다. 템플릿은 세 요소로 이루어진다. **Targets**(어디에), **Actions**(무엇을), **Stop Conditions**(언제 멈출지)다.
 
-Key faults supported:
+지원하는 주요 장애는 다음과 같다.
 
-| Category | Action Examples |
+| 분류 | Action 예시 |
 |----------|-----------|
-| **EC2** | Stop, Terminate, Reboot, CPU/Memory stress, API Throttle |
-| **ECS/EKS** | Task/Pod kill, Container CPU/Memory stress |
+| **EC2** | Stop, Terminate, Reboot, CPU/Memory 부하, API Throttle |
+| **ECS/EKS** | Task/Pod 종료, 컨테이너 CPU/Memory 부하 |
 | **RDS** | Failover, Reboot |
-| **Network** | Packet loss, latency injection, DNS errors, connection blocking (SSM Agent-based) |
-| **API** | Throttle/error injection on specific AWS APIs |
-| **AZ Power** | AZ power-failure simulation (disrupt-connectivity) |
+| **Network** | 패킷 손실, 지연 주입, DNS 오류, 연결 차단 (SSM Agent 기반) |
+| **API** | 특정 AWS API에 대한 Throttle/오류 주입 |
+| **AZ Power** | AZ 전원 장애 시뮬레이션 (disrupt-connectivity) |
 
 ```bash
 aws fis create-experiment-template \
@@ -68,25 +68,25 @@ aws fis create-experiment-template \
   }]'
 ```
 
-### Target Selection Mode—The Blast Radius Dial
+### 대상 선택 모드 — 폭발 반경 다이얼
 
-- **ResourceArns**: Specify exact resources.
-- **ResourceTags**: Match by tags (e.g., `Environment=prod`).
-- **SelectionMode**: `ALL` (all) / `COUNT(N)` (N) / `PERCENT(N%)` (random N%).
+- **ResourceArns**: 정확한 리소스를 지정한다.
+- **ResourceTags**: 태그로 매칭한다(예: `Environment=prod`).
+- **SelectionMode**: `ALL`(전체) / `COUNT(N)`(N개) / `PERCENT(N%)`(무작위 N%).
 
-`PERCENT(30)` means "random 30% of tag-matched instances." This dial quantitatively controls blast radius—start with `PERCENT(5)`, extend to `PERCENT(50)`.
+`PERCENT(30)`은 "태그가 일치하는 인스턴스 중 무작위 30%"라는 뜻이다. 이 다이얼이 폭발 반경을 정량적으로 조절한다. `PERCENT(5)`로 시작해 `PERCENT(50)`까지 넓힌다.
 
-## Stop Condition—Chaos's Safety Belt
+## Stop Condition — 카오스의 안전벨트
 
-FIS's most critical safety mechanism. During experiment, if a **CloudWatch Alarm fires, FIS immediately stops the experiment and rolls back** the injected failure. Example: "if P99 latency exceeds threshold," the alarm triggers and FIS stops CPU stress—preventing chaos from becoming real disaster.
+FIS에서 가장 중요한 안전장치다. 실험 중에 **CloudWatch Alarm이 울리면 FIS가 즉시 실험을 중단하고** 주입한 장애를 **롤백**한다. 예를 들어 "P99 지연이 임계값을 넘으면" 경보가 울려 FIS가 CPU 부하를 멈추므로, 카오스가 실제 재해로 번지지 않는다.
 
-> ⚠️ **Pitfall**: Chaos without Stop Condition is not chaos engineering but **intentional sabotage**. Exam answer to "make chaos experiments safe for operations?" is almost always "Stop Condition (CloudWatch Alarm-based)." Another common pitfall: Stop Condition **stops** the experiment but doesn't undo already-caused impact—so small blast radius and Stop Condition must go together (small radius means damage before stopping is also small). Safety is not a single device but **multi-layer defense: small radius + fast stop**.
+> ⚠️ **함정**: Stop Condition이 없는 카오스는 카오스 엔지니어링이 아니라 **의도적인 사보타주**다. "카오스 실험이 운영에 안전하도록 하려면"의 시험 정답은 거의 항상 "Stop Condition(CloudWatch Alarm 기반)"이다. 또 하나 흔한 함정은, Stop Condition이 실험을 **멈출 뿐** 이미 발생한 영향을 되돌리지는 않는다는 점이다. 그래서 작은 폭발 반경과 Stop Condition은 함께 가야 한다(반경이 작으면 멈추기 전의 피해도 작다). 안전은 단일 장치가 아니라 **작은 반경 + 빠른 중단이라는 다층 방어**다.
 
-> The 2017 AWS S3 us-east-1 major outage started when an engineer debugging accidentally terminated more servers than intended with one command—essentially an "uncontrolled chaos experiment" happening by accident. One lesson: "**large-scale operations must have blast-radius limits and safety guards built in**." AWS later reinforced safety guardrails. FIS's SelectionMode (blast radius limit) and Stop Condition (immediate stop) are exactly this lesson commercialized. Lesson: "large operations with no undo all at once"—is the most dangerous anti-pattern, whether chaos or operations.
+> 2017년 AWS S3 us-east-1 대규모 장애는 한 엔지니어가 디버깅 중 명령 하나로 의도보다 많은 서버를 실수로 종료하면서 시작되었다. 사실상 우연히 벌어진 "통제 없는 카오스 실험"이었다. 교훈 하나는 "**대규모 작업에는 폭발 반경 제한과 안전장치가 내장되어야 한다**"는 것이다. AWS는 이후 안전 가드레일을 강화했다. FIS의 SelectionMode(폭발 반경 제한)와 Stop Condition(즉시 중단)이 바로 이 교훈을 상용화한 것이다. 되돌릴 수단 없이 한 번에 크게 벌이는 작업은 카오스든 운영이든 가장 위험한 안티패턴이다.
 
-## AWS Resilience Hub—Measure and Evaluate Resilience
+## AWS Resilience Hub — 복원력을 측정하고 평가하다
 
-If FIS is "the hand injecting failures," Resilience Hub is "the doctor diagnosing resilience." Register a workload (application), and Resilience Hub analyzes its configuration (CloudFormation stack, Resource Groups, etc.) to evaluate if it **actually achieves your set RTO/RPO targets**.
+FIS가 "장애를 주입하는 손"이라면 Resilience Hub는 "복원력을 진단하는 의사"다. 워크로드(애플리케이션)를 등록하면 Resilience Hub가 그 구성(CloudFormation 스택, Resource Groups 등)을 분석해 설정한 RTO/RPO 목표를 **실제로 달성하는지** 평가한다.
 
 ```bash
 # Resilience policy: per-tier RTO/RPO targets
@@ -102,17 +102,17 @@ aws resiliencehub create-resiliency-policy --policy-name Tier1 \
 aws resiliencehub start-app-assessment --app-arn ... --assessment-name weekly
 ```
 
-Core value:
-- **Measure vs. Target**: "RTO goal 5 min but actual config needs 12 min?" gaps revealed (by failure type—Hardware/Software/AZ/Region).
-- **Recommended improvements + cost**: "Enable Multi-AZ, AZ RTO drops 10→2 min, +$X/month"—concrete proposals.
-- **FIS integration**: Assessment result auto-generates and runs FIS experiments to verify.
-- **Periodic reports**: Resilience score trends tracked.
+핵심 가치는 다음과 같다.
+- **목표 대비 측정**: "RTO 목표는 5분인데 실제 구성은 12분이 필요하다"는 차이를 장애 유형별(Hardware/Software/AZ/Region)로 드러낸다.
+- **개선 권고 + 비용**: "Multi-AZ를 켜면 AZ RTO가 10분에서 2분으로 줄고 월 $X가 추가된다"처럼 구체적으로 제안한다.
+- **FIS 연동**: 평가 결과로 FIS 실험을 자동 생성하고 실행해 검증한다.
+- **주기적 리포트**: 복원력 점수의 추이를 추적한다.
 
-> Resilience Hub automates and quantifies AWS **Well-Architected Framework's Reliability Pillar**. Well-Architected prescribes abstract principles: "test recovery procedures," "auto-recover from failure," "scale horizontally for availability." Resilience Hub converts this to quantitative metrics: "your workload's actual AZ-failure RTO = X seconds vs. 600-second goal." This applies software engineering's "you can't improve what you can't measure" (Drucker aphorism, often cited through Tom DeMarco)—resilience becomes scored gaps and improvements, data-driven improvement.
+> Resilience Hub는 AWS **Well-Architected Framework의 신뢰성 기둥(Reliability Pillar)**을 자동화하고 정량화한다. Well-Architected는 "복구 절차를 테스트하라", "장애에서 자동으로 복구하라", "가용성을 위해 수평 확장하라" 같은 추상적 원칙을 제시한다. Resilience Hub는 이를 "이 워크로드의 실제 AZ 장애 RTO는 X초이고 목표는 600초다"라는 정량 지표로 바꾼다. 측정할 수 없으면 개선할 수 없다는 소프트웨어 공학의 격언(Drucker의 경구로, 흔히 Tom DeMarco를 통해 인용된다)을 적용한 것이다. 복원력이 점수화된 격차와 개선안이 되어, 데이터에 기반한 개선이 가능해진다.
 
-## Periodic Automation—Measure-Experiment-Improve Loop
+## 주기적 자동화 — 측정·실험·개선 루프
 
-Chaos engineering's real value emerges from **regular repetition**, not one-offs. Code changes, infrastructure evolves; yesterday's resilient system breaks today. Use **EventBridge Scheduler** to run FIS experiments periodically, collecting results in Resilience Hub and CloudWatch.
+카오스 엔지니어링의 진짜 가치는 일회성이 아니라 **정기적인 반복**에서 나온다. 코드가 바뀌고 인프라가 진화하므로 어제는 복원력이 있던 시스템이 오늘은 깨질 수 있다. **EventBridge Scheduler**로 FIS 실험을 주기적으로 실행하고, 결과를 Resilience Hub와 CloudWatch에 모은다.
 
 ```
 Periodic Chaos Loop
@@ -127,19 +127,19 @@ Periodic Chaos Loop
    Report → Resilience Hub update + Slack alert + Runbook learns
 ```
 
-### ARC + FIS—DR Failover Itself as Chaos Target
+### ARC + FIS — DR 페일오버 자체를 카오스 대상으로
 
-Trigger Route 53 ARC Routing Control switch via FIS Action, and **periodically validate the DR failover procedure itself**. "Does region failover actually complete within RTO?" checked monthly via automated experiment—directly addressing Day 3's "untested DR doesn't work."
+FIS Action으로 Route 53 ARC Routing Control 전환을 일으켜 **DR 페일오버 절차 자체를 주기적으로 검증**한다. "리전 페일오버가 RTO 안에 실제로 완료되는가"를 매달 자동 실험으로 확인한다. Day 3의 "테스트하지 않은 DR은 동작하지 않는다"를 직접 해결한다.
 
-> **Game Day** and **Chaos Engineering** are often confused but differ. Game Day is a **one-time event** where a team gathers, manually runs intentional failure scenarios, checking humans/processes/runbooks (quarterly/annual, training-focused). Chaos Engineering **automates failure injection periodically** (daily/weekly, verification-focused) via tools like FIS. They're complementary—Game Day validates "how do people respond to failure?" (are runbooks clear, roles assigned?), while Chaos validates "how does the system respond?" (auto-recovery working?). Mature orgs train people quarterly via Game Day and verify systems weekly via automated Chaos. Exams: "one-time human-process training" = Game Day; "periodic system auto-verification" = Chaos/FIS.
+> **Game Day**와 **카오스 엔지니어링**은 자주 혼동되지만 다르다. Game Day는 팀이 모여 의도적인 장애 시나리오를 수동으로 실행하며 사람/프로세스/런북을 점검하는 **일회성 행사**다(분기/연 단위, 훈련 중심). 카오스 엔지니어링은 FIS 같은 도구로 **장애 주입을 주기적으로 자동화**한다(일/주 단위, 검증 중심). 둘은 상호 보완적이다. Game Day는 "사람이 장애에 어떻게 대응하는가"(런북이 명확한가, 역할이 지정되었는가)를 검증하고, 카오스는 "시스템이 장애에 어떻게 반응하는가"(자동 복구가 동작하는가)를 검증한다. 성숙한 조직은 Game Day로 분기마다 사람을 훈련하고, 자동화된 카오스로 매주 시스템을 검증한다. 시험에서 "일회성 사람/프로세스 훈련"은 Game Day, "주기적 시스템 자동 검증"은 Chaos/FIS다.
 
-> ⚠️ **Pitfall**: When automating periodic chaos in production, if Stop Condition thresholds are too sensitive, experiments stop immediately, learning nothing. Too loose, real incidents occur. So Stop Condition thresholds must be carefully grounded in steady-state metrics, starting conservative (small radius + conservative thresholds), then tuning gradually. Safety and learning trade off; balancing them is chaos engineering operations' skill.
+> ⚠️ **함정**: 운영 환경에서 주기적 카오스를 자동화할 때 Stop Condition 임계값이 너무 민감하면 실험이 즉시 멈춰 아무것도 배우지 못한다. 너무 느슨하면 실제 사고가 난다. 그래서 Stop Condition 임계값은 정상 상태 지표에 근거해 신중하게 정해야 하며, 보수적으로(작은 반경 + 보수적 임계값) 시작해 점차 조정한다. 안전과 학습은 맞바꾸는 관계이고, 둘의 균형을 잡는 것이 카오스 엔지니어링 운영의 기술이다.
 
 ## 정리
 
-Four pictures emerge today. First, **Chaos Engineering originated with Netflix Chaos Monkey, applying scientific method (hypothesis→experiment→verification) to system reliability**—not "prevent failures" but "force tolerance by injecting intentionally." Second, **FIS implements this as managed service** with Targets (blast radius: dial via PERCENT/COUNT), Actions (failure types), Stop Conditions (safety belt). Third, **Resilience Hub quantifies Well-Architected Reliability Pillar**, revealing RTO/RPO target-vs-actual gaps, improvements, and costs, integrating with FIS for joint validation. Fourth, **EventBridge Scheduler + FIS automates the measure-experiment-improve loop periodically**, with ARC + FIS validating DR failover itself, while Game Day (humans, one-time) and Chaos (systems, periodic) are complementary.
+오늘은 네 장의 그림이 나왔다. 첫째, **카오스 엔지니어링은 Netflix Chaos Monkey에서 시작되었고 시스템 신뢰성에 과학적 방법(가설 → 실험 → 검증)을 적용**한다. "장애를 막자"가 아니라 "의도적으로 주입해 견디도록 강제하자"다. 둘째, **FIS가 이를 관리형 서비스로 구현**한다. Targets(폭발 반경: PERCENT/COUNT 다이얼), Actions(장애 유형), Stop Conditions(안전벨트)로 이루어진다. 셋째, **Resilience Hub는 Well-Architected 신뢰성 기둥을 정량화**하여 RTO/RPO 목표 대비 실제의 차이, 개선안, 비용을 드러내고 FIS와 연동해 함께 검증한다. 넷째, **EventBridge Scheduler + FIS가 측정·실험·개선 루프를 주기적으로 자동화**하고, ARC + FIS가 DR 페일오버 자체를 검증하며, Game Day(사람, 일회성)와 카오스(시스템, 주기적)는 상호 보완이다.
 
-Next, Week 13 wrap-up: synthesize Multi-AZ, Multi-Region, four DR strategies, Resilience Hub/FIS via scenario questions.
+다음에는 Week 13을 마무리한다. Multi-AZ, 멀티 리전, DR 4종 전략, Resilience Hub/FIS를 시나리오 문제로 종합한다.
 
 ---
 
