@@ -354,7 +354,7 @@ Security Hub는 모든 통합 서비스의 결과를 단일 EventBridge 스트�
 - **Security Hub vs Detective**: Security Hub는 *집계/표준화*, Detective는 *심층 조사*. 넓고 얕게 vs 좁고 깊게.
 - **ASFF**: 결과의 *공통 스키마* — 통합·상관·자동화의 전제.
 - **위임 관리자 정렬**: 모든 탐지 서비스를 *같은* Security Tooling 계정으로 — 시험의 베이스라인 정답.
-- **Security Hub vs Security Lake**: Security Hub는 *탐지 결과*을 ASFF로 모으고, Security Lake는 *로그*(원천 데이터)를 OCSF로 모아 외부 분석 도구에 공급한다. "서드파티 SIEM에 원천 로그를 넘겨라"면 Security Lake, "탐지 결과를 한곳에서 우선순위화·자동화하라"면 Security Hub.
+- **Security Hub vs Security Lake**: Security Hub는 *탐지 결과*를 ASFF로 모으고, Security Lake는 *로그*(원천 데이터)를 OCSF로 모아 외부 분석 도구에 공급한다. "서드파티 SIEM에 원천 로그를 넘겨라"면 Security Lake, "탐지 결과를 한곳에서 우선순위화·자동화하라"면 Security Hub.
 - **automation rules vs EventBridge 규칙**: 전자는 Security Hub *안에서* 결과 필드를 바꾸는 것(억제·상향), 후자는 결과를 *밖으로* 내보내 조치하는 것. 노이즈 정리는 automation rules, 실제 대응은 EventBridge.
 
 ## 통합 아키텍처 점검표: 무엇이 빠지면 무엇이 안 보이는가
