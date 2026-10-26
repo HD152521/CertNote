@@ -21,9 +21,7 @@ CLI는 명령어를 받으면 다음 순서로 실행한다.
 
 왜 CLI v1에서 v2로 옮겼는지 알면 도구 설계 관점이 보인다. v1은 시스템에 설치된 Python에 의존했기 때문에, Python 2.7 EOL(2020년 1월)과 함께 충돌이 잦았다. macOS의 시스템 Python을 손대면 Homebrew와 충돌하고, Linux는 ABI 호환 문제로 보안 패치가 어려웠다. v2는 Python 인터프리터를 정적 번들로 묶어 사용자 시스템과 분리했다. AWS는 이 결정으로 매년 수천 건의 GitHub 이슈를 줄였다고 [회고](https://aws.amazon.com/blogs/developer/aws-cli-v2-is-now-generally-available/)했다.
 
-> 🔍 **더 깊이**: CLI v2의 자격증명 체이닝은 다음 순서로 자격증명을 찾는다. 첫 번째로 발견된 것을 사용. (1) 명령줄 옵션(`--profile`), (2) 환경변수(`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`), (3) `~/.aws/credentials`의 default profile, (4) `~/.aws/config`의 SSO profile, (5) Web Identity Token File(`AWS_WEB_IDENTITY_TOKEN_FILE`, EKS IRSA), (6) ECS task role(`AWS_CONTAINER_CREDENTIALS_RELATIVE_URI`), (7) EC2 인스턴스 메타데이터(IMDSv2). 같은 순서가 모든 SDK(boto3, AWS SDK for Java, Go, .NET 등)에서 일관되게 적용되도록 [AWS SDK Credential Provider 표준](https://docs.aws.amazon.com/sdkref/latest/guide/standardized-credentials.html)이 정의돼 있다.
-
-> 💡 **관련 이론**: credential provider chain은 본질적으로 **Chain of Responsibility 패턴**(GoF, 1994)이다. 각 provider가 "내가 처리할 수 있나?"를 보고 못 하면 다음으로 넘긴다. 이 패턴 덕분에 새 provider(예: Pod Identity)가 추가될 때 기존 코드 변경 없이 chain에 끼워 넣을 수 있다. boto3 소스의 `credentials.py`를 보면 `CredentialResolver` 클래스가 정확히 이 패턴으로 구현돼 있다.
+CLI v2의 자격증명 체이닝은 다음 순서로 자격증명을 찾는다. 첫 번째로 발견된 것을 사용. (1) 명령줄 옵션(`--profile`), (2) 환경변수(`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`), (3) `~/.aws/credentials`의 default profile, (4) `~/.aws/config`의 SSO profile, (5) Web Identity Token File(`AWS_WEB_IDENTITY_TOKEN_FILE`, EKS IRSA), (6) ECS task role(`AWS_CONTAINER_CREDENTIALS_RELATIVE_URI`), (7) EC2 인스턴스 메타데이터(IMDSv2). 같은 순서가 모든 SDK(boto3, AWS SDK for Java, Go, .NET 등)에서 일관되게 적용되도록 [AWS SDK Credential Provider 표준](https://docs.aws.amazon.com/sdkref/latest/guide/standardized-credentials.html)이 정의돼 있다.
 
 ## Named Profile: 멀티 계정 다루기
 
@@ -73,9 +71,7 @@ aws s3 ls
 aws sso login --profile sso-admin
 ```
 
-> ⚠️ **함정**: `~/.aws/credentials`에 있는 access key는 plain text로 저장된다. 디스크 암호화가 안 된 노트북이 분실되면 그대로 키 유출이다. AWS는 IAM User access key 대신 **IAM Identity Center(SSO)** + `aws configure sso`를 강력히 권장한다. SSO는 자격증명을 OS keyring(macOS Keychain, Windows Credential Manager, Linux libsecret)에 암호화 저장하고, 토큰이 만료되면 브라우저로 재인증을 유도한다.
-
-> 📚 **사례**: 2019년 Capital One 사건에서 공격자는 EC2 메타데이터의 IAM Role 임시 키를 훔쳤지만, 만약 그 자리에 노트북 `~/.aws/credentials`의 영구 키가 있었다면 회전이 안 된 채로 수개월 후에 발견됐을 것이다. 2021년 Twitch 소스 코드 유출 사건도 GitHub에 push된 `.aws/credentials`가 한 원인이었다. AWS는 이후 GitHub과 협력해 [Push Protection](https://github.blog/2022-04-04-push-protection-github-advanced-security/)을 통해 AKIA 패턴 키가 push되면 자동 차단한다.
+`~/.aws/credentials`에 있는 access key는 plain text로 저장된다. 디스크 암호화가 안 된 노트북이 분실되면 그대로 키 유출이다. AWS는 IAM User access key 대신 **IAM Identity Center(SSO)** + `aws configure sso`를 강력히 권장한다. SSO는 자격증명을 OS keyring(macOS Keychain, Windows Credential Manager, Linux libsecret)에 암호화 저장하고, 토큰이 만료되면 브라우저로 재인증을 유도한다.
 
 ## SDK의 retry 동작: AIMD와 exponential backoff
 
@@ -91,9 +87,7 @@ API 호출이 throttling이나 일시적 오류를 반환하면 SDK는 자동으
 
 **Adaptive 모드**는 token bucket 알고리즘으로 클라이언트가 자기 호출 속도를 동적으로 제한한다. 서버 throttle을 받기 전에 미리 늦춘다. 단점은 처리량이 제한될 수 있어서, 기본은 standard다.
 
-> 💡 **관련 이론**: AIMD(Additive Increase, Multiplicative Decrease)는 TCP의 congestion control(Jacobson 1988)에서 출발한 알고리즘이다. throughput을 천천히 늘리되, 손실을 감지하면 빠르게 줄인다. AWS SDK의 adaptive retry는 이와 유사한 철학을 client-side rate limiting에 적용한다. RFC 7567(IETF AQM Working Group, 2015)이 비슷한 메커니즘의 표준화 작업을 다룬다. 더 흥미로운 점은 jitter를 안 쓰면 "thundering herd"가 다시 발생한다는 사실이 [Polly Vavilala et al., SIGCOMM 2017]의 데이터센터 트래픽 분석에서도 재확인됐다는 것이다.
-
-> 🔍 **더 깊이**: SDK retry 결정은 HTTP 상태 코드와 에러 코드로 갈린다. (1) 5xx, 429, 502, 503, 504는 재시도. (2) `ThrottlingException`, `Throttling`, `RequestLimitExceeded`, `RequestThrottled`, `ProvisionedThroughputExceededException`은 재시도. (3) 4xx 중 400 BadRequest, 403 AccessDenied, 404 NotFound는 재시도 안 함(영구 오류). 단 DynamoDB의 `TransactionConflictException`처럼 retryable한 4xx도 있어서 서비스별 예외가 존재한다. boto3 소스의 `retries/special.py`에 모든 retryable 에러 목록이 있다.
+SDK retry 결정은 HTTP 상태 코드와 에러 코드로 갈린다. (1) 5xx, 429, 502, 503, 504는 재시도. (2) `ThrottlingException`, `Throttling`, `RequestLimitExceeded`, `RequestThrottled`, `ProvisionedThroughputExceededException`은 재시도. (3) 4xx 중 400 BadRequest, 403 AccessDenied, 404 NotFound는 재시도 안 함(영구 오류). 단 DynamoDB의 `TransactionConflictException`처럼 retryable한 4xx도 있어서 서비스별 예외가 존재한다. boto3 소스의 `retries/special.py`에 모든 retryable 에러 목록이 있다.
 
 > ⚠️ **함정**: Lambda 함수에서 SDK retry를 그대로 두면 함수 timeout과 충돌한다. 기본 timeout 3초인 Lambda 안에서 DynamoDB가 throttling을 반환하면 SDK가 0~1초 + 0~2초 = 최대 3초 대기하다 Lambda가 먼저 죽는다. 이런 경우 `AWS_MAX_ATTEMPTS=1`로 SDK retry를 끄고, 함수 호출자(Step Functions, EventBridge Pipes, SQS DLQ)에서 retry하는 것이 맞다.
 
@@ -124,11 +118,9 @@ SigV4 서명 단계:
 5. Authorization 헤더에 포함하거나, presigned URL의 query string에 박음
 ```
 
-> 🔍 **더 깊이**: SigV4의 5단계 키 유도는 보안 측면에서 의도된 설계다. **kDate**, **kRegion** 등을 분리하면 SecretAccessKey 노출 없이 "이 날짜·이 리전·이 서비스에만 유효한" 중간 키를 만들어 쓸 수 있다. 외부 서비스(예: CloudFront → Lambda@Edge)에 일부 권한만 위임할 때 이 derived key를 전달하는 패턴이 가능. timestamp 15분 skew 제한은 replay attack 방지 — 공격자가 패킷을 가로채도 15분 후엔 못 쓴다. NTP로 클라이언트 시계가 어긋나면 흔히 보는 `SignatureDoesNotMatch` 에러의 원인이다.
+SigV4의 5단계 키 유도는 보안 측면에서 의도된 설계다. **kDate**, **kRegion** 등을 분리하면 SecretAccessKey 노출 없이 "이 날짜·이 리전·이 서비스에만 유효한" 중간 키를 만들어 쓸 수 있다. 외부 서비스(예: CloudFront → Lambda@Edge)에 일부 권한만 위임할 때 이 derived key를 전달하는 패턴이 가능. timestamp 15분 skew 제한은 replay attack 방지 — 공격자가 패킷을 가로채도 15분 후엔 못 쓴다. NTP로 클라이언트 시계가 어긋나면 흔히 보는 `SignatureDoesNotMatch` 에러의 원인이다.
 
-> 📚 **사례**: 2024년 후반 AWS는 **SigV4a**(Signature Version 4 Asymmetric)을 출시했다. ECDSA 기반 비대칭 서명으로, 같은 서명이 여러 리전 endpoint에 동시에 유효하다. **Multi-Region Access Point**(S3)나 cross-region 트래픽에서 매 리전마다 서명을 다시 만들지 않고 한 번에 처리할 수 있게 한다. SigV4가 HMAC 대칭키 기반이라 리전마다 다른 서명을 만들어야 했던 한계를 ECDSA로 풀었다.
-
-> 💡 **관련 이론**: HMAC은 RFC 2104(Krawczyk et al., 1997)에서 정의된 메시지 인증 코드다. `HMAC(K, m) = H((K ⊕ opad) || H((K ⊕ ipad) || m))` 구조로, 단순한 해시 연쇄가 가진 length extension 공격에 안전하다. SigV4가 5단계 HMAC 체인을 쓰는 이유는 key derivation function(KDF)의 표준 패턴이고, NIST SP 800-108(KDF in counter mode)과 유사한 보안 속성을 제공한다.
+2024년 후반 AWS는 **SigV4a**(Signature Version 4 Asymmetric)을 출시했다. ECDSA 기반 비대칭 서명으로, 같은 서명이 여러 리전 endpoint에 동시에 유효하다. **Multi-Region Access Point**(S3)나 cross-region 트래픽에서 매 리전마다 서명을 다시 만들지 않고 한 번에 처리할 수 있게 한다. SigV4가 HMAC 대칭키 기반이라 리전마다 다른 서명을 만들어야 했던 한계를 ECDSA로 풀었다.
 
 ## Presigned URL: 임시 권한을 URL로 패키징
 
@@ -145,7 +137,7 @@ url = s3.generate_presigned_url(
 # 클라이언트가 이 URL로 직접 PUT 가능
 ```
 
-핵심 제약: **presigned URL의 유효 기간은 발급자의 자격증명 유효 기간을 넘을 수 없다**. EC2 인스턴스 프로파일로 발급한 자격증명이 1시간 후 만료된다면 ExpiresIn=86400(24시간)을 적어도 1시간 후에 죽는다. 시험에 단골로 나온다.
+핵심 제약: **presigned URL의 유효 기간은 발급자의 자격증명 유효 기간을 넘을 수 없다**. EC2 인스턴스 프로파일로 발급한 자격증명이 1시간 후 만료된다면 ExpiresIn=86400(24시간)을 적어도 1시간 후에 죽는다.
 
 > ⚠️ **함정**: presigned URL이 만들어진 후 발급자의 IAM 권한이 줄어들면, URL은 만료 전에도 무효화된다. SDK는 발급 시점의 권한만으로 서명하지만, 실제 사용 시 AWS는 현재 권한도 같이 평가한다. 그래서 "presigned URL을 생성한 직후 권한을 회수했더니 URL이 갑자기 죽었다"는 디버깅 시나리오가 가능하다.
 
@@ -155,7 +147,7 @@ CloudShell은 2020년 12월 출시된 브라우저 기반 셸이다. 별도 EC2�
 
 | 특징 | 값 |
 |------|------|
-| 영구 스토리지 | 1GB (홈 디렉토리) |
+| 영구 스토리지 | 1GB (홈 디렉터리) |
 | 메모리 | 4GB |
 | 세션 idle timeout | 20-30분 |
 | 비활성 후 자동 삭제 | 120일 |
@@ -197,11 +189,11 @@ print(s3.list_buckets())
 
 v2/v3는 v1과 비교해 (1) 비동기 first, (2) 모듈 분리(필요한 client만 import), (3) middleware 시스템(retry, signing, logging이 chainable handler로) 등을 공유한다.
 
-JavaScript SDK v2 → v3 마이그레이션이 특히 큰 이슈인데, v3가 클라이언트별로 npm 패키지를 분리(`@aws-sdk/client-s3`, `@aws-sdk/client-dynamodb` 등)하면서 트리 셰이킹으로 Lambda 패키지 크기가 절반 이하로 줄었다. v2가 모든 서비스를 한 번에 import해서 Node.js Lambda의 cold start에 직접 영향을 줬는데, v3는 필요한 client만 가져오므로 cold start 30~50ms 단축이 일반적이다.
+JavaScript SDK v2 → v3 마이그레이션이 특히 큰 이슈인데, v3가 클라이언트별로 npm 패키지를 분리(`@aws-sdk/client-s3`, `@aws-sdk/client-dynamodb` 등)하면서 트리 셰이킹으로 Lambda 패키지 크기가 절반 이하로 줄었다. v2가 모든 서비스를 한 번에 import해서 Node.js Lambda의 콜드 스타트에 직접 영향을 줬는데, v3는 필요한 client만 가져오므로 콜드 스타트가 30~50ms 단축되는 것이 일반적이다.
 
-> 💡 **암기 팁**: SDK 버전 표기가 헷갈리는 패턴이다. **Python → boto3가 v1.x**(boto가 v1이었고 boto3가 사실상 v2 역할), **JavaScript는 v3가 모듈형**, **Java/Go/.NET은 v2가 최신**. AWS 공식 문서에서 "SDK v2"라고 하면 JavaScript는 아니고 다른 언어다.
+SDK 버전 표기가 헷갈리는 패턴이다. **Python → boto3가 v1.x**(boto가 v1이었고 boto3가 사실상 v2 역할), **JavaScript는 v3가 모듈형**, **Java/Go/.NET은 v2가 최신**. AWS 공식 문서에서 "SDK v2"라고 하면 JavaScript는 아니고 다른 언어다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 CLI/SDK가 결국 같은 메커니즘 — credential provider chain, region 결정, SigV4 서명, retry — 위에서 동작한다는 것이다. Named profile로 멀티 계정을 다루고, IAM Identity Center로 장기 키 없이 SSO를 쓰고, `--debug`로 흐름을 추적하는 패턴들이 모든 SDK에서 동일하게 작동한다.
 

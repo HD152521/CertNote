@@ -16,15 +16,15 @@ AWS 컴퓨트의 역사는 **추상화 사다리를 한 칸씩 올라온 역사*
 EC2 → ASG · Placement Group · Spot · Graviton
 ```
 
-> 💡 **관련 이론**: Lambda의 콜드 스타트는 **컨테이너 초기화 비용**의 직접 발현이다. 호출이 없으면 AWS는 실행 환경(Firecracker microVM)을 회수하고, 새 호출 시 microVM 부팅 + 런타임 로드 + 코드 init을 다시 한다(수십~수백 ms). Firecracker(2018, Rust 작성)는 AWS가 만든 경량 가상화 기술로, microVM을 ~125ms에 부팅해 컨테이너의 격리 부족과 VM의 무거움 사이를 메운다. Provisioned Concurrency는 microVM을 미리 데워두는 것이고, SnapStart(Java)는 초기화된 메모리 스냅샷을 복원해 콜드 스타트를 줄인다. 시험에서 "Lambda 지연 변동성 제거 + 예측 가능 트래픽"은 Provisioned Concurrency, "Java 콜드 스타트"는 SnapStart가 직답이다.
+Lambda의 콜드 스타트는 **컨테이너 초기화 비용**의 직접 발현이다. 호출이 없으면 AWS는 실행 환경(Firecracker microVM)을 회수하고, 새 호출 시 microVM 부팅 + 런타임 로드 + 코드 init을 다시 한다(수십~수백 ms). Firecracker(2018, Rust 작성)는 AWS가 만든 경량 가상화 기술로, microVM을 ~125ms에 부팅해 컨테이너의 격리 부족과 VM의 무거움 사이를 메운다. Provisioned Concurrency는 microVM을 미리 데워두는 것이고, SnapStart(Java)는 초기화된 메모리 스냅샷을 복원해 콜드 스타트를 줄인다. 시험에서 "Lambda 지연 변동성 제거 + 예측 가능 트래픽"은 Provisioned Concurrency, "Java 콜드 스타트"는 SnapStart가 직답이다.
 
-> 🔍 **더 깊이**: ECS vs EKS의 선택은 **"표준 락인 vs 운영 단순성"**의 trade-off다. EKS는 Kubernetes API 표준을 제공해 멀티클라우드 이식성(GKE·AKS로 이동 가능)을 주지만, 컨트롤 플레인 비용($0.10/h)과 K8s 자체의 운영 복잡도(CNI·RBAC·Helm)를 짊어진다. ECS는 AWS 독자 오케스트레이터로 학습 곡선이 완만하고 비용이 없지만 AWS에 묶인다. Pro 시험 신호: "기존 K8s 전문성·온프레 K8s와 일관성"이면 EKS, "AWS만 쓰고 단순함 우선·소규모 팀"이면 ECS. 둘 다 데이터 플레인을 Fargate(서버리스) 또는 EC2(세밀 제어·GPU·Spot)로 고를 수 있다.
+ECS vs EKS의 선택은 **"표준 락인 vs 운영 단순성"**의 trade-off다. EKS는 Kubernetes API 표준을 제공해 멀티클라우드 이식성(GKE·AKS로 이동 가능)을 주지만, 컨트롤 플레인 비용($0.10/h)과 K8s 자체의 운영 복잡도(CNI·RBAC·Helm)를 짊어진다. ECS는 AWS 독자 오케스트레이터로 학습 곡선이 완만하고 비용이 없지만 AWS에 묶인다. Pro 시험 신호: "기존 K8s 전문성·온프레 K8s와 일관성"이면 EKS, "AWS만 쓰고 단순함 우선·소규모 팀"이면 ECS. 둘 다 데이터 플레인을 Fargate(서버리스) 또는 EC2(세밀 제어·GPU·Spot)로 고를 수 있다.
 
 > ⚠️ **함정**: Lambda는 만능이 아니다. **15분 실행 제한, 10GB 메모리 상한, /tmp 10GB, 페이로드 6MB(동기)/256KB(비동기)**의 하드 리밋이 있다. "장시간 배치·대용량 처리·상태 유지"가 보이면 Lambda가 아니라 Fargate·Batch·Step Functions다. 또 Lambda는 VPC 내 ENI를 통해 RDS에 붙을 때 동시성만큼 ENI를 소비하므로, 고동시성 + VPC Lambda는 ENI/IP 고갈을 부른다(Hyperplane ENI로 완화됐지만 RDS Proxy로 커넥션 풀링이 정석). "Lambda + RDS 커넥션 폭발"은 RDS Proxy가 정답이다.
 
 ## 데이터 — 일관성 모델과 CAP 이론
 
-데이터베이스 선택은 SAP-C02에서 가장 자주 나오는 결정이다. 핵심은 "관계형이냐 아니냐"를 넘어 **일관성·확장성·접근 패턴**을 읽는 것이다.
+데이터베이스 선택은 SAP-C02에서 중요한 결정이다. 핵심은 "관계형이냐 아니냐"를 넘어 **일관성·확장성·접근 패턴**을 읽는 것이다.
 
 | 요구 | DB | 핵심 차별점 |
 |------|-----|------------|
@@ -41,11 +41,11 @@ EC2 → ASG · Placement Group · Spot · Graviton
 | 검색·로그 | OpenSearch | 역색인 풀텍스트 |
 | 데이터 웨어하우스 | Redshift | 컬럼형 MPP |
 
-> 💡 **관련 이론**: 분산 DB 선택의 이론적 뼈대는 **CAP 정리(Brewer, 2000; Gilbert·Lynch가 2002년 형식 증명)**다. 네트워크 분할(Partition)이 발생하면 일관성(Consistency)과 가용성(Availability) 중 하나를 포기해야 한다. DynamoDB는 기본적으로 **AP**(가용성 우선, eventual consistency)지만 `ConsistentRead=true`로 강한 일관성을 선택할 수 있다. 더 정밀한 모델은 **PACELC(Abadi, 2012)**다 — 분할 시(P) A/C를 고르고, 정상 시(Else)엔 지연(L)/일관성(C)을 고른다. DynamoDB는 PA/EL(정상 시 지연 최소화 위해 일관성 완화), Aurora는 PC/EC(일관성 우선) 성향이다. 시험에서 "글로벌 쓰기 + 낮은 지연 + eventual OK"는 DynamoDB Global Tables(AP/EL), "강한 일관성 + 트랜잭션"은 Aurora가 갈린다.
+분산 DB 선택의 이론적 뼈대는 **CAP 정리(Brewer, 2000; Gilbert·Lynch가 2002년 형식 증명)**다. 네트워크 분할(Partition)이 발생하면 일관성(Consistency)과 가용성(Availability) 중 하나를 포기해야 한다. DynamoDB는 기본적으로 **AP**(가용성 우선, eventual consistency)지만 `ConsistentRead=true`로 강한 일관성을 선택할 수 있다. 더 정밀한 모델은 **PACELC(Abadi, 2012)**다 — 분할 시(P) A/C를 고르고, 정상 시(Else)엔 지연(L)/일관성(C)을 고른다. DynamoDB는 PA/EL(정상 시 지연 최소화 위해 일관성 완화), Aurora는 PC/EC(일관성 우선) 성향이다. 시험에서 "글로벌 쓰기 + 낮은 지연 + eventual OK"는 DynamoDB Global Tables(AP/EL), "강한 일관성 + 트랜잭션"은 Aurora가 갈린다.
 
-> 🔍 **더 깊이**: Aurora의 혁신은 **"로그가 곧 데이터베이스(The log is the database)"** 아키텍처다(2017 SIGMOD 논문). 전통 RDBMS는 데이터 페이지와 redo 로그를 둘 다 네트워크로 복제해 I/O 증폭이 심했다. Aurora는 redo 로그 레코드만 6개 스토리지 노드(3 AZ × 2)로 보내고, 스토리지 계층이 백그라운드에서 페이지를 재구성한다. 쓰기는 6개 중 **4개(4/6 쿼럼)** 응답으로 커밋, 읽기는 3/6 쿼럼으로 가능 — 이 쿼럼 수학(W+R>N, 4+3>6)이 한 AZ 전체가 죽어도 쓰기를, 한 AZ + 한 노드가 죽어도 읽기를 보장한다. 그래서 Aurora는 컴퓨트와 스토리지가 분리돼 리드 레플리카가 동일 스토리지를 공유(복제 지연 거의 0)하고 빠르게 추가된다.
+Aurora의 혁신은 **"로그가 곧 데이터베이스(The log is the database)"** 아키텍처다(2017 SIGMOD 논문). 전통 RDBMS는 데이터 페이지와 redo 로그를 둘 다 네트워크로 복제해 I/O 증폭이 심했다. Aurora는 redo 로그 레코드만 6개 스토리지 노드(3 AZ × 2)로 보내고, 스토리지 계층이 백그라운드에서 페이지를 재구성한다. 쓰기는 6개 중 **4개(4/6 쿼럼)** 응답으로 커밋, 읽기는 3/6 쿼럼으로 가능 — 이 쿼럼 수학(W+R>N, 4+3>6)이 한 AZ 전체가 죽어도 쓰기를, 한 AZ + 한 노드가 죽어도 읽기를 보장한다. 그래서 Aurora는 컴퓨트와 스토리지가 분리돼 Read Replica가 동일 스토리지를 공유(복제 지연 거의 0)하고 빠르게 추가된다.
 
-> 📚 **사례**: 2012년 **Knight Capital**의 4억 4천만 달러 손실(45분)은 데이터·배포 설계 실패의 교과서다. 새 거래 코드를 8대 서버 중 7대에만 배포하고 1대에 옛 플래그를 재사용한 코드가 남아, 그 1대가 폭주 주문을 쏟아냈다. 교훈은 (1) **불변 인프라·블루그린으로 부분 배포 금지**, (2) **킬 스위치(Stop Condition)**, (3) **상태를 코드에 숨기지 말 것**이다. 이것이 Pro가 "배포 안전성 + 즉시 롤백"에 CodeDeploy Blue/Green, FIS Stop Condition을 정답으로 미는 역사적 이유다.
+2012년 **Knight Capital**의 4억 4천만 달러 손실(45분)은 데이터·배포 설계 실패의 교과서다. 새 거래 코드를 8대 서버 중 7대에만 배포하고 1대에 옛 플래그를 재사용한 코드가 남아, 그 1대가 폭주 주문을 쏟아냈다. 교훈은 (1) **불변 인프라·Blue/Green으로 부분 배포 금지**, (2) **킬 스위치(Stop Condition)**, (3) **상태를 코드에 숨기지 말 것**이다. 이것이 Pro가 "배포 안전성 + 즉시 롤백"에 CodeDeploy Blue/Green, FIS Stop Condition을 정답으로 미는 역사적 이유다.
 
 > ⚠️ **함정**: DynamoDB의 **핫 파티션**은 흔한 함정이다. 파티션 키 카디널리티가 낮으면(예: `status=active`) 한 파티션에 쓰기가 몰려 스로틀된다. On-Demand나 충분한 RCU/WCU여도 단일 파티션 한도(3000 RCU/1000 WCU)를 넘으면 throttle된다. 해결은 **고카디널리티 파티션 키 설계 + write sharding(키에 접미사)**이다. "DynamoDB 일부 키만 스로틀"이 보이면 용량 증설이 아니라 키 설계가 답이다.
 
@@ -63,15 +63,15 @@ EC2 → ASG · Placement Group · Spot · Graviton
 | **MSK** | Kafka | 파티션 내 순서 | 오픈소스 Kafka 호환 |
 | **Step Functions** | 워크플로 | 명시적 순서 | 상태 머신, 시각적 |
 
-> 💡 **관련 이론**: SQS의 "At-Least-Once + 무순서"는 우연이 아니라 **분산 시스템의 근본 한계**다. 정확히 한 번(exactly-once) 전달은 분산 환경에서 일반적으로 불가능에 가깝고(네트워크는 메시지 손실·중복을 허용), 그래서 대부분 시스템은 "최소 한 번 전달 + 멱등 소비(idempotent consumer)"로 우회한다. SQS Standard는 가시성 타임아웃(visibility timeout) 동안 메시지를 숨겨 중복 처리를 줄이지만, 컨슈머가 타임아웃 내 삭제 못 하면 재전달된다. 그래서 컨슈머는 **멱등하게** 설계해야 한다(같은 메시지 두 번 처리해도 결과 동일). FIFO는 dedup으로 exactly-once를 흉내내지만 처리량을 희생한다. 시험에서 "정확히 한 번·엄격 순서"는 FIFO, "초고처리량·멱등 소비 가능"은 Standard다.
+SQS의 "At-Least-Once + 무순서"는 우연이 아니라 **분산 시스템의 근본 한계**다. 정확히 한 번(exactly-once) 전달은 분산 환경에서 일반적으로 불가능에 가깝고(네트워크는 메시지 손실·중복을 허용), 그래서 대부분 시스템은 "최소 한 번 전달 + 멱등 소비(idempotent consumer)"로 우회한다. SQS Standard는 가시성 타임아웃(visibility timeout) 동안 메시지를 숨겨 중복 처리를 줄이지만, 컨슈머가 타임아웃 내 삭제 못 하면 재전달된다. 그래서 컨슈머는 **멱등하게** 설계해야 한다(같은 메시지 두 번 처리해도 결과 동일). FIFO는 dedup으로 exactly-once를 흉내내지만 처리량을 희생한다. 시험에서 "정확히 한 번·엄격 순서"는 FIFO, "초고처리량·멱등 소비 가능"은 Standard다.
 
-> 🔍 **더 깊이**: Kinesis vs SQS의 본질 차이는 **"소비 후 삭제 vs 보존 후 재생"**이다. SQS는 컨슈머가 메시지를 처리하면 삭제해 단일 소비자 모델이고, Kinesis는 메시지를 샤드에 보존(기본 24h, 최대 365일)해 여러 컨슈머가 각자의 체크포인트로 같은 데이터를 독립 소비·재생할 수 있다. 이것이 "다중 컨슈머 + 재처리 + 순서 보장"이 Kinesis인 이유다. 샤드는 1MB/s 또는 1000 rec/s 쓰기, 2MB/s 읽기 한도가 있어, 처리량을 늘리려면 샤드를 늘린다(re-sharding). Enhanced Fan-Out은 컨슈머별 전용 2MB/s를 줘 다중 컨슈머 경합을 없앤다. "다중 컨슈머 + 메시지 재생"은 Kinesis(C), "단순 작업 분배"는 SQS다.
+Kinesis vs SQS의 본질 차이는 **"소비 후 삭제 vs 보존 후 재생"**이다. SQS는 컨슈머가 메시지를 처리하면 삭제해 단일 소비자 모델이고, Kinesis는 메시지를 샤드에 보존(기본 24h, 최대 365일)해 여러 컨슈머가 각자의 체크포인트로 같은 데이터를 독립 소비·재생할 수 있다. 이것이 "다중 컨슈머 + 재처리 + 순서 보장"이 Kinesis인 이유다. 샤드는 1MB/s 또는 1000 rec/s 쓰기, 2MB/s 읽기 한도가 있어, 처리량을 늘리려면 샤드를 늘린다(re-sharding). Enhanced Fan-Out은 컨슈머별 전용 2MB/s를 줘 다중 컨슈머 경합을 없앤다. "다중 컨슈머 + 메시지 재생"은 Kinesis(C), "단순 작업 분배"는 SQS다.
 
 > 🎯 **시나리오**: "전자상거래에서 주문 1건이 결제·재고·배송·알림 4개 서비스를 트리거해야 한다. 한 다운스트림이 일시 장애여도 다른 서비스는 영향받지 말아야 하고, 장애 서비스는 복구 후 누락 없이 처리해야 한다. 설계는?" — 답: **SNS(주문 토픽) → 4개 SQS 큐 fan-out, 각 서비스는 자기 큐를 소비**. SNS가 4개 큐에 동시 fan-out하고, 각 큐가 버퍼 역할을 해 한 서비스가 죽어도 그 큐에 메시지가 쌓였다 복구 후 처리된다(다른 큐는 무관). DLQ로 반복 실패 메시지를 격리한다. SNS 직접 Lambda 호출은 장애 시 버퍼가 없어 누락 위험이 크다. 이 "SNS→다중 SQS fan-out"이 결합도를 끊는 정석 패턴이다.
 
 ## 가용성 — 격리 경계의 사다리
 
-가용성 설계의 핵심은 **장애를 격리하는 경계를 어디에 두느냐**다. AWS는 AZ → Region → Account의 사다리를 제공한다. 비용과 복잡도는 위로 갈수록 커지므로, 요구 RTO/RPO에 맞는 최소 경계를 고른다.
+가용성 설계는 **장애를 격리하는 경계를 어디에 두느냐**의 문제다. AWS는 AZ → Region → Account의 사다리를 제공한다. 비용과 복잡도는 위로 갈수록 커지므로, 요구 RTO/RPO에 맞는 최소 경계를 고른다.
 
 | 경계 | 격리 대상 | 대표 패턴 |
 |------|----------|----------|
@@ -79,9 +79,9 @@ EC2 → ASG · Placement Group · Spot · Graviton
 | Multi-Region | 리전 전체 장애·재해 | Aurora Global, DDB Global Tables, Route 53 Failover |
 | Multi-Account | 침해·블래스트 반경 | Organizations, 워크로드 격리 |
 
-> 📚 **사례**: 2021년 12월 **US-EAST-1 대장애**는 단일 리전 의존의 위험을 드러냈다. 내부 네트워크 자동화 버그로 us-east-1의 API가 수 시간 마비됐고, 글로벌 서비스(IAM·일부 콘솔)가 us-east-1에 의존하던 탓에 다른 리전 사용자까지 영향받았다. 교훈은 (1) **단일 리전·단일 AZ 설계는 SLA를 못 채운다**, (2) **us-east-1 의존성을 줄여라**(글로벌 엔드포인트·STS 리전 엔드포인트 사용), (3) **DR 리전은 평소에도 일부 트래픽을 받아 검증된 상태여야 한다**(콜드 스탠바이는 막상 페일오버 시 실패하기 쉽다). 시험에서 "리전 장애 견딤 + RTO 분 단위"는 Active-Active나 Warm Standby가 정답 신호다.
+2021년 12월 **US-EAST-1 대장애**는 단일 리전 의존의 위험을 드러냈다. 내부 네트워크 자동화 버그로 us-east-1의 API가 수 시간 마비됐고, 글로벌 서비스(IAM·일부 콘솔)가 us-east-1에 의존하던 탓에 다른 리전 사용자까지 영향받았다. 교훈은 (1) **단일 리전·단일 AZ 설계는 SLA를 못 채운다**, (2) **us-east-1 의존성을 줄여라**(글로벌 엔드포인트·STS 리전 엔드포인트 사용), (3) **DR 리전은 평소에도 일부 트래픽을 받아 검증된 상태여야 한다**(콜드 스탠바이는 막상 페일오버 시 실패하기 쉽다). 시험에서 "리전 장애 견딤 + RTO 분 단위"는 Active-Active나 Warm Standby가 정답 신호다.
 
-> 🔍 **더 깊이**: 캐싱은 가용성·성능·비용을 동시에 개선하는 지렛대다. **CloudFront**(엣지 CDN)는 정적·동적 콘텐츠를 사용자 근처 엣지에 캐시해 오리진 부하와 지연을 줄이고, **ElastiCache**(Redis/Memcached)는 DB 앞 인메모리 캐시로 읽기를 흡수하며, **DAX**는 DynamoDB 전용 마이크로초 캐시다. 캐싱의 함정은 **캐시 무효화(cache invalidation)** — "컴퓨터 과학의 두 어려운 문제 중 하나"라는 농담처럼, 갱신된 데이터가 캐시에 stale하게 남는 문제다. TTL·write-through·이벤트 기반 무효화로 다룬다. "읽기 폭주 DB 보호 + 마이크로초 지연 + DynamoDB"는 DAX, "범용 DB 읽기 캐시"는 ElastiCache다.
+캐싱은 가용성·성능·비용을 동시에 개선하는 지렛대다. **CloudFront**(엣지 CDN)는 정적·동적 콘텐츠를 사용자 근처 엣지에 캐시해 오리진 부하와 지연을 줄이고, **ElastiCache**(Redis/Memcached)는 DB 앞 인메모리 캐시로 읽기를 흡수하며, **DAX**는 DynamoDB 전용 마이크로초 캐시다. 캐싱의 함정은 **캐시 무효화(cache invalidation)** — "컴퓨터 과학의 두 어려운 문제 중 하나"라는 농담처럼, 갱신된 데이터가 캐시에 stale하게 남는 문제다. TTL·write-through·이벤트 기반 무효화로 다룬다. "읽기 폭주 DB 보호 + 마이크로초 지연 + DynamoDB"는 DAX, "범용 DB 읽기 캐시"는 ElastiCache다.
 
 ## 시나리오 키워드 → 정답 매핑
 
@@ -97,7 +97,7 @@ EC2 → ASG · Placement Group · Spot · Graviton
 | "정확히 한 번 + 엄격 순서" | SQS FIFO | dedup·MessageGroupId |
 | "한 서비스 장애가 타 서비스 영향 X" | SNS → 다중 SQS fan-out | 큐 버퍼 격리 |
 | "글로벌 SQL·RPO<1s" | Aurora Global Database | 스토리지 비동기 복제 |
-| "글로벌 양쪽 쓰기 NoSQL" | DynamoDB Global Tables | 멀티 리전 active-active |
+| "글로벌 양쪽 쓰기 NoSQL" | DynamoDB Global Tables | 멀티 리전 Active-Active |
 | "트래픽 0일 때 비용 0 RDB" | Aurora Serverless v2 | ACU 초당 스케일 |
 | "수십만 TPS Key-Value·단자리 ms" | DynamoDB On-Demand | 무제한 수평 확장 |
 | "DynamoDB 일부 키만 스로틀" | 파티션 키 재설계·write sharding | 핫 파티션 |
@@ -105,7 +105,7 @@ EC2 → ASG · Placement Group · Spot · Graviton
 | "불변 감사 가능 원장" | QLDB | 암호화 검증 이력 |
 | "DynamoDB 마이크로초 읽기 캐시" | DAX | 전용 인메모리 캐시 |
 
-## 정리하며
+## 정리
 
 도메인 2는 **5축(가용성·성능·보안·비용·운영) 동시 최적화**가 본질이다. 핵심 통찰: (1) 컴퓨트는 추상화 사다리 — 요구를 충족하는 가장 관리형 옵션을 고른다, (2) 데이터는 CAP/PACELC로 일관성 vs 가용성·지연을 읽는다 — 글로벌 + eventual은 DynamoDB, 강일관 + 트랜잭션은 Aurora, (3) 이벤트는 결합도를 끊는 도구 — At-Least-Once 멱등 소비가 기본, 다중 컨슈머·재생은 Kinesis, 격리 fan-out은 SNS→SQS, (4) 가용성은 격리 경계 사다리 — 요구 RTO/RPO에 맞는 최소 경계. 같은 정답처럼 보이면 **더 운영 부담 낮고 요구를 정확히 충족하는 쪽**이다.
 

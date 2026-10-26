@@ -16,7 +16,7 @@ DDoS는 공격 계층에 따라 세 종류로 나뉜다(이 분류가 방어 선
 
 핵심 — **L3/L4 DDoS는 Shield가, L7 공격은 WAF가** 주력이다. Shield Standard는 L3/L4를 무료로 자동 완화하지만 L7은 못 막는다. L7 DDoS(정상처럼 보이는 HTTP 요청을 대량 발생)는 Shield Advanced의 L7 보호 + WAF의 Rate-Based 룰이 함께 막는다.
 
-> 💡 **관련 이론**: OSI 7계층 모델(ISO/IEC 7498-1)이 보안 설계의 지도 역할을 한다. 공격과 방어는 계층마다 다르다 — L3(IP)는 NACL·라우팅, L4(TCP/UDP)는 Security Group·Shield, L7(HTTP)은 WAF. 이 계층 구분이 중요한 이유는 "낮은 계층에서 막을 수 있는 걸 높은 계층까지 올리지 말라"는 효율 원칙 때문이다. Volumetric DDoS를 L7(애플리케이션)까지 끌고 오면 이미 서버 자원을 소모한 뒤다. Shield는 이를 AWS 엣지(네트워크 경계)에서 흡수해 애플리케이션에 도달하기 전에 차단한다. 시험에서 "어느 서비스로 막나"의 첫 질문은 항상 "이 공격은 몇 계층인가"다.
+OSI 7계층 모델(ISO/IEC 7498-1)이 보안 설계의 지도 역할을 한다. 공격과 방어는 계층마다 다르다 — L3(IP)는 NACL·라우팅, L4(TCP/UDP)는 Security Group·Shield, L7(HTTP)은 WAF. 이 계층 구분이 중요한 이유는 "낮은 계층에서 막을 수 있는 걸 높은 계층까지 올리지 말라"는 효율 원칙 때문이다. Volumetric DDoS를 L7(애플리케이션)까지 끌고 오면 이미 서버 자원을 소모한 뒤다. Shield는 이를 AWS 엣지(네트워크 경계)에서 흡수해 애플리케이션에 도달하기 전에 차단한다. 시험에서 "어느 서비스로 막나"의 첫 질문은 항상 "이 공격은 몇 계층인가"다.
 
 ## WAF — L7 웹 요청을 룰로 거른다
 
@@ -28,7 +28,7 @@ WAF(Web Application Firewall)는 **L7(HTTP/HTTPS) 요청을 검사해 악성 패
 - **Rate-Based Rule**: 5분 윈도우 동안 단일 IP의 요청 수가 임계값을 넘으면 차단 — L7 DDoS·brute force 완화.
 - **세분 룰**: Geo Match(국가), IP Set, Regex, Size Constraint, SQLi/XSS 검사 등.
 
-> 💡 **관련 이론**: WAF의 Managed Rule "Core Rule Set"은 **OWASP Top 10**(웹 애플리케이션 보안의 사실상 표준)을 기반으로 한다. OWASP는 2003년부터 가장 치명적인 웹 취약점 10가지를 주기적으로 발표하며(SQL Injection·XSS·Broken Access Control 등), 전 세계 보안 기준의 공통 언어가 됐다. WAF Managed Rule을 켜는 것의 가치는 "이 방대한 OWASP 방어 패턴을 직접 작성·유지보수하지 않아도 AWS가 신종 공격에 맞춰 룰을 갱신한다"는 데 있다. 시험에서 "OWASP Top 10 즉시 보호 + 운영 부담 최소"는 Custom 룰 작성이 아니라 **AWS Managed Rule Groups**가 정답이다.
+WAF의 Managed Rule "Core Rule Set"은 **OWASP Top 10**(웹 애플리케이션 보안의 사실상 표준)을 기반으로 한다. OWASP는 2003년부터 가장 치명적인 웹 취약점 10가지를 주기적으로 발표하며(SQL Injection·XSS·Broken Access Control 등), 전 세계 보안 기준의 공통 언어가 됐다. WAF Managed Rule을 켜는 것의 가치는 "이 방대한 OWASP 방어 패턴을 직접 작성·유지보수하지 않아도 AWS가 신종 공격에 맞춰 룰을 갱신한다"는 데 있다. 시험에서 "OWASP Top 10 즉시 보호 + 운영 부담 최소"는 Custom 룰 작성이 아니라 **AWS Managed Rule Groups**가 정답이다.
 
 > ⚠️ **함정**: WAF는 **DDoS 자동 완화 도구가 아니다**. WAF는 "룰에 매칭되는 요청을 차단"할 뿐, 트래픽 폭증을 자동으로 흡수하지 않는다. L7 DDoS 완화는 WAF의 Rate-Based 룰 + Shield Advanced가 함께 한다. 시험 선택지에서 "DDoS 방어"에 WAF만 단독으로 나오면 보통 불완전하다 — Shield(L3/4 자동) + WAF Rate-Based(L7)의 조합이 정답인 경우가 많다.
 
@@ -51,7 +51,7 @@ WAF(Web Application Firewall)는 **L7(HTTP/HTTPS) 요청을 검사해 악성 패
 
 > 🎯 **시나리오**: "전자상거래 사이트가 L7 HTTP flood DDoS를 받아 자동 스케일 아웃으로 트래픽을 버텼지만, 그달 청구서가 평소의 5배가 나왔다. 또 공격 중 대응할 전문 인력이 없었다. 어떻게 대비하나?" → **Shield Advanced**. (1) L7 DDoS 보호로 애플리케이션 계층 공격을 완화하고, (2) **Cost Protection**으로 DDoS 유발 스케일 아웃 요금을 면제받으며, (3) **SRT**가 공격 중 24/7 지원한다. Shield Standard는 L7 미보호 + Cost Protection 없음이라 이 시나리오를 못 막는다. WAF 단독은 DDoS 자동 완화·비용 보호가 없다. 함정: "L7 DDoS + 청구 비용 보호 + 24/7 전문가"의 세 키워드는 Shield Advanced 전용이다.
 
-> 📚 **사례**: 2020년 AWS는 당시 역대 최대 규모의 DDoS 공격(약 2.3 Tbps의 CLDAP 반사 증폭 공격)을 Shield로 완화했다고 공개했다. CLDAP(Connectionless LDAP) 반사 공격은 스푸핑된 출발지 IP로 LDAP 서버에 작은 쿼리를 보내 큰 응답을 피해자에게 쏟아붓는 **증폭(amplification) 공격**이다. 이런 초대형 volumetric 공격은 단일 데이터센터로는 절대 흡수 못 하고, AWS의 글로벌 엣지 용량(수십 Tbps)으로 분산 흡수해야만 막힌다. 교훈: volumetric DDoS 방어의 본질은 "공격보다 큰 흡수 용량"이고, 이것이 개별 기업이 자체 구축하기 가장 어려운 영역이다 — Shield는 AWS 전체 엣지 용량을 방패로 빌려준다.
+2020년 AWS는 당시 역대 최대 규모의 DDoS 공격(약 2.3 Tbps의 CLDAP 반사 증폭 공격)을 Shield로 완화했다고 공개했다. CLDAP(Connectionless LDAP) 반사 공격은 스푸핑된 출발지 IP로 LDAP 서버에 작은 쿼리를 보내 큰 응답을 피해자에게 쏟아붓는 **증폭(amplification) 공격**이다. 이런 초대형 volumetric 공격은 단일 데이터센터로는 절대 흡수 못 하고, AWS의 글로벌 엣지 용량(수십 Tbps)으로 분산 흡수해야만 막힌다. 교훈: volumetric DDoS 방어의 본질은 "공격보다 큰 흡수 용량"이고, 이것이 개별 기업이 자체 구축하기 가장 어려운 영역이다 — Shield는 AWS 전체 엣지 용량을 방패로 빌려준다.
 
 ## Firewall Manager — 멀티 계정에 보안 정책을 일괄·자동 적용
 
@@ -62,7 +62,7 @@ WAF(Web Application Firewall)는 **L7(HTTP/HTTPS) 요청을 검사해 악성 패
 - **자동 적용**: 신규 계정·신규 리소스에도 정책이 자동 적용
 - **드리프트 시정**: 정책 위반(누군가 WAF를 끄는 등)을 자동 탐지·시정·알림
 
-> 📚 **사례**: 한 대기업이 인수합병으로 계정이 수백 개로 늘었는데, 각 사업부가 제각각 보안 설정을 해 어떤 ALB는 WAF가 없고 어떤 건 잘못된 룰을 썼다. Firewall Manager로 "모든 인터넷 향 ALB에 `AWSManagedRulesCommonRuleSet` 적용" 단일 정책을 정의하니, 전 계정에 자동 배포되고 신규 인수 계정도 Organization에 합류하는 즉시 정책이 적용됐다. 누군가 WAF를 끄면 드리프트로 탐지·알림됐다. 교훈: 멀티 계정 보안의 핵심 난제는 "일관성과 신규 자동 포함"이고, Firewall Manager가 이를 중앙에서 강제한다. 시험에서 "Org 전체 WAF/SG 정책 일괄 + 신규 계정 자동"은 항상 Firewall Manager다.
+(가상 사례) 한 대기업이 인수합병으로 계정이 수백 개로 늘었는데, 각 사업부가 제각각 보안 설정을 해 어떤 ALB는 WAF가 없고 어떤 건 잘못된 룰을 썼다. Firewall Manager로 "모든 인터넷 향 ALB에 `AWSManagedRulesCommonRuleSet` 적용" 단일 정책을 정의하니, 전 계정에 자동 배포되고 신규 인수 계정도 Organization에 합류하는 즉시 정책이 적용됐다. 누군가 WAF를 끄면 드리프트로 탐지·알림됐다. 교훈: 멀티 계정 보안의 핵심 난제는 "일관성과 신규 자동 포함"이고, Firewall Manager가 이를 중앙에서 강제한다. 시험에서 "Org 전체 WAF/SG 정책 일괄 + 신규 계정 자동"은 항상 Firewall Manager다.
 
 > ⚠️ **함정**: Firewall Manager vs SCP vs Config. **SCP**는 "할 수 없는 것을 금지"(가드레일, 거부 경계)하지 보안 룰을 배포하진 않는다. **Config**는 "비준수를 평가·탐지"하지 능동적으로 WAF 룰을 배포하진 않는다(시정은 가능하나 보안 정책 배포가 본업이 아님). **Firewall Manager**만이 WAF·Shield·SG·Network Firewall 같은 **보안 정책을 능동적으로 일괄 배포**한다. 시험에서 "보안 정책을 멀티 계정에 배포·강제"는 Firewall Manager, "행위 자체를 금지"는 SCP, "준수 평가"는 Config로 가른다.
 
@@ -74,9 +74,9 @@ WAF가 엣지의 L7 웹 요청을 막는다면, **Network Firewall**은 **VPC �
 - **기능**: 스테이트풀 검사, IDS/IPS(침입 탐지·차단), 도메인 필터링, **TLS Inspection**(암호화 트래픽 복호화 후 검사)
 - **vs WAF**: WAF = 엣지의 L7 웹(CF/ALB/APIGW), Network Firewall = VPC 전반의 모든 프로토콜 트래픽
 
-> 🔍 **더 깊이**: Network Firewall이 Suricata 룰 형식을 쓰는 것은 영리한 설계다. Suricata는 업계 표준 오픈소스 IDS/IPS 엔진이고, 보안 커뮤니티가 작성한 방대한 위협 시그니처(Emerging Threats 등)가 Suricata 형식으로 존재한다. AWS가 독자 형식을 쓰지 않고 Suricata 호환을 택해, 기존 온프레미스 IDS 룰을 클라우드로 그대로 가져올 수 있게 했다. TLS Inspection은 양날의 검이다 — 암호화된 악성 트래픽(C2 통신 등)을 잡으려면 복호화가 필요하지만, 이는 중간자(MITM) 구조라 프라이버시·성능·인증서 관리 부담이 크다. 그래서 보통 특정 대상(아웃바운드 의심 트래픽)에만 선택적으로 적용한다.
+Network Firewall이 Suricata 룰 형식을 쓰는 것은 영리한 설계다. Suricata는 업계 표준 오픈소스 IDS/IPS 엔진이고, 보안 커뮤니티가 작성한 방대한 위협 시그니처(Emerging Threats 등)가 Suricata 형식으로 존재한다. AWS가 독자 형식을 쓰지 않고 Suricata 호환을 택해, 기존 온프레미스 IDS 룰을 클라우드로 그대로 가져올 수 있게 했다. TLS Inspection은 양날의 검이다 — 암호화된 악성 트래픽(C2 통신 등)을 잡으려면 복호화가 필요하지만, 이는 중간자(MITM) 구조라 프라이버시·성능·인증서 관리 부담이 크다. 그래서 보통 특정 대상(아웃바운드 의심 트래픽)에만 선택적으로 적용한다.
 
-> 📚 **사례**: 한 핀테크는 아웃바운드 데이터 유출(exfiltration)이 우려돼 VPC 트래픽 전수 검사를 도입했다. 처음엔 모든 트래픽에 TLS Inspection을 켰는데, 복호화·재암호화 오버헤드로 지연이 급증하고 인증서 관리가 복잡해졌으며 일부 인증서 핀닝(pinning) 앱이 깨졌다. 해법은 선택적 적용 — 신뢰된 내부 트래픽은 통과시키고, **아웃바운드 의심 대상(미분류 외부 도메인)에만** TLS Inspection을 적용했다. 교훈: TLS Inspection은 중간자(MITM) 구조라 강력하지만 비용·성능·호환성 부담이 크다. "전부 복호화"는 안티패턴이고, 위험 기반으로 범위를 좁히는 게 표준이다.
+(가상 사례) 한 핀테크는 아웃바운드 데이터 유출(exfiltration)이 우려돼 VPC 트래픽 전수 검사를 도입했다. 처음엔 모든 트래픽에 TLS Inspection을 켰는데, 복호화·재암호화 오버헤드로 지연이 급증하고 인증서 관리가 복잡해졌으며 일부 인증서 핀닝(pinning) 앱이 깨졌다. 해법은 선택적 적용 — 신뢰된 내부 트래픽은 통과시키고, **아웃바운드 의심 대상(미분류 외부 도메인)에만** TLS Inspection을 적용했다. 교훈: TLS Inspection은 중간자(MITM) 구조라 강력하지만 비용·성능·호환성 부담이 크다. "전부 복호화"는 안티패턴이고, 위험 기반으로 범위를 좁히는 게 표준이다.
 
 ## DNS Firewall — 악성 도메인을 이름 단계에서 차단
 
@@ -86,9 +86,9 @@ WAF가 엣지의 L7 웹 요청을 막는다면, **Network Firewall**은 **VPC �
 - **커스텀 리스트**: 자사 허용/차단 도메인 정의
 - **왜 SG/NACL이 아닌가**: SG·NACL은 IP 기반인데, 악성 도메인의 IP는 자주 바뀐다. 도메인 이름으로 막는 게 견고하다.
 
-> ⚠️ **함정**: "VPC 내 사용자가 악성 도메인에 접근하지 못하게"는 **DNS Firewall**이지 Network Firewall이 아니다(Network Firewall도 도메인 필터링이 가능하나, 관리형 악성 도메인 리스트 기반 차단은 DNS Firewall이 직접적). NACL·SG는 IP 기반이라 도메인 차단에 부적합하다(IP가 수시로 변함). 시험에서 "악성 도메인 차단"의 키워드는 Route 53 DNS Firewall이다.
+"VPC 내 사용자가 악성 도메인에 접근하지 못하게"는 **DNS Firewall**이지 Network Firewall이 아니다(Network Firewall도 도메인 필터링이 가능하나, 관리형 악성 도메인 리스트 기반 차단은 DNS Firewall이 직접적). NACL·SG는 IP 기반이라 도메인 차단에 부적합하다(IP가 수시로 변함). 시험에서 "악성 도메인 차단"의 키워드는 Route 53 DNS Firewall이다.
 
-> 💡 **관련 이론**: DNS Firewall이 IP가 아닌 **이름(name)** 단계에서 막는 게 견고한 이유는 멀웨어의 통신 구조에 있다. 현대 멀웨어는 **DGA(Domain Generation Algorithm)**로 매일 수천 개의 무작위 도메인을 생성하고, C2 서버는 그중 하나만 등록해 탐지를 회피한다. IP는 더 자주 바뀐다(빠른 fast-flux DNS). IP 기반 차단(SG/NACL)은 이 변화를 따라잡을 수 없다. 도메인 평판 리스트(이름 기반)는 IP가 바뀌어도 도메인 패턴·등록 정보로 추적하므로 더 안정적이다. 또 **DNS 터널링**(DNS 쿼리에 데이터를 숨겨 유출)도 DNS 단계에서만 잡힌다 — 이름 해석 계층이 아웃바운드 위협의 핵심 관문인 이유다.
+DNS Firewall이 IP가 아닌 **이름(name)** 단계에서 막는 게 견고한 이유는 멀웨어의 통신 구조에 있다. 현대 멀웨어는 **DGA(Domain Generation Algorithm)**로 매일 수천 개의 무작위 도메인을 생성하고, C2 서버는 그중 하나만 등록해 탐지를 회피한다. IP는 더 자주 바뀐다(빠른 fast-flux DNS). IP 기반 차단(SG/NACL)은 이 변화를 따라잡을 수 없다. 도메인 평판 리스트(이름 기반)는 IP가 바뀌어도 도메인 패턴·등록 정보로 추적하므로 더 안정적이다. 또 **DNS 터널링**(DNS 쿼리에 데이터를 숨겨 유출)도 DNS 단계에서만 잡힌다 — 이름 해석 계층이 아웃바운드 위협의 핵심 관문인 이유다.
 
 ## 엣지 보안 풀스택 아키텍처
 
@@ -108,11 +108,11 @@ WAF가 엣지의 L7 웹 요청을 막는다면, **Network Firewall**은 **VPC �
    전 계층 정책: Firewall Manager (Org 단위 일괄·자동 배포)
 ```
 
-## 정리하며
+## 정리
 
 엣지 보안은 OSI 계층의 지도 위에 선다 — **DDoS는 Shield**(L3/L4 자동, Advanced로 L7+Cost Protection+SRT), **L7 웹 공격은 WAF**(Managed Rule로 OWASP, Rate-Based로 L7 DDoS·brute force), **VPC 내부 트래픽은 Network Firewall**(L3-7 IDS/IPS·TLS Inspection), **악성 도메인은 DNS Firewall**(이름 단계 차단), 그리고 이 모두를 **Firewall Manager**가 Organization 전체에 일괄·자동 배포한다.
 
-SAP 시험 단골 매핑: (1) "OWASP Top 10 즉시 보호 + 운영 부담 최소" → **WAF Managed Rule Groups**, (2) "L7 DDoS + Cost Protection + SRT 24/7" → **Shield Advanced**, (3) "L3/L4 DDoS 무료 자동" → **Shield Standard**, (4) "Org 전체 WAF·SG 정책 일괄 + 신규 계정 자동" → **Firewall Manager**, (5) "VPC 내 IDS/IPS + TLS Inspection" → **Network Firewall**, (6) "VPC 내 악성 도메인 차단" → **Route 53 DNS Firewall**, (7) "특정 국가 차단" → **WAF Geo Match**, (8) "단일 IP brute force/L7 flood 제한" → **WAF Rate-Based Rule**. 다음 day는 11주차 보안 전체를 한 시나리오로 종합한다.
+SAP 시험 매핑: (1) "OWASP Top 10 즉시 보호 + 운영 부담 최소" → **WAF Managed Rule Groups**, (2) "L7 DDoS + Cost Protection + SRT 24/7" → **Shield Advanced**, (3) "L3/L4 DDoS 무료 자동" → **Shield Standard**, (4) "Org 전체 WAF·SG 정책 일괄 + 신규 계정 자동" → **Firewall Manager**, (5) "VPC 내 IDS/IPS + TLS Inspection" → **Network Firewall**, (6) "VPC 내 악성 도메인 차단" → **Route 53 DNS Firewall**, (7) "특정 국가 차단" → **WAF Geo Match**, (8) "단일 IP brute force/L7 flood 제한" → **WAF Rate-Based Rule**. 다음 day는 11주차 보안 전체를 한 시나리오로 종합한다.
 
 ---
 

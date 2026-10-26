@@ -16,15 +16,15 @@ Pro 시험에서 도메인 1(복잡한 조직 설계, 26%)의 핵심 4종은 **O
 
 ## 멀티 계정 거버넌스의 역사와 이론
 
-> 🔍 **더 깊이**: AWS Organizations가 GA된 것은 **2017년 2월**이다. 그 전에는 **Consolidated Billing(2010)**만 있어서 청구만 묶고 권한 거버넌스는 각 계정이 알아서 했다. SCP는 Organizations와 함께 등장했고, 멀티 계정을 "비용 묶음"에서 "거버넌스 단위"로 격상시켰다. 2019년 **Control Tower**(Landing Zone 자동화), 2018년 **AWS SSO**(현 IAM Identity Center)가 차례로 나오며 오늘날의 스택이 완성됐다. 즉 도메인 1의 4종은 7~8년에 걸쳐 점진적으로 쌓인 계층이고, Pro 시험은 이 계층이 "함께 동작하는" 그림을 본다.
+AWS Organizations가 GA된 것은 **2017년 2월**이다. 그 전에는 **Consolidated Billing(2010)**만 있어서 청구만 묶고 권한 거버넌스는 각 계정이 알아서 했다. SCP는 Organizations와 함께 등장했고, 멀티 계정을 "비용 묶음"에서 "거버넌스 단위"로 격상시켰다. 2019년 **Control Tower**(Landing Zone 자동화), 2018년 **AWS SSO**(현 IAM Identity Center)가 차례로 나오며 오늘날의 스택이 완성됐다. 즉 도메인 1의 4종은 7~8년에 걸쳐 점진적으로 쌓인 계층이고, Pro 시험은 이 계층이 "함께 동작하는" 그림을 본다.
 
 회사를 하나의 거대한 AWS 계정에서 운영하면 왜 안 되는가. 핵심은 **blast radius(폭발 반경)** 와 **격리 경계(isolation boundary)** 다.
 
-> 💡 **관련 이론**: 분산 시스템 신뢰성 이론에서 **fault containment region(FCR)** 개념이 있다. 한 결함이 다른 영역으로 전파되지 못하도록 시스템을 경계로 나누는 설계다. AWS 계정은 클라우드에서 가장 강한 FCR이다 — IAM 정책 실수, 리소스 한도(quota), 보안 침해가 계정 경계를 넘지 못한다. VPC나 IAM 경계는 같은 계정 안의 "약한" 경계지만, 계정 경계는 AWS 백본 수준에서 분리된 "강한" 경계다. 이게 "Prod와 Non-Prod는 반드시 계정 분리"의 이론적 근거다.
+분산 시스템 신뢰성 이론에서 **fault containment region(FCR)** 개념이 있다. 한 결함이 다른 영역으로 전파되지 못하도록 시스템을 경계로 나누는 설계다. AWS 계정은 클라우드에서 가장 강한 FCR이다 — IAM 정책 실수, 리소스 한도(quota), 보안 침해가 계정 경계를 넘지 못한다. VPC나 IAM 경계는 같은 계정 안의 "약한" 경계지만, 계정 경계는 AWS 백본 수준에서 분리된 "강한" 경계다. 이게 "Prod와 Non-Prod는 반드시 계정 분리"의 이론적 근거다.
 
-> 💡 **관련 이론**: 멀티 계정 설계는 보안의 **최소 권한 원칙(Principle of Least Privilege)**과 **권한 분리(Separation of Duties, SoD)**를 구조로 강제한 것이다. SoD는 회계·감사 분야에서 1970년대부터 내려온 통제 원칙으로, NIST SP 800-53 AC-5에 명문화돼 있다. 로그를 적재하는 계정(Log Archive)과 그것을 분석하는 계정(Audit)을 나누는 것, 결제만 하는 Management 계정에 워크로드를 두지 않는 것 모두 SoD의 클라우드 구현이다.
+멀티 계정 설계는 보안의 **최소 권한 원칙(Principle of Least Privilege)**과 **권한 분리(Separation of Duties, SoD)**를 구조로 강제한 것이다. SoD는 회계·감사 분야에서 1970년대부터 내려온 통제 원칙으로, NIST SP 800-53 AC-5에 명문화돼 있다. 로그를 적재하는 계정(Log Archive)과 그것을 분석하는 계정(Audit)을 나누는 것, 결제만 하는 Management 계정에 워크로드를 두지 않는 것 모두 SoD의 클라우드 구현이다.
 
-> 📚 **사례**: **Capital One(2019년 7월)** — SSRF 취약점으로 EC2 메타데이터에서 과도한 권한의 IAM Role 자격증명이 탈취되어 1억 6백만 명의 데이터가 유출됐다. 직접 원인은 WAF 설정과 과도한 S3 접근 권한이었지만, 사후 분석에서 "데이터 계정과 애플리케이션 계정이 충분히 분리되지 않아 한 Role이 너무 많은 버킷에 접근할 수 있었다"는 점이 지적됐다. 교훈: 계정·Role 경계를 좁게 나누면 한 자격증명이 탈취돼도 blast radius가 제한된다. 이 사고 후 AWS는 IMDSv2(2019)를 출시하고 SRA(Security Reference Architecture)에서 계정 분리를 강하게 권고했다.
+**Capital One(2019년 7월)** — SSRF 취약점으로 EC2 메타데이터에서 과도한 권한의 IAM Role 자격증명이 탈취되어 1억 6백만 명의 데이터가 유출됐다. 직접 원인은 WAF 설정과 과도한 S3 접근 권한이었지만, 사후 분석에서 "데이터 계정과 애플리케이션 계정이 충분히 분리되지 않아 한 Role이 너무 많은 버킷에 접근할 수 있었다"는 점이 지적됐다. 교훈: 계정·Role 경계를 좁게 나누면 한 자격증명이 탈취돼도 blast radius가 제한된다. 이 사고 후 AWS는 IMDSv2(2019)를 출시하고 SRA(Security Reference Architecture)에서 계정 분리를 강하게 권고했다.
 
 ## 다른 클라우드의 멀티 계정/조직 거버넌스
 
@@ -39,7 +39,7 @@ Pro 시험은 AWS만 묻지만, 개념을 비교하면 본질이 또렷해진다
 | ID 통합 | IAM Identity Center | Entra ID (네이티브) | Cloud Identity |
 | 자동 랜딩존 | Control Tower | Landing Zone (CAF) | Landing Zone (Fabric) |
 
-> 🔍 **더 깊이**: 가장 큰 구조적 차이는 **AWS는 계정이 "별도 청구·별도 quota·별도 리소스 네임스페이스"를 가진 1급 격리 경계**라는 점이다. Azure의 Subscription도 비슷하지만, Azure는 Entra ID가 테넌트 전체에 걸쳐 ID를 네이티브로 관리해서 IDC 같은 별도 통합 계층이 덜 필요하다. GCP의 Project는 가장 가볍고 만들기 쉬워서 "리소스마다 프로젝트" 패턴이 흔하다. AWS에서 SCP가 "OU에 부착하는 default-deny ceiling"이라면, Azure Policy는 "리소스 속성을 평가하는 audit/deny 규칙"이라 평가 모델 자체가 다르다 — Azure Policy는 SCP보다 Config Rule(Detective)에 가깝다.
+가장 큰 구조적 차이는 **AWS는 계정이 "별도 청구·별도 quota·별도 리소스 네임스페이스"를 가진 1급 격리 경계**라는 점이다. Azure의 Subscription도 비슷하지만, Azure는 Entra ID가 테넌트 전체에 걸쳐 ID를 네이티브로 관리해서 IDC 같은 별도 통합 계층이 덜 필요하다. GCP의 Project는 가장 가볍고 만들기 쉬워서 "리소스마다 프로젝트" 패턴이 흔하다. AWS에서 SCP가 "OU에 부착하는 default-deny ceiling"이라면, Azure Policy는 "리소스 속성을 평가하는 audit/deny 규칙"이라 평가 모델 자체가 다르다 — Azure Policy는 SCP보다 Config Rule(Detective)에 가깝다.
 
 ## Week 2 한 줄 요약 30개
 
@@ -85,7 +85,7 @@ Pro 시험은 AWS만 묻지만, 개념을 비교하면 본질이 또렷해진다
 29. 관리자 세션 1h, 개발자 4h, ReadOnly 8h — break-glass 패턴.
 30. Consolidated Billing: RI/SP 공유 ON 기본, 부서별 분리 시 OFF 또는 Cost Allocation Tag.
 
-> 💡 **관련 이론**: 25번의 SCIM은 **RFC 7644(System for Cross-domain Identity Management)** 표준이고, 인증 프로토콜인 SAML 2.0은 OASIS 표준, IDC CLI가 쓰는 device authorization grant는 **RFC 8628(OAuth 2.0 Device Authorization Grant)**이다. 시험에서 "Okta 사용자를 50개 계정에 자동 동기화"라는 표현이 나오면 곧 SCIM(provisioning)이고, "로그인 흐름"은 SAML(authentication)이다. **Provisioning(SCIM) ≠ Authentication(SAML)** — 이 둘을 분리해서 봐야 보기에서 헷갈리지 않는다.
+25번의 SCIM은 **RFC 7644(System for Cross-domain Identity Management)** 표준이고, 인증 프로토콜인 SAML 2.0은 OASIS 표준, IDC CLI가 쓰는 device authorization grant는 **RFC 8628(OAuth 2.0 Device Authorization Grant)**이다. 시험에서 "Okta 사용자를 50개 계정에 자동 동기화"라는 표현이 나오면 곧 SCIM(provisioning)이고, "로그인 흐름"은 SAML(authentication)이다. **Provisioning(SCIM) ≠ Authentication(SAML)** — 이 둘을 분리해서 봐야 보기에서 헷갈리지 않는다.
 
 ## 멀티 계정 4-layer 사고법
 
@@ -137,7 +137,7 @@ Pro 시험은 AWS만 묻지만, 개념을 비교하면 본질이 또렷해진다
 | **SCIM** vs **SAML** | 사용자 프로비저닝 | 인증/로그인 |
 | **CAP 가용성 우선** vs **일관성 우선** | 멀티 리전 거버넌스 데이터 | 아래 박스 참조 |
 
-> 💡 **관련 이론**: 마지막 행과 관련해 — Organizations의 SCP/정책 메타데이터는 **글로벌 컨트롤 플레인**에서 관리되고 멤버 계정에 전파(propagate)된다. 이는 **CAP 정리**에서 가용성(A)을 택한 **eventually consistent** 시스템이다. SCP를 변경하면 즉시가 아니라 수 초~수 분 안에 모든 계정에 적용된다. PACELC로 표현하면 "분할(P)이 없을 때도 지연(L)보다 가용성(A)을 우선"하는 PA/EL 시스템에 가깝다. 그래서 시험에서 "SCP 변경 직후 일부 계정에 즉시 반영 안 됨"이라는 묘사가 나오면 버그가 아니라 전파 지연으로 이해해야 한다.
+마지막 행과 관련해 — Organizations의 SCP/정책 메타데이터는 **글로벌 컨트롤 플레인**에서 관리되고 멤버 계정에 전파(propagate)된다. 이는 **CAP 정리**에서 가용성(A)을 택한 **eventually consistent** 시스템이다. SCP를 변경하면 즉시가 아니라 수 초~수 분 안에 모든 계정에 적용된다. PACELC로 표현하면 "분할(P)이 없을 때도 지연(L)보다 가용성(A)을 우선"하는 PA/EL 시스템에 가깝다. 그래서 시험에서 "SCP 변경 직후 일부 계정에 즉시 반영 안 됨"이라는 묘사가 나오면 버그가 아니라 전파 지연으로 이해해야 한다.
 
 ## 안티패턴: 도메인 1에서 오답을 부르는 설계
 

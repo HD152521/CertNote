@@ -21,7 +21,7 @@ Step Functions는 Amazon States Language(ASL)라는 JSON 기반 언어로 워크
 
 Standard는 각 상태 전환이 "exactly-once" 의미론을 보장한다. 결제 처리나 이메일 발송처럼 중복 실행이 치명적인 작업에 적합하다. Express는 초당 100,000개 이상의 실행을 처리할 수 있는 높은 처리량이 필요한 경우에 쓴다. 짧은 IoT 이벤트 처리, 스트리밍 데이터 변환에 적합하다.
 
-> 💡 **Exactly-once의 분산 시스템 이론** — "Exactly-once"는 분산 시스템에서 가장 어려운 보장 중 하나다. 네트워크 실패가 발생했을 때 재시도를 하면 at-least-once가 되고(중복 가능), 재시도를 안 하면 at-most-once가 된다(손실 가능). Step Functions Standard는 내부적으로 분산 로그와 멱등성(Idempotency) 메커니즘을 통해 exactly-once를 구현한다. 이 구현은 Leslie Lamport의 Paxos(1989)와 유사한 합의 알고리즘을 기반으로 한다. 이 보장이 성능 비용으로 이어지는 것이 Standard가 Express보다 비싸고 처리량이 낮은 이유다. Express의 at-least-once는 중복 처리가 가능한 멱등적 작업(Idempotent Operation)에서만 안전하다.
+**Exactly-once의 분산 시스템 이론** — "Exactly-once"는 분산 시스템에서 가장 어려운 보장 중 하나다. 네트워크 실패가 발생했을 때 재시도를 하면 at-least-once가 되고(중복 가능), 재시도를 안 하면 at-most-once가 된다(손실 가능). Step Functions Standard는 내부적으로 분산 로그와 멱등성(Idempotency) 메커니즘을 통해 exactly-once를 구현한다. 이 구현은 Leslie Lamport의 Paxos(1989)와 유사한 합의 알고리즘을 기반으로 한다. 이 보장이 성능 비용으로 이어지는 것이 Standard가 Express보다 비싸고 처리량이 낮은 이유다. Express의 at-least-once는 중복 처리가 가능한 멱등적 작업(Idempotent Operation)에서만 안전하다.
 
 ### 핵심 상태 타입
 
@@ -64,7 +64,7 @@ Standard는 각 상태 전환이 "exactly-once" 의미론을 보장한다. 결�
 
 승인자가 SQS 메시지를 받아 확인 후 `SendTaskSuccess(taskToken)` 또는 `SendTaskFailure(taskToken)`를 호출하면 워크플로가 재개된다.
 
-> 📚 **Intuit TurboTax Step Functions 사례** — 2021년 Intuit(TurboTax, QuickBooks)는 세금 신고 처리 워크플로를 Step Functions Standard로 구현한 사례를 AWS re:Invent에서 발표했다. 세금 신고 프로세스는 데이터 검증 → 계산 → 정부 기관 제출 → 확인 대기(최대 수 시간) → 결과 통보의 단계를 가진다. 특히 정부 기관 확인 대기 단계에서 waitForTaskToken을 사용해서 실제로 정부 응답이 올 때까지 무상태로 대기했다. 이 패턴으로 월 수백만 건의 세금 신고를 처리한다. 과거에는 Lambda 안에서 폴링 루프로 구현했지만, Step Functions + waitForTaskToken으로 전환하면서 비용이 90% 절감됐다고 발표했다.
+**Intuit TurboTax Step Functions 사례** — 2021년 Intuit(TurboTax, QuickBooks)는 세금 신고 처리 워크플로를 Step Functions Standard로 구현한 사례를 AWS re:Invent에서 발표했다. 세금 신고 프로세스는 데이터 검증 → 계산 → 정부 기관 제출 → 확인 대기(최대 수 시간) → 결과 통보의 단계를 가진다. 특히 정부 기관 확인 대기 단계에서 waitForTaskToken을 사용해서 실제로 정부 응답이 올 때까지 무상태로 대기했다. 이 패턴으로 월 수백만 건의 세금 신고를 처리한다. 과거에는 Lambda 안에서 폴링 루프로 구현했지만, Step Functions + waitForTaskToken으로 전환하면서 비용이 90% 절감됐다고 발표했다.
 
 ### 에러 처리 — Retry와 Catch
 
@@ -226,9 +226,9 @@ subscription OnNewMessage {
 
 클라이언트가 Subscription을 시작하면 WebSocket 연결이 열리고, 누군가 `sendMessage` Mutation을 실행할 때마다 구독자에게 자동으로 Push된다. 채팅, 협업 도구, 실시간 피드에 완벽한 패턴이다.
 
-> 💡 **GraphQL N+1 문제와 DataLoader 해결** — GraphQL의 N+1 문제는 관계형 데이터를 처리할 때 발생한다. 예를 들어 100명의 사용자 목록을 가져오고(`1번 쿼리`), 각 사용자의 최근 주문을 가져오면 100번의 추가 쿼리가 발생한다(`N번 쿼리`, 총 1+N번). Facebook은 이를 해결하기 위해 Dataloader라는 배치 로딩 라이브러리를 개발했다. 개별 요청을 모아서 배치로 처리한다 — 100명의 userId를 모아서 `BatchGetItem`으로 한번에 조회. AppSync도 DynamoDB BatchGetItem 통합과 Pipeline Resolver로 이 문제를 완화한다. Lambda Resolver를 사용할 때는 직접 Dataloader를 구현하거나, AppSync의 배치 처리 기능을 활용한다.
+**GraphQL N+1 문제와 DataLoader 해결** — GraphQL의 N+1 문제는 관계형 데이터를 처리할 때 발생한다. 예를 들어 100명의 사용자 목록을 가져오고(`1번 쿼리`), 각 사용자의 최근 주문을 가져오면 100번의 추가 쿼리가 발생한다(`N번 쿼리`, 총 1+N번). Facebook은 이를 해결하기 위해 Dataloader라는 배치 로딩 라이브러리를 개발했다. 개별 요청을 모아서 배치로 처리한다 — 100명의 userId를 모아서 `BatchGetItem`으로 한번에 조회. AppSync도 DynamoDB BatchGetItem 통합과 Pipeline Resolver로 이 문제를 완화한다. Lambda Resolver를 사용할 때는 직접 Dataloader를 구현하거나, AppSync의 배치 처리 기능을 활용한다.
 
-> 🔍 **AppSync Caching** — AppSync는 per-resolver 캐싱을 지원한다. 특정 쿼리의 응답을 TTL 동안 캐싱하면 DynamoDB/Lambda 호출을 줄일 수 있다. 캐시 크기는 t2.micro부터 r4.8xlarge까지 선택 가능하다. REST API의 전체 응답 캐싱과 달리, AppSync는 필드 단위로 캐시를 제어할 수 있어서 자주 변경되는 필드와 그렇지 않은 필드를 다르게 캐싱할 수 있다. Subscription 데이터는 캐싱되지 않는다(항상 실시간).
+**AppSync Caching** — AppSync는 per-resolver 캐싱을 지원한다. 특정 쿼리의 응답을 TTL 동안 캐싱하면 DynamoDB/Lambda 호출을 줄일 수 있다. 캐시 크기는 t2.micro부터 r4.8xlarge까지 선택 가능하다. REST API의 전체 응답 캐싱과 달리, AppSync는 필드 단위로 캐시를 제어할 수 있어서 자주 변경되는 필드와 그렇지 않은 필드를 다르게 캐싱할 수 있다. Subscription 데이터는 캐싱되지 않는다(항상 실시간).
 
 ### AppSync vs API Gateway — 선택 기준
 
@@ -381,7 +381,7 @@ aws appsync create-api-key \
   --expires 1800000000
 ```
 
-## 정리하며
+## 정리
 
 Step Functions는 Lambda 함수들을 코드가 아닌 상태 머신 정의로 오케스트레이션하는 서비스다. Standard는 1년까지 exactly-once, Express는 5분 안에 대량 처리. waitForTaskToken으로 인간 승인이나 외부 콜백을 기다리고, Distributed Map으로 1만 개 병렬 처리를 선언적으로 구성한다. Retry + Catch는 Saga 패턴으로 보상 트랜잭션을 구현한다.
 

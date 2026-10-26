@@ -40,9 +40,9 @@ LIMIT 100;
 
 세 레버는 곱해진다. CSV 풀스캔 대비 잘 설계된 Parquet 쿼리가 수십 배 저렴해지는 이유다.
 
-> 💡 **관련 이론**: Athena 비용이 "스캔한 데이터량"에 비례한다는 점은 ML 데이터 준비에 직접 영향을 준다. CSV로 풀스캔하면 비싸고 느리지만, 잘 파티셔닝된 Parquet은 같은 쿼리가 훨씬 낮은 비용으로 돈다. ML 피처를 뽑는 쿼리를 자주 돌린다면 이 차이가 누적된다.
+Athena 비용이 "스캔한 데이터량"에 비례한다는 점은 ML 데이터 준비에 직접 영향을 준다. CSV로 풀스캔하면 비싸고 느리지만, 잘 파티셔닝된 Parquet은 같은 쿼리가 훨씬 낮은 비용으로 돈다. ML 피처를 뽑는 쿼리를 자주 돌린다면 이 차이가 누적된다.
 
-> 🔍 **더 깊이**: Athena는 ML 워크플로의 빠른 피처 탐색에 적합하다. SageMaker가 학습 데이터로 Parquet을 S3에서 읽기 전에, 분석가가 Athena로 "타깃 분포는? 클래스 불균형은?"을 SQL로 확인한다. 또 **Athena CTAS(CREATE TABLE AS SELECT)**로 쿼리 결과를 Parquet으로 S3에 저장해 학습 데이터셋을 직접 만들 수도 있다.
+Athena는 ML 워크플로의 빠른 피처 탐색에 적합하다. SageMaker가 학습 데이터로 Parquet을 S3에서 읽기 전에, 분석가가 Athena로 "타깃 분포는? 클래스 불균형은?"을 SQL로 확인한다. 또 **Athena CTAS(CREATE TABLE AS SELECT)**로 쿼리 결과를 Parquet으로 S3에 저장해 학습 데이터셋을 직접 만들 수도 있다.
 
 ```sql
 -- CTAS로 학습용 데이터셋을 Parquet으로 생성
@@ -71,7 +71,7 @@ WHERE year = '2026';
 
 ![Redshift 내부 테이블과 S3 외부 테이블을 Spectrum 으로 조인하는 구조](/diagrams/redshift-spectrum.svg)
 
-ML 통합 측면에서 **Redshift ML**도 알아두자. SQL `CREATE MODEL` 문으로 Redshift 안에서 SageMaker Autopilot을 호출해 모델을 학습·추론할 수 있다. 데이터를 옮기지 않고 SQL만으로 예측 컬럼을 만든다.
+ML 통합 측면에서 **Redshift ML**도 있다. SQL `CREATE MODEL` 문으로 Redshift 안에서 SageMaker Autopilot을 호출해 모델을 학습·추론할 수 있다. 데이터를 옮기지 않고 SQL만으로 예측 컬럼을 만든다.
 
 ```sql
 -- Redshift ML: SQL로 모델 학습 (내부적으로 SageMaker Autopilot 호출)
@@ -83,7 +83,7 @@ IAM_ROLE 'arn:aws:iam::123456789012:role/RedshiftMLRole'
 SETTINGS (S3_BUCKET 'ml-datalake-redshiftml');
 ```
 
-> 🔍 **더 깊이**: 시험 단골 비교 — "임시 탐색/간헐적 쿼리 + 관리 부담 최소 + 데이터를 S3에 그대로"면 **Athena**. "반복적인 고성능 BI 쿼리 + 복잡한 조인 + 지속적 워크로드"면 **Redshift**. "Redshift에서 S3 차가운 데이터를 조인"이면 **Redshift Spectrum**. "데이터 이동 없이 SQL로 ML"이면 **Redshift ML**.
+헷갈리기 쉬운 비교 — "임시 탐색/간헐적 쿼리 + 관리 부담 최소 + 데이터를 S3에 그대로"면 **Athena**. "반복적인 고성능 BI 쿼리 + 복잡한 조인 + 지속적 워크로드"면 **Redshift**. "Redshift에서 S3 차가운 데이터를 조인"이면 **Redshift Spectrum**. "데이터 이동 없이 SQL로 ML"이면 **Redshift ML**.
 
 ## EDA(탐색적 데이터 분석) 기초
 
@@ -121,7 +121,7 @@ print(df.corr(numeric_only=True))  # 피처 상관행렬
 | 결측률 > 50% | 정보가 거의 없음 | 컬럼 제거 또는 "결측 여부" 플래그화 |
 | 소수 클래스 < 1% | 극단 불균형 | 층화 분할 + 리샘플링 + PR-AUC |
 
-> 💡 **관련 이론**: EDA는 1977년 통계학자 **John Tukey**가 그의 저서 *Exploratory Data Analysis*에서 정립한 개념이다. 핵심 철학은 "가설을 세우고 검정하기 전에, 먼저 데이터가 스스로 말하게 하라"이다. 박스플롯·히스토그램·산점도 같은 시각화도 Tukey의 유산이다. ML에서 EDA를 건너뛰면 클래스 불균형이나 데이터 누수(data leakage)를 놓쳐 모델이 잘못된 패턴을 학습한다.
+EDA는 1977년 통계학자 **John Tukey**가 그의 저서 *Exploratory Data Analysis*에서 정립한 개념이다. 핵심 철학은 "가설을 세우고 검정하기 전에, 먼저 데이터가 스스로 말하게 하라"이다. 박스플롯·히스토그램·산점도 같은 시각화도 Tukey의 유산이다. ML에서 EDA를 건너뛰면 클래스 불균형이나 데이터 누수(data leakage)를 놓쳐 모델이 잘못된 패턴을 학습한다.
 
 > ⚠️ **함정**: EDA 단계에서 가장 위험한 실수는 **데이터 누수(data leakage)**다. 예를 들어 "결제 완료일"이라는 컬럼이 "구매 여부" 타깃을 사실상 미리 담고 있으면, 검증 정확도는 99%인데 실제 배포에선 무용지물이다. EDA에서 타깃과 비현실적으로 높은 상관(예: 0.99)을 가진 피처가 보이면 누수를 의심해야 한다.
 

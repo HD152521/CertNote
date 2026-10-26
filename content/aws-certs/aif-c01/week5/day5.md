@@ -58,7 +58,7 @@
 | 데이터 출처(lineage) | 데이터의 출처·변환 추적 |
 | CloudTrail | API 호출 감사 로그 |
 
-> 💡 **관련 이론**: 이 용어들은 "원칙 → 그 원칙을 지키는 AWS 수단"의 짝으로 외우면 오래 간다. 공정성/편향→Clarify, 안전·프라이버시→Guardrails, 투명성→AI Service Cards, 접근→IAM, 데이터 보호→KMS·Macie·Comprehend, 경로→PrivateLink, 증명→CloudTrail.
+이 용어들은 "원칙 → 그 원칙을 지키는 AWS 수단"의 짝으로 외우면 오래 간다. 공정성/편향→Clarify, 안전·프라이버시→Guardrails, 투명성→AI Service Cards, 접근→IAM, 데이터 보호→KMS·Macie·Comprehend, 경로→PrivateLink, 증명→CloudTrail.
 
 ## 판별 순서: 네 번 물으면 하나가 남는다
 
@@ -95,7 +95,7 @@
 - ①을 건너뛰면 틀린다. "챗봇 응답에서 개인정보를 막는다"는 문제는 개인정보라는 단어 때문에 Macie 로 끌리지만, ③의 마지막 줄에서 "대화"로 갈라져 Guardrails 가 된다.
 - ②의 첫 갈림(전통 ML 인가 생성형 AI 인가)이 가장 많은 오답을 걸러 낸다. Clarify 와 Model Monitor 는 SageMaker 로 만든 모델 쪽, Guardrails 는 생성형 AI 쪽이다.
 
-## 자주 나오는 비교 정리
+## 비교 정리
 
 - **투명성 vs 설명가능성**: 투명성은 "이 시스템이 무엇인지 공개", 설명가능성은 "이 결정이 왜 나왔는지 설명". 전자는 AI Service Cards, 후자는 Clarify 와 연결.
 - **Clarify vs Model Monitor**: Clarify 는 편향 측정·설명(주로 학습 전후), Model Monitor 는 배포 후 드리프트·품질 감시. 둘은 연동돼 편향 드리프트도 감시.
@@ -103,7 +103,7 @@
 - **암호화 vs PrivateLink**: 암호화는 내용 보호(저장·전송), PrivateLink 는 경로 보호(인터넷 우회). 다른 층의 방어.
 - **Macie vs Comprehend PII**: Macie 는 S3 저장 데이터에서 PII 탐지, Comprehend 는 텍스트에서 PII 식별·마스킹.
 
-> ⚠️ **함정**: 시험에서 가장 헷갈리는 것들. ① "편향 = 나쁜 의도"가 아니다(대개 무의도적, 데이터로 유입). ② "데이터가 많으면 편향이 사라진다"는 틀림(치우치면 그대로 학습). ③ "Model Monitor 가 모델을 자동 수정한다"는 틀림(감지·경보만). ④ "책임 공유 모델에서 데이터 접근 제어는 AWS 책임"은 틀림(고객 책임). ⑤ "투명성과 설명가능성은 같다"는 틀림.
+> ⚠️ **함정**: 특히 헷갈리는 것들. ① "편향 = 나쁜 의도"가 아니다(대개 무의도적, 데이터로 유입). ② "데이터가 많으면 편향이 사라진다"는 틀림(치우치면 그대로 학습). ③ "Model Monitor 가 모델을 자동 수정한다"는 틀림(감지·경보만). ④ "책임 공유 모델에서 데이터 접근 제어는 AWS 책임"은 틀림(고객 책임). ⑤ "투명성과 설명가능성은 같다"는 틀림.
 
 ## 이름이 닮은 것들을 같은 축에 놓기
 
@@ -128,7 +128,7 @@
 
 - 오른쪽 열이 오답 보기의 재료다. "Macie 로 PII 를 마스킹한다", "Model Monitor 가 자동으로 재학습한다", "Artifact 로 우리 회사의 감사를 대신한다"는 모두 하지 않는 일을 시킨 문장이다.
 
-## AWS 서비스 매핑 (AIF에서 자주 묻는 연결)
+## AWS 서비스 매핑 (AIF에서 묻는 연결)
 
 | 필요 | AWS 서비스/기능 |
 |------|-----------------|
@@ -211,7 +211,7 @@
 | 11 | 저작권, 환각으로 인한 허위 정보, 딥페이크(편향·프라이버시·고지 의무도 가능) | Day 4 |
 | 12 | Human-in-the-Loop | Day 1 |
 
-> 📚 **사례**: 한 핀테크가 생성형 AI 대출 상담 서비스를 책임 있게 출시했다. ① 학습 데이터의 출처·품질을 점검하고 PII 를 Comprehend 로 마스킹(거버넌스+프라이버시), ② Clarify 로 특정 집단 편향을 측정·완화(공정성), ③ IAM 최소 권한과 KMS 암호화, PrivateLink 로 데이터를 보호(보안), ④ Bedrock Guardrails 로 출력에서 부적절한 투자·금융 조언과 PII 를 차단(안전), ⑤ 대출 거절 같은 고위험 결정은 사람이 검토(HITL)하고 설명을 제공(설명가능성), ⑥ 모든 작업을 CloudTrail 로 로깅하고 Model Monitor 로 운영을 감시(거버넌스·감사). Week 5 의 모든 조각이 하나의 시스템에서 맞물린 사례다.
+가상의 사례로, 한 핀테크가 생성형 AI 대출 상담 서비스를 책임 있게 출시했다. ① 학습 데이터의 출처·품질을 점검하고 PII 를 Comprehend 로 마스킹(거버넌스+프라이버시), ② Clarify 로 특정 집단 편향을 측정·완화(공정성), ③ IAM 최소 권한과 KMS 암호화, PrivateLink 로 데이터를 보호(보안), ④ Bedrock Guardrails 로 출력에서 부적절한 투자·금융 조언과 PII 를 차단(안전), ⑤ 대출 거절 같은 고위험 결정은 사람이 검토(HITL)하고 설명을 제공(설명가능성), ⑥ 모든 작업을 CloudTrail 로 로깅하고 Model Monitor 로 운영을 감시(거버넌스·감사). Week 5 의 모든 조각이 하나의 시스템에서 맞물린 사례다.
 
 Week 5 를 세 문장으로 줄이면 이렇다. 책임 있는 AI 는 공정성·투명성·설명가능성·프라이버시 등의 원칙을 SageMaker Clarify·Model Monitor·Bedrock Guardrails·AI Service Cards 로 구현한다. IAM·암호화·PII 보호·PrivateLink 로 기술적으로 방어한다. 데이터·모델 거버넌스와 CloudTrail 감사로 추적·증명한다.
 

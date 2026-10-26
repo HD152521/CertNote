@@ -6,7 +6,7 @@ DOP-C02 시나리오 문제가 어려운 이유는 답이 2~3개 다 동작하�
 
 ## W-AF의 역사 — 사내 문서에서 산업 표준까지
 
-2012년 AWS 솔루션 아키텍트들이 "고객이 자주 묻는 똑같은 질문"을 정리하기 시작했다. "어떻게 설계해야 잘 한 건가요?"라는 질문에 매번 다른 답을 주는 게 비효율적이라, 사내 best practice 문서로 통합했다. 2015년 외부 공개, 2016년 5 Pillars 정립, 2021년 Sustainability 추가로 6 Pillars 완성. 이 진화 과정 자체가 클라우드 설계의 우선순위 변화를 반영한다 — 처음엔 안정성·성능만 중요했고, 비용 압박이 오면서 Cost Optimization이 강화됐고, ESG 시대가 오면서 Sustainability가 들어왔다.
+2012년 AWS 솔루션 아키텍트들이 "고객이 반복해서 묻는 똑같은 질문"을 정리하기 시작했다. "어떻게 설계해야 잘 한 건가요?"라는 질문에 매번 다른 답을 주는 게 비효율적이라, 사내 best practice 문서로 통합했다. 2015년 외부 공개, 2016년 5 Pillars 정립, 2021년 Sustainability 추가로 6 Pillars 완성. 이 진화 과정 자체가 클라우드 설계의 우선순위 변화를 반영한다 — 처음엔 안정성·성능만 중요했고, 비용 압박이 오면서 Cost Optimization이 강화됐고, ESG 시대가 오면서 Sustainability가 들어왔다.
 
 DevOps 관점에서 W-AF가 특별한 이유는 **DevOps Guidance가 W-AF의 한 lens로 별도로 발행**됐다는 점이다(2023). 즉 AWS는 "DevOps는 W-AF의 모든 Pillar에 걸쳐 있는 cross-cutting concern"으로 본다. Operational Excellence 하나만의 문제가 아니다.
 
@@ -30,7 +30,7 @@ AWS 도구 매핑:
 - **Operate 단계**: CloudWatch, X-Ray, ADOT, Systems Manager
 - **Evolve 단계**: AWS DevOps Guru, Compute Optimizer
 
-> 🔍 **더 깊이**: "Operations as code"는 단순히 IaC가 아니다. **Runbook as code**까지 포함한다. SSM Automation Document는 YAML/JSON으로 정의되어 git에 들어가고, 사람이 콘솔에서 클릭하는 절차가 코드로 표현된다. 그래서 같은 사고가 재발해도 자동으로 동일한 복구 절차가 실행된다. 이게 "MTTR 1시간 → 5분"의 결정적 메커니즘이다.
+> "Operations as code"는 단순히 IaC가 아니다. **Runbook as code**까지 포함한다. SSM Automation Document는 YAML/JSON으로 정의되어 git에 들어가고, 사람이 콘솔에서 클릭하는 절차가 코드로 표현된다. 그래서 같은 사고가 재발해도 자동으로 동일한 복구 절차가 실행된다. 이게 "MTTR 1시간 → 5분"의 결정적 메커니즘이다.
 
 ### 2. Security — 보안, DevSecOps의 출발점
 
@@ -43,9 +43,9 @@ AWS 도구 매핑:
 - **Data protection**: KMS, ACM, Secrets Manager
 - **Incident response**: Detective, Security Lake, IR Runbook
 
-> 📚 **사례**: 2019년 Capital One 사고(1억 600만 고객 데이터 유출)는 보안의 shift left 부재가 어떤 결과를 가져오는지 보여준다. SSRF 취약점이 있는 WAF + IMDSv1 + 과도한 IAM 권한이 결합되어 사고로 이어졌는데, 이 모든 요소가 CI/CD 단계에서 자동으로 검출 가능했던 것이다. AWS는 이 사고 직후 IMDSv2를 출시했고, Inspector v2(2021)에 자동 IMDSv1 검출 룰을 추가했다.
+> 2019년 Capital One 사고(1억 600만 고객 데이터 유출)는 보안의 shift left 부재가 어떤 결과를 가져오는지 보여준다. SSRF 취약점이 있는 WAF + IMDSv1 + 과도한 IAM 권한이 결합되어 사고로 이어졌는데, 이 모든 요소가 CI/CD 단계에서 자동으로 검출 가능했던 것이다. AWS는 이 사고 직후 IMDSv2를 출시했고, Inspector v2(2021)에 자동 IMDSv1 검출 룰을 추가했다.
 
-> 💡 **관련 이론**: NIST CSF(Cybersecurity Framework)의 5 함수(Identify, Protect, Detect, Respond, Recover)가 W-AF Security Pillar의 best practice와 거의 1:1로 매핑된다. DOP-C02는 NIST 용어를 직접 묻지는 않지만, "Detective control vs Preventive control" 같은 분류는 자주 나온다.
+> NIST CSF(Cybersecurity Framework)의 5 함수(Identify, Protect, Detect, Respond, Recover)가 W-AF Security Pillar의 best practice와 거의 1:1로 매핑된다. DOP-C02는 NIST 용어를 직접 묻지는 않지만, "Detective control vs Preventive control" 같은 분류는 시나리오에 쓰인다.
 
 ### 3. Reliability — 안정성, DR과 자동 복구
 
@@ -64,7 +64,7 @@ AWS 도구 매핑:
 - **Change management**: Code* 시리즈, CloudFormation drift
 - **Failure management**: CloudWatch Alarms, SSM Automation, Route 53 health checks
 
-> 🔍 **더 깊이**: AWS의 Reliability 철학은 "**Cell-based architecture**"로 진화하고 있다. 한 리전을 여러 독립적인 cell로 나누고, 한 cell의 장애가 다른 cell에 전파되지 않게 격리한다. 이게 2017년 S3 us-east-1 장애 이후 AWS 내부적으로 점진적으로 적용되어 왔다. 시험에서는 직접 안 나오지만, "blast radius 최소화"라는 키워드로 같은 개념이 등장한다.
+> AWS의 Reliability 철학은 "**Cell-based architecture**"로 진화하고 있다. 한 리전을 여러 독립적인 cell로 나누고, 한 cell의 장애가 다른 cell에 전파되지 않게 격리한다. 이게 2017년 S3 us-east-1 장애 이후 AWS 내부적으로 점진적으로 적용되어 왔다. 시험에서는 직접 안 나오지만, "blast radius 최소화"라는 키워드로 같은 개념이 등장한다.
 
 ### 4. Performance Efficiency — 성능 효율
 
@@ -79,7 +79,7 @@ AWS 도구 매핑:
 
 DevOps 관점에서 중요한 건 "**experimentation 인프라**"다. AWS Evidently로 A/B 테스트를 코드로 정의하고, AppConfig로 점진적 롤아웃을 하며, CloudWatch RUM으로 실사용자 성능을 측정한다.
 
-> 💡 **관련 이론**: "Mechanical sympathy"는 Martin Thompson이 2011년 만든 용어로, "하드웨어 특성을 이해하고 그에 맞는 코드를 짠다"는 뜻이다. AWS에서는 워크로드별 인스턴스 family 선택(C5: 컴퓨트 집약, R5: 메모리, M5: 균형, X1: 인메모리 DB)이 정확히 이 개념이다. Graviton(ARM)이 등장하면서 가격-성능 trade-off가 다시 등장했다.
+> "Mechanical sympathy"는 Martin Thompson이 2011년 만든 용어로, "하드웨어 특성을 이해하고 그에 맞는 코드를 짠다"는 뜻이다. AWS에서는 워크로드별 인스턴스 family 선택(C5: 컴퓨트 집약, R5: 메모리, M5: 균형, X1: 인메모리 DB)이 정확히 이 개념이다. Graviton(ARM)이 등장하면서 가격-성능 trade-off가 다시 등장했다.
 
 ### 5. Cost Optimization — 비용 최적화
 
@@ -136,7 +136,7 @@ DevOps Guidance의 4개 영역:
 
 이 lens가 등장한 의미는 크다 — AWS가 공식적으로 "DevOps는 W-AF 안에서 별개의 lens가 필요할 만큼 중요한 cross-cutting concern"으로 인정한 셈이다. DOP-C02 시험은 이 lens의 내용을 직접 묻진 않지만, 시나리오의 배경 사고로 깔려 있다.
 
-> 📚 **사례**: 한 글로벌 핀테크가 DevOps Guidance lens로 자체 진단을 했을 때 "Organizational Adoption" 영역에서 가장 낮은 점수가 나왔다. 도구는 다 있는데(CodePipeline, X-Ray, GuardDuty) 팀 책임이 명확하지 않아 사고 시마다 "누가 답할 차례냐"로 시간을 허비했다. 해결책은 SLO + Error Budget + Incident Manager runbook 일원화. 6개월 후 MTTR이 4시간 → 30분으로 단축됐다.
+> 한 글로벌 핀테크가 DevOps Guidance lens로 자체 진단을 했을 때 "Organizational Adoption" 영역에서 가장 낮은 점수가 나왔다. 도구는 다 있는데(CodePipeline, X-Ray, GuardDuty) 팀 책임이 명확하지 않아 사고 시마다 "누가 답할 차례냐"로 시간을 허비했다. 해결책은 SLO + Error Budget + Incident Manager runbook 일원화. 6개월 후 MTTR이 4시간 → 30분으로 단축됐다.
 
 ## Trusted Advisor — W-AF 자동 진단의 도구
 
@@ -152,7 +152,7 @@ DevOps Guidance의 4개 영역:
 
 Business/Enterprise Support 플랜에서 전체 체크가 활성화되고, Developer 플랜에서는 기본 7개만 제공된다. EventBridge 통합으로 체크 결과를 자동화 워크플로에 연결할 수 있다(예: 0.0.0.0/0 SG 발견 시 Slack 알림 + Lambda 자동 수정).
 
-> 🔍 **더 깊이**: AWS Trusted Advisor와 AWS Config Rules는 비슷해 보이지만 다르다. Trusted Advisor는 AWS가 정의한 250+ best practice를 체크, Config Rules는 고객이 정의한 임의 규칙을 체크. 시험에서 "AWS-managed best practice check"가 키워드면 Trusted Advisor, "custom compliance rule"이면 Config다.
+> AWS Trusted Advisor와 AWS Config Rules는 비슷해 보이지만 다르다. Trusted Advisor는 AWS가 정의한 250+ best practice를 체크, Config Rules는 고객이 정의한 임의 규칙을 체크. 시험에서 "AWS-managed best practice check"가 키워드면 Trusted Advisor, "custom compliance rule"이면 Config다.
 
 ## W-AF Tool — 자동화된 review
 
@@ -180,7 +180,7 @@ aws wellarchitected get-workload --workload-id $WORKLOAD_ID \
 
 여기서 HIGH risk 3개가 우선순위. AWS Console에서 각 HIGH를 클릭하면 구체적인 improvement plan(예: "Enable Multi-AZ for RDS")이 나온다.
 
-## 정리하며 — 시나리오 풀이의 6 Pillar 매핑법
+## 정리
 
 시험장에서 한 시나리오를 받으면 이렇게 분류한다:
 

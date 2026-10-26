@@ -12,7 +12,7 @@ Chaos engineering originated around 2010 at Netflix. As Netflix migrated from it
 
 Chaos Monkey soon expanded into the **Simian Army**—Latency Monkey (inject latency), Conformity Monkey (terminate non-conforming instances), Chaos Gorilla (simulate whole AZ failure), Chaos Kong (simulate whole region failure). FIS commercializes this Simian Army philosophy as a managed AWS service, with reinforced safety guards.
 
-> 💡 **Related Theory**: Chaos engineering isn't just "throw failures" but applies **scientific method** to system reliability. Netflix et al., codifying *Principles of Chaos Engineering* (2015), make this explicit: (1) define steady state as measurable metrics (e.g., 99.9% success rate), (2) form a **hypothesis**: "the system will maintain steady state even under X failure," (3) actually inject the failure to test the hypothesis, (4) if steady state breaks, that's a discovered weakness. This resembles Karl Popper's falsifiability—"we believe the system tolerates X," so we try to disprove it via experiment; if disproven, we fix; if not disproven, confidence grows. The key shift: "belief" becomes "validated evidence" for resilience.
+> Chaos engineering isn't just "throw failures" but applies **scientific method** to system reliability. Netflix et al., codifying *Principles of Chaos Engineering* (2015), make this explicit: (1) define steady state as measurable metrics (e.g., 99.9% success rate), (2) form a **hypothesis**: "the system will maintain steady state even under X failure," (3) actually inject the failure to test the hypothesis, (4) if steady state breaks, that's a discovered weakness. This resembles Karl Popper's falsifiability—"we believe the system tolerates X," so we try to disprove it via experiment; if disproven, we fix; if not disproven, confidence grows. The key shift: "belief" becomes "validated evidence" for resilience.
 
 ## Five Principles of Chaos Engineering
 
@@ -24,7 +24,7 @@ Principles to follow when designing FIS experiments.
 4. **Environment Like Operations**: Validate in Staging, but ultimately in production (or production-like)—production reveals unique weaknesses.
 5. **Stop Condition Always**: Experiment must have a safety net to stop immediately if it gets dangerous.
 
-> 🔍 **Deeper**: "Blast radius" (experiment's scope of impact) is chaos engineering's core concept. Starting small isn't just caution but **learning efficiency**—large experiments carry high accident risk but teach fast; small ones are safe but teach slow. Mature orgs use **progressive exposure**: start tiny, confirm safety, then expand. Like Canary deployments (expose new code to 5% to contain risk), Chaos also "confines failures to small ranges" for risk control. FIS's SelectionMode (PERCENT/COUNT) is precisely this blast radius control dial.
+> "Blast radius" (experiment's scope of impact) is chaos engineering's core concept. Starting small isn't just caution but **learning efficiency**—large experiments carry high accident risk but teach fast; small ones are safe but teach slow. Mature orgs use **progressive exposure**: start tiny, confirm safety, then expand. Like Canary deployments (expose new code to 5% to contain risk), Chaos also "confines failures to small ranges" for risk control. FIS's SelectionMode (PERCENT/COUNT) is precisely this blast radius control dial.
 
 ## AWS FIS—Managed Chaos Injection
 
@@ -82,7 +82,7 @@ FIS's most critical safety mechanism. During experiment, if a **CloudWatch Alarm
 
 > ⚠️ **Pitfall**: Chaos without Stop Condition is not chaos engineering but **intentional sabotage**. Exam answer to "make chaos experiments safe for operations?" is almost always "Stop Condition (CloudWatch Alarm-based)." Another common pitfall: Stop Condition **stops** the experiment but doesn't undo already-caused impact—so small blast radius and Stop Condition must go together (small radius means damage before stopping is also small). Safety is not a single device but **multi-layer defense: small radius + fast stop**.
 
-> 📚 **Case Study**: The 2017 AWS S3 us-east-1 major outage started when an engineer debugging accidentally terminated more servers than intended with one command—essentially an "uncontrolled chaos experiment" happening by accident. One lesson: "**large-scale operations must have blast-radius limits and safety guards built in**." AWS later reinforced safety guardrails. FIS's SelectionMode (blast radius limit) and Stop Condition (immediate stop) are exactly this lesson commercialized. Lesson: "large operations with no undo all at once"—is the most dangerous anti-pattern, whether chaos or operations.
+> The 2017 AWS S3 us-east-1 major outage started when an engineer debugging accidentally terminated more servers than intended with one command—essentially an "uncontrolled chaos experiment" happening by accident. One lesson: "**large-scale operations must have blast-radius limits and safety guards built in**." AWS later reinforced safety guardrails. FIS's SelectionMode (blast radius limit) and Stop Condition (immediate stop) are exactly this lesson commercialized. Lesson: "large operations with no undo all at once"—is the most dangerous anti-pattern, whether chaos or operations.
 
 ## AWS Resilience Hub—Measure and Evaluate Resilience
 
@@ -108,7 +108,7 @@ Core value:
 - **FIS integration**: Assessment result auto-generates and runs FIS experiments to verify.
 - **Periodic reports**: Resilience score trends tracked.
 
-> 💡 **Related Theory**: Resilience Hub automates and quantifies AWS **Well-Architected Framework's Reliability Pillar**. Well-Architected prescribes abstract principles: "test recovery procedures," "auto-recover from failure," "scale horizontally for availability." Resilience Hub converts this to quantitative metrics: "your workload's actual AZ-failure RTO = X seconds vs. 600-second goal." This applies software engineering's "you can't improve what you can't measure" (Drucker aphorism, often cited through Tom DeMarco)—resilience becomes scored gaps and improvements, data-driven improvement.
+> Resilience Hub automates and quantifies AWS **Well-Architected Framework's Reliability Pillar**. Well-Architected prescribes abstract principles: "test recovery procedures," "auto-recover from failure," "scale horizontally for availability." Resilience Hub converts this to quantitative metrics: "your workload's actual AZ-failure RTO = X seconds vs. 600-second goal." This applies software engineering's "you can't improve what you can't measure" (Drucker aphorism, often cited through Tom DeMarco)—resilience becomes scored gaps and improvements, data-driven improvement.
 
 ## Periodic Automation—Measure-Experiment-Improve Loop
 
@@ -131,11 +131,11 @@ Periodic Chaos Loop
 
 Trigger Route 53 ARC Routing Control switch via FIS Action, and **periodically validate the DR failover procedure itself**. "Does region failover actually complete within RTO?" checked monthly via automated experiment—directly addressing Day 3's "untested DR doesn't work."
 
-> 🔍 **Deeper**: **Game Day** and **Chaos Engineering** are often confused but differ. Game Day is a **one-time event** where a team gathers, manually runs intentional failure scenarios, checking humans/processes/runbooks (quarterly/annual, training-focused). Chaos Engineering **automates failure injection periodically** (daily/weekly, verification-focused) via tools like FIS. They're complementary—Game Day validates "how do people respond to failure?" (are runbooks clear, roles assigned?), while Chaos validates "how does the system respond?" (auto-recovery working?). Mature orgs train people quarterly via Game Day and verify systems weekly via automated Chaos. Exams: "one-time human-process training" = Game Day; "periodic system auto-verification" = Chaos/FIS.
+> **Game Day** and **Chaos Engineering** are often confused but differ. Game Day is a **one-time event** where a team gathers, manually runs intentional failure scenarios, checking humans/processes/runbooks (quarterly/annual, training-focused). Chaos Engineering **automates failure injection periodically** (daily/weekly, verification-focused) via tools like FIS. They're complementary—Game Day validates "how do people respond to failure?" (are runbooks clear, roles assigned?), while Chaos validates "how does the system respond?" (auto-recovery working?). Mature orgs train people quarterly via Game Day and verify systems weekly via automated Chaos. Exams: "one-time human-process training" = Game Day; "periodic system auto-verification" = Chaos/FIS.
 
 > ⚠️ **Pitfall**: When automating periodic chaos in production, if Stop Condition thresholds are too sensitive, experiments stop immediately, learning nothing. Too loose, real incidents occur. So Stop Condition thresholds must be carefully grounded in steady-state metrics, starting conservative (small radius + conservative thresholds), then tuning gradually. Safety and learning trade off; balancing them is chaos engineering operations' skill.
 
-## Closing Thoughts
+## 정리
 
 Four pictures emerge today. First, **Chaos Engineering originated with Netflix Chaos Monkey, applying scientific method (hypothesis→experiment→verification) to system reliability**—not "prevent failures" but "force tolerance by injecting intentionally." Second, **FIS implements this as managed service** with Targets (blast radius: dial via PERCENT/COUNT), Actions (failure types), Stop Conditions (safety belt). Third, **Resilience Hub quantifies Well-Architected Reliability Pillar**, revealing RTO/RPO target-vs-actual gaps, improvements, and costs, integrating with FIS for joint validation. Fourth, **EventBridge Scheduler + FIS automates the measure-experiment-improve loop periodically**, with ARC + FIS validating DR failover itself, while Game Day (humans, one-time) and Chaos (systems, periodic) are complementary.
 

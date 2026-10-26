@@ -2,7 +2,7 @@
 
 데이터베이스가 디스크에서 데이터를 읽는 시간과 메모리에서 읽는 시간의 차이는 수천 배에서 수만 배에 달한다. NVMe SSD의 순차 읽기 지연이 50-100μs인 반면, DRAM의 접근 지연은 50-100ns다. 1000배 차이다. 이 물리적 격차가 캐시의 존재 이유다. ElastiCache Redis, Memcached, DAX, MemoryDB — 이 서비스들은 모두 이 물리학적 사실 위에 세워져 있다.
 
-인메모리 데이터 스토어가 단순한 성능 옵션이 아님을 보여주는 수치가 있다. AWS에 따르면 ElastiCache를 활용한 아키텍처는 RDS 단독 구성 대비 읽기 지연을 90% 이상 줄이고, DB RCU 비용을 60-80% 절감할 수 있다. 그 결과 ElastiCache는 SAA-C03 시험에서 가장 자주 등장하는 "성능 개선" 답안이다.
+인메모리 데이터 스토어가 단순한 성능 옵션이 아님을 보여주는 수치가 있다. AWS에 따르면 ElastiCache를 활용한 아키텍처는 RDS 단독 구성 대비 읽기 지연을 90% 이상 줄이고, DB RCU 비용을 60-80% 절감할 수 있다. 그래서 ElastiCache는 SAA-C03 시험의 대표적인 "성능 개선" 답안이다.
 
 ## 캐싱 패턴 — 어떻게 캐시를 채우고 비울 것인가
 
@@ -35,9 +35,9 @@
 | Write-Behind | 높음 | 높음 | 없음 | 있음 (캐시 장애 시) |
 | Read-Through | 높음 | - | 있음 | 없음 |
 
-> 💡 **캐시 교체 알고리즘과 Eviction 정책** — 캐시 교체(Cache Eviction) 알고리즘의 대표는 LRU(Least Recently Used)다. Jim Gray와 Franco Putzolu의 1976년 IBM 연구에서 시작된 개념으로, 가장 오래 사용되지 않은 항목을 제거한다. Redis는 기본 LRU 외에도 LFU(Least Frequently Used — 가장 적게 사용된 항목 제거), Random(무작위 제거), allkeys-lru(TTL 없는 키도 포함해서 LRU), volatile-lru(TTL 있는 키만 LRU) 등 8가지 정책을 지원한다. 일반적으로 "인기도가 고르게 분포된" 워크로드에는 LFU가, "최근에 접근한 것이 다시 접근될 확률이 높은" 워크로드(시계열, 세션)에는 LRU가 적합하다. ElastiCache Redis에서는 `maxmemory-policy` 파라미터로 설정한다.
+**캐시 교체 알고리즘과 Eviction 정책** — 캐시 교체(Cache Eviction) 알고리즘의 대표는 LRU(Least Recently Used)다. Jim Gray와 Franco Putzolu의 1976년 IBM 연구에서 시작된 개념으로, 가장 오래 사용되지 않은 항목을 제거한다. Redis는 기본 LRU 외에도 LFU(Least Frequently Used — 가장 적게 사용된 항목 제거), Random(무작위 제거), allkeys-lru(TTL 없는 키도 포함해서 LRU), volatile-lru(TTL 있는 키만 LRU) 등 8가지 정책을 지원한다. 일반적으로 "인기도가 고르게 분포된" 워크로드에는 LFU가, "최근에 접근한 것이 다시 접근될 확률이 높은" 워크로드(시계열, 세션)에는 LRU가 적합하다. ElastiCache Redis에서는 `maxmemory-policy` 파라미터로 설정한다.
 
-> 🔍 **Thundering Herd(Cache Stampede) 문제** — 대규모 캐시에서 자주 발생하는 문제다. 인기 있는 캐시 항목의 TTL이 만료되는 순간, 수십~수백 개의 동시 요청이 모두 Cache Miss를 받고 DB로 몰려가서 DB를 과부하시킨다. 대응 방법: (1) TTL에 무작위 지터(jitter)를 더해서 만료 시점 분산, (2) Mutex Lock — 첫 번째 요청만 DB를 조회하고 나머지는 대기, (3) Probabilistic Early Expiration — TTL 만료 직전부터 확률적으로 미리 갱신. Redis의 원자적 연산(`SET NX`)으로 Mutex Lock을 구현할 수 있다.
+**Thundering Herd(Cache Stampede) 문제** — 대규모 캐시에서 자주 발생하는 문제다. 인기 있는 캐시 항목의 TTL이 만료되는 순간, 수십~수백 개의 동시 요청이 모두 Cache Miss를 받고 DB로 몰려가서 DB를 과부하시킨다. 대응 방법: (1) TTL에 무작위 지터(jitter)를 더해서 만료 시점 분산, (2) Mutex Lock — 첫 번째 요청만 DB를 조회하고 나머지는 대기, (3) Probabilistic Early Expiration — TTL 만료 직전부터 확률적으로 미리 갱신. Redis의 원자적 연산(`SET NX`)으로 Mutex Lock을 구현할 수 있다.
 
 ## ElastiCache Redis — 데이터 구조 서버
 
@@ -71,7 +71,7 @@ Redis는 인메모리지만 데이터를 디스크에 영속화하는 두 가지
 
 ElastiCache Redis에서 영속성을 위해 두 가지를 함께 쓸 수 있다(RDB로 주기적 스냅샷 + AOF로 명령 기록). 그러나 ElastiCache는 멀티 AZ 복제가 있어서 영속성 자체보다는 "백업/복구"와 "HA" 관점에서 설정을 선택한다.
 
-> 🔍 **Redis 단일 스레드 모델과 원자성** — Redis 6.0(2020)부터 Redis는 Multi-threaded I/O를 도입했다. 이전까지 Redis는 단일 스레드로 명령을 처리해서 CPU 코어를 하나밖에 사용하지 못했다. Redis 6.0에서는 네트워크 I/O는 멀티스레드로 처리하고, 명령 실행은 여전히 단일 스레드로 유지해서 원자성(Atomicity)을 보장한다. Redis의 단일 스레드 명령 처리가 만들어내는 원자성 덕분에 `INCR` 명령은 Race Condition 없이 카운터 증가를 보장한다. ElastiCache Redis는 이 버전을 지원한다. 성능 병목이 CPU 단독이라면 Cluster Mode를 통한 샤딩이 더 효과적이다.
+**Redis 단일 스레드 모델과 원자성** — Redis 6.0(2020)부터 Redis는 Multi-threaded I/O를 도입했다. 이전까지 Redis는 단일 스레드로 명령을 처리해서 CPU 코어를 하나밖에 사용하지 못했다. Redis 6.0에서는 네트워크 I/O는 멀티스레드로 처리하고, 명령 실행은 여전히 단일 스레드로 유지해서 원자성(Atomicity)을 보장한다. Redis의 단일 스레드 명령 처리가 만들어내는 원자성 덕분에 `INCR` 명령은 Race Condition 없이 카운터 증가를 보장한다. ElastiCache Redis는 이 버전을 지원한다. 성능 병목이 CPU 단독이라면 Cluster Mode를 통한 샤딩이 더 효과적이다.
 
 ### Redis Cluster Mode — 샤딩으로 수평 확장
 
@@ -94,9 +94,9 @@ Key "product:A" → CRC16 → 슬롯 7890 → 샤드 2
 
 Hash Tags(`{user}:sessions`, `{user}:profile`): 중괄호 `{}` 안의 문자열만 해시에 사용해서 여러 키를 같은 슬롯에 강제 배치. MGET/MSET이나 트랜잭션을 이 키들에 사용 가능하게 한다.
 
-> 💡 **Redis Cluster의 Consistent Hashing이 아닌 이유** — Redis Cluster는 Consistent Hashing 대신 Hash Slot 방식을 사용한다. 이유는 슬롯 재배치(Resharding)의 단순성이다. 노드를 추가할 때 슬롯 단위로 이동하면 되므로, 어떤 키가 어떤 노드로 가는지 명확하게 추적할 수 있다. Consistent Hashing은 이론적으로 우아하지만, 실제 Redis처럼 핫 슬롯 재배치나 수동 슬롯 할당이 필요한 경우 디버깅이 어렵다. 16384개의 슬롯은 1000개 노드에도 충분히 세밀하게 분배할 수 있는 숫자로 설계됐다.
+**Redis Cluster의 Consistent Hashing이 아닌 이유** — Redis Cluster는 Consistent Hashing 대신 Hash Slot 방식을 사용한다. 이유는 슬롯 재배치(Resharding)의 단순성이다. 노드를 추가할 때 슬롯 단위로 이동하면 되므로, 어떤 키가 어떤 노드로 가는지 명확하게 추적할 수 있다. Consistent Hashing은 이론적으로 우아하지만, 실제 Redis처럼 핫 슬롯 재배치나 수동 슬롯 할당이 필요한 경우 디버깅이 어렵다. 16384개의 슬롯은 1000개 노드에도 충분히 세밀하게 분배할 수 있는 숫자로 설계됐다.
 
-> 📚 **Twitter Redis 사례** — 2018년 Twitter는 Redis를 대규모로 활용하는 방식을 공개했다. Timelines(타임라인 캐싱), Trends(트렌드 실시간 카운터), Rate Limiting(API 속도 제한) 등에 Redis Cluster를 사용하며, 초당 수백만 건의 Redis 작업을 처리한다. 특히 타임라인 조회에서 Redis Sorted Set을 활용해서 사용자별 최근 트윗 목록을 인메모리에 유지하고, DB 조회 없이 타임라인을 제공한다. `ZADD timeline:{userId} {timestamp} {tweetId}`로 타임라인에 추가하고, `ZREVRANGE timeline:{userId} 0 49`로 최신 50개 트윗을 O(log N + K) 시간에 반환한다. 이것이 Redis ZSet(Sorted Set)의 전형적인 사용 사례다.
+**Twitter Redis 사례** — 2018년 Twitter는 Redis를 대규모로 활용하는 방식을 공개했다. Timelines(타임라인 캐싱), Trends(트렌드 실시간 카운터), Rate Limiting(API 속도 제한) 등에 Redis Cluster를 사용하며, 초당 수백만 건의 Redis 작업을 처리한다. 특히 타임라인 조회에서 Redis Sorted Set을 활용해서 사용자별 최근 트윗 목록을 인메모리에 유지하고, DB 조회 없이 타임라인을 제공한다. `ZADD timeline:{userId} {timestamp} {tweetId}`로 타임라인에 추가하고, `ZREVRANGE timeline:{userId} 0 49`로 최신 50개 트윗을 O(log N + K) 시간에 반환한다. 이것이 Redis ZSet(Sorted Set)의 전형적인 사용 사례다.
 
 ## Memcached — 단순함의 미학
 
@@ -145,7 +145,7 @@ Primary ─비동기─► Replica          Writer ─동기─► Multi-AZ 트�
 - 세션 데이터처럼 빠른 접근이 중요하지만 손실되면 안 되는 경우
 - 리더보드, 실시간 카운터처럼 높은 쓰기 처리량 + 내구성이 모두 필요할 때
 
-> 🔍 **MemoryDB WAL 메커니즘** — MemoryDB의 내구성 보장 메커니즘은 전통적 RDBMS의 WAL(Write-Ahead Logging)과 유사하다. 쓰기가 들어오면 먼저 트랜잭션 로그에 기록하고(복수의 AZ에 동기적으로), 그 다음 메모리에 적용한다. 장애 시 트랜잭션 로그를 재실행해서 메모리 상태를 복구한다. Redis의 기존 AOF(fsync=always)와 다른 점은 MemoryDB의 로그가 Multi-AZ에 분산 저장되어 AZ 하나가 완전히 손실돼도 데이터가 보존된다는 것이다. ElastiCache Redis에서 AOF를 활성화해도 AOF 파일 자체가 단일 AZ 내 디스크에만 존재하므로 AZ 장애 시 복구 불가능하다.
+**MemoryDB WAL 메커니즘** — MemoryDB의 내구성 보장 메커니즘은 전통적 RDBMS의 WAL(Write-Ahead Logging)과 유사하다. 쓰기가 들어오면 먼저 트랜잭션 로그에 기록하고(복수의 AZ에 동기적으로), 그 다음 메모리에 적용한다. 장애 시 트랜잭션 로그를 재실행해서 메모리 상태를 복구한다. Redis의 기존 AOF(fsync=always)와 다른 점은 MemoryDB의 로그가 Multi-AZ에 분산 저장되어 AZ 하나가 완전히 손실돼도 데이터가 보존된다는 것이다. ElastiCache Redis에서 AOF를 활성화해도 AOF 파일 자체가 단일 AZ 내 디스크에만 존재하므로 AZ 장애 시 복구 불가능하다.
 
 > ⚠️ **ElastiCache Redis vs MemoryDB 선택 기준** — 시험 함정: "Redis API를 사용하고 고가용성이 필요하면 MemoryDB를 선택한다"는 식의 단순화를 피해야 한다. ElastiCache Redis Multi-AZ도 고가용성을 제공한다. 차이는 **내구성 보장 수준**이다. 캐시 데이터 손실이 허용되고(DB에서 다시 채울 수 있으면) → ElastiCache Redis. 데이터 손실이 절대 허용되지 않고 Redis가 데이터의 진실 소스여야 하면 → MemoryDB. 비용: MemoryDB가 ElastiCache Redis보다 약 2-3배 비싸다.
 
@@ -207,9 +207,9 @@ EC2/ECS → CloudWatch Logs
     └── UltraWarm → Cold (장기 보관 + 비용 절감)
 ```
 
-> 💡 **역인덱스의 알고리즘적 우위** — OpenSearch(Elasticsearch)의 역인덱스는 텍스트를 단어 단위로 분석해서 각 단어가 어느 문서에 나오는지를 매핑한다. 이 구조 덕분에 "특정 단어를 포함한 모든 문서"를 O(log N) 시간에 찾을 수 있다. 반면 RDBMS는 `LIKE '%keyword%'` 쿼리를 처리하려면 Full Table Scan이 필요해서 O(N)이다. 이 알고리즘적 차이가 "왜 전문 검색은 OpenSearch를 쓰는가"의 근본 이유다. 역인덱스는 1950년대 정보 검색 분야에서 개발됐으며, Google 검색 엔진의 핵심이기도 하다. Lucene(OpenSearch의 기반 라이브러리)은 2000년 Doug Cutting이 개발했다.
+**역인덱스의 알고리즘적 우위** — OpenSearch(Elasticsearch)의 역인덱스는 텍스트를 단어 단위로 분석해서 각 단어가 어느 문서에 나오는지를 매핑한다. 이 구조 덕분에 "특정 단어를 포함한 모든 문서"를 O(log N) 시간에 찾을 수 있다. 반면 RDBMS는 `LIKE '%keyword%'` 쿼리를 처리하려면 Full Table Scan이 필요해서 O(N)이다. 이 알고리즘적 차이가 "왜 전문 검색은 OpenSearch를 쓰는가"의 근본 이유다. 역인덱스는 1950년대 정보 검색 분야에서 개발됐으며, Google 검색 엔진의 핵심이기도 하다. Lucene(OpenSearch의 기반 라이브러리)은 2000년 Doug Cutting이 개발했다.
 
-> 📚 **Netflix OpenSearch 로그 분석 사례** — Netflix는 OpenSearch(이전 Elasticsearch)를 이용해서 수천 개의 마이크로서비스에서 발생하는 로그를 실시간으로 분석한다. 특히 Netflix의 Chaos Engineering 도구인 Chaos Monkey가 인프라에 장애를 주입할 때, 엔지니어들은 OpenSearch Dashboards에서 실시간으로 어떤 서비스가 어떻게 반응하는지 관찰한다. 하루 수십 테라바이트의 로그가 Kinesis → Firehose → OpenSearch 파이프라인으로 처리되며, UltraWarm으로 30일치 로그를 저비용 보관한다. 이 아키텍처 없이는 수천 개 마이크로서비스 디버깅이 불가능했을 것이다.
+**Netflix OpenSearch 로그 분석 사례** — Netflix는 OpenSearch(이전 Elasticsearch)를 이용해서 수천 개의 마이크로서비스에서 발생하는 로그를 실시간으로 분석한다. 특히 Netflix의 Chaos Engineering 도구인 Chaos Monkey가 인프라에 장애를 주입할 때, 엔지니어들은 OpenSearch Dashboards에서 실시간으로 어떤 서비스가 어떻게 반응하는지 관찰한다. 하루 수십 테라바이트의 로그가 Kinesis → Firehose → OpenSearch 파이프라인으로 처리되며, UltraWarm으로 30일치 로그를 저비용 보관한다. 이 아키텍처 없이는 수천 개 마이크로서비스 디버깅이 불가능했을 것이다.
 
 ## 특수 목적 데이터베이스 — 시나리오 키워드 매핑
 
@@ -335,7 +335,7 @@ aws cloudwatch get-metric-statistics \
   --statistics Sum
 ```
 
-## 정리하며
+## 정리
 
 인메모리 데이터 스토어는 물리학적 속도 한계에서 시작됐다. DRAM이 NVMe SSD보다 1000배 빠르다는 사실이 캐시의 존재 이유다. ElastiCache Redis는 풍부한 데이터 구조와 Multi-AZ HA로 거의 모든 캐싱 시나리오의 정답이다. Memcached는 단순 캐시가 필요하고 멀티스레드 CPU 효율을 극대화할 때만 선택한다. DAX는 DynamoDB 전용이고 코드 변경을 최소화한다. MemoryDB는 Redis API를 유지하면서 손실 없는 내구성이 필요할 때 선택한다. OpenSearch는 전문 검색과 로그 분석의 표준 답이다.
 

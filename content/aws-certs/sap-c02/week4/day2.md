@@ -8,7 +8,7 @@ Storage Gateway는 온프레미스에 **가상 어플라이언스(VM)** 또는 *
 
 가상 어플라이언스에는 두 종류의 디스크가 연결된다. **캐시 디스크**: 로컬 캐시 데이터를 저장한다. **업로드 버퍼 디스크**: AWS로 전송되기 전 데이터를 임시 저장한다. 이 두 디스크의 크기 설정이 Storage Gateway 성능을 결정하는 핵심 파라미터다.
 
-> 💡 **관련 이론**: Storage Gateway의 캐싱은 **LRU(Least Recently Used)** 알고리즘을 기반으로 한다. 가장 최근에 접근된 데이터가 캐시에 남고, 캐시가 가득 차면 가장 오래 접근되지 않은 데이터가 제거된다. 이는 지역성(Locality of Reference) 원칙에 근거한다. 자주 쓰는 파일이 캐시에 유지되면 클라우드 왕복 없이 로컬 속도로 접근 가능하다. 워킹셋(자주 쓰는 데이터 집합)이 캐시 크기 내에 들어오도록 캐시 디스크를 설계하는 것이 핵심이다.
+Storage Gateway의 캐싱은 **LRU(Least Recently Used)** 알고리즘을 기반으로 한다. 가장 최근에 접근된 데이터가 캐시에 남고, 캐시가 가득 차면 가장 오래 접근되지 않은 데이터가 제거된다. 이는 지역성(Locality of Reference) 원칙에 근거한다. 자주 쓰는 파일이 캐시에 유지되면 클라우드 왕복 없이 로컬 속도로 접근 가능하다. 워킹셋(자주 쓰는 데이터 집합)이 캐시 크기 내에 들어오도록 캐시 디스크를 설계하는 것이 핵심이다.
 
 네트워크 연결은 인터넷 또는 DX를 통해 AWS 리전의 Storage Gateway 서비스 엔드포인트와 HTTPS로 통신한다. DX를 사용하면 일관된 대역폭과 지연으로 대용량 파일 전송 성능이 향상된다.
 
@@ -64,7 +64,7 @@ FSx File Gateway는 온프레미스 Windows 환경을 위한 특화 솔루션이
     VSS(볼륨 섀도우 복사본) 백업
 ```
 
-> 💡 **관련 이론**: SMB(Server Message Block) 프로토콜의 핵심은 **파일 잠금(File Locking)** 메커니즘이다. Windows 파일 공유에서 여러 클라이언트가 같은 파일에 동시 접근할 때 NTFS의 OpLock(Opportunistic Lock)이 캐싱 권한을 협상한다. FSx File Gateway는 이 잠금 메커니즘을 올바르게 구현해 동시 편집 충돌을 방지한다. S3 File Gateway가 S3의 객체 모델(잠금 없음)에 의존하는 것과 달리, FSx File Gateway는 진정한 Windows 파일 시스템 의미를 유지한다.
+SMB(Server Message Block) 프로토콜의 핵심은 **파일 잠금(File Locking)** 메커니즘이다. Windows 파일 공유에서 여러 클라이언트가 같은 파일에 동시 접근할 때 NTFS의 OpLock(Opportunistic Lock)이 캐싱 권한을 협상한다. FSx File Gateway는 이 잠금 메커니즘을 올바르게 구현해 동시 편집 충돌을 방지한다. S3 File Gateway가 S3의 객체 모델(잠금 없음)에 의존하는 것과 달리, FSx File Gateway는 진정한 Windows 파일 시스템 의미를 유지한다.
 
 FSx File Gateway가 S3 File Gateway와 다른 결정적 차이: **Active Directory 통합**과 **NTFS ACL 보존**. 기업의 AD 그룹 정책으로 파일 접근을 제어하는 환경에서 S3 File Gateway로 전환하면 이 권한 체계가 깨진다. FSx File Gateway는 도메인 조인을 지원해 기존 AD 정책이 그대로 적용된다.
 
@@ -72,7 +72,7 @@ FSx File Gateway가 S3 File Gateway와 다른 결정적 차이: **Active Directo
 
 Volume Gateway는 iSCSI(Internet Small Computer Systems Interface) 프로토콜로 온프레미스 서버에 블록 스토리지 볼륨을 제공한다. 서버는 이 볼륨을 일반 디스크처럼 포맷하고 파일시스템을 올릴 수 있다.
 
-> 💡 **관련 이론**: iSCSI(RFC 7143)는 SCSI 명령을 TCP/IP 네트워크 위에서 전송하는 프로토콜이다. 물리 디스크에 SCSI 명령으로 데이터를 쓰는 것처럼, iSCSI로 원격 스토리지에 접근한다. Initiator(클라이언트, 온프레미스 서버)가 Target(서버, Storage Gateway)에 SCSI 명령을 보내면 Target이 블록 I/O를 처리하고 결과를 반환한다. 이 추상화 덕분에 운영체제는 iSCSI 볼륨을 로컬 디스크와 동일하게 취급한다.
+iSCSI(RFC 7143)는 SCSI 명령을 TCP/IP 네트워크 위에서 전송하는 프로토콜이다. 물리 디스크에 SCSI 명령으로 데이터를 쓰는 것처럼, iSCSI로 원격 스토리지에 접근한다. Initiator(클라이언트, 온프레미스 서버)가 Target(서버, Storage Gateway)에 SCSI 명령을 보내면 Target이 블록 I/O를 처리하고 결과를 반환한다. 이 추상화 덕분에 운영체제는 iSCSI 볼륨을 로컬 디스크와 동일하게 취급한다.
 
 ### Cached Mode vs Stored Mode
 
@@ -117,11 +117,11 @@ Volume Gateway는 iSCSI(Internet Small Computer Systems Interface) 프로토콜�
         복구 시: Glacier 테이프 꺼내기 → S3 복원 → 백업 SW에서 복원
 ```
 
-> 📚 **사례**: 한 방송사가 20년치 방송 콘텐츠를 물리 테이프 6만 개로 보관하고 있었다. 테이프 운반, 검색, 복원에 드는 인력 비용이 연간 수억 원이었다. Tape Gateway로 전환 후 물리 테이프 운반 없이 Veeam 백업 소프트웨어를 그대로 유지하면서 모든 백업이 S3와 Glacier Deep Archive에 저장됐다. 테이프 복원 시간이 수 일에서 수 시간으로 단축됐고 물리 테이프 재구매 비용이 없어졌다.
+(가상 사례) 한 방송사가 20년치 방송 콘텐츠를 물리 테이프 6만 개로 보관하고 있었다. 테이프 운반, 검색, 복원에 드는 인력 비용이 연간 수억 원이었다. Tape Gateway로 전환 후 물리 테이프 운반 없이 Veeam 백업 소프트웨어를 그대로 유지하면서 모든 백업이 S3와 Glacier Deep Archive에 저장됐다. 테이프 복원 시간이 수 일에서 수 시간으로 단축됐고 물리 테이프 재구매 비용이 없어졌다.
 
 **Tape Gateway 비용 모델**: S3 Virtual Tape Library 저장 비용 + Glacier Deep Archive 저장 비용(GB당 $0.00099) + 검색 비용. 물리 테이프 대비 GB당 비용이 낮고 검색이 훨씬 빠르다.
 
-> 🔍 **더 깊이**: Tape Gateway의 가상 테이프 크기는 100GB ~ 5TB로 설정 가능하다. 물리 테이프 드라이브 종류(LTO-5부터 LTO-9까지)에 따른 테이프 크기를 에뮬레이션한다. 백업 소프트웨어가 큰 테이프를 사용하도록 구성하면 테이프 수가 줄어 관리가 단순해진다. 가상 테이프의 "꺼내기(Eject)"와 "보관(Archive)" 명령이 S3 → Glacier Deep Archive 이동으로 구현된다.
+Tape Gateway의 가상 테이프 크기는 100GB ~ 5TB로 설정 가능하다. 물리 테이프 드라이브 종류(LTO-5부터 LTO-9까지)에 따른 테이프 크기를 에뮬레이션한다. 백업 소프트웨어가 큰 테이프를 사용하도록 구성하면 테이프 수가 줄어 관리가 단순해진다. 가상 테이프의 "꺼내기(Eject)"와 "보관(Archive)" 명령이 S3 → Glacier Deep Archive 이동으로 구현된다.
 
 ## Storage Gateway vs DataSync vs Transfer Family
 
@@ -133,7 +133,7 @@ Volume Gateway는 iSCSI(Internet Small Computer Systems Interface) 프로토콜�
 | DataSync | 일회성/정기 데이터 동기화 | 마이그레이션, 정기 백업, 대량 전송 | NFS, SMB, S3, EFS, FSx |
 | Transfer Family | SFTP/FTP/FTPS 엔드포인트 제공 | 외부 파트너가 SFTP로 S3/EFS에 업로드 | SFTP, FTP, FTPS, AS2 |
 
-> 💡 **관련 이론**: DataSync는 전송 작업(Task)을 실행하는 에이전트 기반 서비스다. 에이전트가 소스(온프레미스 NFS/SMB)를 스캔하고 목적지(S3, EFS, FSx)와 차이를 계산해 변경된 파일만 전송한다. 병렬 전송과 네트워크 가속으로 1Gbps DX 환경에서 약 30% 높은 실효 처리량을 달성한다. Storage Gateway가 "상시 마운트"라면 DataSync는 "효율적 배치 전송"이다. 마이그레이션 완료 후에는 DataSync 에이전트를 중지하고 Storage Gateway만 유지하는 것이 일반적인 패턴이다.
+DataSync는 전송 작업(Task)을 실행하는 에이전트 기반 서비스다. 에이전트가 소스(온프레미스 NFS/SMB)를 스캔하고 목적지(S3, EFS, FSx)와 차이를 계산해 변경된 파일만 전송한다. 병렬 전송과 네트워크 가속으로 1Gbps DX 환경에서 약 30% 높은 실효 처리량을 달성한다. Storage Gateway가 "상시 마운트"라면 DataSync는 "효율적 배치 전송"이다. 마이그레이션 완료 후에는 DataSync 에이전트를 중지하고 Storage Gateway만 유지하는 것이 일반적인 패턴이다.
 
 ## 다른 클라우드와의 비교
 
@@ -145,7 +145,7 @@ Volume Gateway는 iSCSI(Internet Small Computer Systems Interface) 프로토콜�
 | 테이프 에뮬레이션 | Tape Gateway | - | Azure Import/Export |
 | 블록 스토리지 | Volume Gateway | - | Azure Disk 별도 |
 
-> 📚 **사례**: 글로벌 미디어 그룹이 온프레미스와 AWS의 하이브리드 편집 워크플로를 구축했다. NAS에 저장된 원본 영상 파일을 S3 File Gateway로 마운트해 AWS 편집 시스템이 S3 API로 직접 접근한다. 완성된 영상은 자동 S3 Lifecycle으로 아카이브된다. 동시에 편집 프로젝트 파일(Adobe Premiere, Avid)은 FSx File Gateway를 통해 온프레미스 편집실과 AWS 클라우드 편집 워크스테이션이 공유한다. Windows 도메인 환경의 파일 잠금이 올바르게 동작해 충돌 없이 공동 작업이 가능하다.
+글로벌 미디어 그룹이 온프레미스와 AWS의 하이브리드 편집 워크플로를 구축했다. NAS에 저장된 원본 영상 파일을 S3 File Gateway로 마운트해 AWS 편집 시스템이 S3 API로 직접 접근한다. 완성된 영상은 자동 S3 Lifecycle으로 아카이브된다. 동시에 편집 프로젝트 파일(Adobe Premiere, Avid)은 FSx File Gateway를 통해 온프레미스 편집실과 AWS 클라우드 편집 워크스테이션이 공유한다. Windows 도메인 환경의 파일 잠금이 올바르게 동작해 충돌 없이 공동 작업이 가능하다.
 
 ## 실전 CLI: Storage Gateway 구성
 
@@ -189,7 +189,7 @@ aws storagegateway create-tapes \
   --num-tapes-to-create 5
 ```
 
-Storage Gateway의 핵심은 "기존 프로토콜 그대로, 백엔드만 클라우드"다. 온프레미스 애플리케이션을 수정하지 않고 클라우드 스토리지의 비용 효율성, 가용성, 확장성을 바로 활용할 수 있다. SAP-C02에서 Storage Gateway 문제의 핵심 판단 기준은 프로토콜(NFS/SMB/iSCSI/VTL)과 AD 통합 여부, 그리고 상시 접근이냐 일회성 전송이냐다.
+Storage Gateway는 "기존 프로토콜 그대로, 백엔드만 클라우드"로 요약된다. 온프레미스 애플리케이션을 수정하지 않고 클라우드 스토리지의 비용 효율성, 가용성, 확장성을 바로 활용할 수 있다. SAP-C02에서 Storage Gateway 문제의 핵심 판단 기준은 프로토콜(NFS/SMB/iSCSI/VTL)과 AD 통합 여부, 그리고 상시 접근이냐 일회성 전송이냐다.
 
 ---
 

@@ -40,15 +40,15 @@ Secrets Manager의 가장 큰 차별점은 **자동 회전(automatic rotation)**
 | `AWSPENDING` | 회전 중인 새 비밀 (검증 대기) | 회전 라이프사이클 중 |
 | `AWSPREVIOUS` | 직전 비밀 (롤백·전환 대기용) | 일정 기간 |
 
-> 💡 **관련 이론**: Secrets Manager의 회전 모델은 **dual-credential pattern** 또는 **blue-green credentials** 라고 부른다. 데이터베이스나 서비스가 두 개의 자격증명을 동시에 받아들이는 짧은 윈도우를 두고, 그 윈도우에서 점진적으로 새 자격증명으로 전환한다. 이게 가능한 이유는 RDS user가 본질적으로 ALTER USER로 비밀번호를 바꿀 수 있고, 기존 커넥션은 비밀번호 변경 후에도 끊기지 않기 때문이다. 같은 패턴을 Kubernetes Secrets + cert-manager, HashiCorp Vault의 dynamic credentials 등에서도 볼 수 있다.
+Secrets Manager의 회전 모델은 **dual-credential pattern** 또는 **Blue/Green credentials** 라고 부른다. 데이터베이스나 서비스가 두 개의 자격증명을 동시에 받아들이는 짧은 윈도우를 두고, 그 윈도우에서 점진적으로 새 자격증명으로 전환한다. 이게 가능한 이유는 RDS user가 본질적으로 ALTER USER로 비밀번호를 바꿀 수 있고, 기존 커넥션은 비밀번호 변경 후에도 끊기지 않기 때문이다. 같은 패턴을 Kubernetes Secrets + cert-manager, HashiCorp Vault의 dynamic credentials 등에서도 볼 수 있다.
 
-> 🔍 **더 깊이**: RDS Proxy + Secrets Manager 조합은 자동 회전을 한 단계 더 안전하게 만든다. RDS Proxy가 클라이언트와 RDS 사이에 들어가서 connection pooling을 하고, Secrets Manager에서 비밀번호를 직접 가져와 클라이언트와 DB 양쪽에 다른 자격증명으로 동작할 수 있다. 그래서 회전이 일어나도 클라이언트는 RDS Proxy의 자격증명만 알면 되고, RDS Proxy가 백엔드 비밀번호 변경을 흡수한다. Aurora Serverless v2처럼 connection 수가 자주 변하는 환경에서는 거의 필수 패턴이다.
+RDS Proxy + Secrets Manager 조합은 자동 회전을 한 단계 더 안전하게 만든다. RDS Proxy가 클라이언트와 RDS 사이에 들어가서 connection pooling을 하고, Secrets Manager에서 비밀번호를 직접 가져와 클라이언트와 DB 양쪽에 다른 자격증명으로 동작할 수 있다. 그래서 회전이 일어나도 클라이언트는 RDS Proxy의 자격증명만 알면 되고, RDS Proxy가 백엔드 비밀번호 변경을 흡수한다. Aurora Serverless v2처럼 connection 수가 자주 변하는 환경에서는 거의 필수 패턴이다.
 
-> 📚 **사례**: 2020년 한 모바일 게임 회사가 Aurora MySQL 비밀번호를 90일마다 수동으로 회전하던 운영 절차를 Secrets Manager 자동 회전으로 전환했다. 그 전에는 회전 시점마다 SRE가 새 비밀번호를 ConfigMap에 반영하고 Pod를 재배포했는데, 한 번 실패하면 대규모 장애가 났다. Secrets Manager 도입 후 회전 절차가 완전 자동화됐고, 회전 실패 시 testSecret 단계에서 자동 롤백돼 운영 사고가 18개월간 0건이 됐다. 다만 한 번 트러블슈팅에 어려움을 겪은 건 "회전 Lambda가 RDS와 다른 VPC에 있어 네트워크 문제로 setSecret 실패"였는데, Lambda를 RDS와 같은 VPC subnet에 배치하는 게 운영 표준이 됐다.
+**사례(가상)**: 2020년 한 모바일 게임 회사가 Aurora MySQL 비밀번호를 90일마다 수동으로 회전하던 운영 절차를 Secrets Manager 자동 회전으로 전환했다. 그 전에는 회전 시점마다 SRE가 새 비밀번호를 ConfigMap에 반영하고 Pod를 재배포했는데, 한 번 실패하면 대규모 장애가 났다. Secrets Manager 도입 후 회전 절차가 완전 자동화됐고, 회전 실패 시 testSecret 단계에서 자동 롤백돼 운영 사고가 18개월간 0건이 됐다. 다만 한 번 트러블슈팅에 어려움을 겪은 건 "회전 Lambda가 RDS와 다른 VPC에 있어 네트워크 문제로 setSecret 실패"였는데, Lambda를 RDS와 같은 VPC subnet에 배치하는 게 운영 표준이 됐다.
 
 ## Parameter Store: 비용 0의 구성 저장소
 
-Systems Manager Parameter Store는 Secrets Manager보다 2년 먼저 출시됐고, 기본 사용량이 무료다. "비밀이 아닌 구성"(예: DB 호스트명, S3 버킷 이름, 환경 변수)을 저장하는 데 가장 적합하고, SecureString 타입으로 KMS 암호화도 지원한다. 그래서 "자동 회전이 꼭 필요한 비밀만 Secrets Manager에 두고, 나머지 구성은 Parameter Store에 둔다"는 분업이 가장 흔한 패턴이다.
+Systems Manager Parameter Store는 Secrets Manager보다 2년 먼저 출시됐고, 기본 사용량이 무료다. "비밀이 아닌 구성"(예: DB 호스트명, S3 버킷 이름, 환경 변수)을 저장하는 데 가장 적합하고, SecureString 타입으로 KMS 암호화도 지원한다. 그래서 "자동 회전이 꼭 필요한 비밀만 Secrets Manager에 두고, 나머지 구성은 Parameter Store에 둔다"는 분업이 일반적인 패턴이다.
 
 | 항목 | Standard | Advanced |
 |------|----------|----------|
@@ -80,13 +80,13 @@ Parameter Store가 가진 또 하나의 장점은 **계층형 네임스페이스
 
 > ⚠️ **함정**: "비밀번호를 SecureString으로 Parameter Store에 저장했으니 회전도 자동으로 된다"는 오해가 흔하다. SecureString은 KMS 암호화만 제공할 뿐 회전 기능은 없다. 회전이 필요하면 별도 Lambda를 만들어서 EventBridge cron으로 트리거해야 하는데, 이 과정에서 dual-credential pattern을 직접 구현해야 한다. 실수 한 번이면 다운타임이므로, 회전이 정말 필요한 비밀은 Secrets Manager로 가는 게 운영 부담이 훨씬 적다.
 
-> 🔍 **더 깊이**: Parameter Store와 Secrets Manager는 사실 일부 기능이 겹친다. 2018년 Secrets Manager 출시 이후 AWS는 한동안 두 서비스 모두 발전시키다가, 2020년부터 "비밀 = Secrets Manager, 구성 = Parameter Store"로 가이드를 명확히 했다. 그래서 Parameter Store에 Secrets Manager 비밀을 참조하는 기능(`{{resolve:secretsmanager:...}}`)이 추가됐고, 반대로 Secrets Manager는 RDS 외 다른 데이터베이스(자체 회전 Lambda)와 사용자 정의 회전을 지원하게 됐다. 결과적으로 두 서비스가 같은 시크릿을 두 곳에서 가리키는 패턴(Parameter Store 이름에 Secrets Manager ARN 저장)도 흔하다.
+Parameter Store와 Secrets Manager는 사실 일부 기능이 겹친다. 2018년 Secrets Manager 출시 이후 AWS는 한동안 두 서비스 모두 발전시키다가, 2020년부터 "비밀 = Secrets Manager, 구성 = Parameter Store"로 가이드를 명확히 했다. 그래서 Parameter Store에 Secrets Manager 비밀을 참조하는 기능(`{{resolve:secretsmanager:...}}`)이 추가됐고, 반대로 Secrets Manager는 RDS 외 다른 데이터베이스(자체 회전 Lambda)와 사용자 정의 회전을 지원하게 됐다. 결과적으로 두 서비스가 같은 시크릿을 두 곳에서 가리키는 패턴(Parameter Store 이름에 Secrets Manager ARN 저장)도 흔하다.
 
 ## Secrets Manager의 고급 기능: 멀티 리전 복제와 리소스 정책
 
 엔터프라이즈 환경에서 Secrets Manager가 Parameter Store보다 결정적으로 우위에 있는 두 가지 기능이 **멀티 리전 복제** 와 **리소스 정책** 이다.
 
-멀티 리전 복제는 2021년 3월에 추가됐다. 한 region에서 비밀을 만들고 "ap-northeast-2와 us-west-2에 복제" 옵션을 켜면, 원본이 변경될 때마다 (회전 포함) 자동으로 복제본도 업데이트된다. DR 시나리오에서 active-passive 또는 active-active 모두 활용 가능하고, 복제본 region에서 직접 GetSecretValue를 호출할 수 있어 latency도 낮다. Parameter Store는 이런 자동 복제가 없고 직접 스크립트로 동기화해야 한다.
+멀티 리전 복제는 2021년 3월에 추가됐다. 한 region에서 비밀을 만들고 "ap-northeast-2와 us-west-2에 복제" 옵션을 켜면, 원본이 변경될 때마다 (회전 포함) 자동으로 복제본도 업데이트된다. DR 시나리오에서 Active-Passive 또는 Active-Active 모두 활용 가능하고, 복제본 region에서 직접 GetSecretValue를 호출할 수 있어 latency도 낮다. Parameter Store는 이런 자동 복제가 없고 직접 스크립트로 동기화해야 한다.
 
 리소스 정책은 비밀 자체에 정책을 붙여서 다른 계정 Principal에 접근을 허용하는 기능이다. 예를 들어 SaaS 회사가 고객 계정에 비밀 일부를 공유하고 싶을 때, 비밀의 리소스 정책에 고객 계정 root를 Principal로 허용하면 된다. 그러면 고객은 자기 계정 IAM Role에 `secretsmanager:GetSecretValue` 권한만 부여하면 SaaS 회사의 비밀을 직접 가져올 수 있다.
 
@@ -109,7 +109,7 @@ Parameter Store가 가진 또 하나의 장점은 **계층형 네임스페이스
 
 비밀의 KMS 키도 함께 공유해야 한다는 점이 함정이다. Secrets Manager는 비밀을 KMS로 암호화하므로, 다른 계정이 비밀을 가져오려면 (1) Secrets Manager 리소스 정책 + (2) KMS 키 정책에서 둘 다 그 계정을 허용해야 한다. 이 두 단계 중 하나를 빼먹으면 `AccessDenied`가 나는데 어디가 막혔는지 메시지로는 구분이 안 돼서 트러블슈팅이 까다롭다.
 
-> 📚 **사례**: 2022년 한 결제 SaaS가 고객사에 "테스트용 시크릿 키"를 공유하는 데 Secrets Manager 크로스 계정 패턴을 사용했다. 처음엔 리소스 정책만 설정하고 KMS는 AWS Managed Key(`aws/secretsmanager`)를 썼는데, AWS Managed Key는 크로스 계정 공유가 불가능해서 모든 고객이 `KMSAccessDeniedException`을 받았다. CMK로 전환하고 키 정책에 고객 계정 root를 추가한 후 정상 동작했다. 이후 회사 표준 가이드에 "크로스 계정 공유가 필요한 비밀은 반드시 CMK 사용"이 들어갔다.
+**사례(가상)**: 2022년 한 결제 SaaS가 고객사에 "테스트용 시크릿 키"를 공유하는 데 Secrets Manager 크로스 계정 패턴을 사용했다. 처음엔 리소스 정책만 설정하고 KMS는 AWS Managed Key(`aws/secretsmanager`)를 썼는데, AWS Managed Key는 크로스 계정 공유가 불가능해서 모든 고객이 `KMSAccessDeniedException`을 받았다. CMK로 전환하고 키 정책에 고객 계정 root를 추가한 후 정상 동작했다. 이후 회사 표준 가이드에 "크로스 계정 공유가 필요한 비밀은 반드시 CMK 사용"이 들어갔다.
 
 ## CloudHSM: 컴플라이언스가 요구할 때만
 
@@ -129,9 +129,9 @@ CloudHSM의 운영 모델은 KMS와 완전히 다르다. CloudHSM 클러스터�
 
 CloudHSM이 답인 시나리오는 보통 세 가지다. ① 규제가 "AWS 직원도 키에 접근할 수 없어야 한다"고 명시적으로 요구할 때 (일부 금융·정부·헬스케어). ② 기존 온프레미스 HSM(IBM 4768, Thales nShield)에서 클라우드로 마이그레이션할 때. ③ SSL/TLS 키를 HSM에서 사용해 웹 서버의 private key가 절대 메모리에 평문으로 노출되지 않게 해야 할 때. 그 외에는 KMS CMK + Customer Managed Key 정책으로 거의 모든 컴플라이언스 요구를 만족할 수 있다.
 
-> 💡 **관련 이론**: FIPS 140-2 Level 1~4는 NIST가 정의한 암호 모듈 보안 등급이다. Level 1은 소프트웨어, Level 2는 변조 흔적 남는 하드웨어, Level 3은 변조 방지(tamper-resistant) 하드웨어 + 사용자 인증, Level 4는 변조 즉시 키 자료 소거. 대부분의 상업적 HSM은 Level 3이고, Level 4는 군용·국가 기밀급이다. PCI DSS 같은 카드 산업 규정은 Level 2 이상을 요구하고, 일부 정부 규정(예: 한국 ISMS-P 일부 요건)은 Level 3 이상을 요구한다. CloudHSM이 Level 3이라는 게 보통 충분한 이유다.
+FIPS 140-2 Level 1~4는 NIST가 정의한 암호 모듈 보안 등급이다. Level 1은 소프트웨어, Level 2는 변조 흔적 남는 하드웨어, Level 3은 변조 방지(tamper-resistant) 하드웨어 + 사용자 인증, Level 4는 변조 즉시 키 자료 소거. 대부분의 상업적 HSM은 Level 3이고, Level 4는 군용·국가 기밀급이다. PCI DSS 같은 카드 산업 규정은 Level 2 이상을 요구하고, 일부 정부 규정(예: 한국 ISMS-P 일부 요건)은 Level 3 이상을 요구한다. CloudHSM이 Level 3이라는 게 보통 충분한 이유다.
 
-> 🔍 **더 깊이**: 2022년 출시된 **KMS External Key Store(XKS)** 는 KMS와 CloudHSM(또는 외부 KMIP 서버)을 연결하는 다리 역할을 한다. 키 자료는 외부 HSM에 있고 KMS는 프록시로 동작해서, 외부 HSM에 자기 키를 두면서도 KMS의 풍부한 서비스 통합(S3, EBS, RDS 등)을 그대로 쓸 수 있다. "키는 우리가 직접 관리한다" + "AWS 서비스는 그대로 쓰고 싶다"는 규제 요구에 답하는 패턴인데, 외부 HSM이 다운되면 KMS도 그 키로는 동작 못 한다는 위험이 있어 가용성 설계가 추가로 필요하다.
+2022년 출시된 **KMS External Key Store(XKS)** 는 KMS와 CloudHSM(또는 외부 KMIP 서버)을 연결하는 다리 역할을 한다. 키 자료는 외부 HSM에 있고 KMS는 프록시로 동작해서, 외부 HSM에 자기 키를 두면서도 KMS의 풍부한 서비스 통합(S3, EBS, RDS 등)을 그대로 쓸 수 있다. "키는 우리가 직접 관리한다" + "AWS 서비스는 그대로 쓰고 싶다"는 규제 요구에 답하는 패턴인데, 외부 HSM이 다운되면 KMS도 그 키로는 동작 못 한다는 위험이 있어 가용성 설계가 추가로 필요하다.
 
 ## EC2·Lambda·ECS에서의 표준 사용 패턴
 
@@ -150,7 +150,7 @@ def get_db_password():
     return json.loads(resp["SecretString"])["password"]
 ```
 
-다만 비밀이 회전돼도 Lambda가 cold start를 다시 안 하면 옛 값을 그대로 들고 있을 수 있다. 그래서 2022년 출시된 **AWS Parameters and Secrets Lambda Extension** 이 사실상 표준이 됐다. 익스텐션이 로컬 HTTP 캐시를 제공하고, TTL(기본 5분)이 지나면 자동으로 새로 가져온다. 코드는 `http://localhost:2773/secretsmanager/get?secretId=...`로 호출하면 되고, IAM 권한과 캐싱을 익스텐션이 다 해준다.
+다만 비밀이 회전돼도 Lambda가 콜드 스타트를 다시 안 하면 옛 값을 그대로 들고 있을 수 있다. 그래서 2022년 출시된 **AWS Parameters and Secrets Lambda Extension** 이 사실상 표준이 됐다. 익스텐션이 로컬 HTTP 캐시를 제공하고, TTL(기본 5분)이 지나면 자동으로 새로 가져온다. 코드는 `http://localhost:2773/secretsmanager/get?secretId=...`로 호출하면 되고, IAM 권한과 캐싱을 익스텐션이 다 해준다.
 
 **ECS Task** 는 task definition의 `secrets` 섹션에 ARN을 넣으면 컨테이너 시작 시 환경 변수로 주입된다. 코드 변경 없이 비밀을 받을 수 있다.
 
@@ -226,7 +226,7 @@ aws cloudhsmv2 create-hsm \
   --availability-zone ap-northeast-2a
 ```
 
-## 정리하며
+## 정리
 
 비밀과 구성을 다루는 AWS의 세 도구는 명확한 분업 구조를 가진다. **Secrets Manager** 는 자동 회전과 RDS·DocumentDB 통합이 필요한 진짜 비밀에, **Parameter Store** 는 무료로 저장하는 구성과 가벼운 시크릿에, **CloudHSM** 은 컴플라이언스가 단독 HSM을 요구할 때 쓴다. 시험에서는 키워드 매칭으로 빠르게 풀리지만(자동 회전 → Secrets Manager, 무료 → Parameter Store, FIPS L3 + 전용 → CloudHSM), 실무에서는 두 가지 함정이 가장 흔하다 — ① 비밀을 코드/환경변수에 평문으로 넣는 안티패턴, ② SecureString을 회전 가능한 것으로 오해하는 실수. 회전이 필요한 비밀은 무조건 Secrets Manager로 가는 게 운영 부담이 가장 적다.
 

@@ -19,11 +19,11 @@ SQS는 표준(Standard)과 FIFO 두 가지 큐 타입을 제공하는데, 이 �
 
 표준 큐가 2006년부터 10년이나 단독으로 존재했다는 사실이 중요하다. AWS는 처음부터 "정확한 한 번 + 순서 보장"을 약속할 수 없다는 걸 알았다. 분산 큐 시스템에서 exactly-once는 본질적으로 **two generals problem**의 변형이고, 컨슈머가 메시지를 처리하고 나서 ack를 보내기 전에 죽으면 큐는 그 메시지가 처리됐는지 알 수 없기 때문이다. 그래서 표준 큐는 "처리됐을지 모르니 한 번 더 보낸다"는 at-least-once를 택했고, 클라이언트에게 **멱등성(idempotency)을 구현할 책임**을 떠넘겼다.
 
-> 💡 **관련 이론**: at-most-once / at-least-once / exactly-once 세 가지 delivery semantics는 분산 메시징의 고전이다. Kafka 창시자 Jay Kreps의 2017년 글 "Exactly-once Support in Apache Kafka"에서 명확히 정리됐는데, 핵심은 "exactly-once **delivery**는 불가능하지만 exactly-once **processing**은 producer idempotency + transactional write + consumer offset commit의 조합으로 가능하다"는 것이다. SQS FIFO는 이 중 producer-side dedup(`MessageDeduplicationId` 5분 window)과 consumer-side ordering(MessageGroupId)을 제공하지만, "처리 자체의 멱등성"은 여전히 애플리케이션의 책임이다.
+at-most-once / at-least-once / exactly-once 세 가지 delivery semantics는 분산 메시징의 고전이다. Kafka 창시자 Jay Kreps의 2017년 글 "Exactly-once Support in Apache Kafka"에서 명확히 정리됐는데, 핵심은 "exactly-once **delivery**는 불가능하지만 exactly-once **processing**은 producer idempotency + transactional write + consumer offset commit의 조합으로 가능하다"는 것이다. SQS FIFO는 이 중 producer-side dedup(`MessageDeduplicationId` 5분 window)과 consumer-side ordering(MessageGroupId)을 제공하지만, "처리 자체의 멱등성"은 여전히 애플리케이션의 책임이다.
 
 > 🔍 **더 깊이**: FIFO 큐의 300 msg/s 제한은 어디서 온 숫자일까. SQS 내부적으로 FIFO는 MessageGroupId를 키로 메시지를 **단일 파티션에 직렬화**한다. 한 그룹 안의 메시지는 반드시 순서대로 처리돼야 하므로 동시 처리가 불가능하고, 따라서 그룹 단위 처리량이 단일 파티션의 한계에 묶인다. 2021년 출시된 **High Throughput FIFO**는 이 제약을 우회하기 위해 "그룹 자체를 여러 파티션에 분산"하는 방식으로 동작하고, 그래서 그룹 수가 충분히 많아야 효과가 나온다(소수의 그룹으로 활성화하면 효과 미미). region에 따라 9,000 ~ 70,000 msg/s까지 가능하다.
 
-> 📚 **사례**: 2021년 12월 7일, AWS us-east-1에서 약 7시간 동안 내부 네트워크 장애가 발생해 SQS·DynamoDB·Lambda 등 광범위한 서비스가 영향을 받았다. 이때 많은 회사들이 깨달은 점은 "SQS는 region-resilient하지만 SQS endpoint 자체가 us-east-1 control plane에 의존한다"는 것이었다. Robinhood, Disney+, Slack, Coinbase가 모두 다운됐고, 이 사건 이후 멀티 리전 SQS 패턴(active-active queue + Route 53 health check)이 본격적으로 논의되기 시작했다. [AWS 공식 회고](https://aws.amazon.com/message/12721/).
+**사례**: 2021년 12월 7일, AWS us-east-1에서 약 7시간 동안 내부 네트워크 장애가 발생해 SQS·DynamoDB·Lambda 등 광범위한 서비스가 영향을 받았다. 이때 많은 회사들이 깨달은 점은 "SQS는 region-resilient하지만 SQS endpoint 자체가 us-east-1 control plane에 의존한다"는 것이었다. Robinhood, Disney+, Slack, Coinbase가 모두 다운됐고, 이 사건 이후 멀티 리전 SQS 패턴(active-active queue + Route 53 health check)이 본격적으로 논의되기 시작했다. [AWS 공식 회고](https://aws.amazon.com/message/12721/).
 
 ## 가시성 타임아웃: SQS가 "한 번 이상" 뒤에 숨긴 메커니즘
 
@@ -43,11 +43,11 @@ t=45  : Worker-A 처리 완료, DeleteMessage 시도
         → DB에 중복 결제 / 중복 메일 발송
 ```
 
-이 시나리오가 시험에서 "Lambda 처리 60초인데 visibility 30초면 어떻게 되나"로 단골 출제되는 이유다. 답은 항상 "중복 처리"이고, 해결책은 세 가지 중 하나다. ① 가시성 타임아웃을 처리 시간보다 길게 설정. ② 처리 중간에 `ChangeMessageVisibility`로 동적 연장(긴 작업은 heartbeat 패턴). ③ 컨슈머 측 멱등성 구현(예: 메시지 ID를 DB에 unique key로 기록).
+이 시나리오가 시험에서 "Lambda 처리 60초인데 visibility 30초면 어떻게 되나"로 출제되는 이유다. 답은 "중복 처리"이고, 해결책은 세 가지 중 하나다. ① 가시성 타임아웃을 처리 시간보다 길게 설정. ② 처리 중간에 `ChangeMessageVisibility`로 동적 연장(긴 작업은 heartbeat 패턴). ③ 컨슈머 측 멱등성 구현(예: 메시지 ID를 DB에 unique key로 기록).
 
 > ⚠️ **함정**: "가시성 타임아웃을 길게(예: 12시간) 잡으면 안전하다"고 생각하기 쉬운데 반대 함정이 있다. 컨슈머가 처리 도중 죽었을 때 메시지가 12시간 동안 "보이지 않게" 잠겨버리므로 retry가 12시간 뒤에야 일어난다. 일반적으로 "예상 처리 시간 × 2-3배" 정도가 적정선이고, 그 이상 걸릴 가능성이 있으면 차라리 `ChangeMessageVisibility`로 동적 연장하는 패턴이 안전하다.
 
-> 🔍 **더 깊이**: SQS는 내부적으로 메시지를 여러 서버에 분산 저장하는데, 가시성 타임아웃 정보 역시 분산된다. 그래서 매우 드물게 "분산 시스템의 일시적 비일관성"으로 인해 가시성 타임아웃이 만료되지 않았는데도 다른 컨슈머가 같은 메시지를 받는 경우가 있다(공식 문서 명시). 이게 SQS가 표준 큐를 at-least-once로 분류하는 이유 중 하나다. FIFO 큐는 이 문제를 강한 일관성 메커니즘으로 해결하지만 그 대가로 처리량을 잃었다.
+SQS는 내부적으로 메시지를 여러 서버에 분산 저장하는데, 가시성 타임아웃 정보 역시 분산된다. 그래서 매우 드물게 "분산 시스템의 일시적 비일관성"으로 인해 가시성 타임아웃이 만료되지 않았는데도 다른 컨슈머가 같은 메시지를 받는 경우가 있다(공식 문서 명시). 이게 SQS가 표준 큐를 at-least-once로 분류하는 이유 중 하나다. FIFO 큐는 이 문제를 강한 일관성 메커니즘으로 해결하지만 그 대가로 처리량을 잃었다.
 
 ## DLQ와 maxReceiveCount: 실패를 격리하는 방식
 
@@ -57,9 +57,9 @@ t=45  : Worker-A 처리 완료, DeleteMessage 시도
 
 DLQ 설계의 비대칭 규칙: 표준 큐의 DLQ는 표준이어야 하고, FIFO 큐의 DLQ는 FIFO여야 한다. 이건 메시지 ID 형식이 다르기 때문이고, 시험에 "FIFO 큐의 DLQ로 표준 큐를 쓸 수 있나"가 함정으로 나온다.
 
-> 📚 **사례**: 2020년 Robinhood가 GameStop 사태 직후 결제 처리 큐가 비정상 폭증해 DLQ가 가득 차는 사고를 겪었다. 원인은 한 외부 결제 게이트웨이가 일부 거래에 대해 항상 500을 반환했고, 컨슈머가 재시도하며 maxReceiveCount를 다 소진하자 모든 거래가 DLQ로 빠졌다. 사후 분석에서 "DLQ에 메시지가 일정 수치 이상 쌓이면 CloudWatch Alarm + PagerDuty"를 빼먹은 게 직접적 원인이었다. 그 이후 회사 표준 SRE 체크리스트에 "모든 큐에 DLQ가 있고, 모든 DLQ에 알람이 있는가"가 들어갔다.
+**사례**: 2020년 Robinhood가 GameStop 사태 직후 결제 처리 큐가 비정상 폭증해 DLQ가 가득 차는 사고를 겪었다. 원인은 한 외부 결제 게이트웨이가 일부 거래에 대해 항상 500을 반환했고, 컨슈머가 재시도하며 maxReceiveCount를 다 소진하자 모든 거래가 DLQ로 빠졌다. 사후 분석에서 "DLQ에 메시지가 일정 수치 이상 쌓이면 CloudWatch Alarm + PagerDuty"를 빼먹은 게 직접적 원인이었다. 그 이후 회사 표준 SRE 체크리스트에 "모든 큐에 DLQ가 있고, 모든 DLQ에 알람이 있는가"가 들어갔다.
 
-> 💡 **관련 이론**: Circuit Breaker 패턴(Netflix Hystrix, 2012)과 DLQ는 다른 레벨의 실패 격리다. Circuit Breaker는 "다운스트림이 망가졌으니 잠시 호출을 끊자"는 클라이언트 쪽 보호이고, DLQ는 "이미 받은 메시지가 망가졌으니 격리하자"는 큐 쪽 보호다. 잘 설계된 시스템은 두 가지를 다 갖는다 — Circuit Breaker로 외부 의존성 장애를 빠르게 차단하고, 그래도 흘러들어온 poison message는 DLQ로 격리.
+Circuit Breaker 패턴(Netflix Hystrix, 2012)과 DLQ는 다른 레벨의 실패 격리다. Circuit Breaker는 "다운스트림이 망가졌으니 잠시 호출을 끊자"는 클라이언트 쪽 보호이고, DLQ는 "이미 받은 메시지가 망가졌으니 격리하자"는 큐 쪽 보호다. 잘 설계된 시스템은 두 가지를 다 갖는다 — Circuit Breaker로 외부 의존성 장애를 빠르게 차단하고, 그래도 흘러들어온 poison message는 DLQ로 격리.
 
 ## Long Polling, 배치, KMS — SQS의 비용·성능·보안 옵션들
 
@@ -71,7 +71,7 @@ Long Polling은 `ReceiveMessage` 호출 시 `WaitTimeSeconds`(0-20초)를 지정
 
 256KB라는 메시지 크기 제한은 처음 보면 작아 보이지만, "메시지 큐는 큰 데이터를 옮기는 도구가 아니라 작은 시그널을 전달하는 도구"라는 AWS의 의도가 담겨 있다. 실제로 큰 파일을 보내야 하면 **SQS Extended Client Library**를 쓴다. 클라이언트가 페이로드를 S3에 업로드하고 SQS 메시지에는 S3 객체 reference만 넣는 패턴이다. 이걸 직접 구현해도 되지만 라이브러리가 download/cleanup까지 다 해준다.
 
-> 🔍 **더 깊이**: Extended Client 패턴은 큐뿐 아니라 Kafka 진영에도 같은 이름(KIP-405)으로 존재하는 표준 기법이다. 메시징 시스템의 비용 모델이 "메시지 수 + 메시지 크기"인 반면 객체 스토리지(S3)는 GB·요청당 매우 저렴하므로, 큰 페이로드를 객체 스토리지로 우회시키는 게 거의 항상 경제적이다. 다만 트레이드오프가 있다: 컨슈머가 S3 GET까지 해야 하므로 latency가 늘고, S3 권한과 SQS 권한 두 가지를 IAM에서 관리해야 한다.
+Extended Client 패턴은 큐뿐 아니라 Kafka 진영에도 같은 이름(KIP-405)으로 존재하는 표준 기법이다. 메시징 시스템의 비용 모델이 "메시지 수 + 메시지 크기"인 반면 객체 스토리지(S3)는 GB·요청당 매우 저렴하므로, 큰 페이로드를 객체 스토리지로 우회시키는 게 거의 항상 경제적이다. 다만 트레이드오프가 있다: 컨슈머가 S3 GET까지 해야 하므로 latency가 늘고, S3 권한과 SQS 권한 두 가지를 IAM에서 관리해야 한다.
 
 암호화는 SSE-SQS(AWS 관리 키, 2019년 출시)와 SSE-KMS(고객 관리 KMS 키) 두 옵션이 있다. SSE-KMS를 쓰면 키 사용 권한이 IAM 정책으로 통제되므로 "특정 그룹만 큐 메시지를 복호화"하는 식의 세밀한 보안이 가능하지만, KMS GenerateDataKey 호출이 메시지마다 일어나면 KMS API 한도와 비용을 잡아먹는다. SQS는 이를 완화하기 위해 **data key reuse** 옵션(기본 5분, 최대 24시간)을 제공한다.
 
@@ -106,9 +106,9 @@ EC2 Auto Scaling Group을 쓸 때는 **Backlog Per Instance** 메트릭을 만�
 
 Lambda는 EC2와 모델이 완전히 다르다. Lambda + SQS는 **Event Source Mapping**(ESM)이라는 SQS poller가 Lambda 서비스 내부에서 동작하며 자동으로 컨슈머 수를 늘린다. 큐가 차면 ESM이 동시 실행 Lambda 수를 점진적으로 늘리는데(처음엔 5개, 1분마다 60개씩 추가, 표준 큐 기준 최대 1,000), 이걸 모르고 "Lambda는 무한히 스케일하니 안전하다"고 가정하면 큰 스파이크에서 처리 지연이 생긴다. 2022년 11월 출시된 **Maximum Concurrency** 옵션으로 ESM 자체에 Lambda 동시성 상한을 걸 수 있게 됐는데, 다운스트림(예: RDS connection pool)을 보호하는 데 필수다.
 
-> 💡 **관련 이론**: Little's Law(L = λW)는 큐잉 이론의 기본 법칙으로, "큐의 평균 길이 L = 도착률 λ × 평균 대기시간 W"이다. SQS 운영에서 이 식이 의미하는 바는 "큐 길이를 줄이려면 도착률을 줄이거나(rate limit) 처리시간을 줄이거나(컨슈머 추가) 둘 중 하나"라는 것이다. ASG의 target tracking은 사실상 W를 일정하게 유지하기 위해 컨슈머 수를 조절하는 동작이다.
+Little's Law(L = λW)는 큐잉 이론의 기본 법칙으로, "큐의 평균 길이 L = 도착률 λ × 평균 대기시간 W"이다. SQS 운영에서 이 식이 의미하는 바는 "큐 길이를 줄이려면 도착률을 줄이거나(rate limit) 처리시간을 줄이거나(컨슈머 추가) 둘 중 하나"라는 것이다. ASG의 target tracking은 사실상 W를 일정하게 유지하기 위해 컨슈머 수를 조절하는 동작이다.
 
-> 🔍 **더 깊이**: Lambda + SQS의 ESM은 2020년 11월에 출시된 **Batch Window**(0-5분)와 **Partial Batch Response** 기능이 운영성을 크게 바꿨다. Batch Window는 "메시지가 모일 때까지 기다린 뒤 배치 처리"를 가능하게 해서 비용을 낮춘다(짧은 호출 여러 번 → 긴 호출 한 번). Partial Batch Response는 배치 10개 중 일부만 실패했을 때 실패한 메시지만 가시성 복원하고 성공한 건 자동 삭제하는 기능으로, 그 전엔 배치 안에 1개라도 실패하면 전체 10개가 재시도돼 중복 처리가 심했다.
+Lambda + SQS의 ESM은 2020년 11월에 출시된 **Batch Window**(0-5분)와 **Partial Batch Response** 기능이 운영성을 크게 바꿨다. Batch Window는 "메시지가 모일 때까지 기다린 뒤 배치 처리"를 가능하게 해서 비용을 낮춘다(짧은 호출 여러 번 → 긴 호출 한 번). Partial Batch Response는 배치 10개 중 일부만 실패했을 때 실패한 메시지만 가시성 복원하고 성공한 건 자동 삭제하는 기능으로, 그 전엔 배치 안에 1개라도 실패하면 전체 10개가 재시도돼 중복 처리가 심했다.
 
 ## 다른 메시징 시스템과의 비교
 
@@ -126,7 +126,7 @@ SQS의 설계를 다른 메시징 시스템과 나란히 놓으면 그 trade-off
 
 SQS의 강점은 **운영 부담이 거의 0**이라는 점이다. 브로커도 없고 노드도 없고 클러스터도 없다. 단점은 "한 번 소비되면 사라진다"는 큐 모델이므로 같은 메시지를 여러 시스템이 독립적으로 처리해야 하면 SNS fanout(다음 글) 또는 Kinesis(Day 4)로 가야 한다.
 
-> 📚 **사례**: 2018년 New Relic이 자체 Kafka 클러스터를 운영하다가 일부 워크로드를 SQS로 옮기는 과정을 블로그에 공개했다. 핵심 교훈은 "Kafka는 처리량과 보존이 필요할 때 가치 있지만, 단순 디커플링에는 SQS가 운영 비용이 1/10"이었다. 모든 메시징 워크로드를 Kafka로 통일하는 게 아니라 워크로드 특성에 맞게 골라 쓰는 게 정답이라는 점이 이 시기부터 업계 컨센서스가 됐다.
+**사례**: 2018년 New Relic이 자체 Kafka 클러스터를 운영하다가 일부 워크로드를 SQS로 옮기는 과정을 블로그에 공개했다. 핵심 교훈은 "Kafka는 처리량과 보존이 필요할 때 가치 있지만, 단순 디커플링에는 SQS가 운영 비용이 1/10"이었다. 모든 메시징 워크로드를 Kafka로 통일하는 게 아니라 워크로드 특성에 맞게 골라 쓰는 게 정답이라는 점이 이 시기부터 업계 컨센서스가 됐다.
 
 ## CLI로 직접 만져보기
 
@@ -161,7 +161,7 @@ aws cloudwatch get-metric-statistics --namespace AWS/SQS \
   --period 60 --statistics Average
 ```
 
-## 정리하며
+## 정리
 
 SQS는 분산 시스템의 가장 오래된 문제 — "두 컴포넌트를 시간적으로 분리하면서도 신뢰성 있게 메시지를 주고받기" — 에 대한 AWS의 답이다. 표준 큐는 무제한 처리량과 at-least-once를, FIFO 큐는 엄격한 순서와 exactly-once-processing을 택했다. 가시성 타임아웃은 분산 lock 없이 "한 메시지 = 한 컨슈머"를 보장하는 leasing 메커니즘이고, DLQ는 poison message 격리, Long Polling은 비용·지연 최적화, Extended Client는 256KB 한계를 우회하는 표준 패턴이다.
 

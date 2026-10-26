@@ -8,7 +8,7 @@ Week 4의 주제는 "AWS의 경계를 어디까지 밀어낼 수 있는가"였�
 
 ## Week 4 핵심 의사결정 트리
 
-SAP-C02 시험에서 하이브리드 클라우드 문제는 보통 세 가지 축으로 분해된다. 첫째, 데이터/컴퓨팅이 물리적으로 어디에 있어야 하는가. 둘째, 지연이 얼마나 낮아야 하는가. 셋째, 네트워크 연결이 가능한가. 이 세 축에 따른 의사결정 트리를 손에 익혀두면 문제의 70%는 첫 15초에 방향이 잡힌다.
+SAP-C02 시험에서 하이브리드 클라우드 문제는 보통 세 가지 축으로 분해된다. 첫째, 데이터/컴퓨팅이 물리적으로 어디에 있어야 하는가. 둘째, 지연이 얼마나 낮아야 하는가. 셋째, 네트워크 연결이 가능한가. 이 세 축에 따른 의사결정 트리를 손에 익혀두면 문제는 첫 15초에 방향이 잡힌다.
 
 ```
 데이터가 고객 건물 밖으로 나갈 수 없는가?
@@ -46,7 +46,7 @@ SAP-C02 시험에서 하이브리드 클라우드 문제는 보통 세 가지 �
   └── 여러 K8s 클러스터 단일 콘솔 가시화 → EKS Connector
 ```
 
-> 💡 **OSI 레이어와 하이브리드 경계**: Week 4 서비스들은 서로 다른 레이어에서 "AWS 경계"를 확장한다. Outposts는 **L1-L7 전체 스택**을 고객 시설에 이식한다. Local Zones와 Wavelength는 **L1-L3(인프라)**를 도시/기지국으로 옮긴다. Storage Gateway는 **L4-L7(서비스 프로토콜)**인 NFS/SMB/iSCSI를 온프레미스에 유지하면서 백엔드를 S3/Glacier로 대체한다. Snow Family는 **물리 계층(L0)**인 데이터 운반체 자체를 대체한다. EKS/ECS Anywhere는 **제어 평면 위치**를 조정해 AWS 운영 방식을 온프레미스에 확장한다. 이 레이어별 분류를 이해하면 어떤 제약이 어떤 서비스를 필요로 하는지 직관적으로 파악된다.
+Week 4 서비스들은 서로 다른 레이어에서 "AWS 경계"를 확장한다. Outposts는 **L1-L7 전체 스택**을 고객 시설에 이식한다. Local Zones와 Wavelength는 **L1-L3(인프라)**를 도시/기지국으로 옮긴다. Storage Gateway는 **L4-L7(서비스 프로토콜)**인 NFS/SMB/iSCSI를 온프레미스에 유지하면서 백엔드를 S3/Glacier로 대체한다. Snow Family는 **물리 계층(L0)**인 데이터 운반체 자체를 대체한다. EKS/ECS Anywhere는 **제어 평면 위치**를 조정해 AWS 운영 방식을 온프레미스에 확장한다. 이 레이어별 분류를 이해하면 어떤 제약이 어떤 서비스를 필요로 하는지 직관적으로 파악된다.
 
 ---
 
@@ -62,7 +62,7 @@ SAP-C02 시험에서 하이브리드 클라우드 문제는 보통 세 가지 �
 | Local Zones | AWS 운영 대도시 시설 | 1-5ms | 부분 충족 | 불필요(자체) | 게임·미디어 렌더링·실시간 ML |
 | Wavelength | 통신사 5G MEC | 1-10ms | 부분 충족 | 불필요(자체) | 자율주행·5G IoT·AR/VR |
 
-> 💡 **전파 지연의 물리적 하한**: 지연시간의 물리적 하한선은 빛의 속도로 계산된다. 광섬유에서 빛의 전파 속도는 진공 속도의 약 2/3인 200,000km/s다. 서울-버지니아(약 11,000km) 왕복 지연의 이론적 하한은 약 110ms다. 실제로는 라우팅 홉, 큐잉 지연, 처리 지연이 더해져 150~200ms가 된다. Local Zone은 도시 내 AWS 시설을 배치해 "마지막 마일" 거리를 수 km로 줄인다. 서울 강남에서 서울 Local Zone까지의 왕복 전파 지연은 0.1ms에 불과하다. Wavelength는 통신사 5G MEC 시설에 컴퓨팅을 배치해 5G 패킷이 기지국에서 처리 노드까지 이동하는 거리를 수 km 이내로 줄인다. 5G 링크 자체 지연(1-5ms)과 합산해도 총 10ms 이내를 달성할 수 있다.
+지연 시간의 물리적 하한선은 빛의 속도로 계산된다. 광섬유에서 빛의 전파 속도는 진공 속도의 약 2/3인 200,000km/s다. 서울-버지니아(약 11,000km) 왕복 지연의 이론적 하한은 약 110ms다. 실제로는 라우팅 홉, 큐잉 지연, 처리 지연이 더해져 150~200ms가 된다. Local Zone은 도시 내 AWS 시설을 배치해 "마지막 마일" 거리를 수 km로 줄인다. 서울 강남에서 서울 Local Zone까지의 왕복 전파 지연은 0.1ms에 불과하다. Wavelength는 통신사 5G MEC 시설에 컴퓨팅을 배치해 5G 패킷이 기지국에서 처리 노드까지 이동하는 거리를 수 km 이내로 줄인다. 5G 링크 자체 지연(1-5ms)과 합산해도 총 10ms 이내를 달성할 수 있다.
 
 ### AWS Outposts 아키텍처 심화
 
@@ -108,7 +108,7 @@ Outposts에서 생성 가능한 서비스 (부분):
 
 > ⚠️ **다중 게이트웨이 캐시 불일치 함정**: S3 File Gateway로 여러 지사가 같은 S3 버킷을 공유할 때 한 지사가 쓴 파일이 다른 지사에서 즉시 보이지 않을 수 있다. S3는 2020년 12월부터 강력한 일관성(Strong Consistency)을 보장하지만 Storage Gateway 캐시 레이어가 이를 가린다. 각 게이트웨이가 독립 캐시를 운영하므로 게이트웨이 A가 파일을 쓰고 S3에 flush했더라도 게이트웨이 B의 캐시에는 여전히 오래된 버전이 남아 있을 수 있다. 해결책은 두 가지다: (1) S3 이벤트 알림 → Lambda → `RefreshCache` API 자동 호출, (2) FSx File Gateway로 전환(NTFS OpLock이 분산 캐시 충돌 방지). 시험에서 "동시 편집 충돌 + Windows 파일 공유"가 나오면 FSx File Gateway다.
 
-> 📚 **글로벌 미디어 하이브리드 파이프라인**: 한 글로벌 미디어 그룹이 하이브리드 영상 편집 파이프라인을 구축했다. 원본 영상 RAW footage(4K ProRes, 수 TB/일)는 온프레미스 카메라 장비에서 NFS로 마운트된 S3 File Gateway에 기록된다. AWS 편집 클러스터(GPU EC2)가 S3 API로 직접 접근해 AI 색보정과 노이즈 제거를 처리한다. Premiere Pro 프로젝트 파일(여러 편집자 동시 접근, NTFS 파일 잠금 필수)은 FSx File Gateway를 통해 온프레미스 편집실과 클라우드 워크스테이션이 공유한다. 완성된 최종 영상은 S3 Lifecycle 정책으로 90일 후 Glacier Instant Retrieval, 1년 후 Glacier Deep Archive로 자동 아카이브된다. 이 구성으로 온프레미스 NAS 용량의 75%를 S3로 이전했고 스토리지 비용이 62% 감소했다.
+(가상 사례) 한 글로벌 미디어 그룹이 하이브리드 영상 편집 파이프라인을 구축했다. 원본 영상 RAW footage(4K ProRes, 수 TB/일)는 온프레미스 카메라 장비에서 NFS로 마운트된 S3 File Gateway에 기록된다. AWS 편집 클러스터(GPU EC2)가 S3 API로 직접 접근해 AI 색보정과 노이즈 제거를 처리한다. Premiere Pro 프로젝트 파일(여러 편집자 동시 접근, NTFS 파일 잠금 필수)은 FSx File Gateway를 통해 온프레미스 편집실과 클라우드 워크스테이션이 공유한다. 완성된 최종 영상은 S3 Lifecycle 정책으로 90일 후 Glacier Instant Retrieval, 1년 후 Glacier Deep Archive로 자동 아카이브된다. 이 구성으로 온프레미스 NAS 용량의 75%를 S3로 이전했고 스토리지 비용이 62% 감소했다.
 
 ---
 
@@ -137,7 +137,7 @@ Snow Family 선택 기준:
   → 1Gbps에서도 100TB는 네트워크보다 Snow가 유리할 수 있음
 ```
 
-> 💡 **앤드류 타넨바움의 대역폭 원칙**: "스테이션왜건에 자기테이프를 가득 싣고 고속도로를 달리는 것의 대역폭은 결코 과소평가하면 안 된다." 이 원칙의 현대적 구현이 Snow Family다. Snowball Edge 80TB를 2일 배송으로 보내면 등가 대역폭은 80TB/2일 = 80×8×1024²Mb / 172,800초 = 약 3.8Gbps다. 1Gbps DX보다 3.8배 빠른 "대역폭"이다. 10Gbps DX와 비교해야 비로소 네트워크가 물리 배송을 이긴다(10Gbps 실효 6Gbps > 3.8Gbps). 데이터가 클수록, 회선이 느릴수록, 물리 이동이 경제적이다. Snowball의 보안은 256-bit AES 암호화(KMS 관리 키) + Tamper-Evident 물리 케이스 + TPM 칩 + NIST SP 800-88 데이터 소거 프로세스로 구성된다.
+"스테이션왜건에 자기테이프를 가득 싣고 고속도로를 달리는 것의 대역폭은 결코 과소평가하면 안 된다." 이 원칙의 현대적 구현이 Snow Family다. Snowball Edge 80TB를 2일 배송으로 보내면 등가 대역폭은 80TB/2일 = 80×8×1024²Mb / 172,800초 = 약 3.8Gbps다. 1Gbps DX보다 3.8배 빠른 "대역폭"이다. 10Gbps DX와 비교해야 비로소 네트워크가 물리 배송을 이긴다(10Gbps 실효 6Gbps > 3.8Gbps). 데이터가 클수록, 회선이 느릴수록, 물리 이동이 경제적이다. Snowball의 보안은 256-bit AES 암호화(KMS 관리 키) + Tamper-Evident 물리 케이스 + TPM 칩 + NIST SP 800-88 데이터 소거 프로세스로 구성된다.
 
 | Snow 장비 | 사용 가능 스토리지 | 엣지 컴퓨팅 | 특수 기능 |
 |----------|--------------------|------------|---------|
@@ -161,7 +161,7 @@ Snow Family 선택 기준:
 | Kubernetes 버전 | 없음 (ECS 태스크) | EKS-D | AWS EKS | AWS EKS |
 | 권장 팀 역량 | ECS 운영자 | K8s 전문가 | K8s 기본 지식 | K8s 기본 지식 |
 
-> 🔍 **제어 평면 위치의 의미**: ECS Anywhere와 EKS on Outposts Extended Cluster는 제어 평면이 AWS 리전에 있다. 이 말은 Worker Node가 새 태스크/Pod를 받으려면 AWS 연결이 필요하다는 의미다. 30초의 연결 단절이라면 큰 문제가 없지만, 수분~수시간의 단절이 발생하면 장애조치가 불가능해진다. EKS Anywhere와 EKS on Outposts Local Cluster는 제어 평면(API 서버, etcd, Controller Manager, Scheduler)이 고객 하드웨어에 있다. AWS 연결 없이도 Pod 스케줄링, ReplicaSet 자동 복구, ConfigMap/Secret 관리, HPA가 모두 동작한다. AWS 연결은 ECR 이미지 pull, CloudWatch 전송, EKS Connector 가시화에만 선택적으로 사용된다.
+ECS Anywhere와 EKS on Outposts Extended Cluster는 제어 평면이 AWS 리전에 있다. 이 말은 Worker Node가 새 태스크/Pod를 받으려면 AWS 연결이 필요하다는 의미다. 30초의 연결 단절이라면 큰 문제가 없지만, 수분~수시간의 단절이 발생하면 장애조치가 불가능해진다. EKS Anywhere와 EKS on Outposts Local Cluster는 제어 평면(API 서버, etcd, Controller Manager, Scheduler)이 고객 하드웨어에 있다. AWS 연결 없이도 Pod 스케줄링, ReplicaSet 자동 복구, ConfigMap/Secret 관리, HPA가 모두 동작한다. AWS 연결은 ECR 이미지 pull, CloudWatch 전송, EKS Connector 가시화에만 선택적으로 사용된다.
 
 > 🎯 **방위산업체 3-환경 시나리오**: 방위산업체가 군용 물류 시스템을 세 개의 서로 다른 환경에서 운영한다. (1) 인터넷 완전 차단 군 데이터센터 → EKS Anywhere(에어갭 모드, 로컬 Harbor 레지스트리, 온프레미스 etcd). (2) 일반 기업 사무소 + 기존 ECS 사용 + K8s 인력 없음 → ECS Anywhere(AWS ECS 콘솔/CLI 그대로, 온프레미스 서버를 External Instance로). (3) 비밀 시설 내 AWS Outposts + AWS Managed K8s + 리전 단절 내성 필요 → EKS on Outposts Local Cluster(제어 평면이 Outposts에, 연결 단절 시에도 Pod 스케줄링 유지). 세 환경에 각각 다른 서비스가 최적인 이유를 즉각 판단할 수 있어야 한다.
 

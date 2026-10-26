@@ -1,8 +1,8 @@
 # Day 5 - Week 6 종합 복습: CloudFormation 운영 완전 정복
 
-Week 6는 CloudFormation을 단순 "인프라 생성 도구"에서 "대규모 조직의 운영 플랫폼"으로 바라보는 주간이었다. Day 1의 Template 구조와 Stack 라이프사이클에서 시작해, Day 2의 변경 안전 관리(Change Set, Drift, Rollback Trigger), Day 3의 대규모 IaC 패턴(Nested/Cross-Stack/StackSets), Day 4의 자가 서비스와 동적 설정(Service Catalog, AppConfig, AppRegistry)까지 이어졌다.
+Week 6는 CloudFormation을 단순 "인프라 생성 도구"에서 "대규모 조직의 운영 플랫폼"으로 바라보는 주간이었다. Day 1의 템플릿 구조와 스택 라이프사이클에서 시작해, Day 2의 변경 안전 관리(Change Set, Drift, Rollback Trigger), Day 3의 대규모 IaC 패턴(Nested/Cross-Stack/StackSets), Day 4의 자가 서비스와 동적 설정(Service Catalog, AppConfig, AppRegistry)까지 이어졌다.
 
-SOA-C02에서 CloudFormation은 단순 API 암기 문제가 아니다. "어떤 상황에서 어떤 도구를 선택해야 하는가", "이 변경이 Replacement를 유발하는가", "Stack이 이 상태일 때 어떤 복구 방법이 가능한가"를 판단하는 능력을 측정한다. 이 복습은 그 판단력을 기르는 데 집중한다.
+SOA-C02에서 CloudFormation은 단순 API 암기 문제가 아니다. "어떤 상황에서 어떤 도구를 선택해야 하는가", "이 변경이 Replacement를 유발하는가", "스택이 이 상태일 때 어떤 복구 방법이 가능한가"를 판단하는 능력을 측정한다. 이 복습은 그 판단력을 기르는 데 집중한다.
 
 ## Week 6 핵심 개념 맵
 
@@ -36,11 +36,11 @@ CloudFormation 운영 플랫폼
 
 ## 핵심 비교표: 혼동하기 쉬운 개념들
 
-**Stack 패턴 비교:**
+**스택 패턴 비교:**
 
 | 항목 | Nested Stack | Cross-Stack | StackSets |
 |------|--------------|-------------|-----------|
-| 관계 | 부모-자식 (cascade 삭제) | 독립 (느슨한 결합) | 한 Template → 멀티 대상 |
+| 관계 | 부모-자식 (cascade 삭제) | 독립 (느슨한 결합) | 한 템플릿 → 멀티 대상 |
 | 라이프사이클 | 부모가 자식 통제 | 각자 독립 | StackSet이 일괄 관리 |
 | 값 전달 | `!GetAtt Stack.Outputs.Key` | `!ImportValue 'export-name'` | Parameters |
 | 주요 제약 | 부모 삭제 시 자식도 삭제 | Import 중 Export 변경 불가 | SCP/Permission 충돌 주의 |
@@ -59,12 +59,12 @@ CloudFormation 운영 플랫폼
 
 | 정책 | 적용 시점 | 보호 대상 | 기본값 |
 |------|-----------|-----------|--------|
-| `DeletionPolicy: Delete` | Stack 삭제 시 | 해당 리소스 | Delete (삭제) |
-| `DeletionPolicy: Retain` | Stack 삭제 시 | 해당 리소스 | 보존 (삭제 안 됨) |
-| `DeletionPolicy: Snapshot` | Stack 삭제 시 | RDS/EBS/ElastiCache | 스냅샷 후 삭제 |
+| `DeletionPolicy: Delete` | 스택 삭제 시 | 해당 리소스 | Delete (삭제) |
+| `DeletionPolicy: Retain` | 스택 삭제 시 | 해당 리소스 | 보존 (삭제 안 됨) |
+| `DeletionPolicy: Snapshot` | 스택 삭제 시 | RDS/EBS/ElastiCache | 스냅샷 후 삭제 |
 | `UpdateReplacePolicy: Snapshot` | 업데이트로 인한 교체 시 | RDS/EBS | 스냅샷 후 기존 삭제 |
 | Stack Policy `Update:Delete Deny` | update-stack 실행 시 | 지정 리소스 | (설정 안 하면 모두 허용) |
-| Termination Protection | delete-stack 실행 시 | Stack 전체 | 비활성화 |
+| Termination Protection | delete-stack 실행 시 | 스택 전체 | 비활성화 |
 
 **거버넌스 서비스 비교:**
 
@@ -75,15 +75,15 @@ CloudFormation 운영 플랫폼
 | 트리거 | 사용자 클릭 (Provision) | 설정 변경 배포 시작 | 수동 연결 or 자동 태깅 |
 | 검증 | Template Constraint | JSON Schema / Lambda Validator | - |
 
-> 💡 **관련 이론**: CloudFormation의 전체 설계는 분산 시스템 이론의 "State Reconciliation" 패턴이다. Kubernetes 컨트롤러가 desired state와 current state를 지속적으로 비교해 수렴시키는 것처럼, CloudFormation은 Template(desired state)와 실제 AWS 리소스(current state)의 차이를 계산해 변경 작업을 수행한다. Drift Detection은 이 수렴 루프의 "역방향 검사"다. 운영자가 Template 밖에서 리소스를 변경했을 때, 현실이 desired state에서 벗어났음을 감지한다. Leslie Lamport의 "State Machine Replication"(1984) 이론이 이 패턴의 이론적 기반이다.
+> 💡 **관련 이론**: CloudFormation의 전체 설계는 분산 시스템 이론의 "State Reconciliation" 패턴이다. Kubernetes 컨트롤러가 desired state와 current state를 지속적으로 비교해 수렴시키는 것처럼, CloudFormation은 템플릿(desired state)와 실제 AWS 리소스(current state)의 차이를 계산해 변경 작업을 수행한다. Drift Detection은 이 수렴 루프의 "역방향 검사"다. 운영자가 템플릿 밖에서 리소스를 변경했을 때, 현실이 desired state에서 벗어났음을 감지한다. Leslie Lamport의 "State Machine Replication"(1984) 이론이 이 패턴의 이론적 기반이다.
 
-## 중요 실수 컬렉션: 시험에 자주 나오는 함정
+## 중요 실수 컬렉션: 시험에 나오는 함정
 
-**CloudFormation Template & Stack:**
+**CloudFormation Template & 스택:**
 
 | 실수 | 증상 | 올바른 이해 |
 |------|------|-------------|
-| `ROLLBACK_COMPLETE`에서 update-stack 시도 | "Stack is not in a valid state" 오류 | 삭제 후 재생성만 가능 |
+| `ROLLBACK_COMPLETE`에서 update-stack 시도 | `Stack is not in a valid state` 오류 | 삭제 후 재생성만 가능 |
 | `UPDATE_ROLLBACK_FAILED`에 delete-stack | 실패 가능 | `continue-update-rollback --resources-to-skip` |
 | cfn-signal Timeout 너무 짧게 설정 | "Failed to receive signal" | yum update만 5~10분, PT15M 이상 권장 |
 | RDS MultiAZ 변경이 Replacement인 줄 모름 | 데이터 손실 | Change Set으로 사전 확인 필수 |
@@ -94,10 +94,10 @@ CloudFormation 운영 플랫폼
 
 | 실수 | 증상 | 올바른 이해 |
 |------|------|-------------|
-| 부모 Stack 삭제 후 자식 Stack도 삭제됨 | 예상치 못한 리소스 삭제 | Nested Stack은 cascade 삭제가 기본 |
-| Import 중인 Export 값 변경 시도 | "Export is in use" 오류 | list-imports로 사용 Stack 파악 후 먼저 분리 |
-| `!ImportValue` 안에 `!Sub` 중첩 시도 | Template 검증 오류 | ImportValue는 단독 사용만 가능 |
-| Nested Stack 자식 Template를 직접 접근 | 부모 우회 관리 어려움 | 가급적 부모 Stack을 통해 관리 |
+| 부모 스택 삭제 후 자식 스택도 삭제됨 | 예상치 못한 리소스 삭제 | Nested Stack은 cascade 삭제가 기본 |
+| Import 중인 Export 값 변경 시도 | "Export is in use" 오류 | list-imports로 사용 스택 파악 후 먼저 분리 |
+| `!ImportValue` 안에 `!Sub` 중첩 시도 | 템플릿 검증 오류 | ImportValue는 단독 사용만 가능 |
+| Nested Stack 자식 템플릿을 직접 접근 | 부모 우회 관리 어려움 | 가급적 부모 스택을 통해 관리 |
 
 **StackSets:**
 
@@ -116,13 +116,13 @@ CloudFormation 운영 플랫폼
 | FinalBakeTime 없이 AllAtOnce 사용 | 즉시 100% + 감시 없음 | FinalBakeTime으로 배포 후 모니터링 추가 |
 | Validator 없이 잘못된 JSON 배포 | 앱 파싱 에러 | JSON Schema Validator 반드시 추가 |
 
-> 📚 **사례**: 2024년 물류 스타트업 L사에서 CloudFormation으로 관리하던 RDS 인스턴스의 `MultiAZ`를 `false`에서 `true`로 변경했다. 운영자는 "MultiAZ 활성화는 인플레이스 변경"이라고 알고 있었다. 그러나 해당 인스턴스의 엔진 버전이 함께 업그레이드되는 경우 Replacement가 트리거될 수 있었다. Change Set을 사용했다면 `Replacement: Conditional`을 보고 추가 확인을 했을 것이다. 결과적으로 RDS가 교체되어 새 엔드포인트가 생겼고, 애플리케이션 연결 설정을 변경하지 못한 서버들이 5분간 DB 접속 실패를 겪었다. 이후 모든 RDS 변경은 반드시 Change Set 확인 + `UpdateReplacePolicy: Snapshot` 표준이 됐다.
+가상의 사례로, 2024년 물류 스타트업 L사에서 CloudFormation으로 관리하던 RDS 인스턴스의 `MultiAZ`를 `false`에서 `true`로 변경했다. 운영자는 "MultiAZ 활성화는 인플레이스 변경"이라고 알고 있었다. 그러나 해당 인스턴스의 엔진 버전이 함께 업그레이드되는 경우 Replacement가 트리거될 수 있었다. Change Set을 사용했다면 `Replacement: Conditional`을 보고 추가 확인을 했을 것이다. 결과적으로 RDS가 교체되어 새 엔드포인트가 생겼고, 애플리케이션 연결 설정을 변경하지 못한 서버들이 5분간 DB 접속 실패를 겪었다. 이후 모든 RDS 변경은 반드시 Change Set 확인 + `UpdateReplacePolicy: Snapshot` 표준이 됐다.
 
-> 🔍 **더 깊이**: CloudFormation의 Replacement 판단 기준은 AWS 내부 리소스 핸들러(Resource Handler)가 결정한다. CloudFormation Registry에 등록된 각 리소스 타입의 스키마에 각 속성의 "createOnlyProperties", "readOnlyProperties" 등이 정의돼 있다. "createOnlyProperties"에 해당하는 속성을 변경하면 반드시 Replacement가 발생한다. AWS CLI로 `aws cloudformation describe-type --type RESOURCE --type-name AWS::RDS::DBInstance`를 실행하면 스키마를 확인할 수 있다. 이를 이해하면 "왜 이 속성 변경은 Replacement를 유발하는가"를 외우지 않고도 판단할 수 있다.
+CloudFormation의 Replacement 판단 기준은 AWS 내부 리소스 핸들러(Resource Handler)가 결정한다. CloudFormation Registry에 등록된 각 리소스 타입의 스키마에 각 속성의 "createOnlyProperties", "readOnlyProperties" 등이 정의돼 있다. "createOnlyProperties"에 해당하는 속성을 변경하면 반드시 Replacement가 발생한다. AWS CLI로 `aws cloudformation describe-type --type RESOURCE --type-name AWS::RDS::DBInstance`를 실행하면 스키마를 확인할 수 있다. 이를 이해하면 "왜 이 속성 변경은 Replacement를 유발하는가"를 외우지 않고도 판단할 수 있다.
 
 ## SOA-C02 시험 핵심 판단 체계
 
-**시나리오: "Stack이 X 상태입니다. 어떻게 해야 하는가?"**
+**시나리오: "스택이 X 상태입니다. 어떻게 해야 하는가?"**
 
 ```
 Stack 상태별 대응:
@@ -179,7 +179,7 @@ Stack 실수 삭제 방지:
   Stack Policy + Deny Update:Replace/Delete
 ```
 
-> ⚠️ **함정**: DeletionPolicy와 UpdateReplacePolicy는 "Stack 삭제"와 "업데이트 중 교체"라는 완전히 다른 상황에 적용된다. RDS를 보호하려면 **두 가지를 모두** 설정해야 한다. `DeletionPolicy: Snapshot`만 있고 `UpdateReplacePolicy`가 없으면, Stack 삭제 시에는 스냅샷이 생기지만 업데이트 중 교체가 발생할 때는 기존 RDS가 스냅샷 없이 삭제된다. 시험에서 "RDS 변경 시 데이터 손실을 방지하려면?" 문제의 완전한 답은 `UpdateReplacePolicy: Snapshot`이다.
+> ⚠️ **함정**: DeletionPolicy와 UpdateReplacePolicy는 "스택 삭제"와 "업데이트 중 교체"라는 완전히 다른 상황에 적용된다. RDS를 보호하려면 **두 가지를 모두** 설정해야 한다. `DeletionPolicy: Snapshot`만 있고 `UpdateReplacePolicy`가 없으면, 스택 삭제 시에는 스냅샷이 생기지만 업데이트 중 교체가 발생할 때는 기존 RDS가 스냅샷 없이 삭제된다. 시험에서 "RDS 변경 시 데이터 손실을 방지하려면?" 문제의 완전한 답은 `UpdateReplacePolicy: Snapshot`이다.
 
 ## 📝 종합 연습 문제
 

@@ -10,9 +10,9 @@ SAP-C02 시험에서 데이터 레이크는 분석(Analytics) 도메인의 중�
 
 **Schema-on-Read**는 이 순서를 뒤집는다. 원본을 변환 없이 그대로 저장하고(JSON이든 CSV든 로그든), 스키마는 **읽는 시점에** 적용한다. 같은 원본 파일에 대해 분석가 A는 5개 컬럼만 보는 스키마를, 분석가 B는 30개 컬럼을 보는 스키마를 동시에 정의할 수 있다. 데이터를 버리지 않고 보관하므로 미래의 알 수 없는 분석 요구에 대응할 수 있다. S3가 데이터 레이크의 기반이 된 이유가 정확히 이것이다. S3는 객체에 스키마를 강제하지 않고, 사실상 무한 용량에, 11 나인(99.999999999%) 내구성으로, GB당 월 $0.023이라는 가격으로 "일단 다 저장"을 가능하게 한다.
 
-> 💡 **관련 이론**: Schema-on-Read는 사실 새로운 개념이 아니다. 2004년 Google의 MapReduce 논문과 2006년 Hadoop의 등장에서 시작된 패러다임으로, "구조화되지 않은 대량 데이터를 분산 파일시스템(HDFS)에 저장하고 처리 시점에 구조를 부여한다"는 발상이다. AWS 데이터 레이크는 HDFS를 S3로, MapReduce를 Athena/EMR/Glue로 대체한 클라우드 네이티브 버전이라고 볼 수 있다. 핵심 차이는 컴퓨팅과 스토리지의 **분리(decoupling)**다. Hadoop은 데이터가 있는 노드에서 연산하는 data locality를 추구했지만(스토리지=컴퓨팅 결합), S3 기반 레이크는 스토리지(S3)와 컴퓨팅(Athena/EMR)을 완전히 분리해 각각 독립적으로 스케일링한다. 이 분리가 가능한 이유는 S3의 처리량이 prefix당 초당 5,500 GET을 지원할 만큼 충분히 높고, AWS 내부 네트워크 대역폭이 컴퓨팅 노드와 S3 사이를 병목 없이 잇기 때문이다.
+Schema-on-Read는 사실 새로운 개념이 아니다. 2004년 Google의 MapReduce 논문과 2006년 Hadoop의 등장에서 시작된 패러다임으로, "구조화되지 않은 대량 데이터를 분산 파일시스템(HDFS)에 저장하고 처리 시점에 구조를 부여한다"는 발상이다. AWS 데이터 레이크는 HDFS를 S3로, MapReduce를 Athena/EMR/Glue로 대체한 클라우드 네이티브 버전이라고 볼 수 있다. 핵심 차이는 컴퓨팅과 스토리지의 **분리(decoupling)**다. Hadoop은 데이터가 있는 노드에서 연산하는 data locality를 추구했지만(스토리지=컴퓨팅 결합), S3 기반 레이크는 스토리지(S3)와 컴퓨팅(Athena/EMR)을 완전히 분리해 각각 독립적으로 스케일링한다. 이 분리가 가능한 이유는 S3의 처리량이 prefix당 초당 5,500 GET을 지원할 만큼 충분히 높고, AWS 내부 네트워크 대역폭이 컴퓨팅 노드와 S3 사이를 병목 없이 잇기 때문이다.
 
-> 🔍 **더 깊이**: Schema-on-Read의 함정은 "스키마를 읽는 시점에 추론한다"는 점이 곧 "스키마를 아무도 책임지지 않는다"는 뜻이 될 수 있다는 것이다. 이게 data swamp의 본질이다. 그래서 성숙한 레이크는 Schema-on-Read의 유연함을 유지하면서도 **메타데이터 카탈로그(Glue Catalog)**로 "이 prefix에는 이런 스키마의 데이터가 있다"는 계약을 명시적으로 관리한다. 즉 현실의 데이터 레이크는 순수한 Schema-on-Read가 아니라 "카탈로그로 관리되는 Schema-on-Read"다. 그리고 Iceberg/Hudi/Delta 같은 테이블 포맷이 등장하면서, 레이크에 ACID 트랜잭션과 스키마 진화 추적까지 들어와 사실상 웨어하우스와 레이크의 경계가 흐려지고 있다. 이게 "레이크하우스(Lakehouse)" 개념이다.
+Schema-on-Read의 함정은 "스키마를 읽는 시점에 추론한다"는 점이 곧 "스키마를 아무도 책임지지 않는다"는 뜻이 될 수 있다는 것이다. 이게 data swamp의 본질이다. 그래서 성숙한 레이크는 Schema-on-Read의 유연함을 유지하면서도 **메타데이터 카탈로그(Glue Catalog)**로 "이 prefix에는 이런 스키마의 데이터가 있다"는 계약을 명시적으로 관리한다. 즉 현실의 데이터 레이크는 순수한 Schema-on-Read가 아니라 "카탈로그로 관리되는 Schema-on-Read"다. 그리고 Iceberg/Hudi/Delta 같은 테이블 포맷이 등장하면서, 레이크에 ACID 트랜잭션과 스키마 진화 추적까지 들어와 사실상 웨어하우스와 레이크의 경계가 흐려지고 있다. 이게 "레이크하우스(Lakehouse)" 개념이다.
 
 ## 3계층 아키텍처 — Raw / Curated / Trusted가 신뢰의 경계인 이유
 
@@ -24,7 +24,7 @@ SAP-C02 시험에서 데이터 레이크는 분석(Analytics) 도메인의 중�
 
 **Trusted(Gold)** 계층은 비즈니스 로직이 적용된 최종 산출물이다. 집계된 일별 매출, ML 피처 테이블, BI 대시보드용 사전 조인된 와이드 테이블 등이 여기 있다. 분석가와 BI 도구는 주로 이 계층을 본다.
 
-> 📚 **사례**: 한 글로벌 미디어 회사가 초기에 계층 분리 없이 Kinesis Firehose가 떨군 raw JSON에 Athena 쿼리를 직접 걸었다. 일별 클릭스트림 데이터가 수 TB였고, 분석가 한 명이 `SELECT * FROM clickstream WHERE date = '2024-01-15'`를 실행할 때마다 압축 안 된 JSON 전체(약 3TB)를 스캔해 쿼리 한 번에 $15씩 청구됐다. 하루 50명의 분석가가 평균 10번 쿼리하면 월 $225,000. Curated 계층을 도입해 Parquet + snappy 압축 + `date` 파티션으로 변환한 뒤, 같은 쿼리가 약 30GB만 스캔하게 되어 비용이 100배 줄었다. 핵심은 "분석가가 raw를 직접 만지게 두면 비용이 통제 불능이 된다"는 점이다. SAP 시험의 "Athena 비용이 폭증한다" 시나리오는 거의 이 패턴이다.
+(가상 사례) 한 글로벌 미디어 회사가 초기에 계층 분리 없이 Kinesis Firehose가 떨군 raw JSON에 Athena 쿼리를 직접 걸었다. 일별 클릭스트림 데이터가 수 TB였고, 분석가 한 명이 `SELECT * FROM clickstream WHERE date = '2024-01-15'`를 실행할 때마다 압축 안 된 JSON 전체(약 3TB)를 스캔해 쿼리 한 번에 $15씩 청구됐다. 하루 50명의 분석가가 평균 10번 쿼리하면 월 $225,000. Curated 계층을 도입해 Parquet + snappy 압축 + `date` 파티션으로 변환한 뒤, 같은 쿼리가 약 30GB만 스캔하게 되어 비용이 100배 줄었다. 핵심은 "분석가가 raw를 직접 만지게 두면 비용이 통제 불능이 된다"는 점이다. SAP 시험의 "Athena 비용이 폭증한다" 시나리오는 거의 이 패턴이다.
 
 ## Parquet이 비용을 90% 줄이는 진짜 메커니즘
 
@@ -36,9 +36,9 @@ SAP-C02 시험에서 데이터 레이크는 분석(Analytics) 도메인의 중�
 
 **3. Predicate Pushdown + 통계.** Parquet 파일은 내부적으로 row group 단위로 나뉘고, 각 row group의 메타데이터에 **min/max 통계**를 담는다. `WHERE timestamp > '2024-01-15'`라는 조건이 있으면, Athena는 row group의 max 통계를 보고 "이 row group의 모든 값이 조건 범위 밖"이면 그 블록을 통째로 건너뛴다. 이걸 predicate pushdown이라 한다.
 
-> 💡 **관련 이론**: Parquet은 Google의 2010년 Dremel 논문에서 영감을 받은 포맷이다. Dremel은 중첩된(nested) 데이터를 컬럼 형태로 분해하는 "record shredding and assembly" 알고리즘을 도입했고, 이게 Parquet의 핵심 아이디어다. Dremel은 BigQuery의 기반이 되었고, Parquet은 Hadoop 생태계의 오픈소스 구현이다. 컬럼 지향 저장 자체는 더 오래된 개념으로, 2005년 MIT의 C-Store 논문(나중에 Vertica가 됨)이 학술적 토대다. SAP 관점에서 중요한 건, Athena(Presto/Trino 기반), Redshift Spectrum, EMR Spark, Snowflake가 모두 Parquet을 1급 시민으로 지원한다는 점이다. 즉 Parquet으로 한 번 변환해 두면 여러 쿼리 엔진에서 재사용할 수 있어 vendor lock-in을 줄인다.
+Parquet은 Google의 2010년 Dremel 논문에서 영감을 받은 포맷이다. Dremel은 중첩된(nested) 데이터를 컬럼 형태로 분해하는 "record shredding and assembly" 알고리즘을 도입했고, 이게 Parquet의 핵심 아이디어다. Dremel은 BigQuery의 기반이 되었고, Parquet은 Hadoop 생태계의 오픈소스 구현이다. 컬럼 지향 저장 자체는 더 오래된 개념으로, 2005년 MIT의 C-Store 논문(나중에 Vertica가 됨)이 학술적 토대다. SAP 관점에서 중요한 건, Athena(Presto/Trino 기반), Redshift Spectrum, EMR Spark, Snowflake가 모두 Parquet을 1급 시민으로 지원한다는 점이다. 즉 Parquet으로 한 번 변환해 두면 여러 쿼리 엔진에서 재사용할 수 있어 vendor lock-in을 줄인다.
 
-> 🔍 **더 깊이**: ORC(Optimized Row Columnar)와 Parquet은 둘 다 컬럼 지향이지만 미묘하게 다르다. ORC는 Hortonworks가 Hive를 위해 만들어 stripe 단위 + 더 풍부한 인덱스(bloom filter 내장)를 가지고, Hive/EMR 환경에서 약간 유리하다. Parquet은 Cloudera/Twitter 기원으로 Spark·Presto·Impala 생태계에서 더 넓게 쓰인다. 실무 기준 차이는 크지 않지만, "Hive 워크로드 마이그레이션"이면 ORC, "범용 분석 레이크"면 Parquet이 무난한 선택이다. Avro는 다르다. Avro는 행 지향이고 스키마를 파일에 내장하므로 **스키마 진화에 강하고 스트리밍/쓰기 집약 워크로드**(Kafka, Kinesis)에 적합하다. 그래서 실무 패턴은 "스트리밍 수집은 Avro → 배치 변환 후 Parquet으로 저장"인 경우가 많다.
+ORC(Optimized Row Columnar)와 Parquet은 둘 다 컬럼 지향이지만 미묘하게 다르다. ORC는 Hortonworks가 Hive를 위해 만들어 stripe 단위 + 더 풍부한 인덱스(bloom filter 내장)를 가지고, Hive/EMR 환경에서 약간 유리하다. Parquet은 Cloudera/Twitter 기원으로 Spark·Presto·Impala 생태계에서 더 넓게 쓰인다. 실무 기준 차이는 크지 않지만, "Hive 워크로드 마이그레이션"이면 ORC, "범용 분석 레이크"면 Parquet이 무난한 선택이다. Avro는 다르다. Avro는 행 지향이고 스키마를 파일에 내장하므로 **스키마 진화에 강하고 스트리밍/쓰기 집약 워크로드**(Kafka, Kinesis)에 적합하다. 그래서 실무 패턴은 "스트리밍 수집은 Avro → 배치 변환 후 Parquet으로 저장"인 경우가 많다.
 
 > ⚠️ **함정**: "Parquet이 항상 빠르다"는 아니다. 작은 파일(예: 1MB 미만)이 수백만 개 있으면 Parquet의 장점이 사라진다. 각 파일의 footer 메타데이터를 읽는 오버헤드와 S3 GET 요청 수가 폭증하기 때문이다. 이게 **Small File Problem**이다. 이상적인 Parquet 파일 크기는 128MB~1GB다. 시험에서 "Athena 쿼리가 느리고 파일이 수백만 개"라는 시나리오가 나오면, 답은 "파일 포맷 변경"이 아니라 **compaction(작은 파일 병합)**이다. Glue ETL의 `coalesce`/`repartition`이나 Athena CTAS로 작은 파일을 큰 파일로 다시 써야 한다.
 
@@ -84,9 +84,9 @@ Glue Data Catalog는 데이터 레이크의 "전화번호부"다. "이 S3 prefix
 
 **Glue Crawler**는 S3를 스캔해 스키마를 자동 추론하고 카탈로그에 등록·갱신한다. JSON 로그의 필드, CSV의 헤더, Parquet의 임베디드 스키마를 읽어 테이블과 파티션을 만든다. 다만 Crawler는 만능이 아니다. 스키마가 자주 바뀌는 JSON에서 타입을 잘못 추론하거나, 파티션이 많으면 Crawler 실행 시간·비용이 늘고, classifier 설정이 까다로울 수 있다. 그래서 스키마가 안정적이면 DDL로 테이블을 직접 정의하고 Partition Projection을 쓰는 게 Crawler보다 깔끔한 경우가 많다.
 
-> 🔍 **더 깊이**: Glue Catalog vs Lake Formation의 관계가 시험에서 자주 헷갈린다. Glue Catalog는 메타데이터 저장소 자체다. Lake Formation은 그 위에 얹는 **거버넌스·권한 레이어**다. Lake Formation을 쓰면 IAM 정책 대신 "이 IAM 역할은 이 데이터베이스의 이 테이블의 이 컬럼만, 이 행 필터 조건으로만 볼 수 있다"는 **세분화된(fine-grained) 권한**을 카탈로그 수준에서 중앙 관리한다. 컬럼 수준·행 수준·셀 수준 보안, 그리고 LF-Tags 기반 태그 권한, 크로스 계정 데이터 공유가 핵심 기능이다. SAP 시험에서 "여러 팀/계정이 같은 데이터 레이크를 공유하되 각자 볼 수 있는 컬럼·행이 다르다"는 거버넌스 시나리오는 거의 Lake Formation이 답이다. S3 버킷 정책이나 IAM만으로는 컬럼·행 수준 제어가 불가능하기 때문이다.
+Glue Catalog vs Lake Formation의 관계가 시험에서 자주 헷갈린다. Glue Catalog는 메타데이터 저장소 자체다. Lake Formation은 그 위에 얹는 **거버넌스·권한 레이어**다. Lake Formation을 쓰면 IAM 정책 대신 "이 IAM 역할은 이 데이터베이스의 이 테이블의 이 컬럼만, 이 행 필터 조건으로만 볼 수 있다"는 **세분화된(fine-grained) 권한**을 카탈로그 수준에서 중앙 관리한다. 컬럼 수준·행 수준·셀 수준 보안, 그리고 LF-Tags 기반 태그 권한, 크로스 계정 데이터 공유가 핵심 기능이다. SAP 시험에서 "여러 팀/계정이 같은 데이터 레이크를 공유하되 각자 볼 수 있는 컬럼·행이 다르다"는 거버넌스 시나리오는 거의 Lake Formation이 답이다. S3 버킷 정책이나 IAM만으로는 컬럼·행 수준 제어가 불가능하기 때문이다.
 
-> 📚 **사례**: 한 의료 데이터 분석 플랫폼이 여러 병원의 환자 데이터를 하나의 레이크에 모았다. 데이터 과학팀은 진단·치료 컬럼은 봐야 하지만 환자 이름·주민번호 컬럼은 보면 안 됐다(HIPAA). 처음엔 IAM 정책으로 S3 prefix를 나눠 막으려 했지만, 컬럼 단위 제어가 불가능해 결국 민감 컬럼을 별도 테이블로 분리하는 복잡한 ETL을 만들어야 했다. Lake Formation 도입 후 같은 테이블에 컬럼 수준 권한과 행 수준 필터(특정 병원 데이터만)를 선언적으로 걸어 ETL 복잡성을 제거했다. 추가로 LF-Tags로 "PII 태그가 붙은 모든 컬럼은 분석팀에게 차단"이라는 정책을 한 번에 적용했다.
+(가상 사례) 한 의료 데이터 분석 플랫폼이 여러 병원의 환자 데이터를 하나의 레이크에 모았다. 데이터 과학팀은 진단·치료 컬럼은 봐야 하지만 환자 이름·주민번호 컬럼은 보면 안 됐다(HIPAA). 처음엔 IAM 정책으로 S3 prefix를 나눠 막으려 했지만, 컬럼 단위 제어가 불가능해 결국 민감 컬럼을 별도 테이블로 분리하는 복잡한 ETL을 만들어야 했다. Lake Formation 도입 후 같은 테이블에 컬럼 수준 권한과 행 수준 필터(특정 병원 데이터만)를 선언적으로 걸어 ETL 복잡성을 제거했다. 추가로 LF-Tags로 "PII 태그가 붙은 모든 컬럼은 분석팀에게 차단"이라는 정책을 한 번에 적용했다.
 
 ## Athena의 내부 — Presto/Trino 위의 서버리스 쿼리
 
@@ -101,9 +101,9 @@ Athena의 주요 기능을 운영 관점으로 정리하면:
 - **CTAS(Create Table As Select)**: 쿼리 결과를 새 테이블로 저장하면서 포맷·압축·파티션을 적용. 경량 ETL로 쓸 수 있다.
 - **Federated Query**: Lambda 커넥터를 통해 S3 외부(DynamoDB, RDS, CloudWatch, Redshift)의 데이터를 SQL로 조인. 데이터 이동 없이 여러 소스를 통합 쿼리.
 
-> 💡 **관련 이론**: Athena가 인덱스 없이도 페타바이트를 처리할 수 있는 건 **massively parallel processing(MPP)** 덕분이다. Presto는 쿼리를 stage로 쪼개고 각 stage를 여러 worker에 분산해 S3의 서로 다른 파일/파티션을 병렬로 읽는다. S3가 prefix당 초당 5,500 GET을 지원하므로, 데이터를 여러 prefix에 분산해 두면 Athena가 그만큼 병렬로 읽어 처리량이 선형으로 늘어난다. 이게 컴퓨팅-스토리지 분리 아키텍처의 위력이다. 전통 웨어하우스는 디스크 I/O가 노드에 묶여 있어 이런 탄력적 병렬화가 어렵다. 비교하자면 BigQuery도 같은 철학(Dremel + Colossus 스토리지 분리)이고, Snowflake는 컴퓨팅(virtual warehouse)과 스토리지(S3/GCS/Blob)를 분리한 같은 계열이다.
+Athena가 인덱스 없이도 페타바이트를 처리할 수 있는 건 **massively parallel processing(MPP)** 덕분이다. Presto는 쿼리를 stage로 쪼개고 각 stage를 여러 worker에 분산해 S3의 서로 다른 파일/파티션을 병렬로 읽는다. S3가 prefix당 초당 5,500 GET을 지원하므로, 데이터를 여러 prefix에 분산해 두면 Athena가 그만큼 병렬로 읽어 처리량이 선형으로 늘어난다. 이게 컴퓨팅-스토리지 분리 아키텍처의 위력이다. 전통 웨어하우스는 디스크 I/O가 노드에 묶여 있어 이런 탄력적 병렬화가 어렵다. 비교하자면 BigQuery도 같은 철학(Dremel + Colossus 스토리지 분리)이고, Snowflake는 컴퓨팅(virtual warehouse)과 스토리지(S3/GCS/Blob)를 분리한 같은 계열이다.
 
-> 🔍 **더 깊이**: Athena Federated Query의 동작 원리가 흥미롭다. 각 데이터 소스(DynamoDB, RDS 등)에 대응하는 **Lambda 커넥터**가 있고, Athena는 쿼리 실행 중 필요한 데이터를 그 Lambda를 호출해 가져온다. 커넥터는 가능한 한 predicate pushdown을 데이터 소스로 내려보내(예: DynamoDB의 partition key 조건) 가져오는 데이터를 최소화한다. 단점은 Lambda를 거치므로 S3 직접 쿼리보다 느리고, 대량 데이터 조인 시 Lambda 호출·전송 비용이 든다는 것이다. 그래서 Federated Query는 "S3 레이크 데이터를 운영 DB의 소량 참조 데이터와 조인"하는 패턴에 적합하지, "운영 DB 전체를 분석"하는 용도가 아니다. 후자는 DMS로 S3에 복제 후 쿼리하는 게 정석이다.
+Athena Federated Query의 동작 원리가 흥미롭다. 각 데이터 소스(DynamoDB, RDS 등)에 대응하는 **Lambda 커넥터**가 있고, Athena는 쿼리 실행 중 필요한 데이터를 그 Lambda를 호출해 가져온다. 커넥터는 가능한 한 predicate pushdown을 데이터 소스로 내려보내(예: DynamoDB의 partition key 조건) 가져오는 데이터를 최소화한다. 단점은 Lambda를 거치므로 S3 직접 쿼리보다 느리고, 대량 데이터 조인 시 Lambda 호출·전송 비용이 든다는 것이다. 그래서 Federated Query는 "S3 레이크 데이터를 운영 DB의 소량 참조 데이터와 조인"하는 패턴에 적합하지, "운영 DB 전체를 분석"하는 용도가 아니다. 후자는 DMS로 S3에 복제 후 쿼리하는 게 정석이다.
 
 ## Glue ETL과 Job Bookmark — 증분 처리의 멱등성
 
@@ -111,7 +111,7 @@ Glue ETL은 Apache Spark 기반 매니지드 ETL이다. 서버를 관리하지 �
 
 매일 새 로그가 Raw에 쌓이는데, Glue Job을 매일 돌릴 때마다 전체 데이터를 다시 처리하면 비용·시간이 누적된다. Job Bookmark는 "이전 실행에서 어디까지 처리했는지"를 상태로 저장해, 다음 실행 때 **새로 추가된 데이터만** 처리한다. 이게 증분 ETL이다. Bookmark는 S3 객체의 경우 파일 이름·타임스탬프를, JDBC 소스의 경우 기본 키나 타임스탬프 컬럼을 추적한다.
 
-> ⚠️ **함정**: Job Bookmark의 멱등성(idempotency)에 대한 오해가 흔하다. Bookmark는 "이미 처리한 입력을 건너뛴다"는 것이지, 출력의 중복을 막아주지는 않는다. Job이 실패해 중간까지 출력하고 죽으면, 재실행 시 Bookmark가 정확히 어디까지 커밋됐는지에 따라 중복 출력이 생길 수 있다. 정확한 exactly-once가 필요하면 Iceberg/Hudi 같은 트랜잭션 테이블 포맷의 MERGE(upsert)를 쓰거나, 출력 단계에서 중복 제거 키를 두어야 한다. 시험에서 "Glue Job 재실행 시 중복 데이터" 시나리오는 Bookmark 활성화 + 멱등 출력 설계의 조합으로 본다.
+Job Bookmark의 멱등성(idempotency)에 대한 오해가 흔하다. Bookmark는 "이미 처리한 입력을 건너뛴다"는 것이지, 출력의 중복을 막아주지는 않는다. Job이 실패해 중간까지 출력하고 죽으면, 재실행 시 Bookmark가 정확히 어디까지 커밋됐는지에 따라 중복 출력이 생길 수 있다. 정확한 exactly-once가 필요하면 Iceberg/Hudi 같은 트랜잭션 테이블 포맷의 MERGE(upsert)를 쓰거나, 출력 단계에서 중복 제거 키를 두어야 한다. 시험에서 "Glue Job 재실행 시 중복 데이터" 시나리오는 Bookmark 활성화 + 멱등 출력 설계의 조합으로 본다.
 
 Glue 생태계의 역할 분리를 명확히 하면:
 - **Glue Crawler**: 스키마 추론·카탈로그 등록 (메타데이터)
@@ -135,7 +135,7 @@ AWS는 Glue 4.0+ 및 Athena Engine v3에서 Iceberg를 네이티브 지원하고
 
 > 🎯 **시나리오**: "GDPR 준수를 위해 데이터 레이크에서 특정 사용자의 모든 레코드를 삭제해야 한다. 데이터는 5년치 클릭스트림이고 수천 파티션에 흩어져 있다. 사용자 삭제 요청이 매주 수백 건 들어온다. 가장 운영 효율적인 구성은?" — 답은 **Iceberg(또는 Hudi/Delta) 테이블 포맷 + MERGE/DELETE**. 전통 Parquet 레이크에서는 삭제 대상이 포함된 파티션 전체를 읽어 해당 행만 빼고 다시 쓰는 비효율적 reprocessing이 필요하다. Iceberg는 행 수준 DELETE(merge-on-read 또는 copy-on-write)를 지원해 영향받는 파일만 효율적으로 갱신하고, 트랜잭션 로그로 일관성을 유지한다. 시험에서 "데이터 레이크 + DELETE/UPDATE/GDPR/upsert"는 거의 테이블 포맷이 답이다.
 
-> 📚 **사례**: 한 광고 기술 회사가 실시간 입찰 로그를 전통 Parquet 레이크에 저장했는데, 늦게 도착하는 데이터(late-arriving data)와 정정 이벤트(correction) 때문에 같은 입찰 ID의 데이터가 여러 번 들어왔다. 매번 전체 파티션을 다시 쓰는 dedup 배치가 4시간씩 걸렸다. Apache Hudi로 전환해 입찰 ID를 record key로 한 upsert(MERGE)를 적용하니, 늦게 도착한 정정 데이터만 해당 파일을 갱신해 배치가 20분으로 줄었다. Hudi의 copy-on-write vs merge-on-read 선택은 "읽기 빈도 vs 쓰기 빈도"의 트레이드오프인데, 읽기가 많으면 copy-on-write(읽기 빠름), 쓰기가 많으면 merge-on-read(쓰기 빠름)를 고른다.
+(가상 사례) 한 광고 기술 회사가 실시간 입찰 로그를 전통 Parquet 레이크에 저장했는데, 늦게 도착하는 데이터(late-arriving data)와 정정 이벤트(correction) 때문에 같은 입찰 ID의 데이터가 여러 번 들어왔다. 매번 전체 파티션을 다시 쓰는 dedup 배치가 4시간씩 걸렸다. Apache Hudi로 전환해 입찰 ID를 record key로 한 upsert(MERGE)를 적용하니, 늦게 도착한 정정 데이터만 해당 파일을 갱신해 배치가 20분으로 줄었다. Hudi의 copy-on-write vs merge-on-read 선택은 "읽기 빈도 vs 쓰기 빈도"의 트레이드오프인데, 읽기가 많으면 copy-on-write(읽기 빠름), 쓰기가 많으면 merge-on-read(쓰기 빠름)를 고른다.
 
 ## 비용·성능 안티패턴 정리
 
@@ -147,11 +147,11 @@ AWS는 Glue 4.0+ 및 Athena Engine v3에서 Iceberg를 네이티브 지원하고
 - **Crawler 남용**: 안정적 스키마에 Crawler를 매시간 돌리면 불필요한 비용·시간. → DDL + Partition Projection.
 - **Workgroup 미설정**: 비용 한도 없이 분석가가 `SELECT *`를 남발. → Workgroup per-query 한도.
 
-## 정리하며
+## 정리
 
 데이터 레이크의 본질은 "스토리지와 컴퓨팅의 분리, 그리고 카탈로그로 관리되는 Schema-on-Read"다. S3는 무한·저렴·내구성 높은 스토리지를 제공하고, Glue Catalog는 그 위에 스키마 계약을 입히며, Athena/EMR/Redshift Spectrum이 같은 카탈로그를 공유해 각자의 쿼리 엔진으로 접근한다. 비용·성능의 거의 전부는 **포맷(Parquet)·파티셔닝·압축**이라는 물리적 데이터 레이아웃에서 결정되고, 거버넌스는 Lake Formation의 세분화된 권한으로, 트랜잭션은 Iceberg/Hudi/Delta 테이블 포맷으로 보강된다.
 
-SAP 시험에서 자주 등장하는 카테고리는 (1) "Athena 비용 절감" → Parquet+파티션+압축, (2) "수만 파티션 메타데이터 병목" → Partition Projection, (3) "다계정/다팀 데이터 거버넌스" → Lake Formation, (4) "데이터 레이크 DELETE/upsert/GDPR" → Iceberg/Hudi/Delta, (5) "여러 데이터 소스 통합 쿼리" → Athena Federated Query로 거의 매핑된다. 다음 day에서는 이 데이터 레이크 위에서 실시간 스트리밍을 처리하는 Kinesis 생태계를 본다.
+SAP 시험에 나오는 카테고리는 (1) "Athena 비용 절감" → Parquet+파티션+압축, (2) "수만 파티션 메타데이터 병목" → Partition Projection, (3) "다계정/다팀 데이터 거버넌스" → Lake Formation, (4) "데이터 레이크 DELETE/upsert/GDPR" → Iceberg/Hudi/Delta, (5) "여러 데이터 소스 통합 쿼리" → Athena Federated Query로 거의 매핑된다. 다음 day에서는 이 데이터 레이크 위에서 실시간 스트리밍을 처리하는 Kinesis 생태계를 본다.
 
 ---
 

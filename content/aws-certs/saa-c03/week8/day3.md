@@ -44,13 +44,13 @@ User Pool ── (옵션) 외부 IdP 연합 (Google / SAML / Okta)
 
 흔한 실수는 "User Pool만으로 S3 직접 업로드를 시키려는 것"이다. JWT는 우리가 만든 API에서만 유효한 자격증명이고, AWS의 S3 API는 SigV4 서명을 요구하므로 JWT를 그대로 들고 호출할 수 없다. 모바일 클라이언트가 S3를 직접 호출하려면 반드시 Identity Pool을 거쳐 임시 IAM 자격증명을 받아야 한다. 반대로 "Identity Pool만으로 우리 백엔드 인증"도 불가능하다. Identity Pool은 자체 사용자 디렉터리가 없어서 비밀번호 정책·MFA·이메일 검증 같은 게 없다.
 
-> 💡 **관련 이론**: 이 분업은 OAuth2의 "authorization server"(누구인지를 발급)와 "STS"(권한을 임시 위임)의 분리를 그대로 따른다. User Pool은 OAuth2/OIDC 표준의 authorization server 역할이고, Identity Pool은 SAML 진영의 STS와 비슷한 역할을 한다. 둘을 하나로 합쳐버리면 Auth0이나 Firebase Auth처럼 단순해지지만, "AWS 리소스에 IAM Role 단위로 세밀하게 권한 부여"라는 AWS의 핵심 가치를 잃는다.
+이 분업은 OAuth2의 "authorization server"(누구인지를 발급)와 "STS"(권한을 임시 위임)의 분리를 그대로 따른다. User Pool은 OAuth2/OIDC 표준의 authorization server 역할이고, Identity Pool은 SAML 진영의 STS와 비슷한 역할을 한다. 둘을 하나로 합쳐버리면 Auth0이나 Firebase Auth처럼 단순해지지만, "AWS 리소스에 IAM Role 단위로 세밀하게 권한 부여"라는 AWS의 핵심 가치를 잃는다.
 
-> 🔍 **더 깊이**: Cognito Identity Pool이 호출하는 STS API는 `AssumeRoleWithWebIdentity`인데, 이건 사실 Cognito 전용이 아니라 OIDC 표준이다. AWS는 GitHub Actions, GitLab CI, Kubernetes Pod(IRSA) 같은 외부 시스템에서도 같은 API를 쓰게 해서 "외부 OIDC IdP의 JWT를 신뢰하고 IAM Role 부여"를 일반화했다. Cognito Identity Pool은 이 패턴을 모바일/웹 SDK로 감싼 wrapper에 가깝다.
+Cognito Identity Pool이 호출하는 STS API는 `AssumeRoleWithWebIdentity`인데, 이건 사실 Cognito 전용이 아니라 OIDC 표준이다. AWS는 GitHub Actions, GitLab CI, Kubernetes Pod(IRSA) 같은 외부 시스템에서도 같은 API를 쓰게 해서 "외부 OIDC IdP의 JWT를 신뢰하고 IAM Role 부여"를 일반화했다. Cognito Identity Pool은 이 패턴을 모바일/웹 SDK로 감싼 wrapper에 가깝다.
 
 ## 토큰 3종과 토큰 검증의 함정
 
-User Pool이 발급하는 세 토큰의 역할이 시험에 가장 자주 나온다.
+User Pool이 발급하는 세 토큰의 역할을 시험에서 구분해 묻는다.
 
 | 토큰 | 형식 | 용도 | 기본 수명 |
 |------|------|------|----------|
@@ -114,9 +114,9 @@ User Pool ── attribute mapping (email, dept, employee_id)
 앱 / API Gateway
 ```
 
-엔터프라이즈 SSO 시나리오가 시험에 자주 나오는데, 정답은 거의 항상 "User Pool + 외부 SAML IdP"다. 흔한 함정은 "회사 직원이 사내 시스템에 로그인하는 시나리오에 Identity Pool 단독"을 고르는 것인데, Identity Pool은 자체 디렉터리가 없으니 User Pool이 반드시 앞에 있어야 한다. 또 다른 함정은 "Cognito vs IAM Identity Center" 구분인데, **Cognito는 외부 앱 사용자(customer-facing app), IAM Identity Center는 직원의 AWS 콘솔 SSO** 가 표준 분업이다. "직원이 AWS 콘솔/CLI에 SSO"는 IAM Identity Center, "직원이 우리가 만든 SaaS에 SSO"는 Cognito User Pool + SAML이다.
+엔터프라이즈 SSO 시나리오가 시험에 나오는데, 정답은 대개 "User Pool + 외부 SAML IdP"다. 흔한 함정은 "회사 직원이 사내 시스템에 로그인하는 시나리오에 Identity Pool 단독"을 고르는 것인데, Identity Pool은 자체 디렉터리가 없으니 User Pool이 반드시 앞에 있어야 한다. 또 다른 함정은 "Cognito vs IAM Identity Center" 구분인데, **Cognito는 외부 앱 사용자(customer-facing app), IAM Identity Center는 직원의 AWS 콘솔 SSO** 가 표준 분업이다. "직원이 AWS 콘솔/CLI에 SSO"는 IAM Identity Center, "직원이 우리가 만든 SaaS에 SSO"는 Cognito User Pool + SAML이다.
 
-> 📚 **사례**: 2021년 Okta가 회사를 분리한 Atlassian Confluence 마이그레이션에서 Cognito User Pool + SAML 패턴이 대규모로 쓰였다. 기존 Confluence 자체 인증을 그대로 두면서 새 시스템(AWS 기반)에서도 같은 직원이 SSO로 들어올 수 있게 하기 위해 Cognito가 SAML 어댑터 역할을 했다. 점진적 마이그레이션 패턴으로 회자된다.
+**사례**: 2021년 Okta가 회사를 분리한 Atlassian Confluence 마이그레이션에서 Cognito User Pool + SAML 패턴이 대규모로 쓰였다. 기존 Confluence 자체 인증을 그대로 두면서 새 시스템(AWS 기반)에서도 같은 직원이 SSO로 들어올 수 있게 하기 위해 Cognito가 SAML 어댑터 역할을 했다. 점진적 마이그레이션 패턴으로 회자된다.
 
 ## Lambda Triggers: 로그인 흐름에 코드를 끼워 넣기
 
@@ -147,7 +147,7 @@ def lambda_handler(event, context):
 
 가장 운영적으로 중요한 Trigger는 **Migrate User** 다. 기존 자체 회원 시스템에서 Cognito로 점진적 마이그레이션할 때, 사용자가 처음 Cognito에 로그인 시도하면 Cognito에 사용자가 없다. Migrate User Lambda가 호출되어 옛 DB에서 비밀번호를 검증하고, 성공하면 사용자를 Cognito에 자동 생성한다. 사용자는 비밀번호를 재설정하지 않고도 자연스럽게 Cognito 사용자가 된다. 빅뱅 마이그레이션이 위험한 대규모 서비스에서 거의 표준 패턴이다.
 
-> 🔍 **더 깊이**: PreTokenGeneration Lambda는 multi-tenant SaaS에서 핵심적이다. 사용자가 속한 tenant_id, role, feature flag를 JWT에 custom claim으로 박으면, 백엔드는 별도 DB 조회 없이 JWT만 보고 권한을 결정할 수 있다. 단 JWT 크기가 너무 커지면 HTTP 헤더 한도(8KB 일반적)에 걸리므로, claim을 너무 많이 박지 말고 핵심만 넣는 게 베스트 프랙티스다. 큰 권한 데이터는 백엔드 캐시(예: Redis)에 두고 JWT에는 reference만 두는 패턴이 더 안전하다.
+PreTokenGeneration Lambda는 multi-tenant SaaS에서 핵심적이다. 사용자가 속한 tenant_id, role, feature flag를 JWT에 custom claim으로 박으면, 백엔드는 별도 DB 조회 없이 JWT만 보고 권한을 결정할 수 있다. 단 JWT 크기가 너무 커지면 HTTP 헤더 한도(8KB 일반적)에 걸리므로, claim을 너무 많이 박지 말고 핵심만 넣는 게 베스트 프랙티스다. 큰 권한 데이터는 백엔드 캐시(예: Redis)에 두고 JWT에는 reference만 두는 패턴이 더 안전하다.
 
 ## Advanced Security와 적응형 인증
 
@@ -245,7 +245,7 @@ aws cognito-idp admin-user-global-sign-out \
   --username user@example.com
 ```
 
-## 정리하며
+## 정리
 
 Cognito의 핵심은 **User Pool(누구인지 + JWT) ↔ Identity Pool(AWS Role 임시 위임)** 의 분리다. 두 풀이 답하는 질문이 다르고, 모바일이 S3에 직접 업로드 같은 시나리오는 둘을 조합해야 한다. JWT는 발급 후 즉시 무효화가 어려우니 짧은 수명 + refresh 패턴이 표준이고, GlobalSignOut으로 refresh token만 차단할 수 있다. 외부 IdP 연합은 User Pool에 OIDC(소셜) 또는 SAML(기업) IdP를 추가하면 되고, B2B 엔터프라이즈 SSO 시나리오의 정답은 거의 항상 "User Pool + SAML IdP"다. Lambda Triggers로 로그인 흐름에 사용자 정의 코드를 끼워 넣을 수 있고, Migrate User Trigger는 기존 시스템에서 점진적 마이그레이션의 표준 도구다. Advanced Security는 ML 기반 위협 탐지 + 적응형 MFA를 제공한다.
 

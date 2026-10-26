@@ -10,7 +10,7 @@ DevOps의 핵심 가정은 "코드가 변하지 않으면 동작이 변하지 �
 
 ML 시스템에는 세 종류의 "버전"이 있다 — 코드, 데이터, 모델. 이 셋의 조합을 추적(lineage)하지 못하면 "어느 데이터로 학습한 어느 모델이 지금 운영 중인가"를 알 수 없어 디버깅이 불가능하다. SageMaker는 이를 Pipelines(워크플로우)·Model Registry(모델 버전)·Feature Store(데이터)·Lineage Tracking으로 묶는다.
 
-> 💡 **관련 이론**: Data Drift와 Concept Drift는 명확히 다른 현상이다. **Data Drift(covariate shift)**는 입력 X의 분포가 변하는 것이다 — 예: 신규 사용자층이 유입돼 연령 분포가 바뀜. 입력이 학습 때 못 본 영역으로 가면 모델이 부정확해진다. **Concept Drift**는 입력 X와 정답 Y의 관계 P(Y|X) 자체가 변하는 것이다 — 예: 팬데믹으로 "마스크 구매"가 정상에서 이상으로, 다시 정상으로 의미가 바뀜. Data Drift는 입력만 봐도 감지되지만(라벨 불필요), Concept Drift는 실제 정답(라벨)이 와야 감지된다. 이 구분이 Model Monitor의 모니터 종류(Data Quality vs Model Quality)와 정확히 대응한다.
+Data Drift와 Concept Drift는 명확히 다른 현상이다. **Data Drift(covariate shift)**는 입력 X의 분포가 변하는 것이다 — 예: 신규 사용자층이 유입돼 연령 분포가 바뀜. 입력이 학습 때 못 본 영역으로 가면 모델이 부정확해진다. **Concept Drift**는 입력 X와 정답 Y의 관계 P(Y|X) 자체가 변하는 것이다 — 예: 팬데믹으로 "마스크 구매"가 정상에서 이상으로, 다시 정상으로 의미가 바뀜. Data Drift는 입력만 봐도 감지되지만(라벨 불필요), Concept Drift는 실제 정답(라벨)이 와야 감지된다. 이 구분이 Model Monitor의 모니터 종류(Data Quality vs Model Quality)와 정확히 대응한다.
 
 ## Model Monitor — 4종의 감시와 무엇이 라벨을 필요로 하나
 
@@ -25,7 +25,7 @@ ML 시스템에는 세 종류의 "버전"이 있다 — 코드, 데이터, 모�
 
 > 🔍 **더 깊이**: Model Quality 모니터링이 어려운 건 **라벨 지연(label latency)** 때문이다. 사기 탐지 모델이 "이 거래는 정상"이라고 예측해도, 그게 실제로 사기였는지는 며칠~몇 주 뒤 차지백(chargeback)이 와야 안다. 즉 정확도를 실시간으로 알 수 없다. 그래서 실무에서는 라벨이 빨리 오는 도메인은 Model Quality를, 라벨이 느린 도메인은 Data Quality(입력 분포 변화를 조기 경보로)를 주로 본다. 입력 분포가 크게 변했다면 정답을 몰라도 "모델이 위험하다"는 신호다. 시험에서 "라벨 없이 운영 중 모델 위험 조기 감지"는 Data Quality, "실제 정확도 하락 감지"는 Model Quality.
 
-> 📚 **사례**: 즉석에서 든 전형적 패턴 — 한 이커머스 추천팀이 모델 정확도가 서서히 떨어지는 걸 몇 달간 눈치채지 못하다가 매출 하락으로 발견했다. 원인은 신규 마케팅 캠페인으로 유입된 사용자층의 행동 분포가 학습 데이터와 크게 달랐던 것(data drift)이다. Model Monitor Data Quality를 켜고 기준선 대비 입력 분포 이탈을 CloudWatch Alarm으로 연결했더니, 이후 분포가 임계치를 넘으면 즉시 경보가 떴고, 이를 EventBridge로 재학습 파이프라인에 연결해 자동 재학습되게 했다. 교훈: 드리프트는 "터지고 나서"가 아니라 "입력이 변할 때" 감지해야 한다. 라벨을 기다리면 이미 늦다.
+즉석에서 든 전형적 패턴 — 한 이커머스 추천팀이 모델 정확도가 서서히 떨어지는 걸 몇 달간 눈치채지 못하다가 매출 하락으로 발견했다. 원인은 신규 마케팅 캠페인으로 유입된 사용자층의 행동 분포가 학습 데이터와 크게 달랐던 것(data drift)이다. Model Monitor Data Quality를 켜고 기준선 대비 입력 분포 이탈을 CloudWatch Alarm으로 연결했더니, 이후 분포가 임계치를 넘으면 즉시 경보가 떴고, 이를 EventBridge로 재학습 파이프라인에 연결해 자동 재학습되게 했다. 교훈: 드리프트는 "터지고 나서"가 아니라 "입력이 변할 때" 감지해야 한다. 라벨을 기다리면 이미 늦다.
 
 ## Feature Store — Train-Serve Skew라는 구조적 함정
 
@@ -40,13 +40,13 @@ ML 사고 중 가장 잡기 어려운 게 **train-serve skew**다. 학습 때 �
 
 둘은 자동 동기화된다. 피처 그룹은 **Record Identifier**(예: customer_id)와 **Event Time**으로 정의해 시점별 피처 값(point-in-time)을 추적한다.
 
-> 💡 **관련 이론**: Feature Store의 Online/Offline 분리는 Day 42에서 본 OLTP vs OLAP 분리와 같은 패턴이다. 추론은 "특정 고객 한 명의 피처를 밀리초에 조회"(OLTP 패턴 → DynamoDB)하고, 학습은 "수백만 행의 과거 피처를 대량 스캔"(OLAP 패턴 → S3)한다. 한 저장소로 둘 다 잘하긴 어려우니 분리하고 동기화한다. Point-in-time correctness(학습 시 "그 시점에 알 수 있었던 피처 값"만 쓰는 것)는 미래 정보가 학습에 새는 **data leakage**를 막는 핵심이다 — Event Time 기반 조회가 이를 보장한다. 시험에서 "학습·추론 피처 불일치 방지"는 항상 Feature Store.
+Feature Store의 Online/Offline 분리는 Day 42에서 본 OLTP vs OLAP 분리와 같은 패턴이다. 추론은 "특정 고객 한 명의 피처를 밀리초에 조회"(OLTP 패턴 → DynamoDB)하고, 학습은 "수백만 행의 과거 피처를 대량 스캔"(OLAP 패턴 → S3)한다. 한 저장소로 둘 다 잘하긴 어려우니 분리하고 동기화한다. Point-in-time correctness(학습 시 "그 시점에 알 수 있었던 피처 값"만 쓰는 것)는 미래 정보가 학습에 새는 **data leakage**를 막는 핵심이다 — Event Time 기반 조회가 이를 보장한다. 시험에서 "학습·추론 피처 불일치 방지"는 항상 Feature Store.
 
 ## Model Registry — 모델 거버넌스와 승인 워크플로우
 
 프로덕션에 어떤 모델을 올릴지는 함부로 결정하면 안 된다. **Model Registry**는 모델 버전을 **Model Package Group**으로 관리하고, 각 버전에 승인 상태(PendingManualApproval / Approved / Rejected)를 부여한다. 자동 파이프라인이 모델을 학습·평가해 레지스트리에 등록하면(Pending), 사람이 검토 후 승인하고, 승인 이벤트가 EventBridge를 통해 자동 배포를 트리거한다. 이로써 "자동화의 효율"과 "사람의 거버넌스"를 결합한다.
 
-> 🔍 **더 깊이**: Model Registry의 승인 게이트는 규제 산업(금융·의료)에서 특히 중요하다. 모델이 신용 평가나 진단에 쓰이면, "어느 데이터로 학습했고, 어떤 검증을 통과했으며, 누가 언제 승인했는가"를 감사(audit)할 수 있어야 한다. Model Registry는 이 lineage와 승인 이력을 보존한다. 또 Approved 상태를 EventBridge 규칙으로 잡아 Lambda 배포를 트리거하면, "수동 승인 후 자동 배포"라는 하이브리드 워크플로우가 된다 — 완전 자동도, 완전 수동도 아닌 거버넌스된 자동화다. 시험에서 "모델 배포 전 사람 검토 + 승인 시 자동 배포"는 Model Registry + EventBridge.
+Model Registry의 승인 게이트는 규제 산업(금융·의료)에서 특히 중요하다. 모델이 신용 평가나 진단에 쓰이면, "어느 데이터로 학습했고, 어떤 검증을 통과했으며, 누가 언제 승인했는가"를 감사(audit)할 수 있어야 한다. Model Registry는 이 lineage와 승인 이력을 보존한다. 또 Approved 상태를 EventBridge 규칙으로 잡아 Lambda 배포를 트리거하면, "수동 승인 후 자동 배포"라는 하이브리드 워크플로우가 된다 — 완전 자동도, 완전 수동도 아닌 거버넌스된 자동화다. 시험에서 "모델 배포 전 사람 검토 + 승인 시 자동 배포"는 Model Registry + EventBridge.
 
 ## 완전 자동 MLOps 파이프라인 — 재학습 루프의 완성
 
@@ -82,11 +82,11 @@ ML 사고 중 가장 잡기 어려운 게 **train-serve skew**다. 학습 때 �
 
 전통 CI/CD 도구(CodePipeline·CodeBuild·CodeCommit)를 ML에 그대로 쓸 수 있지만, **SageMaker Projects**는 MLOps용 CI/CD 템플릿을 제공한다. 모델 빌드(학습→평가→등록) 파이프라인과 모델 배포(승인→스테이징→프로덕션) 파이프라인을 미리 구성된 형태로 제공해, 처음부터 파이프라인을 짜는 부담을 줄인다. GitHub Actions·Jenkins 대신 또는 함께 쓸 수 있다.
 
-## 정리하며
+## 정리
 
 MLOps는 "코드 외에 데이터와 모델이 변한다"는 ML 특유의 문제를 운영 규율로 푼다. 드리프트(Data/Concept)를 Model Monitor로 감지하고(라벨 필요 여부로 Data Quality vs Model Quality 구분), Feature Store로 train-serve skew를 구조적으로 막으며, Model Registry로 모델 버전·승인을 거버넌스하고, SageMaker Pipelines로 전체를 DAG로 오케스트레이션해 EventBridge로 재학습 루프를 닫는다.
 
-SAP 시험 단골 매핑: (1) "학습·추론 피처 불일치" → Feature Store, (2) "라벨 없이 드리프트 조기 감지" → Model Monitor Data Quality, (3) "운영 정확도 하락 감지" → Model Monitor Model Quality, (4) "수동 승인 후 자동 배포" → Model Registry + EventBridge, (5) "ML 워크플로우 DAG + Lineage" → SageMaker Pipelines, (6) "편향 시간 변화" → Model Monitor + Clarify Bias Drift, (7) "MLOps CI/CD 템플릿" → SageMaker Projects. 다음 day는 Week 10 전체를 시나리오 문제로 종합 복습한다.
+SAP 시험 매핑: (1) "학습·추론 피처 불일치" → Feature Store, (2) "라벨 없이 드리프트 조기 감지" → Model Monitor Data Quality, (3) "운영 정확도 하락 감지" → Model Monitor Model Quality, (4) "수동 승인 후 자동 배포" → Model Registry + EventBridge, (5) "ML 워크플로우 DAG + Lineage" → SageMaker Pipelines, (6) "편향 시간 변화" → Model Monitor + Clarify Bias Drift, (7) "MLOps CI/CD 템플릿" → SageMaker Projects. 다음 day는 Week 10 전체를 시나리오 문제로 종합 복습한다.
 
 ---
 

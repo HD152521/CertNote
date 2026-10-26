@@ -40,9 +40,9 @@ aws codebuild update-project \
   --no-cache-modes  # 초기화
 ```
 
-> ⚠️ **함정**: `node_modules/**/*`를 S3 캐시에 넣으면 처음에는 빠르게 느껴지지만, `node_modules`가 100MB를 넘으면 S3 업로드·다운로드 시간이 npm install 시간보다 길어질 수 있다. 실제로 캐시 적용 후 오히려 느려지는 팀이 있다. 측정 없이 캐시를 넣으면 안 된다. CloudWatch의 `BuildDuration`, `DownloadSourceDuration`을 before/after로 비교하라.
+> ⚠️ **함정**: `node_modules/**/*`를 S3 캐시에 넣으면 처음에는 빠르게 느껴지지만, `node_modules`가 100MB를 넘으면 S3 업로드·다운로드 시간이 npm install 시간보다 길어질 수 있다. 실제로 캐시 적용 후 오히려 느려지는 팀이 있다. 측정 없이 캐시를 넣으면 안 된다. CloudWatch의 `BuildDuration`, `DownloadSourceDuration`을 before/after로 비교해야 한다.
 
-> 💡 **관련 이론**: 캐시 효과를 평가하는 핵심 지표는 **Cache Hit Rate(캐시 적중률)**다. 적중률이 90%라면 10번 중 9번은 캐시에서 빠르게 처리되고 1번만 실제 인터넷에서 가져온다. CodeBuild의 S3 캐시 적중률은 "캐시 키"의 설계에 달려 있다 — 캐시 경로가 너무 넓으면 캐시 크기가 커져서 다운로드 오버헤드가 생기고, 너무 좁으면 적중률이 낮아진다. 이것은 CPU 캐시 설계의 capacity miss vs conflict miss 트레이드오프와 동일한 문제다.
+> 캐시 효과를 평가하는 핵심 지표는 **Cache Hit Rate(캐시 적중률)**다. 적중률이 90%라면 10번 중 9번은 캐시에서 빠르게 처리되고 1번만 실제 인터넷에서 가져온다. CodeBuild의 S3 캐시 적중률은 "캐시 키"의 설계에 달려 있다 — 캐시 경로가 너무 넓으면 캐시 크기가 커져서 다운로드 오버헤드가 생기고, 너무 좁으면 적중률이 낮아진다. 이것은 CPU 캐시 설계의 capacity miss vs conflict miss 트레이드오프와 동일한 문제다.
 
 ## S3 캐시의 작동 원리: zip, 해시, 버킷
 
@@ -55,7 +55,7 @@ CodeBuild가 S3 캐시를 처리하는 방식은 다음과 같다:
 
 캐시 버킷과 아티팩트 버킷은 보통 다른 S3 버킷이다. Cross-account 환경에서는 두 버킷의 KMS 키가 달라 암호화 정합성 문제가 생길 수 있다.
 
-> 🔍 **더 깊이**: S3 캐시의 파일 경로는 프로젝트 이름과 브랜치를 포함한 키로 저장된다. 즉, `main` 브랜치 캐시와 `feature/xyz` 브랜치 캐시는 별도로 관리된다. 처음 새 브랜치에서 빌드하면 캐시 미스가 발생한다(Cold start). 이것이 trunk-based development가 캐시 효율 면에서 feature branch 전략보다 유리한 이유 중 하나다 — 모든 빌드가 같은 `main` 브랜치 캐시를 공유한다.
+> S3 캐시의 파일 경로는 프로젝트 이름과 브랜치를 포함한 키로 저장된다. 즉, `main` 브랜치 캐시와 `feature/xyz` 브랜치 캐시는 별도로 관리된다. 처음 새 브랜치에서 빌드하면 캐시 미스가 발생한다(Cold start). 이것이 trunk-based development가 캐시 효율 면에서 feature branch 전략보다 유리한 이유 중 하나다 — 모든 빌드가 같은 `main` 브랜치 캐시를 공유한다.
 
 ## Docker Layer Cache: 레이어 불변성의 활용
 
@@ -89,9 +89,9 @@ phases:
 
 `--cache-from type=registry,ref=$ECR/myapp:cache`는 ECR에 저장된 캐시 레이어를 가져온다. `--cache-to`는 새 레이어를 ECR에 저장한다. 호스트가 바뀌어도 ECR에서 가져오기 때문에 항상 캐시가 적중한다. 이것이 **호스트 의존을 제거하는 모던 패턴**이다.
 
-> 💡 **관련 이론**: Docker의 Content-Addressable Storage(CAS)는 각 레이어를 내용의 SHA256 해시로 식별한다. 동일한 내용의 레이어는 해시가 같아서 어느 호스트에서나 동일한 식별자로 참조된다. ECR에 캐시를 저장하면 이 해시 기반 식별이 클라우드 스토리지로 확장된다 — 호스트가 달라도 SHA256이 일치하면 레이어를 재사용한다. 이것은 분산 빌드 시스템의 **원격 실행 캐시(Remote Execution Cache)** 개념과 같다.
+> Docker의 Content-Addressable Storage(CAS)는 각 레이어를 내용의 SHA256 해시로 식별한다. 동일한 내용의 레이어는 해시가 같아서 어느 호스트에서나 동일한 식별자로 참조된다. ECR에 캐시를 저장하면 이 해시 기반 식별이 클라우드 스토리지로 확장된다 — 호스트가 달라도 SHA256이 일치하면 레이어를 재사용한다. 이것은 분산 빌드 시스템의 **원격 실행 캐시(Remote Execution Cache)** 개념과 같다.
 
-> 📚 **사례**: Pinterest는 2021년 블로그에서 ECR Registry Cache 도입 후 Docker 빌드 시간이 평균 72% 단축됐다고 공개했다. 특히 Python + Node.js 의존성이 많은 이미지에서 `RUN pip install`과 `RUN npm install` 레이어가 매번 재실행되는 문제를 해결했다. Dockerfile의 레이어 순서 최적화(변경이 적은 레이어 먼저, 변경이 잦은 레이어 나중에)와 함께 적용했다.
+> Pinterest는 2021년 블로그에서 ECR Registry Cache 도입 후 Docker 빌드 시간이 평균 72% 단축됐다고 공개했다. 특히 Python + Node.js 의존성이 많은 이미지에서 `RUN pip install`과 `RUN npm install` 레이어가 매번 재실행되는 문제를 해결했다. Dockerfile의 레이어 순서 최적화(변경이 적은 레이어 먼저, 변경이 잦은 레이어 나중에)와 함께 적용했다.
 
 ## Compute Type 선택: vCPU와 RAM의 트레이드오프
 
@@ -107,7 +107,7 @@ phases:
 
 > ⚠️ **함정**: "Compute Type을 키우면 빌드가 빠르다"는 선형 관계가 아니다. I/O 바운드 빌드(네트워크 다운로드, 디스크 쓰기)는 vCPU를 늘려도 속도가 거의 안 변한다. CPU 바운드 빌드(컴파일, 암호화)는 확실한 효과가 있다. 측정 없이 Compute Type을 키우면 비용만 늘고 속도는 그대로인 경우가 흔하다.
 
-> 🔍 **더 깊이**: Compute Type 선택은 암달의 법칙(Amdahl's Law)이 작동하는 영역이다. 순차 실행 부분(S)과 병렬 가능 부분(1-S)이 있을 때, 최대 속도 향상은 1/(S + (1-S)/N)이다. 빌드의 "SSM Parameter Store 조회 1초", "ECR 이미지 push 30초" 같은 순차 부분은 vCPU를 늘려도 줄지 않는다. 실제 컴파일 단계만 병렬화 이득을 본다. 이것이 "LARGE를 써도 2배 빠르지 않은" 이유다.
+> Compute Type 선택은 암달의 법칙(Amdahl's Law)이 작동하는 영역이다. 순차 실행 부분(S)과 병렬 가능 부분(1-S)이 있을 때, 최대 속도 향상은 1/(S + (1-S)/N)이다. 빌드의 "SSM Parameter Store 조회 1초", "ECR 이미지 push 30초" 같은 순차 부분은 vCPU를 늘려도 줄지 않는다. 실제 컴파일 단계만 병렬화 이득을 본다. 이것이 "LARGE를 써도 2배 빠르지 않은" 이유다.
 
 ## Build Batch: 의존 그래프로 보는 CI/CD 파이프라인
 
@@ -148,7 +148,7 @@ batch:
 
 각 빌드 노드는 독립 컨테이너이기 때문에 파일시스템을 공유하지 않는다. 노드 간 아티팩트 전달은 S3를 경유해야 한다. 이것이 Build Batch에서 S3 캐시가 특히 중요한 이유다.
 
-> 💡 **관련 이론**: Build Batch의 의존 그래프는 **방향성 비순환 그래프(DAG)**다. GNU Make의 Makefile 의존 관계, Apache Airflow의 DAG, Kubernetes Job 순서 의존이 모두 같은 자료구조를 쓴다. DAG는 순환(cycle)이 없어야 하는데, CodeBuild는 `depend-on`에 순환이 있으면 빌드 생성 시점에 오류를 반환한다. 위상 정렬(Kahn's algorithm 또는 DFS-based)로 실행 순서를 결정한다.
+> Build Batch의 의존 그래프는 **방향성 비순환 그래프(DAG)**다. GNU Make의 Makefile 의존 관계, Apache Airflow의 DAG, Kubernetes Job 순서 의존이 모두 같은 자료구조를 쓴다. DAG는 순환(cycle)이 없어야 하는데, CodeBuild는 `depend-on`에 순환이 있으면 빌드 생성 시점에 오류를 반환한다. 위상 정렬(Kahn's algorithm 또는 DFS-based)로 실행 순서를 결정한다.
 
 > 🎯 **시나리오**: "5개 마이크로서비스가 있다. 각각 ARM/x86 이미지를 만들어야 한다. 일부는 공통 라이브러리에 의존한다." 최적 설계는: (1) `build-graph`로 공통 라이브러리를 첫 번째 노드로, 나머지 서비스를 `depend-on: [common_lib]`으로 설정 → (2) 각 서비스 내에서 ARM/x86을 `build-list`로 병렬 처리 → (3) S3 캐시로 공통 라이브러리 컴파일 결과 공유. 총 실행 시간 = common_lib 빌드 시간 + max(서비스 빌드 시간).
 
@@ -172,7 +172,7 @@ Fleet은 시간당 약정 비용을 낸다. 빌드 빈도가 높을 때 이득�
 
 VPC 모드와 결합하면 ENI 생성 시간도 제거되어 추가 단축이 가능하다.
 
-> 📚 **사례**: 2022년 Shopify가 Engineering Blog에 공개한 사례에 따르면, 하루 약 12만 건의 CI 빌드를 처리하는 과정에서 Provisioning 오버헤드가 누적 CPU 시간의 8%를 차지했다. Reserved Capacity(유사 개념)를 도입한 뒤 이 오버헤드가 1% 미만으로 줄었다. 빌드 빈도가 클수록 Provisioning 최적화의 ROI가 크다는 교훈이다.
+> 2022년 Shopify가 Engineering Blog에 공개한 사례에 따르면, 하루 약 12만 건의 CI 빌드를 처리하는 과정에서 Provisioning 오버헤드가 누적 CPU 시간의 8%를 차지했다. Reserved Capacity(유사 개념)를 도입한 뒤 이 오버헤드가 1% 미만으로 줄었다. 빌드 빈도가 클수록 Provisioning 최적화의 ROI가 크다는 교훈이다.
 
 ## GCP Cloud Build vs CodeBuild: 캐시 전략 비교
 
@@ -187,7 +187,7 @@ VPC 모드와 결합하면 ENI 생성 시간도 제거되어 추가 단축이 �
 
 Cloud Build의 장점은 캐시 키를 파일 해시 기반으로 커스텀할 수 있어 더 세밀한 캐시 전략이 가능하다는 것이다. CodeBuild는 캐시 키 커스터마이징이 제한적이지만 S3와의 통합이 자연스럽다.
 
-> 💡 **관련 이론**: 캐시 무효화(Cache Invalidation)는 컴퓨터 과학에서 "가장 어려운 두 가지 문제"(Phil Karlton) 중 하나다. 빌드 캐시에서 언제 캐시를 버리고 새로 빌드해야 하는가는 간단한 문제가 아니다. `package-lock.json`이 바뀌면 `node_modules` 캐시를 무효화해야 하지만, CodeBuild의 캐시는 경로 기반이라 이 논리를 자동으로 처리하지 않는다. 이것이 Gradle Wrapper, Maven Wrapper, Bazel 같은 도구들이 자체 캐시 무효화 논리를 가진 이유다.
+> 캐시 무효화(Cache Invalidation)는 컴퓨터 과학에서 "가장 어려운 두 가지 문제"(Phil Karlton) 중 하나다. 빌드 캐시에서 언제 캐시를 버리고 새로 빌드해야 하는가는 간단한 문제가 아니다. `package-lock.json`이 바뀌면 `node_modules` 캐시를 무효화해야 하지만, CodeBuild의 캐시는 경로 기반이라 이 논리를 자동으로 처리하지 않는다. 이것이 Gradle Wrapper, Maven Wrapper, Bazel 같은 도구들이 자체 캐시 무효화 논리를 가진 이유다.
 
 ## 빌드 시간 측정: CloudWatch 지표 활용
 

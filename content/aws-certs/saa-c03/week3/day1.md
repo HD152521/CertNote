@@ -24,7 +24,7 @@ AWS는 2009년부터 워크로드별 최적화 패밀리를 분리하기 시작�
 | **Inf/Trn** | AWS 칩 | 추론/학습 전용 | Inferentia2, Trainium2 |
 | **A/g 접미사** | ARM | 비용 절감 | Graviton3, ARM ISA |
 
-> 💡 **관련 이론**: 인스턴스 패밀리 선택은 사실 리틀의 법칙(Little's Law: L = λW)과 관련 있다. 요청의 평균 체류 시간(W)이 CPU 계산에 의해 결정되는 워크로드는 C 패밀리, 메모리 내 데이터 구조 크기에 의해 결정되는 워크로드는 R 패밀리가 맞다. M 패밀리는 병목이 명확하지 않을 때 시작점이 된다.
+인스턴스 패밀리 선택은 사실 리틀의 법칙(Little's Law: L = λW)과 관련 있다. 요청의 평균 체류 시간(W)이 CPU 계산에 의해 결정되는 워크로드는 C 패밀리, 메모리 내 데이터 구조 크기에 의해 결정되는 워크로드는 R 패밀리가 맞다. M 패밀리는 병목이 명확하지 않을 때 시작점이 된다.
 
 ## Nitro 하이퍼바이저: 가상화 오버헤드를 0에 가깝게
 
@@ -48,9 +48,9 @@ Guest VM → Nitro Card (하드웨어) → Physical HW
 Guest VM ← KVM Micro-Hypervisor (메모리 보호, vCPU 스케줄링만)
 ```
 
-> 🔍 **더 깊이**: Nitro의 네트워크 카드는 SR-IOV(Single Root I/O Virtualization)를 이용해 물리 NIC을 여러 가상 함수(VF)로 분할한다. 각 인스턴스는 자신에게 할당된 VF에 직접 접근하므로 네트워크 패킷 경로에서 소프트웨어 레이어가 제거된다. ENA(Elastic Network Adapter) 드라이버가 게스트에 설치되면 이 VF를 직접 제어할 수 있다. 100Gbps 네트워크 성능은 이 구조 덕분에 가능하다.
+Nitro의 네트워크 카드는 SR-IOV(Single Root I/O Virtualization)를 이용해 물리 NIC을 여러 가상 함수(VF)로 분할한다. 각 인스턴스는 자신에게 할당된 VF에 직접 접근하므로 네트워크 패킷 경로에서 소프트웨어 레이어가 제거된다. ENA(Elastic Network Adapter) 드라이버가 게스트에 설치되면 이 VF를 직접 제어할 수 있다. 100Gbps 네트워크 성능은 이 구조 덕분에 가능하다.
 
-> 📚 **사례**: Netflix는 2021년 비디오 인코딩 플랫폼을 Xen c3 인스턴스에서 Nitro c5 인스턴스로 마이그레이션하면서 같은 인코딩 작업에서 CPU 사용량이 약 20% 감소했다고 발표했다. 하이퍼바이저 오버헤드 제거가 실제로 컴퓨팅 비용 절감으로 이어진 사례다.
+**사례**: Netflix는 2021년 비디오 인코딩 플랫폼을 Xen c3 인스턴스에서 Nitro c5 인스턴스로 마이그레이션하면서 같은 인코딩 작업에서 CPU 사용량이 약 20% 감소했다고 발표했다. 하이퍼바이저 오버헤드 제거가 실제로 컴퓨팅 비용 절감으로 이어진 사례다.
 
 ## Graviton: ARM이 x86을 위협하는 이유
 
@@ -60,7 +60,7 @@ Guest VM ← KVM Micro-Hypervisor (메모리 보호, vCPU 스케줄링만)
 
 다만 Graviton은 ARM ISA를 사용하므로 소프트웨어 호환성을 확인해야 한다. JVM 기반(Java, Kotlin, Scala), Python, Go, Rust는 대부분 ARM에서 잘 돌아간다. 문제가 되는 건 x86 전용 바이너리를 배포하는 ISV 상용 소프트웨어나, x86 인라인 어셈블리가 박힌 레거시 C/C++ 코드다.
 
-> 💡 **관련 이론**: RISC vs CISC 논쟁은 1980년대부터 이어졌다. ARM은 RISC 설계 원칙(단순 명령, 고정 길이, 레지스터 중심)을 따라 파이프라인 설계가 단순하고 전력 효율이 높다. x86은 CISC지만 내부적으로 RISC 마이크로 연산(μop)으로 변환해 실행한다. Graviton3는 ARMV8.2 ISA를 사용하며, SVE(Scalable Vector Extension)로 데이터 병렬 처리를 강화해 ML 추론이나 HPC에서 경쟁력이 있다.
+RISC vs CISC 논쟁은 1980년대부터 이어졌다. ARM은 RISC 설계 원칙(단순 명령, 고정 길이, 레지스터 중심)을 따라 파이프라인 설계가 단순하고 전력 효율이 높다. x86은 CISC지만 내부적으로 RISC 마이크로 연산(μop)으로 변환해 실행한다. Graviton3는 ARMV8.2 ISA를 사용하며, SVE(Scalable Vector Extension)로 데이터 병렬 처리를 강화해 ML 추론이나 HPC에서 경쟁력이 있다.
 
 | 구분 | Intel (x86) | AMD (x86) | Graviton3 (ARM) |
 |------|------------|----------|-----------------|
@@ -82,7 +82,7 @@ Guest VM ← KVM Micro-Hypervisor (메모리 보호, vCPU 스케줄링만)
 
 수학적으로 볼 때, 3년 All Upfront Compute SP의 할인율은 ~66%, 3년 Standard RI는 ~72%다. 그러나 RI가 6%포인트 더 유리하려면 3년 내내 **동일 인스턴스 타입을 유지**해야 한다. 클라우드 세계에서 그 확신이 있다면 RI, 없다면 SP가 더 현명하다.
 
-> 💡 **관련 이론**: 이 선택은 옵션 프라이싱 이론의 유연성 프리미엄(flexibility premium)과 동일 구조다. Compute SP는 Black-Scholes 모델에서 넓은 행사 가능 범위를 가진 옵션처럼 유연성이 높아 프리미엄(할인율 포기)을 낸다. RI는 특정 조건에서만 행사 가능한 유럽형 옵션처럼 조건부 할인이 더 크다.
+이 선택은 옵션 프라이싱 이론의 유연성 프리미엄(flexibility premium)과 동일 구조다. Compute SP는 Black-Scholes 모델에서 넓은 행사 가능 범위를 가진 옵션처럼 유연성이 높아 프리미엄(할인율 포기)을 낸다. RI는 특정 조건에서만 행사 가능한 유럽형 옵션처럼 조건부 할인이 더 크다.
 
 **Spot 인스턴스**의 90% 할인이 가능한 이유는 AWS의 예비 용량(spare capacity)을 경매하기 때문이다. AWS의 물리 서버는 최대 부하 예측치보다 항상 많이 준비되어 있다. 그 여분을 유휴로 두는 것보다 저렴하게라도 파는 것이 낫다. 단, AWS가 그 용량이 필요해지면 2분 알림 후 인스턴스를 회수한다. Spot의 핵심 제약은 **단방향 종료 권한이 AWS에 있다**는 것이다.
 
@@ -102,13 +102,13 @@ Guest VM ← KVM Micro-Hypervisor (메모리 보호, vCPU 스케줄링만)
    - capacity-optimized 전략: 가장 여유 있는 풀 선택
 ```
 
-> ⚠️ **함정**: Spot에 "데이터베이스", "stateful", "라이선스 서버"가 등장하면 거의 무조건 오답이다. Spot은 언제든 중단될 수 있어서 MySQL 마스터나 Elasticsearch 마스터 노드에 쓰면 데이터 손실이 발생한다. 단 Spot Fleet에서 Elasticsearch 데이터 노드(복제본 있음)는 사용 가능하다.
+> ⚠️ **함정**: Spot에 "데이터베이스", "stateful", "라이선스 서버"가 등장하면 대개 오답이다. Spot은 언제든 중단될 수 있어서 MySQL 마스터나 Elasticsearch 마스터 노드에 쓰면 데이터 손실이 발생한다. 단 Spot Fleet에서 Elasticsearch 데이터 노드(복제본 있음)는 사용 가능하다.
 
 **Dedicated Host**와 **Dedicated Instance**는 혼동하기 쉽다. Dedicated Instance는 같은 AWS 계정의 다른 인스턴스와 물리 호스트를 공유하지 않지만, 어떤 물리 서버에 올라가는지 보이지 않는다. Dedicated Host는 특정 물리 서버를 점유하고 그 서버의 소켓 수, 코어 수까지 보인다. BYOL(Bring Your Own License) 라이선스가 물리 소켓 수나 물리 코어 수 기준으로 계산되는 Oracle DB나 Windows Server SQL Server에서 Dedicated Host가 필요한 이유다.
 
 **Capacity Reservation**은 할인 없이 용량만 확보한다. "예약"이 아니라 "자리 맡기"다. 큰 이벤트 전날 특정 AZ에 인스턴스 자리를 확보해두고, 이벤트가 끝나면 해제한다. Savings Plans와 결합하면 할인 + 용량 확보 두 마리를 잡는다.
 
-> 📚 **사례**: 2021년 12월, Log4Shell 취약점이 발표되었을 때 많은 회사가 긴급 패치를 위해 대량의 EC2 인스턴스를 필요로 했다. On-Demand 인스턴스 가용성이 순간적으로 낮아진 us-east-1에서 Capacity Reservation 없이 운영하던 팀들이 인스턴스를 즉시 확보하지 못하는 상황이 발생했다. 이후 비즈니스 크리티컬 워크로드에서 Capacity Reservation 도입이 급증했다.
+**사례**: 2021년 12월, Log4Shell 취약점이 발표되었을 때 많은 회사가 긴급 패치를 위해 대량의 EC2 인스턴스를 필요로 했다. On-Demand 인스턴스 가용성이 순간적으로 낮아진 us-east-1에서 Capacity Reservation 없이 운영하던 팀들이 인스턴스를 즉시 확보하지 못하는 상황이 발생했다. 이후 비즈니스 크리티컬 워크로드에서 Capacity Reservation 도입이 급증했다.
 
 ## Spot 2분 통지의 기술: 어떻게 동작하는가
 
@@ -120,21 +120,21 @@ Guest VM ← KVM Micro-Hypervisor (메모리 보호, vCPU 스케줄링만)
 
 2분은 체크포인트를 저장하거나, SQS 메시지를 큐에 돌려보내거나, ECS 태스크 드레인을 시작하기에 충분한 시간이다. 단, 복잡한 DB 플러시나 큰 데이터 업로드는 2분 안에 못 끝날 수 있으므로 애초에 Spot에서 돌리면 안 된다.
 
-> 🔍 **더 깊이**: EC2 Fleet과 Spot Fleet에는 `allocation-strategy`가 있다. `lowest-price`는 가장 싼 풀을 선택하지만 특정 인스턴스 타입에 몰릴 수 있다. `capacity-optimized`는 현재 AWS에서 여유 용량이 가장 많은 풀을 선택해 **인터럽션 빈도를 낮춘다**. 비용이 약간 더 나올 수 있지만 안정성이 올라가므로 장기 배치 잡에 권장된다. `price-capacity-optimized`(2022년 추가)는 이 둘의 균형을 잡는다.
+EC2 Fleet과 Spot Fleet에는 `allocation-strategy`가 있다. `lowest-price`는 가장 싼 풀을 선택하지만 특정 인스턴스 타입에 몰릴 수 있다. `capacity-optimized`는 현재 AWS에서 여유 용량이 가장 많은 풀을 선택해 **인터럽션 빈도를 낮춘다**. 비용이 약간 더 나올 수 있지만 안정성이 올라가므로 장기 배치 잡에 권장된다. `price-capacity-optimized`(2022년 추가)는 이 둘의 균형을 잡는다.
 
 ## Placement Group: 분산 시스템 이론과의 연결
 
 Placement Group은 인스턴스를 물리적으로 어떻게 배치할지 AWS에 힌트를 준다.
 
-**Cluster Placement Group**은 모든 인스턴스를 같은 랙이나 인접 랙에 배치해 네트워크 레이턴시를 최소화한다. 인스턴스 간 latency가 수십 μs 수준으로 떨어지고, 최대 100Gbps Enhanced Networking이 활성화된다. HPC(High Performance Computing)에서 MPI(Message Passing Interface) 기반 병렬 계산이 이 구성을 요구한다. 단점은 단일 하드웨어 장애가 클러스터 전체에 영향을 줄 수 있다는 것이다.
+**Cluster Placement Group**은 모든 인스턴스를 같은 랙이나 인접 랙에 배치해 네트워크 지연 시간을 최소화한다. 인스턴스 간 latency가 수십 μs 수준으로 떨어지고, 최대 100Gbps Enhanced Networking이 활성화된다. HPC(High Performance Computing)에서 MPI(Message Passing Interface) 기반 병렬 계산이 이 구성을 요구한다. 단점은 단일 하드웨어 장애가 클러스터 전체에 영향을 줄 수 있다는 것이다.
 
 **Spread Placement Group**은 각 인스턴스를 물리적으로 다른 랙에 배치한다. 랙 단위 하드웨어 장애가 최대 1개 인스턴스에만 영향을 미친다. AZ당 최대 7개 인스턴스라는 제약이 있어, 소수의 미션 크리티컬 인스턴스(ZooKeeper 노드, Kafka 브로커 리더 등)를 격리할 때 쓴다.
 
 **Partition Placement Group**은 파티션(논리 그룹)별로 다른 물리 랙 집합을 사용한다. AZ당 최대 7개 파티션, 파티션당 수백 개 인스턴스를 넣을 수 있다. HDFS, Apache Cassandra, Apache HBase 같은 분산 시스템은 데이터 복제본을 다른 "랙 그룹"에 배치해야 단일 랙 장애로 데이터를 잃지 않는다. AWS의 Partition이 바로 이 "랙 그룹"에 해당한다.
 
-> 💡 **관련 이론**: Partition Placement Group은 분산 스토리지 시스템의 **Rack Awareness** 개념을 AWS 인프라에 매핑한 것이다. HDFS의 기본 복제 전략(Hadoop 2.x 이상)은 블록의 첫 번째 복제본을 로컬 노드에, 두 번째를 같은 랙의 다른 노드에, 세 번째를 다른 랙의 노드에 배치한다. Partition Group에서 파티션 번호를 인스턴스 메타데이터로 읽어(`instance/placement/partition-number`) Hadoop의 Rack ID에 매핑하면 AWS 위에서 진짜 Rack-Aware HDFS를 구성할 수 있다.
+Partition Placement Group은 분산 스토리지 시스템의 **Rack Awareness** 개념을 AWS 인프라에 매핑한 것이다. HDFS의 기본 복제 전략(Hadoop 2.x 이상)은 블록의 첫 번째 복제본을 로컬 노드에, 두 번째를 같은 랙의 다른 노드에, 세 번째를 다른 랙의 노드에 배치한다. Partition Group에서 파티션 번호를 인스턴스 메타데이터로 읽어(`instance/placement/partition-number`) Hadoop의 Rack ID에 매핑하면 AWS 위에서 진짜 Rack-Aware HDFS를 구성할 수 있다.
 
-> 📚 **사례**: Netflix의 Cassandra 클러스터는 AWS 위에서 Partition Placement Group을 사용해 각 Cassandra 데이터센터(DC)를 하나의 파티션에 매핑한다. 이를 통해 단일 AWS 랙 장애 시 Cassandra의 복제 인수(replication factor=3)가 파티션 경계를 넘어 데이터 가용성을 보장한다. Netflix가 공개한 Engineering Blog(2016)에서 이 아키텍처를 자세히 설명한다.
+**사례**: Netflix의 Cassandra 클러스터는 AWS 위에서 Partition Placement Group을 사용해 각 Cassandra 데이터센터(DC)를 하나의 파티션에 매핑한다. 이를 통해 단일 AWS 랙 장애 시 Cassandra의 복제 인수(replication factor=3)가 파티션 경계를 넘어 데이터 가용성을 보장한다. Netflix가 공개한 Engineering Blog(2016)에서 이 아키텍처를 자세히 설명한다.
 
 ## 다른 클라우드와의 비교: GCP와 Azure의 접근법
 
@@ -181,7 +181,7 @@ curl -H "X-aws-ec2-metadata-token: $TOKEN" \
 
 SSRF 공격자는 보통 GET만 가능하다. PUT을 시도하면 토큰 발급이 안 되고, 토큰 없이 메타데이터를 요청하면 401이 반환된다. 추가로 IMDSv2는 IPv4 TTL을 1로 제한해서 인스턴스 안에서 나간 요청이 라우터를 하나라도 거치면(TTL 감소) 응답이 도달하지 못한다. 컨테이너 탈출 후 호스트 메타데이터 접근도 이 제약으로 차단된다.
 
-> 🔍 **더 깊이**: EC2 Launch Template이나 IMDSv2 강제 설정이 없으면, 오래된 AMI는 기본적으로 IMDSv1이 허용된 상태로 시작한다. AWS 계정 레벨에서 `aws ec2 modify-instance-metadata-defaults --http-tokens required`를 실행하면 해당 리전의 신규 인스턴스는 모두 IMDSv2만 허용된다. 기존 인스턴스에 대해서는 `modify-instance-metadata-options`를 개별로 적용해야 한다.
+EC2 Launch Template이나 IMDSv2 강제 설정이 없으면, 오래된 AMI는 기본적으로 IMDSv1이 허용된 상태로 시작한다. AWS 계정 레벨에서 `aws ec2 modify-instance-metadata-defaults --http-tokens required`를 실행하면 해당 리전의 신규 인스턴스는 모두 IMDSv2만 허용된다. 기존 인스턴스에 대해서는 `modify-instance-metadata-options`를 개별로 적용해야 한다.
 
 ## CLI로 이해 굳히기
 
@@ -220,7 +220,7 @@ aws ec2 create-capacity-reservation \
   --end-date 2025-12-31T23:59:59Z
 ```
 
-## 정리하며
+## 정리
 
 EC2 인스턴스의 패밀리 체계는 "워크로드의 병목 자원이 무엇인가"라는 물음에 대한 대답이다. 스토리지 병목이면 I, 메모리 병목이면 R, CPU 병목이면 C를 고른다. Graviton(ARM)은 코드 호환성 확인 후 첫 번째로 검토할 가성비 옵션이다.
 

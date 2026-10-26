@@ -85,7 +85,7 @@ EC2 한 대만?
 | Step | 단계별 스케일링 크기 | 세밀 제어 필요 |
 | Simple | 단순 +/- N | 레거시, 피할 것 |
 
-## 빈출 함정 7가지
+## 함정 7가지
 
 **함정 1. Instance Store를 DB에 쓰는 경우**
 시험에서 "가장 빠른 스토리지"라는 미끼로 Instance Store를 데이터베이스에 쓰는 답을 제시한다. Instance Store는 인스턴스 중지/종료 시 데이터가 사라지므로 DB에 절대 쓰면 안 된다. 단, Cassandra·MongoDB처럼 복제(replication)로 내구성을 보장하는 분산 DB의 노드 디스크로는 사용 가능하다.

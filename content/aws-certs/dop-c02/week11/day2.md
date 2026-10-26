@@ -27,7 +27,7 @@ X-Ray의 맥락에서 reservoir는 변형되어 쓰인다 — "**매 초마다 �
 
 > 💡 **관련 이론**: 고전 Reservoir Sampling(Algorithm R, Vitter 1985)은 i번째 원소를 k/i 확률로 받아들여 기존 표본 하나와 교체함으로써, 스트림 길이를 모르고도 모든 원소가 균등 확률 k/n으로 선택됨을 보장한다. 핵심 통찰은 "한 번 지나간 데이터를 다시 못 보는 단일 패스 스트림에서 균등 표본을 유지"하는 것이다. X-Ray는 이 알고리즘 자체를 그대로 쓰진 않지만, "스트림에서 고정 예산(reservoir)만큼 보장 수집"이라는 발상을 차용했다. 같은 계열의 스트림 샘플링이 데이터 엔지니어링 전반에 깔려 있다 — Kafka 컨슈머의 샘플 로깅, 로드 테스트 도구의 요청 샘플링, 데이터베이스의 `TABLESAMPLE`이 모두 "전수 처리 없이 대표 표본"이라는 같은 문제를 푼다.
 
-> 🔍 **더 깊이**: X-Ray 샘플링은 **head-based sampling**(요청 입구에서 결정)이다. 요청이 들어오는 순간 "이 trace를 수집할지"를 정하고 `Sampled=1/0`을 전체 체인에 전파한다(Day 1의 propagation). 장점은 단순하고 오버헤드가 낮다는 것 — 버릴 trace는 처음부터 데이터를 안 만든다. 단점은 **"결과를 보고 흥미로운 것만 고를 수 없다"**는 점이다. 입구에서 결정하므로, 이 요청이 나중에 에러를 낼지 느릴지 모른 채 동전을 던진다. 이를 보완하는 것이 **tail-based sampling**(전부 일단 수집 후 trace 완성 시점에 선택) — "에러 난 trace와 p99 느린 trace는 100% 유지, 정상 trace는 1%만"처럼 결과 기반 선택이 가능하다. 단점은 모든 trace를 일단 버퍼링해야 해 오버헤드가 크다. X-Ray 네이티브는 head-based지만, ADOT Collector(Day 3)에 tail-sampling processor를 두면 결과 기반 샘플링을 얹을 수 있다. "에러 trace를 절대 놓치면 안 된다"는 요구는 tail-based로만 완전히 푼다.
+> X-Ray 샘플링은 **head-based sampling**(요청 입구에서 결정)이다. 요청이 들어오는 순간 "이 trace를 수집할지"를 정하고 `Sampled=1/0`을 전체 체인에 전파한다(Day 1의 propagation). 장점은 단순하고 오버헤드가 낮다는 것 — 버릴 trace는 처음부터 데이터를 안 만든다. 단점은 **"결과를 보고 흥미로운 것만 고를 수 없다"**는 점이다. 입구에서 결정하므로, 이 요청이 나중에 에러를 낼지 느릴지 모른 채 동전을 던진다. 이를 보완하는 것이 **tail-based sampling**(전부 일단 수집 후 trace 완성 시점에 선택) — "에러 난 trace와 p99 느린 trace는 100% 유지, 정상 trace는 1%만"처럼 결과 기반 선택이 가능하다. 단점은 모든 trace를 일단 버퍼링해야 해 오버헤드가 크다. X-Ray 네이티브는 head-based지만, ADOT Collector(Day 3)에 tail-sampling processor를 두면 결과 기반 샘플링을 얹을 수 있다. "에러 trace를 절대 놓치면 안 된다"는 요구는 tail-based로만 완전히 푼다.
 
 ## 샘플링 규칙의 우선순위 — 정책의 평가 순서
 
@@ -87,7 +87,7 @@ fault = true
 
 여기서 **annotation으로 추가한 필드만 검색 가능**하다는 Day 1의 원리가 다시 등장한다. `OrderId`를 annotation으로 넣었기에 `annotation.OrderId = ...`로 찾을 수 있다. metadata로 넣었다면 이 검색은 불가능하다 — 인덱싱되지 않았기 때문이다.
 
-> 💡 **관련 이론**: `duration > 2`로 느린 trace를 찾는 것은 옵저버빌리티에서 **outlier 분석**의 출발점이다. 평균 응답시간은 거짓말을 한다 — p50이 100ms여도 p99가 5초면 1%의 사용자는 끔찍한 경험을 한다. 분산 시스템의 **tail latency**(꼬리 지연)는 단순 평균으로는 절대 안 보인다. Jeff Dean의 "The Tail at Scale"(2013)이 정리한 핵심: 서비스가 100개 컴포넌트를 병렬 호출하면, 각 컴포넌트의 p99가 좋아도 전체 요청은 거의 항상 누군가의 p99를 만나 느려진다(99%^100 ≈ 37%만 빠름). 그래서 trace 검색의 본질은 "느린 개별 trace를 잡아 어느 subsegment가 꼬리를 만들었는지"를 보는 것이다. 메트릭(집계)은 "느리다"를 알려주고, trace(개별)는 "왜 느린지"를 알려준다.
+> `duration > 2`로 느린 trace를 찾는 것은 옵저버빌리티에서 **outlier 분석**의 출발점이다. 평균 응답시간은 거짓말을 한다 — p50이 100ms여도 p99가 5초면 1%의 사용자는 끔찍한 경험을 한다. 분산 시스템의 **tail latency**(꼬리 지연)는 단순 평균으로는 절대 안 보인다. Jeff Dean의 "The Tail at Scale"(2013)이 정리한 핵심: 서비스가 100개 컴포넌트를 병렬 호출하면, 각 컴포넌트의 p99가 좋아도 전체 요청은 거의 항상 누군가의 p99를 만나 느려진다(99%^100 ≈ 37%만 빠름). 그래서 trace 검색의 본질은 "느린 개별 trace를 잡아 어느 subsegment가 꼬리를 만들었는지"를 보는 것이다. 메트릭(집계)은 "느리다"를 알려주고, trace(개별)는 "왜 느린지"를 알려준다.
 
 ## X-Ray Insights — 학습된 baseline에서의 이탈 탐지
 
@@ -99,7 +99,7 @@ fault = true
 
 이 이벤트를 EventBridge 규칙으로 받아 Lambda·SNS·SSM Automation으로 연결하면 "이상 탐지 → 자동 알림/자동 진단"의 파이프라인이 된다. CloudWatch Anomaly Detection이 메트릭의 이탈을 보는 것과 짝을 이뤄, X-Ray Insights는 서비스 위상의 건강도 이탈을 본다.
 
-> 📚 **사례**: 한 SaaS 기업이 야간 배포 후 특정 다운스트림 의존성의 fault rate가 서서히 올랐는데, 절대값이 알람 임계값(고정 5%) 아래라 CloudWatch 알람은 안 울렸다. 그러나 그 서비스의 평소 fault rate가 0.1%였기에 X-Ray Insights는 "baseline 대비 비정상 상승"으로 즉시 Insight를 생성했다. EventBridge로 Slack에 알림이 가 30분 만에 롤백했다. 교훈: 고정 임계값은 "절대값은 낮지만 평소 대비 비정상"인 초기 열화를 놓친다. baseline 학습 기반 탐지(Insights)가 이 사각지대를 메운다. 둘은 경쟁이 아니라 보완 관계다.
+> 한 SaaS 기업이 야간 배포 후 특정 다운스트림 의존성의 fault rate가 서서히 올랐는데, 절대값이 알람 임계값(고정 5%) 아래라 CloudWatch 알람은 안 울렸다. 그러나 그 서비스의 평소 fault rate가 0.1%였기에 X-Ray Insights는 "baseline 대비 비정상 상승"으로 즉시 Insight를 생성했다. EventBridge로 Slack에 알림이 가 30분 만에 롤백했다. 교훈: 고정 임계값은 "절대값은 낮지만 평소 대비 비정상"인 초기 열화를 놓친다. baseline 학습 기반 탐지(Insights)가 이 사각지대를 메운다. 둘은 경쟁이 아니라 보완 관계다.
 
 ## 비용 최적화의 실제 — Reservoir와 Rate의 경제학
 
@@ -111,9 +111,9 @@ fault = true
 
 추가로 Powertools Tracer는 `POWERTOOLS_TRACER_CAPTURE_RESPONSE=false`로 응답 페이로드를 metadata에 안 담게 해, 큰 응답이 trace 크기를 부풀리는 비용을 줄인다. 이는 "검색 안 할 큰 데이터는 굳이 trace에 싣지 마라"는 Day 1 원리의 비용 측면이다.
 
-> 🎯 **시나리오**: "결제 API는 장애 시 단 한 건의 trace도 놓치면 안 되고, 헬스체크(`/health`)는 추적에서 완전히 빼고, 그 외 일반 트래픽은 비용을 위해 5%만 추적하고 싶다. 어떻게 구성하나?" — 답은 Priority로 분리한 세 규칙이다. ① `/checkout/*` 규칙을 Priority 100(낮음=먼저 평가), Reservoir 크게(예: 100) + FixedRate 1.0으로 두어 결제는 사실상 전수 추적. ② `/health` 규칙을 Priority 200, Reservoir 0 + FixedRate 0.0으로 두어 헬스체크 완전 제외. ③ Default 규칙(Priority 9000)을 FixedRate 0.05로 두어 나머지 5%. 핵심은 **구체적 규칙을 낮은 Priority로 먼저 매칭시키고, 포괄 규칙을 마지막에 두는 평가 순서**다. "장애 trace를 절대 놓치면 안 된다"가 더 엄격한 요구라면, ADOT의 tail-based 샘플링으로 "에러·고지연 trace 100% 유지"를 추가로 얹는다.
+> 🎯 **시나리오**: "결제 API는 장애 시 단 한 건의 trace도 놓치면 안 되고, 헬스체크(`/health`)는 추적에서 완전히 빼고, 그 외 일반 트래픽은 비용을 위해 5%만 추적하고 싶다. 어떻게 구성하나?" — 답은 Priority로 분리한 세 규칙이다. ① `/checkout/*` 규칙을 Priority 100(낮음=먼저 평가), Reservoir 크게(예: 100) + FixedRate 1.0으로 두어 결제는 사실상 전수 추적. ② `/health` 규칙을 Priority 200, Reservoir 0 + FixedRate 0.0으로 두어 헬스체크 완전 제외. ③ Default 규칙(Priority 9000)을 FixedRate 0.05로 두어 나머지 5%. 원칙은 **구체적 규칙을 낮은 Priority로 먼저 매칭시키고, 포괄 규칙을 마지막에 두는 평가 순서**다. "장애 trace를 절대 놓치면 안 된다"가 더 엄격한 요구라면, ADOT의 tail-based 샘플링으로 "에러·고지연 trace 100% 유지"를 추가로 얹는다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 다섯 가지다. 첫째, **샘플링은 추적의 필수 전제**이고, X-Ray는 Reservoir(초당 최소 보장) + FixedRate(초과분 비율)의 두 단계로 저트래픽 가시성과 비용을 동시에 잡는다. 둘째, **X-Ray는 head-based 샘플링**(입구에서 결정·전파)이라 단순·저오버헤드지만 결과 기반 선택이 안 되고, 그건 ADOT의 tail-based로 보완한다. 셋째, **Priority는 평가 순서**로, 구체적 규칙을 먼저·포괄 규칙을 나중에 두며, reservoir는 계정·리전 전체에서 분산 조율된다. 넷째, **Group으로 거대한 Service Map을 슬라이스**하고, **검색 표현식으로 outlier(느린·에러 trace)를 질의**하되 annotation으로 넣은 필드만 검색된다. 다섯째, **X-Ray Insights는 baseline 학습으로 "절대값은 낮지만 비정상" 열화를 잡아** 고정 임계값의 사각지대를 메운다.
 

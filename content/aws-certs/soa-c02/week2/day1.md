@@ -2,7 +2,7 @@
 
 CloudWatch 콘솔을 열면 끝없이 펼쳐지는 그래프 더미에 압도된다. EC2 CPU, ELB Request Count, Lambda Duration, RDS Connections, ECS CPU Reservation… 운영자는 이 더미 속에서 "지금 우리 서비스가 죽고 있는가"를 5초 안에 판단해야 한다. 그러려면 메트릭이 어떻게 저장되고 어떻게 인덱싱되며 어떻게 비용이 청구되는지를 알아야 한다. 콘솔 UI만 외우면 5분쯤 지나 다시 그래프를 못 찾고, 청구서를 받아 들고서야 cardinality 폭증을 만난다.
 
-오늘은 CloudWatch Metrics의 **데이터 모델, 시간 해상도, 보존 정책, cardinality 함정, 그리고 비용 구조**를 운영자 관점에서 깊이 본다. 시험에서는 "이 시나리오에서 detailed monitoring을 켤까 1초 해상도까지 갈까", "사용자별 latency를 dimension으로 추적할까" 같은 의사결정 시나리오로 자주 등장한다.
+오늘은 CloudWatch Metrics의 **데이터 모델, 시간 해상도, 보존 정책, cardinality 함정, 그리고 비용 구조**를 운영자 관점에서 깊이 본다. 시험에서는 "이 시나리오에서 detailed monitoring을 켤까 1초 해상도까지 갈까", "사용자별 latency를 dimension으로 추적할까" 같은 의사결정 시나리오로 등장한다.
 
 ## CloudWatch Metrics의 데이터 모델
 
@@ -23,7 +23,7 @@ DataPoint = (Namespace, MetricName, Dimensions[], Timestamp, Value, Unit)
 
 **핵심 사실**: `(Namespace, MetricName, Dimensions의 정확한 집합)`이 **유일한 메트릭**으로 취급된다. 즉 `CPUUtilization`이라는 이름 하나로도 EC2가 100대면 100개의 별도 메트릭(`InstanceId` dimension 값이 다름)이 존재한다. 100대 인스턴스 평균을 보려면 Math Expression의 `AVG(METRICS())`나 콘솔의 "Add math" 기능으로 따로 집계해야 한다.
 
-> 🔍 **더 깊이**: CloudWatch는 내부적으로 OpenTSDB·Druid 비슷한 time-series DB 위에 구축돼 있다고 알려져 있다. 메트릭은 `(namespace, metric_name, dimension_set의 정규화된 해시)`로 인덱싱돼 빠른 조회가 가능. 단 dimension 조합이 폭증하면 같은 metric_name이 수십만 개의 서로 다른 메트릭을 만들어 비용과 조회 latency가 폭증. 이걸 **cardinality explosion**이라고 부르며, Prometheus·InfluxDB·Datadog 모두 같은 함정이 있다. CloudWatch는 메트릭당 월 \$0.30(첫 10,000개)이라 dimension 1개 잘못 추가하면 청구서가 즉시 4자리수 증가한다.
+CloudWatch는 내부적으로 OpenTSDB·Druid 비슷한 time-series DB 위에 구축돼 있다고 알려져 있다. 메트릭은 `(namespace, metric_name, dimension_set의 정규화된 해시)`로 인덱싱돼 빠른 조회가 가능. 단 dimension 조합이 폭증하면 같은 metric_name이 수십만 개의 서로 다른 메트릭을 만들어 비용과 조회 latency가 폭증. 이걸 **cardinality explosion**이라고 부르며, Prometheus·InfluxDB·Datadog 모두 같은 함정이 있다. CloudWatch는 메트릭당 월 \$0.30(첫 10,000개)이라 dimension 1개 잘못 추가하면 청구서가 즉시 4자리수 증가한다.
 
 > ⚠️ **함정**: "Dimension에 `user_id`를 넣어 사용자별 latency를 추적하자"는 흔한 안티패턴. 사용자가 100만 명이면 100만 개 메트릭이 생성돼 한 달 비용이 \$30만(!). 사용자별 분석은 메트릭이 아니라 **로그(Logs Insights)** 또는 **OpenSearch**, 혹은 **EMF의 메타데이터 필드**(메트릭 dimension이 아닌 일반 로그 필드)에 넣어야 한다. 시험에서 "사용자별 / 요청별 분석" 키워드가 보이면 Custom Metric dimension은 거의 오답이다.
 
@@ -46,9 +46,9 @@ aws cloudwatch put-metric-data \
     "MetricName=ActiveSessions,Value=4823,Unit=Count,StorageResolution=1"
 ```
 
-> 📚 **사례**: 한 게임 회사가 매분 트래픽 스파이크가 30초만 유지되는 워크로드를 운영. 표준 60초 메트릭에서는 30초 스파이크가 1분 평균에 묻혀 ASG가 늦게 반응했다(스파이크 절반이 끝난 시점에야 임계값 초과 신호가 뜸). 1초 해상도 메트릭 + Step Scaling으로 전환하니 스파이크 감지 시간이 60초 → 10초로 단축. 비용은 메트릭 1개당 월 \$0.30이지만(고해상도라고 메트릭 단가가 더 비싸진 않음, 다만 알람 비용은 1.5배) 인스턴스 부족으로 인한 5xx 손실이 훨씬 컸기에 ROI는 즉시 정당화.
+가상의 사례로, 한 게임 회사가 매분 트래픽 스파이크가 30초만 유지되는 워크로드를 운영. 표준 60초 메트릭에서는 30초 스파이크가 1분 평균에 묻혀 ASG가 늦게 반응했다(스파이크 절반이 끝난 시점에야 임계값 초과 신호가 뜸). 1초 해상도 메트릭 + Step Scaling으로 전환하니 스파이크 감지 시간이 60초 → 10초로 단축. 비용은 메트릭 1개당 월 \$0.30이지만(고해상도라고 메트릭 단가가 더 비싸진 않음, 다만 알람 비용은 1.5배) 인스턴스 부족으로 인한 5xx 손실이 훨씬 컸기에 ROI는 즉시 정당화.
 
-> 🔍 **더 깊이**: High-Resolution 메트릭은 보존 기간 자체는 같지만(15개월), **시간이 지나면 자동으로 더 낮은 해상도로 집계(roll-up)**된다. 1초 해상도는 3시간만 유지되고 그 후 60초 해상도로 집계, 다시 15일 후 5분, 63일 후 1시간 집계로 단계적으로 축소. 따라서 1년 전 1초 해상도 데이터는 조회 불가. 장기 보존이 필요하면 GetMetricData로 export하거나 CloudWatch Metric Stream으로 Kinesis Firehose → S3로 흘려야 한다.
+High-Resolution 메트릭은 보존 기간 자체는 같지만(15개월), **시간이 지나면 자동으로 더 낮은 해상도로 집계(roll-up)**된다. 1초 해상도는 3시간만 유지되고 그 후 60초 해상도로 집계, 다시 15일 후 5분, 63일 후 1시간 집계로 단계적으로 축소. 따라서 1년 전 1초 해상도 데이터는 조회 불가. 장기 보존이 필요하면 GetMetricData로 export하거나 CloudWatch Metric Stream으로 Kinesis Firehose → S3로 흘려야 한다.
 
 ## 메트릭 보존 정책: 자동 다운샘플링의 4단 계단
 
@@ -67,7 +67,7 @@ aws cloudwatch put-metric-data \
 
 장기 보존이 필요하면 **CloudWatch Metric Stream → Kinesis Firehose → S3**(2021 GA), 또는 GetMetricData API로 주기적 export. SLO·SLI 리포트를 분기·연 단위로 작성한다면 S3에 묻어둬야 한다.
 
-> 💡 **관련 이론**: 시계열 DB의 표준 패턴인 **roll-up / down-sampling**의 구현. Prometheus의 `recording rules` + remote write to Thanos, Graphite의 storage-aggregation, InfluxDB의 continuous query, RRDtool의 RRA(Round Robin Archive) 모두 같은 개념. 데이터 양이 시간이 지날수록 자동 감소하는 이유는 "최근 데이터는 정밀히, 오래된 데이터는 거시적으로"라는 운영 사실 반영. SLO 분석 표준 윈도우가 28~30일이라 이 정책 자체로 충분한 경우가 많다.
+시계열 DB의 표준 패턴인 **roll-up / down-sampling**의 구현. Prometheus의 `recording rules` + remote write to Thanos, Graphite의 storage-aggregation, InfluxDB의 continuous query, RRDtool의 RRA(Round Robin Archive) 모두 같은 개념. 데이터 양이 시간이 지날수록 자동 감소하는 이유는 "최근 데이터는 정밀히, 오래된 데이터는 거시적으로"라는 운영 사실 반영. SLO 분석 표준 윈도우가 28~30일이라 이 정책 자체로 충분한 경우가 많다.
 
 ## EC2 Detailed Monitoring vs Basic Monitoring
 
@@ -85,9 +85,9 @@ EC2는 기본 5분 간격의 **Basic Monitoring**을 무료 제공. **Detailed M
 | **SwapUtilization** | ❌ | ❌ | ✅ |
 | **TCPv4 EstablishedConn, NetStat** | ❌ | ❌ | ✅ |
 
-> ⚠️ **함정**: 메모리·디스크 사용률은 EC2 detailed monitoring을 켜도 안 나온다. 이건 게스트 OS 안에서 측정해야 하므로 **CloudWatch Agent**가 필수. 시험에서 "EC2 메모리 사용률 알람" 또는 "디스크가 가득 차기 전에 알람" 시나리오가 나오면 답은 거의 항상 CloudWatch Agent. 또 자주 나오는 함정: "Auto Scaling이 메모리 기반으로 스케일 아웃 못 한다" → Agent로 발행한 custom metric에 ASG의 target tracking을 걸어야 한다.
+> ⚠️ **함정**: 메모리·디스크 사용률은 EC2 detailed monitoring을 켜도 안 나온다. 이건 게스트 OS 안에서 측정해야 하므로 **CloudWatch Agent**가 필수. 시험에서 "EC2 메모리 사용률 알람" 또는 "디스크가 가득 차기 전에 알람" 시나리오가 나오면 답은 거의 항상 CloudWatch Agent. 또 나오는 함정: "Auto Scaling이 메모리 기반으로 스케일 아웃 못 한다" → Agent로 발행한 custom metric에 ASG의 target tracking을 걸어야 한다.
 
-> 🔍 **더 깊이**: EC2는 하이퍼바이저(현재는 Nitro System) 레벨에서 CPU·네트워크·디스크 I/O를 측정한다. 그래서 게스트 OS와 무관하게 수집 가능하고 게스트가 hang 돼도 보인다. 하지만 메모리는 OS 안의 페이지 테이블·캐시 통계가 필요해 하이퍼바이저에서 못 본다. 같은 이유로 디스크 "사용량"(파일시스템 레벨, df -h)도 못 본다 — EBS의 read/write IOPS(블록 디바이스 레벨)는 보임. 이 trade-off는 IaaS의 본질적 한계이며, ECS Fargate·Lambda 같은 서비스에선 AWS가 게스트 OS까지 운영하니 메모리도 표준 메트릭에 포함된다.
+EC2는 하이퍼바이저(현재는 Nitro System) 레벨에서 CPU·네트워크·디스크 I/O를 측정한다. 그래서 게스트 OS와 무관하게 수집 가능하고 게스트가 hang 돼도 보인다. 하지만 메모리는 OS 안의 페이지 테이블·캐시 통계가 필요해 하이퍼바이저에서 못 본다. 같은 이유로 디스크 "사용량"(파일시스템 레벨, df -h)도 못 본다 — EBS의 read/write IOPS(블록 디바이스 레벨)는 보임. 이 trade-off는 IaaS의 본질적 한계이며, ECS Fargate·Lambda 같은 서비스에선 AWS가 게스트 OS까지 운영하니 메모리도 표준 메트릭에 포함된다.
 
 ### CloudWatch Agent 핵심 설치 명령
 
@@ -114,7 +114,7 @@ optionalRestart=yes \
   --targets "Key=tag:Env,Values=Prod"
 ```
 
-이 패턴이 시험에 자주 나오는 "수백 대 EC2에 메모리 메트릭을 일괄 배포" 시나리오의 답이다. SSM Run Command + Parameter Store 조합.
+이 패턴이 시험에 나오는 "수백 대 EC2에 메모리 메트릭을 일괄 배포" 시나리오의 답이다. SSM Run Command + Parameter Store 조합.
 
 ## 사용자 정의 메트릭: PutMetricData의 비용 함정
 
@@ -146,9 +146,9 @@ aws cloudwatch put-metric-data \
 - **메트릭 저장**: 메트릭당 월 \$0.30 (첫 10,000개), 그 이상은 단가 감소
 - **GetMetricData**: 1,000개 metric-second당 \$0.01
 
-> 📚 **사례**: 한 회사가 모든 HTTP 요청마다 `PutMetricData`를 호출해 응답 시간을 기록했다(메트릭 3개 × 호출 평균 100M/일). 한 달 후 청구서를 보니 CloudWatch Metrics API 비용만 \$8,000. **해결: Embedded Metric Format(EMF)으로 로그에 메트릭 임베드 → CloudWatch가 자동 추출**(EMF는 API 호출 0). 비용이 95% 감소. EMF의 깊이는 Week 2 Day 4에서.
+가상의 사례로, 한 회사가 모든 HTTP 요청마다 `PutMetricData`를 호출해 응답 시간을 기록했다(메트릭 3개 × 호출 평균 100M/일). 한 달 후 청구서를 보니 CloudWatch Metrics API 비용만 \$8,000. **해결: Embedded Metric Format(EMF)으로 로그에 메트릭 임베드 → CloudWatch가 자동 추출**(EMF는 API 호출 0). 비용이 95% 감소. EMF의 깊이는 Week 2 Day 4에서.
 
-> 🔍 **더 깊이**: `PutMetricData`는 호출당 최대 1,000개 데이터 포인트 + 1MB 페이로드. 운영자가 직접 메트릭을 발행할 때는 반드시 batch로 묶어 호출 횟수를 최소화. API 호출 비용이 메트릭 저장 비용보다 훨씬 큰 경우가 흔하다. 또 `StatisticValues`로 분당 집계 결과만 발행하면(개별 데이터 포인트 N개 대신 `Sum/Min/Max/SampleCount` 1셋) 호출 수가 60분의 1로 줄어든다. 단 백분위수는 raw value가 있어야 계산되므로 p99를 보고 싶으면 raw로 발행해야 한다.
+`PutMetricData`는 호출당 최대 1,000개 데이터 포인트 + 1MB 페이로드. 운영자가 직접 메트릭을 발행할 때는 반드시 batch로 묶어 호출 횟수를 최소화. API 호출 비용이 메트릭 저장 비용보다 훨씬 큰 경우가 흔하다. 또 `StatisticValues`로 분당 집계 결과만 발행하면(개별 데이터 포인트 N개 대신 `Sum/Min/Max/SampleCount` 1셋) 호출 수가 60분의 1로 줄어든다. 단 백분위수는 raw value가 있어야 계산되므로 p99를 보고 싶으면 raw로 발행해야 한다.
 
 ## Statistic vs ExtendedStatistic: 평균의 거짓말
 
@@ -164,9 +164,9 @@ aws cloudwatch put-metric-data \
 | **TM(percent)** | Trimmed Mean | 양 극단을 잘라낸 평균. outlier 영향 제거 |
 | **WM, PR, TC, TS** | Wins Mean, Percentile Rank, Trimmed Count, Trimmed Sum | 정교한 통계 |
 
-> ⚠️ **함정**: "Lambda 평균 응답시간이 200ms이니 안정적"이라는 판단은 위험. 1%의 요청이 5초 걸리면 p99는 5,000ms — 사용자 1%가 매우 나쁜 경험을 한다. **운영자는 평균이 아니라 p95, p99를 본다**. 시험에서 "사용자 경험의 long tail 모니터링" 시나리오는 거의 항상 백분위수 통계가 답이다. SLO를 평균으로 정의하는 회사는 사실상 SLO가 없는 거나 같다.
+"Lambda 평균 응답시간이 200ms이니 안정적"이라는 판단은 위험. 1%의 요청이 5초 걸리면 p99는 5,000ms — 사용자 1%가 매우 나쁜 경험을 한다. **운영자는 평균이 아니라 p95, p99를 본다**. 시험에서 "사용자 경험의 long tail 모니터링" 시나리오는 거의 항상 백분위수 통계가 답이다. SLO를 평균으로 정의하는 회사는 사실상 SLO가 없는 거나 같다.
 
-> 💡 **관련 이론**: latency의 long tail은 "Power Law" 분포의 결과. Pareto가 19세기에 발견한 80/20 법칙이 latency 분포에도 적용된다. Gil Tene의 "How NOT to Measure Latency"(Strange Loop 2015) 강연은 운영자 필독 — Coordinated Omission이라는 함정과 함께 왜 평균이 거짓말하는지를 설명한다. AWS의 latency SLO도 "p99 < N ms"로 정의되며, 평균은 SLO에 거의 안 쓰인다.
+latency의 long tail은 "Power Law" 분포의 결과. Pareto가 19세기에 발견한 80/20 법칙이 latency 분포에도 적용된다. Gil Tene의 "How NOT to Measure Latency"(Strange Loop 2015) 강연은 운영자 필독 — Coordinated Omission이라는 함정과 함께 왜 평균이 거짓말하는지를 설명한다. AWS의 latency SLO도 "p99 < N ms"로 정의되며, 평균은 SLO에 거의 안 쓰인다.
 
 ## Math Expression: 메트릭의 조합과 파생
 
@@ -193,7 +193,7 @@ e4 = ANOMALY_DETECTION_BAND(e3, 2)  # ML 기반 동적 베이스라인
 - **fill** = `FILL(m1, 0)` (데이터 없는 구간을 0으로)
 - **rate of change** = `RATE(m1)` (단위 시간당 변화율, 누적 카운터를 RPS로)
 
-> 🔍 **더 깊이**: Math Expression은 알람의 직접 입력으로도 쓰인다. "5xx 에러율이 5%를 넘을 때만 알람" 같은 룰은 단일 메트릭으론 표현 못 함(분자/분모가 다른 메트릭). Math Expression으로 비율을 계산하고 그 결과 expression에 임계값을 설정. 알람의 `Metrics` 필드에 `[m1, m2, e1]`처럼 식들을 나열하고 `ReturnData=true`인 식 하나가 알람의 입력이 된다. 콘솔에서 "Add math" 메뉴로 추가하고 expression의 ID가 알람 식별자가 된다.
+Math Expression은 알람의 직접 입력으로도 쓰인다. "5xx 에러율이 5%를 넘을 때만 알람" 같은 룰은 단일 메트릭으론 표현 못 함(분자/분모가 다른 메트릭). Math Expression으로 비율을 계산하고 그 결과 expression에 임계값을 설정. 알람의 `Metrics` 필드에 `[m1, m2, e1]`처럼 식들을 나열하고 `ReturnData=true`인 식 하나가 알람의 입력이 된다. 콘솔에서 "Add math" 메뉴로 추가하고 expression의 ID가 알람 식별자가 된다.
 
 ## Anomaly Detection: ML 기반 동적 베이스라인
 
@@ -203,11 +203,11 @@ e4 = ANOMALY_DETECTION_BAND(e3, 2)  # ML 기반 동적 베이스라인
 
 CloudWatch는 최근 2주(14일)의 데이터를 학습해 STL/ARIMA 계열 회귀 모델을 만든다. 모델 학습에 5분~15분 소요, **매시간 재학습**해 패턴 변화에 적응. 운영자는 표준편차 배수(보통 2 또는 3)만 지정하면 된다.
 
-> 💡 **관련 이론**: 이는 **STL(Seasonal-Trend decomposition using LOESS)**(Cleveland et al., 1990, *Journal of Official Statistics*) 또는 **ARIMA(AutoRegressive Integrated Moving Average)** 모델의 클라우드 구현이다. Facebook Prophet(Taylor & Letham, 2017), Twitter AnomalyDetection(2015), Netflix Surus, LinkedIn Luminol 같은 OSS와 같은 계열. 사람 손으로 임계값을 시간대마다 조정하는 부담을 ML이 대체한다.
+이는 **STL(Seasonal-Trend decomposition using LOESS)**(Cleveland et al., 1990, *Journal of Official Statistics*) 또는 **ARIMA(AutoRegressive Integrated Moving Average)** 모델의 클라우드 구현이다. Facebook Prophet(Taylor & Letham, 2017), Twitter AnomalyDetection(2015), Netflix Surus, LinkedIn Luminol 같은 OSS와 같은 계열. 사람 손으로 임계값을 시간대마다 조정하는 부담을 ML이 대체한다.
 
-> 📚 **사례**: 한 e-commerce 회사가 매일 점심 12시·저녁 7시에 트래픽 피크가 오고 주말은 평일과 다른 패턴이었다. 고정 임계값으로 알람 만들면 매일 false positive 수십 건이 새벽 호출로 이어졌다. Anomaly Detection 도입 후 평소 패턴(점심·저녁 피크, 주말 패턴) 안에서는 알람이 안 울리고, 예상치 못한 트래픽 급변(블랙프라이데이, 장애, 봇 공격)만 정확히 탐지. 운영자 야간 호출이 80% 감소.
+가상의 사례로, 한 e-commerce 회사가 매일 점심 12시·저녁 7시에 트래픽 피크가 오고 주말은 평일과 다른 패턴이었다. 고정 임계값으로 알람 만들면 매일 false positive 수십 건이 새벽 호출로 이어졌다. Anomaly Detection 도입 후 평소 패턴(점심·저녁 피크, 주말 패턴) 안에서는 알람이 안 울리고, 예상치 못한 트래픽 급변(블랙프라이데이, 장애, 봇 공격)만 정확히 탐지. 운영자 야간 호출이 80% 감소.
 
-> ⚠️ **함정**: Anomaly Detection은 **최소 2일치, 안정적으로는 2주치 데이터가 누적된 후 적용**해야 한다. 신규 메트릭에 즉시 적용하면 학습 데이터 부족으로 거의 모든 데이터 포인트가 anomaly로 표시된다. 시험에서 "신규 서비스에 즉시 anomaly detection 적용했더니 잘못된 알람이 폭증한다" 시나리오의 답은 "데이터 누적 후 활성화".
+Anomaly Detection은 **최소 2일치, 안정적으로는 2주치 데이터가 누적된 후 적용**해야 한다. 신규 메트릭에 즉시 적용하면 학습 데이터 부족으로 거의 모든 데이터 포인트가 anomaly로 표시된다. 시험에서 "신규 서비스에 즉시 anomaly detection 적용했더니 잘못된 알람이 폭증한다" 시나리오의 답은 "데이터 누적 후 활성화".
 
 ## CloudWatch Metric Stream: 거의 실시간 외부 export
 
@@ -230,9 +230,9 @@ CloudWatch는 최근 2주(14일)의 데이터를 학습해 STL/ARIMA 계열 회�
 - 거의 실시간 전달 (push 기반)
 - OpenTelemetry 표준 포맷 지원
 
-> 🔍 **더 깊이**: GetMetricData로 모든 메트릭을 매분 폴링하면 API 호출 비용과 latency가 폭증. Metric Stream은 CloudWatch 내부의 메트릭 발행 이벤트를 그대로 Firehose로 push하므로 폴링 패턴이 사라진다. 운영자가 Datadog·New Relic 같은 외부 도구로 메트릭을 옮기는 표준 방법. 비용은 메트릭 업데이트 1,000건당 \$0.003 + Firehose 표준 요금.
+GetMetricData로 모든 메트릭을 매분 폴링하면 API 호출 비용과 latency가 폭증. Metric Stream은 CloudWatch 내부의 메트릭 발행 이벤트를 그대로 Firehose로 push하므로 폴링 패턴이 사라진다. 운영자가 Datadog·New Relic 같은 외부 도구로 메트릭을 옮기는 표준 방법. 비용은 메트릭 업데이트 1,000건당 \$0.003 + Firehose 표준 요금.
 
-## 정리하며
+## 정리
 
 CloudWatch Metrics의 운영자 체크리스트:
 

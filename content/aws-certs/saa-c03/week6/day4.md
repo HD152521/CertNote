@@ -2,7 +2,7 @@
 
 컨테이너는 2013년 Docker가 등장하면서 애플리케이션 배포를 바꿨다. "내 로컬에서는 되는데 서버에서는 안 된다"는 문제의 근본 원인인 환경 불일치를 컨테이너 이미지라는 불변의 실행 단위로 해결했다. 하지만 컨테이너 수십 개, 수백 개를 어떻게 관리하는가라는 새로운 문제가 등장했다. 이것이 컨테이너 오케스트레이션의 영역이다. AWS는 자체 오케스트레이터인 ECS와 Kubernetes 표준을 따르는 EKS, 그리고 두 가지 모두에서 동작하는 서버리스 실행 엔진 Fargate를 제공한다.
 
-> 💡 **관련 이론 — Linux 컨테이너 격리 원리**: 컨테이너의 격리는 Linux 커널의 두 가지 기능 위에 구축된다. **namespaces**는 프로세스가 볼 수 있는 자원을 제한한다 — PID(프로세스 트리), Network(네트워크 인터페이스), Mount(파일시스템), UTS(호스트명), IPC(프로세스 간 통신), User(UID/GID) namespace가 조합되어 컨테이너를 만든다. **cgroups(Control Groups)**는 CPU, 메모리, I/O, 네트워크 대역폭을 컨테이너 단위로 제한한다. Docker는 이 커널 기능 위에 편리한 이미지 빌드·배포 레이어를 추가한 것이다. 2015년 OCI(Open Container Initiative) 표준이 제정되어 컨테이너 이미지 형식과 런타임이 표준화됐고, 이후 containerd, CRI-O 등 다양한 런타임이 생겨났다.
+**관련 이론 — Linux 컨테이너 격리 원리**: 컨테이너의 격리는 Linux 커널의 두 가지 기능 위에 구축된다. **namespaces**는 프로세스가 볼 수 있는 자원을 제한한다 — PID(프로세스 트리), Network(네트워크 인터페이스), Mount(파일시스템), UTS(호스트명), IPC(프로세스 간 통신), User(UID/GID) namespace가 조합되어 컨테이너를 만든다. **cgroups(Control Groups)**는 CPU, 메모리, I/O, 네트워크 대역폭을 컨테이너 단위로 제한한다. Docker는 이 커널 기능 위에 편리한 이미지 빌드·배포 레이어를 추가한 것이다. 2015년 OCI(Open Container Initiative) 표준이 제정되어 컨테이너 이미지 형식과 런타임이 표준화됐고, 이후 containerd, CRI-O 등 다양한 런타임이 생겨났다.
 
 ## 컨테이너 vs VM — 격리 수준의 차이
 
@@ -18,7 +18,7 @@
 
 Lambda의 Firecracker MicroVM은 이 중간 지점이다. 커널을 공유하지 않아 VM 수준 격리를 갖지만, Rust로 작성된 경량 VMM 덕분에 ~125ms 시작 속도로 컨테이너에 근접한다. Fargate 역시 Firecracker 위에서 동작하므로 EC2 기반 ECS보다 강한 보안 격리를 제공한다.
 
-> 🔍 **더 깊이 — 컨테이너 런타임 표준화 과정**: 2014년 Docker 독점 시대에서 2015년 CNCF(Cloud Native Computing Foundation) 설립과 함께 표준화가 시작됐다. OCI(Open Container Initiative)가 이미지 스펙과 런타임 스펙을 정의했고, Kubernetes는 2020년 Docker를 컨테이너 런타임으로 deprecated 처리하고 CRI(Container Runtime Interface)로 교체했다. 현재 Kubernetes의 기본 런타임은 containerd다. AWS EKS도 1.24 버전부터 containerd를 기본으로 사용한다. 이 변화는 SAA-C03 시험에 직접 출제되지 않지만, EKS 노드 업그레이드 시 호환성 문제로 나타날 수 있다.
+**더 깊이 — 컨테이너 런타임 표준화 과정**: 2014년 Docker 독점 시대에서 2015년 CNCF(Cloud Native Computing Foundation) 설립과 함께 표준화가 시작됐다. OCI(Open Container Initiative)가 이미지 스펙과 런타임 스펙을 정의했고, Kubernetes는 2020년 Docker를 컨테이너 런타임으로 deprecated 처리하고 CRI(Container Runtime Interface)로 교체했다. 현재 Kubernetes의 기본 런타임은 containerd다. AWS EKS도 1.24 버전부터 containerd를 기본으로 사용한다. 이 변화는 SAA-C03 시험에 직접 출제되지 않지만, EKS 노드 업그레이드 시 호환성 문제로 나타날 수 있다.
 
 ## ECR — 컨테이너 이미지 레지스트리
 
@@ -48,17 +48,17 @@ Amazon Elastic Container Service(ECS)는 AWS가 2014년 출시한 자체 컨테�
 
 **Cluster(클러스터)**: 태스크와 서비스를 실행하는 논리적 그룹. EC2 인스턴스들의 풀 또는 Fargate 용량.
 
-> 💡 **ECS와 Kubernetes 개념 대응표**:
->
-> | ECS 개념 | Kubernetes 개념 | 설명 |
-> |---------|-----------------|------|
-> | Task Definition | Pod Spec (Deployment 템플릿) | 컨테이너 실행 청사진 |
-> | Task | Pod | 실행 단위 (컨테이너 묶음) |
-> | Service | Deployment + Service | 원하는 상태 유지 + 로드밸런싱 |
-> | Cluster | Cluster / Namespace | 논리적 격리 단위 |
-> | Task Role | IRSA (Pod IAM) | 컨테이너 AWS 권한 |
-> | Task Execution Role | kubelet credential | 에이전트 AWS 권한 |
-> | Fargate | Fargate / Virtual Kubelet | 서버리스 실행 엔진 |
+**ECS와 Kubernetes 개념 대응표**:
+
+| ECS 개념 | Kubernetes 개념 | 설명 |
+|---------|-----------------|------|
+| Task Definition | Pod Spec (Deployment 템플릿) | 컨테이너 실행 청사진 |
+| Task | Pod | 실행 단위 (컨테이너 묶음) |
+| Service | Deployment + Service | 원하는 상태 유지 + 로드밸런싱 |
+| Cluster | Cluster / Namespace | 논리적 격리 단위 |
+| Task Role | IRSA (Pod IAM) | 컨테이너 AWS 권한 |
+| Task Execution Role | kubelet credential | 에이전트 AWS 권한 |
+| Fargate | Fargate / Virtual Kubelet | 서버리스 실행 엔진 |
 
 ### EC2 Launch Type vs Fargate
 
@@ -75,7 +75,7 @@ Amazon Elastic Container Service(ECS)는 AWS가 2014년 출시한 자체 컨테�
 
 Fargate의 격리 강점: 각 Fargate 태스크는 별도의 경량 VM(Firecracker) 위에서 실행된다. 여러 태스크가 같은 호스트 커널을 공유하지 않아 보안 격리가 EC2 Launch Type보다 강하다. 규제 산업(금융, 의료)에서 Fargate를 선호하는 이유다.
 
-> 📚 **사례 — Airbnb Fargate 전환**: Airbnb는 CI/CD 빌드 파이프라인을 Fargate로 전환하면서 유휴 EC2 노드 관리 비용을 제거했다. 빌드 수요에 따라 수초 내에 Fargate 태스크가 시작되고, 빌드 완료 후 자동 종료되어 실제 사용 시간만 과금된다. EC2 기반 빌드 팜 대비 인프라 관리 시간을 주당 수십 시간 절감했다고 밝혔다. Fargate Spot을 빌드 워커에 적용해 비용을 추가 70% 절감한 것도 주목할 만한 점이다.
+**사례 — Airbnb Fargate 전환**: Airbnb는 CI/CD 빌드 파이프라인을 Fargate로 전환하면서 유휴 EC2 노드 관리 비용을 제거했다. 빌드 수요에 따라 수초 내에 Fargate 태스크가 시작되고, 빌드 완료 후 자동 종료되어 실제 사용 시간만 과금된다. EC2 기반 빌드 팜 대비 인프라 관리 시간을 주당 수십 시간 절감했다고 밝혔다. Fargate Spot을 빌드 워커에 적용해 비용을 추가 70% 절감한 것도 주목할 만한 점이다.
 
 ## 네트워킹 모드 — awsvpc가 표준인 이유
 
@@ -93,7 +93,7 @@ awsvpc의 이점:
 
 ALB와 ECS 연결: awsvpc 모드에서 ALB Target Group을 IP 타입으로 생성하고, ECS 서비스가 태스크 시작/종료 시 자동으로 Target Group에 IP를 등록/해제한다.
 
-> 🔍 **더 깊이 — awsvpc 모드의 ENI 제한**: awsvpc 모드에서 각 태스크에 ENI가 생성되므로, EC2 인스턴스당 최대 ENI 수에 제한이 걸릴 수 있다. 예를 들어 `m5.large`는 ENI 3개, `m5.xlarge`는 4개, `m5.24xlarge`는 15개까지 지원한다. 따라서 EC2 Launch Type + awsvpc 모드에서는 인스턴스 타입에 따라 한 호스트에서 실행할 수 있는 태스크 수가 제한된다. AWS가 이를 해결하기 위해 **ENI Trunking**(trunk ENI 1개가 최대 120개 branch ENI를 지원)을 제공하지만, 인스턴스 타입 제한이 있다. Fargate는 이 제한이 없다 — 각 태스크가 별도의 MicroVM이므로.
+**더 깊이 — awsvpc 모드의 ENI 제한**: awsvpc 모드에서 각 태스크에 ENI가 생성되므로, EC2 인스턴스당 최대 ENI 수에 제한이 걸릴 수 있다. 예를 들어 `m5.large`는 ENI 3개, `m5.xlarge`는 4개, `m5.24xlarge`는 15개까지 지원한다. 따라서 EC2 Launch Type + awsvpc 모드에서는 인스턴스 타입에 따라 한 호스트에서 실행할 수 있는 태스크 수가 제한된다. AWS가 이를 해결하기 위해 **ENI Trunking**(trunk ENI 1개가 최대 120개 branch ENI를 지원)을 제공하지만, 인스턴스 타입 제한이 있다. Fargate는 이 제한이 없다 — 각 태스크가 별도의 MicroVM이므로.
 
 ## IAM 권한 — Task Role과 Task Execution Role
 
@@ -189,7 +189,7 @@ spec:
 
 이 구성으로 `my-app` Pod만 S3 읽기 권한을 갖고, 같은 노드의 다른 Pod는 해당 권한이 없다.
 
-> 💡 **관련 이론 — OIDC와 Web Identity Federation**: IRSA의 기반은 OIDC(OpenID Connect, RFC 8485)와 STS Web Identity Federation이다. OIDC는 OAuth 2.0 위에 구축된 인증 레이어로, EKS가 각 Pod의 Service Account에 대해 JWT 형태의 OIDC 토큰을 발급한다. IAM의 신뢰 정책(Trust Policy)에 OIDC Provider ARN과 `sub` 조건(특정 namespace의 특정 service account)을 명시하면, 해당 조건을 만족하는 토큰만 AssumeRole이 허용된다. 이 메커니즘은 Lambda의 실행 역할, EC2의 Instance Profile과 같은 원리지만 Kubernetes 환경에 맞게 확장된 것이다. 2023년 AWS는 더 간단한 **EKS Pod Identity**를 출시했는데, OIDC 설정 없이 EKS 네이티브 API로 Pod에 IAM Role을 직접 연결할 수 있다.
+**관련 이론 — OIDC와 Web Identity Federation**: IRSA의 기반은 OIDC(OpenID Connect, RFC 8485)와 STS Web Identity Federation이다. OIDC는 OAuth 2.0 위에 구축된 인증 레이어로, EKS가 각 Pod의 Service Account에 대해 JWT 형태의 OIDC 토큰을 발급한다. IAM의 신뢰 정책(Trust Policy)에 OIDC Provider ARN과 `sub` 조건(특정 namespace의 특정 service account)을 명시하면, 해당 조건을 만족하는 토큰만 AssumeRole이 허용된다. 이 메커니즘은 Lambda의 실행 역할, EC2의 Instance Profile과 같은 원리지만 Kubernetes 환경에 맞게 확장된 것이다. 2023년 AWS는 더 간단한 **EKS Pod Identity**를 출시했는데, OIDC 설정 없이 EKS 네이티브 API로 Pod에 IAM Role을 직접 연결할 수 있다.
 
 ### EKS 노드 타입
 
@@ -205,7 +205,7 @@ spec:
 
 Fargate Profiles는 특정 Kubernetes Namespace와 Label Selector와 매칭되는 Pod를 Fargate로 실행한다. DaemonSet, HostNetwork Pod, Stateful workload(PersistentVolume 일부)는 Fargate 미지원.
 
-> 📚 **사례 — Shopify의 EKS + Karpenter**: Shopify는 블랙프라이데이 트래픽 폭증을 처리하기 위해 EKS에 Karpenter(오픈소스 node autoscaler)를 도입했다. 기존 Cluster Autoscaler 대비 노드 프로비저닝 속도가 3배 빠르고, 실시간으로 필요한 인스턴스 타입(Spot 포함)을 선택해 30% 비용 절감을 달성했다. 트래픽 피크 시 수백 개의 노드가 수분 내에 추가되고, 피크 이후 자동으로 축소된다. Karpenter는 2023년 CNCF에 기부됐다.
+**사례 — Shopify의 EKS + Karpenter**: Shopify는 블랙프라이데이 트래픽 폭증을 처리하기 위해 EKS에 Karpenter(오픈소스 node autoscaler)를 도입했다. 기존 Cluster Autoscaler 대비 노드 프로비저닝 속도가 3배 빠르고, 실시간으로 필요한 인스턴스 타입(Spot 포함)을 선택해 30% 비용 절감을 달성했다. 트래픽 피크 시 수백 개의 노드가 수분 내에 추가되고, 피크 이후 자동으로 축소된다. Karpenter는 2023년 CNCF에 기부됐다.
 
 ## 배포 전략 — Rolling, Blue/Green, Canary
 
@@ -217,15 +217,15 @@ Fargate Profiles는 특정 Kubernetes Namespace와 Label Selector와 매칭되�
 
 **Canary**: Blue/Green의 변형. 트래픽을 점진적으로 전환(10% → 25% → 50% → 100%). CodeDeploy가 CloudWatch Alarm을 모니터링하여 에러율이 임계치를 넘으면 자동 롤백. 새 버전의 실환경 테스트가 가능하다.
 
-> 🔍 **더 깊이 — ECS 배포 전략 비교**:
->
-> | 배포 방식 | 다운타임 | 롤백 속도 | 인프라 비용 | 복잡도 |
-> |---------|---------|---------|-----------|-------|
-> | Rolling (기본) | 없음 | 느림 (역순 Rolling) | 추가 없음 | 낮음 |
-> | Blue/Green | 없음 | 빠름 (트래픽 전환) | 2× 태스크 일시 | 중간 |
-> | Canary | 없음 | 자동 (CloudWatch) | 2× 태스크 일시 | 높음 |
->
-> 금융 시스템이나 결제 서비스처럼 롤백이 중요한 경우 Blue/Green. 새 기능의 영향이 불확실한 경우 Canary. 일반적인 서비스 업데이트는 Rolling이 적합하다.
+**더 깊이 — ECS 배포 전략 비교**:
+
+| 배포 방식 | 다운타임 | 롤백 속도 | 인프라 비용 | 복잡도 |
+|---------|---------|---------|-----------|-------|
+| Rolling (기본) | 없음 | 느림 (역순 Rolling) | 추가 없음 | 낮음 |
+| Blue/Green | 없음 | 빠름 (트래픽 전환) | 2× 태스크 일시 | 중간 |
+| Canary | 없음 | 자동 (CloudWatch) | 2× 태스크 일시 | 높음 |
+
+금융 시스템이나 결제 서비스처럼 롤백이 중요한 경우 Blue/Green. 새 기능의 영향이 불확실한 경우 Canary. 일반적인 서비스 업데이트는 Rolling이 적합하다.
 
 ## 다른 클라우드와의 비교
 
@@ -241,7 +241,7 @@ Fargate Profiles는 특정 Kubernetes Namespace와 Label Selector와 매칭되�
 
 GCP GKE Autopilot은 노드 관리가 필요 없다는 점에서 AWS Fargate + EKS와 가장 가깝다. 2023년 기준 GKE 컨트롤 플레인이 Zone 클러스터는 무료라는 점이 EKS 대비 비용 우위다.
 
-> 📚 **사례 — Netflix EKS 마이그레이션**: Netflix는 2018년부터 단계적으로 ECS에서 EKS로 마이그레이션을 진행했다. 수천 개의 마이크로서비스가 동작하는 환경에서 Kubernetes의 CRD(Custom Resource Definition)와 Operator 패턴을 활용해 Netflix 특유의 배포 요구사항(자동 카나리, 지역별 배포, 카오스 엔지니어링 훅)을 추상화했다. Spinnaker(Netflix 오픈소스 CD 플랫폼)와 EKS의 통합이 핵심이었다. 현재 Netflix의 수십만 컨테이너가 EKS 위에서 운영된다.
+**사례 — Netflix EKS 마이그레이션**: Netflix는 2018년부터 단계적으로 ECS에서 EKS로 마이그레이션을 진행했다. 수천 개의 마이크로서비스가 동작하는 환경에서 Kubernetes의 CRD(Custom Resource Definition)와 Operator 패턴을 활용해 Netflix 특유의 배포 요구사항(자동 카나리, 지역별 배포, 카오스 엔지니어링 훅)을 추상화했다. Spinnaker(Netflix 오픈소스 CD 플랫폼)와 EKS의 통합이 핵심이었다. 현재 Netflix의 수십만 컨테이너가 EKS 위에서 운영된다.
 
 ## CLI로 ECS Fargate 서비스 배포
 
@@ -369,9 +369,9 @@ eksctl create iamserviceaccount \
   --override-existing-serviceaccounts
 ```
 
-> ⚠️ **함정 — Fargate Spot 중단 대비**: Fargate Spot은 최대 70% 저렴하지만 AWS가 용량 회수 시 2분 전에 SIGTERM을 보내고 태스크를 중단한다. 상태 유지(stateful) 작업에는 사용하면 안 되고, 중단 시 재시도가 자연스러운 배치 작업이나 Spot 중단 시 Fargate(On-Demand)로 자동 전환되는 Capacity Provider Strategy를 구성해야 한다. ECS Capacity Provider Strategy에서 `base=1`을 On-Demand Fargate에 설정하면 최소 1개 태스크는 항상 On-Demand로 보장되고, 나머지는 Spot으로 실행된다.
+**함정 — Fargate Spot 중단 대비**: Fargate Spot은 최대 70% 저렴하지만 AWS가 용량 회수 시 2분 전에 SIGTERM을 보내고 태스크를 중단한다. 상태 유지(stateful) 작업에는 사용하면 안 되고, 중단 시 재시도가 자연스러운 배치 작업이나 Spot 중단 시 Fargate(On-Demand)로 자동 전환되는 Capacity Provider Strategy를 구성해야 한다. ECS Capacity Provider Strategy에서 `base=1`을 On-Demand Fargate에 설정하면 최소 1개 태스크는 항상 On-Demand로 보장되고, 나머지는 Spot으로 실행된다.
 
-## 정리하며
+## 정리
 
 AWS 컨테이너 서비스는 ECR(이미지 저장) → ECS 또는 EKS(오케스트레이션) → Fargate 또는 EC2(실행 환경)라는 레이어로 구성된다. 선택 기준은 명확하다.
 

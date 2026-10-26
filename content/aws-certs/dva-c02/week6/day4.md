@@ -70,7 +70,7 @@ response = dynamodb.transact_write_items(
 | BatchWriteItem | ❌ 원자성 없음 | 25개 | 16MB | 1× WCU |
 | BatchGetItem | ❌ 원자성 없음 | 100개 | 16MB | 1× RCU |
 
-> 💡 **관련 이론**: 2PC는 코디네이터(Coordinator)와 참여자(Participant) 모델을 사용한다. DynamoDB 내부에서 코디네이터는 트랜잭션 요청을 받아 각 파티션 스토리지(참여자)에게 Prepare 메시지를 보낸다. 모든 참여자가 "준비됐다"고 응답하면 Commit을 전파한다. 하나라도 실패하면 Abort를 전파한다. 2PC의 고전적 약점은 코디네이터 장애 시 참여자들이 락을 보유한 채로 대기하는 블로킹 문제다. DynamoDB는 내부적으로 조정 레이어를 다중화해 이 문제를 완화한다.
+2PC는 코디네이터(Coordinator)와 참여자(Participant) 모델을 사용한다. DynamoDB 내부에서 코디네이터는 트랜잭션 요청을 받아 각 파티션 스토리지(참여자)에게 Prepare 메시지를 보낸다. 모든 참여자가 "준비됐다"고 응답하면 Commit을 전파한다. 하나라도 실패하면 Abort를 전파한다. 2PC의 고전적 약점은 코디네이터 장애 시 참여자들이 락을 보유한 채로 대기하는 블로킹 문제다. DynamoDB는 내부적으로 조정 레이어를 다중화해 이 문제를 완화한다.
 
 > ⚠️ **함정**: BatchWriteItem은 원자적이지 않다. 25개 중 일부는 성공하고 일부는 실패할 수 있다. 실패한 항목은 `UnprocessedItems`에 담겨 반환된다. 개발자가 직접 `UnprocessedItems`를 처리하는 재시도 로직을 구현해야 한다. 원자성이 필요하면 반드시 TransactWriteItems를 사용해야 한다.
 
@@ -89,7 +89,7 @@ DynamoDB Batch: 원자성 없음
 
 트랜잭션 충돌 시 `TransactionConflictException`이 발생한다. 동일한 항목에 대해 두 트랜잭션이 동시에 Prepare 단계에 들어가면 하나가 양보하고 재시도해야 한다.
 
-> 💡 **관련 이론**: Serializable 격리는 이론적으로 모든 트랜잭션이 순차적으로 실행된 것과 동일한 결과를 보장한다(직렬화 가능성, Serializability). 실제로는 병렬 실행되지만 충돌 감지와 롤백으로 이 속성을 유지한다. PostgreSQL은 SSI(Serializable Snapshot Isolation)로 이를 구현하고, DynamoDB는 2PC로 구현한다. 두 방법 모두 충돌이 적은 상황에서 높은 처리량을 유지하면서 격리를 보장한다.
+Serializable 격리는 모든 트랜잭션이 순차적으로 실행된 것과 같은 결과를 보장한다(직렬화 가능성, Serializability). 실제로는 병렬로 실행하되 충돌 감지와 롤백으로 이 속성을 유지한다.
 
 ## 조건부 쓰기 패턴 — 경쟁 조건 방지의 핵심
 
@@ -139,7 +139,7 @@ def update_with_optimistic_lock(table, product_id, new_price, current_version):
         raise
 ```
 
-> 💡 **관련 이론**: Optimistic Locking은 비관적 잠금(Pessimistic Locking)과 대조된다. 비관적 잠금은 읽기 시점에 잠금을 획득하고(SELECT FOR UPDATE), 다른 접근을 차단한다. 낙관적 잠금은 "충돌이 거의 없을 것"이라 가정하고 잠금 없이 진행하다가 커밋 시점에 충돌을 감지한다. DynamoDB는 분산 환경에서 전통적인 행 잠금을 지원하지 않으므로, 버전 번호 기반 낙관적 잠금이 유일한 다중 클라이언트 동시성 제어 메커니즘이다. MVCC(Multi-Version Concurrency Control)와 개념적으로 유사하다.
+Optimistic Locking은 비관적 잠금(Pessimistic Locking)과 대조된다. 비관적 잠금은 읽기 시점에 잠금을 획득하고(SELECT FOR UPDATE), 다른 접근을 차단한다. 낙관적 잠금은 "충돌이 거의 없을 것"이라 가정하고 잠금 없이 진행하다가 커밋 시점에 충돌을 감지한다. DynamoDB는 분산 환경에서 전통적인 행 잠금을 지원하지 않으므로, 버전 번호 기반 낙관적 잠금이 유일한 다중 클라이언트 동시성 제어 메커니즘이다. MVCC(Multi-Version Concurrency Control)와 개념적으로 유사하다.
 
 **패턴 4: 선착순 처리 (First-Write-Wins)**
 ```python
@@ -155,7 +155,7 @@ table.update_item(
 )
 ```
 
-> 📚 **사례**: 2021년 항공사 좌석 예약 시스템의 이중 예약 사고. 동시에 두 명이 같은 좌석을 예약하는 요청이 들어왔을 때, 애플리케이션이 먼저 좌석 가용 여부를 읽고(GetItem) 그 다음 예약을 쓰는(PutItem) 구조였다. 두 요청이 같은 빈 좌석을 읽은 후 각자 PutItem을 실행하면 마지막에 실행된 쓰기가 이기면서 이중 예약이 발생했다. 해결책은 `attribute_not_exists(bookedBy)` 조건부 쓰기로 하나의 요청만 성공하게 하는 것이다. 이 패턴은 TOCTOU(Time-Of-Check-To-Time-Of-Use) 버그라고 불린다.
+2021년 항공사 좌석 예약 시스템의 이중 예약 사고. 동시에 두 명이 같은 좌석을 예약하는 요청이 들어왔을 때, 애플리케이션이 먼저 좌석 가용 여부를 읽고(GetItem) 그 다음 예약을 쓰는(PutItem) 구조였다. 두 요청이 같은 빈 좌석을 읽은 후 각자 PutItem을 실행하면 마지막에 실행된 쓰기가 이기면서 이중 예약이 발생했다. 해결책은 `attribute_not_exists(bookedBy)` 조건부 쓰기로 하나의 요청만 성공하게 하는 것이다. 이 패턴은 TOCTOU(Time-Of-Check-To-Time-Of-Use) 버그라고 불린다.
 
 ## Atomic Counter vs Conditional Increment
 
@@ -187,7 +187,7 @@ table.update_item(
 
 멱등성이 중요한 경우 — 결제 처리에서 네트워크 오류로 재시도가 발생할 때 카운터가 두 번 증가하면 안 된다. 이럴 때는 `ClientRequestToken`으로 트랜잭션 멱등성을 보장하거나, DynamoDB에 별도 idempotency key 테이블을 만들어 중복 처리를 방지한다.
 
-> 🔍 **더 깊이**: `ADD` 연산자는 숫자와 집합(Set) 타입에만 적용된다. 숫자 속성이 없으면 0에서 시작하고, Set 속성이 없으면 빈 집합에서 시작한다. Atomic Counter를 람다에서 사용할 때 Lambda가 재시도되면 카운터가 두 번 증가할 수 있다는 사실을 명심해야 한다. Lambda는 at-least-once 실행 보장이므로, 멱등해야 하는 연산에 Atomic Counter를 쓰면 안 된다.
+`ADD` 연산자는 숫자와 집합(Set) 타입에만 적용된다. 숫자 속성이 없으면 0에서 시작하고, Set 속성이 없으면 빈 집합에서 시작한다. Atomic Counter를 Lambda에서 사용할 때 Lambda가 재시도되면 카운터가 두 번 증가할 수 있다는 사실을 명심해야 한다. Lambda는 at-least-once 실행 보장이므로, 멱등해야 하는 연산에 Atomic Counter를 쓰면 안 된다.
 
 ## TTL의 내부 동작 — 비동기 삭제의 함의
 
@@ -231,8 +231,6 @@ response = table.query(
 **epoch 초 단위만 지원**: 문자열 날짜나 밀리초 타임스탬프는 TTL로 동작하지 않는다. 반드시 Unix epoch 초 단위의 숫자여야 한다.
 
 > ⚠️ **함정**: TTL 만료 후에도 최대 48시간 동안 항목이 조회될 수 있다. "TTL이 지났으면 데이터가 없을 것"이라고 가정하는 코드는 잘못된 동작을 한다. 특히 TTL을 보안 세션 만료에 사용할 때 위험하다 — 세션이 "만료됐다"고 TTL을 설정해도 48시간 동안 해당 세션이 여전히 유효한 것처럼 조회될 수 있다. 애플리케이션에서 TTL 속성 값을 직접 확인하는 필터링 로직이 반드시 필요하다.
-
-> 🔍 **더 깊이**: TTL 비동기 삭제의 이유는 DynamoDB의 스토리지 아키텍처에 있다. DynamoDB는 데이터를 SSD 기반 분산 스토리지에 저장하는데, TTL 만료 시 즉시 삭제하면 해당 파티션에 일시적 쓰기 부하가 집중된다. 대신 AWS는 백그라운드 가비지 컬렉션 프로세스를 분산해서 실행하므로, 전체 클러스터 부하가 급증하지 않는다. 이는 Java GC의 Stop-the-World를 피하기 위한 Incremental GC와 유사한 트레이드오프다.
 
 ## 분산 락 구현 패턴 — DynamoDB로 Redis 없이
 
@@ -281,7 +279,7 @@ def release_lock(resource_id: str, owner_id: str) -> bool:
 
 이 패턴의 핵심은 세 가지다. ① `attribute_not_exists`로 락이 없을 때만 생성, ② TTL로 락 홀더가 죽어도 락이 자동 해제, ③ `ownerId` 조건으로 자기 락만 해제. TTL의 비동기 삭제 때문에 만료 후 최대 48시간 동안 락이 남아있을 수 있다는 점을 감안해 TTL을 넉넉하게 설정해야 한다.
 
-> 📚 **사례**: AWS Lambda를 이용한 결제 처리에서 같은 주문 ID로 두 Lambda 인스턴스가 동시에 실행되는 경우가 있다. Lambda는 at-least-once 실행을 보장하므로 동일한 이벤트가 두 번 처리될 수 있다. DynamoDB 분산 락을 주문 ID로 걸어두면 두 번째 Lambda가 `ConditionalCheckFailedException`을 받고 처리를 포기한다. 이 패턴은 Lambda + SQS + DynamoDB로 구성되는 결제 시스템의 표준 멱등성 패턴으로 AWS Well-Architected Framework에도 언급된다.
+Lambda는 at-least-once로 실행되므로 같은 주문 ID의 이벤트가 두 번 처리될 수 있다. DynamoDB 분산 락을 주문 ID로 걸어 두면 두 번째 Lambda가 `ConditionalCheckFailedException`을 받고 처리를 포기한다.
 
 ## 실무 동시성 패턴 모음
 
@@ -296,7 +294,7 @@ def release_lock(resource_id: str, owner_id: str) -> bool:
 | 세션 자동 만료 | TTL 속성 설정 |
 | 분산 락 구현 | Conditional Put + TTL (잠금 만료) |
 
-> 🔍 **더 깊이**: DynamoDB 조건부 표현식에서 사용할 수 있는 함수들: `attribute_exists(path)`, `attribute_not_exists(path)`, `attribute_type(path, type)`, `begins_with(path, substr)`, `contains(path, operand)`, `size(path)`. 이 함수들을 AND/OR/NOT으로 조합할 수 있다. 예를 들어 `attribute_exists(userId) AND size(tags) < :maxTags`처럼 복합 조건을 만들 수 있다. 시험에서는 이 함수 중 어느 것이 올바른 조건인지를 고르는 문제가 종종 나온다.
+DynamoDB 조건부 표현식에서 사용할 수 있는 함수들: `attribute_exists(path)`, `attribute_not_exists(path)`, `attribute_type(path, type)`, `begins_with(path, substr)`, `contains(path, operand)`, `size(path)`. 이 함수들을 AND/OR/NOT으로 조합할 수 있다. 예를 들어 `attribute_exists(userId) AND size(tags) < :maxTags`처럼 복합 조건을 만들 수 있다. 시험에서는 이 함수 중 어느 것이 올바른 조건인지를 고르는 문제가 종종 나온다.
 
 ## 다른 클라우드 비교 — 트랜잭션 지원 현황
 
@@ -308,7 +306,7 @@ def release_lock(resource_id: str, owner_id: str) -> bool:
 | Google Firestore | ✅ | Serializable | 500개 |
 | MongoDB | ✅ (4.0~) | Snapshot | 제한 없음 (실용적 한도 존재) |
 
-> 💡 **관련 이론**: CAP 정리(Brewer, 2000) 관점에서 DynamoDB 트랜잭션은 흥미롭다. 일반 DynamoDB 연산은 AP(Availability + Partition tolerance)를 선택하고 Consistency를 희생한다(최종 일관성). 그러나 트랜잭션은 CP(Consistency + Partition tolerance)에 가깝게 동작하며, 충돌 시 Availability를 희생한다(TransactionConflictException). 같은 시스템에서 두 모드를 선택적으로 사용할 수 있다는 점이 DynamoDB의 설계 유연성을 보여준다.
+CAP 정리(Brewer, 2000) 관점에서 DynamoDB 트랜잭션은 흥미롭다. 일반 DynamoDB 연산은 AP(Availability + Partition tolerance)를 선택하고 Consistency를 희생한다(최종 일관성). 그러나 트랜잭션은 CP(Consistency + Partition tolerance)에 가깝게 동작하며, 충돌 시 Availability를 희생한다(TransactionConflictException). 같은 시스템에서 두 모드를 선택적으로 사용할 수 있다는 점이 DynamoDB의 설계 유연성을 보여준다.
 
 ## 📝 연습 문제
 

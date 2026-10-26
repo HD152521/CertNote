@@ -1,12 +1,12 @@
 # Day 5 - Week 11 종합: 메시징의 모델을 가르는 질문들
 
-Week 11에서 다룬 다섯 서비스—SQS, SNS, Kinesis, Step Functions, AppSync—는 표면적으로 모두 "데이터나 작업을 한 곳에서 다른 곳으로 옮긴다." 그래서 시험은 거의 항상 "이 시나리오에 무엇이 맞는가"를 묻는다. 단편적 암기로는 헷갈리는 비교(SQS vs Kinesis, SNS vs EventBridge, Standard vs Express)를 매번 틀린다. 이번 복습은 다섯 서비스를 다시 나열하는 대신, **이들을 가르는 근본 질문 몇 가지**로 재구성한다. 어떤 시나리오를 만나든 이 질문들을 순서대로 던지면 답이 좁혀진다.
+Week 11에서 다룬 다섯 서비스인 SQS, SNS, Kinesis, Step Functions, AppSync는 표면적으로 모두 "데이터나 작업을 한 곳에서 다른 곳으로 옮긴다." 그래서 시험은 "이 시나리오에 무엇이 맞는가"를 묻는 형태가 많다. 단편적 암기로는 SQS vs Kinesis, SNS vs EventBridge, Standard vs Express 같은 비교에서 흔들리기 쉽다. 이번 복습은 다섯 서비스를 다시 나열하는 대신, **이들을 가르는 근본 질문 몇 가지**로 재구성한다. 어떤 시나리오를 만나든 이 질문들을 순서대로 던지면 답이 좁혀진다.
 
 ## 모델을 가르는 네 가지 질문
 
 ### 질문 1: 한 메시지를 몇 명이 받는가? (1:1 vs 1:N)
 
-이것이 SQS와 SNS를 가르는 첫 갈림길이다.
+SQS와 SNS를 가르는 첫 갈림길이다.
 
 - **1:1 (한 작업 = 한 처리자)** → **SQS**. 주문 처리, 이미지 변환 같은 "작업 큐". 한 메시지는 한 소비자가 가져가 처리하면 사라진다(포인트-투-포인트).
 - **1:N (한 이벤트 → 여러 반응)** → **SNS**(또는 EventBridge). 주문 생성 하나에 재고·결제·알림이 동시 반응. 발행 즉시 모든 구독자에게 푸시(발행-구독).
@@ -15,7 +15,7 @@ Week 11에서 다룬 다섯 서비스—SQS, SNS, Kinesis, Step Functions, AppSy
 
 ### 질문 2: 소비하면 데이터가 사라지는가? (파괴적 읽기 vs 보존 로그)
 
-이것이 SQS와 Kinesis를 가르는 가장 본질적인 질문이다.
+SQS와 Kinesis를 가르는 가장 본질적인 질문이다.
 
 - **소비 = 삭제** → **SQS**. 한 번 처리하면 끝. 재처리·다중 소비 불가.
 - **읽어도 보존(로그)** → **Kinesis Data Streams**. 여러 소비자가 각자 위치에서 동시에 읽고, 어제 데이터를 새 코드로 재처리(replay)할 수 있다. 소비자는 체크포인트로 자기 위치를 책임진다.
@@ -36,9 +36,9 @@ Kinesis 안에서의 갈림길이다.
 - **단계들을 순서·분기·재시도·롤백으로 엮음** → **Step Functions**. 가시성과 에러 처리가 필요한 멀티스텝 비즈니스 프로세스.
 - **다중 백엔드 데이터를 한 쿼리로 + 실시간** → **AppSync**(GraphQL).
 
-> 💡 **관련 이론**: 이 네 질문은 사실 메시징·통합의 고전 분류축과 일치한다 — (1) point-to-point vs pub/sub, (2) destructive read vs log-based, (3) processing vs delivery, (4) choreography vs orchestration. Gregor Hohpe의 *Enterprise Integration Patterns*(2003)와 Jay Kreps의 로그 중심 사상(2013)이 이 축들을 정립했다. AWS의 다섯 서비스는 이 보편적 축들 위의 각기 다른 좌표다. 그래서 한 서비스의 특성을 외우기보다 "이 서비스는 어느 축의 어느 쪽인가"로 위치를 잡으면, 비교 문제가 좌표 읽기로 바뀐다.
+이 네 질문은 메시징·통합의 고전 분류축과 일치한다. (1) point-to-point vs pub/sub, (2) destructive read vs log-based, (3) processing vs delivery, (4) choreography vs orchestration이다. Gregor Hohpe의 *Enterprise Integration Patterns*(2003)와 Jay Kreps의 로그 중심 사상(2013)이 이 축들을 정립했다. AWS의 다섯 서비스는 이 보편적 축들 위의 각기 다른 좌표다. 한 서비스의 특성을 외우기보다 "이 서비스는 어느 축의 어느 쪽인가"로 위치를 잡으면 비교 문제가 좌표 읽기로 바뀐다.
 
-## 핵심 숫자 — 시험은 이 경계값을 노린다
+## 핵심 숫자: 경계값 정리
 
 | 서비스 | 항목 | 값 |
 |--------|------|-----|
@@ -56,7 +56,7 @@ Kinesis 안에서의 갈림길이다.
 | Firehose | 최소 지연 | **60초** (Near Real-Time) |
 | Step Functions | Standard / Express | 1년·exactly-once / 5분·at-least-once |
 
-> ⚠️ **함정**: 가장 자주 틀리는 경계값 셋 — (1) **Firehose는 실시간이 아니다**(최소 60초). "실시간"이 보이면 Data Streams. (2) **SNS는 보존이 없다**. "전달 실패 시 유실 방지"는 SQS를 끼우거나 구독 DLQ. (3) **Lambda-SQS 가시성 타임아웃은 함수 타임아웃의 6배**. 이걸 안 지키면 중복 처리.
+> ⚠️ **함정**: 특히 헷갈리기 쉬운 경계값 셋이다. (1) **Firehose는 실시간이 아니다**(최소 60초). "실시간"이 보이면 Data Streams. (2) **SNS는 보존이 없다**. "전달 실패 시 유실 방지"는 SQS를 끼우거나 구독 DLQ. (3) **Lambda-SQS 가시성 타임아웃은 함수 타임아웃의 6배**. 이를 지키지 않으면 중복 처리가 생긴다.
 
 ## 헷갈리는 비교 정리
 
@@ -72,18 +72,23 @@ Kinesis 안에서의 갈림길이다.
 | `.sync` | `.waitForTaskToken` | 기계 작업 완료 대기 vs 외부/인간 콜백 대기 |
 | AppSync | API Gateway | GraphQL·다중 소스·내장 구독 vs REST·단일 백엔드 |
 
-> 🔍 **더 깊이**: SNS와 EventBridge의 구분은 최근 시험에서 비중이 커졌다. 둘 다 "이벤트를 여러 대상에 보낸다"지만, SNS는 **단순·고속 복제 배포**(속성 기반 필터, 초고처리량)에 강하고, EventBridge는 **풍부한 라우팅**(이벤트 본문 전체에 대한 패턴 매칭, 스키마 레지스트리, SaaS 통합, 스케줄링)에 강하다. 대략의 기준: "같은 메시지를 여러 큐/함수에 빠르게 뿌린다"면 SNS, "이벤트 내용에 따라 복잡하게 분기·변환·외부 SaaS 연동"이면 EventBridge다. 시험이 "정석적 팬아웃"을 물으면 여전히 SNS+SQS가 기본 답이지만, "내용 기반 복잡 라우팅"이면 EventBridge다.
+SNS와 EventBridge의 구분은 최근 시험에서 비중이 커졌다는 평가가 있다. 둘 다 "이벤트를 여러 대상에 보낸다"지만 강점이 다르다.
 
-## 실패 처리 — 서비스마다 다른 안전망
+- SNS는 **단순·고속 복제 배포**(속성 기반 필터, 초고처리량)에 강하다.
+- EventBridge는 **풍부한 라우팅**(이벤트 본문 전체에 대한 패턴 매칭, 스키마 레지스트리, SaaS 통합, 스케줄링)에 강하다.
+- 대략의 기준은 이렇다. "같은 메시지를 여러 큐/함수에 빠르게 뿌린다"면 SNS, "이벤트 내용에 따라 복잡하게 분기·변환·외부 SaaS 연동"이면 EventBridge다.
+- 시험이 "정석적 팬아웃"을 물으면 SNS+SQS가 기본 답이고, "내용 기반 복잡 라우팅"이면 EventBridge다.
 
-각 서비스가 "실패한 메시지/작업"을 어떻게 다루는지는 단골 출제 포인트다.
+## 실패 처리: 서비스마다 다른 안전망
+
+각 서비스가 "실패한 메시지/작업"을 어떻게 다루는지는 시험 범위에 드는 비교 포인트다.
 
 - **SQS**: `maxReceiveCount` 초과 시 **DLQ**(같은 유형끼리). 독이 든 메시지 격리.
 - **SNS**: 비보존이지만 **구독 DLQ**(redrive)로 전달 실패 메시지 보존.
 - **Kinesis**: 순서 보존 때문에 실패 레코드가 **뒤를 막음**(head-of-line blocking). Lambda ESM의 `BisectBatchOnFunctionError`·`MaximumRetryAttempts`·실패 대상(SQS/SNS)으로 완화.
 - **Step Functions**: 상태별 `Retry`(백오프)와 `Catch`(오류 분기), 보상 트랜잭션(Saga).
 
-> 📚 **사례**: 세 종류의 DLQ를 시험이 교묘하게 섞는다. **SQS DLQ**(큐 메시지가 maxReceiveCount 초과), **SNS 구독 DLQ**(구독자 전달 실패), **Lambda DLQ**(Lambda 비동기 호출 실패). 같은 "DLQ"여도 잡는 실패의 계층이 다르다. 예: "SNS가 HTTPS 엔드포인트 전달에 실패한 메시지 보존" → SNS 구독 DLQ. "Lambda가 비동기 이벤트 처리에 실패" → Lambda DLQ(또는 Destinations). "SQS 메시지가 3번 처리 실패" → SQS DLQ. 문구에서 "어느 단계의 실패인가"를 먼저 짚어야 한다.
+> 📚 **사례**: 세 종류의 DLQ를 시험이 섞어 낼 수 있다. **SQS DLQ**(큐 메시지가 maxReceiveCount 초과), **SNS 구독 DLQ**(구독자 전달 실패), **Lambda DLQ**(Lambda 비동기 호출 실패). 같은 "DLQ"여도 잡는 실패의 계층이 다르다. 예: "SNS가 HTTPS 엔드포인트 전달에 실패한 메시지 보존" → SNS 구독 DLQ. "Lambda가 비동기 이벤트 처리에 실패" → Lambda DLQ(또는 Destinations). "SQS 메시지가 3번 처리 실패" → SQS DLQ. 문구에서 "어느 단계의 실패인가"를 먼저 짚어야 한다.
 
 ## 약어 빠른 참조
 

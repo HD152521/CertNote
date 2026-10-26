@@ -61,11 +61,11 @@ App2Container는 현재 실행 중인 Java 또는 .NET IIS 앱을 소스 코드 
 - **CloudWatch Agent**: 컨테이너 메트릭 수집
 - **X-Ray Daemon**: 분산 추적
 
-> 💡 **관련 이론**: 컨테이너는 프로세스 격리를 위해 Linux Namespaces(PID, Network, Mount, IPC, UTS)와 cgroups(CPU·메모리 자원 제한)를 활용한다. A2C는 현재 실행 중인 프로세스의 Namespace 정보와 환경을 분석해 동일한 환경을 컨테이너 이미지로 재현한다. 이론적으로 OS가 제공하는 것과 동일한 격리를 Docker로 복제하는 것이다.
+컨테이너는 프로세스 격리를 위해 Linux Namespaces(PID, Network, Mount, IPC, UTS)와 cgroups(CPU·메모리 자원 제한)를 활용한다. A2C는 현재 실행 중인 프로세스의 Namespace 정보와 환경을 분석해 동일한 환경을 컨테이너 이미지로 재현한다. 이론적으로 OS가 제공하는 것과 동일한 격리를 Docker로 복제하는 것이다.
 
 ## Porting Assistant for .NET: 포팅 분석 도구
 
-A2C와 가장 많이 혼동되는 도구. 결정적 차이:
+A2C와 혼동되기 쉬운 도구. 결정적 차이:
 
 | | App2Container | Porting Assistant |
 |--|--|--|
@@ -82,7 +82,7 @@ Porting Assistant의 동작:
 5. 호환 패키지가 있는 경우 자동 교체 권장
 6. 리포트 생성 (수동 작업 필요 항목 색상 표시)
 
-> 🔍 **더 깊이**: .NET Framework와 .NET Core(현재 .NET 8)의 분리. .NET Framework는 Windows 전용, .NET Core는 크로스 플랫폼(Linux/macOS/Windows). 2016년 Microsoft가 .NET Core를 오픈소스로 출시하면서 AWS에서 Linux 컨테이너로 .NET 앱을 실행하는 길이 열렸다. 하지만 .NET Framework API(Windows Registry, COM, WCF 일부)는 .NET Core에서 지원하지 않아 포팅 과정에서 코드 변경이 필요하다. Porting Assistant는 이 갭을 식별해준다.
+.NET Framework와 .NET Core(현재 .NET 8)의 분리. .NET Framework는 Windows 전용, .NET Core는 크로스 플랫폼(Linux/macOS/Windows). 2016년 Microsoft가 .NET Core를 오픈소스로 출시하면서 AWS에서 Linux 컨테이너로 .NET 앱을 실행하는 길이 열렸다. 하지만 .NET Framework API(Windows Registry, COM, WCF 일부)는 .NET Core에서 지원하지 않아 포팅 과정에서 코드 변경이 필요하다. Porting Assistant는 이 갭을 식별해준다.
 
 ## End-of-Support Migration Program (EMP)
 
@@ -110,7 +110,7 @@ Migration Hub는 마이그레이션 도구가 아니라 **통합 추적 대시�
 
 **Migration Hub Orchestrator (2022~)**: 마이그레이션 단계별 워크플로우를 자동화한다. 예: "ADS 발견 → Wave 승인 → MGN 에이전트 설치 → Test Launch 승인 → Cutover → 검증"을 Orchestrator가 단계별로 실행하고 승인 게이트를 관리.
 
-> 📚 **사례**: 2023년 Deutsche Bank의 대규모 마이그레이션. Deutsche Bank는 5,000대 이상 서버를 AWS로 이전하는 과정에서 Migration Hub Orchestrator를 사용해 Wave 관리와 승인 프로세스를 자동화했다. 금융 규제 요구에 따라 각 Wave Cutover 전 IT 위험 관리팀의 승인 게이트를 Orchestrator에 구성했다. 교훈: 대규모 마이그레이션에서 Orchestrator의 승인 워크플로우는 거버넌스와 감사 추적을 동시에 해결한다.
+2023년 Deutsche Bank의 대규모 마이그레이션. Deutsche Bank는 5,000대 이상 서버를 AWS로 이전하는 과정에서 Migration Hub Orchestrator를 사용해 Wave 관리와 승인 프로세스를 자동화했다. 금융 규제 요구에 따라 각 Wave Cutover 전 IT 위험 관리팀의 승인 게이트를 Orchestrator에 구성했다. 교훈: 대규모 마이그레이션에서 Orchestrator의 승인 워크플로우는 거버넌스와 감사 추적을 동시에 해결한다.
 
 ## Application Discovery Service (ADS): 인벤토리의 출발점
 
@@ -181,7 +181,7 @@ API Gateway (Refactor Spaces 관리)
 - 직접: API Gateway + VPC Link + Route 53 + ALB를 각각 설정해야 함, 여러 팀 간 라우팅 규칙 관리 복잡
 - Refactor Spaces: 추상화 레이어로 라우팅 규칙 추가/변경 UI/API 제공, 팀별 서비스 독립 관리
 
-> 💡 **관련 이론**: Martin Fowler의 Strangler Fig Application (2004). 레거시 시스템의 기능을 하나씩 새로운 서비스로 교체할 때, 원래 시스템이 여전히 실행되지만 점점 더 적은 기능을 처리하도록 하는 패턴이다. "교살(Strangler)"이라는 이름이 불편하게 들릴 수 있지만, 이는 기존 나무를 감싸 결국 대체하는 열대 무화과나무에서 온 비유다. 소프트웨어 현대화에서 가장 현실적이고 안전한 전략으로 널리 채택되었다.
+Martin Fowler의 Strangler Fig Application (2004). 레거시 시스템의 기능을 하나씩 새로운 서비스로 교체할 때, 원래 시스템이 여전히 실행되지만 점점 더 적은 기능을 처리하도록 하는 패턴이다. "교살(Strangler)"이라는 이름이 불편하게 들릴 수 있지만, 이는 기존 나무를 감싸 결국 대체하는 열대 무화과나무에서 온 비유다. 소프트웨어 현대화에서 가장 현실적이고 안전한 전략으로 널리 채택되었다.
 
 ## 도구 선택 매핑 완전판
 

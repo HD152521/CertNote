@@ -10,7 +10,7 @@ DOP 시험에서 하이브리드는 "인터넷 차단 환경에서 DC 서버가 
 
 이것이 SSM Agent와 CodeDeploy Agent가 동작하는 방식이다. 두 에이전트 모두 DC 서버에서 AWS 엔드포인트로 아웃바운드 HTTPS(443)를 열고, 그 연결을 통해 명령·아티팩트를 받는다. 인바운드 포트를 단 하나도 열지 않아도 된다 — 이것이 **bastion-less** 운영(SSM Session Manager로 베스천·22번 포트 제거)과 같은 사상이다.
 
-> 💡 **관련 이론**: Pull 모델의 우위는 분산 시스템의 **연결 방향성(connection directionality)** 원리에서 나온다. 방화벽은 본질적으로 비대칭이다 — 아웃바운드는 허용하고 인바운드는 막는 것이 기본 정책이다. 그래서 NAT 뒤의 수많은 노드를 제어하려면, 중앙이 노드에 연결하는(push) 대신 노드가 중앙에 연결하게(pull) 설계하는 것이 정석이다. 이는 메시지 큐의 컨슈머가 브로커에서 끌어오는 패턴, IoT 기기가 MQTT 브로커로 아웃바운드 연결을 유지하는 패턴, GitOps 에이전트(Argo CD)가 클러스터 안에서 Git을 폴링하는 패턴과 같은 가족이다. 핵심 trade-off: Pull은 방화벽 친화적이고 확장성이 좋지만(중앙이 모든 노드 주소를 알 필요 없음), 명령 전파에 폴링 지연이 있다. Push는 즉시성이 좋지만 인바운드 경로와 노드 인벤토리를 요구한다. 하이브리드는 거의 항상 Pull을 택한다.
+> Pull 모델의 우위는 분산 시스템의 **연결 방향성(connection directionality)** 원리에서 나온다. 방화벽은 본질적으로 비대칭이다 — 아웃바운드는 허용하고 인바운드는 막는 것이 기본 정책이다. 그래서 NAT 뒤의 수많은 노드를 제어하려면, 중앙이 노드에 연결하는(push) 대신 노드가 중앙에 연결하게(pull) 설계하는 것이 정석이다. 이는 메시지 큐의 컨슈머가 브로커에서 끌어오는 패턴, IoT 기기가 MQTT 브로커로 아웃바운드 연결을 유지하는 패턴, GitOps 에이전트(Argo CD)가 클러스터 안에서 Git을 폴링하는 패턴과 같은 가족이다. 핵심 trade-off: Pull은 방화벽 친화적이고 확장성이 좋지만(중앙이 모든 노드 주소를 알 필요 없음), 명령 전파에 폴링 지연이 있다. Push는 즉시성이 좋지만 인바운드 경로와 노드 인벤토리를 요구한다. 하이브리드는 거의 항상 Pull을 택한다.
 
 ## 네트워크 토폴로지 — 인터넷 없이 AWS에 닿는 두 경로
 
@@ -20,9 +20,9 @@ DOP 시험에서 하이브리드는 "인터넷 차단 환경에서 DC 서버가 
 
 AWS API에 닿는 방식이 더 미묘하다. 인터넷이 막혔으니 `s3.amazonaws.com` 같은 퍼블릭 엔드포인트로는 갈 수 없다. **VPC Endpoint(PrivateLink)**가 답이다 — S3·ECR·SSM·Secrets Manager·CodeBuild 등의 API를 VPC 내부의 사설 IP로 노출하고, DC는 DX/TGW를 거쳐 그 사설 IP로 AWS API를 호출한다. 트래픽이 단 한 번도 인터넷으로 나가지 않는다.
 
-> ⚠️ **함정**: **Direct Connect는 그 자체로 암호화되지 않는다.** 이것이 시험의 단골 함정이다. DX는 "사설 전용선"이라 안전하다고 착각하기 쉽지만, 물리적으로 분리됐을 뿐 회선 위 데이터는 평문이다. 규제상 회선 암호화가 필수면 **MACsec(MAC Security, IEEE 802.1AE)**을 DX 포트에 적용하거나(레이어 2 암호화, 10Gbps 이상 전용 연결에서 지원), **IPSec over DX**(DX 위에 VPN을 한 번 더 얹어 레이어 3 암호화)를 쓴다. "DX를 쓰는데 회선 암호화가 필요하다"의 답은 절대 "DX가 자동으로 한다"가 아니다 — MACsec 또는 IPSec over DX다. 참고로 VPN(IPSec)은 기본 암호화되지만 인터넷을 거치면 지연·대역폭이 DX보다 떨어진다.
+> ⚠️ **함정**: **Direct Connect는 그 자체로 암호화되지 않는다.** 이 점이 시험에서 함정으로 쓰인다. DX는 "사설 전용선"이라 안전하다고 착각하기 쉽지만, 물리적으로 분리됐을 뿐 회선 위 데이터는 평문이다. 규제상 회선 암호화가 필수면 **MACsec(MAC Security, IEEE 802.1AE)**을 DX 포트에 적용하거나(레이어 2 암호화, 10Gbps 이상 전용 연결에서 지원), **IPSec over DX**(DX 위에 VPN을 한 번 더 얹어 레이어 3 암호화)를 쓴다. "DX를 쓰는데 회선 암호화가 필요하다"의 답은 절대 "DX가 자동으로 한다"가 아니다 — MACsec 또는 IPSec over DX다. 참고로 VPN(IPSec)은 기본 암호화되지만 인터넷을 거치면 지연·대역폭이 DX보다 떨어진다.
 
-> 🔍 **더 깊이**: DNS가 하이브리드의 숨은 난관이다. DC 서버가 VPC Endpoint의 사설 IP를 받으려면, `secretsmanager.ap-northeast-2.amazonaws.com`을 사설 IP로 해석해야 하는데 DC의 온프레 DNS는 이를 모른다. **Route 53 Resolver Inbound/Outbound Endpoint**가 양방향 해석을 잇는다 — Inbound Endpoint는 DC가 AWS 사설 호스팅 영역을 질의하게 하고, Outbound Endpoint는 AWS가 DC의 내부 도메인을 질의하게 한다. VPC Endpoint를 만들 때 "Private DNS enabled" 옵션이 핵심인데, 이게 켜져야 표준 AWS 엔드포인트 이름이 사설 IP로 해석된다. 시험에서 "PrivateLink Endpoint를 만들었는데 DC에서 여전히 퍼블릭 IP로 해석된다"의 원인은 대개 Resolver Endpoint 미설정 또는 Private DNS 미활성화다.
+> DNS가 하이브리드의 숨은 난관이다. DC 서버가 VPC Endpoint의 사설 IP를 받으려면, `secretsmanager.ap-northeast-2.amazonaws.com`을 사설 IP로 해석해야 하는데 DC의 온프레 DNS는 이를 모른다. **Route 53 Resolver Inbound/Outbound Endpoint**가 양방향 해석을 잇는다 — Inbound Endpoint는 DC가 AWS 사설 호스팅 영역을 질의하게 하고, Outbound Endpoint는 AWS가 DC의 내부 도메인을 질의하게 한다. VPC Endpoint를 만들 때 "Private DNS enabled" 옵션이 핵심인데, 이게 켜져야 표준 AWS 엔드포인트 이름이 사설 IP로 해석된다. 시험에서 "PrivateLink Endpoint를 만들었는데 DC에서 여전히 퍼블릭 IP로 해석된다"의 원인은 대개 Resolver Endpoint 미설정 또는 Private DNS 미활성화다.
 
 ## SSM Hybrid Activation — DC 서버를 EC2처럼 다루기
 
@@ -60,7 +60,7 @@ aws deploy add-tags-to-on-premises-instances \
   --instance-names dc-server-01 --tags Key=App,Value=Billing
 ```
 
-> 🔍 **더 깊이**: CodeDeploy On-Prem의 가장 큰 구조적 한계는 **Auto Scaling 통합 불가**다. EC2 배포에서 CodeDeploy는 ASG와 연동해 새로 뜨는 인스턴스에 자동으로 최신 배포를 적용하지만, On-Prem 인스턴스는 정적 인벤토리다 — 서버가 자동으로 늘거나 줄지 않으니 등록·태깅을 사람(또는 별도 자동화)이 관리해야 한다. 또 Blue/Green 배포의 "새 인스턴스 집합을 띄워 트래픽을 시프트하는" 방식은 On-Prem에서 제한적이다(물리 서버를 즉석에서 복제할 수 없으니). 그래서 On-Prem은 주로 In-Place 배포(기존 서버에 새 버전 덮어쓰기)를 쓴다. 시험에서 "On-Prem 서버에 ASG 기반 자동 스케일 배포"라는 선택지가 나오면 오답이다 — On-Prem은 정적 인벤토리가 전제다.
+> CodeDeploy On-Prem의 가장 큰 구조적 한계는 **Auto Scaling 통합 불가**다. EC2 배포에서 CodeDeploy는 ASG와 연동해 새로 뜨는 인스턴스에 자동으로 최신 배포를 적용하지만, On-Prem 인스턴스는 정적 인벤토리다 — 서버가 자동으로 늘거나 줄지 않으니 등록·태깅을 사람(또는 별도 자동화)이 관리해야 한다. 또 Blue/Green 배포의 "새 인스턴스 집합을 띄워 트래픽을 시프트하는" 방식은 On-Prem에서 제한적이다(물리 서버를 즉석에서 복제할 수 없으니). 그래서 On-Prem은 주로 In-Place 배포(기존 서버에 새 버전 덮어쓰기)를 쓴다. 시험에서 "On-Prem 서버에 ASG 기반 자동 스케일 배포"라는 선택지가 나오면 오답이다 — On-Prem은 정적 인벤토리가 전제다.
 
 ## IAM Roles Anywhere — 정적 키를 X.509 인증서로 대체하기
 
@@ -75,9 +75,9 @@ aws rolesanywhere create-trust-anchor \
 # 이후 프로필+Role 연결 → DC 서버는 credential helper로 임시 자격 증명 획득
 ```
 
-> 💡 **관련 이론**: IAM Roles Anywhere는 **신원 연합(identity federation)**과 **공개키 암호(PKI)** 이론의 결합이다. PKI의 핵심은 신뢰 사슬(chain of trust) — 루트 CA가 중간 CA를, 중간 CA가 서버 인증서를 서명하고, 검증자는 루트 CA만 신뢰하면 사슬 전체를 검증할 수 있다(RFC 5280, X.509 표준). Roles Anywhere의 "Trust Anchor"가 바로 이 루트/중간 CA를 AWS에 신뢰 앵커로 등록하는 것이다. 더 깊은 사상은 **단명 자격 증명(ephemeral credentials)**으로, "비밀은 짧게 살수록 안전하다"는 원칙이다. 정적 키는 시간이 흐를수록 유출 누적 확률이 커지지만, 매번 인증서로 받는 단명 토큰은 유출돼도 곧 만료된다. 이는 EC2의 인스턴스 프로파일, EKS의 IRSA/Pod Identity, OIDC 기반 GitHub Actions 연합과 같은 가족 — "정적 비밀을 단명 토큰으로 대체"라는 현대 클라우드 신원의 일관된 방향이다.
+> IAM Roles Anywhere는 **신원 연합(identity federation)**과 **공개키 암호(PKI)** 이론의 결합이다. PKI의 바탕은 신뢰 사슬(chain of trust) — 루트 CA가 중간 CA를, 중간 CA가 서버 인증서를 서명하고, 검증자는 루트 CA만 신뢰하면 사슬 전체를 검증할 수 있다(RFC 5280, X.509 표준). Roles Anywhere의 "Trust Anchor"가 바로 이 루트/중간 CA를 AWS에 신뢰 앵커로 등록하는 것이다. 더 깊은 사상은 **단명 자격 증명(ephemeral credentials)**으로, "비밀은 짧게 살수록 안전하다"는 원칙이다. 정적 키는 시간이 흐를수록 유출 누적 확률이 커지지만, 매번 인증서로 받는 단명 토큰은 유출돼도 곧 만료된다. 이는 EC2의 인스턴스 프로파일, EKS의 IRSA/Pod Identity, OIDC 기반 GitHub Actions 연합과 같은 가족 — "정적 비밀을 단명 토큰으로 대체"라는 현대 클라우드 신원의 일관된 방향이다.
 
-> 📚 **사례**: 2021년 **Codecov** 공급망 침해는 CI 도구의 Bash Uploader 스크립트가 변조돼, 수천 고객의 CI 환경 변수 — 그 안에 박혀 있던 **정적 클라우드 액세스 키·토큰** — 가 공격자 서버로 유출된 사건이다. 핵심 교훈은 "CI/배포 환경에 정적 장기 자격 증명을 두면, 그 환경이 침해될 때 키가 통째로 새고 무효화·추적이 어렵다"였다. 이 사건 이후 업계는 OIDC 연합(GitHub Actions ↔ AWS), IAM Roles Anywhere, IRSA/Pod Identity 같은 **단명·인증서 기반 자격 증명**으로 빠르게 이동했다. 시험에서 "DC 서버/CI에 정적 키를 두지 않으려면"의 답이 IAM Roles Anywhere인 이유가 바로 이 흐름이다.
+> 2021년 **Codecov** 공급망 침해는 CI 도구의 Bash Uploader 스크립트가 변조돼, 수천 고객의 CI 환경 변수 — 그 안에 박혀 있던 **정적 클라우드 액세스 키·토큰** — 가 공격자 서버로 유출된 사건이다. 핵심 교훈은 "CI/배포 환경에 정적 장기 자격 증명을 두면, 그 환경이 침해될 때 키가 통째로 새고 무효화·추적이 어렵다"였다. 이 사건 이후 업계는 OIDC 연합(GitHub Actions ↔ AWS), IAM Roles Anywhere, IRSA/Pod Identity 같은 **단명·인증서 기반 자격 증명**으로 빠르게 이동했다. 시험에서 "DC 서버/CI에 정적 키를 두지 않으려면"의 답이 IAM Roles Anywhere인 이유가 바로 이 흐름이다.
 
 ## 시크릿·구성·모니터링 통합 — 한 도구로 양쪽을 덮기
 
@@ -88,7 +88,7 @@ aws rolesanywhere create-trust-anchor \
 
 > 🎯 **시나리오**: "인바운드 인터넷이 완전히 차단된 DC의 5,000대 서버가 (1) EC2와 동일하게 패치되고 (2) Secrets Manager에서 DB 자격을 조회하며 (3) 정적 키 없이 AWS API를 호출하고 (4) EC2와 단일 릴리즈로 배포돼야 한다." → (1) SSM Hybrid Activation으로 등록 후 Patch Manager. (2) Secrets Manager용 Interface VPC Endpoint(PrivateLink)를 DX/TGW 경유로 접근, Route 53 Resolver로 사설 DNS 해석. (3) IAM Roles Anywhere로 사내 CA 기반 단명 자격 증명. (4) CodeDeploy On-Prem에 DC 서버를 등록·태깅해 EC2 ASG와 같은 AppSpec으로 동시 배포(In-Place). 회선이 규제상 암호화 필수면 DX에 MACsec 또는 IPSec over DX 추가.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 다섯 가지다. 첫째, **방화벽의 인바운드 차단이 Pull 모델을 강제**하며 — SSM/CodeDeploy 에이전트가 아웃바운드로 끌어오는 — 이는 연결 방향성의 분산 시스템 원리다. 둘째, **인터넷 없이 AWS에 닿으려면 회선(DX+TGW)과 엔드포인트(PrivateLink) 두 결정**이 필요하고, Route 53 Resolver가 양방향 DNS를 잇는다. 셋째, **SSM Hybrid Activation으로 DC 서버를 EC2처럼** 패치·관리하되 활성화 토큰(일회성)과 mi-xxxx(영구)를 구분한다. 넷째, **CodeDeploy On-Prem이 단일 AppSpec으로 양쪽 배포**하되 ASG 통합 불가·정적 인벤토리라는 한계가 있다. 다섯째, **IAM Roles Anywhere가 정적 키를 X.509 인증서 기반 단명 자격 증명으로 대체**한다(Codecov 사건의 교훈) — 그리고 DX는 자동 암호화되지 않아 MACsec/IPSec over DX가 필요하다.
 

@@ -25,13 +25,13 @@ Log Group           ← 동일 애플리케이션의 로그 컨테이너 (정책
 
 Lambda는 함수당 1개 Log Group(`/aws/lambda/<funcName>`), 실행 환경(컨테이너) 인스턴스마다 1개 Stream. EC2의 CloudWatch Agent는 보통 인스턴스 ID로 Stream 분리. ECS Fargate는 task ID, EKS는 pod name으로 stream을 만드는 게 표준.
 
-> 🔍 **더 깊이**: Log Stream은 **Sequence Token**이라는 단조 증가 토큰으로 동시성을 제어한다. 한 Stream에 동시에 `PutLogEvents`를 호출하면 한 쪽은 `InvalidSequenceTokenException`으로 실패하고 새 토큰으로 재시도해야 했다. 2023년부터 새 모드(`PutLogEvents` v2)에서는 sequence token이 옵션이 되어 동시 쓰기가 가능해졌다. 단 한 Stream에 여러 소스가 쓰면 timestamp ordering이 깨질 수 있어 "한 Stream = 한 소스" 원칙은 여전히 표준.
+Log Stream은 **Sequence Token**이라는 단조 증가 토큰으로 동시성을 제어한다. 한 Stream에 동시에 `PutLogEvents`를 호출하면 한 쪽은 `InvalidSequenceTokenException`으로 실패하고 새 토큰으로 재시도해야 했다. 2023년부터 새 모드(`PutLogEvents` v2)에서는 sequence token이 옵션이 되어 동시 쓰기가 가능해졌다. 단 한 Stream에 여러 소스가 쓰면 timestamp ordering이 깨질 수 있어 "한 Stream = 한 소스" 원칙은 여전히 표준.
 
 > ⚠️ **함정**: 로그 메시지 최대 크기 256KB. JSON 객체가 너무 크면 잘리거나 거부. 운영자가 큰 응답 본문을 통째로 로그에 찍으면 truncation으로 디버깅 정보를 잃는다. 큰 페이로드는 S3에 저장하고 로그에는 S3 key만 남기는 패턴이 표준.
 
 ## 보존 정책: 디폴트의 함정 (Never Expire)
 
-**Log Group의 기본 보존 = "Never Expire"** (영구 보존). 운영자가 명시적으로 설정하지 않으면 비용이 무한 증가한다. SOA-C02에서 가장 자주 나오는 비용 시나리오 중 하나가 이것.
+**Log Group의 기본 보존 = "Never Expire"** (영구 보존). 운영자가 명시적으로 설정하지 않으면 비용이 무한 증가한다. SOA-C02에서 나오는 비용 시나리오 중 하나가 이것.
 
 | 보존 기간 옵션 | 사용 시점 |
 |----------------|-----------|
@@ -55,13 +55,13 @@ aws logs describe-log-groups --query 'logGroups[?retentionInDays==`null`].logGro
   | xargs -I {} aws logs put-retention-policy --log-group-name {} --retention-in-days 30
 ```
 
-> 📚 **사례**: 한 회사가 Lambda 함수 500개를 1년간 운영하고 어느 날 청구서를 보니 CloudWatch Logs 비용만 월 \$4,000. 원인은 모든 함수의 Log Group이 기본 "Never Expire" 상태. 7일 보존으로 일괄 변경 후 비용이 90% 감소. 운영자 First Day Action 중 1순위가 Log Group 보존 정책 표준화다.
+가상의 사례로, 한 회사가 Lambda 함수 500개를 1년간 운영하고 어느 날 청구서를 보니 CloudWatch Logs 비용만 월 \$4,000. 원인은 모든 함수의 Log Group이 기본 "Never Expire" 상태. 7일 보존으로 일괄 변경 후 비용이 90% 감소. 운영자 First Day Action 중 1순위가 Log Group 보존 정책 표준화다.
 
-> 🔍 **더 깊이**: 운영자가 모든 신규 Log Group에 자동으로 보존 정책을 적용하는 표준 패턴 3가지.
->
-> 1. **EventBridge 룰**: CloudTrail의 `CreateLogGroup` API 이벤트 감지 → Lambda 자동 호출 → `put-retention-policy` 실행. 신규 생성 시점에 즉시 적용.
-> 2. **Config Rule**: 관리형 룰 `cloudwatch-log-group-retention-period-check`(파라미터 `MinRetentionTime`)로 비준수 탐지 + Remediation Action으로 자동 수정.
-> 3. **CloudFormation / Terraform**: IaC에서 Log Group 정의 시 `RetentionInDays`를 필수로. 단 Lambda는 함수 첫 실행 시 자동 생성이라 IaC로 미리 만들어 두지 않으면 빠진다.
+운영자가 모든 신규 Log Group에 자동으로 보존 정책을 적용하는 표준 패턴 3가지.
+
+1. **EventBridge 룰**: CloudTrail의 `CreateLogGroup` API 이벤트 감지 → Lambda 자동 호출 → `put-retention-policy` 실행. 신규 생성 시점에 즉시 적용.
+2. **Config Rule**: 관리형 룰 `cloudwatch-log-group-retention-period-check`(파라미터 `MinRetentionTime`)로 비준수 탐지 + Remediation Action으로 자동 수정.
+3. **CloudFormation / Terraform**: IaC에서 Log Group 정의 시 `RetentionInDays`를 필수로. 단 Lambda는 함수 첫 실행 시 자동 생성이라 IaC로 미리 만들어 두지 않으면 빠진다.
 
 ## 비용 구조: 운영자가 폭증하기 쉬운 4가지 항목
 
@@ -121,9 +121,9 @@ Subscription은 Log Group의 신규 로그를 실시간으로 다른 서비스�
 { ($.statusCode = 5*) || ($.statusCode = 4*) }  # OR 조건
 ```
 
-> 🔍 **더 깊이**: Subscription Filter는 push 기반이라 latency가 수 초. 단 한 Log Group에 Subscription Filter는 **최대 2개**(2023년부터). 더 필요하면 Kinesis Data Streams로 한 번 보내고 그 위에서 여러 consumer가 읽는 fan-out 구조. 또 한 가지 함정: Subscription Filter는 **새로 도착하는 로그에만 적용**(forward-only). 과거 로그를 retroactive 처리하려면 별도 export task가 필요하다.
+Subscription Filter는 push 기반이라 latency가 수 초. 단 한 Log Group에 Subscription Filter는 **최대 2개**(2023년부터). 더 필요하면 Kinesis Data Streams로 한 번 보내고 그 위에서 여러 consumer가 읽는 fan-out 구조. 또 한 가지 함정: Subscription Filter는 **새로 도착하는 로그에만 적용**(forward-only). 과거 로그를 retroactive 처리하려면 별도 export task가 필요하다.
 
-> 📚 **사례**: 한 회사가 EC2의 syslog에서 "Out of Memory: Kill process" 패턴을 감지하면 Lambda가 자동으로 인스턴스를 재시작하고 운영자에게 Slack 알림을 보내는 자동화를 구축했다. 평균 다운타임이 분 단위 → 초 단위로 단축. 추가로 같은 Lambda가 알람 발생 횟수를 메트릭으로 발행해, OOM이 반복되는 인스턴스 타입을 자동 식별 → 다음 deployment에서 메모리 큰 타입으로 교체하는 closed-loop 운영 자동화를 만들었다.
+가상의 사례로, 한 회사가 EC2의 syslog에서 "Out of Memory: Kill process" 패턴을 감지하면 Lambda가 자동으로 인스턴스를 재시작하고 운영자에게 Slack 알림을 보내는 자동화를 구축했다. 평균 다운타임이 분 단위 → 초 단위로 단축. 추가로 같은 Lambda가 알람 발생 횟수를 메트릭으로 발행해, OOM이 반복되는 인스턴스 타입을 자동 식별 → 다음 deployment에서 메모리 큰 타입으로 교체하는 closed-loop 운영 자동화를 만들었다.
 
 ### Cross-Account Subscription
 
@@ -131,7 +131,7 @@ Subscription은 Log Group의 신규 로그를 실시간으로 다른 서비스�
 
 ![소스 계정과 분석 계정의 로그가 Kinesis 로 모여 Lambda·OpenSearch 로 흐르는 구조](/diagrams/cross-account-subscription.svg)
 
-Account B에 `logs:PutSubscriptionFilter`를 허용하는 Resource Policy를 Destination에 붙여야 한다. 이 패턴이 시험에 자주 나오는 "여러 계정 로그를 중앙 보안 계정에서 실시간 분석" 시나리오의 답.
+Account B에 `logs:PutSubscriptionFilter`를 허용하는 Resource Policy를 Destination에 붙여야 한다. 이 패턴이 시험에 나오는 "여러 계정 로그를 중앙 보안 계정에서 실시간 분석" 시나리오의 답.
 
 ## CloudWatch Logs와 EventBridge의 차이
 
@@ -188,14 +188,14 @@ fields @message
 | limit 30
 ```
 
-> 🔍 **더 깊이**: Logs Insights는 내부적으로 쿼리를 **여러 워커로 병렬 분산**한다. Log Group 크기에 따라 수십 ~ 수백 워커가 각자 일부 Log Stream을 스캔하고 결과를 머지(MapReduce 패턴). 그래서 한 쿼리가 TB 단위 로그도 10~30초 안에 끝난다. 단 비용은 **스캔한 GB로 청구(GB당 \$0.0076)**되므로 다음 3원칙이 핵심:
-> 1. **`filter`를 가능한 한 앞에**: 스캔 후 필터링이 아닌 스캔 중 필터링
-> 2. **시간 범위를 좁게 시작**: 1주일 → 1시간으로 줄이면 비용 168분의 1
-> 3. **`fields` 명시**: 불필요한 필드 로딩 안 함
+Logs Insights는 내부적으로 쿼리를 **여러 워커로 병렬 분산**한다. Log Group 크기에 따라 수십 ~ 수백 워커가 각자 일부 Log Stream을 스캔하고 결과를 머지(MapReduce 패턴). 그래서 한 쿼리가 TB 단위 로그도 10~30초 안에 끝난다. 단 비용은 **스캔한 GB로 청구(GB당 \$0.0076)**되므로 다음 3원칙이 핵심:
+1. **`filter`를 가능한 한 앞에**: 스캔 후 필터링이 아닌 스캔 중 필터링
+2. **시간 범위를 좁게 시작**: 1주일 → 1시간으로 줄이면 비용 168분의 1
+3. **`fields` 명시**: 불필요한 필드 로딩 안 함
 
-> 💡 **관련 이론**: MapReduce(Dean & Ghemawat, 2004 OSDI)의 분산 처리 패러다임과 같은 계열. 쿼리 = 여러 mapper가 부분 결과 산출 → reducer가 머지. Apache Spark, Presto, BigQuery도 같은 구조. Logs Insights의 한계는 로그가 행 지향(line) 저장이라 컬럼 프루닝이 안 된다는 점. 대량 분석은 Athena(Parquet 컬럼 저장)가 압도적으로 빠르고 싸다.
+MapReduce(Dean & Ghemawat, 2004 OSDI)의 분산 처리 패러다임과 같은 계열. 쿼리 = 여러 mapper가 부분 결과 산출 → reducer가 머지. Apache Spark, Presto, BigQuery도 같은 구조. Logs Insights의 한계는 로그가 행 지향(line) 저장이라 컬럼 프루닝이 안 된다는 점. 대량 분석은 Athena(Parquet 컬럼 저장)가 압도적으로 빠르고 싸다.
 
-> ⚠️ **함정**: 시간 범위를 "1주일"로 잡으면 1주일치 모든 로그를 스캔한다. 비용·속도 양면에서 손해. 운영자는 항상 가능한 좁은 시간 범위부터 시작하고 점점 넓힌다. 1시간 → 6시간 → 24시간 순.
+시간 범위를 "1주일"로 잡으면 1주일치 모든 로그를 스캔한다. 비용·속도 양면에서 손해. 운영자는 항상 가능한 좁은 시간 범위부터 시작하고 점점 넓힌다. 1시간 → 6시간 → 24시간 순.
 
 ## VPC Flow Logs와 Logs 통합 패턴
 
@@ -265,7 +265,7 @@ aws logs create-export-task \
 
 비용 비교: CloudWatch Logs Storage(\$0.033/GB) → S3 Standard(\$0.025/GB) → S3 Glacier Deep Archive(\$0.00099/GB)로 비용을 1/33까지 절감.
 
-> 📚 **사례**: 한 금융 회사가 7년 보존 의무가 있는 감사 로그를 CloudWatch Logs에 두고 있어 월 \$15,000를 내고 있었다. Subscription → Firehose → S3 Standard 1년 → Glacier Deep Archive 6년 lifecycle로 전환 후 월 비용 \$400. 38배 절감. 운영자가 보존 비용을 줄이는 가장 큰 단일 변경이다.
+가상의 사례로, 한 금융 회사가 7년 보존 의무가 있는 감사 로그를 CloudWatch Logs에 두고 있어 월 \$15,000를 내고 있었다. Subscription → Firehose → S3 Standard 1년 → Glacier Deep Archive 6년 lifecycle로 전환 후 월 비용 \$400. 38배 절감. 운영자가 보존 비용을 줄이는 가장 큰 단일 변경이다.
 
 ## Logs Anomaly Detection (2023 출시)
 
@@ -299,7 +299,7 @@ aws logs create-export-task \
 
 운영자 패턴: 별도 Monitoring Account를 만들고 모든 워크로드 계정에서 sink를 연결. 운영자는 한 콘솔에서 전 계정 메트릭·로그·X-Ray trace를 통합 조회. Organization 전체를 자동 enrollment하는 옵션도 있다.
 
-## 정리하며
+## 정리
 
 CloudWatch Logs의 운영자 체크리스트:
 

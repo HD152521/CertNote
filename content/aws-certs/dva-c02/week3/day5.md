@@ -118,7 +118,7 @@ Lambda에서 에러 발생?
             │       → ReportBatchItemFailures로 부분 실패 격리
             │
             └── Kinesis/DDB Streams?
-                    → 기본 무한 재시도 (샤드 블록 위험!)
+                    → 기본 무한 재시도 (샤드 블록 위험)
                     → MaximumRetryAttempts 설정 필수
                     → BisectBatchOnFunctionError로 격리
                     → OnFailure Destination으로 최종 실패 처리

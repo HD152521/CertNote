@@ -18,19 +18,19 @@ SAP-C02 도메인 3 "Migration and Modernization"은 비중 20%로, 본질은 "�
 | **Repurchase** | 상용 SaaS로 교체 | 자체 ERP→Workday, CRM→Salesforce | AWS Marketplace |
 | **Refactor** | 클라우드 네이티브 재설계 | 모놀리스→마이크로서비스·서버리스 | DMS+SCT, Lambda, ECS, Step Functions |
 
-> 💡 **관련 이론**: 7R 선택은 **"비즈니스 가치 ÷ 마이그레이션 노력"의 최적화 문제**다. 왼쪽(Retire·Rehost)으로 갈수록 노력은 작지만 클라우드 가치도 작고(EC2를 데이터센터처럼 운영), 오른쪽(Refactor)으로 갈수록 노력·위험은 크지만 진정한 클라우드 네이티브(서버리스·오토스케일·관리형)를 얻는다. 클라우드 벤더별로 모델이 다르다 — Microsoft Azure는 5R(Rehost·Refactor·Rearchitect·Rebuild·Replace), Google Cloud는 자체 분류를 쓴다. AWS의 7R이 가장 세분화됐다. 시험 핵심 매핑: "Lift & Shift"=Rehost, "동일 DB 엔진 + RDS 이동"=Replatform, "모놀리스 분해"=Refactor, "VMware 그대로"=Relocate.
+7R 선택은 **"비즈니스 가치 ÷ 마이그레이션 노력"의 최적화 문제**다. 왼쪽(Retire·Rehost)으로 갈수록 노력은 작지만 클라우드 가치도 작고(EC2를 데이터센터처럼 운영), 오른쪽(Refactor)으로 갈수록 노력·위험은 크지만 진정한 클라우드 네이티브(서버리스·오토스케일·관리형)를 얻는다. 클라우드 벤더별로 모델이 다르다 — Microsoft Azure는 5R(Rehost·Refactor·Rearchitect·Rebuild·Replace), Google Cloud는 자체 분류를 쓴다. AWS의 7R이 가장 세분화됐다. 시험 핵심 매핑: "Lift & Shift"=Rehost, "동일 DB 엔진 + RDS 이동"=Replatform, "모놀리스 분해"=Refactor, "VMware 그대로"=Relocate.
 
 > 🔍 **더 깊이**: Pro 시험의 가장 중요한 통찰은 **"시간 제약이 있으면 Rehost 먼저, 클라우드 위에서 점진 최적화(then optimize)"**다. 데드라인이 짧으면 처음부터 Refactor를 시도하다 스키마 변환·앱 수정·테스트에 수개월이 걸려 실패한다. 대신 MGN으로 빠르게 Rehost해 데이터센터를 먼저 닫고, 클라우드에 올린 뒤 비즈니스 가치 높은 워크로드만 골라 Replatform·Refactor한다. 이것이 "lift-and-shift then modernize" 패턴이며, Capital One·GE 같은 대형 마이그레이션이 검증한 정석이다.
 
-> 📚 **사례**: **GE의 클라우드 후퇴 vs Capital One의 성공**(2010년대 후반)이 7R 전략의 명암을 보여준다. GE는 9,000개 워크로드를 옮기겠다는 야심으로 시작했지만 거버넌스·우선순위 없이 무차별 이전해 상당수를 다시 온프레로 되돌렸다. 반면 Capital One은 2015~2020년 8년에 걸쳐 **초기엔 대부분 Rehost로 빠르게 옮기고**, 점진적으로 Replatform(Oracle→Aurora, 자체 ELB→ALB) → Refactor(모놀리스→마이크로서비스·Lambda)로 진화해 결국 자체 데이터센터를 전부 닫았다. 교훈: 한꺼번에 Refactor하지 말고 wave로 나눠 점진 진행하라.
+**GE의 클라우드 후퇴 vs Capital One의 성공**(2010년대 후반)이 7R 전략의 명암을 보여준다. GE는 9,000개 워크로드를 옮기겠다는 야심으로 시작했지만 거버넌스·우선순위 없이 무차별 이전해 상당수를 다시 온프레로 되돌렸다. 반면 Capital One은 2015~2020년 8년에 걸쳐 **초기엔 대부분 Rehost로 빠르게 옮기고**, 점진적으로 Replatform(Oracle→Aurora, 자체 ELB→ALB) → Refactor(모놀리스→마이크로서비스·Lambda)로 진화해 결국 자체 데이터센터를 전부 닫았다. 교훈: 한꺼번에 Refactor하지 않고 wave로 나눠 점진적으로 진행한다.
 
 ## 도구 내부 동작 — MGN·DMS·DRS의 메커니즘
 
 ### MGN (Application Migration Service) — 블록 레벨 연속 복제
 
-MGN은 온프레 서버에 **에이전트**를 설치해 디스크를 **블록 레벨로 지속 복제**한다. 핵심은 소스가 살아 운영되는 동안 백그라운드로 AWS staging 영역에 계속 동기화하다, cutover 순간에만 짧게 멈추고 EC2로 전환하는 것이다. 다운타임이 "마지막 델타 동기화 + 부팅"으로 압축된다(분 단위).
+MGN은 온프레 서버에 **에이전트**를 설치해 디스크를 **블록 레벨로 지속 복제**한다. 특징은 소스가 살아 운영되는 동안 백그라운드로 AWS staging 영역에 계속 동기화하다, cutover 순간에만 짧게 멈추고 EC2로 전환하는 것이다. 다운타임이 "마지막 델타 동기화 + 부팅"으로 압축된다(분 단위).
 
-> 💡 **관련 이론**: MGN의 블록 레벨 연속 복제는 본질적으로 **비동기 복제 + CDP(Continuous Data Protection)**다. 원리상 DR 서비스인 **Elastic Disaster Recovery(DRS)**와 동일한 엔진(CloudEndure 인수 기반)을 쓴다 — MGN은 "한 번 옮기고 종료", DRS는 "계속 복제하며 DR 대기"라는 목적만 다를 뿐 기술은 형제다. 그래서 시험에서 "최소 다운타임 + OS 통째 이전·일회성"은 MGN, "지속 복제하며 재해 대기"는 DRS로 갈린다. 둘 다 OS·앱·데이터 전체(서버 단위)를 옮기지, 파일(DataSync)이나 DB 스키마(DMS)만 옮기는 게 아니다.
+MGN의 블록 레벨 연속 복제는 본질적으로 **비동기 복제 + CDP(Continuous Data Protection)**다. 원리상 DR 서비스인 **Elastic Disaster Recovery(DRS)**와 동일한 엔진(CloudEndure 인수 기반)을 쓴다 — MGN은 "한 번 옮기고 종료", DRS는 "계속 복제하며 DR 대기"라는 목적만 다를 뿐 기술은 형제다. 그래서 시험에서 "최소 다운타임 + OS 통째 이전·일회성"은 MGN, "지속 복제하며 재해 대기"는 DRS로 갈린다. 둘 다 OS·앱·데이터 전체(서버 단위)를 옮기지, 파일(DataSync)이나 DB 스키마(DMS)만 옮기는 게 아니다.
 
 ### DMS + SCT — CDC로 무중단 DB 이전
 
@@ -38,9 +38,9 @@ MGN은 온프레 서버에 **에이전트**를 설치해 디스크를 **블록 �
 - **이기종(heterogeneous)**: Oracle→Aurora PostgreSQL, SQL Server→MySQL — **SCT로 스키마 변환** + **DMS로 데이터 이전**
 - **CDC(Change Data Capture)**: 초기 풀 로드 + 지속 변경 캡처 → 무중단 cutover
 
-> 🔍 **더 깊이**: DMS의 무중단 비결은 **CDC가 소스 DB의 트랜잭션 로그를 읽는 것**이다 — MySQL의 binlog, Oracle의 redo log, PostgreSQL의 WAL, SQL Server의 transaction log를 파싱해 변경(INSERT/UPDATE/DELETE)을 캡처한다. 이는 read replica처럼 가벼워 소스 DB 부하가 작다. 동작 순서: (1) Full Load로 기존 데이터를 통째 복사, (2) Full Load 중 발생한 변경을 캐시했다 적용, (3) 이후 CDC로 실시간 변경을 계속 적용해 양쪽을 동기 상태로 유지, (4) cutover 시점에 앱 트래픽을 새 DB로 전환하고 DMS 종료. 다운타임이 "트래픽 전환" 순간으로 압축된다. 함정: **동종 이전엔 SCT가 불필요**하다 — SCT는 SQL 방언·저장 프로시저 변환용이라 같은 엔진 간엔 쓸 일이 없다.
+DMS의 무중단 비결은 **CDC가 소스 DB의 트랜잭션 로그를 읽는 것**이다 — MySQL의 binlog, Oracle의 redo log, PostgreSQL의 WAL, SQL Server의 transaction log를 파싱해 변경(INSERT/UPDATE/DELETE)을 캡처한다. 이는 read replica처럼 가벼워 소스 DB 부하가 작다. 동작 순서: (1) Full Load로 기존 데이터를 통째 복사, (2) Full Load 중 발생한 변경을 캐시했다 적용, (3) 이후 CDC로 실시간 변경을 계속 적용해 양쪽을 동기 상태로 유지, (4) cutover 시점에 앱 트래픽을 새 DB로 전환하고 DMS 종료. 다운타임이 "트래픽 전환" 순간으로 압축된다. 함정: **동종 이전엔 SCT가 불필요**하다 — SCT는 SQL 방언·저장 프로시저 변환용이라 같은 엔진 간엔 쓸 일이 없다.
 
-> 📚 **사례**: 한 핀테크가 Oracle Database Enterprise Edition(라이선스 연간 수억 원)에서 Aurora PostgreSQL로 이전했다. **SCT로 PL/SQL → PL/pgSQL 변환**(자동 70%, 수동 30% — SCT는 변환 불가 항목을 Assessment Report로 표시), **DMS CDC로 6개월간 양쪽 동기화**, 주말에 cutover. 결과: 라이선스 비용 0원 + 성능 향상. 전형적인 Refactor 사례이며, "이기종 DB + 스키마 변환"은 항상 SCT+DMS 조합이다.
+(가상 사례) 한 핀테크가 Oracle Database Enterprise Edition(라이선스 연간 수억 원)에서 Aurora PostgreSQL로 이전했다. **SCT로 PL/SQL → PL/pgSQL 변환**(자동 70%, 수동 30% — SCT는 변환 불가 항목을 Assessment Report로 표시), **DMS CDC로 6개월간 양쪽 동기화**, 주말에 cutover. 결과: 라이선스 비용 0원 + 성능 향상. 전형적인 Refactor 사례이며, "이기종 DB + 스키마 변환"은 항상 SCT+DMS 조합이다.
 
 ### DataSync vs Snow Family — 대역폭이 곧 시간
 
@@ -60,7 +60,7 @@ MGN은 온프레 서버에 **에이전트**를 설치해 디스크를 **블록 �
 - **Migration Hub**: Discovery→Planning→Migration→Validation 통합 추적 + 자산별 7R 권고(Strategy Recommendations)
 - **Application Discovery Service(ADS)**: 온프레 인벤토리 자동 수집(에이전트=상세 / 에이전트리스=VMware vCenter 통합) + 의존성 그래프 자동 생성
 
-> 💡 **관련 이론**: **Migration Wave Planning**은 마이그레이션 거버넌스의 핵심이다. 한꺼번에 모든 워크로드를 옮기지 않고, **의존성 그래프 기반**으로 wave 1, 2, 3로 나눠 점진 진행한다 — 강하게 결합된 시스템(같은 DB를 공유하는 앱들)은 같은 wave에, 의존성 없는 시스템은 먼저 옮긴다. ADS가 앱 간 네트워크 통신을 자동 매핑해 의존성 그래프를 만들고, Migration Hub가 wave 배정·진행 추적을 한다. 이것이 "빅뱅 마이그레이션"의 위험을 줄이는 정석이다.
+**Migration Wave Planning**은 마이그레이션 거버넌스의 핵심이다. 한꺼번에 모든 워크로드를 옮기지 않고, **의존성 그래프 기반**으로 wave 1, 2, 3로 나눠 점진 진행한다 — 강하게 결합된 시스템(같은 DB를 공유하는 앱들)은 같은 wave에, 의존성 없는 시스템은 먼저 옮긴다. ADS가 앱 간 네트워크 통신을 자동 매핑해 의존성 그래프를 만들고, Migration Hub가 wave 배정·진행 추적을 한다. 이것이 "빅뱅 마이그레이션"의 위험을 줄이는 정석이다.
 
 ## 현대화 패턴 — 모놀리스를 안전하게 분해하기
 
@@ -75,9 +75,9 @@ MGN은 온프레 서버에 **에이전트**를 설치해 디스크를 **블록 �
 [Aurora + DynamoDB] [Step Functions 워크플로]
 ```
 
-> 🎯 **시나리오**: "한 기업이 20년 된 Java EE 모놀리스(단일 Oracle DB 공유)를 마이크로서비스로 전환하려 한다. 한 번에 재작성하면 비즈니스 중단 위험이 크다. 어떻게 점진 분해하는가?" — 답: **Strangler Fig 패턴 + API Gateway 라우팅 + 새 기능부터 Lambda/Fargate 마이크로서비스 + DMS로 DB도 점진 분리(database-per-service)**. API Gateway가 요청을 모놀리스/새 서비스로 분기하고, 새 기능부터 떼어내며, DB는 DMS로 해당 도메인 데이터를 새 DB(Aurora/DynamoDB)로 점진 이관한다. 한 번에 모든 기능을 옮기지 않으므로 각 단계가 롤백 가능하고 위험이 분산된다. "빅뱅 재작성"은 항상 오답 신호다.
+> 🎯 **시나리오**: "한 기업이 20년 된 Java EE 모놀리스(단일 Oracle DB 공유)를 마이크로서비스로 전환하려 한다. 한 번에 재작성하면 비즈니스 중단 위험이 크다. 어떻게 점진 분해하는가?" — 답: **Strangler Fig 패턴 + API Gateway 라우팅 + 새 기능부터 Lambda/Fargate 마이크로서비스 + DMS로 DB도 점진 분리(database-per-service)**. API Gateway가 요청을 모놀리스/새 서비스로 분기하고, 새 기능부터 떼어내며, DB는 DMS로 해당 도메인 데이터를 새 DB(Aurora/DynamoDB)로 점진 이관한다. 한 번에 모든 기능을 옮기지 않으므로 각 단계가 롤백 가능하고 위험이 분산된다. "빅뱅 재작성"은 오답 신호다.
 
-> 🔍 **더 깊이**: 모놀리스 분해의 어려운 부분은 코드가 아니라 **공유 데이터베이스**다. 마이크로서비스의 원칙은 "서비스마다 자기 DB(database-per-service)"인데, 모놀리스는 보통 하나의 거대 DB를 공유한다. 분해 시 트랜잭션 경계가 서비스를 가로지르면 **분산 트랜잭션** 문제가 생긴다 — 2PC(2-phase commit)는 가용성을 해쳐 클라우드에선 기피되고, 대신 **Saga 패턴**(보상 트랜잭션으로 일관성을 결국 달성)을 Step Functions로 구현한다. "마이크로서비스 간 분산 트랜잭션·보상 로직"이 보이면 Step Functions Saga가 정답 방향이다.
+모놀리스 분해의 어려운 부분은 코드가 아니라 **공유 데이터베이스**다. 마이크로서비스의 원칙은 "서비스마다 자기 DB(database-per-service)"인데, 모놀리스는 보통 하나의 거대 DB를 공유한다. 분해 시 트랜잭션 경계가 서비스를 가로지르면 **분산 트랜잭션** 문제가 생긴다 — 2PC(2-phase commit)는 가용성을 해쳐 클라우드에선 기피되고, 대신 **Saga 패턴**(보상 트랜잭션으로 일관성을 결국 달성)을 Step Functions로 구현한다. "마이크로서비스 간 분산 트랜잭션·보상 로직"이 보이면 Step Functions Saga가 정답 방향이다.
 
 ## 시나리오 키워드 → 정답 매핑
 
@@ -100,7 +100,7 @@ MGN은 온프레 서버에 **에이전트**를 설치해 디스크를 **블록 �
 | "마이크로서비스 분산 트랜잭션" | Step Functions Saga | 보상 트랜잭션 |
 | "VMware → VMware on AWS" | VMware Cloud on AWS(Relocate) | 하이퍼바이저 그대로 |
 
-## 정리하며
+## 정리
 
 도메인 3은 **7R 즉답 + 도구 내부 동작 이해 + 대역폭 수학**이 핵심이다. 통찰: (1) 시간 제약이면 Rehost(MGN) 먼저, 클라우드 위에서 점진 Refactor — GE 실패 vs Capital One 성공이 증명, (2) MGN은 블록 연속 복제(=DRS 형제 엔진), DMS CDC는 트랜잭션 로그를 읽어 무중단, 이기종만 SCT 추가, (3) "수십~수백 TB + 제한 대역폭"은 Snow + 온라인 델타 하이브리드 — 회선으로 PB는 불가, (4) 모놀리스는 빅뱅 재작성 금물 — Strangler Fig로 점진 교살하고 공유 DB는 database-per-service + Saga로 분리. 시험 함정: "동종 이전에 SCT 필요?" → 아니오, DMS만으로 충분.
 

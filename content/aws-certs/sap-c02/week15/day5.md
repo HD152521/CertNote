@@ -8,9 +8,9 @@
 
 HIPAA의 핵심은 **PHI(Protected Health Information, 보호 대상 건강정보)** — 개인을 식별할 수 있는 모든 의료 정보다. HIPAA Security Rule은 PHI에 대해 **관리적·물리적·기술적 보호장치(safeguard)**를 요구하며, 기술적으로는 전송 중·저장 중 암호화, 접근 통제, 감사 로그를 명시한다.
 
-> 💡 **관련 이론**: 클라우드에서 HIPAA를 이해하는 열쇠는 **공동 책임 모델(Shared Responsibility Model)**과 **BAA**다. AWS는 인프라(물리 보안·하이퍼바이저)를 책임지고, 고객은 그 위의 구성(암호화 설정·접근 통제·PHI 처리)을 책임진다. BAA는 이 책임 분담을 법적으로 명문화한 계약으로, AWS Artifact에서 받는다. 결정적 제약은 **PHI는 "HIPAA Eligible Services"에서만 처리**해야 한다는 것 — AWS의 약 130여 개 서비스만 BAA 범위에 들어간다. HIPAA Eligible이 아닌 서비스에 PHI를 넣으면 BAA 위반이다. 시험에서 "HIPAA Eligible 아닌 서비스 사용 차단"이 보이면 **SCP**로 그런 서비스를 Deny하는 게 정답이다 — 법적 요구를 기술 통제로 강제한다.
+클라우드에서 HIPAA를 이해하는 열쇠는 **공동 책임 모델(Shared Responsibility Model)**과 **BAA**다. AWS는 인프라(물리 보안·하이퍼바이저)를 책임지고, 고객은 그 위의 구성(암호화 설정·접근 통제·PHI 처리)을 책임진다. BAA는 이 책임 분담을 법적으로 명문화한 계약으로, AWS Artifact에서 받는다. 결정적 제약은 **PHI는 "HIPAA Eligible Services"에서만 처리**해야 한다는 것 — AWS의 약 130여 개 서비스만 BAA 범위에 들어간다. HIPAA Eligible이 아닌 서비스에 PHI를 넣으면 BAA 위반이다. 시험에서 "HIPAA Eligible 아닌 서비스 사용 차단"이 보이면 **SCP**로 그런 서비스를 Deny하는 게 정답이다 — 법적 요구를 기술 통제로 강제한다.
 
-> 🔍 **더 깊이**: PHI 보호의 한 축은 **비식별화(de-identification)**다. HIPAA는 두 가지 비식별 방법을 인정한다 — **Safe Harbor**(18개 식별자를 모두 제거)와 **Expert Determination**(통계 전문가가 재식별 위험이 낮음을 입증). AWS에서 **Comprehend Medical**은 의료 텍스트에서 PHI 엔터티(이름·날짜·진단 등)를 자동 추출해 비식별화를 돕고, **Macie**는 S3에 저장된 PHI/PII를 자동 발견한다. 둘의 구분이 시험에 나온다 — "의료 텍스트에서 PHI 추출·비식별화"=Comprehend Medical, "S3의 민감 데이터 발견·분류"=Macie다. 또 **HealthLake**는 의료 표준 **FHIR R4** 형식의 데이터레이크로, 의료 데이터를 구조화·분석한다.
+PHI 보호의 한 축은 **비식별화(de-identification)**다. HIPAA는 두 가지 비식별 방법을 인정한다 — **Safe Harbor**(18개 식별자를 모두 제거)와 **Expert Determination**(통계 전문가가 재식별 위험이 낮음을 입증). AWS에서 **Comprehend Medical**은 의료 텍스트에서 PHI 엔터티(이름·날짜·진단 등)를 자동 추출해 비식별화를 돕고, **Macie**는 S3에 저장된 PHI/PII를 자동 발견한다. 둘의 구분이 시험에 나온다 — "의료 텍스트에서 PHI 추출·비식별화"=Comprehend Medical, "S3의 민감 데이터 발견·분류"=Macie다. 또 **HealthLake**는 의료 표준 **FHIR R4** 형식의 데이터 레이크로, 의료 데이터를 구조화·분석한다.
 
 > ⚠️ **함정**: "HIPAA 인증 리전"이라는 건 없다 — HIPAA는 리전이 아니라 **서비스 단위(HIPAA Eligible)**와 BAA로 관리된다. 일반 상용 리전(us-east-1 등)에서도 HIPAA Eligible 서비스 + BAA로 PHI를 합법적으로 다룰 수 있다. GovCloud가 필요한 건 HIPAA 때문이 아니라 **FedRAMP High·DoD** 같은 **정부** 요구 때문이다. 시험에서 HIPAA만 있으면 일반 리전 + Eligible 서비스로 충분하고, FedRAMP High/DoD가 추가되면 GovCloud로 넘어간다 — 이 둘을 섞으면 함정에 빠진다.
 
@@ -18,7 +18,7 @@ HIPAA의 핵심은 **PHI(Protected Health Information, 보호 대상 건강정�
 
 **FedRAMP(Federal Risk and Authorization Management Program)**는 미국 연방 정부가 클라우드 서비스를 쓰기 위한 보안 인증 프로그램으로, Low·Moderate·High 영향 등급이 있다. **GovCloud(US)**는 이 정부 요구를 위한 **물리적·논리적으로 격리된 별도 파티션**이다.
 
-> 💡 **관련 이론**: GovCloud의 핵심 특성은 **ITAR(국제무기거래규정)·EAR 준수를 위한 인력 제한**이다 — GovCloud는 **미국 시민권자·영주권자만이 운영·접근**하며, 별도 자격증명·별도 콘솔·별도 리전(us-gov-west-1·us-gov-east-1)을 쓴다. 이는 NIST SP 800-53의 High 베이스라인과 DoD SRG(IL2~5)를 충족하기 위함이다. 일반 AWS 파티션(aws)과 GovCloud 파티션(aws-us-gov)은 ARN의 파티션 식별자부터 다르고, IAM·계정이 완전히 분리된다. 그래서 일반 리전과 GovCloud 간에는 직접 연결이 안 되고 별도로 관리해야 한다. 시험에서 "FedRAMP High·DoD·미국 시민 운영"이 보이면 GovCloud, "FedRAMP Moderate"는 일반 상용 리전에서도 다수 서비스가 인증되어 있어 GovCloud가 꼭 필요하진 않을 수 있다.
+GovCloud의 핵심 특성은 **ITAR(국제무기거래규정)·EAR 준수를 위한 인력 제한**이다 — GovCloud는 **미국 시민권자·영주권자만이 운영·접근**하며, 별도 자격증명·별도 콘솔·별도 리전(us-gov-west-1·us-gov-east-1)을 쓴다. 이는 NIST SP 800-53의 High 베이스라인과 DoD SRG(IL2~5)를 충족하기 위함이다. 일반 AWS 파티션(aws)과 GovCloud 파티션(aws-us-gov)은 ARN의 파티션 식별자부터 다르고, IAM·계정이 완전히 분리된다. 그래서 일반 리전과 GovCloud 간에는 직접 연결이 안 되고 별도로 관리해야 한다. 시험에서 "FedRAMP High·DoD·미국 시민 운영"이 보이면 GovCloud, "FedRAMP Moderate"는 일반 상용 리전에서도 다수 서비스가 인증되어 있어 GovCloud가 꼭 필요하진 않을 수 있다.
 
 | 요구 | 충분한 환경 |
 |------|------------|
@@ -27,9 +27,9 @@ HIPAA의 핵심은 **PHI(Protected Health Information, 보호 대상 건강정�
 | **FedRAMP High / DoD IL4-5** | **GovCloud(US)** |
 | **ITAR(무기 관련 데이터)** | **GovCloud(US)** (미국인 운영) |
 
-> 🔍 **더 깊이**: 30년 보존 같은 초장기 WORM은 **계층 결합**으로 푼다 — 저렴한 저장은 **S3 Glacier Deep Archive**(가장 싼 아카이브 계층)로, 변경 불가는 **Object Lock Compliance** 또는 백업의 **Vault Lock Compliance**로 건다. 둘은 직교한다 — Glacier가 "어디에 싸게 저장하나", Object Lock이 "변경 불가를 어떻게 강제하나"를 담당한다. 시험에서 "30년·최저 비용·변경 불가"가 보이면 Glacier Deep Archive + Object Lock/Vault Lock Compliance의 조합이다.
+30년 보존 같은 초장기 WORM은 **계층 결합**으로 푼다 — 저렴한 저장은 **S3 Glacier Deep Archive**(가장 싼 아카이브 계층)로, 변경 불가는 **Object Lock Compliance** 또는 백업의 **Vault Lock Compliance**로 건다. 둘은 직교한다 — Glacier가 "어디에 싸게 저장하나", Object Lock이 "변경 불가를 어떻게 강제하나"를 담당한다. 시험에서 "30년·최저 비용·변경 불가"가 보이면 Glacier Deep Archive + Object Lock/Vault Lock Compliance의 조합이다.
 
-> 📚 **사례**: 2015년 미국 **연방 인사관리처(OPM) 해킹**으로 약 2,150만 명의 연방 공무원 신원조회 기록(지문·SF-86 보안 양식 포함)이 유출됐다. 원인은 다년간의 미흡한 보안 — 다단계 인증 부재, 미암호화 데이터, 레거시 시스템, 탐지 실패가 겹쳤다. 이 사건은 연방 클라우드 보안 강화(FedRAMP 강제·지속 모니터링)를 가속했다. 교훈은 헬스케어·금융과 동일하다 — 컴플라이언스는 체크박스가 아니라 암호화·MFA·세그먼테이션·탐지·감사의 심층 방어 전체가 작동해야 의미가 있다. 시험에서 정부·의료 시나리오는 항상 이 다층 보호를 동시에 묻는다.
+2015년 미국 **연방 인사관리처(OPM) 해킹**으로 약 2,150만 명의 연방 공무원 신원조회 기록(지문·SF-86 보안 양식 포함)이 유출됐다. 원인은 다년간의 미흡한 보안 — 다단계 인증 부재, 미암호화 데이터, 레거시 시스템, 탐지 실패가 겹쳤다. 이 사건은 연방 클라우드 보안 강화(FedRAMP 강제·지속 모니터링)를 가속했다. 교훈은 헬스케어·금융과 동일하다 — 컴플라이언스는 체크박스가 아니라 암호화·MFA·세그먼테이션·탐지·감사의 심층 방어 전체가 작동해야 의미가 있다. 시험에서 정부·의료 시나리오는 항상 이 다층 보호를 동시에 묻는다.
 
 ## Week 15 통합 — 케이스 분류 프레임
 
@@ -43,11 +43,11 @@ Pro 시험의 시나리오는 결국 "어느 케이스인가"를 먼저 분류�
 | **미디어** | 대역폭·지연·DRM | 라이브, VOD, 동시 500만, 4K, DRM | MediaLive/Convert/Package/Connect, Origin Shield, Signed Cookie, Personalize |
 | **헬스케어/정부** | 컴플라이언스 제약 | HIPAA, BAA, FedRAMP, PHI, GovCloud | HIPAA Eligible+SCP, Macie/Comprehend Medical, HealthLake, GovCloud |
 
-> 🎯 **시나리오**: "한 시나리오에 'PHI 5억 건 + FedRAMP High + 30년 보관 + 라이브 환자 모니터링 스트림'이 동시에 나온다. 어떻게 분해하나?" — 답: 케이스가 **혼합**됐음을 인식하고 각 제약을 독립적으로 푼다. PHI+FedRAMP High → **GovCloud + HIPAA Eligible + BAA**, 30년 → **Glacier Deep Archive + Vault Lock Compliance**, 라이브 스트림 → **MediaLive/Connect**(단 GovCloud 지원 여부 확인). Pro 시험의 함정은 한 케이스로 단순화하게 유도하는 것 — 실제론 제약마다 다른 서비스가 필요하다. "여러 제약 동시"가 보이면 각각을 분리해 매핑하라.
+> 🎯 **시나리오**: "한 시나리오에 'PHI 5억 건 + FedRAMP High + 30년 보관 + 라이브 환자 모니터링 스트림'이 동시에 나온다. 어떻게 분해하나?" — 답: 케이스가 **혼합**됐음을 인식하고 각 제약을 독립적으로 푼다. PHI+FedRAMP High → **GovCloud + HIPAA Eligible + BAA**, 30년 → **Glacier Deep Archive + Vault Lock Compliance**, 라이브 스트림 → **MediaLive/Connect**(단 GovCloud 지원 여부 확인). Pro 시험의 함정은 한 케이스로 단순화하게 유도하는 것 — 실제론 제약마다 다른 서비스가 필요하다. "여러 제약 동시"가 보이면 각각을 분리해 매핑한다.
 
-> ⚠️ **함정**: 모든 케이스에서 반복되는 함정이 **"가장 강한 통제 = 항상 정답"이 아니라는 것**이다. 스타트업에 CloudHSM을 권하거나, 관대한 RTO에 Multi-Site Active-Active를 권하면 over-engineering이다. Pro 사고는 **요구를 정확히 충족하는 가장 저렴·단순한 선택**이다. 반대로 금융·정부에서 비용을 이유로 격리·암호를 생략하면 컴플라이언스 위반이다. 각 케이스의 지배 제약이 무엇인지 먼저 읽고, 그에 비례하는 통제를 골라야 한다.
+> ⚠️ **함정**: 모든 케이스에서 반복되는 함정이 **"가장 강한 통제가 곧 정답"이 아니라는 것**이다. 스타트업에 CloudHSM을 권하거나, 관대한 RTO에 Multi-Site Active-Active를 권하면 over-engineering이다. Pro 사고는 **요구를 정확히 충족하는 가장 저렴·단순한 선택**이다. 반대로 금융·정부에서 비용을 이유로 격리·암호를 생략하면 컴플라이언스 위반이다. 각 케이스의 지배 제약이 무엇인지 먼저 읽고, 그에 비례하는 통제를 골라야 한다.
 
-## 정리하며
+## 정리
 
 헬스케어·정부 아키텍처는 **컴플라이언스가 서비스 선택지 자체를 제한**한다 — HIPAA Eligible + BAA + SCP로 PHI 처리를 합법 서비스로 가두고, FedRAMP High/DoD는 GovCloud로, PHI 비식별화는 Comprehend Medical, 발견은 Macie, FHIR는 HealthLake, 30년 WORM은 Glacier Deep Archive + Vault Lock Compliance로 푼다. Week 15 전체의 통찰은 **시나리오를 케이스로 분류하고, 지배 제약에 비례하는 통제를 고르며, 혼합 제약은 독립적으로 분해**하는 것이다.
 

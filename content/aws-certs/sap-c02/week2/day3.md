@@ -23,9 +23,9 @@
 
 한 번에 다 설정하면 수개월. Control Tower는 이 모든 것을 **1시간 안에** 자동 구축한다.
 
-> 💡 **관련 이론**: Landing Zone의 사상은 Heroku의 **"12-Factor App"**(2011)에서 영감을 받았다. 12-Factor는 앱이 이미 만들어진 환경 위에 "내려앉기(land)"만 하면 동작하도록 환경 자체를 표준화하라는 사상. 클라우드 인프라에 적용하면 "신규 계정이 만들어지면 그 위에 모든 워크로드가 즉시 동작 가능하도록 인프라가 표준화돼 있어야 한다"는 게 Landing Zone. 이게 **Platform Engineering**(2022 이후 트렌드)의 클라우드 인프라 영역이다.
+Landing Zone의 사상은 Heroku의 **"12-Factor App"**(2011)에서 영감을 받았다. 12-Factor는 앱이 이미 만들어진 환경 위에 "내려앉기(land)"만 하면 동작하도록 환경 자체를 표준화하라는 사상. 클라우드 인프라에 적용하면 "신규 계정이 만들어지면 그 위에 모든 워크로드가 즉시 동작 가능하도록 인프라가 표준화돼 있어야 한다"는 게 Landing Zone. 이게 **Platform Engineering**(2022 이후 트렌드)의 클라우드 인프라 영역이다.
 
-> 🔍 **더 깊이**: Control Tower의 백엔드는 사실 (1) Organizations, (2) Service Catalog, (3) Config, (4) CloudFormation StackSets, (5) IAM Identity Center, (6) CloudWatch Events의 조합이다. AWS가 이걸 fully managed로 묶어 제공하는 것이지 별도의 새 서비스가 아니다. 그래서 Control Tower 없이도 같은 결과를 자체 구축 가능 — 그게 **CfCT(Customizations for Control Tower)**와 **AFT**가 활용하는 기반.
+Control Tower의 백엔드는 사실 (1) Organizations, (2) Service Catalog, (3) Config, (4) CloudFormation StackSets, (5) IAM Identity Center, (6) CloudWatch Events의 조합이다. AWS가 이걸 fully managed로 묶어 제공하는 것이지 별도의 새 서비스가 아니다. 그래서 Control Tower 없이도 같은 결과를 자체 구축 가능 — 그게 **CfCT(Customizations for Control Tower)**와 **AFT**가 활용하는 기반.
 
 ## Control Tower 구성 요소
 
@@ -55,9 +55,9 @@
 - **Strongly Recommended**: 강력 권장 (해제 가능). 예: S3 퍼블릭 차단.
 - **Elective**: 선택. 예: 특정 EBS 타입만 허용.
 
-> 🔍 **더 깊이**: 세 가드레일은 **defense in depth**의 시간축 배치다. (1) Proactive는 IaC 배포 단계, (2) Preventive는 런타임 API 호출 단계, (3) Detective는 사후 모니터링 단계. 한 단계가 뚫려도 다음 단계가 막는다. 예를 들어 IaC 우회로 console에서 직접 만들어도 Preventive(SCP)가 차단, 어찌어찌 만들어졌어도 Detective(Config)가 30분 안에 알림.
+세 가드레일은 **defense in depth**의 시간축 배치다. (1) Proactive는 IaC 배포 단계, (2) Preventive는 런타임 API 호출 단계, (3) Detective는 사후 모니터링 단계. 한 단계가 뚫려도 다음 단계가 막는다. 예를 들어 IaC 우회로 console에서 직접 만들어도 Preventive(SCP)가 차단, 어찌어찌 만들어졌어도 Detective(Config)가 30분 안에 알림.
 
-> 💡 **관련 이론**: Defense in Depth는 미국 NSA가 1990년대 정착시킨 보안 사상이다. 단일 방어막보다 여러 층의 다른 종류 방어를 두라는 것. NIST SP 800-160 (Systems Security Engineering)이 이를 형식화한다. Control Tower 가드레일 3종은 이 사상을 클라우드에 가장 깔끔하게 구현한 사례.
+Defense in Depth는 미국 NSA가 1990년대 정착시킨 보안 사상이다. 단일 방어막보다 여러 층의 다른 종류 방어를 두라는 것. NIST SP 800-160 (Systems Security Engineering)이 이를 형식화한다. Control Tower 가드레일 3종은 이 사상을 클라우드에 가장 깔끔하게 구현한 사례.
 
 > 🎯 **시나리오**: "한 회사가 PCI-DSS 인증을 받기 위해 모든 EBS가 KMS 암호화되어야 한다. (1) CloudFormation으로 배포할 때, (2) Console에서 직접 만들 때, (3) 이미 만들어진 비암호화 EBS도 알림이 와야 한다. 어떻게 보장?" — 답: **3가드레일 모두 활성화**. Proactive는 CFN Hook으로 배포 전 차단, Preventive는 SCP로 RunInstances 시점 차단, Detective는 Config Rule로 기존 리소스 스캔. 셋이 한 세트.
 
@@ -86,7 +86,7 @@ IDC에 권한 세트 자동 매핑 (예: AWSAdministratorAccess)
 사용자에게 알림 (계정 ID + 로그인 URL)
 ```
 
-> 🔍 **더 깊이**: Account Factory는 내부적으로 Service Catalog를 사용한다. "신규 계정 생성"이 Service Catalog Product로 정의돼 있고, Provisioning이 CloudFormation StackSet 실행으로 이어진다. 그래서 Service Catalog 권한이 있는 사용자만 신규 계정 만들 수 있다 — 이게 Org에서 직접 `CreateAccount` 호출하는 것과의 차이.
+Account Factory는 내부적으로 Service Catalog를 사용한다. "신규 계정 생성"이 Service Catalog Product로 정의돼 있고, Provisioning이 CloudFormation StackSet 실행으로 이어진다. 그래서 Service Catalog 권한이 있는 사용자만 신규 계정 만들 수 있다 — 이게 Org에서 직접 `CreateAccount` 호출하는 것과의 차이.
 
 ## AFT (Account Factory for Terraform)
 
@@ -131,7 +131,7 @@ Control Tower는 표준 baseline에서 벗어난 변경 자동 감지:
 
 탐지 시 콘솔 알림 + Lambda 자동 복구 가능.
 
-> 🔍 **더 깊이**: Drift Detection의 백엔드는 CloudFormation StackSet drift detection + 별도 Lambda 모니터링이다. 매 시간 baseline 상태와 실제 상태를 비교. 차이가 있으면 Control Tower 콘솔의 "Landing Zone Drift" 섹션에 표시. 자동 복구는 기본 OFF — 수동으로 "Re-register Account" 또는 "Update Landing Zone" 실행해야 baseline으로 복원.
+Drift Detection의 백엔드는 CloudFormation StackSet drift detection + 별도 Lambda 모니터링이다. 매 시간 baseline 상태와 실제 상태를 비교. 차이가 있으면 Control Tower 콘솔의 "Landing Zone Drift" 섹션에 표시. 자동 복구는 기본 OFF — 수동으로 "Re-register Account" 또는 "Update Landing Zone" 실행해야 baseline으로 복원.
 
 > ⚠️ **함정**: Control Tower에서 OU를 만들 때는 반드시 Control Tower 콘솔에서 만들어야 한다. Organizations 콘솔에서 OU를 만들면 Control Tower가 인식 못 해서 가드레일이 자동 부착 안 된다. "Control Tower에 등록된 OU(registered OU)"와 일반 OU의 차이가 시험에 나온다.
 
@@ -146,7 +146,7 @@ Control Tower는 표준 baseline에서 벗어난 변경 자동 감지:
 | 학습 곡선 | 낮음 (개별 서비스) | 중간 (CT 개념) |
 | 모범 사례 | 자체 연구 | AWS SRA 기반 |
 
-> 💡 **Pro 정답 패턴**: "100개 계정·표준화·신규 계정 자동" → **Control Tower**. "이미 운영 중인 Org에 Landing Zone 적용" → **Control Tower가 기존 Org 흡수 가능**. "Terraform GitOps" → **AFT**. "CloudFormation" → **CfCT**.
+"100개 계정·표준화·신규 계정 자동" → **Control Tower**. "이미 운영 중인 Org에 Landing Zone 적용" → **Control Tower가 기존 Org 흡수 가능**. "Terraform GitOps" → **AFT**. "CloudFormation" → **CfCT**.
 
 ## 아키텍처 다이어그램: Landing Zone에서 로그와 신호가 흐르는 경로
 
@@ -186,9 +186,9 @@ Control Tower가 "1시간 만에 구축한다"는 것의 실체는 아래 배선
   ※ 반대 방향은 존재하지 않는다. Log Archive가 다른 계정을 제어하지 않는다.
 ```
 
-> 🔍 **더 깊이**: 이 구조가 **책임 분리(Separation of Duties)**를 인프라로 강제한다는 점이 핵심이다. 로그를 만드는 주체(워크로드 계정)와 로그를 보관하는 주체(Log Archive)와 로그를 보고 판단하는 주체(Audit)가 서로 다른 계정에 있다. 워크로드 계정이 침해돼도 그 계정의 자격증명으로는 Log Archive의 S3 객체를 지울 수 없다 — 계정 경계 + Object Lock의 이중 방어. 회계에서 "기표하는 사람과 승인하는 사람을 분리하라"는 원칙(SOX 404)을 클라우드 계정 구조로 옮긴 것이다.
+이 구조가 **책임 분리(Separation of Duties)**를 인프라로 강제한다는 점이 핵심이다. 로그를 만드는 주체(워크로드 계정)와 로그를 보관하는 주체(Log Archive)와 로그를 보고 판단하는 주체(Audit)가 서로 다른 계정에 있다. 워크로드 계정이 침해돼도 그 계정의 자격증명으로는 Log Archive의 S3 객체를 지울 수 없다 — 계정 경계 + Object Lock의 이중 방어. 회계에서 "기표하는 사람과 승인하는 사람을 분리하라"는 원칙(SOX 404)을 클라우드 계정 구조로 옮긴 것이다.
 
-> ⚠️ **함정**: Audit 계정을 "보안팀이 쓰는 만능 계정"으로 오해하면 안 된다. Audit 계정은 GuardDuty·Security Hub의 **Delegated Administrator** 역할과 알림 허브 역할만 한다. 보안팀이 실제 조사·포렌식을 하는 공간은 별도의 Security Tooling 계정으로 또 나누는 게 AWS SRA 권장이다. 시험에서 "포렌식 이미지를 어디에 둘까"는 Audit이 아니라 별도 격리 계정이 정답 방향이다.
+Audit 계정을 "보안팀이 쓰는 만능 계정"으로 오해하면 안 된다. Audit 계정은 GuardDuty·Security Hub의 **Delegated Administrator** 역할과 알림 허브 역할만 한다. 보안팀이 실제 조사·포렌식을 하는 공간은 별도의 Security Tooling 계정으로 또 나누는 게 AWS SRA 권장이다. 시험에서 "포렌식 이미지를 어디에 둘까"는 Audit이 아니라 별도 격리 계정이 정답 방향이다.
 
 ## 트레이드오프 비교표: Landing Zone을 만드는 4가지 경로
 
@@ -196,18 +196,18 @@ Control Tower가 "1시간 만에 구축한다"는 것의 실체는 아래 배선
 
 | 경로 | 구축 속도 | 운영 부담 | 커스터마이징 자유도 | 규제 대응 | 적합한 상황 |
 |------|-----------|-----------|---------------------|-----------|--------------|
-| **AWS Control Tower** | 가장 빠름(수 시간) | **가장 낮음** (AWS 관리형) | 낮음 (AFC·CfCT 필요) | 표준 규제 충분 | 대부분의 조직, 기본 선택 |
+| **AWS Control Tower** | 가장 빠름(수 시간) | **가장 낮음** (AWS 관리형) | 낮음 (AFC·CfCT 필요) | 표준 규제 충분 | 일반 조직, 기본 선택 |
 | **Control Tower + AFT/CfCT** | 빠름 | 낮음~중간 | 중간 | 표준 + 사내 표준 | IaC 파이프라인 보유 조직 |
 | **Landing Zone Accelerator (LZA)** | 중간(구성 파일 작성 필요) | 중간 | **높음** (YAML 구성으로 전면 제어) | **강함** (공공·금융·GovCloud) | 엄격 규제·특수 파티션 |
 | **직접 구축(Org+SCP+StackSets)** | 가장 느림(수개월) | **가장 높음** | 완전 자유 | 자체 책임 | CT 미지원 요건이 있을 때만 |
 
-> 💡 **암기 팁**: **"기본은 Control Tower, 규제가 특수하면 LZA, IaC 흐름이면 AFT/CfCT, 직접 구축은 최후."** 시험에서 직접 구축이 정답인 경우는 거의 없다. "LEAST operational overhead"라는 한정어가 붙으면 Control Tower가 사실상 확정이다.
+**"기본은 Control Tower, 규제가 특수하면 LZA, IaC 흐름이면 AFT/CfCT, 직접 구축은 최후."** 시험에서 직접 구축이 정답인 경우는 거의 없다. "LEAST operational overhead"라는 한정어가 붙으면 Control Tower가 사실상 확정이다.
 
-> 🔍 **더 깊이**: LZA(Landing Zone Accelerator on AWS)는 AWS Solutions로 제공되는 배포 가능한 구현체다. CloudFormation과 구성 파일(YAML) 기반이라 네트워크 토폴로지·중앙 로깅·보안 서비스 구성을 코드로 전면 선언할 수 있다. Control Tower가 "정해진 좋은 기본값"이라면 LZA는 "규제 요건에 맞춰 전부 명시하는 골격"이다. 둘은 배타적이지 않아서, Control Tower 위에 LZA를 얹어 추가 구성을 코드로 관리하는 조합도 실무에서 쓰인다. 시험 맥락에서 LZA는 GovCloud·공공·고규제 키워드와 함께 등장한다.
+LZA(Landing Zone Accelerator on AWS)는 AWS Solutions로 제공되는 배포 가능한 구현체다. CloudFormation과 구성 파일(YAML) 기반이라 네트워크 토폴로지·중앙 로깅·보안 서비스 구성을 코드로 전면 선언할 수 있다. Control Tower가 "정해진 좋은 기본값"이라면 LZA는 "규제 요건에 맞춰 전부 명시하는 골격"이다. 둘은 배타적이지 않아서, Control Tower 위에 LZA를 얹어 추가 구성을 코드로 관리하는 조합도 실무에서 쓰인다. 시험 맥락에서 LZA는 GovCloud·공공·고규제 키워드와 함께 등장한다.
 
 ## 운영 중인 Org에 Control Tower를 얹는 순서
 
-"이미 40개 계정이 돌아가고 있다. 여기에 Landing Zone을 도입하라." — Pro 시험에서 가장 자주 나오는 전환 시나리오다. 순서와 각 단계의 근거를 알아야 한다.
+"이미 40개 계정이 돌아가고 있다. 여기에 Landing Zone을 도입하라." — Pro 시험에 나올 만한 전환 시나리오다. 순서와 각 단계의 근거를 알아야 한다.
 
 ```
 1단계  사전 점검 (Assessment)
@@ -248,9 +248,9 @@ Control Tower가 "1시간 만에 구축한다"는 것의 실체는 아래 배선
    └── 근거: Control Tower는 버전이 올라간다. 방치하면 신규 컨트롤을 못 받는다.
 ```
 
-> ⚠️ **함정**: 2단계의 **홈 리전 선택**은 되돌리기가 매우 어렵다. Control Tower의 제어 평면·기본 로그 적재 지점이 홈 리전에 고정되기 때문이다. 데이터 주권 요건이 있는 조직이 임시로 us-east-1에 랜딩존을 만들었다가 ap-northeast-2로 옮기려면 사실상 랜딩존 재구축에 가깝다. 시험에서도 "홈 리전을 나중에 바꾼다"는 보기는 오답 방향으로 취급한다.
+2단계의 **홈 리전 선택**은 되돌리기가 매우 어렵다. Control Tower의 제어 평면·기본 로그 적재 지점이 홈 리전에 고정되기 때문이다. 데이터 주권 요건이 있는 조직이 임시로 us-east-1에 랜딩존을 만들었다가 ap-northeast-2로 옮기려면 사실상 랜딩존 재구축에 가깝다. 시험에서도 "홈 리전을 나중에 바꾼다"는 보기는 오답 방향으로 취급한다.
 
-> 📚 **사례**: 기존 Org에 Control Tower를 도입하는 프로젝트에서 가장 흔한 지연 원인은 기술이 아니라 **기존 Config·CloudTrail 정리**다. 여러 팀이 각자 만든 trail과 Config recorder가 계정마다 다르게 남아 있어, 인벤토리를 만드는 데만 몇 주가 걸린다. 그래서 실무 팀은 1단계에서 `aws configservice describe-configuration-recorders`와 `aws cloudtrail describe-trails`를 전 계정에 StackSet이나 스크립트로 일괄 실행해 표를 먼저 만든다. "도입 전 인벤토리"가 전체 일정의 절반을 좌우한다.
+기존 Org에 Control Tower를 도입하는 프로젝트에서 가장 흔한 지연 원인은 기술이 아니라 **기존 Config·CloudTrail 정리**다. 여러 팀이 각자 만든 trail과 Config recorder가 계정마다 다르게 남아 있어, 인벤토리를 만드는 데만 몇 주가 걸린다. 그래서 실무 팀은 1단계에서 `aws configservice describe-configuration-recorders`와 `aws cloudtrail describe-trails`를 전 계정에 StackSet이나 스크립트로 일괄 실행해 표를 먼저 만든다. "도입 전 인벤토리"가 전체 일정의 절반을 좌우한다.
 
 ## 컨트롤을 코드로 다루기: API와 CLI 실물
 
@@ -299,11 +299,11 @@ Detective 컨트롤이 실제로 무엇을 보는지는 그 백엔드인 Config 
 }
 ```
 
-> 🔍 **더 깊이**: 위 JSON에서 `MaximumExecutionFrequency`가 Detective 가드레일의 **탐지 지연**을 결정한다. 구성 변경 트리거 방식(configuration change trigger)이면 리소스가 바뀌는 즉시 평가되지만, 주기 트리거(periodic)면 최대 그 주기만큼 늦게 탐지된다. 시험에서 "즉시 탐지해야 한다"는 요구가 있으면 주기 평가에만 의존하는 보기는 오답이고, EventBridge로 실시간 이벤트를 잡거나 Preventive(SCP)로 아예 막는 쪽이 정답 방향이다.
+위 JSON에서 `MaximumExecutionFrequency`가 Detective 가드레일의 **탐지 지연**을 결정한다. 구성 변경 트리거 방식(configuration change trigger)이면 리소스가 바뀌는 즉시 평가되지만, 주기 트리거(periodic)면 최대 그 주기만큼 늦게 탐지된다. 시험에서 "즉시 탐지해야 한다"는 요구가 있으면 주기 평가에만 의존하는 보기는 오답이고, EventBridge로 실시간 이벤트를 잡거나 Preventive(SCP)로 아예 막는 쪽이 정답 방향이다.
 
 ## 한정어가 바뀌면 답이 달라진다
 
-"모든 계정에서 비암호화 EBS를 없애라"라는 하나의 요구에, 한정어만 바꿔 보자.
+"모든 계정에서 비암호화 EBS를 없애라"라는 하나의 요구에, 한정어만 바꿔 본다.
 
 | 한정어 | 정답 방향 | 왜 |
 |--------|-----------|-----|
@@ -314,11 +314,11 @@ Detective 컨트롤이 실제로 무엇을 보는지는 그 백엔드인 Config 
 | **MOST cost-effective** | SCP 중심 + Config 규칙 최소화 | Config는 구성 항목 기록·규칙 평가 단위로 과금. SCP는 추가 과금 없음 |
 | **MOST comprehensive / 감사 대응** | 3중(Proactive+Preventive+Detective) | 예방과 증적을 동시에 요구할 때는 한 축만으로 부족 |
 
-> 💡 **암기 팁**: **"Before deploy = Proactive, At API = Preventive, After the fact = Detective."** 세 단어(before / at / after)만 지문에서 찾으면 가드레일 종류가 결정된다.
+**"Before deploy = Proactive, At API = Preventive, After the fact = Detective."** 세 단어(before / at / after)만 지문에서 찾으면 가드레일 종류가 결정된다.
 
-> ⚠️ **함정**: "MOST cost-effective"가 붙었는데 Detective 가드레일을 대량으로 켜는 보기를 고르면 틀린다. Control Tower 자체에는 별도 요금이 없지만, 그 아래에서 동작하는 **AWS Config**는 기록되는 구성 항목 수와 규칙 평가 수에 비례해 과금된다. 계정이 100개면 이 비용이 무시할 수 없다. 그래서 비용 한정어가 붙으면 "SCP로 막을 수 있는 것은 SCP로 막고, Config는 꼭 필요한 규칙만"이 정답 방향이다.
+"MOST cost-effective"가 붙었는데 Detective 가드레일을 대량으로 켜는 보기를 고르면 틀린다. Control Tower 자체에는 별도 요금이 없지만, 그 아래에서 동작하는 **AWS Config**는 기록되는 구성 항목 수와 규칙 평가 수에 비례해 과금된다. 계정이 100개면 이 비용이 무시할 수 없다. 그래서 비용 한정어가 붙으면 "SCP로 막을 수 있는 것은 SCP로 막고, Config는 꼭 필요한 규칙만"이 정답 방향이다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 셋이다. 첫째, **Landing Zone**은 멀티 계정 환경의 기준점이고, Control Tower가 이를 1시간 안에 자동 구축한다. 둘째, **가드레일 3종**(Preventive/Detective/Proactive)이 defense in depth의 시간축으로 작동한다. 셋째, **Account Factory/AFT/CfCT**가 신규 계정 자동화의 세 옵션이며 IaC 도구에 따라 선택이 갈린다.
 

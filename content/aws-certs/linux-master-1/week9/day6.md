@@ -16,7 +16,7 @@
 | 패키지명 | `mysql-server` | `mariadb-server` |
 | 기본 포트 / 엔진 | 3306 / InnoDB | 3306 / InnoDB |
 
-> 📚 **유래·사례**: MySQL은 스웨덴 MySQL AB의 제품이었으나 썬(Sun)을 거쳐 2010년 오라클로 넘어갔다. 상용 DB 회사가 대표 오픈소스 DB를 인수하자 원 개발자 몬티 비데니우스가 이를 포크해 만든 것이 **MariaDB**다(딸 이름에서 따왔다). 그래서 RHEL 계열의 기본 배포 DB가 MariaDB로 교체됐다. 클라이언트 명령(`mysql`, `mysqldump`, `mysqladmin`)과 기본 SQL이 호환되므로 아래 내용은 양쪽에 함께 적용된다.
+MySQL은 스웨덴 MySQL AB의 제품이었으나 썬(Sun)을 거쳐 2010년 오라클로 넘어갔다. 상용 DB 회사가 대표 오픈소스 DB를 인수하자 원 개발자 몬티 비데니우스가 이를 포크해 만든 것이 **MariaDB**다(딸 이름에서 따왔다). 그래서 RHEL 계열의 기본 배포 DB가 MariaDB로 교체됐다. 클라이언트 명령(`mysql`, `mysqldump`, `mysqladmin`)과 기본 SQL이 호환되므로 아래 내용은 양쪽에 함께 적용된다.
 
 ## 설치와 데몬 기동
 
@@ -38,7 +38,7 @@ systemctl restart mariadb      # 설정 변경 후 재시작
 | 메인 설정 파일 | `/etc/my.cnf` | `/etc/mysql/my.cnf` |
 | 데이터 디렉터리 | `/var/lib/mysql` | `/var/lib/mysql` |
 
-> ⚠️ **함정**: **패키지명은 `mariadb-server`인데 서비스명은 `mariadb`**다. `systemctl start mariadb-server`처럼 패키지명을 그대로 서비스명에 쓰는 보기가 오답으로 나온다. MySQL 커뮤니티 패키지를 깔면 서비스명이 `mysqld`가 되는 점, `start`만 하고 `enable`을 빠뜨리면 **재부팅 후 DB가 올라오지 않는다**는 점도 단골이다.
+> ⚠️ **함정**: **패키지명은 `mariadb-server`인데 서비스명은 `mariadb`**다. `systemctl start mariadb-server`처럼 패키지명을 그대로 서비스명에 쓰는 보기가 오답으로 나온다. MySQL 커뮤니티 패키지를 깔면 서비스명이 `mysqld`가 되는 점, `start`만 하고 `enable`을 빠뜨리면 **재부팅 후 DB가 올라오지 않는다**는 점도 함정이다.
 
 ## mysql_secure_installation — 설치 직후의 필수 보안 절차
 
@@ -53,7 +53,7 @@ systemctl restart mariadb      # 설정 변경 후 재시작
 | test 데이터베이스 | 누구나 접근 가능한 기본 `test` DB 삭제 |
 | 권한 테이블 재적재 | 변경 사항 즉시 반영(reload privilege tables) |
 
-> 💡 **개념**: 여기서 말하는 **DB의 root는 리눅스 시스템의 root와 완전히 별개의 계정**이다. 이름만 같을 뿐 인증 정보도 권한 체계도 DB 안에 따로 존재하며, 리눅스 root 암호를 바꿔도 DB root 암호는 그대로다. "DB 관리자 계정의 비밀번호를 설정하는 명령"은 `mysql_secure_installation` 또는 `mysqladmin -u root password '새암호'`다.
+여기서 말하는 **DB의 root는 리눅스 시스템의 root와 완전히 별개의 계정**이다. 이름만 같을 뿐 인증 정보도 권한 체계도 DB 안에 따로 존재하며, 리눅스 root 암호를 바꿔도 DB root 암호는 그대로다. "DB 관리자 계정의 비밀번호를 설정하는 명령"은 `mysql_secure_installation` 또는 `mysqladmin -u root password '새암호'`다.
 
 ```bash
 mysqladmin -u root password 'NewP@ssw0rd'   # 비대화형으로 root 암호 지정
@@ -77,7 +77,7 @@ mysql -u root -p -e "SHOW DATABASES;"     # SQL 한 줄 실행 후 종료
 | `-P` | 포트 번호 (대문자, 기본 3306) |
 | `-e` | 셸에서 SQL 한 줄 실행 후 종료 |
 
-> ⚠️ **함정**: **`-p`(소문자)는 비밀번호, `-P`(대문자)는 포트**다. 대소문자를 바꿔 쓰는 보기가 자주 나온다. `-p` 뒤에 비밀번호를 붙일 때는 **공백 없이** `-pMyPass`로 써야 한다(띄우면 MyPass가 DB 이름으로 해석된다). 명령줄의 비밀번호는 `ps`와 셸 히스토리에 남으므로 실무에서는 `-p`만 쓰고 프롬프트에 입력한다.
+> ⚠️ **함정**: **`-p`(소문자)는 비밀번호, `-P`(대문자)는 포트**다. 대소문자를 바꿔 쓰는 보기가 있다. `-p` 뒤에 비밀번호를 붙일 때는 **공백 없이** `-pMyPass`로 써야 한다(띄우면 MyPass가 DB 이름으로 해석된다). 명령줄의 비밀번호는 `ps`와 셸 히스토리에 남으므로 실무에서는 `-p`만 쓰고 프롬프트에 입력한다.
 
 - 접속 후 쓰는 기본 SQL은 아래와 같다. SQL 문은 **세미콜론(`;`)으로 끝내야** 실행된다.
 
@@ -114,7 +114,7 @@ EXIT;                           -- QUIT; \q 도 동일
 | DML | 데이터 조작어 | `SELECT`, `INSERT`, `UPDATE`, `DELETE` |
 | DCL | 데이터 제어어 | `GRANT`, `REVOKE`, `COMMIT`, `ROLLBACK` |
 
-> 🔍 **더 깊이**: `DELETE`는 DML이라 `WHERE`로 골라 지우고 트랜잭션으로 되돌릴 여지가 있지만, `TRUNCATE`는 DDL이라 테이블을 통째로 비우고 `AUTO_INCREMENT`도 초기화하며 일반적으로 롤백되지 않는다.
+`DELETE`는 DML이라 `WHERE`로 골라 지우고 트랜잭션으로 되돌릴 여지가 있지만, `TRUNCATE`는 DDL이라 테이블을 통째로 비우고 `AUTO_INCREMENT`도 초기화하며 일반적으로 롤백되지 않는다.
 
 ## 사용자와 권한 — `'user'@'host'`라는 한 쌍
 
@@ -152,9 +152,9 @@ FLUSH PRIVILEGES;                           -- 권한 테이블 재적재
   - `webdb.members` : 그 테이블 하나만
 - 실무 원칙은 **필요한 DB에만 최소 권한**을 주는 것이다.
 
-> ⚠️ **함정**: `FLUSH PRIVILEGES`는 **`mysql.user` 같은 권한 테이블을 `UPDATE`/`INSERT`로 직접 건드렸을 때** 메모리의 권한 정보를 다시 읽어들이는 명령이다. `GRANT`·`REVOKE`·`CREATE USER`로 정상 경로를 거쳤다면 서버가 자동 반영하므로 원칙적으로 필요 없다. 시험은 "권한 변경을 즉시 적용하는 명령"으로 이를 답하게 하는 경우가 많으니 명령 자체는 반드시 외워 두자.
+`FLUSH PRIVILEGES`는 **`mysql.user` 같은 권한 테이블을 `UPDATE`/`INSERT`로 직접 건드렸을 때** 메모리의 권한 정보를 다시 읽어들이는 명령이다. `GRANT`·`REVOKE`·`CREATE USER`로 정상 경로를 거쳤다면 서버가 자동 반영하므로 원칙적으로 필요 없다. "권한 변경을 즉시 적용하는 명령"을 묻는 문제의 답이 될 수 있다.
 
-> 💡 **개념**: `'web'@'localhost'`와 `'web'@'%'`는 이름이 같아도 **서로 다른 계정**이다. localhost 계정에만 권한을 주고 원격에서 붙으면 `Access denied`가 뜬다. 참고로 `-h localhost`는 유닉스 소켓(`/var/lib/mysql/mysql.sock`)으로, `-h 127.0.0.1`은 TCP 3306번으로 붙기 때문에 둘의 결과가 갈리기도 한다.
+`'web'@'localhost'`와 `'web'@'%'`는 이름이 같아도 **서로 다른 계정**이다. localhost 계정에만 권한을 주고 원격에서 붙으면 `Access denied`가 뜬다. 참고로 `-h localhost`는 유닉스 소켓(`/var/lib/mysql/mysql.sock`)으로, `-h 127.0.0.1`은 TCP 3306번으로 붙기 때문에 둘의 결과가 갈리기도 한다.
 
 ## 설정 파일 — my.cnf와 bind-address
 
@@ -188,7 +188,7 @@ character-set-server = utf8mb4             # 서버 기본 문자셋
 | `log_error` / `max_connections` | 에러 로그 경로 / 동시 접속 허용 수 |
 | `skip-networking` | TCP 수신을 아예 끄고 소켓 접속만 허용 |
 
-> ⚠️ **함정**: 데비안 계열은 기본값이 **`bind-address = 127.0.0.1`**로 잡혀 있어 원격 접속이 막힌다. 계정을 `'user'@'%'`로 만들고 방화벽까지 열었는데 안 된다면 십중팔구 여기다. 반대로 `0.0.0.0`으로 열고 방화벽을 안 잠그면 DB가 그대로 노출된다. 또 하나, **설정을 고쳤으면 `systemctl restart`를 해야 반영된다.**
+데비안 계열은 기본값이 **`bind-address = 127.0.0.1`**로 잡혀 있어 원격 접속이 막힌다. 계정을 `'user'@'%'`로 만들고 방화벽까지 열었는데 안 된다면 십중팔구 여기다. 반대로 `0.0.0.0`으로 열고 방화벽을 안 잠그면 DB가 그대로 노출된다. 또 하나, **설정을 고쳤으면 `systemctl restart`를 해야 반영된다.**
 
 ```bash
 # 실제 적용 중인 값은 서버에게 직접 물어본다
@@ -217,9 +217,9 @@ mysql -u root -p webdb < /backup/webdb.sql       # 덤프를 흘려 넣어 복�
 mysql -u root -p < /backup/all.sql               # --all-databases 덤프는 DB명 없이
 ```
 
-> ⚠️ **함정**: **백업은 `>`(출력 리다이렉션), 복구는 `<`(입력 리다이렉션)**이며 방향을 바꿔 쓰면 백업 파일이 비워진다. 더 결정적인 것 하나 — **DB 이름만 준 단일 덤프에는 `CREATE DATABASE` 문이 들어 있지 않다.** 복구 전에 대상 DB를 먼저 만들어야 하고, 만들지 않으면 `Unknown database` 오류가 난다. `--databases`나 `--all-databases`로 뜬 덤프에는 DB 생성 문이 포함되므로 DB명 없이 그대로 넣는다.
+**백업은 `>`(출력 리다이렉션), 복구는 `<`(입력 리다이렉션)**이며 방향을 바꿔 쓰면 백업 파일이 비워진다. 더 결정적인 것 하나 — **DB 이름만 준 단일 덤프에는 `CREATE DATABASE` 문이 들어 있지 않다.** 복구 전에 대상 DB를 먼저 만들어야 하고, 만들지 않으면 `Unknown database` 오류가 난다. `--databases`나 `--all-databases`로 뜬 덤프에는 DB 생성 문이 포함되므로 DB명 없이 그대로 넣는다.
 
-> 🔍 **더 깊이**: `mysqldump`는 결과물이 SQL 텍스트인 **논리 백업**이라 다른 서버로 옮기기 쉽다. 서비스를 세우지 않고 일관된 백업을 뜨려면 InnoDB 테이블에 `--single-transaction`을 쓴다. 반면 `/var/lib/mysql`을 `tar`로 묶는 물리 백업은 **반드시 데몬을 정지한 뒤** 해야 한다 — 동작 중 복사하면 깨진 파일이 나온다.
+`mysqldump`는 결과물이 SQL 텍스트인 **논리 백업**이라 다른 서버로 옮기기 쉽다. 서비스를 세우지 않고 일관된 백업을 뜨려면 InnoDB 테이블에 `--single-transaction`을 쓴다. 반면 `/var/lib/mysql`을 `tar`로 묶는 물리 백업은 **반드시 데몬을 정지한 뒤** 해야 한다 — 동작 중 복사하면 깨진 파일이 나온다.
 
 ## 로그와 문제 해결
 
@@ -256,7 +256,7 @@ ss -tlnp | grep 3306                                # 포트가 열려 대기 �
 firewall-cmd --permanent --add-port=3306/tcp && firewall-cmd --reload
 ```
 
-> 💡 **개념**: 접속 실패 메시지 두 가지를 구분하면 진단이 반으로 준다. **`Access denied for user ...`**는 서버까지 도달했으나 계정·비밀번호·권한에서 거절된 것(DB 안쪽 문제)이고, **`Can't connect to MySQL server ...`**는 연결 자체가 닿지 않은 것(데몬 미동작·방화벽·`bind-address` 등 바깥쪽 문제)이다.
+접속 실패 메시지 두 가지를 구분하면 진단이 반으로 준다. **`Access denied for user ...`**는 서버까지 도달했으나 계정·비밀번호·권한에서 거절된 것(DB 안쪽 문제)이고, **`Can't connect to MySQL server ...`**는 연결 자체가 닿지 않은 것(데몬 미동작·방화벽·`bind-address` 등 바깥쪽 문제)이다.
 
 ## 암기 팁 — 헷갈리는 짝 정리
 

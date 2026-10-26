@@ -2,7 +2,7 @@
 
 Amazon API Gateway가 처음 등장한 2015년, 서버리스 API를 만드는 방법은 EC2에 Flask나 Express를 올리거나, Elastic Beanstalk를 쓰는 것이었다. API Gateway는 "Lambda 함수를 HTTP 엔드포인트로 노출하는 관리형 서비스"라는 역할로 시작했지만, 시간이 지나며 인증·캐싱·트래픽 제어·모니터링이 붙은 완전한 API 관리 플랫폼으로 성장했다.
 
-오늘은 REST API의 내부 구조를 완전히 해부한다. 클라이언트가 HTTP 요청을 보내는 순간부터 Lambda가 호출되고 응답이 돌아오기까지, 그 경로의 모든 계층이 무엇을 하는지 이해하면 시험 문제의 70%가 자연스럽게 풀린다.
+오늘은 REST API의 내부 구조를 완전히 해부한다. 클라이언트가 HTTP 요청을 보내는 순간부터 Lambda가 호출되고 응답이 돌아오기까지, 그 경로의 모든 계층이 무엇을 하는지 이해하면 시험의 API Gateway 문제를 풀 때 근거가 선다.
 
 ## API Gateway가 필요한 이유: Lambda Function URL과의 비교
 
@@ -23,8 +23,6 @@ Lambda에는 2022년부터 Function URL이 있다. API Gateway 없이도 Lambda 
 | WebSocket | ❌ | ❌ | 별도 WebSocket API |
 
 **선택 기준**: 단일 Lambda + 단순 HTTP 노출 → Function URL. 복잡한 라우팅·인증·캐싱·사용량 제한 필요 → REST API. 비용이 민감하고 단순한 Lambda/HTTP 프록시 → HTTP API.
-
-> 💡 **관련 이론**: API Gateway는 엔터프라이즈 통합 패턴(EIP, Gregor Hohpe 2003)의 **Message Router** + **Message Filter** + **API Gateway Pattern**(Sam Newman "Building Microservices" 2015)이 합쳐진 것이다. API Gateway 패턴은 마이크로서비스 아키텍처에서 외부 클라이언트가 수십 개의 서비스를 직접 알 필요 없이 하나의 진입점을 통해 접근하게 한다. Netflix의 Zuul, Kong, Nginx Plus, AWS API Gateway 모두 이 패턴의 구현체다.
 
 ## REST API의 계층 구조: 리소스, 메서드, 통합, 스테이지
 
@@ -126,7 +124,7 @@ prod 스테이지:  lambdaAlias = prod → OrderAPI:prod (별칭)
 ```
 
 스테이지 변수 활용 패턴:
-- Lambda 별칭 분기 (가장 흔함)
+- Lambda 별칭 분기 (일반적인 방식)
 - HTTP 통합 URL 분기 (`${stageVariables.backendUrl}`)
 - AWS 서비스 ARN 분기
 
@@ -138,7 +136,7 @@ aws apigateway create-stage \
   --variables 'lambdaAlias=prod,backendUrl=https://api.mycompany.com'
 ```
 
-> 🔍 **더 깊이**: 스테이지 변수는 API Gateway 레벨의 환경 변수다. Lambda 함수의 환경 변수와는 다른 계층이다. Lambda 환경 변수는 함수 실행 시 코드에 노출되고, 스테이지 변수는 API Gateway가 통합 URI를 구성할 때 치환된다. 두 개를 함께 쓰면 API Gateway → Lambda 통합에서 스테이지별 다른 함수를 호출하고, 각 함수 내부에서는 자체 환경 변수로 추가 설정을 관리하는 구조가 된다.
+스테이지 변수는 API Gateway 레벨의 환경 변수다. Lambda 함수의 환경 변수와는 다른 계층이다. Lambda 환경 변수는 함수 실행 시 코드에 노출되고, 스테이지 변수는 API Gateway가 통합 URI를 구성할 때 치환된다. 두 개를 함께 쓰면 API Gateway → Lambda 통합에서 스테이지별 다른 함수를 호출하고, 각 함수 내부에서는 자체 환경 변수로 추가 설정을 관리하는 구조가 된다.
 
 ## REST API vs HTTP API vs WebSocket API: 핵심 비교표
 
@@ -222,7 +220,7 @@ aws apigateway update-stage \
   --patch-operations 'op=replace,path=/canarySettings/percentTraffic,value=0'
 ```
 
-> 💡 **관련 이론**: API Gateway의 카나리 배포는 Lambda 별칭의 트래픽 분할과 함께 사용하면 두 겹의 안전장치가 생긴다. API Gateway 카나리(배포 버전 수준)와 Lambda 별칭 카나리(함수 버전 수준)를 조합해 배포 위험을 최소화한다. 이는 Netflix의 "Chaos Engineering" 원칙과 일맥상통한다 — 통제된 위험으로 시스템의 견고성을 검증한다.
+API Gateway 카나리(배포 버전 수준)와 Lambda 별칭 카나리(함수 버전 수준)를 함께 쓰면 두 겹의 안전장치가 생겨 배포 위험을 줄일 수 있다.
 
 ## OpenAPI(Swagger) Import/Export
 
@@ -273,9 +271,9 @@ aws apigateway put-rest-api \
 
 데이터 전송: 첫 10TB/월은 $0.09/GB, 이후 단계별 할인.
 
-> 📚 **사례**: Slack은 2019년 API Gateway HTTP API(출시 초기)를 도입해 웹훅 수신 비용을 크게 절감했다. 초당 수천 건의 짧은 웹훅 요청에서 REST API 대비 70% 절감이 검증됐다. 단, Slack의 내부 API 중 사용량 추적이 필요한 것들은 여전히 REST API를 사용한다 — API 키와 사용량 플랜이 HTTP API에 없기 때문이다.
+HTTP API는 REST API보다 요금이 낮아 웹훅 수신처럼 짧은 요청이 많은 워크로드에 유리하다. 다만 API 키와 사용량 플랜이 HTTP API에는 없으므로, 사용량 추적이 필요한 API는 REST API를 쓴다.
 
-## 마무리
+## 정리
 
 API Gateway REST API는 HTTP 요청을 받아 인증하고, 검증하고, 변환하고, 백엔드를 호출하고, 응답을 변환해 돌려주는 6단계 파이프라인이다. 엔드포인트 유형은 트래픽 경로를 결정하고, 스테이지는 환경별 배포 단위이며, 스테이지 변수는 하나의 API 정의로 여러 환경에 유연하게 연결하는 메커니즘이다. REST, HTTP, WebSocket 세 가지 API 유형은 기능과 비용에서 명확한 트레이드오프가 있으며, 요구 사항에 맞게 선택하면 된다.
 

@@ -19,15 +19,13 @@ AWS의 리전(Region)을 "데이터센터가 있는 도시 이름"으로만 이�
 | **Wavelength Zone** | 통신사 5G 엣지 | 모바일 5G 디바이스용 |
 | **Outposts** | 고객 데이터센터 | 온프레미스 규제 / 하이브리드 |
 
-> 📚 **사례**: 2017년 2월 28일 오전 9시 37분(태평양 시간), S3 us-east-1에서 운영자가 빌링 시스템 디버깅 중 명령어에 타이포를 내며 의도보다 훨씬 많은 서버를 한꺼번에 정지시킨 사건이 있다. 그 결과 인덱스 서브시스템이 완전 재시작에 들어갔고, 4시간 동안 Stripe, Slack, Trello, IFTTT, Coursera, Quora 등이 다운됐다. AWS Status Page 자체도 S3를 의존하고 있어서 "지금 장애 났는데 장애 페이지에는 초록불"인 상황까지 벌어졌다. 단일 리전 의존이 어떻게 인터넷 절반을 흔드는지를 보여준 사건. [AWS 공식 회고](https://aws.amazon.com/message/41926/).
+**사례**: 2017년 2월 28일 오전 9시 37분(태평양 시간), S3 us-east-1에서 운영자가 빌링 시스템 디버깅 중 명령어에 타이포를 내며 의도보다 훨씬 많은 서버를 한꺼번에 정지시킨 사건이 있다. 그 결과 인덱스 서브시스템이 완전 재시작에 들어갔고, 4시간 동안 Stripe, Slack, Trello, IFTTT, Coursera, Quora 등이 다운됐다. AWS Status Page 자체도 S3를 의존하고 있어서 "지금 장애 났는데 장애 페이지에는 초록불"인 상황까지 벌어졌다. 단일 리전 의존이 어떻게 인터넷 절반을 흔드는지를 보여준 사건. [AWS 공식 회고](https://aws.amazon.com/message/41926/).
 
-## 가용 영역의 진짜 의미: 격리(Isolation)와 동기 복제의 경계
+## 가용 영역의 의미: 격리(Isolation)와 동기 복제의 경계
 
 AZ를 "데이터센터 하나"라고 단순히 이해하면 시험 문제도 틀리고 실무에서도 큰 사고를 낸다. AZ는 **물리적으로 독립된 1개 이상의 DC 집합**이고, 같은 AZ 안의 DC들끼리도 별도 전력·냉방을 쓴다. AZ 간에는 평균 60μs ~ 2ms의 저지연 전용 광섬유로 묶여 있어서 동기 복제(synchronous replication)가 가능한 정도지만, 한 AZ의 화재나 정전이 다른 AZ로 번지지 않을 정도로는 떨어져 있다(보통 수 km ~ 수십 km).
 
 > 🔍 **더 깊이**: AZ 간 latency가 보통 1-2ms라는 사실은 RDS Multi-AZ 설계의 핵심 제약이다. RDS Multi-AZ는 Primary와 Standby 사이에서 **synchronous physical replication**을 한다. 즉 클라이언트가 commit을 받으려면 Primary가 Standby에서 write ack를 받을 때까지 기다린다. AZ 간 RTT가 1-2ms라면 한 트랜잭션당 추가 latency가 그 정도로 끝나지만, 만약 리전 간(예: 서울 ↔ 도쿄, RTT 약 35ms)에 동기 복제를 시도하면 OLTP 워크로드는 사실상 불가능해진다. 이게 "리전 간 복제는 asynchronous(예: Aurora Global Database, RDS Cross-Region Read Replica)"가 기본인 이유다.
-
-> 💡 **관련 이론**: 이 트레이드오프는 분산 시스템의 CAP 정리(Brewer, 2000 PODC keynote; Gilbert & Lynch, 2002 SIGACT News에서 형식화)와 직결된다. Multi-AZ는 "같은 리전 안에서는 CP(Consistency + Partition tolerance)를 선택하되, 리전 간에는 AP(Availability + Partition tolerance)를 선택"하는 명시적인 trade-off다. Aurora Global Database가 리전 간 ~1초 RPO를 약속하면서도 "쓰기는 primary 리전에서만"이라는 제약을 두는 이유가 여기 있다. 또한 PACELC 정리(Abadi, 2012)로 보면 AWS는 "네트워크 분할이 없을 때에도 latency를 위해 consistency를 일부 양보"하는 PA/EL 시스템에 가깝다.
 
 ```
                     [ AWS Global Infrastructure ]
@@ -57,9 +55,9 @@ AZ를 "데이터센터 하나"라고 단순히 이해하면 시험 문제도 틀
 
 AWS가 AZ를 계정별로 다른 물리 AZ에 매핑하는 이유는 **트래픽 분산**이다. 만약 모든 고객이 "a 영역에 먼저 만들자"고 하면 a로만 부하가 쏠리므로, 계정마다 의도적으로 셔플한다. 그래서 두 계정 간 같은 AZ에 리소스를 두려면 `ZoneName`이 아니라 `ZoneId`(예: `apne2-az1`)를 비교해야 한다.
 
-> ⚠️ **함정**: "AZ는 곧 데이터센터 한 곳"이라는 보기가 시험에 자주 나온다. 틀렸다. AZ는 1개 이상의 DC를 묶은 논리적 격리 단위다. 또 자주 나오는 함정이 ZoneName vs ZoneId. 회사 간 VPC 피어링이나 PrivateLink를 설계할 때 AZ 이름만 보고 매칭하면 실제로는 다른 물리 AZ에 붙어 비용·latency가 튀는 일이 흔하다.
+> ⚠️ **함정**: "AZ는 곧 데이터센터 한 곳"이라는 보기가 시험에 나온다. 틀렸다. AZ는 1개 이상의 DC를 묶은 논리적 격리 단위다. 또 하나의 함정이 ZoneName vs ZoneId. 회사 간 VPC 피어링이나 PrivateLink를 설계할 때 AZ 이름만 보고 매칭하면 실제로는 다른 물리 AZ에 붙어 비용·latency가 튀는 일이 흔하다.
 
-> 📚 **사례**: 2019년 8월 23일, AWS 도쿄 리전(`ap-northeast-1`)의 한 AZ에서 냉방 시스템 제어 소프트웨어 버그로 인해 일부 서버가 과열되며 EC2와 EBS가 영향을 받았다. 이 사건의 교훈은 두 가지였다. 첫째, **Single-AZ 배포는 RDS·EBS도 동시에 죽는다**(스토리지가 한 AZ에 묶여 있기 때문). 둘째, **Auto Scaling Group의 AZ 분산이 곧 보험**이다. 당시 ASG에서 multi-AZ로 설정된 워크로드는 살아남았고, 단일 AZ로 묶어둔 곳들은 모두 다운됐다.
+**사례**: 2019년 8월 23일, AWS 도쿄 리전(`ap-northeast-1`)의 한 AZ에서 냉방 시스템 제어 소프트웨어 버그로 인해 일부 서버가 과열되며 EC2와 EBS가 영향을 받았다. 이 사건의 교훈은 두 가지였다. 첫째, **Single-AZ 배포는 RDS·EBS도 동시에 죽는다**(스토리지가 한 AZ에 묶여 있기 때문). 둘째, **Auto Scaling Group의 AZ 분산이 곧 보험**이다. 당시 ASG에서 multi-AZ로 설정된 워크로드는 살아남았고, 단일 AZ로 묶어둔 곳들은 모두 다운됐다.
 
 ## 엣지 로케이션: 콘텐츠 캐시 그 너머
 
@@ -72,11 +70,11 @@ AWS가 AZ를 계정별로 다른 물리 AZ에 매핑하는 이유는 **트래픽
 
 CloudFront와 Global Accelerator가 자주 헷갈리는데, 본질적으로 동작 레이어가 다르다. CloudFront는 **OSI L7(HTTP 의미를 알고 캐싱)**, Global Accelerator는 **OSI L4(TCP/UDP 패킷 자체를 가속)**. 그래서 게임 서버, MQTT, VoIP, WebRTC 시그널링 같은 비-HTTP 트래픽이 보이면 거의 무조건 Global Accelerator다.
 
-> 🔍 **더 깊이**: CloudFront Functions와 Lambda@Edge는 둘 다 엣지에서 동작하지만 위치가 다르다. **CloudFront Functions**는 600+ 엣지 PoP에서 직접 실행되고 100μs 미만의 콜드 스타트로 응답하지만, 메모리 2MB·실행 시간 1ms 제약이 있다. **Lambda@Edge**는 13개의 Regional Edge Cache에서 실행되며 Node.js·Python 런타임 전체를 쓸 수 있지만 콜드 스타트가 수십 ms 단위다. 이 둘의 차이는 "엣지에서 어디까지 무거운 로직을 돌릴 수 있는가"의 trade-off를 보여준다.
+CloudFront Functions와 Lambda@Edge는 둘 다 엣지에서 동작하지만 위치가 다르다. **CloudFront Functions**는 600+ 엣지 PoP에서 직접 실행되고 100μs 미만의 콜드 스타트로 응답하지만, 메모리 2MB·실행 시간 1ms 제약이 있다. **Lambda@Edge**는 13개의 Regional Edge Cache에서 실행되며 Node.js·Python 런타임 전체를 쓸 수 있지만 콜드 스타트가 수십 ms 단위다. 이 둘의 차이는 "엣지에서 어디까지 무거운 로직을 돌릴 수 있는가"의 trade-off를 보여준다.
 
-> 💡 **관련 이론**: Global Accelerator가 제공하는 정적 Anycast IP는 BGP Anycast 기반이다. 같은 IP를 여러 엣지에서 광고하면, 클라이언트의 ISP는 BGP의 best-path 알고리즘(AS_PATH 길이, local preference 등)에 따라 가장 가까운 엣지로 라우팅한다. 이 구조 덕분에 DNS TTL을 기다릴 필요 없이 **수 초 안에 트래픽 재라우팅**이 가능하다. Route 53 기반 페일오버는 DNS 캐시 TTL 때문에 분 단위가 걸리는 것과 대비된다.
+Global Accelerator가 제공하는 정적 Anycast IP는 BGP Anycast 기반이다. 같은 IP를 여러 엣지에서 광고하면, 클라이언트의 ISP는 BGP의 best-path 알고리즘(AS_PATH 길이, local preference 등)에 따라 가장 가까운 엣지로 라우팅한다. 이 구조 덕분에 DNS TTL을 기다릴 필요 없이 **수 초 안에 트래픽 재라우팅**이 가능하다. Route 53 기반 페일오버는 DNS 캐시 TTL 때문에 분 단위가 걸리는 것과 대비된다.
 
-## 특수 인프라: Outposts, Local Zones, Wavelength의 진짜 용도
+## 특수 인프라: Outposts, Local Zones, Wavelength의 용도
 
 이 세 가지는 시험에서 키워드로 구별하면 빠르지만, 왜 이런 게 존재하는지를 이해하면 헷갈릴 일이 없다.
 
@@ -86,13 +84,13 @@ CloudFront와 Global Accelerator가 자주 헷갈리는데, 본질적으로 동�
 
 **Wavelength**는 통신사(Verizon, KDDI, Vodafone, SK Telecom 등) 5G 망 내부의 엣지 데이터센터다. 5G 핵심망(Core network)을 지나지 않고 기지국에서 곧바로 컴퓨팅 자원에 닿으므로, 자율주행 차량 인지 처리나 산업용 IoT 같은 "물리 세계와 직접 상호작용하는" 응용에 쓰인다.
 
-> 💡 **암기 팁**: 본사 안 = O(utposts), 도시 = L(ocal Zones), 5G = W(avelength). 단, 시험에선 키워드보다 시나리오의 "지연 시간 요구치"와 "데이터 위치 제약"을 같이 봐야 한다.
+**암기 팁**: 본사 안 = O(utposts), 도시 = L(ocal Zones), 5G = W(avelength). 단, 시험에선 키워드보다 시나리오의 "지연 시간 요구치"와 "데이터 위치 제약"을 같이 봐야 한다.
 
 ## 공동 책임 모델: AWS와 고객 사이의 계약
 
-클라우드를 처음 쓰는 사람의 가장 흔한 오해는 "AWS가 보안까지 다 알아서 해주는 거 아니야?"다. 실제로는 **AWS = Security OF the Cloud / Customer = Security IN the Cloud** 라는 명확한 분담이 있다. 콘크리트 바닥부터 하이퍼바이저까지는 AWS, 그 위는 고객 책임이라고 보면 거의 정확하다.
+클라우드를 처음 쓰는 사람의 흔히 하는 오해는 "AWS가 보안까지 다 알아서 해주는 거 아니야?"다. 실제로는 **AWS = Security OF the Cloud / Customer = Security IN the Cloud** 라는 명확한 분담이 있다. 콘크리트 바닥부터 하이퍼바이저까지는 AWS, 그 위는 고객 책임이라고 보면 거의 정확하다.
 
-이 모델이 왜 필요한지부터 보자. 전통적인 온프레미스에서는 모든 게 고객 책임이었다(서버, 네트워크, OS, 앱 전부). SaaS에서는 거의 모든 게 벤더 책임이다(Gmail이 다운되면 Google 잘못). 클라우드는 그 중간이고, **어느 서비스를 쓰느냐에 따라 책임 경계선이 달라진다**. EC2(IaaS)는 OS부터 위가 고객, RDS(PaaS)는 DB 엔진 패치까지 AWS, Lambda나 S3 같은 완전 관리형은 더 위까지 AWS 책임이다.
+이 모델이 필요한 이유부터 짚는다. 전통적인 온프레미스에서는 모든 게 고객 책임이었다(서버, 네트워크, OS, 앱 전부). SaaS에서는 거의 모든 게 벤더 책임이다(Gmail이 다운되면 Google 잘못). 클라우드는 그 중간이고, **어느 서비스를 쓰느냐에 따라 책임 경계선이 달라진다**. EC2(IaaS)는 OS부터 위가 고객, RDS(PaaS)는 DB 엔진 패치까지 AWS, Lambda나 S3 같은 완전 관리형은 더 위까지 AWS 책임이다.
 
 ![완전 관리형에서 IaaS로 갈수록 고객 책임이 늘어나는 공동 책임 경계선](/diagrams/shared-responsibility-4tier.svg)
 
@@ -108,11 +106,9 @@ CloudFront와 Global Accelerator가 자주 헷갈리는데, 본질적으로 동�
 | AZ 간 트래픽 암호화 (인프라) | ✅ | - |
 | 애플리케이션 코드 취약점 | - | ✅ |
 
-> 📚 **사례**: 2019년 7월, Capital One에서 1억 600만 명의 카드 발급 신청 데이터가 유출되는 사고가 발생했다. 범인은 전직 AWS 직원 Paige Thompson이었지만, 원인은 AWS 자체가 아니라 **Capital One이 운영하던 WAF의 SSRF 취약점 + EC2 인스턴스 메타데이터 서비스(IMDSv1)의 IAM 역할 노출**이었다. 공격자는 SSRF로 `http://169.254.169.254/latest/meta-data/iam/security-credentials/`에 접근해 임시 자격증명을 탈취했고, 그 자격증명으로 S3 버킷을 읽었다. AWS는 자기 인프라 책임을 다했지만, "고객 책임 영역"(WAF 설정, IAM 역할의 권한 범위, IMDSv1 사용)에서 사고가 났다. [DOJ 공소장 PDF](https://www.justice.gov/usao-edva/press-release/file/1188626/download). 이 사건의 직접적 결과로 AWS는 2019년 11월 **IMDSv2**(세션 토큰 기반)를 출시했다.
+**사례**: 2019년 7월, Capital One에서 1억 600만 명의 카드 발급 신청 데이터가 유출되는 사고가 발생했다. 범인은 전직 AWS 직원 Paige Thompson이었지만, 원인은 AWS 자체가 아니라 **Capital One이 운영하던 WAF의 SSRF 취약점 + EC2 인스턴스 메타데이터 서비스(IMDSv1)의 IAM 역할 노출**이었다. 공격자는 SSRF로 `http://169.254.169.254/latest/meta-data/iam/security-credentials/`에 접근해 임시 자격증명을 탈취했고, 그 자격증명으로 S3 버킷을 읽었다. AWS는 자기 인프라 책임을 다했지만, "고객 책임 영역"(WAF 설정, IAM 역할의 권한 범위, IMDSv1 사용)에서 사고가 났다. [DOJ 공소장 PDF](https://www.justice.gov/usao-edva/press-release/file/1188626/download). 이 사건의 직접적 결과로 AWS는 2019년 11월 **IMDSv2**(세션 토큰 기반)를 출시했다.
 
-> 🔍 **더 깊이**: IMDSv2는 두 단계로 동작한다. ① `PUT /latest/api/token` 요청을 `X-aws-ec2-metadata-token-ttl-seconds` 헤더와 함께 보내 세션 토큰을 받음. ② 메타데이터 요청 시 `X-aws-ec2-metadata-token` 헤더로 토큰 제시. SSRF 공격자가 보통 HTTP GET만 가능하므로 PUT을 못 보내 토큰을 못 받고, 결과적으로 메타데이터 접근이 차단된다. 동시에 IMDSv2 요청은 IP TTL을 1(혹은 hop limit 1)로 강제해서, 인스턴스 안에서만 접근 가능하고 컨테이너 네트워크 outside로는 못 빠져나간다.
-
-> 💡 **관련 이론**: 공동 책임 모델은 NIST SP 800-145의 클라우드 서비스 모델(IaaS / PaaS / SaaS) 분류와 정확히 맞물린다. NIST CSF(Cybersecurity Framework)의 5개 함수(Identify, Protect, Detect, Respond, Recover) 중 Identify와 Protect는 거의 고객 영역에 남는다. AWS는 그 위에서 도구(GuardDuty, Inspector, Macie 등)를 제공하지만, 이를 켜고 정책을 세우는 건 고객 몫이다. ISO 27017(클라우드 보안)과 ISO 27018(클라우드 개인정보)도 이 모델 위에 책임 영역을 명문화한다.
+IMDSv2는 두 단계로 동작한다. ① `PUT /latest/api/token` 요청을 `X-aws-ec2-metadata-token-ttl-seconds` 헤더와 함께 보내 세션 토큰을 받음. ② 메타데이터 요청 시 `X-aws-ec2-metadata-token` 헤더로 토큰 제시. SSRF 공격자가 보통 HTTP GET만 가능하므로 PUT을 못 보내 토큰을 못 받고, 결과적으로 메타데이터 접근이 차단된다. 동시에 IMDSv2 요청은 IP TTL을 1(혹은 hop limit 1)로 강제해서, 인스턴스 안에서만 접근 가능하고 컨테이너 네트워크 outside로는 못 빠져나간다.
 
 ## Well-Architected Framework: 단순 체크리스트가 아니다
 
@@ -127,7 +123,7 @@ AWS는 좋은 클라우드 설계를 6개 기둥(Pillar)으로 정리해두었�
 
 SAA 시험의 도메인 비중(설계 안정성·복원력 26%, 고성능 24%, 보안 30%, 비용 최적화 20%)과 거의 일치한다. 그래서 시나리오 문제에서 "어떤 답이 맞느냐"보다 "**이 시나리오가 어떤 Pillar를 묻는 거냐**"를 먼저 잡으면 답이 보인다. 예를 들어 "야간에만 사용하는 분석 잡"이라는 시나리오는 Cost Optimization을 묻는 거고, 답은 Spot이나 Scheduled Scaling 쪽이다. "한 AZ가 죽어도 서비스가 유지되어야 한다"면 Reliability를 묻는 것이고 답은 Multi-AZ·ASG·ELB 조합이다.
 
-> 💡 **암기 팁**: 머리글자만 따서 **O-S-R-P-C-S**. 단 외우기보다 "**시나리오 키워드 → Pillar → 솔루션 패턴**"으로 매핑하는 연습이 더 중요하다.
+**암기 팁**: 머리글자만 따서 **O-S-R-P-C-S**. 단 외우기보다 "**시나리오 키워드 → Pillar → 솔루션 패턴**"으로 매핑하는 연습이 더 중요하다.
 
 ## CLI로 직접 찍어보기 — 머리에 박는 가장 빠른 방법
 
@@ -157,7 +153,7 @@ aws ec2 describe-availability-zones \
 
 `ZoneName`은 계정별로 셔플되지만 `ZoneId`는 모든 계정에서 동일하다. 따라서 협력사와 VPC를 peering 하면서 "같은 AZ에 배치해서 cross-AZ 비용을 아끼고 싶다"면 ZoneId로 맞춰야 한다. 또 `ZoneType`이 `local-zone`이나 `wavelength-zone`으로 나오면 그 리전이 특수 인프라를 지원한다는 뜻이다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 두 가지다. 첫째, AWS는 **Region > AZ > Edge**라는 3층 인프라 위에서 동작하고, 각 계층은 서로 다른 수준의 격리와 latency 특성을 갖는다. 둘째, 그 인프라 위에서 보안과 운영의 책임은 **AWS는 콘크리트 바닥부터 하이퍼바이저까지, 그 위는 고객**이라는 약속으로 갈린다. 관리형 서비스를 쓰면 그 경계선이 위로 올라가는 만큼 고객 책임은 줄지만, 그래도 "데이터 분류와 IAM 권한"만큼은 절대 줄지 않는다.
 

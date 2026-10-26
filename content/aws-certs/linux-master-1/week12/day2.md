@@ -53,7 +53,7 @@ alice:$6$xyz...:19700:0:90:7:14::
 | 8 | 계정 만료일 |
 | 9 | 예약(미사용) |
 
-> 💡 **개념**: `/etc/passwd`는 **7개 필드**, `/etc/shadow`는 **9개 필드**다. passwd의 두 번째 필드 `x`는 "실제 암호는 shadow에 있다"는 표시다. UID 0은 항상 root다.
+`/etc/passwd`는 **7개 필드**, `/etc/shadow`는 **9개 필드**다. passwd의 두 번째 필드 `x`는 "실제 암호는 shadow에 있다"는 표시다. UID 0은 항상 root다.
 
 ```bash
 # /etc/group — 그룹 정보 (콜론 4개 필드)
@@ -66,12 +66,12 @@ staff:x:1001:alice,bob
 
 > ⚠️ **함정**: shadow의 5번째 필드가 "최대 사용 일수"이고 4번째가 "최소 변경 간격"이다. 순서를 바꿔 외우면 빈칸 채우기에서 틀린다. 또 `/etc/passwd`의 7번째(셸)에 `/sbin/nologin`이나 `/bin/false`가 들어가면 로그인이 차단되는 계정이라는 의미다.
 
-> 🔍 **더 깊이**: shadow 2번째 필드의 `$6$`는 SHA-512 해시를 뜻한다. `$1$`은 MD5, `$5$`는 SHA-256, `$6$`는 SHA-512다. 필드가 `*`이나 `!`로 시작하면 그 계정은 비밀번호 로그인이 잠긴 상태다.
+shadow 2번째 필드의 `$6$`는 SHA-512 해시를 뜻한다. `$1$`은 MD5, `$5$`는 SHA-256, `$6$`는 SHA-512다. 필드가 `*`이나 `!`로 시작하면 그 계정은 비밀번호 로그인이 잠긴 상태다.
 
 ## 디스크 마운트 파일: /etc/fstab
 
 - `/etc/fstab`은 부팅 시 자동으로 마운트할 파일시스템을 정의한다.
-- **6개 필드** 순서가 단골 출제다.
+- **6개 필드** 순서를 묻는다.
 
 ```bash
 # /etc/fstab — 자동 마운트 설정 (공백/탭 구분, 6개 필드)
@@ -91,9 +91,9 @@ tmpfs       /tmp     tmpfs   defaults        0 0
 | 5 | dump 백업 여부(0=안 함) | `0` 또는 `1` |
 | 6 | fsck 검사 순서(0=검사안함, 1=루트, 2=나머지) | `0`/`1`/`2` |
 
-> 📚 **빈출**: fstab의 **6번째 필드는 fsck 검사 순서**다. 루트 파일시스템(`/`)은 반드시 `1`, 나머지는 `2`, 검사 안 할 것은 `0`이다. **5번째 필드는 dump 백업 여부**다. 이 두 숫자 필드의 의미를 헷갈리지 마라.
+fstab의 **6번째 필드는 fsck 검사 순서**다. 루트 파일시스템(`/`)은 반드시 `1`, 나머지는 `2`, 검사 안 할 것은 `0`이다. **5번째 필드는 dump 백업 여부**다. 이 두 숫자 필드의 의미를 혼동하기 쉽다.
 
-> 🔍 **더 깊이**: 마운트 옵션 `defaults`는 `rw,suid,dev,exec,auto,nouser,async`를 묶은 것이다. `ro`(읽기전용), `noexec`(실행금지), `nosuid`(SetUID무시), `noatime`(접근시간 기록 안 함, 성능↑)이 자주 쓰인다. 스왑은 옵션에 `sw`, 종류에 `swap`을 쓴다.
+마운트 옵션 `defaults`는 `rw,suid,dev,exec,auto,nouser,async`를 묶은 것이다. `ro`(읽기전용), `noexec`(실행금지), `nosuid`(SetUID무시), `noatime`(접근시간 기록 안 함, 성능↑)이 자주 쓰인다. 스왑은 옵션에 `sw`, 종류에 `swap`을 쓴다.
 
 ## 작업 스케줄: crontab 관련 파일
 
@@ -128,7 +128,7 @@ tmpfs       /tmp     tmpfs   defaults        0 0
 0 9 * * 1-5   /report.sh           # 평일(월~금) 09:00
 ```
 
-> 💡 **개념**: crontab 시간 필드 순서는 **분-시-일-월-요일**이다. `/etc/crontab`(시스템용)에는 시간 5필드 뒤에 **실행 사용자** 필드가 추가로 들어가지만, 사용자 개인 crontab(`crontab -e`)에는 사용자 필드가 없다. 이 차이가 단골이다.
+crontab 시간 필드 순서는 **분-시-일-월-요일**이다. `/etc/crontab`(시스템용)에는 시간 5필드 뒤에 **실행 사용자** 필드가 추가로 들어가지만, 사용자 개인 crontab(`crontab -e`)에는 사용자 필드가 없다. 이 차이가 헷갈리기 쉽다.
 
 > ⚠️ **함정**: `*/10 * * * *`는 "10분마다", `10 * * * *`는 "매시 10분에 한 번"이다. 슬래시(`/`)가 있으면 주기(every), 없으면 정시 실행이다. 요일은 0과 7이 모두 일요일이다.
 
@@ -152,7 +152,7 @@ sysctl net.ipv4.ip_forward   # 특정 값 조회
 sysctl -w net.ipv4.ip_forward=1   # 즉시(런타임) 설정
 ```
 
-> 📚 **빈출**: 라우터/NAT를 만들려면 `net.ipv4.ip_forward = 1`을 `/etc/sysctl.conf`에 넣고 `sysctl -p`로 적용한다. `sysctl -p`는 "설정 파일 다시 읽기"라는 점을 기억하라. `echo 1 > /proc/sys/net/ipv4/ip_forward`도 같은 효과지만 재부팅하면 사라진다.
+라우터/NAT를 만들려면 `net.ipv4.ip_forward = 1`을 `/etc/sysctl.conf`에 넣고 `sysctl -p`로 적용한다. `sysctl -p`는 "설정 파일 다시 읽기"다. `echo 1 > /proc/sys/net/ipv4/ip_forward`도 같은 효과지만 재부팅하면 사라진다.
 
 ## 암호 정책 기본값: /etc/login.defs
 
@@ -178,7 +178,7 @@ UMASK           022       # 기본 umask
 | `PASS_WARN_AGE` | 만료 전 경고 시작일 |
 | `UID_MIN`/`UID_MAX` | 일반 사용자 UID 범위 |
 
-> 🔍 **더 깊이**: `login.defs`는 **새로 만드는 계정의 기본값**을 정한다. 이미 있는 계정의 정책을 바꾸려면 `chage` 명령을 쓴다. 예: `chage -M 60 alice`(alice의 최대 사용 일수 60일로 변경). login.defs를 고쳐도 기존 사용자에는 소급 적용되지 않는다는 점이 함정이다.
+`login.defs`는 **새로 만드는 계정의 기본값**을 정한다. 이미 있는 계정의 정책을 바꾸려면 `chage` 명령을 쓴다. 예: `chage -M 60 alice`(alice의 최대 사용 일수 60일로 변경). login.defs를 고쳐도 기존 사용자에는 소급 적용되지 않는다는 점이 함정이다.
 
 ## 네트워크 설정 파일
 
@@ -204,7 +204,7 @@ domain example.com
 192.168.0.10  server01 web
 ```
 
-> ⚠️ **함정**: DNS 서버를 지정하는 파일은 `/etc/resolv.conf`이고, 지시어는 `nameserver`다. IP와 이름을 직접 매핑하는 파일은 `/etc/hosts`다. 둘을 혼동하기 쉽다. 조회 순서(파일 먼저냐 DNS 먼저냐)는 `/etc/nsswitch.conf`의 `hosts:` 줄에서 정한다.
+DNS 서버를 지정하는 파일은 `/etc/resolv.conf`이고, 지시어는 `nameserver`다. IP와 이름을 직접 매핑하는 파일은 `/etc/hosts`다. 둘을 혼동하기 쉽다. 조회 순서(파일 먼저냐 DNS 먼저냐)는 `/etc/nsswitch.conf`의 `hosts:` 줄에서 정한다.
 
 ## 경로·지시어 단답 암기 카드
 
@@ -243,7 +243,7 @@ sudo chage -l alice            # alice의 현재 암호 정책(있다면)
 sysctl net.ipv4.ip_forward
 ```
 
-직접 `cat`으로 열어 실제 내용을 보면서 필드 위치를 손에 익혀라. 다음 날은 이 지식을 바탕으로 디스크·LVM·권한을 실제로 수행하는 작업형을 다룬다.
+직접 `cat`으로 열어 실제 내용을 보면서 필드 위치를 손에 익힌다. 다음 날은 이 지식을 바탕으로 디스크·LVM·권한을 실제로 수행하는 작업형을 다룬다.
 
 ## 📖 용어
 

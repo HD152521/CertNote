@@ -6,13 +6,13 @@
 
 ## ALB는 L7이고 NLB는 L4 — 그 의미를 끝까지 보기
 
-가장 흔한 답이 "ALB는 7계층, NLB는 4계층"인데 그 차이가 실무·시험에서 정확히 어떻게 갈리는지를 보자.
+흔한 답은 "ALB는 7계층, NLB는 4계층"이다. 그 차이가 실무·시험에서 정확히 어떻게 갈리는지 정리한다.
 
 **ALB(Application Load Balancer)** 는 HTTP/HTTPS의 의미를 안다. URL path, host header, query string, HTTP header, cookie를 읽어 routing 결정을 할 수 있다. SSL termination을 ALB에서 하면 backend는 plain HTTP로 받는다. WebSocket upgrade도 지원. ALB는 X-Forwarded-For, X-Forwarded-Proto 헤더를 추가해 backend에 client 정보를 전달한다.
 
 **NLB(Network Load Balancer)** 는 TCP/UDP/TLS 패킷을 본다. HTTP 의미를 모르므로 path나 header 기반 routing이 안 된다. 대신 **client의 source IP가 그대로 backend에 전달**(connection passthrough)되므로, backend가 client IP를 직접 본다(ALB는 X-Forwarded-For 헤더를 봐야 함). TLS termination도 가능하지만 더 흔한 패턴은 TLS passthrough(backend가 자체 인증서). 초당 수백만 connection, microsecond-level latency.
 
-**GWLB(Gateway Load Balancer)**, 2020년 출시. **L3 GENEVE 프로토콜** 기반으로 보안 어플라이언스(방화벽, IDS, DPI)를 투명하게 traffic path에 삽입한다. VPC traffic을 third-party Palo Alto/Fortinet 어플라이언스로 inspection한 뒤 원래 경로로 돌려보낸다. 시험에 가끔 출제되는데 키워드는 "투명한 보안 어플라이언스 inserting".
+**GWLB(Gateway Load Balancer)**, 2020년 출시. **L3 GENEVE 프로토콜** 기반으로 보안 어플라이언스(방화벽, IDS, DPI)를 투명하게 traffic path에 삽입한다. VPC traffic을 third-party Palo Alto/Fortinet 어플라이언스로 inspection한 뒤 원래 경로로 돌려보낸다. 키워드는 "투명한 보안 어플라이언스 inserting".
 
 | 차원 | ALB | NLB | GWLB |
 |------|-----|-----|------|
@@ -29,9 +29,7 @@
 | 비용 모델 | 시간당 + LCU | 시간당 + NLCU | 시간당 + GLCU |
 | Cross-zone | 기본 ON, 무료 | 기본 OFF, 활성화 시 data transfer 과금 | 기본 OFF |
 
-> 🔍 **더 깊이**: ALB의 LCU(Load Balancer Capacity Unit) 과금은 4가지 차원 중 가장 큰 값으로 청구된다. ① 새 연결 25개/초, ② 활성 연결 3000개, ③ 1 GB 처리 데이터, ④ 1000 rule evaluations/초. 그래서 단순 트래픽 양만 보지 말고 connection churn(짧은 connection이 많은지)을 같이 봐야 비용 예측이 정확하다. NLB의 NLCU는 ① 새 flow 800개/초, ② 활성 flow 100K, ③ 1 GB 처리 데이터의 max로 청구되고, ALB보다 connection 한도가 훨씬 크다.
-
-> 💡 **관련 이론**: ALB가 backend로 보낼 때 client IP를 X-Forwarded-For 헤더로 전달하는 것은 RFC 7239(Forwarded HTTP Extension)의 비표준 선구자다. RFC 7239는 `Forwarded: for=192.0.2.43; proto=https`라는 표준 헤더를 정의했지만 실무에선 여전히 X-Forwarded-For가 우세하다. NLB의 client IP preservation은 TCP three-way handshake의 source IP가 그대로 backend로 전달되는 메커니즘이다. NLB는 자기를 IP layer에서 거의 투명하게 만든다.
+ALB의 LCU(Load Balancer Capacity Unit) 과금은 4가지 차원 중 가장 큰 값으로 청구된다. ① 새 연결 25개/초, ② 활성 연결 3000개, ③ 1 GB 처리 데이터, ④ 1000 rule evaluations/초. 그래서 단순 트래픽 양만 보지 말고 connection churn(짧은 connection이 많은지)을 같이 봐야 비용 예측이 정확하다. NLB의 NLCU는 ① 새 flow 800개/초, ② 활성 flow 100K, ③ 1 GB 처리 데이터의 max로 청구되고, ALB보다 connection 한도가 훨씬 크다.
 
 ## ALB의 routing rule: rule evaluation의 내부
 
@@ -81,9 +79,9 @@ elbv2.create_rule(
 )
 ```
 
-이 weighted forward가 ALB-native Canary/Blue-Green 배포의 핵심이다. CodeDeploy도 내부적으로 이 weighted target group을 시간에 따라 조정하는 방식으로 동작한다. 시험에 "ALB로 Blue/Green 배포"라는 시나리오가 나오면 답은 "두 target group + weighted forward".
+이 weighted forward가 ALB-native Canary 및 Blue/Green 배포의 핵심이다. CodeDeploy도 내부적으로 이 weighted target group을 시간에 따라 조정하는 방식으로 동작한다. 시험에 "ALB로 Blue/Green 배포"라는 시나리오가 나오면 답은 "두 target group + weighted forward".
 
-> 🔍 **더 깊이**: ALB가 지원하는 condition 종류는 host-header, path-pattern, http-request-method, source-ip, http-header, query-string의 6가지. 그 중 http-header 조건은 client가 보낸 임의의 HTTP header(예: `X-Tenant-Id`)로 routing 가능해서 multi-tenant SaaS의 tenant 분기에 자주 쓰인다. 또 source-ip 조건은 ALB의 LCU 계산에 영향을 주는 무거운 condition이라 너무 많이 쓰면 비용이 튄다.
+ALB가 지원하는 condition 종류는 host-header, path-pattern, http-request-method, source-ip, http-header, query-string의 6가지. 그 중 http-header 조건은 client가 보낸 임의의 HTTP header(예: `X-Tenant-Id`)로 routing 가능해서 multi-tenant SaaS의 tenant 분기에 쓰인다. 또 source-ip 조건은 ALB의 LCU 계산에 영향을 주는 무거운 condition이라 너무 많이 쓰면 비용이 튄다.
 
 > ⚠️ **함정**: ALB의 path-pattern은 글로브 패턴이지 regex가 아니다. `/api/*`는 매치되지만 `/api/v[1-2]/*` 같은 regex는 안 된다. 또 case-sensitive다(`/API/*`는 매치 안 됨). 시험에 "ALB rule로 정규식 매칭"이라는 보기가 나오면 오답.
 
@@ -120,13 +118,11 @@ Target group은 단순한 backend 목록이 아니라 각 target에 대한 healt
 | `Matcher` | 200 | 성공으로 간주할 HTTP 상태 코드 |
 | `DeregistrationDelay` | 300초 | unregister 시 in-flight 요청 완료 대기 |
 
-이 파라미터들의 의미가 시험에 자주 나온다. 예를 들어 `HealthyThresholdCount=5, IntervalSeconds=30`이면 새 인스턴스가 healthy로 인정받는 데 최소 150초가 걸린다. 그래서 ASG의 `HealthCheckGracePeriod`는 이 값보다 커야 한다(보통 300초).
+이 파라미터들의 의미를 알아야 계산 문제를 풀 수 있다. 예를 들어 `HealthyThresholdCount=5, IntervalSeconds=30`이면 새 인스턴스가 healthy로 인정받는 데 최소 150초가 걸린다. 그래서 ASG의 `HealthCheckGracePeriod`는 이 값보다 커야 한다(보통 300초).
 
 **Deregistration delay (connection draining)**: target이 unhealthy로 판단되거나 ASG가 scale-in할 때, ALB는 즉시 그 target에 새 요청을 안 보내지만 **in-flight 요청이 끝날 때까지** 300초(기본) 동안 기다린다. 0으로 설정하면 502 발생 위험, 너무 길면 scale-in이 지연된다. ASG의 lifecycle hook과 결합하면 정확한 graceful shutdown 가능.
 
-> 🔍 **더 깊이**: Health check의 종류는 두 가지다. ① **ELB-based** (기본): target group 자체의 health check가 직접 결정. ② **ASG-driven**: ASG가 `HealthCheckType=ELB`일 때 ELB의 health 결과를 사용. 후자가 켜져 있으면 ELB가 unhealthy로 판단한 인스턴스를 ASG가 자동으로 종료하고 새 인스턴스를 생성한다. 이게 "self-healing" 동작의 핵심. 켜져 있지 않으면 ELB는 traffic을 안 보내지만 인스턴스 자체는 계속 살아 있어 비용이 낭비된다.
-
-> 💡 **관련 이론**: Health check 알고리즘은 분산 시스템의 failure detector 모델(Chandra & Toueg 1996)과 같은 발상이다. 여러 번 연속 fail해야 unhealthy로 판단하는 것은 false positive(일시적 network glitch)를 줄이고 unhealthy threshold를 명시적으로 정함으로써 detection time과 accuracy를 명시적으로 trade-off한다. φ Accrual Failure Detector(Hayashibara 2004) 같은 더 정교한 알고리즘도 있지만, AWS는 단순한 threshold counter로 표현해 운영자가 직관적으로 다룰 수 있게 했다.
+Health check의 종류는 두 가지다. ① **ELB-based** (기본): target group 자체의 health check가 직접 결정. ② **ASG-driven**: ASG가 `HealthCheckType=ELB`일 때 ELB의 health 결과를 사용. 후자가 켜져 있으면 ELB가 unhealthy로 판단한 인스턴스를 ASG가 자동으로 종료하고 새 인스턴스를 생성한다. 이게 "self-healing" 동작의 핵심. 켜져 있지 않으면 ELB는 traffic을 안 보내지만 인스턴스 자체는 계속 살아 있어 비용이 낭비된다.
 
 ## Auto Scaling Group: reconciliation loop의 내부
 
@@ -166,7 +162,7 @@ ASG는 단순히 "인스턴스 수를 늘리고 줄인다"가 아니라 **desire
              Terminated
 ```
 
-**Lifecycle Hook의 진짜 가치**: 새 인스턴스가 부팅되고 user-data가 끝나도, 애플리케이션이 실제로 traffic을 받을 준비가 안 됐을 수 있다(JVM warm-up, cache pre-fill, model loading). lifecycle hook으로 "Pending:Wait" 상태에 일정 시간(또는 명시적 CompleteLifecycleAction까지) 머물게 한 뒤 InService로 보내면, target group에 등록되는 시점에 이미 fully warmed up 상태.
+**Lifecycle Hook의 가치**: 새 인스턴스가 부팅되고 user-data가 끝나도, 애플리케이션이 실제로 traffic을 받을 준비가 안 됐을 수 있다(JVM warm-up, cache pre-fill, model loading). lifecycle hook으로 "Pending:Wait" 상태에 일정 시간(또는 명시적 CompleteLifecycleAction까지) 머물게 한 뒤 InService로 보내면, target group에 등록되는 시점에 이미 fully warmed up 상태.
 
 ```python
 import boto3
@@ -208,7 +204,7 @@ asg.complete_lifecycle_action(
 
 > ⚠️ **함정**: Scaling policy의 **cooldown period**는 다음 scaling action까지 대기 시간이다. Simple Scaling에만 적용되고, Target Tracking/Step Scaling에는 적용 안 된다. 시험에서 "Cooldown이 너무 짧아서 thrashing"이라는 시나리오가 나오면 Simple Scaling을 의심. 또 ASG의 `HealthCheckGracePeriod`는 cooldown과 다른 개념이다. 새 인스턴스가 unhealthy로 표시되더라도 grace period 안에는 종료되지 않는다(boot 중인 인스턴스를 죽이지 않기 위해).
 
-> 🔍 **더 깊이**: Predictive Scaling은 2018년 출시. 일주일 분량의 CloudWatch 지표를 보고 같은 요일·시간대의 패턴을 학습한다. 그래서 매일 9시에 traffic이 spike한다는 패턴이 있으면 8:30에 미리 인스턴스를 띄워 traffic이 도착할 때 이미 warmed up 상태. Target Tracking과 결합 가능(Predictive로 미리 띄우고, 예측 못 한 부분은 Target Tracking이 따라잡음). 단 충분한 학습 데이터(최소 24시간)가 필요하고, traffic 패턴이 random하면 효과가 떨어진다.
+Predictive Scaling은 2018년 출시. 일주일 분량의 CloudWatch 지표를 보고 같은 요일·시간대의 패턴을 학습한다. 그래서 매일 9시에 traffic이 spike한다는 패턴이 있으면 8:30에 미리 인스턴스를 띄워 traffic이 도착할 때 이미 warmed up 상태. Target Tracking과 결합 가능(Predictive로 미리 띄우고, 예측 못 한 부분은 Target Tracking이 따라잡음). 단 충분한 학습 데이터(최소 24시간)가 필요하고, traffic 패턴이 random하면 효과가 떨어진다.
 
 ## Mixed Instance Policy: Spot + 온디맨드의 혼합
 
@@ -248,8 +244,6 @@ asg.create_auto_scaling_group(
 - `capacity-optimized-prioritized`: 우선순위 명시 + capacity 우선
 - `price-capacity-optimized`: 2022년 추가. 가격 + capacity 균형. 가장 추천되는 모던 default
 
-> 📚 **사례**: 2020년 Netflix는 자기네 batch workload의 90%를 Spot으로 운영하며 EC2 비용 50% 절감했다고 발표했다. 핵심은 ① capacity-optimized 전략으로 회수 빈도를 1% 미만으로 줄이고, ② lifecycle hook으로 spot interruption notice를 받자마자 graceful checkpoint, ③ 같은 region 안 여러 인스턴스 패밀리(m5, m5a, m5n, c5)를 Override로 등록해 한 패밀리의 capacity가 빠져도 다른 곳으로 채워지게 했다는 점.
-
 ## SSL/TLS termination과 SNI
 
 ALB의 HTTPS listener는 SSL/TLS termination을 한다. ACM(AWS Certificate Manager)에서 무료 발급한 인증서를 attach하면 자동 갱신까지 된다. **SNI(Server Name Indication)** 지원으로 한 ALB listener에 여러 도메인의 인증서를 동시 등록 가능 — `api.example.com`과 `app.example.com`이 다른 인증서를 쓰지만 같은 ALB로 처리된다.
@@ -262,7 +256,7 @@ ALB의 HTTPS listener는 SSL/TLS termination을 한다. ACM(AWS Certificate Mana
 | mTLS (client cert) | ✅ 2023년 추가 | ❌ |
 | Backend to ALB TLS | ✅ (re-encrypt) | ✅ |
 
-> 🔍 **더 깊이**: ALB의 SSL Policy는 TLS 버전과 cipher suite 조합을 결정한다. `ELBSecurityPolicy-TLS13-1-2-2021-06`은 TLS 1.3 + 1.2를 지원하며 forward secrecy 보장. PCI-DSS·HIPAA 같은 규제 환경에선 명시적으로 TLS 1.2+ 정책 선택해야 한다. ALB는 2023년부터 mTLS(mutual TLS, client certificate validation) 지원. 이전엔 NLB + 자체 TLS termination이 필요했지만 이제 ALB가 직접 client 인증서를 ACM Private CA로 검증.
+ALB의 SSL Policy는 TLS 버전과 cipher suite 조합을 결정한다. `ELBSecurityPolicy-TLS13-1-2-2021-06`은 TLS 1.3 + 1.2를 지원하며 forward secrecy 보장. PCI-DSS·HIPAA 같은 규제 환경에선 명시적으로 TLS 1.2+ 정책 선택해야 한다. ALB는 2023년부터 mTLS(mutual TLS, client certificate validation) 지원. 이전엔 NLB + 자체 TLS termination이 필요했지만 이제 ALB가 직접 client 인증서를 ACM Private CA로 검증.
 
 ## Cross-Zone Load Balancing: 비용에 직결되는 함정
 
@@ -293,7 +287,7 @@ stateless application이라면 sticky session은 불필요하다. 그러나 sess
 
 Application-based는 2019년 추가된 기능으로 ALB가 자기 쿠키를 만들지 않고 백엔드가 보낸 쿠키를 그대로 본다. ALB는 그 쿠키를 hash해 target 결정. 그래서 ALB의 행동을 백엔드 코드에서 통제 가능.
 
-> ⚠️ **함정**: NLB의 source IP affinity는 NAT 뒤의 사용자에게 부정확. 한 회사 사무실의 모든 사용자가 같은 NAT IP로 보이면 한 backend에 부하 쏠림. 또 모바일 사용자는 IP가 자주 바뀌므로 affinity가 깨진다. 이런 경우 sticky 자체를 application layer(JWT, session store)로 옮기는 게 정석.
+NLB의 source IP affinity는 NAT 뒤의 사용자에게 부정확. 한 회사 사무실의 모든 사용자가 같은 NAT IP로 보이면 한 backend에 부하 쏠림. 또 모바일 사용자는 IP가 자주 바뀌므로 affinity가 깨진다. 이런 경우 sticky 자체를 application layer(JWT, session store)로 옮기는 게 정석.
 
 ## ALB → Lambda 직접 호출
 
@@ -311,7 +305,7 @@ ALB의 target type으로 Lambda 함수를 등록 가능(2018년 11월 추가). A
 
 비용은 ALB가 더 저렴한 게 일반적이지만, 외부 공개 API라면 API Gateway의 throttling/key/swagger가 큰 가치를 준다.
 
-> 💡 **관련 이론**: ALB → Lambda 통합은 ALB가 HTTP 요청을 Lambda invocation event로 변환해 Lambda를 동기 호출하는 구조다. Lambda는 ALB의 target group에 등록되고, ALB는 Lambda의 `RequestResponse` mode로 호출한다. Lambda response가 HTTP response로 변환돼 client에 반환된다. 같은 함수를 API Gateway에서도 호출할 수 있고 두 호출의 event 형식이 다르다는 점이 시험에 자주 나온다.
+ALB → Lambda 통합은 ALB가 HTTP 요청을 Lambda invocation event로 변환해 Lambda를 동기 호출하는 구조다. Lambda는 ALB의 target group에 등록되고, ALB는 Lambda의 `RequestResponse` mode로 호출한다. Lambda response가 HTTP response로 변환돼 client에 반환된다. 같은 함수를 API Gateway에서도 호출할 수 있고 두 호출의 event 형식이 다르다는 점에 주의한다.
 
 ## CLI 종합
 
@@ -380,9 +374,9 @@ aws autoscaling put-scaling-policy \
   }'
 ```
 
-## 정리하며
+## 정리
 
-오늘 본 그림은 세 가지다. 첫째, ALB는 L7 HTTP의미를 알고 URL·host·header·cookie 기반 routing을 한다. NLB는 L4로 TCP/UDP를 microsecond latency로 passthrough하며 고정 IP를 제공한다. GWLB는 보안 어플라이언스를 투명하게 inserting할 때 쓴다. 둘째, ASG는 desired capacity를 향한 reconciliation loop를 돌고, lifecycle hook으로 warmup·graceful shutdown을 정확히 통제한다. Target Tracking이 새 워크로드의 default scaling policy. 셋째, Mixed Instance Policy + capacity-optimized Spot이 production-grade 비용 최적화의 표준 패턴이다.
+오늘 본 그림은 세 가지다. 첫째, ALB는 L7 HTTP 의미를 알고 URL·host·header·cookie 기반 routing을 한다. NLB는 L4로 TCP/UDP를 microsecond latency로 passthrough하며 고정 IP를 제공한다. GWLB는 보안 어플라이언스를 투명하게 inserting할 때 쓴다. 둘째, ASG는 desired capacity를 향한 reconciliation loop를 돌고, lifecycle hook으로 warmup·graceful shutdown을 정확히 통제한다. Target Tracking이 새 워크로드의 default scaling policy. 셋째, Mixed Instance Policy + capacity-optimized Spot이 production-grade 비용 최적화의 표준 패턴이다.
 
 다음 글에서는 Week 2 전체를 종합 정리하고, EC2 layer의 진짜 통합 시나리오 — 즉 SG·EBS·ELB·ASG가 한 아키텍처 안에서 어떻게 맞물리는지를 본다.
 

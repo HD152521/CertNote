@@ -15,7 +15,7 @@
 | "Lambda + EKS + RDS + OpenSearch + TS 팀" | **CDK** | 모든 AWS 리소스 L2 추상화 + grant 메서드 + L3 사내 라이브러리 |
 | "멀티 클라우드 (AWS+GCP+Azure)" | **Terraform** | Provider 모델로 클라우드 무관 |
 | "CFN 거버넌스(StackSets, Drift) 그대로 + 서버리스 단순화" | **SAM** | CFN의 모든 기능 호환 |
-| "사내 9000 Stack + 표준 패턴 라이브러리 필요" | **CDK** | L3 Construct로 재사용 가능 추상화 |
+| "사내 9000 스택 + 표준 패턴 라이브러리 필요" | **CDK** | L3 Construct로 재사용 가능 추상화 |
 
 ### 축 2: Lambda 배포 — Version/Alias 모델
 
@@ -89,11 +89,11 @@ update-alias --function-version 7  →  live가 V7 가리킴
 | `.sync` integration | `.waitForTaskToken` | 자동 완료 대기 vs 외부 콜백 대기 |
 | sam deploy | sam sync | CFN 표준 경로 vs 개발 가속·drift 위험 |
 
-> 💡 **관련 이론**: 이 표의 모든 비교는 트레이드오프 모델의 전형이다. CAP 정리(2000년 Eric Brewer), PACELC(2010년 Daniel Abadi), Conway의 법칙(1968) 같은 시스템 디자인 원칙이 IaC와 워크플로 도구에도 동일하게 적용된다. 예를 들어 Standard SFn의 exactly-once는 가용성/성능을 일부 희생한 일관성 보장이고, Express의 at-least-once는 반대의 트레이드. 시험 시나리오는 거의 항상 "어느 trade가 더 중요한가"를 묻는다.
+> 이 표의 모든 비교는 트레이드오프 모델의 전형이다. CAP 정리(2000년 Eric Brewer), PACELC(2010년 Daniel Abadi), Conway의 법칙(1968) 같은 시스템 디자인 원칙이 IaC와 워크플로 도구에도 동일하게 적용된다. 예를 들어 Standard SFn의 exactly-once는 가용성/성능을 일부 희생한 일관성 보장이고, Express의 at-least-once는 반대의 트레이드. 시험 시나리오는 거의 항상 "어느 trade가 더 중요한가"를 묻는다.
 
-> 🎯 **시나리오**: 이번 주 도구 5개의 결합으로 다음 그림을 그리는 문제가 시험에 나올 수 있다 — "CDK로 Lambda+DynamoDB+API Gateway 합성 → CodePipeline Source/Build → SAM Canary로 배포 → 30분 모니터링 → Step Functions로 멀티 리전 순차 배포 + 사람 승인". 이 흐름의 각 단계에서 어느 서비스가 책임지는지 묻는 문제는 거의 매번 출제.
+> 🎯 **시나리오**: 이번 주 도구 5개의 결합으로 다음 그림을 그리는 문제가 시험에 나올 수 있다 — "CDK로 Lambda+DynamoDB+API Gateway 합성 → CodePipeline Source/Build → SAM Canary로 배포 → 30분 모니터링 → Step Functions로 멀티 리전 순차 배포 + 사람 승인". 이 흐름의 각 단계에서 어느 서비스가 책임지는지 묻는 문제가 출제될 수 있다.
 
-> 📚 **사례**: 2023년 AWS Summit Seoul에서 한 핀테크 회사가 발표한 사례 — Lambda 1500개를 CDK + SAM 혼합으로 운영. 단순 서버리스(API+Lambda+Dynamo)는 SAM, 복잡 인프라(Lambda+EKS+OpenSearch+Step Functions)는 CDK, 배포 워크플로는 CodePipeline + Step Functions로 분리. 각 도구의 강점을 정확히 매칭한 결과 배포 시간 70% 단축. 시험에서 "여러 도구를 어떻게 조합?"의 답은 "각 도구의 강점에 맞춰 분리" — 한 도구로 모든 걸 하려는 건 안티패턴.
+> 2023년 AWS Summit Seoul에서 한 핀테크 회사가 발표한 사례 — Lambda 1500개를 CDK + SAM 혼합으로 운영. 단순 서버리스(API+Lambda+Dynamo)는 SAM, 복잡 인프라(Lambda+EKS+OpenSearch+Step Functions)는 CDK, 배포 워크플로는 CodePipeline + Step Functions로 분리. 각 도구의 강점을 정확히 매칭한 결과 배포 시간 70% 단축. 시험에서 "여러 도구를 어떻게 조합?"의 답은 "각 도구의 강점에 맞춰 분리" — 한 도구로 모든 걸 하려는 건 안티패턴.
 
 ## 핵심 함정 정리
 
@@ -101,17 +101,17 @@ update-alias --function-version 7  →  live가 V7 가리킴
 
 > ⚠️ **함정 2**: SnapStart로 모든 호출에서 같은 UUID/random 생성. `org.crac.Resource`의 `afterRestore` Hook에서 재초기화 필수.
 
-> ⚠️ **함정 3**: SAM Policy Template은 광범위(GSI/LSI 포함). PCI/HIPAA에선 `Statement` 직접 작성으로 정확한 ARN 제한.
+> **함정 3**: SAM Policy Template은 광범위(GSI/LSI 포함). PCI/HIPAA에선 `Statement` 직접 작성으로 정확한 ARN 제한.
 
-> ⚠️ **함정 4**: `sam sync --watch`는 CFN 우회 → drift 발생. 프로덕션에서 다음 정규 deploy가 변경 덮어씀.
+> **함정 4**: `sam sync --watch`는 CFN 우회 → drift 발생. 프로덕션에서 다음 정규 deploy가 변경 덮어씀.
 
-> ⚠️ **함정 5**: PC는 `$LATEST`에 설정 불가, Alias/Version에만. Canary 중 두 Version 모두 PC라 비용 2배 일시 상승.
+> **함정 5**: PC는 `$LATEST`에 설정 불가, Alias/Version에만. Canary 중 두 Version 모두 PC라 비용 2배 일시 상승.
 
-> ⚠️ **함정 6**: Container Image Lambda는 Layer 불가, SnapStart 불가. 모든 의존성을 Dockerfile에 포함.
+> **함정 6**: Container Image Lambda는 Layer 불가, SnapStart 불가. 모든 의존성을 Dockerfile에 포함.
 
-> ⚠️ **함정 7**: Alias weighted routing은 primary + 1 additional만. 3-way는 ALB target group이나 Route 53 weighted 필요.
+> **함정 7**: Alias weighted routing은 primary + 1 additional만. 3-way는 ALB target group이나 Route 53 weighted 필요.
 
-> ⚠️ **함정 8**: Step Functions Express는 TaskToken 미지원. 사람 승인 워크플로는 반드시 Standard.
+> **함정 8**: Step Functions Express는 TaskToken 미지원. 사람 승인 워크플로는 반드시 Standard.
 
 ---
 

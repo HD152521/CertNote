@@ -44,7 +44,7 @@ Health Check Grace Period: 새 인스턴스가 ELB 헬스 체크를 받기 시�
 
 **Cooldown**: 스케일링 액션 후 다음 액션까지 대기하는 시간이다. Simple Scaling에서만 적용된다(Target Tracking과 Step Scaling은 자체 워밍업 메커니즘이 있음). 기본 300초.
 
-> 💡 **관련 이론**: ASG의 인스턴스 균형 분배(Rebalancing)는 분산 시스템의 **로드 밸런싱 이론**과 연관된다. ASG는 AZ 간 인스턴스 수 차이가 1 이상이면 리밸런싱을 시도한다. 리밸런싱 시 먼저 새 인스턴스를 시작하고, 그 다음 초과 AZ의 인스턴스를 종료한다(종료 전 시작). 이것은 가용성을 유지하면서 균형을 잡는 "start before stop" 전략이다.
+ASG의 인스턴스 균형 분배(Rebalancing)는 분산 시스템의 **로드 밸런싱 이론**과 연관된다. ASG는 AZ 간 인스턴스 수 차이가 1 이상이면 리밸런싱을 시도한다. 리밸런싱 시 먼저 새 인스턴스를 시작하고, 그 다음 초과 AZ의 인스턴스를 종료한다(종료 전 시작). 이것은 가용성을 유지하면서 균형을 잡는 "start before stop" 전략이다.
 
 ## 스케일링 정책 4종: 제어 이론으로 이해하기
 
@@ -107,9 +107,9 @@ Predictive Scaling(2021년 GA)은 과거 2주 동안의 메트릭 패턴을 ML�
 
 주간 패턴이나 일간 패턴이 있는 워크로드에서 효과적이다. 월요일 오전 9시에 항상 트래픽이 2배로 뛰는 업무 앱이라면, Predictive Scaling이 8시 45분에 미리 인스턴스를 추가해둔다. Target Tracking은 트래픽이 실제로 뛴 후 CPU가 올라가야 반응하므로 2-3분의 반응 지연이 있다.
 
-> 💡 **관련 이론**: Predictive Scaling의 내부 모델은 **시계열 예측(Time Series Forecasting)** 알고리즘이다. AWS는 공개하지 않지만, 일간/주간 계절성(seasonality)과 추세(trend)를 분해하는 분해 모델(Decomposition Model)이나 Prophet(Facebook 오픈소스) 유사 모델로 추정된다. 중요한 것은 학습에 최소 2주 데이터가 필요하며, 새로운 서비스는 처음 2주 동안 예측이 정확하지 않다.
+Predictive Scaling의 내부 모델은 **시계열 예측(Time Series Forecasting)** 알고리즘이다. AWS는 공개하지 않지만, 일간/주간 계절성(seasonality)과 추세(trend)를 분해하는 분해 모델(Decomposition Model)이나 Prophet(Facebook 오픈소스) 유사 모델로 추정된다. 중요한 것은 학습에 최소 2주 데이터가 필요하며, 새로운 서비스는 처음 2주 동안 예측이 정확하지 않다.
 
-> 📚 **사례**: AWS re:Invent 2020에서 Amazon.com의 Prime Day 준비 사례가 공개됐다. Predictive Scaling을 사용해 과거 Prime Day 패턴을 학습시키고, 당일 트래픽 폭증 전 수십 분 전부터 자동으로 수천 대의 인스턴스를 추가했다. 리액티브 스케일링만 사용했을 때보다 응답 시간이 15% 향상됐다.
+**사례**: AWS re:Invent 2020에서 Amazon.com의 Prime Day 준비 사례가 공개됐다. Predictive Scaling을 사용해 과거 Prime Day 패턴을 학습시키고, 당일 트래픽 폭증 전 수십 분 전부터 자동으로 수천 대의 인스턴스를 추가했다. 리액티브 스케일링만 사용했을 때보다 응답 시간이 15% 향상됐다.
 
 ## Lifecycle Hooks: 인스턴스의 시작과 끝을 제어하다
 
@@ -151,11 +151,11 @@ EC2:Terminated
 
 Lifecycle Hook의 알림은 EventBridge, SNS, SQS로 보낼 수 있다. Lambda와 연결해서 자동으로 처리하는 패턴이 일반적이다.
 
-> 📚 **사례**: Discord는 실시간 메시지 처리 서버에서 Lifecycle Hook을 활용한다. 서버가 종료될 때 Terminating:Wait 훅으로 현재 처리 중인 WebSocket 연결을 다른 서버로 마이그레이션하고, 연결이 모두 이동된 후 종료 신호를 보낸다. 이를 통해 사용자가 갑작스러운 연결 끊김 없이 서버 교체가 이루어진다.
+**사례**: Discord는 실시간 메시지 처리 서버에서 Lifecycle Hook을 활용한다. 서버가 종료될 때 Terminating:Wait 훅으로 현재 처리 중인 WebSocket 연결을 다른 서버로 마이그레이션하고, 연결이 모두 이동된 후 종료 신호를 보낸다. 이를 통해 사용자가 갑작스러운 연결 끊김 없이 서버 교체가 이루어진다.
 
 ## Warm Pool: 스케일링 지연 시간의 혁명
 
-새 EC2 인스턴스가 완전히 서비스 가능한 상태가 될 때까지 걸리는 시간을 생각해보자.
+새 EC2 인스턴스가 완전히 서비스 가능한 상태가 될 때까지 걸리는 시간을 생각해 본다.
 
 ```
 EC2 부팅 시간: 30-60초
@@ -176,7 +176,7 @@ Warm Pool의 인스턴스 상태:
 - `Running`: 시작 완료, 실행 중(트래픽만 없음). EC2 비용 발생. 즉시 투입 가능.
 - `Hibernated`: RAM 상태 보존. 더 빠른 재개 가능.
 
-> 🔍 **더 깊이**: Warm Pool 인스턴스가 Stopped 상태일 때, ASG는 이 인스턴스들을 `Warmed:Stopped` 상태로 추적한다. 스케일아웃 신호 시 인스턴스를 Start하고, Lifecycle Hook이 있으면 `Pending:Wait`를 거쳐 InService가 된다. Warm Pool 없이 새 인스턴스를 시작하는 것보다 훨씬 빠르지만, Lifecycle Hook이 긴 작업을 수행하면 그만큼 지연이 생긴다. 최적 설계는 Warm Pool에서 무거운 초기화를 미리 완료하고, Lifecycle Hook은 짧은 작업(설정 파일 가져오기, 헬스 체크 등록 등)만 하는 것이다.
+Warm Pool 인스턴스가 Stopped 상태일 때, ASG는 이 인스턴스들을 `Warmed:Stopped` 상태로 추적한다. 스케일아웃 신호 시 인스턴스를 Start하고, Lifecycle Hook이 있으면 `Pending:Wait`를 거쳐 InService가 된다. Warm Pool 없이 새 인스턴스를 시작하는 것보다 훨씬 빠르지만, Lifecycle Hook이 긴 작업을 수행하면 그만큼 지연이 생긴다. 최적 설계는 Warm Pool에서 무거운 초기화를 미리 완료하고, Lifecycle Hook은 짧은 작업(설정 파일 가져오기, 헬스 체크 등록 등)만 하는 것이다.
 
 ## Termination Policy: 어떤 인스턴스를 먼저 종료할까
 
@@ -184,7 +184,7 @@ Warm Pool의 인스턴스 상태:
 
 | 정책 | 동작 |
 |------|------|
-| Default | AZ 균형 → 가장 오래된 Launch Config/Template → 청구 시간 가까운 것 |
+| Default | AZ 균형 → 가장 오래된 Launch Configuration/Launch Template → 청구 시간 가까운 것 |
 | OldestInstance | 가장 오래된 인스턴스 종료 (새 타입으로 자연 교체) |
 | NewestInstance | 가장 새로운 인스턴스 종료 (새 구성 배포를 빠르게 취소할 때) |
 | OldestLaunchConfiguration | 구버전 LC를 사용하는 인스턴스 우선 종료 |
@@ -192,7 +192,7 @@ Warm Pool의 인스턴스 상태:
 
 **Default Policy의 로직**:
 1. 가장 많은 인스턴스가 있는 AZ에서 종료 (AZ 균형)
-2. 동일 AZ에서 가장 오래된 Launch Configuration/Template 사용 인스턴스
+2. 동일 AZ에서 가장 오래된 Launch Configuration/Launch Template 사용 인스턴스
 3. 동일한 경우 청구 시간 단위 갱신에 가장 임박한 인스턴스
 
 EC2는 초당 과금이므로 ClosestToNextInstanceHour는 현재 큰 의미가 없다. 그러나 온디맨드 가격으로 청구되는 RI 사용률을 최적화할 때는 여전히 유효하다.
@@ -231,7 +231,7 @@ Mixed Instances Policy는 하나의 ASG에서 여러 인스턴스 타입과 On-D
 
 **Capacity Rebalancing**: Spot 인터럽션 경고가 오면 ASG가 자동으로 새로운 Spot 인스턴스를 먼저 시작하고, 인터럽션 대상 인스턴스를 종료한다. 인스턴스 수를 유지하면서 가용성을 보호한다.
 
-> 💡 **관련 이론**: Mixed Instances Policy에서 여러 인스턴스 타입을 허용하는 것은 포트폴리오 이론(Portfolio Theory)의 분산 투자와 유사하다. 단일 인스턴스 타입에만 의존하면 그 타입의 Spot 가용성이 낮을 때 인터럽션이 몰린다. 여러 타입을 분산하면 어느 하나의 타입에 Spot 압박이 와도 나머지 타입이 커버한다. AWS는 이를 "instance type diversification"이라 부른다.
+Mixed Instances Policy에서 여러 인스턴스 타입을 허용하는 것은 포트폴리오 이론(Portfolio Theory)의 분산 투자와 유사하다. 단일 인스턴스 타입에만 의존하면 그 타입의 Spot 가용성이 낮을 때 인터럽션이 몰린다. 여러 타입을 분산하면 어느 하나의 타입에 Spot 압박이 와도 나머지 타입이 커버한다. AWS는 이를 "instance type diversification"이라 부른다.
 
 ## Instance Refresh: 무중단 AMI 업데이트
 
@@ -363,7 +363,7 @@ aws autoscaling put-scaling-policy \
   }'
 ```
 
-## 정리하며
+## 정리
 
 ASG는 단순한 "CPU 높으면 서버 추가"가 아니다. 제어 이론 기반의 Target Tracking, 계단식 반응의 Step Scaling, 예측 기반의 Predictive Scaling, 시간 기반의 Scheduled Scaling이 각각 다른 문제를 해결한다. 그리고 Lifecycle Hook은 시작과 종료 사이에 비즈니스 로직을 삽입해 graceful한 운영을 가능하게 한다.
 

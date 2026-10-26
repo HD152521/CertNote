@@ -2,7 +2,7 @@
 
 마이크로서비스가 다섯 개를 넘어가는 순간, 시스템의 가장 큰 비용은 코드가 아니라 **결합(coupling)**이 된다. A 서비스가 B를 직접 호출하고 B는 C를 호출하는 식의 체인은 처음엔 단순해 보이지만, B의 장애가 A에게 전파되고 D 같은 새 서비스를 끼워 넣을 때마다 양쪽 코드를 모두 수정해야 한다. 이 문제를 푸는 패턴이 **Event-Driven Architecture(EDA)**다. 서비스는 이벤트를 발행하고, 다른 서비스가 그 이벤트를 구독한다. 발행자는 누가 듣는지 모르고, 구독자는 누가 보냈는지 모른다.
 
-AWS의 EDA 도구는 SNS·SQS·Kinesis·EventBridge 등 여러 개가 있지만, 최근 5년간 가장 큰 변화는 **EventBridge가 사실상의 표준 라우터**가 됐다는 점이다. 2019년 CloudWatch Events의 후속으로 출시된 이후, Pipes(2022)와 Scheduler(2022)가 추가되면서 "이벤트의 모든 것"을 다루는 플랫폼으로 진화했다. SAP 시험에서 EventBridge는 도메인 1·2·3에 흩어져 출제되고, 특히 "SNS vs EventBridge" / "Pipes vs Step Functions" 같은 선택 시나리오가 단골이다.
+AWS의 EDA 도구는 SNS·SQS·Kinesis·EventBridge 등 여러 개가 있지만, 최근 5년간 가장 큰 변화는 **EventBridge가 사실상의 표준 라우터**가 됐다는 점이다. 2019년 CloudWatch Events의 후속으로 출시된 이후, Pipes(2022)와 Scheduler(2022)가 추가되면서 "이벤트의 모든 것"을 다루는 플랫폼으로 진화했다. SAP 시험에서 EventBridge는 도메인 1·2·3에 흩어져 출제되고, 특히 "SNS vs EventBridge" / "Pipes vs Step Functions" 같은 선택 시나리오가 나온다.
 
 ## EDA가 왜 필요한가 — 분산 시스템의 결합 문제
 
@@ -15,9 +15,9 @@ EDA의 핵심 아이디어:
 
 이 셋을 모두 제공하는 도구가 메시지 브로커(Message Broker)다. EventBridge는 그중 "이벤트 라우팅"에 특화된 변형이다.
 
-> 💡 **관련 이론**: EDA의 고전적 모델은 1980년대 Linda Tuple Space와 1990년대 Publish/Subscribe(Eugster, "The many faces of publish/subscribe", ACM Computing Surveys 2003)에서 발전했다. 핵심 분류는 **Topic-based**(주제 기반, SNS·Kafka), **Content-based**(내용 기반 필터링, EventBridge), **Type-based**(타입 기반)다. EventBridge는 content-based 필터링을 매니지드로 제공하면서 200+ AWS 서비스를 target으로 묶었다는 점에서 독특한 위치다.
+EDA의 고전적 모델은 1980년대 Linda Tuple Space와 1990년대 Publish/Subscribe(Eugster, "The many faces of publish/subscribe", ACM Computing Surveys 2003)에서 발전했다. 핵심 분류는 **Topic-based**(주제 기반, SNS·Kafka), **Content-based**(내용 기반 필터링, EventBridge), **Type-based**(타입 기반)다. EventBridge는 content-based 필터링을 매니지드로 제공하면서 200+ AWS 서비스를 target으로 묶었다는 점에서 독특한 위치다.
 
-> 🔍 **더 깊이**: EventBridge 내부는 분산 라우팅 시스템으로 구성되어 있다. 이벤트가 도착하면 (1) Schema validation (옵션) (2) Rule pattern matching (3) Target dispatch가 순차로 일어난다. Pattern matching은 효율을 위해 **trie 자료구조**로 인덱싱되어 있어 수천 개 룰에서도 일정한 latency. SNS와 달리 EventBridge는 JSON 깊은 필드 기반 매칭(`detail.amount.value > 1000` 같은)을 지원하는 게 가장 큰 차이.
+EventBridge 내부는 분산 라우팅 시스템으로 구성되어 있다. 이벤트가 도착하면 (1) Schema validation (옵션) (2) Rule pattern matching (3) Target dispatch가 순차로 일어난다. Pattern matching은 효율을 위해 **trie 자료구조**로 인덱싱되어 있어 수천 개 룰에서도 일정한 latency. SNS와 달리 EventBridge는 JSON 깊은 필드 기반 매칭(`detail.amount.value > 1000` 같은)을 지원하는 게 가장 큰 차이.
 
 ## Event Bus 3종 — 누가 발행하는가의 분류
 
@@ -36,7 +36,7 @@ EventBridge는 이벤트를 **Bus** 위에 라우팅한다. Bus는 종류가 셋
 
 각 Bus는 **Cross-account 정책**으로 다른 계정의 발행/구독을 허용할 수 있어, 멀티 계정 환경에서 자연스러운 이벤트 메시 구성이 가능하다.
 
-> 📚 **사례**: Liberty Mutual은 사보험 청구 처리 시스템을 100+ 마이크로서비스로 운영하면서 도메인별 Custom Bus 12개를 사용한다. 각 Bus는 그 도메인의 소유 팀이 관리하고, 다른 도메인은 cross-account subscription으로 필요한 이벤트만 구독한다. 이 모델 덕분에 새 팀이 합류해도 기존 Bus에 영향 없이 자체 Bus를 만들고 발행/구독 정책으로 통신할 수 있다. AWS re:Invent 2022 발표.
+Liberty Mutual은 사보험 청구 처리 시스템을 100+ 마이크로서비스로 운영하면서 도메인별 Custom Bus 12개를 사용한다. 각 Bus는 그 도메인의 소유 팀이 관리하고, 다른 도메인은 cross-account subscription으로 필요한 이벤트만 구독한다. 이 모델 덕분에 새 팀이 합류해도 기존 Bus에 영향 없이 자체 Bus를 만들고 발행/구독 정책으로 통신할 수 있다. AWS re:Invent 2022 발표.
 
 ## Rule = Pattern + Targets
 
@@ -68,11 +68,11 @@ Target은 200+ AWS 서비스 + API Destination(외부 HTTPS) + 다른 Bus + Pipe
 
 > ⚠️ **함정**: "한 룰은 최대 5개 Target"이 시험에 가끔 나온다. 더 많은 target이 필요하면 Step Functions를 target으로 두고 그 안에서 fan-out하거나, 동일 패턴의 룰을 여러 개 만든다. SNS와 다른 점: SNS는 한 Topic에 무제한 구독이 가능하지만 그것은 fan-out 패턴이지 EventBridge의 "rule-based routing"과는 다른 추상화.
 
-> 🔍 **더 깊이**: API Destination(2021)은 매우 강력한 기능이다. 외부 SaaS의 HTTPS 엔드포인트를 target으로 등록하면, EventBridge가 자동으로 인증(API Key, OAuth, Basic), throttle, retry, DLQ를 처리한다. Slack 메시지 전송, Salesforce 업데이트, 자체 SaaS의 webhook receiver로 보내기 등에 쓴다. Lambda를 거치지 않아 운영 부담과 비용이 줄고, 표준 HTTP 헤더 + body 변환을 InputTransformer로 처리.
+API Destination(2021)은 매우 강력한 기능이다. 외부 SaaS의 HTTPS 엔드포인트를 target으로 등록하면, EventBridge가 자동으로 인증(API Key, OAuth, Basic), throttle, retry, DLQ를 처리한다. Slack 메시지 전송, Salesforce 업데이트, 자체 SaaS의 webhook receiver로 보내기 등에 쓴다. Lambda를 거치지 않아 운영 부담과 비용이 줄고, 표준 HTTP 헤더 + body 변환을 InputTransformer로 처리.
 
 ## EventBridge Pipes — 1:1 통합의 새 표준
 
-Pipes(2022)는 EDA의 가장 흔한 패턴인 **"queue/stream → filter → enrich → target"**을 코드 없이 구성하는 도구다. 그 전에는 이걸 Lambda로 직접 짜야 했다.
+Pipes(2022)는 EDA의 대표적인 패턴인 **"queue/stream → filter → enrich → target"**을 코드 없이 구성하는 도구다. 그 전에는 이걸 Lambda로 직접 짜야 했다.
 
 ```
 [Source: SQS / Kinesis / DDB Stream / MQ / MSK]
@@ -110,7 +110,7 @@ Pipes(2022)는 EDA의 가장 흔한 패턴인 **"queue/stream → filter → enr
 
 흔한 패턴: **Pipes의 Target이 Step Functions**. SQS → Pipes(필터) → Step Functions(워크플로우)로 입구는 가볍게, 흐름은 풍부하게.
 
-> 📚 **사례**: 2023년 Doordash는 주문 처리 파이프라인의 입구를 SQS + Lambda(필터 로직) → Step Functions에서 SQS + Pipes(필터) → Step Functions로 전환해 Lambda 운영 부담 제거와 함께 약 30% 비용 절감을 발표. 같은 처리량에 Pipes가 Lambda보다 단가가 낮고, 코드가 사라져서 장애 표면적도 줄었다.
+2023년 Doordash는 주문 처리 파이프라인의 입구를 SQS + Lambda(필터 로직) → Step Functions에서 SQS + Pipes(필터) → Step Functions로 전환해 Lambda 운영 부담 제거와 함께 약 30% 비용 절감을 발표. 같은 처리량에 Pipes가 Lambda보다 단가가 낮고, 코드가 사라져서 장애 표면적도 줄었다.
 
 ## EventBridge Scheduler — 100만 cron의 시대
 
@@ -138,7 +138,7 @@ Scheduler가 EventBridge Rule의 cron을 대체한 이유는 **scale + per-sched
 - **Code Binding**: Java/Python/TypeScript SDK 코드를 자동 생성해 strongly-typed로 이벤트 처리
 - **OpenAPI 3 표준 export**
 
-> 🔍 **더 깊이**: Schema Registry는 Kafka 생태계의 Confluent Schema Registry와 유사한 발상이다. 차이는 EventBridge가 **structural typing**(필드 형태 기반)이고 Kafka Schema Registry는 **nominal typing**(스키마 ID 기반)이라는 점. EventBridge는 backward/forward compatibility 검증을 직접 강제하지 않으므로 발행자가 규약을 깨뜨릴 수 있고, 구독자가 idempotent + tolerant readers 패턴(Postel's Law)을 따라야 안전하다.
+Schema Registry는 Kafka 생태계의 Confluent Schema Registry와 유사한 발상이다. 차이는 EventBridge가 **structural typing**(필드 형태 기반)이고 Kafka Schema Registry는 **nominal typing**(스키마 ID 기반)이라는 점. EventBridge는 backward/forward compatibility 검증을 직접 강제하지 않으므로 발행자가 규약을 깨뜨릴 수 있고, 구독자가 idempotent + tolerant readers 패턴(Postel's Law)을 따라야 안전하다.
 
 ## Archive와 Replay — 시간 여행으로 디버깅
 
@@ -158,7 +158,7 @@ aws events start-replay \
   --destination Arn=arn:aws:events:...:event-bus/order-domain,FilterArns=[...]
 ```
 
-> 📚 **사례**: 2022년 Coinbase가 결제 처리 이벤트를 EventBridge Archive로 1년치 보존하다가, 한 partner 통합 버그로 며칠치 이벤트가 누락된 사고를 Replay로 복구했다. 이전이라면 발행자에게 재발행을 요청해야 했지만, Archive가 있어 수신자만의 책임으로 복구 완료. SAP 시험에서 "이벤트 재처리"가 키워드면 Archive + Replay.
+2022년 Coinbase가 결제 처리 이벤트를 EventBridge Archive로 1년치 보존하다가, 한 partner 통합 버그로 며칠치 이벤트가 누락된 사고를 Replay로 복구했다. 이전이라면 발행자에게 재발행을 요청해야 했지만, Archive가 있어 수신자만의 책임으로 복구 완료. SAP 시험에서 "이벤트 재처리"가 키워드면 Archive + Replay.
 
 ## SNS vs EventBridge — 가장 헷갈리는 분기
 
@@ -193,7 +193,7 @@ EventBridge가 target에 이벤트 전달을 실패하면(target 오류, throttl
 
 각 룰별로 DLQ를 지정할 수 있고, DLQ에 들어간 이벤트는 metadata(target ARN, 실패 이유, 시도 횟수)와 함께 분석 가능.
 
-> ⚠️ **함정**: "EventBridge Target이 Lambda이고 Lambda가 실패하면 EventBridge가 재시도한다"는 보기는 부분적으로 맞다. 정확히는 EventBridge가 Lambda Invoke 자체가 실패하면 재시도하고, Lambda 함수 안의 비즈니스 로직 실패는 Lambda의 비동기 재시도 모델(2회 자동 재시도) + Destinations로 처리. 두 레이어를 혼동하면 시나리오를 잘못 푼다.
+"EventBridge Target이 Lambda이고 Lambda가 실패하면 EventBridge가 재시도한다"는 보기는 부분적으로 맞다. 정확히는 EventBridge가 Lambda Invoke 자체가 실패하면 재시도하고, Lambda 함수 안의 비즈니스 로직 실패는 Lambda의 비동기 재시도 모델(2회 자동 재시도) + Destinations로 처리. 두 레이어를 혼동하면 시나리오를 잘못 푼다.
 
 ## EventBridge vs Kinesis vs Kafka — 스트리밍 시각
 
@@ -210,9 +210,9 @@ EventBridge는 **discrete event router**이고 Kinesis/Kafka는 **continuous str
 
 EventBridge는 "이벤트 한 건씩 라우팅"에 최적화되어 있고, Kinesis/Kafka는 "스트림 전체를 순차 처리"에 최적화. 둘이 같이 쓰이기도 한다: Kafka → EventBridge Pipes → 다양한 target 라우팅.
 
-> 📚 **사례**: 2023년 Capital One의 결제 사기 탐지 시스템은 거래 이벤트를 Kinesis Data Streams로 받고, 그중 의심 거래만 EventBridge Pipes로 필터링해 Step Functions(다단계 검증 + 인간 승인)로 보낸다. Kinesis가 raw stream의 순서·재처리를 담당, EventBridge가 라우팅·필터링을 담당하는 분담 패턴.
+2023년 Capital One의 결제 사기 탐지 시스템은 거래 이벤트를 Kinesis Data Streams로 받고, 그중 의심 거래만 EventBridge Pipes로 필터링해 Step Functions(다단계 검증 + 인간 승인)로 보낸다. Kinesis가 raw stream의 순서·재처리를 담당, EventBridge가 라우팅·필터링을 담당하는 분담 패턴.
 
-## 정리하며
+## 정리
 
 EventBridge는 단순한 "이벤트 라우터"를 넘어 Bus(분류), Rule(매칭), Pipes(통합), Scheduler(시간), Schema Registry(진화), Archive(시간 여행)까지 묶은 **이벤트 플랫폼**이 됐다. 시험 시나리오의 키워드 매핑:
 

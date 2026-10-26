@@ -6,7 +6,7 @@ Week 7 내내 우리가 본 네 가지 서비스 — SQS, SNS, EventBridge, Kine
 
 ## 네 가지 서비스, 네 가지 문제 정의
 
-각 서비스가 풀려는 문제부터 다시 짚자. 외울 정의가 아니라 "이 서비스가 없으면 어떤 고통이 있는가"의 관점이다.
+각 서비스가 풀려는 문제부터 다시 짚는다. 외울 정의가 아니라 "이 서비스가 없으면 어떤 고통이 있는가"의 관점이다.
 
 **SQS (Day 31)** — 생산자와 소비자의 시간을 분리하는 큐. 핵심 추상화는 "*소비자가 잠시 죽어도 메시지는 큐에 남아있다*". 이걸로 사용자 요청 처리 속도와 워커 처리 속도의 불일치(burst)를 흡수한다. 한 메시지는 한 소비자가 가져가서 끝낸다(point-to-point).
 
@@ -16,9 +16,9 @@ Week 7 내내 우리가 본 네 가지 서비스 — SQS, SNS, EventBridge, Kine
 
 **Kinesis (Day 34)** — 시간 순서대로 정렬된 이벤트의 강(stream). 핵심 추상화는 "*같은 데이터를 여러 소비자가 자기 페이스로 재생할 수 있다*". 메시지를 가져가도 사라지지 않고, 보관 기간 동안 누구나 다시 읽을 수 있다. 분석·머신러닝 학습·재처리에 결정적이다.
 
-> 💡 **관련 이론**: 메시징 시스템의 네 모델은 Enterprise Integration Patterns(EIP, Hohpe & Woolf, 2003)에서 정리한 4가지 핵심 패턴과 거의 1:1 대응된다. SQS = **Point-to-Point Channel**, SNS = **Publish-Subscribe Channel**, EventBridge = **Content-Based Router**, Kinesis = **Event Sourcing / Replayable Log**. 즉 AWS는 EIP를 매니지드 서비스로 구현한 셈이다. 시험에서 "어느 서비스" 문제는 결국 "어느 패턴" 문제로 환원되며, 이 매핑이 머리에 있으면 시나리오에서 키워드만 잡아도 답이 나온다.
+메시징 시스템의 네 모델은 Enterprise Integration Patterns(EIP, Hohpe & Woolf, 2003)에서 정리한 4가지 핵심 패턴과 거의 1:1 대응된다. SQS = **Point-to-Point Channel**, SNS = **Publish-Subscribe Channel**, EventBridge = **Content-Based Router**, Kinesis = **Event Sourcing / Replayable Log**. 즉 AWS는 EIP를 매니지드 서비스로 구현한 셈이다. 시험에서 "어느 서비스" 문제는 결국 "어느 패턴" 문제로 환원되며, 이 매핑이 머리에 있으면 시나리오에서 키워드만 잡아도 답이 나온다.
 
-> 🔍 **더 깊이**: 같은 "메시징"이라도 **at-least-once vs exactly-once**, **순서 보장 vs 무관**, **메시지 영속성 vs 일회성**, **fanout 1:N vs point-to-point** 네 축으로 분류하면 모든 메시징 시스템이 그 좌표 위 한 점이다. Kafka는 (at-least-once, partition 내 순서, replayable, 1:N), SQS Standard는 (at-least-once, 순서 없음, consume 후 삭제, 1:1), SNS는 (best-effort, 순서 없음, 일회성, 1:N), SQS FIFO는 (exactly-once-ish, group 내 순서, 1:1), EventBridge는 (at-least-once, 순서 없음, rule 기반 fanout). 이 좌표를 그리면 시험 시나리오 키워드가 어디로 가는지 보인다.
+같은 "메시징"이라도 **at-least-once vs exactly-once**, **순서 보장 vs 무관**, **메시지 영속성 vs 일회성**, **fanout 1:N vs point-to-point** 네 축으로 분류하면 모든 메시징 시스템이 그 좌표 위 한 점이다. Kafka는 (at-least-once, partition 내 순서, replayable, 1:N), SQS Standard는 (at-least-once, 순서 없음, consume 후 삭제, 1:1), SNS는 (best-effort, 순서 없음, 일회성, 1:N), SQS FIFO는 (exactly-once-ish, group 내 순서, 1:1), EventBridge는 (at-least-once, 순서 없음, rule 기반 fanout). 이 좌표를 그리면 시험 시나리오 키워드가 어디로 가는지 보인다.
 
 ## 첫째 축: "한 명이 처리"인가 "여러 명에게 배달"인가
 
@@ -43,9 +43,9 @@ Week 7 내내 우리가 본 네 가지 서비스 — SQS, SNS, EventBridge, Kine
 
 Kinesis는 다르다. 메시지는 보관 기간(기본 24시간, 최대 365일) 동안 스트림에 남아 있고, 소비자가 이미 가져갔어도 그 자리에 그대로 있다. 다른 소비자가 같은 시점부터 다시 읽을 수 있고, 어제의 데이터를 오늘 모델 학습에 다시 쓸 수 있다.
 
-> 💡 **관련 이론**: 이 차이는 분산 시스템에서 **immutable log 패턴**의 가치와 직결된다. Jay Kreps의 "*The Log: What every software engineer should know about real-time data's unifying abstraction*"(2013, LinkedIn Engineering)이 정리한 핵심이다. 데이터를 가변 상태(mutable state)가 아니라 변하지 않는 이벤트의 시퀀스로 보면, 새로운 소비자가 생겼을 때 처음부터 다시 재생해서 동일한 상태를 재구성할 수 있다. Event Sourcing 패턴, CDC(Change Data Capture), Lambda Architecture(batch + streaming) 모두 이 가정 위에서 동작한다. SQS는 가변 상태(메시지를 가져가면 사라짐)이고 Kinesis는 불변 로그라는 점이 두 서비스를 완전히 다른 도구로 만든다.
+이 차이는 분산 시스템에서 **immutable log 패턴**의 가치와 직결된다. Jay Kreps의 "*The Log: What every software engineer should know about real-time data's unifying abstraction*"(2013, LinkedIn Engineering)이 정리한 핵심이다. 데이터를 가변 상태(mutable state)가 아니라 변하지 않는 이벤트의 시퀀스로 보면, 새로운 소비자가 생겼을 때 처음부터 다시 재생해서 동일한 상태를 재구성할 수 있다. Event Sourcing 패턴, CDC(Change Data Capture), Lambda Architecture(batch + streaming) 모두 이 가정 위에서 동작한다. SQS는 가변 상태(메시지를 가져가면 사라짐)이고 Kinesis는 불변 로그라는 점이 두 서비스를 완전히 다른 도구로 만든다.
 
-> 📚 **사례**: Netflix는 2016년 이후 Keystone Pipeline에서 하루 1조 건 이상의 이벤트를 Kinesis 기반으로 처리한다. "왜 SQS가 아닌 Kinesis인가"의 답이 곧 이 축이다 — A/B 테스트, 추천 모델 학습, 실시간 대시보드 등 같은 이벤트를 여러 소비자가 다른 목적으로 사용하기 때문. SQS는 한 소비자가 가져가면 끝이라 같은 데이터를 여러 시스템이 분석하려면 fanout(SNS→SQS) 패턴이 필요한데, 새 소비자가 생기면 그 시점부터의 이벤트만 받을 수 있다(이전 이벤트 재생 불가). Kinesis는 보관 기간 안이면 새 소비자도 처음부터 재생 가능. [Netflix Tech Blog 참고](https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a).
+**사례**: Netflix는 2016년 이후 Keystone Pipeline에서 하루 1조 건 이상의 이벤트를 Kinesis 기반으로 처리한다. "왜 SQS가 아닌 Kinesis인가"의 답이 곧 이 축이다 — A/B 테스트, 추천 모델 학습, 실시간 대시보드 등 같은 이벤트를 여러 소비자가 다른 목적으로 사용하기 때문. SQS는 한 소비자가 가져가면 끝이라 같은 데이터를 여러 시스템이 분석하려면 fanout(SNS→SQS) 패턴이 필요한데, 새 소비자가 생기면 그 시점부터의 이벤트만 받을 수 있다(이전 이벤트 재생 불가). Kinesis는 보관 기간 안이면 새 소비자도 처음부터 재생 가능. [Netflix Tech Blog 참고](https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a).
 
 ## 셋째 축: "이벤트 모양으로 라우팅해야 하나"
 
@@ -57,7 +57,7 @@ SNS와 EventBridge가 자주 헷갈리는 지점이다. 둘 다 1:N 팬아웃처
 
 또 EventBridge는 SaaS 이벤트(Zendesk, Datadog, Stripe, Auth0, MongoDB 등)와 AWS 서비스 이벤트(EC2 상태 변화, S3 PutObject, CodePipeline 단계 등)를 같은 버스에서 받을 수 있다는 점에서 SNS보다 위쪽 추상화에 있다. SNS가 "내가 만든 토픽에 내가 발행"이라면, EventBridge는 "온갖 곳에서 오는 이벤트를 내가 받아서 라우팅"이다.
 
-> 🔍 **더 깊이**: EventBridge의 라우팅은 내부적으로 finite state automaton 기반의 패턴 매처로, 규칙 패턴을 컴파일해서 들어오는 이벤트와 빠르게 매칭한다. 수천 개 규칙이 있어도 단일 이벤트의 라우팅 결정은 마이크로초 단위로 끝나기 때문에 표현력이 SNS Message Filtering(단순 string 비교)과 다른 차원이다 — 숫자 비교, IP 매칭, 존재 여부, 접두사 등이 가능. 다만 EventBridge는 PutEvents 이벤트당 평균 0.5초 지연(p99 < 1.5초)이 있어, 1초 미만 SLA가 필요한 hot path에서는 SNS 또는 SQS 직접 호출이 더 낫다.
+EventBridge의 라우팅은 내부적으로 finite state automaton 기반의 패턴 매처로, 규칙 패턴을 컴파일해서 들어오는 이벤트와 빠르게 매칭한다. 수천 개 규칙이 있어도 단일 이벤트의 라우팅 결정은 마이크로초 단위로 끝나기 때문에 표현력이 SNS Message Filtering(단순 string 비교)과 다른 차원이다 — 숫자 비교, IP 매칭, 존재 여부, 접두사 등이 가능. 다만 EventBridge는 PutEvents 이벤트당 평균 0.5초 지연(p99 < 1.5초)이 있어, 1초 미만 SLA가 필요한 hot path에서는 SNS 또는 SQS 직접 호출이 더 낫다.
 
 > ⚠️ **함정**: "SaaS 통합", "스케줄링", "이벤트 패턴 필터링", "AWS 서비스 이벤트 라우팅" 키워드가 보이면 EventBridge가 답이다. "단순 fanout SQS + Lambda + 이메일"이면 SNS가 답이다. EventBridge로 모든 fanout을 하면 latency가 누적되고 비용도 SNS의 ~10배. 반대로 단순 SNS만 쓰면 SaaS 통합이 어려워서 매번 Lambda를 끼워야 한다.
 
@@ -71,7 +71,7 @@ SNS와 EventBridge가 자주 헷갈리는 지점이다. 둘 다 1:N 팬아웃처
 
 **Kinesis** — at-least-once. KCL이 consumer side에서 sequence number를 DynamoDB에 checkpoint하지만, 한 record가 두 워커에 동시에 보일 짧은 순간이 있다. consumer 코드에서 idempotency 보장 필수.
 
-> 💡 **관련 이론**: Two Generals' Problem(1975)이 증명한 것 — 두 노드 간 안정적인 합의는 비동기 네트워크에서 불가능하다. 즉 발행자와 소비자 사이의 "정확히 한 번"은 메시징 시스템 단독으로는 절대 보장할 수 없고, 소비자 측의 멱등성(idempotency)이나 트랜잭션 outbox 패턴 같은 애플리케이션 협력이 반드시 필요하다. Confluent의 EOS(Exactly Once Semantics, KIP-98)도 transactional producer + read-process-write가 모두 같은 Kafka 클러스터 안에서 끝나야 가능한 좁은 의미의 보장이다. AWS 메시징을 설계할 때 "FIFO 쓰면 중복 없어"라고 외우면 함정에 빠진다.
+Two Generals' Problem(1975)이 증명한 것 — 두 노드 간 안정적인 합의는 비동기 네트워크에서 불가능하다. 즉 발행자와 소비자 사이의 "정확히 한 번"은 메시징 시스템 단독으로는 절대 보장할 수 없고, 소비자 측의 멱등성(idempotency)이나 트랜잭션 outbox 패턴 같은 애플리케이션 협력이 반드시 필요하다. Confluent의 EOS(Exactly Once Semantics, KIP-98)도 transactional producer + read-process-write가 모두 같은 Kafka 클러스터 안에서 끝나야 가능한 좁은 의미의 보장이다. AWS 메시징을 설계할 때 "FIFO 쓰면 중복 없어"라고 외우면 함정에 빠진다.
 
 ## 다섯째 축: 비용과 운영 부담
 
@@ -86,11 +86,11 @@ SNS와 EventBridge가 자주 헷갈리는 지점이다. 둘 다 1:N 팬아웃처
 | 단순 비동기 워커 | SQS | Step Functions |
 | 200KB 이상 메시지 | S3 + SQS Extended Client | base64로 잘라 보내기 |
 
-> 📚 **사례**: 2020년 한 핀테크 스타트업이 모든 비동기 처리를 EventBridge로 통일했다가 월 청구서가 SNS+SQS 조합 대비 12배 폭증한 사례가 회자된다. 원인은 EventBridge가 이벤트당 $1/M USD(처음 100M까지)인 데 비해 SNS는 publish가 $0.50/M USD + 구독자 전달은 SQS면 무료에 가까웠던 것. EventBridge의 가치는 "라우팅 표현력 + SaaS 통합"이고, 단순 fanout이라면 SNS가 비용 효율적이다. 시험에서도 "수억 건의 단순 fanout"이라면 비용 키워드가 SNS 쪽을 가리킨다.
+**사례(가상)**: 2020년 한 핀테크 스타트업이 모든 비동기 처리를 EventBridge로 통일했다가 월 청구서가 SNS+SQS 조합 대비 12배 폭증한 사례가 회자된다. 원인은 EventBridge가 이벤트당 $1/M USD(처음 100M까지)인 데 비해 SNS는 publish가 $0.50/M USD + 구독자 전달은 SQS면 무료에 가까웠던 것. EventBridge의 가치는 "라우팅 표현력 + SaaS 통합"이고, 단순 fanout이라면 SNS가 비용 효율적이다. 시험에서도 "수억 건의 단순 fanout"이라면 비용 키워드가 SNS 쪽을 가리킨다.
 
 ## 처리량(Throughput) 한도와 partition/shard
 
-시험에서 "갑자기 트래픽이 10배 늘어났다, 무엇이 부족한가" 류 문제가 자주 나온다. 각 서비스의 처리량 모델을 기억해두자.
+시험에서 "갑자기 트래픽이 10배 늘어났다, 무엇이 부족한가" 류 문제가 나온다. 이때 각 서비스의 처리량 모델이 판단 기준이 된다.
 
 | 서비스 | 처리량 |
 |---|---|
@@ -114,7 +114,7 @@ SNS와 EventBridge가 자주 헷갈리는 지점이다. 둘 다 1:N 팬아웃처
 
 **3) Resource Policy로 cross-account** — SNS Topic Policy, SQS Queue Policy, EventBridge Bus Policy로 다른 계정의 ARN에 접근 허용. 멀티 계정 환경에서 중앙 audit 큐로 모든 계정 이벤트 모으기.
 
-> 💡 **관련 이론**: 멱등성 키(idempotency key) 설계는 분산 시스템의 핵심 디펜스 라인이다. Stripe의 idempotency-key 헤더 패턴이 사실상 업계 표준 — 클라이언트가 UUID를 생성해서 보내면 서버는 그 키로 처리 결과를 캐싱하고, 동일 키 재요청은 캐시된 결과만 반환한다. SQS/SNS의 at-least-once를 다루는 워커도 같은 원리로 메시지 ID + 처리 결과를 DynamoDB(TTL)에 저장하면 중복 처리를 차단할 수 있다. RFC draft "*The Idempotency-Key HTTP Header Field*"(Sanyal & Vyas, IETF 2021)가 이 패턴을 표준화하려 한다.
+멱등성 키(idempotency key) 설계는 분산 시스템의 핵심 디펜스 라인이다. Stripe의 idempotency-key 헤더 패턴이 사실상 업계 표준 — 클라이언트가 UUID를 생성해서 보내면 서버는 그 키로 처리 결과를 캐싱하고, 동일 키 재요청은 캐시된 결과만 반환한다. SQS/SNS의 at-least-once를 다루는 워커도 같은 원리로 메시지 ID + 처리 결과를 DynamoDB(TTL)에 저장하면 중복 처리를 차단할 수 있다. RFC draft "*The Idempotency-Key HTTP Header Field*"(Sanyal & Vyas, IETF 2021)가 이 패턴을 표준화하려 한다.
 
 ## 다음 주 예고
 

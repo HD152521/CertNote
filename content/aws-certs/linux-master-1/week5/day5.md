@@ -5,7 +5,7 @@
 - 한 문장 흐름: **물리 디스크 → 파티션 → (선택: RAID/LVM) → mkfs → mount/fstab → 쿼터·점검**.
 - Day1은 데이터 표현(inode·블록·저널), Day2는 공간 구획과 연결(파티션·mkfs·fstab)이다.
 - Day3은 유연성과 가상메모리(LVM 3계층·확장 2단계·스왑), Day4는 안전성·공정성·진단(RAID·쿼터·점검).
-- 최빈출 6종: **fstab 6필드 · LVM 확장 2단계 · RAID 최소 디스크 · 쿼터 soft/hard · df vs du · fsck 언마운트**.
+- 핵심 6종: **fstab 6필드 · LVM 확장 2단계 · RAID 최소 디스크 · 쿼터 soft/hard · df vs du · fsck 언마운트**.
 - 명령을 외우되 **"어느 계층에서 무엇을 푸는가"**로 묶어 기억하면 변형 문제에도 흔들리지 않는다.
 
 ## 전체 흐름 한눈에 — 디스크에서 운영까지
@@ -48,7 +48,7 @@
 - **xfs**: 대용량·확장전용(shrink불가). **btrfs**: CoW·스냅샷·체크섬.
 - **inode 고갈**: 용량 남아도 파일 생성 실패 → `df -i`로 진단.
 
-> 💡 **개념 복습**: `df -h`(용량)와 `df -i`(inode)는 다른 것을 본다. "용량 충분한데 파일 못 만듦" = inode 고갈, "용량 부족" = 블록 고갈. 둘을 분리해 진단하는 습관이 중요하다.
+`df -h`(용량)와 `df -i`(inode)는 다른 것을 본다. "용량 충분한데 파일 못 만듦" = inode 고갈, "용량 부족" = 블록 고갈. 둘을 분리해 진단하는 습관이 중요하다.
 
 ## Day 2 핵심 재정리 — 파티션·마운트·fstab
 
@@ -59,7 +59,7 @@
 - **mount/umount**: umount 거부("busy") = 사용 중 프로세스(`fuser -m`/`lsof`). `umount -l`=lazy.
 - **/etc/fstab 6필드**: **장치(UUID)·마운트포인트·타입·옵션·dump(0)·pass(루트1/나머지2/안함0)**.
 
-> ⚠️ **함정 복습**: fstab 6필드 순서와 5·6번 값(dump=거의0, pass=루트1·나머지2·swap0)은 최빈출. 수정 후 `mount -a`로 검증하지 않으면 부팅 실패 위험.
+> ⚠️ **함정 복습**: fstab 6필드 순서와 5·6번 값(dump=거의0, pass=루트1·나머지2·swap0)은 핵심이다. 수정 후 `mount -a`로 검증하지 않으면 부팅 실패 위험.
 
 표로 fstab 한 번 더:
 
@@ -76,11 +76,11 @@ UUID=def  /      ext4  defaults       0  1    ← 루트(pass=1)
 - **명령 매핑**: 조회 `pvs/vgs/lvs`, 확장 `vgextend/lvextend`. `-L`(용량)/`-l`(PE·%, `100%FREE`).
 - **스왑**: 파일시스템 아님. `mkswap`(초기화)→`swapon`(활성)→`swapoff`. fstab: `none swap sw 0 0`. `swapon -s`/`free -h`로 확인.
 
-> 💡 **개념 복습**: "LV 늘렸는데 `df`상 그대로" = `resize2fs`/`xfs_growfs` 누락. 그릇과 내용물은 따로 늘린다. xfs는 축소 불가.
+"LV 늘렸는데 `df`상 그대로" = `resize2fs`/`xfs_growfs` 누락. 그릇과 내용물은 따로 늘린다. xfs는 축소 불가.
 
 ## Day 4 핵심 재정리 — RAID·쿼터·점검
 
-RAID 표(최빈출, 통째로):
+RAID 표(통째로):
 
 | 레벨 | 방식 | 최소 디스크 | 고장 허용 | 효율 |
 |------|------|-------------|-----------|------|
@@ -94,7 +94,7 @@ RAID 표(최빈출, 통째로):
 - **쿼터**: fstab `usrquota`→remount→`quotacheck`→`quotaon`→`edquota`. soft(유예·경고) vs hard(즉시차단). 블록·inode 한계 별도.
 - **점검**: df(FS용량)·du(경로용량)·lsblk(장치트리)·blkid(UUID)·fsck(무결성, **언마운트 필수**). xfs 복구는 `xfs_repair`.
 
-> ⚠️ **함정 복습**: 최소 디스크 수(0·1=2, 5=3, 6·10=4)와 "RAID1·0은 패리티 없음"이 단골. fsck는 언마운트 상태에서만.
+> ⚠️ **함정 복습**: 최소 디스크 수(0·1=2, 5=3, 6·10=4)와 "RAID1·0은 패리티 없음"이 핵심이다. fsck는 언마운트 상태에서만.
 
 ## 핵심 명령어 통합 치트시트
 
@@ -129,9 +129,9 @@ quotacheck -cugm /home; quotaon /home; edquota -u user1; repquota /home
 df -hT; df -i; du -sh /var; lsblk -f; fsck -y /dev/sdb1
 ```
 
-> 📚 **연결 시야**: 실무에서는 이 계층들이 겹쳐 쌓인다. 전형적 구성은 **디스크들 → mdadm RAID → LVM PV → VG → LV → ext4/xfs → mount → quota**. 즉 RAID로 안전성을, LVM으로 유연성을, 파일시스템으로 데이터 구조를, 쿼터로 공정성을 각각 담당시킨다. 각 계층이 독립적으로 한 가지 문제를 푸는 설계 철학을 이해하면 응용 문제도 풀린다.
+**연결 시야**: 실무에서는 이 계층들이 겹쳐 쌓인다. 전형적 구성은 **디스크들 → mdadm RAID → LVM PV → VG → LV → ext4/xfs → mount → quota**. 즉 RAID로 안전성을, LVM으로 유연성을, 파일시스템으로 데이터 구조를, 쿼터로 공정성을 각각 담당시킨다. 각 계층이 독립적으로 한 가지 문제를 푸는 설계 철학을 이해하면 응용 문제도 풀린다.
 
-아래 12문항으로 점검하자.
+아래 12문항으로 점검한다.
 
 ## 📖 용어
 

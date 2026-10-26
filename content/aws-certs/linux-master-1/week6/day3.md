@@ -31,9 +31,9 @@ init 0               # 시스템 종료 (init 6 = 재부팅)
 telinit 5            # init과 동일하게 런레벨 전환
 ```
 
-> ⚠️ **함정**: 런레벨 **0과 6을 부팅 기본값으로 지정하면 절대 안 된다**. 0(종료)이나 6(재부팅)을 기본 런레벨로 두면 시스템이 켜지자마자 꺼지거나 무한 재부팅에 빠진다. 기본값은 보통 텍스트 서버는 3, GUI 데스크톱은 5다. 그리고 1번 = 단일 사용자(복구) 모드라는 점도 자주 출제된다.
+> ⚠️ **함정**: 런레벨 **0과 6을 부팅 기본값으로 지정하면 절대 안 된다**. 0(종료)이나 6(재부팅)을 기본 런레벨로 두면 시스템이 켜지자마자 꺼지거나 무한 재부팅에 빠진다. 기본값은 보통 텍스트 서버는 3, GUI 데스크톱은 5다. 그리고 1번 = 단일 사용자(복구) 모드라는 점도 알아 둔다.
 
-> 💡 **개념**: 런레벨 3과 5의 차이는 딱 하나, **GUI(X 윈도)의 유무**다. 3은 텍스트 콘솔, 5는 그래픽 로그인 화면까지 띄운다. 서버는 자원을 아끼려 3을, 데스크톱은 5를 기본으로 쓴다. 런레벨별 스크립트는 `/etc/rc.d/rc{0~6}.d/`에 S(시작)·K(종료) 접두사로 들어 있었다.
+런레벨 3과 5의 차이는 딱 하나, **GUI(X 윈도)의 유무**다. 3은 텍스트 콘솔, 5는 그래픽 로그인 화면까지 띄운다. 서버는 자원을 아끼려 3을, 데스크톱은 5를 기본으로 쓴다. 런레벨별 스크립트는 `/etc/rc.d/rc{0~6}.d/`에 S(시작)·K(종료) 접두사로 들어 있었다.
 
 ## systemd의 등장과 target
 
@@ -62,9 +62,9 @@ systemctl reboot                           # 재부팅
 systemctl poweroff                         # 종료
 ```
 
-> 💡 **개념**: 런레벨 2·3·4가 모두 **multi-user.target 하나**로 합쳐진 점이 핵심이다(텍스트 다중 사용자). GUI는 graphical.target(옛 5). 따라서 "GUI에서 텍스트로 바꿔라"는 `systemctl set-default multi-user.target`이고, "즉시 전환"은 `systemctl isolate`(옛 init N 역할)다. `set-default`는 다음 부팅부터, `isolate`는 지금 당장이다.
+런레벨 2·3·4가 모두 **multi-user.target 하나**로 합쳐진 점이 핵심이다(텍스트 다중 사용자). GUI는 graphical.target(옛 5). 따라서 "GUI에서 텍스트로 바꿔라"는 `systemctl set-default multi-user.target`이고, "즉시 전환"은 `systemctl isolate`(옛 init N 역할)다. `set-default`는 다음 부팅부터, `isolate`는 지금 당장이다.
 
-> 📚 **유래/사례**: systemd는 2010년 레드햇의 Lennart Poettering이 발표했다. init의 셸 스크립트 기반 순차 부팅은 서비스가 늘수록 느려졌는데, systemd는 소켓·D-Bus를 미리 만들어 두고 서비스를 동시에 띄워 부팅 시간을 크게 줄였다. 도입 당시 "유닉스 철학을 깬다"는 논쟁이 컸지만, 현재는 사실상 표준이 되었다.
+systemd는 2010년 레드햇의 Lennart Poettering이 발표했다. init의 셸 스크립트 기반 순차 부팅은 서비스가 늘수록 느려졌는데, systemd는 소켓·D-Bus를 미리 만들어 두고 서비스를 동시에 띄워 부팅 시간을 크게 줄였다. 도입 당시 "유닉스 철학을 깬다"는 논쟁이 컸지만, 현재는 사실상 표준이 되었다.
 
 ## systemctl — 서비스 제어의 만능 도구
 
@@ -90,9 +90,9 @@ systemctl status sshd         # 상태(active/inactive)와 로그 일부
 systemctl is-active sshd      # 동작 중이면 active 출력
 ```
 
-> ⚠️ **함정**: **`start`와 `enable`은 다르다.** `start`는 "지금 한 번 켠다"(재부팅하면 다시 꺼질 수 있음), `enable`은 "부팅할 때마다 자동으로 켠다"(지금 당장 켜지는 건 아님)이다. 둘 다 하려면 `systemctl enable --now`를 쓴다. 시험에서 이 둘을 바꿔 묻는 함정이 단골이다.
+> ⚠️ **함정**: **`start`와 `enable`은 다르다.** `start`는 "지금 한 번 켠다"(재부팅하면 다시 꺼질 수 있음), `enable`은 "부팅할 때마다 자동으로 켠다"(지금 당장 켜지는 건 아님)이다. 둘 다 하려면 `systemctl enable --now`를 쓴다. 시험에서 이 둘을 바꿔 묻는 함정이 있다.
 
-> 🔍 **직접 쳐보기**: `systemctl status sshd`(또는 crond)를 실행해 `Active:` 줄과 `Loaded:` 줄을 보자. `Active: active (running)`이면 실행 중, 괄호 안 `enabled`/`disabled`가 부팅 자동 시작 여부다. 실행 여부(active)와 자동 시작 여부(enabled)가 별개 정보임을 한 화면에서 확인할 수 있다.
+**직접 쳐보기**: `systemctl status sshd`(또는 crond)를 실행해 `Active:` 줄과 `Loaded:` 줄을 본다. `Active: active (running)`이면 실행 중, 괄호 안 `enabled`/`disabled`가 부팅 자동 시작 여부다. 실행 여부(active)와 자동 시작 여부(enabled)가 별개 정보임을 한 화면에서 확인할 수 있다.
 
 ## unit 파일 — 서비스의 설계도
 
@@ -135,9 +135,9 @@ systemctl start myapp         # 새 서비스 시작
 systemctl enable myapp        # WantedBy의 target에 자동 시작 등록
 ```
 
-> 💡 **개념**: `[Install]`의 `WantedBy=multi-user.target`이 `enable` 시 동작의 핵심이다. enable하면 이 target의 `.wants/` 디렉터리에 심볼릭 링크가 생겨, 부팅 때 해당 target에 도달하면 자동 시작된다. `[Unit]`의 `After=`/`Before=`는 시작 순서를, `Requires=`/`Wants=`는 의존성을 정의한다.
+`[Install]`의 `WantedBy=multi-user.target`이 `enable` 시 동작의 핵심이다. enable하면 이 target의 `.wants/` 디렉터리에 심볼릭 링크가 생겨, 부팅 때 해당 target에 도달하면 자동 시작된다. `[Unit]`의 `After=`/`Before=`는 시작 순서를, `Requires=`/`Wants=`는 의존성을 정의한다.
 
-> ⚠️ **함정**: unit 파일을 수정한 뒤 `systemctl daemon-reload`를 빼먹으면 변경이 반영되지 않는다. systemd는 unit 파일을 메모리에 캐시하기 때문에, 디스크의 파일을 고쳐도 daemon-reload 전까지는 옛 내용으로 동작한다. "unit 수정 → daemon-reload → restart" 순서를 한 세트로 외운다.
+unit 파일을 수정한 뒤 `systemctl daemon-reload`를 빼먹으면 변경이 반영되지 않는다. systemd는 unit 파일을 메모리에 캐시하기 때문에, 디스크의 파일을 고쳐도 daemon-reload 전까지는 옛 내용으로 동작한다. "unit 수정 → daemon-reload → restart" 순서를 한 세트로 외운다.
 
 ## journalctl — systemd의 통합 로그
 
@@ -163,9 +163,9 @@ journalctl -k                 # 커널 메시지(dmesg 격)
 | `-r` | 최신순 역정렬 |
 | `--since`/`--until` | 시간 범위 지정 |
 
-> 💡 **개념**: `journalctl -u 서비스 -f`는 특정 서비스의 로그를 실시간으로 보는 가장 유용한 조합이다. journal은 기본적으로 메모리/임시 저장이라 재부팅하면 사라질 수 있는데, `/etc/systemd/journald.conf`에서 `Storage=persistent`로 바꾸면 디스크(`/var/log/journal/`)에 영구 보존된다.
+`journalctl -u 서비스 -f`는 특정 서비스의 로그를 실시간으로 보는 가장 유용한 조합이다. journal은 기본적으로 메모리/임시 저장이라 재부팅하면 사라질 수 있는데, `/etc/systemd/journald.conf`에서 `Storage=persistent`로 바꾸면 디스크(`/var/log/journal/`)에 영구 보존된다.
 
-> 🔍 **직접 쳐보기**: `journalctl -b -p err`로 이번 부팅에서 발생한 에러만 추려 보자. 시스템에 문제가 있었다면 빨갛게 표시된다. 이어 `journalctl -u sshd --since "today"`로 오늘 SSH 관련 로그만 좁혀 보면, 필터 조합의 위력을 체감할 수 있다.
+**직접 쳐보기**: `journalctl -b -p err`로 이번 부팅에서 발생한 에러만 추려 본다. 시스템에 문제가 있었다면 빨갛게 표시된다. 이어 `journalctl -u sshd --since "today"`로 오늘 SSH 관련 로그만 좁혀 보면, 필터 조합의 위력을 체감할 수 있다.
 
 ## 📖 용어
 

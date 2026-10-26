@@ -119,7 +119,7 @@ Hooks:
 
 CodePipeline ECS(Blue/Green) Action이 `<IMAGE1_NAME>`을 imageDetail.json의 ImageURI로 치환하고, `<TASK_DEFINITION>`을 새로 등록된 Task Definition ARN으로 치환한다.
 
-> 💡 **관련 이론**: Blue/Green 배포의 이론적 기반은 **무중단 교체(Zero-Downtime Replacement)**다. 기존 환경(Blue)을 유지한 채 새 환경(Green)을 완전히 준비한 후, 트래픽 스위치를 ALB Target Group 교체로 순간적으로 전환한다. 실패 시 Blue로 즉시 롤백이 가능하다(다시 Target Group 교체). Rolling은 서비스 중단 없이 점진적으로 교체하지만 롤백이 느리다(새 Task를 다시 이전 버전으로 바꿔야 함). 배포 시간이 중요하면 Rolling, 롤백 시간이 중요하면 Blue/Green이다.
+> Blue/Green 배포의 이론적 기반은 **무중단 교체(Zero-Downtime Replacement)**다. 기존 환경(Blue)을 유지한 채 새 환경(Green)을 완전히 준비한 후, 트래픽 스위치를 ALB Target Group 교체로 순간적으로 전환한다. 실패 시 Blue로 즉시 롤백이 가능하다(다시 Target Group 교체). Rolling은 서비스 중단 없이 점진적으로 교체하지만 롤백이 느리다(새 Task를 다시 이전 버전으로 바꿔야 함). 배포 시간이 중요하면 Rolling, 롤백 시간이 중요하면 Blue/Green이다.
 
 ## buildspec.yml에서 올바른 파일 생성하기
 
@@ -163,9 +163,9 @@ artifacts:
 
 > ⚠️ **함정**: `taskdef.json`에서 컨테이너 이름이 `imagedefinitions.json`의 `name` 필드와 정확히 일치해야 한다. 불일치하면 "Container name not found in task definition" 오류가 발생한다. 또한 Blue/Green 배포에서 `taskdef.json`의 이미지 URI는 반드시 `<IMAGE1_NAME>` 플레이스홀더를 사용해야 한다—실제 URI를 하드코딩하면 CodePipeline이 치환하지 않는다.
 
-> 💡 **관련 이론**: Rolling과 Blue/Green 배포의 파일 형식 차이는 두 Provider의 내부 동작 방식 차이에서 온다. ECS Rolling Provider는 CodePipeline이 직접 ECS API를 호출해 Task Definition을 등록하고 Service를 업데이트한다—단순한 API 호출 자동화다. Blue/Green Provider는 CodeDeploy가 오케스트레이션을 담당한다—CodeDeploy가 ALB Target Group 교체, 배포 훅(Lambda), 트래픽 전환 비율, 롤백을 모두 관리한다. 이 때문에 Blue/Green은 `appspec.yaml`이 필요하다—CodeDeploy가 이 파일로 배포 훅과 ALB 설정을 읽는다. `<IMAGE1_NAME>` 플레이스홀더는 CodePipeline이 `imageDetail.json`의 실제 URI로 치환한다.
+> Rolling과 Blue/Green 배포의 파일 형식 차이는 두 Provider의 내부 동작 방식 차이에서 온다. ECS Rolling Provider는 CodePipeline이 직접 ECS API를 호출해 Task Definition을 등록하고 Service를 업데이트한다—단순한 API 호출 자동화다. Blue/Green Provider는 CodeDeploy가 오케스트레이션을 담당한다—CodeDeploy가 ALB Target Group 교체, 배포 훅(Lambda), 트래픽 전환 비율, 롤백을 모두 관리한다. 이 때문에 Blue/Green은 `appspec.yaml`이 필요하다—CodeDeploy가 이 파일로 배포 훅과 ALB 설정을 읽는다. `<IMAGE1_NAME>` 플레이스홀더는 CodePipeline이 `imageDetail.json`의 실제 URI로 치환한다.
 
-> 📚 **사례**: Netflix의 ECS 배포 전략. Netflix는 수백 개의 ECS 서비스를 운영하면서 서비스의 중요도에 따라 배포 방식을 차별화한다. API Gateway와 같은 Critical Path 서비스는 Blue/Green 배포(즉시 롤백 가능)를 사용하고, 내부 백그라운드 작업(배치 처리, 이메일 발송)은 Rolling 배포(더 빠른 배포)를 사용한다. "롤백 속도가 배포 속도보다 중요한가"가 선택 기준이다. Blue/Green은 롤백이 Target Group 교체로 수초이지만, Rolling은 이전 이미지로 다시 Rolling 배포가 필요해 수분이 걸린다.
+> Netflix의 ECS 배포 전략. Netflix는 수백 개의 ECS 서비스를 운영하면서 서비스의 중요도에 따라 배포 방식을 차별화한다. API Gateway와 같은 Critical Path 서비스는 Blue/Green 배포(즉시 롤백 가능)를 사용하고, 내부 백그라운드 작업(배치 처리, 이메일 발송)은 Rolling 배포(더 빠른 배포)를 사용한다. "롤백 속도가 배포 속도보다 중요한가"가 선택 기준이다. Blue/Green은 롤백이 Target Group 교체로 수초이지만, Rolling은 이전 이미지로 다시 Rolling 배포가 필요해 수분이 걸린다.
 
 ## ECS Service Auto Scaling: Application Auto Scaling의 작동 방식
 
@@ -237,7 +237,7 @@ aws application-autoscaling put-scheduled-action \
 | Step Scaling | 임계값 초과 정도에 따라 다른 조정량 | "CPU 80% → +5개, CPU 90% → +10개" |
 | Scheduled | 시간 기반 사전 스케일링 | 매일 점심, 월요일 오전 |
 
-> 🔍 **더 깊이**: Application Auto Scaling의 Target Tracking은 제어 이론의 **PID Controller(비례-적분-미분 제어기)**를 단순화한 버전이다. 측정값(현재 CPU)과 목표값(70%) 사이의 오차(error)를 계산해 조정량을 결정한다. AWS는 P(비례) 항만 구현한 단순 비례 제어에 ScaleIn/Out Cooldown을 더해 오버슈팅(과도한 스케일링)을 방지한다. 실제 PID Controller를 구현하면 더 정교하지만 대부분의 웹 서비스에서는 단순 Target Tracking으로 충분하다. 빠른 버스트(e.g., 플래시 세일)에는 Scheduled Scaling으로 미리 스케일 아웃하는 것이 Target Tracking보다 효과적이다—Target Tracking이 반응하는 데 1~3분이 걸리기 때문이다.
+> Application Auto Scaling의 Target Tracking은 제어 이론의 **PID Controller(비례-적분-미분 제어기)**를 단순화한 버전이다. 측정값(현재 CPU)과 목표값(70%) 사이의 오차(error)를 계산해 조정량을 결정한다. AWS는 P(비례) 항만 구현한 단순 비례 제어에 ScaleIn/Out Cooldown을 더해 오버슈팅(과도한 스케일링)을 방지한다. 실제 PID Controller를 구현하면 더 정교하지만 대부분의 웹 서비스에서는 단순 Target Tracking으로 충분하다. 빠른 버스트(e.g., 플래시 세일)에는 Scheduled Scaling으로 미리 스케일 아웃하는 것이 Target Tracking보다 효과적이다—Target Tracking이 반응하는 데 1~3분이 걸리기 때문이다.
 
 ## Capacity Provider Strategy: Spot과 On-Demand의 조합
 
@@ -315,7 +315,7 @@ class GracefulShutdown:
         await asyncio.sleep(25)
 ```
 
-> 📚 **사례**: 2020년 Lyft의 ECS Fargate Spot 도입 사례. Lyft는 비정기 배치 작업(데이터 처리, 리포트 생성)에 Fargate Spot을 도입해 컴퓨트 비용을 60% 절감했다. 핵심은 작업을 **체크포인트(checkpoint)** 방식으로 설계한 것—Spot 회수 시 진행 상태를 S3에 저장하고, 새 Task가 체크포인트에서 재시작하도록 구현했다. 이 패턴이 DOP-C02에서 "Spot 사용 + 내결함성 설계"라는 키워드로 자주 등장한다.
+> 2020년 Lyft의 ECS Fargate Spot 도입 사례. Lyft는 비정기 배치 작업(데이터 처리, 리포트 생성)에 Fargate Spot을 도입해 컴퓨트 비용을 60% 절감했다. 핵심은 작업을 **체크포인트(checkpoint)** 방식으로 설계한 것—Spot 회수 시 진행 상태를 S3에 저장하고, 새 Task가 체크포인트에서 재시작하도록 구현했다. 이 패턴이 DOP-C02에서 "Spot 사용 + 내결함성 설계"라는 키워드로 나올 수 있다.
 
 ## ECS Exec: Bastion 없이 컨테이너 디버깅
 
@@ -367,9 +367,9 @@ aws ecs execute-command \
   --command "/bin/sh"
 ```
 
-> ⚠️ **함정**: ECS Exec는 Task가 실행 중인 상태에서만 활성화할 수 있다. `--enable-execute-command`를 Service에 설정해도 이미 실행 중인 Task에는 적용되지 않는다—`--force-new-deployment`로 새 Task를 생성해야 한다. 또한 VPC Endpoint가 없는 환경에서는 인터넷을 통해 SSM API에 접근해야 하므로, Private Subnet에서 ECS Exec를 사용하려면 `ssm.amazonaws.com`, `ssmmessages.amazonaws.com`, `s3.amazonaws.com` VPC Endpoint가 필요하다.
+> ⚠️ **함정**: ECS Exec는 Task가 실행 중인 상태에서만 활성화할 수 있다. `--enable-execute-command`를 Service에 설정해도 이미 실행 중인 Task에는 적용되지 않는다—`--force-new-deployment`로 새 Task를 생성해야 한다. 또한 VPC Endpoint가 없는 환경에서는 인터넷을 통해 SSM API에 접근해야 하므로, 프라이빗 서브넷에서 ECS Exec를 사용하려면 `ssm.amazonaws.com`, `ssmmessages.amazonaws.com`, `s3.amazonaws.com` VPC Endpoint가 필요하다.
 
-> 💡 **관련 이론**: ECS Auto Scaling의 ALB RequestCountPerTarget 메트릭은 CPU/Memory보다 더 좋은 스케일링 시그널인 경우가 많다. CPU 기반 스케일링의 문제는 "CPU가 높아지는 시점 = 이미 시스템이 압박받는 시점"이다—반응이 늦다. 반면 ALB 요청 수는 CPU 상승 이전에 증가한다(요청이 몰리고 CPU 처리가 지연되기 전에). 1000 requests/target 목표를 설정하면 "각 Task가 평균 1000 RPS를 처리한다"는 의미이며, 이 목표를 유지하도록 Task 수가 자동 조정된다. 트래픽 패턴이 예측 가능한 서비스(점심 시간 트래픽 급증)는 Scheduled Action + Target Tracking 조합이 가장 효과적이다—Scheduled가 미리 스케일 아웃하고 Target Tracking이 세밀하게 조정한다.
+> ECS Auto Scaling의 ALB RequestCountPerTarget 메트릭은 CPU/Memory보다 더 좋은 스케일링 시그널인 경우가 많다. CPU 기반 스케일링의 문제는 "CPU가 높아지는 시점 = 이미 시스템이 압박받는 시점"이다—반응이 늦다. 반면 ALB 요청 수는 CPU 상승 이전에 증가한다(요청이 몰리고 CPU 처리가 지연되기 전에). 1000 requests/target 목표를 설정하면 "각 Task가 평균 1000 RPS를 처리한다"는 의미이며, 이 목표를 유지하도록 Task 수가 자동 조정된다. 트래픽 패턴이 예측 가능한 서비스(점심 시간 트래픽 급증)는 Scheduled Action + Target Tracking 조합이 가장 효과적이다—Scheduled가 미리 스케일 아웃하고 Target Tracking이 세밀하게 조정한다.
 
 > 🎯 **시나리오**: 한 전자상거래 서비스가 블랙프라이데이 트래픽을 예측하고 있다. 평상시 Task 5개로 1,000 RPS를 처리하고, 블랙프라이데이에는 50,000 RPS가 예상된다. 문제: Target Tracking만으로는 트래픽이 갑자기 급증할 때 스케일 아웃 반응 시간(1-3분) 동안 서비스가 과부하된다. 해결: (1) 블랙프라이데이 10분 전 Scheduled Action으로 MinCapacity=100으로 미리 스케일 아웃, (2) Target Tracking이 실제 트래픽에 맞게 세밀 조정, (3) 이벤트 종료 후 Scheduled Action으로 MinCapacity=5로 복원, (4) Capacity Provider Strategy로 base=10 On-Demand + Spot 비율로 비용 최적화. 사전 스케일링(Predictive Scaling)이 반응형 스케일링보다 트래픽 급증 시 더 효과적이다.
 
@@ -452,9 +452,9 @@ Stage: Deploy-Prod
 
 > 🎯 **시나리오**: 전자상거래 회사의 결제 서비스를 ECS Fargate로 운영 중이다. 요구사항: (1) prod 배포는 zero-downtime, (2) 트래픽 급증 시 자동 스케일, (3) 비용 최적화를 위해 Spot 사용, (4) Spot 회수 시 결제 트랜잭션 손실 없어야 함. 설계: Blue/Green 배포(ECS CodeDeploy Action)로 zero-downtime. Capacity Provider Strategy로 base=2 On-Demand + weight Spot 4:1. Fargate Spot 회수 SIGTERM 수신 시 새 결제 요청 거부(HTTP 503) + 진행 중인 트랜잭션 완료 후 종료(25초 이내). DB 트랜잭션은 Aurora의 ACID 보장으로 Spot 회수 시 자동 롤백.
 
-## 정리하며
+## 정리
 
-ECS 배포 자동화의 핵심은 두 배포 모드의 파일 형식 차이다. Rolling은 `imagedefinitions.json`, Blue/Green은 `taskdef.json + appspec.yaml + imageDetail.json(<IMAGE1_NAME> 플레이스홀더)`. Auto Scaling은 Application Auto Scaling 서비스로 ECS Service의 DesiredCount를 조정한다. Capacity Provider Strategy의 base+weight 계산이 On-Demand/Spot 비율을 결정한다. ECS Exec는 Task Definition + Task Role + Service 업데이트 세 가지가 동시에 필요하다.
+ECS 배포 자동화에서는 두 배포 모드의 파일 형식 차이가 갈림길이다. Rolling은 `imagedefinitions.json`, Blue/Green은 `taskdef.json + appspec.yaml + imageDetail.json(<IMAGE1_NAME> 플레이스홀더)`. Auto Scaling은 Application Auto Scaling 서비스로 ECS Service의 DesiredCount를 조정한다. Capacity Provider Strategy의 base+weight 계산이 On-Demand/Spot 비율을 결정한다. ECS Exec는 Task Definition + Task Role + Service 업데이트 세 가지가 동시에 필요하다.
 
 ---
 

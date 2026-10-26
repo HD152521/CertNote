@@ -21,7 +21,7 @@ SNS의 모델은 단순하다. **Topic**이 indirection point, **Subscription**�
 
 표준 SNS는 SQS Standard와 비슷한 at-least-once + best-effort ordering이고, FIFO는 SQS FIFO와 짝이 되도록 2020년에 뒤늦게 출시됐다. SNS FIFO가 SQS FIFO만 구독으로 받을 수 있다는 점이 시험 함정인데, 이메일이나 HTTP는 본질적으로 순서·중복 보장이 불가능한 채널이라(이메일은 SMTP relay가 재정렬할 수 있고, HTTP는 4xx/5xx로 재시도) FIFO 의미가 깨지기 때문이다.
 
-> 💡 **관련 이론**: Pub/Sub와 Message Queue의 차이는 1996년 Gregor Hohpe와 Bobby Woolf의 *Enterprise Integration Patterns*에서 명확히 정리됐다. **Point-to-Point Channel**(큐)은 한 메시지 = 한 컨슈머, **Publish-Subscribe Channel**(토픽)은 한 메시지 = N 컨슈머. SNS+SQS의 fanout 패턴은 이 책에 나오는 "Publish-Subscribe Channel + Message Endpoint"의 정확한 매니지드 구현이다. 이 패턴은 Kafka의 consumer group, Google Pub/Sub의 subscription, Azure Service Bus의 topic+subscription에 모두 같은 형태로 존재한다.
+Pub/Sub와 Message Queue의 차이는 1996년 Gregor Hohpe와 Bobby Woolf의 *Enterprise Integration Patterns*에서 명확히 정리됐다. **Point-to-Point Channel**(큐)은 한 메시지 = 한 컨슈머, **Publish-Subscribe Channel**(토픽)은 한 메시지 = N 컨슈머. SNS+SQS의 fanout 패턴은 이 책에 나오는 "Publish-Subscribe Channel + Message Endpoint"의 정확한 매니지드 구현이다. 이 패턴은 Kafka의 consumer group, Google Pub/Sub의 subscription, Azure Service Bus의 topic+subscription에 모두 같은 형태로 존재한다.
 
 > 🔍 **더 깊이**: SNS는 내부적으로 어떻게 fanout을 구현할까. 공식적으로 공개되진 않았지만 거동을 보면 **subscription registry + per-protocol delivery worker** 구조다. publish 한 번 → SNS가 subscription 목록을 lookup → 각 프로토콜별 worker(SQS sender, Lambda invoker, HTTP poster 등)가 병렬로 push. 각 worker는 자체 retry policy를 가지므로 한 구독이 느려도 다른 구독에 영향을 안 준다. HTTP/HTTPS 구독은 4xx면 즉시 포기, 5xx면 지수 백오프로 최대 100,015회 재시도(약 23일 동안)하는데, 이게 RFC 7807 권장 동작이고 다른 클라우드도 비슷하다.
 
@@ -89,9 +89,9 @@ SNS Topic: order-events
 
 2023년 출시된 **Payload-Based Filtering**은 한 단계 더 나아가 메시지 속성이 아닌 본문(JSON body)의 필드로 필터링한다. 기존엔 publisher가 굳이 본문 데이터를 message attribute로 복제해서 넣어야 했는데, 이제 본문을 그대로 두고 필터링할 수 있다. 다만 본문이 반드시 JSON이어야 한다.
 
-> 🔍 **더 깊이**: SNS 필터 정책 매치는 SNS 측에서 일어나므로 "필터에 안 맞는 메시지"는 구독자 비용이 0이다. SQS로 가는 메시지 비용, Lambda 호출 비용 둘 다 안 든다. 만약 필터링을 구독자 측(Lambda 내부 if-else)에서 하면 모든 메시지가 일단 Lambda를 호출해서 콜드 스타트·요청 비용이 다 나간다. 트래픽이 큰 토픽에서는 server-side filter가 비용 차이가 10배 이상 나는 경우가 흔하다.
+SNS 필터 정책 매치는 SNS 측에서 일어나므로 "필터에 안 맞는 메시지"는 구독자 비용이 0이다. SQS로 가는 메시지 비용, Lambda 호출 비용 둘 다 안 든다. 만약 필터링을 구독자 측(Lambda 내부 if-else)에서 하면 모든 메시지가 일단 Lambda를 호출해서 콜드 스타트·요청 비용이 다 나간다. 트래픽이 큰 토픽에서는 server-side filter가 비용 차이가 10배 이상 나는 경우가 흔하다.
 
-> 📚 **사례**: 2022년 Netflix Tech Blog는 자체 이벤트 버스를 SNS 필터링 기반으로 재설계한 이야기를 공개했다. 이전엔 마이크로서비스마다 자체 Kafka 토픽을 운영해 토픽 수가 수천 개에 달했는데, "domain 단위로 하나의 SNS 토픽 + 필터 정책으로 구독자별 분기" 패턴으로 옮긴 뒤 토픽 수가 1/10로 줄고 신규 컨슈머 추가 시간이 일 단위에서 분 단위로 단축됐다. 다만 Netflix는 처리량 한계 때문에 Kafka를 완전히 대체하진 않았고, "낮은 처리량 + 다양한 구독자" 워크로드만 SNS로 옮겼다.
+**사례**: 2022년 Netflix Tech Blog는 자체 이벤트 버스를 SNS 필터링 기반으로 재설계한 이야기를 공개했다. 이전엔 마이크로서비스마다 자체 Kafka 토픽을 운영해 토픽 수가 수천 개에 달했는데, "domain 단위로 하나의 SNS 토픽 + 필터 정책으로 구독자별 분기" 패턴으로 옮긴 뒤 토픽 수가 1/10로 줄고 신규 컨슈머 추가 시간이 일 단위에서 분 단위로 단축됐다. 다만 Netflix는 처리량 한계 때문에 Kafka를 완전히 대체하진 않았고, "낮은 처리량 + 다양한 구독자" 워크로드만 SNS로 옮겼다.
 
 ## SNS FIFO와 순서 보장의 본질
 
@@ -104,7 +104,7 @@ SNS FIFO의 진짜 가치는 "여러 구독자가 같은 순서로 같은 메시
 - 처리량: 토픽당 300 TPS(배치 시 3,000). High Throughput FIFO는 아직 SQS만 지원.
 - 가격: 표준 SNS의 ~10배 정도 단가.
 
-> 💡 **관련 이론**: 분산 시스템에서 "total order broadcast"(모든 노드가 같은 순서로 메시지를 봄)는 합의(consensus)와 등가라는 게 1996년 Tushar Chandra와 Sam Toueg의 유명한 정리다. Paxos/Raft 같은 합의 알고리즘으로 구현 가능하지만 latency와 처리량을 희생한다. SNS FIFO + SQS FIFO 조합이 처리량 300 TPS에 묶이는 것도 이 fundamental 비용을 우회할 방법이 없기 때문이다. exactly-once + total order가 필요하면 "정말로 필요한가, MessageGroupId로 partition할 방법은 없나"를 먼저 물어봐야 한다.
+분산 시스템에서 "total order broadcast"(모든 노드가 같은 순서로 메시지를 봄)는 합의(consensus)와 등가라는 게 1996년 Tushar Chandra와 Sam Toueg의 유명한 정리다. Paxos/Raft 같은 합의 알고리즘으로 구현 가능하지만 latency와 처리량을 희생한다. SNS FIFO + SQS FIFO 조합이 처리량 300 TPS에 묶이는 것도 이 fundamental 비용을 우회할 방법이 없기 때문이다. exactly-once + total order가 필요하면 "정말로 필요한가, MessageGroupId로 partition할 방법은 없나"를 먼저 물어봐야 한다.
 
 ## 다른 Pub/Sub 시스템과의 비교
 
@@ -122,7 +122,7 @@ SNS FIFO의 진짜 가치는 "여러 구독자가 같은 순서로 같은 메시
 
 EventBridge(Day 3)는 SNS와 비슷해 보이지만 다른 도구다. EventBridge는 SaaS·AWS 서비스 이벤트·custom 이벤트를 한 bus로 모으고 rule로 라우팅하는 데 특화돼 있고, SNS는 단순 pub/sub에 특화돼 있다. 처리량은 SNS가 압도적으로 높고, 통합성은 EventBridge가 압도적으로 풍부하다.
 
-> 📚 **사례**: 2017년 2월 28일 AWS S3 us-east-1 대규모 장애 때 많은 회사들이 "S3 이벤트 알림 → SNS → 다운스트림" 체인이 모두 끊겨 알람이 안 왔다. 사후 분석에서 "단일 region SNS에 모든 알림을 의존하지 말고, 멀티 region SNS publish + Route 53 failover로 알림 자체의 가용성을 분리하라"는 권장이 나왔다. 이후 PagerDuty, Datadog 같은 모니터링 회사들은 자체 multi-region notification fabric을 구축했다.
+**사례**: 2017년 2월 28일 AWS S3 us-east-1 대규모 장애 때 많은 회사들이 "S3 이벤트 알림 → SNS → 다운스트림" 체인이 모두 끊겨 알람이 안 왔다. 사후 분석에서 "단일 region SNS에 모든 알림을 의존하지 말고, 멀티 region SNS publish + Route 53 페일오버로 알림 자체의 가용성을 분리하라"는 권장이 나왔다. 이후 PagerDuty, Datadog 같은 모니터링 회사들은 자체 multi-region notification fabric을 구축했다.
 
 ## DLQ, 암호화, 그리고 운영의 세부
 
@@ -171,7 +171,7 @@ aws sns set-topic-attributes --topic-arn arn:... \
   --attribute-value file://cross-account-policy.json
 ```
 
-## 정리하며
+## 정리
 
 SNS는 SQS의 "1:1 작업 분배" 모델이 풀 수 없는 "1:N 이벤트 브로드캐스트"를 위해 존재한다. 그리고 SNS + SQS fanout 패턴은 두 서비스의 강점(SNS의 다양한 push 프로토콜 + SQS의 안전한 buffer)을 합쳐서 AWS에서 가장 자주 보이는 디커플링 아키텍처가 됐다. 메시지 필터링은 토픽 폭증을 막고, FIFO는 순서가 필요한 도메인을 위한 옵션이며, 구독 DLQ와 cross-account 구독은 대규모 조직에서 필수 운영 기능이다.
 

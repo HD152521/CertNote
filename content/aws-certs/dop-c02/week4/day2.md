@@ -6,7 +6,7 @@ On-Premises 배포는 또 다른 차원의 문제다. AWS가 제어하지 않는
 
 오늘은 EC2 배포의 전체 생애주기 — Agent 설치부터 AppSpec Hook 설계, ASG 통합, Auto Scaling Rolling 업데이트, Circuit Breaker, On-Premises 등록까지 — 를 하나의 흐름으로 연결한다.
 
-> 💡 **Day 2의 핵심 판단 기준**: CodeDeploy 문제에서 "자동 롤백"이 나오면 두 가지 레이어를 구분해야 한다. (1) EC2 Rolling Update의 Deployment Group Circuit Breaker — 배포 단계에서 실패 감지. (2) CloudWatch Alarm 기반 자동 롤백 — 배포 후 운영 중 문제 감지. 이 둘의 트리거 시점이 다르다.
+> **Day 2의 핵심 판단 기준**: CodeDeploy 문제에서 "자동 롤백"이 나오면 두 가지 레이어를 구분해야 한다. (1) EC2 Rolling Update의 Deployment Group Circuit Breaker — 배포 단계에서 실패 감지. (2) CloudWatch Alarm 기반 자동 롤백 — 배포 후 운영 중 문제 감지. 이 둘의 트리거 시점이 다르다.
 
 ---
 
@@ -32,7 +32,7 @@ On-Premises 배포는 또 다른 차원의 문제다. AWS가 제어하지 않는
 
 CodeDeploy Agent는 각 EC2/On-Prem 인스턴스에서 실행되며 CodeDeploy API를 폴링해 배포 명령을 기다린다. 새 배포 명령이 오면 S3에서 번들을 다운로드하고 AppSpec에 따라 Hook 스크립트를 순서대로 실행한다.
 
-> 🔍 **더 깊이**: CodeDeploy Agent의 폴링 모델은 Push 방식이 아니라 Pull 방식이다. 인스턴스가 CodeDeploy 엔드포인트에 주기적으로 요청해 새 작업이 있는지 확인한다. 이 모델의 장점은 방화벽 안에 있는 인스턴스(On-Premises 포함)도 아웃바운드 연결만 있으면 동작한다는 것이다. VPC 안의 EC2는 VPC Endpoint(`com.amazonaws.region.codedeploy`) 또는 NAT Gateway로 엔드포인트에 접근한다.
+> CodeDeploy Agent의 폴링 모델은 Push 방식이 아니라 Pull 방식이다. 인스턴스가 CodeDeploy 엔드포인트에 주기적으로 요청해 새 작업이 있는지 확인한다. 이 모델의 장점은 방화벽 안에 있는 인스턴스(On-Premises 포함)도 아웃바운드 연결만 있으면 동작한다는 것이다. VPC 안의 EC2는 VPC Endpoint(`com.amazonaws.region.codedeploy`) 또는 NAT Gateway로 엔드포인트에 접근한다.
 
 ---
 
@@ -86,7 +86,7 @@ SSM Distributor 방식의 장점:
 
 Agent가 S3에서 배포 번들(zip)을 다운로드하는 권한이다. 이 권한이 없으면 각 인스턴스 로그에서 S3 AccessDenied가 나고 전체 배포가 실패한다.
 
-> 💡 **관련 이론**: SSM Distributor + State Manager는 **Configuration Drift 방지** 패턴이다. 인스턴스가 desired state(Agent 설치됨)에서 벗어나면 State Manager가 자동으로 재적용한다. 이것은 Chef/Puppet의 converge 개념과 동일하고, Kubernetes의 컨트롤 루프 패턴과도 같다. "상태를 선언하고 시스템이 유지한다"는 선언적 관리 철학이다. EC2 Image Builder와 결합하면 AMI 빌드 시 Agent를 포함하고, State Manager로 버전만 유지하는 하이브리드 전략도 가능하다.
+> SSM Distributor + State Manager는 **Configuration Drift 방지** 패턴이다. 인스턴스가 desired state(Agent 설치됨)에서 벗어나면 State Manager가 자동으로 재적용한다. 이것은 Chef/Puppet의 converge 개념과 동일하고, Kubernetes의 컨트롤 루프 패턴과도 같다. "상태를 선언하고 시스템이 유지한다"는 선언적 관리 철학이다. EC2 Image Builder와 결합하면 AMI 빌드 시 Agent를 포함하고, State Manager로 버전만 유지하는 하이브리드 전략도 가능하다.
 
 ---
 
@@ -149,9 +149,9 @@ hooks:
       timeout: 120
 ```
 
-> ⚠️ **함정**: `ApplicationStop`은 이전 revision의 appspec.yml에 정의된 스크립트를 실행한다. 처음 배포 시에는 이전 revision이 없으므로 `ApplicationStop`이 실행되지 않는다. 두 번째 배포부터 이전 revision의 stop 스크립트가 실행된다. "첫 배포에서 ApplicationStop이 실행되지 않는다"는 것이 시험에서 자주 나오는 함정이다.
+> ⚠️ **함정**: `ApplicationStop`은 이전 revision의 appspec.yml에 정의된 스크립트를 실행한다. 처음 배포 시에는 이전 revision이 없으므로 `ApplicationStop`이 실행되지 않는다. 두 번째 배포부터 이전 revision의 stop 스크립트가 실행된다. "첫 배포에서 ApplicationStop이 실행되지 않는다"는 것이 시험에서 함정으로 쓰인다.
 
-> 📚 **사례**: 어떤 팀이 배포 시 기존 앱 종료 스크립트(`ApplicationStop`)를 새 revision에 추가했는데, 해당 배포에서는 stop 스크립트가 실행되지 않았다. 원인은 `ApplicationStop`이 현재 배포의 appspec이 아닌 이전 revision의 appspec을 참조하기 때문이다. 새 stop 스크립트는 다음 배포에서 실행된다. 이 동작을 이해하지 못하면 디버깅에서 시간을 낭비한다.
+> 어떤 팀이 배포 시 기존 앱 종료 스크립트(`ApplicationStop`)를 새 revision에 추가했는데, 해당 배포에서는 stop 스크립트가 실행되지 않았다. 원인은 `ApplicationStop`이 현재 배포의 appspec이 아닌 이전 revision의 appspec을 참조하기 때문이다. 새 stop 스크립트는 다음 배포에서 실행된다. 이 동작을 이해하지 못하면 디버깅에서 시간을 낭비한다.
 
 ---
 
@@ -193,7 +193,7 @@ exit 1   # 비0 exit code = CodeDeploy에 실패 보고 → 자동 롤백
 
 > ⚠️ **함정**: "실패를 숨기기 위해 exit 0을 강제" 패턴은 최악의 안티패턴이다. 스크립트가 항상 성공 코드를 반환하면 CodeDeploy가 실패를 감지하지 못하고, 잘못된 버전이 배포된 채로 자동 롤백이 일어나지 않는다. 스크립트 실패는 반드시 비0 exit code로 보고해야 한다.
 
-> 🔍 **더 깊이**: `set -euo pipefail`은 스크립트 안전성의 기본 설정이다. `-e`는 명령이 실패하면 즉시 스크립트를 종료하고, `-u`는 정의되지 않은 변수 참조를 에러로 처리하며, `pipefail`은 파이프라인의 중간 명령 실패도 전파한다. 이 없으면 `cmd1 | cmd2`에서 `cmd1`이 실패해도 `cmd2`가 성공하면 스크립트가 0을 반환할 수 있다. CodeDeploy Hook 스크립트에서 이 설정은 선택이 아니라 필수다.
+> `set -euo pipefail`은 스크립트 안전성의 기본 설정이다. `-e`는 명령이 실패하면 즉시 스크립트를 종료하고, `-u`는 정의되지 않은 변수 참조를 에러로 처리하며, `pipefail`은 파이프라인의 중간 명령 실패도 전파한다. 이 없으면 `cmd1 | cmd2`에서 `cmd1`이 실패해도 `cmd2`가 성공하면 스크립트가 0을 반환할 수 있다. CodeDeploy Hook 스크립트에서 이 설정은 선택이 아니라 필수다.
 
 ---
 
@@ -234,7 +234,7 @@ CodeDeploy가 새 인스턴스 감지 → 진행 중인 배포의 동일 revisio
 | `AllAtOnce` | 모두 동시에 교체 | 가장 빠름, 다운타임 위험 |
 | Custom | 직접 비율 정의 | 예: 25%씩 4회 |
 
-> ⚠️ **함정**: "배포 중 스케일 아웃하면 새 인스턴스는 구 버전이 설치됨" — 이것이 틀린 답이다. CodeDeploy는 ASG에 새 인스턴스가 추가될 때 자동으로 현재 진행 중인(또는 가장 최근에 성공한) 배포를 적용한다. 단, 이것은 **AutoScaling 배포**라는 별도 배포 이벤트로 처리된다. 콘솔에서 두 가지 배포(수동 배포 + AutoScaling 배포)가 동시에 보일 수 있다.
+> "배포 중 스케일 아웃하면 새 인스턴스는 구 버전이 설치됨" — 이것이 틀린 답이다. CodeDeploy는 ASG에 새 인스턴스가 추가될 때 자동으로 현재 진행 중인(또는 가장 최근에 성공한) 배포를 적용한다. 단, 이것은 **AutoScaling 배포**라는 별도 배포 이벤트로 처리된다. 콘솔에서 두 가지 배포(수동 배포 + AutoScaling 배포)가 동시에 보일 수 있다.
 
 ---
 
@@ -262,7 +262,7 @@ aws ecs update-service \
 
 `maximumPercent=200` + `minimumHealthyPercent=100`은 새 Task를 모두 먼저 띄우고(총 200%), 검증 후 구 Task를 제거하는 전략이다. 일시적으로 인스턴스 수가 2배가 되지만 다운타임이 없다.
 
-> 💡 **관련 이론**: MinHealthyPercent와 MaxBatchSize의 조합은 **Rolling Upgrade의 Trade-off**를 직접 제어한다. MinHealthyPercent를 높이면 배포 중에도 높은 가용성을 유지하지만 교체 속도가 느려진다(배치 크기가 제한됨). 낮추면 빠르지만 용량이 줄어든다. 이 설정은 서비스의 SLO와 연결된다 — 트래픽이 예측 불가능하면 MinHealthyPercent=100이 안전하다.
+> MinHealthyPercent와 MaxBatchSize의 조합은 **Rolling Upgrade의 Trade-off**를 직접 제어한다. MinHealthyPercent를 높이면 배포 중에도 높은 가용성을 유지하지만 교체 속도가 느려진다(배치 크기가 제한됨). 낮추면 빠르지만 용량이 줄어든다. 이 설정은 서비스의 SLO와 연결된다 — 트래픽이 예측 불가능하면 MinHealthyPercent=100이 안전하다.
 
 ---
 
@@ -302,7 +302,7 @@ Hook 스크립트가 비0 exit code를 반환하거나, 배포 시간이 초과�
 [완전 안정]
 ```
 
-> 📚 **사례**: 2020년 한 전자상거래 팀이 배포 후 1시간 만에 장바구니 API 오류율이 2%→15%로 증가했다. 원인은 배포된 코드의 메모리 누수였다. `ValidateService` Hook에서는 정상이었지만 트래픽이 몰리자 증상이 나타났다. 이후 그 팀은 `5xx 오류율 > 5%` CloudWatch Alarm을 Deployment Group에 연결해, 배포 후 30분 모니터링 기간 동안 자동 롤백이 가능하도록 구성했다. 레이어 2 Circuit Breaker의 필요성을 실감한 사례다.
+> 2020년 한 전자상거래 팀이 배포 후 1시간 만에 장바구니 API 오류율이 2%→15%로 증가했다. 원인은 배포된 코드의 메모리 누수였다. `ValidateService` Hook에서는 정상이었지만 트래픽이 몰리자 증상이 나타났다. 이후 그 팀은 `5xx 오류율 > 5%` CloudWatch Alarm을 Deployment Group에 연결해, 배포 후 30분 모니터링 기간 동안 자동 롤백이 가능하도록 구성했다. 레이어 2 Circuit Breaker의 필요성을 실감한 사례다.
 
 > 🎯 **시나리오**: 한 팀이 "배포는 성공하는데 그 후 30분 내에 장애가 자주 발생한다"고 보고했다. `ValidateService` Hook을 강화해야 할까, CloudWatch Alarm 기반 자동 롤백을 추가해야 할까? 정답은 **둘 다이지만 순서가 있다**. 먼저 `ValidateService`를 강화해 배포 시점에 잡을 수 있는 문제를 잡는다. 배포 후 시간이 지나야 나타나는 문제(메모리 누수, 동시성 이슈 등)는 CloudWatch Alarm 기반 롤백으로 잡는다. 두 메커니즘은 서로 다른 시점의 실패를 잡는다.
 
@@ -341,7 +341,7 @@ aws sts assume-role \
 - 새 인스턴스를 AWS가 생성할 수 없기 때문
 - 롤백은 이전 revision 재배포 방식
 
-> 🔍 **더 깊이**: On-Premises 인스턴스 등록은 **하이브리드 클라우드** 패턴이다. AWS 바깥의 장치/서버가 AWS API에 접근하기 위해 자격 증명을 갖는 구조다. 보안 모범 사례는 장기 자격 증명(IAM User Access Key) 대신 단기 자격 증명(STS)을 사용하는 것이다. AWS Systems Manager Hybrid Activations도 같은 문제를 해결하는데, SSM Agent를 On-Premises에 설치하면 SSM의 모든 기능(Session Manager, Patch Manager, State Manager)을 온프레미스에서도 쓸 수 있다. 결합하면 CodeDeploy는 배포만, SSM은 나머지 운영을 담당하는 역할 분리가 가능하다.
+> On-Premises 인스턴스 등록은 **하이브리드 클라우드** 패턴이다. AWS 바깥의 장치/서버가 AWS API에 접근하기 위해 자격 증명을 갖는 구조다. 보안 모범 사례는 장기 자격 증명(IAM User Access Key) 대신 단기 자격 증명(STS)을 사용하는 것이다. AWS Systems Manager Hybrid Activations도 같은 문제를 해결하는데, SSM Agent를 On-Premises에 설치하면 SSM의 모든 기능(Session Manager, Patch Manager, State Manager)을 온프레미스에서도 쓸 수 있다. 결합하면 CodeDeploy는 배포만, SSM은 나머지 운영을 담당하는 역할 분리가 가능하다.
 
 ---
 
@@ -384,7 +384,7 @@ aws deploy create-deployment-group \
     "[{Key=Environment,Value=staging,Type=KEY_AND_VALUE}]"
 ```
 
-> 💡 **관련 이론**: Tag 기반 Deployment Group은 **Infrastructure as Code(IaC)의 선언적 타깃팅**이다. "어느 인스턴스를 배포 대상으로 할 것인가"를 태그로 선언하면, 새 인스턴스가 생기든 기존 인스턴스가 사라지든 Group이 동적으로 관리된다. 반면 IP나 인스턴스 ID로 고정하면 인스턴스가 교체될 때마다 설정을 수동으로 업데이트해야 한다. 태그 기반 타깃팅이 IaC 원칙에 부합한다.
+> Tag 기반 Deployment Group은 **Infrastructure as Code(IaC)의 선언적 타깃팅**이다. "어느 인스턴스를 배포 대상으로 할 것인가"를 태그로 선언하면, 새 인스턴스가 생기든 기존 인스턴스가 사라지든 Group이 동적으로 관리된다. 반면 IP나 인스턴스 ID로 고정하면 인스턴스가 교체될 때마다 설정을 수동으로 업데이트해야 한다. 태그 기반 타깃팅이 IaC 원칙에 부합한다.
 
 ---
 
@@ -406,11 +406,11 @@ EC2 Blue/Green에서 Green 인스턴스를 어떻게 만들 것인가:
 - 목적: 문제 발견 시 즉시 롤백 가능 (Blue가 살아있으므로)
 - 트레이드오프: 안전망 ↔ 비용
 
-> ⚠️ **함정**: Termination Wait Time을 너무 길게 설정하면 비용이 크게 증가한다. 2일로 설정하면 Blue 인스턴스가 2일 동안 유지되어 EC2 비용이 2일치 추가 발생한다. 대부분의 팀에서 30분~1시간이 균형점이다. 시험에서 "Termination Wait Time을 7일로 설정한다"가 보기에 나오면 비용 문제를 묻는 것이다.
+> Termination Wait Time을 너무 길게 설정하면 비용이 크게 증가한다. 2일로 설정하면 Blue 인스턴스가 2일 동안 유지되어 EC2 비용이 2일치 추가 발생한다. 일반적으로 30분~1시간이 균형점이다. 시험에서 "Termination Wait Time을 7일로 설정한다"가 보기에 나오면 비용 문제를 묻는 것이다.
 
 ---
 
-## 마무리: EC2 배포 판단 흐름
+## 정리
 
 ```
 배포 대상이 EC2인가?

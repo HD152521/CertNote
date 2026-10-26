@@ -72,7 +72,7 @@ Week 8은 서버리스와 이벤트 기반 아키텍처가 어떻게 협력하�
 "배치 처리 부분 실패만 재시도"        → Lambda ESM ReportBatchItemFailures
 ```
 
-## SAP 시험 단골 함정 정리
+## SAP 시험 함정 정리
 
 1. **Task Role vs Task Execution Role** (ECS/Fargate) — 앱 권한은 Task Role, 인프라(ECR Pull, Logs) 권한은 Execution Role
 2. **EventBridge DLQ vs Lambda Destinations** — EB DLQ는 invoke 실패용, Lambda 비즈니스 로직 실패는 Lambda Destinations

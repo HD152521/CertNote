@@ -1,6 +1,6 @@
 # Day 4 - 비용·지속 가능성 기둥 심화 — 단위 경제학, 탄소 회계의 규제 뿌리, 두 기둥의 trade-off
 
-클라우드 비용을 줄이는 가장 흔한 실수는 "총액"만 보는 것이다. 월 청구서가 10만 달러에서 9만 달러로 줄면 성공처럼 보이지만, 같은 기간 트래픽이 절반으로 줄었다면 사실은 **단위 비용이 악화**된 것이다. Cost Optimization(비용 최적화)의 진짜 지표는 총액이 아니라 **단위 경제학(unit economics) — 요청당·사용자당·거래당 비용**이다. Sustainability(지속 가능성)도 같은 사고를 탄소로 옮긴 것이다 — 절대 배출량이 아니라 "유용한 작업당 탄소"를 줄이는 것이 핵심이다.
+클라우드 비용을 줄이는 흔한 실수는 "총액"만 보는 것이다. 월 청구서가 10만 달러에서 9만 달러로 줄면 성공처럼 보이지만, 같은 기간 트래픽이 절반으로 줄었다면 사실은 **단위 비용이 악화**된 것이다. Cost Optimization(비용 최적화)의 진짜 지표는 총액이 아니라 **단위 경제학(unit economics) — 요청당·사용자당·거래당 비용**이다. Sustainability(지속 가능성)도 같은 사고를 탄소로 옮긴 것이다 — 절대 배출량이 아니라 "유용한 작업당 탄소"를 줄이는 것이 핵심이다.
 
 SAP-C02에서 두 기둥은 "Graviton 전환으로 비용·전력 동시 절감", "idle 비용 0", "콜드 데이터 자동 계층화", "탄소 배출 측정" 같은 키워드로 출제된다. 흥미롭게도 두 기둥은 대개 같은 방향(유휴 자원 제거)이지만 항상 일치하지는 않는다. 오늘은 단위 경제학, 탄소 회계의 규제 뿌리, 두 기둥의 trade-off까지 파고든다.
 
@@ -19,11 +19,11 @@ Cost의 5대 원칙은 "소비 모델 채택, 전체 효율 측정, 데이터센
 | 비용 가시성 | Cost Allocation Tag·Budgets·Cost Anomaly Detection | 귀속·예산·이상 탐지 |
 | 멀티 계정 공유 | Organizations 통합 결제 | SP/RI 공유·볼륨 티어 |
 
-> 💡 **관련 이론**: "전체 효율 측정"은 재무의 **단위 경제학(unit economics)** 개념이다. SaaS 기업이 "고객 한 명을 서비스하는 데 드는 클라우드 비용(cost to serve)"을 추적하듯, 클라우드 비용은 절대액이 아니라 **비즈니스 산출물 대비 비용**으로 봐야 한다. 요청 100만 건당 비용, 활성 사용자당 비용이 진짜 지표다. 이 지표가 개선되면 트래픽이 늘어 총액이 올라도 건강한 성장이고, 악화되면 총액이 줄어도 비효율이 숨어 있다. AWS Cost Allocation Tag로 워크로드·팀·기능별 비용을 귀속시키는 것이 단위 경제학 측정의 출발점이다. 시험에서 "팀·기능별 비용 귀속·쇼백/차지백"이 보이면 Cost Allocation Tag + Cost Categories가 정답 신호다.
+"전체 효율 측정"은 재무의 **단위 경제학(unit economics)** 개념이다. SaaS 기업이 "고객 한 명을 서비스하는 데 드는 클라우드 비용(cost to serve)"을 추적하듯, 클라우드 비용은 절대액이 아니라 **비즈니스 산출물 대비 비용**으로 봐야 한다. 요청 100만 건당 비용, 활성 사용자당 비용이 진짜 지표다. 이 지표가 개선되면 트래픽이 늘어 총액이 올라도 건강한 성장이고, 악화되면 총액이 줄어도 비효율이 숨어 있다. AWS Cost Allocation Tag로 워크로드·팀·기능별 비용을 귀속시키는 것이 단위 경제학 측정의 출발점이다. 시험에서 "팀·기능별 비용 귀속·쇼백/차지백"이 보이면 Cost Allocation Tag + Cost Categories가 정답 신호다.
 
-> 📚 **사례**: 2018년 Pinterest는 AWS 비용이 급증하자 원인을 추적하다 **데이터 전송(특히 AZ 간·인터넷 egress)**이 컴퓨팅 못지않은 큰 비중임을 발견했다. 같은 AZ 안에서 통신하도록 서비스를 재배치하고, S3 접근을 Gateway Endpoint로 돌리고, 외부 전송을 CloudFront로 옮겨 전송 비용을 크게 줄였다. 교훈: 비용 최적화는 컴퓨팅·스토리지만이 아니라 **보이지 않는 데이터 전송**까지 봐야 하며, Cost and Usage Report(CUR)로 리소스·시간 단위 청구를 분해해야 숨은 비용이 드러난다.
+2018년 Pinterest는 AWS 비용이 급증하자 원인을 추적하다 **데이터 전송(특히 AZ 간·인터넷 egress)**이 컴퓨팅 못지않은 큰 비중임을 발견했다. 같은 AZ 안에서 통신하도록 서비스를 재배치하고, S3 접근을 Gateway Endpoint로 돌리고, 외부 전송을 CloudFront로 옮겨 전송 비용을 크게 줄였다. 교훈: 비용 최적화는 컴퓨팅·스토리지만이 아니라 **보이지 않는 데이터 전송**까지 봐야 하며, Cost and Usage Report(CUR)로 리소스·시간 단위 청구를 분해해야 숨은 비용이 드러난다.
 
-> 🔍 **더 깊이**: **데이터 전송 비용**은 시험의 숨은 단골이다. AWS는 인바운드(들어오는)는 대개 무료지만 아웃바운드(나가는)·리전 간·AZ 간 전송에 과금한다. 가장 흔한 절감 패턴 두 가지: (1) **VPC Endpoint** — 프라이빗 서브넷의 인스턴스가 S3·DynamoDB에 접근할 때 NAT Gateway를 거치면 NAT 처리 비용 + egress가 들지만, Gateway Endpoint(S3·DynamoDB 전용, 무료)를 쓰면 AWS 백본으로 직행해 NAT 비용이 사라진다. (2) **CloudFront** — 오리진(S3·ALB)에서 인터넷으로 직접 나가는 egress보다 CloudFront 경유 전송이 단가가 싸고 캐시로 오리진 요청도 준다. 시험에서 "NAT Gateway 데이터 처리 비용 절감"은 VPC Endpoint, "인터넷 egress 비용 절감"은 CloudFront다.
+**데이터 전송 비용**은 시험에서 놓치기 쉬운 항목이다. AWS는 인바운드(들어오는)는 대개 무료지만 아웃바운드(나가는)·리전 간·AZ 간 전송에 과금한다. 가장 흔한 절감 패턴 두 가지: (1) **VPC Endpoint** — 프라이빗 서브넷의 인스턴스가 S3·DynamoDB에 접근할 때 NAT Gateway를 거치면 NAT 처리 비용 + egress가 들지만, Gateway Endpoint(S3·DynamoDB 전용, 무료)를 쓰면 AWS 백본으로 직행해 NAT 비용이 사라진다. (2) **CloudFront** — 오리진(S3·ALB)에서 인터넷으로 직접 나가는 egress보다 CloudFront 경유 전송이 단가가 싸고 캐시로 오리진 요청도 준다. 시험에서 "NAT Gateway 데이터 처리 비용 절감"은 VPC Endpoint, "인터넷 egress 비용 절감"은 CloudFront다.
 
 ## 비용 가시성 도구 — 측정 없이는 최적화 없다
 
@@ -52,11 +52,11 @@ Sustainability(2021년 추가)의 6대 원칙은 "영향 이해, 목표 설정, 
 | 컴퓨팅 밀집 | EKS Bin Packing·Fargate | Cost와 일치 |
 | 탄소 측정 | Customer Carbon Footprint Tool(CCFT) | 가시화 도구 |
 
-> 💡 **관련 이론**: AWS의 2025년 100% 재생에너지·2040 Net-Zero 목표(원래 2030 → 5년 앞당김)는 PR이 아니라 **규제 대응**이다. EU의 **CSRD(Corporate Sustainability Reporting Directive)**는 2024년부터 대기업의 **Scope 3(공급망 포함 간접 배출)** 보고를 의무화했다. 온실가스 회계의 GHG Protocol은 배출을 Scope 1(직접), Scope 2(구매 전력), Scope 3(공급망·간접)로 나누는데, 기업이 클라우드를 쓰면 그 탄소는 기업의 Scope 3에 들어간다. 이 수치는 AWS가 제공한 데이터(CCFT)를 그대로 신고하므로, **CCFT의 정확도가 곧 고객 ESG 보고의 정확도**가 된다. 시험에서 "ESG 보고·Scope 3·탄소 측정"이 보이면 CCFT가 정답 신호다.
+AWS의 2025년 100% 재생에너지·2040 Net-Zero 목표(원래 2030 → 5년 앞당김)는 PR이 아니라 **규제 대응**이다. EU의 **CSRD(Corporate Sustainability Reporting Directive)**는 2024년부터 대기업의 **Scope 3(공급망 포함 간접 배출)** 보고를 의무화했다. 온실가스 회계의 GHG Protocol은 배출을 Scope 1(직접), Scope 2(구매 전력), Scope 3(공급망·간접)로 나누는데, 기업이 클라우드를 쓰면 그 탄소는 기업의 Scope 3에 들어간다. 이 수치는 AWS가 제공한 데이터(CCFT)를 그대로 신고하므로, **CCFT의 정확도가 곧 고객 ESG 보고의 정확도**가 된다. 시험에서 "ESG 보고·Scope 3·탄소 측정"이 보이면 CCFT가 정답 신호다.
 
-> 🔍 **더 깊이**: **Embodied Carbon(내재 탄소)**은 Sustainability의 미묘한 개념이다. 서버의 탄소 발자국은 운영 중 전력(operational carbon)만이 아니라 **제조·운반·폐기에 들어간 탄소(embodied carbon)**도 포함한다. 그래서 "사용률 최대화"가 Sustainability 원칙인 이유가 명확해진다 — 이미 만들어진 하드웨어(embodied carbon은 이미 발생)를 놀리면 그 내재 탄소가 낭비된다. 100대를 30%씩 쓰는 것보다 30대를 100%씩 쓰는 게 내재 탄소·전력 모두에서 낫다. 이것이 EKS Bin Packing(인스턴스에 파드를 빽빽이 채워 노드 수 최소화), Fargate, 서버리스가 Sustainability 점수를 올리는 근거다.
+**Embodied Carbon(내재 탄소)**은 Sustainability의 미묘한 개념이다. 서버의 탄소 발자국은 운영 중 전력(operational carbon)만이 아니라 **제조·운반·폐기에 들어간 탄소(embodied carbon)**도 포함한다. 그래서 "사용률 최대화"가 Sustainability 원칙인 이유가 명확해진다 — 이미 만들어진 하드웨어(embodied carbon은 이미 발생)를 놀리면 그 내재 탄소가 낭비된다. 100대를 30%씩 쓰는 것보다 30대를 100%씩 쓰는 게 내재 탄소·전력 모두에서 낫다. 이것이 EKS Bin Packing(인스턴스에 파드를 빽빽이 채워 노드 수 최소화), Fargate, 서버리스가 Sustainability 점수를 올리는 근거다.
 
-> 📚 **사례**: 2019년 한 글로벌 미디어 기업이 비용 절감을 위해 야간·주말에 트래픽이 거의 없는 개발·스테이징 환경을 24시간 켜두던 관행을 바꿔, **Instance Scheduler(Lambda + EventBridge)**로 업무 시간 외 자동 종료를 도입했다. 결과적으로 비개발 환경 비용이 약 60% 줄었고, 같은 양의 컴퓨팅을 켜두지 않으니 탄소 배출도 비례해 감소했다. 교훈은 "유휴 자원은 비용과 탄소를 동시에 낭비한다"는 Sustainability·Cost 일치 원칙의 전형이다. 반대로, 이 회사가 production DR 환경까지 야간 종료했다면 RTO를 망쳐 Reliability를 희생했을 것이다 — 어느 환경에 적용할지가 trade-off 판단의 핵심이었다.
+2019년 한 글로벌 미디어 기업이 비용 절감을 위해 야간·주말에 트래픽이 거의 없는 개발·스테이징 환경을 24시간 켜두던 관행을 바꿔, **Instance Scheduler(Lambda + EventBridge)**로 업무 시간 외 자동 종료를 도입했다. 결과적으로 비개발 환경 비용이 약 60% 줄었고, 같은 양의 컴퓨팅을 켜두지 않으니 탄소 배출도 비례해 감소했다. 교훈은 "유휴 자원은 비용과 탄소를 동시에 낭비한다"는 Sustainability·Cost 일치 원칙의 전형이다. 반대로, 이 회사가 production DR 환경까지 야간 종료했다면 RTO를 망쳐 Reliability를 희생했을 것이다 — 어느 환경에 적용할지가 trade-off 판단의 핵심이었다.
 
 > ⚠️ **함정**: "재생에너지 리전으로 이전"이 보이면 Sustainability는 개선되지만 **Cost와 무관하거나 오히려 악화**될 수 있다. 리전마다 서비스 단가가 다르고, 사용자에서 먼 리전으로 옮기면 지연(Performance)과 데이터 전송 비용이 늘 수 있다. 시험에서 "탄소만 줄이면 됨"이면 재생에너지 리전이 정답이지만, "비용도 동시에"라면 Graviton·유휴 제거처럼 두 기둥이 함께 개선되는 액션을 골라야 한다. 리전 이전은 탄소 전용 카드다.
 
@@ -74,19 +74,19 @@ Cost와 Sustainability는 대개 같은 방향이지만, Pro 시험은 일치하
 
 > 🎯 **시나리오**: "한 회사가 비용과 탄소 배출을 동시에 줄이라는 경영진 지시를 받았다. 현재 x86 EC2에서 웹·앱 워크로드를 운영 중이다. 가장 효과적인 단일 액션은?" — 답: **Graviton(ARM) 전환**. Graviton은 ARM Neoverse 기반으로 동급 x86 대비 가격·전력 모두 우위(가격 성능비 최대 40% 개선, 전력 대폭 절감)다. 한 번의 전환으로 Cost·Sustainability 두 기둥을 동시에 만족하는 것이 Pro 정답의 전형이다. 다만 ARM 호환 빌드가 필요하므로 컴파일 언어·컨테이너 워크로드에 우선 적용한다. "비용·환경 동시 개선"은 거의 항상 Graviton이 정답 신호다.
 
-> 🔍 **더 깊이**: Graviton의 전력 우위는 **명령어 집합 아키텍처(ISA)**의 차이에서 온다. x86은 CISC(복잡 명령어)로 한 명령이 많은 일을 하지만 디코딩·실행 회로가 복잡해 전력을 더 먹는다. ARM은 RISC(축소 명령어)로 단순 명령을 빠르게 처리해 와트당 성능(performance per watt)이 높다 — 원래 모바일·임베디드용으로 전력 효율이 설계 목표였다. AWS는 이 ARM 코어(Neoverse)를 직접 칩으로 만들어(Graviton2/3/4) 데이터센터에 넣었다. 같은 사상의 특화 칩이 ML용 **Inferentia**(추론)·**Trainium**(학습)으로, GPU 대비 와트당 성능·비용을 개선한다. 시험에서 "추론 비용·전력 절감"은 Inferentia, "대규모 학습 비용 절감"은 Trainium이 정답 신호다.
+Graviton의 전력 우위는 **명령어 집합 아키텍처(ISA)**의 차이에서 온다. x86은 CISC(복잡 명령어)로 한 명령이 많은 일을 하지만 디코딩·실행 회로가 복잡해 전력을 더 먹는다. ARM은 RISC(축소 명령어)로 단순 명령을 빠르게 처리해 와트당 성능(performance per watt)이 높다 — 원래 모바일·임베디드용으로 전력 효율이 설계 목표였다. AWS는 이 ARM 코어(Neoverse)를 직접 칩으로 만들어(Graviton2/3/4) 데이터센터에 넣었다. 같은 사상의 특화 칩이 ML용 **Inferentia**(추론)·**Trainium**(학습)으로, GPU 대비 와트당 성능·비용을 개선한다. 시험에서 "추론 비용·전력 절감"은 Inferentia, "대규모 학습 비용 절감"은 Trainium이 정답 신호다.
 
-> 💡 **관련 이론**: Spot Instance의 경제학은 **2차 시장(secondary market)**과 같다. AWS는 약정·온디맨드로 안 팔린 여유 용량을 경매로 풀어 가동률을 높이고(공급자 이익), 고객은 회수 위험을 떠안는 대가로 최대 90% 할인을 받는다(수요자 이익). 핵심 제약은 **2분 전 회수 통보**이므로, stateless·체크포인트 가능·재실행 가능 워크로드(배치·CI/CD·렌더링·분산 학습)에만 적합하다. Sustainability 관점에서도 Spot은 유휴 용량을 활용하므로 "이미 켜진 자원의 사용률 최대화"라는 원칙과 일치한다. 시험에서 "중단 허용 + 최대 비용 절감"은 Spot/Fargate Spot이 직답이다.
+Spot Instance의 경제학은 **2차 시장(secondary market)**과 같다. AWS는 약정·온디맨드로 안 팔린 여유 용량을 경매로 풀어 가동률을 높이고(공급자 이익), 고객은 회수 위험을 떠안는 대가로 최대 90% 할인을 받는다(수요자 이익). 핵심 제약은 **2분 전 회수 통보**이므로, stateless·체크포인트 가능·재실행 가능 워크로드(배치·CI/CD·렌더링·분산 학습)에만 적합하다. Sustainability 관점에서도 Spot은 유휴 용량을 활용하므로 "이미 켜진 자원의 사용률 최대화"라는 원칙과 일치한다. 시험에서 "중단 허용 + 최대 비용 절감"은 Spot/Fargate Spot이 직답이다.
 
 ## 멀티 계정 비용 — 통합 결제와 BillingConductor
 
 Organization 통합 결제는 비용 측면에서 두 가지를 준다: **(1) SP/RI 공유**(한 계정에서 산 약정이 전 계정에 적용), **(2) 볼륨 티어 할인**(사용량을 합산해 더 높은 할인 구간 진입). 계정을 비용 분리 목적으로 나누되 할인은 공유하는 것이 멀티 계정 비용 설계의 핵심이다. 부서별로 마진·할인을 다르게 재배분(쇼백/차지백)하려면 **AWS BillingConductor**로 커스텀 청구 그룹·요율을 설정한다.
 
-## 정리하며
+## 정리
 
 Cost Optimization은 총액이 아니라 단위 경제학(요청당·사용자당 비용)으로 측정하며, 소비 모델·약정 할인·Spot·유휴 제거·스토리지 계층화·데이터 전송 절감(VPC Endpoint·CloudFront)으로 구현한다. Sustainability는 같은 사고를 탄소로 옮겨 "유용한 작업당 탄소"를 줄이며, 유휴 0·Graviton·재생에너지 리전·CCFT로 측정·개선한다. 두 기둥은 대개 일치하지만(Graviton·유휴 제거), HPC Lustre처럼 trade-off가 생기는 경우를 구분해야 한다. CCFT는 EU CSRD의 Scope 3 보고와 직결돼 규제 가치를 가진다.
 
-SAP 시험 단골 매핑: (1) "비용·전력·탄소 동시 절감, 동급 성능" → **Graviton 전환**, (2) "탄소 배출 측정·ESG/Scope 3 보고" → **CCFT**, (3) "콜드 데이터 자동 저비용·저탄소" → **S3 Lifecycle/Intelligent-Tiering**, (4) "예측 못 한 갑작스러운 비용 급증 탐지" → **Cost Anomaly Detection**(Budgets 아님), (5) "팀·기능별 비용 귀속" → **Cost Allocation Tag/Cost Categories**, (6) "NAT 데이터 처리 비용 절감" → **VPC Endpoint**, (7) "멀티 계정 SP/RI 공유 + 볼륨 할인" → **Organizations 통합 결제**, (8) "부서별 커스텀 청구·차지백" → **BillingConductor**, (9) "유휴 0 + 중단 허용 컴퓨팅" → **Fargate Spot/서버리스**. 다음 day는 6 기둥을 한 시나리오로 통합하는 종합 복습이다.
+SAP 시험 매핑: (1) "비용·전력·탄소 동시 절감, 동급 성능" → **Graviton 전환**, (2) "탄소 배출 측정·ESG/Scope 3 보고" → **CCFT**, (3) "콜드 데이터 자동 저비용·저탄소" → **S3 Lifecycle/Intelligent-Tiering**, (4) "예측 못 한 갑작스러운 비용 급증 탐지" → **Cost Anomaly Detection**(Budgets 아님), (5) "팀·기능별 비용 귀속" → **Cost Allocation Tag/Cost Categories**, (6) "NAT 데이터 처리 비용 절감" → **VPC Endpoint**, (7) "멀티 계정 SP/RI 공유 + 볼륨 할인" → **Organizations 통합 결제**, (8) "부서별 커스텀 청구·차지백" → **BillingConductor**, (9) "유휴 0 + 중단 허용 컴퓨팅" → **Fargate Spot/서버리스**. 다음 day는 6 기둥을 한 시나리오로 통합하는 종합 복습이다.
 
 ---
 

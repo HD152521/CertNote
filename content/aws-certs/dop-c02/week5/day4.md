@@ -4,7 +4,7 @@
 
 오늘은 V2의 동적 파이프라인 기능이 왜 그렇게 설계됐는지, 그리고 어떤 상황에서 어떤 기능을 쓰는지를 구체적인 시나리오와 함께 본다.
 
-> 💡 **관련 이론**: V1에서 V2로의 전환은 단순한 기능 추가가 아니라 설계 철학의 전환이다. V1 파이프라인은 "고정된 워크플로"—같은 코드, 같은 환경, 같은 방식으로 실행된다. V2는 "매개변수화된 워크플로"—같은 파이프라인 정의를 다른 입력값으로 실행할 수 있다. 이 차이는 소프트웨어 설계의 **Template Method Pattern**과 유사하다. V1이 구체 클래스(Concrete Class)라면, V2는 추상 클래스(Abstract Class)에 해당한다—변수를 주입받아 다양한 동작을 표현한다. 이 방향은 Infrastructure as Code의 진화 방향과 일치한다: Terraform의 `variable`, Helm의 `values.yaml`, CDK의 `Props` 모두 같은 철학이다.
+> V1에서 V2로의 전환은 단순한 기능 추가가 아니라 설계 철학의 전환이다. V1 파이프라인은 "고정된 워크플로"—같은 코드, 같은 환경, 같은 방식으로 실행된다. V2는 "매개변수화된 워크플로"—같은 파이프라인 정의를 다른 입력값으로 실행할 수 있다. 이 차이는 소프트웨어 설계의 **Template Method Pattern**과 유사하다. V1이 구체 클래스(Concrete Class)라면, V2는 추상 클래스(Abstract Class)에 해당한다—변수를 주입받아 다양한 동작을 표현한다. 이 방향은 Infrastructure as Code의 진화 방향과 일치한다: Terraform의 `variable`, Helm의 `values.yaml`, CDK의 `Props` 모두 같은 철학이다.
 
 ## V2 변수 시스템: 파이프라인을 매개변수화하기
 
@@ -110,7 +110,7 @@ Deploy Action에서 변수 참조:
 }
 ```
 
-> 💡 **관련 이론**: V2 변수 시스템은 **데이터 바인딩(Data Binding)** 패턴이다. 선언적(Declarative) 프로그래밍에서 "변수 X는 나중에 결정될 값"을 표현하는 방식과 같다. Terraform의 `var.environment`, Helm의 `{{ .Values.image.tag }}`, CloudFormation의 `!Ref` 파라미터와 동일한 개념이다. 차이는 CodePipeline 변수가 파이프라인 실행 시간(runtime)에 결정된다는 점—각 실행이 독립적인 변수 값을 갖는다. 특히 Action Output Variables는 파이프라인 내부의 데이터 흐름을 명시적으로 표현한다. "빌드가 만든 IMAGE_TAG를 배포가 사용한다"는 의존 관계가 코드에서 명확하게 보인다. 이것이 "동적 파이프라인(Dynamic Pipeline)"이라는 표현의 의미다.
+> V2 변수 시스템은 **데이터 바인딩(Data Binding)** 패턴이다. 선언적(Declarative) 프로그래밍에서 "변수 X는 나중에 결정될 값"을 표현하는 방식과 같다. Terraform의 `var.environment`, Helm의 `{{ .Values.image.tag }}`, CloudFormation의 `!Ref` 파라미터와 동일한 개념이다. 차이는 CodePipeline 변수가 파이프라인 실행 시간(runtime)에 결정된다는 점—각 실행이 독립적인 변수 값을 갖는다. 특히 Action Output Variables는 파이프라인 내부의 데이터 흐름을 명시적으로 표현한다. "빌드가 만든 IMAGE_TAG를 배포가 사용한다"는 의존 관계가 코드에서 명확하게 보인다. 이것이 "동적 파이프라인(Dynamic Pipeline)"이라는 표현의 의미다.
 
 > ⚠️ **함정**: `allowedPattern`이 있는 변수에 패턴에 맞지 않는 값을 주입하면 실행 시작 시 즉시 실패한다. `^(staging|prod)$`로 설정된 Environment 변수에 `"production"`을 넣으면 실행이 시작되지 않는다. 또한 Action Output Variables의 Namespace는 Action 설정의 `namespace` 필드에서 정의하고, 이 이름이 `#{Namespace.VARIABLE}` 형식에서 사용된다. 기본 Namespace를 사용하면 Action 이름이 Namespace가 되지 않으므로 명시적으로 Namespace를 설정하는 것이 좋다.
 
@@ -194,9 +194,9 @@ checkout-pipeline 트리거 설정:
 
 `shared/lib/`가 변경되면 네 개의 서비스 파이프라인이 동시에 시작된다. 각 파이프라인이 독립적이므로 서로 영향 없이 병렬로 실행된다.
 
-> 🔍 **더 깊이**: 트리거 필터의 내부 구현은 git의 `diff --name-only`와 유사하다. Push 이벤트에서 변경된 파일 목록을 필터 패턴과 glob matching한다. AWS 내부적으로 EventBridge Pipes가 GitHub Webhook → EventBridge Event → 필터 평가 → 파이프라인 시작의 체인을 처리한다. 주의사항: merge commit은 실제로 변경된 파일이 많더라도 merge commit 자체의 변경은 merge된 브랜치의 전체 diff를 포함한다. 따라서 하나의 PR merge가 예상보다 많은 파이프라인을 트리거할 수 있다. `filePaths.excludes`는 `includes`와 AND가 아니라 subtract 관계다—includes에 매칭된 파일에서 excludes 패턴을 제거한 파일이 남아있을 때 트리거된다. 둘 다 빈 집합이면 트리거되지 않는다.
+> 트리거 필터의 내부 구현은 git의 `diff --name-only`와 유사하다. Push 이벤트에서 변경된 파일 목록을 필터 패턴과 glob matching한다. AWS 내부적으로 EventBridge Pipes가 GitHub Webhook → EventBridge Event → 필터 평가 → 파이프라인 시작의 체인을 처리한다. 주의사항: merge commit은 실제로 변경된 파일이 많더라도 merge commit 자체의 변경은 merge된 브랜치의 전체 diff를 포함한다. 따라서 하나의 PR merge가 예상보다 많은 파이프라인을 트리거할 수 있다. `filePaths.excludes`는 `includes`와 AND가 아니라 subtract 관계다—includes에 매칭된 파일에서 excludes 패턴을 제거한 파일이 남아있을 때 트리거된다. 둘 다 빈 집합이면 트리거되지 않는다.
 
-> 💡 **관련 이론**: 모노레포 트리거 필터는 **이벤트 필터링(Event Filtering)** 패턴의 구현이다. 이벤트 소스(git push)에서 모든 이벤트가 발행되지만, 소비자(파이프라인)는 자신에게 관련된 이벤트만 처리한다. 이것은 Pub/Sub 패턴에서 Topic 기반 필터링(여기서는 브랜치/파일 경로)과 동일한 원리다. EventBridge의 Event Pattern이 이 필터링을 담당한다—CodeStarSourceConnection이 push 이벤트를 EventBridge에 발행하고, 각 파이프라인 트리거가 자신의 필터 패턴으로 이벤트를 선별한다. 이 설계 덕분에 파이프라인이 추가/제거될 때 저장소 구성을 변경할 필요 없이 파이프라인 측 필터만 변경하면 된다.
+> 모노레포 트리거 필터는 **이벤트 필터링(Event Filtering)** 패턴의 구현이다. 이벤트 소스(git push)에서 모든 이벤트가 발행되지만, 소비자(파이프라인)는 자신에게 관련된 이벤트만 처리한다. 이것은 Pub/Sub 패턴에서 Topic 기반 필터링(여기서는 브랜치/파일 경로)과 동일한 원리다. EventBridge의 Event Pattern이 이 필터링을 담당한다—CodeStarSourceConnection이 push 이벤트를 EventBridge에 발행하고, 각 파이프라인 트리거가 자신의 필터 패턴으로 이벤트를 선별한다. 이 설계 덕분에 파이프라인이 추가/제거될 때 저장소 구성을 변경할 필요 없이 파이프라인 측 필터만 변경하면 된다.
 
 ## Execution Mode: 동시성 제어의 세 가지 철학
 
@@ -269,7 +269,7 @@ CheckIfLatestExecution Lambda가 "이 실행이 현재 파이프라인의 마지
 
 > ⚠️ **함정**: PARALLEL Execution Mode를 프로덕션 배포 파이프라인에 적용하면 두 실행이 동시에 같은 ECS Service나 CloudFormation Stack을 수정하려 할 수 있다. CloudFormation은 동시 업데이트를 허용하지 않아서 두 번째 실행이 "UPDATE_IN_PROGRESS: Another update is in progress" 오류로 실패한다. PARALLEL은 각 실행이 독립된 대상(예: 각 PR이 별도 네임스페이스의 ECS Service)에 배포할 때만 안전하다. 공유 리소스가 있는 prod 배포에는 QUEUED나 SUPERSEDED를 사용해야 한다. PR 환경 배포에 PARALLEL을 쓸 때는 파이프라인 변수(`#{variables.PRNumber}`)를 스택 이름에 포함시켜 각 PR이 독립된 스택을 갖도록 해야 한다.
 
-> 📚 **사례**: Shopify의 Execution Mode 전략. Shopify는 수천 개의 마이크로서비스를 운영하면서 서비스 유형별로 다른 Execution Mode를 적용한다. 결제 서비스(Payment)는 QUEUED—모든 commit의 배포 이력을 감사 목적으로 보존해야 하기 때문. 프론트엔드 서비스는 SUPERSEDED—마지막 commit만 중요하고, 이전 commit의 배포가 새 commit의 배포를 지연시키면 안 되기 때문. 테스트 환경은 PARALLEL—각 PR이 독립 환경에서 테스트되어야 하기 때문. "어떤 Execution Mode를 선택하는가"는 서비스의 비즈니스 요구사항(감사 추적 vs 배포 속도 vs 격리)을 반영하는 아키텍처 결정이다.
+> Shopify의 Execution Mode 전략. Shopify는 수천 개의 마이크로서비스를 운영하면서 서비스 유형별로 다른 Execution Mode를 적용한다. 결제 서비스(Payment)는 QUEUED—모든 commit의 배포 이력을 감사 목적으로 보존해야 하기 때문. 프론트엔드 서비스는 SUPERSEDED—마지막 commit만 중요하고, 이전 commit의 배포가 새 commit의 배포를 지연시키면 안 되기 때문. 테스트 환경은 PARALLEL—각 PR이 독립 환경에서 테스트되어야 하기 때문. "어떤 Execution Mode를 선택하는가"는 서비스의 비즈니스 요구사항(감사 추적 vs 배포 속도 vs 격리)을 반영하는 아키텍처 결정이다.
 
 ## Stage 조건 (beforeEntry/success/failure): 자동 게이트
 
@@ -346,9 +346,9 @@ CloudWatch Alarm Rule Provider를 사용하면 Lambda 없이 직접 알람 상�
 
 `WaitTime: 300`은 5분 동안 알람이 OK 상태를 유지하면 게이트 통과. 알람이 ALARM 상태이거나 5분 내에 OK가 되지 않으면 실패.
 
-> 💡 **관련 이론**: Stage 조건은 **Circuit Breaker 패턴**의 파이프라인 레벨 구현이다. Circuit Breaker는 Martin Fowler가 정리한 마이크로서비스 패턴으로, "시스템이 불안정한 상태일 때 추가적인 요청을 차단해 상황을 악화시키지 않는다"는 원칙이다. CloudWatch Alarm이 ALARM 상태(에러율 급증)일 때 `beforeEntry` 조건이 배포를 차단하는 것이 Circuit Breaker의 "OPEN" 상태와 정확히 일치한다. 현재 시스템이 문제가 있는데 새 버전을 배포하면 문제가 악화될 수 있다—Circuit Breaker는 이 상황을 자동으로 막는다. WaitTime이 Circuit Breaker의 "Half-Open" 상태 타임아웃과 유사하다.
+> Stage 조건은 **Circuit Breaker 패턴**의 파이프라인 레벨 구현이다. Circuit Breaker는 Martin Fowler가 정리한 마이크로서비스 패턴으로, "시스템이 불안정한 상태일 때 추가적인 요청을 차단해 상황을 악화시키지 않는다"는 원칙이다. CloudWatch Alarm이 ALARM 상태(에러율 급증)일 때 `beforeEntry` 조건이 배포를 차단하는 것이 Circuit Breaker의 "OPEN" 상태와 정확히 일치한다. 현재 시스템이 문제가 있는데 새 버전을 배포하면 문제가 악화될 수 있다—Circuit Breaker는 이 상황을 자동으로 막는다. WaitTime이 Circuit Breaker의 "Half-Open" 상태 타임아웃과 유사하다.
 
-> 📚 **사례**: Stripe의 Safe Deploy 패턴(2023 AWS re:Invent 발표). Stripe는 결제 서비스의 특성상 배포 실패가 직접적인 매출 손실로 이어진다. 이를 방지하기 위해 모든 prod 배포에 4단계 자동 게이트를 도입했다. (1) beforeEntry: 현재 에러율 < 0.1%, (2) 배포 완료 1분 후: 에러율 여전히 < 0.1%, (3) 배포 완료 5분 후: 에러율 < 0.1% + P99 레이턴시 기준선 이하, (4) 배포 완료 30분 후: 모든 CloudWatch 알람 OK. 어느 게이트에서든 실패하면 자동 롤백. 이 자동화로 배포 관련 사고가 70% 감소했다고 발표했다. 핵심은 "사람이 판단하는 시간 없이 자동으로"—배포 후 문제가 생기면 30초 이내 자동 롤백이 완료된다.
+> Stripe의 Safe Deploy 패턴(2023 AWS re:Invent 발표). Stripe는 결제 서비스의 특성상 배포 실패가 직접적인 매출 손실로 이어진다. 이를 방지하기 위해 모든 prod 배포에 4단계 자동 게이트를 도입했다. (1) beforeEntry: 현재 에러율 < 0.1%, (2) 배포 완료 1분 후: 에러율 여전히 < 0.1%, (3) 배포 완료 5분 후: 에러율 < 0.1% + P99 지연 시간 기준선 이하, (4) 배포 완료 30분 후: 모든 CloudWatch 알람 OK. 어느 게이트에서든 실패하면 자동 롤백. 이 자동화로 배포 관련 사고가 70% 감소했다고 발표했다. 핵심은 "사람이 판단하는 시간 없이 자동으로"—배포 후 문제가 생기면 30초 이내 자동 롤백이 완료된다.
 
 ## CDK Pipelines: 파이프라인 자체가 코드가 되는 방식
 
@@ -434,9 +434,9 @@ Self-mutating의 동작 원리:
 
 이 덕분에 파이프라인 구조 자체도 git으로 관리되고, PR로 리뷰받을 수 있다. 파이프라인 변경이 code review 없이 콘솔에서 직접 이루어지던 문제가 해결된다.
 
-> 💡 **관련 이론**: CDK Pipelines의 self-mutating은 **부트스트랩 문제(Bootstrap Problem)**의 우아한 해결책이다. "파이프라인 자체를 파이프라인으로 배포하려면, 처음에는 파이프라인이 없는데 어떻게 하나?" 1회성 수동 배포(`cdk deploy PipelineStack`)로 파이프라인을 처음 만들고, 이후부터는 파이프라인이 스스로를 업데이트한다. 이것은 컴파일러가 자기 자신으로 컴파일되는 **Self-hosting Compiler** 개념과 유사하다. CDK의 `crossAccountKeys: true`는 Cross-Account 배포를 위해 CMK를 자동 생성하고, `Wave`는 여러 Stage를 병렬로 배포하는 논리적 그룹이다. CDK에서 CodePipeline V2 타입을 사용하면 V2의 변수 시스템과 트리거 필터도 TypeScript로 정의할 수 있다.
+> CDK Pipelines의 self-mutating은 **부트스트랩 문제(Bootstrap Problem)**의 우아한 해결책이다. "파이프라인 자체를 파이프라인으로 배포하려면, 처음에는 파이프라인이 없는데 어떻게 하나?" 1회성 수동 배포(`cdk deploy PipelineStack`)로 파이프라인을 처음 만들고, 이후부터는 파이프라인이 스스로를 업데이트한다. 이것은 컴파일러가 자기 자신으로 컴파일되는 **Self-hosting Compiler** 개념과 유사하다. CDK의 `crossAccountKeys: true`는 Cross-Account 배포를 위해 CMK를 자동 생성하고, `Wave`는 여러 Stage를 병렬로 배포하는 논리적 그룹이다. CDK에서 CodePipeline V2 타입을 사용하면 V2의 변수 시스템과 트리거 필터도 TypeScript로 정의할 수 있다.
 
-> 🔍 **더 깊이**: CDK Pipelines의 `crossAccountKeys: true`가 생성하는 것. 이 옵션이 활성화되면 CDK가 자동으로 KMS CMK를 생성하고, 각 Spoke 계정의 크로스 계정 역할이 이 키를 사용해 Artifact를 복호화할 수 있도록 KMS Key Policy를 설정한다. Day 2에서 수동으로 구성했던 4종 권한 체인(Pipeline Service Role, Trust Policy, S3 Bucket Policy, KMS Key Policy)을 CDK Pipelines가 자동으로 처리한다. 이것이 CDK Pipelines를 Cross-Account 배포의 표준으로 선택하는 이유 중 하나다—IAM 설정 실수를 코드 레벨에서 방지한다.
+> CDK Pipelines의 `crossAccountKeys: true`가 생성하는 것. 이 옵션이 활성화되면 CDK가 자동으로 KMS CMK를 생성하고, 각 Spoke 계정의 크로스 계정 역할이 이 키를 사용해 Artifact를 복호화할 수 있도록 KMS Key Policy를 설정한다. Day 2에서 수동으로 구성했던 4종 권한 체인(Pipeline Service Role, Trust Policy, S3 Bucket Policy, KMS Key Policy)을 CDK Pipelines가 자동으로 처리한다. 이것이 CDK Pipelines를 Cross-Account 배포의 표준으로 선택하는 이유 중 하나다—IAM 설정 실수를 코드 레벨에서 방지한다.
 
 ## EventBridge Pipes: 비표준 트리거 처리
 
@@ -486,11 +486,11 @@ V2 파이프라인이 강력해졌지만 여전히 한계가 있다. 시험에�
 
 현실적인 권장 패턴: **PR 빌드/테스트는 GitHub Actions, Prod 배포는 CodePipeline.** GitHub Actions로 빌드하고 ECR에 이미지를 푸시하면, ECR 이벤트가 CodePipeline을 트리거해서 Prod 배포를 진행한다.
 
-> 🎯 **시나리오**: 한 팀이 100개의 마이크로서비스를 단일 모노레포에서 관리한다. 각 서비스는 별도 ECS 클러스터에 배포된다. 요구사항: (1) 각 서비스 디렉토리 변경만 해당 서비스 파이프라인 트리거, (2) PR 생성 시 임시 스테이징 환경 자동 배포, (3) main 머지 시 자동 prod 배포, (4) prod 배포 전 CloudWatch 알람 자동 확인. 해법: (1) V2 filePaths 필터로 서비스별 트리거 분리, (2) GitHub Actions로 PR 환경 배포(CodePipeline보다 PR 통합이 자연스러움), (3) main 브랜치 트리거 V2 파이프라인, (4) beforeEntry CloudWatch Alarm Rule로 배포 전 자동 게이트. 이 조합이 각 도구의 강점을 활용하는 현실적인 아키텍처다.
+> 🎯 **시나리오**: 한 팀이 100개의 마이크로서비스를 단일 모노레포에서 관리한다. 각 서비스는 별도 ECS 클러스터에 배포된다. 요구사항: (1) 각 서비스 디렉터리 변경만 해당 서비스 파이프라인 트리거, (2) PR 생성 시 임시 스테이징 환경 자동 배포, (3) main 머지 시 자동 prod 배포, (4) prod 배포 전 CloudWatch 알람 자동 확인. 해법: (1) V2 filePaths 필터로 서비스별 트리거 분리, (2) GitHub Actions로 PR 환경 배포(CodePipeline보다 PR 통합이 자연스러움), (3) main 브랜치 트리거 V2 파이프라인, (4) beforeEntry CloudWatch Alarm Rule로 배포 전 자동 게이트. 이 조합이 각 도구의 강점을 활용하는 현실적인 아키텍처다.
 
 > 🎯 **시나리오**: 결제 서비스 팀이 "배포 프리즈(freeze)" 정책을 자동화하고 싶다. 매년 11월 25-28일(블랙프라이데이) 동안 배포를 자동으로 차단하고, 11월 29일 0시에 자동 해제해야 한다. Manual Approval만으로는 실수로 승인할 수 있다. 해결책: EventBridge Scheduler로 두 가지 시간 기반 작업을 예약한다. (1) 11월 25일 0시: Lambda 함수 실행 → `disable-stage-transition` API 호출로 Deploy Stage 전환을 차단. (2) 11월 29일 0시: 다른 Lambda → `enable-stage-transition` API 호출로 재활성화. 파이프라인이 실행되어도 Deploy Stage로 진입하지 못해서 실수로 승인이 불가능하다. V2의 Stage 조건에 날짜 기반 Lambda Rule을 추가하는 방법도 있지만 Scheduler 기반이 더 명확하다.
 
-## 정리하며
+## 정리
 
 V2 파이프라인의 세 가지 핵심 기능은 각각 다른 문제를 해결한다. **변수 시스템**은 동일 파이프라인을 여러 환경에 재사용하는 매개변수화를 가능하게 한다. **트리거 필터**는 모노레포에서 서비스별 파이프라인 독립 실행을 지원한다. **Execution Mode**는 동시 실행의 충돌(SUPERSEDED), 완전한 이력 보존(QUEUED), PR별 독립 환경(PARALLEL) 중 요구에 맞는 것을 선택하게 한다.
 

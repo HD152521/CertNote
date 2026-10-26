@@ -46,8 +46,6 @@ def lambda_handler(event, context):
     }
 ```
 
-> 💡 **관련 이론**: Lambda의 "한 환경에서 한 번에 하나의 요청만" 처리한다는 규칙은 **공유 상태 없는 함수형 프로그래밍**과 같다. Pure function은 동일 입력에 동일 출력을 반환하며 사이드 이펙트가 없다. 하지만 Lambda는 글로벌 변수로 상태를 캐싱한다 — 이건 의도적으로 허용된 최적화다. 핵심은 같은 환경의 다음 호출에서 그 상태가 보이지만, 다른 환경(다른 MicroVM)에서는 전혀 보이지 않는다는 점이다. 분산 시스템 설계 원칙에서는 이를 "지역 캐싱(local cache)"이라고 부른다.
-
 ## 콜드 스타트의 해부: 무엇이 얼마나 걸리는가
 
 콜드 스타트 지연은 세 구간으로 나눌 수 있다.
@@ -67,13 +65,13 @@ def lambda_handler(event, context):
 | Go 1.x | 50–150ms | 30–100ms |
 | .NET 8 | 300–800ms | 200–500ms |
 
-> 💡 **관련 이론**: SnapStart는 Java에서 **체크포인팅(checkpointing)** 아이디어를 구현한 것이다. CRIU(Checkpoint/Restore In Userspace)라는 Linux 기술을 참고했는데, 프로세스의 메모리 상태를 스냅샷 찍어두고 나중에 복원하는 방식이다. Lambda SnapStart는 버전 발행 시점에 JVM이 완전히 초기화된 상태를 S3에 스냅샷으로 저장한다. 이후 호출 시 MicroVM이 그 스냅샷을 그대로 복원하므로 JVM 부팅과 코드 INIT을 건너뛴다. 단, 스냅샷 복원 시 현재 시간, 랜덤 시드, 환경별 자격증명 같은 것들은 재초기화가 필요하다. `CRaC`(Coordinated Restore at Checkpoint) API로 이 시점에 훅을 걸 수 있다.
+SnapStart는 Java에서 **체크포인팅(checkpointing)** 아이디어를 구현한 것이다. CRIU(Checkpoint/Restore In Userspace)라는 Linux 기술을 참고했는데, 프로세스의 메모리 상태를 스냅샷 찍어두고 나중에 복원하는 방식이다. Lambda SnapStart는 버전 발행 시점에 JVM이 완전히 초기화된 상태를 S3에 스냅샷으로 저장한다. 이후 호출 시 MicroVM이 그 스냅샷을 그대로 복원하므로 JVM 부팅과 코드 INIT을 건너뛴다. 단, 스냅샷 복원 시 현재 시간, 랜덤 시드, 환경별 자격증명 같은 것들은 재초기화가 필요하다. `CRaC`(Coordinated Restore at Checkpoint) API로 이 시점에 훅을 걸 수 있다.
 
 > ⚠️ **함정**: SnapStart는 **버전을 발행해야 활성화**된다. `$LATEST`에서는 동작하지 않는다. 따라서 Lambda 별칭과 함께 사용해야 하고, CodeDeploy 트래픽 시프트도 함께 설정하는 것이 일반적이다.
 
 ## Provisioned Concurrency vs Reserved Concurrency: 완전히 다른 목적
 
-두 개념을 헷갈리는 것이 시험 실패의 가장 흔한 원인이다.
+두 개념은 헷갈리기 쉽다.
 
 **Reserved Concurrency**는 함수의 동시성 상한(ceiling)이자 하한(floor)이다. `put-function-concurrency --reserved-concurrent-executions 100`으로 설정하면 이 함수는 최대 100개의 MicroVM만 동시에 실행된다. 동시에, 계정 전체 동시성 풀에서 100개가 이 함수에 전용으로 예약되어 다른 함수가 쓸 수 없다. 0으로 설정하면 모든 호출이 즉시 ThrottlingException 429를 받는다 — 함수를 소프트 비활성화하는 방법이다. **Reserved는 비용이 없다.**
 
@@ -107,7 +105,7 @@ aws lambda put-provisioned-concurrency-config \
   --provisioned-concurrent-executions 20
 ```
 
-> 💡 **관련 이론**: Provisioned Concurrency는 자동 확장과도 연동된다. Application Auto Scaling의 **target tracking** 정책으로 `ProvisionedConcurrencyUtilization` 메트릭이 80%를 넘으면 자동으로 Provisioned Concurrency를 늘릴 수 있다. 예측 가능한 트래픽 패턴(오전 9시 spike)이 있다면 **scheduled scaling**으로 사전에 늘려놓는 패턴도 흔하다.
+Provisioned Concurrency는 자동 확장과도 연동된다. Application Auto Scaling의 **target tracking** 정책으로 `ProvisionedConcurrencyUtilization` 메트릭이 80%를 넘으면 자동으로 Provisioned Concurrency를 늘릴 수 있다. 예측 가능한 트래픽 패턴(오전 9시 spike)이 있다면 **scheduled scaling**으로 사전에 늘려놓는 패턴도 쓴다.
 
 ## Lambda 한도: 시험에 나오는 숫자들
 
@@ -130,7 +128,7 @@ aws lambda put-provisioned-concurrency-config \
 | 레이어 최대 개수 | 5개 | |
 | 레이어+코드 합계 | 250MB | 압축 해제 기준 |
 
-> 🔍 **더 깊이**: `1,769MB = 1 vCPU`라는 숫자는 Lambda 설계 시 정해진 비율이다. 256MB 함수는 약 0.145 vCPU를 받는다. 이 비율은 CPU-bound 작업에서 메모리를 늘리면 성능이 좋아지는 핵심 이유다. 비선형적이라 2배 메모리가 항상 2배 속도를 의미하지는 않지만, CPU 집약적 작업(이미지 처리, 암호화, JSON 직렬화)에서는 메모리 증가가 실행 시간을 줄여 GB-초 기준 비용이 오히려 낮아지는 경우가 있다.
+`1,769MB = 1 vCPU`라는 숫자는 Lambda 설계 시 정해진 비율이다. 256MB 함수는 약 0.145 vCPU를 받는다. 이 비율은 CPU-bound 작업에서 메모리를 늘리면 성능이 좋아지는 핵심 이유다. 비선형적이라 2배 메모리가 항상 2배 속도를 의미하지는 않지만, CPU 집약적 작업(이미지 처리, 암호화, JSON 직렬화)에서는 메모리 증가가 실행 시간을 줄여 GB-초 기준 비용이 오히려 낮아지는 경우가 있다.
 
 ## VPC Lambda와 Hyperplane ENI
 
@@ -151,7 +149,7 @@ aws lambda create-function \
   --memory-size 256
 ```
 
-> ⚠️ **함정**: VPC에 연결된 Lambda는 **인터넷에 직접 접근할 수 없다**. 퍼블릭 서브넷에 놓아도 마찬가지다 — Lambda는 ENI를 통해 VPC에 들어가지만, 공인 IP를 받지 않는다. 인터넷이 필요하면 NAT Gateway + 프라이빗 서브넷, 또는 VPC Endpoint(AWS 서비스용)가 필요하다. "Lambda가 Secrets Manager에 못 붙어요"라는 시나리오에서 VPC Lambda에 VPC Endpoint가 없는 경우가 흔한 함정이다.
+> ⚠️ **함정**: VPC에 연결된 Lambda는 **인터넷에 직접 접근할 수 없다**. 퍼블릭 서브넷에 놓아도 마찬가지다 — Lambda는 ENI를 통해 VPC에 들어가지만, 공인 IP를 받지 않는다. 인터넷이 필요하면 NAT Gateway + 프라이빗 서브넷, 또는 VPC Endpoint(AWS 서비스용)가 필요하다. "Lambda가 Secrets Manager에 못 붙어요"라는 시나리오에서 VPC Lambda에 VPC Endpoint가 없는 경우가 함정이 되기 쉽다.
 
 ## Lambda 권한 모델: 두 가지 정책
 
@@ -171,15 +169,13 @@ aws lambda add-permission \
   --source-arn "arn:aws:execute-api:ap-northeast-2:123456789:abc123/prod/*/orders"
 ```
 
-> 💡 **관련 이론**: 이 두 정책은 IAM의 **identity-based policy vs resource-based policy** 구분과 정확히 일치한다. Identity-based는 "나(주체)는 무엇을 할 수 있는가", resource-based는 "이 자원에 누가 접근할 수 있는가"다. 같은 이분법이 S3 버킷 정책, SQS 큐 정책, KMS 키 정책에도 적용된다.
-
 ## Lambda Extensions: 사이드카 패턴
 
 Lambda Extensions는 함수와 함께 실행되는 별도 프로세스다. **외부 확장**은 독립적인 프로세스로 실행되며, `/opt/extensions/` 경로에 바이너리를 넣으면 Lambda 서비스가 함수와 나란히 실행시킨다. **내부 확장**은 런타임 내부에서 실행되며, 언어별 래퍼 형태다.
 
-실무에서 가장 많이 쓰이는 것은 **AWS Parameters and Secrets Lambda Extension**이다. 이 확장은 함수 코드가 `localhost:2773`으로 HTTP 요청을 보내면 SSM Parameter Store나 Secrets Manager 값을 캐싱해서 반환한다. 함수가 매 호출마다 Secrets Manager API를 호출하면 비용이 발생하고 레이턴시가 늘지만, 확장이 TTL 기간 동안 캐시를 유지하므로 API 호출 횟수가 대폭 줄어든다.
+대표적인 것은 **AWS Parameters and Secrets Lambda Extension**이다. 이 확장은 함수 코드가 `localhost:2773`으로 HTTP 요청을 보내면 SSM Parameter Store나 Secrets Manager 값을 캐싱해서 반환한다. 함수가 매 호출마다 Secrets Manager API를 호출하면 비용이 발생하고 지연 시간이 늘지만, 확장이 TTL 기간 동안 캐시를 유지하므로 API 호출 횟수가 대폭 줄어든다.
 
-> 📚 **사례**: Datadog, Dynatrace, New Relic 같은 APM 벤더들이 Lambda Extension을 활용한다. 기존엔 Lambda 함수 코드 안에 SDK를 심어야 했지만, Extension을 통해 함수 코드를 수정하지 않고도 메트릭과 트레이스를 수집할 수 있다. AWS re:Invent 2020에서 공식 발표됐고, 이 패턴은 마이크로서비스의 사이드카 패턴(Envoy, Istio)과 철학적으로 동일하다.
+Datadog, Dynatrace, New Relic 같은 APM 벤더들이 Lambda Extension을 활용한다. 기존엔 Lambda 함수 코드 안에 SDK를 심어야 했지만, Extension을 통해 함수 코드를 수정하지 않고도 메트릭과 트레이스를 수집할 수 있다. AWS re:Invent 2020에서 공식 발표됐고, 이 패턴은 마이크로서비스의 사이드카 패턴(Envoy, Istio)과 철학적으로 동일하다.
 
 ## 다른 클라우드와 비교: FaaS 구현체의 차이
 
@@ -190,10 +186,10 @@ Lambda Extensions는 함수와 함께 실행되는 별도 프로세스다. **외
 | 최대 실행 시간 | 15분 | 60분 (HTTP), 9분 (이벤트) | 10분 (Consumption) |
 | 최대 메모리 | 10GB | 16GB | 14GB |
 | VPC 연동 | ✅ | ✅ | ✅ |
-| Snapshottng | SnapStart (Java) | 없음 | 없음 |
+| Snapshotting | SnapStart (Java) | 없음 | 없음 |
 | 가격 모델 | 요청 수 + GB-초 | 요청 수 + GHz-초 | 요청 수 + GB-초 |
 
-> 🔍 **더 깊이**: gVisor는 Google이 만든 컨테이너 샌드박스로, 앱과 Linux 커널 사이에 Go로 작성된 커널 에뮬레이션 레이어를 삽입한다. Firecracker가 실제 MicroVM(하드웨어 가상화)인 것과 달리, gVisor는 syscall 인터셉션이라 오버헤드가 다르다. Firecracker는 KVM을 사용하므로 CPU 집약적 작업에서 bare-metal에 더 가깝고, gVisor는 시스템 콜이 많은 I/O 집약적 작업에서 오버헤드가 커질 수 있다. 학술적으로는 2018 OSDI 논문 "gVisor: Reducing Security Overhead with OS-level Virtualization"이 참고 자료다.
+gVisor는 Google이 만든 컨테이너 샌드박스로, 앱과 Linux 커널 사이에 Go로 작성된 커널 에뮬레이션 레이어를 삽입한다. Firecracker가 실제 MicroVM(하드웨어 가상화)인 것과 달리, gVisor는 syscall 인터셉션이라 오버헤드가 다르다. Firecracker는 KVM을 사용하므로 CPU 집약적 작업에서 bare-metal에 더 가깝고, gVisor는 시스템 콜이 많은 I/O 집약적 작업에서 오버헤드가 커질 수 있다.
 
 ## Response Streaming: TTFB 최적화
 
@@ -239,9 +235,9 @@ GB-초/월 = 0.5 × 0.3 × 1,000,000 × 30 = 4,500,000 GB-초
 총계: 약 $74.33/월
 ```
 
-> 💡 **관련 이론**: Lambda의 GB-초 과금은 경제학적으로 **시간 기반 가격책정(time-based pricing)**의 변형이다. vCPU가 메모리에 비례하므로, 더 많은 CPU를 원하면 더 많은 메모리를 사야 한다. 이는 EC2의 인스턴스 타입 선택(c5 = 컴퓨팅 최적, r5 = 메모리 최적)과 다른 방식이다. AWS Power Tuning Tool을 사용하면 여러 메모리 설정에서 실행 시간과 비용을 자동으로 벤치마크해 최적 설정을 찾아준다.
+vCPU가 메모리에 비례하므로, 더 많은 CPU를 원하면 더 많은 메모리를 사야 한다. 이는 EC2의 인스턴스 타입 선택(c5 = 컴퓨팅 최적, r5 = 메모리 최적)과 다른 방식이다. AWS Power Tuning Tool을 사용하면 여러 메모리 설정에서 실행 시간과 비용을 자동으로 벤치마크해 최적 설정을 찾아준다.
 
-## 마무리
+## 정리
 
 Lambda의 실행 모델은 Firecracker MicroVM이라는 독창적인 인프라 위에 세워졌다. 콜드 스타트는 INIT 단계의 필연적 비용이고, Provisioned Concurrency와 SnapStart는 그 비용을 줄이는 두 가지 다른 접근이다. VPC Lambda는 Hyperplane ENI 이후 실용적으로 변했고, Extensions는 Lambda를 더 관찰 가능(observable)하게 만든다. 이 모든 메커니즘을 이해하면 "왜 이 함수가 첫 요청에서 느리지?"나 "왜 RDS에 못 붙지?" 같은 실무 문제가 즉각 진단된다.
 

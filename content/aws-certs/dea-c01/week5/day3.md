@@ -90,7 +90,7 @@ MWAA가 강한 지점은 **복잡한 의존성, 풍부한 연산자 생태계, P
 
 대신 MWAA는 **서버리스가 아니다**. 환경(워커/스케줄러)이 상시 떠 있어 유휴 비용이 발생하고, 환경 클래스(small/medium/large)와 워커 스케일을 관리해야 한다. 운영 부담과 비용이 Step Functions보다 크다.
 
-> 🔍 **더 깊이**: Airflow의 `schedule`(Airflow 2.4 이전에는 `schedule_interval`, 2.4부터 `schedule` 사용 권장)과 `catchup`은 흔한 함정이다. `catchup=True`(Airflow 2.x 기본값)면 `start_date`부터 현재까지 누락된 모든 스케줄 구간을 한꺼번에 **백필(backfill)** 실행한다. 과거 날짜로 DAG를 배포하면 수백 개 실행이 폭주할 수 있다. 의도적 백필이 아니라면 `catchup=False`로 두는 것이 안전하다. 또한 Airflow의 실행 시각은 "구간의 끝"을 기준으로 트리거되는 논리적 날짜(logical date) 개념이라 직관과 어긋나기 쉽다.
+Airflow의 `schedule`(Airflow 2.4 이전에는 `schedule_interval`, 2.4부터 `schedule` 사용 권장)과 `catchup`은 흔한 함정이다. `catchup=True`(Airflow 2.x 기본값)면 `start_date`부터 현재까지 누락된 모든 스케줄 구간을 한꺼번에 **백필(backfill)** 실행한다. 과거 날짜로 DAG를 배포하면 수백 개 실행이 폭주할 수 있다. 의도적 백필이 아니라면 `catchup=False`로 두는 것이 안전하다. 또한 Airflow의 실행 시각은 "구간의 끝"을 기준으로 트리거되는 논리적 날짜(logical date) 개념이라 직관과 어긋나기 쉽다.
 
 ## Glue Workflows: Glue 전용 경량 오케스트레이션
 

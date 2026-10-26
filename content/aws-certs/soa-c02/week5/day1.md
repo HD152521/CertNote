@@ -10,7 +10,7 @@ SSM을 이해하려면 에이전트 기반 서버 관리(Agent-based management)
 
 AWS가 EC2를 대규모로 운영하면서 직면한 문제는 달랐다. SSH 키 분배 부담, 보안 그룹에 22번 포트를 열어야 하는 위험, 수천 대 서버에 동시에 명령을 보낼 때의 폭주 제어, 그리고 모든 운영 행위의 감사 가능성이었다. AWS가 2015년 내놓은 답이 SSM Agent + AWS 관리형 컨트롤 플레인의 조합이었다. 에이전트가 AWS API를 통해 heartbeat를 보내고 명령을 pull하는 구조를 택하면서, 운영자는 어떤 네트워크 환경에서도 인터넷이나 VPC Endpoint만 있으면 인스턴스를 제어할 수 있게 됐다.
 
-> 💡 **관련 이론**: 에이전트 기반 관리는 분산 시스템의 "gossip protocol"과 유사하다. 각 에이전트가 주기적으로 중앙에 heartbeat를 보내고, 중앙은 그 상태를 집계한다. 분산 시스템 이론에서 이를 "failure detector"라고 부른다(Chandra & Toueg, 1996). SSM Agent의 heartbeat가 5분 이상 끊기면 `PingStatus=ConnectionLost`로 표시되는 것이 정확히 이 failure detector 패턴의 구현이다. 이 패턴은 AWS 내부적으로 EC2 heartbeat, ELB health check, RDS replication lag 모니터링에도 같은 원리로 적용된다.
+에이전트 기반 관리는 분산 시스템의 "gossip protocol"과 유사하다. 각 에이전트가 주기적으로 중앙에 heartbeat를 보내고, 중앙은 그 상태를 집계한다. 분산 시스템 이론에서 이를 "failure detector"라고 부른다(Chandra & Toueg, 1996). SSM Agent의 heartbeat가 5분 이상 끊기면 `PingStatus=ConnectionLost`로 표시되는 것이 정확히 이 failure detector 패턴의 구현이다. 이 패턴은 AWS 내부적으로 EC2 heartbeat, ELB health check, RDS replication lag 모니터링에도 같은 원리로 적용된다.
 
 ## 다른 클라우드와 비교: SSM vs GCP OS Configuration vs Azure Arc
 
@@ -29,7 +29,7 @@ SSM의 위치를 정확히 이해하려면 경쟁 클라우드의 유사 서비�
 
 AWS SSM의 차별점은 **IAM과의 완전한 통합** 및 **CloudWatch, S3와의 자동 연계**다. Azure Arc는 하이브리드 환경에서 더 유연하지만 비용이 높다.
 
-> 💡 **관련 이론**: "에이전트 없는 SSH 기반"(Ansible 방식)과 "에이전트 기반"(SSM 방식)의 근본적 차이는 보안 경계 설계에 있다. SSH 기반은 관리 서버가 피관리 서버에 인바운드 연결을 시작한다. 에이전트 기반은 피관리 서버가 관리 서버에 아웃바운드 연결을 시작한다. 방화벽 관점에서 아웃바운드 HTTPS(443)는 거의 어디서나 허용되지만, 인바운드 SSH(22)는 차단이 기본인 환경이 많다. 이것이 SSM이 "에이전트 pull 모델"을 선택한 보안 아키텍처 이유다. RFC 793(TCP) 기반의 SSH와 달리 SSM은 AWS SigV4 서명된 HTTPS 위에서 동작해 mTLS 수준의 인증을 제공한다.
+"에이전트 없는 SSH 기반"(Ansible 방식)과 "에이전트 기반"(SSM 방식)의 근본적 차이는 보안 경계 설계에 있다. SSH 기반은 관리 서버가 피관리 서버에 인바운드 연결을 시작한다. 에이전트 기반은 피관리 서버가 관리 서버에 아웃바운드 연결을 시작한다. 방화벽 관점에서 아웃바운드 HTTPS(443)는 거의 어디서나 허용되지만, 인바운드 SSH(22)는 차단이 기본인 환경이 많다. 이것이 SSM이 "에이전트 pull 모델"을 선택한 보안 아키텍처 이유다. RFC 793(TCP) 기반의 SSH와 달리 SSM은 AWS SigV4 서명된 HTTPS 위에서 동작해 mTLS 수준의 인증을 제공한다.
 
 ## SSM의 5대 카테고리: 운영자의 지형도
 
@@ -74,7 +74,7 @@ sudo yum install -y amazon-ssm-agent
 sudo systemctl enable amazon-ssm-agent && sudo systemctl start amazon-ssm-agent
 ```
 
-> 🔍 **더 깊이**: SSM Agent는 AWS API를 통해 Long Polling 방식으로 명령을 대기한다. AWS SQS와 유사한 메커니즘으로, Agent가 주기적으로 "나에게 실행할 명령이 있는가?"를 SSM 서비스에 묻는다. 이 방식은 Agent가 방화벽 뒤에 있어도 외부에서 인바운드 연결 없이 명령을 받을 수 있게 해준다. 2022년부터는 AWS PrivateLink를 통해 VPC 내에서만 통신하는 것도 가능해졌다. Agent가 내부적으로 사용하는 polling 간격은 5~15초이며, `amazon-ssm-agent.log`에서 `Polling for messages` 메시지로 확인할 수 있다.
+SSM Agent는 AWS API를 통해 Long Polling 방식으로 명령을 대기한다. AWS SQS와 유사한 메커니즘으로, Agent가 주기적으로 "나에게 실행할 명령이 있는가?"를 SSM 서비스에 묻는다. 이 방식은 Agent가 방화벽 뒤에 있어도 외부에서 인바운드 연결 없이 명령을 받을 수 있게 해준다. 2022년부터는 AWS PrivateLink를 통해 VPC 내에서만 통신하는 것도 가능해졌다. Agent가 내부적으로 사용하는 polling 간격은 5~15초이며, `amazon-ssm-agent.log`에서 `Polling for messages` 메시지로 확인할 수 있다.
 
 ## Managed Instance가 되기 위한 3가지 조건
 
@@ -112,7 +112,7 @@ com.amazonaws.<region>.ec2messages
 com.amazonaws.<region>.s3
 ```
 
-> 📚 **사례**: 2021년, 금융권 A사가 보안 컴플라이언스를 위해 완전 사설 VPC(모든 인터넷 차단) 환경으로 전환했다. EC2 인스턴스 200대에 SSM Agent가 설치되어 있었지만 VPC Endpoint를 구성하지 않아 모두 `PingStatus=ConnectionLost`로 빠졌다. 운영팀이 원인을 찾는 데 4시간을 소비했는데, 단순히 3개 Interface Endpoint를 생성하고 보안 그룹에서 443 포트를 허용하자마자 해결됐다. 교훈: 사설 VPC = VPC Endpoint 3개는 무조건 구성 목록에 넣는다. VPC Endpoint 보안 그룹은 EC2 서브넷 CIDR에서 443 인바운드를 허용해야 하며, Endpoint DNS 이름이 Private DNS로 해석되도록 `PrivateDnsEnabled=true`를 확인해야 한다.
+가상의 사례로, 2021년, 금융권 A사가 보안 컴플라이언스를 위해 완전 사설 VPC(모든 인터넷 차단) 환경으로 전환했다. EC2 인스턴스 200대에 SSM Agent가 설치되어 있었지만 VPC Endpoint를 구성하지 않아 모두 `PingStatus=ConnectionLost`로 빠졌다. 운영팀이 원인을 찾는 데 4시간을 소비했는데, 단순히 3개 Interface Endpoint를 생성하고 보안 그룹에서 443 포트를 허용하자마자 해결됐다. 교훈: 사설 VPC = VPC Endpoint 3개는 무조건 구성 목록에 넣는다. VPC Endpoint 보안 그룹은 EC2 서브넷 CIDR에서 443 인바운드를 허용해야 하며, Endpoint DNS 이름이 Private DNS로 해석되도록 `PrivateDnsEnabled=true`를 확인해야 한다.
 
 ## Default Host Management Configuration (DHMC)
 
@@ -127,7 +127,7 @@ aws ssm update-service-setting \
 
 내부적으로 AWS가 `AWSSystemsManagerDefaultEC2InstanceManagementRole`이라는 서비스 연결 역할을 자동 생성하고 모든 EC2에 적용한다. 운영자가 각 인스턴스마다 IAM Role을 신경 쓰지 않아도 되는 "무마찰 운영"의 시작점이다.
 
-> 💡 **관련 이론**: DHMC는 "Convention over Configuration"(CoC) 설계 원칙의 AWS 구현이다. Ruby on Rails가 대중화한 이 원칙은 "합리적 기본값을 제공하고, 사용자가 차이점만 설정하게 하라"는 것이다. 운영자가 새 EC2를 만들 때마다 IAM Role을 명시적으로 붙여야 했던 기존 방식은 "Configuration over Convention"이었다. DHMC는 "Zero-config SSM 등록"을 가능하게 해 2023년 이후 AWS Well-Architected의 운영 효율성 모범 사례로 권장된다. 단, DHMC가 적용된 인스턴스는 커스텀 Instance Profile이 없으므로, S3 접근이나 Secrets Manager 참조 같은 추가 권한이 필요한 경우 별도 Role을 부착해야 한다.
+DHMC는 "Convention over Configuration"(CoC) 설계 원칙의 AWS 구현이다. Ruby on Rails가 대중화한 이 원칙은 "합리적 기본값을 제공하고, 사용자가 차이점만 설정하게 하라"는 것이다. 운영자가 새 EC2를 만들 때마다 IAM Role을 명시적으로 붙여야 했던 기존 방식은 "Configuration over Convention"이었다. DHMC는 "Zero-config SSM 등록"을 가능하게 해 2023년 이후 AWS Well-Architected의 운영 효율성 모범 사례로 권장된다. 단, DHMC가 적용된 인스턴스는 커스텀 Instance Profile이 없으므로, S3 접근이나 Secrets Manager 참조 같은 추가 권한이 필요한 경우 별도 Role을 부착해야 한다.
 
 ## Managed Instance 상태 확인과 트러블슈팅
 
@@ -155,7 +155,7 @@ aws ssm describe-instance-information \
 4. 네트워크 확인 (퍼블릭 VPC면 인터넷 게이트웨이 존재하는가, 사설 VPC면 VPC Endpoint 3개 있는가)
 5. 시간 동기화 확인 (Agent는 NTP 시간 오차가 크면 API 서명 실패로 연결 불가)
 
-> 🔍 **더 깊이**: SSM Agent가 AWS API를 호출할 때 AWS Signature Version 4(SigV4)를 사용한다. SigV4는 현재 UTC 시각을 서명에 포함시키는데, 인스턴스 시계가 5분 이상 오차가 나면 `RequestExpired` 오류로 API 요청이 거부된다. 이때 CloudWatch Logs나 `/var/log/amazon/ssm/amazon-ssm-agent.log`에 시간 오류가 찍힌다. EC2 인스턴스는 기본적으로 Amazon Time Sync Service(169.254.169.123)를 NTP 서버로 사용하므로 VPC 내에서 이 주소로 UDP 123 포트가 막혀 있지 않은지도 확인 대상이다. SigV4 알고리즘(RFC 4634 기반 HMAC-SHA256)은 타임스탬프 오차를 ±5분으로 제한하는데, 이는 replay attack을 막기 위한 표준 보안 메커니즘이다(AWS Signature Version 4 사양, 2023).
+SSM Agent가 AWS API를 호출할 때 AWS Signature Version 4(SigV4)를 사용한다. SigV4는 현재 UTC 시각을 서명에 포함시키는데, 인스턴스 시계가 5분 이상 오차가 나면 `RequestExpired` 오류로 API 요청이 거부된다. 이때 CloudWatch Logs나 `/var/log/amazon/ssm/amazon-ssm-agent.log`에 시간 오류가 찍힌다. EC2 인스턴스는 기본적으로 Amazon Time Sync Service(169.254.169.123)를 NTP 서버로 사용하므로 VPC 내에서 이 주소로 UDP 123 포트가 막혀 있지 않은지도 확인 대상이다. SigV4 알고리즘(RFC 4634 기반 HMAC-SHA256)은 타임스탬프 오차를 ±5분으로 제한하는데, 이는 replay attack을 막기 위한 표준 보안 메커니즘이다(AWS Signature Version 4 사양, 2023).
 
 ## Session Manager: SSH 없는 보안 세션의 내부 동작
 
@@ -226,7 +226,7 @@ aws ssm update-document \
   --document-version "\$LATEST"
 ```
 
-> 📚 **사례**: 2022년, 핀테크 스타트업 B사가 PCI-DSS Level 1 감사를 준비하면서 "모든 서버 접속 세션이 감사 가능해야 한다"는 요구사항을 받았다. 기존 Bastion + SSH 방식으로는 세션 내용 로깅이 어려웠다. Session Manager로 전환하고 KMS 암호화 S3 세션 로그 + CloudWatch Logs를 설정했다. 감사관은 "특정 날짜 특정 운영자가 어떤 명령을 실행했는가"를 S3에서 즉시 조회할 수 있었고, PCI-DSS 10.2.1 요구사항(감사 로그)을 충족했다. 포트 22는 전사 보안 그룹 정책으로 완전 차단됐다.
+가상의 사례로, 2022년, 핀테크 스타트업 B사가 PCI-DSS Level 1 감사를 준비하면서 "모든 서버 접속 세션이 감사 가능해야 한다"는 요구사항을 받았다. 기존 Bastion + SSH 방식으로는 세션 내용 로깅이 어려웠다. Session Manager로 전환하고 KMS 암호화 S3 세션 로그 + CloudWatch Logs를 설정했다. 감사관은 "특정 날짜 특정 운영자가 어떤 명령을 실행했는가"를 S3에서 즉시 조회할 수 있었고, PCI-DSS 10.2.1 요구사항(감사 로그)을 충족했다. 포트 22는 전사 보안 그룹 정책으로 완전 차단됐다.
 
 ## Fleet Manager: SSH/RDP 없는 GUI 관리
 
@@ -236,7 +236,7 @@ Fleet Manager가 제공하는 기능:
 
 | 기능 | 설명 | 기존 방식 대비 |
 |------|------|----------------|
-| **File System Browser** | 인스턴스 내 파일/디렉토리 탐색, 다운로드, 업로드 | scp, sftp 없이 |
+| **File System Browser** | 인스턴스 내 파일/디렉터리 탐색, 다운로드, 업로드 | scp, sftp 없이 |
 | **Process Manager** | 실행 중 프로세스 목록, 강제 종료 | top, kill 없이 |
 | **Users and Groups** | Linux/Windows 사용자·그룹 관리 | useradd, usermod 없이 |
 | **Performance Counters** | CPU, 메모리, 디스크 IO 실시간 | CloudWatch 보조 |
@@ -301,9 +301,9 @@ aws ssm create-resource-data-sync \
 # WHERE name LIKE 'log4j%' AND version < '2.15.0'
 ```
 
-> 📚 **사례**: 2021년 12월 Log4Shell(CVE-2021-44228) 취약점 발표 직후, SSM Inventory를 운영하던 회사들은 30분 만에 "Log4j 1.x 또는 2.0~2.14를 쓰는 서버 목록"을 뽑아냈다. Inventory가 없던 회사들은 수동 점검에 며칠이 걸렸다. 이 사건 이후 "Inventory + Resource Data Sync"는 보안 컴플라이언스 필수 도구로 자리 잡았다. NIST SP 800-171(CUI 보호)의 3.4.1 요구사항("베이스라인 구성 수립 및 유지")이 정확히 이 Inventory 데이터로 증빙 가능하다.
+2021년 12월 Log4Shell(CVE-2021-44228) 취약점 발표 직후, SSM Inventory를 운영하던 회사들은 30분 만에 "Log4j 1.x 또는 2.0~2.14를 쓰는 서버 목록"을 뽑아냈다. Inventory가 없던 회사들은 수동 점검에 며칠이 걸렸다. 이 사건 이후 "Inventory + Resource Data Sync"는 보안 컴플라이언스 필수 도구로 자리 잡았다. NIST SP 800-171(CUI 보호)의 3.4.1 요구사항("베이스라인 구성 수립 및 유지")이 정확히 이 Inventory 데이터로 증빙 가능하다.
 
-> 🔍 **더 깊이**: Inventory의 `Custom:*` 유형은 운영자가 SSM Document를 직접 작성해 임의의 JSON을 수집할 수 있게 한다. 예를 들어 "현재 실행 중인 Docker 컨테이너 목록"이나 "crontab 항목"을 수집하는 커스텀 인벤토리 스크립트를 작성할 수 있다. 수집된 데이터는 `Custom:<타입명>` 형태로 SSM 데이터베이스에 저장된다. Resource Data Sync로 S3에 모으면 AWS Glue + Athena로 SQL 분석, QuickSight로 시각화까지 연결된다. 이 패턴은 CMDB(Configuration Management Database)를 AWS 네이티브로 구현하는 방법이다.
+Inventory의 `Custom:*` 유형은 운영자가 SSM Document를 직접 작성해 임의의 JSON을 수집할 수 있게 한다. 예를 들어 "현재 실행 중인 Docker 컨테이너 목록"이나 "crontab 항목"을 수집하는 커스텀 인벤토리 스크립트를 작성할 수 있다. 수집된 데이터는 `Custom:<타입명>` 형태로 SSM 데이터베이스에 저장된다. Resource Data Sync로 S3에 모으면 AWS Glue + Athena로 SQL 분석, QuickSight로 시각화까지 연결된다. 이 패턴은 CMDB(Configuration Management Database)를 AWS 네이티브로 구현하는 방법이다.
 
 ## Hybrid Activations: 온프레미스도 동일하게
 
@@ -341,7 +341,7 @@ sudo amazon-ssm-agent -register \
 - Standard Tier: 월 1,000개 인스턴스까지 무료
 - Advanced Tier: 시간당 $0.00695/인스턴스 (대규모 온프레미스 관리 또는 Session Manager 세션 로깅 필요 시)
 
-> 💡 **관련 이론**: Hybrid Activations의 아이디어는 "unified control plane" 아키텍처에서 나온다. Google의 Anthos(GKE + 온프레미스), Azure Arc(모든 환경 통합 관리)가 같은 개념을 구현했다. 어떤 환경의 워크로드든 단일 컨트롤 플레인으로 관리하는 것은 멀티클라우드·하이브리드 시대의 핵심 운영 패턴이다. CNCF(Cloud Native Computing Foundation)에서 이 패턴을 "Crossplane"이라는 오픈소스로 구현하고 있다. SOA-C02 시험에서 "온프레미스 서버도 SSM으로 관리하려면?"이라는 질문의 정답은 항상 Hybrid Activations다.
+Hybrid Activations의 아이디어는 "unified control plane" 아키텍처에서 나온다. Google의 Anthos(GKE + 온프레미스), Azure Arc(모든 환경 통합 관리)가 같은 개념을 구현했다. 어떤 환경의 워크로드든 단일 컨트롤 플레인으로 관리하는 것은 멀티클라우드·하이브리드 시대의 핵심 운영 패턴이다. CNCF(Cloud Native Computing Foundation)에서 이 패턴을 "Crossplane"이라는 오픈소스로 구현하고 있다. SOA-C02 시험에서 "온프레미스 서버도 SSM으로 관리하려면?"이라는 질문의 정답은 항상 Hybrid Activations다.
 
 ## SSM vs 경쟁 도구 비교
 

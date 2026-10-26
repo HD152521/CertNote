@@ -17,7 +17,7 @@ Lambda 함수가 처음 호출되거나 오랫동안 사용되지 않다가 다�
 
 4번까지의 시간이 콜드 스타트 지연이다. 언어별로 다르다. Python/Node.js는 보통 100-500ms, Java는 1-3초(JVM 초기화), Go는 수십 ms, .NET은 수백 ms.
 
-콜드 스타트 이후 실행 환경은 **재사용**된다. 같은 환경에서 다음 요청을 처리할 때는 3-4번 과정이 없어서 빠르다. 이것이 웜 스타트(Warm Start)다. 실행 환경이 재사용되는 동안 `/tmp`(512MB~10GB) 디렉토리도 남아 있어서, 파일을 캐싱하는 데 활용할 수 있다.
+콜드 스타트 이후 실행 환경은 **재사용**된다. 같은 환경에서 다음 요청을 처리할 때는 3-4번 과정이 없어서 빠르다. 이것이 웜 스타트(Warm Start)다. 실행 환경이 재사용되는 동안 `/tmp`(512MB~10GB) 디렉터리도 남아 있어서, 파일을 캐싱하는 데 활용할 수 있다.
 
 ```
 [첫 번째 호출 - 콜드 스타트]
@@ -46,9 +46,9 @@ Lambda 함수가 처음 호출되거나 오랫동안 사용되지 않다가 다�
 - **Provisioned Concurrency**: 지정된 수의 인스턴스를 워밍업 상태로 유지
 - **Lambda SnapStart** (Java): 초기화 완료 시점의 메모리 스냅샷을 저장해서 콜드 스타트를 수백 ms로 단축
 
-> 💡 **Firecracker MicroVM과 격리 보장** — Lambda의 Firecracker MicroVM은 AWS가 2018년 오픈 소스로 공개한 기술이다. QEMU/KVM 기반의 전통적 VM보다 훨씬 가볍고 빠르게(125ms 내 시작) 격리된 실행 환경을 만든다. Firecracker는 KVM 하이퍼바이저를 직접 사용하면서 필요한 디바이스 에뮬레이션을 최소화했다. Lambda 함수가 다른 함수의 메모리를 읽거나 프로세스를 종료할 수 없는 것이 이 격리 덕분이다. 2019년 AWS re:Invent에서 공개된 데이터에 따르면 AWS는 초당 수백만 개의 Firecracker MicroVM을 시작할 수 있다. Firecracker는 Rust로 작성됐으며 메모리 안전성과 최소 공격 표면을 중시하는 설계 철학을 갖고 있다.
+**Firecracker MicroVM과 격리 보장** — Lambda의 Firecracker MicroVM은 AWS가 2018년 오픈 소스로 공개한 기술이다. QEMU/KVM 기반의 전통적 VM보다 훨씬 가볍고 빠르게(125ms 내 시작) 격리된 실행 환경을 만든다. Firecracker는 KVM 하이퍼바이저를 직접 사용하면서 필요한 디바이스 에뮬레이션을 최소화했다. Lambda 함수가 다른 함수의 메모리를 읽거나 프로세스를 종료할 수 없는 것이 이 격리 덕분이다. 2019년 AWS re:Invent에서 공개된 데이터에 따르면 AWS는 초당 수백만 개의 Firecracker MicroVM을 시작할 수 있다. Firecracker는 Rust로 작성됐으며 메모리 안전성과 최소 공격 표면을 중시하는 설계 철학을 갖고 있다.
 
-> 🔍 **Lambda SnapStart — 콜드 스타트의 근본적 해결** — Lambda SnapStart(Java용, 2022년 출시)는 콜드 스타트 문제를 근본적으로 다른 방식으로 해결한다. 함수가 배포될 때 초기화 단계(1-4번)를 실행하고, 그 시점의 메모리와 디스크 상태를 스냅샷으로 저장한다. 이후 콜드 스타트가 필요할 때 새로운 MicroVM에서 처음부터 초기화하는 대신, 저장된 스냅샷을 복원한다. Java의 3초 콜드 스타트를 수백 ms 수준으로 줄일 수 있다. 단, 스냅샷 복원 시 `UUID.randomUUID()`, 현재 시간, 난수 생성 등이 스냅샷 시점 값을 반환할 수 있어서 별도 복원 훅(restore hook `@SnapStartRestore`)으로 재초기화해야 한다.
+**Lambda SnapStart — 콜드 스타트의 근본적 해결** — Lambda SnapStart(Java용, 2022년 출시)는 콜드 스타트 문제를 근본적으로 다른 방식으로 해결한다. 함수가 배포될 때 초기화 단계(1-4번)를 실행하고, 그 시점의 메모리와 디스크 상태를 스냅샷으로 저장한다. 이후 콜드 스타트가 필요할 때 새로운 MicroVM에서 처음부터 초기화하는 대신, 저장된 스냅샷을 복원한다. Java의 3초 콜드 스타트를 수백 ms 수준으로 줄일 수 있다. 단, 스냅샷 복원 시 `UUID.randomUUID()`, 현재 시간, 난수 생성 등이 스냅샷 시점 값을 반환할 수 있어서 별도 복원 훅(restore hook `@SnapStartRestore`)으로 재초기화해야 한다.
 
 ## 트리거 유형 — 동기, 비동기, 폴링의 차이
 
@@ -96,7 +96,7 @@ Lambda 서비스가 소스를 직접 폴링해서 배치를 Lambda 함수에 전
 
 > ⚠️ **S3 이벤트 알림은 비동기 호출이다** — "S3가 Lambda를 동기적으로 호출한다" — 틀렸다. S3 이벤트 알림은 Lambda를 비동기적으로 호출한다. S3는 이벤트를 Lambda에 보내고 응답을 기다리지 않는다. 따라서 S3 → Lambda 파이프라인에서 Lambda가 실패하면, AWS Lambda가 자동으로 2회 재시도하고 이후 DLQ나 On-Failure Destination으로 라우팅한다. S3가 직접 오류를 받지 않는다. 반면 API Gateway → Lambda는 동기 호출이므로 Lambda 오류가 API Gateway를 통해 클라이언트에게 직접 전달된다.
 
-> 💡 **이벤트 소스 매핑의 순서 보장과 병렬성** — SQS Standard 큐의 이벤트 소스 매핑은 배치 단위로 처리하며, 순서 보장 없음. SQS FIFO 큐는 메시지 그룹 ID 단위로 순서를 보장하며, 그룹 ID별로 병렬 처리된다. Kinesis와 DynamoDB Streams는 샤드/파티션 단위로 순서를 보장한다. 한 샤드당 하나의 Lambda 실행 컨텍스트가 순차 처리하므로, 샤드 수가 Lambda 병렬성의 한계다. Lambda 병렬 실행 개수를 늘리려면 Kinesis 샤드를 늘려야 한다(Resharding).
+**이벤트 소스 매핑의 순서 보장과 병렬성** — SQS Standard 큐의 이벤트 소스 매핑은 배치 단위로 처리하며, 순서 보장 없음. SQS FIFO 큐는 메시지 그룹 ID 단위로 순서를 보장하며, 그룹 ID별로 병렬 처리된다. Kinesis와 DynamoDB Streams는 샤드/파티션 단위로 순서를 보장한다. 한 샤드당 하나의 Lambda 실행 컨텍스트가 순차 처리하므로, 샤드 수가 Lambda 병렬성의 한계다. Lambda 병렬 실행 개수를 늘리려면 Kinesis 샤드를 늘려야 한다(Resharding).
 
 ## 동시성 제어 — Reserved와 Provisioned의 차이
 
@@ -131,9 +131,9 @@ Lambda 서비스가 소스를 직접 폴링해서 배치를 Lambda 함수에 전
 | 스케일링 | 자동 (한도 내) | 한도 내에서 자동 + PC 범위 보장 |
 | Auto Scaling 연동 | X | O (Application Auto Scaling) |
 
-> 💡 **서버리스 패러다임과 Provisioned Concurrency의 역설** — Provisioned Concurrency의 비용 구조는 서버리스 패러다임과 묘하게 충돌한다. 서버리스는 "사용한 만큼만 낸다"를 표방하는데, Provisioned Concurrency는 사용 여부와 무관하게 비용이 발생한다. 이것은 마치 EC2 인스턴스를 Reserved Instance로 구매하는 것과 유사하다. 트레이드오프: 응답 지연 예측 가능성 vs 비용 효율성. 성능 SLA가 P99 지연 시간을 규정하는 경우(예: "99%의 요청은 100ms 이내"), Provisioned Concurrency가 그 SLA를 맞추는 유일한 방법이 될 수 있다. Application Auto Scaling을 연동해서 피크 시간에만 Provisioned Concurrency를 늘리면 비용을 최적화할 수 있다.
+**서버리스 패러다임과 Provisioned Concurrency의 역설** — Provisioned Concurrency의 비용 구조는 서버리스 패러다임과 묘하게 충돌한다. 서버리스는 "사용한 만큼만 낸다"를 표방하는데, Provisioned Concurrency는 사용 여부와 무관하게 비용이 발생한다. 이것은 마치 EC2 인스턴스를 Reserved Instance로 구매하는 것과 유사하다. 트레이드오프: 응답 지연 예측 가능성 vs 비용 효율성. 성능 SLA가 P99 지연 시간을 규정하는 경우(예: "99%의 요청은 100ms 이내"), Provisioned Concurrency가 그 SLA를 맞추는 유일한 방법이 될 수 있다. Application Auto Scaling을 연동해서 피크 시간에만 Provisioned Concurrency를 늘리면 비용을 최적화할 수 있다.
 
-> 🔍 **Burst Concurrency와 스케일링 속도** — Lambda의 동시성은 갑작스러운 트래픽 폭증 시 처음에는 제한적으로 증가한다. 초기 Burst Limit는 리전별로 다르지만 보통 500-3000개다. 이 한도를 넘으면 분당 500개씩 추가로 증가한다. 즉, 트래픽이 갑자기 1000배 폭증하면 Lambda가 모두 처리할 수 있는 동시성에 도달하는 데 수 분이 걸릴 수 있다. 예상치 못한 트래픽 폭증은 스로틀링을 유발한다. SQS 이벤트 소스 매핑의 경우 Lambda가 처리하지 못한 메시지는 큐에 남아 있으므로 손실 없이 나중에 처리된다.
+**Burst Concurrency와 스케일링 속도** — Lambda의 동시성은 갑작스러운 트래픽 폭증 시 처음에는 제한적으로 증가한다. 초기 Burst Limit는 리전별로 다르지만 보통 500-3000개다. 이 한도를 넘으면 분당 500개씩 추가로 증가한다. 즉, 트래픽이 갑자기 1000배 폭증하면 Lambda가 모두 처리할 수 있는 동시성에 도달하는 데 수 분이 걸릴 수 있다. 예상치 못한 트래픽 폭증은 스로틀링을 유발한다. SQS 이벤트 소스 매핑의 경우 Lambda가 처리하지 못한 메시지는 큐에 남아 있으므로 손실 없이 나중에 처리된다.
 
 ## Lambda 네트워킹 — VPC와 인터넷의 경계
 
@@ -162,9 +162,9 @@ VPC Lambda 비용 고려사항:
 - NAT Gateway: 처리 데이터 GB당 요금 + 시간당 요금
 - VPC Endpoint 사용: DynamoDB, S3 같은 AWS 서비스는 VPC Gateway Endpoint를 통해 NAT GW 없이 접근 가능 → 비용 절감
 
-> 🔍 **Hyperplane ENI와 콜드 스타트 개선** — 과거 Lambda + VPC 구성에서 콜드 스타트가 극단적으로 길었던 이유는 각 함수 인스턴스마다 ENI를 새로 생성했기 때문이다. ENI 생성이 수 초가 걸렸다. 2019년 AWS는 "Hyperplane ENI"를 도입해서 이 문제를 해결했다. Hyperplane ENI는 VPC 연결 Lambda 함수들이 공유하는 ENI 풀 방식으로, 콜드 스타트 시 새 ENI를 생성할 필요가 없어졌다. 현재 VPC Lambda의 콜드 스타트는 비 VPC Lambda와 거의 차이가 없다. Hyperplane은 AWS의 내부 네트워크 가상화 시스템으로, VPC 피어링, Transit Gateway, PrivateLink 등도 이 위에 구축됐다.
+**Hyperplane ENI와 콜드 스타트 개선** — 과거 Lambda + VPC 구성에서 콜드 스타트가 극단적으로 길었던 이유는 각 함수 인스턴스마다 ENI를 새로 생성했기 때문이다. ENI 생성이 수 초가 걸렸다. 2019년 AWS는 "Hyperplane ENI"를 도입해서 이 문제를 해결했다. Hyperplane ENI는 VPC 연결 Lambda 함수들이 공유하는 ENI 풀 방식으로, 콜드 스타트 시 새 ENI를 생성할 필요가 없어졌다. 현재 VPC Lambda의 콜드 스타트는 비 VPC Lambda와 거의 차이가 없다. Hyperplane은 AWS의 내부 네트워크 가상화 시스템으로, VPC 피어링, Transit Gateway, PrivateLink 등도 이 위에 구축됐다.
 
-> 📚 **Coinbase Lambda 성능 분석 사례** — 2021년 Coinbase는 Lambda 기반 백엔드 아키텍처의 성능 분석 블로그를 공개했다. 암호화폐 거래 플랫폼에서 API 지연이 P99 수준에서 예측 불가능한 문제가 발생했고, 분석 결과 Lambda 콜드 스타트가 주요 원인이었다. Provisioned Concurrency를 적용한 결과 P99 지연이 75% 감소했다고 보고했다. 특히 Java 기반 Lambda에서 SnapStart와 Provisioned Concurrency를 함께 적용하는 것이 효과적이었다. Coinbase는 더불어 `arm64` 아키텍처로 전환해서 동일 비용 대비 성능을 20% 추가 향상시켰다.
+**Coinbase Lambda 성능 분석 사례** — 2021년 Coinbase는 Lambda 기반 백엔드 아키텍처의 성능 분석 블로그를 공개했다. 암호화폐 거래 플랫폼에서 API 지연이 P99 수준에서 예측 불가능한 문제가 발생했고, 분석 결과 Lambda 콜드 스타트가 주요 원인이었다. Provisioned Concurrency를 적용한 결과 P99 지연이 75% 감소했다고 보고했다. 특히 Java 기반 Lambda에서 SnapStart와 Provisioned Concurrency를 함께 적용하는 것이 효과적이었다. Coinbase는 더불어 `arm64` 아키텍처로 전환해서 동일 비용 대비 성능을 20% 추가 향상시켰다.
 
 ## Lambda Destinations — DLQ보다 더 유연한 오류 처리
 
@@ -197,7 +197,7 @@ DLQ와의 차이:
 
 ## 사양 한도와 비용 구조
 
-Lambda의 주요 사양 한도는 시험에 자주 나오므로 암기가 필요하다.
+Lambda의 주요 사양 한도는 시험에서 묻기 때문에 암기가 필요하다.
 
 | 항목 | 한도 |
 |------|------|
@@ -304,7 +304,7 @@ aws cloudwatch get-metric-statistics \
   --statistics Sum
 ```
 
-## 정리하며
+## 정리
 
 Lambda는 "이벤트가 발생했을 때 코드를 실행하는" 가장 단순한 모델이다. 그 단순함 뒤에는 Firecracker MicroVM의 격리 보장, 콜드 스타트 물리학, 동기/비동기/폴링의 세 가지 호출 모델, 동시성의 Reserved와 Provisioned 구분, VPC 연결 시의 네트워킹 규칙이 있다.
 

@@ -27,7 +27,7 @@ Healthy Checker 수 >= 3 (15의 18%) → 전체 Healthy
 Healthy Checker 수 < 3 → 전체 Unhealthy
 ```
 
-> 💡 **관련 이론**: 분산 Health Check 설계는 **Byzantine Fault Tolerance**의 경량 버전이다. 단일 모니터가 장애를 보고하면 모니터 자체의 네트워크 문제일 수 있다. 다수결(quorum)로 판정하면 "모니터 장애"와 "실제 서비스 장애"를 구분할 수 있다. 18% 임계치는 "대부분의 리전에서 접근 불가"일 때만 Unhealthy로 판정해 오탐(false positive)을 줄이는 설계다.
+분산 Health Check 설계는 **Byzantine Fault Tolerance**의 경량 버전이다. 단일 모니터가 장애를 보고하면 모니터 자체의 네트워크 문제일 수 있다. 다수결(quorum)로 판정하면 "모니터 장애"와 "실제 서비스 장애"를 구분할 수 있다. 18% 임계치는 "대부분의 리전에서 접근 불가"일 때만 Unhealthy로 판정해 오탐(false positive)을 줄이는 설계다.
 
 **Private Endpoint Health Check의 제약**: Route 53 Health Checker는 퍼블릭 인터넷에서 온다. VPC 내 private 리소스(프라이빗 IP, 인터넷 비연결 인스턴스)에는 직접 도달할 수 없다.
 
@@ -66,7 +66,7 @@ Calculated HC (전체 서비스 판정)
 
 SAP 시나리오에서 Calculated Health Check는 "다계층 애플리케이션에서 모든 계층이 정상일 때만 Route 53이 트래픽을 보내게 하라"는 요구에 매핑된다.
 
-> 🔍 **더 깊이**: Calculated HC를 쓰면 Failover 라우팅에서 "트래픽을 일부러 다른 리전으로 전환하고 싶을 때" 상위 HC를 강제로 Unhealthy로 만드는 트릭을 쓸 수 있다. 실제 서비스는 살아있지만 Calculated HC에서 하나의 자식 HC를 비활성화해 상위를 Unhealthy로 만들면, Route 53이 Secondary로 전환한다. 계획된 유지보수에서 서비스를 내리지 않고 트래픽만 전환하는 패턴이다.
+Calculated HC를 쓰면 Failover 라우팅에서 "트래픽을 일부러 다른 리전으로 전환하고 싶을 때" 상위 HC를 강제로 Unhealthy로 만드는 트릭을 쓸 수 있다. 실제 서비스는 살아있지만 Calculated HC에서 하나의 자식 HC를 비활성화해 상위를 Unhealthy로 만들면, Route 53이 Secondary로 전환한다. 계획된 유지보수에서 서비스를 내리지 않고 트래픽만 전환하는 패턴이다.
 
 ### CloudWatch Alarm Health Check
 
@@ -129,13 +129,13 @@ aws route53 get-dnssec \
   --hosted-zone-id Z1234567890ABC
 ```
 
-> 📚 **사례**: 2020년 Amazon Route 53 DNSSEC 서명 GA. AWS는 KMS와 통합해 KSK를 하드웨어 보안 모듈(HSM) 레벨에서 보호한다. CloudTrail로 모든 KSK 사용이 감사된다. 실제 운영에서 DNSSEC을 잘못 설정하면(DS 레코드가 부모에 등록됐는데 서명이 비활성화되면) 도메인 전체가 SERVFAIL이 돼 모든 사용자가 접근 불가가 된다. 이를 방지하기 위해 Route 53 콘솔은 "먼저 활성화, 그다음 DS 등록" 순서를 강제한다.
+2020년 Amazon Route 53 DNSSEC 서명 GA. AWS는 KMS와 통합해 KSK를 하드웨어 보안 모듈(HSM) 레벨에서 보호한다. CloudTrail로 모든 KSK 사용이 감사된다. 실제 운영에서 DNSSEC을 잘못 설정하면(DS 레코드가 부모에 등록됐는데 서명이 비활성화되면) 도메인 전체가 SERVFAIL이 돼 모든 사용자가 접근 불가가 된다. 이를 방지하기 위해 Route 53 콘솔은 "먼저 활성화, 그다음 DS 등록" 순서를 강제한다.
 
 **2. DNSSEC 검증 (리졸버 레벨)**
 
 Route 53 Resolver가 외부 도메인 쿼리 시 DNSSEC 서명을 검증한다. `DO (DNSSEC OK)` 비트를 설정하면 검증 결과가 `AD (Authenticated Data)` 비트로 응답된다.
 
-> 💡 **관련 이론**: DNSSEC의 신뢰 체인(Chain of Trust)은 PKI의 인증서 체인과 같은 개념이다. 루트 DNS(IANA가 DNSSEC 서명)부터 TLD(.com, .kr), 권한 NS까지 각 레벨의 DS 레코드가 하위 ZSK를 검증한다. 이 체인 중 하나라도 끊기면 검증 실패(BOGUS)가 되어 SERVFAIL이 반환된다. "DNSSEC이 도입됐는데 갑자기 일부 도메인이 안 열린다"는 사고의 원인이다.
+DNSSEC의 신뢰 체인(Chain of Trust)은 PKI의 인증서 체인과 같은 개념이다. 루트 DNS(IANA가 DNSSEC 서명)부터 TLD(.com, .kr), 권한 NS까지 각 레벨의 DS 레코드가 하위 ZSK를 검증한다. 이 체인 중 하나라도 끊기면 검증 실패(BOGUS)가 되어 SERVFAIL이 반환된다. "DNSSEC이 도입됐는데 갑자기 일부 도메인이 안 열린다"는 사고의 원인이다.
 
 ## Geolocation vs Geoproximity: 바이어스 수학
 
@@ -188,7 +188,7 @@ Bias 없음 (기본):
              │ (경계가 도쿄 방향으로 이동)
 ```
 
-> 💡 **관련 이론**: 보로노이 다이어그램(Georgy Voronoy, 1908)은 평면을 n개 점의 가장 가까운 구역으로 분할하는 기하학적 구조다. Geoproximity에서 Bias 없이 여러 리전이 있으면 각 사용자는 가장 가까운 리전으로 분류된다 — 이것이 가장 단순한 보로노이 분할이다. Bias는 각 리전의 "중심 가중치"를 변경해 경계선을 이동시키는 가중 보로노이(Weighted Voronoi)를 만든다.
+보로노이 다이어그램(Georgy Voronoy, 1908)은 평면을 n개 점의 가장 가까운 구역으로 분할하는 기하학적 구조다. Geoproximity에서 Bias 없이 여러 리전이 있으면 각 사용자는 가장 가까운 리전으로 분류된다 — 이것이 가장 단순한 보로노이 분할이다. Bias는 각 리전의 "중심 가중치"를 변경해 경계선을 이동시키는 가중 보로노이(Weighted Voronoi)를 만든다.
 
 **Geoproximity 전제 조건**: Route 53 **Traffic Flow**를 반드시 사용해야 한다. 일반 레코드 편집 UI에서는 Geoproximity를 설정할 수 없다.
 
@@ -196,7 +196,7 @@ Bias 없음 (기본):
 - AWS 리전(ap-northeast-2 등)은 Route 53이 좌표를 자동 설정
 - 온프레미스 데이터센터는 위도·경도를 직접 입력
 
-> 🔍 **더 깊이**: Geolocation과 Geoproximity를 동시에 쓸 수 있는가? 같은 Hosted Zone에서 두 정책을 혼합하는 것은 권장하지 않는다. 그러나 실무에서 "대부분은 Geoproximity(거리 기반 최적화), 특정 국가는 데이터 주권으로 강제 Geolocation"이 필요할 때 Traffic Flow에서 복합 정책을 구성할 수 있다. 이 경우 Geolocation이 먼저 평가되고 매핑이 없으면 Geoproximity로 넘어가는 순서로 구성한다.
+Geolocation과 Geoproximity를 동시에 쓸 수 있는가? 같은 Hosted Zone에서 두 정책을 혼합하는 것은 권장하지 않는다. 그러나 실무에서 "대부분은 Geoproximity(거리 기반 최적화), 특정 국가는 데이터 주권으로 강제 Geolocation"이 필요할 때 Traffic Flow에서 복합 정책을 구성할 수 있다. 이 경우 Geolocation이 먼저 평가되고 매핑이 없으면 Geoproximity로 넘어가는 순서로 구성한다.
 
 ## Route 53 Resolver: 하이브리드 DNS 아키텍처
 
@@ -282,9 +282,9 @@ aws route53resolver associate-resolver-rule \
   --vpc-id vpc-XXXXXXXXXX
 ```
 
-> 📚 **사례**: 금융권 하이브리드 클라우드 설계 사례. 국내 한 대형 금융그룹은 온프레미스 Active Directory(AD DS)를 유지하면서 AWS 계정 30개를 운영한다. AD 도메인(finance.corp.internal)은 온프레미스에서만 해석 가능하고, AWS VPC 내 RDS, ElastiCache 등의 엔드포인트는 AWS Private Hosted Zone에서만 해석 가능하다. Route 53 Resolver Inbound + Outbound Endpoint + Forwarding Rule 조합으로 양방향 DNS 해석을 구성했다. Direct Connect Transit Gateway로 연결돼 DNS 쿼리 경로가 인터넷을 경유하지 않는다.
+금융권 하이브리드 클라우드 설계 사례. 국내 한 대형 금융그룹은 온프레미스 Active Directory(AD DS)를 유지하면서 AWS 계정 30개를 운영한다. AD 도메인(finance.corp.internal)은 온프레미스에서만 해석 가능하고, AWS VPC 내 RDS, ElastiCache 등의 엔드포인트는 AWS Private Hosted Zone에서만 해석 가능하다. Route 53 Resolver Inbound + Outbound Endpoint + Forwarding Rule 조합으로 양방향 DNS 해석을 구성했다. Direct Connect Transit Gateway로 연결돼 DNS 쿼리 경로가 인터넷을 경유하지 않는다.
 
-> 🔍 **더 깊이**: Resolver Endpoint는 고가용성을 위해 최소 2개 AZ에 생성하는 것이 표준이지만, DNS 쿼리 자체는 상태 비저장(stateless)이므로 단일 AZ 장애 시 자동으로 다른 AZ ENI로 전환된다. Outbound Endpoint의 소스 IP는 ENI에 할당된 프라이빗 IP다. 온프레미스 방화벽에서 이 IP를 DNS(UDP/TCP 53) 허용 목록에 추가해야 한다. 많은 하이브리드 환경에서 방화벽 룰 누락으로 DNS 포워딩이 안 되는 사고가 발생한다.
+Resolver Endpoint는 고가용성을 위해 최소 2개 AZ에 생성하는 것이 표준이지만, DNS 쿼리 자체는 상태 비저장(stateless)이므로 단일 AZ 장애 시 자동으로 다른 AZ ENI로 전환된다. Outbound Endpoint의 소스 IP는 ENI에 할당된 프라이빗 IP다. 온프레미스 방화벽에서 이 IP를 DNS(UDP/TCP 53) 허용 목록에 추가해야 한다. 많은 하이브리드 환경에서 방화벽 룰 누락으로 DNS 포워딩이 안 되는 사고가 발생한다.
 
 ## 완전한 Hybrid DNS 설계 패턴
 
@@ -345,11 +345,11 @@ Route 53 응답:
 
 MVA는 "간단한 DNS 라운드로빈 + 비정상 서버 자동 제외"다. ELB보다 기능이 훨씬 적지만, 비용과 운영 복잡도도 훨씬 낮다.
 
-> ⚠️ **함정**: MVA는 Health Check와 연동해야 비정상 서버를 제외할 수 있다. Health Check 없이 MVA를 구성하면 죽은 서버 IP도 반환된다. 시험에서 "ELB 없이 비정상 인스턴스 제외 + 여러 IP 분산"이라면 반드시 "MVA + Health Check 조합"을 확인해야 한다.
+MVA는 Health Check와 연동해야 비정상 서버를 제외할 수 있다. Health Check 없이 MVA를 구성하면 죽은 서버 IP도 반환된다. 시험에서 "ELB 없이 비정상 인스턴스 제외 + 여러 IP 분산"이라면 반드시 "MVA + Health Check 조합"을 확인해야 한다.
 
 ## TTL 전략: 변경 전 낮추고, 변경 후 높이기
 
-Route 53 레코드의 TTL은 DNS 캐시 지속 시간이다. 변경 계획이 있을 때 TTL을 미리 낮추는 전략이 SAP 시험에 자주 등장한다.
+Route 53 레코드의 TTL은 DNS 캐시 지속 시간이다. 변경 계획이 있을 때 TTL을 미리 낮추는 전략이 SAP 시험 범위에 든다.
 
 ```
 평상시:

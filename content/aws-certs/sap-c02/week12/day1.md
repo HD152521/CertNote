@@ -10,9 +10,9 @@ SAP-C02에서 Savings Plans·RI는 "어떤 약정 모델을 골라야 하나", "
 
 이 관점이 중요한 이유는 세 가지 약정 모델의 할인율 차이를 한 번에 설명하기 때문이다. **약정이 구체적일수록(= AWS의 예측 불확실성을 더 많이 제거할수록) 할인이 크다.** EC2 Instance SP는 "이 리전, 이 family를 쓰겠다"고 못 박으므로 AWS가 정확히 어떤 하드웨어를 준비할지 안다 → 최대 72%. Compute SP는 "EC2든 Fargate든 Lambda든, 어느 리전·family든 시간당 $X"라는 느슨한 약속이라 AWS의 예측이 어려워진다 → 최대 66%. 이 6%p 차이가 바로 **유연성 프리미엄(flexibility premium)**이다.
 
-> 💡 **관련 이론**: 이 구조는 금융의 **선도 계약(forward contract)**과 정확히 같은 경제학을 따른다. 미래 가격 변동 위험을 한쪽이 떠안는 대가로 가격을 고정하는 것이다. Spot Instance는 정반대 극단 — AWS의 남는 capacity를 경매로 풀고(시장가), 회수 위험을 전부 고객이 떠안는 대신 최대 90% 할인을 준다. 즉 AWS의 비용 모델은 "위험을 누가 얼마나 떠안느냐"의 연속 스펙트럼이다: On-Demand(AWS가 전부 떠안음, 0% 할인) → Convertible RI → Compute SP → EC2 Instance SP / Standard RI(고객이 약정 위험을 크게 떠안음, ~72%) → Spot(고객이 회수 위험까지 떠안음, ~90%). 시험 시나리오의 "유연성 vs 할인" 트레이드오프는 모두 이 스펙트럼 어디에 워크로드를 놓을지의 문제다.
+이 구조는 금융의 **선도 계약(forward contract)**과 정확히 같은 경제학을 따른다. 미래 가격 변동 위험을 한쪽이 떠안는 대가로 가격을 고정하는 것이다. Spot Instance는 정반대 극단 — AWS의 남는 capacity를 경매로 풀고(시장가), 회수 위험을 전부 고객이 떠안는 대신 최대 90% 할인을 준다. 즉 AWS의 비용 모델은 "위험을 누가 얼마나 떠안느냐"의 연속 스펙트럼이다: On-Demand(AWS가 전부 떠안음, 0% 할인) → Convertible RI → Compute SP → EC2 Instance SP / Standard RI(고객이 약정 위험을 크게 떠안음, ~72%) → Spot(고객이 회수 위험까지 떠안음, ~90%). 시험 시나리오의 "유연성 vs 할인" 트레이드오프는 모두 이 스펙트럼 어디에 워크로드를 놓을지의 문제다.
 
-> 🔍 **더 깊이**: 결제 옵션(All/Partial/No Upfront)의 할인 차이도 같은 위험 논리다. All Upfront는 AWS가 현금을 미리 받으므로(고객 신용 위험 제거 + 화폐의 시간 가치) 가장 큰 할인을 준다. 3년 m5.xlarge Standard RI 기준 대략: On-Demand 대비 All Upfront ~60%, Partial ~58%, No Upfront ~56% 절감 수준으로, 같은 약정 안에서도 결제 방식만으로 수 %p가 갈린다. SAP 시험에서 "현금 흐름 제약 없이 최대 할인"이면 All Upfront, "초기 현금 부담 최소화 + 약정 할인"이면 No Upfront가 정답 신호다.
+결제 옵션(All/Partial/No Upfront)의 할인 차이도 같은 위험 논리다. All Upfront는 AWS가 현금을 미리 받으므로(고객 신용 위험 제거 + 화폐의 시간 가치) 가장 큰 할인을 준다. 3년 m5.xlarge Standard RI 기준 대략: On-Demand 대비 All Upfront ~60%, Partial ~58%, No Upfront ~56% 절감 수준으로, 같은 약정 안에서도 결제 방식만으로 수 %p가 갈린다. SAP 시험에서 "현금 흐름 제약 없이 최대 할인"이면 All Upfront, "초기 현금 부담 최소화 + 약정 할인"이면 No Upfront가 정답 신호다.
 
 ## Savings Plans 3종 — 단위는 "달러/시간"이다
 
@@ -26,7 +26,7 @@ SP를 RI와 헷갈리는 가장 큰 이유는 **약정 단위**가 다르기 때
 
 EC2 Instance SP가 미묘하게 강력한 점은 "family를 고정하되 그 안에서는 자유"라는 점이다. us-east-1의 m5 family로 약정하면, m5.large든 m5.4xlarge든, Linux든 Windows든, 어느 AZ든 그 family 안의 모든 사용이 할인 대상이다. Standard RI보다 한 단계 더 유연하면서 같은 ~72% 할인을 받는다.
 
-> 💡 **관련 이론**: SP가 "인스턴스"가 아니라 "금액"을 약정하는 설계는 CS의 **추상화 계층(abstraction layer)** 사고와 같다. RI는 물리적 자원(인스턴스 타입)에 직접 결합된 약정이라 자원이 바뀌면 약정이 깨진다. SP는 자원 위에 "정규화된 시간당 비용"이라는 추상 계층을 한 겹 올려, 그 아래 실제 인스턴스가 무엇이든 약정이 매칭되게 했다. 이 덕분에 워크로드를 m5에서 m6i로 현대화해도 SP 약정은 그대로 유효하다. 추상화가 결합도(coupling)를 낮춰 변경 비용을 줄이는 전형적 패턴이다.
+SP가 "인스턴스"가 아니라 "금액"을 약정하는 설계는 CS의 **추상화 계층(abstraction layer)** 사고와 같다. RI는 물리적 자원(인스턴스 타입)에 직접 결합된 약정이라 자원이 바뀌면 약정이 깨진다. SP는 자원 위에 "정규화된 시간당 비용"이라는 추상 계층을 한 겹 올려, 그 아래 실제 인스턴스가 무엇이든 약정이 매칭되게 했다. 이 덕분에 워크로드를 m5에서 m6i로 현대화해도 SP 약정은 그대로 유효하다. 추상화가 결합도(coupling)를 낮춰 변경 비용을 줄이는 전형적 패턴이다.
 
 ## RI 2종과 Capacity Reservation — 할인과 용량은 별개다
 
@@ -37,11 +37,11 @@ EC2 Instance SP가 미묘하게 강력한 점은 "family를 고정하되 그 안
 | **Zonal RI** | ~72% | 특정 AZ 고정 | **용량 예약 포함** |
 | **Regional RI** | ~72% | 리전 내 AZ 유연 | 용량 보장 없음 |
 
-여기서 가장 자주 틀리는 지점은 **"RI = 용량 보장"이라는 오해**다. Regional 스코프 RI는 할인만 줄 뿐 용량을 보장하지 않는다. 용량까지 보장받으려면 **Zonal RI**(특정 AZ에 용량 예약)이거나 **On-Demand Capacity Reservation(ODCR)**을 써야 한다. ODCR은 할인이 전혀 없는 순수 용량 예약이고, 여기에 Savings Plans를 얹으면 "용량 보장 + 할인"을 동시에 얻는 표준 조합이 된다.
+여기서 틀리기 쉬운 지점은 **"RI = 용량 보장"이라는 오해**다. Regional 스코프 RI는 할인만 줄 뿐 용량을 보장하지 않는다. 용량까지 보장받으려면 **Zonal RI**(특정 AZ에 용량 예약)이거나 **On-Demand Capacity Reservation(ODCR)**을 써야 한다. ODCR은 할인이 전혀 없는 순수 용량 예약이고, 여기에 Savings Plans를 얹으면 "용량 보장 + 할인"을 동시에 얻는 표준 조합이 된다.
 
-> 🔍 **더 깊이**: Convertible RI의 "교환(exchange)"은 환불이 아니라 **동등 가치 이상으로의 재구성**이다. m5 Convertible RI를 c5로 바꾸려면, 남은 약정 가치가 새 RI 가치 이상이어야 교환된다(돈을 돌려받진 못함). 그래서 Convertible은 "family가 바뀔 가능성은 있지만 약정은 유지하고 싶을 때"의 도구다. 다만 현대적 best practice는 "굳이 Convertible RI를 쓸 거면 Compute SP를 써라"다 — Compute SP가 교환 절차 없이 자동으로 모든 family에 매칭되면서 관리가 훨씬 단순하기 때문이다. 시험에서 Convertible RI와 Compute SP가 둘 다 선택지에 있고 "운영 단순성"을 강조하면 Compute SP가 더 나은 답인 경우가 많다.
+Convertible RI의 "교환(exchange)"은 환불이 아니라 **동등 가치 이상으로의 재구성**이다. m5 Convertible RI를 c5로 바꾸려면, 남은 약정 가치가 새 RI 가치 이상이어야 교환된다(돈을 돌려받진 못함). 그래서 Convertible은 "family가 바뀔 가능성은 있지만 약정은 유지하고 싶을 때"의 도구다. 다만 현대적 best practice는 "굳이 Convertible RI를 쓸 거면 Compute SP를 써라"다 — Compute SP가 교환 절차 없이 자동으로 모든 family에 매칭되면서 관리가 훨씬 단순하기 때문이다. 시험에서 Convertible RI와 Compute SP가 둘 다 선택지에 있고 "운영 단순성"을 강조하면 Compute SP가 더 나은 답인 경우가 많다.
 
-> 📚 **사례**: 한 미디어 기업은 2019년 워크로드 현대화 과정에서 m4 family Standard RI를 대량 보유한 채 m5/m6i로 마이그레이션하려다 막혔다. Standard RI는 family 변경이 안 되니 m4 RI는 점점 놀고, 새 m5 인스턴스는 On-Demand로 청구됐다. 결국 남은 m4 RI를 Marketplace에서 손해 보고 팔았다(원인: family에 결합된 약정). 교훈은 명확했다 — 현대화·기술 변화가 예상되는 워크로드에 Standard RI를 3년 약정하는 것은 안티패턴이고, 같은 상황을 Compute SP로 약정했다면 family를 자유롭게 바꿔도 약정이 그대로 유효했을 것이다. 2020년 이후 이 회사는 RI를 거의 끊고 Compute SP 중심으로 전환했다.
+(가상 사례) 한 미디어 기업은 2019년 워크로드 현대화 과정에서 m4 family Standard RI를 대량 보유한 채 m5/m6i로 마이그레이션하려다 막혔다. Standard RI는 family 변경이 안 되니 m4 RI는 점점 놀고, 새 m5 인스턴스는 On-Demand로 청구됐다. 결국 남은 m4 RI를 Marketplace에서 손해 보고 팔았다(원인: family에 결합된 약정). 교훈은 명확했다 — 현대화·기술 변화가 예상되는 워크로드에 Standard RI를 3년 약정하는 것은 안티패턴이고, 같은 상황을 Compute SP로 약정했다면 family를 자유롭게 바꿔도 약정이 그대로 유효했을 것이다. 2020년 이후 이 회사는 RI를 거의 끊고 Compute SP 중심으로 전환했다.
 
 ## 적용 우선순위 — Billing 엔진은 어떻게 할인을 매칭하나
 
@@ -64,23 +64,23 @@ EC2 Instance SP가 미묘하게 강력한 점은 "family를 고정하되 그 안
 
 > ⚠️ **함정**: "RI와 SP를 둘 다 충분히 샀는데 SP 활용률(utilization)이 100%가 안 된다"는 시나리오. 원인은 RI가 먼저 사용량을 흡수해서 SP가 매칭할 사용량이 부족해진 것이다. RI를 과도하게 사면 SP와 충돌해 SP가 놀게 된다. 정답 방향은 "RI를 줄이거나, 신규 약정은 RI 대신 SP로 통일"이다. 시험에서 "SP utilization이 낮다 → 더 많은 워크로드를 약정 대상으로 끌어와야 한다"가 아니라 "기존 RI가 사용량을 선점하고 있다"를 의심하는 게 Pro 수준의 사고다.
 
-> 🔍 **더 깊이**: AWS는 이 충돌을 줄이기 위해 **Cost Explorer의 Savings Plans / RI Recommendation**을 제공한다. 이 추천 엔진은 과거 7/30/60일 사용량(lookback period)을 분석해 "이만큼 약정하면 낭비 없이 최대 절감"인 시간당 약정액을 계산한다. 내부적으로는 사용량의 **하한선(baseline)**을 찾는 최적화 문제다 — spike까지 약정하면 비는 시간에 약정이 놀고, 너무 적게 약정하면 절감 기회를 놓친다. 그래서 추천은 보통 "꾸준히 항상 켜져 있는 하한 사용량"만큼만 약정하고 변동분은 On-Demand/Spot으로 두는 형태로 나온다.
+AWS는 이 충돌을 줄이기 위해 **Cost Explorer의 Savings Plans / RI Recommendation**을 제공한다. 이 추천 엔진은 과거 7/30/60일 사용량(lookback period)을 분석해 "이만큼 약정하면 낭비 없이 최대 절감"인 시간당 약정액을 계산한다. 내부적으로는 사용량의 **하한선(baseline)**을 찾는 최적화 문제다 — spike까지 약정하면 비는 시간에 약정이 놀고, 너무 적게 약정하면 절감 기회를 놓친다. 그래서 추천은 보통 "꾸준히 항상 켜져 있는 하한 사용량"만큼만 약정하고 변동분은 On-Demand/Spot으로 두는 형태로 나온다.
 
 ## Organization 차원 공유 — 약정을 계정 경계 너머로
 
-멀티 계정 환경(SAP 시험의 단골 전제)에서 약정 할인은 **통합 결제(Consolidated Billing)** 덕분에 계정 경계를 넘어 공유된다. A 계정에서 산 Compute SP의 약정액이 A에서 다 안 쓰이면, 같은 Organization의 B·C 계정 사용량에 자동으로 적용된다.
+멀티 계정 환경(SAP 시험의 일반적인 전제)에서 약정 할인은 **통합 결제(Consolidated Billing)** 덕분에 계정 경계를 넘어 공유된다. A 계정에서 산 Compute SP의 약정액이 A에서 다 안 쓰이면, 같은 Organization의 B·C 계정 사용량에 자동으로 적용된다.
 
 이 공유는 **관리 계정(management account)에서 Sharing이 활성화**돼 있을 때만 작동한다(기본 활성). 특정 계정의 약정을 다른 계정과 공유하고 싶지 않으면(예: 부서별 비용 분리) 관리 계정에서 해당 계정의 RI/SP 공유를 끌 수 있다.
 
-> 💡 **관련 이론**: 이 공유 모델은 분산 시스템의 **자원 풀링(resource pooling)**과 같은 효율을 낸다. 계정마다 따로 약정을 사면 각 계정이 자기 spike에 맞춰 과약정하게 되고 빈 약정이 생긴다. 반대로 Organization 전체를 하나의 풀로 보면, 한 계정이 한가할 때 남는 약정을 바쁜 계정이 흡수해 전체 활용률이 올라간다. 통계적으로 여러 워크로드를 합치면 변동성이 상쇄되는(law of large numbers) 효과로, 풀이 클수록 약정을 사용량 하한에 더 타이트하게 맞춰도 안전하다. 그래서 대규모 Org는 **약정 구매를 중앙(관리 계정 또는 전용 결제 계정)에서 일괄 관리**하는 게 best practice다.
+이 공유 모델은 분산 시스템의 **자원 풀링(resource pooling)**과 같은 효율을 낸다. 계정마다 따로 약정을 사면 각 계정이 자기 spike에 맞춰 과약정하게 되고 빈 약정이 생긴다. 반대로 Organization 전체를 하나의 풀로 보면, 한 계정이 한가할 때 남는 약정을 바쁜 계정이 흡수해 전체 활용률이 올라간다. 통계적으로 여러 워크로드를 합치면 변동성이 상쇄되는(law of large numbers) 효과로, 풀이 클수록 약정을 사용량 하한에 더 타이트하게 맞춰도 안전하다. 그래서 대규모 Org는 **약정 구매를 중앙(관리 계정 또는 전용 결제 계정)에서 일괄 관리**하는 게 best practice다.
 
 > ⚠️ **함정**: "각 멤버 계정이 자기 SP를 사야 한다"를 고르면 Pro 시험에서 거의 오답이다. 약정은 Org 전체에 공유되므로 중앙에서 통합 구매하는 게 활용률·관리 양면에서 우월하다. 또 하나 — RI/SP 할인 공유와 **요금 할인(volume tiering)**은 다른 개념이다. 통합 결제는 사용량을 합산해 볼륨 티어 할인도 같이 적용하므로, 계정을 쪼개 두면 손해다. "비용 분리를 위해 계정을 나누되 할인은 공유"가 멀티 계정 비용 설계의 핵심이다.
 
-## 정리하며
+## 정리
 
 Savings Plans·RI의 핵심은 "약정의 구체성과 할인율은 비례한다"는 위험 이전의 경제학이다. **Compute SP(최대 유연·~66%) ↔ EC2 Instance SP / Standard RI(family 고정·~72%) ↔ Spot(회수 위험·~90%)**의 스펙트럼에서 워크로드를 어디에 놓을지가 모든 시나리오의 뼈대다. Billing 엔진은 "구체적인 약정(Zonal RI)부터 유연한 약정(Compute SP) 순"으로 차감하며, Organization은 통합 결제로 약정을 계정 너머 공유한다.
 
-SAP 시험 단골 매핑: (1) "EC2+Fargate+Lambda 통합 할인" → **Compute SP**, (2) "특정 family·리전 3년 최대 할인" → **EC2 Instance SP / Standard RI**, (3) "family 변경 예상 + 약정 유지" → **Convertible RI**(또는 더 단순한 Compute SP), (4) "용량 보장 + 할인" → **Zonal RI** 또는 **ODCR + SP**, (5) "현금 흐름 여유 + 최대 할인" → **All Upfront**, (6) "멤버 계정마다 SP 구매" → 오답(중앙 통합 구매·공유), (7) "SP 활용률 저하" → RI 과약정이 사용량 선점 의심. 다음 day는 Compute Optimizer와 Rightsizing을 본다.
+SAP 시험 매핑: (1) "EC2+Fargate+Lambda 통합 할인" → **Compute SP**, (2) "특정 family·리전 3년 최대 할인" → **EC2 Instance SP / Standard RI**, (3) "family 변경 예상 + 약정 유지" → **Convertible RI**(또는 더 단순한 Compute SP), (4) "용량 보장 + 할인" → **Zonal RI** 또는 **ODCR + SP**, (5) "현금 흐름 여유 + 최대 할인" → **All Upfront**, (6) "멤버 계정마다 SP 구매" → 오답(중앙 통합 구매·공유), (7) "SP 활용률 저하" → RI 과약정이 사용량 선점 의심. 다음 day는 Compute Optimizer와 Rightsizing을 본다.
 
 ---
 

@@ -2,7 +2,7 @@
 
 어제 본 Run Command는 강력하지만 한 가지 약점이 있다. **일회성**이라는 점이다. nginx를 재시작하는 명령을 던지면 그 순간엔 다 재시작되지만, 30분 뒤 새 인스턴스가 ASG로 뜨면 그 인스턴스는 아무도 손대지 않은 맨몸 상태다. CloudWatch Agent를 fleet 전체에 깔아도, 다음 주에 누군가 한 대에서 그걸 지워버리면 그 한 대는 조용히 표준에서 벗어난다. fleet은 살아 움직이는 생물이라 한 번 명령을 친다고 그 상태가 유지되지 않는다.
 
-State Manager는 이 문제를 "**원하는 상태(desired state)**"라는 추상화로 푼다. 명령을 "한 번 실행"하는 게 아니라 "이 상태가 항상 참이어야 한다"고 선언하고, SSM이 주기적으로 실제 상태를 그 선언에 맞춘다. 오늘은 이 desired state 모델이 Kubernetes·Puppet·Chef와 어떻게 같은 뿌리를 갖는지, Inventory로 fleet의 소프트웨어 지형을 수집해 S3로 흘려 Athena로 SQL 질의하는 데이터 레이크 패턴, 그리고 이 모든 결과가 Compliance로 모여 Security Hub까지 흘러가는 거버넌스 파이프라인을 본다. DOP 시험에서 "새 인스턴스에 자동으로 X 설치", "100만 대 인벤토리를 SQL로 분석", "fleet 컴플라이언스 통합 가시화"는 단골 시나리오다.
+State Manager는 이 문제를 "**원하는 상태(desired state)**"라는 추상화로 푼다. 명령을 "한 번 실행"하는 게 아니라 "이 상태가 항상 참이어야 한다"고 선언하고, SSM이 주기적으로 실제 상태를 그 선언에 맞춘다. 오늘은 이 desired state 모델이 Kubernetes·Puppet·Chef와 어떻게 같은 뿌리를 갖는지, Inventory로 fleet의 소프트웨어 지형을 수집해 S3로 흘려 Athena로 SQL 질의하는 데이터 레이크 패턴, 그리고 이 모든 결과가 Compliance로 모여 Security Hub까지 흘러가는 거버넌스 파이프라인을 본다. DOP 시험에서 "새 인스턴스에 자동으로 X 설치", "100만 대 인벤토리를 SQL로 분석", "fleet 컴플라이언스 통합 가시화"는 대표적인 시나리오다.
 
 ## State Manager — 명령형에서 선언형으로
 
@@ -25,7 +25,7 @@ aws ssm create-association \
 
 > 💡 **관련 이론**: desired state(원하는 상태)는 선언형 구성 관리의 핵심 추상화다. Kubernetes의 컨트롤러가 "ReplicaSet은 항상 3개여야 한다"를 선언하면 컨트롤 루프가 실제 Pod 수를 계속 그 값으로 reconcile(조정)하는 것, Puppet/Chef가 "이 패키지는 설치되어 있어야 한다"를 매니페스트로 선언하고 에이전트가 주기적으로 적용하는 것이 정확히 같은 모델이다. 명령형(imperative)은 "이 명령을 실행하라", 선언형(declarative)은 "이 상태가 되어라"다. 선언형의 장점은 **멱등성(idempotency)** — 몇 번을 적용해도 결과가 같고, drift가 나면 자동으로 되돌아간다. State Manager는 SSM에 이 선언형 패러다임을 가져온 것이다.
 
-> 🔍 **더 깊이**: Association은 `apply-only-at-cron-interval` 옵션에 따라 동작이 미묘하게 달라진다. 이 플래그가 없으면 association을 새로 만들거나 수정한 직후 즉시 한 번 실행되고, 그 다음부터 스케줄대로 돈다. 새 인스턴스가 뜨면 스케줄과 무관하게 즉시 적용한다. 이 플래그를 켜면 "오직 cron 시점에만" 실행되어, 인스턴스 생성 직후 폭주를 막는다. 대규모 환경에서 수백 대가 동시에 부팅하며 association을 동시에 실행하면 패키지 미러나 다운스트림 의존성에 부하가 몰리는데, 이 플래그로 cron 시점에 분산시킨다. 시험에서 직접 묻지는 않지만 "새 인스턴스에 자동 적용 vs 즉시 실행 폭주 방지"의 트레이드오프를 이해해두면 좋다.
+> Association은 `apply-only-at-cron-interval` 옵션에 따라 동작이 미묘하게 달라진다. 이 플래그가 없으면 association을 새로 만들거나 수정한 직후 즉시 한 번 실행되고, 그 다음부터 스케줄대로 돈다. 새 인스턴스가 뜨면 스케줄과 무관하게 즉시 적용한다. 이 플래그를 켜면 "오직 cron 시점에만" 실행되어, 인스턴스 생성 직후 폭주를 막는다. 대규모 환경에서 수백 대가 동시에 부팅하며 association을 동시에 실행하면 패키지 미러나 다운스트림 의존성에 부하가 몰리는데, 이 플래그로 cron 시점에 분산시킨다. 시험에서 직접 묻지는 않지만 "새 인스턴스에 자동 적용 vs 즉시 실행 폭주 방지"의 트레이드오프를 이해해두면 좋다.
 
 > 🎯 **시나리오**: "ASG가 트래픽에 따라 인스턴스를 수시로 띄우고 내린다. 모든 인스턴스에 CloudWatch Agent와 보안 에이전트가 반드시 깔려 있어야 하고, 누가 지워도 자동 복구되어야 한다. AMI에 굽는 것 외의 방법은?" — 답은 State Manager Association으로 두 패키지를 태그 기반으로 선언하고 주기 실행한다. AMI 베이킹은 가능하지만 에이전트 버전 업데이트마다 AMI를 다시 굽고 ASG Launch Template을 교체해야 하는 부담이 있다. State Manager는 association의 패키지 버전만 바꾸면 다음 주기에 전 fleet이 갱신되고, 새 인스턴스도 자동 포함되며, 누가 지워도 reconcile된다. AMI 베이킹(부팅 속도)과 State Manager(런타임 강제)는 보완 관계다.
 
@@ -67,7 +67,7 @@ aws ssm create-association \
 
 `aws ssm put-inventory --instance-id i-... --items file://custom.json`로 올린다. 이로써 "표준 수집 항목 + 우리만의 컴플라이언스 항목"을 한 인벤토리에 담는다.
 
-> 📚 **사례**: Inventory의 진가는 취약점 대응 속도에서 드러난다. 2021년 Log4Shell(Log4j 원격 코드 실행) 사태 때, "우리 fleet 중 취약한 Log4j 버전이 깔린 인스턴스가 어디 어디냐"를 몇 분 안에 답할 수 있는 조직과 며칠씩 수동 조사한 조직의 대응 속도가 갈렸다. Inventory가 애플리케이션·라이브러리 정보를 미리 수집해 S3에 적재해뒀다면, 다음 절에서 볼 Athena SQL 한 줄로 영향받는 인스턴스를 즉시 추려낸다. 인벤토리는 평시에는 지루한 데이터지만 인시던트 때는 생명줄이다.
+> Inventory의 진가는 취약점 대응 속도에서 드러난다. 2021년 Log4Shell(Log4j 원격 코드 실행) 사태 때, "우리 fleet 중 취약한 Log4j 버전이 깔린 인스턴스가 어디 어디냐"를 몇 분 안에 답할 수 있는 조직과 며칠씩 수동 조사한 조직의 대응 속도가 갈렸다. Inventory가 애플리케이션·라이브러리 정보를 미리 수집해 S3에 적재해뒀다면, 다음 절에서 볼 Athena SQL 한 줄로 영향받는 인스턴스를 즉시 추려낸다. 인벤토리는 평시에는 지루한 데이터지만 인시던트 때는 생명줄이다.
 
 ## Resource Data Sync — 인벤토리를 데이터 레이크로
 
@@ -95,9 +95,9 @@ WHERE  name = 'log4j-core'
 
 이 한 줄이 "취약한 Log4j가 깔린 인스턴스를 다 찾아라"라는 인시던트 질의의 답이다. fleet이 10만 대든 100만 대든 Athena는 S3의 데이터를 스캔해 답을 준다. 멀티 계정·멀티 리전 환경에서는 Resource Data Sync를 **Organizations 전체 계정에서 한 중앙 S3 버킷으로** 모을 수 있어, 조직 전체의 인벤토리를 한 데이터 레이크에서 질의한다.
 
-> 💡 **관련 이론**: 이 패턴은 데이터 엔지니어링의 **ELT(Extract-Load-Transform) + 데이터 레이크** 그 자체다. 정형/반정형 데이터를 일단 S3(객체 스토리지)에 raw로 적재하고(Load), 질의 시점에 스키마를 적용해(schema-on-read) Athena로 변환·분석한다(Transform). 전통적인 데이터 웨어하우스(schema-on-write, 적재 전에 스키마 고정)와 대비된다. SSM Inventory → Resource Data Sync → S3 → Athena는 운영 데이터를 데이터 레이크 패턴으로 다루는 전형이다. 같은 구조가 CloudTrail 로그, VPC Flow Logs, ALB 액세스 로그를 S3에 모아 Athena로 질의하는 데도 그대로 쓰인다.
+> 이 패턴은 데이터 엔지니어링의 **ELT(Extract-Load-Transform) + 데이터 레이크** 그 자체다. 정형/반정형 데이터를 일단 S3(객체 스토리지)에 raw로 적재하고(Load), 질의 시점에 스키마를 적용해(schema-on-read) Athena로 변환·분석한다(Transform). 전통적인 데이터 웨어하우스(schema-on-write, 적재 전에 스키마 고정)와 대비된다. SSM Inventory → Resource Data Sync → S3 → Athena는 운영 데이터를 데이터 레이크 패턴으로 다루는 전형이다. 같은 구조가 CloudTrail 로그, VPC Flow Logs, ALB 액세스 로그를 S3에 모아 Athena로 질의하는 데도 그대로 쓰인다.
 
-> 🔍 **더 깊이**: Athena가 S3의 JSON을 효율적으로 읽으려면 테이블 스키마가 필요하다. Glue Crawler를 돌려 자동으로 스키마를 추론하거나, `CREATE EXTERNAL TABLE`로 직접 정의한다. 그리고 인벤토리 데이터가 누적되며 S3 객체가 많아지면, Parquet 같은 컬럼형 포맷으로 변환하고 날짜·계정으로 파티셔닝하면 Athena 스캔량(=비용)이 크게 준다. Resource Data Sync 자체는 JSON으로 떨구지만, ETL 잡으로 Parquet 변환을 한 단계 두는 게 대규모에서 표준이다. Athena는 스캔한 바이트 기준 과금이므로 "질의 비용 = 스캔량"이라는 점을 기억하면 파티셔닝의 가치가 보인다.
+> Athena가 S3의 JSON을 효율적으로 읽으려면 테이블 스키마가 필요하다. Glue Crawler를 돌려 자동으로 스키마를 추론하거나, `CREATE EXTERNAL TABLE`로 직접 정의한다. 그리고 인벤토리 데이터가 누적되며 S3 객체가 많아지면, Parquet 같은 컬럼형 포맷으로 변환하고 날짜·계정으로 파티셔닝하면 Athena 스캔량(=비용)이 크게 준다. Resource Data Sync 자체는 JSON으로 떨구지만, ETL 잡으로 Parquet 변환을 한 단계 두는 게 대규모에서 표준이다. Athena는 스캔한 바이트 기준 과금이므로 "질의 비용 = 스캔량"이라는 점을 기억하면 파티셔닝의 가치가 보인다.
 
 ## Distributor — 자체 패키지의 fleet 배포
 
@@ -145,9 +145,9 @@ State Manager / Patch Manager 결과
    EventBridge → Lambda → 자동 격리/패치/알림
 ```
 
-> 💡 **관련 이론**: 이 파이프라인은 보안 운영의 **detect → assess → respond** 루프이자 SOAR(Security Orchestration, Automation and Response)의 한 형태다. 각 단계가 분리되어 있다는 점이 중요하다. SSM은 상태를 평가(assess)하고, Security Hub는 여러 소스의 Finding을 집계(aggregate)하고, EventBridge + Lambda는 대응(respond)을 자동화한다. 한 도구가 모든 걸 하지 않고 책임을 분리(separation of concerns)해, 새 탐지 소스를 추가하거나 대응 로직을 바꿔도 다른 단계에 영향이 없다. NIST의 사이버보안 프레임워크(Identify-Protect-Detect-Respond-Recover)가 이 구조의 이론적 토대다.
+> 이 파이프라인은 보안 운영의 **detect → assess → respond** 루프이자 SOAR(Security Orchestration, Automation and Response)의 한 형태다. 각 단계가 분리되어 있다는 점이 중요하다. SSM은 상태를 평가(assess)하고, Security Hub는 여러 소스의 Finding을 집계(aggregate)하고, EventBridge + Lambda는 대응(respond)을 자동화한다. 한 도구가 모든 걸 하지 않고 책임을 분리(separation of concerns)해, 새 탐지 소스를 추가하거나 대응 로직을 바꿔도 다른 단계에 영향이 없다. NIST의 사이버보안 프레임워크(Identify-Protect-Detect-Respond-Recover)가 이 구조의 이론적 토대다.
 
-> ⚠️ **함정**: SSM Inventory에는 IAM 사용자·역할 목록 같은 **계정 수준 자원**이 포함되지 않는다. Inventory는 어디까지나 "관리 대상 인스턴스 안의 소프트웨어·서비스·네트워크" 정보다. IAM 같은 계정 자원의 컴플라이언스가 필요하면 AWS Config(리소스 수준 평가)나 IAM Access Analyzer를 써야 한다. 시험에서 "Inventory로 수집되지 않는 것"을 고르는 문제에 IAM 사용자 목록이 정답으로 자주 나온다. Inventory는 인스턴스 내부, Config는 AWS 리소스라는 경계를 기억하라.
+> ⚠️ **함정**: SSM Inventory에는 IAM 사용자·역할 목록 같은 **계정 수준 자원**이 포함되지 않는다. Inventory는 어디까지나 "관리 대상 인스턴스 안의 소프트웨어·서비스·네트워크" 정보다. IAM 같은 계정 자원의 컴플라이언스가 필요하면 AWS Config(리소스 수준 평가)나 IAM Access Analyzer를 써야 한다. 시험에서 "Inventory로 수집되지 않는 것"을 고르는 문제에 IAM 사용자 목록이 정답으로 나온다. Inventory는 인스턴스 내부, Config는 AWS 리소스를 다룬다는 경계가 있다.
 
 ## Change Calendar — 변경 freeze의 코드화
 
@@ -165,7 +165,7 @@ Change Calendar는 OPEN/CLOSED 상태를 시간대별로 정의하고, Automatio
 
 > 🎯 **시나리오**: "전자상거래 회사가 블랙 프라이데이 주간에 실수로 prod 배포가 나가 장애가 난 적이 있다. 사람 실수에 의존하지 않고 그 주간 동안 자동 배포 파이프라인을 차단하고 싶다." — 답은 Change Calendar에 해당 주간을 CLOSED로 정의하고, 파이프라인의 배포 단계 앞에 캘린더 상태를 확인하는 게이트(Automation Runbook 또는 Lambda)를 둔다. CLOSED면 파이프라인이 진행을 멈춘다. 긴급 핫픽스는 별도의 승인 경로로 우회시킨다. freeze 정책이 사람의 기억이 아니라 코드로 강제된다.
 
-## 정리하며
+## 정리
 
 오늘 본 그림은 다섯 가지다. 첫째, **State Manager의 Association은 desired state 추상화**로, Kubernetes·Puppet과 같은 선언형·멱등성 모델이며 새 인스턴스 자동 적용과 drift 자동 복구가 cron 대비 결정적 차이다. 둘째, **Inventory는 fleet의 소프트웨어 지형을 수집**하고 Custom Inventory로 기업 고유 항목까지 담는다 — IAM 같은 계정 자원은 포함하지 않는다. 셋째, **Resource Data Sync → S3 → Athena**는 운영 데이터를 데이터 레이크(schema-on-read) 패턴으로 다루는 전형이고, 인시던트 때 SQL 한 줄로 영향 인스턴스를 추려낸다. 넷째, **Distributor는 자체 패키지를 State Manager로 배포**해 버전을 fleet의 single source of truth로 삼는다. 다섯째, **Compliance → Security Hub → EventBridge → Lambda**는 detect-assess-respond를 책임 분리한 거버넌스 폐루프이고, Change Calendar가 시간 축의 freeze를 코드화한다.
 

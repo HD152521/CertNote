@@ -1,8 +1,8 @@
 # Day 3 - STS와 정책 조건: 임시 자격증명의 깊은 세계
 
-어제 Role을 보며 "STS가 임시 자격증명을 발급한다"고 한 줄로 넘어갔다. 그런데 그 임시 자격증명이 정확히 어떤 구조이고, 어떻게 검증되고, 어떻게 만료되는지를 모르면 실무에서 만나는 가장 흔한 IAM 문제들 — "왜 SDK가 갑자기 401을 던지지?", "왜 federation 토큰이 1시간 후에 죽지?", "왜 Lambda가 자기 함수 ARN을 모르지?" — 를 풀 수 없다.
+어제 Role을 보며 "STS가 임시 자격증명을 발급한다"고 한 줄로 넘어갔다. 그런데 그 임시 자격증명이 정확히 어떤 구조이고, 어떻게 검증되고, 어떻게 만료되는지를 모르면 실무에서 만나는 IAM 문제들 — "왜 SDK가 갑자기 401을 던지지?", "왜 federation 토큰이 1시간 후에 죽지?", "왜 Lambda가 자기 함수 ARN을 모르지?" — 를 풀 수 없다.
 
-오늘은 STS의 4개 API를 깊이 보고, 정책의 Condition 키들을 ABAC 관점에서 분석하고, 리소스 기반 정책의 cross-account 패턴 — 특히 confused deputy 문제와 External ID — 를 본다. 시험에 가장 자주 나오는 영역 중 하나이면서, 실무에서 IAM이 깨질 때 90%가 이 영역이다.
+오늘은 STS의 4개 API를 깊이 보고, 정책의 Condition 키들을 ABAC 관점에서 분석하고, 리소스 기반 정책의 cross-account 패턴 — 특히 confused deputy 문제와 External ID — 를 본다. 시험 범위에 들고, 실무에서 IAM이 깨질 때 가장 먼저 확인하는 영역이기도 하다.
 
 ## STS: Security Token Service의 정체
 
@@ -21,11 +21,9 @@ STS의 핵심 API는 다섯 가지다.
 | `GetFederationToken` | Name, Policy | 임시 자격증명 (15분~36시간) | 커스텀 federation broker |
 | `GetCallerIdentity` | (none) | 현재 호출자의 ARN | 디버깅 |
 
-> 🔍 **더 깊이**: AssumeRole이 반환하는 자격증명은 ① AccessKeyId(시작이 `ASIA`로 다름, 영구 키는 `AKIA`), ② SecretAccessKey, ③ **SessionToken**(JWT 비슷한 구조의 base64 문자열) 3종 세트다. SDK가 API를 호출할 때 SigV4 서명에 모든 3개를 사용한다. AWS 서비스는 받은 SessionToken을 STS 공개키로 검증해 만료 여부와 권한을 확인한다. 영구 키와 달리 임시 키는 STS 측에서 즉시 revoke가 가능하다(`aws sts revoke-credentials` 또는 `revoke older sessions` 액션). 더 흥미로운 점은 SessionToken 안에 원래 Role의 권한 스냅샷이 박혀 있어, 발급 이후 Role의 Permission Policy를 바꿔도 그 세션엔 반영되지 않는다. AWS가 검증을 분산할 수 있는 이유다.
+AssumeRole이 반환하는 자격증명은 ① AccessKeyId(시작이 `ASIA`로 다름, 영구 키는 `AKIA`), ② SecretAccessKey, ③ **SessionToken**(JWT 비슷한 구조의 base64 문자열) 3종 세트다. SDK가 API를 호출할 때 SigV4 서명에 모든 3개를 사용한다. AWS 서비스는 받은 SessionToken을 STS 공개키로 검증해 만료 여부와 권한을 확인한다. 영구 키와 달리 임시 키는 STS 측에서 즉시 revoke가 가능하다(`aws sts revoke-credentials` 또는 `revoke older sessions` 액션). 더 흥미로운 점은 SessionToken 안에 원래 Role의 권한 스냅샷이 박혀 있어, 발급 이후 Role의 Permission Policy를 바꿔도 그 세션엔 반영되지 않는다. AWS가 검증을 분산할 수 있는 이유다.
 
-> 💡 **관련 이론**: STS의 임시 자격증명은 OAuth 2.0의 access token, Kerberos의 ticket-granting ticket과 같은 계열의 메커니즘이다. 모두 "단기 유효 토큰 + 갱신 메커니즘"이라는 패턴을 공유한다. 보안 측면에서 이 패턴이 우월한 이유는 **유출되어도 자동으로 무효화된다**는 점. 1시간 후 자동 만료되는 토큰을 훔쳐도 다음 시간엔 못 쓴다. 반면 IAM User의 access key는 명시적으로 회전하지 않는 한 영구 유효하다. 이 차이가 Capital One 사고(SSRF로 IMDSv1에서 EC2 IAM 역할의 임시 자격증명을 훔침 — 임시 자격증명도 탈취 경로가 열려 있으면 안전하지 않다)와 Twitter 해킹(직원 세션이 1시간으로 제한됐다면 피해 축소) 양쪽의 핵심이다.
-
-> 🔍 **더 깊이**: AccessKeyId의 prefix가 자격증명 종류를 알려준다. `AKIA`는 영구 IAM User key, `ASIA`는 STS 임시 키, `AROA`는 Role 식별자, `AGPA`는 Group, `AIDA`는 User. 보안 도구가 GitHub에 키가 노출됐는지 검사할 때 이 prefix로 정규식을 짠다. truffleHog, GitGuardian 같은 도구가 정확히 이 패턴을 본다. `ASIA`로 시작하는 키가 노출되면 정상적으론 곧 만료되지만, 발급 후 12시간 이내라면 여전히 위험하다.
+AccessKeyId의 prefix가 자격증명 종류를 알려준다. `AKIA`는 영구 IAM User key, `ASIA`는 STS 임시 키, `AROA`는 Role 식별자, `AGPA`는 Group, `AIDA`는 User. 보안 도구가 GitHub에 키가 노출됐는지 검사할 때 이 prefix로 정규식을 짠다. truffleHog, GitGuardian 같은 도구가 정확히 이 패턴을 본다. `ASIA`로 시작하는 키가 노출되면 정상적으론 곧 만료되지만, 발급 후 12시간 이내라면 여전히 위험하다.
 
 ## AssumeRole의 Trust Policy: 누가 이 Role을 빌릴 수 있는가
 
@@ -56,25 +54,23 @@ Role을 만들 때 함께 정의하는 Trust Policy는 "**누가** 이 Role을 a
 
 `Principal`이 누구를 허용할지를 결정한다. `Service`는 AWS 서비스(예: `ec2.amazonaws.com`, `lambda.amazonaws.com`), `AWS`는 같은 또는 다른 계정의 IAM 엔터티, `Federated`는 SAML/OIDC provider다. Trust Policy가 막으면 Permission Policy가 아무리 넓어도 assume이 안 된다.
 
-서비스 principal의 이름이 직관과 다르게 잡힌 경우가 있다. 예를 들어 ECS Task Role의 Trust Principal은 `ecs.amazonaws.com`이 아니라 `ecs-tasks.amazonaws.com`이다. Lambda는 `lambda.amazonaws.com`이지만 Lambda@Edge용 Role은 `lambda.amazonaws.com`과 `edgelambda.amazonaws.com` 두 개를 동시에 trust해야 한다. RDS Enhanced Monitoring은 `monitoring.rds.amazonaws.com`이라는 이상한 이름을 쓴다. 이런 비대칭은 AWS의 서비스 진화 역사에서 비롯됐고, 시험에 종종 함정으로 나온다.
+서비스 principal의 이름이 직관과 다르게 잡힌 경우가 있다. 예를 들어 ECS Task Role의 Trust Principal은 `ecs.amazonaws.com`이 아니라 `ecs-tasks.amazonaws.com`이다. Lambda는 `lambda.amazonaws.com`이지만 Lambda@Edge용 Role은 `lambda.amazonaws.com`과 `edgelambda.amazonaws.com` 두 개를 동시에 trust해야 한다. RDS Enhanced Monitoring은 `monitoring.rds.amazonaws.com`이라는 이상한 이름을 쓴다. 이런 비대칭은 AWS의 서비스 진화 역사에서 비롯됐고, 함정 보기로 쓰이기 쉽다.
 
 > ⚠️ **함정**: Trust Policy의 Principal에 `"AWS": "arn:aws:iam::123456789012:root"`을 적었다고 해서 "그 계정의 root user만" 허용하는 게 아니다. **그 계정 안의 모든 IAM 엔터티가 잠재적 허용 대상**이라는 뜻이다. 실제 assume이 일어나려면 그 엔터티가 자기 계정 안에서 `sts:AssumeRole` 권한도 가져야 한다(양쪽 평가). 그래서 cross-account는 항상 양쪽 정책이 모두 허용해야 동작한다.
 
 ## Confused Deputy 문제와 External ID
 
-이게 시험에 자주 나오면서 실무에서도 자주 사고 나는 부분이다. 시나리오를 보자. SaaS 백업 회사 SaaS-Backup이 우리 S3에 백업 데이터를 쓰기 위해 우리 계정에 Role을 만든다. Trust Policy의 Principal은 SaaS-Backup의 계정 ID로 잡는다.
+시험 시나리오로 나오고 실무에서도 사고가 나는 부분이다. 시나리오는 이렇다. SaaS 백업 회사 SaaS-Backup이 우리 S3에 백업 데이터를 쓰기 위해 우리 계정에 Role을 만든다. Trust Policy의 Principal은 SaaS-Backup의 계정 ID로 잡는다.
 
 문제는 SaaS-Backup이 다른 고객 X도 받았을 때다. 공격자 X가 SaaS-Backup에게 "우리 백업도 처리해줘"라고 요청하면서 우리 Role의 ARN을 넣어버린다면? SaaS-Backup은 자기 계정으로 AssumeRole을 호출할 권한이 있으므로 우리 Role을 빌려 우리 S3에 X의 백업을 덮어쓸 수 있다. **SaaS가 "고객을 헷갈려서" 다른 고객의 자원에 접근**하는 이 현상을 confused deputy라고 한다. 이 용어는 1988년 Norm Hardy가 capability security 맥락에서 처음 명명했고, 본질은 "권한을 가진 대리인(deputy)이 누구를 위해 일하는지 모를 때 생기는 권한 오남용"이다.
 
 해결책이 **External ID**다. 우리 Role의 Trust Policy에 `sts:ExternalId` Condition을 추가해 우리만 아는 비밀 문자열을 강제한다. SaaS-Backup이 우리 Role을 assume하려면 우리가 알려준 External ID를 같이 보내야 한다. X는 우리 External ID를 모르므로 SaaS-Backup이 X의 요청을 처리하려 해도 우리 Role 검증에 실패한다.
 
-> ⚠️ **함정**: External ID는 흔히 "비밀번호"로 오해되지만, 실은 "**고객 식별자**"에 가깝다. 강력한 무작위성보다 "각 고객마다 다른 값"이 핵심이다. SaaS 측에서는 고객별 External ID를 DB에 저장해 매번 다르게 사용한다. AWS는 모든 third-party SaaS Role 설정 시 External ID를 강제로 사용하라고 권장한다. Datadog, New Relic, Splunk, Snowflake 모두 가입 시 External ID를 자동 생성해서 보여준다.
-
-> 📚 **사례**: 2023년 5월에 일부 보안 연구자들이 AWS의 SaaS 통합 패턴에서 External ID를 안 쓰거나, 모든 고객에게 같은 External ID를 부여하는 third-party 벤더들을 찾아냈다. 이들은 confused deputy 공격에 무방비였고, 일부는 다른 고객의 S3 데이터에 접근 가능했다. AWS는 이후 [공식 가이드](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-user_externalid.html)에서 "고객별로 다른, 추측 불가능한 External ID"를 명시적으로 요구하기 시작했다.
+External ID는 흔히 "비밀번호"로 오해되지만, 실은 "**고객 식별자**"에 가깝다. 강력한 무작위성보다 "각 고객마다 다른 값"이 핵심이다. SaaS 측에서는 고객별 External ID를 DB에 저장해 매번 다르게 사용한다. AWS는 모든 third-party SaaS Role 설정 시 External ID를 강제로 사용하라고 권장한다. Datadog, New Relic, Splunk, Snowflake 모두 가입 시 External ID를 자동 생성해서 보여준다.
 
 ## Condition: ABAC의 엔진
 
-Policy의 Condition 절은 IAM 평가의 가장 강력한 부분이다. AWS는 수백 개의 condition key를 제공하는데, 시험에 자주 나오는 것들을 분류해두면 빠르다.
+Policy의 Condition 절은 IAM 평가의 가장 강력한 부분이다. AWS는 수백 개의 condition key를 제공하는데, 시험에서 알아야 할 것들을 분류해 두면 빠르다.
 
 | 카테고리 | 키 | 예시 |
 |------|------|------|
@@ -94,11 +90,9 @@ Policy의 Condition 절은 IAM 평가의 가장 강력한 부분이다. AWS는 �
 | EC2 서비스 | `ec2:InstanceType` | "t3 패밀리만 허용" |
 |  | `ec2:ResourceTag/Owner` | 인스턴스 태그 기준 |
 
-> 🔍 **더 깊이**: `aws:PrincipalTag`와 `aws:RequestTag`의 조합은 ABAC의 핵심이다. Engineering 부서 사용자는 `Dept=Engineering` 태그를 갖고, Engineering이 만드는 자원도 `Dept=Engineering` 태그를 가져야 한다고 강제하면, 단일 정책으로 부서별 자원 분리를 구현할 수 있다. Identity와 자원에 같은 태그가 붙어 있을 때만 액션을 허용하는 패턴: `"Condition": {"StringEquals": {"aws:RequestTag/Dept": "${aws:PrincipalTag/Dept}"}}`. RBAC라면 부서마다 Group과 Policy를 만들어야 하는데, ABAC로는 정책 하나로 끝난다. NIST는 SP 800-162에서 ABAC를 RBAC 다음 세대로 명시했고, AWS는 2017년 이를 IAM에 도입했다.
+`aws:PrincipalTag`와 `aws:RequestTag`의 조합은 ABAC의 핵심이다. Engineering 부서 사용자는 `Dept=Engineering` 태그를 갖고, Engineering이 만드는 자원도 `Dept=Engineering` 태그를 가져야 한다고 강제하면, 단일 정책으로 부서별 자원 분리를 구현할 수 있다. Identity와 자원에 같은 태그가 붙어 있을 때만 액션을 허용하는 패턴: `"Condition": {"StringEquals": {"aws:RequestTag/Dept": "${aws:PrincipalTag/Dept}"}}`. RBAC라면 부서마다 Group과 Policy를 만들어야 하는데, ABAC로는 정책 하나로 끝난다.
 
-> 💡 **관련 이론**: SigV4 서명 알고리즘(AWS API의 표준 인증)은 HMAC-SHA256 기반이다. 클라이언트가 ① canonical request(method, URI, headers, body hash), ② string-to-sign(timestamp, scope, canonical request hash), ③ signing key(SecretAccessKey를 다섯 단계 HMAC로 derive)를 만들어 최종 서명을 생성한다. 임시 자격증명에서는 SessionToken을 `X-Amz-Security-Token` 헤더로 같이 보낸다. SigV4는 RFC 형태로 표준화되진 않았지만 [공식 가이드](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-signing.html)가 그 자리를 한다. 2024년 후반에 출시된 **SigV4a**는 동일 서명으로 여러 리전 endpoint에 동시에 호출 가능한 새 버전이고, S3 Multi-Region Access Point에서 쓰인다. 서명 자체에 리전을 박지 않고 별도 ECDSA 키를 derive해 multi-region 검증을 가능케 한다.
-
-> ⚠️ **함정**: `aws:SourceIp`는 **AWS 서비스를 경유하면 동작하지 않는다**. 예를 들어 Lambda가 S3를 호출할 때 `aws:SourceIp`로 사내 IP만 허용하는 정책은 막혀 버린다. Lambda → S3는 AWS 내부망에서 호출되므로 SourceIp가 사내 IP가 아닌 AWS 내부 IP다. 이런 경우 `aws:SourceVpc`나 `aws:SourceVpce`(VPC Endpoint) 키를 써야 한다. 실제 시험에 자주 나온다.
+> ⚠️ **함정**: `aws:SourceIp`는 **AWS 서비스를 경유하면 동작하지 않는다**. 예를 들어 Lambda가 S3를 호출할 때 `aws:SourceIp`로 사내 IP만 허용하는 정책은 막혀 버린다. Lambda → S3는 AWS 내부망에서 호출되므로 SourceIp가 사내 IP가 아닌 AWS 내부 IP다. 이런 경우 `aws:SourceVpc`나 `aws:SourceVpce`(VPC Endpoint) 키를 써야 한다.
 
 ## IRSA: EKS의 IAM 통합
 
@@ -116,7 +110,7 @@ EKS(Kubernetes on AWS)에서 Pod에 IAM 권한을 주는 표준 방법이 IRSA(I
 
 이 메커니즘 덕분에 노드 단위가 아닌 **Pod 단위 권한 분리**가 가능해진다. 같은 워커 노드 위에 있는 두 Pod이 완전히 다른 IAM Role을 가질 수 있다. 2023년 출시된 **EKS Pod Identity**는 OIDC를 거치지 않는 더 단순한 대안으로, eks-pod-identity-agent라는 데몬셋이 메타데이터 endpoint를 노출해 SDK가 직접 받아간다. 차이가 중요한데, IRSA는 클러스터 외부 OIDC provider 설정이 필요하고 multi-cluster 환경에서 관리가 복잡한 반면, Pod Identity는 EKS 콘솔에서 클릭으로 끝난다. 단 Pod Identity는 IRSA보다 늦게 나와서 일부 third-party 운영자(Karpenter, Cluster Autoscaler 구버전)와 호환되지 않는다.
 
-> 🔍 **더 깊이**: IRSA의 OIDC 검증 흐름은 standard JWT 검증이다. STS는 EKS 클러스터의 OIDC issuer URL(예: `oidc.eks.ap-northeast-2.amazonaws.com/id/ABCDEF1234`)에서 JWKS를 가져와 캐싱하고, 토큰의 서명을 검증한다. 토큰의 `sub` 클레임이 `system:serviceaccount:default:my-sa` 형태라서, IAM Role의 Trust Policy에서 `oidc.eks...:sub` Condition으로 특정 Service Account만 허용할 수 있다. 만약 Condition을 빼면 클러스터의 모든 Pod이 그 Role을 빌릴 수 있어 큰 보안 구멍이 된다. 시험에 자주 나오는 함정.
+IRSA의 OIDC 검증 흐름은 standard JWT 검증이다. STS는 EKS 클러스터의 OIDC issuer URL(예: `oidc.eks.ap-northeast-2.amazonaws.com/id/ABCDEF1234`)에서 JWKS를 가져와 캐싱하고, 토큰의 서명을 검증한다. 토큰의 `sub` 클레임이 `system:serviceaccount:default:my-sa` 형태라서, IAM Role의 Trust Policy에서 `oidc.eks...:sub` Condition으로 특정 Service Account만 허용할 수 있다. 만약 Condition을 빼면 클러스터의 모든 Pod이 그 Role을 빌릴 수 있어 큰 보안 구멍이 된다. 함정이 되기 쉬운 부분이다.
 
 ## Cross-Account의 4가지 패턴
 
@@ -131,13 +125,9 @@ Role chaining에는 숨은 제약이 있다. **체이닝된 세션은 최대 1�
 
 Resource-based policy는 두 방향에서 평가된다는 점이 중요하다. A 계정의 사용자가 B 계정의 S3 버킷에 접근하려면 ① A 계정의 IAM 정책이 S3 접근을 허용하고, ② B 계정의 버킷 정책이 A 계정을 허용해야 한다. **OR가 아니라 AND**다. 단 같은 계정 안의 resource-based policy는 OR로 평가되는데(IAM Policy가 허용하지 않아도 Bucket Policy가 허용하면 OK), cross-account는 AND다. 이 비대칭이 종종 정답을 가른다.
 
-> 📚 **사례**: 2020년 7월 Twitter 해킹. 공격자들이 사회공학으로 직원 자격증명을 탈취해 admin 도구에 접근, 130개 계정(Obama, Biden, Musk 등)을 비트코인 사기에 동원했다. AWS 사고는 아니지만, 직접적 교훈은 **세션 길이 제한과 MFA**다. 만약 사용자 세션이 1시간 max, MFA 강제였다면 공격 시간 창이 훨씬 좁았을 것이다. AWS에서는 IAM Role의 `MaxSessionDuration`을 짧게(1시간) 유지하고, Trust Policy에 `aws:MultiFactorAuthPresent` 조건을 거는 것이 표준 가이드다.
-
-> 📚 **사례**: 2022년 3월 Okta 해킹. Lapsus$ 그룹이 Okta의 third-party support 직원 노트북을 통해 일부 고객 데이터에 접근했다. Okta는 즉시 모든 영향 세션을 revoke했지만, 일부 OIDC 토큰은 expiration까지 유효했다. 교훈: federation을 쓰면 IdP가 뚫렸을 때 다운스트림 AWS 세션을 강제 만료하는 메커니즘이 필요하다. AWS는 이후 IAM Role의 `aws:TokenIssueTime` Condition을 활용해 "특정 시점 이전 발급 토큰 거부" 패턴을 권장하기 시작했다.
-
 ## 권한 평가 알고리즘의 정확한 순서
 
-시험에 가장 자주 나오면서 가장 자주 틀리는 게 IAM 평가 순서다. AWS는 [공식 문서](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html)에서 명시적으로 정의한다.
+IAM 평가 순서는 시험에서 헷갈리기 쉬운 부분이다. AWS는 [공식 문서](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html)에서 명시적으로 정의한다.
 
 ```
 1. SCP (Service Control Policy) — Organizations에서 강제. 거부면 즉시 거부.
@@ -148,9 +138,9 @@ Resource-based policy는 두 방향에서 평가된다는 점이 중요하다. A
 6. Explicit Deny — 어떤 단계에서든 Deny가 나오면 최종 결과는 Deny.
 ```
 
-Explicit Deny가 모든 Allow를 이긴다는 점, 그리고 SCP/Permission Boundary는 **상한을 정한다**는 점(권한을 부여하지 않고 차감만 한다)이 핵심이다. SCP를 처음 도입하는 조직이 가장 자주 하는 실수가 "SCP에 Allow를 적었으니 권한이 생긴다"는 오해다. SCP는 차단만 한다.
+Explicit Deny가 모든 Allow를 이긴다는 점, 그리고 SCP/Permission Boundary는 **상한을 정한다**는 점(권한을 부여하지 않고 차감만 한다)이 핵심이다. SCP를 처음 도입할 때 흔한 오해가 "SCP에 Allow를 적었으니 권한이 생긴다"는 오해다. SCP는 차단만 한다.
 
-## 정리하며
+## 정리
 
 오늘의 핵심은 네 가지다. 첫째, STS는 임시 자격증명의 공장이고 AssumeRole·AssumeRoleWithSAML·AssumeRoleWithWebIdentity가 그 3대 주력 API다. 둘째, Condition 절은 IAM이 ABAC로 진화한 엔진이고, `aws:PrincipalTag`와 `aws:RequestTag`의 조합으로 정책 폭발 없이 부서별 자원 분리가 가능하다. 셋째, cross-account 시나리오의 confused deputy 문제는 External ID로 해결한다. 넷째, IAM 평가는 SCP → Resource-based → Identity-based → Boundary → Session policy 순으로 흐르고, Explicit Deny가 모든 Allow를 이긴다.
 

@@ -123,7 +123,7 @@ D) 외부 npmjs.com 직접 사용
 **정답: B**
 해설: CodeArtifact 인증 토큰의 최대 수명은 **12시간**(기본 12시간, 단축 가능하지만 연장 불가). 빌드 시작 시점에 갱신하고, 장시간 빌드면 단계별 갱신. A는 12시간 한계를 무시한 잘못된 보기, C는 자동화 부재, D는 CodeArtifact를 도입한 의도(보안·재현성) 자체를 부정.
 
-> 🔍 **더 깊이**: CodeArtifact 토큰이 짧은 이유는 **노출 시 피해 최소화** 원칙이다. 빌드 로그에 토큰이 실수로 찍히거나, 빌드 컨테이너 메모리가 dump 되어도 12시간 후엔 무력화된다. 같은 사상으로 STS AssumeRole 토큰도 기본 1시간이고, AWS Signer 서명 만료도 12개월 기본값. 시험에서 "토큰 수명 늘리기"는 거의 항상 함정.
+> CodeArtifact 토큰이 짧은 이유는 **노출 시 피해 최소화** 원칙이다. 빌드 로그에 토큰이 실수로 찍히거나, 빌드 컨테이너 메모리가 dump 되어도 12시간 후엔 무력화된다. 같은 사상으로 STS AssumeRole 토큰도 기본 1시간이고, AWS Signer 서명 만료도 12개월 기본값. 시험에서 "토큰 수명 늘리기"는 거의 항상 함정.
 
 ---
 
@@ -138,7 +138,7 @@ D) Snyk로 모니터링만
 **정답: A**
 해설: 빌드 재현성의 3축 — ① **Lock 파일**(정확한 버전 고정) ② **Upstream 캐시**(외부 삭제 보호) ③ **검증**(주기적 hash 비교). 2016년 `left-pad` 사건(11줄짜리 npm 패키지가 unpublish되어 React, Babel 등 수천 개 프로젝트 빌드 실패)이 이 패턴의 결정적 사례. 그 사건 이후 npm은 unpublish 정책을 강화했지만(72시간 내·25 다운로드 이하만 가능), 그래도 외부 의존을 100% 신뢰할 수 없다.
 
-> 📚 **사례**: 2022년 3월 `node-ipc` 패키지의 메인테이너가 러시아·벨라루스 IP에 대해 파일 삭제 코드를 심은 사고(protestware). 같은 lock 파일이라도 새 minor 버전이 자동 설치되어 영향받았다. 교훈 — **lock 파일도 정기적으로 의존성 스캔(Snyk/Dependabot)을 통과해야 안전**하다.
+> 2022년 3월 `node-ipc` 패키지의 메인테이너가 러시아·벨라루스 IP에 대해 파일 삭제 코드를 심은 사고(protestware). 같은 lock 파일이라도 새 minor 버전이 자동 설치되어 영향받았다. 교훈 — **lock 파일도 정기적으로 의존성 스캔(Snyk/Dependabot)을 통과해야 안전**하다.
 
 ---
 
@@ -153,7 +153,7 @@ D) Reserved Concurrency 설정
 **정답: A**
 해설: 서명 + Enforce가 변조 방어의 정공법. 추가로 ① **Signer Profile 자체의 권한**을 KMS 키 정책으로 분리(빌드 봇만 서명 가능, 개발자는 못 함) ② **Profile version**을 명시적으로 `allowed-publishers`에 등록 ③ 만료 갱신 시 신규 version ARN 추가. C(S3 버전 관리)는 변경 추적이지 변조 검증이 아님(공격자가 S3 write 권한을 얻으면 새 버전도 변조 가능). D는 동시성 제어로 보안과 무관.
 
-> 🔍 **더 깊이**: Lambda 서명 검증은 **배포 시점**에 일어난다. 한 번 검증된 코드는 함수가 실행될 때마다 다시 검증하지 않는다. 따라서 ① 배포 후 함수 환경의 메모리에 직접 코드를 주입하는 공격(RCE 후 monkey patch)은 서명으로 막을 수 없다. 그건 GuardDuty Lambda Protection + Lambda execution environment의 read-only `/var/task`로 막는다. 서명은 "**누가 배포했는가**"를 검증하는 게이트지 "**런타임에 무엇이 실행되는가**"를 검증하는 게이트가 아니다.
+> Lambda 서명 검증은 **배포 시점**에 일어난다. 한 번 검증된 코드는 함수가 실행될 때마다 다시 검증하지 않는다. 따라서 ① 배포 후 함수 환경의 메모리에 직접 코드를 주입하는 공격(RCE 후 monkey patch)은 서명으로 막을 수 없다. 그건 GuardDuty Lambda Protection + Lambda execution environment의 read-only `/var/task`로 막는다. 서명은 "**누가 배포했는가**"를 검증하는 게이트지 "**런타임에 무엇이 실행되는가**"를 검증하는 게이트가 아니다.
 
 ---
 
@@ -168,7 +168,7 @@ D) IAM User 키 발급
 **정답: C**
 해설: OIDC가 **장기 자격 증명 제거의 표준**이다. ① PAT는 사람이 들고 있는 키 → 노출 위험 ② CodeStar Connections는 CodePipeline의 source 인증에는 적합하지만 workflow 자체의 자격 증명은 OIDC ③ IAM User access key는 정적 자격증명. OIDC는 ① 단명 토큰(1시간) ② sub 조건으로 세분화 ③ 키 관리 없음.
 
-> 💡 **관련 이론**: OIDC(OpenID Connect)는 OAuth 2.0 위에 만들어진 ID 토큰 표준이다. GitHub Actions는 매 workflow run마다 `actions/runner` 안에서 OIDC ID 토큰을 발급받고, AWS STS의 `AssumeRoleWithWebIdentity` API에 전달한다. STS는 토큰의 서명을 GitHub의 JWKS(`https://token.actions.githubusercontent.com/.well-known/jwks`)로 검증하고, claim 조건이 trust policy와 일치하면 임시 자격증명 발급. GitLab, Bitbucket Pipelines, CircleCI, Jenkins도 OIDC 토큰 발급을 지원하면 같은 패턴으로 통합 가능하다.
+> OIDC(OpenID Connect)는 OAuth 2.0 위에 만들어진 ID 토큰 표준이다. GitHub Actions는 매 workflow run마다 `actions/runner` 안에서 OIDC ID 토큰을 발급받고, AWS STS의 `AssumeRoleWithWebIdentity` API에 전달한다. STS는 토큰의 서명을 GitHub의 JWKS(`https://token.actions.githubusercontent.com/.well-known/jwks`)로 검증하고, claim 조건이 trust policy와 일치하면 임시 자격증명 발급. GitLab, Bitbucket Pipelines, CircleCI, Jenkins도 OIDC 토큰 발급을 지원하면 같은 패턴으로 통합 가능하다.
 
 ---
 
@@ -218,7 +218,7 @@ D) AWS Backup
 **정답: B**
 해설: Enhanced Scanning이 ECR 푸시마다 자동 + 24h 재스캔. A(Trivy)도 가능하고 실무에서는 **둘 다 같이 쓰는 경우가 많지만** 시험 단일 정답은 네이티브인 B. Enhanced는 ① OS layer + 언어 의존성 ② Snyk DB 기반 ③ Security Hub 자동 통합 ④ CVE 신규 공개 시 자동 재평가. C(CodeGuru Reviewer)는 코드 정적 분석이지 이미지 스캔이 아님.
 
-> 🔍 **더 깊이**: 실무 조합 패턴은 **"빌드 단계 Trivy(빠른 차단) + 푸시 단계 Inspector(공식 기록)"**다. Trivy는 빌드 컨테이너 안에서 즉시 결과를 받아 CodeBuild를 fail 시킬 수 있고, Inspector는 푸시 후 비동기라 빌드 차단 용도로는 늦다. 그래서 "PR에서 차단"이 필요하면 Trivy, "운영 상태 추적"이 필요하면 Inspector. 시험에서 "네이티브 + 자동 집계"가 키워드면 Inspector가 정답.
+> 실무 조합 패턴은 **"빌드 단계 Trivy(빠른 차단) + 푸시 단계 Inspector(공식 기록)"**다. Trivy는 빌드 컨테이너 안에서 즉시 결과를 받아 CodeBuild를 fail 시킬 수 있고, Inspector는 푸시 후 비동기라 빌드 차단 용도로는 늦다. 그래서 "PR에서 차단"이 필요하면 Trivy, "운영 상태 추적"이 필요하면 Inspector. 시험에서 "네이티브 + 자동 집계"가 키워드면 Inspector가 정답.
 
 ---
 
@@ -235,7 +235,7 @@ D) Runtime만 도입
 
 A(역순)는 가장 비싼 사고 비용 단계부터, C는 한 번에 도입 시 alert fatigue로 우회 발생, D는 사후 대응만으로는 사고 자체를 못 막음.
 
-> 📚 **사례**: IBM Cost of a Data Breach Report 2024에 따르면, 평균 사고 비용 \$4.88M 중 코드 작성 단계 결함 수정 비용은 \$80, prod 사고 후 수정 비용은 \$7,600 — **약 95배 차이**. Shift Left가 단순한 이론이 아니라 직접적인 비용 절감인 이유다.
+> IBM Cost of a Data Breach Report 2024에 따르면, 평균 사고 비용 \$4.88M 중 코드 작성 단계 결함 수정 비용은 \$80, prod 사고 후 수정 비용은 \$7,600 — **약 95배 차이**. Shift Left가 단순한 이론이 아니라 직접적인 비용 절감인 이유다.
 
 ---
 
@@ -259,7 +259,7 @@ notation sign 123.dkr.ecr.ap-northeast-2.amazonaws.com/myapp:v1.0 \
 # EKS ratify admission webhook이 검증
 ```
 
-> 🔍 **더 깊이**: cosign keyless가 발급하는 X.509 인증서는 **10분 수명**이지만, 서명 자체는 OCI artifact에 영구 부착된다. 검증 시 Rekor 투명성 로그에서 "당시에 그 OIDC identity가 그 시점에 서명했다"는 사실을 확인한다. AWS Signer는 KMS 키가 영구라 같은 키로 여러 번 서명 가능. 두 모델의 보안 trade-off는 ① **키 분실 위험**(AWS Signer가 있음, cosign keyless는 없음) ② **공격자의 임시 침투 시 서명 가능 시간**(AWS Signer는 KMS 권한 가진 동안, cosign keyless는 10분).
+> cosign keyless가 발급하는 X.509 인증서는 **10분 수명**이지만, 서명 자체는 OCI artifact에 영구 부착된다. 검증 시 Rekor 투명성 로그에서 "당시에 그 OIDC identity가 그 시점에 서명했다"는 사실을 확인한다. AWS Signer는 KMS 키가 영구라 같은 키로 여러 번 서명 가능. 두 모델의 보안 trade-off는 ① **키 분실 위험**(AWS Signer가 있음, cosign keyless는 없음) ② **공격자의 임시 침투 시 서명 가능 시간**(AWS Signer는 KMS 권한 가진 동안, cosign keyless는 10분).
 
 ---
 
@@ -326,4 +326,4 @@ Week 1-2가 "DevOps 사고 프레임 + 소스 단계 보안"이었다면, Week 3
 
 ---
 
-> 💪 Week 2 완료. **소스 제어부터 코드 서명까지 DevSecOps 사고 틀**이 갖춰졌다. 다음 주부터는 그 코드가 실제로 빌드되는 단계에서 발생하는 trade-off — 캐시 hit rate, VPC endpoint, ARM 컴파일, 시크릿 주입 안정성 — 를 본격적으로 다룬다. Week 2가 "**무엇을 입력으로 받는가**"였다면, Week 3은 "**그것을 어떻게 가공하는가**"의 주간이다.
+> Week 2 완료. **소스 제어부터 코드 서명까지 DevSecOps 사고 틀**이 갖춰졌다. 다음 주부터는 그 코드가 실제로 빌드되는 단계에서 발생하는 trade-off — 캐시 hit rate, VPC endpoint, ARM 컴파일, 시크릿 주입 안정성 — 를 본격적으로 다룬다. Week 2가 "**무엇을 입력으로 받는가**"였다면, Week 3은 "**그것을 어떻게 가공하는가**"의 주간이다.

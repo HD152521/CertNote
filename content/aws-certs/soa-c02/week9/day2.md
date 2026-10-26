@@ -12,7 +12,7 @@ Secrets Manager는 비밀을 코드 밖으로 완전히 빼낸다. 애플리케�
 
 여기까지는 Parameter Store SecureString도 똑같이 한다. 결정적 차이는 그다음이다 — **비밀은 정적이지 않다.** 보안 모범 사례는 비밀번호를 주기적으로 바꾸라고 한다(90일 회전이 흔한 컴플라이언스 요건이다). 정적 비밀 저장소는 "바꾸는 일"을 사람에게 떠넘기지만, Secrets Manager는 그 회전을 자동화한다. 이게 가격 차이의 핵심이고, "회전이 필요한가"가 두 서비스를 가르는 결정 기준이다.
 
-> 💡 **관련 이론**: 비밀을 코드에서 분리하는 원칙은 2011년 정립된 Twelve-Factor App 방법론의 세 번째 요소 "Config in the environment"에서 명문화됐다. 핵심 주장은 "코드와 설정(특히 비밀)을 엄격히 분리하라, 같은 코드가 다른 환경(개발·스테이징·프로덕션)에서 다른 비밀로 동작해야 하기 때문"이다. 비밀을 환경 변수나 외부 저장소에 두면 같은 코드 이미지를 모든 환경에 배포할 수 있고, 비밀 노출 시 코드 재배포 없이 비밀만 교체할 수 있다. Secrets Manager는 이 원칙을 "환경 변수"보다 한 단계 더 안전하게 — 암호화·감사·자동 회전이 붙은 전용 서비스로 — 끌어올린 것이다.
+비밀을 코드에서 분리하는 원칙은 2011년 정립된 Twelve-Factor App 방법론의 세 번째 요소 "Config in the environment"에서 명문화됐다. 핵심 주장은 "코드와 설정(특히 비밀)을 엄격히 분리하라, 같은 코드가 다른 환경(개발·스테이징·프로덕션)에서 다른 비밀로 동작해야 하기 때문"이다. 비밀을 환경 변수나 외부 저장소에 두면 같은 코드 이미지를 모든 환경에 배포할 수 있고, 비밀 노출 시 코드 재배포 없이 비밀만 교체할 수 있다. Secrets Manager는 이 원칙을 "환경 변수"보다 한 단계 더 안전하게 — 암호화·감사·자동 회전이 붙은 전용 서비스로 — 끌어올린 것이다.
 
 ## 회전이 4단계로 쪼개진 이유 — 원자적으로 바꿀 수 없는 비밀
 
@@ -33,9 +33,9 @@ Secrets Manager의 회전 Lambda가 4단계로 쪼개진 건 이 비원자성을
 
 이 4단계 분리의 핵심은 **3번 검증이 실패하면 회전 전체가 안전하게 멈춘다**는 점이다. AWSCURRENT 라벨이 끝까지 옛 버전을 가리키고 있으므로, 회전이 중간에 깨져도 애플리케이션은 여전히 작동하는 옛 비밀을 받는다. 만약 회전이 "DB 바꾸고 → 저장소 바꾸기"의 두 단계뿐이었다면, DB는 바뀌었는데 저장소 업데이트가 실패하는 순간 시스템 전체가 인증 불능에 빠진다. 4단계 + 라벨 추적은 어느 지점에서 실패해도 일관된 상태로 수렴하도록 설계된, 일종의 트랜잭션 흉내다.
 
-> 💡 **관련 이론**: 4단계 회전은 데이터베이스 트랜잭션의 2단계 커밋(Two-Phase Commit, 2PC)과 발상이 닮았다. 2PC는 "준비(prepare) 단계에서 모든 참여자가 커밋 가능함을 약속하고, 그 후에야 실제 커밋"하는 프로토콜로, 일부만 커밋되는 부분 실패를 막는다. Secrets Manager는 createSecret/setSecret/testSecret이 "준비" 역할을, finishSecret이 "커밋" 역할을 한다 — testSecret까지 통과해야 비로소 AWSCURRENT를 옮긴다. 진짜 2PC는 아니지만(분산 트랜잭션 코디네이터가 없으므로) "검증 후 커밋"이라는 핵심 안전성은 공유한다. AWSPENDING 라벨이 2PC의 "prepared but not committed" 상태에 해당한다.
+4단계 회전은 데이터베이스 트랜잭션의 2단계 커밋(Two-Phase Commit, 2PC)과 발상이 닮았다. 2PC는 "준비(prepare) 단계에서 모든 참여자가 커밋 가능함을 약속하고, 그 후에야 실제 커밋"하는 프로토콜로, 일부만 커밋되는 부분 실패를 막는다. Secrets Manager는 createSecret/setSecret/testSecret이 "준비" 역할을, finishSecret이 "커밋" 역할을 한다 — testSecret까지 통과해야 비로소 AWSCURRENT를 옮긴다. 진짜 2PC는 아니지만(분산 트랜잭션 코디네이터가 없으므로) "검증 후 커밋"이라는 핵심 안전성은 공유한다. AWSPENDING 라벨이 2PC의 "prepared but not committed" 상태에 해당한다.
 
-> 🔍 **더 깊이**: RDS, Aurora, DocumentDB, Redshift는 AWS가 회전 Lambda를 기성품으로 제공한다 — 위 4단계가 각 DB 엔진에 맞게 구현돼 있어서 사용자가 코드를 한 줄도 짤 필요가 없다. 반면 자체 시스템(레거시 API, 서드파티 SaaS의 토큰 등)은 4단계 인터페이스를 구현한 Custom Rotation Lambda를 직접 작성해야 한다. AWS는 이 Lambda의 골격 템플릿(SAR, Serverless Application Repository)을 제공하므로, createSecret~finishSecret 함수 본문만 대상 시스템에 맞게 채우면 된다. 시험에서 "RDS 비밀번호 회전 Lambda를 직접 짜야 하나?"는 함정이다 — RDS는 AWS 제공, 자체 시스템만 직접 작성이다.
+RDS, Aurora, DocumentDB, Redshift는 AWS가 회전 Lambda를 기성품으로 제공한다 — 위 4단계가 각 DB 엔진에 맞게 구현돼 있어서 사용자가 코드를 한 줄도 짤 필요가 없다. 반면 자체 시스템(레거시 API, 서드파티 SaaS의 토큰 등)은 4단계 인터페이스를 구현한 Custom Rotation Lambda를 직접 작성해야 한다. AWS는 이 Lambda의 골격 템플릿(SAR, Serverless Application Repository)을 제공하므로, createSecret~finishSecret 함수 본문만 대상 시스템에 맞게 채우면 된다. 시험에서 "RDS 비밀번호 회전 Lambda를 직접 짜야 하나?"는 함정이다 — RDS는 AWS 제공, 자체 시스템만 직접 작성이다.
 
 ## Single User vs Alternating Users — 무중단의 진짜 비밀
 
@@ -43,7 +43,7 @@ Secrets Manager의 회전 Lambda가 4단계로 쪼개진 건 이 비원자성을
 
 **Single User 전략**은 한 DB 계정의 비밀번호 하나를 그 자리에서 바꾼다. 단순하지만, 위 틈 동안 그리고 앱들이 캐시를 갱신하기 전까지 짧은 인증 실패가 발생할 수 있다. 대부분의 앱은 연결 재시도 로직이 있어 실무에선 큰 문제가 안 되지만, 엄격한 무중단이 요구되면 부족하다.
 
-**Alternating Users 전략**은 이 문제를 우아하게 푼다. DB에 계정을 **두 개**(예: `app_user` / `app_user_clone`) 두고 번갈아 회전한다. 회전할 때 현재 사용 중이지 **않은** 계정의 비밀번호를 바꾸고, 검증이 끝나면 AWSCURRENT를 그 계정으로 옮긴다. 핵심은 **회전 대상 계정이 회전하는 동안 누구에게도 사용되지 않는다**는 것이다.
+**Alternating Users 전략**은 이 문제를 우아하게 푼다. DB에 계정을 **두 개**(예: `app_user` / `app_user_clone`) 두고 번갈아 회전한다. 회전할 때 현재 사용 중이지 **않은** 계정의 비밀번호를 바꾸고, 검증이 끝나면 AWSCURRENT를 그 계정으로 옮긴다. 회전하는 동안 **회전 대상 계정은 누구에게도 사용되지 않는다**.
 
 ```
 회전 전:  AWSCURRENT → app_user (앱들이 사용 중)
@@ -55,13 +55,13 @@ Secrets Manager의 회전 Lambda가 4단계로 쪼개진 건 이 비원자성을
 
 옛 계정(`app_user`)의 비밀번호는 한동안 유효한 채로 남아 있어, 아직 캐시를 갱신하지 못한 앱들도 회전 직후 한동안 정상 작동한다. 그러다 자연스럽게 새 비밀로 넘어간다. **이게 진짜 무중단**이다 — 회전 순간에 어느 앱도 "막 무효화된 비밀"을 만나지 않는다. 대가는 DB 계정을 두 개 관리해야 한다는 운영 복잡도다.
 
-> 📚 **사례**: 무중단 회전이 왜 어려운지는 비밀 회전이 일으킨 대형 장애들이 증언한다. 2020년 마이크로소프트 Teams는 인증에 쓰던 TLS 인증서가 만료되면서 전 세계적으로 몇 시간 다운됐다 — 비밀(인증서)의 라이프사이클 관리 실패였다. 인증서나 비밀번호는 "언젠가 반드시 바뀌어야 하는데, 바뀌는 순간이 가장 위험한" 자산이다. Alternating Users 패턴은 "옛 비밀과 새 비밀이 한동안 공존하는 유예 기간"을 둬서 이 전환의 위험을 흡수한다. 같은 발상이 인증서 회전에서도 쓰인다 — 새 인증서를 먼저 배포해 양쪽이 유효한 기간을 두고, 그 후에 옛 인증서를 폐기한다.
+무중단 회전이 왜 어려운지는 비밀 회전이 일으킨 대형 장애들이 증언한다. 2020년 마이크로소프트 Teams는 인증에 쓰던 TLS 인증서가 만료되면서 전 세계적으로 몇 시간 다운됐다 — 비밀(인증서)의 라이프사이클 관리 실패였다. 인증서나 비밀번호는 "언젠가 반드시 바뀌어야 하는데, 바뀌는 순간이 가장 위험한" 자산이다. Alternating Users 패턴은 "옛 비밀과 새 비밀이 한동안 공존하는 유예 기간"을 둬서 이 전환의 위험을 흡수한다. 같은 발상이 인증서 회전에서도 쓰인다 — 새 인증서를 먼저 배포해 양쪽이 유효한 기간을 두고, 그 후에 옛 인증서를 폐기한다.
 
 > ⚠️ **함정**: Alternating Users 전략을 쓰려면 회전 Lambda가 "마스터 자격증명"으로 DB에 접속해 다른 계정의 비밀번호를 바꿀 권한이 있어야 한다. 즉 회전 Lambda용 시크릿(`masterarn`)을 별도로 두고, 회전 대상 시크릿에 이 마스터 시크릿을 연결해야 한다. 이 마스터 연결을 빠뜨리면 회전 Lambda가 다른 계정 비밀번호를 못 바꿔 회전이 실패한다. Single User는 자기 비밀번호만 바꾸면 되므로 마스터가 필요 없다 — 이 차이가 두 전략의 설정 복잡도를 가른다.
 
 ## Lambda Extension 캐싱 — API를 두드리지 않으면서 회전을 반영하는 법
 
-Secrets Manager의 청구서를 보면 API 호출($0.05/만 건)이 의외로 많이 나오는 경우가 있다. 원인은 보통 **매 요청마다 시크릿을 fetch하는 코드**다. Lambda 함수가 호출될 때마다 `get_secret_value`를 부르면, 초당 수천 번 호출되는 함수는 초당 수천 번 API를 두드린다. 비용도 문제지만 지연(latency)도 늘고, Secrets Manager API 한도(초당 호출 제한)에 부딪힐 수도 있다.
+Secrets Manager의 청구서를 보면 API 호출($0.05/만 건)이 의외로 큰 비중을 차지하는 경우가 있다. 원인은 보통 **매 요청마다 시크릿을 fetch하는 코드**다. Lambda 함수가 호출될 때마다 `get_secret_value`를 부르면, 초당 수천 번 호출되는 함수는 초당 수천 번 API를 두드린다. 비용도 문제지만 지연(latency)도 늘고, Secrets Manager API 한도(초당 호출 제한)에 부딪힐 수도 있다.
 
 당연한 해법은 캐싱이다. 한 번 가져온 비밀을 메모리에 두고 재사용하면 된다. 그런데 여기 회전과 충돌하는 함정이 있다 — **무한정 캐싱하면 회전된 새 비밀을 영영 못 받는다.** 비밀이 회전됐는데 앱은 옛 비밀을 캐시한 채로 계속 쓰다가 어느 순간 옛 비밀이 완전히 무효화되면 인증 실패한다. 캐싱과 회전 반영은 본질적으로 상충한다.
 
@@ -75,7 +75,7 @@ Secrets Manager의 청구서를 보면 API 호출($0.05/만 건)이 의외로 �
 
 TTL을 짧게 잡으면 회전 반영이 빠르지만 API 호출이 늘고, 길게 잡으면 반대다. 회전 주기(예: 30일)에 비하면 300초 TTL은 충분히 짧아서, 회전 후 최대 5분이면 모든 인스턴스가 새 비밀로 넘어간다. Alternating Users 전략의 유예 기간(옛 비밀이 한동안 유효)이 이 5분을 안전하게 덮어준다.
 
-> 🔍 **더 깊이**: Lambda Extension은 Lambda 실행 환경의 lifecycle hook을 활용한다. 함수 인스턴스가 살아있는 동안(warm) Extension 프로세스도 함께 살아서 캐시를 유지하므로, 같은 인스턴스의 후속 호출은 모두 캐시 히트다. cold start 때만 Extension이 새로 뜨고 첫 fetch가 일어난다. 이 구조 덕분에 "함수당 캐시"가 아니라 "실행 환경당 캐시"가 되어 효율이 높다. EC2/ECS에서는 동일한 캐싱을 AWS Powertools 라이브러리나 자체 인메모리 캐시 + TTL로 구현한다 — 패턴은 같다.
+Lambda Extension은 Lambda 실행 환경의 lifecycle hook을 활용한다. 함수 인스턴스가 살아있는 동안(warm) Extension 프로세스도 함께 살아서 캐시를 유지하므로, 같은 인스턴스의 후속 호출은 모두 캐시 히트다. 콜드 스타트 때만 Extension이 새로 뜨고 첫 fetch가 일어난다. 이 구조 덕분에 "함수당 캐시"가 아니라 "실행 환경당 캐시"가 되어 효율이 높다. EC2/ECS에서는 동일한 캐싱을 AWS Powertools 라이브러리나 자체 인메모리 캐시 + TTL로 구현한다 — 패턴은 같다.
 
 ## Cross-Region Replication이 읽기 전용인 이유 — 단일 진실 원천
 
@@ -85,7 +85,7 @@ Secrets Manager는 시크릿을 여러 리전에 복제할 수 있다. Primary �
 
 Secrets Manager는 이 문제를 **단일 진실 원천(Single Source of Truth)** 패턴으로 푼다. 쓰기와 회전은 오직 Primary에서만 일어나고, 변경은 단방향으로 replica에 전파된다. replica는 Primary의 충실한 사본일 뿐 독립적 판단을 하지 않는다. Primary에서 회전이 끝나면 새 값이 자동으로 모든 replica에 푸시된다. 이 단방향 구조 덕분에 "비밀번호의 정답"은 언제나 하나뿐이고, 충돌이 원천 차단된다.
 
-> 💡 **관련 이론**: 단일 쓰기 지점 + 다중 읽기 복제본 패턴은 분산 데이터베이스의 Primary-Replica(과거 Master-Slave) 복제 모델 그 자체다. RDS Read Replica, DynamoDB(쓰기는 한 곳, 읽기는 분산)도 같은 구조를 쓴다. 이 모델은 CAP 정리에서 일관성(Consistency)을 가용성보다 우선한 선택이다 — 쓰기를 한 곳으로 모아 충돌을 없애는 대신, Primary가 죽으면 새 Primary 승격(failover) 전까지 쓰기가 막힌다. Secrets Manager는 시크릿이 "자주 읽히지만 드물게 쓰이는(회전 주기 30~90일)" 특성이라 이 트레이드오프가 합리적이다. 읽기 가용성(replica)은 높이고, 쓰기 일관성은 단일 지점으로 보장한다.
+단일 쓰기 지점 + 다중 Read Replica 패턴은 분산 데이터베이스의 Primary-Replica(과거 Master-Slave) 복제 모델 그 자체다. RDS Read Replica, DynamoDB(쓰기는 한 곳, 읽기는 분산)도 같은 구조를 쓴다. 이 모델은 CAP 정리에서 일관성(Consistency)을 가용성보다 우선한 선택이다 — 쓰기를 한 곳으로 모아 충돌을 없애는 대신, Primary가 죽으면 새 Primary 승격(failover) 전까지 쓰기가 막힌다. Secrets Manager는 시크릿이 "자주 읽히지만 드물게 쓰이는(회전 주기 30~90일)" 특성이라 이 트레이드오프가 합리적이다. 읽기 가용성(replica)은 높이고, 쓰기 일관성은 단일 지점으로 보장한다.
 
 > ⚠️ **함정**: Cross-Region 복제 시 각 replica 리전에서 시크릿을 복호화할 KMS 키가 필요하다. Primary의 KMS 키는 그 리전에만 있으므로, replica 리전에는 별도의 KMS 키(Multi-Region Key이거나 리전별 별도 키)를 지정해야 한다. `--add-replica-regions Region=us-east-1,KmsKeyId=alias/...`에서 KmsKeyId를 빠뜨리면 그 리전의 기본 `aws/secretsmanager` 키가 쓰이는데, Customer Managed Key로 암호화하려던 의도와 어긋날 수 있다. Cross-Region 시크릿은 항상 "각 리전의 복호화 키가 준비됐는가"를 함께 점검해야 한다.
 
@@ -95,9 +95,9 @@ Secrets Manager는 이 문제를 **단일 진실 원천(Single Source of Truth)*
 
 Resource Policy는 "이 시크릿이 외부 계정 X를 허용하는가"에 답한다. 시크릿 소유자가 명시적으로 외부 접근을 열어주는 관문이다. Destination IAM Policy는 "X 계정 안에서 이 역할이 시크릿을 읽을 권한이 있는가"에 답한다 — 외부 계정 내부의 권한 통제다. KMS Key Policy는 "그 외부 역할이 시크릿을 복호화할 키를 쓸 수 있는가"에 답한다. 시크릿 값을 읽으려면 반드시 복호화해야 하므로, 시크릿 읽기 권한만으로는 부족하고 키 사용 권한이 추가로 필요하다.
 
-이 세 겹은 **Defense in Depth(심층 방어)**의 구현이다. Cross-Account 접근은 가장 위험한 권한 부여 중 하나라(우리 계정 밖의 누군가가 우리 비밀을 읽는다), 한 곳의 실수가 즉시 노출로 이어지지 않도록 세 개의 독립적 관문을 둔다. 가장 흔한 함정이 **KMS Key Policy를 빠뜨리는 것**이다 — Resource Policy와 IAM은 맞췄는데 "AccessDenied"가 나면, 십중팔구 KMS 키가 외부 역할의 `kms:Decrypt`를 허용하지 않은 경우다. 시크릿은 KMS 암호화가 기본이므로 키 권한은 선택이 아니라 필수다.
+이 세 겹은 **Defense in Depth(심층 방어)**의 구현이다. Cross-Account 접근은 가장 위험한 권한 부여 중 하나라(우리 계정 밖의 누군가가 우리 비밀을 읽는다), 한 곳의 실수가 즉시 노출로 이어지지 않도록 세 개의 독립적 관문을 둔다. 대표적인 함정이 **KMS Key Policy를 빠뜨리는 것**이다 — Resource Policy와 IAM은 맞췄는데 "AccessDenied"가 나면, 십중팔구 KMS 키가 외부 역할의 `kms:Decrypt`를 허용하지 않은 경우다. 시크릿은 KMS 암호화가 기본이므로 키 권한은 선택이 아니라 필수다.
 
-> 🔍 **더 깊이**: 기본 `aws/secretsmanager` 관리형 키로 암호화된 시크릿은 사실 Cross-Account 공유가 불가능하다. AWS Managed Key는 Key Policy를 사용자가 수정할 수 없어서 외부 계정에 `kms:Decrypt`를 부여할 방법이 없기 때문이다. 따라서 Cross-Account로 공유할 시크릿은 처음부터 **Customer Managed Key**로 암호화해야 하고, 그 키의 Key Policy에 외부 역할의 복호화 권한을 명시해야 한다. 시험에서 "Cross-Account 시크릿 공유가 안 된다"는 시나리오의 숨은 원인이 종종 "AWS Managed Key로 암호화해서"다.
+기본 `aws/secretsmanager` 관리형 키로 암호화된 시크릿은 사실 Cross-Account 공유가 불가능하다. AWS Managed Key는 Key Policy를 사용자가 수정할 수 없어서 외부 계정에 `kms:Decrypt`를 부여할 방법이 없기 때문이다. 따라서 Cross-Account로 공유할 시크릿은 처음부터 **Customer Managed Key**로 암호화해야 하고, 그 키의 Key Policy에 외부 역할의 복호화 권한을 명시해야 한다. 시험에서 "Cross-Account 시크릿 공유가 안 된다"는 시나리오의 숨은 원인이 종종 "AWS Managed Key로 암호화해서"다.
 
 ## Parameter Store vs Secrets Manager — 비용으로 갈리는 선택
 
@@ -115,9 +115,9 @@ Resource Policy는 "이 시크릿이 외부 계정 X를 허용하는가"에 답�
 
 흥미로운 점은 Parameter Store가 Secrets Manager 시크릿을 **참조**할 수 있다는 것이다. `/aws/reference/secretsmanager/my-secret` 경로로 Parameter Store API를 통해 Secrets Manager 시크릿을 읽을 수 있다. 그래서 코드가 Parameter Store API 하나로 통일된 인터페이스를 쓰면서, 회전이 필요한 비밀만 Secrets Manager에 두는 혼합 패턴이 가능하다. 실무에선 "설정값 대부분은 Parameter Store, DB 자격증명만 Secrets Manager"가 흔하다 — 비용을 최적화하면서 회전이 필요한 곳에만 비싼 서비스를 쓴다.
 
-> 💡 **관련 이론**: "기능이 비슷한 두 서비스 중 어느 것을 쓸까"는 사실 비용 vs 운영 부담의 트레이드오프 문제다. Parameter Store에서 자동 회전을 직접 구현할 수도 있지만(EventBridge 스케줄 + Lambda), 그러면 위에서 본 4단계 상태 기계, 라벨 관리, 실패 롤백을 전부 직접 짜고 유지보수해야 한다. Secrets Manager의 $0.40은 "그 복잡한 회전 오케스트레이션을 AWS가 대신 관리해주는 값"이다. YAGNI(You Aren't Gonna Need It) 원칙대로, 회전이 정말 필요 없는 단순 설정값에 Secrets Manager를 쓰는 건 과잉이다 — 회전이라는 요구가 실제로 있을 때만 Secrets Manager를 꺼내는 게 비용 효율적이다.
+"기능이 비슷한 두 서비스 중 어느 것을 쓸까"는 사실 비용 vs 운영 부담의 트레이드오프 문제다. Parameter Store에서 자동 회전을 직접 구현할 수도 있지만(EventBridge 스케줄 + Lambda), 그러면 위에서 본 4단계 상태 기계, 라벨 관리, 실패 롤백을 전부 직접 짜고 유지보수해야 한다. Secrets Manager의 $0.40은 "그 복잡한 회전 오케스트레이션을 AWS가 대신 관리해주는 값"이다. YAGNI(You Aren't Gonna Need It) 원칙대로, 회전이 정말 필요 없는 단순 설정값에 Secrets Manager를 쓰는 건 과잉이다 — 회전이라는 요구가 실제로 있을 때만 Secrets Manager를 꺼내는 게 비용 효율적이다.
 
-## 정리하며
+## 정리
 
 Secrets Manager의 모든 설계는 "살아있는 비밀을 안전하게 바꾼다"는 한 가지 어려운 문제로 수렴한다. 비밀을 코드에서 떼어내는 건 기본이고(그건 Parameter Store도 한다), 진짜 가치는 회전에 있다. 회전이 4단계로 쪼개진 건 비밀 저장소와 사용처를 원자적으로 바꿀 수 없어서 검증 후 커밋하는 상태 기계가 필요하기 때문이고, Alternating Users 전략은 옛 비밀과 새 비밀의 공존 기간으로 무중단을 보장하고, Cross-Region replica가 읽기 전용인 건 다중 쓰기 충돌을 원천 차단하기 위해서다.
 

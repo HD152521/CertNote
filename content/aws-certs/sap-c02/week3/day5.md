@@ -8,7 +8,7 @@ SAP-C02 시험에서 네트워킹 도메인 문제는 키워드 하나가 정답
 
 ## 연결 패턴 선택 트리
 
-다음 의사결정 트리를 손에 익혀두면 시험장에서 네트워킹 문제의 70%는 첫 15초에 방향이 잡힌다.
+다음 의사결정 트리를 손에 익혀두면 시험장에서 네트워킹 문제는 첫 15초에 방향이 잡힌다.
 
 ```
 VPC 간 연결이 필요한가?
@@ -34,7 +34,7 @@ VPC 간 연결이 필요한가?
     └── 보안 어플라이언스 트래픽 체인 → Gateway Load Balancer Endpoint
 ```
 
-> 💡 **OSI 레이어별 서비스 매핑**: 네트워크 토폴로지 이론에서 이 서비스들은 각자 다른 추상화 레벨을 다룬다. VPC Peering과 TGW는 **L3 네트워크 레벨** 연결(IP 라우팅). PrivateLink는 **서비스 레벨** 연결(DNS + ENI, L4-L7). DX는 **L1/L2 물리-데이터링크 레벨** 위에 L3 BGP를 올린 구조. MACsec은 **L2(이더넷 프레임) 암호화**. 이 추상화 레벨의 차이가 각 서비스의 특성(CIDR 요구사항, 방향성, 확장성)을 결정한다. 예를 들어 PrivateLink가 CIDR 겹침을 허용하는 이유는 IP 라우팅이 아닌 서비스 단위(ENI)로 연결되기 때문이다. L3를 우회하는 L4 연결이므로 CIDR 충돌이 라우팅 문제를 일으키지 않는다.
+네트워크 토폴로지 이론에서 이 서비스들은 각자 다른 추상화 레벨을 다룬다. VPC Peering과 TGW는 **L3 네트워크 레벨** 연결(IP 라우팅). PrivateLink는 **서비스 레벨** 연결(DNS + ENI, L4-L7). DX는 **L1/L2 물리-데이터링크 레벨** 위에 L3 BGP를 올린 구조. MACsec은 **L2(이더넷 프레임) 암호화**. 이 추상화 레벨의 차이가 각 서비스의 특성(CIDR 요구사항, 방향성, 확장성)을 결정한다. 예를 들어 PrivateLink가 CIDR 겹침을 허용하는 이유는 IP 라우팅이 아닌 서비스 단위(ENI)로 연결되기 때문이다. L3를 우회하는 L4 연결이므로 CIDR 충돌이 라우팅 문제를 일으키지 않는다.
 
 ---
 
@@ -52,7 +52,7 @@ VPC 간 연결이 필요한가?
 | PrivateLink | 단방향 | 허용 | N/A | Cross-Region 지원(2024) | ENI $0.01/hr + $0.01/GB |
 | Gateway Endpoint | 단방향(VPC→서비스) | N/A | 불가(VPC 내부만) | 불가 | 무료 |
 
-> 🔍 **비용 함정**: VPC Peering이 "무료"라는 표현은 Peering 연결 자체에 요금이 없다는 의미다. 실제로는 **AZ 간 데이터 전송 요금($0.01/GB)**이 발생한다. 같은 AZ 내 Peering 통신은 무료지만 AZ를 넘으면 요금이 붙는다. TGW는 처리 비용($0.02/GB) 외에 Attachment 시간당 요금($0.05/시간)도 붙는다. 10개 VPC를 Full Mesh Peering으로 연결하면 45개 Peering이 필요하지만 연결 자체 비용은 없다. TGW로 전환하면 Attachment 10개($0.50/hr)와 처리량 요금이 추가된다. 대신 운영 부담이 45개→1개로 줄어든다. SAP-C02에서 "비용 최소화 + VPC 소수 + 단순 연결"이면 Peering, "운영 부담 최소 + VPC 다수"이면 TGW가 정답 방향이다.
+VPC Peering이 "무료"라는 표현은 Peering 연결 자체에 요금이 없다는 의미다. 실제로는 **AZ 간 데이터 전송 요금($0.01/GB)**이 발생한다. 같은 AZ 내 Peering 통신은 무료지만 AZ를 넘으면 요금이 붙는다. TGW는 처리 비용($0.02/GB) 외에 Attachment 시간당 요금($0.05/시간)도 붙는다. 10개 VPC를 Full Mesh Peering으로 연결하면 45개 Peering이 필요하지만 연결 자체 비용은 없다. TGW로 전환하면 Attachment 10개($0.50/hr)와 처리량 요금이 추가된다. 대신 운영 부담이 45개→1개로 줄어든다. SAP-C02에서 "비용 최소화 + VPC 소수 + 단순 연결"이면 Peering, "운영 부담 최소 + VPC 다수"이면 TGW가 정답 방향이다.
 
 ---
 
@@ -66,7 +66,7 @@ VPC 간 연결이 필요한가?
 | High Resiliency | 2 Location × 1회선 = 2회선 | 99.9% | 일반 엔터프라이즈 |
 | Development | 1 Location × 1회선 + VPN 백업 | 99% | 비프로덕션, POC |
 
-> 💡 **SLA 수학**: AWS DX SLA에서 "99.99%"는 연간 약 52.6분의 다운타임을 허용한다. "99.9%"는 연간 8.76시간이다. "99%"는 연간 87.6시간이다. Maximum Resiliency에서 두 DX Location이 **동시에** 장애 날 확률은 각 Location의 장애 확률의 곱이다. 단일 Location SLA가 99.9%라면 장애 확률이 0.1% = 0.001이고, 두 Location이 동시에 장애일 확률은 0.001 × 0.001 = 0.000001 = 99.9999% 가용성이라는 계산이 성립한다. 이것이 AWS가 Maximum Resiliency를 "2 Location × 2 회선"으로 정의한 수학적 근거다. LAG(Link Aggregation Group)는 같은 Location 내 포트를 묶는 것이므로 Location 전체 장애에는 무력하다. 4회선이어도 같은 Location에 있으면 99.99% 달성 불가다.
+AWS DX SLA에서 "99.99%"는 연간 약 52.6분의 다운타임을 허용한다. "99.9%"는 연간 8.76시간이다. "99%"는 연간 87.6시간이다. Maximum Resiliency에서 두 DX Location이 **동시에** 장애 날 확률은 각 Location의 장애 확률의 곱이다. 단일 Location SLA가 99.9%라면 장애 확률이 0.1% = 0.001이고, 두 Location이 동시에 장애일 확률은 0.001 × 0.001 = 0.000001 = 99.9999% 가용성이라는 계산이 성립한다. 이것이 AWS가 Maximum Resiliency를 "2 Location × 2 회선"으로 정의한 수학적 근거다. LAG(Link Aggregation Group)는 같은 Location 내 포트를 묶는 것이므로 Location 전체 장애에는 무력하다. 4회선이어도 같은 Location에 있으면 99.99% 달성 불가다.
 
 ### VIF 선택 퀵 레퍼런스
 
@@ -81,7 +81,7 @@ VPC 간 연결이 필요한가?
 
 > ⚠️ **Hosted Connection 함정**: Hosted Connection(파트너 제공)은 **Transit VIF를 지원하지 않는다**. Dedicated Connection(AWS 직접 제공)만 Transit VIF 생성이 가능하다. 따라서 파트너 통해 DX를 연결하고 멀티 VPC에 접근해야 한다면 각 VPC마다 Private VIF를 만드는 방법(복잡) 또는 파트너에게 Dedicated Connection을 요청해야 한다. 시험에서 "파트너 DX + 다수 VPC"가 나오면 이 제약을 기억해야 한다. 또한 Hosted Connection의 대역폭은 50Mbps~10Gbps로 Dedicated Connection(1G/10G/100G)과 다른 선택지가 있다.
 
-> 🔍 **MACsec 심화**: MACsec(IEEE 802.1AE)은 이더넷 프레임 단위로 암호화한다. DX는 L1 광섬유 위에 L2 이더넷을 올리는데 MACsec은 이 L2 프레임 전체를 AES-256으로 암호화한다. AWS에서 MACsec이 지원되는 것은 Dedicated Connection 10Gbps와 100Gbps뿐이다. 1Gbps Dedicated Connection과 모든 Hosted Connection은 MACsec 미지원이다. 규제 환경에서 "회선 자체 암호화"가 요구될 때 IPsec(L3)이나 TLS(L7)와 구분하는 것이 핵심이다. MACsec은 AWS와 DX Location 사이의 링크를 암호화하며 DX Location과 온프레미스 사이는 추가로 별도 MACsec 장비가 필요하다.
+MACsec(IEEE 802.1AE)은 이더넷 프레임 단위로 암호화한다. DX는 L1 광섬유 위에 L2 이더넷을 올리는데 MACsec은 이 L2 프레임 전체를 AES-256으로 암호화한다. AWS에서 MACsec이 지원되는 것은 Dedicated Connection 10Gbps와 100Gbps뿐이다. 1Gbps Dedicated Connection과 모든 Hosted Connection은 MACsec 미지원이다. 규제 환경에서 "회선 자체 암호화"가 요구될 때 IPsec(L3)이나 TLS(L7)와 구분하는 것이 핵심이다. MACsec은 AWS와 DX Location 사이의 링크를 암호화하며 DX Location과 온프레미스 사이는 추가로 별도 MACsec 장비가 필요하다.
 
 ---
 
@@ -100,7 +100,7 @@ AWS → 온프레미스 방향 (인바운드 to 온프레미스):
   → DX 다운 시 AWS는 유일한 VPN 경로 선택
 ```
 
-> 🔍 **BGP 속성 전파 범위**: BGP 속성의 전파 범위를 이해하면 혼동이 줄어든다. **Local Preference**는 iBGP(같은 AS 내부)에서만 교환되고 eBGP 피어에게는 전달되지 않는다. 따라서 온프레미스 라우터가 설정한 Local Preference는 AWS 측에 전달되지 않고 온프레미스 내부의 경로 선택에만 영향을 준다. 반면 **AS Path**와 **MED(Multi-Exit Discriminator)**는 eBGP를 통해 피어에게 전달되므로 AWS 라우터가 이 값을 받아 경로 선택에 활용한다. 이 전파 범위 차이가 방향별 BGP 조작 방법이 달라지는 이유다. RFC 4271(BGP-4)에서 Local Preference는 OPTIONAL NON-TRANSITIVE, AS Path는 WELL-KNOWN MANDATORY로 정의되어 있어 AS Path는 항상 eBGP 경계를 넘어 전파된다.
+BGP 속성의 전파 범위를 이해하면 혼동이 줄어든다. **Local Preference**는 iBGP(같은 AS 내부)에서만 교환되고 eBGP 피어에게는 전달되지 않는다. 따라서 온프레미스 라우터가 설정한 Local Preference는 AWS 측에 전달되지 않고 온프레미스 내부의 경로 선택에만 영향을 준다. 반면 **AS Path**와 **MED(Multi-Exit Discriminator)**는 eBGP를 통해 피어에게 전달되므로 AWS 라우터가 이 값을 받아 경로 선택에 활용한다. 이 전파 범위 차이가 방향별 BGP 조작 방법이 달라지는 이유다. RFC 4271(BGP-4)에서 Local Preference는 OPTIONAL NON-TRANSITIVE, AS Path는 WELL-KNOWN MANDATORY로 정의되어 있어 AS Path는 항상 eBGP 경계를 넘어 전파된다.
 
 > ⚠️ **시험 함정**: "AWS → 온프레미스 방향 우선순위 제어"가 나오면 반드시 **AS Path Prepending**을 떠올린다. "온프레미스 → AWS 방향 우선순위 제어"가 나오면 **Local Preference**를 떠올린다. 방향을 헷갈리면 반드시 틀린다. 또 하나의 함정: "BFD로 DX 페일오버를 빠르게"는 맞지만, BFD 자체가 경로 선택을 하는 것이 아니라 장애를 감지해 BGP에 통보하는 역할이다. BFD로 감지하고 BGP가 경로를 재계산하는 것이다.
 
@@ -144,7 +144,7 @@ Dev→Shared: RT-Workload에 Shared CIDR 있음 → 허용
 Shared→Dev: RT-Shared에 Dev CIDR 있음 → 허용
 ```
 
-> 💡 **Association vs Propagation 암기법**: Association = "나는 이 RT의 결정을 따른다(Follow)". Propagation = "나의 CIDR을 이 RT에 알린다(Advertise)". Dev가 RT-Workload에 Association되어 있고 RT-Workload에 Prod CIDR이 Propagate되지 않으면, Dev→Prod 패킷은 Blackhole이다. TGW의 Blackhole 라우트는 명시적으로 트래픽을 버리는 정적 라우트로 추가할 수도 있는데, 이는 "특정 CIDR이 실수로 Propagate되더라도 강제 차단"하는 방어 목적으로 사용된다.
+Association = "나는 이 RT의 결정을 따른다(Follow)". Propagation = "나의 CIDR을 이 RT에 알린다(Advertise)". Dev가 RT-Workload에 Association되어 있고 RT-Workload에 Prod CIDR이 Propagate되지 않으면, Dev→Prod 패킷은 Blackhole이다. TGW의 Blackhole 라우트는 명시적으로 트래픽을 버리는 정적 라우트로 추가할 수도 있는데, 이는 "특정 CIDR이 실수로 Propagate되더라도 강제 차단"하는 방어 목적으로 사용된다.
 
 > 🎯 **5-환경 격리 시나리오**: 대형 금융 그룹이 TGW로 개발(Dev), 스테이징(Stage), 프로덕션(Prod), 공유(Shared), 보안(Security) 5개 환경을 운영한다. Dev↔Prod 격리, Stage↔Prod 격리, Dev↔Stage 격리가 필요하지만 모든 환경이 Shared와 Security에 접근해야 한다. 설계: RT-Workload(Dev/Stage/Prod Association, Shared CIDR + Security CIDR만 Propagation), RT-Shared(Shared Association, 모든 CIDR Propagation), RT-Security(Security Association, 모든 CIDR Propagation). Security VPC의 IDS/IPS는 모든 트래픽을 볼 수 있고, 워크로드 환경 간 통신은 라우팅 자체가 없어 차단된다. 이 설계에서 Security VPC는 "Read-Only" 관찰자가 아니라 RT-Security를 통해 모든 CIDR을 알고 있어 필요시 개입(트래픽 인젝션)도 가능하다.
 
@@ -163,12 +163,12 @@ Shared→Dev: RT-Shared에 Dev CIDR 있음 → 허용
 | Endpoint 유형 | 지원 서비스 | CIDR 영향 | 비용 | DNS |
 |--------------|------------|-----------|------|-----|
 | Interface Endpoint | 대부분 AWS 서비스, PrivateLink 커스텀 | VPC에 ENI 생성 | $0.01/hr + GB | Private DNS 이름 |
-| Gateway Endpoint | S3, DynamoDB 만 | 라우트 테이블 변경 | 무료 | 변경 없음 |
+| Gateway Endpoint | S3, DynamoDB 만 | 라우팅 테이블 변경 | 무료 | 변경 없음 |
 | GWLB Endpoint | 보안 어플라이언스 | GENEVE 터널 | GB당 요금 | 없음 |
 
-> 📚 **실제 사례**: 2023년 한 국내 핀테크가 해외 결제 처리 SaaS와 연동할 때 금융 규제기관이 "데이터가 공개 인터넷을 통과하지 않아야 한다"는 요건을 제시했다. SaaS 벤더가 AWS PrivateLink Endpoint Service를 제공했고, 핀테크의 VPC에 Interface Endpoint를 생성해 두 회사의 CIDR(10.0.0.0/8이 겹침)에도 불구하고 사설 연결을 완성했다. 구현 시간이 VPN 터널 설계보다 4배 빠르고 운영 인력도 절감됐다는 후기가 있다. 2024년에는 Cross-Region PrivateLink가 GA되어 다른 리전의 Endpoint Service에 Interface Endpoint를 만들 수 있게 됐는데, 이것도 시험 출제 범위에 들어간다.
+2023년 한 국내 핀테크가 해외 결제 처리 SaaS와 연동할 때 금융 규제기관이 "데이터가 공개 인터넷을 통과하지 않아야 한다"는 요건을 제시했다. SaaS 벤더가 AWS PrivateLink Endpoint Service를 제공했고, 핀테크의 VPC에 Interface Endpoint를 생성해 두 회사의 CIDR(10.0.0.0/8이 겹침)에도 불구하고 사설 연결을 완성했다. 구현 시간이 VPN 터널 설계보다 4배 빠르고 운영 인력도 절감됐다는 후기가 있다. 2024년에는 Cross-Region PrivateLink가 GA되어 다른 리전의 Endpoint Service에 Interface Endpoint를 만들 수 있게 됐는데, 이것도 시험 출제 범위에 들어간다.
 
-> ⚠️ **Gateway Endpoint 함정**: Gateway Endpoint는 **온프레미스(DX/VPN)에서 사용할 수 없다**. Gateway Endpoint는 VPC 라우트 테이블에 prefix list 형태의 라우트를 추가하는 방식이다. 이 라우트는 VPC 내부 트래픽에만 적용되므로 DX나 VPN을 통해 온프레미스에서 들어오는 트래픽은 이 라우트를 타지 않는다. 온프레미스에서 S3에 인터넷 없이 접근하려면 **S3 Interface Endpoint** 또는 **Public VIF**를 사용해야 한다. 시험에서 "온프레미스 + S3 + 인터넷 없이"가 나오면 Gateway Endpoint가 아닌 Interface Endpoint나 Public VIF를 선택한다.
+Gateway Endpoint는 **온프레미스(DX/VPN)에서 사용할 수 없다**. Gateway Endpoint는 VPC 라우팅 테이블에 prefix list 형태의 라우트를 추가하는 방식이다. 이 라우트는 VPC 내부 트래픽에만 적용되므로 DX나 VPN을 통해 온프레미스에서 들어오는 트래픽은 이 라우트를 타지 않는다. 온프레미스에서 S3에 인터넷 없이 접근하려면 **S3 Interface Endpoint** 또는 **Public VIF**를 사용해야 한다. 시험에서 "온프레미스 + S3 + 인터넷 없이"가 나오면 Gateway Endpoint가 아닌 Interface Endpoint나 Public VIF를 선택한다.
 
 ---
 
@@ -196,7 +196,7 @@ Shared→Dev: RT-Shared에 Dev CIDR 있음 → 허용
 
 ---
 
-## 마무리: Week 3 핵심 키워드 모음
+## 정리: Week 3 핵심 키워드 모음
 
 | 키워드 | 즉각 연상 서비스 |
 |--------|----------------|

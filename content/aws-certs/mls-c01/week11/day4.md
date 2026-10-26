@@ -129,7 +129,7 @@ estimator = Estimator(
 - S3에 쌓인 CloudTrail 로그는 버킷 정책·객체 잠금으로 변조를 막고, Athena 등으로 질의해 감사 근거로 쓴다.
 - 오래된 감사 로그는 S3 수명 주기로 저비용 스토리지 클래스로 옮겨 보관 비용을 줄인다.
 
-> 💡 **관련 이론**: "성능을 디버깅한다" = CloudWatch. "규정 준수를 증명한다" = CloudTrail. CloudTrail은 모든 API의 누가·무엇을·언제·어디서를 남기는 규제 대응의 토대다.
+"성능을 디버깅한다" = CloudWatch. "규정 준수를 증명한다" = CloudTrail. CloudTrail은 모든 API의 누가·무엇을·언제·어디서를 남기는 규제 대응의 토대다.
 
 > ⚠️ **함정**: CloudTrail은 관리(control plane) API를 남긴다. 초당 수천 건씩 들어오는 `InvokeEndpoint` 같은 고빈도 데이터 플레인 호출까지 감사 로그로 세려 하면 안 된다. 호출량·지연은 **CloudWatch 지표**로 본다.
 

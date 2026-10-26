@@ -1,6 +1,6 @@
 # Day 5 - Week 4 종합 복습: S3·CloudFront·스토리지 패턴을 하나의 판단 체계로
 
-Week 4는 AWS 스토리지 스택의 상위 계층을 다뤘다. S3의 내부 일관성 모델과 대규모 운영 패턴(Day 16), 8가지 스토리지 클래스와 수명 주기 정책의 경제학(Day 17), 접근 제어 5계층과 암호화 키 관리(Day 18), CloudFront 3계층 캐시 구조와 하이브리드 스토리지 패턴(Day 19). 이 네 주제는 시험에서 가장 자주 나오는 "데이터 스토리지" 도메인의 핵심이다.
+Week 4는 AWS 스토리지 스택의 상위 계층을 다뤘다. S3의 내부 일관성 모델과 대규모 운영 패턴(Day 16), 8가지 스토리지 클래스와 수명 주기 정책의 경제학(Day 17), 접근 제어 5계층과 암호화 키 관리(Day 18), CloudFront 3계층 캐시 구조와 하이브리드 스토리지 패턴(Day 19). 이 네 주제는 "데이터 스토리지" 도메인의 핵심이다.
 
 오늘의 목표는 이것을 단순 암기가 아닌 **판단 체계**로 정리하는 것이다. "시나리오 키워드 → 설계 패턴 → 구체적인 서비스 선택"이라는 사고 흐름이 자동화되면, 처음 보는 시나리오에서도 답이 보인다.
 
@@ -28,7 +28,7 @@ Storage Gateway ←────────────── CloudFront (CDN)
 
 데이터는 S3를 중심으로 흐른다. 왼쪽에서는 온프레미스 Storage Gateway가 하이브리드 브리지 역할을 하고, 오른쪽에서는 CloudFront가 글로벌 배포를 담당한다. 보안과 비용은 S3를 감싸는 두 가지 핵심 관심사다.
 
-> 💡 **관련 이론**: 이 아키텍처는 데이터 메시(Data Mesh) 원칙 중 "데이터를 프로덕트로 취급하라(Data as a Product)"와 연결된다. S3를 중앙 데이터 레이크로 두고, 접근 패턴(온프레미스 연결, CDN 배포, 직접 API)별로 다른 인터페이스를 제공하되 데이터 원본은 하나로 유지한다. 이는 분산 시스템에서 Single Source of Truth를 유지하면서 다양한 소비 패턴을 지원하는 **CQRS(Command Query Responsibility Segregation)**와 유사한 사고다.
+이 아키텍처는 데이터 메시(Data Mesh) 원칙 중 "데이터를 프로덕트로 취급하라(Data as a Product)"와 연결된다. S3를 중앙 데이터 레이크로 두고, 접근 패턴(온프레미스 연결, CDN 배포, 직접 API)별로 다른 인터페이스를 제공하되 데이터 원본은 하나로 유지한다. 이는 분산 시스템에서 Single Source of Truth를 유지하면서 다양한 소비 패턴을 지원하는 **CQRS(Command Query Responsibility Segregation)**와 유사한 사고다.
 
 ## 스토리지 클래스: 데이터 온도와 비용의 트레이드오프 요약
 
@@ -52,9 +52,9 @@ Storage Gateway ←────────────── CloudFront (CDN)
 
 **비용 함정 3가지**: 최소 보관 기간(Standard-IA: 30일, Glacier Instant/Flexible: 90일, Deep Archive: 180일)을 채우지 못하면 남은 기간을 청구. 최소 객체 크기(Standard-IA/One Zone-IA: 128KB). 미완료 멀티파트 업로드는 완료된 객체처럼 과금.
 
-> 💡 **관련 이론**: 스토리지 클래스 선택은 정보이론의 **엔트로피(Entropy)** 개념과 연결된다. 접근 패턴이 예측 가능할수록(엔트로피 낮음) 수동 Lifecycle 정책이 최적화된다. 예측이 불가능할수록(엔트로피 높음) Intelligent-Tiering의 자동 분류가 전체 TCO를 낮춘다. Intelligent-Tiering의 모니터링 비용은 예측 불확실성에 대한 "정보 비용"이다.
+스토리지 클래스 선택은 정보이론의 **엔트로피(Entropy)** 개념과 연결된다. 접근 패턴이 예측 가능할수록(엔트로피 낮음) 수동 Lifecycle 정책이 최적화된다. 예측이 불가능할수록(엔트로피 높음) Intelligent-Tiering의 자동 분류가 전체 TCO를 낮춘다. Intelligent-Tiering의 모니터링 비용은 예측 불확실성에 대한 "정보 비용"이다.
 
-> 📚 **사례**: Netflix는 전체 콘텐츠 카탈로그를 스토리지 클래스 계층으로 관리한다. 신작과 인기작은 Standard, 6개월 이상 된 덜 인기 있는 콘텐츠는 Standard-IA, 원본 마스터 파일은 Glacier Deep Archive. Lifecycle 정책으로 자동 전환하되, 콘텐츠가 다시 인기를 얻으면(시즌2 출시, 수상 등) S3 Batch Operations로 다시 Standard로 올린다. 이 패턴 하나로 연간 수천만 달러의 스토리지 비용을 절감한다.
+**사례**: Netflix는 전체 콘텐츠 카탈로그를 스토리지 클래스 계층으로 관리한다. 신작과 인기작은 Standard, 6개월 이상 된 덜 인기 있는 콘텐츠는 Standard-IA, 원본 마스터 파일은 Glacier Deep Archive. Lifecycle 정책으로 자동 전환하되, 콘텐츠가 다시 인기를 얻으면(시즌2 출시, 수상 등) S3 Batch Operations로 다시 Standard로 올린다. 이 패턴 하나로 연간 수천만 달러의 스토리지 비용을 절감한다.
 
 ## S3 보안: 5계층 평가와 키워드 매핑
 
@@ -76,9 +76,9 @@ Storage Gateway ←────────────── CloudFront (CDN)
 | 실수 삭제 방지 | S3 Versioning + MFA Delete | Delete Marker 생성 |
 | HTTPS 강제 | 버킷 정책 Deny (aws:SecureTransport=false) | HTTP 요청 차단 |
 
-> 💡 **관련 이론**: S3 접근 제어의 5계층 구조는 OSI 모델과 같은 **계층화 원칙**을 따른다. 각 계층은 독립적으로 동작하고, 하위 계층이 거부하면 상위 계층의 허용이 무효화된다. NIST SP 800-207 "Zero Trust Architecture"에서 말하는 "모든 요청을 잠재적으로 적대적으로 간주하고 매 요청마다 인증/인가"는 이 다층 구조로 구현된다. BPA가 첫 번째 검문소, SCP가 조직 경계, VPC Endpoint Policy가 네트워크 경계, IAM/Bucket Policy가 신원 기반 제어다.
+S3 접근 제어의 5계층 구조는 OSI 모델과 같은 **계층화 원칙**을 따른다. 각 계층은 독립적으로 동작하고, 하위 계층이 거부하면 상위 계층의 허용이 무효화된다. NIST SP 800-207 "Zero Trust Architecture"에서 말하는 "모든 요청을 잠재적으로 적대적으로 간주하고 매 요청마다 인증/인가"는 이 다층 구조로 구현된다. BPA가 첫 번째 검문소, SCP가 조직 경계, VPC Endpoint Policy가 네트워크 경계, IAM/Bucket Policy가 신원 기반 제어다.
 
-> 🔍 **더 깊이**: 봉투 암호화(Envelope Encryption)에서 SSE-KMS의 "키가 KMS 밖으로 나오지 않는다"는 보장은 어떻게 이루어지는가. KMS의 HSM(Hardware Security Module)은 FIPS 140-2 Level 3 인증을 받은 하드웨어다. 마스터 키는 물리적으로 이 HSM 안에서만 존재한다. KMS의 `GenerateDataKey` API를 호출하면 HSM 내부에서 DEK(데이터 암호화 키)를 생성해, 평문 DEK와 마스터 키로 암호화된 DEK를 반환한다. 이후 마스터 키는 HSM 밖으로 절대 나오지 않으며, 암호화된 DEK만 저장된다. 이 구조가 키 탈취를 거의 불가능하게 만드는 핵심이다.
+봉투 암호화(Envelope Encryption)에서 SSE-KMS의 "키가 KMS 밖으로 나오지 않는다"는 보장은 어떻게 이루어지는가. KMS의 HSM(Hardware Security Module)은 FIPS 140-2 Level 3 인증을 받은 하드웨어다. 마스터 키는 물리적으로 이 HSM 안에서만 존재한다. KMS의 `GenerateDataKey` API를 호출하면 HSM 내부에서 DEK(데이터 암호화 키)를 생성해, 평문 DEK와 마스터 키로 암호화된 DEK를 반환한다. 이후 마스터 키는 HSM 밖으로 절대 나오지 않으며, 암호화된 DEK만 저장된다. 이 구조가 키 탈취를 거의 불가능하게 만드는 핵심이다.
 
 > ⚠️ **함정**: Object Lock Governance Mode와 Compliance Mode를 혼동하지 말 것. "누구도 삭제 불가"가 요건이면 Compliance Mode. Governance Mode는 `s3:BypassGovernanceRetention` 권한을 가진 IAM 사용자(root 포함)가 잠금 해제 가능하다. 시험에서 "규제 감사관 요건", "법적 보관", "root도 삭제 불가"가 나오면 Compliance Mode다.
 
@@ -109,7 +109,7 @@ CloudFront 관련 문제는 두 가지 패턴으로 나온다. "어느 계층에
 
 **Invalidation(캐시 무효화)**: 파일이 업데이트됐을 때 캐시를 강제 갱신. `/images/*`처럼 와일드카드 사용 가능. 첫 1,000개 경로/월은 무료, 이후 경로당 과금. 잦은 업데이트가 있는 경우 파일명에 버전/해시를 포함해 Invalidation 없이 새 캐시를 생성하는 전략이 더 효율적이다.
 
-> 📚 **사례**: 2021년 Facebook의 DNS 장애가 6시간 동안 서비스를 중단시켰을 때, CloudFront를 CDN으로 사용하는 사이트들은 캐시 히트율이 높은 정적 콘텐츠에 대해서 오리진 장애와 무관하게 서비스를 계속 제공했다. CloudFront의 TTL 기반 캐시가 오리진 장애의 완충재 역할을 한 사례다. 단, TTL=0인 API 경로는 오리진 장애의 영향을 그대로 받았다.
+**사례**: 2021년 Facebook의 DNS 장애가 6시간 동안 서비스를 중단시켰을 때, CloudFront를 CDN으로 사용하는 사이트들은 캐시 히트율이 높은 정적 콘텐츠에 대해서 오리진 장애와 무관하게 서비스를 계속 제공했다. CloudFront의 TTL 기반 캐시가 오리진 장애의 완충재 역할을 한 사례다. 단, TTL=0인 API 경로는 오리진 장애의 영향을 그대로 받았다.
 
 ### 엣지 컴퓨팅 선택 기준
 
@@ -123,7 +123,7 @@ CloudFront 관련 문제는 두 가지 패턴으로 나온다. "어느 계층에
 | 이미지 변환 (Sharp 등) | ❌ (메모리/시간 부족) | ✅ |
 | 오리진 응답 변환 | ❌ (Origin 이벤트 없음) | ✅ |
 
-> 🔍 **더 깊이**: CloudFront Functions가 "외부 호출 불가"인 이유는 네트워크 제약뿐 아니라 **실행 시간 제약(1ms)** 때문이다. HTTP 외부 호출의 RTT가 최소 수십 ms이므로, 1ms 제약 안에서 완료할 수 없다. Lambda@Edge는 30초까지 실행 가능해 외부 API 호출이 가능하다. 그러나 Lambda@Edge는 Regional Edge Cache(13개 위치)에서 실행되므로 CloudFront Functions(400+ PoP)보다 지리적으로 사용자에서 멀다. 이것이 "가볍고 빠른 로직은 Functions, 무거운 로직은 Lambda@Edge"라는 원칙의 기술적 근거다.
+CloudFront Functions가 "외부 호출 불가"인 이유는 네트워크 제약뿐 아니라 **실행 시간 제약(1ms)** 때문이다. HTTP 외부 호출의 RTT가 최소 수십 ms이므로, 1ms 제약 안에서 완료할 수 없다. Lambda@Edge는 30초까지 실행 가능해 외부 API 호출이 가능하다. 그러나 Lambda@Edge는 Regional Edge Cache(13개 위치)에서 실행되므로 CloudFront Functions(400+ PoP)보다 지리적으로 사용자에서 멀다. 이것이 "가볍고 빠른 로직은 Functions, 무거운 로직은 Lambda@Edge"라는 원칙의 기술적 근거다.
 
 ## 하이브리드 스토리지 도구 선택: 세 서비스의 결정적 차이
 
@@ -137,13 +137,13 @@ CloudFront 관련 문제는 두 가지 패턴으로 나온다. "어느 계층에
 
 **Tape Gateway가 존재하는 이유**: 세계에는 아직도 수십만 개의 물리 테이프 라이브러리가 동작 중이다. Veeam, Veritas NetBackup, IBM Spectrum Protect 같은 백업 소프트웨어는 수십 년의 역사를 가지며, 교체 비용과 재교육 비용이 막대하다. Tape Gateway는 이 소프트웨어들이 "테이프 라이브러리가 있다"고 착각하게 하면서 실제로는 AWS S3/Glacier에 저장한다. 물리 테이프의 관리 부담(테이프 교체, 오프사이트 보관, 테이프 열화)을 제거하면서 소프트웨어 마이그레이션은 나중으로 미룰 수 있다.
 
-> 💡 **관련 이론**: Storage Gateway의 **로컬 캐시 계층**은 컴퓨터 메모리 계층 구조(Cache → RAM → Disk)의 동일한 원리다. 자주 접근하는 데이터(Hot)는 게이트웨이 로컬 디스크 캐시에, 덜 접근하는 데이터는 AWS S3/Glacier에. 80-20 법칙(전체 액세스의 80%가 20%의 데이터에 집중)이 적용되는 환경에서 로컬 캐시 크기를 전체 데이터의 20-30%로 설정하면 캐시 히트율이 높다.
+Storage Gateway의 **로컬 캐시 계층**은 컴퓨터 메모리 계층 구조(Cache → RAM → Disk)의 동일한 원리다. 자주 접근하는 데이터(Hot)는 게이트웨이 로컬 디스크 캐시에, 덜 접근하는 데이터는 AWS S3/Glacier에. 80-20 법칙(전체 액세스의 80%가 20%의 데이터에 집중)이 적용되는 환경에서 로컬 캐시 크기를 전체 데이터의 20-30%로 설정하면 캐시 히트율이 높다.
 
 ## 통합 아키텍처 패턴 5가지
 
-시험 시나리오에서 자주 나오는 5가지 패턴을 아키텍처로 정리한다.
+시험 시나리오에 쓰이는 5가지 패턴을 아키텍처로 정리한다.
 
-**패턴 A: 글로벌 정적 웹 서비스 (가장 흔한 패턴)**
+**패턴 A: 글로벌 정적 웹 서비스**
 ```
 사용자 (글로벌)
   → CloudFront (HTTPS, Signed URL/Cookie, WAF)
@@ -222,11 +222,11 @@ SAA 시험의 비용 최적화 도메인(20% 비중)에서 스토리지 관련 �
 □ Transfer Acceleration: 불필요하면 비활성화
 ```
 
-> 📚 **사례**: Dropbox는 2016년 AWS에서 자체 데이터센터로 이전("Magic Pocket" 프로젝트)하기 전까지 S3를 기반으로 수억 명의 사용자 파일을 저장했다. 이 기간 동안 Dropbox가 적용한 S3 비용 최적화 패턴은 접근 빈도 기반 스토리지 클래스 분류, 멀티파트 업로드 최적화, CloudFront 통합으로 GET 요청 비용 절감이었다. 당시 S3 비용이 연간 수천만 달러 규모였고, 최적화 작업으로 30-40%를 절감했다고 공개됐다. 이 경험이 이후 "Exabyte-scale 스토리지를 어떻게 최적화할 것인가"라는 업계 논의의 시발점이 됐다.
+**사례**: Dropbox는 2016년 AWS에서 자체 데이터센터로 이전("Magic Pocket" 프로젝트)하기 전까지 S3를 기반으로 수억 명의 사용자 파일을 저장했다. 이 기간 동안 Dropbox가 적용한 S3 비용 최적화 패턴은 접근 빈도 기반 스토리지 클래스 분류, 멀티파트 업로드 최적화, CloudFront 통합으로 GET 요청 비용 절감이었다. 당시 S3 비용이 연간 수천만 달러 규모였고, 최적화 작업으로 30-40%를 절감했다고 공개됐다. 이 경험이 이후 "Exabyte-scale 스토리지를 어떻게 최적화할 것인가"라는 업계 논의의 시발점이 됐다.
 
 ## 주요 숫자 암기표
 
-시험에서 자주 나오는 숫자들을 한 곳에 모았다.
+시험에서 묻는 숫자들을 한 곳에 모았다.
 
 | 항목 | 값 | 의미 |
 |------|----|----- |

@@ -38,9 +38,9 @@ Week 2를 한 문장으로 압축하면 이렇다. **VPC 네트워킹의 모든 
                   [ TGW ] ─── 다른 VPC, 온프레미스
 ```
 
-이 토폴로지가 SAA 시나리오 문제의 *기본 배경*이다. 거의 모든 네트워크 시나리오는 이 그림 위에 "여기서 어떤 컴포넌트가 빠졌는가" 또는 "이 컴포넌트를 추가하려면 무엇이 필요한가"를 묻는 형태로 변형된다. 그림을 따라 패킷 하나를 손가락으로 짚어 보자. DB 서브넷의 RDS가 S3에 백업을 쓴다고 하면, 그 패킷은 `local` 라우팅을 벗어나 어디로 가야 하는가? IGW로 가면 인터넷 노출이고, NAT GW로 가면 비용이 발생한다. 정답은 Gateway Endpoint로 빠져 AWS 백본으로 직행하는 것이다 — 이 한 줄의 추론이 시나리오 문제 절반의 골격이다.
+이 토폴로지가 SAA 시나리오 문제의 *기본 배경*이다. 거의 모든 네트워크 시나리오는 이 그림 위에 "여기서 어떤 컴포넌트가 빠졌는가" 또는 "이 컴포넌트를 추가하려면 무엇이 필요한가"를 묻는 형태로 변형된다. 그림을 따라 패킷 하나를 손가락으로 짚어 보면 이렇다. DB 서브넷의 RDS가 S3에 백업을 쓴다고 하면, 그 패킷은 `local` 라우팅을 벗어나 어디로 가야 하는가? IGW로 가면 인터넷 노출이고, NAT GW로 가면 비용이 발생한다. 정답은 Gateway Endpoint로 빠져 AWS 백본으로 직행하는 것이다 — 이 한 줄의 추론이 시나리오 문제 절반의 골격이다.
 
-> 💡 **관련 이론**: 이 토폴로지는 *hub-and-spoke* + *3-tier* 두 고전 패턴의 합성이다. 3-tier(Presentation/Application/Data)는 1990년대 후반 엔터프라이즈 아키텍처에서 왔고, hub-and-spoke는 1950년대 항공 노선 설계(Delta가 애틀랜타 허브로 개척)에서 유래해 1990년대 WAN 설계로 넘어왔다. TGW는 정확히 이 hub-and-spoke를 네트워크 코어에 구현한 것이다. AWS가 2018년 re:Invent에서 TGW를 발표하기 전까지는 VPC Peering 풀메시(O(n²) 연결)로 같은 걸 흉내 냈는데, 이건 hub-and-spoke가 아니라 *point-to-point mesh*라서 VPC가 늘수록 관리가 기하급수로 폭증했다.
+이 토폴로지는 *hub-and-spoke* + *3-tier* 두 고전 패턴의 합성이다. 3-tier(Presentation/Application/Data)는 1990년대 후반 엔터프라이즈 아키텍처에서 왔고, hub-and-spoke는 1950년대 항공 노선 설계(Delta가 애틀랜타 허브로 개척)에서 유래해 1990년대 WAN 설계로 넘어왔다. TGW는 정확히 이 hub-and-spoke를 네트워크 코어에 구현한 것이다. AWS가 2018년 re:Invent에서 TGW를 발표하기 전까지는 VPC Peering 풀메시(O(n²) 연결)로 같은 걸 흉내 냈는데, 이건 hub-and-spoke가 아니라 *point-to-point mesh*라서 VPC가 늘수록 관리가 기하급수로 폭증했다.
 
 ## 두 축으로 보는 Week 2 격자
 
@@ -53,7 +53,7 @@ Week 2를 한 문장으로 압축하면 이렇다. **VPC 네트워킹의 모든 
 | Gateway Endpoint | prefix list로 S3/DDB 직행 | Endpoint Policy |
 | Interface Endpoint | ENI(사설 IP)로 서비스 직행 | Endpoint Policy + SG |
 | Peering | 상대 VPC CIDR 라우팅 | 없음(SG 참조 가능) |
-| TGW | 다중 VPC/온프레미스 라우팅 | TGW route table 분리 |
+| TGW | 다중 VPC/온프레미스 라우팅 | TGW 라우팅 테이블 분리 |
 | VGW/VPN | 온프레미스 CIDR 라우팅 | 없음(IPsec 암호화) |
 
 이 격자가 머릿속에 있으면 "이 시나리오는 라우팅 문제인가 방화벽 문제인가"를 즉시 분리할 수 있다. "응답이 안 온다"는 보통 방화벽(NACL stateless) 문제고, "패킷이 아예 안 나간다"는 보통 라우팅(경로 누락) 문제다.
@@ -84,7 +84,7 @@ Week 2를 한 문장으로 압축하면 이렇다. **VPC 네트워킹의 모든 
 | "회선 L2 암호화" | DX + MACsec |
 | "외부 인터넷 없는 EC2 SSM 접근" | SSM/SSMmessages/EC2messages Interface Endpoint |
 
-> 🔍 **더 깊이**: 이 매핑표의 함정은 *키워드가 둘 이상 섞인* 복합 시나리오다. SAA-C03은 단순 "키워드→서비스" 1:1 매칭을 줄이고, "비용 최적화 + 고가용성 + 규제 준수"처럼 제약을 3개 이상 겹쳐서 *최선의 trade-off*를 고르게 만든다. 예를 들어 "온프레미스를 저지연으로 연결하되 회선 장애에도 끊기면 안 된다"면 DX 단독이 아니라 **DX + Site-to-Site VPN backup**이 정답이다. DX는 물리 회선이라 장애 시 복구가 느리고, VPN은 인터넷 기반이라 즉시 페일오버가 된다. 두 키워드("저지연" + "장애 무중단")가 충돌하는 듯 보이지만 실제로는 *조합*이 답인 패턴이 시험에 자주 나온다.
+이 매핑표의 함정은 *키워드가 둘 이상 섞인* 복합 시나리오다. SAA-C03은 단순 "키워드→서비스" 1:1 매칭을 줄이고, "비용 최적화 + 고가용성 + 규제 준수"처럼 제약을 3개 이상 겹쳐서 *최선의 trade-off*를 고르게 만든다. 예를 들어 "온프레미스를 저지연으로 연결하되 회선 장애에도 끊기면 안 된다"면 DX 단독이 아니라 **DX + Site-to-Site VPN backup**이 정답이다. DX는 물리 회선이라 장애 시 복구가 느리고, VPN은 인터넷 기반이라 즉시 페일오버가 된다. 두 키워드("저지연" + "장애 무중단")가 충돌하는 듯 보이지만 실제로는 *조합*이 답인 패턴이 시험에 나온다.
 
 ## SG vs NACL 핵심 한 줄
 
@@ -96,17 +96,15 @@ Week 2를 한 문장으로 압축하면 이렇다. **VPC 네트워킹의 모든 
 | Source | IP, SG, prefix list | IP만 |
 | 평가 | 모든 룰 합집합 | 번호 순 첫 매칭 |
 
-> 💡 **관련 이론**: 두 방화벽의 직렬 결합은 *Defense in Depth*(NIST SP 800-41 Rev.1, "Guidelines on Firewalls and Firewall Policy") 원칙의 직접 구현이다. 동일 패킷이 두 독립된 정책 엔진(서브넷 NACL → ENI SG)을 모두 통과해야 한다는 *AND* 조건이 단일 방어선 우회 시에도 두 번째 방어선이 작동하게 만든다. 같은 원칙이 *zero trust* 아키텍처(NIST SP 800-207)의 핵심이며, AWS는 이를 IAM(identity layer) + Network(network layer) + Encryption(data layer) 세 축으로 확장한다.
-
-> 🔍 **더 깊이**: SG의 stateful은 *connection tracking*(conntrack)을 통해 구현된다. Linux netfilter의 conntrack 테이블과 같은 개념으로, outbound로 나간 connection의 5-tuple(src IP/port, dst IP/port, protocol)을 기억해 두었다가 그 응답 패킷을 자동 허용한다. 반면 NACL은 이 상태 테이블이 없어서 — 진짜로 *각 패킷을 독립적으로* 평가한다. 이게 NACL이 ephemeral port range를 따로 열어야 하는 근본 이유다. AWS Nitro 카드가 SG conntrack을 하드웨어 가속으로 처리하기 때문에 SG는 거의 무비용으로 stateful을 제공하지만, 한 ENI당 추적 가능한 connection 수에는 상한이 있고(대략 수십만), 이를 넘으면 새 connection이 거부되는 *conntrack 고갈* 장애가 드물게 발생한다.
+SG의 stateful은 *connection tracking*(conntrack)을 통해 구현된다. Linux netfilter의 conntrack 테이블과 같은 개념으로, outbound로 나간 connection의 5-tuple(src IP/port, dst IP/port, protocol)을 기억해 두었다가 그 응답 패킷을 자동 허용한다. 반면 NACL은 이 상태 테이블이 없어서 — 진짜로 *각 패킷을 독립적으로* 평가한다. 이게 NACL이 ephemeral port range를 따로 열어야 하는 근본 이유다. AWS Nitro 카드가 SG conntrack을 하드웨어 가속으로 처리하기 때문에 SG는 거의 무비용으로 stateful을 제공하지만, 한 ENI당 추적 가능한 connection 수에는 상한이 있고(대략 수십만), 이를 넘으면 새 connection이 거부되는 *conntrack 고갈* 장애가 드물게 발생한다.
 
 > ⚠️ **함정**: "SG에서 outbound를 막으면 inbound 응답도 막히나?"는 흔한 오해다. SG는 stateful이라 *inbound로 들어온 connection의 응답 outbound*는 outbound 룰과 무관하게 자동 허용된다. 즉 SG outbound를 전부 닫아도 이미 들어온 요청에 대한 응답은 나간다. 반대로 *내가 먼저 시작한 outbound*(예: 패치 다운로드)는 outbound 룰이 필요하다. 이 방향성 구분이 시험에서 자주 함정으로 나온다.
 
 ## 자주 틀리는 함정 정리
 
-1. **Public 서브넷 3조건**: IGW 경로 + Public IP + SG 허용. 한 가지라도 빠지면 안 된다. 진단 순서는 항상 "라우팅 → Public IP → SG → NACL → DNS" 다섯 단계. Reachability Analyzer가 이를 자동화한다.
+1. **퍼블릭 서브넷 3조건**: IGW 경로 + Public IP + SG 허용. 한 가지라도 빠지면 안 된다. 진단 순서는 항상 "라우팅 → Public IP → SG → NACL → DNS" 다섯 단계. Reachability Analyzer가 이를 자동화한다.
 2. **NACL은 ephemeral port range를 따로 열어야** outbound 응답이 들어온다. Linux는 32768-60999, Windows는 49152-65535, ELB·NLB는 1024-65535, 안전하게는 1024-65535 다 허용.
-3. **NAT GW는 AZ scoped**. AZ별로 만들고 같은 AZ Private 서브넷이 같은 AZ NAT 사용. cross-AZ 비용도 함께 줄어든다.
+3. **NAT GW는 AZ scoped**. AZ별로 만들고 같은 AZ 프라이빗 서브넷이 같은 AZ NAT 사용. cross-AZ 비용도 함께 줄어든다.
 4. **Peering은 non-transitive**. VPC가 늘면 TGW로 전환. 10개 이상 VPC면 무조건 TGW. A↔B, B↔C가 있어도 A↔C는 안 된다(B를 경유 못 함).
 5. **CIDR 겹치면 Peering·TGW 불가**. 회사 차원 IP 거버넌스 필요. IPAM 도입 권장.
 6. **Gateway Endpoint는 S3와 DynamoDB만**. 나머지는 Interface. Gateway Endpoint는 같은 리전 내에서만 동작하고 온프레미스/Peering 너머에서는 접근 불가(라우팅 테이블 기반이라).
@@ -117,15 +115,13 @@ Week 2를 한 문장으로 압축하면 이렇다. **VPC 네트워킹의 모든 
 11. **Cross-AZ 데이터 전송은 양방향 GB당 과금**. Multi-AZ HA의 숨은 비용이고 Week 10에서 자세히 다룬다.
 12. **NAT GW의 connection idle timeout은 350초 고정**. 더 긴 connection은 keepalive 필요. RDS·DB connection pool과 함께 자주 문제가 된다.
 
-> ⚠️ **함정**: 함정 4번(non-transitive)이 시험에서 가장 자주 나온다. "VPC A는 B와 Peering, B는 C와 Peering. A가 C와 통신하려면?"의 답은 "A↔C 직접 Peering 추가" 또는 "TGW로 전환"이지, "B의 라우팅 테이블에 경로 추가"가 아니다. Peering은 *transit* 라우팅을 구조적으로 막아 두었기 때문에 B를 라우터처럼 쓸 수 없다. 이건 버그가 아니라 의도된 보안 설계로, 한 VPC가 다른 두 VPC 사이의 중간자가 되는 걸 원천 차단한다. 같은 격리를 의도적으로 깨고 싶으면 B에 NAT/프록시 인스턴스를 두는 우회가 있지만 운영이 복잡해 TGW가 정답이다.
+> ⚠️ **함정**: 함정 4번(non-transitive)이 시험에서 특히 중요하다. "VPC A는 B와 Peering, B는 C와 Peering. A가 C와 통신하려면?"의 답은 "A↔C 직접 Peering 추가" 또는 "TGW로 전환"이지, "B의 라우팅 테이블에 경로 추가"가 아니다. Peering은 *transit* 라우팅을 구조적으로 막아 두었기 때문에 B를 라우터처럼 쓸 수 없다. 이건 버그가 아니라 의도된 보안 설계로, 한 VPC가 다른 두 VPC 사이의 중간자가 되는 걸 원천 차단한다. 같은 격리를 의도적으로 깨고 싶으면 B에 NAT/프록시 인스턴스를 두는 우회가 있지만 운영이 복잡해 TGW가 정답이다.
 
 ## SDN과 결정성: Week 2를 관통하는 한 가지 원리
 
 이번 주 모든 컴포넌트가 공유하는 한 가지 사실: VPC는 **SDN(Software-Defined Networking)** 위에 올라가 있다. 물리 라우터·스위치가 패킷을 보는 게 아니라, 각 호스트의 Nitro 카드가 *Mapping Service*에 질의해 "이 가상 IP가 어느 물리 호스트에 있는지"를 받아 encapsulation(보통 사설 프로토콜로 캡슐화)해서 보낸다. 이 구조 덕분에 라우팅 테이블·SG·NACL 같은 "설정"이 즉시 전 호스트에 전파되고, 물리 토폴로지와 무관하게 논리 네트워크를 자유롭게 그릴 수 있다.
 
-> 💡 **관련 이론**: AWS는 2017년 SIGCOMM 논문 *"A Retrospective on the Lessons Learned from the AWS Virtual Private Cloud"*에서 이 설계의 일부를 공개했다. 핵심은 control plane(라우팅 결정)과 data plane(패킷 전달)의 분리, 그리고 Mapping Service의 분산 캐싱이다. 같은 SDN 사조는 2008년 스탠퍼드의 OpenFlow 논문(McKeown et al.)에서 학문적으로 정립됐고, Google의 B4(2013, SIGCOMM)가 데이터센터 간 WAN에 SDN을 적용한 최초의 대규모 사례다. VPC·GCP VPC·Azure VNet 모두 이 SDN 패러다임의 상용 구현이다.
-
-> 📚 **사례**: SDN 결정성의 양날을 보여준 대표 사고가 **2021년 10월 Meta(Facebook) 6시간 글로벌 장애**다. BGP 라우팅 설정 변경 작업 중 백본 전체가 자기 자신을 인터넷에서 *withdraw*했고, 그 결과 DNS 서버까지 도달 불가가 되어 사내 인증·도구·심지어 데이터센터 출입 카드까지 마비됐다. 중앙 집중식 결정성은 "한 줄을 바꾸면 즉시 전체에 반영된다"는 강점이 곧 "한 줄을 잘못 바꾸면 즉시 전체가 무너진다"는 약점이 된다. AWS VPC도 같은 구조적 위험을 안고 있어, 라우팅 변경은 항상 *change window* + Reachability Analyzer 사전 검증으로 보호한다.
+**사례**: SDN 결정성의 양날을 보여준 대표 사고가 **2021년 10월 Meta(Facebook) 6시간 글로벌 장애**다. BGP 라우팅 설정 변경 작업 중 백본 전체가 자기 자신을 인터넷에서 *withdraw*했고, 그 결과 DNS 서버까지 도달 불가가 되어 사내 인증·도구·심지어 데이터센터 출입 카드까지 마비됐다. 중앙 집중식 결정성은 "한 줄을 바꾸면 즉시 전체에 반영된다"는 강점이 곧 "한 줄을 잘못 바꾸면 즉시 전체가 무너진다"는 약점이 된다. AWS VPC도 같은 구조적 위험을 안고 있어, 라우팅 변경은 항상 *change window* + Reachability Analyzer 사전 검증으로 보호한다.
 
 ## 진짜 사고 사례 한 번 더
 
@@ -139,7 +135,7 @@ Week 2를 한 문장으로 압축하면 이렇다. **VPC 네트워킹의 모든 
 - **2022년 9월 Uber 침해**: 협력사 직원 MFA 피로 공격 → 내부 시스템·시크릿 매니저 접근. Zero Trust + 최소권한 도입 가속.
 - **2021년 6월 Fastly CDN 장애**: 한 고객의 설정 변경이 잠재 버그를 트리거해 1시간 글로벌 다운. 설정의 결정성이 양날임을 다시 보여줌.
 
-> 📚 **사례**: 2019년 **Capital One**은 시험과 가장 직결되는 사고다. 공격 경로가 정확히 Week 2의 컴포넌트들을 관통한다 — (1) 잘못 구성된 WAF를 SSRF 경로로 삼아 (2) EC2 메타데이터(IMDSv1)에서 (3) 과도한 IAM Role 자격증명을 얻고 (4) S3로 exfiltration. 사후 방어가 정확히 이번 주 함정 정리와 겹친다: IMDSv2 강제, S3 **Endpoint Policy + `aws:PrincipalOrgID`** 로 조직 외 버킷 접근 차단, Permission Boundary로 권한 상한. SAA 시나리오에서 "데이터 유출 방지"가 키워드면 IAM 정책만이 아니라 *네트워크 계층 차단(Endpoint Policy)* 까지 묶어야 정답이다.
+**사례**: 2019년 **Capital One**은 시험과 가장 직결되는 사고다. 공격 경로가 정확히 Week 2의 컴포넌트들을 관통한다 — (1) 잘못 구성된 WAF를 SSRF 경로로 삼아 (2) EC2 메타데이터(IMDSv1)에서 (3) 과도한 IAM Role 자격증명을 얻고 (4) S3로 exfiltration. 사후 방어가 정확히 이번 주 함정 정리와 겹친다: IMDSv2 강제, S3 **Endpoint Policy + `aws:PrincipalOrgID`** 로 조직 외 버킷 접근 차단, Permission Boundary로 권한 상한. SAA 시나리오에서 "데이터 유출 방지"가 키워드면 IAM 정책만이 아니라 *네트워크 계층 차단(Endpoint Policy)* 까지 묶어야 정답이다.
 
 ## 비용 vs 가용성 trade-off 표
 
@@ -152,7 +148,7 @@ Week 2를 한 문장으로 압축하면 이렇다. **VPC 네트워킹의 모든 
 | 로깅 | Flow Logs to S3 (저렴) | Flow Logs to CloudWatch (실시간 알람) |
 | 다중 VPC | Peering(저비용 소규모) | TGW(확장·표준화) |
 
-> ⚠️ **함정**: 시나리오에서 "비용 최적화"라는 단어가 보이면 무조건 단일 AZ NAT·Gateway Endpoint·VPN을 답으로 고르기 쉽지만, "고가용성·SLA 99.99%·미션 크리티컬" 같은 워드와 충돌하면 가용성이 우선이다. 시나리오를 끝까지 읽고 *우선순위*를 정확히 판단해야 한다. SAA-C03의 채점 철학은 W-AF(Well-Architected Framework)의 6개 기둥 — Operational Excellence, Security, Reliability, Performance, Cost, Sustainability — 중 *문제가 강조한 기둥*을 우선하는 것이다. "스타트업이 비용에 민감"이면 Cost, "금융 규제"면 Security·Reliability가 우선이라는 신호다.
+**함정**: 시나리오에서 "비용 최적화"라는 단어가 보이면 무조건 단일 AZ NAT·Gateway Endpoint·VPN을 답으로 고르기 쉽지만, "고가용성·SLA 99.99%·미션 크리티컬" 같은 워드와 충돌하면 가용성이 우선이다. 시나리오를 끝까지 읽고 *우선순위*를 정확히 판단해야 한다. SAA-C03의 채점 철학은 W-AF(Well-Architected Framework)의 6개 기둥 — Operational Excellence, Security, Reliability, Performance, Cost, Sustainability — 중 *문제가 강조한 기둥*을 우선하는 것이다. "스타트업이 비용에 민감"이면 Cost, "금융 규제"면 Security·Reliability가 우선이라는 신호다.
 
 ## 진단 순서 단권화: 패킷 추적 5단계
 
@@ -166,7 +162,7 @@ Week 2를 한 문장으로 압축하면 이렇다. **VPC 네트워킹의 모든 
 5. OS 방화벽/앱     — iptables, 앱 listen 포트, DNS 해석
 ```
 
-> 🔍 **더 깊이**: 이 5단계를 자동화한 게 **VPC Reachability Analyzer**(2020 출시)다. 출발 ENI와 목적지를 지정하면 *실제 패킷을 보내지 않고* 설정만 정적 분석해 "어느 컴포넌트에서 차단되는지"를 경로로 보여준다. 내부적으로 라우팅·SG·NACL·peering·endpoint를 그래프로 모델링하고 *형식 검증(formal verification)* 으로 도달성을 증명한다. 이 형식 검증 엔진은 AWS의 *Provable Security* 팀이 만든 Zelkova/Tiros 계열 도구에 기반하며, SMT solver(satisfiability modulo theories)로 "이 정책 조합에서 패킷이 통과 가능한가"를 수학적으로 판정한다. Network Access Analyzer는 여기서 더 나아가 "의도하지 않은 인터넷 노출 경로"를 조직 전체에서 탐지한다.
+이 5단계를 자동화한 게 **VPC Reachability Analyzer**(2020 출시)다. 출발 ENI와 목적지를 지정하면 *실제 패킷을 보내지 않고* 설정만 정적 분석해 "어느 컴포넌트에서 차단되는지"를 경로로 보여준다. 내부적으로 라우팅·SG·NACL·peering·endpoint를 그래프로 모델링하고 *형식 검증(formal verification)* 으로 도달성을 증명한다. 이 형식 검증 엔진은 AWS의 *Provable Security* 팀이 만든 Zelkova/Tiros 계열 도구에 기반하며, SMT solver(satisfiability modulo theories)로 "이 정책 조합에서 패킷이 통과 가능한가"를 수학적으로 판정한다. Network Access Analyzer는 여기서 더 나아가 "의도하지 않은 인터넷 노출 경로"를 조직 전체에서 탐지한다.
 
 ## 다음 주 예고
 

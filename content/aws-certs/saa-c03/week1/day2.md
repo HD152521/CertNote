@@ -8,8 +8,6 @@
 
 IAM은 두 가지 질문에 답하는 시스템이다. 첫째 "이 요청자가 누구인가?"(Authentication, AuthN), 둘째 "그 사람이 이걸 해도 되는가?"(Authorization, AuthZ). 전자는 자격 증명(비밀번호, Access Key, STS 임시 토큰)으로, 후자는 정책(Policy)으로 해결한다. 모든 AWS API 호출은 **SigV4 서명 알고리즘**으로 서명된 HTTP 요청이고, AWS는 그 서명을 검증해 신원을 확인한 다음 정책을 평가해 허용/거부를 결정한다.
 
-> 💡 **관련 이론**: 인증과 인가는 Saltzer & Schroeder가 1975년 논문 "The Protection of Information in Computer Systems"에서 제시한 보안 8대 원칙의 기반이다. 그중 핵심이 **최소 권한 원칙(Principle of Least Privilege)** 과 **Fail-safe Defaults**(기본은 거부). AWS IAM의 "Implicit Deny + Explicit Allow" 모델이 정확히 이 두 원칙을 구현한다. 권한 모델은 RBAC(Role-Based, NIST RBAC 표준 INCITS 359-2012)와 ABAC(Attribute-Based, NIST SP 800-162) 두 축으로 나뉘는데, IAM은 두 가지를 모두 지원하고 태그 기반 ABAC는 2018년에 정식 추가됐다.
-
 > 🔍 **더 깊이**: SigV4 서명은 요청 본문, 헤더, 타임스탬프, 자격 증명 ID, 시크릿 키를 HMAC-SHA256으로 체이닝해 만든다. 핵심은 시크릿이 네트워크로 절대 나가지 않는다는 점. AWS 서버는 같은 시크릿으로 같은 서명을 다시 계산해서 비교한다. 또 타임스탬프가 ±15분을 벗어나면 거부되므로 replay 공격이 막힌다. EC2 안에서 IMDSv2가 임시 자격 증명을 발급하는 것도 결국 이 SigV4 서명에 쓸 키를 안전하게 전달하기 위함이다.
 
 ## IAM의 4대 엔터티
@@ -47,7 +45,7 @@ IAM은 두 가지 질문에 답하는 시스템이다. 첫째 "이 요청자가 
    | EC2 / Lambda / 다른 계정 / OIDC
 ```
 
-> 📚 **사례**: 2017년 OneLogin 침해 사건. 공격자가 AWS API 키를 탈취한 뒤 며칠간 고객 데이터를 빼냈다. 사후 분석에서 드러난 핵심 원인은 **장기 IAM User Access Key를 코드 저장소(Git)에 커밋했다가 노출됐고, 그 키에 광범위한 권한이 붙어 있었다**는 것. 만약 이 키가 Role 기반 임시 자격 증명이었다면 노출 시점에 이미 만료됐을 가능성이 높다. 이 사건은 "사람이든 앱이든 가능한 한 Role을 써라"는 베스트 프랙티스가 자리잡은 결정적 계기 중 하나다.
+**사례**: 2017년 OneLogin 침해 사건. 공격자가 AWS API 키를 탈취한 뒤 며칠간 고객 데이터를 빼냈다. 사후 분석에서 드러난 핵심 원인은 **장기 IAM User Access Key를 코드 저장소(Git)에 커밋했다가 노출됐고, 그 키에 광범위한 권한이 붙어 있었다**는 것. 만약 이 키가 Role 기반 임시 자격 증명이었다면 노출 시점에 이미 만료됐을 가능성이 높다. 이 사건은 "사람이든 앱이든 가능한 한 Role을 써라"는 베스트 프랙티스가 자리잡은 결정적 계기 중 하나다.
 
 ## Policy: JSON 한 장이 모든 걸 결정한다
 
@@ -109,9 +107,9 @@ IAM 정책은 JSON 문서로 작성하고, 핵심 필드는 5개다.
 
 핵심 두 가지를 기억하면 된다. 첫째, **명시적 거부(Explicit Deny)는 어디에 있든 무조건 이긴다.** 둘째, **허용은 모든 레이어에서 동시에 허용되어야 한다.** SCP가 Deny면 IAM 정책이 아무리 Allow여도 안 된다. Permissions Boundary가 그 권한을 포함 안 하면 못 한다.
 
-> 🔍 **더 깊이**: 같은 계정 안에서 Resource Policy와 Identity Policy가 둘 다 있을 때는 **합집합(union)** 이 적용된다. 즉 한 쪽만 Allow여도 통과한다. 그런데 **교차 계정(Cross-Account)** 일 때는 다르다. 양쪽 모두 Allow여야 한다(소유 계정의 Resource Policy + 호출 계정의 Identity Policy). 이게 시험 단골 함정이다. "S3 버킷 정책에서 다른 계정 User를 Allow했는데 왜 안 되냐"는 문제의 답은 "그 계정 안에서도 Identity Policy로 Allow해야 한다"는 것.
+같은 계정 안에서 Resource Policy와 Identity Policy가 둘 다 있을 때는 **합집합(union)** 이 적용된다. 즉 한 쪽만 Allow여도 통과한다. 그런데 **교차 계정(Cross-Account)** 일 때는 다르다. 양쪽 모두 Allow여야 한다(소유 계정의 Resource Policy + 호출 계정의 Identity Policy). 이 차이가 시험에서 함정으로 쓰인다. "S3 버킷 정책에서 다른 계정 User를 Allow했는데 왜 안 되냐"는 문제의 답은 "그 계정 안에서도 Identity Policy로 Allow해야 한다"는 것.
 
-> 💡 **관련 이론**: 이 평가 로직은 형식적으로 보면 결정 트리(Decision Tree) 위에서의 명시적 우선순위 시스템이다. XACML(eXtensible Access Control Markup Language, OASIS 표준)이 비슷한 정책 결합 알고리즘(deny-overrides, permit-overrides 등)을 정의하고 있고, IAM은 그중 **deny-overrides** 를 기본으로 채택한다. 이는 보안에서 "안전 측 실패(fail-safe)"를 보장하는 가장 보수적인 선택이다.
+이 평가 로직은 형식적으로 보면 결정 트리(Decision Tree) 위에서의 명시적 우선순위 시스템이다. XACML(eXtensible Access Control Markup Language, OASIS 표준)이 비슷한 정책 결합 알고리즘(deny-overrides, permit-overrides 등)을 정의하고 있고, IAM은 그중 **deny-overrides** 를 기본으로 채택한다. 이는 보안에서 "안전 측 실패(fail-safe)"를 보장하는 가장 보수적인 선택이다.
 
 ## Root vs IAM User: 절대 root로 살지 않는다
 
@@ -124,7 +122,7 @@ AWS 계정을 만들면 처음 만들어지는 신원이 **root**다. root는 �
 3. 일상 작업용 **IAM User** 또는 **IAM Identity Center(SSO)** 사용
 4. root는 금고에 넣고 1년에 몇 번만 꺼냄
 
-> 📚 **사례**: 2020년 한 스타트업이 root Access Key를 GitHub public repo에 실수로 push했다. 몇 분 만에 봇이 키를 스캔해 EC2 P3 인스턴스 수십 대를 띄워 암호화폐를 채굴했고, 24시간 만에 청구서가 $50,000을 넘었다. AWS는 보통 이런 사건을 인지하면 자동으로 키를 비활성화하고 청구도 면제해주지만, 모든 사례가 그렇진 않다. 교훈은 단순하다: root key는 **존재 자체가 위험**이다. GitHub은 이후 자체적으로 secret scanning을 도입해 AWS·GCP·Stripe 등의 키 패턴을 push 시점에 감지한다.
+**사례(가상)**: 2020년 한 스타트업이 root Access Key를 GitHub public repo에 실수로 push했다. 몇 분 만에 봇이 키를 스캔해 EC2 P3 인스턴스 수십 대를 띄워 암호화폐를 채굴했고, 24시간 만에 청구서가 $50,000을 넘었다. AWS는 보통 이런 사건을 인지하면 자동으로 키를 비활성화하고 청구도 면제해주지만, 모든 사례가 그렇진 않다. 교훈은 단순하다: root key는 **존재 자체가 위험**이다. GitHub은 이후 자체적으로 secret scanning을 도입해 AWS·GCP·Stripe 등의 키 패턴을 push 시점에 감지한다.
 
 ## IAM Identity Center(구 AWS SSO): 진짜 표준
 
@@ -138,7 +136,7 @@ AWS 계정을 만들면 처음 만들어지는 신원이 **root**다. root는 �
 | 회전 부담 | 사용자 책임 | 자동 |
 | 시험 권장 | 개별 사용자 권장 X | ✅ |
 
-## MFA: 두 번째 요인의 진짜 의미
+## MFA: 두 번째 요인의 의미
 
 MFA는 "내가 아는 것(비밀번호) + 내가 가진 것(토큰 생성기)"의 조합이다. AWS는 4가지 MFA를 지원한다.
 
@@ -147,7 +145,7 @@ MFA는 "내가 아는 것(비밀번호) + 내가 가진 것(토큰 생성기)"�
 - **SMS MFA**: 더 이상 권장 안 함 (SIM swap 공격 취약)
 - **U2F 보안 키**: 가장 안전. 피싱 내성 있음
 
-TOTP는 30초마다 바뀌는 6자리 코드인데, 그 알고리즘은 RFC 6238에 정의되어 있다. 공유된 비밀(QR 코드 스캔 시 등록한 시드)과 현재 시각의 30초 윈도우를 HMAC-SHA1로 합쳐 해시하고, 그 결과의 일부분을 6자리 숫자로 자른다. 시험에선 "MFA를 강제하려면 어떻게?"라는 문제가 자주 나오는데, 답은 **정책의 Condition에 `aws:MultiFactorAuthPresent: true`를 거는 것**.
+TOTP는 30초마다 바뀌는 6자리 코드인데, 그 알고리즘은 RFC 6238에 정의되어 있다. 공유된 비밀(QR 코드 스캔 시 등록한 시드)과 현재 시각의 30초 윈도우를 HMAC-SHA1로 합쳐 해시하고, 그 결과의 일부분을 6자리 숫자로 자른다. 시험에선 "MFA를 강제하려면 어떻게?"라는 문제가 나오는데, 답은 **정책의 Condition에 `aws:MultiFactorAuthPresent: true`를 거는 것**.
 
 ```json
 "Condition": {
@@ -157,7 +155,7 @@ TOTP는 30초마다 바뀌는 6자리 코드인데, 그 알고리즘은 RFC 6238
 
 이 조건이 붙은 Deny statement는 "MFA를 안 거친 세션이면 무조건 거부"라는 의미가 된다. `BoolIfExists`를 쓰는 이유는 일부 서비스(예: IAM Role을 통한 서비스 간 호출)에서 이 키가 아예 존재하지 않을 수 있기 때문이다.
 
-> 🔍 **더 깊이**: WebAuthn/FIDO2는 비대칭 키 기반이라 피싱에 본질적으로 강하다. 등록 시 디바이스에서 키 쌍을 생성하고, 공개키만 서버에 저장한다. 로그인 시 서버가 보낸 챌린지를 디바이스의 비밀키로 서명하는데, 그 서명에는 **origin(접속 도메인)** 이 포함된다. 따라서 피싱 사이트에서 받은 챌린지를 정상 서비스에 다시 던지는 공격이 자동으로 막힌다. SAA에선 깊게 안 물어보지만 "어떤 MFA가 가장 안전한가" 류 문제의 답은 FIDO/WebAuthn.
+WebAuthn/FIDO2는 비대칭 키 기반이라 피싱에 본질적으로 강하다. 등록 시 디바이스에서 키 쌍을 생성하고, 공개키만 서버에 저장한다. 로그인 시 서버가 보낸 챌린지를 디바이스의 비밀키로 서명하는데, 그 서명에는 **origin(접속 도메인)** 이 포함된다. 따라서 피싱 사이트에서 받은 챌린지를 정상 서비스에 다시 던지는 공격이 자동으로 막힌다. SAA에선 깊게 안 물어보지만 "어떤 MFA가 가장 안전한가" 류 문제의 답은 FIDO/WebAuthn.
 
 ## EC2 Instance Profile과 IAM Role: 키 없이 권한 받는 법
 
@@ -174,7 +172,7 @@ curl -H "X-aws-ec2-metadata-token: $TOKEN" \
 
 이때 반환되는 자격 증명은 보통 1시간마다 자동 갱신된다. SDK는 만료 5분 전부터 미리 새 토큰을 받아오므로 애플리케이션 코드에서 신경 쓸 필요가 없다.
 
-> 📚 **사례**: Capital One 사고(Day 1에서 봤음)의 직접 원인이 바로 이 IMDS의 IMDSv1 버전이었다. IMDSv1은 단순 GET이어서 SSRF로 외부 공격자가 접근 가능했다. IMDSv2는 PUT으로 토큰을 먼저 받아야 GET이 동작하므로 거의 대부분의 SSRF가 무력화된다. 2022년부터 모든 신규 EC2 AMI는 기본적으로 IMDSv2를 요구하도록 권장된다.
+**사례**: Capital One 사고(Day 1에서 봤음)의 직접 원인이 바로 이 IMDS의 IMDSv1 버전이었다. IMDSv1은 단순 GET이어서 SSRF로 외부 공격자가 접근 가능했다. IMDSv2는 PUT으로 토큰을 먼저 받아야 GET이 동작하므로 거의 대부분의 SSRF가 무력화된다. 2022년부터 모든 신규 EC2 AMI는 기본적으로 IMDSv2를 요구하도록 권장된다.
 
 ## 실무 베스트 프랙티스 정리
 
@@ -187,7 +185,7 @@ curl -H "X-aws-ec2-metadata-token: $TOKEN" \
 7. **CloudTrail**로 모든 IAM 활동 감사.
 8. **Permissions Boundary**로 개발자가 만드는 Role의 권한 상한 강제.
 
-## 정리하며
+## 정리
 
 IAM의 4대 엔터티(User/Group/Role/Policy)와 정책 평가 로직(명시 Deny > 명시 Allow > 묵시 Deny)이 오늘의 두 그림이다. 이 둘만 머리에 박혀 있어도 시험 IAM 영역의 70%는 풀린다. 다음 글에서는 STS와 정책 평가의 더 깊은 내부 — Permissions Boundary, ABAC 태그, Confused Deputy 문제 — 를 본다.
 

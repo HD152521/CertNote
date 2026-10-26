@@ -4,7 +4,7 @@
 
 오늘은 EBS의 내부 아키텍처(왜 AZ 종속인지, 왜 io2 Block Express만 256K IOPS인지)부터 인스턴스 스토어의 물리적 NVMe까지 따라가 본다. 그 위에서 EFS·FSx가 어떤 위치를 차지하는지, EBS 스냅샷이 S3에 정확히 어떻게 저장되는지를 본다. 개발자가 시험에서 만나는 "왜 우리 EBS는 IOPS가 안 나오지?", "왜 인스턴스 stop했더니 데이터가 다 날아갔지?" 같은 시나리오는 결국 이 layer를 끝까지 본 사람만 풀 수 있다.
 
-## EBS는 네트워크 디스크다 — AZ 종속의 진짜 이유
+## EBS는 네트워크 디스크다 — AZ 종속의 이유
 
 EBS는 "EC2에 attach되는 디스크"라고 단순히 이해하면 절반만 본 거다. 실제로 EBS는 **AZ 안의 별도 분산 스토리지 fleet**에 데이터를 저장하고, EC2 인스턴스는 그 fleet에 iSCSI 비슷한 프로토콜로 네트워크 너머 접근한다. 그래서 EBS volume은 **AZ에 종속적**이고, EC2를 다른 AZ로 옮기려면 ① snapshot 생성(S3에 저장) → ② 새 AZ에서 snapshot으로 volume 생성 → ③ attach라는 3단계가 필요하다.
 
@@ -25,13 +25,11 @@ EBS는 한 AZ 안에서 자동으로 **3-way replication**을 한다. 그래서 
 
 Nitro 인스턴스의 경우 EBS는 **Nitro EBS Card**라는 전용 PCIe 카드를 통해 액세스된다. 호스트 OS의 CPU를 거의 안 거치고 카드가 직접 네트워크 패킷을 처리하므로, 같은 인스턴스 타입에서 non-Nitro 대비 약 2배의 EBS throughput이 나온다. 또 EBS-Optimized 옵션이 무료로 기본 활성화돼 있어, EC2의 일반 네트워크 대역과 EBS 대역이 분리된다(예전엔 옵션이었고 추가 요금).
 
-> 🔍 **더 깊이**: EBS의 "11 nines durability"(io2/io2 Block Express)는 한 AZ 안의 3-way replication 위에 background scrubbing(체크섬 검사 후 손상 시 재복제), erasure coding 일부 적용, 정기적 fault detection으로 달성된다. gp3는 11 nines가 아니라 99.8-99.9% durability(연간 0.1-0.2% volume이 영구 데이터 손실 가능성). 그래서 critical workload에는 gp3보다 io2가 권장된다. 다만 실무에선 어떤 EBS 타입이든 application-level backup(snapshot, RDS automated backup, Aurora continuous backup)이 항상 권장된다.
-
-> 💡 **관련 이론**: EBS의 3-way replication은 분산 스토리지의 quorum-based consistency 모델 위에서 동작한다. 쓰기는 3 replica 중 2개에 성공해야 ack를 받고(W=2), 읽기는 1개에서 받아도 된다(R=1). 이게 Dynamo paper(DeCandia et al., 2007)의 quorum 모델과 같은 발상이다. R+W > N(여기서 N=3)이면 strong consistency를 보장. EBS는 R=1, W=2, N=3으로 W+R=3=N이라 strong consistency는 아니지만, 실무에선 write back에서 strong consistency를 추가로 보장하는 메커니즘이 있다.
+EBS의 "11 nines durability"(io2/io2 Block Express)는 한 AZ 안의 3-way replication 위에 background scrubbing(체크섬 검사 후 손상 시 재복제), erasure coding 일부 적용, 정기적 fault detection으로 달성된다. gp3는 11 nines가 아니라 99.8-99.9% durability(연간 0.1-0.2% volume이 영구 데이터 손실 가능성). 그래서 critical workload에는 gp3보다 io2가 권장된다. 다만 실무에선 어떤 EBS 타입이든 application-level backup(snapshot, RDS automated backup, Aurora continuous backup)이 항상 권장된다.
 
 ## EBS volume type 깊이 분석
 
-볼륨 타입을 외우기 전에 각자의 진짜 용도를 보자.
+볼륨 타입을 외우기 전에 각 타입의 용도부터 구분한다.
 
 | 타입 | 미디어 | 기본 IOPS / 최대 IOPS | 처리량 | 가격(GB/월, ap-northeast-2 기준) | 대표 워크로드 |
 |------|-------|----------|--------|----------|----------|
@@ -45,19 +43,19 @@ Nitro 인스턴스의 경우 EBS는 **Nitro EBS Card**라는 전용 PCIe 카드�
 
 **gp3가 gp2를 대체하는 이유**: gp2는 IOPS가 볼륨 크기에 묶여 있어(1GB당 3 IOPS, 최대 16,000) 100GB 볼륨에 5,000 IOPS가 필요하면 1,667GB까지 키워야 했다. gp3는 IOPS와 throughput을 **크기와 독립적으로** 설정 가능하다(추가 비용 있음). 같은 100GB 볼륨에 5,000 IOPS와 250 MB/s를 설정해도 gp2보다 약 20% 저렴하다.
 
-**io1 vs io2의 차이**: io2가 늦게 나온 만큼 더 좋다. ① durability가 io1의 99.9%에서 io2는 99.999%(=11 nines)로 4 nines 더 높음. ② 같은 가격에 IOPS:GB 비율이 io1의 1:50에서 io2는 1:500으로 10배. 즉 100GB io2는 5,000 IOPS까지 가능, 100GB io1은 50 IOPS까지만 보장. 그래서 새 워크로드에 io1을 쓰는 것은 거의 항상 오답이다.
+**io1 vs io2의 차이**: io2가 늦게 나온 만큼 더 좋다. ① durability가 io1의 99.9%에서 io2는 99.999%(=11 nines)로 4 nines 더 높음. ② 같은 가격에 IOPS:GB 비율이 io1의 1:50에서 io2는 1:500으로 10배. 즉 100GB io2는 5,000 IOPS까지 가능, 100GB io1은 50 IOPS까지만 보장. 그래서 새 워크로드에 io1을 쓰는 것은 오답 보기로 쓰이기 쉽다.
 
-**io2 Block Express**: 2021년 출시. NVMe over Fabrics 프로토콜 기반으로 EBS 네트워크 stack을 새로 짰다. 256K IOPS, 4 GB/s throughput, sub-millisecond latency, 64TB까지 확장. SAP HANA 같은 인메모리 DB의 영구 스토리지 layer에 쓰인다. r5b 같은 io2 Block Express 호환 인스턴스에서만 동작.
+**io2 Block Express**: 2021년 출시. NVMe over Fabrics 프로토콜 기반으로 EBS 네트워크 스택을 새로 짰다. 256K IOPS, 4 GB/s throughput, sub-millisecond latency, 64TB까지 확장. SAP HANA 같은 인메모리 DB의 영구 스토리지 layer에 쓰인다. r5b 같은 io2 Block Express 호환 인스턴스에서만 동작.
 
-> ⚠️ **함정**: 시험에서 "데이터베이스에 가장 적합한 EBS 타입"이 보이면 무조건 io2 또는 io2 Block Express. gp3도 "일반 DB"엔 충분하지만, "지연 시간 민감"이나 "미션 크리티컬"이라는 키워드가 붙으면 io2 답. 또 "HDD를 부팅 볼륨으로"라는 보기는 항상 오답이다. st1과 sc1은 부팅 불가.
+> ⚠️ **함정**: 시험에서 "데이터베이스에 가장 적합한 EBS 타입"이 보이면 io2 또는 io2 Block Express가 답이다. gp3도 "일반 DB"엔 충분하지만, "지연 시간 민감"이나 "미션 크리티컬"이라는 키워드가 붙으면 io2 답. 또 "HDD를 부팅 볼륨으로"라는 보기는 오답이다. st1과 sc1은 부팅 불가.
 
-> 🔍 **더 깊이**: gp3의 baseline 3,000 IOPS는 1GB든 1TB든 동일하다. 그 위에 추가 IOPS는 1 IOPS당 월 $0.005, throughput은 1MB/s당 월 $0.04(125 MB/s 위에서). 그래서 80GB 부팅 볼륨에 5,000 IOPS가 필요하면 추가 2,000 IOPS × $0.005 = 월 $10이 추가된다. 비교적 저렴한 옵션이라 production 부팅 볼륨도 gp3로 통일하는 게 표준이 되어가는 중.
+gp3의 baseline 3,000 IOPS는 1GB든 1TB든 동일하다. 그 위에 추가 IOPS는 1 IOPS당 월 $0.005, throughput은 1MB/s당 월 $0.04(125 MB/s 위에서). 그래서 80GB 부팅 볼륨에 5,000 IOPS가 필요하면 추가 2,000 IOPS × $0.005 = 월 $10이 추가된다. 비교적 저렴한 옵션이라 production 부팅 볼륨도 gp3로 통일하는 게 표준이 되어가는 중.
 
 ## EBS Multi-Attach: 같은 볼륨을 여러 인스턴스에서
 
 기본적으로 EBS volume은 한 EC2 인스턴스에만 attach된다. 그런데 **io1/io2 + Nitro 인스턴스 + 같은 AZ** 조합에서만 가능한 예외가 EBS Multi-Attach다. 최대 16개 인스턴스가 같은 volume에 동시 attach된다.
 
-그런데 **여기서 시험에 자주 나오는 함정**: Multi-Attach만 켠다고 끝이 아니다. 일반 파일시스템(ext4, xfs)은 cluster-aware하지 않아서 여러 노드가 동시 write하면 파일시스템이 깨진다. **GFS2, OCFS2, VxFS** 같은 cluster file system이 필요하고, 그 위에서 distributed lock manager가 동시 access를 조율해야 한다. 즉 Multi-Attach는 application/middleware가 이미 클러스터링을 알고 있을 때(Oracle RAC, SAP ASCS·ERS 같은 경우)만 의미가 있다.
+그런데 **여기에 함정이 있다**: Multi-Attach만 켠다고 끝이 아니다. 일반 파일시스템(ext4, xfs)은 cluster-aware하지 않아서 여러 노드가 동시 write하면 파일시스템이 깨진다. **GFS2, OCFS2, VxFS** 같은 cluster file system이 필요하고, 그 위에서 distributed lock manager가 동시 access를 조율해야 한다. 즉 Multi-Attach는 application/middleware가 이미 클러스터링을 알고 있을 때(Oracle RAC, SAP ASCS·ERS 같은 경우)만 의미가 있다.
 
 ```python
 # Multi-Attach 가능한 io2 volume 생성
@@ -70,9 +68,9 @@ volume = ec2.create_volume(
 )
 ```
 
-> 💡 **암기 팁**: 시험에 "여러 EC2가 같은 디스크 공유"라는 시나리오의 답은 거의 항상 **EFS**(NFS 기반 파일 공유)지 EBS Multi-Attach가 아니다. Multi-Attach는 cluster-aware 워크로드의 특수 케이스일 뿐.
+시험에 "여러 EC2가 같은 디스크 공유"라는 시나리오의 답은 **EFS**(NFS 기반 파일 공유)지 EBS Multi-Attach가 아니다. Multi-Attach는 cluster-aware 워크로드의 특수 케이스일 뿐.
 
-## Instance Store: 물리적 NVMe의 진짜 모습
+## Instance Store: 물리적 NVMe
 
 인스턴스 스토어(ephemeral storage, instance-store)는 EC2 호스트의 물리 디스크에 직접 연결된 스토리지다. EBS와 달리 네트워크를 거치지 않으므로 latency는 microsecond 수준, IOPS는 수백만에 달한다. 단점은 **호스트가 죽으면 데이터도 죽는다**는 것.
 
@@ -97,9 +95,7 @@ i3·i4i·im4gn·is4gen 같은 storage-optimized 인스턴스 패밀리는 NVMe i
 | 다른 인스턴스에 attach | 가능 | 불가 |
 | 크기 변경 | 가능 (실시간) | 불가 |
 
-> 🔍 **더 깊이**: 인스턴스 stop은 인스턴스가 다른 호스트로 옮겨갈 수 있는 작업이다(start 시 새 호스트 할당). 그래서 호스트 종속인 instance store는 stop으로 데이터가 사라진다. 반대로 reboot은 같은 호스트에서 OS만 재시작하므로 데이터가 유지된다. Hibernate는 RAM 내용을 EBS 루트 볼륨에 dump하고 stop하는 것이라 instance store는 마찬가지로 소멸된다. 그래서 hibernate는 EBS 루트 볼륨이 암호화돼 있어야 하고, 일부 인스턴스 타입(주로 m·c·r 계열)만 지원한다.
-
-> 📚 **사례**: 2017년 한 ML 스타트업이 i3.4xlarge에서 train된 모델 weights를 instance store에 저장하고 batch 종료 후 인스턴스를 stop했다가 모든 데이터를 잃었다. AWS는 친절하게 "Are you sure?" 경고를 띄우지만 자동화 스크립트는 그걸 무시한다. 그 회사는 그 후로 모든 training script에서 S3 sync를 마지막 단계로 강제했다고 한다. 시험에 "important data → instance store에만 저장"이라는 보기가 나오면 항상 오답.
+인스턴스 stop은 인스턴스가 다른 호스트로 옮겨갈 수 있는 작업이다(start 시 새 호스트 할당). 그래서 호스트 종속인 instance store는 stop으로 데이터가 사라진다. 반대로 reboot은 같은 호스트에서 OS만 재시작하므로 데이터가 유지된다. Hibernate는 RAM 내용을 EBS 루트 볼륨에 dump하고 stop하는 것이라 instance store는 마찬가지로 소멸된다. 그래서 hibernate는 EBS 루트 볼륨이 암호화돼 있어야 하고, 일부 인스턴스 타입(주로 m·c·r 계열)만 지원한다.
 
 ## EBS Snapshot: S3 위의 incremental backup
 
@@ -172,11 +168,9 @@ EBS encryption은 사용자가 보기엔 토글 하나지만 내부적으로는 
 
 핵심은 ① plaintext DEK는 KMS 안과 EC2 host 메모리에만 존재(디스크에 절대 안 적힘), ② 모든 IO는 transparent encrypt/decrypt(애플리케이션 입장에선 보이지 않음), ③ 성능 영향은 < 1% (AES-NI 하드웨어 가속 활용).
 
-> 🔍 **더 깊이**: KMS Multi-Region Key는 2021년 출시. 같은 key material을 여러 리전에서 사용 가능하므로 EBS snapshot을 cross-region copy해도 같은 키로 복호화 가능. 이전엔 각 리전마다 새 키를 만들어 snapshot copy 시 re-encrypt해야 했다. 단 Multi-Region Key는 KMS의 fully-managed CMK가 아닌 customer-managed CMK(CMK)에서만 가능하다.
+KMS Multi-Region Key는 2021년 출시. 같은 key material을 여러 리전에서 사용 가능하므로 EBS snapshot을 cross-region copy해도 같은 키로 복호화 가능. 이전엔 각 리전마다 새 키를 만들어 snapshot copy 시 re-encrypt해야 했다. 단 Multi-Region Key는 KMS의 fully-managed CMK가 아닌 customer-managed CMK(CMK)에서만 가능하다.
 
-**미암호화 volume을 암호화하는 5단계**: ① snapshot 생성(미암호화) → ② `copy-snapshot --encrypted --kms-key-id` 로 암호화 복사 → ③ 암호화된 snapshot에서 새 volume 생성 → ④ 원래 volume detach, 새 volume attach → ⑤ 검증 후 원본 삭제. 이 순서를 통째로 외워야 한다.
-
-> 💡 **관련 이론**: Envelope encryption은 1990년대 PGP가 표준화한 기법이다(RFC 4880). 큰 데이터를 빠른 symmetric 키로 암호화하고, 그 symmetric 키를 느린 asymmetric 키나 KMS 같은 강한 서비스로 한 번만 암호화한다. AES-256-XTS는 디스크 암호화 표준(IEEE 1619-2007)으로, 같은 plaintext block이라도 위치별로 다른 ciphertext가 나오게 해 패턴 누출을 막는다. BitLocker, FileVault, dm-crypt(LUKS) 모두 AES-XTS를 쓴다.
+**미암호화 volume을 암호화하는 5단계**: ① snapshot 생성(미암호화) → ② `copy-snapshot --encrypted --kms-key-id` 로 암호화 복사 → ③ 암호화된 snapshot에서 새 volume 생성 → ④ 원래 volume detach, 새 volume attach → ⑤ 검증 후 원본 삭제. 이 순서가 암호화 전환 절차다.
 
 ## EFS, FSx: EBS 너머의 파일 공유
 
@@ -202,7 +196,7 @@ EBS가 "한 인스턴스가 단독 사용하는 블록 디스크"라면, EFS는 
 - **Infrequent Access (IA)**: 30일 미접근 자동 이동, $0.025/GB·월 + 접근 시 GB당 $0.01
 - **Archive**: 90일 미접근, $0.008/GB·월 + 접근 시 GB당 $0.03
 
-> 🔍 **더 깊이**: Lambda가 EFS를 마운트할 수 있다는 점이 시험에 자주 나온다. Lambda는 boot 시 EFS access point를 통해 mount하고, 함수 안에서 일반 파일 IO처럼 read/write 가능. 큰 ML 모델(GB 단위)을 Lambda layer 한도(250MB) 안에 못 넣을 때 EFS에 둔다. 단 Lambda → EFS는 같은 VPC + 같은 subnet 또는 access point가 필요하고, cold start latency가 EFS mount 시간만큼 추가된다.
+Lambda는 EFS를 마운트할 수 있다. Lambda는 boot 시 EFS access point를 통해 mount하고, 함수 안에서 일반 파일 IO처럼 read/write 가능. 큰 ML 모델(GB 단위)을 Lambda layer 한도(250MB) 안에 못 넣을 때 EFS에 둔다. 단 Lambda → EFS는 같은 VPC + 같은 subnet 또는 access point가 필요하고, 콜드 스타트 latency가 EFS mount 시간만큼 추가된다.
 
 ## CLI 종합
 
@@ -255,9 +249,9 @@ aws dlm create-lifecycle-policy \
   }'
 ```
 
-## 정리하며
+## 정리
 
-오늘 본 그림은 세 가지다. 첫째, EBS는 AZ 안의 분산 스토리지 fleet에 네트워크 너머 접근하는 block storage이고, gp3가 새 워크로드의 default이며 io2 Block Express가 인메모리 DB용 최상위 옵션이다. 둘째, Instance Store는 호스트 NVMe 직결이라 microsecond latency지만 stop·terminate·호스트 장애로 데이터가 사라지므로 절대 영구 저장에 쓰면 안 된다. 셋째, 여러 인스턴스가 같은 데이터를 본다면 EBS Multi-Attach가 아니라 EFS(또는 워크로드에 따라 FSx)가 정답이다.
+오늘 본 그림은 세 가지다. 첫째, EBS는 AZ 안의 분산 스토리지 fleet에 네트워크 너머 접근하는 block storage이고, gp3가 새 워크로드의 default이며 io2 Block Express가 인메모리 DB용 최상위 옵션이다. 둘째, Instance Store는 호스트 NVMe 직결이라 microsecond latency지만 stop·terminate·호스트 장애로 데이터가 사라지므로 영구 저장에 쓰지 않는다. 셋째, 여러 인스턴스가 같은 데이터를 본다면 EBS Multi-Attach가 아니라 EFS(또는 워크로드에 따라 FSx)가 정답이다.
 
 다음 글에서는 그 위에 트래픽을 분산하는 layer — ALB·NLB·GWLB와 Auto Scaling Group을 본다. EBS가 한 인스턴스의 디스크 layer였다면, ELB·ASG는 여러 인스턴스 위의 가용성·확장성 layer다.
 

@@ -48,7 +48,7 @@
 | 마운트 타입 | nfs | cifs |
 | 인증 | IP·UID 기반 | 계정/암호 기반 |
 
-> 💡 **선택 한 줄**: 전부 리눅스면 **NFS**, 윈도가 섞이면 **Samba**.
+**선택 한 줄**: 전부 리눅스면 **NFS**, 윈도가 섞이면 **Samba**.
 
 ## Day 3 복습: 방화벽 — iptables와 firewalld
 
@@ -78,9 +78,9 @@
 - **rsyslog.conf** : `facility.priority` 짝으로 지정 수준 **이상**을 기록. `.none`은 제외, `=`는 그 수준만.
 - **logrotate** : `rotate N`·`compress`·`daily/weekly`로 로그를 순환·보존한다.
 
-> 💡 **보안 디버깅 신호**: "권한은 맞는데 접근이 안 된다" → SELinux 컨텍스트 의심. `setenforce 0`으로 사라지면 SELinux 문제(운영에선 끄지 말고 컨텍스트 수정).
+**보안 디버깅 신호**: "권한은 맞는데 접근이 안 된다" → SELinux 컨텍스트 의심. `setenforce 0`으로 사라지면 SELinux 문제(운영에선 끄지 말고 컨텍스트 수정).
 
-## 자주 헷갈리는 핵심 비교 한눈에
+## 헷갈리기 쉬운 핵심 비교 한눈에
 
 | 헷갈림 | 정답 |
 |--------|------|
@@ -95,7 +95,7 @@
 | setenforce 범위 | enforcing↔permissive만, disabled 불가 |
 | wtmp/btmp 조회 | last / lastb (바이너리, cat 불가) |
 
-아래 종합 문제로 한 주를 정리하자.
+아래 종합 문제로 한 주를 정리한다.
 
 ## 📖 용어
 
