@@ -8,6 +8,7 @@ import { cn } from '@/lib/cn';
 import { Select } from '@/components/ui/Select';
 import { useLanguage } from '@/lib/i18n-client';
 import { QuestionReport } from '@/components/userInput/QuestionReport';
+import { InlineMd } from '@/components/InlineMd';
 
 interface CertOption { slug: string; code: string; name: string }
 
@@ -395,7 +396,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
                 })}
               </ul>
               {it.selected === null && <p className="mt-2 text-xs text-danger">{lang === 'en' ? 'Unanswered' : '미응답'}</p>}
-              {it.explanation && <p className="mt-2 text-xs text-fg-muted whitespace-pre-wrap leading-relaxed">💡 {it.explanation}</p>}
+              {it.explanation && <p className="mt-2 text-xs text-fg-muted whitespace-pre-wrap leading-relaxed">💡 <InlineMd text={it.explanation} /></p>}
               <QuestionReport questionId={it.questionId} lang={lang} />
             </li>
           );

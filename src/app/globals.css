@@ -100,6 +100,11 @@ html, body {
 .article ol { list-style: decimal; }
 .article li { margin: 0.25rem 0; }
 .article li > p { margin: 0.25rem 0; }
+/* 퀴즈 보기 목록(Quiz.tsx)은 .article 안에서 렌더되지만 본문 목록이 아니다. 위 규칙은 레이어 밖이라
+   Tailwind 유틸리티로는 덮을 수 없어 여기서 되돌린다. 보기 사이 간격은 space-y-2 가 맡는다. */
+.article ul.quiz-choices { list-style: none; margin: 0; padding-left: 0; }
+.article ul.quiz-choices > li { margin: 0; }
+.article ul.quiz-choices > li + li { margin-top: 0.5rem; }
 .article a { color: var(--fg); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; transition: text-decoration-color 0.15s; }
 .article a:hover { text-decoration-color: var(--accent); }
 .article strong { color: var(--fg); font-weight: 700; }

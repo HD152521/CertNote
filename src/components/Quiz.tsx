@@ -7,6 +7,7 @@ import { answerCount, isMultiAnswer, parseCorrectSet } from '@/lib/quiz/correctn
 import { TutorPanel } from '@/components/tutor/TutorPanel';
 import { QuestionReport } from '@/components/userInput/QuestionReport';
 import { cn } from '@/lib/cn';
+import { InlineMd } from '@/components/InlineMd';
 
 interface QuizProps {
   question: QuizQuestion;
@@ -68,8 +69,8 @@ export function Quiz({ question, questionId, lang = 'ko' }: QuizProps) {
         <p className="font-mono text-[11px] uppercase tracking-wider text-fg-faint">{t.question} {question.number}</p>
         {multi && <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">{t.pickN(needed)}</span>}
       </div>
-      <p className="font-medium leading-relaxed mb-4 text-fg">{question.text}</p>
-      <ul className="space-y-2">
+      <p className="font-medium leading-relaxed mb-4 text-fg"><InlineMd text={question.text} /></p>
+      <ul className="quiz-choices space-y-2">
         {question.choices.map((c) => {
           const isPicked = picked.includes(c.label);
           const isCorrectChoice = correctSet.has(c.label);
@@ -96,7 +97,7 @@ export function Quiz({ question, questionId, lang = 'ko' }: QuizProps) {
                 )}>
                   {revealed ? <Check className="h-3 w-3" /> : isWrong ? <X className="h-3 w-3" /> : c.label}
                 </span>
-                <span className="text-sm flex-1 leading-relaxed text-fg">{c.text}</span>
+                <span className="text-sm flex-1 leading-relaxed text-fg"><InlineMd text={c.text} /></span>
               </button>
             </li>
           );
@@ -111,7 +112,7 @@ export function Quiz({ question, questionId, lang = 'ko' }: QuizProps) {
       {submitted && (
         <div className={cn('mt-4 rounded-md border p-3 text-sm', isCorrect ? 'border-success/40 bg-success/5' : 'border-danger/40 bg-danger/5')}>
           <p className="font-medium mb-1.5 text-fg">{isCorrect ? t.correct : `${t.answer}: ${question.answer}`}</p>
-          {question.explanation && (<p className="text-fg-muted whitespace-pre-wrap leading-relaxed">{question.explanation}</p>)}
+          {question.explanation && (<p className="text-fg-muted whitespace-pre-wrap leading-relaxed"><InlineMd text={question.explanation} /></p>)}
           {!isCorrect && questionId && (
             <TutorPanel questionId={questionId} selected={multi ? [...picked].sort().join(',') : (picked[0] ?? '')} />
           )}
