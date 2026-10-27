@@ -315,6 +315,38 @@ try {
     }
   }
   console.log('✓ users.has_password 컬럼 준비 완료');
+
+  // 문제별 오류 신고(비로그인 허용). 연락처는 받지 않는다 — 고칠 대상은 question_id 로 충분하다.
+  // status: open(미처리) / resolved(고침) / dismissed(문제없음). 관리자 목록은 미처리부터 본다.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS question_reports (
+      id          BIGSERIAL PRIMARY KEY,
+      question_id TEXT NOT NULL,
+      user_id     BIGINT REFERENCES users(id) ON DELETE SET NULL,
+      reason      TEXT NOT NULL,
+      message     TEXT,
+      status      TEXT NOT NULL DEFAULT 'open',
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_question_reports_status ON question_reports (status, created_at DESC);');
+  console.log('✓ question_reports 테이블 준비 완료');
+
+  // "만들어 줬으면 하는 자격증" 요청(비로그인 허용). 이메일은 따로 받지 않는다 — 출시 알림은 로그인 사용자에게만
+  // 계정 이메일로 보낸다(남의 주소를 대신 넣거나 가짜 주소로 집계를 부풀릴 수 없게).
+  // notified_at: 그 요청자에게 출시 알림을 보낸 시각(관리자가 표시). 탈퇴하면 요청도 지운다(CASCADE).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS cert_requests (
+      id         BIGSERIAL PRIMARY KEY,
+      cert_key   TEXT NOT NULL,
+      other_name  TEXT,
+      user_id     BIGINT REFERENCES users(id) ON DELETE CASCADE,
+      notified_at TIMESTAMPTZ,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_cert_requests_key ON cert_requests (cert_key);');
+  console.log('✓ cert_requests 테이블 준비 완료');
 } catch (err) {
   console.error('마이그레이션 실패:', err);
   process.exit(1);

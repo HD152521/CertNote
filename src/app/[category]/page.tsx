@@ -9,6 +9,7 @@ import { groupCertsByLevel } from '@/lib/levels';
 import { hreflangPair } from '@/lib/i18n';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 import { JsonLd } from '@/components/JsonLd';
+import { CertRequestForm } from '@/components/userInput/CertRequestForm';
 import { buildItemListLd, buildBreadcrumbLd } from '@/lib/structuredData';
 
 interface PageProps { params: Promise<{ category: string }>; }
@@ -159,6 +160,8 @@ export default async function CategoryHubPage({ params }: PageProps) {
           </div>
         </section>
       ))}
+
+      <CertRequestForm lang={lang} />
 
       <p className="text-xs text-fg-faint">
         {lang === 'en' ? (

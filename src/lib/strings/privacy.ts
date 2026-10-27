@@ -16,11 +16,13 @@ export type PrivacyKey =
   | 'collectOptional'
   | 'collectAutomatic'
   | 'collectBehavior'
+  | 'collectRequests'
   | 'purposeTitle'
   | 'purposeAccount'
   | 'purposeFeatures'
   | 'purposeNotifications'
   | 'purposeImprovement'
+  | 'purposeRequests'
   | 'retentionTitle'
   | 'retentionBody'
   | 'thirdPartyTitle'
@@ -37,7 +39,7 @@ export type PrivacyKey =
 export const privacyStrings: Dict<PrivacyKey> = {
   ko: {
     title: '개인정보처리방침',
-    lastUpdated: '최종 업데이트: 2026-10-13',
+    lastUpdated: '최종 업데이트: 2026-10-27',
     intro:
       '주간랩스가 운영하는 CertNote(이하 “서비스”)는 이용자의 개인정보를 중요하게 생각하며, 아래와 같이 수집·이용합니다. 방침이 바뀌면 이 페이지에 변경 내용과 날짜를 알립니다.',
 
@@ -46,12 +48,15 @@ export const privacyStrings: Dict<PrivacyKey> = {
     collectOptional: '선택: 직업, 학습 목적, 현재 수준/경력',
     collectAutomatic: '자동 수집: 학습 기록(진도·정답·복습), 접속 로그, 알림 구독 정보',
     collectBehavior: '이용 행태: 페이지 방문·클릭·체류 등 사용 통계(제품 분석 도구 PostHog를 통해 수집)',
+    collectRequests:
+      '자격증 요청·문제 오류 신고(선택): 요청한 자격증, 신고 내용. 로그인 중이면 계정과 연결되며, 이메일 등 연락처는 따로 받지 않습니다.',
 
     purposeTitle: '2. 이용 목적',
     purposeAccount: '회원 식별 및 로그인·계정 관리',
     purposeFeatures: '학습 진도·복습·통계 등 서비스 기능 제공',
     purposeNotifications: '학습 알림 발송(동의한 경우)',
     purposeImprovement: '이용 행태 분석을 통한 콘텐츠·서비스 개선(PostHog 등 분석 도구 활용)',
+    purposeRequests: '요청한 자격증의 노트가 나왔을 때 계정 이메일로 1회 알림(로그인 사용자), 신고받은 문제의 오류 수정',
 
     retentionTitle: '3. 보유 및 이용 기간',
     retentionBody:
@@ -77,7 +82,7 @@ export const privacyStrings: Dict<PrivacyKey> = {
   },
   en: {
     title: 'Privacy Policy',
-    lastUpdated: 'Last updated: 2026-10-13',
+    lastUpdated: 'Last updated: 2026-10-27',
     intro:
       'CertNote (the “Service”), operated by Jugan Labs (주간랩스), treats your personal information as something worth protecting, and collects and uses it as described below. Changes to this policy are posted on this page with their date.',
 
@@ -88,6 +93,8 @@ export const privacyStrings: Dict<PrivacyKey> = {
       'Collected automatically: study records (progress, answers, reviews), access logs, notification subscription details',
     collectBehavior:
       'Usage behavior: page views, clicks, time on page, and similar usage statistics (collected through the product analytics tool PostHog)',
+    collectRequests:
+      'Certification requests and question error reports (optional): the certification you asked for and what you reported. If you are signed in, these are linked to your account. We do not ask for an email or other contact details.',
 
     purposeTitle: '2. How we use it',
     purposeAccount: 'Identifying members and handling login and account management',
@@ -95,6 +102,7 @@ export const privacyStrings: Dict<PrivacyKey> = {
     purposeNotifications: 'Sending study reminders (where you have opted in)',
     purposeImprovement:
       'Improving content and the service through usage analysis (using analytics tools such as PostHog)',
+    purposeRequests: 'Sending one launch notice to your account email when a requested certification is published (signed-in users), and fixing reported question errors',
 
     retentionTitle: '3. Retention period',
     retentionBody:
