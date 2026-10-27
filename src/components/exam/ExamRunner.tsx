@@ -8,6 +8,7 @@ import { cn } from '@/lib/cn';
 import { Select } from '@/components/ui/Select';
 import { useLanguage } from '@/lib/i18n-client';
 import { QuestionReport } from '@/components/userInput/QuestionReport';
+import { InlineMd } from '@/components/InlineMd';
 
 interface CertOption { slug: string; code: string; name: string }
 
@@ -272,7 +273,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
               <Flag className="h-3 w-3" /> {marked.has(q.questionId) ? (lang === 'en' ? 'Flagged' : '마킹됨') : (lang === 'en' ? 'Review Later' : '나중에')}
             </button>
           </div>
-          <p className="mb-2 font-medium leading-relaxed text-fg whitespace-pre-wrap">{q.prompt}</p>
+          <p className="mb-2 font-medium leading-relaxed text-fg whitespace-pre-wrap"><InlineMd text={q.prompt} /></p>
           {q.multi && <p className="mb-3 text-xs text-accent">{lang === 'en' ? 'Multiple answers — select all that apply.' : '복수 응답 — 해당하는 보기를 모두 선택하세요.'}</p>}
           <ul className="space-y-2">
             {q.choices.map((c) => {
@@ -285,7 +286,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
                     <span className={cn('mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center font-mono text-[10px]',
                       q.multi ? 'rounded' : 'rounded-full',
                       isPicked ? 'bg-accent text-white' : 'border border-border-strong text-fg-muted')}>{c.label}</span>
-                    <span className="flex-1 text-sm leading-relaxed text-fg">{c.text}</span>
+                    <span className="flex-1 text-sm leading-relaxed text-fg"><InlineMd text={c.text} /></span>
                   </button>
                 </li>
               );
@@ -378,7 +379,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
                 <Link href={`/${DEFAULT_CATEGORY}/${it.slug}`} className="font-mono text-[11px] uppercase tracking-wider text-fg-faint hover:text-fg">{it.slug} · {it.domain}</Link>
                 <span className={cn('flex h-5 w-5 items-center justify-center rounded-full text-xs', it.correct ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger')}>{it.correct ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}</span>
               </div>
-              <p className="mb-3 font-medium leading-relaxed text-fg whitespace-pre-wrap">{it.prompt}</p>
+              <p className="mb-3 font-medium leading-relaxed text-fg whitespace-pre-wrap"><InlineMd text={it.prompt} /></p>
               <ul className="space-y-1.5">
                 {it.choices.map((c) => {
                   const isAnswer = correctSet.has(c.label);
@@ -387,7 +388,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
                     <li key={c.label} className={cn('flex items-start gap-2 rounded-md border px-2.5 py-1.5 text-sm',
                       isAnswer ? 'border-success/40 bg-success/5 text-fg' : isPicked ? 'border-danger/40 bg-danger/5 text-fg' : 'border-border text-fg-muted')}>
                       <span className="mt-0.5 font-mono text-[10px] text-fg-faint">{c.label}</span>
-                      <span className="flex-1 leading-relaxed">{c.text}</span>
+                      <span className="flex-1 leading-relaxed"><InlineMd text={c.text} /></span>
                       {isAnswer && <span className="text-[10px] text-success">{lang === 'en' ? 'Correct' : '정답'}</span>}
                       {isPicked && !isAnswer && <span className="text-[10px] text-danger">{lang === 'en' ? 'Your Answer' : '내 선택'}</span>}
                     </li>
@@ -395,7 +396,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
                 })}
               </ul>
               {it.selected === null && <p className="mt-2 text-xs text-danger">{lang === 'en' ? 'Unanswered' : '미응답'}</p>}
-              {it.explanation && <p className="mt-2 text-xs text-fg-muted whitespace-pre-wrap leading-relaxed">💡 {it.explanation}</p>}
+              {it.explanation && <p className="mt-2 text-xs text-fg-muted whitespace-pre-wrap leading-relaxed">💡 <InlineMd text={it.explanation} /></p>}
               <QuestionReport questionId={it.questionId} lang={lang} />
             </li>
           );
