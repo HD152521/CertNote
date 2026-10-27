@@ -11,6 +11,7 @@ import { Paywall } from '@/components/Paywall';
 import { SummaryCard } from '@/components/day/SummaryCard';
 import { Toc } from '@/components/Toc';
 import { MarkAsRead } from '@/components/MarkAsRead';
+import { ResumeReading } from '@/components/resume/ResumeReading';
 import { ExamDateNudge } from '@/components/study/ExamDateNudge';
 import { DayNavigationOverlay } from '@/components/study/DayNavigationOverlay';
 import { DayMeta } from '@/components/DayMeta';
@@ -73,6 +74,7 @@ export async function DayView({ category, slug, w, d, lang, content, locked, log
       {!locked && (
         <MarkAsRead slug={slug} week={w} day={d} title={content.title} href={content.href} />
       )}
+      {!locked && <ResumeReading href={content.href} lang={lang} />}
       {/* Mobile navigation overlay - Click to show arrows */}
       <DayNavigationOverlay prevHref={content.prev ? linkDayRefHref(content.prev) : undefined} nextHref={content.next ? linkDayRefHref(content.next) : undefined} />
       <div className="min-w-0 flex-1">

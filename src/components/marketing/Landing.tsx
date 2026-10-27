@@ -5,6 +5,7 @@ import type { CertMeta } from '@/lib/content';
 import { JsonLd } from '@/components/JsonLd';
 import { buildFaqPageLd, type FaqEntry } from '@/lib/structuredData';
 import { DAILY_STUDY_MINUTES } from '@/lib/studyTime';
+import { ResumeLink } from '@/components/resume/ResumeLink';
 
 interface WeekSpan {
   min: number;
@@ -192,6 +193,8 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
         <p className="text-sm text-fg-faint">
           ✓ 전 주차 노트·연습문제 로그인 없이 열람 • ✓ 모의고사·복습·AI 설명은 무료 가입 후 이용
         </p>
+        {/* 다시 찾아온 방문자에게만 보인다(이 브라우저의 읽은 기록). */}
+        <ResumeLink codes={Object.fromEntries(certs.map((c) => [c.slug, c.code]))} className="max-w-md" />
       </section>
 
       {/* Trust Section */}

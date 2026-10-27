@@ -13,6 +13,7 @@ import BulletList from '@/components/ui/BulletList';
 import ExamInfoCard from '@/components/ExamInfoCard';
 import ExamRevisionSection from '@/components/ExamRevisionSection';
 import UpcomingExamNotice from '@/components/UpcomingExamNotice';
+import { ResumeLink } from '@/components/resume/ResumeLink';
 import { cn } from '@/lib/cn';
 import { linkDayRefHref } from '@/lib/navTree';
 import { JsonLd } from '@/components/JsonLd';
@@ -159,6 +160,8 @@ export default async function CertIndexPage({ params }: PageProps) {
             {lang === 'en' ? 'Start with Week 1' : 'Week 1부터 시작'} <ArrowRight className="h-4 w-4" />
           </Link>
         )}
+        {/* 이 브라우저에서 읽던 기록이 있을 때만 보인다(한국어 화면 전용 문구). */}
+        {lang === 'ko' && <ResumeLink slug={slug} className="max-w-md" />}
         <p>
           <Link href={`/${category}/reviews/${slug}`} className="text-sm text-fg-muted underline underline-offset-4 hover:text-fg">
             {lang === 'en' ? `Read ${meta.code} pass reviews →` : `${meta.code} 합격 후기 보기 →`}
