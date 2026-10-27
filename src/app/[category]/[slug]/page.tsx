@@ -6,11 +6,13 @@ import { hreflangPair } from '@/lib/i18n';
 import { ArrowRight } from 'lucide-react';
 import { getAllDays, getCertMeta, listCerts, certLevelLabel, certHref } from '@/lib/content';
 import { isHighlightLevel } from '@/lib/levels';
-import { getExamInfo } from '@/lib/examInfo';
+import { getExamInfo, isUpcomingActive } from '@/lib/examInfo';
 import { getMockExamQuestionCount } from '@/lib/exam/examBankCount';
 import { buildTrackContents } from '@/lib/certTrack';
 import BulletList from '@/components/ui/BulletList';
 import ExamInfoCard from '@/components/ExamInfoCard';
+import ExamRevisionSection from '@/components/ExamRevisionSection';
+import UpcomingExamNotice from '@/components/UpcomingExamNotice';
 import { cn } from '@/lib/cn';
 import { linkDayRefHref } from '@/lib/navTree';
 import { JsonLd } from '@/components/JsonLd';
@@ -98,6 +100,10 @@ export default async function CertIndexPage({ params }: PageProps) {
   }
   const firstDay = days[0];
   const examInfo = getExamInfo(slug);
+  // 다음 시험 버전 안내는 첫 응시일 전까지만 보인다. 이 페이지는 정적 생성이라 "오늘"은 빌드(배포) 시점의
+  // 한국 날짜다 — 첫 응시일이 지나도 재배포 전까지는 남으므로, 그 전에 데이터에서 지우는 것이 정석이다.
+  const todayKst = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const upcoming = lang === 'ko' && examInfo?.upcoming && isUpcomingActive(examInfo.upcoming, todayKst) ? examInfo.upcoming : null;
   // 구글이 이 페이지를 "강좌"로 이해하게 하는 구조화 데이터(JSON-LD). 생성 로직은
   // src/lib/structuredData.ts(buildCourseLd)로 단일화(Step4) — day 페이지 Article의 isPartOf가
   // 이 Course를 @id로 참조하므로 값이 한 곳에서만 나와야 한다. isAccessibleForFree 판단 근거는
@@ -160,8 +166,13 @@ export default async function CertIndexPage({ params }: PageProps) {
           </Link>
         </p>
       </header>
+      {upcoming && <UpcomingExamNotice code={meta.code} upcoming={upcoming} />}
       {examInfo && examInfo.faq && examInfo.faq.length > 0 && <JsonLd data={buildFaqPageLd(examInfo.faq)} />}
       {examInfo && <ExamInfoCard info={examInfo} lang={lang} section={section} />}
+      {/* 이전 시험 버전과의 차이. 문구가 한국어라 영어판에는 싣지 않는다(src/components/ExamRevisionSection.tsx). */}
+      {lang === 'ko' && examInfo?.revision && (
+        <ExamRevisionSection code={meta.code} revision={examInfo.revision} domains={examInfo.domains} />
+      )}
 
       {/* 트랙 구성 — 자격증마다 값이 달라지는 '사실 명세'다(홍보 문구가 아니다).
           이 페이지 본문에는 '모의고사'·'연습문제'라는 단어가 아예 없었고(메타 description에만

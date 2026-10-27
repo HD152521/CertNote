@@ -34,6 +34,29 @@ export interface ExamFaq {
   a: string;
 }
 
+// 이전 시험 버전과의 차이(자격증 허브의 "DOP-C01과 DOP-C02 차이" 섹션).
+// 실제 검색어("dop-c01 c02 차이")가 확인된 주제라 자격증마다 다른 사실만 담는다.
+// 전부 공식 시험 가이드·AWS 공지에서 확인한 값이어야 한다 — 확인 못 한 날짜는 비워 둔다.
+export interface ExamRevision {
+  previousCode: string; // 'DOP-C01'
+  oldUntil?: string; // 이전 버전 마지막 응시일(YYYY-MM-DD)
+  newSince?: string; // 현재 버전 첫 응시일(YYYY-MM-DD)
+  oldDomains?: ExamDomain[]; // 이전 버전 도메인. 현재 버전은 ExamInfo.domains 가 정본이다.
+  changes: string[]; // 공식 문서가 밝힌 변경점만. 추정은 쓰지 않는다.
+  sources: string[]; // 확인에 쓴 공식 URL
+  checkedAt: string; // 대조한 날짜(YYYY-MM-DD)
+}
+
+// 발표됐지만 아직 시작 전인 다음 시험 버전(예: SAP-C03). 날짜가 지나면 이 블록을 지우고
+// 트랙을 새 버전 기준으로 옮겨야 한다 — 지난 안내가 남지 않도록 화면에서도 since 이후엔 숨긴다.
+export interface ExamUpcoming {
+  code: string; // 'SAP-C03'
+  since: string; // 새 버전 첫 응시일(YYYY-MM-DD)
+  changes: string[];
+  sources: string[];
+  checkedAt: string;
+}
+
 export interface ExamInfo {
   examCode: string;
   fullName: string;
@@ -69,6 +92,8 @@ export interface ExamInfo {
   difficulty?: string; // 난이도 한줄(예: '중급 · 실무 1~2년 권장')
   source?: string; // 정확성 대조용 공식 가이드 URL
   syncedAt?: string; // 최신성 관리(YYYY-MM-DD)
+  revision?: ExamRevision; // 한국어 화면 전용(영어판에는 렌더하지 않는다)
+  upcoming?: ExamUpcoming; // 한국어 화면 전용
 }
 
 // AWS 자격증 공통 시험 혜택·꿀팁(전 자격증 동일이라 공유 상수). 출처: AWS 공식 인증 혜택/FAQ 페이지.
@@ -149,6 +174,60 @@ function isExamInfo(value: unknown): value is ExamInfo {
   );
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function isOptionalDate(v: unknown): boolean {
+  return v === undefined || (typeof v === 'string' && ISO_DATE.test(v));
+}
+
+function isStringList(v: unknown, min: number): v is string[] {
+  return Array.isArray(v) && v.length >= min && v.every((s) => typeof s === 'string' && s.trim().length > 0);
+}
+
+export function isExamRevision(value: unknown): value is ExamRevision {
+  if (typeof value !== 'object' || value === null) return false;
+  const r = value as Record<string, unknown>;
+  return (
+    typeof r.previousCode === 'string' && r.previousCode.trim().length > 0 &&
+    isOptionalDate(r.oldUntil) &&
+    isOptionalDate(r.newSince) &&
+    (r.oldDomains === undefined ||
+      (Array.isArray(r.oldDomains) &&
+        r.oldDomains.every((d) => typeof d === 'object' && d !== null && typeof (d as ExamDomain).name === 'string'))) &&
+    isStringList(r.changes, 1) &&
+    isStringList(r.sources, 1) &&
+    typeof r.checkedAt === 'string' && ISO_DATE.test(r.checkedAt)
+  );
+}
+
+export function isExamUpcoming(value: unknown): value is ExamUpcoming {
+  if (typeof value !== 'object' || value === null) return false;
+  const u = value as Record<string, unknown>;
+  return (
+    typeof u.code === 'string' && u.code.trim().length > 0 &&
+    typeof u.since === 'string' && ISO_DATE.test(u.since) &&
+    isStringList(u.changes, 1) &&
+    isStringList(u.sources, 1) &&
+    typeof u.checkedAt === 'string' && ISO_DATE.test(u.checkedAt)
+  );
+}
+
+// 다음 버전 안내를 보여 줄 날짜인가. 첫 응시일 당일부터는 "예정"이 아니므로 숨긴다.
+// today 는 YYYY-MM-DD 문자열로 받아 문자열 비교한다(시간대 변환 없이 결정적).
+export function isUpcomingActive(upcoming: ExamUpcoming, today: string): boolean {
+  return today < upcoming.since;
+}
+
+// revision·upcoming 이 형식에 안 맞으면 그 블록만 버린다. 시험 정보 카드 전체를 잃을 이유는 없다.
+function withValidExtras(info: ExamInfo): ExamInfo {
+  const { revision, upcoming, ...rest } = info;
+  return {
+    ...rest,
+    ...(isExamRevision(revision) ? { revision } : {}),
+    ...(isExamUpcoming(upcoming) ? { upcoming } : {}),
+  };
+}
+
 // 서버 전용. slug 에 해당하는 시험 정보를 읽어 반환한다.
 // 파일이 없거나 JSON 이 깨졌거나 스키마가 맞지 않으면 null (호출 측에서 graceful 처리).
 export function getExamInfo(slug: string): ExamInfo | null {
@@ -160,7 +239,7 @@ export function getExamInfo(slug: string): ExamInfo | null {
   try {
     const raw = readFileSync(path.join(EXAM_INFO_ROOT, `${slug}.json`), 'utf8');
     const json: unknown = JSON.parse(raw);
-    parsed = isExamInfo(json) ? json : null;
+    parsed = isExamInfo(json) ? withValidExtras(json) : null;
   } catch {
     parsed = null;
   }
