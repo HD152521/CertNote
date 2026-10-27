@@ -214,6 +214,11 @@ export function isExamUpcoming(value: unknown): value is ExamUpcoming {
 
 // 다음 버전 안내를 보여 줄 날짜인가. 첫 응시일 당일부터는 "예정"이 아니므로 숨긴다.
 // today 는 YYYY-MM-DD 문자열로 받아 문자열 비교한다(시간대 변환 없이 결정적).
+// 한국 날짜(YYYY-MM-DD). 시간대 데이터 없이 UTC+9 를 더해 구한다(빌드 환경과 무관하게 결정적).
+export function kstToday(now: Date = new Date()): string {
+  return new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 export function isUpcomingActive(upcoming: ExamUpcoming, today: string): boolean {
   return today < upcoming.since;
 }

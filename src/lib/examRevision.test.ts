@@ -3,7 +3,7 @@ import { readdirSync } from 'node:fs';
 import { getExamInfo, isExamRevision } from './examInfo';
 import { formatKoDate } from '@/components/ExamRevisionSection';
 import { withAnd, withTo } from './koParticle';
-import { isExamUpcoming, isUpcomingActive } from './examInfo';
+import { isExamUpcoming, isUpcomingActive, kstToday } from './examInfo';
 
 const VALID = {
   previousCode: 'DOP-C01',
@@ -95,5 +95,10 @@ describe('upcoming exam', () => {
   test('is shown only before the first exam day', () => {
     expect(isUpcomingActive(U, '2026-11-16')).toBe(true);
     expect(isUpcomingActive(U, '2026-11-17')).toBe(false);
+  });
+
+  test('kstToday rolls over at midnight Korea time', () => {
+    expect(kstToday(new Date('2026-11-16T14:59:59Z'))).toBe('2026-11-16');
+    expect(kstToday(new Date('2026-11-16T15:00:00Z'))).toBe('2026-11-17');
   });
 });
