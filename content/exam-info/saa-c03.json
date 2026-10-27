@@ -43,5 +43,39 @@
       "q": "한국어로 응시할 수 있나요?",
       "a": "네, 한국어를 포함해 총 10개 언어로 제공됩니다. 시험 등록 시 언어를 선택할 수 있습니다."
     }
-  ]
+  ],
+  "revision": {
+    "previousCode": "SAA-C02",
+    "oldUntil": "2022-08-29",
+    "newSince": "2022-08-30",
+    "oldDomains": [
+      {
+        "name": "복원력 있는 아키텍처 설계",
+        "weight": 30
+      },
+      {
+        "name": "고성능 아키텍처 설계",
+        "weight": 28
+      },
+      {
+        "name": "보안 애플리케이션 및 아키텍처 설계",
+        "weight": 24
+      },
+      {
+        "name": "비용 최적화 아키텍처 설계",
+        "weight": 18
+      }
+    ],
+    "changes": [
+      "보안 도메인이 24%에서 30%로 늘어 가장 비중이 큰 도메인이 됐습니다.",
+      "복원력은 30%에서 26%로, 고성능은 28%에서 24%로 줄고, 비용 최적화는 18%에서 20%로 늘었습니다.",
+      "65문항(채점 50·비채점 15), 130분, 합격 점수 720점은 그대로입니다.",
+      "AWS는 최신 서비스와 모범 사례를 반영했다고만 밝혔고, 세부 주제의 추가·삭제 목록은 공개하지 않았습니다."
+    ],
+    "sources": [
+      "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "https://web.archive.org/web/20220701/https://aws.amazon.com/certification/coming-soon/"
+    ],
+    "checkedAt": "2026-10-27"
+  }
 }

@@ -43,5 +43,56 @@
       "q": "한국어로 응시할 수 있나요?",
       "a": "네, 한국어를 포함해 총 6개 언어로 제공됩니다. 시험 등록 시 언어를 선택할 수 있습니다."
     }
-  ]
+  ],
+  "revision": {
+    "previousCode": "DVA-C01",
+    "oldUntil": "2023-02-27",
+    "newSince": "2023-02-28",
+    "oldDomains": [
+      {
+        "name": "배포",
+        "weight": 22
+      },
+      {
+        "name": "보안",
+        "weight": 26
+      },
+      {
+        "name": "AWS 서비스를 통한 개발",
+        "weight": 30
+      },
+      {
+        "name": "리팩터링",
+        "weight": 10
+      },
+      {
+        "name": "모니터링 및 문제 해결",
+        "weight": 12
+      }
+    ],
+    "changes": [
+      "도메인이 5개에서 4개로 줄었습니다. 리팩터링 도메인(10%)이 없어지고, 모니터링 및 문제 해결(12%)은 문제 해결 및 최적화(18%)로 바뀌었습니다.",
+      "AWS 서비스를 통한 개발은 30%에서 32%로, 배포는 22%에서 24%로 늘었습니다.",
+      "채점 50문항·비채점 15문항과 합격 점수 720점은 그대로입니다.",
+      "AWS는 직무 분석(JTA)에 따라 내용을 갱신했다고만 밝혔고, 세부 주제의 추가·삭제 목록은 공개하지 않았습니다."
+    ],
+    "sources": [
+      "https://web.archive.org/web/20230115/https://aws.amazon.com/certification/coming-soon/"
+    ],
+    "checkedAt": "2026-10-27"
+  },
+  "upcoming": {
+    "code": "DVA-C03",
+    "since": "2026-12-01",
+    "changes": [
+      "AI 서비스를 쓸 때의 보안 위험을 다루는 과제 2.3이 새로 생깁니다. 접근 관리, 데이터 프라이버시, 입출력 필터링, AI 에이전트 보안이 들어갑니다.",
+      "AI 코딩 도구로 코드를 생성·리뷰하고 테스트·배포·문제 분석을 돕는 내용이 여러 과제에 추가됩니다.",
+      "Presigned URL, 컨테이너 이미지 빌드(Amazon ECR), ECS·EKS·Fargate 배포가 추가됩니다.",
+      "도메인 3이 테스트 및 배포(22%)로 바뀌고, 문제 해결 및 최적화는 18%에서 22%로 늘어납니다."
+    ],
+    "sources": [
+      "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/dva-03-comparison.html"
+    ],
+    "checkedAt": "2026-10-27"
+  }
 }
