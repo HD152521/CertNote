@@ -1,4 +1,6 @@
 [
+  {"date": "2026-10-27", "cert": "scs-c03", "kind": "exam", "summary": "SCS-C03 시험 안내의 도메인을 SCS-C02 기준에서 C03 기준으로 정정: 탐지 16%·인시던트 대응 14%·인프라 보안 18%·IAM 20%·데이터 보호 18%·보안 기반 및 거버넌스 14%, 순서 배열·짝 맞추기 문항 유형 추가"},
+  {"date": "2026-10-27", "cert": "scs-c03", "kind": "quiz", "summary": "SCS-C03 모의고사 65문항을 C03 도메인으로 재분류하고, 노트의 도메인 이름·비중 표기를 C03 기준으로 정정"},
   {"date": "2026-10-26", "cert": "dva-c02", "kind": "fact", "summary": "DVA-C02 EBS 수치 정정: io1 100GiB 최대 5,000 IOPS, io2 Block Express 통합(256,000 IOPS·내구성 99.999%), gp3 최대 80,000 IOPS·2,000 MiB/s"},
   {"date": "2026-10-26", "cert": "dva-c02", "kind": "fact", "summary": "DVA-C02 Lambda·SQS 한도 최신화: 메모리 1MB 단위, 비동기 페이로드 1MB, 응답 스트리밍 200MB, 함수별 10초마다 1,000개 확장, SQS 메시지 1MiB"},
   {"date": "2026-10-26", "cert": "dva-c02", "kind": "fact", "summary": "DVA-C02 S3 서술 정정: Intelligent-Tiering 128KB 미만 객체 처리, Express One Zone 지연(한 자릿수 ms), Presigned URL 만료, Glacier 40KB 메타데이터 과금"},

@@ -142,7 +142,7 @@ aws iam list-user-policies --user-name alice  # inline policies
 
 IAM Access Analyzer analyzes resource policies to automatically find **resources allowing access beyond account or organization boundaries**. S3 buckets, IAM roles, KMS keys, Lambda functions — if opened to external principals, it creates findings.
 
-This is the intersection of Domain 2 (detective) and Domain 4 (IAM). You can't manually review hundreds of buckets and roles, so it automatically detects "access crossing trust boundaries." Its policy generation feature even creates least-privilege policies from CloudTrail logs of actual use.
+This is the intersection of Domain 1 (Detection) and Domain 4 (IAM). You can't manually review hundreds of buckets and roles, so it automatically detects "access crossing trust boundaries." Its policy generation feature even creates least-privilege policies from CloudTrail logs of actual use.
 
 > 💡 **Related Theory**: Access Analyzer's core is **external vs trusted** distinction. Access within the same account or organization is treated as normal; only crossing that boundary creates findings. "Set organization boundary as zone of trust" treats cross-account within organization as normal and catches only real external exposure.
 

@@ -1,6 +1,6 @@
 # Day 4 - Full Practice Exam Pace: Six-Domain Synthesis Scenario Review
 
-Today is practical *pacing training*, not learning. Real SCS-C03: 65 questions, 170 minutes — ~2.6 min/question. We dissect long scenarios quickly in 1 minute, extracting the *skeleton*. Question bias matters: Domain 3/4 (infrastructure/IAM) ~36%, Domain 1/2 (detect/log) ~32%, Domain 5/6 (data/govern) ~32%.
+Today is practical *pacing training*, not learning. Real SCS-C03: 65 questions, 170 minutes — ~2.6 min/question. We dissect long scenarios quickly in 1 minute, extracting the *skeleton*. Question bias matters: Domain 3/4 (infrastructure/IAM) ~38%, Domain 1/2 (detection/incident response) ~30%, Domain 5/6 (data/governance) ~32%.
 
 ## Pacing Strategy: 4-Step Scenario Breakdown
 

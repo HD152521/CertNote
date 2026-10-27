@@ -2,7 +2,7 @@
 
 When people first learn cloud security, they often think IAM is everything. The belief is that solid permissions alone ensure safety. But real breach reports tell a different story. Attackers almost always secure "network reachability" first. Exposed RDP ports, databases open to the Internet, misrouted subnets. No matter how strong IAM is, if the attack surface touches the Internet, it becomes a launching pad for credential theft and vulnerability exploitation.
 
-That's why the SCS-C03 exam treats network in Domain 3 (Infrastructure Security, ~20-22%) not as "the end of policy" but as **the outermost defense line**. Today we examine VPC security design. We'll see how to isolate subnets, why routing tables are invisible security controls, and develop the mental model to accurately answer "does the Internet reach this resource?"
+That's why the SCS-C03 exam treats network in Domain 3 (Infrastructure Security, 18%) not as "the end of policy" but as **the outermost defense line**. Today we examine VPC security design. We'll see how to isolate subnets, why routing tables are invisible security controls, and develop the mental model to accurately answer "does the Internet reach this resource?"
 
 ## VPC as Isolation Boundary: CIDR and Tenancy
 

@@ -1,6 +1,6 @@
 # Day 2 - Integrated Review Domains 3 & 4: Infrastructure Security ↔ Identity and Access Management
 
-Domains 3 (Infrastructure Security, ~20%) and 4 (IAM, ~16%) are the highest-scoring bundle in exams. Their relationship is clear: **Domain 3 controls "where can you reach (network path)" while Domain 4 controls "what can you do (permission)"**. Specialty answers almost always demand *"block at network boundary, then block again at IAM with least privilege"* — dual control. Today we bind these two dimensions into one access control model.
+Domains 3 (Infrastructure Security, ~18%) and 4 (IAM, ~20%) are the highest-scoring bundle in exams, and Domain 4 alone is the heaviest single domain in SCS-C03. Their relationship is clear: **Domain 3 controls "where can you reach (network path)" while Domain 4 controls "what can you do (permission)"**. Specialty answers almost always demand *"block at network boundary, then block again at IAM with least privilege"* — dual control. Today we bind these two dimensions into one access control model.
 
 ## Infrastructure Security: Network Path Control Layers
 
