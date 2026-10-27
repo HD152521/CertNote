@@ -1,6 +1,6 @@
-# Day 3 - Integrated Review Domains 5 & 6: Data Protection ↔ Management and Governance
+# Day 3 - Integrated Review Domains 5 & 6: Data Protection ↔ Security Foundations and Governance
 
-Domains 5 (Data Protection, ~18%) and 6 (Management & Governance, ~14%) close the exam's arc. Relationship: **Domain 5 asks "how do we encrypt/isolate/retain data?" while Domain 6 asks "how do we enforce that across organization scale?"** Specialty answers take a control working in one account and propagate it organization-wide. Today we bind KMS-centric data protection with Organizations-centric enforcement into one control-propagation model.
+Domains 5 (Data Protection, ~18%) and 6 (Security Foundations and Governance, ~14%) close the exam's arc. Relationship: **Domain 5 asks "how do we encrypt/isolate/retain data?" while Domain 6 asks "how do we enforce that across organization scale?"** Specialty answers take a control working in one account and propagate it organization-wide. Today we bind KMS-centric data protection with Organizations-centric enforcement into one control-propagation model.
 
 ## Data Protection: KMS as the Center
 

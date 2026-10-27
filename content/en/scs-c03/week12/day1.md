@@ -1,6 +1,6 @@
-# Day 1 - Integrated Review Domains 1 & 2: Threat Detection and Incident Response ↔ Security Logging and Monitoring
+# Day 1 - Integrated Review Domains 1 & 2: Detection ↔ Incident Response
 
-The two heaviest-tested axes of the six exam domains are Domain 1 (Threat Detection and Incident Response, ~14%) and Domain 2 (Security Logging and Monitoring, ~18%). They almost always appear as *one flow* in exams. "Logs must exist to detect, detection must exist to respond." Today, we review the pipeline — **collection (logs) → analysis/detection (GuardDuty/Detective/Macie) → aggregation (Security Hub) → auto-response (EventBridge→Lambda/SSM)** — as one nervous system.
+Domain 1 (Detection, 16%) and Domain 2 (Incident Response, 14%) together make up 30% of the exam and form one bundle. In SCS-C03, logging and monitoring is not a separate domain but **part of Domain 1 Detection** — monitoring and alerting, logging, and troubleshooting monitoring and logging all live in Domain 1. Domain 2 covers designing and testing incident response plans and responding to events, including validating findings to assess scope and impact. They almost always appear as *one flow* in exams. "Logs must exist to detect, detection must exist to respond." Today, we review the pipeline — **collection (logs) → analysis/detection (GuardDuty/Detective/Macie) → aggregation (Security Hub) → auto-response (EventBridge→Lambda/SSM)** — as one nervous system.
 
 ## Logging Layer: What Gets Recorded Where
 

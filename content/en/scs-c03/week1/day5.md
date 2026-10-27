@@ -12,7 +12,7 @@ One problem tangles implicit Deny, SCP guardrails, cross-account both-sides allo
 |----|------|
 | Responsibility line | IaaS(EC2) high customer burden, SaaS(S3) low. **Data and access control always customer** |
 | Control types | Preventive(IAM/SCP/SG/KMS) · Detective(CloudTrail/GuardDuty/Config) · Responsive(EventBridge→SSM) |
-| 6 domains | Threat detection 14 / Logging 18 / Infrastructure 20 / IAM 16 / Data 18 / Governance 14 |
+| 6 domains | Detection 16 / Incident response 14 / Infrastructure 18 / IAM 20 / Data 18 / Security foundations and governance 14 |
 
 ### IAM Evaluation Algorithm (Day 2·3)
 

@@ -2,7 +2,7 @@
 
 Security groups and NACLs block traffic. But they can't answer "what traffic is flowing right now," "who tried to access our DB," or "is this blocked connection normal or an attack?" Controls only block; they don''t see. Seeing — visibility — is a separate capability.
 
-VPC Flow Logs are that visibility. They record metadata of IP traffic flowing (or blocked) in a VPC. Not the payload, but "who to whom, on which port, how much, allow or deny." Today we read Flow Logs structure precisely and master analysis techniques to detect breaches and misconfigurations through logs. This bridges both SCS-C03 Domain 1 (Threat Detection) and Domain 3 (Infrastructure Security).
+VPC Flow Logs are that visibility. They record metadata of IP traffic flowing (or blocked) in a VPC. Not the payload, but "who to whom, on which port, how much, allow or deny." Today we read Flow Logs structure precisely and master analysis techniques to detect breaches and misconfigurations through logs. This bridges both SCS-C03 Domain 1 (Detection) and Domain 3 (Infrastructure Security).
 
 ## What Flow Logs Record and What They Don''t
 

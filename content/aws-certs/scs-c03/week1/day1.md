@@ -137,40 +137,40 @@ AWS의 공동 책임 모델은 한 문장으로 요약된다. **AWS는 "클라�
 
 ## SCS-C03이 측정하는 6개 도메인
 
-2024년 개정된 SCS-C03은 65문항, 170분, 750/1000점 합격 기준이다. 시험 청사진(exam guide)은 6개 도메인과 가중치를 명시한다.
+SCS-C03은 2025년 12월 2일부터 시행 중인 시험이다(이전 버전 SCS-C02는 2025년 12월 1일까지 시행됐다). 65문항(채점 50 + 비채점 15), 170분, 750/1000점 합격 기준이며, 문항 유형은 객관식(multiple choice)·복수 응답(multiple response)·순서 배열(ordering)·매칭(matching)이다. 시험 청사진(exam guide)은 6개 도메인과 가중치를 명시한다.
 
 | # | 도메인 | 가중치 | 한 줄 요약 |
 |---|--------|--------|-----------|
-| 1 | **Threat Detection and Incident Response** | 14% | GuardDuty·Detective로 위협 탐지, 사고 대응 플레이북, 포렌식 |
-| 2 | **Security Logging and Monitoring** | 18% | CloudTrail·Config·CloudWatch·Security Hub로 가시성 확보 |
-| 3 | **Infrastructure Security** | 20% | VPC·보안 그룹·NACL·WAF·Shield·네트워크 경계 방어 |
-| 4 | **Identity and Access Management** | 16% | IAM·STS·Identity Center·페더레이션·정책 평가 |
+| 1 | **Detection** | 16% | CloudTrail·Config·CloudWatch·GuardDuty·Security Hub로 모니터링·알림·로깅, 그 트러블슈팅 |
+| 2 | **Incident Response** | 14% | 사고 대응 계획 설계·테스트, 이벤트 대응, finding 검증으로 범위·영향 평가, 포렌식 |
+| 3 | **Infrastructure Security** | 18% | VPC·보안 그룹·NACL·WAF·Shield·네트워크 경계 방어 |
+| 4 | **Identity and Access Management** | 20% | IAM·STS·Identity Center·페더레이션·정책 평가 |
 | 5 | **Data Protection** | 18% | KMS·암호화·S3 보호·Secrets Manager·인증서 |
-| 6 | **Management and Security Governance** | 14% | Organizations·SCP·Control Tower·규정 준수·멀티 계정 거버넌스 |
+| 6 | **Security Foundations and Governance** | 14% | Organizations·SCP·Control Tower·규정 준수·멀티 계정 거버넌스 |
 
-가중치를 보면 **도메인 3(인프라 20%) + 도메인 2(로깅 18%) + 도메인 5(데이터 18%)**가 시험의 절반 이상이다. 하지만 도메인 4(IAM 16%)는 **다른 모든 도메인의 전제**다. KMS 키 정책도 IAM 평가 로직 위에서 동작하고, cross-account 로깅도 AssumeRole 위에서 동작한다. 그래서 Week 1을 IAM에 통째로 할당하는 것이다.
+가중치를 보면 **도메인 4(IAM 20%)**가 가장 무겁고, **도메인 3(인프라 18%) + 도메인 5(데이터 18%)**가 뒤를 잇는다. 이 셋이 시험의 절반 이상이다. 게다가 도메인 4는 **다른 모든 도메인의 전제**다. KMS 키 정책도 IAM 평가 로직 위에서 동작하고, cross-account 로깅도 AssumeRole 위에서 동작한다. 그래서 Week 1을 IAM에 통째로 할당하는 것이다.
 
-도메인은 따로 외우는 6개의 과목이 아니라 **하나의 사고 흐름**이다. 위협이 들어온다(D1 탐지) → 그게 보이려면 로그가 있어야 하고(D2) → 들어오는 길목은 네트워크(D3) → 그 안에서 권한은 IAM(D4) → 보호 대상은 데이터(D5) → 이 모든 걸 조직 차원에서 강제(D6). 시나리오 문제는 보통 2-3개 도메인을 한 묶음으로 엮는다.
+도메인은 따로 외우는 6개의 과목이 아니라 **하나의 사고 흐름**이다. 위협이 보이려면 로그와 모니터링이 있어야 하고(D1 탐지) → 탐지된 사건은 범위·영향을 검증해 대응한다(D2 인시던트 대응) → 들어오는 길목은 네트워크(D3) → 그 안에서 권한은 IAM(D4) → 보호 대상은 데이터(D5) → 이 모든 걸 조직 차원에서 강제(D6). 시나리오 문제는 보통 2-3개 도메인을 한 묶음으로 엮는다.
 
 도메인마다 "이 도메인이면 이 서비스"라는 앵커가 있다. 12주 학습의 지도 역할을 하는 표이니, 지금 완벽히 이해할 필요는 없고 **이름과 소속만 눈에 익혀 두면** 된다. 각 주차가 진행되면서 이 칸들이 하나씩 채워진다.
 
 | 도메인 | 비중 | 핵심 서비스 | 이 도메인이 답하는 질문 | 학습 시점 |
 |--------|------|-------------|--------------------------|-----------|
-| D1 위협 탐지·사고 대응 | 14% | GuardDuty, Detective, Inspector, Security Hub, EventBridge | "공격이 진행 중인가? 났다면 어떻게 봉쇄·복구하나?" | 후반 |
-| D2 로깅·모니터링 | 18% | CloudTrail, CloudWatch Logs, Config, VPC Flow Logs, Athena | "무슨 일이 있었는지 나중에 증명할 수 있나?" | 중반 |
-| D3 인프라 보안 | 20% | VPC, 보안 그룹, NACL, WAF, Shield, Network Firewall, PrivateLink | "트래픽이 어디로 흐르고 어디서 막히나?" | 중반 |
-| D4 자격 증명·액세스 관리 | 16% | IAM, STS, Identity Center, Organizations SCP, Cognito | "이 주체가 이 행위를 해도 되나?" | **이번 주** |
+| D1 탐지 | 16% | CloudTrail, CloudWatch Logs, Config, VPC Flow Logs, Athena, GuardDuty, Inspector, Security Hub | "공격이 진행 중인가? 무슨 일이 있었는지 나중에 증명할 수 있나?" | 중반~후반 |
+| D2 인시던트 대응 | 14% | Detective, EventBridge, Lambda/SSM 자동화 | "일어난 사고의 범위·영향은 어디까지이고, 어떻게 봉쇄·복구하나?" | 후반 |
+| D3 인프라 보안 | 18% | VPC, 보안 그룹, NACL, WAF, Shield, Network Firewall, PrivateLink | "트래픽이 어디로 흐르고 어디서 막히나?" | 중반 |
+| D4 자격 증명·액세스 관리 | 20% | IAM, STS, Identity Center, Organizations SCP, Cognito | "이 주체가 이 행위를 해도 되나?" | **이번 주** |
 | D5 데이터 보호 | 18% | KMS, CloudHSM, S3 암호화, Secrets Manager, ACM, Macie | "저장·전송 중 데이터가 보호되고 있나?" | Week 3~4 |
-| D6 관리·거버넌스 | 14% | Organizations, Control Tower, Config Conformance Pack, Audit Manager | "조직 전체에 통제를 강제·증명할 수 있나?" | 후반 |
+| D6 보안 기반·거버넌스 | 14% | Organizations, Control Tower, Config Conformance Pack, Audit Manager | "조직 전체에 통제를 강제·증명할 수 있나?" | 후반 |
 
-가중치를 보면 **도메인 3(인프라 20%) + 도메인 2(로깅 18%) + 도메인 5(데이터 18%)**가 시험의 절반 이상이다. 하지만 도메인 4(IAM 16%)는 **다른 모든 도메인의 전제**다. 이 구조를 그림으로 그리면 IAM이 왜 첫 주인지가 분명해진다.
+가중치를 보면 **도메인 4(IAM 20%)**가 가장 무겁고, **도메인 3(인프라 18%) + 도메인 5(데이터 18%)**까지 더하면 시험의 절반 이상이다. 게다가 도메인 4는 **다른 모든 도메인의 전제**다. 이 구조를 그림으로 그리면 IAM이 왜 첫 주인지가 분명해진다.
 
 ```
 [ 6개 도메인은 층이 아니라 사슬이다 ]
 
-        D6 관리·거버넌스 (조직 전체에 강제)
+        D6 보안 기반·거버넌스 (조직 전체에 강제)
    ┌──────────────────────────────────────────────┐
-   │   D1 위협 탐지  ◀── 신호 ──  D2 로깅·모니터링 │
+   │   D2 인시던트 대응 ◀── 신호 ── D1 탐지·로깅 │
    │        │                          ▲          │
    │      대응                       기록          │
    │        ▼                          │          │
@@ -185,7 +185,7 @@ AWS의 공동 책임 모델은 한 문장으로 요약된다. **AWS는 "클라�
 
    D4는 다른 다섯 도메인 전부의 "판정 엔진"이다.
    · KMS 키 정책(D5)도 IAM 평가 위에서 동작
-   · 교차 계정 로그 수집(D2)도 AssumeRole 위에서 동작
+   · 교차 계정 로그 수집(D1)도 AssumeRole 위에서 동작
    · SCP 가드레일(D6)도 IAM 평가의 한 층
    · GuardDuty 위임 관리자(D1)도 IAM 신뢰 관계 위에서 동작
 ```
@@ -230,7 +230,7 @@ AWS의 공동 책임 모델은 한 문장으로 요약된다. **AWS는 "클라�
 
 데이터 분류와 최소 권한은 사실 같은 원칙의 양면이다. 분류는 "이 자산이 얼마나 중요한가"를 정하고, 최소 권한은 "그 중요도에 비례해 접근을 좁힌다"를 실행한다. 보안 공학에서는 이 짝을 **자산 중심 위험 관리**라고 부른다. 위협 목록에서 출발하면 끝이 없지만(공격 기법은 무한하다), 자산 목록에서 출발하면 유한하다. SCS-C03의 시나리오가 거의 항상 "무엇이 유출됐다/유출될 수 있다"로 시작하는 것도 같은 이유다 — 자산을 먼저 특정해야 통제를 고를 수 있다.
 
-> 🎯 **시나리오**: "감사팀이 '우리 조직 전체에서 신용카드 번호가 어느 S3 버킷에 있는지 목록을 달라'고 요구했다. 계정은 40개, 버킷은 2,000개가 넘는다." → 사람이 훑는 방법을 고른 보기는 전부 탈락이다. 정답 방향은 **Macie를 조직 단위로 활성화**하고(Security Tooling 계정을 위임 관리자로 지정) 민감 데이터 검색 작업을 돌려 발견 사항을 Security Hub로 모으는 것이다. 여기서 도메인 5(데이터)·도메인 2(가시성)·도메인 6(조직 차원 위임)이 한 문항 안에서 만난다. 도메인이 사슬이라는 말이 이런 뜻이다.
+> 🎯 **시나리오**: "감사팀이 '우리 조직 전체에서 신용카드 번호가 어느 S3 버킷에 있는지 목록을 달라'고 요구했다. 계정은 40개, 버킷은 2,000개가 넘는다." → 사람이 훑는 방법을 고른 보기는 전부 탈락이다. 정답 방향은 **Macie를 조직 단위로 활성화**하고(Security Tooling 계정을 위임 관리자로 지정) 민감 데이터 검색 작업을 돌려 발견 사항을 Security Hub로 모으는 것이다. 여기서 도메인 5(데이터)·도메인 1(탐지)·도메인 6(조직 차원 위임)이 한 문항 안에서 만난다. 도메인이 사슬이라는 말이 이런 뜻이다.
 
 2017년 다수의 기업이 S3 버킷을 public-read로 열어둔 채 PII를 저장해 대형 유출이 잇따랐다(Verizon, Accenture 등). AWS는 이 패턴을 막으려 2018년 **S3 Block Public Access**를 도입했고, 2023년부터는 신규 버킷에 기본 활성화했다. 이것이 "예방 통제를 플랫폼 기본값으로 강제"하는 거버넌스(도메인 6)의 전형이다.
 
@@ -294,7 +294,7 @@ GuardDuty·Security Hub·Macie·Config 모두 "delegated administrator" 패턴�
      워크로드 계정 관리자가 키를 지워 증거를 무력화하는 경로를 막는다.
 ```
 
-이 그림의 세 성질은 전부 하나의 가정에서 나온다 — **워크로드 계정은 언젠가 뚫린다.** 침해된 계정의 관리자 권한을 공격자가 쥐었을 때도 증거가 남아 있어야 조사가 가능하다. 그래서 로그는 "다른 계정에, 쓰기 전용으로, 지울 수 없게" 보관한다. 이것이 도메인 2와 도메인 6이 만나는 지점이고, Week 후반에 CloudTrail 조직 트레일과 S3 Object Lock으로 다시 만난다.
+이 그림의 세 성질은 전부 하나의 가정에서 나온다 — **워크로드 계정은 언젠가 뚫린다.** 침해된 계정의 관리자 권한을 공격자가 쥐었을 때도 증거가 남아 있어야 조사가 가능하다. 그래서 로그는 "다른 계정에, 쓰기 전용으로, 지울 수 없게" 보관한다. 이것이 도메인 1(탐지)과 도메인 6이 만나는 지점이고, Week 후반에 CloudTrail 조직 트레일과 S3 Object Lock으로 다시 만난다.
 
 현재 계정이 조직 안에서 어디에 있는지는 CLI로 바로 확인할 수 있다. 보안 작업의 첫 줄은 언제나 "내가 지금 어느 계정, 어느 신원인가"다.
 
@@ -336,12 +336,12 @@ aws organizations list-delegated-administrators
 | KMS | 5 | 예방 | 암호화 키로 데이터 접근 통제 |
 | 보안 그룹 / NACL | 3 | 예방 | 네트워크 트래픽 필터 |
 | WAF / Shield | 3 | 예방 | 웹 공격·DDoS 차단 |
-| CloudTrail | 2 | 탐지 | API 호출 감사 로그 |
+| CloudTrail | 1 | 탐지 | API 호출 감사 로그 |
 | GuardDuty | 1, 2 | 탐지 | ML 기반 위협 탐지 |
-| Config | 2, 6 | 탐지 | 리소스 구성 규정 준수 평가 |
-| Macie | 5, 2 | 탐지 | S3 민감 데이터 분류 |
-| Security Hub | 2, 1 | 탐지 | 보안 발견 사항 집계·표준 점검 |
-| EventBridge + SSM/Lambda | 1 | 대응 | 자동 remediation |
+| Config | 1, 6 | 탐지 | 리소스 구성 규정 준수 평가 |
+| Macie | 5, 1 | 탐지 | S3 민감 데이터 분류 |
+| Security Hub | 1, 2 | 탐지 | 보안 발견 사항 집계·표준 점검 |
+| EventBridge + SSM/Lambda | 2 | 대응 | 자동 remediation |
 
 > 🎯 **시나리오**: "S3 버킷에 PII가 암호화 없이 저장돼 있다는 사실을 사후에 알게 됐다. 재발을 막을 통제 조합은?" 단일 답이 아니다. **탐지**(Macie로 민감 데이터 발견 + Config rule `s3-bucket-server-side-encryption-enabled`) + **예방**(SCP로 미암호화 PutObject 차단, S3 Block Public Access) + **대응**(EventBridge → Lambda로 자동 암호화/격리). 세 유형을 한 번에 떠올리는 게 SCS-C03의 사고법이다.
 
@@ -363,7 +363,7 @@ aws organizations list-delegated-administrators
 
 ## 정리
 
-오늘 그린 그림 세 가지를 새기자. 첫째, **공동 책임 모델**은 서비스 유형(IaaS/PaaS/SaaS)에 따라 책임선이 움직이며, 데이터와 접근제어는 어떤 경우에도 고객 책임이다. 둘째, 모든 통제는 **예방·탐지·대응** 세 유형으로 분류되고, 성숙한 아키텍처는 셋을 계층으로 쌓는다. 셋째, **6개 도메인**은 따로 외우는 과목이 아니라 위협 → 가시성 → 네트워크 → 신원 → 데이터 → 거버넌스로 흐르는 하나의 사고 사슬이다.
+오늘 그린 그림 세 가지를 새기자. 첫째, **공동 책임 모델**은 서비스 유형(IaaS/PaaS/SaaS)에 따라 책임선이 움직이며, 데이터와 접근제어는 어떤 경우에도 고객 책임이다. 둘째, 모든 통제는 **예방·탐지·대응** 세 유형으로 분류되고, 성숙한 아키텍처는 셋을 계층으로 쌓는다. 셋째, **6개 도메인**은 따로 외우는 과목이 아니라 탐지 → 대응 → 네트워크 → 신원 → 데이터 → 거버넌스로 흐르는 하나의 사고 사슬이다.
 
 2019년 공개된 Capital One 침해는 오늘 배운 두 축이 실제 사고에서 어떻게 맞물리는지를 보여 준다. 공격자는 잘못 구성된 웹 애플리케이션 방화벽을 통해 SSRF로 EC2 인스턴스 메타데이터에 접근했고, 그 인스턴스 역할의 임시 자격 증명을 얻어 S3 버킷의 데이터를 내려받았다. 미국·캐나다 신용카드 신청자 약 1억 600만 명 규모의 정보가 영향을 받았다. 여기서 공동 책임 모델의 어느 쪽이 뚫렸는지 따져 보면 **전부 고객 책임 영역이었다.** S3 인프라도, 하이퍼바이저도, 물리 보안도 뚫리지 않았다. 뚫린 것은 애플리케이션 구성(WAF), 인스턴스 메타데이터 설정(IMDS), 그리고 인스턴스 역할의 권한 범위였다. "관리형 서비스를 쓰면 안전하다"는 통념이 왜 위험한지를 이 사건 하나가 요약한다.
 
@@ -373,7 +373,7 @@ aws organizations list-delegated-administrators
 
 ### 한 줄 요약
 
-공동 책임 모델은 고정된 표가 아니라 **서비스 유형에 따라 위아래로 움직이는 경계선**이며, 데이터 분류·암호화 결정·접근제어 세 줄만은 IaaS든 SaaS든 언제나 고객 책임이다. 모든 통제는 **예방·탐지·대응** 세 유형으로 분류되고, 문항의 동사("prevent/detect/respond")가 어느 유형을 요구하는지 알려 준다 — GuardDuty로 "차단"한다거나 Config로 "막는다"는 보기는 서비스는 맞고 동사가 틀린 대표적 오답이다. SCS-C03의 6개 도메인은 위협 → 가시성 → 네트워크 → 신원 → 데이터 → 거버넌스로 흐르는 하나의 사슬이고, 그 판정 엔진이 **도메인 4(IAM)**이라 첫 주를 여기에 쓴다. 멀티 계정 구조에서 로그는 Log Archive 계정으로 **단방향·삭제 불가**하게 흐르고, 보안 도구는 관리 계정이 아니라 **Security Tooling 계정에 위임**한다. 마지막으로 문항 끝의 형용사(most secure / least operational overhead)가 곧 채점 기준이라는 것을 잊지 않는다.
+공동 책임 모델은 고정된 표가 아니라 **서비스 유형에 따라 위아래로 움직이는 경계선**이며, 데이터 분류·암호화 결정·접근제어 세 줄만은 IaaS든 SaaS든 언제나 고객 책임이다. 모든 통제는 **예방·탐지·대응** 세 유형으로 분류되고, 문항의 동사("prevent/detect/respond")가 어느 유형을 요구하는지 알려 준다 — GuardDuty로 "차단"한다거나 Config로 "막는다"는 보기는 서비스는 맞고 동사가 틀린 대표적 오답이다. SCS-C03의 6개 도메인은 탐지 → 대응 → 네트워크 → 신원 → 데이터 → 거버넌스로 흐르는 하나의 사슬이고, 그 판정 엔진이 **도메인 4(IAM)**이라 첫 주를 여기에 쓴다. 멀티 계정 구조에서 로그는 Log Archive 계정으로 **단방향·삭제 불가**하게 흐르고, 보안 도구는 관리 계정이 아니라 **Security Tooling 계정에 위임**한다. 마지막으로 문항 끝의 형용사(most secure / least operational overhead)가 곧 채점 기준이라는 것을 잊지 않는다.
 
 ---
 
@@ -405,13 +405,13 @@ D) 보안 그룹으로 인바운드 트래픽을 443만 허용
 
 **문제 3.** SCS-C03 도메인 중 가중치가 가장 높은 영역과, 그 영역이 다루는 주제로 가장 적절한 조합은?
 
-A) Identity and Access Management — KMS 키 회전 정책  
-B) Infrastructure Security — VPC·보안 그룹·WAF 등 네트워크 경계 방어  
+A) Infrastructure Security — VPC·보안 그룹·WAF 등 네트워크 경계 방어  
+B) Identity and Access Management — IAM 정책 평가·페더레이션·최소 권한  
 C) Data Protection — Organizations SCP로 조직 거버넌스  
-D) Threat Detection and Incident Response — CloudTrail 로그 보존 정책  
+D) Detection — 사고 대응 계획 테스트와 침해 범위·영향 검증  
 
 **정답: B**  
-해설: 가중치가 가장 높은 도메인은 Infrastructure Security(20%)이고, VPC·보안 그룹·NACL·WAF·Shield 같은 네트워크 경계 방어를 다룬다. KMS는 Data Protection, SCP는 Management and Governance, CloudTrail 보존은 Logging and Monitoring 영역으로, 나머지 보기는 도메인과 주제가 어긋나 있다.
+해설: SCS-C03에서 가중치가 가장 높은 도메인은 Identity and Access Management(20%)이고, IAM 정책 평가·STS·Identity Center·페더레이션·최소 권한을 다룬다. Infrastructure Security는 도메인과 주제의 짝은 맞지만 가중치가 18%로, SCS-C02 시절(20%, 최고 비중)의 기억으로 고르기 쉬운 함정이다. SCP는 Security Foundations and Governance, 사고 대응 계획 테스트와 범위·영향 검증은 Incident Response 영역이라 나머지 보기는 도메인과 주제가 어긋나 있다.
 
 ---
 

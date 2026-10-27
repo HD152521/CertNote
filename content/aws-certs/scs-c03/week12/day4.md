@@ -105,12 +105,12 @@ Specialty 문제는 대개 "틀린 답"이 아니라 "덜 좋은 답"을 가린�
 
 | 도메인 | 비중 | 대표 문항 형태 | 정답 후보 서비스·패턴 |
 |---|---|---|---|
-| **1. 위협 탐지·인시던트 대응** | ~14% | "탐지했다, 무엇부터 하는가" / "범위를 조사하려면" / "자동 격리하려면" | GuardDuty, Detective, EventBridge→Lambda/SSM, 격리 SG, 스냅샷, `aws:TokenIssueTime` Deny |
-| **2. 보안 로깅·모니터링** | ~18% | "이 증거가 안 보인다" / "변조 불가 중앙 보관" / "즉시 알림" | CloudTrail(관리·데이터·Insights), Config, Flow Logs, Security Hub, Athena/Lake, 메트릭 필터 알람 |
-| **3. 인프라 보안** | ~20% | "이 트래픽만 통과" / "인터넷 없이" / "복합 위협 방어" | SG/NACL, Gateway·Interface Endpoint, WAF, Shield Advanced, Network Firewall, TGW, CloudFront+OAC |
-| **4. 자격 증명·액세스 관리** | ~16% | "왜 AccessDenied인가" / "안전하게 위임" / "키를 어디에" | 평가 순서, SCP·권한 경계, AssumeRole+External ID, Identity Center, 인스턴스 프로파일, Roles Anywhere, Cognito |
+| **1. 탐지** | ~16% | "이 증거가 안 보인다" / "변조 불가 중앙 보관" / "즉시 알림" / "이것을 발견하려면" | CloudTrail(관리·데이터·Insights), Config, Flow Logs, GuardDuty, Security Hub, Athena/Lake, 메트릭 필터 알람 |
+| **2. 인시던트 대응** | ~14% | "탐지했다, 무엇부터 하는가" / "범위·영향을 조사하려면" / "자동 격리하려면" | Detective, EventBridge→Lambda/SSM, 격리 SG, 스냅샷, `aws:TokenIssueTime` Deny |
+| **3. 인프라 보안** | ~18% | "이 트래픽만 통과" / "인터넷 없이" / "복합 위협 방어" | SG/NACL, Gateway·Interface Endpoint, WAF, Shield Advanced, Network Firewall, TGW, CloudFront+OAC |
+| **4. 자격 증명·액세스 관리** | ~20% | "왜 AccessDenied인가" / "안전하게 위임" / "키를 어디에" | 평가 순서, SCP·권한 경계, AssumeRole+External ID, Identity Center, 인스턴스 프로파일, Roles Anywhere, Cognito |
 | **5. 데이터 보호** | ~18% | "암호화 방식 선택" / "N년 불변 보존" / "키를 단독 소유" | SSE-KMS/DSSE/SSE-C, CloudHSM·custom key store, Object Lock, `aws:SecureTransport`, ACM, Macie |
-| **6. 관리·보안 거버넌스** | ~14% | "조직 전체에 강제" / "감사 증거" / "신규 계정 자동" | SCP·RCP, Control Tower, Config·Conformance Pack, Audit Manager, Firewall Manager, Service Catalog |
+| **6. 보안 기반 및 거버넌스** | ~14% | "조직 전체에 강제" / "감사 증거" / "신규 계정 자동" | SCP·RCP, Control Tower, Config·Conformance Pack, Audit Manager, Firewall Manager, Service Catalog |
 
 읽는 요령 하나. 문항에 **"모든 계정", "조직 전체", "앞으로 만들어질", "신규 계정"**이 등장하면 도메인이 무엇이든 **거버넌스 도구가 정답 자리에 들어온다.** 계정 단위 도구(개별 WAF 연결, 계정별 수동 활성화, 개별 Config 규칙)는 이때 대개 오답이다.
 
@@ -147,9 +147,9 @@ Specialty 문제는 대개 "틀린 답"이 아니라 "덜 좋은 답"을 가린�
 
 실제 문항은 도메인을 가로지른다. 아래 세 케이스는 지문 형태와 분해 과정을 그대로 보여 준다(정답 후보까지만 짚고, 자세한 풀이는 아래 연습에서 다룬다).
 
-> 🎯 **케이스 1 (도메인 2·5·6 교차)**: *"규제 기관이 지난 3년간 모든 계정의 관리자 활동을 요구했다. 회사는 로그를 S3에 보관해 왔지만, 한 계정의 관리자가 6개월 전 자신의 trail을 삭제한 정황이 있다."* → 분해하면 축이 셋이다. ① **증명 축** — 과거 기간의 증거는 소급 생성이 불가능하므로, 지금 할 수 있는 것은 남아 있는 조직 trail과 log file validation digest로 *무결성이 보장된 구간*을 확정하는 것이다. ② **원인 축** — 멤버 계정 관리자가 trail을 지울 수 있었다는 것 자체가 설계 결함이다. 조직 trail은 멤버가 소유자가 아니므로 지울 수 없다. ③ **재발 방지 축** — SCP로 `StopLogging`·`DeleteTrail` Deny, Log Archive 계정 분리, Object Lock. 이 케이스의 오답 보기는 대개 "지금부터 로그를 켠다"(과거를 증명하지 못함)거나 "CloudWatch Logs 보존을 늘린다"(원인이 아님)다.
+> 🎯 **케이스 1 (도메인 1·5·6 교차)**: *"규제 기관이 지난 3년간 모든 계정의 관리자 활동을 요구했다. 회사는 로그를 S3에 보관해 왔지만, 한 계정의 관리자가 6개월 전 자신의 trail을 삭제한 정황이 있다."* → 분해하면 축이 셋이다. ① **증명 축** — 과거 기간의 증거는 소급 생성이 불가능하므로, 지금 할 수 있는 것은 남아 있는 조직 trail과 log file validation digest로 *무결성이 보장된 구간*을 확정하는 것이다. ② **원인 축** — 멤버 계정 관리자가 trail을 지울 수 있었다는 것 자체가 설계 결함이다. 조직 trail은 멤버가 소유자가 아니므로 지울 수 없다. ③ **재발 방지 축** — SCP로 `StopLogging`·`DeleteTrail` Deny, Log Archive 계정 분리, Object Lock. 이 케이스의 오답 보기는 대개 "지금부터 로그를 켠다"(과거를 증명하지 못함)거나 "CloudWatch Logs 보존을 늘린다"(원인이 아님)다.
 
-> 🎯 **케이스 2 (도메인 1·3·4 교차)**: *"프라이빗 서브넷의 애플리케이션이 침해됐고, 인스턴스 역할의 자격증명이 외부 IP에서 사용된 정황이 GuardDuty에 잡혔다. 애플리케이션은 교체할 수 없다."* → "교체할 수 없다"가 결정적 제약이다. 코드 수정이 필요한 답(SDK 변경, 자격증명 주입 방식 변경)은 전부 탈락하고, **인프라 계층 해결**만 남는다. ① 봉쇄는 격리 SG + **프로파일 분리 + `aws:TokenIssueTime` Deny**(네트워크 격리만으로는 외부에서 쓰이는 토큰을 못 막는다). ② 재발 방지는 **IMDSv2 강제 + hop limit**, 역할 권한 축소, `aws:SourceVpce` 조건. ③ 조사는 CloudTrail에서 그 세션 ARN을 축으로 전수 추적. 세 도메인이 한 사건에서 각자 한 겹씩 맡는 전형이다.
+> 🎯 **케이스 2 (도메인 2·3·4 교차)**: *"프라이빗 서브넷의 애플리케이션이 침해됐고, 인스턴스 역할의 자격증명이 외부 IP에서 사용된 정황이 GuardDuty에 잡혔다. 애플리케이션은 교체할 수 없다."* → "교체할 수 없다"가 결정적 제약이다. 코드 수정이 필요한 답(SDK 변경, 자격증명 주입 방식 변경)은 전부 탈락하고, **인프라 계층 해결**만 남는다. ① 봉쇄는 격리 SG + **프로파일 분리 + `aws:TokenIssueTime` Deny**(네트워크 격리만으로는 외부에서 쓰이는 토큰을 못 막는다). ② 재발 방지는 **IMDSv2 강제 + hop limit**, 역할 권한 축소, `aws:SourceVpce` 조건. ③ 조사는 CloudTrail에서 그 세션 ARN을 축으로 전수 추적. 세 도메인이 한 사건에서 각자 한 겹씩 맡는 전형이다.
 
 > 🎯 **케이스 3 (도메인 3·6 교차)**: *"200개 계정에 걸쳐 인터넷에 노출된 ALB가 계속 늘고 있다. 표준 WAF 규칙을 모든 ALB에 적용하고, 앞으로 만들어질 것에도 자동 적용하며, 기존 서비스는 중단시키지 않아야 한다."* → 단서가 셋이다. "모든 계정"·"앞으로 만들어질" → **Firewall Manager**(계정별 수동 연결은 오답). "중단시키지 않아야" → 처음엔 **count 모드**로 배포해 오탐을 관측한 뒤 block으로 전환. 그리고 Firewall Manager는 **Config가 전제**이며 `RemediationEnabled`가 꺼져 있으면 보고만 한다는 점이 보기의 함정으로 쓰인다.
 
@@ -204,7 +204,7 @@ Specialty 문제는 대개 "틀린 답"이 아니라 "덜 좋은 답"을 가린�
 
 ## 📝 연습 문제
 
-**문제 1.** (도메인 2·6) 한 기업이 200개 계정의 모든 API 활동을 변조 불가능하게 중앙 보관하고, 어떤 계정도 로깅을 끄지 못하게 하며, 신규 계정에도 자동 적용되길 원한다. 가장 적절한 설계는?
+**문제 1.** (도메인 1·6) 한 기업이 200개 계정의 모든 API 활동을 변조 불가능하게 중앙 보관하고, 어떤 계정도 로깅을 끄지 못하게 하며, 신규 계정에도 자동 적용되길 원한다. 가장 적절한 설계는?
 
 A) 각 계정 관리자가 개별 trail을 만들고 로컬 S3에 저장  
 B) Organization trail로 중앙 S3(다른 계정·log file validation·Object Lock) + SCP로 StopLogging/DeleteTrail Deny + Control Tower로 신규 계정 자동 적용  
@@ -264,7 +264,7 @@ D) 버킷을 퍼블릭으로 공개
 
 ---
 
-**문제 6.** (도메인 2·3) 글로벌 웹앱이 (1) SQLi 시도, (2) 로그인 무차별 대입, (3) 간헐적 L3/4 대규모 flood를 받는다. 오리진 직접 접근도 차단해야 한다. 가장 적절한 통합 설계는?
+**문제 6.** (도메인 3) 글로벌 웹앱이 (1) SQLi 시도, (2) 로그인 무차별 대입, (3) 간헐적 L3/4 대규모 flood를 받는다. 오리진 직접 접근도 차단해야 한다. 가장 적절한 통합 설계는?
 
 A) ALB에만 WAF를 붙인다  
 B) CloudFront 전면 + CLOUDFRONT scope WAF(SQLi managed + /login rate-based) + Shield Advanced + 오리진 직접 접근 차단(prefix list/비밀 헤더)  
@@ -312,7 +312,7 @@ D) 코드에 하드코딩 후 정기 수동 변경
 
 ---
 
-**문제 10.** (도메인 2) 한 팀이 "S3 객체가 누구에 의해 다운로드됐는지"를 못 찾고 있다. 기본 CloudTrail은 켜져 있다. 원인은?
+**문제 10.** (도메인 1) 한 팀이 "S3 객체가 누구에 의해 다운로드됐는지"를 못 찾고 있다. 기본 CloudTrail은 켜져 있다. 원인은?
 
 A) VPC Flow Logs가 꺼져 있다  
 B) S3 객체 수준 접근은 CloudTrail 데이터 이벤트를 별도로 활성화해야 기록된다(관리 이벤트는 미기록)  

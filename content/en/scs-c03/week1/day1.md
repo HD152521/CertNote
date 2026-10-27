@@ -37,20 +37,20 @@ Security engineers must develop the habit of classifying all controls into three
 
 ## SCS-C03's 6 Domains Being Measured
 
-The updated SCS-C03 (2024) has 65 questions, 170 minutes, and 750/1000 passing score. The exam blueprint specifies 6 domains and weightings.
+SCS-C03 has been in use since December 2, 2025 (the previous version, SCS-C02, was used until December 1, 2025). It has 65 questions (50 scored + 15 unscored), 170 minutes, and a 750/1000 passing score. Question types are multiple choice, multiple response, ordering, and matching. The exam blueprint specifies 6 domains and weightings.
 
 | # | Domain | Weight | One-Line Summary |
 |---|--------|--------|-----------|
-| 1 | **Threat Detection and Incident Response** | 14% | Detect threats with GuardDuty·Detective, incident response playbooks, forensics |
-| 2 | **Security Logging and Monitoring** | 18% | Gain visibility with CloudTrail·Config·CloudWatch·Security Hub |
-| 3 | **Infrastructure Security** | 20% | Defend network boundaries with VPC·security groups·NACL·WAF·Shield |
-| 4 | **Identity and Access Management** | 16% | IAM·STS·Identity Center·federation·policy evaluation |
+| 1 | **Detection** | 16% | Monitoring, alerting, and logging with CloudTrail·Config·CloudWatch·GuardDuty·Security Hub, plus troubleshooting them |
+| 2 | **Incident Response** | 14% | Design and test incident response plans, respond to events, validate findings to assess scope and impact, forensics |
+| 3 | **Infrastructure Security** | 18% | Defend network boundaries with VPC·security groups·NACL·WAF·Shield |
+| 4 | **Identity and Access Management** | 20% | IAM·STS·Identity Center·federation·policy evaluation |
 | 5 | **Data Protection** | 18% | KMS·encryption·S3 protection·Secrets Manager·certificates |
-| 6 | **Management and Security Governance** | 14% | Organizations·SCP·Control Tower·compliance·multi-account governance |
+| 6 | **Security Foundations and Governance** | 14% | Organizations·SCP·Control Tower·compliance·multi-account governance |
 
-Looking at weights, **Domain 3 (infrastructure 20%) + Domain 2 (logging 18%) + Domain 5 (data 18%)** make up more than half the exam. But Domain 4 (IAM 16%) is **the prerequisite for all other domains**. KMS key policies operate on top of IAM evaluation logic, and cross-account logging works on top of AssumeRole. That's why Week 1 is entirely dedicated to IAM.
+Looking at weights, **Domain 4 (IAM 20%)** is the heaviest, followed by **Domain 3 (infrastructure 18%) + Domain 5 (data 18%)**; together these three make up more than half the exam. On top of that, Domain 4 is **the prerequisite for all other domains**. KMS key policies operate on top of IAM evaluation logic, and cross-account logging works on top of AssumeRole. That's why Week 1 is entirely dedicated to IAM.
 
-> 💡 **Related Theory**: The domains aren't 6 separate subjects to memorize — they're **one flow of thinking**. A threat arrives (D1 detect) → to see it, logs must exist (D2) → the entry point is the network (D3) → authorization inside is IAM (D4) → the protected asset is data (D5) → enforce all of this at organizational level (D6). Scenario questions usually bundle 2-3 domains together.
+> 💡 **Related Theory**: The domains aren't 6 separate subjects to memorize — they're **one flow of thinking**. To see a threat, logs and monitoring must exist (D1 Detection) → a detected event is validated for scope and impact and then responded to (D2 Incident Response) → the entry point is the network (D3) → authorization inside is IAM (D4) → the protected asset is data (D5) → enforce all of this at organizational level (D6). Scenario questions usually bundle 2-3 domains together.
 
 ## Data Classification and Least Privilege: Two Starting Points of Security Incidents
 
@@ -97,18 +97,18 @@ Practice classifying key services by the two axes you learned today (control typ
 | KMS | 5 | Preventive | Control data access with encryption keys |
 | Security Groups / NACL | 3 | Preventive | Filter network traffic |
 | WAF / Shield | 3 | Preventive | Block web attacks·DDoS |
-| CloudTrail | 2 | Detective | Audit log of API calls |
+| CloudTrail | 1 | Detective | Audit log of API calls |
 | GuardDuty | 1, 2 | Detective | ML-based threat detection |
-| Config | 2, 6 | Detective | Assess resource compliance |
-| Macie | 5, 2 | Detective | Classify sensitive S3 data |
-| Security Hub | 2, 1 | Detective | Aggregate findings·run standard checks |
-| EventBridge + SSM/Lambda | 1 | Responsive | Auto-remediation |
+| Config | 1, 6 | Detective | Assess resource compliance |
+| Macie | 5, 1 | Detective | Classify sensitive S3 data |
+| Security Hub | 1, 2 | Detective | Aggregate findings·run standard checks |
+| EventBridge + SSM/Lambda | 2 | Responsive | Auto-remediation |
 
 > 🎯 **Scenario**: "PII in S3 bucket found stored without encryption. What control combination prevents recurrence?" Not a single answer. **Detective** (Macie finds sensitive data + Config rule `s3-bucket-server-side-encryption-enabled`) + **Preventive** (SCP blocks unencrypted PutObject, S3 Block Public Access) + **Responsive** (EventBridge → Lambda auto-encrypt/quarantine). Thinking of all three types at once is how SCS-C03 thinks.
 
 ## Summary — The Map Ahead
 
-Remember three pictures we drew today. First, **the Shared Responsibility Model** has a moving boundary depending on service type (IaaS/PaaS/SaaS), but data and access control are always customer responsibility. Second, all controls fall into **three types — preventive, detective, responsive** — and mature architecture stacks them in layers. Third, **the 6 domains** aren't separate subjects to memorize but flow from threat → visibility → network → identity → data → governance — one chain of thinking.
+Remember three pictures we drew today. First, **the Shared Responsibility Model** has a moving boundary depending on service type (IaaS/PaaS/SaaS), but data and access control are always customer responsibility. Second, all controls fall into **three types — preventive, detective, responsive** — and mature architecture stacks them in layers. Third, **the 6 domains** aren't separate subjects to memorize but flow from detection → response → network → identity → data → governance — one chain of thinking.
 
 Starting tomorrow, we enter IAM, the spine of that chain. Once you understand what users, groups, roles, and policies are, and exactly how AWS's evaluation logic decides whether to allow or deny a request, you'll start seeing how every other domain rests on top of that foundation.
 
@@ -142,13 +142,13 @@ Explanation: GuardDuty is a detective control that notices threats that have alr
 
 **Question 3.** Which combination correctly pairs the highest-weighted SCS-C03 domain with the topics it covers?
 
-A) Identity and Access Management — KMS key rotation policies  
-B) Infrastructure Security — network perimeter defense such as VPC, security groups, and WAF  
+A) Infrastructure Security — network perimeter defense such as VPC, security groups, and WAF  
+B) Identity and Access Management — IAM policy evaluation, federation, and least privilege  
 C) Data Protection — organizational governance with Organizations SCPs  
-D) Threat Detection and Incident Response — CloudTrail log retention policies  
+D) Detection — testing incident response plans and validating breach scope and impact  
 
 **Answer: B**  
-Explanation: The highest-weighted domain is Infrastructure Security (20%), and it covers network perimeter defense such as VPC, security groups, NACLs, WAF, and Shield. KMS belongs to Data Protection, SCPs to Management and Governance, and CloudTrail retention to Logging and Monitoring — so in every other option the domain and the topic are mismatched.
+Explanation: In SCS-C03 the highest-weighted domain is Identity and Access Management (20%), covering IAM policy evaluation, STS, Identity Center, federation, and least privilege. Infrastructure Security pairs correctly with its topic, but its weight is 18%; it is a trap for anyone remembering SCS-C02, where it was the top domain at 20%. SCPs belong to Security Foundations and Governance, and testing IR plans and validating scope and impact belong to Incident Response — so the remaining options mismatch the domain and the topic.
 
 ---
 
