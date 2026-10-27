@@ -36,6 +36,7 @@ export function PrivacyContent() {
           <li>{s.collectOptional}</li>
           <li>{s.collectAutomatic}</li>
           <li>{s.collectBehavior}</li>
+          <li>{s.collectRequests}</li>
         </ul>
       </Section>
 
@@ -45,6 +46,7 @@ export function PrivacyContent() {
           <li>{s.purposeFeatures}</li>
           <li>{s.purposeNotifications}</li>
           <li>{s.purposeImprovement}</li>
+          <li>{s.purposeRequests}</li>
         </ul>
       </Section>
 

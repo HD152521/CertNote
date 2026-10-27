@@ -5,6 +5,7 @@ import { Check, X } from 'lucide-react';
 import type { QuizQuestion } from '@/lib/parseQuiz';
 import { answerCount, isMultiAnswer, parseCorrectSet } from '@/lib/quiz/correctness';
 import { TutorPanel } from '@/components/tutor/TutorPanel';
+import { QuestionReport } from '@/components/userInput/QuestionReport';
 import { cn } from '@/lib/cn';
 
 interface QuizProps {
@@ -115,6 +116,7 @@ export function Quiz({ question, questionId, lang = 'ko' }: QuizProps) {
             <TutorPanel questionId={questionId} selected={multi ? [...picked].sort().join(',') : (picked[0] ?? '')} />
           )}
           <button type="button" onClick={reset} className="mt-2 block text-xs text-fg-muted hover:text-fg underline underline-offset-4">{t.retry}</button>
+          {questionId && <QuestionReport questionId={questionId} lang={lang} />}
         </div>
       )}
     </div>
