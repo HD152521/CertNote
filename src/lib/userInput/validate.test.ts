@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AppError } from '@/lib/auth/errors';
-import { CERT_CANDIDATES, OTHER_CERT_KEY } from './certCandidates';
+import { CERT_CANDIDATES, OTHER_CERT_KEY, certCandidatesFor, isCertCandidateKey } from './certCandidates';
 import { listCerts } from '@/lib/content';
 import { REPORT_MESSAGE_MAX, parseCertRequest, parseQuestionReport } from './validate';
 
@@ -55,5 +55,14 @@ describe('parseCertRequest', () => {
     const existing = new Set((await listCerts('aws-certs')).map((c) => c.slug));
     expect(existing.size).toBeGreaterThan(0);
     for (const c of CERT_CANDIDATES) expect(existing.has(c.key)).toBe(false);
+  });
+
+  it('영어판 후보에는 한글 라벨이 없고, 한국어판은 전체 후보를 보여 준다', () => {
+    const en = certCandidatesFor('en');
+    expect(en.length).toBeGreaterThan(0);
+    for (const c of en) expect(c.label).not.toMatch(/[가-힣]/);
+    expect(certCandidatesFor('ko')).toEqual(CERT_CANDIDATES);
+    // 영어판에서 빠진 후보도 서버 검증은 그대로 통과한다(언어 전환 중 제출 등).
+    for (const c of CERT_CANDIDATES) expect(isCertCandidateKey(c.key)).toBe(true);
   });
 });
