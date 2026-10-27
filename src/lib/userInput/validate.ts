@@ -9,8 +9,6 @@ export const REPORT_MESSAGE_MAX = 500;
 export const OTHER_CERT_NAME_MIN = 2;
 export const OTHER_CERT_NAME_MAX = 50;
 
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-const EMAIL_MAX = 254;
 // questionId()·examQuestionId 형식(slug-w1-d2-q3, slug-exam-12 등)을 넘는 이상한 입력을 DB 조회 전에 거른다.
 const QUESTION_ID_RE = /^[a-z0-9-]{3,100}$/;
 
@@ -23,7 +21,6 @@ export interface QuestionReportInput {
 export interface CertRequestInput {
   certKey: string;
   otherName: string | null;
-  email: string | null;
 }
 
 function text(v: unknown): string {
@@ -59,10 +56,5 @@ export function parseCertRequest(body: unknown): CertRequestInput {
     }
     otherName = name;
   }
-
-  const email = text(b.email).toLowerCase();
-  if (email && (email.length > EMAIL_MAX || !EMAIL_RE.test(email))) {
-    throw new AppError(400, 'invalid_email', '올바른 이메일을 입력해 주세요.');
-  }
-  return { certKey, otherName, email: email || null };
+  return { certKey, otherName };
 }

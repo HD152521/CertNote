@@ -56,10 +56,10 @@ describe('POST /api/question-report', () => {
 });
 
 describe('POST /api/cert-request', () => {
-  it('후보 자격증 요청을 저장한다(이메일 선택)', async () => {
+  it('비로그인 요청은 user_id 없이 저장한다', async () => {
     const res = await certPOST(req({ certKey: 'sqld' }));
     expect(res.status).toBe(200);
-    expect(mocks.query.mock.calls[0][1]).toEqual(['sqld', null, null, null]);
+    expect(mocks.query.mock.calls[0][1]).toEqual(['sqld', null, null]);
   });
 
   it('잘못된 입력은 400 이고 저장하지 않는다', async () => {
@@ -68,11 +68,12 @@ describe('POST /api/cert-request', () => {
     expect(mocks.query).not.toHaveBeenCalled();
   });
 
-  it('같은 사람의 중복 요청을 거르는 조건이 쿼리에 있다', async () => {
+  it('이메일은 받지 않고, 로그인 사용자는 계정으로 중복을 거른다', async () => {
     mocks.getCurrentUser.mockResolvedValue({ sub: '7' });
-    await certPOST(req({ certKey: 'cka', email: 'a@example.com' }));
+    await certPOST(req({ certKey: 'cka', email: 'someone-else@example.com' }));
     const [sql, params] = mocks.query.mock.calls[0];
-    expect(sql).toContain('WHERE NOT EXISTS');
-    expect(params).toEqual(['cka', null, 'a@example.com', '7']);
+    expect(sql).toContain('NOT EXISTS');
+    expect(sql).not.toContain('email');
+    expect(params).toEqual(['cka', null, '7']);
   });
 });

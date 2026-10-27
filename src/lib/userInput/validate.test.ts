@@ -38,14 +38,12 @@ describe('parseQuestionReport', () => {
 });
 
 describe('parseCertRequest', () => {
-  it('후보 key 를 받고 이메일은 선택이다', () => {
-    expect(parseCertRequest({ certKey: 'sqld' })).toEqual({ certKey: 'sqld', otherName: null, email: null });
-    expect(parseCertRequest({ certKey: 'cka', email: ' A@Example.com ' }).email).toBe('a@example.com');
+  it('후보 key 를 받는다', () => {
+    expect(parseCertRequest({ certKey: 'sqld' })).toEqual({ certKey: 'sqld', otherName: null });
   });
 
-  it('후보 밖 key, 잘못된 이메일은 거부한다', () => {
+  it('후보 밖 key 는 거부한다', () => {
     expect(codeOf(() => parseCertRequest({ certKey: 'saa-c03' }))).toBe('invalid_cert');
-    expect(codeOf(() => parseCertRequest({ certKey: 'cka', email: 'not-an-email' }))).toBe('invalid_email');
   });
 
   it("'기타'는 자격증 이름이 필요하다", () => {

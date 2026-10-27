@@ -20,8 +20,13 @@ export async function POST(req: Request) {
     if (!getQuestionById(input.questionId)) throw new AppError(404, 'invalid_question', '문제를 찾을 수 없습니다.');
 
     const session = await getCurrentUser();
+    // 로그인 사용자가 같은 문제를 미처리 상태에서 또 신고하면 무시한다(관리자 목록이 한 사람 신고로 덮이지 않게).
     await query(
-      'INSERT INTO question_reports (question_id, user_id, reason, message) VALUES ($1, $2, $3, $4)',
+      `INSERT INTO question_reports (question_id, user_id, reason, message)
+       SELECT $1, $2, $3, $4
+       WHERE $2::bigint IS NULL OR NOT EXISTS (
+         SELECT 1 FROM question_reports WHERE user_id = $2::bigint AND question_id = $1 AND status = 'open'
+       )`,
       [input.questionId, session?.sub ?? null, input.reason, input.message],
     );
     return Response.json({ ok: true });

@@ -27,17 +27,25 @@ const REASON_LABEL: Record<string, string> = {
 export function AdminQuestionReports({ items }: { items: QuestionReportItem[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const openCount = items.filter((r) => r.status === 'open').length;
 
   async function setStatus(id: number, status: string) {
     setBusy(id);
+    setError(null);
     try {
       const res = await fetch('/api/admin/question-reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status }),
       });
-      if (res.ok) router.refresh();
+      if (!res.ok) {
+        setError(`상태를 바꾸지 못했습니다(${res.status}). 다시 로그인한 뒤 시도해 주세요.`);
+        return;
+      }
+      router.refresh();
+    } catch {
+      setError('상태를 바꾸지 못했습니다. 네트워크를 확인해 주세요.');
     } finally {
       setBusy(null);
     }
@@ -46,6 +54,7 @@ export function AdminQuestionReports({ items }: { items: QuestionReportItem[] })
   return (
     <section className="space-y-2">
       <h2 className="text-sm font-medium">문제 오류 신고 (미처리 {openCount} / 전체 {items.length})</h2>
+      {error && <p className="text-xs text-danger">{error}</p>}
       {items.length === 0 ? (
         <p className="text-sm text-fg-faint">아직 받은 신고가 없습니다.</p>
       ) : (

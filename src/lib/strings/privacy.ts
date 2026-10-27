@@ -49,14 +49,14 @@ export const privacyStrings: Dict<PrivacyKey> = {
     collectAutomatic: '자동 수집: 학습 기록(진도·정답·복습), 접속 로그, 알림 구독 정보',
     collectBehavior: '이용 행태: 페이지 방문·클릭·체류 등 사용 통계(제품 분석 도구 PostHog를 통해 수집)',
     collectRequests:
-      '자격증 요청(선택): 출시 알림을 원할 때 남긴 이메일. 알림을 보낸 뒤 파기합니다. 문제 오류 신고에는 연락처를 받지 않습니다.',
+      '자격증 요청·문제 오류 신고(선택): 요청한 자격증, 신고 내용. 로그인 중이면 계정과 연결되며, 이메일 등 연락처는 따로 받지 않습니다.',
 
     purposeTitle: '2. 이용 목적',
     purposeAccount: '회원 식별 및 로그인·계정 관리',
     purposeFeatures: '학습 진도·복습·통계 등 서비스 기능 제공',
     purposeNotifications: '학습 알림 발송(동의한 경우)',
     purposeImprovement: '이용 행태 분석을 통한 콘텐츠·서비스 개선(PostHog 등 분석 도구 활용)',
-    purposeRequests: '요청받은 자격증의 노트 출시 알림, 신고받은 문제의 오류 수정',
+    purposeRequests: '요청한 자격증의 노트가 나왔을 때 계정 이메일로 1회 알림(로그인 사용자), 신고받은 문제의 오류 수정',
 
     retentionTitle: '3. 보유 및 이용 기간',
     retentionBody:
@@ -94,7 +94,7 @@ export const privacyStrings: Dict<PrivacyKey> = {
     collectBehavior:
       'Usage behavior: page views, clicks, time on page, and similar usage statistics (collected through the product analytics tool PostHog)',
     collectRequests:
-      'Certification requests (optional): the email you leave for a launch notice. We delete it after sending the notice. Error reports on questions do not ask for contact details.',
+      'Certification requests and question error reports (optional): the certification you asked for and what you reported. If you are signed in, these are linked to your account. We do not ask for an email or other contact details.',
 
     purposeTitle: '2. How we use it',
     purposeAccount: 'Identifying members and handling login and account management',
@@ -102,7 +102,7 @@ export const privacyStrings: Dict<PrivacyKey> = {
     purposeNotifications: 'Sending study reminders (where you have opted in)',
     purposeImprovement:
       'Improving content and the service through usage analysis (using analytics tools such as PostHog)',
-    purposeRequests: 'Sending launch notices for requested certifications, and fixing reported question errors',
+    purposeRequests: 'Sending one launch notice to your account email when a requested certification is published (signed-in users), and fixing reported question errors',
 
     retentionTitle: '3. Retention period',
     retentionBody:

@@ -332,16 +332,17 @@ try {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_question_reports_status ON question_reports (status, created_at DESC);');
   console.log('✓ question_reports 테이블 준비 완료');
 
-  // "만들어 줬으면 하는 자격증" 요청. email 은 출시 알림을 원할 때만(선택) — 로그인 사용자는 user_id 로 계정 이메일을 쓴다.
-  // 탈퇴하면 user_id 행은 지운다(CASCADE) — 계정과 묶인 요청을 남길 이유가 없다.
+  // "만들어 줬으면 하는 자격증" 요청(비로그인 허용). 이메일은 따로 받지 않는다 — 출시 알림은 로그인 사용자에게만
+  // 계정 이메일로 보낸다(남의 주소를 대신 넣거나 가짜 주소로 집계를 부풀릴 수 없게).
+  // notified_at: 그 요청자에게 출시 알림을 보낸 시각(관리자가 표시). 탈퇴하면 요청도 지운다(CASCADE).
   await pool.query(`
     CREATE TABLE IF NOT EXISTS cert_requests (
       id         BIGSERIAL PRIMARY KEY,
       cert_key   TEXT NOT NULL,
-      other_name TEXT,
-      email      TEXT,
-      user_id    BIGINT REFERENCES users(id) ON DELETE CASCADE,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      other_name  TEXT,
+      user_id     BIGINT REFERENCES users(id) ON DELETE CASCADE,
+      notified_at TIMESTAMPTZ,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
   await pool.query('CREATE INDEX IF NOT EXISTS idx_cert_requests_key ON cert_requests (cert_key);');

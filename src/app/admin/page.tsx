@@ -67,9 +67,10 @@ export default async function AdminPage() {
         to_char(created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS created_at
       FROM question_reports
       ORDER BY (status = 'open') DESC, created_at DESC LIMIT 200`),
-    // 같은 '기타' 이름은 대소문자만 달라도 한 줄로 모은다. 알림 이메일은 직접 입력 > 계정 이메일 순.
+    // 같은 '기타' 이름은 대소문자만 달라도 한 줄로 모은다. 알림은 로그인 요청자의 계정 이메일로만, 아직 안 보낸 사람만.
     query<CertRequestTally>(`SELECT cr.cert_key, min(cr.other_name) AS other_name, count(*)::int AS total,
-        coalesce(array_agg(DISTINCT coalesce(cr.email, u.email)) FILTER (WHERE coalesce(cr.email, u.email) IS NOT NULL), '{}') AS emails
+        count(cr.user_id)::int AS members,
+        coalesce(array_agg(DISTINCT u.email) FILTER (WHERE u.email IS NOT NULL AND cr.notified_at IS NULL), '{}') AS pending_emails
       FROM cert_requests cr LEFT JOIN users u ON u.id = cr.user_id
       GROUP BY cr.cert_key, lower(coalesce(cr.other_name, ''))
       ORDER BY total DESC`),

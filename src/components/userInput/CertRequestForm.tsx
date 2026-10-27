@@ -12,8 +12,7 @@ const LABELS = {
     select: '자격증 선택',
     other: '목록에 없음 (직접 입력)',
     otherPlaceholder: '자격증 이름',
-    email: '나오면 알림 받을 이메일 (선택)',
-    emailHint: '알림을 보낸 뒤에는 지웁니다. 로그인했다면 비워 둬도 됩니다.',
+    notice: '로그인한 상태로 요청하면, 노트가 나왔을 때 계정 이메일로 한 번 알려 드려요.',
     submit: '요청하기',
     done: '요청을 받았어요. 고마워요!',
     failed: '보내지 못했어요. 잠시 후 다시 시도해 주세요.',
@@ -24,8 +23,7 @@ const LABELS = {
     select: 'Choose a certification',
     other: 'Not listed (type it in)',
     otherPlaceholder: 'Certification name',
-    email: 'Email for a launch notice (optional)',
-    emailHint: 'Deleted after we send the notice. Leave blank if you are signed in.',
+    notice: 'Request while signed in and we will email your account once when the notes are out.',
     submit: 'Request',
     done: 'Got it. Thanks!',
     failed: 'Could not send. Please try again later.',
@@ -39,7 +37,6 @@ export function CertRequestForm({ lang = 'ko' }: { lang?: 'ko' | 'en' }) {
   const t = LABELS[lang];
   const [certKey, setCertKey] = useState('');
   const [otherName, setOtherName] = useState('');
-  const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +54,7 @@ export function CertRequestForm({ lang = 'ko' }: { lang?: 'ko' | 'en' }) {
       const res = await fetch('/api/cert-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ certKey, otherName: isOther ? otherName : undefined, email }),
+        body: JSON.stringify({ certKey, otherName: isOther ? otherName : undefined }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -93,11 +90,7 @@ export function CertRequestForm({ lang = 'ko' }: { lang?: 'ko' | 'en' }) {
             <input type="text" value={otherName} onChange={(e) => setOtherName(e.target.value)} maxLength={OTHER_CERT_NAME_MAX}
               placeholder={t.otherPlaceholder} aria-label={t.otherPlaceholder} className={INPUT_CLS} />
           )}
-          <div className="space-y-1">
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email"
-              placeholder={t.email} aria-label={t.email} className={INPUT_CLS} />
-            <p className="text-xs text-fg-faint">{t.emailHint}</p>
-          </div>
+          <p className="text-xs text-fg-faint">{t.notice}</p>
           {error && <p className="text-xs text-danger">{error}</p>}
           <button type="submit" disabled={!canSubmit}
             className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40">

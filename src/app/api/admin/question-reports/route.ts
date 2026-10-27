@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     if (!session || session.role !== 'admin') throw new AppError(403, 'forbidden', '권한이 없습니다.');
     const body = await req.json().catch(() => null);
     const id = Number(body?.id);
-    if (!Number.isInteger(id)) throw new AppError(400, 'invalid_body', 'id가 필요합니다.');
+    if (!Number.isSafeInteger(id) || id <= 0) throw new AppError(400, 'invalid_body', 'id가 필요합니다.');
     const status = typeof body?.status === 'string' ? body.status : '';
     if (!STATUSES.includes(status)) throw new AppError(400, 'invalid_body', '상태값이 올바르지 않습니다.');
     await query('UPDATE question_reports SET status = $2 WHERE id = $1', [id, status]);
