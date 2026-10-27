@@ -19,7 +19,7 @@ interface Turn {
   text: string;
 }
 
-// 오답 직후 노출되는 AI 설명 패널. 이메일 인증된 로그인 계정 전용(서버 게이팅, 계정당 하루 3회) —
+// 오답 직후 노출되는 AI 설명 패널. 로그인 계정 전용(서버 게이팅, 계정당 하루 3회) —
 // 비로그인은 가입 안내로, 미인증은 인증 메일 안내(+재발송)로 수렴한다.
 export function TutorPanel({ questionId, selected }: TutorPanelProps) {
   const language = useLanguage();

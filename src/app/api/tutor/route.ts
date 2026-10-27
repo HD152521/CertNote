@@ -4,7 +4,7 @@ import { clientIp, rateLimit } from '@/lib/rateLimit';
 import type { Language } from '@/lib/i18n';
 import { resolveFakeMode } from '@/lib/tutor/fakeTutor';
 import { getTutorError } from '@/lib/tutor/errors';
-import { parseTutorInput, requireVerifiedEmail, reserveTutorCall, type TutorInput } from '@/lib/tutor/tutorRequest';
+import { parseTutorInput, reserveTutorCall, type TutorInput } from '@/lib/tutor/tutorRequest';
 import {
   getCachedExplanation,
   isTutorConfigured,
@@ -69,7 +69,7 @@ async function streamExplanation(
   return new Response(body, { headers: TEXT_HEADERS });
 }
 
-// AI 오답 튜터. 이메일 인증된 로그인 사용자 누구나, 계정당 하루 TUTOR_DAILY_LIMIT회(전체 합산은 TUTOR_GLOBAL_DAILY_LIMIT회).
+// AI 오답 튜터. 로그인 사용자 누구나(이메일 인증 불필요, 2026-10-27 결정), 계정당 하루 TUTOR_DAILY_LIMIT회(전체 합산은 TUTOR_GLOBAL_DAILY_LIMIT회).
 // 문제+오답을 받아 설명을 text/plain으로 스트리밍한다.
 export async function POST(req: Request) {
   try {
@@ -84,9 +84,6 @@ export async function POST(req: Request) {
     if (!rl.ok) {
       throw new AppError(429, 'rate_limited', getTutorError(language, 'rateLimited'));
     }
-
-    // 미인증 계정은 캐시 조회·쿼터·LLM 어느 것도 건드리기 전에 막는다.
-    await requireVerifiedEmail(user.sub, language);
 
     if (!isTutorConfigured()) {
       throw new AppError(503, 'tutor_unavailable', getTutorError(language, 'tutorUnavailable'));

@@ -1,5 +1,4 @@
 import { AppError } from '@/lib/auth/errors';
-import { getVerificationStatus } from '@/lib/auth/emailVerification';
 import { getQuestionById, type IndexedQuestion } from '@/lib/questions';
 import type { Language } from '@/lib/i18n';
 import { getTutorError } from './errors';
@@ -14,15 +13,6 @@ import {
 } from './tutorService';
 
 // /api/tutor 라우트가 쓰는 요청 단계별 검사. 각 함수는 거부 사유를 AppError 로 던진다(상태코드 포함).
-
-// 이메일 인증된 계정만 통과. 소셜 가입자는 가입 시점에 email_verified=true 로 저장되므로 별도 분기가 없다
-// (userRepository.createOauthUser / linkOauth). 사용자 행을 못 찾으면 인증된 것으로 가정하지 않는다.
-export async function requireVerifiedEmail(userId: string, language: Language): Promise<void> {
-  const status = await getVerificationStatus(userId);
-  if (!status?.emailVerified) {
-    throw new AppError(403, 'email_unverified', getTutorError(language, 'emailUnverified'));
-  }
-}
 
 export interface TutorInput {
   questionId: string;
