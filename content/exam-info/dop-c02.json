@@ -45,5 +45,48 @@
       "q": "한국어로 응시할 수 있나요?",
       "a": "네, 한국어를 포함해 총 4개 언어로 제공됩니다. 시험 등록 시 언어를 선택할 수 있습니다."
     }
-  ]
+  ],
+  "revision": {
+    "previousCode": "DOP-C01",
+    "oldUntil": "2023-03-06",
+    "newSince": "2023-03-07",
+    "oldDomains": [
+      {
+        "name": "SDLC 자동화",
+        "weight": 22
+      },
+      {
+        "name": "구성 관리 및 IaC",
+        "weight": 19
+      },
+      {
+        "name": "모니터링 및 로깅",
+        "weight": 15
+      },
+      {
+        "name": "정책 및 표준 자동화",
+        "weight": 10
+      },
+      {
+        "name": "인시던트 및 이벤트 대응",
+        "weight": 18
+      },
+      {
+        "name": "고가용성·내결함성·재해 복구",
+        "weight": 16
+      }
+    ],
+    "changes": [
+      "정책 및 표준 자동화(10%)가 보안 및 규정 준수(17%)로 바뀌어 비중이 커졌습니다.",
+      "고가용성·내결함성·재해 복구(16%)는 복원력 있는 클라우드 솔루션(15%)으로 바뀌었습니다.",
+      "구성 관리 및 IaC는 19%에서 17%로, 인시던트 및 이벤트 대응은 18%에서 14%로 줄었습니다.",
+      "채점 65문항·비채점 10문항과 합격 점수 750점은 그대로입니다.",
+      "AWS는 직무 분석(JTA)에 따라 내용을 갱신했다고만 밝혔고, 세부 주제의 추가·삭제 목록은 공개하지 않았습니다."
+    ],
+    "sources": [
+      "https://docs.aws.amazon.com/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02.html",
+      "https://web.archive.org/web/20230115/https://aws.amazon.com/certification/coming-soon/"
+    ],
+    "checkedAt": "2026-10-27"
+  }
 }

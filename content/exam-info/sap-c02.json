@@ -43,5 +43,58 @@
       "q": "한국어로 응시할 수 있나요?",
       "a": "네, 한국어를 포함해 총 6개 언어로 제공됩니다. 시험 등록 시 언어를 선택할 수 있습니다."
     }
-  ]
+  ],
+  "revision": {
+    "previousCode": "SAP-C01",
+    "oldUntil": "2022-11-14",
+    "newSince": "2022-11-15",
+    "oldDomains": [
+      {
+        "name": "조직 복잡성을 위한 설계",
+        "weight": 12.5
+      },
+      {
+        "name": "새 솔루션 설계",
+        "weight": 31
+      },
+      {
+        "name": "마이그레이션 계획",
+        "weight": 15
+      },
+      {
+        "name": "비용 관리",
+        "weight": 12.5
+      },
+      {
+        "name": "기존 솔루션의 지속적 개선",
+        "weight": 29
+      }
+    ],
+    "changes": [
+      "도메인이 5개에서 4개로 재편됐습니다. 마이그레이션 계획(15%)과 비용 관리(12.5%) 도메인이 없어지고, 워크로드 마이그레이션 및 현대화(20%)가 생겼습니다.",
+      "조직 복잡성 도메인 비중이 12.5%에서 26%로 크게 늘었습니다.",
+      "채점 65문항·비채점 10문항과 합격 점수 750점은 그대로입니다.",
+      "AWS는 세부 주제의 추가·삭제 목록을 공개하지 않았습니다."
+    ],
+    "sources": [
+      "https://web.archive.org/web/20220701/https://aws.amazon.com/certification/coming-soon/"
+    ],
+    "checkedAt": "2026-10-27"
+  },
+  "upcoming": {
+    "code": "SAP-C03",
+    "since": "2026-11-17",
+    "changes": [
+      "도메인이 4개에서 5개로 바뀝니다. 보안·규정 준수·거버넌스(25%)와 운영 우수성 및 자동화(20%)가 독립 도메인이 됩니다.",
+      "생성형 AI를 아키텍처에 통합하는 내용이 추가됩니다(Amazon Bedrock, AgentCore, RAG, Guardrails).",
+      "포스트 양자 암호, IPv6 듀얼 스택 전환, 데이터 레이크·레이크하우스, 멀티 테넌트 설계가 추가됩니다.",
+      "IoT 서비스 전체, AppStream 2.0·WorkSpaces, 미디어 서비스가 출제 범위 목록에서 빠집니다.",
+      "채점 65문항·비채점 10문항은 그대로이고, 합격 점수는 750점에서 720점으로 내려갑니다."
+    ],
+    "sources": [
+      "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-professional-03/sap-03-comparison.html",
+      "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03.html"
+    ],
+    "checkedAt": "2026-10-27"
+  }
 }

@@ -43,5 +43,38 @@
       "q": "한국어로 응시할 수 있나요?",
       "a": "네, 한국어를 포함해 총 9개 언어로 제공됩니다. 시험 등록 시 언어를 선택할 수 있습니다."
     }
-  ]
+  ],
+  "revision": {
+    "previousCode": "CLF-C01",
+    "oldUntil": "2023-09-18",
+    "newSince": "2023-09-19",
+    "oldDomains": [
+      {
+        "name": "클라우드 개념",
+        "weight": 26
+      },
+      {
+        "name": "보안 및 규정 준수",
+        "weight": 25
+      },
+      {
+        "name": "기술",
+        "weight": 33
+      },
+      {
+        "name": "청구 및 요금",
+        "weight": 16
+      }
+    ],
+    "changes": [
+      "클라우드 마이그레이션의 이점과 전략(AWS 클라우드 도입 프레임워크, AWS CAF 포함)을 다루는 과제 1.3이 새로 생겼습니다.",
+      "AWS는 CLF-C01에서 삭제된 내용은 없다고 밝혔습니다. 기존 과제는 CLF-C02의 다른 과제로 옮겨졌습니다.",
+      "보안 및 규정 준수 비중이 25%에서 30%로 늘고, 청구·요금 도메인은 지원 플랜까지 포함해 16%에서 12%로 줄었습니다.",
+      "채점 50문항·비채점 15문항과 합격 점수 700점은 그대로입니다."
+    ],
+    "sources": [
+      "https://d1.awsstatic.com/training-and-certification/docs-cloud-practitioner/AWS-Certified-Cloud-Practitioner_Exam-Guide.pdf"
+    ],
+    "checkedAt": "2026-10-27"
+  }
 }

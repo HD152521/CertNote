@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CERT_CANDIDATES, OTHER_CERT_KEY } from '@/lib/userInput/certCandidates';
+import { OTHER_CERT_KEY, certCandidatesFor } from '@/lib/userInput/certCandidates';
 import { OTHER_CERT_NAME_MAX, OTHER_CERT_NAME_MIN } from '@/lib/userInput/validate';
 import { Select } from '@/components/ui/Select';
 
@@ -82,7 +82,7 @@ export function CertRequestForm({ lang = 'ko' }: { lang?: 'ko' | 'en' }) {
           <Select
             value={certKey}
             onChange={setCertKey}
-            options={[...CERT_CANDIDATES.map((c) => ({ value: c.key, label: c.label })), { value: OTHER_CERT_KEY, label: t.other }]}
+            options={[...certCandidatesFor(lang).map((c) => ({ value: c.key, label: c.label })), { value: OTHER_CERT_KEY, label: t.other }]}
             placeholder={t.select}
             ariaLabel={t.select}
           />
