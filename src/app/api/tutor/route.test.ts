@@ -136,35 +136,13 @@ describe('POST /api/tutor — 인증', () => {
   });
 });
 
-describe('POST /api/tutor — 이메일 미인증', () => {
-  it('미인증 계정은 403 email_unverified, LLM 호출·쿼터 차감·캐시 조회 없음', async () => {
+describe('POST /api/tutor — 이메일 인증 불필요', () => {
+  // 튜터는 로그인만 하면 쓴다(이메일 인증 게이트 제거). 비용은 사용자·전역 일일 쿼터가 막는다.
+  it('이메일 미인증 계정도 통과한다', async () => {
     mocks.getVerificationStatus.mockResolvedValue({ email: USER.email, emailVerified: false });
-    const res = await POST(post(validBody()));
-    expect(res.status).toBe(403);
-    expect((await json(res)).error).toBe('email_unverified');
-    expectNoLlmAndNoQuota();
-    expect(mocks.getCachedExplanation).not.toHaveBeenCalled();
-  });
-
-  it('사용자 행을 못 찾으면(상태 null) 안전하게 403으로 막는다', async () => {
-    mocks.getVerificationStatus.mockResolvedValue(null);
-    const res = await POST(post(validBody()));
-    expect(res.status).toBe(403);
-    expectNoLlmAndNoQuota();
-  });
-
-  it('403 메시지는 요청 언어를 따른다', async () => {
-    mocks.getVerificationStatus.mockResolvedValue({ email: USER.email, emailVerified: false });
-    const en = await json(await POST(post(validBody({ language: 'en' }))));
-    const ko = await json(await POST(post(validBody({ language: 'ko' }))));
-    expect(en.message).toMatch(/verif/i);
-    expect(ko.message).toMatch(/인증/);
-  });
-
-  it('인증된 계정은 통과한다', async () => {
     const res = await POST(post(validBody()));
     expect(res.status).toBe(200);
-    expect(mocks.getVerificationStatus).toHaveBeenCalledWith(USER.sub);
+    expect(mocks.getVerificationStatus).not.toHaveBeenCalled();
   });
 });
 
