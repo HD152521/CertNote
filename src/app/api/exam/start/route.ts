@@ -18,7 +18,11 @@ export async function POST(req: Request) {
     }
     const certSlug = typeof body.certSlug === 'string' && body.certSlug ? body.certSlug : null;
     const count = Math.min(Math.max(1, body.count), MAX_COUNT);
-    const questions = buildExam(certSlug, count);
+    // 도메인 필터(선택). 문자열만, 개수·길이 상한을 둔다.
+    const domains = Array.isArray(body.domains)
+      ? (body.domains as unknown[]).filter((d): d is string => typeof d === 'string' && d.length > 0 && d.length <= 120).slice(0, 40)
+      : [];
+    const questions = buildExam(certSlug, count, domains);
     if (questions.length === 0) {
       throw new AppError(404, 'no_questions', '해당 범위에 문제가 없습니다.');
     }

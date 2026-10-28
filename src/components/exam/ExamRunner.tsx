@@ -9,8 +9,11 @@ import { Select } from '@/components/ui/Select';
 import { useLanguage } from '@/lib/i18n-client';
 import { QuestionReport } from '@/components/userInput/QuestionReport';
 import { InlineMd } from '@/components/InlineMd';
+import { domainKey } from '@/lib/exam/domainKey';
+import { ExamDomainScores, type DomainScore } from './ExamDomainScores';
+import { PracticeFeedback, type CheckResult } from './PracticeFeedback';
 
-interface CertOption { slug: string; code: string; name: string }
+interface CertOption { slug: string; code: string; name: string; domains: string[] }
 
 interface ExamQuestion {
   questionId: string;
@@ -37,9 +40,13 @@ interface ExamResult {
   passed: boolean;
   passMark: number;
   items: ExamResultItem[];
+  domains: DomainScore[];
 }
 
 type Phase = 'setup' | 'running' | 'result';
+// exam: 끝나고 한 번에 채점(제한 시간 사용 가능). practice: 문제마다 바로 정답·해설.
+type Mode = 'exam' | 'practice';
+interface StartOptions { certSlug: string; domains: string[]; mode: Mode }
 
 const COUNT_OPTIONS = [10, 20, 40];
 
@@ -58,6 +65,9 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
   const [count, setCount] = useState(20);
   const [useTimer, setUseTimer] = useState(true);
   const [minutes, setMinutes] = useState(20);
+  const [mode, setMode] = useState<Mode>('exam');
+  const [selDomains, setSelDomains] = useState<string[]>([]); // 빈 배열 = 전체 도메인
+  const [runMode, setRunMode] = useState<Mode>('exam'); // 진행 중인 세트의 모드
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,6 +78,8 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
   const [idx, setIdx] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [checked, setChecked] = useState<Record<string, CheckResult>>({});
+  const [checking, setChecking] = useState(false);
 
   // result
   const [result, setResult] = useState<ExamResult | null>(null);
@@ -115,14 +127,14 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
     return () => clearTimeout(t);
   }, [phase, timeLeft]);
 
-  async function start() {
+  async function start(opts: StartOptions = { certSlug, domains: selDomains, mode }) {
     setStarting(true);
     setError(null);
     try {
       const res = await fetch('/api/exam/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ certSlug: certSlug || undefined, count }),
+        body: JSON.stringify({ certSlug: opts.certSlug || undefined, count, domains: opts.domains }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -135,7 +147,9 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
       setIdx(0);
       setResult(null);
       setFilterWrong(false);
-      setTimeLeft(useTimer ? Math.max(1, minutes) * 60 : null);
+      setChecked({});
+      setRunMode(opts.mode);
+      setTimeLeft(opts.mode === 'exam' && useTimer ? Math.max(1, minutes) * 60 : null);
       setPhase('running');
     } catch {
       setError(lang === 'en' ? 'Network error occurred.' : '네트워크 오류가 발생했습니다.');
@@ -144,7 +158,43 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
     }
   }
 
+  // 연습 모드: 고른 답을 서버에서 확인하고 해설을 붙인다. 확인한 문제는 답을 바꿀 수 없다.
+  async function check(q: ExamQuestion) {
+    const selected = answers[q.questionId];
+    if (!selected || checked[q.questionId] || checking) return;
+    setChecking(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/exam/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questionId: q.questionId, selected }),
+      });
+      if (!res.ok) throw new Error();
+      const data = (await res.json()) as CheckResult;
+      setChecked((prev) => ({ ...prev, [q.questionId]: data }));
+    } catch {
+      setError(lang === 'en' ? 'Could not check the answer. Please try again.' : '정답을 확인하지 못했습니다. 다시 시도해 주세요.');
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  // 결과 화면 "약한 도메인만 연습하기" — 같은 문항 수로, 연습 모드로 바로 시작.
+  function retryWeak(weak: DomainScore[]) {
+    const domains = certSlug ? weak.map((d) => d.domain) : weak.map((d) => domainKey(d.slug, d.domain));
+    setMode('practice');
+    // 자격증을 고른 경우에만 칩으로 보이므로 그때만 남긴다. 전체 범위의 slug::도메인 키는 이번 세트에만 쓴다.
+    setSelDomains(certSlug ? domains : []);
+    start({ certSlug, domains, mode: 'practice' });
+  }
+
+  function toggleDomain(d: string) {
+    setSelDomains((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
+  }
+
   function pick(q: ExamQuestion, label: string) {
+    if (checked[q.questionId]) return;
     setAnswers((prev) => {
       if (!q.multi) return { ...prev, [q.questionId]: label };
       // 복수 응답: 토글 후 정규화("B,D"). 모두 해제하면 키 제거(미응답).
@@ -169,6 +219,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
     setAnswers({});
     setMarked(new Set());
     setResult(null);
+    setChecked({});
     setError(null);
   }
   function trySubmit() {
@@ -177,14 +228,51 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
     submit();
   }
 
+  const domainOptions = certs.find((c) => c.slug === certSlug)?.domains ?? [];
+
   if (phase === 'setup') {
     return (
       <div className="space-y-6">
         <div className="space-y-2">
           <label className="block text-sm text-fg-muted">{lang === 'en' ? 'Certification' : '자격증 범위'}</label>
-          <Select value={certSlug} onChange={setCertSlug}
+          <Select value={certSlug} onChange={(v) => { setCertSlug(v); setSelDomains([]); }}
             options={[{ value: '', label: lang === 'en' ? 'All Certifications' : '전체 자격증' }, ...certs.map((c) => ({ value: c.slug, label: `${c.code} — ${c.name}` }))]}
             ariaLabel={lang === 'en' ? 'Certification' : '자격증'} />
+        </div>
+
+        {domainOptions.length > 0 && (
+          <div className="space-y-2">
+            <label className="block text-sm text-fg-muted">
+              {lang === 'en' ? 'Domains' : '도메인'} <span className="text-xs text-fg-faint">{lang === 'en' ? '(none selected = all)' : '(안 고르면 전체)'}</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {domainOptions.map((d) => (
+                <button key={d} type="button" onClick={() => toggleDomain(d)} aria-pressed={selDomains.includes(d)}
+                  className={cn('rounded-md border px-3 py-1.5 text-sm transition',
+                    selDomains.includes(d) ? 'border-accent bg-accent/10 text-fg' : 'border-border text-fg-muted hover:text-fg')}>
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <label className="block text-sm text-fg-muted">{lang === 'en' ? 'Mode' : '모드'}</label>
+          <div className="flex gap-2">
+            {(['exam', 'practice'] as const).map((m) => (
+              <button key={m} type="button" onClick={() => setMode(m)} aria-pressed={mode === m}
+                className={cn('flex-1 rounded-md border px-3 py-2 text-left text-sm transition',
+                  mode === m ? 'border-accent bg-accent/10 text-fg' : 'border-border text-fg-muted hover:text-fg')}>
+                <span className="block font-medium">{m === 'exam' ? (lang === 'en' ? 'Exam' : '실전') : (lang === 'en' ? 'Practice' : '연습')}</span>
+                <span className="block text-xs text-fg-faint">
+                  {m === 'exam'
+                    ? (lang === 'en' ? 'Graded at the end' : '끝나고 한 번에 채점')
+                    : (lang === 'en' ? 'Answer after each question' : '문제마다 바로 해설')}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -200,7 +288,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
           </div>
         </div>
 
-        <div className="space-y-2">
+        {mode === 'exam' && <div className="space-y-2">
           <label className="flex items-center gap-2 text-sm text-fg">
             <input type="checkbox" checked={useTimer} onChange={(e) => setUseTimer(e.target.checked)} />
             {lang === 'en' ? 'Use Time Limit' : '제한 시간 사용'}
@@ -213,17 +301,21 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
               {lang === 'en' ? 'min' : '분'}
             </div>
           )}
-        </div>
+        </div>}
 
         {error && <p className="text-sm text-danger" role="alert">{error}</p>}
-        <button type="button" onClick={start} disabled={starting}
+        <button type="button" onClick={() => start()} disabled={starting}
           className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50">
           {starting ? (lang === 'en' ? 'Preparing…' : '준비 중…') : (lang === 'en' ? 'Start Exam' : '시험 시작')}
         </button>
         <p className="text-xs text-fg-faint">
-          {lang === 'en'
-            ? `Answers won't be shown until you submit. After submission, all questions are graded at once, and wrong answers are added to your review queue.`
-            : '제출 전까지 정답은 표시되지 않습니다. 제출 후 일괄 채점되고, 틀린 문제는 복습 큐에 쌓입니다.'}
+          {mode === 'practice'
+            ? (lang === 'en'
+              ? 'Pick an answer and press Check to see the explanation. Results are recorded when you finish, and wrong answers go to your review queue.'
+              : '답을 고르고 "정답 확인"을 누르면 바로 해설이 나옵니다. 마지막에 결과를 보면 기록되고, 틀린 문제는 복습 큐에 쌓입니다.')
+            : (lang === 'en'
+              ? `Answers won't be shown until you submit. After submission, all questions are graded at once, and wrong answers are added to your review queue.`
+              : '제출 전까지 정답은 표시되지 않습니다. 제출 후 일괄 채점되고, 틀린 문제는 복습 큐에 쌓입니다.')}
         </p>
       </div>
     );
@@ -232,6 +324,7 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
   if (phase === 'running') {
     const q = questions[idx];
     const pickedSet = new Set((answers[q.questionId] ?? '').split(',').filter(Boolean));
+    const fb = checked[q.questionId];
     const isLow = timeLeft !== null && timeLeft <= 60;
     return (
       <div className="space-y-4">
@@ -278,11 +371,16 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
           <ul className="space-y-2">
             {q.choices.map((c) => {
               const isPicked = pickedSet.has(c.label);
+              // 연습 모드에서 확인한 뒤엔 정답 초록, 내 오답 빨강으로 보기 자체를 칠한다.
+              const isAnswer = !!fb && fb.answer.toUpperCase().includes(c.label);
+              const tone = fb
+                ? isAnswer ? 'border-success/50 bg-success/10' : isPicked ? 'border-danger/50 bg-danger/10' : 'border-border opacity-70'
+                : isPicked ? 'border-accent bg-accent/10' : 'border-border hover:border-border-strong';
               return (
                 <li key={c.label}>
-                  <button type="button" onClick={() => pick(q, c.label)} aria-pressed={isPicked}
-                    className={cn('flex w-full items-start gap-3 rounded-md border px-3 py-2.5 text-left transition',
-                      isPicked ? 'border-accent bg-accent/10' : 'border-border hover:border-border-strong')}>
+                  <button type="button" onClick={() => pick(q, c.label)} aria-pressed={isPicked} disabled={!!fb}
+                    className={cn('flex w-full items-start gap-3 rounded-md border px-3 py-2.5 text-left transition disabled:cursor-default',
+                      tone)}>
                     <span className={cn('mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center font-mono text-[10px]',
                       q.multi ? 'rounded' : 'rounded-full',
                       isPicked ? 'bg-accent text-white' : 'border border-border-strong text-fg-muted')}>{c.label}</span>
@@ -292,6 +390,13 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
               );
             })}
           </ul>
+          {runMode === 'practice' && !fb && (
+            <button type="button" onClick={() => check(q)} disabled={!answers[q.questionId] || checking}
+              className="mt-3 w-full rounded-md border border-accent/60 bg-accent/10 px-3 py-2 text-sm font-medium text-fg transition hover:bg-accent/15 disabled:opacity-40">
+              {checking ? (lang === 'en' ? 'Checking…' : '확인 중…') : (lang === 'en' ? 'Check Answer' : '정답 확인')}
+            </button>
+          )}
+          {fb && <PracticeFeedback result={fb} lang={lang} />}
         </div>
 
         {error && <p className="text-sm text-danger">{error}</p>}
@@ -344,6 +449,9 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
           ? 'Wrong answers have been automatically added to your review queue.'
           : '틀린 문제는 오답노트(복습 큐)에 자동으로 추가됐어요.'}
       </p>
+
+      {error && <p className="text-sm text-danger" role="alert">{error}</p>}
+      <ExamDomainScores rows={r.domains ?? []} passMark={r.passMark} multiCert={!certSlug} lang={lang} onRetryWeak={retryWeak} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
