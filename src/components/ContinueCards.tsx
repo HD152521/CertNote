@@ -6,6 +6,7 @@ import { ArrowRight, Clock, Sparkles } from 'lucide-react';
 import type { CertMeta } from '@/lib/content';
 import type { StarterDay } from '@/lib/study/starter';
 import { onProgressChange, readProgress, type ProgressEntry } from '@/lib/progress';
+import { markResumeIntent, readPosition, resumeHref, shouldOfferResume } from '@/lib/readingPosition';
 import { cn } from '@/lib/cn';
 import { useLanguage } from '@/lib/i18n-client';
 import { pick } from '@/lib/strings/dict';
@@ -17,7 +18,8 @@ interface ContinueCardsProps {
   starter?: StarterDay | null;
 }
 
-interface Row { cert: CertMeta; entry: ProgressEntry; }
+// href 는 읽던 소제목이 있으면 #소제목까지 붙은 주소, midway 는 노트 중간에서 멈췄는지.
+interface Row { cert: CertMeta; entry: ProgressEntry; href: string; midway: boolean }
 
 export function ContinueCards({ certs, starter }: ContinueCardsProps) {
   const s = pick(chromeStrings, useLanguage());
@@ -28,7 +30,9 @@ export function ContinueCards({ certs, starter }: ContinueCardsProps) {
       const list: Row[] = [];
       for (const cert of certs) {
         const entry = prog[cert.slug]?.lastVisited;
-        if (entry) list.push({ cert, entry });
+        if (!entry) continue;
+        const pos = readPosition(entry.href);
+        list.push({ cert, entry, href: resumeHref(entry.href, pos), midway: shouldOfferResume(pos) });
       }
       list.sort((a, b) => b.entry.at - a.entry.at);
       setRows(list);
@@ -69,10 +73,11 @@ export function ContinueCards({ certs, starter }: ContinueCardsProps) {
         <Clock className="h-3.5 w-3.5" /> {s.continueReading}
       </h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {rows.slice(0, 4).map(({ cert, entry }) => (
+        {rows.slice(0, 4).map(({ cert, entry, href, midway }) => (
           <Link
             key={cert.slug}
-            href={entry.href}
+            href={href}
+            onClick={() => midway && markResumeIntent(entry.href)}
             className={cn('group flex flex-col gap-1.5 rounded-lg border border-border bg-bg-elevated p-4', 'transition hover:border-border-strong')}
           >
             <div className="flex items-center justify-between">

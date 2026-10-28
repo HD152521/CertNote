@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { MAX_ENTRIES, pickCurrentHeading, putPosition, resumeHref, shouldOfferResume, type ReadingPosition } from './readingPosition';
+import { MAX_ENTRIES, pickCurrentHeading, putPosition, resumeHref, resumeScrollY, sectionWithin, shouldOfferResume, type ReadingPosition } from './readingPosition';
 
 const pos = (over: Partial<ReadingPosition> = {}): ReadingPosition => ({
   headingId: 'iam-정책',
@@ -63,5 +63,36 @@ describe('resumeHref', () => {
     expect(resumeHref('/aws/saa-c03/week1/day2', pos())).toBe(`/aws/saa-c03/week1/day2#${encodeURIComponent('iam-정책')}`);
     expect(resumeHref('/aws/saa-c03/week1/day2', pos({ ratio: 0.02 }))).toBe('/aws/saa-c03/week1/day2');
     expect(resumeHref('/x', undefined)).toBe('/x');
+  });
+});
+
+describe('sectionWithin', () => {
+  // 소제목 a(top 1000) → b(top 2000). offset 96 은 화면 위 여백.
+  const hs = [{ id: 'a', top: 1000 }, { id: 'b', top: 2000 }];
+
+  test('is 0 right at the heading and grows through the section', () => {
+    expect(sectionWithin(hs, 0, 1000 - 96, 5000)).toBe(0);
+    expect(sectionWithin(hs, 0, 1500 - 96, 5000)).toBeCloseTo(0.5);
+  });
+
+  test('uses the document end for the last heading', () => {
+    expect(sectionWithin(hs, 1, 3000 - 96, 4000)).toBeCloseTo(0.5);
+  });
+
+  test('stays between 0 and 1', () => {
+    expect(sectionWithin(hs, 0, 0, 5000)).toBe(0);
+    expect(sectionWithin(hs, 0, 99999, 5000)).toBe(1);
+    expect(sectionWithin([{ id: 'x', top: 100 }], 0, 500, 100)).toBe(0); // 구간 길이 0
+  });
+});
+
+describe('resumeScrollY', () => {
+  test('lands at the same fraction of the section as when it was saved', () => {
+    expect(resumeScrollY(1000, 2000, 0.5)).toBe(1500 - 96);
+    expect(resumeScrollY(1000, 2000, 0)).toBe(1000 - 96);
+  });
+
+  test('never goes above the top of the page', () => {
+    expect(resumeScrollY(50, 400, 0)).toBe(0);
   });
 });
