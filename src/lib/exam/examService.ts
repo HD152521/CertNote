@@ -1,6 +1,7 @@
 import { getAllExamQuestions, getExamQuestionById, getExamQuestionsByCert, type ExamBankQuestion } from './examBank';
 import { isMultiAnswer, isSelectionCorrect, normalizeSelection } from '../quiz/correctness';
 import { getAttemptService } from '../quiz/attemptService';
+import { DOMAIN_KEY_SEP, domainKey } from './domainKey';
 
 // AWS 시험 합격선은 1000점 만점 720점(≈72%). 모의고사도 동일 기준으로 합/불 판정.
 export const PASS_MARK = 72;
@@ -24,6 +25,15 @@ export interface ExamResultItem extends ExamQuestion {
   explanation: string;
 }
 
+// 결과 화면의 도메인별 점수 한 줄. 같은 도메인 이름이 다른 자격증에도 있어 slug 와 함께 묶는다.
+export interface DomainScore {
+  slug: string;
+  domain: string;
+  total: number;
+  correct: number;
+  rate: number; // 0~100
+}
+
 export interface ExamResult {
   total: number;
   answered: number;
@@ -32,7 +42,16 @@ export interface ExamResult {
   passed: boolean;
   passMark: number;
   items: ExamResultItem[];
+  domains: DomainScore[]; // 정답률 낮은 순
 }
+
+// 연습 모드에서 한 문제씩 확인한 결과.
+export interface CheckResult {
+  correct: boolean;
+  answer: string;
+  explanation: string;
+}
+
 
 function toExamQuestion(q: ExamBankQuestion): ExamQuestion {
   return { questionId: q.id, number: q.number, prompt: q.prompt, choices: q.choices, slug: q.slug, domain: q.domain, multi: isMultiAnswer(q.answer) };
@@ -85,11 +104,41 @@ function sampleByDomain(pool: readonly ExamBankQuestion[], n: number): ExamBankQ
   return shuffle(picked);
 }
 
+// 고른 도메인으로 문제 풀을 좁힌다. 빈 목록이면 그대로. 자격증에 없는 도메인은 무시된다.
+function filterByDomains(pool: readonly ExamBankQuestion[], certSlug: string | null, domains: readonly string[]): ExamBankQuestion[] {
+  if (domains.length === 0) return pool.slice();
+  const keys = new Set(domains.map((d) => (certSlug && !d.includes(DOMAIN_KEY_SEP) ? domainKey(certSlug, d) : d)));
+  return pool.filter((q) => keys.has(domainKey(q.slug, q.domain)));
+}
+
 // 모의고사 은행(day 퀴즈와 별개)에서 자격증(없으면 전체) count문항을 도메인 비례로 정답 없이 반환.
-export function buildExam(certSlug: string | null, count: number): ExamQuestion[] {
-  const pool = certSlug ? getExamQuestionsByCert(certSlug) : getAllExamQuestions();
+// domains 를 주면 그 도메인에서만 뽑는다(약한 도메인 다시 풀기·도메인 연습).
+export function buildExam(certSlug: string | null, count: number, domains: readonly string[] = []): ExamQuestion[] {
+  const pool = filterByDomains(certSlug ? getExamQuestionsByCert(certSlug) : getAllExamQuestions(), certSlug, domains);
+  if (pool.length === 0) return [];
   const n = Math.min(Math.max(1, Math.floor(count) || 1), Math.min(MAX_COUNT, pool.length));
   return sampleByDomain(pool, n).slice(0, n).map(toExamQuestion);
+}
+
+// 채점 항목을 자격증·도메인별로 묶어 정답률 낮은 순으로. 미응답은 오답으로 센다.
+export function summarizeByDomain(items: readonly ExamResultItem[]): DomainScore[] {
+  const map = new Map<string, DomainScore>();
+  for (const it of items) {
+    const key = domainKey(it.slug, it.domain);
+    const cur = map.get(key) ?? { slug: it.slug, domain: it.domain, total: 0, correct: 0, rate: 0 };
+    map.set(key, { ...cur, total: cur.total + 1, correct: cur.correct + (it.correct ? 1 : 0) });
+  }
+  return [...map.values()]
+    .map((d) => ({ ...d, rate: Math.round((d.correct / d.total) * 100) }))
+    .sort((a, b) => a.rate - b.rate || b.total - a.total);
+}
+
+// 연습 모드: 한 문제의 정답·해설. 기록은 하지 않는다(마지막 제출 때 gradeExam 이 한 번만 기록).
+export function checkAnswer(questionId: string, selected: string): CheckResult | null {
+  const q = getExamQuestionById(questionId);
+  const picked = selected ? normalizeSelection(selected) : '';
+  if (!q || !picked) return null;
+  return { correct: isSelectionCorrect(q.answer, picked), answer: q.answer, explanation: q.explanation };
 }
 
 // 제출 채점: 미응답은 오답 처리, 응답분은 attempt로 기록(오답 자동 복습 적재 + 대시보드 반영).
@@ -125,5 +174,5 @@ export async function gradeExam(
   }
   const total = items.length;
   const score = total > 0 ? Math.round((correct / total) * 100) : 0;
-  return { total, answered, correct, score, passed: score >= PASS_MARK, passMark: PASS_MARK, items };
+  return { total, answered, correct, score, passed: score >= PASS_MARK, passMark: PASS_MARK, items, domains: summarizeByDomain(items) };
 }
