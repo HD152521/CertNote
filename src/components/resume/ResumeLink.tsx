@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Clock, ArrowRight } from 'lucide-react';
 import { onProgressChange, readProgress, type ProgressEntry } from '@/lib/progress';
-import { readPosition, resumeHref, shouldOfferResume } from '@/lib/readingPosition';
+import { markResumeIntent, readPosition, resumeHref, shouldOfferResume } from '@/lib/readingPosition';
 
 interface Resume {
   slug: string;
@@ -43,6 +43,7 @@ export function ResumeLink({ slug, codes, className }: { slug?: string; codes?: 
   return (
     <Link
       href={resume.href}
+      onClick={() => resume.midway && markResumeIntent(entry.href)}
       className={`group flex items-center gap-3 rounded-lg border border-accent/40 bg-accent/5 px-4 py-3 transition hover:border-accent ${className ?? ''}`}
     >
       <Clock className="h-4 w-4 shrink-0 text-accent" />
