@@ -33,7 +33,7 @@ export function AccountStrip({ state }: { state: SimState }) {
     <div className="border-t border-border bg-bg-subtle px-4 py-3">
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-fg-muted">계정 리소스</span>
-        <span className="font-mono text-[11px] text-fg-faint">{list.length}개</span>
+        <span className="text-[11px] text-fg-faint">계정 번호·ID·시각은 예시 값 · {list.length}개</span>
       </div>
       {list.length === 0 ? (
         <div className="text-[13px] text-fg-faint">아직 만든 리소스가 없어요. 명령으로 무언가를 만들면 여기에 나타나요.</div>
