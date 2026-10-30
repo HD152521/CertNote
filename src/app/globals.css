@@ -153,3 +153,12 @@ html, body {
 .article--summary li:first-child { margin-top: 0; }
 .article--summary li:last-child { margin-bottom: 0; }
 .article--summary p { margin: 0.4rem 0; }
+
+/* CLI 연습장: 계정 리소스가 생기거나 바뀐 순간 한 번 빛난다(AccountStrip). */
+@keyframes cli-flash {
+  0% { background-color: color-mix(in srgb, var(--accent) 22%, var(--bg)); border-color: var(--accent); }
+  100% { background-color: var(--bg); border-color: var(--border-strong); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cli-flash { animation: cli-flash 1.4s ease-out; }
+}
