@@ -44,7 +44,7 @@
     },
     {
       "cmd": "ls -l",
-      "stdout": "total 8\ndrwxr-xr-x 3 root root 4096 Oct 31 04:30 a\ndrwxr-xr-x 2 root root 4096 Oct 31 04:30 docs\n-rw-r--r-- 1 root root    0 Oct 31 04:30 f1\n-rw-r--r-- 1 root root    0 Oct 31 04:30 f2\n",
+      "stdout": "total 8\ndrwxr-xr-x 3 root root 4096 Oct 31 05:30 a\ndrwxr-xr-x 2 root root 4096 Oct 31 05:30 docs\n-rw-r--r-- 1 root root    0 Oct 31 05:30 f1\n-rw-r--r-- 1 root root    0 Oct 31 05:30 f2\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -152,7 +152,7 @@
     },
     {
       "cmd": "ls -la",
-      "stdout": "total 16\ndrwxr-xr-x 3 root root 4096 Oct 31 04:30 .\ndrwxr-xr-x 3 root root 4096 Oct 31 04:30 ..\ndrwxr-xr-x 3 root root 4096 Oct 31 04:30 docs\n-rw-r--r-- 1 root root   12 Oct 31 04:30 f1\n-rw-r--r-- 1 root root    0 Oct 31 04:30 f2-renamed\n",
+      "stdout": "total 16\ndrwxr-xr-x 3 root root 4096 Oct 31 05:30 .\ndrwxr-xr-x 3 root root 4096 Oct 31 05:30 ..\ndrwxr-xr-x 3 root root 4096 Oct 31 05:30 docs\n-rw-r--r-- 1 root root   12 Oct 31 05:30 f1\n-rw-r--r-- 1 root root    0 Oct 31 05:30 f2-renamed\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -206,13 +206,13 @@
     },
     {
       "cmd": "ls -ld docs",
-      "stdout": "drwxr-xr-x 3 root root 4096 Oct 31 04:30 docs\n",
+      "stdout": "drwxr-xr-x 3 root root 4096 Oct 31 05:30 docs\n",
       "stderr": "",
       "exitCode": 0
     },
     {
       "cmd": "ls -lh",
-      "stdout": "total 8.0K\ndrwxr-xr-x 3 root root 4.0K Oct 31 04:30 docs\n-rw-r--r-- 1 root root   12 Oct 31 04:30 f1\n-rw-r--r-- 1 root root    0 Oct 31 04:30 f2-renamed\n",
+      "stdout": "total 8.0K\ndrwxr-xr-x 3 root root 4.0K Oct 31 05:30 docs\n-rw-r--r-- 1 root root   12 Oct 31 05:30 f1\n-rw-r--r-- 1 root root    0 Oct 31 05:30 f2-renamed\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -346,7 +346,7 @@
     },
     {
       "cmd": "ls -l p",
-      "stdout": "-rwxr-xr-- 1 root root 0 Oct 31 04:30 p\n",
+      "stdout": "-rwxr-xr-- 1 root root 0 Oct 31 05:30 p\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -358,7 +358,7 @@
     },
     {
       "cmd": "ls -l p",
-      "stdout": "-rw-rwx--- 1 root root 0 Oct 31 04:30 p\n",
+      "stdout": "-rw-rwx--- 1 root root 0 Oct 31 05:30 p\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -370,7 +370,7 @@
     },
     {
       "cmd": "ls -l p",
-      "stdout": "-rwxrwxrwx 1 root root 0 Oct 31 04:30 p\n",
+      "stdout": "-rwxrwxrwx 1 root root 0 Oct 31 05:30 p\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -382,7 +382,7 @@
     },
     {
       "cmd": "ls -l p",
-      "stdout": "-rwxrwx--- 1 root root 0 Oct 31 04:30 p\n",
+      "stdout": "-rwxrwx--- 1 root root 0 Oct 31 05:30 p\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -394,7 +394,7 @@
     },
     {
       "cmd": "ls -l p",
-      "stdout": "-rwsr-xr-x 1 root root 0 Oct 31 04:30 p\n",
+      "stdout": "-rwsr-xr-x 1 root root 0 Oct 31 05:30 p\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -406,7 +406,7 @@
     },
     {
       "cmd": "ls -l p",
-      "stdout": "-rwSr-xr-x 1 root root 0 Oct 31 04:30 p\n",
+      "stdout": "-rwSr-xr-x 1 root root 0 Oct 31 05:30 p\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -418,7 +418,7 @@
     },
     {
       "cmd": "ls -l p",
-      "stdout": "-rwxr-s--- 1 root root 0 Oct 31 04:30 p\n",
+      "stdout": "-rwxr-s--- 1 root root 0 Oct 31 05:30 p\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -430,7 +430,7 @@
     },
     {
       "cmd": "ls -l p",
-      "stdout": "-rwxr-S--- 1 root root 0 Oct 31 04:30 p\n",
+      "stdout": "-rwxr-S--- 1 root root 0 Oct 31 05:30 p\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -448,7 +448,7 @@
     },
     {
       "cmd": "ls -ld d",
-      "stdout": "drwxrwxrwt 2 root root 4096 Oct 31 04:30 d\n",
+      "stdout": "drwxrwxrwt 2 root root 4096 Oct 31 05:30 d\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -460,7 +460,7 @@
     },
     {
       "cmd": "ls -ld d",
-      "stdout": "drwxrwxrwT 2 root root 4096 Oct 31 04:30 d\n",
+      "stdout": "drwxrwxrwT 2 root root 4096 Oct 31 05:30 d\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -478,7 +478,7 @@
     },
     {
       "cmd": "ls -l p",
-      "stdout": "-rwxr-xr-x 1 root root 0 Oct 31 04:30 p\n",
+      "stdout": "-rwxr-xr-x 1 root root 0 Oct 31 05:30 p\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -490,13 +490,13 @@
     },
     {
       "cmd": "stat p",
-      "stdout": "  File: p\n  Size: 0         \tBlocks: 0          IO Block: 4096   regular empty file\nDevice: 83h/131d\tInode: 62797007    Links: 1\nAccess: (0755/-rwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)\nAccess: 2026-10-31 04:30:36.809059144 +0000\nModify: 2026-10-31 04:30:36.809059144 +0000\nChange: 2026-10-31 04:30:36.914217234 +0000\n Birth: 2026-10-31 04:30:36.809059144 +0000\n",
+      "stdout": "  File: p\n  Size: 0         \tBlocks: 0          IO Block: 4096   regular empty file\nDevice: 83h/131d\tInode: 62796991    Links: 1\nAccess: (0755/-rwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)\nAccess: 2026-10-31 05:30:04.605330352 +0000\nModify: 2026-10-31 05:30:04.605330352 +0000\nChange: 2026-10-31 05:30:04.700552325 +0000\n Birth: 2026-10-31 05:30:04.605330352 +0000\n",
       "stderr": "",
       "exitCode": 0
     },
     {
       "cmd": "stat d",
-      "stdout": "  File: d\n  Size: 4096      \tBlocks: 8          IO Block: 4096   directory\nDevice: 83h/131d\tInode: 62797059    Links: 2\nAccess: (1776/drwxrwxrwT)  Uid: (    0/    root)   Gid: (    0/    root)\nAccess: 2026-10-31 04:30:36.882669806 +0000\nModify: 2026-10-31 04:30:36.882669806 +0000\nChange: 2026-10-31 04:30:36.903701424 +0000\n Birth: 2026-10-31 04:30:36.882669806 +0000\n",
+      "stdout": "  File: d\n  Size: 4096      \tBlocks: 8          IO Block: 4096   directory\nDevice: 83h/131d\tInode: 62797059    Links: 2\nAccess: (1776/drwxrwxrwT)  Uid: (    0/    root)   Gid: (    0/    root)\nAccess: 2026-10-31 05:30:04.679391884 +0000\nModify: 2026-10-31 05:30:04.679391884 +0000\nChange: 2026-10-31 05:30:04.689972106 +0000\n Birth: 2026-10-31 05:30:04.679391884 +0000\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -532,7 +532,7 @@
     },
     {
       "cmd": "ls -ld q qd",
-      "stdout": "-rw-r----- 1 root root    0 Oct 31 04:30 q\ndrwxr-x--- 2 root root 4096 Oct 31 04:30 qd\n",
+      "stdout": "-rw-r----- 1 root root    0 Oct 31 05:30 q\ndrwxr-x--- 2 root root 4096 Oct 31 05:30 qd\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -568,7 +568,7 @@
     },
     {
       "cmd": "ls -l p",
-      "stdout": "---------- 1 root root 0 Oct 31 04:30 p\n",
+      "stdout": "---------- 1 root root 0 Oct 31 05:30 p\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -580,7 +580,7 @@
     },
     {
       "cmd": "ls -ld d",
-      "stdout": "drwxr-x--- 2 root root 4096 Oct 31 04:30 d\n",
+      "stdout": "drwxr-x--- 2 root root 4096 Oct 31 05:30 d\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -592,7 +592,7 @@
     },
     {
       "cmd": "ls -l p",
-      "stdout": "-r--r--r-- 1 root root 0 Oct 31 04:30 p\n",
+      "stdout": "-r--r--r-- 1 root root 0 Oct 31 05:30 p\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -604,7 +604,7 @@
     },
     {
       "cmd": "ls -l p",
-      "stdout": "-rw-r--r-- 1 root root 0 Oct 31 04:30 p\n",
+      "stdout": "-rw-r--r-- 1 root root 0 Oct 31 05:30 p\n",
       "stderr": "",
       "exitCode": 0
     }
@@ -648,7 +648,7 @@
     },
     {
       "cmd": "ls -l",
-      "stdout": "total 0\n-rw-r--r-- 1 alice root 0 Oct 31 04:30 f\n-rw-r--r-- 1 alice dev  0 Oct 31 04:30 g\n-rw-r--r-- 1 root  dev  0 Oct 31 04:30 h\n",
+      "stdout": "total 0\n-rw-r--r-- 1 alice root 0 Oct 31 05:30 f\n-rw-r--r-- 1 alice dev  0 Oct 31 05:30 g\n-rw-r--r-- 1 root  dev  0 Oct 31 05:30 h\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -678,7 +678,7 @@
     },
     {
       "cmd": "ls -l",
-      "stdout": "total 0\n-rw-r--r-- 1 alice root  0 Oct 31 04:30 f\n-rw-r--r-- 1 root  root  0 Oct 31 04:30 g\n-rw-r--r-- 1 root  alice 0 Oct 31 04:30 h\n",
+      "stdout": "total 0\n-rw-r--r-- 1 alice root  0 Oct 31 05:30 f\n-rw-r--r-- 1 root  root  0 Oct 31 05:30 g\n-rw-r--r-- 1 root  alice 0 Oct 31 05:30 h\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -708,7 +708,7 @@
     },
     {
       "cmd": "ls -lR t",
-      "stdout": "t:\ntotal 4\ndrwxr-xr-x 2 alice dev 4096 Oct 31 04:30 u\n\nt/u:\ntotal 0\n-rw-r--r-- 1 alice dev 0 Oct 31 04:30 v\n",
+      "stdout": "t:\ntotal 4\ndrwxr-xr-x 2 alice dev 4096 Oct 31 05:30 u\n\nt/u:\ntotal 0\n-rw-r--r-- 1 alice dev 0 Oct 31 05:30 v\n",
       "stderr": "",
       "exitCode": 0
     }
@@ -734,7 +734,7 @@
     },
     {
       "cmd": "ls -li",
-      "stdout": "total 8\n62797007 -rw-r--r-- 2 root root 5 Oct 31 04:30 hard\n62797007 -rw-r--r-- 2 root root 5 Oct 31 04:30 orig\n62797014 lrwxrwxrwx 1 root root 4 Oct 31 04:30 soft -> orig\n",
+      "stdout": "total 8\n62797007 -rw-r--r-- 2 root root 5 Oct 31 05:30 hard\n62797007 -rw-r--r-- 2 root root 5 Oct 31 05:30 orig\n62797014 lrwxrwxrwx 1 root root 4 Oct 31 05:30 soft -> orig\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -758,7 +758,7 @@
     },
     {
       "cmd": "ls -l",
-      "stdout": "total 4\n-rw-r--r-- 1 root root 5 Oct 31 04:30 hard\nlrwxrwxrwx 1 root root 4 Oct 31 04:30 soft -> orig\n",
+      "stdout": "total 4\n-rw-r--r-- 1 root root 5 Oct 31 05:30 hard\nlrwxrwxrwx 1 root root 4 Oct 31 05:30 soft -> orig\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -782,7 +782,7 @@
     },
     {
       "cmd": "ls -l abs",
-      "stdout": "lrwxrwxrwx 1 root root 11 Oct 31 04:30 abs -> /lab/w/hard\n",
+      "stdout": "lrwxrwxrwx 1 root root 11 Oct 31 05:30 abs -> /lab/w/hard\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -812,7 +812,7 @@
     },
     {
       "cmd": "ls -l dl",
-      "stdout": "lrwxrwxrwx 1 root root 3 Oct 31 04:30 dl -> dir\n",
+      "stdout": "lrwxrwxrwx 1 root root 3 Oct 31 05:30 dl -> dir\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -836,7 +836,7 @@
     },
     {
       "cmd": "ls -ld dir",
-      "stdout": "drwxr-xr-x 2 root root 4096 Oct 31 04:30 dir\n",
+      "stdout": "drwxr-xr-x 2 root root 4096 Oct 31 05:30 dir\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -916,13 +916,13 @@
     },
     {
       "cmd": "ls -la /home/alice",
-      "stdout": "total 20\ndrwx------ 2 alice alice 4096 Oct 31 04:30 .\ndrwxr-xr-x 1 root  root  4096 Oct 31 04:30 ..\n-rw-r--r-- 1 alice alice   18 Aug  2  2022 .bash_logout\n-rw-r--r-- 1 alice alice  141 Aug  2  2022 .bash_profile\n-rw-r--r-- 1 alice alice  376 Aug  2  2022 .bashrc\n",
+      "stdout": "total 20\ndrwx------ 2 alice alice 4096 Oct 31 05:30 .\ndrwxr-xr-x 1 root  root  4096 Oct 31 05:30 ..\n-rw-r--r-- 1 alice alice   18 Aug  2  2022 .bash_logout\n-rw-r--r-- 1 alice alice  141 Aug  2  2022 .bash_profile\n-rw-r--r-- 1 alice alice  376 Aug  2  2022 .bashrc\n",
       "stderr": "",
       "exitCode": 0
     },
     {
       "cmd": "ls -ld /home/alice",
-      "stdout": "drwx------ 2 alice alice 4096 Oct 31 04:30 /home/alice\n",
+      "stdout": "drwx------ 2 alice alice 4096 Oct 31 05:30 /home/alice\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -1060,7 +1060,7 @@
     },
     {
       "cmd": "ls -ld /home/carol",
-      "stdout": "drwx------ 2 carol carol 4096 Oct 31 04:30 /home/carol\n",
+      "stdout": "drwx------ 2 carol carol 4096 Oct 31 05:30 /home/carol\n",
       "stderr": "",
       "exitCode": 0
     }
@@ -1194,7 +1194,7 @@
     },
     {
       "cmd": "find src -name '*.c' -exec ls -l {} \\;",
-      "stdout": "-rw-r--r-- 1 root root 0 Oct 31 04:30 src/a.c\n-rw-r--r-- 1 root root 0 Oct 31 04:30 src/sub/c.c\n",
+      "stdout": "-rw-r--r-- 1 root root 0 Oct 31 05:30 src/a.c\n-rw-r--r-- 1 root root 0 Oct 31 05:30 src/sub/c.c\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -1394,7 +1394,7 @@
     },
     {
       "cmd": "ls -l shared",
-      "stdout": "total 0\n-rw-r--r-- 1 alice alice 0 Oct 31 04:30 mine\n-rw-rw-rw- 1 root  root  0 Oct 31 04:30 rootfile\n",
+      "stdout": "total 0\n-rw-r--r-- 1 alice alice 0 Oct 31 05:30 mine\n-rw-rw-rw- 1 root  root  0 Oct 31 05:30 rootfile\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -1624,7 +1624,7 @@
     },
     {
       "cmd": "chmod 4755 t.txt; cp t.txt t2; cp -p t.txt t3; ls -l t.txt t2 t3",
-      "stdout": "-rwsr-xr-x 1 root root 17 Oct 31 04:30 t.txt\n-rwxr-xr-x 1 root root 17 Oct 31 04:30 t2\n-rwsr-xr-x 1 root root 17 Oct 31 04:30 t3\n",
+      "stdout": "-rwsr-xr-x 1 root root 17 Oct 31 05:30 t.txt\n-rwxr-xr-x 1 root root 17 Oct 31 05:30 t2\n-rwsr-xr-x 1 root root 17 Oct 31 05:30 t3\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -1708,7 +1708,7 @@
     },
     {
       "cmd": "chown alice: t3; ls -l t3",
-      "stdout": "-rwxr-xr-x 1 alice alice 17 Oct 31 04:30 t3\n",
+      "stdout": "-rwxr-xr-x 1 alice alice 17 Oct 31 05:30 t3\n",
       "stderr": "",
       "exitCode": 0
     },
@@ -1852,7 +1852,7 @@
     },
     {
       "cmd": "ln t.txt hl; ln t.txt hl2; ls -l t.txt",
-      "stdout": "-rwsr-xr-x 3 root root 17 Oct 31 04:30 t.txt\n",
+      "stdout": "-rwsr-xr-x 3 root root 17 Oct 31 05:30 t.txt\n",
       "stderr": "",
       "exitCode": 0
     }
@@ -1927,6 +1927,254 @@
     {
       "cmd": "find . -name \"[z-a]\"",
       "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    }
+  ],
+  "labs-2": [
+    {
+      "cmd": "mkdir share",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "chgrp dev share",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "chmod 2775 share",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "ls -ld share",
+      "stdout": "drwxrwsr-x 2 root dev 4096 Oct 31 05:30 share\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "touch share/a.txt",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "mkdir share/sub",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "ls -l share",
+      "stdout": "total 4\n-rw-r--r-- 1 kim dev    0 Oct 31 05:30 a.txt\ndrwxr-sr-x 2 kim dev 4096 Oct 31 05:30 sub\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "chmod +t share",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "ls -ld share",
+      "stdout": "drwxrwsr-t 3 root dev 4096 Oct 31 05:30 share\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "stat -c \"%a %A\" share",
+      "stdout": "3775 drwxrwsr-t\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "rm -f share/a.txt",
+      "stdout": "",
+      "stderr": "rm: cannot remove 'share/a.txt': Operation not permitted\n",
+      "exitCode": 1
+    },
+    {
+      "cmd": "touch share/b.txt",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "rm share/b.txt",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "chmod g-s share",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "ls -ld share",
+      "stdout": "drwxrwxr-t 3 root dev 4096 Oct 31 05:30 share\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "mkdir -p data/logs data/tmp",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "touch data/app.conf data/logs/a.log data/logs/b.log data/tmp/x.tmp",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "echo hello > data/logs/b.log",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "chmod 4755 data/app.conf",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "chown kim data/tmp/x.tmp",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "find data -name \"*.log\"",
+      "stdout": "data/logs/a.log\ndata/logs/b.log\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "find data -type f -perm -4000",
+      "stdout": "data/app.conf\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "find data -user kim",
+      "stdout": "data/tmp/x.tmp\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "find data -type f -size 0",
+      "stdout": "data/logs/a.log\ndata/app.conf\ndata/tmp/x.tmp\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "find data -name \"*.tmp\" -exec rm {} \\;",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "ls data/tmp",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "find data -type f | wc -l",
+      "stdout": "3\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "find / -perm -4000 -name passwd",
+      "stdout": "/usr/bin/passwd\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "grep bash /etc/passwd",
+      "stdout": "root:x:0:0:root:/root:/bin/bash\nkim:x:1000:1000::/home/kim:/bin/bash\nlee:x:1001:1001::/home/lee:/bin/bash\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "grep -c nologin /etc/passwd",
+      "stdout": "13\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "grep -v nologin /etc/passwd | wc -l",
+      "stdout": "6\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "grep -n kim /etc/passwd /etc/group",
+      "stdout": "/etc/passwd:18:kim:x:1000:1000::/home/kim:/bin/bash\n/etc/group:35:kim:x:1000:\n/etc/group:37:dev:x:1002:kim,lee\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "grep ^root /etc/passwd",
+      "stdout": "root:x:0:0:root:/root:/bin/bash\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "grep -w dev /etc/group",
+      "stdout": "dev:x:1002:kim,lee\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "cat /etc/passwd | grep -c bash",
+      "stdout": "3\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "mkdir -p proj/src; touch proj/README proj/src/main.c",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "chown -R kim:dev proj",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "ls -lR proj",
+      "stdout": "proj:\ntotal 4\n-rw-r--r-- 1 kim dev    0 Oct 31 05:30 README\ndrwxr-xr-x 2 kim dev 4096 Oct 31 05:30 src\n\nproj/src:\ntotal 0\n-rw-r--r-- 1 kim dev 0 Oct 31 05:30 main.c\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "chgrp -R root proj/src",
+      "stdout": "",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "ls -l proj/src",
+      "stdout": "total 0\n-rw-r--r-- 1 kim root 0 Oct 31 05:30 main.c\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "cmd": "chown lee: proj/README; ls -l proj/README",
+      "stdout": "-rw-r--r-- 1 lee lee 0 Oct 31 05:30 proj/README\n",
       "stderr": "",
       "exitCode": 0
     }

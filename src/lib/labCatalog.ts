@@ -63,6 +63,51 @@ const LINUX_INFO: Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'
     ],
     related: [{ href: '/linux/linux-master-2/week3/day4', label: '사용자와 계정 관리' }],
   },
+  'linux-shared-dir': {
+    summary: '팀이 같이 쓰는 디렉터리에 setgid 를 걸어 그룹을 물려주고, sticky bit 로 남의 파일을 지우지 못하게 막는 과정을 두 사용자로 번갈아 겪습니다.',
+    intro: [
+      'SetGID 와 Sticky bit 는 정의만 외우면 쉽게 섞입니다. 실제로는 "같은 그룹 사람끼리 파일을 함께 쓰되, 남의 파일은 못 지우게" 라는 한 가지 목적을 위해 둘을 같이 겁니다.',
+      '이 실습은 dev 그룹에 kim·lee 두 사용자가 있는 상태로 /srv 에서 시작합니다. su 로 사용자를 바꿔 가며 같은 디렉터리에서 무엇이 되고 무엇이 막히는지 확인합니다.',
+    ],
+    related: [
+      { href: '/linux/linux-master-2/week4/day3', label: '특수 권한: SetUID · SetGID · Sticky bit' },
+      { href: '/linux/linux-master-2/week4/day5', label: 'Week 4 종합 복습: 권한 한 장 정리' },
+    ],
+  },
+  'linux-find': {
+    summary: 'find 로 이름·권한·소유자 조건에 맞는 파일을 찾고, -exec 로 찾은 파일을 한꺼번에 지웁니다. -perm 4000 / -4000 / /4000 의 차이도 확인합니다.',
+    intro: [
+      'find 는 옵션이 많아 보이지만 "어디서(경로) + 무엇을(조건) + 어떻게(동작)" 세 덩어리로 읽으면 됩니다. 시험에는 setuid 파일 찾기(-perm -4000), 소유자 없는 파일 찾기(-nouser) 같은 보안 점검 문항이 자주 나옵니다.',
+      '이 실습은 로그 파일, 임시 파일, setuid 가 붙은 설정 파일이 섞인 /root/find/data 에서 시작합니다. 마지막 단계에서 아래 띠의 임시 파일이 사라지는 것을 확인하세요.',
+    ],
+    related: [
+      { href: '/linux/linux-master-2/week3/day3', label: '내용 보기와 찾기' },
+      { href: '/linux/linux-master-2/week4/day3', label: '특수 권한: SetUID · SetGID · Sticky bit' },
+    ],
+  },
+  'linux-grep-pipe': {
+    summary: '/etc/passwd 를 grep 으로 골라 읽고, -c·-v·-n 옵션과 ^ 정규식, 파이프로 wc 에 이어 세는 법을 익힙니다.',
+    intro: [
+      '/etc/passwd 는 계정 하나가 한 줄인 텍스트 파일이라 grep 연습에 가장 좋은 재료입니다. 계정 관리 문항과 grep 문항을 함께 대비할 수 있습니다.',
+      '이 실습은 일반 사용자 kim·lee 가 있는 상태에서 시작합니다. 결과로 나오는 숫자는 실제 Rocky Linux 8.8 의 기본 계정 수를 그대로 따릅니다.',
+    ],
+    related: [
+      { href: '/linux/linux-master-2/week3/day3', label: '내용 보기와 찾기' },
+      { href: '/linux/linux-master-2/week5/day4', label: '리다이렉션 · 별칭 · 히스토리' },
+      { href: '/linux/linux-master-2/week3/day4', label: '사용자와 계정 관리' },
+    ],
+  },
+  'linux-ownership': {
+    summary: 'chown 으로 파일과 디렉터리 전체(-R)의 소유자·그룹을 넘기고, chgrp 로 그룹만 바꾼 뒤, 일반 사용자는 소유자를 넘길 수 없다는 것을 확인합니다.',
+    intro: [
+      'chown kim:dev, chown :dev, chgrp dev 는 모두 소유권을 바꾸지만 바뀌는 칸이 다릅니다. 시험에서는 이 표현들을 섞어 보기로 내고, "일반 사용자가 할 수 있는가" 를 함께 묻습니다.',
+      '이 실습은 root 가 만든 /srv/proj 에서 시작합니다. 아래 띠에서 항목마다 소유자:그룹 이 바뀌는 것을 볼 수 있습니다.',
+    ],
+    related: [
+      { href: '/linux/linux-master-2/week4/day2', label: '소유권과 umask' },
+      { href: '/linux/linux-master-2/week4/day5', label: 'Week 4 종합 복습: 권한 한 장 정리' },
+    ],
+  },
 };
 
 const AWS_INFO: Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'>> = {
@@ -100,6 +145,10 @@ export const LAB_CATALOG: LabEntry[] = [
   entry('linux', 'linux-perm-basics', 'LAB L1', '숫자와 기호로 권한 바꾸고 umask 확인하기'),
   entry('linux', 'linux-links', 'LAB L2', '하드 링크와 심볼릭 링크 구분하기'),
   entry('linux', 'linux-users', 'LAB L3', '사용자를 만들고 그 사용자로 권한 거부 겪어 보기'),
+  entry('linux', 'linux-shared-dir', 'LAB L4', '팀 공유 디렉터리 만들기: setgid 와 sticky bit'),
+  entry('linux', 'linux-find', 'LAB L5', 'find 로 조건에 맞는 파일 찾고 한꺼번에 처리하기'),
+  entry('linux', 'linux-grep-pipe', 'LAB L6', 'grep 과 파이프로 /etc/passwd 읽기'),
+  entry('linux', 'linux-ownership', 'LAB L7', 'chown·chgrp 로 프로젝트 소유권 넘기기'),
   entry('aws', 'regions-azs', 'LAB 01', '리전과 가용 영역 지도 그리기'),
   entry('aws', 's3-first-bucket', 'LAB 02', '서울 리전에 첫 버킷 만들기'),
   entry('aws', 'iam-least-privilege', 'LAB 03', '읽기 전용 사용자 만들고 정리하기'),

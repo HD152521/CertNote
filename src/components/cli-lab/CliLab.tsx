@@ -172,6 +172,11 @@ export function CliLab({ labId }: { labId: string }) {
         cwd={`~/labs/${lab.id}`}
         region={sim.defaultRegion}
         accountId={sim.accountId}
+        task={
+          currentStep
+            ? { label: `STEP ${lab.steps.indexOf(currentStep) + 1} / ${lab.steps.length} · ${currentStep.title}`, text: currentStep.task }
+            : undefined
+        }
         log={log}
         input={input}
         onInput={setInput}

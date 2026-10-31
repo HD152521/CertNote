@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
 export type NewLogEntry =
@@ -19,6 +19,8 @@ interface LabTerminalProps {
   prompt?: string;
   inputLabel?: string;
   placeholder?: string;
+  /** 지금 풀 단계. 모바일에서 터미널 바로 위에 붙여, 키보드를 연 채로도 문제를 볼 수 있게 한다. */
+  task?: { label: string; text: string };
   log: LogEntry[];
   input: string;
   onInput: (value: string) => void;
@@ -27,6 +29,11 @@ interface LabTerminalProps {
 }
 
 const PROMPT_USER = 'learner@certnote';
+
+// 모바일에서 입력창을 누르면 터미널을 사이트 헤더(h-14) 바로 아래로 올리고, 키보드가 가린 만큼 터미널 높이를 줄인다.
+const MOBILE_MAX = 640;
+const SITE_HEADER_PX = 56;
+const MIN_LOG_PX = 140;
 
 // "[root@localhost ~]# " 를 칸별로 색칠한다.
 function ShellPrompt({ text }: { text: string }) {
@@ -96,9 +103,29 @@ function Entry({ entry }: { entry: LogEntry }) {
 
 export function LabTerminal({
   cwd, headerRight, region, accountId, prompt, inputLabel = 'AWS CLI 명령 입력',
-  placeholder = 'aws 로 시작해 보세요 · Tab 자동 완성', log, input, onInput, onKeyDown, inputRef,
+  placeholder = 'aws 로 시작해 보세요 · Tab 자동 완성', task, log, input, onInput, onKeyDown, inputRef,
 }: LabTerminalProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [fitHeight, setFitHeight] = useState<number | null>(null);
+
+  const fitToKeyboard = useCallback(() => {
+    const root = rootRef.current;
+    const logEl = scrollRef.current;
+    const vv = window.visualViewport;
+    if (!root || !logEl || !vv || window.innerWidth >= MOBILE_MAX) return;
+    const chrome = logEl.getBoundingClientRect().top - root.getBoundingClientRect().top;
+    setFitHeight(Math.max(MIN_LOG_PX, Math.floor(vv.height - SITE_HEADER_PX - chrome - 8)));
+    window.scrollTo({ top: root.getBoundingClientRect().top + window.scrollY - SITE_HEADER_PX, behavior: 'smooth' });
+  }, []);
+
+  // 키보드가 열리고 닫히며 보이는 영역이 바뀌는 동안(포커스 중에만) 높이를 다시 맞춘다.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (fitHeight === null || !vv) return;
+    vv.addEventListener('resize', fitToKeyboard);
+    return () => vv.removeEventListener('resize', fitToKeyboard);
+  }, [fitHeight, fitToKeyboard]);
 
   // 새 줄이 생기면 터미널 안쪽만 맨 아래로 — 페이지 스크롤은 건드리지 않는다.
   useEffect(() => {
@@ -108,6 +135,7 @@ export function LabTerminal({
 
   return (
     <div
+      ref={rootRef}
       className="overflow-hidden bg-[#0e1513] font-mono text-[13px] leading-[1.65] text-[#c9d6d0]"
       onClick={() => {
         if (!window.getSelection()?.toString()) inputRef.current?.focus();
@@ -123,7 +151,20 @@ export function LabTerminal({
         )}
       </div>
 
-      <div ref={scrollRef} role="log" aria-live="polite" className="h-[22rem] overflow-y-auto px-4 py-3 sm:h-[26rem]">
+      {task && (
+        <div className="border-b border-[#1f2b27] bg-[#16211e] px-4 py-2 font-sans sm:hidden">
+          <div className="font-mono text-[11px] tracking-wide text-[#5eead4]">{task.label}</div>
+          <div className="mt-0.5 text-[13px] leading-snug text-[#dfe9e4]">{task.text}</div>
+        </div>
+      )}
+
+      <div
+        ref={scrollRef}
+        role="log"
+        aria-live="polite"
+        className="h-[22rem] overflow-y-auto px-4 py-3 sm:h-[26rem]"
+        style={fitHeight !== null ? { height: fitHeight } : undefined}
+      >
         {log.map((entry) => (
           <Entry key={entry.id} entry={entry} />
         ))}
@@ -134,6 +175,8 @@ export function LabTerminal({
             value={input}
             onChange={(e) => onInput(e.target.value)}
             onKeyDown={onKeyDown}
+            onFocus={() => window.setTimeout(fitToKeyboard, 300)}
+            onBlur={() => setFitHeight(null)}
             spellCheck={false}
             autoCapitalize="off"
             autoComplete="off"

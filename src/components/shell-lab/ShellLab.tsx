@@ -177,6 +177,11 @@ export function ShellLab({ labId }: { labId: string }) {
           </span>
         }
         prompt={prompt(sim)}
+        task={
+          currentStep
+            ? { label: `STEP ${lab.steps.indexOf(currentStep) + 1} / ${lab.steps.length} · ${currentStep.title}`, text: currentStep.task }
+            : undefined
+        }
         inputLabel="리눅스 명령 입력"
         placeholder="ls -l 처럼 쳐 보세요 · Tab 자동 완성"
         log={log}

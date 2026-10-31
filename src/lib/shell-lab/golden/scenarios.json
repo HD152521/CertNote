@@ -1118,5 +1118,153 @@
         "cmd": "find . -name \"[z-a]\""
       }
     ]
+  },
+  {
+    "id": "labs-2",
+    "prelude": [
+      "mkdir -p /lab/w",
+      "cd /lab/w",
+      "useradd -m kim",
+      "useradd -m lee",
+      "groupadd dev",
+      "usermod -aG dev kim",
+      "usermod -aG dev lee"
+    ],
+    "steps": [
+      {
+        "cmd": "mkdir share"
+      },
+      {
+        "cmd": "chgrp dev share"
+      },
+      {
+        "cmd": "chmod 2775 share"
+      },
+      {
+        "cmd": "ls -ld share"
+      },
+      {
+        "cmd": "touch share/a.txt",
+        "as": "kim"
+      },
+      {
+        "cmd": "mkdir share/sub",
+        "as": "kim"
+      },
+      {
+        "cmd": "ls -l share"
+      },
+      {
+        "cmd": "chmod +t share"
+      },
+      {
+        "cmd": "ls -ld share"
+      },
+      {
+        "cmd": "stat -c \"%a %A\" share"
+      },
+      {
+        "cmd": "rm -f share/a.txt",
+        "as": "lee"
+      },
+      {
+        "cmd": "touch share/b.txt",
+        "as": "lee"
+      },
+      {
+        "cmd": "rm share/b.txt",
+        "as": "lee"
+      },
+      {
+        "cmd": "chmod g-s share"
+      },
+      {
+        "cmd": "ls -ld share"
+      },
+      {
+        "cmd": "mkdir -p data/logs data/tmp"
+      },
+      {
+        "cmd": "touch data/app.conf data/logs/a.log data/logs/b.log data/tmp/x.tmp"
+      },
+      {
+        "cmd": "echo hello > data/logs/b.log"
+      },
+      {
+        "cmd": "chmod 4755 data/app.conf"
+      },
+      {
+        "cmd": "chown kim data/tmp/x.tmp"
+      },
+      {
+        "cmd": "find data -name \"*.log\"",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find data -type f -perm -4000"
+      },
+      {
+        "cmd": "find data -user kim"
+      },
+      {
+        "cmd": "find data -type f -size 0",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find data -name \"*.tmp\" -exec rm {} \\;"
+      },
+      {
+        "cmd": "ls data/tmp"
+      },
+      {
+        "cmd": "find data -type f | wc -l"
+      },
+      {
+        "cmd": "find / -perm -4000 -name passwd"
+      },
+      {
+        "cmd": "grep bash /etc/passwd"
+      },
+      {
+        "cmd": "grep -c nologin /etc/passwd"
+      },
+      {
+        "cmd": "grep -v nologin /etc/passwd | wc -l"
+      },
+      {
+        "cmd": "grep -n kim /etc/passwd /etc/group"
+      },
+      {
+        "cmd": "grep ^root /etc/passwd"
+      },
+      {
+        "cmd": "grep -w dev /etc/group"
+      },
+      {
+        "cmd": "cat /etc/passwd | grep -c bash"
+      },
+      {
+        "cmd": "mkdir -p proj/src; touch proj/README proj/src/main.c"
+      },
+      {
+        "cmd": "chown -R kim:dev proj"
+      },
+      {
+        "cmd": "ls -lR proj"
+      },
+      {
+        "cmd": "chgrp -R root proj/src"
+      },
+      {
+        "cmd": "ls -l proj/src"
+      },
+      {
+        "cmd": "chown lee: proj/README; ls -l proj/README"
+      }
+    ]
   }
 ]
