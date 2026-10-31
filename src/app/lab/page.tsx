@@ -56,24 +56,25 @@ export default function LabHubPage() {
             </h2>
             <p className="text-sm leading-relaxed text-fg-muted">{group.description}</p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-bg-elevated">
             {LAB_CATALOG.filter((l) => l.kind === group.kind).map((lab) => (
-              <Link
-                key={lab.id}
-                href={`/lab/${lab.id}`}
-                className="group flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated p-5 transition hover:border-border-strong"
-              >
-                <div className="space-y-1.5">
-                  <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-fg-faint">{lab.code}</span>
-                  <h3 className="font-semibold leading-snug">{lab.title}</h3>
-                  <p className="text-sm leading-relaxed text-fg-muted">{lab.summary}</p>
-                </div>
-                <span className="mt-auto flex items-center gap-1 text-[12.5px] text-fg-faint group-hover:text-accent">
-                  실습하기 <ArrowRight className="h-3.5 w-3.5" />
-                </span>
-              </Link>
+              <li key={lab.id}>
+                <Link
+                  href={`/lab/${lab.id}`}
+                  className="group flex items-center gap-3 px-4 py-3 transition hover:bg-bg-subtle sm:gap-4"
+                >
+                  <span className="w-7 shrink-0 font-mono sm:w-12 text-[11px] uppercase tracking-wider text-fg-faint">
+                    {lab.code.replace('LAB ', '')}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium leading-snug text-fg">{lab.title}</span>
+                    <span className="mt-0.5 hidden truncate text-[13px] text-fg-muted sm:block">{lab.summary}</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-fg-faint transition group-hover:translate-x-0.5 group-hover:text-accent" />
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
       ))}
     </div>
