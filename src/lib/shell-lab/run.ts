@@ -34,6 +34,9 @@ const NOT_YET = new Set([
   'type', 'source', 'env', 'printf', 'test', 'readlink', 'basename', 'dirname', 'uname', 'hostname',
 ]);
 
+/** Rocky 의 대화형 셸이 기본으로 갖는 별칭(coreutils 의 /etc/profile.d/colorls.sh: alias ll='ls -l --color=auto'). */
+const ALIASES: Record<string, string[]> = { ll: ['ls', '-l'] };
+
 export const SUPPORTED_LIST = Object.keys(COMMANDS).sort().join(' ');
 
 const TICK = 2;
@@ -138,8 +141,9 @@ class Runner {
 
   /** argv 로 바로 실행 (find -exec, su -c) */
   exec = (argv: string[], io: Io, depth: number): number => {
-    const [name, ...args] = argv;
-    if (name === undefined) return 0;
+    const [alias, ...rest] = argv;
+    if (alias === undefined) return 0;
+    const [name, ...args] = ALIASES[alias] ? [...ALIASES[alias], ...rest] : argv;
     if (depth > MAX_DEPTH) {
       io.err('-bash: maximum nesting level exceeded\n');
       return 1;

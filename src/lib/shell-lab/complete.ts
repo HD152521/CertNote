@@ -31,7 +31,7 @@ export function complete(line: string, st: ShellState): Completion {
   const before = line.slice(0, start).trim();
   const isCommand = before === '' || /[|;&]$/.test(before);
   if (isCommand && !word.includes('/')) {
-    const names = ['help', ...Object.keys(COMMANDS)].filter((n) => n.startsWith(word)).sort();
+    const names = ['help', 'll', ...Object.keys(COMMANDS)].filter((n) => n.startsWith(word)).sort();
     return finish(line, start, word, names.map((n) => ({ text: n, suffix: ' ' })));
   }
   const slash = word.lastIndexOf('/');

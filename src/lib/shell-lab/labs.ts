@@ -80,7 +80,12 @@ export const SHELL_LABS: ShellLab[] = [
         hint: '대상(u·g·o·a) + 연산(+ - =) + 권한(r w x). 두 가지 변경은 쉼표로 이어요.',
         answer: 'chmod u-x,g+w report.txt',
         takeaway: '기호 모드는 말한 비트만 바꾸고 나머지는 그대로 둬요. 754 에서 u-x,g+w 를 하면 674(rw-rwxr--)가 돼요.',
-        isDone: ({ state, result }) => perm(state, '/root/perm/report.txt') === 0o674 && ran(result, 'chmod'),
+        // 앞에서 무엇을 했든, 기호 모드로 "소유자 x 없음 + 그룹 w 있음" 이 되면 통과(754 에서 시작했다면 674).
+        isDone: ({ state, result }) => {
+          const m = perm(state, '/root/perm/report.txt');
+          const symbolic = result.commands.some((argv) => argv[0] === 'chmod' && argv.slice(1).some((a) => /^[ugoa]*[-+=]/.test(a)));
+          return symbolic && (m & 0o100) === 0 && (m & 0o020) !== 0;
+        },
       },
       {
         id: 'umask',

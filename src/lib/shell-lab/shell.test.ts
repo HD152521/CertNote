@@ -97,11 +97,36 @@ describe('shell labs', () => {
     expect(done).toEqual(lab.steps.map((s) => s.id));
   });
 
+  it('L1 step 2 passes even after an earlier chmod -x (user report 2026-10-31)', () => {
+    const lab = SHELL_LABS.find((l) => l.id === 'linux-perm-basics')!;
+    let st = labInitialState(lab);
+    const passed: string[] = [];
+    for (const line of ['chmod 754 report.txt', 'chmod -x report.txt', 'chmod u-x,g+w report.txt']) {
+      const result = runLine(line, st);
+      st = result.state;
+      for (const s of lab.steps) if (!passed.includes(s.id) && s.isDone({ state: st, result })) passed.push(s.id);
+    }
+    expect(passed).toEqual(['octal', 'symbolic']);
+  });
+
+  it('does not pass the symbolic step with a numeric chmod', () => {
+    const lab = SHELL_LABS.find((l) => l.id === 'linux-perm-basics')!;
+    const result = runLine('chmod 674 report.txt', labInitialState(lab));
+    expect(lab.steps[1].isDone({ state: result.state, result })).toBe(false);
+  });
+
   it('starts each lab in its work directory with a clean history', () => {
     for (const lab of SHELL_LABS) {
       const st = labInitialState(lab);
       expect(runLine('pwd', st).stdout).toBe(`${lab.workdir}\n`);
       expect(st.lastExit).toBe(0);
     }
+  });
+});
+
+describe('aliases', () => {
+  it('ll is ls -l like the Rocky interactive shell', () => {
+    const st = createInitialState();
+    expect(runLine('ll /etc/skel', st).stdout).toBe(runLine('ls -l /etc/skel', st).stdout);
   });
 });
