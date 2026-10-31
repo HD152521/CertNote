@@ -92,11 +92,58 @@ KAIT 공식 페이지(https://www.ihd.or.kr/introducesubject1.do, 2026-10-30 확
 4. 사용자와 그룹: 보조 그룹 추가 → `id` 로 확인 → `userdel -r`
 5. find 로 찾기: 권한·소유자·크기 조건, `-exec` 로 일괄 처리
 
-### 내일 작업 순서
-1. podman 으로 `rockylinux:8.8` 을 띄워 1단계 명령의 실제 출력·오류 문구를 수집한다(골든 파일).
-2. 상태 모델과 `ls -l` 부터 만든다(대부분의 과제가 결과를 `ls -l` 로 확인한다).
-3. 권한 → 링크 → 사용자 → find 순서로 명령을 넣고, 골든 테스트를 통과시킨다.
-4. 과제 1~2 를 `/lab` 미리보기에 올려 사용자 확인을 받는다.
+### 작업 순서 (2026-10-31 진행)
+1. ~~podman 으로 `rockylinux:8.8` 을 띄워 1단계 명령의 실제 출력·오류 문구를 수집한다(골든 파일).~~ → Docker 로 수집
+2. ~~상태 모델과 `ls -l` 부터 만든다.~~
+3. ~~권한 → 링크 → 사용자 → find 순서로 명령을 넣고, 골든 테스트를 통과시킨다.~~
+4. 과제를 `/lab` 미리보기에 올려 사용자 확인을 받는다. ← **지금 여기** (과제 L1·L2·L3 올림)
+
+## 4. 리눅스 셸 연습장 1단계 — 결과 (2026-10-31)
+
+### 구조
+```
+src/lib/shell-lab/
+  types.ts      inode·계정·그룹·세션(su 스택) 상태 모델
+  state.ts      처음 상태: Rocky 8.8 이미지의 디렉터리 뼈대, /etc/passwd·group 17·34줄, /etc/skel·/root 점 파일(내용 그대로)
+  fs.ts         경로 해석(심볼릭 링크·ELOOP), 권한 검사(소유자·그룹·기타, sticky), 노드 만들기·지우기·링크
+  mode.ts       ls 권한 문자열(s/S/t/T), chmod 숫자·기호 모드(gnulib 규칙, 디렉터리 setgid 보존)
+  format.ts     ls 날짜·-h 크기·여러 칸 배치(ls.c 의 열 계산과 탭 정렬 그대로), stat 시각
+  parse.ts      따옴표·이스케이프, | ; && ||, > >> 2> 2>&1 < &>, ~·$VAR·$?·와일드카드
+  run.ts        한 줄 실행(상태 복사본), 명령표, 아직 지원하지 않는 실제 명령 안내, 프롬프트
+  commands/     files(pwd cd mkdir rmdir touch cp mv rm ln) list(ls stat) text(cat head tail wc echo)
+                perms(chmod chown chgrp umask) accounts(useradd usermod userdel groupadd groupdel passwd id whoami groups su exit)
+                search(find grep)
+  complete.ts   Tab 자동 완성(명령 이름·경로)
+  labs.ts       과제 L1 권한 · L2 링크 · L3 사용자
+  golden/       scenarios.json(명령) · results.json(실제 Rocky 8.8 출력)
+scripts/shell-lab/  Dockerfile(rockylinux:8.8 + findutils·passwd) · golden.mjs(수집기)
+src/components/shell-lab/  ShellLab(과제 틀) · WorkdirStrip(지켜보는 디렉터리·계정 띠)
+src/components/cli-lab/LabSteps.tsx  단계 패널 — AWS·리눅스 연습장이 같이 쓴다(CliLab 에서 뺐다)
+```
+
+### 골든 테스트
+- 시나리오 9개(파일, 권한, 소유자, 링크, 사용자, find·grep, 권한 거부, 경계 사례, 리뷰 회귀) **319단계 전부 실제 출력과 같다.** stdout·stderr·종료 코드를 모두 비교한다.
+- 다시 찍기: `docker build -t certnote-rocky88 scripts/shell-lab && node scripts/shell-lab/golden.mjs`
+- 실행 환경마다 다른 값만 양쪽에서 같은 자리표시로 바꿔 비교한다: ls·stat 의 시각, stat 의 장치·inode 번호, `ls -li` 의 inode 번호(같은 번호끼리 같은지는 유지), `passwd -S` 의 날짜.
+- 다른 사용자 단계는 컨테이너에서 `runuser -u`, 시뮬레이터에서는 세션을 하나 쌓아 실행한다.
+
+### 실제와 일부러 다르게 둔 것
+- find·grep -r 은 이름순으로 돈다(실제는 디스크 순서라 매번 다르다). 골든은 정렬해 비교한다.
+- root 의 `rm`·`cp`·`mv` 별칭(-i)은 넣지 않았다. 대신 일반 사용자가 쓰기 금지 파일을 지우면 실제처럼 확인 질문을 띄우고 "n" 으로 처리한 뒤 안내한다.
+- `ls -l` 권한 뒤의 SELinux 점(`-rw-r--r--.`)은 없다. 컨테이너 기준이다. 실제 시험 VM 은 SELinux 가 켜져 있으면 점이 보인다 — 화면 안내에 넣을지 정해야 한다.
+- 로케일은 C(영어 메시지, '...' 따옴표). 시험 VM 의 로케일은 아직 확인하지 못했다.
+- 비밀번호 입력은 건너뛴다(`passwd` 는 설정된 것으로 처리하고 안내). 일반 사용자에서 `su` 는 막고 `exit` 로 돌아가게 안내한다.
+- vi·tar·sort·systemctl 등 실제로 있는 명령은 "command not found" 로 속이지 않고 "아직 지원하지 않음" 안내를 띄운다. tar 는 1단계 표에 있었지만 아카이브 크기·gzip 출력을 정확히 맞추기 어려워 뒤로 미뤘다.
+
+### 확인
+- `vitest src/lib/shell-lab` 22개(골든 9 + 셸 동작·자동 완성·과제 13), `src/lib/cli-lab` 21개 그대로 통과.
+- 코드 리뷰 에이전트: HIGH 1(`grep -R` 이 심볼릭 링크 고리에서 탭을 멈춤 → 실제처럼 `recursive directory loop` 경고 후 건너뜀), MEDIUM 2(잘못된 와일드카드 `[z-a]` 에서 예외 → 글자 그대로, 빈 변수가 빈 인자로 남음 → 뺌), LOW 2(`constructor` 같은 이름, `mv .`) 모두 고치고 실제 출력으로 회귀 골든을 더했다. 화면에서 예외가 나도 입력이 사라지지 않게 안내를 띄운다.
+- Playwright 1440px(라이트)·390px(다크): L1 4단계 완주, L2·L3 진행, Tab 완성, 페이지 오류 0, 가로 스크롤 없음.
+
+### 남은 것
+1. 사용자 확인(`/lab`): 과제 문구, 띠 디자인, 셸 프롬프트 모양.
+2. 노트 삽입: 리눅스마스터 2급 노트에 ```` ```shell-lab linux-perm-basics ```` 블록. AWS 연습장과 같은 방식.
+3. 2단계 범위 결정(tar, sort·cut·파이프 확장, 1급 실기의 crontab·systemctl·쿼터).
 
 ### 위험
 - **범위 팽창**: 셸은 끝이 없다. 1단계 표의 명령·옵션만 지원하고, 나머지는 "연습장 안내"로 돌린다.

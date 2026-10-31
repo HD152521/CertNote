@@ -1,0 +1,1122 @@
+[
+  {
+    "id": "files",
+    "prelude": [
+      "mkdir -p /lab/w",
+      "cd /lab/w"
+    ],
+    "steps": [
+      {
+        "cmd": "pwd"
+      },
+      {
+        "cmd": "mkdir docs"
+      },
+      {
+        "cmd": "mkdir a/b"
+      },
+      {
+        "cmd": "mkdir -p a/b/c"
+      },
+      {
+        "cmd": "mkdir docs"
+      },
+      {
+        "cmd": "touch f1 f2"
+      },
+      {
+        "cmd": "ls"
+      },
+      {
+        "cmd": "ls -l"
+      },
+      {
+        "cmd": "echo hello > f1"
+      },
+      {
+        "cmd": "echo world >> f1"
+      },
+      {
+        "cmd": "cat f1"
+      },
+      {
+        "cmd": "wc f1"
+      },
+      {
+        "cmd": "wc -l f1"
+      },
+      {
+        "cmd": "head -n 1 f1"
+      },
+      {
+        "cmd": "tail -n 1 f1"
+      },
+      {
+        "cmd": "cp f1 f3"
+      },
+      {
+        "cmd": "cp a docs"
+      },
+      {
+        "cmd": "cp -r a docs/"
+      },
+      {
+        "cmd": "ls -R"
+      },
+      {
+        "cmd": "mv f3 docs/"
+      },
+      {
+        "cmd": "mv f2 f2-renamed"
+      },
+      {
+        "cmd": "rm a"
+      },
+      {
+        "cmd": "rm -r a"
+      },
+      {
+        "cmd": "rm nothing"
+      },
+      {
+        "cmd": "rm -f nothing"
+      },
+      {
+        "cmd": "ls -la"
+      },
+      {
+        "cmd": "cat nothing"
+      },
+      {
+        "cmd": "cat docs"
+      },
+      {
+        "cmd": "cd docs"
+      },
+      {
+        "cmd": "pwd"
+      },
+      {
+        "cmd": "cd .."
+      },
+      {
+        "cmd": "cd nowhere"
+      },
+      {
+        "cmd": "cd f1"
+      },
+      {
+        "cmd": "ls -d docs"
+      },
+      {
+        "cmd": "ls -ld docs"
+      },
+      {
+        "cmd": "ls -lh"
+      },
+      {
+        "cmd": "ls nothing"
+      },
+      {
+        "cmd": "rmdir docs"
+      },
+      {
+        "cmd": "mkdir empty"
+      },
+      {
+        "cmd": "rmdir empty"
+      },
+      {
+        "cmd": "echo 'a  b'   \"c\" $HOME"
+      },
+      {
+        "cmd": "cat f1 | wc -l"
+      },
+      {
+        "cmd": "ls | wc -l"
+      },
+      {
+        "cmd": "ls docs | grep f"
+      },
+      {
+        "cmd": "touch b.txt c.txt d.log"
+      },
+      {
+        "cmd": "ls *.txt"
+      },
+      {
+        "cmd": "cp f1 a1 a2"
+      },
+      {
+        "cmd": "head f1 nothing"
+      },
+      {
+        "cmd": "wc f1 f2-renamed"
+      },
+      {
+        "cmd": "nosuchcmd"
+      },
+      {
+        "cmd": "cd"
+      },
+      {
+        "cmd": "pwd"
+      },
+      {
+        "cmd": "cd -"
+      },
+      {
+        "cmd": "mv nothing x"
+      },
+      {
+        "cmd": "touch"
+      }
+    ]
+  },
+  {
+    "id": "perms",
+    "prelude": [
+      "mkdir -p /lab/w",
+      "cd /lab/w"
+    ],
+    "steps": [
+      {
+        "cmd": "touch p"
+      },
+      {
+        "cmd": "chmod 754 p"
+      },
+      {
+        "cmd": "ls -l p"
+      },
+      {
+        "cmd": "chmod u-x,g+w,o= p"
+      },
+      {
+        "cmd": "ls -l p"
+      },
+      {
+        "cmd": "chmod a+rwx p"
+      },
+      {
+        "cmd": "ls -l p"
+      },
+      {
+        "cmd": "chmod o-rwx p"
+      },
+      {
+        "cmd": "ls -l p"
+      },
+      {
+        "cmd": "chmod 4755 p"
+      },
+      {
+        "cmd": "ls -l p"
+      },
+      {
+        "cmd": "chmod u-x p"
+      },
+      {
+        "cmd": "ls -l p"
+      },
+      {
+        "cmd": "chmod 2750 p"
+      },
+      {
+        "cmd": "ls -l p"
+      },
+      {
+        "cmd": "chmod g-x p"
+      },
+      {
+        "cmd": "ls -l p"
+      },
+      {
+        "cmd": "mkdir d"
+      },
+      {
+        "cmd": "chmod 1777 d"
+      },
+      {
+        "cmd": "ls -ld d"
+      },
+      {
+        "cmd": "chmod o-x d"
+      },
+      {
+        "cmd": "ls -ld d"
+      },
+      {
+        "cmd": "chmod 644 p"
+      },
+      {
+        "cmd": "chmod +x p"
+      },
+      {
+        "cmd": "ls -l p"
+      },
+      {
+        "cmd": "stat -c '%a %A %U %G %n' p"
+      },
+      {
+        "cmd": "stat p",
+        "norm": [
+          "stat"
+        ]
+      },
+      {
+        "cmd": "stat d",
+        "norm": [
+          "stat"
+        ]
+      },
+      {
+        "cmd": "umask"
+      },
+      {
+        "cmd": "umask 027"
+      },
+      {
+        "cmd": "umask"
+      },
+      {
+        "cmd": "touch q"
+      },
+      {
+        "cmd": "mkdir qd"
+      },
+      {
+        "cmd": "ls -ld q qd"
+      },
+      {
+        "cmd": "umask 0022"
+      },
+      {
+        "cmd": "chmod 999 p"
+      },
+      {
+        "cmd": "chmod u+z p"
+      },
+      {
+        "cmd": "chmod 644 nothing"
+      },
+      {
+        "cmd": "chmod 0 p"
+      },
+      {
+        "cmd": "ls -l p"
+      },
+      {
+        "cmd": "chmod -R 750 d"
+      },
+      {
+        "cmd": "ls -ld d"
+      },
+      {
+        "cmd": "chmod =r p"
+      },
+      {
+        "cmd": "ls -l p"
+      },
+      {
+        "cmd": "chmod u=rw,go=r p"
+      },
+      {
+        "cmd": "ls -l p"
+      }
+    ]
+  },
+  {
+    "id": "owners",
+    "prelude": [
+      "mkdir -p /lab/w",
+      "cd /lab/w"
+    ],
+    "steps": [
+      {
+        "cmd": "useradd alice"
+      },
+      {
+        "cmd": "groupadd dev"
+      },
+      {
+        "cmd": "touch f g h"
+      },
+      {
+        "cmd": "chown alice f"
+      },
+      {
+        "cmd": "chown alice:dev g"
+      },
+      {
+        "cmd": "chgrp dev h"
+      },
+      {
+        "cmd": "ls -l"
+      },
+      {
+        "cmd": "chown bob f"
+      },
+      {
+        "cmd": "chgrp nogroup f"
+      },
+      {
+        "cmd": "chown :alice h"
+      },
+      {
+        "cmd": "chown root.root g"
+      },
+      {
+        "cmd": "ls -l"
+      },
+      {
+        "cmd": "chown alice nothing"
+      },
+      {
+        "cmd": "mkdir -p t/u"
+      },
+      {
+        "cmd": "touch t/u/v"
+      },
+      {
+        "cmd": "chown -R alice:dev t"
+      },
+      {
+        "cmd": "ls -lR t"
+      }
+    ]
+  },
+  {
+    "id": "links",
+    "prelude": [
+      "mkdir -p /lab/w",
+      "cd /lab/w"
+    ],
+    "steps": [
+      {
+        "cmd": "echo data > orig"
+      },
+      {
+        "cmd": "ln orig hard"
+      },
+      {
+        "cmd": "ln -s orig soft"
+      },
+      {
+        "cmd": "ls -li",
+        "norm": [
+          "inode"
+        ]
+      },
+      {
+        "cmd": "cat soft"
+      },
+      {
+        "cmd": "ln orig hard"
+      },
+      {
+        "cmd": "rm orig"
+      },
+      {
+        "cmd": "ls -l"
+      },
+      {
+        "cmd": "cat soft"
+      },
+      {
+        "cmd": "cat hard"
+      },
+      {
+        "cmd": "ln -s /lab/w/hard abs"
+      },
+      {
+        "cmd": "ls -l abs"
+      },
+      {
+        "cmd": "ln nothing x"
+      },
+      {
+        "cmd": "mkdir dir"
+      },
+      {
+        "cmd": "ln dir dl"
+      },
+      {
+        "cmd": "ln -s dir dl"
+      },
+      {
+        "cmd": "ls -l dl"
+      },
+      {
+        "cmd": "ls dl"
+      },
+      {
+        "cmd": "touch dl/inside"
+      },
+      {
+        "cmd": "ls dir"
+      },
+      {
+        "cmd": "ls -ld dir"
+      },
+      {
+        "cmd": "stat -c '%h %F %n' hard dir soft"
+      }
+    ]
+  },
+  {
+    "id": "users",
+    "prelude": [
+      "mkdir -p /lab/w",
+      "cd /lab/w"
+    ],
+    "steps": [
+      {
+        "cmd": "whoami"
+      },
+      {
+        "cmd": "id"
+      },
+      {
+        "cmd": "useradd -m alice"
+      },
+      {
+        "cmd": "tail -n 1 /etc/passwd"
+      },
+      {
+        "cmd": "id alice"
+      },
+      {
+        "cmd": "groupadd dev"
+      },
+      {
+        "cmd": "usermod -aG dev alice"
+      },
+      {
+        "cmd": "id alice"
+      },
+      {
+        "cmd": "useradd -u 1500 -g dev -s /bin/sh bob"
+      },
+      {
+        "cmd": "tail -n 2 /etc/passwd"
+      },
+      {
+        "cmd": "grep dev /etc/group"
+      },
+      {
+        "cmd": "ls -la /home/alice",
+        "norm": [
+          "dotdot"
+        ]
+      },
+      {
+        "cmd": "ls -ld /home/alice"
+      },
+      {
+        "cmd": "ls /home"
+      },
+      {
+        "cmd": "useradd alice"
+      },
+      {
+        "cmd": "groupadd dev"
+      },
+      {
+        "cmd": "passwd -S bob",
+        "norm": [
+          "isodate"
+        ]
+      },
+      {
+        "cmd": "passwd -l bob"
+      },
+      {
+        "cmd": "passwd -S bob",
+        "norm": [
+          "isodate"
+        ]
+      },
+      {
+        "cmd": "passwd -u bob"
+      },
+      {
+        "cmd": "usermod -s /bin/bash bob"
+      },
+      {
+        "cmd": "grep bob /etc/passwd"
+      },
+      {
+        "cmd": "usermod -G dev,alice bob"
+      },
+      {
+        "cmd": "id bob"
+      },
+      {
+        "cmd": "userdel -r alice"
+      },
+      {
+        "cmd": "ls /home"
+      },
+      {
+        "cmd": "id alice"
+      },
+      {
+        "cmd": "userdel nobody2"
+      },
+      {
+        "cmd": "groupadd -g 2000 ops"
+      },
+      {
+        "cmd": "tail -n 3 /etc/group"
+      },
+      {
+        "cmd": "useradd -m -G ops,dev carol"
+      },
+      {
+        "cmd": "id carol"
+      },
+      {
+        "cmd": "groupdel ops"
+      },
+      {
+        "cmd": "id carol"
+      },
+      {
+        "cmd": "userdel bob"
+      },
+      {
+        "cmd": "ls -ld /home/carol"
+      }
+    ]
+  },
+  {
+    "id": "find-grep",
+    "prelude": [
+      "mkdir -p /lab/w",
+      "cd /lab/w"
+    ],
+    "steps": [
+      {
+        "cmd": "mkdir -p src/sub"
+      },
+      {
+        "cmd": "touch src/a.c src/b.txt src/sub/c.c"
+      },
+      {
+        "cmd": "chmod 600 src/b.txt"
+      },
+      {
+        "cmd": "echo 'Hello World' > notes.txt"
+      },
+      {
+        "cmd": "echo 'hello again' >> notes.txt"
+      },
+      {
+        "cmd": "echo bye >> notes.txt"
+      },
+      {
+        "cmd": "grep hello notes.txt"
+      },
+      {
+        "cmd": "grep -i hello notes.txt"
+      },
+      {
+        "cmd": "grep -n bye notes.txt"
+      },
+      {
+        "cmd": "grep -c -i hello notes.txt"
+      },
+      {
+        "cmd": "grep -v hello notes.txt"
+      },
+      {
+        "cmd": "grep -in HELLO notes.txt"
+      },
+      {
+        "cmd": "grep nothing notes.txt"
+      },
+      {
+        "cmd": "grep hello nofile"
+      },
+      {
+        "cmd": "grep -r World .",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "grep World src"
+      },
+      {
+        "cmd": "cat notes.txt | grep -c hello"
+      },
+      {
+        "cmd": "find . -name '*.c'",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find src -type d",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find . -type f -perm 600"
+      },
+      {
+        "cmd": "find . -name 'a.*' -user root"
+      },
+      {
+        "cmd": "find src -name '*.c' -exec ls -l {} \\;",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find . -size 0",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find . -type f -size +0",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find . -mtime -1 -type f",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find nothing"
+      },
+      {
+        "cmd": "find . -name '*.txt' -type f",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find . -perm -u=r -name '*.txt'",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find src",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find . -iname 'NOTES*'"
+      },
+      {
+        "cmd": "find . -name '*.c' | wc -l"
+      },
+      {
+        "cmd": "find . -empty -type d"
+      },
+      {
+        "cmd": "useradd alice"
+      },
+      {
+        "cmd": "chown alice src/a.c"
+      },
+      {
+        "cmd": "find . -user alice"
+      },
+      {
+        "cmd": "find . -nouser"
+      },
+      {
+        "cmd": "find . -type x"
+      }
+    ]
+  },
+  {
+    "id": "access",
+    "prelude": [
+      "mkdir -p /lab/w",
+      "cd /lab/w",
+      "useradd -m alice"
+    ],
+    "steps": [
+      {
+        "cmd": "mkdir secret"
+      },
+      {
+        "cmd": "chmod 700 secret"
+      },
+      {
+        "cmd": "touch secret/x"
+      },
+      {
+        "cmd": "ls secret",
+        "as": "alice"
+      },
+      {
+        "cmd": "touch secret/y",
+        "as": "alice"
+      },
+      {
+        "cmd": "cat secret/x",
+        "as": "alice"
+      },
+      {
+        "cmd": "touch pub"
+      },
+      {
+        "cmd": "echo hi >> pub",
+        "as": "alice"
+      },
+      {
+        "cmd": "cat pub",
+        "as": "alice"
+      },
+      {
+        "cmd": "chmod 600 pub"
+      },
+      {
+        "cmd": "cat pub",
+        "as": "alice"
+      },
+      {
+        "cmd": "mkdir shared"
+      },
+      {
+        "cmd": "chmod 1777 shared"
+      },
+      {
+        "cmd": "touch shared/rootfile"
+      },
+      {
+        "cmd": "chmod 666 shared/rootfile"
+      },
+      {
+        "cmd": "rm -f shared/rootfile",
+        "as": "alice"
+      },
+      {
+        "cmd": "touch shared/mine",
+        "as": "alice"
+      },
+      {
+        "cmd": "ls -l shared"
+      },
+      {
+        "cmd": "rm shared/mine",
+        "as": "alice"
+      },
+      {
+        "cmd": "chmod 777 shared"
+      },
+      {
+        "cmd": "rm -f shared/rootfile",
+        "as": "alice"
+      },
+      {
+        "cmd": "ls shared"
+      },
+      {
+        "cmd": "whoami",
+        "as": "alice"
+      },
+      {
+        "cmd": "id",
+        "as": "alice"
+      },
+      {
+        "cmd": "chmod 777 pub",
+        "as": "alice"
+      },
+      {
+        "cmd": "chown alice pub",
+        "as": "alice"
+      },
+      {
+        "cmd": "mkdir x",
+        "as": "alice"
+      },
+      {
+        "cmd": "useradd mallory",
+        "as": "alice"
+      },
+      {
+        "cmd": "ls /root",
+        "as": "alice"
+      },
+      {
+        "cmd": "chmod 711 secret"
+      },
+      {
+        "cmd": "ls secret",
+        "as": "alice"
+      },
+      {
+        "cmd": "chmod 644 secret/x"
+      },
+      {
+        "cmd": "cat secret/x",
+        "as": "alice"
+      },
+      {
+        "cmd": "chmod 744 secret"
+      },
+      {
+        "cmd": "ls secret",
+        "as": "alice"
+      },
+      {
+        "cmd": "cat secret/x",
+        "as": "alice"
+      }
+    ]
+  },
+  {
+    "id": "edge",
+    "prelude": [
+      "mkdir -p /lab/w",
+      "cd /lab/w",
+      "useradd -m alice"
+    ],
+    "steps": [
+      {
+        "cmd": "mkdir docs"
+      },
+      {
+        "cmd": "wc docs"
+      },
+      {
+        "cmd": "head docs"
+      },
+      {
+        "cmd": "tail docs"
+      },
+      {
+        "cmd": "su nobody2"
+      },
+      {
+        "cmd": "passwd -S nobody2"
+      },
+      {
+        "cmd": "mkdir -p src/sub && touch src/a.c src/sub/b.c"
+      },
+      {
+        "cmd": "find . -name '*.c' -maxdepth 2",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find . -maxdepth 1 -type d",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find . -foo"
+      },
+      {
+        "cmd": "find src -name"
+      },
+      {
+        "cmd": "echo 'abc 123' > t.txt; echo 'xyz' >> t.txt; echo 'a1b2' >> t.txt"
+      },
+      {
+        "cmd": "grep '[0-9]\\+' t.txt"
+      },
+      {
+        "cmd": "grep -E '^[a-z]+$' t.txt"
+      },
+      {
+        "cmd": "grep -o '[0-9]' t.txt"
+      },
+      {
+        "cmd": "grep -w abc t.txt"
+      },
+      {
+        "cmd": "grep -l abc t.txt nothing"
+      },
+      {
+        "cmd": "grep '[[:digit:]]' t.txt"
+      },
+      {
+        "cmd": "grep -c '' t.txt"
+      },
+      {
+        "cmd": "chmod 4755 t.txt; cp t.txt t2; cp -p t.txt t3; ls -l t.txt t2 t3"
+      },
+      {
+        "cmd": "mv docs src"
+      },
+      {
+        "cmd": "ls src"
+      },
+      {
+        "cmd": "mv src src/sub"
+      },
+      {
+        "cmd": "mv t2 src/sub"
+      },
+      {
+        "cmd": "mv src/sub/t2 ."
+      },
+      {
+        "cmd": "cp -r src src/sub"
+      },
+      {
+        "cmd": "mkdir priv; chmod 700 priv; touch priv/f; chmod 744 priv"
+      },
+      {
+        "cmd": "ls -l priv",
+        "as": "alice"
+      },
+      {
+        "cmd": "chmod 755 priv; chmod 444 priv/f; chmod 777 priv"
+      },
+      {
+        "cmd": "rm -f priv/f",
+        "as": "alice"
+      },
+      {
+        "cmd": "ls priv"
+      },
+      {
+        "cmd": "chown alice:nogrp t3"
+      },
+      {
+        "cmd": "chown bob:alice t3"
+      },
+      {
+        "cmd": "chown alice: t3; ls -l t3"
+      },
+      {
+        "cmd": "ln -s loop1 loop2; ln -s loop2 loop1; cat loop1"
+      },
+      {
+        "cmd": "umask -S"
+      },
+      {
+        "cmd": "umask 999"
+      },
+      {
+        "cmd": "touch -c ghost; ls ghost"
+      },
+      {
+        "cmd": "ls -i t3 | wc -w"
+      },
+      {
+        "cmd": "rm -r src; rm -rf /"
+      },
+      {
+        "cmd": "echo $HOME $PWD; echo ~alice"
+      },
+      {
+        "cmd": "cat < t.txt | head -n 1"
+      },
+      {
+        "cmd": "ls nothing 2>/dev/null || echo fail"
+      },
+      {
+        "cmd": "ls nothing 2>&1 | wc -l"
+      },
+      {
+        "cmd": "false_cmd && echo yes"
+      },
+      {
+        "cmd": "rmdir nothing; rmdir t3"
+      },
+      {
+        "cmd": "mkdir"
+      },
+      {
+        "cmd": "cp"
+      },
+      {
+        "cmd": "cp t3"
+      },
+      {
+        "cmd": "chmod 644"
+      },
+      {
+        "cmd": "ls -z"
+      },
+      {
+        "cmd": "id -un; id -G alice; id -gn alice"
+      },
+      {
+        "cmd": "groups alice"
+      },
+      {
+        "cmd": "usermod -L alice; passwd -S alice",
+        "norm": [
+          "isodate"
+        ]
+      },
+      {
+        "cmd": "userdel -r alice; ls /home /var/spool/mail"
+      },
+      {
+        "cmd": "stat -c '%N' loop1"
+      },
+      {
+        "cmd": "ls -lt t.txt t3 | wc -l"
+      },
+      {
+        "cmd": "ln t.txt hl; ln t.txt hl2; ls -l t.txt"
+      }
+    ]
+  },
+  {
+    "id": "review-fixes",
+    "prelude": [
+      "mkdir -p /lab/w",
+      "cd /lab/w"
+    ],
+    "steps": [
+      {
+        "cmd": "mkdir a; ln -s . a/self; echo foo > a/x"
+      },
+      {
+        "cmd": "grep -R foo a"
+      },
+      {
+        "cmd": "grep -R zz a"
+      },
+      {
+        "cmd": "mv . /tmp"
+      },
+      {
+        "cmd": "ls [z-a]"
+      },
+      {
+        "cmd": "ls $NOPE"
+      },
+      {
+        "cmd": "echo \"\" x"
+      },
+      {
+        "cmd": "echo $NOPE end"
+      },
+      {
+        "cmd": "touch constructor"
+      },
+      {
+        "cmd": "ls"
+      },
+      {
+        "cmd": "cat toString"
+      },
+      {
+        "cmd": "find . -name \"[z-a]\""
+      }
+    ]
+  }
+]

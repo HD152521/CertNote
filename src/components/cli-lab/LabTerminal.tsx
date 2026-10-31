@@ -1,17 +1,24 @@
 'use client';
 
-import { useEffect, useRef, type KeyboardEvent } from 'react';
+import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
 export type NewLogEntry =
-  | { kind: 'cmd'; text: string; exitCode: number }
+  | { kind: 'cmd'; text: string; exitCode: number; prompt?: string }
   | { kind: 'out' | 'err' | 'note' | 'sys' | 'pass'; text: string };
 export type LogEntry = NewLogEntry & { id: number };
 
 interface LabTerminalProps {
+  /** 머리줄 왼쪽에 보이는 경로 */
   cwd: string;
-  region: string;
-  accountId: string;
+  /** 머리줄 오른쪽. 없으면 AWS 리전·계정 표시 */
+  headerRight?: ReactNode;
+  region?: string;
+  accountId?: string;
+  /** 셸 프롬프트(예: "[root@localhost ~]# "). 없으면 AWS 연습장 프롬프트 */
+  prompt?: string;
+  inputLabel?: string;
+  placeholder?: string;
   log: LogEntry[];
   input: string;
   onInput: (value: string) => void;
@@ -21,7 +28,23 @@ interface LabTerminalProps {
 
 const PROMPT_USER = 'learner@certnote';
 
-function Prompt() {
+// "[root@localhost ~]# " 를 칸별로 색칠한다.
+function ShellPrompt({ text }: { text: string }) {
+  const m = /^\[([^@]+@[^ ]+) (.*)\]([#$]) $/.exec(text);
+  if (!m) return <span className="select-none text-[#6b7f78]">{text}</span>;
+  return (
+    <span className="select-none">
+      <span className="text-[#6b7f78]">[</span>
+      <span className="text-[#5eead4]">{m[1]}</span>
+      <span className="text-[#c9d6d0]"> {m[2]}</span>
+      <span className="text-[#6b7f78]">]{m[3]}</span>
+      <span aria-hidden> </span>
+    </span>
+  );
+}
+
+function Prompt({ text }: { text?: string }) {
+  if (text) return <ShellPrompt text={text} />;
   return (
     <span className="select-none">
       <span className="text-[#5eead4]">{PROMPT_USER}</span>
@@ -37,7 +60,7 @@ function Entry({ entry }: { entry: LogEntry }) {
       return (
         <div className="group flex items-start gap-3">
           <div className="min-w-0 flex-1 whitespace-pre-wrap break-all">
-            <Prompt />
+            <Prompt text={entry.prompt} />
             <span className="text-[#e7efeb]">{entry.text}</span>
           </div>
           {entry.exitCode !== 0 && (
@@ -71,7 +94,10 @@ function Entry({ entry }: { entry: LogEntry }) {
   }
 }
 
-export function LabTerminal({ cwd, region, accountId, log, input, onInput, onKeyDown, inputRef }: LabTerminalProps) {
+export function LabTerminal({
+  cwd, headerRight, region, accountId, prompt, inputLabel = 'AWS CLI 명령 입력',
+  placeholder = 'aws 로 시작해 보세요 · Tab 자동 완성', log, input, onInput, onKeyDown, inputRef,
+}: LabTerminalProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // 새 줄이 생기면 터미널 안쪽만 맨 아래로 — 페이지 스크롤은 건드리지 않는다.
@@ -88,11 +114,13 @@ export function LabTerminal({ cwd, region, accountId, log, input, onInput, onKey
       }}
     >
       <div className="flex items-center justify-between gap-3 border-b border-[#1f2b27] bg-[#121b18] px-4 py-2 text-[11.5px] text-[#6b7f78]">
-        <span className="truncate">~/labs/{cwd}</span>
-        <span className="flex shrink-0 items-center gap-2">
-          <span className="rounded-sm bg-[#5eead4]/10 px-1.5 text-[#5eead4]">{region}</span>
-          <span className="hidden sm:inline">acct {accountId}</span>
-        </span>
+        <span className="truncate">{cwd}</span>
+        {headerRight ?? (
+          <span className="flex shrink-0 items-center gap-2">
+            <span className="rounded-sm bg-[#5eead4]/10 px-1.5 text-[#5eead4]">{region}</span>
+            <span className="hidden sm:inline">acct {accountId}</span>
+          </span>
+        )}
       </div>
 
       <div ref={scrollRef} role="log" aria-live="polite" className="h-[22rem] overflow-y-auto px-4 py-3 sm:h-[26rem]">
@@ -100,7 +128,7 @@ export function LabTerminal({ cwd, region, accountId, log, input, onInput, onKey
           <Entry key={entry.id} entry={entry} />
         ))}
         <label className="flex items-center">
-          <Prompt />
+          <Prompt text={prompt} />
           <input
             ref={inputRef}
             value={input}
@@ -110,13 +138,13 @@ export function LabTerminal({ cwd, region, accountId, log, input, onInput, onKey
             autoCapitalize="off"
             autoComplete="off"
             autoCorrect="off"
-            aria-label="AWS CLI 명령 입력"
+            aria-label={inputLabel}
             // 16px 미만이면 iOS 가 입력 시 화면을 확대한다.
             className={cn(
               'min-w-0 flex-1 bg-transparent text-[16px] text-[#e7efeb] caret-[#5eead4] outline-none sm:text-[13px]',
               'placeholder:text-[#3d4f49]',
             )}
-            placeholder={log.some((e) => e.kind === 'cmd') ? '' : 'aws 로 시작해 보세요 · Tab 자동 완성'}
+            placeholder={log.some((e) => e.kind === 'cmd') ? '' : placeholder}
           />
         </label>
       </div>
