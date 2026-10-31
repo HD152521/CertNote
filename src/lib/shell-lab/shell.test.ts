@@ -130,3 +130,11 @@ describe('aliases', () => {
     expect(runLine('ll /etc/skel', st).stdout).toBe(runLine('ls -l /etc/skel', st).stdout);
   });
 });
+
+describe('alias in lab checks', () => {
+  it('ll -i counts as ls -i for the inode step', () => {
+    const lab = SHELL_LABS.find((l) => l.id === 'linux-links')!;
+    const result = runLine('ll -i', labInitialState(lab));
+    expect(lab.steps.find((s) => s.id === 'inode')!.isDone({ state: result.state, result })).toBe(true);
+  });
+});

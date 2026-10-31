@@ -148,7 +148,7 @@ class Runner {
       io.err('-bash: maximum nesting level exceeded\n');
       return 1;
     }
-    this.out.commands.push(argv);
+    this.out.commands.push([name, ...args]);
     if (name === 'bash' || name === 'sh') {
       if (args[0] === '-c' && args[1] !== undefined) return this.line(args[1], io, depth + 1);
       io.note('새 셸을 여는 것은 연습장에서 지원하지 않아요. bash -c "명령" 은 쓸 수 있어요.');
