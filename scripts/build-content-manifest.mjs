@@ -37,6 +37,10 @@ const SOURCE_FILES = [
   'src/app/terms/page.tsx',
   'src/app/roadmap/page.tsx',
   'content/roadmaps.json',
+  // 실습(/lab) — 내용이 코드에 있다
+  'src/lib/labCatalog.ts',
+  'src/lib/shell-lab/labs.ts',
+  'src/lib/cli-lab/labs.ts',
 ];
 
 const DAY_FILE_RE = /week\d+[\\/]day\d+\.md$/;

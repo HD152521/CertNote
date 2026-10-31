@@ -55,3 +55,6 @@ qa/
 
 # has_password 보정 결과(되돌리기용 id 목록, 운영 데이터) — 커밋하지 않는다
 has-password-backfill-*.json
+
+# Git Bash 가 비정상 종료할 때 남기는 덤프
+*.stackdump

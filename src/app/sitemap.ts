@@ -5,6 +5,7 @@ import { getRoadmapRoles } from '@/lib/roadmap';
 import { getSourceFileMtime } from '@/lib/fileMtime';
 import { FREE_WEEK } from '@/lib/entitlement/policy';
 import { isIndexableDay } from '@/lib/day/indexPolicy';
+import { LAB_CATALOG } from '@/lib/labCatalog';
 import { SITE_URL } from '@/lib/site';
 
 // 여러 파일의 lastModified 중 최댓값(가장 최근 변경)을 고른다. undefined는 무시.
@@ -110,6 +111,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       out.push(sitemapEntry(`${SITE_URL}/roadmap/${role.slug}`, roadmapLastMod, 'monthly', 0.6));
     }
   }
+
+  // 실습(브라우저 터미널 연습장). 목록과 과제별 페이지. 내용은 코드에 있으므로 소스 파일 시각을 쓴다.
+  const labLastMod = maxMtime([
+    await getSourceFileMtime('src/lib/labCatalog.ts'),
+    await getSourceFileMtime('src/lib/shell-lab/labs.ts'),
+    await getSourceFileMtime('src/lib/cli-lab/labs.ts'),
+  ]);
+  out.push(sitemapEntry(`${SITE_URL}/lab`, labLastMod, 'monthly', 0.7));
+  for (const lab of LAB_CATALOG) out.push(sitemapEntry(`${SITE_URL}/lab/${lab.id}`, labLastMod, 'monthly', 0.6));
 
   // 영어판(번역이 끝난 주차만 색인). 콘텐츠가 없으면 조용히 생략.
   const enCerts = await listCerts(EN_CATEGORY).catch(() => []);
