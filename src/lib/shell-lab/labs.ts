@@ -435,10 +435,10 @@ export const SHELL_LABS: ShellLab[] = [
   },
 ];
 
-/** 과제의 처음 상태. setup 명령을 실행하고 시계·종료 코드는 처음처럼 되돌린다. */
+/** 과제의 처음 상태. setup 명령을 실행하고 종료 코드는 처음처럼 되돌린다. */
 export function labInitialState(lab: ShellLab): ShellState {
   let st = createInitialState();
-  const start = st.clock;
   for (const line of lab.setup) st = runLine(line, st).state;
-  return { ...st, clock: start, lastExit: 0 };
+  // 시계는 되돌리지 않는다 — 되돌리면 setup 이 만든 파일이 "미래" 시각이 되어 ls -l 이 시각 대신 연도를 찍는다.
+  return { ...st, lastExit: 0 };
 }

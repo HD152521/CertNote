@@ -1266,5 +1266,68 @@
         "cmd": "chown lee: proj/README; ls -l proj/README"
       }
     ]
+  },
+  {
+    "id": "quiz-shell",
+    "prelude": [
+      "mkdir -p /lab/q",
+      "cd /lab/q"
+    ],
+    "steps": [
+      {
+        "cmd": "touch a.txt b.log"
+      },
+      {
+        "cmd": "mkdir -p d/e"
+      },
+      {
+        "cmd": "find . -atime -1 -type f",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find . -ctime -1",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find . -amin -60 -name '*.log'"
+      },
+      {
+        "cmd": "find . -cmin +100"
+      },
+      {
+        "cmd": "find . -atime +7"
+      },
+      {
+        "cmd": "find . -ctime 0 -type d",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "find . -atime x"
+      },
+      {
+        "cmd": "chmod g-w,o-r a.txt"
+      },
+      {
+        "cmd": "ls -l a.txt"
+      },
+      {
+        "cmd": "chmod 755 -a a.txt"
+      },
+      {
+        "cmd": "chown -r root a.txt"
+      },
+      {
+        "cmd": "mv -r d e2"
+      },
+      {
+        "cmd": "ln -h a.txt x"
+      }
+    ]
   }
 ]

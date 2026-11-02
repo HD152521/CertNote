@@ -29,6 +29,38 @@ export interface Parsed {
 }
 
 /**
+ * 실제 Rocky 8.8 의 짧은 옵션 전체(coreutils 8.30, grep 3.1, shadow-utils 4.6, util-linux 2.32 의 --help 기준).
+ * 흉내 내지 않은 옵션을 "invalid option" 과 구분하는 데만 쓴다.
+ */
+export const REAL_SHORT_OPTIONS: Record<string, string> = {
+  ls: 'aAbBcCdDfFgGhHiIklLmnNopqQrRsStTuUvwxXZ1',
+  cp: 'abdfiHlLnPpRrsStTuvxZ',
+  mv: 'bfinStTuvZ',
+  rm: 'dfiIrRv',
+  ln: 'bdfFiLnPrsStTv',
+  mkdir: 'mpvZ',
+  rmdir: 'pv',
+  touch: 'acdfhmrt',
+  chmod: 'cfvR',
+  chown: 'cfhvRHLP',
+  chgrp: 'cfhvRHLP',
+  cat: 'AbeEnstTuv',
+  head: 'cnqvz0123456789',
+  tail: 'bcfFlnqsvz0123456789',
+  wc: 'clLmw',
+  stat: 'cfLt',
+  grep: 'ABCDEFGHILPRTUVXZabcdefhilmnoqrsuvwxyz0123456789',
+  useradd: 'bcdDefgGhkKlmMnNopPrRsuUZ',
+  usermod: 'acdefgGhlLmopPRsuUvVwWZ',
+  userdel: 'fhrRPZ',
+  groupadd: 'fgKoprRPh',
+  groupdel: 'fhRP',
+  passwd: 'kluSdenxwif',
+  id: 'agGnruzZ',
+  su: 'cfgGhlmpPsuV',
+};
+
+/**
  * GNU getopt 처럼: -abc 묶음, -n 5 / -n5, 옵션이 피연산자 뒤에 와도 된다, -- 뒤는 전부 피연산자.
  * 모르는 옵션이면 문구를 stderr 에 쓰고 null.
  */
@@ -75,6 +107,11 @@ export function getopt(
           break;
         }
         if (!spec.flags.includes(c)) {
+          // 실제로는 있는 옵션인데 흉내 내지 않은 것이면 "invalid option" 으로 속이지 않는다.
+          if (REAL_SHORT_OPTIONS[name]?.includes(c)) {
+            io.note(`${name} -${c} 는 실제 Rocky Linux 에 있는 옵션이지만 연습장에서는 아직 지원하지 않아요.`);
+            return { exit: usageExit };
+          }
           io.err(`${name}: invalid option -- '${c}'\n${tryHelp}`);
           return { exit: usageExit };
         }

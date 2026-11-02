@@ -3,7 +3,7 @@ import { isRoot, node, resolve, uid } from '../fs';
 import { applyMode, modeString, octal4, parseMode, type ModeSpec } from '../mode';
 import { accountByName, accountByUid, groupByName, groupsOf, session } from '../state';
 import type { Inode, ShellState } from '../types';
-import { errText, q, type Command, type Ctx } from './context';
+import { REAL_SHORT_OPTIONS, errText, q, type Command, type Ctx } from './context';
 
 /** -R 이면 디렉터리 안쪽까지. 안쪽의 심볼릭 링크는 따라가지 않는다. */
 function walk(st: ShellState, path: string, n: Inode, recursive: boolean, visit: (path: string, n: Inode) => void) {
@@ -17,18 +17,25 @@ function walk(st: ShellState, path: string, n: Inode, recursive: boolean, visit:
 }
 
 /** chmod·chown 의 옵션(-R -v -c -f)과 나머지를 나눈다. chmod 는 -x 같은 모드가 옵션처럼 생겨서 따로 본다. */
-function splitArgs(ctx: Ctx, modeLike: boolean): { flags: Set<string>; rest: string[] } | number {
+function splitArgs(ctx: Ctx, modeLike: boolean): { flags: Set<string>; rest: string[]; modes: string[] } | number {
   const flags = new Set<string>();
   const rest: string[] = [];
+  const modes: string[] = [];
   for (const a of ctx.args) {
-    if (modeLike && /^-[rwxXst]+$/.test(a)) rest.push(a);
+    // GNU chmod 은 - 뒤가 모드 글자(rwxXst ugoa , + - = 숫자)뿐이면 옵션이 아니라 모드로 읽는다: -x, -a, -go
+    if (modeLike && /^-[rwxXstugoa,+=0-7-]+$/.test(a)) modes.push(a);
     else if (/^-[Rvcfh]+$/.test(a)) for (const c of a.slice(1)) flags.add(c);
     else if (a.startsWith('-') && a.length > 1 && !/^-\d/.test(a)) {
-      ctx.io.err(`${ctx.name}: invalid option -- '${a[1]}'\nTry '${ctx.name} --help' for more information.\n`);
+      const bad = [...a.slice(1)].find((c) => !'Rvcfh'.includes(c)) ?? a[1];
+      if (REAL_SHORT_OPTIONS[ctx.name]?.includes(bad)) {
+        ctx.io.note(`${ctx.name} -${bad} 는 실제 Rocky Linux 에 있는 옵션이지만 연습장에서는 아직 지원하지 않아요.`);
+        return 1;
+      }
+      ctx.io.err(`${ctx.name}: invalid option -- '${bad}'\nTry '${ctx.name} --help' for more information.\n`);
       return 1;
     } else rest.push(a);
   }
-  return { flags, rest };
+  return { flags, rest, modes };
 }
 
 function operandsOrError(ctx: Ctx, rest: string[]): boolean {
@@ -48,10 +55,12 @@ const describe = (m: number, n: Inode) => `${octal4(m)} (${modeString({ type: n.
 export const chmod: Command = (ctx) => {
   const parsed = splitArgs(ctx, true);
   if (typeof parsed === 'number') return parsed;
-  const { flags, rest } = parsed;
+  const { flags, rest, modes } = parsed;
   const { st, io } = ctx;
-  if (!operandsOrError(ctx, rest)) return 1;
-  const [modeText, ...files] = rest;
+  // -x 처럼 옵션 자리에 모드가 오면 그것이 모드가 되고 나머지 인자는 모두 파일이다(chmod 755 -a f → 모드 '-a').
+  const args = modes.length ? [modes.join(','), ...rest] : rest;
+  if (!operandsOrError(ctx, args)) return 1;
+  const [modeText, ...files] = args;
   const spec: ModeSpec | null = parseMode(modeText);
   if (!spec) {
     io.err(`chmod: invalid mode: ${q(modeText)}\nTry 'chmod --help' for more information.\n`);
