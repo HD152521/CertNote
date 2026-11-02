@@ -97,6 +97,16 @@ export const chmod: Command = (ctx) => {
             : `mode of ${q(p)} changed from ${describe(before, n)} to ${describe(next, n)}\n`,
         );
       }
+      // GNU: 모드를 옵션 자리(-w)로 받았는데 umask 때문에 결과가 기대와 다르면 알리고 실패로 끝난다.
+      if (modes.length) {
+        const naive = applyMode(spec, before, n.type === 'dir', 0);
+        if (next & ~naive) {
+          const name = /^[\w./-]+$/.test(p) ? p : q(p);
+          const perms = (m: number) => modeString({ type: n.type, mode: m }).slice(1);
+          io.err(`chmod: ${name}: new permissions are ${perms(next)}, not ${perms(naive)}\n`);
+          exit = 1;
+        }
+      }
     });
   }
   return exit;

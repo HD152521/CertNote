@@ -1327,6 +1327,30 @@
       },
       {
         "cmd": "ln -h a.txt x"
+      },
+      {
+        "cmd": "touch f"
+      },
+      {
+        "cmd": "chmod 777 f"
+      },
+      {
+        "cmd": "chmod -x -w f"
+      },
+      {
+        "cmd": "ls -l f"
+      },
+      {
+        "cmd": "mkdir dd"
+      },
+      {
+        "cmd": "touch dd/in"
+      },
+      {
+        "cmd": "chmod -x -R dd"
+      },
+      {
+        "cmd": "ls -ld dd"
       }
     ]
   },

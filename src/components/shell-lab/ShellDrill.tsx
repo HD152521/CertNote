@@ -159,15 +159,14 @@ export function ShellDrill({ drillId }: { drillId: string }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-1.5 px-4 sm:px-5" role="tablist" aria-label="문제">
+      <nav className="flex flex-wrap gap-1.5 px-4 sm:px-5" aria-label="문제 고르기">
         {drill.items.map((it, i) => {
           const done = solved.includes(it.id);
           return (
             <button
               key={it.id}
               type="button"
-              role="tab"
-              aria-selected={i === index}
+              aria-current={i === index ? 'step' : undefined}
               aria-label={`문제 ${i + 1}${done ? ' 정답' : ''}: ${it.title}`}
               onClick={() => setIndex(i)}
               className={cn(
@@ -181,7 +180,7 @@ export function ShellDrill({ drillId }: { drillId: string }) {
             </button>
           );
         })}
-      </div>
+      </nav>
 
       <DrillItemView
         key={item.id}

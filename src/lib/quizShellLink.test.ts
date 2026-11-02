@@ -105,3 +105,27 @@ describe('initial states', () => {
     expect(runLine('ls -l', st).stdout).toMatch(/ Oct 31 09:00 file\.txt\n$/);
   });
 });
+
+describe('quizSandboxState option clusters and directories', () => {
+  it('reads -aG as an option with a value, not a user name', () => {
+    const st = quizSandboxState(['usermod -aG wheel kim', 'useradd -mG dev lee']);
+    expect(runLine('id wheel', st).exitCode).toBe(1);
+    expect(runLine('usermod -aG wheel kim', st).exitCode).toBe(0);
+    expect(runLine('useradd -mG dev lee', st).exitCode).toBe(0);
+  });
+
+  it('makes sticky/setgid targets without an extension into directories', () => {
+    const st = quizSandboxState(['chmod 1777 /tmp/shared', 'chmod g+s team', 'chmod u+s tool', 'chmod 2755 run.sh']);
+    expect(runLine('ls -ld /tmp/shared team', st).stdout).toMatch(/^d.*\/tmp\/shared\nd.*team\n$/);
+    expect(runLine('ls -l tool run.sh', st).stdout).toMatch(/^-.*run\.sh\n-.*tool\n$/);
+  });
+
+  it('creates a missing find start directory', () => {
+    const st = quizSandboxState(['find /data -perm -4000']);
+    expect(runLine('find /data -perm -4000', st).stderr).toBe('');
+  });
+
+  it('never throws on odd names', () => {
+    expect(() => quizSandboxState(["rm 'a'b*", 'cat "x y.txt"', 'chmod 755 $(id)'])).not.toThrow();
+  });
+});

@@ -76,7 +76,12 @@ const PERM: DrillItem[] = [
     isDone: ({ state, result }) =>
       stat(state, '/data/secret')?.type === 'dir' &&
       mode(state, '/data/secret') === 0o700 &&
-      result.commands.some((a) => a[0] === 'mkdir' && a.slice(1).some((x) => /^-[a-zA-Z]*m/.test(x) || x.startsWith('--mode'))),
+      result.commands.some(
+        (a) =>
+          a[0] === 'mkdir' &&
+          a.slice(1).some((x) => /^-[a-zA-Z]*m/.test(x) || x.startsWith('--mode')) &&
+          a.slice(1).some((x) => /(^|\/)secret\/?$/.test(x)),
+      ),
   },
   {
     id: 'umask',

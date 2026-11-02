@@ -215,7 +215,7 @@ export function ReviewSession() {
             </p>
             {current!.explanation && <p className="text-fg-muted whitespace-pre-wrap leading-relaxed mb-2">{current!.explanation}</p>}
             <p className="text-xs text-fg-faint">{fmt(s.nextDue, { due: formatDue(lang, result!.dueAt) })}</p>
-            <QuizShellLink key={current!.questionId} question={current!} wrong={!result!.correct} />
+            {lang !== 'en' && <QuizShellLink key={current!.questionId} question={current!} wrong={!result!.correct} />}
             {!result!.correct && (
               <>
                 <WrongReasonPicker questionId={current!.questionId} />

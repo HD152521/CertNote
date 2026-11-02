@@ -11,11 +11,9 @@ export const SANDBOX_DIR = '/root/practice';
 
 const SAMPLE_LINES = ['INFO server started', 'ERROR disk full', 'warning: low memory', 'error: retry failed', 'INFO user kim login', 'DEBUG done'];
 
-/** 값을 하나 받는 옵션(그 다음 낱말은 파일이 아니다) */
-const OPT_WITH_VALUE: Record<string, string[]> = {
-  head: ['-n', '-c'], tail: ['-n', '-c'], grep: ['-e', '-f', '-m', '-A', '-B', '-C'],
-  useradd: ['-g', '-G', '-d', '-s', '-u', '-c', '-e', '-k'], usermod: ['-g', '-G', '-d', '-s', '-u', '-c', '-l', '-e'],
-  groupadd: ['-g'], passwd: ['-n', '-x', '-w', '-i'],
+/** 값을 하나 받는 짧은 옵션 글자(그 다음 낱말이나 묶음의 나머지는 파일이 아니다) */
+const OPT_WITH_VALUE: Record<string, string> = {
+  head: 'nc', tail: 'nc', grep: 'efmABC', useradd: 'gGdsucek', usermod: 'gGdsucle', groupadd: 'g', passwd: 'nxwi',
 };
 
 interface Needs {
@@ -31,39 +29,59 @@ interface Needs {
 const isPlainPath = (s: string) => /^[A-Za-z0-9_./-]+$/.test(s) && s !== '.' && s !== '..' && !s.startsWith('-');
 const isName = (s: string) => /^[a-z_][a-z0-9_-]*$/.test(s);
 
-/** 옵션과 옵션 값을 뺀 위치 인자 */
-function positionals(name: string, args: string[]): string[] {
-  const withValue = OPT_WITH_VALUE[name] ?? [];
-  const out: string[] = [];
+interface Args {
+  /** 옵션과 옵션 값을 뺀 위치 인자 */
+  pos: string[];
+  /** 값을 받은 옵션: -G wheel, -aG wheel, -Gwheel 모두 G → wheel */
+  values: Record<string, string>;
+}
+
+/** getopt 처럼 -aG wheel 같은 묶음을 풀어 위치 인자와 옵션 값을 나눈다 */
+function parseArgs(name: string, args: string[]): Args {
+  const withValue = OPT_WITH_VALUE[name] ?? '';
+  const pos: string[] = [];
+  const values: Record<string, string> = {};
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     // chmod -x file 의 -x 는 옵션이 아니라 모드다.
-    if (name === 'chmod' && /^-[rwxXstugoa,+=0-7-]+$/.test(a)) out.push(a);
-    else if (withValue.includes(a)) i++;
-    else if (!a.startsWith('-') || a === '-') out.push(a);
+    if (name === 'chmod' && /^-[rwxXstugoa,+=0-7-]+$/.test(a)) pos.push(a);
+    else if (a.startsWith('--') || a === '-' || !a.startsWith('-')) {
+      if (!a.startsWith('--')) pos.push(a);
+    } else {
+      const j = [...a.slice(1)].findIndex((c) => withValue.includes(c));
+      if (j < 0) continue;
+      const rest = a.slice(j + 2);
+      values[a[j + 1]] = rest || args[++i] || '';
+    }
   }
-  return out;
+  return { pos, values };
 }
 
-const optionValue = (args: string[], opt: string) => {
-  const i = args.indexOf(opt);
-  return i >= 0 ? args[i + 1] : undefined;
-};
+/** 특수 권한 중 sticky·setgid 는 보통 디렉터리에 붙인다(chmod 1777 /tmp, chmod g+s shared) */
+const DIR_MODE = /^[123567][0-7]{3}$|[+=][a-z]*t|g[a-z]*[+=][a-z]*s/;
+const hasExtension = (p: string) => /\.\w+$/.test(p);
 
 /** *.txt 같은 단순 와일드카드는 걸리는 파일 두 개를 만든다 */
 function addPath(set: Set<string>, path: string) {
-  if (/^[^*?[\]]*\*[^*?[\]/]*$/.test(path)) {
+  if (/^[A-Za-z0-9_./-]*\*[A-Za-z0-9_.-]*$/.test(path)) {
     set.add(path.replace('*', 'a'));
     set.add(path.replace('*', 'b'));
   } else if (isPlainPath(path)) set.add(path);
+  // 그 밖(따옴표·공백이 든 이름 등)은 만들지 않는다 — setup 명령 문자열을 깨뜨릴 수 있다.
 }
 
 function collect(name: string, args: string[], needs: Needs) {
-  const pos = positionals(name, args);
+  const { pos, values } = parseArgs(name, args);
   const recursive = args.some((a) => /^-[a-zA-Z]*[rR]/.test(a));
+  const groupsIn = () => [values.g, ...(values.G?.split(',') ?? [])].filter((g): g is string => !!g && isName(g));
   switch (name) {
-    case 'chmod':
-      pos.slice(1).forEach((p) => addPath(recursive ? needs.dirs : needs.files, p));
+    case 'chmod': {
+      const toDir = (p: string) => recursive || (DIR_MODE.test(pos[0] ?? '') && !hasExtension(p));
+      pos.slice(1).forEach((p) => addPath(toDir(p) ? needs.dirs : needs.files, p));
+      break;
+    }
+    case 'find':
+      pos.forEach((p) => addPath(needs.dirs, p));
       break;
     case 'chown':
     case 'chgrp': {
@@ -93,14 +111,14 @@ function collect(name: string, args: string[], needs: Needs) {
       break;
     case 'useradd':
       pos.forEach((u) => needs.newUsers.add(u));
-      [optionValue(args, '-g'), ...(optionValue(args, '-G')?.split(',') ?? [])].forEach((g) => g && isName(g) && needs.groups.add(g));
+      groupsIn().forEach((g) => needs.groups.add(g));
       break;
     case 'groupadd':
       pos.forEach((g) => needs.newGroups.add(g));
       break;
     case 'usermod':
       pos.filter(isName).forEach((u) => needs.users.add(u));
-      [optionValue(args, '-g'), ...(optionValue(args, '-G')?.split(',') ?? [])].forEach((g) => g && isName(g) && needs.groups.add(g));
+      groupsIn().forEach((g) => needs.groups.add(g));
       break;
     case 'userdel': case 'passwd': case 'id': case 'groups': case 'su':
       pos.filter(isName).forEach((u) => needs.users.add(u));
@@ -130,7 +148,11 @@ export function quizSandboxState(commands: string[]): ShellState {
 
   let st = createInitialState();
   const run = (line: string) => {
-    st = runLine(line, st).state;
+    try {
+      st = runLine(line, st).state;
+    } catch {
+      // 준비 명령 하나가 실패해도 연습 셸은 열려야 한다.
+    }
   };
   run(`mkdir ${SANDBOX_DIR}`);
   run(`cd ${SANDBOX_DIR}`);

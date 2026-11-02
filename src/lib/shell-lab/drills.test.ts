@@ -59,6 +59,8 @@ ${r.stderr}`).toBe(0);
     expect(solves(item('find-suid'), ['find /var/data -type f -perm 4000 > /root/suid.txt'])).toBe(false);
     expect(solves(item('find-suid'), ['find /var/data -perm -2000 > /root/suid.txt'])).toBe(false);
     expect(solves(item('mkdir-m'), ['mkdir /data/secret', 'chmod 700 /data/secret', 'ls -ld /data/secret'])).toBe(false);
+    expect(solves(item('mkdir-m'), ['mkdir -m 755 /data/x; mkdir /data/secret; chmod 700 /data/secret'])).toBe(false);
+    expect(solves(item('mkdir-m'), ['cd /data', 'mkdir -m 0700 secret'])).toBe(true);
     expect(solves(item('chown-r'), ['chown kim:dev /data/app'])).toBe(false);
     expect(solves(item('userdel-r'), ['userdel park'])).toBe(false);
     expect(solves(item('useradd'), ['useradd -u 1500 -d /home/devkim -m -s /bin/sh -g dev devkim'])).toBe(false);

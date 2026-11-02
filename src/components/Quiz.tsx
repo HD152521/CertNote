@@ -116,7 +116,7 @@ export function Quiz({ question, questionId, slug, lang = 'ko' }: QuizProps) {
         <div className={cn('mt-4 rounded-md border p-3 text-sm', isCorrect ? 'border-success/40 bg-success/5' : 'border-danger/40 bg-danger/5')}>
           <p className="font-medium mb-1.5 text-fg">{isCorrect ? t.correct : `${t.answer}: ${question.answer}`}</p>
           {question.explanation && (<p className="text-fg-muted whitespace-pre-wrap leading-relaxed"><InlineMd text={question.explanation} /></p>)}
-          {slug && (
+          {slug && lang === 'ko' && (
             <QuizShellLink
               question={{ slug, prompt: question.text, choices: question.choices, answer: question.answer, explanation: question.explanation }}
               wrong={!isCorrect}
