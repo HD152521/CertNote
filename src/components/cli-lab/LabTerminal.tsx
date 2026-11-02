@@ -156,7 +156,7 @@ export function LabTerminal({
       {task && (
         <div className="border-b border-[#1f2b27] bg-[#16211e] px-4 py-2 font-sans sm:hidden">
           <div className="font-mono text-[11px] tracking-wide text-[#5eead4]">{task.label}</div>
-          <div className="mt-0.5 text-[13px] leading-snug text-[#dfe9e4]">{task.text}</div>
+          <div className="mt-0.5 whitespace-pre-line text-[13px] leading-snug text-[#dfe9e4]">{task.text}</div>
         </div>
       )}
 

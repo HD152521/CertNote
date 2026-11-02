@@ -1329,5 +1329,289 @@
         "cmd": "ln -h a.txt x"
       }
     ]
+  },
+  {
+    "id": "drill-octal",
+    "prelude": [
+      "mkdir /data",
+      "echo \"echo report\" > /data/report.sh",
+      "chmod 644 /data/report.sh",
+      "cd /data"
+    ],
+    "steps": [
+      {
+        "cmd": "chmod 750 /data/report.sh"
+      },
+      {
+        "cmd": "ls -l /data/report.sh"
+      }
+    ]
+  },
+  {
+    "id": "drill-mkdir-m",
+    "prelude": [
+      "mkdir /data",
+      "cd /data"
+    ],
+    "steps": [
+      {
+        "cmd": "mkdir -m 700 /data/secret"
+      },
+      {
+        "cmd": "ls -ld /data/secret"
+      }
+    ]
+  },
+  {
+    "id": "drill-umask",
+    "prelude": [
+      "mkdir /data",
+      "cd /data"
+    ],
+    "steps": [
+      {
+        "cmd": "umask 027"
+      },
+      {
+        "cmd": "umask"
+      },
+      {
+        "cmd": "mkdir /data/x"
+      },
+      {
+        "cmd": "touch /data/y"
+      },
+      {
+        "cmd": "ls -l /data"
+      }
+    ]
+  },
+  {
+    "id": "drill-setuid",
+    "prelude": [
+      "mkdir -p /data/bin",
+      "touch /data/bin/tool",
+      "chmod 755 /data/bin/tool",
+      "cd /data/bin"
+    ],
+    "steps": [
+      {
+        "cmd": "chmod u+s /data/bin/tool"
+      },
+      {
+        "cmd": "ls -l /data/bin/tool"
+      }
+    ]
+  },
+  {
+    "id": "drill-setgid-dir",
+    "prelude": [
+      "groupadd dev",
+      "mkdir -p /data/share",
+      "cd /data"
+    ],
+    "steps": [
+      {
+        "cmd": "chgrp dev /data/share"
+      },
+      {
+        "cmd": "chmod 2775 /data/share"
+      },
+      {
+        "cmd": "ls -ld /data/share"
+      },
+      {
+        "cmd": "touch /data/share/f"
+      },
+      {
+        "cmd": "ls -l /data/share"
+      }
+    ]
+  },
+  {
+    "id": "drill-sticky",
+    "prelude": [
+      "mkdir -p /data/pub",
+      "cd /data"
+    ],
+    "steps": [
+      {
+        "cmd": "chmod 1777 /data/pub"
+      },
+      {
+        "cmd": "ls -ld /data/pub"
+      }
+    ]
+  },
+  {
+    "id": "drill-chown-r",
+    "prelude": [
+      "useradd -m kim",
+      "groupadd dev",
+      "mkdir -p /data/app/conf /data/app/log",
+      "touch /data/app/run.sh /data/app/conf/app.conf /data/app/log/app.log",
+      "cd /data"
+    ],
+    "steps": [
+      {
+        "cmd": "chown -R kim:dev /data/app"
+      },
+      {
+        "cmd": "ls -lR /data/app"
+      }
+    ]
+  },
+  {
+    "id": "drill-useradd",
+    "prelude": [
+      "groupadd dev"
+    ],
+    "steps": [
+      {
+        "cmd": "useradd -u 1500 -d /home/devkim -m -s /bin/sh -G dev devkim"
+      },
+      {
+        "cmd": "id devkim"
+      },
+      {
+        "cmd": "grep devkim /etc/passwd"
+      },
+      {
+        "cmd": "ls -ld /home/devkim"
+      }
+    ]
+  },
+  {
+    "id": "drill-usermod-ag",
+    "prelude": [
+      "groupadd dev",
+      "useradd -m -G dev lee"
+    ],
+    "steps": [
+      {
+        "cmd": "usermod -aG wheel lee"
+      },
+      {
+        "cmd": "id lee"
+      }
+    ]
+  },
+  {
+    "id": "drill-lock",
+    "prelude": [
+      "useradd -m kim"
+    ],
+    "steps": [
+      {
+        "cmd": "passwd -l kim",
+        "norm": [
+          "isodate"
+        ]
+      },
+      {
+        "cmd": "passwd -S kim",
+        "norm": [
+          "isodate"
+        ]
+      },
+      {
+        "cmd": "ls -ld /home/kim",
+        "norm": [
+          "isodate"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "drill-userdel-r",
+    "prelude": [
+      "useradd -m park",
+      "touch /home/park/memo.txt"
+    ],
+    "steps": [
+      {
+        "cmd": "userdel -r park"
+      },
+      {
+        "cmd": "id park"
+      },
+      {
+        "cmd": "ls /home"
+      }
+    ]
+  },
+  {
+    "id": "drill-groupadd",
+    "prelude": [],
+    "steps": [
+      {
+        "cmd": "groupadd -g 3000 ops"
+      },
+      {
+        "cmd": "grep ops /etc/group"
+      }
+    ]
+  },
+  {
+    "id": "drill-find-suid",
+    "prelude": [
+      "mkdir -p /var/data/bin /var/data/lib",
+      "touch /var/data/bin/a /var/data/bin/b /var/data/lib/c /var/data/lib/d",
+      "chmod 4755 /var/data/bin/a",
+      "chmod 4711 /var/data/lib/c",
+      "chmod 2755 /var/data/lib/d",
+      "cd /root"
+    ],
+    "steps": [
+      {
+        "cmd": "find /var/data -type f -perm -4000 > /root/suid.txt",
+        "norm": [
+          "sort"
+        ]
+      },
+      {
+        "cmd": "cat /root/suid.txt",
+        "norm": [
+          "sort"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "drill-grep-count",
+    "prelude": [
+      "useradd -m kim",
+      "useradd -m -s /bin/sh lee",
+      "useradd -m park",
+      "cd /root"
+    ],
+    "steps": [
+      {
+        "cmd": "grep -c '/bin/bash$' /etc/passwd > /root/bash_count.txt"
+      },
+      {
+        "cmd": "cat /root/bash_count.txt"
+      }
+    ]
+  },
+  {
+    "id": "drill-find-exec",
+    "prelude": [
+      "useradd -m kim",
+      "useradd -m lee",
+      "mkdir -p /tmp/work/sub",
+      "touch /tmp/work/k1 /tmp/work/sub/k2 /tmp/work/l1 /tmp/work/sub/l2",
+      "chown kim /tmp/work/k1 /tmp/work/sub/k2",
+      "chown lee /tmp/work/l1 /tmp/work/sub/l2",
+      "cd /tmp/work"
+    ],
+    "steps": [
+      {
+        "cmd": "find /tmp/work -user kim -type f -exec rm {} \\;"
+      },
+      {
+        "cmd": "ls -lR /tmp/work"
+      }
+    ]
   }
 ]
