@@ -4,13 +4,13 @@ import { headingOf, tokenize, type Token } from './lexer';
 import { NotSupported, OraError, parseDefaultDate } from './values';
 
 /** 별칭으로 쓸 수 없는 예약어 */
-const RESERVED = new Set(
+export const RESERVED = new Set(
   ('SELECT FROM WHERE GROUP BY HAVING ORDER AND OR NOT IN IS NULL LIKE BETWEEN JOIN ON USING INNER LEFT RIGHT FULL ' +
     'OUTER CROSS NATURAL UNION INTERSECT MINUS DISTINCT ALL AS CASE WHEN THEN ELSE END EXISTS ANY SOME ESCAPE ASC DESC ' +
-    'FETCH OFFSET CONNECT START PRIOR SIBLINGS OVER PARTITION WITH INSERT UPDATE DELETE INTO VALUES SET CREATE DROP TABLE PIVOT UNPIVOT').split(' '),
+    'FETCH OFFSET CONNECT START PRIOR SIBLINGS OVER PARTITION FOR WITH INSERT UPDATE DELETE INTO VALUES SET CREATE DROP TABLE PIVOT UNPIVOT').split(' '),
 );
 
-const missingExpr = () => new OraError('ORA-00936', 'missing expression');
+export const missingExpr = () => new OraError('ORA-00936', 'missing expression');
 /** WITHIN GROUP 으로 "이 값이 들어온다면 몇 등인가" 를 묻는 가상 순위 집계 */
 const HYPOTHETICAL = new Set(['RANK', 'DENSE_RANK', 'PERCENT_RANK', 'CUME_DIST']);
 
@@ -21,45 +21,45 @@ const tooManySets = () =>
 const notEnded = () => new OraError('ORA-00933', 'SQL command not properly ended');
 
 export class Parser {
-  private toks: Token[];
-  private i = 0;
+  protected toks: Token[];
+  protected i = 0;
 
-  constructor(private src: string) {
+  constructor(protected src: string) {
     this.toks = tokenize(src);
   }
 
-  private get t(): Token {
+  protected get t(): Token {
     return this.toks[this.i];
   }
-  private peek(n = 1): Token {
+  protected peek(n = 1): Token {
     return this.toks[Math.min(this.i + n, this.toks.length - 1)];
   }
-  private isWord(w: string, tok = this.t) {
+  protected isWord(w: string, tok = this.t) {
     return tok.kind === 'word' && tok.value === w;
   }
-  private isOp(o: string, tok = this.t) {
+  protected isOp(o: string, tok = this.t) {
     return tok.kind === 'op' && tok.value === o;
   }
-  private acceptWord(w: string): boolean {
+  protected acceptWord(w: string): boolean {
     if (!this.isWord(w)) return false;
     this.i++;
     return true;
   }
-  private acceptOp(o: string): boolean {
+  protected acceptOp(o: string): boolean {
     if (!this.isOp(o)) return false;
     this.i++;
     return true;
   }
-  private expectOp(o: string) {
+  protected expectOp(o: string) {
     if (this.acceptOp(o)) return;
     if (o === ')') throw new OraError('ORA-00907', 'missing right parenthesis');
     if (o === '(') throw new OraError('ORA-00906', 'missing left parenthesis');
     throw missingExpr();
   }
-  private expectWord(w: string) {
+  protected expectWord(w: string) {
     if (!this.acceptWord(w)) throw new OraError('ORA-00905', 'missing keyword');
   }
-  private ident(): string {
+  protected ident(): string {
     const tok = this.t;
     if (tok.kind === 'quoted' || (tok.kind === 'word' && !RESERVED.has(tok.value))) {
       this.i++;
@@ -82,7 +82,7 @@ export class Parser {
   }
 
   /** 문장이 끝나야 할 자리에 낱말이 더 있을 때. Oracle 23ai 의 문구(ORA-03048/03049)를 따른다. */
-  private unexpected(): OraError {
+  protected unexpected(): OraError {
     const tok = this.t;
     const before = this.src.slice(0, tok.start);
     const shown = before.length > 32 ? `...${before.slice(-29)}` : before;
@@ -97,7 +97,7 @@ export class Parser {
   }
 
   /** 조건·값 자리의 서브쿼리. Oracle 은 여기서 ORDER BY 를 받지 않는다(인라인 뷰는 받는다). */
-  private predicateSubquery(): Select {
+  protected predicateSubquery(): Select {
     const q = this.select();
     // ORDER BY 뒤에 FETCH·OFFSET 이 오면(Top N) Oracle 12c 부터는 받아 준다.
     if (q.orderBy && !q.fetch) {
@@ -107,7 +107,7 @@ export class Parser {
   }
 
   /** WITH 이름 AS (쿼리), ... */
-  private withClause(): WithQuery[] {
+  protected withClause(): WithQuery[] {
     const out: WithQuery[] = [];
     do {
       const name = this.ident();
@@ -155,7 +155,7 @@ export class Parser {
     return q;
   }
 
-  private fetchClause(): NonNullable<Select['fetch']> {
+  protected fetchClause(): NonNullable<Select['fetch']> {
     let offset = 0;
     if (this.acceptWord('OFFSET')) {
       const n = this.t;
@@ -178,7 +178,7 @@ export class Parser {
   }
 
   /** SELECT 블록 하나, 또는 괄호로 싼 쿼리 */
-  private queryTerm(): QueryBlock | Select['body'] {
+  protected queryTerm(): QueryBlock | Select['body'] {
     if (this.isOp('(')) {
       this.i++;
       const inner = this.select();
@@ -204,7 +204,6 @@ export class Parser {
     if (this.acceptWord('HAVING')) q.having = this.expr();
     // Oracle 은 HAVING 을 GROUP BY 앞에 써도 받아 준다.
     if (!q.groupBy && this.isWord('GROUP')) this.groupByClause(q);
-    if (this.isWord('PIVOT') || this.isWord('UNPIVOT')) throw new NotSupported('PIVOT·UNPIVOT 은 실습장 3단계에서 열려요.');
     return q;
   }
 
@@ -213,7 +212,7 @@ export class Parser {
    *   GROUP BY A, ROLLUP(B, C) → (A,B,C) (A,B) (A)
    * 원소가 모두 보통 식이면 묶음은 하나이고 groupingSets 는 두지 않는다.
    */
-  private groupByClause(q: QueryBlock) {
+  protected groupByClause(q: QueryBlock) {
     this.i++;
     this.expectWord('BY');
     let sets: Expr[][] = [[]];
@@ -241,7 +240,7 @@ export class Parser {
   }
 
   /** GROUP BY 원소 하나 → 묶음 목록 */
-  private groupElement(): { sets: Expr[][]; special: boolean } {
+  protected groupElement(): { sets: Expr[][]; special: boolean } {
     if (this.isWord('ROLLUP') || this.isWord('CUBE')) {
       const kind = this.t.value;
       this.i++;
@@ -280,7 +279,7 @@ export class Parser {
   }
 
   /** START WITH 조건 CONNECT BY [NOCYCLE] 조건 — 두 절의 순서는 바뀌어도 된다. */
-  private connectByClause(): NonNullable<QueryBlock['connectBy']> {
+  protected connectByClause(): NonNullable<QueryBlock['connectBy']> {
     let startWith: Expr | undefined;
     let condition: Expr | undefined;
     let nocycle = false;
@@ -301,7 +300,7 @@ export class Parser {
   }
 
   /** OVER ( [PARTITION BY …] [ORDER BY …] [ROWS|RANGE …] ) */
-  private windowSpec(): WindowSpec {
+  protected windowSpec(): WindowSpec {
     this.expectOp('(');
     const spec: WindowSpec = { partitionBy: [], orderBy: [] };
     if (this.acceptWord('PARTITION')) {
@@ -328,7 +327,7 @@ export class Parser {
     return spec;
   }
 
-  private windowBound(): WindowBound {
+  protected windowBound(): WindowBound {
     if (this.acceptWord('UNBOUNDED')) {
       if (this.acceptWord('PRECEDING')) return { kind: 'UNBOUNDED PRECEDING' };
       this.expectWord('FOLLOWING');
@@ -347,7 +346,7 @@ export class Parser {
   }
 
   /** ROLLUP·GROUPING SETS 안의 묶음 하나: 식, (식, 식), () */
-  private columnGroup(): Expr[] {
+  protected columnGroup(): Expr[] {
     if (this.isOp('(')) {
       // (A, B) 는 한 덩어리, (A + 1) 같은 괄호 식과 구분한다.
       const save = this.i;
@@ -367,7 +366,7 @@ export class Parser {
     return e.type === 'tuple' ? e.items : [e];
   }
 
-  private selectList(): SelectItem[] {
+  protected selectList(): SelectItem[] {
     const items: SelectItem[] = [];
     do {
       const start = this.t.start;
@@ -383,7 +382,7 @@ export class Parser {
     return items;
   }
 
-  private aliasName(required: boolean): string {
+  protected aliasName(required: boolean): string {
     const tok = this.t;
     if (tok.kind === 'quoted' || (tok.kind === 'word' && !RESERVED.has(tok.value))) {
       this.i++;
@@ -393,13 +392,13 @@ export class Parser {
     throw new OraError('ORA-00923', 'FROM keyword not found where expected');
   }
 
-  private fromList(): FromItem[] {
+  protected fromList(): FromItem[] {
     const list = [this.joined()];
     while (this.acceptOp(',')) list.push(this.joined());
     return list;
   }
 
-  private joined(): FromItem {
+  protected joined(): FromItem {
     let left = this.tableRef();
     for (;;) {
       const natural = this.acceptWord('NATURAL');
@@ -431,7 +430,79 @@ export class Parser {
     }
   }
 
-  private tableRef(): FromItem {
+  /** 표 뒤의 PIVOT·UNPIVOT(여러 번 이어질 수 있다)과 그 뒤 별칭 */
+  protected pivotTail(item: FromItem): FromItem {
+    let cur = item;
+    for (;;) {
+      if (this.acceptWord('PIVOT')) {
+        if (this.isWord('XML')) throw new NotSupported('PIVOT XML 은 실습장에서 지원하지 않아요.');
+        this.expectOp('(');
+        const aggs: { expr: Expr; alias?: string; text: string }[] = [];
+        do {
+          const s = this.t.start;
+          const expr = this.expr();
+          const text = this.src.slice(s, this.toks[this.i - 1].end);
+          const alias = this.acceptWord('AS') ? this.aliasName(true) : this.t.kind === 'word' && !RESERVED.has(this.t.value) ? this.aliasName(false) : undefined;
+          aggs.push({ expr, alias, text });
+        } while (this.acceptOp(','));
+        this.expectWord('FOR');
+        const forCols = this.isOp('(') ? (() => {
+          this.i++;
+          const list = [this.ident()];
+          while (this.acceptOp(',')) list.push(this.ident());
+          this.expectOp(')');
+          return list;
+        })() : [this.ident()];
+        this.expectWord('IN');
+        this.expectOp('(');
+        if (this.isWord('SELECT') || this.isWord('ANY')) throw new NotSupported('PIVOT 의 IN 에 서브쿼리·ANY 를 쓰는 것은 PIVOT XML 에서만 되고, 실습장에서는 지원하지 않아요.');
+        const values: { vals: Expr[]; alias?: string; text: string }[] = [];
+        do {
+          const s = this.t.start;
+          const e = this.additive();
+          const vals = e.type === 'tuple' ? e.items : [e];
+          const text = this.src.slice(s, this.toks[this.i - 1].end);
+          const alias = this.acceptWord('AS') ? this.aliasName(true) : this.t.kind === 'word' && !RESERVED.has(this.t.value) ? this.aliasName(false) : undefined;
+          values.push({ vals, alias, text });
+        } while (this.acceptOp(','));
+        this.expectOp(')');
+        this.expectOp(')');
+        cur = { type: 'pivot', source: cur, aggs, forCols, values };
+        continue;
+      }
+      if (this.acceptWord('UNPIVOT')) {
+        let includeNulls = false;
+        if (this.acceptWord('INCLUDE')) {
+          this.expectWord('NULLS');
+          includeNulls = true;
+        } else if (this.acceptWord('EXCLUDE')) this.expectWord('NULLS');
+        this.expectOp('(');
+        if (this.isOp('(')) throw new NotSupported('여러 열을 한 번에 UNPIVOT 하는 것은 실습장에서 아직 지원하지 않아요.');
+        const valueCol = this.ident();
+        this.expectWord('FOR');
+        const nameCol = this.ident();
+        this.expectWord('IN');
+        this.expectOp('(');
+        const cols: { col: string; label?: Expr }[] = [];
+        do {
+          const col = this.ident();
+          cols.push({ col, label: this.acceptWord('AS') ? this.additive() : undefined });
+        } while (this.acceptOp(','));
+        this.expectOp(')');
+        this.expectOp(')');
+        cur = { type: 'unpivot', source: cur, valueCol, nameCol, cols, includeNulls };
+        continue;
+      }
+      break;
+    }
+    if (cur !== item) {
+      const alias = this.tableAlias();
+      if (alias && (cur.type === 'pivot' || cur.type === 'unpivot')) cur = { ...cur, alias };
+    }
+    return cur;
+  }
+
+  protected tableRef(): FromItem {
     if (this.isOp('(')) {
       this.i++;
       if (!this.isWord('SELECT') && !this.isWord('WITH') && !this.isOp('(')) {
@@ -442,21 +513,21 @@ export class Parser {
       }
       const query = this.select();
       this.expectOp(')');
-      return { type: 'view', query, alias: this.tableAlias() };
+      return this.pivotTail({ type: 'view', query, alias: this.tableAlias() });
     }
     if (this.t.kind !== 'word' && this.t.kind !== 'quoted') throw new OraError('ORA-00903', 'invalid table name');
     let name = this.ident();
     if (this.acceptOp('.')) name = this.ident(); // SCOTT.EMP → EMP
-    return { type: 'table', name, alias: this.tableAlias() };
+    return this.pivotTail({ type: 'table', name, alias: this.tableAlias() });
   }
 
-  private tableAlias(): string | undefined {
+  protected tableAlias(): string | undefined {
     if (this.isWord('AS')) throw new OraError('ORA-00933', 'SQL command not properly ended'); // Oracle 은 테이블 별칭에 AS 를 받지 않는다
     if (this.t.kind === 'quoted' || (this.t.kind === 'word' && !RESERVED.has(this.t.value))) return this.ident();
     return undefined;
   }
 
-  private orderList(): OrderItem[] {
+  protected orderList(): OrderItem[] {
     const out: OrderItem[] = [];
     do {
       const expr = this.expr();
@@ -481,31 +552,31 @@ export class Parser {
     return this.orExpr();
   }
 
-  private span<T extends object>(start: number, node: T): T & { start: number; end: number } {
+  protected span<T extends object>(start: number, node: T): T & { start: number; end: number } {
     return { ...node, start, end: this.toks[this.i - 1].end };
   }
 
-  private orExpr(): Expr {
+  protected orExpr(): Expr {
     const start = this.t.start;
     let left = this.andExpr();
     while (this.acceptWord('OR')) left = this.span(start, { type: 'or' as const, left, right: this.andExpr() });
     return left;
   }
 
-  private andExpr(): Expr {
+  protected andExpr(): Expr {
     const start = this.t.start;
     let left = this.notExpr();
     while (this.acceptWord('AND')) left = this.span(start, { type: 'and' as const, left, right: this.notExpr() });
     return left;
   }
 
-  private notExpr(): Expr {
+  protected notExpr(): Expr {
     const start = this.t.start;
     if (this.acceptWord('NOT')) return this.span(start, { type: 'unary' as const, op: 'NOT' as const, arg: this.notExpr() });
     return this.predicate();
   }
 
-  private predicate(): Expr {
+  protected predicate(): Expr {
     const start = this.t.start;
     if (this.isWord('EXISTS')) {
       this.i++;
@@ -573,7 +644,7 @@ export class Parser {
   }
 
   /** + - || 는 같은 우선순위(Oracle) */
-  private additive(): Expr {
+  protected additive(): Expr {
     const start = this.t.start;
     let left = this.multiplicative();
     for (;;) {
@@ -585,7 +656,7 @@ export class Parser {
     }
   }
 
-  private multiplicative(): Expr {
+  protected multiplicative(): Expr {
     const start = this.t.start;
     let left = this.unary();
     for (;;) {
@@ -597,7 +668,7 @@ export class Parser {
     }
   }
 
-  private unary(): Expr {
+  protected unary(): Expr {
     const start = this.t.start;
     if (this.isWord('PRIOR') || this.isWord('CONNECT_BY_ROOT')) {
       const op = this.t.value === 'PRIOR' ? ('PRIOR' as const) : ('ROOT' as const);
@@ -612,7 +683,7 @@ export class Parser {
     return this.primary();
   }
 
-  private primary(): Expr {
+  protected primary(): Expr {
     const t = this.t;
     const start = t.start;
     if (t.kind === 'number') {
@@ -661,6 +732,29 @@ export class Parser {
       return this.span(start, { type: 'lit' as const, value: parseDefaultDate(this.toks[this.i - 1].value) });
     }
     if (w === 'CASE') return this.caseExpr();
+    if (w === 'CAST' && this.peek().kind === 'op' && this.peek().value === '(') {
+      this.i += 2;
+      const arg = this.expr();
+      this.expectWord('AS');
+      const tt = this.t;
+      if (tt.kind !== 'word') throw new OraError('ORA-00902', 'invalid datatype');
+      this.i++;
+      let spec = tt.value === 'VARCHAR' ? 'VARCHAR2' : tt.value;
+      if (this.acceptOp('(')) {
+        const a = this.t;
+        this.i++;
+        let inner = a.value;
+        if (this.acceptOp(',')) {
+          const b = this.t;
+          this.i++;
+          inner += `,${b.value}`;
+        }
+        this.expectOp(')');
+        spec += `(${inner})`;
+      }
+      this.expectOp(')');
+      return this.span(start, { type: 'func' as const, name: 'CAST', args: [arg, { type: 'lit' as const, value: spec, start, end: start }] });
+    }
     if (w === 'ROWNUM') {
       this.i++;
       return this.span(start, { type: 'rownum' as const });
@@ -677,7 +771,7 @@ export class Parser {
   }
 
   /** 이름 뒤: .열, .*, (+) */
-  private columnTail(start: number, first: string): Expr {
+  protected columnTail(start: number, first: string): Expr {
     if (this.acceptOp('.')) {
       if (this.acceptOp('*')) return this.span(start, { type: 'star' as const, table: first });
       const name = this.t.kind === 'quoted' || this.t.kind === 'word' ? this.t.value : '';
@@ -690,7 +784,7 @@ export class Parser {
     return this.span(start, { type: 'col' as const, name: first, outer });
   }
 
-  private caseExpr(): Expr {
+  protected caseExpr(): Expr {
     const start = this.t.start;
     this.i++;
     const base = this.isWord('WHEN') ? undefined : this.expr();
@@ -706,7 +800,7 @@ export class Parser {
     return this.span(start, { type: 'case' as const, base, whens, else: elseExpr });
   }
 
-  private call(start: number, name: string): Expr {
+  protected call(start: number, name: string): Expr {
     this.expectOp('(');
     if (name === 'EXTRACT') {
       const field = this.t.value;
@@ -750,7 +844,7 @@ export class Parser {
     return this.overCheck(this.span(start, { type: 'func' as const, name, args, distinct }));
   }
 
-  private overCheck(e: Expr): Expr {
+  protected overCheck(e: Expr): Expr {
     if (this.acceptWord('OVER')) {
       if (e.type !== 'func') throw missingExpr();
       const over = this.windowSpec();
@@ -802,6 +896,7 @@ export function freeTables(sel: Select, bound: ReadonlySet<string> = new Set()):
     if (f.type === 'table') {
       if (!scope.has(f.name)) out.add(f.name);
     } else if (f.type === 'view') visitSelect(f.query, scope);
+    else if (f.type === 'pivot' || f.type === 'unpivot') visitFrom(f.source, scope);
     else {
       visitFrom(f.left, scope);
       visitFrom(f.right, scope);

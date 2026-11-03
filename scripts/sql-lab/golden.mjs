@@ -16,6 +16,15 @@ const root = process.cwd();
 const cases = JSON.parse(readFileSync(path.join(root, 'scripts/sql-lab/cases.json'), 'utf8'));
 const OUT = path.join(root, 'src/lib/sql-lab/golden/results.json');
 
+// 시나리오가 만든 테이블·뷰를 지운다(EMP·DEPT·SALGRADE 만 남긴다).
+const CLEANUP = `BEGIN
+  FOR v IN (SELECT VIEW_NAME FROM USER_VIEWS) LOOP EXECUTE IMMEDIATE 'DROP VIEW "' || v.VIEW_NAME || '"'; END LOOP;
+  FOR t IN (SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME NOT IN ('EMP', 'DEPT', 'SALGRADE')) LOOP
+    EXECUTE IMMEDIATE 'DROP TABLE "' || t.TABLE_NAME || '" CASCADE CONSTRAINTS PURGE';
+  END LOOP;
+END;
+/`;
+
 const script = [
   'SET PAGESIZE 50000 LINESIZE 32767 FEEDBACK OFF TAB OFF TRIMSPOOL ON TRIMOUT ON',
   'SET MARKUP CSV ON QUOTE ON',
@@ -24,7 +33,20 @@ const script = [
   "ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD';",
   "ALTER SESSION SET NLS_DATE_LANGUAGE = 'AMERICAN';",
   "ALTER SESSION SET NLS_NUMERIC_CHARACTERS = '.,';",
-  ...cases.flatMap((c) => [`PROMPT ###CASE ${c.id}`, c.sql.replace(/;\s*$/, '') + ';']),
+  ...cases.flatMap((c) =>
+    c.script
+      ? // 여러 문장(DML·DDL·TCL)을 한 세션에서 차례로: 문장마다 표시를 찍고, 끝나면 되돌리고 만든 것을 지운다.
+        [
+          'SET FEEDBACK ON',
+          `PROMPT ###CASE ${c.id}`,
+          ...c.script.flatMap((s, k) => [`PROMPT ###STMT ${k}`, s.replace(/;\s*$/, '') + ';']),
+          'PROMPT ###DONE',
+          'SET FEEDBACK OFF',
+          'ROLLBACK;',
+          CLEANUP,
+        ]
+      : [`PROMPT ###CASE ${c.id}`, c.sql.replace(/;\s*$/, '') + ';'],
+  ),
   'PROMPT ###END',
 ].join('\n');
 
@@ -64,12 +86,32 @@ function parseCsvLine(line) {
   return cells;
 }
 
+const FEEDBACK_RE = /^(\d+ rows? (created|updated|deleted|merged)|Table (created|dropped|altered|truncated|renamed)|View (created|dropped)|Commit complete|Rollback complete|Savepoint created)\.$/;
+const SELECTED_RE = /^(\d+ rows? selected\.|no rows selected)$/;
+
+/** 문장 하나의 출력 → 결과(오류 / 피드백 문구 / 결과 표) */
+function parseOne(body) {
+  const ora = /^(ORA-\d{5}): ?(.*)$/m.exec(body);
+  if (ora && (/ERROR at line/.test(body) || /^ERROR:\s*$/m.test(body))) return { error: ora[1], message: ora[2].trim() };
+  const lines = body.split('\n').filter((l) => l.trim() !== '' && !SELECTED_RE.test(l.trim()));
+  const fb = lines.find((l) => FEEDBACK_RE.test(l.trim()));
+  if (fb) return { message: fb.trim() };
+  if (lines.length === 0) return { columns: null, rows: [] };
+  const unNull = (cells) => cells.map((v) => (v === '<NULL>' ? '' : v));
+  return { columns: parseCsvLine(lines[0]), rows: lines.slice(1).map((l) => unNull(parseCsvLine(l))) };
+}
+
 const results = {};
 const sections = out.split(/^###CASE /m).slice(1);
 for (const sec of sections) {
   const [head, ...rest] = sec.split('\n');
   const id = head.trim();
   const body = rest.join('\n').replace(/###END[\s\S]*$/, '').trimEnd();
+  if (body.includes('###STMT ')) {
+    const steps = body.replace(/###DONE[\s\S]*$/, '').split(/^###STMT \d+$/m).slice(1);
+    results[id] = { steps: steps.map((s) => parseOne(s.trim())) };
+    continue;
+  }
   const ora = /^(ORA-\d{5}): ?(.*)$/m.exec(body);
   if (ora && (/ERROR at line/.test(body) || /^ERROR:\s*$/m.test(body))) {
     results[id] = { error: ora[1], message: ora[2].trim() };

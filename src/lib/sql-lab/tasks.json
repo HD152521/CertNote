@@ -296,5 +296,89 @@
         "ordered": true
       }
     ]
+  },
+  {
+    "id": "sql-pivot-dml",
+    "code": "SQL S5",
+    "title": "PIVOT·정규 표현식·DML·트랜잭션으로 모양 바꾸고 데이터 고치기",
+    "items": [
+      {
+        "id": "pivot-job",
+        "title": "직무를 행으로, 부서를 열로",
+        "prompt": "직무(JOB)별로 10·20·30번 부서의 급여 합계를 한 행에 출력하시오. 열은 JOB, D10, D20, D30 순서이고 직무 순으로 정렬한다.",
+        "hint": "PIVOT 에 넘길 열(JOB, DEPTNO, SAL)만 인라인 뷰로 고른다. 나머지 열이 남아 있으면 그것까지 묶음 키가 된다.",
+        "answer": "SELECT * FROM (SELECT JOB, DEPTNO, SAL FROM EMP) PIVOT (SUM(SAL) FOR DEPTNO IN (10 AS D10, 20 AS D20, 30 AS D30)) ORDER BY JOB;",
+        "explain": "SUM(CASE WHEN DEPTNO = 10 THEN SAL END) 같은 CASE+GROUP BY 로도 같은 결과를 만들 수 있다. 사원이 없는 칸은 SUM 이라 NULL 이다.",
+        "ordered": true
+      },
+      {
+        "id": "regexp-vowels",
+        "title": "모음이 두 개 이상인 이름",
+        "prompt": "이름에 모음(A, E, I, O, U)이 두 개 이상 들어 있는 사원의 이름과 모음 개수를 이름 순으로 출력하시오.",
+        "hint": "정규식으로 문자 집합 [AEIOU] 의 개수를 센다.",
+        "answer": "SELECT ENAME, REGEXP_COUNT(ENAME, '[AEIOU]') AS 모음 FROM EMP WHERE REGEXP_COUNT(ENAME, '[AEIOU]') >= 2 ORDER BY ENAME;",
+        "explain": "LENGTH(ENAME) - LENGTH(TRANSLATE(ENAME, 'XAEIOU', 'X')) 로 세는 방법도 있지만 REGEXP_COUNT 가 짧다.",
+        "ordered": true
+      },
+      {
+        "id": "regexp-mask",
+        "title": "이름 가운데 가리기",
+        "prompt": "10번 부서 사원의 이름을 첫 글자와 마지막 글자만 남기고 가운데를 모두 * 로 바꿔(예: KING → K**G) 원래 이름 순으로 출력하시오.",
+        "hint": "첫 글자·가운데·마지막 글자를 SUBSTR 로 나누고, 가운데 글자 수만큼 * 를 RPAD 로 만든다. REGEXP_REPLACE 로 가운데 글자(.)를 바꿔도 된다.",
+        "answer": "SELECT SUBSTR(ENAME, 1, 1) || RPAD('*', LENGTH(ENAME) - 2, '*') || SUBSTR(ENAME, -1) AS 이름 FROM EMP WHERE DEPTNO = 10 ORDER BY ENAME;",
+        "explain": "SUBSTR(ENAME, 1, 1) || REGEXP_REPLACE(SUBSTR(ENAME, 2, LENGTH(ENAME) - 2), '.', '*') || SUBSTR(ENAME, -1) 처럼 정규식과 문자 함수를 섞어도 결과가 같으면 정답이다.",
+        "ordered": true
+      },
+      {
+        "id": "insert-dept",
+        "title": "부서 하나 추가하기",
+        "prompt": "부서 번호 50, 이름 'IT', 위치 'SEOUL' 인 부서를 DEPT 에 추가하시오. (채점은 추가한 뒤의 DEPT 전체로 한다.)",
+        "hint": "열 순서대로 값을 다 주면 열 목록을 생략할 수 있다.",
+        "answer": "INSERT INTO DEPT VALUES (50, 'IT', 'SEOUL');",
+        "explain": "INSERT INTO DEPT (DEPTNO, DNAME, LOC) VALUES (50, 'IT', 'SEOUL') 처럼 열 목록을 적는 편이 테이블 구조가 바뀌어도 안전하다.",
+        "ordered": true,
+        "check": "SELECT * FROM DEPT ORDER BY DEPTNO"
+      },
+      {
+        "id": "update-raise",
+        "title": "영업직 급여 인상",
+        "prompt": "직무가 SALESMAN 인 사원의 급여를 10% 올리시오. (채점은 30번 부서 사원의 사번·급여로 한다.)",
+        "hint": "UPDATE … SET SAL = SAL * 1.1 WHERE …",
+        "answer": "UPDATE EMP SET SAL = SAL * 1.1 WHERE JOB = 'SALESMAN';",
+        "explain": "WHERE 를 빠뜨리면 전 사원의 급여가 오른다. 실행 전에 같은 WHERE 로 SELECT 해서 대상 행부터 확인하는 습관이 사고를 줄인다.",
+        "ordered": true,
+        "check": "SELECT EMPNO, SAL FROM EMP WHERE DEPTNO = 30 ORDER BY EMPNO"
+      },
+      {
+        "id": "delete-dept",
+        "title": "부서와 그 사원 지우기",
+        "prompt": "20번 부서를 DEPT 에서 지우시오. EMP 의 DEPTNO 가 DEPT 를 참조하므로 20번 부서 사원을 먼저 지워야 한다. (채점은 남은 부서 번호와 부서별 사원 수로 한다.)",
+        "hint": "부모(DEPT) 행을 먼저 지우면 ORA-02292(자식 행이 있음)가 난다.",
+        "answer": "DELETE FROM EMP WHERE DEPTNO = 20; DELETE FROM DEPT WHERE DEPTNO = 20;",
+        "explain": "외래 키에 ON DELETE CASCADE 가 걸려 있었다면 부모만 지워도 자식이 함께 지워진다. EMP 의 FK_DEPTNO 에는 그 옵션이 없다.",
+        "ordered": true,
+        "check": "SELECT D.DEPTNO, COUNT(E.EMPNO) FROM DEPT D LEFT JOIN EMP E ON D.DEPTNO = E.DEPTNO GROUP BY D.DEPTNO ORDER BY D.DEPTNO"
+      },
+      {
+        "id": "savepoint",
+        "title": "SAVEPOINT 로 일부만 되돌리기",
+        "prompt": "DEPT 에 (50, 'IT', 'SEOUL') 을 넣고 SAVEPOINT A 를 만든 뒤 (60, 'HR', 'BUSAN') 을 넣으시오. 그다음 60번만 취소되도록 되돌리시오. (채점은 그 뒤의 DEPT 전체로 한다.)",
+        "hint": "ROLLBACK 만 쓰면 마지막 COMMIT 이후가 모두 취소된다. 특정 지점까지만 되돌리는 문장이 따로 있다.",
+        "answer": "INSERT INTO DEPT VALUES (50, 'IT', 'SEOUL'); SAVEPOINT A; INSERT INTO DEPT VALUES (60, 'HR', 'BUSAN'); ROLLBACK TO A;",
+        "explain": "ROLLBACK TO A 는 A 이후의 변경만 취소하고 트랜잭션은 이어진다. 50번은 아직 COMMIT 전이라 ROLLBACK 을 한 번 더 하면 함께 사라진다.",
+        "ordered": true,
+        "check": "SELECT * FROM DEPT ORDER BY DEPTNO"
+      },
+      {
+        "id": "create-table",
+        "title": "제약 조건이 있는 테이블 만들기",
+        "prompt": "회원 테이블 T_MEMBER 를 만드시오. 열은 ID(숫자 4자리, 기본 키), NAME(문자 10자, 반드시 입력), GRADE(문자 1자, 기본값 'B', 'A'·'B'·'C' 만 허용)이다. 만든 뒤 (1, 'KIM') 과 (2, 'LEE', 'A') 두 행을 넣으시오. (채점은 T_MEMBER 의 내용으로 한다.)",
+        "hint": "DEFAULT 는 값을 생략한 열에 들어간다. 허용 값 목록은 CHECK (GRADE IN (…)) 로 건다.",
+        "answer": "CREATE TABLE T_MEMBER (ID NUMBER(4) PRIMARY KEY, NAME VARCHAR2(10) NOT NULL, GRADE CHAR(1) DEFAULT 'B' CHECK (GRADE IN ('A', 'B', 'C'))); INSERT INTO T_MEMBER (ID, NAME) VALUES (1, 'KIM'); INSERT INTO T_MEMBER VALUES (2, 'LEE', 'A');",
+        "explain": "첫 행은 GRADE 를 생략해 기본값 'B' 가 들어간다. INSERT INTO T_MEMBER VALUES (1, 'KIM') 처럼 열 목록 없이 값을 덜 주면 ORA-00947(값이 모자람)이 난다.",
+        "ordered": true,
+        "check": "SELECT * FROM T_MEMBER ORDER BY ID"
+      }
+    ]
   }
 ]

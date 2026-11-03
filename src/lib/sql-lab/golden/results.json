@@ -10189,6 +10189,2058 @@
       ]
     ]
   },
+  "pv-basic": {
+    "columns": [
+      "JOB",
+      "10",
+      "20",
+      "30"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "",
+        "6000",
+        ""
+      ],
+      [
+        "CLERK",
+        "1300",
+        "1900",
+        "950"
+      ],
+      [
+        "MANAGER",
+        "2450",
+        "2975",
+        "2850"
+      ],
+      [
+        "PRESIDENT",
+        "5000",
+        "",
+        ""
+      ],
+      [
+        "SALESMAN",
+        "",
+        "",
+        "5600"
+      ]
+    ]
+  },
+  "pv-alias": {
+    "columns": [
+      "JOB",
+      "D10",
+      "D20",
+      "D30"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "",
+        "6000",
+        ""
+      ],
+      [
+        "CLERK",
+        "1300",
+        "1900",
+        "950"
+      ],
+      [
+        "MANAGER",
+        "2450",
+        "2975",
+        "2850"
+      ],
+      [
+        "PRESIDENT",
+        "5000",
+        "",
+        ""
+      ],
+      [
+        "SALESMAN",
+        "",
+        "",
+        "5600"
+      ]
+    ]
+  },
+  "pv-count": {
+    "columns": [
+      "DEPTNO",
+      "CLERK",
+      "MANAGER",
+      "SALESMAN"
+    ],
+    "rows": [
+      [
+        "10",
+        "1",
+        "1",
+        "0"
+      ],
+      [
+        "20",
+        "2",
+        "1",
+        "0"
+      ],
+      [
+        "30",
+        "1",
+        "1",
+        "4"
+      ]
+    ]
+  },
+  "pv-multi": {
+    "columns": [
+      "JOB",
+      "D10_S",
+      "D10_C",
+      "D20_S",
+      "D20_C"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "",
+        "0",
+        "6000",
+        "2"
+      ],
+      [
+        "CLERK",
+        "1300",
+        "1",
+        "1900",
+        "2"
+      ],
+      [
+        "MANAGER",
+        "2450",
+        "1",
+        "2975",
+        "1"
+      ],
+      [
+        "PRESIDENT",
+        "5000",
+        "1",
+        "",
+        "0"
+      ],
+      [
+        "SALESMAN",
+        "",
+        "0",
+        "",
+        "0"
+      ]
+    ]
+  },
+  "pv-noinline": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "14"
+      ]
+    ]
+  },
+  "pv-noalias-str": {
+    "columns": [
+      "DEPTNO",
+      "'CLERK'",
+      "'ANALYST'"
+    ],
+    "rows": [
+      [
+        "10",
+        "1",
+        "0"
+      ],
+      [
+        "20",
+        "2",
+        "2"
+      ],
+      [
+        "30",
+        "1",
+        "0"
+      ]
+    ]
+  },
+  "pv-total-only": {
+    "columns": [
+      "D10",
+      "D20",
+      "D30",
+      "D40"
+    ],
+    "rows": [
+      [
+        "8750",
+        "10875",
+        "9400",
+        ""
+      ]
+    ]
+  },
+  "pv-where-after": {
+    "columns": [
+      "JOB",
+      "D10",
+      "D20"
+    ],
+    "rows": [
+      [
+        "CLERK",
+        "1300",
+        "1100"
+      ],
+      [
+        "MANAGER",
+        "2450",
+        "2975"
+      ],
+      [
+        "PRESIDENT",
+        "5000",
+        ""
+      ]
+    ]
+  },
+  "pv-case-equiv": {
+    "columns": [
+      "JOB",
+      "D10",
+      "D20"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "",
+        "6000"
+      ],
+      [
+        "CLERK",
+        "1300",
+        "1900"
+      ],
+      [
+        "MANAGER",
+        "2450",
+        "2975"
+      ],
+      [
+        "PRESIDENT",
+        "5000",
+        ""
+      ],
+      [
+        "SALESMAN",
+        "",
+        ""
+      ]
+    ]
+  },
+  "unpv-basic": {
+    "columns": [
+      "DEPTNO",
+      "COL",
+      "AMT"
+    ],
+    "rows": [
+      [
+        "1",
+        "D10",
+        "100"
+      ],
+      [
+        "2",
+        "D10",
+        "200"
+      ],
+      [
+        "2",
+        "D20",
+        "300"
+      ]
+    ]
+  },
+  "unpv-include": {
+    "columns": [
+      "ID",
+      "K",
+      "V"
+    ],
+    "rows": [
+      [
+        "1",
+        "A",
+        "100"
+      ],
+      [
+        "1",
+        "B",
+        ""
+      ]
+    ]
+  },
+  "unpv-label": {
+    "columns": [
+      "ID",
+      "K",
+      "V"
+    ],
+    "rows": [
+      [
+        "1",
+        "ALPHA",
+        "100"
+      ],
+      [
+        "1",
+        "BETA",
+        "200"
+      ]
+    ]
+  },
+  "unpv-roundtrip": {
+    "columns": [
+      "JOB",
+      "DEPTNO",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "D20",
+        "6000"
+      ],
+      [
+        "CLERK",
+        "D10",
+        "1300"
+      ],
+      [
+        "CLERK",
+        "D20",
+        "1900"
+      ],
+      [
+        "CLERK",
+        "D30",
+        "950"
+      ],
+      [
+        "MANAGER",
+        "D10",
+        "2450"
+      ],
+      [
+        "MANAGER",
+        "D20",
+        "2975"
+      ],
+      [
+        "MANAGER",
+        "D30",
+        "2850"
+      ],
+      [
+        "PRESIDENT",
+        "D10",
+        "5000"
+      ],
+      [
+        "SALESMAN",
+        "D30",
+        "5600"
+      ]
+    ]
+  },
+  "re-like": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ADAMS"
+      ],
+      [
+        "ALLEN"
+      ],
+      [
+        "JAMES"
+      ],
+      [
+        "JONES"
+      ]
+    ]
+  },
+  "re-like-i": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ADAMS"
+      ],
+      [
+        "ALLEN"
+      ],
+      [
+        "BLAKE"
+      ],
+      [
+        "CLARK"
+      ],
+      [
+        "JAMES"
+      ],
+      [
+        "MARTIN"
+      ],
+      [
+        "WARD"
+      ]
+    ]
+  },
+  "re-like-end": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "KING"
+      ],
+      [
+        "MILLER"
+      ],
+      [
+        "TURNER"
+      ]
+    ]
+  },
+  "re-like-class": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "14"
+      ]
+    ]
+  },
+  "re-substr": {
+    "columns": [
+      "REGEXP_SUBSTR('SQLD-2026-11','[0-9]+')",
+      "REGEXP_SUBSTR('SQLD-2026-11','[0-9]+',1,2)",
+      "REGEXP_SUBSTR('A1B22C333','[[:DIGIT:]]+',1,3)",
+      "REGEXP_SUBSTR('KING','X')"
+    ],
+    "rows": [
+      [
+        "2026",
+        "11",
+        "333",
+        ""
+      ]
+    ]
+  },
+  "re-substr-sub": {
+    "columns": [
+      "REGEXP_SUBSTR('KIM@EXAMPLE.COM','([A-Z]+)@([A-Z.]+)',1,1,NULL,2)"
+    ],
+    "rows": [
+      [
+        "example.com"
+      ]
+    ]
+  },
+  "re-instr": {
+    "columns": [
+      "REGEXP_INSTR('SQLD-2026-11','[0-9]')",
+      "REGEXP_INSTR('SQLD-2026-11','-',1,2)",
+      "REGEXP_INSTR('SQLD-2026-11','[0-9]+',1,1,1)",
+      "REGEXP_INSTR('ABC','Z')"
+    ],
+    "rows": [
+      [
+        "6",
+        "10",
+        "10",
+        "0"
+      ]
+    ]
+  },
+  "re-replace": {
+    "columns": [
+      "REGEXP_REPLACE('010-1234-5678','[0-9]{4}$','****')",
+      "REGEXP_REPLACE('ABC','+','')",
+      "REGEXP_REPLACE('ABCABC','B','X',1,2)",
+      "REGEXP_REPLACE('KIMLEE','(\\\\W+)(\\\\W+)','\\\\2\\\\1')"
+    ],
+    "rows": [
+      [
+        "010-1234-****",
+        "a b c",
+        "ABCAxC",
+        "kim lee"
+      ]
+    ]
+  },
+  "re-replace-emp": {
+    "columns": [
+      "ENAME",
+      "M"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "CL*RK"
+      ],
+      [
+        "KING",
+        "K*NG"
+      ],
+      [
+        "MILLER",
+        "M*LL*R"
+      ]
+    ]
+  },
+  "re-count": {
+    "columns": [
+      "REGEXP_COUNT('BANANA','A')",
+      "REGEXP_COUNT('BANANA','AN')",
+      "REGEXP_COUNT('BANANA','A',1,'I')",
+      "REGEXP_COUNT('BANANA','A',3)"
+    ],
+    "rows": [
+      [
+        "3",
+        "2",
+        "3",
+        "2"
+      ]
+    ]
+  },
+  "re-perl": {
+    "columns": [
+      "REGEXP_SUBSTR('ABC123DEF','\\\\D+')",
+      "REGEXP_COUNT('ABC','\\\\S')",
+      "REGEXP_SUBSTR('HELLO_WORLD!','\\\\W+')"
+    ],
+    "rows": [
+      [
+        "",
+        "0",
+        ""
+      ]
+    ]
+  },
+  "re-null": {
+    "columns": [
+      "REGEXP_SUBSTR(NULL,'A')",
+      "REGEXP_COUNT(NULL,'A')",
+      "REGEXP_REPLACE('ABC',NULL,'X')"
+    ],
+    "rows": [
+      [
+        "",
+        "",
+        "ABC"
+      ]
+    ]
+  },
+  "re-like-select-err": {
+    "columns": [
+      "REGEXP_LIKE(ENAME,'A')"
+    ],
+    "rows": [
+      [
+        "FALSE"
+      ],
+      [
+        "TRUE"
+      ],
+      [
+        "TRUE"
+      ],
+      [
+        "FALSE"
+      ],
+      [
+        "TRUE"
+      ],
+      [
+        "TRUE"
+      ],
+      [
+        "TRUE"
+      ],
+      [
+        "FALSE"
+      ],
+      [
+        "FALSE"
+      ],
+      [
+        "FALSE"
+      ],
+      [
+        "TRUE"
+      ],
+      [
+        "TRUE"
+      ],
+      [
+        "FALSE"
+      ],
+      [
+        "FALSE"
+      ]
+    ]
+  },
+  "dml-insert-select": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "2 rows created."
+      },
+      {
+        "columns": [
+          "DEPTNO",
+          "DNAME",
+          "LOC"
+        ],
+        "rows": [
+          [
+            "10",
+            "ACCOUNTING",
+            "NEW YORK"
+          ],
+          [
+            "20",
+            "RESEARCH",
+            "DALLAS"
+          ],
+          [
+            "50",
+            "IT",
+            "SEOUL"
+          ],
+          [
+            "60",
+            "HR",
+            ""
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "dml-update": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "3 rows updated."
+      },
+      {
+        "error": "ORA-00904",
+        "message": "\"JOB_DUMMY\": invalid identifier"
+      },
+      {
+        "message": "10 rows updated."
+      },
+      {
+        "columns": [
+          "ENAME",
+          "SAL",
+          "COMM"
+        ],
+        "rows": [
+          [
+            "ALLEN",
+            "1600",
+            "300"
+          ],
+          [
+            "WARD",
+            "1250",
+            "500"
+          ],
+          [
+            "MARTIN",
+            "1250",
+            "1400"
+          ],
+          [
+            "BLAKE",
+            "2850",
+            "0"
+          ],
+          [
+            "CLARK",
+            "2695",
+            "0"
+          ],
+          [
+            "KING",
+            "5500",
+            "0"
+          ],
+          [
+            "TURNER",
+            "1500",
+            "0"
+          ],
+          [
+            "JAMES",
+            "950",
+            "0"
+          ],
+          [
+            "MILLER",
+            "1430",
+            "0"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "dml-update-sub": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "5 rows updated."
+      },
+      {
+        "message": "1 row updated."
+      },
+      {
+        "columns": [
+          "ENAME",
+          "SAL",
+          "DEPTNO"
+        ],
+        "rows": [
+          [
+            "ADAMS",
+            "3000",
+            "20"
+          ],
+          [
+            "CLARK",
+            "2450",
+            "10"
+          ],
+          [
+            "FORD",
+            "3000",
+            "20"
+          ],
+          [
+            "JONES",
+            "3000",
+            "20"
+          ],
+          [
+            "KING",
+            "5000",
+            "10"
+          ],
+          [
+            "MILLER",
+            "1300",
+            "10"
+          ],
+          [
+            "SCOTT",
+            "3000",
+            "20"
+          ],
+          [
+            "SMITH",
+            "5000",
+            "10"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "dml-delete-truncate": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "6 rows deleted."
+      },
+      {
+        "message": "1 row deleted."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "7"
+          ]
+        ]
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "14"
+          ]
+        ]
+      },
+      {
+        "message": "Table truncated."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "0"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      },
+      {
+        "error": "ORA-00942",
+        "message": "table or view \"SCOTT\".\"T_E\" does not exist"
+      }
+    ]
+  },
+  "dml-merge": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "2 rows updated."
+      },
+      {
+        "message": "4 rows merged."
+      },
+      {
+        "columns": [
+          "DEPTNO",
+          "DNAME",
+          "LOC"
+        ],
+        "rows": [
+          [
+            "10",
+            "ACCOUNTING",
+            "NEW YORK"
+          ],
+          [
+            "20",
+            "RESEARCH",
+            "DALLAS"
+          ],
+          [
+            "30",
+            "SALES",
+            "CHICAGO"
+          ],
+          [
+            "40",
+            "OPERATIONS",
+            "BOSTON"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "dml-merge-where": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "2 rows merged."
+      },
+      {
+        "columns": [
+          "DEPTNO",
+          "DNAME",
+          "LOC"
+        ],
+        "rows": [
+          [
+            "10",
+            "accounting",
+            "NEW YORK"
+          ],
+          [
+            "20",
+            "RESEARCH",
+            "DALLAS"
+          ],
+          [
+            "40",
+            "OPERATIONS",
+            "BOSTON"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "tcl-savepoint": {
+    "steps": [
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "Savepoint created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "Savepoint created."
+      },
+      {
+        "message": "1 row deleted."
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "DEPTNO"
+        ],
+        "rows": [
+          [
+            "10"
+          ],
+          [
+            "20"
+          ],
+          [
+            "30"
+          ],
+          [
+            "40"
+          ],
+          [
+            "50"
+          ],
+          [
+            "60"
+          ]
+        ]
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "DEPTNO"
+        ],
+        "rows": [
+          [
+            "10"
+          ],
+          [
+            "20"
+          ],
+          [
+            "30"
+          ],
+          [
+            "40"
+          ],
+          [
+            "50"
+          ]
+        ]
+      },
+      {
+        "error": "ORA-01086",
+        "message": "savepoint 'B' never established in this session or is invalid"
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "4"
+          ]
+        ]
+      }
+    ]
+  },
+  "tcl-commit-rollback": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row deleted."
+      },
+      {
+        "message": "Commit complete."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "DEPTNO"
+        ],
+        "rows": [
+          [
+            "10"
+          ],
+          [
+            "20"
+          ],
+          [
+            "30"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "tcl-ddl-commits": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "5"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "ddl-constraints": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "error": "ORA-00001",
+        "message": "unique constraint (SCOTT.PK_TX) violated on table SCOTT.T_X columns (ID)"
+      },
+      {
+        "error": "ORA-01400",
+        "message": "cannot insert NULL into (\"SCOTT\".\"T_X\".\"NM\")"
+      },
+      {
+        "error": "ORA-12899",
+        "message": "value too large for column \"SCOTT\".\"T_X\".\"NM\" (actual: 7, maximum: 5)"
+      },
+      {
+        "error": "ORA-02290",
+        "message": "check constraint (SCOTT.CK_TX) violated"
+      },
+      {
+        "error": "ORA-01438",
+        "message": "value 1000 greater than specified precision (5, 2) for column"
+      },
+      {
+        "error": "ORA-02291",
+        "message": "integrity constraint (SCOTT.FK_TX) violated - parent key not found"
+      },
+      {
+        "error": "ORA-01407",
+        "message": "cannot update (\"SCOTT\".\"T_X\".\"NM\") to NULL"
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "columns": [
+          "ID",
+          "NM",
+          "AMT",
+          "D"
+        ],
+        "rows": [
+          [
+            "1",
+            "A",
+            "1",
+            "10"
+          ],
+          [
+            "7",
+            "F",
+            "1.23",
+            "20"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "ddl-default-fk": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "columns": [
+          "CID",
+          "PID",
+          "CNT",
+          "HD"
+        ],
+        "rows": [
+          [
+            "10",
+            "1",
+            "0",
+            "2026-01-01"
+          ],
+          [
+            "11",
+            "2",
+            "0",
+            "2026-01-01"
+          ],
+          [
+            "12",
+            "2",
+            "5",
+            "2026-01-01"
+          ]
+        ]
+      },
+      {
+        "message": "1 row deleted."
+      },
+      {
+        "columns": [
+          "CID",
+          "PID",
+          "CNT",
+          "HD"
+        ],
+        "rows": [
+          [
+            "10",
+            "1",
+            "0",
+            "2026-01-01"
+          ]
+        ]
+      },
+      {
+        "error": "ORA-02449",
+        "message": "unique/primary keys in table referenced by foreign keys"
+      },
+      {
+        "message": "Table dropped."
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "ddl-setnull": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row deleted."
+      },
+      {
+        "columns": [
+          "CID",
+          "PID"
+        ],
+        "rows": [
+          [
+            "10",
+            ""
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "ddl-alter": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "error": "ORA-01758",
+        "message": "table must be empty to add mandatory (NOT NULL) column"
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "error": "ORA-01441",
+        "message": "cannot decrease column length because some value is too big"
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "columns": [
+          "ENAME",
+          "BONUS_AMT"
+        ],
+        "rows": [
+          [
+            "CLARK",
+            "100"
+          ],
+          [
+            "KING",
+            "100"
+          ],
+          [
+            "MILLER",
+            "100"
+          ]
+        ]
+      },
+      {
+        "message": "Table renamed."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "3"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "ddl-add-constraint": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "error": "ORA-02299",
+        "message": "cannot validate (SCOTT.UQ_TX) - duplicate keys found"
+      },
+      {
+        "error": "ORA-02293",
+        "message": "cannot validate (SCOTT.CK_TX) - check constraint violated"
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "error": "ORA-00001",
+        "message": "unique constraint (SCOTT.PK_TX) violated on table SCOTT.T_X columns (EMPNO)"
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "15"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "ddl-ctas-notnull": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "5"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "ddl-view": {
+    "steps": [
+      {
+        "message": "View created."
+      },
+      {
+        "columns": [
+          "EMPNO",
+          "ENAME",
+          "DEPTNO"
+        ],
+        "rows": [
+          [
+            "7782",
+            "CLARK",
+            "10"
+          ],
+          [
+            "7839",
+            "KING",
+            "10"
+          ],
+          [
+            "7934",
+            "MILLER",
+            "10"
+          ]
+        ]
+      },
+      {
+        "message": "View created."
+      },
+      {
+        "columns": [
+          "DEPTNO",
+          "CNT"
+        ],
+        "rows": [
+          [
+            "10",
+            "3"
+          ],
+          [
+            "20",
+            "5"
+          ],
+          [
+            "30",
+            "6"
+          ]
+        ]
+      },
+      {
+        "message": "View dropped."
+      },
+      {
+        "error": "ORA-00942",
+        "message": "table or view \"SCOTT\".\"T_V\" does not exist"
+      }
+    ]
+  },
+  "dml-errors": {
+    "steps": [
+      {
+        "error": "ORA-00001",
+        "message": "unique constraint (SCOTT.PK_EMP) violated on table SCOTT.EMP columns (EMPNO)"
+      },
+      {
+        "error": "ORA-02291",
+        "message": "integrity constraint (SCOTT.FK_DEPTNO) violated - parent key not found"
+      },
+      {
+        "error": "ORA-02292",
+        "message": "integrity constraint (SCOTT.FK_DEPTNO) violated - child record found"
+      },
+      {
+        "error": "ORA-02266",
+        "message": "unique/primary keys in table referenced by enabled foreign keys"
+      },
+      {
+        "error": "ORA-02449",
+        "message": "unique/primary keys in table referenced by foreign keys"
+      },
+      {
+        "error": "ORA-00947",
+        "message": "not enough values"
+      },
+      {
+        "error": "ORA-00913",
+        "message": "too many values"
+      },
+      {
+        "error": "ORA-00904",
+        "message": "\"NOPE\": invalid identifier"
+      },
+      {
+        "error": "ORA-01407",
+        "message": "cannot update (\"SCOTT\".\"EMP\".\"EMPNO\") to NULL"
+      },
+      {
+        "message": "Rollback complete."
+      }
+    ]
+  },
+  "pv-two-aggs-noalias": {
+    "error": "ORA-56907",
+    "message": "10: Duplicate column names are generated due to pivot values being too long or due to the absence of unique and short aliases for both pivot values and aggregates."
+  },
+  "unpv-mixed": {
+    "error": "ORA-01790",
+    "message": "expression must have same datatype as corresponding expression"
+  },
+  "unpv-mixed-label": {
+    "error": "ORA-01790",
+    "message": "expression must have same datatype as corresponding expression"
+  },
+  "re-x-flag": {
+    "columns": [
+      "REGEXP_COUNT('ABC','AB',1,'X')",
+      "REGEXP_COUNT('ABC','AB',1,'X')"
+    ],
+    "rows": [
+      [
+        "0",
+        "1"
+      ]
+    ]
+  },
+  "cast-basic": {
+    "columns": [
+      "LENGTH(CAST('AB'ASCHAR(5)))",
+      "CAST('12.5'ASNUMBER)+1",
+      "CAST(123.456ASNUMBER(5,1))"
+    ],
+    "rows": [
+      [
+        "5",
+        "13.5",
+        "123.5"
+      ]
+    ]
+  },
+  "cast-too-long": {
+    "columns": [
+      "CAST('ABCDEF'ASVARCHAR2(3))"
+    ],
+    "rows": [
+      [
+        "ABC"
+      ]
+    ]
+  },
+  "fk-update-parent-cascade": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "error": "ORA-02292",
+        "message": "integrity constraint (SCOTT.FK_TC) violated - child record found"
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "1"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "dml-values-sysdate": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "columns": [
+          "ID",
+          "NM",
+          "CASEWHENDISNOTNULLTHEN1END"
+        ],
+        "rows": [
+          [
+            "1",
+            "SCOTT",
+            "1"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "char-compare": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "2"
+          ]
+        ]
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "2"
+          ]
+        ]
+      },
+      {
+        "columns": [
+          "LENGTH(C)",
+          "LENGTH(V)"
+        ],
+        "rows": [
+          [
+            "5",
+            "1"
+          ]
+        ]
+      },
+      {
+        "message": "2 rows deleted."
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "ctas-names": {
+    "steps": [
+      {
+        "error": "ORA-00998",
+        "message": "must name this expression with a column alias"
+      },
+      {
+        "error": "ORA-00957",
+        "message": "duplicate column name"
+      },
+      {
+        "message": "Table created."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "14"
+          ]
+        ]
+      },
+      {
+        "error": "ORA-00998",
+        "message": "must name this expression with a column alias"
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "dml-rownum": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "3 rows deleted."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "11"
+          ]
+        ]
+      },
+      {
+        "message": "11 rows updated."
+      },
+      {
+        "columns": [
+          "SUM(COMM)"
+        ],
+        "rows": [
+          [
+            "66"
+          ]
+        ]
+      },
+      {
+        "message": "1 row updated."
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "fk-self-ref": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "1 row deleted."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "9"
+          ]
+        ]
+      },
+      {
+        "message": "1 row deleted."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "0"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "fk-self-ref-noaction": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "5 rows deleted."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "9"
+          ]
+        ]
+      },
+      {
+        "error": "ORA-02292",
+        "message": "integrity constraint (SCOTT.FK_TS) violated - child record found"
+      },
+      {
+        "message": "9 rows deleted."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "0"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "alter-number-narrow": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "error": "ORA-01440",
+        "message": "column to be modified must be empty to decrease precision or scale"
+      },
+      {
+        "error": "ORA-01440",
+        "message": "column to be modified must be empty to decrease precision or scale"
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "rename-col-check": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "error": "ORA-02290",
+        "message": "check constraint (SCOTT.CK_TR) violated"
+      },
+      {
+        "columns": [
+          "SEARCH_CONDITION_VC"
+        ],
+        "rows": [
+          [
+            "\"PAY\">0"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "char-vs-varchar": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "0"
+          ]
+        ]
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "1"
+          ]
+        ]
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "1"
+          ]
+        ]
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "1"
+          ]
+        ]
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "0"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "cast-num-overflow": {
+    "error": "ORA-01438",
+    "message": "value 123.456 greater than specified precision (2, 0) for column"
+  },
+  "cast-num-overflow-scale": {
+    "error": "ORA-01438",
+    "message": "value 99.95 greater than specified precision (3, 1) for column"
+  },
+  "cast-num-ok": {
+    "columns": [
+      "CAST(9.95ASNUMBER(3,1))",
+      "CAST(123.456ASNUMBER(5,2))"
+    ],
+    "rows": [
+      [
+        "10",
+        "123.46"
+      ]
+    ]
+  },
+  "cast-num-to-short-char": {
+    "error": "ORA-25137",
+    "message": "Data value out of range"
+  },
+  "rename-col-check-multi": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "columns": [
+          "CONSTRAINT_NAME",
+          "SEARCH_CONDITION_VC"
+        ],
+        "rows": [
+          [
+            "CK1",
+            "\"LO\"<\"HI\" AND \"LO\">=0"
+          ],
+          [
+            "CK2",
+            "Q > 0"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "dml-update-pk-child": {
+    "steps": [
+      {
+        "error": "ORA-02292",
+        "message": "integrity constraint (SCOTT.FK_DEPTNO) violated - child record found"
+      },
+      {
+        "message": "1 row updated."
+      },
+      {
+        "columns": [
+          "DEPTNO"
+        ],
+        "rows": [
+          [
+            "10"
+          ],
+          [
+            "20"
+          ],
+          [
+            "30"
+          ],
+          [
+            "41"
+          ]
+        ]
+      },
+      {
+        "message": "Rollback complete."
+      }
+    ]
+  },
   "task-sql-select-basics-annual": {
     "columns": [
       "ENAME",
@@ -11137,6 +13189,294 @@
       ]
     ]
   },
+  "task-sql-pivot-dml-pivot-job": {
+    "columns": [
+      "JOB",
+      "D10",
+      "D20",
+      "D30"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "",
+        "6000",
+        ""
+      ],
+      [
+        "CLERK",
+        "1300",
+        "1900",
+        "950"
+      ],
+      [
+        "MANAGER",
+        "2450",
+        "2975",
+        "2850"
+      ],
+      [
+        "PRESIDENT",
+        "5000",
+        "",
+        ""
+      ],
+      [
+        "SALESMAN",
+        "",
+        "",
+        "5600"
+      ]
+    ]
+  },
+  "task-sql-pivot-dml-regexp-vowels": {
+    "columns": [
+      "ENAME",
+      "모음"
+    ],
+    "rows": [
+      [
+        "ADAMS",
+        "2"
+      ],
+      [
+        "ALLEN",
+        "2"
+      ],
+      [
+        "BLAKE",
+        "2"
+      ],
+      [
+        "JAMES",
+        "2"
+      ],
+      [
+        "JONES",
+        "2"
+      ],
+      [
+        "MARTIN",
+        "2"
+      ],
+      [
+        "MILLER",
+        "2"
+      ],
+      [
+        "TURNER",
+        "2"
+      ]
+    ]
+  },
+  "task-sql-pivot-dml-regexp-mask": {
+    "columns": [
+      "이름"
+    ],
+    "rows": [
+      [
+        "C***K"
+      ],
+      [
+        "K**G"
+      ],
+      [
+        "M****R"
+      ]
+    ]
+  },
+  "task-sql-pivot-dml-insert-dept": {
+    "steps": [
+      {
+        "message": "1 row created."
+      },
+      {
+        "columns": [
+          "DEPTNO",
+          "DNAME",
+          "LOC"
+        ],
+        "rows": [
+          [
+            "10",
+            "ACCOUNTING",
+            "NEW YORK"
+          ],
+          [
+            "20",
+            "RESEARCH",
+            "DALLAS"
+          ],
+          [
+            "30",
+            "SALES",
+            "CHICAGO"
+          ],
+          [
+            "40",
+            "OPERATIONS",
+            "BOSTON"
+          ],
+          [
+            "50",
+            "IT",
+            "SEOUL"
+          ]
+        ]
+      }
+    ]
+  },
+  "task-sql-pivot-dml-update-raise": {
+    "steps": [
+      {
+        "message": "4 rows updated."
+      },
+      {
+        "columns": [
+          "EMPNO",
+          "SAL"
+        ],
+        "rows": [
+          [
+            "7499",
+            "1760"
+          ],
+          [
+            "7521",
+            "1375"
+          ],
+          [
+            "7654",
+            "1375"
+          ],
+          [
+            "7698",
+            "2850"
+          ],
+          [
+            "7844",
+            "1650"
+          ],
+          [
+            "7900",
+            "950"
+          ]
+        ]
+      }
+    ]
+  },
+  "task-sql-pivot-dml-delete-dept": {
+    "steps": [
+      {
+        "message": "5 rows deleted."
+      },
+      {
+        "message": "1 row deleted."
+      },
+      {
+        "columns": [
+          "DEPTNO",
+          "COUNT(E.EMPNO)"
+        ],
+        "rows": [
+          [
+            "10",
+            "3"
+          ],
+          [
+            "30",
+            "6"
+          ],
+          [
+            "40",
+            "0"
+          ]
+        ]
+      }
+    ]
+  },
+  "task-sql-pivot-dml-savepoint": {
+    "steps": [
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "Savepoint created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "DEPTNO",
+          "DNAME",
+          "LOC"
+        ],
+        "rows": [
+          [
+            "10",
+            "ACCOUNTING",
+            "NEW YORK"
+          ],
+          [
+            "20",
+            "RESEARCH",
+            "DALLAS"
+          ],
+          [
+            "30",
+            "SALES",
+            "CHICAGO"
+          ],
+          [
+            "40",
+            "OPERATIONS",
+            "BOSTON"
+          ],
+          [
+            "50",
+            "IT",
+            "SEOUL"
+          ]
+        ]
+      }
+    ]
+  },
+  "task-sql-pivot-dml-create-table": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "columns": [
+          "ID",
+          "NAME",
+          "GRADE"
+        ],
+        "rows": [
+          [
+            "1",
+            "KIM",
+            "B"
+          ],
+          [
+            "2",
+            "LEE",
+            "A"
+          ]
+        ]
+      }
+    ]
+  },
   "note-w2d1-1": {
     "columns": [
       "CNT",
@@ -11186,16 +13526,72 @@
     ]
   },
   "note-w2d2-1": {
-    "error": "ORA-00942",
-    "message": "table or view \"SCOTT\".\"T_ORD_LINE\" does not exist"
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "columns": [
+          "ORDER_NO",
+          "PROD_NO",
+          "PROD_NAME",
+          "QTY"
+        ],
+        "rows": [
+          [
+            "1001",
+            "P1",
+            "PEN",
+            "2"
+          ],
+          [
+            "1002",
+            "P1",
+            "PEN",
+            "5"
+          ],
+          [
+            "1002",
+            "P2",
+            "NOTE",
+            "1"
+          ]
+        ]
+      }
+    ]
   },
   "note-w2d2-2": {
-    "error": "ORA-00942",
-    "message": "table or view \"SCOTT\".\"T_ORD_LINE\" does not exist"
+    "steps": [
+      {
+        "error": "ORA-00942",
+        "message": "table or view \"SCOTT\".\"T_ORD_LINE\" does not exist"
+      },
+      {
+        "error": "ORA-00942",
+        "message": "table or view \"SCOTT\".\"T_ORD_LINE\" does not exist"
+      },
+      {
+        "error": "ORA-00942",
+        "message": "table or view \"SCOTT\".\"T_ORD_LINE\" does not exist"
+      }
+    ]
   },
   "note-w2d2-3": {
-    "error": "ORA-00942",
-    "message": "table or view \"SCOTT\".\"T_ORD_LINE\" does not exist"
+    "steps": [
+      {
+        "error": "ORA-00942",
+        "message": "table or view \"SCOTT\".\"T_ORD_LINE\" does not exist"
+      }
+    ]
   },
   "note-w2d2-4": {
     "columns": [
@@ -11539,8 +13935,53 @@
     ]
   },
   "note-w2d5-8": {
-    "error": "ORA-00942",
-    "message": "table or view \"SCOTT\".\"T_ITEM_SURR\" does not exist"
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "columns": [
+          "ITEM_ID",
+          "ORDER_NO",
+          "PROD_NO",
+          "QTY"
+        ],
+        "rows": [
+          [
+            "1",
+            "1001",
+            "P1",
+            "2"
+          ],
+          [
+            "2",
+            "1001",
+            "P1",
+            "2"
+          ]
+        ]
+      }
+    ]
+  },
+  "note-w2d5-9": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "error": "ORA-00001",
+        "message": "unique constraint (SCOTT.T_ITEM_NAT_PK) violated on table SCOTT.T_ITEM_NAT columns (ORDER_NO, PROD_NO)"
+      }
+    ]
   },
   "note-w3d1-1": {
     "columns": [
@@ -14968,6 +17409,45 @@
       [
         "SCOTT",
         "36000"
+      ]
+    ]
+  },
+  "note-w5d2-14": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "AVG_SAL"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "1600",
+        "1567"
+      ],
+      [
+        "BLAKE",
+        "2850",
+        "1567"
+      ],
+      [
+        "FORD",
+        "3000",
+        "2175"
+      ],
+      [
+        "JONES",
+        "2975",
+        "2175"
+      ],
+      [
+        "KING",
+        "5000",
+        "2917"
+      ],
+      [
+        "SCOTT",
+        "3000",
+        "2175"
       ]
     ]
   },
@@ -18405,6 +20885,1614 @@
         "ADAMS",
         "SCOTT"
       ]
+    ]
+  },
+  "note-w7d1-1": {
+    "columns": [
+      "JOB",
+      "10",
+      "20",
+      "30"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "",
+        "6000",
+        ""
+      ],
+      [
+        "CLERK",
+        "1300",
+        "1900",
+        "950"
+      ],
+      [
+        "MANAGER",
+        "2450",
+        "2975",
+        "2850"
+      ],
+      [
+        "PRESIDENT",
+        "5000",
+        "",
+        ""
+      ],
+      [
+        "SALESMAN",
+        "",
+        "",
+        "5600"
+      ]
+    ]
+  },
+  "note-w7d1-2": {
+    "columns": [
+      "JOB",
+      "D10",
+      "D20",
+      "D30"
+    ],
+    "rows": [
+      [
+        "CLERK",
+        "1300",
+        "1900",
+        "950"
+      ],
+      [
+        "MANAGER",
+        "2450",
+        "2975",
+        "2850"
+      ],
+      [
+        "SALESMAN",
+        "",
+        "",
+        "5600"
+      ]
+    ]
+  },
+  "note-w7d1-3": {
+    "columns": [
+      "DEPTNO",
+      "CLERK",
+      "MGR",
+      "SALES"
+    ],
+    "rows": [
+      [
+        "10",
+        "1",
+        "1",
+        "0"
+      ],
+      [
+        "20",
+        "2",
+        "1",
+        "0"
+      ],
+      [
+        "30",
+        "1",
+        "1",
+        "4"
+      ]
+    ]
+  },
+  "note-w7d1-4": {
+    "columns": [
+      "EMPNO",
+      "ENAME",
+      "JOB",
+      "MGR",
+      "HIREDATE",
+      "COMM",
+      "D10",
+      "D20",
+      "D30"
+    ],
+    "rows": [
+      [
+        "7369",
+        "SMITH",
+        "CLERK",
+        "7902",
+        "1980-12-17",
+        "",
+        "",
+        "800",
+        ""
+      ],
+      [
+        "7499",
+        "ALLEN",
+        "SALESMAN",
+        "7698",
+        "1981-02-20",
+        "300",
+        "",
+        "",
+        "1600"
+      ],
+      [
+        "7521",
+        "WARD",
+        "SALESMAN",
+        "7698",
+        "1981-02-22",
+        "500",
+        "",
+        "",
+        "1250"
+      ],
+      [
+        "7566",
+        "JONES",
+        "MANAGER",
+        "7839",
+        "1981-04-02",
+        "",
+        "",
+        "2975",
+        ""
+      ]
+    ]
+  },
+  "note-w7d1-5": {
+    "columns": [
+      "D10",
+      "D20",
+      "D30"
+    ],
+    "rows": [
+      [
+        "8750",
+        "10875",
+        "9400"
+      ]
+    ]
+  },
+  "note-w7d1-6": {
+    "columns": [
+      "JOB",
+      "D10_S",
+      "D10_C",
+      "D20_S",
+      "D20_C"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "",
+        "0",
+        "6000",
+        "2"
+      ],
+      [
+        "CLERK",
+        "1300",
+        "1",
+        "1900",
+        "2"
+      ],
+      [
+        "MANAGER",
+        "2450",
+        "1",
+        "2975",
+        "1"
+      ],
+      [
+        "PRESIDENT",
+        "5000",
+        "1",
+        "",
+        "0"
+      ],
+      [
+        "SALESMAN",
+        "",
+        "0",
+        "",
+        "0"
+      ]
+    ]
+  },
+  "note-w7d1-7": {
+    "columns": [
+      "EMPNO",
+      "ENAME",
+      "ITEM",
+      "VAL"
+    ],
+    "rows": [
+      [
+        "7499",
+        "ALLEN",
+        "COMM",
+        "300"
+      ],
+      [
+        "7499",
+        "ALLEN",
+        "SAL",
+        "1600"
+      ],
+      [
+        "7521",
+        "WARD",
+        "COMM",
+        "500"
+      ],
+      [
+        "7521",
+        "WARD",
+        "SAL",
+        "1250"
+      ],
+      [
+        "7654",
+        "MARTIN",
+        "COMM",
+        "1400"
+      ],
+      [
+        "7654",
+        "MARTIN",
+        "SAL",
+        "1250"
+      ],
+      [
+        "7698",
+        "BLAKE",
+        "SAL",
+        "2850"
+      ],
+      [
+        "7844",
+        "TURNER",
+        "COMM",
+        "0"
+      ],
+      [
+        "7844",
+        "TURNER",
+        "SAL",
+        "1500"
+      ],
+      [
+        "7900",
+        "JAMES",
+        "SAL",
+        "950"
+      ]
+    ]
+  },
+  "note-w7d1-8": {
+    "columns": [
+      "EMPNO",
+      "ENAME",
+      "ITEM",
+      "VAL"
+    ],
+    "rows": [
+      [
+        "7499",
+        "ALLEN",
+        "COMM",
+        "300"
+      ],
+      [
+        "7499",
+        "ALLEN",
+        "SAL",
+        "1600"
+      ],
+      [
+        "7521",
+        "WARD",
+        "COMM",
+        "500"
+      ],
+      [
+        "7521",
+        "WARD",
+        "SAL",
+        "1250"
+      ],
+      [
+        "7654",
+        "MARTIN",
+        "COMM",
+        "1400"
+      ],
+      [
+        "7654",
+        "MARTIN",
+        "SAL",
+        "1250"
+      ],
+      [
+        "7698",
+        "BLAKE",
+        "COMM",
+        ""
+      ],
+      [
+        "7698",
+        "BLAKE",
+        "SAL",
+        "2850"
+      ],
+      [
+        "7844",
+        "TURNER",
+        "COMM",
+        "0"
+      ],
+      [
+        "7844",
+        "TURNER",
+        "SAL",
+        "1500"
+      ],
+      [
+        "7900",
+        "JAMES",
+        "COMM",
+        ""
+      ],
+      [
+        "7900",
+        "JAMES",
+        "SAL",
+        "950"
+      ]
+    ]
+  },
+  "note-w7d1-9": {
+    "columns": [
+      "JOB",
+      "DEPTNO",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "20",
+        "6000"
+      ],
+      [
+        "CLERK",
+        "10",
+        "1300"
+      ],
+      [
+        "CLERK",
+        "20",
+        "1900"
+      ],
+      [
+        "CLERK",
+        "30",
+        "950"
+      ],
+      [
+        "MANAGER",
+        "10",
+        "2450"
+      ],
+      [
+        "MANAGER",
+        "20",
+        "2975"
+      ],
+      [
+        "MANAGER",
+        "30",
+        "2850"
+      ],
+      [
+        "PRESIDENT",
+        "10",
+        "5000"
+      ],
+      [
+        "SALESMAN",
+        "30",
+        "5600"
+      ]
+    ]
+  },
+  "note-w7d1-10": {
+    "columns": [
+      "JOB",
+      "D10",
+      "D20",
+      "D30"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "",
+        "6000",
+        ""
+      ],
+      [
+        "CLERK",
+        "1300",
+        "1900",
+        "950"
+      ],
+      [
+        "MANAGER",
+        "2450",
+        "2975",
+        "2850"
+      ],
+      [
+        "PRESIDENT",
+        "5000",
+        "",
+        ""
+      ],
+      [
+        "SALESMAN",
+        "",
+        "",
+        "5600"
+      ]
+    ]
+  },
+  "note-w7d2-1": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ADAMS"
+      ],
+      [
+        "ALLEN"
+      ],
+      [
+        "JAMES"
+      ],
+      [
+        "JONES"
+      ]
+    ]
+  },
+  "note-w7d2-2": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ALLEN"
+      ],
+      [
+        "MILLER"
+      ],
+      [
+        "SCOTT"
+      ]
+    ]
+  },
+  "note-w7d2-3": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "FORD"
+      ],
+      [
+        "KING"
+      ],
+      [
+        "WARD"
+      ]
+    ]
+  },
+  "note-w7d2-4": {
+    "columns": [
+      "LIKE_A",
+      "LIKE_PCT",
+      "REGEXP_A"
+    ],
+    "rows": [
+      [
+        "0",
+        "7",
+        "7"
+      ]
+    ]
+  },
+  "note-w7d2-5": {
+    "columns": [
+      "ENAME",
+      "V1",
+      "V2",
+      "P1",
+      "CNT"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "A",
+        "E",
+        "1",
+        "2"
+      ],
+      [
+        "BLAKE",
+        "A",
+        "E",
+        "3",
+        "2"
+      ],
+      [
+        "JAMES",
+        "A",
+        "E",
+        "2",
+        "2"
+      ],
+      [
+        "MARTIN",
+        "A",
+        "I",
+        "2",
+        "2"
+      ],
+      [
+        "TURNER",
+        "U",
+        "E",
+        "2",
+        "2"
+      ],
+      [
+        "WARD",
+        "A",
+        "",
+        "2",
+        "1"
+      ]
+    ]
+  },
+  "note-w7d2-6": {
+    "columns": [
+      "A",
+      "B",
+      "C"
+    ],
+    "rows": [
+      [
+        "1234",
+        "5678",
+        "10"
+      ]
+    ]
+  },
+  "note-w7d2-7": {
+    "columns": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "rows": [
+      [
+        "3",
+        "1",
+        "5",
+        "3"
+      ]
+    ]
+  },
+  "note-w7d2-8": {
+    "columns": [
+      "ID",
+      "DOM"
+    ],
+    "rows": [
+      [
+        "user",
+        "mail.com"
+      ]
+    ]
+  },
+  "note-w7d2-9": {
+    "columns": [
+      "ENAME",
+      "MASKED"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "CL*RK"
+      ],
+      [
+        "KING",
+        "K*NG"
+      ],
+      [
+        "MILLER",
+        "M*LL*R"
+      ]
+    ]
+  },
+  "note-w7d2-10": {
+    "columns": [
+      "D",
+      "P",
+      "N"
+    ],
+    "rows": [
+      [
+        "03/11/2026",
+        "010-****-5678",
+        "123"
+      ]
+    ]
+  },
+  "note-w7d2-11": {
+    "columns": [
+      "C_DEFAULT",
+      "C_I",
+      "C_IC"
+    ],
+    "rows": [
+      [
+        "0",
+        "7",
+        "0"
+      ]
+    ]
+  },
+  "note-w7d2-12": {
+    "columns": [
+      "NO_M",
+      "M",
+      "NO_N",
+      "N"
+    ],
+    "rows": [
+      [
+        "1",
+        "2",
+        "N",
+        "Y"
+      ]
+    ]
+  },
+  "note-w7d3-1": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "columns": [
+          "DEPTNO",
+          "DNAME",
+          "LOC"
+        ],
+        "rows": [
+          [
+            "10",
+            "ACCOUNTING",
+            "NEW YORK"
+          ],
+          [
+            "20",
+            "RESEARCH",
+            "DALLAS"
+          ],
+          [
+            "30",
+            "SALES",
+            "CHICAGO"
+          ],
+          [
+            "40",
+            "OPERATIONS",
+            "BOSTON"
+          ],
+          [
+            "50",
+            "EDUCATION",
+            "SEOUL"
+          ],
+          [
+            "60",
+            "IT",
+            ""
+          ],
+          [
+            "70",
+            "HR",
+            ""
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w7d3-2": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "error": "ORA-00947",
+        "message": "not enough values"
+      },
+      {
+        "error": "ORA-00913",
+        "message": "too many values"
+      },
+      {
+        "columns": [
+          "DEPTNO",
+          "DNAME",
+          "LOC"
+        ],
+        "rows": [
+          [
+            "50",
+            "EDUCATION",
+            "SEOUL"
+          ],
+          [
+            "60",
+            "IT",
+            "SEOUL"
+          ],
+          [
+            "70",
+            "HR",
+            ""
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w7d3-3": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "3 rows created."
+      },
+      {
+        "message": "2 rows created."
+      },
+      {
+        "columns": [
+          "EMPNO",
+          "ENAME",
+          "SAL"
+        ],
+        "rows": [
+          [
+            "7782",
+            "CLARK",
+            "2450"
+          ],
+          [
+            "7788",
+            "SCOTT",
+            ""
+          ],
+          [
+            "7839",
+            "KING",
+            "5000"
+          ],
+          [
+            "7902",
+            "FORD",
+            ""
+          ],
+          [
+            "7934",
+            "MILLER",
+            "1300"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w7d3-4": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "3 rows updated."
+      },
+      {
+        "message": "1 row updated."
+      },
+      {
+        "message": "1 row updated."
+      },
+      {
+        "message": "0 rows updated."
+      },
+      {
+        "columns": [
+          "ENAME",
+          "JOB",
+          "SAL",
+          "COMM"
+        ],
+        "rows": [
+          [
+            "CLARK",
+            "MANAGER",
+            "2695",
+            "100"
+          ],
+          [
+            "KING",
+            "PRESIDENT",
+            "5500",
+            "100"
+          ],
+          [
+            "MILLER",
+            "CLERK",
+            "1430",
+            "100"
+          ],
+          [
+            "ADAMS",
+            "ANALYST",
+            "3000",
+            ""
+          ],
+          [
+            "FORD",
+            "ANALYST",
+            "3000",
+            ""
+          ],
+          [
+            "JONES",
+            "MANAGER",
+            "2975",
+            ""
+          ],
+          [
+            "SCOTT",
+            "ANALYST",
+            "3000",
+            ""
+          ],
+          [
+            "SMITH",
+            "CLERK",
+            "3000",
+            ""
+          ]
+        ]
+      },
+      {
+        "message": "14 rows updated."
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w7d3-5": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "6 rows deleted."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "8"
+          ]
+        ]
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "14"
+          ]
+        ]
+      },
+      {
+        "message": "14 rows deleted."
+      },
+      {
+        "message": "Table truncated."
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "0"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      },
+      {
+        "error": "ORA-00942",
+        "message": "table or view \"SCOTT\".\"EMP_T\" does not exist"
+      }
+    ]
+  },
+  "note-w7d3-6": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "3 rows updated."
+      },
+      {
+        "message": "4 rows merged."
+      },
+      {
+        "columns": [
+          "EMPNO",
+          "ENAME",
+          "BONUS"
+        ],
+        "rows": [
+          [
+            "7566",
+            "JONES",
+            "148.75"
+          ],
+          [
+            "7698",
+            "BLAKE",
+            "142.5"
+          ],
+          [
+            "7782",
+            "CLARK",
+            "245"
+          ],
+          [
+            "7839",
+            "KING",
+            "500"
+          ],
+          [
+            "7934",
+            "MILLER",
+            "0"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w7d3-7": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "error": "ORA-38104",
+        "message": "Columns referenced in the ON Clause cannot be updated: \"B\".\"EMPNO\""
+      },
+      {
+        "message": "5 rows merged."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "8"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w7d4-1": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "Commit complete."
+      },
+      {
+        "message": "1 row deleted."
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "DEPTNO",
+          "DNAME"
+        ],
+        "rows": [
+          [
+            "10",
+            "ACCOUNTING"
+          ],
+          [
+            "20",
+            "RESEARCH"
+          ],
+          [
+            "30",
+            "SALES"
+          ],
+          [
+            "40",
+            "OPERATIONS"
+          ],
+          [
+            "50",
+            "EDUCATION"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w7d4-2": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row updated."
+      },
+      {
+        "message": "Savepoint created."
+      },
+      {
+        "message": "1 row updated."
+      },
+      {
+        "message": "Savepoint created."
+      },
+      {
+        "message": "1 row deleted."
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "ENAME",
+          "SAL"
+        ],
+        "rows": [
+          [
+            "CLARK",
+            "1000"
+          ],
+          [
+            "KING",
+            "2000"
+          ],
+          [
+            "MILLER",
+            "1300"
+          ]
+        ]
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "ENAME",
+          "SAL"
+        ],
+        "rows": [
+          [
+            "CLARK",
+            "1000"
+          ],
+          [
+            "KING",
+            "5000"
+          ],
+          [
+            "MILLER",
+            "1300"
+          ]
+        ]
+      },
+      {
+        "error": "ORA-01086",
+        "message": "savepoint 'SP2' never established in this session or is invalid"
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "ENAME",
+          "SAL"
+        ],
+        "rows": [
+          [
+            "CLARK",
+            "2450"
+          ],
+          [
+            "KING",
+            "5000"
+          ],
+          [
+            "MILLER",
+            "1300"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w7d4-3": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Savepoint created."
+      },
+      {
+        "message": "1 row deleted."
+      },
+      {
+        "message": "Savepoint created."
+      },
+      {
+        "message": "1 row deleted."
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "DEPTNO"
+        ],
+        "rows": [
+          [
+            "20"
+          ],
+          [
+            "30"
+          ],
+          [
+            "40"
+          ]
+        ]
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "4"
+          ]
+        ]
+      },
+      {
+        "error": "ORA-01086",
+        "message": "savepoint 'A' never established in this session or is invalid"
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w7d4-4": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "5"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w7d4-5": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "error": "ORA-12899",
+        "message": "value too large for column \"SCOTT\".\"T_DEPT\".\"DNAME\" (actual: 24, maximum: 14)"
+      },
+      {
+        "message": "Commit complete."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "5"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w7d5-1": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "error": "ORA-00001",
+        "message": "unique constraint (SCOTT.T_DEPT_PK) violated on table SCOTT.T_DEPT columns (DEPTNO)"
+      },
+      {
+        "error": "ORA-00001",
+        "message": "unique constraint (SCOTT.T_DEPT_UK) violated on table SCOTT.T_DEPT columns (DNAME)"
+      },
+      {
+        "error": "ORA-01400",
+        "message": "cannot insert NULL into (\"SCOTT\".\"T_DEPT\".\"DNAME\")"
+      },
+      {
+        "error": "ORA-02290",
+        "message": "check constraint (SCOTT.T_EMP_CK) violated"
+      },
+      {
+        "error": "ORA-02291",
+        "message": "integrity constraint (SCOTT.T_EMP_FK) violated - parent key not found"
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "error": "ORA-02292",
+        "message": "integrity constraint (SCOTT.T_EMP_FK) violated - child record found"
+      },
+      {
+        "message": "Table dropped."
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w7d5-2": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "14 rows created."
+      },
+      {
+        "message": "14 rows created."
+      },
+      {
+        "message": "5 rows created."
+      },
+      {
+        "error": "ORA-02292",
+        "message": "integrity constraint (SCOTT.T_EMP3_FK) violated - child record found"
+      },
+      {
+        "message": "1 row deleted."
+      },
+      {
+        "columns": [
+          "E1_ROWS",
+          "E2_ROWS",
+          "E2_NULL"
+        ],
+        "rows": [
+          [
+            "8",
+            "14",
+            "6"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      },
+      {
+        "message": "Table dropped."
+      },
+      {
+        "message": "Table dropped."
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w7d5-3": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "Table created."
+      },
+      {
+        "columns": [
+          "TNAME",
+          "T",
+          "COND"
+        ],
+        "rows": [
+          [
+            "T_DEPT",
+            "C",
+            "\"DNAME\" IS NOT NULL"
+          ],
+          [
+            "T_DEPT",
+            "C",
+            "LOC <> 'X'"
+          ],
+          [
+            "T_DEPT",
+            "P",
+            ""
+          ],
+          [
+            "T_DEPT2",
+            "C",
+            "\"DNAME\" IS NOT NULL"
+          ]
+        ]
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "error": "ORA-01400",
+        "message": "cannot insert NULL into (\"SCOTT\".\"T_DEPT2\".\"DNAME\")"
+      },
+      {
+        "columns": [
+          "DEPTNO",
+          "DNAME",
+          "LOC"
+        ],
+        "rows": [
+          [
+            "10",
+            "ACCOUNTING",
+            "SEOUL"
+          ],
+          [
+            "10",
+            "SALES",
+            ""
+          ],
+          [
+            "20",
+            "IT",
+            "X"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w7d5-4": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "error": "ORA-01441",
+        "message": "cannot decrease column length because some value is too big"
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "error": "ORA-01758",
+        "message": "table must be empty to add mandatory (NOT NULL) column"
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "Table renamed."
+      },
+      {
+        "columns": [
+          "EMPNO",
+          "ENAME",
+          "SALARY",
+          "BONUS"
+        ],
+        "rows": [
+          [
+            "7782",
+            "CLARK",
+            "2450",
+            "0"
+          ],
+          [
+            "7839",
+            "KING",
+            "5000",
+            "0"
+          ],
+          [
+            "7934",
+            "MILLER",
+            "1300",
+            "0"
+          ]
+        ]
+      },
+      {
+        "message": "Table truncated."
+      },
+      {
+        "columns": [
+          "COUNT(*)"
+        ],
+        "rows": [
+          [
+            "0"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
     ]
   }
 }

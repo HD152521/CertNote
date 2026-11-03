@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { runSql, runStatement } from './run';
-import { SQL_TASK_SETS, judge, type SqlTaskItem } from './tasks';
+import { SQL_TASK_SETS, judge, runForTask, type SqlTaskItem } from './tasks';
 import { display, formatNumberSqlplus } from './values';
 
 const item = (setId: string, id: string): SqlTaskItem => {
@@ -23,14 +23,24 @@ describe('SQL 실습장 엔진', () => {
     expect(formatNumberSqlplus(12345678901)).toBe('1.2346E+10');
   });
 
-  test('실습장 2·3단계 기능은 가짜 ORA 오류 대신 안내를 낸다', () => {
+  test('실습장이 흉내 내지 않는 기능은 가짜 ORA 오류 대신 안내를 낸다', () => {
     for (const sql of [
-      "SELECT REGEXP_SUBSTR(ENAME, '[AEIOU]') FROM EMP",
-      "UPDATE EMP SET SAL = 0",
-      "SELECT * FROM (SELECT DEPTNO, JOB FROM EMP) PIVOT (COUNT(*) FOR DEPTNO IN (10, 20))",
+      'GRANT SELECT ON EMP TO SCOTT',
+      'SELECT * FROM (SELECT DEPTNO, JOB FROM EMP) PIVOT XML (COUNT(*) FOR DEPTNO IN (ANY))',
+      "CREATE VIEW V_T AS SELECT * FROM DEPT; INSERT INTO V_T VALUES (50, 'IT', 'SEOUL')",
     ]) {
-      expect(runStatement(sql).kind, sql).toBe('note');
+      const rs = runSql(sql);
+      expect(rs[rs.length - 1].kind, sql).toBe('note');
     }
+  });
+
+  test('DML·TCL: 한 번 실행 안에서 세션이 이어지고, 실행마다 처음 데이터로 돌아온다', () => {
+    const rs = runSql("INSERT INTO DEPT VALUES (50, 'IT', 'SEOUL'); SAVEPOINT A; DELETE FROM DEPT WHERE DEPTNO = 40; ROLLBACK TO A; SELECT COUNT(*) FROM DEPT; ROLLBACK; SELECT COUNT(*) FROM DEPT");
+    expect(rs.map((r) => (r.kind === 'rows' ? r.rows[0][0] : r.kind === 'message' ? r.message : r.kind))).toEqual(['1 row created.', 'Savepoint created.', '1 row deleted.', 'Rollback complete.', 5, 'Rollback complete.', 4]);
+    const again = runStatement('SELECT COUNT(*) FROM DEPT');
+    expect(again.kind === 'rows' && again.rows[0][0]).toBe(4);
+    const fk = runStatement('DELETE FROM DEPT WHERE DEPTNO = 10');
+    expect(fk.kind === 'error' && fk.code).toBe('ORA-02292');
   });
 
   test('시험 기준과 23ai 가 다른 곳은 시험 기준 오류에 설명을 붙인다', () => {
@@ -84,6 +94,12 @@ describe('SQL 실습장 엔진', () => {
     // 아주 깊은 계층은 전용 안내
     const deep = runStatement('SELECT COUNT(*) FROM DUAL CONNECT BY LEVEL <= 5000');
     expect(deep.kind === 'note' && deep.message).toMatch(/깊어서/);
+    // 반복 안의 반복 정규식은 실행하지 않고 안내, PK 가 있는 테이블에 큰 INSERT … SELECT 도 3초 안에
+    expect(runStatement("SELECT REGEXP_COUNT(RPAD('A', 28, 'A') || 'B', '(A+)+C') FROM DUAL").kind).toBe('note');
+    const pk0 = Date.now();
+    const big = runSql('CREATE TABLE T_BIG (A NUMBER PRIMARY KEY); INSERT INTO T_BIG SELECT ROWNUM FROM EMP A, EMP B, EMP C, EMP D');
+    expect(big[1].kind === 'message' && big[1].message).toBe('38416 rows created.');
+    expect(Date.now() - pk0).toBeLessThan(3500);
     // 재귀 WITH 는 아직 안내만
     expect(runStatement('WITH R (N) AS (SELECT 1 FROM DUAL UNION ALL SELECT N + 1 FROM R WHERE N < 5) SELECT * FROM R').kind).toBe('note');
     expect(Date.now() - t0).toBeLessThan(25000);
@@ -118,7 +134,7 @@ describe('SQL 실습장 엔진', () => {
 describe('SQL 실습장 과제 채점', () => {
   test('모든 모범 답안은 자기 자신에게 정답이다', () => {
     for (const set of SQL_TASK_SETS) {
-      for (const it of set.items) expect(judge(it, runStatement(it.answer)), `${set.id}/${it.id}`).toEqual({ ok: true });
+      for (const it of set.items) expect(runForTask(it, it.answer).verdict, `${set.id}/${it.id}`).toEqual({ ok: true });
     }
   });
 
@@ -160,6 +176,16 @@ describe('SQL 실습장 과제 채점', () => {
     expect(verdict('sql-window-hierarchy', 'org-chart', 'SELECT LEVEL, ENAME FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER BY ENAME').ok).toBe(false);
     expect(verdict('sql-window-hierarchy', 'dept-top', 'SELECT DEPTNO, ENAME, SAL FROM EMP WHERE ROW_NUMBER() OVER (PARTITION BY DEPTNO ORDER BY SAL DESC) = 1')).toMatchObject({ ok: false, reason: expect.stringMatching(/ORA-30483/) });
     expect(verdict('sql-window-hierarchy', 'running-total', 'SELECT ENAME, HIREDATE, SAL, SUM(SAL) OVER (ORDER BY HIREDATE, ENAME ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM EMP WHERE DEPTNO = 30 ORDER BY 2, 1')).toEqual({ ok: true });
+  });
+
+  test('S5 데이터 변경 과제는 바뀐 상태로 채점한다', () => {
+    const task = (id: string) => SQL_TASK_SETS.find((x) => x.id === 'sql-pivot-dml')!.items.find((i) => i.id === id)!;
+    const v = (id: string, sql: string) => runForTask(task(id), sql).verdict;
+    expect(v('insert-dept', "INSERT INTO DEPT (DEPTNO, DNAME, LOC) VALUES (50, 'IT', 'SEOUL')")).toEqual({ ok: true });
+    expect(v('update-raise', 'UPDATE EMP SET SAL = SAL * 1.1')?.ok).toBe(false);
+    expect(v('delete-dept', 'DELETE FROM DEPT WHERE DEPTNO = 20')).toMatchObject({ ok: false, reason: expect.stringMatching(/ORA-02292/) });
+    expect(v('savepoint', "INSERT INTO DEPT VALUES (50, 'IT', 'SEOUL'); SAVEPOINT A; INSERT INTO DEPT VALUES (60, 'HR', 'BUSAN'); ROLLBACK")?.ok).toBe(false);
+    expect(v('create-table', "CREATE TABLE T_MEMBER (ID NUMBER(4) PRIMARY KEY, NAME VARCHAR2(10) NOT NULL, GRADE CHAR(1) DEFAULT 'B' CHECK (GRADE IN ('A','B','C'))); INSERT INTO T_MEMBER VALUES (1, 'KIM', 'B'); INSERT INTO T_MEMBER (ID, NAME, GRADE) VALUES (2, 'LEE', 'A')")).toEqual({ ok: true });
   });
 
   test('S3 도 같은 결과면 다른 쓰기를 정답으로 본다', () => {

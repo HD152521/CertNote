@@ -1,4 +1,5 @@
 // 단일행 함수(문자·숫자·날짜·변환·NULL). 집계 함수는 exec.ts 에 있다.
+import { columnFromSpec } from './data';
 import { formatDate, formatNumber, parseDate } from './formats';
 import { DAY_MS, NotSupported, OraError, SqlDate, addDays, compare, dateOf, toNumber, toText, type Value } from './values';
 
@@ -86,7 +87,120 @@ function truncDate(d: SqlDate, fmt: string | null, round: boolean): SqlDate {
   throw new OraError('ORA-01898', 'too many precision specifiers');
 }
 
+/** Oracle 정규식 → JS 정규식. POSIX 문자 클래스([[:digit:]] 등)를 바꾸고 일치 옵션(i c n m)을 플래그로 옮긴다. */
+export function oracleRegex(pattern: string, match: string | null, global = false): RegExp {
+  const classes: Record<string, string> = {
+    digit: '0-9', alpha: 'A-Za-z', alnum: 'A-Za-z0-9', upper: 'A-Z', lower: 'a-z', space: '\\s', punct: '!-\\/:-@\\[-`{-~', xdigit: '0-9A-Fa-f', blank: ' \\t', cntrl: '\\x00-\\x1f',
+  };
+  let src = pattern.replace(/\[:(\w+):\]/g, (m, name: string) => classes[name] ?? m);
+  // (A+)+ 처럼 반복 안의 반복은 브라우저 정규식에서 지수 시간이 걸려 탭이 멈출 수 있다. 실행하지 않고 안내한다.
+  if (/\((?:[^()\\]|\\.)*[+*}](?:[^()\\]|\\.)*\)[+*{]/.test(src)) {
+    throw new NotSupported('반복 안에 또 반복이 있는 정규식((A+)+ 등)은 브라우저에서 아주 오래 걸릴 수 있어 실습장에서 실행하지 않아요. 반복을 하나로 줄여 보세요.');
+  }
+  if ((match ?? '').includes('x')) src = src.replace(/\\.|\[(?:\\.|[^\]])*\]|\s+/g, (m) => (/^\s+$/.test(m) ? '' : m)); // 'x': 공백 무시
+  let flags = global ? 'g' : '';
+  for (const ch of match ?? '') {
+    if (ch === 'i') flags = flags.replace('i', '') + 'i';
+    else if (ch === 'c') flags = flags.replace('i', '');
+    else if (ch === 'n') flags += flags.includes('s') ? '' : 's';
+    else if (ch === 'm') flags += flags.includes('m') ? '' : 'm';
+    else if (ch !== 'x') throw new OraError('ORA-01760', 'illegal argument for function');
+  }
+  try {
+    return new RegExp(src, flags);
+  } catch {
+    throw new OraError('ORA-12726', 'unmatched bracket in regular expression');
+  }
+}
+
+/** pos 부터 occ 번째 일치(없으면 null). 빈 일치는 한 칸씩 건너뛴다. */
+function nthMatch(s: string, re: RegExp, pos: number, occ: number): RegExpExecArray | null {
+  const g = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
+  g.lastIndex = Math.max(0, pos - 1);
+  let n = 0;
+  let m: RegExpExecArray | null;
+  while ((m = g.exec(s))) {
+    if (m[0] === '') g.lastIndex++;
+    if (++n === occ) return m;
+  }
+  return null;
+}
+
 export const FUNCTIONS: Record<string, Fn> = {
+  CAST: (a) => {
+    const [v, specV] = a;
+    if (v === null) return null;
+    const c = columnFromSpec('X', String(specV));
+    if (!['NUMBER', 'VARCHAR2', 'DATE'].includes(c.type) || !/^(NUMBER|INTEGER|INT|VARCHAR2|CHAR|DATE)/.test(String(specV))) {
+      throw new NotSupported(`${String(specV)} 로의 CAST 는 실습장에서 아직 지원하지 않아요.`);
+    }
+    if (c.type === 'NUMBER') {
+      const n = toNumber(v)!;
+      if (c.precision === undefined) return n;
+      const r = roundTo(n, c.scale ?? 0, 'round');
+      const intDigits = Math.abs(r) >= 1 ? Math.floor(Math.log10(Math.abs(Math.trunc(r)))) + 1 : 0;
+      if (intDigits > c.precision - (c.scale ?? 0)) throw new OraError('ORA-01438', `value ${n} greater than specified precision (${c.precision}, ${c.scale ?? 0}) for column`);
+      return r;
+    }
+    if (c.type === 'DATE') return v instanceof SqlDate ? v : parseDate(str(v), undefined);
+    let s = str(v);
+    // 문자열을 줄이면 Oracle 은 잘라서 돌려준다. 숫자·날짜를 짧은 문자로 바꾸면 ORA-25137.
+    if (c.length !== undefined && [...s].length > c.length) {
+      if (typeof v !== 'string') throw new OraError('ORA-25137', 'Data value out of range');
+      s = [...s].slice(0, c.length).join('');
+    }
+    if (c.fixed && c.length !== undefined) s = s.padEnd(c.length, ' ');
+    return s;
+  },
+  REGEXP_SUBSTR: (a) => {
+    argCount('REGEXP_SUBSTR', a, 2, 6);
+    if (a[0] === null || a[1] === null) return null;
+    const m = nthMatch(str(a[0]), oracleRegex(str(a[1]), a[4] === undefined || a[4] === null ? null : str(a[4])), a.length > 2 && a[2] !== null ? num(a[2]) : 1, a.length > 3 && a[3] !== null ? num(a[3]) : 1);
+    if (!m) return null;
+    const sub = a.length > 5 && a[5] !== null ? num(a[5]) : 0;
+    return textOrNull(m[sub] ?? '');
+  },
+  REGEXP_INSTR: (a) => {
+    argCount('REGEXP_INSTR', a, 2, 7);
+    if (a[0] === null || a[1] === null) return null;
+    const m = nthMatch(str(a[0]), oracleRegex(str(a[1]), a[5] === undefined || a[5] === null ? null : str(a[5])), a.length > 2 && a[2] !== null ? num(a[2]) : 1, a.length > 3 && a[3] !== null ? num(a[3]) : 1);
+    if (!m) return 0;
+    const after = a.length > 4 && a[4] !== null && num(a[4]) === 1;
+    return m.index + 1 + (after ? m[0].length : 0);
+  },
+  REGEXP_COUNT: (a) => {
+    argCount('REGEXP_COUNT', a, 2, 4);
+    if (a[0] === null || a[1] === null) return null;
+    const s = str(a[0]);
+    const re = oracleRegex(str(a[1]), a[3] === undefined || a[3] === null ? null : str(a[3]), true);
+    re.lastIndex = a.length > 2 && a[2] !== null ? num(a[2]) - 1 : 0;
+    let n = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(s))) {
+      if (m[0] === '') re.lastIndex++;
+      n++;
+    }
+    return n;
+  },
+  REGEXP_REPLACE: (a) => {
+    argCount('REGEXP_REPLACE', a, 2, 6);
+    if (a[0] === null) return null;
+    if (a[1] === null) return a[0];
+    const s = str(a[0]);
+    const repl = a.length > 2 && a[2] !== null ? str(a[2]) : '';
+    const pos = a.length > 3 && a[3] !== null ? num(a[3]) : 1;
+    const occ = a.length > 4 && a[4] !== null ? num(a[4]) : 0;
+    const re = oracleRegex(str(a[1]), a[5] === undefined || a[5] === null ? null : str(a[5]), true);
+    const head = s.slice(0, pos - 1);
+    let n = 0;
+    const tail = s.slice(pos - 1).replace(re, (...m: unknown[]) => {
+      n++;
+      if (occ !== 0 && n !== occ) return m[0] as string;
+      // Oracle 의 \1 … \9 역참조
+      return repl.replace(/\\(\d)/g, (_, d: string) => String(m[Number(d)] ?? ''));
+    });
+    return textOrNull(head + tail);
+  },
   // ── 문자 ──
   LOWER: (a) => (argCount('LOWER', a, 1), a[0] === null ? null : str(a[0]).toLowerCase()),
   UPPER: (a) => (argCount('UPPER', a, 1), a[0] === null ? null : str(a[0]).toUpperCase()),
