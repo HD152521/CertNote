@@ -1,6 +1,6 @@
 // 식 계산. 조건(WHERE·ON·HAVING)은 3값 논리(참·거짓·UNKNOWN=null)로 계산한다.
 import type { Expr, Select } from './ast';
-import { FUNCTIONS, NILADIC, extractField, trimBoth } from './functions';
+import { FUNCTIONS, NILADIC, extractField, oracleRegex, trimBoth } from './functions';
 import type { HierInfo } from './hierarchy';
 import { WINDOW_ONLY, windowKey } from './window';
 import { invalidIdentifier, resolveColumn, type Relation } from './relation';
@@ -264,6 +264,28 @@ function likeMatch(text: string, pattern: string, escape: string | null): boolea
   return pi === p.length;
 }
 
+/** Oracle 의 공백 채움 비교 조건: 양쪽이 CHAR 이거나, 한쪽이 CHAR 열이고 다른 쪽이 문자 리터럴 */
+function padded(a: Expr, b: Expr, ctx: EvalCtx): boolean {
+  const lit = (x: Expr) => x.type === 'lit' && typeof x.value === 'string';
+  const fa = isFixedChar(a, ctx);
+  const fb = isFixedChar(b, ctx);
+  return (fa && (fb || lit(b))) || (fb && lit(a));
+}
+
+/** 식이 CHAR(n) 열을 그대로 가리키는가 */
+function isFixedChar(e: Expr, ctx: EvalCtx): boolean {
+  if (e.type !== 'col') return false;
+  for (let c: EvalCtx | undefined = ctx; c; c = c.outer) {
+    try {
+      const hit = resolveColumn(c.rel, e.table, e.name);
+      if (hit) return !!c.rel.cols[hit.index].fixed;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
 /** 조건식(참·거짓·UNKNOWN). */
 export function cond(e: Expr, ctx: EvalCtx): boolean | null {
   switch (e.type) {
@@ -288,20 +310,47 @@ export function cond(e: Expr, ctx: EvalCtx): boolean | null {
       }
       break;
     case 'bin':
-      if (COMPARE_OPS.has(e.op)) return cmpOp(e.op, compare(evaluate(e.left, ctx), evaluate(e.right, ctx)));
+      if (COMPARE_OPS.has(e.op)) {
+        const l = evaluate(e.left, ctx);
+        const r = evaluate(e.right, ctx);
+        // CHAR 열은 끝 공백을 채워 비교한다: CHAR(5) 의 'A    ' = 'A'
+        if (typeof l === 'string' && typeof r === 'string' && padded(e.left, e.right, ctx)) {
+          return cmpOp(e.op, compare(l.replace(/ +$/, ''), r.replace(/ +$/, '')));
+        }
+        return cmpOp(e.op, compare(l, r));
+      }
       break;
     case 'isnull': {
       const v = evaluate(e.arg, ctx);
       return e.not ? v !== null : v === null;
     }
     case 'between': {
-      const v = evaluate(e.arg, ctx);
-      const lo = cmpOp('>=', compare(v, evaluate(e.low, ctx)));
-      const hi = cmpOp('<=', compare(v, evaluate(e.high, ctx)));
+      let v = evaluate(e.arg, ctx);
+      let low = evaluate(e.low, ctx);
+      let high = evaluate(e.high, ctx);
+      if (typeof v === 'string' && padded(e.arg, e.low, ctx) && padded(e.arg, e.high, ctx)) {
+        const t = (x: Value) => (typeof x === 'string' ? x.replace(/ +$/, '') : x);
+        v = t(v);
+        low = t(low);
+        high = t(high);
+      }
+      const lo = cmpOp('>=', compare(v, low));
+      const hi = cmpOp('<=', compare(v, high));
       const r = lo === false || hi === false ? false : lo === null || hi === null ? null : true;
       return e.not ? (r === null ? null : !r) : r;
     }
     case 'in': {
+      if (e.arg.type !== 'tuple' && isFixedChar(e.arg, ctx)) {
+        // 목록의 항목마다: CHAR 열이나 문자 리터럴이면 공백 채움, 아니면(VARCHAR2 열·함수 결과) 그대로 비교
+        const v = evaluate(e.arg, ctx);
+        const rs = e.list.map((x) => {
+          const w = evaluate(x, ctx);
+          const pad = typeof v === 'string' && typeof w === 'string' && padded(e.arg, x, ctx);
+          return cmpOp('=', compare(pad ? (v as string).replace(/ +$/, '') : v, pad ? (w as string).replace(/ +$/, '') : w));
+        });
+        const r = rs.some((x) => x === true) ? true : rs.some((x) => x === null) ? null : false;
+        return e.not ? (r === null ? null : !r) : r;
+      }
       if (e.arg.type === 'tuple') {
         const left = e.arg.items.map((x) => evaluate(x, ctx));
         const rows = e.list.map((item) => {
@@ -336,6 +385,15 @@ export function cond(e: Expr, ctx: EvalCtx): boolean | null {
       if (e.quant === 'ANY') return results.some((r) => r === true) ? true : results.some((r) => r === null) ? null : false;
       return results.some((r) => r === false) ? false : results.some((r) => r === null) ? null : true;
     }
+    case 'func':
+      if (e.name === 'REGEXP_LIKE') {
+        // REGEXP_LIKE(문자열, 패턴[, 옵션]) 은 값이 아니라 조건이다.
+        if (e.args.length < 2 || e.args.length > 3) throw new OraError('ORA-00909', 'invalid number of arguments');
+        const [s, p, m] = e.args.map((a) => evaluate(a, ctx));
+        if (s === null || p === null) return null;
+        return oracleRegex(toText(p)!, m === undefined || m === null ? null : toText(m)).test(toText(s)!);
+      }
+      break;
     case 'like': {
       const v = evaluate(e.arg, ctx);
       const p = evaluate(e.pattern, ctx);
@@ -502,7 +560,7 @@ function callFunction(name: string, args: Value[]): Value {
 export function callFunctionName(name: string): never {
   {
     if (name === 'NTH_VALUE' || name === 'LISTAGG') throw new NotSupported(`${name} 는 아직 실습장에서 지원하지 않아요.`);
-    if (name.startsWith('REGEXP_')) throw new NotSupported('정규 표현식 함수(REGEXP_*)는 실습장 3단계에서 열려요.');
+    if (name === 'REGEXP_LIKE') throw new OraError('ORA-00904', '"REGEXP_LIKE": invalid identifier', 'REGEXP_LIKE 는 값이 아니라 조건이에요. WHERE 나 CASE WHEN 안에 써요.');
     if (['ISNULL', 'LEN', 'GETDATE', 'CHARINDEX', 'DATEADD', 'CEILING'].includes(name)) {
       throw new OraError('ORA-00904', `"${name}": invalid identifier`);
     }

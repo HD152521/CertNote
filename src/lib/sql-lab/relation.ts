@@ -13,6 +13,8 @@ export interface RelCol {
   name: string;
   /** 테이블 열의 자료형(NVL 등의 형 변환에 쓴다). 뷰·식에서 온 열은 모를 수 있다. */
   type?: 'NUMBER' | 'VARCHAR2' | 'DATE';
+  /** CHAR(n) 열: 비교할 때 끝 공백을 채워 비교한다(blank-padded) */
+  fixed?: boolean;
   /** 이름으로 찾을 수 없는 열(ANSI 조인 뷰의 SELECT * 가 만든 같은 이름 열 — Oracle 이 안에서 이름을 바꿔 둔다). SELECT * 로만 보인다. */
   hidden?: boolean;
   /** 인라인 뷰·WITH 에서 온 열. Oracle 은 모호성 오류에 이 열의 출처 이름을 비워서 보인다. */

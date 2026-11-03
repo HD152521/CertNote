@@ -2,13 +2,15 @@
 
 import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Play, RotateCcw } from 'lucide-react';
-import { runSql, type StatementResult } from '@/lib/sql-lab/run';
 import { ResultView } from './ResultView';
+import { runInWorker, type Verdict } from './runner';
+import type { WireResult } from './sqlWorker';
 
 interface SqlConsoleProps {
   initial: string;
-  /** 실행할 때마다 결과를 받아 덧붙일 내용(채점 줄 등)을 돌려준다 */
-  onRun?: (results: StatementResult[], src: string) => ReactNode;
+  /** 과제 채점: 실행할 때 이 과제로 채점하고, 결과를 renderVerdict 로 그린다 */
+  task?: { setId: string; itemId: string };
+  renderVerdict?: (verdict: Verdict) => ReactNode;
   label?: string;
   rows?: number;
 }
@@ -17,22 +19,32 @@ const BUTTON =
   'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-accent';
 
 // SQL 입력창 + 실행 + 결과. Ctrl(⌘)+Enter 로 실행, Tab 은 공백 두 칸.
-export function SqlConsole({ initial, onRun, label = 'SQL 입력', rows = 4 }: SqlConsoleProps) {
+export function SqlConsole({ initial, task, renderVerdict, label = 'SQL 입력', rows = 4 }: SqlConsoleProps) {
   const [src, setSrc] = useState(initial);
-  const [results, setResults] = useState<StatementResult[] | null>(null);
+  const [results, setResults] = useState<WireResult[] | null>(null);
   const [extra, setExtra] = useState<ReactNode>(null);
+  const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
 
-  const run = () => {
-    const rs = runSql(src);
-    setResults(rs);
-    setExtra(onRun ? onRun(rs, src) : null);
+  // 실행은 워커에서 한다. 4초 안에 끝나지 않으면 멈추고 안내한다(탭은 멈추지 않는다).
+  const run = async () => {
+    if (busy) return;
+    setBusy(true);
+    const out = await runInWorker(src, task);
+    setBusy(false);
+    if (out.timedOut) {
+      setResults([{ kind: 'note', sql: src, message: '실행이 4초 안에 끝나지 않아서 멈췄어요. 정규식의 반복이 겹치거나, 큰 조인·큰 테이블을 행마다 다시 계산하고 있는지 확인해 보세요.' }]);
+      setExtra(null);
+      return;
+    }
+    setResults(out.results);
+    setExtra(renderVerdict && out.results.length ? renderVerdict(out.verdict) : null);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      run();
+      void run();
       return;
     }
     if (e.key === 'Tab' && !e.shiftKey) {
@@ -60,8 +72,8 @@ export function SqlConsole({ initial, onRun, label = 'SQL 입력', rows = 4 }: S
         className="block w-full resize-y rounded-md border border-border-strong bg-code-bg px-3 py-2.5 font-mono text-[16px] leading-relaxed text-fg focus:border-accent focus:outline-none sm:text-[13.5px]"
       />
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={run} className={`${BUTTON} bg-fg text-bg hover:opacity-90`}>
-          <Play className="h-3.5 w-3.5" aria-hidden /> 실행
+        <button type="button" onClick={run} disabled={busy} className={`${BUTTON} bg-fg text-bg hover:opacity-90 disabled:opacity-60`}>
+          <Play className="h-3.5 w-3.5" aria-hidden /> {busy ? '실행 중…' : '실행'}
         </button>
         <button
           type="button"

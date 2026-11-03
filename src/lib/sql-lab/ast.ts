@@ -55,6 +55,10 @@ export type JoinKind = 'INNER' | 'LEFT' | 'RIGHT' | 'FULL' | 'CROSS';
 
 export type FromItem =
   | { type: 'table'; name: string; alias?: string }
+  /** 원본 PIVOT (집계 [AS 별칭], … FOR 열 IN (값 [AS 별칭], …)) */
+  | { type: 'pivot'; source: FromItem; aggs: { expr: Expr; alias?: string; text: string }[]; forCols: string[]; values: { vals: Expr[]; alias?: string; text: string }[]; alias?: string }
+  /** 원본 UNPIVOT [INCLUDE NULLS] (값열 FOR 이름열 IN (열 [AS 라벨], …)) */
+  | { type: 'unpivot'; source: FromItem; valueCol: string; nameCol: string; cols: { col: string; label?: Expr }[]; includeNulls: boolean; alias?: string }
   | { type: 'view'; query: Select; alias?: string }
   | { type: 'join'; kind: JoinKind; natural: boolean; left: FromItem; right: FromItem; on?: Expr; using?: string[] };
 

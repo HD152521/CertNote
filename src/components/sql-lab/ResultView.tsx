@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Info } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import type { StatementResult } from '@/lib/sql-lab/run';
+import type { WireResult as StatementResult } from './sqlWorker';
 import { display } from '@/lib/sql-lab/values';
 
 /** 행이 너무 많으면 화면이 길어지므로 잘라 보인다(예제 테이블은 많아야 수십 행). */
@@ -25,6 +25,7 @@ export function ResultView({ result, showSql }: { result: StatementResult; showS
           {result.hint && <p className="mt-1.5 text-[13px] leading-relaxed text-fg-muted">{result.hint}</p>}
         </div>
       )}
+      {result.kind === 'message' && <div className="font-mono text-[12.5px] text-fg-muted">{result.message}</div>}
       {result.kind === 'note' && (
         <div className="flex items-start gap-2 rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px] leading-relaxed text-fg-muted">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />

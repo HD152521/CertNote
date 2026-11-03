@@ -5,8 +5,9 @@ import type { Database } from './data';
 import { AGGREGATES, callFunctionName, children, cond, containsAggregate, evaluate, isAggregate, lookupColumn, type EvalCtx } from './eval';
 import { FUNCTIONS } from './functions';
 import { emptyRelation, invalidIdentifier, joinRelations, joinShape, mergeColumns, resolveColumn, type RelCol, type Relation } from './relation';
-import { NotSupported, OraError, compare, groupKey, kindOf, type Value } from './values';
+import { NotSupported, OraError, SqlDate, compare, groupKey, kindOf, type Value } from './values';
 import { buildHierarchy, type HierInfo } from './hierarchy';
+import { dictionaryTable } from './dictionary';
 import { WINDOW_ONLY, checkWindowSpec, computeWindow, isWindow, windowError, windowKey, type WindowFunc } from './window';
 
 /** ROLLUP·CUBE 계산량 상한(묶음 수 × 입력 행). 넘으면 탭이 몇 초씩 멈춘다. */
@@ -19,7 +20,7 @@ export interface ResultSet {
   sortKeys?: Value[][];
 }
 
-interface Env {
+export interface Env {
   db: Database;
   /** WITH 절로 이름 붙인 쿼리(바깥 → 안쪽으로 물려준다) */
   ctes?: Map<string, { columns?: string[]; query: Select; env: Env; result?: ResultSet }>;
@@ -34,13 +35,13 @@ interface Env {
 // ── 이름 검사(행 없이) ───────────────────────────────────────────────────────
 
 /** 식 속 열 이름이 모두 있는지(이 쿼리 → 바깥 쿼리 순) 확인한다. */
-function checkNames(e: Expr, rel: Relation, outer: EvalCtx | undefined, env?: Env) {
+export function checkNames(e: Expr, rel: Relation, outer: EvalCtx | undefined, env?: Env) {
   const probe = (): EvalCtx => ({ rel, row: rel.cols.map(() => null), outer, runSubquery: () => ({ rows: [], width: 0 }) });
   if (e.type === 'col') {
     lookupColumn(probe(), e.table, e.name);
     return;
   }
-  if (e.type === 'func' && !e.over && !AGGREGATES.has(e.name) && !FUNCTIONS[e.name] && !WINDOW_ONLY.has(e.name) && e.name !== 'SYS_CONNECT_BY_PATH') callFunctionName(e.name);
+  if (e.type === 'func' && !e.over && !AGGREGATES.has(e.name) && !FUNCTIONS[e.name] && !WINDOW_ONLY.has(e.name) && e.name !== 'SYS_CONNECT_BY_PATH' && e.name !== 'REGEXP_LIKE') callFunctionName(e.name);
   // 서브쿼리 안쪽 이름도 바깥 행 없이 미리 검사한다(행이 없거나 AND 가 단락돼도 Oracle 은 ORA-00904 를 낸다).
   if (env && (e.type === 'subquery' || e.type === 'insub' || e.type === 'exists' || e.type === 'cmpsub')) {
     try {
@@ -149,7 +150,7 @@ function viewColumns(query: Select, names: string[], qual: string | null): RelCo
   return names.map((name) => ({ qual, name, fromView: true, ...(ansiStar && (count.get(name) ?? 0) > 1 ? { hidden: true } : {}) }));
 }
 
-function tableRelation(env: Env, item: Extract<FromItem, { type: 'table' }>): Relation {
+export function tableRelation(env: Env, item: Extract<FromItem, { type: 'table' }>): Relation {
   const cte = env.ctes?.get(item.name);
   if (cte) {
     const rs = (cte.result ??= runSelect(cte.env, cte.query));
@@ -158,19 +159,27 @@ function tableRelation(env: Env, item: Extract<FromItem, { type: 'table' }>): Re
     const names = cte.columns ?? rs.columns;
     return { cols: viewColumns(cte.query, names, qual), rows: rs.rows, banned: new Map(), quals: new Set([qual]) };
   }
-  const t = env.db[item.name];
+  const t = env.db[item.name] ?? dictionaryTable(env.db, item.name);
   if (!t) throw new OraError('ORA-00942', `table or view "SCOTT"."${item.name}" does not exist`);
+  if (t.view) {
+    // 뷰: 저장한 쿼리를 그때그때 실행한다(기반 테이블이 바뀌면 뷰 결과도 바뀐다).
+    const rs = runSelect(env, t.view);
+    const qual = item.alias ?? item.name;
+    return { cols: viewColumns(t.view, t.columns.map((c) => c.name), qual), rows: rs.rows, banned: new Map(), quals: new Set([qual]) };
+  }
   const qual = item.alias ?? item.name;
   return {
-    cols: t.columns.map((c) => ({ qual, name: c.name, type: c.type })),
+    cols: t.columns.map((c) => ({ qual, name: c.name, type: c.type, ...(c.fixed ? { fixed: true } : {}) })),
     rows: t.rows.map((r) => [...r]),
     banned: new Map(),
     quals: new Set([qual]),
   };
 }
 
-function fromItemRelation(env: Env, item: FromItem, outer: EvalCtx | undefined): Relation {
+export function fromItemRelation(env: Env, item: FromItem, outer: EvalCtx | undefined): Relation {
   if (item.type === 'table') return tableRelation(env, item);
+  if (item.type === 'pivot') return pivotRelation(env, item, outer);
+  if (item.type === 'unpivot') return unpivotRelation(env, item, outer);
   if (item.type === 'view') {
     const rs = runSelect(env, item.query, outer);
     const qual = item.alias ?? null;
@@ -205,6 +214,101 @@ function fromItemRelation(env: Env, item: FromItem, outer: EvalCtx | undefined):
   }
   const on = item.on!;
   return joinRelations(left, right, item.kind, (row) => cond(on, ctxOf(env, probe, row, outer)) === true);
+}
+
+/** 식 안의 열 이름들(대문자) */
+function columnNames(e: Expr, out = new Set<string>()): Set<string> {
+  if (e.type === 'col') out.add(e.name);
+  children(e).forEach((c) => columnNames(c, out));
+  return out;
+}
+
+/**
+ * PIVOT: 집계와 FOR 에 쓰지 않은 열이 모두 묶음 키가 된다(그래서 인라인 뷰로 필요한 열만 넘긴다).
+ * 결과 열 = 묶음 열 + (IN 값마다 × 집계마다) 열. 열 이름은 값 별칭(없으면 값 원문)에 집계 별칭을 _ 로 잇는다.
+ */
+function pivotRelation(env: Env, item: Extract<FromItem, { type: 'pivot' }>, outer: EvalCtx | undefined): Relation {
+  const rel = fromItemRelation(env, item.source, outer);
+  if (item.aggs.length > 1 && item.aggs.filter((a) => !a.alias).length > 1) {
+    const first = item.values[0];
+    throw new OraError('ORA-56907', `${first?.alias ?? first?.text ?? ''}: Duplicate column names are generated due to pivot values being too long or due to the absence of unique and short aliases for both pivot values and aggregates.`);
+  }
+  for (const a of item.aggs) {
+    if (!isAggregate(a.expr)) throw new OraError('ORA-56902', 'expect aggregate function inside pivot operation');
+    checkNames(a.expr, rel, outer, env);
+  }
+  const forIdx = item.forCols.map((c) => {
+    const hit = resolveColumn(rel, undefined, c);
+    if (!hit) throw invalidIdentifier(undefined, c);
+    return hit.index;
+  });
+  const used = new Set([...item.aggs.flatMap((a) => [...columnNames(a.expr)]), ...item.forCols]);
+  const groupIdx = rel.cols.map((c, i) => (used.has(c.name) ? -1 : i)).filter((i) => i >= 0);
+  const valueCtx = ctxOf(env, emptyRelation(), [], outer);
+  const targets = item.values.map((v) => v.vals.map((e) => evaluate(e, valueCtx)));
+  const groups = new Map<string, Value[][]>();
+  for (const row of rel.rows) {
+    const k = JSON.stringify(groupIdx.map((i) => groupKey(row[i])));
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k)!.push(row);
+  }
+  const heading = (t: string) => t.replace(/\s+/g, '').toUpperCase();
+  const names = item.values.flatMap((v) =>
+    item.aggs.map((a) => {
+      const base = v.alias ?? heading(v.text);
+      return item.aggs.length > 1 || a.alias ? (a.alias ? `${base}_${a.alias}` : `${base}_${heading(a.text)}`) : base;
+    }),
+  );
+  const rows: Value[][] = [...groups.values()].map((members) => {
+    const out: Value[] = groupIdx.map((i) => members[0][i]);
+    targets.forEach((vals) => {
+      const hit = members.filter((row) => forIdx.every((fi, k) => compare(row[fi], vals[k]) === 0));
+      for (const a of item.aggs) out.push(evaluate(a.expr, ctxOf(env, rel, hit[0] ?? members[0], outer, { group: hit })));
+    });
+    return out;
+  });
+  const qual = item.alias ?? null;
+  return {
+    cols: [...groupIdx.map((i) => ({ qual, name: rel.cols[i].name, type: rel.cols[i].type, fromView: true })), ...names.map((name) => ({ qual, name, fromView: true }))],
+    rows,
+    banned: new Map(),
+    quals: new Set(qual ? [qual] : []),
+  };
+}
+
+/** UNPIVOT: 열 여러 개를 (이름, 값) 행 여러 개로 편다. 기본은 값이 NULL 인 행을 뺀다(INCLUDE NULLS 면 남긴다). */
+function unpivotRelation(env: Env, item: Extract<FromItem, { type: 'unpivot' }>, outer: EvalCtx | undefined): Relation {
+  const rel = fromItemRelation(env, item.source, outer);
+  const idx = item.cols.map(({ col }) => {
+    const hit = resolveColumn(rel, undefined, col);
+    if (!hit) throw invalidIdentifier(undefined, col);
+    return hit.index;
+  });
+  // 펼칠 열들의 자료형이 같아야 한다(열 정의, 없으면 실제 값으로 본다). 라벨끼리도 같아야 한다.
+  const kindOfCol = (i: number) => rel.cols[i].type ?? (() => {
+    const v = rel.rows.find((r) => r[i] !== null)?.[i];
+    return v === undefined ? undefined : typeof v === 'number' ? 'NUMBER' : v instanceof SqlDate ? 'DATE' : 'VARCHAR2';
+  })();
+  const types = new Set(idx.map(kindOfCol).filter(Boolean));
+  if (types.size > 1) throw new OraError('ORA-01790', 'expression must have same datatype as corresponding expression');
+  const keep = rel.cols.map((_, i) => i).filter((i) => !idx.includes(i));
+  const labelCtx = ctxOf(env, emptyRelation(), [], outer);
+  const labels = item.cols.map((c) => (c.label ? evaluate(c.label, labelCtx) : c.col));
+  if (new Set(labels.filter((l) => l !== null).map((l) => typeof l)).size > 1) throw new OraError('ORA-01790', 'expression must have same datatype as corresponding expression');
+  const rows: Value[][] = [];
+  for (const row of rel.rows) {
+    idx.forEach((ci, k) => {
+      if (row[ci] === null && !item.includeNulls) return;
+      rows.push([...keep.map((i) => row[i]), labels[k], row[ci]]);
+    });
+  }
+  const qual = item.alias ?? null;
+  return {
+    cols: [...keep.map((i) => ({ qual, name: rel.cols[i].name, type: rel.cols[i].type, fromView: true })), { qual, name: item.nameCol, fromView: true }, { qual, name: item.valueCol, fromView: true }],
+    rows,
+    banned: new Map(),
+    quals: new Set(qual ? [qual] : []),
+  };
 }
 
 function hasOuterMark(e: Expr): boolean {
@@ -321,7 +425,7 @@ function hasOr(e: Expr): boolean {
   return e.type === 'or' || e.type === 'in' || children(e).some(hasOr);
 }
 
-function ctxOf(env: Env, rel: Relation, row: Value[], outer: EvalCtx | undefined, extra: Partial<EvalCtx> = {}): EvalCtx {
+export function ctxOf(env: Env, rel: Relation, row: Value[], outer: EvalCtx | undefined, extra: Partial<EvalCtx> = {}): EvalCtx {
   const hier = env.hier?.get(row);
   const hierMap = env.hier;
   return {

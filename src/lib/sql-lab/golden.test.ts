@@ -3,15 +3,18 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { runStatement } from './run';
+import { runSql, runStatement } from './run';
 import { display } from './values';
 
 interface Case {
   id: string;
   sql: string;
   match?: 'code';
+  /** 여러 문장을 한 세션에서 차례로(DML·DDL·TCL) */
+  script?: string[];
 }
-type Golden = { columns: string[] | null; rows: string[][] } | { error: string; message: string };
+type One = { columns: string[] | null; rows: string[][] } | { error: string; message: string } | { message: string };
+type Golden = One | { steps: One[] };
 
 const root = process.cwd();
 const cases = JSON.parse(readFileSync(path.join(root, 'scripts/sql-lab/cases.json'), 'utf8')) as Case[];
@@ -21,8 +24,9 @@ const golden = JSON.parse(readFileSync(path.join(root, 'src/lib/sql-lab/golden/r
  * Oracle 23ai 에서만 달라진 동작(시험은 이전 버전 기준)이라 엔진이 일부러 따르지 않는 사례.
  * - err-923: 23ai 는 FROM 없는 SELECT 를 받아 준다. 실습장은 시험 기준(ORA-00923)을 따른다.
  * - note-w4d2-15: 23ai 는 HAVING 에서 SELECT 별칭을 받아 준다. 실습장은 시험 기준(ORA-00904 + 설명)을 따른다.
+ * - re-like-select-err: 23ai 는 BOOLEAN 형이 있어 SELECT 목록의 REGEXP_LIKE 가 TRUE/FALSE 를 낸다. 실습장은 이전 버전처럼 조건으로만 받는다.
  */
-const VERSION_DIFFERENCES = new Set(['err-923', 'note-w4d2-15']);
+const VERSION_DIFFERENCES = new Set(['err-923', 'note-w4d2-15', 're-like-select-err']);
 
 /** 정렬 키가 같은 행의 순서가 정해지지 않음을 보여 주는 노트 예제 — 행 집합만 맞춘다. */
 const TIE_ORDER = new Set(['note-w4d3-1']);
@@ -37,10 +41,29 @@ describe('SQL 실습장 골든 (Oracle Database 23ai Free 대조)', () => {
   test.each(cases.filter((c) => !VERSION_DIFFERENCES.has(c.id)))('$id', (c) => {
     const want = golden[c.id];
     expect(want, `골든 결과 없음: ${c.id} — node scripts/sql-lab/golden.mjs`).toBeDefined();
+    if ('steps' in want) {
+      const got = runSql(c.script!.map((s) => s.replace(/;\s*$/, '')).join(';\n'));
+      expect(got.length, `${c.id}: 문장 수`).toBe(want.steps.length);
+      want.steps.forEach((w, k) => {
+        const g = got[k];
+        const label = `${c.id} #${k + 1}: ${c.script![k].slice(0, 60)}`;
+        if ('error' in w) expect(g.kind === 'error' ? g.code : `${g.kind}`, label).toBe(w.error);
+        else if ('message' in w) expect(g.kind === 'message' ? g.message : `${g.kind}${g.kind === 'error' ? ` ${g.code} ${g.message}` : ''}`, label).toBe(w.message);
+        else {
+          expect(g.kind, label).toBe('rows');
+          if (g.kind === 'rows') expect(g.rows.map((r) => r.map(display)), label).toEqual(w.rows);
+        }
+      });
+      return;
+    }
     const got = runStatement(c.sql);
     if ('error' in want) {
       expect(got.kind === 'error' ? got.code : `${got.kind} 결과`).toBe(want.error);
       if (c.match !== 'code' && got.kind === 'error') expect(got.message.trimEnd()).toBe(want.message); // 골든은 줄 끝 공백을 지운다
+      return;
+    }
+    if ('message' in want) {
+      expect(got.kind === 'message' ? got.message : got.kind).toBe(want.message);
       return;
     }
     if (got.kind !== 'rows') throw new Error(`${got.kind}: ${got.kind === 'error' ? `${got.code} ${got.message}` : got.message}`);

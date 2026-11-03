@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ArrowRight, Check, Database, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { SQL_TASK_SETS, judge, type SqlTaskItem } from '@/lib/sql-lab/tasks';
+import { SQL_TASK_SETS, type SqlTaskItem } from '@/lib/sql-lab/tasks';
 import { SchemaPanel } from './SchemaPanel';
 import { SqlConsole } from './SqlConsole';
 
@@ -13,6 +13,7 @@ const SMALL_BUTTON =
 const STARTER = 'SELECT *\nFROM EMP;';
 
 interface ItemProps {
+  setId: string;
   item: SqlTaskItem;
   index: number;
   total: number;
@@ -22,7 +23,7 @@ interface ItemProps {
 }
 
 // 과제 하나: 지문 → SQL 입력 → 결과·채점 → 힌트·모범 답안.
-function TaskView({ item, index, total, solved, onSolved, onNext }: ItemProps) {
+function TaskView({ setId, item, index, total, solved, onSolved, onNext }: ItemProps) {
   const [showHint, setShowHint] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
   const reveal = showAnswer || solved;
@@ -47,10 +48,9 @@ function TaskView({ item, index, total, solved, onSolved, onNext }: ItemProps) {
         key={item.id}
         initial={STARTER}
         label={`과제 ${index + 1} SQL 입력`}
-        onRun={(results) => {
-          const last = results[results.length - 1];
-          if (!last) return null;
-          const v = judge(item, last);
+        task={{ setId, itemId: item.id }}
+        renderVerdict={(v) => {
+          if (!v) return null;
           if (v.ok) {
             onSolved();
             return (
@@ -157,6 +157,7 @@ export function SqlLab({ setId }: { setId: string }) {
 
       <TaskView
         key={item.id}
+        setId={set.id}
         item={item}
         index={index}
         total={set.items.length}

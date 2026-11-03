@@ -224,6 +224,18 @@ const SQL_INFO: Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'>>
       { href: '/data/sqld/week6/day4', label: '계층형 질의' },
     ],
   },
+  'sql-pivot-dml': {
+    summary: 'PIVOT, REGEXP_COUNT·이름 가리기, INSERT·UPDATE·DELETE(외래 키 순서), SAVEPOINT 로 일부만 되돌리기, 제약 조건 있는 테이블 만들기를 직접 실행하며 푸는 8과제입니다.',
+    intro: [
+      'DML 과 트랜잭션은 문장을 실행한 뒤의 데이터 상태가 답입니다. 이 과제는 입력한 문장을 실행한 다음 확인 쿼리로 테이블 내용을 읽어, 모범 답안을 실행한 뒤의 내용과 비교합니다.',
+      '실행할 때마다 예제 테이블은 처음 상태로 돌아오므로 마음껏 지우고 바꿔도 됩니다. 외래 키 때문에 지우는 순서가 틀리면 Oracle 과 같은 ORA-02292 가 나고, 그 문장만 취소됩니다.',
+    ],
+    related: [
+      { href: '/data/sqld/week7/day1', label: 'PIVOT·UNPIVOT' },
+      { href: '/data/sqld/week7/day3', label: 'DML' },
+      { href: '/data/sqld/week7/day4', label: 'TCL' },
+    ],
+  },
 };
 
 const INFO: Record<LabKind, Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'>>> = {
@@ -251,6 +263,7 @@ export const LAB_CATALOG: LabEntry[] = [
   entry('sql', 'sql-group-join', 'SQL S2', 'GROUP BY·HAVING·조인으로 묶고 잇기'),
   entry('sql', 'sql-subquery-rollup', 'SQL S3', '서브쿼리·집합 연산·ROLLUP 으로 한 번에 묻고 묶기'),
   entry('sql', 'sql-window-hierarchy', 'SQL S4', '윈도우 함수·Top N·계층형 질의로 순위 매기고 나무 펼치기'),
+  entry('sql', 'sql-pivot-dml', 'SQL S5', 'PIVOT·정규 표현식·DML·트랜잭션으로 모양 바꾸고 데이터 고치기'),
   entry('aws', 'regions-azs', 'LAB 01', '리전과 가용 영역 지도 그리기'),
   entry('aws', 's3-first-bucket', 'LAB 02', '서울 리전에 첫 버킷 만들기'),
   entry('aws', 'iam-least-privilege', 'LAB 03', '읽기 전용 사용자 만들고 정리하기'),
