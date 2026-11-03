@@ -83,11 +83,11 @@ export const config = {
     // 콘텐츠 존재 검증(docs/SEO-indexing-fix-plan.md Step6). 섹션 허브(/aws·/linux)·/en 자체는
     // handleContentRoute 내부에서 항상 통과시키므로 여기 포함해도 안전하다. /aws-certs 는 레거시
     // 전파 창 대비(정상 흐름에선 next.config 301이 먼저 처리).
-    '/aws/:path*', '/linux/:path*', '/aws-certs/:path*', '/en/:path*',
+    '/aws/:path*', '/linux/:path*', '/data/:path*', '/aws-certs/:path*', '/en/:path*',
     // 임의 4세그먼트 경로(/:a/:b/:c/:d) — day 라우트가 받는 깊이. 어떤 철자든 분류를 거치게 한다
     // (근거: src/lib/proxyRouting.ts). _next/static·_next/image 에셋은 제외한다.
     '/:a((?!_next/static/|_next/image)[^/]+)/:b/:c/:d',
     // 대소문자 변형 접두사(/AWS·/Linux·/EN 과 하위). 대소문자 무시 호스트에서 소문자 페이지로 풀리는 것을 막는다.
-    '/:category([aA][wW][sS])/:path*', '/:category([lL][iI][nN][uU][xX])/:path*', '/:category([eE][nN])/:path*',
+    '/:category([aA][wW][sS])/:path*', '/:category([lL][iI][nN][uU][xX])/:path*', '/:category([eE][nN])/:path*', '/:category([dD][aA][tT][aA])/:path*',
   ],
 };

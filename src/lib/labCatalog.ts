@@ -2,7 +2,7 @@
 // 과제 내용(단계·판정)은 각 엔진의 labs.ts 에 있다. 사이드바(모든 페이지에 실림)가 시뮬레이터 엔진을
 // 끌어오지 않도록 여기서는 엔진을 import 하지 않는다 — 코드·제목이 엔진과 같은지는 labCatalog.test.ts 가 본다.
 
-export type LabKind = 'linux' | 'practical' | 'aws';
+export type LabKind = 'linux' | 'practical' | 'sql' | 'aws';
 
 export interface LabEntry {
   id: string;
@@ -28,6 +28,12 @@ export const LAB_GROUPS: { kind: LabKind; title: string; description: string }[]
     title: '리눅스마스터 실기 대비',
     description:
       '1급 2차의 작업형처럼 조건을 주고 그대로 만들어 내는 문제입니다. 명령 글자가 아니라 실행 뒤의 상태로 채점해서, chmod 750 이든 chmod u=rwx,g=rx,o= 이든 결과가 맞으면 정답입니다. 문제마다 모범 답안의 결과를 실제 Rocky 8.8 에서 확인했습니다.',
+  },
+  {
+    kind: 'sql',
+    title: 'SQL (SQLD)',
+    description:
+      'SQLD 시험 문법(Oracle) 그대로 EMP·DEPT·SALGRADE 예제 테이블에 SQL 을 실행해 봅니다. 결과와 오류 문구는 실제 Oracle Database 에서 찍은 결과와 하나하나 비교해 맞췄고, 과제는 쿼리 글자가 아니라 결과로 채점해 같은 결과를 내는 다른 쿼리도 정답입니다.',
   },
   {
     kind: 'aws',
@@ -169,9 +175,37 @@ const PRACTICAL_INFO: Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'ti
   },
 };
 
+const SQL_INFO: Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'>> = {
+  'sql-select-basics': {
+    summary: 'NULL 이 섞인 연봉 계산, DISTINCT, LIKE, BETWEEN·IN, IS NULL, 문자·날짜 함수, CASE 를 EMP 테이블에 직접 실행하며 푸는 8과제입니다.',
+    intro: [
+      'SQLD 2과목은 "이 SQL 의 결과는?" 처럼 실행 결과를 묻는 문항이 많습니다. 결과를 머릿속으로만 그려 보면 NULL 이 섞인 계산이나 = NULL 같은 함정에서 틀리기 쉬워, 한 번 직접 돌려 보는 편이 확실합니다.',
+      '과제마다 조건에 맞는 SELECT 를 쓰고 실행하면 바로 채점합니다. 별칭이나 쓰는 함수가 달라도 결과가 같으면 정답이고, 틀리면 행 수가 다른지·값이 다른지·순서만 다른지 알려 줍니다.',
+    ],
+    related: [
+      { href: '/data/sqld/week3/day1', label: '관계형 DB 와 SELECT' },
+      { href: '/data/sqld/week3/day4', label: 'NULL 함수와 CASE·DECODE' },
+      { href: '/data/sqld/week3/day5', label: 'WHERE 절' },
+    ],
+  },
+  'sql-group-join': {
+    summary: 'GROUP BY·HAVING, 집계와 NULL, EQUI·Non-EQUI 조인, 외부 조인의 COUNT(*) 함정, 셀프 조인을 직접 실행하며 푸는 8과제입니다.',
+    intro: [
+      'GROUP BY 와 조인은 SQLD 에서 결과 행 수와 값을 계산하게 하는 문항으로 많이 나옵니다. 외부 조인에서 COUNT(*) 와 COUNT(열)이 왜 다른지, HAVING 과 WHERE 가 어디서 갈리는지는 결과표를 직접 보면 오래 남습니다.',
+      'Oracle 식 (+) 조인과 ANSI JOIN 중 어느 쪽으로 써도 결과가 같으면 정답입니다. 오류가 나면 실제 Oracle 과 같은 ORA 번호와 문구가 나옵니다.',
+    ],
+    related: [
+      { href: '/data/sqld/week4/day1', label: 'GROUP BY 와 집계 함수' },
+      { href: '/data/sqld/week4/day4', label: '조인 (EQUI·Non-EQUI·(+))' },
+      { href: '/data/sqld/week4/day5', label: '표준 조인 (ANSI)' },
+    ],
+  },
+};
+
 const INFO: Record<LabKind, Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'>>> = {
   linux: LINUX_INFO,
   practical: PRACTICAL_INFO,
+  sql: SQL_INFO,
   aws: AWS_INFO,
 };
 
@@ -189,6 +223,8 @@ export const LAB_CATALOG: LabEntry[] = [
   entry('linux', 'linux-ownership', 'LAB L7', 'chown·chgrp 로 프로젝트 소유권 넘기기'),
   entry('practical', 'linux-practical-perm', '실기 P1', '권한·소유권 작업형 문제 7선'),
   entry('practical', 'linux-practical-users', '실기 P2', '계정·검색 작업형 문제 8선'),
+  entry('sql', 'sql-select-basics', 'SQL S1', 'SELECT·함수·WHERE 로 원하는 행 골라내기'),
+  entry('sql', 'sql-group-join', 'SQL S2', 'GROUP BY·HAVING·조인으로 묶고 잇기'),
   entry('aws', 'regions-azs', 'LAB 01', '리전과 가용 영역 지도 그리기'),
   entry('aws', 's3-first-bucket', 'LAB 02', '서울 리전에 첫 버킷 만들기'),
   entry('aws', 'iam-least-privilege', 'LAB 03', '읽기 전용 사용자 만들고 정리하기'),

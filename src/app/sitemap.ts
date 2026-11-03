@@ -117,6 +117,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     await getSourceFileMtime('src/lib/labCatalog.ts'),
     await getSourceFileMtime('src/lib/shell-lab/labs.ts'),
     await getSourceFileMtime('src/lib/shell-lab/drills.ts'),
+    await getSourceFileMtime('src/lib/sql-lab/tasks.json'),
     await getSourceFileMtime('src/lib/cli-lab/labs.ts'),
   ]);
   out.push(sitemapEntry(`${SITE_URL}/lab`, labLastMod, 'monthly', 0.7));

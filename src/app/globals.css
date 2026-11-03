@@ -128,6 +128,11 @@ html, body {
 .article table { width: 100%; border-collapse: collapse; font-size: 0.93rem; margin: 1.25rem 0; }
 .article th, .article td { text-align: left; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
 .article th { font-weight: 600; background: var(--bg-subtle); border-bottom: 1px solid var(--border-strong); white-space: nowrap; }
+/* SQL 실습장 결과표: SQL*Plus 처럼 촘촘하게, 숫자 열은 오른쪽 정렬(본문 표 규칙을 덮는다). */
+.article table.sql-result { margin: 0; font-size: 12.5px; }
+.article .sql-result th, .article .sql-result td { padding: 0.3rem 0.65rem; text-align: inherit; }
+.article .sql-result th.text-right, .article .sql-result td.text-right { text-align: right; }
+.article .sql-result td { border-bottom: 0; }
 .article .heading-anchor { color: inherit; text-decoration: none; }
 .article .heading-anchor:hover { color: var(--accent); }
 .article :is(h1, h2, h3, h4) { scroll-margin-top: 80px; }

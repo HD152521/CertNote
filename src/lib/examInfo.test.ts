@@ -132,7 +132,8 @@ describe('회귀 — 기존 AWS 시험정보는 단일형 그대로여야 한다
   const awsSlugs = readdirSync('content/exam-info')
     .filter((f) => f.endsWith('.json'))
     .map((f) => f.replace(/\.json$/, ''))
-    .filter((slug) => !slug.startsWith('linux-'));
+    // 국내 자격(리눅스마스터·SQLD)은 phases 형식이다.
+    .filter((slug) => !slug.startsWith('linux-') && slug !== 'sqld');
 
   test('AWS 파일이 11개 이상 로드된다', () => {
     expect(awsSlugs.length).toBeGreaterThanOrEqual(11);

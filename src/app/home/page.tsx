@@ -34,7 +34,8 @@ export default async function StudyHomePage() {
   const certs = await listCerts(DEFAULT_CATEGORY);
   const awsCount = certs.filter((c) => (c.section ?? 'aws') === 'aws').length;
   const linuxCount = certs.filter((c) => c.section === 'linux').length;
-  const trackSummary = `AWS 클라우드 자격증 ${awsCount}종${linuxCount > 0 ? ` + 리눅스마스터 ${linuxCount}종` : ''}`;
+  const dataCount = certs.filter((c) => c.section === 'data').length;
+  const trackSummary = `AWS 클라우드 자격증 ${awsCount}종${linuxCount > 0 ? ` + 리눅스마스터 ${linuxCount}종` : ''}${dataCount > 0 ? ` + SQLD` : ''}`;
   const groups = groupCertsByLevel(certs, 'aws').map((g) => ({ level: g.level, items: g.certs }));
   const starter = await getStarterDay(session.sub);
 

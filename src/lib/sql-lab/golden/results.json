@@ -1,0 +1,7796 @@
+{
+  "sel-star": {
+    "columns": [
+      "DEPTNO",
+      "DNAME",
+      "LOC"
+    ],
+    "rows": [
+      [
+        "10",
+        "ACCOUNTING",
+        "NEW YORK"
+      ],
+      [
+        "20",
+        "RESEARCH",
+        "DALLAS"
+      ],
+      [
+        "30",
+        "SALES",
+        "CHICAGO"
+      ],
+      [
+        "40",
+        "OPERATIONS",
+        "BOSTON"
+      ]
+    ]
+  },
+  "sel-cols": {
+    "columns": [
+      "ENAME",
+      "JOB",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "SMITH",
+        "CLERK",
+        "800"
+      ],
+      [
+        "ALLEN",
+        "SALESMAN",
+        "1600"
+      ],
+      [
+        "WARD",
+        "SALESMAN",
+        "1250"
+      ],
+      [
+        "JONES",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "MARTIN",
+        "SALESMAN",
+        "1250"
+      ],
+      [
+        "BLAKE",
+        "MANAGER",
+        "2850"
+      ],
+      [
+        "CLARK",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "SCOTT",
+        "ANALYST",
+        "3000"
+      ],
+      [
+        "KING",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "TURNER",
+        "SALESMAN",
+        "1500"
+      ],
+      [
+        "ADAMS",
+        "CLERK",
+        "1100"
+      ],
+      [
+        "JAMES",
+        "CLERK",
+        "950"
+      ],
+      [
+        "FORD",
+        "ANALYST",
+        "3000"
+      ],
+      [
+        "MILLER",
+        "CLERK",
+        "1300"
+      ]
+    ]
+  },
+  "sel-alias": {
+    "columns": [
+      "이름",
+      "연봉",
+      "Monthly Pay"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "29400",
+        "2450"
+      ],
+      [
+        "KING",
+        "60000",
+        "5000"
+      ],
+      [
+        "MILLER",
+        "15600",
+        "1300"
+      ]
+    ]
+  },
+  "sel-heading": {
+    "columns": [
+      "SAL+COMM",
+      "ENAME||'님'",
+      "'HELLOWORLD'",
+      "NVL(COMM,0)"
+    ],
+    "rows": [
+      [
+        "",
+        "SMITH 님",
+        "Hello World",
+        "0"
+      ],
+      [
+        "1900",
+        "ALLEN 님",
+        "Hello World",
+        "300"
+      ]
+    ]
+  },
+  "sel-distinct": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ANALYST"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "MANAGER"
+      ],
+      [
+        "PRESIDENT"
+      ],
+      [
+        "SALESMAN"
+      ]
+    ]
+  },
+  "sel-distinct2": {
+    "columns": [
+      "DEPTNO",
+      "JOB"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK"
+      ],
+      [
+        "10",
+        "MANAGER"
+      ],
+      [
+        "10",
+        "PRESIDENT"
+      ],
+      [
+        "20",
+        "ANALYST"
+      ],
+      [
+        "20",
+        "CLERK"
+      ],
+      [
+        "20",
+        "MANAGER"
+      ],
+      [
+        "30",
+        "CLERK"
+      ],
+      [
+        "30",
+        "MANAGER"
+      ],
+      [
+        "30",
+        "SALESMAN"
+      ]
+    ]
+  },
+  "sel-null-arith": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "COMM",
+      "SAL+COMM",
+      "SAL*12+NVL(COMM,0)"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "1600",
+        "300",
+        "1900",
+        "19500"
+      ],
+      [
+        "WARD",
+        "1250",
+        "500",
+        "1750",
+        "15500"
+      ],
+      [
+        "MARTIN",
+        "1250",
+        "1400",
+        "2650",
+        "16400"
+      ],
+      [
+        "BLAKE",
+        "2850",
+        "",
+        "",
+        "34200"
+      ],
+      [
+        "TURNER",
+        "1500",
+        "0",
+        "1500",
+        "18000"
+      ],
+      [
+        "JAMES",
+        "950",
+        "",
+        "",
+        "11400"
+      ]
+    ]
+  },
+  "sel-concat": {
+    "columns": [
+      "직원"
+    ],
+    "rows": [
+      [
+        "ADAMS(CLERK)"
+      ],
+      [
+        "FORD(ANALYST)"
+      ],
+      [
+        "JONES(MANAGER)"
+      ],
+      [
+        "SCOTT(ANALYST)"
+      ],
+      [
+        "SMITH(CLERK)"
+      ]
+    ]
+  },
+  "sel-concat-null": {
+    "columns": [
+      "ENAME||COMM"
+    ],
+    "rows": [
+      [
+        "SMITH"
+      ],
+      [
+        "ALLEN300"
+      ]
+    ]
+  },
+  "sel-dual": {
+    "columns": [
+      "1+2",
+      "10/4",
+      "7*3-1",
+      "'A'||'B'"
+    ],
+    "rows": [
+      [
+        "3",
+        "2.5",
+        "20",
+        "AB"
+      ]
+    ]
+  },
+  "sel-numbers": {
+    "columns": [
+      "SAL/3",
+      "0.5",
+      "-0.25",
+      "1E3",
+      "1/3",
+      "10/4",
+      "SAL*1.1",
+      "2/3*1000000"
+    ],
+    "rows": [
+      [
+        "266.666667",
+        ".5",
+        "-.25",
+        "1000",
+        ".333333333",
+        "2.5",
+        "880",
+        "666666.667"
+      ]
+    ]
+  },
+  "sel-bignum": {
+    "columns": [
+      "12345678901",
+      "123456789.123",
+      "0.000012345",
+      "-9876543210"
+    ],
+    "rows": [
+      [
+        "1.2346E+10",
+        "123456789",
+        ".000012345",
+        "-9.877E+09"
+      ]
+    ]
+  },
+  "sel-empty-str": {
+    "columns": [
+      "LENGTH('')",
+      "NVL('','X')",
+      "CASEWHEN''ISNULLTHEN'NULL'ELSE'NOT'END"
+    ],
+    "rows": [
+      [
+        "",
+        "x",
+        "NULL"
+      ]
+    ]
+  },
+  "sel-rownum": {
+    "columns": [
+      "ROWNUM",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "1",
+        "SMITH"
+      ],
+      [
+        "2",
+        "ALLEN"
+      ],
+      [
+        "3",
+        "WARD"
+      ]
+    ]
+  },
+  "sel-rownum-eq2": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "sel-comment": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "KING"
+      ]
+    ]
+  },
+  "fn-case": {
+    "columns": [
+      "LOWER(ENAME)",
+      "UPPER('ABC')",
+      "INITCAP('HELLOWORLDSQL')"
+    ],
+    "rows": [
+      [
+        "smith",
+        "ABC",
+        "Hello World Sql"
+      ]
+    ]
+  },
+  "fn-substr": {
+    "columns": [
+      "SUBSTR('ABCDE',2,3)",
+      "SUBSTR('ABCDE',0,2)",
+      "SUBSTR('ABCDE',-2)",
+      "SUBSTR('ABCDE',3)",
+      "SUBSTR('ABCDE',6)"
+    ],
+    "rows": [
+      [
+        "BCD",
+        "AB",
+        "DE",
+        "CDE",
+        ""
+      ]
+    ]
+  },
+  "fn-length": {
+    "columns": [
+      "ENAME",
+      "LENGTH(ENAME)",
+      "LENGTH('데이터')"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "5",
+        "3"
+      ],
+      [
+        "KING",
+        "4",
+        "3"
+      ],
+      [
+        "MILLER",
+        "6",
+        "3"
+      ]
+    ]
+  },
+  "fn-instr": {
+    "columns": [
+      "INSTR('ABCABC','B')",
+      "INSTR('ABCABC','B',1,2)",
+      "INSTR('ABCABC','B',-1)",
+      "INSTR('ABCABC','Z')",
+      "INSTR('ABCABC','C',4)"
+    ],
+    "rows": [
+      [
+        "2",
+        "5",
+        "5",
+        "0",
+        "6"
+      ]
+    ]
+  },
+  "fn-trim": {
+    "columns": [
+      "'['||TRIM('AB')||']'",
+      "LTRIM('XXABCXX','X')",
+      "RTRIM('XXABCXX','X')",
+      "TRIM('X'FROM'XXABCXX')",
+      "TRIM(LEADING'0'FROM'00120')",
+      "TRIM(TRAILING'X'FROM'ABXX')"
+    ],
+    "rows": [
+      [
+        "[a b]",
+        "abcxx",
+        "xxabc",
+        "abc",
+        "120",
+        "ab"
+      ]
+    ]
+  },
+  "fn-pad": {
+    "columns": [
+      "LPAD(ENAME,8,'*')",
+      "RPAD(ENAME,8,'-')",
+      "LPAD('ABC',2)",
+      "LPAD('7',3,'0')"
+    ],
+    "rows": [
+      [
+        "***SMITH",
+        "SMITH---",
+        "ab",
+        "007"
+      ]
+    ]
+  },
+  "fn-replace": {
+    "columns": [
+      "REPLACE('JACKANDJUE','J','BL')",
+      "REPLACE('ABCABC','B')",
+      "TRANSLATE('ABCD','AB','XY')",
+      "CONCAT('SQL','D')",
+      "CONCAT(NULL,'X')"
+    ],
+    "rows": [
+      [
+        "BLACK and BLUE",
+        "ACAC",
+        "xyCD",
+        "SQLD",
+        "x"
+      ]
+    ]
+  },
+  "fn-ascii": {
+    "columns": [
+      "ASCII('A')",
+      "CHR(65)",
+      "ASCII('A')"
+    ],
+    "rows": [
+      [
+        "65",
+        "A",
+        "97"
+      ]
+    ]
+  },
+  "fn-round": {
+    "columns": [
+      "ROUND(1234.567,1)",
+      "ROUND(1234.567)",
+      "ROUND(1234.567,-2)",
+      "ROUND(-2.5)",
+      "ROUND(2.5)",
+      "ROUND(1.005,2)"
+    ],
+    "rows": [
+      [
+        "1234.6",
+        "1235",
+        "1200",
+        "-3",
+        "3",
+        "1.01"
+      ]
+    ]
+  },
+  "fn-trunc": {
+    "columns": [
+      "TRUNC(1234.567,1)",
+      "TRUNC(1234.567)",
+      "TRUNC(1234.567,-2)",
+      "TRUNC(-1.5)"
+    ],
+    "rows": [
+      [
+        "1234.5",
+        "1234",
+        "1200",
+        "-1"
+      ]
+    ]
+  },
+  "fn-ceil": {
+    "columns": [
+      "CEIL(1.1)",
+      "CEIL(-1.1)",
+      "FLOOR(1.9)",
+      "FLOOR(-1.1)"
+    ],
+    "rows": [
+      [
+        "2",
+        "-1",
+        "1",
+        "-2"
+      ]
+    ]
+  },
+  "fn-mod": {
+    "columns": [
+      "MOD(10,3)",
+      "MOD(-7,3)",
+      "MOD(7,-3)",
+      "MOD(5,0)",
+      "MOD(5.5,2)"
+    ],
+    "rows": [
+      [
+        "1",
+        "-1",
+        "1",
+        "5",
+        "1.5"
+      ]
+    ]
+  },
+  "fn-misc-num": {
+    "columns": [
+      "ABS(-15)",
+      "SIGN(-3)",
+      "SIGN(0)",
+      "SIGN(2.5)",
+      "POWER(2,10)",
+      "SQRT(16)"
+    ],
+    "rows": [
+      [
+        "15",
+        "-1",
+        "0",
+        "1",
+        "1024",
+        "4"
+      ]
+    ]
+  },
+  "fn-sal-round": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "ROUND(SAL/7,2)",
+      "TRUNC(SAL/7,1)"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "2450",
+        "350",
+        "350"
+      ],
+      [
+        "KING",
+        "5000",
+        "714.29",
+        "714.2"
+      ],
+      [
+        "MILLER",
+        "1300",
+        "185.71",
+        "185.7"
+      ]
+    ]
+  },
+  "dt-arith": {
+    "columns": [
+      "HIREDATE",
+      "HIREDATE+100",
+      "HIREDATE-1",
+      "DATE'2026-11-03'-HIREDATE"
+    ],
+    "rows": [
+      [
+        "1980-12-17",
+        "1981-03-27",
+        "1980-12-16",
+        "16757"
+      ]
+    ]
+  },
+  "dt-months": {
+    "columns": [
+      "ADD_MONTHS(DATE'2026-01-31',1)",
+      "ADD_MONTHS(DATE'2026-02-28',1)",
+      "ADD_MONTHS(DATE'2026-03-15',-3)",
+      "ADD_MONTHS(DATE'2024-02-29',12)"
+    ],
+    "rows": [
+      [
+        "2026-02-28",
+        "2026-03-31",
+        "2025-12-15",
+        "2025-02-28"
+      ]
+    ]
+  },
+  "dt-between": {
+    "columns": [
+      "MONTHS_BETWEEN(DATE'2026-03-15',DATE'2026-01-15')",
+      "MONTHS_BETWEEN(DATE'2026-01-01',DATE'2026-03-15')",
+      "MONTHS_BETWEEN(DATE'2026-02-28',DATE'2026-01-31')"
+    ],
+    "rows": [
+      [
+        "2",
+        "-2.4516129",
+        "1"
+      ]
+    ]
+  },
+  "dt-between-emp": {
+    "columns": [
+      "ENAME",
+      "TRUNC(MONTHS_BETWEEN(DATE'2026-11-03',HIREDATE))"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "544"
+      ],
+      [
+        "KING",
+        "539"
+      ],
+      [
+        "MILLER",
+        "537"
+      ]
+    ]
+  },
+  "dt-lastday": {
+    "columns": [
+      "LAST_DAY(DATE'2026-02-10')",
+      "LAST_DAY(DATE'2024-02-10')",
+      "NEXT_DAY(DATE'2026-11-03','FRIDAY')",
+      "NEXT_DAY(DATE'2026-11-03','TUE')"
+    ],
+    "rows": [
+      [
+        "2026-02-28",
+        "2024-02-29",
+        "2026-11-06",
+        "2026-11-10"
+      ]
+    ]
+  },
+  "dt-extract": {
+    "columns": [
+      "EXTRACT(YEARFROMHIREDATE)",
+      "EXTRACT(MONTHFROMHIREDATE)",
+      "EXTRACT(DAYFROMHIREDATE)"
+    ],
+    "rows": [
+      [
+        "1987",
+        "4",
+        "19"
+      ]
+    ]
+  },
+  "dt-trunc": {
+    "columns": [
+      "TRUNC(DATE'2026-11-17','MM')",
+      "TRUNC(DATE'2026-11-17','YYYY')",
+      "ROUND(DATE'2026-11-17','MM')",
+      "ROUND(DATE'2026-07-01','YYYY')",
+      "ROUND(DATE'2026-11-15','MM')"
+    ],
+    "rows": [
+      [
+        "2026-11-01",
+        "2026-01-01",
+        "2026-12-01",
+        "2027-01-01",
+        "2026-11-01"
+      ]
+    ]
+  },
+  "dt-tochar": {
+    "columns": [
+      "TO_CHAR(DATE'2026-11-03','YYYY/MM/DD')",
+      "TO_CHAR(DATE'2026-11-03','YYYY",
+      "MM",
+      "DD",
+      "')",
+      "TO_CHAR(DATE'2026-11-03','DAY')",
+      "TO_CHAR(DATE'2026-11-03','DY')",
+      "TO_CHAR(DATE'2026-11-03','MON')",
+      "TO_CHAR(DATE'2026-11-03','MONTH')",
+      "TO_CHAR(DATE'2026-11-03','QDDDD')"
+    ],
+    "rows": [
+      [
+        "2026/11/03",
+        "2026년 11월 03일",
+        "TUESDAY  ",
+        "TUE",
+        "NOV",
+        "November ",
+        "4 3 307"
+      ]
+    ]
+  },
+  "dt-tochar-time": {
+    "columns": [
+      "TO_CHAR(TO_DATE('2026-11-0314:05:09','YYYY-MM-DDHH24:MI:SS'),'HH24:MI:SS')",
+      "TO_CHAR(TO_DATE('2026-11-0314:05:09','YYYY-MM-DDHH24:MI:SS'),'HH:MIAM')",
+      "TO_CHAR(TO_DATE('20261103','YYYYMMDD'),'FMMONTHDD,YYYY')"
+    ],
+    "rows": [
+      [
+        "14:05:09",
+        "02:05 PM",
+        "November 3, 2026"
+      ]
+    ]
+  },
+  "dt-todate": {
+    "columns": [
+      "TO_DATE('2026/01/05')",
+      "TO_DATE('05-JAN-2026','DD-MON-YYYY')",
+      "TO_DATE('2026.01.05','YYYY.MM.DD')"
+    ],
+    "rows": [
+      [
+        "2026-01-05",
+        "2026-01-05",
+        "2026-01-05"
+      ]
+    ]
+  },
+  "dt-hire-fmt": {
+    "columns": [
+      "ENAME",
+      "TO_CHAR(HIREDATE,'YYYY-MM')"
+    ],
+    "rows": [
+      [
+        "SMITH",
+        "1980-12"
+      ],
+      [
+        "JONES",
+        "1981-04"
+      ],
+      [
+        "FORD",
+        "1981-12"
+      ],
+      [
+        "SCOTT",
+        "1987-04"
+      ],
+      [
+        "ADAMS",
+        "1987-05"
+      ]
+    ]
+  },
+  "dt-compare-str": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ADAMS"
+      ],
+      [
+        "SCOTT"
+      ]
+    ]
+  },
+  "num-tochar": {
+    "columns": [
+      "TO_CHAR(1234.5,'99,999.99')",
+      "TO_CHAR(1234.5,'FM99,999.99')",
+      "TO_CHAR(12345,'999')",
+      "TO_CHAR(0.5,'0.00')",
+      "TO_CHAR(7,'000')",
+      "TO_CHAR(1234,'$9,999')",
+      "TO_CHAR(-1234.5,'9,999.9')"
+    ],
+    "rows": [
+      [
+        "  1,234.50",
+        "1,234.5",
+        "####",
+        " 0.50",
+        " 007",
+        " $1,234",
+        "-1,234.5"
+      ]
+    ]
+  },
+  "num-tochar-sal": {
+    "columns": [
+      "ENAME",
+      "TO_CHAR(SAL,'L99,999')"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "           $2,450"
+      ],
+      [
+        "KING",
+        "           $5,000"
+      ],
+      [
+        "MILLER",
+        "           $1,300"
+      ]
+    ]
+  },
+  "num-tonumber": {
+    "columns": [
+      "TO_NUMBER('123.45')+1",
+      "TO_NUMBER('1,234','9,999')",
+      "'10'+5",
+      "'3'*'4'"
+    ],
+    "rows": [
+      [
+        "124.45",
+        "1234",
+        "15",
+        "12"
+      ]
+    ]
+  },
+  "num-implicit-str": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "SMITH"
+      ]
+    ]
+  },
+  "nl-nvl": {
+    "columns": [
+      "ENAME",
+      "COMM",
+      "NVL(COMM,0)",
+      "NVL2(COMM,'있음','없음')",
+      "NULLIF(SAL,1250)",
+      "COALESCE(COMM,MGR,0)"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "300",
+        "300",
+        "있음",
+        "1600",
+        "300"
+      ],
+      [
+        "WARD",
+        "500",
+        "500",
+        "있음",
+        "",
+        "500"
+      ],
+      [
+        "MARTIN",
+        "1400",
+        "1400",
+        "있음",
+        "",
+        "1400"
+      ],
+      [
+        "BLAKE",
+        "",
+        "0",
+        "없음",
+        "2850",
+        "7839"
+      ],
+      [
+        "TURNER",
+        "0",
+        "0",
+        "있음",
+        "1500",
+        "0"
+      ],
+      [
+        "JAMES",
+        "",
+        "0",
+        "없음",
+        "950",
+        "7698"
+      ]
+    ]
+  },
+  "nl-coalesce": {
+    "columns": [
+      "COALESCE(NULL,NULL,3,4)",
+      "NULLIF('A','A')",
+      "NULLIF('A','B')",
+      "NVL(NULL,'X')"
+    ],
+    "rows": [
+      [
+        "3",
+        "",
+        "A",
+        "x"
+      ]
+    ]
+  },
+  "nl-king": {
+    "columns": [
+      "ENAME",
+      "MGR",
+      "NVL(TO_CHAR(MGR),'최고관리자')"
+    ],
+    "rows": [
+      [
+        "SMITH",
+        "7902",
+        "7902"
+      ],
+      [
+        "KING",
+        "",
+        "최고관리자"
+      ]
+    ]
+  },
+  "cs-simple": {
+    "columns": [
+      "ENAME",
+      "DEPTNO",
+      "부서"
+    ],
+    "rows": [
+      [
+        "SMITH",
+        "20",
+        "RES"
+      ],
+      [
+        "ALLEN",
+        "30",
+        "기타"
+      ],
+      [
+        "CLARK",
+        "10",
+        "ACC"
+      ]
+    ]
+  },
+  "cs-searched": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "등급"
+    ],
+    "rows": [
+      [
+        "KING",
+        "5000",
+        "고"
+      ],
+      [
+        "FORD",
+        "3000",
+        "고"
+      ],
+      [
+        "SCOTT",
+        "3000",
+        "고"
+      ],
+      [
+        "JONES",
+        "2975",
+        "중"
+      ],
+      [
+        "BLAKE",
+        "2850",
+        "중"
+      ],
+      [
+        "CLARK",
+        "2450",
+        "중"
+      ],
+      [
+        "ALLEN",
+        "1600",
+        "중"
+      ],
+      [
+        "TURNER",
+        "1500",
+        "중"
+      ],
+      [
+        "MILLER",
+        "1300",
+        "저"
+      ],
+      [
+        "MARTIN",
+        "1250",
+        "저"
+      ],
+      [
+        "WARD",
+        "1250",
+        "저"
+      ],
+      [
+        "ADAMS",
+        "1100",
+        "저"
+      ],
+      [
+        "JAMES",
+        "950",
+        "저"
+      ],
+      [
+        "SMITH",
+        "800",
+        "저"
+      ]
+    ]
+  },
+  "cs-noelse": {
+    "columns": [
+      "ENAME",
+      "CASEWHENCOMM>0THEN'수당'END"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "수당"
+      ],
+      [
+        "WARD",
+        "수당"
+      ],
+      [
+        "MARTIN",
+        "수당"
+      ],
+      [
+        "BLAKE",
+        ""
+      ],
+      [
+        "TURNER",
+        ""
+      ],
+      [
+        "JAMES",
+        ""
+      ]
+    ]
+  },
+  "cs-decode": {
+    "columns": [
+      "ENAME",
+      "DECODE(JOB,'CLERK','사무','SALESMAN','영업','기타')",
+      "DECODE(COMM,NULL,'N','Y')"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "영업",
+        "Y"
+      ],
+      [
+        "WARD",
+        "영업",
+        "Y"
+      ],
+      [
+        "MARTIN",
+        "영업",
+        "Y"
+      ],
+      [
+        "BLAKE",
+        "기타",
+        "N"
+      ],
+      [
+        "TURNER",
+        "영업",
+        "Y"
+      ],
+      [
+        "JAMES",
+        "사무",
+        "N"
+      ]
+    ]
+  },
+  "cs-decode-nodefault": {
+    "columns": [
+      "DECODE(1,2,'X')",
+      "DECODE(NULL,NULL,'같다','다르다')"
+    ],
+    "rows": [
+      [
+        "",
+        "같다"
+      ]
+    ]
+  },
+  "cs-null-eq": {
+    "columns": [
+      "CASENULLWHENNULLTHEN'같다'ELSE'다르다'END"
+    ],
+    "rows": [
+      [
+        "다르다"
+      ]
+    ]
+  },
+  "wh-compare": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "JONES",
+        "2975"
+      ],
+      [
+        "FORD",
+        "3000"
+      ],
+      [
+        "SCOTT",
+        "3000"
+      ],
+      [
+        "KING",
+        "5000"
+      ]
+    ]
+  },
+  "wh-ne": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "8"
+      ]
+    ]
+  },
+  "wh-ne2": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "3"
+      ]
+    ]
+  },
+  "wh-between": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "MARTIN",
+        "1250"
+      ],
+      [
+        "WARD",
+        "1250"
+      ],
+      [
+        "MILLER",
+        "1300"
+      ],
+      [
+        "TURNER",
+        "1500"
+      ],
+      [
+        "ALLEN",
+        "1600"
+      ]
+    ]
+  },
+  "wh-between-rev": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "wh-notbetween": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "JAMES"
+      ],
+      [
+        "KING"
+      ],
+      [
+        "SMITH"
+      ]
+    ]
+  },
+  "wh-in": {
+    "columns": [
+      "ENAME",
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ADAMS",
+        "CLERK"
+      ],
+      [
+        "FORD",
+        "ANALYST"
+      ],
+      [
+        "JAMES",
+        "CLERK"
+      ],
+      [
+        "MILLER",
+        "CLERK"
+      ],
+      [
+        "SCOTT",
+        "ANALYST"
+      ],
+      [
+        "SMITH",
+        "CLERK"
+      ]
+    ]
+  },
+  "wh-notin-null": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "wh-in-null": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "BLAKE"
+      ],
+      [
+        "CLARK"
+      ],
+      [
+        "JONES"
+      ]
+    ]
+  },
+  "wh-like": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ADAMS"
+      ],
+      [
+        "ALLEN"
+      ],
+      [
+        "JAMES"
+      ],
+      [
+        "MARTIN"
+      ],
+      [
+        "WARD"
+      ]
+    ]
+  },
+  "wh-like2": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ADAMS"
+      ],
+      [
+        "JAMES"
+      ],
+      [
+        "JONES"
+      ]
+    ]
+  },
+  "wh-like-escape": {
+    "columns": [
+      "'A_B'"
+    ],
+    "rows": [
+      [
+        "A_B"
+      ]
+    ]
+  },
+  "wh-like-escape2": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "wh-notlike": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "7"
+      ]
+    ]
+  },
+  "wh-isnull": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "BLAKE"
+      ],
+      [
+        "JAMES"
+      ]
+    ]
+  },
+  "wh-eqnull": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "wh-isnotnull": {
+    "columns": [
+      "ENAME",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "TURNER",
+        "0"
+      ],
+      [
+        "ALLEN",
+        "300"
+      ],
+      [
+        "WARD",
+        "500"
+      ],
+      [
+        "MARTIN",
+        "1400"
+      ]
+    ]
+  },
+  "wh-precedence": {
+    "columns": [
+      "ENAME",
+      "JOB",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "SALESMAN",
+        "1600"
+      ],
+      [
+        "JONES",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "MARTIN",
+        "SALESMAN",
+        "1250"
+      ],
+      [
+        "TURNER",
+        "SALESMAN",
+        "1500"
+      ],
+      [
+        "WARD",
+        "SALESMAN",
+        "1250"
+      ]
+    ]
+  },
+  "wh-precedence2": {
+    "columns": [
+      "ENAME",
+      "JOB",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "JONES",
+        "MANAGER",
+        "2975"
+      ]
+    ]
+  },
+  "wh-not": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "9"
+      ]
+    ]
+  },
+  "wh-comm-gt": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "MARTIN"
+      ]
+    ]
+  },
+  "wh-anyall": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "FORD",
+        "3000"
+      ],
+      [
+        "JONES",
+        "2975"
+      ],
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "SCOTT",
+        "3000"
+      ]
+    ]
+  },
+  "gb-agg": {
+    "columns": [
+      "COUNT(*)",
+      "COUNT(COMM)",
+      "COUNT(DISTINCTJOB)",
+      "SUM(SAL)",
+      "AVG(SAL)",
+      "MIN(SAL)",
+      "MAX(SAL)"
+    ],
+    "rows": [
+      [
+        "14",
+        "4",
+        "5",
+        "29025",
+        "2073.21429",
+        "800",
+        "5000"
+      ]
+    ]
+  },
+  "gb-avg-null": {
+    "columns": [
+      "AVG(COMM)",
+      "AVG(NVL(COMM,0))",
+      "SUM(COMM)/COUNT(*)"
+    ],
+    "rows": [
+      [
+        "550",
+        "157.142857",
+        "157.142857"
+      ]
+    ]
+  },
+  "gb-dept": {
+    "columns": [
+      "DEPTNO",
+      "COUNT(*)",
+      "SUM(SAL)",
+      "ROUND(AVG(SAL),1)"
+    ],
+    "rows": [
+      [
+        "10",
+        "3",
+        "8750",
+        "2916.7"
+      ],
+      [
+        "20",
+        "5",
+        "10875",
+        "2175"
+      ],
+      [
+        "30",
+        "6",
+        "9400",
+        "1566.7"
+      ]
+    ]
+  },
+  "gb-multi": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "COUNT(*)",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "1",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "1",
+        "5000"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "2",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "2",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "1",
+        "2975"
+      ],
+      [
+        "30",
+        "CLERK",
+        "1",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "1",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "4",
+        "5600"
+      ]
+    ]
+  },
+  "gb-empty": {
+    "columns": [
+      "COUNT(*)",
+      "SUM(SAL)",
+      "MAX(SAL)"
+    ],
+    "rows": [
+      [
+        "0",
+        "",
+        ""
+      ]
+    ]
+  },
+  "gb-empty-grouped": {
+    "columns": null,
+    "rows": []
+  },
+  "gb-minmax-str": {
+    "columns": [
+      "MIN(ENAME)",
+      "MAX(ENAME)",
+      "MIN(HIREDATE)",
+      "MAX(HIREDATE)"
+    ],
+    "rows": [
+      [
+        "ADAMS",
+        "WARD",
+        "1980-12-17",
+        "1987-05-23"
+      ]
+    ]
+  },
+  "gb-stddev": {
+    "columns": [
+      "DEPTNO",
+      "ROUND(STDDEV(SAL),2)",
+      "ROUND(VARIANCE(SAL),2)"
+    ],
+    "rows": [
+      [
+        "10",
+        "1893.63",
+        "3585833.33"
+      ],
+      [
+        "20",
+        "1123.33",
+        "1261875"
+      ],
+      [
+        "30",
+        "668.33",
+        "446666.67"
+      ]
+    ]
+  },
+  "gb-stddev-one": {
+    "columns": [
+      "STDDEV(SAL)",
+      "VARIANCE(SAL)"
+    ],
+    "rows": [
+      [
+        "0",
+        "0"
+      ]
+    ]
+  },
+  "gb-expr": {
+    "columns": [
+      "입사년",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "1980",
+        "1"
+      ],
+      [
+        "1981",
+        "10"
+      ],
+      [
+        "1982",
+        "1"
+      ],
+      [
+        "1987",
+        "2"
+      ]
+    ]
+  },
+  "gb-case": {
+    "columns": [
+      "구분",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "HIGH",
+        "6"
+      ],
+      [
+        "LOW",
+        "8"
+      ]
+    ]
+  },
+  "gb-nullgroup": {
+    "columns": [
+      "COMM",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0",
+        "1"
+      ],
+      [
+        "300",
+        "1"
+      ],
+      [
+        "500",
+        "1"
+      ],
+      [
+        "1400",
+        "1"
+      ],
+      [
+        "",
+        "10"
+      ]
+    ]
+  },
+  "gb-count-distinct-null": {
+    "columns": [
+      "COUNT(DISTINCTCOMM)",
+      "COUNT(DISTINCTMGR)"
+    ],
+    "rows": [
+      [
+        "4",
+        "6"
+      ]
+    ]
+  },
+  "gb-sum-decode": {
+    "columns": [
+      "D10",
+      "D20",
+      "D30"
+    ],
+    "rows": [
+      [
+        "8750",
+        "10875",
+        "9400"
+      ]
+    ]
+  },
+  "gb-having": {
+    "columns": [
+      "DEPTNO",
+      "AVG(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "2916.66667"
+      ],
+      [
+        "20",
+        "2175"
+      ]
+    ]
+  },
+  "gb-having-count": {
+    "columns": [
+      "JOB",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "CLERK",
+        "4"
+      ],
+      [
+        "MANAGER",
+        "3"
+      ],
+      [
+        "SALESMAN",
+        "4"
+      ]
+    ]
+  },
+  "gb-having-noselect": {
+    "columns": [
+      "DEPTNO"
+    ],
+    "rows": [
+      [
+        "10"
+      ],
+      [
+        "20"
+      ]
+    ]
+  },
+  "gb-having-nogroup": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "14"
+      ]
+    ]
+  },
+  "gb-having-nogroup-false": {
+    "columns": null,
+    "rows": []
+  },
+  "gb-where-having": {
+    "columns": [
+      "DEPTNO",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "10",
+        "3"
+      ],
+      [
+        "20",
+        "4"
+      ],
+      [
+        "30",
+        "5"
+      ]
+    ]
+  },
+  "gb-order-agg": {
+    "columns": [
+      "DEPTNO",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "20",
+        "10875"
+      ],
+      [
+        "30",
+        "9400"
+      ],
+      [
+        "10",
+        "8750"
+      ]
+    ]
+  },
+  "gb-order-agg-hidden": {
+    "columns": [
+      "DEPTNO"
+    ],
+    "rows": [
+      [
+        "30"
+      ],
+      [
+        "20"
+      ],
+      [
+        "10"
+      ]
+    ]
+  },
+  "err-ident": {
+    "error": "ORA-00904",
+    "message": "\"X\": invalid identifier"
+  },
+  "err-937": {
+    "error": "ORA-00937",
+    "message": "not a single-group group function"
+  },
+  "err-979": {
+    "error": "ORA-00979",
+    "message": "\"ENAME\": must appear in the GROUP BY clause or be used in an aggregate function"
+  },
+  "err-979-q": {
+    "error": "ORA-00979",
+    "message": "\"E\".\"ENAME\": must appear in the GROUP BY clause or be used in an aggregate function"
+  },
+  "err-934": {
+    "error": "ORA-00934",
+    "message": "group function is not allowed here"
+  },
+  "err-918": {
+    "error": "ORA-00918",
+    "message": "DEPTNO: column ambiguously specified - appears in DEPT and EMP"
+  },
+  "err-942": {
+    "error": "ORA-00942",
+    "message": "table or view \"SCOTT\".\"NOPE\" does not exist"
+  },
+  "err-1476": {
+    "error": "ORA-01476",
+    "message": "divisor is equal to zero"
+  },
+  "err-25155": {
+    "error": "ORA-25155",
+    "message": "column used in NATURAL join cannot have qualifier"
+  },
+  "err-25154": {
+    "error": "ORA-25154",
+    "message": "column part of USING clause cannot have qualifier"
+  },
+  "err-1791": {
+    "error": "ORA-01791",
+    "message": "not a SELECTed expression"
+  },
+  "err-936": {
+    "error": "ORA-00936",
+    "message": "missing expression"
+  },
+  "err-936b": {
+    "error": "ORA-00936",
+    "message": "missing expression"
+  },
+  "err-907": {
+    "error": "ORA-00907",
+    "message": "missing right parenthesis"
+  },
+  "err-923": {
+    "error": "ORA-00904",
+    "message": "\"ENAME\": invalid identifier"
+  },
+  "err-alias-where": {
+    "error": "ORA-00904",
+    "message": "\"연봉\": invalid identifier"
+  },
+  "err-tablealias": {
+    "error": "ORA-00904",
+    "message": "\"EMP\".\"ENAME\": invalid identifier"
+  },
+  "err-978": {
+    "error": "ORA-00978",
+    "message": "nested group function without GROUP BY"
+  },
+  "err-1722": {
+    "error": "ORA-01722",
+    "message": "unable to convert string value containing 'a' to a number:"
+  },
+  "err-932": {
+    "error": "ORA-00932",
+    "message": "expression (5) is of data type NUMBER, which is incompatible with expected data type DATE"
+  },
+  "err-1427": {
+    "error": "ORA-01427",
+    "message": "single-row subquery returns more than one row"
+  },
+  "err-1785": {
+    "error": "ORA-01785",
+    "message": "ORDER BY item must be the number of a SELECT-list expression"
+  },
+  "err-1789": {
+    "error": "ORA-01789",
+    "message": "query block has incorrect number of result columns"
+  },
+  "err-1790": {
+    "error": "ORA-01790",
+    "message": "expression must have same datatype as corresponding expression"
+  },
+  "err-25156": {
+    "error": "ORA-25156",
+    "message": "old style outer join (+) cannot be used with ANSI joins"
+  },
+  "err-938": {
+    "error": "ORA-00938",
+    "message": "not enough arguments for function"
+  },
+  "err-ambig-order": {
+    "error": "ORA-00960",
+    "message": "ambiguous column naming in select list"
+  },
+  "ob-desc": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "FORD",
+        "3000"
+      ],
+      [
+        "SCOTT",
+        "3000"
+      ],
+      [
+        "JONES",
+        "2975"
+      ],
+      [
+        "BLAKE",
+        "2850"
+      ],
+      [
+        "CLARK",
+        "2450"
+      ],
+      [
+        "ALLEN",
+        "1600"
+      ],
+      [
+        "TURNER",
+        "1500"
+      ],
+      [
+        "MILLER",
+        "1300"
+      ],
+      [
+        "MARTIN",
+        "1250"
+      ],
+      [
+        "WARD",
+        "1250"
+      ],
+      [
+        "ADAMS",
+        "1100"
+      ],
+      [
+        "JAMES",
+        "950"
+      ],
+      [
+        "SMITH",
+        "800"
+      ]
+    ]
+  },
+  "ob-alias": {
+    "columns": [
+      "ENAME",
+      "연봉"
+    ],
+    "rows": [
+      [
+        "KING",
+        "60000"
+      ],
+      [
+        "CLARK",
+        "29400"
+      ],
+      [
+        "MILLER",
+        "15600"
+      ]
+    ]
+  },
+  "ob-position": {
+    "columns": [
+      "ENAME",
+      "JOB",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "FORD",
+        "ANALYST",
+        "3000"
+      ],
+      [
+        "SCOTT",
+        "ANALYST",
+        "3000"
+      ],
+      [
+        "JONES",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "ADAMS",
+        "CLERK",
+        "1100"
+      ],
+      [
+        "SMITH",
+        "CLERK",
+        "800"
+      ]
+    ]
+  },
+  "ob-hidden": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "MILLER"
+      ],
+      [
+        "CLARK"
+      ],
+      [
+        "KING"
+      ]
+    ]
+  },
+  "ob-nulls-asc": {
+    "columns": [
+      "ENAME",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "TURNER",
+        "0"
+      ],
+      [
+        "ALLEN",
+        "300"
+      ],
+      [
+        "WARD",
+        "500"
+      ],
+      [
+        "MARTIN",
+        "1400"
+      ],
+      [
+        "BLAKE",
+        ""
+      ],
+      [
+        "JAMES",
+        ""
+      ]
+    ]
+  },
+  "ob-nulls-desc": {
+    "columns": [
+      "ENAME",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "BLAKE",
+        ""
+      ],
+      [
+        "JAMES",
+        ""
+      ],
+      [
+        "MARTIN",
+        "1400"
+      ],
+      [
+        "WARD",
+        "500"
+      ],
+      [
+        "ALLEN",
+        "300"
+      ],
+      [
+        "TURNER",
+        "0"
+      ]
+    ]
+  },
+  "ob-nulls-first": {
+    "columns": [
+      "ENAME",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "BLAKE",
+        ""
+      ],
+      [
+        "JAMES",
+        ""
+      ],
+      [
+        "TURNER",
+        "0"
+      ],
+      [
+        "ALLEN",
+        "300"
+      ],
+      [
+        "WARD",
+        "500"
+      ],
+      [
+        "MARTIN",
+        "1400"
+      ]
+    ]
+  },
+  "ob-nulls-last-desc": {
+    "columns": [
+      "ENAME",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "MARTIN",
+        "1400"
+      ],
+      [
+        "WARD",
+        "500"
+      ],
+      [
+        "ALLEN",
+        "300"
+      ],
+      [
+        "TURNER",
+        "0"
+      ],
+      [
+        "BLAKE",
+        ""
+      ],
+      [
+        "JAMES",
+        ""
+      ]
+    ]
+  },
+  "ob-expr": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "BLAKE",
+        "2850",
+        ""
+      ],
+      [
+        "MARTIN",
+        "1250",
+        "1400"
+      ],
+      [
+        "ALLEN",
+        "1600",
+        "300"
+      ],
+      [
+        "WARD",
+        "1250",
+        "500"
+      ],
+      [
+        "TURNER",
+        "1500",
+        "0"
+      ],
+      [
+        "JAMES",
+        "950",
+        ""
+      ]
+    ]
+  },
+  "ob-mgr": {
+    "columns": [
+      "ENAME",
+      "MGR"
+    ],
+    "rows": [
+      [
+        "KING",
+        ""
+      ],
+      [
+        "SMITH",
+        "7902"
+      ],
+      [
+        "BLAKE",
+        "7839"
+      ],
+      [
+        "CLARK",
+        "7839"
+      ],
+      [
+        "JONES",
+        "7839"
+      ],
+      [
+        "ADAMS",
+        "7788"
+      ],
+      [
+        "MILLER",
+        "7782"
+      ],
+      [
+        "ALLEN",
+        "7698"
+      ],
+      [
+        "JAMES",
+        "7698"
+      ],
+      [
+        "MARTIN",
+        "7698"
+      ],
+      [
+        "TURNER",
+        "7698"
+      ],
+      [
+        "WARD",
+        "7698"
+      ],
+      [
+        "FORD",
+        "7566"
+      ],
+      [
+        "SCOTT",
+        "7566"
+      ]
+    ]
+  },
+  "ob-string": {
+    "columns": [
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "SALES"
+      ],
+      [
+        "RESEARCH"
+      ],
+      [
+        "OPERATIONS"
+      ],
+      [
+        "ACCOUNTING"
+      ]
+    ]
+  },
+  "ob-date": {
+    "columns": [
+      "ENAME",
+      "HIREDATE"
+    ],
+    "rows": [
+      [
+        "JAMES",
+        "1981-12-03"
+      ],
+      [
+        "MARTIN",
+        "1981-09-28"
+      ],
+      [
+        "TURNER",
+        "1981-09-08"
+      ],
+      [
+        "BLAKE",
+        "1981-05-01"
+      ],
+      [
+        "WARD",
+        "1981-02-22"
+      ],
+      [
+        "ALLEN",
+        "1981-02-20"
+      ]
+    ]
+  },
+  "ob-distinct-ok": {
+    "columns": [
+      "DEPTNO"
+    ],
+    "rows": [
+      [
+        "30"
+      ],
+      [
+        "20"
+      ],
+      [
+        "10"
+      ]
+    ]
+  },
+  "ob-alias-vs-col": {
+    "columns": [
+      "SAL",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "2450"
+      ],
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "MILLER",
+        "1300"
+      ]
+    ]
+  },
+  "jn-equi": {
+    "columns": [
+      "ENAME",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "SMITH",
+        "RESEARCH"
+      ],
+      [
+        "ALLEN",
+        "SALES"
+      ],
+      [
+        "WARD",
+        "SALES"
+      ],
+      [
+        "JONES",
+        "RESEARCH"
+      ],
+      [
+        "MARTIN",
+        "SALES"
+      ],
+      [
+        "BLAKE",
+        "SALES"
+      ],
+      [
+        "CLARK",
+        "ACCOUNTING"
+      ],
+      [
+        "SCOTT",
+        "RESEARCH"
+      ],
+      [
+        "KING",
+        "ACCOUNTING"
+      ],
+      [
+        "TURNER",
+        "SALES"
+      ],
+      [
+        "ADAMS",
+        "RESEARCH"
+      ],
+      [
+        "JAMES",
+        "SALES"
+      ],
+      [
+        "FORD",
+        "RESEARCH"
+      ],
+      [
+        "MILLER",
+        "ACCOUNTING"
+      ]
+    ]
+  },
+  "jn-equi-filter": {
+    "columns": [
+      "ENAME",
+      "LOC"
+    ],
+    "rows": [
+      [
+        "ADAMS",
+        "DALLAS"
+      ],
+      [
+        "FORD",
+        "DALLAS"
+      ],
+      [
+        "JONES",
+        "DALLAS"
+      ],
+      [
+        "SCOTT",
+        "DALLAS"
+      ],
+      [
+        "SMITH",
+        "DALLAS"
+      ]
+    ]
+  },
+  "jn-tablename": {
+    "columns": [
+      "ENAME",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "FORD",
+        "RESEARCH"
+      ],
+      [
+        "JONES",
+        "RESEARCH"
+      ],
+      [
+        "KING",
+        "ACCOUNTING"
+      ],
+      [
+        "SCOTT",
+        "RESEARCH"
+      ]
+    ]
+  },
+  "jn-nonequi": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "GRADE"
+    ],
+    "rows": [
+      [
+        "KING",
+        "5000",
+        "5"
+      ],
+      [
+        "BLAKE",
+        "2850",
+        "4"
+      ],
+      [
+        "CLARK",
+        "2450",
+        "4"
+      ],
+      [
+        "FORD",
+        "3000",
+        "4"
+      ],
+      [
+        "JONES",
+        "2975",
+        "4"
+      ],
+      [
+        "SCOTT",
+        "3000",
+        "4"
+      ],
+      [
+        "ALLEN",
+        "1600",
+        "3"
+      ],
+      [
+        "TURNER",
+        "1500",
+        "3"
+      ],
+      [
+        "MARTIN",
+        "1250",
+        "2"
+      ],
+      [
+        "MILLER",
+        "1300",
+        "2"
+      ],
+      [
+        "WARD",
+        "1250",
+        "2"
+      ],
+      [
+        "ADAMS",
+        "1100",
+        "1"
+      ],
+      [
+        "JAMES",
+        "950",
+        "1"
+      ],
+      [
+        "SMITH",
+        "800",
+        "1"
+      ]
+    ]
+  },
+  "jn-three": {
+    "columns": [
+      "ENAME",
+      "DNAME",
+      "GRADE"
+    ],
+    "rows": [
+      [
+        "ADAMS",
+        "RESEARCH",
+        "1"
+      ],
+      [
+        "FORD",
+        "RESEARCH",
+        "4"
+      ],
+      [
+        "JONES",
+        "RESEARCH",
+        "4"
+      ],
+      [
+        "SCOTT",
+        "RESEARCH",
+        "4"
+      ],
+      [
+        "SMITH",
+        "RESEARCH",
+        "1"
+      ]
+    ]
+  },
+  "jn-cartesian": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "56"
+      ]
+    ]
+  },
+  "jn-outer-oracle": {
+    "columns": [
+      "DEPTNO",
+      "DNAME",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "10",
+        "ACCOUNTING",
+        "CLARK"
+      ],
+      [
+        "10",
+        "ACCOUNTING",
+        "KING"
+      ],
+      [
+        "10",
+        "ACCOUNTING",
+        "MILLER"
+      ],
+      [
+        "20",
+        "RESEARCH",
+        "ADAMS"
+      ],
+      [
+        "20",
+        "RESEARCH",
+        "FORD"
+      ],
+      [
+        "20",
+        "RESEARCH",
+        "JONES"
+      ],
+      [
+        "20",
+        "RESEARCH",
+        "SCOTT"
+      ],
+      [
+        "20",
+        "RESEARCH",
+        "SMITH"
+      ],
+      [
+        "30",
+        "SALES",
+        "ALLEN"
+      ],
+      [
+        "30",
+        "SALES",
+        "BLAKE"
+      ],
+      [
+        "30",
+        "SALES",
+        "JAMES"
+      ],
+      [
+        "30",
+        "SALES",
+        "MARTIN"
+      ],
+      [
+        "30",
+        "SALES",
+        "TURNER"
+      ],
+      [
+        "30",
+        "SALES",
+        "WARD"
+      ],
+      [
+        "40",
+        "OPERATIONS",
+        ""
+      ]
+    ]
+  },
+  "jn-outer-count": {
+    "columns": [
+      "DNAME",
+      "COUNT(E.EMPNO)",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "3",
+        "3"
+      ],
+      [
+        "OPERATIONS",
+        "0",
+        "1"
+      ],
+      [
+        "RESEARCH",
+        "5",
+        "5"
+      ],
+      [
+        "SALES",
+        "6",
+        "6"
+      ]
+    ]
+  },
+  "jn-outer-missing-plus": {
+    "columns": [
+      "DEPTNO",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLARK"
+      ],
+      [
+        "10",
+        "KING"
+      ],
+      [
+        "20",
+        "FORD"
+      ],
+      [
+        "20",
+        "JONES"
+      ],
+      [
+        "20",
+        "SCOTT"
+      ],
+      [
+        "30",
+        "BLAKE"
+      ]
+    ]
+  },
+  "jn-outer-with-plus": {
+    "columns": [
+      "DEPTNO",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLARK"
+      ],
+      [
+        "10",
+        "KING"
+      ],
+      [
+        "20",
+        "FORD"
+      ],
+      [
+        "20",
+        "JONES"
+      ],
+      [
+        "20",
+        "SCOTT"
+      ],
+      [
+        "30",
+        "BLAKE"
+      ],
+      [
+        "40",
+        ""
+      ]
+    ]
+  },
+  "jn-self": {
+    "columns": [
+      "사원",
+      "관리자"
+    ],
+    "rows": [
+      [
+        "ADAMS",
+        "SCOTT"
+      ],
+      [
+        "ALLEN",
+        "BLAKE"
+      ],
+      [
+        "BLAKE",
+        "KING"
+      ],
+      [
+        "CLARK",
+        "KING"
+      ],
+      [
+        "FORD",
+        "JONES"
+      ],
+      [
+        "JAMES",
+        "BLAKE"
+      ],
+      [
+        "JONES",
+        "KING"
+      ],
+      [
+        "MARTIN",
+        "BLAKE"
+      ],
+      [
+        "MILLER",
+        "CLARK"
+      ],
+      [
+        "SCOTT",
+        "JONES"
+      ],
+      [
+        "SMITH",
+        "FORD"
+      ],
+      [
+        "TURNER",
+        "BLAKE"
+      ],
+      [
+        "WARD",
+        "BLAKE"
+      ]
+    ]
+  },
+  "jn-self-outer": {
+    "columns": [
+      "사원",
+      "관리자"
+    ],
+    "rows": [
+      [
+        "ADAMS",
+        "SCOTT"
+      ],
+      [
+        "ALLEN",
+        "BLAKE"
+      ],
+      [
+        "BLAKE",
+        "KING"
+      ],
+      [
+        "CLARK",
+        "KING"
+      ],
+      [
+        "FORD",
+        "JONES"
+      ],
+      [
+        "JAMES",
+        "BLAKE"
+      ],
+      [
+        "JONES",
+        "KING"
+      ],
+      [
+        "KING",
+        ""
+      ],
+      [
+        "MARTIN",
+        "BLAKE"
+      ],
+      [
+        "MILLER",
+        "CLARK"
+      ],
+      [
+        "SCOTT",
+        "JONES"
+      ],
+      [
+        "SMITH",
+        "FORD"
+      ],
+      [
+        "TURNER",
+        "BLAKE"
+      ],
+      [
+        "WARD",
+        "BLAKE"
+      ]
+    ]
+  },
+  "jn-inner": {
+    "columns": [
+      "ENAME",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "BLAKE",
+        "SALES"
+      ],
+      [
+        "CLARK",
+        "ACCOUNTING"
+      ],
+      [
+        "JONES",
+        "RESEARCH"
+      ]
+    ]
+  },
+  "jn-join-default": {
+    "columns": [
+      "ENAME",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "ACCOUNTING"
+      ],
+      [
+        "KING",
+        "ACCOUNTING"
+      ],
+      [
+        "MILLER",
+        "ACCOUNTING"
+      ]
+    ]
+  },
+  "jn-natural": {
+    "columns": [
+      "DEPTNO",
+      "ENAME",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLARK",
+        "ACCOUNTING"
+      ],
+      [
+        "10",
+        "KING",
+        "ACCOUNTING"
+      ],
+      [
+        "10",
+        "MILLER",
+        "ACCOUNTING"
+      ]
+    ]
+  },
+  "jn-natural-star": {
+    "columns": [
+      "DEPTNO",
+      "DNAME",
+      "LOC",
+      "EMPNO",
+      "ENAME",
+      "JOB",
+      "MGR",
+      "HIREDATE",
+      "SAL",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "20",
+        "RESEARCH",
+        "DALLAS",
+        "7369",
+        "SMITH",
+        "CLERK",
+        "7902",
+        "1980-12-17",
+        "800",
+        ""
+      ]
+    ]
+  },
+  "jn-using": {
+    "columns": [
+      "DEPTNO",
+      "ENAME",
+      "LOC"
+    ],
+    "rows": [
+      [
+        "30",
+        "ALLEN",
+        "CHICAGO"
+      ],
+      [
+        "30",
+        "BLAKE",
+        "CHICAGO"
+      ],
+      [
+        "30",
+        "JAMES",
+        "CHICAGO"
+      ],
+      [
+        "30",
+        "MARTIN",
+        "CHICAGO"
+      ],
+      [
+        "30",
+        "TURNER",
+        "CHICAGO"
+      ],
+      [
+        "30",
+        "WARD",
+        "CHICAGO"
+      ]
+    ]
+  },
+  "jn-using-star": {
+    "columns": [
+      "DEPTNO",
+      "EMPNO",
+      "ENAME",
+      "JOB",
+      "MGR",
+      "HIREDATE",
+      "SAL",
+      "COMM",
+      "DNAME",
+      "LOC"
+    ],
+    "rows": [
+      [
+        "10",
+        "7839",
+        "KING",
+        "PRESIDENT",
+        "",
+        "1981-11-17",
+        "5000",
+        "",
+        "ACCOUNTING",
+        "NEW YORK"
+      ]
+    ]
+  },
+  "jn-on-star": {
+    "columns": [
+      "EMPNO",
+      "ENAME",
+      "JOB",
+      "MGR",
+      "HIREDATE",
+      "SAL",
+      "COMM",
+      "DEPTNO",
+      "DEPTNO",
+      "DNAME",
+      "LOC"
+    ],
+    "rows": [
+      [
+        "7839",
+        "KING",
+        "PRESIDENT",
+        "",
+        "1981-11-17",
+        "5000",
+        "",
+        "10",
+        "10",
+        "ACCOUNTING",
+        "NEW YORK"
+      ]
+    ]
+  },
+  "jn-cross": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "56"
+      ]
+    ]
+  },
+  "jn-cross-rows": {
+    "columns": [
+      "DNAME",
+      "GRADE"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "1"
+      ],
+      [
+        "ACCOUNTING",
+        "2"
+      ],
+      [
+        "RESEARCH",
+        "1"
+      ],
+      [
+        "RESEARCH",
+        "2"
+      ]
+    ]
+  },
+  "jn-left": {
+    "columns": [
+      "DNAME",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "CLARK"
+      ],
+      [
+        "ACCOUNTING",
+        "KING"
+      ],
+      [
+        "ACCOUNTING",
+        "MILLER"
+      ],
+      [
+        "OPERATIONS",
+        ""
+      ],
+      [
+        "RESEARCH",
+        "ADAMS"
+      ],
+      [
+        "RESEARCH",
+        "FORD"
+      ],
+      [
+        "RESEARCH",
+        "JONES"
+      ],
+      [
+        "RESEARCH",
+        "SCOTT"
+      ],
+      [
+        "RESEARCH",
+        "SMITH"
+      ],
+      [
+        "SALES",
+        "ALLEN"
+      ],
+      [
+        "SALES",
+        "BLAKE"
+      ],
+      [
+        "SALES",
+        "JAMES"
+      ],
+      [
+        "SALES",
+        "MARTIN"
+      ],
+      [
+        "SALES",
+        "TURNER"
+      ],
+      [
+        "SALES",
+        "WARD"
+      ]
+    ]
+  },
+  "jn-right": {
+    "columns": [
+      "DNAME",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "KING"
+      ],
+      [
+        "OPERATIONS",
+        ""
+      ]
+    ]
+  },
+  "jn-full": {
+    "columns": [
+      "DEPTNO",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "20",
+        "ADAMS"
+      ],
+      [
+        "20",
+        "FORD"
+      ],
+      [
+        "20",
+        "JONES"
+      ],
+      [
+        "20",
+        "SCOTT"
+      ],
+      [
+        "20",
+        "SMITH"
+      ],
+      [
+        "30",
+        ""
+      ],
+      [
+        "40",
+        ""
+      ],
+      [
+        "",
+        "CLARK"
+      ],
+      [
+        "",
+        "KING"
+      ],
+      [
+        "",
+        "MILLER"
+      ]
+    ]
+  },
+  "jn-left-on-filter": {
+    "columns": [
+      "DNAME",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "KING"
+      ],
+      [
+        "OPERATIONS",
+        ""
+      ],
+      [
+        "RESEARCH",
+        "FORD"
+      ],
+      [
+        "RESEARCH",
+        "JONES"
+      ],
+      [
+        "RESEARCH",
+        "SCOTT"
+      ],
+      [
+        "SALES",
+        ""
+      ]
+    ]
+  },
+  "jn-left-where-filter": {
+    "columns": [
+      "DNAME",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "KING"
+      ],
+      [
+        "RESEARCH",
+        "FORD"
+      ],
+      [
+        "RESEARCH",
+        "JONES"
+      ],
+      [
+        "RESEARCH",
+        "SCOTT"
+      ]
+    ]
+  },
+  "jn-nonequi-ansi": {
+    "columns": [
+      "ENAME",
+      "GRADE"
+    ],
+    "rows": [
+      [
+        "KING",
+        "5"
+      ],
+      [
+        "CLARK",
+        "4"
+      ],
+      [
+        "MILLER",
+        "2"
+      ]
+    ]
+  },
+  "jn-three-ansi": {
+    "columns": [
+      "ENAME",
+      "DNAME",
+      "GRADE"
+    ],
+    "rows": [
+      [
+        "BLAKE",
+        "SALES",
+        "4"
+      ],
+      [
+        "CLARK",
+        "ACCOUNTING",
+        "4"
+      ],
+      [
+        "FORD",
+        "RESEARCH",
+        "4"
+      ],
+      [
+        "JONES",
+        "RESEARCH",
+        "4"
+      ],
+      [
+        "KING",
+        "ACCOUNTING",
+        "5"
+      ],
+      [
+        "SCOTT",
+        "RESEARCH",
+        "4"
+      ]
+    ]
+  },
+  "jn-self-ansi-left": {
+    "columns": [
+      "ENAME",
+      "MGR_NAME"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "KING"
+      ],
+      [
+        "KING",
+        ""
+      ],
+      [
+        "MILLER",
+        "CLARK"
+      ]
+    ]
+  },
+  "jn-group": {
+    "columns": [
+      "DNAME",
+      "SUM(E.SAL)"
+    ],
+    "rows": [
+      [
+        "RESEARCH",
+        "10875"
+      ],
+      [
+        "SALES",
+        "9400"
+      ],
+      [
+        "ACCOUNTING",
+        "8750"
+      ]
+    ]
+  },
+  "sq-scalar": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "FORD",
+        "3000"
+      ],
+      [
+        "SCOTT",
+        "3000"
+      ],
+      [
+        "JONES",
+        "2975"
+      ],
+      [
+        "BLAKE",
+        "2850"
+      ],
+      [
+        "CLARK",
+        "2450"
+      ]
+    ]
+  },
+  "sq-in": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ADAMS"
+      ],
+      [
+        "FORD"
+      ],
+      [
+        "JONES"
+      ],
+      [
+        "SCOTT"
+      ],
+      [
+        "SMITH"
+      ]
+    ]
+  },
+  "sq-corr": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "DEPTNO"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "1600",
+        "30"
+      ],
+      [
+        "BLAKE",
+        "2850",
+        "30"
+      ],
+      [
+        "FORD",
+        "3000",
+        "20"
+      ],
+      [
+        "JONES",
+        "2975",
+        "20"
+      ],
+      [
+        "KING",
+        "5000",
+        "10"
+      ],
+      [
+        "SCOTT",
+        "3000",
+        "20"
+      ]
+    ]
+  },
+  "sq-exists": {
+    "columns": [
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "OPERATIONS"
+      ]
+    ]
+  },
+  "sq-select-list": {
+    "columns": [
+      "DNAME",
+      "인원"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "3"
+      ],
+      [
+        "RESEARCH",
+        "5"
+      ],
+      [
+        "SALES",
+        "6"
+      ],
+      [
+        "OPERATIONS",
+        "0"
+      ]
+    ]
+  },
+  "sq-inline": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "FORD",
+        "3000"
+      ],
+      [
+        "SCOTT",
+        "3000"
+      ]
+    ]
+  },
+  "sq-notin-null": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "sq-any": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "ADAMS",
+        "1100"
+      ],
+      [
+        "ALLEN",
+        "1600"
+      ],
+      [
+        "JAMES",
+        "950"
+      ],
+      [
+        "MARTIN",
+        "1250"
+      ],
+      [
+        "MILLER",
+        "1300"
+      ],
+      [
+        "SMITH",
+        "800"
+      ],
+      [
+        "TURNER",
+        "1500"
+      ],
+      [
+        "WARD",
+        "1250"
+      ]
+    ]
+  },
+  "set-union": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ANALYST"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "MANAGER"
+      ],
+      [
+        "PRESIDENT"
+      ]
+    ]
+  },
+  "set-unionall": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ANALYST"
+      ],
+      [
+        "ANALYST"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "MANAGER"
+      ],
+      [
+        "MANAGER"
+      ],
+      [
+        "PRESIDENT"
+      ]
+    ]
+  },
+  "set-intersect": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "CLERK"
+      ],
+      [
+        "MANAGER"
+      ]
+    ]
+  },
+  "set-minus": {
+    "columns": [
+      "DEPTNO"
+    ],
+    "rows": [
+      [
+        "40"
+      ]
+    ]
+  },
+  "fetch-first": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "FORD",
+        "3000"
+      ],
+      [
+        "SCOTT",
+        "3000"
+      ]
+    ]
+  },
+  "fetch-offset": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "SCOTT",
+        "3000"
+      ],
+      [
+        "JONES",
+        "2975"
+      ]
+    ]
+  },
+  "misc-greatest": {
+    "columns": [
+      "GREATEST(1,5,3)",
+      "LEAST('B','A','C')",
+      "GREATEST(SAL,2000)"
+    ],
+    "rows": [
+      [
+        "5",
+        "a",
+        "2000"
+      ]
+    ]
+  },
+  "misc-schema-prefix": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "SMITH"
+      ]
+    ]
+  },
+  "misc-quoted-alias-order": {
+    "columns": [
+      "name"
+    ],
+    "rows": [
+      [
+        "CLARK"
+      ],
+      [
+        "KING"
+      ],
+      [
+        "MILLER"
+      ]
+    ]
+  },
+  "task-sql-select-basics-annual": {
+    "columns": [
+      "ENAME",
+      "연봉"
+    ],
+    "rows": [
+      [
+        "SMITH",
+        "9600"
+      ],
+      [
+        "ALLEN",
+        "19500"
+      ],
+      [
+        "WARD",
+        "15500"
+      ],
+      [
+        "JONES",
+        "35700"
+      ],
+      [
+        "MARTIN",
+        "16400"
+      ],
+      [
+        "BLAKE",
+        "34200"
+      ],
+      [
+        "CLARK",
+        "29400"
+      ],
+      [
+        "SCOTT",
+        "36000"
+      ],
+      [
+        "KING",
+        "60000"
+      ],
+      [
+        "TURNER",
+        "18000"
+      ],
+      [
+        "ADAMS",
+        "13200"
+      ],
+      [
+        "JAMES",
+        "11400"
+      ],
+      [
+        "FORD",
+        "36000"
+      ],
+      [
+        "MILLER",
+        "15600"
+      ]
+    ]
+  },
+  "task-sql-select-basics-distinct-job": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ANALYST"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "MANAGER"
+      ],
+      [
+        "PRESIDENT"
+      ],
+      [
+        "SALESMAN"
+      ]
+    ]
+  },
+  "task-sql-select-basics-like-name": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "JAMES"
+      ],
+      [
+        "MARTIN"
+      ],
+      [
+        "WARD"
+      ]
+    ]
+  },
+  "task-sql-select-basics-between-in": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "ADAMS",
+        "1100"
+      ],
+      [
+        "MARTIN",
+        "1250"
+      ],
+      [
+        "WARD",
+        "1250"
+      ],
+      [
+        "TURNER",
+        "1500"
+      ],
+      [
+        "ALLEN",
+        "1600"
+      ]
+    ]
+  },
+  "task-sql-select-basics-null-comm": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "BLAKE"
+      ],
+      [
+        "JAMES"
+      ]
+    ]
+  },
+  "task-sql-select-basics-string-fn": {
+    "columns": [
+      "INITCAP(ENAME)",
+      "LENGTH(ENAME)"
+    ],
+    "rows": [
+      [
+        "Clark",
+        "5"
+      ],
+      [
+        "King",
+        "4"
+      ],
+      [
+        "Miller",
+        "6"
+      ]
+    ]
+  },
+  "task-sql-select-basics-hire-year": {
+    "columns": [
+      "ENAME",
+      "HIREDATE"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "1981-02-20"
+      ],
+      [
+        "WARD",
+        "1981-02-22"
+      ],
+      [
+        "JONES",
+        "1981-04-02"
+      ],
+      [
+        "BLAKE",
+        "1981-05-01"
+      ],
+      [
+        "CLARK",
+        "1981-06-09"
+      ],
+      [
+        "TURNER",
+        "1981-09-08"
+      ],
+      [
+        "MARTIN",
+        "1981-09-28"
+      ],
+      [
+        "KING",
+        "1981-11-17"
+      ],
+      [
+        "FORD",
+        "1981-12-03"
+      ],
+      [
+        "JAMES",
+        "1981-12-03"
+      ]
+    ]
+  },
+  "task-sql-select-basics-case-grade": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "등급"
+    ],
+    "rows": [
+      [
+        "FORD",
+        "3000",
+        "상"
+      ],
+      [
+        "SCOTT",
+        "3000",
+        "상"
+      ],
+      [
+        "JONES",
+        "2975",
+        "중"
+      ],
+      [
+        "ADAMS",
+        "1100",
+        "하"
+      ],
+      [
+        "SMITH",
+        "800",
+        "하"
+      ]
+    ]
+  },
+  "task-sql-group-join-dept-avg": {
+    "columns": [
+      "DEPTNO",
+      "COUNT(*)",
+      "ROUND(AVG(SAL))"
+    ],
+    "rows": [
+      [
+        "10",
+        "3",
+        "2917"
+      ],
+      [
+        "20",
+        "5",
+        "2175"
+      ],
+      [
+        "30",
+        "6",
+        "1567"
+      ]
+    ]
+  },
+  "task-sql-group-join-having": {
+    "columns": [
+      "DEPTNO",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "20",
+        "5"
+      ],
+      [
+        "30",
+        "6"
+      ]
+    ]
+  },
+  "task-sql-group-join-avg-comm": {
+    "columns": [
+      "AVG(COMM)",
+      "AVG(NVL(COMM,0))"
+    ],
+    "rows": [
+      [
+        "550",
+        "157.142857"
+      ]
+    ]
+  },
+  "task-sql-group-join-equi-join": {
+    "columns": [
+      "ENAME",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "ADAMS",
+        "RESEARCH"
+      ],
+      [
+        "FORD",
+        "RESEARCH"
+      ],
+      [
+        "JONES",
+        "RESEARCH"
+      ],
+      [
+        "SCOTT",
+        "RESEARCH"
+      ],
+      [
+        "SMITH",
+        "RESEARCH"
+      ]
+    ]
+  },
+  "task-sql-group-join-non-equi": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "GRADE"
+    ],
+    "rows": [
+      [
+        "KING",
+        "5000",
+        "5"
+      ],
+      [
+        "BLAKE",
+        "2850",
+        "4"
+      ],
+      [
+        "CLARK",
+        "2450",
+        "4"
+      ],
+      [
+        "FORD",
+        "3000",
+        "4"
+      ],
+      [
+        "JONES",
+        "2975",
+        "4"
+      ],
+      [
+        "SCOTT",
+        "3000",
+        "4"
+      ]
+    ]
+  },
+  "task-sql-group-join-outer-join": {
+    "columns": [
+      "DNAME",
+      "COUNT(E.EMPNO)"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "3"
+      ],
+      [
+        "OPERATIONS",
+        "0"
+      ],
+      [
+        "RESEARCH",
+        "5"
+      ],
+      [
+        "SALES",
+        "6"
+      ]
+    ]
+  },
+  "task-sql-group-join-self-join": {
+    "columns": [
+      "ENAME",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ADAMS",
+        "SCOTT"
+      ],
+      [
+        "ALLEN",
+        "BLAKE"
+      ],
+      [
+        "BLAKE",
+        "KING"
+      ],
+      [
+        "CLARK",
+        "KING"
+      ],
+      [
+        "FORD",
+        "JONES"
+      ],
+      [
+        "JAMES",
+        "BLAKE"
+      ],
+      [
+        "JONES",
+        "KING"
+      ],
+      [
+        "KING",
+        ""
+      ],
+      [
+        "MARTIN",
+        "BLAKE"
+      ],
+      [
+        "MILLER",
+        "CLARK"
+      ],
+      [
+        "SCOTT",
+        "JONES"
+      ],
+      [
+        "SMITH",
+        "FORD"
+      ],
+      [
+        "TURNER",
+        "BLAKE"
+      ],
+      [
+        "WARD",
+        "BLAKE"
+      ]
+    ]
+  },
+  "task-sql-group-join-join-group": {
+    "columns": [
+      "DNAME",
+      "SUM(E.SAL)"
+    ],
+    "rows": [
+      [
+        "RESEARCH",
+        "10875"
+      ],
+      [
+        "SALES",
+        "9400"
+      ],
+      [
+        "ACCOUNTING",
+        "8750"
+      ]
+    ]
+  },
+  "note-w2d1-1": {
+    "columns": [
+      "CNT",
+      "EMPNO_CNT",
+      "ENAME_CNT",
+      "JOB_CNT"
+    ],
+    "rows": [
+      [
+        "14",
+        "14",
+        "14",
+        "5"
+      ]
+    ]
+  },
+  "note-w2d1-2": {
+    "columns": [
+      "EMPNO",
+      "ENAME",
+      "JOB",
+      "MGR",
+      "DEPTNO"
+    ],
+    "rows": [
+      [
+        "7782",
+        "CLARK",
+        "MANAGER",
+        "7839",
+        "10"
+      ],
+      [
+        "7839",
+        "KING",
+        "PRESIDENT",
+        "",
+        "10"
+      ],
+      [
+        "7934",
+        "MILLER",
+        "CLERK",
+        "7782",
+        "10"
+      ]
+    ]
+  },
+  "note-w2d2-1": {
+    "error": "ORA-00942",
+    "message": "table or view \"SCOTT\".\"T_ORD_LINE\" does not exist"
+  },
+  "note-w2d2-2": {
+    "error": "ORA-00942",
+    "message": "table or view \"SCOTT\".\"T_ORD_LINE\" does not exist"
+  },
+  "note-w2d2-3": {
+    "error": "ORA-00942",
+    "message": "table or view \"SCOTT\".\"T_ORD_LINE\" does not exist"
+  },
+  "note-w2d2-4": {
+    "columns": [
+      "EMPNO",
+      "ENAME",
+      "DEPTNO",
+      "DNAME",
+      "LOC"
+    ],
+    "rows": [
+      [
+        "7369",
+        "SMITH",
+        "20",
+        "RESEARCH",
+        "DALLAS"
+      ],
+      [
+        "7566",
+        "JONES",
+        "20",
+        "RESEARCH",
+        "DALLAS"
+      ],
+      [
+        "7788",
+        "SCOTT",
+        "20",
+        "RESEARCH",
+        "DALLAS"
+      ],
+      [
+        "7876",
+        "ADAMS",
+        "20",
+        "RESEARCH",
+        "DALLAS"
+      ],
+      [
+        "7902",
+        "FORD",
+        "20",
+        "RESEARCH",
+        "DALLAS"
+      ]
+    ]
+  },
+  "note-w2d3-1": {
+    "columns": [
+      "DEPTNO",
+      "DNAME",
+      "EMP_CNT",
+      "SAL_SUM"
+    ],
+    "rows": [
+      [
+        "10",
+        "ACCOUNTING",
+        "3",
+        "8750"
+      ],
+      [
+        "20",
+        "RESEARCH",
+        "5",
+        "10875"
+      ],
+      [
+        "30",
+        "SALES",
+        "6",
+        "9400"
+      ],
+      [
+        "40",
+        "OPERATIONS",
+        "0",
+        ""
+      ]
+    ]
+  },
+  "note-w2d4-1": {
+    "columns": [
+      "DEPTNO",
+      "DNAME",
+      "EMP_CNT",
+      "SAL_SUM"
+    ],
+    "rows": [
+      [
+        "10",
+        "ACCOUNTING",
+        "3",
+        "8750"
+      ],
+      [
+        "20",
+        "RESEARCH",
+        "5",
+        "10875"
+      ],
+      [
+        "30",
+        "SALES",
+        "6",
+        "9400"
+      ],
+      [
+        "40",
+        "OPERATIONS",
+        "0",
+        ""
+      ]
+    ]
+  },
+  "note-w2d4-2": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "GRADE"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "2450",
+        "4"
+      ],
+      [
+        "KING",
+        "5000",
+        "5"
+      ],
+      [
+        "MILLER",
+        "1300",
+        "2"
+      ]
+    ]
+  },
+  "note-w2d4-3": {
+    "columns": [
+      "EMPNO",
+      "ENAME",
+      "MGR",
+      "MGR_NAME"
+    ],
+    "rows": [
+      [
+        "7782",
+        "CLARK",
+        "7839",
+        "KING"
+      ],
+      [
+        "7839",
+        "KING",
+        "",
+        ""
+      ],
+      [
+        "7934",
+        "MILLER",
+        "7782",
+        "CLARK"
+      ]
+    ]
+  },
+  "note-w2d5-1": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "COMM",
+      "TOTAL",
+      "TOTAL2"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "1600",
+        "300",
+        "1900",
+        "1900"
+      ],
+      [
+        "WARD",
+        "1250",
+        "500",
+        "1750",
+        "1750"
+      ],
+      [
+        "MARTIN",
+        "1250",
+        "1400",
+        "2650",
+        "2650"
+      ],
+      [
+        "BLAKE",
+        "2850",
+        "",
+        "",
+        "2850"
+      ],
+      [
+        "TURNER",
+        "1500",
+        "0",
+        "1500",
+        "1500"
+      ],
+      [
+        "JAMES",
+        "950",
+        "",
+        "",
+        "950"
+      ]
+    ]
+  },
+  "note-w2d5-2": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "note-w2d5-3": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "10"
+      ]
+    ]
+  },
+  "note-w2d5-4": {
+    "columns": [
+      "ENAME",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "300"
+      ],
+      [
+        "WARD",
+        "500"
+      ],
+      [
+        "MARTIN",
+        "1400"
+      ]
+    ]
+  },
+  "note-w2d5-5": {
+    "columns": [
+      "CNT",
+      "COMM_CNT",
+      "COMM_SUM",
+      "COMM_AVG",
+      "COMM_AVG2"
+    ],
+    "rows": [
+      [
+        "14",
+        "4",
+        "2200",
+        "550",
+        "157.142857"
+      ]
+    ]
+  },
+  "note-w2d5-6": {
+    "columns": [
+      "DEPTNO",
+      "COUNT(*)",
+      "COUNT(COMM)",
+      "SUM(COMM)",
+      "AVG(COMM)"
+    ],
+    "rows": [
+      [
+        "10",
+        "3",
+        "0",
+        "",
+        ""
+      ],
+      [
+        "20",
+        "5",
+        "0",
+        "",
+        ""
+      ],
+      [
+        "30",
+        "6",
+        "4",
+        "2200",
+        "550"
+      ]
+    ]
+  },
+  "note-w2d5-7": {
+    "columns": [
+      "ENAME",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "TURNER",
+        "0"
+      ],
+      [
+        "ALLEN",
+        "300"
+      ],
+      [
+        "WARD",
+        "500"
+      ],
+      [
+        "MARTIN",
+        "1400"
+      ],
+      [
+        "BLAKE",
+        ""
+      ],
+      [
+        "JAMES",
+        ""
+      ]
+    ]
+  },
+  "note-w2d5-8": {
+    "error": "ORA-00942",
+    "message": "table or view \"SCOTT\".\"T_ITEM_SURR\" does not exist"
+  },
+  "note-w3d1-1": {
+    "columns": [
+      "DEPTNO",
+      "DNAME",
+      "LOC"
+    ],
+    "rows": [
+      [
+        "10",
+        "ACCOUNTING",
+        "NEW YORK"
+      ],
+      [
+        "20",
+        "RESEARCH",
+        "DALLAS"
+      ],
+      [
+        "30",
+        "SALES",
+        "CHICAGO"
+      ],
+      [
+        "40",
+        "OPERATIONS",
+        "BOSTON"
+      ]
+    ]
+  },
+  "note-w3d1-2": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "ANNUAL"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "2450",
+        "29400"
+      ],
+      [
+        "KING",
+        "5000",
+        "60000"
+      ],
+      [
+        "MILLER",
+        "1300",
+        "15600"
+      ]
+    ]
+  },
+  "note-w3d1-3": {
+    "columns": [
+      "사원 이름",
+      "월급",
+      "연봉"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "2450",
+        "29400"
+      ],
+      [
+        "KING",
+        "5000",
+        "60000"
+      ],
+      [
+        "MILLER",
+        "1300",
+        "15600"
+      ]
+    ]
+  },
+  "note-w3d1-4": {
+    "error": "ORA-00923",
+    "message": "FROM keyword not found where expected"
+  },
+  "note-w3d1-5": {
+    "error": "ORA-00904",
+    "message": "\"급여\": invalid identifier"
+  },
+  "note-w3d1-6": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ANALYST"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "MANAGER"
+      ],
+      [
+        "PRESIDENT"
+      ],
+      [
+        "SALESMAN"
+      ]
+    ]
+  },
+  "note-w3d1-7": {
+    "columns": [
+      "DEPTNO",
+      "JOB"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK"
+      ],
+      [
+        "10",
+        "MANAGER"
+      ],
+      [
+        "10",
+        "PRESIDENT"
+      ],
+      [
+        "20",
+        "ANALYST"
+      ],
+      [
+        "20",
+        "CLERK"
+      ],
+      [
+        "20",
+        "MANAGER"
+      ],
+      [
+        "30",
+        "CLERK"
+      ],
+      [
+        "30",
+        "MANAGER"
+      ],
+      [
+        "30",
+        "SALESMAN"
+      ]
+    ]
+  },
+  "note-w3d1-8": {
+    "columns": [
+      "COMM"
+    ],
+    "rows": [
+      [
+        ""
+      ],
+      [
+        "1400"
+      ],
+      [
+        "500"
+      ],
+      [
+        "300"
+      ],
+      [
+        "0"
+      ]
+    ]
+  },
+  "note-w3d1-9": {
+    "columns": [
+      "ENAME",
+      "SAL+100*2",
+      "(SAL+100)*2"
+    ],
+    "rows": [
+      [
+        "SMITH",
+        "1000",
+        "1800"
+      ]
+    ]
+  },
+  "note-w3d1-10": {
+    "columns": [
+      "INTRO"
+    ],
+    "rows": [
+      [
+        "CLARK의 직무는 MANAGER이다"
+      ],
+      [
+        "KING의 직무는 PRESIDENT이다"
+      ],
+      [
+        "MILLER의 직무는 CLERK이다"
+      ]
+    ]
+  },
+  "note-w3d1-11": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "COMM",
+      "SAL+COMM",
+      "ANNUAL"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "1600",
+        "300",
+        "1900",
+        "19500"
+      ],
+      [
+        "WARD",
+        "1250",
+        "500",
+        "1750",
+        "15500"
+      ],
+      [
+        "MARTIN",
+        "1250",
+        "1400",
+        "2650",
+        "16400"
+      ],
+      [
+        "BLAKE",
+        "2850",
+        "",
+        "",
+        ""
+      ],
+      [
+        "TURNER",
+        "1500",
+        "0",
+        "1500",
+        "18000"
+      ],
+      [
+        "JAMES",
+        "950",
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  "note-w3d1-12": {
+    "columns": [
+      "ENAME||NULL||JOB"
+    ],
+    "rows": [
+      [
+        "KINGPRESIDENT"
+      ]
+    ]
+  },
+  "note-w3d2-1": {
+    "error": "ORA-00937",
+    "message": "not a single-group group function"
+  },
+  "note-w3d2-2": {
+    "columns": [
+      "ENAME",
+      "LOW",
+      "CAP"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "clark",
+        "Clark"
+      ],
+      [
+        "KING",
+        "king",
+        "King"
+      ],
+      [
+        "MILLER",
+        "miller",
+        "Miller"
+      ]
+    ]
+  },
+  "note-w3d2-3": {
+    "columns": [
+      "EJ"
+    ],
+    "rows": [
+      [
+        "CLARK - MANAGER"
+      ],
+      [
+        "KING - PRESIDENT"
+      ],
+      [
+        "MILLER - CLERK"
+      ]
+    ]
+  },
+  "note-w3d2-4": {
+    "columns": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "rows": [
+      [
+        "TABA",
+        "BASE",
+        "BA",
+        "DAT"
+      ]
+    ]
+  },
+  "note-w3d2-5": {
+    "columns": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "rows": [
+      [
+        "4",
+        "7",
+        "13",
+        "1"
+      ]
+    ]
+  },
+  "note-w3d2-6": {
+    "columns": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "rows": [
+      [
+        "2",
+        "4",
+        "6",
+        "0"
+      ]
+    ]
+  },
+  "note-w3d2-7": {
+    "columns": [
+      "L",
+      "R",
+      "T"
+    ],
+    "rows": [
+      [
+        "[SQL  ]",
+        "[  SQL]",
+        "[SQL]"
+      ]
+    ]
+  },
+  "note-w3d2-8": {
+    "columns": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "rows": [
+      [
+        "SQLxx",
+        "xxSQL",
+        "SQL",
+        "SQLxx"
+      ]
+    ]
+  },
+  "note-w3d2-9": {
+    "error": "ORA-30001",
+    "message": "trim set should have only one character"
+  },
+  "note-w3d2-10": {
+    "columns": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "rows": [
+      [
+        "***SQL",
+        "SQL---",
+        "DATA",
+        "007"
+      ]
+    ]
+  },
+  "note-w3d2-11": {
+    "columns": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "rows": [
+      [
+        "65",
+        "97",
+        "A",
+        "a",
+        "65"
+      ]
+    ]
+  },
+  "note-w3d2-12": {
+    "columns": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "rows": [
+      [
+        "1200",
+        "1200",
+        "1300",
+        "1230"
+      ]
+    ]
+  },
+  "note-w3d2-13": {
+    "columns": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "rows": [
+      [
+        "-3",
+        "-2",
+        "-2",
+        "-3"
+      ]
+    ]
+  },
+  "note-w3d2-14": {
+    "columns": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "rows": [
+      [
+        "1",
+        "-1",
+        "1",
+        "10",
+        "1.5"
+      ]
+    ]
+  },
+  "note-w3d2-15": {
+    "error": "ORA-00904",
+    "message": "\"LEN\": invalid identifier"
+  },
+  "note-w3d3-1": {
+    "columns": [
+      "A",
+      "B",
+      "C"
+    ],
+    "rows": [
+      [
+        "2026-11-10",
+        "2026-10-31",
+        "52"
+      ]
+    ]
+  },
+  "note-w3d3-2": {
+    "error": "ORA-00975",
+    "message": "date + date not allowed"
+  },
+  "note-w3d3-3": {
+    "columns": [
+      "PLAIN",
+      "FULL_TIME"
+    ],
+    "rows": [
+      [
+        "2026-11-03",
+        "2026-11-03 01:00:00"
+      ]
+    ]
+  },
+  "note-w3d3-4": {
+    "columns": [
+      "A",
+      "B",
+      "C"
+    ],
+    "rows": [
+      [
+        "2026-02-28",
+        "2026-08-03",
+        "2026-03-31"
+      ]
+    ]
+  },
+  "note-w3d3-5": {
+    "columns": [
+      "A",
+      "B",
+      "C"
+    ],
+    "rows": [
+      [
+        "3",
+        "-3",
+        ".483870968"
+      ]
+    ]
+  },
+  "note-w3d3-6": {
+    "columns": [
+      "A",
+      "B",
+      "C"
+    ],
+    "rows": [
+      [
+        "2026-02-28",
+        "2028-02-29",
+        "2026-11-06"
+      ]
+    ]
+  },
+  "note-w3d3-7": {
+    "columns": [
+      "ENAME",
+      "HIREDATE",
+      "Y",
+      "M"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "1981-06-09",
+        "1981",
+        "6"
+      ],
+      [
+        "KING",
+        "1981-11-17",
+        "1981",
+        "11"
+      ],
+      [
+        "MILLER",
+        "1982-01-23",
+        "1982",
+        "1"
+      ]
+    ]
+  },
+  "note-w3d3-8": {
+    "columns": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "rows": [
+      [
+        "2026-11-01",
+        "2026-01-01",
+        "2026-11-01",
+        "2026-12-01",
+        "2027-01-01"
+      ]
+    ]
+  },
+  "note-w3d3-9": {
+    "columns": [
+      "A",
+      "B"
+    ],
+    "rows": [
+      [
+        "2026-11-03 14:35",
+        "2026-11-03 00:00"
+      ]
+    ]
+  },
+  "note-w3d3-10": {
+    "columns": [
+      "ENAME",
+      "HIREDATE",
+      "YEARS",
+      "PROBATION",
+      "FIRST_PAY"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "1981-06-09",
+        "45",
+        "1981-12-09",
+        "1981-06-30"
+      ],
+      [
+        "KING",
+        "1981-11-17",
+        "44",
+        "1982-05-17",
+        "1981-11-30"
+      ],
+      [
+        "MILLER",
+        "1982-01-23",
+        "44",
+        "1982-07-23",
+        "1982-01-31"
+      ]
+    ]
+  },
+  "note-w3d3-11": {
+    "columns": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "rows": [
+      [
+        "2026년 11월 03일",
+        "TUESDAY  ",
+        "TUE",
+        "4"
+      ]
+    ]
+  },
+  "note-w3d3-12": {
+    "columns": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "rows": [
+      [
+        " 1,234,567.89",
+        "########",
+        " 0042",
+        " $1,234.50"
+      ]
+    ]
+  },
+  "note-w3d3-13": {
+    "columns": [
+      "A",
+      "B",
+      "C"
+    ],
+    "rows": [
+      [
+        "2026-11-03",
+        "2026-11-03",
+        "1235"
+      ]
+    ]
+  },
+  "note-w3d3-14": {
+    "error": "ORA-01843",
+    "message": "An invalid month was specified."
+  },
+  "note-w3d3-15": {
+    "columns": [
+      "A",
+      "B",
+      "C"
+    ],
+    "rows": [
+      [
+        "15",
+        "105",
+        "12"
+      ]
+    ]
+  },
+  "note-w3d3-16": {
+    "columns": [
+      "ENAME",
+      "HIREDATE"
+    ],
+    "rows": [
+      [
+        "JAMES",
+        "1981-12-03"
+      ],
+      [
+        "FORD",
+        "1981-12-03"
+      ]
+    ]
+  },
+  "note-w3d3-17": {
+    "error": "ORA-01858",
+    "message": "A non-numeric character was found instead of a numeric character."
+  },
+  "note-w3d4-1": {
+    "columns": [
+      "ENAME",
+      "COMM",
+      "C0",
+      "S1",
+      "S2"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "300",
+        "300",
+        "1900",
+        "1900"
+      ],
+      [
+        "WARD",
+        "500",
+        "500",
+        "1750",
+        "1750"
+      ],
+      [
+        "MARTIN",
+        "1400",
+        "1400",
+        "2650",
+        "2650"
+      ],
+      [
+        "BLAKE",
+        "",
+        "0",
+        "",
+        "2850"
+      ],
+      [
+        "TURNER",
+        "0",
+        "0",
+        "1500",
+        "1500"
+      ],
+      [
+        "JAMES",
+        "",
+        "0",
+        "",
+        "950"
+      ]
+    ]
+  },
+  "note-w3d4-2": {
+    "error": "ORA-01722",
+    "message": "unable to convert string value containing 'N' to a number:"
+  },
+  "note-w3d4-3": {
+    "columns": [
+      "ENAME",
+      "COMM",
+      "FLAG",
+      "PAY"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "300",
+        "수당있음",
+        "1900"
+      ],
+      [
+        "WARD",
+        "500",
+        "수당있음",
+        "1750"
+      ],
+      [
+        "MARTIN",
+        "1400",
+        "수당있음",
+        "2650"
+      ],
+      [
+        "BLAKE",
+        "",
+        "수당없음",
+        "2850"
+      ],
+      [
+        "TURNER",
+        "0",
+        "수당있음",
+        "1500"
+      ],
+      [
+        "JAMES",
+        "",
+        "수당없음",
+        "950"
+      ]
+    ]
+  },
+  "note-w3d4-4": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "N"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "1600",
+        "1600"
+      ],
+      [
+        "WARD",
+        "1250",
+        ""
+      ],
+      [
+        "MARTIN",
+        "1250",
+        ""
+      ],
+      [
+        "BLAKE",
+        "2850",
+        "2850"
+      ],
+      [
+        "TURNER",
+        "1500",
+        "1500"
+      ],
+      [
+        "JAMES",
+        "950",
+        "950"
+      ]
+    ]
+  },
+  "note-w3d4-5": {
+    "columns": [
+      "ENAME",
+      "COMM",
+      "MGR",
+      "C"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "300",
+        "7698",
+        "300"
+      ],
+      [
+        "WARD",
+        "500",
+        "7698",
+        "500"
+      ],
+      [
+        "MARTIN",
+        "1400",
+        "7698",
+        "1400"
+      ],
+      [
+        "BLAKE",
+        "",
+        "7839",
+        "7839"
+      ],
+      [
+        "CLARK",
+        "",
+        "7839",
+        "7839"
+      ],
+      [
+        "KING",
+        "",
+        "",
+        "0"
+      ],
+      [
+        "TURNER",
+        "0",
+        "7698",
+        "0"
+      ],
+      [
+        "JAMES",
+        "",
+        "7698",
+        "7698"
+      ],
+      [
+        "MILLER",
+        "",
+        "7782",
+        "7782"
+      ]
+    ]
+  },
+  "note-w3d4-6": {
+    "columns": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "rows": [
+      [
+        "4",
+        "14",
+        "2200",
+        "550",
+        "157.142857"
+      ]
+    ]
+  },
+  "note-w3d4-7": {
+    "columns": [
+      "ENAME",
+      "DEPTNO",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "JONES",
+        "20",
+        "RESEARCH"
+      ],
+      [
+        "BLAKE",
+        "30",
+        "ETC"
+      ],
+      [
+        "CLARK",
+        "10",
+        "ACCOUNTING"
+      ]
+    ]
+  },
+  "note-w3d4-8": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "GRADE"
+    ],
+    "rows": [
+      [
+        "SMITH",
+        "800",
+        "LOW"
+      ],
+      [
+        "JONES",
+        "2975",
+        "MID"
+      ],
+      [
+        "SCOTT",
+        "3000",
+        "HIGH"
+      ],
+      [
+        "ADAMS",
+        "1100",
+        "LOW"
+      ],
+      [
+        "FORD",
+        "3000",
+        "HIGH"
+      ]
+    ]
+  },
+  "note-w3d4-9": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "GRADE"
+    ],
+    "rows": [
+      [
+        "SMITH",
+        "800",
+        "LOW"
+      ],
+      [
+        "JONES",
+        "2975",
+        "MID"
+      ],
+      [
+        "SCOTT",
+        "3000",
+        "MID"
+      ],
+      [
+        "ADAMS",
+        "1100",
+        "LOW"
+      ],
+      [
+        "FORD",
+        "3000",
+        "MID"
+      ]
+    ]
+  },
+  "note-w3d4-10": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "RAISE"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "2450",
+        "2695"
+      ],
+      [
+        "KING",
+        "5000",
+        "5500"
+      ],
+      [
+        "MILLER",
+        "1300",
+        ""
+      ]
+    ]
+  },
+  "note-w3d4-11": {
+    "error": "ORA-00932",
+    "message": "expression (2) is of data type NUMBER, which is incompatible with expected data type CHAR"
+  },
+  "note-w3d4-12": {
+    "columns": [
+      "ENAME",
+      "DEPTNO",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "JONES",
+        "20",
+        "RESEARCH"
+      ],
+      [
+        "BLAKE",
+        "30",
+        "ETC"
+      ],
+      [
+        "CLARK",
+        "10",
+        "ACCOUNTING"
+      ]
+    ]
+  },
+  "note-w3d4-13": {
+    "columns": [
+      "ENAME",
+      "COMM",
+      "D",
+      "C"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "300",
+        "값있음",
+        "값있음"
+      ],
+      [
+        "WARD",
+        "500",
+        "값있음",
+        "값있음"
+      ],
+      [
+        "MARTIN",
+        "1400",
+        "값있음",
+        "값있음"
+      ],
+      [
+        "BLAKE",
+        "",
+        "NULL임",
+        "값있음"
+      ],
+      [
+        "TURNER",
+        "0",
+        "값있음",
+        "값있음"
+      ],
+      [
+        "JAMES",
+        "",
+        "NULL임",
+        "값있음"
+      ]
+    ]
+  },
+  "note-w3d4-14": {
+    "columns": [
+      "E",
+      "N"
+    ],
+    "rows": [
+      [
+        "NULL",
+        "EMPTY"
+      ]
+    ]
+  },
+  "note-w3d5-1": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "SCOTT",
+        "3000"
+      ],
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "FORD",
+        "3000"
+      ]
+    ]
+  },
+  "note-w3d5-2": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "note-w3d5-3": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "1600"
+      ],
+      [
+        "WARD",
+        "1250"
+      ],
+      [
+        "MARTIN",
+        "1250"
+      ],
+      [
+        "TURNER",
+        "1500"
+      ],
+      [
+        "MILLER",
+        "1300"
+      ]
+    ]
+  },
+  "note-w3d5-4": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "note-w3d5-5": {
+    "columns": [
+      "ENAME",
+      "DEPTNO"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "10"
+      ],
+      [
+        "KING",
+        "10"
+      ],
+      [
+        "MILLER",
+        "10"
+      ]
+    ]
+  },
+  "note-w3d5-6": {
+    "columns": [
+      "ENAME",
+      "JOB",
+      "DEPTNO"
+    ],
+    "rows": [
+      [
+        "JONES",
+        "MANAGER",
+        "20"
+      ],
+      [
+        "JAMES",
+        "CLERK",
+        "30"
+      ]
+    ]
+  },
+  "note-w3d5-7": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "WARD"
+      ],
+      [
+        "MARTIN"
+      ],
+      [
+        "JAMES"
+      ]
+    ]
+  },
+  "note-w3d5-8": {
+    "columns": [
+      "R"
+    ],
+    "rows": [
+      [
+        "OK"
+      ]
+    ]
+  },
+  "note-w3d5-9": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "note-w3d5-10": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "note-w3d5-11": {
+    "columns": [
+      "ENAME",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "300"
+      ],
+      [
+        "WARD",
+        "500"
+      ],
+      [
+        "MARTIN",
+        "1400"
+      ],
+      [
+        "TURNER",
+        "0"
+      ]
+    ]
+  },
+  "note-w3d5-12": {
+    "columns": [
+      "ENAME",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "WARD",
+        "500"
+      ],
+      [
+        "MARTIN",
+        "1400"
+      ],
+      [
+        "TURNER",
+        "0"
+      ]
+    ]
+  },
+  "note-w3d5-13": {
+    "columns": [
+      "ENAME",
+      "JOB",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "SALESMAN",
+        "1600"
+      ],
+      [
+        "WARD",
+        "SALESMAN",
+        "1250"
+      ],
+      [
+        "JONES",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "MARTIN",
+        "SALESMAN",
+        "1250"
+      ],
+      [
+        "TURNER",
+        "SALESMAN",
+        "1500"
+      ]
+    ]
+  },
+  "note-w3d5-14": {
+    "columns": [
+      "ENAME",
+      "JOB",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "JONES",
+        "MANAGER",
+        "2975"
+      ]
+    ]
+  },
+  "note-w3d5-15": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "note-w3d5-16": {
+    "columns": [
+      "ENAME",
+      "MGR"
+    ],
+    "rows": [
+      [
+        "SCOTT",
+        "7566"
+      ],
+      [
+        "FORD",
+        "7566"
+      ]
+    ]
+  },
+  "note-w3d5-17": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "note-w3d5-18": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "8"
+      ]
+    ]
+  },
+  "note-w4d1-1": {
+    "columns": [
+      "SUM(SAL)",
+      "AVG(SAL)",
+      "MIN(SAL)",
+      "MAX(SAL)"
+    ],
+    "rows": [
+      [
+        "29025",
+        "2073.21429",
+        "800",
+        "5000"
+      ]
+    ]
+  },
+  "note-w4d1-2": {
+    "columns": [
+      "MIN(HIREDATE)",
+      "MAX(HIREDATE)",
+      "MIN(ENAME)",
+      "MAX(ENAME)"
+    ],
+    "rows": [
+      [
+        "1980-12-17",
+        "1987-05-23",
+        "ADAMS",
+        "WARD"
+      ]
+    ]
+  },
+  "note-w4d1-3": {
+    "columns": [
+      "SD",
+      "VAR"
+    ],
+    "rows": [
+      [
+        "1182.5",
+        "1398313.87"
+      ]
+    ]
+  },
+  "note-w4d1-4": {
+    "columns": [
+      "COUNT(*)",
+      "COUNT(COMM)",
+      "COUNT(DISTINCTJOB)",
+      "COUNT(MGR)"
+    ],
+    "rows": [
+      [
+        "14",
+        "4",
+        "5",
+        "13"
+      ]
+    ]
+  },
+  "note-w4d1-5": {
+    "columns": [
+      "M1",
+      "M2"
+    ],
+    "rows": [
+      [
+        "6",
+        "13"
+      ]
+    ]
+  },
+  "note-w4d1-6": {
+    "columns": [
+      "AVG(COMM)",
+      "AVG(NVL(COMM,0))",
+      "SUM(COMM)",
+      "COUNT(COMM)"
+    ],
+    "rows": [
+      [
+        "550",
+        "157.142857",
+        "2200",
+        "4"
+      ]
+    ]
+  },
+  "note-w4d1-7": {
+    "columns": [
+      "SUM(SAL+COMM)",
+      "SUM(SAL)+SUM(COMM)"
+    ],
+    "rows": [
+      [
+        "7800",
+        "31225"
+      ]
+    ]
+  },
+  "note-w4d1-8": {
+    "columns": [
+      "CNT",
+      "TOTAL"
+    ],
+    "rows": [
+      [
+        "0",
+        ""
+      ]
+    ]
+  },
+  "note-w4d1-9": {
+    "columns": null,
+    "rows": []
+  },
+  "note-w4d1-10": {
+    "columns": [
+      "DEPTNO",
+      "COUNT(*)",
+      "SUM(SAL)",
+      "AVG_SAL"
+    ],
+    "rows": [
+      [
+        "10",
+        "3",
+        "8750",
+        "2917"
+      ],
+      [
+        "20",
+        "5",
+        "10875",
+        "2175"
+      ],
+      [
+        "30",
+        "6",
+        "9400",
+        "1567"
+      ]
+    ]
+  },
+  "note-w4d1-11": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "CNT",
+      "SUM_SAL"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "1",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "1",
+        "5000"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "2",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "2",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "1",
+        "2975"
+      ],
+      [
+        "30",
+        "CLERK",
+        "1",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "1",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "4",
+        "5600"
+      ]
+    ]
+  },
+  "note-w4d1-12": {
+    "error": "ORA-00979",
+    "message": "\"ENAME\": must appear in the GROUP BY clause or be used in an aggregate function"
+  },
+  "note-w4d1-13": {
+    "error": "ORA-00937",
+    "message": "not a single-group group function"
+  },
+  "note-w4d1-14": {
+    "columns": [
+      "MAX(COUNT(*))"
+    ],
+    "rows": [
+      [
+        "6"
+      ]
+    ]
+  },
+  "note-w4d2-1": {
+    "error": "ORA-00934",
+    "message": "group function is not allowed here"
+  },
+  "note-w4d2-2": {
+    "columns": [
+      "DEPTNO",
+      "AVG_SAL"
+    ],
+    "rows": [
+      [
+        "10",
+        "2917"
+      ],
+      [
+        "20",
+        "2175"
+      ]
+    ]
+  },
+  "note-w4d2-3": {
+    "columns": [
+      "DEPTNO",
+      "MAX(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "5000"
+      ]
+    ]
+  },
+  "note-w4d2-4": {
+    "columns": [
+      "DEPTNO",
+      "CNT"
+    ],
+    "rows": [
+      [
+        "20",
+        "5"
+      ],
+      [
+        "30",
+        "6"
+      ]
+    ]
+  },
+  "note-w4d2-5": {
+    "columns": [
+      "DEPTNO",
+      "CNT"
+    ],
+    "rows": [
+      [
+        "10",
+        "2"
+      ],
+      [
+        "20",
+        "3"
+      ],
+      [
+        "30",
+        "3"
+      ]
+    ]
+  },
+  "note-w4d2-6": {
+    "columns": [
+      "DEPTNO",
+      "CNT"
+    ],
+    "rows": [
+      [
+        "20",
+        "3"
+      ],
+      [
+        "30",
+        "3"
+      ]
+    ]
+  },
+  "note-w4d2-7": {
+    "columns": [
+      "DEPTNO",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "10",
+        "3"
+      ],
+      [
+        "30",
+        "6"
+      ]
+    ]
+  },
+  "note-w4d2-8": {
+    "columns": [
+      "DEPTNO",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "10",
+        "3"
+      ],
+      [
+        "30",
+        "6"
+      ]
+    ]
+  },
+  "note-w4d2-9": {
+    "error": "ORA-00979",
+    "message": "\"ENAME\": must appear in the GROUP BY clause or be used in an aggregate function"
+  },
+  "note-w4d2-10": {
+    "columns": [
+      "DEPTNO"
+    ],
+    "rows": [
+      [
+        "10"
+      ],
+      [
+        "20"
+      ]
+    ]
+  },
+  "note-w4d2-11": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "14"
+      ]
+    ]
+  },
+  "note-w4d2-12": {
+    "columns": null,
+    "rows": []
+  },
+  "note-w4d2-13": {
+    "error": "ORA-00904",
+    "message": "\"ANNUAL\": invalid identifier"
+  },
+  "note-w4d2-14": {
+    "columns": [
+      "ENAME",
+      "ANNUAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "60000"
+      ],
+      [
+        "FORD",
+        "36000"
+      ],
+      [
+        "SCOTT",
+        "36000"
+      ],
+      [
+        "JONES",
+        "35700"
+      ],
+      [
+        "BLAKE",
+        "34200"
+      ]
+    ]
+  },
+  "note-w4d2-15": {
+    "columns": [
+      "DEPTNO",
+      "CNT"
+    ],
+    "rows": [
+      [
+        "20",
+        "5"
+      ],
+      [
+        "30",
+        "6"
+      ]
+    ]
+  },
+  "note-w4d2-16": {
+    "columns": [
+      "JOB",
+      "TOTAL"
+    ],
+    "rows": [
+      [
+        "MANAGER",
+        "8275"
+      ],
+      [
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "SALESMAN",
+        "5600"
+      ]
+    ]
+  },
+  "note-w4d3-1": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "SMITH",
+        "800"
+      ],
+      [
+        "ADAMS",
+        "1100"
+      ],
+      [
+        "JONES",
+        "2975"
+      ],
+      [
+        "FORD",
+        "3000"
+      ],
+      [
+        "SCOTT",
+        "3000"
+      ]
+    ]
+  },
+  "note-w4d3-2": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "SCOTT",
+        "3000"
+      ],
+      [
+        "FORD",
+        "3000"
+      ],
+      [
+        "JONES",
+        "2975"
+      ],
+      [
+        "ADAMS",
+        "1100"
+      ],
+      [
+        "SMITH",
+        "800"
+      ]
+    ]
+  },
+  "note-w4d3-3": {
+    "columns": [
+      "ENAME",
+      "ANNUAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "60000"
+      ],
+      [
+        "CLARK",
+        "29400"
+      ],
+      [
+        "MILLER",
+        "15600"
+      ]
+    ]
+  },
+  "note-w4d3-4": {
+    "columns": [
+      "ENAME",
+      "JOB",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "CLARK",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "MILLER",
+        "CLERK",
+        "1300"
+      ]
+    ]
+  },
+  "note-w4d3-5": {
+    "error": "ORA-01785",
+    "message": "ORDER BY item must be the number of a SELECT-list expression"
+  },
+  "note-w4d3-6": {
+    "columns": [
+      "Name",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "2450"
+      ],
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "MILLER",
+        "1300"
+      ]
+    ]
+  },
+  "note-w4d3-7": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "FORD",
+        "3000"
+      ],
+      [
+        "SCOTT",
+        "3000"
+      ],
+      [
+        "JONES",
+        "2975"
+      ],
+      [
+        "ADAMS",
+        "1100"
+      ],
+      [
+        "SMITH",
+        "800"
+      ]
+    ]
+  },
+  "note-w4d3-8": {
+    "columns": [
+      "ENAME",
+      "DEPTNO",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "10",
+        "2450"
+      ],
+      [
+        "MILLER",
+        "10",
+        "1300"
+      ],
+      [
+        "JONES",
+        "20",
+        "2975"
+      ],
+      [
+        "ADAMS",
+        "20",
+        "1100"
+      ],
+      [
+        "SMITH",
+        "20",
+        "800"
+      ],
+      [
+        "BLAKE",
+        "30",
+        "2850"
+      ],
+      [
+        "JAMES",
+        "30",
+        "950"
+      ]
+    ]
+  },
+  "note-w4d3-9": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "MILLER",
+        "1300"
+      ],
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "CLARK",
+        "2450"
+      ]
+    ]
+  },
+  "note-w4d3-10": {
+    "columns": [
+      "ENAME",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "TURNER",
+        "0"
+      ],
+      [
+        "ALLEN",
+        "300"
+      ],
+      [
+        "WARD",
+        "500"
+      ],
+      [
+        "MARTIN",
+        "1400"
+      ],
+      [
+        "BLAKE",
+        ""
+      ],
+      [
+        "JAMES",
+        ""
+      ]
+    ]
+  },
+  "note-w4d3-11": {
+    "columns": [
+      "ENAME",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "BLAKE",
+        ""
+      ],
+      [
+        "JAMES",
+        ""
+      ],
+      [
+        "MARTIN",
+        "1400"
+      ],
+      [
+        "WARD",
+        "500"
+      ],
+      [
+        "ALLEN",
+        "300"
+      ],
+      [
+        "TURNER",
+        "0"
+      ]
+    ]
+  },
+  "note-w4d3-12": {
+    "columns": [
+      "ENAME",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "BLAKE",
+        ""
+      ],
+      [
+        "JAMES",
+        ""
+      ],
+      [
+        "TURNER",
+        "0"
+      ],
+      [
+        "ALLEN",
+        "300"
+      ],
+      [
+        "WARD",
+        "500"
+      ],
+      [
+        "MARTIN",
+        "1400"
+      ]
+    ]
+  },
+  "note-w4d3-13": {
+    "columns": [
+      "ENAME",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "MARTIN",
+        "1400"
+      ],
+      [
+        "WARD",
+        "500"
+      ],
+      [
+        "ALLEN",
+        "300"
+      ],
+      [
+        "TURNER",
+        "0"
+      ],
+      [
+        "BLAKE",
+        ""
+      ],
+      [
+        "JAMES",
+        ""
+      ]
+    ]
+  },
+  "note-w4d3-14": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "KING"
+      ],
+      [
+        "CLARK"
+      ],
+      [
+        "MILLER"
+      ]
+    ]
+  },
+  "note-w4d3-15": {
+    "error": "ORA-01791",
+    "message": "not a SELECTed expression"
+  },
+  "note-w4d3-16": {
+    "error": "ORA-00979",
+    "message": "\"SAL\": must appear in the GROUP BY clause or be used in an aggregate function"
+  },
+  "note-w4d3-17": {
+    "columns": [
+      "DEPTNO",
+      "CNT"
+    ],
+    "rows": [
+      [
+        "10",
+        "3"
+      ],
+      [
+        "20",
+        "5"
+      ],
+      [
+        "30",
+        "6"
+      ]
+    ]
+  },
+  "note-w4d4-1": {
+    "columns": [
+      "ENAME",
+      "DEPTNO",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "10",
+        "ACCOUNTING"
+      ],
+      [
+        "KING",
+        "10",
+        "ACCOUNTING"
+      ],
+      [
+        "MILLER",
+        "10",
+        "ACCOUNTING"
+      ]
+    ]
+  },
+  "note-w4d4-2": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "14"
+      ]
+    ]
+  },
+  "note-w4d4-3": {
+    "error": "ORA-00918",
+    "message": "DEPTNO: column ambiguously specified - appears in DEPT and EMP"
+  },
+  "note-w4d4-4": {
+    "error": "ORA-00904",
+    "message": "\"EMP\".\"ENAME\": invalid identifier"
+  },
+  "note-w4d4-5": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "56"
+      ]
+    ]
+  },
+  "note-w4d4-6": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "70"
+      ]
+    ]
+  },
+  "note-w4d4-7": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "70"
+      ]
+    ]
+  },
+  "note-w4d4-8": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "GRADE"
+    ],
+    "rows": [
+      [
+        "JAMES",
+        "950",
+        "1"
+      ],
+      [
+        "MARTIN",
+        "1250",
+        "2"
+      ],
+      [
+        "WARD",
+        "1250",
+        "2"
+      ],
+      [
+        "ALLEN",
+        "1600",
+        "3"
+      ],
+      [
+        "TURNER",
+        "1500",
+        "3"
+      ],
+      [
+        "BLAKE",
+        "2850",
+        "4"
+      ]
+    ]
+  },
+  "note-w4d4-9": {
+    "columns": [
+      "GRADE",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "1",
+        "3"
+      ],
+      [
+        "2",
+        "3"
+      ],
+      [
+        "3",
+        "2"
+      ],
+      [
+        "4",
+        "5"
+      ],
+      [
+        "5",
+        "1"
+      ]
+    ]
+  },
+  "note-w4d4-10": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "42"
+      ]
+    ]
+  },
+  "note-w4d4-11": {
+    "columns": [
+      "ENAME",
+      "DNAME",
+      "GRADE"
+    ],
+    "rows": [
+      [
+        "BLAKE",
+        "SALES",
+        "4"
+      ],
+      [
+        "CLARK",
+        "ACCOUNTING",
+        "4"
+      ],
+      [
+        "JONES",
+        "RESEARCH",
+        "4"
+      ]
+    ]
+  },
+  "note-w4d4-12": {
+    "columns": [
+      "DEPTNO",
+      "DNAME",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "10",
+        "ACCOUNTING",
+        "CLARK"
+      ],
+      [
+        "10",
+        "ACCOUNTING",
+        "KING"
+      ],
+      [
+        "10",
+        "ACCOUNTING",
+        "MILLER"
+      ],
+      [
+        "40",
+        "OPERATIONS",
+        ""
+      ]
+    ]
+  },
+  "note-w4d4-13": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "15"
+      ]
+    ]
+  },
+  "note-w4d4-14": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "14"
+      ]
+    ]
+  },
+  "note-w4d4-15": {
+    "columns": [
+      "DEPTNO",
+      "CNT",
+      "ROWS_"
+    ],
+    "rows": [
+      [
+        "10",
+        "3",
+        "3"
+      ],
+      [
+        "20",
+        "5",
+        "5"
+      ],
+      [
+        "30",
+        "6",
+        "6"
+      ],
+      [
+        "40",
+        "0",
+        "1"
+      ]
+    ]
+  },
+  "note-w4d4-16": {
+    "columns": [
+      "DNAME",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "KING"
+      ],
+      [
+        "OPERATIONS",
+        ""
+      ],
+      [
+        "RESEARCH",
+        "FORD"
+      ],
+      [
+        "RESEARCH",
+        "JONES"
+      ],
+      [
+        "RESEARCH",
+        "SCOTT"
+      ],
+      [
+        "SALES",
+        ""
+      ]
+    ]
+  },
+  "note-w4d4-17": {
+    "columns": [
+      "DNAME",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "KING"
+      ],
+      [
+        "RESEARCH",
+        "FORD"
+      ],
+      [
+        "RESEARCH",
+        "JONES"
+      ],
+      [
+        "RESEARCH",
+        "SCOTT"
+      ]
+    ]
+  },
+  "note-w4d5-1": {
+    "columns": [
+      "ENAME",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "ACCOUNTING"
+      ],
+      [
+        "KING",
+        "ACCOUNTING"
+      ],
+      [
+        "MILLER",
+        "ACCOUNTING"
+      ]
+    ]
+  },
+  "note-w4d5-2": {
+    "error": "ORA-02000",
+    "message": "missing ON or USING keyword"
+  },
+  "note-w4d5-3": {
+    "columns": [
+      "ENAME",
+      "DEPTNO",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "10",
+        "ACCOUNTING"
+      ],
+      [
+        "KING",
+        "10",
+        "ACCOUNTING"
+      ],
+      [
+        "MILLER",
+        "10",
+        "ACCOUNTING"
+      ]
+    ]
+  },
+  "note-w4d5-4": {
+    "columns": [
+      "DEPTNO",
+      "DNAME",
+      "LOC",
+      "EMPNO",
+      "ENAME",
+      "JOB",
+      "MGR",
+      "HIREDATE",
+      "SAL",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "10",
+        "ACCOUNTING",
+        "NEW YORK",
+        "7839",
+        "KING",
+        "PRESIDENT",
+        "",
+        "1981-11-17",
+        "5000",
+        ""
+      ]
+    ]
+  },
+  "note-w4d5-5": {
+    "columns": [
+      "DEPTNO",
+      "DNAME",
+      "LOC",
+      "EMPNO",
+      "ENAME",
+      "JOB",
+      "MGR",
+      "HIREDATE",
+      "SAL",
+      "COMM",
+      "DEPTNO"
+    ],
+    "rows": [
+      [
+        "10",
+        "ACCOUNTING",
+        "NEW YORK",
+        "7839",
+        "KING",
+        "PRESIDENT",
+        "",
+        "1981-11-17",
+        "5000",
+        "",
+        "10"
+      ]
+    ]
+  },
+  "note-w4d5-6": {
+    "error": "ORA-25155",
+    "message": "column used in NATURAL join cannot have qualifier"
+  },
+  "note-w4d5-7": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "70"
+      ]
+    ]
+  },
+  "note-w4d5-8": {
+    "columns": [
+      "ENAME",
+      "DEPTNO",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "10",
+        "ACCOUNTING"
+      ],
+      [
+        "KING",
+        "10",
+        "ACCOUNTING"
+      ],
+      [
+        "MILLER",
+        "10",
+        "ACCOUNTING"
+      ]
+    ]
+  },
+  "note-w4d5-9": {
+    "error": "ORA-25154",
+    "message": "column part of USING clause cannot have qualifier"
+  },
+  "note-w4d5-10": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "56"
+      ]
+    ]
+  },
+  "note-w4d5-11": {
+    "error": "ORA-03048",
+    "message": "SQL reserved word 'ON' is not syntactically valid following '...(*) FROM EMP CROSS JOIN DEPT '"
+  },
+  "note-w4d5-12": {
+    "columns": [
+      "DEPTNO",
+      "DNAME",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "10",
+        "ACCOUNTING",
+        "CLARK"
+      ],
+      [
+        "10",
+        "ACCOUNTING",
+        "KING"
+      ],
+      [
+        "10",
+        "ACCOUNTING",
+        "MILLER"
+      ],
+      [
+        "40",
+        "OPERATIONS",
+        ""
+      ]
+    ]
+  },
+  "note-w4d5-13": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "15"
+      ]
+    ]
+  },
+  "note-w4d5-14": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "15"
+      ]
+    ]
+  },
+  "note-w4d5-15": {
+    "columns": [
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "OPERATIONS"
+      ]
+    ]
+  },
+  "note-w4d5-16": {
+    "error": "ORA-25156",
+    "message": "old style outer join (+) cannot be used with ANSI joins"
+  },
+  "note-w4d5-17": {
+    "columns": [
+      "DNAME",
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "KING",
+        "5000"
+      ],
+      [
+        "OPERATIONS",
+        "",
+        ""
+      ],
+      [
+        "RESEARCH",
+        "FORD",
+        "3000"
+      ],
+      [
+        "RESEARCH",
+        "SCOTT",
+        "3000"
+      ],
+      [
+        "SALES",
+        "",
+        ""
+      ]
+    ]
+  },
+  "note-w4d5-18": {
+    "columns": [
+      "DNAME",
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "KING",
+        "5000"
+      ],
+      [
+        "RESEARCH",
+        "FORD",
+        "3000"
+      ],
+      [
+        "RESEARCH",
+        "SCOTT",
+        "3000"
+      ]
+    ]
+  },
+  "note-w4d5-19": {
+    "columns": [
+      "DNAME",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "CLARK"
+      ],
+      [
+        "ACCOUNTING",
+        "KING"
+      ],
+      [
+        "ACCOUNTING",
+        "MILLER"
+      ],
+      [
+        "OPERATIONS",
+        ""
+      ],
+      [
+        "RESEARCH",
+        ""
+      ],
+      [
+        "SALES",
+        ""
+      ]
+    ]
+  },
+  "note-w4d5-20": {
+    "columns": [
+      "DNAME",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "CLARK"
+      ],
+      [
+        "ACCOUNTING",
+        "KING"
+      ],
+      [
+        "ACCOUNTING",
+        "MILLER"
+      ]
+    ]
+  },
+  "note-w4d5-21": {
+    "columns": [
+      "DNAME",
+      "CNT"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "3"
+      ],
+      [
+        "OPERATIONS",
+        "0"
+      ],
+      [
+        "RESEARCH",
+        "5"
+      ],
+      [
+        "SALES",
+        "6"
+      ]
+    ]
+  }
+}

@@ -140,7 +140,7 @@ export async function DayView({ category, slug, w, d, lang, content, locked, log
               certMeta={content.certMeta}
               lang={lang}
               examUrl={getExamInfo(slug)?.officialUrl ?? null}
-              services={content.certMeta.section === 'linux' ? [] : detectAwsServices(content.body)}
+              services={(content.certMeta.section ?? 'aws') !== 'aws' ? [] : detectAwsServices(content.body)}
             />
           )}
           {/* 학습을 마친 접점에서 시험일 등록(D-day·일일 분량)을 안내. 잠긴 페이지·영어판에선 생략(위젯이 한국어 전용). */}

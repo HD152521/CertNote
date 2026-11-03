@@ -118,6 +118,15 @@
       "weeks": 14,
       "order": 7,
       "section": "linux"
+    },
+    {
+      "slug": "sqld",
+      "code": "SQLD",
+      "level": "developer",
+      "name": "SQL 개발자 (SQLD)",
+      "weeks": 4,
+      "order": 13,
+      "section": "data"
     }
   ]
 }

@@ -69,6 +69,15 @@ async function main() {
     const slugs = await listDirs(categoryDir);
     for (const slug of slugs) {
       const slugDir = path.join(categoryDir, slug);
+      // 섹션은 meta.json 이 단일 출처다(예전엔 slug 하드코딩이라 linux-master-2 가 aws 로 찍혔다).
+      const section = await fs
+        .readFile(path.join(slugDir, 'meta.json'), 'utf8')
+        .then((t) => JSON.parse(t).section ?? 'aws')
+        .catch((e) => {
+          // meta.json 이 없는 폴더만 aws 로 본다. 깨진 meta.json 은 조용히 넘기지 않는다.
+          if (e.code === 'ENOENT') return 'aws';
+          throw e;
+        });
       const weeks = (await listDirs(slugDir)).filter((w) => /^week\d+$/.test(w));
       for (const weekName of weeks) {
         const week = Number.parseInt(weekName.slice(4), 10);
@@ -87,7 +96,7 @@ async function main() {
               id: `${slug}-w${week}-d${day}-q${index}`,
               category,
               slug,
-              section: slug === 'linux-master-1' ? 'linux' : 'aws', // P0-8: 섹션 스탬프
+              section, // P0-8: 섹션 스탬프
               week,
               day,
               number: q.number,

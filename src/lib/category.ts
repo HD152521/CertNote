@@ -11,10 +11,10 @@ export const EN_CATEGORY = 'en';
 // ── 섹션(주제) 축 — Phase1: URL/필터 뷰로 활성화 ─────────────────────────────
 // category(주제+언어 혼재)를 Section(주제) × Language(언어)로 분리한다. 공개 URL은 섹션 세그먼트
 // (/aws, /linux)를 쓰고, 콘텐츠는 물리 이동 없이 content/aws-certs/ 안에 공존한다(meta.section 필터).
-export type Section = 'aws' | 'kubernetes' | 'terraform' | 'linux';
+export type Section = 'aws' | 'kubernetes' | 'terraform' | 'linux' | 'data';
 
 // 현재 콘텐츠가 존재해 라우팅 활성인 섹션. kubernetes·terraform은 콘텐츠 투입(Phase3) 시 추가.
-export const SECTIONS: readonly Section[] = ['aws', 'linux'];
+export const SECTIONS: readonly Section[] = ['aws', 'linux', 'data'];
 
 // 라우팅이 받아들이는 공개 category 세그먼트: 섹션들 + 영어판(en). Phase1에서 레거시 'aws-certs'는
 // 제외되어(next.config.ts에서 301) 더는 200으로 서빙되지 않는다. DEFAULT_CATEGORY는 여전히
@@ -29,7 +29,7 @@ export function isSection(x: string): x is Section {
 // 공존한다(섹션 구분은 meta.section 필터). k8s/tf는 Phase3에서 자체 폴더로 투입.
 export function contentDirOfSection(section: Section, lang: Lang = 'ko'): string {
   if (lang === 'en') return EN_CATEGORY; // Phase3(D4)에서 섹션별 en 재편
-  if (section === 'aws' || section === 'linux') return DEFAULT_CATEGORY;
+  if (section === 'aws' || section === 'linux' || section === 'data') return DEFAULT_CATEGORY;
   return section;
 }
 
@@ -52,6 +52,7 @@ export function sectionLabel(section: Section): string {
     case 'kubernetes': return 'Kubernetes';
     case 'terraform': return 'Terraform';
     case 'linux': return 'Linux';
+    case 'data': return 'Data';
   }
 }
 

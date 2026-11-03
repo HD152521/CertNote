@@ -89,8 +89,16 @@
 4. 모의고사 100문항.
 5. SQL 실습장 S1 → S2 → S3 (각 단계 골든 통과 후 공개).
 
-## 7. 착수 전 결정이 필요한 것
+## 7. 결정 (2026-11-03)
 
-- 섹션 이름·URL: `/data/sqld` 로 할지(나중에 ADsP 등 데이터 자격증을 같은 섹션에 둘 수 있음), 다른 이름으로 할지.
-- 순서: 노트·문제를 먼저 다 쓰고 실습장을 붙일지, W3·W4 와 S1 을 같이 진행해 "실습되는 SQLD" 를 먼저 보여 줄지.
-- 기간: 8주 40일 제안 — 더 짧은 단기 합격형(4주)을 원하는지.
+- 섹션·URL: `/data/sqld` (섹션 `data`, 사이드바 "Data"). ADsP 등은 같은 섹션에 붙인다.
+- 순서: W3·W4 와 실습장 S1 을 같이 진행한다("실습되는 SQLD" 를 먼저).
+- 기간: 8주 40일 그대로.
+
+## 8. 진행 현황 (2026-11-03)
+
+- 공개 준비: W1~W4(20일, 100문항). meta.json 은 실제 파일 수(4주 20일)로 두고, W5~W8 을 올릴 때 8주 40일로 바꾼다.
+- 실습장 엔진 `src/lib/sql-lab`: SELECT·WHERE·함수·GROUP BY·HAVING·ORDER BY·조인(ANSI·(+))·서브쿼리·집합 연산·FETCH FIRST 까지. 윈도우 함수·계층형 질의·ROLLUP·PIVOT·REGEXP·DML 은 "n단계에서 열린다" 안내를 낸다(가짜 ORA 오류를 내지 않는다).
+- 골든: `node scripts/sql-lab/cases.mjs && node scripts/sql-lab/golden.mjs` → `src/lib/sql-lab/golden/results.json`. 사례는 직접 쓴 것 + 노트의 ```sql 블록 전부 + 과제 모범 답안. 23ai 와 시험 기준이 다른 곳(FROM 없는 SELECT, HAVING·GROUP BY 의 SELECT 별칭)은 시험 기준 오류에 설명(hint)을 붙이고 테스트의 VERSION_DIFFERENCES 에 적는다.
+- 화면: 노트의 ```sql 블록에 "실습장에서 실행하고 고쳐 보기", 퀴즈 해설 아래 "문제의 SQL 직접 실행해 보기", `/lab/sql-select-basics`·`/lab/sql-group-join` 과제 16개(결과 집합으로 채점).
+- 남은 일: W5~W8 집필, 실습장 2단계(윈도우 함수·ROWNUM 심화·CONNECT BY·ROLLUP), 3단계(PIVOT·REGEXP·DML·TCL·DDL), 모의고사 100문항, 응시료 확인.

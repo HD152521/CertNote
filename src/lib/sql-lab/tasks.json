@@ -1,0 +1,160 @@
+[
+  {
+    "id": "sql-select-basics",
+    "code": "SQL S1",
+    "title": "SELECT·함수·WHERE 로 원하는 행 골라내기",
+    "items": [
+      {
+        "id": "annual",
+        "title": "연봉 계산과 별칭",
+        "prompt": "모든 사원의 이름(ENAME)과 연봉을 사번(EMPNO) 순으로 출력하시오. 연봉은 SAL * 12 에 COMM 을 더한 값이고, COMM 이 없는 사원은 0 으로 계산한다.",
+        "hint": "COMM 이 NULL 이면 SAL * 12 + COMM 전체가 NULL 이 된다. NVL 로 먼저 0 으로 바꾼다.",
+        "answer": "SELECT ENAME, SAL * 12 + NVL(COMM, 0) AS 연봉 FROM EMP ORDER BY EMPNO;",
+        "explain": "NULL 이 섞인 산술은 결과가 NULL 이다. NVL(COMM, 0) 대신 COALESCE(COMM, 0) 이나 CASE 를 써도 같은 결과면 정답이다.",
+        "ordered": true
+      },
+      {
+        "id": "distinct-job",
+        "title": "중복 없는 직무 목록",
+        "prompt": "사원 테이블에 있는 직무(JOB)를 중복 없이 알파벳 순으로 출력하시오.",
+        "hint": "SELECT 바로 뒤에 붙이는 키워드 하나로 중복 행을 없앤다.",
+        "answer": "SELECT DISTINCT JOB FROM EMP ORDER BY JOB;",
+        "explain": "DISTINCT 는 SELECT 목록 전체가 같은 행을 하나로 합친다. GROUP BY JOB 으로도 같은 결과를 낼 수 있다.",
+        "ordered": true
+      },
+      {
+        "id": "like-name",
+        "title": "이름의 두 번째 글자",
+        "prompt": "이름의 두 번째 글자가 A 인 사원의 이름을 이름 순으로 출력하시오.",
+        "hint": "LIKE 에서 _ 는 아무 글자 하나, % 는 0글자 이상이다.",
+        "answer": "SELECT ENAME FROM EMP WHERE ENAME LIKE '_A%' ORDER BY ENAME;",
+        "explain": "'_A%' 는 첫 글자는 아무거나, 둘째 글자는 A, 그 뒤는 상관없다는 뜻이다. SUBSTR(ENAME, 2, 1) = 'A' 로 써도 정답이다.",
+        "ordered": true
+      },
+      {
+        "id": "between-in",
+        "title": "범위와 목록 조건",
+        "prompt": "급여(SAL)가 1000 이상 2000 이하이면서 부서 번호가 20 또는 30 인 사원의 이름과 급여를 급여 순(같으면 이름 순)으로 출력하시오.",
+        "hint": "BETWEEN 은 양 끝을 포함한다. 목록 비교는 IN 을 쓴다.",
+        "answer": "SELECT ENAME, SAL FROM EMP WHERE SAL BETWEEN 1000 AND 2000 AND DEPTNO IN (20, 30) ORDER BY SAL, ENAME;",
+        "explain": "BETWEEN 1000 AND 2000 은 SAL >= 1000 AND SAL <= 2000 과 같다. AND 와 OR 를 섞어 썼다면 괄호를 확인한다 — AND 가 OR 보다 먼저 계산된다.",
+        "ordered": true
+      },
+      {
+        "id": "null-comm",
+        "title": "NULL 찾기",
+        "prompt": "커미션(COMM)이 없는(NULL) 사원 중 30번 부서 사원의 이름을 이름 순으로 출력하시오.",
+        "hint": "= NULL 은 언제나 UNKNOWN 이라 아무 행도 고르지 못한다.",
+        "answer": "SELECT ENAME FROM EMP WHERE COMM IS NULL AND DEPTNO = 30 ORDER BY ENAME;",
+        "explain": "NULL 은 IS NULL 로만 찾는다. TURNER 의 COMM 은 NULL 이 아니라 0 이라서 결과에 없다.",
+        "ordered": true
+      },
+      {
+        "id": "string-fn",
+        "title": "문자 함수 조합",
+        "prompt": "10번 부서 사원의 이름을 첫 글자만 대문자로 바꾼 값(예: King)과 이름의 글자 수를 이름 순으로 출력하시오.",
+        "hint": "첫 글자만 대문자로 바꾸는 함수와 글자 수를 세는 함수를 쓴다.",
+        "answer": "SELECT INITCAP(ENAME), LENGTH(ENAME) FROM EMP WHERE DEPTNO = 10 ORDER BY ENAME;",
+        "explain": "INITCAP 은 단어 첫 글자만 대문자, 나머지는 소문자로 바꾼다. 정렬 기준은 원래 이름(ENAME)이다.",
+        "ordered": true
+      },
+      {
+        "id": "hire-year",
+        "title": "날짜에서 연도 뽑기",
+        "prompt": "1981년에 입사한 사원의 이름과 입사일(HIREDATE)을 입사일 순(같으면 이름 순)으로 출력하시오.",
+        "hint": "EXTRACT(YEAR FROM ...) 나 TO_CHAR(..., 'YYYY') 로 연도를 꺼낸다. 날짜 범위(BETWEEN)로 써도 된다.",
+        "answer": "SELECT ENAME, HIREDATE FROM EMP WHERE EXTRACT(YEAR FROM HIREDATE) = 1981 ORDER BY HIREDATE, ENAME;",
+        "explain": "HIREDATE BETWEEN DATE '1981-01-01' AND DATE '1981-12-31' 도 같은 결과다. 시각이 들어 있는 날짜라면 BETWEEN 의 끝값에 주의한다.",
+        "ordered": true
+      },
+      {
+        "id": "case-grade",
+        "title": "CASE 로 구간 나누기",
+        "prompt": "20번 부서 사원의 이름, 급여, 등급을 급여가 높은 순(같으면 이름 순)으로 출력하시오. 등급은 급여 3000 이상이면 '상', 1500 이상이면 '중', 나머지는 '하'다.",
+        "hint": "검색형 CASE 는 위에서부터 처음 맞는 WHEN 의 값을 고른다.",
+        "answer": "SELECT ENAME, SAL, CASE WHEN SAL >= 3000 THEN '상' WHEN SAL >= 1500 THEN '중' ELSE '하' END AS 등급 FROM EMP WHERE DEPTNO = 20 ORDER BY SAL DESC, ENAME;",
+        "explain": "WHEN 의 순서가 중요하다. SAL >= 1500 을 먼저 쓰면 3000 인 사원도 '중' 이 된다.",
+        "ordered": true
+      }
+    ]
+  },
+  {
+    "id": "sql-group-join",
+    "code": "SQL S2",
+    "title": "GROUP BY·HAVING·조인으로 묶고 잇기",
+    "items": [
+      {
+        "id": "dept-avg",
+        "title": "부서별 집계",
+        "prompt": "부서 번호별 사원 수와 평균 급여(소수 첫째 자리에서 반올림)를 부서 번호 순으로 출력하시오.",
+        "hint": "GROUP BY 에 쓴 열과 집계 함수만 SELECT 에 올 수 있다.",
+        "answer": "SELECT DEPTNO, COUNT(*), ROUND(AVG(SAL)) FROM EMP GROUP BY DEPTNO ORDER BY DEPTNO;",
+        "explain": "SELECT 에 ENAME 처럼 GROUP BY 밖의 열을 넣으면 ORA-00979 가 난다.",
+        "ordered": true
+      },
+      {
+        "id": "having",
+        "title": "묶음에 조건 걸기",
+        "prompt": "사원이 4명 이상인 부서의 부서 번호와 사원 수를 부서 번호 순으로 출력하시오.",
+        "hint": "묶은 뒤의 조건은 WHERE 가 아니라 HAVING 에 쓴다.",
+        "answer": "SELECT DEPTNO, COUNT(*) FROM EMP GROUP BY DEPTNO HAVING COUNT(*) >= 4 ORDER BY DEPTNO;",
+        "explain": "WHERE 는 묶기 전에 행을 거르므로 집계 함수를 쓸 수 없다(ORA-00934).",
+        "ordered": true
+      },
+      {
+        "id": "avg-comm",
+        "title": "집계와 NULL",
+        "prompt": "전 사원의 커미션 평균을 두 가지로 한 행에 출력하시오. 첫째 값은 커미션이 있는 사원만의 평균, 둘째 값은 커미션이 없는 사원을 0 으로 쳐서 14명 전체로 나눈 평균이다.",
+        "hint": "집계 함수는 NULL 을 빼고 계산한다.",
+        "answer": "SELECT AVG(COMM), AVG(NVL(COMM, 0)) FROM EMP;",
+        "explain": "AVG(COMM) 은 COMM 이 있는 4명으로 나눈 550, AVG(NVL(COMM, 0)) 은 14명으로 나눈 157.142857 이다. SUM(COMM) / COUNT(*) 도 둘째 값과 같다.",
+        "ordered": false
+      },
+      {
+        "id": "equi-join",
+        "title": "부서 이름 붙이기",
+        "prompt": "DALLAS 에 있는 부서의 사원 이름과 부서 이름(DNAME)을 사원 이름 순으로 출력하시오.",
+        "hint": "EMP 와 DEPT 를 DEPTNO 로 잇는다. 두 테이블에 같은 이름의 열이 있으면 별칭으로 어느 쪽인지 밝힌다.",
+        "answer": "SELECT E.ENAME, D.DNAME FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO WHERE D.LOC = 'DALLAS' ORDER BY E.ENAME;",
+        "explain": "Oracle 식(FROM EMP E, DEPT D WHERE E.DEPTNO = D.DEPTNO)으로 써도 같은 결과다.",
+        "ordered": true
+      },
+      {
+        "id": "non-equi",
+        "title": "급여 등급 잇기",
+        "prompt": "급여 등급(SALGRADE.GRADE)이 4 이상인 사원의 이름, 급여, 등급을 등급이 높은 순(같으면 이름 순)으로 출력하시오.",
+        "hint": "급여가 LOSAL 과 HISAL 사이에 드는 등급과 잇는다(= 가 아닌 조인).",
+        "answer": "SELECT E.ENAME, E.SAL, S.GRADE FROM EMP E JOIN SALGRADE S ON E.SAL BETWEEN S.LOSAL AND S.HISAL WHERE S.GRADE >= 4 ORDER BY S.GRADE DESC, E.ENAME;",
+        "explain": "Non-EQUI 조인은 = 대신 BETWEEN·>· < 같은 비교로 잇는다.",
+        "ordered": true
+      },
+      {
+        "id": "outer-join",
+        "title": "사원이 없는 부서도 보이기",
+        "prompt": "모든 부서의 이름과 그 부서 사원 수를 부서 이름 순으로 출력하시오. 사원이 없는 부서는 0 으로 출력하시오.",
+        "hint": "사원이 없는 부서도 남기려면 외부 조인을 쓴다. COUNT(*) 는 NULL 로 채운 행도 1로 센다.",
+        "answer": "SELECT D.DNAME, COUNT(E.EMPNO) FROM DEPT D LEFT JOIN EMP E ON D.DEPTNO = E.DEPTNO GROUP BY D.DNAME ORDER BY D.DNAME;",
+        "explain": "COUNT(*) 를 쓰면 OPERATIONS 가 1 이 된다. COUNT(E.EMPNO) 처럼 사원 쪽 열을 세야 0 이 나온다. Oracle 식으로는 WHERE E.DEPTNO(+) = D.DEPTNO 다.",
+        "ordered": true
+      },
+      {
+        "id": "self-join",
+        "title": "관리자 이름 붙이기",
+        "prompt": "모든 사원의 이름과 그 관리자의 이름을 사원 이름 순으로 출력하시오. 관리자가 없는 KING 도 결과에 남기시오.",
+        "hint": "EMP 를 두 번 쓴다(사원 쪽, 관리자 쪽). KING 을 남기려면 외부 조인이 필요하다.",
+        "answer": "SELECT E.ENAME, M.ENAME FROM EMP E LEFT JOIN EMP M ON E.MGR = M.EMPNO ORDER BY E.ENAME;",
+        "explain": "내부 조인이면 MGR 이 NULL 인 KING 이 빠져 13행이 된다.",
+        "ordered": true
+      },
+      {
+        "id": "join-group",
+        "title": "조인한 뒤 묶기",
+        "prompt": "부서 이름별 급여 합계를 합계가 큰 순으로 출력하시오. 사원이 없는 부서는 빼도 된다.",
+        "hint": "먼저 잇고, 그다음 부서 이름으로 묶는다.",
+        "answer": "SELECT D.DNAME, SUM(E.SAL) FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO GROUP BY D.DNAME ORDER BY SUM(E.SAL) DESC;",
+        "explain": "ORDER BY 2 DESC 처럼 위치 번호로 정렬해도 된다.",
+        "ordered": true
+      }
+    ]
+  }
+]

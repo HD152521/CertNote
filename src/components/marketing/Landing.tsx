@@ -155,6 +155,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
   );
   const awsCerts = certs.filter((c) => (c.section ?? 'aws') === 'aws');
   const linuxCount = certs.filter((c) => c.section === 'linux').length;
+  const dataCount = certs.filter((c) => c.section === 'data').length;
   const highlights = buildHighlights(spanOf(certs));
   const offers = buildOffers(nf, { certCount, pageCount, questionCount });
   const faq = buildFaq(spanOf(awsCerts), awsCerts);
@@ -279,7 +280,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
         <div className="space-y-2">
           <h2 className="text-2xl font-bold">CertNote에서 받을 수 있는 것</h2>
           <p className="text-fg-muted">
-            {nf(certCount)}개 트랙 중 AWS 자격증 {nf(awsCerts.length)}개{linuxCount > 0 ? `, 리눅스마스터 ${nf(linuxCount)}개` : ''}.
+            {nf(certCount)}개 트랙 중 AWS 자격증 {nf(awsCerts.length)}개{linuxCount > 0 ? `, 리눅스마스터 ${nf(linuxCount)}개` : ''}{dataCount > 0 ? `, 데이터 자격증 ${nf(dataCount)}개` : ''}.
             노트와 연습 문제는 로그인 없이 열려 있고, 모의고사와 복습은 무료 계정이 있으면 쓸 수 있습니다.
           </p>
         </div>

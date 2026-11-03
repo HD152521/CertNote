@@ -36,9 +36,9 @@ async function collectItems(): Promise<RssItem[]> {
 
 export async function GET(): Promise<Response> {
   const body = buildRss({
-    title: `${SITE_NAME} — AWS·리눅스마스터 자격증 학습 노트`,
+    title: `${SITE_NAME} — AWS·리눅스마스터·SQLD 자격증 학습 노트`,
     link: SITE_URL,
-    description: 'AWS 자격증과 리눅스마스터를 한국어 노트와 연습 문제로 준비하는 무료 학습 사이트',
+    description: 'AWS 자격증, 리눅스마스터, SQLD 를 한국어 노트와 연습 문제로 준비하는 무료 학습 사이트',
     language: 'ko',
     items: await collectItems(),
   });

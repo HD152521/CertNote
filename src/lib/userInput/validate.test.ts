@@ -39,7 +39,7 @@ describe('parseQuestionReport', () => {
 
 describe('parseCertRequest', () => {
   it('후보 key 를 받는다', () => {
-    expect(parseCertRequest({ certKey: 'sqld' })).toEqual({ certKey: 'sqld', otherName: null });
+    expect(parseCertRequest({ certKey: 'adsp' })).toEqual({ certKey: 'adsp', otherName: null });
   });
 
   it('후보 밖 key 는 거부한다', () => {

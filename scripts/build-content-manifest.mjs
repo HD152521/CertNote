@@ -41,6 +41,7 @@ const SOURCE_FILES = [
   'src/lib/labCatalog.ts',
   'src/lib/shell-lab/labs.ts',
   'src/lib/shell-lab/drills.ts',
+  'src/lib/sql-lab/tasks.json',
   'src/lib/cli-lab/labs.ts',
 ];
 

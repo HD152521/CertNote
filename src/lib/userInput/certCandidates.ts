@@ -17,7 +17,6 @@ export const CERT_CANDIDATES: readonly CertCandidate[] = [
   { key: 'az-900', label: 'Azure AZ-900 · Fundamentals' },
   { key: 'gcp-ace', label: 'Google Cloud ACE · Associate Cloud Engineer' },
   { key: 'info-processing-engineer', label: '정보처리기사', domestic: true },
-  { key: 'sqld', label: 'SQLD · SQL 개발자', domestic: true },
   { key: 'adsp', label: 'ADsP · 데이터분석 준전문가', domestic: true },
   { key: 'network-manager-2', label: '네트워크관리사 2급', domestic: true },
 ];

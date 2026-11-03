@@ -41,11 +41,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ? `${sectionName} Certifications — Types & Recommended Order`
       : section === 'linux'
         ? '리눅스마스터 1급·2급 자격증 순서와 공부 방법 — 무료 한국어 학습 노트'
+        : section === 'data'
+        ? 'SQLD 자격증 공부 방법 — SQL 을 직접 돌려 보는 무료 한국어 학습 노트'
         : `${sectionName} 자격증 종류와 순서, 공부 방법 — ${certs.length}종 무료 한국어 학습 노트`;
   const description =
     section === 'aws'
       ? `AWS 자격증 ${certs.length}종을 레벨별로 정리. Cloud Practitioner(기초) → 어소시에이트(SAA·DVA·SOA) → 프로페셔널(SAP·DOP) → 전문분야 순서로 준비하세요. 전 과정 무료.`
-      : `${sectionName} 자격증 ${certs.length}종을 레벨별로 정리하고 추천 순서로 준비하세요. 매일 읽는 심화 노트 + 연습 문제. 전 과정 무료.`;
+      : section === 'data'
+        ? 'SQLD(SQL 개발자) 무료 학습 노트. 데이터 모델링과 SQL 을 매일 노트와 연습 문제로 익히고, 예제 SQL 은 실제 Oracle 과 대조한 실습장에서 바로 실행해 봅니다.'
+        : `${sectionName} 자격증 ${certs.length}종을 레벨별로 정리하고 추천 순서로 준비하세요. 매일 읽는 심화 노트 + 연습 문제. 전 과정 무료.`;
   const url = `/${category}`;
   // aws 허브만 영어판(/en)이 존재해 hreflang을 선언한다. linux 등 다른 섹션은 영어판이 없어
   // 상호 참조가 성립하지 않으므로 languages를 아예 넣지 않는다(없는 URL을 가리키면 클러스터 무효화).
@@ -101,6 +105,10 @@ export default async function CategoryHubPage({ params }: PageProps) {
     ? {
         'grade-2': '입문·실무 기초 — 리눅스마스터 2급부터 시작하세요.',
         'grade-1': '심화·전문가 — 실무 경험과 함께 준비하는 상위 등급.',
+      }
+    : section === 'data'
+    ? {
+        developer: 'SQL 개발자(SQLD) — 데이터 모델링과 SQL 기본·활용. 예제 SQL 을 실습장에서 바로 실행해 볼 수 있습니다.',
       }
     : {
         foundational: '여기서 시작 — 사전지식 없이 클라우드 기초.',
