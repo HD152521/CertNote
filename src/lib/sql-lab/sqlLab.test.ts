@@ -25,8 +25,7 @@ describe('SQL 실습장 엔진', () => {
 
   test('실습장 2·3단계 기능은 가짜 ORA 오류 대신 안내를 낸다', () => {
     for (const sql of [
-      'SELECT ENAME, RANK() OVER (ORDER BY SAL DESC) FROM EMP',
-      'SELECT LEVEL, ENAME FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR',
+      "SELECT REGEXP_SUBSTR(ENAME, '[AEIOU]') FROM EMP",
       "UPDATE EMP SET SAL = 0",
       "SELECT * FROM (SELECT DEPTNO, JOB FROM EMP) PIVOT (COUNT(*) FOR DEPTNO IN (10, 20))",
     ]) {
@@ -68,9 +67,26 @@ describe('SQL 실습장 엔진', () => {
     const slow = Date.now();
     expect(runStatement("SELECT COUNT(*) FROM EMP A, EMP B, EMP C WHERE EXISTS (SELECT 1 FROM EMP X, EMP Y WHERE LPAD(X.ENAME || Y.ENAME, 2000, 'ab') LIKE '%a%b%a%b%z%' || A.ENAME)").kind).toBe('note');
     expect(Date.now() - slow).toBeLessThan(6000);
+    // 큰 조인 위의 윈도우 함수는 누적 합으로 빨리 끝나고, 거대한 계층은 3초 상한에서 멈춘다
+    const w0 = Date.now();
+    expect(runStatement('SELECT COUNT(*) FROM (SELECT SUM(A.SAL) OVER () X FROM EMP A, EMP B, EMP C, EMP D)').kind).toBe('rows');
+    expect(Date.now() - w0).toBeLessThan(3000);
+    expect(runStatement('SELECT COUNT(*) FROM EMP A, EMP B, EMP C START WITH A.MGR IS NULL CONNECT BY PRIOR A.EMPNO = A.MGR').kind).toBe('note');
+    // MAX 처럼 누적 합을 못 쓰는 프레임, RANGE n 프레임도 3초 안에 끝나거나 멈춘다
+    for (const sql of [
+      'SELECT COUNT(*) FROM (SELECT MAX(A.SAL) OVER (ORDER BY A.SAL, B.SAL, C.SAL, D.SAL) X FROM EMP A, EMP B, EMP C, EMP D)',
+      'SELECT COUNT(*) FROM (SELECT SUM(A.SAL) OVER (ORDER BY A.SAL RANGE BETWEEN 100 PRECEDING AND 100 FOLLOWING) X FROM EMP A, EMP B, EMP C, EMP D)',
+    ]) {
+      const s0 = Date.now();
+      runStatement(sql);
+      expect(Date.now() - s0, sql).toBeLessThan(3600);
+    }
+    // 아주 깊은 계층은 전용 안내
+    const deep = runStatement('SELECT COUNT(*) FROM DUAL CONNECT BY LEVEL <= 5000');
+    expect(deep.kind === 'note' && deep.message).toMatch(/깊어서/);
     // 재귀 WITH 는 아직 안내만
     expect(runStatement('WITH R (N) AS (SELECT 1 FROM DUAL UNION ALL SELECT N + 1 FROM R WHERE N < 5) SELECT * FROM R').kind).toBe('note');
-    expect(Date.now() - t0).toBeLessThan(15000);
+    expect(Date.now() - t0).toBeLessThan(25000);
   });
 
   test('행이 없거나 AND 가 단락돼도 잘못된 이름·함수는 Oracle 처럼 오류다', () => {
@@ -134,6 +150,16 @@ describe('SQL 실습장 과제 채점', () => {
     expect(notIn).toMatchObject({ ok: false, reason: expect.stringMatching(/0행/) });
     const unionAll = verdict('sql-subquery-rollup', 'union-jobs', 'SELECT JOB FROM EMP WHERE DEPTNO = 10 UNION ALL SELECT JOB FROM EMP WHERE DEPTNO = 30 ORDER BY JOB');
     expect(unionAll.ok).toBe(false);
+  });
+
+  test('S4 단골 실수는 오답, 같은 결과의 다른 쓰기는 정답', () => {
+    expect(verdict('sql-window-hierarchy', 'dense-rank', 'SELECT ENAME, SAL, RANK() OVER (ORDER BY SAL DESC) FROM EMP ORDER BY 3, ENAME').ok).toBe(false);
+    expect(verdict('sql-window-hierarchy', 'top3-sal', 'SELECT ENAME, SAL FROM EMP WHERE ROWNUM <= 3 ORDER BY SAL DESC, ENAME').ok).toBe(false);
+    expect(verdict('sql-window-hierarchy', 'top3-sal', 'SELECT * FROM (SELECT ENAME, SAL FROM EMP ORDER BY SAL DESC, ENAME) WHERE ROWNUM <= 3')).toEqual({ ok: true });
+    expect(verdict('sql-window-hierarchy', 'org-chart', 'SELECT LEVEL, ENAME FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR MGR = EMPNO ORDER SIBLINGS BY ENAME').ok).toBe(false);
+    expect(verdict('sql-window-hierarchy', 'org-chart', 'SELECT LEVEL, ENAME FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER BY ENAME').ok).toBe(false);
+    expect(verdict('sql-window-hierarchy', 'dept-top', 'SELECT DEPTNO, ENAME, SAL FROM EMP WHERE ROW_NUMBER() OVER (PARTITION BY DEPTNO ORDER BY SAL DESC) = 1')).toMatchObject({ ok: false, reason: expect.stringMatching(/ORA-30483/) });
+    expect(verdict('sql-window-hierarchy', 'running-total', 'SELECT ENAME, HIREDATE, SAL, SUM(SAL) OVER (ORDER BY HIREDATE, ENAME ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM EMP WHERE DEPTNO = 30 ORDER BY 2, 1')).toEqual({ ok: true });
   });
 
   test('S3 도 같은 결과면 다른 쓰기를 정답으로 본다', () => {

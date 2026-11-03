@@ -27,6 +27,12 @@ const VERSION_DIFFERENCES = new Set(['err-923', 'note-w4d2-15']);
 /** 정렬 키가 같은 행의 순서가 정해지지 않음을 보여 주는 노트 예제 — 행 집합만 맞춘다. */
 const TIE_ORDER = new Set(['note-w4d3-1']);
 
+/**
+ * 동점에 매기는 번호가 정해지지 않는 노트 예제(ROW_NUMBER 의 동점) — 노트가 "순서가 보장되지 않는다" 고 설명한다.
+ * 열과 행 수만 맞춘다.
+ */
+const NONDETERMINISTIC = new Set(['note-w6d1-2']);
+
 describe('SQL 실습장 골든 (Oracle Database 23ai Free 대조)', () => {
   test.each(cases.filter((c) => !VERSION_DIFFERENCES.has(c.id)))('$id', (c) => {
     const want = golden[c.id];
@@ -41,7 +47,8 @@ describe('SQL 실습장 골든 (Oracle Database 23ai Free 대조)', () => {
     const rows = got.rows.map((r) => r.map(display));
     // CSV 제목 줄은 따옴표가 든 제목에서 깨진다(Oracle 이 제목 속 " 를 이스케이프하지 않는다). 폭이 맞을 때만 비교한다.
     if (want.columns && want.columns.length === got.columns.length) expect(got.columns).toEqual(want.columns);
-    if (TIE_ORDER.has(c.id)) expect([...rows].sort()).toEqual([...want.rows].sort());
+    if (NONDETERMINISTIC.has(c.id)) expect(rows.length).toBe(want.rows.length);
+    else if (TIE_ORDER.has(c.id)) expect([...rows].sort()).toEqual([...want.rows].sort());
     else expect(rows).toEqual(want.rows);
   });
 });

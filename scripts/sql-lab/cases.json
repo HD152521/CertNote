@@ -1275,6 +1275,446 @@
   "match": "code"
  },
  {
+  "id": "win-rank3",
+  "sql": "SELECT ENAME, SAL, RANK() OVER (ORDER BY SAL DESC) R, DENSE_RANK() OVER (ORDER BY SAL DESC) DR, ROW_NUMBER() OVER (ORDER BY SAL DESC, ENAME) RN FROM EMP ORDER BY SAL DESC, ENAME"
+ },
+ {
+  "id": "win-rank-part",
+  "sql": "SELECT DEPTNO, ENAME, SAL, RANK() OVER (PARTITION BY DEPTNO ORDER BY SAL DESC) R FROM EMP ORDER BY DEPTNO, R, ENAME"
+ },
+ {
+  "id": "win-rank-asc-nulls",
+  "sql": "SELECT ENAME, COMM, RANK() OVER (ORDER BY COMM) R FROM EMP WHERE DEPTNO = 30 ORDER BY R, ENAME"
+ },
+ {
+  "id": "win-rank-desc-nulls",
+  "sql": "SELECT ENAME, COMM, RANK() OVER (ORDER BY COMM DESC) R FROM EMP WHERE DEPTNO = 30 ORDER BY R, ENAME"
+ },
+ {
+  "id": "win-top-per-dept",
+  "sql": "SELECT * FROM (SELECT DEPTNO, ENAME, SAL, ROW_NUMBER() OVER (PARTITION BY DEPTNO ORDER BY SAL DESC, ENAME) RN FROM EMP) WHERE RN = 1 ORDER BY DEPTNO"
+ },
+ {
+  "id": "win-where-err",
+  "sql": "SELECT ENAME FROM EMP WHERE ROW_NUMBER() OVER (ORDER BY SAL) = 1"
+ },
+ {
+  "id": "win-having-err",
+  "sql": "SELECT ENAME FROM EMP GROUP BY ENAME HAVING RANK() OVER (ORDER BY ENAME) = 1"
+ },
+ {
+  "id": "win-no-over",
+  "sql": "SELECT ROW_NUMBER() FROM DUAL"
+ },
+ {
+  "id": "win-no-order",
+  "sql": "SELECT RANK() OVER () FROM DUAL"
+ },
+ {
+  "id": "win-rn-no-order",
+  "sql": "SELECT ROW_NUMBER() OVER () FROM DUAL"
+ },
+ {
+  "id": "win-sum-all",
+  "sql": "SELECT ENAME, SAL, SUM(SAL) OVER () TOTAL FROM EMP WHERE DEPTNO = 10 ORDER BY ENAME"
+ },
+ {
+  "id": "win-sum-part",
+  "sql": "SELECT DEPTNO, ENAME, SAL, SUM(SAL) OVER (PARTITION BY DEPTNO) S FROM EMP ORDER BY DEPTNO, ENAME"
+ },
+ {
+  "id": "win-cum",
+  "sql": "SELECT ENAME, SAL, SUM(SAL) OVER (ORDER BY SAL) CUM FROM EMP WHERE DEPTNO = 30 ORDER BY SAL, ENAME"
+ },
+ {
+  "id": "win-cum-rows",
+  "sql": "SELECT ENAME, SAL, SUM(SAL) OVER (ORDER BY SAL, ENAME ROWS UNBOUNDED PRECEDING) CUM FROM EMP WHERE DEPTNO = 30 ORDER BY SAL, ENAME"
+ },
+ {
+  "id": "win-cum-part",
+  "sql": "SELECT DEPTNO, ENAME, SAL, SUM(SAL) OVER (PARTITION BY DEPTNO ORDER BY SAL, ENAME) CUM FROM EMP ORDER BY DEPTNO, SAL, ENAME"
+ },
+ {
+  "id": "win-moving",
+  "sql": "SELECT ENAME, SAL, AVG(SAL) OVER (ORDER BY SAL, ENAME ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) MA FROM EMP WHERE DEPTNO = 20 ORDER BY SAL, ENAME"
+ },
+ {
+  "id": "win-range-n",
+  "sql": "SELECT ENAME, SAL, COUNT(*) OVER (ORDER BY SAL RANGE BETWEEN 500 PRECEDING AND 500 FOLLOWING) C FROM EMP ORDER BY SAL, ENAME"
+ },
+ {
+  "id": "win-range-cur",
+  "sql": "SELECT ENAME, SAL, COUNT(*) OVER (ORDER BY SAL RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) C FROM EMP WHERE DEPTNO = 20 ORDER BY SAL, ENAME"
+ },
+ {
+  "id": "win-rows-following",
+  "sql": "SELECT ENAME, SAL, SUM(SAL) OVER (ORDER BY EMPNO ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) S FROM EMP WHERE DEPTNO = 30 ORDER BY EMPNO"
+ },
+ {
+  "id": "win-count-max-min",
+  "sql": "SELECT DEPTNO, ENAME, COUNT(*) OVER (PARTITION BY DEPTNO) C, MAX(SAL) OVER (PARTITION BY DEPTNO) MX, MIN(SAL) OVER (PARTITION BY DEPTNO) MN FROM EMP ORDER BY DEPTNO, ENAME"
+ },
+ {
+  "id": "win-lag-lead",
+  "sql": "SELECT ENAME, SAL, LAG(SAL) OVER (ORDER BY SAL, ENAME) PREV, LEAD(SAL, 2, 0) OVER (ORDER BY SAL, ENAME) NEXT2 FROM EMP WHERE DEPTNO = 30 ORDER BY SAL, ENAME"
+ },
+ {
+  "id": "win-lag-part",
+  "sql": "SELECT DEPTNO, ENAME, HIREDATE, LAG(ENAME) OVER (PARTITION BY DEPTNO ORDER BY HIREDATE, ENAME) BEFORE_ME FROM EMP ORDER BY DEPTNO, HIREDATE, ENAME"
+ },
+ {
+  "id": "win-first-last",
+  "sql": "SELECT DEPTNO, ENAME, SAL, FIRST_VALUE(ENAME) OVER (PARTITION BY DEPTNO ORDER BY SAL DESC, ENAME) TOP1, LAST_VALUE(ENAME) OVER (PARTITION BY DEPTNO ORDER BY SAL DESC, ENAME) LV FROM EMP ORDER BY DEPTNO, SAL DESC, ENAME"
+ },
+ {
+  "id": "win-last-full",
+  "sql": "SELECT DEPTNO, ENAME, LAST_VALUE(ENAME) OVER (PARTITION BY DEPTNO ORDER BY SAL DESC, ENAME ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) LV FROM EMP ORDER BY DEPTNO, ENAME"
+ },
+ {
+  "id": "win-ratio",
+  "sql": "SELECT ENAME, SAL, ROUND(RATIO_TO_REPORT(SAL) OVER (), 4) R FROM EMP WHERE DEPTNO = 10 ORDER BY ENAME"
+ },
+ {
+  "id": "win-ratio-part",
+  "sql": "SELECT DEPTNO, ENAME, ROUND(RATIO_TO_REPORT(SAL) OVER (PARTITION BY DEPTNO), 3) R FROM EMP ORDER BY DEPTNO, ENAME"
+ },
+ {
+  "id": "win-ratio-order-err",
+  "sql": "SELECT RATIO_TO_REPORT(SAL) OVER (ORDER BY SAL) FROM EMP"
+ },
+ {
+  "id": "win-pct-cume",
+  "sql": "SELECT ENAME, SAL, ROUND(PERCENT_RANK() OVER (ORDER BY SAL), 4) PR, ROUND(CUME_DIST() OVER (ORDER BY SAL), 4) CD FROM EMP WHERE DEPTNO = 30 ORDER BY SAL, ENAME"
+ },
+ {
+  "id": "win-ntile",
+  "sql": "SELECT ENAME, SAL, NTILE(4) OVER (ORDER BY SAL DESC, ENAME) Q FROM EMP ORDER BY SAL DESC, ENAME"
+ },
+ {
+  "id": "win-ntile-3",
+  "sql": "SELECT ENAME, NTILE(3) OVER (ORDER BY EMPNO) T FROM EMP WHERE DEPTNO = 30 ORDER BY EMPNO"
+ },
+ {
+  "id": "win-grouped",
+  "sql": "SELECT DEPTNO, SUM(SAL) S, RANK() OVER (ORDER BY SUM(SAL) DESC) R FROM EMP GROUP BY DEPTNO ORDER BY R"
+ },
+ {
+  "id": "win-grouped-total",
+  "sql": "SELECT DEPTNO, SUM(SAL) S, SUM(SUM(SAL)) OVER () T FROM EMP GROUP BY DEPTNO ORDER BY DEPTNO"
+ },
+ {
+  "id": "win-orderby",
+  "sql": "SELECT ENAME, SAL FROM EMP WHERE DEPTNO = 20 ORDER BY RANK() OVER (ORDER BY SAL DESC), ENAME"
+ },
+ {
+  "id": "win-dist-count",
+  "sql": "SELECT DEPTNO, COUNT(DISTINCT JOB) OVER (PARTITION BY DEPTNO) J FROM EMP WHERE ENAME IN ('SMITH', 'KING', 'ALLEN') ORDER BY DEPTNO"
+ },
+ {
+  "id": "topn-rownum",
+  "sql": "SELECT ROWNUM, ENAME, SAL FROM (SELECT ENAME, SAL FROM EMP ORDER BY SAL DESC, ENAME) WHERE ROWNUM <= 3"
+ },
+ {
+  "id": "topn-rownum-trap",
+  "sql": "SELECT ENAME, SAL FROM EMP WHERE ROWNUM <= 3 ORDER BY SAL DESC"
+ },
+ {
+  "id": "topn-rownum-gt",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE ROWNUM > 1"
+ },
+ {
+  "id": "topn-rownum-between",
+  "sql": "SELECT * FROM (SELECT ROWNUM RN, ENAME FROM (SELECT ENAME FROM EMP ORDER BY ENAME)) WHERE RN BETWEEN 4 AND 6"
+ },
+ {
+  "id": "topn-fetch-ties",
+  "sql": "SELECT ENAME, SAL FROM EMP ORDER BY SAL DESC FETCH FIRST 2 ROWS WITH TIES"
+ },
+ {
+  "id": "topn-fetch-ties2",
+  "sql": "SELECT ENAME, SAL FROM EMP ORDER BY SAL FETCH FIRST 3 ROWS WITH TIES"
+ },
+ {
+  "id": "topn-fetch-pct",
+  "sql": "SELECT ENAME, SAL FROM EMP ORDER BY SAL DESC, ENAME FETCH FIRST 20 PERCENT ROWS ONLY"
+ },
+ {
+  "id": "topn-offset-only",
+  "sql": "SELECT ENAME FROM EMP ORDER BY ENAME OFFSET 12 ROWS"
+ },
+ {
+  "id": "topn-rn-func",
+  "sql": "SELECT ENAME, SAL FROM (SELECT ENAME, SAL, DENSE_RANK() OVER (ORDER BY SAL DESC) DR FROM EMP) WHERE DR <= 3 ORDER BY SAL DESC, ENAME"
+ },
+ {
+  "id": "hq-basic",
+  "sql": "SELECT LEVEL, EMPNO, ENAME, MGR FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME"
+ },
+ {
+  "id": "hq-indent",
+  "sql": "SELECT LPAD(' ', 2 * (LEVEL - 1)) || ENAME AS 조직도 FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME"
+ },
+ {
+  "id": "hq-reverse",
+  "sql": "SELECT LEVEL, ENAME FROM EMP START WITH ENAME = 'SMITH' CONNECT BY PRIOR MGR = EMPNO"
+ },
+ {
+  "id": "hq-path",
+  "sql": "SELECT ENAME, SYS_CONNECT_BY_PATH(ENAME, '/') P FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME"
+ },
+ {
+  "id": "hq-root-leaf",
+  "sql": "SELECT ENAME, CONNECT_BY_ROOT ENAME ROOT, CONNECT_BY_ISLEAF LEAF FROM EMP START WITH ENAME IN ('JONES', 'BLAKE') CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME"
+ },
+ {
+  "id": "hq-prior-col",
+  "sql": "SELECT ENAME, PRIOR ENAME 관리자, LEVEL FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME"
+ },
+ {
+  "id": "hq-level-limit",
+  "sql": "SELECT LEVEL, ENAME FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR AND LEVEL <= 2 ORDER SIBLINGS BY ENAME"
+ },
+ {
+  "id": "hq-where-filter",
+  "sql": "SELECT LEVEL, ENAME FROM EMP WHERE JOB <> 'MANAGER' START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME"
+ },
+ {
+  "id": "hq-prune",
+  "sql": "SELECT LEVEL, ENAME FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR AND ENAME <> 'BLAKE' ORDER SIBLINGS BY ENAME"
+ },
+ {
+  "id": "hq-no-start",
+  "sql": "SELECT COUNT(*) FROM EMP CONNECT BY PRIOR EMPNO = MGR"
+ },
+ {
+  "id": "hq-level-count",
+  "sql": "SELECT LEVEL, COUNT(*) FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR GROUP BY LEVEL ORDER BY LEVEL"
+ },
+ {
+  "id": "hq-dual-gen",
+  "sql": "SELECT LEVEL N FROM DUAL CONNECT BY LEVEL <= 5"
+ },
+ {
+  "id": "hq-connect-first",
+  "sql": "SELECT LEVEL, ENAME FROM EMP CONNECT BY PRIOR EMPNO = MGR START WITH ENAME = 'JONES' ORDER SIBLINGS BY ENAME"
+ },
+ {
+  "id": "hq-loop",
+  "sql": "SELECT EMPNO FROM EMP CONNECT BY PRIOR EMPNO = EMPNO"
+ },
+ {
+  "id": "hq-level-nocb",
+  "sql": "SELECT LEVEL FROM DUAL"
+ },
+ {
+  "id": "hq-siblings-nocb",
+  "sql": "SELECT ENAME FROM EMP ORDER SIBLINGS BY ENAME"
+ },
+ {
+  "id": "hq-orderby",
+  "sql": "SELECT LEVEL, ENAME FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER BY LEVEL DESC, ENAME"
+ },
+ {
+  "id": "hq-isleaf-filter",
+  "sql": "SELECT ENAME FROM EMP WHERE CONNECT_BY_ISLEAF = 1 START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER BY ENAME"
+ },
+ {
+  "id": "hq-join-ansi",
+  "sql": "SELECT LEVEL, E.ENAME, D.DNAME FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO START WITH E.MGR IS NULL CONNECT BY PRIOR E.EMPNO = E.MGR ORDER SIBLINGS BY E.ENAME"
+ },
+ {
+  "id": "hq-rownum",
+  "sql": "SELECT ROWNUM, LEVEL, ENAME FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME"
+ },
+ {
+  "id": "self-3level",
+  "sql": "SELECT E.ENAME 사원, M.ENAME 관리자, MM.ENAME 차상위 FROM EMP E, EMP M, EMP MM WHERE E.MGR = M.EMPNO AND M.MGR = MM.EMPNO ORDER BY E.ENAME"
+ },
+ {
+  "id": "self-3level-outer",
+  "sql": "SELECT E.ENAME, M.ENAME MGR1, MM.ENAME MGR2 FROM EMP E LEFT JOIN EMP M ON E.MGR = M.EMPNO LEFT JOIN EMP MM ON M.MGR = MM.EMPNO ORDER BY E.ENAME"
+ },
+ {
+  "id": "self-count-sub",
+  "sql": "SELECT M.ENAME, COUNT(*) 부하수 FROM EMP E JOIN EMP M ON E.MGR = M.EMPNO GROUP BY M.ENAME ORDER BY 2 DESC, 1"
+ },
+ {
+  "id": "hyp-rank",
+  "sql": "SELECT RANK(1500) WITHIN GROUP (ORDER BY SAL DESC) R, DENSE_RANK(1500) WITHIN GROUP (ORDER BY SAL DESC) DR FROM EMP"
+ },
+ {
+  "id": "hyp-rank-asc-tie",
+  "sql": "SELECT RANK(3000) WITHIN GROUP (ORDER BY SAL) R, DENSE_RANK(3000) WITHIN GROUP (ORDER BY SAL) DR, ROUND(PERCENT_RANK(3000) WITHIN GROUP (ORDER BY SAL), 4) PR, ROUND(CUME_DIST(3000) WITHIN GROUP (ORDER BY SAL), 4) CD FROM EMP"
+ },
+ {
+  "id": "hyp-rank-dept",
+  "sql": "SELECT DEPTNO, RANK(2000) WITHIN GROUP (ORDER BY SAL) R FROM EMP GROUP BY DEPTNO ORDER BY DEPTNO"
+ },
+ {
+  "id": "win-agg-where",
+  "sql": "SELECT ENAME FROM EMP WHERE SAL > AVG(SAL) OVER ()"
+ },
+ {
+  "id": "hq-agg-max-level",
+  "sql": "SELECT MAX(LEVEL) FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR"
+ },
+ {
+  "id": "hq-agg-avg-level",
+  "sql": "SELECT AVG(LEVEL) FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR"
+ },
+ {
+  "id": "hq-agg-leaf",
+  "sql": "SELECT SUM(CONNECT_BY_ISLEAF) FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR"
+ },
+ {
+  "id": "hq-agg-prior",
+  "sql": "SELECT COUNT(PRIOR ENAME) FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR"
+ },
+ {
+  "id": "hq-agg-root",
+  "sql": "SELECT COUNT(DISTINCT CONNECT_BY_ROOT ENAME) FROM EMP START WITH ENAME IN ('JONES', 'BLAKE', 'CLARK') CONNECT BY PRIOR EMPNO = MGR"
+ },
+ {
+  "id": "hq-agg-dual",
+  "sql": "SELECT SUM(LEVEL) FROM DUAL CONNECT BY LEVEL <= 100"
+ },
+ {
+  "id": "hq-agg-dept",
+  "sql": "SELECT DEPTNO, MAX(LEVEL), COUNT(*) FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR GROUP BY DEPTNO ORDER BY DEPTNO"
+ },
+ {
+  "id": "hq-prior-level",
+  "sql": "SELECT ENAME, LEVEL, PRIOR LEVEL FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR AND LEVEL <= 2 ORDER SIBLINGS BY ENAME"
+ },
+ {
+  "id": "win-lag-frame",
+  "sql": "SELECT LAG(SAL) OVER (ORDER BY SAL ROWS 1 PRECEDING) FROM EMP"
+ },
+ {
+  "id": "win-rank-frame",
+  "sql": "SELECT RANK() OVER (ORDER BY SAL ROWS 1 PRECEDING) FROM EMP"
+ },
+ {
+  "id": "win-frame-rev1",
+  "sql": "SELECT SUM(SAL) OVER (ORDER BY SAL ROWS BETWEEN 1 FOLLOWING AND 1 PRECEDING) FROM EMP"
+ },
+ {
+  "id": "win-frame-rev2",
+  "sql": "SELECT SUM(SAL) OVER (ORDER BY SAL ROWS BETWEEN UNBOUNDED FOLLOWING AND CURRENT ROW) FROM EMP"
+ },
+ {
+  "id": "win-frame-rev3",
+  "sql": "SELECT SUM(SAL) OVER (ORDER BY SAL ROWS BETWEEN CURRENT ROW AND UNBOUNDED PRECEDING) FROM EMP"
+ },
+ {
+  "id": "win-frame-rev4",
+  "sql": "SELECT SUM(SAL) OVER (ORDER BY SAL ROWS BETWEEN CURRENT ROW AND 1 PRECEDING) FROM EMP"
+ },
+ {
+  "id": "win-frame-rev5",
+  "sql": "SELECT SUM(SAL) OVER (ORDER BY SAL ROWS BETWEEN 1 FOLLOWING AND CURRENT ROW) FROM EMP"
+ },
+ {
+  "id": "win-frame-rev6",
+  "sql": "SELECT SUM(SAL) OVER (ORDER BY SAL RANGE BETWEEN 1 FOLLOWING AND 1 PRECEDING) FROM EMP"
+ },
+ {
+  "id": "win-frame-ok-pp",
+  "sql": "SELECT ENAME, SUM(SAL) OVER (ORDER BY EMPNO ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) S FROM EMP WHERE DEPTNO = 30 ORDER BY EMPNO"
+ },
+ {
+  "id": "win-range-2keys",
+  "sql": "SELECT COUNT(*) OVER (ORDER BY SAL, ENAME RANGE BETWEEN 150 PRECEDING AND 150 FOLLOWING) FROM EMP"
+ },
+ {
+  "id": "win-range-date",
+  "sql": "SELECT ENAME, HIREDATE, COUNT(*) OVER (ORDER BY HIREDATE RANGE BETWEEN 30 PRECEDING AND CURRENT ROW) C FROM EMP ORDER BY HIREDATE, ENAME"
+ },
+ {
+  "id": "win-range-date-f",
+  "sql": "SELECT ENAME, COUNT(*) OVER (ORDER BY HIREDATE RANGE BETWEEN CURRENT ROW AND 60 FOLLOWING) C FROM EMP ORDER BY HIREDATE, ENAME"
+ },
+ {
+  "id": "win-rank-arg",
+  "sql": "SELECT RANK(1500) OVER (ORDER BY SAL DESC) FROM EMP"
+ },
+ {
+  "id": "win-dense-arg",
+  "sql": "SELECT DENSE_RANK(SAL) OVER (ORDER BY SAL) FROM EMP"
+ },
+ {
+  "id": "win-rn-arg",
+  "sql": "SELECT ROW_NUMBER(SAL) OVER (ORDER BY SAL) FROM EMP"
+ },
+ {
+  "id": "topn-ties-noorder",
+  "sql": "SELECT COUNT(*) FROM (SELECT ENAME, SAL FROM EMP FETCH FIRST 2 ROWS WITH TIES)"
+ },
+ {
+  "id": "topn-ties-noorder2",
+  "sql": "SELECT COUNT(*) FROM (SELECT ENAME FROM EMP WHERE DEPTNO = 10 FETCH FIRST 1 ROWS WITH TIES)"
+ },
+ {
+  "id": "win-rows-frac",
+  "sql": "SELECT ENAME, COUNT(*) OVER (ORDER BY EMPNO ROWS BETWEEN 0.5 PRECEDING AND 1.5 FOLLOWING) C FROM EMP WHERE DEPTNO = 10 ORDER BY EMPNO"
+ },
+ {
+  "id": "win-rows-frac2",
+  "sql": "SELECT ENAME, SUM(SAL) OVER (ORDER BY EMPNO ROWS BETWEEN 1.9 PRECEDING AND CURRENT ROW) S FROM EMP WHERE DEPTNO = 30 ORDER BY EMPNO"
+ },
+ {
+  "id": "win-range-desc",
+  "sql": "SELECT ENAME, SAL, COUNT(*) OVER (ORDER BY SAL DESC RANGE BETWEEN 300 PRECEDING AND 300 FOLLOWING) C FROM EMP ORDER BY SAL DESC, ENAME"
+ },
+ {
+  "id": "win-range-nulls",
+  "sql": "SELECT ENAME, COMM, COUNT(*) OVER (ORDER BY COMM RANGE BETWEEN 500 PRECEDING AND CURRENT ROW) C FROM EMP WHERE DEPTNO = 30 ORDER BY COMM, ENAME"
+ },
+ {
+  "id": "win-range-nulls-first",
+  "sql": "SELECT ENAME, COMM, COUNT(*) OVER (ORDER BY COMM NULLS FIRST RANGE BETWEEN CURRENT ROW AND 1000 FOLLOWING) C FROM EMP WHERE DEPTNO = 30 ORDER BY COMM NULLS FIRST, ENAME"
+ },
+ {
+  "id": "win-range-desc-nulls",
+  "sql": "SELECT ENAME, COMM, SUM(COMM) OVER (ORDER BY COMM DESC RANGE BETWEEN 200 PRECEDING AND 200 FOLLOWING) S FROM EMP WHERE DEPTNO = 30 ORDER BY COMM DESC, ENAME"
+ },
+ {
+  "id": "win-range-nulls-unb1",
+  "sql": "SELECT ENAME, COMM, SUM(SAL) OVER (ORDER BY COMM RANGE BETWEEN 1 FOLLOWING AND UNBOUNDED FOLLOWING) S FROM EMP ORDER BY COMM, ENAME"
+ },
+ {
+  "id": "win-range-nulls-unb2",
+  "sql": "SELECT ENAME, COMM, COUNT(*) OVER (ORDER BY COMM RANGE BETWEEN 100 FOLLOWING AND UNBOUNDED FOLLOWING) C FROM EMP ORDER BY COMM, ENAME"
+ },
+ {
+  "id": "win-range-nulls-unb3",
+  "sql": "SELECT ENAME, COMM, COUNT(*) OVER (ORDER BY COMM DESC RANGE BETWEEN UNBOUNDED PRECEDING AND 100 PRECEDING) C FROM EMP ORDER BY COMM DESC, ENAME"
+ },
+ {
+  "id": "win-range-nulls-unb4",
+  "sql": "SELECT ENAME, COMM, COUNT(*) OVER (ORDER BY COMM NULLS FIRST RANGE BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) C FROM EMP ORDER BY COMM NULLS FIRST, ENAME"
+ },
+ {
+  "id": "win-range-nulls-unb5",
+  "sql": "SELECT ENAME, COMM, MIN(ENAME) OVER (ORDER BY COMM DESC NULLS LAST RANGE BETWEEN 1 FOLLOWING AND UNBOUNDED FOLLOWING) M FROM EMP ORDER BY COMM DESC NULLS LAST, ENAME"
+ },
+ {
+  "id": "win-range-mgr-unb",
+  "sql": "SELECT ENAME, MGR, SUM(SAL) OVER (ORDER BY MGR RANGE BETWEEN 1 FOLLOWING AND UNBOUNDED FOLLOWING) S FROM EMP ORDER BY MGR, ENAME"
+ },
+ {
+  "id": "win-range-mgr-desc-unb",
+  "sql": "SELECT ENAME, MGR, COUNT(*) OVER (ORDER BY MGR DESC RANGE BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) C FROM EMP ORDER BY MGR DESC, ENAME"
+ },
+ {
+  "id": "win-range-part-nulls",
+  "sql": "SELECT DEPTNO, ENAME, COUNT(*) OVER (PARTITION BY DEPTNO ORDER BY COMM RANGE BETWEEN 100 FOLLOWING AND UNBOUNDED FOLLOWING) C FROM EMP ORDER BY DEPTNO, COMM, ENAME"
+ },
+ {
+  "id": "self-sal-gt-mgr",
+  "sql": "SELECT E.ENAME, E.SAL, M.ENAME, M.SAL FROM EMP E, EMP M WHERE E.MGR = M.EMPNO AND E.SAL > M.SAL ORDER BY E.ENAME"
+ },
+ {
   "id": "task-sql-select-basics-annual",
   "sql": "SELECT ENAME, SAL * 12 + NVL(COMM, 0) AS 연봉 FROM EMP ORDER BY EMPNO"
  },
@@ -1365,6 +1805,34 @@
  {
   "id": "task-sql-subquery-rollup-rollup-label",
   "sql": "SELECT CASE GROUPING(JOB) WHEN 1 THEN '전체' ELSE JOB END, COUNT(*) FROM EMP GROUP BY ROLLUP(JOB) ORDER BY GROUPING(JOB), JOB"
+ },
+ {
+  "id": "task-sql-window-hierarchy-dense-rank",
+  "sql": "SELECT ENAME, SAL, DENSE_RANK() OVER (ORDER BY SAL DESC) AS 순위 FROM EMP ORDER BY 3, ENAME"
+ },
+ {
+  "id": "task-sql-window-hierarchy-dept-top",
+  "sql": "SELECT DEPTNO, ENAME, SAL FROM (SELECT DEPTNO, ENAME, SAL, ROW_NUMBER() OVER (PARTITION BY DEPTNO ORDER BY SAL DESC, ENAME) RN FROM EMP) WHERE RN = 1 ORDER BY DEPTNO"
+ },
+ {
+  "id": "task-sql-window-hierarchy-running-total",
+  "sql": "SELECT ENAME, HIREDATE, SAL, SUM(SAL) OVER (ORDER BY HIREDATE, ENAME) AS 누적 FROM EMP WHERE DEPTNO = 30 ORDER BY HIREDATE, ENAME"
+ },
+ {
+  "id": "task-sql-window-hierarchy-prev-sal",
+  "sql": "SELECT ENAME, SAL, LAG(SAL) OVER (ORDER BY SAL, ENAME) AS 앞급여, SAL - LAG(SAL) OVER (ORDER BY SAL, ENAME) AS 차이 FROM EMP WHERE DEPTNO = 20 ORDER BY SAL, ENAME"
+ },
+ {
+  "id": "task-sql-window-hierarchy-top3-sal",
+  "sql": "SELECT ENAME, SAL FROM EMP ORDER BY SAL DESC, ENAME FETCH FIRST 3 ROWS ONLY"
+ },
+ {
+  "id": "task-sql-window-hierarchy-org-chart",
+  "sql": "SELECT LEVEL, ENAME FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME"
+ },
+ {
+  "id": "task-sql-window-hierarchy-path-to-king",
+  "sql": "SELECT LEVEL, ENAME FROM EMP START WITH ENAME = 'SMITH' CONNECT BY PRIOR MGR = EMPNO"
  },
  {
   "id": "note-w2d1-1",
@@ -2815,6 +3283,318 @@
  {
   "id": "note-w5d5-11",
   "sql": "SELECT DEPTNO, JOB, SUM(SAL) FROM EMP GROUP BY GROUPING SETS ((DEPTNO, JOB), (DEPTNO), (JOB), ()) ORDER BY DEPTNO, JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d1-1",
+  "sql": "SELECT ENAME, SAL, RANK() OVER (ORDER BY SAL DESC) AS RNK, DENSE_RANK() OVER (ORDER BY SAL DESC) AS DRNK, ROW_NUMBER() OVER (ORDER BY SAL DESC, ENAME) AS RN FROM EMP ORDER BY SAL DESC, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d1-2",
+  "sql": "SELECT ENAME, SAL, ROW_NUMBER() OVER (ORDER BY SAL DESC) AS RN FROM EMP WHERE SAL >= 2900 ORDER BY RN",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d1-3",
+  "sql": "SELECT ENAME, SAL, COMM, RANK() OVER (ORDER BY COMM DESC) AS RNK FROM EMP WHERE DEPTNO = 30 ORDER BY RNK, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d1-4",
+  "sql": "SELECT DEPTNO, ENAME, SAL, RANK() OVER (PARTITION BY DEPTNO ORDER BY SAL DESC) AS RNK FROM EMP ORDER BY DEPTNO, RNK, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d1-5",
+  "sql": "SELECT JOB, ENAME, SAL, DENSE_RANK() OVER (PARTITION BY JOB ORDER BY SAL) AS DR FROM EMP WHERE JOB IN ('SALESMAN', 'CLERK') ORDER BY JOB, DR, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d1-6",
+  "sql": "SELECT ENAME, SAL, RANK() OVER () AS RNK FROM EMP WHERE DEPTNO = 10",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d1-7",
+  "sql": "SELECT ENAME, SAL, RANK() OVER (ORDER BY SAL DESC) AS RNK FROM EMP WHERE RANK() OVER (ORDER BY SAL DESC) <= 3",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d1-8",
+  "sql": "SELECT DEPTNO, COUNT(*) FROM EMP GROUP BY DEPTNO HAVING RANK() OVER (ORDER BY COUNT(*) DESC) = 1",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d1-9",
+  "sql": "SELECT ENAME, SAL, RNK FROM (SELECT ENAME, SAL, RANK() OVER (ORDER BY SAL DESC) AS RNK FROM EMP) WHERE RNK <= 3 ORDER BY RNK, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d1-10",
+  "sql": "SELECT DEPTNO, ENAME, SAL FROM (SELECT DEPTNO, ENAME, SAL, ROW_NUMBER() OVER (PARTITION BY DEPTNO ORDER BY SAL DESC, ENAME) AS RN FROM EMP) WHERE RN <= 2 ORDER BY DEPTNO, RN",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d1-11",
+  "sql": "SELECT ENAME, SAL, RANK() OVER (ORDER BY SAL DESC) AS RNK FROM EMP WHERE DEPTNO = 20 ORDER BY RNK, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d1-12",
+  "sql": "SELECT DEPTNO, SUM(SAL) AS SUM_SAL, RANK() OVER (ORDER BY SUM(SAL) DESC) AS RNK FROM EMP GROUP BY DEPTNO ORDER BY RNK",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d1-13",
+  "sql": "SELECT RANK(1500) WITHIN GROUP (ORDER BY SAL DESC) AS RNK FROM EMP",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d2-1",
+  "sql": "SELECT DEPTNO, ENAME, SAL, SUM(SAL) OVER (PARTITION BY DEPTNO) AS DEPT_SUM, ROUND(AVG(SAL) OVER (PARTITION BY DEPTNO)) AS DEPT_AVG, COUNT(*) OVER () AS CNT FROM EMP WHERE DEPTNO IN (10, 20) ORDER BY DEPTNO, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d2-2",
+  "sql": "SELECT ENAME, SAL FROM EMP WHERE SAL > AVG(SAL) OVER ()",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d2-3",
+  "sql": "SELECT ENAME, SAL, SUM(SAL) OVER (ORDER BY SAL, ENAME) AS CUM FROM EMP WHERE DEPTNO = 30 ORDER BY SAL, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d2-4",
+  "sql": "SELECT ENAME, SAL, SUM(SAL) OVER (ORDER BY SAL) AS RANGE_SUM, SUM(SAL) OVER (ORDER BY SAL, ENAME ROWS UNBOUNDED PRECEDING) AS ROWS_SUM FROM EMP WHERE DEPTNO = 30 ORDER BY SAL, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d2-5",
+  "sql": "SELECT ENAME, SAL, AVG(SAL) OVER (ORDER BY SAL, ENAME ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS MOV_AVG, SUM(SAL) OVER (ORDER BY SAL, ENAME ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS MOV_SUM FROM EMP WHERE DEPTNO = 30 ORDER BY SAL, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d2-6",
+  "sql": "SELECT ENAME, SAL, COUNT(*) OVER (ORDER BY SAL RANGE BETWEEN 150 PRECEDING AND 150 FOLLOWING) AS NEAR_CNT FROM EMP WHERE DEPTNO = 30 ORDER BY SAL, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d2-7",
+  "sql": "SELECT ENAME, HIREDATE, SAL, LAG(SAL) OVER (ORDER BY HIREDATE) AS PREV_SAL, LEAD(SAL) OVER (ORDER BY HIREDATE) AS NEXT_SAL FROM EMP WHERE DEPTNO = 30 ORDER BY HIREDATE",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d2-8",
+  "sql": "SELECT ENAME, HIREDATE, SAL, LAG(SAL, 2) OVER (ORDER BY HIREDATE) AS LAG2, LAG(SAL, 2, 0) OVER (ORDER BY HIREDATE) AS LAG2_0, LEAD(ENAME, 1, 'NONE') OVER (ORDER BY HIREDATE) AS NEXT_EMP FROM EMP WHERE DEPTNO = 30 ORDER BY HIREDATE",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d2-9",
+  "sql": "SELECT ENAME, SAL, FIRST_VALUE(ENAME) OVER (ORDER BY SAL DESC, ENAME) AS TOP_EMP, LAST_VALUE(ENAME) OVER (ORDER BY SAL DESC, ENAME) AS LAST_DEF, LAST_VALUE(ENAME) OVER (ORDER BY SAL DESC, ENAME ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS LAST_FULL FROM EMP WHERE DEPTNO = 30 ORDER BY SAL DESC, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d2-10",
+  "sql": "SELECT ENAME, SAL, ROUND(RATIO_TO_REPORT(SAL) OVER (), 3) AS RATIO, ROUND(SAL / SUM(SAL) OVER (), 3) AS SAME FROM EMP WHERE DEPTNO = 30 ORDER BY SAL DESC, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d2-11",
+  "sql": "SELECT ENAME, SAL, RANK() OVER (ORDER BY SAL) AS RNK, PERCENT_RANK() OVER (ORDER BY SAL) AS PR, ROUND(CUME_DIST() OVER (ORDER BY SAL), 4) AS CD FROM EMP WHERE DEPTNO = 30 ORDER BY SAL, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d2-12",
+  "sql": "SELECT ENAME, SAL, NTILE(4) OVER (ORDER BY SAL DESC, ENAME) AS GRP FROM EMP ORDER BY SAL DESC, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d3-1",
+  "sql": "SELECT ROWNUM, ENAME, SAL FROM EMP WHERE ROWNUM <= 3",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d3-2",
+  "sql": "SELECT COUNT(*) AS CNT FROM EMP WHERE ROWNUM = 2",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d3-3",
+  "sql": "SELECT COUNT(*) AS CNT FROM EMP WHERE ROWNUM > 1",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d3-4",
+  "sql": "SELECT ROWNUM, ENAME, SAL FROM EMP WHERE ROWNUM <= 3 ORDER BY SAL DESC",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d3-5",
+  "sql": "SELECT ROWNUM, ENAME, SAL FROM (SELECT ENAME, SAL FROM EMP ORDER BY SAL DESC, ENAME) WHERE ROWNUM <= 3",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d3-6",
+  "sql": "SELECT ENAME, SAL FROM (SELECT ROWNUM AS RN, ENAME, SAL FROM (SELECT ENAME, SAL FROM EMP ORDER BY SAL DESC, ENAME) WHERE ROWNUM <= 6) WHERE RN >= 4",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d3-7",
+  "sql": "SELECT ENAME, SAL FROM EMP ORDER BY SAL DESC, ENAME FETCH FIRST 3 ROWS ONLY",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d3-8",
+  "sql": "SELECT ENAME, SAL FROM EMP ORDER BY SAL DESC, ENAME OFFSET 3 ROWS FETCH NEXT 3 ROWS ONLY",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d3-9",
+  "sql": "SELECT * FROM (SELECT ENAME, SAL FROM EMP ORDER BY SAL DESC FETCH FIRST 2 ROWS WITH TIES) ORDER BY SAL DESC, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d3-10",
+  "sql": "SELECT ENAME, SAL FROM (SELECT ENAME, SAL, ROW_NUMBER() OVER (ORDER BY SAL DESC, ENAME) AS RN FROM EMP) WHERE RN BETWEEN 4 AND 6 ORDER BY RN",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d4-1",
+  "sql": "SELECT LEVEL, RPAD(LPAD(' ', 2 * (LEVEL - 1)) || ENAME, 16) AS TREE, EMPNO, MGR FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d4-2",
+  "sql": "SELECT LEVEL, RPAD(LPAD(' ', 2 * (LEVEL - 1)) || ENAME, 16) AS TREE FROM EMP START WITH ENAME = 'JONES' CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d4-3",
+  "sql": "SELECT LEVEL, ENAME, MGR FROM EMP START WITH ENAME = 'SMITH' CONNECT BY PRIOR MGR = EMPNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d4-4",
+  "sql": "SELECT ENAME, LEVEL FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER BY ENAME FETCH FIRST 3 ROWS ONLY",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d4-5",
+  "sql": "SELECT ENAME, CONNECT_BY_ROOT ENAME AS ROOT, CONNECT_BY_ISLEAF AS LEAF, SUBSTR(SYS_CONNECT_BY_PATH(ENAME, '/'), 1, 25) AS PATH FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d4-6",
+  "sql": "SELECT ENAME, CONNECT_BY_ROOT ENAME AS ROOT FROM EMP WHERE CONNECT_BY_ISLEAF = 1 START WITH JOB = 'MANAGER' CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d4-7",
+  "sql": "SELECT LEVEL, RPAD(LPAD(' ', 2 * (LEVEL - 1)) || ENAME, 16) AS TREE FROM EMP WHERE ENAME <> 'JONES' START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d4-8",
+  "sql": "SELECT LEVEL, RPAD(LPAD(' ', 2 * (LEVEL - 1)) || ENAME, 16) AS TREE FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR AND ENAME <> 'JONES' ORDER SIBLINGS BY ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d5-1",
+  "sql": "SELECT E.EMPNO, E.ENAME, E.MGR, M.ENAME AS MGR_NAME FROM EMP E, EMP M WHERE E.MGR = M.EMPNO ORDER BY E.EMPNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d5-2",
+  "sql": "SELECT E.ENAME, M.ENAME AS SUB_NAME FROM EMP E JOIN EMP M ON M.MGR = E.EMPNO WHERE E.ENAME = 'JONES' ORDER BY M.ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d5-3",
+  "sql": "SELECT ENAME FROM EMP, EMP WHERE MGR = EMPNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d5-4",
+  "sql": "SELECT E.ENAME, M.ENAME AS MGR_NAME, T.ENAME AS TOP_NAME FROM EMP E, EMP M, EMP T WHERE E.MGR = M.EMPNO AND M.MGR = T.EMPNO ORDER BY E.EMPNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d5-5",
+  "sql": "SELECT E.ENAME, M.ENAME AS MGR_NAME FROM EMP E, EMP M WHERE E.MGR = M.EMPNO(+) ORDER BY E.EMPNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d5-6",
+  "sql": "SELECT E.ENAME, M.ENAME AS MGR_NAME, T.ENAME AS TOP_NAME FROM EMP E LEFT OUTER JOIN EMP M ON E.MGR = M.EMPNO LEFT OUTER JOIN EMP T ON M.MGR = T.EMPNO ORDER BY E.EMPNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d5-7",
+  "sql": "SELECT E.ENAME, E.SAL, M.ENAME AS MGR_NAME, M.SAL AS MGR_SAL FROM EMP E JOIN EMP M ON E.MGR = M.EMPNO WHERE E.SAL > M.SAL ORDER BY E.ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d5-8",
+  "sql": "SELECT M.ENAME, COUNT(*) AS CNT FROM EMP E JOIN EMP M ON E.MGR = M.EMPNO GROUP BY M.ENAME ORDER BY CNT DESC, M.ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w6d5-9",
+  "sql": "SELECT LEVEL, ENAME, PRIOR ENAME AS MGR_NAME FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME",
   "match": "code",
   "note": true
  }

@@ -212,6 +212,18 @@ const SQL_INFO: Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'>>
       { href: '/data/sqld/week5/day5', label: 'GROUPING SETS·GROUPING' },
     ],
   },
+  'sql-window-hierarchy': {
+    summary: 'DENSE_RANK·ROW_NUMBER 순위, 부서별 1등 뽑기, 누적 합, LAG, 상위 3명(ROWNUM·FETCH FIRST), CONNECT BY 조직도와 보고 라인을 직접 실행하며 푸는 7과제입니다.',
+    intro: [
+      '윈도우 함수와 계층형 질의는 결과 표를 직접 보면 차이가 바로 보입니다. RANK 와 DENSE_RANK 가 동점에서 어떻게 갈리는지, PRIOR 를 어느 쪽에 붙이면 나무가 거꾸로 펼쳐지는지가 결과 표에 그대로 드러납니다.',
+      '윈도우 함수는 WHERE 에 바로 쓸 수 없어서 인라인 뷰로 감싸는 연습이 함께 들어 있습니다. 같은 결과를 내면 ROWNUM 이든 FETCH FIRST 든 정답입니다.',
+    ],
+    related: [
+      { href: '/data/sqld/week6/day1', label: '순위 함수' },
+      { href: '/data/sqld/week6/day3', label: 'Top N 쿼리' },
+      { href: '/data/sqld/week6/day4', label: '계층형 질의' },
+    ],
+  },
 };
 
 const INFO: Record<LabKind, Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'>>> = {
@@ -238,6 +250,7 @@ export const LAB_CATALOG: LabEntry[] = [
   entry('sql', 'sql-select-basics', 'SQL S1', 'SELECT·함수·WHERE 로 원하는 행 골라내기'),
   entry('sql', 'sql-group-join', 'SQL S2', 'GROUP BY·HAVING·조인으로 묶고 잇기'),
   entry('sql', 'sql-subquery-rollup', 'SQL S3', '서브쿼리·집합 연산·ROLLUP 으로 한 번에 묻고 묶기'),
+  entry('sql', 'sql-window-hierarchy', 'SQL S4', '윈도우 함수·Top N·계층형 질의로 순위 매기고 나무 펼치기'),
   entry('aws', 'regions-azs', 'LAB 01', '리전과 가용 영역 지도 그리기'),
   entry('aws', 's3-first-bucket', 'LAB 02', '서울 리전에 첫 버킷 만들기'),
   entry('aws', 'iam-least-privilege', 'LAB 03', '읽기 전용 사용자 만들고 정리하기'),

@@ -1,6 +1,8 @@
 // 식 계산. 조건(WHERE·ON·HAVING)은 3값 논리(참·거짓·UNKNOWN=null)로 계산한다.
 import type { Expr, Select } from './ast';
 import { FUNCTIONS, NILADIC, extractField, trimBoth } from './functions';
+import type { HierInfo } from './hierarchy';
+import { WINDOW_ONLY, windowKey } from './window';
 import { invalidIdentifier, resolveColumn, type Relation } from './relation';
 import { NotSupported, OraError, SqlDate, addDays, compare, parseDefaultDate, toNumber, toText, type Value } from './values';
 
@@ -17,6 +19,12 @@ export interface EvalCtx {
   src?: string;
   /** 서브쿼리에 넘긴 바깥 문맥 표시: 서브쿼리 안에서 이 문맥(또는 더 바깥)의 열을 읽으면 hit 가 켜진다 */
   correlation?: { hit: boolean };
+  /** 계층형 질의의 노드 정보(LEVEL·PRIOR·CONNECT_BY_ROOT) */
+  hier?: HierInfo;
+  /** 행 → 그 행의 계층 정보(집계가 묶음의 행마다 LEVEL 등을 읽을 때) */
+  hierOf?: (row: Value[]) => HierInfo | undefined;
+  /** 윈도우 함수 값(windowKey → 값). SELECT 를 계산하기 전에 채운다. */
+  windowValues?: Map<string, Value>;
   /** GROUP BY 가 있는 묶음 계산인가(GROUPING 함수는 GROUP BY 없이 못 쓴다) */
   hasGroupBy?: boolean;
   /** ROLLUP·CUBE 의 소계 행: 이 묶음에서 빠진 GROUP BY 식이면 true(그 값은 NULL 로 보인다) */
@@ -26,7 +34,7 @@ export interface EvalCtx {
 
 export const AGGREGATES = new Set(['COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'STDDEV', 'VARIANCE', 'MEDIAN', 'GROUPING', 'GROUPING_ID']);
 
-export const isAggregate = (e: Expr) => e.type === 'func' && AGGREGATES.has(e.name);
+export const isAggregate = (e: Expr) => e.type === 'func' && ((AGGREGATES.has(e.name) && !e.over) || !!e.withinGroup);
 
 /** 식 안에 집계 함수가 있는가(서브쿼리 안은 보지 않는다). */
 export function containsAggregate(e: Expr): boolean {
@@ -53,7 +61,7 @@ export function children(e: Expr): Expr[] {
     case 'like':
       return [e.arg, e.pattern, ...(e.escape ? [e.escape] : [])];
     case 'func':
-      return e.args;
+      return e.over ? [...e.args, ...e.over.partitionBy, ...e.over.orderBy.map((o) => o.expr)] : e.args;
     case 'case':
       return [...(e.base ? [e.base] : []), ...e.whens.flatMap((w) => [w.when, w.then]), ...(e.else ? [e.else] : [])];
     case 'cmpsub':
@@ -370,10 +378,24 @@ export function evaluate(e: Expr, ctx: EvalCtx): Value {
       return ctx.rownum ?? 1;
     case 'slot':
       return ctx.row[e.index] ?? null;
+    case 'pseudo': {
+      if (!ctx.hier) throw new OraError('ORA-01788', 'CONNECT BY clause required in this query block');
+      if (e.name === 'LEVEL') return ctx.hier.level;
+      return e.name === 'CONNECT_BY_ISLEAF' ? ctx.hier.isLeaf : ctx.hier.isCycle;
+    }
     case 'star':
       throw new OraError('ORA-00936', 'missing expression');
     case 'unary': {
       if (e.op === 'NOT') break;
+      if (e.op === 'PRIOR' || e.op === 'ROOT') {
+        if (!ctx.hier) throw new OraError('ORA-01788', 'CONNECT BY clause required in this query block');
+        // PRIOR LEVEL·PRIOR CONNECT_BY_ISLEAF 처럼 가상 열에는 PRIOR 를 붙일 수 없다.
+        if (e.arg.type === 'pseudo' || (e.arg.type === 'unary' && (e.arg.op === 'PRIOR' || e.arg.op === 'ROOT'))) throw new OraError('ORA-00976', 'Specified pseudocolumn or operator not allowed here.');
+        const row = e.op === 'PRIOR' ? ctx.hier.parent : ctx.hier.root;
+        if (!row) return null;
+        const hier = ctx.hierOf?.(row);
+        return evaluate(e.arg, { ...ctx, row, ...(hier ? { hier } : {}) });
+      }
       const v = evaluate(e.arg, ctx);
       if (v === null) return null;
       return e.op === '-' ? -toNumber(v)! : toNumber(v);
@@ -382,6 +404,19 @@ export function evaluate(e: Expr, ctx: EvalCtx): Value {
       if (COMPARE_OPS.has(e.op)) break;
       return arith(e.op, evaluate(e.left, ctx), evaluate(e.right, ctx), e);
     case 'func': {
+      if (e.over) {
+        const v = ctx.windowValues?.get(windowKey(e));
+        if (v === undefined) throw new OraError('ORA-30483', 'window  functions are not allowed here');
+        return v;
+      }
+      if (e.withinGroup) return hypothetical(e, ctx);
+      if (WINDOW_ONLY.has(e.name)) throw new OraError('ORA-30484', 'missing OVER clause, or invalid identifier found for window function');
+      if (e.name === 'SYS_CONNECT_BY_PATH') {
+        if (!ctx.hier) throw new OraError('ORA-01788', 'CONNECT BY clause required in this query block');
+        if (e.args.length !== 2) throw new OraError('ORA-00909', 'invalid number of arguments');
+        const sep = toText(evaluate(e.args[1], ctx)) ?? '';
+        return ctx.hier.path.map((row) => sep + (toText(evaluate(e.args[0], { ...ctx, row })) ?? '')).join('') || null;
+      }
       if (AGGREGATES.has(e.name)) return aggregate(e, ctx);
       const args = e.args.map((a) => evaluate(a, ctx));
       // NVL·COALESCE 는 첫 인자의(NVL2 는 둘째 인자의) 자료형으로 나머지를 바꾼다.
@@ -419,6 +454,44 @@ export function evaluate(e: Expr, ctx: EvalCtx): Value {
   throw new NotSupported('조건식(비교·AND·OR)을 SELECT 의 값으로 쓰는 것은 실습장에서 지원하지 않아요. CASE WHEN 으로 바꿔 써 주세요.');
 }
 
+/** RANK(v) WITHIN GROUP (ORDER BY x): 묶음에 v 를 넣는다면 몇 등인가(가상 순위). */
+function hypothetical(e: Extract<Expr, { type: 'func' }>, ctx: EvalCtx): Value {
+  if (!ctx.group) throw new OraError('ORA-00934', 'group function is not allowed here');
+  const order = e.withinGroup!;
+  const hyp = e.args.map((a) => evaluate(a, { ...ctx, group: undefined }));
+  const rows = ctx.group.map((row) => order.map((o) => evaluate(o.expr, rowCtx(ctx, row))));
+  // 정렬 방향을 따라 a 가 b 보다 앞이면 음수(NULL 은 ASC 에서 맨 뒤)
+  const cmp = (a: Value[], b: Value[]) => {
+    for (let t = 0; t < order.length; t++) {
+      const o = order[t];
+      const nullsFirst = o.nulls ? o.nulls === 'FIRST' : o.desc;
+      const x = a[t];
+      const y = b[t];
+      if (x === null && y === null) continue;
+      if (x === null) return nullsFirst ? -1 : 1;
+      if (y === null) return nullsFirst ? 1 : -1;
+      const c = (compare(x, y) ?? 0) * (o.desc ? -1 : 1);
+      if (c) return c;
+    }
+    return 0;
+  };
+  const n = rows.length;
+  const before = rows.filter((r) => cmp(r, hyp) < 0).length;
+  const peers = rows.filter((r) => cmp(r, hyp) === 0).length;
+  switch (e.name) {
+    case 'RANK':
+      return before + 1;
+    case 'DENSE_RANK': {
+      const distinct = new Set(rows.filter((r) => cmp(r, hyp) < 0).map((r) => JSON.stringify(r.map((v) => (v === null ? null : String(v))))));
+      return distinct.size + 1;
+    }
+    case 'PERCENT_RANK':
+      return n === 0 ? 0 : before / n;
+    default:
+      return (before + peers + 1) / (n + 1); // CUME_DIST
+  }
+}
+
 function callFunction(name: string, args: Value[]): Value {
   const fn = FUNCTIONS[name];
   if (!fn) return callFunctionName(name);
@@ -428,9 +501,7 @@ function callFunction(name: string, args: Value[]): Value {
 /** 없는 함수 이름: 2·3단계 기능이면 안내, 아니면 Oracle 과 같은 ORA-00904. */
 export function callFunctionName(name: string): never {
   {
-    if (['ROW_NUMBER', 'RANK', 'DENSE_RANK', 'LAG', 'LEAD', 'NTILE', 'RATIO_TO_REPORT', 'CUME_DIST', 'PERCENT_RANK', 'FIRST_VALUE', 'LAST_VALUE'].includes(name)) {
-      throw new NotSupported(`${name} 같은 윈도우 함수는 실습장 2단계에서 열려요.`);
-    }
+    if (name === 'NTH_VALUE' || name === 'LISTAGG') throw new NotSupported(`${name} 는 아직 실습장에서 지원하지 않아요.`);
     if (name.startsWith('REGEXP_')) throw new NotSupported('정규 표현식 함수(REGEXP_*)는 실습장 3단계에서 열려요.');
     if (['ISNULL', 'LEN', 'GETDATE', 'CHARINDEX', 'DATEADD', 'CEILING'].includes(name)) {
       throw new OraError('ORA-00904', `"${name}": invalid identifier`);
@@ -440,6 +511,12 @@ export function callFunctionName(name: string): never {
 }
 
 /** 집계 함수: 지금 묶음(ctx.group)의 행마다 인자를 계산해 모은다. NULL 은 빼고 센다. */
+/** 묶음 안의 한 행을 계산하는 문맥(그 행의 계층 정보까지 바꿔 끼운다) */
+function rowCtx(ctx: EvalCtx, row: Value[]): EvalCtx {
+  const hier = ctx.hierOf?.(row);
+  return { ...ctx, row, group: undefined, isRolledUp: undefined, ...(hier ? { hier } : {}) };
+}
+
 function aggregate(e: Extract<Expr, { type: 'func' }>, ctx: EvalCtx): Value {
   // GROUPING(열): 이 행이 그 열로 묶이지 않은(소계·총계) 행이면 1. GROUPING_ID 는 그 비트를 이은 수.
   if (e.name === 'GROUPING' || e.name === 'GROUPING_ID') {
@@ -459,7 +536,7 @@ function aggregate(e: Extract<Expr, { type: 'func' }>, ctx: EvalCtx): Value {
     return ctx.group.length;
   }
   if (e.args.length !== 1) throw new OraError(e.args.length ? 'ORA-00909' : 'ORA-00909', 'invalid number of arguments');
-  let values = ctx.group.map((row) => evaluate(e.args[0], { ...ctx, row, group: undefined, isRolledUp: undefined })).filter((v): v is Exclude<Value, null> => v !== null);
+  let values = ctx.group.map((row) => evaluate(e.args[0], rowCtx(ctx, row))).filter((v): v is Exclude<Value, null> => v !== null);
   if (e.distinct) {
     const seen = new Set<string>();
     values = values.filter((v) => {

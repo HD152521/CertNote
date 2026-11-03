@@ -1,5 +1,5 @@
 // SELECT 문 파서(재귀 하강). Oracle 문법 기준이며, 오류는 Oracle 과 같은 ORA 번호를 낸다.
-import type { Expr, FromItem, JoinKind, OrderItem, QueryBlock, Select, SelectItem, WithQuery } from './ast';
+import type { Expr, FromItem, JoinKind, OrderItem, QueryBlock, Select, SelectItem, WindowBound, WindowSpec, WithQuery } from './ast';
 import { headingOf, tokenize, type Token } from './lexer';
 import { NotSupported, OraError, parseDefaultDate } from './values';
 
@@ -7,10 +7,12 @@ import { NotSupported, OraError, parseDefaultDate } from './values';
 const RESERVED = new Set(
   ('SELECT FROM WHERE GROUP BY HAVING ORDER AND OR NOT IN IS NULL LIKE BETWEEN JOIN ON USING INNER LEFT RIGHT FULL ' +
     'OUTER CROSS NATURAL UNION INTERSECT MINUS DISTINCT ALL AS CASE WHEN THEN ELSE END EXISTS ANY SOME ESCAPE ASC DESC ' +
-    'FETCH OFFSET CONNECT START PRIOR WITH INSERT UPDATE DELETE INTO VALUES SET CREATE DROP TABLE PIVOT UNPIVOT').split(' '),
+    'FETCH OFFSET CONNECT START PRIOR SIBLINGS OVER PARTITION WITH INSERT UPDATE DELETE INTO VALUES SET CREATE DROP TABLE PIVOT UNPIVOT').split(' '),
 );
 
 const missingExpr = () => new OraError('ORA-00936', 'missing expression');
+/** WITHIN GROUP 으로 "이 값이 들어온다면 몇 등인가" 를 묻는 가상 순위 집계 */
+const HYPOTHETICAL = new Set(['RANK', 'DENSE_RANK', 'PERCENT_RANK', 'CUME_DIST']);
 
 /** ROLLUP·CUBE·GROUPING SETS 가 만드는 묶음 수 상한(CUBE 6개 = 64). 묶음마다 전체 행을 다시 훑는다. */
 export const MAX_GROUPING_SETS = 64;
@@ -141,8 +143,13 @@ export class Parser {
     const q: Select = { body, ...(withList ? { with: withList } : {}) };
     if (this.isWord('ORDER')) {
       this.i++;
-      this.expectWord('BY');
-      q.orderBy = this.orderList();
+      if (this.acceptWord('SIBLINGS')) {
+        this.expectWord('BY');
+        q.orderSiblings = this.orderList();
+      } else {
+        this.expectWord('BY');
+        q.orderBy = this.orderList();
+      }
     }
     if (this.isWord('OFFSET') || this.isWord('FETCH')) q.fetch = this.fetchClause();
     return q;
@@ -192,9 +199,7 @@ export class Parser {
     const from = this.fromList();
     const q: QueryBlock = { type: 'query', distinct, items, from };
     if (this.acceptWord('WHERE')) q.where = this.expr();
-    if (this.isWord('START') || this.isWord('CONNECT')) {
-      throw new NotSupported('계층형 질의(START WITH·CONNECT BY)는 실습장 2단계에서 열려요.');
-    }
+    if (this.isWord('START') || this.isWord('CONNECT')) q.connectBy = this.connectByClause();
     if (this.isWord('GROUP')) this.groupByClause(q);
     if (this.acceptWord('HAVING')) q.having = this.expr();
     // Oracle 은 HAVING 을 GROUP BY 앞에 써도 받아 준다.
@@ -272,6 +277,73 @@ export class Parser {
       return { sets: [[]], special: true }; // () = 총계
     }
     return { sets: [[this.expr()]], special: false };
+  }
+
+  /** START WITH 조건 CONNECT BY [NOCYCLE] 조건 — 두 절의 순서는 바뀌어도 된다. */
+  private connectByClause(): NonNullable<QueryBlock['connectBy']> {
+    let startWith: Expr | undefined;
+    let condition: Expr | undefined;
+    let nocycle = false;
+    for (let k = 0; k < 2; k++) {
+      if (!startWith && this.isWord('START')) {
+        this.i++;
+        this.expectWord('WITH');
+        startWith = this.expr();
+      } else if (!condition && this.isWord('CONNECT')) {
+        this.i++;
+        this.expectWord('BY');
+        nocycle = this.acceptWord('NOCYCLE');
+        condition = this.expr();
+      }
+    }
+    if (!condition) throw new OraError('ORA-01788', 'CONNECT BY clause required in this query block');
+    return { startWith, condition, nocycle };
+  }
+
+  /** OVER ( [PARTITION BY …] [ORDER BY …] [ROWS|RANGE …] ) */
+  private windowSpec(): WindowSpec {
+    this.expectOp('(');
+    const spec: WindowSpec = { partitionBy: [], orderBy: [] };
+    if (this.acceptWord('PARTITION')) {
+      this.expectWord('BY');
+      spec.partitionBy.push(this.expr());
+      while (this.acceptOp(',')) spec.partitionBy.push(this.expr());
+    }
+    if (this.isWord('ORDER')) {
+      this.i++;
+      this.expectWord('BY');
+      spec.orderBy = this.orderList();
+    }
+    if (this.isWord('ROWS') || this.isWord('RANGE')) {
+      const unit = this.t.value as 'ROWS' | 'RANGE';
+      this.i++;
+      if (!spec.orderBy.length) throw new OraError('ORA-30485', 'missing ORDER BY expression in the window specification');
+      if (this.acceptWord('BETWEEN')) {
+        const start = this.windowBound();
+        this.expectWord('AND');
+        spec.frame = { unit, start, end: this.windowBound() };
+      } else spec.frame = { unit, start: this.windowBound(), end: { kind: 'CURRENT ROW' } };
+    }
+    this.expectOp(')');
+    return spec;
+  }
+
+  private windowBound(): WindowBound {
+    if (this.acceptWord('UNBOUNDED')) {
+      if (this.acceptWord('PRECEDING')) return { kind: 'UNBOUNDED PRECEDING' };
+      this.expectWord('FOLLOWING');
+      return { kind: 'UNBOUNDED FOLLOWING' };
+    }
+    if (this.acceptWord('CURRENT')) {
+      this.expectWord('ROW');
+      return { kind: 'CURRENT ROW' };
+    }
+    const t = this.t;
+    if (t.kind !== 'number') throw missingExpr();
+    this.i++;
+    if (this.acceptWord('PRECEDING')) return { kind: 'PRECEDING', offset: Number(t.value) };
+    this.expectWord('FOLLOWING');
+    return { kind: 'FOLLOWING', offset: Number(t.value) };
   }
 
   /** ROLLUP·GROUPING SETS 안의 묶음 하나: 식, (식, 식), () */
@@ -527,6 +599,11 @@ export class Parser {
 
   private unary(): Expr {
     const start = this.t.start;
+    if (this.isWord('PRIOR') || this.isWord('CONNECT_BY_ROOT')) {
+      const op = this.t.value === 'PRIOR' ? ('PRIOR' as const) : ('ROOT' as const);
+      this.i++;
+      return this.span(start, { type: 'unary' as const, op, arg: this.unary() });
+    }
     if (this.isOp('-') || this.isOp('+')) {
       const op = this.t.value as '-' | '+';
       this.i++;
@@ -589,8 +666,9 @@ export class Parser {
       return this.span(start, { type: 'rownum' as const });
     }
     if (w === 'GROUP_ID') throw new NotSupported('GROUP_ID 는 아직 실습장에서 지원하지 않아요. 소계 행 구분은 GROUPING·GROUPING_ID 로 해요.');
-    if (w === 'PRIOR' || w === 'LEVEL' || w === 'CONNECT_BY_ROOT' || w === 'SYS_CONNECT_BY_PATH') {
-      throw new NotSupported('계층형 질의(LEVEL·PRIOR)는 실습장 2단계에서 열려요.');
+    if (w === 'LEVEL' || w === 'CONNECT_BY_ISLEAF' || w === 'CONNECT_BY_ISCYCLE') {
+      this.i++;
+      return this.span(start, { type: 'pseudo' as const, name: w });
     }
     if (RESERVED.has(w)) throw missingExpr();
     this.i++;
@@ -673,8 +751,23 @@ export class Parser {
   }
 
   private overCheck(e: Expr): Expr {
-    if (this.isWord('OVER')) throw new NotSupported('윈도우 함수(OVER 절)는 실습장 2단계에서 열려요.');
-    if (this.isWord('WITHIN') || this.isWord('KEEP')) throw new NotSupported('WITHIN GROUP·KEEP 은 아직 실습장에서 지원하지 않아요.');
+    if (this.acceptWord('OVER')) {
+      if (e.type !== 'func') throw missingExpr();
+      const over = this.windowSpec();
+      return this.span(e.start, { ...e, over });
+    }
+    if (this.isWord('WITHIN') && e.type === 'func' && HYPOTHETICAL.has(e.name)) {
+      this.i++;
+      this.expectWord('GROUP');
+      this.expectOp('(');
+      this.expectWord('ORDER');
+      this.expectWord('BY');
+      const withinGroup = this.orderList();
+      this.expectOp(')');
+      if (withinGroup.length !== e.args.length) throw new OraError('ORA-00909', 'invalid number of arguments');
+      return this.span(e.start, { ...e, withinGroup });
+    }
+    if (this.isWord('WITHIN') || this.isWord('KEEP')) throw new NotSupported('WITHIN GROUP·KEEP 은 RANK·DENSE_RANK·PERCENT_RANK·CUME_DIST 의 가상 순위만 실습장에서 지원해요.');
     return e;
   }
 }
