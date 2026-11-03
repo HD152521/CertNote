@@ -19,7 +19,7 @@ export interface OfficialRefsProps {
 export function OfficialRefs({ certMeta, lang, examUrl, services }: OfficialRefsProps) {
   if (!examUrl && services.length === 0) return null;
   const s = pick(trustStrings, lang);
-  const examLabel = fmt(certMeta.section === 'linux' ? s.refsExamSyllabus : s.refsExamGuide, { exam: certMeta.code });
+  const examLabel = fmt((certMeta.section ?? 'aws') !== 'aws' ? s.refsExamSyllabus : s.refsExamGuide, { exam: certMeta.code });
   const items = [
     ...(examUrl ? [{ href: examUrl, label: examLabel }] : []),
     ...services.map((doc) => ({ href: awsDocsUrl(doc.path, lang), label: `${doc.label} ${s.refsDocsSuffix}` })),

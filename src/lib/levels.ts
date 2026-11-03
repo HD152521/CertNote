@@ -6,6 +6,7 @@ import type { CertLevel } from './content';
 export const SECTION_TIERS: Record<Section, string[]> = {
   aws: ['foundational', 'associate', 'professional', 'specialty'],
   linux: ['grade-2', 'grade-1'],
+  data: ['developer', 'professional'],
   kubernetes: ['kcna', 'ckad', 'cka', 'cks'],
   terraform: ['associate', 'professional'],
 };
@@ -24,6 +25,12 @@ const LINUX_LABELS: Record<string, string> = {
   'grade-2': '2급',
 };
 
+// 데이터 자격증(SQLD·SQLP)은 한국데이터산업진흥원 국가공인 자격이라 '개발자/전문가' 로 표기한다.
+const DATA_LABELS: Record<string, string> = {
+  developer: '개발자',
+  professional: '전문가',
+};
+
 function titleCase(s: string): string {
   return s.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -33,6 +40,7 @@ function titleCase(s: string): string {
 export function certLevelLabel(level: CertLevel, section: Section = 'aws'): string {
   if (section === 'aws' && AWS_LABELS[level]) return AWS_LABELS[level];
   if (section === 'linux' && LINUX_LABELS[level]) return LINUX_LABELS[level];
+  if (section === 'data' && DATA_LABELS[level]) return DATA_LABELS[level];
   return titleCase(level);
 }
 

@@ -23,7 +23,7 @@ export function reportErrorHref(pagePath: string): string {
 // 순수 서버 컴포넌트 — props 만 읽는다(요청별 동적 API 금지, DayView 의 계약과 같다).
 export function DaySourceLine({ certMeta, lang, reviewedMonth, pagePath }: DaySourceLineProps) {
   const s = pick(trustStrings, lang);
-  const basis = fmt(certMeta.section === 'linux' ? s.basisLinux : s.basisAws, { exam: certMeta.code });
+  const basis = fmt((certMeta.section ?? 'aws') !== 'aws' ? s.basisLinux : s.basisAws, { exam: certMeta.code });
   return (
     <p aria-label={s.lineLabel} className="mb-2 flex flex-wrap items-center gap-x-1.5 text-xs text-fg-muted">
       <span>{basis}</span>

@@ -57,9 +57,9 @@ describe('POST /api/question-report', () => {
 
 describe('POST /api/cert-request', () => {
   it('비로그인 요청은 user_id 없이 저장한다', async () => {
-    const res = await certPOST(req({ certKey: 'sqld' }));
+    const res = await certPOST(req({ certKey: 'adsp' }));
     expect(res.status).toBe(200);
-    expect(mocks.query.mock.calls[0][1]).toEqual(['sqld', null, null]);
+    expect(mocks.query.mock.calls[0][1]).toEqual(['adsp', null, null]);
   });
 
   it('잘못된 입력은 400 이고 저장하지 않는다', async () => {
