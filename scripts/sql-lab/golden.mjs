@@ -71,7 +71,7 @@ for (const sec of sections) {
   const id = head.trim();
   const body = rest.join('\n').replace(/###END[\s\S]*$/, '').trimEnd();
   const ora = /^(ORA-\d{5}): ?(.*)$/m.exec(body);
-  if (ora && /ERROR at line/.test(body)) {
+  if (ora && (/ERROR at line/.test(body) || /^ERROR:\s*$/m.test(body))) {
     results[id] = { error: ora[1], message: ora[2].trim() };
     continue;
   }

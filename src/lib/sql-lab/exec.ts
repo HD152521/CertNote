@@ -6,6 +6,8 @@ import { AGGREGATES, callFunctionName, children, cond, containsAggregate, evalua
 import { FUNCTIONS } from './functions';
 import { emptyRelation, invalidIdentifier, joinRelations, joinShape, mergeColumns, resolveColumn, type RelCol, type Relation } from './relation';
 import { NotSupported, OraError, compare, groupKey, kindOf, type Value } from './values';
+import { buildHierarchy, type HierInfo } from './hierarchy';
+import { WINDOW_ONLY, checkWindowSpec, computeWindow, isWindow, windowError, windowKey, type WindowFunc } from './window';
 
 /** ROLLUP·CUBE 계산량 상한(묶음 수 × 입력 행). 넘으면 탭이 몇 초씩 멈춘다. */
 const MAX_GROUP_WORK = 300_000;
@@ -13,6 +15,8 @@ const MAX_GROUP_WORK = 300_000;
 export interface ResultSet {
   columns: string[];
   rows: Value[][];
+  /** ORDER BY 키(WITH TIES 용) */
+  sortKeys?: Value[][];
 }
 
 interface Env {
@@ -21,6 +25,8 @@ interface Env {
   ctes?: Map<string, { columns?: string[]; query: Select; env: Env; result?: ResultSet }>;
   /** 문장 하나의 작업량(훑은 행 수). 상관 서브쿼리가 큰 조인을 행마다 다시 돌리면 탭이 멈추므로 상한을 둔다. */
   work?: { rows: number; deadline?: number };
+  /** 계층형 질의가 펼친 노드 행 → 계층 정보(문장 하나 동안) */
+  hier?: WeakMap<Value[], HierInfo>;
   /** 원문 — 오류 문구에 식 원문을 넣을 때 */
   src?: string;
 }
@@ -34,7 +40,7 @@ function checkNames(e: Expr, rel: Relation, outer: EvalCtx | undefined, env?: En
     lookupColumn(probe(), e.table, e.name);
     return;
   }
-  if (e.type === 'func' && !AGGREGATES.has(e.name) && !FUNCTIONS[e.name]) callFunctionName(e.name);
+  if (e.type === 'func' && !e.over && !AGGREGATES.has(e.name) && !FUNCTIONS[e.name] && !WINDOW_ONLY.has(e.name) && e.name !== 'SYS_CONNECT_BY_PATH') callFunctionName(e.name);
   // 서브쿼리 안쪽 이름도 바깥 행 없이 미리 검사한다(행이 없거나 AND 가 단락돼도 Oracle 은 ORA-00904 를 낸다).
   if (env && (e.type === 'subquery' || e.type === 'insub' || e.type === 'exists' || e.type === 'cmpsub')) {
     try {
@@ -110,6 +116,26 @@ function checkGrouped(e: Expr, groupKeys: Set<string>, rel: Relation, hasGroupBy
 
 function noAggregate(e: Expr | undefined) {
   if (e && containsAggregate(e)) throw new OraError('ORA-00934', 'group function is not allowed here');
+  const w = e ? windowsIn(e) : [];
+  if (w.some((f) => AGGREGATES.has(f.name))) throw new OraError('ORA-00934', 'group function is not allowed here');
+  if (w.length) throw windowError();
+}
+
+/** 식 안의 윈도우 함수(서브쿼리 안은 그 서브쿼리가 계산한다) */
+function windowsIn(e: Expr, out: WindowFunc[] = []): WindowFunc[] {
+  if (isWindow(e)) {
+    if (e.args.some((a) => windowsIn(a).length)) throw windowError(); // 윈도우 함수 안의 윈도우 함수
+    out.push(e);
+  }
+  children(e).forEach((c) => windowsIn(c, out));
+  return out;
+}
+const containsWindow = (e: Expr) => windowsIn(e).length > 0;
+
+/** 계층형 질의의 가상 열·PRIOR 가 CONNECT BY 없이 쓰였는가 */
+function usesHierarchy(e: Expr): boolean {
+  if (e.type === 'pseudo' || (e.type === 'unary' && (e.op === 'PRIOR' || e.op === 'ROOT')) || (e.type === 'func' && e.name === 'SYS_CONNECT_BY_PATH')) return true;
+  return children(e).some(usesHierarchy);
 }
 
 // ── FROM ─────────────────────────────────────────────────────────────────────
@@ -296,7 +322,18 @@ function hasOr(e: Expr): boolean {
 }
 
 function ctxOf(env: Env, rel: Relation, row: Value[], outer: EvalCtx | undefined, extra: Partial<EvalCtx> = {}): EvalCtx {
-  return { rel, row, outer, src: env.src, runSubquery: (q, o) => runSubquery(env, q, o), ...extra };
+  const hier = env.hier?.get(row);
+  const hierMap = env.hier;
+  return {
+    rel,
+    row,
+    outer,
+    src: env.src,
+    runSubquery: (q, o) => runSubquery(env, q, o),
+    ...(hier ? { hier } : {}),
+    ...(hierMap ? { hierOf: (r: Value[]) => hierMap.get(r) } : {}),
+    ...extra,
+  };
 }
 
 /** 문장 하나를 실행하는 동안 비상관 서브쿼리 결과를 기억한다(바깥 행마다 다시 돌리면 큰 조인에서 탭이 멈춘다). */
@@ -350,6 +387,8 @@ function expandItems(items: SelectItem[], rel: Relation): OutCol[] {
 interface BlockRow {
   values: Value[];
   ctx: EvalCtx;
+  /** ORDER BY 키(FETCH … WITH TIES 가 동점을 이어 붙일 때 쓴다) */
+  sortKey?: Value[];
 }
 
 const MAX_STATEMENT_WORK = 2_000_000;
@@ -369,8 +408,19 @@ function precheckDeadline(env: Env): number {
 export const MAX_STATEMENT_MS = 3000;
 const tooSlow = () => new NotSupported('실행이 3초를 넘어서 멈췄어요. 큰 조인 위에서 서브쿼리가 행마다 다시 실행되거나, 문자열 계산이 너무 무거운지 확인해 보세요.');
 
-function runBlock(env: Env, q: QueryBlock, orderBy: OrderItem[] | undefined, outer: EvalCtx | undefined): { columns: string[]; rows: BlockRow[]; cols: OutCol[] } {
-  const { rel, rest } = buildFrom(env, q, outer);
+function runBlock(
+  env: Env,
+  q: QueryBlock,
+  orderBy: OrderItem[] | undefined,
+  outer: EvalCtx | undefined,
+  orderSiblings?: OrderItem[],
+): { columns: string[]; rows: BlockRow[]; cols: OutCol[] } {
+  const { rel: fromRel, rest: fromRest } = buildFrom(env, q, outer);
+  let rel = fromRel;
+  let rest = fromRest;
+  const checkTime = () => {
+    if (env.work?.deadline && Date.now() > env.work.deadline) throw tooSlow();
+  };
   if (env.work && (env.work.rows += rel.rows.length) > MAX_STATEMENT_WORK) {
     throw new NotSupported('계산량이 너무 커서 실행을 멈췄어요. 큰 조인 위에서 상관 서브쿼리가 행마다 다시 실행되고 있는지 확인해 보세요.');
   }
@@ -397,7 +447,36 @@ function runBlock(env: Env, q: QueryBlock, orderBy: OrderItem[] | undefined, out
   if (q.having) aliasHint(q.having, 'HAVING');
   noAggregate(q.where);
   q.groupBy?.forEach(noAggregate);
+  if (q.having && containsWindow(q.having)) throw windowError();
+  cols.forEach((c) => windowsIn(c.expr).forEach(checkWindowSpec));
 
+  if (orderSiblings && !q.connectBy) throw new OraError('ORA-30929', 'ORDER SIBLINGS BY clause not allowed here');
+  if (!q.connectBy) {
+    const used = [...cols.map((c) => c.expr), ...rest, ...(q.groupBy ?? []), ...(q.having ? [q.having] : []), ...(orderBy ?? []).map((o) => o.expr)];
+    if (used.some(usesHierarchy)) throw new OraError('ORA-01788', 'CONNECT BY clause required in this query block');
+  } else {
+    // 계층형 질의: 조인 조건으로 먼저 잇고 → 나무를 펼친 뒤 → 나머지 WHERE 로 거른다.
+    const cb = q.connectBy;
+    [cb.condition, ...(cb.startWith ? [cb.startWith] : [])].forEach((e) => {
+      checkNames(e, rel, outer, env);
+      noAggregate(e);
+    });
+    const isJoin = (c: Expr) => c.type === 'bin' && c.op === '=' && c.left.type === 'col' && c.right.type === 'col' && !!c.left.table && !!c.right.table && c.left.table !== c.right.table;
+    const joinConds = q.from.length > 1 ? rest.filter(isJoin) : [];
+    rest = rest.filter((c) => !joinConds.includes(c));
+    const base = joinConds.length ? rel.rows.filter((row) => joinConds.every((c) => cond(c, ctxOf(env, rel, row, outer)) === true)) : rel.rows;
+    env.hier ??= new WeakMap();
+    const info = env.hier;
+    const relNow = rel;
+    const nodes = buildHierarchy(base, cb, orderSiblings, {
+      ctx: (row, hier) => ctxOf(env, relNow, row, outer, { hier }),
+      cond: (e, c) => cond(e, c),
+      evaluate: (e, c) => evaluate(e, c),
+      sortCompare: compareForSort,
+      checkTime,
+    }, info);
+    rel = { ...rel, rows: nodes };
+  }
   const where = rest.length ? rest.reduce((a, b): Expr => ({ type: 'and', left: a, right: b, start: a.start, end: b.end })) : undefined;
   const filtered: Value[][] = [];
   const deadline = env.work?.deadline;
@@ -412,11 +491,27 @@ function runBlock(env: Env, q: QueryBlock, orderBy: OrderItem[] | undefined, out
   const orderAgg = (orderBy ?? []).some((o, i) => !isAliasRef(o.expr, aliasMap) && containsAggregate(orderExprs[i]));
   const grouped = !!q.groupBy || cols.some((c) => containsAggregate(c.expr)) || !!q.having || orderAgg;
 
+  // SELECT·ORDER BY 에 나온 윈도우 함수(값은 행 문맥이 다 모인 뒤 한 번에 계산한다)
+  const windowFns = [...cols.flatMap((c) => windowsIn(c.expr)), ...orderExprs.flatMap((e) => windowsIn(e))];
+  windowFns.forEach(checkWindowSpec);
+  const finish = (ctxs: EvalCtx[]): BlockRow[] => {
+    if (windowFns.length) {
+      const maps = ctxs.map(() => new Map<string, Value>());
+      const done = new Set<string>();
+      for (const w of windowFns) {
+        const k = windowKey(w);
+        if (done.has(k)) continue;
+        done.add(k);
+        const vals = computeWindow(w, ctxs, { evaluate: (e, c) => evaluate(e, c), sortCompare: compareForSort, checkTime });
+        vals.forEach((v, i) => maps[i].set(k, v));
+      }
+      ctxs.forEach((c, i) => (c.windowValues = maps[i]));
+    }
+    return ctxs.map((ctx) => ({ values: cols.map((c) => evaluate(c.expr, ctx)), ctx }));
+  };
+
   if (!grouped) {
-    const rows = filtered.map((row, i) => {
-      const ctx = ctxOf(env, rel, row, outer, { rownum: i + 1 });
-      return { values: cols.map((c) => evaluate(c.expr, ctx)), ctx };
-    });
+    const rows = finish(filtered.map((row, i) => ctxOf(env, rel, row, outer, { rownum: i + 1 })));
     return { columns: cols.map((c) => c.name), rows, cols };
   }
 
@@ -467,15 +562,16 @@ function runBlock(env: Env, q: QueryBlock, orderBy: OrderItem[] | undefined, out
     return { columns: cols.map((c) => c.name), rows: [{ values: cols.map((c) => evaluate(c.expr, ctx)), ctx }], cols };
   }
 
-  const rows: BlockRow[] = [];
+  const groupCtxs: EvalCtx[] = [];
   for (const { groups: gs, isRolledUp } of groupSets) {
     for (const members of gs.values()) {
       const rep = members[0] ?? rel.cols.map(() => null);
       const ctx = ctxOf(env, rel, rep, outer, { group: members, isRolledUp, hasGroupBy });
       if (q.having && cond(q.having, ctx) !== true) continue;
-      rows.push({ values: cols.map((c) => evaluate(c.expr, ctx)), ctx });
+      groupCtxs.push(ctx);
     }
   }
+  const rows = finish(groupCtxs);
   // Oracle 의 GROUP BY 결과 순서는 보장되지 않는다(해시 묶음). 실습장은 묶음 키 오름차순으로 보여 준다.
   if (hasGroupBy && !orderBy) {
     rows.sort((a, b) => {
@@ -573,7 +669,7 @@ function orderBlockRows(env: Env, q: QueryBlock, cols: OutCol[], rows: BlockRow[
     return 0;
   });
   void env;
-  return decorated.map((d) => d.r);
+  return decorated.map((d) => ({ ...d.r, sortKey: d.k }));
 }
 
 function stripSpan(e: Expr) {
@@ -619,7 +715,7 @@ export function runSelect(baseEnv: Env, sel: Select, outer?: EvalCtx): ResultSet
   let result: ResultSet;
   if (sel.body.type === 'query') {
     const q = sel.body;
-    const block = runBlock(env, q, sel.orderBy, outer);
+    const block = runBlock(env, q, sel.orderBy, outer, sel.orderSiblings);
     let rows = block.rows;
     if (q.distinct) rows = dedupe(rows);
     if (sel.orderBy) {
@@ -632,7 +728,9 @@ export function runSelect(baseEnv: Env, sel: Select, outer?: EvalCtx): ResultSet
       rows = orderBlockRows(env, q, block.cols, rows, sel.orderBy);
     }
     result = { columns: block.columns, rows: rows.map((r) => r.values) };
+    if (sel.fetch?.withTies && sel.orderBy) result.sortKeys = rows.map((r) => r.sortKey ?? []);
   } else {
+    if (sel.orderSiblings) throw new OraError('ORA-30929', 'ORDER SIBLINGS BY clause not allowed here');
     result = runSetOp(env, sel, outer);
   }
   if (sel.fetch) result = applyFetch(env, result, sel.fetch, outer);
@@ -698,14 +796,19 @@ function sortAll<T extends { values: Value[] }>(rows: T[]): T[] {
 
 function applyFetch(env: Env, rs: ResultSet, f: NonNullable<Select['fetch']>, outer: EvalCtx | undefined): ResultSet {
   let rows = rs.rows.slice(f.offset);
+  const keys = rs.sortKeys?.slice(f.offset);
   if (f.count) {
     const v = evaluate(f.count, ctxOf(env, emptyRelation(), [], outer));
     const n = typeof v === 'number' ? v : 0;
-    const take = f.percent ? Math.ceil((rs.rows.length * n) / 100) : Math.floor(n);
-    if (f.withTies) throw new NotSupported('WITH TIES 는 실습장 2단계에서 열려요.');
-    rows = rows.slice(0, Math.max(0, take));
+    let take = Math.max(0, f.percent ? Math.ceil((rs.rows.length * n) / 100) : Math.floor(n));
+    // WITH TIES: 마지막 행과 ORDER BY 키가 같은 행까지 이어 붙인다.
+    if (f.withTies && keys && take > 0 && take < rows.length) {
+      const last = JSON.stringify(keys[take - 1].map(groupKey));
+      while (take < rows.length && JSON.stringify(keys[take].map(groupKey)) === last) take++;
+    }
+    rows = rows.slice(0, take);
   }
-  return { ...rs, rows };
+  return { columns: rs.columns, rows };
 }
 
 export { AGGREGATES };

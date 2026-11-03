@@ -10,7 +10,9 @@ export type Expr =
   | ({ type: 'lit'; value: Value } & Span)
   | ({ type: 'col'; table?: string; name: string; outer?: boolean } & Span)
   | ({ type: 'star'; table?: string } & Span)
-  | ({ type: 'unary'; op: '-' | '+' | 'NOT'; arg: Expr } & Span)
+  | ({ type: 'unary'; op: '-' | '+' | 'NOT' | 'PRIOR' | 'ROOT'; arg: Expr } & Span)
+  /** 계층형 질의의 가상 열 */
+  | ({ type: 'pseudo'; name: 'LEVEL' | 'CONNECT_BY_ISLEAF' | 'CONNECT_BY_ISCYCLE' } & Span)
   | ({ type: 'bin'; op: string; left: Expr; right: Expr } & Span)
   | ({ type: 'and' | 'or'; left: Expr; right: Expr } & Span)
   | ({ type: 'isnull'; arg: Expr; not: boolean } & Span)
@@ -18,7 +20,7 @@ export type Expr =
   | ({ type: 'in'; arg: Expr; list: Expr[]; not: boolean } & Span)
   | ({ type: 'insub'; arg: Expr; query: Select; not: boolean } & Span)
   | ({ type: 'like'; arg: Expr; pattern: Expr; escape?: Expr; not: boolean } & Span)
-  | ({ type: 'func'; name: string; args: Expr[]; distinct?: boolean; star?: boolean } & Span)
+  | ({ type: 'func'; name: string; args: Expr[]; distinct?: boolean; star?: boolean; over?: WindowSpec; withinGroup?: OrderItem[] } & Span)
   | ({ type: 'case'; base?: Expr; whens: { when: Expr; then: Expr }[]; else?: Expr } & Span)
   | ({ type: 'subquery'; query: Select } & Span)
   | ({ type: 'exists'; query: Select; not: boolean } & Span)
@@ -29,6 +31,18 @@ export type Expr =
   | ({ type: 'slot'; index: number; table?: string; name: string } & Span)
   | ({ type: 'extract'; field: string; arg: Expr } & Span)
   | ({ type: 'trim'; mode: 'LEADING' | 'TRAILING' | 'BOTH'; chars?: Expr; arg: Expr } & Span);
+
+export interface WindowBound {
+  kind: 'UNBOUNDED PRECEDING' | 'UNBOUNDED FOLLOWING' | 'CURRENT ROW' | 'PRECEDING' | 'FOLLOWING';
+  offset?: number;
+}
+
+/** OVER (PARTITION BY … ORDER BY … ROWS|RANGE BETWEEN … AND …) */
+export interface WindowSpec {
+  partitionBy: Expr[];
+  orderBy: OrderItem[];
+  frame?: { unit: 'ROWS' | 'RANGE'; start: WindowBound; end: WindowBound };
+}
 
 export interface SelectItem {
   expr: Expr;
@@ -60,6 +74,8 @@ export interface QueryBlock {
   groupBy?: Expr[];
   /** ROLLUP·CUBE·GROUPING SETS 를 펼친 묶음 목록. 없으면 groupBy 하나로만 묶는다. */
   groupingSets?: Expr[][];
+  /** START WITH … CONNECT BY … */
+  connectBy?: { startWith?: Expr; condition: Expr; nocycle: boolean };
   /** GROUP BY () 만 쓴 경우: 행이 없어도 총계 한 행을 낸다(GROUPING SETS(()) 는 0행이다) */
   grandTotalOnly?: boolean;
   having?: Expr;
@@ -83,6 +99,8 @@ export interface WithQuery {
 export interface Select {
   with?: WithQuery[];
   body: QueryBlock | SetOp;
+  /** ORDER SIBLINGS BY: 계층형 질의에서 형제끼리만 정렬 */
+  orderSiblings?: OrderItem[];
   orderBy?: OrderItem[];
   fetch?: { offset: number; count?: Expr; percent?: boolean; withTies?: boolean };
 }

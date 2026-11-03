@@ -27,3 +27,36 @@
 - `1 IN (SELECT ENAME, COUNT(*) FROM EMP)`: Oracle 은 00913 을 먼저, 엔진은 00937.
 - CUBE 7개(128 묶음) + SELECT 목록 오류: Oracle ORA-00979, 엔진은 묶음 상한 안내.
 - 큰 교차 조인 위 상관 서브쿼리: 3초 상한 안내로 멈춘다(의도된 동작이지만, 계산을 줄이는 방법이 있으면 결과를 낼 수 있다).
+
+## W6 1차 검토에서 나온 것
+
+윈도우 함수
+- `ROWS UNBOUNDED FOLLOWING`·`ROWS 1 FOLLOWING` 단축형: Oracle ORA-02000, 엔진은 결과.
+- `LAG(SAL, -1)` → Oracle ORA-01428, `LAG(SAL, 1, 'X')` → ORA-01722, `NTILE(0)` → ORA-01428(엔진 30489), `ROWS -1 PRECEDING` → ORA-01428(엔진 00936).
+- `ROWS 1.5 PRECEDING` 을 Oracle 은 실행한다(엔진 안내).
+- 문자열 키 `RANGE n`: Oracle ORA-00902(엔진 01722).
+- `COUNT(DISTINCT JOB) OVER (ORDER BY …)`: Oracle ORA-30487, 엔진은 결과.
+- `SUM(RANK() OVER …)`: Oracle ORA-30483, 엔진 14. `HAVING SUM(SAL) > AVG(SUM(SAL)) OVER ()`: Oracle ORA-00935(엔진 30483).
+- `UPPER(…) OVER`·`NVL(…) OVER`: Oracle ORA-00923.
+- `MEDIAN OVER` 를 Oracle 은 계산한다(엔진 30484). `LAST_VALUE(… IGNORE NULLS)` 는 안내로 바꾸는 편이 낫다(지금 ORA-00907).
+- `RANK() WITHIN GROUP`(인자 없음)·`ROW_NUMBER(1) WITHIN GROUP` 오류 번호.
+- 동점 행의 순서가 Oracle 과 반대로 나오는 경우(FORD·SCOTT, MARTIN·WARD). Oracle 도 보장하지 않는 순서라 결과 자체는 틀리지 않다.
+
+계층형 질의·Top N
+- NOCYCLE 없는 `CONNECT_BY_ISCYCLE`: Oracle ORA-30930, 엔진 0.
+- `ORDER SIBLINGS BY 1`(위치)·별칭: 엔진이 위치로 보지 않고 별칭은 ORA-00904.
+- `CONNECT BY ROWNUM <= 4` 는 안내만. `PRIOR PRIOR`·START WITH 안의 PRIOR 는 Oracle 오류.
+- `CONNECT PRIOR …`(BY 빠짐): Oracle ORA-00924(엔진 00905).
+- `CONNECT BY LEVEL <= 6000` 이상: 재귀가 깊어 처리하지 못한다는 안내.
+- 큰 교차 조인 위의 계층형 질의(EMP A, EMP B …): 3초 상한 안내로 멈춘다(자식 찾기를 색인으로 바꾸면 결과를 낼 수 있다).
+- 집합 연산 뒤 `FETCH … WITH TIES` 가 무시된다(`UNION ALL … ORDER BY 1 FETCH FIRST 2 ROWS WITH TIES`: 엔진 2행, Oracle 4행).
+
+## W6 2차 검토에서 나온 것
+
+- 집합 연산 뒤의 `FETCH … WITH TIES`(위 항목과 같음).
+- 가짜 성공: `SUM(RANK() OVER (…))`(ORA-30483), `COUNT(DISTINCT JOB) OVER (ORDER BY SAL)`(ORA-30487), NOCYCLE 없는 `CONNECT_BY_ISCYCLE`(ORA-30930), `START WITH PRIOR …`(ORA-00976).
+- `ORDER SIBLINGS BY 1`·별칭.
+- 프레임 오프셋에 식(`RANGE BETWEEN 100+100 PRECEDING …`): Oracle 은 실행, 엔진 ORA-00905.
+- `RANGE -100 PRECEDING`: Oracle ORA-01428, 엔진 ORA-00936(ROWS 와 같은 항목).
+- `SUM(DISTINCT SAL) OVER (ORDER BY …)`·`AVG(DISTINCT …) OVER (ORDER BY …)`: Oracle ORA-30487, 엔진은 결과(COUNT DISTINCT 와 같은 항목).
+- `ROWS 99999999999999999999 PRECEDING`: Oracle 은 NULL, 엔진은 합계.
