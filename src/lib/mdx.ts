@@ -4,6 +4,7 @@ import remarkCjkFriendly from 'remark-cjk-friendly';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypePrettyCode from 'rehype-pretty-code';
+import { rehypeSqlSource } from './rehypeSqlSource';
 
 // 마크다운을 읽는 규칙. 본문(Article)과 요약 카드(SummaryCard)가 같은 목록을 쓴다.
 //
@@ -49,6 +50,8 @@ export const mdxOptions: MDXRemoteProps['options'] = {
           keepBackground: false,
         },
       ],
+      // ```sql 블록의 원문을 남긴다(SQLD 노트의 "실습장에서 실행" 버튼).
+      rehypeSqlSource,
     ],
   },
 };

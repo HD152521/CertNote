@@ -3,12 +3,14 @@ import { LABS } from './cli-lab/labs';
 import { LAB_CATALOG } from './labCatalog';
 import { SHELL_DRILLS } from './shell-lab/drills';
 import { SHELL_LABS } from './shell-lab/labs';
+import { SQL_TASK_SETS } from './sql-lab/tasks';
 
 describe('lab catalog', () => {
   it('lists every lab of both engines with the same code and title', () => {
     const engine = [
       ...SHELL_LABS.map((l) => ({ id: l.id, kind: 'linux', code: l.code, title: l.title })),
       ...SHELL_DRILLS.map((l) => ({ id: l.id, kind: 'practical', code: l.code, title: l.title })),
+      ...SQL_TASK_SETS.map((l) => ({ id: l.id, kind: 'sql', code: l.code, title: l.title })),
       ...LABS.map((l) => ({ id: l.id, kind: 'aws', code: l.code, title: l.title })),
     ];
     expect(LAB_CATALOG.map(({ id, kind, code, title }) => ({ id, kind, code, title }))).toEqual(engine);

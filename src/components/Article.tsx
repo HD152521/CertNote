@@ -3,6 +3,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc';
 import { mdxOptions } from '@/lib/mdx';
 import { parseQuiz } from '@/lib/parseQuiz';
 import { QuizSection } from './QuizSection';
+import { SqlRunBlock } from './sql-lab/SqlRunBlock';
 
 interface ArticleProps {
   source: string;
@@ -12,16 +13,41 @@ interface ArticleProps {
   lang?: 'ko' | 'en';
 }
 
+// rehypeSqlSource 가 모든 ```sql 블록에 원문(data-sql)을 남긴다. 실행 버튼이 없는 트랙에서는 HTML 에 싣지 않는다.
+type FigureProps = ComponentPropsWithoutRef<'figure'> & { 'data-sql'?: string };
+const PlainFigure = ({ 'data-sql': _sql, ...props }: FigureProps) => {
+  void _sql;
+  return <figure {...props} />;
+};
+
 // 넓은 표가 페이지 전체를 가로로 늘리지 않도록, 표만 스크롤되는 박스로 감싼다.
-const mdxComponents = {
+const baseComponents = {
   table: (props: ComponentPropsWithoutRef<'table'>) => (
     <div className="table-wrap">
       <table {...props} />
     </div>
   ),
+  figure: PlainFigure,
+};
+
+// SQL 실습장(EMP·DEPT 예제 테이블)으로 돌릴 수 있는 트랙. 다른 트랙의 SQL(예: Athena)은 테이블이 달라 버튼을 달지 않는다.
+const SQL_RUNNABLE_SLUGS = new Set(['sqld']);
+const isRunnableSql = (sql: string) => /^\s*(?:--[^\n]*\n\s*)*(SELECT|\()/i.test(sql);
+
+const sqlComponents = {
+  ...baseComponents,
+  figure: ({ 'data-sql': sql, ...props }: FigureProps) =>
+    sql && isRunnableSql(sql) ? (
+      <SqlRunBlock sql={sql}>
+        <figure {...props} />
+      </SqlRunBlock>
+    ) : (
+      <figure {...props} />
+    ),
 };
 
 export function Article({ source, slug, week, day, lang = 'ko' }: ArticleProps) {
+  const mdxComponents = SQL_RUNNABLE_SLUGS.has(slug) ? sqlComponents : baseComponents;
   const { before, questions, after } = parseQuiz(source);
   if (questions.length === 0) {
     return (<div className="article"><MDXRemote source={source} options={mdxOptions} components={mdxComponents} /></div>);
