@@ -40,6 +40,7 @@ const SOURCE_FILES = [
   // 실습(/lab) — 내용이 코드에 있다
   'src/lib/labCatalog.ts',
   'src/lib/shell-lab/labs.ts',
+  'src/lib/shell-lab/drills.ts',
   'src/lib/cli-lab/labs.ts',
 ];
 

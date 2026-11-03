@@ -8,10 +8,13 @@ import { TutorPanel } from '@/components/tutor/TutorPanel';
 import { QuestionReport } from '@/components/userInput/QuestionReport';
 import { cn } from '@/lib/cn';
 import { InlineMd } from '@/components/InlineMd';
+import { QuizShellLink } from '@/components/shell-lab/QuizShellLink';
 
 interface QuizProps {
   question: QuizQuestion;
   questionId?: string;
+  /** 자격증 slug. 리눅스 문항이면 해설 아래에 셸 연습을 붙인다. */
+  slug?: string;
   lang?: 'ko' | 'en';
 }
 
@@ -30,7 +33,7 @@ function recordAttempt(questionId: string, selected: string): void {
   }).catch(() => {});
 }
 
-export function Quiz({ question, questionId, lang = 'ko' }: QuizProps) {
+export function Quiz({ question, questionId, slug, lang = 'ko' }: QuizProps) {
   const t = LABELS[lang];
   const correctSet = parseCorrectSet(question.answer);
   const multi = isMultiAnswer(question.answer);
@@ -113,6 +116,12 @@ export function Quiz({ question, questionId, lang = 'ko' }: QuizProps) {
         <div className={cn('mt-4 rounded-md border p-3 text-sm', isCorrect ? 'border-success/40 bg-success/5' : 'border-danger/40 bg-danger/5')}>
           <p className="font-medium mb-1.5 text-fg">{isCorrect ? t.correct : `${t.answer}: ${question.answer}`}</p>
           {question.explanation && (<p className="text-fg-muted whitespace-pre-wrap leading-relaxed"><InlineMd text={question.explanation} /></p>)}
+          {slug && lang === 'ko' && (
+            <QuizShellLink
+              question={{ slug, prompt: question.text, choices: question.choices, answer: question.answer, explanation: question.explanation }}
+              wrong={!isCorrect}
+            />
+          )}
           {!isCorrect && questionId && (
             <TutorPanel questionId={questionId} selected={multi ? [...picked].sort().join(',') : (picked[0] ?? '')} />
           )}
@@ -123,3 +132,4 @@ export function Quiz({ question, questionId, lang = 'ko' }: QuizProps) {
     </div>
   );
 }
+

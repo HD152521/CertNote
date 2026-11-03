@@ -12,6 +12,7 @@ import { InlineMd } from '@/components/InlineMd';
 import { domainKey } from '@/lib/exam/domainKey';
 import { ExamDomainScores, type DomainScore } from './ExamDomainScores';
 import { PracticeFeedback, type CheckResult } from './PracticeFeedback';
+import { QuizShellLink } from '@/components/shell-lab/QuizShellLink';
 
 interface CertOption { slug: string; code: string; name: string; domains: string[] }
 
@@ -397,6 +398,13 @@ export function ExamRunner({ certs }: { certs: CertOption[] }) {
             </button>
           )}
           {fb && <PracticeFeedback result={fb} lang={lang} />}
+          {fb && lang !== 'en' && (
+            <QuizShellLink
+              key={q.questionId}
+              question={{ slug: q.slug, prompt: q.prompt, choices: q.choices, answer: fb.answer, explanation: fb.explanation }}
+              wrong={!fb.correct}
+            />
+          )}
         </div>
 
         {error && <p className="text-sm text-danger">{error}</p>}

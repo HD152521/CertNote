@@ -24,7 +24,7 @@ export function QuizSection({ questions, slug, week, day, lang = 'ko' }: QuizSec
       </header>
       <div className="space-y-3">
         {questions.map((q, i) => (
-          <Quiz key={i} question={q} questionId={questionId(slug, week, day, i + 1)} lang={lang} />
+          <Quiz key={i} question={q} questionId={questionId(slug, week, day, i + 1)} slug={slug} lang={lang} />
         ))}
       </div>
     </section>

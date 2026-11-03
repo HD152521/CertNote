@@ -2,7 +2,7 @@
 // 과제 내용(단계·판정)은 각 엔진의 labs.ts 에 있다. 사이드바(모든 페이지에 실림)가 시뮬레이터 엔진을
 // 끌어오지 않도록 여기서는 엔진을 import 하지 않는다 — 코드·제목이 엔진과 같은지는 labCatalog.test.ts 가 본다.
 
-export type LabKind = 'linux' | 'aws';
+export type LabKind = 'linux' | 'practical' | 'aws';
 
 export interface LabEntry {
   id: string;
@@ -22,6 +22,12 @@ export const LAB_GROUPS: { kind: LabKind; title: string; description: string }[]
     title: '리눅스 셸',
     description:
       '리눅스마스터 2급 범위(파일 시스템 명령어, 권한, 사용자와 그룹)를 Rocky Linux 8.8 시뮬레이터에서 직접 쳐 봅니다. 출력과 오류 문구는 실제 Rocky 8.8 에서 찍은 결과와 하나하나 비교해 맞췄습니다.',
+  },
+  {
+    kind: 'practical',
+    title: '리눅스마스터 실기 대비',
+    description:
+      '1급 2차의 작업형처럼 조건을 주고 그대로 만들어 내는 문제입니다. 명령 글자가 아니라 실행 뒤의 상태로 채점해서, chmod 750 이든 chmod u=rwx,g=rx,o= 이든 결과가 맞으면 정답입니다. 문제마다 모범 답안의 결과를 실제 Rocky 8.8 에서 확인했습니다.',
   },
   {
     kind: 'aws',
@@ -137,8 +143,40 @@ const AWS_INFO: Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'>>
   },
 };
 
+const PRACTICAL_INFO: Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'>> = {
+  'linux-practical-perm': {
+    summary: '권한 숫자·기호 지정, mkdir -m, umask, SetUID, SetGID 공유 디렉터리, Sticky bit, chown -R 을 조건에 맞춰 직접 만들어 내는 7문제입니다.',
+    intro: [
+      '리눅스마스터 1급 2차는 필기 40%(단답·서술)와 작업형 실기 60%로 치릅니다. 작업형은 "이런 조건이 되도록 설정하시오" 처럼 결과를 요구하므로, 명령을 외웠는지보다 결과를 정확히 만들어 내는지가 점수를 가릅니다.',
+      '문제마다 처음 상태가 따로 준비되어 있고, 명령을 칠 때마다 조건을 모두 채웠는지 바로 채점합니다. 같은 결과를 내는 다른 명령도 정답으로 인정합니다. 막히면 모범 답안과 해설을 열어 보세요.',
+    ],
+    related: [
+      { href: '/linux/linux-master-2/week4/day1', label: '권한의 구조: rwx와 8진수' },
+      { href: '/linux/linux-master-2/week4/day2', label: '소유권과 umask' },
+      { href: '/linux/linux-master-2/week4/day3', label: '특수 권한: SetUID · SetGID · Sticky bit' },
+    ],
+  },
+  'linux-practical-users': {
+    summary: 'useradd 옵션 조합, usermod -aG, 계정 잠금, userdel -r, groupadd -g, find -perm·-exec, grep -c 를 조건대로 수행하는 8문제입니다.',
+    intro: [
+      '계정 관리와 파일 검색은 작업형 실기에서 감점이 잦은 영역입니다. usermod -G 에서 -a 를 빼서 기존 그룹이 사라지거나, find -perm 4000 처럼 - 를 빼서 결과가 비는 실수가 대표적입니다.',
+      '이 세트는 그런 실수를 하면 채점에서 걸리도록 만들었습니다. 틀렸을 때 왜 틀렸는지 터미널 출력(id, ls -l, cat)으로 직접 확인해 보세요.',
+    ],
+    related: [
+      { href: '/linux/linux-master-2/week3/day4', label: '사용자와 계정 관리' },
+      { href: '/linux/linux-master-2/week4/day3', label: '특수 권한: SetUID · SetGID · Sticky bit' },
+    ],
+  },
+};
+
+const INFO: Record<LabKind, Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'>>> = {
+  linux: LINUX_INFO,
+  practical: PRACTICAL_INFO,
+  aws: AWS_INFO,
+};
+
 const entry = (kind: LabKind, id: string, code: string, title: string): LabEntry => ({
-  id, kind, code, title, ...(kind === 'linux' ? LINUX_INFO : AWS_INFO)[id],
+  id, kind, code, title, ...INFO[kind][id],
 });
 
 export const LAB_CATALOG: LabEntry[] = [
@@ -149,6 +187,8 @@ export const LAB_CATALOG: LabEntry[] = [
   entry('linux', 'linux-find', 'LAB L5', 'find 로 조건에 맞는 파일 찾고 한꺼번에 처리하기'),
   entry('linux', 'linux-grep-pipe', 'LAB L6', 'grep 과 파이프로 /etc/passwd 읽기'),
   entry('linux', 'linux-ownership', 'LAB L7', 'chown·chgrp 로 프로젝트 소유권 넘기기'),
+  entry('practical', 'linux-practical-perm', '실기 P1', '권한·소유권 작업형 문제 7선'),
+  entry('practical', 'linux-practical-users', '실기 P2', '계정·검색 작업형 문제 8선'),
   entry('aws', 'regions-azs', 'LAB 01', '리전과 가용 영역 지도 그리기'),
   entry('aws', 's3-first-bucket', 'LAB 02', '서울 리전에 첫 버킷 만들기'),
   entry('aws', 'iam-least-privilege', 'LAB 03', '읽기 전용 사용자 만들고 정리하기'),

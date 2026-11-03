@@ -4,9 +4,11 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { CliLab } from '@/components/cli-lab/CliLab';
 import { JsonLd } from '@/components/JsonLd';
+import { ShellDrill } from '@/components/shell-lab/ShellDrill';
 import { ShellLab } from '@/components/shell-lab/ShellLab';
 import { LABS } from '@/lib/cli-lab/labs';
 import { LAB_CATALOG, LAB_GROUPS, labById } from '@/lib/labCatalog';
+import { SHELL_DRILLS } from '@/lib/shell-lab/drills';
 import { SHELL_LABS } from '@/lib/shell-lab/labs';
 import { buildBreadcrumbLd } from '@/lib/structuredData';
 
@@ -36,7 +38,11 @@ export default async function LabPage({ params }: { params: Promise<{ id: string
   const lab = labById((await params).id);
   if (!lab) notFound();
   const group = LAB_GROUPS.find((g) => g.kind === lab.kind)!;
-  const steps = (lab.kind === 'linux' ? SHELL_LABS : LABS).find((l) => l.id === lab.id)?.steps.map((s) => s.title) ?? [];
+  const steps =
+    lab.kind === 'practical'
+      ? (SHELL_DRILLS.find((d) => d.id === lab.id)?.items.map((i) => i.title) ?? [])
+      : ((lab.kind === 'linux' ? SHELL_LABS : LABS).find((l) => l.id === lab.id)?.steps.map((s) => s.title) ?? []);
+  const isDrill = lab.kind === 'practical';
   const breadcrumbLd = buildBreadcrumbLd([
     { name: '홈', url: '/' },
     { name: '실습', url: '/lab' },
@@ -57,18 +63,31 @@ export default async function LabPage({ params }: { params: Promise<{ id: string
         {lab.intro.map((p) => (
           <p key={p}>{p}</p>
         ))}
-        <h2 id="steps">이 실습에서 할 일</h2>
+        <h2 id="steps">{isDrill ? '문제 목록' : '이 실습에서 할 일'}</h2>
         <ol>
           {steps.map((s) => (
             <li key={s}>{s}</li>
           ))}
         </ol>
-        <p>
-          막히면 단계마다 있는 힌트를 먼저 보고, 그래도 어려우면 정답을 입력창에 넣어 실행해 보세요. 오류를 만나는 것도
-          실습의 일부입니다. 처음 상태로 돌아가려면 터미널에 <code>reset</code> 을 입력합니다.
-        </p>
+        {isDrill ? (
+          <p>
+            시험장에서처럼 먼저 혼자 풀어 보고, 막히면 모범 답안과 해설을 여세요. 문제마다 처음 상태가 따로 있어서 순서와
+            상관없이 풀 수 있고, 망가뜨렸으면 터미널에 <code>reset</code> 을 입력해 그 문제를 처음부터 다시 풉니다.
+          </p>
+        ) : (
+          <p>
+            막히면 단계마다 있는 힌트를 먼저 보고, 그래도 어려우면 정답을 입력창에 넣어 실행해 보세요. 오류를 만나는 것도
+            실습의 일부입니다. 처음 상태로 돌아가려면 터미널에 <code>reset</code> 을 입력합니다.
+          </p>
+        )}
 
-        {lab.kind === 'linux' ? <ShellLab labId={lab.id} /> : <CliLab labId={lab.id} />}
+        {lab.kind === 'practical' ? (
+          <ShellDrill drillId={lab.id} />
+        ) : lab.kind === 'linux' ? (
+          <ShellLab labId={lab.id} />
+        ) : (
+          <CliLab labId={lab.id} />
+        )}
 
         {lab.related.length > 0 && (
           <>

@@ -21,6 +21,8 @@ interface LabTerminalProps {
   placeholder?: string;
   /** 지금 풀 단계. 모바일에서 터미널 바로 위에 붙여, 키보드를 연 채로도 문제를 볼 수 있게 한다. */
   task?: { label: string; text: string };
+  /** 퀴즈 안에 끼우는 작은 터미널 */
+  compact?: boolean;
   log: LogEntry[];
   input: string;
   onInput: (value: string) => void;
@@ -103,7 +105,7 @@ function Entry({ entry }: { entry: LogEntry }) {
 
 export function LabTerminal({
   cwd, headerRight, region, accountId, prompt, inputLabel = 'AWS CLI 명령 입력',
-  placeholder = 'aws 로 시작해 보세요 · Tab 자동 완성', task, log, input, onInput, onKeyDown, inputRef,
+  placeholder = 'aws 로 시작해 보세요 · Tab 자동 완성', task, compact = false, log, input, onInput, onKeyDown, inputRef,
 }: LabTerminalProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -154,7 +156,7 @@ export function LabTerminal({
       {task && (
         <div className="border-b border-[#1f2b27] bg-[#16211e] px-4 py-2 font-sans sm:hidden">
           <div className="font-mono text-[11px] tracking-wide text-[#5eead4]">{task.label}</div>
-          <div className="mt-0.5 text-[13px] leading-snug text-[#dfe9e4]">{task.text}</div>
+          <div className="mt-0.5 whitespace-pre-line text-[13px] leading-snug text-[#dfe9e4]">{task.text}</div>
         </div>
       )}
 
@@ -162,7 +164,7 @@ export function LabTerminal({
         ref={scrollRef}
         role="log"
         aria-live="polite"
-        className="h-[22rem] overflow-y-auto px-4 py-3 sm:h-[26rem]"
+        className={cn('overflow-y-auto px-4 py-3', compact ? 'h-[14rem] sm:h-[16rem]' : 'h-[22rem] sm:h-[26rem]')}
         style={fitHeight !== null ? { height: fitHeight } : undefined}
       >
         {log.map((entry) => (

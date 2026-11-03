@@ -6,6 +6,7 @@ import { Check, X } from 'lucide-react';
 import { answerCount, isMultiAnswer, parseCorrectSet } from '@/lib/quiz/correctness';
 import { TutorPanel } from '@/components/tutor/TutorPanel';
 import { WrongReasonPicker } from '@/components/review/WrongReasonPicker';
+import { QuizShellLink } from '@/components/shell-lab/QuizShellLink';
 import { cn } from '@/lib/cn';
 import { useLanguage } from '@/lib/i18n-client';
 import { fmt, pick } from '@/lib/strings/dict';
@@ -214,6 +215,7 @@ export function ReviewSession() {
             </p>
             {current!.explanation && <p className="text-fg-muted whitespace-pre-wrap leading-relaxed mb-2">{current!.explanation}</p>}
             <p className="text-xs text-fg-faint">{fmt(s.nextDue, { due: formatDue(lang, result!.dueAt) })}</p>
+            {lang !== 'en' && <QuizShellLink key={current!.questionId} question={current!} wrong={!result!.correct} />}
             {!result!.correct && (
               <>
                 <WrongReasonPicker questionId={current!.questionId} />

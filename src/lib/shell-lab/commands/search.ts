@@ -24,9 +24,9 @@ class FindError extends Error {}
 
 const UNSUPPORTED_PREDICATES = ['-delete', '-ls', '-fls', '-printf', '-fprintf', '-regex', '-iregex', '-ok', '-execdir', '-prune', '-quit'];
 
-function numericTest(arg: string, value: () => number, scale: (v: number) => number) {
+function numericTest(pred: string, arg: string, value: () => number, scale: (v: number) => number) {
   const m = /^([+-]?)(\d+)$/.exec(arg);
-  if (!m) throw new FindError(`find: invalid argument ${q(arg)}`);
+  if (!m) throw new FindError(`find: invalid argument \`${arg}' to \`${pred}'`);
   const n = Number(m[2]);
   return () => {
     const v = scale(value());
@@ -119,18 +119,23 @@ function parseFind(st: ShellState, tokens: string[]): FindParse {
         if (!m) throw new FindError(`find: invalid -size type ${q(raw)}`);
         const unit = { b: 512, c: 1, w: 2, k: 1024, M: 1024 ** 2, G: 1024 ** 3, '': 512 }[m[2]]!;
         let current: Visit;
-        const check = numericTest(m[1], () => sizeOf(st, current.n, current.path.split('/').pop()), (b) => Math.ceil(b / unit));
+        const check = numericTest('-size', m[1], () => sizeOf(st, current.n, current.path.split('/').pop()), (b) => Math.ceil(b / unit));
         return test((v) => {
           current = v;
           return check();
         });
       }
       case '-mtime':
-      case '-mmin': {
+      case '-mmin':
+      case '-atime':
+      case '-amin':
+      case '-ctime':
+      case '-cmin': {
         const raw = need(t);
-        const unit = t === '-mtime' ? 86400 : 60;
+        const unit = t.endsWith('time') ? 86400 : 60;
+        const field = t[1] === 'm' ? 'mtime' : t[1] === 'a' ? 'atime' : 'ctime';
         let current: Visit;
-        const check = numericTest(raw, () => st.clock - current.n.mtime, (s) => Math.floor(s / unit));
+        const check = numericTest(t, raw, () => st.clock - current.n[field], (s) => Math.floor(s / unit));
         return test((v) => {
           current = v;
           return check();
@@ -233,7 +238,7 @@ export const find: Command = (ctx) => {
   } catch (e) {
     const msg = (e as Error).message;
     if (msg.startsWith('unsupported:')) {
-      io.note(`find 의 ${msg.slice(12)} 조건은 연습장에서 아직 지원하지 않아요. -name -type -perm -user -group -size -mtime -empty -exec 를 쓸 수 있어요.`);
+      io.note(`find 의 ${msg.slice(12)} 조건은 연습장에서 아직 지원하지 않아요. -name -type -perm -user -group -size -mtime -atime -ctime -empty -exec 를 쓸 수 있어요.`);
       return 1;
     }
     io.err(`${msg}\n`);
