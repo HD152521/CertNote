@@ -102,4 +102,5 @@
 - 골든: `node scripts/sql-lab/cases.mjs && node scripts/sql-lab/golden.mjs` → `src/lib/sql-lab/golden/results.json`. 사례는 직접 쓴 것 + 노트의 ```sql 블록 전부 + 과제 모범 답안. 23ai 와 시험 기준이 다른 곳(FROM 없는 SELECT, HAVING·GROUP BY 의 SELECT 별칭)은 시험 기준 오류에 설명(hint)을 붙이고 테스트의 VERSION_DIFFERENCES 에 적는다.
 - 화면: 노트의 ```sql 블록에 "실습장에서 실행하고 고쳐 보기", 퀴즈 해설 아래 "문제의 SQL 직접 실행해 보기", `/lab/sql-select-basics`·`/lab/sql-group-join` 과제 16개(결과 집합으로 채점).
 - 2026-11-04: W7(PR #44, 실습장 S5·DML·Web Worker 실행) 과 W8(시험 직전 정리) 공개 → 8주 40일, 200문항 완료.
-- 남은 일: 모의고사 100문항(content/exams/sqld.json), 응시료 확인.
+- 2026-11-04: 모의고사 100문항(content/exams/sqld.json, 실제 시험 2회분 — 1과목 20 : 2과목 80) 공개.
+- 남은 일: 응시료 확인.

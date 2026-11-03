@@ -88,7 +88,8 @@ const DOMAIN_MAP: Record<string, Record<string, string>> = {
   },
 };
 
-const AWS_SLUGS = getExamCertSlugs().filter((slug) => !slug.startsWith('linux-'));
+// 리눅스마스터·SQLD 는 시험이 과목(phase) 단위라 아래에서 따로 검사한다.
+const AWS_SLUGS = getExamCertSlugs().filter((slug) => !slug.startsWith('linux-') && slug !== 'sqld');
 
 function answerLabels(q: ExamBankQuestion): string[] {
   return q.answer.split(',').map((s) => s.trim()).filter(Boolean);
@@ -157,5 +158,45 @@ describe('모의고사 실전화 — AWS 자격증 은행', () => {
         expect(Math.abs(actual - expected), `${d.name}: ${actual} vs ${expected.toFixed(1)}`).toBeLessThanOrEqual(DOMAIN_TOLERANCE);
       }
     });
+  });
+});
+
+// SQLD: 은행은 실제 시험 2회분(50문항 × 2). 과목 비중 1과목 20 : 2과목 80 을 정확히 맞춘다.
+const SQLD_SETS = 2;
+describe('모의고사 실전화 — SQLD 은행', () => {
+  const questions = getExamQuestionsByCert('sqld');
+  const info = getExamInfo('sqld');
+
+  test('문항 구조: 보기 A~D, 정답 하나, number 1..N 중복 없음', () => {
+    expect(questions.map((q) => q.number)).toEqual(questions.map((_, i) => i + 1));
+    for (const q of questions) {
+      expect(q.choices.map((c) => c.label).join(''), `#${q.number}`).toBe('ABCD');
+      expect(answerLabels(q), `#${q.number}`).toHaveLength(1);
+      expect('ABCD', `#${q.number}`).toContain(q.answer);
+      expect(q.explanation.length, `#${q.number}`).toBeGreaterThan(20);
+    }
+  });
+
+  test('문항 수가 실제 시험 50문항의 2회분이다', () => {
+    expect(questions.length).toBe(50 * SQLD_SETS);
+  });
+
+  test('과목 이름은 exam-info 과목이고 비중(20:80)과 정확히 같다', () => {
+    expect(info).not.toBeNull();
+    const counts = new Map<string, number>();
+    for (const q of questions) counts.set(q.domain, (counts.get(q.domain) ?? 0) + 1);
+    expect([...counts.keys()].sort()).toEqual(info!.domains.map((d) => d.name).sort());
+    for (const d of info!.domains) expect(counts.get(d.name), d.name).toBe((questions.length * (d.weight ?? 0)) / 100);
+  });
+
+  test(`정답 보기가 가장 긴 문항이 ${MAX_LONGEST_CORRECT_RATIO * 100}% 이하다`, () => {
+    const longest = questions.filter(isCorrectLongest);
+    expect(longest.length / questions.length, `정답최장 #${longest.map((q) => q.number).join(',')}`).toBeLessThanOrEqual(MAX_LONGEST_CORRECT_RATIO);
+  });
+
+  test(`정답 글자 하나가 ${MAX_SINGLE_LETTER_RATIO * 100}%를 넘지 않는다`, () => {
+    const counts = new Map<string, number>();
+    for (const q of questions) counts.set(q.answer, (counts.get(q.answer) ?? 0) + 1);
+    for (const [label, n] of counts) expect(n / questions.length, `${label} ${n}`).toBeLessThanOrEqual(MAX_SINGLE_LETTER_RATIO);
   });
 });
