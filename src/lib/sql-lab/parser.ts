@@ -1,5 +1,5 @@
 // SELECT 문 파서(재귀 하강). Oracle 문법 기준이며, 오류는 Oracle 과 같은 ORA 번호를 낸다.
-import type { Expr, FromItem, JoinKind, OrderItem, QueryBlock, Select, SelectItem } from './ast';
+import type { Expr, FromItem, JoinKind, OrderItem, QueryBlock, Select, SelectItem, WithQuery } from './ast';
 import { headingOf, tokenize, type Token } from './lexer';
 import { NotSupported, OraError, parseDefaultDate } from './values';
 
@@ -11,6 +11,11 @@ const RESERVED = new Set(
 );
 
 const missingExpr = () => new OraError('ORA-00936', 'missing expression');
+
+/** ROLLUP·CUBE·GROUPING SETS 가 만드는 묶음 수 상한(CUBE 6개 = 64). 묶음마다 전체 행을 다시 훑는다. */
+export const MAX_GROUPING_SETS = 64;
+const tooManySets = () =>
+  new NotSupported(`묶음(소계 단위)이 ${MAX_GROUPING_SETS}개를 넘어서 실행하지 않았어요. CUBE 는 인자가 n 개면 묶음이 2ⁿ 개예요. 인자를 줄여 보세요.`);
 const notEnded = () => new OraError('ORA-00933', 'SQL command not properly ended');
 
 export class Parser {
@@ -67,8 +72,7 @@ export class Parser {
     if (first.kind === 'word' && ['INSERT', 'UPDATE', 'DELETE', 'MERGE', 'CREATE', 'DROP', 'ALTER', 'TRUNCATE', 'COMMIT', 'ROLLBACK', 'SAVEPOINT', 'GRANT', 'REVOKE'].includes(first.value)) {
       throw new NotSupported(`${first.value} 문은 실습장 3단계(DML·TCL·DDL)에서 열려요. 지금은 SELECT 만 실행할 수 있어요.`);
     }
-    if (first.kind === 'word' && first.value === 'WITH') throw new NotSupported('WITH 절은 아직 실습장에서 지원하지 않아요.');
-    if (!this.isWord('SELECT')) throw new OraError('ORA-00900', 'invalid SQL statement');
+    if (!this.isWord('SELECT') && !this.isWord('WITH')) throw new OraError('ORA-00900', 'invalid SQL statement');
     const q = this.select();
     this.acceptOp(';');
     if (this.t.kind !== 'end') throw this.unexpected();
@@ -90,7 +94,40 @@ export class Parser {
     return notEnded();
   }
 
+  /** 조건·값 자리의 서브쿼리. Oracle 은 여기서 ORDER BY 를 받지 않는다(인라인 뷰는 받는다). */
+  private predicateSubquery(): Select {
+    const q = this.select();
+    // ORDER BY 뒤에 FETCH·OFFSET 이 오면(Top N) Oracle 12c 부터는 받아 준다.
+    if (q.orderBy && !q.fetch) {
+      throw new OraError('ORA-00907', 'missing right parenthesis', 'WHERE·SELECT 절의 서브쿼리에는 ORDER BY 를 쓸 수 없어요. 정렬이 필요하면 FROM 절의 인라인 뷰에서 정렬해요.');
+    }
+    return q;
+  }
+
+  /** WITH 이름 AS (쿼리), ... */
+  private withClause(): WithQuery[] {
+    const out: WithQuery[] = [];
+    do {
+      const name = this.ident();
+      let columns: string[] | undefined;
+      if (this.acceptOp('(')) {
+        columns = [this.ident()];
+        while (this.acceptOp(',')) columns.push(this.ident());
+        this.expectOp(')');
+      }
+      this.expectWord('AS');
+      this.expectOp('(');
+      const query = this.select();
+      this.expectOp(')');
+      out.push({ name, columns, query });
+    } while (this.acceptOp(','));
+    checkWithReferences(out);
+    // 같은 이름을 두 번 정의하면 Oracle 은 앞의 정의를 쓴다.
+    return out.filter((w, i) => out.findIndex((x) => x.name === w.name) === i);
+  }
+
   select(): Select {
+    const withList = this.acceptWord('WITH') ? this.withClause() : undefined;
     let body: Select['body'] = this.queryTerm();
     for (;;) {
       let op: 'UNION' | 'UNION ALL' | 'INTERSECT' | 'MINUS' | null = null;
@@ -101,7 +138,7 @@ export class Parser {
       const right = this.queryTerm();
       body = { type: 'set', op, left: { body }, right: { body: right } };
     }
-    const q: Select = { body };
+    const q: Select = { body, ...(withList ? { with: withList } : {}) };
     if (this.isWord('ORDER')) {
       this.i++;
       this.expectWord('BY');
@@ -158,25 +195,104 @@ export class Parser {
     if (this.isWord('START') || this.isWord('CONNECT')) {
       throw new NotSupported('계층형 질의(START WITH·CONNECT BY)는 실습장 2단계에서 열려요.');
     }
-    if (this.isWord('GROUP')) {
-      this.i++;
-      this.expectWord('BY');
-      if (this.isWord('ROLLUP') || this.isWord('CUBE') || this.isWord('GROUPING')) {
-        throw new NotSupported('ROLLUP·CUBE·GROUPING SETS 는 실습장 2단계에서 열려요.');
-      }
-      q.groupBy = [this.expr()];
-      while (this.acceptOp(',')) q.groupBy.push(this.expr());
-    }
+    if (this.isWord('GROUP')) this.groupByClause(q);
     if (this.acceptWord('HAVING')) q.having = this.expr();
     // Oracle 은 HAVING 을 GROUP BY 앞에 써도 받아 준다.
-    if (!q.groupBy && this.isWord('GROUP')) {
-      this.i++;
-      this.expectWord('BY');
-      q.groupBy = [this.expr()];
-      while (this.acceptOp(',')) q.groupBy.push(this.expr());
-    }
+    if (!q.groupBy && this.isWord('GROUP')) this.groupByClause(q);
     if (this.isWord('PIVOT') || this.isWord('UNPIVOT')) throw new NotSupported('PIVOT·UNPIVOT 은 실습장 3단계에서 열려요.');
     return q;
+  }
+
+  /**
+   * GROUP BY 절. 원소마다 "묶음 목록"을 만들고 원소끼리는 곱으로 합친다.
+   *   GROUP BY A, ROLLUP(B, C) → (A,B,C) (A,B) (A)
+   * 원소가 모두 보통 식이면 묶음은 하나이고 groupingSets 는 두지 않는다.
+   */
+  private groupByClause(q: QueryBlock) {
+    this.i++;
+    this.expectWord('BY');
+    let sets: Expr[][] = [[]];
+    let special = false;
+    let onlyEmpty = true;
+    do {
+      onlyEmpty &&= this.isOp('(') && this.peek().kind === 'op' && this.peek().value === ')';
+      const el = this.groupElement();
+      special ||= el.special;
+      if (sets.length * el.sets.length > MAX_GROUPING_SETS) throw tooManySets();
+      sets = sets.flatMap((a) => el.sets.map((b) => [...a, ...b]));
+    } while (this.acceptOp(','));
+    const all: Expr[] = [];
+    const seen = new Set<string>();
+    for (const e of sets.flat()) {
+      const k = JSON.stringify(e, (key, v) => (key === 'start' || key === 'end' ? undefined : v));
+      if (!seen.has(k)) {
+        seen.add(k);
+        all.push(e);
+      }
+    }
+    q.groupBy = all;
+    if (special) q.groupingSets = sets;
+    if (onlyEmpty) q.grandTotalOnly = true;
+  }
+
+  /** GROUP BY 원소 하나 → 묶음 목록 */
+  private groupElement(): { sets: Expr[][]; special: boolean } {
+    if (this.isWord('ROLLUP') || this.isWord('CUBE')) {
+      const kind = this.t.value;
+      this.i++;
+      this.expectOp('(');
+      const parts = [this.columnGroup()];
+      while (this.acceptOp(',')) parts.push(this.columnGroup());
+      this.expectOp(')');
+      if (parts.some((p) => p.length === 0)) throw missingExpr(); // ROLLUP(()) 은 Oracle 도 ORA-00936
+      if (kind === 'ROLLUP') {
+        // ROLLUP(a, b, c) → (a,b,c) (a,b) (a) ()
+        return { sets: parts.map((_, i) => parts.slice(0, parts.length - i).flat()).concat([[]]), special: true };
+      }
+      // CUBE: 모든 부분 집합(많은 쪽부터). 인자가 n 개면 묶음이 2ⁿ 개다.
+      const n = parts.length;
+      if (2 ** n > MAX_GROUPING_SETS) throw tooManySets();
+      const sets: Expr[][] = [];
+      for (let mask = (1 << n) - 1; mask >= 0; mask--) sets.push(parts.filter((_, i) => mask & (1 << (n - 1 - i))).flat());
+      return { sets, special: true };
+    }
+    if (this.isWord('GROUPING') && this.peek().kind === 'word' && this.peek().value === 'SETS') {
+      this.i += 2;
+      this.expectOp('(');
+      const sets: Expr[][] = [];
+      do {
+        if (this.isWord('ROLLUP') || this.isWord('CUBE')) sets.push(...this.groupElement().sets);
+        else sets.push(this.columnGroup());
+      } while (this.acceptOp(','));
+      this.expectOp(')');
+      return { sets, special: true };
+    }
+    if (this.isOp('(') && this.peek().kind === 'op' && this.peek().value === ')') {
+      this.i += 2;
+      return { sets: [[]], special: true }; // () = 총계
+    }
+    return { sets: [[this.expr()]], special: false };
+  }
+
+  /** ROLLUP·GROUPING SETS 안의 묶음 하나: 식, (식, 식), () */
+  private columnGroup(): Expr[] {
+    if (this.isOp('(')) {
+      // (A, B) 는 한 덩어리, (A + 1) 같은 괄호 식과 구분한다.
+      const save = this.i;
+      this.i++;
+      if (this.acceptOp(')')) return [];
+      const first = this.expr();
+      if (this.acceptOp(',')) {
+        const list = [first];
+        do list.push(this.expr());
+        while (this.acceptOp(','));
+        this.expectOp(')');
+        return list;
+      }
+      this.i = save;
+    }
+    const e = this.expr();
+    return e.type === 'tuple' ? e.items : [e];
   }
 
   private selectList(): SelectItem[] {
@@ -246,7 +362,7 @@ export class Parser {
   private tableRef(): FromItem {
     if (this.isOp('(')) {
       this.i++;
-      if (!this.isWord('SELECT') && !this.isOp('(')) {
+      if (!this.isWord('SELECT') && !this.isWord('WITH') && !this.isOp('(')) {
         // (EMP JOIN DEPT ...) 처럼 괄호로 싼 조인
         const inner = this.joined();
         this.expectOp(')');
@@ -322,7 +438,7 @@ export class Parser {
     if (this.isWord('EXISTS')) {
       this.i++;
       this.expectOp('(');
-      const query = this.select();
+      const query = this.predicateSubquery();
       this.expectOp(')');
       return this.span(start, { type: 'exists' as const, query, not: false });
     }
@@ -341,8 +457,8 @@ export class Parser {
     }
     if (this.acceptWord('IN')) {
       this.expectOp('(');
-      if (this.isWord('SELECT')) {
-        const query = this.select();
+      if (this.isWord('SELECT') || this.isWord('WITH')) {
+        const query = this.predicateSubquery();
         this.expectOp(')');
         return this.span(start, { type: 'insub' as const, arg: left, query, not });
       }
@@ -365,7 +481,7 @@ export class Parser {
         const quant = this.t.value === 'ALL' ? 'ALL' : 'ANY';
         this.i++;
         this.expectOp('(');
-        if (!this.isWord('SELECT')) {
+        if (!this.isWord('SELECT') && !this.isWord('WITH')) {
           const list = [this.additive()];
           while (this.acceptOp(',')) list.push(this.additive());
           this.expectOp(')');
@@ -374,7 +490,7 @@ export class Parser {
             .map((x): Expr => ({ type: 'bin', op, left, right: x, start, end: x.end }))
             .reduce((a, b) => ({ type: quant === 'ALL' ? 'and' : 'or', left: a, right: b, start, end: b.end }));
         }
-        const query = this.select();
+        const query = this.predicateSubquery();
         this.expectOp(')');
         return this.span(start, { type: 'cmpsub' as const, op, quant: quant as 'ANY' | 'ALL', left, query });
       }
@@ -433,8 +549,8 @@ export class Parser {
     }
     if (t.kind === 'op' && t.value === '(') {
       this.i++;
-      if (this.isWord('SELECT')) {
-        const query = this.select();
+      if (this.isWord('SELECT') || this.isWord('WITH')) {
+        const query = this.predicateSubquery();
         this.expectOp(')');
         return this.span(start, { type: 'subquery' as const, query });
       }
@@ -472,6 +588,7 @@ export class Parser {
       this.i++;
       return this.span(start, { type: 'rownum' as const });
     }
+    if (w === 'GROUP_ID') throw new NotSupported('GROUP_ID 는 아직 실습장에서 지원하지 않아요. 소계 행 구분은 GROUPING·GROUPING_ID 로 해요.');
     if (w === 'PRIOR' || w === 'LEVEL' || w === 'CONNECT_BY_ROOT' || w === 'SYS_CONNECT_BY_PATH') {
       throw new NotSupported('계층형 질의(LEVEL·PRIOR)는 실습장 2단계에서 열려요.');
     }
@@ -560,6 +677,78 @@ export class Parser {
     if (this.isWord('WITHIN') || this.isWord('KEEP')) throw new NotSupported('WITHIN GROUP·KEEP 은 아직 실습장에서 지원하지 않아요.');
     return e;
   }
+}
+
+/**
+ * 쿼리가 FROM(조인·인라인 뷰·서브쿼리 포함)에서 부르는 테이블 이름 중, 그 안의 WITH 가 정의하지 않은 것(바깥에서 와야 하는 이름).
+ * 안쪽 WITH 의 원소 i 는 같은 목록의 앞 원소들(0..i-1)을 볼 수 있다.
+ */
+export function freeTables(sel: Select, bound: ReadonlySet<string> = new Set()): Set<string> {
+  const out = new Set<string>();
+  const visitSelect = (s: Select, scope: ReadonlySet<string>) => {
+    let inner = scope;
+    for (const w of s.with ?? []) {
+      visitSelect(w.query, inner); // 자기 이름과 뒤쪽 이름은 아직 안 보인다
+      inner = new Set([...inner, w.name]);
+    }
+    visitBody(s.body, inner);
+    s.orderBy?.forEach((o) => visitExpr(o.expr, inner));
+    if (s.fetch?.count) visitExpr(s.fetch.count, inner);
+  };
+  const visitBody = (b: Select['body'], scope: ReadonlySet<string>) => {
+    if (b.type === 'set') {
+      visitSelect(b.left, scope);
+      visitSelect(b.right, scope);
+      return;
+    }
+    b.from.forEach((f) => visitFrom(f, scope));
+    const exprs = [...b.items.map((i) => i.expr), ...(b.where ? [b.where] : []), ...(b.having ? [b.having] : []), ...(b.groupBy ?? [])];
+    exprs.forEach((e) => visitExpr(e, scope));
+  };
+  const visitFrom = (f: FromItem, scope: ReadonlySet<string>) => {
+    if (f.type === 'table') {
+      if (!scope.has(f.name)) out.add(f.name);
+    } else if (f.type === 'view') visitSelect(f.query, scope);
+    else {
+      visitFrom(f.left, scope);
+      visitFrom(f.right, scope);
+      if (f.on) visitExpr(f.on, scope);
+    }
+  };
+  const visitExpr = (e: Expr, scope: ReadonlySet<string>) => {
+    if ('query' in e && e.query) visitSelect(e.query as Select, scope);
+    for (const v of Object.values(e)) {
+      if (Array.isArray(v)) {
+        for (const x of v) {
+          if (!x || typeof x !== 'object') continue;
+          if ('type' in x) visitExpr(x as Expr, scope);
+          else if ('when' in x) {
+            visitExpr(x.when, scope);
+            visitExpr(x.then, scope);
+          }
+        }
+      } else if (v && typeof v === 'object' && 'type' in v && 'start' in v) visitExpr(v as Expr, scope);
+    }
+  };
+  visitSelect(sel, bound);
+  return out;
+}
+
+/**
+ * WITH 목록의 이름 규칙(Oracle):
+ *  - 원소가 자기 이름을 부르면 재귀 WITH 다. 열 이름 목록이 없으면 ORA-32039, 있으면 실습장이 아직 못 한다(안내).
+ *  - 원소가 같은 목록의 뒤쪽 이름을 부르면 ORA-32031.
+ */
+function checkWithReferences(list: WithQuery[]) {
+  list.forEach((w, i) => {
+    const free = freeTables(w.query, new Set(list.slice(0, i).map((x) => x.name).filter((n) => n !== w.name)));
+    if (free.has(w.name)) {
+      if (!w.columns) throw new OraError('ORA-32039', `missing column alias list in recursive WITH clause element ${w.name}`);
+      throw new NotSupported('자기 자신을 부르는 재귀 WITH 는 아직 실습장에서 지원하지 않아요. 계층 구조는 실습장 2단계의 CONNECT BY 로 다뤄요.');
+    }
+    const later = new Set(list.slice(i + 1).map((x) => x.name));
+    if ([...free].some((n) => later.has(n))) throw new OraError('ORA-32031', 'illegal reference of a query name in WITH clause');
+  });
 }
 
 /** 여러 문장을 ; 기준으로 나눈다(따옴표 안의 ; 는 건드리지 않는다). */

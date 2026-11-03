@@ -156,5 +156,75 @@
         "ordered": true
       }
     ]
+  },
+  {
+    "id": "sql-subquery-rollup",
+    "code": "SQL S3",
+    "title": "서브쿼리·집합 연산·ROLLUP 으로 한 번에 묻고 묶기",
+    "items": [
+      {
+        "id": "above-avg",
+        "title": "전체 평균보다 많이 받는 사원",
+        "prompt": "급여가 전체 사원 평균 급여보다 많은 사원의 이름과 급여를 급여가 높은 순(같으면 이름 순)으로 출력하시오.",
+        "hint": "평균은 한 값이므로 단일행 서브쿼리로 비교한다.",
+        "answer": "SELECT ENAME, SAL FROM EMP WHERE SAL > (SELECT AVG(SAL) FROM EMP) ORDER BY SAL DESC, ENAME;",
+        "explain": "WHERE SAL > AVG(SAL) 처럼 쓰면 WHERE 에 집계 함수가 들어가 ORA-00934 가 난다. 평균은 서브쿼리로 먼저 구한다.",
+        "ordered": true
+      },
+      {
+        "id": "dept-max",
+        "title": "부서별 최고 급여자",
+        "prompt": "부서마다 그 부서에서 급여가 가장 많은 사원의 부서 번호, 이름, 급여를 부서 번호 순(같으면 이름 순)으로 출력하시오.",
+        "hint": "(부서 번호, 급여) 묶음을 부서별 최고 급여 목록과 비교하거나, 상관 서브쿼리로 자기 부서의 최댓값과 비교한다.",
+        "answer": "SELECT DEPTNO, ENAME, SAL FROM EMP WHERE (DEPTNO, SAL) IN (SELECT DEPTNO, MAX(SAL) FROM EMP GROUP BY DEPTNO) ORDER BY DEPTNO, ENAME;",
+        "explain": "20번 부서는 SCOTT 과 FORD 가 둘 다 3000 이라 두 행이 나온다. WHERE SAL = (SELECT MAX(SAL) FROM EMP E2 WHERE E2.DEPTNO = E.DEPTNO) 처럼 상관 서브쿼리로 써도 같은 결과다.",
+        "ordered": true
+      },
+      {
+        "id": "no-emp-dept",
+        "title": "사원이 없는 부서",
+        "prompt": "사원이 한 명도 없는 부서의 부서 번호와 이름을 출력하시오.",
+        "hint": "EXISTS 의 부정, 또는 부서 번호 목록끼리의 차집합을 쓴다.",
+        "answer": "SELECT DEPTNO, DNAME FROM DEPT D WHERE NOT EXISTS (SELECT 1 FROM EMP E WHERE E.DEPTNO = D.DEPTNO);",
+        "explain": "DEPTNO NOT IN (SELECT DEPTNO FROM EMP) 도 지금 데이터에서는 같은 결과다. 다만 서브쿼리 결과에 NULL 이 하나라도 있으면 NOT IN 은 아무 행도 돌려주지 않는다.",
+        "ordered": false
+      },
+      {
+        "id": "not-manager",
+        "title": "부하 직원이 없는 사원",
+        "prompt": "누구의 관리자(MGR)도 아닌 사원의 이름을 이름 순으로 출력하시오.",
+        "hint": "MGR 열에는 NULL 이 있다(KING). NOT IN 을 쓰면 무엇이 달라지는지 직접 실행해 본다.",
+        "answer": "SELECT ENAME FROM EMP E WHERE NOT EXISTS (SELECT 1 FROM EMP M WHERE M.MGR = E.EMPNO) ORDER BY ENAME;",
+        "explain": "WHERE EMPNO NOT IN (SELECT MGR FROM EMP) 는 MGR 에 NULL 이 섞여 0행이 된다. NOT IN (SELECT MGR FROM EMP WHERE MGR IS NOT NULL) 로 NULL 을 빼면 정답과 같다.",
+        "ordered": true
+      },
+      {
+        "id": "union-jobs",
+        "title": "두 부서의 직무 합치기",
+        "prompt": "10번 부서와 30번 부서에 있는 직무(JOB)를 중복 없이 하나의 목록으로 알파벳 순으로 출력하시오.",
+        "hint": "두 SELECT 의 결과를 합치면서 중복을 없애는 집합 연산자를 쓴다.",
+        "answer": "SELECT JOB FROM EMP WHERE DEPTNO = 10 UNION SELECT JOB FROM EMP WHERE DEPTNO = 30 ORDER BY JOB;",
+        "explain": "UNION ALL 이면 CLERK·MANAGER 가 겹쳐 나온다. WHERE DEPTNO IN (10, 30) 에 DISTINCT 를 써도 결과는 같다.",
+        "ordered": true
+      },
+      {
+        "id": "rollup-dept",
+        "title": "부서별 소계와 총계",
+        "prompt": "부서 번호별 급여 합계와 전체 급여 총계를 한 결과에 출력하시오. 부서 번호 순으로 보이고, 총계 행은 맨 뒤에 둔다.",
+        "hint": "GROUP BY 에 소계·총계 행을 더해 주는 함수를 쓴다. 총계 행의 부서 번호는 NULL 이다.",
+        "answer": "SELECT DEPTNO, SUM(SAL) FROM EMP GROUP BY ROLLUP(DEPTNO) ORDER BY DEPTNO;",
+        "explain": "ROLLUP(DEPTNO) 는 부서별 3행에 총계 1행을 더한다. NULL 은 오름차순에서 맨 뒤라 총계가 마지막이다. GROUPING SETS(DEPTNO, ()) 로 써도 같다.",
+        "ordered": true
+      },
+      {
+        "id": "rollup-label",
+        "title": "소계 행에 이름 붙이기",
+        "prompt": "직무별 사원 수와 전체 사원 수를 출력하시오. 첫째 열은 직무 이름이고, 전체 행에는 '전체' 라고 보인다. 직무 순으로 보이고 전체 행은 맨 뒤에 둔다.",
+        "hint": "소계 행인지는 GROUPING(JOB) 이 1 인지로 가린다.",
+        "answer": "SELECT CASE GROUPING(JOB) WHEN 1 THEN '전체' ELSE JOB END, COUNT(*) FROM EMP GROUP BY ROLLUP(JOB) ORDER BY GROUPING(JOB), JOB;",
+        "explain": "NVL(JOB, '전체') 도 지금은 같은 결과지만, JOB 값 자체가 NULL 인 행이 있으면 실제 NULL 과 소계 행을 구분하지 못한다. GROUPING 은 그 둘을 가른다.",
+        "ordered": true
+      }
+    ]
   }
 ]

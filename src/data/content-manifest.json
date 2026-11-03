@@ -1414,10 +1414,10 @@
     "src/app/roadmap/page.tsx": "2026-10-23T00:39:22+09:00",
     "src/app/terms/page.tsx": "2026-10-13T13:11:46+09:00",
     "src/lib/cli-lab/labs.ts": "2026-10-30T15:57:52+09:00",
-    "src/lib/labCatalog.ts": "2026-11-02T23:57:54+09:00",
+    "src/lib/labCatalog.ts": "2026-11-03T18:27:23+09:00",
     "src/lib/shell-lab/drills.ts": "2026-11-02T23:57:54+09:00",
     "src/lib/shell-lab/labs.ts": "2026-11-02T23:46:09+09:00",
-    "content/aws-certs/sqld/meta.json": "2026-11-03T08:23:04.418Z",
+    "content/aws-certs/sqld/meta.json": "2026-11-03T18:27:22+09:00",
     "content/aws-certs/sqld/week1/day1.md": "2026-11-03T08:27:34.255Z",
     "content/aws-certs/sqld/week1/day2.md": "2026-11-03T08:28:35.460Z",
     "content/aws-certs/sqld/week1/day3.md": "2026-11-03T08:29:33.941Z",
@@ -1438,6 +1438,11 @@
     "content/aws-certs/sqld/week4/day3.md": "2026-11-03T08:49:28.953Z",
     "content/aws-certs/sqld/week4/day4.md": "2026-11-03T08:37:51.058Z",
     "content/aws-certs/sqld/week4/day5.md": "2026-11-03T08:37:51.056Z",
-    "src/lib/sql-lab/tasks.json": "2026-11-03T08:51:13.125Z"
+    "src/lib/sql-lab/tasks.json": "2026-11-03T18:27:23+09:00",
+    "content/aws-certs/sqld/week5/day1.md": "2026-11-03T09:53:39.158Z",
+    "content/aws-certs/sqld/week5/day2.md": "2026-11-03T09:55:41.838Z",
+    "content/aws-certs/sqld/week5/day3.md": "2026-11-03T09:57:10.132Z",
+    "content/aws-certs/sqld/week5/day4.md": "2026-11-03T09:58:37.652Z",
+    "content/aws-certs/sqld/week5/day5.md": "2026-11-03T10:00:37.835Z"
   }
 }

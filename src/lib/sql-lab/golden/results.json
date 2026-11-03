@@ -3978,6 +3978,2150 @@
       ]
     ]
   },
+  "sq-multi-col": {
+    "columns": [
+      "ENAME",
+      "DEPTNO",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "10",
+        "5000"
+      ],
+      [
+        "FORD",
+        "20",
+        "3000"
+      ],
+      [
+        "SCOTT",
+        "20",
+        "3000"
+      ],
+      [
+        "BLAKE",
+        "30",
+        "2850"
+      ]
+    ]
+  },
+  "sq-all": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "JONES",
+        "2975"
+      ],
+      [
+        "FORD",
+        "3000"
+      ],
+      [
+        "SCOTT",
+        "3000"
+      ],
+      [
+        "KING",
+        "5000"
+      ]
+    ]
+  },
+  "sq-any-eq": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ALLEN"
+      ],
+      [
+        "BLAKE"
+      ],
+      [
+        "JAMES"
+      ],
+      [
+        "MARTIN"
+      ],
+      [
+        "TURNER"
+      ],
+      [
+        "WARD"
+      ]
+    ]
+  },
+  "sq-exists-corr": {
+    "columns": [
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING"
+      ],
+      [
+        "RESEARCH"
+      ]
+    ]
+  },
+  "sq-having": {
+    "columns": [
+      "DEPTNO",
+      "AVG(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "2916.66667"
+      ],
+      [
+        "20",
+        "2175"
+      ]
+    ]
+  },
+  "sq-scalar-dname": {
+    "columns": [
+      "ENAME",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "FORD",
+        "RESEARCH"
+      ],
+      [
+        "JONES",
+        "RESEARCH"
+      ],
+      [
+        "KING",
+        "ACCOUNTING"
+      ],
+      [
+        "SCOTT",
+        "RESEARCH"
+      ]
+    ]
+  },
+  "sq-inline-join": {
+    "columns": [
+      "DNAME",
+      "AVG_SAL"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "2917"
+      ],
+      [
+        "RESEARCH",
+        "2175"
+      ],
+      [
+        "SALES",
+        "1567"
+      ]
+    ]
+  },
+  "sq-1427-in": {
+    "error": "ORA-01427",
+    "message": "single-row subquery returns more than one row"
+  },
+  "sq-913": {
+    "error": "ORA-00913",
+    "message": "too many values"
+  },
+  "sq-notexists-null": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "8"
+      ]
+    ]
+  },
+  "with-basic": {
+    "columns": [
+      "DNAME",
+      "CNT"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "3"
+      ],
+      [
+        "RESEARCH",
+        "5"
+      ],
+      [
+        "SALES",
+        "6"
+      ]
+    ]
+  },
+  "with-chain": {
+    "columns": [
+      "DEPTNO",
+      "S"
+    ],
+    "rows": [
+      [
+        "10",
+        "8750"
+      ],
+      [
+        "20",
+        "10075"
+      ],
+      [
+        "30",
+        "8450"
+      ]
+    ]
+  },
+  "with-cols": {
+    "columns": [
+      "NM"
+    ],
+    "rows": [
+      [
+        "SALES"
+      ],
+      [
+        "OPERATIONS"
+      ]
+    ]
+  },
+  "set-union-order-alias": {
+    "columns": [
+      "이름",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "10"
+      ],
+      [
+        "CLARK",
+        "2450"
+      ],
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "MILLER",
+        "1300"
+      ],
+      [
+        "OPERATIONS",
+        "40"
+      ],
+      [
+        "RESEARCH",
+        "20"
+      ],
+      [
+        "SALES",
+        "30"
+      ]
+    ]
+  },
+  "set-union-dup": {
+    "columns": [
+      "DEPTNO"
+    ],
+    "rows": [
+      [
+        "10"
+      ],
+      [
+        "20"
+      ],
+      [
+        "30"
+      ],
+      [
+        "40"
+      ]
+    ]
+  },
+  "set-unionall-count": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "18"
+      ]
+    ]
+  },
+  "set-minus-emp": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ANALYST"
+      ]
+    ]
+  },
+  "set-three": {
+    "columns": [
+      "DEPTNO"
+    ],
+    "rows": [
+      [
+        "40"
+      ]
+    ]
+  },
+  "set-null": {
+    "columns": [
+      "COMM"
+    ],
+    "rows": [
+      [
+        "0"
+      ],
+      [
+        "300"
+      ],
+      [
+        "500"
+      ],
+      [
+        "1400"
+      ],
+      [
+        ""
+      ]
+    ]
+  },
+  "set-orderby-name-err": {
+    "error": "ORA-00904",
+    "message": "\"DNAME\": invalid identifier"
+  },
+  "ru-dept-job": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "10",
+        "",
+        "8750"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "20",
+        "",
+        "10875"
+      ],
+      [
+        "30",
+        "CLERK",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "30",
+        "",
+        "9400"
+      ],
+      [
+        "",
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "ru-rev": {
+    "columns": [
+      "JOB",
+      "DEPTNO",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "20",
+        "6000"
+      ],
+      [
+        "ANALYST",
+        "",
+        "6000"
+      ],
+      [
+        "CLERK",
+        "10",
+        "1300"
+      ],
+      [
+        "CLERK",
+        "20",
+        "1900"
+      ],
+      [
+        "CLERK",
+        "30",
+        "950"
+      ],
+      [
+        "CLERK",
+        "",
+        "4150"
+      ],
+      [
+        "MANAGER",
+        "10",
+        "2450"
+      ],
+      [
+        "MANAGER",
+        "20",
+        "2975"
+      ],
+      [
+        "MANAGER",
+        "30",
+        "2850"
+      ],
+      [
+        "MANAGER",
+        "",
+        "8275"
+      ],
+      [
+        "PRESIDENT",
+        "10",
+        "5000"
+      ],
+      [
+        "PRESIDENT",
+        "",
+        "5000"
+      ],
+      [
+        "SALESMAN",
+        "30",
+        "5600"
+      ],
+      [
+        "SALESMAN",
+        "",
+        "5600"
+      ],
+      [
+        "",
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "ru-count": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "13"
+      ]
+    ]
+  },
+  "ru-single": {
+    "columns": [
+      "DEPTNO",
+      "COUNT(*)",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "3",
+        "8750"
+      ],
+      [
+        "20",
+        "5",
+        "10875"
+      ],
+      [
+        "30",
+        "6",
+        "9400"
+      ],
+      [
+        "",
+        "14",
+        "29025"
+      ]
+    ]
+  },
+  "ru-partial": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "1"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "1"
+      ],
+      [
+        "10",
+        "",
+        "3"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "2"
+      ],
+      [
+        "20",
+        "CLERK",
+        "2"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "1"
+      ],
+      [
+        "20",
+        "",
+        "5"
+      ],
+      [
+        "30",
+        "CLERK",
+        "1"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "1"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "4"
+      ],
+      [
+        "30",
+        "",
+        "6"
+      ]
+    ]
+  },
+  "ru-composite": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "MGR",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "7782",
+        "1"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "7839",
+        "1"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "",
+        "1"
+      ],
+      [
+        "10",
+        "",
+        "",
+        "3"
+      ],
+      [
+        "",
+        "",
+        "",
+        "3"
+      ]
+    ]
+  },
+  "cube-dept-job": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "10",
+        "",
+        "8750"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "20",
+        "",
+        "10875"
+      ],
+      [
+        "30",
+        "CLERK",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "30",
+        "",
+        "9400"
+      ],
+      [
+        "",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "",
+        "CLERK",
+        "4150"
+      ],
+      [
+        "",
+        "MANAGER",
+        "8275"
+      ],
+      [
+        "",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "",
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "cube-count": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "18"
+      ]
+    ]
+  },
+  "gs-basic": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "",
+        "8750"
+      ],
+      [
+        "20",
+        "",
+        "10875"
+      ],
+      [
+        "30",
+        "",
+        "9400"
+      ],
+      [
+        "",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "",
+        "CLERK",
+        "4150"
+      ],
+      [
+        "",
+        "MANAGER",
+        "8275"
+      ],
+      [
+        "",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "",
+        "SALESMAN",
+        "5600"
+      ]
+    ]
+  },
+  "gs-total": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "30",
+        "CLERK",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "",
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "gs-rollup-equiv": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "10",
+        "",
+        "8750"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "20",
+        "",
+        "10875"
+      ],
+      [
+        "30",
+        "CLERK",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "30",
+        "",
+        "9400"
+      ],
+      [
+        "",
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "gs-empty-only": {
+    "columns": [
+      "COUNT(*)",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "14",
+        "29025"
+      ]
+    ]
+  },
+  "grouping-fn": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "GD",
+      "GJ",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "0",
+        "0",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "0",
+        "0",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "0",
+        "0",
+        "5000"
+      ],
+      [
+        "10",
+        "",
+        "0",
+        "1",
+        "8750"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "0",
+        "0",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "0",
+        "0",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "0",
+        "0",
+        "2975"
+      ],
+      [
+        "20",
+        "",
+        "0",
+        "1",
+        "10875"
+      ],
+      [
+        "30",
+        "CLERK",
+        "0",
+        "0",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "0",
+        "0",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "0",
+        "0",
+        "5600"
+      ],
+      [
+        "30",
+        "",
+        "0",
+        "1",
+        "9400"
+      ],
+      [
+        "",
+        "",
+        "1",
+        "1",
+        "29025"
+      ]
+    ]
+  },
+  "grouping-label": {
+    "columns": [
+      "부서",
+      "직무",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "10",
+        "소계",
+        "8750"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "20",
+        "소계",
+        "10875"
+      ],
+      [
+        "30",
+        "CLERK",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "30",
+        "소계",
+        "9400"
+      ],
+      [
+        "총계",
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "grouping-decode": {
+    "columns": [
+      "직무",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "2"
+      ],
+      [
+        "CLERK",
+        "4"
+      ],
+      [
+        "MANAGER",
+        "3"
+      ],
+      [
+        "PRESIDENT",
+        "1"
+      ],
+      [
+        "SALESMAN",
+        "4"
+      ],
+      [
+        "ALL",
+        "14"
+      ]
+    ]
+  },
+  "grouping-id": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "GID",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "0",
+        "1"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "0",
+        "1"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "0",
+        "1"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "0",
+        "2"
+      ],
+      [
+        "20",
+        "CLERK",
+        "0",
+        "2"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "0",
+        "1"
+      ],
+      [
+        "30",
+        "CLERK",
+        "0",
+        "1"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "0",
+        "1"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "0",
+        "4"
+      ],
+      [
+        "10",
+        "",
+        "1",
+        "3"
+      ],
+      [
+        "20",
+        "",
+        "1",
+        "5"
+      ],
+      [
+        "30",
+        "",
+        "1",
+        "6"
+      ],
+      [
+        "",
+        "ANALYST",
+        "2",
+        "2"
+      ],
+      [
+        "",
+        "CLERK",
+        "2",
+        "4"
+      ],
+      [
+        "",
+        "MANAGER",
+        "2",
+        "3"
+      ],
+      [
+        "",
+        "PRESIDENT",
+        "2",
+        "1"
+      ],
+      [
+        "",
+        "SALESMAN",
+        "2",
+        "4"
+      ],
+      [
+        "",
+        "",
+        "3",
+        "14"
+      ]
+    ]
+  },
+  "grouping-having": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "",
+        "8750"
+      ],
+      [
+        "20",
+        "",
+        "10875"
+      ],
+      [
+        "30",
+        "",
+        "9400"
+      ],
+      [
+        "",
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "grouping-where-err": {
+    "error": "ORA-00934",
+    "message": "group function is not allowed here"
+  },
+  "ru-avg-null": {
+    "columns": [
+      "DEPTNO",
+      "AVG(COMM)",
+      "COUNT(COMM)"
+    ],
+    "rows": [
+      [
+        "10",
+        "",
+        "0"
+      ],
+      [
+        "20",
+        "",
+        "0"
+      ],
+      [
+        "30",
+        "550",
+        "4"
+      ],
+      [
+        "",
+        "550",
+        "4"
+      ]
+    ]
+  },
+  "ru-join": {
+    "columns": [
+      "DNAME",
+      "JOB",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "CLERK",
+        "1"
+      ],
+      [
+        "ACCOUNTING",
+        "MANAGER",
+        "1"
+      ],
+      [
+        "ACCOUNTING",
+        "PRESIDENT",
+        "1"
+      ],
+      [
+        "ACCOUNTING",
+        "",
+        "3"
+      ],
+      [
+        "RESEARCH",
+        "ANALYST",
+        "2"
+      ],
+      [
+        "RESEARCH",
+        "CLERK",
+        "2"
+      ],
+      [
+        "RESEARCH",
+        "MANAGER",
+        "1"
+      ],
+      [
+        "RESEARCH",
+        "",
+        "5"
+      ],
+      [
+        "SALES",
+        "CLERK",
+        "1"
+      ],
+      [
+        "SALES",
+        "MANAGER",
+        "1"
+      ],
+      [
+        "SALES",
+        "SALESMAN",
+        "4"
+      ],
+      [
+        "SALES",
+        "",
+        "6"
+      ],
+      [
+        "",
+        "",
+        "14"
+      ]
+    ]
+  },
+  "ru-979": {
+    "error": "ORA-00979",
+    "message": "\"ENAME\": must appear in the GROUP BY clause or be used in an aggregate function"
+  },
+  "grouping-nogroup": {
+    "error": "ORA-30481",
+    "message": "GROUPING, GROUPING_ID, and GROUP_ID cannot be used without GROUP BY"
+  },
+  "grouping-plain": {
+    "columns": [
+      "DEPTNO",
+      "GROUPING(DEPTNO)"
+    ],
+    "rows": [
+      [
+        "10",
+        "0"
+      ],
+      [
+        "20",
+        "0"
+      ],
+      [
+        "30",
+        "0"
+      ]
+    ]
+  },
+  "grouping-notin": {
+    "error": "ORA-00979",
+    "message": "\"JOB\": must appear in the GROUP BY clause or be used in an aggregate function"
+  },
+  "ru-empty": {
+    "columns": null,
+    "rows": []
+  },
+  "ru-empty-99": {
+    "columns": null,
+    "rows": []
+  },
+  "cube-empty": {
+    "columns": null,
+    "rows": []
+  },
+  "gs-empty-input": {
+    "columns": null,
+    "rows": []
+  },
+  "gs-empty-input2": {
+    "columns": null,
+    "rows": []
+  },
+  "gs-empty-979": {
+    "error": "ORA-00979",
+    "message": "\"JOB\": must appear in the GROUP BY clause or be used in an aggregate function"
+  },
+  "ob-alias-in-grouping": {
+    "columns": [
+      "X",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "CLERK",
+        "4150"
+      ],
+      [
+        "MANAGER",
+        "8275"
+      ],
+      [
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "ob-alias-expr": {
+    "columns": [
+      "DEPTNO",
+      "M"
+    ],
+    "rows": [
+      [
+        "30",
+        "2850"
+      ],
+      [
+        "20",
+        "3000"
+      ],
+      [
+        "10",
+        "5000"
+      ]
+    ]
+  },
+  "ob-alias-expr-ru": {
+    "columns": [
+      "DEPTNO",
+      "S"
+    ],
+    "rows": [
+      [
+        "10",
+        "8750"
+      ],
+      [
+        "30",
+        "9400"
+      ],
+      [
+        "20",
+        "10875"
+      ],
+      [
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "ob-alias-expr-plain": {
+    "columns": [
+      "ENAME",
+      "Y"
+    ],
+    "rows": [
+      [
+        "KING",
+        "60000"
+      ],
+      [
+        "CLARK",
+        "29400"
+      ],
+      [
+        "MILLER",
+        "15600"
+      ]
+    ]
+  },
+  "with-in-subquery": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "14"
+      ]
+    ]
+  },
+  "with-scalar": {
+    "columns": [
+      "(WITHXAS(SELECTMAX(SAL)MFROMEMP)SELECTMFROMX)"
+    ],
+    "rows": [
+      [
+        "5000"
+      ]
+    ]
+  },
+  "with-self-nocols": {
+    "error": "ORA-32039",
+    "message": "missing column alias list in recursive WITH clause element A"
+  },
+  "with-name-is-column": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "14"
+      ]
+    ]
+  },
+  "with-name-is-column2": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "3"
+      ]
+    ]
+  },
+  "with-name-groupby": {
+    "error": "ORA-00904",
+    "message": "\"T\": invalid identifier"
+  },
+  "with-nested-self": {
+    "error": "ORA-32039",
+    "message": "missing column alias list in recursive WITH clause element A"
+  },
+  "with-forward": {
+    "error": "ORA-32031",
+    "message": "illegal reference of a query name in WITH clause"
+  },
+  "grouping-expr-arg": {
+    "error": "ORA-00979",
+    "message": "\"EMP\".\"DEPTNO\"+0: must appear in the GROUP BY clause or be used in an aggregate function"
+  },
+  "rollup-empty-paren": {
+    "error": "ORA-00936",
+    "message": "missing expression"
+  },
+  "ob-dup-alias-expr": {
+    "error": "ORA-00960",
+    "message": "ambiguous column naming in select list"
+  },
+  "set-ob-expr": {
+    "error": "ORA-01785",
+    "message": "ORDER BY item must be the number of a SELECT-list expression"
+  },
+  "with-inner-shadow": {
+    "columns": [
+      "V"
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "with-inner-shadow-view": {
+    "columns": [
+      "V"
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "with-inner-shadow-exists": {
+    "columns": [
+      "V"
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "with-inner-b-then-b": {
+    "columns": [
+      "V"
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "with-inner-forward": {
+    "error": "ORA-32031",
+    "message": "illegal reference of a query name in WITH clause"
+  },
+  "with-col-alias-named-like-cte": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "4"
+      ]
+    ]
+  },
+  "sq-uncorrelated-big": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "2744"
+      ]
+    ]
+  },
+  "sq-fetch-in": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "FORD"
+      ],
+      [
+        "KING"
+      ],
+      [
+        "SCOTT"
+      ]
+    ]
+  },
+  "sq-fetch-scalar": {
+    "columns": [
+      "(SELECTENAMEFROMEMPORDERBYSALDESCFETCHFIRST1ROWONLY)"
+    ],
+    "rows": [
+      [
+        "KING"
+      ]
+    ]
+  },
+  "sq-offset-exists": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "with-dup-cols-star": {
+    "error": "ORA-00918",
+    "message": "DEPTNO: column ambiguously specified - appears in  and"
+  },
+  "with-dup-cols-ref": {
+    "error": "ORA-00918",
+    "message": "DEPTNO: column ambiguously specified - appears in  and"
+  },
+  "with-dup-cols-qualified": {
+    "error": "ORA-00918",
+    "message": "DEPTNO: column ambiguously specified - appears in  and"
+  },
+  "with-dup-cols-other": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "SMITH"
+      ]
+    ]
+  },
+  "with-dup-cols-chain": {
+    "error": "ORA-00918",
+    "message": "EMPNO: column ambiguously specified - appears in  and"
+  },
+  "view-dup-cols": {
+    "error": "ORA-00918",
+    "message": "ENAME: column ambiguously specified - appears in  and"
+  },
+  "view-dup-cols-ref": {
+    "error": "ORA-00918",
+    "message": "DEPTNO: column ambiguously specified - appears in  and"
+  },
+  "with-forward-orderby": {
+    "error": "ORA-32031",
+    "message": "illegal reference of a query name in WITH clause"
+  },
+  "with-unused-error": {
+    "error": "ORA-00904",
+    "message": "\"NOPE\": invalid identifier"
+  },
+  "with-unused-table": {
+    "error": "ORA-00942",
+    "message": "table or view \"SCOTT\".\"NOTABLE\" does not exist"
+  },
+  "with-unused-979": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "4"
+      ]
+    ]
+  },
+  "with-unused-div0": {
+    "columns": [
+      "1"
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "with-unused-tonumber": {
+    "columns": [
+      "1"
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "with-unused-1427": {
+    "columns": [
+      "1"
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "with-unused-big": {
+    "columns": [
+      "1"
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "with-shortcircuit-div0": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "with-used-div0": {
+    "error": "ORA-01476",
+    "message": "divisor is equal to zero"
+  },
+  "with-ansi-star": {
+    "columns": [
+      "EMPNO",
+      "ENAME",
+      "JOB",
+      "MGR",
+      "HIREDATE",
+      "SAL",
+      "COMM",
+      "DEPTNO",
+      "DEPTNO",
+      "DNAME",
+      "LOC"
+    ],
+    "rows": [
+      [
+        "7369",
+        "SMITH",
+        "CLERK",
+        "7902",
+        "1980-12-17",
+        "800",
+        "",
+        "20",
+        "20",
+        "RESEARCH",
+        "DALLAS"
+      ]
+    ]
+  },
+  "with-ansi-ref": {
+    "error": "ORA-00904",
+    "message": "\"DEPTNO\": invalid identifier"
+  },
+  "with-ansi-qref": {
+    "error": "ORA-00904",
+    "message": "\"T\".\"DEPTNO\": invalid identifier"
+  },
+  "with-ansi-other": {
+    "columns": [
+      "ENAME",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "KING",
+        "ACCOUNTING"
+      ]
+    ]
+  },
+  "with-ansi-cross": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "16"
+      ]
+    ]
+  },
+  "view-ansi-star": {
+    "columns": [
+      "EMPNO",
+      "ENAME",
+      "JOB",
+      "MGR",
+      "HIREDATE",
+      "SAL",
+      "COMM",
+      "DEPTNO",
+      "DEPTNO",
+      "DNAME",
+      "LOC"
+    ],
+    "rows": [
+      [
+        "7369",
+        "SMITH",
+        "CLERK",
+        "7902",
+        "1980-12-17",
+        "800",
+        "",
+        "20",
+        "20",
+        "RESEARCH",
+        "DALLAS"
+      ]
+    ]
+  },
+  "view-ansi-explicit": {
+    "error": "ORA-00918",
+    "message": "DEPTNO: column ambiguously specified - appears in  and"
+  },
+  "view-ansi-count": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "14"
+      ]
+    ]
+  },
+  "gb-empty-paren-empty-input": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "gb-empty-paren-twice": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "gb-empty-paren": {
+    "columns": [
+      "COUNT(*)",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "14",
+        "29025"
+      ]
+    ]
+  },
+  "star-group-979": {
+    "error": "ORA-00979",
+    "message": "\"EMP\".\"EMPNO\": must appear in the GROUP BY clause or be used in an aggregate function"
+  },
+  "star-group-979-alias": {
+    "error": "ORA-00979",
+    "message": "\"E\".\"EMPNO\": must appear in the GROUP BY clause or be used in an aggregate function"
+  },
+  "star-group-ok": {
+    "columns": [
+      "DEPTNO",
+      "DNAME",
+      "LOC"
+    ],
+    "rows": [
+      [
+        "10",
+        "ACCOUNTING",
+        "NEW YORK"
+      ],
+      [
+        "20",
+        "RESEARCH",
+        "DALLAS"
+      ],
+      [
+        "30",
+        "SALES",
+        "CHICAGO"
+      ],
+      [
+        "40",
+        "OPERATIONS",
+        "BOSTON"
+      ]
+    ]
+  },
+  "view-ansi-qualified-star": {
+    "error": "ORA-00918",
+    "message": "DEPTNO: column ambiguously specified - appears in  and"
+  },
+  "view-ansi-qualified-mixed": {
+    "error": "ORA-00918",
+    "message": "DEPTNO: column ambiguously specified - appears in  and"
+  },
+  "with-ansi-qualified-star": {
+    "error": "ORA-00918",
+    "message": "DEPTNO: column ambiguously specified - appears in  and"
+  },
+  "sq-shortcircuit-932": {
+    "error": "ORA-00932",
+    "message": "expression (1) is of data type NUMBER, which is incompatible with expected data type DATE"
+  },
+  "sq-shortcircuit-938": {
+    "error": "ORA-00938",
+    "message": "not enough arguments for function"
+  },
+  "sq-shortcircuit-975": {
+    "error": "ORA-00975",
+    "message": "date + date not allowed"
+  },
+  "with-unused-913": {
+    "error": "ORA-00913",
+    "message": "too many values"
+  },
+  "with-unused-1789": {
+    "error": "ORA-01789",
+    "message": "query block has incorrect number of result columns"
+  },
+  "with-unused-934": {
+    "error": "ORA-00934",
+    "message": "group function is not allowed here"
+  },
+  "with-unused-30481": {
+    "error": "ORA-30481",
+    "message": "GROUPING, GROUPING_ID, and GROUP_ID cannot be used without GROUP BY"
+  },
+  "with-unused-909": {
+    "error": "ORA-00909",
+    "message": "invalid number of arguments"
+  },
+  "with-unused-937": {
+    "columns": [
+      "1"
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "with-unused-932": {
+    "columns": [
+      "1"
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "gb-empty-noagg": {
+    "columns": null,
+    "rows": []
+  },
+  "gb-empty-having": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "gs-two-empty-sets": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ],
+      [
+        "0"
+      ]
+    ]
+  },
+  "gs-three-empty-sets": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ],
+      [
+        "0"
+      ],
+      [
+        "0"
+      ]
+    ]
+  },
+  "fn-arity-nvl1": {
+    "error": "ORA-00909",
+    "message": "invalid number of arguments"
+  },
+  "fn-arity-nvl3": {
+    "error": "ORA-00909",
+    "message": "invalid number of arguments"
+  },
+  "fn-arity-substr4": {
+    "error": "ORA-00939",
+    "message": "too many arguments for function"
+  },
+  "fn-arity-lower0": {
+    "error": "ORA-00909",
+    "message": "invalid number of arguments"
+  },
+  "with-dup-name": {
+    "columns": [
+      "V"
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
   "task-sql-select-basics-annual": {
     "columns": [
       "ENAME",
@@ -4447,6 +6591,185 @@
       [
         "ACCOUNTING",
         "8750"
+      ]
+    ]
+  },
+  "task-sql-subquery-rollup-above-avg": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "FORD",
+        "3000"
+      ],
+      [
+        "SCOTT",
+        "3000"
+      ],
+      [
+        "JONES",
+        "2975"
+      ],
+      [
+        "BLAKE",
+        "2850"
+      ],
+      [
+        "CLARK",
+        "2450"
+      ]
+    ]
+  },
+  "task-sql-subquery-rollup-dept-max": {
+    "columns": [
+      "DEPTNO",
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "10",
+        "KING",
+        "5000"
+      ],
+      [
+        "20",
+        "FORD",
+        "3000"
+      ],
+      [
+        "20",
+        "SCOTT",
+        "3000"
+      ],
+      [
+        "30",
+        "BLAKE",
+        "2850"
+      ]
+    ]
+  },
+  "task-sql-subquery-rollup-no-emp-dept": {
+    "columns": [
+      "DEPTNO",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "40",
+        "OPERATIONS"
+      ]
+    ]
+  },
+  "task-sql-subquery-rollup-not-manager": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ADAMS"
+      ],
+      [
+        "ALLEN"
+      ],
+      [
+        "JAMES"
+      ],
+      [
+        "MARTIN"
+      ],
+      [
+        "MILLER"
+      ],
+      [
+        "SMITH"
+      ],
+      [
+        "TURNER"
+      ],
+      [
+        "WARD"
+      ]
+    ]
+  },
+  "task-sql-subquery-rollup-union-jobs": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "CLERK"
+      ],
+      [
+        "MANAGER"
+      ],
+      [
+        "PRESIDENT"
+      ],
+      [
+        "SALESMAN"
+      ]
+    ]
+  },
+  "task-sql-subquery-rollup-rollup-dept": {
+    "columns": [
+      "DEPTNO",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "8750"
+      ],
+      [
+        "20",
+        "10875"
+      ],
+      [
+        "30",
+        "9400"
+      ],
+      [
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "task-sql-subquery-rollup-rollup-label": {
+    "columns": [
+      "CASEGROUPING(JOB)WHEN1THEN'전체'ELSEJOBEND",
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "2"
+      ],
+      [
+        "CLERK",
+        "4"
+      ],
+      [
+        "MANAGER",
+        "3"
+      ],
+      [
+        "PRESIDENT",
+        "1"
+      ],
+      [
+        "SALESMAN",
+        "4"
+      ],
+      [
+        "전체",
+        "14"
       ]
     ]
   },
@@ -7790,6 +10113,1816 @@
       [
         "SALES",
         "6"
+      ]
+    ]
+  },
+  "note-w5d1-1": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "FORD",
+        "3000"
+      ],
+      [
+        "SCOTT",
+        "3000"
+      ]
+    ]
+  },
+  "note-w5d1-2": {
+    "columns": [
+      "DEPTNO",
+      "AVG(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "2916.66667"
+      ],
+      [
+        "20",
+        "2175"
+      ]
+    ]
+  },
+  "note-w5d1-3": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "BLAKE",
+        "2850"
+      ]
+    ]
+  },
+  "note-w5d1-4": {
+    "error": "ORA-01427",
+    "message": "single-row subquery returns more than one row"
+  },
+  "note-w5d1-5": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "FORD",
+        "3000"
+      ],
+      [
+        "SCOTT",
+        "3000"
+      ],
+      [
+        "JONES",
+        "2975"
+      ]
+    ]
+  },
+  "note-w5d1-6": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "14"
+      ]
+    ]
+  },
+  "note-w5d1-7": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "note-w5d1-8": {
+    "columns": [
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING"
+      ],
+      [
+        "RESEARCH"
+      ]
+    ]
+  },
+  "note-w5d1-9": {
+    "columns": [
+      "ENAME",
+      "DEPTNO",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "10",
+        "5000"
+      ],
+      [
+        "FORD",
+        "20",
+        "3000"
+      ],
+      [
+        "SCOTT",
+        "20",
+        "3000"
+      ],
+      [
+        "BLAKE",
+        "30",
+        "2850"
+      ]
+    ]
+  },
+  "note-w5d1-10": {
+    "columns": [
+      "ENAME",
+      "DEPTNO",
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ADAMS",
+        "20",
+        "CLERK"
+      ],
+      [
+        "SMITH",
+        "20",
+        "CLERK"
+      ],
+      [
+        "ALLEN",
+        "30",
+        "SALESMAN"
+      ],
+      [
+        "MARTIN",
+        "30",
+        "SALESMAN"
+      ],
+      [
+        "TURNER",
+        "30",
+        "SALESMAN"
+      ],
+      [
+        "WARD",
+        "30",
+        "SALESMAN"
+      ]
+    ]
+  },
+  "note-w5d1-11": {
+    "columns": [
+      "ENAME",
+      "DEPTNO",
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ADAMS",
+        "20",
+        "CLERK"
+      ],
+      [
+        "SMITH",
+        "20",
+        "CLERK"
+      ],
+      [
+        "ALLEN",
+        "30",
+        "SALESMAN"
+      ],
+      [
+        "JAMES",
+        "30",
+        "CLERK"
+      ],
+      [
+        "MARTIN",
+        "30",
+        "SALESMAN"
+      ],
+      [
+        "TURNER",
+        "30",
+        "SALESMAN"
+      ],
+      [
+        "WARD",
+        "30",
+        "SALESMAN"
+      ]
+    ]
+  },
+  "note-w5d1-12": {
+    "error": "ORA-00913",
+    "message": "too many values"
+  },
+  "note-w5d1-13": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "note-w5d1-14": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "8"
+      ]
+    ]
+  },
+  "note-w5d1-15": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "8"
+      ]
+    ]
+  },
+  "note-w5d1-16": {
+    "error": "ORA-00907",
+    "message": "missing right parenthesis"
+  },
+  "note-w5d2-1": {
+    "columns": [
+      "ENAME",
+      "DEPTNO",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "10",
+        "5000"
+      ],
+      [
+        "FORD",
+        "20",
+        "3000"
+      ],
+      [
+        "JONES",
+        "20",
+        "2975"
+      ],
+      [
+        "SCOTT",
+        "20",
+        "3000"
+      ],
+      [
+        "ALLEN",
+        "30",
+        "1600"
+      ],
+      [
+        "BLAKE",
+        "30",
+        "2850"
+      ]
+    ]
+  },
+  "note-w5d2-2": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "BLAKE",
+        "2850"
+      ],
+      [
+        "FORD",
+        "3000"
+      ],
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "SCOTT",
+        "3000"
+      ]
+    ]
+  },
+  "note-w5d2-3": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "6"
+      ]
+    ]
+  },
+  "note-w5d2-4": {
+    "columns": [
+      "DNAME",
+      "CNT"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "3"
+      ],
+      [
+        "RESEARCH",
+        "5"
+      ],
+      [
+        "SALES",
+        "6"
+      ],
+      [
+        "OPERATIONS",
+        "0"
+      ]
+    ]
+  },
+  "note-w5d2-5": {
+    "columns": [
+      "ENAME",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "BLAKE",
+        "SALES"
+      ],
+      [
+        "CLARK",
+        "ACCOUNTING"
+      ],
+      [
+        "JONES",
+        "RESEARCH"
+      ]
+    ]
+  },
+  "note-w5d2-6": {
+    "columns": [
+      "DNAME",
+      "PRES"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "KING"
+      ],
+      [
+        "RESEARCH",
+        ""
+      ],
+      [
+        "SALES",
+        ""
+      ],
+      [
+        "OPERATIONS",
+        ""
+      ]
+    ]
+  },
+  "note-w5d2-7": {
+    "error": "ORA-01427",
+    "message": "single-row subquery returns more than one row"
+  },
+  "note-w5d2-8": {
+    "error": "ORA-00913",
+    "message": "too many values"
+  },
+  "note-w5d2-9": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "AVG_SAL"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "1600",
+        "1567"
+      ],
+      [
+        "BLAKE",
+        "2850",
+        "1567"
+      ],
+      [
+        "FORD",
+        "3000",
+        "2175"
+      ],
+      [
+        "JONES",
+        "2975",
+        "2175"
+      ],
+      [
+        "KING",
+        "5000",
+        "2917"
+      ],
+      [
+        "SCOTT",
+        "3000",
+        "2175"
+      ]
+    ]
+  },
+  "note-w5d2-10": {
+    "columns": [
+      "DEPTNO",
+      "AVG_SAL"
+    ],
+    "rows": [
+      [
+        "10",
+        "2917"
+      ],
+      [
+        "20",
+        "2175"
+      ]
+    ]
+  },
+  "note-w5d2-11": {
+    "error": "ORA-00904",
+    "message": "\"X\".\"SAL\": invalid identifier"
+  },
+  "note-w5d2-12": {
+    "error": "ORA-00904",
+    "message": "\"ANNUAL\": invalid identifier"
+  },
+  "note-w5d2-13": {
+    "columns": [
+      "ENAME",
+      "ANNUAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "60000"
+      ],
+      [
+        "FORD",
+        "36000"
+      ],
+      [
+        "SCOTT",
+        "36000"
+      ]
+    ]
+  },
+  "note-w5d3-1": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ANALYST"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "MANAGER"
+      ],
+      [
+        "PRESIDENT"
+      ]
+    ]
+  },
+  "note-w5d3-2": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ANALYST"
+      ],
+      [
+        "ANALYST"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "MANAGER"
+      ],
+      [
+        "MANAGER"
+      ],
+      [
+        "PRESIDENT"
+      ]
+    ]
+  },
+  "note-w5d3-3": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "5"
+      ]
+    ]
+  },
+  "note-w5d3-4": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "2450"
+      ],
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "MILLER",
+        "1300"
+      ],
+      [
+        "합계",
+        "8750"
+      ]
+    ]
+  },
+  "note-w5d3-5": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "CLERK"
+      ],
+      [
+        "MANAGER"
+      ]
+    ]
+  },
+  "note-w5d3-6": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "PRESIDENT"
+      ]
+    ]
+  },
+  "note-w5d3-7": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ANALYST"
+      ]
+    ]
+  },
+  "note-w5d3-8": {
+    "columns": [
+      "DEPTNO"
+    ],
+    "rows": [
+      [
+        "40"
+      ]
+    ]
+  },
+  "note-w5d3-9": {
+    "error": "ORA-01789",
+    "message": "query block has incorrect number of result columns"
+  },
+  "note-w5d3-10": {
+    "error": "ORA-01790",
+    "message": "expression must have same datatype as corresponding expression"
+  },
+  "note-w5d3-11": {
+    "columns": [
+      "ID",
+      "NAME"
+    ],
+    "rows": [
+      [
+        "10",
+        "ACCOUNTING"
+      ],
+      [
+        "20",
+        "RESEARCH"
+      ],
+      [
+        "30",
+        "SALES"
+      ],
+      [
+        "40",
+        "OPERATIONS"
+      ],
+      [
+        "7782",
+        "CLARK"
+      ],
+      [
+        "7839",
+        "KING"
+      ],
+      [
+        "7934",
+        "MILLER"
+      ]
+    ]
+  },
+  "note-w5d3-12": {
+    "error": "ORA-00904",
+    "message": "\"DNAME\": invalid identifier"
+  },
+  "note-w5d3-13": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING"
+      ],
+      [
+        "CLARK"
+      ],
+      [
+        "KING"
+      ],
+      [
+        "MILLER"
+      ]
+    ]
+  },
+  "note-w5d3-14": {
+    "error": "ORA-03048",
+    "message": "SQL reserved word 'UNION' is not syntactically valid following '...DEPTNO = 10 ORDER BY JOB '"
+  },
+  "note-w5d3-15": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ANALYST"
+      ],
+      [
+        "PRESIDENT"
+      ]
+    ]
+  },
+  "note-w5d3-16": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ANALYST"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "MANAGER"
+      ],
+      [
+        "PRESIDENT"
+      ]
+    ]
+  },
+  "note-w5d4-1": {
+    "columns": [
+      "DEPTNO",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "8750"
+      ],
+      [
+        "20",
+        "10875"
+      ],
+      [
+        "30",
+        "9400"
+      ],
+      [
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "note-w5d4-2": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "CNT",
+      "SUM_SAL"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "1",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "1",
+        "5000"
+      ],
+      [
+        "10",
+        "",
+        "3",
+        "8750"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "2",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "2",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "1",
+        "2975"
+      ],
+      [
+        "20",
+        "",
+        "5",
+        "10875"
+      ],
+      [
+        "30",
+        "CLERK",
+        "1",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "1",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "4",
+        "5600"
+      ],
+      [
+        "30",
+        "",
+        "6",
+        "9400"
+      ],
+      [
+        "",
+        "",
+        "14",
+        "29025"
+      ]
+    ]
+  },
+  "note-w5d4-3": {
+    "columns": [
+      "JOB",
+      "DEPTNO",
+      "SUM_SAL"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "20",
+        "6000"
+      ],
+      [
+        "ANALYST",
+        "",
+        "6000"
+      ],
+      [
+        "CLERK",
+        "10",
+        "1300"
+      ],
+      [
+        "CLERK",
+        "20",
+        "1900"
+      ],
+      [
+        "CLERK",
+        "30",
+        "950"
+      ],
+      [
+        "CLERK",
+        "",
+        "4150"
+      ],
+      [
+        "MANAGER",
+        "10",
+        "2450"
+      ],
+      [
+        "MANAGER",
+        "20",
+        "2975"
+      ],
+      [
+        "MANAGER",
+        "30",
+        "2850"
+      ],
+      [
+        "MANAGER",
+        "",
+        "8275"
+      ],
+      [
+        "PRESIDENT",
+        "10",
+        "5000"
+      ],
+      [
+        "PRESIDENT",
+        "",
+        "5000"
+      ],
+      [
+        "SALESMAN",
+        "30",
+        "5600"
+      ],
+      [
+        "SALESMAN",
+        "",
+        "5600"
+      ],
+      [
+        "",
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "note-w5d4-4": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM_SAL"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "10",
+        "",
+        "8750"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "20",
+        "",
+        "10875"
+      ],
+      [
+        "30",
+        "CLERK",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "30",
+        "",
+        "9400"
+      ],
+      [
+        "",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "",
+        "CLERK",
+        "4150"
+      ],
+      [
+        "",
+        "MANAGER",
+        "8275"
+      ],
+      [
+        "",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "",
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "note-w5d4-5": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "10",
+        "",
+        "8750"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "20",
+        "",
+        "10875"
+      ],
+      [
+        "30",
+        "CLERK",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "30",
+        "",
+        "9400"
+      ]
+    ]
+  },
+  "note-w5d4-6": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "30",
+        "CLERK",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "",
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "note-w5d4-7": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "10",
+        "",
+        "8750"
+      ],
+      [
+        "",
+        "",
+        "8750"
+      ]
+    ]
+  },
+  "note-w5d5-1": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM_SAL"
+    ],
+    "rows": [
+      [
+        "10",
+        "",
+        "8750"
+      ],
+      [
+        "20",
+        "",
+        "10875"
+      ],
+      [
+        "30",
+        "",
+        "9400"
+      ],
+      [
+        "",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "",
+        "CLERK",
+        "4150"
+      ],
+      [
+        "",
+        "MANAGER",
+        "8275"
+      ],
+      [
+        "",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "",
+        "SALESMAN",
+        "5600"
+      ]
+    ]
+  },
+  "note-w5d5-2": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM_SAL"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "10",
+        "",
+        "8750"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "20",
+        "",
+        "10875"
+      ],
+      [
+        "30",
+        "CLERK",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "30",
+        "",
+        "9400"
+      ],
+      [
+        "",
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "note-w5d5-3": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "MGR",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "",
+        "5000"
+      ],
+      [
+        "10",
+        "",
+        "7782",
+        "1300"
+      ],
+      [
+        "10",
+        "",
+        "7839",
+        "2450"
+      ],
+      [
+        "10",
+        "",
+        "",
+        "5000"
+      ]
+    ]
+  },
+  "note-w5d5-4": {
+    "error": "ORA-00979",
+    "message": "\"JOB\": must appear in the GROUP BY clause or be used in an aggregate function"
+  },
+  "note-w5d5-5": {
+    "columns": [
+      "JOB",
+      "MGR",
+      "SUM_SAL",
+      "G_M"
+    ],
+    "rows": [
+      [
+        "CLERK",
+        "7782",
+        "1300",
+        "0"
+      ],
+      [
+        "CLERK",
+        "",
+        "1300",
+        "1"
+      ],
+      [
+        "MANAGER",
+        "7839",
+        "2450",
+        "0"
+      ],
+      [
+        "MANAGER",
+        "",
+        "2450",
+        "1"
+      ],
+      [
+        "PRESIDENT",
+        "",
+        "5000",
+        "0"
+      ],
+      [
+        "PRESIDENT",
+        "",
+        "5000",
+        "1"
+      ],
+      [
+        "",
+        "",
+        "8750",
+        "1"
+      ]
+    ]
+  },
+  "note-w5d5-6": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM_SAL",
+      "G_D",
+      "G_J"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1300",
+        "0",
+        "0"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "2450",
+        "0",
+        "0"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "5000",
+        "0",
+        "0"
+      ],
+      [
+        "10",
+        "",
+        "8750",
+        "0",
+        "1"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "6000",
+        "0",
+        "0"
+      ],
+      [
+        "20",
+        "CLERK",
+        "1900",
+        "0",
+        "0"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "2975",
+        "0",
+        "0"
+      ],
+      [
+        "20",
+        "",
+        "10875",
+        "0",
+        "1"
+      ],
+      [
+        "30",
+        "CLERK",
+        "950",
+        "0",
+        "0"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "2850",
+        "0",
+        "0"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "5600",
+        "0",
+        "0"
+      ],
+      [
+        "30",
+        "",
+        "9400",
+        "0",
+        "1"
+      ],
+      [
+        "",
+        "",
+        "29025",
+        "1",
+        "1"
+      ]
+    ]
+  },
+  "note-w5d5-7": {
+    "columns": [
+      "DEPT_L",
+      "JOB_L",
+      "SUM_SAL"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "10",
+        "소계",
+        "8750"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "20",
+        "소계",
+        "10875"
+      ],
+      [
+        "30",
+        "CLERK",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "30",
+        "소계",
+        "9400"
+      ],
+      [
+        "총계",
+        " ",
+        "29025"
+      ]
+    ]
+  },
+  "note-w5d5-8": {
+    "columns": [
+      "DEPT_L",
+      "JOB_L",
+      "SUM_SAL"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "10",
+        "전체",
+        "8750"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "20",
+        "전체",
+        "10875"
+      ],
+      [
+        "30",
+        "CLERK",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "30",
+        "전체",
+        "9400"
+      ],
+      [
+        "전체",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "전체",
+        "CLERK",
+        "4150"
+      ],
+      [
+        "전체",
+        "MANAGER",
+        "8275"
+      ],
+      [
+        "전체",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "전체",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "전체",
+        "전체",
+        "29025"
+      ]
+    ]
+  },
+  "note-w5d5-9": {
+    "error": "ORA-00934",
+    "message": "group function is not allowed here"
+  },
+  "note-w5d5-10": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "",
+        "8750"
+      ],
+      [
+        "20",
+        "",
+        "10875"
+      ],
+      [
+        "30",
+        "",
+        "9400"
+      ],
+      [
+        "",
+        "",
+        "29025"
+      ]
+    ]
+  },
+  "note-w5d5-11": {
+    "columns": [
+      "DEPTNO",
+      "JOB",
+      "SUM(SAL)"
+    ],
+    "rows": [
+      [
+        "10",
+        "CLERK",
+        "1300"
+      ],
+      [
+        "10",
+        "MANAGER",
+        "2450"
+      ],
+      [
+        "10",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "10",
+        "",
+        "8750"
+      ],
+      [
+        "20",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "20",
+        "CLERK",
+        "1900"
+      ],
+      [
+        "20",
+        "MANAGER",
+        "2975"
+      ],
+      [
+        "20",
+        "",
+        "10875"
+      ],
+      [
+        "30",
+        "CLERK",
+        "950"
+      ],
+      [
+        "30",
+        "MANAGER",
+        "2850"
+      ],
+      [
+        "30",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "30",
+        "",
+        "9400"
+      ],
+      [
+        "",
+        "ANALYST",
+        "6000"
+      ],
+      [
+        "",
+        "CLERK",
+        "4150"
+      ],
+      [
+        "",
+        "MANAGER",
+        "8275"
+      ],
+      [
+        "",
+        "PRESIDENT",
+        "5000"
+      ],
+      [
+        "",
+        "SALESMAN",
+        "5600"
+      ],
+      [
+        "",
+        "",
+        "29025"
       ]
     ]
   }

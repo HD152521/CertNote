@@ -13,6 +13,10 @@ export interface RelCol {
   name: string;
   /** 테이블 열의 자료형(NVL 등의 형 변환에 쓴다). 뷰·식에서 온 열은 모를 수 있다. */
   type?: 'NUMBER' | 'VARCHAR2' | 'DATE';
+  /** 이름으로 찾을 수 없는 열(ANSI 조인 뷰의 SELECT * 가 만든 같은 이름 열 — Oracle 이 안에서 이름을 바꿔 둔다). SELECT * 로만 보인다. */
+  hidden?: boolean;
+  /** 인라인 뷰·WITH 에서 온 열. Oracle 은 모호성 오류에 이 열의 출처 이름을 비워서 보인다. */
+  fromView?: boolean;
   /** 합쳐진 열의 출처 — 원래 별칭으로 접근하면 오류(ORA-25154/25155) */
   merged?: 'USING' | 'NATURAL';
 }
@@ -36,15 +40,22 @@ export function resolveColumn(rel: Relation, table: string | undefined, name: st
     const banned = rel.banned.get(`${table}.${name}`);
     if (banned === 'USING') throw new OraError('ORA-25154', 'column part of USING clause cannot have qualifier');
     if (banned === 'NATURAL') throw new OraError('ORA-25155', 'column used in NATURAL join cannot have qualifier');
-    const idx = rel.cols.findIndex((c) => c.qual === table && c.name === name);
-    return idx < 0 ? null : { index: idx };
+    const qhits = rel.cols.map((c, i) => (c.qual === table && c.name === name && !c.hidden ? i : -1)).filter((i) => i >= 0);
+    // 같은 이름 열이 둘인 뷰·WITH(SELECT * FROM EMP, DEPT)는 접두사를 붙여도 모호하다.
+    if (qhits.length > 1) throw ambiguous(rel, qhits, name);
+    return qhits.length ? { index: qhits[0] } : null;
   }
-  const hits = rel.cols.map((c, i) => (c.name === name ? i : -1)).filter((i) => i >= 0);
-  if (hits.length > 1) {
-    const where = [...new Set(hits.map((i) => rel.cols[i].qual ?? ''))].sort();
-    throw new OraError('ORA-00918', `${name}: column ambiguously specified - appears in ${where.join(' and ')}`);
-  }
+  const hits = rel.cols.map((c, i) => (c.name === name && !c.hidden ? i : -1)).filter((i) => i >= 0);
+  if (hits.length > 1) throw ambiguous(rel, hits, name);
   return hits.length ? { index: hits[0] } : null;
+}
+
+/** ORA-00918. 테이블 열이면 "appears in DEPT and EMP", 뷰에서 온 열이면 출처가 비어 "appears in  and " 로 보인다. */
+function ambiguous(rel: Relation, hits: number[], name: string): OraError {
+  const named = [...new Set(hits.filter((i) => !rel.cols[i].fromView).map((i) => rel.cols[i].qual ?? ''))];
+  const blank = hits.filter((i) => rel.cols[i].fromView).map(() => '');
+  const where = [...named, ...blank].sort();
+  return new OraError('ORA-00918', `${name}: column ambiguously specified - appears in ${where.join(' and ')}`);
 }
 
 export function invalidIdentifier(table: string | undefined, name: string): OraError {

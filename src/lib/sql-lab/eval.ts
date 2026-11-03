@@ -15,10 +15,16 @@ export interface EvalCtx {
   groupSet?: EvalCtx[];
   /** 원문(오류 문구에 식 원문을 넣을 때) */
   src?: string;
+  /** 서브쿼리에 넘긴 바깥 문맥 표시: 서브쿼리 안에서 이 문맥(또는 더 바깥)의 열을 읽으면 hit 가 켜진다 */
+  correlation?: { hit: boolean };
+  /** GROUP BY 가 있는 묶음 계산인가(GROUPING 함수는 GROUP BY 없이 못 쓴다) */
+  hasGroupBy?: boolean;
+  /** ROLLUP·CUBE 의 소계 행: 이 묶음에서 빠진 GROUP BY 식이면 true(그 값은 NULL 로 보인다) */
+  isRolledUp?: (e: Expr) => boolean;
   runSubquery: (q: Select, outer: EvalCtx) => { rows: Value[][]; width: number };
 }
 
-export const AGGREGATES = new Set(['COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'STDDEV', 'VARIANCE', 'MEDIAN']);
+export const AGGREGATES = new Set(['COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'STDDEV', 'VARIANCE', 'MEDIAN', 'GROUPING', 'GROUPING_ID']);
 
 export const isAggregate = (e: Expr) => e.type === 'func' && AGGREGATES.has(e.name);
 
@@ -65,9 +71,14 @@ export function children(e: Expr): Expr[] {
 
 /** 열 이름 → 값. 이 쿼리에 없으면 바깥 쿼리(상관 서브쿼리)에서 찾는다. */
 export function lookupColumn(ctx: EvalCtx, table: string | undefined, name: string): Value {
+  let crossed: { hit: boolean } | undefined;
   for (let c: EvalCtx | undefined = ctx; c; c = c.outer) {
     const hit = resolveColumn(c.rel, table, name);
-    if (hit) return c.row[hit.index] ?? null;
+    if (hit) {
+      if (crossed) crossed.hit = true; // 서브쿼리가 바깥 행을 읽었다(상관 서브쿼리)
+      return c.row[hit.index] ?? null;
+    }
+    if (c.outer?.correlation) crossed ??= c.outer.correlation;
   }
   if (!table && NILADIC.has(name)) return niladic(name);
   throw invalidIdentifier(table, name);
@@ -349,6 +360,7 @@ function inList(v: Value, list: Value[], not: boolean): boolean | null {
 }
 
 export function evaluate(e: Expr, ctx: EvalCtx): Value {
+  if (ctx.isRolledUp && e.type !== 'lit' && !isAggregate(e) && ctx.isRolledUp(e)) return null;
   switch (e.type) {
     case 'lit':
       return e.value;
@@ -356,6 +368,8 @@ export function evaluate(e: Expr, ctx: EvalCtx): Value {
       return lookupColumn(ctx, e.table, e.name);
     case 'rownum':
       return ctx.rownum ?? 1;
+    case 'slot':
+      return ctx.row[e.index] ?? null;
     case 'star':
       throw new OraError('ORA-00936', 'missing expression');
     case 'unary': {
@@ -427,6 +441,13 @@ export function callFunctionName(name: string): never {
 
 /** 집계 함수: 지금 묶음(ctx.group)의 행마다 인자를 계산해 모은다. NULL 은 빼고 센다. */
 function aggregate(e: Extract<Expr, { type: 'func' }>, ctx: EvalCtx): Value {
+  // GROUPING(열): 이 행이 그 열로 묶이지 않은(소계·총계) 행이면 1. GROUPING_ID 는 그 비트를 이은 수.
+  if (e.name === 'GROUPING' || e.name === 'GROUPING_ID') {
+    if (!ctx.group || !ctx.hasGroupBy) throw new OraError('ORA-30481', 'GROUPING, GROUPING_ID, and GROUP_ID cannot be used without GROUP BY');
+    if (e.name === 'GROUPING' && e.args.length !== 1) throw new OraError('ORA-00909', 'invalid number of arguments');
+    const bits = e.args.map((a) => (ctx.isRolledUp?.(a) ? 1 : 0));
+    return bits.reduce<number>((acc, b) => acc * 2 + b, 0);
+  }
   if (ctx.groupSet && e.args.some(containsAggregate)) {
     // 바깥 집계: 묶음마다 안쪽 집계를 계산한 값들을 다시 집계한다.
     const values = ctx.groupSet.map((g) => evaluate(e.args[0], g)).filter((v): v is Exclude<Value, null> => v !== null);
@@ -438,7 +459,7 @@ function aggregate(e: Extract<Expr, { type: 'func' }>, ctx: EvalCtx): Value {
     return ctx.group.length;
   }
   if (e.args.length !== 1) throw new OraError(e.args.length ? 'ORA-00909' : 'ORA-00909', 'invalid number of arguments');
-  let values = ctx.group.map((row) => evaluate(e.args[0], { ...ctx, row, group: undefined })).filter((v): v is Exclude<Value, null> => v !== null);
+  let values = ctx.group.map((row) => evaluate(e.args[0], { ...ctx, row, group: undefined, isRolledUp: undefined })).filter((v): v is Exclude<Value, null> => v !== null);
   if (e.distinct) {
     const seen = new Set<string>();
     values = values.filter((v) => {

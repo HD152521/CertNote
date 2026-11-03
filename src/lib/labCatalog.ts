@@ -200,6 +200,18 @@ const SQL_INFO: Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'>>
       { href: '/data/sqld/week4/day5', label: '표준 조인 (ANSI)' },
     ],
   },
+  'sql-subquery-rollup': {
+    summary: '단일행·다중 컬럼·상관 서브쿼리, NOT IN 과 NULL 함정, UNION, ROLLUP 소계·총계, GROUPING 으로 소계 행 구분하기를 직접 실행하며 푸는 7과제입니다.',
+    intro: [
+      '서브쿼리와 ROLLUP 은 결과 행이 몇 개인지, 어떤 값이 나오는지를 머릿속으로만 세면 틀리기 쉽습니다. NOT IN 에 NULL 이 섞이면 결과가 0행이 되는 함정처럼, 직접 돌려 보면 한 번에 이해되는 동작이 많습니다.',
+      '같은 결과를 내면 서브쿼리 대신 조인이나 EXISTS 로 써도 정답입니다. ROLLUP 의 소계 행은 NULL 로 보이므로, 순서를 맞출 때 NULL 이 어디로 가는지도 함께 확인하세요.',
+    ],
+    related: [
+      { href: '/data/sqld/week5/day1', label: '서브쿼리 기본' },
+      { href: '/data/sqld/week5/day4', label: 'ROLLUP·CUBE' },
+      { href: '/data/sqld/week5/day5', label: 'GROUPING SETS·GROUPING' },
+    ],
+  },
 };
 
 const INFO: Record<LabKind, Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'>>> = {
@@ -225,6 +237,7 @@ export const LAB_CATALOG: LabEntry[] = [
   entry('practical', 'linux-practical-users', '실기 P2', '계정·검색 작업형 문제 8선'),
   entry('sql', 'sql-select-basics', 'SQL S1', 'SELECT·함수·WHERE 로 원하는 행 골라내기'),
   entry('sql', 'sql-group-join', 'SQL S2', 'GROUP BY·HAVING·조인으로 묶고 잇기'),
+  entry('sql', 'sql-subquery-rollup', 'SQL S3', '서브쿼리·집합 연산·ROLLUP 으로 한 번에 묻고 묶기'),
   entry('aws', 'regions-azs', 'LAB 01', '리전과 가용 영역 지도 그리기'),
   entry('aws', 's3-first-bucket', 'LAB 02', '서울 리전에 첫 버킷 만들기'),
   entry('aws', 'iam-least-privilege', 'LAB 03', '읽기 전용 사용자 만들고 정리하기'),

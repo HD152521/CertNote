@@ -25,6 +25,8 @@ export type Expr =
   | ({ type: 'cmpsub'; op: string; quant: 'ANY' | 'ALL'; left: Expr; query: Select } & Span)
   | ({ type: 'rownum' } & Span)
   | ({ type: 'tuple'; items: Expr[] } & Span)
+  /** SELECT * 가 펼친 열(이름으로 못 찾는 숨은 열도 위치로 가리킨다) */
+  | ({ type: 'slot'; index: number; table?: string; name: string } & Span)
   | ({ type: 'extract'; field: string; arg: Expr } & Span)
   | ({ type: 'trim'; mode: 'LEADING' | 'TRAILING' | 'BOTH'; chars?: Expr; arg: Expr } & Span);
 
@@ -54,7 +56,12 @@ export interface QueryBlock {
   items: SelectItem[];
   from: FromItem[];
   where?: Expr;
+  /** GROUP BY 에 나온 식 전부(중복 없이). ROLLUP·CUBE 안의 식도 여기 있다. */
   groupBy?: Expr[];
+  /** ROLLUP·CUBE·GROUPING SETS 를 펼친 묶음 목록. 없으면 groupBy 하나로만 묶는다. */
+  groupingSets?: Expr[][];
+  /** GROUP BY () 만 쓴 경우: 행이 없어도 총계 한 행을 낸다(GROUPING SETS(()) 는 0행이다) */
+  grandTotalOnly?: boolean;
   having?: Expr;
 }
 
@@ -65,8 +72,16 @@ export interface SetOp {
   right: Select;
 }
 
+/** WITH 절의 이름 붙은 쿼리 하나 */
+export interface WithQuery {
+  name: string;
+  columns?: string[];
+  query: Select;
+}
+
 /** 쿼리 하나: 블록 또는 집합 연산, 그리고 맨 바깥 ORDER BY·FETCH */
 export interface Select {
+  with?: WithQuery[];
   body: QueryBlock | SetOp;
   orderBy?: OrderItem[];
   fetch?: { offset: number; count?: Expr; percent?: boolean; withTies?: boolean };

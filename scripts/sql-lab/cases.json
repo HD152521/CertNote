@@ -753,6 +753,528 @@
   "sql": "SELECT ENAME \"name\" FROM EMP WHERE DEPTNO = 10 ORDER BY \"name\""
  },
  {
+  "id": "sq-multi-col",
+  "sql": "SELECT ENAME, DEPTNO, SAL FROM EMP WHERE (DEPTNO, SAL) IN (SELECT DEPTNO, MAX(SAL) FROM EMP GROUP BY DEPTNO) ORDER BY DEPTNO, ENAME"
+ },
+ {
+  "id": "sq-all",
+  "sql": "SELECT ENAME, SAL FROM EMP WHERE SAL > ALL (SELECT SAL FROM EMP WHERE DEPTNO = 30) ORDER BY SAL, ENAME"
+ },
+ {
+  "id": "sq-any-eq",
+  "sql": "SELECT ENAME FROM EMP WHERE SAL = ANY (SELECT SAL FROM EMP WHERE DEPTNO = 30) ORDER BY ENAME"
+ },
+ {
+  "id": "sq-exists-corr",
+  "sql": "SELECT D.DNAME FROM DEPT D WHERE EXISTS (SELECT 1 FROM EMP E WHERE E.DEPTNO = D.DEPTNO AND E.SAL >= 3000) ORDER BY 1"
+ },
+ {
+  "id": "sq-having",
+  "sql": "SELECT DEPTNO, AVG(SAL) FROM EMP GROUP BY DEPTNO HAVING AVG(SAL) > (SELECT AVG(SAL) FROM EMP) ORDER BY DEPTNO"
+ },
+ {
+  "id": "sq-scalar-dname",
+  "sql": "SELECT ENAME, (SELECT DNAME FROM DEPT D WHERE D.DEPTNO = E.DEPTNO) DNAME FROM EMP E WHERE E.SAL > 2900 ORDER BY ENAME"
+ },
+ {
+  "id": "sq-inline-join",
+  "sql": "SELECT D.DNAME, A.AVG_SAL FROM DEPT D, (SELECT DEPTNO, ROUND(AVG(SAL)) AVG_SAL FROM EMP GROUP BY DEPTNO) A WHERE D.DEPTNO = A.DEPTNO ORDER BY D.DNAME"
+ },
+ {
+  "id": "sq-1427-in",
+  "sql": "SELECT ENAME FROM EMP WHERE SAL = (SELECT MAX(SAL) FROM EMP GROUP BY DEPTNO)"
+ },
+ {
+  "id": "sq-913",
+  "sql": "SELECT ENAME FROM EMP WHERE SAL IN (SELECT SAL, DEPTNO FROM EMP)"
+ },
+ {
+  "id": "sq-notexists-null",
+  "sql": "SELECT COUNT(*) FROM EMP E WHERE NOT EXISTS (SELECT 1 FROM EMP M WHERE M.MGR = E.EMPNO)"
+ },
+ {
+  "id": "with-basic",
+  "sql": "WITH D AS (SELECT DEPTNO, COUNT(*) CNT FROM EMP GROUP BY DEPTNO) SELECT DEPT.DNAME, D.CNT FROM DEPT, D WHERE DEPT.DEPTNO = D.DEPTNO ORDER BY 1"
+ },
+ {
+  "id": "with-chain",
+  "sql": "WITH A AS (SELECT DEPTNO, SAL FROM EMP WHERE SAL > 1000), B AS (SELECT DEPTNO, SUM(SAL) S FROM A GROUP BY DEPTNO) SELECT * FROM B ORDER BY DEPTNO"
+ },
+ {
+  "id": "with-cols",
+  "sql": "WITH T (NO, NM) AS (SELECT DEPTNO, DNAME FROM DEPT) SELECT NM FROM T WHERE NO >= 30 ORDER BY NO"
+ },
+ {
+  "id": "set-union-order-alias",
+  "sql": "SELECT ENAME AS 이름, SAL FROM EMP WHERE DEPTNO = 10 UNION SELECT DNAME, DEPTNO FROM DEPT ORDER BY 이름"
+ },
+ {
+  "id": "set-union-dup",
+  "sql": "SELECT DEPTNO FROM EMP UNION SELECT DEPTNO FROM DEPT ORDER BY 1"
+ },
+ {
+  "id": "set-unionall-count",
+  "sql": "SELECT COUNT(*) FROM (SELECT DEPTNO FROM EMP UNION ALL SELECT DEPTNO FROM DEPT)"
+ },
+ {
+  "id": "set-minus-emp",
+  "sql": "SELECT JOB FROM EMP WHERE DEPTNO = 20 MINUS SELECT JOB FROM EMP WHERE DEPTNO = 10 ORDER BY 1"
+ },
+ {
+  "id": "set-three",
+  "sql": "SELECT DEPTNO FROM DEPT UNION ALL SELECT DEPTNO FROM DEPT MINUS SELECT DEPTNO FROM EMP"
+ },
+ {
+  "id": "set-null",
+  "sql": "SELECT COMM FROM EMP WHERE DEPTNO = 30 UNION SELECT NULL FROM DUAL ORDER BY 1"
+ },
+ {
+  "id": "set-orderby-name-err",
+  "sql": "SELECT ENAME FROM EMP WHERE DEPTNO = 10 UNION SELECT DNAME FROM DEPT ORDER BY DNAME"
+ },
+ {
+  "id": "ru-dept-job",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) FROM EMP GROUP BY ROLLUP(DEPTNO, JOB) ORDER BY DEPTNO, JOB"
+ },
+ {
+  "id": "ru-rev",
+  "sql": "SELECT JOB, DEPTNO, SUM(SAL) FROM EMP GROUP BY ROLLUP(JOB, DEPTNO) ORDER BY JOB, DEPTNO"
+ },
+ {
+  "id": "ru-count",
+  "sql": "SELECT COUNT(*) FROM (SELECT DEPTNO, JOB, SUM(SAL) FROM EMP GROUP BY ROLLUP(DEPTNO, JOB))"
+ },
+ {
+  "id": "ru-single",
+  "sql": "SELECT DEPTNO, COUNT(*), SUM(SAL) FROM EMP GROUP BY ROLLUP(DEPTNO) ORDER BY DEPTNO"
+ },
+ {
+  "id": "ru-partial",
+  "sql": "SELECT DEPTNO, JOB, COUNT(*) FROM EMP GROUP BY DEPTNO, ROLLUP(JOB) ORDER BY DEPTNO, JOB"
+ },
+ {
+  "id": "ru-composite",
+  "sql": "SELECT DEPTNO, JOB, MGR, COUNT(*) FROM EMP WHERE DEPTNO = 10 GROUP BY ROLLUP(DEPTNO, (JOB, MGR)) ORDER BY DEPTNO, JOB, MGR"
+ },
+ {
+  "id": "cube-dept-job",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) FROM EMP GROUP BY CUBE(DEPTNO, JOB) ORDER BY DEPTNO, JOB"
+ },
+ {
+  "id": "cube-count",
+  "sql": "SELECT COUNT(*) FROM (SELECT DEPTNO, JOB FROM EMP GROUP BY CUBE(DEPTNO, JOB))"
+ },
+ {
+  "id": "gs-basic",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) FROM EMP GROUP BY GROUPING SETS(DEPTNO, JOB) ORDER BY DEPTNO, JOB"
+ },
+ {
+  "id": "gs-total",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) FROM EMP GROUP BY GROUPING SETS((DEPTNO, JOB), ()) ORDER BY DEPTNO, JOB"
+ },
+ {
+  "id": "gs-rollup-equiv",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) FROM EMP GROUP BY GROUPING SETS((DEPTNO, JOB), DEPTNO, ()) ORDER BY DEPTNO, JOB"
+ },
+ {
+  "id": "gs-empty-only",
+  "sql": "SELECT COUNT(*), SUM(SAL) FROM EMP GROUP BY GROUPING SETS(())"
+ },
+ {
+  "id": "grouping-fn",
+  "sql": "SELECT DEPTNO, JOB, GROUPING(DEPTNO) GD, GROUPING(JOB) GJ, SUM(SAL) FROM EMP GROUP BY ROLLUP(DEPTNO, JOB) ORDER BY DEPTNO, JOB"
+ },
+ {
+  "id": "grouping-label",
+  "sql": "SELECT CASE GROUPING(DEPTNO) WHEN 1 THEN '총계' ELSE TO_CHAR(DEPTNO) END 부서, CASE WHEN GROUPING(JOB) = 1 AND GROUPING(DEPTNO) = 0 THEN '소계' ELSE JOB END 직무, SUM(SAL) FROM EMP GROUP BY ROLLUP(DEPTNO, JOB) ORDER BY GROUPING(DEPTNO), DEPTNO, GROUPING(JOB), JOB"
+ },
+ {
+  "id": "grouping-decode",
+  "sql": "SELECT DECODE(GROUPING(JOB), 1, 'ALL', JOB) 직무, COUNT(*) FROM EMP GROUP BY ROLLUP(JOB) ORDER BY GROUPING(JOB), JOB"
+ },
+ {
+  "id": "grouping-id",
+  "sql": "SELECT DEPTNO, JOB, GROUPING_ID(DEPTNO, JOB) GID, COUNT(*) FROM EMP GROUP BY CUBE(DEPTNO, JOB) ORDER BY GID, DEPTNO, JOB"
+ },
+ {
+  "id": "grouping-having",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) FROM EMP GROUP BY ROLLUP(DEPTNO, JOB) HAVING GROUPING(JOB) = 1 ORDER BY DEPTNO"
+ },
+ {
+  "id": "grouping-where-err",
+  "sql": "SELECT DEPTNO FROM EMP WHERE GROUPING(DEPTNO) = 0 GROUP BY ROLLUP(DEPTNO)"
+ },
+ {
+  "id": "ru-avg-null",
+  "sql": "SELECT DEPTNO, AVG(COMM), COUNT(COMM) FROM EMP GROUP BY ROLLUP(DEPTNO) ORDER BY DEPTNO"
+ },
+ {
+  "id": "ru-join",
+  "sql": "SELECT D.DNAME, E.JOB, COUNT(*) FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO GROUP BY ROLLUP(D.DNAME, E.JOB) ORDER BY D.DNAME, E.JOB"
+ },
+ {
+  "id": "ru-979",
+  "sql": "SELECT DEPTNO, ENAME, SUM(SAL) FROM EMP GROUP BY ROLLUP(DEPTNO)"
+ },
+ {
+  "id": "grouping-nogroup",
+  "sql": "SELECT GROUPING(DEPTNO) FROM EMP"
+ },
+ {
+  "id": "grouping-plain",
+  "sql": "SELECT DEPTNO, GROUPING(DEPTNO) FROM EMP GROUP BY DEPTNO ORDER BY 1"
+ },
+ {
+  "id": "grouping-notin",
+  "sql": "SELECT DEPTNO, GROUPING(JOB) FROM EMP GROUP BY ROLLUP(DEPTNO)"
+ },
+ {
+  "id": "ru-empty",
+  "sql": "SELECT DEPTNO, COUNT(*) FROM EMP WHERE 1 = 0 GROUP BY ROLLUP(DEPTNO)"
+ },
+ {
+  "id": "ru-empty-99",
+  "sql": "SELECT DEPTNO, COUNT(*) FROM EMP WHERE DEPTNO = 99 GROUP BY ROLLUP(DEPTNO)"
+ },
+ {
+  "id": "cube-empty",
+  "sql": "SELECT DEPTNO, COUNT(*) FROM EMP WHERE 1 = 0 GROUP BY CUBE(DEPTNO)"
+ },
+ {
+  "id": "gs-empty-input",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE 1 = 0 GROUP BY GROUPING SETS(())"
+ },
+ {
+  "id": "gs-empty-input2",
+  "sql": "SELECT DEPTNO, COUNT(*) FROM EMP WHERE 1 = 0 GROUP BY GROUPING SETS(DEPTNO, ())"
+ },
+ {
+  "id": "gs-empty-979",
+  "sql": "SELECT JOB, COUNT(*) FROM EMP GROUP BY GROUPING SETS(())"
+ },
+ {
+  "id": "ob-alias-in-grouping",
+  "sql": "SELECT JOB AS X, SUM(SAL) FROM EMP GROUP BY ROLLUP(JOB) ORDER BY GROUPING(X), X"
+ },
+ {
+  "id": "ob-alias-expr",
+  "sql": "SELECT DEPTNO, MAX(SAL) AS M FROM EMP GROUP BY DEPTNO ORDER BY M + 0, DEPTNO"
+ },
+ {
+  "id": "ob-alias-expr-ru",
+  "sql": "SELECT DEPTNO, SUM(SAL) AS S FROM EMP GROUP BY ROLLUP(DEPTNO) ORDER BY S + 0"
+ },
+ {
+  "id": "ob-alias-expr-plain",
+  "sql": "SELECT ENAME, SAL * 12 AS Y FROM EMP WHERE DEPTNO = 10 ORDER BY Y / 12 DESC"
+ },
+ {
+  "id": "with-in-subquery",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE DEPTNO IN (WITH X AS (SELECT DEPTNO FROM DEPT) SELECT DEPTNO FROM X)"
+ },
+ {
+  "id": "with-scalar",
+  "sql": "SELECT (WITH X AS (SELECT MAX(SAL) M FROM EMP) SELECT M FROM X) FROM DUAL"
+ },
+ {
+  "id": "with-self-nocols",
+  "sql": "WITH A AS (SELECT * FROM A) SELECT * FROM A"
+ },
+ {
+  "id": "with-name-is-column",
+  "sql": "WITH JOB AS (SELECT DEPTNO, JOB FROM EMP) SELECT COUNT(*) FROM JOB"
+ },
+ {
+  "id": "with-name-is-column2",
+  "sql": "WITH SAL AS (SELECT ENAME, SAL FROM EMP WHERE DEPTNO = 10) SELECT COUNT(*) FROM SAL"
+ },
+ {
+  "id": "with-name-groupby",
+  "sql": "WITH T AS (SELECT DEPTNO, COUNT(*) C FROM EMP GROUP BY DEPTNO, T) SELECT * FROM T"
+ },
+ {
+  "id": "with-nested-self",
+  "sql": "WITH B AS (SELECT 1 X FROM DUAL), A AS (SELECT DEPTNO FROM DEPT WHERE DEPTNO IN (SELECT DEPTNO FROM A)) SELECT * FROM A"
+ },
+ {
+  "id": "with-forward",
+  "sql": "WITH A AS (SELECT * FROM B), B AS (SELECT 1 X FROM DUAL) SELECT * FROM A"
+ },
+ {
+  "id": "grouping-expr-arg",
+  "sql": "SELECT DEPTNO, GROUPING(DEPTNO + 0) FROM EMP GROUP BY ROLLUP(DEPTNO)",
+  "match": "code"
+ },
+ {
+  "id": "rollup-empty-paren",
+  "sql": "SELECT DEPTNO FROM EMP GROUP BY ROLLUP(())"
+ },
+ {
+  "id": "ob-dup-alias-expr",
+  "sql": "SELECT ENAME X, SAL X FROM EMP ORDER BY X + 0"
+ },
+ {
+  "id": "set-ob-expr",
+  "sql": "SELECT JOB X FROM EMP UNION SELECT DNAME FROM DEPT ORDER BY LOWER(X)"
+ },
+ {
+  "id": "with-inner-shadow",
+  "sql": "WITH A AS (WITH A AS (SELECT 1 V FROM DUAL) SELECT * FROM A) SELECT * FROM A"
+ },
+ {
+  "id": "with-inner-shadow-view",
+  "sql": "WITH A AS (SELECT * FROM (WITH A AS (SELECT 1 V FROM DUAL) SELECT * FROM A)) SELECT * FROM A"
+ },
+ {
+  "id": "with-inner-shadow-exists",
+  "sql": "WITH A AS (SELECT 1 V FROM DUAL WHERE EXISTS (WITH A AS (SELECT 1 X FROM DUAL) SELECT * FROM A)) SELECT * FROM A"
+ },
+ {
+  "id": "with-inner-b-then-b",
+  "sql": "WITH A AS (WITH B AS (SELECT 1 V FROM DUAL) SELECT * FROM B), B AS (SELECT 2 V FROM DUAL) SELECT * FROM A"
+ },
+ {
+  "id": "with-inner-forward",
+  "sql": "WITH A AS (WITH X AS (SELECT * FROM B) SELECT * FROM X), B AS (SELECT 1 V FROM DUAL) SELECT * FROM A"
+ },
+ {
+  "id": "with-col-alias-named-like-cte",
+  "sql": "WITH A AS (SELECT * FROM DEPT), B AS (SELECT DEPTNO, DEPT AS D FROM (SELECT DEPTNO, 1 DEPT FROM A)) SELECT COUNT(*) FROM B"
+ },
+ {
+  "id": "sq-uncorrelated-big",
+  "sql": "SELECT COUNT(*) FROM EMP X, EMP Y, EMP Z WHERE X.EMPNO IN (SELECT P.EMPNO FROM EMP P, EMP Q WHERE Q.EMPNO = 7839)"
+ },
+ {
+  "id": "sq-fetch-in",
+  "sql": "SELECT ENAME FROM EMP WHERE EMPNO IN (SELECT EMPNO FROM EMP ORDER BY SAL DESC, ENAME FETCH FIRST 3 ROWS ONLY) ORDER BY 1"
+ },
+ {
+  "id": "sq-fetch-scalar",
+  "sql": "SELECT (SELECT ENAME FROM EMP ORDER BY SAL DESC FETCH FIRST 1 ROW ONLY) FROM DUAL"
+ },
+ {
+  "id": "sq-offset-exists",
+  "sql": "SELECT COUNT(*) FROM DEPT D WHERE EXISTS (SELECT 1 FROM EMP E WHERE E.DEPTNO = D.DEPTNO ORDER BY SAL OFFSET 5 ROWS)"
+ },
+ {
+  "id": "with-dup-cols-star",
+  "sql": "WITH T AS (SELECT * FROM EMP E, DEPT D WHERE E.DEPTNO = D.DEPTNO) SELECT * FROM T"
+ },
+ {
+  "id": "with-dup-cols-ref",
+  "sql": "WITH T AS (SELECT * FROM EMP E, DEPT D WHERE E.DEPTNO = D.DEPTNO) SELECT DEPTNO FROM T"
+ },
+ {
+  "id": "with-dup-cols-qualified",
+  "sql": "WITH T AS (SELECT * FROM EMP E, DEPT D WHERE E.DEPTNO = D.DEPTNO) SELECT T.DEPTNO FROM T"
+ },
+ {
+  "id": "with-dup-cols-other",
+  "sql": "WITH T AS (SELECT * FROM EMP E, DEPT D WHERE E.DEPTNO = D.DEPTNO) SELECT ENAME FROM T WHERE EMPNO = 7369"
+ },
+ {
+  "id": "with-dup-cols-chain",
+  "sql": "WITH B AS (SELECT * FROM EMP A, EMP A2), C AS (SELECT * FROM B) SELECT COUNT(*) FROM C"
+ },
+ {
+  "id": "view-dup-cols",
+  "sql": "SELECT * FROM (SELECT ENAME, ENAME FROM EMP)"
+ },
+ {
+  "id": "view-dup-cols-ref",
+  "sql": "SELECT DEPTNO FROM (SELECT * FROM EMP E, DEPT D WHERE E.DEPTNO = D.DEPTNO)"
+ },
+ {
+  "id": "with-forward-orderby",
+  "sql": "WITH A AS (SELECT 1 V FROM DUAL ORDER BY (SELECT COUNT(*) FROM B)), B AS (SELECT 1 V FROM DUAL) SELECT * FROM A"
+ },
+ {
+  "id": "with-unused-error",
+  "sql": "WITH T AS (SELECT NOPE FROM EMP) SELECT 1 FROM DUAL"
+ },
+ {
+  "id": "with-unused-table",
+  "sql": "WITH T AS (SELECT * FROM NOTABLE) SELECT 1 FROM DUAL"
+ },
+ {
+  "id": "with-unused-979",
+  "sql": "WITH T AS (SELECT DEPTNO, SAL FROM EMP GROUP BY DEPTNO) SELECT COUNT(*) FROM DEPT"
+ },
+ {
+  "id": "with-unused-div0",
+  "sql": "WITH T AS (SELECT 1/0 X FROM DUAL) SELECT 1 FROM DUAL"
+ },
+ {
+  "id": "with-unused-tonumber",
+  "sql": "WITH T AS (SELECT TO_NUMBER('a') X FROM DUAL) SELECT 1 FROM DUAL"
+ },
+ {
+  "id": "with-unused-1427",
+  "sql": "WITH T AS (SELECT (SELECT ENAME FROM EMP) X FROM DUAL) SELECT 1 FROM DUAL"
+ },
+ {
+  "id": "with-unused-big",
+  "sql": "WITH T AS (SELECT * FROM EMP A, EMP B, EMP C, EMP D, EMP F) SELECT 1 FROM DUAL"
+ },
+ {
+  "id": "with-shortcircuit-div0",
+  "sql": "WITH T AS (SELECT 1/0 X FROM DUAL) SELECT COUNT(*) FROM DUAL WHERE 1 = 0 AND EXISTS (SELECT 1 FROM T)"
+ },
+ {
+  "id": "with-used-div0",
+  "sql": "WITH T AS (SELECT 1/0 X FROM DUAL) SELECT * FROM T"
+ },
+ {
+  "id": "with-ansi-star",
+  "sql": "WITH T AS (SELECT * FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO) SELECT * FROM T WHERE EMPNO = 7369"
+ },
+ {
+  "id": "with-ansi-ref",
+  "sql": "WITH T AS (SELECT * FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO) SELECT DEPTNO FROM T"
+ },
+ {
+  "id": "with-ansi-qref",
+  "sql": "WITH T AS (SELECT * FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO) SELECT T.DEPTNO FROM T"
+ },
+ {
+  "id": "with-ansi-other",
+  "sql": "WITH T AS (SELECT * FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO) SELECT ENAME, DNAME FROM T WHERE EMPNO = 7839"
+ },
+ {
+  "id": "with-ansi-cross",
+  "sql": "WITH T AS (SELECT * FROM DEPT A CROSS JOIN DEPT B) SELECT COUNT(*) FROM T"
+ },
+ {
+  "id": "view-ansi-star",
+  "sql": "SELECT * FROM (SELECT * FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO) WHERE EMPNO = 7369"
+ },
+ {
+  "id": "view-ansi-explicit",
+  "sql": "SELECT * FROM (SELECT E.DEPTNO, D.DEPTNO FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO) WHERE ROWNUM = 1"
+ },
+ {
+  "id": "view-ansi-count",
+  "sql": "SELECT COUNT(*) FROM (SELECT * FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO)"
+ },
+ {
+  "id": "gb-empty-paren-empty-input",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE 1 = 0 GROUP BY ()"
+ },
+ {
+  "id": "gb-empty-paren-twice",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE 1 = 0 GROUP BY (), ()"
+ },
+ {
+  "id": "gb-empty-paren",
+  "sql": "SELECT COUNT(*), SUM(SAL) FROM EMP GROUP BY ()"
+ },
+ {
+  "id": "star-group-979",
+  "sql": "SELECT * FROM EMP GROUP BY DEPTNO"
+ },
+ {
+  "id": "star-group-979-alias",
+  "sql": "SELECT * FROM EMP E GROUP BY DEPTNO"
+ },
+ {
+  "id": "star-group-ok",
+  "sql": "SELECT * FROM DEPT GROUP BY DEPTNO, DNAME, LOC ORDER BY 1"
+ },
+ {
+  "id": "view-ansi-qualified-star",
+  "sql": "SELECT * FROM (SELECT E.*, D.* FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO) WHERE EMPNO = 7839"
+ },
+ {
+  "id": "view-ansi-qualified-mixed",
+  "sql": "SELECT * FROM (SELECT E.*, D.DEPTNO FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO) WHERE EMPNO = 7839"
+ },
+ {
+  "id": "with-ansi-qualified-star",
+  "sql": "WITH T AS (SELECT E.*, D.* FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO) SELECT * FROM T"
+ },
+ {
+  "id": "sq-shortcircuit-932",
+  "sql": "SELECT 1 FROM DUAL WHERE 1 = 0 AND EXISTS (SELECT 1 FROM EMP WHERE HIREDATE = 1)",
+  "match": "code"
+ },
+ {
+  "id": "sq-shortcircuit-938",
+  "sql": "SELECT 1 FROM DUAL WHERE 1 = 0 AND EXISTS (SELECT 1 FROM EMP WHERE SUBSTR(ENAME) = 'A')",
+  "match": "code"
+ },
+ {
+  "id": "sq-shortcircuit-975",
+  "sql": "SELECT 1 FROM DUAL WHERE 1 = 0 AND EXISTS (SELECT 1 FROM DUAL WHERE SYSDATE + SYSDATE IS NULL)",
+  "match": "code"
+ },
+ {
+  "id": "with-unused-913",
+  "sql": "WITH T AS (SELECT DEPTNO FROM DEPT WHERE DEPTNO IN (SELECT DEPTNO, SAL FROM EMP)) SELECT 1 FROM DUAL"
+ },
+ {
+  "id": "with-unused-1789",
+  "sql": "WITH T AS (SELECT DEPTNO FROM DEPT UNION SELECT DEPTNO, SAL FROM EMP) SELECT 1 FROM DUAL"
+ },
+ {
+  "id": "with-unused-934",
+  "sql": "WITH T AS (SELECT 1 X FROM EMP WHERE COUNT(*) > 1) SELECT 1 FROM DUAL"
+ },
+ {
+  "id": "with-unused-30481",
+  "sql": "WITH T AS (SELECT GROUPING(DEPTNO) G FROM EMP) SELECT 1 FROM DUAL"
+ },
+ {
+  "id": "with-unused-909",
+  "sql": "WITH T AS (SELECT ADD_MONTHS(SYSDATE, 1, 2) X FROM DUAL) SELECT 1 FROM DUAL",
+  "match": "code"
+ },
+ {
+  "id": "with-unused-937",
+  "sql": "WITH T AS (SELECT ENAME, COUNT(*) C FROM EMP) SELECT 1 FROM DUAL"
+ },
+ {
+  "id": "with-unused-932",
+  "sql": "WITH T AS (SELECT 1 X FROM EMP WHERE HIREDATE = 1) SELECT 1 FROM DUAL"
+ },
+ {
+  "id": "gb-empty-noagg",
+  "sql": "SELECT 1 FROM EMP WHERE 1 = 0 GROUP BY ()"
+ },
+ {
+  "id": "gb-empty-having",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE 1 = 0 GROUP BY () HAVING 1 = 1"
+ },
+ {
+  "id": "gs-two-empty-sets",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE 1 = 0 GROUP BY GROUPING SETS((), ())"
+ },
+ {
+  "id": "gs-three-empty-sets",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE 1 = 0 GROUP BY GROUPING SETS((), (), ())"
+ },
+ {
+  "id": "fn-arity-nvl1",
+  "sql": "SELECT NVL(1) FROM DUAL"
+ },
+ {
+  "id": "fn-arity-nvl3",
+  "sql": "SELECT NVL(1, 2, 3) FROM DUAL"
+ },
+ {
+  "id": "fn-arity-substr4",
+  "sql": "SELECT SUBSTR('A', 1, 2, 3) FROM DUAL"
+ },
+ {
+  "id": "fn-arity-lower0",
+  "sql": "SELECT LOWER() FROM DUAL"
+ },
+ {
+  "id": "with-dup-name",
+  "sql": "WITH X AS (SELECT 1 V FROM DUAL), X AS (SELECT 2 V FROM DUAL) SELECT V FROM X",
+  "match": "code"
+ },
+ {
   "id": "task-sql-select-basics-annual",
   "sql": "SELECT ENAME, SAL * 12 + NVL(COMM, 0) AS 연봉 FROM EMP ORDER BY EMPNO"
  },
@@ -815,6 +1337,34 @@
  {
   "id": "task-sql-group-join-join-group",
   "sql": "SELECT D.DNAME, SUM(E.SAL) FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO GROUP BY D.DNAME ORDER BY SUM(E.SAL) DESC"
+ },
+ {
+  "id": "task-sql-subquery-rollup-above-avg",
+  "sql": "SELECT ENAME, SAL FROM EMP WHERE SAL > (SELECT AVG(SAL) FROM EMP) ORDER BY SAL DESC, ENAME"
+ },
+ {
+  "id": "task-sql-subquery-rollup-dept-max",
+  "sql": "SELECT DEPTNO, ENAME, SAL FROM EMP WHERE (DEPTNO, SAL) IN (SELECT DEPTNO, MAX(SAL) FROM EMP GROUP BY DEPTNO) ORDER BY DEPTNO, ENAME"
+ },
+ {
+  "id": "task-sql-subquery-rollup-no-emp-dept",
+  "sql": "SELECT DEPTNO, DNAME FROM DEPT D WHERE NOT EXISTS (SELECT 1 FROM EMP E WHERE E.DEPTNO = D.DEPTNO)"
+ },
+ {
+  "id": "task-sql-subquery-rollup-not-manager",
+  "sql": "SELECT ENAME FROM EMP E WHERE NOT EXISTS (SELECT 1 FROM EMP M WHERE M.MGR = E.EMPNO) ORDER BY ENAME"
+ },
+ {
+  "id": "task-sql-subquery-rollup-union-jobs",
+  "sql": "SELECT JOB FROM EMP WHERE DEPTNO = 10 UNION SELECT JOB FROM EMP WHERE DEPTNO = 30 ORDER BY JOB"
+ },
+ {
+  "id": "task-sql-subquery-rollup-rollup-dept",
+  "sql": "SELECT DEPTNO, SUM(SAL) FROM EMP GROUP BY ROLLUP(DEPTNO) ORDER BY DEPTNO"
+ },
+ {
+  "id": "task-sql-subquery-rollup-rollup-label",
+  "sql": "SELECT CASE GROUPING(JOB) WHEN 1 THEN '전체' ELSE JOB END, COUNT(*) FROM EMP GROUP BY ROLLUP(JOB) ORDER BY GROUPING(JOB), JOB"
  },
  {
   "id": "note-w2d1-1",
@@ -1887,6 +2437,384 @@
  {
   "id": "note-w4d5-21",
   "sql": "SELECT D.DNAME, COUNT(E.EMPNO) AS CNT\nFROM DEPT D LEFT JOIN EMP E ON D.DEPTNO = E.DEPTNO\nGROUP BY D.DNAME\nORDER BY D.DNAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-1",
+  "sql": "SELECT ENAME, SAL FROM EMP WHERE SAL > (SELECT SAL FROM EMP WHERE ENAME = 'JONES') ORDER BY SAL DESC, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-2",
+  "sql": "SELECT DEPTNO, AVG(SAL) FROM EMP GROUP BY DEPTNO HAVING AVG(SAL) > (SELECT AVG(SAL) FROM EMP) ORDER BY DEPTNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-3",
+  "sql": "SELECT ENAME, SAL FROM EMP WHERE SAL = (SELECT MAX(SAL) FROM EMP WHERE DEPTNO = 30)",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-4",
+  "sql": "SELECT ENAME, SAL FROM EMP WHERE SAL = (SELECT SAL FROM EMP WHERE DEPTNO = 30)",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-5",
+  "sql": "SELECT ENAME, SAL FROM EMP WHERE SAL > ALL (SELECT SAL FROM EMP WHERE DEPTNO = 30) ORDER BY SAL DESC, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-6",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE SAL > ALL (SELECT SAL FROM EMP WHERE DEPTNO = 40)",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-7",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE SAL > ANY (SELECT SAL FROM EMP WHERE DEPTNO = 40)",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-8",
+  "sql": "SELECT DNAME FROM DEPT D WHERE EXISTS (SELECT 1 FROM EMP E WHERE E.DEPTNO = D.DEPTNO AND E.SAL >= 3000) ORDER BY DNAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-9",
+  "sql": "SELECT ENAME, DEPTNO, SAL FROM EMP WHERE (DEPTNO, SAL) IN (SELECT DEPTNO, MAX(SAL) FROM EMP GROUP BY DEPTNO) ORDER BY DEPTNO, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-10",
+  "sql": "SELECT ENAME, DEPTNO, JOB FROM EMP WHERE (DEPTNO, JOB) IN (SELECT DEPTNO, JOB FROM EMP WHERE ENAME IN ('SMITH', 'ALLEN')) ORDER BY DEPTNO, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-11",
+  "sql": "SELECT ENAME, DEPTNO, JOB FROM EMP WHERE DEPTNO IN (SELECT DEPTNO FROM EMP WHERE ENAME IN ('SMITH', 'ALLEN')) AND JOB IN (SELECT JOB FROM EMP WHERE ENAME IN ('SMITH', 'ALLEN')) ORDER BY DEPTNO, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-12",
+  "sql": "SELECT ENAME FROM EMP WHERE DEPTNO = (SELECT DEPTNO, DNAME FROM DEPT WHERE DEPTNO = 10)",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-13",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE EMPNO NOT IN (SELECT MGR FROM EMP)",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-14",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE EMPNO NOT IN (SELECT MGR FROM EMP WHERE MGR IS NOT NULL)",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-15",
+  "sql": "SELECT COUNT(*) FROM EMP E WHERE NOT EXISTS (SELECT 1 FROM EMP M WHERE M.MGR = E.EMPNO)",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d1-16",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE DEPTNO IN (SELECT DEPTNO FROM DEPT ORDER BY DEPTNO)",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d2-1",
+  "sql": "SELECT E.ENAME, E.DEPTNO, E.SAL FROM EMP E WHERE E.SAL > (SELECT AVG(S.SAL) FROM EMP S WHERE S.DEPTNO = E.DEPTNO) ORDER BY E.DEPTNO, E.ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d2-2",
+  "sql": "SELECT E.ENAME, E.SAL FROM EMP E WHERE E.SAL = (SELECT MAX(SAL) FROM EMP S WHERE S.DEPTNO = E.DEPTNO) ORDER BY E.ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d2-3",
+  "sql": "SELECT COUNT(*) FROM EMP E WHERE EXISTS (SELECT 1 FROM EMP M WHERE M.MGR = E.EMPNO)",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d2-4",
+  "sql": "SELECT D.DNAME, (SELECT COUNT(*) FROM EMP E WHERE E.DEPTNO = D.DEPTNO) AS CNT FROM DEPT D ORDER BY D.DEPTNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d2-5",
+  "sql": "SELECT E.ENAME, (SELECT D.DNAME FROM DEPT D WHERE D.DEPTNO = E.DEPTNO) AS DNAME FROM EMP E WHERE E.JOB = 'MANAGER' ORDER BY E.ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d2-6",
+  "sql": "SELECT D.DNAME, (SELECT E.ENAME FROM EMP E WHERE E.DEPTNO = D.DEPTNO AND E.JOB = 'PRESIDENT') AS PRES FROM DEPT D ORDER BY D.DEPTNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d2-7",
+  "sql": "SELECT D.DNAME, (SELECT ENAME FROM EMP E WHERE E.DEPTNO = D.DEPTNO) AS ENAME FROM DEPT D",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d2-8",
+  "sql": "SELECT D.DNAME, (SELECT ENAME, SAL FROM EMP E WHERE E.DEPTNO = D.DEPTNO AND E.SAL >= 5000) AS X FROM DEPT D",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d2-9",
+  "sql": "SELECT E.ENAME, E.SAL, A.AVG_SAL FROM EMP E, (SELECT DEPTNO, ROUND(AVG(SAL)) AS AVG_SAL FROM EMP GROUP BY DEPTNO) A WHERE E.DEPTNO = A.DEPTNO AND E.SAL > A.AVG_SAL ORDER BY E.ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d2-10",
+  "sql": "SELECT DEPTNO, AVG_SAL FROM (SELECT DEPTNO, ROUND(AVG(SAL)) AS AVG_SAL FROM EMP GROUP BY DEPTNO) WHERE AVG_SAL > 2000 ORDER BY DEPTNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d2-11",
+  "sql": "SELECT X.ENAME FROM (SELECT ENAME FROM EMP WHERE DEPTNO = 10) X WHERE X.SAL > 1000",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d2-12",
+  "sql": "SELECT ENAME, SAL * 12 AS ANNUAL FROM EMP WHERE ANNUAL >= 36000",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d2-13",
+  "sql": "SELECT ENAME, ANNUAL FROM (SELECT ENAME, SAL * 12 AS ANNUAL FROM EMP) WHERE ANNUAL >= 36000 ORDER BY ANNUAL DESC, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-1",
+  "sql": "SELECT JOB FROM EMP WHERE DEPTNO = 10 UNION SELECT JOB FROM EMP WHERE DEPTNO = 20 ORDER BY JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-2",
+  "sql": "SELECT JOB FROM EMP WHERE DEPTNO = 10 UNION ALL SELECT JOB FROM EMP WHERE DEPTNO = 20 ORDER BY JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-3",
+  "sql": "SELECT COUNT(*) FROM (SELECT COMM FROM EMP UNION SELECT COMM FROM EMP)",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-4",
+  "sql": "SELECT ENAME, SAL FROM EMP WHERE DEPTNO = 10 UNION ALL SELECT '합계', SUM(SAL) FROM EMP WHERE DEPTNO = 10",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-5",
+  "sql": "SELECT JOB FROM EMP WHERE DEPTNO = 10 INTERSECT SELECT JOB FROM EMP WHERE DEPTNO = 20 ORDER BY JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-6",
+  "sql": "SELECT JOB FROM EMP WHERE DEPTNO = 10 MINUS SELECT JOB FROM EMP WHERE DEPTNO = 20 ORDER BY JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-7",
+  "sql": "SELECT JOB FROM EMP WHERE DEPTNO = 20 MINUS SELECT JOB FROM EMP WHERE DEPTNO = 10 ORDER BY JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-8",
+  "sql": "SELECT DEPTNO FROM DEPT MINUS SELECT DEPTNO FROM EMP",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-9",
+  "sql": "SELECT ENAME, SAL FROM EMP UNION SELECT DNAME FROM DEPT",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-10",
+  "sql": "SELECT ENAME FROM EMP UNION SELECT DEPTNO FROM DEPT",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-11",
+  "sql": "SELECT EMPNO AS ID, ENAME AS NAME FROM EMP WHERE DEPTNO = 10 UNION SELECT DEPTNO, DNAME FROM DEPT ORDER BY ID",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-12",
+  "sql": "SELECT ENAME FROM EMP WHERE DEPTNO = 10 UNION SELECT DNAME FROM DEPT WHERE DEPTNO = 10 ORDER BY DNAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-13",
+  "sql": "SELECT ENAME FROM EMP WHERE DEPTNO = 10 UNION SELECT DNAME FROM DEPT WHERE DEPTNO = 10 ORDER BY ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-14",
+  "sql": "SELECT JOB FROM EMP WHERE DEPTNO = 10 ORDER BY JOB UNION SELECT JOB FROM EMP WHERE DEPTNO = 20",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-15",
+  "sql": "SELECT JOB FROM EMP WHERE DEPTNO = 10 UNION SELECT JOB FROM EMP WHERE DEPTNO = 20 MINUS SELECT JOB FROM EMP WHERE DEPTNO = 30 ORDER BY JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d3-16",
+  "sql": "SELECT JOB FROM EMP WHERE DEPTNO = 10 UNION (SELECT JOB FROM EMP WHERE DEPTNO = 20 MINUS SELECT JOB FROM EMP WHERE DEPTNO = 30) ORDER BY JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d4-1",
+  "sql": "SELECT DEPTNO, SUM(SAL) FROM EMP GROUP BY ROLLUP(DEPTNO) ORDER BY DEPTNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d4-2",
+  "sql": "SELECT DEPTNO, JOB, COUNT(*) AS CNT, SUM(SAL) AS SUM_SAL FROM EMP GROUP BY ROLLUP(DEPTNO, JOB) ORDER BY DEPTNO, JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d4-3",
+  "sql": "SELECT JOB, DEPTNO, SUM(SAL) AS SUM_SAL FROM EMP GROUP BY ROLLUP(JOB, DEPTNO) ORDER BY JOB, DEPTNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d4-4",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) AS SUM_SAL FROM EMP GROUP BY CUBE(DEPTNO, JOB) ORDER BY DEPTNO, JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d4-5",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) FROM EMP GROUP BY DEPTNO, ROLLUP(JOB) ORDER BY DEPTNO, JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d4-6",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) FROM EMP GROUP BY ROLLUP((DEPTNO, JOB)) ORDER BY DEPTNO, JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d4-7",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) FROM EMP WHERE DEPTNO = 10 GROUP BY ROLLUP(DEPTNO, JOB) ORDER BY DEPTNO, JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d5-1",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) AS SUM_SAL FROM EMP GROUP BY GROUPING SETS (DEPTNO, JOB) ORDER BY DEPTNO, JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d5-2",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) AS SUM_SAL FROM EMP GROUP BY GROUPING SETS ((DEPTNO, JOB), DEPTNO, ()) ORDER BY DEPTNO, JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d5-3",
+  "sql": "SELECT DEPTNO, JOB, MGR, SUM(SAL) FROM EMP GROUP BY GROUPING SETS ((DEPTNO, JOB), (DEPTNO, MGR)) HAVING DEPTNO = 10 ORDER BY DEPTNO, JOB, MGR",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d5-4",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) AS SUM_SAL FROM EMP GROUP BY GROUPING SETS (DEPTNO, ())",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d5-5",
+  "sql": "SELECT JOB, MGR, SUM(SAL) AS SUM_SAL, GROUPING(MGR) AS G_M FROM EMP WHERE DEPTNO = 10 GROUP BY ROLLUP(JOB, MGR) ORDER BY JOB, G_M, MGR",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d5-6",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) AS SUM_SAL, GROUPING(DEPTNO) AS G_D, GROUPING(JOB) AS G_J FROM EMP GROUP BY ROLLUP(DEPTNO, JOB) ORDER BY DEPTNO, JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d5-7",
+  "sql": "SELECT CASE GROUPING(DEPTNO) WHEN 1 THEN '총계' ELSE TO_CHAR(DEPTNO) END AS DEPT_L, CASE WHEN GROUPING(DEPTNO) = 1 THEN ' ' WHEN GROUPING(JOB) = 1 THEN '소계' ELSE JOB END AS JOB_L, SUM(SAL) AS SUM_SAL FROM EMP GROUP BY ROLLUP(DEPTNO, JOB) ORDER BY GROUPING(DEPTNO), DEPTNO, GROUPING(JOB), JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d5-8",
+  "sql": "SELECT DECODE(GROUPING(DEPTNO), 1, '전체', DEPTNO) AS DEPT_L, DECODE(GROUPING(JOB), 1, '전체', JOB) AS JOB_L, SUM(SAL) AS SUM_SAL FROM EMP GROUP BY CUBE(DEPTNO, JOB) ORDER BY GROUPING(DEPTNO), DEPTNO, GROUPING(JOB), JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d5-9",
+  "sql": "SELECT DECODE(GROUPING(JOB), 1, '합계', JOB) AS JOB, SUM(SAL) AS SUM_SAL FROM EMP GROUP BY ROLLUP(JOB) ORDER BY GROUPING(JOB), JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d5-10",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) FROM EMP GROUP BY GROUPING SETS ((DEPTNO, JOB), DEPTNO, ()) HAVING GROUPING(JOB) = 1 ORDER BY DEPTNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w5d5-11",
+  "sql": "SELECT DEPTNO, JOB, SUM(SAL) FROM EMP GROUP BY GROUPING SETS ((DEPTNO, JOB), (DEPTNO), (JOB), ()) ORDER BY DEPTNO, JOB",
   "match": "code",
   "note": true
  }

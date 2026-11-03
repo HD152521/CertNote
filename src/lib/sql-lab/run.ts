@@ -1,6 +1,6 @@
 // SQL 실습장 입구: 입력 문자열(여러 문장 가능)을 실행해 문장마다 결과 또는 오류를 돌려준다.
 import { sampleDatabase, type Database } from './data';
-import { runSelect } from './exec';
+import { MAX_STATEMENT_MS, runSelect } from './exec';
 import { parseSelect, splitStatements } from './parser';
 import { NotSupported, OraError, display, type Value } from './values';
 
@@ -12,7 +12,7 @@ export type StatementResult =
 export function runStatement(sql: string, db: Database = sampleDatabase()): StatementResult {
   try {
     const query = parseSelect(sql);
-    const rs = runSelect({ db, src: sql }, query);
+    const rs = runSelect({ db, src: sql, work: { rows: 0, deadline: Date.now() + MAX_STATEMENT_MS } }, query);
     const numeric = rs.columns.map((_, i) => rs.rows.some((r) => typeof r[i] === 'number') && rs.rows.every((r) => r[i] === null || typeof r[i] === 'number'));
     return { kind: 'rows', sql, columns: rs.columns, rows: rs.rows, numeric };
   } catch (e) {
