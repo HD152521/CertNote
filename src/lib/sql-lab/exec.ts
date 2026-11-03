@@ -4,8 +4,11 @@ import type { Expr, FromItem, OrderItem, QueryBlock, Select, SelectItem } from '
 import type { Database } from './data';
 import { AGGREGATES, callFunctionName, children, cond, containsAggregate, evaluate, isAggregate, lookupColumn, type EvalCtx } from './eval';
 import { FUNCTIONS } from './functions';
-import { emptyRelation, invalidIdentifier, joinRelations, joinShape, mergeColumns, resolveColumn, type Relation } from './relation';
+import { emptyRelation, invalidIdentifier, joinRelations, joinShape, mergeColumns, resolveColumn, type RelCol, type Relation } from './relation';
 import { NotSupported, OraError, compare, groupKey, kindOf, type Value } from './values';
+
+/** ROLLUP·CUBE 계산량 상한(묶음 수 × 입력 행). 넘으면 탭이 몇 초씩 멈춘다. */
+const MAX_GROUP_WORK = 300_000;
 
 export interface ResultSet {
   columns: string[];
@@ -14,6 +17,10 @@ export interface ResultSet {
 
 interface Env {
   db: Database;
+  /** WITH 절로 이름 붙인 쿼리(바깥 → 안쪽으로 물려준다) */
+  ctes?: Map<string, { columns?: string[]; query: Select; env: Env; result?: ResultSet }>;
+  /** 문장 하나의 작업량(훑은 행 수). 상관 서브쿼리가 큰 조인을 행마다 다시 돌리면 탭이 멈추므로 상한을 둔다. */
+  work?: { rows: number; deadline?: number };
   /** 원문 — 오류 문구에 식 원문을 넣을 때 */
   src?: string;
 }
@@ -30,7 +37,12 @@ function checkNames(e: Expr, rel: Relation, outer: EvalCtx | undefined, env?: En
   if (e.type === 'func' && !AGGREGATES.has(e.name) && !FUNCTIONS[e.name]) callFunctionName(e.name);
   // 서브쿼리 안쪽 이름도 바깥 행 없이 미리 검사한다(행이 없거나 AND 가 단락돼도 Oracle 은 ORA-00904 를 낸다).
   if (env && (e.type === 'subquery' || e.type === 'insub' || e.type === 'exists' || e.type === 'cmpsub')) {
-    runSelect(env, e.query, probe());
+    try {
+      runSelect({ ...env, work: { rows: 0, deadline: precheckDeadline(env) } }, e.query, probe());
+    } catch (err) {
+      // 미리 보는 것은 이름 오류뿐이다. 실행 오류(0 으로 나누기 등)는 그 서브쿼리를 실제로 계산할 때만 난다.
+      if (err instanceof OraError && SUBQUERY_PRECHECK_ERRORS.has(err.code)) throw err;
+    }
   }
   children(e).forEach((c) => checkNames(c, rel, outer, env));
 }
@@ -39,6 +51,7 @@ function checkNames(e: Expr, rel: Relation, outer: EvalCtx | undefined, env?: En
 function exprKey(e: Expr, rel: Relation): string {
   return JSON.stringify(e, (k, v) => {
     if (k === 'start' || k === 'end') return undefined;
+    if (v && typeof v === 'object' && v.type === 'slot') return { col: v.index };
     if (v && typeof v === 'object' && v.type === 'col') {
       try {
         const hit = resolveColumn(rel, v.table, v.name);
@@ -58,6 +71,16 @@ function colHeading(e: Extract<Expr, { type: 'col' }>) {
 /** 묶음 쿼리에서 식이 GROUP BY 식·집계·상수로만 이뤄졌는지. */
 function checkGrouped(e: Expr, groupKeys: Set<string>, rel: Relation, hasGroupBy: boolean, outer: EvalCtx | undefined) {
   if (groupKeys.has(exprKey(e, rel))) return;
+  if (e.type === 'func' && (e.name === 'GROUPING' || e.name === 'GROUPING_ID')) {
+    if (!hasGroupBy) throw new OraError('ORA-30481', 'GROUPING, GROUPING_ID, and GROUP_ID cannot be used without GROUP BY');
+    for (const a of e.args) {
+      if (groupKeys.has(exprKey(a, rel))) continue;
+      // GROUPING 의 인자는 GROUP BY 식 그 자체여야 한다(DEPTNO + 0 처럼 감싼 식은 Oracle 도 ORA-00979).
+      const label = a.type === 'col' ? colHeading(a) : 'GROUPING';
+      throw new OraError('ORA-00979', `${label}: must appear in the GROUP BY clause or be used in an aggregate function`);
+    }
+    return;
+  }
   if (isAggregate(e)) {
     const args = e.type === 'func' ? e.args : [];
     if (args.some(containsAggregate)) {
@@ -71,6 +94,11 @@ function checkGrouped(e: Expr, groupKeys: Set<string>, rel: Relation, hasGroupBy
     if (!resolveColumn(rel, e.table, e.name)) return;
     if (!hasGroupBy) throw new OraError('ORA-00937', 'not a single-group group function');
     throw new OraError('ORA-00979', `${colHeading(e)}: must appear in the GROUP BY clause or be used in an aggregate function`);
+  }
+  if (e.type === 'slot') {
+    // SELECT * 가 펼친 열도 GROUP BY 규칙은 같다.
+    if (!hasGroupBy) throw new OraError('ORA-00937', 'not a single-group group function');
+    throw new OraError('ORA-00979', `${e.table ? `"${e.table}".` : ''}"${e.name}": must appear in the GROUP BY clause or be used in an aggregate function`);
   }
   if (e.type === 'rownum') {
     if (!hasGroupBy) throw new OraError('ORA-00937', 'not a single-group group function');
@@ -86,7 +114,24 @@ function noAggregate(e: Expr | undefined) {
 
 // ── FROM ─────────────────────────────────────────────────────────────────────
 
+/** 뷰·WITH 의 열. ANSI 조인 위의 SELECT * 가 만든 같은 이름 열은 Oracle 이 이름을 바꿔 두므로 이름으로 못 찾는다. */
+function viewColumns(query: Select, names: string[], qual: string | null): RelCol[] {
+  const b = query.body;
+  const ansiStar = b.type === 'query' && b.items.some((i) => i.expr.type === 'star' && !i.expr.table) && b.from.some((f) => f.type === 'join' && !f.natural && !f.using);
+  const count = new Map<string, number>();
+  names.forEach((n) => count.set(n, (count.get(n) ?? 0) + 1));
+  return names.map((name) => ({ qual, name, fromView: true, ...(ansiStar && (count.get(name) ?? 0) > 1 ? { hidden: true } : {}) }));
+}
+
 function tableRelation(env: Env, item: Extract<FromItem, { type: 'table' }>): Relation {
+  const cte = env.ctes?.get(item.name);
+  if (cte) {
+    const rs = (cte.result ??= runSelect(cte.env, cte.query));
+    if (cte.columns && cte.columns.length !== rs.columns.length) throw new OraError('ORA-32038', 'number of WITH clause column names does not match number of elements in select list');
+    const qual = item.alias ?? item.name;
+    const names = cte.columns ?? rs.columns;
+    return { cols: viewColumns(cte.query, names, qual), rows: rs.rows, banned: new Map(), quals: new Set([qual]) };
+  }
   const t = env.db[item.name];
   if (!t) throw new OraError('ORA-00942', `table or view "SCOTT"."${item.name}" does not exist`);
   const qual = item.alias ?? item.name;
@@ -104,7 +149,7 @@ function fromItemRelation(env: Env, item: FromItem, outer: EvalCtx | undefined):
     const rs = runSelect(env, item.query, outer);
     const qual = item.alias ?? null;
     return {
-      cols: rs.columns.map((name) => ({ qual, name })),
+      cols: viewColumns(item.query, rs.columns, qual),
       rows: rs.rows,
       banned: new Map(),
       quals: new Set(qual ? [qual] : []),
@@ -254,9 +299,22 @@ function ctxOf(env: Env, rel: Relation, row: Value[], outer: EvalCtx | undefined
   return { rel, row, outer, src: env.src, runSubquery: (q, o) => runSubquery(env, q, o), ...extra };
 }
 
+/** 문장 하나를 실행하는 동안 비상관 서브쿼리 결과를 기억한다(바깥 행마다 다시 돌리면 큰 조인에서 탭이 멈춘다). */
+const subqueryCache = new WeakMap<Env, WeakMap<Select, { rows: Value[][]; width: number }>>();
+
 function runSubquery(env: Env, q: Select, outer: EvalCtx) {
-  const rs = runSelect(env, q, outer);
-  return { rows: rs.rows, width: rs.columns.length };
+  let byQuery = subqueryCache.get(env);
+  if (!byQuery) {
+    byQuery = new WeakMap();
+    subqueryCache.set(env, byQuery);
+  }
+  const cached = byQuery.get(q);
+  if (cached) return cached;
+  const correlation = { hit: false };
+  const rs = runSelect(env, q, { ...outer, correlation });
+  const out = { rows: rs.rows, width: rs.columns.length };
+  if (!correlation.hit) byQuery.set(q, out);
+  return out;
 }
 
 // ── SELECT 목록 ──────────────────────────────────────────────────────────────
@@ -275,7 +333,9 @@ function expandItems(items: SelectItem[], rel: Relation): OutCol[] {
       if (t !== undefined && !rel.quals.has(t)) throw new OraError('ORA-00904', `"${t}": invalid identifier`);
       rel.cols.forEach((c, i) => {
         if (t !== undefined && c.qual !== t) return;
-        out.push({ name: c.name, expr: { type: 'col', table: c.qual ?? undefined, name: c.name, start: i, end: i } as Expr });
+        // 같은 이름 열이 모호하면(쉼표 조인 뷰) Oracle 처럼 ORA-00918 — 이름으로 한 번 찾아 본다.
+        if (!c.hidden) resolveColumn(rel, c.qual ?? undefined, c.name);
+        out.push({ name: c.name, expr: { type: 'slot', index: i, table: c.qual ?? undefined, name: c.name, start: i, end: i } });
       });
       continue;
     }
@@ -292,8 +352,28 @@ interface BlockRow {
   ctx: EvalCtx;
 }
 
+const MAX_STATEMENT_WORK = 2_000_000;
+/** 실행하지 않아도 Oracle 이 먼저 내는 오류(이름·구조) */
+const NAME_ERRORS = new Set([
+  'ORA-00904', 'ORA-00942', 'ORA-00918', 'ORA-32031', 'ORA-32038', 'ORA-32039', 'ORA-25154', 'ORA-25155',
+  // 구조 오류도 Oracle 은 쓰지 않는 WITH 에서 낸다(열 수·인자 수·집계 위치). GROUP BY 규칙(00937·00979)과 형 오류(00932·00975)는 내지 않는다.
+  'ORA-00913', 'ORA-00947', 'ORA-01789', 'ORA-00934', 'ORA-30481', 'ORA-00909', 'ORA-00938', 'ORA-00939', 'ORA-00978',
+]);
+/** 서브쿼리를 미리 볼 때 바로 내는 오류: 이름 오류와, 실행 전에 정해지는 GROUP BY 규칙 */
+const SUBQUERY_PRECHECK_ERRORS = new Set([...NAME_ERRORS, 'ORA-00979', 'ORA-00937', 'ORA-00932', 'ORA-00975']);
+/** 미리 보기는 1.5초까지, 그리고 문장 전체 마감을 넘지 않는다(넘으면 그 미리 보기는 건너뛴다). */
+function precheckDeadline(env: Env): number {
+  return Math.min(Date.now() + 1500, env.work?.deadline ?? Infinity);
+}
+/** 문장 하나에 쓸 수 있는 시간(밀리초). 넘으면 탭이 멈춘 것처럼 보이므로 멈춘다. */
+export const MAX_STATEMENT_MS = 3000;
+const tooSlow = () => new NotSupported('실행이 3초를 넘어서 멈췄어요. 큰 조인 위에서 서브쿼리가 행마다 다시 실행되거나, 문자열 계산이 너무 무거운지 확인해 보세요.');
+
 function runBlock(env: Env, q: QueryBlock, orderBy: OrderItem[] | undefined, outer: EvalCtx | undefined): { columns: string[]; rows: BlockRow[]; cols: OutCol[] } {
   const { rel, rest } = buildFrom(env, q, outer);
+  if (env.work && (env.work.rows += rel.rows.length) > MAX_STATEMENT_WORK) {
+    throw new NotSupported('계산량이 너무 커서 실행을 멈췄어요. 큰 조인 위에서 상관 서브쿼리가 행마다 다시 실행되고 있는지 확인해 보세요.');
+  }
   const cols = expandItems(q.items, rel);
 
   // 이름 검사: WHERE 는 SELECT 별칭을 모른다.
@@ -320,12 +400,16 @@ function runBlock(env: Env, q: QueryBlock, orderBy: OrderItem[] | undefined, out
 
   const where = rest.length ? rest.reduce((a, b): Expr => ({ type: 'and', left: a, right: b, start: a.start, end: b.end })) : undefined;
   const filtered: Value[][] = [];
-  for (const row of rel.rows) {
+  const deadline = env.work?.deadline;
+  for (let i = 0; i < rel.rows.length; i++) {
+    if (deadline && (i & 63) === 0 && Date.now() > deadline) throw tooSlow();
+    const row = rel.rows[i];
     if (!where || cond(where, ctxOf(env, rel, row, outer, { rownum: filtered.length + 1 })) === true) filtered.push(row);
   }
 
   const aliasMap = new Map(cols.filter((c) => c.alias).map((c) => [c.alias!, c]));
-  const orderAgg = (orderBy ?? []).some((o) => !isAliasRef(o.expr, aliasMap) && containsAggregate(o.expr));
+  const orderExprs = (orderBy ?? []).map((o) => (isAliasRef(o.expr, aliasMap) ? o.expr : substituteAliases(o.expr, aliasMap)));
+  const orderAgg = (orderBy ?? []).some((o, i) => !isAliasRef(o.expr, aliasMap) && containsAggregate(orderExprs[i]));
   const grouped = !!q.groupBy || cols.some((c) => containsAggregate(c.expr)) || !!q.having || orderAgg;
 
   if (!grouped) {
@@ -338,24 +422,43 @@ function runBlock(env: Env, q: QueryBlock, orderBy: OrderItem[] | undefined, out
 
   const groupExprs = q.groupBy ?? [];
   const keys = new Set(groupExprs.map((g) => exprKey(g, rel)));
-  const hasGroupBy = groupExprs.length > 0;
+  const hasGroupBy = groupExprs.length > 0 || !!q.groupingSets;
   cols.forEach((c) => checkGrouped(c.expr, keys, rel, hasGroupBy, outer));
   if (q.having) checkGrouped(q.having, keys, rel, hasGroupBy, outer);
-  for (const o of orderBy ?? []) if (!isAliasRef(o.expr, aliasMap) && o.expr.type !== 'lit') checkGrouped(o.expr, keys, rel, hasGroupBy, outer);
+  (orderBy ?? []).forEach((o, i) => {
+    if (isAliasRef(o.expr, aliasMap) || o.expr.type === 'lit') return;
+    // 묶음 집합(ROLLUP 등)이나 별칭을 거쳐 집계가 겹치면 Oracle 은 ORA-00934 를 낸다.
+    if (q.groupingSets && nestedGroupFn(orderExprs[i])) throw new OraError('ORA-00934', 'group function is not allowed here');
+    checkGrouped(orderExprs[i], keys, rel, hasGroupBy, outer);
+  });
 
-  const groups = new Map<string, Value[][]>();
-  for (const row of filtered) {
-    const ctx = ctxOf(env, rel, row, outer);
-    const k = groupExprs.map((g) => groupKey(evaluate(g, ctx)));
-    const kk = JSON.stringify(k);
-    if (!groups.has(kk)) groups.set(kk, []);
-    groups.get(kk)!.push(row);
+  // 묶음 목록: 보통 GROUP BY 는 하나, ROLLUP·CUBE·GROUPING SETS 는 여러 개(소계·총계).
+  const sets = q.groupingSets ?? [groupExprs];
+  if (sets.length * filtered.length > MAX_GROUP_WORK) {
+    throw new NotSupported(`계산량(묶음 ${sets.length}개 × ${filtered.length.toLocaleString('en-US')}행)이 너무 커서 실행하지 않았어요. 조인을 줄이거나 ROLLUP·CUBE 의 인자를 줄여 보세요.`);
   }
-  // GROUP BY 없는 집계는 행이 없어도 한 행을 낸다(COUNT(*) = 0).
-  if (!hasGroupBy && groups.size === 0) groups.set('', []);
+  const groupSets = sets.map((set) => {
+    const inSet = new Set(set.map((g) => exprKey(g, rel)));
+    const rolled = new Set([...keys].filter((k) => !inSet.has(k)));
+    const groups = new Map<string, Value[][]>();
+    for (const row of filtered) {
+      const ctx = ctxOf(env, rel, row, outer);
+      const kk = JSON.stringify(set.map((g) => groupKey(evaluate(g, ctx))));
+      if (!groups.has(kk)) groups.set(kk, []);
+      groups.get(kk)!.push(row);
+    }
+    // GROUP BY 없는 집계와 총계 묶음(())은 행이 없어도 한 행을 낸다(COUNT(*) = 0).
+    // Oracle: GROUP BY () 이거나 빈 묶음이 여러 개면, SELECT 에 집계가 있을 때만 빈 입력에서도 총계 행을 낸다.
+    const emptySetsOnly = !!q.groupingSets && q.groupingSets.length > 1 && q.groupingSets.every((x) => x.length === 0);
+    const totalOnEmpty = !hasGroupBy || ((q.grandTotalOnly || emptySetsOnly) && cols.some((c) => containsAggregate(c.expr)));
+    if (set.length === 0 && groups.size === 0 && totalOnEmpty) groups.set('', []);
+    const isRolledUp = rolled.size ? (e: Expr) => rolled.has(exprKey(e, rel)) : undefined;
+    return { groups, isRolledUp };
+  });
+  const groups = groupSets[0].groups;
 
   // 집계를 두 번 겹친 쿼리(SELECT MAX(COUNT(*)) ... GROUP BY)는 묶음들을 다시 모아 한 행을 낸다.
-  if (hasGroupBy && cols.some((c) => isAggregate(c.expr) && c.expr.type === 'func' && c.expr.args.some(containsAggregate))) {
+  if (hasGroupBy && !q.groupingSets && cols.some((c) => isAggregate(c.expr) && c.expr.type === 'func' && c.expr.args.some(containsAggregate))) {
     const groupSet = [...groups.values()].map((members) => ctxOf(env, rel, members[0], outer, { group: members }));
     if (cols.some((c) => !(isAggregate(c.expr) && c.expr.type === 'func' && c.expr.args.some(containsAggregate)))) {
       throw new OraError('ORA-00937', 'not a single-group group function');
@@ -365,11 +468,13 @@ function runBlock(env: Env, q: QueryBlock, orderBy: OrderItem[] | undefined, out
   }
 
   const rows: BlockRow[] = [];
-  for (const members of groups.values()) {
-    const rep = members[0] ?? rel.cols.map(() => null);
-    const ctx = ctxOf(env, rel, rep, outer, { group: members });
-    if (q.having && cond(q.having, ctx) !== true) continue;
-    rows.push({ values: cols.map((c) => evaluate(c.expr, ctx)), ctx });
+  for (const { groups: gs, isRolledUp } of groupSets) {
+    for (const members of gs.values()) {
+      const rep = members[0] ?? rel.cols.map(() => null);
+      const ctx = ctxOf(env, rel, rep, outer, { group: members, isRolledUp, hasGroupBy });
+      if (q.having && cond(q.having, ctx) !== true) continue;
+      rows.push({ values: cols.map((c) => evaluate(c.expr, ctx)), ctx });
+    }
   }
   // Oracle 의 GROUP BY 결과 순서는 보장되지 않는다(해시 묶음). 실습장은 묶음 키 오름차순으로 보여 준다.
   if (hasGroupBy && !orderBy) {
@@ -382,6 +487,28 @@ function runBlock(env: Env, q: QueryBlock, orderBy: OrderItem[] | undefined, out
     });
   }
   return { columns: cols.map((c) => c.name), rows, cols };
+}
+
+/**
+ * ORDER BY 식 안의 SELECT 별칭을 그 식으로 바꾼다. Oracle 은 ORDER BY 에서 별칭을 열 이름보다 먼저 찾는다.
+ * (SELECT DECODE(GROUPING(JOB), ...) AS JOB ... ORDER BY GROUPING(JOB) 의 JOB 은 별칭이라 ORA-00934 가 난다.)
+ */
+function substituteAliases(e: Expr, aliasMap: Map<string, OutCol>, dupes?: Set<string>): Expr {
+  if (e.type === 'col' && !e.table && dupes?.has(e.name)) throw new OraError('ORA-00960', 'ambiguous column naming in select list');
+  if (e.type === 'col' && !e.table && aliasMap.has(e.name)) return aliasMap.get(e.name)!.expr;
+  if (e.type === 'subquery' || e.type === 'exists' || e.type === 'insub' || e.type === 'cmpsub') return e;
+  const out: Record<string, unknown> = { ...e };
+  for (const [k, v] of Object.entries(e)) {
+    if (Array.isArray(v)) out[k] = v.map((x) => (x && typeof x === 'object' && 'type' in x ? substituteAliases(x as Expr, aliasMap, dupes) : x && typeof x === 'object' && 'when' in x ? { when: substituteAliases(x.when, aliasMap, dupes), then: substituteAliases(x.then, aliasMap, dupes) } : x));
+    else if (v && typeof v === 'object' && 'type' in v && k !== 'query') out[k] = substituteAliases(v as Expr, aliasMap, dupes);
+  }
+  return out as unknown as Expr;
+}
+
+/** 집계 함수의 인자에 또 집계(또는 GROUPING)가 들어 있는가 */
+function nestedGroupFn(e: Expr): boolean {
+  if (isAggregate(e) && e.type === 'func' && e.args.some(containsAggregate)) return true;
+  return children(e).some(nestedGroupFn);
 }
 
 function isAliasRef(e: Expr, aliasMap: Map<string, OutCol>): boolean {
@@ -431,7 +558,10 @@ function orderBlockRows(env: Env, q: QueryBlock, cols: OutCol[], rows: BlockRow[
       if (idx < 0) throw new OraError('ORA-01791', 'not a SELECTed expression');
       return (r) => r.values[idx];
     }
-    return (r) => evaluate(e, r.ctx);
+    const aliasMap = new Map(cols.filter((c) => c.alias).map((c) => [c.alias!, c]));
+    const dupes = new Set([...aliasCount].filter(([, n]) => n > 1).map(([name]) => name));
+    const resolved = substituteAliases(e, aliasMap, dupes);
+    return (r) => evaluate(resolved, r.ctx);
   };
   const keys = orderBy.map((o) => ({ o, key: keyOf(o) }));
   const decorated = rows.map((r) => ({ r, k: keys.map(({ key }) => key(r)) }));
@@ -457,14 +587,35 @@ function checkOrderNames(q: QueryBlock, cols: OutCol[], orderBy: OrderItem[], re
     const e = o.expr;
     if (e.type === 'lit') continue;
     if (e.type === 'col' && !e.table && cols.some((c) => c.alias === e.name)) continue;
-    checkNames(e, rel, outer);
+    const aliasMap = new Map(cols.filter((c) => c.alias).map((c) => [c.alias!, c]));
+    checkNames(substituteAliases(e, aliasMap), rel, outer);
   }
   void q;
 }
 
 // ── 바깥 SELECT ──────────────────────────────────────────────────────────────
 
-export function runSelect(env: Env, sel: Select, outer?: EvalCtx): ResultSet {
+export function runSelect(baseEnv: Env, sel: Select, outer?: EvalCtx): ResultSet {
+  let env = baseEnv;
+  if (sel.with) {
+    // 앞에 정의한 이름은 뒤의 정의와 본문에서 쓸 수 있다.
+    const ctes = new Map(baseEnv.ctes);
+    env = { ...baseEnv, ctes };
+    for (const w of sel.with) ctes.set(w.name, { columns: w.columns, query: w.query, env: { ...env, ctes: new Map(ctes) } });
+    // 본문에서 쓰지 않는 WITH 원소도 이름 오류는 Oracle 처럼 실행 전에 낸다.
+    for (const w of sel.with) {
+      const cte = ctes.get(w.name)!;
+      try {
+        const rs = runSelect({ ...cte.env, work: { rows: 0, deadline: precheckDeadline(env) } }, cte.query);
+        if (cte.columns && cte.columns.length !== rs.columns.length) {
+          throw new OraError('ORA-32038', 'number of WITH clause column names does not match number of elements in select list');
+        }
+      } catch (err) {
+        // Oracle 이 실행 전에 내는 것은 이름·구조 오류뿐이다. 0 으로 나누기 같은 실행 오류는 그 WITH 를 실제로 읽을 때만 난다.
+        if (err instanceof OraError && NAME_ERRORS.has(err.code)) throw err;
+      }
+    }
+  }
   let result: ResultSet;
   if (sel.body.type === 'query') {
     const q = sel.body;
@@ -519,7 +670,8 @@ function runSetOp(env: Env, sel: Select, outer: EvalCtx | undefined): ResultSet 
         idx = e.value - 1;
         if (!Number.isInteger(e.value) || idx < 0 || idx >= left.columns.length) throw new OraError('ORA-01785', 'ORDER BY item must be the number of a SELECT-list expression');
       } else if (e.type === 'col' && !e.table) idx = left.columns.indexOf(e.name);
-      if (idx < 0) throw new OraError('ORA-00904', e.type === 'col' ? `"${e.name}": invalid identifier` : '"ORDER BY": invalid identifier');
+      if (idx < 0 && e.type !== 'col') throw new OraError('ORA-01785', 'ORDER BY item must be the number of a SELECT-list expression');
+      if (idx < 0 && e.type === 'col') throw new OraError('ORA-00904', `"${e.name}": invalid identifier`);
       return { idx, o };
     });
     rows.sort((a, b) => {

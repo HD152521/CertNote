@@ -34,7 +34,7 @@ describe('SQL 실습장 골든 (Oracle Database 23ai Free 대조)', () => {
     const got = runStatement(c.sql);
     if ('error' in want) {
       expect(got.kind === 'error' ? got.code : `${got.kind} 결과`).toBe(want.error);
-      if (c.match !== 'code' && got.kind === 'error') expect(got.message).toBe(want.message);
+      if (c.match !== 'code' && got.kind === 'error') expect(got.message.trimEnd()).toBe(want.message); // 골든은 줄 끝 공백을 지운다
       return;
     }
     if (got.kind !== 'rows') throw new Error(`${got.kind}: ${got.kind === 'error' ? `${got.code} ${got.message}` : got.message}`);

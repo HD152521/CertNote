@@ -28,7 +28,7 @@ describe('SQL 실습장 엔진', () => {
       'SELECT ENAME, RANK() OVER (ORDER BY SAL DESC) FROM EMP',
       'SELECT LEVEL, ENAME FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR',
       "UPDATE EMP SET SAL = 0",
-      'SELECT DEPTNO, SUM(SAL) FROM EMP GROUP BY ROLLUP(DEPTNO)',
+      "SELECT * FROM (SELECT DEPTNO, JOB FROM EMP) PIVOT (COUNT(*) FOR DEPTNO IN (10, 20))",
     ]) {
       expect(runStatement(sql).kind, sql).toBe('note');
     }
@@ -57,7 +57,20 @@ describe('SQL 실습장 엔진', () => {
     expect(runStatement("SELECT LPAD('a', 999999999) FROM DUAL").kind).toBe('note');
     const like = runStatement(`SELECT COUNT(*) FROM DUAL WHERE '${'a'.repeat(5000)}' LIKE '${'%a'.repeat(40)}%b'`);
     expect(like.kind === 'rows' && like.rows[0][0]).toBe(0);
-    expect(Date.now() - t0).toBeLessThan(5000);
+    // CUBE 인자가 많으면 묶음이 2ⁿ 개 — 실행하지 않고 안내한다.
+    expect(runStatement('SELECT COUNT(*) FROM EMP GROUP BY CUBE(EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM, DEPTNO, 1, 2, 3, 4)').kind).toBe('note');
+    expect(runStatement('SELECT COUNT(*) FROM EMP GROUP BY ROLLUP(JOB, MGR), ROLLUP(SAL, COMM), ROLLUP(DEPTNO, EMPNO), ROLLUP(ENAME, HIREDATE)').kind).toBe('note');
+    // 큰 조인 위의 CUBE: 묶음 수 × 행 수 상한
+    expect(runStatement('SELECT COUNT(*) FROM EMP A, EMP B, EMP C, DEPT D, DEPT E GROUP BY CUBE(A.JOB, B.JOB, C.JOB, D.LOC, E.LOC, A.DEPTNO)').kind).toBe('note');
+    // 큰 조인 위의 상관 서브쿼리: 문장 전체 작업량 상한
+    expect(runStatement('SELECT COUNT(*) FROM EMP A, EMP B, EMP C, EMP D WHERE A.SAL > (SELECT AVG(X.SAL) FROM EMP X, EMP Y WHERE X.DEPTNO = D.DEPTNO)').kind).toBe('note');
+    // 무거운 문자열 계산: 시간 상한(3초)에서 멈춘다
+    const slow = Date.now();
+    expect(runStatement("SELECT COUNT(*) FROM EMP A, EMP B, EMP C WHERE EXISTS (SELECT 1 FROM EMP X, EMP Y WHERE LPAD(X.ENAME || Y.ENAME, 2000, 'ab') LIKE '%a%b%a%b%z%' || A.ENAME)").kind).toBe('note');
+    expect(Date.now() - slow).toBeLessThan(6000);
+    // 재귀 WITH 는 아직 안내만
+    expect(runStatement('WITH R (N) AS (SELECT 1 FROM DUAL UNION ALL SELECT N + 1 FROM R WHERE N < 5) SELECT * FROM R').kind).toBe('note');
+    expect(Date.now() - t0).toBeLessThan(15000);
   });
 
   test('행이 없거나 AND 가 단락돼도 잘못된 이름·함수는 Oracle 처럼 오류다', () => {
@@ -117,5 +130,15 @@ describe('SQL 실습장 과제 채점', () => {
     expect(caseOrder.ok).toBe(false);
     const where = verdict('sql-group-join', 'having', 'SELECT DEPTNO, COUNT(*) FROM EMP WHERE COUNT(*) >= 4 GROUP BY DEPTNO');
     expect(where).toMatchObject({ ok: false, reason: expect.stringMatching(/ORA-00934/) });
+    const notIn = verdict('sql-subquery-rollup', 'not-manager', 'SELECT ENAME FROM EMP WHERE EMPNO NOT IN (SELECT MGR FROM EMP) ORDER BY ENAME');
+    expect(notIn).toMatchObject({ ok: false, reason: expect.stringMatching(/0행/) });
+    const unionAll = verdict('sql-subquery-rollup', 'union-jobs', 'SELECT JOB FROM EMP WHERE DEPTNO = 10 UNION ALL SELECT JOB FROM EMP WHERE DEPTNO = 30 ORDER BY JOB');
+    expect(unionAll.ok).toBe(false);
+  });
+
+  test('S3 도 같은 결과면 다른 쓰기를 정답으로 본다', () => {
+    expect(verdict('sql-subquery-rollup', 'rollup-dept', 'SELECT DEPTNO, SUM(SAL) FROM EMP GROUP BY GROUPING SETS(DEPTNO, ()) ORDER BY 1')).toEqual({ ok: true });
+    expect(verdict('sql-subquery-rollup', 'dept-max', 'SELECT DEPTNO, ENAME, SAL FROM EMP E WHERE SAL = (SELECT MAX(SAL) FROM EMP X WHERE X.DEPTNO = E.DEPTNO) ORDER BY 1, 2')).toEqual({ ok: true });
+    expect(verdict('sql-subquery-rollup', 'not-manager', 'SELECT ENAME FROM EMP WHERE EMPNO NOT IN (SELECT MGR FROM EMP WHERE MGR IS NOT NULL) ORDER BY 1')).toEqual({ ok: true });
   });
 });

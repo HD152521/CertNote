@@ -5,9 +5,12 @@ import { DAY_MS, NotSupported, OraError, SqlDate, addDays, compare, dateOf, toNu
 type Fn = (args: Value[]) => Value;
 
 const argCount = (name: string, args: Value[], min: number, max = min) => {
-  if (args.length < min) throw new OraError('ORA-00938', 'not enough arguments for function');
-  if (args.length > max) throw new OraError('ORA-00939', 'too many arguments for function');
   void name;
+  if (args.length >= min && args.length <= max) return;
+  // 인자 수가 정해진 함수(NVL·LOWER·ADD_MONTHS)는 Oracle 이 ORA-00909 를, 범위가 있는 함수(SUBSTR)는 00938·00939 를 낸다.
+  if (min === max) throw new OraError('ORA-00909', 'invalid number of arguments');
+  if (args.length < min) throw new OraError('ORA-00938', 'not enough arguments for function');
+  throw new OraError('ORA-00939', 'too many arguments for function');
 };
 
 const anyNull = (args: Value[]) => args.some((a) => a === null);
