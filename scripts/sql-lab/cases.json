@@ -4614,5 +4614,374 @@
    "DROP TABLE T_STAFF PURGE"
   ],
   "note": true
+ },
+ {
+  "id": "note-w8d1-1",
+  "sql": "SELECT ENAME, SAL, COMM, SAL + COMM AS TOTAL, SAL + NVL(COMM, 0) AS TOTAL2 FROM EMP WHERE DEPTNO = 30 ORDER BY ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d1-2",
+  "sql": "SELECT (SELECT COUNT(*) FROM EMP WHERE COMM = NULL) AS EQ_NULL, (SELECT COUNT(*) FROM EMP WHERE COMM IS NULL) AS IS_NULL, (SELECT COUNT(*) FROM EMP WHERE COMM <> 0) AS NE_ZERO FROM DUAL",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d1-3",
+  "sql": "SELECT EMPNO, ENAME || NULL || '!' AS NAME_NULL, LENGTH(ENAME || NULL) AS LEN FROM EMP WHERE EMPNO IN (7499, 7839) ORDER BY EMPNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d1-4",
+  "sql": "SELECT CASE WHEN '' IS NULL THEN 'NULL' ELSE 'NOT NULL' END AS EMPTY, LENGTH('') AS LEN, NVL('', 'XYZ') AS NV FROM DUAL",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d1-5",
+  "sql": "SELECT COUNT(*) AS CNT_ALL, COUNT(COMM) AS CNT_COMM, COUNT(MGR) AS CNT_MGR, COUNT(DISTINCT MGR) AS CNT_DMGR, COUNT(DISTINCT DEPTNO) AS CNT_DEPT FROM EMP",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d1-6",
+  "sql": "SELECT SUM(COMM), AVG(COMM), ROUND(AVG(NVL(COMM, 0)), 2) AS AVG_NVL, ROUND(SUM(COMM) / COUNT(*), 2) AS SUM_CNT FROM EMP",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d1-7",
+  "sql": "SELECT SUM(SAL + COMM) AS SUM_PLUS, SUM(SAL) + SUM(COMM) AS PLUS_SUM FROM EMP",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d1-8",
+  "sql": "SELECT COUNT(*), COUNT(COMM), SUM(SAL), MAX(SAL), NVL(SUM(SAL), 0) AS NVL_SUM FROM EMP WHERE DEPTNO = 40",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d1-9",
+  "sql": "SELECT (SELECT COUNT(*) FROM EMP WHERE DEPTNO IN (10, NULL)) AS IN_CNT, (SELECT COUNT(*) FROM EMP WHERE DEPTNO NOT IN (10, NULL)) AS NOT_IN_CNT FROM DUAL",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d1-10",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE SAL NOT IN (SELECT COMM FROM EMP)",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d1-11",
+  "sql": "SELECT COUNT(*) FROM EMP E WHERE NOT EXISTS (SELECT 1 FROM EMP C WHERE C.COMM = E.SAL)",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d1-12",
+  "sql": "SELECT EMPNO, ENAME, COMM, MGR, NVL(COMM, 0) AS NV, NVL2(COMM, 'Y', 'N') AS NV2, NULLIF(COMM, 0) AS NIF, COALESCE(COMM, MGR, 0) AS COAL FROM EMP WHERE EMPNO IN (7369, 7499, 7839, 7844) ORDER BY EMPNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d1-13",
+  "sql": "SELECT ENAME, MGR FROM EMP WHERE DEPTNO = 10 ORDER BY MGR DESC",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d1-14",
+  "sql": "SELECT ENAME, MGR FROM EMP WHERE DEPTNO = 10 ORDER BY MGR DESC NULLS LAST",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d1-15",
+  "sql": "SELECT ENAME, COMM, CASE WHEN COMM = NULL THEN 'NONE' ELSE 'HAS' END AS EQ, CASE COMM WHEN NULL THEN 'NONE' ELSE 'HAS' END AS SMP, CASE WHEN COMM IS NULL THEN 'NONE' ELSE 'HAS' END AS ISN, DECODE(COMM, NULL, 'NONE', 'HAS') AS DEC FROM EMP WHERE DEPTNO = 30 ORDER BY ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-1",
+  "sql": "SELECT ENAME, SAL * 12 AS ANNUAL FROM EMP WHERE DEPTNO = 10 ORDER BY ANNUAL DESC",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-2",
+  "sql": "SELECT ENAME, SAL * 12 AS ANNUAL FROM EMP WHERE ANNUAL > 30000",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-3",
+  "sql": "SELECT DEPTNO, AVG(SAL) FROM EMP WHERE AVG(SAL) > 2000 GROUP BY DEPTNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-4",
+  "sql": "SELECT DEPTNO, ROUND(AVG(SAL)) AS AVG_SAL FROM EMP GROUP BY DEPTNO HAVING AVG(SAL) > 2000 ORDER BY AVG_SAL DESC",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-5",
+  "sql": "SELECT DEPTNO, ENAME, SUM(SAL) FROM EMP GROUP BY DEPTNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-6",
+  "sql": "SELECT DEPTNO, COUNT(*) AS CNT FROM EMP GROUP BY DEPTNO HAVING DEPTNO > 10 ORDER BY DEPTNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-7",
+  "sql": "SELECT ROWNUM, ENAME, SAL FROM EMP WHERE ROWNUM <= 3 ORDER BY SAL DESC",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-8",
+  "sql": "SELECT ROWNUM AS RN, ENAME, SAL FROM (SELECT ENAME, SAL FROM EMP ORDER BY SAL DESC, ENAME) WHERE ROWNUM <= 3",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-9",
+  "sql": "SELECT COUNT(*) FROM EMP WHERE ROWNUM = 2",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-10",
+  "sql": "SELECT COUNT(*) FROM EMP, DEPT",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-11",
+  "sql": "SELECT COUNT(*) FROM EMP E, DEPT D, SALGRADE S WHERE E.DEPTNO = D.DEPTNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-12",
+  "sql": "SELECT COUNT(*) FROM EMP E, DEPT D, SALGRADE S WHERE E.DEPTNO = D.DEPTNO AND E.SAL BETWEEN S.LOSAL AND S.HISAL",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-13",
+  "sql": "SELECT D.DNAME, E.ENAME FROM DEPT D, EMP E WHERE D.DEPTNO = E.DEPTNO(+) AND E.JOB(+) = 'CLERK' ORDER BY D.DNAME, E.ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-14",
+  "sql": "SELECT D.DNAME, E.ENAME FROM DEPT D, EMP E WHERE D.DEPTNO = E.DEPTNO(+) AND E.JOB = 'CLERK' ORDER BY D.DNAME, E.ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-15",
+  "sql": "SELECT D.DEPTNO, DNAME FROM EMP E JOIN DEPT D USING (DEPTNO) WHERE E.ENAME = 'KING'",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-16",
+  "sql": "SELECT E.DEPTNO, DNAME FROM EMP E NATURAL JOIN DEPT D WHERE ENAME = 'KING'",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-17",
+  "sql": "SELECT DEPTNO, DNAME FROM EMP E JOIN DEPT D USING (DEPTNO) WHERE E.ENAME = 'KING'",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-18",
+  "sql": "SELECT ENAME, SAL FROM EMP WHERE SAL = (SELECT SAL FROM EMP WHERE JOB = 'ANALYST')",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-19",
+  "sql": "SELECT JOB FROM EMP WHERE DEPTNO = 10 UNION SELECT JOB FROM EMP WHERE DEPTNO = 20 ORDER BY JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-20",
+  "sql": "SELECT JOB FROM EMP WHERE DEPTNO = 10 UNION ALL SELECT JOB FROM EMP WHERE DEPTNO = 20 ORDER BY JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-21",
+  "sql": "SELECT ENAME, SAL FROM EMP WHERE SAL BETWEEN 1250 AND 1600 ORDER BY SAL, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-22",
+  "sql": "SELECT ENAME FROM EMP WHERE ENAME LIKE '_A%' ORDER BY ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-23",
+  "sql": "SELECT V FROM (SELECT 'A_B' AS V FROM DUAL UNION ALL SELECT 'AXB' FROM DUAL UNION ALL SELECT 'AB' FROM DUAL) WHERE V LIKE 'A_B' ORDER BY V",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d2-24",
+  "sql": "SELECT V FROM (SELECT 'A_B' AS V FROM DUAL UNION ALL SELECT 'AXB' FROM DUAL UNION ALL SELECT 'AB' FROM DUAL) WHERE V LIKE 'A\\_B' ESCAPE '\\' ORDER BY V",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d3-1",
+  "sql": "SELECT ENAME || ' / ' || JOB AS EJ, 'A' || NULL || 'B' AS AB FROM EMP WHERE EMPNO = 7839",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d3-2",
+  "sql": "SELECT ENAME + JOB FROM EMP WHERE EMPNO = 7839",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d3-3",
+  "sql": "SELECT EMPNO, ENAME, NVL(COMM, 0) AS NVL_COMM, COALESCE(COMM, MGR, 0) AS COAL FROM EMP WHERE EMPNO IN (7499, 7566, 7839) ORDER BY EMPNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d3-4",
+  "sql": "SELECT ISNULL(COMM, 0) FROM EMP",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d3-5",
+  "sql": "SELECT SUBSTR('DATABASE', 1, 4) AS SUB, LENGTH('DATABASE') AS LEN, TO_CHAR(DATE '2026-11-04', 'YYYY/MM/DD') AS CH, CAST('123' AS NUMBER) + 1 AS CA FROM DUAL",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d3-6",
+  "sql": "SELECT CASE WHEN '' IS NULL THEN 'NULL' ELSE 'NOT NULL' END AS E, LENGTH('') AS L, NVL('', 'EMPTY') AS N FROM DUAL",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d3-7",
+  "sql": "SELECT ENAME, COMM FROM EMP WHERE DEPTNO = 30 ORDER BY COMM, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d3-8",
+  "sql": "SELECT ENAME, SAL FROM EMP ORDER BY SAL DESC FETCH FIRST 2 ROWS WITH TIES",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d3-9",
+  "sql": "SELECT COUNT(*) FROM EMP E, DEPT D WHERE E.DEPTNO(+) = D.DEPTNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d3-10",
+  "sql": "SELECT DEPTNO FROM DEPT MINUS SELECT DEPTNO FROM EMP",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d3-11",
+  "sql": "SELECT ENAME, DEPTNO, DECODE(DEPTNO, 10, 'ACCT', 20, 'RSCH', 'ETC') AS DEC, CASE DEPTNO WHEN 10 THEN 'ACCT' WHEN 20 THEN 'RSCH' ELSE 'ETC' END AS CS FROM EMP WHERE EMPNO IN (7369, 7499, 7839) ORDER BY EMPNO",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d3-12",
+  "sql": "SELECT LEVEL, ENAME, MGR FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR AND LEVEL <= 2 ORDER SIBLINGS BY ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d3-13",
+  "sql": "CREATE TABLE T8D3_EMP (EMPNO NUMBER(4), ENAME VARCHAR2(10), JOB VARCHAR2(9));\nALTER TABLE T8D3_EMP MODIFY (ENAME VARCHAR2(20), JOB VARCHAR2(20));\nALTER TABLE T8D3_EMP RENAME COLUMN JOB TO JOB_NAME;\nRENAME T8D3_EMP TO T8D3_STAFF;\nINSERT INTO T8D3_STAFF VALUES (1, 'HONG GILDONG JR', 'DATA ENGINEER LEAD');\nSELECT * FROM T8D3_STAFF;\nROLLBACK;\nDROP TABLE T8D3_STAFF PURGE",
+  "script": [
+   "CREATE TABLE T8D3_EMP (EMPNO NUMBER(4), ENAME VARCHAR2(10), JOB VARCHAR2(9))",
+   "ALTER TABLE T8D3_EMP MODIFY (ENAME VARCHAR2(20), JOB VARCHAR2(20))",
+   "ALTER TABLE T8D3_EMP RENAME COLUMN JOB TO JOB_NAME",
+   "RENAME T8D3_EMP TO T8D3_STAFF",
+   "INSERT INTO T8D3_STAFF VALUES (1, 'HONG GILDONG JR', 'DATA ENGINEER LEAD')",
+   "SELECT * FROM T8D3_STAFF",
+   "ROLLBACK",
+   "DROP TABLE T8D3_STAFF PURGE"
+  ],
+  "note": true
+ },
+ {
+  "id": "note-w8d5-1",
+  "sql": "SELECT SUBSTR('SQLDEVELOPER', -3, 2) AS SUB, INSTR('SQLDEVELOPER', 'E', 1, 2) AS INS, ROUND(45.678, -1) AS RND, TRUNC(45.678, 1) AS TRC, CEIL(-1.2) AS CL, FLOOR(-1.2) AS FL, MOD(-7, 3) AS MD FROM DUAL",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d5-2",
+  "sql": "SELECT (SELECT COUNT(*) FROM EMP WHERE SAL > ANY (SELECT SAL FROM EMP WHERE DEPTNO = 30)) AS GT_ANY, (SELECT COUNT(*) FROM EMP WHERE SAL > ALL (SELECT SAL FROM EMP WHERE DEPTNO = 30)) AS GT_ALL, (SELECT COUNT(*) FROM EMP WHERE SAL IN (SELECT SAL FROM EMP WHERE DEPTNO = 30)) AS IN_CNT, (SELECT COUNT(*) FROM EMP WHERE SAL > ALL (SELECT SAL FROM EMP WHERE DEPTNO = 99)) AS ALL_EMPTY FROM DUAL",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d5-3",
+  "sql": "SELECT (SELECT COUNT(*) FROM (SELECT JOB FROM EMP WHERE DEPTNO = 10 UNION SELECT JOB FROM EMP WHERE DEPTNO = 20)) AS U, (SELECT COUNT(*) FROM (SELECT JOB FROM EMP WHERE DEPTNO = 10 UNION ALL SELECT JOB FROM EMP WHERE DEPTNO = 20)) AS UA, (SELECT COUNT(*) FROM (SELECT JOB FROM EMP WHERE DEPTNO = 10 INTERSECT SELECT JOB FROM EMP WHERE DEPTNO = 20)) AS I, (SELECT COUNT(*) FROM (SELECT JOB FROM EMP WHERE DEPTNO = 10 MINUS SELECT JOB FROM EMP WHERE DEPTNO = 20)) AS M FROM DUAL",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d5-4",
+  "sql": "SELECT (SELECT COUNT(*) FROM (SELECT DEPTNO, JOB FROM EMP GROUP BY DEPTNO, JOB)) AS BASE, (SELECT COUNT(*) FROM (SELECT DEPTNO, JOB FROM EMP GROUP BY ROLLUP(DEPTNO, JOB))) AS RLP, (SELECT COUNT(*) FROM (SELECT DEPTNO, JOB FROM EMP GROUP BY CUBE(DEPTNO, JOB))) AS CUB, (SELECT COUNT(*) FROM (SELECT DEPTNO, JOB FROM EMP GROUP BY GROUPING SETS(DEPTNO, JOB))) AS GSETS FROM DUAL",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d5-5",
+  "sql": "SELECT ENAME, SAL, RANK() OVER (ORDER BY SAL) AS RNK, DENSE_RANK() OVER (ORDER BY SAL) AS DRNK, ROW_NUMBER() OVER (ORDER BY SAL, ENAME) AS RN, SUM(SAL) OVER (ORDER BY SAL) AS RUN_SUM FROM EMP WHERE DEPTNO = 30 ORDER BY SAL, ENAME",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d5-6",
+  "sql": "SELECT LEVEL, ENAME, CONNECT_BY_ISLEAF AS LEAF FROM EMP START WITH ENAME = 'SMITH' CONNECT BY PRIOR MGR = EMPNO ORDER BY LEVEL",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d5-7",
+  "sql": "SELECT * FROM (SELECT DEPTNO, JOB FROM EMP) PIVOT (COUNT(*) FOR DEPTNO IN (10 AS D10, 20 AS D20, 30 AS D30)) ORDER BY JOB",
+  "match": "code",
+  "note": true
+ },
+ {
+  "id": "note-w8d5-8",
+  "sql": "SELECT REGEXP_SUBSTR('A12-B345-C6', '[0-9]+', 1, 2) AS SUB, REGEXP_COUNT('A12-B345-C6', '[0-9]') AS CNT, REGEXP_INSTR('A12-B345-C6', '-') AS INS, REGEXP_REPLACE('2026-11-04', '(\\d+)-(\\d+)-(\\d+)', '\\3/\\2/\\1') AS REP FROM DUAL",
+  "match": "code",
+  "note": true
  }
 ]

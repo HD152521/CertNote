@@ -3,10 +3,10 @@
   "code": "SQLD",
   "level": "developer",
   "name": "SQL 개발자 (SQLD)",
-  "weeks": 7,
+  "weeks": 8,
   "accent": "#2563EB",
   "order": 13,
-  "dayCount": 35,
+  "dayCount": 40,
   "sourceRepo": "sqld",
   "syncedAt": "2026-11-03T00:00:00.000Z",
   "section": "data"
