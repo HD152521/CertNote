@@ -29,7 +29,7 @@ const golden = JSON.parse(readFileSync(path.join(root, 'src/lib/sql-lab/golden/r
 const VERSION_DIFFERENCES = new Set(['err-923', 'note-w4d2-15', 're-like-select-err']);
 
 /** 정렬 키가 같은 행의 순서가 정해지지 않음을 보여 주는 노트 예제 — 행 집합만 맞춘다. */
-const TIE_ORDER = new Set(['note-w4d3-1']);
+const TIE_ORDER = new Set(['note-w4d3-1', 'note-w8d3-8']);
 
 /**
  * 동점에 매기는 번호가 정해지지 않는 노트 예제(ROW_NUMBER 의 동점) — 노트가 "순서가 보장되지 않는다" 고 설명한다.

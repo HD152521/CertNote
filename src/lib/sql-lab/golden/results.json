@@ -22494,5 +22494,1161 @@
         "message": "Table dropped."
       }
     ]
+  },
+  "note-w8d1-1": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "COMM",
+      "TOTAL",
+      "TOTAL2"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "1600",
+        "300",
+        "1900",
+        "1900"
+      ],
+      [
+        "BLAKE",
+        "2850",
+        "",
+        "",
+        "2850"
+      ],
+      [
+        "JAMES",
+        "950",
+        "",
+        "",
+        "950"
+      ],
+      [
+        "MARTIN",
+        "1250",
+        "1400",
+        "2650",
+        "2650"
+      ],
+      [
+        "TURNER",
+        "1500",
+        "0",
+        "1500",
+        "1500"
+      ],
+      [
+        "WARD",
+        "1250",
+        "500",
+        "1750",
+        "1750"
+      ]
+    ]
+  },
+  "note-w8d1-2": {
+    "columns": [
+      "EQ_NULL",
+      "IS_NULL",
+      "NE_ZERO"
+    ],
+    "rows": [
+      [
+        "0",
+        "10",
+        "3"
+      ]
+    ]
+  },
+  "note-w8d1-3": {
+    "columns": [
+      "EMPNO",
+      "NAME_NULL",
+      "LEN"
+    ],
+    "rows": [
+      [
+        "7499",
+        "ALLEN!",
+        "5"
+      ],
+      [
+        "7839",
+        "KING!",
+        "4"
+      ]
+    ]
+  },
+  "note-w8d1-4": {
+    "columns": [
+      "EMPTY",
+      "LEN",
+      "NV"
+    ],
+    "rows": [
+      [
+        "NULL",
+        "",
+        "XYZ"
+      ]
+    ]
+  },
+  "note-w8d1-5": {
+    "columns": [
+      "CNT_ALL",
+      "CNT_COMM",
+      "CNT_MGR",
+      "CNT_DMGR",
+      "CNT_DEPT"
+    ],
+    "rows": [
+      [
+        "14",
+        "4",
+        "13",
+        "6",
+        "3"
+      ]
+    ]
+  },
+  "note-w8d1-6": {
+    "columns": [
+      "SUM(COMM)",
+      "AVG(COMM)",
+      "AVG_NVL",
+      "SUM_CNT"
+    ],
+    "rows": [
+      [
+        "2200",
+        "550",
+        "157.14",
+        "157.14"
+      ]
+    ]
+  },
+  "note-w8d1-7": {
+    "columns": [
+      "SUM_PLUS",
+      "PLUS_SUM"
+    ],
+    "rows": [
+      [
+        "7800",
+        "31225"
+      ]
+    ]
+  },
+  "note-w8d1-8": {
+    "columns": [
+      "COUNT(*)",
+      "COUNT(COMM)",
+      "SUM(SAL)",
+      "MAX(SAL)",
+      "NVL_SUM"
+    ],
+    "rows": [
+      [
+        "0",
+        "0",
+        "",
+        "",
+        "0"
+      ]
+    ]
+  },
+  "note-w8d1-9": {
+    "columns": [
+      "IN_CNT",
+      "NOT_IN_CNT"
+    ],
+    "rows": [
+      [
+        "3",
+        "0"
+      ]
+    ]
+  },
+  "note-w8d1-10": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "note-w8d1-11": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "14"
+      ]
+    ]
+  },
+  "note-w8d1-12": {
+    "columns": [
+      "EMPNO",
+      "ENAME",
+      "COMM",
+      "MGR",
+      "NV",
+      "NV2",
+      "NIF",
+      "COAL"
+    ],
+    "rows": [
+      [
+        "7369",
+        "SMITH",
+        "",
+        "7902",
+        "0",
+        "N",
+        "",
+        "7902"
+      ],
+      [
+        "7499",
+        "ALLEN",
+        "300",
+        "7698",
+        "300",
+        "Y",
+        "300",
+        "300"
+      ],
+      [
+        "7839",
+        "KING",
+        "",
+        "",
+        "0",
+        "N",
+        "",
+        "0"
+      ],
+      [
+        "7844",
+        "TURNER",
+        "0",
+        "7698",
+        "0",
+        "Y",
+        "",
+        "0"
+      ]
+    ]
+  },
+  "note-w8d1-13": {
+    "columns": [
+      "ENAME",
+      "MGR"
+    ],
+    "rows": [
+      [
+        "KING",
+        ""
+      ],
+      [
+        "CLARK",
+        "7839"
+      ],
+      [
+        "MILLER",
+        "7782"
+      ]
+    ]
+  },
+  "note-w8d1-14": {
+    "columns": [
+      "ENAME",
+      "MGR"
+    ],
+    "rows": [
+      [
+        "CLARK",
+        "7839"
+      ],
+      [
+        "MILLER",
+        "7782"
+      ],
+      [
+        "KING",
+        ""
+      ]
+    ]
+  },
+  "note-w8d1-15": {
+    "columns": [
+      "ENAME",
+      "COMM",
+      "EQ",
+      "SMP",
+      "ISN",
+      "DEC"
+    ],
+    "rows": [
+      [
+        "ALLEN",
+        "300",
+        "HAS",
+        "HAS",
+        "HAS",
+        "HAS"
+      ],
+      [
+        "BLAKE",
+        "",
+        "HAS",
+        "HAS",
+        "NONE",
+        "NONE"
+      ],
+      [
+        "JAMES",
+        "",
+        "HAS",
+        "HAS",
+        "NONE",
+        "NONE"
+      ],
+      [
+        "MARTIN",
+        "1400",
+        "HAS",
+        "HAS",
+        "HAS",
+        "HAS"
+      ],
+      [
+        "TURNER",
+        "0",
+        "HAS",
+        "HAS",
+        "HAS",
+        "HAS"
+      ],
+      [
+        "WARD",
+        "500",
+        "HAS",
+        "HAS",
+        "HAS",
+        "HAS"
+      ]
+    ]
+  },
+  "note-w8d2-1": {
+    "columns": [
+      "ENAME",
+      "ANNUAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "60000"
+      ],
+      [
+        "CLARK",
+        "29400"
+      ],
+      [
+        "MILLER",
+        "15600"
+      ]
+    ]
+  },
+  "note-w8d2-2": {
+    "error": "ORA-00904",
+    "message": "\"ANNUAL\": invalid identifier"
+  },
+  "note-w8d2-3": {
+    "error": "ORA-00934",
+    "message": "group function is not allowed here"
+  },
+  "note-w8d2-4": {
+    "columns": [
+      "DEPTNO",
+      "AVG_SAL"
+    ],
+    "rows": [
+      [
+        "10",
+        "2917"
+      ],
+      [
+        "20",
+        "2175"
+      ]
+    ]
+  },
+  "note-w8d2-5": {
+    "error": "ORA-00979",
+    "message": "\"ENAME\": must appear in the GROUP BY clause or be used in an aggregate function"
+  },
+  "note-w8d2-6": {
+    "columns": [
+      "DEPTNO",
+      "CNT"
+    ],
+    "rows": [
+      [
+        "20",
+        "5"
+      ],
+      [
+        "30",
+        "6"
+      ]
+    ]
+  },
+  "note-w8d2-7": {
+    "columns": [
+      "ROWNUM",
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "2",
+        "ALLEN",
+        "1600"
+      ],
+      [
+        "3",
+        "WARD",
+        "1250"
+      ],
+      [
+        "1",
+        "SMITH",
+        "800"
+      ]
+    ]
+  },
+  "note-w8d2-8": {
+    "columns": [
+      "RN",
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "1",
+        "KING",
+        "5000"
+      ],
+      [
+        "2",
+        "FORD",
+        "3000"
+      ],
+      [
+        "3",
+        "SCOTT",
+        "3000"
+      ]
+    ]
+  },
+  "note-w8d2-9": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "note-w8d2-10": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "56"
+      ]
+    ]
+  },
+  "note-w8d2-11": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "70"
+      ]
+    ]
+  },
+  "note-w8d2-12": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "14"
+      ]
+    ]
+  },
+  "note-w8d2-13": {
+    "columns": [
+      "DNAME",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "MILLER"
+      ],
+      [
+        "OPERATIONS",
+        ""
+      ],
+      [
+        "RESEARCH",
+        "ADAMS"
+      ],
+      [
+        "RESEARCH",
+        "SMITH"
+      ],
+      [
+        "SALES",
+        "JAMES"
+      ]
+    ]
+  },
+  "note-w8d2-14": {
+    "columns": [
+      "DNAME",
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "ACCOUNTING",
+        "MILLER"
+      ],
+      [
+        "RESEARCH",
+        "ADAMS"
+      ],
+      [
+        "RESEARCH",
+        "SMITH"
+      ],
+      [
+        "SALES",
+        "JAMES"
+      ]
+    ]
+  },
+  "note-w8d2-15": {
+    "error": "ORA-25154",
+    "message": "column part of USING clause cannot have qualifier"
+  },
+  "note-w8d2-16": {
+    "error": "ORA-25155",
+    "message": "column used in NATURAL join cannot have qualifier"
+  },
+  "note-w8d2-17": {
+    "columns": [
+      "DEPTNO",
+      "DNAME"
+    ],
+    "rows": [
+      [
+        "10",
+        "ACCOUNTING"
+      ]
+    ]
+  },
+  "note-w8d2-18": {
+    "error": "ORA-01427",
+    "message": "single-row subquery returns more than one row"
+  },
+  "note-w8d2-19": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ANALYST"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "MANAGER"
+      ],
+      [
+        "PRESIDENT"
+      ]
+    ]
+  },
+  "note-w8d2-20": {
+    "columns": [
+      "JOB"
+    ],
+    "rows": [
+      [
+        "ANALYST"
+      ],
+      [
+        "ANALYST"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "CLERK"
+      ],
+      [
+        "MANAGER"
+      ],
+      [
+        "MANAGER"
+      ],
+      [
+        "PRESIDENT"
+      ]
+    ]
+  },
+  "note-w8d2-21": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "MARTIN",
+        "1250"
+      ],
+      [
+        "WARD",
+        "1250"
+      ],
+      [
+        "MILLER",
+        "1300"
+      ],
+      [
+        "TURNER",
+        "1500"
+      ],
+      [
+        "ALLEN",
+        "1600"
+      ]
+    ]
+  },
+  "note-w8d2-22": {
+    "columns": [
+      "ENAME"
+    ],
+    "rows": [
+      [
+        "JAMES"
+      ],
+      [
+        "MARTIN"
+      ],
+      [
+        "WARD"
+      ]
+    ]
+  },
+  "note-w8d2-23": {
+    "columns": [
+      "V"
+    ],
+    "rows": [
+      [
+        "AXB"
+      ],
+      [
+        "A_B"
+      ]
+    ]
+  },
+  "note-w8d2-24": {
+    "columns": [
+      "V"
+    ],
+    "rows": [
+      [
+        "A_B"
+      ]
+    ]
+  },
+  "note-w8d3-1": {
+    "columns": [
+      "EJ",
+      "AB"
+    ],
+    "rows": [
+      [
+        "KING / PRESIDENT",
+        "AB"
+      ]
+    ]
+  },
+  "note-w8d3-2": {
+    "error": "ORA-01722",
+    "message": "unable to convert string value containing 'K' to a number: ENAME"
+  },
+  "note-w8d3-3": {
+    "columns": [
+      "EMPNO",
+      "ENAME",
+      "NVL_COMM",
+      "COAL"
+    ],
+    "rows": [
+      [
+        "7499",
+        "ALLEN",
+        "300",
+        "300"
+      ],
+      [
+        "7566",
+        "JONES",
+        "0",
+        "7839"
+      ],
+      [
+        "7839",
+        "KING",
+        "0",
+        "0"
+      ]
+    ]
+  },
+  "note-w8d3-4": {
+    "error": "ORA-00904",
+    "message": "\"ISNULL\": invalid identifier"
+  },
+  "note-w8d3-5": {
+    "columns": [
+      "SUB",
+      "LEN",
+      "CH",
+      "CA"
+    ],
+    "rows": [
+      [
+        "DATA",
+        "8",
+        "2026/11/04",
+        "124"
+      ]
+    ]
+  },
+  "note-w8d3-6": {
+    "columns": [
+      "E",
+      "L",
+      "N"
+    ],
+    "rows": [
+      [
+        "NULL",
+        "",
+        "EMPTY"
+      ]
+    ]
+  },
+  "note-w8d3-7": {
+    "columns": [
+      "ENAME",
+      "COMM"
+    ],
+    "rows": [
+      [
+        "TURNER",
+        "0"
+      ],
+      [
+        "ALLEN",
+        "300"
+      ],
+      [
+        "WARD",
+        "500"
+      ],
+      [
+        "MARTIN",
+        "1400"
+      ],
+      [
+        "BLAKE",
+        ""
+      ],
+      [
+        "JAMES",
+        ""
+      ]
+    ]
+  },
+  "note-w8d3-8": {
+    "columns": [
+      "ENAME",
+      "SAL"
+    ],
+    "rows": [
+      [
+        "KING",
+        "5000"
+      ],
+      [
+        "SCOTT",
+        "3000"
+      ],
+      [
+        "FORD",
+        "3000"
+      ]
+    ]
+  },
+  "note-w8d3-9": {
+    "columns": [
+      "COUNT(*)"
+    ],
+    "rows": [
+      [
+        "15"
+      ]
+    ]
+  },
+  "note-w8d3-10": {
+    "columns": [
+      "DEPTNO"
+    ],
+    "rows": [
+      [
+        "40"
+      ]
+    ]
+  },
+  "note-w8d3-11": {
+    "columns": [
+      "ENAME",
+      "DEPTNO",
+      "DEC",
+      "CS"
+    ],
+    "rows": [
+      [
+        "SMITH",
+        "20",
+        "RSCH",
+        "RSCH"
+      ],
+      [
+        "ALLEN",
+        "30",
+        "ETC",
+        "ETC"
+      ],
+      [
+        "KING",
+        "10",
+        "ACCT",
+        "ACCT"
+      ]
+    ]
+  },
+  "note-w8d3-12": {
+    "columns": [
+      "LEVEL",
+      "ENAME",
+      "MGR"
+    ],
+    "rows": [
+      [
+        "1",
+        "KING",
+        ""
+      ],
+      [
+        "2",
+        "BLAKE",
+        "7839"
+      ],
+      [
+        "2",
+        "CLARK",
+        "7839"
+      ],
+      [
+        "2",
+        "JONES",
+        "7839"
+      ]
+    ]
+  },
+  "note-w8d3-13": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "Table renamed."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "columns": [
+          "EMPNO",
+          "ENAME",
+          "JOB_NAME"
+        ],
+        "rows": [
+          [
+            "1",
+            "HONG GILDONG JR",
+            "DATA ENGINEER LEAD"
+          ]
+        ]
+      },
+      {
+        "message": "Rollback complete."
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "note-w8d5-1": {
+    "columns": [
+      "SUB",
+      "INS",
+      "RND",
+      "TRC",
+      "CL",
+      "FL",
+      "MD"
+    ],
+    "rows": [
+      [
+        "PE",
+        "7",
+        "50",
+        "45.6",
+        "-1",
+        "-2",
+        "-1"
+      ]
+    ]
+  },
+  "note-w8d5-2": {
+    "columns": [
+      "GT_ANY",
+      "GT_ALL",
+      "IN_CNT",
+      "ALL_EMPTY"
+    ],
+    "rows": [
+      [
+        "12",
+        "4",
+        "6",
+        "14"
+      ]
+    ]
+  },
+  "note-w8d5-3": {
+    "columns": [
+      "U",
+      "UA",
+      "I",
+      "M"
+    ],
+    "rows": [
+      [
+        "4",
+        "8",
+        "2",
+        "1"
+      ]
+    ]
+  },
+  "note-w8d5-4": {
+    "columns": [
+      "BASE",
+      "RLP",
+      "CUB",
+      "GSETS"
+    ],
+    "rows": [
+      [
+        "9",
+        "13",
+        "18",
+        "8"
+      ]
+    ]
+  },
+  "note-w8d5-5": {
+    "columns": [
+      "ENAME",
+      "SAL",
+      "RNK",
+      "DRNK",
+      "RN",
+      "RUN_SUM"
+    ],
+    "rows": [
+      [
+        "JAMES",
+        "950",
+        "1",
+        "1",
+        "1",
+        "950"
+      ],
+      [
+        "MARTIN",
+        "1250",
+        "2",
+        "2",
+        "2",
+        "3450"
+      ],
+      [
+        "WARD",
+        "1250",
+        "2",
+        "2",
+        "3",
+        "3450"
+      ],
+      [
+        "TURNER",
+        "1500",
+        "4",
+        "3",
+        "4",
+        "4950"
+      ],
+      [
+        "ALLEN",
+        "1600",
+        "5",
+        "4",
+        "5",
+        "6550"
+      ],
+      [
+        "BLAKE",
+        "2850",
+        "6",
+        "5",
+        "6",
+        "9400"
+      ]
+    ]
+  },
+  "note-w8d5-6": {
+    "columns": [
+      "LEVEL",
+      "ENAME",
+      "LEAF"
+    ],
+    "rows": [
+      [
+        "1",
+        "SMITH",
+        "0"
+      ],
+      [
+        "2",
+        "FORD",
+        "0"
+      ],
+      [
+        "3",
+        "JONES",
+        "0"
+      ],
+      [
+        "4",
+        "KING",
+        "1"
+      ]
+    ]
+  },
+  "note-w8d5-7": {
+    "columns": [
+      "JOB",
+      "D10",
+      "D20",
+      "D30"
+    ],
+    "rows": [
+      [
+        "ANALYST",
+        "0",
+        "2",
+        "0"
+      ],
+      [
+        "CLERK",
+        "1",
+        "2",
+        "1"
+      ],
+      [
+        "MANAGER",
+        "1",
+        "1",
+        "1"
+      ],
+      [
+        "PRESIDENT",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "SALESMAN",
+        "0",
+        "0",
+        "4"
+      ]
+    ]
+  },
+  "note-w8d5-8": {
+    "columns": [
+      "SUB",
+      "CNT",
+      "INS",
+      "REP"
+    ],
+    "rows": [
+      [
+        "345",
+        "6",
+        "4",
+        "04/11/2026"
+      ]
+    ]
   }
 }
