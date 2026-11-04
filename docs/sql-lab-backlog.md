@@ -63,10 +63,13 @@
 
 ## W7 3차 검토에서 미룬 것(막지 않음)
 
-2026-11-05 에 아래 7건을 고쳤다(골든 27건 추가): RENAME COLUMN 이 문자열 리터럴 속 글자로 CHECK 를 다시 만들던 것, NUMBER(p,s) 의 s>p·s<0, `CAST(날짜 AS VARCHAR2(짧게))` ORA-01801, USER_CONSTRAINTS.SEARCH_CONDITION, `PIVOT … IN (10, 10)` ORA-56907, 정규식 함수 위치·횟수 인자 ORA-01428, ORA-01722 의 `%s`.
+2026-11-05 에 아래 7건을 고쳤다(골든 32건 추가, 열 값의 음수 반값 반올림과 정규식 인자의 소수·NULL 처리 포함): RENAME COLUMN 이 문자열 리터럴 속 글자로 CHECK 를 다시 만들던 것, NUMBER(p,s) 의 s>p·s<0, `CAST(날짜 AS VARCHAR2(짧게))` ORA-01801, USER_CONSTRAINTS.SEARCH_CONDITION, `PIVOT … IN (10, 10)` ORA-56907, 정규식 함수 위치·횟수 인자 ORA-01428, ORA-01722 의 `%s`.
 
 남긴 것
 - 문자 리터럴끼리 공백 채움 비교: Oracle 23ai 는 `WHERE 'A ' = 'A'` 에서만 1 이고, `CASE WHEN 'A ' = 'A'`·`DECODE('A ', 'A', …)` 는 0 이다(상수 접기 결과로 보인다). 엔진은 어디서나 0 이라 WHERE 만 다르다. 따라가지 않는다.
 - ORA-01722 의 걸린 글자가 한글 등 ASCII 밖이면 Oracle 은 `UNISTR('\AC00')` 로 적고 줄을 바꾼다. 엔진은 글자를 그대로 적는다.
 - ORA-01722 다음 줄의 `ORA-03302: (ORA-01722 details) invalid string value: …` 는 엔진이 내지 않는다.
 - `ORDER BY SEARCH_CONDITION`(LONG): Oracle ORA-00997, 엔진은 정렬한다.
+- PIVOT: `IN ('CLERK', 'clerk')` 를 Oracle 은 두 열로 내지만 엔진은 머리글을 대문자로 바꿔 ORA-56907(main 은 00918). 값 별칭이 묶음 열과 겹칠 때(`IN (10 AS JOB, 20)`) Oracle 56907, 엔진 00918. `PIVOT (SUM(SAL) S, COUNT(*) FOR …)` 의 별칭 없는 집계 열 이름: Oracle "10", 엔진 "10_COUNT(*)".
+- ORA-01722 가 열에서 나면(`WHERE ENAME = 10`, `SUM(JOB)`) Oracle 은 콜론 뒤에 열 이름을 붙인다(`… to a number: ENAME`). `TO_NUMBER('1e400')`: Oracle ORA-01426, 엔진 Infinity.
+- RENAME COLUMN 뒤 다시 만든 CHECK 원문에서 Oracle 은 BETWEEN·IN 을 풀어 쓴다(`"LOW">=0 AND "LOW"<="HI"`, `UPPER("S")='LO' OR UPPER("S")='HI'`). 엔진은 원래 모양을 둔다.

@@ -26,7 +26,7 @@ function asDate(v: Value): SqlDate {
   return parseDate(v as string, undefined);
 }
 
-function roundTo(n: number, digits: number, mode: 'round' | 'trunc'): number {
+export function roundTo(n: number, digits: number, mode: 'round' | 'trunc'): number {
   const f = 10 ** digits;
   const scaled = n * f;
   // 이진 부동소수 오차(1.005*100=100.49999…) 를 지우고 자른다.
@@ -127,9 +127,11 @@ function nthMatch(s: string, re: RegExp, pos: number, occ: number): RegExpExecAr
 }
 
 /** 정규식 함수의 위치·횟수 인자: 범위를 벗어나면 ORA-01428 (위치는 1 이상, REGEXP_REPLACE 의 횟수만 0 도 된다) */
-function rangeArg(v: Value | undefined, fallback: number, min = 1): number {
-  if (v === undefined || v === null) return fallback;
-  const n = num(v);
+// 소수는 버린다(1.5 → 1). 인자를 NULL 로 주면 null(함수 결과도 NULL), 생략하면 기본값.
+function rangeArg(a: Value[], i: number, fallback: number, min = 1): number | null {
+  if (a.length <= i) return fallback;
+  if (a[i] === null) return null;
+  const n = Math.trunc(num(a[i]));
   if (n < min) throw new OraError('ORA-01428', `Argument ${numberToText(n)} is out of range.`);
   return n;
 }
@@ -164,26 +166,31 @@ export const FUNCTIONS: Record<string, Fn> = {
   },
   REGEXP_SUBSTR: (a) => {
     argCount('REGEXP_SUBSTR', a, 2, 6);
-    if (a[0] === null || a[1] === null) return null;
-    const m = nthMatch(str(a[0]), oracleRegex(str(a[1]), a[4] === undefined || a[4] === null ? null : str(a[4])), rangeArg(a[2], 1), rangeArg(a[3], 1));
+    const pos = rangeArg(a, 2, 1);
+    const occ = rangeArg(a, 3, 1);
+    if (a[0] === null || a[1] === null || pos === null || occ === null) return null;
+    const m = nthMatch(str(a[0]), oracleRegex(str(a[1]), a[4] === undefined || a[4] === null ? null : str(a[4])), pos, occ);
     if (!m) return null;
     const sub = a.length > 5 && a[5] !== null ? num(a[5]) : 0;
     return textOrNull(m[sub] ?? '');
   },
   REGEXP_INSTR: (a) => {
     argCount('REGEXP_INSTR', a, 2, 7);
-    if (a[0] === null || a[1] === null) return null;
-    const m = nthMatch(str(a[0]), oracleRegex(str(a[1]), a[5] === undefined || a[5] === null ? null : str(a[5])), rangeArg(a[2], 1), rangeArg(a[3], 1));
+    const pos = rangeArg(a, 2, 1);
+    const occ = rangeArg(a, 3, 1);
+    if (a[0] === null || a[1] === null || pos === null || occ === null) return null;
+    const m = nthMatch(str(a[0]), oracleRegex(str(a[1]), a[5] === undefined || a[5] === null ? null : str(a[5])), pos, occ);
     if (!m) return 0;
     const after = a.length > 4 && a[4] !== null && num(a[4]) === 1;
     return m.index + 1 + (after ? m[0].length : 0);
   },
   REGEXP_COUNT: (a) => {
     argCount('REGEXP_COUNT', a, 2, 4);
-    if (a[0] === null || a[1] === null) return null;
+    const pos = rangeArg(a, 2, 1);
+    if (a[0] === null || a[1] === null || pos === null) return null;
     const s = str(a[0]);
     const re = oracleRegex(str(a[1]), a[3] === undefined || a[3] === null ? null : str(a[3]), true);
-    re.lastIndex = rangeArg(a[2], 1) - 1;
+    re.lastIndex = pos - 1;
     let n = 0;
     let m: RegExpExecArray | null;
     while ((m = re.exec(s))) {
@@ -194,12 +201,12 @@ export const FUNCTIONS: Record<string, Fn> = {
   },
   REGEXP_REPLACE: (a) => {
     argCount('REGEXP_REPLACE', a, 2, 6);
-    if (a[0] === null) return null;
+    const pos = rangeArg(a, 3, 1);
+    const occ = rangeArg(a, 4, 0, 0);
+    if (a[0] === null || pos === null || occ === null) return null;
     if (a[1] === null) return a[0];
     const s = str(a[0]);
     const repl = a.length > 2 && a[2] !== null ? str(a[2]) : '';
-    const pos = rangeArg(a[3], 1);
-    const occ = rangeArg(a[4], 0, 0);
     const re = oracleRegex(str(a[1]), a[5] === undefined || a[5] === null ? null : str(a[5]), true);
     const head = s.slice(0, pos - 1);
     let n = 0;

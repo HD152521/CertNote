@@ -12414,6 +12414,104 @@
     "error": "ORA-01722",
     "message": "unable to convert string value containing 'a' to a number:"
   },
+  "dml-coerce-neg-round": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "error": "ORA-01438",
+        "message": "value -.0995 greater than specified precision (2, 3) for column"
+      },
+      {
+        "message": "1 row created."
+      },
+      {
+        "error": "ORA-01438",
+        "message": "value -9.5 greater than specified precision (1, 0) for column"
+      },
+      {
+        "message": "1 row updated."
+      },
+      {
+        "columns": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "rows": [
+          [
+            "-1500",
+            "",
+            "-1.01",
+            "-3"
+          ],
+          [
+            "1400",
+            "",
+            "1.01",
+            "3"
+          ],
+          [
+            "",
+            "-.099",
+            "",
+            ""
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "regexp-arg-fraction": {
+    "columns": [
+      "REGEXP_INSTR('ABCB','B',1,1.5)",
+      "REGEXP_INSTR('ABCB','B',1,2.7)",
+      "REGEXP_REPLACE('ABCB','B','X',1,1.5)",
+      "REGEXP_REPLACE('ABCB','B','X',1,0.5)"
+    ],
+    "rows": [
+      [
+        "2",
+        "4",
+        "aXcb",
+        "aXcX"
+      ]
+    ]
+  },
+  "regexp-arg-fraction-err": {
+    "error": "ORA-01428",
+    "message": "Argument 0 is out of range."
+  },
+  "regexp-arg-null": {
+    "columns": [
+      "REGEXP_SUBSTR('ABCB','B',NULL)",
+      "REGEXP_INSTR('ABCB','B',1,NULL)",
+      "REGEXP_COUNT('ABCB','B',NULL)",
+      "REGEXP_REPLACE('ABCB','B','X',NULL)"
+    ],
+    "rows": [
+      [
+        "",
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  "regexp-null-src-pos0": {
+    "error": "ORA-01428",
+    "message": "Argument 0 is out of range."
+  },
   "dml-update-pk-child": {
     "steps": [
       {

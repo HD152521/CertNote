@@ -2,6 +2,7 @@
 // 문장이 실패하면 그 문장만 되돌린다(Oracle 의 문장 단위 롤백). DDL 은 앞뒤로 암묵적 COMMIT 을 한다.
 import type { Expr, Select } from './ast';
 import { cloneDatabase, columnFromSpec, type Column, type Constraint, type Database, type Table } from './data';
+import { roundTo } from './functions';
 import { tokenize } from './lexer';
 import { cond, evaluate, type EvalCtx } from './eval';
 import { checkNames, ctxOf, fromItemRelation, runSelect, tableRelation, type Env } from './exec';
@@ -44,8 +45,7 @@ export function coerce(t: Table, c: Column, v: Value): Value {
     let n = toNumber(v instanceof SqlDate ? (() => { throw new OraError('ORA-00932', 'inconsistent datatypes: expected NUMBER got DATE'); })() : v)!;
     if (c.precision !== undefined) {
       const s = c.scale ?? 0;
-      const f = 10 ** s;
-      n = Math.round(Number((n * f).toPrecision(15))) / f;
+      n = roundTo(n, s, 'round'); // 반값은 0 에서 먼 쪽으로(-2.5 → -3)
       if (Math.abs(n) >= 10 ** (c.precision - s)) {
         throw new OraError('ORA-01438', `value ${numberToText(Number(toNumber(v)))} greater than specified precision (${c.precision}, ${s}) for column`);
       }

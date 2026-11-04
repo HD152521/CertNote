@@ -561,6 +561,11 @@ c('to-number-msg-space', "SELECT TO_NUMBER('1 2') FROM DUAL");
 c('to-number-msg-minus', "SELECT TO_NUMBER('-') FROM DUAL");
 c('to-number-msg-e', "SELECT TO_NUMBER('1e') FROM DUAL");
 c('to-number-msg-plus', "SELECT 'ab' + 1 FROM DUAL");
+s('dml-coerce-neg-round', 'CREATE TABLE T_N (A NUMBER(4,-2), B NUMBER(2,3), C NUMBER(3,2), D NUMBER(1))', 'INSERT INTO T_N (A, C, D) VALUES (-1350, -1.005, -2.5)', 'INSERT INTO T_N (A, C, D) VALUES (1350, 1.005, 2.5)', 'INSERT INTO T_N (B) VALUES (-0.0995)', 'INSERT INTO T_N (B) VALUES (-0.0994)', 'INSERT INTO T_N (D) VALUES (-9.5)', 'UPDATE T_N SET A = A - 50 WHERE A = -1400', 'SELECT A, B, C, D FROM T_N ORDER BY A, B', 'DROP TABLE T_N PURGE');
+c('regexp-arg-fraction', "SELECT REGEXP_INSTR('abcb', 'b', 1, 1.5), REGEXP_INSTR('abcb', 'b', 1, 2.7), REGEXP_REPLACE('abcb', 'b', 'X', 1, 1.5), REGEXP_REPLACE('abcb', 'b', 'X', 1, 0.5) FROM DUAL");
+c('regexp-arg-fraction-err', "SELECT REGEXP_SUBSTR('abcb', 'b', 0.5) FROM DUAL");
+c('regexp-arg-null', "SELECT REGEXP_SUBSTR('abcb', 'b', NULL), REGEXP_INSTR('abcb', 'b', 1, NULL), REGEXP_COUNT('abcb', 'b', NULL), REGEXP_REPLACE('abcb', 'b', 'X', NULL) FROM DUAL");
+c('regexp-null-src-pos0', "SELECT REGEXP_SUBSTR(NULL, 'b', 0) FROM DUAL");
 s('dml-update-pk-child', "UPDATE DEPT SET DEPTNO = 11 WHERE DEPTNO = 10", "UPDATE DEPT SET DEPTNO = 41 WHERE DEPTNO = 40", 'SELECT DEPTNO FROM DEPT ORDER BY 1', 'ROLLBACK');
 
 // ── SQL 실습장 과제의 모범 답안 ──
