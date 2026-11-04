@@ -46,8 +46,7 @@ export function coerce(t: Table, c: Column, v: Value): Value {
       const s = c.scale ?? 0;
       const f = 10 ** s;
       n = Math.round(Number((n * f).toPrecision(15))) / f;
-      const intDigits = Math.abs(n) >= 1 ? Math.floor(Math.log10(Math.abs(Math.trunc(n)) || 1)) + 1 : 0;
-      if (intDigits > c.precision - s) {
+      if (Math.abs(n) >= 10 ** (c.precision - s)) {
         throw new OraError('ORA-01438', `value ${numberToText(Number(toNumber(v)))} greater than specified precision (${c.precision}, ${s}) for column`);
       }
     }
@@ -654,10 +653,10 @@ function alter(st: Extract<Statement, { type: 'alter' }>, db: Database, session:
       t.columns[i] = { ...t.columns[i], name: a.to };
       for (const k of t.constraints ?? []) {
         k.columns = k.columns.map((c) => (c === a.from ? a.to : c));
-        if (k.check) {
+        if (k.check && usesColumn(k.check, a.from)) {
           k.check = renameInExpr(k.check, a.from, a.to);
           // Oracle 은 이름을 바꾼 열을 쓰는 CHECK 만 원문을 다시 만든다: 열 이름은 큰따옴표, 연산자 둘레 공백은 뺀다("LOW"<"HI" AND "LOW">=0).
-          if (k.checkText && new RegExp(`\\b${a.from}\\b`, 'i').test(k.checkText)) k.checkText = regenerateCheck(k.checkText, a.from, a.to, t.columns.map((c) => c.name));
+          if (k.checkText) k.checkText = regenerateCheck(k.checkText, a.from, a.to, t.columns.map((c) => c.name));
         }
       }
       break;
@@ -718,6 +717,16 @@ function regenerateCheck(text: string, from: string, to: string, columns: string
     else out += tok.value;
   }
   return out.replace(/ {2,}/g, ' ').replace(/\( /g, '(').replace(/ \)/g, ')').trim();
+}
+
+/** 식 안에 그 이름의 열 참조가 있는가(문자열 리터럴은 열 참조가 아니다) */
+function usesColumn(e: Expr, name: string): boolean {
+  let hit = false;
+  JSON.stringify(e, (_k, v) => {
+    if (v && typeof v === 'object' && v.type === 'col' && v.name === name) hit = true;
+    return v;
+  });
+  return hit;
 }
 
 function renameInExpr(e: Expr, from: string, to: string): Expr {

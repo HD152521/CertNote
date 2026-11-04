@@ -59,13 +59,21 @@ export function parseDefaultDate(s: string): SqlDate {
   return dateOf(y, mo, d, Number(m[4] ?? 0), Number(m[5] ?? 0), Number(m[6] ?? 0));
 }
 
+/** 숫자로 읽다가 멈춘 글자(끝까지 읽었는데 숫자가 덜 끝났으면 마지막 글자): '1x2' → x, '12.3.4' → ., '-' → - */
+function badNumberChar(s: string): string {
+  const ok = /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?/i.exec(s)?.[0] ?? '';
+  let i = ok.length;
+  while (s[i] === ' ' && i < s.length - 1) i++;
+  return s[i] ?? s[s.length - 1] ?? '';
+}
+
 /** 문자 → 숫자 암시적 변환(TO_NUMBER 기본형). */
 export function toNumber(v: Value): number | null {
   if (v === null) return null;
   if (typeof v === 'number') return v;
   if (v instanceof SqlDate) throw new OraError('ORA-00932', 'inconsistent datatypes: expected NUMBER got DATE');
   const s = v.trim();
-  if (!/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(s)) throw new OraError('ORA-01722', 'unable to convert string value containing %s to a number: %s');
+  if (!/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(s)) throw new OraError('ORA-01722', `unable to convert string value containing '${badNumberChar(s)}' to a number:`);
   return Number(s);
 }
 

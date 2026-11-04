@@ -39,13 +39,14 @@ const BUILDERS: Record<string, (db: Database) => Table> = {
   USER_CONSTRAINTS: (db) =>
     make(
       'USER_CONSTRAINTS',
-      [['OWNER', 'VARCHAR2(128)'], ['CONSTRAINT_NAME', 'VARCHAR2(128)'], ['CONSTRAINT_TYPE', 'VARCHAR2(1)'], ['TABLE_NAME', 'VARCHAR2(128)'], ['SEARCH_CONDITION_VC', 'VARCHAR2(4000)'], ['R_CONSTRAINT_NAME', 'VARCHAR2(128)'], ['DELETE_RULE', 'VARCHAR2(9)'], ['STATUS', 'VARCHAR2(8)']],
+      [['OWNER', 'VARCHAR2(128)'], ['CONSTRAINT_NAME', 'VARCHAR2(128)'], ['CONSTRAINT_TYPE', 'VARCHAR2(1)'], ['TABLE_NAME', 'VARCHAR2(128)'], ['SEARCH_CONDITION', 'VARCHAR2(4000)'], ['SEARCH_CONDITION_VC', 'VARCHAR2(4000)'], ['R_CONSTRAINT_NAME', 'VARCHAR2(128)'], ['DELETE_RULE', 'VARCHAR2(9)'], ['STATUS', 'VARCHAR2(8)']],
       userTables(db).flatMap((t) => [
-        ...t.columns.filter((c) => c.notNullName).map((c): Value[] => ['SCOTT', c.notNullName!, 'C', t.name, `"${c.name}" IS NOT NULL`, null, null, 'ENABLED']),
+        ...t.columns.filter((c) => c.notNullName).map((c): Value[] => ['SCOTT', c.notNullName!, 'C', t.name, `"${c.name}" IS NOT NULL`, `"${c.name}" IS NOT NULL`, null, null, 'ENABLED']),
         ...(t.constraints ?? []).map((k): Value[] => {
           const parent = k.refTable ? db[k.refTable] : undefined;
           const rName = parent ? (primaryOrUnique(parent, k.refColumns ?? parent.constraints?.find((x) => x.kind === 'P')?.columns ?? [])?.name ?? null) : null;
-          return ['SCOTT', k.name, k.kind, t.name, k.kind === 'C' ? (k.checkText ?? null) : null, rName, k.kind === 'R' ? (k.onDelete ?? 'NO ACTION') : null, 'ENABLED'];
+          const cond = k.kind === 'C' ? (k.checkText ?? null) : null;
+          return ['SCOTT', k.name, k.kind, t.name, cond, cond, rName, k.kind === 'R' ? (k.onDelete ?? 'NO ACTION') : null, 'ENABLED'];
         }),
       ]),
     ),

@@ -533,6 +533,34 @@ c('cast-num-overflow-scale', 'SELECT CAST(99.95 AS NUMBER(3,1)) FROM DUAL');
 c('cast-num-ok', 'SELECT CAST(9.95 AS NUMBER(3,1)), CAST(123.456 AS NUMBER(5,2)) FROM DUAL');
 c('cast-num-to-short-char', 'SELECT CAST(12345 AS VARCHAR2(3)) FROM DUAL');
 s('rename-col-check-multi', 'CREATE TABLE T_R (LOW NUMBER, HI NUMBER, Q NUMBER, CONSTRAINT CK1 CHECK (LOW < HI AND LOW >= 0), CONSTRAINT CK2 CHECK (Q > 0))', 'ALTER TABLE T_R RENAME COLUMN LOW TO LO', "SELECT CONSTRAINT_NAME, SEARCH_CONDITION_VC FROM USER_CONSTRAINTS WHERE TABLE_NAME = 'T_R' ORDER BY 1", 'DROP TABLE T_R PURGE');
+// W7 3차 검토에서 미룬 것
+c('cast-num-scale-gt-prec', 'SELECT CAST(0.01 AS NUMBER(2,3)), CAST(0.0994 AS NUMBER(2,3)) FROM DUAL');
+c('cast-num-scale-gt-prec-err', 'SELECT CAST(0.1 AS NUMBER(2,3)) FROM DUAL');
+c('cast-num-neg-scale', 'SELECT CAST(1234.5 AS NUMBER(6,-2)), CAST(-1250 AS NUMBER(4,-2)) FROM DUAL');
+c('cast-num-neg-scale-err', 'SELECT CAST(1234567.5 AS NUMBER(3,-2)) FROM DUAL');
+c('cast-date-short-varchar', 'SELECT CAST(HIREDATE AS VARCHAR2(5)) FROM EMP');
+c('cast-date-short-char', 'SELECT CAST(HIREDATE AS CHAR(5)) FROM EMP');
+c('cast-date-varchar-ok', "SELECT CAST(HIREDATE AS VARCHAR2(10)) FROM EMP WHERE ENAME = 'KING'");
+s('rename-col-check-literal', "CREATE TABLE T_Q (LOT NUMBER, S VARCHAR2(5), CONSTRAINT CKQ CHECK (LOT > 0 AND S <> 'LO'))", 'ALTER TABLE T_Q RENAME COLUMN LO TO LOW', 'ALTER TABLE T_Q RENAME COLUMN LOT TO LOTNO', "SELECT SEARCH_CONDITION_VC FROM USER_CONSTRAINTS WHERE TABLE_NAME = 'T_Q'", 'DROP TABLE T_Q PURGE');
+s('rename-col-check-untouched', "CREATE TABLE T_Q (LOT NUMBER, S VARCHAR2(5), CONSTRAINT CKQ CHECK (lot > 0 and S <> 'LO'))", 'ALTER TABLE T_Q RENAME COLUMN S TO S2', 'ALTER TABLE T_Q ADD (X NUMBER CONSTRAINT CKX CHECK (X  >  1))', 'ALTER TABLE T_Q RENAME COLUMN LOT TO LO', "SELECT CONSTRAINT_NAME, SEARCH_CONDITION_VC FROM USER_CONSTRAINTS WHERE TABLE_NAME = 'T_Q' ORDER BY 1", 'DROP TABLE T_Q PURGE');
+s('dict-search-condition', 'CREATE TABLE T_Q (A NUMBER, CONSTRAINT CKQ CHECK (A > 0))', "SELECT SEARCH_CONDITION FROM USER_CONSTRAINTS WHERE TABLE_NAME = 'T_Q'", 'DROP TABLE T_Q PURGE');
+c('pivot-dup-values', 'SELECT * FROM (SELECT DEPTNO, SAL FROM EMP) PIVOT (SUM(SAL) FOR DEPTNO IN (10, 10))');
+c('pivot-dup-alias', 'SELECT * FROM (SELECT DEPTNO, SAL FROM EMP) PIVOT (SUM(SAL) FOR DEPTNO IN (10 AS D, 20 AS D))');
+c('regexp-substr-pos0', "SELECT REGEXP_SUBSTR('x', 'x', 0) FROM DUAL");
+c('regexp-substr-pos-neg', "SELECT REGEXP_SUBSTR('x', 'x', -1) FROM DUAL");
+c('regexp-substr-occ0', "SELECT REGEXP_SUBSTR('x', 'x', 1, 0) FROM DUAL");
+c('regexp-instr-pos0', "SELECT REGEXP_INSTR('x', 'x', 0) FROM DUAL");
+c('regexp-instr-occ0', "SELECT REGEXP_INSTR('x', 'x', 1, 0) FROM DUAL");
+c('regexp-count-pos0', "SELECT REGEXP_COUNT('x', 'x', 0) FROM DUAL");
+c('regexp-replace-pos0', "SELECT REGEXP_REPLACE('x', 'x', 'y', 0) FROM DUAL");
+c('regexp-replace-occ-neg', "SELECT REGEXP_REPLACE('x', 'x', 'y', 1, -1) FROM DUAL");
+c('regexp-replace-occ0-ok', "SELECT REGEXP_REPLACE('aXbX', 'X', '-', 1, 0) FROM DUAL");
+c('to-number-msg-x', "SELECT TO_NUMBER('1x2') FROM DUAL");
+c('to-number-msg-dot', "SELECT TO_NUMBER('12.3.4') FROM DUAL");
+c('to-number-msg-space', "SELECT TO_NUMBER('1 2') FROM DUAL");
+c('to-number-msg-minus', "SELECT TO_NUMBER('-') FROM DUAL");
+c('to-number-msg-e', "SELECT TO_NUMBER('1e') FROM DUAL");
+c('to-number-msg-plus', "SELECT 'ab' + 1 FROM DUAL");
 s('dml-update-pk-child', "UPDATE DEPT SET DEPTNO = 11 WHERE DEPTNO = 10", "UPDATE DEPT SET DEPTNO = 41 WHERE DEPTNO = 40", 'SELECT DEPTNO FROM DEPT ORDER BY 1', 'ROLLBACK');
 
 // ── SQL 실습장 과제의 모범 답안 ──

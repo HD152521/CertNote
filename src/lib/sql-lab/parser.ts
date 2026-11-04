@@ -745,9 +745,10 @@ export class Parser {
         this.i++;
         let inner = a.value;
         if (this.acceptOp(',')) {
+          const minus = this.acceptOp('-') ? '-' : '';
           const b = this.t;
           this.i++;
-          inner += `,${b.value}`;
+          inner += `,${minus}${b.value}`;
         }
         this.expectOp(')');
         spec += `(${inner})`;

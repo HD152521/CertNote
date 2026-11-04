@@ -259,6 +259,10 @@ function pivotRelation(env: Env, item: Extract<FromItem, { type: 'pivot' }>, out
       return item.aggs.length > 1 || a.alias ? (a.alias ? `${base}_${a.alias}` : `${base}_${heading(a.text)}`) : base;
     }),
   );
+  const dupe = names.find((n, i) => names.indexOf(n) !== i);
+  if (dupe !== undefined) {
+    throw new OraError('ORA-56907', `${dupe}: Duplicate column names are generated due to pivot values being too long or due to the absence of unique and short aliases for both pivot values and aggregates.`);
+  }
   const rows: Value[][] = [...groups.values()].map((members) => {
     const out: Value[] = groupIdx.map((i) => members[0][i]);
     targets.forEach((vals) => {

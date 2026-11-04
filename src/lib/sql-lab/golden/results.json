@@ -12208,6 +12208,212 @@
       }
     ]
   },
+  "cast-num-scale-gt-prec": {
+    "columns": [
+      "CAST(0.01ASNUMBER(2,3))",
+      "CAST(0.0994ASNUMBER(2,3))"
+    ],
+    "rows": [
+      [
+        ".01",
+        ".099"
+      ]
+    ]
+  },
+  "cast-num-scale-gt-prec-err": {
+    "error": "ORA-01438",
+    "message": "value .1 greater than specified precision (2, 3) for column"
+  },
+  "cast-num-neg-scale": {
+    "columns": [
+      "CAST(1234.5ASNUMBER(6,-2))",
+      "CAST(-1250ASNUMBER(4,-2))"
+    ],
+    "rows": [
+      [
+        "1200",
+        "-1300"
+      ]
+    ]
+  },
+  "cast-num-neg-scale-err": {
+    "error": "ORA-01438",
+    "message": "value 1234567.5 greater than specified precision (3, -2) for column"
+  },
+  "cast-date-short-varchar": {
+    "error": "ORA-01801",
+    "message": "date format is too long for internal buffer"
+  },
+  "cast-date-short-char": {
+    "error": "ORA-25137",
+    "message": "Data value out of range"
+  },
+  "cast-date-varchar-ok": {
+    "columns": [
+      "CAST(HIREDATEASVARCHAR2(10))"
+    ],
+    "rows": [
+      [
+        "1981-11-17"
+      ]
+    ]
+  },
+  "rename-col-check-literal": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "error": "ORA-00904",
+        "message": "\"LO\": invalid identifier"
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "columns": [
+          "SEARCH_CONDITION_VC"
+        ],
+        "rows": [
+          [
+            "\"LOTNO\">0 AND \"S\"<>'LO'"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "rename-col-check-untouched": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "message": "Table altered."
+      },
+      {
+        "columns": [
+          "CONSTRAINT_NAME",
+          "SEARCH_CONDITION_VC"
+        ],
+        "rows": [
+          [
+            "CKQ",
+            "\"LO\">0 AND \"S2\"<>'LO'"
+          ],
+          [
+            "CKX",
+            "X  >  1"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "dict-search-condition": {
+    "steps": [
+      {
+        "message": "Table created."
+      },
+      {
+        "columns": [
+          "SEARCH_CONDITION"
+        ],
+        "rows": [
+          [
+            "A > 0"
+          ]
+        ]
+      },
+      {
+        "message": "Table dropped."
+      }
+    ]
+  },
+  "pivot-dup-values": {
+    "error": "ORA-56907",
+    "message": "10: Duplicate column names are generated due to pivot values being too long or due to the absence of unique and short aliases for both pivot values and aggregates."
+  },
+  "pivot-dup-alias": {
+    "error": "ORA-56907",
+    "message": "D: Duplicate column names are generated due to pivot values being too long or due to the absence of unique and short aliases for both pivot values and aggregates."
+  },
+  "regexp-substr-pos0": {
+    "error": "ORA-01428",
+    "message": "Argument 0 is out of range."
+  },
+  "regexp-substr-pos-neg": {
+    "error": "ORA-01428",
+    "message": "Argument -1 is out of range."
+  },
+  "regexp-substr-occ0": {
+    "error": "ORA-01428",
+    "message": "Argument 0 is out of range."
+  },
+  "regexp-instr-pos0": {
+    "error": "ORA-01428",
+    "message": "Argument 0 is out of range."
+  },
+  "regexp-instr-occ0": {
+    "error": "ORA-01428",
+    "message": "Argument 0 is out of range."
+  },
+  "regexp-count-pos0": {
+    "error": "ORA-01428",
+    "message": "Argument 0 is out of range."
+  },
+  "regexp-replace-pos0": {
+    "error": "ORA-01428",
+    "message": "Argument 0 is out of range."
+  },
+  "regexp-replace-occ-neg": {
+    "error": "ORA-01428",
+    "message": "Argument -1 is out of range."
+  },
+  "regexp-replace-occ0-ok": {
+    "columns": [
+      "REGEXP_REPLACE('AXBX','X','-',1,0)"
+    ],
+    "rows": [
+      [
+        "a-b-"
+      ]
+    ]
+  },
+  "to-number-msg-x": {
+    "error": "ORA-01722",
+    "message": "unable to convert string value containing 'x' to a number:"
+  },
+  "to-number-msg-dot": {
+    "error": "ORA-01722",
+    "message": "unable to convert string value containing '.' to a number:"
+  },
+  "to-number-msg-space": {
+    "error": "ORA-01722",
+    "message": "unable to convert string value containing '2' to a number:"
+  },
+  "to-number-msg-minus": {
+    "error": "ORA-01722",
+    "message": "unable to convert string value containing '-' to a number:"
+  },
+  "to-number-msg-e": {
+    "error": "ORA-01722",
+    "message": "unable to convert string value containing 'e' to a number:"
+  },
+  "to-number-msg-plus": {
+    "error": "ORA-01722",
+    "message": "unable to convert string value containing 'a' to a number:"
+  },
   "dml-update-pk-child": {
     "steps": [
       {

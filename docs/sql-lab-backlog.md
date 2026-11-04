@@ -62,11 +62,11 @@
 - `ROWS 99999999999999999999 PRECEDING`: Oracle 은 NULL, 엔진은 합계.
 
 ## W7 3차 검토에서 미룬 것(막지 않음)
-- RENAME COLUMN: CHECK 를 다시 만들지 정규식으로 판단해 문자열 리터럴 속 같은 글자에도 걸린다(`CHECK (LOT > 0 AND S <> 'LO')` 에서 LO→LOW). 바꾸기 전 `k.check` 식에 해당 열 노드가 있는지로 판단할 것.
-- 문자 리터럴끼리 비교에 공백 채움이 없다: `WHERE 'A ' = 'A'` Oracle 1, 엔진 0(main 부터).
-- NUMBER(p,s) 에서 s>p 또는 s<0: `CAST(0.01 AS NUMBER(2,3))` Oracle .01 / 엔진 01438, `CAST(1234.5 AS NUMBER(6,-2))` Oracle 1200 / 엔진 00907.
-- `CAST(HIREDATE AS VARCHAR2(5))`: Oracle ORA-01801, 엔진 ORA-25137.
-- USER_CONSTRAINTS 에 `SEARCH_CONDITION` 열이 없다(_VC 만 있음).
-- `PIVOT … IN (10, 10)`: Oracle ORA-56907, 엔진 ORA-00918 이고 메시지에 빈칸이 남는다.
-- `REGEXP_SUBSTR('x','x',0)`: Oracle ORA-01428, 엔진은 'x'.
-- ORA-01722 메시지에 `%s` 가 그대로 보인다(values.ts, main 부터).
+
+2026-11-05 에 아래 7건을 고쳤다(골든 27건 추가): RENAME COLUMN 이 문자열 리터럴 속 글자로 CHECK 를 다시 만들던 것, NUMBER(p,s) 의 s>p·s<0, `CAST(날짜 AS VARCHAR2(짧게))` ORA-01801, USER_CONSTRAINTS.SEARCH_CONDITION, `PIVOT … IN (10, 10)` ORA-56907, 정규식 함수 위치·횟수 인자 ORA-01428, ORA-01722 의 `%s`.
+
+남긴 것
+- 문자 리터럴끼리 공백 채움 비교: Oracle 23ai 는 `WHERE 'A ' = 'A'` 에서만 1 이고, `CASE WHEN 'A ' = 'A'`·`DECODE('A ', 'A', …)` 는 0 이다(상수 접기 결과로 보인다). 엔진은 어디서나 0 이라 WHERE 만 다르다. 따라가지 않는다.
+- ORA-01722 의 걸린 글자가 한글 등 ASCII 밖이면 Oracle 은 `UNISTR('\AC00')` 로 적고 줄을 바꾼다. 엔진은 글자를 그대로 적는다.
+- ORA-01722 다음 줄의 `ORA-03302: (ORA-01722 details) invalid string value: …` 는 엔진이 내지 않는다.
+- `ORDER BY SEARCH_CONDITION`(LONG): Oracle ORA-00997, 엔진은 정렬한다.
