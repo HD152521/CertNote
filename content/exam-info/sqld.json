@@ -9,7 +9,8 @@
       "questionCount": "50문항 (1과목 10 · 2과목 40)",
       "durationMin": 90,
       "format": "객관식, 문항당 2점",
-      "eligibility": "제한 없음"
+      "eligibility": "제한 없음",
+      "cost": { "amount": 50000, "currency": "KRW" }
     }
   ],
   "languages": [
@@ -30,7 +31,7 @@
   "registerUrl": "https://www.dataq.or.kr/",
   "difficulty": "입문~중급 · SQL 을 처음 배우는 학습자도 8주면 준비할 수 있다",
   "source": "https://www.dataq.or.kr/www/sub/a_04.do",
-  "syncedAt": "2026-11-03",
+  "syncedAt": "2026-11-05",
   "faq": [
     {
       "q": "SQLD 시험은 어떻게 치러지나요?",
@@ -46,7 +47,7 @@
     },
     {
       "q": "시험은 1년에 몇 번 있나요?",
-      "a": "연 4회 정기 시행합니다. 회차별 접수 기간과 응시료는 데이터자격검정 홈페이지 접수 화면에서 확인하세요."
+      "a": "연 4회 정기 시행합니다. 응시료는 50,000원이고, 회차별 접수 기간은 데이터자격검정 홈페이지 접수 화면에서 확인하세요."
     },
     {
       "q": "어떤 DBMS 문법으로 출제되나요?",
