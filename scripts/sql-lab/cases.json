@@ -2397,6 +2397,14 @@
   "sql": "SELECT REGEXP_SUBSTR('abcb', 'b', NULL), REGEXP_INSTR('abcb', 'b', 1, NULL), REGEXP_COUNT('abcb', 'b', NULL), REGEXP_REPLACE('abcb', 'b', 'X', NULL) FROM DUAL"
  },
  {
+  "id": "regexp-arg-neg-fraction",
+  "sql": "SELECT REGEXP_REPLACE('abc', 'b', 'X', 1, -0.5) FROM DUAL"
+ },
+ {
+  "id": "regexp-arg-neg-fraction-pos",
+  "sql": "SELECT REGEXP_SUBSTR('abc', 'b', -0.5) FROM DUAL"
+ },
+ {
   "id": "regexp-null-src-pos0",
   "sql": "SELECT REGEXP_SUBSTR(NULL, 'b', 0) FROM DUAL"
  },

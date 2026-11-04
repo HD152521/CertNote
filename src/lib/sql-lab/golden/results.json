@@ -12508,6 +12508,14 @@
       ]
     ]
   },
+  "regexp-arg-neg-fraction": {
+    "error": "ORA-01428",
+    "message": "Argument -.5 is out of range."
+  },
+  "regexp-arg-neg-fraction-pos": {
+    "error": "ORA-01428",
+    "message": "Argument -.5 is out of range."
+  },
   "regexp-null-src-pos0": {
     "error": "ORA-01428",
     "message": "Argument 0 is out of range."

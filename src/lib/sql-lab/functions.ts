@@ -131,7 +131,10 @@ function nthMatch(s: string, re: RegExp, pos: number, occ: number): RegExpExecAr
 function rangeArg(a: Value[], i: number, fallback: number, min = 1): number | null {
   if (a.length <= i) return fallback;
   if (a[i] === null) return null;
-  const n = Math.trunc(num(a[i]));
+  const raw = num(a[i]);
+  // 음수는 원래 값으로 오류(-0.5 → "Argument -.5"), 0 이상은 버린 값으로 검사(0.5 → "Argument 0")
+  if (raw < 0 && min >= 0) throw new OraError('ORA-01428', `Argument ${numberToText(raw)} is out of range.`);
+  const n = Math.trunc(raw);
   if (n < min) throw new OraError('ORA-01428', `Argument ${numberToText(n)} is out of range.`);
   return n;
 }

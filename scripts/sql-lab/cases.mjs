@@ -565,6 +565,8 @@ s('dml-coerce-neg-round', 'CREATE TABLE T_N (A NUMBER(4,-2), B NUMBER(2,3), C NU
 c('regexp-arg-fraction', "SELECT REGEXP_INSTR('abcb', 'b', 1, 1.5), REGEXP_INSTR('abcb', 'b', 1, 2.7), REGEXP_REPLACE('abcb', 'b', 'X', 1, 1.5), REGEXP_REPLACE('abcb', 'b', 'X', 1, 0.5) FROM DUAL");
 c('regexp-arg-fraction-err', "SELECT REGEXP_SUBSTR('abcb', 'b', 0.5) FROM DUAL");
 c('regexp-arg-null', "SELECT REGEXP_SUBSTR('abcb', 'b', NULL), REGEXP_INSTR('abcb', 'b', 1, NULL), REGEXP_COUNT('abcb', 'b', NULL), REGEXP_REPLACE('abcb', 'b', 'X', NULL) FROM DUAL");
+c('regexp-arg-neg-fraction', "SELECT REGEXP_REPLACE('abc', 'b', 'X', 1, -0.5) FROM DUAL");
+c('regexp-arg-neg-fraction-pos', "SELECT REGEXP_SUBSTR('abc', 'b', -0.5) FROM DUAL");
 c('regexp-null-src-pos0', "SELECT REGEXP_SUBSTR(NULL, 'b', 0) FROM DUAL");
 s('dml-update-pk-child', "UPDATE DEPT SET DEPTNO = 11 WHERE DEPTNO = 10", "UPDATE DEPT SET DEPTNO = 41 WHERE DEPTNO = 40", 'SELECT DEPTNO FROM DEPT ORDER BY 1', 'ROLLBACK');
 
