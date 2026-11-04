@@ -2242,6 +2242,173 @@
   ]
  },
  {
+  "id": "cast-num-scale-gt-prec",
+  "sql": "SELECT CAST(0.01 AS NUMBER(2,3)), CAST(0.0994 AS NUMBER(2,3)) FROM DUAL"
+ },
+ {
+  "id": "cast-num-scale-gt-prec-err",
+  "sql": "SELECT CAST(0.1 AS NUMBER(2,3)) FROM DUAL"
+ },
+ {
+  "id": "cast-num-neg-scale",
+  "sql": "SELECT CAST(1234.5 AS NUMBER(6,-2)), CAST(-1250 AS NUMBER(4,-2)) FROM DUAL"
+ },
+ {
+  "id": "cast-num-neg-scale-err",
+  "sql": "SELECT CAST(1234567.5 AS NUMBER(3,-2)) FROM DUAL"
+ },
+ {
+  "id": "cast-date-short-varchar",
+  "sql": "SELECT CAST(HIREDATE AS VARCHAR2(5)) FROM EMP"
+ },
+ {
+  "id": "cast-date-short-char",
+  "sql": "SELECT CAST(HIREDATE AS CHAR(5)) FROM EMP"
+ },
+ {
+  "id": "cast-date-varchar-ok",
+  "sql": "SELECT CAST(HIREDATE AS VARCHAR2(10)) FROM EMP WHERE ENAME = 'KING'"
+ },
+ {
+  "id": "rename-col-check-literal",
+  "sql": "CREATE TABLE T_Q (LOT NUMBER, S VARCHAR2(5), CONSTRAINT CKQ CHECK (LOT > 0 AND S <> 'LO'));\nALTER TABLE T_Q RENAME COLUMN LO TO LOW;\nALTER TABLE T_Q RENAME COLUMN LOT TO LOTNO;\nSELECT SEARCH_CONDITION_VC FROM USER_CONSTRAINTS WHERE TABLE_NAME = 'T_Q';\nDROP TABLE T_Q PURGE",
+  "script": [
+   "CREATE TABLE T_Q (LOT NUMBER, S VARCHAR2(5), CONSTRAINT CKQ CHECK (LOT > 0 AND S <> 'LO'))",
+   "ALTER TABLE T_Q RENAME COLUMN LO TO LOW",
+   "ALTER TABLE T_Q RENAME COLUMN LOT TO LOTNO",
+   "SELECT SEARCH_CONDITION_VC FROM USER_CONSTRAINTS WHERE TABLE_NAME = 'T_Q'",
+   "DROP TABLE T_Q PURGE"
+  ]
+ },
+ {
+  "id": "rename-col-check-untouched",
+  "sql": "CREATE TABLE T_Q (LOT NUMBER, S VARCHAR2(5), CONSTRAINT CKQ CHECK (lot > 0 and S <> 'LO'));\nALTER TABLE T_Q RENAME COLUMN S TO S2;\nALTER TABLE T_Q ADD (X NUMBER CONSTRAINT CKX CHECK (X  >  1));\nALTER TABLE T_Q RENAME COLUMN LOT TO LO;\nSELECT CONSTRAINT_NAME, SEARCH_CONDITION_VC FROM USER_CONSTRAINTS WHERE TABLE_NAME = 'T_Q' ORDER BY 1;\nDROP TABLE T_Q PURGE",
+  "script": [
+   "CREATE TABLE T_Q (LOT NUMBER, S VARCHAR2(5), CONSTRAINT CKQ CHECK (lot > 0 and S <> 'LO'))",
+   "ALTER TABLE T_Q RENAME COLUMN S TO S2",
+   "ALTER TABLE T_Q ADD (X NUMBER CONSTRAINT CKX CHECK (X  >  1))",
+   "ALTER TABLE T_Q RENAME COLUMN LOT TO LO",
+   "SELECT CONSTRAINT_NAME, SEARCH_CONDITION_VC FROM USER_CONSTRAINTS WHERE TABLE_NAME = 'T_Q' ORDER BY 1",
+   "DROP TABLE T_Q PURGE"
+  ]
+ },
+ {
+  "id": "dict-search-condition",
+  "sql": "CREATE TABLE T_Q (A NUMBER, CONSTRAINT CKQ CHECK (A > 0));\nSELECT SEARCH_CONDITION FROM USER_CONSTRAINTS WHERE TABLE_NAME = 'T_Q';\nDROP TABLE T_Q PURGE",
+  "script": [
+   "CREATE TABLE T_Q (A NUMBER, CONSTRAINT CKQ CHECK (A > 0))",
+   "SELECT SEARCH_CONDITION FROM USER_CONSTRAINTS WHERE TABLE_NAME = 'T_Q'",
+   "DROP TABLE T_Q PURGE"
+  ]
+ },
+ {
+  "id": "pivot-dup-values",
+  "sql": "SELECT * FROM (SELECT DEPTNO, SAL FROM EMP) PIVOT (SUM(SAL) FOR DEPTNO IN (10, 10))"
+ },
+ {
+  "id": "pivot-dup-alias",
+  "sql": "SELECT * FROM (SELECT DEPTNO, SAL FROM EMP) PIVOT (SUM(SAL) FOR DEPTNO IN (10 AS D, 20 AS D))"
+ },
+ {
+  "id": "regexp-substr-pos0",
+  "sql": "SELECT REGEXP_SUBSTR('x', 'x', 0) FROM DUAL"
+ },
+ {
+  "id": "regexp-substr-pos-neg",
+  "sql": "SELECT REGEXP_SUBSTR('x', 'x', -1) FROM DUAL"
+ },
+ {
+  "id": "regexp-substr-occ0",
+  "sql": "SELECT REGEXP_SUBSTR('x', 'x', 1, 0) FROM DUAL"
+ },
+ {
+  "id": "regexp-instr-pos0",
+  "sql": "SELECT REGEXP_INSTR('x', 'x', 0) FROM DUAL"
+ },
+ {
+  "id": "regexp-instr-occ0",
+  "sql": "SELECT REGEXP_INSTR('x', 'x', 1, 0) FROM DUAL"
+ },
+ {
+  "id": "regexp-count-pos0",
+  "sql": "SELECT REGEXP_COUNT('x', 'x', 0) FROM DUAL"
+ },
+ {
+  "id": "regexp-replace-pos0",
+  "sql": "SELECT REGEXP_REPLACE('x', 'x', 'y', 0) FROM DUAL"
+ },
+ {
+  "id": "regexp-replace-occ-neg",
+  "sql": "SELECT REGEXP_REPLACE('x', 'x', 'y', 1, -1) FROM DUAL"
+ },
+ {
+  "id": "regexp-replace-occ0-ok",
+  "sql": "SELECT REGEXP_REPLACE('aXbX', 'X', '-', 1, 0) FROM DUAL"
+ },
+ {
+  "id": "to-number-msg-x",
+  "sql": "SELECT TO_NUMBER('1x2') FROM DUAL"
+ },
+ {
+  "id": "to-number-msg-dot",
+  "sql": "SELECT TO_NUMBER('12.3.4') FROM DUAL"
+ },
+ {
+  "id": "to-number-msg-space",
+  "sql": "SELECT TO_NUMBER('1 2') FROM DUAL"
+ },
+ {
+  "id": "to-number-msg-minus",
+  "sql": "SELECT TO_NUMBER('-') FROM DUAL"
+ },
+ {
+  "id": "to-number-msg-e",
+  "sql": "SELECT TO_NUMBER('1e') FROM DUAL"
+ },
+ {
+  "id": "to-number-msg-plus",
+  "sql": "SELECT 'ab' + 1 FROM DUAL"
+ },
+ {
+  "id": "dml-coerce-neg-round",
+  "sql": "CREATE TABLE T_N (A NUMBER(4,-2), B NUMBER(2,3), C NUMBER(3,2), D NUMBER(1));\nINSERT INTO T_N (A, C, D) VALUES (-1350, -1.005, -2.5);\nINSERT INTO T_N (A, C, D) VALUES (1350, 1.005, 2.5);\nINSERT INTO T_N (B) VALUES (-0.0995);\nINSERT INTO T_N (B) VALUES (-0.0994);\nINSERT INTO T_N (D) VALUES (-9.5);\nUPDATE T_N SET A = A - 50 WHERE A = -1400;\nSELECT A, B, C, D FROM T_N ORDER BY A, B;\nDROP TABLE T_N PURGE",
+  "script": [
+   "CREATE TABLE T_N (A NUMBER(4,-2), B NUMBER(2,3), C NUMBER(3,2), D NUMBER(1))",
+   "INSERT INTO T_N (A, C, D) VALUES (-1350, -1.005, -2.5)",
+   "INSERT INTO T_N (A, C, D) VALUES (1350, 1.005, 2.5)",
+   "INSERT INTO T_N (B) VALUES (-0.0995)",
+   "INSERT INTO T_N (B) VALUES (-0.0994)",
+   "INSERT INTO T_N (D) VALUES (-9.5)",
+   "UPDATE T_N SET A = A - 50 WHERE A = -1400",
+   "SELECT A, B, C, D FROM T_N ORDER BY A, B",
+   "DROP TABLE T_N PURGE"
+  ]
+ },
+ {
+  "id": "regexp-arg-fraction",
+  "sql": "SELECT REGEXP_INSTR('abcb', 'b', 1, 1.5), REGEXP_INSTR('abcb', 'b', 1, 2.7), REGEXP_REPLACE('abcb', 'b', 'X', 1, 1.5), REGEXP_REPLACE('abcb', 'b', 'X', 1, 0.5) FROM DUAL"
+ },
+ {
+  "id": "regexp-arg-fraction-err",
+  "sql": "SELECT REGEXP_SUBSTR('abcb', 'b', 0.5) FROM DUAL"
+ },
+ {
+  "id": "regexp-arg-null",
+  "sql": "SELECT REGEXP_SUBSTR('abcb', 'b', NULL), REGEXP_INSTR('abcb', 'b', 1, NULL), REGEXP_COUNT('abcb', 'b', NULL), REGEXP_REPLACE('abcb', 'b', 'X', NULL) FROM DUAL"
+ },
+ {
+  "id": "regexp-arg-neg-fraction",
+  "sql": "SELECT REGEXP_REPLACE('abc', 'b', 'X', 1, -0.5) FROM DUAL"
+ },
+ {
+  "id": "regexp-arg-neg-fraction-pos",
+  "sql": "SELECT REGEXP_SUBSTR('abc', 'b', -0.5) FROM DUAL"
+ },
+ {
+  "id": "regexp-null-src-pos0",
+  "sql": "SELECT REGEXP_SUBSTR(NULL, 'b', 0) FROM DUAL"
+ },
+ {
   "id": "dml-update-pk-child",
   "sql": "UPDATE DEPT SET DEPTNO = 11 WHERE DEPTNO = 10;\nUPDATE DEPT SET DEPTNO = 41 WHERE DEPTNO = 40;\nSELECT DEPTNO FROM DEPT ORDER BY 1;\nROLLBACK",
   "script": [

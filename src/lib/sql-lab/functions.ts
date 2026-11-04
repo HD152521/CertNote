@@ -1,7 +1,7 @@
 // 단일행 함수(문자·숫자·날짜·변환·NULL). 집계 함수는 exec.ts 에 있다.
 import { columnFromSpec } from './data';
 import { formatDate, formatNumber, parseDate } from './formats';
-import { DAY_MS, NotSupported, OraError, SqlDate, addDays, compare, dateOf, toNumber, toText, type Value } from './values';
+import { DAY_MS, NotSupported, OraError, SqlDate, addDays, compare, dateOf, numberToText, toNumber, toText, type Value } from './values';
 
 type Fn = (args: Value[]) => Value;
 
@@ -26,7 +26,7 @@ function asDate(v: Value): SqlDate {
   return parseDate(v as string, undefined);
 }
 
-function roundTo(n: number, digits: number, mode: 'round' | 'trunc'): number {
+export function roundTo(n: number, digits: number, mode: 'round' | 'trunc'): number {
   const f = 10 ** digits;
   const scaled = n * f;
   // 이진 부동소수 오차(1.005*100=100.49999…) 를 지우고 자른다.
@@ -126,6 +126,19 @@ function nthMatch(s: string, re: RegExp, pos: number, occ: number): RegExpExecAr
   return null;
 }
 
+/** 정규식 함수의 위치·횟수 인자: 범위를 벗어나면 ORA-01428 (위치는 1 이상, REGEXP_REPLACE 의 횟수만 0 도 된다) */
+// 소수는 버린다(1.5 → 1). 인자를 NULL 로 주면 null(함수 결과도 NULL), 생략하면 기본값.
+function rangeArg(a: Value[], i: number, fallback: number, min = 1): number | null {
+  if (a.length <= i) return fallback;
+  if (a[i] === null) return null;
+  const raw = num(a[i]);
+  // 음수는 원래 값으로 오류(-0.5 → "Argument -.5"), 0 이상은 버린 값으로 검사(0.5 → "Argument 0")
+  if (raw < 0 && min >= 0) throw new OraError('ORA-01428', `Argument ${numberToText(raw)} is out of range.`);
+  const n = Math.trunc(raw);
+  if (n < min) throw new OraError('ORA-01428', `Argument ${numberToText(n)} is out of range.`);
+  return n;
+}
+
 export const FUNCTIONS: Record<string, Fn> = {
   CAST: (a) => {
     const [v, specV] = a;
@@ -137,15 +150,17 @@ export const FUNCTIONS: Record<string, Fn> = {
     if (c.type === 'NUMBER') {
       const n = toNumber(v)!;
       if (c.precision === undefined) return n;
-      const r = roundTo(n, c.scale ?? 0, 'round');
-      const intDigits = Math.abs(r) >= 1 ? Math.floor(Math.log10(Math.abs(Math.trunc(r)))) + 1 : 0;
-      if (intDigits > c.precision - (c.scale ?? 0)) throw new OraError('ORA-01438', `value ${n} greater than specified precision (${c.precision}, ${c.scale ?? 0}) for column`);
+      const s = c.scale ?? 0;
+      const r = roundTo(n, s, 'round');
+      // NUMBER(p,s) 에 들어가는 값은 |값| < 10^(p-s). s 가 p 보다 크거나(0.01 → NUMBER(2,3)) 음수여도(1234.5 → NUMBER(6,-2) = 1200) 같은 규칙이다.
+      if (Math.abs(r) >= 10 ** (c.precision - s)) throw new OraError('ORA-01438', `value ${numberToText(n)} greater than specified precision (${c.precision}, ${s}) for column`);
       return r;
     }
     if (c.type === 'DATE') return v instanceof SqlDate ? v : parseDate(str(v), undefined);
     let s = str(v);
     // 문자열을 줄이면 Oracle 은 잘라서 돌려준다. 숫자·날짜를 짧은 문자로 바꾸면 ORA-25137.
     if (c.length !== undefined && [...s].length > c.length) {
+      if (v instanceof SqlDate && !c.fixed) throw new OraError('ORA-01801', 'date format is too long for internal buffer');
       if (typeof v !== 'string') throw new OraError('ORA-25137', 'Data value out of range');
       s = [...s].slice(0, c.length).join('');
     }
@@ -154,26 +169,31 @@ export const FUNCTIONS: Record<string, Fn> = {
   },
   REGEXP_SUBSTR: (a) => {
     argCount('REGEXP_SUBSTR', a, 2, 6);
-    if (a[0] === null || a[1] === null) return null;
-    const m = nthMatch(str(a[0]), oracleRegex(str(a[1]), a[4] === undefined || a[4] === null ? null : str(a[4])), a.length > 2 && a[2] !== null ? num(a[2]) : 1, a.length > 3 && a[3] !== null ? num(a[3]) : 1);
+    const pos = rangeArg(a, 2, 1);
+    const occ = rangeArg(a, 3, 1);
+    if (a[0] === null || a[1] === null || pos === null || occ === null) return null;
+    const m = nthMatch(str(a[0]), oracleRegex(str(a[1]), a[4] === undefined || a[4] === null ? null : str(a[4])), pos, occ);
     if (!m) return null;
     const sub = a.length > 5 && a[5] !== null ? num(a[5]) : 0;
     return textOrNull(m[sub] ?? '');
   },
   REGEXP_INSTR: (a) => {
     argCount('REGEXP_INSTR', a, 2, 7);
-    if (a[0] === null || a[1] === null) return null;
-    const m = nthMatch(str(a[0]), oracleRegex(str(a[1]), a[5] === undefined || a[5] === null ? null : str(a[5])), a.length > 2 && a[2] !== null ? num(a[2]) : 1, a.length > 3 && a[3] !== null ? num(a[3]) : 1);
+    const pos = rangeArg(a, 2, 1);
+    const occ = rangeArg(a, 3, 1);
+    if (a[0] === null || a[1] === null || pos === null || occ === null) return null;
+    const m = nthMatch(str(a[0]), oracleRegex(str(a[1]), a[5] === undefined || a[5] === null ? null : str(a[5])), pos, occ);
     if (!m) return 0;
     const after = a.length > 4 && a[4] !== null && num(a[4]) === 1;
     return m.index + 1 + (after ? m[0].length : 0);
   },
   REGEXP_COUNT: (a) => {
     argCount('REGEXP_COUNT', a, 2, 4);
-    if (a[0] === null || a[1] === null) return null;
+    const pos = rangeArg(a, 2, 1);
+    if (a[0] === null || a[1] === null || pos === null) return null;
     const s = str(a[0]);
     const re = oracleRegex(str(a[1]), a[3] === undefined || a[3] === null ? null : str(a[3]), true);
-    re.lastIndex = a.length > 2 && a[2] !== null ? num(a[2]) - 1 : 0;
+    re.lastIndex = pos - 1;
     let n = 0;
     let m: RegExpExecArray | null;
     while ((m = re.exec(s))) {
@@ -184,12 +204,12 @@ export const FUNCTIONS: Record<string, Fn> = {
   },
   REGEXP_REPLACE: (a) => {
     argCount('REGEXP_REPLACE', a, 2, 6);
-    if (a[0] === null) return null;
+    const pos = rangeArg(a, 3, 1);
+    const occ = rangeArg(a, 4, 0, 0);
+    if (a[0] === null || pos === null || occ === null) return null;
     if (a[1] === null) return a[0];
     const s = str(a[0]);
     const repl = a.length > 2 && a[2] !== null ? str(a[2]) : '';
-    const pos = a.length > 3 && a[3] !== null ? num(a[3]) : 1;
-    const occ = a.length > 4 && a[4] !== null ? num(a[4]) : 0;
     const re = oracleRegex(str(a[1]), a[5] === undefined || a[5] === null ? null : str(a[5]), true);
     const head = s.slice(0, pos - 1);
     let n = 0;
