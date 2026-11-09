@@ -6,12 +6,12 @@ import { LAB_CATALOG, LAB_GROUPS } from '@/lib/labCatalog';
 import { SITE_URL } from '@/lib/site';
 import { buildBreadcrumbLd, buildItemListLd } from '@/lib/structuredData';
 
-// "실습" 카테고리 목록. 브라우저에서 도는 터미널 연습장(리눅스 셸·AWS CLI)을 모아 둔다.
+// "실습" 카테고리 목록. 브라우저에서 도는 연습장(SQL·리눅스 셸·AWS CLI)을 모아 둔다.
 export const dynamic = 'error'; // 정적 생성 강제
 
-const TITLE = '실습 — 리눅스 셸·AWS CLI 를 브라우저에서 직접 쳐 보기';
+const TITLE = '실습 — SQL(SQLD)·리눅스 셸·AWS CLI 를 설치 없이 브라우저에서';
 const DESCRIPTION =
-  '리눅스마스터 권한·링크·사용자 관리와 AWS 리전·S3·IAM 을 설치 없이 브라우저 터미널에서 실습합니다. 명령을 치면 가상 파일 시스템과 계정이 실제로 바뀌고, 단계마다 시험 포인트를 정리해 줍니다.';
+  'SQLD 문법(Oracle) SQL 실습장과 리눅스마스터·AWS CLI 터미널을 설치 없이 브라우저에서 직접 실행합니다. 결과와 오류 문구는 실제 Oracle·Rocky Linux 출력과 맞췄습니다.';
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -51,7 +51,7 @@ export default function LabHubPage() {
       {LAB_GROUPS.map((group) => (
         <section key={group.kind} aria-labelledby={`lab-${group.kind}`} className="space-y-4">
           <div className="space-y-1.5">
-            <h2 id={`lab-${group.kind}`} className="text-xl font-semibold tracking-tight">
+            <h2 id={`lab-${group.kind}`} className="scroll-mt-20 text-xl font-semibold tracking-tight">
               {group.title}
             </h2>
             <p className="text-sm leading-relaxed text-fg-muted">{group.description}</p>

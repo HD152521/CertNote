@@ -59,7 +59,8 @@ export async function proxy(req: NextRequest) {
 
   if (!authorized) {
     const loginUrl = new URL('/login', req.url);
-    loginUrl.searchParams.set('next', path);
+    // 쿼리까지 넘긴다(/exam?cert=sqld 처럼 허브에서 고른 자격증이 로그인 뒤에도 남게). 검증은 safeNext 가 한다.
+    loginUrl.searchParams.set('next', path + req.nextUrl.search);
     return NextResponse.redirect(loginUrl);
   }
 
