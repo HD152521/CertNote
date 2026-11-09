@@ -22,7 +22,8 @@
     "test:e2e:only": "playwright test",
     "test:e2e:seo": "npm run build && playwright test --config=playwright.seo.config.ts",
     "test:e2e:seo:only": "playwright test --config=playwright.seo.config.ts",
-    "verify:seo": "node scripts/verify-seo.mjs"
+    "verify:seo": "node scripts/verify-seo.mjs",
+    "indexnow": "node scripts/indexnow.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.105.0",
