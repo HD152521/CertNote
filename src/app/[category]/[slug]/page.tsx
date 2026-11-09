@@ -170,7 +170,7 @@ export default async function CertIndexPage({ params }: PageProps) {
           )}
           {/* 모의고사(/exam, 로그인 필요)와 실습장은 허브에서 닿는 링크가 없었다. 모의고사·실습이 한국어 전용이라 ko 에서만. */}
           {lang === 'ko' && mockExamCount > 0 && (
-            <Link href={`/exam?cert=${slug}`}
+            <Link href={`/exam?cert=${slug}`} prefetch={false}
               className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium transition hover:border-border-strong">
               모의고사 {mockExamCount}문항 풀기 <ArrowRight className="h-4 w-4" />
             </Link>

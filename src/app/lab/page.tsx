@@ -51,7 +51,7 @@ export default function LabHubPage() {
       {LAB_GROUPS.map((group) => (
         <section key={group.kind} aria-labelledby={`lab-${group.kind}`} className="space-y-4">
           <div className="space-y-1.5">
-            <h2 id={`lab-${group.kind}`} className="text-xl font-semibold tracking-tight">
+            <h2 id={`lab-${group.kind}`} className="scroll-mt-20 text-xl font-semibold tracking-tight">
               {group.title}
             </h2>
             <p className="text-sm leading-relaxed text-fg-muted">{group.description}</p>
