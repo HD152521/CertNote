@@ -44,6 +44,7 @@ async function main() {
         method: 'POST',
         headers: { 'content-type': 'application/json; charset=utf-8' },
         body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(30_000),
       });
       // 200(받음)·202(키 확인 대기)는 성공이다. 그 밖은 본문을 보여 준다.
       const ok = r.status === 200 || r.status === 202;
