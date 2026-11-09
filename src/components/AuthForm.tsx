@@ -37,6 +37,7 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
   const lang = useLanguage();
   const router = useRouter();
   const params = useSearchParams();
+  const switchNext = params.get('next') ? safeNext(params.get('next'), '') : '';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -277,7 +278,8 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
       )}
       <p className="text-sm text-fg-muted">
         {t(lang, mode === 'login' ? 'dontHaveAccount' : 'alreadyHaveAccount')}{' '}
-        <Link href={mode === 'login' ? '/signup' : '/login'} className="text-fg underline underline-offset-4">{t(lang, mode === 'login' ? 'signup' : 'login')}</Link>
+        {/* 로그인↔가입을 오가도 돌아갈 곳(?next=)을 잃지 않게 넘긴다. 처음 온 사람은 대개 가입으로 넘어간다. */}
+        <Link href={`${mode === 'login' ? '/signup' : '/login'}${switchNext ? `?next=${encodeURIComponent(switchNext)}` : ''}`} className="text-fg underline underline-offset-4">{t(lang, mode === 'login' ? 'signup' : 'login')}</Link>
       </p>
     </div>
   );

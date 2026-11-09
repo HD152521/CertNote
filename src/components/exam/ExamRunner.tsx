@@ -57,12 +57,12 @@ function fmtTime(sec: number): string {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-export function ExamRunner({ certs }: { certs: CertOption[] }) {
+export function ExamRunner({ certs, initialCert = '' }: { certs: CertOption[]; initialCert?: string }) {
   const lang = useLanguage();
   const [phase, setPhase] = useState<Phase>('setup');
 
   // setup
-  const [certSlug, setCertSlug] = useState('');
+  const [certSlug, setCertSlug] = useState(initialCert);
   const [count, setCount] = useState(20);
   const [useTimer, setUseTimer] = useState(true);
   const [minutes, setMinutes] = useState(20);

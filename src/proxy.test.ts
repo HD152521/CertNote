@@ -51,4 +51,10 @@ describe('proxy — 홈(/) 분기', () => {
 
     expect(res.headers.get('location')).toBe(`${ORIGIN}/login?next=%2Fdashboard`);
   });
+
+  test('로그인으로 보낼 때 쿼리도 next 에 담는다(허브에서 고른 모의고사 자격증 유지)', async () => {
+    const res = await proxy(request('/exam?cert=sqld'));
+
+    expect(res.headers.get('location')).toBe(`${ORIGIN}/login?next=%2Fexam%3Fcert%3Dsqld`);
+  });
 });

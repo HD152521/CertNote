@@ -1,4 +1,4 @@
-import { DEFAULT_CATEGORY, EN_CATEGORY, SUPPORTED_CATEGORIES, isSupportedCategory, langOfCategory, sectionLabel, sectionOfCategory } from '@/lib/category';
+import { DEFAULT_CATEGORY, EN_CATEGORY, SUPPORTED_CATEGORIES, isSupportedCategory, langOfCategory, sectionLabel, sectionOfCategory, type Section } from '@/lib/category';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -20,6 +20,12 @@ import { JsonLd } from '@/components/JsonLd';
 import { buildCourseLd, buildBreadcrumbLd, buildFaqPageLd } from '@/lib/structuredData';
 import { AdSlot } from '@/components/ads/AdSlot';
 import { resolveAdPlacement } from '@/lib/ads/adPlacements';
+
+// 허브의 실습 바로가기: 섹션 → /lab 의 그룹 앵커(src/app/lab/page.tsx 의 id="lab-<kind>")와 버튼 문구.
+const LAB_KIND_OF_SECTION: Record<Section, string> = { aws: 'aws', linux: 'linux', data: 'sql', kubernetes: 'linux', terraform: 'aws' };
+const LAB_LABEL_OF_SECTION: Record<Section, string> = {
+  aws: 'AWS CLI 실습', linux: '리눅스 셸 실습', data: 'SQL 실습장 (설치 없이)', kubernetes: '실습', terraform: '실습',
+};
 
 interface PageProps { params: Promise<{ category: string; slug: string }>; }
 
@@ -100,6 +106,7 @@ export default async function CertIndexPage({ params }: PageProps) {
     byWeek.get(d.week)!.push(d);
   }
   const firstDay = days[0];
+  const mockExamCount = getMockExamQuestionCount(slug);
   const examInfo = getExamInfo(slug);
   // 다음 시험 버전 안내는 첫 응시일 전까지만 보인다. 이 페이지는 정적 생성이라 "오늘"은 빌드(배포) 시점의
   // 한국 날짜다 — 첫 응시일이 지나도 재배포 전까지는 남으므로, 그 전에 데이터에서 지우는 것이 정석이다.
@@ -154,11 +161,29 @@ export default async function CertIndexPage({ params }: PageProps) {
             <Link href={certHref(meta)} className="underline underline-offset-4 hover:text-fg">view the Korean track</Link>.
           </p>
         )}
-        {firstDay && (
-          <Link href={firstDay.href}
-            className={cn('inline-flex items-center gap-2 rounded-md border border-border bg-bg-subtle', 'px-3 py-1.5 text-sm font-medium transition hover:border-border-strong')}>
-            {lang === 'en' ? 'Start with Week 1' : 'Week 1부터 시작'} <ArrowRight className="h-4 w-4" />
-          </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          {firstDay && (
+            <Link href={firstDay.href}
+              className={cn('inline-flex items-center gap-2 rounded-md border border-border bg-bg-subtle', 'px-3 py-1.5 text-sm font-medium transition hover:border-border-strong')}>
+              {lang === 'en' ? 'Start with Week 1' : 'Week 1부터 시작'} <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
+          {/* 모의고사(/exam, 로그인 필요)와 실습장은 허브에서 닿는 링크가 없었다. 모의고사·실습이 한국어 전용이라 ko 에서만. */}
+          {lang === 'ko' && mockExamCount > 0 && (
+            <Link href={`/exam?cert=${slug}`}
+              className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium transition hover:border-border-strong">
+              모의고사 {mockExamCount}문항 풀기 <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
+          {lang === 'ko' && (
+            <Link href={`/lab#lab-${LAB_KIND_OF_SECTION[section]}`}
+              className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium transition hover:border-border-strong">
+              {LAB_LABEL_OF_SECTION[section]} <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
+        </div>
+        {lang === 'ko' && mockExamCount > 0 && (
+          <p className="text-xs text-fg-faint">노트·실습은 로그인 없이 볼 수 있고, 모의고사와 오답 복습은 무료 가입 뒤에 쓸 수 있어요.</p>
         )}
         {/* 이 브라우저에서 읽던 기록이 있을 때만 보인다(한국어 화면 전용 문구). */}
         {lang === 'ko' && <ResumeLink slug={slug} className="max-w-md" />}
@@ -190,7 +215,7 @@ export default async function CertIndexPage({ params }: PageProps) {
             items={buildTrackContents({
               dayCount: meta.dayCount,
               weeks: meta.weeks,
-              mockExamCount: getMockExamQuestionCount(slug),
+              mockExamCount,
             })}
             className="rounded-lg border border-border bg-bg-elevated p-4 sm:p-5"
           />
