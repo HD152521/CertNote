@@ -79,7 +79,7 @@
 
 출력을 어떻게 맞췄나
 - 셸: rockylinux:8.8 컨테이너(리눅스마스터 1급 실기 환경과 같은 버전)에서 같은 명령을 실행해 stdout·stderr·종료 코드를 저장하고, 시뮬레이터 출력과 비교합니다. 26개 시나리오 423단계입니다. 시각·inode 번호처럼 실행할 때마다 바뀌는 값만 양쪽 다 자리표시로 바꿔 비교합니다.
-- SQL: Oracle Database 23ai Free 컨테이너에서 찍은 결과와 957개 사례(여러 문장짜리 60개 포함)를 대조합니다. 23ai 에서만 달라진 동작 3개(FROM 없는 SELECT, HAVING 에서 SELECT 별칭, SELECT 목록의 REGEXP_LIKE)는 일부러 시험 기준 동작을 따르고, 나머지 954개는 결과·오류 번호·오류 문구가 같아야 테스트가 통과합니다.
+- SQL: Oracle Database 23ai Free 컨테이너에서 찍은 결과와 957개 사례(여러 문장짜리 60개 포함)를 대조합니다. 23ai 에서만 달라진 동작 3개(FROM 없는 SELECT, HAVING 에서 SELECT 별칭, SELECT 목록의 REGEXP_LIKE)는 일부러 시험 기준 동작을 따르고, 나머지 954개는 결과·오류 번호·오류 문구가 같아야 테스트가 통과합니다(동점 순서가 정해지지 않는 3건은 행 집합·행 수만 비교).
 - 골든 없이 명령이나 문법을 추가하지 않는 것을 규칙으로 두고 있습니다. 추측으로 쓴 오류 문구가 틀리면 학습용으로는 오히려 해가 된다고 봤습니다.
 
 일부러 실제와 다르게 둔 것 / 아직 다른 것
@@ -164,7 +164,7 @@ SELECT SUM(SAL + COMM), SUM(SAL) + SUM(COMM) FROM EMP;
 | --- | --- |
 | 7800 | 31225 |
 
-왼쪽은 행마다 `SAL + COMM` 을 먼저 계산합니다. COMM 이 NULL 인 10명은 그 합이 NULL 이 되고, SUM 은 NULL 을 빼고 더하니 COMM 이 있는 4명 몫만 남습니다. 오른쪽은 열마다 따로 더한 뒤(NULL 은 빼고) 합칩니다. 괄호 위치 하나로 4배가 차이 납니다.
+왼쪽은 행마다 `SAL + COMM` 을 먼저 계산합니다. COMM 이 NULL 인 10명은 그 합이 NULL 이 되고, SUM 은 NULL 을 빼고 더하니 COMM 이 있는 4명 몫만 남습니다. 오른쪽은 열마다 따로 더한 뒤(NULL 은 빼고) 합칩니다. 더하는 순서 하나로 4배가 차이 납니다.
 
 ## 4. `(+)` 를 한쪽 조건에만 붙이면 외부 조인이 풀린다
 
@@ -304,7 +304,7 @@ SELECT DEPTNO, COUNT(*) AS CNT FROM EMP GROUP BY DEPTNO HAVING CNT > 3 ORDER BY 
 | 20 | 5 |
 | 30 | 6 |
 
-23ai 는 FROM 없는 SELECT 도 받아 줍니다(시험 기준은 ORA-00923). 최신 Oracle 이나 온라인 실행기로 연습하다가 "되네?" 하고 넘어가면 시험에서 틀릴 수 있습니다. SQLD 문제는 이전 버전 동작(오류)을 기준으로 냅니다. 시험 대비로는 `HAVING COUNT(*) > 3` 처럼 식을 그대로 적는 습관이 안전합니다.
+23ai 는 FROM 없는 SELECT 도 받아 줍니다(시험 기준은 ORA-00923). 최신 Oracle 이나 온라인 실행기로 연습하다가 "되네?" 하고 넘어가면 시험에서 틀릴 수 있습니다. 시험 기준으로는 오류로 봅니다. 시험 대비로는 `HAVING COUNT(*) > 3` 처럼 식을 그대로 적는 습관이 안전합니다.
 
 ---
 
@@ -348,7 +348,7 @@ SELECT DEPTNO, COUNT(*) AS CNT FROM EMP GROUP BY DEPTNO HAVING CNT > 3 ORDER BY 
 | 6 | `note-w5d1-6`, `note-w8d5-2`(30번 부서 ALL 4 · ANY 12) | |
 | 7 | `note-w3d2-13`, `note-w3d2-12` | |
 | 8 | `note-w4d2-13`, `note-w5d2-13`, `note-w4d2-15`(23ai 결과, `VERSION_DIFFERENCES`), `err-923`(FROM 없는 SELECT) | 엔진은 HAVING 별칭에 ORA-00904 + "23ai 는 받아 주지만 시험 기준으로는 오류" 안내 |
-| 덧붙임 | `wh-between-rev`, `cs-decode-nodefault` | `WHERE COMM = NULL` 0행은 엔진으로만 확인 |
+| 덧붙임 | `wh-between-rev`, `cs-decode-nodefault` | `WHERE COMM = NULL` 0행은 `wh-eqnull` 로 확인 |
 
 "SQL Server 는 NULL 이 가장 작다"(5번)는 레포에서 확인한 것이 아니라 일반 지식이다. 걸리면 그 문장을 빼도 글이 성립한다.
 
