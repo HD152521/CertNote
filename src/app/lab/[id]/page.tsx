@@ -13,6 +13,8 @@ import { SHELL_DRILLS } from '@/lib/shell-lab/drills';
 import { SHELL_LABS } from '@/lib/shell-lab/labs';
 import { SQL_TASK_SETS } from '@/lib/sql-lab/tasks';
 import { buildBreadcrumbLd } from '@/lib/structuredData';
+import { DEFAULT_CATEGORY } from '@/lib/category';
+import { certHref, listCerts } from '@/lib/content';
 
 // 실습 한 개. 소개 → 단계 목록 → 연습장 → 관련 노트.
 // 본문을 .article 로 감싸 연습장이 노트 안에 들어갔을 때와 같은 CSS 환경에서 보이게 한다.
@@ -47,6 +49,9 @@ export default async function LabPage({ params }: { params: Promise<{ id: string
         ? (SQL_TASK_SETS.find((s) => s.id === lab.id)?.items.map((i) => i.title) ?? [])
         : ((lab.kind === 'linux' ? SHELL_LABS : LABS).find((l) => l.id === lab.id)?.steps.map((s) => s.title) ?? []);
   const isDrill = lab.kind === 'practical';
+  // 관련 노트가 속한 자격증의 허브. 실습 페이지는 day 노트(대부분 2주차 이후)로만 이어지고 허브로 가는 링크가 없었다.
+  const relatedSlugs = new Set(lab.related.map((r) => r.href.split('/')[2]));
+  const relatedCerts = (await listCerts(DEFAULT_CATEGORY)).filter((c) => relatedSlugs.has(c.slug));
   const isSql = lab.kind === 'sql';
   const breadcrumbLd = buildBreadcrumbLd([
     { name: '홈', url: '/' },
@@ -110,6 +115,13 @@ export default async function LabPage({ params }: { params: Promise<{ id: string
                 <li key={r.href}>
                   <Link href={r.href} className="inline-flex items-center gap-1.5">
                     <BookOpen className="h-3.5 w-3.5 shrink-0" aria-hidden /> {r.label}
+                  </Link>
+                </li>
+              ))}
+              {relatedCerts.map((c) => (
+                <li key={c.slug}>
+                  <Link href={certHref(c)} className="inline-flex items-center gap-1.5">
+                    <BookOpen className="h-3.5 w-3.5 shrink-0" aria-hidden /> {c.code} 전체 커리큘럼 ({c.weeks}주)
                   </Link>
                 </li>
               ))}

@@ -54,7 +54,10 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
     activeSlug ? { [activeSlug]: true } : {},
   );
 
-  const certBase = (meta: NavCertMeta): string => (isEn ? EN_CATEGORY : meta.section ?? 'aws');
+  // 사용자가 펼치거나 접은 주차(`slug:주차`). 값이 없으면 지금 보는 주차만 펼친 상태다.
+  const [openWeeks, setOpenWeeks] = useState<Record<string, boolean>>({});
+
+  const certBase =(meta: NavCertMeta): string => (isEn ? EN_CATEGORY : meta.section ?? 'aws');
 
   function renderCert({ meta, weeks }: CertTree) {
     const isOpen = openSlugs[meta.slug] ?? false;
@@ -85,12 +88,29 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
         </div>
         {isOpen && (
           <ul className="mt-1 mb-2 ml-2 space-y-0.5 border-l border-border pl-2">
-            {weeks.map(([w, ws]) => (
+            {weeks.map(([w, ws]) => {
+              const weekKey = `${meta.slug}:${w}`;
+              const isCurrentWeek = pathname.includes(`/${base}/${meta.slug}/week${w}/`);
+              const isWeekOpen = openWeeks[weekKey] ?? isCurrentWeek;
+              // 접힌 주차의 day 링크는 펼칠 때 그린다. 예전엔 접힌 주차도 HTML 에 링크가 다 들어 있어
+              // day 페이지마다 같은 자격증의 day 전부(55~80개)로 똑같이 링크했고, 1주차·허브가 따로 두드러지지 않았다.
+              // 1주차(무료 진입 페이지)와 지금 보는 주차만 처음부터 싣는다. 다른 주차는 허브의 주차 목록이 전부 링크한다.
+              const rendersDays = w === 1 || isCurrentWeek || isWeekOpen;
+              return (
               <li key={w}>
-                <details open={pathname.includes(`/${base}/${meta.slug}/week${w}/`)}>
+                <details
+                  open={isWeekOpen}
+                  onToggle={(e) => {
+                    const nowOpen = e.currentTarget.open;
+                    // 브라우저가 open 속성을 반영할 때도 toggle 이 온다. 지금 상태와 같으면 기록하지 않아야
+                    // 다른 주차로 이동했을 때 기본값(지금 보는 주차만 펼침)이 그대로 적용된다.
+                    setOpenWeeks((p) => ((p[weekKey] ?? isCurrentWeek) === nowOpen ? p : { ...p, [weekKey]: nowOpen }));
+                  }}
+                >
                   <summary className="cursor-pointer list-none rounded px-2 py-1 text-xs text-fg-muted hover:bg-bg-subtle hover:text-fg">
                     Week {w}
                   </summary>
+                  {rendersDays && (
                   <ul className="mt-0.5 ml-2 space-y-0.5 border-l border-border pl-2">
                     {ws.map(([day, title]) => {
                       const href = linkDayHref(dayBase, meta.slug, w, day);
@@ -113,9 +133,11 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
                       );
                     })}
                   </ul>
+                  )}
                 </details>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </div>
