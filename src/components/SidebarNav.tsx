@@ -57,7 +57,7 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
   // 사용자가 펼치거나 접은 주차(`slug:주차`). 값이 없으면 지금 보는 주차만 펼친 상태다.
   const [openWeeks, setOpenWeeks] = useState<Record<string, boolean>>({});
 
-  const certBase =(meta: NavCertMeta): string => (isEn ? EN_CATEGORY : meta.section ?? 'aws');
+  const certBase = (meta: NavCertMeta): string => (isEn ? EN_CATEGORY : meta.section ?? 'aws');
 
   function renderCert({ meta, weeks }: CertTree) {
     const isOpen = openSlugs[meta.slug] ?? false;
