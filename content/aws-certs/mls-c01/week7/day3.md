@@ -1,4 +1,4 @@
-# Day 3 - RNNs and Sequences: From LSTM to Transformer
+# Day 3 - RNN과 시퀀스 모델: LSTM에서 Transformer까지
 
 ## 📌 핵심 정리
 

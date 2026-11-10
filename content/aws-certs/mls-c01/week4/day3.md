@@ -1,4 +1,4 @@
-# Day 3 - Data Visualization: Distribution, Correlation, QuickSight, Insights
+# Day 3 - 데이터 시각화: 분포·상관관계·QuickSight·인사이트 도출
 
 ## 📌 핵심 정리
 

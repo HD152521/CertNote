@@ -1,4 +1,4 @@
-# Day 1 - Statistical Foundations: Distribution, Central Tendency, Dispersion, Transformations, Sample and Population
+# Day 1 - 통계 기초: 분포·중심 경향·산포·변환·표본과 모집단
 
 ## 📌 핵심 정리
 

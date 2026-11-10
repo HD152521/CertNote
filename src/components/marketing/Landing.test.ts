@@ -193,3 +193,11 @@ describe('Landing — 정정된 문구', () => {
     expect(text).not.toContain('자동 복습');
   });
 });
+
+describe('Landing — 허브 링크', () => {
+  it('모든 트랙의 허브로 한 번 이상 링크한다(홈에서 닿지 않는 허브가 없다)', () => {
+    const html = renderHtml();
+    const hrefs = new Set([...html.matchAll(/<a\b[^>]*\shref="([^"]+)"/g)].map((m) => m[1]));
+    for (const c of CERTS) expect(hrefs, c.slug).toContain(`/${c.section}/${c.slug}`);
+  });
+});

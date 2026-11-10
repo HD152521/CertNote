@@ -1,4 +1,4 @@
-# Day 4 - Operations & Cost: Cost Optimization, Logging/Audit, Disaster Recovery
+# Day 4 - 운영과 비용: 비용 최적화·로깅과 감사·재해 복구
 
 ## 📌 핵심 정리
 

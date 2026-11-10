@@ -1,4 +1,4 @@
-# Day 5 - Week 6 Comprehensive Review: Algorithm Selection and SageMaker Builtins
+# Day 5 - 6주차 종합 복습: 알고리즘 선택과 SageMaker 내장 알고리즘
 
 ## 📌 핵심 정리
 

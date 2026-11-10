@@ -1,4 +1,4 @@
-# Day 2 - SageMaker Builtin 1: XGBoost, Linear Learner, K-Means, KNN
+# Day 2 - SageMaker 내장 알고리즘 1: XGBoost·Linear Learner·K-Means·KNN
 
 ## 📌 핵심 정리
 

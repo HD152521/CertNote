@@ -1,4 +1,4 @@
-# Day 5 - Week 5 Comprehensive Review: Statistics and Validation Design
+# Day 5 - 5주차 종합 복습: 통계와 검증 설계
 
 ## 📌 핵심 정리
 

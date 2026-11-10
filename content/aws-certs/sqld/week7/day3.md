@@ -1,4 +1,4 @@
-# Day 3 - DML
+# Day 3 - 데이터 조작어 DML (INSERT·UPDATE·DELETE·MERGE)
 
 ## 📌 핵심 정리
 

@@ -208,8 +208,8 @@ const SQL_INFO: Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'>>
     ],
     related: [
       { href: '/data/sqld/week5/day1', label: '서브쿼리 기본' },
-      { href: '/data/sqld/week5/day4', label: 'ROLLUP·CUBE' },
-      { href: '/data/sqld/week5/day5', label: 'GROUPING SETS·GROUPING' },
+      { href: '/data/sqld/week5/day4', label: '그룹 함수 ROLLUP·CUBE' },
+      { href: '/data/sqld/week5/day5', label: 'GROUPING SETS 와 GROUPING 함수' },
     ],
   },
   'sql-window-hierarchy': {
@@ -231,9 +231,9 @@ const SQL_INFO: Record<string, Omit<LabEntry, 'id' | 'kind' | 'code' | 'title'>>
       '실행할 때마다 예제 테이블은 처음 상태로 돌아오므로 마음껏 지우고 바꿔도 됩니다. 외래 키 때문에 지우는 순서가 틀리면 Oracle 과 같은 ORA-02292 가 나고, 그 문장만 취소됩니다.',
     ],
     related: [
-      { href: '/data/sqld/week7/day1', label: 'PIVOT·UNPIVOT' },
-      { href: '/data/sqld/week7/day3', label: 'DML' },
-      { href: '/data/sqld/week7/day4', label: 'TCL' },
+      { href: '/data/sqld/week7/day1', label: 'PIVOT 절과 UNPIVOT 절' },
+      { href: '/data/sqld/week7/day3', label: '데이터 조작어 DML (INSERT·UPDATE·DELETE·MERGE)' },
+      { href: '/data/sqld/week7/day4', label: '트랜잭션 제어어 TCL (COMMIT·ROLLBACK·SAVEPOINT)' },
     ],
   },
 };

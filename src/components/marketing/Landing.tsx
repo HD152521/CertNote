@@ -153,6 +153,7 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
   const popular = POPULAR_SLUGS.map((slug) => certs.find((c) => c.slug === slug)).filter(
     (c): c is CertMeta => Boolean(c),
   );
+  const others = certs.filter((c) => !POPULAR_SLUGS.includes(c.slug));
   const awsCerts = certs.filter((c) => (c.section ?? 'aws') === 'aws');
   const linuxCount = certs.filter((c) => c.section === 'linux').length;
   const dataCount = certs.filter((c) => c.section === 'data').length;
@@ -332,6 +333,23 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
               </Link>
             ))}
           </div>
+          {/* 나머지 트랙의 허브. 홈은 허브 3개에만 링크해 SQLD·리눅스마스터 2급 등은 홈에서 닿는 길이 없었다.
+              허브는 각 트랙의 주차 목록이 있는 색인 대상 페이지라, 홈의 링크를 여기로 모은다. */}
+          {others.length > 0 && (
+            <ul aria-label="전체 자격증 트랙" className="flex flex-wrap gap-2">
+              {others.map((cert) => (
+                <li key={cert.slug}>
+                  <Link
+                    href={certHref(cert)}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-fg-muted transition hover:border-accent hover:text-fg"
+                  >
+                    <span className="font-mono text-xs text-fg-faint">{cert.code}</span>
+                    {cert.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
 

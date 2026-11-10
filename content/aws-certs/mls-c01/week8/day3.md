@@ -1,4 +1,4 @@
-# Day 3 - Overfitting/Underfitting: Diagnosis and Regularization/Data Augmentation
+# Day 3 - 과적합과 과소적합: 진단과 정규화·데이터 증강
 
 ## 📌 핵심 정리
 

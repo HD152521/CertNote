@@ -1,4 +1,4 @@
-# Day 5 - Week 11 Review: Monitoring, MLOps, Security, Operations
+# Day 5 - 11주차 종합 복습: 모니터링·MLOps·보안·운영
 
 ## 📌 핵심 정리
 

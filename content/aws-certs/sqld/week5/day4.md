@@ -1,4 +1,4 @@
-# Day 4 - ROLLUP·CUBE
+# Day 4 - 그룹 함수 ROLLUP·CUBE
 
 ## 📌 핵심 정리
 

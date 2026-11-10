@@ -1,4 +1,4 @@
-# Day 5 - Week 3 Comprehensive Review: Cleaning and Feature Engineering
+# Day 5 - 3주차 종합 복습: 데이터 정제와 특성 공학
 
 ## 📌 핵심 정리
 

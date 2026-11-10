@@ -1,4 +1,4 @@
-# Day 3 - SageMaker Builtin 2: Text, Image, Time Series, Recommendation
+# Day 3 - SageMaker 내장 알고리즘 2: 텍스트·이미지·시계열·추천
 
 ## 📌 핵심 정리
 
