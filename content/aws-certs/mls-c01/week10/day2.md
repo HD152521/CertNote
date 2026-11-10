@@ -1,4 +1,4 @@
-# Day 2 - Real-time Endpoint Operations: Configuration, Auto Scaling, Multi-Model
+# Day 2 - 실시간 엔드포인트 운영: 구성·Auto Scaling·멀티모델 엔드포인트
 
 ## 📌 핵심 정리
 

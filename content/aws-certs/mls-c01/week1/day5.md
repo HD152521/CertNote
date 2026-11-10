@@ -1,4 +1,4 @@
-# Day 5 - Week 1 Integrated Review: ML Overview & Data Engineering 1
+# Day 5 - 1주차 종합 복습: ML 개요와 데이터 엔지니어링 1
 
 ## 📌 핵심 정리
 

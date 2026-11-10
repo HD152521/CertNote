@@ -1,4 +1,4 @@
-# Day 2 - Feature Selection: Filter, Wrapper, Embedded, Importance, Multicollinearity
+# Day 2 - 특성 선택(Feature Selection): 필터·래퍼·임베디드 방식·중요도·다중공선성
 
 ## 📌 핵심 정리
 

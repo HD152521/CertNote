@@ -1,4 +1,4 @@
-# Day 1 - Model Monitoring: SageMaker Model Monitor and Drift Response
+# Day 1 - 모델 모니터링: SageMaker Model Monitor와 드리프트 대응
 
 ## 📌 핵심 정리
 

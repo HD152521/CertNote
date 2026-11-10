@@ -1,4 +1,4 @@
-# Day 5 - Week 4 Comprehensive Review: Dimensionality, Feature Selection, Visualization, Imbalance
+# Day 5 - 4주차 종합 복습: 차원 축소·특성 선택·시각화·불균형
 
 ## 📌 핵심 정리
 

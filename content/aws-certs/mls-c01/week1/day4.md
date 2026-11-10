@@ -1,4 +1,4 @@
-# Day 4 - Data Labeling: SageMaker Ground Truth·Active Learning·Label Quality
+# Day 4 - 데이터 레이블링: SageMaker Ground Truth·액티브 러닝(Active Learning)·레이블 품질
 
 ## 📌 핵심 정리
 

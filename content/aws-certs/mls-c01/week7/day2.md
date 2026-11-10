@@ -1,4 +1,4 @@
-# Day 2 - CNN: Convolutional Neural Networks and Computer Vision
+# Day 2 - CNN(합성곱 신경망)과 컴퓨터 비전
 
 ## 📌 핵심 정리
 

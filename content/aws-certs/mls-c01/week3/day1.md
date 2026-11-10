@@ -1,4 +1,4 @@
-# Day 1 - Data Cleaning: Missing Values, Outlier Detection, Duplicates and Errors
+# Day 1 - 데이터 정제: 결측치·이상치 탐지·중복과 오류 처리
 
 ## 📌 핵심 정리
 

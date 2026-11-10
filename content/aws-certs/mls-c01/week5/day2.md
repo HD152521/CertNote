@@ -1,4 +1,4 @@
-# Day 2 - Correlation and Relationships: Correlation Coefficients, Causation vs. Correlation, Multivariate Relationships
+# Day 2 - 상관관계 분석: 상관계수·상관과 인과의 차이·다변량 관계
 
 ## 📌 핵심 정리
 

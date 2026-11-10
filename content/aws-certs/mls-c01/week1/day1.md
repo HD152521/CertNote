@@ -1,4 +1,4 @@
-# Day 1 - ML Lifecycle (Specialty Perspective)
+# Day 1 - ML 수명주기(ML Lifecycle): 비즈니스 문제 정의부터 A/B 테스트까지
 
 ## 📌 핵심 정리
 

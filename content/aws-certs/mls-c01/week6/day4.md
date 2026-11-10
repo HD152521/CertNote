@@ -1,4 +1,4 @@
-# Day 4 - Unsupervised/Anomaly Detection: RCF, PCA, IP Insights, Topic Models (LDA/NTM)
+# Day 4 - 비지도 학습과 이상 탐지: RCF·PCA·IP Insights·토픽 모델(LDA/NTM)
 
 ## 📌 핵심 정리
 

@@ -1,4 +1,4 @@
-# Day 4 - Synthesis: 4 Domains + End-to-End Scenarios
+# Day 4 - 4개 도메인 통합: 엔드투엔드 시나리오로 종합 정리
 
 ## 📌 핵심 정리
 

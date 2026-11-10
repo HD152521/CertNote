@@ -1,4 +1,4 @@
-# Day 3 - Inference Optimization: Neo, Elastic Inference, Inferentia, Inference Pipelines
+# Day 3 - 추론 최적화: SageMaker Neo·Elastic Inference·Inferentia·추론 파이프라인
 
 ## 📌 핵심 정리
 

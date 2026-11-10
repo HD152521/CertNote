@@ -1,4 +1,4 @@
-# Day 5 - Week 8 Review: Training, Tuning, Generalization
+# Day 5 - 8주차 종합 복습: 학습·튜닝·일반화
 
 ## 📌 핵심 정리
 

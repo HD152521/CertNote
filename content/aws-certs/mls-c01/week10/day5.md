@@ -1,4 +1,4 @@
-# Day 5 - Week 10 Review: ML Implementation & Operations 1 — Deployment & Inference
+# Day 5 - 10주차 종합 복습: ML 구현·운영 1 — 배포와 추론
 
 ## 📌 핵심 정리
 

@@ -1,4 +1,4 @@
-# Day 3 - ML Security: IAM Execution Roles, VPC Isolation, KMS Encryption
+# Day 3 - ML 보안: IAM 실행 역할·VPC 격리·KMS 암호화
 
 ## 📌 핵심 정리
 

@@ -1,4 +1,4 @@
-# Day 1 - PIVOT·UNPIVOT
+# Day 1 - PIVOT 절과 UNPIVOT 절
 
 ## 📌 핵심 정리
 

@@ -1,4 +1,4 @@
-# Day 4 - Validation Design: train/validation/test Split, Cross-Validation, Time Series Split, Stratified Sampling
+# Day 4 - 검증 설계: 학습/검증/테스트 분할·교차 검증·시계열 분할·층화 샘플링
 
 ## 📌 핵심 정리
 

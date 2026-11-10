@@ -1,4 +1,4 @@
-# Day 5 - Week 2 Comprehensive Review: From Transformation to Distributed Training Data Supply
+# Day 5 - 2주차 종합 복습: 데이터 변환부터 분산 학습 데이터 공급까지
 
 ## 📌 핵심 정리
 

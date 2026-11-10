@@ -1,4 +1,4 @@
-# Day 4 - TCL
+# Day 4 - 트랜잭션 제어어 TCL (COMMIT·ROLLBACK·SAVEPOINT)
 
 ## 📌 핵심 정리
 

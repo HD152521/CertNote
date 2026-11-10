@@ -1,4 +1,4 @@
-# Day 3 - Data Leakage: Causes, Detection, Prevention; Time Series Leakage; Target Leakage
+# Day 3 - 데이터 누수(Data Leakage): 원인·탐지·예방과 시계열 누수·타깃 누수
 
 ## 📌 핵심 정리
 

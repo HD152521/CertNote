@@ -1,4 +1,4 @@
-# Day 4 - Handling Class Imbalance: Over/Undersampling, SMOTE, Class Weights, Evaluation
+# Day 4 - 클래스 불균형 처리: 오버샘플링·언더샘플링·SMOTE·클래스 가중치·평가
 
 ## 📌 핵심 정리
 

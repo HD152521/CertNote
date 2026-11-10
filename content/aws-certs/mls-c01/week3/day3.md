@@ -1,4 +1,4 @@
-# Day 3 - Time Series, Text Features, and High-Cardinality Categorical Handling
+# Day 3 - 시계열·텍스트 피처와 고카디널리티 범주형 변수 처리
 
 ## 📌 핵심 정리
 

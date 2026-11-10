@@ -1,4 +1,4 @@
-# Day 3 - ORDER BY
+# Day 3 - ORDER BY 절과 정렬
 
 ## 📌 핵심 정리
 

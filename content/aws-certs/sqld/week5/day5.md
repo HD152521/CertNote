@@ -1,4 +1,4 @@
-# Day 5 - GROUPING SETS·GROUPING
+# Day 5 - GROUPING SETS 와 GROUPING 함수
 
 ## 📌 핵심 정리
 

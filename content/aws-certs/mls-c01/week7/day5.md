@@ -1,4 +1,4 @@
-# Day 5 - Week 7 Synthesis: Deep Learning Summary
+# Day 5 - 7주차 종합 복습: 딥러닝 정리
 
 ## 📌 핵심 정리
 

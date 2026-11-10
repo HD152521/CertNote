@@ -1,4 +1,4 @@
-# Day 2 - MLOps: SageMaker Pipelines, Model Registry, CI/CD
+# Day 2 - MLOps 자동화: SageMaker Pipelines·Model Registry·CI/CD
 
 ## 📌 핵심 정리
 

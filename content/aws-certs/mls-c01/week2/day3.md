@@ -1,4 +1,4 @@
-# Day 3 - Data Augmentation and Synthesis: Addressing Insufficient and Imbalanced Data
+# Day 3 - 데이터 증강과 합성: 부족한 데이터·불균형 데이터 대응
 
 ## 📌 핵심 정리
 

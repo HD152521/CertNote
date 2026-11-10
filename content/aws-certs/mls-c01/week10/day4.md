@@ -1,4 +1,4 @@
-# Day 4 - Deployment Strategies: A/B Testing, Blue/Green, Canary, Shadow, Rollback
+# Day 4 - 모델 배포 전략: A/B 테스트·Blue/Green·카나리·섀도·롤백
 
 ## 📌 핵심 정리
 

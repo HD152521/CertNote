@@ -1,4 +1,4 @@
-# Day 4 - Data Storage and Access Optimization: Pipe vs File Mode, FSx for Lustre, Distributed Training
+# Day 4 - 학습 데이터 저장·접근 최적화: Pipe 모드 vs File 모드·FSx for Lustre·분산 학습
 
 ## 📌 핵심 정리
 
