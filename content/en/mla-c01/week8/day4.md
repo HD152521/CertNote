@@ -63,3 +63,63 @@ D) Only notify a person and do nothing else
 Explanation: A ConditionStep (quality gate) at the end of the pipeline checks the performance threshold and blocks registration if it is below the standard. A is risky, C loses version history, and D lacks automation.
 
 ---
+
+**Question 3.** In a domain where data changes quickly but there are also many periods with no change, which retraining trigger is the most appropriate for minimizing retraining cost while still responding to performance degradation?
+
+A) Unconditionally retrain every hour  
+B) Event-driven retraining triggered by Model Monitor drift/performance violations  
+C) Never retrain the model  
+D) Retrain once a year  
+
+**Answer: B**  
+Explanation: Retraining only when a drift/performance violation event occurs avoids unnecessary retraining cost during periods with no change while responding immediately to degradation. A wastes resources during periods with no change, C leaves drift unaddressed, and D responds too slowly to rapid change.
+
+---
+
+**Question 4.** You want to validate a new model version with real production traffic without affecting users in any way. How can you record the new model's responses without returning them to users?
+
+A) A/B test (50:50 traffic split)  
+B) Shadow testing  
+C) Full blue/green cutover  
+D) Deploy the new model directly to 100% of traffic  
+
+**Answer: B**  
+Explanation: Shadow testing sends a copy of production traffic to the new model to run inference and record results without returning the responses to users, so user impact is zero. In A, the new model's responses actually reach some users, and in C and D the new model serves users directly, which is risky.
+
+---
+
+**Question 5.** In a SageMaker Pipelines retraining pipeline, how can you prevent automatic deployment when the newly trained model's evaluation accuracy is below the threshold?
+
+A) Skip the evaluation step  
+B) Use a ConditionStep to register the model in Model Registry only when accuracy is at or above the threshold  
+C) Always register the new model  
+D) Delete the endpoint  
+
+**Answer: B**  
+Explanation: Using a ConditionStep to register the model only when the evaluation metric passes the threshold (if_steps) and not registering it otherwise automatically prevents performance regression. A removes validation and is risky, C deploys bad models too, and D is an unrelated action that interrupts the service.
+
+---
+
+**Question 6.** In an A/B test, which SageMaker mechanism splits traffic between the existing model and the new model?
+
+A) Two separate endpoints, with the client branching directly  
+B) Multiple production variants on one endpoint, with traffic distributed by weight  
+C) An S3 bucket policy  
+D) IAM role separation  
+
+**Answer: B**  
+Explanation: SageMaker runs A/B tests by placing multiple production variants on one endpoint and splitting the traffic share with `initial_weight`, and the weights can be adjusted in real time to allow gradual rollout. A increases client-side complexity, and C and D are unrelated to traffic distribution.
+
+---
+
+**Question 7.** Which is the most appropriate order of the automation chain from drift detection to the start of retraining?
+
+A) Model Monitor violation → CloudWatch Alarm → EventBridge/Lambda → SageMaker Pipeline execution  
+B) S3 upload → DynamoDB → manual retraining  
+C) X-Ray trace → Clarify → delete endpoint  
+D) CloudWatch Logs → retraining completes with SNS alone  
+
+**Answer: A**  
+Explanation: When Model Monitor sends a violation as a CloudWatch metric, the alarm goes to ALARM, and an EventBridge rule or Lambda triggers a SageMaker Pipeline retraining run; this is the standard automation chain. B is manual, C is an unrelated combination of services, and D cannot complete retraining with SNS notifications alone.
+
+---

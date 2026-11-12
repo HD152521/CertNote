@@ -145,3 +145,15 @@ D) Add a Deny to the IAM policy
 Explanation: S3 object-level access (GetObject and so on) is recorded as CloudTrail data events, which are disabled by default because of cost, so they must be explicitly enabled to be tracked. Versioning is a change history, Macie is detection, and Deny is blocking; none of them creates access audit logs.
 
 ---
+
+**Question 5.** You want to regularly receive third-party market research datasets and integrate them into your analytics pipeline. Which AWS service is the most appropriate?
+
+A) AWS Clean Rooms  
+B) AWS Glue Schema Registry  
+C) AWS Data Exchange  
+D) AWS CloudTrail Lake  
+
+**Answer: C**  
+Explanation: AWS Data Exchange is a data marketplace where you can subscribe to third-party datasets and receive them regularly through S3/API/Redshift. Clean Rooms is for joint analysis without exposing raw data, Schema Registry is for streaming schemas, and CloudTrail Lake is for analyzing audit events.
+
+---

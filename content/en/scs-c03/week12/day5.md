@@ -82,8 +82,98 @@ Core reflex: Text expression → Service instant translation. Speed-maker:
 
 ## 📝 Practice Questions
 
-All 8 practice questions from this final day are preserved in Korean as per requirements:
+**Question 1.** During the exam, you have been unable to decide between two options on one question for 4 minutes. What is the most reasonable action?
 
-**Questions 1 through 8 (Korean, untranslated)**
+A) Keep holding on until the answer comes to you
+B) Mark it with flag for review, move on to the next question, and revisit it in the second pass
+C) Leave it blank
+D) End the exam early
+
+**Answer: B**
+Explanation: The average is about 2.6 minutes per question, so spending too much time on one question breaks your overall pace. The standard strategy is to mark it with flag for review, move on, and focus on it in the second pass. Holding on costs a lot of time, there is no penalty for wrong answers so leaving it blank is a loss, and ending early throws away the chance to review.
+
+---
+
+**Question 2.** The passage says "automatically, without manual intervention, remediate non-compliant resources." What typical pattern does this keyword point to?
+
+A) A person checks the console every day
+B) Config/GuardDuty finding -> EventBridge -> Lambda or SSM Automation automated remediation
+C) An IAM policy review meeting
+D) A weekly Trusted Advisor report
+
+**Answer: B**
+Explanation: "Automatic remediation without human intervention" almost always points to event-driven automation (Config/finding -> EventBridge -> Lambda/SSM Automation). Manual console checks, review meetings, and weekly reports are all manual and after-the-fact, so they do not match the automatic remediation requirement. The reflex of translating keywords into patterns creates speed.
+
+---
+
+**Question 3.** The requirement is "prevent any account in the organization from performing a specific action." When the two options are (A) detect with a Config rule and (B) Deny with an SCP, which is best?
+
+A) Config rule - because it finds violations
+B) SCP Deny - a preventive control that makes the action impossible in the first place (prevent > detect)
+C) Both are the same
+D) Manually attach IAM policies in each account
+
+**Answer: B**
+Explanation: "Prevent from doing" is a preventive control requirement. An SCP Deny makes the action impossible in the first place at the organization/OU level, and in the security hierarchy, prevent comes before detect. Config is only after-the-fact detection, and manually attaching IAM policies causes drift at multi-account scale. Settle last-minute two-way choices with the hierarchy prevent > detect > respond.
+
+---
+
+**Question 4.** Both options work: (A) a script that rotates keys directly with cron on EC2, and (B) Secrets Manager automatic rotation. Which answer is preferred in SCS-C03, and why?
+
+A) The custom script - because it is more flexible
+B) Secrets Manager automatic rotation - managed and automated solutions are preferred over self-implementation (managed > self-managed)
+C) Both are the same
+D) Key rotation is unnecessary
+
+**Answer: B**
+Explanation: Even when both approaches work, AWS prefers managed, automated solutions over self-implementation (in terms of operational burden, errors, and auditing). Secrets Manager's built-in rotation is best. A custom script carries high maintenance and failure risk, and key rotation is necessary for security. This is a typical application of the managed > self-managed preference hierarchy.
+
+---
+
+**Question 5.** Which of the following trap statements is *not true*?
+
+A) CloudTrail management events do not record S3 object-level access
+B) An SCP does not grant permissions; it only limits the maximum
+C) An ACM certificate for CloudFront may be issued in any Region
+D) A NACL is stateless, so outbound ephemeral ports must be allowed separately
+
+**Answer: C**
+Explanation: An ACM certificate to be attached to CloudFront must be issued in us-east-1 (N. Virginia), so "in any Region" is not true. The rest are all true, frequently tested traps: data events must be enabled separately, an SCP does not grant permissions (it limits the maximum), and NACLs are stateless with ephemeral ports. Because this question asks for the *incorrect* statement, the answer is the ACM Region statement.
+
+---
+
+**Question 6.** The requirement is "access S3 from a private subnet in the MOST cost-effective way." Which answer does the emphasis phrase "MOST cost-effective" decide?
+
+A) Through a NAT Gateway (billed per hour and per data processed)
+B) An S3 Gateway VPC Endpoint (free)
+C) An Interface Endpoint (billed per hour and per data)
+D) Assign a public IP
+
+**Answer: B**
+Explanation: S3 supports Gateway Endpoints, which are free, so the emphasis phrase "most cost-effective" decides the answer. A NAT Gateway and an Interface Endpoint both have hourly and data charges, and assigning a public IP violates the private and security requirements. An emphasis phrase (MOST cost-effective) makes you pick the best among several working answers by the cost criterion.
+
+---
+
+**Question 7.** Which is the most inappropriate exam mindset?
+
+A) Identify the last sentence of the question (what is actually being asked) first
+B) Hold on to a question you do not know until you solve it, then move on
+C) When two answers both work, decide using the preference hierarchy (managed/automated/least-privilege/prevent)
+D) Immediately eliminate options that clearly violate the requirements (hardcoding keys, making things public)
+
+**Answer: B**
+Explanation: Holding on to a question you do not know until the end is a wrong strategy that breaks your overall pace; the right move is to flag for review and move on. The rest (last sentence first, applying the preference hierarchy, immediately eliminating clearly wrong answers) are all recommended exam techniques. Passing comes from the pace across 65 questions, not from perfecting one question.
+
+---
+
+**Question 8.** Which option correctly links the two requirements "automatically discover whether credit card numbers are stored in S3" and "assess whether EC2 has unpatched CVEs" to the right services?
+
+A) GuardDuty for both
+B) The former is Macie (S3 sensitive data classification), the latter is Inspector (vulnerability/CVE assessment)
+C) The former is Inspector, the latter is Macie
+D) Config for both
+
+**Answer: B**
+Explanation: Discovering and classifying sensitive data such as credit card numbers in S3 is a dedicated Macie capability, and CVE/vulnerability assessment of EC2/ECR/Lambda is Inspector's role. GuardDuty detects behavioral threats and Config assesses configuration compliance, so both are unsuitable for these requirements. Distinguishing the service roles (data = Macie, vulnerabilities = Inspector) is a frequently tested essential.
 
 ---

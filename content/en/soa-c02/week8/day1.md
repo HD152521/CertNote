@@ -152,3 +152,96 @@ Azure's NSG functions like SG; no NACL equivalent. Azure instead uses "ASG (Appl
 ## Summary
 
 VPC is AWS's answer to three EC2-Classic limitations: IP stability, network isolation, and on-premises integration. Understanding this history makes the 5 reserved IPs, route table mechanics, dual firewall layers, and IPv6 design decisions all click into place. Tomorrow we'll trace traffic through flow logs and troubleshooting tools.
+
+---
+
+## 📝 Practice Questions
+
+**Question 1.** An EC2 instance in a private subnet needs to call an external API. What is the most appropriate configuration?
+
+A) Add 0.0.0.0/0 outbound to the security group
+B) Assign a Public IP to the instance
+C) Place a NAT Gateway in a public subnet and add `0.0.0.0/0 → nat-xxx` to the private subnet's route table
+D) Attach an IGW directly to the private subnet
+
+**Answer: C**
+
+Explanation: By definition, a private subnet has no route to an IGW. For external communication, a NAT GW (which must itself be in a public subnet) performs SNAT, replacing the private IP with its own public IP on the way out. In production, the standard is to place one NAT GW in each AZ so that if one AZ fails, external communication from the private subnets in other AZs is not cut off. A single NAT GW with multi-AZ private subnets is a loss in both availability and cross-AZ data transfer cost.
+
+---
+
+**Question 2.** Which of the following statements about the difference between security groups and NACLs is incorrect?
+
+A) SG is stateful, NACL is stateless
+B) SG allows only Allow, NACL can do both Allow and Deny
+C) SG evaluates all rules as OR, NACL applies the first match in number order
+D) SG applies at the subnet level, NACL applies at the ENI level
+
+**Answer: D**
+
+Explanation: It is exactly the opposite. SG applies at the ENI (instance) level and NACL at the subnet level. This difference is why the two tools are used together: broad policies applied to an entire subnet (for example, blocking a specific malicious IP or compliance isolation) suit NACLs, and fine-grained policies for individual instances suit SGs. Even two instances in the same subnet have different policies applied if their SGs differ.
+
+---
+
+**Question 3.** In a new VPC, a Custom NACL was created allowing only inbound port 80, and HTTP requests come in but responses do not go out. What is the cause?
+
+A) The Internet Gateway is not attached
+B) The NACL is stateless, so the outbound ephemeral ports (1024-65535) over which the response traffic leaves must also be specified explicitly
+C) Blocked by the Security Group
+D) The route table has no 0.0.0.0/0 route
+
+**Answer: B**
+
+Explanation: The most common NACL pitfall. An SG is stateful, so responses pass automatically through connection tracking, but a NACL does not track connection state. When a client sends a request to port 80, the source port is an ephemeral port assigned by the OS (32768-60999 on Linux, 49152-65535 on Windows since Vista), and the server's response must return to that ephemeral port. The safest pattern is to allow all of 1024-65535 in the NACL outbound rules; narrowing it further breaks specific OSs and specific flows.
+
+---
+
+**Question 4.** How do you allow an EC2 instance in an IPv6 private subnet to make outbound-only connections while blocking new connections initiated from outside?
+
+A) Use a NAT Gateway for IPv6
+B) Use an Egress-Only Internet Gateway (EIGW), an IPv6-only stateful filter
+C) Route all external communication through a VPC Endpoint
+D) Add an inbound NACL Deny to a standard Internet Gateway
+
+**Answer: B**
+
+Explanation: IPv6 has plenty of addresses, so NAT's address translation function is unnecessary. However, the requirement to "block only new connections coming in from outside" still exists, and that is the role of the EIGW. The EIGW internally performs stateful connection tracking, passing the responses to connections initiated from inside and blocking new connections initiated from outside. It is a direct implementation of the model defined in IETF RFC 4864: "NAT is not security; a stateful firewall is security." Following this standard, AWS does not create NAT for IPv6 and provides only the EIGW.
+
+---
+
+**Question 5.** Can 16 EC2 instances be launched in a `/28` subnet?
+
+A) Yes
+B) No: because of the 5 IPs AWS reserves, there are 11 usable IPs
+C) Yes, but the IPv6 option is required
+D) No: `/28` provides only 8 IPs
+
+**Answer: B**
+
+Explanation: In every subnet, AWS reserves 5 IPs: `.0` (network address, RFC 950), `.1` (VPC router/default gateway), `.2` (Amazon DNS resolver), `.3` (reserved by AWS for future use), and the last IP (`.255` or `.15`, broadcast, RFC 919). Subtracting 5 from the 16 IPs of a `/28` leaves 11. Because of this pitfall, database subnets are usually sized at `/27` (32-5=27 IPs) or larger. A configuration such as RDS Multi-AZ requires at least 2 AZs in the subnet group, so always keep the 5-IP deduction in mind when planning IPs.
+
+---
+
+**Question 6.** A company created a new VPC and added a VPC Interface Endpoint (for example, SSM), but the endpoint's DNS name does not resolve from EC2. What is the most likely cause?
+
+A) Insufficient IAM permissions
+B) The VPC's `enableDnsHostnames` is turned off (Interface Endpoints work only when both are turned on)
+C) A missing subnet route table entry
+D) The Security Group blocks traffic coming from the endpoint
+
+**Answer: B**
+
+Explanation: When you create a VPC directly in the console, `enableDnsHostnames` is off by default (only the default VPC has it on automatically). An Interface Endpoint registers a Private DNS name per endpoint (for example, `ssm.us-east-1.amazonaws.com`) so instances call the endpoint with the same domain, and for this Private DNS to work the VPC must have both toggles (`enableDnsSupport` + `enableDnsHostnames`) turned on. Turning on both toggles when creating a new VPC should become a reflex. On the exam, it often appears as a scenario where "the Interface Endpoint does not work."
+
+---
+
+**Question 7.** An operations team numbered NACL rules 100, 110, 120 while cleaning up the NACL. Why space them by 10 instead of using 1, 2, 3?
+
+A) By AWS policy, numbers below 100 cannot be used
+B) It is a convention of leaving gaps so that new rules can be inserted between two rules later (derived from BASIC line numbering)
+C) Multiples of 100 are faster for performance
+D) Compatibility with Cisco IOS
+
+**Answer: B**
+
+Explanation: A NACL applies the first match, so there will be times when you need to insert a new rule between rules. If you space them as 100, 110, 120, you can later "add a new Deny rule at 105." If you had numbered them 1, 2, 3, you could not insert between them and would have to renumber all the existing rules. This convention comes directly from the line numbering of the BASIC language in the 1960s (`10 PRINT / 20 GOTO`), and Cisco IOS ACLs use the same pattern. User-defined NACL numbers can range from 1 to 32766.

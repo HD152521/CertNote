@@ -122,4 +122,60 @@ Next: ROC/PR curves, thresholds, AUC — understanding tradeoffs visually.
 
 ## 📝 Practice Questions
 
-[Questions 1-5 in Korean as per original...]
+**Question 1.** In a credit card fraud detection model, fraudulent transactions are 0.5% of the total. One model recorded 99.5% accuracy. What is the main reason this accuracy cannot be trusted?
+
+A) Accuracy is a metric used only in regression  
+B) Accuracy is always calculated lower than recall  
+C) Accuracy is meaningful only for multi-class problems  
+D) The data is so extremely imbalanced that labeling every transaction "legitimate" also yields 99.5% accuracy  
+
+**Answer: D**  
+Explanation: If fraud is 0.5%, simply predicting everything as legitimate gives 99.5%, so accuracy reflects none of the fraud-detection ability. Accuracy is a classification metric (A is wrong), its relationship to recall cannot be generalized (B is wrong), and it is also used for binary classification (C is wrong).
+
+---
+
+**Question 2.** You are evaluating a cancer screening model. Missing a patient (positive) by labeling them normal (FN) is the most dangerous outcome. Which metric should be prioritized?
+
+A) Recall  
+B) Precision  
+C) Specificity  
+D) Accuracy  
+
+**Answer: A**  
+Explanation: The goal is to reduce FN, so prioritize recall (TP/(TP+FN)), which has FN in the denominator. Precision (B) is for reducing FP, specificity (C) focuses on hitting negatives, and accuracy (D) is inappropriate for imbalanced data.
+
+---
+
+**Question 3.** A model has a precision of 0.95 and a recall of 0.10. Roughly what is the F1 score that balances the two, and what does it imply?
+
+A) About 0.53 — a good arithmetic mean of the two metrics  
+B) About 0.18 — recall is very low, so most actual positives are being missed  
+C) About 0.95 — excellent because precision is high  
+D) About 0.10 — F1 is always equal to recall  
+
+**Answer: B**  
+Explanation: F1 = 2×(0.95×0.10)/(0.95+0.10) ≈ 0.18, and because the harmonic mean is sensitive to the lower value (recall), it reveals that most actual positives are being missed. It is not the arithmetic mean (A), it does not reflect only precision (C), and it is not equal to recall (D).
+
+---
+
+**Question 4.** In a spam filter, sending legitimate mail to the spam folder (FP) causes the greatest harm to users. Which metric should be prioritized when evaluating the model?
+
+A) Recall  
+B) F2 score (recall-weighted)  
+C) Precision  
+D) Absolute number of FN  
+
+**Answer: C**  
+Explanation: The goal is to reduce FP, so prioritize precision (TP/(TP+FP)), which has FP in the denominator. Recall (A) and F2 (B) emphasize FN/recall, which is the opposite direction, and the FN count (D) measures omissions and is unrelated to this situation.
+
+---
+
+**Question 5.** In a multi-class classification problem with 5 classes where some classes have very few samples, you want to evaluate so that minority-class performance is reflected equally. Which averaging method is appropriate?
+
+A) Micro average  
+B) Simple accuracy  
+C) Weighted average  
+D) Macro average  
+
+**Answer: D**  
+Explanation: Macro average takes an equally weighted average of the per-class metrics, so minority classes are reflected just as much as large classes. Micro (A) and Weighted (C) are dominated by classes with many samples, and accuracy (B) masks imbalance.

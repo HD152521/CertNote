@@ -149,3 +149,15 @@ D) Move the Glue job to another Region
 Explanation: To read SSE-KMS data, the IAM role must be granted decrypt permission in the KMS key policy (or a grant). Making it public is a security violation, re-encrypting with SSE-S3 gives up key control, and moving Regions is unrelated to the permission problem.
 
 ---
+
+**Question 5.** Which statement best describes KMS envelope encryption?
+
+A) The KMS key directly encrypts large amounts of data  
+B) The KMS key encrypts a data key, and the data key encrypts the actual data  
+C) The data is encrypted twice with KMS  
+D) The client fully manages the keys  
+
+**Answer: B**  
+Explanation: Envelope encryption protects the data key with the KMS key (the root), and the data key encrypts the actual data, which provides efficient handling of large data and fewer KMS calls at the same time. A does not match how KMS works, C is confused with the DSSE concept, and D describes client-side encryption.
+
+---

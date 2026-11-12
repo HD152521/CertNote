@@ -82,7 +82,115 @@ Final two days: Full exam scenarios (Day 4) and D-Day exam prep strategy (Day 5)
 
 ## 📝 Practice Questions
 
-(Practice questions 1-6 in Korean on incident response, security, compliance, GuardDuty, Config, CloudTrail)
+**Question 1.** You want to "block developers in advance from using unapproved Regions in the prod account," separately "audit whether such use has already occurred," and also "automatically revert it when it occurs." What control category and service is each?
+
+A) GuardDuty for all three
+
+B) Blocking = preventive (SCP Deny), auditing = detective (Config rule + CloudTrail), automatic recovery = responsive (Config auto-remediation/SSM)
+
+C) Security Hub for all three
+
+D) Blocking = Lambda, auditing = Lambda, recovery = Lambda
+
+**Answer: B**
+
+Explanation: Controls fall into three categories — preventive, detective, and responsive — and the verb in the question is the clue: "block/prevent" is preventive (an SCP Deny is the Region guardrail on an OU/account), "audit/detect" is detective (a Config rule evaluates non-compliance and CloudTrail records the activity), and "automatically recover/remediate" is responsive (Config auto-remediation or an SSM document). Options that solve all three categories with a single service (A, C, D) run counter to the principle of defense in depth.
+
+---
+
+**Question 2.** A scenario requires both "scan the OS and packages of EC2 instances for known CVEs and prioritize them" and "detect signs of compromise such as abnormal API calls and cryptocurrency mining that differ from the usual." What service fits each?
+
+A) GuardDuty for both
+
+B) CVE scanning = Amazon Inspector, abnormal behavior detection = Amazon GuardDuty
+
+C) Inspector for both
+
+D) CVE = Macie, behavior = Inspector
+
+**Answer: B**
+
+Explanation: Inspector is vulnerability-based detection: it compares installed packages and the OS against CVE databases to find "where are the holes" and prioritizes them. GuardDuty is behavior-based anomaly detection: it catches behavior that deviates from the normal baseline (abnormal API calls, communication with malicious IPs, mining). The two are complementary, but their roles differ. Macie (D) detects PII in S3 and is irrelevant.
+
+---
+
+**Question 3.** You want to block an S3 bucket automatically when it is made public, but also put a gate in the workflow so that "risky actions such as deleting or changing a bucket that holds production data must be approved by a human." What is the most appropriate configuration?
+
+A) A Lambda function unconditionally runs every action as soon as it finds the problem
+
+B) A Config rule detects non-compliance → an SSM Automation runbook blocks automatically, with an `aws:approve` step inserted at risky steps so that it proceeds after human approval
+
+C) GuardDuty modifies the bucket directly
+
+D) Block with Macie
+
+**Answer: B**
+
+Explanation: A Config rule detects the public bucket as non-compliant and an SSM Automation runbook performs the automatic fix, and for risky actions (delete, change), SSM's `aws:approve` step inserts human approval into the workflow — the standard of "automation + a human gate for risky actions." Unconditional immediate execution (A) risks a runaway, GuardDuty (C) is detection rather than a remediation actor, and Macie (D) detects PII and is irrelevant.
+
+---
+
+**Question 4.** When GuardDuty generates a finding that "EC2 instance credentials have been exfiltrated externally," you want to configure an automatic response that immediately invalidates those credentials without human intervention. What are the most appropriate entry point and flow?
+
+A) SNS modifies IAM directly
+
+B) GuardDuty finding → EventBridge rule (event pattern filter) → Lambda (invalidate the role's sessions/attach an isolating policy) → SNS/Incident Manager notification
+
+C) A Config Aggregator invalidates the credentials
+
+D) CloudTrail blocks automatically
+
+**Answer: B**
+
+Explanation: The entry point of automated response is EventBridge — filter the GuardDuty finding with an event pattern to trigger Lambda, and the Lambda function invalidates the exfiltrated role's sessions or attaches an isolating policy and then sends a notification. This is a closed loop of detect → decide → act, and the standard response to credential theft incidents like Capital One's. SNS (A), a Config Aggregator (C), and CloudTrail (D) are not action actors.
+
+---
+
+**Question 5.** You want to enable GuardDuty and Security Hub across all 60 accounts, automatically include any account newly joining Organizations in the future, and aggregate all findings in a single Audit account. What is the most appropriate configuration?
+
+A) Each account administrator enables them manually in the console
+
+B) Designate the Audit account as the Delegated Administrator and turn on Org Auto-Enable to automatically include new accounts, and aggregate multi-Region findings with the Security Hub Region Aggregator
+
+C) Enable them in each account every time with StackSets
+
+D) A Lambda function scans for new accounts daily and enables them
+
+**Answer: B**
+
+Explanation: The multi-account standard for AWS security services is to delegate the Audit account as the Delegated Administrator and automatically include new accounts with Org Auto-Enable — the management account does not run security operations directly but delegates them, separating concerns. Multi-Region aggregation of findings is the Security Hub Region Aggregator. Manual work (A), repeated StackSets (C), and Lambda scanning (D) are anti-patterns with omissions and operational burden, and native Organizations integration is superior.
+
+---
+
+**Question 6.** Every quarter, evidence of security controls must be gathered for a SOC 2 audit, and the manual work takes weeks. CloudTrail, Config, and Security Hub are already enabled. How can you automate evidence collection and reporting?
+
+A) Query directly with Athena each time
+
+B) Use the SOC 2 framework in AWS Audit Manager to automatically collect output from CloudTrail, Config, and Security Hub as evidence and generate an assessment report
+
+C) Collect evidence with Macie
+
+D) Generate the report with a Config Aggregator
+
+**Answer: B**
+
+Explanation: Audit Manager automatically collects and organizes the output from CloudTrail, Config, and Security Hub as evidence according to predefined frameworks (SOC 2, PCI DSS, HIPAA, and so on) and produces an assessment report for submission to auditors — provided that those source services are enabled (already satisfied). Config is real-time compliance evaluation, not accumulation and reporting of audit evidence (D). Manual Athena queries (A) and Macie (C) are not compliance evidence automation.
+
+---
+
+**Question 7.** You want to guarantee the integrity of CloudTrail logs so that an attacker cannot erase traces when a breach occurs. What is the most appropriate design?
+
+A) Leave the logs in each account's default CloudTrail as they are
+
+B) Centralize logs with an organization trail in a separate Log Archive account, make them immutable with S3 Object Lock (WORM), and restrict access to that account to the extreme
+
+C) Keep them only in CloudWatch Logs
+
+D) Delete or archive the logs daily with Lambda
+
+**Answer: B**
+
+Explanation: For integrity and non-repudiation, centralize logs with an organization trail in a Log Archive account separate from security operations (Audit), and make them immutable with S3 Object Lock (WORM) so that neither an attacker nor an operator can delete them — the standard of separating operational privileges from evidence-retention privileges. The default trail in each account (A) can be deleted from a compromised account, CloudWatch Logs alone (C) is unsuitable for long-term immutable retention, and Lambda deletion (D) is an anti-pattern that destroys evidence.
 
 ---
 

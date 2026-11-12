@@ -337,6 +337,22 @@ Explanation: The core of **command discipline** is that the IC speaks last. Afte
 
 ---
 
+**Question 7.** Which option correctly maps the components of AWS Incident Manager to the incident response flow?
+
+A) A Response Plan is the human contact information, and Contacts are the automated procedure
+
+B) Response Plan (automated procedure: a bundle of runbook, channel, and contacts) → Engagement (pages a Contact via SMS/Voice/Email) → Escalation Plan (next step when there is no response) → Timeline (automatic recording of the entire process) → PIR (draft post-incident analysis)
+
+C) The Timeline is advance planning, and the PIR is real-time paging
+
+D) The Escalation Plan defines the notification card format
+
+**Answer: B**
+
+Explanation: Incident Manager's structure is the ICS (Incident Command System) codified — a Response Plan is the automated procedure that runs when an incident occurs (bundling impact, title, SSM Automation runbook, chat channel, and engagement), Contacts are people and their contact methods, an Engagement is the actual act of paging, an Escalation Plan hands over to the next group when there is no response for N minutes (ICS resource succession), the Timeline automatically timestamps every event (the ICS activity log), and the PIR automatically generates a draft post-incident analysis based on the Timeline. A, C, and D are wrong answers that mix up the roles.
+
+---
+
 ## 📌 Today's Summary
 
 There are five key takeaways today. First, **ChatOps** makes chat the operational control plane, achieving shared context, transparency, and auditability. Second, **AWS Chatbot and CodeStar Notifications** are the bridges that relay AWS alerts to Slack. Third, **Guardrail Policy** binds IAM permissions to chat commands at the minimum, enabling safe automation. Fourth, **AWS Incident Manager** automates the lifecycle from detection to post-mortem, and grounds learning in timeline reconstruction. Fifth, the **MIR war room pattern** keeps structure even under the pressure of a large-scale incident through clear roles, the IC speak-last principle, and a single voice. The complete loop of monitoring → self-healing → human coordination → learning is thus completed.

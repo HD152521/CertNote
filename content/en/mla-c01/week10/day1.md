@@ -80,6 +80,62 @@ Tomorrow: Domains 3&4 — deployment/orchestration and monitoring/security same 
 
 ## 📝 Practice Questions
 
-**Questions 1-5** [Practice questions in Korean follow after marker]
+**Question 1.** A team uses the same customer features (recent purchase amount, tenure, etc.) in both a real-time recommendation model and a nightly batch churn prediction model. They want to prevent skew between training and inference and reuse the features. Which is the most appropriate solution?
+
+A) Each model maintains its own separate preprocessing code  
+B) SageMaker Feature Store (online + offline stores)  
+C) Save a fresh CSV to S3 every time  
+D) Recompute the features with an Athena query on every call  
+
+**Answer: B**  
+Explanation: Feature Store lets you define a feature once so that the online store (low-latency real-time inference) and the offline store (bulk training and batch) share the same definition, which eliminates training-serving skew and enables feature reuse. A duplicates code and increases inconsistency, C has no version or consistency management, and D recomputes on every call and cannot meet the real-time low-latency requirement.
+
+---
+
+**Question 2.** Before deploying a credit-scoring model, you want to check whether predictions are unfairly biased against specific gender and age groups, and also explain how much each feature contributed to individual predictions. Which tool is the most appropriate?
+
+A) SageMaker Model Monitor  
+B) SageMaker Clarify  
+C) SageMaker Debugger  
+D) CloudWatch Logs  
+
+**Answer: B**  
+Explanation: Clarify measures fairness across groups with pre-training and post-training bias metrics and explains predictions with SHAP-based feature attributions, so it meets both requirements. A is mainly for monitoring data and quality drift in production, C is for debugging tensors and resources during training, and D is simple log collection that provides no bias or explainability analysis.
+
+---
+
+**Question 3.** You built a classification model on data where 99.5% of transactions are legitimate and only 0.5% are fraud. Which combination of metrics best evaluates the model's performance?
+
+A) Accuracy alone  
+B) F1 score and AUC-ROC, plus Recall for fraud detection  
+C) RMSE  
+D) R² coefficient of determination  
+
+**Answer: B**  
+Explanation: With extremely imbalanced data, Accuracy can reach 99.5% by predicting "all legitimate," which reflects none of the fraud-detection ability, so you should evaluate with F1 and AUC, which are robust to imbalance, and Recall, which captures the fraud that is missed. A is misleading on imbalanced data, and C and D are regression metrics that are unsuitable for evaluating classification performance.
+
+---
+
+**Question 4.** The training dataset is much larger than the local disk of a single instance, and copying all of it at the start of training causes significant delay. Which is the most appropriate improvement?
+
+A) Use File mode to copy all the data to the instance  
+B) Use Pipe mode (or Fast File mode) to stream input from S3  
+C) Train on a random 1% of the data  
+D) Switch to a smaller instance  
+
+**Answer: B**  
+Explanation: Pipe mode (and Fast File mode) streams data from S3 without copying all of it, which solves both the problem of data that exceeds disk capacity and the startup delay. A causes exactly that copy delay, C discards data and degrades performance, and D makes the capacity problem worse.
+
+---
+
+**Question 5.** Within a limited training budget, you want to find a good hyperparameter combination with as few training trials as possible. Which strategy is the most appropriate in SageMaker AMT?
+
+A) Grid Search  
+B) Bayesian optimization  
+C) Try them manually one by one  
+D) Explore all combinations randomly without limit  
+
+**Answer: B**  
+Explanation: Bayesian optimization uses the results of previous trials to explore promising candidates first, so it is the most efficient way to find a good combination with few training runs. A exhaustively searches the discrete space and needs many trials, C is inefficient and not reproducible, and D is the exact opposite of a budget constraint.
 
 ---

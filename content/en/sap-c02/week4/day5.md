@@ -297,3 +297,81 @@ D) Move the physical tape data in bulk with Snowball Edge + S3
 **Answer: B**
 
 Explanation: "Without modifying the existing NetBackup software" is the key. Tape Gateway emulates an iSCSI VTL (Virtual Tape Library) interface so NetBackup recognizes it like a physical tape device. Backup jobs run as they are and the data is stored in the S3 VTL. On an "Archive" command, it moves to Glacier Deep Archive. Restores are handled with only a Glacier restore request, without transporting physical tapes (Standard restore 3-5 hours, Bulk restore 12 hours). S3 File Gateway (A) has an NFS/SMB interface and no VTL, so NetBackup does not recognize it as a tape device. DataSync (C) is a file copy tool with no VTL integration for backup software. Snowball (D) is a one-time physical move and is unsuitable for ongoing backups.
+
+---
+
+**Question 7.** A defense contractor must operate a Kubernetes-based logistics system on a completely isolated military network (air-gapped). It has its own K8s operations team and needs EKS-compatible Kubernetes. The AWS connection is completely cut off. Which service is appropriate?
+
+A) AWS ECS Anywhere
+B) AWS EKS Anywhere
+C) EKS on Outposts Extended Cluster
+D) AWS Fargate
+
+**Answer: B**
+
+Explanation: Air-gapped + operating its own K8s control plane + EKS-compatible = EKS Anywhere. EKS Anywhere is based on EKS-D (EKS Distro) and is deployed on customer hardware (vSphere, bare metal, and so on), and in air-gapped mode it operates fully self-sufficiently with no AWS connection by using a local Harbor registry and an on-premises mirror repository. Because the Kubernetes API server, etcd, and Controller Manager are all on customer hardware, Pod scheduling, auto-recovery, and ConfigMap management work in an air-gapped environment. ECS Anywhere (A) has its control plane in the AWS Region, so it always requires an AWS connection. EKS on Outposts Extended Cluster (C) also has its control plane in the AWS Region, so it requires a connection and also requires Outposts hardware. Fargate (D) is exclusive to AWS Regions.
+
+---
+
+**Question 8.** A retail company runs microservices on AWS ECS. Under the privacy law, some data processing must run only on-premises. It has no Kubernetes expertise and wants to keep its existing ECS Task Definitions, CLI, and console operating practices. Which solution is appropriate?
+
+A) EKS Anywhere (build an on-premises K8s cluster)
+B) ECS Anywhere (register on-premises servers as External Instances)
+C) EKS on Outposts Local Cluster
+D) AWS Fargate + VPC Endpoint (process only in private subnets)
+
+**Answer: B**
+
+Explanation: "Keep the existing ECS practices + no K8s staff + run on-premises" must all be satisfied. With ECS Anywhere, the control plane is fully managed by AWS ECS, and on-premises servers are registered to the ECS cluster as External Instances through the SSM Agent and ECS Agent. The existing ECS Task Definitions, the `aws ecs run-task` CLI, and the ECS console work as they are. Tasks running on on-premises External Instances keep the data on-premises. No K8s knowledge is needed. EKS Anywhere (A) requires you to operate the K8s control plane yourself, so K8s expertise is essential. EKS on Outposts (C) requires purchasing Outposts hardware. Fargate (D) runs in the AWS Region, so it does not meet the on-premises processing requirement.
+
+---
+
+**Question 9.** A film production company transfers 5 TB of raw footage every day from an on-premises NAS to S3. It has a 10 Gbps Dedicated DX connection. It needs automatic checksum verification that the S3 and NAS file contents match exactly, and the transfer must run automatically at a specific time every night. What is the most appropriate solution?
+
+A) Ship a Snowball Edge every day
+B) AWS DataSync (nightly schedule + checksum verification enabled)
+C) S3 File Gateway + S3 Lifecycle
+D) A direct S3 REST API upload script (multipart + manual MD5 comparison)
+
+**Answer: B**
+
+Explanation: A 10 Gbps DX and 5 TB per day can be handled comfortably by DataSync (about 1.9 hours at an effective 6 Gbps of the 10 Gbps). DataSync automatically calculates checksums (SHA-256) before and after the transfer to verify data integrity between the source and destination, and automatically retransmits when a mismatch is found. The scheduling feature also supports automated nightly cron runs. Shipping a Snowball every day (A) is completely uneconomical with a 10 Gbps DX and creates a heavy operational burden. S3 File Gateway (C) is an always-mounted tool, and its scheduled transfer and checksum comparison are not as strong as DataSync. A direct script (D) requires you to implement parallel processing optimization, automatic retries, and integrity verification yourself, which is a heavy operational burden.
+
+---
+
+**Question 10.** At a factory with an AWS Outposts rack installed, the Service Link connection was completely down for 45 minutes. During this period, what is the state of the factory control system (running on Outposts EC2) and of the EC2 instances that need to be newly deployed?
+
+A) All existing instances are automatically terminated after 5 minutes
+B) Existing running instances continue to operate, but launching new instances, IAM authentication, and creating EBS snapshots are not possible
+C) Outposts automatically switches to Disconnected Mode and all functions operate normally
+D) Instances operate, but EBS volume I/O stops immediately
+
+**Answer: B**
+
+Explanation: AWS Outposts does not officially support a Disconnected Mode. When the Service Link is cut, things fall into two categories. What keeps working: EC2 instances the hypervisor has already started, local EBS volume I/O, the internal Outposts VPC network (communication between subnets), and communication with the on-premises LAN through the LGW. What stops: launching new EC2 instances (AWS STS is not reachable for IAM authentication), creating EBS snapshots (cannot connect to S3 in the parent Region), sending CloudWatch metrics/logs (some are buffered and sent after reconnection), SSM Run Command, and most management tasks through the AWS console/CLI. For this reason, when putting critical workloads such as factory automation on Outposts, the Service Link must be protected with redundant DX (Maximum Resiliency). C is a feature that does not exist (Azure Stack Hub has a Disconnected Mode, but Outposts does not).
+
+---
+
+**Question 11.** Which of the following correctly distinguishes the use cases of AWS DataSync and Storage Gateway?
+
+A) DataSync is used when an always-on mount is needed, and Storage Gateway is used for one-time bulk migration
+B) DataSync is used for one-time or periodic batch transfer plus integrity verification, and Storage Gateway is used for an always-on hybrid storage mount
+C) DataSync supports only block storage, and Storage Gateway supports only file storage
+D) Both can be used equally when migrating an on-premises file server to S3, so choose only by cost
+
+**Answer: B**
+
+Explanation: DataSync and Storage Gateway have different purposes. DataSync is a migration/synchronization tool that "moves data from A to B." It transfers between a source (NFS, SMB, S3, HDFS, EFS, and so on) and a destination on a schedule or one time, and verifies the checksum of each file to guarantee integrity. After the transfer, the DataSync task is complete. Storage Gateway is a hybrid integration tool that lets "on-premises applications keep using AWS storage as if it were local storage." The gateway must always be running, and applications access it continuously through NFS/SMB/iSCSI. A has the descriptions reversed. C is wrong (DataSync supports various file/object/block sources, and Storage Gateway supports file/block/tape). D is wrong (their purposes are fundamentally different).
+
+---
+
+**Question 12.** A company wants to provide an AR (augmented reality) remote medical consultation service from the MEC facilities of 5G partner carriers on 6 continents. A surgeon assists a patient thousands of kilometers away in real time over a 5G connection from a smartphone. The latency requirement is within 20 ms one way. What is the most appropriate approach to deploy this service using AWS global infrastructure?
+
+A) Deploy EC2 in the AWS Regions of each continent + Global Accelerator
+B) Deploy AWS Wavelength Zones in the carrier partners' 5G MEC on 6 continents
+C) Deploy Local Zones in major cities on 6 continents
+D) AWS edge caching (CloudFront) + Lambda@Edge
+
+**Answer: B**
+
+Explanation: 5G devices (smartphones) + 20 ms one-way = Wavelength is the exact use case. Wavelength places EC2 inside the carrier's 5G MEC facility, minimizing the distance 5G packets travel from the base station to the Wavelength Zone. It achieves within 5 to 10 ms one way, comfortably meeting the 20 ms requirement. Global Accelerator + Regions (A) goes through the path of 5G core, internet, AWS PoP, and Region, so 30 to 100 ms one way is expected. Local Zones (C) are optimized for city-level general internet access and have no way to bypass the 5G core, so they cannot reduce latency for 5G devices as much as Wavelength. CloudFront + Lambda@Edge (D) is an HTTP request-response pattern and has difficulty meeting the latency requirement of real-time bidirectional AR streaming.

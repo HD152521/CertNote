@@ -47,3 +47,81 @@ D) Check the instance tags with a Config Rule
 **Answer: B**
 
 ---
+
+**Question 2.** A new CVE was published to the NVD yesterday. An ECR image that was scanned with Inspector v2 a week ago and judged "clean" suddenly shows a Critical finding today. What is the correct interpretation of this behavior?
+
+A) Inspector malfunctioned, so ignore the finding
+B) Inspector v2 scans continuously, so when a new CVE is published it automatically re-evaluates existing resources; this is normal behavior
+C) It is a sign that someone tampered with the image
+D) The image must be pushed again for the scan to be updated
+
+**Answer: B**
+
+Explanation: The key characteristic of Inspector v2 is continuous scanning. It does not end with a single scan; when a new CVE is added from the NVD or vendor advisories, it automatically re-evaluates the EC2, ECR, and Lambda resources it has already scanned. So an image that was clean until yesterday showing a finding today because of a new CVE is not a bug but intended behavior. During the Log4Shell (CVE-2021-44228) incident, this continuous scanning proved its value by automatically listing "where in our environment are the vulnerable versions."
+
+---
+
+**Question 3.** In an 80 TB S3 data lake run by a data analytics team, a company wants to find buckets at risk of exposing credit card numbers while controlling scan cost. What is the most appropriate approach?
+
+A) Precisely scan all 80 TB at once with Macie
+B) Draw a risk map of buckets at low cost with Macie's automated sensitive data discovery (sampling), then precisely scan only the high-risk buckets
+C) Scan the S3 buckets with GuardDuty
+D) Scan S3 objects with Inspector
+
+**Answer: B**
+
+Explanation: Macie bills in proportion to the number of bytes of data scanned, so precisely scanning all 80 TB without filtering makes cost explode. The automated sensitive data discovery mode intelligently samples objects to build, at low cost, a map of "which buckets are risky." Then running precise classification jobs only on the buckets identified as high risk catches the risk while controlling cost. GuardDuty and Inspector are not tools that look at sensitive data in the body of S3 objects.
+
+---
+
+**Question 4.** A company wants to view findings from GuardDuty, Inspector, Macie, IAM Access Analyzer, and a third-party Palo Alto tool in the same format on a single dashboard, and at the same time automatically score whether its accounts meet the CIS and PCI-DSS standards. Which service is it?
+
+A) CloudWatch Dashboard
+B) Security Hub: normalizes and integrates all findings in ASFF and automatically evaluates security standards
+C) AWS Config alone
+D) Audit Manager
+
+**Answer: B**
+
+Explanation: Security Hub does not detect threats itself; it normalizes the findings of multiple tools into the ASFF (AWS Security Finding Format) standard JSON schema and gathers them on one screen. At the same time, it automatically scores security standards such as FSBP, CIS, PCI-DSS, and NIST 800-53 based on Config Rules. It is therefore the only service that satisfies both requirements, "integration + standards evaluation," at once. Config looks at configuration compliance but is not a hub integrating findings from multiple tools, and Audit Manager is for collecting audit evidence.
+
+---
+
+**Question 5.** GuardDuty detected a suspected compromised instance with severity 8.5. A company wants to configure an automated response that immediately replaces that instance's security group with an isolation security group, without human intervention. What is the standard flow?
+
+A) A Lambda polls GuardDuty every minute to check for findings
+B) GuardDuty Finding → EventBridge Rule (filter severity 7.0 or higher) → SSM Automation Runbook `AWS-IsolateEC2InstanceFromGuardDutyFinding` (or Lambda) replaces it with an isolation SG
+C) A Config Rule automatically terminates the instance
+D) Inspector patches the instance
+
+**Answer: B**
+
+Explanation: The standard skeleton of AWS automated security response is "security tool → EventBridge → SSM Automation/Lambda." GuardDuty publishes findings as EventBridge events, and when a rule filtered by the severity score (on a scale of 0.1 to 8.9, with 7.0 and above being High) matches, an SSM Automation Runbook replaces the instance's SG with an isolation SG. AWS provides a standard Runbook such as `AWS-IsolateEC2InstanceFromGuardDutyFinding` for this purpose. Polling (A) is inefficient, less real-time, and not AWS's recommended event-driven pattern.
+
+---
+
+**Question 6.** While reviewing Inspector settings, the security team found an old document saying "install a separate agent, create an assessment template, and run scans manually." What is the correct explanation by current exam and practical standards?
+
+A) That approach is the current standard, so follow it as is
+B) That is the old Inspector (v1, classic) approach. The current standard, Inspector v2, rides on the SSM Agent and continuously scans EC2, ECR, and Lambda without separate installation
+C) Inspector never needed an agent
+D) Inspector v2 scans only EC2
+
+**Answer: B**
+
+Explanation: The old Inspector (v1, classic) required the user to install a dedicated agent, create an assessment template, and run it manually. The current standard, Inspector v2, rides on the Inventory of the already-installed SSM Agent, works without separate installation, and continuously scans not only EC2 but also ECR images and Lambda functions. The description "separate agent installation + manual execution" is a trap signal pointing to v1. Note, however, that v2 also presupposes the SSM Agent for collecting EC2 packages, so instances not registered with SSM are not scanned.
+
+---
+
+**Question 7.** A company enabled the CIS AWS Foundations Benchmark standard in Security Hub, but no standard check results are populated at all. What is the most likely missing prerequisite?
+
+A) GuardDuty is disabled
+B) AWS Config is disabled: Security Hub's security standard checks are implemented internally as Config Rules, so Config is a prerequisite
+C) Macie is disabled
+D) There are no WAF rules
+
+**Answer: B**
+
+Explanation: The automated evaluation of Security Hub's security standards (CIS, FSBP, PCI-DSS, and so on) is implemented behind the scenes as many AWS Config Rules. Therefore Config must be enabled and recording resource configuration in that Region and account for the standard checks to be populated. If Config is off, the check results remain empty even if you turn on the standard. GuardDuty and Macie are merely integration sources that each send findings to Security Hub, not prerequisites for the standard checks.
+
+---

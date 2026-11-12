@@ -109,6 +109,62 @@ Tomorrow: protecting data and models themselves — KMS encryption and Secrets m
 
 ## 📝 Practice Questions
 
-**Questions 1-5** [Practice questions in Korean follow after marker]
+**Question 1.** Due to regulatory requirements, the SageMaker training container must be unable to make any external network calls, so it cannot download model weights or packages from outside. Which setting is the most appropriate?
+
+A) Specify public subnets in VpcConfig  
+B) Set `EnableNetworkIsolation` to true and include the dependencies in the container image in advance  
+C) Open security group outbound to 0.0.0.0/0  
+D) Add a NAT gateway  
+
+**Answer: B**  
+Explanation: Turning on network isolation blocks all outbound calls from the container so it cannot fetch packages or weights from outside, which is the strongest isolation, though the necessary dependencies must be included in the image beforehand. A public subnet actually opens an internet path in A, and C and D allow or expand external access, which is the exact opposite of the requirement.
+
+---
+
+**Question 2.** You ran a training job in VPC mode (private subnets, no internet gateway), and the job starts but makes no progress and eventually times out. What is the most likely cause?
+
+A) The training algorithm hyperparameters are wrong  
+B) There is no S3 gateway endpoint or ECR interface endpoint, so it cannot reach the data or the image  
+C) The instance type is not a GPU  
+D) The user lacks `iam:PassRole`  
+
+**Answer: B**  
+Explanation: In VPC mode without an internet gateway, reaching S3 and ECR requires a gateway/interface VPC endpoint for each, and without them the container cannot access the data or image and hangs. A and C produce different errors rather than a hang, and for D a missing PassRole would prevent the job from even starting, which does not match the symptom "it starts."
+
+---
+
+**Question 3.** You want to configure VPC access to S3 without traversing the internet and at no cost. Which is appropriate?
+
+A) Create a gateway VPC endpoint for S3 and associate it with the route table  
+B) Use only an interface endpoint (PrivateLink) for S3  
+C) Access S3 through a NAT gateway  
+D) Add an internet gateway  
+
+**Answer: A**  
+Explanation: S3 and DynamoDB support gateway VPC endpoints, which provide access without traversing the internet and at no additional cost by adding a route to the route table. B is possible for S3 as well, but interface endpoints are billed per hour and per data processed, which does not fit "at no cost," and C and D send traffic over a public path, which contradicts the isolation goal.
+
+---
+
+**Question 4.** You ran multi-node distributed training in VPC mode, and communication between nodes fails, so training does not start. Which rule should be added to the security group?
+
+A) Allow all inbound from 0.0.0.0/0  
+B) A self-referencing inbound rule whose source is the same security group (allowing node-to-node communication)  
+C) Allow outbound 443 to the internet  
+D) Deny all inbound  
+
+**Answer: B**  
+Explanation: Distributed training nodes have ENIs in the same security group, so a self-referencing inbound rule with that security group as the source is needed to allow node-to-node communication. A opens security too broadly and violates least privilege, C is about external communication rather than internal node-to-node traffic, and D blocks communication further and makes the problem worse.
+
+---
+
+**Question 5.** Which statement most accurately describes the difference between VPC mode and `EnableNetworkIsolation`?
+
+A) They are two names for the same setting  
+B) VPC mode sends traffic through the customer VPC so that VPC controls apply, while network isolation blocks all outbound network calls from the container  
+C) VPC mode costs money and network isolation is free  
+D) Network isolation allows internet access  
+
+**Answer: B**  
+Explanation: VPC mode attaches the container to a customer VPC subnet so that VPC controls such as security groups and endpoints apply, while network isolation is a stronger block that cuts all outbound traffic from the container, so the two are at different levels. A is wrong because they are different settings, C is wrong because cost is not the key distinction, and D is the opposite explanation because network isolation blocks the internet.
 
 ---

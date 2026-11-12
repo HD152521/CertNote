@@ -221,5 +221,29 @@ C) Global Accelerator automatic failover
 D) Lambda automatic DNS switching
 
 **Answer: B**
+---
 
+**Question 11.** A company wants to design DR for a staging environment with a 24-hour RTO SLA at the lowest possible cost. Which strategy is most appropriate?
+
+A) Multi-Site Active-Active
+B) Warm Standby
+C) Pilot Light
+D) Backup & Restore
+
+**Answer: D**
+
+**Explanation:** When a lenient goal of a 24-hour RTO is given together with "minimum cost," Backup & Restore, which keeps 0% of compute running in the DR Region, is the correct answer. Recreating the infrastructure with IaC during a failure takes several hours, which fits well within a 24-hour RTO. A, B, and C provide a faster RTO but incur that much idle cost, which is over-engineering that wastes money on an RTO that does not need to be met. Choosing "the cheapest strategy that can meet the requirement" is Pro-level thinking.
+
+---
+
+**Question 12.** A company wants to protect its backups so that they can be recovered even if a workload account is taken over by ransomware. Which is the most robust configuration?
+
+A) Cross-Region Copy only, in the same account
+B) Cross-Account Copy to a separate backup account + Compliance Lock on the destination Vault
+C) Enable S3 Versioning
+D) Backup Vault Governance Lock
+
+**Answer: B**
+
+**Explanation:** Even if ransomware takes over administrator privileges in the workload account, if the backups are in a separate account (cross-account) and that Vault has a Compliance Lock (which even root cannot delete), the attacker cannot touch them and recovery is possible without paying a ransom (the lesson of the 2021 Colonial Pipeline incident). A is in the same account, so if the account is taken over, the backups in the other Region are also exposed. C (Versioning) only protects against overwrites and does not prevent deletion. D (Governance) can be released with the stolen administrator privileges. The combination of Cross-Account + Compliance Lock is the answer for "account takeover / ransomware preparedness."
 ---

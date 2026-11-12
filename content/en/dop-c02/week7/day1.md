@@ -281,3 +281,85 @@ D) It is only logged in CloudWatch and the deployment continues
 Explanation: If a BeforeAllowTraffic or AfterAllowTraffic test fails during a CodeDeploy deployment, the alias is automatically rolled back to the previous version. Clients are not affected.
 
 ---
+
+**Question 4.** What is the actual behavior of the first line of a SAM template, `Transform: AWS::Serverless-2016-10-31`?
+
+A) It expands SAM pseudo-resources into CFN-native resources as a CloudFormation macro  
+B) It converts Lambda code to Python  
+C) It automatically creates an IAM role at deployment time  
+D) It triggers sam build  
+
+**Answer: A**
+Explanation: Transform is the CloudFormation macro mechanism (2016): before the template reaches the CFN engine, a separate Lambda macro rewrites the template. After macro processing, `AWS::Serverless::Function` is unrolled into 6 to 8 real resources such as `AWS::Lambda::Function` + `AWS::IAM::Role` + `AWS::Lambda::Permission`. B has nothing to do with code conversion, C is only one of the results of macro processing and not the role of the macro itself, and D is a separate step of the sam CLI. You can check the unrolled result in the "Processed template" tab of the CFN console.
+
+---
+
+**Question 5.** Which area that `sam local invoke` does NOT validate is the most dangerous?
+
+A) Handling of normal input by the function logic  
+B) IAM role deny policies + actual VPC ENI creation latency  
+C) JSON parsing errors  
+D) Loading environment variables  
+
+**Answer: B**
+Explanation: SAM Local uses the host's AWS credentials as they are, so the permission boundary of the IAM role is not validated. Network latency such as VPC ENI creation (8 to 10 seconds), RDS Proxy connections, and security group egress rules also does not exist locally. As in the 2020 fintech case, this is the typical scenario where the function passes locally and then dies from a timeout in prod. A/C/D can all be validated locally. Lesson: local is for logic, integration belongs in the dev cloud.
+
+---
+
+**Question 6.** To configure SAM so that a new Lambda version receives only 10% of traffic for 30 minutes and is rolled back immediately if a 5xx alarm fires, you would use:
+
+A) `DeploymentPreference: AllAtOnce` + Alarm  
+B) `DeploymentPreference: Linear10PercentEvery10Minutes` + Alarm  
+C) `DeploymentPreference: Canary10Percent30Minutes` + a connected CloudWatch Alarm  
+D) sam sync --watch  
+
+**Answer: C**
+Explanation: The Canary pattern has two steps: "first N% → wait a set time → 100%." Canary10Percent30Minutes runs at 10% for 30 minutes and then jumps to 100%. Linear (B) is a multi-step pattern that keeps increasing by 10% at 1/10-minute intervals, so it differs in meaning from the scenario's "10% for 30 minutes, then 100%." AllAtOnce (A) goes to 100% immediately. sam sync (D) is for development acceleration and has nothing to do with traffic shifting. When an alarm is connected, CodeDeploy automatically rolls back to the previous version as soon as it fires.
+
+---
+
+**Question 7.** What benefit do the two flags of `sam build --use-container --cached` provide together?
+
+A) Building in a Lambda runtime container guarantees native dependency compatibility + reusing unchanged dependencies shortens build time  
+B) Cost savings  
+C) Automatic IAM permission grants  
+D) Automatic Canary activation  
+
+**Answer: A**
+Explanation: It is a common problem that Python `.so` files built on macOS/Windows are incompatible with Lambda's Linux glibc (2022 SaaS case). `--use-container` solves this by building in the same container image as the Lambda runtime. `--cached` reuses the dependency layer if requirements have not changed. Build time drops to 1/2 to 1/3. B/C/D are unrelated.
+
+---
+
+**Question 8.** What is the biggest reason not to use `sam sync --watch` in production?
+
+A) It costs more  
+B) It bypasses CloudFormation tracking, causing drift, and the next sam deploy overwrites the changes  
+C) It is not supported in the Korea Region  
+D) It does not support Java functions  
+
+**Answer: B**
+Explanation: sam sync patches code changes directly with the `update-function-code` API, so the state of the CFN stack and the actual state diverge (drift). The next regular sam deploy overwrites the changes based on the CFN state, so the hotswap changes disappear. In addition, no ChangeSet is created, which defeats the change history and approval workflow. It is explicitly a development-acceleration tool, and for production the standard is the regular sam deploy + CodeDeploy combination.
+
+---
+
+**Question 9.** Which statement about the limits of SAM policy templates is MOST accurate?
+
+A) They add cost  
+B) `DynamoDBReadPolicy: TableName` includes permissions for all GSIs/LSIs of that table — it may not be true least privilege  
+C) IAM policy evaluation becomes slower  
+D) They conflict with Lambda layers  
+
+**Answer: B**
+Explanation: Policy templates reduce boilerplate, but their permission scope can be broader than hand-written IAM JSON. AWS publishes the expanded IAM JSON of every template in its official GitHub repository, so in PCI/HIPAA environments you need to review them before adopting. If you need exact least privilege, write it yourself with a `Policies: - Statement: - Effect: Allow, Action: [...], Resource: [...]` block. A/C/D are all unrelated.
+
+---
+
+**Question 10.** Which resources does `sam pipeline bootstrap` for SAM Pipelines create in each environment's account?
+
+A) Lambda function + DynamoDB table  
+B) Pipeline execution role + CFN execution role + artifact S3 bucket + (optional) ECR repository  
+C) VPC + subnet + NAT gateway  
+D) Cognito user pool  
+
+**Answer: B**
+Explanation: bootstrap creates only the CI/CD infrastructure (permissions + artifact storage). This set of four is isolated in each environment account, so a dev pipeline cannot access resources in the prod account (the namespace isolation principle of NIST SP 800-204C). Application resources (Lambda, DynamoDB) are created later with sam deploy. A/C/D belong to the application domain and are unrelated to bootstrap.

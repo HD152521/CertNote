@@ -128,9 +128,250 @@ Go pass it.
 
 ## 📝 Practice Questions
 
-**Final Drill: 10 mini-scenarios (30 sec each, answer in 1 minute)**
+**Question 1.** A global fintech runs 40 services in a monorepo. The payments pipeline must run only when files under `services/payments/**` change, build artifacts must be protected against tampering, and the Lambda function needs a 10% canary for 5 minutes before full shift, with automatic rollback on an alarm. Which combination is MOST appropriate?
 
-(Truncated for token efficiency; follow the pattern from Day 4)
+A) CodePipeline V1 + KMS encryption + AllAtOnce deployment
+B) CodePipeline V2 (filePaths trigger) + AWS Signer/Notation signing + Inspector scanning + CodeDeploy `Canary10Percent5Minutes` + CloudWatch Alarm automatic rollback
+C) Jenkins + S3 ACLs + Rolling deployment
+D) CodePipeline V2 + KMS signing + Linear deployment
+
+**Answer: B**
+
+Explanation: Path filtering is the V2 filePaths trigger; tamper protection is signing (Signer/Notation) plus Inspector, not KMS encryption; a 10% canary for 5 minutes is `Canary10Percent5Minutes`; and automatic alarm-based rollback is CodeDeploy plus a CloudWatch Alarm. V1 (A) has no path filter and AllAtOnce is high risk; S3 ACLs/Rolling (C) fail the integrity and deployment requirements; "KMS signing" (D) is itself a wrong term (KMS is for encryption), and Linear is not "a 10% canary in two steps."
+
+---
+
+**Question 2.** In a 60-account environment you must (1) enable GuardDuty and Config in every account, automatically including new accounts, (2) automatically block S3 public access, but require human approval for risky actions such as deleting production resources, and (3) automatically invalidate stolen IAM credentials. Which design is MOST appropriate?
+
+A) Enable each account manually + a Lambda function that executes every action immediately
+B) Audit account as Delegated Administrator + Organizations auto-enable / Config rule + SSM Automation (`aws:approve` gates risky actions) / GuardDuty finding → EventBridge → Lambda (credential invalidation)
+C) Enable security only through StackSets + all automation in Step Functions Express
+D) Turn on only Security Hub and handle the rest manually
+
+**Answer: B**
+
+Explanation: Automatic inclusion of new accounts is Delegated Administrator + auto-enable; auto-remediation with a human gate is a Config rule + SSM `aws:approve`; automatic credential invalidation is GuardDuty → EventBridge → Lambda (defense in depth across prevention, detection, and response). Manual enablement with unconditional immediate execution (A) risks gaps and runaway actions; StackSets only plus Express (C) is unsuitable for automatic new-account coverage and auditing; Security Hub only (D) is just aggregation, with detection and response missing.
+
+---
+
+**Question 3.** A payments database needs an RTO of 1 minute and an RPO of a few seconds. The session store (key-value) needs simultaneous writes in two Regions. A partner has whitelisted the destination IP in its firewall, so the IP cannot change, yet 1-second failover is required. In addition, the failover procedure must not depend on the primary Region being healthy. Which combination is MOST appropriate?
+
+A) RDS Multi-AZ + DynamoDB Multi-AZ + Route 53 failover, with the failover Lambda function in the primary Region
+B) Aurora Global Database + DynamoDB global tables + Global Accelerator (static anycast IPs), with failover automation (health checks + EventBridge + Step Functions) running in the DR Region
+C) RDS read replica + ElastiCache + CloudFront
+D) Aurora Global Database + DynamoDB global tables + Route 53 (TTL 0)
+
+**Answer: B**
+
+Explanation: A SQL database with an RTO of 1 minute and an RPO of seconds is Aurora Global Database; a key-value store with simultaneous writes in two Regions is DynamoDB global tables; a fixed IP with 1-second failover is Global Accelerator (bypassing DNS TTL); and the failover automation must run in the DR Region (the lesson of the 2021 us-east-1 outage). Multi-AZ (A) is not multi-Region, and a Lambda function in the primary Region is useless if that Region is down; (C) fails on SQL DR, simultaneous writes, and fixed IP; Route 53 with TTL 0 (D) cannot guarantee 1 second or a fixed IP because of DNS caching.
+
+---
+
+**Question 4.** You need distributed traces for 50 microservices. Traffic is high, so tracing every request is too expensive. The traces must be sent to multiple backends without vendor lock-in, and multi-account observability must be unified in a single dashboard. Which combination is MOST appropriate?
+
+A) X-Ray 100% tracing + a separate dashboard per account
+B) ADOT (OpenTelemetry) + custom sampling (high for critical paths, 0% for health checks) + CloudWatch OAM (sink/link)
+C) Reconstruct traces with CloudWatch Logs Insights + Lambda aggregation
+D) Inspector + self-hosted Grafana
+
+**Answer: B**
+
+Explanation: Vendor-neutral, multi-backend output is ADOT (OpenTelemetry), cost efficiency comes from custom sampling, and multi-account unification is OAM. 100% tracing (A) explodes cost, and separate dashboards fail to unify; reconstructing traces from logs (C) cannot stitch together the request path; Inspector (D) is a vulnerability scanner and is irrelevant.
+
+---
+
+**Question 5.** In a regulated industry, SOC 2 audit evidence must be collected and reported automatically every quarter. CloudTrail, Config, and Security Hub are already enabled, and CloudTrail logs must not be deletable by an attacker in the event of a breach. Which design is MOST appropriate?
+
+A) Keep the default trail in each account + aggregate manually with Athena each time
+B) Audit Manager (SOC 2 framework) to collect evidence and generate reports automatically + an organization trail centralized in the Log Archive account + S3 Object Lock (WORM) for immutability
+C) Collect evidence with Macie + retain CloudWatch Logs permanently
+D) Generate reports with a Config aggregator + keep logs in each account
+
+**Answer: B**
+
+Explanation: Automatic evidence collection and reporting is Audit Manager (its prerequisite of source services being enabled is already met), and log integrity comes from centralizing in the Log Archive account plus S3 Object Lock (WORM) for immutability (separating operations from evidence permissions). Manual Athena (A), Macie (C, which is for PII), and Config aggregator reports (D) do not automate compliance evidence, and keeping logs in each account risks deletion during a breach.
+
+---
+
+**Question 6.** You want to delegate self-service IAM role creation to developers while safely enforcing that the roles they create cannot exceed the company policy ceiling (for example, specific Regions only). Which method is MOST appropriate?
+
+A) Grant developers AdministratorAccess including `iam:CreateRole`, and detect company policy violations afterward through CloudTrail audits
+B) Define a permissions boundary and, in the role-creation permission, use the `iam:PermissionsBoundary` condition to force the boundary to be attached to every new role
+C) Prohibit role creation entirely and have the platform team create roles manually on request through tickets
+D) Attach only a Region-restriction SCP to the OU to control the ceiling of permissions individual roles can have at the account level
+
+**Answer: B**
+
+Explanation: A permissions boundary is a principal-level permission ceiling. Forcing the boundary to be attached through the `iam:PermissionsBoundary` condition on the role-creation permission means every role a developer creates cannot exceed the ceiling, which blocks privilege escalation and safely delegates self-service. Admin (A) is a privilege-escalation hole, a total ban (C) abandons self-service, and an SCP (D) is an account/OU ceiling, not enforcement at role-creation time.
+
+---
+
+**Question 7.** For incident response, you want to build a complex runbook that needs multiple steps, retries, and an audit trail, and that can be triggered by both AWS Health events (scheduled maintenance) and GuardDuty findings. Which combination is MOST appropriate?
+
+A) Lambda alone + SNS polling
+B) EventBridge (default bus for Health, event pattern filter for GuardDuty) → Step Functions Standard (multi-step, retries, execution history for audit) → Incident Manager
+C) Routing through CloudWatch alarms only
+D) A single SSM Run Command
+
+**Answer: B**
+
+Explanation: The entry point for automated response is EventBridge (AWS Health uses the default bus; GuardDuty uses an event pattern filter), multi-step handling, retries, and audit come from Step Functions Standard, and paging and post-incident analysis come from Incident Manager. Lambda alone (A) is limited for multi-step work and auditing, alarms only (C) are metric thresholds rather than event routing, and a single Run Command (D) is not a workflow.
+
+---
+
+**Question 8.** A CodeBuild build environment in a private VPC must access ECR, S3, CodeArtifact, and Secrets Manager without internet access, and the build artifacts must be readable cross-account by the Spoke account at deployment time. Which design is MOST appropriate?
+
+A) NAT gateway + share IAM user keys with the Spoke
+B) A VPC endpoint (PrivateLink) for each service + a cross-account bucket policy on the artifact S3 bucket and a KMS CMK key policy that allows the Spoke to decrypt
+C) Internet gateway + a public S3 bucket
+D) Direct Connect + root credentials for the Spoke
+
+**Answer: B**
+
+Explanation: VPC access without the internet is VPC endpoints, and cross-account artifact reads require both the S3 bucket policy and the KMS key policy to allow the Spoke (a missing KMS permission is the classic trap). NAT/IGW (A, C) route through the internet, violating the requirement, and IAM keys and public buckets are security anti-patterns; root credentials (D) are a severe violation.
+
+---
+
+**Question 9.** You operate feature flags with AppConfig, and a design that assumed "AWS pushes changes to the application immediately when the configuration changes" is not actually being reflected immediately. What is the cause and the correct understanding?
+
+A) It is a configuration propagation bug in AppConfig, so open a case with AWS Support and wait for a hotfix
+B) AppConfig is a polling model, not a push model; the application retrieves configuration periodically through the AppConfig Agent/Extension, so there is a propagation delay equal to the polling interval (controlled by adjusting the interval)
+C) Switch to Secrets Manager and trigger an immediate application refresh with a rotation event (EventBridge)
+D) Switch to Parameter Store and have the application restart when it receives an SNS notification on change
+
+**Answer: B**
+
+Explanation: AppConfig is polling-based: the client (Agent/Lambda extension) fetches the configuration at the configured interval, so the "immediate push" assumption is wrong. The speed of propagation is controlled by the polling interval. It is not a bug (A), and Secrets Manager/Parameter Store (C, D) lack built-in validation, gradual rollout, and automatic rollback, so they do not fit the feature flag requirements.
+
+---
+
+**Question 10.** Which service performs each of the following: "scanning EC2 for known CVEs," "detecting PII in S3," "proactively validating whether an IAM policy could be shared externally," and "root cause and relationship analysis of a security incident"?
+
+A) GuardDuty (CVE) / GuardDuty (PII) / GuardDuty (external exposure) / GuardDuty (causal analysis) — unified as threat detection
+B) Inspector (CVE) / Macie (PII) / IAM Access Analyzer (external exposure and policy validation) / Detective (causal analysis)
+C) Security Hub (CVE) / Security Hub (PII) / Security Hub (external exposure) / Security Hub (causal analysis) — aggregated in a single console
+D) Config rule (CVE) / Config rule (PII) / Config rule (external exposure) / Config rule (causal analysis) — unified as compliance
+
+**Answer: B**
+
+Explanation: Detection services have different signal sources: Inspector (vulnerability CVEs), Macie (sensitive data in S3), Access Analyzer (external exposure + policy validation), and Detective (incident causality through a GuardDuty/CloudTrail graph). Options that claim a single service (A, C, D) can handle all four misunderstand the division of responsibilities.
+
+---
+
+**Question 11.** Both options work. The question asks for applying a security baseline to 60 accounts, including new accounts, with the LEAST operational overhead. (A) Deploy with self-managed StackSets, manually creating an execution role in each account; (B) deploy service-managed StackSets + auto-deployment to the OU. Which do you choose based on the qualifier?
+
+A) Self-managed — finer-grained control
+B) Service-managed + auto-deployment — Organizations integration lets AWS manage execution roles automatically and include new accounts automatically, minimizing operational burden
+C) They are the same
+D) Implement it yourself with Lambda
+
+**Answer: B**
+
+Explanation: The qualifier "LEAST operational overhead" is decisive. Service-managed integrates with Organizations, manages execution roles automatically, and auto-deployment includes new accounts automatically, so the operational burden is minimal. Self-managed (A) requires manual role setup in each account, so the burden is large (choose it only for non-Organizations or legacy setups), and a custom Lambda implementation (D) is the largest burden. The qualifier breaks the tie between two answers that look equal.
+
+---
+
+**Question 12.** An organization intermittently gets "Access Denied (KMS)" in a cross-account pipeline deployment. The S3 bucket policy has already been updated to allow the Spoke. What is the MOST appropriate next step?
+
+A) Restart the pipeline
+B) Add `kms:Decrypt` (and `GenerateDataKey` if needed) permission for the Spoke account/deployment role to the key policy of the KMS CMK used to encrypt the artifacts — both the S3 policy and the KMS key policy must allow access
+C) Disable ECR
+D) Downgrade the pipeline to V1
+
+**Answer: B**
+
+Explanation: If the artifacts are encrypted with a KMS CMK, the Spoke needs decrypt permission in the **KMS key policy** as well as the S3 bucket policy in order to read them. This is the classic case of fixing only S3 and missing KMS; adding the Spoke's `kms:Decrypt` to the key policy resolves it. Restarting (A), disabling ECR (C), and downgrading to V1 (D) do not address the root cause (KMS permissions).
+
+---
+
+**Question 13.** What is the MOST recommended action the day before the exam (D-1)?
+
+A) Take three new practice exams to find weak domains up to the last minute and reinforce the error notes
+B) Get at least 7 hours of sleep, lightly skim only the starred key points of the main material, and avoid new material and new practice exams
+C) Stay up all night reorganizing all six domains once more and memorize the weak areas intensively
+D) Increase caffeine above normal to raise alertness and push concentration late into the night
+
+**Answer: B**
+
+Explanation: Right before the exam, lowering cognitive load and protecting self-efficacy and memory consolidation (sleep) benefits your score. New practice exams (A) shake confidence through score fluctuation, while all-nighters (C) and excess caffeine (D) cut into sleep and unsettle even what you memorized yesterday.
+
+---
+
+**Question 14.** When two options are both technically workable, which direction is generally preferred in a question that includes the qualifier "MOST cost-effective"?
+
+A) Always-on high-availability infrastructure over-provisioned for peak load to secure performance headroom
+B) Managed, serverless, usage-based pricing plus tiering (hot/cold) — for example, S3 + Athena instead of retaining logs permanently
+C) The fully managed service with the most features, covering future requirements all at once
+D) The service the team knows best, with low learning cost and fewer operational mistakes
+
+**Answer: B**
+
+Explanation: The cost-effective qualifier points toward usage-based pricing, managed services, and tiering (always-on and over-provisioning are eliminated). Having many features (C) and familiarity (D) are not cost criteria.
+
+---
+
+**Question 15.** Why is choosing KMS encryption wrong in a question that requires "tamper protection (integrity/provenance)"?
+
+A) Because KMS CMK request and key storage costs are higher than signing, which conflicts with cost optimization
+B) Because KMS provides confidentiality (encryption), not integrity or proof of origin — tamper protection is handled by signing such as AWS Signer/Notation
+C) Because KMS cannot directly sign artifact formats such as OCI container images or Lambda zip files
+D) Because KMS keys are Region-bound, so a single key cannot prove the origin of multi-Region artifacts
+
+**Answer: B**
+
+Explanation: Encryption (KMS) and signing guarantee different properties — encryption prevents reading, while signing proves whether something was forged or tampered with. As the SolarWinds supply chain lesson shows, integrity is guaranteed by signing (Signer/Notation).
+
+---
+
+**Question 16.** What is the MOST appropriate strategy for the last 20 minutes of the exam?
+
+A) Answer as many untouched new questions as possible to keep adding scoring opportunities until the end
+B) Review the flagged (hard) questions first, keep your first instinct unless you have new evidence to change an answer, and make sure no answer is left blank
+C) Re-review the answers to all questions from question 1 to catch every mistake
+D) Recheck only the questions you felt sure you got right, to lock in your score safely
+
+**Answer: B**
+
+Explanation: Focus the limited time on flagged questions; changing answers without evidence is statistically a loss, so keep your first instinct; and never leave an answer blank. A full re-review (C) runs out of time, and rechecking confident questions (D) is inefficient.
+
+---
+
+**Question 17.** You must apply a security baseline to 60 accounts, including new accounts, with the LEAST operational overhead. Between self-managed StackSets and service-managed StackSets + auto-deployment, what is the correct choice and its rationale?
+
+A) Self-managed — you define each account's execution role yourself, allowing finer-grained permission control
+B) Service-managed + auto-deployment — Organizations integration lets AWS manage execution roles automatically and include new accounts automatically, minimizing operational burden
+C) Both support OU-targeted deployment, so the operational burden is effectively the same
+D) Run a daily Lambda function on an EventBridge schedule to scan for new accounts and deploy the baseline through the API
+
+**Answer: B**
+
+Explanation: The qualifier LEAST operational overhead decides it — service-managed has the lowest burden with automatic role management plus auto-deployment (automatic for new accounts). Self-managed (A) requires manual role setup in each account (only for non-Organizations or legacy setups), and the Lambda scan (D) is the largest burden.
+
+---
+
+**Question 18.** You designed AppConfig assuming that "changes take effect immediately when the configuration changes," but there is a delay. What is the correct understanding?
+
+A) AppConfig is inherently an immediate push model, so the behavior is a bug — you should contact AWS Support
+B) AppConfig is a polling model, so clients fetch at the configured interval — the propagation delay is normal and is controlled by the polling interval
+C) If immediate propagation is required, replace it with Secrets Manager and trigger the refresh with a rotation event
+D) You must change the architecture to receive AppConfig changes as EventBridge events and push them to the application
+
+**Answer: B**
+
+Explanation: AppConfig is a model in which the Agent/extension polls periodically — it is not an immediate push, and the delay depends on the polling interval. It is not a bug (A), and Secrets Manager (C) cannot meet the feature flag requirements (validation, gradual rollout).
+
+---
+
+**Question 19.** On a Professional exam, when you encounter a question you know nothing about, which is a reasonable direction for guessing so that you do not leave the answer blank?
+
+A) The option that is longest and looks most sophisticated with many technical terms
+B) The option that suggests AWS-native, automated, minimal operational overhead (avoid options with unfamiliar, suspicious service names or manual operations)
+C) The option placed first (A) — the probability it is correct based on how questions are typically written
+D) The most expensive, full-stack solution with the most features — safely choosing the top-tier option
+
+**Answer: B**
+
+Explanation: DOP answers usually converge on "AWS-native, automated, minimal operations," and options with unfamiliar service names or manual scripts are often traps. Length (A), order (C), and cost (D) are not valid grounds.
 
 ---
 

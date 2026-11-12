@@ -135,4 +135,60 @@ Next: Tools diving in — Debugger, Clarify (bias detection, SHAP explanations),
 
 ## 📝 Practice Questions
 
-[Questions 1-5 in Korean, matching original...]
+**Question 1.** The data contains a few extreme outliers caused by sensor errors, and you want an evaluation metric that does not react too sensitively to them. Which is the most appropriate?
+
+A) RMSE  
+B) MAE  
+C) R²  
+D) Maximum of the residuals  
+
+**Answer: B**  
+Explanation: MAE does not square the errors, so it is robust to extreme outliers and is less swayed by them. RMSE (A) amplifies large errors by squaring, R² (C) is also sensitive because it is based on sums of squares, and the maximum residual (D) is determined by a single outlier.
+
+---
+
+**Question 2.** On the same predictions, RMSE came out noticeably larger than MAE. What does this imply?
+
+A) The model has data leakage  
+B) All errors are identical  
+C) Some large errors (large outlier-like residuals) exist  
+D) The target variable is categorical  
+
+**Answer: C**  
+Explanation: RMSE amplifies large errors by squaring, so a large gap between RMSE and MAE means a few large errors exist. It is unrelated to data leakage (A) or a categorical target (D), and if all errors were equal (B), the two metrics would be nearly the same.
+
+---
+
+**Question 3.** You want to compare forecast performance across several stores with very different sales scales, regardless of scale. However, some stores have sales close to 0. Which is a correct caveat for this metric?
+
+A) MAPE is scale-independent, but when actual values are close to 0 the denominator blows up and it may be unsuitable  
+B) MAPE is always stable even when actual values are 0  
+C) MAPE is an absolute error, so it is unsuitable for scale comparison  
+D) MAPE is a classification-only metric  
+
+**Answer: A**  
+Explanation: MAPE is a relative metric that divides the error by the actual value, so it is useful for scale comparison, but when the actual value is 0 or close to 0, the denominator blows up and distorts it. It is not stable at 0 (B), it is a ratio rather than an absolute error (C), and it is a regression metric (D is wrong).
+
+---
+
+**Question 4.** A regression model's R² was calculated as -0.2. What does this mean?
+
+A) It is a calculation error, and R² cannot be negative  
+B) The model explains 20% of the variance  
+C) The model is perfect  
+D) The model performs worse than simply predicting the target mean  
+
+**Answer: D**  
+Explanation: R² < 0 is a strong warning that the model is worse than the baseline of predicting with the simple mean line (ȳ). R² can be negative (A is wrong), and a negative value does not mean 20% explanatory power (B) or perfection (C).
+
+---
+
+**Question 5.** RMSE is low and satisfying, but the residual plot (predicted values vs. residuals) shows a clear U-shaped curve. What is the most reasonable interpretation and action?
+
+A) The metric is good, so deploy as is  
+B) Ignore it, since residual plots are meaningful only for classification  
+C) The model is failing to capture nonlinearity, so consider feature transformations or a nonlinear model  
+D) Shuffling the data randomly will make the curve disappear  
+
+**Answer: C**  
+Explanation: A U-shaped/curved pattern in the residuals is a signal that the model has not captured a nonlinear relationship, so you should consider feature transformations or a nonlinear model. Deploying based on the metric alone (A) is risky, residual analysis is a core diagnostic for regression (B is wrong), and shuffling does not remove the cause of the pattern (D).

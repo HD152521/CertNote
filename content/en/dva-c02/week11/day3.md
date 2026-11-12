@@ -346,6 +346,28 @@ D) 1 hour
 
 ---
 
+**Question 6.** Which statement about the latency characteristics of Firehose is correct?
+
+A) It delivers immediately (in milliseconds)
+B) It has a minimum 60-second buffer, so it is Near Real-Time and unsuitable for ultra-low-latency real-time processing
+C) It is always delayed by 1 hour
+D) It has no delay and also allows reprocessing
+
+**Answer: B** - Firehose buffers data by size (1-128 MB) or time (60-900 seconds) and then delivers it in batches, so there is a **minimum 60-second** delay (Near Real-Time). If you need "immediate processing within 1 second," you must consume Data Streams directly. A is closer to Data Streams (EFO, about 70 ms). C) 1 hour is far off, even longer than the maximum buffering (900 seconds = 15 minutes). D) Firehose is pass-through, so it has no retention or reprocessing.
+
+---
+
+**Question 7.** While Lambda consumes a Kinesis stream, one record keeps failing to process. The records after it are not processed and are stuck. Which description of this phenomenon and the response is correct?
+
+A) Like SQS, only that record is automatically moved to a DLQ
+B) Head-of-line blocking occurs because order is preserved within a shard, and it is mitigated by configuring BisectBatchOnFunctionError, MaximumRetryAttempts, and a failure destination (SQS/SNS)
+C) You must delete and recreate the stream
+D) Changing the partition key solves it
+
+**Answer: B** - Kinesis **preserves order** within a shard, so a failed record cannot be skipped and the records behind it are blocked, which is **head-of-line blocking** (the price of order preservation). To mitigate this, the Lambda event source mapping provides options to split a batch in half to narrow down the problem record (`BisectBatchOnFunctionError`), limit the maximum number of retries (`MaximumRetryAttempts`), and send exhausted failed records to SQS/SNS (`DestinationConfig`). A) Unlike SQS, Kinesis cannot automatically pull out just one record. C and D are unrelated.
+
+---
+
 ## 📌 Today's Summary
 
 1. Kinesis Data Streams: Real-time streaming, shard-based, multiple consumers

@@ -86,8 +86,6 @@ SAP exam frequent mappings: (1) "EC2+Fargate+Lambda unified discount" → **Comp
 
 ## 📝 Practice Questions
 
-[Exercise questions 1-7 preserved exactly as in Korean source - not translated per requirement]
-
 **Question 1.** A company uses EC2, Fargate, and Lambda, and frequently changes instance families depending on the workload. It wants to apply discounts as broadly as possible with a 1-year commitment. Which is the most appropriate?
 
 A) Standard RI (m5 family)
@@ -102,7 +100,101 @@ D) Zonal RI
 
 **Explanation:** Compute SP covers EC2, Fargate, and Lambda, and automatically applies the discount to usage within the hourly commitment amount regardless of Region, OS, family, or tenancy. It fits workloads that change families frequently. A is tied to a family, so the commitment goes unused when the family changes, and it does not cover Fargate or Lambda. B is fixed to a specific Region and family, which conflicts with the requirement "frequently changes families." D is for reserving capacity in a specific AZ and is not a unified discount across diverse compute. Trap: "includes Fargate and Lambda" is possible only with Compute SP.
 
-[Remaining questions 2-7 preserved exactly as in Korean]
+---
+
+**Question 2.** A workload will run 24 hours a day for 3 years in us-east-1 on the same m6i family, and there is no plan to change the family. The company wants the maximum discount. Which is the most appropriate?
+
+A) Compute Savings Plans
+
+B) EC2 Instance Savings Plans (or Standard RI)
+
+C) Convertible RI
+
+D) On-Demand
+
+**Answer: B**
+
+**Explanation:** When the family and Region are fixed, EC2 Instance SP or Standard RI gives the largest discount at about 72%. EC2 Instance SP is one step more flexible than Standard RI because it allows changes to size, OS, and AZ within the same family, at the same discount. A (Compute SP) trades flexibility for a lower discount of about 66%. C (Convertible) buys the freedom to change at the lowest discount of about 54%, so it does not fit the "no change planned + maximum discount" requirement. D is the list price. Trap: when the family is fixed and the discount must be maximized, there is no reason to pay for flexibility, so choose the most specific commitment.
+
+---
+
+**Question 3.** An Organization runs 10 member accounts with consolidated billing. It wants to minimize total compute cost while maximizing commitment utilization. Which commitment purchase strategy is most appropriate?
+
+A) Each member account purchases SPs individually based on its own usage
+
+B) Purchase SPs centrally in the management account (or a dedicated billing account) sized to the baseline of Organization-wide usage, with sharing enabled
+
+C) Purchase Standard RIs in each member account
+
+D) Use only On-Demand with no commitment
+
+**Answer: B**
+
+**Explanation:** In a consolidated billing environment, SP and RI discounts are shared across the whole Organization when sharing is enabled. Pooling multiple workloads cancels out variability, so it is safe to commit more tightly to the usage baseline, and when one account is idle, a busy account absorbs the unused commitment, which raises utilization. A and C over-commit per account and leave idle commitments, which lowers utilization. D gives up commitment discounts, which defeats the goal of minimizing cost. Trap: "purchase individually in each member account" is a classic wrong answer on the Pro exam.
+
+---
+
+**Question 4.** A mission-critical workload must have guaranteed capacity in a specific AZ (guaranteed scale-out during a failure) and also wants a cost discount. Which is the most appropriate?
+
+A) Regional Standard RI
+
+B) Compute Savings Plans alone
+
+C) Zonal RI, or ODCR + Savings Plans
+
+D) Spot Instances
+
+**Answer: C**
+
+**Explanation:** When capacity must be guaranteed, the correct answer is a Zonal RI (capacity reservation in a specific AZ plus a discount) or a combination of ODCR (pure capacity reservation, no discount) + SP (discount). A (Regional RI) gives only a discount and does not guarantee capacity. B (Compute SP) also gives only a discount with no capacity guarantee. D (Spot) can be reclaimed, which is the opposite of a mission-critical capacity guarantee. Trap: "Regional RI = capacity guarantee" is a common misconception; capacity is guaranteed by a Zonal RI or ODCR.
+
+---
+
+**Question 5.** A team holds an m5 Standard RI on a 3-year term, and the company has decided to modernize the workload to m6i. What should the new commitment be so that the RI is not wasted and the company can respond flexibly to future family changes?
+
+A) Purchase additional m5 Standard RIs
+
+B) Compute Savings Plans (or Convertible RI)
+
+C) Zonal RI
+
+D) Switch to On-Demand
+
+**Answer: B**
+
+**Explanation:** When a family change (m5 to m6i) is expected, you need a commitment that is not tied to a family. Compute SP automatically matches regardless of family, Region, and OS, so the commitment remains valid after modernization (a Convertible RI can also work through exchange, but the procedure is cumbersome, so Compute SP is operationally superior). A repeats the same trap, leaving the m5 RI idle again. C is for AZ-specific capacity and has nothing to do with family flexibility. D gives up the discount. Trap: a family-bound commitment (Standard RI) is an anti-pattern for workloads where modernization or technology change is expected.
+
+---
+
+**Question 6.** After the cost team newly purchased a large amount of RIs and SPs at the same time, it found that SP utilization is below 100%. What is the most likely cause?
+
+A) SP can never reach 100% utilization
+
+B) The RIs absorbed (offset) usage first, leaving insufficient usage for the SP to match
+
+C) Compute SP cannot cover Fargate
+
+D) SP is not shared in consolidated billing
+
+**Answer: B**
+
+**Explanation:** The billing engine applies the most specific commitments (RI) first and the flexible commitments (SP) afterward. If you buy too many RIs, the RIs claim usage every hour first, which reduces the remaining usage available for the SP to match and lowers SP utilization. The right direction is to reduce RIs or standardize new commitments on SP. A is wrong (100% is possible with an appropriately sized commitment). C is wrong (Compute SP includes Fargate). D is wrong (SP is shared in consolidated billing). Trap: when SP utilization is low, first suspect "RI over-commitment claiming usage first," not "insufficient usage."
+
+---
+
+**Question 7.** A company wants commitment-based discounts while minimizing upfront cash outlay. Which payment option is most appropriate?
+
+A) All Upfront
+
+B) Partial Upfront
+
+C) No Upfront
+
+D) On-Demand with no commitment
+
+**Answer: C**
+
+**Explanation:** No Upfront lets you pay in monthly installments over the commitment term with no upfront payment while still receiving the commitment discount. This fits the requirement to minimize upfront cash burden. A (All Upfront) gives the largest discount but the largest upfront cash outlay. B (Partial) is in between. D receives no discount at all. Trap: "minimum upfront cash + commitment discount" points to No Upfront, while "cash available + maximum discount" points to All Upfront.
 
 ---
 

@@ -136,6 +136,62 @@ Tomorrow: network isolation — using VPC mode to isolate SageMaker from the int
 
 ## 📝 Practice Questions
 
-**Questions 1-5** [Practice questions in Korean follow after marker]
+**Question 1.** A SageMaker training job fails with "Access Denied" as soon as it starts, because it cannot read the S3 data. The user has the `sagemaker:CreateTrainingJob` permission. What is the most likely cause?
+
+A) The user's IAM policy lacks `s3:GetObject`  
+B) The SageMaker execution role's permission policy lacks read permission for that S3 bucket  
+C) The S3 bucket is in a different Region  
+D) The training instance type is wrong  
+
+**Answer: B**  
+Explanation: S3 access while a training job runs is performed with the permissions of the execution role that SageMaker assumes, not the user's, so Access Denied occurs if the execution role lacks bucket read permission. A is wrong because the user's policy does not directly determine S3 access during job execution, and C and D cause other kinds of errors rather than Access Denied.
+
+---
+
+**Question 2.** A data scientist has permission to create training jobs, but job creation fails with "is not authorized to perform: iam:PassRole." What is the most appropriate fix?
+
+A) Add `s3:*` to the execution role  
+B) Add the `iam:PassRole` permission for that execution role's ARN to the user's policy  
+C) Remove SageMaker from the execution role's trust policy  
+D) Grant the user `AdministratorAccess`  
+
+**Answer: B**  
+Explanation: When creating a training job, the user must pass the execution role to SageMaker, and this requires the `iam:PassRole` permission, so adding PassRole as the error message indicates resolves it. A concerns the execution role's permissions and is unrelated to the PassRole error, C breaks the role's trust and makes things worse, and D violates the principle of least privilege and is an overreaction since the root cause is PassRole.
+
+---
+
+**Question 3.** The security team wants to enforce the rule that "only KMS-encrypted objects may be uploaded to the model artifact bucket." Which policy element is the most effective to add to the execution role?
+
+A) Broadly grant `s3:PutObject` with `Allow`  
+B) A conditional explicit deny that `Deny`s `s3:PutObject` when `s3:x-amz-server-side-encryption` is not `aws:kms`  
+C) Make the bucket public  
+D) Remove `iam:PassRole`  
+
+**Answer: B**  
+Explanation: A policy that checks the encryption header condition and applies an explicit `Deny` when it is not KMS blocks unencrypted uploads at the source, and because an explicit deny takes precedence over any allow, it is a strong guardrail. A allows without constraints and defeats the rule, C worsens security, and D is wrong because PassRole is unrelated to upload encryption.
+
+---
+
+**Question 4.** What must be included in the trust policy of a SageMaker execution role?
+
+A) The ARN of a human user in `Principal`  
+B) `sagemaker.amazonaws.com` as the `Service` in `Principal`, and the `sts:AssumeRole` action  
+C) The `s3:GetObject` action  
+D) A specific IP address in `Condition`  
+
+**Answer: B**  
+Explanation: The trust policy defines "who can assume this role," and for SageMaker to assume the role, the service principal `sagemaker.amazonaws.com` must be able to perform `sts:AssumeRole`. A is wrong because a service role is assumed by a service, not a person, C belongs in the permission policy, not the trust policy, and D is not a required element.
+
+---
+
+**Question 5.** Which SageMaker execution role permission policy best follows the principle of least privilege?
+
+A) Use the `AmazonSageMakerFullAccess` managed policy as is  
+B) Allow `s3:*` on all S3 buckets  
+C) Allow only `s3:GetObject`/`s3:ListBucket` on the training data bucket and `s3:PutObject` on the artifact bucket, using specific ARNs  
+D) Allow `*` for both `Action` and `Resource`  
+
+**Answer: C**  
+Explanation: A policy that limits the actions the job actually needs to specific bucket ARNs and separates the read and write buckets is the narrowest on both actions and resources and therefore best follows least privilege. A includes broad permissions unnecessary for training, and B and D are excessively broad in actions and resources, the exact opposite of least privilege.
 
 ---
