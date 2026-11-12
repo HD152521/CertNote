@@ -222,86 +222,86 @@ S3 performance optimization is not simply about being "fast" but is a design pro
 
 ## 📝 Practice Questions
 
-**문제 1.** What method must you use when uploading an S3 object exceeding 5GB? And what is the minimum size of each part in a multipart upload? (excluding the last part)
+**Question 1.** What method must you use when uploading an S3 object exceeding 5GB? And what is the minimum size of each part in a multipart upload? (excluding the last part)
 
 A) Single PUT is possible, part minimum 1MB
 B) Multipart Upload required, part minimum 5MB
 C) Transfer Acceleration required, part minimum 10MB
 D) Presigned URL required, part minimum 100MB
 
-**정답: B**
-해설: The maximum size of a single PUT is 5GB. When it exceeds 5GB, you must use Multipart Upload, and the minimum size of each part (except the last part) is 5MB. A part under 5MB causes an error during CompleteMultipartUpload. The maximum number of parts is 10,000, and the maximum object size is 5TB. Transfer Acceleration and Presigned URL are separate features unrelated to part size.
+**Answer: B**
+Explanation: The maximum size of a single PUT is 5GB. When it exceeds 5GB, you must use Multipart Upload, and the minimum size of each part (except the last part) is 5MB. A part under 5MB causes an error during CompleteMultipartUpload. The maximum number of parts is 10,000, and the maximum object size is 5TB. Transfer Acceleration and Presigned URL are separate features unrelated to part size.
 
 ---
 
-**문제 2.** You have an application where users in many countries worldwide upload large files to an S3 bucket in us-east-1. What is the most appropriate way to improve upload speed?
+**Question 2.** You have an application where users in many countries worldwide upload large files to an S3 bucket in us-east-1. What is the most appropriate way to improve upload speed?
 
 A) Create a separate S3 bucket per country and replicate with CRR
 B) Enable S3 Transfer Acceleration
 C) Add CloudFront to the upload path
 D) Connect all users via a VPN close to us-east-1
 
-**정답: B**
-해설: Transfer Acceleration leverages the CloudFront edge network so that from anywhere in the world, traffic goes over the public internet only as far as the nearest edge, and is then delivered quickly to the bucket over the AWS backbone network. Creating a bucket per country (A) creates excessive management complexity. CloudFront is caching-based download acceleration and is not suitable for uploads. A VPN has high cost and complexity.
+**Answer: B**
+Explanation: Transfer Acceleration leverages the CloudFront edge network so that from anywhere in the world, traffic goes over the public internet only as far as the nearest edge, and is then delivered quickly to the bucket over the AWS backbone network. Creating a bucket per country (A) creates excessive management complexity. CloudFront is caching-based download acceleration and is not suitable for uploads. A VPN has high cost and complexity.
 
 ---
 
-**문제 3.** Which is the correct description of S3 Select?
+**Question 3.** Which is the correct description of S3 Select?
 
 A) It can JOIN and query files across multiple S3 buckets
 B) Within a single object, it filters with SQL and returns only the data you need
 C) It fully supports GROUP BY and aggregate functions
 D) It can be used for free with no download cost
 
-**정답: B**
-해설: S3 Select runs simple SQL (SELECT/WHERE) within a single object (CSV, JSON, Parquet) and returns only the data you need. Because it transmits only the filtered result instead of downloading the entire file, network cost and processing cost are reduced. For JOINs or complex aggregations, you must use Amazon Athena. The cost is calculated as GB scanned + GB returned.
+**Answer: B**
+Explanation: S3 Select runs simple SQL (SELECT/WHERE) within a single object (CSV, JSON, Parquet) and returns only the data you need. Because it transmits only the filtered result instead of downloading the entire file, network cost and processing cost are reduced. For JOINs or complex aggregations, you must use Amazon Athena. The cost is calculated as GB scanned + GB returned.
 
 ---
 
-**문제 4.** Which is the correct description of S3 prefix design?
+**Question 4.** Which is the correct description of S3 prefix design?
 
 A) If you store all files under the same prefix, S3 automatically distributes partitions
 B) Because the limits of PUT 3,500/s and GET 5,500/s per prefix are applied independently, using varied prefixes increases overall throughput
 C) Prefixes are unrelated to performance and are used purely for organization purposes
 D) Increasing the number of prefixes increases S3 storage cost
 
-**정답: B**
-해설: S3's throughput limits are applied independently per prefix. Using 10 different prefixes theoretically allows 35,000 PUT/s and 55,000 GET/s. In the past there was a hot-partition problem where keys clustered in alphabetical order, but since 2018 this has been resolved by S3's automatic partition splitting. The number of prefixes is unrelated to storage cost.
+**Answer: B**
+Explanation: S3's throughput limits are applied independently per prefix. Using 10 different prefixes theoretically allows 35,000 PUT/s and 55,000 GET/s. In the past there was a hot-partition problem where keys clustered in alphabetical order, but since 2018 this has been resolved by S3's automatic partition splitting. The number of prefixes is unrelated to storage cost.
 
 ---
 
-**문제 5.** What is the currently (2024) recommended way to distribute private content by combining CloudFront and S3?
+**Question 5.** What is the currently (2024) recommended way to distribute private content by combining CloudFront and S3?
 
 A) Set the S3 bucket to public and configure caching in CloudFront
 B) Use OAI (Origin Access Identity)
 C) Use OAC (Origin Access Control)
 D) Use API Gateway as an S3 proxy instead of CloudFront
 
-**정답: C**
-해설: OAC (Origin Access Control) is the current recommended method, launched in 2022. OAI (Origin Access Identity) is legacy, cannot serve SSE-KMS-encrypted objects, and was supported only in some regions. OAC supports SigV4 signing, can serve SSE-KMS objects via CloudFront, and is available in all regions. On the exam, if a question has the condition "serve SSE-KMS-encrypted S3 content via CloudFront," OAC is the only correct answer.
+**Answer: C**
+Explanation: OAC (Origin Access Control) is the current recommended method, launched in 2022. OAI (Origin Access Identity) is legacy, cannot serve SSE-KMS-encrypted objects, and was supported only in some regions. OAC supports SigV4 signing, can serve SSE-KMS objects via CloudFront, and is available in all regions. On the exam, if a question has the condition "serve SSE-KMS-encrypted S3 content via CloudFront," OAC is the only correct answer.
 
 ---
 
-**문제 6.** How do you prevent unnecessary S3 costs from incomplete multipart uploads?
+**Question 6.** How do you prevent unnecessary S3 costs from incomplete multipart uploads?
 
 A) Do not use multipart uploads
 B) Add an AbortIncompleteMultipartUpload rule to the lifecycle policy
 C) Set an auto-complete flag on multipart uploads
 D) Change the storage class to S3 Intelligent-Tiering
 
-**정답: B**
-해설: If a multipart upload is started but not completed, the already-uploaded parts are not automatically deleted and continue to incur storage cost. If you set `AbortIncompleteMultipartUpload` in the lifecycle policy, the parts of incomplete multipart uploads are automatically deleted after a specified number of days (e.g., 7 days). Together with `NoncurrentVersionExpiration`, which automatically deletes previous versions in a versioning-enabled bucket, this is an essential setting for S3 cost management.
+**Answer: B**
+Explanation: If a multipart upload is started but not completed, the already-uploaded parts are not automatically deleted and continue to incur storage cost. If you set `AbortIncompleteMultipartUpload` in the lifecycle policy, the parts of incomplete multipart uploads are automatically deleted after a specified number of days (e.g., 7 days). Together with `NoncurrentVersionExpiration`, which automatically deletes previous versions in a versioning-enabled bucket, this is an essential setting for S3 cost management.
 
 ---
 
-**문제 7.** You need to extract only the logs of a specific IP address from a 100GB log file. What is the most efficient way to process it without downloading the entire file to EC2?
+**Question 7.** You need to extract only the logs of a specific IP address from a 100GB log file. What is the most efficient way to process it without downloading the entire file to EC2?
 
 A) Store it in Glacier with S3 Glacier Select and then query
 B) Use S3 Select to filter by IP on the S3 service side
 C) Use the CloudFront log analysis feature
 D) Get the file list with S3 Inventory and analyze with Athena
 
-**정답: B**
-해설: S3 Select applies SQL to a single file in CSV, JSON, or Parquet format and returns only the data you need. Instead of downloading the entire 100GB file, extracting only the logs of a specific IP with a WHERE clause drastically reduces network transfer volume and processing time. S3 Glacier Select is a similar feature for files stored in Glacier, but this scenario is a file in regular S3. S3 Inventory is for file list/metadata lookups. Athena is suitable for multiple files or complex queries.
+**Answer: B**
+Explanation: S3 Select applies SQL to a single file in CSV, JSON, or Parquet format and returns only the data you need. Instead of downloading the entire 100GB file, extracting only the logs of a specific IP with a WHERE clause drastically reduces network transfer volume and processing time. S3 Glacier Select is a similar feature for files stored in Glacier, but this scenario is a file in regular S3. S3 Inventory is for file list/metadata lookups. Athena is suitable for multiple files or complex queries.
 
 ---

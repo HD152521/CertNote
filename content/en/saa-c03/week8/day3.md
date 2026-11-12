@@ -255,95 +255,95 @@ In the next article we'll look at security *after* user authentication — the s
 
 ## 📝 Practice Questions
 
-**문제 1.** A mobile app needs to temporarily grant authenticated users permission to upload images directly to an S3 bucket. What is the most suitable solution?
+**Question 1.** A mobile app needs to temporarily grant authenticated users permission to upload images directly to an S3 bucket. What is the most suitable solution?
 
 A) User Pool alone + S3 presigned URL
 B) Grant an STS Role via Identity Pool + direct S3 upload (User Pool + Identity Pool combination recommended)
 C) Bake IAM user keys into the app
 D) Allow Public Write via the S3 bucket policy
 
-**정답: B**
+**Answer: B**
 
-해설: For a mobile client to call the S3 API directly, it needs IAM credentials capable of SigV4 signing, and Identity Pool is what issues those. The standard flow is to handle user authentication with User Pool and hand that JWT to Identity Pool to get temporary credentials via STS `AssumeRoleWithWebIdentity`. The presigned URL in A is also possible, but for a requirement of "direct upload permission," Identity Pool is the fit. C is a security disaster, and D is a data leak.
+Explanation: For a mobile client to call the S3 API directly, it needs IAM credentials capable of SigV4 signing, and Identity Pool is what issues those. The standard flow is to handle user authentication with User Pool and hand that JWT to Identity Pool to get temporary credentials via STS `AssumeRoleWithWebIdentity`. The presigned URL in A is also possible, but for a requirement of "direct upload permission," Identity Pool is the fit. C is a security disaster, and D is a data leak.
 
 ---
 
-**문제 2.** A company wants its employees to log into a SaaS app via the company's Okta SAML SSO. What is the most suitable configuration?
+**Question 2.** A company wants its employees to log into a SaaS app via the company's Okta SAML SSO. What is the most suitable configuration?
 
 A) IAM Identity Center
 B) Register Okta as a SAML IdP in a Cognito User Pool
 C) Cognito Identity Pool alone
 D) ALB authentication + OIDC
 
-**정답: B**
+**Answer: B**
 
-해설: The "users SSO into a SaaS app" scenario is standardly Cognito User Pool + an external SAML IdP (Okta/Azure AD/AD FS). IAM Identity Center (A) is for employees to SSO into the AWS console/CLI, not for authenticating external app users. C can't stand alone because it has no user directory. D is partially possible as front-of-ALB authentication, but the canonical SaaS auth pattern is User Pool + SAML.
+Explanation: The "users SSO into a SaaS app" scenario is standardly Cognito User Pool + an external SAML IdP (Okta/Azure AD/AD FS). IAM Identity Center (A) is for employees to SSO into the AWS console/CLI, not for authenticating external app users. C can't stand alone because it has no user directory. D is partially possible as front-of-ALB authentication, but the canonical SaaS auth pattern is User Pool + SAML.
 
 ---
 
-**문제 3.** An API Gateway HTTP API needs to verify JWTs issued by a Cognito User Pool. What is the most suitable approach?
+**Question 3.** An API Gateway HTTP API needs to verify JWTs issued by a Cognito User Pool. What is the most suitable approach?
 
 A) Verify directly on every request with a Lambda Authorizer
 B) Configure a JWT Authorizer (specify the Cognito User Pool issuer + Audience)
 C) Use IAM Auth
 D) Use an API Key
 
-**정답: B**
+**Answer: B**
 
-해설: HTTP APIs have a native JWT Authorizer, and if you set the Cognito User Pool's issuer URL and App Client ID (audience), it automatically handles JWKS caching + signature verification + claim checks. A Lambda Authorizer (A) is possible but burdensome because you'd have to write the JWKS caching and verification code yourself. C and D are unrelated to JWT verification.
+Explanation: HTTP APIs have a native JWT Authorizer, and if you set the Cognito User Pool's issuer URL and App Client ID (audience), it automatically handles JWKS caching + signature verification + claim checks. A Lambda Authorizer (A) is possible but burdensome because you'd have to write the JWKS caching and verification code yourself. C and D are unrelated to JWT verification.
 
 ---
 
-**문제 4.** A user's password is suspected to be compromised. You want to immediately terminate all of that user's active sessions. What is the most appropriate action?
+**Question 4.** A user's password is suspected to be compromised. You want to immediately terminate all of that user's active sessions. What is the most appropriate action?
 
 A) Delete and recreate the User Pool
 B) Invalidate refresh tokens with AdminUserGlobalSignOut + force a password change
 C) Just redeploy the backend code
 D) Just send the user an email notice
 
-**정답: B**
+**Answer: B**
 
-해설: AdminUserGlobalSignOut immediately invalidates all of that user's refresh tokens. However, already-issued ID/Access Tokens remain valid until they expire, so the shorter the token lifetime (e.g., 5–15 minutes), the faster the cutoff. Additionally, forcing a password change requires a new password on the next login. If you truly need instant cutoff, the standard is to add a token blocklist layer at the backend as well.
+Explanation: AdminUserGlobalSignOut immediately invalidates all of that user's refresh tokens. However, already-issued ID/Access Tokens remain valid until they expire, so the shorter the token lifetime (e.g., 5–15 minutes), the faster the cutoff. Additionally, forcing a password change requires a new password on the next login. If you truly need instant cutoff, the standard is to add a token blocklist layer at the backend as well.
 
 ---
 
-**문제 5.** A company wants to allow only company-domain emails (`@mycompany.com`) at sign-up. What is the most appropriate approach?
+**Question 5.** A company wants to allow only company-domain emails (`@mycompany.com`) at sign-up. What is the most appropriate approach?
 
 A) Validate the email domain in a PreSignUp Lambda Trigger and throw an exception on mismatch
 B) Block it with an IAM policy
 C) A PostAuthentication Lambda Trigger
 D) Just show the user an informational message
 
-**정답: A**
+**Answer: A**
 
-해설: A PreSignUp Lambda Trigger is invoked right before sign-up, so it can validate the email domain and throw an exception to block sign-up when it doesn't match. B can't affect the user sign-up flow. C runs after authentication, so sign-up is already complete. D has no enforcement power. Users coming in from an external IdP also invoke PreSignUp, so you can block them the same way.
+Explanation: A PreSignUp Lambda Trigger is invoked right before sign-up, so it can validate the email domain and throw an exception to block sign-up when it doesn't match. B can't affect the user sign-up flow. C runs after authentication, so sign-up is already complete. D has no enforcement power. Users coming in from an external IdP also invoke PreSignUp, so you can block them the same way.
 
 ---
 
-**문제 6.** A SaaS wants to gradually migrate from its existing homegrown membership system (MySQL + bcrypt) to a Cognito User Pool. How can users move over naturally without resetting their passwords?
+**Question 6.** A SaaS wants to gradually migrate from its existing homegrown membership system (MySQL + bcrypt) to a Cognito User Pool. How can users move over naturally without resetting their passwords?
 
 A) Use a Migrate User Lambda Trigger to verify against the old DB on first login and auto-create in Cognito
 B) Send a password-reset email to all users
 C) Keep the homegrown system as-is
 D) Create everyone as IAM users
 
-**정답: A**
+**Answer: A**
 
-해설: The Migrate User Trigger was designed for exactly this scenario. The first time a user tries to log into Cognito, the user doesn't exist there, so the Migrate User Lambda is invoked; the Lambda verifies the password with a bcrypt comparison against the old DB and, on success, auto-creates the user in Cognito. The user moves over to Cognito naturally without a password reset. It's the standard pattern for large-scale services where a big-bang migration is too risky.
+Explanation: The Migrate User Trigger was designed for exactly this scenario. The first time a user tries to log into Cognito, the user doesn't exist there, so the Migrate User Lambda is invoked; the Lambda verifies the password with a bcrypt comparison against the old DB and, on success, auto-creates the user in Cognito. The user moves over to Cognito naturally without a password reset. It's the standard pattern for large-scale services where a big-bang migration is too risky.
 
 ---
 
-**문제 7.** A company wants to automatically require MFA for login attempts from risky IPs, regions, or devices. What is the most suitable feature?
+**Question 7.** A company wants to automatically require MFA for login attempts from risky IPs, regions, or devices. What is the most suitable feature?
 
 A) GuardDuty
 B) Adaptive Authentication in Cognito Advanced Security Features
 C) A WAF Rate-based Rule
 D) An IAM MFA policy
 
-**정답: B**
+**Answer: B**
 
-해설: Adaptive Authentication in Cognito Advanced Security uses ML to evaluate the risk of a login attempt, assigns a risk score, and automatically requires additional MFA at Medium or above (or blocks at High). GuardDuty (A) is AWS account/resource threat detection, not user-authentication threat detection. C is traffic rate limiting, and D is for IAM users (employees), not app users.
+Explanation: Adaptive Authentication in Cognito Advanced Security uses ML to evaluate the risk of a login attempt, assigns a risk score, and automatically requires additional MFA at Medium or above (or blocks at High). GuardDuty (A) is AWS account/resource threat detection, not user-authentication threat detection. C is traffic rate limiting, and D is for IAM users (employees), not app users.
 
 ---
 
-해설 보강: On the exam, Cognito's most frequent trap is the "User Pool vs Identity Pool distinction." User authentication and JWT issuance → User Pool; credentials for calling AWS APIs directly → Identity Pool; need both → combine them. For external SSO (SAML/OIDC), adding the IdP to the User Pool is the answer, and remember the precise division of labor: IAM Identity Center is exclusively for employee SSO into the AWS console.
+Additional Explanation: On the exam, Cognito's most frequent trap is the "User Pool vs Identity Pool distinction." User authentication and JWT issuance → User Pool; credentials for calling AWS APIs directly → Identity Pool; need both → combine them. For external SSO (SAML/OIDC), adding the IdP to the User Pool is the answer, and remember the precise division of labor: IAM Identity Center is exclusively for employee SSO into the AWS console.

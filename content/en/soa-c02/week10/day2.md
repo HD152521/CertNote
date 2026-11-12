@@ -138,93 +138,93 @@ In the next article, we'll transcend backup/restore units, exploring how databas
 
 ## 📝 Practice Questions
 
-**문제 1.** 회사가 RDS·EBS·DynamoDB·EFS를 하나의 정책으로 통합 백업하고 컴플라이언스 보고서까지 자동 생성하려 한다. 가장 적합한 도구는?
+**Question 1.** A company wants to back up RDS, EBS, DynamoDB, and EFS under a single policy and automatically generate compliance reports. Which tool is most suitable?
 
 A) DLM(Data Lifecycle Manager)
-B) AWS Backup — Backup Plan으로 멀티 서비스 통합, Backup Audit Manager Framework로 컴플라이언스 자동 검증
-C) 서비스별 수동 스냅샷
-D) Lambda 커스텀 스크립트
+B) AWS Backup: integrates multiple services through a Backup Plan, and automatically verifies compliance with Backup Audit Manager frameworks
+C) Manual snapshots per service
+D) Custom Lambda scripts
 
-**정답: B**
+**Answer: B**
 
-해설: DLM은 EBS/AMI 전용이라 RDS·DynamoDB·EFS를 다루지 못한다. AWS Backup은 EBS/RDS/Aurora/DynamoDB/EFS/FSx/S3 등을 하나의 Backup Plan으로 통합 백업하고, Backup Audit Manager의 Control 기반 Framework로 "모든 prod 리소스가 백업되는가, 보존 기간이 충분한가" 등을 지속 검증해 컴플라이언스 리포트를 자동 생성한다.
-
----
-
-**문제 2.** Ransomware 공격자가 운영 계정의 관리자 권한을 탈취해 백업까지 삭제하는 시나리오를 막아야 한다. 가장 강력한 구조는?
-
-A) 운영 계정 내 IAM 정책으로 삭제 권한만 제거
-B) Cross-Account로 백업을 별도 중앙 계정 Vault에 복제하고, 그 금고에 Compliance 모드 Vault Lock을 적용
-C) 백업 빈도를 높임
-D) MFA를 모든 사용자에게 강제
-
-**정답: B**
-
-해설: 운영 계정이 통째로 침해되면 그 계정 내 IAM 정책(A)은 공격자가 우회한다. 진짜 방어는 백업을 다른 보안 경계(별도 계정)에 두는 것이다. 멤버 계정의 CopyAction이 중앙 백업 계정 금고로 복제하고, 그 금고에 Compliance Vault Lock을 걸면 멤버 계정의 어떤 권한으로도, 심지어 중앙 계정 루트로도 보존 기간 내 복구 지점을 삭제할 수 없다. "관리자도 못 지운다"가 곧 "공격자도 못 지운다"다.
+Explanation: DLM is dedicated to EBS/AMI and cannot handle RDS, DynamoDB, or EFS. AWS Backup backs up EBS, RDS, Aurora, DynamoDB, EFS, FSx, S3, and more under one Backup Plan, and with Backup Audit Manager's control-based frameworks it continuously verifies conditions such as "are all prod resources backed up and is the retention period sufficient" and automatically generates compliance reports.
 
 ---
 
-**문제 3.** 운영자가 Vault Lock을 Compliance 모드로 적용한 직후 보존 기간 설정이 잘못됐음을 깨달았다. 되돌릴 수 있나?
+**Question 2.** You must prevent a ransomware scenario in which an attacker steals administrator privileges in the production account and deletes the backups as well. What is the strongest architecture?
 
-A) IAM 권한이 있으면 언제든 가능
-B) changeable-for-days(cooling-off, 최소 3일) 기간 내라면 변경·해제 가능하지만, 그 기간이 지나면 루트·AWS를 포함해 영구히 불가
-C) AWS Support에 요청하면 해제해 준다
-D) 절대 불가능, 적용 즉시 영구
+A) Remove only the delete permission with an IAM policy inside the production account
+B) Replicate backups cross-account to a vault in a separate central account and apply Vault Lock in Compliance mode to that vault
+C) Increase the backup frequency
+D) Enforce MFA for all users
 
-**정답: B**
+**Answer: B**
 
-해설: Compliance Vault Lock은 `changeable-for-days`로 지정한 cooling-off 기간(최소 3일) 동안만 변경·해제할 수 있고, 그 기간이 지나면 발급자·루트 계정·AWS 누구도 풀 수 없는 진짜 불변 상태가 된다. 이 유예 기간은 비가역적 영구화 전에 설정을 검증하고 되돌릴 마지막 창이다. Governance 모드는 권한자가 언제든 해제 가능해 이 제약이 없다.
+Explanation: If the production account is fully compromised, an IAM policy (A) inside that account is bypassed by the attacker. The real defense is to keep backups in a different security boundary (a separate account). The member account's CopyAction replicates to the vault in the central backup account, and if Compliance Vault Lock is applied to that vault, no permission in the member account, not even the central account's root, can delete recovery points within the retention period. "Even an administrator cannot delete it" means "an attacker cannot delete it either."
 
 ---
 
-**문제 4.** 오후 2시 30분에 실행된 잘못된 DELETE 쿼리 직전 상태로 RDS를 되돌려야 한다. 어제 새벽 스냅샷밖에 없으면 하루치를 잃는다. 어떤 기능이 필요한가?
+**Question 3.** Right after applying Vault Lock in Compliance mode, an operator realizes the retention period setting was wrong. Can it be reverted?
 
-A) Manual Snapshot 복원
-B) Point-in-Time Recovery(PITR) — 베이스 스냅샷 복원 후 트랜잭션 로그를 지정 시각까지 재생해 임의의 초 단위 시점으로 새 인스턴스 복원
+A) Yes, at any time if you have IAM permissions
+B) Within the changeable-for-days (cooling-off, minimum 3 days) period it can be changed or removed, but after that period it is permanently impossible, including for the root account and AWS
+C) AWS Support will remove it on request
+D) Never possible; it is permanent immediately upon application
+
+**Answer: B**
+
+Explanation: Compliance Vault Lock can be changed or removed only during the cooling-off period specified by `changeable-for-days` (minimum 3 days); after that period it becomes truly immutable and no one, neither the issuer, the root account, nor AWS, can lift it. This grace period is the last window to verify the setting and revert it before it becomes irreversibly permanent. Governance mode can be removed at any time by authorized principals, so it has no such constraint.
+
+---
+
+**Question 4.** You need to roll RDS back to the state just before an erroneous DELETE query that ran at 2:30 PM. If you only have yesterday's early-morning snapshot, you lose a day of data. Which feature is needed?
+
+A) Restore from a manual snapshot
+B) Point-in-Time Recovery (PITR): restore a base snapshot and then replay transaction logs up to the specified time, restoring to a new instance at any point in time down to the second
 C) Read Replica promote
-D) Multi-AZ 페일오버
+D) Multi-AZ failover
 
-**정답: B**
+**Answer: B**
 
-해설: PITR은 주기적 베이스 스냅샷 + 연속 트랜잭션 로그(binlog/WAL) 조합으로 동작한다. 지정한 시각을 주면 그 직전 베이스 스냅샷을 복원한 뒤 로그를 그 시각까지 재생해 임의 시점 상태를 새 인스턴스로 재구성한다. 항상 새 리소스로 복원하므로 원본은 보존된다. 단 PITR은 자동 백업 보존 기간(기본 1~35일) 내에서만 작동한다.
-
----
-
-**문제 5.** Backup Plan에서 백업을 90일 후 Cold Storage로 옮기고 100일 후 삭제하도록 설정하려 했더니 정책이 거부된다. 이유는?
-
-A) Cold Storage는 RDS 백업을 지원하지 않는다
-B) Cold Storage로 이동한 백업은 최소 90일을 Cold에 머물러야 하므로, 이동 시점과 삭제 시점의 차이가 90일 미만이면 거부된다
-C) 보존 기간은 365일 이상이어야 한다
-D) Cold Storage 이동은 180일 후에만 가능하다
-
-**정답: B**
-
-해설: AWS Backup은 Cold Storage로 옮긴 복구 지점이 최소 90일간 Cold에 머물도록 강제한다. 따라서 `MoveToColdStorageAfterDays`와 `DeleteAfterDays`의 차이가 최소 90일 이상이어야 한다. 90일 이동 후 100일 삭제는 차이가 10일뿐이라 거부된다. Cold는 Warm보다 약 75% 저렴하지만 복원이 느리므로, RTO가 빡빡한 백업은 Warm에 둬야 한다.
+Explanation: PITR works by combining periodic base snapshots with continuous transaction logs (binlog/WAL). Given a specific time, it restores the base snapshot immediately before that time, replays the logs up to that time, and reconstructs the state at that arbitrary point into a new instance. Because it always restores to a new resource, the original is preserved. However, PITR works only within the automated backup retention period (default 1 to 35 days).
 
 ---
 
-**문제 6.** 수백 개 prod 리소스 중 일부가 백업 계획에서 누락됐는지를 장애 전에 자동으로 탐지하려 한다. 어떤 도구가 적합한가?
+**Question 5.** When configuring a Backup Plan to move backups to Cold Storage after 90 days and delete them after 100 days, the policy is rejected. Why?
 
-A) CloudWatch 알람
-B) Backup Audit Manager Framework — BACKUP_RESOURCES_PROTECTED_BY_BACKUP_PLAN 등 Control로 미보호 리소스를 지속 평가
-C) 수동 태그 점검
+A) Cold Storage does not support RDS backups
+B) Backups moved to Cold Storage must stay in Cold for at least 90 days, so the policy is rejected if the difference between the transition time and the deletion time is less than 90 days
+C) The retention period must be at least 365 days
+D) Moving to Cold Storage is possible only after 180 days
+
+**Answer: B**
+
+Explanation: AWS Backup enforces that a recovery point moved to Cold Storage stays in Cold for at least 90 days. Therefore the difference between `MoveToColdStorageAfterDays` and `DeleteAfterDays` must be at least 90 days. Moving after 90 days and deleting after 100 days has a difference of only 10 days, so it is rejected. Cold is about 75% cheaper than Warm but restores more slowly, so backups with tight RTOs should stay in Warm.
+
+---
+
+**Question 6.** Among hundreds of prod resources, you want to automatically detect, before an outage, whether some have been left out of the backup plan. Which tool is suitable?
+
+A) CloudWatch alarms
+B) Backup Audit Manager framework: continuously evaluates unprotected resources with controls such as BACKUP_RESOURCES_PROTECTED_BY_BACKUP_PLAN
+C) Manual tag checks
 D) S3 Inventory
 
-**정답: B**
+**Answer: B**
 
-해설: Backup Audit Manager는 Control 기반으로 환경을 지속 평가한다. `BACKUP_RESOURCES_PROTECTED_BY_BACKUP_PLAN` Control은 지정 범위(예: prod 태그) 리소스 중 백업 계획에 포함되지 않은 것을 찾아내고, 다른 Control은 보존 기간·Cross-Region 복사·Vault Lock 여부를 검증한다. 내부적으로 AWS Config 평가 엔진 위에서 동작해 새 리소스 등장 직후 미보호 상태를 감지하므로, 누락이 장애 때가 아니라 발생 즉시 드러난다.
+Explanation: Backup Audit Manager continuously evaluates the environment based on controls. The `BACKUP_RESOURCES_PROTECTED_BY_BACKUP_PLAN` control finds resources in the specified scope (for example, those with a prod tag) that are not included in a backup plan, and other controls verify retention period, cross-Region copy, and Vault Lock. Internally it runs on the AWS Config evaluation engine and detects the unprotected state right after a new resource appears, so gaps are revealed as soon as they occur rather than during an outage.
 
 ---
 
-**문제 7.** 회사가 매일 백업은 잘 돌고 있다고 믿었는데, 실제 장애 시 복원이 IAM 권한·의존 리소스 문제로 실패했다. 이를 사전에 방지하려면?
+**Question 7.** A company believed daily backups were running fine, but in an actual outage the restore failed because of IAM permission and dependent-resource problems. How can this be prevented in advance?
 
-A) 백업 빈도를 더 높인다
-B) Restore Testing Plan으로 정기적 자동 복원 테스트를 수행해 백업이 실제 복원 가능한지 검증한다
-C) Vault Lock을 적용한다
-D) Cold Storage로 옮긴다
+A) Increase the backup frequency
+B) Use a Restore Testing Plan to run regular automated restore tests and verify that backups can actually be restored
+C) Apply Vault Lock
+D) Move backups to Cold Storage
 
-**정답: B**
+**Answer: B**
 
-해설: Backup Plan은 백업 생성만 자동화하고 복원 가능 여부는 검증하지 않는다. 손상된 백업, 복원 시 IAM 권한 부족, 보안 그룹·서브넷 등 의존 리소스 누락으로 정작 장애 때 복원이 실패할 수 있다. Restore Testing Plan은 정기적으로 실제 복원을 자동 수행해 "백업이 진짜 살아 있는지"를 증명한다. 복원해본 적 없는 백업은 백업이 없는 것과 크게 다르지 않다.
+Explanation: A Backup Plan automates only the creation of backups and does not verify that they can be restored. Corrupted backups, insufficient IAM permissions at restore time, or missing dependent resources such as security groups and subnets can cause a restore to fail precisely during an outage. A Restore Testing Plan automatically performs real restores on a regular basis to prove that "the backup is truly alive." A backup that has never been restored is not much different from having no backup.
 
 ---

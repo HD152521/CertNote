@@ -210,86 +210,86 @@ Judge every exam scenario with this map:
 
 ## 📝 Practice Questions
 
-**문제 1.** A JBoss Java EE app is running on-premises. You want to migrate to EKS without modifying code, auto-generating container image and EKS manifest. Most suitable tool?
+**Question 1.** A JBoss Java EE app is running on-premises. You want to migrate to EKS without modifying code, auto-generating container image and EKS manifest. Most suitable tool?
 
 A) AWS MGN (transfer entire server to EC2)
 B) AWS App2Container
 C) AWS Porting Assistant for .NET
 D) AWS Copilot CLI (ECS/EKS deployment tool)
 
-**정답: B**
+**Answer: B**
 JBoss Java app containerization → A2C. A2C supports JBoss including Java application servers, auto-generates Dockerfile + EKS Deployment YAML by analyzing running processes without source code. MGN transfers OS wholesale to EC2 (not containerization); Porting Assistant is .NET-only; Copilot deploys already-containerized apps to ECS.
 
 ---
 
-**문제 2.** Company wants to run .NET Framework 4.7 IIS app on Linux ECS. Currently Windows-only. What's first?
+**Question 2.** Company wants to run .NET Framework 4.7 IIS app on Linux ECS. Currently Windows-only. What's first?
 
 A) A2C directly containerize (run Windows Container on ECS)
 B) Porting Assistant for .NET analyze .NET Core compatibility, then port
 C) MGN migrate to Windows EC2, then containerize
 D) Refactor Spaces separate into microservices
 
-**정답: B**
+**Answer: B**
 Linux ECS requires .NET Core (cross-platform). .NET Framework is Windows-only, so first use Porting Assistant to analyze .NET 8 compatibility and port. A2C can only create Windows Containers from .NET Framework IIS (not Linux). After porting, use A2C or write Dockerfile for Linux Container.
 
 ---
 
-**문제 3.** Company's migration team simultaneously runs MGN (EC2 transfer), DMS (DB transfer), partner tool (file server transfer). Executive wants "entire progress on one screen." Which service?
+**Question 3.** Company's migration team simultaneously runs MGN (EC2 transfer), DMS (DB transfer), partner tool (file server transfer). Executive wants "entire progress on one screen." Which service?
 
 A) CloudWatch Dashboards
 B) AWS Migration Hub
 C) AWS Systems Manager OpsCenter
 D) AWS Service Catalog
 
-**정답: B**
+**Answer: B**
 Multi-tool migration progress unified tracking → Migration Hub. After home region setup, MGN, DMS, partner tool progress aggregates in Migration Hub. CloudWatch is operational monitoring; OpsCenter is operational incident management.
 
 ---
 
-**문제 4.** Large monolithic Java app → microservices transition. Full redesign is too risky. Keep monolith while developing new features as microservices, gradually replacing. Which service manages this routing?
+**Question 4.** Large monolithic Java app → microservices transition. Full redesign is too risky. Keep monolith while developing new features as microservices, gradually replacing. Which service manages this routing?
 
 A) AWS App Mesh (service mesh)
 B) AWS Migration Hub Refactor Spaces
 C) AWS API Gateway (manual config)
 D) AWS Cloud Map (service discovery)
 
-**정답: B**
+**Answer: B**
 Strangler Fig pattern managed implementation → Refactor Spaces. Auto-configures API Gateway, VPC Link, Route 53; easily add routing rules for new microservices. App Mesh manages service-to-service communication for existing microservices; Cloud Map provides service registration/discovery.
 
 ---
 
-**문제 5.** 1,500 VMware vCenter servers' CPU, memory, network dependencies without agents. Suitable tool?
+**Question 5.** 1,500 VMware vCenter servers' CPU, memory, network dependencies without agents. Suitable tool?
 
 A) ADS Discovery Agent (install on each OS)
 B) ADS Agentless Collector (vCenter virtual appliance)
 C) DMS Fleet Advisor
 D) Migration Hub Strategy Recommendations
 
-**정답: B**
+**Answer: B**
 vCenter environment + agentless → ADS Agentless Collector. Deploy virtual appliance in vCenter to collect all VMware VM metrics without agents. Discovery Agent requires OS installation; Fleet Advisor DB-specialized; Strategy Recommendations analyzes then recommends.
 
 ---
 
-**문제 6.** Executives want "AWS saves how much over 5 years?" Need report comparing current on-premises cost (hardware, electricity, labor, licenses) with expected AWS post-migration cost. Which tool?
+**Question 6.** Executives want "AWS saves how much over 5 years?" Need report comparing current on-premises cost (hardware, electricity, labor, licenses) with expected AWS post-migration cost. Which tool?
 
 A) AWS Pricing Calculator
 B) AWS Cost Explorer
 C) AWS Migration Evaluator
 D) AWS Budgets
 
-**정답: C**
+**Answer: C**
 On-premises vs AWS post-migration 5-year TCO comparison → Migration Evaluator (formerly TSO Logic). Input on-premises cost items, returns Right-Sized AWS configuration and cost, generating business case report. Pricing Calculator estimates specific AWS config (no current-state comparison); Cost Explorer analyzes already-deployed AWS spending.
 
 ---
 
-**문제 7.** Company starting 24-month project transferring 2,000 servers. Wants AWS partner expert support, AWS migration credits, Mobilize-stage Landing Zone setup support. What provides all?
+**Question 7.** Company starting 24-month project transferring 2,000 servers. Wants AWS partner expert support, AWS migration credits, Mobilize-stage Landing Zone setup support. What provides all?
 
 A) AWS Professional Services contract
 B) AWS Migration Acceleration Program (MAP)
 C) AWS Migration Hub
 D) AWS Activate (startup program)
 
-**정답: B**
+**Answer: B**
 Large migration + partner expert + AWS credits + Landing Zone support → MAP. MAP provides Assess/Mobilize/Migrate 3-stage package with funding incentives, partners, and tools. AWS Activate is startup-only; Professional Services is MAP-separate contract; Migration Hub is tracking tool.
 
 ---

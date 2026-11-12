@@ -70,62 +70,62 @@ In the next article, we'll review all of Week 5 — pricing models, cost tools, 
 
 ## 📝 Practice Questions
 
-**문제 1.** A company running dozens of AWS accounts wants to combine payment into one bill and aggregate usage to grow volume discounts. Which feature is the best fit?
+**Question 1.** A company running dozens of AWS accounts wants to combine payment into one bill and aggregate usage to grow volume discounts. Which feature is the best fit?
 
 A) AWS Budgets  
 B) AWS Organizations consolidated billing  
 C) AWS Pricing Calculator  
 D) Cost allocation tags  
 
-**정답: B**  
-해설: Organizations consolidated billing combines all account bills into a single management account, aggregates usage to reach volume discount tiers sooner, and also shares RI/SP commitments. Budgets is budget alerts, Pricing Calculator is advance estimation, and tags are a cost-breakdown basis — none is a bill-combining feature.
+**Answer: B**  
+Explanation: Organizations consolidated billing combines all account bills into a single management account, aggregates usage to reach volume discount tiers sooner, and also shares RI/SP commitments. Budgets is budget alerts, Pricing Calculator is advance estimation, and tags are a cost-breakdown basis — none is a bill-combining feature.
 
 ---
 
-**문제 2.** You want to group multiple accounts into Organizational Units (OUs) and apply bulk guardrails with Service Control Policies (SCPs) to govern centrally. Which service is the best fit?
+**Question 2.** You want to group multiple accounts into Organizational Units (OUs) and apply bulk guardrails with Service Control Policies (SCPs) to govern centrally. Which service is the best fit?
 
 A) AWS Organizations  
 B) AWS Trusted Advisor  
 C) Amazon CloudWatch  
 D) AWS Cost Explorer  
 
-**정답: A**  
-해설: AWS Organizations groups multiple accounts into OUs and applies policies in bulk with SCPs to manage and control centrally. Trusted Advisor is automatic checks, CloudWatch is monitoring, and Cost Explorer is cost analysis — none is a multi-account governance feature.
+**Answer: A**  
+Explanation: AWS Organizations groups multiple accounts into OUs and applies policies in bulk with SCPs to manage and control centrally. Trusted Advisor is automatic checks, CloudWatch is monitoring, and Cost Explorer is cost analysis — none is a multi-account governance feature.
 
 ---
 
-**문제 3.** You want to estimate in advance the expected monthly cost of moving a new, not-yet-deployed architecture to the cloud in order to plan a budget. Which tool is the best fit?
+**Question 3.** You want to estimate in advance the expected monthly cost of moving a new, not-yet-deployed architecture to the cloud in order to plan a budget. Which tool is the best fit?
 
 A) AWS Cost Explorer  
 B) AWS Cost and Usage Report  
 C) AWS Pricing Calculator  
 D) AWS Budgets  
 
-**정답: C**  
-해설: Pricing Calculator is an advance-estimation tool that calculates the expected cost of an architecture before deployment, well suited for migration and budget planning. Cost Explorer and CUR are after-the-fact tools for costs already incurred, and Budgets is a budget-exceeded alert feature.
+**Answer: C**  
+Explanation: Pricing Calculator is an advance-estimation tool that calculates the expected cost of an architecture before deployment, well suited for migration and budget planning. Cost Explorer and CUR are after-the-fact tools for costs already incurred, and Budgets is a budget-exceeded alert feature.
 
 ---
 
-**문제 4.** The cost of maintaining an on-premises data center includes hidden costs like power, cooling, and operations staff, on top of server purchase costs. What is the concept of summing all such costs to compare against the cloud?
+**Question 4.** The cost of maintaining an on-premises data center includes hidden costs like power, cooling, and operations staff, on top of server purchase costs. What is the concept of summing all such costs to compare against the cloud?
 
 A) Volume discount  
 B) Total Cost of Ownership (TCO)  
 C) Reserved Instances  
 D) Savings Plans  
 
-**정답: B**  
-해설: TCO (Total Cost of Ownership) is the concept of summing not just purchase costs but hidden costs like power, cooling, staff, and maintenance to compare on-premises and cloud honestly. Volume discounts are usage-based unit-price reductions, and RI/Savings Plans are commitment discount models — different from a total-cost comparison concept.
+**Answer: B**  
+Explanation: TCO (Total Cost of Ownership) is the concept of summing not just purchase costs but hidden costs like power, cooling, staff, and maintenance to compare on-premises and cloud honestly. Volume discounts are usage-based unit-price reductions, and RI/Savings Plans are commitment discount models — different from a total-cost comparison concept.
 
 ---
 
-**문제 5.** Which of the following is LEAST related to the cost-side benefits of consolidated billing?
+**Question 5.** Which of the following is LEAST related to the cost-side benefits of consolidated billing?
 
 A) All account bills are combined into one, simplifying accounting  
 B) Per-account usage is aggregated, reaching volume discount tiers sooner  
 C) RI/Savings Plans commitments can be shared by other accounts in the organization  
 D) Different SCPs are forcibly applied to each account to automatically reduce costs  
 
-**정답: D**  
-해설: SCPs are not a cost benefit of consolidated billing but a permission/governance control of Organizations, and the policies themselves don't automatically reduce costs. Single bill, aggregated volume discounts, and commitment sharing are all genuine cost-side benefits of consolidated billing.
+**Answer: D**  
+Explanation: SCPs are not a cost benefit of consolidated billing but a permission/governance control of Organizations, and the policies themselves don't automatically reduce costs. Single bill, aggregated volume discounts, and commitment sharing are all genuine cost-side benefits of consolidated billing.
 
 ---

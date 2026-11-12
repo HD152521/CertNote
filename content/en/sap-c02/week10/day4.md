@@ -92,87 +92,87 @@ SAP exam common mappings: (1) "training/inference feature mismatch" → Feature 
 
 ## 📝 Practice Questions
 
-**문제 1.** 학습 때 배치로 계산한 피처와 실시간 추론 때 계산한 피처가 미묘하게 달라 모델이 조용히 부정확해지는 train-serve skew를 구조적으로 방지하려 한다. 가장 적합한 것은?
+**Question 1.** You want to structurally prevent train-serve skew, where the features computed in batch during training differ subtly from those computed during real-time inference, causing the model to become silently inaccurate. Which is the most appropriate?
 
-A) S3에 피처를 저장해 양쪽이 읽게 함
+A) Store features in S3 and have both sides read them
 B) SageMaker Feature Store(Online/Offline)
-C) 학습·추론 코드를 같은 Lambda로 통합
-D) 추론 결과를 DynamoDB에 캐싱
+C) Combine the training and inference code into the same Lambda
+D) Cache inference results in DynamoDB
 
-**정답: B**
-해설: Feature Store는 피처를 한 번 정의·계산해 중앙 저장하고, 학습(Offline/S3)과 추론(Online/DynamoDB)이 동일하게 정의된 피처를 자동 동기화된 저장소에서 읽게 해 train-serve skew를 구조적으로 막는다. Event Time 기반 point-in-time 조회로 data leakage도 방지한다. A(S3 공유)·C·D는 피처 정의·버전·동기화를 직접 관리해야 해 skew 위험이 남는다. 함정: "학습·추론 피처 일관성"은 Feature Store.
+**Answer: B**
+Explanation: Feature Store defines and computes features once and stores them centrally, so training (Offline/S3) and inference (Online/DynamoDB) read identically defined features from automatically synchronized stores, structurally preventing train-serve skew. Point-in-time lookups based on Event Time also prevent data leakage. A (shared S3), C, and D require you to manage feature definitions, versions, and synchronization yourself, so the skew risk remains. Trap: "consistency of training and inference features" is Feature Store.
 
 ---
 
-**문제 2.** 사기 탐지 모델은 실제 정답(차지백)이 며칠 뒤에야 온다. 라벨을 기다리지 않고 운영 중 모델의 위험을 조기에 감지하려 한다. 어떤 모니터링인가?
+**Question 2.** For a fraud detection model, the actual ground truth (chargebacks) arrives only days later. You want to detect the production model's risk early without waiting for labels. Which monitoring should you use?
 
 A) Model Monitor Model Quality
 B) Model Monitor Data Quality
 C) Clarify Bias Drift
-D) CloudWatch Custom Metric만
+D) CloudWatch Custom Metric only
 
-**정답: B**
-해설: Data Quality 모니터링은 입력 피처의 분포·통계가 학습 기준선에서 벗어났는지를 보며 라벨이 필요 없다. 라벨 지연이 큰 도메인에서 입력 분포 변화(data drift)를 조기 경보로 활용한다. A(Model Quality)는 실제 정확도를 계산하므로 라벨이 필요해 며칠을 기다려야 한다. C(Bias Drift)는 편향 변화용. D는 ML 기준선 비교·드리프트 감지 자동화가 없다. 함정: "라벨 없이 조기 감지"는 Data Quality, "실제 정확도 하락"은 Model Quality.
-
----
-
-**문제 3.** 자동 학습된 새 모델을 프로덕션에 올리기 전 데이터 과학자가 반드시 검토·승인해야 하고, 승인되면 사람 개입 없이 엔드포인트에 자동 배포되어야 한다. 어떤 구성인가?
-
-A) CodePipeline Manual Approval만
-B) Model Registry 승인 상태 + EventBridge(Approved) → Lambda 배포
-C) Lambda 게이트로 직접 구현
-D) Jenkins 빌드 승인
-
-**정답: B**
-해설: Model Registry는 모델 버전에 승인 상태(Pending/Approved/Rejected)를 부여해 사람 검토 게이트를 만들고, Approved 이벤트를 EventBridge로 잡아 Lambda 배포를 자동 트리거한다. "사람 승인 + 승인 후 자동 배포"의 하이브리드 거버넌스가 ML 모델 배포의 표준이다. A는 일반 파이프라인 승인이지 모델 버전·lineage 거버넌스가 아니다. C·D는 직접 구현 부담. 함정: "모델 검토 승인 + 승인 시 자동 배포"는 Model Registry + EventBridge.
+**Answer: B**
+Explanation: Data Quality monitoring looks at whether the distribution and statistics of input features have deviated from the training baseline, and it needs no labels. In domains with long label delays, input distribution change (data drift) is used as an early warning. A (Model Quality) calculates actual accuracy, so it requires labels and would mean waiting days. C (Bias Drift) is for changes in bias. D lacks automation for ML baseline comparison and drift detection. Trap: "early detection without labels" is Data Quality; "actual accuracy decline" is Model Quality.
 
 ---
 
-**문제 4.** 모델 운영 중 실제 예측 정확도가 시간이 지나며 떨어지는 것(concept drift)을 자동 감지하려 한다. 실제 라벨은 확보 가능하다. 어떤 모니터링인가?
+**Question 3.** Before an automatically trained new model is deployed to production, a data scientist must review and approve it, and once approved it must be deployed automatically to the endpoint without human intervention. Which configuration should you use?
+
+A) CodePipeline Manual Approval only
+B) Model Registry approval status + EventBridge (Approved) → Lambda deployment
+C) Implement it directly with a Lambda gate
+D) Jenkins build approval
+
+**Answer: B**
+Explanation: Model Registry assigns an approval status (Pending/Approved/Rejected) to model versions to create a human review gate, captures the Approved event through EventBridge, and automatically triggers a Lambda deployment. This hybrid governance of "human approval + automatic deployment after approval" is the standard for ML model deployment. A is a general pipeline approval, not model version and lineage governance. C and D have a heavy implementation burden. Trap: "model review approval + automatic deployment on approval" is Model Registry + EventBridge.
+
+---
+
+**Question 4.** You want to automatically detect a decline in actual prediction accuracy over time (concept drift) while the model is in production. Actual labels are obtainable. Which monitoring should you use?
 
 A) Model Monitor Data Quality
 B) Model Monitor Model Quality
 C) Feature Attribution Drift
 D) Trusted Advisor
 
-**정답: B**
-해설: Model Quality 모니터링은 실제 정답(라벨)과 예측을 비교해 정확도·정밀도·재현율의 하락을 감지하며, 이것이 concept drift(입력-정답 관계 변화) 감지에 해당한다. 라벨이 확보 가능하다는 조건이 Model Quality를 가능하게 한다. A(Data Quality)는 입력 분포만 보고 실제 정확도는 모른다. C는 피처 기여도 변화, D는 ML 모니터가 아니다. 함정: "실제 정확도 하락 + 라벨 있음"은 Model Quality.
+**Answer: B**
+Explanation: Model Quality monitoring compares actual ground truth (labels) with predictions to detect declines in accuracy, precision, and recall, which corresponds to detecting concept drift (a change in the input-to-ground-truth relationship). The condition that labels are obtainable is what makes Model Quality possible. A (Data Quality) looks only at the input distribution and does not know actual accuracy. C is about changes in feature attribution, and D is not an ML monitor. Trap: "actual accuracy decline + labels available" is Model Quality.
 
 ---
 
-**문제 5.** 모델의 예측이 특정 인구 집단에 불리해지는 편향(bias)이 시간 경과에 따라 커지는지 감지해야 한다. 어떤 조합인가?
+**Question 5.** You must detect whether bias, in which the model's predictions become unfavorable to a specific demographic group, grows over time. Which combination should you use?
 
 A) Model Monitor + Clarify Bias Drift
 B) DataBrew
 C) Comprehend
 D) GuardDuty
 
-**정답: A**
-해설: Model Monitor의 Bias Drift는 SageMaker Clarify와 통합되어 모델 예측의 편향 지표가 기준선 대비 시간에 따라 변하는지를 감지한다. B(DataBrew)는 데이터 준비 도구, C(Comprehend)는 NLP, D(GuardDuty)는 위협 탐지로 모델 편향과 무관. 함정: "편향 시간 변화 감지"는 Model Monitor + Clarify Bias Drift.
+**Answer: A**
+Explanation: Bias Drift in Model Monitor is integrated with SageMaker Clarify and detects whether the bias metrics of model predictions change over time relative to the baseline. B (DataBrew) is a data preparation tool, C (Comprehend) is NLP, and D (GuardDuty) is threat detection; all are unrelated to model bias. Trap: "detecting bias change over time" is Model Monitor + Clarify Bias Drift.
 
 ---
 
-**문제 6.** 전처리·학습·튜닝·평가·등록·배포로 이어지는 ML 워크플로우를 DAG로 표현하고, 각 스텝의 입출력 lineage와 실험을 자동 추적하며, 변경 없는 스텝은 캐싱하려 한다. 가장 적합한 것은?
+**Question 6.** You want to express an ML workflow running through preprocessing, training, tuning, evaluation, registration, and deployment as a DAG, automatically track the input/output lineage and experiments of each step, and cache unchanged steps. Which is the most appropriate?
 
 A) AWS Step Functions
 B) SageMaker Pipelines
 C) Amazon MWAA(Airflow)
 D) Glue Workflow
 
-**정답: B**
-해설: SageMaker Pipelines는 ML 전용 DAG 오케스트레이터로 학습/튜닝/평가/등록 스텝, Model Registry 연동, Lineage 자동 추적, 스텝 캐싱을 기본 제공한다. A(Step Functions)는 범용 워크플로우(ML 외 작업 혼합)에, C(MWAA)는 복잡 스케줄링·기존 Airflow 마이그레이션에, D(Glue Workflow)는 ETL에 적합하지만 ML lineage·실험 추적이 없다. 함정: "ML 워크플로우 + Lineage/실험/캐싱"은 SageMaker Pipelines.
+**Answer: B**
+Explanation: SageMaker Pipelines is an ML-specific DAG orchestrator that provides training/tuning/evaluation/registration steps, Model Registry integration, automatic Lineage tracking, and step caching out of the box. A (Step Functions) suits general-purpose workflows (mixing non-ML tasks), C (MWAA) suits complex scheduling and migrating existing Airflow, and D (Glue Workflow) suits ETL, but none of them has ML lineage or experiment tracking. Trap: "ML workflow + Lineage/experiments/caching" is SageMaker Pipelines.
 
 ---
 
-**문제 7.** 운영 중 모델의 입력 분포가 임계치를 넘게 변하면 사람 개입 없이 재학습 파이프라인을 자동 실행하고 싶다. 어떤 연결인가?
+**Question 7.** When the input distribution of a production model changes beyond a threshold, you want to run the retraining pipeline automatically without human intervention. Which connection should you use?
 
-A) CloudWatch Alarm → 수동 재학습
-B) Model Monitor 드리프트 → EventBridge → SageMaker Pipeline 재실행
-C) Lambda 크론으로 매일 무조건 재학습
-D) Config 규칙 → SNS
+A) CloudWatch Alarm → manual retraining
+B) Model Monitor drift → EventBridge → re-run the SageMaker Pipeline
+C) Lambda cron that retrains unconditionally every day
+D) Config rule → SNS
 
-**정답: B**
-해설: Model Monitor가 드리프트를 감지하면 CloudWatch/EventBridge로 이벤트를 발생시키고, EventBridge 규칙이 SageMaker Pipeline 재실행을 트리거해 재학습 루프를 자동으로 닫는다. A는 수동이라 자동화가 아니다. C(무조건 매일 재학습)는 드리프트와 무관하게 비용·자원 낭비. D는 구성 규정 준수용으로 ML 재학습과 무관. 함정: "드리프트 감지 → 자동 재학습"은 Model Monitor + EventBridge + Pipelines.
+**Answer: B**
+Explanation: When Model Monitor detects drift, it emits an event through CloudWatch/EventBridge, and an EventBridge rule triggers a re-run of the SageMaker Pipeline, automatically closing the retraining loop. A is manual, so it is not automation. C (unconditional daily retraining) wastes cost and resources regardless of drift. D is for configuration compliance and is unrelated to ML retraining. Trap: "drift detection → automatic retraining" is Model Monitor + EventBridge + Pipelines.
 
 ---
 

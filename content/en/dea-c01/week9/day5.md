@@ -82,62 +82,62 @@ DELETE FROM lake_clean.payments WHERE customer_id = 'GDPR-REQ-2026-042';
 
 ## 📝 Practice Questions
 
-**문제 1.** 결제 데이터 플랫폼에서 분석가에게 카드번호는 토큰으로, 자기 지역 행만 노출하고, 새 테이블이 추가돼도 권한이 자동 적용되게 하려 한다. 가장 적절한 조합은?
+**Question 1.** On a payment data platform, you want analysts to see card numbers as tokens, expose only the rows for their own region, and have permissions applied automatically even when new tables are added. Which combination is the most appropriate?
 
-A) IAM 와일드카드 정책 + SSE-S3  
-B) S3 버킷 정책 + 클라이언트 측 암호화  
-C) Lake Formation TBAC + 데이터 필터 + ETL 토큰화  
-D) Redshift 스냅샷 공유 + 파티션 프로젝션  
+A) IAM wildcard policy + SSE-S3  
+B) S3 bucket policy + client-side encryption  
+C) Lake Formation TBAC + data filter + ETL tokenization  
+D) Redshift snapshot sharing + partition projection  
 
-**정답: C**  
-해설: TBAC는 새 테이블에 태그만 맞으면 권한이 자동 적용되고, 데이터 필터가 컬럼·행을 제한하며, ETL 토큰화가 카드번호 원본을 숨깁니다. 와일드카드는 최소 권한 위반, 버킷 정책은 세분화가 약하고, 스냅샷 공유는 요건과 무관합니다.
-
----
-
-**문제 2.** 보안팀이 "어떤 IAM 역할이 지난달 결제 버킷의 특정 객체를 읽었는지"를 입증해야 한다. 필요한 설정은?
-
-A) CloudTrail 데이터 이벤트(S3 객체 수준) 활성화  
-B) Macie 맞춤 식별자 추가  
-C) KMS 키 자동 교체  
-D) Lake Formation TBAC 적용  
-
-**정답: A**  
-해설: S3 객체 읽기 추적은 CloudTrail 데이터 이벤트로 기록되며 기본 비활성이라 명시적으로 켜야 합니다. Macie는 탐지, 키 교체는 암호화 위생, TBAC는 접근 제어로 객체 접근 감사 로그를 생성하지 않습니다.
+**Answer: C**  
+Explanation: With TBAC, permissions are applied automatically to a new table as long as its tags match, a data filter restricts columns and rows, and ETL tokenization hides the original card numbers. Wildcards violate least privilege, bucket policies are weak in granularity, and snapshot sharing is unrelated to the requirements.
 
 ---
 
-**문제 3.** 외부 파트너와 캠페인 효과를 공동 분석하되 양사 고객 원본은 노출하지 않아야 한다. 동시에 사내 분석가에게는 PII를 제외한 데이터를 제공한다. 올바른 서비스 조합은?
+**Question 2.** A security team must prove "which IAM role read a specific object in the payment bucket last month." What setup is required?
 
-A) 파트너는 Data Exchange, 분석가는 IAM 와일드카드  
-B) 둘 다 S3 교차 계정 버킷 공유  
-C) 둘 다 Redshift datashare  
-D) 파트너는 Clean Rooms, 분석가는 Lake Formation 데이터 필터  
+A) Enable CloudTrail data events (S3 object-level)  
+B) Add a Macie custom identifier  
+C) Automatic KMS key rotation  
+D) Apply Lake Formation TBAC  
 
-**정답: D**  
-해설: 원본 비노출 공동 분석은 Clean Rooms, PII 제외 사내 제공은 Lake Formation 데이터 필터가 각각 정답입니다. Data Exchange·버킷 공유·datashare는 원본을 상대에게 전달하므로 파트너 요건을 위반합니다.
-
----
-
-**문제 4.** SSE-KMS로 암호화된 결제 버킷에서 대량 객체를 읽는 ETL이 KMS 스로틀링과 비용 급증을 겪는다. 동시에 평문 HTTP 접근도 막아야 한다. 가장 적절한 조치 조합은?
-
-A) SSE-S3로 전환 + 버전 관리  
-B) S3 Bucket Key 활성화 + `aws:SecureTransport: false` 거부  
-C) 클라이언트 측 암호화 + Glacier 전환  
-D) KMS 키 매일 교체 + Object Lock  
-
-**정답: B**  
-해설: Bucket Key는 객체별 KMS 호출을 줄여 비용·스로틀링을 완화하고, SecureTransport 거부는 평문 HTTP를 차단합니다. SSE-S3 전환은 키 제어 상실, 클라이언트 측·Glacier는 ETL 부담, 매일 교체·Object Lock은 문제와 무관합니다.
+**Answer: A**  
+Explanation: Tracking S3 object reads is recorded in CloudTrail data events, which are disabled by default and must be explicitly enabled. Macie is detection, key rotation is encryption hygiene, and TBAC is access control; none of them generates object access audit logs.
 
 ---
 
-**문제 5.** 데이터 보안·거버넌스의 "다층 방어"를 가장 정확히 설명한 것은?
+**Question 3.** You must jointly analyze campaign effectiveness with an external partner without exposing either company's raw customer data. At the same time, you provide in-house analysts with data excluding PII. Which combination of services is correct?
 
-A) 암호화 하나만 충분히 강하면 다른 통제는 불필요하다  
-B) 접근 제어만 있으면 감사는 필요 없다  
-C) 암호화·접근 제어·탐지·감사가 함께 작동해야 규제·신뢰 요건을 충족한다  
-D) 모든 통제를 IAM 하나로 대체할 수 있다  
+A) Data Exchange for the partner, IAM wildcard for analysts  
+B) S3 cross-account bucket sharing for both  
+C) Redshift datashare for both  
+D) Clean Rooms for the partner, Lake Formation data filter for analysts  
 
-**정답: C**  
-해설: 보안·거버넌스는 기밀성(암호화)·권한(접근 제어)·가시성(탐지)·책임 추적(감사)이 결합된 다층 방어이며, 어느 하나로 나머지를 대체할 수 없습니다. A·B·D는 단일 통제로 충분하다는 잘못된 전제를 담고 있습니다.
+**Answer: D**  
+Explanation: Clean Rooms is correct for joint analysis without exposing raw data, and a Lake Formation data filter is correct for providing in-house data excluding PII. Data Exchange, bucket sharing, and datashare hand the raw data over to the other party, which violates the partner requirement.
+
+---
+
+**Question 4.** An ETL job reading a large number of objects from a payment bucket encrypted with SSE-KMS is suffering KMS throttling and a cost spike. Plaintext HTTP access must also be blocked at the same time. Which combination of actions is the most appropriate?
+
+A) Switch to SSE-S3 + versioning  
+B) Enable S3 Bucket Key + deny `aws:SecureTransport: false`  
+C) Client-side encryption + Glacier transition  
+D) Rotate the KMS key daily + Object Lock  
+
+**Answer: B**  
+Explanation: A Bucket Key reduces per-object KMS calls, easing cost and throttling, and the SecureTransport deny blocks plaintext HTTP. Switching to SSE-S3 loses key control, client-side encryption and Glacier burden the ETL, and daily rotation and Object Lock are unrelated to the problem.
+
+---
+
+**Question 5.** Which option most accurately describes "defense in depth" in data security and governance?
+
+A) If encryption alone is strong enough, other controls are unnecessary  
+B) With access control alone, auditing is not needed  
+C) Encryption, access control, detection, and auditing must work together to meet regulatory and trust requirements  
+D) All controls can be replaced by IAM alone  
+
+**Answer: C**  
+Explanation: Security and governance are a defense in depth that combines confidentiality (encryption), authorization (access control), visibility (detection), and accountability (auditing), and no single one can replace the rest. A, B, and D contain the false premise that a single control is sufficient.
 
 ---

@@ -344,91 +344,91 @@ Next article covers the orchestrator flowing all these steps automatically — *
 
 ## 📝 Practice Questions
 
-**문제 1.** What are the mandatory prerequisites to use CodeDeploy with EC2 instances?
+**Question 1.** What are the mandatory prerequisites to use CodeDeploy with EC2 instances?
 
 A) CodeDeploy Agent installation on EC2
 B) Grant S3 download permission to EC2 instance profile
 C) Pre-create 2 ALB Target Groups
 D) Create CodeDeploy service role
 
-**정답: A, B, D**
+**Answer: A, B, D**
 
-해설: A) Agent is essential for EC2 deployment — without it, polling itself doesn't happen. B) Must download bundle from S3, so instance needs S3 read permission (IAM instance profile + `s3:GetObject`). D) CodeDeploy service role is essential for CodeDeploy to manipulate user EC2/ASG/ALB. C) 2 Target Groups are **Blue-Green only** — In-Place needs just 1. On exam, "EC2 deployment prerequisites" typically A+D, while "Blue-Green extra prerequisites" adds C.
+Explanation: A) Agent is essential for EC2 deployment — without it, polling itself doesn't happen. B) Must download bundle from S3, so instance needs S3 read permission (IAM instance profile + `s3:GetObject`). D) CodeDeploy service role is essential for CodeDeploy to manipulate user EC2/ASG/ALB. C) 2 Target Groups are **Blue-Green only** — In-Place needs just 1. On exam, "EC2 deployment prerequisites" typically A+D, while "Blue-Green extra prerequisites" adds C.
 
 ---
 
-**문제 2.** When transitioning Lambda function to new version, you want to **send only 10% traffic for 10 minutes then switch remaining in one move**. Best deployment configuration?
+**Question 2.** When transitioning Lambda function to new version, you want to **send only 10% traffic for 10 minutes then switch remaining in one move**. Best deployment configuration?
 
 A) `LambdaLinear10PercentEvery1Minute`
 B) `LambdaCanary10Percent10Minutes`
 C) `LambdaCanary10Percent5Minutes`
 D) `LambdaAllAtOnce`
 
-**정답: B**
+**Answer: B**
 
-해설: Canary pattern is "hold N% for M minutes, then jump to 100% once" — 2-stage shift. Problem asks "10% for 10 minutes then switch rest in one move" matching `LambdaCanary10Percent10Minutes` exactly. A) Linear shifts +10% every 1 min, gradual increase ≠ "switch in one move"; B) 5 min is wrong time condition; D) AllAtOnce jumps immediately to 100%. Canary vs Linear distinction is exam core.
+Explanation: Canary pattern is "hold N% for M minutes, then jump to 100% once" — 2-stage shift. Problem asks "10% for 10 minutes then switch rest in one move" matching `LambdaCanary10Percent10Minutes` exactly. A) Linear shifts +10% every 1 min, gradual increase ≠ "switch in one move"; B) 5 min is wrong time condition; D) AllAtOnce jumps immediately to 100%. Canary vs Linear distinction is exam core.
 
 ---
 
-**문제 3.** Which of the following is the **most appropriate statement about EC2 ApplicationStop**?
+**Question 3.** Which of the following is the **most appropriate statement about EC2 ApplicationStop**?
 
 A) It runs the newest revision's script
 B) It runs the previous revision's script
 C) It's skipped if previous phases succeed
 D) It can only use shell scripts, not other languages
 
-**정답: B**
+**Answer: B**
 
-해설: ApplicationStop runs **the script from the previous revision** — the earliest phase regardless of how new revision other phases fail. If ApplicationStop itself fails, that instance deployment is marked failed but subsequent phases not affected. B/C/D are all downstream and skipped if earlier phases fail. When "ApplicationStop's specialness" appears on exam, "previous revision's script runs" is the answer.
+Explanation: ApplicationStop runs **the script from the previous revision** — the earliest phase regardless of how new revision other phases fail. If ApplicationStop itself fails, that instance deployment is marked failed but subsequent phases not affected. B/C/D are all downstream and skipped if earlier phases fail. When "ApplicationStop's specialness" appears on exam, "previous revision's script runs" is the answer.
 
 ---
 
-**문제 4.** What is NOT a mandatory prerequisite for ECS Blue-Green deployment with CodeDeploy?
+**Question 4.** What is NOT a mandatory prerequisite for ECS Blue-Green deployment with CodeDeploy?
 
 A) Set ECS service's deploymentController.type to CODE_DEPLOY
 B) Pre-create 2 ALB Target Groups (Production + Test)
 C) Specify TaskDefinition and LoadBalancerInfo in appspec.json
 D) Install CodeDeploy Agent in ECS container
 
-**정답: D**
+**Answer: D**
 
-해설: ECS **doesn't require CodeDeploy Agent** — ECS service handles task definition swap and target group transition, CodeDeploy orchestrates. Agent is EC2/on-premises only. A) Switching deployment controller to CODE_DEPLOY lets CodeDeploy manipulate ECS service. B) Blue-Green by definition requires two environments. C) appspec.json carries CodeDeploy-ECS connection info. "ECS + Agent" answer is almost always a trap on exam.
+Explanation: ECS **doesn't require CodeDeploy Agent** — ECS service handles task definition swap and target group transition, CodeDeploy orchestrates. Agent is EC2/on-premises only. A) Switching deployment controller to CODE_DEPLOY lets CodeDeploy manipulate ECS service. B) Blue-Green by definition requires two environments. C) appspec.json carries CodeDeploy-ECS connection info. "ECS + Agent" answer is almost always a trap on exam.
 
 ---
 
-**문제 5.** If CloudWatch Alarm `ErrorRate > 5%` fires during EC2 fleet (100 instances) In-Place deployment, what's needed for auto-rollback?
+**Question 5.** If CloudWatch Alarm `ErrorRate > 5%` fires during EC2 fleet (100 instances) In-Place deployment, what's needed for auto-rollback?
 
 A) Add alarm to DeploymentGroup's AlarmConfiguration + include DEPLOYMENT_STOP_ON_ALARM in AutoRollbackConfiguration.Events
 B) Register CodeDeploy stop API directly in CloudWatch Alarm action
 C) Write Lambda to call stop on alarm
 D) Change ASG health check type to ELB
 
-**정답: A**
+**Answer: A**
 
-해설: CodeDeploy auto-rollback requires both settings active. ① AlarmConfiguration registers alarms for CodeDeploy to poll ② AutoRollbackConfiguration.Events with `DEPLOYMENT_STOP_ON_ALARM` triggers auto-rollback on alarm. B) CloudWatch Alarm doesn't support CodeDeploy API directly. C) Possible but inefficient with race condition risk. D) Unrelated. "Deployment + alarm → auto-rollback" is a classic exam scenario — both settings together is the answer.
+Explanation: CodeDeploy auto-rollback requires both settings active. ① AlarmConfiguration registers alarms for CodeDeploy to poll ② AutoRollbackConfiguration.Events with `DEPLOYMENT_STOP_ON_ALARM` triggers auto-rollback on alarm. B) CloudWatch Alarm doesn't support CodeDeploy API directly. C) Possible but inefficient with race condition risk. D) Unrelated. "Deployment + alarm → auto-rollback" is a classic exam scenario — both settings together is the answer.
 
 ---
 
-**문제 6.** CodeDeploy Blue-Green deployment after swap, if original ASG is set to **terminate 5 minutes later**, what's the purpose?
+**Question 6.** CodeDeploy Blue-Green deployment after swap, if original ASG is set to **terminate 5 minutes later**, what's the purpose?
 
 A) New ASG warmup time
 B) Fast rollback safety net (original ASG stays live for instant swap reversal if needed)
 C) DNS TTL expiry wait
 D) Cost optimization cooldown
 
-**정답: B**
+**Answer: B**
 
-해설: Keeping original ASG alive after swap is **fast rollback insurance** — within 5 minutes, if problems detected, ALB listener rule can switch back, instant EC2 restoration without re-provisioning. After 5 minutes, original instances terminate; thereafter rollback requires spinning up new instances. A) Warmup before swap. C) ALB handles DNS internally. D) ASG cooldown is scale policy term, unrelated. When "Blue-Green termination wait time" appears on exam, it's the rollback insurance explanation.
+Explanation: Keeping original ASG alive after swap is **fast rollback insurance** — within 5 minutes, if problems detected, ALB listener rule can switch back, instant EC2 restoration without re-provisioning. After 5 minutes, original instances terminate; thereafter rollback requires spinning up new instances. A) Warmup before swap. C) ALB handles DNS internally. D) ASG cooldown is scale policy term, unrelated. When "Blue-Green termination wait time" appears on exam, it's the rollback insurance explanation.
 
 ---
 
-**문제 7.** Which of the following is NOT a supported CodeDeploy deployment target?
+**Question 7.** Which of the following is NOT a supported CodeDeploy deployment target?
 
 A) Amazon EC2 Auto Scaling Group
 B) AWS Lambda function
 C) Amazon ECS service
 D) Amazon RDS DB instance
 
-**정답: D**
+**Answer: D**
 
-해설: CodeDeploy's official targets are EC2/on-premises (including ASG), Lambda, ECS — three only. RDS is a database service with different deployment concept; schema migration uses separate tools (Flyway/Liquibase) or RDS's own blue/green deployment (added 2022, separate from CodeDeploy). A/B/C are explicit support. When "CodeDeploy target NOT in scope" appears on exam, data services like RDS/DynamoDB/S3 are almost always the wrong answer.
+Explanation: CodeDeploy's official targets are EC2/on-premises (including ASG), Lambda, ECS — three only. RDS is a database service with different deployment concept; schema migration uses separate tools (Flyway/Liquibase) or RDS's own blue/green deployment (added 2022, separate from CodeDeploy). A/B/C are explicit support. When "CodeDeploy target NOT in scope" appears on exam, data services like RDS/DynamoDB/S3 are almost always the wrong answer.

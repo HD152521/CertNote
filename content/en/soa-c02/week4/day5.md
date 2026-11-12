@@ -141,123 +141,123 @@ Auto Remediation = Config NON_COMPLIANT trigger → SSM Automation Runbook auto-
 
 ## 📝 Practice Questions
 
-**문제 1.** 보안팀이 "누가 프로덕션 S3 버킷에서 고객 PII 데이터를 다운로드했는지" 추적해야 한다. 필요한 CloudTrail 설정은?
+**Question 1.** The security team needs to track "who downloaded customer PII data from the production S3 bucket." What CloudTrail configuration is required?
 
-A) Management Events만 활성화하면 `GetObject`를 포함한 모든 S3 접근이 컨트롤 플레인 이벤트로 기록되어 충분하다
-B) S3 Data Events 활성화 — 특정 버킷의 GetObject/PutObject 추적
-C) CloudTrail Insights를 활성화해 비정상적 다운로드 spike를 ML로 감지하면 누가 받았는지 식별된다
-D) GuardDuty S3 Protection을 켜면 의심스러운 데이터 접근을 Finding으로 만들어 다운로드 주체까지 특정한다
+A) Enabling only Management Events is sufficient, because all S3 access including `GetObject` is recorded as control plane events
+B) Enable S3 Data Events — track GetObject/PutObject for the specific bucket
+C) Enable CloudTrail Insights to detect abnormal download spikes with ML, which identifies who downloaded the data
+D) Turning on GuardDuty S3 Protection creates findings for suspicious data access and identifies even the party that performed the download
 
-**정답: B**
-해설: S3 객체 다운로드(GetObject)는 Data Event다. Management Events는 `PutBucketPolicy`, `CreateBucket` 같은 컨트롤 플레인 작업만 추적한다. Data Events를 대상 버킷에 활성화해야 객체 레벨 접근이 기록된다. 비용($0.10/100K events)이 발생하므로 민감 버킷만 선택적으로 활성화하는 것이 효율적이다.
-
----
-
-**문제 2.** Root 사용자가 콘솔에 로그인하면 즉시 SNS 알림 + Slack 통보를 자동화하려 한다. 어떤 도구 조합이 가장 적합한가?
-
-A) CloudTrail 로그를 CloudWatch Logs로 보낸 뒤 `{ $.userIdentity.type = "Root" }` Metric Filter + CloudWatch Alarm으로 SNS 발송
-B) EventBridge Rule (CloudTrail 이벤트 패턴 `userIdentity.type = Root`) → SNS + Lambda(Slack)
-C) Config Rule `root-account-mfa-enabled`로 Root 사용을 평가하고 NON_COMPLIANT 시 SNS로 알림
-D) Audit Manager의 Root 접근 Control을 Assessment에 추가해 로그인 발생을 증거로 수집·통보
-
-**정답: B**
-해설: CloudTrail은 모든 API 호출(콘솔 로그인 포함)을 EventBridge default bus로 자동 전달한다. EventBridge Rule에서 `userIdentity.type = Root` 패턴을 매칭하면 Root 로그인만 필터링된다. SNS와 Lambda(Slack webhook 호출)를 Target으로 지정하면 실시간 다채널 알림이 가능하다. A의 Metric Filter 경로도 동작은 하지만 지연이 크다. Config와 Audit Manager는 이벤트 대응 도구가 아니다.
+**Answer: B**
+Explanation: Downloading an S3 object (GetObject) is a Data Event. Management Events track only control plane operations such as `PutBucketPolicy` and `CreateBucket`. Data Events must be enabled on the target bucket for object-level access to be recorded. Because it incurs cost ($0.10 per 100K events), it is efficient to enable it selectively only for sensitive buckets.
 
 ---
 
-**문제 3.** 회사가 "S3 public bucket이 만들어지면 자동으로 차단"을 운영자 개입 없이 처리하려 한다. 가장 적합한 조합은?
+**Question 2.** The company wants to automate an immediate SNS notification plus a Slack notification whenever the Root user signs in to the console. Which combination of tools is most appropriate?
 
-A) CloudTrail Insights로 퍼블릭 버킷 생성 API의 호출량 spike를 감지해 EventBridge로 차단 Lambda를 트리거
+A) Send CloudTrail logs to CloudWatch Logs, then send via SNS using a `{ $.userIdentity.type = "Root" }` Metric Filter + CloudWatch Alarm
+B) EventBridge Rule (CloudTrail event pattern `userIdentity.type = Root`) → SNS + Lambda (Slack)
+C) Evaluate Root usage with the Config rule `root-account-mfa-enabled` and send an SNS notification when NON_COMPLIANT
+D) Add the Audit Manager Root access Control to an Assessment to collect sign-in occurrences as evidence and notify
+
+**Answer: B**
+Explanation: CloudTrail automatically delivers all API calls (including console sign-ins) to the EventBridge default bus. Matching the `userIdentity.type = Root` pattern in an EventBridge Rule filters only Root sign-ins. Specifying SNS and Lambda (calling the Slack webhook) as Targets enables real-time multi-channel notifications. The Metric Filter path in A also works but has high latency. Config and Audit Manager are not event-response tools.
+
+---
+
+**Question 3.** The company wants "automatically block an S3 public bucket when it is created" to be handled without operator intervention. What is the most appropriate combination?
+
+A) Detect spikes in the call volume of public bucket creation APIs with CloudTrail Insights and trigger a blocking Lambda through EventBridge
 B) Config Rule `s3-bucket-public-read-prohibited` + Auto Remediation `AWS-DisableS3BucketPublicReadWrite`
-C) GuardDuty S3 Threat Detection으로 퍼블릭 노출을 Finding으로 만들고 자동으로 Public Access Block을 적용
-D) Amazon Macie로 퍼블릭 버킷의 민감 데이터를 분류한 뒤 위험 버킷의 퍼블릭 액세스를 자동 차단
+C) Use GuardDuty S3 Threat Detection to create a finding for public exposure and automatically apply Public Access Block
+D) Classify sensitive data in public buckets with Amazon Macie, then automatically block public access on risky buckets
 
-**정답: B**
-해설: Continuous compliance + auto remediation 표준 패턴이다. Config Rule이 버킷 설정 변경 시 즉시 평가(Configuration change 트리거) → NON_COMPLIANT 감지 → SSM Runbook `AWS-DisableS3BucketPublicReadWrite` 자동 실행 → 퍼블릭 액세스 차단. GuardDuty는 위협을 탐지하지만 자동 교정 기능이 없다. Macie는 데이터 분류 전문이다.
-
----
-
-**문제 4.** 외부 감사를 위해 1년치 CloudTrail 데이터를 SQL로 분석해야 한다. 가장 적합한 도구는?
-
-A) Event History를 콘솔에서 필터링 — 변경 불가한 90일 이벤트를 CSV로 내보내 외부 SQL 도구로 1년치 분석
-B) CloudTrail Lake — 콘솔에서 직접 SQL 쿼리, 7년 보존, ETL 불필요
-C) Trail 이벤트를 DynamoDB Streams로 적재한 뒤 PartiQL로 1년치를 쿼리
-D) S3 Trail 없이 Athena만 단독으로 띄워 CloudTrail Event History를 직접 테이블로 쿼리
-
-**정답: B**
-해설: Event History는 90일만 제공된다. 90일 이상 분석은 Lake 또는 S3+Athena가 필요하다. Lake는 콘솔에서 직접 SQL + 외부 데이터 통합 + 멀티 계정 지원이 가능하고 별도 ETL 파이프라인이 불필요하다. S3+Athena도 유효하지만 파티션 설정, 스키마 관리가 필요하다. 대규모 멀티 계정 환경에서 빠른 분석이 필요하면 Lake가 운영 부담이 낮다.
+**Answer: B**
+Explanation: This is the standard continuous compliance + auto remediation pattern. The Config rule evaluates immediately when a bucket configuration changes (Configuration change trigger) → NON_COMPLIANT is detected → the SSM Runbook `AWS-DisableS3BucketPublicReadWrite` runs automatically → public access is blocked. GuardDuty detects threats but has no automatic remediation capability. Macie specializes in data classification.
 
 ---
 
-**문제 5.** 비정상적으로 많은 EC2 RunInstances 호출을 자동 감지하려면 어떤 서비스가 가장 적합한가?
+**Question 4.** One year of CloudTrail data must be analyzed with SQL for an external audit. What is the most appropriate tool?
 
-A) Config Rule `ec2-instance-no-public-ip`로 신규 인스턴스를 평가해 비정상 생성을 NON_COMPLIANT로 표시
-B) CloudTrail Insights (ApiCallRateInsight — 7일 baseline 학습 후 spike 감지)
-C) CloudTrail 로그를 CloudWatch Logs로 보내 Logs Insights `stats count(*) by bin(5m)` 쿼리로 RunInstances 급증을 주기적으로 집계
-D) Audit Manager의 EC2 Control로 RunInstances 호출을 증거로 수집해 호출량 이상을 보고서로 식별
+A) Filter Event History in the console — export the immutable 90 days of events as CSV and analyze one year in an external SQL tool
+B) CloudTrail Lake — run SQL queries directly in the console, 7-year retention, no ETL needed
+C) Load Trail events into DynamoDB Streams and then query one year with PartiQL
+D) Without an S3 Trail, stand up Athena alone and query CloudTrail Event History directly as a table
 
-**정답: B**
-해설: CloudTrail Insights는 정확히 이 시나리오를 위해 설계됐다. ApiCallRateInsight가 특정 API(`RunInstances`)의 호출량을 7일 baseline 대비 통계적으로 유의미하게 높아지면 Insight 이벤트를 생성한다. Config Rule은 리소스 상태를 평가하지 호출량 spike를 탐지하지 않는다. 단, 7일 학습 기간이 필요하고 이 기간 동안은 의미 있는 탐지가 안 된다는 점을 인지해야 한다.
-
----
-
-**문제 6.** 회사가 HIPAA 컴플라이언스 증거를 외부 감사관에게 제출해야 한다. 가장 효율적인 도구는?
-
-A) Config Aggregator의 HIPAA 관련 Rule 평가 결과를 CSV로 내보내 Control별로 수동 매핑·정리
-B) Audit Manager의 사전 제공 HIPAA Framework로 Assessment 실행 → 자동 증거 수집 → PDF/CSV 보고서
-C) CloudTrail Lake에서 HIPAA 관련 API 호출을 SQL로 추출해 엑셀로 변환한 뒤 감사 증빙으로 제출
-D) Trusted Advisor의 보안 점검 결과와 Security Hub 점수를 캡처해 컴플라이언스 증거로 묶어 제출
-
-**정답: B**
-해설: Audit Manager의 핵심 사용 사례다. HIPAA Framework를 선택해 Assessment를 활성화하면 Config Rule 결과, CloudTrail API 호출, Security Hub Finding을 각 Control에 자동으로 매핑해 수집한다. 감사 시점에 "보고서 생성" 버튼 클릭만으로 증거가 정리된 PDF/CSV가 나온다. 이 접근이 "지속적 컴플라이언스"의 구현이다.
+**Answer: B**
+Explanation: Event History provides only 90 days. Analysis beyond 90 days requires Lake or S3+Athena. Lake supports SQL directly in the console, external data integration, and multi-account support, and needs no separate ETL pipeline. S3+Athena is also valid but requires partition setup and schema management. When fast analysis is needed in a large multi-account environment, Lake has a lower operational burden.
 
 ---
 
-**문제 7.** 멀티 계정에서 비준수 리소스를 한눈에 보려 한다. 어떤 구성이 표준인가?
+**Question 5.** Which service is most suitable for automatically detecting an abnormally high number of EC2 RunInstances calls?
 
-A) 계정마다 콘솔에 로그인해 Config 대시보드의 NON_COMPLIANT 목록을 확인하고 스프레드시트로 취합
-B) Config Aggregator를 Audit Account에 두고 모든 계정·리전 데이터를 통합
-C) CloudWatch Cross-Account Observability(OAM)로 각 계정 Config 메트릭을 중앙 대시보드 위젯에 모아 비준수 현황을 표시
-D) CloudTrail Lake Organization EDS에 SQL을 돌려 리소스 변경 이벤트로부터 비준수 리소스를 역산
+A) Evaluate new instances with the Config rule `ec2-instance-no-public-ip` and mark abnormal creation as NON_COMPLIANT
+B) CloudTrail Insights (ApiCallRateInsight — learns a 7-day baseline and then detects spikes)
+C) Send CloudTrail logs to CloudWatch Logs and periodically aggregate RunInstances surges with a Logs Insights `stats count(*) by bin(5m)` query
+D) Collect RunInstances calls as evidence with the Audit Manager EC2 Control and identify call-volume anomalies in a report
 
-**정답: B**
-해설: Config Aggregator는 멀티 계정·리전의 Config 데이터를 단일 뷰로 통합한다. Audit Account에 위치하는 것이 Landing Zone의 표준 패턴이다. `describe-aggregate-compliance-by-config-rules` API로 어떤 계정의 어떤 리소스가 어떤 Rule을 위반하는지 통합 조회할 수 있다. Organizations와 통합하면 신규 계정 추가 시 자동으로 Aggregator에 포함된다.
-
----
-
-**문제 8.** Auto Remediation이 설정됐는데 NON_COMPLIANT 리소스가 자동으로 교정되지 않는다. 트러블슈팅 순서는?
-
-A) Config Rule을 삭제하고 재생성한 뒤 Remediation을 다시 연결해 평가 캐시를 초기화한다
-B) Config 콘솔의 Remediation Execution Status 확인 → AutomationAssumeRole의 IAM 권한 검토 → Runbook 실행 로그 확인
-C) Config의 S3 Delivery Channel을 재설정해 Configuration Item 전달 지연으로 인한 교정 실패를 해소한다
-D) Configuration Recorder를 중지·재시작해 리소스 상태 기록을 강제로 재동기화한다
-
-**정답: B**
-해설: Auto Remediation = SSM Automation Runbook 실행이다. 실패의 90%는 IAM 권한 문제다. Config 콘솔의 Remediation 탭 → "Remediation Execution Status"에서 실패 메시지를 확인한다. "AutomationExecution failed: Access Denied"이면 AutomationAssumeRole에 대상 리소스 수정 권한을 추가한다. Runbook 자체의 오류라면 SSM Automation 콘솔의 Execution 이력에서 상세 로그를 확인한다.
+**Answer: B**
+Explanation: CloudTrail Insights is designed for exactly this scenario. ApiCallRateInsight generates an Insight event when the call volume of a specific API (`RunInstances`) becomes statistically significantly higher than the 7-day baseline. Config rules evaluate resource state and do not detect call-volume spikes. Note, however, that a 7-day learning period is required, and meaningful detection is not possible during this period.
 
 ---
 
-**문제 9.** Microsoft Windows BYOL 라이선스 200코어 한도를 초과하면 자동으로 EC2 시작을 차단하려 한다. 어떤 도구가 필요한가?
+**Question 6.** The company must submit HIPAA compliance evidence to an external auditor. What is the most efficient tool?
 
-A) Config Rule로 실행 중인 Windows 인스턴스의 vCPU 합계를 주기적으로 평가해 200코어 초과 시 NON_COMPLIANT로 차단
-B) License Manager Configuration + LicenseCountHardLimit = true + AMI 연결
-C) Trusted Advisor의 라이선스 점검으로 코어 사용량을 모니터링하고 한도 근접 시 권고로 알림
-D) Service Quotas에 Windows 코어 쿼터를 200으로 설정해 초과 RunInstances를 거부
+A) Export the Config Aggregator's HIPAA-related rule evaluation results as CSV and manually map and organize them by Control
+B) Run an Assessment with Audit Manager's prebuilt HIPAA Framework → automatic evidence collection → PDF/CSV report
+C) Extract HIPAA-related API calls from CloudTrail Lake with SQL, convert them to Excel, and submit them as audit evidence
+D) Capture Trusted Advisor security check results and the Security Hub score and bundle them as compliance evidence for submission
 
-**정답: B**
-해설: License Manager의 정확한 사용 사례다. License Configuration을 만들 때 `--license-count-hard-limit` 플래그를 켜면, 해당 AMI로 EC2를 시작할 때 라이선스 카운트가 한도에 도달하면 RunInstances 자체가 실패한다. Hard Limit이 false면 초과 시 알림만 보내고 시작은 허용된다. Config Rule은 이 차단 기능이 없다.
+**Answer: B**
+Explanation: This is the core use case for Audit Manager. When you select the HIPAA Framework and activate an Assessment, Config rule results, CloudTrail API calls, and Security Hub findings are automatically mapped to and collected for each Control. At audit time, simply clicking the "Generate report" button produces a PDF/CSV with the evidence organized. This approach is the implementation of "continuous compliance."
 
 ---
 
-**문제 10.** Trail의 무결성을 외부 감사관에게 입증해야 한다. 필요한 기능은 무엇이며, 어떻게 검증하는가?
+**Question 7.** The company wants to see non-compliant resources across multiple accounts at a glance. Which configuration is the standard?
 
-A) Trail S3 버킷에 버전 관리를 활성화해 모든 로그 파일의 이전 버전을 보존하고 변경 이력으로 무결성을 입증
-B) Log File Validation 활성화 → 1시간 단위 digest 파일 + SHA-256 해시 체인 → `aws cloudtrail validate-logs` 명령으로 검증
-C) Trail 버킷에 MFA Delete를 활성화해 로그 파일 삭제·덮어쓰기를 차단함으로써 무결성을 보장
-D) Trail 로그를 SSE-KMS로 암호화하고 키 정책으로 접근을 제한해 로그가 변조되지 않았음을 입증
+A) Log in to each account's console, check the NON_COMPLIANT list on the Config dashboard, and compile it into a spreadsheet
+B) Place a Config Aggregator in the Audit Account and consolidate data from all accounts and Regions
+C) Use CloudWatch Cross-Account Observability (OAM) to gather each account's Config metrics into a central dashboard widget to display non-compliance status
+D) Run SQL on a CloudTrail Lake Organization EDS to derive non-compliant resources backward from resource change events
 
-**정답: B**
-해설: Log File Validation을 활성화하면 CloudTrail이 매 1시간마다 해당 시간의 로그 파일들의 SHA-256 해시를 담은 digest 파일을 생성하고, digest 파일들도 체인 구조로 연결된다. `aws cloudtrail validate-logs --trail-arn ... --start-time ...` 명령으로 어떤 로그도 변조되지 않았음을 수학적으로 입증한다. S3 버전 관리는 삭제된 파일 복원에 도움이 되지만 변조 감지 기능은 없다. MFA Delete는 삭제 보호, KMS 암호화는 기밀성 보호로 목적이 다르다.
+**Answer: B**
+Explanation: A Config Aggregator consolidates Config data from multiple accounts and Regions into a single view. Placing it in the Audit Account is the standard Landing Zone pattern. The `describe-aggregate-compliance-by-config-rules` API lets you query in one place which resources in which accounts violate which rules. When integrated with Organizations, newly added accounts are automatically included in the Aggregator.
+
+---
+
+**Question 8.** Auto Remediation is configured, but NON_COMPLIANT resources are not being remediated automatically. What is the troubleshooting sequence?
+
+A) Delete and recreate the Config rule, then reattach Remediation to reset the evaluation cache
+B) Check Remediation Execution Status in the Config console → review the IAM permissions of the AutomationAssumeRole → check the Runbook execution logs
+C) Reconfigure Config's S3 Delivery Channel to resolve remediation failures caused by delayed Configuration Item delivery
+D) Stop and restart the Configuration Recorder to force a resync of resource state recording
+
+**Answer: B**
+Explanation: Auto Remediation = running an SSM Automation Runbook. 90% of failures are IAM permission problems. Go to the Remediation tab in the Config console → check the failure message in "Remediation Execution Status". If it says "AutomationExecution failed: Access Denied", add permissions to modify the target resource to the AutomationAssumeRole. If the error is in the Runbook itself, check the detailed logs in the Execution history of the SSM Automation console.
+
+---
+
+**Question 9.** The company wants to automatically block EC2 launches when the Microsoft Windows BYOL license limit of 200 cores is exceeded. Which tool is needed?
+
+A) Periodically evaluate the total vCPUs of running Windows instances with a Config rule and block with NON_COMPLIANT when it exceeds 200 cores
+B) License Manager Configuration + LicenseCountHardLimit = true + AMI association
+C) Monitor core usage with the Trusted Advisor license check and notify through a recommendation when approaching the limit
+D) Set a Windows core quota of 200 in Service Quotas to reject RunInstances beyond it
+
+**Answer: B**
+Explanation: This is the exact use case for License Manager. If the `--license-count-hard-limit` flag is turned on when creating the License Configuration, RunInstances itself fails when the license count reaches the limit while launching EC2 from that AMI. If Hard Limit is false, only a notification is sent when the limit is exceeded and the launch is still allowed. Config rules have no such blocking capability.
+
+---
+
+**Question 10.** The integrity of the Trail must be demonstrated to an external auditor. Which feature is needed, and how is it verified?
+
+A) Enable versioning on the Trail S3 bucket to preserve previous versions of all log files and demonstrate integrity through the change history
+B) Enable Log File Validation → hourly digest files + SHA-256 hash chain → verify with the `aws cloudtrail validate-logs` command
+C) Enable MFA Delete on the Trail bucket to block deletion and overwriting of log files, thereby guaranteeing integrity
+D) Encrypt Trail logs with SSE-KMS and restrict access with a key policy to demonstrate that the logs have not been tampered with
+
+**Answer: B**
+Explanation: When Log File Validation is enabled, CloudTrail generates a digest file every hour containing the SHA-256 hashes of that hour's log files, and the digest files are also linked in a chain structure. The command `aws cloudtrail validate-logs --trail-arn ... --start-time ...` mathematically proves that no logs have been tampered with. S3 versioning helps restore deleted files but has no tamper-detection capability. MFA Delete protects against deletion and KMS encryption protects confidentiality, so their purposes differ.
 
 ---
 

@@ -98,62 +98,62 @@ aws s3 cp ./orders.parquet \
 
 ## 📝 Practice Questions
 
-**문제 1.** 데이터레이크에서 수집한 원본 데이터를 절대 변경하지 않고 보관하며, 재처리의 단일 진실 공급원 역할을 하는 존은 무엇인가?
+**Question 1.** Which zone in a data lake keeps the ingested raw data without ever modifying it and serves as the single source of truth for reprocessing?
 
-A) Curated 존  
-B) Clean 존  
-C) Raw 존  
-D) Sandbox 존  
+A) Curated zone  
+B) Clean zone  
+C) Raw zone  
+D) Sandbox zone  
 
-**정답: C**  
-해설: Raw(Bronze) 존은 수집한 원본을 그대로 불변 보관하며 재처리의 source of truth입니다. Clean은 검증·정규화된 중간 단계, Curated는 비즈니스 집계 결과로 소비용입니다. Sandbox는 표준 3계층에 포함되지 않습니다.
-
----
-
-**문제 2.** Athena 쿼리에서 `WHERE year=2026 AND month=6` 조건이 해당 프리픽스만 스캔하도록 만드는 기법은?
-
-A) 파티션 프루닝  
-B) 데이터 스큐  
-C) 브로드캐스트 조인  
-D) 버킷팅 셔플  
-
-**정답: A**  
-해설: 파티션 키가 WHERE 조건에 있으면 엔진이 관련 프리픽스만 읽는 파티션 프루닝이 작동해 스캔량과 비용을 줄입니다. 나머지는 파티션 기반 스캔 절감과 무관한 개념입니다.
+**Answer: C**  
+Explanation: The Raw (Bronze) zone keeps the ingested originals immutably as they are and is the source of truth for reprocessing. Clean is a validated and normalized intermediate stage, and Curated holds business aggregation results for consumption. Sandbox is not part of the standard three layers.
 
 ---
 
-**문제 3.** 데이터레이크에서 파일이 수만 개의 매우 작은 파일로 쪼개졌을 때 발생하는 문제로 가장 적절한 것은?
+**Question 2.** Which technique makes the condition `WHERE year=2026 AND month=6` in an Athena query scan only the corresponding prefix?
 
-A) 데이터 내구성이 떨어진다  
-B) 메타데이터 오버헤드와 S3 요청 비용이 증가한다  
-C) 파티션 프루닝이 비활성화된다  
-D) 스키마가 자동으로 변경된다  
+A) Partition pruning  
+B) Data skew  
+C) Broadcast join  
+D) Bucketing shuffle  
 
-**정답: B**  
-해설: 작은 파일 문제는 파일별 메타데이터 처리 오버헤드와 다수의 S3 GET 요청으로 비용·지연이 증가합니다. 권장은 128MB~1GB이며 compaction으로 병합합니다. 내구성·스키마·프루닝과는 직접 관련이 없습니다.
+**Answer: A**  
+Explanation: When the partition key appears in the WHERE condition, partition pruning works so that the engine reads only the relevant prefixes, reducing the amount scanned and the cost. The rest are concepts unrelated to partition-based scan reduction.
 
 ---
 
-**문제 4.** Glue Data Catalog에 파티션을 등록하지 않고 테이블 속성의 규칙으로 파티션을 계산해 카탈로그 병목을 줄이는 Athena 기능은?
+**Question 3.** What is the most appropriate problem that occurs when files in a data lake are split into tens of thousands of very small files?
 
-A) 파티션 프로젝션  
-B) 크롤러 스케줄링  
+A) Data durability decreases  
+B) Metadata overhead and S3 request costs increase  
+C) Partition pruning is disabled  
+D) The schema changes automatically  
+
+**Answer: B**  
+Explanation: The small-file problem increases cost and latency due to per-file metadata processing overhead and a large number of S3 GET requests. The recommended size is 128 MB to 1 GB, and files are merged by compaction. It is not directly related to durability, schema, or pruning.
+
+---
+
+**Question 4.** Which Athena feature reduces catalog bottlenecks by computing partitions from rules in the table properties instead of registering partitions in the Glue Data Catalog?
+
+A) Partition projection  
+B) Crawler scheduling  
 C) CTAS  
-D) 워크그룹 격리  
+D) Workgroup isolation  
 
-**정답: A**  
-해설: 파티션 프로젝션(Partition Projection)은 파티션을 카탈로그에 일일이 등록하지 않고 범위·포맷 규칙으로 계산해 대량 파티션 환경에서 조회 비용과 지연을 줄입니다. 크롤러는 등록 방식이고, CTAS는 결과 테이블 생성, 워크그룹은 비용·격리 관리입니다.
+**Answer: A**  
+Explanation: Partition projection computes partitions from range and format rules without registering each partition in the catalog, reducing query cost and latency in environments with a large number of partitions. A crawler is a registration approach, CTAS creates result tables, and workgroups manage cost and isolation.
 
 ---
 
-**문제 5.** 분석용 데이터레이크에서 컬럼 단위로 필요한 데이터만 읽어 스캔량을 줄이고 압축 효율이 높은 권장 파일 포맷은?
+**Question 5.** In an analytical data lake, which recommended file format reads only the needed data by column to reduce the amount scanned and has high compression efficiency?
 
 A) CSV  
 B) JSON  
 C) Parquet  
 D) XML  
 
-**정답: C**  
-해설: Parquet(또는 ORC)은 컬럼형 포맷으로 필요한 컬럼만 읽어 스캔 비용을 줄이고 컬럼 단위 압축으로 저장 비용을 낮춥니다. CSV/JSON/XML은 행 기반 또는 비효율적이어서 분석 워크로드에 부적합합니다.
+**Answer: C**  
+Explanation: Parquet (or ORC) is a columnar format that reduces scan cost by reading only the needed columns and lowers storage cost with column-level compression. CSV/JSON/XML are row-based or inefficient and are unsuitable for analytical workloads.
 
 ---

@@ -107,62 +107,62 @@ Next: Post-deployment — monitoring for drift.
 
 ## 📝 Practice Questions
 
-**문제 1.** 새 추천 모델을 실제 사용자에게 전혀 노출하지 않은 채, 프로덕션 트래픽에 대해 응답과 지연을 운영 모델과 비교 검증하고 싶다. 가장 적합한 전략은?
+**Question 1.** You want to validate a new recommendation model's responses and latency against production traffic and compare them with the production model, without exposing the new model to real users at all. Which strategy is MOST appropriate?
 
-A) A/B 테스트  
-B) 카나리 배포  
-C) 섀도 배포(Shadow Testing)  
-D) 블루/그린 배포  
+A) A/B testing  
+B) Canary deployment  
+C) Shadow deployment (shadow testing)  
+D) Blue/green deployment  
 
-**정답: C**  
-해설: 섀도 배포는 트래픽을 새 모델에도 복제해 보내되 응답을 사용자에게 반환하지 않으므로 노출 위험이 0이면서 실제 분포로 검증할 수 있다. A/B(A)·카나리(B)·블루그린(D)은 모두 어느 정도 실제 사용자에게 새 모델 응답을 노출한다.
-
----
-
-**문제 2.** 새 모델 버전을 처음에는 트래픽의 5%에만 보내고, CloudWatch 지표가 건강하면 25%, 50%, 100%로 단계 확대하며, 오류율이 급증하면 자동으로 되돌리고 싶다. 무엇을 사용해야 하는가?
-
-A) All-at-once 트래픽 시프팅  
-B) 배포 가드레일의 Canary 모드 + CloudWatch 알람 기반 자동 롤백  
-C) Batch Transform 재실행  
-D) 멀티모델 엔드포인트  
-
-**정답: B**  
-해설: 소량부터 점진 확대 + 지표 악화 시 자동 복귀는 배포 가드레일의 Canary(또는 Linear) 트래픽 시프팅에 CloudWatch 알람 기반 자동 롤백을 결합한 구성이다. All-at-once(A)는 한 번에 전체 전환, Batch(C)·MME(D)는 배포 전략이 아니다.
+**Answer: C**  
+Explanation: Shadow deployment replicates traffic to the new model as well but does not return its responses to users, so there is zero exposure risk while still validating on the real distribution. A/B (A), canary (B), and blue/green (D) all expose the new model's responses to real users to some degree.
 
 ---
 
-**문제 3.** 두 모델을 동일 엔드포인트에서 각각 50% 트래픽으로 동시에 운영하며, 클릭률 같은 비즈니스 KPI를 충분한 기간 수집해 어느 모델이 통계적으로 더 나은지 판단하려 한다. 이 방식은?
+**Question 2.** You want to send a new model version only 5% of traffic at first, expand in stages to 25%, 50%, and 100% if CloudWatch metrics are healthy, and automatically roll back if the error rate spikes. What should you use?
 
-A) 섀도 배포  
-B) 블루/그린 배포  
-C) A/B 테스트  
-D) 롤백  
+A) All-at-once traffic shifting  
+B) Deployment guardrails in Canary mode with automatic rollback based on CloudWatch alarms  
+C) Re-run Batch Transform  
+D) Multi-model endpoint  
 
-**정답: C**  
-해설: 두 모델을 가중치로 분할해 동시에 노출하고 실제 KPI를 비교해 우열을 가리는 것은 A/B 테스트다. 섀도(A)는 노출하지 않고, 블루/그린(B)은 비교가 아니라 전환에 초점, 롤백(D)은 복귀 동작이다.
-
----
-
-**문제 4.** 블루/그린 배포의 주요 트레이드오프로 옳은 것은?
-
-A) 전환 순간 100% 트래픽이 새 버전으로 가므로 단계적 노출이 없으면 위험이 한꺼번에 드러나지만, 블루가 살아 있어 롤백이 빠르다  
-B) 새 버전에 트래픽을 항상 1%씩만 보낸다  
-C) 사용자에게 새 버전 응답을 절대 보여주지 않는다  
-D) 두 모델을 영구히 50/50으로 유지한다  
-
-**정답: A**  
-해설: 블루/그린은 그린을 완전히 띄운 뒤 한 번에 전환하므로 단계적 노출이 없으면 위험이 동시에 드러나지만, 블루 환경이 그대로 살아 있어 문제 시 즉시 롤백할 수 있다. 1%씩(B)은 카나리, 노출 안 함(C)은 섀도, 영구 50/50(D)은 A/B의 일시적 상태일 뿐이다.
+**Answer: B**  
+Explanation: Gradual expansion starting from a small amount, with automatic reversion when metrics degrade, is a configuration that combines deployment guardrails' Canary (or Linear) traffic shifting with automatic rollback based on CloudWatch alarms. All-at-once (A) switches everything at once, and Batch (C) and MME (D) are not deployment strategies.
 
 ---
 
-**문제 5.** SageMaker에서 ProductionVariant의 트래픽 가중치를 90/10에서 0/100으로 점진 조정하는 행위가 직접적으로 가능하게 하는 배포 전략들의 공통 기반은?
+**Question 3.** You want to run two models at the same time on the same endpoint, each with 50% of the traffic, collect a business KPI such as click-through rate over a sufficient period, and determine which model is statistically better. What is this approach?
 
-A) Batch Transform 잡 스케줄  
-B) Inferentia 칩의 컴파일 기능  
-C) Neo의 하드웨어 최적화  
-D) 하나의 엔드포인트에 여러 Variant를 두고 가중치로 트래픽을 분할하는 메커니즘  
+A) Shadow deployment  
+B) Blue/green deployment  
+C) A/B testing  
+D) Rollback  
 
-**정답: D**  
-해설: A/B·카나리·블루그린 같은 전략은 모두 한 엔드포인트 안의 다중 ProductionVariant와 트래픽 가중치 조정이라는 공통 메커니즘 위에서 동작한다. Batch(A)·Inferentia(B)·Neo(C)는 배포 트래픽 분할과 무관한 최적화/실행 도구다.
+**Answer: C**  
+Explanation: Splitting traffic between two models by weight, exposing both at the same time, and comparing real KPIs to decide which is better is A/B testing. Shadow (A) does not expose, blue/green (B) focuses on switching rather than comparison, and rollback (D) is a reversion action.
+
+---
+
+**Question 4.** Which statement correctly describes the main trade-off of blue/green deployment?
+
+A) At the moment of cutover 100% of traffic goes to the new version, so without staged exposure the risk appears all at once, but because blue is still running, rollback is fast  
+B) It always sends only 1% of traffic to the new version  
+C) It never shows users the new version's responses  
+D) It keeps two models at 50/50 permanently  
+
+**Answer: A**  
+Explanation: Blue/green fully brings up green and then switches over at once, so without staged exposure the risk is revealed all at the same time, but because the blue environment remains intact, you can roll back immediately if there is a problem. 1% at a time (B) is canary, no exposure (C) is shadow, and a permanent 50/50 split (D) is only a temporary state of A/B.
+
+---
+
+**Question 5.** In SageMaker, what is the common foundation of the deployment strategies that adjusting the traffic weights of ProductionVariants from 90/10 to 0/100 gradually makes directly possible?
+
+A) Scheduling Batch Transform jobs  
+B) The compilation capability of the Inferentia chip  
+C) Neo's hardware optimization  
+D) The mechanism of placing multiple variants on one endpoint and splitting traffic by weight  
+
+**Answer: D**  
+Explanation: Strategies such as A/B, canary, and blue/green all operate on the common mechanism of multiple ProductionVariants within one endpoint and adjustment of traffic weights. Batch (A), Inferentia (B), and Neo (C) are optimization or execution tools unrelated to splitting deployment traffic.
 
 ---

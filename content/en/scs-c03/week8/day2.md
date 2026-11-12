@@ -133,63 +133,63 @@ If CloudWatch is single-signal threshold detection, Security Hub is *aggregation
 
 ## 📝 Practice Questions
 
-**문제 1.** Security Hub의 보안 표준(CIS, FSBP) 컨트롤이 평가되려면 반드시 활성화되어 있어야 하는 선행 서비스는?
+**Question 1.** Which prerequisite service must be enabled for Security Hub security standards (CIS, FSBP) controls to be evaluated?
 
 A) Amazon Macie  
 B) AWS Config  
 C) Amazon Inspector  
 D) AWS Shield Advanced  
 
-**정답: B**  
-해설: Security Hub의 표준 컨트롤은 내부적으로 AWS Config 규칙으로 리소스 설정을 평가하므로 Config가 활성화되어 있어야 한다. Macie는 민감데이터 발견, Inspector는 취약점 스캔, Shield는 DDoS 방어로 표준 컨트롤 평가의 선행 조건이 아니다.
+**Answer: B**  
+Explanation: Security Hub standards controls internally evaluate resource settings with AWS Config rules, so Config must be enabled. Macie is sensitive data discovery, Inspector is vulnerability scanning, and Shield is DDoS protection, so none of them is a prerequisite for standards control evaluation.
 
 ---
 
-**문제 2.** GuardDuty, Inspector, Macie의 서로 다른 결과 포맷을 단일 체계로 다루기 위해 Security Hub가 사용하는 정규화 포맷은?
+**Question 2.** Which normalized format does Security Hub use to handle the different result formats of GuardDuty, Inspector, and Macie in a single scheme?
 
-A) CloudTrail 이벤트 스키마  
+A) CloudTrail event schema  
 B) ASFF(AWS Security Finding Format)  
-C) VPC Flow Logs 포맷  
-D) OCSF 원본 포맷만 그대로 보관  
+C) VPC Flow Logs format  
+D) Keep only the original OCSF format as-is  
 
-**정답: B**  
-해설: Security Hub는 모든 통합 소스의 결과를 ASFF라는 단일 JSON 스키마로 정규화해 출처와 무관하게 같은 필드(Severity.Normalized, Workflow.Status 등)로 검색·라우팅할 수 있게 한다. CloudTrail/VPC Flow 포맷은 다른 데이터이고, OCSF는 Security Lake의 포맷이다.
-
----
-
-**문제 3.** 운영자가 특정 결과를 검토한 뒤 "의도적으로 무시하되 기록은 남기고 보안 점수·알림에서 제외"하려 한다. ASFF에서 설정할 값은?
-
-A) RecordState를 ARCHIVED로  
-B) Workflow.Status를 SUPPRESSED로  
-C) Severity.Normalized를 0으로  
-D) Compliance.Status를 PASSED로  
-
-**정답: B**  
-해설: Workflow.Status를 SUPPRESSED로 두면 운영자가 의도적으로 무시했음을 표시하며 알림·점수 집계에서 빠지지만 기록은 남는다. RecordState=ARCHIVED는 시스템이 근본 문제 해소를 판단해 바꾸는 값이고, 심각도나 Compliance를 임의 조작하는 것은 의미를 왜곡한다.
+**Answer: B**  
+Explanation: Security Hub normalizes the results from all integrated sources into a single JSON schema called ASFF, so they can be searched and routed using the same fields (Severity.Normalized, Workflow.Status, etc.) regardless of origin. The CloudTrail/VPC Flow formats are different data, and OCSF is the format of Security Lake.
 
 ---
 
-**문제 4.** 수백 개의 멤버 계정과 여러 리전에 걸쳐 Security Hub 표준을 일관되게 적용하고 모든 결과를 단일 화면에서 보려 한다. 가장 적절한 접근은?
+**Question 3.** After reviewing a particular finding, an operator wants to "intentionally ignore it but keep the record and exclude it from the security score and notifications." What value should be set in ASFF?
 
-A) 각 계정·리전에서 개별적으로 Security Hub를 수동 설정  
-B) Organizations에서 위임 관리자를 지정하고 Central Configuration으로 표준을 배포한 뒤 Cross-Region Aggregation으로 한 리전에 집계  
-C) 모든 결과를 이메일로 전달하도록 SNS만 구성  
-D) GuardDuty만 켜면 자동으로 통합된다  
+A) Set RecordState to ARCHIVED  
+B) Set Workflow.Status to SUPPRESSED  
+C) Set Severity.Normalized to 0  
+D) Set Compliance.Status to PASSED  
 
-**정답: B**  
-해설: 다계정·다리전 일관 운영의 정답은 Organizations 위임 관리자 + Central Configuration(표준/컨트롤 일괄 배포) + Cross-Region Aggregation(단일 집계 리전)이다. 계정별 수동 설정은 확장성이 없고, SNS만으로는 표준 강제·집계가 안 되며, GuardDuty는 탐지기일 뿐 표준 점검·집계를 대신하지 않는다.
+**Answer: B**  
+Explanation: Setting Workflow.Status to SUPPRESSED indicates the operator intentionally ignored it, and it is excluded from notifications and score aggregation while the record remains. RecordState=ARCHIVED is a value the system changes when it determines the underlying problem has been resolved, and arbitrarily manipulating severity or Compliance distorts the meaning.
 
 ---
 
-**문제 5.** Security Hub의 CRITICAL 결과가 들어올 때 자동으로 실제 교정(예: 노출된 보안 그룹 규칙 회수)을 수행하려 한다. 표준 아키텍처는?
+**Question 4.** You want to apply Security Hub standards consistently across hundreds of member accounts and multiple Regions and view all findings in a single pane. What is the most appropriate approach?
 
-A) Security Hub Automation Rule로 보안 그룹을 직접 수정  
-B) 결과가 EventBridge에 자동 발행되므로, EventBridge 규칙으로 패턴을 매칭해 SSM Automation/Lambda로 교정  
-C) Config 규칙이 자동으로 교정한다  
-D) Macie가 교정한다  
+A) Manually configure Security Hub individually in each account and Region  
+B) Designate a delegated administrator in Organizations, deploy standards with Central Configuration, and aggregate into one Region with Cross-Region Aggregation  
+C) Configure only SNS to forward all findings by email  
+D) Simply turning on GuardDuty integrates everything automatically  
 
-**정답: B**  
-해설: 모든 Security Hub 결과는 EventBridge로 자동 발행되므로, EventBridge 규칙으로 CRITICAL 패턴을 잡아 SSM Automation 문서나 Lambda로 실제 교정을 실행하는 것이 표준 패턴(AWS의 ASR 솔루션도 이 경로)이다. Automation Rule은 결과 필드 갱신·억제만 할 뿐 외부 리소스를 직접 바꾸지 못하고, Config 자동 교정은 Config 규칙 차원이며, Macie는 데이터 발견 도구다.
+**Answer: B**  
+Explanation: The answer for consistent multi-account, multi-Region operation is an Organizations delegated administrator + Central Configuration (bulk deployment of standards/controls) + Cross-Region Aggregation (a single aggregation Region). Per-account manual setup does not scale, SNS alone cannot enforce standards or aggregate, and GuardDuty is only a detector and does not replace standards checks or aggregation.
+
+---
+
+**Question 5.** When a CRITICAL finding arrives in Security Hub, you want to automatically perform actual remediation (for example, revoking an exposed security group rule). What is the standard architecture?
+
+A) Directly modify the security group with a Security Hub Automation Rule  
+B) Because findings are automatically published to EventBridge, match the pattern with an EventBridge rule and remediate with SSM Automation/Lambda  
+C) A Config rule remediates automatically  
+D) Macie remediates  
+
+**Answer: B**  
+Explanation: All Security Hub findings are automatically published to EventBridge, so the standard pattern (which AWS's ASR solution also follows) is to catch the CRITICAL pattern with an EventBridge rule and run actual remediation with an SSM Automation document or Lambda. Automation Rules only update or suppress finding fields and cannot directly change external resources, Config automatic remediation is at the Config rule level, and Macie is a data discovery tool.
 
 ---
 

@@ -112,62 +112,62 @@ Tomorrow we will review all of Week 2 (transformation, pipelines, augmentation, 
 
 ## 📝 Practice Questions
 
-**문제 1.** 수백 GB의 학습 데이터를 사용하는데, 학습 시작 전 전체 다운로드 대기 시간과 EBS 디스크 비용을 줄이고 싶다. 임의 접근은 크게 필요 없다. 가장 적합한 입력 모드는?
+**Question 1.** You are using hundreds of GB of training data and want to reduce the wait time for downloading everything before training starts and the EBS disk cost. Random access is not really needed. Which input mode is MOST appropriate?
 
 A) Pipe mode  
 B) File mode  
-C) 로컬 노트북 업로드  
-D) DynamoDB 직접 읽기  
+C) Upload from a local laptop  
+D) Read directly from DynamoDB  
 
-**정답: A**  
-해설: Pipe mode는 S3에서 데이터를 스트리밍으로 흘려보내 다운로드 대기 없이 즉시 학습을 시작하고 디스크 용량 제약에서 자유로우므로, 매우 큰 데이터를 순차 처리할 때 적합하다. File mode(A)는 전체 다운로드를 기다려 시작 지연·디스크 비용이 크고, C·D는 대규모 학습 데이터 공급 방식으로 부적절하다.
+**Answer: A**  
+Explanation: Pipe mode streams data from S3 so training starts immediately without waiting for a download and is free from disk capacity constraints, making it suitable for sequentially processing very large data. File mode (A) waits for a full download, so start-up delay and disk cost are high, and C and D are inappropriate ways to supply large-scale training data.
 
 ---
 
-**문제 2.** File mode의 POSIX 파일 접근 편의성과 Pipe mode의 즉시 시작 장점을 절충하여, 큰 데이터셋을 스트리밍하면서도 로컬 파일처럼 임의 접근하려는 경우 적합한 모드는?
+**Question 2.** Which mode is appropriate when you want a compromise between the POSIX file access convenience of File mode and the immediate start advantage of Pipe mode, streaming a large dataset while still accessing it randomly like local files?
 
 A) File mode  
 B) Pipe mode  
 C) FastFile mode  
 D) Batch mode  
 
-**정답: C**  
-해설: FastFile mode는 파일을 필요할 때 스트리밍으로 가져오되 로컬 파일처럼 POSIX 접근이 가능해, 전체 다운로드를 기다리지 않으면서 임의 접근도 지원하므로 큰 데이터셋에 자주 권장된다. File(A)은 전체 다운로드가 필요하고 Pipe(B)는 임의 접근이 어려우며, Batch mode(D)는 SageMaker 학습 입력 모드가 아니다.
+**Answer: C**  
+Explanation: FastFile mode fetches files by streaming when needed while allowing POSIX access like local files, supporting random access without waiting for a full download, so it is often recommended for large datasets. File (A) requires a full download, Pipe (B) makes random access difficult, and Batch mode (D) is not a SageMaker training input mode.
 
 ---
 
-**문제 3.** Amazon FSx for Lustre가 학습 데이터 접근에 특히 유리한 상황으로 가장 옳은 것은?
+**Question 3.** Which is the most correct situation in which Amazon FSx for Lustre is especially advantageous for training data access?
 
-A) 한 번만 읽는 소규모 단발성 학습  
-B) 텍스트 한 줄을 읽는 단순 함수  
-C) 데이터를 전혀 읽지 않는 추론  
-D) 대규모 데이터를 여러 epoch·여러 작업에서 반복 읽으며 저지연이 중요한 분산 학습  
+A) Small one-off training that reads the data only once  
+B) A simple function that reads one line of text  
+C) Inference that reads no data at all  
+D) Distributed training that repeatedly reads large-scale data across many epochs and multiple jobs and where low latency is important  
 
-**정답: D**  
-해설: FSx for Lustre는 수백 GB/s급 처리량과 밀리초 이하 지연의 병렬 파일 시스템으로, 대규모 데이터를 반복적으로 읽고 여러 노드가 공유하며 저지연이 중요한 분산 학습에서 가치를 발한다. 단발성·소규모 학습(A)은 S3 직접 접근으로 충분하고, C·D는 데이터 접근 자체가 미미해 FSx가 정당화되지 않는다.
+**Answer: D**  
+Explanation: FSx for Lustre is a parallel file system with hundreds of GB/s of throughput and sub-millisecond latency, and it is valuable for distributed training that repeatedly reads large-scale data, is shared by multiple nodes, and requires low latency. One-off, small-scale training (A) is well served by direct S3 access, and for B and C data access itself is negligible, so FSx is not justified.
 
 ---
 
-**문제 4.** 4개 노드로 데이터 병렬 학습을 하면서 각 노드가 전체 데이터를 중복 다운로드하지 않고 자기 몫만 받게 하려면 SageMaker에서 사용하는 분배 설정은?
+**Question 4.** When doing data-parallel training on 4 nodes, which distribution setting in SageMaker do you use so that each node receives only its own share rather than downloading the entire dataset redundantly?
 
 A) FullyReplicated  
 B) ShardedByS3Key  
 C) FileMode only  
 D) SingleRecord  
 
-**정답: B**  
-해설: ShardedByS3Key는 S3 객체들을 인스턴스 수만큼 나눠 각 인스턴스가 데이터의 일부만 받게 하므로, 데이터 병렬 학습에서 중복 다운로드·중복 처리를 막는다. FullyReplicated(A)는 모든 인스턴스가 전체 데이터를 받아 중복이 발생하고, C·D는 데이터 분배 방식과 무관하다.
+**Answer: B**  
+Explanation: ShardedByS3Key divides the S3 objects by the number of instances so that each instance receives only part of the data, preventing duplicate downloads and duplicate processing in data-parallel training. With FullyReplicated (A), every instance receives the entire dataset, causing duplication, and C and D are unrelated to the data distribution method.
 
 ---
 
-**문제 5.** ShardedByS3Key 샤딩이 실제로 효과를 내기 위한 전제 조건으로 가장 옳은 것은?
+**Question 5.** What is the most correct precondition for ShardedByS3Key sharding to actually be effective?
 
-A) 데이터가 하나의 거대한 단일 파일이어야 한다  
-B) 데이터가 여러 개의 S3 객체(파일)로 분할되어 있어야 한다  
-C) 모델 병렬만 사용해야 한다  
-D) 입력 모드가 반드시 File mode여야 한다  
+A) The data must be a single huge file  
+B) The data must be split into multiple S3 objects (files)  
+C) Only model parallelism must be used  
+D) The input mode must be File mode  
 
-**정답: B**  
-해설: ShardedByS3Key는 S3 객체 단위로 나누므로, 데이터가 여러 파일로 분할되어 있어야 인스턴스별로 분배되어 효과를 낸다. 단일 거대 파일(A)은 객체 단위로 쪼갤 수 없어 샤딩 효과가 없다. 샤딩은 데이터 병렬에서 쓰이므로 모델 병렬 전용(C)이 아니고, 특정 입력 모드(D)에 종속되지도 않는다.
+**Answer: B**  
+Explanation: ShardedByS3Key divides by S3 object, so the data must be split into multiple files to be distributed per instance and be effective. A single huge file (A) cannot be split by object, so sharding has no effect. Sharding is used in data parallelism, so it is not exclusive to model parallelism (C), nor is it tied to a specific input mode (D).
 
 ---

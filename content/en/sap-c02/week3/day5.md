@@ -228,7 +228,7 @@ B) TGW each region + TGW Inter-Region Peering + DX Gateway + Transit VIF + TGW R
 C) AWS Cloud WAN global policy + DX Gateway + Transit VIF + define isolation in policy
 D) VPC Peering hubs per region + Site-to-Site VPN on-premises connection
 
-**정답: C**
+**Answer: C**
 
 Explanation: "Single policy" management across 3 regions 60 VPCs is Cloud WAN's core strength. Cloud WAN Core Network Policy defines environment segments (dev/stage/prod/shared) and declares routing allow/block between segments. DX Gateway + Transit VIF connects on-premises accessing all-region VPCs. B possible but per-region TGW Route Table separate management higher operational burden. A Full Mesh needs (60×59)/2 = 1,770 Peerings—unmaintainable; Peering doesn't support transitive routing. D's VPN doesn't meet DX bandwidth/latency consistency.
 
@@ -241,7 +241,7 @@ B) MACsec (10G Dedicated) + enable BFD
 C) IPsec VPN over DX + BGP AS Path adjustment + BFD
 D) TLS 1.3 application encryption + BFD
 
-**정답: B**
+**Answer: B**
 
 Explanation: "DX circuit encryption" means L2 encryption MACsec (IEEE 802.1AE). MACsec supported on 10Gbps/100Gbps Dedicated Connection. Currently 10G Dedicated meets requirement. Sub-1-second failover achieved via BFD (RFC 5880) exchanging hellos 300ms intervals; 3 consecutive failures trigger 300ms failure notification to BGP. IPsec VPN over DX (A, C) is L3 encryption, not L2 "circuit" encryption; different from requirement. A also stacks MACsec + IPsec creating unnecessary dual-encryption latency. TLS (D) is L7, not circuit-level encryption.
 
@@ -254,7 +254,7 @@ B) Each hospital VPC Peering (hospital→analysis only)
 C) Create Endpoint Service (NLB) in analysis VPC + create Interface Endpoint each hospital VPC
 D) Share analysis VPC via RAM
 
-**정답: C**
+**Answer: C**
 
 Explanation: Four requirements: (1) hospitals→analysis API only, (2) hospital ↔ hospital prohibited, (3) analysis internal IP unexposed (only NLB visible), (4) CIDR overlap allowed. PrivateLink only option meeting all. Interface Endpoint unidirectional (hospital→NLB), allows CIDR overlap, service-unit exposure (NLB IP only). No Endpoint between hospitals = no communication path = automatic isolation. TGW (A) blocks hospital ↔ hospital via route isolation but doesn't allow CIDR overlap. Peering (B) also CIDR impossible. RAM (D) is resource sharing, not service-level access control; exposes internal IPs.
 
@@ -267,7 +267,7 @@ B) Switch from Site-to-Site to Client VPN
 C) Emergency Hosted Connection request (minimum 50Mbps)
 D) Place CloudFront before Lambda for caching
 
-**정답: A**
+**Answer: A**
 
 Explanation: VGW unsupported ECMP = max 1.25Gbps (active tunnel 1). TGW + enable ECMP + 4 VPN connections (2 tunnels each, Active-Active) = 8 tunnels parallel = theoretical 10Gbps. Completable within days. Key: VGW→TGW switch enables ECMP. Client VPN (B) for individual users not inter-site high-bandwidth. Hosted Connection (C) takes weeks; DX itself 6 months. CloudFront (D) HTTP caching doesn't solve real-time inventory sync bandwidth.
 
@@ -280,7 +280,7 @@ B) Security account GLB + Palo Alto, workload VPCs GLB Endpoint + TGW traffic co
 C) Apply WAF to all ALBs
 D) Deploy Network Firewall at Egress VPC center
 
-**정답: B**
+**Answer: B**
 
 Explanation: GLB + GWLB Endpoint preserve original 5-tuple (source IP, destination IP, protocol, source/destination port) via GENEVE (RFC 8926) when delivering to appliances. Palo Alto stateful inspection then returns traffic. Security account GLB workload VPC reference via GWLB Endpoint, centralized model exactly meets requirements. TGW concentrates all VPC outbound. Per-VPC deployment (A) multiplies appliance/license costs. WAF (C) L7 HTTP/HTTPS only. Network Firewall (D) AWS-managed doesn't satisfy "central Palo Alto appliance" requirement.
 
@@ -293,7 +293,7 @@ B) Apply high Local Preference to DX path on-premises BGP
 C) Apply AS Path Prepending to VPN-side BGP advertisement on-premises
 D) Lambda periodically monitor BGP paths and adjust priority
 
-**정답: C**
+**Answer: C**
 
 Explanation: AWS→on-premises path selection determined by **AWS BGP**. AWS prefers shorter AS Path. On-premises applying AS Path Prepending (repeating own ASN) on VPN-side neighbor makes VPN path longer; AWS then selects shorter-AS-Path DX. DX failure removes DX BGP path; AWS selects only VPN. A non-existent AWS console feature. B Local Preference for on-premises→AWS (outbound) doesn't transmit to AWS BGP. D Lambda can't directly control BGP—unrealistic.
 
@@ -306,7 +306,7 @@ B) S3 Gateway Endpoint + Secrets Manager Interface Endpoint + ECR Interface Endp
 C) S3 Interface Endpoint + Secrets Manager Interface Endpoint + ECR Interface Endpoint
 D) Transit VIF + DX Gateway access via on-premises
 
-**정답: B**
+**Answer: B**
 
 Explanation: S3 via Gateway Endpoint (free) without internet. Secrets Manager needs Interface Endpoint (charged $0.01/hr + GB). ECR needs two endpoints: `com.amazonaws.region.ecr.api` (API calls) and `com.amazonaws.region.ecr.dkr` (image pull). EC2 image pull from ECR fetches layers from S3 requiring S3 Gateway Endpoint too. C's S3 Interface Endpoint costs $0.01/hr + GB making B cost-optimal with free Gateway Endpoint. D adds unnecessary on-premises complexity.
 
@@ -319,7 +319,7 @@ B) 2 circuits each Location = 4 total
 C) Add VPN backup (High Resiliency + VPN)
 D) Upgrade DX bandwidth to 10G
 
-**정답: B**
+**Answer: B**
 
 Explanation: Maximum Resiliency (99.99%) = **2 different DX Locations with 2 circuits each**, 4 total. Currently 1 each; add 1 each Location. LAG (A) bundles ports same Location (802.3ad/LACP)—powerless against location-wide failure. 4 circuits same Location LAG still down on Location failure. VPN backup (C) is Development level (99%). DX SLA depends on circuit count and location diversity not bandwidth upgrade (D).
 
@@ -332,7 +332,7 @@ B) Create Endpoint Service (NLB) + Organizations allowed Principal + customers I
 C) Internet-facing ALB payment service + TLS + IP whitelist
 D) Each customer VPC Peering + Security Group payment port only
 
-**정답: B**
+**Answer: B**
 
 Explanation: Allow CIDR overlap + service-level access + customer onboarding automation all required. B Organizations allowed Principal means new customer added to Organizations automatically creates Interface Endpoint without Endpoint Service config change. `acceptance-required: true` adds approval. A CIDR impossible. C internet ALB violates security. D Peering also impossible.
 
@@ -345,7 +345,7 @@ B) AWS Client VPN + SAML 2.0 (Azure AD) auth + multi-AZ subnet Association
 C) EC2 Bastion Host + SSH port-forwarding + Azure AD integration
 D) AWS WorkSpaces + Azure AD SAML
 
-**정답: B**
+**Answer: B**
 
 Explanation: Individual researcher laptops accessing private VPC analysis is Client VPN exact use case. SAML 2.0 Azure AD integration means employees VPN authenticate with existing credentials (SSO). Network location independent, all data VPC-retained. Multi-AZ Association ensures high availability. Site-to-Site VPN (A) fixed inter-site; per-home-router deployment massive operational burden. Bastion (C) SSH-only; JupyterHub/RStudio HTTP-based incompatible. WorkSpaces (D) virtual desktop replaces laptop—overkill, high cost.
 
@@ -358,7 +358,7 @@ B) TGW ECMP operates Site-to-Site VPN Attachments only; both tunnels per VPN con
 C) Single VPN 4 tunnels with TGW ECMP achieves max 20Gbps
 D) VGW also supports ECMP; no TGW replacement needed
 
-**정답: B**
+**Answer: B**
 
 Explanation: TGW ECMP operates **VPN Attachment** (Site-to-Site VPN), using multiple VPN connection tunnels Active-Active parallel. Each VPN connection 2 tunnels (Active-Active), N VPN connections = 2N tunnels ECMP. Single tunnel max 1.25Gbps; 4 VPN connections (8 tunnels) theoretical 10Gbps. VGW (D) unsupported ECMP, only Active-Standby. A VPN not inter-VPC. C single VPN is 2 tunnels requiring VPN connections 2 for 4 tunnels; 4 VPN connections 10Gbps.
 
@@ -371,7 +371,7 @@ B) Enable DX SiteLink + connect both DC DX to same DXGW
 C) TGW Inter-Region Peering + connect each DC DX to each TGW
 D) Accelerated VPN each DC, use AWS Global Accelerator
 
-**정답: B**
+**Answer: B**
 
 Explanation: DX SiteLink enables on-premises traffic to traverse AWS DX Location ↔ DX Location global backbone without AWS region virtual interface (VPC) transit. New York DC DX + London DC DX same DXGW + enable SiteLink = traffic DX Location → AWS backbone → DX Location path. "Without AWS region resource transit" is SiteLink exact use case. A TGW region-transits. C TGW transits. D Accelerated VPN uses Global Accelerator but VPN lacks DX stable low-latency; "region resource transit" condition unclear.
 

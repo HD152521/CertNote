@@ -92,87 +92,87 @@ SAP exam common mappings: (1) "extract receipts/invoices" → Textract AnalyzeEx
 
 ## 📝 Practice Questions
 
-**문제 1.** 사내 위키와 SharePoint에 흩어진 문서를 직원이 "작년 출장비 정산 규정이 뭐야?" 같은 자연어로 질문해 검색하게 하고, 문서별 접근 권한도 반영해야 한다. 가장 적합한 서비스는?
+**Question 1.** Employees must be able to search documents scattered across an internal wiki and SharePoint by asking natural-language questions such as "What was the travel expense reimbursement policy last year?", and per-document access permissions must be respected. Which service is the most appropriate?
 
 A) Amazon OpenSearch
 B) Amazon Kendra
 C) Amazon Athena
 D) S3 Select
 
-**정답: B**
-해설: Kendra는 시맨틱(자연어) 검색에 특화된 엔터프라이즈 검색 서비스로, 자연어 질의를 이해하고 SharePoint·S3 등 커넥터와 문서 수준 권한(ACL)을 지원한다. A(OpenSearch)는 기본이 키워드·풀텍스트 검색으로 자연어 질의·권한 커넥터가 약하다(벡터를 직접 구성하면 가능하나 관리형 자연어 검색은 Kendra). C·D는 정형 데이터 쿼리용이지 문서 검색이 아니다. 함정: "자연어 질의 + 사내 문서 + 권한"은 Kendra, "키워드·로그 검색"은 OpenSearch.
+**Answer: B**
+Explanation: Kendra is an enterprise search service specialized in semantic (natural-language) search; it understands natural-language queries and supports connectors such as SharePoint and S3 along with document-level permissions (ACLs). A (OpenSearch) is fundamentally keyword/full-text search, with weak natural-language query and permission connectors (it is possible if you build vectors yourself, but managed natural-language search is Kendra). C and D are for structured-data queries, not document search. Trap: "natural-language queries + internal documents + permissions" is Kendra; "keyword/log search" is OpenSearch.
 
 ---
 
-**문제 2.** 월 수만 건의 공급사 청구서 PDF에서 품목·금액·세금을 자동 추출해야 한다. 가장 정확하고 적합한 API는?
+**Question 2.** You must automatically extract line items, amounts, and taxes from tens of thousands of supplier invoice PDFs per month. Which API is the most accurate and appropriate?
 
 A) Rekognition DetectText
 B) Textract AnalyzeExpense
 C) Comprehend
-D) Lambda + 오픈소스 Tesseract OCR
+D) Lambda + open-source Tesseract OCR
 
-**정답: B**
-해설: Textract AnalyzeExpense는 영수증·청구서 전용 API로 품목·금액·세금·공급사를 구조적으로 자동 식별한다. 범용 AnalyzeDocument나 단순 OCR보다 청구서 도메인에서 정확하다. A(Rekognition DetectText)는 이미지 속 텍스트 검출용이지 청구서 구조 이해가 없다. C(Comprehend)는 텍스트 이해용이지 OCR/문서 추출이 아니다. D는 직접 구축 부담·정확도 열위. 함정: 청구서·영수증은 전용 AnalyzeExpense가 정답.
+**Answer: B**
+Explanation: Textract AnalyzeExpense is an API dedicated to receipts and invoices that structurally identifies line items, amounts, taxes, and vendors automatically. It is more accurate in the invoice domain than the general-purpose AnalyzeDocument or plain OCR. A (Rekognition DetectText) detects text in images and has no understanding of invoice structure. C (Comprehend) is for text understanding, not OCR/document extraction. D has a build burden and inferior accuracy. Trap: for invoices and receipts, the dedicated AnalyzeExpense is the correct answer.
 
 ---
 
-**문제 3.** 콜센터 통화 녹취(음성 파일)를 분석해 고객 감정(긍/부정)과 자주 언급되는 주제를 추출하려 한다. 어떤 조합인가?
+**Question 3.** You want to analyze call center call recordings (audio files) to extract customer sentiment (positive/negative) and frequently mentioned topics. Which combination should you use?
 
 A) Polly + Comprehend
 B) Transcribe + Comprehend
-C) Lex만
-D) Connect만
+C) Lex only
+D) Connect only
 
-**정답: B**
-해설: 음성을 먼저 Transcribe(STT)로 텍스트화한 뒤, Comprehend로 감정 분석(DetectSentiment)과 주제 추출(토픽 모델링)을 한다. A(Polly)는 텍스트→음성(TTS)이라 방향이 반대. C(Lex)는 챗봇 봇 빌더. D(Connect)는 콜센터 플랫폼이지 자체 감정·주제 분석 엔진이 아니다(Contact Lens가 내부적으로 Transcribe+Comprehend를 쓴다). 함정: 음성 분석은 Transcribe(텍스트화) 후 Comprehend(분석).
+**Answer: B**
+Explanation: First convert the audio to text with Transcribe (STT), then use Comprehend for sentiment analysis (DetectSentiment) and topic extraction (topic modeling). A (Polly) is text-to-speech (TTS), which is the opposite direction. C (Lex) is a chatbot builder. D (Connect) is a contact center platform, not a standalone sentiment/topic analysis engine (Contact Lens uses Transcribe + Comprehend internally). Trap: audio analysis is Transcribe (to text) followed by Comprehend (analysis).
 
 ---
 
-**문제 4.** S3 버킷에 저장된 수백만 개 객체에 민감한 개인정보(PII)가 들어 있는지 식별하고 분류해 규정 준수를 점검해야 한다. 어떤 서비스인가?
+**Question 4.** You must identify and classify whether millions of objects stored in S3 buckets contain sensitive personal information (PII) in order to check regulatory compliance. Which service should you use?
 
 A) Comprehend DetectPiiEntities
 B) Amazon Macie
 C) Amazon Inspector
 D) Amazon GuardDuty
 
-**정답: B**
-해설: Macie는 S3에 저장된 데이터를 스캔해 PII·민감 정보를 식별·분류하고 보안 알림을 내는 데이터 보안·거버넌스 서비스다. A(Comprehend PII)는 API로 들어온 임의 텍스트의 PII 탐지용이지 S3 대량 스캔용이 아니다. C(Inspector)는 EC2/컨테이너 취약점 스캔, D(GuardDuty)는 위협 탐지로 PII와 무관. 함정: 대상이 S3면 Macie, 임의 텍스트면 Comprehend.
+**Answer: B**
+Explanation: Macie is a data security and governance service that scans data stored in S3 to identify and classify PII and sensitive information and raises security alerts. A (Comprehend PII) detects PII in arbitrary text passed through its API and is not for bulk scanning of S3. C (Inspector) scans EC2/containers for vulnerabilities, and D (GuardDuty) is threat detection; neither relates to PII. Trap: if the target is S3, Macie; if it is arbitrary text, Comprehend.
 
 ---
 
-**문제 5.** 사용자가 업로드하는 사진에서 폭력·성인 콘텐츠를 자동으로 탐지해 차단해야 한다. 어떤 서비스/기능인가?
+**Question 5.** You must automatically detect and block violent or adult content in photos uploaded by users. Which service/feature should you use?
 
 A) Rekognition Content Moderation
 B) Comprehend
 C) Macie
 D) Textract
 
-**정답: A**
-해설: Rekognition Content Moderation(콘텐츠 검수)은 이미지·영상에서 폭력·성인·부적절 콘텐츠를 사전 학습된 모델로 탐지·분류한다. B(Comprehend)는 텍스트 NLP, C(Macie)는 S3 PII, D(Textract)는 문서 OCR로 모두 이미지 콘텐츠 검수와 무관. 함정: "이미지·영상 부적절 콘텐츠"는 Rekognition Content Moderation.
+**Answer: A**
+Explanation: Rekognition Content Moderation detects and classifies violent, adult, and inappropriate content in images and videos using pretrained models. B (Comprehend) is text NLP, C (Macie) is S3 PII, and D (Textract) is document OCR; all are unrelated to image content moderation. Trap: "inappropriate content in images/videos" is Rekognition Content Moderation.
 
 ---
 
-**문제 6.** EC2·RDS·Lambda로 구성된 운영 환경에서 비정상 지표·장애 징후를 자동으로 탐지하고 근본 원인과 권고를 받고 싶다. 어떤 서비스인가?
+**Question 6.** In a production environment made up of EC2, RDS, and Lambda, you want to automatically detect abnormal metrics and signs of failure and receive root causes and recommendations. Which service should you use?
 
-A) CloudWatch Alarm만
+A) CloudWatch Alarm only
 B) Amazon DevOps Guru
 C) AWS Trusted Advisor
 D) AWS Config
 
-**정답: B**
-해설: DevOps Guru는 ML로 운영 지표의 이상 패턴을 자동 탐지해 장애 징후·근본 원인·권고를 제시하는 운영 이상 탐지 서비스다. A(CloudWatch Alarm)는 임계값 기반 단순 알람으로 ML 이상 탐지·근본 원인 분석이 없다. C(Trusted Advisor)는 모범 사례 점검, D(Config)는 구성 규정 준수 평가로 운영 이상 탐지가 아니다. 함정: "운영 이상 자동 탐지 + 근본 원인"은 DevOps Guru.
+**Answer: B**
+Explanation: DevOps Guru uses ML to automatically detect anomalous patterns in operational metrics and presents signs of failure, root causes, and recommendations; it is an operational anomaly detection service. A (CloudWatch Alarm) is a simple threshold-based alarm with no ML anomaly detection or root cause analysis. C (Trusted Advisor) checks best practices, and D (Config) evaluates configuration compliance; neither is operational anomaly detection. Trap: "automatic operational anomaly detection + root cause" is DevOps Guru.
 
 ---
 
-**문제 7.** 1시간 분량의 강의 영상에서 등장하는 객체·장면·텍스트를 추출해야 한다. 처리에 수 분이 걸린다. 올바른 호출 패턴은?
+**Question 7.** You must extract the objects, scenes, and text that appear in a one-hour lecture video. Processing takes several minutes. What is the correct invocation pattern?
 
-A) Rekognition 이미지 동기 API를 프레임마다 호출
-B) Rekognition Video 비동기 API(StartLabelDetection) + SNS 알림
-C) Textract 비동기 API
-D) Comprehend 배치 작업
+A) Call the Rekognition image synchronous API for every frame
+B) Rekognition Video asynchronous API (StartLabelDetection) + SNS notification
+C) Textract asynchronous API
+D) Comprehend batch job
 
-**정답: B**
-해설: 긴 비디오 분석은 처리에 수 분~수십 분이 걸려 동기 응답이 불가하므로, Rekognition Video 비동기 API(StartLabelDetection 등)로 S3의 비디오를 받아 작업을 시작하고 완료 시 SNS로 알림받는 패턴이 정석이다. A(프레임마다 동기 호출)는 비효율적이고 장면·움직임 추적이 안 된다. C(Textract)는 문서 OCR용. D(Comprehend)는 텍스트 분석용. 함정: "긴 비디오/대용량 처리"는 비동기 + SNS 알림.
+**Answer: B**
+Explanation: Analyzing a long video takes several minutes to tens of minutes, so a synchronous response is not possible; the standard pattern is to use the Rekognition Video asynchronous API (such as StartLabelDetection), which takes the video in S3, starts a job, and sends an SNS notification on completion. A (synchronous calls per frame) is inefficient and cannot track scenes or motion. C (Textract) is for document OCR. D (Comprehend) is for text analysis. Trap: "long video / large-volume processing" is asynchronous + SNS notification.
 
 ---
 

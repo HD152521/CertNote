@@ -91,50 +91,50 @@ KMS "provides computation without letting keys leave the HSM," controls usage wi
 
 ## 📝 Practice Questions
 
-**문제 1.** 보안팀이 "키 정책을 직접 편집해 세밀한 접근 통제를 적용하고, 키 회전 주기를 통제하며, 다른 계정과 키를 공유해야 한다"고 요구한다. 어떤 종류의 키를 써야 하는가?
+**Question 1.** The security team requires: "We must edit the key policy directly to apply fine-grained access control, control the key rotation period, and share the key with other accounts." Which type of key should be used?
 
 A) AWS owned key  
 B) AWS managed key (`aws/s3`)  
 C) Customer managed key  
-D) S3 관리형 키(SSE-S3)  
+D) S3 managed key (SSE-S3)  
 
-**정답: C**  
-해설: 키 정책 편집, 회전 주기 통제, 교차계정 공유는 모두 고객이 소유·관리하는 customer managed key에서만 가능하다. AWS managed key는 키 정책이 AWS에 의해 고정돼 편집할 수 없고 교차계정 공유도 안 된다. AWS owned key는 콘솔에 보이지도 않으며 통제 대상이 아니다. SSE-S3는 KMS 키가 아니라 S3가 관리하는 별도 방식으로 키 정책 개념이 없다.
-
----
-
-**문제 2.** 관리자가 KMS 키의 기본 키 정책에서 `Enable IAM User Permissions`(Principal이 계정 root, Action `kms:*`) 구문을 실수로 삭제했다. IAM 관리자 권한을 가진 사용자도 키를 사용할 수 없게 되었다. 원인으로 가장 정확한 것은?
-
-A) IAM 정책이 KMS보다 항상 우선하므로 무관하다  
-B) 키 정책이 IAM에 권한을 위임하지 않으면 IAM 정책만으로는 키에 접근할 수 없기 때문  
-C) 키가 자동으로 비활성화되었기 때문  
-D) CloudTrail이 비활성화되었기 때문  
-
-**정답: B**  
-해설: KMS는 키 정책과 IAM이 함께 작동하는 이중 모델을 쓴다. 키 정책의 `Enable IAM User Permissions` 구문이 "이 계정의 IAM 정책으로 권한 결정을 위임한다"는 핵심 위임이다. 이를 삭제하면 키 정책에 직접 명시되지 않은 어떤 프린시펄도(관리자 포함) 키를 쓸 수 없다. IAM이 KMS보다 항상 우선한다는 설명은 틀렸으며, 키 비활성화나 CloudTrail은 이 증상과 무관하다.
+**Answer: C**  
+Explanation: Editing the key policy, controlling the rotation period, and cross-account sharing are all possible only with a customer managed key that the customer owns and manages. For an AWS managed key, the key policy is fixed by AWS and cannot be edited, and cross-account sharing is not possible. An AWS owned key is not even visible in the console and is not under your control. SSE-S3 is not a KMS key but a separate method managed by S3, and it has no concept of a key policy.
 
 ---
 
-**문제 3.** AWS 외부의 파트너 시스템이 데이터를 암호화해 우리 계정으로 보내야 한다. 파트너에게는 KMS API 호출 권한이나 복호화 권한을 주면 안 된다. 가장 적절한 키 구성은?
+**Question 2.** An administrator accidentally deleted the `Enable IAM User Permissions` statement (Principal is the account root, Action `kms:*`) from the default key policy of a KMS key. Even users with IAM administrator permissions can no longer use the key. What is the most accurate cause?
 
-A) 대칭 customer managed key를 만들고 파트너에게 `kms:Encrypt` 권한 부여  
-B) 비대칭 KMS 키(암호화/복호화 용도)를 만들어 퍼블릭 키를 파트너에게 배포, 복호화는 KMS 내부 프라이빗 키로 수행  
-C) S3 presigned URL을 파트너에게 발급  
-D) AWS managed key를 공유  
+A) IAM policies always take precedence over KMS, so it is irrelevant  
+B) Unless the key policy delegates permissions to IAM, IAM policies alone cannot grant access to the key  
+C) The key was automatically disabled  
+D) CloudTrail was disabled  
 
-**정답: B**  
-해설: 파트너에게 KMS 호출 권한을 주지 않고 암호화만 시키려면 비대칭 키가 적합하다. 퍼블릭 키를 배포하면 파트너는 KMS API 없이 로컬에서 암호화할 수 있고, 프라이빗 키는 KMS 밖으로 나가지 않아 복호화는 우리 계정의 KMS만 수행한다. 대칭 키로 `kms:Encrypt`를 주면 파트너가 KMS API를 호출해야 하므로 요구를 위반한다. presigned URL이나 managed key 공유는 이 요구와 맞지 않는다.
+**Answer: B**  
+Explanation: KMS uses a dual model in which the key policy and IAM work together. The `Enable IAM User Permissions` statement in the key policy is the key delegation that says "delegate permission decisions to IAM policies in this account." If it is deleted, no principal that is not explicitly named in the key policy (administrators included) can use the key. The explanation that IAM always takes precedence over KMS is wrong, and key disablement or CloudTrail is unrelated to this symptom.
 
 ---
 
-**문제 4.** 단일 리전 customer managed key로 암호화한 EBS 스냅샷을 us-east-1에서 us-west-2로 복사해 사용하려 한다. 가장 정확한 설명은?
+**Question 3.** A partner system outside AWS must encrypt data and send it to our account. The partner must not be given KMS API call permission or decryption permission. What is the most appropriate key configuration?
 
-A) 같은 키 ID로 어느 리전에서나 복호화되므로 추가 작업이 없다  
-B) 스냅샷 복사 시 대상 리전의 키로 재암호화가 필요하다(단일 리전 키는 리전을 넘지 못함). 교차 리전 운영이 잦으면 멀티 리전 키를 고려한다  
-C) 비대칭 키로 변환하면 자동 해결된다  
-D) AWS owned key로 바꿔야 한다  
+A) Create a symmetric customer managed key and grant the partner `kms:Encrypt` permission  
+B) Create an asymmetric KMS key (encrypt/decrypt usage), distribute the public key to the partner, and perform decryption with the private key inside KMS  
+C) Issue S3 presigned URLs to the partner  
+D) Share an AWS managed key  
 
-**정답: B**  
-해설: 일반 KMS 키는 키 자료가 해당 리전을 떠나지 못하므로, 다른 리전에서 스냅샷을 쓰려면 대상 리전의 키로 재암호화해야 한다. 교차 리전 복호화를 동일 키로 하려면 같은 키 자료를 여러 리전에 복제하는 멀티 리전 키가 설계상 정답이다. 비대칭 변환이나 AWS owned key 전환은 이 문제를 해결하지 못한다.
+**Answer: B**  
+Explanation: An asymmetric key is suitable when you want the partner to only encrypt without granting KMS call permission. If you distribute the public key, the partner can encrypt locally without the KMS API, and the private key never leaves KMS, so only KMS in our account performs decryption. Granting `kms:Encrypt` on a symmetric key would require the partner to call the KMS API, which violates the requirement. Presigned URLs or sharing a managed key do not fit this requirement.
+
+---
+
+**Question 4.** You want to copy an EBS snapshot encrypted with a single-Region customer managed key from us-east-1 to us-west-2 and use it. What is the most accurate statement?
+
+A) The same key ID can decrypt in any Region, so no additional work is needed  
+B) When copying the snapshot, it must be re-encrypted with a key in the destination Region (a single-Region key cannot cross Regions). If cross-Region operations are frequent, consider a multi-Region key  
+C) Converting to an asymmetric key resolves this automatically  
+D) You must switch to an AWS owned key  
+
+**Answer: B**  
+Explanation: Because the key material of a regular KMS key cannot leave its Region, using the snapshot in another Region requires re-encrypting it with a key in the destination Region. To perform cross-Region decryption with the same key, a multi-Region key, which replicates the same key material across multiple Regions, is the design answer. Converting to asymmetric or switching to an AWS owned key does not solve this problem.
 
 ---

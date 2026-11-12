@@ -647,86 +647,86 @@ aws cloudformation describe-stack-events --stack-name xxx
 
 ## 📝 Practice Questions
 
-**문제 1.** CloudFormation Template에서 반드시 있어야 하는 섹션은?
+**Question 1.** Which section is required in a CloudFormation Template?
 
 A) AWSTemplateFormatVersion, Resources, Outputs
 B) Parameters, Resources, Conditions
 C) Resources
 D) Description, Resources, Parameters
 
-**정답: C**
-해설: CloudFormation Template에서 유일한 필수 섹션은 `Resources`다. 나머지 모든 섹션(AWSTemplateFormatVersion, Description, Metadata, Parameters, Mappings, Conditions, Transform, Outputs, Rules)은 선택이다. 실제로 `Resources` 섹션 하나만 있는 최소 Template도 유효하다.
+**Answer: C**
+Explanation: The only required section in a CloudFormation Template is `Resources`. All other sections (AWSTemplateFormatVersion, Description, Metadata, Parameters, Mappings, Conditions, Transform, Outputs, Rules) are optional. In fact, even a minimal Template with only a `Resources` section is valid.
 
 ---
 
-**문제 2.** Stack이 `ROLLBACK_COMPLETE` 상태에 있다. 이 Stack을 동일한 이름으로 새 Template로 업데이트하려 한다. 어떻게 해야 하는가?
+**Question 2.** A stack is in the `ROLLBACK_COMPLETE` state. You want to update this stack with a new Template under the same name. What should you do?
 
-A) `update-stack` 명령을 실행한다
-B) `create-change-set`으로 변경 사항을 먼저 확인한다
-C) `delete-stack`으로 삭제한 후 `create-stack`으로 재생성한다
-D) `continue-update-rollback`을 실행한다
+A) Run the `update-stack` command
+B) Review the changes first with `create-change-set`
+C) Delete it with `delete-stack` and then recreate it with `create-stack`
+D) Run `continue-update-rollback`
 
-**정답: C**
-해설: `ROLLBACK_COMPLETE` 상태는 초기 Stack 생성이 실패하고 롤백이 완료된 최종 상태다. 이 상태에서는 업데이트가 불가능하며 삭제만 가능하다. `update-stack`을 시도하면 "Stack is not in a valid state" 오류가 발생한다. `continue-update-rollback`은 `UPDATE_ROLLBACK_FAILED` 상태 전용이다. 반드시 삭제 후 재생성해야 한다.
-
----
-
-**문제 3.** EC2 인스턴스의 User Data 스크립트가 완료될 때까지 CloudFormation이 기다리게 하려면 어떤 설정이 필요한가?
-
-A) EC2 리소스에 `UpdatePolicy`를 설정한다
-B) EC2 리소스에 `CreationPolicy.ResourceSignal`을 설정하고, User Data에서 스크립트 완료 후 `cfn-signal`을 호출한다
-C) EC2 리소스에 `DependsOn`을 설정한다
-D) `WaitCondition` 리소스를 별도로 생성한다
-
-**정답: B**
-해설: `CreationPolicy.ResourceSignal`이 표준 패턴이다. EC2 리소스에 `CreationPolicy`를 정의하면 CloudFormation이 지정된 수(Count)의 `cfn-signal` 성공 신호를 받을 때까지 대기한다. User Data 스크립트 마지막에 `cfn-signal --exit-code $?`를 호출하면 스크립트 성공/실패 여부가 CloudFormation에 전달된다. `WaitCondition`(D)은 이전 방식으로 현재는 CreationPolicy가 권장된다.
+**Answer: C**
+Explanation: The `ROLLBACK_COMPLETE` state is the final state in which the initial stack creation failed and the rollback completed. Updates are not possible in this state; only deletion is possible. Attempting `update-stack` produces a "Stack is not in a valid state" error. `continue-update-rollback` is only for the `UPDATE_ROLLBACK_FAILED` state. You must delete and recreate it.
 
 ---
 
-**문제 4.** CloudFormation 운영자가 S3 버킷 리소스의 `BucketName`을 `old-bucket`에서 `new-bucket`으로 변경했다. Stack 업데이트 시 어떤 일이 발생하는가?
+**Question 3.** What configuration is needed so that CloudFormation waits until the User Data script on an EC2 instance completes?
 
-A) S3 버킷 이름이 인플레이스로 변경된다
-B) 기존 S3 버킷이 삭제되고 새 이름으로 버킷이 생성된다 (Replacement)
-C) 변경이 거부된다
-D) 자동으로 버킷 내용이 새 버킷으로 복사된다
+A) Set an `UpdatePolicy` on the EC2 resource
+B) Set `CreationPolicy.ResourceSignal` on the EC2 resource, and call `cfn-signal` from User Data after the script completes
+C) Set `DependsOn` on the EC2 resource
+D) Create a separate `WaitCondition` resource
 
-**정답: B**
-해설: S3 버킷 이름(`BucketName` 속성)은 변경 불가능한 속성(immutable property)이다. 이 속성을 변경하면 CloudFormation이 기존 버킷을 삭제하고 새 이름으로 버킷을 생성하는 Replacement를 수행한다. `DeletionPolicy`가 `Delete`(기본값)이면 기존 버킷과 그 안의 데이터가 모두 삭제된다. Change Set을 사용하면 `Replacement: True`로 사전에 확인할 수 있다. 중요 데이터가 있다면 반드시 `DeletionPolicy: Retain`을 설정해야 한다.
-
----
-
-**문제 5.** Template에서 현재 리전에 해당하는 최신 Amazon Linux 2 AMI ID를 자동으로 사용하려 한다. 하드코딩이나 Mapping을 사용하지 않는 방법은?
-
-A) `!GetAZs` 함수로 AMI 목록을 가져온다
-B) Lambda Custom Resource로 최신 AMI를 조회한다
-C) Parameter의 `Type`을 `AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>`로 설정하고 `Default`에 AWS 공식 SSM 경로를 지정한다
-D) Mappings에 리전별 최신 AMI ID를 매월 업데이트한다
-
-**정답: C**
-해설: AWS는 공식 SSM 파라미터 경로(`/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2` 등)에 최신 AMI ID를 자동으로 업데이트한다. Parameter 타입을 `AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>`로 설정하면 CloudFormation이 배포 시점에 자동으로 최신 AMI ID를 가져온다. 이 방법은 수동 업데이트 없이 항상 최신 AMI를 사용하는 운영 모범 사례다.
+**Answer: B**
+Explanation: `CreationPolicy.ResourceSignal` is the standard pattern. When `CreationPolicy` is defined on an EC2 resource, CloudFormation waits until it receives the specified number (Count) of successful `cfn-signal` signals. Calling `cfn-signal --exit-code $?` at the end of the User Data script reports whether the script succeeded or failed to CloudFormation. `WaitCondition` (D) is the older approach; CreationPolicy is now recommended.
 
 ---
 
-**문제 6.** Auto Scaling Group을 CloudFormation으로 관리할 때 `UpdatePolicy: AutoScalingRollingUpdate`를 사용한다. `WaitOnResourceSignals: true`로 설정했을 때의 동작은?
+**Question 4.** A CloudFormation operator changed the `BucketName` of an S3 bucket resource from `old-bucket` to `new-bucket`. What happens when the Stack is updated?
 
-A) `PauseTime`만큼 대기한 후 다음 배치로 이동한다
-B) 각 배치의 인스턴스들이 cfn-signal을 보낼 때까지 대기한 후 다음 배치로 이동한다
-C) 모든 배치 교체 후 한 번에 cfn-signal을 대기한다
-D) ELB 헬스체크가 통과될 때까지 대기한다
+A) The S3 bucket name is changed in place
+B) The existing S3 bucket is deleted and a bucket with the new name is created (Replacement)
+C) The change is rejected
+D) The bucket contents are automatically copied to the new bucket
 
-**정답: B**
-해설: `WaitOnResourceSignals: true`로 설정하면 각 배치(MaxBatchSize)의 인스턴스들이 `cfn-signal`로 준비 완료를 알릴 때까지 대기한 후 다음 배치를 처리한다. `PauseTime`은 `WaitOnResourceSignals: false`일 때 배치 간 고정 대기 시간으로 사용된다. 즉 두 설정은 상호 배타적이다. WaitOnResourceSignals=true면 PauseTime이 cfn-signal 대기의 최대 타임아웃으로 동작한다.
+**Answer: B**
+Explanation: The S3 bucket name (the `BucketName` property) is an immutable property. Changing it makes CloudFormation perform a Replacement, deleting the existing bucket and creating a bucket with the new name. If `DeletionPolicy` is `Delete` (the default), the existing bucket and all the data in it are deleted. A Change Set lets you confirm `Replacement: True` in advance. If there is important data, you must set `DeletionPolicy: Retain`.
 
 ---
 
-**문제 7.** CloudFormation Stack Policy에 대한 설명으로 올바른 것은?
+**Question 5.** You want the Template to automatically use the latest Amazon Linux 2 AMI ID for the current Region. Which method uses neither hardcoding nor Mappings?
 
-A) Stack Policy는 IAM 정책과 동일하게 동작하며, Principal에 IAM 사용자 ARN을 지정해야 한다
-B) Stack Policy를 설정하지 않으면 모든 리소스 업데이트가 기본으로 거부된다
-C) Stack Policy는 CloudFormation이 특정 리소스에 수행할 수 있는 업데이트 작업을 제어하며, 기본적으로 모든 업데이트가 허용된다
-D) Stack Policy는 Stack 삭제를 방지하는 용도로 사용된다
+A) Retrieve the AMI list with the `!GetAZs` function
+B) Look up the latest AMI with a Lambda Custom Resource
+C) Set the Parameter `Type` to `AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>` and specify the official AWS SSM path in `Default`
+D) Update the latest AMI ID for each Region in Mappings every month
 
-**정답: C**
-해설: Stack Policy는 CloudFormation 엔진이 Stack 업데이트 시 특정 리소스에 수행할 수 있는 작업(Update:Modify, Update:Replace, Update:Delete)을 제어한다. Stack Policy가 **없으면** 모든 리소스 업데이트가 허용된다. Stack Policy가 **설정되면** 명시적으로 Allow된 작업만 허용되고 나머지는 거부된다. Stack 삭제 방지는 Termination Protection이 담당한다(D). Principal은 항상 `"*"`를 사용하며 특정 IAM 사용자 지정이 아니다(A).
+**Answer: C**
+Explanation: AWS automatically updates the latest AMI ID at the official SSM parameter paths (such as `/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2`). When the Parameter type is set to `AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>`, CloudFormation automatically fetches the latest AMI ID at deployment time. This is an operational best practice that always uses the latest AMI without manual updates.
+
+---
+
+**Question 6.** When managing an Auto Scaling Group with CloudFormation, you use `UpdatePolicy: AutoScalingRollingUpdate`. What is the behavior when `WaitOnResourceSignals: true` is set?
+
+A) Wait for `PauseTime`, then move on to the next batch
+B) Wait until the instances in each batch send cfn-signal, then move on to the next batch
+C) Replace all batches, then wait for cfn-signal once at the end
+D) Wait until the ELB health check passes
+
+**Answer: B**
+Explanation: When `WaitOnResourceSignals: true` is set, CloudFormation waits until the instances in each batch (MaxBatchSize) report readiness with `cfn-signal` before processing the next batch. `PauseTime` is used as a fixed wait time between batches when `WaitOnResourceSignals: false`. In other words, the two settings are mutually exclusive. If WaitOnResourceSignals=true, PauseTime acts as the maximum timeout for waiting for cfn-signal.
+
+---
+
+**Question 7.** Which statement about a CloudFormation Stack Policy is correct?
+
+A) A Stack Policy works the same as an IAM policy, and the Principal must specify an IAM user ARN
+B) If no Stack Policy is set, all resource updates are denied by default
+C) A Stack Policy controls which update actions CloudFormation can perform on specific resources, and all updates are allowed by default
+D) A Stack Policy is used to prevent Stack deletion
+
+**Answer: C**
+Explanation: A Stack Policy controls the actions (Update:Modify, Update:Replace, Update:Delete) that the CloudFormation engine can perform on specific resources during a Stack update. If there is **no** Stack Policy, all resource updates are allowed. Once a Stack Policy is **set**, only explicitly allowed actions are permitted and everything else is denied. Preventing Stack deletion is the job of Termination Protection (D). The Principal is always `"*"` and does not specify a particular IAM user (A).
 
 ---

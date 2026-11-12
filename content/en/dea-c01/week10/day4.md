@@ -62,62 +62,62 @@ The most common reason for lost points on the exam is not lack of knowledge but 
 
 ## 📝 Practice Questions
 
-**문제 1.** 스트리밍 데이터를 여러 독립 애플리케이션이 각자 컨슈머로 직접 읽고, 24시간 내 데이터를 재처리할 수 있어야 한다. 가장 적합한 서비스는?
+**Question 1.** Multiple independent applications must each read a data stream directly as their own consumers, and be able to reprocess data within 24 hours. Which service is the most suitable?
 
 A) Amazon Data Firehose  
 B) Amazon SNS  
 C) Amazon Kinesis Data Streams  
 D) Amazon SQS FIFO  
 
-**정답: C**  
-해설: Kinesis Data Streams는 샤드 기반으로 여러 컨슈머가 독립적으로 읽고 보존 기간 내 재처리(re-read)가 가능합니다. Firehose는 직접 소비·재처리 개념이 없고, SNS/SQS는 스트림 재처리 모델이 아닙니다.
+**Answer: C**  
+Explanation: Kinesis Data Streams is shard-based, allowing multiple consumers to read independently and re-read data within the retention period. Firehose has no concept of direct consumption or reprocessing, and SNS/SQS are not stream-reprocessing models.
 
 ---
 
-**문제 2.** "누가 어떤 S3 버킷에 PutObject API를 언제 호출했는지" 감사해야 한다. 가장 적합한 서비스는?
+**Question 2.** You must audit "who called the PutObject API on which S3 bucket, and when." Which service is the most suitable?
 
 A) Amazon CloudWatch Logs  
 B) AWS CloudTrail  
 C) Amazon Macie  
 D) AWS Config  
 
-**정답: B**  
-해설: CloudTrail은 계정의 API 호출(주체·시각·액션)을 기록하는 감사 서비스입니다. CloudWatch Logs는 애플리케이션 로그, Macie는 민감정보 탐지, Config는 리소스 구성 변경 추적으로 API 호출 감사가 주목적이 아닙니다.
+**Answer: B**  
+Explanation: CloudTrail is an audit service that records API calls in the account (principal, time, action). CloudWatch Logs holds application logs, Macie detects sensitive data, and Config tracks resource configuration changes, so auditing API calls is not their primary purpose.
 
 ---
 
-**문제 3.** 분석가가 임시로 S3 데이터를 표준 SQL로 한 번 조회하려 한다. 상시 클러스터를 두고 싶지 않고 운영 부담을 최소화하려 한다. 가장 적합한 서비스는?
+**Question 3.** An analyst wants to query S3 data once, ad hoc, with standard SQL. They do not want to keep an always-on cluster and want to minimize operational overhead. Which service is the most suitable?
 
-A) Amazon Redshift 상시 클러스터  
+A) Amazon Redshift always-on cluster  
 B) Amazon EMR  
 C) Amazon Athena  
-D) EC2에 직접 설치한 Hive  
+D) Hive installed directly on EC2  
 
-**정답: C**  
-해설: Athena는 서버리스로 상시 인프라 없이 S3를 즉석 SQL 조회하며 스캔량만 과금해 임시·간헐 분석에 가장 적합합니다. Redshift 상시 클러스터·EMR·EC2 Hive는 운영 부담과 비용이 큽니다.
+**Answer: C**  
+Explanation: Athena is serverless, queries S3 with ad hoc SQL without always-on infrastructure, and charges only for the amount scanned, making it the best fit for temporary or intermittent analysis. An always-on Redshift cluster, EMR, and Hive on EC2 have high operational burden and cost.
 
 ---
 
-**문제 4.** 대규모(수십 TB) 일일 배치를 기존 Spark/Hive 코드로 처리하며, 인스턴스 타입과 튜닝을 세밀히 제어하고 Spot으로 비용을 절감하려 한다. 가장 적합한 서비스는?
+**Question 4.** You want to process a large (tens of TB) daily batch with existing Spark/Hive code, finely control instance types and tuning, and reduce cost with Spot Instances. Which service is the most suitable?
 
 A) Amazon EMR  
 B) AWS Glue  
 C) AWS Lambda  
 D) Amazon Athena  
 
-**정답: A**  
-해설: EMR은 관리형 Hadoop/Spark 클러스터로 인스턴스 플릿·Spot·세밀한 튜닝과 기존 Spark/Hive 코드 재사용에 적합합니다. Glue는 서버리스라 세밀한 클러스터 제어가 제한적이고, Lambda·Athena는 대규모 배치 처리 엔진이 아닙니다.
+**Answer: A**  
+Explanation: EMR is a managed Hadoop/Spark cluster suited to instance fleets, Spot Instances, fine-grained tuning, and reusing existing Spark/Hive code. Glue is serverless and offers limited fine-grained cluster control, and Lambda and Athena are not large-scale batch processing engines.
 
 ---
 
-**문제 5.** S3 버킷에 흩어진 민감 개인정보(PII)를 자동으로 발견·분류하는 것이 목적이다. 침해 위협 탐지가 아니라 데이터 분류가 핵심이다. 가장 적합한 서비스는?
+**Question 5.** The goal is to automatically discover and classify sensitive personally identifiable information (PII) scattered across S3 buckets. Data classification is the key requirement, not detecting breach threats. Which service is the most suitable?
 
 A) Amazon GuardDuty  
 B) Amazon Macie  
 C) AWS WAF  
 D) Amazon Inspector  
 
-**정답: B**  
-해설: Macie는 ML로 S3 내 PII·금융정보 등 민감 데이터를 발견·분류합니다. GuardDuty는 위협·침해 탐지, WAF는 웹 공격 차단, Inspector는 취약점 평가로 데이터 분류 기능이 없습니다.
+**Answer: B**  
+Explanation: Macie discovers and classifies sensitive data such as PII and financial information in S3 using ML. GuardDuty detects threats and breaches, WAF blocks web attacks, and Inspector assesses vulnerabilities, so none of them classify data.
 
 ---

@@ -174,9 +174,9 @@ Week 3 is compute (EC2, ASG, ELB). It's the process of putting workloads on top 
 
 ---
 
-## 📝 종합 연습 문제 (시나리오 12문항)
+## 📝 Comprehensive Practice Questions (12 Scenario Questions)
 
-**문제 1.** A fintech needs its ECS tasks in a Private subnet to call an outbound API. To design so that outbound is maintained even during a full-AZ failure?
+**Question 1.** A fintech needs its ECS tasks in a Private subnet to call an outbound API. To design so that outbound is maintained even during a full-AZ failure?
 
 A) A single NAT GW with all Private subnets routing to it — the cheapest, but if the AZ where the NAT sits dies, the outbound of all subnets is cut simultaneously, directly violating the requirement of full-AZ failure tolerance
 
@@ -186,12 +186,12 @@ C) A NAT Instance with an ASG — you can auto-recover an EC2-based NAT with an 
 
 D) Attach an IGW to the Private subnet — a Private instance has no Public IP, so even with an IGW attached it can't receive responses, so outbound itself doesn't hold up
 
-**정답: B**
-해설: The NAT GW is AZ-scoped. Place one per AZ and have the same-AZ Private use the same-AZ NAT, and even if one AZ dies the others survive. Cost is roughly double, but RTO becomes 0. Single-AZ savings all collapse with a single incident (the 2020 Single-AZ NAT incident is exactly this case). The reason D is wrong is that even with an IGW attached, a Private instance has no Public IP so it can't receive responses — the IGW is bidirectional only for instances that have a Public IP.
+**Answer: B**
+Explanation: The NAT GW is AZ-scoped. Place one per AZ and have the same-AZ Private use the same-AZ NAT, and even if one AZ dies the others survive. Cost is roughly double, but RTO becomes 0. Single-AZ savings all collapse with a single incident (the 2020 Single-AZ NAT incident is exactly this case). The reason D is wrong is that even with an IGW attached, a Private instance has no Public IP so it can't receive responses — the IGW is bidirectional only for instances that have a Public IP.
 
 ---
 
-**문제 2.** An operator needs to SSH into a Production EC2. What is the most secure method?
+**Question 2.** An operator needs to SSH into a Production EC2. What is the most secure method?
 
 A) Public IP + SSH key — exposes the instance directly to the internet and opens port 22, maximizing the scanning/brute-force attack surface, so the most dangerous
 
@@ -201,12 +201,12 @@ C) Session Manager
 
 D) ClientVPN + SSH key — even narrowing the network boundary with a VPN, port 22 and SSH-key-based access remain as-is, falling short of complete zero-port Zero Trust access
 
-**정답: C**
-해설: Port 22 itself is closed, IAM controls access, and every session is automatically saved to CloudWatch Logs/S3. The Zero Trust model (NIST SP 800-207). With 0 inbound ports, the attack surface structurally disappears. B (Bastion) is also a common answer, but port 22 and key management burden still remain, and the Bastion itself becomes a single point of failure and breach target. In a fully isolated environment, additionally place the three SSM/SSMmessages/EC2messages Interface Endpoints.
+**Answer: C**
+Explanation: Port 22 itself is closed, IAM controls access, and every session is automatically saved to CloudWatch Logs/S3. The Zero Trust model (NIST SP 800-207). With 0 inbound ports, the attack surface structurally disappears. B (Bastion) is also a common answer, but port 22 and key management burden still remain, and the Bastion itself becomes a single point of failure and breach target. In a fully isolated environment, additionally place the three SSM/SSMmessages/EC2messages Interface Endpoints.
 
 ---
 
-**문제 3.** Several TB flow to S3 daily from a Private subnet, and NAT GW cost is exploding. What is the most appropriate action?
+**Question 3.** Several TB flow to S3 daily from a Private subnet, and NAT GW cost is exploding. What is the most appropriate action?
 
 A) Add a NAT GW
 
@@ -216,12 +216,12 @@ C) Direct Connect
 
 D) Route directly to the IGW
 
-**정답: B**
-해설: A Gateway Endpoint is free, and since data flows over the AWS internal network it also saves the NAT data transfer cost. Limited to S3/DynamoDB. Because NAT data processing is charged at about $0.045/GB, dozens of TB per month means thousands of dollars incurred just from S3 traffic passing through the NAT. Switching to a Gateway Endpoint ends with adding one prefix list line to the route table, so the cost-effectiveness is overwhelming. C (DX) is for on-premises connections, so it's unrelated.
+**Answer: B**
+Explanation: A Gateway Endpoint is free, and since data flows over the AWS internal network it also saves the NAT data transfer cost. Limited to S3/DynamoDB. Because NAT data processing is charged at about $0.045/GB, dozens of TB per month means thousands of dollars incurred just from S3 traffic passing through the NAT. Switching to a Gateway Endpoint ends with adding one prefix list line to the route table, so the cost-effectiveness is overwhelming. C (DX) is for on-premises connections, so it's unrelated.
 
 ---
 
-**문제 4.** A company wants to connect all VPCs across 50 AWS accounts. What is the most appropriate solution?
+**Question 4.** A company wants to connect all VPCs across 50 AWS accounts. What is the most appropriate solution?
 
 A) Full-mesh Peering (1225)
 
@@ -231,12 +231,12 @@ C) 50 NAT Gateways
 
 D) 50 Direct Connects
 
-**정답: B**
-해설: Create a TGW in one account (usually a Networking account) and share it to other accounts with RAM. All accounts attach to the same TGW. A full mesh of 50 VPCs becomes 50×49/2 = 1225 Peerings, which is unmanageable, and non-transitive so routing doesn't work either. TGW needs only as many connections as attachments (O(n)) in a hub-and-spoke. A larger organization (multi-region) considers Cloud WAN.
+**Answer: B**
+Explanation: Create a TGW in one account (usually a Networking account) and share it to other accounts with RAM. All accounts attach to the same TGW. A full mesh of 50 VPCs becomes 50×49/2 = 1225 Peerings, which is unmanageable, and non-transitive so routing doesn't work either. TGW needs only as many connections as attachments (O(n)) in a hub-and-spoke. A larger organization (multi-region) considers Cloud WAN.
 
 ---
 
-**문제 5.** You created a Custom NACL and allowed inbound 80, but the external response doesn't come back. The cause?
+**Question 5.** You created a Custom NACL and allowed inbound 80, but the external response doesn't come back. The cause?
 
 A) The SG denies
 
@@ -246,12 +246,12 @@ C) There's no IGW
 
 D) No Public IP assigned
 
-**정답: B**
-해설: The NACL is stateless. The request came in on 80, but the response has to go *outbound* with the client's ephemeral port (1024-65535) as the destination. Because the NACL doesn't remember connection state, you have to explicitly specify this outbound rule. With an SG, conntrack would auto-allow the response. This is the single most decisive reason the NACL's operational burden is heavy, which is why in practice the NACL is used only for broad Deny (blocked IP ranges) and fine-grained control is left to the SG.
+**Answer: B**
+Explanation: The NACL is stateless. The request came in on 80, but the response has to go *outbound* with the client's ephemeral port (1024-65535) as the destination. Because the NACL doesn't remember connection state, you have to explicitly specify this outbound rule. With an SG, conntrack would auto-allow the response. This is the single most decisive reason the NACL's operational burden is heavy, which is why in practice the NACL is used only for broad Deny (blocked IP ranges) and fine-grained control is left to the SG.
 
 ---
 
-**문제 6.** After two companies merge, both VPCs are 10.0.0.0/16. What is the most realistic approach?
+**Question 6.** After two companies merge, both VPCs are 10.0.0.0/16. What is the most realistic approach?
 
 A) Just peer them
 
@@ -261,12 +261,12 @@ C) Just add a TGW
 
 D) Resolve the IP conflict with a NAT GW
 
-**정답: B**
-해설: Overlapping CIDRs can't be routed by either Peering or TGW — the packet's destination IP exists on both sides simultaneously, so the router can't decide where to send it. There's no fundamental solution other than migrating one side. Afterward, adopt company-wide IP governance with IPAM. As a temporary workaround there's a pattern of exposing only some services one-directionally with PrivateLink, but the essential solution is migration. In an actual 2018 M&A incident, it took 6 months.
+**Answer: B**
+Explanation: Overlapping CIDRs can't be routed by either Peering or TGW — the packet's destination IP exists on both sides simultaneously, so the router can't decide where to send it. There's no fundamental solution other than migrating one side. Afterward, adopt company-wide IP governance with IPAM. As a temporary workaround there's a pattern of exposing only some services one-directionally with PrivateLink, but the essential solution is migration. In an actual 2018 M&A incident, it took 6 months.
 
 ---
 
-**문제 7.** One EC2 has 5 SGs attached. SG A allows 22, and SG B has a 22-deny rule (impossible, but suppose). How is it evaluated?
+**Question 7.** One EC2 has 5 SGs attached. SG A allows 22, and SG B has a 22-deny rule (impossible, but suppose). How is it evaluated?
 
 A) Deny wins
 
@@ -276,12 +276,12 @@ C) SGs can't have Deny rules at all; it's the union of all Allow rules
 
 D) Alphabetical order
 
-**정답: C**
-해설: SGs are Allow only. A Deny rule can't be created syntactically. It's evaluated as the union of the rules of all SGs attached to the ENI. Explicit denial is handled by the NACL (Deny rule). This *Allow-accumulating* model is the decisive difference from the *explicit Deny-first* model (IAM, NACL). That's why "block only a specific IP" is impossible with an SG and must be done with a NACL Deny or WAF.
+**Answer: C**
+Explanation: SGs are Allow only. A Deny rule can't be created syntactically. It's evaluated as the union of the rules of all SGs attached to the ENI. Explicit denial is handled by the NACL (Deny rule). This *Allow-accumulating* model is the decisive difference from the *explicit Deny-first* model (IAM, NACL). That's why "block only a specific IP" is impossible with an SG and must be done with a NACL Deny or WAF.
 
 ---
 
-**문제 8.** To get private access to the external SaaS Snowflake without going through the internet?
+**Question 8.** To get private access to the external SaaS Snowflake without going through the internet?
 
 A) VPC Peering
 
@@ -291,12 +291,12 @@ C) Direct Connect
 
 D) NAT GW
 
-**정답: B**
-해설: PrivateLink with a SaaS means the external ISV publishes an endpoint service (NLB-based) and an Interface Endpoint (ENI + private IP) is created in the consumer VPC. Traffic goes over only the AWS backbone without touching the internet or IGW at all. Major SaaS — Snowflake, Databricks, MongoDB Atlas, Datadog — support it. A (Peering) requires knowing the peer VPC CIDR and is unsuitable because the SaaS is multi-tenant. This pattern is the industry standard for "communicating with a SaaS without going through the internet inside AWS."
+**Answer: B**
+Explanation: PrivateLink with a SaaS means the external ISV publishes an endpoint service (NLB-based) and an Interface Endpoint (ENI + private IP) is created in the consumer VPC. Traffic goes over only the AWS backbone without touching the internet or IGW at all. Major SaaS — Snowflake, Databricks, MongoDB Atlas, Datadog — support it. A (Peering) requires knowing the peer VPC CIDR and is unsuitable because the SaaS is multi-tenant. This pattern is the industry standard for "communicating with a SaaS without going through the internet inside AWS."
 
 ---
 
-**문제 9.** You want to see even the SQL injection payload with Flow Logs. What is the most appropriate solution?
+**Question 9.** You want to see even the SQL injection payload with Flow Logs. What is the most appropriate solution?
 
 A) Upgrade to Flow Logs version 5
 
@@ -306,12 +306,12 @@ C) CloudTrail
 
 D) GuardDuty
 
-**정답: B**
-해설: Flow Logs record only 5-tuple header metadata (src/dst/port/protocol/action/bytes) and *never carry the payload*. To see an L7 payload like SQL injection, replicate the full ENI traffic with Traffic Mirroring and do deep packet inspection with an IDS like Suricata/Zeek. This is the standard *VPC IDS* pattern. A more managed option is AWS Network Firewall (with built-in Suricata rules). C (CloudTrail) is API-call auditing so it's unrelated, and D (GuardDuty) is threat detection but doesn't capture the payload.
+**Answer: B**
+Explanation: Flow Logs record only 5-tuple header metadata (src/dst/port/protocol/action/bytes) and *never carry the payload*. To see an L7 payload like SQL injection, replicate the full ENI traffic with Traffic Mirroring and do deep packet inspection with an IDS like Suricata/Zeek. This is the standard *VPC IDS* pattern. A more managed option is AWS Network Firewall (with built-in Suricata rules). C (CloudTrail) is API-call auditing so it's unrelated, and D (GuardDuty) is threat detection but doesn't capture the payload.
 
 ---
 
-**문제 10.** Is there a cost for data transfer between two AZs in the same region?
+**Question 10.** Is there a cost for data transfer between two AZs in the same region?
 
 A) Free
 
@@ -321,12 +321,12 @@ C) Charged in only one direction
 
 D) Charged only when using Peering
 
-**정답: B**
-해설: Cross-AZ data transfer is charged per GB in both directions ($0.01/GB in each direction). It's a core pitfall of cost optimization and the hidden cost of Multi-AZ HA. EFS, RDS Multi-AZ synchronous replication, ALB cross-zone load balancing, and inter-broker Kafka replication are all affected. The essence is the trade-off that *bundling all workloads in a single AZ makes cross-AZ cost 0 but availability 0 too*. Covered in detail in Week 10 cost optimization.
+**Answer: B**
+Explanation: Cross-AZ data transfer is charged per GB in both directions ($0.01/GB in each direction). It's a core pitfall of cost optimization and the hidden cost of Multi-AZ HA. EFS, RDS Multi-AZ synchronous replication, ALB cross-zone load balancing, and inter-broker Kafka replication are all affected. The essence is the trade-off that *bundling all workloads in a single AZ makes cross-AZ cost 0 but availability 0 too*. Covered in detail in Week 10 cost optimization.
 
 ---
 
-**문제 11.** For an EC2 in a fully isolated Private subnet (no internet) to access Systems Manager?
+**Question 11.** For an EC2 in a fully isolated Private subnet (no internet) to access Systems Manager?
 
 A) Add an IGW
 
@@ -336,12 +336,12 @@ C) Create three Interface Endpoints: ssm, ssmmessages, ec2messages
 
 D) Add a Bastion
 
-**정답: C**
-해설: Session Manager's core dependency. The SSM Agent has to reach three endpoints over outbound HTTPS (443) — `ssm` (API), `ssmmessages` (session data channel), `ec2messages` (command polling). In an environment without internet, expose these endpoints on VPC-internal private IPs with three PrivateLink Interface Endpoints. Miss even one and the session won't attach. A standard pattern that comes up often in government/finance/PCI scenarios. B (NAT) works, but it violates the "no internet transit" constraint.
+**Answer: C**
+Explanation: Session Manager's core dependency. The SSM Agent has to reach three endpoints over outbound HTTPS (443) — `ssm` (API), `ssmmessages` (session data channel), `ec2messages` (command polling). In an environment without internet, expose these endpoints on VPC-internal private IPs with three PrivateLink Interface Endpoints. Miss even one and the session won't attach. A standard pattern that comes up often in government/finance/PCI scenarios. B (NAT) works, but it violates the "no internet transit" constraint.
 
 ---
 
-**문제 12.** A multinational company needs to consistently manage a global network spanning 30 regions and 100 AWS accounts as *policy as code*. What is the most appropriate solution?
+**Question 12.** A multinational company needs to consistently manage a global network spanning 30 regions and 100 AWS accounts as *policy as code*. What is the most appropriate solution?
 
 A) Full-mesh VPC Peering
 
@@ -351,5 +351,5 @@ C) AWS Cloud WAN
 
 D) 100 Direct Connects
 
-**정답: C**
-해설: Cloud WAN (GA in 2021) is TGW's global backbone extension. It manages segments (prod/dev isolation), attachments, route propagation, and inter-region connections all at once *centrally, as code* with a JSON policy document. At the scale of dozens of regions and hundreds of accounts, B (per-region TGW + manual TGW Peering) requires binding connections and route propagation by hand one by one, and operations explode. Cloud WAN abstracts this into a single *core network* policy. Exam appearance frequency is still low, but it's trending up since 2024.
+**Answer: C**
+Explanation: Cloud WAN (GA in 2021) is TGW's global backbone extension. It manages segments (prod/dev isolation), attachments, route propagation, and inter-region connections all at once *centrally, as code* with a JSON policy document. At the scale of dozens of regions and hundreds of accounts, B (per-region TGW + manual TGW Peering) requires binding connections and route propagation by hand one by one, and operations explode. Cloud WAN abstracts this into a single *core network* policy. Exam appearance frequency is still low, but it's trending up since 2024.

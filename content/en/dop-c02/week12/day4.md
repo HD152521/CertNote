@@ -239,104 +239,104 @@ The next article ties all of Week 12 together: **the five-stage pipeline and the
 
 ## 📝 Practice Questions
 
-**문제 1.** ChatOps의 핵심 가치는?
+**Question 1.** What is the core value of ChatOps?
 
-A) 채팅이 더 빠르다
+A) Chat is faster
 
-B) 컨텍스트가 공유되고 검색 가능하며, 모든 액션이 감시·감사되고, 조직 지식이 기록된다
+B) Context is shared and searchable, all actions are monitored and audited, and organizational knowledge is recorded
 
-C) 이모지를 쓸 수 있다
+C) You can use emoji
 
-D) 이메일보다 덜 공식적이다
+D) It is less formal than email
 
-**정답: B**
+**Answer: B**
 
-해설: ChatOps는 단순히 "채팅으로 말하자"가 아니라 **투명한 운영**이다. 모든 사람이 alert를 같은 채널에서 보고(context 공유), 명령어가 thread에 기록되고(감시·감사), Slack 히스토리가 검색 가능한 사건 기록이 된다(조직 학습). 이전 "on-call이 몰래 문제를 고치고 '해결됨'만 공고"와 다르다.
-
----
-
-**문제 2.** AWS Chatbot이 Slack 채널의 명령어 `/scale-out-prod-api-10`을 실행할 때, 안전하게 하려면?
-
-A) Chatbot 자신이 root 권한으로 실행
-
-B) Chatbot이 맡은 IAM 역할(guardrail policy)에 autoscaling:SetDesiredCapacity를 prod-api-* ASG로만 허용하고, 삭제 작업은 명시적 거부
-
-C) 모든 AWS 권한을 Chatbot role에 주되, Slack 채널 멤버만 명령 가능
-
-D) Chatbot을 사용하지 말고 on-call이 AWS 콘솔에서 직접 작업
-
-**정답: B**
-
-해설: Guardrail Policy는 **최소 권한 원칙**을 chat 명령어 실행에 적용한 것. Chatbot role이 명시적으로 allowed(scale out) 또는 denied(delete DB)를 지정해야 의도 이상의 작업이 실행되지 않는다. 모든 권한(C)은 "누군가 /delete-database 치면?"을 열어둔다.
+Explanation: ChatOps is not simply "let's talk via chat" but **transparent operations**. Everyone sees the alert in the same channel (shared context), commands are recorded in the thread (monitoring and auditing), and the Slack history becomes a searchable incident record (organizational learning). This differs from the old way, where "the on-call engineer quietly fixes the problem and only announces 'resolved.'"
 
 ---
 
-**문제 3.** AWS Incident Manager의 "응답 계획(Response Plan)"에 미리 설정할 수 있는 것은?
+**Question 2.** How can you make it safe when AWS Chatbot executes the command `/scale-out-prod-api-10` from a Slack channel?
 
-A) Slack 채널 ARN (자동 오픈)
+A) Chatbot runs with root privileges itself
 
-B) IC 역할 (자동 할당)
+B) In the IAM role (guardrail policy) that Chatbot assumes, allow autoscaling:SetDesiredCapacity only for prod-api-* ASGs and explicitly deny delete operations
 
-C) on-call engagement (자동 호출/SMS)
+C) Grant all AWS permissions to the Chatbot role, but only Slack channel members can issue commands
 
-D) SSM Automation 시작 (자동 실행)
+D) Do not use Chatbot, and have the on-call engineer work directly in the AWS console
 
-E) 모두 다
+**Answer: B**
 
-**정답: E**
-
-해설: Response Plan은 템플릿으로, incident 타입별로 어떤 채널을 오픈하고 누가 IC인지, 누구에게 연락하고, 어떤 Automation을 시작할지 모두 미리 지정한다. Incident Manager는 이 계획에 따라 자동으로 인시던트 생명주기를 구성한다.
+Explanation: A guardrail policy applies the **principle of least privilege** to chat command execution. The Chatbot role must explicitly specify what is allowed (scale out) or denied (delete DB) so that no operation beyond the intended ones runs. Granting all permissions (C) leaves open the question "what if someone types /delete-database?"
 
 ---
 
-**문제 4.** 타임라인(Timeline)의 용도는?
+**Question 3.** What can be configured in advance in an AWS Incident Manager "Response Plan"?
 
-A) 인시던트 중 뭐가 일어났는지 시간순 기록 — 포스트모템의 기초
+A) The Slack channel ARN (opened automatically)
 
-B) 각 팀이 뭘 했는지 추적 — 책임 추적
+B) The IC role (assigned automatically)
 
-C) 다음 유사 인시던트 시 "이전엔 이렇게 했다"로 재사용
+C) On-call engagement (automatic paging/SMS)
 
-D) A, C 맞음 (B는 타임라인 목적이 아님 — 블레임 추적은 blameless culture 위배)
+D) Starting an SSM Automation (executed automatically)
 
-**정답: D**
+E) All of the above
 
-해설: Timeline은 "무엇이·언제·누가·왜"를 기록하는 사건 로그다. 포스트모템(RCA)의 필수 입력이고, 조직 학습을 위해 재사용된다. 그러나 "누가 실수했나"를 추적하는 용도는 아니다 — blameless post-mortems는 사람이 아니라 **시스템과 프로세스**를 개선하는 데 집중한다.
+**Answer: E**
 
----
-
-**문제 5.** 인시던트 커맨더(IC)의 역할로 틀린 것은?
-
-A) 최종 결정권자
-
-B) 모든 진단 작업을 직접 실행
-
-C) 역할 배분 (DBA는 복구, Platform은 모니터링)
-
-D) 외부(고객, 언론, CEO)로 하나의 음성 (다른 팀이 각각 말하면 일관성 깨짐)
-
-**정답: B**
-
-해설: IC는 war room의 사령관인데, 직접 모든 일을 하는 게 아니라 **위임**한다. DBA 리드에게 "복구 작업 지휘", Platform 리드에게 "모니터링" 등을 시킨다. IC는 정보 수집 → 의사결정 → 위임 → 상황 업데이트에 집중한다. 모든 작업을 직접 하면 한 사람이 병목이 되어 응답이 느려진다.
+Explanation: A Response Plan is a template that pre-specifies, for each incident type, which channel to open, who the IC is, whom to contact, and which Automation to start. Incident Manager automatically builds the incident lifecycle according to this plan.
 
 ---
 
-**문제 6.** "Major Incident Response (MIR) war room에서 모두가 얘기하다 보니 혼란스러웠다. 어떤 원칙으로 구조화할까?"
+**Question 4.** What is the purpose of the Timeline?
 
-A) 더 많이 말하는 사람이 리더
+A) A chronological record of what happened during the incident — the basis for the postmortem
 
-B) IC가 맨 마지막에 말한다 — 다른 사람들 의견 다 들은 후 결정
+B) Tracking what each team did — accountability tracking
 
-C) 모두가 동시에 말한다 (진짜 생각이 나온다)
+C) Reuse in the next similar incident as "this is how we did it before"
 
-D) 의사 결정이 느려지니 IC가 모든 권한을 쥔다
+D) A and C are correct (B is not the purpose of the timeline — tracking blame violates a blameless culture)
 
-**정답: B**
+**Answer: D**
 
-해설: **command discipline**의 핵심은 IC가 speak last다. 모두가 의견을 내놓은 후, IC가 정보를 종합해 결정한다. 이렇게 하면 IC는 모든 perspective를 들었고 best decision이 나올 확률이 높다. speak first하면 IC 의견에 모두가 따라가는 바이어스(anchor)가 생긴다.
+Explanation: The Timeline is an event log that records "what, when, who, and why." It is a required input to the post-mortem (RCA) and is reused for organizational learning. However, it is not for tracking "who made the mistake" — blameless post-mortems focus on improving **systems and processes**, not people.
+
+---
+
+**Question 5.** Which of the following is NOT a role of the Incident Commander (IC)?
+
+A) The final decision maker
+
+B) Personally executing all diagnostic work
+
+C) Assigning roles (the DBA handles recovery, Platform handles monitoring)
+
+D) The single voice to the outside (customers, press, CEO) (if different teams speak separately, consistency breaks down)
+
+**Answer: B**
+
+Explanation: The IC is the commander of the war room, but does not do everything personally; the IC **delegates**. The IC directs the DBA lead to "lead recovery work," the Platform lead to "handle monitoring," and so on. The IC focuses on gathering information → decision-making → delegating → situation updates. If the IC does all the work personally, one person becomes a bottleneck and response slows down.
+
+---
+
+**Question 6.** "In the Major Incident Response (MIR) war room, everyone was talking at once and it was chaotic. What principle should be used to structure it?"
+
+A) Whoever talks the most is the leader
+
+B) The IC speaks last — decides after hearing everyone else's opinions
+
+C) Everyone speaks at the same time (real ideas emerge)
+
+D) Decision-making slows down, so the IC holds all the authority
+
+**Answer: B**
+
+Explanation: The core of **command discipline** is that the IC speaks last. After everyone has offered their opinions, the IC synthesizes the information and decides. This way the IC has heard every perspective and the best decision is more likely to emerge. If the IC speaks first, a bias (anchoring) arises in which everyone follows the IC's opinion.
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 다섯 가지다. 첫째, **ChatOps**는 chat을 운영 제어 평면으로 삼아 컨텍스트 공유·투명성·감시성을 이룬다. 둘째, **AWS Chatbot과 CodeStar Notifications**은 AWS alert를 Slack에 중계하는 다리다. 셋째, **Guardrail Policy**는 chat 명령어에 IAM 권한을 최소로 바인딩해 안전한 자동화를 가능하게 한다. 넷째, **AWS Incident Manager**는 detection부터 post-mortem까지 lifecycle을 자동화하고, timeline 재구성으로 학습을 기반화한다. 다섯째, **MIR 전쟁 지휘소 패턴**은 명확한 역할·IC speak-last 원칙·single voice로 대규모 인시던트 압박 속에서도 구조를 유지한다. 모니터링 → 자동 치유 → 인간 조정 → 학습의 완전한 루프가 완성된다.
+There are five key takeaways today. First, **ChatOps** makes chat the operational control plane, achieving shared context, transparency, and auditability. Second, **AWS Chatbot and CodeStar Notifications** are the bridges that relay AWS alerts to Slack. Third, **Guardrail Policy** binds IAM permissions to chat commands at the minimum, enabling safe automation. Fourth, **AWS Incident Manager** automates the lifecycle from detection to post-mortem, and grounds learning in timeline reconstruction. Fifth, the **MIR war room pattern** keeps structure even under the pressure of a large-scale incident through clear roles, the IC speak-last principle, and a single voice. The complete loop of monitoring → self-healing → human coordination → learning is thus completed.

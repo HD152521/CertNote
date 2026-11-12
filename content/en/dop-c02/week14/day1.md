@@ -137,115 +137,115 @@ Next time we explore how those accumulated Findings are **unified, normalized, a
 
 ## 📝 Practice Questions
 
-**문제 1.** GuardDuty가 "에이전트 없이(agentless)" 동작할 수 있는 근본 이유는?
+**Question 1.** What is the fundamental reason GuardDuty can operate "agentlessly"?
 
-A) GuardDuty가 각 EC2에 경량 에이전트를 자동 배포해서
+A) GuardDuty automatically deploys a lightweight agent to each EC2 instance
 
-B) AWS가 이미 수집하는 데이터 평면 로그(CloudTrail, VPC Flow, Route 53 DNS)의 복제 스트림을 GuardDuty가 직접 받아 분석하므로 별도 수집 인프라나 에이전트가 필요 없어서
+B) GuardDuty directly receives and analyzes replicated streams of the data-plane logs that AWS already collects (CloudTrail, VPC Flow, Route 53 DNS), so no separate collection infrastructure or agent is needed
 
-C) GuardDuty가 네트워크 패킷을 직접 가로채서
+C) GuardDuty intercepts network packets directly
 
-D) 사용자가 모든 로그를 수동으로 업로드해서
+D) Users manually upload all the logs
 
-**정답: B**
+**Answer: B**
 
-해설: GuardDuty의 "켜기 버튼 하나"의 정체는 새 데이터 수집 인프라를 까는 게 아니라, AWS가 이미 기록하는 데이터 평면 로그 — CloudTrail(API 호출), VPC Flow Logs(네트워크 흐름), Route 53 Resolver(DNS 쿼리) — 의 복제 스트림을 내부적으로 직접 받아 분석하는 것이다. 그래서 사용자가 VPC Flow Logs를 따로 활성화·저장하지 않아도 GuardDuty는 흐름을 본다. 예외적으로 EKS/ECS Runtime Monitoring과 EBS Malware Protection은 경량 에이전트나 스냅샷 스캔을 추가로 쓴다. 에이전트 자동 배포(A)나 수동 업로드(D)는 GuardDuty의 모델이 아니다.
-
----
-
-**문제 2.** 침해가 매우 드문 환경(예: 100만 이벤트당 1건)에서 탐지기의 정확도가 99%여도 알람의 대다수가 false positive가 되는 통계적 현상은? GuardDuty가 이에 대응하는 장치는?
-
-A) CAP 정리 — Severity 점수로 대응
-
-B) 기저율의 오류(base rate fallacy) — Severity 점수, Suppression Rule, Trusted IP List로 알람 피로를 줄여 대응
-
-C) 무어의 법칙 — 더 빠른 하드웨어로 대응
-
-D) 비둘기집 원리 — region 분산으로 대응
-
-**정답: B**
-
-해설: 기저율의 오류는 사건의 사전 확률(기저율)이 극히 낮을 때, 탐지기 정확도가 높아도 양성 판정의 대부분이 거짓 양성이 되는 베이즈 추론의 결과다. 침입 탐지의 근본 난제이며, 데닝의 통계적 IDS 모델 이래 핵심 문제로 남아 있다. GuardDuty는 Severity 점수(위협 심각성 × 탐지 신뢰도)로 우선순위를 매기고, Suppression Rule·Trusted IP List로 알려진 정상 패턴을 걸러 운영팀의 알람 피로를 줄인다. "탐지는 쉽고, 알람 피로 없이 탐지하는 게 어렵다"가 핵심이다. CAP(A)·무어(C)·비둘기집(D)은 무관하다.
+Explanation: The reality behind GuardDuty's "single on button" is not deploying new data-collection infrastructure but internally receiving and analyzing replicated streams of the data-plane logs AWS already records — CloudTrail (API calls), VPC Flow Logs (network flows), and Route 53 Resolver (DNS queries). That is why GuardDuty sees the flows even if the user has not separately enabled and stored VPC Flow Logs. As exceptions, EKS/ECS Runtime Monitoring and EBS Malware Protection additionally use a lightweight agent or snapshot scanning. Automatic agent deployment (A) or manual uploads (D) are not GuardDuty's model.
 
 ---
 
-**문제 3.** GuardDuty Severity 점수가 동일한 공격 유형인데도 케이스마다 다르게 나오는 이유로 가장 정확한 것은?
+**Question 2.** What is the statistical phenomenon in which, in an environment where breaches are extremely rare (for example, 1 per million events), most alarms become false positives even if the detector is 99% accurate? What mechanisms does GuardDuty use to address it?
 
-A) Severity는 무작위로 부여된다
+A) The CAP theorem — addressed with Severity scores
 
-B) Severity는 위협의 심각성뿐 아니라 탐지 신뢰도(confidence)를 함께 반영하므로, "성공 후 추가 활동이 관측됨" 같은 확신 요소가 점수를 높인다
+B) The base rate fallacy — addressed by reducing alarm fatigue with Severity scores, Suppression Rules, and Trusted IP Lists
 
-C) Severity는 인스턴스 타입에 비례한다
+C) Moore's law — addressed with faster hardware
 
-D) Severity는 계정 나이에 따라 정해진다
+D) The pigeonhole principle — addressed with Region distribution
 
-**정답: B**
+**Answer: B**
 
-해설: GuardDuty Severity는 단순한 "공격 위험도"가 아니라 위협의 심각성 × 신뢰도를 함께 반영한다. 같은 `SSHBruteForce`라도 "성공 후 추가 활동(권한 상승·데이터 접근)이 관측됨"이면 침해 신뢰도가 올라 점수가 뛴다. 반대로 "엄청난 공격처럼 보이지만 확신이 낮음"은 중간 점수에 머문다. DOP에서 "왜 이 Finding의 severity가 예상보다 낮은가"의 답은 종종 "탐지 신뢰도가 아직 낮아서"다. 무작위(A)·인스턴스 타입(C)·계정 나이(D)는 근거 없다.
-
----
-
-**문제 4.** GuardDuty Critical Finding(`Backdoor:EC2/C&CActivity.B!DNS`) 발견 시 SSM Automation Runbook으로 자동 대응한다. 단계 순서로 가장 올바른 것은?
-
-A) 인스턴스 즉시 종료 → 스냅샷 → 알림
-
-B) EBS 스냅샷(포렌식 보존) → 격리 SG로 교체(네트워크 격리, 종료 아님) → IAM 역할 무력화 → 태그 → 알림
-
-C) 알림 → 운영자 승인 대기 → 수동 종료
-
-D) IAM 역할 삭제 → 인스턴스 재부팅 → 스냅샷
-
-**정답: B**
-
-해설: 자동 격리 단계의 순서가 중요하다. 포렌식 증거 보존을 위해 EBS 스냅샷을 가장 먼저 떠야 한다 — 인스턴스를 종료하거나 오염시킨 뒤엔 메모리·디스크 상태가 사라져 조사가 불가능하다. "격리"는 인스턴스 종료가 아니라 격리 SG(모든 아웃바운드 차단 + 포렌식 점프박스 인바운드만 허용)로 네트워크만 끊어 C2 통신을 차단하면서 조사자 접근은 남기는 것이다. 즉시 종료(A)나 재부팅(D)은 증거 인멸이고, 수동 승인 대기(C)는 "사람 없이 즉시 대응"이라는 자동화 목표에 어긋난다.
+Explanation: The base rate fallacy is a consequence of Bayesian inference: when the prior probability (base rate) of an event is extremely low, most positive determinations become false positives even if the detector's accuracy is high. It is the fundamental challenge of intrusion detection and has remained a core problem since Denning's statistical IDS model. GuardDuty prioritizes with the Severity score (threat severity × detection confidence) and filters known normal patterns with Suppression Rules and Trusted IP Lists to reduce alarm fatigue for operations teams. The key is "detection is easy; detecting without alarm fatigue is hard." CAP (A), Moore (C), and the pigeonhole principle (D) are unrelated.
 
 ---
 
-**문제 5.** 수백 개 계정 조직에서 기존 계정은 물론 앞으로 생성될 모든 신규 계정에도 GuardDuty가 자동 활성되고, Finding이 중앙 집계되게 하려면?
+**Question 3.** What is the MOST accurate reason that GuardDuty Severity scores differ from case to case even for the same attack type?
 
-A) 각 계정 관리자가 콘솔에서 수동으로 GuardDuty를 켠다
+A) Severity is assigned randomly
 
-B) 관리 계정(management account)에서 모든 탐지를 직접 운영한다
+B) Severity reflects not only the threat's seriousness but also the detection confidence, so confidence-raising factors such as "additional activity observed after success" raise the score
 
-C) Audit 계정을 GuardDuty 위임 관리자(Delegated Administrator)로 지정하고 auto-enable을 ALL/NEW로 설정한다
+C) Severity is proportional to the instance type
 
-D) Lambda로 매일 신규 계정을 스캔해 GuardDuty를 켜는 스크립트를 돌린다
+D) Severity is determined by the age of the account
 
-**정답: C**
+**Answer: B**
 
-해설: GuardDuty는 Organizations와 통합해 Audit 계정을 위임 관리자로 지정하면 조직 전체를 중앙 통제한다. auto-enable을 ALL(기존)·NEW(신규)로 설정하면 새로 만들어지는 계정도 자동으로 GuardDuty가 켜져, 사람이 새 계정마다 켜는 걸 잊는 사고를 원천 차단한다. 위임 관리자 패턴은 관리 계정에 권한을 몰지 않고 보안 운영을 Audit 계정에 분리하는 관심사 분리·폭발 반경 축소 원칙의 적용이다. 수동(A)·관리 계정 직접 운영(B)·커스텀 스크립트(D)는 모두 누락·운영 부담의 위험이 있는 안티패턴이다.
-
----
-
-**문제 6.** false positive를 줄이고 싶지만, 나중에 그 IP/패턴이 실제로 침해됐을 때를 대비해 사후 조사용 기록은 남기고자 한다. 올바른 선택은?
-
-A) Trusted IP List에 추가해 Finding 생성 자체를 막는다
-
-B) Suppression Rule을 만들어 Finding은 생성·보존하되 콘솔/알림에서만 숨긴다
-
-C) GuardDuty를 끈다
-
-D) 해당 region 전체를 비활성화한다
-
-**정답: B**
-
-해설: Trusted IP List는 해당 IP에 대한 Finding 생성 자체를 막으므로, 그 IP가 나중에 침해돼도 GuardDuty가 침묵하는 사각지대가 된다. 반면 Suppression Rule은 Finding을 여전히 생성·보존하되 콘솔/알림에서만 숨기므로, 사후 조사 시 데이터가 남아 있다. "false positive는 줄이되 감사용 기록은 보존"이라는 요구에는 Suppression Rule이 맞다. GuardDuty를 끄거나(C) region을 비활성화(D)하면 탐지 공백이 생긴다.
+Explanation: GuardDuty Severity is not a simple "attack risk" but reflects threat seriousness × confidence together. Even for the same `SSHBruteForce`, if "additional activity after success (privilege escalation, data access) is observed," confidence in the compromise rises and the score jumps. Conversely, something that "looks like a huge attack but with low confidence" stays at a medium score. In DOP, the answer to "why is this Finding's severity lower than expected" is often "because the detection confidence is still low." Random (A), instance type (C), and account age (D) have no basis.
 
 ---
 
-**문제 7.** GuardDuty Finding이 자동으로 ASFF(AWS Security Finding Format)로 변환되어 Security Hub로 전송되는 설계가 주는 핵심 이점은?
+**Question 4.** When a GuardDuty Critical Finding (`Backdoor:EC2/C&CActivity.B!DNS`) is found, an SSM Automation Runbook responds automatically. Which is the most correct order of steps?
 
-A) Finding의 저장 비용이 사라진다
+A) Terminate the instance immediately → snapshot → notify
 
-B) 서로 다른 탐지 소스(GuardDuty·Inspector·Macie)의 출력이 같은 표준 스키마로 정규화되어, 다운스트림(중복 제거·우선순위화·자동 수정 파이프라인)을 소스마다 새로 짤 필요가 없어진다
+B) EBS snapshot (forensic preservation) → swap in an isolation SG (network isolation, not termination) → neutralize the IAM role → tag → notify
 
-C) Finding이 자동으로 수정된다
+C) Notify → wait for operator approval → manually terminate
 
-D) GuardDuty가 더 빨리 탐지하게 된다
+D) Delete the IAM role → reboot the instance → snapshot
 
-**정답: B**
+**Answer: B**
 
-해설: ASFF는 보안 데이터의 정규화 문제에 대한 답으로, 여러 탐지기의 서로 다른 출력 형식을 하나의 표준 스키마로 통일한다. 이는 표준 인터페이스(adapter pattern) 사상의 구현으로, Security Hub가 중복 제거·우선순위화를 하고 EventBridge 필터·자동 수정 Lambda 같은 다운스트림을 소스마다 다시 작성하지 않아도 되게 한다 — 통합 보안 자동화의 전제 조건이다. 저장 비용(A)·자동 수정(C)·탐지 속도(D)와는 직접 관련이 없다.
+Explanation: The order of the automatic isolation steps matters. To preserve forensic evidence, the EBS snapshot must be taken first — once the instance is terminated or contaminated, the memory and disk state disappear and investigation becomes impossible. "Isolation" is not terminating the instance but cutting only the network with an isolation SG (blocking all outbound and allowing only inbound from a forensic jump box), which blocks C2 communication while keeping investigator access. Immediate termination (A) or reboot (D) destroys evidence, and waiting for manual approval (C) contradicts the automation goal of "immediate response without humans."
+
+---
+
+**Question 5.** In an organization with hundreds of accounts, how can you make GuardDuty automatically enabled not only for existing accounts but also for every new account created in the future, with Findings aggregated centrally?
+
+A) Each account administrator manually turns on GuardDuty in the console
+
+B) Operate all detection directly from the management account
+
+C) Designate the Audit account as the GuardDuty Delegated Administrator and set auto-enable to ALL/NEW
+
+D) Run a script that scans for new accounts daily with Lambda and turns on GuardDuty
+
+**Answer: C**
+
+Explanation: GuardDuty integrates with Organizations, and designating the Audit account as the delegated administrator gives central control of the whole organization. Setting auto-enable to ALL (existing) and NEW (new) automatically turns on GuardDuty for newly created accounts as well, eliminating at the source the accident of people forgetting to turn it on for each new account. The delegated administrator pattern applies the principles of separation of concerns and blast-radius reduction by separating security operations into the Audit account instead of concentrating privileges in the management account. Manual operation (A), direct operation from the management account (B), and custom scripts (D) are all anti-patterns with the risk of omissions and operational burden.
+
+---
+
+**Question 6.** You want to reduce false positives, but still keep records for post-incident investigation in case that IP/pattern is later actually compromised. What is the correct choice?
+
+A) Add it to the Trusted IP List to prevent Finding generation altogether
+
+B) Create a Suppression Rule so that Findings are still generated and retained but hidden only from the console/notifications
+
+C) Turn off GuardDuty
+
+D) Disable the entire Region
+
+**Answer: B**
+
+Explanation: A Trusted IP List prevents Finding generation for that IP altogether, so if the IP is compromised later it becomes a blind spot where GuardDuty is silent. A Suppression Rule, by contrast, still generates and retains the Finding and hides it only from the console/notifications, so the data remains for post-incident investigation. For the requirement "reduce false positives but preserve records for auditing," a Suppression Rule is right. Turning off GuardDuty (C) or disabling the Region (D) creates detection gaps.
+
+---
+
+**Question 7.** What is the key benefit of the design in which GuardDuty Findings are automatically converted to ASFF (AWS Security Finding Format) and sent to Security Hub?
+
+A) The storage cost of Findings disappears
+
+B) The outputs of different detection sources (GuardDuty, Inspector, Macie) are normalized into the same standard schema, so downstream pipelines (deduplication, prioritization, auto-remediation) do not have to be rebuilt for each source
+
+C) Findings are remediated automatically
+
+D) GuardDuty detects faster
+
+**Answer: B**
+
+Explanation: ASFF is the answer to the normalization problem of security data, unifying the differing output formats of multiple detectors into one standard schema. This is an implementation of the standard-interface (adapter pattern) idea, letting Security Hub perform deduplication and prioritization and removing the need to rewrite downstream components such as EventBridge filters and auto-remediation Lambda functions for each source — a prerequisite for integrated security automation. It is not directly related to storage cost (A), auto-remediation (C), or detection speed (D).
 
 ---
 

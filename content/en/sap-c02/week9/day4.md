@@ -107,94 +107,94 @@ SAP exam frequent mappings: (1) "Exclude PII columns / specific rows only" → L
 
 ## 📝 Practice Questions
 
-**문제 1.** S3 데이터 레이크의 한 테이블에서, 분석가 그룹에게는 PII 컬럼(주민번호·이메일)을 제외한 나머지 컬럼만 보여주고 싶다. S3 버킷 정책과 IAM만으로는 컬럼 단위 통제가 안 된다. 가장 적합한 것은?
+**Question 1.** In one table of an S3 data lake, you want to show the analyst group all columns except the PII columns (Korean resident registration number, email). S3 bucket policies and IAM alone cannot control at the column level. What is the most appropriate choice?
 
-A) S3 버킷 정책으로 객체 접근 제한
-B) Lake Formation 컬럼 수준 권한(Column-Level Security)
-C) KMS로 컬럼 암호화
-D) PII 컬럼을 별도 버킷으로 분리하고 IAM으로 차단
+A) Restrict object access with an S3 bucket policy
+B) Lake Formation column-level permissions (Column-Level Security)
+C) Encrypt columns with KMS
+D) Separate the PII columns into another bucket and block them with IAM
 
-**정답: B**
+**Answer: B**
 
-해설: 한 Parquet 파일에 모든 컬럼이 섞여 있으므로 S3 버킷 정책·IAM(객체 수준)으로는 컬럼 단위 권한을 낼 수 없다. Lake Formation은 Glue Catalog 위에서 컬럼 단위 권한을 부여해, 같은 테이블을 질의해도 허용된 컬럼만 반환한다(CLS). A·D는 객체/버킷 수준이라 컬럼 입도가 안 나오고, D는 데이터를 분리·복제해 관리 부담이 큼. C(KMS)는 암호화일 뿐 컬럼 단위 노출 제어가 아니다.
-
----
-
-**문제 2.** 데이터 레이크에 매주 새 테이블이 수십 개씩 추가된다. 테이블이 추가될 때마다 수동으로 권한을 부여하는 운영 부담이 커지고 있다. 새 테이블에 자동으로 알맞은 권한이 적용되게 하려면?
-
-A) 테이블마다 IAM 정책을 수동으로 추가
-B) Lake Formation LF Tag(태그 기반 접근 제어)
-C) S3 객체 태그
-D) Glue Trigger로 권한 스크립트 실행
-
-**정답: B**
-
-해설: LF Tag는 ABAC(속성 기반 접근 제어)로, 데이터에 분류 태그(예: classification=PII)를 붙이고 사용자/역할에 태그 권한을 주면, 새 테이블·컬럼이 해당 태그를 받는 순간 권한이 자동 적용된다. 자원이 늘어도 정책을 다시 손볼 필요가 없어 스케일링된다. A는 수동 부담이 그대로. C(S3 태그)는 Lake Formation 권한 메커니즘과 무관. D는 직접 스크립트를 짜고 유지해야 해 관리형 ABAC의 이점이 없다.
+Explanation: Because all columns are mixed in a single Parquet file, S3 bucket policies and IAM (object level) cannot grant column-level permissions. Lake Formation grants column-level permissions on top of the Glue Catalog, so even when the same table is queried, only the permitted columns are returned (CLS). A and D are at the object/bucket level and do not achieve column granularity, and D also separates and duplicates data, which is a heavy management burden. C (KMS) is just encryption, not column-level exposure control.
 
 ---
 
-**문제 3.** 중앙 데이터 계정(Producer)의 Glue Catalog 데이터를 여러 부서 계정(Consumer)이 공유해야 한다. 동시에 각 부서는 자기 region 행만 보고 PII 컬럼은 제외돼야 한다. 가장 적합한 구성은?
+**Question 2.** Dozens of new tables are added to the data lake every week. The operational burden of manually granting permissions each time a table is added is growing. How can you make the appropriate permissions apply to new tables automatically?
 
-A) Producer의 IAM Role을 Consumer가 AssumeRole
-B) RAM으로 Glue Catalog 공유 + Lake Formation으로 행·열 세분 권한
-C) 각 Consumer 계정에 데이터를 COPY로 복제
-D) S3 Cross-Account 버킷 정책
+A) Manually add an IAM policy for each table
+B) Lake Formation LF Tag (tag-based access control)
+C) S3 object tags
+D) Run a permission script with a Glue Trigger
 
-**정답: B**
+**Answer: B**
 
-해설: RAM(Resource Access Manager)이 Producer의 Glue Catalog 리소스를 Consumer 계정에 공유하고, 그 위에 Lake Formation이 컬럼 필터(PII 제외)와 행 필터(region별)를 건다. Consumer는 자기 계정의 Athena/Redshift로 질의하되 LF가 허용한 행·열만 본다. A는 광범위한 역할 위임이라 세분 권한이 안 되고, C는 데이터 복제·동기화 부담과 거버넌스 분산, D(버킷 정책)는 행·열 입도가 안 나온다. "멀티 계정 + 중앙 레이크 + 세분 권한"은 RAM + Lake Formation.
+Explanation: LF Tag is ABAC (attribute-based access control): you attach a classification tag to data (for example, classification=PII) and grant tag permissions to users/roles, and the moment a new table or column receives that tag, the permission applies automatically. It scales because policies need not be revisited as resources grow. A leaves the manual burden unchanged. C (S3 tags) is unrelated to the Lake Formation permission mechanism. D requires writing and maintaining scripts yourself and has none of the benefits of managed ABAC.
 
 ---
 
-**문제 4.** 온프레미스에서 자체 운영하던 Apache Kafka 클러스터를 AWS로 옮기려 한다. 기존 프로듀서·컨슈머 애플리케이션 코드와 Debezium 커넥터를 거의 그대로 재사용하고, 브로커 운영 부담은 줄이고 싶다. 가장 적합한 것은?
+**Question 3.** Multiple department accounts (Consumers) must share the Glue Catalog data in a central data account (Producer). At the same time, each department must see only its own region's rows and the PII columns must be excluded. What is the most appropriate configuration?
 
-A) Kinesis Data Streams로 마이그레이션
+A) Consumers AssumeRole into the Producer's IAM Role
+B) Share the Glue Catalog with RAM + fine-grained row and column permissions with Lake Formation
+C) Replicate the data into each Consumer account with COPY
+D) S3 cross-account bucket policy
+
+**Answer: B**
+
+Explanation: RAM (Resource Access Manager) shares the Producer's Glue Catalog resources with the Consumer accounts, and Lake Formation applies column filters (excluding PII) and row filters (per region) on top. Consumers query with their own account's Athena/Redshift but see only the rows and columns that LF permits. A is a broad role delegation that does not allow fine-grained permissions, C adds the burden of data replication and synchronization and scatters governance, and D (bucket policy) does not achieve row or column granularity. "Multi-account + central lake + fine-grained permissions" is RAM + Lake Formation.
+
+---
+
+**Question 4.** You want to move an Apache Kafka cluster that you operated yourself on premises to AWS. You want to reuse the existing producer and consumer application code and the Debezium connector almost as is, while reducing the broker operations burden. What is the most appropriate choice?
+
+A) Migrate to Kinesis Data Streams
 B) Amazon MSK
 C) SQS
 D) Amazon MQ
 
-**정답: B**
+**Answer: B**
 
-해설: MSK는 Apache Kafka를 매니지드로 제공하므로 Kafka API가 그대로여서 기존 프로듀서·컨슈머 코드와 커넥터(Debezium 등)를 거의 수정 없이 재사용하고, 브로커 프로비저닝·패치·복제·모니터링은 AWS가 맡아 운영 부담이 준다. A(Kinesis)는 AWS 독자 기술이라 SDK·파티셔닝·소비 모델을 전부 다시 짜야 함. C(SQS)는 메시지 큐로 스트림 재생·컨슈머 그룹 모델이 다름. D(MQ)는 ActiveMQ/RabbitMQ 매니지드로 Kafka가 아니다. "기존 Kafka 자산 재사용 + 운영 부담↓"은 MSK.
+Explanation: MSK provides Apache Kafka as a managed service, so the Kafka API stays the same, letting you reuse existing producer and consumer code and connectors (such as Debezium) with almost no changes, while AWS takes on broker provisioning, patching, replication, and monitoring, reducing the operations burden. A (Kinesis) is an AWS-proprietary technology, so the SDK, partitioning, and consumption model would all have to be rewritten. C (SQS) is a message queue with a different stream replay and consumer group model. D (MQ) is managed ActiveMQ/RabbitMQ and is not Kafka. "Reusing existing Kafka assets + lower operations burden" is MSK.
 
 ---
 
-**문제 5.** Kafka를 쓰고 싶지만 브로커 수·파티션 용량 계획 같은 클러스터 사이징을 하고 싶지 않고, 처리량에 따라 자동으로 확장되기를 원한다. 가장 적합한 것은?
+**Question 5.** You want to use Kafka but do not want to do cluster sizing such as planning the number of brokers and partition capacity, and you want it to scale automatically with throughput. What is the most appropriate choice?
 
-A) 프로비저닝드 MSK 클러스터를 크게 구성
+A) Configure a large provisioned MSK cluster
 B) MSK Serverless
-C) Kinesis Data Streams 프로비저닝드 모드
-D) 자체 Kafka를 EC2에 구축
+C) Kinesis Data Streams provisioned mode
+D) Build your own Kafka on EC2
 
-**정답: B**
+**Answer: B**
 
-해설: MSK Serverless는 브로커 수·파티션 용량 계획 없이 토픽을 만들고 데이터를 보내면 처리량에 맞춰 자동 확장한다. 사이징이 어렵거나 가변적인 워크로드, 클러스터 운영 회피에 최적이다. A는 사이징을 직접 해야 함. C는 Kafka가 아니고 프로비저닝드는 샤드 계획이 필요. D는 운영 부담이 가장 큼. 단, 초고처리량·세밀한 튜닝이 필요하면 프로비저닝드 MSK가 더 유연하다는 한계도 기억할 것.
+Explanation: MSK Serverless lets you create topics and send data without planning broker counts or partition capacity, and it scales automatically with throughput. It is optimal for workloads where sizing is difficult or variable and for avoiding cluster operations. A requires you to do sizing yourself. C is not Kafka, and provisioned mode needs shard planning. D has the largest operational burden. However, also remember the limitation that provisioned MSK is more flexible when ultra-high throughput or fine-grained tuning is needed.
 
 ---
 
-**문제 6.** Glue Data Catalog의 테이블에 대해 "이 컬럼은 NULL 5% 미만, 이메일 형식이어야 함" 같은 품질 규칙을 정의하고 주기적으로 자동 검사하며 위반 시 알림을 받고 싶다. 가장 적합한 것은?
+**Question 6.** For a table in the Glue Data Catalog, you want to define quality rules such as "this column must have under 5% NULLs and be in email format," have them checked automatically on a regular schedule, and be notified of violations. What is the most appropriate choice?
 
-A) Athena에서 WHERE로 수동 확인
+A) Check manually with WHERE in Athena
 B) Glue Data Quality(DQDL)
-C) DataBrew 프로파일만 1회 실행
-D) Lambda로 직접 검증 코드 작성
+C) Run a DataBrew profile just once
+D) Write your own validation code with Lambda
 
-**정답: B**
+**Answer: B**
 
-해설: Glue Data Quality는 DQDL(Data Quality Definition Language)로 카탈로그 테이블에 품질 규칙을 선언하고, 주기적·자동으로 검사해 위반 시 EventBridge로 알린다(규칙 ML 추천도 지원). A는 수동·일회성. C(DataBrew 프로파일)는 통계 프로파일링이지 지속적 규칙 검증·알림 체계가 아님. D는 직접 코드를 짜고 유지해야 해 관리형 품질 프레임워크의 이점이 없다.
+Explanation: Glue Data Quality declares quality rules on catalog tables using DQDL (Data Quality Definition Language), checks them periodically and automatically, and notifies through EventBridge on violations (it also supports ML-based rule recommendations). A is manual and one-off. C (DataBrew profile) is statistical profiling, not a continuous rule validation and notification system. D requires writing and maintaining the code yourself and has none of the benefits of a managed quality framework.
 
 ---
 
-**문제 7.** 대규모 조직에서 분석가들이 필요한 데이터셋을 사내에서 검색하고 구독을 요청하면 승인 워크플로우를 거쳐 접근권이 부여되는 "데이터 마켓플레이스" 경험을 원한다. 프로듀서/컨슈머 경험을 분리하고 Lake Formation·Redshift와 통합돼야 한다. 가장 적합한 것은?
+**Question 7.** A large organization wants a "data marketplace" experience in which analysts search for the datasets they need within the company and request subscriptions, and access is granted after an approval workflow. It must separate the producer/consumer experiences and integrate with Lake Formation and Redshift. What is the most appropriate choice?
 
-A) Lake Formation 단독
+A) Lake Formation alone
 B) AWS DataZone
 C) Glue Crawler
-D) QuickSight 대시보드
+D) QuickSight dashboards
 
-**정답: B**
+**Answer: B**
 
-해설: DataZone은 비즈니스 도메인 단위 데이터 카탈로그·검색·구독·승인 워크플로우를 제공하는 거버넌스 서비스로, 데이터 프로듀서(게시)와 컨슈머(검색·구독) 경험을 분리하고 Lake Formation·Glue·Redshift·S3와 통합된다. 구독 승인이 실제 LF 권한 부여로 이어진다. A(Lake Formation)는 권한 메커니즘이지 검색·구독 마켓플레이스 경험이 아님. C는 스키마 추론 도구. D는 BI 시각화로 목적이 다르다.
+Explanation: DataZone is a governance service that provides a business-domain-level data catalog, search, subscription, and approval workflows; it separates the data producer (publishing) and consumer (search and subscription) experiences and integrates with Lake Formation, Glue, Redshift, and S3. Subscription approval leads to actual LF permission grants. A (Lake Formation) is a permission mechanism, not a search and subscription marketplace experience. C is a schema inference tool. D is BI visualization, so its purpose is different.
 
 ---
 

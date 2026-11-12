@@ -173,62 +173,62 @@ In multi-account (Organizations) environments, enforce Web ACL consistently via 
 
 ## 📝 Practice Questions
 
-**문제 1.** Web ACL의 규칙들이 평가되는 방식으로 옳은 것은?
+**Question 1.** Which description of how the rules in a Web ACL are evaluated is correct?
 
-A) 모든 규칙을 동시에 평가해 가장 엄격한 액션을 적용한다  
-B) 규칙을 priority 오름차순으로 평가하며, terminating action(Allow/Block)을 만나면 즉시 평가를 종료한다  
-C) Block 규칙을 먼저, Allow 규칙을 나중에 평가한다  
-D) Default Action을 먼저 적용한 뒤 규칙으로 예외를 만든다  
+A) All rules are evaluated simultaneously and the strictest action is applied  
+B) Rules are evaluated in ascending priority order, and evaluation ends immediately upon encountering a terminating action (Allow/Block)  
+C) Block rules are evaluated first and Allow rules later  
+D) The Default Action is applied first, and exceptions are made with rules  
 
-**정답: B**  
-해설: WAF는 규칙을 priority 오름차순으로 순차 평가하고, Allow 또는 Block 같은 terminating action을 만나는 순간 평가를 멈춘다. Count와 (토큰 발급 후의) 비종료 액션은 다음 규칙으로 흐른다. 동시 평가(모든 규칙을 한꺼번에)는 동작 모델이 아니며, Block/Allow의 평가 순서가 고정돼 있지도 않다. Default Action은 어떤 규칙도 매칭되지 않았을 때 마지막에 적용된다.
-
----
-
-**문제 2.** SQLi 탐지 규칙을 만들었는데 공격자가 `%53ELECT`처럼 URL 인코딩으로 우회한다. 가장 적절한 보완은?
-
-A) 규칙을 Block에서 Count로 변경  
-B) Rate-based rule로 전환  
-C) FieldToMatch에 TextTransformation(URL_DECODE, HTML_ENTITY_DECODE, LOWERCASE)을 추가해 매칭 전 정규화  
-D) Geo match로 해당 국가를 차단  
-
-**정답: C**  
-해설: WAF는 매칭 *전에* TextTransformation을 적용해 페이로드를 정규화한다. URL_DECODE는 `%53`을 `S`로 디코딩하고, HTML_ENTITY_DECODE는 엔티티를, LOWERCASE는 대소문자 변형을 무력화한다. 이를 누락하면 인코딩·케이스 변형 우회에 취약하다. Count 전환은 차단을 약화시키고, rate-based나 geo match는 인코딩 우회와 무관한 다른 차원의 통제다.
+**Answer: B**  
+Explanation: WAF evaluates rules sequentially in ascending priority order and stops evaluation the moment it meets a terminating action such as Allow or Block. Count and non-terminating actions (after issuing a token) flow on to the next rule. Simultaneous evaluation (all rules at once) is not the operating model, nor is the evaluation order of Block/Allow fixed. The Default Action is applied last when no rule has matched.
 
 ---
 
-**문제 3.** 로그인 엔드포인트(`/login`)에 대한 credential stuffing을 완화하려 한다. 가장 정밀한 설계는?
+**Question 2.** You created an SQLi detection rule, but attackers bypass it with URL encoding such as `%53ELECT`. What is the most appropriate supplement?
 
-A) 전체 Web ACL에 IP 집계 rate-based rule 하나만 적용  
-B) `/login`을 ScopeDownStatement로 지정하고, AggregateKey를 CUSTOM_KEYS(IP + username)로 구성한 rate-based rule  
-C) Default Action을 Block으로 바꾼다  
-D) CAPTCHA를 모든 경로에 적용  
+A) Change the rule from Block to Count  
+B) Switch to a Rate-based rule  
+C) Add TextTransformation (URL_DECODE, HTML_ENTITY_DECODE, LOWERCASE) to FieldToMatch to normalize before matching  
+D) Block the country with Geo match  
 
-**정답: B**  
-해설: ScopeDownStatement로 속도 계산 대상을 `/login`에 한정하면 다른 정상 트래픽이 영향받지 않는다. CUSTOM_KEYS로 IP와 username을 함께 집계하면, 한 IP가 여러 계정을 돌려 시도하거나 분산 IP가 한 계정을 노리는 패턴을 모두 포착한다. 전역 IP 집계만으로는 분산 공격을 놓치고, 전체 경로 CAPTCHA는 정상 사용자 마찰을 과도하게 키운다. Default Block은 전체 앱을 막아버린다.
-
----
-
-**문제 4.** AWS Managed Rule Group을 새로 도입하면서 정상 트래픽 차단(false positive)을 사전에 측정하려 한다. 첫 단계로 가장 적절한 것은?
-
-A) 규칙 그룹을 OverrideAction을 Count로 설정해 매칭만 기록하고 차단하지 않게 한다  
-B) Web ACL Default Action을 Count로 설정  
-C) 규칙 그룹을 일단 제거하고 나중에 추가  
-D) WCU를 최대로 올린다  
-
-**정답: A**  
-해설: 관리형 규칙 그룹 도입의 모범 패턴은 먼저 `OverrideAction: Count`로 그룹 전체를 카운트 모드로 두고 CloudWatch 메트릭·샘플 요청으로 어떤 정상 트래픽이 매칭되는지 측정한 뒤, 안전이 확인되면 Block(None override)으로 전환하는 것이다. Default Action에는 Count가 없으며(Allow/Block만), 그룹을 제거하면 측정 자체가 불가능하고, WCU 상향은 false positive와 무관하다.
+**Answer: C**  
+Explanation: WAF applies TextTransformation *before* matching to normalize the payload. URL_DECODE decodes `%53` to `S`, HTML_ENTITY_DECODE neutralizes entities, and LOWERCASE neutralizes case variations. If these are missing, it is vulnerable to encoding and case variation bypasses. Switching to Count weakens blocking, and rate-based or geo match are controls of a different dimension unrelated to encoding bypass.
 
 ---
 
-**문제 5.** CloudFront 배포에 WAF를 연결하려는데 Web ACL이 목록에 보이지 않는다. 가장 가능성 높은 원인은?
+**Question 3.** We want to mitigate credential stuffing against the login endpoint (`/login`). What is the most precise design?
 
-A) Web ACL이 REGIONAL 스코프로 생성되어 CLOUDFRONT(us-east-1 글로벌) 스코프 대상에 붙지 않는다  
-B) WCU가 부족하다  
-C) 로깅이 비활성화되어 있다  
-D) Default Action이 Allow다  
+A) Apply just one IP-aggregated rate-based rule to the entire Web ACL  
+B) A rate-based rule that specifies `/login` as the ScopeDownStatement and configures the AggregateKey as CUSTOM_KEYS (IP + username)  
+C) Change the Default Action to Block  
+D) Apply CAPTCHA to all paths  
 
-**정답: A**  
-해설: WAFv2 Web ACL은 스코프가 `CLOUDFRONT`(us-east-1에서 생성되는 글로벌 스코프)와 `REGIONAL`(ALB/API Gateway 등 리전 리소스)로 나뉜다. CloudFront에 연결하려면 반드시 CLOUDFRONT 스코프로 만들어야 하며, REGIONAL ACL은 CloudFront 대상 목록에 나타나지 않는다. WCU, 로깅, Default Action은 연결 가능 여부와 무관하다.
+**Answer: B**  
+Explanation: Limiting the rate calculation target to `/login` with a ScopeDownStatement leaves other legitimate traffic unaffected. Aggregating IP and username together with CUSTOM_KEYS captures both patterns in which one IP cycles through many accounts and in which distributed IPs target one account. Global IP aggregation alone misses distributed attacks, and CAPTCHA on all paths raises friction for legitimate users excessively. Default Block blocks the entire app.
+
+---
+
+**Question 4.** While introducing an AWS Managed Rule Group, we want to measure legitimate traffic being blocked (false positives) in advance. What is the most appropriate first step?
+
+A) Set the rule group's OverrideAction to Count so it only records matches and does not block  
+B) Set the Web ACL Default Action to Count  
+C) Remove the rule group for now and add it later  
+D) Raise the WCU to the maximum  
+
+**Answer: A**  
+Explanation: The best-practice pattern for introducing a managed rule group is to first put the entire group in count mode with `OverrideAction: Count`, measure which legitimate traffic matches using CloudWatch metrics and sampled requests, and then switch to Block (None override) once safety is confirmed. The Default Action has no Count (only Allow/Block), removing the group makes measurement itself impossible, and raising WCU has nothing to do with false positives.
+
+---
+
+**Question 5.** You are trying to associate WAF with a CloudFront distribution but the Web ACL does not appear in the list. What is the most likely cause?
+
+A) The Web ACL was created with REGIONAL scope and so cannot be attached to a CLOUDFRONT (us-east-1 global) scope target  
+B) The WCU is insufficient  
+C) Logging is disabled  
+D) The Default Action is Allow  
+
+**Answer: A**  
+Explanation: WAFv2 Web ACL scope is divided into `CLOUDFRONT` (a global scope created in us-east-1) and `REGIONAL` (Regional resources such as ALB/API Gateway). To associate with CloudFront, you must create it with the CLOUDFRONT scope, and a REGIONAL ACL does not appear in the CloudFront target list. WCU, logging, and Default Action have nothing to do with whether it can be associated.
 
 ---

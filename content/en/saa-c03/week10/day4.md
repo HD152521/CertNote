@@ -104,94 +104,94 @@ In the next article, we synthesize the four axes we saw over the week — comput
 
 ## 📝 Practice Questions
 
-**문제 1.** A finance team wants to freely analyze granular billing data — down to the hour and the individual resource — in SQL to build complex custom reports. What is the most suitable approach?
+**Question 1.** A finance team wants to freely analyze granular billing data — down to the hour and the individual resource — in SQL to build complex custom reports. What is the most suitable approach?
 
 A) Capture graphs from Cost Explorer and analyze them
 B) Export CUR to S3 and query it with Athena
 C) Download a Trusted Advisor report
 D) Extract data from Budgets
 
-**정답: B**
+**Answer: B**
 
-해설: CUR (Cost and Usage Report) exports the most granular billing data — at the hour and resource level — to S3 and enables arbitrarily complex SQL analysis with Athena, Redshift, or QuickSight. Cost Explorer (A) is strong at fast visualization and forecasting but can't do free-form, resource-level SQL. Trusted Advisor (C) is a check/recommendation tool, and Budgets (D) is a budget/alert tool, not for fine-grained analysis. "Granular analysis with Athena" reflexively means CUR.
+Explanation: CUR (Cost and Usage Report) exports the most granular billing data — at the hour and resource level — to S3 and enables arbitrarily complex SQL analysis with Athena, Redshift, or QuickSight. Cost Explorer (A) is strong at fast visualization and forecasting but can't do free-form, resource-level SQL. Trusted Advisor (C) is a check/recommendation tool, and Budgets (D) is a budget/alert tool, not for fine-grained analysis. "Granular analysis with Athena" reflexively means CUR.
 
 ---
 
-**문제 2.** A development account risks a runaway of expensive resources during an experiment. To automatically block creation of additional resources without human intervention once cost reaches 100% of budget, what should you use?
+**Question 2.** A development account risks a runaway of expensive resources during an experiment. To automatically block creation of additional resources without human intervention once cost reaches 100% of budget, what should you use?
 
 A) Set up a Cost Explorer alert
 B) AWS Budgets + Budgets Actions to auto-attach an IAM policy
 C) CloudWatch Alarm + SNS
 D) Trusted Advisor alerts
 
-**정답: B**
+**Answer: B**
 
-해설: Budgets Actions automatically takes an action when a budget threshold is reached — attaching a restrictive IAM policy to block expensive resource creation, or stopping instances. It's an automatic circuit breaker that doesn't wait for human intervention. Cost Explorer (A) only visualizes, CloudWatch Alarm + SNS (C) only sends an alert without automatic blocking, and Trusted Advisor (D) is a recommendation tool with no real-time forced-blocking capability.
+Explanation: Budgets Actions automatically takes an action when a budget threshold is reached — attaching a restrictive IAM policy to block expensive resource creation, or stopping instances. It's an automatic circuit breaker that doesn't wait for human intervention. Cost Explorer (A) only visualizes, CloudWatch Alarm + SNS (C) only sends an alert without automatic blocking, and Trusted Advisor (D) is a recommendation tool with no real-time forced-blocking capability.
 
 ---
 
-**문제 3.** An organization attached a `CostCenter` tag to every resource to report cloud cost by department, but the per-tag breakdown still doesn't appear in Cost Explorer. What is the cause?
+**Question 3.** An organization attached a `CostCenter` tag to every resource to report cloud cost by department, but the per-tag breakdown still doesn't appear in Cost Explorer. What is the cause?
 
 A) Tags are automatically reflected in cost classification
 B) The tag was not activated as a Cost Allocation Tag in the management account
 C) Tags apply only to EC2
 D) Cost Explorer doesn't support tags
 
-**정답: B**
+**Answer: B**
 
-해설: Merely attaching tags to resources is not enough; you must explicitly activate the tag as a Cost Allocation Tag in the management (billing) account for cost to be grouped by tag value. Also, activation is not retroactive, so only cost from the activation point onward is classified. A is wrong (not automatic), C is wrong (many resource types are supported), and D is wrong (Cost Explorer supports grouping by activated tags).
+Explanation: Merely attaching tags to resources is not enough; you must explicitly activate the tag as a Cost Allocation Tag in the management (billing) account for cost to be grouped by tag value. Also, activation is not retroactive, so only cost from the activation point onward is classified. A is wrong (not automatic), C is wrong (many resource types are supported), and D is wrong (Cost Explorer supports grouping by activated tags).
 
 ---
 
-**문제 4.** A company's cloud cost varies greatly by period, making it hard to catch abnormal spikes with a fixed budget threshold. To automatically detect spend that is unusual versus the normal pattern using ML, what should you use?
+**Question 4.** A company's cloud cost varies greatly by period, making it hard to catch abnormal spikes with a fixed budget threshold. To automatically detect spend that is unusual versus the normal pattern using ML, what should you use?
 
 A) AWS Budgets fixed threshold
 B) AWS Cost Anomaly Detection
 C) Trusted Advisor
 D) Service Quotas
 
-**정답: B**
+**Answer: B**
 
-해설: Cost Anomaly Detection uses ML to learn your normal spend pattern and detect "statistically abnormal increases" on a pattern basis, making it suitable for an environment where cost varies by period and a fixed threshold is useless. A Budgets fixed threshold (A) produces many false alarms or misses with highly variable cost. Trusted Advisor (C) is not an ML cost-anomaly tool, and Service Quotas (D) is limit management, unrelated to cost-spike detection. It's the same relationship as CloudWatch's fixed Alarm vs. Anomaly Detection.
+Explanation: Cost Anomaly Detection uses ML to learn your normal spend pattern and detect "statistically abnormal increases" on a pattern basis, making it suitable for an environment where cost varies by period and a fixed threshold is useless. A Budgets fixed threshold (A) produces many false alarms or misses with highly variable cost. Trusted Advisor (C) is not an ML cost-anomaly tool, and Service Quotas (D) is limit management, unrelated to cost-spike detection. It's the same relationship as CloudWatch's fixed Alarm vs. Anomaly Detection.
 
 ---
 
-**문제 5.** An enterprise runs multiple AWS accounts under Organizations. To automatically apply a Compute Savings Plan bought in account A to account B's EC2 usage and receive aggregated volume discounts, what should it use?
+**Question 5.** An enterprise runs multiple AWS accounts under Organizations. To automatically apply a Compute Savings Plan bought in account A to account B's EC2 usage and receive aggregated volume discounts, what should it use?
 
 A) Keep separate billing per account
 B) Use Consolidated Billing
 C) Buy a separate SP per account
 D) Connect accounts with PrivateLink
 
-**정답: B**
+**Answer: B**
 
-해설: Organizations' Consolidated Billing aggregates all member-account usage in the management account, so an SP/RI bought in one account is automatically applied to another account's usage (reducing commitment waste) and volume discounts reach aggregated tiers faster. A loses this sharing/aggregation benefit, C wastes commitments when each account can't fully consume its own, and D is a networking-connection tool unrelated to billing.
+Explanation: Organizations' Consolidated Billing aggregates all member-account usage in the management account, so an SP/RI bought in one account is automatically applied to another account's usage (reducing commitment waste) and volume discounts reach aggregated tiers faster. A loses this sharing/aggregation benefit, C wastes commitments when each account can't fully consume its own, and D is a networking-connection tool unrelated to billing.
 
 ---
 
-**문제 6.** A team wants to analyze with ML whether EC2 instances are over-provisioned and get optimal-size recommendations, while also identifying obvious waste like unattached EBS volumes. What is the most appropriate tool combination?
+**Question 6.** A team wants to analyze with ML whether EC2 instances are over-provisioned and get optimal-size recommendations, while also identifying obvious waste like unattached EBS volumes. What is the most appropriate tool combination?
 
 A) Compute Optimizer (ML right-sizing) + Trusted Advisor (idle/unattached resources)
 B) Cost Explorer alone
 C) Macie + Inspector
 D) Budgets + SNS
 
-**정답: A**
+**Answer: A**
 
-해설: Compute Optimizer recommends the optimal type/size per instance with ML, and Trusted Advisor identifies obvious waste like unattached EBS, idle EIPs, and underutilized EC2 with rules — the two are complementary as "precise tuning + rough cleanup." Cost Explorer (B) is a visualization tool that can't do right-sizing, Macie/Inspector (C) are security tools, and Budgets (D) is budget management, unrelated to right-sizing and waste identification.
+Explanation: Compute Optimizer recommends the optimal type/size per instance with ML, and Trusted Advisor identifies obvious waste like unattached EBS, idle EIPs, and underutilized EC2 with rules — the two are complementary as "precise tuning + rough cleanup." Cost Explorer (B) is a visualization tool that can't do right-sizing, Macie/Inspector (C) are security tools, and Budgets (D) is budget management, unrelated to right-sizing and waste identification.
 
 ---
 
-**문제 7.** An MSP (managed service provider) wants to issue custom invoices to multiple customer accounts with a margin added. To apply custom billing rules separate from the actual AWS bill, what should it use?
+**Question 7.** An MSP (managed service provider) wants to issue custom invoices to multiple customer accounts with a margin added. To apply custom billing rules separate from the actual AWS bill, what should it use?
 
 A) Cost Explorer
 B) AWS Billing Conductor
 C) Cost Allocation Tags
 D) CUR
 
-**정답: B**
+**Answer: B**
 
-해설: Billing Conductor layers custom billing on top of consolidated billing, producing a pro forma invoice where a reseller adds a margin for customers or allocates cost to internal departments by custom rules. Cost Explorer (A) is visualization, Cost Allocation Tags (C) is cost grouping, and CUR (D) is granular data export — none of them is a "custom invoice issuance" feature. "Multi-account custom/reseller billing" is the signal.
+Explanation: Billing Conductor layers custom billing on top of consolidated billing, producing a pro forma invoice where a reseller adds a margin for customers or allocates cost to internal departments by custom rules. Cost Explorer (A) is visualization, Cost Allocation Tags (C) is cost grouping, and CUR (D) is granular data export — none of them is a "custom invoice issuance" feature. "Multi-account custom/reseller billing" is the signal.
 
 ---
 

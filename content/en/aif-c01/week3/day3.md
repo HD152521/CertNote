@@ -96,62 +96,62 @@ In the next session, we'll directly address the core limitations: **hallucinatio
 
 ## 📝 Practice Questions
 
-**문제 1.** Which of the following is the most accurate explanation of Few-shot prompting?
+**Question 1.** Which of the following is the most accurate explanation of Few-shot prompting?
 
 A) A learning method that permanently changes model weights  
 B) A technique where a few example answers are shown in the prompt to make the model follow the pattern  
 C) A method where no examples are given, only instructions  
 D) Retraining the model from scratch  
 
-**정답: B**  
-해설: Few-shot is a technique where you present 2-5 examples in the prompt so the model follows that pattern—it's In-Context Learning that doesn't change weights. A and D describe fine-tuning/retraining, which is incorrect. C describes Zero-shot without examples, which is incorrect.
+**Answer: B**  
+Explanation: Few-shot is a technique where you present 2-5 examples in the prompt so the model follows that pattern—it's In-Context Learning that doesn't change weights. A and D describe fine-tuning/retraining, which is incorrect. C describes Zero-shot without examples, which is incorrect.
 
 ---
 
-**문제 2.** Which of the following is NOT a recommendation for writing a good prompt?
+**Question 2.** Which of the following is NOT a recommendation for writing a good prompt?
 
 A) Specify the desired output format (e.g., JSON, one word)  
 B) Assign a persona (role) to establish tone  
 C) Write as ambiguously and generally as possible  
 D) Give specific and clear instructions  
 
-**정답: C**  
-해설: The core of a good prompt is clarity and specificity. Specifying output format, assigning roles, and giving specific instructions are all recommended. C's "write ambiguously and generally" is the opposite—it reduces result consistency and quality, so it's not a recommendation.
+**Answer: C**  
+Explanation: The core of a good prompt is clarity and specificity. Specifying output format, assigning roles, and giving specific instructions are all recommended. C's "write ambiguously and generally" is the opposite—it reduces result consistency and quality, so it's not a recommendation.
 
 ---
 
-**문제 3.** You need to reflect the contents of the latest internal documents the model wasn't trained on in your answers. What is the most appropriate approach?
+**Question 3.** You need to reflect the contents of the latest internal documents the model wasn't trained on in your answers. What is the most appropriate approach?
 
 A) Solve it by strongly instructing "answer accurately" in the prompt  
 B) Use RAG (Retrieval-Augmented Generation) to find relevant documents and provide them with the prompt  
 C) Lowering temperature to 0 will make unknown information accurate  
 D) Increasing Few-shot examples will make the model know internal documents  
 
-**정답: B**  
-해설: Information the model wasn't trained on can't be obtained through prompt instructions or temperature adjustment alone—it actually causes hallucination. RAG, which searches for relevant documents and includes them in the prompt, is appropriate. A, C, and D all fail to supply "missing knowledge," so they're incorrect.
+**Answer: B**  
+Explanation: Information the model wasn't trained on can't be obtained through prompt instructions or temperature adjustment alone—it actually causes hallucination. RAG, which searches for relevant documents and includes them in the prompt, is appropriate. A, C, and D all fail to supply "missing knowledge," so they're incorrect.
 
 ---
 
-**문제 4.** What is the general standard order to try methods of adjusting model behavior from lowest to highest cost/difficulty?
+**Question 4.** What is the general standard order to try methods of adjusting model behavior from lowest to highest cost/difficulty?
 
 A) Fine-tuning → RAG → Prompt engineering  
 B) Prompt engineering → RAG → Fine-tuning  
 C) RAG → Fine-tuning → Prompt engineering  
 D) Fine-tuning → Prompt engineering → RAG  
 
-**정답: B**  
-해설: The standard is to try cheapest and fastest prompt engineering first, move to RAG if external knowledge is needed, and finally consider fine-tuning if deep domain internalization is required. A and D try expensive fine-tuning first, which isn't recommended. C has the order mixed up.
+**Answer: B**  
+Explanation: The standard is to try cheapest and fastest prompt engineering first, move to RAG if external knowledge is needed, and finally consider fine-tuning if deep domain internalization is required. A and D try expensive fine-tuning first, which isn't recommended. C has the order mixed up.
 
 ---
 
-**문제 5.** Which of the following is NOT a limitation of prompt engineering?
+**Question 5.** Which of the following is NOT a limitation of prompt engineering?
 
 A) Information the model wasn't trained on is hard to answer accurately, and hallucinations can occur  
 B) The same prompt can produce different outputs each time (non-determinism)  
 C) There is prompt injection vulnerability from malicious user input  
 D) Output format and tone cannot be adjusted  
 
-**정답: D**  
-해설: Adjusting output format and tone is what prompt engineering does best—not a limitation. Meanwhile, hallucinations from unknown information (A), non-determinism (B), and prompt injection vulnerability (C) are all real limitations. Therefore, the one that is NOT a limitation is D.
+**Answer: D**  
+Explanation: Adjusting output format and tone is what prompt engineering does best—not a limitation. Meanwhile, hallucinations from unknown information (A), non-determinism (B), and prompt injection vulnerability (C) are all real limitations. Therefore, the one that is NOT a limitation is D.
 
 ---

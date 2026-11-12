@@ -284,99 +284,99 @@ Next we see CDK expand to entire AWS ecosystem in Week 9 summary, then Week 10 d
 
 (All practice problems in Korean preserved as required)
 
-**문제 1.** CDK가 Pulumi와 다른 핵심 차이는?
+**Question 1.** What is the key difference between CDK and Pulumi?
 
-A) Pulumi는 AWS 전용
-B) CDK는 코드를 CloudFormation 템플릿으로 합성(synth)해 CFN 엔진에 위임 → CFN의 거버넌스(StackSets, Drift, ChangeSet, Service Catalog) 자산 자동 활용. Pulumi는 자체 엔진이 직접 AWS API 호출
-C) CDK가 더 빠름
-D) Pulumi는 TypeScript 미지원
+A) Pulumi is AWS only
+B) CDK synthesizes code into a CloudFormation template and delegates to the CFN engine → it automatically reuses CFN governance assets (StackSets, drift, change sets, Service Catalog). Pulumi has its own engine that calls the AWS APIs directly
+C) CDK is faster
+D) Pulumi does not support TypeScript
 
-**정답: B**
+**Answer: B**
 
-해설: 합성 모델 vs 직접 엔진 모델의 차이가 운영 전체를 결정. AWS-only 환경의 큰 조직은 CFN 거버넌스 재사용 때문에 CDK 선호. 멀티 클라우드 환경에서는 Pulumi 또는 Terraform 선호. LLVM IR 패턴(고수준 언어 → IR → 다양한 타겟)과 같은 두 단계 추상화 — 이 덕분에 cdktf, cdk8s 같은 다른 합성 타겟이 가능.
-
----
-
-**문제 2.** CDK Construct Level의 실무 적용 패턴으로 가장 권장되는 것은?
-
-A) 무조건 L3 사용
-B) L2를 기본으로 + 보안 영향 큰 부분은 L1로 정확한 제어 + 반복 표준 패턴은 자체 L3 Construct로 추출
-C) L1만 사용
-D) Level 무관
-
-**정답: B**
-
-해설: 외부 L3 패턴(`ApplicationLoadBalancedFargateService` 등)은 빠른 PoC에는 좋지만 prod에서 내부 세부사항(보안 그룹 ingress 범위, ALB access log, WAF) 제어 어려움. 자체 L3로 표준 추출하면 50개 마이크로서비스의 보안 정책 변경이 한 곳 수정으로 전체 반영. L1은 IAM Policy/KMS Key Policy 같은 정밀 제어가 필요한 곳에 한정 사용.
+Explanation: The difference between the synthesis model and the direct engine model determines the whole of operations. Large organizations in AWS-only environments prefer CDK because it reuses CFN governance. In multi-cloud environments, Pulumi or Terraform is preferred. It is a two-stage abstraction like the LLVM IR pattern (high-level language → IR → various targets) — which makes other synthesis targets such as cdktf and cdk8s possible.
 
 ---
 
-**문제 3.** `cdk bootstrap`이 만드는 IAM Role 구조의 보안적 의미는?
+**Question 2.** What is the most recommended practical pattern for CDK construct levels?
 
-A) 단일 역할이 모든 일 수행
-B) deploy/cfn-exec/file-publishing/image-publishing/lookup의 5종 역할로 권한 분리 — cfn-exec만 강한 권한(기본 AdministratorAccess)을 갖고 CloudFormation 서비스만 가정 가능. prod에선 `--cloudformation-execution-policies`로 더 좁히는 게 권장
-C) 사용자 IAM과 동일
-D) Lambda 실행용
+A) Always use L3
+B) Use L2 as the default + use L1 for precise control of security-critical parts + extract repeated standard patterns into your own L3 constructs
+C) Use only L1
+D) Level does not matter
 
-**정답: B**
+**Answer: B**
 
-해설: 권한 분리 원칙(separation of privilege). 사람/파이프라인이 가정하는 deploy role은 좁고, 강한 권한을 가진 cfn-exec는 CloudFormation 서비스 principal만 신뢰. 사람이 cfn-exec를 직접 가정할 수 없어 모든 변경이 CFN을 통과 — 자동 감사 추적. prod에 기본 AdministratorAccess는 변경 통제 무력화 우려가 있어 표준 PowerUser + 명시적 deny로 좁히는 게 운영 표준.
+Explanation: External L3 patterns (such as `ApplicationLoadBalancedFargateService`) are good for a quick PoC, but in prod it is hard to control internal details (security group ingress range, ALB access logs, WAF). If you extract the standard into your own L3, a security policy change for 50 microservices is reflected everywhere by editing one place. Limit L1 to places that need precise control, such as IAM policies and KMS key policies.
+
+---
+
+**Question 3.** What is the security significance of the IAM role structure that `cdk bootstrap` creates?
+
+A) A single role does everything
+B) Permissions are separated into five roles — deploy/cfn-exec/file-publishing/image-publishing/lookup — only cfn-exec has strong permissions (AdministratorAccess by default) and can be assumed only by the CloudFormation service. In prod, narrowing it further with `--cloudformation-execution-policies` is recommended
+C) Same as user IAM
+D) For Lambda execution
+
+**Answer: B**
+
+Explanation: The principle of separation of privilege. The deploy role assumed by humans/pipelines is narrow, while cfn-exec, which has strong permissions, trusts only the CloudFormation service principal. Humans cannot assume cfn-exec directly, so every change goes through CFN — an automatic audit trail. Default AdministratorAccess in prod risks neutralizing change control, so the operational standard is to narrow it to standard PowerUser + explicit deny.
 
 ---
 
 (Remaining practice problems in Korean - continuing format...)
 
-**문제 4.** CDK Pipelines의 self-mutation의 의미는?
+**Question 4.** What does self-mutation mean in CDK Pipelines?
 
-A) Lambda 자동 갱신
-B) Pipeline이 첫 Stage로 자기 자신 update를 수행 — 파이프라인 정의(Stage 추가, 환경 변경, 빌드 명령 수정)가 다음 실행에 자동 반영, 별도 도구로 파이프라인을 수정할 필요 없음
-C) IAM 자동 회전
-D) ECR 자동 푸시
+A) Automatic Lambda renewal
+B) The pipeline updates itself as its first stage — changes to the pipeline definition (adding stages, changing environments, modifying build commands) are reflected automatically in the next run, with no need for a separate tool to modify the pipeline
+C) Automatic IAM rotation
+D) Automatic ECR push
 
-**정답: B**
+**Answer: B**
 
-해설: GitOps "파이프라인도 코드" 원칙의 AWS 네이티브 구현. 일반 CodePipeline은 정의와 실행이 분리되어 파이프라인 수정에 CFN/Terraform이 별도로 필요. self-mutation은 Lisp 메타 순환 평가기, Tekton Trigger Templates, ArgoCD App-of-Apps와 같은 self-modifying 패턴. 매주 환경이 늘어나는 SaaS에서 특히 강력.
-
----
-
-**문제 5.** CDK Pipelines로 멀티 계정 배포 시 `crossAccountKeys: true`가 필수인 이유는?
-
-A) 비용 절감
-B) CodePipeline 아티팩트 S3 객체를 다른 계정 cfn-exec-role이 복호화하려면 운영자 정의 KMS CMK가 필요 — AWS 관리형 KMS는 다른 계정에 공유 불가. CDK가 자동으로 CMK 생성 + Key Policy에 모든 대상 계정 권한 추가
-C) Region 확장
-D) Lambda 호환
-
-**정답: B**
-
-해설: AWS 관리형 KMS 키는 단일 계정 전용. 멀티 계정 아티팩트 복호화에는 CMK 필수. `crossAccountKeys: false`(기본)에서 Prod 계정 추가 시 "어제까지 잘 되던 Pipeline이 KMS 에러"라는 시나리오가 시험 단골. CMK는 $1/월/key 추가 비용이고 한 번 켜고 끄면 기존 아티팩트 복호화 불가하므로 처음부터 켜고 시작 권장.
+Explanation: An AWS-native implementation of the GitOps principle that "the pipeline is code too." In a regular CodePipeline, the definition and execution are separate, so modifying the pipeline requires CFN/Terraform separately. Self-mutation is a self-modifying pattern like the Lisp metacircular evaluator, Tekton Trigger Templates, and ArgoCD app-of-apps. It is especially powerful for SaaS where environments grow every week.
 
 ---
 
-**문제 6.** CDK Aspects의 가장 정확한 사용 사례는?
+**Question 5.** Why is `crossAccountKeys: true` required for multi-account deployments with CDK Pipelines?
 
-A) 단일 리소스 속성 변경
-B) 트리 전체 횡단 처리 — 모든 리소스에 태그 강제, 모든 S3에 암호화 검증, 모든 RDS에 multi-AZ 강제 등 cross-cutting concerns
-C) Lambda 호출
-D) Pipeline 트리거
+A) Cost savings
+B) For the cfn-exec role of another account to decrypt the CodePipeline artifact S3 objects, an operator-defined KMS CMK is needed — AWS managed KMS keys cannot be shared with other accounts. CDK automatically creates the CMK and adds permissions for all target accounts to the key policy
+C) Region expansion
+D) Lambda compatibility
 
-**정답: B**
+**Answer: B**
 
-해설: Aspect-Oriented Programming의 IaC 버전. 합성(synth) 시점에 트리를 순회하며 모든 노드 평가. `Annotations.addError`로 빌드 실패시킬 수 있어 CI 파이프라인의 이른 시점 피드백. Hooks(배포 시점 차단)보다 더 빠른 피드백, Config Rules(배포 후 평가)와 함께 3단 검증 계층. cdk-nag가 Aspects 기반의 룰셋 묶음(NIST/HIPAA/AWS Solutions).
+Explanation: AWS managed KMS keys are for a single account only. A CMK is required for multi-account artifact decryption. The scenario "a pipeline that worked fine until yesterday gets a KMS error" after adding a Prod account with `crossAccountKeys: false` (the default) is an exam favorite. A CMK costs an additional $1/month/key, and once you turn it on and then off, existing artifacts cannot be decrypted, so it is recommended to enable it from the start.
 
 ---
 
-**문제 7.** CDK Aspects 또는 cdk-nag 룰셋을 prod에 도입할 때 권장 전략은?
+**Question 6.** What is the most accurate use case for CDK Aspects?
 
-A) 모든 룰을 한 번에 enforce
-B) Warning으로 베이스라인 측정 → 가장 자주 위반되는 5개 룰만 enforce → 단계적으로 나머지 룰 enforce 전환 (graceful rollout)
-C) 룰 무시
-D) prod에서만 활성화
+A) Changing the properties of a single resource
+B) Cross-cutting processing across the entire tree — cross-cutting concerns such as enforcing tags on all resources, validating encryption on all S3 buckets, and enforcing multi-AZ on all RDS instances
+C) Invoking Lambda
+D) Triggering a pipeline
 
-**정답: B**
+**Answer: B**
 
-해설: 거버넌스 도구의 단계적 도입 원칙. 한 번에 모든 룰 켜면 1000+ 위반으로 빌드 마비(2022 SaaS 사례). 처음엔 warning으로 측정 → 우선순위 룰 점진 enforce → 6개월에 걸쳐 단계적 확장이 표준. CFN Hooks의 WARN→FAIL 전환, K8s OPA Gatekeeper의 dryrun→warn→deny rollout과 같은 패턴. 거버넌스는 기술이 아니라 운영의 문제.
+Explanation: The IaC version of aspect-oriented programming. At synth time it traverses the tree and evaluates every node. `Annotations.addError` can fail the build, giving early feedback in the CI pipeline. Feedback is faster than Hooks (blocking at deployment time), and together with Config rules (evaluation after deployment) it forms a three-tier verification layer. cdk-nag is a bundle of rule sets based on Aspects (NIST/HIPAA/AWS Solutions).
+
+---
+
+**Question 7.** What is the recommended strategy when introducing CDK Aspects or cdk-nag rule sets to prod?
+
+A) Enforce all rules at once
+B) Measure the baseline with warnings → enforce only the 5 most frequently violated rules → gradually switch the remaining rules to enforce (graceful rollout)
+C) Ignore the rules
+D) Enable only in prod
+
+**Answer: B**
+
+Explanation: The principle of phased adoption of governance tools. Turning on all rules at once paralyzes the build with 1000+ violations (a 2022 SaaS case). The standard is to measure with warnings first → gradually enforce priority rules → expand in stages over 6 months. It is the same pattern as the WARN→FAIL transition of CFN Hooks and the dryrun→warn→deny rollout of K8s OPA Gatekeeper. Governance is an operations problem, not a technology problem.
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 다섯 가지다. 첫째, CDK는 코드 → CFN 템플릿 합성 모델로 CFN 거버넌스 자산 자동 활용(LLVM IR 패턴). 둘째, Construct L1/L2/L3는 추상화 세 계단이고 실무는 L2 기본 + 자체 L3 추출. 셋째, `cdk bootstrap`의 5종 IAM Role은 권한 분리 원칙, cfn-exec는 prod에서 좁힐 필요. 넷째, CDK Pipelines self-mutation은 GitOps "파이프라인도 코드" 원칙의 AWS 구현이고 멀티 계정엔 `crossAccountKeys: true` 필수. 다섯째, Aspects + cdk-nag(합성 시점) + Hooks(배포 시점) + Config Rules(배포 후)의 3단 검증 계층, 단계적 rollout이 거버넌스 도입의 표준.
+The five key takeaways from today are as follows. First, CDK uses a code → CFN template synthesis model and automatically reuses CFN governance assets (the LLVM IR pattern). Second, construct L1/L2/L3 are three steps of abstraction, and in practice the approach is L2 by default plus extracting your own L3. Third, the five IAM roles of `cdk bootstrap` follow the principle of separation of privilege, and cfn-exec needs to be narrowed in prod. Fourth, CDK Pipelines self-mutation is the AWS implementation of the GitOps principle "the pipeline is code too," and multi-account setups require `crossAccountKeys: true`. Fifth, the three-tier verification layer of Aspects + cdk-nag (synth time) + Hooks (deployment time) + Config rules (after deployment), with phased rollout, is the standard for introducing governance.

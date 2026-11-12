@@ -407,72 +407,72 @@ SOA operator's situation-based tool choice:
 
 ## 📝 Practice Questions
 
-**문제 1.** 회사가 CloudTrail Lake를 도입하려 한다. 기존 Trail(S3 저장)과 Lake를 모두 운영할 경우 발생하는 문제와 선택 기준은?
+**Question 1.** A company wants to adopt CloudTrail Lake. What problem arises if it operates both the existing Trail (stored in S3) and Lake, and what are the selection criteria?
 
-A) Lake가 Trail보다 저장 비용이 저렴하므로 Trail을 반드시 종료해야 한다
-B) 동일 이벤트에 Trail 수집 비용과 Lake Ingest 비용이 별도로 발생해 이중 청구된다. 용도에 따라 하나를 선택하거나 둘 다 필요한 경우 비용을 인지한다
-C) Lake가 켜지면 Trail이 자동 비활성화된다
-D) Lake와 Trail은 서로 다른 이벤트를 수집해 중복이 없다
+A) Lake has lower storage cost than Trail, so the Trail must be shut down
+B) Trail collection cost and Lake Ingest cost are charged separately for the same events, causing double billing. Choose one based on the use case, or if both are needed, be aware of the cost
+C) When Lake is turned on, the Trail is disabled automatically
+D) Lake and Trail collect different events, so there is no duplication
 
-**정답: B**
-해설: CloudTrail Lake와 Trail(S3)은 완전히 독립적인 서비스다. 둘 다 활성화하면 같은 이벤트를 두 군데에 수집하므로 Trail 비용 + Lake Ingest 비용이 이중으로 발생한다. 선택 기준: 즉각 SQL 분석이 주목적 → Lake, 장기 아카이브 + SIEM 연동 → Trail+S3, 두 가지 모두 필요하면 비용을 인지하고 둘 다 운영. Lake가 Trail보다 비용이 항상 저렴하지 않으며(Ingest $2.50/GB는 경우에 따라 더 비쌀 수 있음), 자동 비활성화는 없다.
-
----
-
-**문제 2.** CloudTrail Insights가 "RunInstances API 호출량 100배 급증"을 감지하지 못했다. 가장 가능성 높은 원인은?
-
-A) RunInstances는 Insights 감지 대상이 아니다
-B) Insights 활성화 후 7일이 지나지 않아 Baseline이 구축되지 않았다
-C) ApiErrorRateInsight만 활성화하고 ApiCallRateInsight는 활성화하지 않았다
-D) Insights는 Data Events만 분석한다
-
-**정답: B 또는 C (둘 다 가능, B가 더 일반적)**
-해설: B - Insights는 활성화 후 7일이 지나야 정상 baseline이 구축된다. 신규 Trail에 바로 켜면 처음 7일간 이상 감지가 작동하지 않는다. C - RunInstances의 양 증가는 ApiCallRateInsight가 탐지한다. ApiErrorRateInsight만 켰다면 API 호출량 급증은 감지하지 못한다. D는 틀렸다 — Insights는 Management Events를 분석한다(RunInstances는 Management Event).
+**Answer: B**
+Explanation: CloudTrail Lake and a Trail (S3) are completely independent services. If both are enabled, the same events are collected in two places, so Trail cost + Lake Ingest cost are charged twice. Selection criteria: if the main purpose is immediate SQL analysis → Lake; if long-term archive + SIEM integration → Trail+S3; if both are needed, be aware of the cost and run both. Lake is not always cheaper than a Trail (Ingest at $2.50/GB can be more expensive in some cases), and there is no automatic disabling.
 
 ---
 
-**문제 3.** 보안팀이 "특정 IAM 사용자(alice)가 지난 달 어떤 S3 버킷에서 무엇을 했는지"를 조사하려 한다. CloudTrail Lake에서 가장 적합한 쿼리 접근은?
+**Question 2.** CloudTrail Insights failed to detect a "100x spike in RunInstances API call volume." What is the most likely cause?
 
-A) `WHERE userIdentity.userName = 'alice'`로만 조회한다
-B) `WHERE (userIdentity.arn LIKE '%alice%' OR userIdentity.sessionContext.sessionIssuer.arn LIKE '%alice%') AND eventSource = 's3.amazonaws.com'`로 조회한다
-C) CloudTrail은 S3 이벤트를 기록하지 않는다
-D) alice의 IAM Access Key ID로만 검색한다
+A) RunInstances is not a target of Insights detection
+B) 7 days had not passed since enabling Insights, so the baseline was not established
+C) Only ApiErrorRateInsight was enabled, and ApiCallRateInsight was not
+D) Insights analyzes only Data Events
 
-**정답: B**
-해설: IAM 사용자가 직접 호출할 때는 `userIdentity.arn`에 `:user/alice`가 포함된다. 하지만 alice가 역할을 Assume한 후 작업하면 `userIdentity.type = 'AssumedRole'`이 되어 `userIdentity.sessionContext.sessionIssuer.arn`에서 alice를 찾아야 한다. 완전한 조사를 위해 두 조건을 OR로 조합한다. `userName`은 IAM User 유형일 때만 존재하고 AssumedRole에는 없어 불완전하다.
-
----
-
-**문제 4.** Organization 전체 50개 계정의 CloudTrail 이벤트를 단일 SQL로 쿼리하려 한다. 어떤 구성이 필요한가?
-
-A) 각 계정에 Athena 테이블을 만들고 UNION ALL로 조합한다
-B) Organization-enabled Event Data Store를 관리 계정 또는 위임된 관리자 계정에서 생성한다
-C) 모든 계정의 Trail을 동일 S3 버킷으로 수집하면 Lake가 자동으로 통합된다
-D) CloudWatch Logs Insights로 크로스 계정 쿼리가 가능하다
-
-**정답: B**
-해설: Organization-enabled EDS를 생성하면 Organization 전체 계정의 이벤트가 하나의 EDS에 수집된다. 이후 `recipientAccountId` 필드로 계정을 구분하며 단일 SQL로 전체를 쿼리할 수 있다. A는 UNION ALL 방식으로 가능하지만 테이블 관리 부담이 크다. C는 같은 S3로 수집해도 Lake가 자동 통합되지 않는다. D는 CW Logs Insights는 Log Group 기반이고 크로스 계정 네이티브 지원이 제한적이다.
+**Answer: B or C (both are possible, B is more common)**
+Explanation: B - Insights builds a normal baseline only after 7 days have passed since it was enabled. If you turn it on right away for a new Trail, anomaly detection does not work for the first 7 days. C - An increase in RunInstances volume is detected by ApiCallRateInsight. If only ApiErrorRateInsight is on, a spike in API call volume is not detected. D is wrong — Insights analyzes Management Events (RunInstances is a Management Event).
 
 ---
 
-**문제 5.** CloudTrail 이벤트를 EventBridge로 받기 위해 별도 Trail 설정이 필요한가?
+**Question 3.** The security team wants to investigate "what a specific IAM user (alice) did in which S3 buckets last month." What is the most appropriate query approach in CloudTrail Lake?
 
-A) Trail에서 "EventBridge 전달" 옵션을 명시적으로 활성화해야 한다
-B) 아니다. CloudTrail 이벤트는 자동으로 EventBridge default bus에 전달된다. EventBridge Rule만 만들면 된다
-C) CloudWatch Logs 통합이 먼저 필요하다
-D) CloudTrail Lake가 활성화돼야 EventBridge 전달이 가능하다
+A) Query only with `WHERE userIdentity.userName = 'alice'`
+B) Query with `WHERE (userIdentity.arn LIKE '%alice%' OR userIdentity.sessionContext.sessionIssuer.arn LIKE '%alice%') AND eventSource = 's3.amazonaws.com'`
+C) CloudTrail does not record S3 events
+D) Search only by alice's IAM Access Key ID
 
-**정답: B**
-해설: CloudTrail 이벤트는 Trail 유무와 관계없이 자동으로 EventBridge default event bus로 전달된다. EventBridge에서 Rule을 만들어 `source: aws.cloudtrail`과 특정 `eventName`으로 패턴을 매칭하면 된다. 이것이 CloudTrail + EventBridge 통합의 핵심 편의성이다. Trail은 이벤트를 S3/CW Logs에 "저장"하는 것이고, EventBridge 전달은 별개의 "실시간 이벤트 라우팅" 채널이다.
+**Answer: B**
+Explanation: When an IAM user makes a call directly, `userIdentity.arn` contains `:user/alice`. However, if alice assumes a role and then works, `userIdentity.type = 'AssumedRole'`, so you must find alice in `userIdentity.sessionContext.sessionIssuer.arn`. For a complete investigation, combine the two conditions with OR. `userName` exists only for the IAM User type and not for AssumedRole, so it is incomplete.
 
 ---
 
-**문제 6.** 한 운영자가 CloudTrail Lake 쿼리를 실행했는데 예상보다 비용이 높다. 비용을 줄이기 위한 가장 효과적인 방법은?
+**Question 4.** You want to query CloudTrail events for all 50 accounts in the Organization with a single SQL statement. What configuration is needed?
 
-A) 더 짧은 보존 기간으로 EDS를 재생성한다
-B) `eventTime` 범위를 좁히고 `SELECT *` 대신 필요한 컬럼만 명시한다
-C) Athena로 전환한다
-D) Lake를 비활성화하고 Trail+Athena로 돌아간다
+A) Create an Athena table in each account and combine them with UNION ALL
+B) Create an Organization-enabled Event Data Store in the management account or a delegated administrator account
+C) If all accounts' Trails are collected into the same S3 bucket, Lake integrates them automatically
+D) Cross-account queries are possible with CloudWatch Logs Insights
 
-**정답: B**
-해설: Lake 쿼리 비용은 스캔된 데이터 양(TB) 기준이다. 비용 절감의 핵심은 두 가지다. 첫째, `eventTime` 범위를 좁히면 스캔 범위가 줄어든다(예: 30일 → 7일). 둘째, `SELECT *`는 모든 컬럼을 스캔하지만, 컬럼형 저장소는 필요한 컬럼만 명시하면 해당 컬럼만 스캔한다. 이 두 가지로 쿼리 비용을 80~90% 줄이는 것이 가능하다. 보존 기간은 저장 비용에 영향을 주지만 쿼리 비용에는 직접 영향이 없다.
+**Answer: B**
+Explanation: If you create an Organization-enabled EDS, events from all accounts in the Organization are collected into a single EDS. You can then distinguish accounts by the `recipientAccountId` field and query everything with a single SQL statement. A is possible with the UNION ALL approach, but the table management burden is large. For C, even if collected into the same S3 bucket, Lake does not integrate automatically. For D, CloudWatch Logs Insights is Log Group-based and has limited native cross-account support.
+
+---
+
+**Question 5.** Is a separate Trail configuration needed to receive CloudTrail events in EventBridge?
+
+A) You must explicitly enable the "EventBridge delivery" option on the Trail
+B) No. CloudTrail events are delivered automatically to the EventBridge default bus. You only need to create an EventBridge Rule
+C) CloudWatch Logs integration is needed first
+D) CloudTrail Lake must be enabled for EventBridge delivery to work
+
+**Answer: B**
+Explanation: CloudTrail events are delivered automatically to the EventBridge default event bus regardless of whether a Trail exists. You only need to create a Rule in EventBridge and match a pattern with `source: aws.cloudtrail` and a specific `eventName`. This is the key convenience of the CloudTrail + EventBridge integration. A Trail "stores" events in S3/CW Logs, while EventBridge delivery is a separate "real-time event routing" channel.
+
+---
+
+**Question 6.** An operator ran a CloudTrail Lake query, and the cost was higher than expected. What is the most effective way to reduce cost?
+
+A) Recreate the EDS with a shorter retention period
+B) Narrow the `eventTime` range and specify only the needed columns instead of `SELECT *`
+C) Switch to Athena
+D) Disable Lake and go back to Trail+Athena
+
+**Answer: B**
+Explanation: Lake query cost is based on the amount of data scanned (TB). There are two keys to reducing cost. First, narrowing the `eventTime` range reduces the scan range (e.g., 30 days → 7 days). Second, `SELECT *` scans all columns, but in columnar storage, specifying only the needed columns scans only those columns. These two measures can cut query cost by 80 to 90%. The retention period affects storage cost but has no direct effect on query cost.

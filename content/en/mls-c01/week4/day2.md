@@ -113,62 +113,62 @@ Remedies: remove one correlated feature, combine via PCA, or soften via L2 regul
 
 ## 📝 Practice Questions
 
-**문제 1.** 수천 개의 특성을 가진 데이터에서 모델을 학습하기 전에 가장 빠르게 무관한 특성을 1차로 걸러내고 싶다. 어떤 접근이 가장 적합한가?
+**Question 1.** In data with thousands of features, you want to quickly do a first-pass filter of irrelevant features before training a model. Which approach is MOST appropriate?
 
-A) 래퍼 방법(RFE)으로 부분집합을 반복 탐색  
-B) 필터 방법(상호정보량·F-검정)으로 점수화  
-C) 모든 특성 조합을 완전 탐색  
-D) t-SNE로 2차원 축소  
+A) Iteratively search subsets with a wrapper method (RFE)  
+B) Score with a filter method (mutual information, F-test)  
+C) Exhaustively search every combination of features  
+D) Reduce to 2 dimensions with t-SNE  
 
-**정답: B**  
-해설: 필터 방법은 모델을 학습하지 않고 통계 지표로 점수화하므로 대규모 특성의 1차 선별에 가장 빠르다. RFE(A)와 완전 탐색(C)은 반복 학습으로 매우 느리고, t-SNE(D)는 특성 선택이 아니라 시각화 기법이다.
-
----
-
-**문제 2.** 선형 회귀 모델에서 정확히 일부 특성의 계수를 0으로 만들어 자동 특성 선택 효과를 얻으려 한다. 적절한 규제는?
-
-A) L2(Ridge) 규제  
-B) 규제 없음  
-C) 드롭아웃  
-D) L1(Lasso) 규제  
-
-**정답: D**  
-해설: L1(Lasso) 규제는 마름모형 제약 기하 때문에 일부 계수를 정확히 0으로 만들어 희소 해를 유도한다. L2(A)는 계수를 줄이지만 0으로 만들지 않고, 규제 없음(B)은 선택 효과가 없으며, 드롭아웃(C)은 신경망 정규화 기법이다.
+**Answer: B**  
+Explanation: Filter methods score features with statistical measures without training a model, so they are the fastest for a first-pass selection among a large number of features. RFE (A) and exhaustive search (C) are very slow because of repeated training, and t-SNE (D) is a visualization technique, not feature selection.
 
 ---
 
-**문제 3.** 두 특성의 상관계수가 0.95이고 선형 회귀 계수가 불안정하다. 가장 적절한 진단·처리는?
+**Question 2.** In a linear regression model, you want to obtain an automatic feature selection effect by driving the coefficients of some features to exactly 0. Which regularization is appropriate?
 
-A) VIF로 다중공선성을 확인하고 상관 특성 중 하나를 제거한다  
-B) 두 특성을 모두 제곱해 다항 특성을 추가한다  
-C) 타깃 변수를 로그 변환한다  
-D) 학습률을 낮춘다  
+A) L2 (Ridge) regularization  
+B) No regularization  
+C) Dropout  
+D) L1 (Lasso) regularization  
 
-**정답: A**  
-해설: 강한 상관과 불안정한 계수는 다중공선성의 전형적 증상이므로 VIF로 확인하고 중복 특성을 제거(또는 PCA·Ridge로 완화)하는 것이 정석이다. 다항 특성 추가(B)는 상관을 악화시키고, 타깃 로그 변환(C)·학습률(D)은 다중공선성과 무관하다.
-
----
-
-**문제 4.** 트리 기반 모델의 불순도 기반 특성 중요도에 대한 설명으로 옳은 것은?
-
-A) 항상 가장 신뢰할 수 있는 중요도 지표다  
-B) 모델과 무관하게 계산되는 모델 독립 지표다  
-C) 고카디널리티(분할 후보가 많은) 특성을 과대평가하는 편향이 있다  
-D) 선형 모델에서만 사용할 수 있다  
-
-**정답: C**  
-해설: 불순도 기반(MDI) 중요도는 분할 후보가 많은 고카디널리티 특성을 과대평가하는 편향이 알려져 있어, 순열 중요도나 SHAP이 더 신뢰된다. 따라서 항상 신뢰(A)는 틀리고, 모델 학습에 종속되므로 모델 독립(B)이 아니며, 트리 모델 지표이므로 선형 전용(D)도 틀리다.
+**Answer: D**  
+Explanation: Because of the diamond-shaped constraint geometry, L1 (Lasso) regularization drives some coefficients to exactly 0, inducing a sparse solution. L2 (A) shrinks coefficients but does not make them 0, no regularization (B) has no selection effect, and dropout (C) is a neural network regularization technique.
 
 ---
 
-**문제 5.** 규제 산업에서 "어떤 변수가 예측에 사용되었는지"를 설명해야 한다. PCA와 비교해 특성 선택을 선호하는 이유로 가장 적절한 것은?
+**Question 3.** The correlation coefficient of two features is 0.95 and the linear regression coefficients are unstable. What is the most appropriate diagnosis and treatment?
 
-A) 특성 선택이 항상 더 높은 정확도를 보장한다  
-B) PCA는 분산을 보존하지 못한다  
-C) 특성 선택은 표준화가 필요 없다  
-D) 특성 선택은 원본 특성을 유지해 해석 가능성을 보존한다  
+A) Check multicollinearity with VIF and remove one of the correlated features  
+B) Square both features and add polynomial features  
+C) Log-transform the target variable  
+D) Lower the learning rate  
 
-**정답: D**  
-해설: PCA는 원본 특성을 선형 결합해 의미를 잃지만, 특성 선택은 원본 특성의 부분집합을 그대로 남기므로 "어떤 변수를 썼는지" 설명할 수 있다. 정확도 보장(A)은 사실이 아니고, PCA는 분산을 보존하며(B 오류), 표준화 필요 여부(C)는 선호 이유가 아니다.
+**Answer: A**  
+Explanation: Strong correlation and unstable coefficients are typical symptoms of multicollinearity, so the standard approach is to check with VIF and remove the redundant feature (or mitigate with PCA or Ridge). Adding polynomial features (B) worsens the correlation, and log-transforming the target (C) and the learning rate (D) are unrelated to multicollinearity.
+
+---
+
+**Question 4.** Which statement about impurity-based feature importance in tree-based models is correct?
+
+A) It is always the most reliable importance measure  
+B) It is a model-agnostic measure computed independently of the model  
+C) It is biased toward overestimating high-cardinality features (those with many split candidates)  
+D) It can be used only with linear models  
+
+**Answer: C**  
+Explanation: Impurity-based (MDI) importance is known to be biased toward overestimating high-cardinality features with many split candidates, so permutation importance or SHAP is more trustworthy. Therefore "always reliable" (A) is wrong, it depends on model training so it is not model-agnostic (B), and since it is a tree model measure, "linear only" (D) is also wrong.
+
+---
+
+**Question 5.** In a regulated industry, you must explain "which variables were used in the prediction." Which is the most appropriate reason for preferring feature selection over PCA?
+
+A) Feature selection always guarantees higher accuracy  
+B) PCA does not preserve variance  
+C) Feature selection does not require standardization  
+D) Feature selection retains the original features and so preserves interpretability  
+
+**Answer: D**  
+Explanation: PCA linearly combines the original features and loses their meaning, whereas feature selection keeps a subset of the original features intact, so you can explain "which variables were used." A guarantee of accuracy (A) is not true, PCA does preserve variance (B is wrong), and whether standardization is needed (C) is not a reason for the preference.
 
 ---

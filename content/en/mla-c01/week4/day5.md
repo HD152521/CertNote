@@ -67,62 +67,62 @@ Week 4 compresses SageMaker training into four axes: ① **Training Job**: spin 
 
 ## 📝 Practice Questions
 
-**문제 1.** 다음 중 SageMaker Training Job과 빌트인 알고리즘에 대한 설명으로 옳은 것은?
+**Question 1.** Which of the following is correct about SageMaker Training Jobs and built-in algorithms?
 
-A) Training Job은 학습이 끝나도 인스턴스를 계속 유지한다  
-B) Training Job은 학습 후 model.tar.gz를 S3에 저장하고 인스턴스를 자동 종료하며, 내 스크립트는 프레임워크 Estimator의 entry_point로 학습한다  
-C) 빌트인 알고리즘은 항상 커스텀 컨테이너를 직접 빌드해야 한다  
-D) XGBoost는 이미지 분할 전용 알고리즘이다  
+A) A Training Job keeps the instance running even after training ends  
+B) A Training Job saves model.tar.gz to S3 after training and automatically terminates the instance, and your own script is trained as the entry_point of a framework Estimator  
+C) Built-in algorithms always require you to build a custom container yourself  
+D) XGBoost is an algorithm dedicated to image segmentation  
 
-**정답: B**  
-해설: Training Job은 학습 완료 후 모델을 S3에 저장하고 인스턴스를 자동으로 내리며, 사용자 스크립트는 프레임워크 Estimator의 entry_point로 실행한다. A는 인스턴스를 유지한다는 점에서 틀리고, C는 빌트인이 미리 만들어진 컨테이너라는 사실과 반대이며, D는 XGBoost가 정형 데이터 분류/회귀용이라는 점과 어긋난다.
-
----
-
-**문제 2.** 학습 비용을 줄이려는 여러 시나리오에서 가장 적절하게 짝지어진 것은?
-
-A) 중단 후 재개 필요 → Spot만 켜기  
-B) 라벨 데이터가 적은 분류기 → 처음부터 학습  
-C) 중단 후 재개 필요 → Spot + 체크포인트, 라벨 적은 분류기 → 전이학습  
-D) 효율적 하이퍼파라미터 탐색 → Grid Search  
-
-**정답: C**  
-해설: Spot은 중단 가능성 때문에 체크포인트와 함께 써야 재개가 보장되고, 라벨 데이터가 적을 때는 전이학습이 적합하다. A는 체크포인트 누락으로 진행분이 날아갈 수 있고, B는 데이터 부족으로 과적합되기 쉬우며, D는 효율적 탐색의 기본이 전수 조사가 아닌 베이지안이라는 점과 어긋난다.
+**Answer: B**  
+Explanation: After training completes, a Training Job saves the model to S3 and automatically brings down the instance, and the user's script runs as the entry_point of a framework Estimator. A is wrong in saying the instance is kept, C is the opposite of the fact that built-ins are prebuilt containers, and D conflicts with XGBoost being for classification/regression on structured data.
 
 ---
 
-**문제 3.** 수 TB 데이터를 여러 epoch 반복해 읽는 분산 학습에서 I/O가 병목이고, 입력 데이터는 대용량 스트리밍으로 효율적으로 넣고 싶다. 가장 적절한 조합은?
+**Question 2.** Across several scenarios aimed at reducing training cost, which pairing is most appropriate?
+
+A) Need to resume after interruption → enable Spot only  
+B) Classifier with little labeled data → train from scratch  
+C) Need to resume after interruption → Spot + checkpoints; classifier with little labeled data → transfer learning  
+D) Efficient hyperparameter search → Grid Search  
+
+**Answer: C**  
+Explanation: Because Spot can be interrupted, it must be used with checkpoints to guarantee resumption, and transfer learning suits cases with little labeled data. A can lose progress due to missing checkpoints, B is prone to overfitting due to insufficient data, and D conflicts with the fact that the basis of efficient search is Bayesian rather than exhaustive enumeration.
+
+---
+
+**Question 3.** In distributed training that repeatedly reads several TB of data over many epochs, I/O is the bottleneck, and you want to feed the input data efficiently as large-volume streaming. What is the most appropriate combination?
 
 A) FSx for Lustre + RecordIO-protobuf  
-B) S3 File 모드 + CSV  
-C) 로컬 디스크 + JSON  
+B) S3 File mode + CSV  
+C) Local disk + JSON  
 D) DynamoDB + XML  
 
-**정답: A**  
-해설: FSx for Lustre는 대용량 데이터의 반복 읽기 I/O 병목을 해소하고, RecordIO-protobuf는 대용량 스트리밍 입력에 가장 효율적인 포맷이다. B는 매 시작 전체 다운로드와 텍스트 파싱으로 비효율적이고, C는 대규모 분산 학습 규모에 맞지 않으며, D는 학습 데이터 소스/포맷으로 부적합하다.
+**Answer: A**  
+Explanation: FSx for Lustre resolves the I/O bottleneck of repeatedly reading large data, and RecordIO-protobuf is the most efficient format for large-volume streaming input. B is inefficient because of downloading everything at each start and text parsing, C does not fit the scale of large distributed training, and D is unsuitable as a training data source/format.
 
 ---
 
-**문제 4.** AMT(하이퍼파라미터 튜닝)에 대한 설명으로 옳은 것은?
+**Question 4.** Which is correct about AMT (hyperparameter tuning)?
 
-A) Bayesian은 이전 시도 결과를 활용해 다음 시도를 선택하며, 조기 종료로 가망 없는 학습을 중단해 비용을 줄일 수 있다  
-B) Grid Search가 가장 적은 횟수로 최적값을 찾는 전략이다  
-C) 워밍 스타트는 항상 데이터가 동일할 때만 사용 가능하다  
-D) max_parallel_jobs를 높이면 Bayesian의 순차 학습 이점이 커진다  
+A) Bayesian uses previous trial results to choose the next trial, and early stopping can halt hopeless training jobs to reduce cost  
+B) Grid Search is the strategy that finds the optimum with the fewest runs  
+C) Warm start can always be used only when the data is identical  
+D) Increasing max_parallel_jobs enlarges the sequential learning benefit of Bayesian  
 
-**정답: A**  
-해설: Bayesian은 이전 결과로 다음 시도를 똑똑하게 고르고, early stopping은 진행 중 가망 없는 학습을 끊어 비용을 절감한다. B는 Grid가 전수 조사라 비효율적이고, C는 데이터가 변경돼도 TRANSFER_LEARNING 타입으로 워밍 스타트가 가능하며, D는 병렬을 높이면 순차 의존 이점이 오히려 줄어든다는 점과 반대다.
+**Answer: A**  
+Explanation: Bayesian uses previous results to choose the next trial intelligently, and early stopping cuts off hopeless in-progress training jobs to save cost. B is inefficient because Grid is exhaustive enumeration, C is wrong because warm start is possible with the TRANSFER_LEARNING type even when the data changes, and D is the opposite of the fact that raising parallelism actually reduces the sequential dependency benefit.
 
 ---
 
-**문제 5.** 검증된 사전학습 텍스트 모델을 내 도메인 데이터로 미세조정해 빠르고 저렴하게 배포하려 한다. 가장 적합한 접근은?
+**Question 5.** You want to fine-tune a validated pretrained text model on your domain data and deploy it quickly and cheaply. What is the most suitable approach?
 
-A) 빌트인 K-Means를 처음부터 학습한다  
-B) JumpStart 사전학습 모델을 fit으로 미세조정한 뒤 deploy한다  
-C) Feature Store에 모델을 적재해 배포한다  
-D) AMT로 하이퍼파라미터만 튜닝한다  
+A) Train the built-in K-Means from scratch  
+B) Fine-tune a JumpStart pretrained model with fit, then deploy  
+C) Load the model into Feature Store and deploy it  
+D) Tune only the hyperparameters with AMT  
 
-**정답: B**  
-해설: JumpStart는 사전학습 모델을 제공하며 fit으로 내 데이터에 미세조정(전이학습)한 뒤 deploy로 배포할 수 있어 빠르고 저렴하다. A는 무관한 군집화의 밑바닥 학습이고, C는 특성 저장소로 모델 배포 수단이 아니며, D는 사전학습 모델 활용 없이 튜닝만 하는 것이라 요구를 충족하지 못한다.
+**Answer: B**  
+Explanation: JumpStart provides pretrained models that you can fine-tune (transfer learning) on your data with fit and then deploy with deploy, which is fast and cheap. A is training an unrelated clustering model from the ground up, C is a feature store and not a means of model deployment, and D only tunes without using a pretrained model, so it fails to meet the requirement.
 
 ---

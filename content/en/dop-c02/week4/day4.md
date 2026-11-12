@@ -381,86 +381,86 @@ CODE_DEPLOY vs ECS controller decision:
 
 ## 📝 Practice Questions
 
-**문제 1.** ECS Service에서 Blue/Green 배포를 사용하려면 어떤 deployment controller를 설정해야 하는가?
+**Question 1.** Which deployment controller must be configured to use a Blue/Green deployment on an ECS service?
 
 A) `ECS`
 B) `CODE_DEPLOY`
 C) `EXTERNAL`
 D) `FARGATE`
 
-**정답: B**
-해설: ECS Blue/Green은 반드시 `CODE_DEPLOY` 컨트롤러다. 기본 `ECS` 컨트롤러는 Rolling Update만 지원한다. `EXTERNAL`은 App Mesh 등 외부 시스템이 트래픽을 제어할 때 사용한다. `FARGATE`는 컨트롤러가 아니라 Launch Type이다. ECS Service 생성 시 컨트롤러를 지정하면 이후 변경이 불가능하다는 것도 기억해야 한다.
+**Answer: B**
+Explanation: ECS Blue/Green must use the `CODE_DEPLOY` controller. The default `ECS` controller supports only rolling updates. `EXTERNAL` is used when an external system such as App Mesh controls traffic. `FARGATE` is a launch type, not a controller. Also remember that once the controller is specified when creating an ECS service, it cannot be changed afterward.
 
 ---
 
-**문제 2.** ECS Rolling Update에서 자동 롤백을 구현하는 방법은?
+**Question 2.** How do you implement automatic rollback in an ECS rolling update?
 
-A) CodeDeploy Application을 추가로 생성
-B) `deploymentCircuitBreaker={enable=true,rollback=true}` 설정
-C) Lambda 함수로 상태를 주기적으로 체크
-D) CloudFormation Rollback 사용
+A) Additionally create a CodeDeploy application
+B) Set `deploymentCircuitBreaker={enable=true,rollback=true}`
+C) Periodically check the status with a Lambda function
+D) Use CloudFormation rollback
 
-**정답: B**
-해설: ECS 자체의 Deployment Circuit Breaker가 Rolling Update의 자동 롤백 메커니즘이다. 새 Task가 연속적으로 Health Check를 실패하면 Circuit Breaker가 이를 감지하고 이전 Task Definition으로 자동 롤백한다. CodeDeploy(A)를 추가하면 Blue/Green으로 전환되어 컨트롤러가 달라진다. CloudFormation Rollback(D)는 인프라 프로비저닝 롤백이지 배포 롤백이 아니다.
-
----
-
-**문제 3.** ECS Blue/Green 배포에서 Test Listener의 역할은?
-
-A) 로드밸런서 비용 절감
-B) 프로덕션 트래픽 노출 전 새 Task Set에 별도 포트로 테스트 트래픽을 노출해 사전 검증
-C) Blue Task Set의 Health Check 수행
-D) CodeDeploy에 배포 완료 보고
-
-**정답: B**
-해설: Test Listener는 선택 사항이지만, 있으면 `AfterAllowTestTraffic` Hook을 통해 프로덕션 트래픽을 받기 전에 새 Task Set을 별도로 검증할 수 있다. 예를 들어 내부 팀만 접근하는 8443 포트로 새 버전을 테스트한 후, 검증이 완료되면 프로덕션 트래픽 시프트를 진행한다. Test Listener 없이도 Blue/Green 배포는 정상 동작한다.
+**Answer: B**
+Explanation: ECS own deployment circuit breaker is the automatic rollback mechanism for rolling updates. If new tasks fail health checks consecutively, the circuit breaker detects this and automatically rolls back to the previous task definition. Adding CodeDeploy (A) would switch to Blue/Green, which changes the controller. CloudFormation rollback (D) is a rollback of infrastructure provisioning, not a deployment rollback.
 
 ---
 
-**문제 4.** CodePipeline의 ECS(Blue/Green) Action에서 `<IMAGE1_NAME>` 플레이스홀더의 역할은?
+**Question 3.** What is the role of the test listener in an ECS Blue/Green deployment?
 
-A) ECS 클러스터 이름을 지정
-B) taskdef.json 내 컨테이너 이미지 URI 자리에 실제 ECR 이미지 URI로 자동 치환됨
-C) Target Group 이름을 지정
-D) CodeDeploy Application 이름을 지정
+A) Reducing load balancer cost
+B) Exposing test traffic on a separate port to the new task set before production traffic is exposed, for pre-validation
+C) Performing health checks on the Blue task set
+D) Reporting deployment completion to CodeDeploy
 
-**정답: B**
-해설: CodeBuild가 생성하는 `imagedefinitions.json`의 imageUri 값이 Pipeline을 통해 `taskdef.json`의 `<IMAGE1_NAME>` 자리에 치환된다. 이 자동 치환 덕분에 매 빌드마다 새로운 이미지 태그(보통 git SHA)가 Task Definition에 반영되어 새 Revision이 등록되고 Blue/Green 배포가 시작된다. 플레이스홀더 형식이 정확히 `<IMAGE1_NAME>`이어야 한다.
-
----
-
-**문제 5.** ECS Blue/Green 배포에서 Termination Wait Time 60분 중 45분이 지났다. 새 버전에서 심각한 버그가 발견됐다. 가장 빠른 복원 방법은?
-
-A) 이전 Task Definition으로 새 배포 시작 (15~20분 소요)
-B) CodeDeploy 콘솔 또는 CLI에서 해당 배포를 Stop Deployment + Rollback → Blue Task Set으로 즉시 복원
-C) ECS Service의 desired count를 0으로 줄인 후 복원
-D) ALB Listener Rule을 수동으로 Blue Target Group으로 변경
-
-**정답: B**
-해설: Termination Wait Time 60분이 아직 끝나지 않았으므로 Blue Task Set이 살아있다. CodeDeploy의 Stop Deployment + Rollback은 ALB 트래픽을 Blue Target Group으로 즉시 전환하고 Green Task Set을 종료한다. 수십 초 내 복원이 가능하다. Wait Time이 지나 Blue Task Set이 이미 종료됐다면 B가 불가능하고 A(이전 Task Definition으로 재배포)가 필요하다.
+**Answer: B**
+Explanation: The test listener is optional, but if present, the `AfterAllowTestTraffic` hook lets you validate the new task set separately before it receives production traffic. For example, test the new version on port 8443 that only the internal team can access, and once validation is complete, proceed with the production traffic shift. A Blue/Green deployment works normally even without a test listener.
 
 ---
 
-**문제 6.** ECS Rolling Update에서 `minimumHealthyPercent=100, maximumPercent=200`의 동작은?
+**Question 4.** What is the role of the `<IMAGE1_NAME>` placeholder in the CodePipeline ECS (Blue/Green) action?
 
-A) 절반씩 교체 (50% 구 버전 종료 후 50% 신 버전 시작)
-B) 구 Task를 유지하며 새 Task를 먼저 띄우고(총 200%), 새 Task Health Check 통과 후 구 Task 종료 (Surge 패턴)
-C) 모든 Task를 동시에 교체
-D) 1개씩 순서대로 교체
+A) Specifies the ECS cluster name
+B) It is automatically replaced with the actual ECR image URI at the container image URI position in taskdef.json
+C) Specifies the target group name
+D) Specifies the CodeDeploy application name
 
-**정답: B**
-해설: `minimumHealthyPercent=100`은 배포 중에도 최소 100%의 Task가 Healthy해야 한다는 것이다. `maximumPercent=200`은 최대 200%까지 Task를 늘릴 수 있다. 결과적으로 "새 Task를 모두 띄우고(200%), 검증 후 구 Task를 제거(100%로 복귀)"하는 Surge 패턴이 된다. 다운타임 없이 배포되지만 일시적으로 EC2/Fargate 비용이 2배 발생한다.
+**Answer: B**
+Explanation: The imageUri value in the `imagedefinitions.json` generated by CodeBuild is substituted through the pipeline at the `<IMAGE1_NAME>` position in `taskdef.json`. Thanks to this automatic substitution, a new image tag (usually the git SHA) is reflected in the task definition on every build, a new revision is registered, and the Blue/Green deployment starts. The placeholder format must be exactly `<IMAGE1_NAME>`.
 
 ---
 
-**문제 7.** ECS Blue/Green Deployment Group 설정에서 필수가 아닌 것은?
+**Question 5.** In an ECS Blue/Green deployment, 45 minutes of the 60-minute termination wait time have passed. A serious bug was found in the new version. What is the fastest way to restore service?
 
-A) 두 Target Group (Blue, Green)
+A) Start a new deployment with the previous task definition (takes 15 to 20 minutes)
+B) Stop Deployment + Rollback that deployment from the CodeDeploy console or CLI → instantly restores the Blue task set
+C) Reduce the ECS service desired count to 0 and then restore
+D) Manually change the ALB listener rule to the Blue target group
+
+**Answer: B**
+Explanation: The 60-minute termination wait time has not yet ended, so the Blue task set is still alive. CodeDeploy Stop Deployment + Rollback instantly switches ALB traffic to the Blue target group and terminates the Green task set. Restoration within tens of seconds is possible. If the wait time has passed and the Blue task set has already been terminated, B is not possible and A (redeploying with the previous task definition) is needed.
+
+---
+
+**Question 6.** What is the behavior of `minimumHealthyPercent=100, maximumPercent=200` in an ECS rolling update?
+
+A) Replace half at a time (terminate 50% of old, then start 50% of new)
+B) Keep the old tasks and launch the new tasks first (200% total), then terminate the old tasks after the new tasks pass health checks (surge pattern)
+C) Replace all tasks at once
+D) Replace one at a time in sequence
+
+**Answer: B**
+Explanation: `minimumHealthyPercent=100` means at least 100% of tasks must be healthy even during the deployment. `maximumPercent=200` means the number of tasks can grow to at most 200%. The result is a surge pattern: "launch all the new tasks (200%), then remove the old tasks after validation (returning to 100%)." It deploys without downtime, but EC2/Fargate cost is temporarily doubled.
+
+---
+
+**Question 7.** Which of the following is not required in an ECS Blue/Green deployment group configuration?
+
+A) Two target groups (Blue, Green)
 B) Production Listener
 C) Test Listener
 D) CodeDeploy Service Role
 
-**정답: C**
-해설: Test Listener는 선택 사항이다. Production Listener(두 Target Group 사이 트래픽을 전환)와 두 Target Group은 Blue/Green의 핵심 구성 요소라 필수다. CodeDeploy Service Role은 ECS API, ALB API 호출 권한을 위해 필수다. Test Listener는 추가 포트로 새 버전을 사전 검증하는 옵션 기능이다. 이 구분이 시험에서 반복적으로 나온다.
+**Answer: C**
+Explanation: The test listener is optional. The production listener (which switches traffic between the two target groups) and the two target groups are the core components of Blue/Green and are therefore required. The CodeDeploy service role is required for permission to call the ECS and ALB APIs. The test listener is an optional feature for pre-validating the new version on an additional port. This distinction appears repeatedly on the exam.
 
 ---

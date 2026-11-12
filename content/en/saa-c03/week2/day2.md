@@ -161,96 +161,96 @@ The IGW is the bidirectional door to the outside, the NAT GW is the outbound-onl
 
 ## 📝 Practice Questions
 
-**문제 1.** An EC2 in a Private subnet needs to call an external API. What is the most appropriate solution?
+**Question 1.** An EC2 in a Private subnet needs to call an external API. What is the most appropriate solution?
 
 A) Attach only an IGW
 B) Place a NAT Gateway in a Public subnet in the same AZ and route to it
 C) ALB
 D) PrivateLink
 
-**정답: B**
-해설: For outbound-only, the NAT GW is the answer. Even if you attach only an IGW, a Private instance has no Public IP and can't get out. PrivateLink is just private access to a specific AWS service or ISV service, not general internet outbound. If it's limited to AWS services (e.g., S3, DynamoDB), you can use a Gateway Endpoint instead of NAT and greatly reduce cost. Also, if an external SaaS supports PrivateLink, you can reach it without going through NAT.
+**Answer: B**
+Explanation: For outbound-only, the NAT GW is the answer. Even if you attach only an IGW, a Private instance has no Public IP and can't get out. PrivateLink is just private access to a specific AWS service or ISV service, not general internet outbound. If it's limited to AWS services (e.g., S3, DynamoDB), you can use a Gateway Endpoint instead of NAT and greatly reduce cost. Also, if an external SaaS supports PrivateLink, you can reach it without going through NAT.
 
 ---
 
-**문제 2.** For NAT Gateway HA?
+**Question 2.** For NAT Gateway HA?
 
 A) One NAT GW in every AZ, with each AZ's Private subnet using the NAT in the same AZ
 B) Put one NAT GW in one AZ and have the other AZs share it
 C) Run a NAT Instance with an ASG
 D) Attach several EIPs
 
-**정답: A**
-해설: The NAT GW is AZ-scoped. If one AZ dies, that NAT dies. Per-AZ NAT + per-AZ routing is the standard. Cost rises, but it's cheaper than a single incident. It also reduces cross-AZ traffic cost — same-AZ NAT routing wins on both cost and availability. When you add up the NAT GW's hourly cost + the cross-AZ data transfer cost, a single-AZ NAT is often not unconditionally cheaper.
+**Answer: A**
+Explanation: The NAT GW is AZ-scoped. If one AZ dies, that NAT dies. Per-AZ NAT + per-AZ routing is the standard. Cost rises, but it's cheaper than a single incident. It also reduces cross-AZ traffic cost — same-AZ NAT routing wins on both cost and availability. When you add up the NAT GW's hourly cost + the cross-AZ data transfer cost, a single-AZ NAT is often not unconditionally cheaper.
 
 ---
 
-**문제 3.** What is the most secure way for an operator to access an EC2?
+**Question 3.** What is the most secure way for an operator to access an EC2?
 
 A) Bastion + SSH key
 B) EC2 Instance Connect
 C) Session Manager + IAM policy + CloudWatch Logs
 D) Open port 22 on the instance's Public IP
 
-**정답: C**
-해설: Port 22 itself is closed, IAM controls who can access, and every session is logged automatically to CloudWatch. An implementation of Zero Trust principles. A regular exam answer. The NIST SP 800-207 Zero Trust Architecture recommendation points the same way. Compliance frameworks (PCI-DSS, SOC 2, HIPAA) also recommend it, because Session Manager's automatic session recording satisfies audit requirements as-is.
+**Answer: C**
+Explanation: Port 22 itself is closed, IAM controls who can access, and every session is logged automatically to CloudWatch. An implementation of Zero Trust principles. A regular exam answer. The NIST SP 800-207 Zero Trust Architecture recommendation points the same way. Compliance frameworks (PCI-DSS, SOC 2, HIPAA) also recommend it, because Session Manager's automatic session recording satisfies audit requirements as-is.
 
 ---
 
-**문제 4.** If you make too many connections to the same destination through a NAT GW?
+**Question 4.** If you make too many connections to the same destination through a NAT GW?
 
 A) The NAT GW auto-scales
 B) A port allocation failure can occur
 C) The IGW compensates
 D) An EIP is added automatically
 
-**정답: B**
-해설: Since it multiplexes over a single EIP's 65,535 ports, the limit is roughly 55,000 concurrent connections to a single destination IP/port combination. The fix is to split into several NAT GWs or spread the destinations. Since 2021, you can attach secondary EIPs to a NAT GW to expand the number of ports. If the CloudWatch metric `ErrorPortAllocation` is greater than 0, it means this problem is occurring.
+**Answer: B**
+Explanation: Since it multiplexes over a single EIP's 65,535 ports, the limit is roughly 55,000 concurrent connections to a single destination IP/port combination. The fix is to split into several NAT GWs or spread the destinations. Since 2021, you can attach secondary EIPs to a NAT GW to expand the number of ports. If the CloudWatch metric `ErrorPortAllocation` is greater than 0, it means this problem is occurring.
 
 ---
 
-**문제 5.** Which is correct about the role of the IGW?
+**Question 5.** Which is correct about the role of the IGW?
 
 A) NAT-translate an instance's Private IP to a Public IP
 B) Enforce security groups
 C) Enforce NACLs
 D) DDoS defense
 
-**정답: A**
-해설: The IGW does 1:1 NAT + routing. Security is handled by SG/NACL, and DDoS by Shield. The IGW itself has no rule set. That the IGW is free is also often asked — the traffic passing through the IGW itself has no cost; only the outbound data cost for going out to the outside is incurred. This is a decisive difference from the NAT GW, and the direct reason for "why the IGW is the answer in cost scenarios."
+**Answer: A**
+Explanation: The IGW does 1:1 NAT + routing. Security is handled by SG/NACL, and DDoS by Shield. The IGW itself has no rule set. That the IGW is free is also often asked — the traffic passing through the IGW itself has no cost; only the outbound data cost for going out to the outside is incurred. This is a decisive difference from the NAT GW, and the direct reason for "why the IGW is the answer in cost scenarios."
 
 ---
 
-**문제 6.** Which is the safest SG design for the Bastion pattern?
+**Question 6.** Which is the safest SG design for the Bastion pattern?
 
 A) Bastion SG inbound SSH 0.0.0.0/0
 B) The Private EC2 SG references the Bastion SG as its source
 C) The Private EC2 has a Public IP directly
 D) IAM AdministratorAccess on the Bastion
 
-**정답: B**
-해설: The SG reference pattern is the standard. Automatically tracked even when IPs change. The Bastion SG's source should allow only the company IP whitelist to be truly safe. An even better answer is to not use a Bastion at all — switch to Session Manager. As of 2024, AWS has excluded the Bastion itself from its newly recommended architectures.
+**Answer: B**
+Explanation: The SG reference pattern is the standard. Automatically tracked even when IPs change. The Bastion SG's source should allow only the company IP whitelist to be truly safe. An even better answer is to not use a Bastion at all — switch to Session Manager. As of 2024, AWS has excluded the Bastion itself from its newly recommended architectures.
 
 ---
 
-**문제 7.** What is the principle by which Session Manager works without inbound port 22?
+**Question 7.** What is the principle by which Session Manager works without inbound port 22?
 
 A) AWS accesses the instance from outside
 B) The SSM Agent long-polls the SSM endpoint over outbound HTTPS, and a bidirectional channel runs over it
 C) The NAT GW translates the inbound
 D) An EIP is auto-assigned
 
-**정답: B**
-해설: An outbound-only Zero Trust model. There's only an HTTPS connection going out from the instance to SSM, and the operator session flows over that connection. The key benefit is that no inbound port is needed at all. If you want more complete isolation, you can also use an SSM VPC Endpoint so that the outbound itself terminates within the private network. This pattern makes operator access possible even in air-gapped environments (external internet blocked).
+**Answer: B**
+Explanation: An outbound-only Zero Trust model. There's only an HTTPS connection going out from the instance to SSM, and the operator session flows over that connection. The key benefit is that no inbound port is needed at all. If you want more complete isolation, you can also use an SSM VPC Endpoint so that the outbound itself terminates within the private network. This pattern makes operator access possible even in air-gapped environments (external internet blocked).
 
 ---
 
-**문제 8.** For Session Manager to work in a fully isolated Private subnet (no internet)?
+**Question 8.** For Session Manager to work in a fully isolated Private subnet (no internet)?
 
 A) Add a NAT Gateway
 B) Add an IGW
 C) Create three Interface Endpoints: ssm, ssmmessages, ec2messages
 D) Add a Bastion
 
-**정답: C**
-해설: Session Manager's core dependency is that the SSM Agent must be able to reach the SSM endpoint over outbound HTTPS. In an environment without internet, you expose the SSM endpoints inside the VPC with three PrivateLink Interface Endpoints. This is the standard pattern that achieves *full isolation + operator access* at the same time, and it comes up often in exam scenarios.
+**Answer: C**
+Explanation: Session Manager's core dependency is that the SSM Agent must be able to reach the SSM endpoint over outbound HTTPS. In an environment without internet, you expose the SSM endpoints inside the VPC with three PrivateLink Interface Endpoints. This is the standard pattern that achieves *full isolation + operator access* at the same time, and it comes up often in exam scenarios.

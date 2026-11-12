@@ -82,24 +82,24 @@ SAP exam frequent mappings: (1) "RTO/RPO in minutes + global" → **Aurora Globa
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 글로벌 서비스가 여러 리전에서 동시에 읽고 쓰며, 한 리전이 장애가 나도 다른 리전에서 끊김 없이 쓰기를 계속 받아야 한다. 일시적 데이터 불일치는 비즈니스적으로 허용된다. 가장 적합한 데이터베이스는?
+**Question 1.** A global service reads and writes simultaneously in multiple Regions, and even if one Region fails, other Regions must continue to accept writes without interruption. Temporary data inconsistency is acceptable to the business. What is the most appropriate database?
 
-A) RDS Multi-AZ (동기 복제)
+A) RDS Multi-AZ (synchronous replication)
 
-B) DynamoDB Global Table (멀티 리전, 멀티 액티브)
+B) DynamoDB Global Table (multi-Region, multi-active)
 
-C) Aurora 단일 리전 + Read Replica
+C) Aurora single Region + Read Replica
 
-D) 단일 리전 DynamoDB
+D) Single-Region DynamoDB
 
-**정답: B**
-해설: DynamoDB Global Table은 모든 리전이 쓰기를 받는 멀티 액티브 구조로, CAP의 가용성(AP)을 택해 한 리전 장애에도 다른 리전이 쓰기를 계속 받는다. 대신 last-writer-wins로 일시적 불일치를 허용하는데 문제에서 이를 허용한다. A(RDS Multi-AZ)는 단일 리전 내 동기 복제로 멀티 리전 동시 쓰기가 아니다. C는 리전 장애에 취약하고 쓰기는 단일 리전이다. D는 멀티 리전이 아니다. 함정: "전 리전 동시 쓰기 + 항상 가용 + 불일치 허용"은 AP(DynamoDB Global)다.
+**Answer: B**
+Explanation: DynamoDB Global Table is a multi-active structure in which every Region accepts writes; it chooses availability (AP) in the CAP theorem, so even if one Region fails, other Regions keep accepting writes. In exchange, it tolerates temporary inconsistency through last-writer-wins, which the question allows. A (RDS Multi-AZ) is synchronous replication within a single Region, not simultaneous multi-Region writes. C is vulnerable to a Region failure and writes go to a single Region. D is not multi-Region. Trap: "simultaneous writes in all Regions + always available + inconsistency tolerated" is AP (DynamoDB Global).
 
 ---
 
-**문제 2.** 한 분산 ML 학습 작업이 수백 개 노드 간에 매 스텝 그래디언트를 교환하며, 노드 간 통신 지연이 학습 속도를 좌우한다. 가용성보다 통신 성능이 우선이다. 가장 적합한 구성은?
+**Question 2.** A distributed ML training job exchanges gradients across hundreds of nodes at every step, and inter-node communication latency determines training speed. Communication performance takes priority over availability. What is the most appropriate configuration?
 
-A) Spread Placement Group으로 노드를 여러 랙에 분산
+A) Spread nodes across multiple racks with a Spread Placement Group
 
 B) Cluster Placement Group + EFA + FSx for Lustre
 
@@ -107,67 +107,67 @@ C) Multi-AZ Auto Scaling Group
 
 D) Partition Placement Group + EBS gp3
 
-**정답: B**
-해설: Cluster PG는 같은 AZ·랙에 노드를 밀집 배치해 지연을 최소화하고, EFA는 OS-bypass로 MPI/NCCL 통신에 RDMA 수준 저지연을 주며, FSx Lustre는 수백 GB/s로 데이터를 공급한다 — HPC·분산 학습의 표준 3종이다. A(Spread)는 격리가 목적이라 지연이 오히려 늘고, C(Multi-AZ)는 AZ 간 지연으로 통신이 느리며, D(Partition)는 대규모 분산 저장용이지 초저지연 통신용이 아니다. 함정: "노드 간 초저지연 통신"은 Cluster PG + EFA다.
+**Answer: B**
+Explanation: A Cluster PG places nodes densely in the same AZ and rack to minimize latency, EFA provides RDMA-level low latency for MPI/NCCL communication through OS-bypass, and FSx for Lustre supplies data at hundreds of GB/s — the standard trio for HPC and distributed training. A (Spread) is for isolation, so latency actually increases; C (Multi-AZ) slows communication because of inter-AZ latency; and D (Partition) is for large-scale distributed storage, not ultra-low-latency communication. Trap: "ultra-low-latency inter-node communication" is Cluster PG + EFA.
 
 ---
 
-**문제 3.** 한 읽기 집약 애플리케이션이 DynamoDB에서 동일 항목을 초당 수만 번 읽어 지연과 비용이 높다. 애플리케이션 코드 변경을 최소화하며 마이크로초 단위 응답을 원한다. 가장 적합한 솔루션은?
+**Question 3.** A read-intensive application reads the same items from DynamoDB tens of thousands of times per second, resulting in high latency and cost. You want microsecond responses while minimizing application code changes. What is the most appropriate solution?
 
-A) ElastiCache for Redis를 cache-aside로 구현
+A) Implement ElastiCache for Redis with cache-aside
 
-B) DAX(DynamoDB Accelerator) 추가
+B) Add DAX (DynamoDB Accelerator)
 
-C) DynamoDB 읽기 용량(RCU)을 대폭 증설
+C) Greatly increase DynamoDB read capacity (RCU)
 
-D) Aurora Read Replica 추가
+D) Add an Aurora Read Replica
 
-**정답: B**
-해설: DAX는 DynamoDB 전용 인메모리 캐시로 DynamoDB와 API 호환이라 코드 변경이 거의 없고, 캐시 적중 시 마이크로초 응답과 읽기 비용 절감을 동시에 준다. A(ElastiCache)는 범용 캐시지만 cache-aside 로직을 직접 작성해야 해 코드 변경이 크다. C는 비용만 늘고 마이크로초 응답을 보장하지 않는다. D는 DynamoDB가 아닌 Aurora용이다. 함정: "DynamoDB 전용 + 코드 최소 변경 + 마이크로초"는 DAX의 직답이다.
-
----
-
-**문제 4.** 한 모바일 백엔드에서 장애 복구 시 수많은 클라이언트가 동시에 재시도하며 서버가 회복 직전에 다시 무너지는 현상이 반복된다. 가장 적합한 대응은?
-
-A) 재시도 횟수를 무제한으로 늘린다
-
-B) 지수 백오프에 지터(jitter)를 추가해 재시도 시각을 분산한다
-
-C) 재시도를 완전히 제거한다
-
-D) 모든 클라이언트가 동일한 고정 간격으로 재시도하게 한다
-
-**정답: B**
-해설: 동시 재시도 폭풍(thundering herd)은 지수 백오프(간격을 1s→2s→4s로 증가)에 지터(무작위성)를 더해 재시도 시각을 [0, backoff] 구간에 균등 분포시켜 부하를 시간축에 평탄화함으로써 해결한다. AWS SDK 기본 전략에 내장돼 있다. A는 부하를 키우고, C는 일시 장애를 흡수 못 하며, D(고정 간격)는 오히려 동기화돼 스파이크를 만든다. 함정: "동시 재시도 과부하"는 backoff + jitter다.
+**Answer: B**
+Explanation: DAX is an in-memory cache dedicated to DynamoDB and is API-compatible with DynamoDB, so almost no code change is needed, and on a cache hit it provides microsecond responses and read cost savings at the same time. A (ElastiCache) is a general-purpose cache but requires you to write the cache-aside logic yourself, so the code change is large. C only increases cost and does not guarantee microsecond responses. D is for Aurora, not DynamoDB. Trap: "DynamoDB-specific + minimal code changes + microseconds" is the direct answer for DAX.
 
 ---
 
-**문제 5.** 한 시스템에서 생산자가 메시지를 소비자 처리 속도보다 빠르게 쏟아내 메시지 유실과 타임아웃이 발생한다. 처리에 실패한 메시지는 정상 흐름을 막지 않고 별도로 격리·재처리하고 싶다. 가장 적합한 설계는?
+**Question 4.** In a mobile backend, when recovering from a failure, many clients retry at the same time, and the server repeatedly collapses again just before recovering. What is the most appropriate response?
 
-A) SNS로 소비자에게 직접 팬아웃
+A) Increase the number of retries without limit
 
-B) SQS로 버퍼링하고 처리 실패 메시지는 DLQ로 격리
+B) Add jitter to exponential backoff to spread out the retry times
 
-C) Lambda를 동기 호출로 직접 연결
+C) Remove retries entirely
 
-D) DynamoDB Streams로 직접 처리
+D) Have all clients retry at the same fixed interval
 
-**정답: B**
-해설: 생산자-소비자 속도 불일치는 SQS 큐로 버퍼링해 소비자가 자기 속도로 폴링하게 하고(backpressure 흡수), 처리 실패 메시지는 DLQ(Dead Letter Queue)로 격리해 정상 흐름을 막지 않으면서 재처리한다. A(SNS 직접)·C(동기 호출)는 소비자가 못 따라가면 유실·타임아웃이 난다. D는 이 목적의 디커플링·버퍼링 메커니즘이 아니다. 함정: "유입 폭주 흡수 + 실패 격리"는 SQS + DLQ다.
+**Answer: B**
+Explanation: A simultaneous retry storm (thundering herd) is solved by adding jitter (randomness) to exponential backoff (intervals growing 1s → 2s → 4s), which distributes retry times uniformly over the interval [0, backoff] and flattens the load along the time axis. It is built into the AWS SDK default strategy. A increases the load, C cannot absorb transient failures, and D (fixed interval) actually synchronizes clients and creates spikes. Trap: "overload from simultaneous retries" is backoff + jitter.
 
 ---
 
-**문제 6.** 한 팀이 Aurora Global Database를 도입했는데, 문서에 RPO가 "0이 아니라 1초 미만"으로 명시돼 있다. 이 RPO 특성을 가장 잘 설명하는 것은?
+**Question 5.** In a system, producers push messages faster than consumers can process them, causing message loss and timeouts. You want messages that fail processing to be isolated and reprocessed separately without blocking the normal flow. What is the most appropriate design?
 
-A) Aurora Global은 동기 복제라 RPO가 항상 0이다
+A) Fan out directly to consumers with SNS
 
-B) Aurora Global은 리전 간 비동기 복제를 사용하므로 1초 미만의 데이터 손실 창이 존재한다
+B) Buffer with SQS and isolate messages that fail processing in a DLQ
 
-C) RPO 1초 미만은 단순 마케팅 표현이며 실제로는 0이다
+C) Connect Lambda directly with synchronous invocation
 
-D) Aurora Global은 복제를 하지 않는다
+D) Process directly with DynamoDB Streams
 
-**정답: B**
-해설: Aurora Global Database는 리전 간 비동기 복제를 사용한다. 동기로 전 리전을 묶으면 지연이 폭증(PACELC의 EL 트레이드오프)하므로, 비동기로 지연을 줄이는 대신 1초 미만의 데이터 손실 가능 창(RPO)을 허용한다. A는 동기로 오인한 것, C·D는 사실과 다르다. 함정: RPO가 "0이 아닌 1초 미만"이면 비동기 복제이며, 지연과 일관성의 trade-off(PACELC)를 반영한 것이다.
+**Answer: B**
+Explanation: For a producer-consumer rate mismatch, buffer with an SQS queue so consumers poll at their own pace (absorbing backpressure), and isolate messages that fail processing in a DLQ (Dead Letter Queue) so they can be reprocessed without blocking the normal flow. A (direct SNS) and C (synchronous invocation) cause loss and timeouts if the consumer cannot keep up. D is not a decoupling or buffering mechanism for this purpose. Trap: "absorbing inflow surges + isolating failures" is SQS + DLQ.
+
+---
+
+**Question 6.** A team adopted Aurora Global Database, and the documentation states that the RPO is "not 0 but under 1 second." What best explains this RPO characteristic?
+
+A) Aurora Global uses synchronous replication, so the RPO is always 0
+
+B) Aurora Global uses asynchronous cross-Region replication, so a data loss window of under 1 second exists
+
+C) An RPO under 1 second is merely a marketing expression and is actually 0
+
+D) Aurora Global does not perform replication
+
+**Answer: B**
+Explanation: Aurora Global Database uses asynchronous cross-Region replication. Binding all Regions synchronously would cause latency to explode (the EL trade-off of PACELC), so it reduces latency with asynchronous replication in exchange for allowing a possible data loss window (RPO) of under 1 second. A mistakes it for synchronous, and C and D are not factual. Trap: if the RPO is "not 0 but under 1 second," it is asynchronous replication and reflects the latency-versus-consistency trade-off (PACELC).
 
 ---

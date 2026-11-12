@@ -98,118 +98,118 @@ Next: containers scale to 100+ microservices, **large-scale ECS/EKS ops** at dep
 
 ## 📝 Practice Questions
 
-**문제 1.** 온프레미스 데이터센터의 방화벽이 인바운드를 차단하는 환경에서, SSM/CodeDeploy 에이전트가 동작하는 방식과 그 근본 원리는?
+**Question 1.** In an environment where the on-premises data center firewall blocks inbound traffic, how do the SSM/CodeDeploy agents work, and what is the underlying principle?
 
-A) 중앙 AWS가 DC 서버로 명령을 밀어 넣는(push) 방식이며 인바운드 22/443 포트를 열어야 한다
+A) Central AWS pushes commands to the DC servers, and inbound ports 22/443 must be opened
 
-B) DC 서버의 에이전트가 AWS로 아웃바운드 HTTPS(443)를 열어 명령·아티팩트를 끌어오는(pull) 방식이며, 방화벽의 비대칭성(아웃바운드 허용·인바운드 차단)을 활용해 인바운드 포트를 하나도 열지 않는다
+B) The agents on the DC servers open outbound HTTPS (443) to AWS and pull commands and artifacts, exploiting the firewall's asymmetry (outbound allowed, inbound blocked) so that no inbound port is opened at all
 
-C) DC 서버가 인터넷에 공개돼야 한다
+C) The DC servers must be exposed to the internet
 
-D) VPN 없이는 불가능하다
+D) It is impossible without a VPN
 
-**정답: B**
+**Answer: B**
 
-해설: 방화벽은 본질적으로 비대칭(아웃바운드 허용, 인바운드 차단)이므로, NAT 뒤 다수 노드를 제어하려면 노드가 중앙에 연결하는 Pull 모델이 정석이다. SSM/CodeDeploy 에이전트는 DC에서 AWS로 아웃바운드 443을 열어 명령을 끌어오므로 인바운드 포트를 하나도 열 필요가 없다(bastion-less와 같은 사상). Push(A)·인터넷 공개(C)·VPN 필수(D)는 하이브리드 운영의 전제와 어긋난다.
-
----
-
-**문제 2.** Direct Connect 10Gbps 회선을 사용 중인데 규제상 회선 암호화가 필수다. 최소 변경으로 만족시키려면?
-
-A) Direct Connect는 사설 전용선이므로 자동으로 암호화된다
-
-B) DX는 그 자체로 암호화되지 않으므로 MACsec(레이어 2) 또는 IPSec over DX(레이어 3)를 추가해야 한다
-
-C) S3 SSE-KMS만 켜면 회선이 암호화된다
-
-D) TLS만 강제하면 된다
-
-**정답: B**
-
-해설: DX는 물리적으로 분리된 전용선일 뿐 회선 위 데이터는 평문이다 — 자동 암호화되지 않는다. 회선 암호화가 필요하면 MACsec(IEEE 802.1AE, 전용 연결의 레이어 2 암호화)을 DX 포트에 적용하거나 IPSec over DX(DX 위에 VPN을 얹은 레이어 3 암호화)를 쓴다. SSE-KMS(C)는 S3 저장 데이터 암호화이지 회선과 무관하고, TLS(D)는 애플리케이션 계층이라 "회선 암호화 필수"라는 규제 요구를 직접 충족한다고 보기 어렵다. 자동 암호화(A)는 가장 흔한 오답이다.
+Explanation: A firewall is inherently asymmetric (outbound allowed, inbound blocked), so to control many nodes behind NAT, the standard approach is a Pull model in which nodes connect to the center. The SSM/CodeDeploy agents open outbound 443 from the DC to AWS to pull commands, so no inbound port needs to be opened (the same philosophy as bastion-less). Push (A), internet exposure (C), and VPN required (D) contradict the premises of hybrid operations.
 
 ---
 
-**문제 3.** SSM Hybrid Activation에서 ActivationCode/ActivationId(활성화 토큰)와 mi-xxxx(관리형 인스턴스 ID)의 관계로 가장 정확한 것은?
+**Question 2.** You are using a 10 Gbps Direct Connect link, and regulations require link encryption. What satisfies this with the least change?
 
-A) 둘은 같은 것이다
+A) Direct Connect is a private dedicated line, so it is encrypted automatically
 
-B) 활성화 토큰은 만료일·등록 한도가 있는 일회성 등록용 토큰이고, mi-xxxx는 등록 후 서버에 영구적으로 붙는 관리형 인스턴스 ID다 — 토큰이 만료돼도 이미 등록된 mi-xxxx는 영향 없이 계속 관리된다
+B) DX itself is not encrypted, so you must add MACsec (Layer 2) or IPSec over DX (Layer 3)
 
-C) mi-xxxx는 매 명령마다 새로 발급된다
+C) Enabling S3 SSE-KMS alone encrypts the link
 
-D) 활성화 토큰은 영구적이고 mi-xxxx는 일회용이다
+D) Enforcing TLS alone is enough
 
-**정답: B**
+**Answer: B**
 
-해설: ActivationCode/ActivationId는 서버를 SSM에 처음 등록할 때만 쓰는 만료·한도 있는 일회성 토큰이고, 등록이 끝나면 의미가 없다. mi-xxxx는 등록 후 서버에 영구적으로 붙어 Run Command·Patch Manager·State Manager의 대상이 된다. 따라서 활성화 토큰이 만료돼도 이미 등록된 서버는 계속 관리되며, 토큰은 신규 등록에만 필요하다. 동일(A)·매 명령 발급(C)·관계 반대(D)는 틀리다.
-
----
-
-**문제 4.** AWS EC2 ASG와 DC 서버를 하나의 배포로 같은 릴리즈를 동시에 푸는 표준 방법과 그 한계는?
-
-A) Ansible만으로 가능하며 한계가 없다
-
-B) CodeDeploy에 On-Premises Instances를 등록·태깅해 동일 AppSpec으로 EC2 ASG와 함께 배포하되, On-Prem은 Auto Scaling 통합 불가·정적 인벤토리라는 한계가 있어 주로 In-Place 배포를 쓴다
-
-C) Lambda로 양쪽에 배포한다
-
-D) SSM State Manager만으로 가능하다
-
-**정답: B**
-
-해설: CodeDeploy는 On-Premises Instances를 지원해 DC 서버를 등록·태깅하면 EC2와 동일한 AppSpec으로 하나의 배포에 묶을 수 있다. 다만 On-Prem은 ASG와 연동되지 않아 정적 인벤토리이며(서버가 자동으로 늘지 않음), Blue/Green의 새 인스턴스 집합 생성도 제한적이라 주로 In-Place 배포를 쓴다. "On-Prem에 ASG 기반 자동 스케일 배포"는 오답이다. Ansible 무한계(A)·Lambda(C)·State Manager(D)는 단일 AppSpec 통합 배포의 표준이 아니다.
+Explanation: DX is merely a physically separate dedicated line, and the data on the link is plaintext — it is not encrypted automatically. If link encryption is required, apply MACsec (IEEE 802.1AE, Layer 2 encryption for dedicated connections) to the DX port, or use IPSec over DX (Layer 3 encryption with a VPN layered over DX). SSE-KMS (C) encrypts data stored in S3 and has nothing to do with the link, and TLS (D) is at the application layer, so it is hard to say it directly satisfies a regulatory requirement for "mandatory link encryption." Automatic encryption (A) is the most common wrong answer.
 
 ---
 
-**문제 5.** 5,000대 DC 서버에 정적 액세스 키를 심지 않고, 사내 PKI를 활용해 AWS API 호출용 임시 자격 증명을 부여하려면?
+**Question 3.** Which statement MOST accurately describes the relationship between the ActivationCode/ActivationId (activation token) and mi-xxxx (managed instance ID) in SSM Hybrid Activation?
 
-A) IAM User 장기 액세스 키를 각 서버에 배포
+A) They are the same thing
 
-B) IAM Roles Anywhere — 사내 CA를 Trust Anchor로 등록하고 서버의 X.509 인증서로 인증해 STS 단명 자격 증명을 받는다
+B) The activation token is a one-time registration token with an expiration date and registration limit, and mi-xxxx is the managed instance ID permanently attached to the server after registration — even if the token expires, an already registered mi-xxxx continues to be managed without impact
+
+C) mi-xxxx is newly issued for every command
+
+D) The activation token is permanent and mi-xxxx is single-use
+
+**Answer: B**
+
+Explanation: The ActivationCode/ActivationId is a one-time token with an expiration and limit used only when first registering a server with SSM, and it has no meaning once registration is complete. mi-xxxx is permanently attached to the server after registration and becomes the target of Run Command, Patch Manager, and State Manager. Therefore, even if the activation token expires, already registered servers continue to be managed, and the token is needed only for new registrations. Identical (A), issued per command (C), and the reversed relationship (D) are wrong.
+
+---
+
+**Question 4.** What is the standard method for deploying the same release simultaneously to an AWS EC2 ASG and DC servers in a single deployment, and what is its limitation?
+
+A) It is possible with Ansible alone and has no limitations
+
+B) Register and tag On-Premises Instances in CodeDeploy and deploy together with the EC2 ASG using the same AppSpec, but On-Prem has the limitations of no Auto Scaling integration and a static inventory, so In-Place deployment is mainly used
+
+C) Deploy to both with Lambda
+
+D) It is possible with SSM State Manager alone
+
+**Answer: B**
+
+Explanation: CodeDeploy supports On-Premises Instances, so once DC servers are registered and tagged, they can be bundled into one deployment with EC2 using the same AppSpec. However, On-Prem is not integrated with the ASG and is a static inventory (servers do not scale automatically), and creating a new set of instances for Blue/Green is also limited, so In-Place deployment is mainly used. "ASG-based automatic scaling deployment to On-Prem" is a wrong answer. Ansible with no limits (A), Lambda (C), and State Manager (D) are not the standard for single-AppSpec integrated deployment.
+
+---
+
+**Question 5.** For 5,000 DC servers, how can you grant temporary credentials for AWS API calls using the corporate PKI, without embedding static access keys?
+
+A) Distribute long-term IAM User access keys to each server
+
+B) IAM Roles Anywhere — register the corporate CA as a Trust Anchor, authenticate with the server's X.509 certificate, and receive short-lived STS credentials
 
 C) Cognito Identity Pool
 
-D) STS GetSessionToken을 매번 수동 호출
+D) Manually call STS GetSessionToken every time
 
-**정답: B**
+**Answer: B**
 
-해설: IAM Roles Anywhere는 사내 PKI의 X.509 인증서로 AWS에 신원을 증명하고 임시 자격 증명을 받는다 — 정적 키가 서버에 존재하지 않는다. PKI의 신뢰 사슬(RFC 5280)을 Trust Anchor로 등록하고, "비밀은 짧게 살수록 안전하다"는 단명 자격 증명 원칙을 구현한다(IRSA·OIDC 연합과 같은 가족). 장기 키(A)는 Codecov류 유출 위험의 안티패턴, Cognito(C)는 앱 사용자 신원용, 수동 GetSessionToken(D)은 인증서 기반 자동화가 아니다.
-
----
-
-**문제 6.** 인터넷이 차단된 DC 서버가 AWS Secrets Manager를 조회해야 한다. 최소 변경으로 사설 경로를 만들려면? 그리고 흔히 빠뜨리는 추가 설정은?
-
-A) NAT Gateway를 추가해 인터넷으로 나간다
-
-B) Secrets Manager용 Interface VPC Endpoint(PrivateLink)를 만들어 DX/TGW 경유로 사설 IP 접근하되, Route 53 Resolver Endpoint 설정과 Endpoint의 Private DNS 활성화로 DC에서 표준 엔드포인트 이름이 사설 IP로 해석되게 한다
-
-C) Public Endpoint + IAM 정책
-
-D) Lambda Proxy를 만든다
-
-**정답: B**
-
-해설: 인터넷 차단 환경에선 Interface VPC Endpoint(PrivateLink)로 Secrets Manager API를 VPC 내부 사설 IP로 노출하고 DX/TGW로 접근한다 — 트래픽이 인터넷으로 나가지 않는다(Route 53 Resolver로 DNS 해석). 흔히 빠뜨리는 것이 DNS다: Route 53 Resolver Endpoint와 Endpoint의 Private DNS 활성화가 없으면 DC가 여전히 퍼블릭 IP로 해석한다. NAT(A)·Public Endpoint(C)는 인터넷 경로를 요구하고, Lambda Proxy(D)는 불필요한 우회다.
+Explanation: IAM Roles Anywhere proves identity to AWS with X.509 certificates from the corporate PKI and receives temporary credentials — no static keys exist on the servers. It registers the PKI's chain of trust (RFC 5280) as a Trust Anchor and implements the short-lived credential principle that "the shorter a secret lives, the safer it is" (the same family as IRSA and OIDC federation). Long-term keys (A) are an anti-pattern with Codecov-style leak risk, Cognito (C) is for app user identity, and manually calling GetSessionToken (D) is not certificate-based automation.
 
 ---
 
-**문제 7.** Codecov(2021) 공급망 침해가 하이브리드/CI 자격 증명 설계에 남긴 핵심 교훈은?
+**Question 6.** A DC server with the internet blocked must query AWS Secrets Manager. How can you create a private path with the least change, and what additional setting is commonly missed?
 
-A) 컨테이너 이미지를 자주 스캔해야 한다
+A) Add a NAT Gateway and go out over the internet
 
-B) CI/배포 환경에 정적 장기 자격 증명을 두면 그 환경 침해 시 키가 통째로 유출되고 무효화·추적이 어려우므로, OIDC 연합·IAM Roles Anywhere·IRSA 같은 단명·인증서 기반 자격 증명으로 이동해야 한다
+B) Create an Interface VPC Endpoint (PrivateLink) for Secrets Manager to access it via a private IP over DX/TGW, and configure a Route 53 Resolver Endpoint and enable Private DNS on the Endpoint so that the standard endpoint name resolves to the private IP from the DC
 
-C) 모든 트래픽을 암호화해야 한다
+C) Public Endpoint + IAM policy
 
-D) 멀티 리전 백업이 필수다
+D) Build a Lambda Proxy
 
-**정답: B**
+**Answer: B**
 
-해설: Codecov 침해는 CI 업로더 스크립트 변조로 고객 CI 환경 변수에 박힌 정적 키·토큰이 통째로 유출된 사건이다. 교훈은 "정적 장기 자격 증명을 CI/배포 환경에 두지 말라"이며, 이후 업계는 OIDC 연합·IAM Roles Anywhere·IRSA/Pod Identity 같은 단명 자격 증명으로 이동했다. 이미지 스캔(A)·트래픽 암호화(C)·멀티 리전(D)은 다른 주제다.
+Explanation: In an internet-blocked environment, an Interface VPC Endpoint (PrivateLink) exposes the Secrets Manager API on a private IP inside the VPC, and it is accessed through DX/TGW — traffic never goes out to the internet (DNS is resolved through Route 53 Resolver). What is commonly missed is DNS: without a Route 53 Resolver Endpoint and Private DNS enabled on the Endpoint, the DC still resolves to the public IP. NAT (A) and the Public Endpoint (C) require an internet path, and a Lambda Proxy (D) is an unnecessary detour.
+
+---
+
+**Question 7.** What is the key lesson that the Codecov (2021) supply chain breach left for hybrid/CI credential design?
+
+A) Container images must be scanned frequently
+
+B) If static long-term credentials are kept in CI/deployment environments, a compromise of that environment leaks the keys wholesale and they are hard to invalidate or trace, so you should move to short-lived, certificate-based credentials such as OIDC federation, IAM Roles Anywhere, and IRSA
+
+C) All traffic must be encrypted
+
+D) Multi-Region backup is mandatory
+
+**Answer: B**
+
+Explanation: The Codecov breach was an incident in which the CI uploader script was tampered with and the static keys and tokens embedded in customers' CI environment variables were leaked wholesale. The lesson is "do not keep static long-term credentials in CI/deployment environments," and the industry has since moved to short-lived credentials such as OIDC federation, IAM Roles Anywhere, and IRSA/Pod Identity. Image scanning (A), traffic encryption (C), and multi-Region (D) are different topics.
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 다섯 가지다. 첫째, 방화벽의 인바운드 차단이 Pull 모델(아웃바운드로 끌어오는 SSM/CodeDeploy 에이전트)을 강제하며 이는 연결 방향성의 분산 시스템 원리다. 둘째, 인터넷 없이 AWS에 닿으려면 회선(DX+TGW, DX는 미암호화→MACsec/IPSec)과 엔드포인트(PrivateLink) 두 결정이 필요하고 Route 53 Resolver가 양방향 DNS를 잇는다. 셋째, SSM Hybrid Activation으로 DC 서버를 EC2처럼 관리하되 활성화 토큰(일회성·만료)과 mi-xxxx(영구)를 구분한다. 넷째, CodeDeploy On-Prem이 단일 AppSpec으로 양쪽 배포하되 ASG 통합 불가·정적 인벤토리·주로 In-Place라는 한계가 있다. 다섯째, IAM Roles Anywhere가 정적 키를 X.509 인증서 기반 단명 자격 증명으로 대체한다(Codecov 사건의 교훈, PKI 신뢰 사슬 RFC 5280).
+There are five key takeaways today. First, the firewall's inbound blocking forces the Pull model (the SSM/CodeDeploy agents that pull via outbound connections), which is the distributed-systems principle of connection directionality. Second, reaching AWS without the internet requires two decisions, the link (DX+TGW; DX is unencrypted → MACsec/IPSec) and the endpoint (PrivateLink), and Route 53 Resolver connects DNS in both directions. Third, SSM Hybrid Activation manages DC servers like EC2, distinguishing the activation token (one-time, expiring) from mi-xxxx (permanent). Fourth, CodeDeploy On-Prem deploys to both sides with a single AppSpec but is limited by no ASG integration, a static inventory, and mainly In-Place deployment. Fifth, IAM Roles Anywhere replaces static keys with short-lived credentials based on X.509 certificates (the lesson of the Codecov incident, the PKI chain of trust per RFC 5280).

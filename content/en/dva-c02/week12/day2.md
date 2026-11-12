@@ -155,112 +155,112 @@ Next we move to SAM, CloudFormation compressed for serverless.
 
 ## 📝 Practice Questions
 
-**문제 1.** 프로덕션 스택의 템플릿을 수정해 적용하려 한다. RDS가 의도치 않게 교체되어 데이터가 사라지는 것을 사전에 발견하려면?
+**Question 1.** You want to modify and apply the template of a production stack. How can you discover in advance that RDS would be unintentionally replaced, causing data loss?
 
-A) 바로 스택을 업데이트하고 결과를 본다
+A) Update the stack right away and see the result
 
-B) Change Set을 생성해 Replacement 여부를 검토한 뒤 실행한다
+B) Create a Change Set, review whether there is a Replacement, and then execute it
 
-C) 드리프트 감지를 실행한다
+C) Run drift detection
 
-D) Termination Protection을 켠다
+D) Turn on Termination Protection
 
-**정답: B**
+**Answer: B**
 
-해설: **Change Set**은 업데이트를 실제로 적용하기 전에 각 리소스가 추가/수정/삭제/**교체(Replacement: True)** 중 무엇이 되는지 보여준다. RDS가 교체되면 새 빈 DB가 생기고 데이터가 사라질 수 있으므로, Change Set으로 "Replacement: True"를 미리 확인하고 멈출 수 있다. A) 바로 업데이트하면 발견했을 땐 이미 늦다. C) 드리프트 감지는 이미 벌어진 콘솔 변경과의 차이를 보는 것이지 업데이트 결과 예측이 아니다. D) Termination Protection은 스택 삭제를 막을 뿐 업데이트 중 교체를 막지 않는다.
-
----
-
-**문제 2.** CloudFormation 스택 생성 시 두 보안 그룹이 서로를 참조해 "circular dependency" 오류가 났다. 올바른 해결은?
-
-A) DependsOn을 양쪽에 추가한다
-
-B) 인라인 ingress 규칙을 별도의 AWS::EC2::SecurityGroupIngress 리소스로 분리한다
-
-C) 두 보안 그룹을 하나로 합친다
-
-D) 리전을 변경한다
-
-**정답: B**
-
-해설: 두 리소스가 서로를 참조하면 의존 그래프에 순환이 생겨 위상 정렬이 불가능해 생성이 실패한다. 보안 그룹 규칙을 인라인으로 두지 말고 **별도의 `AWS::EC2::SecurityGroupIngress` 리소스**로 떼어내면, 보안 그룹 자체는 서로 참조하지 않고 규칙만 나중에 양쪽을 연결하므로 순환이 끊긴다. A) DependsOn은 명시적 의존을 추가할 뿐 순환을 풀지 못한다(오히려 악화). C) 합치면 격리가 깨지고 항상 가능하지도 않다. D) 리전과 무관하다.
+Explanation: A **Change Set** shows, before the update is actually applied, whether each resource will be added, modified, deleted, or **replaced (Replacement: True)**. If RDS is replaced, a new empty DB is created and data can be lost, so with a Change Set you can check "Replacement: True" in advance and stop. A) If you update right away, it is already too late by the time you find out. C) Drift detection looks at differences from console changes that have already happened; it does not predict update results. D) Termination Protection only prevents stack deletion and does not prevent replacement during an update.
 
 ---
 
-**문제 3.** 스택을 삭제하더라도 그 안의 프로덕션 RDS 데이터베이스는 보존하고 싶다. 적절한 설정은?
+**Question 2.** When creating a CloudFormation stack, two security groups reference each other and a "circular dependency" error occurred. What is the correct fix?
 
-A) Termination Protection 활성화
+A) Add DependsOn to both sides
 
-B) 리소스에 DeletionPolicy: Retain 설정
+B) Split the inline ingress rules into separate AWS::EC2::SecurityGroupIngress resources
 
-C) Stack Policy로 Update:Delete 거부
+C) Merge the two security groups into one
 
-D) IAM으로 삭제 권한 제거
+D) Change the Region
 
-**정답: B**
+**Answer: B**
 
-해설: **`DeletionPolicy: Retain`** 을 RDS 리소스에 걸면, 스택을 삭제해도 그 리소스는 삭제되지 않고 그대로 남는다(데이터 보존). 스냅샷을 원하면 `Snapshot`을 쓴다. A) Termination Protection은 스택 자체의 삭제를 막을 뿐, 스택을 정상적으로 삭제하는 경우의 리소스 보존과는 다른 개념이다. C) Stack Policy는 업데이트 작업 중 보호이지 스택 삭제 시점의 리소스 보존이 아니다. D) IAM은 "누가" 삭제하는지를 막을 뿐 리소스 보존 메커니즘이 아니다.
-
----
-
-**문제 4.** 네트워크 스택이 Export한 VPC ID를 애플리케이션 스택에서 참조하려 한다. 올바른 함수와 제약은?
-
-A) !Ref vpc-id, 모든 리전에서 가능
-
-B) !ImportValue로 가져오며, 같은 리전·같은 계정 안에서만 가능
-
-C) !GetAtt vpc.Id, 교차 리전 가능
-
-D) !FindInMap, 교차 계정 가능
-
-**정답: B**
-
-해설: 다른 스택이 `Outputs`에서 `Export`한 값은 **`!ImportValue`** 로 가져온다. 단 이 메커니즘은 **같은 리전·같은 계정 내 스택끼리만** 작동하며 교차 리전/계정은 지원하지 않는다. 또 Import가 걸려 있는 동안 원본 Export는 변경·삭제할 수 없는 강결합이 생긴다. A) !Ref는 같은 템플릿 내 리소스/파라미터 참조다. C) !GetAtt는 같은 템플릿 내 속성 참조이고 교차 리전을 주지 않는다. D) !FindInMap은 매핑 조회로 무관하다.
+Explanation: When two resources reference each other, a cycle forms in the dependency graph, so topological sorting is impossible and creation fails. If you do not keep the security group rules inline and instead separate them into **separate `AWS::EC2::SecurityGroupIngress` resources**, the security groups themselves no longer reference each other and only the rules link the two later, which breaks the cycle. A) DependsOn only adds explicit dependencies and cannot resolve a cycle (it actually makes it worse). C) Merging breaks isolation and is not always possible. D) It has nothing to do with the Region.
 
 ---
 
-**문제 5.** CloudFormation으로 EC2를 만들고 UserData로 애플리케이션을 부트스트랩하는데, 스크립트가 실패해도 스택이 "성공"으로 끝난다. 부트스트랩 완료를 CloudFormation이 기다리게 하려면?
+**Question 3.** You want to preserve the production RDS database inside a stack even if the stack is deleted. What is the appropriate setting?
 
-A) DependsOn 추가
+A) Enable Termination Protection
 
-B) CreationPolicy + cfn-signal로 부트스트랩 완료 신호를 보낸다
+B) Set DeletionPolicy: Retain on the resource
+
+C) Deny Update:Delete with a Stack Policy
+
+D) Remove the delete permission with IAM
+
+**Answer: B**
+
+Explanation: If you apply **`DeletionPolicy: Retain`** to the RDS resource, the resource is not deleted and remains as is even when the stack is deleted (data preserved). Use `Snapshot` if you want a snapshot. A) Termination Protection only prevents deletion of the stack itself; it is a different concept from preserving resources when the stack is deleted normally. C) A Stack Policy protects during update operations, not resource preservation at stack deletion time. D) IAM only blocks "who" deletes; it is not a resource preservation mechanism.
+
+---
+
+**Question 4.** You want to reference, in an application stack, the VPC ID exported by a network stack. What are the correct function and its constraint?
+
+A) !Ref vpc-id, possible in all Regions
+
+B) Retrieved with !ImportValue, and only possible within the same Region and the same account
+
+C) !GetAtt vpc.Id, cross-Region possible
+
+D) !FindInMap, cross-account possible
+
+**Answer: B**
+
+Explanation: A value that another stack has `Export`ed in `Outputs` is retrieved with **`!ImportValue`**. However, this mechanism works **only between stacks in the same Region and the same account**; cross-Region or cross-account is not supported. Also, while an Import exists, the original Export cannot be changed or deleted, which creates tight coupling. A) !Ref references resources/parameters within the same template. C) !GetAtt references attributes within the same template and does not provide cross-Region. D) !FindInMap looks up a mapping and is irrelevant.
+
+---
+
+**Question 5.** You create an EC2 instance with CloudFormation and bootstrap the application with UserData, but the stack finishes as "successful" even if the script fails. How can you make CloudFormation wait for bootstrap completion?
+
+A) Add DependsOn
+
+B) Use CreationPolicy + cfn-signal to send a bootstrap completion signal
 
 C) DeletionPolicy: Retain
 
-D) Stack Policy 설정
+D) Set a Stack Policy
 
-**정답: B**
+**Answer: B**
 
-해설: 기본적으로 CloudFormation은 EC2 생성 API가 성공하면 "성공"으로 보며, 인스턴스 **안의** 애플리케이션이 실제로 떴는지는 모른다. **`CreationPolicy`** 를 걸고 부트스트랩 끝에서 **`cfn-signal`** 로 성공 신호를 보내게 하면, CloudFormation은 그 신호(또는 타임아웃)까지 기다렸다가 완료 처리한다. 신호가 안 오면 실패로 보고 롤백한다. A) DependsOn은 리소스 간 순서일 뿐 내부 부트스트랩 완료를 기다리지 않는다. C·D는 부트스트랩 신호와 무관하다.
+Explanation: By default, CloudFormation considers it a "success" when the EC2 creation API succeeds, and does not know whether the application **inside** the instance actually came up. If you apply a **`CreationPolicy`** and have the bootstrap send a success signal with **`cfn-signal`** at the end, CloudFormation waits for that signal (or the timeout) before marking completion. If the signal does not arrive, it is treated as a failure and rolls back. A) DependsOn is only ordering between resources and does not wait for internal bootstrap completion. C and D have nothing to do with the bootstrap signal.
 
 ---
 
-**문제 6.** 운영자가 콘솔에서 보안 그룹을 손으로 수정했다. CloudFormation 템플릿과 실제 리소스의 차이를 확인하려면?
+**Question 6.** An operator modified a security group by hand in the console. How can you check the difference between the CloudFormation template and the actual resource?
 
-A) Change Set 생성
+A) Create a Change Set
 
-B) 드리프트 감지(Drift Detection) 실행
+B) Run Drift Detection
 
-C) 스택 업데이트
+C) Update the stack
 
 D) Termination Protection
 
-**정답: B**
+**Answer: B**
 
-해설: **드리프트 감지**는 템플릿이 기대하는 상태와 실제 리소스 상태를 비교해 콘솔 등에서 발생한 수동 변경(드리프트)을 찾아낸다. 단 자동이 아니라 명시적으로 실행해야 하며, 지속·자동 감지가 필요하면 AWS Config와 결합한다. A) Change Set은 "앞으로의 업데이트"가 무엇을 바꿀지 보여주는 것이지 현재 어긋남을 보여주지 않는다. C) 스택 업데이트는 오히려 콘솔 변경을 덮어쓸 위험이 있다. D) Termination Protection은 삭제 방지일 뿐이다.
+Explanation: **Drift detection** compares the state the template expects with the actual resource state and finds manual changes (drift) made through the console and so on. However, it is not automatic and must be run explicitly; if you need continuous, automatic detection, combine it with AWS Config. A) A Change Set shows what a "future update" would change, not the current mismatch. C) A stack update actually risks overwriting the console changes. D) Termination Protection only prevents deletion.
 
 ---
 
-**문제 7.** CloudFormation의 자동 롤백 동작에 대한 설명으로 가장 정확한 것은?
+**Question 7.** Which statement about CloudFormation's automatic rollback behavior is the most accurate?
 
-A) 생성 중 한 리소스가 실패하면 그때까지 만든 것을 그대로 두고 멈춘다
+A) If a resource fails during creation, it leaves everything created so far as is and stops
 
-B) 생성/업데이트 중 실패하면 직전 안정 상태로 되돌리며, 이는 트랜잭션의 원자성과 유사하다
+B) If creation/update fails, it reverts to the last stable state, which is similar to the atomicity of a transaction
 
-C) 롤백은 항상 100% 성공한다
+C) Rollback always succeeds 100%
 
-D) 롤백은 사용자가 수동으로만 시작할 수 있다
+D) Rollback can only be started manually by the user
 
-**정답: B**
+**Answer: B**
 
-해설: CloudFormation은 생성·업데이트 중 실패 시 **직전의 안정 상태로 자동 롤백**해, 명령적 스크립트처럼 어중간한 상태로 방치하지 않는다. 이는 DB 트랜잭션의 **원자성**(전부 성공 아니면 전부 취소)과 유사한 보장이다. A) 그대로 두는 게 아니라 되돌린다. C) 항상 성공하지는 않는다 — 비어 있지 않은 S3 버킷 등으로 `ROLLBACK_FAILED`에 빠지면 수동 정리 후 `ContinueUpdateRollback`이 필요하다. D) 롤백은 실패 시 자동으로 시작된다.
+Explanation: When creation or an update fails, CloudFormation **automatically rolls back to the last stable state**, so unlike an imperative script it does not leave things in a half-finished state. This is a guarantee similar to the **atomicity** of a DB transaction (all succeed or all are canceled). A) It does not leave things as is; it reverts them. C) It does not always succeed: if it falls into `ROLLBACK_FAILED` because of, for example, a non-empty S3 bucket, manual cleanup followed by `ContinueUpdateRollback` is required. D) Rollback starts automatically on failure.

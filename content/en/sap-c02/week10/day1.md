@@ -78,87 +78,87 @@ SAP exam common mappings: (1) "large payload + long inference + per-request" →
 
 ## 📝 Practice Questions
 
-**문제 1.** 사용자가 800MB 의료 영상을 업로드하면 모델이 분석하는데 추론에 약 5분이 걸린다. 동기 HTTP 응답은 타임아웃이 나고, 트래픽은 하루 수십 건으로 불규칙하다. 가장 적합한 추론 옵션은?
+**Question 1.** A user uploads an 800 MB medical image, and a model analyzes it; inference takes about 5 minutes. A synchronous HTTP response times out, and traffic is irregular at a few dozen requests per day. Which inference option is the most appropriate?
 
 A) Real-Time Endpoint
 B) Serverless Inference
 C) Async Inference
 D) Multi-Model Endpoint
 
-**정답: C**
-해설: Async Inference는 큐 기반으로 요청을 받아 결과를 S3에 쓰고 SNS로 알리며, 최대 1GB 페이로드와 긴 처리 시간을 지원한다. 800MB(>6MB 한계)와 5분 추론(>60초 타임아웃)은 Real-Time(A)·Serverless(B)의 페이로드/타임아웃 한계를 모두 초과하므로 불가하다. Async는 불규칙 트래픽에서 0으로 스케일 다운도 가능. D(Multi-Model)는 여러 모델을 한 엔드포인트에 올리는 비용 최적화 기법이지 큰 페이로드/긴 추론 문제의 답이 아니다. 함정: "큰 페이로드 + 긴 추론 + 요청별 처리"는 무조건 Async.
+**Answer: C**
+Explanation: Async Inference accepts requests through a queue, writes results to S3, notifies through SNS, and supports payloads up to 1 GB and long processing times. 800 MB (over the 6 MB limit) and 5-minute inference (over the 60-second timeout) exceed the payload/timeout limits of both Real-Time (A) and Serverless (B), so they are not possible. Async can also scale down to zero with irregular traffic. D (Multi-Model) is a cost-optimization technique that hosts multiple models on one endpoint; it is not the answer to a large-payload/long-inference problem. Trap: "large payload + long inference + per-request processing" is always Async.
 
 ---
 
-**문제 2.** GPU 학습 비용을 최대 90% 절감하면서 Spot 인스턴스 회수 시에도 학습이 완료되도록 보장해야 한다. 어떻게 구성하는가?
+**Question 2.** You must reduce GPU training costs by up to 90% while ensuring training completes even when Spot Instances are reclaimed. How should you configure this?
 
-A) Reserved Instance로 학습
+A) Train on Reserved Instances
 B) Managed Spot Training + Checkpoint(checkpoint_s3_uri)
-C) Compute Savings Plans 적용
-D) On-Demand로 학습 후 결과 캐싱
+C) Apply Compute Savings Plans
+D) Train on On-Demand and cache the results
 
-**정답: B**
-해설: Managed Spot Training은 Spot 인스턴스(최대 90% 할인)를 학습에 쓰고, Checkpoint(주기적 가중치를 S3에 저장)로 Spot 회수 시 마지막 체크포인트부터 재개해 작업을 완료시킨다. 이 둘은 항상 함께 쓴다 — 체크포인트 없는 Spot 학습은 긴 작업에서 거의 완료되지 못한다. A(Reserved)·C(Savings Plans)는 약정 할인이지 90%에 못 미치고 중단 복구와 무관. D는 비용 절감이 없다. 함정: "학습 90% 절감 + 중단 복구"는 항상 Spot + Checkpoint.
+**Answer: B**
+Explanation: Managed Spot Training uses Spot Instances (up to 90% discount) for training, and Checkpoints (periodically saving weights to S3) let training resume from the last checkpoint when Spot capacity is reclaimed, so the job completes. The two are always used together — Spot training without checkpoints almost never finishes for long jobs. A (Reserved) and C (Savings Plans) are commitment discounts that fall short of 90% and have nothing to do with interruption recovery. D provides no cost savings. Trap: "training cost reduction of 90% + interruption recovery" is always Spot + Checkpoint.
 
 ---
 
-**문제 3.** 1000개 고객사별 맞춤 모델을 서빙해야 한다. 각 모델은 가끔만 호출되고, 모델마다 별도 엔드포인트를 띄우면 인스턴스 비용이 감당이 안 된다. 가장 적합한 구성은?
+**Question 3.** You must serve custom models for 1,000 customers. Each model is invoked only occasionally, and running a separate endpoint for each model makes instance costs unaffordable. Which configuration is the most appropriate?
 
-A) 모델마다 Serverless Inference 엔드포인트
+A) A Serverless Inference endpoint for each model
 B) Multi-Model Endpoint(MME)
-C) 모델마다 Real-Time Endpoint
-D) 모든 모델을 하나로 합쳐 단일 모델로 학습
+C) A Real-Time Endpoint for each model
+D) Combine all models and train a single model
 
-**정답: B**
-해설: Multi-Model Endpoint는 하나의 엔드포인트(소수 인스턴스)에 여러 모델을 올려두고, 요청 시 해당 모델을 S3에서 메모리로 동적 로딩해 추론하며 자주 안 쓰는 모델은 LRU로 내린다. 긴 꼬리 트래픽(대부분 모델이 가끔 호출)에서 인스턴스 메모리를 캐시처럼 공유해 비용을 극적으로 줄인다. A(모델당 Serverless)도 유휴 비용은 줄지만 1000개 엔드포인트 관리 부담이 크고 MME가 더 효율적. C는 비용 폭발. D는 고객사별 맞춤이 사라져 요구 위반. 함정: "다수의 가끔 쓰는 모델 비용 절감"은 MME.
+**Answer: B**
+Explanation: A Multi-Model Endpoint hosts multiple models on one endpoint (a small number of instances), dynamically loads the requested model from S3 into memory on demand, and evicts rarely used models using LRU. With long-tail traffic (most models invoked only occasionally), instance memory is shared like a cache, dramatically reducing cost. A (one Serverless endpoint per model) also reduces idle cost, but managing 1,000 endpoints is a heavy burden and MME is more efficient. C causes a cost explosion. D loses per-customer customization and violates the requirement. Trap: "cost reduction for many occasionally used models" is MME.
 
 ---
 
-**문제 4.** 새 추천 모델을 프로덕션에 올리기 전, 실제 운영 트래픽에서 새 모델의 지연·에러·예측을 검증하되 사용자 응답에는 전혀 영향을 주지 않아야 한다. 어떤 배포 전략인가?
+**Question 4.** Before deploying a new recommendation model to production, you must validate the new model's latency, errors, and predictions on real production traffic without affecting user responses at all. Which deployment strategy should you use?
 
 A) A/B Test(Production Variants)
-B) Canary 배포
+B) Canary deployment
 C) Shadow Endpoint(Shadow Testing)
-D) Blue/Green 배포
+D) Blue/Green deployment
 
-**정답: C**
-해설: Shadow Endpoint는 실시간 운영 트래픽을 새 모델에 복제(미러링)하지만 그 출력을 사용자에게 반환하지 않으므로, 사용자 경험에 0 영향으로 새 모델을 기존 모델과 비교한다. A(A/B)·B(Canary)·D(Blue/Green)는 모두 일부 사용자가 실제로 새 모델의 응답을 받으므로 "사용자 응답에 영향 없이"라는 조건에 어긋난다. 함정: "영향 없이 트래픽 미러링 비교"는 Shadow, "실제 트래픽 분할 비교"는 A/B.
+**Answer: C**
+Explanation: A Shadow Endpoint replicates (mirrors) live production traffic to the new model but does not return its output to users, so the new model can be compared with the existing model with zero impact on user experience. A (A/B), B (Canary), and D (Blue/Green) all result in some users actually receiving the new model's responses, which violates the "no impact on user responses" condition. Trap: "compare by mirroring traffic without impact" is Shadow; "compare by actually splitting traffic" is A/B.
 
 ---
 
-**문제 5.** 모델이 학습 때 쓴 피처와 실시간 추론 때 계산한 피처가 미묘하게 달라 정확도가 떨어지는 train-serve skew가 발생한다. 어떻게 방지하는가?
+**Question 5.** Accuracy drops because of train-serve skew: the features used during training differ subtly from those computed during real-time inference. How do you prevent this?
 
-A) S3에 피처를 저장해 양쪽이 읽게 함
+A) Store features in S3 and have both sides read them
 B) SageMaker Feature Store(Online/Offline)
-C) DynamoDB에 피처를 직접 저장
-D) 학습과 추론 코드를 같은 함수로 작성
+C) Store features directly in DynamoDB
+D) Write the training and inference code as the same function
 
-**정답: B**
-해설: SageMaker Feature Store는 학습용 Offline Store(S3+Glue)와 추론용 Online Store(DynamoDB 저지연)를 자동 동기화해, 양쪽이 동일하게 정의·계산된 피처를 쓰도록 보장한다. 이것이 train-serve skew를 막는 표준 해법이다. A(S3 공유)·C(DDB 직접)는 피처 정의·버전·동기화를 직접 관리해야 해 skew 위험이 남는다. D는 코드 일관성은 돕지만 피처 저장·서빙 인프라가 아니다. 함정: "학습·추론 피처 일관성"은 Feature Store.
+**Answer: B**
+Explanation: SageMaker Feature Store automatically synchronizes the Offline Store for training (S3 + Glue) and the Online Store for inference (low-latency DynamoDB), ensuring both sides use features that are defined and computed identically. This is the standard solution for preventing train-serve skew. A (shared S3) and C (direct DynamoDB) require you to manage feature definitions, versions, and synchronization yourself, so the skew risk remains. D helps with code consistency but is not a feature storage and serving infrastructure. Trap: "consistency of training and inference features" is Feature Store.
 
 ---
 
-**문제 6.** 매일 밤 전체 고객 5천만 명의 이탈 점수를 일괄로 다시 계산해 S3에 저장해야 한다. 상시 엔드포인트는 필요 없다. 가장 적합하고 경제적인 방법은?
+**Question 6.** Every night you must recompute churn scores for all 50 million customers in bulk and store them in S3. A persistent endpoint is not needed. What is the most appropriate and cost-effective method?
 
-A) Real-Time Endpoint를 밤에만 띄움
+A) Start a Real-Time Endpoint only at night
 B) Batch Transform
 C) Async Inference
-D) Serverless Inference로 5천만 건 호출
+D) Call Serverless Inference 50 million times
 
-**정답: B**
-해설: Batch Transform은 엔드포인트가 아니라 일회성 배치 작업으로, S3의 대량 데이터셋 전체에 추론을 돌리고 결과를 S3에 쓴 뒤 인스턴스를 종료한다. 상시 서빙이 필요 없는 야간 일괄 스코어링의 정석이다. A는 엔드포인트 관리·기동 부담. C(Async)는 요청-응답형 개별 추론용이지 데이터셋 전체 일괄용이 아니다. D는 5천만 건을 개별 호출하면 비효율적이고 비싸다. 함정: "데이터셋 전체 일괄 추론"은 Batch Transform, "개별 요청 비동기"는 Async.
+**Answer: B**
+Explanation: Batch Transform is a one-time batch job, not an endpoint; it runs inference over an entire large dataset in S3, writes the results to S3, and then terminates the instances. It is the classic choice for nightly bulk scoring that does not need persistent serving. A adds the burden of managing and starting an endpoint. C (Async) is for individual request-response inference, not for bulk processing of an entire dataset. D is inefficient and expensive because it makes 50 million individual invocations. Trap: "bulk inference over an entire dataset" is Batch Transform; "asynchronous individual requests" is Async.
 
 ---
 
-**문제 7.** 추론 비용과 성능을 최적화하기 위해 NVIDIA GPU 대신 AWS 자체 설계 추론 전용 칩을 쓰려 한다. 어떤 칩인가?
+**Question 7.** To optimize inference cost and performance, you want to use an AWS-designed inference-specific chip instead of NVIDIA GPUs. Which chip is it?
 
 A) Trainium(Trn1)
 B) Inferentia(Inf1/Inf2)
 C) Graviton
 D) F1 FPGA
 
-**정답: B**
-해설: Inferentia(Inf1/Inf2)는 AWS가 설계한 추론 전용 ASIC으로, 같은 처리량을 GPU보다 낮은 비용으로 낸다. A(Trainium)는 학습 전용 칩이고, C(Graviton)는 범용 ARM CPU(추론 전용이 아님), D(F1 FPGA)는 커스텀 하드웨어 가속용이지 ML 추론 전용 칩이 아니다. 함정: 추론=Inferentia, 학습=Trainium, 범용 CPU=Graviton.
+**Answer: B**
+Explanation: Inferentia (Inf1/Inf2) is an inference-specific ASIC designed by AWS that delivers the same throughput at a lower cost than GPUs. A (Trainium) is a training-specific chip, C (Graviton) is a general-purpose ARM CPU (not inference-specific), and D (F1 FPGA) is for custom hardware acceleration, not an ML inference-specific chip. Trap: inference = Inferentia, training = Trainium, general-purpose CPU = Graviton.
 
 ---
 

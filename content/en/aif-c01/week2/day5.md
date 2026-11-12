@@ -86,62 +86,62 @@ Next week we enter machine learning and deep learning, plus AWS's AI/ML service 
 
 ## 📝 Practice Questions
 
-**문제 1.** ML 수명주기에 대한 설명으로 가장 정확한 것은?
+**Question 1.** Which statement about the ML lifecycle is most accurate?
 
 A) Collection → Training → Deployment in one linear direction, then done  
 B) Collection → Preparation → Training → Evaluation → Deployment → Monitoring, with circulation when performance degrades  
 C) Deployment is the final step with no work after  
 D) Data preparation stage can be skipped  
 
-**정답: B**  
-해설: The ML lifecycle goes through six stages: collection, preparation, training, evaluation, deployment, monitoring, and is circular—when performance degrades from drift, we return to the beginning. It's not one-way (A), deployment isn't the end (C), and data preparation is one of the most important stages and cannot be skipped (D).
+**Answer: B**  
+Explanation: The ML lifecycle goes through six stages: collection, preparation, training, evaluation, deployment, monitoring, and is circular—when performance degrades from drift, we return to the beginning. It's not one-way (A), deployment isn't the end (C), and data preparation is one of the most important stages and cannot be skipped (D).
 
 ---
 
-**문제 2.** 다음 중 정밀도(Precision)를 우선해야 하는 상황으로 가장 적절한 것은?
+**Question 2.** Which of the following is the most appropriate situation in which precision should be prioritized?
 
 A) Diagnosis model where we can't miss a single cancer patient  
 B) Spam filter where wrongly classifying normal emails as spam is problematic  
 C) Fraud detection system that must catch as much fraud as possible  
 D) Missing person search system where we can't miss a single person  
 
-**정답: B**  
-해설: Wrongly flagging a normal email as spam is a false positive (FP), and precision focuses on reducing FP. Therefore, spam filters where false alarms are costly prioritize precision. The rest (cancer diagnosis, fraud detection, missing person search) are all "missing is critical" situations that prioritize recall to reduce false negatives.
+**Answer: B**  
+Explanation: Wrongly flagging a normal email as spam is a false positive (FP), and precision focuses on reducing FP. Therefore, spam filters where false alarms are costly prioritize precision. The rest (cancer diagnosis, fraud detection, missing person search) are all "missing is critical" situations that prioritize recall to reduce false negatives.
 
 ---
 
-**문제 3.** 학습 데이터 정확도는 98%로 매우 높지만 테스트 데이터 정확도는 64%로 크게 낮다. 이 현상과 그 진단으로 옳은 것은?
+**Question 3.** Training data accuracy is very high at 98%, but test data accuracy is much lower at 64%. Which option correctly states this phenomenon and its diagnosis?
 
 A) Underfitting — model is too simple  
 B) Overfitting — model memorized training data and failed to generalize  
 C) Evidence of no data leakage  
 D) Means perfect class balance  
 
-**정답: B**  
-해설: A large gap where training score is very high but test score is much lower is a classic sign of overfitting—the model memorized training data and failed to generalize to unseen data. Underfitting would show low training scores too (A wrong), and C·D are statements unrelated to this symptom.
+**Answer: B**  
+Explanation: A large gap where training score is very high but test score is much lower is a classic sign of overfitting—the model memorized training data and failed to generalize to unseen data. Underfitting would show low training scores too (A wrong), and C·D are statements unrelated to this symptom.
 
 ---
 
-**문제 4.** 데이터 드리프트(Data Drift)와 데이터 누수(Data Leakage)를 구분한 설명으로 옳은 것은?
+**Question 4.** Which statement correctly distinguishes data drift from data leakage?
 
 A) Both occur before training and are the same problem  
 B) Drift is distribution change over time after deployment; leakage is test data mixing into training causing inflated evaluation scores  
 C) Leakage is performance degradation during operation; drift is evaluation score inflation  
 D) Both occur only at the model deployment stage  
 
-**정답: B**  
-해설: Data drift is an operational problem where data distribution changes after deployment, causing the model to become outdated. Data leakage is an evaluation problem where test data gets mixed into training, inflating evaluation scores unrealistically. They happen at opposite times with opposite results, so A·C·D are all wrong.
+**Answer: B**  
+Explanation: Data drift is an operational problem where data distribution changes after deployment, causing the model to become outdated. Data leakage is an evaluation problem where test data gets mixed into training, inflating evaluation scores unrealistically. They happen at opposite times with opposite results, so A·C·D are all wrong.
 
 ---
 
-**문제 5.** 고위험 자동 의사결정 시스템에서 책임 있는 AI를 위해 권장되는 설계는?
+**Question 5.** What design is recommended for responsible AI in a high-stakes automated decision-making system?
 
 A) Have AI handle all decisions independently and automatically  
 B) Have people review and approve critical decisions through Human-in-the-loop  
 C) Skip data labeling to speed things up  
 D) Stop monitoring to reduce costs  
 
-**정답: B**  
-해설: For high-risk decisions, the danger of AI-only automation (inability to filter bias and errors) is large, so putting people in the loop (Human-in-the-loop) to review and approve critical decisions is a core safety mechanism of Responsible AI. Skipping labeling or stopping monitoring actually harms model quality and safety.
+**Answer: B**  
+Explanation: For high-risk decisions, the danger of AI-only automation (inability to filter bias and errors) is large, so putting people in the loop (Human-in-the-loop) to review and approve critical decisions is a core safety mechanism of Responsible AI. Skipping labeling or stopping monitoring actually harms model quality and safety.
 
 ---

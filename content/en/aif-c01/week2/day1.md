@@ -83,62 +83,62 @@ Tomorrow we dive deeper into "data" itself, the fuel of this lifecycle. We'll co
 
 ## 📝 Practice Questions
 
-**문제 1.** ML 수명주기에서 데이터를 모은 직후, 모델 학습 전에 반드시 거쳐야 하는 단계는?
+**Question 1.** In the ML lifecycle, which step must be performed right after collecting data and before training a model?
 
 A) Model Deployment  
 B) Data Preparation (cleaning and transformation)  
 C) Monitoring  
 D) Model Evaluation  
 
-**정답: B**  
-해설: Current raw data is messy due to missing values, duplicates, and format inconsistencies, so the data preparation stage of cleaning and transforming it into a learnable form must be completed before training. Deployment and monitoring are stages after training and evaluation, and evaluation occurs after training, so neither is the stage immediately before training.
+**Answer: B**  
+Explanation: Current raw data is messy due to missing values, duplicates, and format inconsistencies, so the data preparation stage of cleaning and transforming it into a learnable form must be completed before training. Deployment and monitoring are stages after training and evaluation, and evaluation occurs after training, so neither is the stage immediately before training.
 
 ---
 
-**문제 2.** ML 수명주기를 한 방향으로 끝나는 직선이 아니라 순환하는 원으로 보는 가장 큰 이유는?
+**Question 2.** What is the main reason the ML lifecycle is viewed as a repeating cycle rather than a one-way straight line?
 
 A) Once a model is deployed, it remains accurate forever  
 B) Because data distribution changes over time (drift), causing the model to become outdated, making retraining necessary  
 C) Because new algorithms are invented each time  
 D) Because the deployment stage takes the longest  
 
-**정답: B**  
-해설: The distribution of data in the world changes over time (data drift), and models built from training data become increasingly misaligned with reality. That's why when monitoring detects performance degradation, we need to recollect data and retrain in a circular process. A models do not remain accurate forever, so A is incorrect. C and D are unrelated to the fundamental reason for the circular nature.
+**Answer: B**  
+Explanation: The distribution of data in the world changes over time (data drift), and models built from training data become increasingly misaligned with reality. That's why when monitoring detects performance degradation, we need to recollect data and retrain in a circular process. A models do not remain accurate forever, so A is incorrect. C and D are unrelated to the fundamental reason for the circular nature.
 
 ---
 
-**문제 3.** 모델 평가 단계에서 성능을 측정할 때 사용해야 하는 데이터로 가장 적절한 것은?
+**Question 3.** Which data is most appropriate to use when measuring performance in the model evaluation stage?
 
 A) Data used in training  
 B) Unseen data that was not used in training  
 C) Raw data that has not been cleaned yet  
 D) Data collected only after deployment  
 
-**정답: B**  
-해설: It's natural that a model fits well on training data (since we've already seen it), so true performance must be measured on unseen data that was not used in training. Evaluating only on training data makes it impossible to distinguish between memorization and true generalization. Raw uncleaned data is unsuitable for evaluation, and evaluation is performed before deployment.
+**Answer: B**  
+Explanation: It's natural that a model fits well on training data (since we've already seen it), so true performance must be measured on unseen data that was not used in training. Evaluating only on training data makes it impossible to distinguish between memorization and true generalization. Raw uncleaned data is unsuitable for evaluation, and evaluation is performed before deployment.
 
 ---
 
-**문제 4.** "Garbage In, Garbage Out"이라는 격언이 ML 수명주기에서 강조하는 단계는?
+**Question 4.** Which stage of the ML lifecycle does the adage "Garbage In, Garbage Out" emphasize?
 
 A) Deployment  
 B) Monitoring  
 C) Data Collection and Preparation (data quality)  
 D) Model Evaluation  
 
-**정답: C**  
-해설: This adage means that no matter how good the algorithm, poor input data quality results in poor output (model). It emphasizes the importance of the stages of collecting and cleaning data. Deployment, monitoring, and evaluation are stages after data quality is established, so they are not direct targets of this adage.
+**Answer: C**  
+Explanation: This adage means that no matter how good the algorithm, poor input data quality results in poor output (model). It emphasizes the importance of the stages of collecting and cleaning data. Deployment, monitoring, and evaluation are stages after data quality is established, so they are not direct targets of this adage.
 
 ---
 
-**문제 5.** 6개월 전 배포한 모델의 정확도가 운영 중 점점 떨어지고 있다. ML 수명주기 관점에서 가장 올바른 대응은?
+**Question 5.** The accuracy of a model deployed six months ago is gradually declining in production. From the ML lifecycle perspective, what is the most appropriate response?
 
 A) Immediately discard the model and stop using ML  
 B) Take no action; the model will recover automatically over time  
 C) Because this is performance degradation detected by monitoring, collect recent data and retrain  
 D) Simply re-check the accuracy on training data  
 
-**정답: C**  
-해설: Performance degradation during operation is a signal that the monitoring stage should catch, and data drift is likely the cause. Therefore, the correct approach is to complete another cycle of the lifecycle by collecting recent data and retraining. Since the model does not recover automatically, B is incorrect. Training data accuracy is irrelevant to the current operational problem, so D is also inappropriate.
+**Answer: C**  
+Explanation: Performance degradation during operation is a signal that the monitoring stage should catch, and data drift is likely the cause. Therefore, the correct approach is to complete another cycle of the lifecycle by collecting recent data and retraining. Since the model does not recover automatically, B is incorrect. Training data accuracy is irrelevant to the current operational problem, so D is also inappropriate.
 
 ---

@@ -146,7 +146,7 @@ Next time we comprehensively review all of Week 13 — Multi-AZ, Multi-Region, D
 
 ## 📝 Practice Questions
 
-**문제 1.** You want to inject CPU stress for 5 minutes into a random 30% of EC2 production instances, but have it immediately stop and roll back if P99 latency exceeds a threshold during the experiment. Which FIS configuration is correct?
+**Question 1.** You want to inject CPU stress for 5 minutes into a random 30% of EC2 production instances, but have it immediately stop and roll back if P99 latency exceeds a threshold during the experiment. Which FIS configuration is correct?
 
 A) SelectionMode ALL + no Stop Condition
 
@@ -156,13 +156,13 @@ C) Terminate all instances
 
 D) Manually raise CPU from the console
 
-**정답: B**
+**Answer: B**
 
-해설: The random 30% is quantitatively blast-radius-controlled via SelectionMode PERCENT(30), CPU stress runs the AWSFIS-Run-CPU-Stress SSM document for 5 minutes (PT5M), and immediate halt on P99 latency threshold exceedance is implemented with a CloudWatch Alarm-based Stop Condition. SelectionMode ALL with no Stop Condition (A) is dangerous because the blast radius is the entire fleet with no safety net; terminating everything (C) differs from the intent (CPU stress) and is too destructive; manual (D) can't be reproduced or automated. The combination of PERCENT (blast radius) + Stop Condition (safety belt) is the core of safe chaos.
+Explanation: The random 30% is quantitatively blast-radius-controlled via SelectionMode PERCENT(30), CPU stress runs the AWSFIS-Run-CPU-Stress SSM document for 5 minutes (PT5M), and immediate halt on P99 latency threshold exceedance is implemented with a CloudWatch Alarm-based Stop Condition. SelectionMode ALL with no Stop Condition (A) is dangerous because the blast radius is the entire fleet with no safety net; terminating everything (C) differs from the intent (CPU stress) and is too destructive; manual (D) can't be reproduced or automated. The combination of PERCENT (blast radius) + Stop Condition (safety belt) is the core of safe chaos.
 
 ---
 
-**문제 2.** What distinguishes chaos engineering from simply "throwing intentional failures" at a system?
+**Question 2.** What distinguishes chaos engineering from simply "throwing intentional failures" at a system?
 
 A) It kills more instances
 
@@ -172,13 +172,13 @@ C) It's done only in production
 
 D) It uses no safety mechanisms
 
-**정답: B**
+**Answer: B**
 
-해설: Chaos engineering is an application of the scientific method — you define the steady state with measurable metrics (success rate, P99, etc.), form the hypothesis that "the system will maintain steady state even under a specific fault," then inject a real failure to validate or falsify that hypothesis (Principles of Chaos Engineering). If falsified, that is a discovered weakness. Like Popper's falsificationism, this treats resilience as "verified evidence" rather than "belief." Killing more (A), production-only (C), and removing safety mechanisms (D) are all not the essence of chaos engineering — in fact D is a dangerous anti-pattern.
+Explanation: Chaos engineering is an application of the scientific method — you define the steady state with measurable metrics (success rate, P99, etc.), form the hypothesis that "the system will maintain steady state even under a specific fault," then inject a real failure to validate or falsify that hypothesis (Principles of Chaos Engineering). If falsified, that is a discovered weakness. Like Popper's falsificationism, this treats resilience as "verified evidence" rather than "belief." Killing more (A), production-only (C), and removing safety mechanisms (D) are all not the essence of chaos engineering — in fact D is a dangerous anti-pattern.
 
 ---
 
-**문제 3.** What is the rationale for the recommended approach of "starting a chaos experiment with a small blast radius (e.g., 5% of instances) and expanding gradually"?
+**Question 3.** What is the rationale for the recommended approach of "starting a chaos experiment with a small blast radius (e.g., 5% of instances) and expanding gradually"?
 
 A) Because doing it small is cheaper
 
@@ -188,13 +188,13 @@ C) Because AWS prohibits large experiments
 
 D) Because small experiments are more accurate
 
-**정답: B**
+**Answer: B**
 
-해설: Starting with a small blast radius is a progressive exposure strategy that confines and controls risk in a small scope while gradually building trust — the same idea as a canary deployment that exposes new code to only 5%, controlling risk by "confining failure to a small scope." FIS's SelectionMode (PERCENT/COUNT) is this blast radius dial. Cost (A) and accuracy (D) are not the core, and AWS does not prohibit large experiments (C) — once safety is confirmed, you deliberately expand.
+Explanation: Starting with a small blast radius is a progressive exposure strategy that confines and controls risk in a small scope while gradually building trust — the same idea as a canary deployment that exposes new code to only 5%, controlling risk by "confining failure to a small scope." FIS's SelectionMode (PERCENT/COUNT) is this blast radius dial. Cost (A) and accuracy (D) are not the core, and AWS does not prohibit large experiments (C) — once safety is confirmed, you deliberately expand.
 
 ---
 
-**문제 4.** What is the most important safety mechanism preventing a FIS chaos experiment from escalating into a real operational failure?
+**Question 4.** What is the most important safety mechanism preventing a FIS chaos experiment from escalating into a real operational failure?
 
 A) Keep the experiment duration short
 
@@ -204,13 +204,13 @@ C) Run the experiment only at night
 
 D) Manually inspect after the experiment
 
-**정답: B**
+**Answer: B**
 
-해설: FIS's Stop Condition is the core safety mechanism that immediately halts the experiment and rolls back the injected failure when a CloudWatch Alarm fires during the experiment (e.g., P99 latency threshold exceeded) — preventing chaos from escalating into a real failure. However, a Stop Condition only stops; it can't undo damage already done, so it must be paired with a small blast radius (PERCENT) as a "small radius + fast stop" multi-layered defense. Short duration (A), nighttime execution (C), and post-hoc inspection (D) are only supplementary — the real-time automatic halt of the Stop Condition is most important.
+Explanation: FIS's Stop Condition is the core safety mechanism that immediately halts the experiment and rolls back the injected failure when a CloudWatch Alarm fires during the experiment (e.g., P99 latency threshold exceeded) — preventing chaos from escalating into a real failure. However, a Stop Condition only stops; it can't undo damage already done, so it must be paired with a small blast radius (PERCENT) as a "small radius + fast stop" multi-layered defense. Short duration (A), nighttime execution (C), and post-hoc inspection (D) are only supplementary — the real-time automatic halt of the Stop Condition is most important.
 
 ---
 
-**문제 5.** You want to measure whether your actual configuration achieves the workload's set RTO/RPO goals (e.g., AZ failure RTO 600 seconds), and receive improvement proposals and cost impact when it falls short. Which service is most appropriate?
+**Question 5.** You want to measure whether your actual configuration achieves the workload's set RTO/RPO goals (e.g., AZ failure RTO 600 seconds), and receive improvement proposals and cost impact when it falls short. Which service is most appropriate?
 
 A) Use FIS alone
 
@@ -220,13 +220,13 @@ C) CloudWatch Dashboard
 
 D) AWS Config
 
-**정답: B**
+**Answer: B**
 
-해설: Resilience Hub analyzes the workload configuration to evaluate whether it actually achieves the set resilience policy (RTO/RPO by Hardware/Software/AZ/Region), presents concrete improvement proposals and cost impact when it falls short, and validates results with FIS experiments — it's the quantification tool for the Well-Architected Reliability Pillar. FIS (A) is the hand that injects failure, not something that measures against goals or recommends; CloudWatch Dashboard (C) is metric visualization; and Config (D) tracks configuration compliance, not RTO/RPO evaluation.
+Explanation: Resilience Hub analyzes the workload configuration to evaluate whether it actually achieves the set resilience policy (RTO/RPO by Hardware/Software/AZ/Region), presents concrete improvement proposals and cost impact when it falls short, and validates results with FIS experiments — it's the quantification tool for the Well-Architected Reliability Pillar. FIS (A) is the hand that injects failure, not something that measures against goals or recommends; CloudWatch Dashboard (C) is metric visualization; and Config (D) tracks configuration compliance, not RTO/RPO evaluation.
 
 ---
 
-**문제 6.** You want to automatically verify every month whether the DR region failover procedure actually works within RTO. Which combination is most appropriate?
+**Question 6.** You want to automatically verify every month whether the DR region failover procedure actually works within RTO. Which combination is most appropriate?
 
 A) The ops team manually fails over each quarter
 
@@ -236,13 +236,13 @@ C) Only document the procedure
 
 D) Perform Backup more frequently
 
-**정답: B**
+**Answer: B**
 
-해설: Triggering the Route 53 ARC Routing Control switch as a FIS Action lets you validate the DR failover procedure itself as a periodic automated experiment — automatically confirming every month "does region failover actually finish within RTO?", directly resolving the risk that "untested DR doesn't work." Manual quarterly failover (A) is infrequent and error-prone, documentation (C) doesn't validate actual operation, and frequent Backup (D) is unrelated to validating the failover procedure.
+Explanation: Triggering the Route 53 ARC Routing Control switch as a FIS Action lets you validate the DR failover procedure itself as a periodic automated experiment — automatically confirming every month "does region failover actually finish within RTO?", directly resolving the risk that "untested DR doesn't work." Manual quarterly failover (A) is infrequent and error-prone, documentation (C) doesn't validate actual operation, and frequent Backup (D) is unrelated to validating the failover procedure.
 
 ---
 
-**문제 7.** What most accurately describes the relationship between Game Day and Chaos Engineering?
+**Question 7.** What most accurately describes the relationship between Game Day and Chaos Engineering?
 
 A) They are different names for the same thing
 
@@ -252,9 +252,9 @@ C) Chaos Engineering has replaced Game Day
 
 D) Game Day runs more frequently
 
-**정답: B**
+**Answer: B**
 
-해설: Game Day is a one-time drill (quarterly/annual, learning-focused) where a team gathers to manually execute intentional failure scenarios and check people, processes, and runbooks, while Chaos Engineering periodically automates failure injection (daily/weekly, validation-focused) with tools like FIS. They are complementary — Game Day validates "how do people respond to failure," Chaos validates "how does the system respond to failure." Mature organizations train people with quarterly Game Days and validate systems with weekly automated chaos. They are neither the same thing (A) nor a replacement relationship (C), and since periodic-automated Chaos runs more often, D is also wrong.
+Explanation: Game Day is a one-time drill (quarterly/annual, learning-focused) where a team gathers to manually execute intentional failure scenarios and check people, processes, and runbooks, while Chaos Engineering periodically automates failure injection (daily/weekly, validation-focused) with tools like FIS. They are complementary — Game Day validates "how do people respond to failure," Chaos validates "how does the system respond to failure." Mature organizations train people with quarterly Game Days and validate systems with weekly automated chaos. They are neither the same thing (A) nor a replacement relationship (C), and since periodic-automated Chaos runs more often, D is also wrong.
 
 ---
 

@@ -88,62 +88,62 @@ Tomorrow we move AI security further forward to **Data Governance and Compliance
 
 ## 📝 Practice Questions
 
-**문제 1.** In the AWS shared responsibility model, when calling a model with Amazon Bedrock, who is responsible for "setting IAM permissions for who can access input data"?
+**Question 1.** In the AWS shared responsibility model, when calling a model with Amazon Bedrock, who is responsible for "setting IAM permissions for who can access input data"?
 
 A) AWS  
 B) Customer  
 C) Bedrock's foundation model provider  
 D) Internet service provider  
 
-**정답: B**  
-해설: IAM permission setting and data access control are "security IN the cloud," which is customer responsibility. AWS is responsible for the cloud's foundation security like data centers and hardware. C and D are not parties in the shared responsibility model.
+**Answer: B**  
+Explanation: IAM permission setting and data access control are "security IN the cloud," which is customer responsibility. AWS is responsible for the cloud's foundation security like data centers and hardware. C and D are not parties in the shared responsibility model.
 
 ---
 
-**문제 2.** When granting data scientists access to a training S3 bucket, what's the safest approach?
+**Question 2.** When granting data scientists access to a training S3 bucket, what's the safest approach?
 
 A) Give all users administrator permissions  
 B) Grant read permission only to the specific bucket needed (least privilege)  
 C) Open the bucket publicly without IAM  
 D) Grant permissions once and never review again  
 
-**정답: B**  
-해설: The least privilege principle means granting only necessary permissions — the safest approach. A's full admin access and C's public bucket are excessive exposure. D violates the principle that permissions must be periodically reviewed and revoked.
+**Answer: B**  
+Explanation: The least privilege principle means granting only necessary permissions — the safest approach. A's full admin access and C's public bucket are excessive exposure. D violates the principle that permissions must be periodically reviewed and revoked.
 
 ---
 
-**문제 3.** Which statement correctly describes "encryption at rest" and "encryption in transit"?
+**Question 3.** Which statement correctly describes "encryption at rest" and "encryption in transit"?
 
 A) At-rest encryption with KMS protects stored data, in-transit encryption with TLS protects network communication; both are necessary  
 B) They're the same thing, only one is needed  
 C) In-transit encryption protects S3 stored data  
 D) At-rest encryption prevents network eavesdropping  
 
-**정답: A**  
-해설: At-rest encryption (KMS) protects storage data, in-transit encryption (TLS) protects communication, and both are needed. B wrongly treats them as identical. C and D swap the roles of the two concepts.
+**Answer: A**  
+Explanation: At-rest encryption (KMS) protects storage data, in-transit encryption (TLS) protects communication, and both are needed. B wrongly treats them as identical. C and D swap the roles of the two concepts.
 
 ---
 
-**문제 4.** Training data contains customer support text with names and ID numbers. You want to automatically identify and mask this personal information (PII). What service is most appropriate?
+**Question 4.** Training data contains customer support text with names and ID numbers. You want to automatically identify and mask this personal information (PII). What service is most appropriate?
 
 A) AWS PrivateLink  
 B) Amazon Comprehend (PII Detection)  
 C) AWS KMS  
 D) Amazon EC2  
 
-**정답: B**  
-해설: Amazon Comprehend can identify PII entities in text and mask or remove them. A's PrivateLink is network path protection, C's KMS is encryption key management, D's EC2 is computing, not PII text detection.
+**Answer: B**  
+Explanation: Amazon Comprehend can identify PII entities in text and mask or remove them. A's PrivateLink is network path protection, C's KMS is encryption key management, D's EC2 is computing, not PII text detection.
 
 ---
 
-**문제 5.** A heavily regulated financial company wants to use Amazon Bedrock while keeping traffic from going through the public internet and only within AWS's internal network. What's the most appropriate approach?
+**Question 5.** A heavily regulated financial company wants to use Amazon Bedrock while keeping traffic from going through the public internet and only within AWS's internal network. What's the most appropriate approach?
 
 A) Configure AWS PrivateLink (VPC endpoint) for private connectivity  
 B) Transmit data in plain text  
 C) Remove all IAM permissions  
 D) Scan for PII with Amazon Macie  
 
-**정답: A**  
-해설: PrivateLink creates a private connection within the VPC so traffic doesn't go through the internet. B weakens security, C prevents normal operation, and D's Macie is a PII detection tool unrelated to network path protection.
+**Answer: A**  
+Explanation: PrivateLink creates a private connection within the VPC so traffic doesn't go through the internet. B weakens security, C prevents normal operation, and D's Macie is a PII detection tool unrelated to network path protection.
 
 ---

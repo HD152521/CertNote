@@ -82,62 +82,62 @@ In the next article, we'll look at the tools that let you actually inspect and c
 
 ## 📝 Practice Questions
 
-**문제 1.** You want to run a new project whose traffic pattern is still uncertain, flexibly and without commitment. Which pricing model is the best fit?
+**Question 1.** You want to run a new project whose traffic pattern is still uncertain, flexibly and without commitment. Which pricing model is the best fit?
 
 A) Reserved Instances (RIs)  
 B) Spot Instances  
 C) On-Demand  
 D) Savings Plans  
 
-**정답: C**  
-해설: On-Demand bills only for what you run, with no long-term commitment or upfront payment, so it's a good starting point for unpredictable or short-term workloads. RIs and Savings Plans assume a 1–3 year commitment, which is a burden when the pattern is uncertain, and Spot carries reclamation risk that doesn't suit stable operation.
+**Answer: C**  
+Explanation: On-Demand bills only for what you run, with no long-term commitment or upfront payment, so it's a good starting point for unpredictable or short-term workloads. RIs and Savings Plans assume a 1–3 year commitment, which is a burden when the pattern is uncertain, and Spot carries reclamation risk that doesn't suit stable operation.
 
 ---
 
-**문제 2.** You want to run a stable workload that runs steadily 24 hours a day as cheaply as possible, but you also want the discount to keep applying even if you change the instance type or Region. Which is the best fit?
+**Question 2.** You want to run a stable workload that runs steadily 24 hours a day as cheaply as possible, but you also want the discount to keep applying even if you change the instance type or Region. Which is the best fit?
 
 A) Savings Plans  
 B) On-Demand  
 C) Spot Instances  
 D) Free Tier  
 
-**정답: A**  
-해설: Savings Plans commit to an hourly dollar spend, so the commitment applies flexibly even when you change instance type or Region. On-Demand has no discount, Spot carries high reclamation risk that doesn't suit always-on stable operation, and the Free Tier is merely a free allowance for new users, not a discount mechanism for always-on workloads.
+**Answer: A**  
+Explanation: Savings Plans commit to an hourly dollar spend, so the commitment applies flexibly even when you change instance type or Region. On-Demand has no discount, Spot carries high reclamation risk that doesn't suit always-on stable operation, and the Free Tier is merely a free allowance for new users, not a discount mechanism for always-on workloads.
 
 ---
 
-**문제 3.** You want to process a large-scale batch data analysis job — one that's fine to be interrupted and restarted midway — as cheaply as possible. Which pricing model is the best fit?
+**Question 3.** You want to process a large-scale batch data analysis job — one that's fine to be interrupted and restarted midway — as cheaply as possible. Which pricing model is the best fit?
 
 A) On-Demand  
 B) Reserved Instances (RIs)  
 C) Spot Instances  
 D) Savings Plans  
 
-**정답: C**  
-해설: Spot Instances use AWS spare capacity at up to roughly 90% off On-Demand but can be reclaimed, making them the best fit for interruption-tolerant (fault-tolerant) batch and analysis work. On-Demand, RIs, and Savings Plans are more stable but not as cheap as Spot.
+**Answer: C**  
+Explanation: Spot Instances use AWS spare capacity at up to roughly 90% off On-Demand but can be reclaimed, making them the best fit for interruption-tolerant (fault-tolerant) batch and analysis work. On-Demand, RIs, and Savings Plans are more stable but not as cheap as Spot.
 
 ---
 
-**문제 4.** A new user wants to try out EC2 and S3 up to a set limit without cost concerns after signing up. What can they use?
+**Question 4.** A new user wants to try out EC2 and S3 up to a set limit without cost concerns after signing up. What can they use?
 
 A) Volume discount  
 B) AWS Free Tier  
 C) Reserved Instances (RIs)  
 D) Savings Plans  
 
-**정답: B**  
-해설: The Free Tier lets new users try services up to a set limit for free, in the form of 12 Months Free, Always Free, and Trials. A volume discount is a unit-price reduction as usage grows, and RIs/Savings Plans are commitment-based discounts, which differ from a free-trial purpose.
+**Answer: B**  
+Explanation: The Free Tier lets new users try services up to a set limit for free, in the form of 12 Months Free, Always Free, and Trials. A volume discount is a unit-price reduction as usage grows, and RIs/Savings Plans are commitment-based discounts, which differ from a free-trial purpose.
 
 ---
 
-**문제 5.** What is the pricing structure called where the per-GB price on S3 automatically drops as you store more and more data?
+**Question 5.** What is the pricing structure called where the per-GB price on S3 automatically drops as you store more and more data?
 
 A) Savings Plans  
 B) Spot pricing  
 C) Volume (tiered) discount  
 D) On-Demand pricing  
 
-**정답: C**  
-해설: A volume (tiered) discount is a pricing structure where the unit price automatically drops as usage grows, with S3 storage being the prime example. Savings Plans are commitment-based discounts, Spot is auction pricing for spare capacity, and On-Demand is the standard unit price with no commitment — all conceptually different from an automatic unit-price reduction based on usage itself.
+**Answer: C**  
+Explanation: A volume (tiered) discount is a pricing structure where the unit price automatically drops as usage grows, with S3 storage being the prime example. Savings Plans are commitment-based discounts, Spot is auction pricing for spare capacity, and On-Demand is the standard unit price with no commitment — all conceptually different from an automatic unit-price reduction based on usage itself.
 
 ---

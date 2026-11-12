@@ -135,112 +135,112 @@ Next: CDK and serverless arch patterns, where you escape YAML entirely and progr
 
 ## 📝 Practice Questions
 
-**문제 1.** 작성한 SAM 템플릿을 배포하니 CloudFormation이 `AWS::Serverless::Function`을 알 수 없는 리소스 타입이라며 실패한다. 원인은?
+**Question 1.** When you deploy a SAM template you wrote, CloudFormation fails saying `AWS::Serverless::Function` is an unknown resource type. What is the cause?
 
-A) Runtime이 잘못됐다
+A) The Runtime is wrong
 
-B) 템플릿에 `Transform: AWS::Serverless-2016-10-31` 선언이 빠졌다
+B) The `Transform: AWS::Serverless-2016-10-31` declaration is missing from the template
 
-C) Globals 섹션이 없다
+C) There is no Globals section
 
-D) Outputs가 없다
+D) There is no Outputs
 
-**정답: B**
+**Answer: B**
 
-해설: SAM 단축 리소스(`AWS::Serverless::*`)는 **`Transform: AWS::Serverless-2016-10-31`** 선언이 있어야 CloudFormation이 매크로로 펼친다. 이 선언이 없으면 CloudFormation은 SAM 리소스를 알 수 없는 타입으로 보고 실패한다. 날짜는 고정 식별자다. A) Runtime 오류는 다른 에러를 낸다. C) Globals와 D) Outputs는 선택 사항이라 없어도 배포된다.
-
----
-
-**문제 2.** SAM과 CloudFormation의 관계로 가장 정확한 것은?
-
-A) SAM은 CloudFormation과 완전히 별개의 독립 배포 엔진이다
-
-B) SAM은 CloudFormation 매크로로, 배포 시 서버리스 리소스를 일반 CloudFormation으로 펼쳐 배포한다
-
-C) SAM이 CloudFormation을 대체한다
-
-D) CloudFormation이 SAM의 하위 기능이다
-
-**정답: B**
-
-해설: SAM은 **CloudFormation의 확장(매크로)** 이다. `Transform`이 배포 직전 SAM 리소스를 완전한 CloudFormation 리소스로 펼치며, 별도 배포 엔진이 없으므로 롤백·의존 그래프·Change Set 등 CloudFormation의 기능을 그대로 물려받는다. 그래서 SAM 템플릿에 일반 CloudFormation 리소스도 섞어 쓸 수 있다. A·C는 둘을 별개/대체로 보는 오해다. D는 관계가 거꾸로다.
+Explanation: SAM shorthand resources (`AWS::Serverless::*`) are expanded by CloudFormation as a macro only if the **`Transform: AWS::Serverless-2016-10-31`** declaration is present. Without this declaration, CloudFormation sees the SAM resources as an unknown type and fails. The date is a fixed identifier. A) A Runtime error produces a different error. C) Globals and D) Outputs are optional, so deployment works without them.
 
 ---
 
-**문제 3.** Lambda 함수에 특정 DynamoDB 테이블에 대한 CRUD 권한만 최소로 부여하려 한다. SAM에서 가장 적절한 방법은?
+**Question 2.** What is the most accurate description of the relationship between SAM and CloudFormation?
 
-A) 함수에 dynamodb:* 인라인 정책을 붙인다
+A) SAM is a completely separate, independent deployment engine from CloudFormation
 
-B) DynamoDBCrudPolicy 정책 템플릿에 TableName을 지정한다
+B) SAM is a CloudFormation macro that expands serverless resources into regular CloudFormation at deployment time and deploys them
 
-C) AdministratorAccess 관리형 정책을 붙인다
+C) SAM replaces CloudFormation
 
-D) 모든 함수에 같은 역할을 공유한다
+D) CloudFormation is a sub-feature of SAM
 
-**정답: B**
+**Answer: B**
 
-해설: **`DynamoDBCrudPolicy`** 정책 템플릿에 `TableName`을 주면, SAM이 그 테이블 ARN에 한정된 CRUD 액션만 가진 최소 권한 정책으로 펼쳐 함수 전용 역할에 붙인다. 의도를 한 줄로 선언하면 최소 권한이 자동으로 따라오는 "안전한 기본값" 설계다. A) `dynamodb:*`는 필요 이상으로 넓다. C) Administrator는 최소 권한 위반이다. D) 역할 공유는 권한 격리를 깨고 사고 반경을 키운다.
-
----
-
-**문제 4.** `sam local start-api`로 로컬 테스트를 하려는데 실행되지 않는다. 가장 가능성 높은 원인은?
-
-A) Outputs 섹션 누락
-
-B) Docker가 설치/실행되어 있지 않음
-
-C) 리전이 잘못 설정됨
-
-D) Globals 섹션 누락
-
-**정답: B**
-
-해설: `sam local`은 **Docker 컨테이너로 Lambda 실행 환경을 재현**하므로 Docker가 설치되고 실행 중이어야 한다. Docker가 없으면 로컬 실행 자체가 불가능하다. A·D는 선택 섹션이라 로컬 실행을 막지 않는다. C) 리전은 실제 백엔드 호출에 영향을 줄 수 있으나 `start-api` 기동 실패의 1순위 원인은 Docker다.
+Explanation: SAM is an **extension (macro) of CloudFormation**. `Transform` expands SAM resources into full CloudFormation resources right before deployment, and since there is no separate deployment engine, it inherits CloudFormation features such as rollback, the dependency graph, and Change Sets as is. That is why you can mix regular CloudFormation resources into a SAM template. A and C are misconceptions that treat the two as separate or as a replacement. D has the relationship backwards.
 
 ---
 
-**문제 5.** 개발 중 코드 변경을 가장 빠르게 Lambda에 반영하고 싶지만, 이 방식을 프로덕션에 쓰면 안 되는 이유까지 고려해야 한다. 적절한 명령과 주의점은?
+**Question 3.** You want to grant a Lambda function minimal CRUD permissions on only a specific DynamoDB table. What is the most appropriate method in SAM?
 
-A) sam deploy — 가장 빠르므로 프로덕션에도 그대로 사용
+A) Attach an inline policy with dynamodb:* to the function
 
-B) sam sync --watch — 코드만 즉시 업데이트해 빠르지만 CloudFormation 상태와 어긋날 수 있어 개발 전용
+B) Specify TableName in the DynamoDBCrudPolicy policy template
 
-C) sam build — 코드를 자동 배포
+C) Attach the AdministratorAccess managed policy
 
-D) sam logs — 코드를 업데이트
+D) Share the same role across all functions
 
-**정답: B**
+**Answer: B**
 
-해설: **`sam sync --watch`** 는 코드 변경 시 CloudFormation을 거치지 않고 Lambda 코드를 직접 업데이트해 수 초 만에 반영한다. 빠른 대가로 CloudFormation이 보는 스택 상태와 실제 함수가 어긋날(drift) 수 있어 **개발 전용**이며, 프로덕션은 전체 CloudFormation 경로인 `sam deploy`로 배포해야 한다. A) `sam deploy`는 안전하지만 빠른 반복용은 아니다. C) `sam build`는 패키징이다. D) `sam logs`는 로그 조회다.
-
----
-
-**문제 6.** 20개 Lambda 함수가 모두 같은 런타임과 타임아웃을 쓴다. 반복 설정을 줄이되 일부 함수만 다른 타임아웃을 주고 싶다. SAM에서의 방법은?
-
-A) 함수마다 모든 속성을 반복해서 적는다
-
-B) Globals.Function에 공통값을 두고, 예외 함수에서 해당 속성만 재정의한다
-
-C) Mappings를 사용한다
-
-D) Outputs에 정의한다
-
-**정답: B**
-
-해설: **Globals** 섹션에 공통 기본값(Runtime, Timeout 등)을 선언하면 모든 Function에 적용되고, 개별 함수에서 같은 속성을 다시 적으면 그것이 Globals를 **재정의**한다. "넓은 기본값을 좁은 범위가 덮어쓴다"는 계층적 병합 패턴이다. A) 반복은 DRY 위반이다. C) Mappings는 조회 테이블로 공통 속성 적용 용도가 아니다. D) Outputs는 출력값이라 무관하다.
+Explanation: When you give `TableName` to the **`DynamoDBCrudPolicy`** policy template, SAM expands it into a least-privilege policy with only CRUD actions scoped to that table's ARN and attaches it to the function's dedicated role. Declaring the intent in one line automatically brings least privilege, a "safe default" design. A) `dynamodb:*` is broader than necessary. C) Administrator violates least privilege. D) Sharing a role breaks permission isolation and enlarges the blast radius.
 
 ---
 
-**문제 7.** 새 Lambda 버전 배포 시 트래픽을 한 번에 100% 보내지 않고 10%만 보내 모니터링한 뒤 문제없으면 점진적으로 늘리고, 알람 시 자동 롤백하려 한다. SAM에서의 메커니즘은?
+**Question 4.** You try to test locally with `sam local start-api` but it does not run. What is the most likely cause?
 
-A) Globals로 전체 트래픽 즉시 전환
+A) The Outputs section is missing
 
-B) AutoPublishAlias + DeploymentPreference(Canary)로 CodeDeploy 기반 점진 배포
+B) Docker is not installed or running
+
+C) The Region is set incorrectly
+
+D) The Globals section is missing
+
+**Answer: B**
+
+Explanation: `sam local` **reproduces the Lambda execution environment with Docker containers**, so Docker must be installed and running. Without Docker, local execution is impossible. A and D are optional sections and do not block local execution. C) The Region can affect calls to real backends, but the number one cause of `start-api` failing to start is Docker.
+
+---
+
+**Question 5.** During development you want code changes reflected in Lambda as fast as possible, but you must also consider why this method should not be used in production. What are the appropriate command and caveat?
+
+A) sam deploy - fastest, so use it as is in production too
+
+B) sam sync --watch - updates only the code immediately so it is fast, but it can drift from the CloudFormation state, so it is for development only
+
+C) sam build - automatically deploys the code
+
+D) sam logs - updates the code
+
+**Answer: B**
+
+Explanation: **`sam sync --watch`** updates the Lambda code directly without going through CloudFormation when code changes, reflecting it in a few seconds. The price of speed is that the stack state CloudFormation sees and the actual function can drift apart, so it is **for development only**, and production must be deployed with `sam deploy`, the full CloudFormation path. A) `sam deploy` is safe but not meant for fast iteration. C) `sam build` is packaging. D) `sam logs` is for viewing logs.
+
+---
+
+**Question 6.** 20 Lambda functions all use the same runtime and timeout. You want to reduce repeated settings but give a different timeout to only some functions. What is the method in SAM?
+
+A) Repeat all properties for every function
+
+B) Put the common values in Globals.Function, and override only that property in the exception functions
+
+C) Use Mappings
+
+D) Define it in Outputs
+
+**Answer: B**
+
+Explanation: When you declare common defaults (Runtime, Timeout, and so on) in the **Globals** section, they apply to all Functions, and if an individual function writes the same property again, it **overrides** Globals. This is a hierarchical merge pattern where "a narrower scope overrides broad defaults". A) Repetition violates DRY. C) Mappings are lookup tables and not for applying common properties. D) Outputs are output values and are irrelevant.
+
+---
+
+**Question 7.** When deploying a new Lambda version, you want to send only 10% of traffic instead of 100% at once, monitor it, increase it gradually if there are no problems, and automatically roll back on an alarm. What is the mechanism in SAM?
+
+A) Switch all traffic immediately with Globals
+
+B) AutoPublishAlias + DeploymentPreference (Canary) for CodeDeploy-based gradual deployment
 
 C) sam local invoke
 
 D) DeletionPolicy: Retain
 
-**정답: B**
+**Answer: B**
 
-해설: SAM은 `AutoPublishAlias`로 함수 버전 별칭을 만들고 **`DeploymentPreference`**(예: `Canary10Percent5Minutes`)로 CodeDeploy 기반 **점진 배포(Canary/Linear)** 를 선언한다. 새 버전에 트래픽을 일부만 보내 CloudWatch 알람을 지켜보고, 정상이면 나머지를 넘기며, 알람이 울리면 자동 롤백한다. 사고 반경을 줄이는 점진 배포 패턴이다. A) 즉시 전환은 점진 배포가 아니다. C) 로컬 실행은 배포와 무관하다. D) DeletionPolicy는 삭제 보호로 무관하다.
+Explanation: SAM creates a function version alias with `AutoPublishAlias` and declares a CodeDeploy-based **gradual deployment (Canary/Linear)** with **`DeploymentPreference`** (for example `Canary10Percent5Minutes`). It sends only part of the traffic to the new version while watching CloudWatch alarms, shifts the rest if healthy, and automatically rolls back if an alarm fires. It is a gradual deployment pattern that reduces the blast radius. A) An immediate switch is not a gradual deployment. C) Local execution has nothing to do with deployment. D) DeletionPolicy is deletion protection and is irrelevant.

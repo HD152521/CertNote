@@ -114,112 +114,112 @@ Next week (Week 15): **Comprehensive Scenarios**. Industry-specific cases: enter
 
 ## 📝 Practice Questions
 
-**문제 1.** RTO 5분·RPO 1초·글로벌 SQL DB
+**Question 1.** RTO 5 minutes, RPO 1 second, global SQL DB
 
 A) RDS Multi-AZ
 B) Aurora Global Database
 C) DMS Continuous Replication
 D) Read Replica
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 2.** "운영 중 의도적 장애 주입 + 알람 시 자동 중단"
+**Question 2.** "Deliberate fault injection in operation + automatic stop on alarm"
 
-A) Lambda로 수동 EC2 종료
+A) Terminate EC2 manually with Lambda
 B) FIS + Stop Condition
-C) Trusted Advisor 모니터링
-D) Resilience Hub 자동 테스트
+C) Trusted Advisor monitoring
+D) Resilience Hub automated tests
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 3.** 규제: 백업 7년 + 즉시 변경·삭제 불가 (AWS root도)
+**Question 3.** Regulation: backups for 7 years + cannot be modified or deleted immediately (even by AWS root)
 
 A) S3 Glacier Deep Archive
 B) Backup Vault Compliance Lock
 C) Backup Vault Governance Lock
 D) S3 Object Lock Governance Mode
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 4.** 양 리전 모두 쓰기 가능
+**Question 4.** Writes possible in both Regions
 
 A) Aurora Global (Read-Only Secondary)
 B) DynamoDB Global Tables
 C) RDS Cross-Region Read Replica
 D) DocumentDB Global Cluster
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 5.** 문제 AZ만 즉시 트래픽 제외
+**Question 5.** Immediately remove only the problem AZ from traffic
 
-A) NACL로 차단
+A) Block with a NACL
 B) Route 53 ARC Zonal Shift
 C) ASG Detach Instance
 D) ALB Connection Draining
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 6.** 온프레미스 VM 200대, AWS 24시간 DR 환경 유지
+**Question 6.** 200 on-premises VMs, maintain an AWS DR environment on standby around the clock
 
 A) Application Migration Service (MGN)
 B) Elastic Disaster Recovery (DRS)
 C) DataSync
 D) Snowball
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 7.** RDS Failover 30초 이내 + standby read 분산
+**Question 7.** RDS failover within 30 seconds + distribute standby reads
 
 A) Multi-AZ Instance
 B) Multi-AZ Cluster
 C) Read Replica
-D) Snapshot 복원
+D) Restore from a Snapshot
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 8.** DR 격차 자동 식별 + 권고 + CI/CD 통합
+**Question 8.** Automatically identify DR gaps + recommendations + CI/CD integration
 
 A) Trusted Advisor
 B) Resilience Hub
 C) WA Tool
 D) Config
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 9.** S3 다중 리전 단일 글로벌 엔드포인트
+**Question 9.** A single global endpoint for S3 across multiple Regions
 
 A) CloudFront
 B) S3 Multi-Region Access Point (MRAP)
 C) Route 53 Latency Routing
 D) Global Accelerator
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 10.** "사람이 false positive를 우려해 명시적으로 failover를 결정"
+**Question 10.** "A human decides on failover explicitly out of concern for false positives"
 
-A) Route 53 자동 Health Check Failover
+A) Route 53 automatic Health Check failover
 B) Route 53 ARC Routing Control
-C) Global Accelerator 자동 failover
-D) Lambda 자동 DNS 전환
+C) Global Accelerator automatic failover
+D) Lambda automatic DNS switching
 
-**정답: B**
+**Answer: B**
 
 ---

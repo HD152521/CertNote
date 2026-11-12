@@ -145,62 +145,62 @@ Design principles summary:
 
 ## 📝 Practice Questions
 
-**문제 1.** S3를 오리진으로 하는 CloudFront 배포에서 사용자가 S3 버킷 URL로 직접 접근해 CloudFront(및 WAF)를 우회한다. 가장 적절한 대응은?
+**Question 1.** In a CloudFront distribution that uses S3 as the origin, users access the S3 bucket URL directly and bypass CloudFront (and WAF). What is the most appropriate response?
 
-A) S3 버킷을 공개로 두고 ACL만 조정  
-B) OAC를 구성하고 S3 버킷 정책에서 해당 CloudFront 배포(SourceArn)만 허용, Block Public Access는 켜둔다  
-C) S3 presigned URL로 전환  
-D) NACL로 S3 트래픽 차단  
+A) Leave the S3 bucket public and only adjust the ACL  
+B) Configure OAC and allow only that CloudFront distribution (SourceArn) in the S3 bucket policy, keeping Block Public Access turned on  
+C) Switch to S3 presigned URLs  
+D) Block S3 traffic with a NACL  
 
-**정답: B**  
-해설: Origin Access Control(OAC)은 CloudFront가 SigV4로 서명해 S3에 요청하게 하고, 버킷 정책에서 `AWS:SourceArn`으로 특정 배포만 허용하면 다른 경로의 직접 접근이 차단된다. Block Public Access를 켜둔 채 OAC로만 접근하게 하는 것이 정석이다. 공개 버킷·NACL은 우회를 못 막고, presigned URL은 오히려 엣지 통제를 건너뛴다.
-
----
-
-**문제 2.** 구독자에게 `/premium/` 하위 수백 개 객체를 1시간 동안 접근 허용하되, 객체마다 별도 링크를 만들고 싶지 않다. 가장 적절한 방법은?
-
-A) CloudFront 서명 URL을 객체마다 생성  
-B) CloudFront 서명 쿠키(경로 패턴 와일드카드 정책)  
-C) S3 버킷을 공개로 전환  
-D) OAI 적용  
-
-**정답: B**  
-해설: 서명 쿠키는 경로 패턴(`/premium/*`) 하위 다수 객체에 대한 시간 제한 접근을 단일 쿠키로 부여하므로 객체마다 URL을 만들 필요가 없다. 서명 URL은 단일 객체용이라 수백 개를 따로 만들어야 한다. 공개 전환은 통제를 없애고, OAI는 오리진 잠금 메커니즘이지 사용자 접근 통제가 아니다.
+**Answer: B**  
+Explanation: Origin Access Control (OAC) makes CloudFront sign requests to S3 with SigV4, and allowing only a specific distribution through `AWS:SourceArn` in the bucket policy blocks direct access through any other path. The standard approach is to keep Block Public Access on and allow access only through OAC. A public bucket or a NACL cannot prevent the bypass, and presigned URLs actually skip edge controls.
 
 ---
 
-**문제 3.** CloudFront 배포에 ACM 인증서를 연결하려는데 발급한 인증서가 목록에 나타나지 않는다. 가장 가능성 높은 원인은?
+**Question 2.** You want to grant subscribers access to hundreds of objects under `/premium/` for one hour without creating a separate link for each object. What is the most appropriate method?
 
-A) 인증서가 us-east-1이 아닌 다른 리전에 발급되어 CloudFront에 붙지 않는다  
-B) DNS 검증을 사용했기 때문  
-C) 와일드카드 도메인이라서  
-D) 인증서가 무료라서  
+A) Generate a CloudFront signed URL for each object  
+B) CloudFront signed cookies (policy with a path-pattern wildcard)  
+C) Switch the S3 bucket to public  
+D) Apply OAI  
 
-**정답: A**  
-해설: CloudFront는 글로벌 엣지 서비스라서 연결할 ACM 인증서가 반드시 us-east-1(N. Virginia)에 있어야 한다. 다른 리전 인증서는 CloudFront 선택 목록에 나타나지 않는다. DNS 검증은 오히려 자동 갱신에 유리하고, 와일드카드·무료 여부는 연결 가능성과 무관하다.
-
----
-
-**문제 4.** ACM이 발급한 인증서의 보안상 핵심 특성으로 옳은 것은?
-
-A) 개인키를 다운로드해 EC2에 수동 설치할 수 있다  
-B) 개인키를 추출할 수 없고 ACM이 통합 서비스(CloudFront/ALB/API Gateway)에 안전하게 배포·자동 갱신하므로 키 유출 경로가 제거된다  
-C) 인증서가 1회용이라 매번 재발급해야 한다  
-D) HTTP에서만 사용 가능하다  
-
-**정답: B**  
-해설: ACM 발급 인증서는 개인키가 사용자에게 노출되지 않으며, ACM이 지원 통합 서비스에 직접 배포하고 자동 갱신한다. 키를 직접 다루지 않으므로 유출·오용 경로가 구조적으로 사라지고, 자동 갱신으로 만료 장애도 줄인다. 그래서 EC2 직접 설치(개인키 필요)에는 ACM 발급 키를 쓸 수 없다는 점이 A를 틀리게 만든다.
+**Answer: B**  
+Explanation: Signed cookies grant time-limited access to many objects under a path pattern (`/premium/*`) with a single cookie, so there is no need to create a URL for each object. Signed URLs are for a single object, so hundreds would have to be created separately. Making the bucket public removes control, and OAI is an origin-locking mechanism, not user access control.
 
 ---
 
-**문제 5.** 엣지 경계를 한 줄로 정렬해 우회를 막으려 한다. WAF를 어디에 붙이고 오리진을 어떻게 보호해야 하는가?
+**Question 3.** You are trying to attach an ACM certificate to a CloudFront distribution, but the certificate you issued does not appear in the list. What is the most likely cause?
 
-A) WAF를 ALB에만 붙이고 ALB를 공개로 둔다  
-B) WAF를 CloudFront(CLOUDFRONT scope)에 붙이고, 오리진 ALB는 CloudFront managed prefix list로 직접 접근을 차단하며 CloudFront 비밀 헤더를 검증한다  
-C) WAF를 끄고 Security Group만 사용  
-D) WAF를 CloudFront와 ALB 둘 다에 붙이되 오리진은 공개  
+A) The certificate was issued in a Region other than us-east-1, so it cannot be attached to CloudFront  
+B) DNS validation was used  
+C) It is a wildcard domain  
+D) The certificate is free  
 
-**정답: B**  
-해설: 경계가 엣지라면 WAF를 CloudFront(CLOUDFRONT scope)에 붙여 모든 진입을 엣지에서 평가하고, 오리진 ALB는 CloudFront prefix list로 직접 접근을 차단하고 CloudFront가 주입한 비밀 헤더(X-Origin-Verify)를 검증해 엣지 우회를 막는다. ALB만 보호하거나 오리진을 공개로 두면 우회 경로가 남고, WAF를 끄면 L7 방어가 사라진다.
+**Answer: A**  
+Explanation: CloudFront is a global edge service, so the ACM certificate you attach must be in us-east-1 (N. Virginia). Certificates in other Regions do not appear in the CloudFront selection list. DNS validation actually helps with automatic renewal, and whether the certificate is a wildcard or free has no bearing on whether it can be attached.
+
+---
+
+**Question 4.** Which statement about the key security characteristic of certificates issued by ACM is correct?
+
+A) You can download the private key and manually install it on EC2  
+B) The private key cannot be extracted, and ACM securely deploys and automatically renews the certificate on integrated services (CloudFront/ALB/API Gateway), so the key leakage path is eliminated  
+C) The certificate is single-use and must be reissued every time  
+D) It can be used only over HTTP  
+
+**Answer: B**  
+Explanation: With ACM-issued certificates, the private key is never exposed to the user, and ACM deploys the certificate directly to supported integrated services and renews it automatically. Because you never handle the key directly, the leakage and misuse paths structurally disappear, and automatic renewal also reduces outages caused by expiration. That is why A is wrong: an ACM-issued key cannot be used for direct installation on EC2 (which requires the private key).
+
+---
+
+**Question 5.** You want to align the edge boundary in a single line to prevent bypass. Where should WAF be attached, and how should the origin be protected?
+
+A) Attach WAF only to the ALB and leave the ALB public  
+B) Attach WAF to CloudFront (CLOUDFRONT scope), block direct access to the origin ALB with the CloudFront managed prefix list, and validate a CloudFront secret header  
+C) Turn off WAF and use only Security Groups  
+D) Attach WAF to both CloudFront and the ALB but leave the origin public  
+
+**Answer: B**  
+Explanation: If the boundary is the edge, attach WAF to CloudFront (CLOUDFRONT scope) so that all entry is evaluated at the edge, block direct access to the origin ALB with the CloudFront prefix list, and validate the secret header (X-Origin-Verify) injected by CloudFront to prevent edge bypass. Protecting only the ALB or leaving the origin public leaves a bypass path, and turning off WAF removes L7 defense.
 
 ---

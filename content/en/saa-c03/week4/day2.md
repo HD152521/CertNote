@@ -295,72 +295,72 @@ Lifecycle policies automate this optimization. The most important settings are c
 
 ## 📝 Practice Questions
 
-**문제 1.** You store medical imaging (MRI, CT) data. Images are accessed frequently for 3 months after a visit, but after that they need to be provided immediately, only once or twice a year, on a doctor's request. Retention of 5+ years is a legal obligation. What is the most cost-effective lifecycle design?
+**Question 1.** You store medical imaging (MRI, CT) data. Images are accessed frequently for 3 months after a visit, but after that they need to be provided immediately, only once or twice a year, on a doctor's request. Retention of 5+ years is a legal obligation. What is the most cost-effective lifecycle design?
 
 A) Keep in Standard permanently
 B) 30 days after creation → Standard-IA, 90 days → Glacier Instant Retrieval, delete after 5 years
 C) Glacier Flexible Retrieval immediately on creation
 D) 90 days after creation → Glacier Deep Archive, delete after 5 years
 
-**정답: B**
-해설: Frequent access for the first 3 months (90 days) → Standard, or Standard-IA (after 30 days). After that, accessed 1-2 times a year with immediate need → Glacier Instant Retrieval (ms retrieval). Transitioning after 90 days satisfies Glacier Instant's minimum storage duration (90 days). Deleting after 5 years prevents unnecessary cost once the legal obligation is met. C incurs excessive retrieval cost (time + money) from Glacier Flexible during the first 3 months of frequent access. D can't retrieve immediately (12-hour wait).
+**Answer: B**
+Explanation: Frequent access for the first 3 months (90 days) → Standard, or Standard-IA (after 30 days). After that, accessed 1-2 times a year with immediate need → Glacier Instant Retrieval (ms retrieval). Transitioning after 90 days satisfies Glacier Instant's minimum storage duration (90 days). Deleting after 5 years prevents unnecessary cost once the legal obligation is met. C incurs excessive retrieval cost (time + money) from Glacier Flexible during the first 3 months of frequent access. D can't retrieve immediately (12-hour wait).
 
 ---
 
-**문제 2.** A company's data analytics pipeline processes logs stored in S3. The data team can hardly predict which logs will be analyzed frequently. Logs average 300KB in size; some are analyzed within hours of creation, and some are barely accessed even after months. What is the most suitable storage class?
+**Question 2.** A company's data analytics pipeline processes logs stored in S3. The data team can hardly predict which logs will be analyzed frequently. Logs average 300KB in size; some are analyzed within hours of creation, and some are barely accessed even after months. What is the most suitable storage class?
 
 A) Standard (keep all data always immediately accessible)
 B) Standard-IA (automatic transition after 30 days)
 C) Intelligent-Tiering
 D) Glacier Instant Retrieval
 
-**정답: C**
-해설: When access patterns are unpredictable and the object size is 300KB (above 128KB, so Intelligent-Tiering's efficiency applies), Intelligent-Tiering is optimal. Frequently accessed objects stay in Frequent Access, and objects not accessed for 30 days move automatically to Infrequent Access, optimizing automatically with no retrieval cost. Standard wastes cost on unaccessed data. Standard-IA, applied uniformly without predicting the pattern, incurs retrieval cost on frequently accessed objects. Glacier Instant wastes storage cost on frequently accessed data.
+**Answer: C**
+Explanation: When access patterns are unpredictable and the object size is 300KB (above 128KB, so Intelligent-Tiering's efficiency applies), Intelligent-Tiering is optimal. Frequently accessed objects stay in Frequent Access, and objects not accessed for 30 days move automatically to Infrequent Access, optimizing automatically with no retrieval cost. Standard wastes cost on unaccessed data. Standard-IA, applied uniformly without predicting the pattern, incurs retrieval cost on frequently accessed objects. Glacier Instant wastes storage cost on frequently accessed data.
 
 ---
 
-**문제 3.** A dev team stores a large volume of thumbnail images in S3. The thumbnails can be regenerated from the originals at any time, and are accessed only when a user requests them. User access is about 1-2 times a week. They want to minimize cost. Which class is suitable?
+**Question 3.** A dev team stores a large volume of thumbnail images in S3. The thumbnails can be regenerated from the originals at any time, and are accessed only when a user requests them. User access is about 1-2 times a week. They want to minimize cost. Which class is suitable?
 
 A) S3 Standard
 B) S3 Glacier Deep Archive
 C) S3 One Zone-IA
 D) S3 Intelligent-Tiering
 
-**정답: C**
-해설: The conditions are "regenerable data" + "single-AZ failure tolerable" + "immediate retrieval needed (served right away on user request)" + "frequent access (1-2 times a week, considering Standard-IA's 30-day minimum duration)." One Zone-IA cuts cost with a single AZ for regenerable data and allows immediate retrieval. At 1-2 accesses a week you incur Standard-IA's per-GB retrieval cost, but One Zone-IA is still cheaper than Standard. Glacier can't retrieve immediately (Deep Archive is 12 hours). On the exam, when "regenerable + minimize cost + immediate access" appear together, it's One Zone-IA.
+**Answer: C**
+Explanation: The conditions are "regenerable data" + "single-AZ failure tolerable" + "immediate retrieval needed (served right away on user request)" + "frequent access (1-2 times a week, considering Standard-IA's 30-day minimum duration)." One Zone-IA cuts cost with a single AZ for regenerable data and allows immediate retrieval. At 1-2 accesses a week you incur Standard-IA's per-GB retrieval cost, but One Zone-IA is still cheaper than Standard. Glacier can't retrieve immediately (Deep Archive is 12 hours). On the exam, when "regenerable + minimize cost + immediate access" appear together, it's One Zone-IA.
 
 ---
 
-**문제 4.** A legal team must retain financial transaction records for exactly 7 years and must be able to provide the data within 12 hours during an audit over that period. Monthly storage cost must be minimized. Which solution is suitable?
+**Question 4.** A legal team must retain financial transaction records for exactly 7 years and must be able to provide the data within 12 hours during an audit over that period. Monthly storage cost must be minimized. Which solution is suitable?
 
 A) S3 Standard → Lifecycle delete after 7 years
 B) S3 Glacier Flexible Retrieval → Lifecycle delete after 7 years
 C) S3 Glacier Deep Archive → Lifecycle delete after 7 years
 D) S3 Standard-IA → Lifecycle delete after 7 years
 
-**정답: C**
-해설: 7-year long-term retention + retrieval within 12 hours (Standard retrieval is 12 hours, Bulk retrieval 48 hours) + minimize cost. Glacier Deep Archive is the cheapest class in S3 and provides data within 12 hours on Standard retrieval. Its 180-day minimum storage duration is no problem for a 7-year retention requirement. B (Glacier Flexible) is more expensive and doesn't fit the "minimize cost" requirement. A and D incur unnecessarily high storage cost over 7 years.
+**Answer: C**
+Explanation: 7-year long-term retention + retrieval within 12 hours (Standard retrieval is 12 hours, Bulk retrieval 48 hours) + minimize cost. Glacier Deep Archive is the cheapest class in S3 and provides data within 12 hours on Standard retrieval. Its 180-day minimum storage duration is no problem for a 7-year retention requirement. B (Glacier Flexible) is more expensive and doesn't fit the "minimize cost" requirement. A and D incur unnecessarily high storage cost over 7 years.
 
 ---
 
-**문제 5.** Versioning is enabled on an S3 bucket. Old versions are accumulating and storage cost is rising. You want to set a Lifecycle policy that protects the current version while deleting only previous versions older than 90 days. What do you configure?
+**Question 5.** Versioning is enabled on an S3 bucket. Old versions are accumulating and storage cost is rising. You want to set a Lifecycle policy that protects the current version while deleting only previous versions older than 90 days. What do you configure?
 
 A) Expiration: Days=90 (delete all objects after 90 days)
 B) NoncurrentVersionExpiration: NoncurrentDays=90
 C) AbortIncompleteMultipartUpload: DaysAfterInitiation=90
 D) Transition: Days=90, StorageClass=GLACIER (archive previous versions)
 
-**정답: B**
-해설: `NoncurrentVersionExpiration` applies an expiration policy to the noncurrent (non-current) previous versions in a versioning-enabled bucket. The current version stays protected. A's `Expiration: Days=90` deletes all objects (including the current version) after 90 days. C is multipart-upload cleanup. D archives previous versions but doesn't delete them, so cost keeps accruing.
+**Answer: B**
+Explanation: `NoncurrentVersionExpiration` applies an expiration policy to the noncurrent (non-current) previous versions in a versioning-enabled bucket. The current version stays protected. A's `Expiration: Days=90` deletes all objects (including the current version) after 90 days. C is multipart-upload cleanup. D archives previous versions but doesn't delete them, so cost keeps accruing.
 
 ---
 
-**문제 6.** A company headquartered in the US finds that some objects in its ap-northeast-2 Seoul bucket are accessed frequently while others haven't been accessed in months. S3 Storage Lens analysis shows 60% of all data hasn't been accessed in 90+ days. What is the most effective cost optimization?
+**Question 6.** A company headquartered in the US finds that some objects in its ap-northeast-2 Seoul bucket are accessed frequently while others haven't been accessed in months. S3 Storage Lens analysis shows 60% of all data hasn't been accessed in 90+ days. What is the most effective cost optimization?
 
 A) Move all objects to Glacier immediately
 B) Bulk-convert to the Intelligent-Tiering storage class
 C) Manually move objects with no access for 90 days from Standard to Glacier
 D) Migrate the bucket to One Zone
 
-**정답: B**
-해설: When access patterns are mixed (some frequent, some not accessed in 90 days) and the pattern can change dynamically, Intelligent-Tiering automatically places each object in the optimal tier. The frequently accessed 40% stays in Frequent Access, and the unaccessed 60% moves automatically to Infrequent Access. A causes Glacier retrieval costs to explode on the frequently accessed 40%. C carries a heavy manual-management burden and requires re-moving when patterns change. D's One Zone migration entails data-loss risk.
+**Answer: B**
+Explanation: When access patterns are mixed (some frequent, some not accessed in 90 days) and the pattern can change dynamically, Intelligent-Tiering automatically places each object in the optimal tier. The frequently accessed 40% stays in Frequent Access, and the unaccessed 60% moves automatically to Infrequent Access. A causes Glacier retrieval costs to explode on the frequently accessed 40%. C carries a heavy manual-management burden and requires re-moving when patterns change. D's One Zone migration entails data-loss risk.

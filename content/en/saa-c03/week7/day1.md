@@ -171,87 +171,87 @@ In the next article we'll look at SNS and the fanout pattern — the answer to t
 
 ## 📝 Practice Questions
 
-**문제 1.** A payment service requires that "the same customer's payments are processed exactly once, in the order they occur." Throughput is on the order of tens of requests per second per customer. What is the most appropriate SQS configuration?
+**Question 1.** A payment service requires that "the same customer's payments are processed exactly once, in the order they occur." Throughput is on the order of tens of requests per second per customer. What is the most appropriate SQS configuration?
 
 A) Standard SQS + client-side idempotency key
 B) FIFO SQS + MessageGroupId = customerId + ContentBasedDeduplication
 C) Standard SQS + a very large visibility timeout
 D) FIFO SQS + the same MessageGroupId for all messages
 
-**정답: B**
-해설: "Exactly once + ordering" is the definition of FIFO, and since ordering is needed per customer, setting MessageGroupId to customerId gives parallelism across customers and serialization within a single customer. Turning on ContentBasedDeduplication automatically uses a SHA-256 hash of the body as the dedup ID, preventing duplicate publishing of the same message within the 5-minute window. A pushes the "exactly once" requirement onto the application rather than SQS and guarantees no ordering. C has nothing to do with the visibility timeout. D means "all messages in one group" = all processing serialized onto a single partition, capping throughput at 300 msg/s and losing cross-customer parallelism — a common mistake.
+**Answer: B**
+Explanation: "Exactly once + ordering" is the definition of FIFO, and since ordering is needed per customer, setting MessageGroupId to customerId gives parallelism across customers and serialization within a single customer. Turning on ContentBasedDeduplication automatically uses a SHA-256 hash of the body as the dedup ID, preventing duplicate publishing of the same message within the 5-minute window. A pushes the "exactly once" requirement onto the application rather than SQS and guarantees no ordering. C has nothing to do with the visibility timeout. D means "all messages in one group" = all processing serialized onto a single partition, capping throughput at 300 msg/s and losing cross-customer parallelism — a common mistake.
 
 ---
 
-**문제 2.** A Lambda takes an average of 80 seconds to process an SQS message. The queue's visibility timeout is the default (30 seconds). What behavior will be observed in production?
+**Question 2.** A Lambda takes an average of 80 seconds to process an SQS message. The queue's visibility timeout is the default (30 seconds). What behavior will be observed in production?
 
 A) After 80 seconds the Lambda completes normally and the message is automatically deleted
 B) Multiple Lambda instances receive the same message and process it in duplicate, potentially causing duplicate DB writes / duplicate payments
 C) The message is permanently lost
 D) It moves to the DLQ immediately, regardless of maxReceiveCount
 
-**정답: B**
-해설: When the visibility timeout is shorter than the processing time, the message returns to visible before the consumer calls DeleteMessage, and another consumer picks it up. This is the direct consequence of SQS at-least-once and the most common bug in production. The fix is one or more of: ① increase the visibility timeout to 2-3× the processing time, ② extend a heartbeat mid-processing with `ChangeMessageVisibility`, ③ consumer-side idempotency (record the message ID as a unique key). Ideally the ①+③ combination is safest. A misunderstands the definition of visibility timeout, C is wrong because the message isn't lost within the retention period (4 days by default), and D is wrong because a message moves to the DLQ only after exceeding maxReceiveCount.
+**Answer: B**
+Explanation: When the visibility timeout is shorter than the processing time, the message returns to visible before the consumer calls DeleteMessage, and another consumer picks it up. This is the direct consequence of SQS at-least-once and the most common bug in production. The fix is one or more of: ① increase the visibility timeout to 2-3× the processing time, ② extend a heartbeat mid-processing with `ChangeMessageVisibility`, ③ consumer-side idempotency (record the message ID as a unique key). Ideally the ①+③ combination is safest. A misunderstands the definition of visibility timeout, C is wrong because the message isn't lost within the retention period (4 days by default), and D is wrong because a message moves to the DLQ only after exceeding maxReceiveCount.
 
 ---
 
-**문제 3.** A company's SQS consumer attempted to process some messages more than 5 times each due to external payment API failures, and those messages retried infinitely, stalling the queue. What is the most effective way to solve this?
+**Question 3.** A company's SQS consumer attempted to process some messages more than 5 times each due to external payment API failures, and those messages retried infinitely, stalling the queue. What is the most effective way to solve this?
 
 A) maxReceiveCount=3 + DLQ configuration + a CloudWatch Alarm on the DLQ message count
 B) Increase the Visibility Timeout to 12 hours to reduce retry frequency
 C) Change SQS Standard to FIFO
 D) Set Lambda concurrency to unlimited
 
-**정답: A**
-해설: The standard solution to the poison message problem is DLQ + maxReceiveCount. After 3 failures the message is automatically isolated to the DLQ, preventing queue stalls, and the operator can analyze the cause in the DLQ and then reprocess via the Redrive API. Since messages piling up in the DLQ is itself abnormal, you must be alerted via a CloudWatch Alarm — the omission of which was the direct cause of the 2020 Robinhood incident. B only delays the problem by 12 hours without solving it. C is a change of message model, unrelated to failure isolation. D actually makes things worse by putting an even bigger load on the external API.
+**Answer: A**
+Explanation: The standard solution to the poison message problem is DLQ + maxReceiveCount. After 3 failures the message is automatically isolated to the DLQ, preventing queue stalls, and the operator can analyze the cause in the DLQ and then reprocess via the Redrive API. Since messages piling up in the DLQ is itself abnormal, you must be alerted via a CloudWatch Alarm — the omission of which was the direct cause of the 2020 Robinhood incident. B only delays the problem by 12 hours without solving it. C is a change of message model, unrelated to failure isolation. D actually makes things worse by putting an even bigger load on the external API.
 
 ---
 
-**문제 4.** To minimize the number of SQS ReceiveMessage API calls for cost savings while still processing messages quickly upon arrival, what is the most appropriate configuration?
+**Question 4.** To minimize the number of SQS ReceiveMessage API calls for cost savings while still processing messages quickly upon arrival, what is the most appropriate configuration?
 
 A) Poll ReceiveMessage in short bursts every 100ms (short polling)
 B) Long polling with WaitTimeSeconds=20 and MaxNumberOfMessages=10 batching
 C) Change the Standard queue to FIFO
 D) Trigger on message arrival with CloudWatch Events
 
-**정답: B**
-해설: Long polling (up to 20 seconds) makes the cost of empty responses nearly 0, and since the response comes the instant a message arrives, latency is good too. It's the AWS official recommendation and the answer in almost every scenario. Receiving batches of 10 makes per-call cost 1/10. A is a cost bomb from empty polling. C is a message model issue, unrelated to polling cost. D is wrong because there's no direct EventBridge integration that uses SQS message arrival as a trigger (the Lambda Event Source Mapping does long polling internally).
+**Answer: B**
+Explanation: Long polling (up to 20 seconds) makes the cost of empty responses nearly 0, and since the response comes the instant a message arrives, latency is good too. It's the AWS official recommendation and the answer in almost every scenario. Receiving batches of 10 makes per-call cost 1/10. A is a cost bomb from empty polling. C is a message model issue, unrelated to polling cost. D is wrong because there's no direct EventBridge integration that uses SQS message arrival as a trigger (the Lambda Event Source Mapping does long polling internally).
 
 ---
 
-**문제 5.** A system needs to deliver PDF attachments averaging 500KB through a queue. How do you handle SQS's 256KB limit?
+**Question 5.** A system needs to deliver PDF attachments averaging 500KB through a queue. How do you handle SQS's 256KB limit?
 
 A) Split the message into 256KB chunks and send as multiple messages
 B) Upload the file to S3 and include only the S3 object reference in the SQS message (Extended Client Library)
 C) Switch to a FIFO queue, which allows up to 1MB
 D) Migrate to Kinesis Data Streams
 
-**정답: B**
-해설: The SQS Extended Client Library automatically uploads the payload to S3 and puts only the S3 reference in the message. The consumer-side library automatically downloads from S3 and cleans up after processing. It's the same standard pattern as KIP-405 in the Kafka world. A breaks message ordering/consistency guarantees and makes consumer-side reassembly complex. C is misinformation — 256KB is the same for FIFO. D is wrong because Kinesis also has a 1MB-per-record limit and doesn't replace SQS's queue model either. That said, there are scenarios where moving to Kinesis is correct (multiple consumers independently processing the same data), which we'll cover on Day 4.
+**Answer: B**
+Explanation: The SQS Extended Client Library automatically uploads the payload to S3 and puts only the S3 reference in the message. The consumer-side library automatically downloads from S3 and cleans up after processing. It's the same standard pattern as KIP-405 in the Kafka world. A breaks message ordering/consistency guarantees and makes consumer-side reassembly complex. C is misinformation — 256KB is the same for FIFO. D is wrong because Kinesis also has a 1MB-per-record limit and doesn't replace SQS's queue model either. That said, there are scenarios where moving to Kinesis is correct (multiple consumers independently processing the same data), which we'll cover on Day 4.
 
 ---
 
-**문제 6.** You're running SQS consumers on an EC2 Auto Scaling Group. What is the most recommended scaling metric?
+**Question 6.** You're running SQS consumers on an EC2 Auto Scaling Group. What is the most recommended scaling metric?
 
 A) CPU utilization above 70%
 B) Always +1 instance whenever queue length exceeds 1,000
 C) A target value for ApproximateNumberOfMessagesVisible ÷ number of InService instances (Backlog per Instance)
 D) A fixed 5-minute schedule
 
-**정답: C**
-해설: A simple queue-length basis (B) has the inefficiency of scaling at the same threshold whether there's 1 instance or 100. A CPU basis (A) has the problem that when SQS workers are I/O bound, backlog builds up even while CPU is low. Setting Backlog per Instance (the number of messages each instance must process) as a target tracking policy automatically adjusts instance count in proportion to load. It's the recommended pattern in the AWS official whitepaper. D can't respond to traffic fluctuation. For Lambda consumers this is automatic, but for EC2/ECS you have to build the custom metric yourself.
+**Answer: C**
+Explanation: A simple queue-length basis (B) has the inefficiency of scaling at the same threshold whether there's 1 instance or 100. A CPU basis (A) has the problem that when SQS workers are I/O bound, backlog builds up even while CPU is low. Setting Backlog per Instance (the number of messages each instance must process) as a target tracking policy automatically adjusts instance count in proportion to load. It's the recommended pattern in the AWS official whitepaper. D can't respond to traffic fluctuation. For Lambda consumers this is automatic, but for EC2/ECS you have to build the custom metric yourself.
 
 ---
 
-**문제 7.** A company is receiving messages from an SNS topic into an SQS Standard queue, and observed that some messages arrive twice within 1 minute. What is the most likely cause and solution combination?
+**Question 7.** A company is receiving messages from an SNS topic into an SQS Standard queue, and observed that some messages arrive twice within 1 minute. What is the most likely cause and solution combination?
 
 A) An SNS bug / contact AWS Support
 B) The at-least-once nature of SQS Standard / implement consumer-side idempotency based on message ID
 C) A network problem / VPC Endpoint configuration
 D) Misconfigured DLQ / remove the DLQ
 
-**정답: B**
-해설: SQS Standard is by definition at-least-once, and this characteristic is preserved through the SNS → SQS integration as well. The same message arriving twice is not a bug but specified behavior. The solution is for the consumer to take the message ID (or a business idempotency key) and prevent duplicate processing with a mechanism like a DynamoDB conditional write. If double processing must absolutely never happen, you have to go to the SNS FIFO + SQS FIFO combination (with the throughput constraint, though). A mistakes normal behavior for a bug. C is irrelevant. D is unrelated to the DLQ.
+**Answer: B**
+Explanation: SQS Standard is by definition at-least-once, and this characteristic is preserved through the SNS → SQS integration as well. The same message arriving twice is not a bug but specified behavior. The solution is for the consumer to take the message ID (or a business idempotency key) and prevent duplicate processing with a mechanism like a DynamoDB conditional write. If double processing must absolutely never happen, you have to go to the SNS FIFO + SQS FIFO combination (with the throughput constraint, though). A mistakes normal behavior for a bug. C is irrelevant. D is unrelated to the DLQ.
 
 ---
 

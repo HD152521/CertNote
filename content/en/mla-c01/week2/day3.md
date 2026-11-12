@@ -112,62 +112,62 @@ Next, we'll explore **storage strategies optimized for ML training — partition
 
 ## 📝 Practice Questions
 
-**문제 1.** A data scientist wants to intermittently explore Parquet data in S3 via SQL without infrastructure management. Costs should be proportional only to data scanned. Which service is most suitable?
+**Question 1.** A data scientist wants to intermittently explore Parquet data in S3 via SQL without infrastructure management. Costs should be proportional only to data scanned. Which service is most suitable?
 
 A) Amazon Redshift provisioned cluster  
 B) Amazon Athena  
 C) Amazon EMR  
 D) Amazon RDS  
 
-**정답: B**  
-해설: Athena is serverless, queries S3 data directly via SQL, and bills only on bytes scanned, making it ideal for ad-hoc, intermittent exploration. Redshift cluster (A) bills on node-hours and requires data loading, inefficient for intermittent use. EMR (C) has large cluster management burden, and RDS (D) is an OLTP database.
+**Answer: B**  
+Explanation: Athena is serverless, queries S3 data directly via SQL, and bills only on bytes scanned, making it ideal for ad-hoc, intermittent exploration. Redshift cluster (A) bills on node-hours and requires data loading, inefficient for intermittent use. EMR (C) has large cluster management burden, and RDS (D) is an OLTP database.
 
 ---
 
-**문제 2.** To reduce Athena query costs, which combination most effectively reduces scan volume?
+**Question 2.** To reduce Athena query costs, which combination most effectively reduces scan volume?
 
 A) CSV format + single file storage  
 B) Parquet format + partitioning + compression  
 C) JSON format + compression  
 D) Flat storage of all data in one folder  
 
-**정답: B**  
-해설: Athena bills on scan volume, so the three levers are (1) columnar Parquet to read only needed columns, (2) partitioning to scan only needed partitions, (3) compression to reduce physical bytes. CSV single file (A) or JSON (C) are row-based and inefficient, and flat storage (D) prevents partition pruning.
+**Answer: B**  
+Explanation: Athena bills on scan volume, so the three levers are (1) columnar Parquet to read only needed columns, (2) partitioning to scan only needed partitions, (3) compression to reduce physical bytes. CSV single file (A) or JSON (C) are row-based and inefficient, and flat storage (D) prevents partition pruning.
 
 ---
 
-**문제 3.** A team wants to keep frequently used data in a Redshift cluster and query it without data movement against cold historical data in S3. Which feature is most suitable?
+**Question 3.** A team wants to keep frequently used data in a Redshift cluster and query it without data movement against cold historical data in S3. Which feature is most suitable?
 
 A) Redshift Spectrum  
 B) Glue Crawler  
 C) Kinesis Firehose  
 D) DMS  
 
-**정답: A**  
-해설: Redshift Spectrum lets you query S3 data as external tables from Redshift and join with internal tables, supporting a pattern of hot data in cluster and cold data in S3 without movement. Glue Crawler (B) is for schema inference, Firehose (C) for stream loading, DMS (D) for DB replication.
+**Answer: A**  
+Explanation: Redshift Spectrum lets you query S3 data as external tables from Redshift and join with internal tables, supporting a pattern of hot data in cluster and cold data in S3 without movement. Glue Crawler (B) is for schema inference, Firehose (C) for stream loading, DMS (D) for DB replication.
 
 ---
 
-**문제 4.** During EDA, one feature shows a suspiciously high 0.99 correlation with the target. What should you suspect first?
+**Question 4.** During EDA, one feature shows a suspiciously high 0.99 correlation with the target. What should you suspect first?
 
 A) Model performance will be excellent, so use it as-is  
 B) Data leakage possibility  
 C) Use the feature with doubled weight  
 D) Missing value problem  
 
-**정답: B**  
-해설: A feature with unrealistically high correlation to the target likely contains target information prematurely — data leakage. Training/validation show high accuracy, but deployment is useless. Using as-is (A) or increasing weight (C) worsens leakage. Missing values (D) don't explain the correlation number itself.
+**Answer: B**  
+Explanation: A feature with unrealistically high correlation to the target likely contains target information prematurely — data leakage. Training/validation show high accuracy, but deployment is useless. Using as-is (A) or increasing weight (C) worsens leakage. Missing values (D) don't explain the correlation number itself.
 
 ---
 
-**문제 5.** You want to train a model and create prediction columns within Redshift using only SQL, without data movement. Which feature do you use?
+**Question 5.** You want to train a model and create prediction columns within Redshift using only SQL, without data movement. Which feature do you use?
 
 A) Athena CTAS  
 B) Redshift ML (CREATE MODEL)  
 C) Glue DataBrew  
 D) Redshift COPY  
 
-**정답: B**  
-해설: Redshift ML uses `CREATE MODEL` SQL statement to internally call SageMaker Autopilot for training and create prediction functions for SQL inference, performing ML via SQL alone without moving data. Athena CTAS (A) just saves query results, no training; DataBrew (C) cleans data; COPY (D) loads data.
+**Answer: B**  
+Explanation: Redshift ML uses `CREATE MODEL` SQL statement to internally call SageMaker Autopilot for training and create prediction functions for SQL inference, performing ML via SQL alone without moving data. Athena CTAS (A) just saves query results, no training; DataBrew (C) cleans data; COPY (D) loads data.
 
 ---

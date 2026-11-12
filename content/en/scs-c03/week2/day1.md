@@ -132,60 +132,60 @@ Next article will explore **Permission Boundary** in depth, a practical pattern 
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 사용자에게 `AdministratorAccess` Identity 정책이 부착되어 있다. 그런데 이 사용자가 특정 S3 버킷의 객체를 읽으려 하자 `AccessDenied`가 발생한다. CloudTrail에는 SCP 차단 기록이 없다. 가장 가능성 높은 원인은?
+**Question 1.** A user has the `AdministratorAccess` Identity policy attached. However, when this user tries to read an object in a specific S3 bucket, `AccessDenied` occurs. CloudTrail shows no record of an SCP block. What is the most likely cause?
 
-A) IAM 정책이 우선순위에서 밀렸기 때문  
-B) 버킷 정책에 해당 주체를 대상으로 한 명시적 Deny가 있기 때문  
-C) S3는 Identity 정책을 지원하지 않기 때문  
-D) AdministratorAccess는 S3를 포함하지 않기 때문  
+A) The IAM policy lost out in priority  
+B) The bucket policy has an explicit Deny targeting that principal  
+C) S3 does not support Identity policies  
+D) AdministratorAccess does not include S3  
 
-**정답: B**  
-해설: 명시적 Deny는 모든 Allow를 이긴다. SCP 차단이 아니라면, 리소스 기반 정책인 버킷 정책의 explicit deny가 가장 유력하다. 우선순위가 밀린 게 아니라 평가 1단계에서 Deny가 즉시 최종 결정을 내린 것이다. S3는 Identity 정책을 지원하며, AdministratorAccess(`*:*`)는 S3를 포함하므로 나머지 보기는 틀리다.
-
----
-
-**문제 2.** Permission Boundary가 `s3:*`만 허용하도록 설정된 롤이 있다. 이 롤의 Identity 정책은 `ec2:RunInstances`와 `s3:GetObject`를 Allow한다. 이 롤이 실제로 수행할 수 있는 액션은?
-
-A) `ec2:RunInstances`와 `s3:GetObject` 모두  
-B) `s3:GetObject`만  
-C) `ec2:RunInstances`만  
-D) 아무것도 못 함  
-
-**정답: B**  
-해설: 유효 권한은 Permission Boundary와 Identity 정책의 교집합이다. Boundary가 `s3:*`만 허용하므로 `ec2:RunInstances`는 상한을 넘어 거부되고, `s3:GetObject`만 양쪽이 모두 허용하여 통과한다. Boundary는 권한을 부여하지 않고 상한만 정한다는 핵심 원리를 묻는 문제다.
+**Answer: B**  
+Explanation: An explicit Deny beats every Allow. If it is not an SCP block, an explicit deny in the bucket policy, which is a resource-based policy, is the most likely cause. The policy did not lose out in priority; the Deny made the final decision immediately at evaluation step 1. S3 supports Identity policies, and AdministratorAccess (`*:*`) includes S3, so the other choices are wrong.
 
 ---
 
-**문제 3.** 계정 A의 IAM 사용자가 계정 B의 S3 버킷에 객체를 업로드해야 한다. 동작하게 하려면 무엇이 반드시 필요한가?
+**Question 2.** There is a role whose Permission Boundary allows only `s3:*`. The role's Identity policy Allows `ec2:RunInstances` and `s3:GetObject`. Which actions can this role actually perform?
 
-A) 계정 A의 IAM 정책에 `s3:PutObject` Allow만 있으면 된다  
-B) 계정 B의 버킷 정책에 계정 A를 허용하는 Allow만 있으면 된다  
-C) 계정 A의 IAM 정책과 계정 B의 버킷 정책이 모두 Allow해야 한다  
-D) 두 계정을 같은 Organizations에 두기만 하면 된다  
+A) Both `ec2:RunInstances` and `s3:GetObject`  
+B) Only `s3:GetObject`  
+C) Only `ec2:RunInstances`  
+D) Nothing  
 
-**정답: C**  
-해설: 크로스 계정 접근은 호출자 계정의 Identity 정책과 리소스 계정의 Resource 정책이 모두 Allow해야 하는 AND 관계다. 한쪽만으로는 통과하지 못한다. 같은 Organizations 소속이라는 사실만으로 권한이 생기지는 않으며, SCP는 오히려 상한을 더 제한할 뿐이다.
-
----
-
-**문제 4.** 한 보안 엔지니어가 SCP로 `Deny ec2:*`를 OU에 적용했다. 그런데 해당 OU의 한 계정에서 관리자가 IAM 정책으로 `Allow ec2:*`를 부여했다. 이 계정의 사용자는 EC2 인스턴스를 시작할 수 있는가?
-
-A) 가능하다, IAM 정책이 SCP보다 구체적이므로  
-B) 가능하다, 계정 관리자 권한이 SCP를 무시하므로  
-C) 불가능하다, SCP의 명시적 Deny가 IAM Allow를 이기므로  
-D) 조건에 따라 다르다  
-
-**정답: C**  
-해설: SCP의 명시적 Deny는 평가 1단계에서 즉시 최종 결정을 내린다. IAM 정책이 아무리 구체적이거나 관리자급이어도, 명시적 Deny를 뚫을 수 없다. 가드레일은 계정 내부의 어떤 Allow보다 우선하며, 이것이 SCP를 조직 차원 통제 수단으로 쓰는 이유다.
+**Answer: B**  
+Explanation: The effective permissions are the intersection of the Permission Boundary and the Identity policy. Because the Boundary allows only `s3:*`, `ec2:RunInstances` exceeds the upper limit and is denied, and only `s3:GetObject`, which both allow, passes. This question tests the key principle that a Boundary does not grant permissions but only sets an upper limit.
 
 ---
 
-**문제 5.** 어떤 IAM 정책의 Statement에 `"Condition": { "BoolIfExists": { "aws:MultiFactorAuthPresent": "true" } }`가 붙어 있다. `Bool` 대신 `BoolIfExists`를 쓴 이유로 가장 적절한 것은?
+**Question 3.** An IAM user in Account A must upload objects to an S3 bucket in Account B. What is absolutely required for this to work?
 
-A) MFA 키가 존재하지 않는 호출(예: 서비스 롤)에서 의도치 않은 결과를 막기 위해  
-B) `BoolIfExists`가 더 빠르게 평가되기 때문  
-C) `Bool`은 SCP에서만 동작하기 때문  
-D) MFA를 더 강하게 강제하기 위해  
+A) Only an `s3:PutObject` Allow in Account A's IAM policy is needed  
+B) Only an Allow in Account B's bucket policy permitting Account A is needed  
+C) Both Account A's IAM policy and Account B's bucket policy must Allow  
+D) It is enough to put both accounts in the same Organizations  
 
-**정답: A**  
-해설: AssumeRole로 얻은 임시 자격증명이나 서비스 롤 호출에는 `aws:MultiFactorAuthPresent` 키가 아예 없을 수 있다. 이때 `Bool`은 키 부재를 다르게 처리해 정책이 의도와 어긋날 수 있으므로, `BoolIfExists`로 "키가 존재할 때만 비교"하게 만들어 안전하게 처리한다. 성능이나 SCP 전용 여부와는 무관하다.
+**Answer: C**  
+Explanation: Cross-account access is an AND relationship in which both the caller account's Identity policy and the resource account's Resource policy must Allow. Either one alone does not pass. Belonging to the same Organizations does not create permissions by itself, and an SCP only further restricts the upper limit.
+
+---
+
+**Question 4.** A security engineer applied `Deny ec2:*` to an OU with an SCP. However, an administrator in one account of that OU granted `Allow ec2:*` with an IAM policy. Can a user in this account launch EC2 instances?
+
+A) Yes, because the IAM policy is more specific than the SCP  
+B) Yes, because account administrator permissions ignore the SCP  
+C) No, because the explicit Deny in the SCP beats the IAM Allow  
+D) It depends on the conditions  
+
+**Answer: C**  
+Explanation: An explicit Deny in an SCP makes the final decision immediately at evaluation step 1. No matter how specific or administrator-level the IAM policy is, it cannot break through an explicit Deny. The guardrail takes precedence over any Allow inside the account, which is why SCPs are used as an organization-level control.
+
+---
+
+**Question 5.** A Statement in an IAM policy has `"Condition": { "BoolIfExists": { "aws:MultiFactorAuthPresent": "true" } }` attached. What is the most appropriate reason for using `BoolIfExists` instead of `Bool`?
+
+A) To prevent unintended results for calls where the MFA key does not exist (for example, service roles)  
+B) Because `BoolIfExists` is evaluated faster  
+C) Because `Bool` works only in SCPs  
+D) To enforce MFA more strongly  
+
+**Answer: A**  
+Explanation: Temporary credentials obtained through AssumeRole or service role calls may not have the `aws:MultiFactorAuthPresent` key at all. In that case `Bool` treats the missing key differently and the policy may diverge from the intent, so `BoolIfExists` makes it "compare only when the key exists" and handles it safely. It has nothing to do with performance or being SCP-only.

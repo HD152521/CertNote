@@ -106,94 +106,94 @@ In the next article we look at the governance layer that reports, forecasts, and
 
 ## 📝 Practice Questions
 
-**문제 1.** EC2 instances in a private subnet read and write large amounts of data to S3, and the NAT Gateway's data processing cost has spiked. What is the most effective cost-saving measure?
+**Question 1.** EC2 instances in a private subnet read and write large amounts of data to S3, and the NAT Gateway's data processing cost has spiked. What is the most effective cost-saving measure?
 
 A) Create an Interface Endpoint (PrivateLink) for S3
 B) Create an S3 Gateway Endpoint
 C) Replace the NAT Gateway with a NAT Instance
 D) Build a Direct Connect
 
-**정답: B**
+**Answer: B**
 
-해설: An S3 Gateway Endpoint adds an S3 route to the route table so traffic goes directly over the AWS backbone instead of NAT/internet, and the endpoint itself is completely free, driving NAT processing cost to zero. An Interface Endpoint (A) can be used for S3 too but costs ENI/GB charges, making it more expensive than the free Gateway Endpoint. A NAT Instance (C) only adds management burden while the traffic cost structure stays the same. Direct Connect (D) is for on-premises connectivity — an overkill solution.
+Explanation: An S3 Gateway Endpoint adds an S3 route to the route table so traffic goes directly over the AWS backbone instead of NAT/internet, and the endpoint itself is completely free, driving NAT processing cost to zero. An Interface Endpoint (A) can be used for S3 too but costs ENI/GB charges, making it more expensive than the free Gateway Endpoint. A NAT Instance (C) only adds management burden while the traffic cost structure stays the same. Direct Connect (D) is for on-premises connectivity — an overkill solution.
 
 ---
 
-**문제 2.** A company serves static images/videos stored in S3 to global users, and data-transfer-out (DTO) cost is exploding in proportion to user growth. What is the most suitable way to reduce cost?
+**Question 2.** A company serves static images/videos stored in S3 to global users, and data-transfer-out (DTO) cost is exploding in proportion to user growth. What is the most suitable way to reduce cost?
 
 A) Replicate the S3 bucket to multiple regions and serve directly
 B) Place CloudFront in front of S3
 C) Use a NAT Gateway with price class set to All
 D) Enable S3 Transfer Acceleration
 
-**정답: B**
+**Answer: B**
 
-해설: CloudFront reduces S3 origin requests via edge caching, transfer on S3→CloudFront is free, and the CloudFront→user egress unit price is cheaper than direct S3, making it cheaper than "direct S3." A actually increases replication and transfer cost, C is a wrong choice since NAT has no price-class concept, and D is an upload (inbound) acceleration feature unrelated to reducing download transfer cost.
+Explanation: CloudFront reduces S3 origin requests via edge caching, transfer on S3→CloudFront is free, and the CloudFront→user egress unit price is cheaper than direct S3, making it cheaper than "direct S3." A actually increases replication and transfer cost, C is a wrong choice since NAT has no price-class concept, and D is an upload (inbound) acceleration feature unrelated to reducing download transfer cost.
 
 ---
 
-**문제 3.** Two EC2 instances communicate within the same region, yet an unexpected data transfer charge is being billed. What is the most likely cause?
+**Question 3.** Two EC2 instances communicate within the same region, yet an unexpected data transfer charge is being billed. What is the most likely cause?
 
 A) The two instances are in different AZs
 B) A charge was applied to inbound traffic
 C) Same-AZ communication is always charged
 D) VPC Peering is disabled
 
-**정답: A**
+**Answer: A**
 
-해설: Even within the same region, communication between instances in different AZs is charged per GB in both directions — because an AZ is a physically separated data center and the infrastructure cost of connecting them is passed on. B is wrong (inbound is generally free), C is also wrong (same-AZ communication is free), and D is irrelevant to communication within a single VPC. If cost-sensitive, design your topology so communication completes within the same AZ.
+Explanation: Even within the same region, communication between instances in different AZs is charged per GB in both directions — because an AZ is a physically separated data center and the infrastructure cost of connecting them is passed on. B is wrong (inbound is generally free), C is also wrong (same-AZ communication is free), and D is irrelevant to communication within a single VPC. If cost-sensitive, design your topology so communication completes within the same AZ.
 
 ---
 
-**문제 4.** An architect assumed "using a VPC Endpoint always saves cost" and installed an Interface Endpoint for a Secrets Manager that is only called a little, but cost went up. Why?
+**Question 4.** An architect assumed "using a VPC Endpoint always saves cost" and installed an Interface Endpoint for a Secrets Manager that is only called a little, but cost went up. Why?
 
 A) An Interface Endpoint has an hourly ENI charge + GB processing charge, so it can be more expensive than NAT for low-volume traffic
 B) An Interface Endpoint is S3-only and was applied incorrectly
 C) A missing Endpoint Policy incurred extra charges
 D) Secrets Manager doesn't support Endpoints
 
-**정답: A**
+**Answer: A**
 
-해설: An Interface Endpoint (PrivateLink) creates an ENI in the subnet and costs an hourly charge plus a GB processing charge. When traffic is low, this fixed cost exceeds the NAT savings, making it more expensive. "VPC Endpoint = always savings" is a wrong formula, and the only free one is the S3/DDB Gateway Endpoint. B is wrong (Interface supports many services), C is not a cost cause, and D is also wrong (Secrets Manager supports Interface Endpoints).
+Explanation: An Interface Endpoint (PrivateLink) creates an ENI in the subnet and costs an hourly charge plus a GB processing charge. When traffic is low, this fixed cost exceeds the NAT savings, making it more expensive. "VPC Endpoint = always savings" is a wrong formula, and the only free one is the S3/DDB Gateway Endpoint. B is wrong (Interface supports many services), C is not a cost cause, and D is also wrong (Secrets Manager supports Interface Endpoints).
 
 ---
 
-**문제 5.** A team runs an NLB and has a problem where traffic is skewed to targets in a specific AZ. When enabling cross-zone load balancing, what should you know from a cost standpoint?
+**Question 5.** A team runs an NLB and has a problem where traffic is skewed to targets in a specific AZ. When enabling cross-zone load balancing, what should you know from a cost standpoint?
 
 A) NLB cross-zone is on by default, so nothing changes
 B) Enabling NLB cross-zone incurs inter-AZ data transfer charges
 C) Cross-zone is only possible on ALB
 D) Enabling cross-zone lowers availability
 
-**정답: B**
+**Answer: B**
 
-해설: NLB has cross-zone load balancing off by default, and enabling it distributes traffic evenly to targets in all AZs — improving balance but incurring inter-AZ data transfer charges in the process (the difference being that ALB has cross-zone on by default and doesn't separately bill inter-AZ charges). A is wrong for NLB, C is also wrong (NLB supports cross-zone too), and D is the opposite — better balance is favorable for availability.
+Explanation: NLB has cross-zone load balancing off by default, and enabling it distributes traffic evenly to targets in all AZs — improving balance but incurring inter-AZ data transfer charges in the process (the difference being that ALB has cross-zone on by default and doesn't separately bill inter-AZ charges). A is wrong for NLB, C is also wrong (NLB supports cross-zone too), and D is the opposite — better balance is favorable for availability.
 
 ---
 
-**문제 6.** A company wants to connect and route 50+ VPCs scalably from a central point. When management convenience and scalability take priority over cost, what is suitable?
+**Question 6.** A company wants to connect and route 50+ VPCs scalably from a central point. When management convenience and scalability take priority over cost, what is suitable?
 
 A) Full-mesh all VPCs with 1:1 VPC Peering
 B) Hub-and-spoke connection with Transit Gateway
 C) Connect each VPC via a detour over the internet
 D) Merge all VPCs into one
 
-**정답: B**
+**Answer: B**
 
-해설: Transit Gateway is a central router that bundles many VPCs in a hub-and-spoke; it carries a per-GB data processing charge but removes the management complexity of full-mesh Peering (N VPCs need N(N-1)/2 connections), giving scalability and management convenience. A is nearly unmanageable at 50 VPCs as the number of connections explodes, C is bad for both security and cost, and D is inappropriate from an isolation/blast-radius standpoint. "Few VPCs, low-cost connection" means Peering; "many VPCs, scalable connection" means TGW.
+Explanation: Transit Gateway is a central router that bundles many VPCs in a hub-and-spoke; it carries a per-GB data processing charge but removes the management complexity of full-mesh Peering (N VPCs need N(N-1)/2 connections), giving scalability and management convenience. A is nearly unmanageable at 50 VPCs as the number of connections explodes, C is bad for both security and cost, and D is inappropriate from an isolation/blast-radius standpoint. "Few VPCs, low-cost connection" means Peering; "many VPCs, scalable connection" means TGW.
 
 ---
 
-**문제 7.** A service's users are concentrated only in North America and Europe, and it wants to reduce CloudFront cost further. What is the appropriate action?
+**Question 7.** A service's users are concentrated only in North America and Europe, and it wants to reduce CloudFront cost further. What is the appropriate action?
 
 A) Change the price class to PriceClass_All
 B) Set the price class to PriceClass_100 (North America/Europe)
 C) Remove CloudFront and serve directly from S3
 D) Disable Origin Shield
 
-**정답: B**
+**Answer: B**
 
-해설: CloudFront price class 100 uses only North America/Europe edges to reduce cost — since users are concentrated in those regions, not using far-away edges means no latency penalty. PriceClass_All (A) uses all edges worldwide for the highest cost, C loses the caching and free-origin-transfer benefits and can actually be more expensive, and D — turning off Origin Shield lowers cache hit rate, which can increase origin requests and cost.
+Explanation: CloudFront price class 100 uses only North America/Europe edges to reduce cost — since users are concentrated in those regions, not using far-away edges means no latency penalty. PriceClass_All (A) uses all edges worldwide for the highest cost, C loses the caching and free-origin-transfer benefits and can actually be more expensive, and D — turning off Origin Shield lowers cache hit rate, which can increase origin requests and cost.
 
 ---
 

@@ -51,146 +51,146 @@ Visualize this tree, then check where your answers branch during 12 questions.
 
 ---
 
-**문제 1.** A global fintech deploys identical K8s workloads across AWS, GCP, on-premises. AWS must minimize control plane ops (etcd backup, upgrades); identical manifests must work across environments. Most fitting combo?
+**Question 1.** A global fintech deploys identical K8s workloads across AWS, GCP, on-premises. AWS must minimize control plane ops (etcd backup, upgrades); identical manifests must work across environments. Most fitting combo?
 
 A) ECS Fargate + Capacity Provider
 B) EKS + Managed Node Group (or EKS Auto Mode)
 C) App Runner + GitHub auto-deploy
 D) ECS Anywhere
 
-**정답: B**
+**Answer: B**
 Decompose two keywords: "K8s standard + multi-cloud portability" = EKS (K8s API). "Minimize control plane ops" = AWS-managed control plane = EKS. A/D: AWS-proprietary APIs break portability. C: PaaS, no K8s manifest compatibility. Branching: same scenario "AWS-only ops, minimize burden" → ECS Fargate answers. Bonus: further reduce ops via EKS Auto Mode (2024).
 
 ---
 
-**문제 2.** Company operates 30 EKS clusters. Pods access S3, DynamoDB with per-Pod least privilege. Easiest way to reuse identical IAM Role across all clusters?
+**Question 2.** Company operates 30 EKS clusters. Pods access S3, DynamoDB with per-Pod least privilege. Easiest way to reuse identical IAM Role across all clusters?
 
 A) EC2 Instance Profile permissions
 B) IRSA (IAM Roles for Service Accounts)
 C) EKS Pod Identity
 D) Pod environment variables with Access Key
 
-**정답: C**
+**Answer: C**
 "Pod-per-IAM" satisfies both IRSA and Pod Identity; "multi-cluster role reuse" is decisive branch. IRSA: per-cluster OIDC registration, per-cluster Trust Policy. Pod Identity: single principal (`pods.eks.amazonaws.com`), identical Role reused all clusters. A: all Pods on node share permissions, violates least privilege. D: key exposure risk. Branching: "OIDC standard compliant, multi-cloud friendly" emphasized → IRSA answers.
 
 ---
 
-**문제 3.** EKS cluster with variable traffic. Must satisfy all: ① scale-out <1min ② dynamically select instance type per Pod requests ③ auto-handle Spot ④ auto-consolidate underutilized nodes. Which tool?
+**Question 3.** EKS cluster with variable traffic. Must satisfy all: ① scale-out <1min ② dynamically select instance type per Pod requests ③ auto-handle Spot ④ auto-consolidate underutilized nodes. Which tool?
 
 A) Cluster Autoscaler + ASG
 B) Horizontal Pod Autoscaler only
 C) Karpenter
 D) EKS Managed Node Group + Spot
 
-**정답: C**
+**Answer: C**
 Karpenter alone satisfies all four. Bypasses ASG, EC2 Fleet API direct provisioning, NodePool lists diverse instance candidates, capacity-type spot/on-demand both allowed, Consolidation unifies nodes. CA bound to ASG—fixed instance types, weak consolidation. HPA adjusts Pod count, different layer from nodes. MNG ASG-based, lacks Karpenter unification/rebalancing. Branching: "ASG-based simple patterns only" → CA answers.
 
 ---
 
-**문제 4.** ECS Fargate back-office API. 5 Tasks average, spikes to 30 during campaigns. 1-year commitment possible, some Task reclamation tolerable. Cost-optimal config?
+**Question 4.** ECS Fargate back-office API. 5 Tasks average, spikes to 30 during campaigns. 1-year commitment possible, some Task reclamation tolerable. Cost-optimal config?
 
 A) FARGATE On-Demand 100% + EC2 Instance SP
 B) FARGATE_SPOT 100%
 C) Compute SP 5-Task commitment + Capacity Provider (base=2 FARGATE + FARGATE_SPOT 80%)
 D) EC2 Launch Type + Reserved Instance
 
-**정답: C**
+**Answer: C**
 Two traffic profiles (steady 5-baseline + variable spike) matched two discount levers: SP anchors baseline, Spot handles variable. base=2 ensures minimum availability on Spot reclamation. A: EC2 Instance SP doesn't apply to Fargate. B: all Spot risks simultaneous reclamation outage. D: EC2 RI inefficient against spike variability. Trap: Spot and SP can't coexist—false. Different resources, naturally coexist.
 
 ---
 
-**문제 5.** Media startup wants single-line code push → auto-build, deploy, HTTPS endpoint, zero ops burden. No sidecars, service mesh, advanced VPC integration needed. Which service?
+**Question 5.** Media startup wants single-line code push → auto-build, deploy, HTTPS endpoint, zero ops burden. No sidecars, service mesh, advanced VPC integration needed. Which service?
 
 A) ECS Fargate + ALB
 B) EKS + ArgoCD
 C) App Runner
 D) Elastic Beanstalk
 
-**정답: C**
+**Answer: C**
 App Runner: point to GitHub or ECR, build/deploy/domain/auto-scaling bundled PaaS. A: bigger ops burden (ALB, TG, Service Definition). B: K8s + GitOps huge ops. D: EC2-based, heavier. Trap: "ECS Fargate cheaper?" Yes, but App Runner trades per-unit cost for ops reduction; simple single backend favors App Runner's breakeven.
 
 ---
 
-**문제 6.** Fintech runs 30 ECS Fargate microservices. Must satisfy all: ① all comms mTLS ② canary new versions 5% traffic ③ per-service circuit breaker. Most fitting combo?
+**Question 6.** Fintech runs 30 ECS Fargate microservices. Must satisfy all: ① all comms mTLS ② canary new versions 5% traffic ③ per-service circuit breaker. Most fitting combo?
 
 A) ALB Weighted Target Group + ACM Public Cert
 B) AWS App Mesh + ACM Private CA
 C) Cloud Map only
 D) Route 53 Weighted Routing
 
-**정답: B**
+**Answer: B**
 Three full-mesh features (mTLS, weighted canary, circuit breaker) = App Mesh domain. ACM Private CA short-lived auto-rotation, Virtual Router 5% weighting, Virtual Node circuit breaker. A: ACM Public external-domain, ALB lacks circuit breaker. C: discovery only, no mesh features. D: DNS-level weighting—1% granularity, no circuit breaker. Operations: App Mesh EOL (2026.9) → new adoption standard Istio; SAP asks era-correct.
 
 ---
 
-**문제 7.** ECS Cluster inter-microservice: ① auto-discovery ② auto Envoy sidecar ③ auto CloudWatch metrics ④ minimum ops. Weighted canary unnecessary. Which service?
+**Question 7.** ECS Cluster inter-microservice: ① auto-discovery ② auto Envoy sidecar ③ auto CloudWatch metrics ④ minimum ops. Weighted canary unnecessary. Which service?
 
 A) App Mesh
 B) ECS Service Connect
 C) Cloud Map + manual client LB
 D) ALB per Service
 
-**정답: B**
+**Answer: B**
 Service Connect: single ECS Service block enables Envoy auto-inject, Cloud Map auto-register, retries, metrics standard. A: full mesh bigger ops. C: all manual. D: 30 services = 30 ALBs, cost and ops burden high. Branching: weighted canary, mTLS, circuit breaker needed → App Mesh answers.
 
 ---
 
-**문제 8.** Manufacturer operates 100 factory gateways. Some internet-down for days. Control plane must operate autonomously inside factory. Most fitting service?
+**Question 8.** Manufacturer operates 100 factory gateways. Some internet-down for days. Control plane must operate autonomously inside factory. Most fitting service?
 
 A) ECS Anywhere
 B) EKS Anywhere
 C) AWS Outposts
 D) Snowball Edge
 
-**정답: B**
+**Answer: B**
 "Internet-down, control plane autonomous" = control plane on-prem. EKS Anywhere (EKS-D based) exactly that model. A: control plane AWS cloud—internet loss halts deployments/scaling. C: AWS hardware customer facility, control plane calls still need region. D: data transfer device, irrelevant. Branching: "on-prem use ECS-like tools" → ECS Anywhere (control plane AWS).
 
 ---
 
-**문제 9.** EKS 1.22 → 1.24 upgrade. Most accurate procedure?
+**Question 9.** EKS 1.22 → 1.24 upgrade. Most accurate procedure?
 
 A) Control Plane 1.22 → 1.24 one step
 B) Node groups first to 1.24, then Control Plane
 C) Control Plane 1.22 → 1.23 → 1.24 step-wise, each stage check node/Addon compatibility, install EBS CSI Driver Addon (1.23+ mandatory)
 D) New 1.24 cluster, migrate workloads
 
-**정답: C**
+**Answer: C**
 EKS one minor version at a time; node groups tolerate Control Plane ±1 minor. A: EKS API rejected. B: nodes ahead of Control Plane breaks compatibility. D: possible but ops burden, downtime high. Trap: 1.23 removed in-tree EBS plugin—EBS CSI Driver Addon de facto required. Miss it → PVC Pending forever. Fintech case: payment system delays.
 
 ---
 
-**문제 10.** EKS Pod CPU·memory sufficient; new Pods stop scheduling. Limit beyond node resources. Minimum-ops solution?
+**Question 10.** EKS Pod CPU·memory sufficient; new Pods stop scheduling. Limit beyond node resources. Minimum-ops solution?
 
 A) Replace node group with larger instances
 B) Enable VPC CNI Prefix Delegation
 C) Switch to Calico CNI
 D) Configure Custom Networking
 
-**정답: B**
+**Answer: B**
 Symptom: ENI slot exhaustion. AWS VPC CNI assigns VPC IPs directly; instance ENI limits (t3.medium ~17). Prefix Delegation assigns /28 (16 IPs) per ENI, multiplies slots 16×. Single environment variable (`ENABLE_PREFIX_DELEGATION=true`) applies. A: possible but node replacement, cost increase. C: CNI swap breaks VPC SG, routing integration. D: needs separate subnet, routing design. Branching: VPC subnet IP exhaustion → Custom Networking answers.
 
 ---
 
-**문제 11.** SaaS ML inference workload: 100ms average, 50k/hour calls, 3GB memory. Most cost-efficient compute?
+**Question 11.** SaaS ML inference workload: 100ms average, 50k/hour calls, 3GB memory. Most cost-efficient compute?
 
 A) Lambda
 B) Fargate On-Demand
 C) Fargate Spot
 D) EC2 + Reserved Instance
 
-**정답: A**
+**Answer: A**
 Lambda's 1ms billing dominates short, frequent calls. 100ms × 50k = 5,000s/hour = ~1.4hours billed time. Fargate (B/C): 1-minute floor + Task overhead while idle = higher. EC2 (D): 1 instance × 24h always-on = most expensive. Trap: 3GB within Lambda 10GB limit. Exceed or cold-start sensitive → Fargate wins. Bonus: Lambda Provisioned Concurrency nearly eliminates cold-start.
 
 ---
 
-**문제 12.** Company simultaneously operates EC2 and Fargate, planning EC2-to-Fargate migration. Needs 1-year commitment discount applying both, commitment persists during migration. Which commitment?
+**Question 12.** Company simultaneously operates EC2 and Fargate, planning EC2-to-Fargate migration. Needs 1-year commitment discount applying both, commitment persists during migration. Which commitment?
 
 A) EC2 Instance Savings Plans
 B) Compute Savings Plans
 C) Standard Reserved Instance
 D) Convertible Reserved Instance
 
-**정답: B**
+**Answer: B**
 Only Compute SP applies across EC2 + Fargate + Lambda, auto-tracks through migration. A: EC2 Instance SP (family, region fixed) excludes Fargate. C/D: RI EC2-only. Bonus: Compute SP discount (~66%) slightly lower than EC2 Instance SP (~72%) but flexibility premium. SP auto-applies, needs no instance specification. Trap: simple price-list-only view chooses EC2 Instance SP—wrong, excludes Fargate.
 
 ---

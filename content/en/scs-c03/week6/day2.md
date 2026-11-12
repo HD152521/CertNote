@@ -103,62 +103,62 @@ You can set it at both account and bucket levels, and **account-level BPA overri
 
 ## 📝 Practice Questions
 
-**문제 1.** SSE-S3 대신 SSE-KMS를 선택해야 하는 가장 본질적인 이유는?
+**Question 1.** What is the most fundamental reason to choose SSE-KMS over SSE-S3?
 
-A) SSE-KMS가 더 강한 암호화 알고리즘을 쓰기 때문  
-B) 데이터 접근(s3:GetObject)과 키 접근(kms:Decrypt)을 독립된 인가 게이트로 분리해 키 사용을 별도 통제·감사할 수 있기 때문  
-C) SSE-KMS가 더 저렴하기 때문  
-D) SSE-S3는 버전 관리를 지원하지 않기 때문  
+A) SSE-KMS uses a stronger encryption algorithm  
+B) It separates data access (s3:GetObject) and key access (kms:Decrypt) into independent authorization gates, so key usage can be controlled and audited separately  
+C) SSE-KMS is cheaper  
+D) SSE-S3 does not support versioning  
 
-**정답: B**  
-해설: 두 모드 모두 AES-256을 쓰므로 알고리즘 강도는 같다. 차이는 키 접근 통제의 분리다. SSE-KMS는 KMS 키 정책으로 복호화 권한을 S3 권한과 별개로 통제하고, CloudTrail에 키 사용을 기록해 감사할 수 있다. SSE-KMS는 KMS 호출 비용이 추가되므로 더 저렴하지 않으며, 버전 관리는 암호화 모드와 무관하다.
-
----
-
-**문제 2.** SSE-KMS를 사용하는 고트래픽 버킷에서 KMS ThrottlingException과 비용 급증이 발생한다. 가장 적절한 해결책은?
-
-A) 암호화를 SSE-S3로 변경  
-B) S3 Bucket Key를 활성화해 객체별 KMS 호출을 버킷 수준 키 파생으로 대체  
-C) KMS 키를 비활성화  
-D) DSSE-KMS로 전환  
-
-**정답: B**  
-해설: S3 Bucket Key는 버킷 수준 단기 키를 KMS에서 한 번 받아 객체별 데이터 키를 S3가 로컬에서 파생하므로 KMS API 호출을 최대 99% 줄인다 — 스로틀과 비용을 동시에 완화한다. SSE-S3로 바꾸면 키 통제·감사를 잃고, DSSE-KMS는 오히려 KMS 호출이 늘며 Bucket Key와 호환되지 않는다. 키 비활성화는 복호화를 막아버린다.
+**Answer: B**  
+Explanation: Both modes use AES-256, so the algorithm strength is the same. The difference is the separation of key access control. SSE-KMS controls decryption permission through the KMS key policy independently of S3 permissions, and key usage is recorded in CloudTrail for auditing. SSE-KMS incurs additional KMS call costs, so it is not cheaper, and versioning is unrelated to the encryption mode.
 
 ---
 
-**문제 3.** 규제상 "권한 있는 누구도(루트 계정 포함) 보존 기간 내에는 객체를 삭제·변경할 수 없어야 한다"는 요구가 있다. 올바른 구성은?
+**Question 2.** A high-traffic bucket that uses SSE-KMS experiences KMS ThrottlingException errors and a cost spike. What is the most appropriate solution?
 
-A) 버킷 정책으로 Delete를 Deny  
-B) 버전 관리 + Object Lock의 Governance 모드  
-C) 버전 관리 + Object Lock의 Compliance 모드  
-D) MFA Delete만 활성화  
+A) Change the encryption to SSE-S3  
+B) Enable the S3 Bucket Key to replace per-object KMS calls with bucket-level key derivation  
+C) Disable the KMS key  
+D) Switch to DSSE-KMS  
 
-**정답: C**  
-해설: Compliance 모드 Object Lock은 루트 계정조차 보존 기간 내 삭제·변경할 수 없는 진정한 불변성을 제공한다. Governance 모드는 `BypassGovernanceRetention` 권한자가 우회할 수 있어 "누구도"라는 요구에 미달한다. 버킷 정책 Deny는 권한 변경으로 우회 가능하고, MFA Delete는 MFA를 가진 루트가 여전히 삭제할 수 있다.
-
----
-
-**문제 4.** 버킷 정책에 익명 공개 읽기(`Principal: *`, `s3:GetObject`)를 허용했는데도 외부에서 접근이 거부된다. 가장 가능성 높은 원인은?
-
-A) SSE-KMS 암호화 때문  
-B) 계정/버킷 수준의 Block Public Access가 활성화되어 공개 정책을 무력화하고 있다  
-C) 버전 관리가 꺼져 있어서  
-D) 객체 잠금이 걸려 있어서  
-
-**정답: B**  
-해설: Block Public Access는 ACL·버킷 정책의 공개 설정보다 우선 적용되는 상위 가드레일이다. BPA의 `BlockPublicPolicy`/`RestrictPublicBuckets`가 켜져 있으면 공개 버킷 정책이 무시되어 익명 접근이 거부된다. 암호화·버전 관리·객체 잠금은 익명 읽기 차단의 원인이 아니다. 권장 패턴은 BPA를 유지하고 CloudFront+OAC로 비공개 S3를 서빙하는 것이다.
+**Answer: B**  
+Explanation: The S3 Bucket Key obtains a bucket-level short-lived key from KMS once, and S3 derives per-object data keys locally, reducing KMS API calls by up to 99% - easing both throttling and cost. Switching to SSE-S3 loses key control and auditing, and DSSE-KMS actually increases KMS calls and is not compatible with the Bucket Key. Disabling the key blocks decryption.
 
 ---
 
-**문제 5.** 버전 관리가 켜진 버킷에서 객체를 다수 삭제했는데 스토리지 비용이 줄지 않는다. 가장 적절한 조치는?
+**Question 3.** A regulation requires that "no one with privileges (including the root account) can delete or modify objects within the retention period." What is the correct configuration?
 
-A) 버전 관리를 비활성화한다  
-B) 수명주기 정책으로 비현행 버전(noncurrent version)과 만료된 delete marker를 일정 일수 후 만료·정리한다  
-C) BPA를 활성화한다  
-D) Object Lock Compliance를 적용한다  
+A) Deny Delete in the bucket policy  
+B) Versioning + Object Lock Governance mode  
+C) Versioning + Object Lock Compliance mode  
+D) Enable only MFA Delete  
 
-**정답: B**  
-해설: 버전 관리 버킷에서 삭제는 실제 데이터를 지우지 않고 delete marker를 추가하며, 이전 버전들은 그대로 남아 비용을 차지한다. 수명주기 정책으로 비현행 버전을 만료시키고 만료된 delete marker를 정리해야 실제 스토리지가 회수된다. 버전 관리는 비활성화할 수 없고(suspend만 가능), BPA·Object Lock은 비용 회수와 무관하며 Object Lock은 오히려 삭제를 막는다.
+**Answer: C**  
+Explanation: Object Lock in Compliance mode provides true immutability, where even the root account cannot delete or modify objects within the retention period. Governance mode can be bypassed by those with the `BypassGovernanceRetention` permission, so it falls short of the "no one" requirement. A bucket policy Deny can be bypassed by changing permissions, and with MFA Delete a root user who holds MFA can still delete.
+
+---
+
+**Question 4.** A bucket policy allows anonymous public read (`Principal: *`, `s3:GetObject`), yet access from outside is denied. What is the most likely cause?
+
+A) SSE-KMS encryption  
+B) Block Public Access is enabled at the account/bucket level and is nullifying the public policy  
+C) Versioning is turned off  
+D) An object lock is applied  
+
+**Answer: B**  
+Explanation: Block Public Access is a higher-level guardrail that takes precedence over public settings in ACLs and bucket policies. If BPA's `BlockPublicPolicy`/`RestrictPublicBuckets` is on, the public bucket policy is ignored and anonymous access is denied. Encryption, versioning, and object lock are not causes of blocking anonymous reads. The recommended pattern is to keep BPA on and serve private S3 through CloudFront+OAC.
+
+---
+
+**Question 5.** After deleting many objects in a bucket with versioning enabled, storage costs have not decreased. What is the most appropriate action?
+
+A) Disable versioning  
+B) Use a lifecycle policy to expire noncurrent versions and clean up expired delete markers after a set number of days  
+C) Enable BPA  
+D) Apply Object Lock Compliance  
+
+**Answer: B**  
+Explanation: In a versioned bucket, a delete does not erase the actual data but adds a delete marker, and the previous versions remain and continue to incur cost. You must expire noncurrent versions with a lifecycle policy and clean up expired delete markers for the storage to actually be reclaimed. Versioning cannot be disabled (it can only be suspended), BPA and Object Lock are unrelated to cost reclamation, and Object Lock in fact prevents deletion.
 
 ---

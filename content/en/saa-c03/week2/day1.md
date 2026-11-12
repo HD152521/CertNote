@@ -184,84 +184,84 @@ A VPC is isolation, a subnet is an IP slice bound to an AZ, and a route table is
 
 ## 📝 Practice Questions
 
-**문제 1.** You launched an EC2 in a new subnet but it has no internet. The SG is fully open. What should you check first?
+**Question 1.** You launched an EC2 in a new subnet but it has no internet. The SG is fully open. What should you check first?
 
 A) IAM Role permissions
 B) Whether the route table has a `0.0.0.0/0 → igw-xxx` route and whether a Public IP is assigned to the instance
 C) The S3 Endpoint
 D) DNS server settings
 
-**정답: B**
-해설: Check which of the 3 conditions for a Public subnet (IGW route, Public IP, SG/NACL) is missing. Even with the SG open, if there's no routing the packet itself can't leave. The diagnostic order is always the five steps "routing → Public IP → SG → NACL → DNS." VPC Reachability Analyzer automates this diagnosis for you.
+**Answer: B**
+Explanation: Check which of the 3 conditions for a Public subnet (IGW route, Public IP, SG/NACL) is missing. Even with the SG open, if there's no routing the packet itself can't leave. The diagnostic order is always the five steps "routing → Public IP → SG → NACL → DNS." VPC Reachability Analyzer automates this diagnosis for you.
 
 ---
 
-**문제 2.** How many IPs in a `/24` subnet can actually be assigned to instances?
+**Question 2.** How many IPs in a `/24` subnet can actually be assigned to instances?
 
 A) 256
 B) 254
 C) 251
 D) 255
 
-**정답: C**
-해설: 256 minus AWS's 5 reserved (`.0`, `.1`, `.2`, `.3`, `.255`) equals 251. This differs from a normal network's -2 (network/broadcast). Workloads like EKS and Fargate create many ENIs and thus need larger subnets. Numbers worth memorizing: `/28`=11, `/27`=27, `/26`=59, `/25`=123, `/24`=251.
+**Answer: C**
+Explanation: 256 minus AWS's 5 reserved (`.0`, `.1`, `.2`, `.3`, `.255`) equals 251. This differs from a normal network's -2 (network/broadcast). Workloads like EKS and Fargate create many ENIs and thus need larger subnets. Numbers worth memorizing: `/28`=11, `/27`=27, `/26`=59, `/25`=123, `/24`=251.
 
 ---
 
-**문제 3.** Which statement about the relationship between a VPC and a subnet is correct?
+**Question 3.** Which statement about the relationship between a VPC and a subnet is correct?
 
 A) A subnet can span multiple AZs
 B) A VPC can span multiple regions
 C) A subnet is bound to a single AZ
 D) Subnets within the same VPC cannot route to each other
 
-**정답: C**
-해설: Subnet = AZ is the fundamental unit of isolation. A VPC is region-scoped. Subnets within the same VPC route automatically (`local`). This `local` route cannot be deleted — isolation inside a VPC is only possible via SG/NACL. So "completely isolating two subnets within the same VPC" is impossible via routing and requires SG/NACL or a separate VPC.
+**Answer: C**
+Explanation: Subnet = AZ is the fundamental unit of isolation. A VPC is region-scoped. Subnets within the same VPC route automatically (`local`). This `local` route cannot be deleted — isolation inside a VPC is only possible via SG/NACL. So "completely isolating two subnets within the same VPC" is impossible via routing and requires SG/NACL or a separate VPC.
 
 ---
 
-**문제 4.** A route table has these two routes: `10.0.0.0/16 → local`, `10.0.5.0/24 → pcx-abc`. Where does a packet destined for `10.0.5.10` go?
+**Question 4.** A route table has these two routes: `10.0.0.0/16 → local`, `10.0.5.0/24 → pcx-abc`. Where does a packet destined for `10.0.5.10` go?
 
 A) To local
 B) To the Peering Connection
 C) It's dropped
 D) To the IGW
 
-**정답: A**
-해설: This is a trick question. In theory LPM says the `/24` should win, but **the VPC's internal CIDR (`local`) always takes priority**. If `10.0.5.0/24` is inside the VPC CIDR (`10.0.0.0/16`), `local` wins. That's why an IP inside the same VPC cannot be diverted to another target. This is exactly why "isolation inside the same VPC is done with SG/NACL, not routing." Only if `pcx-abc`'s destination were outside the VPC CIDR would LPM then apply.
+**Answer: A**
+Explanation: This is a trick question. In theory LPM says the `/24` should win, but **the VPC's internal CIDR (`local`) always takes priority**. If `10.0.5.0/24` is inside the VPC CIDR (`10.0.0.0/16`), `local` wins. That's why an IP inside the same VPC cannot be diverted to another target. This is exactly why "isolation inside the same VPC is done with SG/NACL, not routing." Only if `pcx-abc`'s destination were outside the VPC CIDR would LPM then apply.
 
 ---
 
-**문제 5.** Why do you use an Egress-Only Internet Gateway?
+**Question 5.** Why do you use an Egress-Only Internet Gateway?
 
 A) To replace IPv4 NAT
 B) To allow only outbound for IPv6 instances while blocking inbound
 C) To replace a VPN gateway
 D) For private S3 access
 
-**정답: B**
-해설: IPv6 has no NAT, so EIGW is used when you want outbound-only. It acts as a firewall that policy-enforces the inbound block. The "Local Network Protection for IPv6" principle of RFC 4864 is the theoretical backdrop of this scenario. EIGW doesn't apply to IPv4 instances, so for those you still use a NAT GW.
+**Answer: B**
+Explanation: IPv6 has no NAT, so EIGW is used when you want outbound-only. It acts as a firewall that policy-enforces the inbound block. The "Local Network Protection for IPv6" principle of RFC 4864 is the theoretical backdrop of this scenario. EIGW doesn't apply to IPv4 instances, so for those you still use a NAT GW.
 
 ---
 
-**문제 6.** A company wants to merge two VPCs after an M&A, but both are `10.0.0.0/16`. What is the most appropriate approach?
+**Question 6.** A company wants to merge two VPCs after an M&A, but both are `10.0.0.0/16`. What is the most appropriate approach?
 
 A) Just connect them with VPC Peering
 B) Migrate one VPC to a new CIDR, then use Peering or TGW
 C) Just add a Transit Gateway
 D) Resolve the IP conflict with a NAT Gateway
 
-**정답: B**
-해설: Overlapping CIDRs can't be routed via Peering/TGW. It's a cost created by the absence of IP governance. Adopting IPAM is the after-the-fact answer. In reality, migration cost is so high that it's common to use a temporary workaround exposing only some services via PrivateLink. Another workaround is placing a NAT instance in between and disguising the CIDR with SNAT, but it's operationally complex and rarely used.
+**Answer: B**
+Explanation: Overlapping CIDRs can't be routed via Peering/TGW. It's a cost created by the absence of IP governance. Adopting IPAM is the after-the-fact answer. In reality, migration cost is so high that it's common to use a temporary workaround exposing only some services via PrivateLink. Another workaround is placing a NAT instance in between and disguising the CIDR with SNAT, but it's operationally complex and rarely used.
 
 ---
 
-**문제 7.** In EKS, Pods consume ENIs and exhaust subnet IPs. What is the most appropriate action?
+**Question 7.** In EKS, Pods consume ENIs and exhaust subnet IPs. What is the most appropriate action?
 
 A) Change to a smaller subnet
 B) Expand the subnet to `/22` or apply Custom CNI mode
 C) Add a NAT Gateway
 D) Issue more EIPs
 
-**정답: B**
-해설: EKS's default VPC CNI uses a Secondary IP per Pod ENI, so IP consumption is heavy. The standard fix is to enlarge the subnet or use the Custom Networking pattern that separately allocates a Pod-only CIDR (e.g., CGNAT 100.64.0.0/10). Larger clusters can also be solved with IPv6 mode (IP per Pod) or prefix delegation. The *prefix delegation* feature launched in 2021 assigns a `/28` prefix per ENI instead of an IP, increasing the number of usable Pod IPs per node by 16x.
+**Answer: B**
+Explanation: EKS's default VPC CNI uses a Secondary IP per Pod ENI, so IP consumption is heavy. The standard fix is to enlarge the subnet or use the Custom Networking pattern that separately allocates a Pod-only CIDR (e.g., CGNAT 100.64.0.0/10). Larger clusters can also be solved with IPv6 mode (IP per Pod) or prefix delegation. The *prefix delegation* feature launched in 2021 assigns a `/28` prefix per ENI instead of an IP, increasing the number of usable Pod IPs per node by 16x.

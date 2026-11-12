@@ -115,62 +115,62 @@ These signals connect to *actual isolation, forensics, recovery* workflows next 
 
 ## 📝 Practice Questions
 
-**문제 1.** 인터넷에 노출된 EC2가 침해된 것으로 보인다. 50개 계정 조직에서 (a) 사전에 약점을 알고, (b) 공격을 탐지하고, (c) 근본원인을 조사하고, (d) 자동으로 격리·티켓팅하려 한다. 가장 적절한 통합 설계는?
+**Question 1.** An internet-exposed EC2 instance appears to be compromised. In a 50-account organization, you want to (a) know weaknesses in advance, (b) detect attacks, (c) investigate the root cause, and (d) automatically isolate and create tickets. What is the most appropriate integrated design?
 
-A) GuardDuty 하나만 켜고 나머지는 수동으로 처리한다  
-B) Inspector(취약점) + GuardDuty(위협) + Detective(조사) + Security Hub 집계 → EventBridge → Lambda/SSM 자동 대응, 모두 Security Tooling 계정에 위임  
-C) WAF와 Shield만으로 모든 것을 처리한다  
-D) CloudTrail 로그를 Athena로 수동 쿼리해 사람이 분석한다  
+A) Turn on only GuardDuty and handle the rest manually  
+B) Inspector (vulnerabilities) + GuardDuty (threats) + Detective (investigation) + Security Hub aggregation → EventBridge → Lambda/SSM automatic response, all delegated to the Security Tooling account  
+C) Handle everything with only WAF and Shield  
+D) Have people analyze by manually querying CloudTrail logs with Athena  
 
-**정답: B**  
-해설: 네 요구가 서로 다른 탐지 기능에 대응하므로 전문 도구를 통합해야 한다. Inspector가 사전 약점을, GuardDuty가 공격을, Detective가 근본원인을 담당하고, Security Hub가 ASFF로 집계해 EventBridge로 격리·티켓 자동화를 트리거하며, 모든 서비스를 Security Tooling 계정에 위임해 멀티계정 일관성을 확보한다. GuardDuty 단독·WAF/Shield(예방)·수동 Athena 분석은 이 통합 요구를 충족하지 못한다.
-
----
-
-**문제 2.** 한 분석가가 "Amazon Detective로 위협을 실시간 탐지하고 악성 트래픽을 차단하겠다"고 설계했다. 이 설계의 오류는?
-
-A) Detective는 멀티계정에서 동작하지 않는다  
-B) Detective는 탐지나 차단을 하지 않고, 기존 결과·로그를 조사·근본원인 분석하는 도구다 — 탐지는 GuardDuty, 차단은 WAF/SG의 역할이다  
-C) Detective는 EC2만 지원한다  
-D) Detective는 비용이 너무 비싸다  
-
-**정답: B**  
-해설: Detective는 결과를 생성하거나 트래픽을 차단하지 않으며, GuardDuty 등이 만든 결과와 로그를 동작 그래프로 조사해 "왜·어디까지·어떻게"를 분석하는 조사 전용 도구다. 위협 탐지는 GuardDuty, 차단은 WAF/SG/NACL의 역할이다. Detective는 멀티계정을 지원하며 EC2 외 다양한 엔티티를 다루므로 나머지 보기는 틀렸다.
+**Answer: B**  
+Explanation: The four requirements correspond to different detection capabilities, so specialized tools must be integrated. Inspector handles weaknesses in advance, GuardDuty handles attacks, and Detective handles root cause; Security Hub aggregates in ASFF and triggers isolation and ticket automation via EventBridge; and delegating all services to the Security Tooling account provides multi-account consistency. GuardDuty alone, WAF/Shield (prevention), and manual Athena analysis cannot satisfy this integrated requirement.
 
 ---
 
-**문제 3.** Inspector를 켰는데 일부 EC2가 스캔되지 않고, GuardDuty는 호스트 내부 악성 프로세스를 탐지하지 못한다. 두 문제의 올바른 해결 조합은?
+**Question 2.** An analyst designed "detect threats in real time and block malicious traffic with Amazon Detective." What is the error in this design?
 
-A) Inspector는 SSM 관리 상태(또는 agentless) 확인, GuardDuty는 Runtime Monitoring 활성화  
-B) 둘 다 VPC Flow Logs를 S3에 저장하면 해결된다  
-C) Inspector는 ECR continuous를 켜고, GuardDuty는 Trusted IP를 추가한다  
-D) 둘 다 Security Hub만 켜면 자동 해결된다  
+A) Detective does not work in multi-account setups  
+B) Detective neither detects nor blocks; it is a tool for investigating and analyzing the root cause of existing findings and logs - detection is GuardDuty's role and blocking is WAF/SG's role  
+C) Detective supports only EC2  
+D) Detective is too expensive  
 
-**정답: A**  
-해설: Inspector의 EC2 에이전트 기반 스캔은 인스턴스가 SSM으로 관리되어야 하므로 SSM 상태를 확인(또는 agentless 사용)해야 하고, GuardDuty 기초는 네트워크/API만 보므로 호스트 내부 프로세스 가시성은 Runtime Monitoring으로 확보한다. Flow Logs 저장·ECR continuous(이미지 대상)·Trusted IP(결과 억제)·Security Hub(집계)는 이 두 문제의 직접 해결책이 아니다.
-
----
-
-**문제 4.** 멀티리전·다계정 조직에서 신규 계정이 자동으로 탐지에 포함되고, 모든 리전 결과를 단일 창에서 보며, 워크로드 팀이 탐지를 끄지 못하게 하려 한다. 가장 적절한 베이스라인은?
-
-A) 각 계정·리전에서 서비스를 수동으로 켜고 콘솔을 번갈아 본다  
-B) 탐지 서비스를 Security Tooling 계정에 위임 + auto-enable + Security Hub aggregation Region 구성  
-C) 관리(management) 계정에서 모든 것을 직접 운영한다  
-D) 결과를 이메일로만 받는다  
-
-**정답: B**  
-해설: 위임 관리자(Security Tooling 계정) + 조직 모드 auto-enable은 신규 계정 자동 포함과 멤버의 임의 비활성화 방지를 동시에 달성하고, Security Hub aggregation Region은 멀티리전 결과를 단일 리전에 집계한다. 수동 활성화·콘솔 순회는 사각지대를 낳고, 관리 계정 직접 운영은 권한 집중 위험이며, 이메일 수신만으로는 통합·자동화가 불가능하다.
+**Answer: B**  
+Explanation: Detective does not generate findings or block traffic; it is an investigation-only tool that analyzes the findings and logs created by GuardDuty and others as a behavior graph to answer "why, how far, and how." Threat detection is GuardDuty, and blocking is the role of WAF/SG/NACL. Detective supports multi-account and handles various entities beyond EC2, so the other options are wrong.
 
 ---
 
-**문제 5.** 다음 중 이번 주 탐지 통합에서 "함정"으로 자주 지적되는 항목이 아닌 것은?
+**Question 3.** After you turned on Inspector, some EC2 instances are not scanned, and GuardDuty does not detect malicious processes inside the host. What is the correct combination of fixes for the two problems?
 
-A) Detective를 위협 탐지·차단 도구로 오인하는 것  
-B) GuardDuty 기초만으로 호스트 내부 프로세스를 본다고 가정하는 것  
-C) 모든 탐지 서비스의 위임 관리자를 동일 Security Tooling 계정으로 정렬하고 auto-enable을 켜는 것  
-D) Security Hub 결과가 모든 리전에 글로벌로 보인다고 가정하는 것  
+A) For Inspector, check the SSM managed state (or agentless); for GuardDuty, enable Runtime Monitoring  
+B) Storing VPC Flow Logs in S3 solves both  
+C) For Inspector, turn on ECR continuous; for GuardDuty, add a Trusted IP  
+D) Simply turning on Security Hub solves both automatically  
 
-**정답: C**  
-해설: 모든 탐지 서비스를 동일 Security Tooling 계정에 위임하고 auto-enable을 켜는 것은 함정이 아니라 *권장 베이스라인*이다 — 데이터·권한·조사 일관성과 신규 계정 자동 포함을 보장한다. 나머지는 모두 실제 빈출 함정이다: Detective는 조사 도구이지 탐지·차단이 아니고, GuardDuty 기초는 호스트 내부를 못 보며(Runtime Monitoring 필요), Security Hub 결과는 리전별이라 aggregation Region이 필요하다. 함정이 *아닌* 것을 고르는 문제이므로 정답은 위임 정렬 구성이다.
+**Answer: A**  
+Explanation: Inspector's agent-based EC2 scanning requires the instance to be managed by SSM, so check the SSM status (or use agentless), and since basic GuardDuty sees only network/API, visibility into processes inside the host is obtained with Runtime Monitoring. Storing Flow Logs, ECR continuous (for images), Trusted IP (finding suppression), and Security Hub (aggregation) are not direct fixes for these two problems.
+
+---
+
+**Question 4.** In a multi-Region, multi-account organization, you want new accounts to be automatically included in detection, to view all Region findings in a single pane, and to prevent workload teams from turning detection off. What is the most appropriate baseline?
+
+A) Manually turn on services in each account and Region and switch between consoles  
+B) Delegate detection services to the Security Tooling account + auto-enable + configure a Security Hub aggregation Region  
+C) Operate everything directly in the management account  
+D) Receive findings only by email  
+
+**Answer: B**  
+Explanation: A delegated administrator (Security Tooling account) + organization mode auto-enable achieves both automatic inclusion of new accounts and prevention of members disabling arbitrarily, and the Security Hub aggregation Region aggregates multi-Region findings into a single Region. Manual activation and console hopping create blind spots, operating directly in the management account risks concentrating privileges, and merely receiving email makes integration and automation impossible.
+
+---
+
+**Question 5.** Which of the following is NOT frequently cited as a "pitfall" in this week's detection integration?
+
+A) Mistaking Detective for a threat detection and blocking tool  
+B) Assuming basic GuardDuty alone sees processes inside the host  
+C) Aligning the delegated administrator of all detection services to the same Security Tooling account and turning on auto-enable  
+D) Assuming Security Hub findings are visible globally across all Regions  
+
+**Answer: C**  
+Explanation: Delegating all detection services to the same Security Tooling account and turning on auto-enable is not a pitfall but the *recommended baseline* - it ensures consistency of data, permissions, and investigation, and automatic inclusion of new accounts. The rest are all genuinely frequent pitfalls: Detective is an investigation tool and not for detection or blocking, basic GuardDuty cannot see inside the host (Runtime Monitoring is needed), and Security Hub findings are per Region, so an aggregation Region is needed. Because the question asks you to choose what is *not* a pitfall, the answer is the delegated alignment configuration.
 
 ---

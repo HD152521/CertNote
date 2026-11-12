@@ -21,19 +21,19 @@ SAP exam mappings: (1) "EU data blocked from EU exit, root included" → **SCP D
 
 ---
 
-**문제 1.** EU 데이터 비EU 이동 차단, root도 불가 → **SCP DenyRegions**
+**Question 1.** Block movement of EU data outside the EU, even for root → **SCP DenyRegions**
 
-**문제 2.** 서버 100대 최소 다운타임 OS 통째 이전 → **MGN 블록 레벨 연속 복제**
+**Question 2.** Migrate the whole OS of 100 servers with minimal downtime → **MGN block-level continuous replication**
 
-**문제 3.** Oracle→Aurora PostgreSQL 스키마 변환 필요 → **DMS + SCT Refactor**
+**Question 3.** Oracle → Aurora PostgreSQL requires schema conversion → **DMS + SCT Refactor**
 
-**문제 4.** 7년 감사 로그 root도 변경 불가 → **Object Lock Compliance**
+**Question 4.** 7-year audit logs unmodifiable even by root → **Object Lock Compliance**
 
-**문제 5.** 다중 리역 VPC 일부 격리 → **TGW 다중 라우트 테이블**
+**Question 5.** Isolate some VPCs across multiple Regions → **TGW multiple route tables**
 
-**문제 6.** DX 장애 1초 이내 VPN 전환 → **DX 2회선 + VPN + BGP/BFD**
+**Question 6.** Switch to VPN within 1 second of a DX failure → **2 DX connections + VPN + BGP/BFD**
 
-**문제 7.** 6개월 데드라인 100TB 점진 최적화 → **Rehost 먼저, 선택적 Refactor**
+**Question 7.** 100 TB gradual optimization with a 6-month deadline → **Rehost first, selective Refactor**
 
 ---
 

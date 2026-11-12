@@ -96,7 +96,7 @@ SAP exam frequent mappings: (1) "RTO 24hrs, minimize cost" → **Backup & Restor
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 개발팀이 스테이징 환경의 DR을 설계한다. 비즈니스 SLA는 RTO 24시간·RPO 12시간으로 매우 관대하고, 비용을 최소화하라는 지시를 받았다. 가장 적합한 전략은?
+**Question 1.** A development team is designing DR for a staging environment. The business SLA is very lenient, with an RTO of 24 hours and an RPO of 12 hours, and the team has been told to minimize cost. What is the most appropriate strategy?
 
 A) Multi-Site Active-Active
 
@@ -106,29 +106,29 @@ C) Pilot Light
 
 D) Backup & Restore
 
-**정답: D**
+**Answer: D**
 
-해설: RTO 24시간·RPO 12시간이라는 관대한 목표와 "비용 최소" 지시가 동시에 주어지면, DR 리전에 컴퓨트를 0% 켜두는 Backup & Restore가 정답이다. 정기 스냅샷·CRR로 데이터만 보내두고 장애 시 IaC로 인프라를 재생성하면 수 시간이 걸리지만 24시간 RTO 안에 충분히 들어온다. A·B·C는 모두 더 빠른 RTO를 제공하지만 그만큼 유휴 자원 비용이 발생해, 충족할 필요 없는 RTO를 위해 돈을 낭비하는 over-engineering이다. 함정: "충족 가능한 가장 저렴한 전략"을 고르는 것이 Pro 사고이며, RTO를 과도하게 초과 달성하는 것은 비용 낭비다.
-
----
-
-**문제 2.** 한 회사가 DR 리전인 us-west-2와 production인 us-east-1 사이에 데이터베이스를 **리전 간 동기 복제(RPO 0)**로 구성하려 했더니 쓰기 처리량이 급감했다. 원인으로 가장 정확한 것은?
-
-A) us-west-2의 인스턴스 사양이 부족하다
-
-B) 약 4,000km 거리로 인한 왕복 지연이 모든 쓰기에 더해졌다
-
-C) KMS 암호화가 복제를 느리게 한다
-
-D) Route 53 TTL이 너무 길다
-
-**정답: B**
-
-해설: 동기 복제는 모든 사본의 ack를 받아야 쓰기가 완료되므로, primary와 사본 사이의 왕복 지연(RTT)이 모든 쓰기 지연에 더해진다. us-east-1↔us-west-2는 약 4,000km로 빛의 물리적 왕복만 약 40ms이며, 여기에 네트워크 오버헤드가 더해져 쓰기마다 수십 ms가 추가된다. 이것이 리전 간 동기 복제가 비현실적이고 거의 항상 비동기를 쓰는 이유다(CAP/PACELC의 지연-일관성 트레이드오프). A는 사양 문제로 오해한 것이고, C·D는 처리량 급감의 본질과 무관하다. 함정: "리전 간 RPO 0"을 요구하면 큰 지연 대가를 의심해야 한다.
+Explanation: When a lenient target of RTO 24 hours and RPO 12 hours is given together with an instruction to "minimize cost," the answer is Backup & Restore, which keeps 0% compute running in the DR Region. If you only send data over with periodic snapshots and CRR and recreate the infrastructure with IaC during a failure, it takes several hours but easily fits within the 24-hour RTO. A, B, and C all provide a faster RTO but incur idle-resource cost in proportion, which is over-engineering that wastes money on an RTO that does not need to be met. Trap: Pro thinking is choosing the cheapest strategy that can meet the requirement, and exceeding the RTO target by a wide margin is a waste of cost.
 
 ---
 
-**문제 3.** 한 미디어 회사가 DR 리전에 production과 동일한 전체 스택을 **축소된 capacity로 항상 가동**하고, 장애 시 Auto Scaling으로 확장해 수 분 내 복구하려 한다. 이 전략은?
+**Question 2.** A company tried to set up **synchronous cross-Region replication (RPO 0)** for a database between the DR Region us-west-2 and the production Region us-east-1, and write throughput dropped sharply. What is the most accurate cause?
+
+A) The instance specifications in us-west-2 are insufficient
+
+B) The round-trip latency of a distance of about 4,000 km is added to every write
+
+C) KMS encryption slows down replication
+
+D) The Route 53 TTL is too long
+
+**Answer: B**
+
+Explanation: Synchronous replication completes a write only after receiving acks from all replicas, so the round-trip time (RTT) between the primary and the replicas is added to every write latency. us-east-1 ↔ us-west-2 is about 4,000 km, so the physical round trip of light alone is about 40 ms, and network overhead on top of that adds tens of ms to each write. This is why synchronous cross-Region replication is impractical and asynchronous replication is almost always used (the latency-versus-consistency trade-off of CAP/PACELC). A wrongly assumes a specification problem, and C and D are unrelated to the essence of the throughput drop. Trap: when "cross-Region RPO 0" is required, suspect a large latency cost.
+
+---
+
+**Question 3.** A media company wants to **always run** the same full stack as production in the DR Region at **reduced capacity** and recover within minutes by scaling out with Auto Scaling during a failure. What is this strategy?
 
 A) Backup & Restore
 
@@ -138,13 +138,13 @@ C) Warm Standby
 
 D) Multi-Site Active-Active
 
-**정답: C**
+**Answer: C**
 
-해설: Warm Standby의 정의는 "DR 리전에 축소된 capacity의 전체 스택(앱 서버 포함)을 상시 가동하고, 장애 시 스케일 아웃으로 production 수준에 도달"이다. 앱 서버가 이미 떠 있어 스케일 아웃 시간만 걸리므로 RTO가 수 분이다. B(Pilot Light)는 DB만 켜두고 앱은 콜드(AMI만 준비)라 앱을 처음 시작해야 해 RTO가 더 길다 — "앱 서버가 항상 떠 있느냐"가 둘을 가르는 결정적 차이다. A는 DR 리전에 아무것도 안 켜두고, D는 양쪽이 트래픽을 받는다. 함정: "축소판 전체 스택 상시 가동"은 Warm Standby의 직답 키워드다.
+Explanation: The definition of Warm Standby is "keep the full stack (including app servers) running at reduced capacity in the DR Region at all times, and reach production level by scaling out during a failure." Because the app servers are already running and only scale-out time is needed, the RTO is a few minutes. B (Pilot Light) keeps only the DB running and the app is cold (only an AMI is prepared), so the app must be started from scratch and the RTO is longer — "whether the app servers are always running" is the decisive difference between the two. A runs nothing in the DR Region, and D has both sides receiving traffic. Trap: "the full stack running at all times in miniature" is the direct-answer keyword for Warm Standby.
 
 ---
 
-**문제 4.** 한 글로벌 게임 회사가 매치메이킹 서비스에 99.99% 가용성과 양 리전 동시 쓰기를 요구한다. 가장 적합한 DR·데이터 구성은?
+**Question 4.** A global gaming company requires 99.99% availability and simultaneous writes in both Regions for its matchmaking service. What is the most appropriate DR and data configuration?
 
 A) Backup & Restore + S3 CRR
 
@@ -154,56 +154,56 @@ C) Warm Standby + RDS Multi-AZ
 
 D) Multi-Site Active-Active + DynamoDB Global Tables
 
-**정답: D**
+**Answer: D**
 
-해설: 99.99% SLA(연간 다운타임 약 53분)는 장애 시 수 분이 걸리는 Pilot Light·Warm Standby로는 사실상 불가능하고, 양 리전이 이미 트래픽을 받는 Multi-Site Active-Active만이 RTO를 0에 수렴시킨다. "양 리전 동시 쓰기"는 multi-master인 DynamoDB Global Tables가 정답이다(Aurora Global의 secondary는 read-only). A·B·C는 모두 RTO가 분 단위 이상이라 4 9 SLA를 못 맞추고, B의 Read Replica는 양 리전 쓰기를 지원하지 않는다. 함정: "99.99% + 양 리전 쓰기"는 Multi-Site + DDB Global Tables의 직답 조합이다.
-
----
-
-**문제 5.** 한 회사가 Route 53 Failover Routing으로 DR 전환을 구성했으나, 실제 장애 시 일부 사용자가 수 분간 여전히 죽은 primary로 접속했다. 원인과 RTO를 초 단위로 줄이는 해법으로 가장 정확한 것은?
-
-A) Health Check 간격을 늘린다
-
-B) DNS TTL 캐싱이 원인이며, Global Accelerator로 DNS 캐싱을 우회한다
-
-C) Secondary 레코드를 삭제한다
-
-D) Route 53를 다른 리전으로 옮긴다
-
-**정답: B**
-
-해설: Route 53가 레코드를 Secondary로 바꿔도 클라이언트·중간 DNS 리졸버가 이전 IP를 TTL 동안 캐싱하면 그 시간만큼 전환이 지연된다 — 이것이 DNS 기반 Failover의 본질적 한계다. RTO를 초 단위로 요구하면 Global Accelerator의 애니캐스트 고정 IP를 쓰면 된다. 클라이언트는 항상 같은 IP를 보고, AWS 네트워크 내부에서 엔드포인트를 즉시 전환하므로 DNS 캐싱 영향을 받지 않는다. A는 오히려 감지를 느리게 하고, C·D는 무관하다. 함정: "DNS 캐싱으로 인한 전환 지연 + 초 단위 RTO"는 Global Accelerator의 시그널이다.
+Explanation: A 99.99% SLA (about 53 minutes of downtime per year) is practically impossible with Pilot Light or Warm Standby, which take several minutes during a failure, and only Multi-Site Active-Active, in which both Regions already receive traffic, brings the RTO close to 0. For "simultaneous writes in both Regions," DynamoDB Global Tables, which is multi-master, is the answer (the secondary of Aurora Global is read-only). A, B, and C all have an RTO of minutes or more and cannot meet a four-nines SLA, and the Read Replica in B does not support writes in both Regions. Trap: "99.99% + writes in both Regions" is the direct-answer combination of Multi-Site + DDB Global Tables.
 
 ---
 
-**문제 6.** 한 기업이 비용 절감을 위해 DR 리전을 평소에는 유휴로 두지 않고 사용자 트래픽 처리에도 활용하고 싶다. 가장 적합한 접근은?
+**Question 5.** A company configured DR failover with Route 53 Failover Routing, but during an actual failure some users still connected to the dead primary for several minutes. What is the most accurate cause and the solution that reduces RTO to seconds?
 
-A) Backup & Restore로 전환한다
+A) Increase the Health Check interval
 
-B) Pilot Light에서 DB만 더 크게 띄운다
+B) DNS TTL caching is the cause, and Global Accelerator bypasses DNS caching
 
-C) Multi-Site Active-Active로 양 리전을 Latency Routing으로 묶어 DR과 성능 최적화를 동시에 달성한다
+C) Delete the Secondary record
 
-D) DR 리전을 삭제한다
+D) Move Route 53 to another Region
 
-**정답: C**
+**Answer: B**
 
-해설: 클라우드 DR의 경제학이 온프레미스와 다른 핵심은 DR 자원을 이중 활용할 수 있다는 점이다. Multi-Site Active-Active로 양 리전을 모두 production으로 운영하고 Route 53 Latency Routing으로 사용자에게 더 가까운 리전을 제공하면, DR(한쪽 장애 시 다른 쪽이 흡수)과 성능 최적화(지연 감소)를 동시에 얻는다 — 유휴 자원이 사라진다. A·B는 오히려 DR 리전을 더 유휴화하고, D는 DR을 포기하는 것이다. 함정: "DR 리전을 평소에도 활용"은 Active-Active 구성의 신호다.
+Explanation: Even if Route 53 switches the record to the Secondary, if clients and intermediate DNS resolvers cache the previous IP for the TTL, the failover is delayed by that amount of time — this is the inherent limitation of DNS-based failover. If RTO must be in seconds, use Global Accelerator's anycast static IPs. Clients always see the same IP, and endpoints are switched instantly inside the AWS network, so they are unaffected by DNS caching. A actually slows detection, and C and D are unrelated. Trap: "failover delay caused by DNS caching + RTO in seconds" is the signal for Global Accelerator.
 
 ---
 
-**문제 7.** RTO와 RPO의 관계로 가장 정확한 설명은?
+**Question 6.** To reduce cost, a company does not want to leave its DR Region idle during normal operation and wants to use it to serve user traffic as well. What is the most appropriate approach?
 
-A) RTO와 RPO는 항상 같은 값이어야 한다
+A) Switch to Backup & Restore
 
-B) RTO는 장애 이후 복구까지의 미래 시간, RPO는 장애 이전 허용 데이터 손실의 과거 시간으로 서로 독립적이다
+B) Run a larger DB only in Pilot Light
 
-C) RPO가 0이면 RTO도 반드시 0이다
+C) Use Multi-Site Active-Active, tying both Regions together with Latency Routing to achieve DR and performance optimization at the same time
 
-D) RTO는 데이터 손실, RPO는 복구 시간을 의미한다
+D) Delete the DR Region
 
-**정답: B**
+**Answer: C**
 
-해설: RTO(Recovery Time Objective)는 시간축에서 장애 이후 미래(복구까지 허용 시간)를, RPO(Recovery Point Objective)는 장애 이전 과거(잃어도 되는 데이터의 시간 폭)를 가리키며 서로 독립적이다. 야간 배치 회계 시스템처럼 RPO≈0(모든 거래 보존)이지만 RTO는 수 시간(다음 영업일까지 복구)인 경우가 실재한다. C는 둘을 잘못 연동한 것이고, D는 RTO와 RPO의 정의를 뒤바꾼 것이다. 함정: "허용 데이터 손실"은 RPO, "복구 시간"은 RTO로 정확히 구분해야 하며 둘은 따로 흔들린다.
+Explanation: The key difference between the economics of cloud DR and on-premises DR is that DR resources can be used for two purposes. If you run both Regions as production with Multi-Site Active-Active and serve users from the closer Region with Route 53 Latency Routing, you get DR (the other side absorbs the load if one fails) and performance optimization (lower latency) at the same time — idle resources disappear. A and B make the DR Region even more idle, and D gives up DR. Trap: "using the DR Region during normal operation as well" is the signal for an Active-Active configuration.
+
+---
+
+**Question 7.** What is the most accurate description of the relationship between RTO and RPO?
+
+A) RTO and RPO must always have the same value
+
+B) RTO is the future time until recovery after a failure and RPO is the past time of acceptable data loss before the failure, so they are independent of each other
+
+C) If RPO is 0, RTO must also be 0
+
+D) RTO means data loss and RPO means recovery time
+
+**Answer: B**
+
+Explanation: On the timeline, RTO (Recovery Time Objective) refers to the future after the failure (the time allowed until recovery), and RPO (Recovery Point Objective) refers to the past before the failure (the time span of data that may be lost), and they are independent of each other. There are real cases, such as a nightly-batch accounting system, where RPO ≈ 0 (all transactions preserved) but RTO is several hours (recovery by the next business day). C wrongly couples the two, and D swaps the definitions of RTO and RPO. Trap: you must distinguish precisely "acceptable data loss" = RPO and "recovery time" = RTO, and the two vary independently.
 
 ---

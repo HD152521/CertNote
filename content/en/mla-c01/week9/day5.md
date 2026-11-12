@@ -94,6 +94,6 @@ You've now completed operations knowledge. Next: synthesis with deployment and m
 
 ## 📝 Practice Questions
 
-**문제 1-5** [Practice questions in Korean follow after marker]
+**Questions 1-5** [Practice questions in Korean follow after marker]
 
 ---

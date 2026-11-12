@@ -299,102 +299,102 @@ The next article explores **ChatOps and Incident Manager** — when humans do ne
 
 ## 📝 Practice Questions
 
-**문제 1.** MAPE-K 루프의 순서와 AWS 서비스 매핑으로 옳은 것은?
+**Question 1.** Which of the following correctly gives the order of the MAPE-K loop and its mapping to AWS services?
 
 A) Monitor(X-Ray) → Analyze(Lambda) → Plan(Automation) → Execute(EventBridge) → Knowledge(Insights)
 
-B) Monitor(CloudWatch 메트릭/로그) → Analyze(CloudWatch Alarm, Lambda) → Plan(Systems Manager Automation, 결정 트리) → Execute(EventBridge → Automation) → Knowledge(CloudWatch Insights, 포스트모템)
+B) Monitor (CloudWatch metrics/logs) → Analyze (CloudWatch Alarm, Lambda) → Plan (Systems Manager Automation, decision tree) → Execute (EventBridge → Automation) → Knowledge (CloudWatch Insights, postmortems)
 
-C) Execute 후 바로 Monitor로 다시 (순환) — Knowledge는 선택 사항
+C) Go straight back to Monitor after Execute (a cycle) — Knowledge is optional
 
-D) Knowledge는 사람 인터뷰이고 Automation화 불가
+D) Knowledge is human interviews and cannot be automated
 
-**정답: B**
+**Answer: B**
 
-해설: MAPE-K는 Monitor(관찰) → Analyze(편차 검사) → Plan(회복 액션 결정) → Execute(수행) → Knowledge(피드백·학습) 순환이다. 각 단계가 AWS 서비스로 구현되며, Knowledge는 CloudWatch Insights(데이터 분석)와 post-mortems(조직 학습)로 반영되어 정책을 개선한다. Knowledge가 없으면 같은 문제로 반복 치유하는 악순환에 빠진다.
-
----
-
-**문제 2.** 자동 치유 액션의 안전성 티어 중 "CPU 높음 시 인스턴스 2개 추가 스케일 아웃"은 어느 티어인가?
-
-A) Tier 1 — 상태 없는 서비스 재시작(가장 안전)
-
-B) Tier 2 — 수평 스케일 아웃(근본 원인 수정 전 부하 전환)
-
-C) Tier 3 — Circuit Breaker(의존성 호출 중단)
-
-D) Tier 4 — Failover(상태 보존 서비스)
-
-**정답: B**
-
-해설: 스케일 아웃은 인스턴스 추가로 건강한 인스턴스에 부하를 몰아주는 것으로, 근본 원인(메모리 누수, 비효율 쿼리 등)을 고치지는 않지만 즉시 고객 영향을 줄인다. Blue-green 패턴처럼 시간을 버는 행동이므로 Tier 2다.
+Explanation: MAPE-K is the cycle Monitor (observe) → Analyze (check for deviation) → Plan (decide the recovery action) → Execute (carry out) → Knowledge (feedback and learning). Each stage is implemented with AWS services, and Knowledge is reflected through CloudWatch Insights (data analysis) and post-mortems (organizational learning) to improve policy. Without Knowledge, you fall into a vicious cycle of repeatedly self-healing the same problem.
 
 ---
 
-**문제 3.** "데이터베이스 Failover를 트리거했는데, 같은 문제로 계속 해서 5번 이상 자동 치유 Automation이 실행되고 있다"는 신고가 들어왔다. 이를 막는 안전망은?
+**Question 2.** Among the safety tiers of automated healing actions, which tier is "scale out by adding 2 instances when CPU is high"?
 
-A) Automation 코드에 `MaxRetries: 1` 설정
+A) Tier 1 — restart a stateless service (safest)
 
-B) Bounded Execution Count — 같은 IssueId에 대해 하루에 5회 이상이면 자동 치유 중단, on-call 에스컬레이션
+B) Tier 2 — horizontal scale-out (shifting load before the root cause is fixed)
 
-C) Automation을 비활성화
+C) Tier 3 — Circuit Breaker (stop calls to a dependency)
 
-D) Circuit Breaker for Automation 패턴 — Failover 후 헬스 체크 통과 시까지 기다렸다가 통과하면 중단, 통과 못하면 인간에게 에스컬레이션
+D) Tier 4 — Failover (stateful services)
 
-**정답: B, D**
+**Answer: B**
 
-해설: 둘 다 정답이다. B는 동일 이슈에 대한 반복 실행 횟수 상한선(bounded execution count)으로 무한 루프를 막는 것이고, D는 특정 조건(헬스 체크)을 모니터링하다 "이미 회복됐다"고 판단되면 자동 치유 루프를 빠져나오는 Circuit Breaker for Automation 패턴이다. 실제 운영은 둘 다 적용 — 조건 기반 탈출(D) + 타임아웃 안전망(B).
-
----
-
-**문제 4.** "월요일 오전 배포 중에 Automation이 서비스를 재시작해서 배포가 롤백됐다"는 인시던트가 발생했다. 이를 방지하려면?
-
-A) Automation을 이번 주부터 비활성화
-
-B) Systems Manager Change Calendar에 "MondayDeployment" 프리즈 윈도우 등록, Automation rule이 프리즈 중에는 트리거되지 않도록 조건 추가
-
-C) 배포 후 30분 지나서 모니터링 시작하도록 연체
-
-D) 알람을 비활성화
-
-**정답: B**
-
-해설: Change Calendar는 유지보수/배포 윈도우 같은 "이 기간에는 자동 변경 금지" 정책을 코드로 표현하는 메커니즘이다. Automation이 트리거되기 전에 "지금이 프리즈 기간인가?" 체크하도록 EventBridge rule에 조건을 추가하면 자동화가 배포 중에 간섭하지 않는다.
+Explanation: Scaling out adds instances to spread load onto healthy instances; it does not fix the root cause (a memory leak, an inefficient query, and so on), but it immediately reduces customer impact. Like the blue-green pattern, it is an action that buys time, so it is Tier 2.
 
 ---
 
-**문제 5.** 자동 치유 Automation이 계속 실패하고 있다. 기하급수적 재시도(exponential backoff)를 적용했을 때 최대 대기 시간 600초(10분)에 도달할 때까지의 대기 스케줄은?
+**Question 3.** A report comes in that "a database failover was triggered, and the self-healing Automation has been running more than 5 times for the same problem." Which safety nets prevent this?
+
+A) Set `MaxRetries: 1` in the Automation code
+
+B) Bounded Execution Count — if the same IssueId occurs 5 or more times a day, stop automatic healing and escalate to on-call
+
+C) Disable the Automation
+
+D) The Circuit Breaker for Automation pattern — after a failover, wait until the health check passes, stop once it passes, and escalate to a human if it does not
+
+**Answer: B, D**
+
+Explanation: Both are correct. B prevents an infinite loop with an upper bound on repeated executions for the same issue (bounded execution count), and D is the Circuit Breaker for Automation pattern, which monitors a specific condition (a health check) and exits the self-healing loop once it determines "it has already recovered." Real operations apply both — condition-based exit (D) + a timeout safety net (B).
+
+---
+
+**Question 4.** An incident occurred in which "during a Monday morning deployment, an Automation restarted the service and the deployment was rolled back." How can you prevent this?
+
+A) Disable the Automation starting this week
+
+B) Register a "MondayDeployment" freeze window in the Systems Manager Change Calendar and add a condition so that the Automation rule is not triggered during the freeze
+
+C) Delay monitoring so that it starts 30 minutes after deployment
+
+D) Disable the alarms
+
+**Answer: B**
+
+Explanation: Change Calendar is a mechanism for expressing, as code, a policy of "no automated changes during this period," such as maintenance/deployment windows. If you add a condition to the EventBridge rule so that it checks "is it a freeze period now?" before the Automation is triggered, the automation will not interfere during deployments.
+
+---
+
+**Question 5.** A self-healing Automation keeps failing. When exponential backoff is applied, what is the wait schedule until it reaches the maximum wait time of 600 seconds (10 minutes)?
 
 A) 30s → 60s → 120s → 240s → 480s → 600s (cap 600s)
 
-B) 1s → 2s → 4s → 8s → 16s → 32s (지수 2배)
+B) 1s → 2s → 4s → 8s → 16s → 32s (doubling exponentially)
 
-C) 30s → 90s → 270s → 810s (3배씩)
+C) 30s → 90s → 270s → 810s (tripling each time)
 
-D) 고정 30s 반복
+D) A fixed 30s repeated
 
-**정답: A**
+**Answer: A**
 
-해설: Exponential backoff는 보통 2배씩 증가한다. 초기 30s 시작 시 30 → 60 → 120 → 240 → 480 → 960(상한 600으로 cap) 경로다. 이는 transient 에러(일시 네트워크 끊김)에는 빠른 재시도를 주고, persistent 에러(설정 오류)에는 점차 여유를 두면서도 무한 밀려남(thundering herd)을 막는다.
+Explanation: Exponential backoff usually increases by 2x each time. Starting from an initial 30s, the path is 30 → 60 → 120 → 240 → 480 → 960 (capped at the 600 upper limit). This gives fast retries for transient errors (a brief network drop) and progressively more room for persistent errors (misconfiguration), while also preventing endless pile-ups (a thundering herd).
 
 ---
 
-**문제 6.** AWS Fault Injection Simulator(FIS)에서 "prod 클러스터의 30% Fargate 태스크를 죽이는" 실험을 하는데, 에러율이 갑자기 50%로 치솟으면?
+**Question 6.** In an AWS Fault Injection Simulator (FIS) experiment that "kills 30% of the Fargate tasks in the prod cluster," what happens if the error rate suddenly spikes to 50%?
 
-A) 즉시 실험 중단, 원인 파악
+A) Immediately stop the experiment and find the cause
 
-B) 예정대로 10분 더 진행해서 자동 치유 성능을 측정
+B) Continue for another 10 minutes as planned to measure self-healing performance
 
-C) StopCondition에 "CloudWatch 에러율 > 40% 알람" 등록해 놓으면 자동 중단, 재해 방지
+C) If a "CloudWatch error rate > 40% alarm" has been registered as a StopCondition, the experiment stops automatically, preventing a disaster
 
-D) FIS는 프로덕션에 쓸 수 없다
+D) FIS cannot be used in production
 
-**정답: C**
+**Answer: C**
 
-해설: FIS는 **통제된 카오스**다. StopCondition(stop-condition)을 미리 지정해 실험이 위험 수준에 도달하면 자동 중단되도록 해야 한다. 50% 에러율이 예상과 다르면 StopCondition이 발동해 태스크 킬링을 멈추고 재해를 방지한다. 이것이 카오스 엔지니어링의 안전 장치이며, 프로덕션에서 자신 있게 할 수 있게 한다.
+Explanation: FIS is **controlled chaos**. You must specify a StopCondition (stop-condition) in advance so that the experiment stops automatically when it reaches a dangerous level. If a 50% error rate differs from expectations, the StopCondition triggers, stops the task killing, and prevents a disaster. This is the safety mechanism of chaos engineering, and it is what lets you run experiments in production with confidence.
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 다섯 가지다. 첫째, **MAPE-K**(Monitor-Analyze-Plan-Execute-Knowledge)는 자기 치유 루프의 틀로, AWS 서비스들이 각 단계를 구현한다. 둘째, **자동 치유 액션 티어**는 Tier 1(재시작·안전)부터 Tier 5(블루-그린·위험)까지 트레이드오프를 반영하고, 단계적 에스컬레이션으로 안전을 지킨다. 셋째, **안전망**(Automation Circuit Breaker, exponential backoff, execution count, change window)은 자동 치유 폭주를 막는다. 넷째, **FIS(Fault Injection Simulator)**는 실제 장애가 오기 전에 회복 절차를 검증하는 능동적 카오스 테스트다. 다섯째, 규모 확대에 따라 인간 중심에서 시스템 중심으로 전환하면 복구 시간을 분 단위에서 초 단위로 단축하고, 고객 경험을 "중단"에서 "투명한 치유"로 변모시킨다.
+There are five key takeaways today. First, **MAPE-K** (Monitor-Analyze-Plan-Execute-Knowledge) is the framework for a self-healing loop, with AWS services implementing each stage. Second, the **self-healing action tiers** reflect trade-offs from Tier 1 (restart, safe) to Tier 5 (blue-green, risky), and protect safety through staged escalation. Third, **safety nets** (Automation Circuit Breaker, exponential backoff, execution count, change window) prevent runaway self-healing. Fourth, **FIS (Fault Injection Simulator)** is proactive chaos testing that validates recovery procedures before a real failure arrives. Fifth, shifting from human-centered to system-centered operations as scale grows shortens recovery time from minutes to seconds and transforms the customer experience from "outage" to "transparent healing."

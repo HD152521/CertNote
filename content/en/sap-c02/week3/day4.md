@@ -273,86 +273,86 @@ PrivateLink is core pattern across AWS service access, internal service sharing,
 
 ## 📝 Practice Questions
 
-**문제 1.** Financial company uses Snowflake data warehouse. Regulations require data not traverse internet; both organizations use identical VPC CIDR 10.0.0.0/8. Appropriate connection method:
+**Question 1.** Financial company uses Snowflake data warehouse. Regulations require data not traverse internet; both organizations use identical VPC CIDR 10.0.0.0/8. Appropriate connection method:
 
 A) VPC Peering
 B) AWS Transit Gateway + TGW Peering
 C) AWS PrivateLink (Interface Endpoint)
 D) Direct Connect + Public VIF
 
-**정답: C**
+**Answer: C**
 Explanation: Identical CIDR makes Peering and TGW impossible due to CIDR collision (A, B incorrect). Direct Connect + Public VIF accesses AWS public services like S3 privately, doesn't apply to third-party SaaS like Snowflake (D incorrect). PrivateLink connects service-unit regardless of CIDR collision—correct answer. Snowflake provides PrivateLink Endpoint Service so Customer creates Interface Endpoint in their VPC.
 
 ---
 
-**문제 2.** EC2 instance (private subnet) accesses S3. Data must not traverse internet and cost minimization required. Most appropriate method:
+**Question 2.** EC2 instance (private subnet) accesses S3. Data must not traverse internet and cost minimization required. Most appropriate method:
 
 A) Access S3 over internet via NAT Gateway
 B) S3 Interface Endpoint (PrivateLink)
 C) S3 Gateway Endpoint
 D) Access S3 via on-premises through VPN tunnel
 
-**정답: C**
+**Answer: C**
 Explanation: S3 Gateway Endpoint is free and doesn't traverse internet. Interface Endpoint (B) also works but incurs hourly + data charges. "Cost minimization" keyword points to free Gateway Endpoint as answer. NAT Gateway (A) traverses internet with costs. VPN routing (D) adds unnecessary complexity. However, if on-premises must privately access S3, Gateway Endpoint is route-table-based unsuitable for on-premises, requiring Interface Endpoint.
 
 ---
 
-**문제 3.** Company A's internal microservice (VPC A) must serve company B (VPC B). Company B should only call service, not access other Company A resources. Both VPCs have overlapping CIDRs. Appropriate architecture:
+**Question 3.** Company A's internal microservice (VPC A) must serve company B (VPC B). Company B should only call service, not access other Company A resources. Both VPCs have overlapping CIDRs. Appropriate architecture:
 
 A) VPC A and VPC B Peering connection
 B) Create Endpoint Service (NLB-based) in VPC A, configure Interface Endpoint in VPC B
 C) Connect both VPCs via TGW then restrict with Security Group
 D) Place NAT Gateway in VPC A and expose service with public IP
 
-**정답: B**
+**Answer: B**
 Explanation: PrivateLink Endpoint Service is standard pattern for unidirectional service-level exposure. Meets all requirements: CIDR overlap allowed, unidirectional (B→A API calls only), VPC A's other resources inaccessible. Peering (A) impossible due to CIDR overlap; even if possible, VPC B would gain access to all VPC A resources. TGW (C) also CIDR-collision issues and enables network-level access. Public IP exposure (D) violates security via internet.
 
 ---
 
-**문제 4.** Want to inspect all outbound internet traffic from multiple VPCs via central Security VPC's firewall appliance. Appliance must maintain original packet's 5-tuple and perform stateful inspection. Appropriate configuration:
+**Question 4.** Want to inspect all outbound internet traffic from multiple VPCs via central Security VPC's firewall appliance. Appliance must maintain original packet's 5-tuple and perform stateful inspection. Appropriate configuration:
 
 A) TGW + Egress VPC + NLB-based appliance
 B) ALB + Lambda-based traffic inspection
 C) Gateway Load Balancer + GLB Endpoint + GENEVE protocol
 D) PrivateLink Interface Endpoint + appliance VPC
 
-**정답: C**
+**Answer: C**
 Explanation: GLB preserves original packet 5-tuple via GENEVE (RFC 8926) when delivering to appliances. Appliance applies stateful firewall rules based on this info and returns traffic. GLB Endpoint placed in Spoke VPCs "Bump in the wire" style. NLB (A) is L4 load balancer making source IP preservation complex and GENEVE unsupported. ALB + Lambda (B) is HTTP-level processing unsuitable for all L3/L4 traffic inspection. Interface Endpoint (D) is unidirectional service exposure, not traffic redirection pattern.
 
 ---
 
-**문제 5.** Created Secrets Manager Interface Endpoint in VPC and enabled Private DNS. However, calling `secretsmanager.ap-northeast-2.amazonaws.com` from EC2 returns public IP. Root cause:
+**Question 5.** Created Secrets Manager Interface Endpoint in VPC and enabled Private DNS. However, calling `secretsmanager.ap-northeast-2.amazonaws.com` from EC2 returns public IP. Root cause:
 
 A) Interface Endpoint Security Group blocks port 443
 B) VPC's `enableDnsSupport` or `enableDnsHostnames` disabled
 C) S3 Gateway Endpoint interferes DNS resolution
 D) EC2's /etc/hosts file has wrong entry
 
-**정답: B**
+**Answer: B**
 Explanation: Private DNS requires both VPC DNS support (`enableDnsSupport=true`) and DNS hostnames (`enableDnsHostnames=true`) enabled. If either disabled, Private Hosted Zone doesn't connect to VPC so standard domain resolves to public IP. Security Group (A) is packet filter unaffecting DNS resolution. S3 Gateway Endpoint (C) unrelated to Secrets Manager DNS. /etc/hosts (D) possible but not mentioned condition and uncommon cause.
 
 ---
 
-**문제 6.** Multi-account environment: must use shared service account's billing service (NLB-based) privately from 50 different workload account VPCs. Most appropriate configuration:
+**Question 6.** Multi-account environment: must use shared service account's billing service (NLB-based) privately from 50 different workload account VPCs. Most appropriate configuration:
 
 A) Peer shared account VPC with all 50 workload account VPCs
 B) Share TGW via RAM and connect shared account VPC to TGW
 C) Create Endpoint Service in shared account + add Organizations to allowed Principal + create Interface Endpoint in workload accounts
 D) Make shared account's NLB internet-facing
 
-**정답: C**
+**Answer: C**
 Explanation: Adding Organizations ARN to Endpoint Service's `add-allowed-principals` allows all organization accounts creating Interface Endpoints. New accounts need no Endpoint Service configuration changes. Peering (A) requires minimum 50 Peerings with CIDR collision risk. TGW (B) enables network-level access to billing service beyond just service resources, high operational complexity. Internet-facing NLB (D) violates security requirements.
 
 ---
 
-**문제 7.** Which Gateway Endpoint or Interface Endpoint (PrivateLink) can on-premises servers use via DX to privately access S3 without internet:
+**Question 7.** Which Gateway Endpoint or Interface Endpoint (PrivateLink) can on-premises servers use via DX to privately access S3 without internet:
 
 A) Only Gateway Endpoint possible
 B) Only Interface Endpoint possible
 C) Both possible
 D) Neither possible, only Public VIF possible
 
-**정답: B**
+**Answer: B**
 Explanation: Gateway Endpoint is route-table-based, applies only to VPC-internal traffic. On-premises traffic via DX doesn't traverse Gateway Endpoint. Interface Endpoint creates ENI for private IP access, so on-premises can access via DX Private VIF to Interface Endpoint ENI IP reaching S3 without internet. Requires on-premises DNS to resolve S3 domain to Interface Endpoint private IP via Route 53 Resolver configuration.
 
 ---

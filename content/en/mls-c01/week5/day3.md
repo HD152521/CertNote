@@ -131,62 +131,62 @@ Next post covers the principles in practice: **validation design — splitting, 
 
 ## 📝 Practice Questions
 
-**문제 1.** 이탈 예측 모델에서 한 특성 `해지_사유_코드`의 중요도가 비정상적으로 높고 검증 정확도가 99%였다. 이 현상의 가장 유력한 원인은?
+**Question 1.** In a churn prediction model, the importance of one feature, `termination_reason_code`, is abnormally high and the validation accuracy is 99%. What is the MOST likely cause of this phenomenon?
 
-A) 타깃 누수 — 이탈이 확정된 뒤 생성되는 정보가 특성에 포함됐다  
-B) 모델이 과소적합되었다  
-C) 학습률이 너무 높다  
-D) 표본이 너무 적다  
+A) Target leakage - information generated after churn is confirmed is included in the features  
+B) The model is underfitted  
+C) The learning rate is too high  
+D) The sample is too small  
 
-**정답: A**  
-해설: `해지_사유_코드`는 이탈이 이미 확정된 후에야 채워지는 값이므로, 예측 시점에는 알 수 없는 미래·결과 정보다. 이것이 특성에 들어가면 모델이 정답을 미리 보는 타깃 누수가 된다. 비정상적으로 높은 단일 특성 중요도와 검증 점수가 전형적 신호다. 과소적합(B)이나 학습률(C), 표본 크기(D)와는 무관하다.
-
----
-
-**문제 2.** 일별 매출 시계열을 무작위로 섞어 train/test를 나눴더니 검증 점수가 매우 높았지만 실제 미래 예측은 형편없었다. 올바른 조치는?
-
-A) 무작위 분할을 그대로 두고 표본을 늘린다  
-B) 시간 순으로 분할해 과거로 학습하고 미래로 평가한다  
-C) 테스트셋을 학습셋과 섞는다  
-D) 매출을 정규화한다  
-
-**정답: B**  
-해설: 시계열은 시간적 의존성이 있어 무작위 분할 시 미래 데이터로 과거를 예측하는 시계열 누수가 발생한다. 과거로 학습하고 미래로 평가하는 시간 순 분할(forward-chaining)이 정답이다. 표본을 늘려도(A) 누수 구조는 그대로이고, 섞기(C)는 누수를 악화시키며, 정규화(D)는 분할 문제와 무관하다.
+**Answer: A**  
+Explanation: `termination_reason_code` is a value filled in only after churn has already been confirmed, so it is future/outcome information that is not known at prediction time. When it enters the features, the model sees the answer in advance, which is target leakage. An abnormally high single-feature importance and validation score are the classic signs. It is unrelated to underfitting (B), learning rate (C), or sample size (D).
 
 ---
 
-**문제 3.** scikit-learn에서 전처리(스케일링·대치)를 교차검증 시 누수 없이 적용하는 가장 안전한 방법은?
+**Question 2.** You randomly shuffled a daily sales time series and split it into train/test; the validation score was very high, but real future predictions were terrible. What is the correct action?
 
-A) 전체 데이터로 스케일러를 fit한 뒤 교차검증한다  
-B) 전처리를 Pipeline에 넣어 각 fold의 학습 부분에서만 fit되게 한다  
-C) 테스트셋의 통계로 전처리한다  
-D) 전처리를 생략한다  
+A) Keep the random split and increase the sample size  
+B) Split chronologically, training on the past and evaluating on the future  
+C) Mix the test set with the training set  
+D) Normalize the sales  
 
-**정답: B**  
-해설: Pipeline에 전처리를 넣으면 교차검증의 각 fold마다 학습 부분에서만 `fit`이 일어나고 검증 부분에는 `transform`만 적용돼 누수가 차단된다. 전체 데이터로 미리 fit(A)하거나 테스트 통계를 쓰면(C) 테스트 정보가 새어 점수가 부풀려진다. 전처리 생략(D)은 해결책이 아니다.
-
----
-
-**문제 4.** 다음 중 train/validation/test 분할을 깨끗이 해도 탐지되지 않는 누수 유형은?
-
-A) train-test 전처리 오염  
-B) 분할 전 중복 제거 누락  
-C) 특성 자체에 결과 정보가 포함된 타깃 누수  
-D) 분할 전 전체 데이터 스케일링  
-
-**정답: C**  
-해설: 타깃 누수는 누수 정보가 특성 안에 들어 있어 어떤 분할을 해도 모든 분할이 똑같이 오염되므로 분할 검증만으로는 잡히지 않는다. 각 특성이 예측 시점에 알 수 있는 값인지 시점을 따져야 한다. 나머지(A·B·D)는 전처리·분할 절차를 바로잡으면 막을 수 있는 오염 유형이다.
+**Answer: B**  
+Explanation: Time series have temporal dependence, so a random split causes time-series leakage, predicting the past with future data. A chronological split (forward-chaining) that trains on the past and evaluates on the future is the answer. Increasing the sample (A) leaves the leakage structure unchanged, mixing (C) worsens the leakage, and normalization (D) is unrelated to the split problem.
 
 ---
 
-**문제 5.** 시계열 모델에서 `최근 7일 이동평균` 특성을 만들 때 누수를 피하는 올바른 방법은?
+**Question 3.** What is the safest way in scikit-learn to apply preprocessing (scaling, imputation) during cross-validation without leakage?
 
-A) 예측 대상 시점을 포함한 7일 평균을 사용한다  
-B) 미래 7일 평균을 사용한다  
-C) 전체 기간 평균으로 정규화한다  
-D) 현재 시점을 제외하고 과거(t−1 이전)만 포함하도록 shift 후 rolling을 적용한다  
+A) Fit the scaler on the entire dataset, then cross-validate  
+B) Put the preprocessing in a Pipeline so it is fit only on the training portion of each fold  
+C) Preprocess using the test set's statistics  
+D) Skip preprocessing  
 
-**정답: D**  
-해설: 이동평균 특성은 예측 시점에 실제로 알 수 있는 과거 값만 포함해야 한다. `shift(1)` 후 `rolling(7)`처럼 현재·미래를 배제하고 과거만 집계해야 누수가 없다. 현재 시점 포함(A)이나 미래 평균(B)은 미래 정보 유입이고, 전체 기간 평균(C)도 미래가 과거 행에 스며드는 누수다.
+**Answer: B**  
+Explanation: When preprocessing is put in a Pipeline, `fit` happens only on the training portion of each cross-validation fold and only `transform` is applied to the validation portion, blocking leakage. Fitting on the entire dataset in advance (A) or using test statistics (C) leaks test information and inflates the score. Skipping preprocessing (D) is not a solution.
+
+---
+
+**Question 4.** Which type of leakage will NOT be detected even if the train/validation/test split is done cleanly?
+
+A) Train-test preprocessing contamination  
+B) Failure to remove duplicates before splitting  
+C) Target leakage, where outcome information is contained in a feature itself  
+D) Scaling the entire dataset before splitting  
+
+**Answer: C**  
+Explanation: In target leakage, the leaked information is inside the feature, so every split is contaminated equally regardless of how you split, and split-based validation alone cannot catch it. You must examine, for each feature, whether the value is known at prediction time. The others (A, B, D) are contamination types that can be prevented by fixing the preprocessing and splitting procedure.
+
+---
+
+**Question 5.** When creating a `7-day moving average` feature in a time series model, what is the correct way to avoid leakage?
+
+A) Use a 7-day average that includes the target prediction time point  
+B) Use the average of the next 7 days  
+C) Normalize by the average over the entire period  
+D) Apply shift and then rolling so that only the past (before t-1) is included, excluding the current time point  
+
+**Answer: D**  
+Explanation: A moving average feature must include only past values that are actually known at prediction time. Leakage is avoided only by aggregating the past while excluding the present and future, as in `shift(1)` followed by `rolling(7)`. Including the current time point (A) or using a future average (B) lets future information in, and an entire-period average (C) also leaks the future into past rows.
 
 ---

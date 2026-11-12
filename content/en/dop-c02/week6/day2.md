@@ -458,86 +458,86 @@ ECS deployment automation's core is the file format difference between deploymen
 
 ## 📝 Practice Questions
 
-**문제 1.** ECS Blue/Green 배포에서 CodeBuild가 출력해야 하는 파일 조합은?
+**Question 1.** What combination of files must CodeBuild output for an ECS Blue/Green deployment?
 
-A) imagedefinitions.json만
-B) taskdef.json + appspec.yaml + imageDetail.json (이미지 URI는 taskdef.json에 `<IMAGE1_NAME>` 플레이스홀더)
+A) imagedefinitions.json only
+B) taskdef.json + appspec.yaml + imageDetail.json (the image URI is the `<IMAGE1_NAME>` placeholder in taskdef.json)
 C) buildspec.yml + Dockerfile
 D) template.yaml + parameters.json
 
-**정답: B**
-해설: Blue/Green 배포(CodeDeploy ECS Provider)는 세 파일이 필요하다. `taskdef.json`에서 컨테이너 이미지 URI 자리에 `<IMAGE1_NAME>` 플레이스홀더를 사용하고, `imageDetail.json`에 실제 이미지 URI를 담는다. `appspec.yaml`은 CodeDeploy 배포 훅(BeforeInstall, AfterInstall 등)과 ALB 설정을 정의한다. Rolling 배포는 `imagedefinitions.json` 하나만 필요하다.
+**Answer: B**
+Explanation: A Blue/Green deployment (the CodeDeploy ECS provider) requires three files. Use the `<IMAGE1_NAME>` placeholder at the container image URI position in `taskdef.json`, and put the actual image URI in `imageDetail.json`. `appspec.yaml` defines the CodeDeploy deployment hooks (BeforeInstall, AfterInstall, and so on) and the ALB configuration. A rolling deployment needs only `imagedefinitions.json`.
 
 ---
 
-**문제 2.** ECS Service Auto Scaling에서 "평일 오전 9시에 최소 Task 수를 10개로, 오후 6시에 다시 2개로 줄이는" 요구사항을 구현하는 방법은?
+**Question 2.** How do you implement the requirement "on weekdays raise the minimum task count to 10 at 9 AM and reduce it back to 2 at 6 PM" with ECS service auto scaling?
 
-A) CloudWatch Alarm으로 시간별 알람 생성
-B) Application Auto Scaling의 Scheduled Action으로 cron 스케줄 설정
-C) Lambda를 매시간 실행해 update-service 호출
-D) ECS Service의 desiredCount를 매일 수동 변경
+A) Create hourly alarms with CloudWatch alarms
+B) Set a cron schedule with an Application Auto Scaling scheduled action
+C) Run Lambda every hour to call update-service
+D) Manually change the ECS service desiredCount every day
 
-**정답: B**
-해설: Scheduled Action이 이 요구사항의 정확한 도구다. `cron(0 0 * * MON-FRI *)` (UTC 00:00 = KST 09:00)에 MinCapacity=10, `cron(0 9 * * MON-FRI *)` (UTC 09:00 = KST 18:00)에 MinCapacity=2. Target Tracking과 Scheduled Action을 함께 사용하면 Scheduled Action이 MinCapacity를 높여서 최소 Task 수를 보장하고, Target Tracking이 그 위에서 실제 부하에 맞게 추가 스케일링을 담당한다.
-
----
-
-**문제 3.** Capacity Provider Strategy `FARGATE base=2, weight=1; FARGATE_SPOT weight=4`로 Task 10개가 실행 중일 때 On-Demand와 Spot의 분포는?
-
-A) On-Demand 5개, Spot 5개
-B) On-Demand 2개(base) + 나머지 8개를 1:4 비율 → On-Demand ~4개(2+1.6), Spot ~6개
-C) On-Demand 2개, Spot 8개
-D) 모두 On-Demand
-
-**정답: B**
-해설: base=2는 처음 2개 Task를 무조건 On-Demand로 보장한다. 나머지 8개는 weight 비율 1:4로 분배된다—8/(1+4)=1.6개 On-Demand, 6.4개 Spot. 반올림 결과 On-Demand 약 2개, Spot 약 6개. 합계 On-Demand ~4개, Spot ~6개. AWS는 정확한 비율보다 "대략적인 비율 목표"를 유지하므로 실제 분배는 약간 다를 수 있다.
+**Answer: B**
+Explanation: A scheduled action is the exact tool for this requirement. MinCapacity=10 at `cron(0 0 * * MON-FRI *)` (UTC 00:00 = KST 09:00), and MinCapacity=2 at `cron(0 9 * * MON-FRI *)` (UTC 09:00 = KST 18:00). When target tracking and scheduled actions are used together, the scheduled action raises MinCapacity to guarantee the minimum task count, and target tracking handles additional scaling on top of that to match the actual load.
 
 ---
 
-**문제 4.** ECS Exec로 실행 중인 컨테이너에 접속하려 할 때 "ExecuteCommandAgent is not running" 오류가 발생한다. 가장 가능성 높은 원인은?
+**Question 3.** With the capacity provider strategy `FARGATE base=2, weight=1; FARGATE_SPOT weight=4` and 10 tasks running, what is the distribution of On-Demand and Spot?
 
-A) Task Role에 권한이 없다
-B) enableExecuteCommand가 Task Definition에 설정됐지만, Service를 --enable-execute-command와 함께 업데이트하지 않았거나 --force-new-deployment로 새 Task를 생성하지 않았다
-C) VPC 엔드포인트가 없다
-D) ECS 클러스터 버전이 낮다
+A) 5 On-Demand, 5 Spot
+B) 2 On-Demand (base) + the remaining 8 split 1:4 → about 4 On-Demand (2+1.6), about 6 Spot
+C) 2 On-Demand, 8 Spot
+D) All On-Demand
 
-**정답: B**
-해설: ECS Exec Agent는 Task가 시작될 때 초기화된다. Service에 enableExecuteCommand를 설정해도 이미 실행 중인 기존 Task에는 적용되지 않는다. `--force-new-deployment`로 기존 Task를 교체해 새 Task가 ECS Exec Agent와 함께 시작되도록 해야 한다. Task Definition에 enableExecuteCommand가 없거나(이것도 확인 필요), Task Role에 ssmmessages 권한이 없는 경우도 원인이 될 수 있지만, "Agent is not running"이라는 특정 오류는 새 Task가 아직 생성되지 않은 경우에 자주 나타난다.
+**Answer: B**
+Explanation: base=2 guarantees that the first 2 tasks are always On-Demand. The remaining 8 are distributed in the weight ratio 1:4 — 8/(1+4)=1.6 On-Demand, 6.4 Spot. After rounding, about 2 On-Demand and about 6 Spot. In total about 4 On-Demand and about 6 Spot. AWS maintains a "roughly targeted ratio" rather than an exact ratio, so the actual distribution may differ slightly.
 
 ---
 
-**문제 5.** ECS Rolling 배포에서 새 Task가 시작되기 시작했지만 기존 Task가 종료되지 않아 desired count보다 많은 Task가 실행 중이다. 이 동작을 제어하는 ECS Service 설정은?
+**Question 4.** When trying to connect to a running container with ECS Exec, the error "ExecuteCommandAgent is not running" occurs. What is the most likely cause?
 
-A) maximumPercent와 minimumHealthyPercent
+A) The task role lacks permissions
+B) enableExecuteCommand was set in the task definition, but the service was not updated with --enable-execute-command, or new tasks were not created with --force-new-deployment
+C) There is no VPC endpoint
+D) The ECS cluster version is too old
+
+**Answer: B**
+Explanation: The ECS Exec agent is initialized when a task starts. Even if you set enableExecuteCommand on the service, it does not apply to existing tasks that are already running. You must replace the existing tasks with `--force-new-deployment` so that new tasks start with the ECS Exec agent. A missing enableExecuteCommand in the task definition (which also needs to be checked) or a missing ssmmessages permission in the task role can also be causes, but the specific error "Agent is not running" often appears when new tasks have not yet been created.
+
+---
+
+**Question 5.** In an ECS rolling deployment, new tasks have started but the old tasks are not terminated, so more tasks than the desired count are running. Which ECS service setting controls this behavior?
+
+A) maximumPercent and minimumHealthyPercent
 B) desiredCount
 C) Capacity Provider Strategy
 D) enableExecuteCommand
 
-**정답: A**
-해설: `maximumPercent`(기본 200%)는 배포 중 최대 실행 Task 비율이고, `minimumHealthyPercent`(기본 100%)는 배포 중 유지해야 하는 최소 정상 Task 비율이다. 기본 설정으로 desired=4인 서비스는 배포 중 최대 8개(200%), 최소 4개(100%) Task가 실행될 수 있다. 비용을 최적화하려면 maximumPercent를 150%로 낮추고, 가용성 우선이면 minimumHealthyPercent를 낮춰서 더 많은 새 Task를 먼저 시작하고 빠르게 이전 Task를 교체할 수 있다.
+**Answer: A**
+Explanation: `maximumPercent` (default 200%) is the maximum percentage of running tasks during a deployment, and `minimumHealthyPercent` (default 100%) is the minimum percentage of healthy tasks that must be maintained during a deployment. With the default settings, a service with desired=4 can run at most 8 tasks (200%) and at least 4 tasks (100%) during a deployment. To optimize cost, lower maximumPercent to 150%; if availability is the priority, lower minimumHealthyPercent so that more new tasks can be started first and old tasks replaced quickly.
 
 ---
 
-**문제 6.** 같은 이미지 태그(`latest`)로 새 버전을 ECR에 push했는데 ECS Service가 자동으로 업데이트되지 않는다. 수동으로 강제 업데이트하는 명령은?
+**Question 6.** You pushed a new version to ECR with the same image tag (`latest`), but the ECS service is not updated automatically. What is the command to force an update manually?
 
 A) aws ecs update-service --task-definition :latest
 B) aws ecs update-service --cluster prod --service checkout --force-new-deployment
 C) aws ecs start-task
 D) aws ecs run-task
 
-**정답: B**
-해설: `--force-new-deployment`는 Task Definition 변경 없이 ECS Service가 새 Task를 시작하게 강제한다. 새 Task가 시작될 때 이미지를 다시 pull하므로 ECR에 새로 push된 `latest` 이미지가 사용된다. 이 방식은 IMMUTABLE 태그 원칙에 반하지만(같은 태그로 다른 이미지를 사용하므로), 태그 변경 없이 빠른 핫픽스 배포가 필요한 긴급 상황에 사용된다. 장기적으로는 commit SHA 기반 태그를 사용하는 것이 권장된다.
+**Answer: B**
+Explanation: `--force-new-deployment` forces the ECS service to start new tasks without changing the task definition. When new tasks start they pull the image again, so the newly pushed `latest` image in ECR is used. This approach goes against the IMMUTABLE tag principle (since a different image is used with the same tag), but it is used in urgent situations that need a quick hotfix deployment without changing the tag. In the long term, using commit SHA-based tags is recommended.
 
 ---
 
-**문제 7.** ECS Fargate Spot Task가 갑자기 회수될 때 결제 트랜잭션 손실을 방지하는 설계는?
+**Question 7.** What design prevents loss of payment transactions when an ECS Fargate Spot task is suddenly reclaimed?
 
-A) Fargate Spot 대신 On-Demand만 사용
-B) SIGTERM 수신 시 새 요청 거부 + 진행 중인 트랜잭션 완료 후 종료하는 graceful shutdown 로직 구현 + DB 트랜잭션은 ACID 보장으로 자동 롤백
-C) Task 종료 전 데이터를 로컬 디스크에 저장
-D) CloudWatch Events로 Spot 회수 감지 후 수동 복구
+A) Use only On-Demand instead of Fargate Spot
+B) Implement graceful shutdown logic that rejects new requests on receiving SIGTERM and exits after in-flight transactions complete + DB transactions are rolled back automatically through ACID guarantees
+C) Save data to local disk before the task terminates
+D) Detect the Spot reclamation with CloudWatch Events and recover manually
 
-**정답: B**
-해설: Fargate Spot 회수 2분 전 SIGTERM이 ECS Agent를 통해 컨테이너에 전달된다. 애플리케이션이 SIGTERM을 처리해서 (1) 새 HTTP 요청에 503 응답 → 로드 밸런서가 다른 Task로 라우팅, (2) 진행 중인 트랜잭션 최대 25초(stopTimeout 30초 - 5초 마진) 동안 완료 대기, (3) DB 트랜잭션은 RDBMS의 ACID 보장으로 완료되거나 자동 롤백된다. 로컬 디스크(C)는 Task 종료 시 사라지므로 영속성이 없다.
+**Answer: B**
+Explanation: Two minutes before a Fargate Spot reclamation, SIGTERM is delivered to the container through the ECS agent. The application handles SIGTERM to (1) respond 503 to new HTTP requests → the load balancer routes to other tasks, (2) wait up to 25 seconds (stopTimeout 30 seconds minus a 5-second margin) for in-flight transactions to complete, and (3) DB transactions either complete or are rolled back automatically through the ACID guarantees of the RDBMS. Local disk (C) disappears when the task terminates, so it has no persistence.
 
 ---

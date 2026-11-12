@@ -105,4 +105,4 @@ Next: Domain 5+6 (incident response and security) closes final 18%.
 
 ## 📌 Today's Summary
 
-오늘 도메인 3+4의 36%를 엮었다. 첫째, 복원력은 RTO/RPO 비즈니스 규약에서 시작하고 이는 아키텍처 계층을 정의한다. 둘째, 네 가지 DR 전략(백업, 파일럿, 웜, 액티브-액티브)은 비용과 속도를 트레이드오프한다. 셋째, 관찰성 3층(메트릭, 로그, 트레이스)은 직교하며 근본 원인 파악에 모두 필요하다. 넷째, 다중 계정 관찰성은 OAM으로 중앙화한다. 다섯째, 혼돈 공학(FIS)은 복원력을 검증하고 RTO/RPO 달성 여부를 측정한다. 여섯째, 단일 피드백 루프: 관찰→격리→자동치유→테스트→예방, 이 흐름이 시스템을 견고하게 한다.
+Today we tied together 36% of Domains 3+4. First, resilience starts from the RTO/RPO business contract, which defines the architecture tiers. Second, the four DR strategies (backup, pilot light, warm standby, active-active) trade off cost against speed. Third, the three layers of observability (metrics, logs, traces) are orthogonal, and all are needed to identify the root cause. Fourth, multi-account observability is centralized with OAM. Fifth, chaos engineering (FIS) validates resilience and measures whether the RTO/RPO is achieved. Sixth, a single feedback loop: observe → isolate → self-heal → test → prevent, and this flow makes the system robust.

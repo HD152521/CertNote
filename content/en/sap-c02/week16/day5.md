@@ -28,17 +28,17 @@ Confidence heuristics:
 
 ## 📝 Practice Questions
 
-**문제 1.** 100TB ERP 6개월 global + security-first → **Rehost(MGN) + 3개월 병렬 refactor + FIS drill**
+**Question 1.** 100 TB ERP in 6 months, global + security-first → **Rehost (MGN) + 3 months of parallel refactoring + FIS drill**
 
-**문제 2.** $0→1M 스타트업 12개월 → **Serverless(Lambda/DDB) + cost monitoring**
+**Question 2.** $0 → 1M startup in 12 months → **Serverless (Lambda/DDB) + cost monitoring**
 
-**문제 3.** 금융 규제 + legacy monolith → **Rehost compute + refactor data(Aurora Global + KMS)**
+**Question 3.** Financial regulation + legacy monolith → **Rehost compute + refactor data (Aurora Global + KMS)**
 
-**문제 4.** 2년 sunset legacy → **Retain(마이그레이션 비용 > refactor ROI)**
+**Question 4.** Legacy to be sunset in 2 years → **Retain (migration cost > refactor ROI)**
 
-**문제 5.** RTO<15min → **Multi-AZ 충분; RTO<5min → Multi-Region; RTO=0 → Multi-Site Active**
+**Question 5.** RTO < 15 min → **Multi-AZ is sufficient; RTO < 5 min → Multi-Region; RTO = 0 → Multi-Site Active**
 
-**문제 6.** 시험 시간 관리 → **1분 read + 20sec 기둥 + 40sec tool + 10sec decoy + 15분 review buffer**
+**Question 6.** Exam time management → **1 min read + 20 sec pillar + 40 sec tool + 10 sec decoy + 15 min review buffer**
 
 ---
 

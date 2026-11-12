@@ -108,62 +108,62 @@ In the next session, we'll see "how to talk to this model to get the answers we 
 
 ## 📝 Practice Questions
 
-**문제 1.** Which of the following is the most accurate explanation of "token" in LLMs?
+**Question 1.** Which of the following is the most accurate explanation of "token" in LLMs?
 
 A) It always means exactly one word  
 B) It is a unit into which a model divides text for processing, and can be a word, word fragment, or letter  
 C) It is a security token used for user authentication  
 D) It is a score representing model accuracy  
 
-**정답: B**  
-해설: A token is the basic unit by which a model processes text. In subword tokenization, it can be a complete word, a word fragment, or even a single letter. A is incorrect because tokens are not always words. C confuses it with tokens in security, and D is unrelated to accuracy. Most LLM services charge based on input + output token count, so it directly affects costs.
+**Answer: B**  
+Explanation: A token is the basic unit by which a model processes text. In subword tokenization, it can be a complete word, a word fragment, or even a single letter. A is incorrect because tokens are not always words. C confuses it with tokens in security, and D is unrelated to accuracy. Most LLM services charge based on input + output token count, so it directly affects costs.
 
 ---
 
-**문제 2.** Which of the following is a correct characteristic of embedding?
+**Question 2.** Which of the following is a correct characteristic of embedding?
 
 A) Words with similar meanings are positioned close together in vector space  
 B) All words are converted to identical vectors  
 C) Embedding compresses text into a summary that humans can read  
 D) Embedding is used only for training and cannot be used for search  
 
-**정답: A**  
-해설: Embedding converts tokens/text into numeric vectors carrying meaning, positioning those with closer meaning nearer to each other. This property is used to implement semantic search and RAG. B is incorrect because each word has a different vector, C is incorrect because embeddings are numeric vectors, not human-readable summaries, and D is incorrect because embeddings are crucial for search, recommendation, and RAG.
+**Answer: A**  
+Explanation: Embedding converts tokens/text into numeric vectors carrying meaning, positioning those with closer meaning nearer to each other. This property is used to implement semantic search and RAG. B is incorrect because each word has a different vector, C is incorrect because embeddings are numeric vectors, not human-readable summaries, and D is incorrect because embeddings are crucial for search, recommendation, and RAG.
 
 ---
 
-**문제 3.** What does context window mean?
+**Question 3.** What does context window mean?
 
 A) The time it takes to train a model  
 B) The maximum number of input + output tokens a model can process simultaneously at once  
 C) The size of the screen on which a model responds  
 D) A permanent database that a model stores  
 
-**정답: B**  
-해설: The context window is the maximum number of tokens (prompt + response) that a model can see together at one time. Exceeding this causes older content to be cut off, and more tokens increase cost and latency. A is unrelated to training time, C is unrelated to the UI, and D is incorrect because models don't do permanent storage. Content exceeding the window must be selectively input using RAG or similar methods.
+**Answer: B**  
+Explanation: The context window is the maximum number of tokens (prompt + response) that a model can see together at one time. Exceeding this causes older content to be cut off, and more tokens increase cost and latency. A is unrelated to training time, C is unrelated to the UI, and D is incorrect because models don't do permanent storage. Content exceeding the window must be selectively input using RAG or similar methods.
 
 ---
 
-**문제 4.** You want to automate a fact-based, consistent classification task. What is the most appropriate temperature setting?
+**Question 4.** You want to automate a fact-based, consistent classification task. What is the most appropriate temperature setting?
 
 A) Set temperature high (e.g., 0.9) to increase diversity  
 B) Set temperature low (e.g., 0.1) to encourage consistent and predictable output  
 C) Temperature does not affect output  
 D) Set temperature to a negative number  
 
-**정답: B**  
-해설: When temperature is low, the model conservatively selects high-probability tokens, producing consistent and predictable answers suitable for fact-based work like classification and extraction. Conversely, creative or brainstorming work benefits from high temperature. C is incorrect because temperature directly affects output diversity, and D is incorrect because typically only values 0 or above are valid.
+**Answer: B**  
+Explanation: When temperature is low, the model conservatively selects high-probability tokens, producing consistent and predictable answers suitable for fact-based work like classification and extraction. Conversely, creative or brainstorming work benefits from high temperature. C is incorrect because temperature directly affects output diversity, and D is incorrect because typically only values 0 or above are valid.
 
 ---
 
-**문제 5.** Which of the following is a correct difference between training and inference?
+**Question 5.** Which of the following is a correct difference between training and inference?
 
 A) Training happens with every request, and inference happens only once  
 B) Training is the process of adjusting model parameters with data, and inference is the process of generating answers with a trained model  
 C) They are the same thing  
 D) Inference modifies the model with data, and training only generates answers  
 
-**정답: B**  
-해설: Training is a one-time (or occasional) process of adjusting model parameters with data, and inference is a per-request process of inputting to an already-trained model to get output. A is incorrect because it reverses their frequency, C is incorrect because they are clearly different concepts, and D is incorrect because it reverses the roles of training and inference.
+**Answer: B**  
+Explanation: Training is a one-time (or occasional) process of adjusting model parameters with data, and inference is a per-request process of inputting to an already-trained model to get output. A is incorrect because it reverses their frequency, C is incorrect because they are clearly different concepts, and D is incorrect because it reverses the roles of training and inference.
 
 ---

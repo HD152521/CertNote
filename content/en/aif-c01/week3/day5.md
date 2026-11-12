@@ -104,62 +104,62 @@ On this foundation, starting next week we'll zoom into AWS's specific generative
 
 ## 📝 Practice Questions
 
-**문제 1.** When synthesizing Week 3's essence, which correctly orders methods of adjusting model behavior from lowest to highest cost/difficulty?
+**Question 1.** When synthesizing Week 3's essence, which correctly orders methods of adjusting model behavior from lowest to highest cost/difficulty?
 
 A) Fine-tuning → RAG → Prompt engineering  
 B) Prompt engineering → RAG → Fine-tuning  
 C) RAG → Prompt engineering → Fine-tuning  
 D) The three methods have no cost difference  
 
-**정답: B**  
-해설: The standard is to try cheapest and fastest prompt engineering first, move to RAG if external/internal knowledge is needed, then consider fine-tuning if deep domain internalization is required. A and C have the order wrong. D is incorrect because fine-tuning is most expensive.
+**Answer: B**  
+Explanation: The standard is to try cheapest and fastest prompt engineering first, move to RAG if external/internal knowledge is needed, then consider fine-tuning if deep domain internalization is required. A and C have the order wrong. D is incorrect because fine-tuning is most expensive.
 
 ---
 
-**문제 2.** Which pairing of AWS service and its purpose is correct?
+**Question 2.** Which pairing of AWS service and its purpose is correct?
 
 A) Amazon SageMaker Clarify—measuring data/model bias and explainability  
 B) Amazon Bedrock Guardrails—improving model training speed  
 C) AWS AI Service Cards—storing embedding vectors  
 D) Amazon Bedrock—only image compression  
 
-**정답: A**  
-해설: SageMaker Clarify provides bias metrics and feature importance (explainability). B's Guardrails is a safety tool for filtering harmful content and masking PII, unrelated to training speed. C's AI Service Cards document transparency on intended use, limitations, and fairness—not vector storage. D's Bedrock calls multiple FMs and isn't primarily for image compression.
+**Answer: A**  
+Explanation: SageMaker Clarify provides bias metrics and feature importance (explainability). B's Guardrails is a safety tool for filtering harmful content and masking PII, unrelated to training speed. C's AI Service Cards document transparency on intended use, limitations, and fairness—not vector storage. D's Bedrock calls multiple FMs and isn't primarily for image compression.
 
 ---
 
-**문제 3.** What is the most important difference between "Few-shot prompting" and "Fine-tuning"?
+**Question 3.** What is the most important difference between "Few-shot prompting" and "Fine-tuning"?
 
 A) Few-shot doesn't change model weights; fine-tuning does change them  
 B) Few-shot is always more expensive than fine-tuning  
 C) Both retrain the model from scratch  
 D) Fine-tuning means inserting examples into the prompt  
 
-**정답: A**  
-해설: Few-shot is In-Context Learning showing examples in the prompt—no weight change. Fine-tuning changes weights through additional training. B is generally wrong because fine-tuning is more expensive. C is incorrect—neither is from-scratch retraining. D describes Few-shot, not fine-tuning.
+**Answer: A**  
+Explanation: Few-shot is In-Context Learning showing examples in the prompt—no weight change. Fine-tuning changes weights through additional training. B is generally wrong because fine-tuning is more expensive. C is incorrect—neither is from-scratch retraining. D describes Few-shot, not fine-tuning.
 
 ---
 
-**문제 4.** You want to build a chatbot that answers accurately based on latest internal policy documents and reduce hallucination. What's the most appropriate combination?
+**Question 4.** You want to build a chatbot that answers accurately based on latest internal policy documents and reduce hallucination. What's the most appropriate combination?
 
 A) Maximize temperature and increase examples  
 B) Embed internal documents, store in vector DB, provide related documents via RAG  
 C) Just increase model size and it solves itself  
 D) Write the longest prompt possible  
 
-**정답: B**  
-해설: Unknown company info requires RAG to search related documents and include them in the prompt—this improves accuracy and reduces hallucination. A increases hallucination by raising temperature. C doesn't guarantee internal knowledge. D doesn't guarantee accuracy.
+**Answer: B**  
+Explanation: Unknown company info requires RAG to search related documents and include them in the prompt—this improves accuracy and reduces hallucination. A increases hallucination by raising temperature. C doesn't guarantee internal knowledge. D doesn't guarantee accuracy.
 
 ---
 
-**문제 5.** Which risk and its explanation are incorrectly paired?
+**Question 5.** Which risk and its explanation are incorrectly paired?
 
 A) Hallucination—plausibly generating false content  
 B) Bias—learning data prejudice to produce unfair output  
 C) Non-determinism—same input can produce different outputs  
 D) Hallucination—model permanently refuses to respond  
 
-**정답: D**  
-해설: Hallucination is generating false content as if true, not refusing to respond. So D is the incorrect pairing. A is hallucination, B is bias, C is non-determinism—all correctly paired.
+**Answer: D**  
+Explanation: Hallucination is generating false content as if true, not refusing to respond. So D is the incorrect pairing. A is hallucination, B is bias, C is non-determinism—all correctly paired.
 
 ---

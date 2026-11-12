@@ -86,62 +86,62 @@ model = xgb.XGBClassifier(scale_pos_weight=49)  # negative:positive = 49:1
 
 ## 📝 Practice Questions
 
-**문제 1.** 양성이 전체의 1%인 사기 탐지 데이터에서 모델 성능을 평가하려 한다. 가장 부적절한 단일 지표는?
+**Question 1.** You want to evaluate model performance on fraud detection data in which positives are 1% of the total. Which single metric is the LEAST appropriate?
 
 A) Recall  
 B) Accuracy  
 C) F1 score  
 D) PR-AUC  
 
-**정답: B**  
-해설: 양성이 1%면 "전부 음성"으로 찍어도 정확도 99%가 나오는 정확도 역설 때문에 Accuracy는 불균형에서 가장 오해를 부른다. Recall(A)·F1(C)·PR-AUC(D)는 소수 클래스 성능을 반영해 더 적절하다.
+**Answer: B**  
+Explanation: When positives are 1%, predicting "all negative" still yields 99% accuracy (the accuracy paradox), so Accuracy is the most misleading metric for imbalanced data. Recall (A), F1 (C), and PR-AUC (D) reflect minority-class performance and are more appropriate.
 
 ---
 
-**문제 2.** SMOTE에 대한 설명으로 옳은 것은?
+**Question 2.** Which statement about SMOTE is correct?
 
-A) 다수 클래스 샘플을 무작위로 제거한다  
-B) 소수 클래스 샘플을 그대로 복제만 한다  
-C) 소수 클래스의 최근접 이웃 사이를 보간해 합성 샘플을 만든다  
-D) 데이터 분할 전에 전체 데이터에 적용해야 한다  
+A) It randomly removes majority-class samples  
+B) It only duplicates minority-class samples as they are  
+C) It creates synthetic samples by interpolating between nearest neighbors of the minority class  
+D) It must be applied to the entire dataset before splitting the data  
 
-**정답: C**  
-해설: SMOTE는 소수 클래스 샘플과 그 k-최근접 이웃 사이를 선형 보간해 새로운 합성 샘플을 생성한다. 다수 제거(A)는 언더샘플링, 단순 복제(B)는 무작위 오버샘플링이며, 분할 전 적용(D)은 데이터 누수를 일으키는 잘못된 방법이다.
-
----
-
-**문제 3.** 데이터를 변경하지 않고 XGBoost에서 소수(양성) 클래스의 오분류에 더 큰 벌점을 주려 한다. 적절한 설정은?
-
-A) `scale_pos_weight`를 (음성 수/양성 수)로 설정한다  
-B) `n_estimators`를 늘린다  
-C) `learning_rate`를 0으로 둔다  
-D) `max_depth`를 1로 고정한다  
-
-**정답: A**  
-해설: XGBoost의 `scale_pos_weight`를 음성/양성 비율로 두면 양성 오류에 더 큰 가중을 부여해 불균형을 알고리즘 수준에서 보정한다. 트리 수(B)·깊이(D)·학습률(C)은 불균형 가중과 직접 관련이 없다.
+**Answer: C**  
+Explanation: SMOTE generates new synthetic samples by linearly interpolating between a minority-class sample and its k-nearest neighbors. Removing majority samples (A) is undersampling, simple duplication (B) is random oversampling, and applying it before splitting (D) is a wrong approach that causes data leakage.
 
 ---
 
-**문제 4.** 교차검증과 함께 SMOTE를 적용할 때 데이터 누수를 막는 올바른 방법은?
+**Question 3.** Without changing the data, you want XGBoost to penalize misclassification of the minority (positive) class more heavily. Which setting is appropriate?
 
-A) 전체 데이터에 SMOTE를 먼저 적용한 뒤 교차검증한다  
-B) 검증셋에도 SMOTE를 적용한다  
-C) SMOTE 후 무작위로 다시 섞는다  
-D) imblearn Pipeline으로 각 fold의 학습 부분에만 SMOTE를 적용한다  
+A) Set `scale_pos_weight` to (number of negatives / number of positives)  
+B) Increase `n_estimators`  
+C) Set `learning_rate` to 0  
+D) Fix `max_depth` at 1  
 
-**정답: D**  
-해설: 각 fold의 학습 부분 안에서만 리샘플링해야 합성 양성이 검증셋에 새어 들지 않는다 — imblearn Pipeline이 이를 보장한다. 전체 적용(A)·검증셋 적용(B)은 누수를 일으키고, 단순 셔플(C)은 누수를 막지 못한다.
+**Answer: A**  
+Explanation: Setting XGBoost's `scale_pos_weight` to the negative/positive ratio gives positive-class errors a larger weight, correcting the imbalance at the algorithm level. The number of trees (B), depth (D), and learning rate (C) are not directly related to imbalance weighting.
 
 ---
 
-**문제 5.** 사기 탐지에서 양성이 매우 희소하다. ROC-AUC보다 PR-AUC를 선호하는 이유로 가장 적절한 것은?
+**Question 4.** When applying SMOTE together with cross-validation, what is the correct way to prevent data leakage?
 
-A) PR-AUC는 항상 ROC-AUC보다 값이 크다  
-B) PR-AUC는 계산이 더 빠르다  
-C) ROC의 거짓 양성률은 거대한 음성에 희석되어 소수 양성 성능을 과대평가할 수 있다  
-D) ROC-AUC는 회귀에서만 쓸 수 있다  
+A) Apply SMOTE to the entire dataset first, then cross-validate  
+B) Apply SMOTE to the validation set as well  
+C) Randomly reshuffle after SMOTE  
+D) Use an imblearn Pipeline so SMOTE is applied only to the training portion of each fold  
 
-**정답: C**  
-해설: ROC의 FPR 분모에 많은 음성(TN+FP)이 들어가 소수 양성의 오류가 희석되므로, 양성에 집중하는 PR-AUC가 희소 클래스 성능 변화에 더 민감하다. 값 크기(A)·계산 속도(B)는 선호 이유가 아니고, ROC-AUC는 분류 지표(D 오류)다.
+**Answer: D**  
+Explanation: Resampling must happen only within the training portion of each fold so that synthetic positives do not leak into the validation set - an imblearn Pipeline guarantees this. Applying it to the entire dataset (A) or the validation set (B) causes leakage, and a simple shuffle (C) does not prevent leakage.
+
+---
+
+**Question 5.** Positives are extremely rare in fraud detection. What is the MOST appropriate reason to prefer PR-AUC over ROC-AUC?
+
+A) PR-AUC is always larger than ROC-AUC  
+B) PR-AUC is faster to compute  
+C) The ROC false positive rate is diluted by the huge number of negatives and can overestimate minority-positive performance  
+D) ROC-AUC can be used only for regression  
+
+**Answer: C**  
+Explanation: The FPR denominator in ROC includes the many negatives (TN+FP), which dilutes errors on the rare positives, so PR-AUC, which focuses on positives, is more sensitive to changes in rare-class performance. Magnitude (A) and computation speed (B) are not reasons to prefer it, and ROC-AUC is a classification metric (D is wrong).
 
 ---

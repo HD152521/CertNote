@@ -23,105 +23,105 @@ Now eight scenarios.
 
 ## 📝 Practice Questions
 
-**문제 1.** 핀테크 회사가 신용카드 사기를 실시간으로 탐지하려 한다. 거래의 99.7%가 정상이며, 사기를 놓치는 비용이 매우 크다. 어떤 평가 지표를 우선해야 하는가?
+**Question 1.** A fintech company wants to detect credit card fraud in real time. 99.7% of transactions are legitimate, and the cost of missing fraud is very high. Which evaluation metric should be prioritized?
 
 A) Accuracy  
-B) Recall(과 보조로 F1·AUC-ROC)  
+B) Recall (with F1 and AUC-ROC as secondary metrics)  
 C) RMSE  
-D) R² 결정계수  
+D) R² coefficient of determination  
 
-**정답: B**  
-해설: 극심한 불균형(99.7% 정상)에서 사기를 놓치는 비용이 크면 거짓음성을 최소화하는 Recall을 우선하고 전반 균형은 F1·AUC로 본다. A는 "전부 정상" 예측만으로 99.7%가 나와 사기 탐지력을 못 보여주고, C·D는 회귀 지표라 분류 평가에 부적합하다.
-
----
-
-**문제 2.** 전국 2,000개 매장에 매장별 수요 예측 XGBoost 모델이 있다. 각 모델은 하루 몇 번만 호출되며, 2,000개 엔드포인트 비용이 부담이다. 가장 비용 효율적인 배포는?
-
-A) 매장마다 별도 실시간 엔드포인트  
-B) 멀티모델 엔드포인트(MME)  
-C) 멀티컨테이너 엔드포인트(MCE)  
-D) 2,000개를 묶은 추론 파이프라인  
-
-**정답: B**  
-해설: "같은 프레임워크(XGBoost) 모델이 매우 많고 개별 호출 빈도가 낮다"는 MME의 정확한 조건으로, 소수 인스턴스에 모델을 동적 로드·공유해 비용을 크게 낮춘다. A는 2,000개 엔드포인트로 비용이 폭발하고, C는 서로 다른 프레임워크 소수 모델용이며, D는 전처리→추론 순차 체인이라 다수 모델 서빙과 무관하다.
+**Answer: B**  
+Explanation: With extreme imbalance (99.7% legitimate) and a high cost for missing fraud, prioritize Recall, which minimizes false negatives, and use F1 and AUC to check overall balance. A reaches 99.7% just by predicting "everything is legitimate," so it says nothing about fraud detection ability, and C and D are regression metrics that are unsuitable for evaluating classification.
 
 ---
 
-**문제 3.** 의료 영상 모델이 개별 요청당 250MB 이미지를 받아 약 8분간 추론하며, 결과는 완료 후 S3에서 수령한다. 가장 적절한 추론 옵션은?
+**Question 2.** A nationwide retailer has an XGBoost demand forecasting model for each of its 2,000 stores. Each model is invoked only a few times per day, and the cost of 2,000 endpoints is a burden. What is the most cost-effective deployment?
 
-A) 실시간 엔드포인트  
-B) 서버리스 추론  
-C) 비동기 추론  
-D) 배치 변환  
+A) A separate real-time endpoint for each store  
+B) Multi-model endpoint (MME)  
+C) Multi-container endpoint (MCE)  
+D) An inference pipeline that bundles all 2,000 models  
 
-**정답: C**  
-해설: 페이로드 250MB와 처리 8분은 실시간/서버리스 한계(6MB·4MB / 60초)를 초과하고, 개별 요청을 큐로 받아 결과를 S3에 저장하는 패턴은 비동기 추론(최대 1GB·60분)과 정확히 일치한다. A·B는 페이로드·시간 제약으로 탈락하고, D는 전체 데이터셋 일괄 방식이라 "개별 요청" 패턴과 다르다.
-
----
-
-**문제 4.** 규제 대상 데이터로 학습하는데, 학습 컨테이너가 인터넷을 거치지 않고 S3·ECR에 접근하고 외부로의 데이터 유출을 차단해야 한다. 가장 적절한 구성은?
-
-A) IAM 정책만 강화  
-B) VPC 내 학습 + S3·ECR VPC 엔드포인트 + 네트워크 격리(EnableNetworkIsolation)  
-C) KMS 암호화만 적용  
-D) 퍼블릭 서브넷 + 보안그룹  
-
-**정답: B**  
-해설: VPC 내부 학습 + VPC 엔드포인트로 인터넷 비경유 접근 + 네트워크 격리로 외부 통신 차단의 조합이 요구를 정확히 충족한다. A는 권한만으로 네트워크 격리가 안 되고, C는 저장 암호화일 뿐 네트워크와 무관하며, D는 퍼블릭 노출이 남아 유출 차단 요구에 어긋난다.
+**Answer: B**  
+Explanation: "Very many models on the same framework (XGBoost) with a low invocation frequency per model" is exactly the condition for MME, which dynamically loads and shares models across a small number of instances to greatly reduce cost. A makes costs explode with 2,000 endpoints, C is for a small number of models on different frameworks, and D is a sequential preprocessing-to-inference chain that has nothing to do with serving many models.
 
 ---
 
-**문제 5.** 데이터 사이언티스트가 코드를 거의 작성하지 않고 S3 데이터셋을 시각적으로 탐색·정제하고 결측 대치·인코딩을 적용한 뒤 그 흐름을 학습 파이프라인으로 내보내려 한다. 가장 적절한 도구는?
+**Question 3.** A medical imaging model receives a 250 MB image per request and runs inference for about 8 minutes, and the results are retrieved from S3 after completion. What is the most appropriate inference option?
 
-A) Amazon EMR(Spark 직접 코딩)  
+A) Real-time endpoint  
+B) Serverless inference  
+C) Asynchronous inference  
+D) Batch transform  
+
+**Answer: C**  
+Explanation: A 250 MB payload and 8 minutes of processing exceed the real-time/serverless limits (6 MB / 4 MB payload, 60 seconds), and the pattern of receiving individual requests in a queue and storing results in S3 exactly matches asynchronous inference (up to 1 GB, 60 minutes). A and B are eliminated by the payload and time constraints, and D processes a whole dataset in bulk, which differs from the "individual request" pattern.
+
+---
+
+**Question 4.** A model is trained on regulated data, and the training container must access S3 and ECR without traversing the internet and must block data exfiltration to the outside. What is the most appropriate configuration?
+
+A) Only strengthen IAM policies  
+B) Training inside a VPC + S3 and ECR VPC endpoints + network isolation (EnableNetworkIsolation)  
+C) Apply only KMS encryption  
+D) Public subnet + security group  
+
+**Answer: B**  
+Explanation: The combination of training inside a VPC, access without traversing the internet through VPC endpoints, and blocking outside communication with network isolation exactly meets the requirements. A cannot achieve network isolation with permissions alone, C is only encryption at rest and unrelated to networking, and D leaves public exposure, which conflicts with the requirement to block exfiltration.
+
+---
+
+**Question 5.** A data scientist wants to visually explore and clean an S3 dataset with almost no coding, apply missing-value imputation and encoding, and then export that flow to a training pipeline. What is the most appropriate tool?
+
+A) Amazon EMR (hand-coded Spark)  
 B) SageMaker Data Wrangler  
 C) Amazon Athena  
 D) AWS Lambda  
 
-**정답: B**  
-해설: Data Wrangler는 비주얼 인터페이스로 데이터 탐색·정제·특성 변환을 코드 없이 수행하고 그 흐름을 처리 작업·파이프라인으로 내보낼 수 있어 요구와 일치한다. A는 직접 Spark 코딩이 필요하고, C는 SQL 분석 쿼리 도구이며, D는 범용 함수 실행으로 비주얼 데이터 준비 기능이 없다.
+**Answer: B**  
+Explanation: Data Wrangler performs data exploration, cleaning, and feature transformation through a visual interface without code and can export the flow to a processing job or pipeline, which matches the requirements. A requires hand-coding Spark, C is a SQL analytics query tool, and D is general-purpose function execution with no visual data preparation capability.
 
 ---
 
-**문제 6.** 운영 중인 모델의 예측 정확도가 시간이 지나며 떨어지는지(실제 정답 대비) 감시하려 한다. 어떤 구성이 필요한가?
+**Question 6.** You want to monitor whether the prediction accuracy of a production model degrades over time (against actual ground truth). What configuration is needed?
 
-A) Model Monitor — Data Quality 모니터만  
-B) Model Monitor — Model Quality 모니터 + 실제 정답(ground truth) 수집  
-C) Clarify 편향 분석 일회 실행  
-D) CloudTrail 로그 분석  
+A) Model Monitor — Data Quality monitor only  
+B) Model Monitor — Model Quality monitor + collect actual ground truth  
+C) A one-time Clarify bias analysis run  
+D) CloudTrail log analysis  
 
-**정답: B**  
-해설: 예측 성능 저하(정답 대비)를 감시하려면 Model Quality 모니터가 필요하며, 이를 계산하려면 실제 정답 라벨을 수집해 예측과 대조해야 한다. A의 Data Quality는 입력 분포 변화만 보고 정답 대비 성능을 평가하지 못하고, C는 일회성 편향 분석이며, D는 API 감사 로그라 모델 성능과 무관하다.
+**Answer: B**  
+Explanation: Monitoring prediction performance degradation (against ground truth) requires a Model Quality monitor, and computing it requires collecting actual ground truth labels and comparing them with predictions. A's Data Quality only looks at input distribution changes and cannot evaluate performance against ground truth, C is a one-time bias analysis, and D is an API audit log unrelated to model performance.
 
 ---
 
-**문제 7.** 다변량 시계열 판매 데이터로 향후 30일 수요를 예측하려 한다. 여러 관련 시계열의 패턴을 함께 학습하는 데 가장 적합한 SageMaker 빌트인 알고리즘은?
+**Question 7.** You want to forecast demand for the next 30 days from multivariate time series sales data. Which SageMaker built-in algorithm is best suited to learn the patterns of multiple related time series together?
 
 A) Linear Learner  
 B) DeepAR  
 C) K-Means  
 D) Random Cut Forest  
 
-**정답: B**  
-해설: DeepAR은 여러 관련 시계열을 함께 학습해 미래 구간을 예측하는 데 특화된 빌트인 알고리즘으로 다변량 수요 예측에 적합하다. A는 단순 회귀로 시계열 구조를 못 살리고, C는 클러스터링, D는 이상 탐지 알고리즘이라 예측 목적과 다르다.
+**Answer: B**  
+Explanation: DeepAR is a built-in algorithm specialized in learning multiple related time series together to forecast future periods, making it well suited for multivariate demand forecasting. A is simple regression that cannot capture time series structure, C is clustering, and D is an anomaly detection algorithm, all different from the forecasting goal.
 
 ---
 
-**문제 8.** 새 학습 데이터가 S3에 들어올 때마다 자동으로 재학습→평가→(기준 통과 시)등록을 수행하고, 모델 버전과 승인 상태를 관리하려 한다. 가장 적절한 조합은?
+**Question 8.** Whenever new training data arrives in S3, you want to automatically retrain, evaluate, and (if criteria are passed) register the model, while managing model versions and approval status. What is the most appropriate combination?
 
-A) cron으로 단일 학습 작업만 반복  
-B) EventBridge 트리거 → SageMaker Pipeline(ConditionStep) → Model Registry 등록/승인  
-C) 사람이 수동으로 노트북 실행  
-D) Model Monitor가 재학습을 직접 수행  
+A) Repeat only a single training job with cron  
+B) EventBridge trigger → SageMaker Pipeline (ConditionStep) → Model Registry registration/approval  
+C) A person manually runs a notebook  
+D) Model Monitor performs retraining directly  
 
-**정답: B**  
-해설: EventBridge가 S3 이벤트로 Pipeline을 시작하고, ConditionStep이 평가 기준 통과 시에만 Model Registry에 등록·승인 관리하게 하는 것이 자동 재학습 MLOps의 표준 패턴이다. A는 평가·조건·버전관리가 없고, C는 자동화가 아니며, D는 Model Monitor가 재학습 실행 주체가 아니라 부적절하다.
+**Answer: B**  
+Explanation: Having EventBridge start the Pipeline from an S3 event and having a ConditionStep register the model in Model Registry and manage approval only when the evaluation criteria are passed is the standard pattern for automated retraining MLOps. A has no evaluation, conditions, or version management, C is not automation, and D is inappropriate because Model Monitor is not what executes retraining.
 
 ---
 
 
 ## 📝 Practice Questions
 
-**문제 1-5** [Practice questions in Korean follow after marker]
+**Questions 1-5** [Practice questions in Korean follow after marker]
 
 ---

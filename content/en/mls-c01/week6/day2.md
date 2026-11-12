@@ -120,62 +120,62 @@ Today we organized four tabular data builtins. XGBoost (nonlinear trees, scaling
 
 ## 📝 Practice Questions
 
-**문제 1.** 중간 규모의 정형(표 형식) 데이터로 이진 분류를 하는데, 피처 간 비선형 상호작용이 중요하고 결측치도 일부 있다. 가장 적합한 빌트인은?
+**Question 1.** You are doing binary classification on medium-sized structured (tabular) data in which nonlinear interactions between features matter and there are some missing values. Which built-in algorithm is MOST suitable?
 
 A) K-Means  
 B) XGBoost  
 C) PCA  
 D) DeepAR  
 
-**정답: B**  
-해설: 정형 데이터의 비선형·상호작용 포착과 결측치 자체 처리가 강점인 XGBoost가 적합하다. K-Means(A)는 비지도 군집, PCA(C)는 차원 축소, DeepAR(D)는 시계열 예측이라 이진 분류 과제와 맞지 않는다.
+**Answer: B**  
+Explanation: XGBoost, whose strengths are capturing nonlinearity and interactions in structured data and handling missing values natively, is suitable. K-Means (A) is unsupervised clustering, PCA (C) is dimensionality reduction, and DeepAR (D) is time series forecasting, so none fit a binary classification task.
 
 ---
 
-**문제 2.** XGBoost 학습 중 학습 손실은 계속 낮아지지만 검증 손실은 상승하는 과적합이 관찰된다. 다음 중 과적합을 완화하는 조정으로 적절하지 않은 것은?
+**Question 2.** During XGBoost training, you observe overfitting: the training loss keeps decreasing while the validation loss rises. Which of the following adjustments is NOT appropriate for mitigating overfitting?
 
-A) max_depth를 낮춘다  
-B) eta(학습률)를 낮춘다  
-C) lambda/alpha 정규화를 강화한다  
-D) max_depth를 크게 높인다  
+A) Lower max_depth  
+B) Lower eta (the learning rate)  
+C) Strengthen lambda/alpha regularization  
+D) Greatly increase max_depth  
 
-**정답: D**  
-해설: max_depth를 높이면 트리가 더 복잡해져 과적합이 심해진다. max_depth↓(A), eta↓(B), 정규화 강화(C)는 모두 모델을 단순화해 과적합을 줄이는 올바른 방향이다.
+**Answer: D**  
+Explanation: Increasing max_depth makes the trees more complex and worsens overfitting. Lowering max_depth (A), lowering eta (B), and strengthening regularization (C) are all the right direction, simplifying the model to reduce overfitting.
 
 ---
 
-**문제 3.** 다음 중 거리 기반이어서 학습 전 피처 스케일링이 특히 중요한 빌트인 알고리즘은?
+**Question 3.** Which of the following built-in algorithms is distance-based, making feature scaling before training especially important?
 
 A) XGBoost  
 B) K-Means  
 C) Random Cut Forest  
 D) BlazingText  
 
-**정답: B**  
-해설: K-Means는 유클리드 거리로 클러스터를 형성하므로 스케일이 큰 피처가 거리를 지배하지 않도록 스케일링이 필수다. XGBoost(A)는 트리라 스케일 불변이고, RCF(C)·BlazingText(D)는 이 맥락의 정답이 아니다.
+**Answer: B**  
+Explanation: K-Means forms clusters using Euclidean distance, so scaling is essential to keep large-scale features from dominating the distance. XGBoost (A) is tree-based and scale-invariant, and RCF (C) and BlazingText (D) are not the answer in this context.
 
 ---
 
-**문제 4.** 수억 행 규모의 매우 큰 데이터로, 관계가 대체로 선형이며 빠른 학습과 모델 해석이 중요하다. 가장 적합한 빌트인은?
+**Question 4.** You have a very large dataset of hundreds of millions of rows, the relationships are mostly linear, and fast training and model interpretability matter. Which built-in algorithm is MOST suitable?
 
 A) Linear Learner  
 B) KNN  
 C) Factorization Machines  
 D) Image Classification  
 
-**정답: A**  
-해설: Linear Learner는 초대규모 데이터에서 빠르고, 선형 모델이라 계수 해석이 쉬우며 여러 모델을 동시에 학습해 최적을 고른다. KNN(B)은 대규모 추론 비용이 크고, FM(C)은 희소 상호작용 추천에 특화, Image Classification(D)은 이미지 전용이다.
+**Answer: A**  
+Explanation: Linear Learner is fast on ultra-large data, is a linear model so coefficients are easy to interpret, and trains multiple models simultaneously to choose the best. KNN (B) has high inference cost at large scale, FM (C) specializes in sparse-interaction recommendation, and Image Classification (D) is image-only.
 
 ---
 
-**문제 5.** K-Means를 사용할 때 사용자가 반드시 사전에 지정해야 하는 핵심 하이퍼파라미터는?
+**Question 5.** Which key hyperparameter must the user specify in advance when using K-Means?
 
 A) objective  
 B) predictor_type  
-C) k (클러스터 수)  
+C) k (number of clusters)  
 D) num_round  
 
-**정답: C**  
-해설: K-Means는 데이터를 몇 개 그룹으로 나눌지(k)를 사전에 지정해야 한다. objective·num_round(A, D)는 XGBoost, predictor_type(B)은 Linear Learner/KNN의 파라미터다.
+**Answer: C**  
+Explanation: K-Means requires you to specify in advance how many groups (k) to divide the data into. objective and num_round (A, D) are XGBoost parameters, and predictor_type (B) is a Linear Learner/KNN parameter.
 
 ---

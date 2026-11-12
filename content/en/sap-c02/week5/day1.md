@@ -155,86 +155,86 @@ Design principle: **Externalize state as much as possible.** Store sessions in D
 
 ## 📝 Practice Questions
 
-**문제 1.** A global financial service operates Aurora PostgreSQL in us-east-1. It wants to set up a DR region in eu-west-1 requiring RPO < 1 second and RTO < 1 minute. Cost is not a major constraint. Which configuration is most suitable?
+**Question 1.** A global financial service operates Aurora PostgreSQL in us-east-1. It wants to set up a DR region in eu-west-1 requiring RPO < 1 second and RTO < 1 minute. Cost is not a major constraint. Which configuration is most suitable?
 
 A) RDS Cross-Region Read Replica + manual promotion
 B) Aurora Global Database + Route 53 Failover Health Check
 C) DMS CDC for real-time synchronization + cutover
 D) S3 snapshot backup + restore
 
-**정답: B**
-해설: Aurora Global Database achieves RPO < 1 second through storage-level replication, and promoting Secondary to Primary takes < 1 minute during failure. A has RPO of seconds to tens of seconds, not guaranteeing 1 second, with longer RTO. C is unsuitable for DR (migration tool). D fails RPO/RTO requirements.
+**Answer: B**
+Explanation: Aurora Global Database achieves RPO < 1 second through storage-level replication, and promoting Secondary to Primary takes < 1 minute during failure. A has RPO of seconds to tens of seconds, not guaranteeing 1 second, with longer RTO. C is unsuitable for DR (migration tool). D fails RPO/RTO requirements.
 
 ---
 
-**문제 2.** An e-commerce operates DynamoDB in us-east-1. It needs identical data in ap-southeast-1, with writes occurring in both regions. Conflicts are acceptable as long as "eventual convergence" occurs. Which service is suitable?
+**Question 2.** An e-commerce operates DynamoDB in us-east-1. It needs identical data in ap-southeast-1, with writes occurring in both regions. Conflicts are acceptable as long as "eventual convergence" occurs. Which service is suitable?
 
 A) Aurora Global Database
 B) DynamoDB Global Tables
 C) ElastiCache Global Datastore
 D) RDS Cross-Region Read Replica
 
-**정답: B**
-해설: Bidirectional (master-master) writes + eventual consistency (LWW) = exact DynamoDB Global Tables use case. Aurora Global has single Primary (unidirectional write). ElastiCache Global Datastore is for caching. RDS Read Replica is unidirectional.
+**Answer: B**
+Explanation: Bidirectional (master-master) writes + eventual consistency (LWW) = exact DynamoDB Global Tables use case. Aurora Global has single Primary (unidirectional write). ElastiCache Global Datastore is for caching. RDS Read Replica is unidirectional.
 
 ---
 
-**문제 3.** A company must choose a DR strategy requiring "RTO 15 minutes, RPO 5 minutes." Cost should be minimized. Which DR pattern is most suitable?
+**Question 3.** A company must choose a DR strategy requiring "RTO 15 minutes, RPO 5 minutes." Cost should be minimized. Which DR pattern is most suitable?
 
 A) Backup & Restore
 B) Pilot Light
 C) Warm Standby
 D) Multi-Site Active-Active
 
-**정답: C**
-해설: Warm Standby's continuously operated scaled-down stack achieves RTO minutes to 15 minutes, RPO minutes. Pilot Light has uncertain 15-minute RTO due to app server boot time. Active-Active violates cost minimization. Backup & Restore has hours RTO, unsatisfactory.
+**Answer: C**
+Explanation: Warm Standby's continuously operated scaled-down stack achieves RTO minutes to 15 minutes, RPO minutes. Pilot Light has uncertain 15-minute RTO due to app server boot time. Active-Active violates cost minimization. Backup & Restore has hours RTO, unsatisfactory.
 
 ---
 
-**문제 4.** In multi-region Active-Active, an SRE team wants to "intentionally, safely" control region failover manually. They want to prevent flapping risk from automatic failover. Which service do they use?
+**Question 4.** In multi-region Active-Active, an SRE team wants to "intentionally, safely" control region failover manually. They want to prevent flapping risk from automatic failover. Which service do they use?
 
 A) Route 53 Failover routing (automatic Health Check)
 B) Route 53 ARC (Application Recovery Controller)
 C) CloudWatch Alarm + Lambda automation
 D) Global Accelerator traffic dial
 
-**정답: B**
-해설: Route 53 ARC enforces via Safety Rule "must keep minimum N controls on before switching," preventing flapping and complete blackouts. Manual switches ideal for intentional failover. A is automatic switching with flapping risk. C incurs custom automation operational overhead.
+**Answer: B**
+Explanation: Route 53 ARC enforces via Safety Rule "must keep minimum N controls on before switching," preventing flapping and complete blackouts. Manual switches ideal for intentional failover. A is automatic switching with flapping risk. C incurs custom automation operational overhead.
 
 ---
 
-**문제 5.** Due to GDPR, EU user data must store only in EU regions. A single codebase must operate us-east-1 (US users) and eu-west-1 (EU users). Which method guarantees data isolation?
+**Question 5.** Due to GDPR, EU user data must store only in EU regions. A single codebase must operate us-east-1 (US users) and eu-west-1 (EU users). Which method guarantees data isolation?
 
 A) DynamoDB Global Tables (auto-replicate both regions)
 B) Aurora Global Database (Read Replica in eu-west-1)
 C) Independent DynamoDB per region + Route 53 Geolocation routing
 D) S3 Cross-Region Replication + Presigned URL
 
-**정답: C**
-해설: Both A and B replicate data to both regions, violating GDPR data residency requirements. D has S3 CRR copying data to the US, also violating requirements. C alone isolates data per region and routes EU users to eu-west-1 via Route 53 Geolocation.
+**Answer: C**
+Explanation: Both A and B replicate data to both regions, violating GDPR data residency requirements. D has S3 CRR copying data to the US, also violating requirements. C alone isolates data per region and routes EU users to eu-west-1 via Route 53 Geolocation.
 
 ---
 
-**문제 6.** A company configured multi-region Active-Active, but rarely the same user record gets modified simultaneously in both regions, causing inconsistency. Since it's a financial system, conflicts are unacceptable. How to resolve?
+**Question 6.** A company configured multi-region Active-Active, but rarely the same user record gets modified simultaneously in both regions, causing inconsistency. Since it's a financial system, conflicts are unacceptable. How to resolve?
 
 A) Use DynamoDB Global Tables' LWW as-is
 B) Use Aurora Global Database to allow only single Primary writes
 C) Auto-merge conflicts via Lambda
 D) Process all writes only from a single-AZ EC2
 
-**정답: B**
-해설: Financial system, no conflicts = single write point required. Aurora Global Database allows writes only in Primary region, Secondary read-only, making conflicts impossible. RPO < 1 second also enables disaster recovery. A allows conflicts. C has merge logic complexity and error potential. D defeats multi-region purpose.
+**Answer: B**
+Explanation: Financial system, no conflicts = single write point required. Aurora Global Database allows writes only in Primary region, Secondary read-only, making conflicts impossible. RPO < 1 second also enables disaster recovery. A allows conflicts. C has merge logic complexity and error potential. D defeats multi-region purpose.
 
 ---
 
-**문제 7.** A game company serves global users with UDP-based matchmaking servers. us-east-1 failure must failover to ap-northeast-2 within seconds. Which service to choose?
+**Question 7.** A game company serves global users with UDP-based matchmaking servers. us-east-1 failure must failover to ap-northeast-2 within seconds. Which service to choose?
 
 A) Route 53 Latency-Based Routing
 B) CloudFront + Lambda@Edge
 C) Global Accelerator + NLB
 D) API Gateway Regional endpoint
 
-**정답: C**
-해설: UDP protocol support + seconds-level failover (bypassing DNS cache) = Global Accelerator. Route 53 LBR has minutes failover due to DNS TTL. CloudFront doesn't support UDP. API Gateway HTTP-only.
+**Answer: C**
+Explanation: UDP protocol support + seconds-level failover (bypassing DNS cache) = Global Accelerator. Route 53 LBR has minutes failover due to DNS TTL. CloudFront doesn't support UDP. API Gateway HTTP-only.
 
 ---

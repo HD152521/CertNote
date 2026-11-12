@@ -77,62 +77,62 @@ From next session, we'll see AWS's domain-specific managed AI services (Rekognit
 
 ## 📝 Practice Questions
 
-**문제 1.** A team wants to directly train a custom predictive model using their company's unique data and continuously monitor model quality post-deployment. What is the most appropriate service?
+**Question 1.** A team wants to directly train a custom predictive model using their company's unique data and continuously monitor model quality post-deployment. What is the most appropriate service?
 
 A) Amazon Bedrock  
 B) Amazon SageMaker  
 C) Amazon Polly  
 D) Amazon Translate  
 
-**정답: B**  
-해설: SageMaker covers the entire ML lifecycle from data prep to training, deployment, and monitoring, ideal for controlling custom models with your own data. A focuses on renting existing FMs via API. C is speech synthesis, D is translation—both unrelated to custom model training.
+**Answer: B**  
+Explanation: SageMaker covers the entire ML lifecycle from data prep to training, deployment, and monitoring, ideal for controlling custom models with your own data. A focuses on renting existing FMs via API. C is speech synthesis, D is translation—both unrelated to custom model training.
 
 ---
 
-**문제 2.** Which most accurately explains the difference between Bedrock and SageMaker?
+**Question 2.** Which most accurately explains the difference between Bedrock and SageMaker?
 
 A) Bedrock trains models directly, SageMaker only calls APIs  
 B) Bedrock rents FMs via API; SageMaker builds and operates your own models  
 C) They're completely the same service  
 D) SageMaker doesn't support generative AI at all  
 
-**정답: B**  
-해설: Bedrock is an abstracted-infrastructure FM rental service, while SageMaker is an ML platform where you control data, algorithms, and deployment. A reverses their roles. C is clearly different services. D is wrong because JumpStart handles FMs too.
+**Answer: B**  
+Explanation: Bedrock is an abstracted-infrastructure FM rental service, while SageMaker is an ML platform where you control data, algorithms, and deployment. A reverses their roles. C is clearly different services. D is wrong because JumpStart handles FMs too.
 
 ---
 
-**문제 3.** You want to quickly deploy pre-trained models and solution templates from a catalog or fine-tune them with your company's data. Which SageMaker feature is this?
+**Question 3.** You want to quickly deploy pre-trained models and solution templates from a catalog or fine-tune them with your company's data. Which SageMaker feature is this?
 
 A) Model Monitor  
 B) JumpStart  
 C) Data Wrangler  
 D) Batch Transform  
 
-**정답: B**  
-해설: JumpStart provides pre-trained models and solution templates for fast starts and fine-tuning. A monitors quality/drift post-deployment. C cleans data. D is a batch inference method—all different from catalog-based starting.
+**Answer: B**  
+Explanation: JumpStart provides pre-trained models and solution templates for fast starts and fine-tuning. A monitors quality/drift post-deployment. C cleans data. D is a batch inference method—all different from catalog-based starting.
 
 ---
 
-**문제 4.** You want to process large accumulated data at a set time each night. What's the most cost-effective inference method?
+**Question 4.** You want to process large accumulated data at a set time each night. What's the most cost-effective inference method?
 
 A) Real-time endpoint  
 B) Batch Transform  
 C) Retrain the model each time  
 D) Manually operate an always-on GPU instance  
 
-**정답: B**  
-해설: Batch Transform is cost-effective for regularly processing accumulated data at once. A stays on, incurring cost even idle. C is training, not inference. D carries operational burden and cost.
+**Answer: B**  
+Explanation: Batch Transform is cost-effective for regularly processing accumulated data at once. A stays on, incurring cost even idle. C is training, not inference. D carries operational burden and cost.
 
 ---
 
-**문제 5.** Traffic is irregular and sporadic; you want costs near zero when there are no requests. What inference method suits this scenario?
+**Question 5.** Traffic is irregular and sporadic; you want costs near zero when there are no requests. What inference method suits this scenario?
 
 A) Serverless inference  
 B) Always-on real-time endpoint  
 C) Batch Transform  
 D) Asynchronous inference is the only option  
 
-**정답: A**  
-해설: Serverless inference incurs no cost when idle, fitting sporadic, irregular traffic. B incurs idle cost. C is for bulk batch processing. D is for large input/long processing—a separate method not precisely matching "sporadic traffic" cue.
+**Answer: A**  
+Explanation: Serverless inference incurs no cost when idle, fitting sporadic, irregular traffic. B incurs idle cost. C is for bulk batch processing. D is for large input/long processing—a separate method not precisely matching "sporadic traffic" cue.
 
 ---

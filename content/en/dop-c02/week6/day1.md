@@ -447,86 +447,86 @@ ECR is not just a Docker Hub replacement. OCI-standard content-addressable stora
 
 ## 📝 Practice Questions
 
-**문제 1.** "Python 라이브러리(requests 패키지)에서 발견된 새 CVE를 ECR 이미지에서 자동으로 감지하고 Security Hub에 통합"하려면 어떤 구성이 필요한가?
+**Question 1.** What configuration is needed to "automatically detect a new CVE found in a Python library (the requests package) in an ECR image and integrate it into Security Hub"?
 
 A) Basic Scanning (scanOnPush: true) + CloudWatch Events
-B) Enhanced Scanning (Inspector) + CONTINUOUS_SCAN + Security Hub 통합
-C) Lambda가 매일 이미지를 다운로드하고 pip audit 실행
-D) Trusted Advisor의 이미지 스캔 기능
+B) Enhanced scanning (Inspector) + CONTINUOUS_SCAN + Security Hub integration
+C) Lambda downloads the image daily and runs pip audit
+D) The Trusted Advisor image scanning feature
 
-**정답: B**
-해설: Basic Scanning은 OS 패키지(apt, yum)만 스캔하고 Python pip 같은 언어 패키지를 감지하지 못한다. Enhanced Scanning(Inspector)만이 언어별 의존성 스캔을 지원한다. CONTINUOUS_SCAN은 이미지가 ECR에 있는 동안 새 CVE가 발표되면 자동으로 재평가하므로 "사후에 발견된 CVE"도 감지한다. Inspector Findings는 Security Hub와 자동 통합되어 중앙 보안 대시보드에 표시된다.
-
----
-
-**문제 2.** ECR Lifecycle Policy에서 rulePriority 1, 2, 3이 있을 때, 한 이미지가 규칙 1과 규칙 3에 동시에 매칭된다면 어떻게 처리되는가?
-
-A) 가장 높은 우선순위(숫자가 큰 것)의 규칙이 적용된다
-B) 가장 낮은 rulePriority 숫자(즉 규칙 1)가 먼저 평가되어 규칙 1의 action이 적용된다
-C) 양쪽 규칙이 모두 적용되어 이미지가 두 번 삭제된다
-D) 가장 최근에 추가된 규칙이 우선한다
-
-**정답: B**
-해설: rulePriority는 숫자가 낮을수록 먼저 평가된다. 이미지가 규칙 1과 규칙 3에 모두 매칭되면 규칙 1(priority 1)이 먼저 적용되고, 규칙 3은 이미 처리된 이미지에 다시 적용되지 않는다. "낮은 숫자 = 높은 우선순위"라는 직관에 반하는 설계지만 이것이 ECR Lifecycle Policy의 동작 방식이다. 드라이런(`get-lifecycle-policy-preview`)으로 실제 결과를 확인하는 것이 실수를 방지하는 방법이다.
+**Answer: B**
+Explanation: Basic scanning scans only OS packages (apt, yum) and does not detect language packages such as Python pip. Only enhanced scanning (Inspector) supports language-specific dependency scanning. CONTINUOUS_SCAN automatically re-evaluates when a new CVE is published while the image is in ECR, so it also detects "CVEs discovered after the fact." Inspector findings are automatically integrated with Security Hub and shown on the central security dashboard.
 
 ---
 
-**문제 3.** EKS Pod이 ECR Private 이미지를 pull할 때 가장 안전한 IAM 구성은?
+**Question 2.** In an ECR lifecycle policy with rulePriority 1, 2, and 3, how is an image handled if it matches both rule 1 and rule 3?
 
-A) EKS 노드 EC2 Role에 AmazonEC2ContainerRegistryReadOnly 정책 첨부 (모든 Pod 공유)
-B) 각 서비스별 Kubernetes ServiceAccount에 IRSA로 별도 IAM Role 매핑, Role에 필요한 ECR 리포지토리만 접근 허용
-C) Pod Spec에 ECR 자격 증명을 환경 변수로 직접 주입
-D) ECR Repository Policy를 EKS 클러스터 VPC에서 허용으로 설정
+A) The rule with the highest priority (the larger number) is applied
+B) The lowest rulePriority number (that is, rule 1) is evaluated first and the action of rule 1 is applied
+C) Both rules are applied and the image is deleted twice
+D) The most recently added rule takes precedence
 
-**정답: B**
-해설: IRSA(IAM Roles for Service Accounts)가 EKS 권한의 표준이다. 노드 Role(A)은 해당 노드의 모든 Pod이 같은 권한을 갖는 overly permissive 접근이다. 어떤 Pod이 침해되면 노드의 모든 권한을 사용할 수 있다. IRSA는 Pod별 최소 권한을 구현한다—결제 서비스 Pod은 결제 관련 ECR 리포지토리만, 인증 서비스 Pod은 인증 리포지토리만 접근 가능하다. 환경 변수 주입(C)은 장기 자격 증명 노출 위험이 있다.
-
----
-
-**문제 4.** "prod 이미지가 빌드된 후 태그를 변경하거나 같은 태그로 다른 이미지를 push하는 것을 방지"하는 ECR 구성은?
-
-A) ECR 리포지토리에 별도 IAM Policy로 PutImage 권한을 제거
-B) 리포지토리의 Image Tag Mutability를 IMMUTABLE로 설정
-C) Lifecycle Policy로 오래된 이미지를 자동 삭제
-D) Cross-Region Replication으로 이미지를 복제
-
-**정답: B**
-해설: IMMUTABLE 설정은 한 번 push된 태그를 덮어쓰기 불가능하게 만든다. `docker push myapp:prod-v1.2.3`을 두 번 실행하면 두 번째 push가 오류로 실패한다. IAM Policy로 PutImage를 제거(A)하면 아무도 이미지를 push할 수 없어서 CI/CD가 깨진다. Lifecycle Policy(C)는 삭제 제어이고 수정 방지가 아니다.
+**Answer: B**
+Explanation: The lower the rulePriority number, the earlier it is evaluated. If an image matches both rule 1 and rule 3, rule 1 (priority 1) is applied first, and rule 3 is not applied again to an image that has already been processed. The design is counterintuitive ("lower number = higher priority"), but this is how ECR lifecycle policies work. Checking the actual result with a dry run (`get-lifecycle-policy-preview`) is how you prevent mistakes.
 
 ---
 
-**문제 5.** Docker Hub Rate Limit으로 인해 EKS 클러스터에서 nginx 공식 이미지 pull이 간헐적으로 실패한다. 가장 근본적인 해결책은?
+**Question 3.** What is the most secure IAM configuration for an EKS pod to pull images from ECR private?
 
-A) EKS 노드 수를 줄여 pull 횟수 감소
-B) ECR Pull Through Cache를 Docker Hub와 연결하고, 클러스터의 모든 nginx pull을 ECR 경유로 변경
-C) Docker Hub 계정을 유료로 업그레이드
-D) nginx 이미지를 S3에 저장하고 필요 시 다운로드
+A) Attach the AmazonEC2ContainerRegistryReadOnly policy to the EKS node EC2 role (shared by all pods)
+B) Map a separate IAM role to each service Kubernetes ServiceAccount with IRSA, allowing the role to access only the ECR repositories it needs
+C) Inject ECR credentials directly into the pod spec as environment variables
+D) Configure the ECR repository policy to allow the EKS cluster VPC
 
-**정답: B**
-해설: ECR Pull Through Cache가 근본적 해결책이다. 첫 번째 pull은 Docker Hub에서 가져와 ECR에 저장하고, 이후 pull은 ECR에서 직접 제공한다. ECR이 Docker Hub 인증 정보를 Secrets Manager에서 관리하므로 인증된 계정의 Rate Limit(훨씬 높음)이 적용된다. Kubernetes 매니페스트에서 `image: nginx:1.25`를 `image: <account>.dkr.ecr.<region>.amazonaws.com/dockerhub/library/nginx:1.25`로 변경만 하면 된다. 노드 감소(A)는 임시방편이고, 유료 업그레이드(C)도 가능하지만 AWS 서비스 안에서의 해결이 권장된다.
-
----
-
-**문제 6.** ECR Cross-Region Replication을 설정했는데 새 이미지가 목적 리전에 복제되지 않는다. 가장 먼저 확인해야 할 것은?
-
-A) 목적 리전의 IAM 권한
-B) repositoryFilters의 PREFIX_MATCH 패턴이 리포지토리 이름과 일치하는지, 그리고 목적 리전에 해당 리포지토리가 사전에 생성되어 있는지
-C) KMS 키 설정
-D) ECR 스캔 설정
-
-**정답: B**
-해설: Replication이 동작하지 않는 가장 흔한 원인 두 가지다. (1) repositoryFilters의 PREFIX_MATCH 패턴이 리포지토리 이름과 매칭되지 않는 경우—예: `filter: "prod/"` 설정인데 리포지토리 이름이 `myapp`(prod/ 프리픽스 없음)이면 복제 안 됨. (2) 목적 리전에 동일 이름의 리포지토리가 없는 경우—설정에 따라 자동 생성이 안 될 수 있어서 리포지토리를 수동으로 먼저 생성해야 함. 복제는 비동기라서 즉시 확인해도 보이지 않을 수 있다.
+**Answer: B**
+Explanation: IRSA (IAM Roles for Service Accounts) is the standard for EKS permissions. The node role (A) is an overly permissive approach in which all pods on that node have the same permissions. If any pod is compromised, all of the node permissions can be used. IRSA implements least privilege per pod — a payment service pod can access only payment-related ECR repositories, and an authentication service pod can access only the authentication repository. Injecting environment variables (C) carries the risk of exposing long-term credentials.
 
 ---
 
-**문제 7.** ECR 이미지의 SBOM(Software Bill of Materials)과 CVE 정보를 지속적으로 모니터링하고, 새 CRITICAL 취약점 발견 시 운영팀에 자동 알림을 보내는 아키텍처는?
+**Question 4.** Which ECR configuration "prevents changing a tag or pushing a different image with the same tag after the prod image is built"?
 
-A) Inspector Enhanced Scanning + CONTINUOUS_SCAN → Inspector Finding 생성 → Security Hub → EventBridge → SNS → 이메일/Slack
-B) Basic Scanning + CloudWatch 알람
-C) Lambda가 매일 ECR describe-images 호출 후 취약점 데이터베이스와 비교
-D) Trusted Advisor 대시보드 주기적 모니터링
+A) Remove the PutImage permission with a separate IAM policy on the ECR repository
+B) Set the repository image tag mutability to IMMUTABLE
+C) Automatically delete old images with a lifecycle policy
+D) Replicate the images with cross-Region replication
 
-**정답: A**
-해설: Inspector Enhanced Scanning이 CVE 데이터베이스 업데이트 시 자동 재평가(CONTINUOUS_SCAN)하고 Findings를 생성한다. Security Hub가 이 Findings를 수집하고, EventBridge Rule이 "CRITICAL Inspector Finding"을 필터링해 SNS로 라우팅, 이메일과 Slack(Chatbot)으로 즉시 알림이 간다. 이 전체 파이프라인이 완전 자동이고 새 CVE 발표 후 수 시간 이내에 감지/알림이 완료된다. 나머지 옵션은 의존성 스캔(B)을 하지 않거나(C, D) 자동화가 불완전하다.
+**Answer: B**
+Explanation: The IMMUTABLE setting makes a tag that has been pushed once impossible to overwrite. If you run `docker push myapp:prod-v1.2.3` twice, the second push fails with an error. Removing PutImage with an IAM policy (A) means no one can push images, which breaks CI/CD. A lifecycle policy (C) controls deletion and does not prevent modification.
+
+---
+
+**Question 5.** Because of the Docker Hub rate limit, pulling the official nginx image intermittently fails on an EKS cluster. What is the most fundamental solution?
+
+A) Reduce the number of EKS nodes to reduce the number of pulls
+B) Connect an ECR pull through cache to Docker Hub and change all nginx pulls in the cluster to go through ECR
+C) Upgrade the Docker Hub account to a paid plan
+D) Store the nginx image in S3 and download it when needed
+
+**Answer: B**
+Explanation: The ECR pull through cache is the fundamental solution. The first pull fetches from Docker Hub and stores in ECR, and subsequent pulls are served directly from ECR. ECR manages the Docker Hub credentials in Secrets Manager, so the (much higher) rate limit of an authenticated account applies. In the Kubernetes manifest you only need to change `image: nginx:1.25` to `image: <account>.dkr.ecr.<region>.amazonaws.com/dockerhub/library/nginx:1.25`. Reducing nodes (A) is a stopgap, and a paid upgrade (C) is also possible, but a solution within AWS services is recommended.
+
+---
+
+**Question 6.** You configured ECR cross-Region replication, but new images are not replicated to the destination Region. What should you check first?
+
+A) IAM permissions in the destination Region
+B) Whether the PREFIX_MATCH pattern in repositoryFilters matches the repository name, and whether the repository was created in advance in the destination Region
+C) KMS key settings
+D) ECR scan settings
+
+**Answer: B**
+Explanation: These are the two most common causes of replication not working. (1) The PREFIX_MATCH pattern in repositoryFilters does not match the repository name — for example, if the filter is `"prod/"` but the repository name is `myapp` (no prod/ prefix), it is not replicated. (2) There is no repository with the same name in the destination Region — depending on the configuration it may not be created automatically, so you must create the repository manually first. Replication is asynchronous, so it may not be visible even if you check immediately.
+
+---
+
+**Question 7.** Which architecture continuously monitors the SBOM (software bill of materials) and CVE information of ECR images and automatically sends an alert to the operations team when a new CRITICAL vulnerability is found?
+
+A) Inspector enhanced scanning + CONTINUOUS_SCAN → Inspector finding created → Security Hub → EventBridge → SNS → email/Slack
+B) Basic scanning + CloudWatch alarm
+C) Lambda calls ECR describe-images daily and compares against a vulnerability database
+D) Periodically monitor the Trusted Advisor dashboard
+
+**Answer: A**
+Explanation: Inspector enhanced scanning automatically re-evaluates (CONTINUOUS_SCAN) when the CVE database is updated and generates findings. Security Hub collects these findings, an EventBridge rule filters "CRITICAL Inspector findings" and routes them to SNS, and an alert goes out immediately by email and Slack (Chatbot). This whole pipeline is fully automated, and detection and alerting complete within a few hours after a new CVE is published. The other options either do not perform dependency scanning (B) or have incomplete automation (C, D).
 
 ---

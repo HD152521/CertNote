@@ -108,62 +108,62 @@ Next we see JumpStart for using pre-trained models without training from scratch
 
 ## 📝 Practice Questions
 
-**문제 1.** 제한된 컴퓨팅 예산으로 가능한 적은 학습 횟수로 좋은 하이퍼파라미터 조합을 찾고 싶다. 이전 시도 결과를 활용해 다음 시도를 똑똑하게 선택하는 전략은?
+**Question 1.** With a limited compute budget, you want to find a good hyperparameter combination with as few training runs as possible. Which strategy uses the results of previous trials to choose the next trials intelligently?
 
 A) Grid Search  
 B) Random Search  
 C) Bayesian  
-D) 수동 탐색  
+D) Manual search  
 
-**정답: C**  
-해설: 베이지안 최적화는 지금까지의 시도 결과로 유망한 영역의 확률 모델을 만들어 다음 시도를 정보 가치가 높은 곳으로 선택하므로 적은 횟수로 좋은 값을 찾는다. A는 모든 조합을 전수 조사해 비효율적이고, B는 독립 무작위라 운에 의존하며, D는 자동화 이점이 없다.
-
----
-
-**문제 2.** 튜닝 작업이 여러 학습을 돌리며 비용이 크다. 진행 중에 목표 지표가 명백히 가망 없는 학습 작업을 자동으로 중단해 컴퓨팅 비용을 줄이려면?
-
-A) max_parallel_jobs를 1로 낮춘다  
-B) early_stopping_type을 Auto로 설정한다  
-C) 인스턴스 타입을 더 큰 것으로 바꾼다  
-D) 목표 지표를 제거한다  
-
-**정답: B**  
-해설: early_stopping_type='Auto'는 진행 중 지표가 다른 시도들에 뒤처지는 학습 작업을 중간에 끊어 컴퓨팅 시간을 절약한다. A는 병렬성만 줄여 총 시간을 늘리고, C는 오히려 비용을 키우며, D는 튜닝 자체를 불가능하게 만든다.
+**Answer: C**  
+Explanation: Bayesian optimization builds a probabilistic model of promising regions from the trial results so far and picks the next trial where the information value is high, so it finds good values with few trials. A exhaustively covers every combination and is inefficient, B is independent random sampling and relies on luck, and D has no automation benefit.
 
 ---
 
-**문제 3.** 어제 동일한 데이터와 알고리즘으로 튜닝을 한 번 마쳤고, 오늘 하이퍼파라미터 범위만 약간 넓혀 이전 결과를 활용해 더 빠르게 수렴시키려 한다. 가장 적합한 기능과 타입은?
+**Question 2.** A tuning job runs many training jobs and is costly. How can you reduce compute cost by automatically stopping training jobs whose objective metric is clearly hopeless while in progress?
 
-A) 워밍 스타트, IDENTICAL_DATA_AND_ALGORITHM  
-B) 처음부터 새 튜닝 작업 생성  
-C) 조기 종료만 활성화  
-D) Grid Search로 전환  
+A) Lower max_parallel_jobs to 1  
+B) Set early_stopping_type to Auto  
+C) Change the instance type to a larger one  
+D) Remove the objective metric  
 
-**정답: A**  
-해설: 데이터·알고리즘이 동일하고 범위만 조정해 이전 튜닝 결과를 출발점으로 삼을 때는 워밍 스타트의 IDENTICAL_DATA_AND_ALGORITHM 타입이 적합하다. B는 이전 지식을 버려 비효율적이고, C는 결과 재사용과 무관하며, D는 전수 조사로 수렴 가속과 거리가 멀다.
+**Answer: B**  
+Explanation: early_stopping_type='Auto' stops partway through training jobs whose in-progress metric lags behind other trials, saving compute time. A only reduces parallelism and increases total time, C actually increases cost, and D makes tuning itself impossible.
 
 ---
 
-**문제 4.** 학습 한 번이 수 시간 걸리는 딥러닝 모델을 튜닝하면서, 성능이 나쁜 구성은 학습 초반에 끊고 유망한 구성에 자원을 집중하는 전략을 쓰고 싶다. 가장 적합한 탐색 전략은?
+**Question 3.** You finished one tuning job yesterday with the same data and algorithm, and today you want to widen only the hyperparameter ranges slightly and converge faster by reusing the previous results. What are the most suitable feature and type?
+
+A) Warm start, IDENTICAL_DATA_AND_ALGORITHM  
+B) Create a new tuning job from scratch  
+C) Enable only early stopping  
+D) Switch to Grid Search  
+
+**Answer: A**  
+Explanation: When the data and algorithm are identical, only the ranges are adjusted, and you want to use the previous tuning results as a starting point, the warm start IDENTICAL_DATA_AND_ALGORITHM type is appropriate. B discards prior knowledge and is inefficient, C is unrelated to reusing results, and D is exhaustive search, which is far from accelerating convergence.
+
+---
+
+**Question 4.** While tuning a deep learning model where a single training run takes several hours, you want a strategy that stops poorly performing configurations early in training and concentrates resources on promising ones. Which search strategy is most suitable?
 
 A) Grid Search  
 B) Hyperband  
-C) 수동 탐색  
-D) 단일 학습 작업  
+C) Manual search  
+D) Single training job  
 
-**정답: B**  
-해설: Hyperband는 학습 도중 성능이 나쁜 구성을 조기에 중단하고 자원을 유망한 구성에 재분배하므로, 학습이 오래 걸리는 딥러닝 튜닝에서 특히 효율적이다. A는 모든 조합을 끝까지 돌려 비효율적이고, C는 자동화 이점이 없으며, D는 튜닝이 아니다.
+**Answer: B**  
+Explanation: Hyperband stops poorly performing configurations early during training and redistributes resources to promising configurations, so it is especially efficient for deep learning tuning where training takes a long time. A runs every combination to the end and is inefficient, C has no automation benefit, and D is not tuning.
 
 ---
 
-**문제 5.** HyperparameterTuner에서 max_jobs와 max_parallel_jobs의 의미로 올바른 것은?
+**Question 5.** In HyperparameterTuner, which is correct about the meaning of max_jobs and max_parallel_jobs?
 
-A) max_jobs는 동시 실행 수, max_parallel_jobs는 총 학습 작업 수다  
-B) max_jobs는 총 학습 작업 수, max_parallel_jobs는 동시에 실행할 학습 작업 수다  
-C) 둘 다 인스턴스 개수를 의미한다  
-D) 둘 다 목표 지표의 임계값이다  
+A) max_jobs is the number of concurrent runs and max_parallel_jobs is the total number of training jobs  
+B) max_jobs is the total number of training jobs and max_parallel_jobs is the number of training jobs to run concurrently  
+C) Both mean the number of instances  
+D) Both are thresholds of the objective metric  
 
-**정답: B**  
-해설: max_jobs는 튜닝이 실행할 총 학습 작업 수이고 max_parallel_jobs는 그중 동시에 돌릴 작업 수이며, 베이지안 전략에서는 병렬을 너무 높이면 순차적 학습 이점이 줄어든다. A는 둘의 의미가 뒤바뀌었고, C는 인스턴스 설정과 혼동한 것이며, D는 목표 지표와 무관하다.
+**Answer: B**  
+Explanation: max_jobs is the total number of training jobs the tuning will run and max_parallel_jobs is the number of those to run concurrently; in the Bayesian strategy, setting parallelism too high reduces the benefit of sequential learning. A swaps the meanings of the two, C confuses them with instance settings, and D is unrelated to the objective metric.
 
 ---

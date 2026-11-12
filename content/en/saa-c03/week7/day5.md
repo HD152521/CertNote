@@ -124,158 +124,158 @@ Week 8 goes into the depth of databases. It looks at which workloads RDS, Aurora
 
 ## 📝 Practice Questions
 
-**문제 1.** When an e-commerce company's order system emits an "order completed" event, it must do the following four things simultaneously: (1) send a message to the payment-processing queue, (2) record it in the analytics system, (3) email the user, (4) notify the warehouse system. New subscribers may also be added in the future. What is the most appropriate architecture?
+**Question 1.** When an e-commerce company's order system emits an "order completed" event, it must do the following four things simultaneously: (1) send a message to the payment-processing queue, (2) record it in the analytics system, (3) email the user, (4) notify the warehouse system. New subscribers may also be added in the future. What is the most appropriate architecture?
 
 A) The order service calls SendMessage directly on each of 4 SQS queues (payment, analytics, email, warehouse) and deploys code when a new subscriber is added
 B) SNS topic → 4 SQS queue fanout (SNS-SQS fanout pattern)
 C) Put order events into a Kinesis Data Stream and have 4 systems each consume with a KCL application + DynamoDB checkpoint table
 D) Create 4 rules on an EventBridge custom bus, each routing the same OrderPlaced pattern to 4 targets
 
-**정답: B**
+**Answer: B**
 
-해설: The model answer for a simple-fanout scenario with expected subscriber growth is the SNS→SQS pattern. SNS publishes once to a topic, all SQS subscribers receive it, and each queue's worker processes at its own pace. A new subscriber just creates an SQS queue and adds a subscription to the SNS topic — the publisher's code doesn't change. (A) explodes coupling and requires modifying the publisher for each new subscriber. (C) Kinesis is for analytics workloads needing retention/re-read, not for fanout; it's also expensive and operationally heavy. (D) EventBridge works too but is expensive for simple fanout and adds latency. However, if the scenario has "event pattern filtering" or "SaaS integration," EventBridge is the answer.
+Explanation: The model answer for a simple-fanout scenario with expected subscriber growth is the SNS→SQS pattern. SNS publishes once to a topic, all SQS subscribers receive it, and each queue's worker processes at its own pace. A new subscriber just creates an SQS queue and adds a subscription to the SNS topic — the publisher's code doesn't change. (A) explodes coupling and requires modifying the publisher for each new subscriber. (C) Kinesis is for analytics workloads needing retention/re-read, not for fanout; it's also expensive and operationally heavy. (D) EventBridge works too but is expensive for simple fanout and adds latency. However, if the scenario has "event pattern filtering" or "SaaS integration," EventBridge is the answer.
 
 ---
 
-**문제 2.** A payment system requires "one payment must be processed exactly once + the same customer's payments must be processed in order." What is the most appropriate queue configuration?
+**Question 2.** A payment system requires "one payment must be processed exactly once + the same customer's payments must be processed in order." What is the most appropriate queue configuration?
 
 A) SQS Standard + a DynamoDB idempotency-key table so the worker blocks duplicate processing
 B) SQS FIFO + MessageGroupId=customer_id
 C) An SNS FIFO topic + a Lambda subscriber performing the payment directly
 D) Kinesis Data Streams + partition key=customer_id + a KCL worker processing payments in order from the shard
 
-**정답: B**
+**Answer: B**
 
-해설: A FIFO queue guarantees ordering per MessageGroupId and blocks duplicate publishing within a 5-minute window via ContentBasedDeduplication or MessageDeduplicationId. Using customer_id as the group ID naturally guarantees "the same customer's payments in order + exactly once." (A) Standard + idempotency can't guarantee ordering. (C) SNS FIFO is for fanout and doesn't directly suit the worker-queue model — an SNS FIFO → SQS FIFO combination would work but adds a stage. (D) Kinesis also guarantees the same customer's ordering via partition key, but payment is a 1:1 queue model (one worker takes it and processes) rather than stream analytics. Kinesis is valuable when re-read/analytics are needed; a payment worker queue is naturally SQS FIFO. And Kinesis is far more expensive.
+Explanation: A FIFO queue guarantees ordering per MessageGroupId and blocks duplicate publishing within a 5-minute window via ContentBasedDeduplication or MessageDeduplicationId. Using customer_id as the group ID naturally guarantees "the same customer's payments in order + exactly once." (A) Standard + idempotency can't guarantee ordering. (C) SNS FIFO is for fanout and doesn't directly suit the worker-queue model — an SNS FIFO → SQS FIFO combination would work but adds a stage. (D) Kinesis also guarantees the same customer's ordering via partition key, but payment is a 1:1 queue model (one worker takes it and processes) rather than stream analytics. Kinesis is valuable when re-read/analytics are needed; a payment worker queue is naturally SQS FIFO. And Kinesis is far more expensive.
 
 ---
 
-**문제 3.** A company wants to receive events from SaaS products like GitHub, Stripe, and Datadog in its workload and route them to other AWS services (Lambda, Step Functions, SQS) via automation rules. What is the most appropriate solution?
+**Question 3.** A company wants to receive events from SaaS products like GitHub, Stripe, and Datadog in its workload and route them to other AWS services (Lambda, Step Functions, SQS) via automation rules. What is the most appropriate solution?
 
 A) Build an API Gateway + Lambda that receives webhooks per SaaS, implement auth/retry yourself, and fanout via an SNS topic
 B) EventBridge SaaS Partner Source + bus + rules
 C) Collect each SaaS's webhooks into Kinesis Data Streams, then have Lambda read the source field and branch
 D) Integrate by calling each SaaS API as a polling task directly in a Step Functions state machine
 
-**정답: B**
+**Answer: B**
 
-해설: EventBridge is designed for exactly this scenario. SaaS Partner Source is natively integrated with 30+ SaaS products, so webhook handling, auth, and retry are all managed. Received events are routed to various targets by JSON pattern rules on the same bus. (A) Lambda + SNS works too, but you'd have to implement webhook endpoints, auth, and retry per SaaS yourself. EventBridge provides that as managed. (C) Kinesis is for stream analytics, not routing. (D) Step Functions is workflow orchestration, not an event-reception/routing hub. When you see SaaS, pattern matching, and routing keywords, it's almost always EventBridge.
+Explanation: EventBridge is designed for exactly this scenario. SaaS Partner Source is natively integrated with 30+ SaaS products, so webhook handling, auth, and retry are all managed. Received events are routed to various targets by JSON pattern rules on the same bus. (A) Lambda + SNS works too, but you'd have to implement webhook endpoints, auth, and retry per SaaS yourself. EventBridge provides that as managed. (C) Kinesis is for stream analytics, not routing. (D) Step Functions is workflow orchestration, not an event-reception/routing hub. When you see SaaS, pattern matching, and routing keywords, it's almost always EventBridge.
 
 ---
 
-**문제 4.** 1 million IoT devices send telemetry data at an average of 50,000 events per second, and this data must (1) be stored raw in S3, (2) undergo real-time anomaly detection with Lambda, (3) be reused for ML model training next quarter. What is the most appropriate solution?
+**Question 4.** 1 million IoT devices send telemetry data at an average of 50,000 events per second, and this data must (1) be stored raw in S3, (2) undergo real-time anomaly detection with Lambda, (3) be reused for ML model training next quarter. What is the most appropriate solution?
 
 A) SQS Standard queue + Lambda polls, does anomaly detection, then batch-exports to S3; ML training reloads from S3
 B) SNS topic → SQS / Lambda / S3 fanout delivering to three consumers simultaneously
 C) Kinesis Data Streams + Lambda + Firehose → S3
 D) EventBridge bus → route to multiple targets like Lambda, S3, analytics via rules
 
-**정답: C**
+**Answer: C**
 
-해설: The core keyword is "reuse" — the same data is viewed by multiple consumers for different purposes. SQS/SNS/EventBridge are take-and-gone models, making re-read for ML training difficult. Kinesis keeps data intact during the retention period (default 24 hours, up to 365 days), so a new consumer can replay from the beginning. Lambda polls the shard for real-time anomaly detection, and Firehose attached to the same stream auto-loads to S3 (raw storage + ML training). 50,000 TPS is about 50 shards. (A)(B) SQS/SNS can't re-read. (D) EventBridge has a smaller throughput limit and is more expensive.
+Explanation: The core keyword is "reuse" — the same data is viewed by multiple consumers for different purposes. SQS/SNS/EventBridge are take-and-gone models, making re-read for ML training difficult. Kinesis keeps data intact during the retention period (default 24 hours, up to 365 days), so a new consumer can replay from the beginning. Lambda polls the shard for real-time anomaly detection, and Firehose attached to the same stream auto-loads to S3 (raw storage + ML training). 50,000 TPS is about 50 shards. (A)(B) SQS/SNS can't re-read. (D) EventBridge has a smaller throughput limit and is more expensive.
 
 ---
 
-**문제 5.** A company's worker receives messages from SQS and calls an external API, and the external API call takes 45 seconds on average, sometimes up to 90 seconds. But occasionally the same message gets processed twice. What is the cause and fix?
+**Question 5.** A company's worker receives messages from SQS and calls an external API, and the external API call takes 45 seconds on average, sometimes up to 90 seconds. But occasionally the same message gets processed twice. What is the cause and fix?
 
 A) Change the Standard queue to a FIFO queue to guarantee a single consumer per MessageGroupId and remove duplicates
 B) The Visibility Timeout is shorter than the processing time → increase the Visibility Timeout or dynamically extend it with ChangeMessageVisibility
 C) It's the at-least-once limit of the Standard queue, so just adding an idempotency-key table solves it regardless of visibility settings
 D) DLQ + maxReceiveCount=3 + Redrive Policy to isolate the reprocessed message and block duplicates
 
-**정답: B**
+**Answer: B**
 
-해설: With a default Visibility Timeout of 30 seconds and processing taking 45-90 seconds, another worker takes the same message again during processing. There are two fixes: (1) set the Visibility Timeout sufficiently longer than the processing time (e.g., 120 seconds), (2) if processing time is variable, have the worker periodically call the ChangeMessageVisibility API mid-processing to extend visibility. (A) FIFO has the same visibility timeout problem. (C) An idempotency key mitigates the duplicate effect but leaves the root cause. (D) A DLQ is for isolating processing-failure messages, not for preventing duplicate processing. In practice you do (B) and (C) together — extend visibility + add an idempotency key as a second line of defense.
+Explanation: With a default Visibility Timeout of 30 seconds and processing taking 45-90 seconds, another worker takes the same message again during processing. There are two fixes: (1) set the Visibility Timeout sufficiently longer than the processing time (e.g., 120 seconds), (2) if processing time is variable, have the worker periodically call the ChangeMessageVisibility API mid-processing to extend visibility. (A) FIFO has the same visibility timeout problem. (C) An idempotency key mitigates the duplicate effect but leaves the root cause. (D) A DLQ is for isolating processing-failure messages, not for preventing duplicate processing. In practice you do (B) and (C) together — extend visibility + add an idempotency key as a second line of defense.
 
 ---
 
-**문제 6.** A company wants to send a Slack notification only when a CodePipeline deployment fails. What is the most appropriate configuration?
+**Question 6.** A company wants to send a Slack notification only when a CodePipeline deployment fails. What is the most appropriate configuration?
 
 A) Send all CodePipeline stage events to an SNS topic and have Lambda filter only state=FAILED to call a Slack webhook
 B) CodePipeline → EventBridge rule (failure events only) → SNS → Chatbot → Slack
 C) Send CodePipeline events to an SQS queue and have Lambda poll, determine failure, and send to Slack
 D) Flow CodePipeline events into Kinesis Data Streams and have a KCL consumer pick only failure records and send to Slack
 
-**정답: B**
+**Answer: B**
 
-해설: EventBridge automatically receives AWS service events. CodePipeline publishes all stage events with the `aws.codepipeline` source, and the rule pattern `{"source": ["aws.codepipeline"], "detail-type": ["CodePipeline Stage Execution State Change"], "detail": {"state": ["FAILED"]}}` filters only failures. The target is SNS → Chatbot, which is natively integrated with Slack (or SNS → Lambda → Slack webhook). (A) SNS has limited event filtering and CodePipeline would have to send all events to SNS → filtering in Lambda is cost/latency inefficient. (C) SQS has no routing and would need Lambda filtering anyway. (D) Kinesis doesn't fit. For AWS service event routing, EventBridge is the answer.
+Explanation: EventBridge automatically receives AWS service events. CodePipeline publishes all stage events with the `aws.codepipeline` source, and the rule pattern `{"source": ["aws.codepipeline"], "detail-type": ["CodePipeline Stage Execution State Change"], "detail": {"state": ["FAILED"]}}` filters only failures. The target is SNS → Chatbot, which is natively integrated with Slack (or SNS → Lambda → Slack webhook). (A) SNS has limited event filtering and CodePipeline would have to send all events to SNS → filtering in Lambda is cost/latency inefficient. (C) SQS has no routing and would need Lambda filtering anyway. (D) Kinesis doesn't fit. For AWS service event routing, EventBridge is the answer.
 
 ---
 
-**문제 7.** A Kinesis Data Streams consumer works fine with 1 consumer, but adding a second consumer that analyzes the same data makes both throttle frequently. What is the cause and fix?
+**Question 7.** A Kinesis Data Streams consumer works fine with 1 consumer, but adding a second consumer that analyzes the same data makes both throttle frequently. What is the cause and fix?
 
 A) Insufficient shard count → double the shards with UpdateShardCount to secure total out bandwidth
 B) A Classic consumer shares 2MB/s out per shard across all consumers → use Enhanced Fan-Out
 C) A specific partition key is hot and records pile into one shard → redesign key distribution to resolve throttling
 D) The consumer's Visibility Timeout is short so records are re-exposed → set the timeout longer than the processing time
 
-**정답: B**
+**Answer: B**
 
-해설: Kinesis Classic consumer (GetRecords API polling) mode shares 2MB/s out or 5 GetRecords/s per shard **across all consumers**. With 2 consumers each is limited to about 1MB/s, causing throttling. Enhanced Fan-Out (HTTP/2 push-based) provides an independent 2MB/s bandwidth per consumer, so even with N consumers each gets full bandwidth. (A) Adding shards is possible but expensive; EFO is the more direct answer. (C) A hot key is a different problem where only that shard chokes. (D) An SQS concept. EFO has an added cost ($0.015/consumer-shard-hour + data retrieval) but is the standard solution for multi-consumer scenarios.
+Explanation: Kinesis Classic consumer (GetRecords API polling) mode shares 2MB/s out or 5 GetRecords/s per shard **across all consumers**. With 2 consumers each is limited to about 1MB/s, causing throttling. Enhanced Fan-Out (HTTP/2 push-based) provides an independent 2MB/s bandwidth per consumer, so even with N consumers each gets full bandwidth. (A) Adding shards is possible but expensive; EFO is the more direct answer. (C) A hot key is a different problem where only that shard chokes. (D) An SQS concept. EFO has an added cost ($0.015/consumer-shard-hour + data retrieval) but is the standard solution for multi-consumer scenarios.
 
 ---
 
-**문제 8.** A company processes SQS queue messages with Lambda, but occasionally a temporary external-API outage causes one message's processing to fail 5 times in a row. Normal messages must keep being processed, and failed messages should be isolated for later analysis and reprocessing. How?
+**Question 8.** A company processes SQS queue messages with Lambda, but occasionally a temporary external-API outage causes one message's processing to fail 5 times in a row. Normal messages must keep being processed, and failed messages should be isolated for later analysis and reprocessing. How?
 
 A) Lower Lambda reserved concurrency to throttle failed messages from occupying the retry queue
 B) Increase the Visibility Timeout enough to wait for external API recovery, then reprocess the same message
 C) DLQ + maxReceiveCount=5 + Redrive Policy
 D) Fanout via an SNS topic so a separate analysis subscriber receives failed messages
 
-**정답: C**
+**Answer: C**
 
-해설: The DLQ (Dead Letter Queue) + Redrive pattern is designed for exactly this scenario. Set a RedrivePolicy on the queue attributes specifying `{deadLetterTargetArn: ..., maxReceiveCount: 5}`, and a message whose receive count exceeds 5 automatically moves to the DLQ. Normal messages keep processing, failed messages are isolated. Later, the DLQ Redrive feature (launched 2021) can resend them all to the source queue at once. (A) Lowering concurrency only slows processing. (B) Visibility is a processing-time problem, not a count problem. (D) SNS is irrelevant.
+Explanation: The DLQ (Dead Letter Queue) + Redrive pattern is designed for exactly this scenario. Set a RedrivePolicy on the queue attributes specifying `{deadLetterTargetArn: ..., maxReceiveCount: 5}`, and a message whose receive count exceeds 5 automatically moves to the DLQ. Normal messages keep processing, failed messages are isolated. Later, the DLQ Redrive feature (launched 2021) can resend them all to the source queue at once. (A) Lowering concurrency only slows processing. (B) Visibility is a processing-time problem, not a count problem. (D) SNS is irrelevant.
 
 ---
 
-**문제 9.** A company routes SaaS, AWS, and internal events all through EventBridge, and **on failure it must inspect and reprocess all events**. What is the most appropriate backup strategy?
+**Question 9.** A company routes SaaS, AWS, and internal events all through EventBridge, and **on failure it must inspect and reprocess all events**. What is the most appropriate backup strategy?
 
 A) Attach an SQS DLQ to every rule to back up delivery-failed events and redrive from the queue on failure
 B) EventBridge Archive + Replay feature
 C) Replicate all bus events to Kinesis Data Streams and re-read during the retention period when reprocessing
 D) Load all events to S3 via a Firehose target and re-issue them with PutEvents via Lambda on failure
 
-**정답: B**
+**Answer: B**
 
-해설: EventBridge Archive automatically retains events arriving on the bus (up to 365 days), and the Replay feature can re-publish events from a specific time range back to the same bus. In other words, the archive is a "reprocessable backup." (A) A DLQ isolates processing-failure messages, not backs up all events. (C) Building a separate Kinesis pipeline is operationally heavy (you're already using EventBridge). (D) S3 loading is possible but reprocessing requires implementing the re-publish-to-EventBridge logic yourself. Archive + Replay is managed.
+Explanation: EventBridge Archive automatically retains events arriving on the bus (up to 365 days), and the Replay feature can re-publish events from a specific time range back to the same bus. In other words, the archive is a "reprocessable backup." (A) A DLQ isolates processing-failure messages, not backs up all events. (C) Building a separate Kinesis pipeline is operationally heavy (you're already using EventBridge). (D) S3 loading is possible but reprocessing requires implementing the re-publish-to-EventBridge logic yourself. Archive + Replay is managed.
 
 ---
 
-**문제 10.** A company must send push notifications from a globally distributed mobile app (iOS APNs, Android FCM, web push). How, with minimal operational burden?
+**Question 10.** A company must send push notifications from a globally distributed mobile app (iOS APNs, Android FCM, web push). How, with minimal operational burden?
 
 A) Have Lambda call the APNs/FCM/web-push SDKs individually and manage certificate/token expiry yourself
 B) SNS Mobile Push (Platform Application + Endpoint)
 C) An EventBridge rule matches per device platform and routes to each push-service API target
 D) Kinesis Data Streams → a Lambda consumer reads device tokens and sends to each push channel
 
-**정답: B**
+**Answer: B**
 
-해설: SNS Mobile Push is a managed service designed for this scenario. It integrates push services like APNs, FCM, ADM (Amazon), Baidu, MPNS, and WNS under the Platform Application abstraction, registers device tokens as Endpoints, and a single SNS publish routes to the appropriate channel. Certificate management, retry, and delivery reports are all managed. (A) Lambda directly means implementing per-OS SDKs, auth, and expiring-token handling yourself. (C)(D) both need extra code since push-service integration isn't their built-in solution.
+Explanation: SNS Mobile Push is a managed service designed for this scenario. It integrates push services like APNs, FCM, ADM (Amazon), Baidu, MPNS, and WNS under the Platform Application abstraction, registers device tokens as Endpoints, and a single SNS publish routes to the appropriate channel. Certificate management, retry, and delivery reports are all managed. (A) Lambda directly means implementing per-OS SDKs, auth, and expiring-token handling yourself. (C)(D) both need extra code since push-service integration isn't their built-in solution.
 
 ---
 
-**문제 11.** A company wants to automatically adjust the number of EC2 workers based on the number of messages in an SQS queue. What is the most appropriate metric and pattern?
+**Question 11.** A company wants to automatically adjust the number of EC2 workers based on the number of messages in an SQS queue. What is the most appropriate metric and pattern?
 
 A) A Target Tracking policy based on the workers' average EC2 CPU Utilization to adjust instance count
 B) `ApproximateNumberOfMessagesVisible / instance count = Backlog per Instance` Custom Metric + Target Tracking
 C) Scheduled Scaling that predefines peak traffic hours to scale instance count on a schedule
 D) Scale the worker ASG based on CloudFront's Requests/CacheHitRate metric
 
-**정답: B**
+**Answer: B**
 
-해설: The AWS-recommended pattern (Backlog per Instance scaling). Scaling by queue length itself causes oscillation because when workers grow and the queue empties, you can't kill them all in time. Using "*backlog to process per instance*" as the metric lets instance count naturally find a stable state as it changes. Push a custom metric to CloudWatch + ASG Target Tracking. (A) Queue workers often wait for messages with idle CPU, so a CPU basis is unsuitable. (C) Only valid for predictable cycles. (D) Irrelevant.
+Explanation: The AWS-recommended pattern (Backlog per Instance scaling). Scaling by queue length itself causes oscillation because when workers grow and the queue empties, you can't kill them all in time. Using "*backlog to process per instance*" as the metric lets instance count naturally find a stable state as it changes. Push a custom metric to CloudWatch + ASG Target Tracking. (A) Queue workers often wait for messages with idle CPU, so a CPU basis is unsuitable. (C) Only valid for predictable cycles. (D) Irrelevant.
 
 ---
 
-**문제 12.** A company must send 600KB PDF data via SQS. The SQS max message size is 256KB. What is the most appropriate approach?
+**Question 12.** A company must send 600KB PDF data via SQS. The SQS max message size is 256KB. What is the most appropriate approach?
 
 A) Split the 600KB PDF into 3 chunks under 256KB, send with sequence numbers, and have the consumer reassemble in order
 B) Store the PDF in S3 + put only the S3 ARN/Key in the SQS message (Extended Client / self-implemented)
 C) Change to a FIFO queue to guarantee chunk order via MessageGroupId and transmit the large body
 D) Send PDF records directly via Kinesis Data Streams, which allows up to 1MB per message
 
-**정답: B**
+**Answer: B**
 
-해설: The SQS Extended Client Library is provided for exactly this pattern — it automatically stores large payloads in S3 and sends only a reference to SQS. Self-implementation is also possible. (A) Message splitting/reassembly complicates ordering, duplication, and failure recovery, and even FIFO doesn't guarantee boundaries. (C) FIFO has the same 256KB limit. (D) Kinesis allows up to 1MB but is a stream model, not a queue model, so it's a workload mismatch. And "passing a PDF through a queue" is itself an anti-pattern — S3 is optimal for storing the body, and having SQS flow only the reference is the cloud-native pattern.
+Explanation: The SQS Extended Client Library is provided for exactly this pattern — it automatically stores large payloads in S3 and sends only a reference to SQS. Self-implementation is also possible. (A) Message splitting/reassembly complicates ordering, duplication, and failure recovery, and even FIFO doesn't guarantee boundaries. (C) FIFO has the same 256KB limit. (D) Kinesis allows up to 1MB but is a stream model, not a queue model, so it's a workload mismatch. And "passing a PDF through a queue" is itself an anti-pattern — S3 is optimal for storing the body, and having SQS flow only the reference is the cloud-native pattern.
 
 ---

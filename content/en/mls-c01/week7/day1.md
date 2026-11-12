@@ -115,62 +115,62 @@ Example: 1000 samples, batch size 100 → one epoch = 10 iterations
 
 ## 📝 Practice Questions
 
-**문제 1.** 다중 클래스(10개 클래스) 이미지 분류 신경망의 **출력층 활성화 함수**로 가장 적절한 것은?
+**Question 1.** Which is the MOST appropriate **output layer activation function** for a multiclass (10-class) image classification neural network?
 
 A) ReLU  
 B) Softmax  
 C) Sigmoid  
 D) Tanh  
 
-**정답: B**  
-해설: 다중 분류 출력은 클래스별 확률 분포(합=1)가 필요하므로 Softmax가 적합하다. ReLU/Tanh(A·D)는 은닉층용이고, Sigmoid(C)는 단일 노드 이진 분류 출력에 쓴다.
+**Answer: B**  
+Explanation: Multiclass output needs a per-class probability distribution (summing to 1), so Softmax is appropriate. ReLU/Tanh (A, D) are for hidden layers, and Sigmoid (C) is used for single-node binary classification output.
 
 ---
 
-**문제 2.** 깊은 신경망의 은닉층에서 Sigmoid를 쓸 때 학습이 잘 안 되는 주된 이유와 일반적 처방은?
+**Question 2.** What is the main reason training goes poorly when using Sigmoid in the hidden layers of a deep neural network, and what is the usual remedy?
 
-A) 출력이 음수라서 — Softmax로 교체  
-B) 양 끝에서 도함수가 0에 가까워 기울기 소실 — ReLU 계열로 교체  
-C) 확률을 출력하지 못해서 — 선형 함수로 교체  
-D) 계산이 너무 빨라서 — Tanh로 교체  
+A) The output is negative - replace with Softmax  
+B) The derivative is close to 0 at both ends, causing vanishing gradients - replace with a ReLU-family function  
+C) It cannot output probabilities - replace with a linear function  
+D) The computation is too fast - replace with Tanh  
 
-**정답: B**  
-해설: Sigmoid는 포화 구간에서 도함수가 0에 가까워 역전파 시 기울기가 소실된다. 은닉층 활성화를 ReLU 계열로 바꾸면 크게 완화된다. 출력이 음수(A)나 빠른 계산(D)은 사실과 다르며, 확률 출력 여부(C)는 은닉층 문제와 무관하다.
-
----
-
-**문제 3.** 활성화 함수가 전혀 없는(선형만 있는) 다층 신경망의 표현력은?
-
-A) 단일 선형 모델과 동등하다  
-B) 임의의 비선형 함수를 근사할 수 있다  
-C) 층 수에 비례해 비선형성이 증가한다  
-D) XOR 문제를 풀 수 있다  
-
-**정답: A**  
-해설: 선형 변환의 합성은 여전히 선형 변환이므로, 비선형 활성화가 없으면 아무리 층을 쌓아도 단일 선형 모델과 같다. 따라서 비선형 함수 근사(B)나 XOR(D)는 불가능하고, 깊이만으로 비선형성이 생기지 않는다(C).
+**Answer: B**  
+Explanation: Sigmoid's derivative is close to 0 in the saturated regions, so gradients vanish during backpropagation. Replacing the hidden-layer activation with a ReLU-family function greatly mitigates this. The output being negative (A) or fast computation (D) is not true, and whether it outputs probabilities (C) is unrelated to the hidden-layer problem.
 
 ---
 
-**문제 4.** 데이터 8000개, 배치 크기 200으로 5 에폭 학습할 때 전체 **가중치 갱신(이터레이션) 횟수**는?
+**Question 3.** What is the representational power of a multilayer neural network with no activation functions at all (only linear)?
+
+A) Equivalent to a single linear model  
+B) Can approximate any nonlinear function  
+C) Nonlinearity increases in proportion to the number of layers  
+D) Can solve the XOR problem  
+
+**Answer: A**  
+Explanation: A composition of linear transformations is still a linear transformation, so without nonlinear activations, no matter how many layers you stack, it is equivalent to a single linear model. Therefore approximating nonlinear functions (B) or XOR (D) is impossible, and depth alone does not create nonlinearity (C).
+
+---
+
+**Question 4.** When training for 5 epochs with 8,000 samples and a batch size of 200, what is the total number of **weight updates (iterations)**?
 
 A) 40  
 B) 1000  
 C) 200  
 D) 8000  
 
-**정답: C**  
-해설: 한 에폭의 이터레이션 = 8000 / 200 = 40회이고, 5 에폭이면 40 × 5 = 200회의 가중치 갱신이 일어난다. 40(A)은 1 에폭 분량, 1000(B)·8000(D)은 계산과 무관한 값이다.
+**Answer: C**  
+Explanation: Iterations per epoch = 8000 / 200 = 40, so for 5 epochs there are 40 × 5 = 200 weight updates. 40 (A) is the amount for 1 epoch, and 1000 (B) and 8000 (D) are values unrelated to the calculation.
 
 ---
 
-**문제 5.** 역전파(backpropagation)의 역할을 가장 정확히 설명한 것은?
+**Question 5.** Which BEST describes the role of backpropagation?
 
-A) 입력 데이터를 정규화한다  
-B) 최적의 학습률을 자동으로 탐색한다  
-C) 활성화 함수를 자동 선택한다  
-D) 연쇄 법칙으로 손실에 대한 각 가중치의 기울기를 출력→입력 방향으로 계산한다  
+A) Normalizes the input data  
+B) Automatically searches for the optimal learning rate  
+C) Automatically selects the activation function  
+D) Uses the chain rule to compute the gradient of the loss with respect to each weight, in the output-to-input direction  
 
-**정답: D**  
-해설: 역전파는 연쇄 법칙으로 손실의 기울기를 출력층에서 입력층 방향으로 전파해 계산하는 알고리즘이다. 정규화(A)·학습률 탐색(B)·활성화 선택(C)은 역전파의 역할이 아니다.
+**Answer: D**  
+Explanation: Backpropagation is an algorithm that uses the chain rule to propagate and compute the loss gradients from the output layer toward the input layer. Normalization (A), learning rate search (B), and activation selection (C) are not roles of backpropagation.
 
 ---

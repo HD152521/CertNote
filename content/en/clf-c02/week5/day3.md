@@ -63,62 +63,62 @@ In the next article, we'll look at the billing structure for grouping and paying
 
 ## 📝 Practice Questions
 
-**문제 1.** You run a production workload 24/7 and need phone/chat technical support and the full set of Trusted Advisor checks. However, you don't need a dedicated TAM. Which support plan is the best fit?
+**Question 1.** You run a production workload 24/7 and need phone/chat technical support and the full set of Trusted Advisor checks. However, you don't need a dedicated TAM. Which support plan is the best fit?
 
 A) Basic  
 B) Developer  
 C) Business  
 D) Enterprise  
 
-**정답: C**  
-해설: The Business plan provides 24/7 phone/chat/email technical support and the full set of Trusted Advisor checks, making it suitable for production operations. Basic has no technical cases, Developer is limited to email during business hours, and Enterprise includes a TAM and the fastest response — exceeding the requirements (and overpaying).
+**Answer: C**  
+Explanation: The Business plan provides 24/7 phone/chat/email technical support and the full set of Trusted Advisor checks, making it suitable for production operations. Basic has no technical cases, Developer is limited to email during business hours, and Enterprise includes a TAM and the fastest response — exceeding the requirements (and overpaying).
 
 ---
 
-**문제 2.** A large enterprise running a mission-critical environment wants a dedicated technical advisor and the fastest emergency response. Which support plan is the best fit?
+**Question 2.** A large enterprise running a mission-critical environment wants a dedicated technical advisor and the fastest emergency response. Which support plan is the best fit?
 
 A) Developer  
 B) Business  
 C) Enterprise  
 D) Basic  
 
-**정답: C**  
-해설: The Enterprise plan provides a dedicated TAM, the fastest response for critical cases (15-minute target), concierge support, and more, making it suitable for a mission-critical environment. Basic and Developer don't even have 24/7 support, and Business is 24/7 but doesn't include a TAM.
+**Answer: C**  
+Explanation: The Enterprise plan provides a dedicated TAM, the fastest response for critical cases (15-minute target), concierge support, and more, making it suitable for a mission-critical environment. Basic and Developer don't even have 24/7 support, and Business is 24/7 but doesn't include a TAM.
 
 ---
 
-**문제 3.** Which plan is provided to every account at no additional cost, cannot open technical support cases, and can only use billing inquiries, documentation, and forums?
+**Question 3.** Which plan is provided to every account at no additional cost, cannot open technical support cases, and can only use billing inquiries, documentation, and forums?
 
 A) Basic  
 B) Developer  
 C) Business  
 D) Enterprise  
 
-**정답: A**  
-해설: Basic is provided free to every account but cannot open technical support cases; it can only use account/billing inquiries, documentation, forums, and limited Trusted Advisor. Developer and above are all paid and can open technical support cases.
+**Answer: A**  
+Explanation: Basic is provided free to every account but cannot open technical support cases; it can only use account/billing inquiries, documentation, forums, and limited Trusted Advisor. Developer and above are all paid and can open technical support cases.
 
 ---
 
-**문제 4.** Which dedicated person is provided with Enterprise Support and continuously understands the customer's environment to advise on architecture, operations, and cost?
+**Question 4.** Which dedicated person is provided with Enterprise Support and continuously understands the customer's environment to advise on architecture, operations, and cost?
 
 A) Trusted Advisor  
 B) Technical Account Manager (TAM)  
 C) Solutions Architect certification  
 D) AWS Config  
 
-**정답: B**  
-해설: A TAM is a dedicated technical advisor provided with the Enterprise plan who stays with the customer continuously and guides them on best practices. Trusted Advisor is an automatic-check tool (not a person), and Config is a configuration assessment service — different from a dedicated advisory person.
+**Answer: B**  
+Explanation: A TAM is a dedicated technical advisor provided with the Enterprise plan who stays with the customer continuously and guides them on best practices. Trusted Advisor is an automatic-check tool (not a person), and Config is a configuration assessment service — different from a dedicated advisory person.
 
 ---
 
-**문제 5.** Which service automatically inspects your environment and recommends improvements across five categories — cost, performance, security, fault tolerance, and service quotas? (Note: the full set of checks is provided on Business or higher.)
+**Question 5.** Which service automatically inspects your environment and recommends improvements across five categories — cost, performance, security, fault tolerance, and service quotas? (Note: the full set of checks is provided on Business or higher.)
 
 A) AWS Budgets  
 B) AWS Trusted Advisor  
 C) AWS Cost Explorer  
 D) Technical Account Manager  
 
-**정답: B**  
-해설: Trusted Advisor automatically inspects your environment across five categories (cost, performance, security, fault tolerance, service quotas) and recommends improvements relative to best practices, with the full set of checks unlocking on Business and Enterprise. Budgets is budget alerts, Cost Explorer is cost analysis, and a TAM is a human advisor — none is an automatic-check tool.
+**Answer: B**  
+Explanation: Trusted Advisor automatically inspects your environment across five categories (cost, performance, security, fault tolerance, service quotas) and recommends improvements relative to best practices, with the full set of checks unlocking on Business and Enterprise. Budgets is budget alerts, Cost Explorer is cost analysis, and a TAM is a human advisor — none is an automatic-check tool.
 
 ---

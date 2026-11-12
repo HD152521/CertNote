@@ -138,62 +138,62 @@ Next, we'll explore how to query data prepared this way using **Athena and Redsh
 
 ## 📝 Practice Questions
 
-**문제 1.** A data engineer wants to automatically register thousands of Parquet files in S3 to Glue Data Catalog without manually defining schemas. What is the most suitable tool?
+**Question 1.** A data engineer wants to automatically register thousands of Parquet files in S3 to Glue Data Catalog without manually defining schemas. What is the most suitable tool?
 
 A) Glue ETL Job  
 B) Glue Crawler  
 C) Athena CREATE TABLE  
 D) Glue DataBrew  
 
-**정답: B**  
-해설: Glue Crawler scans S3 paths, auto-infers file format and column/type, recognizes partitions, and creates tables in Data Catalog. This is the textbook answer for automatic schema registration. ETL Job (A) is for transformation, not schema registration. Athena CREATE TABLE (C) is manual definition, impractical for thousands of files. DataBrew (D) is a no-code cleaning/profiling tool.
+**Answer: B**  
+Explanation: Glue Crawler scans S3 paths, auto-infers file format and column/type, recognizes partitions, and creates tables in Data Catalog. This is the textbook answer for automatic schema registration. ETL Job (A) is for transformation, not schema registration. Athena CREATE TABLE (C) is manual definition, impractical for thousands of files. DataBrew (D) is a no-code cleaning/profiling tool.
 
 ---
 
-**문제 2.** A data analyst wants to profile and clean data by detecting nulls and outliers using a visual interface, without writing code. Which service is most suitable?
+**Question 2.** A data analyst wants to profile and clean data by detecting nulls and outliers using a visual interface, without writing code. Which service is most suitable?
 
 A) Glue ETL Job (PySpark)  
 B) EMR Spark  
 C) Glue DataBrew  
 D) Kinesis Data Analytics  
 
-**정답: C**  
-해설: DataBrew offers 250+ predefined transformations and data profiling via no-code GUI, letting non-technical users quickly clean and explore data. Both PySpark ETL Jobs (A) and EMR Spark (B) require code. Kinesis Data Analytics (D) is for real-time stream analysis.
+**Answer: C**  
+Explanation: DataBrew offers 250+ predefined transformations and data profiling via no-code GUI, letting non-technical users quickly clean and explore data. Both PySpark ETL Jobs (A) and EMR Spark (B) require code. Kinesis Data Analytics (D) is for real-time stream analysis.
 
 ---
 
-**문제 3.** What is the most accurate description of Glue Data Catalog's core role?
+**Question 3.** What is the most accurate description of Glue Data Catalog's core role?
 
 A) It duplicates and stores data objects from S3  
 B) It stores metadata like table schema, location, and partitions, shared by Athena/Redshift/EMR/SageMaker  
 C) It executes ETL transformation logic  
 D) It processes real-time streams  
 
-**정답: B**  
-해설: Data Catalog is a Hive Metastore-compatible metadata repository storing schema, S3 location, and partition info — not the data itself. Multiple analytics/ML services share it to see consistent schemas. Data duplication (A), transformation execution (C), and stream processing (D) are not catalog roles.
+**Answer: B**  
+Explanation: Data Catalog is a Hive Metastore-compatible metadata repository storing schema, S3 location, and partition info — not the data itself. Multiple analytics/ML services share it to see consistent schemas. Data duplication (A), transformation execution (C), and stream processing (D) are not catalog roles.
 
 ---
 
-**문제 4.** For a small dataset (few MB) requiring simple transformation, which Glue Job type avoids Spark cluster startup overhead and costs?
+**Question 4.** For a small dataset (few MB) requiring simple transformation, which Glue Job type avoids Spark cluster startup overhead and costs?
 
 A) Glue Spark Job  
 B) Glue Python Shell Job  
 C) Glue Streaming Job  
 D) EMR on EC2  
 
-**정답: B**  
-해설: Glue Python Shell Job runs simple Python scripts without distributed Spark processing, avoiding cluster startup overhead and cost for small-data transformations. Spark Job (A) is for large-scale distributed work and is overkill for small data. Streaming Job (C) is for stream processing, and EMR on EC2 (D) requires heavier cluster management.
+**Answer: B**  
+Explanation: Glue Python Shell Job runs simple Python scripts without distributed Spark processing, avoiding cluster startup overhead and cost for small-data transformations. Spark Job (A) is for large-scale distributed work and is overkill for small data. Streaming Job (C) is for stream processing, and EMR on EC2 (D) requires heavier cluster management.
 
 ---
 
-**문제 5.** JSON data coming to the S3 Raw zone must be made efficient for ML training. What is the recommended output approach in Glue ETL?
+**Question 5.** JSON data coming to the S3 Raw zone must be made efficient for ML training. What is the recommended output approach in Glue ETL?
 
 A) Copy JSON as-is to the Curated zone  
 B) Convert to CSV and store without compression  
 C) Convert to Parquet, partition by frequently filtered keys, store in Curated zone  
 D) Combine all data into a single file for storage  
 
-**정답: C**  
-해설: Parquet (columnar, compressed, predicate pushdown) is efficient for ML training, and partitioning by frequently used keys reduces scan volume. Copying JSON (A) is inefficient; uncompressed CSV (B) is row-based and unsuitable. Single giant file (D) prevents parallel processing and partition pruning.
+**Answer: C**  
+Explanation: Parquet (columnar, compressed, predicate pushdown) is efficient for ML training, and partitioning by frequently used keys reduces scan volume. Copying JSON (A) is inefficient; uncompressed CSV (B) is row-based and unsuitable. Single giant file (D) prevents parallel processing and partition pruning.
 
 ---

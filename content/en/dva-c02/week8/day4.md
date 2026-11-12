@@ -278,91 +278,91 @@ For DVA-C02 prep: six deployment strategies' trade-offs, Web vs Worker environme
 
 ## 📝 Practice Questions
 
-**문제 1.** Best Beanstalk deployment strategy for production with **no downtime, fastest rollback possible**?
+**Question 1.** Best Beanstalk deployment strategy for production with **no downtime, fastest rollback possible**?
 
 A) All at once
 B) Rolling
 C) Immutable
 D) Blue/Green (URL swap)
 
-**정답: D**
+**Answer: D**
 
-해설: Blue/Green maintains two environments, URL swap transfers traffic. Rollback just reverses swap — **seconds to complete**. C) Immutable safe but rollback deletes new ASG, reactivates old — slightly slower. A) AllAtOnce has downtime. B) Rolling is redeploy-based rollback. When "instant rollback + zero downtime," Blue/Green is typical answer, though Immutable sometimes qualifies.
+Explanation: Blue/Green maintains two environments, URL swap transfers traffic. Rollback just reverses swap — **seconds to complete**. C) Immutable safe but rollback deletes new ASG, reactivates old — slightly slower. A) AllAtOnce has downtime. B) Rolling is redeploy-based rollback. When "instant rollback + zero downtime," Blue/Green is typical answer, though Immutable sometimes qualifies.
 
 ---
 
-**문제 2.** In .ebextensions, to run DB migration **on one ASG instance only**?
+**Question 2.** In .ebextensions, to run DB migration **on one ASG instance only**?
 
 A) `commands:` + `singleton: true`
 B) `container_commands:` + `leader_only: true`
 C) `option_settings:` + `aws:autoscaling:asg:MinSize:1`
 D) `packages:` + `once: true`
 
-**정답: B**
+**Answer: B**
 
-해설: `container_commands` executes after application code unpacked (migration needs source), `leader_only: true` designates one leader. DB migration needs ① source availability ② single execution (race condition prevention). A) `singleton` doesn't exist. C) MinSize is capacity, not execution gating. D) `packages` is package installation section. When "DB migration once," leader_only is standard exam answer.
+Explanation: `container_commands` executes after application code unpacked (migration needs source), `leader_only: true` designates one leader. DB migration needs ① source availability ② single execution (race condition prevention). A) `singleton` doesn't exist. C) MinSize is capacity, not execution gating. D) `packages` is package installation section. When "DB migration once," leader_only is standard exam answer.
 
 ---
 
-**문제 3.** Difference between Beanstalk Web Server and Worker Environment?
+**Question 3.** Difference between Beanstalk Web Server and Worker Environment?
 
 A) Worker has no ALB, SQS Daemon converts messages to HTTP to application
 B) Web is SQS-based, Worker is HTTP-based
 C) Worker lacks Auto Scaling Group
 D) Web requires RDS integration
 
-**정답: A**
+**Answer: A**
 
-해설: Worker's core: EC2 SQS Daemon polls queue, converts message → HTTP POST to application (default `/`). Application just HTTP server, no SQS SDK needed. B) Opposite — Web is HTTP, Worker is SQS-based. C) Worker has ASG (scales by queue length). D) RDS is optional for both, external recommended. When Worker environment pattern, SQS + Daemon is core.
+Explanation: Worker's core: EC2 SQS Daemon polls queue, converts message → HTTP POST to application (default `/`). Application just HTTP server, no SQS SDK needed. B) Opposite — Web is HTTP, Worker is SQS-based. C) Worker has ASG (scales by queue length). D) RDS is optional for both, external recommended. When Worker environment pattern, SQS + Daemon is core.
 
 ---
 
-**문제 4.** When Beanstalk environment created with "Create new RDS DB" option in console, then `eb terminate` executed, what happens?
+**Question 4.** When Beanstalk environment created with "Create new RDS DB" option in console, then `eb terminate` executed, what happens?
 
 A) RDS stays separate
 B) RDS deletes too, data permanent loss possible
 C) RDS auto-snapshots then deletes
 D) Beanstalk warns and prevents termination
 
-**정답: B**
+**Answer: B**
 
-해설: RDS inside environment's CloudFormation stack deletes on termination. Auto-backup (if enabled) preserves data temporarily; without it, permanent loss. A) No, part of stack. C) Optional snapshot setting, data loss likely. D) Warning shown but doesn't block. Standard trap — production RDS **must** be **outside** Beanstalk. When "environment delete + RDS loss" scenario, typical exam trap.
+Explanation: RDS inside environment's CloudFormation stack deletes on termination. Auto-backup (if enabled) preserves data temporarily; without it, permanent loss. A) No, part of stack. C) Optional snapshot setting, data loss likely. D) Warning shown but doesn't block. Standard trap — production RDS **must** be **outside** Beanstalk. When "environment delete + RDS loss" scenario, typical exam trap.
 
 ---
 
-**문제 5.** Amazon Linux 2 Beanstalk, increase nginx `client_max_body_size` to 50MB. Recommended method?
+**Question 5.** Amazon Linux 2 Beanstalk, increase nginx `client_max_body_size` to 50MB. Recommended method?
 
 A) `.ebextensions/nginx.config` full config overwrite
 B) `.platform/nginx/conf.d/custom.conf` add-only config
 C) `eb ssh` direct nginx.conf edit
 D) Beanstalk console nginx option
 
-**정답: B**
+**Answer: B**
 
-해설: AL2+ recommends `.platform/`. Settings in `.platform/nginx/conf.d/` append (base preserved), not overwrite like `.ebextensions`. A) Overwrite risks losing AWS base config. C) SSH edit vanishes on instance recreation (non-persistent). D) Console lacks nginx options. When AL2 + custom nginx, .platform is answer.
+Explanation: AL2+ recommends `.platform/`. Settings in `.platform/nginx/conf.d/` append (base preserved), not overwrite like `.ebextensions`. A) Overwrite risks losing AWS base config. C) SSH edit vanishes on instance recreation (non-persistent). D) Console lacks nginx options. When AL2 + custom nginx, .platform is answer.
 
 ---
 
-**문제 6.** Beanstalk Traffic Splitting prerequisite?
+**Question 6.** Beanstalk Traffic Splitting prerequisite?
 
 A) Worker Environment only
 B) Web Server Environment with Application Load Balancer
 C) Classic Load Balancer
 D) RDS embedded in environment
 
-**정답: B**
+**Answer: B**
 
-해설: Traffic Splitting uses ALB **weighted target group** feature. CLB/NLB lack weight routing. A) Worker has no ALB. C) Classic LB no weights. D) RDS unrelated. When "Traffic Splitting + Beanstalk," ALB is implicit.
+Explanation: Traffic Splitting uses ALB **weighted target group** feature. CLB/NLB lack weight routing. A) Worker has no ALB. C) Classic LB no weights. D) RDS unrelated. When "Traffic Splitting + Beanstalk," ALB is implicit.
 
 ---
 
-**문제 7.** Beanstalk Immutable deployment, first new ASG instance fails health check, what happens?
+**Question 7.** Beanstalk Immutable deployment, first new ASG instance fails health check, what happens?
 
 A) Production unaffected, new ASG auto-deletes, deployment marked failed
 B) Existing ASG also terminates
 C) Auto-switches to Rolling
 D) Environment completely deletes
 
-**정답: A**
+**Answer: A**
 
-해설: Immutable's safety core — new ASG separate from production. Failed health check → new ASG deleted only, existing continues traffic. Deployment fails but service safe. B/C/D wrong behaviors. When "Immutable safety," health check failure answer is A.
+Explanation: Immutable's safety core — new ASG separate from production. Failed health check → new ASG deleted only, existing continues traffic. Deployment fails but service safe. B/C/D wrong behaviors. When "Immutable safety," health check failure answer is A.

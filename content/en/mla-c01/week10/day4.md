@@ -66,69 +66,69 @@ Today's core: **translation speed**. Catch scenario keywords (drift, bias, isola
 
 ## 📝 Practice Questions
 
-**문제 1.** 배포 전에 모델 예측이 특정 집단에 불공정한지 한 번 점검하고, 동시에 각 특성의 예측 기여도를 SHAP로 보고하려 한다. 가장 적절한 기능은?
+**Question 1.** Before deployment, you want to check once whether the model's predictions are unfair to specific groups, and at the same time report each feature's prediction contribution using SHAP. What is the most appropriate feature?
 
 A) Model Monitor (Bias Drift)  
 B) SageMaker Clarify  
-C) CloudWatch 대시보드  
+C) CloudWatch dashboard  
 D) Model Registry  
 
-**정답: B**  
-해설: "배포 전 일회 점검 + 편향 측정 + SHAP 기여도"는 Clarify의 정확한 역할이다. A의 Bias Drift는 운영 중 지속 감시용이라 "배포 전 일회" 조건과 어긋나고, C는 운영 지표 시각화, D는 모델 버전 관리로 편향·설명과 무관하다.
+**Answer: B**  
+Explanation: "A one-time pre-deployment check + bias measurement + SHAP contributions" is exactly the role of Clarify. A's Bias Drift is for continuous monitoring in production, so it conflicts with the "one-time pre-deployment" condition, C is operational metric visualization, and D is model version management, unrelated to bias and explainability.
 
 ---
 
-**문제 2.** 학습 작업이 중단되어도 재시작할 수 있고 비용을 최대한 절감하려 한다. 단, 마감이 빠듯하지는 않다. 가장 적절한 선택은?
+**Question 2.** You want to be able to restart a training job even if it is interrupted and to cut costs as much as possible. However, the deadline is not tight. What is the most appropriate choice?
 
-A) 온디맨드 인스턴스 고정  
-B) Managed Spot Training(Spot 인스턴스)  
-C) 더 큰 GPU 인스턴스로 빨리 끝내기  
-D) 서버리스 추론으로 전환  
+A) Fixed On-Demand instances  
+B) Managed Spot Training (Spot Instances)  
+C) Finish quickly with a larger GPU instance  
+D) Switch to serverless inference  
 
-**정답: B**  
-해설: Managed Spot Training은 중단 가능한 Spot 인스턴스를 써서 학습 비용을 크게 절감하며 체크포인트로 재시작을 지원하므로 "중단 허용 + 비용 절감 + 여유 있는 마감"에 적합하다. A는 절감이 없고, C는 비용을 늘리며, D는 추론 옵션이라 학습 비용 절감과 무관하다.
-
----
-
-**문제 3.** 다음 중 요구사항과 기능 매핑이 잘못된 것은?
-
-A) 입력 데이터 분포 변화 감지 → Model Monitor(Data Quality)  
-B) 누가 엔드포인트를 삭제했는지 감사 → CloudTrail  
-C) 인터넷 없이 S3 접근 → KMS 암호화  
-D) 동종 모델 수백 개 비용 절감 → 멀티모델 엔드포인트(MME)  
-
-**정답: C**  
-해설: 인터넷 없이 S3·ECR에 접근하는 것은 VPC 엔드포인트(PrivateLink)의 역할이며, KMS는 저장 데이터 암호화로 네트워크 경로와 무관하므로 C가 잘못된 매핑이다. A·B·D는 각각 Data Quality 드리프트 감지, CloudTrail API 감사, MME 다수 모델 비용 절감으로 모두 올바른 매핑이다.
+**Answer: B**  
+Explanation: Managed Spot Training uses interruptible Spot Instances to greatly reduce training cost and supports restarting from checkpoints, so it suits "interruption tolerated + cost savings + relaxed deadline." A provides no savings, C increases cost, and D is an inference option unrelated to reducing training cost.
 
 ---
 
-**문제 4.** 트래픽이 업무 시간에만 있고 야간·주말엔 거의 0으로 떨어지는 사내 도구의 추론 비용을 줄이려 한다. 첫 호출의 약간의 지연(콜드 스타트)은 허용된다. 가장 적절한 옵션은?
+**Question 3.** Which of the following requirement-to-feature mappings is incorrect?
 
-A) 실시간 엔드포인트를 0대로 오토스케일  
-B) 서버리스 추론  
-C) 배치 변환  
-D) 더 큰 인스턴스의 실시간 엔드포인트  
+A) Detect input data distribution changes → Model Monitor (Data Quality)  
+B) Audit who deleted an endpoint → CloudTrail  
+C) Access S3 without the internet → KMS encryption  
+D) Reduce cost for hundreds of similar models → Multi-model endpoint (MME)  
 
-**정답: B**  
-해설: 간헐적 트래픽 + 0까지 스케일 + 콜드 스타트 허용은 서버리스 추론의 정확한 조건으로 유휴 시 비용이 0에 가깝다. A는 실시간이 최소 1대를 강제해 0 스케일이 불가능하고, C는 즉시 응답이 아닌 일괄 처리이며, D는 always-on 비용을 오히려 늘린다.
+**Answer: C**  
+Explanation: Accessing S3 and ECR without the internet is the role of VPC endpoints (PrivateLink), and KMS encrypts data at rest and is unrelated to the network path, so C is the incorrect mapping. A, B, and D are all correct mappings: Data Quality drift detection, CloudTrail API auditing, and MME cost reduction for many models, respectively.
 
 ---
 
-**문제 5.** Model Monitor의 Data Quality와 Model Quality 모니터 차이로 가장 정확한 것은?
+**Question 4.** You want to reduce inference costs for an internal tool whose traffic occurs only during business hours and drops to nearly zero at night and on weekends. A slight delay on the first invocation (cold start) is acceptable. What is the most appropriate option?
 
-A) Data Quality는 정답 라벨이 필요하고 Model Quality는 필요 없다  
-B) Data Quality는 입력 데이터 분포·스키마 변화를 보고, Model Quality는 실제 정답 대비 예측 성능 저하를 보며 ground truth 수집이 필요하다  
-C) 둘 다 편향만 측정한다  
-D) Model Quality는 학습 전에만 동작한다  
+A) Autoscale a real-time endpoint down to 0 instances  
+B) Serverless inference  
+C) Batch transform  
+D) A real-time endpoint on a larger instance  
 
-**정답: B**  
-해설: Data Quality는 입력 분포·스키마 드리프트를 베이스라인과 비교하고, Model Quality는 실제 정답과 예측을 대조해 성능 저하를 측정하므로 ground truth 라벨 수집이 필요하다. A는 라벨 필요 주체가 뒤바뀌었고, C는 편향만 본다는 잘못된 한정이며, D는 Model Quality가 운영 중 감시 기능이라 사실과 다르다.
+**Answer: B**  
+Explanation: Intermittent traffic + scaling to zero + tolerating cold starts is exactly the condition for serverless inference, whose cost is close to zero when idle. A is impossible because real-time endpoints enforce a minimum of 1 instance so they cannot scale to 0, C is bulk processing rather than immediate response, and D actually increases always-on cost.
+
+---
+
+**Question 5.** Which statement most accurately describes the difference between the Data Quality and Model Quality monitors of Model Monitor?
+
+A) Data Quality requires ground truth labels and Model Quality does not  
+B) Data Quality looks at changes in input data distribution and schema, while Model Quality looks at degradation of prediction performance against actual ground truth and requires ground truth collection  
+C) Both measure only bias  
+D) Model Quality works only before training  
+
+**Answer: B**  
+Explanation: Data Quality compares input distribution and schema drift against a baseline, and Model Quality measures performance degradation by comparing actual ground truth with predictions, so it requires collecting ground truth labels. A swaps which monitor needs labels, C is an incorrect restriction that says they only look at bias, and D is factually wrong because Model Quality is a monitoring feature that runs in production.
 
 ---
 
 
 ## 📝 Practice Questions
 
-**문제 1-5** [Practice questions in Korean follow after marker]
+**Questions 1-5** [Practice questions in Korean follow after marker]
 
 ---

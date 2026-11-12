@@ -174,120 +174,120 @@ This threefold vision is the starting point of Domain 1. Next we explore **Servi
 
 ## 📝 Practice Questions
 
-**문제 1.** A fintech company needs PCI-DSS certification and wants to isolate payment workloads. What problem occurs if they keep payment, HR, and logistics workloads in the same AWS account and separate them only with IAM Roles?
+**Question 1.** A fintech company needs PCI-DSS certification and wants to isolate payment workloads. What problem occurs if they keep payment, HR, and logistics workloads in the same AWS account and separate them only with IAM Roles?
 
 A) EBS snapshot costs per account roughly double, increasing monthly billing
 B) Audit scope expands to entire account, causing PCI certification cost explosion
 C) RDS Multi-AZ configuration is prohibited for accounts with PCI workloads
 D) IAM User quota depletes quickly proportional to cardholder data volume
 
-**정답: B**
-해설: PCI-DSS considers any system touching cardholder data in audit scope. Mixing PCI and non-PCI in one account makes entire account subject to audit, exploding cost/time. Separate accounts mean only that account needs audit. Same principle applies to HIPAA, SOX. Trade-off: account separation ops burden < audit savings.
+**Answer: B**
+Explanation: PCI-DSS considers any system touching cardholder data in audit scope. Mixing PCI and non-PCI in one account makes entire account subject to audit, exploding cost/time. Separate accounts mean only that account needs audit. Same principle applies to HIPAA, SOX. Trade-off: account separation ops burden < audit savings.
 
 ---
 
-**문제 2.** Which statement about Management accounts is correct?
+**Question 2.** Which statement about Management accounts is correct?
 
 A) All workloads should be deployed to Management to centralize billing
 B) SCP attached to Org root automatically applies strongly to Management
 C) It's the billing master and workload deployment is forbidden by standard guideline
 D) Same SCP inherited from Member accounts applies identically to Management
 
-**정답: C**
-해설: Management is billing·Org-only. Workloads go to member accounts. SCP doesn't apply to Management (intentional). Compromise = all members at risk, so root MFA hardware token·email alias required.
+**Answer: C**
+Explanation: Management is billing·Org-only. Workloads go to member accounts. SCP doesn't apply to Management (intentional). Compromise = all members at risk, so root MFA hardware token·email alias required.
 
 ---
 
-**문제 3.** What's the biggest risk of keeping Prod and Dev in the same account?
+**Question 3.** What's the biggest risk of keeping Prod and Dev in the same account?
 
 A) NAT Gateway·data transfer costs aggregate, increasing monthly billing
 B) Dev mistake affects Prod (blast radius)
 C) Dev/Prod permissions mix in one account, making IAM policy simplification difficult
 D) Same account prevents region-split deployment
 
-**정답: B**
-해설: Account = strong isolation boundary. Netflix Chaos Engineering's blast radius concept. Dev/Prod in same account: IAM policy mistake lets Dev User reach Prod resource. Capital One breach core lesson also stems from account isolation gap.
+**Answer: B**
+Explanation: Account = strong isolation boundary. Netflix Chaos Engineering's blast radius concept. Dev/Prod in same account: IAM policy mistake lets Dev User reach Prod resource. Capital One breach core lesson also stems from account isolation gap.
 
 ---
 
-**문제 4.** To immutably store 100 accounts' CloudTrail logs in one place?
+**Question 4.** To immutably store 100 accounts' CloudTrail logs in one place?
 
 A) Apply bucket policy + Versioning to each account S3 bucket individually
 B) Log Archive account + S3 Object Lock + Organization Trail
 C) Store in each account CloudWatch Logs with indefinite retention
 D) Leave logs and query directly with Athena as needed
 
-**정답: B**
-해설: Log Archive account + Object Lock (WORM, Write Once Read Many) is standard. Organization Trail, once enabled, auto-streams all member CloudTrail to same S3. Regulations like 21 CFR Part 11, SOX require log immutability.
+**Answer: B**
+Explanation: Log Archive account + Object Lock (WORM, Write Once Read Many) is standard. Organization Trail, once enabled, auto-streams all member CloudTrail to same S3. Regulations like 21 CFR Part 11, SOX require log immutability.
 
 ---
 
-**문제 5.** How should OUs be split?
+**Question 5.** How should OUs be split?
 
 A) Map company org chart (Sales·Dev·HR) directly to OUs
 B) Split OUs by operation region (us/eu/apac)
 C) Group by common policy (SCP)
 D) Create OU per developer individual·team
 
-**정답: C**
-해설: OU groups accounts by common policy application. Copying org chart directly means almost no common SCP between OUs, making SCP pointless. SRA recommends Security/Infrastructure/Workloads/Sandbox.
+**Answer: C**
+Explanation: OU groups accounts by common policy application. Copying org chart directly means almost no common SCP between OUs, making SCP pointless. SRA recommends Security/Infrastructure/Workloads/Sandbox.
 
 ---
 
-**문제 6.** Biggest benefit of Consolidated Billing?
+**Question 6.** Biggest benefit of Consolidated Billing?
 
 A) Security boundary between member accounts strengthens, blocking breach spread
 B) RI·Savings Plans sharing + volume discount pooling + single invoice
 C) IAM policy unified across member accounts, simplifying permission management
 D) Auto-triggered DR failover across all member accounts
 
-**정답: B**
-해설: All accounts' usage pooled → RI/SP share, tier discounts. CFO·accounting single invoice. Billing consolidation itself doesn't boost security (needs SCP/CT separately).
+**Answer: B**
+Explanation: All accounts' usage pooled → RI/SP share, tier discounts. CFO·accounting single invoice. Billing consolidation itself doesn't boost security (needs SCP/CT separately).
 
 ---
 
-**문제 7.** Design guideline for OU where developers freely experiment?
+**Question 7.** Design guideline for OU where developers freely experiment?
 
 A) Include in Workloads OU, apply identical Prod guardrails
 B) Sandbox OU + restrictive SCP (deny GPU·expensive instances) + AWS Budgets alert + auto-cleanup Lambda
 C) Create experimental IAM User in Management, create resources directly
 D) Include in Security OU with logging·audit tools
 
-**정답: B**
-해설: Sandbox OU pattern — isolation + cost-control SCP + auto-cleanup. Monthly Lambda purging unused resources is standard. Developer experimentation recommended, but billing mustn't explode.
+**Answer: B**
+Explanation: Sandbox OU pattern — isolation + cost-control SCP + auto-cleanup. Monthly Lambda purging unused resources is standard. Developer experimentation recommended, but billing mustn't explode.
 
 ---
 
-**문제 8.** Global company operates in three regions: US, EU, APAC, each with separate regulation (GDPR, CCPA). OU design?
+**Question 8.** Global company operates in three regions: US, EU, APAC, each with separate regulation (GDPR, CCPA). OU design?
 
 A) Single OU for all accounts, apply SCP globally
 B) Region OUs (US/EU/APAC) + Prod/Non-Prod nesting per region
 C) Split OUs per microservice·application
 D) Create OU per developer individual·team
 
-**정답: B**
-해설: Group by unit where common SCP applies. GDPR only on EU OU. CCPA only on US OU. Common PCI-DSS could be separate PCI OU. Same SCP scope = same OU.
+**Answer: B**
+Explanation: Group by unit where common SCP applies. GDPR only on EU OU. CCPA only on US OU. Common PCI-DSS could be separate PCI OU. Same SCP scope = same OU.
 
 ---
 
-**문제 9.** Security team wants to test new SCP. Must not impact production. Recommended pattern?
+**Question 9.** Security team wants to test new SCP. Must not impact production. Recommended pattern?
 
 A) Attach directly to Production OU, monitor with CloudTrail, adjust
 B) PolicyStaging OU with 1 test account, attach and validate
 C) Dry-run SCP mode in Management account to preview impact
 D) Call IAM policy simulator Lambda to pre-simulate SCP effect
 
-**정답: B**
-해설: PolicyStaging OU is standard. Combine with AWS Config Conformance Pack to validate SCP effect, then attach to main OU. SCP has no official dry-run mode, so staging OU is the real dry-run.
+**Answer: B**
+Explanation: PolicyStaging OU is standard. Combine with AWS Config Conformance Pack to validate SCP effect, then attach to main OU. SCP has no official dry-run mode, so staging OU is the real dry-run.
 
 ---
 
-**문제 10.** Company wants to auto-create accounts with Terraform and auto-apply baseline (VPC, IAM, CloudTrail). Best tool?
+**Question 10.** Company wants to auto-create accounts with Terraform and auto-apply baseline (VPC, IAM, CloudTrail). Best tool?
 
 A) Account Factory console, manually apply baseline
 B) AFT (Account Factory for Terraform)
 C) CfCT (Customizations for Control Tower, CloudFormation-based)
 D) StackSets alone to deploy baseline stacks to all accounts
 
-**정답: B**
-해설: AFT aligns with Terraform GitOps flow. Per-account customization possible (network stub, extra IAM Role, tagging). CfCT is CloudFormation-based.
+**Answer: B**
+Explanation: AFT aligns with Terraform GitOps flow. Per-account customization possible (network stub, extra IAM Role, tagging). CfCT is CloudFormation-based.

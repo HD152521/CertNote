@@ -88,53 +88,53 @@ In the next article, we'll re-weave Domain 4, cost optimization, by the principl
 
 ## 📝 Practice Questions
 
-**문제 1.** You train an ML model on a large dataset; the data is in S3 and hundreds of nodes must read it in ultra-fast parallel. What is the most suitable storage?
+**Question 1.** You train an ML model on a large dataset; the data is in S3 and hundreds of nodes must read it in ultra-fast parallel. What is the most suitable storage?
 
 A) EFS Max I/O B) FSx for Lustre C) FSx for ONTAP D) gp3 EBS
 
-**정답: B**
+**Answer: B**
 
-해설: **FSx for Lustre**, with its parallel file system architecture, produces hundreds of GB/s of aggregate throughput even when hundreds of nodes read one dataset simultaneously, and **integrates S3 directly as a backend** to rapidly pull in large training data — the answer for "S3 + ultra-fast parallel + ML/HPC." EFS (A) is single-mount-target NFS and can't reach extreme parallelism, ONTAP (C) is a general-purpose file service for NetApp features, and gp3 (D) is single-instance block storage, unsuited to multi-node sharing.
+Explanation: **FSx for Lustre**, with its parallel file system architecture, produces hundreds of GB/s of aggregate throughput even when hundreds of nodes read one dataset simultaneously, and **integrates S3 directly as a backend** to rapidly pull in large training data — the answer for "S3 + ultra-fast parallel + ML/HPC." EFS (A) is single-mount-target NFS and can't reach extreme parallelism, ONTAP (C) is a general-purpose file service for NetApp features, and gp3 (D) is single-instance block storage, unsuited to multi-node sharing.
 
 ---
 
-**문제 2.** An application reading DynamoDB needs microsecond (μs) responses. What is appropriate?
+**Question 2.** An application reading DynamoDB needs microsecond (μs) responses. What is appropriate?
 
 A) DAX B) ElastiCache Redis C) MemoryDB D) Add a GSI
 
-**정답: A**
+**Answer: A**
 
-해설: **DAX** is a DynamoDB-dedicated in-memory accelerator; on a cache hit it responds immediately from memory in the same VPC without going to DynamoDB, yielding **microseconds**. ElastiCache (B) is a general-purpose cache in the millisecond (ms) range and its DynamoDB integration isn't automatic, MemoryDB (C) is a durable in-memory DB not a DynamoDB accelerator, and a GSI (D) merely expands query patterns and doesn't drop read latency to μs. "DynamoDB + μs" = DAX is the sole answer signal.
+Explanation: **DAX** is a DynamoDB-dedicated in-memory accelerator; on a cache hit it responds immediately from memory in the same VPC without going to DynamoDB, yielding **microseconds**. ElastiCache (B) is a general-purpose cache in the millisecond (ms) range and its DynamoDB integration isn't automatic, MemoryDB (C) is a durable in-memory DB not a DynamoDB accelerator, and a GSI (D) merely expands query patterns and doesn't drop read latency to μs. "DynamoDB + μs" = DAX is the sole answer signal.
 
 ---
 
-**문제 3.** A global multiplayer game must reduce the latency of UDP-based real-time traffic and needs a fixed IP. What is the appropriate service?
+**Question 3.** A global multiplayer game must reduce the latency of UDP-based real-time traffic and needs a fixed IP. What is the appropriate service?
 
 A) CloudFront B) Global Accelerator C) NLB only D) Route 53 Latency
 
-**정답: B**
+**Answer: B**
 
-해설: **Global Accelerator** accelerates uncacheable TCP/UDP traffic over AWS's dedicated backbone and provides **fixed Anycast IPs**, suiting real-time non-HTTP workloads like games and VoIP. CloudFront (A) is an HTTP/HTTPS content-cache service, unsuited to UDP game traffic; NLB alone (C) can't obtain global backbone acceleration and fixed Anycast IPs; and Route 53 Latency (D) is only DNS routing and doesn't accelerate the packet path. "UDP/TCP acceleration + fixed IP + non-HTTP" = Global Accelerator.
+Explanation: **Global Accelerator** accelerates uncacheable TCP/UDP traffic over AWS's dedicated backbone and provides **fixed Anycast IPs**, suiting real-time non-HTTP workloads like games and VoIP. CloudFront (A) is an HTTP/HTTPS content-cache service, unsuited to UDP game traffic; NLB alone (C) can't obtain global backbone acceleration and fixed Anycast IPs; and Route 53 Latency (D) is only DNS routing and doesn't accelerate the packet path. "UDP/TCP acceleration + fixed IP + non-HTTP" = Global Accelerator.
 
 ---
 
-**문제 4.** An HPC workload must minimize inter-node network latency. What is the appropriate Placement Group strategy?
+**Question 4.** An HPC workload must minimize inter-node network latency. What is the appropriate Placement Group strategy?
 
 A) Cluster B) Spread C) Partition D) Multi-AZ distribution
 
-**정답: A**
+**Answer: A**
 
-해설: A **Cluster Placement Group** physically gathers instances onto the same rack, same AZ to optimize inter-node network latency and bandwidth, suiting HPC and distributed training. Spread (B) scatters across distinct hardware to isolate failures, the opposite purpose; Partition (C) is for rack-level isolation in large-scale distributed systems; and Multi-AZ distribution (D) crosses AZs so inter-node latency actually grows. "Lowest inter-node latency / HPC" = Cluster. But gathering trades off against fault isolation.
+Explanation: A **Cluster Placement Group** physically gathers instances onto the same rack, same AZ to optimize inter-node network latency and bandwidth, suiting HPC and distributed training. Spread (B) scatters across distinct hardware to isolate failures, the opposite purpose; Partition (C) is for rack-level isolation in large-scale distributed systems; and Multi-AZ distribution (D) crosses AZs so inter-node latency actually grows. "Lowest inter-node latency / HPC" = Cluster. But gathering trades off against fault isolation.
 
 ---
 
-**문제 5.** A single clickstream must be processed independently by an analytics team, a recommendation team, and an archive team, with the ability to replay past data when needed. What is the appropriate service?
+**Question 5.** A single clickstream must be processed independently by an analytics team, a recommendation team, and an archive team, with the ability to replay past data when needed. What is the appropriate service?
 
 A) SQS B) Kinesis Data Streams C) SNS D) EventBridge
 
-**정답: B**
+**Answer: B**
 
-해설: **Kinesis Data Streams** lets multiple consumers read the same stream independently and **replay** past records during the retention period, the answer for a fan-out + replay scenario. SQS (A) deletes a message once a consumer takes it, so replay and multiple independent processing are impossible; SNS (C) pushes only at publish time (no replay); and EventBridge (D) is rule-based routing, not a stream-replay store. "Multiple consumers independent processing + replay" = Kinesis Data Streams.
+Explanation: **Kinesis Data Streams** lets multiple consumers read the same stream independently and **replay** past records during the retention period, the answer for a fan-out + replay scenario. SQS (A) deletes a message once a consumer takes it, so replay and multiple independent processing are impossible; SNS (C) pushes only at publish time (no replay); and EventBridge (D) is rule-based routing, not a stream-replay store. "Multiple consumers independent processing + replay" = Kinesis Data Streams.
 
 ---
 

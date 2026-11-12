@@ -85,62 +85,62 @@ Operations (OLTP): DynamoDB  →  change capture (Streams/Export)  →  Analytic
 
 ## 📝 Practice Questions
 
-**문제 1.** DynamoDB에서 시계열 데이터의 PK를 날짜(예: `2026-06-26`)로만 지정했을 때 발생하는 문제는?
+**Question 1.** What problem occurs in DynamoDB when the PK of time-series data is specified only as the date (for example, `2026-06-26`)?
 
-A) 강한 일관성을 보장하지 못한다  
-B) 그날의 모든 트래픽이 한 파티션에 몰려 핫 파티션·스로틀링이 발생한다  
-C) GSI를 생성할 수 없다  
-D) Streams가 비활성화된다  
+A) Strong consistency cannot be guaranteed  
+B) All traffic for that day is concentrated on one partition, causing hot partitions and throttling  
+C) A GSI cannot be created  
+D) Streams is disabled  
 
-**정답: B**  
-해설: PK 해시가 같은 날짜 하나로 고정되면 그날 트래픽이 단일 파티션에 집중되어 핫 파티션과 스로틀링이 생깁니다. 해결책은 샤드 접미사 등으로 키를 분산하는 것입니다. 나머지는 키 설계와 직접 관련이 없습니다.
+**Answer: B**  
+Explanation: If the PK hash is fixed to a single date, that day's traffic concentrates on a single partition, causing a hot partition and throttling. The fix is to distribute the key, for example with a shard suffix. The other options are not directly related to key design.
 
 ---
 
-**문제 2.** 기본 키와 다른 속성(예: status)으로 테이블 전체를 조회하는 새로운 접근 패턴을 추가하려면 무엇을 사용하는가?
+**Question 2.** What do you use to add a new access pattern that queries the entire table by an attribute other than the primary key (for example, status)?
 
-A) LSI (테이블 생성 후 추가)  
+A) LSI (added after table creation)  
 B) VACUUM  
 C) GSI (Global Secondary Index)  
-D) 파티션 프로젝션  
+D) Partition projection  
 
-**정답: C**  
-해설: GSI는 다른 PK/SK로 테이블 전체를 인덱싱해 새 조회 축을 추가하며 언제든 생성 가능합니다(비동기·결과적 일관성). LSI는 같은 PK에 다른 SK이고 테이블 생성 시에만 정의되며, 나머지는 DynamoDB 인덱스와 무관합니다.
+**Answer: C**  
+Explanation: A GSI indexes the whole table by a different PK/SK to add a new query axis and can be created at any time (asynchronous, eventually consistent). An LSI uses the same PK with a different SK and can only be defined when the table is created, and the rest are unrelated to DynamoDB indexes.
 
 ---
 
-**문제 3.** DynamoDB 테이블의 아이템 변경을 시간순으로 캡처해 분석 파이프라인으로 흘려보내는 기능은?
+**Question 3.** Which feature captures item changes in a DynamoDB table in time order and flows them into an analytics pipeline?
 
 A) DynamoDB Streams  
-B) Glue 크롤러  
+B) Glue crawler  
 C) Athena CTAS  
 D) Redshift WLM  
 
-**정답: A**  
-해설: DynamoDB Streams는 INSERT/MODIFY/REMOVE 변경을 시간순 레코드로 캡처해 Lambda/Kinesis를 거쳐 S3·Redshift로 적재하는 CDC 파이프라인의 출발점입니다. 나머지는 각각 스키마 추론, Athena 테이블 생성, Redshift 큐 관리입니다.
+**Answer: A**  
+Explanation: DynamoDB Streams captures INSERT/MODIFY/REMOVE changes as time-ordered records and is the starting point of a CDC pipeline that loads them into S3 or Redshift via Lambda/Kinesis. The others are, respectively, schema inference, Athena table creation, and Redshift queue management.
 
 ---
 
-**문제 4.** 운영 DynamoDB 테이블에 부하를 주지 않고 특정 시점 데이터를 S3로 내보내 Athena로 분석하려면 가장 적절한 방법은?
+**Question 4.** What is the most appropriate way to export data from a production DynamoDB table as of a specific point in time to S3 and analyze it with Athena without putting load on the table?
 
-A) 테이블을 풀 스캔하는 분석 쿼리를 직접 실행  
-B) PITR 기반 S3 export(테이블 익스포트) 사용  
-C) 모든 아이템에 GSI 추가  
-D) LSI를 추가로 생성  
+A) Run an analytical query that performs a full scan of the table directly  
+B) Use a PITR-based S3 export (table export)  
+C) Add a GSI for every item  
+D) Create an additional LSI  
 
-**정답: B**  
-해설: PITR(특정 시점 복구) 기반 S3 export는 운영 테이블의 읽기 처리량을 소비하지 않고 스냅샷을 S3로 내보내 Athena로 분석할 수 있습니다. 풀 스캔은 운영에 부하를 주고, 인덱스 추가는 분석 익스포트와 무관합니다.
+**Answer: B**  
+Explanation: A PITR (point-in-time recovery) based S3 export writes a snapshot to S3 without consuming the production table's read throughput, so it can be analyzed with Athena. A full scan puts load on production, and adding indexes is unrelated to an analytics export.
 
 ---
 
-**문제 5.** DynamoDB 사용이 분석 관점에서 부적합한 워크로드로 가장 적절한 것은?
+**Question 5.** Which workload is the most appropriate example of one for which using DynamoDB is unsuitable from an analytics perspective?
 
-A) 사용자 ID로 세션 데이터를 한 자릿수 ms로 조회  
-B) 임의 컬럼들에 대한 복잡한 조인과 대규모 애드혹 집계 리포팅  
-C) 장바구니·디바이스 상태 저장  
-D) 예측 불가 트래픽의 서버리스 백엔드  
+A) Looking up session data by user ID in single-digit milliseconds  
+B) Reporting with complex joins and large-scale ad hoc aggregations over arbitrary columns  
+C) Storing shopping carts and device state  
+D) A serverless backend with unpredictable traffic  
 
-**정답: B**  
-해설: DynamoDB는 키 기반 고속 조회와 대규모 동시성에 강하지만, 임의 컬럼 조인·대규모 집계·애드혹 분석에는 부적합합니다. 이런 경우 Streams/export로 S3+Athena·Redshift로 옮겨 분석합니다. 나머지는 DynamoDB의 적합 사례입니다.
+**Answer: B**  
+Explanation: DynamoDB is strong at fast key-based lookups and massive concurrency, but is unsuitable for arbitrary-column joins, large-scale aggregations, and ad hoc analytics. In such cases, move the data with Streams/export to S3 + Athena or Redshift for analysis. The others are suitable use cases for DynamoDB.
 
 ---

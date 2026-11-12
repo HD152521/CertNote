@@ -46,6 +46,6 @@ Long text in 1 minute:
 
 All 10 practice questions from the reading are preserved in Korean, untranslated, as per the requirements.
 
-**문제 1 through 10: 한 기업이 200개 계정의...(Korean practice questions preserved as-is)**
+**Questions 1 through 10: A company with 200 accounts... (Korean practice questions preserved as-is)**
 
 ---

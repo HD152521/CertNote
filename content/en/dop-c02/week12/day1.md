@@ -185,118 +185,118 @@ The next article explores **SSM Automation Runbook** — turning operational pro
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 이벤트를 그 내용(state, pipeline 이름)에 따라 서로 다른 15개 AWS 서비스로 정밀하게 분기해야 한다. 단순 팬아웃이 아니라 콘텐츠 기반 라우팅이 필요하다. 가장 적합한 서비스는?
+**Question 1.** A single event must be routed precisely to different ones of 15 AWS services based on its content (state, pipeline name). Simple fan-out is not enough; content-based routing is required. Which service is MOST suitable?
 
-A) SNS 토픽 하나에 모두 구독시킨다
+A) Subscribe everything to a single SNS topic
 
-B) EventBridge — Rule의 Event Pattern으로 콘텐츠 기반 라우팅(Content-Based Router 패턴)
+B) EventBridge — content-based routing with a Rule's Event Pattern (the Content-Based Router pattern)
 
-C) SQS 큐를 15개 만들어 직접 분배한다
+C) Create 15 SQS queues and distribute directly
 
-D) Lambda가 모든 분기 로직을 if-else로 처리
+D) Have a Lambda function handle all branching logic with if-else
 
-**정답: B**
+**Answer: B**
 
-해설: EventBridge Rule은 EIP의 Content-Based Router 패턴 구현으로, 이벤트 JSON의 내용(`source`·`detail-type`·`detail`)을 검사해 서로 다른 Target으로 정밀 분기한다. SNS(A)는 토픽 단위의 거친 팬아웃이라 내용 기반 정밀 라우팅에 약하고(필터 정책으로 일부만 보완), SQS 15개(C)는 발신자가 분배 로직을 떠안아 결합도가 생기며, Lambda if-else(D)는 새 분기를 추가할 때마다 코드를 고쳐야 해 결합도를 끊지 못한다. EventBridge의 핵심 가치는 발신자가 수신자를 모르고, 새 구독자 추가 시 발신자 코드가 0줄 바뀐다는 것이다.
-
----
-
-**문제 2.** 매일 새벽 3시 정각에 5만 개의 사용자별 백업 작업이 한꺼번에 실행되면서 다운스트림 시스템이 부하로 무너진다. 표준 해법은?
-
-A) cron을 02:59로 당긴다
-
-B) EventBridge Scheduler의 Flexible Time Window로 실행을 15분 윈도우에 분산(지터 주입)
-
-C) Lambda 동시성 한도를 늘린다
-
-D) 작업을 5개 그룹으로 수동 분할해 각각 다른 cron을 건다
-
-**정답: B**
-
-해설: 모든 작업이 같은 시각에 터지는 thundering herd(쇄도)는 분산 시스템의 고전 문제이며, 해법은 지터(jitter) 주입이다. EventBridge Scheduler의 Flexible Time Window는 "정확히 그 시각"이 아니라 "이 윈도우 안 어디든"으로 실행을 시간축에 퍼뜨려 부하를 분산한다. 같은 원리가 재시도의 exponential backoff with jitter, 캐시 만료 분산에 쓰인다. 시각을 당기거나(A) 동시성을 늘리는 것(C)은 근본 원인인 동시 쇄도를 해결하지 못하고, 수동 분할(D)은 운영 부담만 늘린다.
+Explanation: An EventBridge Rule is an implementation of the EIP Content-Based Router pattern, inspecting the contents of the event JSON (`source`, `detail-type`, `detail`) to branch precisely to different Targets. SNS (A) is coarse topic-level fan-out and is weak at content-based precise routing (filter policies only partially compensate), 15 SQS queues (C) push the distribution logic onto the sender and create coupling, and Lambda if-else (D) requires code changes every time a new branch is added, so it does not break the coupling. The core value of EventBridge is that the sender does not know the receivers, and adding a new subscriber changes zero lines of sender code.
 
 ---
 
-**문제 3.** SQS 큐의 메시지를 폴링해 이벤트 패턴으로 거르고, 부족한 정보를 외부 API로 보강한 뒤 DynamoDB에 저장하는 흐름을 글루 코드 없이 구성하려 한다. 가장 적합한 것은?
+**Question 2.** Every day at exactly 3 AM, 50,000 per-user backup jobs run all at once, overwhelming downstream systems with load. What is the standard solution?
 
-A) Lambda를 직접 작성해 폴링·필터·보강·저장을 모두 처리
+A) Move the cron to 02:59
+
+B) Spread execution across a 15-minute window (injecting jitter) with EventBridge Scheduler's Flexible Time Window
+
+C) Increase the Lambda concurrency limit
+
+D) Manually split the jobs into 5 groups and set a different cron for each
+
+**Answer: B**
+
+Explanation: A thundering herd, in which all jobs fire at the same instant, is a classic distributed-systems problem, and the solution is to inject jitter. EventBridge Scheduler's Flexible Time Window spreads execution along the time axis as "anywhere within this window" rather than "exactly at that time," distributing the load. The same principle is used in exponential backoff with jitter for retries and in spreading cache expirations. Moving the time (A) or raising concurrency (C) does not solve the root cause, the simultaneous surge, and manual splitting (D) only adds operational burden.
+
+---
+
+**Question 3.** You want to build, without glue code, a flow that polls messages from an SQS queue, filters them by event pattern, enriches the missing information with an external API, and stores the result in DynamoDB. Which is MOST suitable?
+
+A) Write a Lambda function yourself that handles polling, filtering, enrichment, and storage
 
 B) EventBridge Pipes (Source → Filter → Enrichment → Target)
 
-C) SNS 팬아웃
+C) SNS fan-out
 
 D) Kinesis Data Analytics
 
-**정답: B**
+**Answer: B**
 
-해설: EventBridge Pipes는 파이프-필터 아키텍처의 구현으로, 폴링이 필요한 소스(SQS/Kinesis/DynamoDB Streams/MSK)를 받아 Filter(이벤트 패턴) → Enrichment(Lambda/Step Functions/API Destination) → Target으로 관리형으로 연결한다. 폴링·배치·에러 처리 같은 배관 코드를 AWS가 흡수하므로, 직접 Lambda를 짜는 것(A) 대비 글루 코드가 사라진다. 또한 Filter 단계가 Enrichment 앞에 있어, 불필요한 이벤트를 비싼 보강 전에 버리는 early filtering(predicate pushdown) 경제학을 제공한다. SNS(C)는 폴링 소스 통합·보강 단계가 없다.
-
----
-
-**문제 4.** 결제 처리 Lambda의 버그로 6월 1일 새벽 시간대 이벤트가 잘못 처리됐다. 버그를 고친 뒤 그 시간대 이벤트만 재처리하려 한다. 전제로 미리 해뒀어야 할 것과 해법은?
-
-A) CloudTrail 로그를 파싱해 이벤트를 수동 재구성
-
-B) EventBridge Archive를 미리 설정해 뒀다면 start-replay로 해당 기간 이벤트를 다시 흘려보냄
-
-C) DynamoDB 백업에서 복원
-
-D) S3 버전 관리로 롤백
-
-**정답: B**
-
-해설: EventBridge Archive는 버스를 지나는 이벤트를 보관하고, Replay로 특정 기간의 이벤트를 다시 버스로 흘려보낸다. 이는 이벤트 소싱의 "이벤트 스트림 리플레이로 재처리"라는 통찰을 빌린 것으로, 버그 수정 후 해당 시간대 이벤트를 재처리하는 전형적 사고 복구 패턴이다. 단, Archive는 사전에 설정돼 있어야 하며 보존 기간 내여야 한다. CloudTrail(A)은 API 호출 감사용이지 이벤트 페이로드 재생용이 아니고, DynamoDB 백업(C)·S3 버전(D)은 이벤트 재처리가 아니라 데이터 상태 복원이다.
+Explanation: EventBridge Pipes is an implementation of the pipe-and-filter architecture: it takes a source that requires polling (SQS/Kinesis/DynamoDB Streams/MSK) and connects it in a managed way as Filter (event pattern) → Enrichment (Lambda/Step Functions/API Destination) → Target. AWS absorbs the plumbing code such as polling, batching, and error handling, so glue code disappears compared with writing a Lambda function yourself (A). In addition, the Filter stage comes before Enrichment, providing the economics of early filtering (predicate pushdown): unnecessary events are discarded before the expensive enrichment. SNS (C) has neither polling-source integration nor an enrichment stage.
 
 ---
 
-**문제 5.** EventBridge로 결제 이벤트를 처리하는데, 같은 이벤트가 가끔 두 번 처리돼 이중 청구가 발생한다. 근본 원인과 해법은?
+**Question 4.** A bug in the payment-processing Lambda caused events from the early morning hours of June 1 to be processed incorrectly. After fixing the bug, you want to reprocess only the events from that time window. What should have been set up in advance, and what is the solution?
 
-A) EventBridge가 고장났다 — 지원팀에 문의
+A) Parse CloudTrail logs and reconstruct the events manually
 
-B) EventBridge 전달은 at-least-once라 중복이 정상 — 컨슈머에 멱등성 로직(이벤트 ID 기반 중복 차단)을 추가
+B) If an EventBridge Archive had been set up in advance, replay the events for that period with start-replay
 
-C) RetryPolicy를 0으로 설정
+C) Restore from a DynamoDB backup
 
-D) DLQ를 제거
+D) Roll back using S3 versioning
 
-**정답: B**
+**Answer: B**
 
-해설: EventBridge 전달 보장은 at-least-once(최소 1회)로, 분산 시스템 특성상 같은 이벤트가 두 번 전달될 수 있다. 멱등성(f(f(x))=f(x))은 중복 처리를 막는 컨슈머의 책임이다 — 이벤트 ID를 키로 한 멱등성 로직(DynamoDB conditional write, Lambda Powertools Idempotency 등)이 필요하다. RetryPolicy를 0으로(C) 하면 일시 실패 시 이벤트가 유실되고, DLQ 제거(D)는 영구 실패 이벤트를 잃는다. 중복은 버그(A)가 아니라 설계된 동작이다.
-
----
-
-**문제 6.** 여러 워크로드 계정의 이벤트를 보안 계정의 중앙 버스로 모아 조직 전체를 한 곳에서 감지·대응하려 한다. 올바른 구성은?
-
-A) 각 계정에서 Lambda로 보안 계정 API를 직접 호출
-
-B) 수신 측 중앙 버스에 put-permission으로 송신 계정의 PutEvents를 허용하고, 송신 측 Rule의 Target을 중앙 버스로 지정(hub-and-spoke 이벤트 메시)
-
-C) VPC Peering으로 이벤트 전달
-
-D) S3 크로스 계정 복제
-
-**정답: B**
-
-해설: 크로스 계정 이벤트 라우팅은 두 단계다 — 수신 측 버스에 리소스 정책(put-permission)으로 송신 계정의 events:PutEvents를 허용하고, 송신 측은 Rule의 Target을 상대 계정 버스 ARN으로 지정한다. 이렇게 워크로드 계정(spoke)이 중앙 보안 계정 버스(hub)로 이벤트를 보내면 hub-and-spoke 이벤트 메시가 된다. 이는 AWS Organizations의 위임 관리자처럼 관측·권한을 중앙으로 모으되 워크로드는 격리하는 거버넌스 사상이다. VPC Peering(C)은 네트워크 계층이지 이벤트 라우팅이 아니고, S3 복제(D)는 객체 복제다.
+Explanation: An EventBridge Archive stores events passing through the bus, and a Replay streams the events of a specific period back to the bus. This borrows the event-sourcing insight of "reprocessing by replaying the event stream," and it is the classic incident-recovery pattern for reprocessing a time window's events after a bug fix. However, the Archive must be configured in advance and the events must be within the retention period. CloudTrail (A) is for auditing API calls, not for replaying event payloads, and DynamoDB backups (C) and S3 versions (D) restore data state rather than reprocess events.
 
 ---
 
-**문제 7.** Event Pattern `{"detail": {"state": ["FAILED"]}}`에 대한 설명으로 옳은 것은?
+**Question 5.** Payment events are processed through EventBridge, but the same event is occasionally processed twice, causing double billing. What are the root cause and the solution?
 
-A) 이벤트 JSON이 이 패턴과 정확히 같아야(완전 일치) 매칭된다
+A) EventBridge is broken — contact the support team
 
-B) 부분 일치(subset match)로, detail.state가 FAILED인 모든 이벤트를 잡고 그 외 필드는 무시한다
+B) EventBridge delivery is at-least-once, so duplicates are normal — add idempotency logic to the consumer (duplicate blocking based on the event ID)
 
-C) state 값을 배열이 아닌 `"FAILED"` 문자열로 써도 동일하게 동작한다
+C) Set RetryPolicy to 0
 
-D) 여러 키는 OR, 한 키 안의 배열은 AND로 묶인다
+D) Remove the DLQ
 
-**정답: B**
+**Answer: B**
 
-해설: Event Pattern은 부분 일치(subset match)다 — 패턴에 명시한 필드만 검사하고 이벤트의 나머지 필드는 무시하므로, state가 FAILED이기만 하면 다른 필드가 무엇이든 매칭된다. 값은 항상 배열이어야 하며 `"FAILED"` 문자열(C)은 틀리고 `["FAILED"]` 배열이 맞다. 의미론은 서로 다른 키가 AND(모두 만족), 한 키 안의 배열이 OR(하나만 만족)으로, D의 설명은 정반대다. 완전 일치(A)가 아니라 부분 일치라는 점이 EventBridge 패턴의 핵심이다.
+Explanation: EventBridge's delivery guarantee is at-least-once (a minimum of once), and because of the nature of distributed systems the same event can be delivered twice. Idempotency (f(f(x))=f(x)) is the consumer's responsibility to prevent duplicate processing — idempotency logic keyed on the event ID is required (a DynamoDB conditional write, Lambda Powertools Idempotency, and so on). Setting RetryPolicy to 0 (C) loses events on transient failures, and removing the DLQ (D) loses permanently failed events. Duplication is designed behavior, not a bug (A).
+
+---
+
+**Question 6.** You want to collect events from multiple workload accounts into a central bus in the security account to detect and respond across the whole organization from one place. What is the correct configuration?
+
+A) Each account directly calls the security account's API from Lambda
+
+B) On the receiving central bus, allow the sending accounts' PutEvents with put-permission, and set the sending side's Rule Target to the central bus (a hub-and-spoke event mesh)
+
+C) Deliver events over VPC Peering
+
+D) S3 cross-account replication
+
+**Answer: B**
+
+Explanation: Cross-account event routing has two steps — on the receiving bus, allow the sending account's events:PutEvents through a resource policy (put-permission), and on the sending side, set the Rule's Target to the other account's bus ARN. When workload accounts (spokes) send events to the central security account's bus (the hub) this way, it forms a hub-and-spoke event mesh. This is a governance philosophy, like AWS Organizations' delegated administrator, that centralizes observation and authority while keeping workloads isolated. VPC Peering (C) is a network layer, not event routing, and S3 replication (D) replicates objects.
+
+---
+
+**Question 7.** Which statement about the Event Pattern `{"detail": {"state": ["FAILED"]}}` is correct?
+
+A) The event JSON must be exactly identical to this pattern (exact match) to match
+
+B) It is a subset match: it catches all events whose detail.state is FAILED and ignores the other fields
+
+C) Writing the state value as the string `"FAILED"` instead of an array works the same
+
+D) Multiple keys are combined with OR, and an array within a key is combined with AND
+
+**Answer: B**
+
+Explanation: An Event Pattern is a subset match — it checks only the fields specified in the pattern and ignores the rest of the event's fields, so as long as state is FAILED, it matches regardless of the other fields. Values must always be arrays, so the string `"FAILED"` (C) is wrong and the array `["FAILED"]` is correct. In the semantics, different keys are ANDed (all must be satisfied) and an array within one key is ORed (only one must be satisfied), so D's description is the exact opposite. That it is a subset match rather than an exact match (A) is the core of EventBridge patterns.
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 다섯 가지다. 첫째, EventBridge는 EIP의 메시지 버스·콘텐츠 기반 라우터 패턴을 AWS에 구현한 것으로, 발신자가 수신자를 모르게 해 결합도를 끊는다. 둘째, Event Pattern 매칭은 순차 비교가 아니라 결정 트리/상태 기계로 컴파일되어 규칙 수에 무관하게 빠르며, 부분 일치 의미론과 배열=OR 규칙을 가진다. 셋째, Scheduler는 수백만 스케줄과 Flexible Time Window(지터)로 thundering herd를 막는 CloudWatch cron의 후계자다. 넷째, Pipes는 파이프-필터 아키텍처로 폴링 소스의 글루 코드를 관리형으로 흡수하고, early filtering으로 비용을 아낀다. 다섯째, Archive/Replay는 이벤트 소싱의 재처리 통찰을 빌렸고, at-least-once 전달이므로 컨슈머는 멱등해야 한다.
+There are five key takeaways today. First, EventBridge is an AWS implementation of the EIP message bus and content-based router patterns, severing coupling by keeping the sender unaware of the receivers. Second, Event Pattern matching is compiled into a decision tree/state machine rather than compared sequentially, so it is fast regardless of the number of rules, and it has subset-match semantics and the array = OR rule. Third, Scheduler is the successor to CloudWatch cron, preventing a thundering herd with millions of schedules and the Flexible Time Window (jitter). Fourth, Pipes absorb the glue code of polling sources in a managed way through the pipe-and-filter architecture and save cost with early filtering. Fifth, Archive/Replay borrows the reprocessing insight of event sourcing, and since delivery is at-least-once, consumers must be idempotent.

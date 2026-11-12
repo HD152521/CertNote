@@ -225,148 +225,148 @@ Currently recommended: via EventBridge
 | CORS | Cross-Origin Resource Sharing | Needed for direct S3 access from the browser |
 | ACM | AWS Certificate Manager | HTTPS certificate management |
 
-## 📝 Week 5 종합 연습 문제
+## 📝 Week 5 Comprehensive Practice Questions
 
-**문제 1.** A company's medical imaging data must be retained for 10 years per regulations. It is accessed frequently for the first year, then almost never, but requires immediate lookup during an audit. What is the most cost-effective lifecycle design?
+**Question 1.** A company's medical imaging data must be retained for 10 years per regulations. It is accessed frequently for the first year, then almost never, but requires immediate lookup during an audit. What is the most cost-effective lifecycle design?
 
 A) Keep it in Standard as-is for all 10 years to always guarantee immediate lookup — immediacy is met, but keeping the barely-accessed 9-year span in the most expensive class is the exact opposite of cost optimization
 B) Keep it in Standard for 1 year, then transition to Glacier Deep Archive to minimize long-term storage cost — Deep Archive takes 12–48 hours to recover, violating the "immediate lookup" requirement at audit time
 C) Standard → after 30 days Standard-IA → after 1 year Glacier Instant Retrieval → delete after 10 years
 D) Leave it to Intelligent-Tiering's automatic tiering for 10 years to respond to access-pattern changes — automatic, but the per-object monitoring cost accumulates over 10 years and immediate lookup can break if the Archive tier turns on
 
-**정답: C**
-해설: Standard for the first month, Standard-IA after 30 days to reduce storage cost, Glacier Instant Retrieval after 1 year for even greater cost savings — Glacier Instant supports millisecond immediate retrieval, so it meets the "immediate lookup" requirement. Glacier Flexible Retrieval or Deep Archive need time to recover and do not fit the immediate-lookup requirement. A has no cost optimization. B's Glacier Deep Archive is 12–48 hours to recover. D's Intelligent-Tiering is automatic but immediate retrieval may be unavailable when the Archive tier is enabled, and monitoring cost accumulates over 10 years.
+**Answer: C**
+Explanation: Standard for the first month, Standard-IA after 30 days to reduce storage cost, Glacier Instant Retrieval after 1 year for even greater cost savings — Glacier Instant supports millisecond immediate retrieval, so it meets the "immediate lookup" requirement. Glacier Flexible Retrieval or Deep Archive need time to recover and do not fit the immediate-lookup requirement. A has no cost optimization. B's Glacier Deep Archive is 12–48 hours to recover. D's Intelligent-Tiering is automatic but immediate retrieval may be unavailable when the Archive tier is enabled, and monitoring cost accumulates over 10 years.
 
 ---
 
-**문제 2.** A mobile app user needs to upload a profile photo. You want to avoid the server bearing the load of processing large file data. What is the most suitable architecture?
+**Question 2.** A mobile app user needs to upload a profile photo. You want to avoid the server bearing the load of processing large file data. What is the most suitable architecture?
 
 A) A sequential proxy upload where the client sends the file to the server, which receives it and re-uploads it to S3 — every byte goes through the server, so the bandwidth and load you were trying to avoid land squarely on the server
 B) The server generates a PUT Presigned URL → the client uploads directly to S3 with that URL
 C) The client uploads directly to the S3 Transfer Acceleration endpoint to accelerate transfer — long-distance transfer gets faster, but it is not a means of authentication/authorization control and adds acceleration fees
 D) Put a CloudFront distribution on the upload path to deliver from the edge to S3 — CloudFront is mainly for download caching/distribution, so it is unsuitable as a pattern for removing user-upload load
 
-**정답: B**
-해설: In the PUT Presigned URL pattern, the server generates the URL and the client uploads directly to S3 with that URL. The server does not process the file bytes, so there is no bandwidth load. The URL includes the bucket, key, expiration time, allowed ContentType, etc. as a signature, preventing unauthorized uploads. After the upload completes, you can trigger Lambda via an S3 event notification to do post-processing such as image resizing. This pattern is the standard upload architecture for social media, file-sharing services, and the like.
+**Answer: B**
+Explanation: In the PUT Presigned URL pattern, the server generates the URL and the client uploads directly to S3 with that URL. The server does not process the file bytes, so there is no bandwidth load. The URL includes the bucket, key, expiration time, allowed ContentType, etc. as a signature, preventing unauthorized uploads. After the upload completes, you can trigger Lambda via an S3 event notification to do post-processing such as image resizing. This pattern is the standard upload architecture for social media, file-sharing services, and the like.
 
 ---
 
-**문제 3.** In AWS Organizations, you want to forcibly keep Block Public Access maintained on all S3 buckets. Which service do you use?
+**Question 3.** In AWS Organizations, you want to forcibly keep Block Public Access maintained on all S3 buckets. Which service do you use?
 
 A) In each account, manually keep the 4 Block Public Access options on for each bucket — there is no enforcement, so if someone turns it off it stays off, and org-wide consistency is not guaranteed
 B) Deny the action of disabling Block Public Access with an SCP (Service Control Policy)
 C) Configure auto-remediation with Lambda + EventBridge to immediately re-enable when a BPA-disable event is detected — post-hoc detection/correction leaves a public-exposure gap between the change and the recovery
 D) Use an AWS Config managed rule to detect BPA-non-compliant buckets and report them on a dashboard — it only detects; automatic blocking/remediation needs a separate Remediation Lambda
 
-**정답: B**
-해설: Using an SCP, you can deny the very API call that turns off Block Public Access in all accounts within the Organization. For example, placing a Deny condition on the `s3:PutBucketPublicAccessBlock` action means no one can change Block Public Access. C's Lambda + EventBridge pattern is post-hoc detection and correction, with a time gap between the change and the fix that creates a security gap. D's AWS Config only detects and needs an additional Lambda for automatic correction. B is a preventive control and is the most powerful.
+**Answer: B**
+Explanation: Using an SCP, you can deny the very API call that turns off Block Public Access in all accounts within the Organization. For example, placing a Deny condition on the `s3:PutBucketPublicAccessBlock` action means no one can change Block Public Access. C's Lambda + EventBridge pattern is post-hoc detection and correction, with a time gap between the change and the fix that creates a security gap. D's AWS Config only detects and needs an additional Lambda for automatic correction. B is a preventive control and is the most powerful.
 
 ---
 
-**문제 4.** In an architecture where an S3 event notification invokes Lambda on object upload, the same file triggered Lambda twice within a short period. What is the cause and solution of this phenomenon?
+**Question 4.** In an architecture where an S3 event notification invokes Lambda on object upload, the same file triggered Lambda twice within a short period. What is the cause and solution of this phenomenon?
 
 A) A Lambda concurrency misconfiguration ran the same event twice — increase Reserved Concurrency — concurrency is only the number of parallel executions and is unrelated to duplicate delivery of the same event
 B) S3 event notifications are at-least-once delivery, so this is normal behavior — implement idempotent processing within Lambda
 C) The bucket policy registered the event notification to two targets, causing two invocations — clean up the bucket policy — the bucket policy is only access control and has nothing to do with event notification registration/duplication
 D) The ObjectCreated wildcard filter caught both PUT and COPY, causing duplication — filter to ObjectCreated:Put only — narrowing the event type does not prevent duplicate delivery of a single PUT
 
-**정답: B**
-해설: S3 event notifications guarantee at-least-once delivery, and duplicate delivery can occur rarely. This is designed behavior, not a bug. The solution is to implement idempotent processing within the Lambda function — record the S3 ETag or version ID of the file to be processed in DynamoDB, and silently skip an already-processed event. Event filtering restricts the event type but does not solve the duplicate-delivery problem.
+**Answer: B**
+Explanation: S3 event notifications guarantee at-least-once delivery, and duplicate delivery can occur rarely. This is designed behavior, not a bug. The solution is to implement idempotent processing within the Lambda function — record the S3 ETag or version ID of the file to be processed in DynamoDB, and silently skip an already-processed event. Event filtering restricts the event type but does not solve the duplicate-delivery problem.
 
 ---
 
-**문제 5.** A company providing a global service hosts a static web application on S3. The requirements are HTTPS required, global optimization, and a custom domain for SEO. Which architecture is correct?
+**Question 5.** A company providing a global service hosts a static web application on S3. The requirements are HTTPS required, global optimization, and a custom domain for SEO. Which architecture is correct?
 
 A) Connect only a Route 53 alias to the S3 static website endpoint to serve on a custom domain — the website endpoint supports HTTP only and does not meet the HTTPS-required requirement
 B) A public S3 bucket with website hosting on + CloudFront + ACM + Route 53 — HTTPS/domain work, but opening the bucket to public is weaker security than the OAC method
 C) S3 bucket (OAC) + CloudFront + ACM + Route 53
 D) Serve static files from an EC2 web server and use S3 only for source storage — running/patching/scaling an always-on instance adds excessive complexity for a static site
 
-**정답: C**
-해설: The architecture that meets all requirements is C. Using OAC, you allow only CloudFront to access the S3 bucket without opening it to public (better security than B's public bucket). CloudFront supports HTTPS (ACM certificate), global caching, and a Route 53 custom domain connection all together. The S3 static website itself (A) supports HTTP only, and HTTPS is impossible without CloudFront. An EC2 web server (D) adds unnecessary complexity.
+**Answer: C**
+Explanation: The architecture that meets all requirements is C. Using OAC, you allow only CloudFront to access the S3 bucket without opening it to public (better security than B's public bucket). CloudFront supports HTTPS (ACM certificate), global caching, and a Route 53 custom domain connection all together. The S3 static website itself (A) supports HTTP only, and HTTPS is impossible without CloudFront. An EC2 web server (D) adds unnecessary complexity.
 
 ---
 
-**문제 6.** On an S3 bucket, a lifecycle policy is set to "transition to Standard-IA after 30 days, to Glacier Flexible after 90 days." On the 50th day, you deleted the object. What fee is billed?
+**Question 6.** On an S3 bucket, a lifecycle policy is set to "transition to Standard-IA after 30 days, to Glacier Flexible after 90 days." On the 50th day, you deleted the object. What fee is billed?
 
 A) 30 days of Standard + the actual IA storage of 20 days of Standard-IA — looking only at day count it seems plausible, but it omits the 30-day minimum retention billing of IA and wrongly bills only 20 days
 B) 50 days of Standard + 30 days of Standard-IA (IA minimum retention 30 days)
 C) Even after transition, only 50 days of Standard is billed based on the original class — a wrong answer ignoring the IA transition and minimum-retention billing
 D) Because it was deleted before meeting the Glacier transition condition (90 days), 90 days of Standard-IA is billed — a wrong answer assuming a non-existent retroactive Glacier minimum-retention billing
 
-**정답: B**
-해설: Standard has no minimum retention duration, so only 30 days is billed. The transition to Standard-IA happened on day 30, and since it was deleted on day 50, the period stored as IA is 20 days. However, because Standard-IA's minimum retention duration is 30 days, even though it was actually stored for 20 days, 30 days of IA cost is billed. That is, Standard 30 days + Standard-IA 30 days (minimum) = B is the answer. Early-deletion billing applies to IA, Glacier, and Deep Archive all.
+**Answer: B**
+Explanation: Standard has no minimum retention duration, so only 30 days is billed. The transition to Standard-IA happened on day 30, and since it was deleted on day 50, the period stored as IA is 20 days. However, because Standard-IA's minimum retention duration is 30 days, even though it was actually stored for 20 days, 30 days of IA cost is billed. That is, Standard 30 days + Standard-IA 30 days (minimum) = B is the answer. Early-deletion billing applies to IA, Glacier, and Deep Archive all.
 
 ---
 
-**문제 7.** A dev team needs a Lambda in a different AWS account to access a Lambda deployment package stored in S3. What is the most secure way to grant access without opening the S3 bucket to public?
+**Question 7.** A dev team needs a Lambda in a different AWS account to access a Lambda deployment package stored in S3. What is the most secure way to grant access without opening the S3 bucket to public?
 
 A) Generate a GET Presigned URL for each deployment package and pass it to the other account's Lambda — it works, but the URL expires and must be reissued for each deployment version, unsuitable for an automation pipeline
 B) Specify the other account's ARN as a Principal in the bucket policy and Allow
 C) Open the bucket to public and whitelist only the other account's NAT IP — public exposure + IP-spoofing risk, violating the "private, not public" requirement
 D) Replicate the package with CRR to a bucket/region owned by the other account so it can be read locally — this only replicates/duplicates the data and is not an access-granting mechanism, and needs extra setup like versioning
 
-**정답: B**
-해설: Specifying the other account's Lambda execution-role ARN as a Principal in the bucket policy enables cross-account access without opening it to public. A resource-based policy (bucket policy) can grant permissions even to another account that has no IAM user — a strength of S3. A Presigned URL is temporary and expires. Public + IP whitelist has an IP-spoofing risk. CRR is data replication, not access control.
+**Answer: B**
+Explanation: Specifying the other account's Lambda execution-role ARN as a Principal in the bucket policy enables cross-account access without opening it to public. A resource-based policy (bucket policy) can grant permissions even to another account that has no IAM user — a strength of S3. A Presigned URL is temporary and expires. Public + IP whitelist has an IP-spoofing risk. CRR is data replication, not access control.
 
 ---
 
-**문제 8.** Which is correct as the default setting of every new S3 bucket as of 2024?
+**Question 8.** Which is correct as the default setting of every new S3 bucket as of 2024?
 
 A) Public access allowed + encryption disabled + ACL enabled — assumes it ships open for convenience, but this is the exact opposite of the current secure-by-default principle
 B) All 4 Block Public Access disabled + SSE-S3 default encryption + ACL enabled — encryption is right, but the part about BPA shipping off is wrong
 C) All 4 Block Public Access enabled, SSE-S3 default encryption, Bucket Owner Enforced (ACL disabled)
 D) Only 1 of the 4 Block Public Access enabled + encryption optional + Object Writer ownership — partial enablement, optional encryption, and an outdated ownership model are inconsistent with the current default
 
-**정답: C**
-해설: Since 2023, the default of every new S3 bucket is ① all 4 Block Public Access options enabled, ② SSE-S3 (AES-256) default encryption, ③ Object Ownership = Bucket Owner Enforced (ACL disabled). These three defaults are the implementation of the "Secure by Default" principle. If public access is needed for static website hosting, you must explicitly turn off Block Public Access and write a bucket policy.
+**Answer: C**
+Explanation: Since 2023, the default of every new S3 bucket is ① all 4 Block Public Access options enabled, ② SSE-S3 (AES-256) default encryption, ③ Object Ownership = Bucket Owner Enforced (ACL disabled). These three defaults are the implementation of the "Secure by Default" principle. If public access is needed for static website hosting, you must explicitly turn off Block Public Access and write a bucket policy.
 
 ---
 
-**문제 9.** An S3 bucket has billions of objects, and you must find the objects among all of them that do not have SSE-KMS encryption applied and apply encryption to them in bulk. Which method is suitable?
+**Question 9.** An S3 bucket has billions of objects, and you must find the objects among all of them that do not have SSE-KMS encryption applied and apply encryption to them in bulk. Which method is suitable?
 
 A) Paginate ListObjects with Lambda and check the encryption status of each object with HeadObject, then re-encrypt — it works, but the API calls, execution time, and cost for billions of objects explode, making it impractical
 B) Generate an encryption-status report with S3 Inventory → filter unencrypted objects with Athena → apply SSE-KMS copy with S3 Batch Operations
 C) Extract the per-object encryption status from the S3 Storage Class Analysis report to build a target list — Storage Class Analysis is for access-pattern/storage-class analysis and does not provide encryption status
 D) Trace back CloudTrail PUT event logs and identify unencrypted objects by the presence of the SSE header — it misses objects outside the CloudTrail retention period and analyzing billions of log entries is inefficient
 
-**정답: B**
-해설: For a large-scale operation on billions of objects, the combination of S3 Inventory + Athena + S3 Batch Operations is the answer. S3 Inventory periodically generates a list of all objects in the bucket and their metadata (including encryption status) in CSV/Parquet. Filter with Athena for objects where "ServerSideEncryption is not aws:kms" to build a list, then use this list as the manifest for S3 Batch Operations to run an SSE-KMS-applied copy operation. Directly iterating over billions of objects with Lambda takes enormous time and cost. Storage Class Analysis does not provide encryption status.
+**Answer: B**
+Explanation: For a large-scale operation on billions of objects, the combination of S3 Inventory + Athena + S3 Batch Operations is the answer. S3 Inventory periodically generates a list of all objects in the bucket and their metadata (including encryption status) in CSV/Parquet. Filter with Athena for objects where "ServerSideEncryption is not aws:kms" to build a list, then use this list as the manifest for S3 Batch Operations to run an SSE-KMS-applied copy operation. Directly iterating over billions of objects with Lambda takes enormous time and cost. Storage Class Analysis does not provide encryption status.
 
 ---
 
-**문제 10.** Choose the correct solution for the following scenario. "A company's partner needs to upload files to a specific S3 bucket. The partner does not have an AWS account."
+**Question 10.** Choose the correct solution for the following scenario. "A company's partner needs to upload files to a specific S3 bucket. The partner does not have an AWS account."
 
 A) Create a partner-only IAM user and pass an Access Key that allows only PutObject — even with narrowed permissions, you end up handing long-term credentials to an external party, creating a heavy key-management/rotation burden
 B) Set the bucket to public-writable so anyone can upload — public write without authentication is a serious security incident with a high risk of data pollution/abuse
 C) Periodically generate a PUT Presigned URL for the partner and pass it to them
 D) Establish VPC Peering with the partner's network so they upload over a private path — it requires the partner to have an AWS account/VPC, contradicting the "no account" premise
 
-**정답: C**
-해설: When granting S3 access to an external partner without an AWS account, a PUT Presigned URL is the most secure and simple. You can set an expiration time to limit the validity period, and you can even restrict to a specific key (file name) and ContentType. Creating an IAM user (A) means providing long-term credentials to the partner, creating a credential-management burden. A public bucket (B) is very bad for security. VPC Peering (D) requires the partner to have an AWS account and VPC.
+**Answer: C**
+Explanation: When granting S3 access to an external partner without an AWS account, a PUT Presigned URL is the most secure and simple. You can set an expiration time to limit the validity period, and you can even restrict to a specific key (file name) and ContentType. Creating an IAM user (A) means providing long-term credentials to the partner, creating a credential-management burden. A public bucket (B) is very bad for security. VPC Peering (D) requires the partner to have an AWS account and VPC.
 
 ---
 
-**문제 11.** You set up CRR from S3 bucket A (us-east-1) to bucket B (ap-northeast-2). In bucket A, you permanently deleted an object directly (with an explicit version ID) without a delete marker. What about bucket B?
+**Question 11.** You set up CRR from S3 bucket A (us-east-1) to bucket B (ap-northeast-2). In bucket A, you permanently deleted an object directly (with an explicit version ID) without a delete marker. What about bucket B?
 
 A) The permanent deletion propagates through the replication pipeline and the corresponding version in bucket B is automatically deleted too — CRR by default does not replicate permanent version deletion, so it does not propagate
 B) That object remains in bucket B as-is
 C) Instead of a permanent deletion, a delete marker is replicated to bucket B and hides the latest version — this was an explicit-version-ID permanent deletion, not delete-marker creation, and delete-marker replication is also disabled by default
 D) The source version disappears, integrity checks fail, and a replication-failure event/notification occurs — deletion is not a replication target and is not treated as a failure
 
-**정답: B**
-해설: S3 replication by default does not replicate delete operations — for data-protection purposes. Even if you permanently delete a specific version in bucket A, that version remains in bucket B as-is. Delete markers are also not replicated by default (can be optionally enabled). This design prevents accidental or malicious deletions from propagating through replication. In bidirectional replication, enabling delete-marker replication creates a cross-delete risk — it must be configured carefully.
+**Answer: B**
+Explanation: S3 replication by default does not replicate delete operations — for data-protection purposes. Even if you permanently delete a specific version in bucket A, that version remains in bucket B as-is. Delete markers are also not replicated by default (can be optionally enabled). This design prevents accidental or malicious deletions from propagating through replication. In bidirectional replication, enabling delete-marker replication creates a cross-delete risk — it must be configured carefully.
 
 ---
 
-**문제 12.** Which of the following are all correct descriptions of an S3 Access Point?
+**Question 12.** Which of the following are all correct descriptions of an S3 Access Point?
 
 A) An Access Point creates a new bucket that holds data separately from the existing bucket — an Access Point does not create a new bucket; it only adds a named virtual entrance on top of the existing bucket
 B) A VPC-only Access Point can block access from the internet
 C) Only up to 1 Access Point can be created per bucket, unifying the entrance — in reality, thousands per bucket (up to 10,000) can be created
 D) Each Access Point has its own independent policy and DNS name
 
-**정답: B, D**
-해설: An Access Point does not create a new bucket; it creates a virtual entrance on top of an existing bucket (A is wrong). Up to 10,000 Access Points can be created per bucket (C is wrong). Setting a VPC-only Access Point means access via that Access Point is allowed only from within the specified VPC and internet access is blocked (B is right). Each Access Point has a unique DNS name (`<name>-<account-id>.s3-accesspoint.<region>.amazonaws.com`) and an independent bucket policy (D is right).
+**Answer: B, D**
+Explanation: An Access Point does not create a new bucket; it creates a virtual entrance on top of an existing bucket (A is wrong). Up to 10,000 Access Points can be created per bucket (C is wrong). Setting a VPC-only Access Point means access via that Access Point is allowed only from within the specified VPC and internet access is blocked (B is right). Each Access Point has a unique DNS name (`<name>-<account-id>.s3-accesspoint.<region>.amazonaws.com`) and an independent bucket policy (D is right).
 
 ---

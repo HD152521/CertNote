@@ -119,62 +119,62 @@ Next deep-dives real-time endpoints—the most critical—covering setup, auto-s
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 모바일 게임이 사용자가 아이템 구매 버튼을 누르는 순간 사기 여부를 50ms 이내에 판정해야 한다. 트래픽은 하루 종일 꾸준히 높다. 가장 적절한 추론 옵션은?
+**Question 1.** A mobile game must determine whether a purchase is fraudulent within 50 ms at the moment a user taps the item purchase button. Traffic is consistently high all day. What is the most appropriate inference option?
 
-A) 배치 변환  
-B) 실시간 엔드포인트  
-C) 서버리스 추론  
-D) 비동기 추론  
+A) Batch transform  
+B) Real-time endpoint  
+C) Serverless inference  
+D) Asynchronous inference  
 
-**정답: B**  
-해설: "구매 순간 50ms 이내 판정 + 꾸준히 높은 트래픽"은 저지연·동기·always-on의 전형으로 실시간 엔드포인트가 정답이다. A는 즉시성이 전혀 없어 부적합하고, C는 콜드 스타트로 일관된 저지연을 보장하지 못하며, D는 큐 기반이라 즉시 응답이 불가능하다.
-
----
-
-**문제 2.** 사내 분석 도구가 가끔(하루 몇 번, 시간대 불규칙) 모델을 호출한다. 호출이 없는 시간이 대부분이라 인스턴스를 항상 켜두는 비용이 아깝다. 약간의 첫 응답 지연은 허용된다. 적절한 옵션은?
-
-A) 실시간 엔드포인트  
-B) 서버리스 추론  
-C) 배치 변환  
-D) 인스턴스를 항상 2대 띄운 실시간 엔드포인트  
-
-**정답: B**  
-해설: "간헐적·불규칙 트래픽 + 유휴 시간 대부분 + 콜드 스타트 허용"은 서버리스 추론의 정확한 조건이다. 트래픽이 없으면 0으로 스케일되어 비용이 들지 않는다. A와 D는 유휴 시간에도 always-on 비용이 나가 낭비이고, C는 개별 호출이 아닌 일괄 처리 방식이라 사용 패턴과 맞지 않는다.
+**Answer: B**  
+Explanation: "A decision within 50 ms at the moment of purchase + consistently high traffic" is the classic low-latency, synchronous, always-on pattern, so a real-time endpoint is the answer. A has no immediacy at all and is unsuitable, C cannot guarantee consistently low latency because of cold starts, and D is queue-based so an immediate response is impossible.
 
 ---
 
-**문제 3.** 의료 영상 분석 모델이 한 장당 200MB의 고해상도 이미지를 받아 처리에 약 5분이 걸린다. 요청은 개별로 들어오며 결과는 처리 완료 후 받으면 된다. 적절한 옵션은?
+**Question 2.** An internal analytics tool occasionally invokes the model (a few times a day, at irregular times). Most of the time there are no invocations, so keeping instances running all the time is wasteful. A slight delay on the first response is acceptable. What is the appropriate option?
 
-A) 실시간 엔드포인트  
-B) 서버리스 추론  
-C) 비동기 추론  
-D) 배치 변환  
+A) Real-time endpoint  
+B) Serverless inference  
+C) Batch transform  
+D) A real-time endpoint with 2 instances always running  
 
-**정답: C**  
-해설: 페이로드 200MB는 실시간/서버리스의 한계(6MB/4MB)를 초과하고 처리 5분은 60초 제약을 넘는다. 비동기 추론은 최대 1GB 페이로드와 60분 처리를 지원하며 개별 요청을 큐로 처리하므로 이 시나리오에 정확히 맞는다. A·B는 페이로드·시간 제약으로 탈락하고, D는 전체 데이터셋 일괄 방식이라 "개별 요청" 패턴과 다르다.
-
----
-
-**문제 4.** 매일 밤 12시에 전체 고객 1,000만 명의 이탈 확률을 계산해 데이터 웨어하우스에 적재한다. 실시간성은 전혀 필요 없다. 비용을 최소화하려면?
-
-A) 실시간 엔드포인트를 밤에만 켠다  
-B) 서버리스 추론으로 1,000만 건을 순차 호출한다  
-C) 배치 변환 작업으로 전체 데이터셋을 일괄 처리한다  
-D) 비동기 추론으로 1,000만 건을 큐에 넣는다  
-
-**정답: C**  
-해설: "전체 데이터셋을 정기적으로 일괄, 실시간성 불필요, 비용 최소화"는 배치 변환의 교과서적 시나리오다. 작업이 끝나면 클러스터가 종료되어 always-on 비용이 0이고, 데이터를 여러 인스턴스로 분할해 빠르게 처리한다. A·B·D는 모두 개별 호출/엔드포인트 기반이라 1,000만 건 일괄 처리에는 비효율적이고 비싸다.
+**Answer: B**  
+Explanation: "Intermittent, irregular traffic + mostly idle time + cold start tolerated" is exactly the condition for serverless inference. With no traffic it scales to 0 and incurs no cost. A and D waste money on always-on cost even during idle time, and C is a bulk processing method rather than individual invocations, so it does not fit the usage pattern.
 
 ---
 
-**문제 5.** 비동기 추론이 실시간 엔드포인트와 구별되는 핵심 특징으로 가장 적절한 것은?
+**Question 3.** A medical image analysis model receives a 200 MB high-resolution image each and takes about 5 minutes to process. Requests arrive individually and the results can be received after processing completes. What is the appropriate option?
 
-A) 응답을 항상 밀리초 단위로 동기 반환한다  
-B) 큰 페이로드(최대 1GB)와 긴 처리(최대 60분)를 지원하고 요청이 없으면 인스턴스를 0까지 줄일 수 있다  
-C) 엔드포인트 없이 전체 데이터셋을 한 번에 처리한다  
-D) 인스턴스를 최소 1대 항상 유지해야 한다  
+A) Real-time endpoint  
+B) Serverless inference  
+C) Asynchronous inference  
+D) Batch transform  
 
-**정답: B**  
-해설: 비동기 추론은 큐 기반으로 큰 페이로드(1GB)와 긴 처리시간(60분)을 허용하며, 큐가 비면 인스턴스를 0까지 스케일 다운해 비용을 절약한다. A는 비동기가 아닌 실시간/서버리스의 동기 특성이고, C는 배치 변환의 설명이며, D는 실시간 엔드포인트의 제약(최소 1대 유지)으로 비동기와 반대다.
+**Answer: C**  
+Explanation: A 200 MB payload exceeds the real-time/serverless limits (6 MB / 4 MB) and 5 minutes of processing exceeds the 60-second constraint. Asynchronous inference supports payloads up to 1 GB and 60 minutes of processing and handles individual requests through a queue, so it fits this scenario exactly. A and B are eliminated by the payload and time constraints, and D processes a whole dataset in bulk, which differs from the "individual request" pattern.
+
+---
+
+**Question 4.** Every night at 12:00, you compute churn probabilities for all 10 million customers and load them into a data warehouse. Real-time results are not needed at all. How do you minimize cost?
+
+A) Turn on a real-time endpoint only at night  
+B) Sequentially invoke serverless inference 10 million times  
+C) Process the entire dataset in bulk with a batch transform job  
+D) Put 10 million requests into the queue with asynchronous inference  
+
+**Answer: C**  
+Explanation: "Regularly processing the entire dataset in bulk, no real-time need, minimize cost" is the textbook scenario for batch transform. When the job ends the cluster terminates, so always-on cost is zero, and the data is split across multiple instances for fast processing. A, B, and D are all based on individual invocations/endpoints, so they are inefficient and expensive for bulk processing of 10 million records.
+
+---
+
+**Question 5.** Which is the most appropriate key characteristic that distinguishes asynchronous inference from a real-time endpoint?
+
+A) It always returns responses synchronously in milliseconds  
+B) It supports large payloads (up to 1 GB) and long processing (up to 60 minutes) and can scale instances down to 0 when there are no requests  
+C) It processes the entire dataset at once without an endpoint  
+D) It must always keep at least 1 instance running  
+
+**Answer: B**  
+Explanation: Asynchronous inference is queue-based and allows large payloads (1 GB) and long processing times (60 minutes), and it saves cost by scaling instances down to 0 when the queue is empty. A is the synchronous characteristic of real-time/serverless, not asynchronous; C is the description of batch transform; and D is a constraint of real-time endpoints (keep at least 1 instance), the opposite of asynchronous.
 
 ---

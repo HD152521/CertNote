@@ -274,95 +274,95 @@ In the next article, we'll bring this week's security services together in a sce
 
 ## 📝 Practice Questions
 
-**문제 1.** A company's web app is being hit with SQL injection and XSS attacks. What is the most suitable blocking solution?
+**Question 1.** A company's web app is being hit with SQL injection and XSS attacks. What is the most suitable blocking solution?
 
 A) Shield Standard
 B) WAF + AWS Managed Rules (CommonRuleSet, SQLi, XSS) on CloudFront/ALB
 C) Network Firewall
 D) Security Group
 
-**정답: B**
+**Answer: B**
 
-해설: SQLi and XSS are L7 application-layer attacks, so WAF is the answer, and AWS Managed Rules cover the OWASP Top 10 almost verbatim. Shield (A) is for L3/L4 DDoS only and can't block SQLi. Network Firewall (C) is for inspecting L3-L7 traffic inside a VPC, not a dedicated tool for standard web-attack defense. SG (D) is a Layer-4-and-below firewall, so it can't inspect payloads.
+Explanation: SQLi and XSS are L7 application-layer attacks, so WAF is the answer, and AWS Managed Rules cover the OWASP Top 10 almost verbatim. Shield (A) is for L3/L4 DDoS only and can't block SQLi. Network Firewall (C) is for inspecting L3-L7 traffic inside a VPC, not a dedicated tool for standard web-attack defense. SG (D) is a Layer-4-and-below firewall, so it can't inspect payloads.
 
 ---
 
-**문제 2.** A fintech company is worried about a large-scale DDoS attack and also fears the AWS bill bomb such an attack could cause. What is the most suitable solution?
+**Question 2.** A fintech company is worried about a large-scale DDoS attack and also fears the AWS bill bomb such an attack could cause. What is the most suitable solution?
 
 A) Shield Standard
 B) Shield Advanced (includes DRT support + Cost Protection + L7 Auto-Mitigation)
 C) WAF Rate-based Rule only
 D) Route 53 Failover
 
-**정답: B**
+**Answer: B**
 
-해설: Shield Advanced's core value is cost protection. AWS refunds the ELB/CloudFront/Route 53/EC2 scale-out costs caused by DDoS, so you're protected from a bill bomb. 24/7 DRT support and automatic L7 mitigation are also included. Standard (A) is free but has no cost protection. A Rate-based Rule (C) handles L7 only. D is not a DDoS solution.
+Explanation: Shield Advanced's core value is cost protection. AWS refunds the ELB/CloudFront/Route 53/EC2 scale-out costs caused by DDoS, so you're protected from a bill bomb. 24/7 DRT support and automatic L7 mitigation are also included. Standard (A) is free but has no cost protection. A Rate-based Rule (C) handles L7 only. D is not a DDoS solution.
 
 ---
 
-**문제 3.** A company enabled GuardDuty and got a high-severity finding: "EC2 communicating with a known cryptomining pool." You want to automatically isolate the instance and alert SecOps within 5 minutes. What is the most suitable automation pattern?
+**Question 3.** A company enabled GuardDuty and got a high-severity finding: "EC2 communicating with a known cryptomining pool." You want to automatically isolate the instance and alert SecOps within 5 minutes. What is the most suitable automation pattern?
 
 A) GuardDuty → manual daily review
 B) GuardDuty → EventBridge rule (severity >= 7) → Lambda (swap to a quarantine SG) + SNS (SecOps)
 C) Turn off GuardDuty and monitor directly
 D) Enable CloudTrail only
 
-**정답: B**
+**Answer: B**
 
-해설: A GuardDuty finding is published to EventBridge immediately, so the standard pattern is a severity-threshold-based rule that triggers Lambda to swap the instance into a quarantine SG (or terminate it) and alert SecOps via SNS. Manual review (A, C) can't meet the 5-minute SLA, and D doesn't even perform detection.
+Explanation: A GuardDuty finding is published to EventBridge immediately, so the standard pattern is a severity-threshold-based rule that triggers Lambda to swap the instance into a quarantine SG (or terminate it) and alert SecOps via SNS. Manual review (A, C) can't meet the 5-minute SLA, and D doesn't even perform detection.
 
 ---
 
-**문제 4.** A company wants to automatically detect and classify which objects in its S3 buckets contain PII like credit card numbers and national ID numbers. What is the most suitable service?
+**Question 4.** A company wants to automatically detect and classify which objects in its S3 buckets contain PII like credit card numbers and national ID numbers. What is the most suitable service?
 
 A) GuardDuty
 B) Macie
 C) Inspector
 D) Config
 
-**정답: B**
+**Answer: B**
 
-해설: Macie analyzes S3 object content with ML and automatically classifies over 100 PII patterns. It's used for GDPR, PCI DSS, HIPAA, and PIPA compliance. GuardDuty (A) is behavior-based threat detection, Inspector (C) is vulnerability scanning, and Config (D) is configuration evaluation — none of them do content classification.
+Explanation: Macie analyzes S3 object content with ML and automatically classifies over 100 PII patterns. It's used for GDPR, PCI DSS, HIPAA, and PIPA compliance. GuardDuty (A) is behavior-based threat detection, Inspector (C) is vulnerability scanning, and Config (D) is configuration evaluation — none of them do content classification.
 
 ---
 
-**문제 5.** A company wants to automatically evaluate whether a newly disclosed CVE affects the OS packages on 1,000 EC2 instances. What is the most suitable service?
+**Question 5.** A company wants to automatically evaluate whether a newly disclosed CVE affects the OS packages on 1,000 EC2 instances. What is the most suitable service?
 
 A) GuardDuty
 B) Inspector v2 (automatic/continuous scanning of EC2 + ECR + Lambda)
 C) Macie
 D) Security Hub
 
-**정답: B**
+**Answer: B**
 
-해설: Inspector v2 collects EC2 package inventory via the SSM Agent and automatically compares it against the CVE database. When a new CVE is disclosed, it immediately re-evaluates every affected instance. It also weights internet-exposed instances via Network Reachability analysis. GuardDuty (A) is behavior-based, not a static vulnerability scanner.
+Explanation: Inspector v2 collects EC2 package inventory via the SSM Agent and automatically compares it against the CVE database. When a new CVE is disclosed, it immediately re-evaluates every affected instance. It also weights internet-exposed instances via Network Reachability analysis. GuardDuty (A) is behavior-based, not a static vulnerability scanner.
 
 ---
 
-**문제 6.** An enterprise runs 50 AWS accounts and wants to enforce the same WAF Web ACL on every account's ALB. What is the most suitable service?
+**Question 6.** An enterprise runs 50 AWS accounts and wants to enforce the same WAF Web ACL on every account's ALB. What is the most suitable service?
 
 A) Manually configure WAF on each account
 B) Apply org-wide WAF policy uniformly with AWS Firewall Manager
 C) Check daily with Lambda
 D) Security Hub
 
-**정답: B**
+**Answer: B**
 
-해설: Firewall Manager is a dedicated service that applies WAF Web ACL, Shield Advanced, Security Group, Network Firewall, and Route 53 Resolver DNS Firewall policies uniformly across an entire AWS Organization. It also auto-applies to new accounts/resources. A explodes operational overhead, C makes consistency hard to guarantee, and D is an integrated dashboard, not a policy-enforcement tool.
+Explanation: Firewall Manager is a dedicated service that applies WAF Web ACL, Shield Advanced, Security Group, Network Firewall, and Route 53 Resolver DNS Firewall policies uniformly across an entire AWS Organization. It also auto-applies to new accounts/resources. A explodes operational overhead, C makes consistency hard to guarantee, and D is an integrated dashboard, not a policy-enforcement tool.
 
 ---
 
-**문제 7.** After a GuardDuty finding, you want to trace the root cause by visualizing, in a graph, "when this IAM Role first appeared, which instances it was attached to, and which APIs it called." What is the most suitable service?
+**Question 7.** After a GuardDuty finding, you want to trace the root cause by visualizing, in a graph, "when this IAM Role first appeared, which instances it was attached to, and which APIs it called." What is the most suitable service?
 
 A) CloudTrail Insights
 B) Detective
 C) Security Hub
 D) Config
 
-**정답: B**
+**Answer: B**
 
-해설: Detective is a dedicated service that integrates GuardDuty findings, VPC Flow Logs, and CloudTrail into a graph DB to visualize the root cause of a security incident. You can see the time axis, relationships between entities, and API call frequency on a single screen, cutting analysis time from hours to minutes. Security Hub (C) is an integrated score/dashboard, not root-cause graph analysis.
+Explanation: Detective is a dedicated service that integrates GuardDuty findings, VPC Flow Logs, and CloudTrail into a graph DB to visualize the root cause of a security incident. You can see the time axis, relationships between entities, and API call frequency on a single screen, cutting analysis time from hours to minutes. Security Hub (C) is an integrated score/dashboard, not root-cause graph analysis.
 
 ---
 
-해설 보강: AWS's 5 security pillars are cleanly divided as "WAF (L7 prevention), Shield (L3/L4 DDoS), GuardDuty (behavior detection), Inspector (vulnerabilities), Macie (PII)," and mapping the exam keywords precisely gets you to the answer fast. In practice, the standard is to build not a single service but a pipeline: GuardDuty → EventBridge → Lambda automated response → Detective analysis → Security Hub integrated score. Also keep in mind that Firewall Manager is the one and only answer for org-wide guardrails.
+Additional Explanation: AWS's 5 security pillars are cleanly divided as "WAF (L7 prevention), Shield (L3/L4 DDoS), GuardDuty (behavior detection), Inspector (vulnerabilities), Macie (PII)," and mapping the exam keywords precisely gets you to the answer fast. In practice, the standard is to build not a single service but a pipeline: GuardDuty → EventBridge → Lambda automated response → Detective analysis → Security Hub integrated score. Also keep in mind that Firewall Manager is the one and only answer for org-wide guardrails.

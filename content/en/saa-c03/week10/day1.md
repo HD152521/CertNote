@@ -109,94 +109,94 @@ In the next article we move from compute to storage, looking at how S3 storage c
 
 ## 📝 Practice Questions
 
-**문제 1.** A company runs a 24/7 web application and may in the future want to freely move to newer-generation instances and change OS or region as well. To get the maximum cost discount while keeping this flexibility, what should it use?
+**Question 1.** A company runs a 24/7 web application and may in the future want to freely move to newer-generation instances and change OS or region as well. To get the maximum cost discount while keeping this flexibility, what should it use?
 
 A) Standard Reserved Instance, 3 years
 B) Compute Savings Plan
 C) EC2 Instance Savings Plan
 D) Spot Instances
 
-**정답: B**
+**Answer: B**
 
-해설: A Compute Savings Plan commits to "$X per hour of spend," so the discount follows even if you freely change instance family, region, OS, and tenancy, and it even covers Fargate and Lambda (~66%). A Standard RI (A) is nailed to a specific type, so the commitment dies when you move to a new generation. An EC2 Instance SP (C) discounts deeper (~72%) but pins family and region, failing the "free migration" requirement. Spot (D) is unsuitable for a 24/7 stable workload — it can be reclaimed at any time.
+Explanation: A Compute Savings Plan commits to "$X per hour of spend," so the discount follows even if you freely change instance family, region, OS, and tenancy, and it even covers Fargate and Lambda (~66%). A Standard RI (A) is nailed to a specific type, so the commitment dies when you move to a new generation. An EC2 Instance SP (C) discounts deeper (~72%) but pins family and region, failing the "free migration" requirement. Spot (D) is unsuitable for a 24/7 stable workload — it can be reclaimed at any time.
 
 ---
 
-**문제 2.** A team runs a machine-learning training batch job that runs at night. The job can be paused and resumed via checkpoints, and minimizing cost is the top priority. Which option is most suitable?
+**Question 2.** A team runs a machine-learning training batch job that runs at night. The job can be paused and resumed via checkpoints, and minimizing cost is the top priority. Which option is most suitable?
 
 A) On-Demand
 B) Reserved Instance, 3 years
 C) Spot Instances + Capacity Rebalancing
 D) Convertible RI
 
-**정답: C**
+**Answer: C**
 
-해설: A fault-tolerant batch that can pause and resume via checkpoints is Spot's ideal use case, earning up to 90% off. Turning on Capacity Rebalancing delivers the impending-reclaim signal before the 2-minute notice, buying time to move work in advance. On-Demand (A) is the most expensive, and RI (B) / Convertible RI (D) are commitments for 24/7 stable workloads, so for a "night-only batch" most of the committed hours are wasted. The key signal is the fault-tolerance mention: "can pause and resume via checkpoints."
+Explanation: A fault-tolerant batch that can pause and resume via checkpoints is Spot's ideal use case, earning up to 90% off. Turning on Capacity Rebalancing delivers the impending-reclaim signal before the 2-minute notice, buying time to move work in advance. On-Demand (A) is the most expensive, and RI (B) / Convertible RI (D) are commitments for 24/7 stable workloads, so for a "night-only batch" most of the committed hours are wasted. The key signal is the fault-tolerance mention: "can pause and resume via checkpoints."
 
 ---
 
-**문제 3.** A company runs an RDS PostgreSQL instance 24/7 and wants to reduce cost with a 1-year commitment. Which option should it use?
+**Question 3.** A company runs an RDS PostgreSQL instance 24/7 and wants to reduce cost with a 1-year commitment. Which option should it use?
 
 A) Compute Savings Plan
 B) EC2 Instance Savings Plan
 C) Reserved Instance (RDS)
 D) Spot Instances
 
-**정답: C**
+**Answer: C**
 
-해설: Savings Plans cover only the EC2/Fargate/Lambda compute execution layer; RDS, Redshift, ElastiCache, and OpenSearch are still committed to only via Reserved Instances. So the answer is an RDS RI. A and B are wrong because SPs don't apply to RDS, and D is wrong because RDS doesn't support Spot and putting a database on a reclaimable instance is itself inappropriate. When you see the word "RDS," you should think RI, not SP.
+Explanation: Savings Plans cover only the EC2/Fargate/Lambda compute execution layer; RDS, Redshift, ElastiCache, and OpenSearch are still committed to only via Reserved Instances. So the answer is an RDS RI. A and B are wrong because SPs don't apply to RDS, and D is wrong because RDS doesn't support Spot and putting a database on a reclaimable instance is itself inappropriate. When you see the word "RDS," you should think RI, not SP.
 
 ---
 
-**문제 4.** A team runs Java and Node.js container workloads on ECS and wants to lower the compute unit price while minimizing code changes. What is the most suitable approach?
+**Question 4.** A team runs Java and Node.js container workloads on ECS and wants to lower the compute unit price while minimizing code changes. What is the most suitable approach?
 
 A) Swap instances for a larger type
 B) Move to Graviton (ARM)-based instances/Fargate
 C) Rewrite all workloads to Lambda
 D) Move to Dedicated Hosts
 
-**정답: B**
+**Answer: B**
 
-해설: Graviton delivers up to 40% price-performance through the power efficiency of the ARM/RISC architecture and AWS vertical integration. Runtime-based languages like Java and Node.js run without code changes as long as you use the ARM version of the runtime, and containers switch over seamlessly via multi-architecture images, meeting the "minimize code changes" condition. A actually increases cost, C is a large-scale rewrite that contradicts "minimal change," and D is for license BYOL purposes, not a cost-saving measure.
+Explanation: Graviton delivers up to 40% price-performance through the power efficiency of the ARM/RISC architecture and AWS vertical integration. Runtime-based languages like Java and Node.js run without code changes as long as you use the ARM version of the runtime, and containers switch over seamlessly via multi-architecture images, meeting the "minimize code changes" condition. A actually increases cost, C is a large-scale rewrite that contradicts "minimal change," and D is for license BYOL purposes, not a cost-saving measure.
 
 ---
 
-**문제 5.** A company suspects its EC2 instances are over-provisioned. To get a concrete recommendation of the optimal type and size for each instance by analyzing past usage patterns with ML, what should it use?
+**Question 5.** A company suspects its EC2 instances are over-provisioned. To get a concrete recommendation of the optimal type and size for each instance by analyzing past usage patterns with ML, what should it use?
 
 A) Trusted Advisor
 B) Compute Optimizer
 C) Cost Explorer
 D) CloudWatch Alarm
 
-**정답: B**
+**Answer: B**
 
-해설: Compute Optimizer analyzes past CloudWatch metrics with ML and concretely recommends the optimal type/size and estimated savings per instance (EC2, EBS, Lambda, ASG, ECS). Trusted Advisor (A) is rule-based and catches only obvious waste like "underutilized EC2" by threshold; it can't do precise right-sizing — the two are complementary. Cost Explorer (C) is a cost-visualization and forecasting tool, and CloudWatch Alarm (D) is a threshold alert, not a right-sizing recommendation tool. To see memory accurately as well, you must feed memory metrics via the CloudWatch Agent to raise recommendation accuracy.
+Explanation: Compute Optimizer analyzes past CloudWatch metrics with ML and concretely recommends the optimal type/size and estimated savings per instance (EC2, EBS, Lambda, ASG, ECS). Trusted Advisor (A) is rule-based and catches only obvious waste like "underutilized EC2" by threshold; it can't do precise right-sizing — the two are complementary. Cost Explorer (C) is a cost-visualization and forecasting tool, and CloudWatch Alarm (D) is a threshold alert, not a right-sizing recommendation tool. To see memory accurately as well, you must feed memory metrics via the CloudWatch Agent to raise recommendation accuracy.
 
 ---
 
-**문제 6.** You run a production workload on Spot instances, but frequent interruptions are hurting availability. Which allocation strategy most effectively reduces the interruptions themselves?
+**Question 6.** You run a production workload on Spot instances, but frequent interruptions are hurting availability. Which allocation strategy most effectively reduces the interruptions themselves?
 
 A) lowest-price allocation, using only the cheapest pool
 B) capacity-optimized allocation + diversify across multiple instance types/AZs
 C) Standardize on a single instance type
 D) Set the On-Demand bid to the maximum
 
-**정답: B**
+**Answer: B**
 
-해설: capacity-optimized allocation picks "the capacity pool least likely to be reclaimed right now," minimizing interruptions themselves, and diversifying across multiple types/AZs ensures quick replacement even when one pool is reclaimed. lowest-price (A) causes the paradox of demand piling onto the cheapest pool, making reclaims more frequent. A single type (C) is the opposite of diversification, with no replacement pool available at reclaim time — risky. D is irrelevant because Spot is no longer a bid auction; reclaims happen not from price but from recovering On-Demand demand.
+Explanation: capacity-optimized allocation picks "the capacity pool least likely to be reclaimed right now," minimizing interruptions themselves, and diversifying across multiple types/AZs ensures quick replacement even when one pool is reclaimed. lowest-price (A) causes the paradox of demand piling onto the cheapest pool, making reclaims more frequent. A single type (C) is the opposite of diversification, with no replacement pool available at reclaim time — risky. D is irrelevant because Spot is no longer a bid auction; reclaims happen not from price but from recovering On-Demand demand.
 
 ---
 
-**문제 7.** An architect wants to optimize the cost of a workload that mixes stable baseline traffic with unpredictable spikes. What is the most appropriate combination strategy?
+**Question 7.** An architect wants to optimize the cost of a workload that mixes stable baseline traffic with unpredictable spikes. What is the most appropriate combination strategy?
 
 A) Standardize entirely on On-Demand
 B) Commit everything to 3-year RIs
 C) Mix Savings Plan for the baseline, On-Demand for the variable/spikes (+ Spot for the fault-tolerant portion)
 D) Run everything on Spot
 
-**정답: C**
+**Answer: C**
 
-해설: Cost optimization is portfolio design that decomposes a workload by stability and predictability and dresses each part in the matching pricing model. The 24/7 baseline is deeply discounted with an SP, unpredictable spikes are flexibly absorbed by On-Demand, and the fault-tolerant portion saves via Spot. A leaves even the baseline on expensive On-Demand (wasteful), B commits even the variable/spikes so unused commitments are wasted, and D puts the baseline that needs stability onto reclaimable Spot, hurting availability.
+Explanation: Cost optimization is portfolio design that decomposes a workload by stability and predictability and dresses each part in the matching pricing model. The 24/7 baseline is deeply discounted with an SP, unpredictable spikes are flexibly absorbed by On-Demand, and the fault-tolerant portion saves via Spot. A leaves even the baseline on expensive On-Demand (wasteful), B commits even the variable/spikes so unused commitments are wasted, and D puts the baseline that needs stability onto reclaimable Spot, hurting availability.
 
 ---
 

@@ -288,86 +288,86 @@ User ──► [Shield Advanced] ──► CloudFront Distribution
 
 ## 📝 Practice Questions
 
-**문제 1.** CloudFront is serving S3 Private bucket (SSE-KMS encrypted) content. Currently using OAI, getting AccessDenied on KMS bucket. How to resolve?
+**Question 1.** CloudFront is serving S3 Private bucket (SSE-KMS encrypted) content. Currently using OAI, getting AccessDenied on KMS bucket. How to resolve?
 
 A) Change S3 bucket encryption to SSE-S3
 B) Switch from OAI to OAC (SigV4 support)
 C) Attach KMS permission IAM Role to CloudFront
 D) Lambda@Edge handles KMS decryption
 
-**정답: B**
-해설: OAI doesn't support SigV4, causing AccessDenied on SSE-KMS bucket access. OAC signs S3 requests with SigV4, fully functioning with KMS buckets. Switch to OAC and configure S3 Bucket Policy with CloudFront Service Principal + SourceArn condition.
+**Answer: B**
+Explanation: OAI doesn't support SigV4, causing AccessDenied on SSE-KMS bucket access. OAC signs S3 requests with SigV4, fully functioning with KMS buckets. Switch to OAC and configure S3 Bucket Policy with CloudFront Service Principal + SourceArn condition.
 
 ---
 
-**문제 2.** Global media streaming service wants reduce Origin server load. Problem: all 400 PoPs' Cache Miss hit Origin directly. Most effective solution?
+**Question 2.** Global media streaming service wants reduce Origin server load. Problem: all 400 PoPs' Cache Miss hit Origin directly. Most effective solution?
 
 A) Increase CloudFront TTL
 B) Enable Origin Shield
 C) Add Lambda@Edge to Origin Request
 D) Block excessive requests via WAF
 
-**정답: B**
-해설: Origin Shield places additional cache tier between Regional Edge Cache and Origin, absorbing all 400 PoPs' Cache Miss at one regional Origin Shield. Reduces Origin load up to 99%. Raising TTL improves cache efficiency but creates freshness issues.
+**Answer: B**
+Explanation: Origin Shield places additional cache tier between Regional Edge Cache and Origin, absorbing all 400 PoPs' Cache Miss at one regional Origin Shield. Reduces Origin load up to 99%. Raising TTL improves cache efficiency but creates freshness issues.
 
 ---
 
-**문제 3.** CloudFront must handle URL rewrite (SPA routing) and add security headers. Request rate is hundreds of millions per second, cost is critical. Most cost-efficient method?
+**Question 3.** CloudFront must handle URL rewrite (SPA routing) and add security headers. Request rate is hundreds of millions per second, cost is critical. Most cost-efficient method?
 
 A) Lambda@Edge (Origin Request)
 B) CloudFront Functions (Viewer Request/Response)
 C) ALB Lambda Target
 D) API Gateway + Lambda
 
-**정답: B**
-해설: CloudFront Functions: <1ms execution + $0.10 per 1M calls, 6x cheaper than Lambda@Edge ($0.60+). URL rewrite and header manipulation are typical CloudFront Functions use cases. Lambda@Edge for external API calls or complex logic.
+**Answer: B**
+Explanation: CloudFront Functions: <1ms execution + $0.10 per 1M calls, 6x cheaper than Lambda@Edge ($0.60+). URL rewrite and header manipulation are typical CloudFront Functions use cases. Lambda@Edge for external API calls or complex logic.
 
 ---
 
-**문제 4.** Paid video streaming service delivers content via HLS (HTTP Live Streaming). Each HLS segment (.ts file) number hundreds, allow only subscribers. Most suitable method?
+**Question 4.** Paid video streaming service delivers content via HLS (HTTP Live Streaming). Each HLS segment (.ts file) number hundreds, allow only subscribers. Most suitable method?
 
 A) Issue Signed URL for each .ts file
 B) Issue Signed Cookies (once at login)
 C) CloudFront Functions handle authentication
 D) Public S3 bucket, Lambda handles auth
 
-**정답: B**
-해설: HLS streaming generates hundreds of .ts segment file requests. Issuing Signed URL per file creates extreme server load and complexity. Signed Cookies issued once at login automatically include in all segment requests, highly efficient.
+**Answer: B**
+Explanation: HLS streaming generates hundreds of .ts segment file requests. Issuing Signed URL per file creates extreme server load and complexity. Signed Cookies issued once at login automatically include in all segment requests, highly efficient.
 
 ---
 
-**문제 5.** Payment form credit card field needs additional encryption passing through CloudFront. HTTPS alone insufficient as CloudFront edge decrypts—requires End-to-End protection per security team. Which feature?
+**Question 5.** Payment form credit card field needs additional encryption passing through CloudFront. HTTPS alone insufficient as CloudFront edge decrypts—requires End-to-End protection per security team. Which feature?
 
 A) HTTPS Certificate Manager
 B) Field-Level Encryption
 C) WAF SQL Injection rules
 D) S3 Server-Side Encryption
 
-**정답: B**
-해설: Field-Level Encryption additionally encrypts specific form fields at CloudFront Edge with RSA public key, transmitting encrypted to Origin. Only payment service with private key can decrypt, providing End-to-End protection meeting PCI-DSS requirements via AWS standard pattern.
+**Answer: B**
+Explanation: Field-Level Encryption additionally encrypts specific form fields at CloudFront Edge with RSA public key, transmitting encrypted to Origin. Only payment service with private key can decrypt, providing End-to-End protection meeting PCI-DSS requirements via AWS standard pattern.
 
 ---
 
-**문제 6.** CloudFront must implement A/B testing. Route users to version A or B Origin based on cookie, call external experiment service API. Which compute option suitable?
+**Question 6.** CloudFront must implement A/B testing. Route users to version A or B Origin based on cookie, call external experiment service API. Which compute option suitable?
 
 A) CloudFront Functions (Viewer Request)
 B) Lambda@Edge (Origin Request)
 C) CloudFront Functions (Origin Request)
 D) AWS Step Functions
 
-**정답: B**
-해설: External API calls impossible in CloudFront Functions (network calls forbidden). Lambda@Edge in Origin Request event enables external API calls, dynamically changing Origin based on cookies. CloudFront Functions unsuitable due to 1ms limit and network call prohibition.
+**Answer: B**
+Explanation: External API calls impossible in CloudFront Functions (network calls forbidden). Lambda@Edge in Origin Request event enables external API calls, dynamically changing Origin based on cookies. CloudFront Functions unsuitable due to 1ms limit and network call prohibition.
 
 ---
 
-**문제 7.** SaaS company operates CloudFront with us-east-1 ALB and eu-west-1 ALB as Origins. When us-east-1 ALB returns 5xx errors, auto-failover to eu-west-1. Which configuration needed?
+**Question 7.** SaaS company operates CloudFront with us-east-1 ALB and eu-west-1 ALB as Origins. When us-east-1 ALB returns 5xx errors, auto-failover to eu-west-1. Which configuration needed?
 
 A) Route 53 Failover routing only
 B) CloudFront Origin Group (Primary: us-east-1 ALB, Secondary: eu-west-1 ALB)
 C) Lambda@Edge error detection then Origin change
 D) CloudFront + Route 53 Health Check combination
 
-**정답: B**
-해설: CloudFront Origin Group provides Origin Failover automatically retrying Secondary Origin on Primary 5xx response. Switches immediately based on HTTP response code without DNS TTL delay.
+**Answer: B**
+Explanation: CloudFront Origin Group provides Origin Failover automatically retrying Secondary Origin on Primary 5xx response. Switches immediately based on HTTP response code without DNS TTL delay.
 
 ---

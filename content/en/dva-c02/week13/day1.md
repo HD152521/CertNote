@@ -126,91 +126,91 @@ WebSocket: $connect, $disconnect, $default
 
 ## 📝 Final Mock Exam - Part 1
 
-**문제 1.** What problem does Provisioned Concurrency solve in Lambda?
+**Question 1.** What problem does Provisioned Concurrency solve in Lambda?
 
 A) High cost  
 B) Cold Start latency  
 C) Timeout issues  
 D) Memory shortage  
 
-**정답: B** - Provisioned Concurrency pre-initializes execution environments to eliminate Cold Start delays.
+**Answer: B** - Provisioned Concurrency pre-initializes execution environments to eliminate Cold Start delays.
 
 ---
 
-**문제 2.** What does HTTP 429 error mean in API Gateway?
+**Question 2.** What does HTTP 429 error mean in API Gateway?
 
 A) Authentication failure  
 B) Too many requests (throttling exceeded)  
 C) Server error  
 D) Resource not found  
 
-**정답: B** - HTTP 429 Too Many Requests is returned when API Gateway throttling limit is exceeded.
+**Answer: B** - HTTP 429 Too Many Requests is returned when API Gateway throttling limit is exceeded.
 
 ---
 
-**문제 3.** When Deny and Allow conflict in IAM policy?
+**Question 3.** When Deny and Allow conflict in IAM policy?
 
 A) Allow takes precedence  
 B) Deny takes precedence  
 C) Last setting takes precedence  
 D) Administrator decides  
 
-**정답: B** - In IAM policy evaluation, explicit Deny always takes precedence over Allow.
+**Answer: B** - In IAM policy evaluation, explicit Deny always takes precedence over Allow.
 
 ---
 
-**문제 4.** Which storage loses data when EC2 instance is stopped then restarted?
+**Question 4.** Which storage loses data when EC2 instance is stopped then restarted?
 
 A) EBS gp3  
 B) EBS io2  
 C) Instance Store  
 D) EFS  
 
-**정답: C** - Instance Store is ephemeral storage that is deleted when the instance is stopped or terminated.
+**Answer: C** - Instance Store is ephemeral storage that is deleted when the instance is stopped or terminated.
 
 ---
 
-**문제 5.** Correct way to share data between Lambda functions?
+**Question 5.** Correct way to share data between Lambda functions?
 
 A) Store in Lambda environment variables  
 B) Store in /tmp  
 C) Use external storage like DynamoDB, S3, ElastiCache  
 D) Store in Lambda memory  
 
-**정답: C** - Data sharing between Lambda functions requires external storage like DynamoDB, S3, ElastiCache. Lambda memory is not shared between instances.
+**Answer: C** - Data sharing between Lambda functions requires external storage like DynamoDB, S3, ElastiCache. Lambda memory is not shared between instances.
 
 ---
 
-**문제 6.** How to immediately invalidate cache in API Gateway?
+**Question 6.** How to immediately invalidate cache in API Gateway?
 
 A) Redeploy API  
 B) Call cache deletion API  
 C) Request with Cache-Control: max-age=0 header  
 D) Set TTL to 0  
 
-**정답: C** - Include `Cache-Control: max-age=0` header to force API Gateway to fetch latest response from backend.
+**Answer: C** - Include `Cache-Control: max-age=0` header to force API Gateway to fetch latest response from backend.
 
 ---
 
-**문제 7.** Where are Lambda Layer files stored?
+**Question 7.** Where are Lambda Layer files stored?
 
 A) /var/runtime  
 B) /opt  
 C) /tmp  
 D) /var/task  
 
-**정답: B** - Lambda Layer files are mounted in `/opt` directory.
+**Answer: B** - Lambda Layer files are mounted in `/opt` directory.
 
 ---
 
-**문제 8.** Correct way to access S3 cross-account?
+**Question 8.** Correct way to access S3 cross-account?
 
 A) Create IAM user in target account  
 B) Use STS AssumeRole for target account role  
 C) Enable S3 public access  
 D) VPN connection  
 
-**정답: B** - Use STS AssumeRole to assume target account role and access S3 with temporary credentials.
+**Answer: B** - Use STS AssumeRole to assume target account role and access S3 with temporary credentials.
 
 ---
 

@@ -40,26 +40,26 @@ Continuous learning closes the loop: deploy → monitor → detect drift → aut
 
 ## 📝 Practice Questions
 
-**문제 1.** 모델 정확도가 기준선 0.85 아래로 떨어졌을 때 자동으로 재학습 파이프라인을 시작시키려 한다. 가장 적절한 트리거는?
+**Question 1.** You want to automatically start a retraining pipeline when model accuracy drops below the baseline of 0.85. What is the most appropriate trigger?
 
-A) EventBridge 정시 규칙(cron)  
-B) CloudWatch Alarm이 정확도 메트릭 임계치 위반 감지 → EventBridge 또는 Lambda 트리거  
-C) S3 버전 관리  
-D) IAM 정책 변경  
+A) EventBridge scheduled rule (cron)  
+B) A CloudWatch Alarm detects the accuracy metric breaching the threshold → EventBridge or Lambda trigger  
+C) S3 versioning  
+D) IAM policy change  
 
-**정답: B**  
-해설: 정확도 저하는 CloudWatch Alarm으로 감지되고, ALARM 상태 변경이 EventBridge나 Lambda로 전달되어 재학습 파이프라인을 트리거한다. A는 정시 트리거일 뿐 성능 저하 감지가 아니고, C·D는 모니터링·트리거와 무관하다.
+**Answer: B**  
+Explanation: An accuracy drop is detected by a CloudWatch Alarm, and the ALARM state change is delivered to EventBridge or Lambda to trigger the retraining pipeline. A is only a scheduled trigger and not detection of performance degradation, and C and D are unrelated to monitoring or triggering.
 
 ---
 
-**문제 2.** 지속적 학습 루프에서 재학습된 모델이 이전 모델보다 성능이 낮으면 어떻게 되어야 하는가?
+**Question 2.** In a continuous training loop, what should happen if the retrained model performs worse than the previous model?
 
-A) 자동으로 배포한다  
-B) 품질 게이트(ConditionStep)가 등록을 막는다  
-C) 이전 모델을 삭제한다  
-D) 사람에게만 알리고 아무것도 하지 않는다  
+A) Deploy it automatically  
+B) The quality gate (ConditionStep) blocks registration  
+C) Delete the previous model  
+D) Only notify a person and do nothing else  
 
-**정답: B**  
-해설: 파이프라인 끝의 ConditionStep(품질 게이트)이 성능 임계치를 확인해 기준 미만이면 등록을 막는다. A는 위험하고, C는 버전 히스토리 손실, D는 자동화 부족이다.
+**Answer: B**  
+Explanation: A ConditionStep (quality gate) at the end of the pipeline checks the performance threshold and blocks registration if it is below the standard. A is risky, C loses version history, and D lacks automation.
 
 ---

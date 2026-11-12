@@ -84,62 +84,62 @@ Week 2 covered the entire process of getting data to models—transformation (Gl
 
 ## 📝 Practice Questions
 
-**문제 1.** 운영 인력이 적은 팀이 매일 표준 Spark 변환을 돌리고, 그 결과로 모델을 재학습하는 ML CI/CD를 lineage 추적과 함께 구성하려 한다. 가장 자연스러운 조합은?
+**Question 1.** A team with limited operations staff runs standard Spark transformations daily and wants to build ML CI/CD that retrains a model from the results, with lineage tracking. What is the most natural combination?
 
-A) EMR 상시 클러스터 + 수동 학습  
-B) Glue 서버리스 ETL + SageMaker Pipelines  
-C) Lambda 단일 함수로 전부 처리  
-D) Athena 쿼리만으로 학습까지 수행  
+A) Always-on EMR cluster + manual training  
+B) Glue serverless ETL + SageMaker Pipelines  
+C) Handle everything with a single Lambda function  
+D) Perform even training using only Athena queries  
 
-**정답: B**  
-해설: 운영 부담을 최소화하는 Glue 서버리스 ETL로 변환을 처리하고, ML 전용이며 lineage·모델 레지스트리가 내장된 SageMaker Pipelines로 재학습 CI/CD를 구성하는 것이 요구사항(운영 최소·추적성)에 가장 부합한다. 상시 EMR+수동(A)은 운영 부담이 크고, Lambda 단일 함수(C)·Athena만으로(D)는 Spark 변환과 모델 학습을 감당하기 어렵다.
-
----
-
-**문제 2.** 1:999로 극히 불균형한 데이터에서 소수 클래스를 단순 복제 대신 보간으로 합성해 늘리고, 평가는 거짓 안심을 피하려 한다. 알맞은 조합은?
-
-A) SMOTE 오버샘플링 + PR-AUC 평가  
-B) 언더샘플링 + 정확도 평가  
-C) 데이터 복제 + 정확도 평가  
-D) 합성 데이터로만 검증  
-
-**정답: A**  
-해설: SMOTE는 소수 샘플과 최근접 이웃 사이를 보간해 새 샘플을 합성하므로 단순 복제의 과적합 위험을 줄이고, 불균형에서 정확도는 거짓 안심을 주므로 PR-AUC로 평가하는 것이 옳다. 정확도 평가(B·C)는 불균형에서 부적절하고, 검증은 실데이터로 해야 하므로 D도 틀렸다.
+**Answer: B**  
+Explanation: Handling the transformation with Glue serverless ETL, which minimizes operational burden, and building the retraining CI/CD with SageMaker Pipelines, which is ML-specific and has built-in lineage and a model registry, best matches the requirements (minimal operations, traceability). Always-on EMR + manual (A) has a heavy operational burden, and a single Lambda function (C) or Athena alone (D) cannot handle Spark transformations and model training.
 
 ---
 
-**문제 3.** 수 TB 데이터를 8개 노드로 데이터 병렬 학습할 때 각 노드의 중복 다운로드를 없애고 시작 지연을 줄이려 한다. 가장 적절한 설계는?
+**Question 2.** In extremely imbalanced data of 1:999, you want to increase the minority class by synthesizing through interpolation instead of simple duplication, and avoid false reassurance in evaluation. Which combination is appropriate?
 
-A) 단일 거대 파일 + FullyReplicated + File mode  
-B) DynamoDB에서 직접 읽기  
-C) 여러 파일로 분할 + ShardedByS3Key + (반복 읽기 시) FSx for Lustre  
-D) 모든 노드가 전체 데이터를 다운로드  
+A) SMOTE oversampling + PR-AUC evaluation  
+B) Undersampling + accuracy evaluation  
+C) Data duplication + accuracy evaluation  
+D) Validate only with synthetic data  
 
-**정답: C**  
-해설: 데이터를 여러 S3 객체로 분할해야 ShardedByS3Key가 노드별 분배 효과를 내며, 반복 읽기가 많으면 FSx for Lustre를 공유 고속 스토리지로 붙여 지연을 줄인다. 단일 거대 파일+FullyReplicated(A)와 전체 다운로드(D)는 중복과 시작 지연을 키우고, DynamoDB 직접 읽기(C)는 대규모 분산 학습 데이터 공급에 부적합하다.
+**Answer: A**  
+Explanation: SMOTE synthesizes new samples by interpolating between minority samples and their nearest neighbors, reducing the overfitting risk of simple duplication, and because accuracy gives false reassurance under imbalance, evaluating with PR-AUC is correct. Accuracy-based evaluation (B, C) is inappropriate under imbalance, and validation must be done with real data, so D is also wrong.
 
 ---
 
-**문제 4.** 데이터 변환 워크플로에 비-ML 단계(외부 승인 대기, Lambda 후처리)와 SageMaker 학습이 함께 섞여 있고 복잡한 분기·재시도가 필요하다. 상위 오케스트레이터로 가장 적합한 것은?
+**Question 3.** When training on several TB of data in a data-parallel fashion across 8 nodes, you want to eliminate duplicate downloads on each node and reduce start-up delay. Which design is MOST appropriate?
 
-A) SageMaker Pipelines 단독  
+A) Single huge file + FullyReplicated + File mode  
+B) Read directly from DynamoDB  
+C) Split into multiple files + ShardedByS3Key + (for repeated reads) FSx for Lustre  
+D) Every node downloads the entire dataset  
+
+**Answer: C**  
+Explanation: The data must be split into multiple S3 objects for ShardedByS3Key to distribute across nodes effectively, and if there are many repeated reads, attaching FSx for Lustre as shared high-speed storage reduces latency. A single huge file + FullyReplicated (A) and downloading everything (D) increase duplication and start-up delay, and reading directly from DynamoDB (C) is unsuitable for supplying large-scale distributed training data.
+
+---
+
+**Question 4.** A data transformation workflow mixes non-ML steps (waiting for external approval, Lambda post-processing) with SageMaker training and requires complex branching and retries. Which is the most appropriate top-level orchestrator?
+
+A) SageMaker Pipelines alone  
 B) FSx for Lustre  
 C) Glue Crawler  
 D) AWS Step Functions  
 
-**정답: D**  
-해설: Step Functions는 Glue·Lambda·SageMaker·승인 대기 등 이질적 서비스를 상태 머신으로 묶고 Choice·Retry·Catch로 분기·재시도를 선언적으로 처리하는 범용 오케스트레이터라 ML+비ML 혼합 워크플로에 적합하다. SageMaker Pipelines 단독(A)은 비-ML·승인 통합이 제한적이고, Glue Crawler(C)·FSx(D)는 오케스트레이션 도구가 아니다.
+**Answer: D**  
+Explanation: Step Functions is a general-purpose orchestrator that ties together heterogeneous services such as Glue, Lambda, SageMaker, and approval waits in a state machine and handles branching and retries declaratively with Choice, Retry, and Catch, so it suits mixed ML and non-ML workflows. SageMaker Pipelines alone (A) has limited integration of non-ML steps and approvals, and Glue Crawler (C) and FSx (D) are not orchestration tools.
 
 ---
 
-**문제 5.** MLS-C01 데이터 엔지니어링 영역에서 도구 선택형 문제를 풀 때 가장 핵심이 되는 판단 기준은?
+**Question 5.** When answering tool-selection questions in the MLS-C01 data engineering domain, what is the most essential decision criterion?
 
-A) 항상 가장 최신에 출시된 서비스를 고른다  
-B) 비용·운영 부담·규모·접근 패턴 등 요구사항 단서에 맞는 선택을 한다  
-C) 무조건 가장 강력한(비싼) 옵션을 고른다  
-D) 모든 문제에서 EMR을 정답으로 본다  
+A) Always choose the most recently released service  
+B) Make the choice that fits the requirement clues such as cost, operational burden, scale, and access pattern  
+C) Always choose the most powerful (expensive) option  
+D) Treat EMR as the correct answer to every question  
 
-**정답: B**  
-해설: 이 영역의 출제 패턴은 거의 항상 비용·운영 부담·규모·접근 패턴의 트레이드오프 판단이며, 정답은 단일 기술이 아니라 문제의 요구사항 단서("운영 최소", "매우 큰 데이터", "임의 접근 필요" 등)에 맞는 선택이다. 최신·최강·특정 도구를 무조건 고르는 A·C·D는 상황 적합성을 무시한 잘못된 접근이다.
+**Answer: B**  
+Explanation: The question pattern in this domain is almost always a trade-off judgment among cost, operational burden, scale, and access pattern, and the correct answer is not a single technology but the choice that fits the requirement clues in the question ("minimal operations," "very large data," "random access required," and so on). A, C, and D, which unconditionally choose the newest, the strongest, or a particular tool, are wrong approaches that ignore fitness for the situation.
 
 ---

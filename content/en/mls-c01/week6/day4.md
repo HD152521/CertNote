@@ -99,62 +99,62 @@ Today we consolidated unsupervised/anomaly builtins: RCF(general anomaly), IP In
 
 ## 📝 Practice Questions
 
-**문제 1.** 서버 메트릭 스트림에서 평소와 다른 급변(스파이크)을 실시간으로, 레이블 없이 탐지하려 한다. 가장 적합한 조합은?
+**Question 1.** You want to detect abnormal sudden changes (spikes) in a server metric stream in real time and without labels. Which combination is MOST suitable?
 
-A) PCA로 차원 축소 후 K-Means  
-B) Kinesis Data Analytics의 Random Cut Forest  
+A) Dimensionality reduction with PCA followed by K-Means  
+B) Random Cut Forest in Kinesis Data Analytics  
 C) IP Insights  
 D) BlazingText supervised  
 
-**정답: B**  
-해설: 레이블 없는 수치 스트림의 실시간 이상 탐지는 Kinesis Data Analytics에 내장된 RANDOM_CUT_FOREST 함수가 정석이다. PCA+K-Means(A)는 이상탐지 전용이 아니고, IP Insights(C)는 엔티티-IP 관계 특화, BlazingText(D)는 텍스트 분류용이다.
+**Answer: B**  
+Explanation: For real-time anomaly detection on an unlabeled numeric stream, the RANDOM_CUT_FOREST function built into Kinesis Data Analytics is the standard approach. PCA + K-Means (A) is not dedicated to anomaly detection, IP Insights (C) specializes in entity-IP relationships, and BlazingText (D) is for text classification.
 
 ---
 
-**문제 2.** 한 웹 서비스가 "특정 사용자 계정이 평소와 전혀 다른 IP 주소에서 로그인"하는 비정상을 탐지하려 한다. 가장 특화된 빌트인은?
+**Question 2.** A web service wants to detect the anomaly of "a specific user account logging in from an IP address completely different from usual." Which built-in algorithm is the MOST specialized for this?
 
 A) Random Cut Forest  
 B) PCA  
 C) IP Insights  
 D) LDA  
 
-**정답: C**  
-해설: IP Insights는 엔티티(사용자/계정)와 IPv4 주소의 연관 패턴을 학습해 평소와 다른 조합을 탐지하도록 특화돼 있다. RCF(A)는 일반 수치 이상, PCA(B)는 차원 축소, LDA(D)는 토픽 모델이다.
+**Answer: C**  
+Explanation: IP Insights is specialized to learn the association patterns between entities (users/accounts) and IPv4 addresses and detect unusual combinations. RCF (A) is for general numeric anomalies, PCA (B) is dimensionality reduction, and LDA (D) is a topic model.
 
 ---
 
-**문제 3.** 상관관계가 높은 500개의 수치 피처를 분산을 최대한 보존하며 30개 정도로 압축해 다운스트림 모델의 입력으로 쓰려 한다. 가장 적합한 빌트인은?
+**Question 3.** You want to compress 500 highly correlated numeric features to about 30 while preserving as much variance as possible, to use as input to a downstream model. Which built-in algorithm is MOST suitable?
 
 A) PCA  
 B) Factorization Machines  
 C) DeepAR  
 D) IP Insights  
 
-**정답: A**  
-해설: 상관된 다수 피처를 분산 보존 소수 주성분으로 압축하는 것은 PCA의 정의 그대로다(매우 큰 차원이면 randomized 모드). FM(B)은 희소 추천, DeepAR(C)는 시계열, IP Insights(D)는 이상 탐지용이다.
+**Answer: A**  
+Explanation: Compressing many correlated features into a few variance-preserving principal components is exactly the definition of PCA (use randomized mode for very high dimensions). FM (B) is for sparse recommendation, DeepAR (C) is for time series, and IP Insights (D) is for anomaly detection.
 
 ---
 
-**문제 4.** 라벨이 없는 대규모 문서 코퍼스에서 잠재 주제를 발견하려 한다. 데이터가 매우 크고 GPU로 학습을 가속하고 싶다. LDA와 NTM 중 더 적합한 것과 그 이유로 옳은 것은?
+**Question 4.** You want to discover latent topics in a large unlabeled document corpus. The data is very large and you want to accelerate training with GPUs. Which of LDA and NTM is more suitable, and which statement gives the correct reason?
 
-A) LDA — 신경망 기반이라 GPU에서 빠르다  
-B) LDA — 항상 NTM보다 정확하다  
-C) NTM — 확률적 생성 모델이라 항상 해석이 더 쉽다  
-D) NTM — 신경망 기반으로 대규모·GPU 활용에 유리하다  
+A) LDA - it is neural network-based, so it is fast on GPU  
+B) LDA - it is always more accurate than NTM  
+C) NTM - it is a probabilistic generative model, so it is always easier to interpret  
+D) NTM - it is neural network-based, which is advantageous for large scale and GPU use  
 
-**정답: D**  
-해설: NTM은 신경망(오토인코더) 기반 토픽 모델로 대규모 데이터와 GPU 활용에 유리하다. LDA가 신경망 기반(A)이라는 설명은 틀렸고(LDA는 확률 모델), "항상 더 정확/해석 쉽다"(B, C)는 단정도 근거가 없다.
+**Answer: D**  
+Explanation: NTM is a neural network (autoencoder)-based topic model, which is advantageous for large-scale data and GPU use. The claim that LDA is neural network-based (A) is wrong (LDA is a probabilistic model), and the assertions that one is "always more accurate/easier to interpret" (B, C) have no basis either.
 
 ---
 
-**문제 5.** SageMaker에서 "LDA"라는 이름과 관련해 가장 정확한 설명은?
+**Question 5.** Which is the MOST accurate statement about the name "LDA" in SageMaker?
 
-A) SageMaker 빌트인 LDA는 차원 축소용 선형판별분석이다  
-B) LDA와 NTM은 모두 지도학습 분류 알고리즘이다  
-C) LDA는 이미지 분류 전용이다  
-D) SageMaker 빌트인 LDA는 토픽 모델(Latent Dirichlet Allocation)이며, 차원축소의 선형판별분석과 이름만 같다  
+A) SageMaker's built-in LDA is Linear Discriminant Analysis for dimensionality reduction  
+B) LDA and NTM are both supervised classification algorithms  
+C) LDA is dedicated to image classification  
+D) SageMaker's built-in LDA is a topic model (Latent Dirichlet Allocation), sharing only the name with Linear Discriminant Analysis for dimensionality reduction  
 
-**정답: D**  
-해설: SageMaker의 빌트인 LDA는 토픽 모델(Latent Dirichlet Allocation)이며, 차원 축소에 쓰는 선형판별분석(Linear Discriminant Analysis)과는 약어만 같고 다른 것이다. 따라서 A는 혼동, LDA/NTM은 비지도 토픽 모델이므로 지도 분류(B)·이미지 전용(C)도 틀렸다.
+**Answer: D**  
+Explanation: SageMaker's built-in LDA is a topic model (Latent Dirichlet Allocation); it shares only the abbreviation with Linear Discriminant Analysis, which is used for dimensionality reduction, and is a different thing. So A is a confusion, and since LDA/NTM are unsupervised topic models, supervised classification (B) and image-only (C) are also wrong.
 
 ---

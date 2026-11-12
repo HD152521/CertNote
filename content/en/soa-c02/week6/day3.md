@@ -485,72 +485,72 @@ Q5: Want to provide standard infrastructure to developers via self-service
 
 ## 📝 Practice Questions
 
-**문제 1.** 회사가 AWS Organizations로 50개 계정을 관리한다. 모든 계정에 CloudTrail과 GuardDuty를 자동으로 활성화하고, 앞으로 새로 추가되는 계정도 자동으로 포함되길 원한다. 가장 적합한 솔루션은?
+**Question 1.** A company manages 50 accounts with AWS Organizations. It wants to automatically enable CloudTrail and GuardDuty in all accounts, and to have accounts added in the future included automatically. What is the most suitable solution?
 
-A) 50개 계정에 각각 CloudFormation Stack을 수동으로 배포한다
-B) StackSets with Service-Managed Permissions + `AutoDeployment=true`를 설정한다
-C) Lambda 함수로 Organizations API를 폴링해 새 계정을 감지하고 CloudFormation을 실행한다
-D) Control Tower를 사용한다
+A) Manually deploy a CloudFormation Stack to each of the 50 accounts
+B) Use StackSets with Service-Managed Permissions + `AutoDeployment=true`
+C) Use a Lambda function to poll the Organizations API, detect new accounts, and run CloudFormation
+D) Use Control Tower
 
-**정답: B**
-해설: StackSets with Service-Managed Permissions는 Organizations와 네이티브로 통합된다. `AutoDeployment=true`를 설정하면 새 계정이 OU에 추가될 때 EventBridge 이벤트가 발생하고 CloudFormation이 자동으로 Stack Instance를 생성한다. D(Control Tower)도 유사한 기능을 제공하지만 전체 AWS 환경 구조를 Control Tower로 전환해야 하는 더 큰 작업이다. B가 현재 조직 구조를 유지하면서 가장 최소 변경으로 구현 가능하다.
-
----
-
-**문제 2.** Stack A(네트워크 Stack)가 VPC ID를 Export하고 Stack B가 `!ImportValue`로 사용 중이다. 운영자가 Stack A의 다른 속성(NAT Gateway 수)을 변경하는 업데이트를 시도한다. 이 업데이트는 VPC ID Export 값을 변경하지 않는다. 어떻게 되는가?
-
-A) Stack B가 ImportValue를 사용 중이라 Stack A를 전혀 수정할 수 없다
-B) Stack A 업데이트가 정상적으로 허용된다. Export 값 자체가 변경되지 않으므로 제약이 없다
-C) Stack B도 함께 자동으로 업데이트된다
-D) Stack A를 업데이트하기 전에 Stack B를 먼저 삭제해야 한다
-
-**정답: B**
-해설: Cross-Stack의 제약은 "Import 중인 Export의 값(Value) 또는 Export 자체를 변경/삭제할 수 없다"는 것이다. NAT Gateway 수 변경은 VPC ID Export 값에 영향을 주지 않으므로 허용된다. 제약은 Export 이름이나 Export 값 자체를 변경하거나, Export를 출력에서 제거하려 할 때 적용된다.
+**Answer: B**
+Explanation: StackSets with Service-Managed Permissions integrates natively with Organizations. With `AutoDeployment=true`, an EventBridge event is raised when a new account is added to the OU, and CloudFormation automatically creates a Stack Instance. D (Control Tower) offers similar functionality, but it is a larger undertaking that requires moving the entire AWS environment structure to Control Tower. B can be implemented with the fewest changes while keeping the current organization structure.
 
 ---
 
-**문제 3.** Nested Stack을 사용할 때 부모 Stack을 삭제하면 어떻게 되는가?
+**Question 2.** Stack A (a network Stack) exports the VPC ID and Stack B uses it with `!ImportValue`. An operator tries an update to Stack A that changes another property (the number of NAT Gateways). This update does not change the VPC ID Export value. What happens?
 
-A) 부모 Stack만 삭제되고 자식 Stack은 독립적으로 남는다
-B) 자식 Stack들이 역순으로 삭제되고 그 다음 부모 Stack이 삭제된다 (cascade)
-C) 자식 Stack들의 DeletionPolicy에 따라 결정된다
-D) 삭제가 거부된다
+A) Stack A cannot be modified at all because Stack B is using the ImportValue
+B) The Stack A update is allowed normally. There is no restriction because the Export value itself does not change
+C) Stack B is also automatically updated
+D) Stack B must be deleted first before updating Stack A
 
-**정답: B**
-해설: Nested Stack에서 부모가 자식의 라이프사이클을 제어한다. 부모 Stack 삭제 시 자식 Stack들이 역순으로(의존성의 반대 순서) 삭제된다. 자식 Stack 내 리소스의 `DeletionPolicy`는 Stack 간 cascade 삭제에도 적용된다. 즉, `DeletionPolicy: Retain`이 설정된 S3 버킷이 자식 Stack에 있다면, 그 버킷은 Stack이 삭제되어도 보존된다.
-
----
-
-**문제 4.** StackSets를 배포하는 중 100개 계정 중 8개에서 IAM 권한 오류로 실패했다. `FailureToleranceCount: 5`로 설정되어 있다. 어떻게 되는가?
-
-A) 8개 실패는 무시되고 나머지 92개에 계속 배포된다
-B) 5개를 초과했으므로 전체 배포 작업이 중단된다. 이미 배포된 것들은 유지되고 아직 미배포 계정들은 진행되지 않는다
-C) 이미 배포된 계정들 포함 전체 롤백이 시작된다
-D) 실패한 8개만 자동으로 재시도된다
-
-**정답: B**
-해설: FailureToleranceCount=5는 5개 계정 실패까지 허용한다는 의미다. 8개가 실패하면 임계값(5)을 초과하므로 StackSets 작업이 중단된다. 이미 성공적으로 배포된 Stack Instance들은 롤백되지 않고 유지된다. 나머지 배포 예정 계정들은 작업이 실행되지 않는다. 운영자는 IAM 권한 문제를 해결한 후 `update-stack-instances`로 실패한 계정들만 재시도해야 한다.
+**Answer: B**
+Explanation: The Cross-Stack constraint is that you cannot change or delete the value of an Export that is being imported, or the Export itself. Changing the number of NAT Gateways does not affect the VPC ID Export value, so it is allowed. The constraint applies when you try to change the Export name or Export value itself, or remove the Export from the Outputs.
 
 ---
 
-**문제 5.** Nested Stack과 Cross-Stack Reference를 비교할 때, VPC와 서브넷 같은 공유 네트워크 인프라를 관리하기 위해 어떤 방식을 사용해야 하는가? 그 이유는?
+**Question 3.** When using Nested Stacks, what happens when the parent Stack is deleted?
 
-A) Nested Stack - 부모가 라이프사이클을 통제하므로 더 안전하다
-B) Cross-Stack Reference - VPC는 애플리케이션보다 수명이 길고, 여러 팀의 독립적인 Stack이 참조해야 하므로 각 Stack의 독립적인 라이프사이클이 중요하다
-C) 두 방식 모두 동일하게 적합하다
-D) 직접 Template에 복제하는 것이 가장 안전하다
+A) Only the parent Stack is deleted and the child Stacks remain independently
+B) The child Stacks are deleted in reverse order and then the parent Stack is deleted (cascade)
+C) It is determined by the DeletionPolicy of the child Stacks
+D) The deletion is rejected
 
-**정답: B**
-해설: VPC는 애플리케이션 Stack들보다 훨씬 수명이 길고 안정적인 리소스다. Nested Stack을 사용하면 VPC가 특정 애플리케이션 Stack의 "자식"이 되어 그 애플리케이션 Stack 삭제 시 VPC도 삭제될 위험이 있다. Cross-Stack으로 분리하면 여러 팀의 애플리케이션 Stack이 독립적으로 동일한 VPC를 참조할 수 있다. Import를 사용하는 Stack들이 있는 한 VPC Stack 삭제가 불가능하므로 오히려 실수 삭제 방지 효과도 있다.
+**Answer: B**
+Explanation: In Nested Stacks, the parent controls the lifecycle of the children. When the parent Stack is deleted, the child Stacks are deleted in reverse order (the opposite of the dependency order). The `DeletionPolicy` of resources inside a child Stack also applies to cascade deletion across Stacks. That is, if an S3 bucket with `DeletionPolicy: Retain` is in a child Stack, that bucket is preserved even when the Stack is deleted.
 
 ---
 
-**문제 6.** Organizations SCP로 ap-northeast-2와 us-east-1만 허용하고 다른 모든 리전의 리소스 생성을 거부했다. StackSets로 eu-west-1에 새 Stack Instance를 배포하려 하면?
+**Question 4.** While deploying StackSets, 8 of 100 accounts failed with IAM permission errors. `FailureToleranceCount: 5` is set. What happens?
 
-A) Service-Managed StackSets는 SCP를 우회할 수 있으므로 정상 배포된다
-B) ExecutionRole은 관리 계정의 권한을 상속하므로 SCP 제약 없이 배포된다
-C) SCP가 ExecutionRole에도 적용되므로 eu-west-1 배포가 거부되고 Stack Instance 생성이 실패한다
-D) StackSets는 SCP 이전에 평가되므로 정상 배포된다
+A) The 8 failures are ignored and deployment continues to the remaining 92
+B) Since it exceeded 5, the entire deployment operation is stopped. Already deployed ones are kept and accounts not yet deployed do not proceed
+C) A full rollback starts, including the accounts already deployed
+D) Only the 8 failed ones are automatically retried
 
-**정답: C**
-해설: SCP는 계정 내 모든 IAM 엔티티(사용자, 역할)에 적용된다. StackSets의 ExecutionRole도 예외가 없다. eu-west-1이 SCP에서 허용되지 않으면 ExecutionRole이 eu-west-1에서 CloudFormation API를 호출할 수 없다. `FailureTolerancePercentage` 설정에 따라 이 실패가 전체 배포를 중단시킬 수 있다. 해결책: eu-west-1 사용이 필요한 계정들을 별도 OU로 분리하고 해당 OU의 SCP에 eu-west-1을 허용하는 조건을 추가한다.
+**Answer: B**
+Explanation: FailureToleranceCount=5 means up to 5 account failures are tolerated. If 8 fail, the threshold (5) is exceeded, so the StackSets operation stops. Stack Instances that were already deployed successfully are not rolled back and are kept. The operation is not run on the remaining accounts scheduled for deployment. After resolving the IAM permission problem, the operator must retry only the failed accounts with `update-stack-instances`.
+
+---
+
+**Question 5.** Comparing Nested Stacks and Cross-Stack References, which approach should be used to manage shared network infrastructure such as a VPC and subnets, and why?
+
+A) Nested Stack - it is safer because the parent controls the lifecycle
+B) Cross-Stack Reference - a VPC outlives applications and must be referenced by independent Stacks from multiple teams, so an independent lifecycle for each Stack is important
+C) Both approaches are equally suitable
+D) Duplicating it directly in the Template is the safest
+
+**Answer: B**
+Explanation: A VPC is a far longer-lived and more stable resource than application Stacks. With a Nested Stack, the VPC becomes a "child" of a particular application Stack, so there is a risk that the VPC is also deleted when that application Stack is deleted. Separating with Cross-Stack lets the application Stacks of multiple teams reference the same VPC independently. As long as there are Stacks importing it, the VPC Stack cannot be deleted, which also helps prevent accidental deletion.
+
+---
+
+**Question 6.** An Organizations SCP allows only ap-northeast-2 and us-east-1 and denies resource creation in all other Regions. What happens if you try to deploy a new Stack Instance to eu-west-1 with StackSets?
+
+A) Service-Managed StackSets can bypass the SCP, so it deploys normally
+B) The ExecutionRole inherits the management account's permissions, so it deploys without SCP restrictions
+C) The SCP also applies to the ExecutionRole, so the eu-west-1 deployment is denied and Stack Instance creation fails
+D) StackSets are evaluated before the SCP, so it deploys normally
+
+**Answer: C**
+Explanation: An SCP applies to all IAM entities (users, roles) in the account. The StackSets ExecutionRole is no exception. If eu-west-1 is not allowed by the SCP, the ExecutionRole cannot call the CloudFormation API in eu-west-1. Depending on the `FailureTolerancePercentage` setting, this failure can stop the entire deployment. Solution: separate the accounts that need to use eu-west-1 into a separate OU and add a condition allowing eu-west-1 to that OU's SCP.

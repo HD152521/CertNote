@@ -76,62 +76,62 @@ In the next article, we'll look at how to **automatically generate and deploy th
 
 ## 📝 Practice Questions
 
-**문제 1.** You want to track an EC2 instance's CPU utilization as a time series and send a notification when it exceeds 80%. Which service is most appropriate?
+**Question 1.** You want to track an EC2 instance's CPU utilization as a time series and send a notification when it exceeds 80%. Which service is most appropriate?
 
 A) AWS CloudTrail  
 B) Amazon CloudWatch  
 C) AWS Config  
 D) AWS Systems Manager  
 
-**정답: B**  
-해설: CloudWatch is a monitoring service that collects performance metrics and provides threshold-based alarms. CloudTrail is for API activity records (auditing), Config is for configuration compliance, and Systems Manager is for operational tasks, so none are meant for performance alarms.
+**Answer: B**  
+Explanation: CloudWatch is a monitoring service that collects performance metrics and provides threshold-based alarms. CloudTrail is for API activity records (auditing), Config is for configuration compliance, and Systems Manager is for operational tasks, so none are meant for performance alarms.
 
 ---
 
-**문제 2.** For a security investigation, you need to determine "who, when, and from which IP changed an S3 bucket policy." Which service is most appropriate?
+**Question 2.** For a security investigation, you need to determine "who, when, and from which IP changed an S3 bucket policy." Which service is most appropriate?
 
 A) Amazon CloudWatch  
 B) AWS Config  
 C) AWS CloudTrail  
 D) Amazon SNS  
 
-**정답: C**  
-해설: CloudTrail is an audit-log service that records API calls and activity within the account, tracing who did what and when. CloudWatch is for performance monitoring, Config evaluates configuration state, and SNS sends notifications, so none are suited to tracing actions.
+**Answer: C**  
+Explanation: CloudTrail is an audit-log service that records API calls and activity within the account, tracing who did what and when. CloudWatch is for performance monitoring, Config evaluates configuration state, and SNS sends notifications, so none are suited to tracing actions.
 
 ---
 
-**문제 3.** You want to automatically detect resources that violate the company rule "every S3 bucket must be encrypted" and track configuration history. Which service is most appropriate?
+**Question 3.** You want to automatically detect resources that violate the company rule "every S3 bucket must be encrypted" and track configuration history. Which service is most appropriate?
 
 A) AWS Config  
 B) Amazon CloudWatch  
 C) AWS Systems Manager  
 D) Amazon SQS  
 
-**정답: A**  
-해설: AWS Config records resource configurations, evaluates compliance against rules (e.g., bucket encryption), and keeps configuration history. CloudWatch is for performance, Systems Manager is for operational tasks, and SQS is a message queue, so none have configuration-compliance evaluation capability.
+**Answer: A**  
+Explanation: AWS Config records resource configurations, evaluates compliance against rules (e.g., bucket encryption), and keeps configuration history. CloudWatch is for performance, Systems Manager is for operational tasks, and SQS is a message queue, so none have configuration-compliance evaluation capability.
 
 ---
 
-**문제 4.** You want to apply OS patches in bulk to hundreds of EC2 instances without SSH keys or open ports. Which service is most appropriate?
+**Question 4.** You want to apply OS patches in bulk to hundreds of EC2 instances without SSH keys or open ports. Which service is most appropriate?
 
 A) Amazon CloudWatch  
 B) AWS CloudTrail  
 C) AWS Systems Manager  
 D) AWS Config  
 
-**정답: C**  
-해설: Systems Manager is an operational tool suite that applies large-scale patches in bulk via Patch Manager and connects securely without keys/ports via Session Manager. CloudWatch, CloudTrail, and Config are for monitoring, auditing, and configuration evaluation respectively, and don't perform bulk operational tasks.
+**Answer: C**  
+Explanation: Systems Manager is an operational tool suite that applies large-scale patches in bulk via Patch Manager and connects securely without keys/ports via Session Manager. CloudWatch, CloudTrail, and Config are for monitoring, auditing, and configuration evaluation respectively, and don't perform bulk operational tasks.
 
 ---
 
-**문제 5.** Which is the most accurate description of the difference in roles between CloudWatch and CloudTrail?
+**Question 5.** Which is the most accurate description of the difference in roles between CloudWatch and CloudTrail?
 
 A) CloudWatch records API actions, and CloudTrail monitors performance  
 B) CloudWatch is performance metrics/logs/alarms, and CloudTrail is the activity record of who did what  
 C) Both only evaluate configuration compliance  
 D) Both automate server patching  
 
-**정답: B**  
-해설: CloudWatch watches performance (metrics, logs, alarms), while CloudTrail records actions (who did what). A swaps the two; configuration compliance is Config's role and server patching is Systems Manager's role.
+**Answer: B**  
+Explanation: CloudWatch watches performance (metrics, logs, alarms), while CloudTrail records actions (who did what). A swaps the two; configuration compliance is Config's role and server patching is Systems Manager's role.
 
 ---

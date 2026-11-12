@@ -291,58 +291,58 @@ Real-Time Data Pipeline
 
 ## 📝 Practice Questions
 
-**문제 1.** What is the write throughput per shard in Kinesis Data Streams?
+**Question 1.** What is the write throughput per shard in Kinesis Data Streams?
 
 A) 10MB/s  
 B) 1MB/s or 1,000 records/s  
 C) 100MB/s  
 D) 5MB/s  
 
-**정답: B** - Each Kinesis shard can write 1MB per second or 1,000 records per second.
+**Answer: B** - Each Kinesis shard can write 1MB per second or 1,000 records per second.
 
 ---
 
-**문제 2.** What is the easiest way to store real-time clickstream data to S3?
+**Question 2.** What is the easiest way to store real-time clickstream data to S3?
 
 A) Kinesis Data Streams + Lambda + S3 direct storage  
 B) Kinesis Data Firehose → S3  
 C) SQS → Lambda → S3  
 D) Direct S3 API calls  
 
-**정답: B** - Kinesis Data Firehose is serverless and automatically stores data to S3.
+**Answer: B** - Kinesis Data Firehose is serverless and automatically stores data to S3.
 
 ---
 
-**문제 3.** What is the characteristic of records using the same partition key in Kinesis?
+**Question 3.** What is the characteristic of records using the same partition key in Kinesis?
 
 A) Distributed across different shards  
 B) Stored in same shard, order guaranteed  
 C) Priority processing  
 D) Deduplication  
 
-**정답: B** - Records with same partition key always go to same shard with order guarantee.
+**Answer: B** - Records with same partition key always go to same shard with order guarantee.
 
 ---
 
-**문제 4.** What is the most significant difference between Kinesis Data Streams and SQS?
+**Question 4.** What is the most significant difference between Kinesis Data Streams and SQS?
 
 A) Cost difference  
 B) Kinesis allows multiple consumers to simultaneously read same data  
 C) Processing speed difference  
 D) Region restriction  
 
-**정답: B** - Kinesis retains data so multiple consumers can independently read from their positions.
+**Answer: B** - Kinesis retains data so multiple consumers can independently read from their positions.
 
 ---
 
-**문제 5.** What is the minimum latency for Kinesis Data Firehose?
+**Question 5.** What is the minimum latency for Kinesis Data Firehose?
 
 A) Immediate  
 B) 1 minute  
 C) 5 minutes  
 D) 1 hour  
 
-**정답: B** - Firehose buffers data for batch delivery, so minimum 1 minute latency (Near Real-Time).
+**Answer: B** - Firehose buffers data for batch delivery, so minimum 1 minute latency (Near Real-Time).
 
 ---
 

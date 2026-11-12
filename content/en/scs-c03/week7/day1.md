@@ -128,62 +128,62 @@ CloudTrail is a recording tool, but combined with **CloudWatch Logs** or **Event
 
 ## 📝 Practice Questions
 
-**문제 1.** S3 버킷에서 특정 객체를 누가 다운로드했는지 추적하려는데 기본 multi-region trail에 해당 `GetObject` 호출이 보이지 않는다. 원인과 해결로 옳은 것은?
+**Question 1.** You are trying to trace who downloaded a specific object from an S3 bucket, but the `GetObject` call does not appear in the default multi-Region trail. Which cause and resolution is correct?
 
-A) `GetObject`는 글로벌 서비스 이벤트라서 us-east-1 trail이 필요하다  
-B) `GetObject`는 데이터 이벤트라서 기본으로 기록되지 않으며, trail에 S3 data event selector를 추가해야 한다  
-C) 로그 파일 무결성 검증을 켜야 데이터 이벤트가 기록된다  
-D) Insights 이벤트를 활성화해야 한다  
+A) `GetObject` is a global service event, so a us-east-1 trail is needed  
+B) `GetObject` is a data event, so it is not recorded by default, and you must add an S3 data event selector to the trail  
+C) Log file integrity validation must be turned on for data events to be recorded  
+D) Insights events must be enabled  
 
-**정답: B**  
-해설: S3 객체 수준 작업(`GetObject`/`PutObject` 등)은 데이터 평면 작업인 데이터 이벤트이며 기본적으로 꺼져 있다. trail에 S3 data event selector(또는 advanced event selector)를 명시적으로 추가해야 기록된다. `GetObject`는 글로벌 서비스 이벤트가 아니고, 무결성 검증은 변조 탐지용이지 기록 대상을 늘리지 않으며, Insights는 호출 *비율* 이상 탐지로 개별 다운로드 추적과 무관하다.
-
----
-
-**문제 2.** 200개 계정 조직에서 어떤 멤버 계정 관리자도 끄거나 변경할 수 없는 중앙 집중 감사를 보장해야 한다. 가장 적절한 설계는?
-
-A) 각 멤버 계정에서 개별 trail을 만들고 정기적으로 점검한다  
-B) 관리 계정에서 멀티리전 organization trail을 만들어 로그를 별도 로깅 전용 계정 S3 버킷에 집계한다  
-C) Event history를 90일마다 내보내 보관한다  
-D) 각 계정의 CloudWatch Logs를 수동으로 모은다  
-
-**정답: B**  
-해설: organization trail은 관리 계정(또는 위임 관리자)에서 생성되어 모든 멤버 계정에 자동 적용되며, 멤버 계정 관리자는 이를 끄거나 삭제할 수 없다. 새 계정도 자동 포함된다. 로그를 별도 로깅 계정으로 보내면 멤버 계정이 권한을 얻어도 로그를 변조할 수 없다. 개별 trail은 일관성·강제성이 없고, Event history는 90일·내보내기 불가, 수동 집계는 누락·변조에 취약하다.
+**Answer: B**  
+Explanation: S3 object-level operations (`GetObject`/`PutObject`, etc.) are data events, which are data plane operations and are off by default. You must explicitly add an S3 data event selector (or advanced event selector) to the trail for them to be recorded. `GetObject` is not a global service event, integrity validation is for tamper detection and does not expand what is recorded, and Insights detects anomalies in call *rates*, which is unrelated to tracking individual downloads.
 
 ---
 
-**문제 3.** 컴플라이언스 감사관이 지난 3개월간 CloudTrail 로그 파일이 변조되지 않았음을 암호학적으로 증명하라고 요구한다. 어떤 기능이 이를 직접 제공하는가?
+**Question 2.** In a 200-account organization, you must guarantee centralized auditing that no member account administrator can turn off or change. What is the most appropriate design?
 
-A) S3 버킷 버전 관리  
-B) CloudTrail 로그 파일 무결성 검증(SHA-256 해시 + RSA 서명된 digest 체인)  
-C) Insights 이벤트  
-D) KMS 봉투 암호화  
+A) Create an individual trail in each member account and check it regularly  
+B) Create a multi-Region organization trail in the management account and aggregate the logs into an S3 bucket in a dedicated logging account  
+C) Export Event history every 90 days and store it  
+D) Manually collect each account's CloudWatch Logs  
 
-**정답: B**  
-해설: 로그 파일 무결성 검증은 각 로그 파일의 SHA-256 해시를 계산하고, 이를 RSA로 서명된 시간별 digest 파일에 기록하며, digest를 이전 digest와 해시 체인으로 연결한다. 따라서 로그나 digest의 어떤 변조도 검증 단계에서 탐지된다. 버전 관리는 덮어쓰기 이력만 남기고 암호학적 증명을 제공하지 않으며, Insights는 이상 탐지, KMS 암호화는 기밀성 통제로 무결성 *증명*과는 다르다.
-
----
-
-**문제 4.** 보안 분석가가 별도 ETL나 Athena 테이블 구성 없이 지난 2년치 CloudTrail 이벤트를 SQL로 즉시 조사하길 원한다. 가장 적합한 것은?
-
-A) Event history 콘솔에서 필터링  
-B) CloudTrail Lake 이벤트 데이터 스토어에서 SQL 쿼리  
-C) S3에 저장된 JSON을 매번 수동 파싱  
-D) Insights 대시보드  
-
-**정답: B**  
-해설: CloudTrail Lake는 이벤트를 불변 데이터 스토어에 저장하고 SQL로 직접 쿼리하게 하며 최대 10년 보존을 지원한다. ETL이나 Athena 테이블·파티션 관리가 필요 없다. Event history는 90일·내보내기 불가, 수동 JSON 파싱은 비효율, Insights는 호출 비율 이상 탐지용 대시보드로 임의 SQL 조사를 제공하지 않는다.
+**Answer: B**  
+Explanation: An organization trail is created in the management account (or a delegated administrator) and automatically applies to all member accounts, and member account administrators cannot turn it off or delete it. New accounts are included automatically. If logs are sent to a separate logging account, a member account cannot tamper with the logs even if it obtains permissions. Individual trails lack consistency and enforceability, Event history covers 90 days and cannot be exported, and manual aggregation is vulnerable to omission and tampering.
 
 ---
 
-**문제 5.** 침해 대응팀이 "공격자가 침투 후 CloudTrail을 끄는 행위(`StopLogging`)를 즉시 탐지·경보하라"고 요청한다. 가장 적절한 구성은?
+**Question 3.** A compliance auditor requires cryptographic proof that CloudTrail log files from the past 3 months have not been tampered with. Which feature directly provides this?
 
-A) trail의 로그 파일 무결성 검증만 켠다  
-B) CloudTrail 관리 이벤트를 EventBridge 규칙(`eventName in [StopLogging, DeleteTrail, UpdateTrail]`)으로 매칭해 SNS·Lambda로 실시간 대응을 트리거한다  
-C) 데이터 이벤트 선택기를 추가한다  
-D) Insights 이벤트를 켜고 매주 검토한다  
+A) S3 bucket versioning  
+B) CloudTrail log file integrity validation (SHA-256 hash + RSA-signed digest chain)  
+C) Insights events  
+D) KMS envelope encryption  
 
-**정답: B**  
-해설: `StopLogging`/`DeleteTrail`/`UpdateTrail`은 관리 이벤트로 기록되며, EventBridge 규칙으로 이 이벤트를 실시간 매칭해 SNS 경보나 Lambda 자동 대응을 트리거할 수 있다. 무결성 검증은 사후 변조 증명이라 실시간 경보가 아니고, 데이터 이벤트 선택기는 데이터 평면 작업용이며, Insights는 비율 이상 탐지로 즉시성과 정밀도가 떨어진다. organization trail로 멤버 계정에서 끌 수 없게 하는 것도 보완책이다.
+**Answer: B**  
+Explanation: Log file integrity validation computes the SHA-256 hash of each log file, records it in an hourly digest file signed with RSA, and links each digest to the previous digest in a hash chain. Therefore any tampering with a log or digest is detected at the validation step. Versioning only keeps overwrite history and provides no cryptographic proof, Insights is anomaly detection, and KMS encryption is a confidentiality control that differs from integrity *proof*.
+
+---
+
+**Question 4.** A security analyst wants to immediately investigate the past 2 years of CloudTrail events with SQL, without a separate ETL or Athena table setup. What is most suitable?
+
+A) Filter in the Event history console  
+B) Run SQL queries in a CloudTrail Lake event data store  
+C) Manually parse the JSON stored in S3 every time  
+D) The Insights dashboard  
+
+**Answer: B**  
+Explanation: CloudTrail Lake stores events in an immutable data store and lets you query them directly with SQL, supporting retention of up to 10 years. No ETL or Athena table/partition management is needed. Event history covers 90 days and cannot be exported, manual JSON parsing is inefficient, and Insights is a dashboard for call-rate anomaly detection that does not offer ad hoc SQL investigation.
+
+---
+
+**Question 5.** The incident response team requests: "Immediately detect and alert on an attacker turning off CloudTrail after intrusion (`StopLogging`)." What is the most appropriate configuration?
+
+A) Turn on only log file integrity validation for the trail  
+B) Match CloudTrail management events with an EventBridge rule (`eventName in [StopLogging, DeleteTrail, UpdateTrail]`) and trigger real-time response through SNS/Lambda  
+C) Add a data event selector  
+D) Turn on Insights events and review weekly  
+
+**Answer: B**  
+Explanation: `StopLogging`/`DeleteTrail`/`UpdateTrail` are recorded as management events, and you can match these events in real time with an EventBridge rule to trigger an SNS alert or an automatic Lambda response. Integrity validation is after-the-fact proof of tampering rather than a real-time alert, data event selectors are for data plane operations, and Insights is rate-based anomaly detection that is lacking in immediacy and precision. Making it impossible to turn off from member accounts with an organization trail is also a complementary measure.
 
 ---

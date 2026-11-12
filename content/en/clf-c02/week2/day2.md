@@ -87,62 +87,62 @@ Tomorrow we move to the neighborhood where these servers and storage live togeth
 
 ## 📝 Practice Questions
 
-**문제 1.** You have a Linux-based workload where multiple EC2 instances must simultaneously access, read, and write the same files. Which storage is the best fit?
+**Question 1.** You have a Linux-based workload where multiple EC2 instances must simultaneously access, read, and write the same files. Which storage is the best fit?
 
 A) EBS  
 B) EFS  
 C) S3 Glacier Deep Archive  
 D) Instance Store  
 
-**정답: B**  
-해설: EFS is a file system that multiple EC2s can mount and share simultaneously, precisely matching the condition "multiple servers share the same files." EBS is by default a disk dedicated to one instance, and Glacier is for archives that aren't accessed often, unrelated to concurrent file sharing.
+**Answer: B**  
+Explanation: EFS is a file system that multiple EC2s can mount and share simultaneously, precisely matching the condition "multiple servers share the same files." EBS is by default a disk dedicated to one instance, and Glacier is for archives that aren't accessed often, unrelated to concurrent file sharing.
 
 ---
 
-**문제 2.** You want to store large-volume audit logs that a legal obligation requires you to keep for 7 years but that you almost never need to retrieve, as cheaply as possible. Which S3 storage class fits?
+**Question 2.** You want to store large-volume audit logs that a legal obligation requires you to keep for 7 years but that you almost never need to retrieve, as cheaply as possible. Which S3 storage class fits?
 
 A) S3 Standard  
 B) S3 Standard-IA  
 C) S3 Glacier Deep Archive  
 D) S3 Intelligent-Tiering  
 
-**정답: C**  
-해설: Glacier Deep Archive is the cheapest storage class in S3; retrieval takes several hours, but for "long-term retention that is almost never accessed" it's the most cost-effective. Standard is for frequently accessed data, so it's expensive; Standard-IA is for occasional access; and Intelligent-Tiering is the auto-tiering option for when you don't know the access pattern.
+**Answer: C**  
+Explanation: Glacier Deep Archive is the cheapest storage class in S3; retrieval takes several hours, but for "long-term retention that is almost never accessed" it's the most cost-effective. Standard is for frequently accessed data, so it's expensive; Standard-IA is for occasional access; and Intelligent-Tiering is the auto-tiering option for when you don't know the access pattern.
 
 ---
 
-**문제 3.** Which most accurately captures what S3's "durability of 11 9s (99.999999999%)" means?
+**Question 3.** Which most accurately captures what S3's "durability of 11 9s (99.999999999%)" means?
 
 A) The probability you can always access the data instantly  
 B) The probability you won't lose the stored data  
 C) Data transfer speed  
 D) The proportion of a month with no downtime  
 
-**정답: B**  
-해설: Durability means "the probability you won't lose the data," and S3 achieves this target by automatically replicating data across multiple Availability Zones. Accessibility is a separate concept called availability, so A and D are not the definition of durability, and it has nothing to do with transfer speed (C).
+**Answer: B**  
+Explanation: Durability means "the probability you won't lose the data," and S3 achieves this target by automatically replicating data across multiple Availability Zones. Accessibility is a separate concept called availability, so A and D are not the definition of durability, and it has nothing to do with transfer speed (C).
 
 ---
 
-**문제 4.** Which statement about EBS volumes is correct?
+**Question 4.** Which statement about EBS volumes is correct?
 
 A) It can be freely attached simultaneously to EC2s across multiple Availability Zones (AZs)  
 B) It is tied to a specific Availability Zone (AZ) and attaches to EC2s in that AZ  
 C) It is object storage accessed directly over HTTP without a server  
 D) Its capacity can't be sized in advance and it auto-scales infinitely  
 
-**정답: B**  
-해설: An EBS volume is bound to a specific AZ and attaches to EC2s in the same AZ; to move it to another AZ you take a snapshot and restore it. A, "freely attached simultaneously across multiple AZs," is wrong; object storage accessed over HTTP is a characteristic of S3 (C); and infinite auto-scaling is a characteristic of S3/EFS, not EBS.
+**Answer: B**  
+Explanation: An EBS volume is bound to a specific AZ and attaches to EC2s in the same AZ; to move it to another AZ you take a snapshot and restore it. A, "freely attached simultaneously across multiple AZs," is wrong; object storage accessed over HTTP is a characteristic of S3 (C); and infinite auto-scaling is a characteristic of S3/EFS, not EBS.
 
 ---
 
-**문제 5.** In S3, when an object's access frequency drops over time, which mechanism automatically moves it to a cheaper storage class to save cost?
+**Question 5.** In S3, when an object's access frequency drops over time, which mechanism automatically moves it to a cheaper storage class to save cost?
 
 A) Lifecycle Policy  
 B) Security Group  
 C) EBS Snapshot  
 D) Reserved Instance  
 
-**정답: A**  
-해설: A Lifecycle Policy automatically moves objects to a cheaper class or deletes them based on rules like "after N days move to a certain class, and after N more days delete." A Security Group controls network traffic, an EBS Snapshot is a block-volume backup, and a Reserved Instance is an EC2 purchase option — all unrelated.
+**Answer: A**  
+Explanation: A Lifecycle Policy automatically moves objects to a cheaper class or deletes them based on rules like "after N days move to a certain class, and after N more days delete." A Security Group controls network traffic, an EBS Snapshot is a block-volume backup, and a Reserved Instance is an EC2 purchase option — all unrelated.
 
 ---

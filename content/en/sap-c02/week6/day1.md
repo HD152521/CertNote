@@ -213,86 +213,86 @@ Blurry boundary case: "Migrate a Java app from Tomcat to EKS via App2Container."
 
 ## 📝 Practice Questions
 
-**문제 1.** A company has 1,200 physical servers and 500 VMware VMs. They want to quickly migrate physical servers to the cloud, and they want to keep using their existing vCenter and vMotion for the VMware environment. Which R is most suitable for each?
+**Question 1.** A company has 1,200 physical servers and 500 VMware VMs. They want to quickly migrate physical servers to the cloud, and they want to keep using their existing vCenter and vMotion for the VMware environment. Which R is most suitable for each?
 
 A) Physical servers: Rehost, VMware: Rehost
 B) Physical servers: Rehost (MGN), VMware: Relocate (VMware Cloud on AWS)
 C) Physical servers: Refactor, VMware: Retain
 D) Both Repurchase
 
-**정답: B**
+**Answer: B**
 Physical servers to EC2 without code changes = Rehost (MGN). VMware environment transfer with vCenter/vMotion as-is = Relocate (VMware Cloud on AWS). Relocate is specific to VMware vSphere environments.
 
 ---
 
-**문제 2.** Of 200 servers discovered by ADS, 50 are found to have average CPU 2%, no traffic, and last login 1 year ago. Which R should apply to these servers?
+**Question 2.** Of 200 servers discovered by ADS, 50 are found to have average CPU 2%, no traffic, and last login 1 year ago. Which R should apply to these servers?
 
 A) Retain (low migration ROI)
 B) Retire (decommission)
 C) Rehost (get to cloud quickly)
 D) Repurchase (SaaS replacement)
 
-**정답: B**
+**Answer: B**
 Unused systems = Retire. Retain means "intentionally keeping on-premises for a reason." Keeping unused systems on-premises is unnecessary cost. Decommissioning is the most direct cost saving.
 
 ---
 
-**문제 3.** A manufacturer wants to migrate a 100TB Oracle DB to AWS. They want to eliminate Oracle Enterprise licensing costs, keep application code unchanged, and want automatic stored procedure conversion. Which R and tools fit best?
+**Question 3.** A manufacturer wants to migrate a 100TB Oracle DB to AWS. They want to eliminate Oracle Enterprise licensing costs, keep application code unchanged, and want automatic stored procedure conversion. Which R and tools fit best?
 
 A) Rehost (MGN), Oracle on EC2
 B) Replatform (SCT + DMS → Aurora PostgreSQL)
 C) Refactor (complete redesign)
 D) Retain (keep Oracle licensing)
 
-**정답: B**
+**Answer: B**
 Database engine change (Oracle → Aurora PG) + no code changes = Replatform. SCT converts schema and PL/SQL, DMS Full Load + CDC for seamless migration. Rehost keeps running Oracle on EC2, maintaining licensing costs.
 
 ---
 
-**문제 4.** A company's in-house CRM system has legacy code with high maintenance costs. Its functionality is identical to commercial CRM SaaS. Which R is most suitable?
+**Question 4.** A company's in-house CRM system has legacy code with high maintenance costs. Its functionality is identical to commercial CRM SaaS. Which R is most suitable?
 
 A) Rehost
 B) Replatform
 C) Repurchase (e.g., Salesforce)
 D) Refactor
 
-**정답: C**
+**Answer: C**
 Functionality replaceable by commercial SaaS = Repurchase. CRM has mature SaaS solutions like Salesforce and HubSpot. Repurchase eliminates IT maintenance burden by transferring it to the vendor.
 
 ---
 
-**문제 5.** You need to complete a company-wide 5,000-server migration in 18 months. You want to leverage AWS funding support, expert consulting, and partner ecosystem. What should you use?
+**Question 5.** You need to complete a company-wide 5,000-server migration in 18 months. You want to leverage AWS funding support, expert consulting, and partner ecosystem. What should you use?
 
 A) AWS Trusted Advisor
 B) AWS Migration Acceleration Program (MAP)
 C) AWS Control Tower alone
 D) AWS Personal Health Dashboard
 
-**정답: B**
+**Answer: B**
 Large-scale migration + AWS funding + partner consulting = MAP. MAP is a three-stage program (Assess/Mobilize/Migrate) providing funding incentives, credits, and tools as a package. Trusted Advisor and Control Tower are individual tools, not programs.
 
 ---
 
-**문제 6.** Based on ADS-collected data, you need to submit an "on-premises vs AWS 5-year cost comparison report" to executives. Which tool do you use?
+**Question 6.** Based on ADS-collected data, you need to submit an "on-premises vs AWS 5-year cost comparison report" to executives. Which tool do you use?
 
 A) AWS Cost Explorer
 B) AWS Migration Evaluator (formerly TSO Logic)
 C) AWS Pricing Calculator
 D) AWS Compute Optimizer
 
-**정답: B**
+**Answer: B**
 Migration financial business case = Migration Evaluator. Compares current on-premises costs vs 5-year AWS TCO after migration. Cost Explorer analyzes already-deployed AWS spending; Pricing Calculator estimates new workload costs.
 
 ---
 
-**문제 7.** A company wants to migrate a Tomcat Java web app to EKS. They want to generate container images and EKS manifests automatically without touching source code. Which tool is suitable?
+**Question 7.** A company wants to migrate a Tomcat Java web app to EKS. They want to generate container images and EKS manifests automatically without touching source code. Which tool is suitable?
 
 A) AWS MGN (Application Migration Service)
 B) AWS App2Container
 C) AWS Porting Assistant for .NET
 D) AWS Copilot CLI
 
-**정답: B**
+**Answer: B**
 Containerize running Java (Tomcat) app without source code → App2Container. A2C analyzes running processes and auto-generates Dockerfile + ECS/EKS manifests. MGN does Rehost of entire VMs to EC2; Porting Assistant converts .NET Framework to .NET Core.
 
 ---

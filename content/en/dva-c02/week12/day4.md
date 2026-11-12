@@ -140,112 +140,112 @@ Next: Week 12 review synthesizing containers/IaC, then observability/troubleshoo
 
 ## 📝 Practice Questions
 
-**문제 1.** CDK 프로젝트를 새 계정·리전에 처음 배포하려는데 "bootstrap" 관련 오류가 난다. `cdk bootstrap`이 하는 일과 실행 빈도로 옳은 것은?
+**Question 1.** You are about to deploy a CDK project to a new account and Region for the first time and get a "bootstrap" related error. Which is correct about what `cdk bootstrap` does and how often it is run?
 
-A) 매 배포마다 실행하며, Lambda 코드를 압축한다
+A) Run on every deployment, and it zips Lambda code
 
-B) 계정·리전 조합마다 1회 실행하며, CDK 배포에 필요한 S3 버킷·ECR·IAM 역할 같은 발판 자원을 깐다
+B) Run once per account-Region combination, and it sets up scaffolding resources needed for CDK deployment such as an S3 bucket, ECR, and IAM roles
 
-C) CDK 코드를 CloudFormation으로 변환만 한다
+C) It only converts CDK code to CloudFormation
 
-D) 기존 스택을 삭제한다
+D) It deletes existing stacks
 
-**정답: B**
+**Answer: B**
 
-해설: `cdk bootstrap`은 CDK가 배포 과정에서 자산(Lambda zip, Docker 이미지)을 올려둘 S3 버킷·ECR 리포지토리와 배포용 IAM 역할 등 "배포를 가능하게 하는 발판"을 미리 까는 일회성 작업으로, **계정과 리전의 조합마다 한 번씩** 한다. 이는 "스스로를 돌리기 위한 최소 자원을 먼저 만든다"는 부트스트래핑 개념이다. A) 매 배포가 아니라 일회성이다. C) 코드→템플릿 변환은 `cdk synth`다. D) 삭제는 `cdk destroy`다.
-
----
-
-**문제 2.** `cdk synth`와 `cdk deploy`의 차이로 옳은 것은?
-
-A) synth는 즉시 자원을 배포하고, deploy는 미리보기만 한다
-
-B) synth는 CDK 코드를 CloudFormation 템플릿으로 합성할 뿐 배포하지 않고, deploy는 그 템플릿을 CloudFormation에 올려 자원을 만든다
-
-C) 둘은 완전히 동일하다
-
-D) synth는 Terraform용, deploy는 CloudFormation용이다
-
-**정답: B**
-
-해설: `cdk synth`는 로컬에서 CDK 코드를 실행해 CloudFormation 템플릿(JSON)을 생성할 뿐, AWS에 아무것도 배포하지 않는다. `cdk deploy`는 그 템플릿을 CloudFormation에 제출해 실제 자원을 프로비저닝한다. 이는 컴파일러의 "소스→중간 표현(synth)"과 "실행(deploy)" 분리와 같다. A는 역할이 뒤바뀐 설명이고, C·D는 사실과 다르다.
+Explanation: `cdk bootstrap` is a one-time task that sets up in advance the "scaffolding that makes deployment possible", such as the S3 bucket and ECR repository where CDK uploads assets (Lambda zips, Docker images) during deployment and the IAM roles used for deployment, and it is done **once for each account and Region combination**. This is the bootstrapping concept of "first create the minimal resources needed to run itself". A) It is one-time, not on every deployment. C) Converting code to a template is `cdk synth`. D) Deletion is `cdk destroy`.
 
 ---
 
-**문제 3.** API Gateway 뒤의 Lambda A가 작업의 일부를 Lambda B에 넘기려 한다. 비용·결합도·내결함성 측면에서 권장되는 구성은?
+**Question 2.** Which is correct about the difference between `cdk synth` and `cdk deploy`?
 
-A) Lambda A가 Lambda B를 동기(RequestResponse)로 직접 호출
+A) synth deploys resources immediately, and deploy only gives a preview
 
-B) Lambda A가 SQS에 메시지를 넣고, Lambda B가 큐를 소비
+B) synth only synthesizes CDK code into a CloudFormation template without deploying, and deploy submits that template to CloudFormation to create the resources
 
-C) Lambda A와 B를 하나의 거대 함수로 합침
+C) The two are completely identical
 
-D) Lambda A가 Lambda B를 1초마다 폴링
+D) synth is for Terraform and deploy is for CloudFormation
 
-**정답: B**
+**Answer: B**
 
-해설: 동기 직접 호출은 A가 B를 기다리며 **이중 과금**되고, B의 장애·지연이 A로 **전파**되며, 둘의 확장이 묶인다. SQS를 끼우면 A는 메시지를 넣고 즉시 반환해 기다리지 않고(비용·타임아웃 해결), B는 자기 속도로 소비하며(독립 확장), B가 잠시 죽어도 메시지가 큐에 남는다(내결함성). 이는 생산자-소비자를 유계 버퍼로 분리하는 고전 패턴이다. A는 안티패턴, C는 단일 책임을 깨고, D는 비효율적 폴링이다.
-
----
-
-**문제 4.** 하나의 주문 완료 이벤트가 발생하면 (1) 재고 시스템, (2) 이메일 발송, (3) 분석 파이프라인이 **동시에** 그 이벤트를 받아 각자 처리해야 한다. 가장 적합한 구성은?
-
-A) SQS 하나에 세 소비자를 붙인다
-
-B) SNS 토픽에 세 시스템(또는 각 SQS)을 구독시켜 팬아웃한다
-
-C) Lambda가 세 시스템을 순서대로 동기 호출한다
-
-D) DynamoDB Streams로 직접 세 곳에 쓴다
-
-**정답: B**
-
-해설: "한 이벤트를 여러 시스템이 **동시에**" 받는 것은 펍/섭 팬아웃이고, 이는 **SNS**의 모델이다. 각 구독자(또는 SNS→SQS→소비자)가 같은 메시지의 복사본을 받아 독립적으로 처리한다. A) SQS는 한 메시지를 한 소비자가 가져가 삭제하므로(1:1) 세 곳이 모두 받지 못한다. C) 순차 동기 호출은 결합·전파 문제가 있다. D) Streams는 테이블 변경을 흘리는 용도로 이 요구에 직접 맞지 않는다.
+Explanation: `cdk synth` runs the CDK code locally to generate a CloudFormation template (JSON) and deploys nothing to AWS. `cdk deploy` submits that template to CloudFormation to actually provision the resources. This is like a compiler's separation of "source to intermediate representation (synth)" and "execution (deploy)". A describes the roles swapped, and C and D are not true.
 
 ---
 
-**문제 5.** SQS 표준 큐로 메시지를 받는 Lambda 소비자가, 같은 메시지를 가끔 두 번 처리해 중복 레코드가 생긴다. 근본 원인과 올바른 대응은?
+**Question 3.** Lambda A behind API Gateway wants to hand off part of its work to Lambda B. What configuration is recommended in terms of cost, coupling, and fault tolerance?
 
-A) SQS 버그이므로 AWS에 문의한다
+A) Lambda A directly invokes Lambda B synchronously (RequestResponse)
 
-B) 표준 큐는 at-least-once 전달이라 중복이 정상이며, 소비자를 멱등하게(예: DynamoDB 조건부 쓰기로 중복 키 무시) 만든다
+B) Lambda A puts a message into SQS, and Lambda B consumes the queue
 
-C) 큐를 삭제하고 다시 만든다
+C) Merge Lambda A and B into one huge function
 
-D) Lambda 메모리를 늘린다
+D) Lambda A polls Lambda B every second
 
-**정답: B**
+**Answer: B**
 
-해설: SQS 표준 큐는 **at-least-once(최소 한 번)** 전달을 보장하므로 같은 메시지가 두 번 이상 올 수 있다 — 이는 두 장군 문제로 인해 분산 시스템에서 "정확히 한 번 전달"이 사실상 불가능하기 때문이다. 정답은 전달을 바꾸려 하기보다 소비자를 **멱등**하게 만드는 것이다: 멱등성 키 + DynamoDB `attribute_not_exists` 조건부 쓰기로 이미 처리한 ID를 무시한다. 또는 엄격한 중복 제거가 필요하면 FIFO 큐를 쓴다. A·C·D는 원인을 오해한 대응이다.
-
----
-
-**문제 6.** SAM 템플릿과 CDK가 공통으로 가지는 성질로 옳은 것은?
-
-A) 둘 다 멀티 클라우드를 지원한다
-
-B) 둘 다 최종적으로 CloudFormation으로 변환되어 배포된다
-
-C) 둘 다 반드시 TypeScript로 작성한다
-
-D) 둘 다 CloudFormation을 대체하는 별개 엔진이다
-
-**정답: B**
-
-해설: SAM은 `Transform` 매크로로 짧은 YAML을 긴 CloudFormation으로 펼치고, CDK는 `synth`로 프로그래밍 언어 코드를 CloudFormation 템플릿으로 합성한다 — **둘 다 종착지가 CloudFormation**이다. 차이는 입력 형태(SAM=YAML 매크로, CDK=프로그래밍 언어)와 특화(SAM=서버리스)다. A) 멀티 클라우드는 Terraform/Pulumi다. C) CDK는 여러 언어를 지원하고 SAM은 YAML이다. D) 별개 엔진이 아니라 CloudFormation 위에 올라탄다.
+Explanation: A synchronous direct call makes A wait for B and be **billed twice**, B's failures and delays **propagate** to A, and the scaling of the two is tied together. With SQS in between, A puts in a message and returns immediately without waiting (solving cost and timeout), B consumes at its own pace (independent scaling), and even if B is briefly down the messages remain in the queue (fault tolerance). This is the classic pattern of decoupling producer and consumer with a bounded buffer. A is an anti-pattern, C breaks single responsibility, and D is inefficient polling.
 
 ---
 
-**문제 7.** 지연에 민감한 동기 REST API의 Lambda가 첫 호출에서 콜드 스타트로 느리다. 콜드 스타트를 줄이는 방법으로 적절하지 않은 것은?
+**Question 4.** When a single order-completed event occurs, (1) the inventory system, (2) email sending, and (3) the analytics pipeline must each receive that event **simultaneously** and process it on their own. What is the most suitable configuration?
 
-A) Provisioned Concurrency로 실행 환경을 미리 워밍
+A) Attach three consumers to one SQS queue
 
-B) 배포 패키지 크기를 줄여 초기화 시간 단축
+B) Subscribe the three systems (or an SQS queue for each) to an SNS topic and fan out
 
-C) (Java 등) SnapStart로 스냅샷에서 복원
+C) Lambda synchronously invokes the three systems in order
 
-D) Lambda A가 Lambda B를 동기로 호출하도록 변경
+D) Write directly to the three places with DynamoDB Streams
 
-**정답: D**
+**Answer: B**
 
-해설: 콜드 스타트 완화책은 Provisioned Concurrency(미리 워밍된 환경 유지), SnapStart(초기화된 스냅샷에서 복원), 패키지 크기 축소다. D) Lambda 간 동기 직접 호출은 콜드 스타트와 무관할 뿐 아니라 비용·결합도·오류 전파를 키우는 **안티패턴**이라 오히려 상황을 악화시킨다. 콜드 스타트는 함수 자체의 초기화 비용 문제이지 호출 방식으로 푸는 게 아니다.
+Explanation: Having multiple systems receive one event **simultaneously** is pub/sub fan-out, and that is the model of **SNS**. Each subscriber (or SNS to SQS to consumer) receives a copy of the same message and processes it independently. A) With SQS, one consumer takes a message and deletes it (1:1), so not all three receive it. C) Sequential synchronous calls have coupling and propagation problems. D) Streams are for streaming table changes and do not directly fit this requirement.
+
+---
+
+**Question 5.** A Lambda consumer receiving messages from an SQS standard queue occasionally processes the same message twice, creating duplicate records. What are the root cause and the correct response?
+
+A) It is an SQS bug, so contact AWS
+
+B) A standard queue has at-least-once delivery so duplicates are normal; make the consumer idempotent (for example, ignore duplicate keys with a DynamoDB conditional write)
+
+C) Delete the queue and recreate it
+
+D) Increase the Lambda memory
+
+**Answer: B**
+
+Explanation: An SQS standard queue guarantees **at-least-once** delivery, so the same message can arrive more than once; this is because "exactly-once delivery" is practically impossible in distributed systems due to the Two Generals Problem. The right answer is not to try to change delivery but to make the consumer **idempotent**: use an idempotency key + a DynamoDB `attribute_not_exists` conditional write to ignore IDs that were already processed. Or, if strict deduplication is needed, use a FIFO queue. A, C, and D are responses that misunderstand the cause.
+
+---
+
+**Question 6.** Which is correct about a property that SAM templates and CDK have in common?
+
+A) Both support multi-cloud
+
+B) Both are ultimately converted to CloudFormation and deployed
+
+C) Both must be written in TypeScript
+
+D) Both are separate engines that replace CloudFormation
+
+**Answer: B**
+
+Explanation: SAM expands short YAML into long CloudFormation with the `Transform` macro, and CDK synthesizes programming-language code into a CloudFormation template with `synth`, so **both end up at CloudFormation**. The differences are the input form (SAM = YAML macro, CDK = programming language) and specialization (SAM = serverless). A) Multi-cloud is Terraform/Pulumi. C) CDK supports multiple languages and SAM is YAML. D) They are not separate engines; they sit on top of CloudFormation.
+
+---
+
+**Question 7.** The Lambda of a latency-sensitive synchronous REST API is slow on the first invocation because of a cold start. Which is NOT an appropriate way to reduce cold starts?
+
+A) Pre-warm execution environments with Provisioned Concurrency
+
+B) Reduce the deployment package size to shorten initialization time
+
+C) Restore from a snapshot with SnapStart (Java, etc.)
+
+D) Change Lambda A to invoke Lambda B synchronously
+
+**Answer: D**
+
+Explanation: Cold start mitigations are Provisioned Concurrency (keeping pre-warmed environments), SnapStart (restoring from an initialized snapshot), and reducing package size. D) Direct synchronous invocation between Lambda functions is not only unrelated to cold starts but an **anti-pattern** that increases cost, coupling, and error propagation, so it actually makes things worse. A cold start is a problem of the function's own initialization cost and is not solved by changing the invocation method.

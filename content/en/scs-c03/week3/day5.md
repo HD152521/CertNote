@@ -116,79 +116,79 @@ Next Week 4 examines the second pillar of infrastructure security — edge prote
 
 ## 📝 Practice Questions
 
-**문제 1.** 프로덕션 RDS가 인터넷에서 접근 가능하다는 경고를 받았다. 가장 근본적인(표면적이 아닌) 차단 조치는?
+**Question 1.** You received a warning that the production RDS is accessible from the internet. What is the most fundamental (not superficial) blocking action?
 
-A) 보안 그룹 인바운드의 0.0.0.0/0을 특정 IP로만 좁힌다  
-B) RDS를 인터넷 경로가 없는 서브넷에 두고 PubliclyAccessible을 끈다  
-C) NACL 아웃바운드 임시 포트를 차단한다  
-D) RDS의 자동 백업을 비활성화한다  
+A) Narrow the 0.0.0.0/0 in the security group inbound to specific IPs only  
+B) Place the RDS in a subnet with no internet path and turn off PubliclyAccessible  
+C) Block the NACL outbound ephemeral ports  
+D) Disable the RDS automatic backups  
 
-**정답: B**  
-해설: 인터넷 도달은 라우팅 경로와 퍼블릭 주소, 그리고 통제 허용이 모두 충족돼야 성립한다. 인터넷 경로가 없는 서브넷에 두고 퍼블릭 접근 설정을 끄면 경로와 주소 자체가 사라져 가장 근본적으로 차단된다. 보안 그룹만 좁히는 것은 다른 계층이 다시 열리면 무력화될 수 있는 표면적 처방이다.
-
----
-
-**문제 2.** 침해된 인스턴스가 탈취한 자격증명으로 회사 S3 데이터를 외부 공격자 버킷으로 빼내려는 시나리오를 네트워크 설계로 막으려고 한다. 가장 효과적인 조합은?
-
-A) NAT Gateway를 두되 보안 그룹 아웃바운드를 443만 허용한다  
-B) NAT를 제거하고 필요한 AWS 서비스만 VPC Endpoint로 연결하며 버킷 정책에 SourceVpce 조건을 건다  
-C) IAM 정책에서 S3 권한을 모두 제거한다  
-D) CloudTrail 로깅을 강화한다  
-
-**정답: B**  
-해설: NAT를 제거하면 무분별한 아웃바운드 경로가 사라져 외부 버킷으로의 전송 자체가 막히고, 필요한 서비스만 엔드포인트로 연결한 뒤 버킷 정책에 엔드포인트 경유 조건을 걸면 회사 버킷은 그 경로로만 접근된다. 자격증명을 탈취해도 데이터가 빠져나갈 네트워크 경로가 없어진다. 로깅 강화는 탐지일 뿐 차단이 아니다.
+**Answer: B**  
+Explanation: Internet reachability holds only when the routing path, public address, and control allows are all satisfied. Placing it in a subnet with no internet path and turning off the public access setting eliminates the path and the address themselves, blocking at the most fundamental level. Narrowing only the security group is a superficial remedy that can be nullified if another layer is opened again.
 
 ---
 
-**문제 3.** 연결 트러블슈팅 중 "요청은 나가는데 응답이 돌아오지 않는" 증상이 발생했다. 어느 계층을 가장 먼저 의심해야 하는가?
+**Question 2.** We want to use network design to stop a scenario in which a compromised instance tries to exfiltrate company S3 data to an external attacker's bucket using stolen credentials. What is the most effective combination?
 
-A) 보안 그룹 인바운드 규칙  
-B) 라우팅 테이블의 로컬 경로  
-C) NACL 아웃바운드의 임시 포트 허용 여부  
-D) 엔드포인트 정책의 Resource 범위  
+A) Keep a NAT Gateway but allow only 443 on the security group outbound  
+B) Remove the NAT, connect only the needed AWS services with VPC Endpoints, and put a SourceVpce condition on the bucket policy  
+C) Remove all S3 permissions from the IAM policy  
+D) Strengthen CloudTrail logging  
 
-**정답: C**  
-해설: 요청은 나가지만 응답만 안 오는 증상은 비저장 방식인 NACL이 응답 트래픽을 막는 전형적 패턴이다. NACL은 상태를 추적하지 않으므로 응답이 나가는 임시 포트 범위를 아웃바운드에 명시 허용해야 한다. 상태를 추적하는 보안 그룹은 응답을 자동 허용하므로 이 증상의 원인이 아니다.
-
----
-
-**문제 4.** 온프레미스에서 Direct Connect로 S3에 접근하려는데 AccessDenied가 아니라 timeout이 발생한다. 가장 가능성 높은 원인은?
-
-A) 버킷 정책의 SourceVpce 조건이 잘못 설정됨  
-B) S3 Gateway Endpoint를 사용 중이라 온프레미스에서 도달할 수 없음  
-C) IAM 정책에 s3:GetObject 권한이 없음  
-D) KMS 키 정책이 복호화를 거부함  
-
-**정답: B**  
-해설: timeout은 정책 거부가 아니라 네트워크 도달 실패를 의미한다. Gateway Endpoint는 라우팅 기반이라 VPC 내부 전용이므로 온프레미스에서 직접 닿을 수 없다. 온프레미스 사설 접근에는 Interface Endpoint와 도메인을 사설 IP로 해석하는 DNS 구성이 필요하다. 정책 문제였다면 timeout이 아니라 AccessDenied가 발생한다.
+**Answer: B**  
+Explanation: Removing the NAT eliminates the indiscriminate outbound path so that transfer to an external bucket is blocked in itself, and if you connect only the needed services via endpoints and put an endpoint-routing condition on the bucket policy, the company bucket is accessed only through that path. Even if credentials are stolen, there is no network path for the data to leave. Strengthening logging is detection, not blocking.
 
 ---
 
-**문제 5.** 다음 중 보안 그룹과 NACL의 차이를 올바르게 설명한 것을 모두 고른 조합은?
+**Question 3.** During connectivity troubleshooting, the symptom "the request goes out but the response does not come back" occurred. Which layer should be suspected first?
 
-(가) 보안 그룹은 상태를 추적하고 NACL은 추적하지 않는다
-(나) NACL은 명시적 Deny가 가능하지만 보안 그룹은 Allow만 가능하다
-(다) 같은 서브넷 내부 통신에는 NACL이 적용되지 않는다
-(라) 보안 그룹은 규칙 번호 순서로 첫 매치에서 평가를 종료한다
+A) Security group inbound rules  
+B) The local route in the route table  
+C) Whether the NACL outbound allows ephemeral ports  
+D) The Resource scope of the endpoint policy  
 
-A) 가, 나, 다  
-B) 가, 나, 라  
-C) 나, 다, 라  
-D) 가, 다, 라  
-
-**정답: A**  
-해설: 보안 그룹은 상태를 추적해 응답을 자동 허용하고 허용 규칙만 지원하며, NACL은 비저장 방식에 거부 규칙도 지원한다. 또 NACL은 서브넷 경계 트래픽만 검사하므로 같은 서브넷 내부 통신에는 적용되지 않는다. 규칙 번호 순서로 첫 매치에서 종료하는 것은 NACL의 평가 방식이며 보안 그룹은 모든 규칙을 종합 평가하므로 (라)는 틀렸다.
+**Answer: C**  
+Explanation: The symptom where the request goes out but only the response does not come back is a typical pattern of the stateless NACL blocking the response traffic. A NACL does not track state, so the ephemeral port range the response goes out on must be explicitly allowed in the outbound. A security group, which tracks state, automatically allows responses, so it is not the cause of this symptom.
 
 ---
 
-**문제 6.** Flow Logs 분석에서 "한 내부 호스트가 짧은 시간에 100개 이상의 서로 다른 외부 목적지와 통신"하는 패턴이 보였다. 가장 의심되는 활동과, 침해 호스트를 정확히 특정하기 위해 필요한 필드의 조합은?
+**Question 4.** When trying to access S3 from on-premises over Direct Connect, a timeout occurs rather than AccessDenied. What is the most likely cause?
 
-A) 데이터 유출 의심 / srcaddr 필드  
-B) C2 비콘 또는 횡적 이동 의심 / pkt-srcaddr 필드  
-C) 정상 헬스 체크 / az-id 필드  
-D) DDoS 공격 의심 / dstport 필드  
+A) The SourceVpce condition in the bucket policy is misconfigured  
+B) An S3 Gateway Endpoint is in use, so it cannot be reached from on-premises  
+C) The IAM policy lacks the s3:GetObject permission  
+D) The KMS key policy denies decryption  
 
-**정답: B**  
-해설: 한 호스트가 다수의 서로 다른 목적지와 통신하는 패턴은 명령제어 비콘이나 내부 횡적 이동의 징후다. 그리고 NAT를 거치면 일반 출발지 주소 필드에 NAT 주소가 찍히므로, NAT 변환 이전의 실제 송신 호스트를 식별하려면 패킷 원본 출발지 주소 필드가 필요하다. 이 필드가 침해 호스트 특정의 열쇠다.
+**Answer: B**  
+Explanation: A timeout means a network reachability failure, not a policy denial. A Gateway Endpoint is routing-based and VPC-internal only, so it cannot be reached directly from on-premises. Private access from on-premises requires an Interface Endpoint and a DNS configuration that resolves the domain to a private IP. If it were a policy problem, AccessDenied would occur instead of a timeout.
+
+---
+
+**Question 5.** Which combination selects all the correct descriptions of the differences between security groups and NACLs?
+
+(i) A security group tracks state and a NACL does not
+(ii) A NACL can explicitly Deny but a security group can only Allow
+(iii) A NACL does not apply to communication inside the same subnet
+(iv) A security group ends evaluation at the first match in rule number order
+
+A) i, ii, iii  
+B) i, ii, iv  
+C) ii, iii, iv  
+D) i, iii, iv  
+
+**Answer: A**  
+Explanation: A security group tracks state, automatically allows responses, and supports only allow rules, while a NACL is stateless and also supports deny rules. Also, a NACL inspects only subnet boundary traffic, so it does not apply to communication inside the same subnet. Ending at the first match in rule number order is how a NACL evaluates, and a security group evaluates all rules together, so (iv) is wrong.
+
+---
+
+**Question 6.** In Flow Logs analysis, a pattern appeared in which "one internal host communicates with more than 100 different external destinations in a short time." What is the combination of the most suspected activity and the field needed to pinpoint the compromised host?
+
+A) Suspected data exfiltration / srcaddr field  
+B) Suspected C2 beaconing or lateral movement / pkt-srcaddr field  
+C) Normal health check / az-id field  
+D) Suspected DDoS attack / dstport field  
+
+**Answer: B**  
+Explanation: A pattern in which one host communicates with many different destinations is a sign of command-and-control beaconing or internal lateral movement. And since the NAT address is recorded in the normal source address field when traffic passes through NAT, identifying the actual sending host before NAT translation requires the packet original source address field. This field is the key to pinpointing the compromised host.
 
 ---

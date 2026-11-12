@@ -227,86 +227,86 @@ Tomorrow we cover Aurora, which stands on RDS's foundation but chose a completel
 
 ## 📝 Practice Questions
 
-**문제 1.** A company runs RDS MySQL, and its read traffic is 10× its write traffic. What is the most suitable way to increase read throughput without sacrificing write performance?
+**Question 1.** A company runs RDS MySQL, and its read traffic is 10× its write traffic. What is the most suitable way to increase read throughput without sacrificing write performance?
 
 A) Enable Multi-AZ and serve reads from the Standby
 B) Add 2-3 Read Replicas and connect the application to the read endpoint
 C) Put an RDS Proxy in front to distribute connections
 D) Upgrade to a larger instance class
 
-**정답: B**
-해설: A Multi-AZ Standby generally does not serve read traffic (Multi-AZ Cluster can, but that's distinct from plain Multi-AZ). A Read Replica is a read-only copy created via asynchronous replication that serves read traffic through a separate endpoint. RDS Proxy is a tool for reducing connection counts, not for increasing read throughput. An instance upgrade is expensive and doesn't solve the fundamental traffic-distribution problem.
+**Answer: B**
+Explanation: A Multi-AZ Standby generally does not serve read traffic (Multi-AZ Cluster can, but that's distinct from plain Multi-AZ). A Read Replica is a read-only copy created via asynchronous replication that serves read traffic through a separate endpoint. RDS Proxy is a tool for reducing connection counts, not for increasing read throughput. An instance upgrade is expensive and doesn't solve the fundamental traffic-distribution problem.
 
 ---
 
-**문제 2.** When 1,000 Lambda functions run simultaneously, RDS starts throwing "Too many connections" errors. How do you solve this with minimal code changes?
+**Question 2.** When 1,000 Lambda functions run simultaneously, RDS starts throwing "Too many connections" errors. How do you solve this with minimal code changes?
 
 A) Change the RDS instance to a larger class to raise max_connections
 B) Limit Lambda's reserved concurrency to 50
 C) Introduce RDS Proxy to add connection pooling between Lambda and RDS
 D) Add 5 Read Replicas to distribute the connections
 
-**정답: C**
-해설: RDS Proxy provides connection pooling that accepts thousands of Lambda connections while maintaining only a small number of connections to the DB. The application only needs to change its connection method to the Proxy endpoint, so code changes are minimized. A is not a fundamental fix and raises cost. B may fail to meet business needs by limiting Lambda throughput. D only distributes read-only connections and doesn't solve the write-connection problem.
+**Answer: C**
+Explanation: RDS Proxy provides connection pooling that accepts thousands of Lambda connections while maintaining only a small number of connections to the DB. The application only needs to change its connection method to the Proxy endpoint, so code changes are minimized. A is not a fundamental fix and raises cost. B may fail to meet business needs by limiting Lambda throughput. D only distributes read-only connections and doesn't solve the write-connection problem.
 
 ---
 
-**문제 3.** You need to convert a running unencrypted RDS instance to an encrypted state. What is the correct procedure?
+**Question 3.** You need to convert a running unencrypted RDS instance to an encrypted state. What is the correct procedure?
 
 A) Flip the "Enable Encryption" toggle in the RDS console
 B) Stop the instance, enable encryption, then restart it
 C) Take a snapshot of the current instance → copy the snapshot with the encryption option → restore a new instance from the encrypted snapshot
 D) Create a Read Replica with encryption enabled and promote it
 
-**정답: C**
-해설: RDS encryption can only be set at instance creation time and cannot be changed afterward. Converting unencrypted → encrypted must be done via the snapshot-to-new-instance path. A and B are impossible operations. D is also impossible — if the Primary is unencrypted, a same-region Replica is created unencrypted too. However, a Cross-Region Read Replica can be created in an encrypted state with a separate KMS key.
+**Answer: C**
+Explanation: RDS encryption can only be set at instance creation time and cannot be changed afterward. Converting unencrypted → encrypted must be done via the snapshot-to-new-instance path. A and B are impossible operations. D is also impossible — if the Primary is unencrypted, a same-region Replica is created unencrypted too. However, a Cross-Region Read Replica can be created in an encrypted state with a separate KMS key.
 
 ---
 
-**문제 4.** With RDS Multi-AZ enabled, the Primary instance in AZ-a fails. How does Multi-AZ contribute to recovering service with minimal downtime?
+**Question 4.** With RDS Multi-AZ enabled, the Primary instance in AZ-a fails. How does Multi-AZ contribute to recovering service with minimal downtime?
 
 A) It fetches the latest snapshot from S3 and starts a new instance
 B) It automatically promotes the AZ-b Standby to Primary and updates the DNS CNAME
 C) An operator must manually trigger the failover
 D) It automatically promotes an AZ-b Read Replica to Primary
 
-**정답: B**
-해설: The core value of Multi-AZ is automatic failover. When AWS detects a Primary failure, it automatically promotes the Standby to the new Primary and updates the DNS CNAME record. If the application uses the RDS DNS endpoint, it automatically connects to the new Primary after the DNS TTL. C is wrong — needing no manual intervention is exactly the advantage of Multi-AZ. D is wrong — a Multi-AZ Standby and a Read Replica are different concepts.
+**Answer: B**
+Explanation: The core value of Multi-AZ is automatic failover. When AWS detects a Primary failure, it automatically promotes the Standby to the new Primary and updates the DNS CNAME record. If the application uses the RDS DNS endpoint, it automatically connects to the new Primary after the DNS TTL. C is wrong — needing no manual intervention is exactly the advantage of Multi-AZ. D is wrong — a Multi-AZ Standby and a Read Replica are different concepts.
 
 ---
 
-**문제 5.** You run RDS MySQL in the Seoul region (ap-northeast-2). To prepare for a full regional disaster while minimizing RPO, and to also serve read traffic from the Tokyo region (ap-northeast-1). What is the most suitable solution?
+**Question 5.** You run RDS MySQL in the Seoul region (ap-northeast-2). To prepare for a full regional disaster while minimizing RPO, and to also serve read traffic from the Tokyo region (ap-northeast-1). What is the most suitable solution?
 
 A) Enable Multi-AZ and configure a separate Multi-AZ in the Tokyo region as well
 B) Create a Cross-Region Read Replica from Seoul to Tokyo, and have Tokyo users use the Replica endpoint
 C) Create independent RDS instances in Seoul and Tokyo and synchronize them at the application level
 D) Replicate backups to Tokyo with S3 Cross-Region Replication
 
-**정답: B**
-해설: A Cross-Region Read Replica achieves two goals at once. ① Tokyo users read from a physically nearby Replica → reduced latency. ② On a Seoul failure, promote the Tokyo Replica → DR. Since it's asynchronous replication, RPO is not 0 (a lag of seconds to tens of seconds), but it's far smaller than a full S3 backup. A is impossible — cross-region Multi-AZ doesn't exist; Multi-AZ is an inter-AZ mechanism within the same region. C has serious data-consistency problems. D can have an RPO measured in hours.
+**Answer: B**
+Explanation: A Cross-Region Read Replica achieves two goals at once. ① Tokyo users read from a physically nearby Replica → reduced latency. ② On a Seoul failure, promote the Tokyo Replica → DR. Since it's asynchronous replication, RPO is not 0 (a lag of seconds to tens of seconds), but it's far smaller than a full S3 backup. A is impossible — cross-region Multi-AZ doesn't exist; Multi-AZ is an inter-AZ mechanism within the same region. C has serious data-consistency problems. D can have an RPO measured in hours.
 
 ---
 
-**문제 6.** Which statement about RDS automated-backup PITR (Point-In-Time Recovery) is correct?
+**Question 6.** Which statement about RDS automated-backup PITR (Point-In-Time Recovery) is correct?
 
 A) You can recover to any minute-level point within the retention period (up to 35 days)
 B) You can recover to any 5-minute point within the retention period, and it overwrites the existing instance directly
 C) You can recover to any 5-minute point within the retention period, and a new instance is created
 D) The retention period is up to 90 days and a manual snapshot is required
 
-**정답: C**
-해설: RDS automated-backup PITR provides recovery points at 5-minute granularity (transaction logs are uploaded to S3 every 5 minutes), and the retention period is 1-35 days. The key point is that PITR recovery creates a "new instance." The existing instance stays as is. A is wrong because it's 5-minute, not minute, granularity. B is wrong about overwriting the existing instance. D is wrong about the 90-day retention.
+**Answer: C**
+Explanation: RDS automated-backup PITR provides recovery points at 5-minute granularity (transaction logs are uploaded to S3 every 5 minutes), and the retention period is 1-35 days. The key point is that PITR recovery creates a "new instance." The existing instance stays as is. A is wrong because it's 5-minute, not minute, granularity. B is wrong about overwriting the existing instance. D is wrong about the 90-day retention.
 
 ---
 
-**문제 7.** An application team wants to SSH directly into the RDS instance and edit the MySQL configuration file (my.cnf). Is this possible, and what is the alternative?
+**Question 7.** An application team wants to SSH directly into the RDS instance and edit the MySQL configuration file (my.cnf). Is this possible, and what is the alternative?
 
 A) It's possible. RDS is EC2-based, so SSH access is allowed
 B) It's not possible. RDS is a managed service with no guest OS access. MySQL parameters must be changed through an RDS Parameter Group
 C) It's possible. You can connect via AWS Systems Manager Session Manager
 D) It's not possible. RDS parameters cannot be changed at all
 
-**정답: B**
-해설: RDS is a managed PaaS service where the user can only access the DB layer and above. Direct access to the OS or the MySQL config file is not possible. DB engine parameters (e.g., innodb_buffer_pool_size, max_connections, slow_query_log) can be changed in an RDS Parameter Group, and some parameters require a DB restart to take effect (Static Parameters). If you truly need MySQL on EC2, you must install it directly on EC2 rather than RDS — and in that case all responsibilities such as OS patching, backups, and HA setup fall on the customer.
+**Answer: B**
+Explanation: RDS is a managed PaaS service where the user can only access the DB layer and above. Direct access to the OS or the MySQL config file is not possible. DB engine parameters (e.g., innodb_buffer_pool_size, max_connections, slow_query_log) can be changed in an RDS Parameter Group, and some parameters require a DB restart to take effect (Static Parameters). If you truly need MySQL on EC2, you must install it directly on EC2 rather than RDS — and in that case all responsibilities such as OS patching, backups, and HA setup fall on the customer.
 
 ---

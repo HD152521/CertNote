@@ -92,6 +92,6 @@ Tomorrow: Week 9 synthesis — all four security, networking, encryption, cost a
 
 ## 📝 Practice Questions
 
-**문제 1-5** [Practice questions in Korean follow after marker]
+**Questions 1-5** [Practice questions in Korean follow after marker]
 
 ---

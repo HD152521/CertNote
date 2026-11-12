@@ -124,62 +124,62 @@ Next we see distributed training when a model doesn't fit one machine or trainin
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 팀이 PyTorch로 작성한 학습 코드를 SageMaker에서 최소한의 노력으로 돌리려 한다. 환경은 표준 PyTorch면 충분하고 특수한 시스템 패키지는 없다. 가장 적합한 방식은?
+**Question 1.** A team wants to run training code written in PyTorch on SageMaker with minimal effort. A standard PyTorch environment is sufficient and there are no special system packages. What is the most suitable approach?
 
-A) 모든 것을 직접 만든 Docker 이미지(BYOC)  
-B) 스크립트 모드로 train.py를 PyTorch Estimator에 전달  
-C) 내장 알고리즘만 사용  
-D) EC2에 수동으로 PyTorch를 설치해 학습  
+A) A fully custom-built Docker image (BYOC)  
+B) Pass train.py to the PyTorch Estimator in script mode  
+C) Use only built-in algorithms  
+D) Manually install PyTorch on EC2 and train there  
 
-**정답: B**  
-해설: 표준 PyTorch 환경에 학습 스크립트만 있으면 스크립트 모드가 가장 빠르며 Docker를 다룰 필요가 없다. A는 시스템 의존성이 없는데 불필요하게 컨테이너를 직접 빌드하는 과잉 작업이고, C는 자체 PyTorch 코드를 쓸 수 없으며, D는 SageMaker의 관리형 학습 이점을 버리는 수동 방식이다.
-
----
-
-**문제 2.** 스크립트 모드 학습에서 학습 종료 후 모델 산출물이 S3에 자동으로 업로드되지 않았다. 가장 가능성 높은 원인은?
-
-A) instance_count를 1로 설정했다  
-B) 모델을 SM_MODEL_DIR(/opt/ml/model)이 아닌 임의 경로에 저장했다  
-C) framework_version을 명시했다  
-D) 하이퍼파라미터를 전달했다  
-
-**정답: B**  
-해설: SageMaker는 `/opt/ml/model`(SM_MODEL_DIR)에 저장된 산출물만 학습 종료 시 압축해 S3로 업로드한다. A·C·D는 모두 정상적인 학습 설정으로 산출물 업로드와 무관하며, 저장 경로 규약을 어긴 것이 직접 원인이다.
+**Answer: B**  
+Explanation: When you have a standard PyTorch environment and only a training script, script mode is the fastest and you do not need to deal with Docker. A is excessive work that builds a container unnecessarily when there are no system dependencies, C cannot use your own PyTorch code, and D is a manual approach that gives up the benefits of SageMaker managed training.
 
 ---
 
-**문제 3.** 스크립트 모드를 쓰되 학습 코드가 transformers, datasets 같은 추가 파이썬 패키지를 필요로 한다. Docker를 직접 만들지 않고 해결하는 방법은?
+**Question 2.** In script mode training, the model artifacts were not automatically uploaded to S3 after training ended. What is the most likely cause?
 
-A) BYOC로 처음부터 이미지를 만든다  
-B) source_dir에 requirements.txt를 넣어 SageMaker가 자동 설치하게 한다  
-C) 패키지를 학습 데이터에 포함시킨다  
-D) 내장 알고리즘으로 전환한다  
+A) instance_count was set to 1  
+B) The model was saved to an arbitrary path instead of SM_MODEL_DIR (/opt/ml/model)  
+C) framework_version was specified explicitly  
+D) Hyperparameters were passed  
 
-**정답: B**  
-해설: AWS 프레임워크 컨테이너는 source_dir의 requirements.txt를 시작 시 자동 설치하므로 파이썬 패키지 추가에 Docker 빌드가 필요 없다. A는 파이썬 패키지만 필요한데 과한 작업이고, C는 데이터와 의존성을 혼동한 것이며, D는 자체 코드를 포기하는 선택이다.
-
----
-
-**문제 4.** 학습 코드가 ffmpeg, libsndfile 같은 시스템 레벨 패키지(apt)와 특정 CUDA 드라이버 조합을 요구한다. 적합한 접근은?
-
-A) requirements.txt에 ffmpeg를 적는다  
-B) 스크립트 모드만으로 처리한다  
-C) BYOC로 시스템 패키지와 런타임을 구운 자체 Docker 이미지를 ECR에 올려 사용한다  
-D) 하이퍼파라미터로 ffmpeg를 전달한다  
-
-**정답: C**  
-해설: 시스템 레벨 패키지와 특수 런타임은 pip로 설치되지 않으므로 BYOC로 Docker 이미지에 직접 구워 ECR에 올려야 한다. A는 pip 전용이라 apt 패키지 설치가 안 되고, B도 같은 한계가 있으며, D는 하이퍼파라미터의 용도와 무관하다.
+**Answer: B**  
+Explanation: SageMaker compresses and uploads to S3 at the end of training only the artifacts saved in `/opt/ml/model` (SM_MODEL_DIR). A, C, and D are all normal training settings unrelated to artifact upload, and violating the save path convention is the direct cause.
 
 ---
 
-**문제 5.** BYOC로 학습 컨테이너를 만들 때 SageMaker가 입력 데이터를 컨테이너 내부에 복사하는 표준 경로는?
+**Question 3.** You use script mode, but the training code needs additional Python packages such as transformers and datasets. How can you solve this without building Docker yourself?
 
-A) /opt/ml/input/data/<채널명>/  
+A) Build the image from scratch with BYOC  
+B) Put requirements.txt in source_dir so SageMaker installs it automatically  
+C) Include the packages in the training data  
+D) Switch to a built-in algorithm  
+
+**Answer: B**  
+Explanation: AWS framework containers automatically install the requirements.txt in source_dir at startup, so no Docker build is needed to add Python packages. A is excessive work when only Python packages are needed, C confuses data with dependencies, and D means giving up your own code.
+
+---
+
+**Question 4.** The training code requires system-level packages (apt) such as ffmpeg and libsndfile and a specific CUDA driver combination. What is the suitable approach?
+
+A) Write ffmpeg in requirements.txt  
+B) Handle it with script mode alone  
+C) Use BYOC: upload to ECR your own Docker image with the system packages and runtime baked in  
+D) Pass ffmpeg as a hyperparameter  
+
+**Answer: C**  
+Explanation: System-level packages and special runtimes cannot be installed with pip, so they must be baked directly into a Docker image with BYOC and uploaded to ECR. A cannot install apt packages because it is pip-only, B has the same limitation, and D has nothing to do with the purpose of hyperparameters.
+
+---
+
+**Question 5.** When building a training container with BYOC, what is the standard path where SageMaker copies input data inside the container?
+
+A) /opt/ml/input/data/<channel-name>/  
 B) /home/user/data/  
 C) /tmp/sagemaker/  
 D) /var/log/training/  
 
-**정답: A**  
-해설: SageMaker는 fit()에 지정한 채널의 데이터를 컨테이너 내 `/opt/ml/input/data/<채널명>/`에 복사하며, 모델은 `/opt/ml/model`에 저장하는 규약을 따른다. B·C·D는 임의 경로로 SageMaker 규약이 아니어서 해당 위치에 데이터가 자동 배치되지 않는다.
+**Answer: A**  
+Explanation: SageMaker copies the data of the channels specified in fit() to `/opt/ml/input/data/<channel-name>/` inside the container, and follows the convention of saving the model to `/opt/ml/model`. B, C, and D are arbitrary paths that are not SageMaker conventions, so data is not automatically placed there.
 
 ---

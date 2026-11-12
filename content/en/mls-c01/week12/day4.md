@@ -71,98 +71,98 @@ MLS-C01 is over. Weeks 1-4 (data, stats), 5-6 (alg select), 7-12 (modeling + ops
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 핀테크가 모바일 앱 클릭스트림을 밀리초 단위로 수집해, 사기 탐지 팀과 추천 팀이 같은 스트림을 각자 독립적으로 소비하고, 장애 시 과거 1일치를 재처리해야 한다. 가장 적합한 수집 서비스는?
+**Question 1.** A fintech company ingests mobile app clickstream data at millisecond granularity; the fraud detection team and the recommendation team must each consume the same stream independently, and the previous 1 day of data must be reprocessed after a failure. Which ingestion service is MOST appropriate?
 
 A) Kinesis Data Firehose  
 B) Amazon SQS FIFO  
-C) AWS Glue 배치 잡  
+C) AWS Glue batch job  
 D) Kinesis Data Streams  
 
-**정답: D**  
-해설: 다중 소비자가 독립적으로 읽고 보존기간 내 재처리가 필요하면 샤드·보존기간을 제어하는 Data Streams가 정답이다. Firehose(A)는 완전관리 적재 전용이고, SQS FIFO(B)는 소비 시 삭제되어 다중 독립 소비·재처리에 약하며, Glue(C)는 배치 ETL이다.
+**Answer: D**  
+Explanation: When multiple consumers read independently and reprocessing within the retention period is required, Data Streams, which controls shards and the retention period, is the correct answer. Firehose (A) is solely for fully managed delivery, SQS FIFO (B) deletes messages on consumption and is weak for multiple independent consumers and reprocessing, and Glue (C) is batch ETL.
 
 ---
 
-**문제 2.** 신용 승인 데이터는 부도(양성) 비율이 2%로 극단 불균형이다. 모델 후보들을 임계값과 무관하게 변별력으로 비교한 뒤, 운영 임계값은 FN/FP 비용에 맞춰 따로 정하려 한다. 가장 적절한 평가 접근은?
+**Question 2.** Credit approval data is extremely imbalanced, with a default (positive) rate of 2%. You want to compare candidate models by discriminative power independent of the threshold, and then set the operating threshold separately according to FN/FP costs. Which evaluation approach is MOST appropriate?
 
-A) 임계값 0.5에서의 정확도로 모델을 비교한다  
-B) RMSE로 모델을 비교한다  
-C) PR 곡선의 AUC로 모델을 비교하고, 임계값은 비용 곡선상 최소 지점으로 사후 결정한다  
-D) R²가 가장 높은 모델을 고른다  
+A) Compare models by accuracy at a threshold of 0.5  
+B) Compare models by RMSE  
+C) Compare models by the AUC of the PR curve, and decide the threshold afterward at the minimum point on the cost curve  
+D) Choose the model with the highest R²  
 
-**정답: C**  
-해설: 극단 불균형에서는 PR-AUC가 정직한 변별력 지표이며, 운영 임계값은 비용 구조에 맞춰 사후 결정하는 2단계 분리가 정석이다. 정확도(A)는 불균형에서 과대평가되고, RMSE(B)·R²(D)는 회귀 지표라 분류에 부적합하다.
+**Answer: C**  
+Explanation: Under extreme imbalance, PR-AUC is an honest measure of discriminative power, and the standard approach is a two-step separation in which the operating threshold is decided afterward according to the cost structure. Accuracy (A) is overestimated under imbalance, and RMSE (B) and R² (D) are regression metrics and unsuitable for classification.
 
 ---
 
-**문제 3.** 데이터 과학자가 S3 데이터 레이크의 로그를 클러스터 프로비저닝 없이 표준 SQL로 탐색하고, 그 결과를 대시보드로 시각화하려 한다. 가장 적합한 조합은?
+**Question 3.** A data scientist wants to explore logs in an S3 data lake with standard SQL without provisioning a cluster, and visualize the results in a dashboard. Which combination is MOST appropriate?
 
 A) EMR + Kibana  
 B) Athena + QuickSight  
 C) Redshift Spectrum + CloudWatch  
-D) Glue 크롤러 + CloudTrail  
+D) Glue crawler + CloudTrail  
 
-**정답: B**  
-해설: Athena는 S3를 서버리스 SQL로 조회하고 QuickSight는 그 결과를 BI 대시보드로 시각화해 클러스터 없는 탐색·시각화에 최적이다. EMR(A)은 클러스터 운영이 필요하고, CloudWatch(C)·CloudTrail(D)은 모니터링·감사 도구로 분석 시각화 용도가 아니다.
+**Answer: B**  
+Explanation: Athena queries S3 with serverless SQL and QuickSight visualizes the results as a BI dashboard, making the combination optimal for cluster-free exploration and visualization. EMR (A) requires cluster operation, and CloudWatch (C) and CloudTrail (D) are monitoring and auditing tools, not for analytical visualization.
 
 ---
 
-**문제 4.** 정형 표 데이터(수치·범주 혼합, 일부 결측)로 이탈을 예측하는 모델을 적은 튜닝 예산으로 빠르게 최적화하려 한다. 알고리즘과 튜닝 전략의 조합으로 가장 적절한 것은?
+**Question 4.** You want to quickly optimize, with a small tuning budget, a model that predicts churn from structured tabular data (mixed numeric and categorical, with some missing values). Which combination of algorithm and tuning strategy is MOST appropriate?
 
-A) XGBoost + 베이지안 최적화(AMT)  
+A) XGBoost + Bayesian optimization (AMT)  
 B) CNN + Grid Search  
 C) DeepAR + Random Search  
-D) K-Means + 수동 튜닝  
+D) K-Means + manual tuning  
 
-**정답: A**  
-해설: 정형 표 데이터에는 XGBoost가 강한 기본값이고, 적은 예산에서 효율적인 튜닝은 이전 시도를 활용하는 베이지안 최적화다. CNN(B)은 이미지용, DeepAR(C)은 시계열용, K-Means(D)는 비지도 군집으로 지도 분류 문제에 맞지 않는다.
+**Answer: A**  
+Explanation: XGBoost is a strong default for structured tabular data, and efficient tuning on a small budget is Bayesian optimization, which uses previous trials. CNN (B) is for images, DeepAR (C) is for time series, and K-Means (D) is unsupervised clustering and does not fit a supervised classification problem.
 
 ---
 
-**문제 5.** 이미지 1천만 장을 야간에 한 번에 분류해 결과를 S3에 저장하면 되고, 낮 동안 상시 엔드포인트는 필요 없다. 가장 비용 효율적인 추론 방식은?
+**Question 5.** You only need to classify 10 million images in one pass overnight and store the results in S3, and no always-on endpoint is needed during the day. Which inference method is MOST cost-effective?
 
-A) Real-time Endpoint 상시 가동  
+A) Run a Real-time Endpoint at all times  
 B) Serverless Inference  
 C) Batch Transform  
-D) Asynchronous Inference 상시 가동  
+D) Keep Asynchronous Inference always running  
 
-**정답: C**  
-해설: 대량 데이터를 정해진 시점에 한 번에 처리하고 상시 엔드포인트가 불필요하면 Batch Transform이 가장 비용 효율적이다. 상시 Real-time(A)·상시 Async(D)는 불필요한 상시 비용이 들고, Serverless(B)는 건당 호출용으로 대량 일괄 처리에는 Batch가 우선이다.
-
----
-
-**문제 6.** 프로덕션에 배포된 추천 모델의 클릭률이 배포 6주 후부터 점진적으로 하락했다. 입력 사용자 행동 분포가 학습 시점과 달라졌는지 자동으로 탐지하고 임계 초과 시 재학습을 트리거하려 한다. 가장 적합한 구성은?
-
-A) CloudTrail로 API 호출을 추적한다  
-B) Elastic Inference로 추론을 가속한다  
-C) Multi-Model Endpoint로 모델을 추가한다  
-D) Model Monitor로 드리프트를 감지하고 CloudWatch 알람으로 재학습 파이프라인을 트리거한다  
-
-**정답: D**  
-해설: Model Monitor는 베이스라인 대비 운영 입력의 드리프트를 감지하고, CloudWatch 알람으로 재학습 자동화를 트리거할 수 있다. CloudTrail(A)은 감사, Elastic Inference(B)는 추론 가속, Multi-Model(C)은 호스팅 효율로 드리프트 대응과 무관하다.
+**Answer: C**  
+Explanation: When a large volume of data is processed in one pass at a set time and an always-on endpoint is unnecessary, Batch Transform is the most cost-effective. Always-on Real-time (A) and always-on Async (D) incur unnecessary standing costs, and Serverless (B) is for per-request invocation, so Batch takes priority for large-volume bulk processing.
 
 ---
 
-**문제 7.** 규제 산업의 대출 심사 모델에서 성별·인종 집단 간 예측 공정성을 정량 측정하고, 개별 거절 결정의 근거(어떤 피처가 얼마나 기여했는지)를 설명해야 한다. 가장 적합한 서비스는?
+**Question 6.** The click-through rate of a recommendation model deployed to production has been declining gradually since 6 weeks after deployment. You want to automatically detect whether the input user behavior distribution has changed from training time and trigger retraining when a threshold is exceeded. Which configuration is MOST appropriate?
+
+A) Track API calls with CloudTrail  
+B) Accelerate inference with Elastic Inference  
+C) Add models with a Multi-Model Endpoint  
+D) Detect drift with Model Monitor and trigger the retraining pipeline with a CloudWatch alarm  
+
+**Answer: D**  
+Explanation: Model Monitor detects drift in production inputs relative to the baseline, and a CloudWatch alarm can trigger retraining automation. CloudTrail (A) is for auditing, Elastic Inference (B) is for inference acceleration, and Multi-Model (C) is for hosting efficiency; none is related to responding to drift.
+
+---
+
+**Question 7.** For a loan underwriting model in a regulated industry, you must quantitatively measure prediction fairness across gender and race groups and explain the basis of individual rejection decisions (which features contributed and by how much). Which service is MOST appropriate?
 
 A) SageMaker Debugger  
 B) SageMaker Clarify  
 C) CloudWatch Logs Insights  
-D) SageMaker Model Monitor 단독  
+D) SageMaker Model Monitor alone  
 
-**정답: B**  
-해설: 집단 간 편향(Disparate Impact 등) 측정과 SHAP 기반 개별 예측 설명은 모두 Clarify의 역할이다. Debugger(A)는 학습 과정의 텐서·기울기를 다루고, CloudWatch Logs(C)는 로그 분석, Model Monitor 단독(D)은 드리프트 감지로 공정성·설명 전용이 아니다.
+**Answer: B**  
+Explanation: Measuring bias between groups (such as Disparate Impact) and explaining individual predictions based on SHAP are both roles of Clarify. Debugger (A) deals with tensors and gradients during training, CloudWatch Logs (C) is for log analysis, and Model Monitor alone (D) detects drift and is not dedicated to fairness or explainability.
 
 ---
 
-**문제 8.** 한 팀이 데이터 처리 → 학습 → 평가 → 조건부 모델 등록까지를 코드로 표준화해, 매주 새 데이터로 자동 재학습하고 버전과 승인을 관리하려 한다. 가장 적합한 조합은?
+**Question 8.** A team wants to standardize, as code, everything from data processing to training, evaluation, and conditional model registration, automatically retrain every week with new data, and manage versions and approvals. Which combination is MOST appropriate?
 
-A) SageMaker Pipelines로 DAG를 정의하고 Model Registry로 버전·승인 관리  
-B) EC2에 cron 셸 스크립트로 단계를 순차 실행  
-C) Lambda 하나로 전체 학습 잡을 직접 실행  
-D) Glue 크롤러로 모델을 등록  
+A) Define a DAG with SageMaker Pipelines and manage versions and approvals with Model Registry  
+B) Run the steps sequentially with a cron shell script on EC2  
+C) Run the entire training job directly from a single Lambda function  
+D) Register the model with a Glue crawler  
 
-**정답: A**  
-해설: SageMaker Pipelines는 ML 단계를 DAG로 정의해 재현·자동 재학습·CI/CD를 제공하고, Model Registry가 버전·승인을 관리한다. cron 스크립트(B)는 표준화·재현성이 약하고, Lambda 단독(C)은 장시간 학습에 부적합하며, Glue 크롤러(D)는 데이터 카탈로깅 용도다.
+**Answer: A**  
+Explanation: SageMaker Pipelines defines ML steps as a DAG and provides reproducibility, automatic retraining, and CI/CD, while Model Registry manages versions and approvals. A cron script (B) is weak in standardization and reproducibility, Lambda alone (C) is unsuitable for long-running training, and a Glue crawler (D) is for data cataloging.
 
 ---

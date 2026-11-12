@@ -172,91 +172,91 @@ Next we look at another face of secrets: not secret storage but **user authentic
 
 ## 📝 Practice Questions
 
-**문제 1.** Production RDS MySQL password must auto-rotate every 30 days. What is the best service?
+**Question 1.** Production RDS MySQL password must auto-rotate every 30 days. What is the best service?
 
 A) SSM Parameter Store SecureString + EventBridge schedule
 B) AWS Secrets Manager auto-rotation
 C) Lambda-based rotation + Parameter Store storage
 D) KMS auto key rotation
 
-**정답: B**
+**Answer: B**
 
-해설: Secrets Manager auto-creates validated rotation Lambda for RDS MySQL, managing four-step rotation (createSecret → setSecret → testSecret → finishSecret). Enable in console; AWS handles it. A) Parameter Store has no rotation feature; scheduling only triggers logic you write. C) Direct Lambda implementation is unnecessarily complex and reinvents the validated wheel. D) KMS key rotation is for encryption keys, not DB passwords. "RDS + auto-rotation" means Secrets Manager.
+Explanation: Secrets Manager auto-creates validated rotation Lambda for RDS MySQL, managing four-step rotation (createSecret → setSecret → testSecret → finishSecret). Enable in console; AWS handles it. A) Parameter Store has no rotation feature; scheduling only triggers logic you write. C) Direct Lambda implementation is unnecessarily complex and reinvents the validated wheel. D) KMS key rotation is for encryption keys, not DB passwords. "RDS + auto-rotation" means Secrets Manager.
 
 ---
 
-**문제 2.** To fetch SecureString parameter **in plaintext** from SSM Parameter Store, what CLI command?
+**Question 2.** To fetch SecureString parameter **in plaintext** from SSM Parameter Store, what CLI command?
 
 A) `aws ssm get-parameter --name /key`
 B) `aws ssm get-parameter --name /key --with-decryption`
 C) `aws ssm get-secure-parameter --name /key`
 D) `aws kms decrypt --parameter /key`
 
-**정답: B**
+**Answer: B**
 
-해설: SecureString returns **encrypted by default**; plaintext requires `--with-decryption`. Caller must have `kms:Decrypt` on the key. This separation allows "can see parameter exists, cannot read plaintext" roles. C) No `get-secure-parameter` command exists. D) SSM delegates decryption; KMS decrypt is not called directly.
+Explanation: SecureString returns **encrypted by default**; plaintext requires `--with-decryption`. Caller must have `kms:Decrypt` on the key. This separation allows "can see parameter exists, cannot read plaintext" roles. C) No `get-secure-parameter` command exists. D) SSM delegates decryption; KMS decrypt is not called directly.
 
 ---
 
-**문제 3.** Which feature do Secrets Manager AND Parameter Store both provide?
+**Question 3.** Which feature do Secrets Manager AND Parameter Store both provide?
 
 A) Lambda-based auto-rotation
 B) RDS integration rotation
 C) KMS storage encryption
 D) 64KB secret storage
 
-**정답: C**
+**Answer: C**
 
-해설: Both use KMS to encrypt stored data — Parameter Store's SecureString is KMS-encrypted. So "encryption support" alone cannot distinguish. A·B) Auto and RDS rotation are Secrets Manager-only. D) 64KB is Secrets Manager only; Parameter Store is Standard 4KB / Advanced 8KB. Real difference is rotation, integration, size — not encryption. Common trap.
+Explanation: Both use KMS to encrypt stored data — Parameter Store's SecureString is KMS-encrypted. So "encryption support" alone cannot distinguish. A·B) Auto and RDS rotation are Secrets Manager-only. D) 64KB is Secrets Manager only; Parameter Store is Standard 4KB / Advanced 8KB. Real difference is rotation, integration, size — not encryption. Common trap.
 
 ---
 
-**문제 4.** Simple config (no rotation, 2KB, cost-minimal) like feature flags. Best choice?
+**Question 4.** Simple config (no rotation, 2KB, cost-minimal) like feature flags. Best choice?
 
 A) Secrets Manager
 B) Parameter Store Standard
 C) Parameter Store Advanced
 D) S3 object
 
-**정답: B**
+**Answer: B**
 
-해설: No rotation + ≤8KB + cost-first = Parameter Store Standard. Standard fits 4KB and is **free**. A) Secrets Manager costs $0.40/month even for one secret with no rotation — overkill. C) Advanced adds 8KB and policies; unnecessary for simple 2KB. D) S3 lacks hierarchy, encryption integration, IAM granularity. Decision tree end: "rotation NO → size NO → RDS NO → cost-first" = Parameter Store Standard.
+Explanation: No rotation + ≤8KB + cost-first = Parameter Store Standard. Standard fits 4KB and is **free**. A) Secrets Manager costs $0.40/month even for one secret with no rotation — overkill. C) Advanced adds 8KB and policies; unnecessary for simple 2KB. D) S3 lacks hierarchy, encryption integration, IAM granularity. Decision tree end: "rotation NO → size NO → RDS NO → cost-first" = Parameter Store Standard.
 
 ---
 
-**문제 5.** Lambda reads Secrets Manager per call, accumulating cost and latency. How to reduce calls without hardcoding secrets in code, per AWS?
+**Question 5.** Lambda reads Secrets Manager per call, accumulating cost and latency. How to reduce calls without hardcoding secrets in code, per AWS?
 
 A) Copy secret to Lambda environment variable in plaintext
 B) Use Parameters and Secrets Lambda Extension for local caching
 C) Duplicate secret to S3 and read from there
 D) Increase Provisioned Concurrency
 
-**정답: B**
+**Answer: B**
 
-해설: AWS Parameters and Secrets Lambda Extension runs a localhost cache proxy (default port 2773), hitting the API only on cache miss while the container (warm invocation) persists. Safe cache replaces risky plaintext code caching. A) Plaintext in env vars = exposure risk + no refresh on rotation. C) S3 duplication expands secret exposure surface. D) Provisioned Concurrency cuts cold starts, not secret call cost.
+Explanation: AWS Parameters and Secrets Lambda Extension runs a localhost cache proxy (default port 2773), hitting the API only on cache miss while the container (warm invocation) persists. Safe cache replaces risky plaintext code caching. A) Plaintext in env vars = exposure risk + no refresh on rotation. C) S3 duplication expands secret exposure surface. D) Provisioned Concurrency cuts cold starts, not secret call cost.
 
 ---
 
-**문제 6.** Alternating-Users rotation beats Single-User why?
+**Question 6.** Alternating-Users rotation beats Single-User why?
 
 A) Cheaper
 B) Old account stays alive briefly post-rotation, so cached-old-password clients still connect — near-zero downtime
 C) Works with Parameter Store too
 D) Also rotates KMS key
 
-**정답: B**
+**Answer: B**
 
-해설: Alternating-Users keeps two DB accounts, rotating the unused one first then switching. Old account lingers one rotation cycle, so clients with cached old password keep connecting post-rotation with nearly no downtime. Single-User swaps immediately in one account, risking brief auth failure. A) Cost-independent. C) Rotation is Secrets Manager feature only. D) DB password rotation, not KMS key rotation.
+Explanation: Alternating-Users keeps two DB accounts, rotating the unused one first then switching. Old account lingers one rotation cycle, so clients with cached old password keep connecting post-rotation with nearly no downtime. Single-User swaps immediately in one account, risking brief auth failure. A) Cost-independent. C) Rotation is Secrets Manager feature only. D) DB password rotation, not KMS key rotation.
 
 ---
 
-**문제 7.** Auto Scaling template should always boot the latest Amazon Linux 2023 AMI without hardcoding. Best method?
+**Question 7.** Auto Scaling template should always boot the latest Amazon Linux 2023 AMI without hardcoding. Best method?
 
 A) Store AMI ID in Secrets Manager
 B) Reference Parameter Store Public Parameter (`/aws/service/ami-amazon-linux-latest/...`)
 C) Lambda daily updates template AMI ID
 D) Inject AMI ID as environment variable
 
-**정답: B**
+**Answer: B**
 
-해설: AWS publishes latest AMI IDs as Parameter Store **Public Parameters**. Reference `/aws/service/ami-amazon-linux-latest/al2023-...` to always fetch the latest patched AMI without hardcoding, direct in CloudFormation/template. A) Secrets Manager is for secrets, not auto-updating values. C) Direct polling is unnecessary complexity. D) Env variables require manual sync.
+Explanation: AWS publishes latest AMI IDs as Parameter Store **Public Parameters**. Reference `/aws/service/ami-amazon-linux-latest/al2023-...` to always fetch the latest patched AMI without hardcoding, direct in CloudFormation/template. A) Secrets Manager is for secrets, not auto-updating values. C) Direct polling is unnecessary complexity. D) Env variables require manual sync.

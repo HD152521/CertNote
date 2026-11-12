@@ -88,62 +88,62 @@ Next week we move on to the domain of cost management and support (pricing, bill
 
 ## 📝 Practice Questions
 
-**문제 1.** According to the shared responsibility model, who is responsible for security patching of the operating system running on an EC2 instance?
+**Question 1.** According to the shared responsibility model, who is responsible for security patching of the operating system running on an EC2 instance?
 
 A) AWS  
 B) The customer  
 C) AWS and the customer perform it jointly and directly  
 D) There is no responsible party  
 
-**정답: B**  
-해설: With EC2 (IaaS), patching the guest operating system and applications is the customer's responsibility ("in the cloud"). AWS is responsible for the "of the cloud" area such as the physical infrastructure and the virtualization layer. Patching responsibility shifts to AWS as you move toward managed services, but the OS of EC2 is the customer's portion.
+**Answer: B**  
+Explanation: With EC2 (IaaS), patching the guest operating system and applications is the customer's responsibility ("in the cloud"). AWS is responsible for the "of the cloud" area such as the physical infrastructure and the virtualization layer. Patching responsibility shifts to AWS as you move toward managed services, but the OS of EC2 is the customer's portion.
 
 ---
 
-**문제 2.** Which service defends against attacks that flood a service with massive traffic simultaneously (DDoS) and is provided free by default to all customers?
+**Question 2.** Which service defends against attacks that flood a service with massive traffic simultaneously (DDoS) and is provided free by default to all customers?
 
 A) AWS WAF  
 B) AWS Shield Standard  
 C) Amazon GuardDuty  
 D) Amazon Macie  
 
-**정답: B**  
-해설: Shield Standard is provided free to all customers and automatically defends against DDoS (traffic floods). WAF is web attack (SQL injection/XSS) filtering, GuardDuty is malicious activity detection, and Macie is S3 sensitive data detection — none are DDoS defense services.
+**Answer: B**  
+Explanation: Shield Standard is provided free to all customers and automatically defends against DDoS (traffic floods). WAF is web attack (SQL injection/XSS) filtering, GuardDuty is malicious activity detection, and Macie is S3 sensitive data detection — none are DDoS defense services.
 
 ---
 
-**문제 3.** A company wants to easily manage encryption keys to use across AWS services. What is the most appropriate default choice for general needs?
+**Question 3.** A company wants to easily manage encryption keys to use across AWS services. What is the most appropriate default choice for general needs?
 
 A) AWS CloudHSM  
 B) AWS KMS  
 C) AWS Secrets Manager  
 D) AWS Artifact  
 
-**정답: B**  
-해설: KMS is the default choice that integrates with AWS services to easily create and manage encryption keys. CloudHSM is used in strict cases requiring sole key control in dedicated hardware, Secrets Manager is for credential storage, and Artifact is the compliance report portal.
+**Answer: B**  
+Explanation: KMS is the default choice that integrates with AWS services to easily create and manage encryption keys. CloudHSM is used in strict cases requiring sole key control in dedicated hardware, Secrets Manager is for credential storage, and Artifact is the compliance report portal.
 
 ---
 
-**문제 4.** For an audit, you need to obtain AWS's ISO 27001 certificate and SOC reports. Separately, you must store data only within the EU. What is the correct combination of actions for each?
+**Question 4.** For an audit, you need to obtain AWS's ISO 27001 certificate and SOC reports. Separately, you must store data only within the EU. What is the correct combination of actions for each?
 
 A) Download reports from Artifact / Select an EU Region  
 B) Generate reports with Inspector / Replicate to all Regions  
 C) Download reports with Trusted Advisor / Change the instance type  
 D) Issue certificates with Security Hub / Configure IAM groups  
 
-**정답: A**  
-해설: Compliance reports are downloaded self-service from AWS Artifact, and the data sovereignty requirement is met by selecting an EU Region. Inspector, Trusted Advisor, and Security Hub are not report-issuing portals, and replicating to all Regions, changing the instance type, and IAM groups are unrelated to the data storage location requirement.
+**Answer: A**  
+Explanation: Compliance reports are downloaded self-service from AWS Artifact, and the data sovereignty requirement is met by selecting an EU Region. Inspector, Trusted Advisor, and Security Hub are not report-issuing portals, and replicating to all Regions, changing the instance type, and IAM groups are unrelated to the data storage location requirement.
 
 ---
 
-**문제 5.** You want to safely store a database password without hardcoding it into code and rotate it automatically on a schedule. Which service is most appropriate?
+**Question 5.** You want to safely store a database password without hardcoding it into code and rotate it automatically on a schedule. Which service is most appropriate?
 
 A) AWS Secrets Manager  
 B) Amazon Inspector  
 C) AWS WAF  
 D) Amazon Macie  
 
-**정답: A**  
-해설: Secrets Manager safely stores credentials such as passwords and API keys and supports automatic rotation. Inspector is for vulnerability assessment, WAF is for web attack filtering, and Macie is for S3 sensitive data detection — none provide credential storage and rotation.
+**Answer: A**  
+Explanation: Secrets Manager safely stores credentials such as passwords and API keys and supports automatic rotation. Inspector is for vulnerability assessment, WAF is for web attack filtering, and Macie is for S3 sensitive data detection — none provide credential storage and rotation.
 
 ---

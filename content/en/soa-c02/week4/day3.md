@@ -597,72 +597,72 @@ Using only one tool leaves incomplete audit capability. "CloudTrail alone is eno
 
 ## 📝 Practice Questions
 
-**문제 1.** "S3 버킷이 퍼블릭으로 설정되면 자동으로 차단하고, 보안팀에 알림을 보내라"는 요구사항의 가장 완전한 구성은?
+**Question 1.** What is the most complete configuration for the requirement "automatically block an S3 bucket when it is made public, and send a notification to the security team"?
 
-A) Config Rule `s3-bucket-public-read-prohibited` + Auto Remediation (Automatic: true) + SNS 알림
-B) CloudTrail 단독
-C) Lambda가 주기적으로 S3 버킷 상태를 스캔
-D) GuardDuty S3 Protection만
+A) Config Rule `s3-bucket-public-read-prohibited` + Auto Remediation (Automatic: true) + SNS notification
+B) CloudTrail alone
+C) A Lambda that periodically scans S3 bucket status
+D) GuardDuty S3 Protection only
 
-**정답: A**
-해설: Config Rule(Configuration Change 트리거, 버킷 변경 즉시 평가) → NON_COMPLIANT 감지 → Auto Remediation(SSM `AWS-DisableS3BucketPublicReadWrite`) → 자동 차단. 알림은 Config가 SNS에 직접 전달하거나, EventBridge Rule(Config Compliance 상태 변경 이벤트)에서 SNS로 보낸다. C는 주기 사이 노출 시간이 있다. B는 행위만 기록하고 상태를 추적·교정하지 않는다. D는 위협 감지 도구이지 컴플라이언스 교정 도구가 아니다.
-
----
-
-**문제 2.** Root 계정 MFA 활성화 여부를 Config Rule로 확인하려 한다. 어떤 평가 트리거를 선택해야 하는가?
-
-A) Configuration Change — Root 계정 MFA 변경 시 즉시 평가
-B) Periodic — 정기적으로 상태를 확인 (Root MFA 상태 변경이 Config 변경 이벤트로 발생하지 않음)
-C) 두 트리거를 모두 사용
-D) EventBridge 트리거 (별도 설정)
-
-**정답: B**
-해설: Root 계정의 MFA 디바이스 추가/삭제는 Config가 리소스 변경 이벤트로 인식하지 못한다. CI가 새로 생성되지 않으므로 Configuration Change 트리거가 발동할 조건이 없다. 따라서 `root-account-mfa-enabled` Managed Rule은 기본적으로 Periodic 트리거(24시간 주기)로 동작한다. 반면 S3 버킷 ACL 변경이나 SG 규칙 변경은 CI 생성 이벤트가 있어 Configuration Change 트리거가 작동한다.
+**Answer: A**
+Explanation: Config Rule (Configuration Change trigger, evaluated immediately when the bucket changes) → NON_COMPLIANT detected → Auto Remediation (SSM `AWS-DisableS3BucketPublicReadWrite`) → automatic blocking. For notification, Config delivers directly to SNS, or an EventBridge Rule (Config Compliance status change event) sends to SNS. C leaves an exposure window between scan intervals. B only records actions and does not track or remediate state. D is a threat detection tool, not a compliance remediation tool.
 
 ---
 
-**문제 3.** 회사가 PCI-DSS 컴플라이언스를 위해 관련 Config Rule 40개를 배포해야 한다. 가장 효율적인 방법은?
+**Question 2.** You want to check whether Root account MFA is enabled using a Config Rule. Which evaluation trigger should you choose?
 
-A) AWS 콘솔에서 Rule을 하나씩 수동 생성 (40회)
-B) Conformance Pack `Operational-Best-Practices-for-PCI-DSS` 단일 배포
-C) CloudFormation으로 40개 Rule 템플릿 작성
-D) Terraform으로 Rule을 하나씩 배포
+A) Configuration Change — evaluate immediately when Root account MFA changes
+B) Periodic — check the state at regular intervals (Root MFA state changes do not occur as Config change events)
+C) Use both triggers
+D) EventBridge trigger (separate setup)
 
-**정답: B**
-해설: Conformance Pack은 컴플라이언스 프레임워크별로 관련 Rule·Remediation을 묶어 단 한 번의 배포로 적용한다. PCI-DSS Conformance Pack에는 관련 Rule이 이미 포함돼 있다. `put-conformance-pack` 한 번으로 배포 완료. A는 40회 수동 작업으로 누락 위험. C와 D는 Rule을 직접 나열해야 해 Conformance Pack보다 작업량이 많고 유지보수가 복잡하다.
-
----
-
-**문제 4.** Config Aggregator를 어느 계정에 배치하는 것이 Landing Zone 표준인가?
-
-A) 워크로드가 가장 많은 Production 계정
-B) Audit Account — 워크로드와 분리된 전용 감사 계정
-C) Management Account (조직 루트 계정)
-D) 각 계정에 개별 Aggregator 배치
-
-**정답: B**
-해설: Landing Zone(Control Tower, AWS Well-Architected 권고) 설계에서 Aggregator는 Audit Account에 위치한다. Management Account는 SCP 적용 불가 + 조직 관리 전용이며 워크로드나 감사 도구를 두지 않는다. Audit Account는 로그 아카이브와 컴플라이언스 집약 전용이다. 이 분리가 핵심 보안 원칙이다 — 워크로드 계정이 침해되더라도 감사 데이터는 Audit Account의 별도 보안 통제 하에 안전하게 보호된다.
+**Answer: B**
+Explanation: Config does not recognize adding/removing a Root account MFA device as a resource change event. Because no new configuration item (CI) is created, there is no condition to fire the Configuration Change trigger. Therefore, the `root-account-mfa-enabled` Managed Rule works with a Periodic trigger (24-hour interval) by default. By contrast, S3 bucket ACL changes or SG rule changes produce CI creation events, so the Configuration Change trigger works.
 
 ---
 
-**문제 5.** Auto Remediation이 설정됐는데 NON_COMPLIANT 리소스가 자동 교정되지 않는다. 트러블슈팅 순서로 가장 적합한 것은?
+**Question 3.** A company must deploy 40 related Config Rules for PCI-DSS compliance. What is the most efficient way?
 
-A) Config Rule을 삭제하고 다시 생성
-B) Config 콘솔 → Rule → Remediation Execution Status 확인 → AutomationAssumeRole IAM 권한 검토 → SSM Automation 실행 로그 확인
-C) S3 Delivery Channel 재설정
-D) Configuration Recorder 재시작
+A) Create the Rules one by one manually in the AWS console (40 times)
+B) Deploy the Conformance Pack `Operational-Best-Practices-for-PCI-DSS` in one deployment
+C) Write a CloudFormation template for the 40 Rules
+D) Deploy the Rules one by one with Terraform
 
-**정답: B**
-해설: Auto Remediation 실패의 가장 흔한 원인은 IAM 권한 부족이다. 트러블슈팅 순서: (1) Config 콘솔에서 해당 Rule의 Remediation Execution Status를 확인해 실패/성공 여부와 오류 메시지 파악. (2) 오류가 AccessDenied라면 `AutomationAssumeRole`의 IAM 정책에서 필요한 권한(예: `s3:PutBucketPublicAccessBlock`) 추가. (3) 수동으로 "Remediate" 버튼을 눌러 재실행하고 SSM Automation 콘솔에서 상세 실행 로그 확인. Rule 재생성(A)은 근본 원인을 해결하지 않는다.
+**Answer: B**
+Explanation: A Conformance Pack bundles the related Rules and Remediations for each compliance framework and applies them in a single deployment. The PCI-DSS Conformance Pack already includes the related Rules. Deployment is complete with a single `put-conformance-pack`. A means 40 manual operations with a risk of omissions. C and D require listing the Rules directly, so there is more work than a Conformance Pack and maintenance is more complex.
 
 ---
 
-**문제 6.** 운영자가 "어제 누가 이 SG 규칙을 추가했고, 현재 이 SG의 전체 상태는?"을 조사하려 한다. 어떤 도구를 어떤 순서로 사용하는가?
+**Question 4.** In which account is the Config Aggregator placed as the Landing Zone standard?
 
-A) Config만으로 두 질문 모두 답할 수 있다
-B) CloudTrail에서 `AuthorizeSecurityGroupIngress` 이벤트로 누가 추가했는지 확인 → Config Resource Timeline에서 현재 SG 상태 확인
-C) CloudTrail만으로 두 질문 모두 답할 수 있다
-D) GuardDuty로 두 질문을 동시에 확인한다
+A) The Production account with the most workloads
+B) The Audit Account — a dedicated audit account separated from workloads
+C) The Management Account (organization root account)
+D) A separate Aggregator in each account
 
-**정답: B**
-해설: "누가 추가했나(행위)" = CloudTrail. `AuthorizeSecurityGroupIngress` 이벤트의 `userIdentity.arn`, `requestParameters`(FromPort, ToPort, IpProtocol, IpRanges), `sourceIPAddress`로 확인한다. "현재 SG 상태(상태)" = Config. Resource Timeline에서 `AWS::EC2::SecurityGroup` CI의 최신 스냅샷에서 현재 모든 인바운드·아웃바운드 규칙을 확인한다. CloudTrail은 행위 로그이지 현재 상태를 보여주지 않는다. Config는 현재 상태를 보여주지만 "누가 바꿨는지"의 행위자 정보가 없다. 두 도구를 조합해야 완전한 그림이 나온다.
+**Answer: B**
+Explanation: In a Landing Zone design (recommended by Control Tower and the AWS Well-Architected Framework), the Aggregator is located in the Audit Account. The Management Account cannot have SCPs applied and is dedicated to organization management, so no workloads or audit tools are placed there. The Audit Account is dedicated to log archiving and compliance aggregation. This separation is a key security principle — even if a workload account is compromised, the audit data stays safely protected under the separate security controls of the Audit Account.
+
+---
+
+**Question 5.** Auto Remediation is configured, but NON_COMPLIANT resources are not being remediated automatically. What is the most appropriate troubleshooting sequence?
+
+A) Delete the Config rule and create it again
+B) Config console → Rule → check Remediation Execution Status → review the IAM permissions of the AutomationAssumeRole → check the SSM Automation execution logs
+C) Reconfigure the S3 Delivery Channel
+D) Restart the Configuration Recorder
+
+**Answer: B**
+Explanation: The most common cause of Auto Remediation failure is insufficient IAM permissions. Troubleshooting sequence: (1) In the Config console, check the rule's Remediation Execution Status to see whether it failed or succeeded and to read the error message. (2) If the error is AccessDenied, add the required permissions (for example, `s3:PutBucketPublicAccessBlock`) to the IAM policy of the `AutomationAssumeRole`. (3) Click the "Remediate" button to rerun manually and check the detailed execution logs in the SSM Automation console. Recreating the rule (A) does not address the root cause.
+
+---
+
+**Question 6.** An operator wants to investigate "who added this SG rule yesterday, and what is the full current state of this SG?" Which tools should be used, and in what order?
+
+A) Config alone can answer both questions
+B) Check in CloudTrail who added it via the `AuthorizeSecurityGroupIngress` event → check the current SG state in the Config Resource Timeline
+C) CloudTrail alone can answer both questions
+D) Use GuardDuty to check both questions at once
+
+**Answer: B**
+Explanation: "Who added it (action)" = CloudTrail. Check the `userIdentity.arn`, `requestParameters` (FromPort, ToPort, IpProtocol, IpRanges), and `sourceIPAddress` of the `AuthorizeSecurityGroupIngress` event. "Current SG state (state)" = Config. In the Resource Timeline, check all current inbound and outbound rules in the latest snapshot of the `AWS::EC2::SecurityGroup` CI. CloudTrail is an action log and does not show the current state. Config shows the current state but has no actor information about "who changed it". Both tools must be combined for the complete picture.

@@ -76,62 +76,62 @@ Next week: ML solution monitoring and maintenance depth — security and governa
 
 ## 📝 Practice Questions
 
-**문제 1.** 운영 중 모델의 실제 정답 레이블을 수집할 방법이 전혀 없는 상황에서 모델 성능 저하를 조기에 감지하려 한다. 가장 적절한 조합은?
+**Question 1.** In production there is no way at all to collect the model's actual ground truth labels, and you want to detect model performance degradation early. What is the most appropriate combination?
 
-A) 모델 품질 모니터만 사용  
-B) 데이터 품질 드리프트 + 피처 기여도 드리프트 모니터  
-C) CloudWatch 4XX 알람만 사용  
-D) 아무것도 할 수 없다  
+A) Use only the Model Quality monitor  
+B) Data Quality drift + Feature Attribution Drift monitors  
+C) Use only a CloudWatch 4XX alarm  
+D) Nothing can be done  
 
-**정답: B**  
-해설: 라벨이 없으면 모델 품질 모니터는 쓸 수 없으므로, 라벨이 필요 없는 데이터 품질(입력 분포 변화)과 피처 기여도(SHAP 중요도 변화) 드리프트로 조기 경보를 얻는다. A는 ground truth가 필요해 불가능하고, C는 시스템 오류 지표일 뿐 모델 성능과 무관하며, D는 라벨 없이도 우회 감지가 가능하므로 틀리다.
-
----
-
-**문제 2.** 어떤 엔드포인트에서 `Invocation5XXErrors`가 급증하고 `ModelLatency`도 함께 치솟았다. 가장 먼저 의심할 영역은?
-
-A) 클라이언트의 잘못된 페이로드 형식  
-B) 모델 컨테이너의 자원 부족/충돌 등 서버 측 문제  
-C) Clarify 편향 지표  
-D) S3 버전 관리 설정  
-
-**정답: B**  
-해설: 5XX(서버 오류)와 ModelLatency 동반 급증은 모델 컨테이너가 부하·자원 부족·타임아웃으로 고전하는 서버 측 신호다. 인스턴스 증설·헬스 체크가 필요하다. A는 4XX의 전형이고, C는 공정성 지표로 시스템 오류와 무관하며, D는 관련 없는 설정이다.
+**Answer: B**  
+Explanation: Without labels the Model Quality monitor cannot be used, so you get early warning from Data Quality (input distribution changes) and Feature Attribution (SHAP importance changes) drift, which need no labels. A is impossible because it requires ground truth, C is only a system error metric unrelated to model performance, and D is wrong because indirect detection is possible even without labels.
 
 ---
 
-**문제 3.** 새 모델 버전을 운영 트래픽으로 검증하되 사용자에게는 절대 영향을 주지 않으면서, 충분히 검증되면 일부 사용자에게 점진적으로 노출하고 싶다. 단계적 전략으로 옳은 것은?
+**Question 2.** On an endpoint, `Invocation5XXErrors` spiked and `ModelLatency` also soared. Which area should you suspect first?
 
-A) 처음부터 블루/그린으로 100% 전환  
-B) 먼저 섀도 테스트로 무위험 검증 후, A/B(배리언트 가중치)로 점진 롤아웃  
-C) A/B로 50:50 분할 후 섀도로 전환  
-D) 재학습을 생략하고 바로 배포  
+A) The client's incorrect payload format  
+B) Server-side problems such as resource exhaustion or crashes in the model container  
+C) Clarify bias metrics  
+D) S3 versioning settings  
 
-**정답: B**  
-해설: 위험 사다리에 따라 사용자 영향 0인 섀도 테스트로 먼저 검증하고, 만족하면 A/B 가중치로 소수 사용자에 점진 노출하는 것이 안전한 단계적 전략이다. A는 검증 없이 전면 전환해 위험하고, C는 순서가 뒤바뀌어(이미 영향을 준 뒤 섀도) 비논리적이며, D는 검증을 모두 건너뛴다.
+**Answer: B**  
+Explanation: A simultaneous spike in 5XX (server errors) and ModelLatency is a server-side signal that the model container is struggling with load, resource exhaustion, or timeouts. Adding instances and health checks are needed. A is typical of 4XX, C is a fairness metric unrelated to system errors, and D is an unrelated setting.
 
 ---
 
-**문제 4.** Model Monitor가 드리프트를 감지한 뒤 자동으로 재학습을 시작하게 하려면, 빈칸의 서비스 조합으로 가장 적절한 것은? "Model Monitor 위반 → CloudWatch Alarm → ___ → SageMaker Pipeline 실행"
+**Question 3.** You want to validate a new model version with production traffic without ever affecting users, and, once sufficiently validated, gradually expose it to some users. Which phased strategy is correct?
+
+A) Switch 100% from the start with blue/green  
+B) First validate risk-free with shadow testing, then roll out gradually with A/B (variant weights)  
+C) Split 50:50 with A/B, then switch to shadow  
+D) Skip retraining and deploy right away  
+
+**Answer: B**  
+Explanation: Following the risk ladder, validate first with shadow testing, which has zero user impact, and once satisfied, gradually expose a small share of users with A/B weights; this is the safe phased strategy. A is risky because it switches everything without validation, C is illogical because the order is reversed (shadow after users have already been affected), and D skips validation entirely.
+
+---
+
+**Question 4.** To have retraining start automatically after Model Monitor detects drift, which service combination best fills the blank? "Model Monitor violation → CloudWatch Alarm → ___ → SageMaker Pipeline execution"
 
 A) S3 → Glue  
-B) EventBridge(또는 SNS→Lambda)  
+B) EventBridge (or SNS → Lambda)  
 C) DynamoDB Streams  
 D) QuickSight  
 
-**정답: B**  
-해설: CloudWatch Alarm이 ALARM 상태가 되면 EventBridge 규칙이나 SNS→Lambda가 SageMaker Pipeline 재학습 실행을 트리거하는 것이 표준 자동화 체인이다. A는 ETL용, C는 DB 변경 스트림, D는 BI 대시보드로 파이프라인 트리거 역할이 아니다.
+**Answer: B**  
+Explanation: The standard automation chain is that when a CloudWatch Alarm enters the ALARM state, an EventBridge rule or SNS → Lambda triggers a SageMaker Pipeline retraining run. A is for ETL, C is a database change stream, and D is a BI dashboard, none of which serves as a pipeline trigger.
 
 ---
 
-**문제 5.** 재학습 파이프라인에서 새로 학습한 모델이 평가 기준에 미달했을 때 성능 회귀를 막는 표준 메커니즘은?
+**Question 5.** In a retraining pipeline, what is the standard mechanism to prevent performance regression when a newly trained model falls short of the evaluation criteria?
 
-A) 모든 새 모델을 무조건 배포  
-B) SageMaker Pipelines의 ConditionStep으로 기준 통과 시에만 Model Registry에 등록  
-C) 엔드포인트를 매번 삭제  
-D) CloudWatch Logs에 경고만 남기고 그대로 배포  
+A) Deploy every new model unconditionally  
+B) Use SageMaker Pipelines' ConditionStep to register in Model Registry only when the criteria are passed  
+C) Delete the endpoint every time  
+D) Only leave a warning in CloudWatch Logs and deploy as is  
 
-**정답: B**  
-해설: ConditionStep으로 평가 지표가 기준을 통과할 때만 모델을 등록(이후 배포)하고, 미달이면 기존 모델을 유지해 회귀를 막는다. A·D는 나쁜 모델도 배포되어 회귀를 허용하고, C는 서비스를 중단시키는 무관한 동작이다.
+**Answer: B**  
+Explanation: With a ConditionStep, the model is registered (and subsequently deployed) only when the evaluation metrics pass the criteria, and if they fall short the existing model is kept to prevent regression. A and D let bad models be deployed and allow regression, and C is an unrelated action that interrupts the service.
 
 ---

@@ -88,7 +88,7 @@ Next we synthesize Week 10's four services — CloudWatch, X-Ray, CloudTrail, Ev
 
 ## 📝 Practice Questions
 
-**문제 1.** ECS cluster: "host average CPU 30% but one container hits 100%, restarts repeatedly." To detect this, appropriate choice:
+**Question 1.** ECS cluster: "host average CPU 30% but one container hits 100%, restarts repeatedly." To detect this, appropriate choice:
 
 A) EC2 basic metrics alone sufficient
 
@@ -98,13 +98,13 @@ C) Enable CloudTrail
 
 D) Add X-Ray Annotation
 
-**정답: B**
+**Answer: B**
 
-해설: Host average metrics hide specific container spikes. **Container Insights** aggregates cluster → service → task → container levels, showing which container peaks and task restart metrics, pinpointing the problem. Containers are dynamic/short-lived; host-only monitoring is insufficient.
+Explanation: Host average metrics hide specific container spikes. **Container Insights** aggregates cluster → service → task → container levels, showing which container peaks and task restart metrics, pinpointing the problem. Containers are dynamic/short-lived; host-only monitoring is insufficient.
 
 ---
 
-**문제 2.** Payment API endpoint down at 3 AM (no traffic) — nobody aware until morning user gets error. Proactively confirm availability without real users:
+**Question 2.** Payment API endpoint down at 3 AM (no traffic) — nobody aware until morning user gets error. Proactively confirm availability without real users:
 
 A) CloudWatch basic metric alarm
 
@@ -114,13 +114,13 @@ C) CloudTrail Data Events
 
 D) Container Insights
 
-**정답: B**
+**Answer: B**
 
-해설: Traditional monitoring is passive (traffic triggers data). **Synthetics** canary (synthetic user) periodically probes, confirming availability proactively (coal miner's canary — senses danger before human). Lambda-based, scripts multi-step flows, screenshots for layout breaks. A) Basic metrics rely on traffic existing.
+Explanation: Traditional monitoring is passive (traffic triggers data). **Synthetics** canary (synthetic user) periodically probes, confirming availability proactively (coal miner's canary — senses danger before human). Lambda-based, scripts multi-step flows, screenshots for layout breaks. A) Basic metrics rely on traffic existing.
 
 ---
 
-**문제 3.** Traffic fluctuates hour/day/week. Single static CPU threshold fails: oversensitive early morning, under-sensitive afternoons. Without manually swapping thresholds, alert only to "this hour's normal range" deviation:
+**Question 3.** Traffic fluctuates hour/day/week. Single static CPU threshold fails: oversensitive early morning, under-sensitive afternoons. Without manually swapping thresholds, alert only to "this hour's normal range" deviation:
 
 A) Multiple static thresholds
 
@@ -130,13 +130,13 @@ C) Metric Filter
 
 D) Composite Alarm
 
-**정답: B**
+**Answer: B**
 
-해설: **Anomaly Detection** learns seasonality (daily/weekly patterns), creates "if this hour/weekday, expected range," alarming on band breach. Statistically captures calendar-based normal variance. Static thresholds can't adapt; multiple thresholds are manual burden. Short-pattern metrics handle best; chaotic metrics develop wide bands.
+Explanation: **Anomaly Detection** learns seasonality (daily/weekly patterns), creates "if this hour/weekday, expected range," alarming on band breach. Statistically captures calendar-based normal variance. Static thresholds can't adapt; multiple thresholds are manual burden. Short-pattern metrics handle best; chaotic metrics develop wide bands.
 
 ---
 
-**문제 4.** Implement "alert if success rate < 99%," have SuccessCount and TotalRequests metrics. Appropriate method:
+**Question 4.** Implement "alert if success rate < 99%," have SuccessCount and TotalRequests metrics. Appropriate method:
 
 A) Alarm on each separately
 
@@ -146,13 +146,13 @@ C) Anomaly Detection
 
 D) Logs Insights query
 
-**정답: B**
+**Answer: B**
 
-해설: Success rate needs ratio calculation. **Metric Math** combines into derived metric, alarm on ratio. Ratio alarms are stable — "100 errors" breaks at traffic scale, but "1% error rate" stays meaningful. SRE defines SLOs in ratios (99.9% uptime), implements via Metric Math.
+Explanation: Success rate needs ratio calculation. **Metric Math** combines into derived metric, alarm on ratio. Ratio alarms are stable — "100 errors" breaks at traffic scale, but "1% error rate" stays meaningful. SRE defines SLOs in ratios (99.9% uptime), implements via Metric Math.
 
 ---
 
-**문제 5.** Org runs prod/staging/dev in separate AWS accounts. View core metrics from all three in one dashboard:
+**Question 5.** Org runs prod/staging/dev in separate AWS accounts. View core metrics from all three in one dashboard:
 
 A) Check each account separately, manual combine
 
@@ -162,13 +162,13 @@ C) Impossible, per-account isolation
 
 D) Export all to S3, combine manually
 
-**정답: B**
+**Answer: B**
 
-해설: CloudWatch supports **cross-account, cross-region dashboards**, merging metrics from multiple accounts/regions into unified view. Essential for distributed org setups. A·D manual, C false.
+Explanation: CloudWatch supports **cross-account, cross-region dashboards**, merging metrics from multiple accounts/regions into unified view. Essential for distributed org setups. A·D manual, C false.
 
 ---
 
-**문제 6.** Stream CloudWatch metrics to company standard tool (Datadog) near-real-time:
+**Question 6.** Stream CloudWatch metrics to company standard tool (Datadog) near-real-time:
 
 A) Periodic `GetMetricData` polling
 
@@ -178,13 +178,13 @@ C) Logs Subscription Filter
 
 D) CloudTrail
 
-**정답: B**
+**Answer: B**
 
-해설: **Metric Stream** push-feeds metrics via Firehose to external tools (real-time). Old `GetMetricData` polling (A) has latency/cost/rate-limit issues. C) Subscription Filter for *logs*, not metrics — separate pipelines.
+Explanation: **Metric Stream** push-feeds metrics via Firehose to external tools (real-time). Old `GetMetricData` polling (A) has latency/cost/rate-limit issues. C) Subscription Filter for *logs*, not metrics — separate pipelines.
 
 ---
 
-**문제 7.** EKS team has existing Prometheus/Grafana ops and assets. Container monitoring standard choice, vs. Container Insights:
+**Question 7.** EKS team has existing Prometheus/Grafana ops and assets. Container monitoring standard choice, vs. Container Insights:
 
 A) Container Insights always best
 
@@ -194,6 +194,6 @@ C) X-Ray alternative
 
 D) CloudTrail monitors containers
 
-**정답: B**
+**Answer: B**
 
-해설: Container Insights is AWS-native (CloudWatch push/integrated). **AMP+AMG** follows CNCF standard (Prometheus scrapes, Grafana displays), compatible with existing Prometheus/Grafana experience. "Simple in AWS" → Container Insights; "Kubernetes standard, existing assets" → AMP — push vs. pull choice.
+Explanation: Container Insights is AWS-native (CloudWatch push/integrated). **AMP+AMG** follows CNCF standard (Prometheus scrapes, Grafana displays), compatible with existing Prometheus/Grafana experience. "Simple in AWS" → Container Insights; "Kubernetes standard, existing assets" → AMP — push vs. pull choice.

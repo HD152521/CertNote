@@ -129,62 +129,62 @@ Today: AMT auto-searches for optimal hyperparameters. Key flow: **define search 
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 데이터 과학자가 딥러닝 모델을 튜닝하는데, 각 trial이 여러 에폭을 학습한다. 가망 없는 후보에 자원을 낭비하지 않고 빠르게 좋은 조합으로 수렴하려 한다. 가장 적합한 AMT 전략은?
+**Question 1.** A data scientist is tuning a deep learning model in which each trial trains for many epochs. They want to converge quickly on a good combination without wasting resources on unpromising candidates. Which AMT strategy is MOST suitable?
 
 A) Grid Search  
 B) Random Search  
 C) Bayesian  
 D) Hyperband  
 
-**정답: D**  
-해설: Hyperband는 다중 fidelity 전략으로 적은 자원을 먼저 주고 가망 없는 trial을 조기 중단해, 에폭 반복형 딥러닝 튜닝에서 빠르게 수렴한다. 그리드(A)는 조합 폭발에 취약하고, 랜덤(B)은 가지치기가 없으며, 베이지안(C)도 효율적이나 반복 학습의 다중 fidelity 조기중단은 Hyperband가 특화되어 있다.
+**Answer: D**  
+Explanation: Hyperband is a multi-fidelity strategy that gives few resources first and stops unpromising trials early, so it converges quickly when tuning deep learning with repeated epochs. Grid (A) is vulnerable to combinatorial explosion, random (B) has no pruning, and Bayesian (C) is also efficient, but Hyperband specializes in multi-fidelity early stopping for iterative training.
 
 ---
 
-**문제 2.** 양성 클래스(사기)가 전체의 1%인 불균형 데이터로 분류 모델을 튜닝한다. AMT의 목표 지표로 가장 부적절한 것은?
+**Question 2.** You are tuning a classification model on imbalanced data in which the positive class (fraud) is 1% of the total. Which AMT objective metric is the LEAST appropriate?
 
 A) validation:auc  
 B) validation:f1  
 C) validation:accuracy  
 D) validation:recall  
 
-**정답: C**  
-해설: 1% 불균형에서 Accuracy를 최대화하면 전부 음성으로 찍어도 99%가 나와 양성 탐지 능력을 전혀 반영하지 못한다. AUC(A)·F1(B)·Recall(D)은 불균형에서 양성 식별 성능을 더 잘 반영하므로 목표 지표로 적절하다.
+**Answer: C**  
+Explanation: With 1% imbalance, maximizing Accuracy yields 99% even when everything is predicted negative, so it fails to reflect positive detection ability at all. AUC (A), F1 (B), and Recall (D) better reflect positive identification performance on imbalanced data, so they are appropriate objective metrics.
 
 ---
 
-**문제 3.** 어제 끝난 튜닝 작업이 좋은 영역을 어느 정도 찾았다. 같은 데이터와 알고리즘으로 탐색을 처음부터 다시 하지 않고 이어서 더 진행하려 한다. 가장 적절한 기능은?
+**Question 3.** A tuning job that finished yesterday has found a reasonably good region. You want to continue the search further with the same data and algorithm instead of starting over. Which feature is MOST appropriate?
 
-A) IDENTICAL_DATA_AND_ALGORITHM 타입의 워밍 스타트  
-B) max_parallel_jobs를 최대로 설정  
-C) 전략을 Grid로 변경  
-D) early_stopping_type을 Off로 설정  
+A) Warm start with the IDENTICAL_DATA_AND_ALGORITHM type  
+B) Set max_parallel_jobs to the maximum  
+C) Change the strategy to Grid  
+D) Set early_stopping_type to Off  
 
-**정답: A**  
-해설: 데이터·알고리즘이 동일하고 이전 탐색을 이어서 확장하려면 IDENTICAL_DATA_AND_ALGORITHM 타입 워밍 스타트가 정답이다. 병렬 증가(B)·전략 변경(C)·조기종료 끄기(D)는 이전 작업의 탐색 지식을 재사용하는 것과 무관하다.
-
----
-
-**문제 4.** 베이지안 전략으로 튜닝하면서 max_parallel_jobs를 매우 크게 설정했더니, 기대보다 최적 조합 탐색 효율이 떨어졌다. 가장 가능성 높은 원인은?
-
-A) 베이지안은 그리드보다 항상 비효율적이다  
-B) 병렬 trial이 많으면 이전 결과를 활용해 다음을 정하는 베이지안의 이점이 줄어든다  
-C) 목표 지표를 Minimize로 잘못 설정했다  
-D) Spot 인스턴스를 사용했기 때문이다  
-
-**정답: B**  
-해설: 베이지안은 이전 trial 결과로 다음 후보를 정하므로 순차성이 핵심이다. 병렬을 과도하게 키우면 아직 결과가 없는 상태에서 후보를 정해야 해 정보 활용 이점이 줄어든다. 베이지안이 항상 비효율(A)이 아니며, Minimize 설정(C)·Spot(D)은 이 현상과 직접 관련이 없다.
+**Answer: A**  
+Explanation: When the data and algorithm are identical and you want to extend the previous search, a warm start of the IDENTICAL_DATA_AND_ALGORITHM type is the answer. Increasing parallelism (B), changing the strategy (C), and turning off early stopping (D) are unrelated to reusing the search knowledge of a previous job.
 
 ---
 
-**문제 5.** 커스텀 학습 스크립트로 AMT를 돌릴 때, AMT가 각 trial의 목표 지표 값을 인식하게 하려면 반드시 해야 하는 것은?
+**Question 4.** While tuning with the Bayesian strategy, you set max_parallel_jobs very high, and the efficiency of finding the optimal combination was lower than expected. What is the most likely cause?
 
-A) instance_count를 늘린다  
-B) metric_definitions에 로그에서 지표를 추출할 정규식을 지정한다  
-C) 입력 모드를 Pipe로 바꾼다  
-D) max_jobs를 1로 둔다  
+A) Bayesian is always less efficient than grid  
+B) With many parallel trials, the advantage of Bayesian, which uses previous results to decide the next ones, diminishes  
+C) The objective metric was incorrectly set to Minimize  
+D) Spot instances were used  
 
-**정답: B**  
-해설: 커스텀 스크립트는 표준 지표명을 자동 제공하지 않으므로, 학습 로그에 출력한 지표를 정규식으로 파싱하도록 metric_definitions를 지정해야 AMT가 목표 지표를 읽는다. 인스턴스 수(A)·입력 모드(C)·max_jobs(D)는 지표 인식과 무관하다.
+**Answer: B**  
+Explanation: Bayesian optimization decides the next candidates from previous trial results, so sequentiality is key. If parallelism is raised excessively, candidates must be chosen before results are available, reducing the benefit of using information. Bayesian is not always inefficient (A), and the Minimize setting (C) and Spot (D) are not directly related to this phenomenon.
+
+---
+
+**Question 5.** When running AMT with a custom training script, what must you do so that AMT recognizes the objective metric value of each trial?
+
+A) Increase instance_count  
+B) Specify in metric_definitions a regular expression that extracts the metric from the logs  
+C) Change the input mode to Pipe  
+D) Set max_jobs to 1  
+
+**Answer: B**  
+Explanation: A custom script does not automatically provide standard metric names, so you must specify metric_definitions to parse the metrics printed in the training log with a regular expression so that AMT can read the objective metric. The instance count (A), input mode (C), and max_jobs (D) are unrelated to metric recognition.
 
 ---

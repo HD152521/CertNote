@@ -387,86 +387,86 @@ Tomorrow we review all of week 6, cementing the selection criteria for Lambda, A
 
 ## 📝 Practice Questions
 
-**문제 1.** A development team is building an application on Kubernetes and plans to deploy the same workload on-premises, on GCP GKE, and on AWS. Which is the most suitable container orchestration service on AWS?
+**Question 1.** A development team is building an application on Kubernetes and plans to deploy the same workload on-premises, on GCP GKE, and on AWS. Which is the most suitable container orchestration service on AWS?
 
 A) Amazon ECS — AWS-only but simple and fast
 B) Amazon EKS — Kubernetes-standard, guaranteeing multi-cloud/on-premises portability
 C) AWS Fargate alone — run containers directly without orchestration
 D) Install Kubernetes directly on EC2 — full control
 
-**정답: B**
+**Answer: B**
 EKS is compatible with upstream Kubernetes, so the same YAML manifests can be used on GKE, on-premises, and EKS with minimal modification. ECS is an AWS-only concept, so it has no portability. D carries a heavy control-plane management burden. Fargate alone has no orchestration layer.
 
 ---
 
-**문제 2.** An ECS Fargate task needs to read files from an S3 bucket and store the processing results in DynamoDB. What is the correct way to grant these permissions?
+**Question 2.** An ECS Fargate task needs to read files from an S3 bucket and store the processing results in DynamoDB. What is the correct way to grant these permissions?
 
 A) Add S3 read and DynamoDB write permissions to the Instance Profile of the EC2 instance where the ECS cluster runs
 B) Hardcode an AWS Access Key and Secret Key into the task container's environment variables
 C) Grant S3 read and DynamoDB write permissions to the Task Definition's Task Role
 D) Add S3 read and DynamoDB write permissions to the Task Execution Role
 
-**정답: C**
+**Answer: C**
 The Task Role is the permission the application code inside the container uses to call AWS services. The Task Execution Role (D) is the permission for the ECS agent to pull the image from ECR and send logs — different from the application code's AWS access. A is wrong because Fargate has no EC2 instance. B is wrong because hardcoding is a serious security risk.
 
 ---
 
-**문제 3.** An ECS Fargate service handles traffic through an ALB. Each task uses port 8080, and to automatically register/deregister tasks in the ALB Target Group, which networking mode should you use?
+**Question 3.** An ECS Fargate service handles traffic through an ALB. Each task uses port 8080, and to automatically register/deregister tasks in the ALB Target Group, which networking mode should you use?
 
 A) bridge mode (randomly assigns host ports via dynamic port mapping)
 B) host mode (binds the container port directly to the host port)
 C) awsvpc mode (assigns an ENI and dedicated IP to each task, Target Group IP type)
 D) overlay mode (Docker Swarm network)
 
-**정답: C**
+**Answer: C**
 Fargate supports only awsvpc mode. In awsvpc mode each task gets its own ENI and private IP, and if you set the ALB Target Group to IP type, the ECS service automatically registers the IP when a task starts and deregisters it when the task stops. A and B are usable only with the EC2 Launch Type. D is not supported by ECS.
 
 ---
 
-**문제 4.** In an EKS cluster, a payment-processing Pod and a log-collection Pod run on the same node. Only the payment-processing Pod should access AWS Secrets Manager, while the log-collection Pod should access only CloudWatch Logs. What is the most secure way to grant different IAM permissions to each Pod?
+**Question 4.** In an EKS cluster, a payment-processing Pod and a log-collection Pod run on the same node. Only the payment-processing Pod should access AWS Secrets Manager, while the log-collection Pod should access only CloudWatch Logs. What is the most secure way to grant different IAM permissions to each Pod?
 
 A) Grant both permissions on the EC2 node's Instance Profile
 B) Use IRSA (IAM Roles for Service Accounts) to attach different IAM Roles to each Pod's Service Account
 C) Set a per-Pod IAM Access Key in environment variables
 D) Separate the nodes and apply a different Instance Profile to each node
 
-**정답: B**
+**Answer: B**
 IRSA is the standard way to grant IAM permissions per Pod in EKS. By attaching an independent IAM Role to each Pod's Service Account, each Pod holds only its own Role's permissions even on the same node. A gives every Pod on the same node both permissions, violating the Principle of Least Privilege. C risks credential exposure. D — separating nodes is costly and doesn't scale.
 
 ---
 
-**문제 5.** A company is containerizing a legacy Java monolith as it moves to microservices. The operations team has no Kubernetes experience and wants to deploy to production quickly without managing nodes. What is the most suitable combination of AWS services?
+**Question 5.** A company is containerizing a legacy Java monolith as it moves to microservices. The operations team has no Kubernetes experience and wants to deploy to production quickly without managing nodes. What is the most suitable combination of AWS services?
 
 A) EKS + Managed Node Groups
 B) ECS + Fargate
 C) ECS + EC2 Launch Type
 D) EKS + Fargate
 
-**정답: B**
+**Answer: B**
 There is no Kubernetes experience and no desire to manage nodes. ECS has a simpler conceptual model, and Fargate requires no node management. The ECS + Fargate combination has the least operational burden while enabling fast production deployment. A and D have a Kubernetes learning curve. C requires managing EC2 nodes directly.
 
 ---
 
-**문제 6.** A financial services company needs strong security isolation in its container environment for PCI DSS compliance. Kernel-level isolation is required between containers that process data for different customers. Which execution environment meets this requirement?
+**Question 6.** A financial services company needs strong security isolation in its container environment for PCI DSS compliance. Kernel-level isolation is required between containers that process data for different customers. Which execution environment meets this requirement?
 
 A) ECS + EC2 Launch Type + bridge networking mode
 B) ECS + EC2 Launch Type + awsvpc networking mode
 C) ECS + Fargate (Firecracker MicroVM-based)
 D) EKS + Managed Node Groups + DaemonSet
 
-**정답: C**
+**Answer: C**
 Fargate runs each task in a Firecracker MicroVM, so it is fully isolated at the kernel level. Because it doesn't share the host kernel with other tasks, a kernel vulnerability cannot affect other tasks. A and B share the same kernel among multiple tasks on top of EC2. D also shares the same kernel among Pods on top of EC2 nodes. When kernel-level isolation is an explicit requirement, Fargate is the correct answer.
 
 ---
 
-**문제 7.** You want to run an ECS service in a private subnet and pull images from ECR without going over the internet. What combination of VPC Endpoints is required?
+**Question 7.** You want to run an ECS service in a private subnet and pull images from ECR without going over the internet. What combination of VPC Endpoints is required?
 
 A) Set up only com.amazonaws.region.ecr.dkr
 B) com.amazonaws.region.ecr.api + com.amazonaws.region.ecr.dkr + S3 Gateway Endpoint
 C) com.amazonaws.region.ecr.api + S3 Gateway Endpoint
 D) Access ECR over the internet through a NAT Gateway
 
-**정답: B**
+**Answer: B**
 ECR VPC Endpoints require all three. `ecr.api` is needed for ECR API calls (authentication, image metadata), and `ecr.dkr` for Docker image layer transfer. The S3 Gateway Endpoint is required because ECR stores the actual image layers in S3. If even one of these is missing, image pulls from a private subnet fail. D can go over the internet through a NAT Gateway but does not satisfy the security requirement (not traversing the internet).
 
 ---

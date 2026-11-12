@@ -418,7 +418,7 @@ A **504 Gateway Timeout** occurs when the integration timeout (max 29 seconds) i
 
 ## 📝 Practice Questions
 
-**문제 1.**  
+**Question 1.**  
 A company's internal Lambda function must call an API Gateway REST API in another AWS account. What is the most secure way to authenticate while applying the principle of least privilege to the Lambda function?
 
 A) Create an API key and store it in a Lambda environment variable  
@@ -426,12 +426,12 @@ B) Grant `execute-api:Invoke` to the Lambda execution role and call with a SigV4
 C) Use a Cognito User Pool Authorizer and have Lambda log in to Cognito  
 D) Allow the Lambda function ARN in the Resource Policy  
 
-**정답: B**  
+**Answer: B**  
 SigV4 automatically leverages the Lambda's IAM role credentials, and the AWS SDK handles the signing. For cross-account, you allow the origin account's role ARN in the target API's Resource Policy and grant `execute-api:Invoke` to the Lambda role. An API key is not an authentication mechanism, so it doesn't fit the principle of least privilege.
 
 ---
 
-**문제 2.**  
+**Question 2.**  
 On an API using a Lambda Authorizer (TOKEN type), the Authorizer Lambda runs every time on repeated calls with the same JWT token. What is the most direct way to optimize this?
 
 A) Set Provisioned Concurrency on the Authorizer Lambda  
@@ -439,12 +439,12 @@ B) Set the Authorizer's TTL greater than 0 to enable result caching
 C) Replace the Lambda Authorizer with a Cognito User Pool Authorizer  
 D) Migrate to API Gateway HTTP API  
 
-**정답: B**  
+**Answer: B**  
 A TOKEN-type Lambda Authorizer uses the token value as the cache key to cache the IAM policy response. Setting the TTL greater than 0 (default 300 seconds) returns the cached policy without invoking Lambda again for requests coming with the same token. This reduces both latency and Lambda execution cost.
 
 ---
 
-**문제 3.**  
+**Question 3.**  
 You want to apply WAF to an API Gateway REST API to block SQL injection attacks. This API is a Regional endpoint. What is the correct configuration?
 
 A) Apply WAF in front of CloudFront  
@@ -452,12 +452,12 @@ B) Attach a WAF Web ACL directly to the API Gateway REST API
 C) Inspect for SQL injection patterns in a Lambda Authorizer  
 D) Switch to an HTTP API and apply WAF  
 
-**정답: B**  
+**Answer: B**  
 A Regional endpoint REST API can attach a WAF Web ACL directly. A is the workaround used for Edge-Optimized or HTTP API (which doesn't support WAF). HTTP API doesn't support WAF directly, so D is wrong.
 
 ---
 
-**문제 4.**  
+**Question 4.**  
 API Gateway response caching is enabled. A particular client that needed fresh data sent a `Cache-Control: max-age=0` header and received 403 Forbidden. What is the cause?
 
 A) Because caching is disabled  
@@ -465,12 +465,12 @@ B) Because that client lacks the `execute-api:InvalidateCache` IAM permission
 C) Because the Cache-Control header is not supported by API Gateway  
 D) Because the client's API key has expired  
 
-**정답: B**  
+**Answer: B**  
 When "require authorization for cache invalidation (requireAuthorizationForCacheControl)" is enabled on the API Gateway stage, a caller without the `execute-api:InvalidateCache` permission who sends `max-age=0` gets a 403. This is by design to prevent unintended cache defeat.
 
 ---
 
-**문제 5.**  
+**Question 5.**  
 A company wants to offer tiered API access to three kinds of partners (Premium: 1000 RPS, Standard: 100 RPS, Free: 10 RPS). What is the most appropriate configuration?
 
 A) Create a separate API Gateway REST API per partner  
@@ -478,12 +478,12 @@ B) Create three usage plans and issue an API key to each partner, linking it to 
 C) Return a different IAM policy per partner tier from a Lambda Authorizer  
 D) Create three stages (premium, standard, free) and set different throttling on each  
 
-**정답: B**  
+**Answer: B**  
 Usage plans are designed for exactly this purpose. Define each tier's throttling (RPS, burst) and quota (daily/weekly/monthly limits) as a separate plan, and link each partner's API key to the appropriate plan. A single API and stage can accommodate all partners.
 
 ---
 
-**문제 6.**  
+**Question 6.**  
 In API Gateway CloudWatch metrics, `Latency` averages 3 seconds and `IntegrationLatency` averages 0.1 seconds. Which best explains this situation?
 
 A) The Lambda function is slow, so the response time is long  
@@ -491,12 +491,12 @@ B) A DynamoDB query is the bottleneck
 C) A bottleneck is occurring in API Gateway internal processing (auth, mapping, cache, etc.)  
 D) Network latency is high  
 
-**정답: C**  
+**Answer: C**  
 `Latency (3s) - IntegrationLatency (0.1s) = 2.9s` is consumed inside API Gateway. Lambda Authorizer invocation, request/response mapping (VTL), cache processing, and so on could be the cause. A short IntegrationLatency means the backend (Lambda, DynamoDB) is fast.
 
 ---
 
-**문제 7.**  
+**Question 7.**  
 You need to implement Cognito user authentication on an HTTP API. You can't use REST API's Cognito User Pool Authorizer as-is. What is the correct approach on HTTP API?
 
 A) Only a Lambda Authorizer can be used  
@@ -504,5 +504,5 @@ B) Configure a JWT Authorizer and specify the Cognito User Pool's issuer URL and
 C) HTTP API does not support authentication  
 D) Switch to IAM authentication via a Cognito Identity Pool  
 
-**정답: B**  
+**Answer: B**  
 HTTP API's JWT Authorizer supports any provider that follows the OIDC/OAuth 2.0 standard (Cognito, Auth0, Okta, etc.). When using Cognito, specify `https://cognito-idp.{region}.amazonaws.com/{userPoolId}` as the `issuer` and the app client ID as the `audience`. It's functionally equivalent to REST API's Cognito User Pool Authorizer but configured differently.

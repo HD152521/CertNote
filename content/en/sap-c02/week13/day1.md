@@ -94,22 +94,22 @@ SAP exam common mappings: (1) "structured 6-pillar workload evaluation" → **WA
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 조직이 Lambda·API Gateway·Step Functions 기반 서버리스 애플리케이션을 운영하며, 콜드 스타트·동시성 한도·실행 시간 같은 서버리스 고유 위험을 WA Tool로 점검하려 한다. 가장 적합한 접근은?
+**Question 1.** An organization runs a serverless application based on Lambda, API Gateway, and Step Functions, and wants to review serverless-specific risks such as cold starts, concurrency limits, and execution time with the WA Tool. Which is the most appropriate approach?
 
-A) 기본 AWS WA Lens만으로 평가한다
+A) Evaluate with only the default AWS WA Lens
 
-B) 기본 WA Lens에 Serverless Lens를 추가해 평가한다
+B) Evaluate by adding the Serverless Lens to the default WA Lens
 
-C) Trusted Advisor의 자동 체크만 사용한다
+C) Use only Trusted Advisor's automated checks
 
-D) Custom Lens를 직접 만들어 모든 질문을 새로 작성한다
+D) Build a Custom Lens yourself and write all the questions from scratch
 
-**정답: B**
-**해설:** Serverless Lens는 콜드 스타트·동시성·실행 시간·이벤트 소싱 등 서버리스 고유의 베스트 프랙티스 질문을 기본 Lens 위에 얹는다. A는 서버리스 고유 위험이 질문에 없어 누락된다. C(Trusted Advisor)는 자동 스캔일 뿐 구조화된 6 기둥 평가가 아니다. D는 AWS가 이미 제공하는 Serverless Lens를 두고 처음부터 다시 만드는 불필요한 작업으로, Custom Lens는 "AWS 표준에 없는 사내 규정"을 추가할 때 쓴다. 함정: 도메인 특화 점검은 해당 Lens를 추가하는 것이지 기본 Lens로 되는 게 아니다.
+**Answer: B**
+**Explanation:** The Serverless Lens layers serverless-specific best-practice questions, such as cold starts, concurrency, execution time, and event sourcing, on top of the default Lens. With A, serverless-specific risks are missing because the questions do not cover them. C (Trusted Advisor) is merely an automated scan, not a structured six-pillar assessment. D is unnecessary work that rebuilds from scratch even though AWS already provides the Serverless Lens; a Custom Lens is used to add "internal rules not in the AWS standard." Trap: domain-specific review means adding the relevant Lens, not relying on the default Lens.
 
 ---
 
-**문제 2.** 한 핀테크가 분기마다 WA Review를 수행하며, 각 리뷰 시점의 위험 상태를 동결해 개선 추이(HRI 23개 → 8개 → 3개)를 AWS Support와 공유하려 한다. WA Tool의 어떤 기능을 사용하나?
+**Question 2.** A fintech performs a WA Review every quarter and wants to freeze the risk state at each review point and share the improvement trend (23 HRIs → 8 → 3) with AWS Support. Which WA Tool feature does it use?
 
 A) Lens
 
@@ -119,27 +119,27 @@ C) Trusted Advisor
 
 D) Custom Lens
 
-**정답: B**
-**해설:** Milestone은 특정 시점의 답변·위험 상태를 불변 스냅샷으로 저장해 시간축 비교를 가능하게 한다(Git 태그와 같은 발상). 두 Milestone을 비교하면 개선 추이를 정량적으로 보여줄 수 있다. A(Lens)는 도메인 특화 질문 확장이지 시점 추적이 아니다. C는 자동 체크 도구로 추이 동결 기능이 없다. D는 사내 표준을 질문으로 추가하는 기능이다. 함정: "추이 추적·시점 비교·보고"는 Milestone의 직답 키워드다.
+**Answer: B**
+**Explanation:** A Milestone saves the answers and risk state at a specific point in time as an immutable snapshot, enabling comparison along the time axis (the same idea as a Git tag). Comparing two Milestones lets you show the improvement trend quantitatively. A (Lens) extends domain-specific questions and is not point-in-time tracking. C is an automated check tool and has no feature for freezing a trend. D is a feature for adding internal standards as questions. Trap: "trend tracking, point-in-time comparison, reporting" are the direct-answer keywords for Milestone.
 
 ---
 
-**문제 3.** WA Tool에서 HRI(High Risk Issue)는 어떻게 도출되는가?
+**Question 3.** In the WA Tool, how is an HRI (High Risk Issue) derived?
 
-A) AWS Solutions Architect가 수동으로 검토해 주관적으로 매긴다
+A) An AWS Solutions Architect reviews it manually and assigns it subjectively
 
-B) 워크로드가 각 질문의 베스트 프랙티스를 충족하지 못하면 위험도에 따라 자동 분류된다
+B) It is automatically classified by risk level when the workload does not meet the best practices of each question
 
-C) Trusted Advisor의 비용 체크 결과만으로 결정된다
+C) It is determined solely by Trusted Advisor's cost check results
 
-D) 고객이 직접 위험도를 입력한다
+D) The customer enters the risk level directly
 
-**정답: B**
-**해설:** WA Tool은 각 질문마다 여러 베스트 프랙티스 선택지를 두고, 워크로드가 충족하지 못한 항목의 위험도에 따라 HRI(높음) 또는 MRI(중간)로 **규칙 기반 자동 분류**한다. 사람의 주관(A·D)이 아니라 베스트 프랙티스 미충족이라는 객관 기준으로 산출된다. C는 Trusted Advisor와 혼동한 것으로, TA는 자동 스캔 도구이고 WA Tool은 질문 기반 평가다. 함정: HRI는 "주관적 판단"이 아니라 "베스트 프랙티스 미충족"의 결과다.
+**Answer: B**
+**Explanation:** For each question, the WA Tool provides several best-practice choices and **automatically classifies by rules** as HRI (high) or MRI (medium) according to the risk of the items the workload fails to meet. It is derived from the objective criterion of unmet best practices, not from human judgment (A, D). C confuses it with Trusted Advisor; TA is an automated scanning tool, whereas the WA Tool is a question-based assessment. Trap: an HRI is the result of "unmet best practices," not "subjective judgment."
 
 ---
 
-**문제 4.** 다음 중 2021년 re:Invent에서 Well-Architected Framework에 새로 추가된 6번째 기둥은?
+**Question 4.** Which of the following is the sixth pillar newly added to the Well-Architected Framework at re:Invent 2021?
 
 A) Operational Excellence
 
@@ -149,37 +149,37 @@ C) Sustainability
 
 D) Security
 
-**정답: C**
-**해설:** WA는 2015년 5 기둥(Ops·Security·Reliability·Performance·Cost)으로 출발했고, 2021년 Sustainability(지속 가능성)가 6번째로 추가됐다. EU CSRD 등 탄소 규제 본격화 시기와 맞물린다. A·B·D는 모두 최초 5 기둥에 포함된 기둥이다. 함정: "최근 추가된 기둥", "탄소·전력 효율"은 Sustainability를 가리킨다.
+**Answer: C**
+**Explanation:** WA started in 2015 with five pillars (Ops, Security, Reliability, Performance, Cost), and Sustainability was added as the sixth in 2021. This coincides with the period when carbon regulations such as the EU CSRD took full effect. A, B, and D are all pillars included in the original five. Trap: "a recently added pillar" or "carbon and power efficiency" points to Sustainability.
 
 ---
 
-**문제 5.** 한 기업이 "모든 DB는 사내 전용 KMS 키로 암호화", "모든 외부 ALB는 WAF 필수" 같은 AWS 기본 베스트 프랙티스에 없는 **사내 보안 표준**도 WA Tool 평가에 포함하고 싶다. 가장 적합한 방법은?
+**Question 5.** A company wants to include **internal security standards** that are not in the AWS default best practices, such as "all databases are encrypted with a company-dedicated KMS key" and "all external ALBs must have WAF," in its WA Tool assessment. What is the most appropriate method?
 
-A) Serverless Lens를 적용한다
+A) Apply the Serverless Lens
 
-B) Custom Lens를 정의해 사내 표준을 질문으로 등록한다
+B) Define a Custom Lens and register the internal standards as questions
 
-C) Trusted Advisor 사용자 정의 체크를 만든다
+C) Create a Trusted Advisor custom check
 
-D) Milestone을 더 자주 기록한다
+D) Record Milestones more often
 
-**정답: B**
-**해설:** Custom Lens는 기업이 자사 표준을 JSON으로 정의해 WA Tool 평가 항목으로 등록하는 기능으로, AWS 기본 Lens가 다루지 않는 사내 규정 위반을 HRI로 도출한다. 멀티 계정 환경에서 Custom Lens를 표준화하면 모든 팀이 동일 기준으로 평가받는다. A는 서버리스 도메인 특화일 뿐 사내 표준과 무관하다. C(Trusted Advisor)는 사용자 정의 6 기둥 평가 기능이 없다. D는 시점 기록 빈도일 뿐이다. 함정: "AWS 기본 + 사내 규정 동시 점검"은 Custom Lens의 직답 신호다.
+**Answer: B**
+**Explanation:** A Custom Lens is a feature that lets a company define its own standards in JSON and register them as WA Tool assessment items, and it surfaces violations of internal rules that the AWS default Lens does not cover as HRIs. If the Custom Lens is standardized across a multi-account environment, all teams are assessed against the same criteria. A is only specific to the serverless domain and unrelated to internal standards. C (Trusted Advisor) has no custom six-pillar assessment capability. D is merely the frequency of point-in-time records. Trap: "checking the AWS defaults and internal rules at the same time" is the direct-answer signal for Custom Lens.
 
 ---
 
-**문제 6.** Trusted Advisor와 WA Tool의 관계로 가장 정확한 설명은?
+**Question 6.** What is the most accurate description of the relationship between Trusted Advisor and the WA Tool?
 
-A) 둘은 동일한 도구이며 이름만 다르다
+A) They are the same tool with different names
 
-B) Trusted Advisor는 비용·성능·보안·내결함성·서비스 한도를 자동 스캔하고, WA Tool은 6 기둥 질문 기반의 구조화된 정성 평가다
+B) Trusted Advisor automatically scans cost, performance, security, fault tolerance, and service limits, whereas the WA Tool is a structured qualitative assessment based on six-pillar questions
 
-C) WA Tool이 Trusted Advisor를 완전히 대체한다
+C) The WA Tool completely replaces Trusted Advisor
 
-D) Trusted Advisor만 멀티 계정을 지원한다
+D) Only Trusted Advisor supports multiple accounts
 
-**정답: B**
-**해설:** Trusted Advisor는 5개 카테고리를 자동 체크하는 스캐너이고, WA Tool은 광범위한 질문으로 워크로드를 6 기둥으로 구조화 평가하는 도구다. 둘은 상호 보완적이며, 최신 WA Tool은 일부 질문에 TA 결과를 자동으로 끌어와 답을 미리 채운다(A·C 오답). D는 사실과 무관하다. 함정: "자동 스캔 = Trusted Advisor", "질문 기반 구조화 평가 = WA Tool"로 갈린다.
+**Answer: B**
+**Explanation:** Trusted Advisor is a scanner that automatically checks five categories, while the WA Tool is a tool that assesses a workload against the six pillars in a structured way using broad questions. The two are complementary, and the latest WA Tool automatically pulls in TA results for some questions to prefill the answers (A and C are wrong). D has nothing to do with the facts. Trap: it splits into "automatic scan = Trusted Advisor" and "question-based structured assessment = WA Tool."
 
 ---

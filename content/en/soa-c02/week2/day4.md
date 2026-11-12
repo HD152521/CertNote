@@ -332,97 +332,97 @@ Tomorrow: Week 2 review + 10 scenario problems.
 
 ## 📝 Practice Questions
 
-**문제 1.** Created Metric Filter but no metric when no match, so alarm won't trigger. Root cause and fix?
+**Question 1.** Created Metric Filter but no metric when no match, so alarm won't trigger. Root cause and fix?
 
 A) Filter pattern incorrect
 B) Set `DefaultValue: 0` to publish 0 on no-match. Properly configure alarm `TreatMissingData`
 C) Log Group retention insufficient
 D) Alarm Evaluation Period insufficient
 
-**정답: B**
-해설: Metric Filter publishes on match only. No match = no metric data → alarm `TreatMissingData` applies (default notBreaching = normal). Setting `DefaultValue: 0` ensures "0 occurrences" state explicit. Then alarm `>= 1` works correctly.
+**Answer: B**
+Explanation: Metric Filter publishes on match only. No match = no metric data → alarm `TreatMissingData` applies (default notBreaching = normal). Setting `DefaultValue: 0` ensures "0 occurrences" state explicit. Then alarm `>= 1` works correctly.
 
 ---
 
-**문제 2.** Applied Anomaly Detection to new metric immediately; all data marked anomaly. Root cause?
+**Question 2.** Applied Anomaly Detection to new metric immediately; all data marked anomaly. Root cause?
 
 A) Anomaly Detection needs min 2d-2w learning data. Insufficient data → wrong baseline
 B) Metric dimensions incorrect
 C) Alarm Evaluation Period insufficient
 D) Not High-Resolution
 
-**정답: A**
-해설: Anomaly Detection learns from recent 2 weeks → new metrics lack data/insufficient data → wrong baseline → nearly all values anomalies. Operators enable after 2d-2w accumulation. Alarm still evaluates during learning but accuracy low.
+**Answer: A**
+Explanation: Anomaly Detection learns from recent 2 weeks → new metrics lack data/insufficient data → wrong baseline → nearly all values anomalies. Operators enable after 2d-2w accumulation. Alarm still evaluates during learning but accuracy low.
 
 ---
 
-**문제 3.** Workload has daily same-time traffic peaks plus different weekend pattern; reduce false positives?
+**Question 3.** Workload has daily same-time traffic peaks plus different weekend pattern; reduce false positives?
 
 A) Set fixed threshold to average + standard deviation
 B) Anomaly Detection alarm (learns hourly/daily patterns)
 C) Composite Alarm combining multiple alarms
 D) Math Expression
 
-**정답: B**
-해설: Anomaly Detection learns per-hour per-day patterns via ML. Normal peaks treated as normal; only true anomalies trigger. Daily same-time peaks exactly the scenario Anomaly Detection excels.
+**Answer: B**
+Explanation: Anomaly Detection learns per-hour per-day patterns via ML. Normal peaks treated as normal; only true anomalies trigger. Daily same-time peaks exactly the scenario Anomaly Detection excels.
 
 ---
 
-**문제 4.** Operators published 5 metrics per transaction, API cost exploded. Most suitable alternative?
+**Question 4.** Operators published 5 metrics per transaction, API cost exploded. Most suitable alternative?
 
 A) Batch PutMetricData calls
 B) EMF single log line embeds 5 metrics (zero API calls)
 C) Custom Logs Insights query per minute
 D) Metric Filter
 
-**정답: B**
-해설: EMF single console.log auto-extracts metrics. Zero API cost. PowerTools library (Python/Java/TS) auto-generates. A limited effect, C increases latency, D processes existing logs.
+**Answer: B**
+Explanation: EMF single console.log auto-extracts metrics. Zero API cost. PowerTools library (Python/Java/TS) auto-generates. A limited effect, C increases latency, D processes existing logs.
 
 ---
 
-**문제 5.** View metrics and logs from multiple accounts in one console?
+**Question 5.** View metrics and logs from multiple accounts in one console?
 
 A) Log into each account console separately
 B) CloudWatch Cross-Account Observability + Monitoring Account Sink, Source from workload accounts
 C) Export all logs to S3, query Athena
 D) Consolidate all account IAM Roles
 
-**정답: B**
-해설: CloudWatch Observability Access Manager (2022): sink in monitoring account, source connection from workload accounts. Unified all-account metrics/logs/X-Ray in one console. Organization-wide auto-enrollment available.
+**Answer: B**
+Explanation: CloudWatch Observability Access Manager (2022): sink in monitoring account, source connection from workload accounts. Unified all-account metrics/logs/X-Ray in one console. Organization-wide auto-enrollment available.
 
 ---
 
-**문제 6.** Operators want to count all Lambda ERROR / CRITICAL / Exception logs as single metric. Metric Filter pattern?
+**Question 6.** Operators want to count all Lambda ERROR / CRITICAL / Exception logs as single metric. Metric Filter pattern?
 
 A) `"ERROR"` only
 B) `?ERROR ?CRITICAL ?Exception` (OR pattern)
 C) `"ERROR" "CRITICAL" "Exception"` (AND pattern, all three)
 D) Logs Insights only
 
-**정답: B**
-해설: Metric Filter OR pattern uses `?` prefix. `?ERROR ?CRITICAL ?Exception` matches any one. AND (`"ERROR" "CRITICAL"`) requires both, wrong intent.
+**Answer: B**
+Explanation: Metric Filter OR pattern uses `?` prefix. `?ERROR ?CRITICAL ?Exception` matches any one. AND (`"ERROR" "CRITICAL"`) requires both, wrong intent.
 
 ---
 
-**문제 7.** Created Metric Filter but past 1 week ERROR logs don't appear in metrics. Root cause and fix?
+**Question 7.** Created Metric Filter but past 1 week ERROR logs don't appear in metrics. Root cause and fix?
 
 A) Filter pattern wrong / fix regex
 B) Metric Filter forward-only — new logs only. Past logs separate Logs Insights aggregation
 C) Log Group retention insufficient / increase
 D) IAM permission insufficient
 
-**정답: B**
-해설: Metric Filter evaluated at ingestion time; past logs not processed. New Filter counts only from creation forward. Historical analysis requires separate Insights query like `stats count(*) by bin(5m)`.
+**Answer: B**
+Explanation: Metric Filter evaluated at ingestion time; past logs not processed. New Filter counts only from creation forward. Historical analysis requires separate Insights query like `stats count(*) by bin(5m)`.
 
 ---
 
-**문제 8.** EMF JSON: handle user_id (high-cardinality) and service (low-cardinality) correctly?
+**Question 8.** EMF JSON: handle user_id (high-cardinality) and service (low-cardinality) correctly?
 
 A) Both as metric dimensions
 B) Service as dimension, user_id as regular field (metadata) — avoid metric cardinality explosion
 C) Both as metric values
 D) Not possible with EMF
 
-**정답: B**
-해설: `_aws.CloudWatchMetrics.Dimensions` contains low-cardinality fields (service, env, operation) only. High-cardinality fields (user_id, request_id, trace_id) as regular JSON fields — searchable in logs, no metric cardinality explosion. EMF core design intent.
+**Answer: B**
+Explanation: `_aws.CloudWatchMetrics.Dimensions` contains low-cardinality fields (service, env, operation) only. High-cardinality fields (user_id, request_id, trace_id) as regular JSON fields — searchable in logs, no metric cardinality explosion. EMF core design intent.
 

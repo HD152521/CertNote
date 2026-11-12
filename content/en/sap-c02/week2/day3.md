@@ -158,96 +158,96 @@ Next article explores **IAM Identity Center** that Control Tower auto-enables. P
 
 ## 📝 Practice Questions
 
-**문제 1.** "Pre-block S3 bucket becoming public" — Strongest guardrail combo?
+**Question 1.** "Pre-block S3 bucket becoming public" — Strongest guardrail combo?
 
 A) Detective only
 B) Preventive (SCP) only
 C) Proactive (CFN Hook) only
 D) Preventive + Proactive + Detective (triple)
 
-**정답: D**
-해설: Defense in depth — Proactive (IaC deploy block), Preventive (API call block), Detective (post-monitor) as one set. One layer breaks, next catches. Prevent structural 2017 Verizon·Accenture S3 public incidents, multi-layer defense essential.
+**Answer: D**
+Explanation: Defense in depth — Proactive (IaC deploy block), Preventive (API call block), Detective (post-monitor) as one set. One layer breaks, next catches. Prevent structural 2017 Verizon·Accenture S3 public incidents, multi-layer defense essential.
 
 ---
 
-**문제 2.** 100-account standardization·auto-create·SCP batch-attach. Most appropriate?
+**Question 2.** 100-account standardization·auto-create·SCP batch-attach. Most appropriate?
 
 A) CloudFormation StackSets only
 B) Control Tower + Account Factory
 C) Service Catalog
 D) Systems Manager
 
-**정답: B**
-해설: Control Tower is multi-account governance standard. Account Factory does auto-create + auto-guardrail attach. StackSets is partial, Service Catalog is general tool.
+**Answer: B**
+Explanation: Control Tower is multi-account governance standard. Account Factory does auto-create + auto-guardrail attach. StackSets is partial, Service Catalog is general tool.
 
 ---
 
-**문제 3.** Existing running Org. Adopt Landing Zone?
+**Question 3.** Existing running Org. Adopt Landing Zone?
 
 A) Must create new Org
 B) Control Tower can ingest existing Org (set up)
 C) AFT only
 D) StackSets only
 
-**정답: B**
-해설: Control Tower can set-up on existing Org. Recognizes existing OUs·accounts, adds Log Archive·Audit. Existing workloads stay, governance layer added.
+**Answer: B**
+Explanation: Control Tower can set-up on existing Org. Recognizes existing OUs·accounts, adds Log Archive·Audit. Existing workloads stay, governance layer added.
 
 ---
 
-**문제 4.** Terraform IaC-based: new account + custom resource auto-deploy. Which tool?
+**Question 4.** Terraform IaC-based: new account + custom resource auto-deploy. Which tool?
 
 A) CfCT
 B) AFT (Account Factory for Terraform)
 C) Account Factory only
 D) CDK
 
-**정답: B**
-해설: AFT is Terraform-based GitOps. CfCT is CloudFormation. CDK is separate tool.
+**Answer: B**
+Explanation: AFT is Terraform-based GitOps. CfCT is CloudFormation. CDK is separate tool.
 
 ---
 
-**문제 5.** Landing Zone deviates from standard setting. What detects?
+**Question 5.** Landing Zone deviates from standard setting. What detects?
 
 A) GuardDuty
 B) Control Tower Drift Detection
 C) Security Hub
 D) Trusted Advisor
 
-**정답: B**
-해설: Control Tower Drift Detection hourly compares baseline vs actual. On diff, console alert + Lambda auto-remediation trigger possible. CloudFormation StackSet drift + Lambda monitoring combo.
+**Answer: B**
+Explanation: Control Tower Drift Detection hourly compares baseline vs actual. On diff, console alert + Lambda auto-remediation trigger possible. CloudFormation StackSet drift + Lambda monitoring combo.
 
 ---
 
-**문제 6.** Control Tower's Detective guardrail uses which service?
+**Question 6.** Control Tower's Detective guardrail uses which service?
 
 A) SCP
 B) AWS Config Rule
 C) CloudFormation Hook
 D) WAF Rule
 
-**정답: B**
-해설: Detective = Config Rule, Preventive = SCP, Proactive = CFN Hook. Know backend service mapping for each guardrail type.
+**Answer: B**
+Explanation: Detective = Config Rule, Preventive = SCP, Proactive = CFN Hook. Know backend service mapping for each guardrail type.
 
 ---
 
-**문제 7.** Fintech: 200 new microservice accounts yearly. GitOps + Terraform. Best?
+**Question 7.** Fintech: 200 new microservice accounts yearly. GitOps + Terraform. Best?
 
 A) Account Factory console 200 times
 B) AFT + Git Repo + CodePipeline
 C) Lambda + CreateAccount API
 D) CloudFormation StackSets
 
-**정답: B**
-해설: AFT GitOps flow best. PR merge → auto account creation + baseline. Capital One·HashiCorp standard. C is self-build, operational burden high.
+**Answer: B**
+Explanation: AFT GitOps flow best. PR merge → auto account creation + baseline. Capital One·HashiCorp standard. C is self-build, operational burden high.
 
 ---
 
-**문제 8.** In Control Tower, create OU in Organizations console. Result?
+**Question 8.** In Control Tower, create OU in Organizations console. Result?
 
 A) Normal operation
 B) Control Tower doesn't recognize → guardrails don't auto-attach, "unregistered OU"
 C) Immediate error
 D) Account Factory doesn't work
 
-**정답: B**
-해설: Control Tower doesn't recognize. Must create in Control Tower console for "registered OU" status → guardrails auto-apply. Frequent trap.
+**Answer: B**
+Explanation: Control Tower doesn't recognize. Must create in Control Tower console for "registered OU" status → guardrails auto-apply. Frequent trap.

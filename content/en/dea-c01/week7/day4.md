@@ -85,62 +85,62 @@ Selection criteria summary:
 
 ## 📝 Practice Questions
 
-**문제 1.** 다음 중 행 기반 OLTP에 최적화되어 정규화된 트랜잭션·ACID 워크로드에 가장 적합한 스토어는?
+**Question 1.** Which of the following stores is optimized for row-based OLTP and best suited to normalized transactional and ACID workloads?
 
 A) Amazon Redshift  
 B) Amazon Athena  
 C) Amazon Aurora  
 D) Amazon OpenSearch  
 
-**정답: C**  
-해설: Aurora(및 RDS)는 행 기반 관계형 OLTP로 정규화 스키마·트랜잭션·소량 행 처리에 최적입니다. Redshift는 컬럼형 OLAP, Athena는 S3 서버리스 분석, OpenSearch는 검색·로그 분석용입니다.
+**Answer: C**  
+Explanation: Aurora (and RDS) is row-based relational OLTP, optimal for normalized schemas, transactions, and handling small numbers of rows. Redshift is columnar OLAP, Athena is serverless analytics on S3, and OpenSearch is for search and log analytics.
 
 ---
 
-**문제 2.** Aurora의 데이터를 별도 ETL 파이프라인(DMS/Glue) 구축 없이 Redshift로 거의 실시간 복제해 분석하려면 무엇을 사용하는가?
+**Question 2.** What do you use to replicate Aurora data to Redshift in near real time for analysis without building a separate ETL pipeline (DMS/Glue)?
 
-A) 제로 ETL(Zero-ETL) 통합  
+A) Zero-ETL integration  
 B) DynamoDB Streams  
 C) Redshift Spectrum  
-D) Athena 페더레이션 쿼리  
+D) Athena federated query  
 
-**정답: A**  
-해설: 제로 ETL 통합은 AWS가 CDC 복제를 관리형으로 수행해 Aurora 데이터를 코드리스로 Redshift에 거의 실시간 반영합니다. Streams는 DynamoDB 변경 캡처, Spectrum은 S3 외부 테이블 쿼리, 페더레이션은 Athena의 이종 소스 조인입니다.
-
----
-
-**문제 3.** 운영 Aurora 인스턴스에 무거운 BI 리포팅 쿼리가 트랜잭션 성능을 저하시킨다. 가장 먼저 고려할 1차 완화책은?
-
-A) 모든 테이블을 비정규화한다  
-B) 읽기 복제본(read replica)으로 분석 부하를 분리한다  
-C) DynamoDB로 마이그레이션한다  
-D) 정렬 키를 추가한다  
-
-**정답: B**  
-해설: 읽기 복제본으로 분석·리포팅 쿼리를 분리하면 쓰기 트랜잭션 성능 저하를 막을 수 있는 1차 패턴입니다. 대규모 집계가 지속되면 Redshift로 옮기는 것이 다음 단계입니다. 비정규화·DynamoDB 이전·정렬 키는 부적절하거나 관계없습니다.
+**Answer: A**  
+Explanation: Zero-ETL integration has AWS perform the CDC replication as a managed service, reflecting Aurora data in Redshift in near real time without code. Streams is DynamoDB change capture, Spectrum queries external tables in S3, and federation is Athena's join across heterogeneous sources.
 
 ---
 
-**문제 4.** Oracle DB를 Aurora PostgreSQL로 마이그레이션하면서 마이그레이션 중 지속적 변경 복제(CDC)가 필요하다. 가장 적절한 서비스는?
+**Question 3.** Heavy BI reporting queries on a production Aurora instance are degrading transaction performance. What is the first mitigation to consider?
 
-A) 제로 ETL 통합  
+A) Denormalize all tables  
+B) Separate the analytics load onto a read replica  
+C) Migrate to DynamoDB  
+D) Add a sort key  
+
+**Answer: B**  
+Explanation: Separating analytics and reporting queries onto a read replica is the first-line pattern for preventing degradation of write transaction performance. If large-scale aggregation continues, moving to Redshift is the next step. Denormalization, migrating to DynamoDB, and sort keys are inappropriate or irrelevant.
+
+---
+
+**Question 4.** You are migrating an Oracle database to Aurora PostgreSQL and need ongoing change replication (CDC) during the migration. Which service is the most appropriate?
+
+A) Zero-ETL integration  
 B) AWS DMS(Database Migration Service)  
 C) Athena CTAS  
 D) Kinesis Data Firehose  
 
-**정답: B**  
-해설: DMS는 이종 DB 간 마이그레이션과 지속 복제(CDC)를 지원하며 Oracle→Aurora 같은 폭넓은 소스/타깃 조합을 다룹니다. 제로 ETL은 Aurora/RDS/DynamoDB→Redshift/OpenSearch에 한정되고, CTAS·Firehose는 마이그레이션 용도가 아닙니다.
+**Answer: B**  
+Explanation: DMS supports migration between heterogeneous databases and ongoing replication (CDC), and handles a broad range of source/target combinations such as Oracle to Aurora. Zero-ETL is limited to Aurora/RDS/DynamoDB to Redshift/OpenSearch, and CTAS and Firehose are not for migration.
 
 ---
 
-**문제 5.** "사용자 ID 기반 한 자릿수 ms 조회, 예측 불가한 대규모 동시성, 서버리스 운영"이 핵심 요구일 때 가장 적합한 스토어는?
+**Question 5.** Which store is the most suitable when the key requirements are "single-digit millisecond lookups by user ID, unpredictable massive concurrency, and serverless operation"?
 
 A) Amazon Redshift  
 B) Amazon Aurora  
 C) Amazon DynamoDB  
 D) Amazon Athena  
 
-**정답: C**  
-해설: 키 기반 초저지연 조회, 대규모 동시성, 온디맨드 서버리스 운영은 DynamoDB의 핵심 강점입니다. Redshift/Athena는 분석 OLAP, Aurora는 관계형 트랜잭션 워크로드에 적합합니다.
+**Answer: C**  
+Explanation: Key-based ultra-low-latency lookups, massive concurrency, and on-demand serverless operation are core strengths of DynamoDB. Redshift/Athena are suited to analytical OLAP, and Aurora is suited to relational transactional workloads.
 
 ---

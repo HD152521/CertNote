@@ -280,58 +280,58 @@ SNS Fanout Architecture
 
 ## 📝 Practice Questions
 
-**문제 1.** When multiple Lambda functions need to process one event simultaneously?
+**Question 1.** When multiple Lambda functions need to process one event simultaneously?
 
 A) Use SQS alone  
 B) SNS fanout (SNS → multiple SQS → multiple Lambda)  
 C) Use EventBridge alone  
 D) Use Kinesis  
 
-**정답: B** - Fanout pattern delivers message from SNS to multiple SQS simultaneously for independent processing.
+**Answer: B** - Fanout pattern delivers message from SNS to multiple SQS simultaneously for independent processing.
 
 ---
 
-**문제 2.** To deliver messages with specific attribute values only to certain subscribers?
+**Question 2.** To deliver messages with specific attribute values only to certain subscribers?
 
 A) SNS access policy  
 B) SNS filter policy  
 C) SQS queue policy  
 D) Lambda environment variables  
 
-**정답: B** - SNS filter policy delivers messages to specific subscribers based on message attributes.
+**Answer: B** - SNS filter policy delivers messages to specific subscribers based on message attributes.
 
 ---
 
-**문제 3.** What is the most significant difference between SNS and SQS?
+**Question 3.** What is the most significant difference between SNS and SQS?
 
 A) Price difference  
 B) SNS is Push (immediate delivery), SQS is Pull (consumer receives)  
 C) Security difference  
 D) Region restriction  
 
-**정답: B** - SNS pushes to all subscribers immediately, while SQS requires consumers to pull messages.
+**Answer: B** - SNS pushes to all subscribers immediately, while SQS requires consumers to pull messages.
 
 ---
 
-**문제 4.** When S3 events need to be delivered to multiple Lambda functions simultaneously?
+**Question 4.** When S3 events need to be delivered to multiple Lambda functions simultaneously?
 
 A) S3 event → Lambda directly (multiple configurations)  
 B) S3 event → SNS → multiple Lambda/SQS  
 C) Use CloudWatch Events  
 D) Not possible  
 
-**정답: B** - S3 can only set one event target directly, so SNS is used in between for fanout.
+**Answer: B** - S3 can only set one event target directly, so SNS is used in between for fanout.
 
 ---
 
-**문제 5.** What is the default behavior when SNS fails to deliver a message to Lambda?
+**Question 5.** What is the default behavior when SNS fails to deliver a message to Lambda?
 
 A) Auto-move to SQS  
 B) Retry then lose message  
 C) Auto-move to DLQ  
 D) Email notification  
 
-**정답: B** - SNS retries then loses the message on failure by default. Must set Lambda DLQ or Destinations.
+**Answer: B** - SNS retries then loses the message on failure by default. Must set Lambda DLQ or Destinations.
 
 ---
 

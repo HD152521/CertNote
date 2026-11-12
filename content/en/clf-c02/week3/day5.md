@@ -90,62 +90,62 @@ Remember again that the exam asks "situation → most appropriate service." In p
 
 ## 📝 Practice Questions
 
-**문제 1.** You must read and write the session information of millions of users quickly, in milliseconds, and it must scale automatically even during traffic spikes. Which database is most appropriate?
+**Question 1.** You must read and write the session information of millions of users quickly, in milliseconds, and it must scale automatically even during traffic spikes. Which database is most appropriate?
 
 A) Amazon Redshift  
 B) Amazon DynamoDB  
 C) Amazon RDS for MySQL  
 D) AWS CloudFormation  
 
-**정답: B**  
-해설: DynamoDB is a managed NoSQL database that provides millisecond responses and automatic scaling, making it suitable for large-scale, high-speed key-value lookups. Redshift is an analytical data warehouse with a different response orientation, RDS's auto-scaling is not as flexible as NoSQL, and CloudFormation is an IaC service, not a database.
+**Answer: B**  
+Explanation: DynamoDB is a managed NoSQL database that provides millisecond responses and automatic scaling, making it suitable for large-scale, high-speed key-value lookups. Redshift is an analytical data warehouse with a different response orientation, RDS's auto-scaling is not as flexible as NoSQL, and CloudFormation is an IaC service, not a database.
 
 ---
 
-**문제 2.** When a single order occurs, you want to send the same message simultaneously to the notification system, the inventory system, and the shipping system. Which service is most appropriate?
+**Question 2.** When a single order occurs, you want to send the same message simultaneously to the notification system, the inventory system, and the shipping system. Which service is most appropriate?
 
 A) Amazon SQS  
 B) Amazon SNS  
 C) Amazon RDS  
 D) Amazon CloudWatch  
 
-**정답: B**  
-해설: SNS is a publish/subscribe (fan-out) service that delivers a single message to multiple subscribers simultaneously, making it suitable for notifying many systems at once. SQS is a queue that piles messages in one line for sequential processing, RDS is a relational DB, and CloudWatch is a monitoring service, so none are meant for simultaneous fan-out notification.
+**Answer: B**  
+Explanation: SNS is a publish/subscribe (fan-out) service that delivers a single message to multiple subscribers simultaneously, making it suitable for notifying many systems at once. SQS is a queue that piles messages in one line for sequential processing, RDS is a relational DB, and CloudWatch is a monitoring service, so none are meant for simultaneous fan-out notification.
 
 ---
 
-**문제 3.** You want to trace after the fact when a specific user called which AWS API to delete a resource, for a security audit. Which service is most appropriate?
+**Question 3.** You want to trace after the fact when a specific user called which AWS API to delete a resource, for a security audit. Which service is most appropriate?
 
 A) Amazon CloudWatch  
 B) AWS CloudTrail  
 C) AWS Config  
 D) Amazon EventBridge  
 
-**정답: B**  
-해설: CloudTrail records "who, when, and what" for API calls within the account, making it suitable for security auditing and incident investigation. CloudWatch is for performance metric/log monitoring, Config tracks resource configuration and compliance, and EventBridge is used for event routing, so tracing the caller is not their main role.
+**Answer: B**  
+Explanation: CloudTrail records "who, when, and what" for API calls within the account, making it suitable for security auditing and incident investigation. CloudWatch is for performance metric/log monitoring, Config tracks resource configuration and compliance, and EventBridge is used for event routing, so tracing the caller is not their main role.
 
 ---
 
-**문제 4.** You want to continuously check compliance with resource configuration rules — such as "whether every EBS volume is encrypted" — and track change history. Which service is most appropriate?
+**Question 4.** You want to continuously check compliance with resource configuration rules — such as "whether every EBS volume is encrypted" — and track change history. Which service is most appropriate?
 
 A) AWS Config  
 B) Amazon CloudWatch  
 C) Amazon SQS  
 D) Amazon Aurora  
 
-**정답: A**  
-해설: Config tracks resource configuration state and change history and detects violations of compliance rules. CloudWatch is for performance/log monitoring, SQS is a message queue, and Aurora is a database, so their roles differ from configuration-compliance checking.
+**Answer: A**  
+Explanation: Config tracks resource configuration state and change history and detects violations of compliance rules. CloudWatch is for performance/log monitoring, SQS is a message queue, and Aurora is a database, so their roles differ from configuration-compliance checking.
 
 ---
 
-**문제 5.** You want to repeatedly create a completely identical infrastructure environment for dev, test, and prod without mistakes, and delete it all at once when it's no longer needed. Which service is most appropriate?
+**Question 5.** You want to repeatedly create a completely identical infrastructure environment for dev, test, and prod without mistakes, and delete it all at once when it's no longer needed. Which service is most appropriate?
 
 A) Amazon CloudWatch  
 B) AWS CloudFormation  
 C) Amazon DynamoDB  
 D) Amazon SNS  
 
-**정답: B**  
-해설: CloudFormation is an IaC service that defines infrastructure as templates (code) and creates/deletes it in bulk per stack, making it suitable for repeatedly building identical environments. CloudWatch is for monitoring, DynamoDB is a NoSQL DB, and SNS is a notification service, so none are meant for automatic infrastructure provisioning.
+**Answer: B**  
+Explanation: CloudFormation is an IaC service that defines infrastructure as templates (code) and creates/deletes it in bulk per stack, making it suitable for repeatedly building identical environments. CloudWatch is for monitoring, DynamoDB is a NoSQL DB, and SNS is a notification service, so none are meant for automatic infrastructure provisioning.
 
 ---

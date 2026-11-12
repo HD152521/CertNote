@@ -130,62 +130,62 @@ The KMS CMK key policy must also allow account B's `kms:Decrypt`. The IAM policy
 
 ## 📝 Practice Questions
 
-**문제 1.** RDS MySQL 마스터 비밀번호를 자동 회전하되, 회전 중 단 한 건의 인증 실패도 발생하면 안 된다. 가장 적절한 회전 전략은?
+**Question 1.** You want to automatically rotate the RDS MySQL master password, but not a single authentication failure may occur during rotation. What is the most appropriate rotation strategy?
 
-A) single-user 회전 — 같은 사용자의 비밀번호만 교체  
-B) alternating-users 회전 — 두 사용자를 번갈아 쓰고 마스터 자격증명 시크릿을 회전 Lambda에 연결  
-C) 회전을 비활성화하고 수동으로 분기마다 교체  
-D) Parameter Store SecureString으로 옮긴 뒤 회전  
+A) Single-user rotation - replace only the same user's password  
+B) Alternating-users rotation - alternate between two users and connect the master credentials secret to the rotation Lambda  
+C) Disable rotation and rotate manually every quarter  
+D) Move to Parameter Store SecureString and then rotate  
 
-**정답: B**  
-해설: alternating-users 전략은 현재 사용 중이 아닌 사용자의 비밀번호를 먼저 바꾼 뒤 전환하므로 인증 실패 창이 사실상 없다. 이를 위해 회전 Lambda는 슈퍼유저(마스터) 자격증명을 별도 시크릿으로 참조해야 한다. single-user는 비밀번호 변경과 캐시 갱신 사이에 순간 실패가 가능하고, 수동 회전은 자동화 요구에 어긋나며, Parameter Store는 자동 회전 기능 자체가 없다.
-
----
-
-**문제 2.** 계정 A의 시크릿을 계정 B의 IAM 역할이 읽으려 하자 KMS 관련 `AccessDeniedException`이 발생한다. 시크릿은 `aws/secretsmanager` 관리형 키로 암호화되어 있다. 올바른 조치는?
-
-A) 계정 B 역할에 `secretsmanager:GetSecretValue`만 추가하면 된다  
-B) 시크릿을 고객 관리형 KMS 키(CMK)로 암호화하고, 그 키 정책에 계정 B의 kms:Decrypt를 허용한다  
-C) 시크릿 복구 대기 기간을 늘린다  
-D) 시크릿을 계정 B로 복제한다  
-
-**정답: B**  
-해설: 교차계정 복호화에는 시크릿 리소스 정책, KMS 키 정책, 계정 B IAM 정책 세 가지가 모두 필요하다. AWS 관리형 키 `aws/secretsmanager`는 키 정책을 편집할 수 없어 외부 계정에 Decrypt를 부여할 방법이 없다. 따라서 CMK로 재암호화하고 키 정책에 계정 B 주체의 kms:Decrypt를 추가해야 한다. GetSecretValue만으로는 복호화 단계에서 막히고, 복구 기간이나 복제는 무관하다.
+**Answer: B**  
+Explanation: The alternating-users strategy first changes the password of the user that is not currently in use and then switches over, so there is effectively no authentication failure window. For this, the rotation Lambda must reference the superuser (master) credentials as a separate secret. Single-user can cause momentary failures between the password change and the cache refresh, manual rotation conflicts with the automation requirement, and Parameter Store has no automatic rotation feature at all.
 
 ---
 
-**문제 3.** 회전 Lambda의 4단계 중, 새 자격증명이 실제로 동작하는지 검증한 뒤에야 현재 버전으로 승격되도록 보장하는 메커니즘은?
+**Question 2.** When an IAM role in Account B tries to read a secret in Account A, a KMS-related `AccessDeniedException` occurs. The secret is encrypted with the `aws/secretsmanager` managed key. What is the correct action?
 
-A) createSecret이 AWSCURRENT를 즉시 갱신한다  
-B) testSecret이 AWSPENDING 자격증명으로 연결을 검증하고, 성공해야만 finishSecret이 AWSPENDING을 AWSCURRENT로 승격한다  
-C) setSecret이 검증과 승격을 동시에 수행한다  
-D) finishSecret이 먼저 승격한 뒤 testSecret으로 사후 검증한다  
+A) Just adding `secretsmanager:GetSecretValue` to the Account B role is enough  
+B) Encrypt the secret with a customer managed KMS key (CMK) and allow kms:Decrypt for Account B in that key's policy  
+C) Extend the secret recovery window  
+D) Replicate the secret to Account B  
 
-**정답: B**  
-해설: 회전은 createSecret(신규 생성, AWSPENDING) → setSecret(대상에 적용) → testSecret(AWSPENDING으로 실제 검증) → finishSecret(승격) 순서다. testSecret이 성공해야 finishSecret이 AWSPENDING을 AWSCURRENT로 올린다. 검증 실패 시 AWSCURRENT는 옛 값을 유지하므로 애플리케이션이 멈추지 않는다. createSecret/setSecret은 승격하지 않으며, 승격을 검증보다 먼저 하면 무중단 보장이 깨진다.
-
----
-
-**문제 4.** 회전이 필요 없고 비용을 최소화하면서 단순 API 키 하나를 KMS 암호화해 저장하려 한다. 가장 적절한 서비스는?
-
-A) Secrets Manager — 회전 기능을 끄고 사용  
-B) Parameter Store의 SecureString 파라미터(Standard 티어)  
-C) S3 객체로 SSE-KMS 저장  
-D) DynamoDB 항목에 평문 저장  
-
-**정답: B**  
-해설: 회전·교차계정 공유가 불필요하고 비용이 우선이면 Parameter Store SecureString(Standard 티어, 무료)이 최적이다. KMS로 암호화 저장하고 IAM으로 접근을 통제한다. Secrets Manager는 시크릿당 월정액이 들어 단순 저장에는 과하고, S3/DynamoDB는 시크릿 전용 수명주기 기능이 없다. DynamoDB 평문 저장은 보안상 부적절하다.
+**Answer: B**  
+Explanation: Cross-account decryption requires all three: the secret resource policy, the KMS key policy, and the Account B IAM policy. The AWS managed key `aws/secretsmanager` has a key policy that cannot be edited, so there is no way to grant Decrypt to an external account. Therefore you must re-encrypt with a CMK and add kms:Decrypt for the Account B principal to the key policy. GetSecretValue alone is blocked at the decryption step, and the recovery window or replication is irrelevant.
 
 ---
 
-**문제 5.** IAM 정책에서 `Resource`를 `arn:aws:secretsmanager:...:secret:prod/db/mysql`로 정확히 지정했는데도 `GetSecretValue`가 거부된다. 가장 가능성 높은 원인은?
+**Question 3.** Among the four steps of the rotation Lambda, which mechanism guarantees that the new credentials are promoted to the current version only after being verified to actually work?
 
-A) 시크릿 ARN 끝의 6자 무작위 접미사가 매칭되지 않아서 — `prod/db/mysql-*`처럼 와일드카드를 붙여야 한다  
-B) KMS 키가 비활성화되어서  
-C) 시크릿 복구 대기 중이라서  
-D) Parameter Store와 이름이 충돌해서  
+A) createSecret immediately updates AWSCURRENT  
+B) testSecret verifies the connection with the AWSPENDING credentials, and only if it succeeds does finishSecret promote AWSPENDING to AWSCURRENT  
+C) setSecret performs verification and promotion at the same time  
+D) finishSecret promotes first and then testSecret verifies afterward  
 
-**정답: A**  
-해설: Secrets Manager는 같은 이름의 시크릿이 삭제·재생성될 때를 구분하려 ARN 끝에 `-` + 6자 무작위 문자를 붙인다. 정책 Resource에 접미사 없는 정확한 이름만 쓰면 실제 ARN과 매칭되지 않아 거부된다. `prod/db/mysql-*` 또는 `prod/db/mysql-??????`로 접미사를 포함해야 한다. KMS 비활성화는 복호화 단계에서 다른 오류를 내고, 복구 대기·이름 충돌은 이 증상의 원인이 아니다.
+**Answer: B**  
+Explanation: Rotation proceeds in the order createSecret (create new, AWSPENDING) → setSecret (apply to the target) → testSecret (actually verify with AWSPENDING) → finishSecret (promote). Only if testSecret succeeds does finishSecret raise AWSPENDING to AWSCURRENT. If verification fails, AWSCURRENT keeps the old value, so the application does not stop. createSecret/setSecret do not promote, and promoting before verification would break the zero-downtime guarantee.
+
+---
+
+**Question 4.** You need no rotation and want to minimize cost while storing a single simple API key encrypted with KMS. What is the most appropriate service?
+
+A) Secrets Manager - use it with rotation turned off  
+B) A Parameter Store SecureString parameter (Standard tier)  
+C) Store it as an S3 object with SSE-KMS  
+D) Store it in plaintext in a DynamoDB item  
+
+**Answer: B**  
+Explanation: When rotation and cross-account sharing are unnecessary and cost is the priority, a Parameter Store SecureString (Standard tier, free) is optimal. It stores the value encrypted with KMS and controls access with IAM. Secrets Manager charges a monthly fee per secret, which is excessive for simple storage, and S3/DynamoDB have no secret-specific lifecycle features. Storing plaintext in DynamoDB is inappropriate from a security standpoint.
+
+---
+
+**Question 5.** Even though the IAM policy `Resource` is specified exactly as `arn:aws:secretsmanager:...:secret:prod/db/mysql`, `GetSecretValue` is denied. What is the most likely cause?
+
+A) The 6-character random suffix at the end of the secret ARN does not match - you must add a wildcard such as `prod/db/mysql-*`  
+B) The KMS key was disabled  
+C) The secret is pending recovery  
+D) The name conflicts with Parameter Store  
+
+**Answer: A**  
+Explanation: Secrets Manager appends `-` plus 6 random characters to the end of the ARN to distinguish when a secret with the same name is deleted and recreated. If the policy Resource uses only the exact name without the suffix, it does not match the actual ARN and is denied. You must include the suffix, as in `prod/db/mysql-*` or `prod/db/mysql-??????`. A disabled KMS key causes a different error at the decryption step, and pending recovery or a name conflict is not the cause of this symptom.
 
 ---

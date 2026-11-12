@@ -121,62 +121,62 @@ Performance/cost optimization's core: "minimize data read." Columnar formats (Pa
 
 ## 📝 Practice Questions
 
-**문제 1.** Athena 쿼리가 대부분 100개 컬럼 중 3~4개만 조회하는데 데이터가 CSV로 저장돼 비용이 높다. 스캔 비용을 가장 효과적으로 줄이는 포맷 전환은?
+**Question 1.** Most Athena queries read only 3 to 4 of 100 columns, but the data is stored as CSV, so the cost is high. Which format conversion most effectively reduces scan cost?
 
-A) JSON으로 변환  
-B) Avro로 변환  
-C) Parquet 같은 열 기반 포맷으로 변환  
-D) 압축하지 않은 TSV로 변환  
+A) Convert to JSON  
+B) Convert to Avro  
+C) Convert to a columnar format such as Parquet  
+D) Convert to uncompressed TSV  
 
-**정답: C**  
-해설: 열 기반 포맷(Parquet/ORC)은 쿼리에 필요한 컬럼 블록만 읽는 컬럼 프루닝과 통계 기반 스킵을 제공해 몇 개 컬럼만 조회할 때 스캔량을 극적으로 줄인다. JSON·TSV·Avro는 행 기반이라 전체 행을 읽어야 하므로 컬럼 프루닝 이점이 없다.
-
----
-
-**문제 2.** 거대한 단일 Gzip 압축 CSV 파일을 EMR Spark가 처리하는데 병렬성이 전혀 나오지 않고 워커 하나만 일한다. 근본 원인은?
-
-A) Gzip 압축률이 너무 높아서  
-B) 단독 Gzip 텍스트는 분할 불가능(non-splittable)이라 한 워커가 파일 전체를 읽어야 하기 때문  
-C) Spark는 압축 파일을 못 읽기 때문  
-D) CSV는 컬럼이 없기 때문  
-
-**정답: B**  
-해설: 단독 Gzip 텍스트 파일은 분할 불가능해 하나의 파일을 하나의 워커가 통째로 읽어야 하므로 병렬성이 죽는다. 해결책은 Parquet+Snappy처럼 블록 단위로 분할 가능한 형태로 저장하거나, 파일을 적정 크기로 나누는 것이다.
+**Answer: C**  
+Explanation: Columnar formats (Parquet/ORC) provide column pruning, which reads only the column blocks needed by the query, and statistics-based skipping, dramatically reducing the amount scanned when only a few columns are queried. JSON, TSV, and Avro are row-based and must read entire rows, so they have no column pruning benefit.
 
 ---
 
-**문제 3.** 매출 데이터를 `year/month/day`로 파티셔닝해 S3에 저장했다. `WHERE year=2026 AND month=6 AND day=26` 쿼리가 빠르고 저렴한 이유는?
+**Question 2.** EMR Spark is processing a huge single Gzip-compressed CSV file, but there is no parallelism at all and only one worker is working. What is the root cause?
 
-A) 모든 파티션을 병렬로 읽기 때문  
-B) Hive가 자동으로 최적화하기 때문  
-C) 엔진이 필요한 파티션만 읽고 나머지 디렉터리를 전혀 열지 않기 때문(파티션 프루닝)  
-D) 날짜가 고카디널리티라 압축이 우수하기 때문  
+A) The Gzip compression ratio is too high  
+B) A standalone Gzip text file is non-splittable, so one worker must read the entire file  
+C) Spark cannot read compressed files  
+D) CSV has no columns  
 
-**정답: C**  
-해설: 파티션 프루닝(partition pruning)은 조건에 맞지 않는 디렉터리 전체를 읽지 않아 스캔량을 대폭 줄인다. 날짜는 저카디널리티 파티션 키로 이상적이며, 필요한 날짜 디렉터리만 열기 때문에 빠르고 저렴하다.
-
----
-
-**문제 4.** 작은 파일이 S3에 수만 개 쌓여 있을 때 Athena/Spark 성능이 나쁜 이유는?
-
-A) 작은 파일은 압축이 안 되기 때문  
-B) 각 파일마다 LIST/GET 요청·메타데이터 파싱·태스크 스케줄링 오버헤드가 누적되고, 병렬성도 지역성(locality)도 나오지 않기 때문  
-C) 컬럼 프루닝이 작은 파일에서 안 되기 때문  
-D) Parquet이 작은 파일을 못 읽기 때문  
-
-**정답: B**  
-해설: 작은 파일은 수만 개의 S3 요청·메타데이터 파싱·태스크 생성으로 오버헤드를 지배적으로 낳고, 워커 당 일할 충분한 데이터가 없어 유휴 비용이 크다. 해결책은 128MB~1GB로 컴팩션하는 것이다.
+**Answer: B**  
+Explanation: A standalone Gzip text file is non-splittable, so a single worker must read the whole file, which kills parallelism. The fix is to store the data in a block-splittable form such as Parquet + Snappy, or to split the file into appropriately sized pieces.
 
 ---
 
-**문제 5.** Parquet의 강점을 가장 정확히 설명한 것은?
+**Question 3.** Sales data is stored in S3 partitioned by `year/month/day`. Why is a query with `WHERE year=2026 AND month=6 AND day=26` fast and cheap?
 
-A) CSV보다 압축 비율이 높다  
-B) 스키마 진화에 유리하다  
-C) 컬럼 프루닝, 통계 기반 스킵, 고압축의 삼위일체로 분석 쿼리 성능을 극대화한다  
-D) 행 기반이라 쓰기가 빠르다  
+A) Because it reads all partitions in parallel  
+B) Because Hive optimizes it automatically  
+C) Because the engine reads only the required partitions and never opens the other directories (partition pruning)  
+D) Because dates have high cardinality, so compression is excellent  
 
-**정답: C**  
-해설: Parquet의 핵심 강점은 열 기반으로 필요 컬럼만 읽고(프루닝), min/max 통계로 블록 전체를 스킵하며(predicate pushdown), 같은 컬럼 값 반복으로 고압축된다는 세 가지 상승작용이다. 스키마 진화는 Avro 강점, 행 기반 빠른 쓰기도 Avro·CSV다.
+**Answer: C**  
+Explanation: Partition pruning avoids reading entire directories that do not match the condition, greatly reducing the amount scanned. A date is an ideal low-cardinality partition key, and because only the needed date directory is opened, the query is fast and cheap.
+
+---
+
+**Question 4.** Why is Athena/Spark performance poor when tens of thousands of small files have accumulated in S3?
+
+A) Because small files cannot be compressed  
+B) Because LIST/GET requests, metadata parsing, and task scheduling overhead accumulate for each file, and neither parallelism nor locality is achieved  
+C) Because column pruning does not work on small files  
+D) Because Parquet cannot read small files  
+
+**Answer: B**  
+Explanation: Small files create dominant overhead from tens of thousands of S3 requests, metadata parsing, and task creation, and there is not enough data per worker, so idle cost is high. The fix is to compact them to 128 MB to 1 GB.
+
+---
+
+**Question 5.** Which option most accurately describes the strengths of Parquet?
+
+A) It has a higher compression ratio than CSV  
+B) It is advantageous for schema evolution  
+C) The trio of column pruning, statistics-based skipping, and high compression maximizes analytical query performance  
+D) It is row-based, so writes are fast  
+
+**Answer: C**  
+Explanation: Parquet's key strength is the synergy of three things: being columnar, it reads only the needed columns (pruning); min/max statistics let it skip entire blocks (predicate pushdown); and repeated values in the same column yield high compression. Schema evolution is an Avro strength, and fast row-based writes are also Avro and CSV.
 
 ---

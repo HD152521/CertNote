@@ -17,7 +17,7 @@ Macie uses ML and pattern matching to auto-discover and classify sensitive data 
   "customDataIdentifier": {
     "name": "internal-employee-id",
     "regex": "EMP-[0-9]{6}",
-    "keywords": ["employee", "사번"],
+    "keywords": ["employee", "employee ID"],
     "maximumMatchDistance": 50
   }
 }
@@ -99,50 +99,50 @@ Link detection to response for consistent protection without ops burden.
 
 ## 📝 Practice Questions
 
-**문제 1.** 수천 개의 S3 버킷 중 어디에 신용카드 번호·주민번호가 저장돼 있는지 모른다. 민감 데이터의 위치와 유형을 자동으로 발견하는 서비스는?
+**Question 1.** You do not know which of thousands of S3 buckets store credit card numbers and Korean resident registration numbers. Which service automatically discovers the location and type of sensitive data?
 
 A) AWS Config  
 B) AWS Glue DataBrew  
 C) Amazon Macie  
 D) Amazon Inspector  
 
-**정답: C**  
-해설: Macie는 ML과 패턴 매칭으로 S3의 PII·민감 데이터를 자동 탐지·분류하고 위치·유형을 발견으로 보고합니다. Config는 리소스 구성, DataBrew는 데이터 준비, Inspector는 워크로드 취약점 스캔용입니다.
+**Answer: C**  
+Explanation: Macie automatically detects and classifies PII and sensitive data in S3 using ML and pattern matching, and reports the location and type as findings. Config is for resource configuration, DataBrew is for data preparation, and Inspector is for workload vulnerability scanning.
 
 ---
 
-**문제 2.** 결제 분석을 위해 카드번호로 거래를 조인해야 하지만 원본 카드번호는 숨겨야 한다. 나중에 권한 있는 시스템이 원본을 복원할 수도 있어야 한다. 가장 적합한 기법은?
+**Question 2.** For payment analysis, you must join transactions by card number but must hide the original card number. A privileged system must also be able to restore the original later. Which technique is the most suitable?
 
-A) 비가역 마스킹  
-B) 컬럼 삭제  
-C) Glacier 보관  
-D) 토큰화  
+A) Irreversible masking  
+B) Column deletion  
+C) Glacier archiving  
+D) Tokenization  
 
-**정답: D**  
-해설: 토큰화는 민감 값을 토큰으로 치환하되 매핑을 볼트에 보관해 조인 일관성을 유지하고 필요 시 역토큰화로 원복할 수 있습니다. 비가역 마스킹·컬럼 삭제는 복원이 불가능하고, Glacier는 보호 기법이 아닙니다.
-
----
-
-**문제 3.** Redshift에서 동일 테이블을 두 역할이 조회하되, 분석가에게는 카드번호 뒤 4자리만, 관리자에게는 전체를 보여주려 한다. 가장 적절한 기능은?
-
-A) S3 버킷 정책  
-B) Redshift 동적 데이터 마스킹(DDM)  
-C) KMS 키 교체  
-D) 파티션 프로젝션  
-
-**정답: B**  
-해설: Redshift DDM은 컬럼에 마스킹 정책을 붙이고 역할별로 다른 가시성을 제공해 같은 쿼리라도 역할에 따라 다른 값을 반환합니다. 버킷 정책·키 교체·파티션 프로젝션은 컬럼 단위 동적 마스킹을 제공하지 않습니다.
+**Answer: D**  
+Explanation: Tokenization replaces a sensitive value with a token while keeping the mapping in a vault, maintaining join consistency and allowing restoration through detokenization when needed. Irreversible masking and column deletion cannot be restored, and Glacier is not a protection technique.
 
 ---
 
-**문제 4.** Macie가 민감 데이터를 탐지한 직후 자동으로 해당 버킷을 격리하고 보안팀에 알리고자 한다. 가장 적절한 아키텍처는?
+**Question 3.** In Redshift, two roles query the same table, and you want to show analysts only the last 4 digits of the card number and show administrators the full number. Which feature is the most appropriate?
 
-A) Macie 발견 → EventBridge → Lambda(버킷 정책 제한) + SNS 알림  
-B) S3 수명주기 정책으로 객체 삭제  
-C) CloudFront 배포 생성  
-D) Redshift 스냅샷 생성  
+A) S3 bucket policy  
+B) Redshift dynamic data masking (DDM)  
+C) KMS key rotation  
+D) Partition projection  
 
-**정답: A**  
-해설: Macie 발견을 EventBridge로 받아 Lambda가 버킷 접근을 제한하고 SNS로 알림하면 탐지-대응이 자동 연결됩니다. 수명주기 삭제는 증거 손실 위험, CloudFront·Redshift 스냅샷은 민감 데이터 대응과 무관합니다.
+**Answer: B**  
+Explanation: Redshift DDM attaches a masking policy to a column and provides different visibility per role, so the same query returns different values depending on the role. Bucket policies, key rotation, and partition projection do not provide column-level dynamic masking.
+
+---
+
+**Question 4.** You want Macie to automatically isolate the bucket and notify the security team immediately after it detects sensitive data. What is the most appropriate architecture?
+
+A) Macie finding → EventBridge → Lambda (restrict bucket policy) + SNS notification  
+B) Delete objects with an S3 lifecycle policy  
+C) Create a CloudFront distribution  
+D) Create a Redshift snapshot  
+
+**Answer: A**  
+Explanation: Receiving the Macie finding through EventBridge, having Lambda restrict bucket access, and notifying with SNS automatically connects detection to response. Lifecycle deletion risks losing evidence, and CloudFront and Redshift snapshots are unrelated to responding to sensitive data.
 
 ---

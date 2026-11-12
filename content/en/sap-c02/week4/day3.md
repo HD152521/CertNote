@@ -208,72 +208,72 @@ Snow Family and DataSync are complementary, not competitive services. The most c
 
 ## 📝 Practice Questions
 
-**문제 1.** 헬스케어 기업이 15년치 의료 영상 데이터 800TB를 온프레미스에서 AWS S3로 이전해야 한다. 데이터센터의 AWS DX 회선은 1Gbps다. 이전 완료 후에는 신규 영상만 매주 S3로 동기화할 계획이다. 가장 효율적인 구성은?
+**Question 1.** A healthcare company must migrate 800 TB of 15 years of medical imaging data from on premises to AWS S3. The data center's AWS DX connection is 1 Gbps. After the migration is complete, it plans to synchronize only new images to S3 weekly. What is the most efficient configuration?
 
-A) DataSync로 전체 800TB 전송 + 이후 DataSync 정기 동기화
-B) Snowball Edge 10대(각 80TB)로 초기 800TB 이전 + 이후 DataSync 주간 증분 동기화
-C) Storage Gateway S3 File로 전체 800TB 전송
-D) Site-to-Site VPN 추가 + DataSync 가속
+A) Transfer the full 800 TB with DataSync + regular DataSync synchronization afterward
+B) Initial 800 TB transfer with 10 Snowball Edge devices (80 TB each) + weekly incremental DataSync synchronization afterward
+C) Transfer the full 800 TB with Storage Gateway S3 File
+D) Add Site-to-Site VPN + DataSync acceleration
 
-**정답: B**
-해설: 1Gbps × 실효 70% = 700Mbps로 800TB를 전송하면 약 25일이 필요하다. Snowball Edge 10대(800TB)를 동시 배포하면 데이터 적재 3~4일 + 배송 왕복 7일 = 약 10~14일로 완료된다. 2배 빠른 초기 이전이 가능하다. 이후 DataSync로 주간 증분 동기화를 자동화하면 운영 부담이 최소화된다. DataSync만으로(A) 800TB를 전송하면 25일 이상 소요되고 DX 대역폭의 상당 부분을 마이그레이션이 점유한다. Storage Gateway(C)는 상시 마운트를 위한 서비스이지 대량 일회성 이전에 최적화되어 있지 않다. VPN 추가(D)는 대역폭이 DX보다 낮아 도움이 안 된다.
-
----
-
-**문제 2.** 에너지 회사가 북극 탐사 선박에서 수집한 지진 탐사 데이터(약 60TB)를 AWS로 전송해야 한다. 선박의 위성 인터넷은 2Mbps로 제한된다. 동시에 선박 위에서 실시간 지진 데이터 분석이 필요하다. 가장 적합한 솔루션은?
-
-A) DataSync + 위성 인터넷
-B) Snowball Edge Compute Optimized (엣지 분석 + 항구 귀환 시 데이터 이전)
-C) AWS Outposts (선박에 배치)
-D) Site-to-Site VPN + 위성 인터넷
-
-**정답: B**
-해설: 2Mbps로 60TB를 전송하면 약 2,800일(7.7년)이 걸린다. 물리 이동이 유일한 현실적 선택이다. Snowball Edge Compute Optimized는 104 vCPU와 선택적 GPU로 선박 위에서 EC2와 Lambda를 실행해 실시간 지진 데이터 분석이 가능하다. 항구 귀환 시 장비를 AWS로 발송해 S3 import를 완료한다. DataSync + 위성(A)과 VPN + 위성(D)은 2Mbps 제한으로 현실적으로 불가능하다. Outposts(C)는 최소 1U 서버이고 항상 AWS Service Link 연결이 필요한데 선박의 2Mbps로는 Service Link 유지도 어렵다.
+**Answer: B**
+Explanation: Transferring 800 TB at 1 Gbps × 70% effective = 700 Mbps takes about 25 days. Deploying 10 Snowball Edge devices (800 TB) at the same time completes in about 10-14 days: 3-4 days of data loading + 7 days of round-trip shipping. An initial transfer twice as fast is possible. Automating weekly incremental DataSync synchronization afterward minimizes the operational burden. Transferring 800 TB with DataSync alone (A) takes more than 25 days and the migration occupies a large part of the DX bandwidth. Storage Gateway (C) is a service for persistent mounting and is not optimized for large one-time transfers. Adding VPN (D) does not help because its bandwidth is lower than DX.
 
 ---
 
-**문제 3.** 영화 스튜디오가 매일 밤 디지털 필름 촬영 원본(약 5TB/일)을 온프레미스 NAS에서 S3로 백업한다. 회선은 10Gbps DX가 있다. 백업 완료 후 S3와 NAS 파일이 정확히 일치하는지 자동 검증이 필요하다. 최적 솔루션은?
+**Question 2.** An energy company must transfer seismic survey data (about 60 TB) collected on an Arctic exploration vessel to AWS. The vessel's satellite internet is limited to 2 Mbps. At the same time, real-time seismic data analysis is needed on the vessel. What is the most appropriate solution?
 
-A) Snowball Edge 매일 발송
-B) AWS DataSync (매일 야간 실행, 자동 무결성 검증 포함)
+A) DataSync + satellite internet
+B) Snowball Edge Compute Optimized (edge analytics + data transfer upon returning to port)
+C) AWS Outposts (deployed on the vessel)
+D) Site-to-Site VPN + satellite internet
+
+**Answer: B**
+Explanation: Transferring 60 TB at 2 Mbps would take about 2,800 days (7.7 years). Physical transport is the only realistic choice. Snowball Edge Compute Optimized has 104 vCPUs and an optional GPU, so it can run EC2 and Lambda on the vessel for real-time seismic data analysis. Upon returning to port, the device is shipped to AWS to complete the S3 import. DataSync + satellite (A) and VPN + satellite (D) are practically impossible because of the 2 Mbps limit. Outposts (C) is at minimum a 1U server and always requires an AWS Service Link connection, and maintaining the Service Link is difficult at the vessel's 2 Mbps.
+
+---
+
+**Question 3.** A film studio backs up digital film shoot originals (about 5 TB per day) from an on-premises NAS to S3 every night. It has a 10 Gbps DX connection. After the backup completes, it needs automatic verification that the S3 and NAS files match exactly. What is the best solution?
+
+A) Ship Snowball Edge every day
+B) AWS DataSync (runs nightly, with automatic integrity verification included)
 C) S3 File Gateway + S3 Lifecycle
-D) S3 REST API 직접 업로드 스크립트
+D) A script that uploads directly with the S3 REST API
 
-**정답: B**
-해설: 10Gbps DX로 5TB/일은 충분히 전송 가능하다(이론상 1.1시간, 실제 2~3시간). DataSync는 전송 후 자동 체크섬 검증으로 무결성을 보장한다. 매일 야간 스케줄로 cron 자동화도 가능하다. Snowball을 매일 발송(A)하는 것은 5TB/일 × 10Gbps DX 환경에서 완전히 과한 비용이다. S3 File Gateway(C)는 상시 마운트로 실시간 저장에 적합하지만 자동 무결성 검증이 DataSync만큼 강력하지 않다. 직접 스크립트(D)는 병렬 처리 최적화와 자동 재시도, 무결성 검증을 모두 직접 구현해야 한다.
-
----
-
-**문제 4.** AWS Snow 장비가 분실되었다. 데이터 유출 위험은?
-
-A) 데이터가 평문으로 저장되므로 완전한 유출 위험이 있다
-B) 256-bit AES 암호화 + KMS 키 관리로 인해 물리 장비만으로 데이터 복호화 불가능
-C) S3에서 데이터를 원격으로 삭제하면 장비의 데이터도 삭제된다
-D) 장비를 원격으로 잠글 수 있다
-
-**정답: B**
-해설: Snow 장비의 모든 데이터는 기록 전에 256-bit AES로 암호화된다. 암호화 키는 AWS KMS에 있으며 장비에는 암호화된 키 재료만 있다. 장비가 AWS 데이터센터에 연결되지 않은 상태에서는 복호화 키를 얻을 수 없으므로 물리 장비만 있어도 데이터를 읽을 수 없다. 또한 물리 변조 시 보안 칩이 키를 자동 파기한다. C는 S3와 장비의 데이터가 연동되지 않는다(장비 내 데이터는 독립). D는 Snow 장비에 원격 잠금 기능이 없다.
+**Answer: B**
+Explanation: 5 TB per day is easily transferable over a 10 Gbps DX connection (in theory 1.1 hours, in practice 2-3 hours). DataSync guarantees integrity through automatic checksum verification after transfer. It can also be automated on a nightly schedule like cron. Shipping a Snowball every day (A) is completely excessive in cost for 5 TB/day over a 10 Gbps DX. S3 File Gateway (C) suits real-time storage through a persistent mount, but its automatic integrity verification is not as strong as DataSync's. A direct script (D) requires you to implement parallel processing optimization, automatic retries, and integrity verification all yourself.
 
 ---
 
-**문제 5.** DataSync와 AWS Storage Gateway S3 File Gateway 중 "온프레미스 서버가 주기적으로 S3에 파일을 저장하고 읽어야 한다"는 요구사항에 더 적합한 것은?
+**Question 4.** An AWS Snow device was lost. What is the risk of data exposure?
+
+A) The data is stored in plaintext, so there is a complete risk of exposure
+B) Because of 256-bit AES encryption + KMS key management, the data cannot be decrypted with the physical device alone
+C) Deleting the data remotely from S3 also deletes the data on the device
+D) The device can be locked remotely
+
+**Answer: B**
+Explanation: All data on a Snow device is encrypted with 256-bit AES before it is written. The encryption keys are in AWS KMS, and the device holds only encrypted key material. While the device is not connected to an AWS data center, the decryption key cannot be obtained, so the data cannot be read even if someone has the physical device. In addition, upon physical tampering, the security chip destroys the key automatically. For C, the data in S3 and on the device are not linked (the data on the device is independent). For D, Snow devices have no remote lock feature.
+
+---
+
+**Question 5.** Between DataSync and AWS Storage Gateway S3 File Gateway, which is more suitable for the requirement "an on-premises server must periodically store files in S3 and read them"?
 
 A) DataSync
 B) S3 File Gateway
-C) 두 서비스 모두 동일하게 적합
-D) 두 서비스 모두 부적합, Snowball 사용
+C) Both services are equally suitable
+D) Neither service is suitable; use Snowball
 
-**정답: B**
-해설: "주기적으로 저장하고 읽는다"는 상시적 하이브리드 접근이 필요한 패턴이다. S3 File Gateway는 NFS/SMB로 마운트해 애플리케이션이 로컬 파일 시스템처럼 S3를 사용하게 한다. DataSync는 배치 전송으로 특정 시점에 파일을 동기화하는 도구지, 실시간으로 파일을 읽고 쓰는 상시 마운트를 제공하지 않는다. DataSync는 마이그레이션, 정기 백업, DR 동기화에 적합하다.
+**Answer: B**
+Explanation: "Periodically store and read" is a pattern that requires persistent hybrid access. S3 File Gateway is mounted over NFS/SMB so that applications use S3 like a local file system. DataSync is a batch transfer tool that synchronizes files at a specific point in time and does not provide a persistent mount for reading and writing files in real time. DataSync suits migration, regular backups, and DR synchronization.
 
 ---
 
-**문제 6.** 자동차 제조사가 공장 QA 카메라 100대에서 수집한 이미지로 ML 결함 탐지를 실행한다. 공장 LAN은 있지만 인터넷 연결이 없다. 이미지는 공장 서버에 저장되고 ML 추론 결과는 QA 시스템으로 전달된다. 결과 이미지와 레이블은 주기적으로 AWS로 보내 모델 재학습에 사용한다. 가장 적합한 아키텍처는?
+**Question 6.** An automaker runs ML defect detection on images collected from 100 QA cameras in a factory. The factory has a LAN but no internet connection. Images are stored on a factory server and the ML inference results are delivered to the QA system. The result images and labels are periodically sent to AWS and used to retrain the model. What is the most appropriate architecture?
 
 A) AWS Outposts Rack + Direct Connect
-B) Snowball Edge Compute Optimized (엣지 ML 추론) + 주기적 Snowball 교체로 데이터 전송
-C) Local Zones (공장 근처 도시)
-D) EC2 온디맨드 + Site-to-Site VPN
+B) Snowball Edge Compute Optimized (edge ML inference) + data transfer by periodically swapping Snowball devices
+C) Local Zones (a city near the factory)
+D) EC2 On-Demand + Site-to-Site VPN
 
-**정답: B**
-해설: 인터넷이 없는 환경에서 ML 추론을 실행하고 데이터를 주기적으로 AWS로 보내는 것이 요구사항이다. Snowball Edge Compute Optimized는 GPU 옵션으로 ML 추론(SageMaker Edge Manager와 연동)을 공장 내에서 실행할 수 있다. 이미지 데이터를 로컬에 저장하고 정기적으로(예: 주 1회) 장비를 교체해 AWS로 데이터를 발송한다. Outposts(A)는 Service Link가 항상 필요한데 인터넷이 없는 환경에서는 Service Link 유지가 어렵다. Local Zones(C)는 AWS가 운영하는 도시 시설이므로 공장 내 ML 추론에 부적합하다. EC2 + VPN(D)은 인터넷이 없는 환경에서 불가능하다.
+**Answer: B**
+Explanation: The requirements are to run ML inference in an environment with no internet and to send data to AWS periodically. Snowball Edge Compute Optimized can run ML inference inside the factory with its GPU option (integrated with SageMaker Edge Manager). Image data is stored locally and the device is swapped regularly (for example, once a week) to ship the data to AWS. Outposts (A) always needs a Service Link, and maintaining a Service Link is difficult in an environment with no internet. Local Zones (C) are city facilities operated by AWS and are unsuitable for ML inference inside the factory. EC2 + VPN (D) is impossible in an environment with no internet.

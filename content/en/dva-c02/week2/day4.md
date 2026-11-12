@@ -390,99 +390,99 @@ In the next article, we pull all of Week 2 together and look at the real integra
 
 ## 📝 Practice Questions
 
-**문제 1.** A company wants to run a Blue/Green canary deployment with an ALB. What is the correct configuration?
+**Question 1.** A company wants to run a Blue/Green canary deployment with an ALB. What is the correct configuration?
 
 A) Create two ALBs and branch via DNS
 B) Register two target groups as a weighted forward on a single listener rule, and adjust the weights over time
 C) Move to an NLB
 D) The ALB doesn't support canary
 
-**정답: B**
-해설: An ALB can distribute a single rule's forward action across multiple target groups by weight (added November 2019). Start with Blue target group 100, Green 0 → gradually raise Green to 10, 25, 50, 100. CodeDeploy's ALB integration uses exactly this mechanism. The weights don't have to sum to 100 (they're relative ratios). A can't switch instantly because of DNS TTL. As for C, an NLB can do weighted forward too, but it lacks canary tooling as refined as the ALB's.
+**Answer: B**
+Explanation: An ALB can distribute a single rule's forward action across multiple target groups by weight (added November 2019). Start with Blue target group 100, Green 0 → gradually raise Green to 10, 25, 50, 100. CodeDeploy's ALB integration uses exactly this mechanism. The weights don't have to sum to 100 (they're relative ratios). A can't switch instantly because of DNS TTL. As for C, an NLB can do weighted forward too, but it lacks canary tooling as refined as the ALB's.
 
 ---
 
-**문제 2.** In an ASG, new instances do get registered with the ALB but start receiving traffic before the application is fully ready, causing 5xx errors. What is the most appropriate response?
+**Question 2.** In an ASG, new instances do get registered with the ALB but start receiving traffic before the application is fully ready, causing 5xx errors. What is the most appropriate response?
 
 A) Reduce the ALB's health check interval
 B) Add an `EC2_INSTANCE_LAUNCHING` lifecycle hook to the ASG and have the instance call `CompleteLifecycleAction` when warmup finishes
 C) Increase the ASG's max size
 D) Increase the target group's deregistration delay
 
-**정답: B**
-해설: A lifecycle hook holds a new instance in the "Pending:Wait" state, delaying the ASG's transition to InService. Once the in-instance warmup script (JVM warmup, cache preload, model load) finishes, it proceeds with `complete-lifecycle-action --lifecycle-action-result CONTINUE`. Only then is it registered with the ALB target group and starts receiving traffic. A just increases the health check frequency; it doesn't control readiness. D concerns in-flight handling at termination, unrelated to the startup moment. As an alternative, the pattern of putting the health check path at `/healthz` and returning 200 only once warmup completes is also frequently used.
+**Answer: B**
+Explanation: A lifecycle hook holds a new instance in the "Pending:Wait" state, delaying the ASG's transition to InService. Once the in-instance warmup script (JVM warmup, cache preload, model load) finishes, it proceeds with `complete-lifecycle-action --lifecycle-action-result CONTINUE`. Only then is it registered with the ALB target group and starts receiving traffic. A just increases the health check frequency; it doesn't control readiness. D concerns in-flight handling at termination, unrelated to the startup moment. As an alternative, the pattern of putting the health check path at `/healthz` and returning 200 only once warmup completes is also frequently used.
 
 ---
 
-**문제 3.** What cost is incurred when you enable cross-zone load balancing on an NLB?
+**Question 3.** What cost is incurred when you enable cross-zone load balancing on an NLB?
 
 A) An additional hourly NLB charge
 B) Cross-AZ data transfer ($0.01 per GB, $0.02 for the round trip)
 C) Increased NLCU usage
 D) No cost change
 
-**정답: B**
-해설: On the NLB, cross-zone is OFF by default, and turning it on incurs bidirectional data transfer cost for traffic that crosses AZs. Traffic within the same AZ is free, but when an AZ-a NLB node sends to an AZ-b target, it costs $0.01 each way, outbound + inbound. So enable NLB cross-zone with awareness of the potential cost increase. Contrast this with the ALB, where cross-zone is ON by default and free. D is wrong.
+**Answer: B**
+Explanation: On the NLB, cross-zone is OFF by default, and turning it on incurs bidirectional data transfer cost for traffic that crosses AZs. Traffic within the same AZ is free, but when an AZ-a NLB node sends to an AZ-b target, it costs $0.01 each way, outbound + inbound. So enable NLB cross-zone with awareness of the potential cost increase. Contrast this with the ALB, where cross-zone is ON by default and free. D is wrong.
 
 ---
 
-**문제 4.** A game server needs to communicate globally over UDP port 17800. What is the most appropriate LB?
+**Question 4.** A game server needs to communicate globally over UDP port 17800. What is the most appropriate LB?
 
 A) ALB
 B) NLB (supports TCP/UDP, static EIP)
 C) CLB
 D) GWLB
 
-**정답: B**
-해설: The ALB is limited to HTTP/HTTPS and WebSocket and can't handle UDP. The CLB is legacy. GWLB is for security appliances. The NLB handles TCP/UDP/TLS and provides a static EIP per AZ, so you can pin the IP into the game client. On top of that, a Global Accelerator + NLB combination even enables BGP Anycast-based global routing. Non-HTTP traffic like gaming/finance/IoT/VoIP is almost always NLB.
+**Answer: B**
+Explanation: The ALB is limited to HTTP/HTTPS and WebSocket and can't handle UDP. The CLB is legacy. GWLB is for security appliances. The NLB handles TCP/UDP/TLS and provides a static EIP per AZ, so you can pin the IP into the game client. On top of that, a Global Accelerator + NLB combination even enables BGP Anycast-based global routing. Non-HTTP traffic like gaming/finance/IoT/VoIP is almost always NLB.
 
 ---
 
-**문제 5.** Which ASG scaling policy uses ML to predict future traffic and spin up instances ahead of time?
+**Question 5.** Which ASG scaling policy uses ML to predict future traffic and spin up instances ahead of time?
 
 A) Target Tracking
 B) Step Scaling
 C) Scheduled Scaling
 D) Predictive Scaling
 
-**정답: D**
-해설: Predictive Scaling was added in 2018. It learns a week's worth of CloudWatch metrics to predict the pattern for the same day-of-week and time-of-day, spinning up instances before the traffic arrives. It can be combined with Target Tracking. It needs at least 24 hours of data to learn. C's Scheduled is where the user specifies explicit times and numbers — not ML prediction. A's Target Tracking looks at the current metric and adjusts reactively.
+**Answer: D**
+Explanation: Predictive Scaling was added in 2018. It learns a week's worth of CloudWatch metrics to predict the pattern for the same day-of-week and time-of-day, spinning up instances before the traffic arrives. It can be combined with Target Tracking. It needs at least 24 hours of data to learn. C's Scheduled is where the user specifies explicit times and numbers — not ML prediction. A's Target Tracking looks at the current metric and adjusts reactively.
 
 ---
 
-**문제 6.** What is the biggest difference between ALB → Lambda integration and API Gateway → Lambda integration?
+**Question 6.** What is the biggest difference between ALB → Lambda integration and API Gateway → Lambda integration?
 
 A) The ALB doesn't support Lambda
 B) The ALB suits external APIs, API Gateway suits internal APIs
 C) API Gateway additionally provides API management features like throttling, API keys, usage plans, and OpenAPI import
 D) The Lambda response format is identical
 
-**정답: C**
-해설: ALB → Lambda is a simple HTTP → Lambda passthrough — cheap, but with no API management features. API Gateway provides a rich API management layer: throttling (per-key, per-stage, per-method), API key issuance and validation, Usage Plans, OpenAPI spec import, request/response transformation, and Lambda Proxy vs. Lambda Integration. But it costs more than the ALB, so generally API Gateway for externally public APIs, ALB for internal APIs. D is wrong — the event formats differ, and invoking the same function from both places requires event conversion.
+**Answer: C**
+Explanation: ALB → Lambda is a simple HTTP → Lambda passthrough — cheap, but with no API management features. API Gateway provides a rich API management layer: throttling (per-key, per-stage, per-method), API key issuance and validation, Usage Plans, OpenAPI spec import, request/response transformation, and Lambda Proxy vs. Lambda Integration. But it costs more than the ALB, so generally API Gateway for externally public APIs, ALB for internal APIs. D is wrong — the event formats differ, and invoking the same function from both places requires event conversion.
 
 ---
 
-**문제 7.** To minimize Spot Instance reclamation while maximizing cost savings, which ASG setting is most appropriate?
+**Question 7.** To minimize Spot Instance reclamation while maximizing cost savings, which ASG setting is most appropriate?
 
 A) The `lowest-price` allocation strategy
 B) The `capacity-optimized` or `price-capacity-optimized` allocation strategy + multiple instance family Overrides
 C) Use 100% Spot only
 D) Use On-Demand only
 
-**정답: B**
-해설: `capacity-optimized` prefers the Spot pool with the most capacity (= least likely to be reclaimed). The `price-capacity-optimized` strategy added in 2022 balances price and capacity for a more modern choice. Registering multiple instance types in Overrides means that when one pool drains, it's backfilled from another, reducing reclamation further. A's `lowest-price` only looks at the cheapest pool, so reclamation is high (unsuitable for production). C is risky for critical workloads. D gives up Spot's cost savings.
+**Answer: B**
+Explanation: `capacity-optimized` prefers the Spot pool with the most capacity (= least likely to be reclaimed). The `price-capacity-optimized` strategy added in 2022 balances price and capacity for a more modern choice. Registering multiple instance types in Overrides means that when one pool drains, it's backfilled from another, reducing reclamation further. A's `lowest-price` only looks at the cheapest pool, so reclamation is high (unsuitable for production). C is risky for critical workloads. D gives up Spot's cost savings.
 
 ---
 
-**문제 8.** Both ALB and NLB send traffic only to instances that pass health checks. What is the difference in their health check behavior?
+**Question 8.** Both ALB and NLB send traffic only to instances that pass health checks. What is the difference in their health check behavior?
 
 A) The ALB looks at HTTP/HTTPS response codes (Matcher); the NLB looks at TCP connection success or an HTTP/HTTPS response
 B) The NLB doesn't support health checks
 C) The ALB checks every 30 seconds, the NLB every 60 seconds
 D) The two LBs' health checks are identical
 
-**정답: A**
-해설: HTTP/HTTPS health checks are standard for the ALB, and it inspects the response code (`Matcher`, default 200). The NLB can do all three of TCP/HTTP/HTTPS, and a TCP health check only looks at a simple SYN-ACK response (independent of the application layer). So an NLB TCP health check can pass as long as the OS is alive even if the application is dead, which is why an HTTP health check is more recommended for accurate readiness judgment. C is wrong — both default to 30 seconds. D is wrong.
+**Answer: A**
+Explanation: HTTP/HTTPS health checks are standard for the ALB, and it inspects the response code (`Matcher`, default 200). The NLB can do all three of TCP/HTTP/HTTPS, and a TCP health check only looks at a simple SYN-ACK response (independent of the application layer). So an NLB TCP health check can pass as long as the OS is alive even if the application is dead, which is why an HTTP health check is more recommended for accurate readiness judgment. C is wrong — both default to 30 seconds. D is wrong.
 
 ---
 

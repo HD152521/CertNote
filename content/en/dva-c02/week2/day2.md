@@ -235,99 +235,99 @@ In the next article, we look at the layer where EC2 accesses disk — EBS, the i
 
 ## 📝 Practice Questions
 
-**문제 1.** A developer designed an ECS task so that a Lambda calls a Secrets Manager Interface Endpoint. The Lambda SG's outbound is wide open to 0.0.0.0/0, yet a `ConnectTimeoutError` occurs. What is the most likely cause?
+**Question 1.** A developer designed an ECS task so that a Lambda calls a Secrets Manager Interface Endpoint. The Lambda SG's outbound is wide open to 0.0.0.0/0, yet a `ConnectTimeoutError` occurs. What is the most likely cause?
 
 A) Secrets Manager doesn't support Interface Endpoints
 B) The Endpoint SG's inbound doesn't allow 443 from the Lambda SG
 C) IAM permissions are insufficient
 D) The Lambda's timeout is too short
 
-**정답: B**
-해설: An Interface Endpoint (PrivateLink) has its own ENI, and an SG is attached to that ENI. Even if the Lambda's outbound is 0.0.0.0/0, if the Endpoint SG's inbound is closed, the packet is dropped at the Endpoint ENI. The fix is to allow TCP 443 on the Endpoint SG's inbound with the Lambda SG as the source. For C, an IAM problem would usually surface as `AccessDeniedException`, not a timeout. For D, a normal Secrets Manager call completes within 100ms — far faster than Lambda's default 3-second timeout. The Endpoint SG is a frequently missed trap.
+**Answer: B**
+Explanation: An Interface Endpoint (PrivateLink) has its own ENI, and an SG is attached to that ENI. Even if the Lambda's outbound is 0.0.0.0/0, if the Endpoint SG's inbound is closed, the packet is dropped at the Endpoint ENI. The fix is to allow TCP 443 on the Endpoint SG's inbound with the Lambda SG as the source. For C, an IAM problem would usually surface as `AccessDeniedException`, not a timeout. For D, a normal Secrets Manager call completes within 100ms — far faster than Lambda's default 3-second timeout. The Endpoint SG is a frequently missed trap.
 
 ---
 
-**문제 2.** A company wants IAM-controlled shell access to EC2 without using SSH keys. They absolutely do not want to open inbound port 22. What is the most appropriate solution?
+**Question 2.** A company wants IAM-controlled shell access to EC2 without using SSH keys. They absolutely do not want to open inbound port 22. What is the most appropriate solution?
 
 A) EC2 Instance Connect (Browser-based SSH)
 B) Session Manager (SSM Agent + HTTPS over WebSocket)
 C) Bastion Host + SSH
 D) Direct Connect + VPN
 
-**정답: B**
-해설: With Session Manager, the SSM Agent connects to the SSM service over outbound HTTPS (443), and you open a shell over that session from the AWS Console or CLI. It works with port 22 closed, and IAM permissions (`ssm:StartSession`) control who can access which instance. Every command is recorded in CloudTrail, so auditing is possible too. A's EC2 Instance Connect can also be IAM-controlled, but ultimately port 22 must be open in the SG for the EC2 Instance Connect service IP. C requires port 22 open somewhere. D is a network connectivity method, not a shell access method.
+**Answer: B**
+Explanation: With Session Manager, the SSM Agent connects to the SSM service over outbound HTTPS (443), and you open a shell over that session from the AWS Console or CLI. It works with port 22 closed, and IAM permissions (`ssm:StartSession`) control who can access which instance. Every command is recorded in CloudTrail, so auditing is possible too. A's EC2 Instance Connect can also be IAM-controlled, but ultimately port 22 must be open in the SG for the EC2 Instance Connect service IP. C requires port 22 open somewhere. D is a network connectivity method, not a shell access method.
 
 ---
 
-**문제 3.** An EC2 instance is an m5.large and sporadically throws `Connection refused`. CPU and memory have headroom, and there are no errors in the application logs. What is the most likely cause?
+**Question 3.** An EC2 instance is an m5.large and sporadically throws `Connection refused`. CPU and memory have headroom, and there are no errors in the application logs. What is the most likely cause?
 
 A) EBS IOPS limit exceeded
 B) Conntrack table limit exceeded (check the CloudWatch `conntrack_allowance_exceeded` metric)
 C) The ALB's deregistration delay
 D) IMDSv2 token expiration
 
-**정답: B**
-해설: Each EC2 instance has an SG stateful conntrack table with a per-instance-type limit (~350K for m5.large, ~1M for c5n.large). When the limit is exceeded, new connections are dropped. Check it with the CloudWatch agent's `conntrack_allowance_exceeded` metric. Fixes: ① change the instance type to a larger one (the c5n family), ② change the application to reuse the connection pool efficiently, ③ reduce the number of connections with keep-alive. For A, exceeding the IO limit increases latency, not connection refused. C is unrelated to ALB behavior. D is unrelated to metadata lookups.
+**Answer: B**
+Explanation: Each EC2 instance has an SG stateful conntrack table with a per-instance-type limit (~350K for m5.large, ~1M for c5n.large). When the limit is exceeded, new connections are dropped. Check it with the CloudWatch agent's `conntrack_allowance_exceeded` metric. Fixes: ① change the instance type to a larger one (the c5n family), ② change the application to reuse the connection pool efficiently, ③ reduce the number of connections with keep-alive. For A, exceeding the IO limit increases latency, not connection refused. C is unrelated to ALB behavior. D is unrelated to metadata lookups.
 
 ---
 
-**문제 4.** A User Data script doesn't run at instance boot. What is the most appropriate first debugging step?
+**Question 4.** A User Data script doesn't run at instance boot. What is the most appropriate first debugging step?
 
 A) Rebuild the AMI
 B) Check `/var/log/cloud-init-output.log` and `/var/log/cloud-init.log`
 C) Move the instance to a different AZ
 D) Remove the IAM instance profile
 
-**정답: B**
-해설: User Data runs at the final stage of cloud-init (`cloud-final.service`), and all output is recorded in `/var/log/cloud-init-output.log`, while cloud-init's own operational log goes to `/var/log/cloud-init.log`. The most common failure causes are: ① a missing shebang (`#!/bin/bash`), ② Windows CRLF line endings, ③ insufficient IAM permission when calling external resources from inside User Data, ④ User Data exceeding the 16KB size limit. You can also see some of the boot log via the EC2 console's "Get System Log" or `aws ec2 get-console-output`.
+**Answer: B**
+Explanation: User Data runs at the final stage of cloud-init (`cloud-final.service`), and all output is recorded in `/var/log/cloud-init-output.log`, while cloud-init's own operational log goes to `/var/log/cloud-init.log`. The most common failure causes are: ① a missing shebang (`#!/bin/bash`), ② Windows CRLF line endings, ③ insufficient IAM permission when calling external resources from inside User Data, ④ User Data exceeding the 16KB size limit. You can also see some of the boot log via the EC2 console's "Get System Log" or `aws ec2 get-console-output`.
 
 ---
 
-**문제 5.** A company wants to use an ED25519 key pair on an EC2 instance. What is the exact command to create it via the CLI?
+**Question 5.** A company wants to use an ED25519 key pair on an EC2 instance. What is the exact command to create it via the CLI?
 
 A) `aws ec2 create-key-pair --key-name my-key --key-type ed25519 --query 'KeyMaterial' --output text > my-key.pem`
 B) `aws ec2 create-key-pair --key-name my-key --key-format ed25519`
 C) `aws iam create-key-pair --key-name my-key`
 D) Only possible from the EC2 console
 
-**정답: A**
-해설: Specify it with `--key-type ed25519`. Receive the output in PEM format, save it to `my-key.pem`, then use SSH after `chmod 400 my-key.pem`. ED25519 has a shorter key than RSA 2048, faster signing/verification, and stronger resistance to side-channel attacks. AWS has supported ED25519 since 2021. C's `aws iam create-key-pair` is a nonexistent command (IAM keys are access keys, not SSH keys).
+**Answer: A**
+Explanation: Specify it with `--key-type ed25519`. Receive the output in PEM format, save it to `my-key.pem`, then use SSH after `chmod 400 my-key.pem`. ED25519 has a shorter key than RSA 2048, faster signing/verification, and stronger resistance to side-channel attacks. AWS has supported ED25519 since 2021. C's `aws iam create-key-pair` is a nonexistent command (IAM keys are access keys, not SSH keys).
 
 ---
 
-**문제 6.** An EC2 instance had its IAM role credentials stolen through IMDSv1 via an SSRF attack. What is the most appropriate EC2 setting to prevent the same incident?
+**Question 6.** An EC2 instance had its IAM role credentials stolen through IMDSv1 via an SSRF attack. What is the most appropriate EC2 setting to prevent the same incident?
 
 A) Remove the IAM role
 B) Enforce IMDSv2 with `MetadataOptions.HttpTokens=required, HttpPutResponseHopLimit=1` + block access via containers
 C) Block 169.254.169.254 in the Security Group
 D) Use the `ec2messages.amazonaws.com` endpoint
 
-**정답: B**
-해설: `HttpTokens=required` disables IMDSv1 → an SSRF attacker can't send the PUT, so they can't obtain a token and metadata access is blocked. `HttpPutResponseHopLimit=1` adds further hardening → a Docker container network traverses one more hop, so IMDS access from inside a container is blocked. A stops the application from using IAM permissions. C fails because 169.254.169.254 is a link-local address and can't be controlled by an SG (an SG only sees packets routed outside the ENI). D is an endpoint for SSM communication and is unrelated to IMDS.
+**Answer: B**
+Explanation: `HttpTokens=required` disables IMDSv1 → an SSRF attacker can't send the PUT, so they can't obtain a token and metadata access is blocked. `HttpPutResponseHopLimit=1` adds further hardening → a Docker container network traverses one more hop, so IMDS access from inside a container is blocked. A stops the application from using IAM permissions. C fails because 169.254.169.254 is a link-local address and can't be controlled by an SG (an SG only sees packets routed outside the ENI). D is an endpoint for SSM communication and is unrelated to IMDS.
 
 ---
 
-**문제 7.** In the following cloud-config YAML, which part defines commands that run on every boot?
+**Question 7.** In the following cloud-config YAML, which part defines commands that run on every boot?
 
 A) `runcmd`
 B) `bootcmd`
 C) `scripts_per_boot`
 D) `write_files`
 
-**정답: C**
-해설: `runcmd` runs at cloud-init "instance" frequency — only once on first boot. `bootcmd` runs on every boot but at a very early stage where networking may not be up. `scripts_per_boot` runs the scripts in the `/var/lib/cloud/scripts/per-boot/` directory on every boot. `write_files` is not a command but a file-creation directive. To run User Data on every boot, use a mime-multipart `text/x-shellscript-per-boot` type part.
+**Answer: C**
+Explanation: `runcmd` runs at cloud-init "instance" frequency — only once on first boot. `bootcmd` runs on every boot but at a very early stage where networking may not be up. `scripts_per_boot` runs the scripts in the `/var/lib/cloud/scripts/per-boot/` directory on every boot. `write_files` is not a command but a file-creation directive. To run User Data on every boot, use a mime-multipart `text/x-shellscript-per-boot` type part.
 
 ---
 
-**문제 8.** A Lambda function is connected to a VPC and tries to call a DynamoDB Gateway Endpoint over PrivateLink. Which statement about the Lambda SG and Endpoint configuration is correct?
+**Question 8.** A Lambda function is connected to a VPC and tries to call a DynamoDB Gateway Endpoint over PrivateLink. Which statement about the Lambda SG and Endpoint configuration is correct?
 
 A) A Gateway Endpoint (S3, DynamoDB) has no ENI, so no SG applies; instead you add a prefix list to the Route Table to send the Lambda subnet's outbound route to the endpoint
 B) A Gateway Endpoint also has an ENI, so it's controlled with an SG
 C) DynamoDB only supports PrivateLink Interface Endpoints
 D) When a Lambda is connected to a VPC, DynamoDB calls become impossible
 
-**정답: A**
-해설: AWS has two kinds of VPC Endpoints. A **Gateway Endpoint** (S3 and DynamoDB only) works as a Route Table entry, routing traffic to the endpoint without an ENI or SG. An **Interface Endpoint** (PrivateLink, most services) creates an ENI and attaches an SG to it. DynamoDB has supported the Gateway Endpoint since 2017, and added PrivateLink Interface Endpoint support in 2023. On the exam, the answer to "a Lambda is connected to a VPC but DynamoDB calls time out" is almost always a missing prefix list in the Gateway Endpoint's Route Table.
+**Answer: A**
+Explanation: AWS has two kinds of VPC Endpoints. A **Gateway Endpoint** (S3 and DynamoDB only) works as a Route Table entry, routing traffic to the endpoint without an ENI or SG. An **Interface Endpoint** (PrivateLink, most services) creates an ENI and attaches an SG to it. DynamoDB has supported the Gateway Endpoint since 2017, and added PrivateLink Interface Endpoint support in 2023. On the exam, the answer to "a Lambda is connected to a VPC but DynamoDB calls time out" is almost always a missing prefix list in the Gateway Endpoint's Route Table.
 
 ---
 

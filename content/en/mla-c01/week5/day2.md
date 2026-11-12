@@ -105,62 +105,62 @@ Next we see debugging and profiling—looking inside at how training runs, where
 
 ## 📝 Practice Questions
 
-**문제 1.** 학습할 모델은 단일 GPU 메모리에 충분히 들어가지만, 데이터셋이 매우 커서 한 GPU로는 학습이 며칠 걸린다. 가장 적합한 분산 전략은?
+**Question 1.** The model to train fits comfortably in single-GPU memory, but the dataset is so large that training on one GPU would take days. What is the most suitable distributed strategy?
 
-A) 모델 병렬로 모델을 여러 GPU에 분할  
-B) 데이터 병렬로 여러 GPU/노드에 배치를 분배하고 그래디언트를 all-reduce  
-C) 배치 크기를 1로 줄인다  
-D) 학습을 CPU로 옮긴다  
+A) Model parallelism to split the model across multiple GPUs  
+B) Data parallelism to distribute batches across multiple GPUs/nodes and all-reduce the gradients  
+C) Reduce the batch size to 1  
+D) Move training to CPU  
 
-**정답: B**  
-해설: 모델이 GPU에 들어가는데 느린 경우는 처리량 문제이므로 데이터 병렬로 여러 장비에 데이터를 분배해 거의 선형으로 속도를 높인다. A는 모델이 안 들어갈 때 쓰는 전략이라 불필요하고, C는 오히려 느려지며, D는 GPU 가속을 버리는 잘못된 선택이다.
-
----
-
-**문제 2.** 70억 파라미터 모델을 학습하려는데 단일 GPU에서 메모리 부족(OOM)이 발생한다. 데이터 병렬로 노드를 추가해도 해결되지 않는다. 근본 해결책은?
-
-A) 데이터 병렬 GPU 수를 두 배로 늘린다  
-B) SageMaker 모델 병렬(SMP)로 모델 파라미터·옵티마이저 상태를 여러 GPU에 분할·샤딩한다  
-C) 학습률을 낮춘다  
-D) 에폭 수를 줄인다  
-
-**정답: B**  
-해설: OOM은 모델 복제본 자체가 한 GPU에 안 들어가는 문제로, 데이터 병렬은 각 GPU에 전체 복제본을 두므로 해결되지 않는다. 모델 병렬/샤딩으로 모델을 GPU 간에 나눠야 한다. A는 같은 OOM이 반복되고, C·D는 메모리 사용량과 무관하다.
+**Answer: B**  
+Explanation: When the model fits on the GPU but training is slow, it is a throughput problem, so data parallelism distributes data across multiple machines to increase speed almost linearly. A is a strategy for when the model does not fit and is therefore unnecessary, C actually slows things down, and D is a wrong choice that gives up GPU acceleration.
 
 ---
 
-**문제 3.** 데이터 병렬에서 GPU 수를 늘려 유효 배치 크기가 커졌다. 이때 흔히 함께 조정해야 하는 것은?
+**Question 2.** You want to train a 7-billion-parameter model but run out of memory (OOM) on a single GPU. Adding nodes with data parallelism does not solve it. What is the fundamental solution?
 
-A) 모델 아키텍처  
-B) 학습률(예: 배치 증가에 맞춰 스케일링)  
-C) S3 버킷 리전  
-D) IAM 역할  
+A) Double the number of data-parallel GPUs  
+B) Use SageMaker model parallelism (SMP) to split and shard the model parameters and optimizer state across multiple GPUs  
+C) Lower the learning rate  
+D) Reduce the number of epochs  
 
-**정답: B**  
-해설: 데이터 병렬로 유효 배치가 커지면 학습률을 그대로 두면 수렴이 나빠질 수 있어 보통 학습률을 함께 조정(linear scaling 등)한다. A는 분산 전략과 무관하게 바꿀 이유가 없고, C·D는 학습 수렴과 관계없는 설정이다.
+**Answer: B**  
+Explanation: OOM is a problem where the model replica itself does not fit on one GPU, and data parallelism does not solve it because it places a full replica on each GPU. You must split the model across GPUs with model parallelism/sharding. A repeats the same OOM, and C and D are unrelated to memory usage.
 
 ---
 
-**문제 4.** 다수 GPU 노드 간 all-reduce 통신이 병목이 되어 분산 학습 확장 효율이 떨어진다. AWS에서 노드 간 저지연 고대역 통신을 제공하는 것은?
+**Question 3.** In data parallelism, increasing the number of GPUs has increased the effective batch size. What commonly needs to be adjusted along with it?
+
+A) Model architecture  
+B) Learning rate (for example, scaled to match the batch increase)  
+C) S3 bucket Region  
+D) IAM role  
+
+**Answer: B**  
+Explanation: When data parallelism enlarges the effective batch, leaving the learning rate unchanged can hurt convergence, so the learning rate is usually adjusted together (linear scaling, etc.). A has no reason to change regardless of the distributed strategy, and C and D are settings unrelated to training convergence.
+
+---
+
+**Question 4.** All-reduce communication between many GPU nodes has become a bottleneck, reducing the scaling efficiency of distributed training. Which AWS offering provides low-latency, high-bandwidth communication between nodes?
 
 A) Elastic Fabric Adapter (EFA)  
 B) Amazon SQS  
 C) CloudFront  
 D) Route 53  
 
-**정답: A**  
-해설: EFA는 HPC·분산 학습용 저지연 고대역 네트워크 인터페이스로, p4d/p5 등에서 노드 간 all-reduce 통신 병목을 줄인다. B는 메시지 큐, C는 CDN, D는 DNS로 모두 분산 학습의 GPU 간 통신과 무관하다.
+**Answer: A**  
+Explanation: EFA is a low-latency, high-bandwidth network interface for HPC and distributed training that reduces the all-reduce communication bottleneck between nodes on p4d/p5 and similar instances. B is a message queue, C is a CDN, and D is DNS, all unrelated to GPU-to-GPU communication in distributed training.
 
 ---
 
-**문제 5.** 대용량 학습 데이터를 여러 GPU 노드에 고처리량으로 공급해 데이터 로딩 병목을 줄이려 한다. 적합한 서비스는?
+**Question 5.** You want to supply large training datasets to multiple GPU nodes with high throughput to reduce the data loading bottleneck. Which service is appropriate?
 
-A) S3에서 매 스텝마다 단건 GET  
-B) FSx for Lustre 고성능 병렬 파일시스템으로 S3 데이터를 캐시·공급  
-C) DynamoDB 테이블 스캔  
-D) EBS 단일 볼륨을 한 노드에만 부착  
+A) Single-object GET from S3 at every step  
+B) FSx for Lustre high-performance parallel file system to cache and serve S3 data  
+C) DynamoDB table scan  
+D) A single EBS volume attached to only one node  
 
-**정답: B**  
-해설: FSx for Lustre는 S3와 연동되는 고처리량 병렬 파일시스템으로 대규모 학습 데이터를 여러 노드에 빠르게 공급해 로딩 병목을 줄인다. A는 단건 호출로 처리량이 낮고, C는 분석용 NoSQL로 부적합하며, D는 단일 노드 전용이라 분산 공급이 안 된다.
+**Answer: B**  
+Explanation: FSx for Lustre is a high-throughput parallel file system integrated with S3 that quickly supplies large training datasets to multiple nodes, reducing the loading bottleneck. A has low throughput because of single-object calls, C is an analytics-unsuitable NoSQL database, and D is for a single node only, so it cannot supply data in a distributed way.
 
 ---

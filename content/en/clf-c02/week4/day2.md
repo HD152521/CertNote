@@ -70,62 +70,62 @@ In the next article, we'll take a step beyond security to cover **compliance**. 
 
 ## 📝 Practice Questions
 
-**문제 1.** You want to protect a web app from web application layer attacks such as SQL injection and cross-site scripting (XSS). Which service is most appropriate?
+**Question 1.** You want to protect a web app from web application layer attacks such as SQL injection and cross-site scripting (XSS). Which service is most appropriate?
 
 A) AWS Shield  
 B) AWS WAF  
 C) Amazon GuardDuty  
 D) Amazon Macie  
 
-**정답: B**  
-해설: WAF filters web attack patterns such as SQL injection and XSS at L7 (the application layer). Shield stops DDoS (traffic floods), GuardDuty detects malicious activity, and Macie deals with S3 sensitive data — none of which are about blocking web attacks.
+**Answer: B**  
+Explanation: WAF filters web attack patterns such as SQL injection and XSS at L7 (the application layer). Shield stops DDoS (traffic floods), GuardDuty detects malicious activity, and Macie deals with S3 sensitive data — none of which are about blocking web attacks.
 
 ---
 
-**문제 2.** Which service is provided free by default to all AWS customers and automatically defends against common DDoS attacks?
+**Question 2.** Which service is provided free by default to all AWS customers and automatically defends against common DDoS attacks?
 
 A) AWS Shield Standard  
 B) AWS WAF  
 C) Amazon Inspector  
 D) AWS Security Hub  
 
-**정답: A**  
-해설: Shield Standard is provided to all customers at no additional cost and automatically defends against network/transport layer DDoS. WAF is web attack filtering, Inspector is vulnerability assessment, and Security Hub is a unified dashboard — none are DDoS defense services.
+**Answer: A**  
+Explanation: Shield Standard is provided to all customers at no additional cost and automatically defends against network/transport layer DDoS. WAF is web attack filtering, Inspector is vulnerability assessment, and Security Hub is a unified dashboard — none are DDoS defense services.
 
 ---
 
-**문제 3.** You want to automatically discover and classify sensitive data such as personally identifiable information (PII) stored in an S3 bucket. Which service is most appropriate?
+**Question 3.** You want to automatically discover and classify sensitive data such as personally identifiable information (PII) stored in an S3 bucket. Which service is most appropriate?
 
 A) Amazon GuardDuty  
 B) Amazon Inspector  
 C) Amazon Macie  
 D) AWS WAF  
 
-**정답: C**  
-해설: Macie specializes in using machine learning to discover and classify sensitive data (such as PII) in S3. GuardDuty detects malicious activity, Inspector checks vulnerabilities, and WAF filters web attacks — none have S3 data classification capabilities.
+**Answer: C**  
+Explanation: Macie specializes in using machine learning to discover and classify sensitive data (such as PII) in S3. GuardDuty detects malicious activity, Inspector checks vulnerabilities, and WAF filters web attacks — none have S3 data classification capabilities.
 
 ---
 
-**문제 4.** You want to automatically check for known software vulnerabilities present in EC2 instances and container images. Which service is most appropriate?
+**Question 4.** You want to automatically check for known software vulnerabilities present in EC2 instances and container images. Which service is most appropriate?
 
 A) Amazon Inspector  
 B) Amazon Macie  
 C) AWS Shield  
 D) AWS Security Hub  
 
-**정답: A**  
-해설: Inspector scans EC2, containers, and Lambda to check for known vulnerabilities (CVEs) and exposure issues. Macie is for S3 sensitive data, Shield is DDoS defense, and Security Hub is a findings-aggregation dashboard — none are vulnerability assessment tools.
+**Answer: A**  
+Explanation: Inspector scans EC2, containers, and Lambda to check for known vulnerabilities (CVEs) and exposure issues. Macie is for S3 sensitive data, Shield is DDoS defense, and Security Hub is a findings-aggregation dashboard — none are vulnerability assessment tools.
 
 ---
 
-**문제 5.** You want to gather and monitor, in one place, the detection findings of multiple security services such as GuardDuty, Inspector, and Macie. Which service is most appropriate?
+**Question 5.** You want to gather and monitor, in one place, the detection findings of multiple security services such as GuardDuty, Inspector, and Macie. Which service is most appropriate?
 
 A) AWS WAF  
 B) AWS Security Hub  
 C) Amazon GuardDuty  
 D) AWS Shield Advanced  
 
-**정답: B**  
-해설: Security Hub is a centralized dashboard that gathers the findings of multiple security services on one screen and shows your security posture against best practices. WAF, GuardDuty, and Shield are individual services that each handle a specific threat, not tools for unified visibility.
+**Answer: B**  
+Explanation: Security Hub is a centralized dashboard that gathers the findings of multiple security services on one screen and shows your security posture against best practices. WAF, GuardDuty, and Shield are individual services that each handle a specific threat, not tools for unified visibility.
 
 ---

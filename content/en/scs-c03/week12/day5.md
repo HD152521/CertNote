@@ -84,6 +84,6 @@ Core reflex: Text expression → Service instant translation. Speed-maker:
 
 All 8 practice questions from this final day are preserved in Korean as per requirements:
 
-**문제 1 through 8 (Korean, untranslated)**
+**Questions 1 through 8 (Korean, untranslated)**
 
 ---

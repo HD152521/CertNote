@@ -98,50 +98,50 @@ Single-pillar gaps (good sharing, no audit) risk compliance, trust loss.
 
 ## 📝 Practice Questions
 
-**문제 1.** 두 회사가 광고 효과를 공동 측정하려 하지만, 서로의 고객 원본 데이터는 절대 노출할 수 없다. 합의된 집계 쿼리 결과만 공유하려면?
+**Question 1.** Two companies want to jointly measure ad effectiveness, but must never expose each other's raw customer data. How can they share only the results of agreed-upon aggregate queries?
 
-A) AWS Data Exchange로 데이터셋 교환  
-B) S3 교차 계정 버킷 정책으로 원본 공유  
-C) Redshift 스냅샷 공유  
-D) AWS Clean Rooms로 협업  
+A) Exchange datasets with AWS Data Exchange  
+B) Share the raw data with an S3 cross-account bucket policy  
+C) Share a Redshift snapshot  
+D) Collaborate with AWS Clean Rooms  
 
-**정답: D**  
-해설: Clean Rooms는 당사자들이 원본을 서로 노출하지 않고 사전 합의된 분석 규칙으로 집계 결과만 얻는 공동 분석 서비스입니다. Data Exchange·버킷 공유·스냅샷 공유는 모두 원본 데이터를 상대에게 전달하므로 요건에 맞지 않습니다.
-
----
-
-**문제 2.** 한 매출 컬럼의 정의를 변경하기 전에, 그 컬럼이 어떤 다운스트림 리포트와 테이블에 영향을 주는지 파악하려 한다. 가장 도움이 되는 거버넌스 기능은?
-
-A) 데이터 계보(lineage)  
-B) S3 수명주기 정책  
-C) KMS 키 교체  
-D) 파티션 프로젝션  
-
-**정답: A**  
-해설: 데이터 계보는 소스→변환→타깃→BI의 흐름을 기록해 영향 분석(어떤 다운스트림이 깨지는지)을 가능하게 합니다. 수명주기·키 교체·파티션 프로젝션은 영향 추적과 무관합니다.
+**Answer: D**  
+Explanation: Clean Rooms is a joint analysis service in which the parties obtain only aggregated results under pre-agreed analysis rules without exposing raw data to each other. Data Exchange, bucket sharing, and snapshot sharing all hand the raw data over to the other party, so they do not meet the requirement.
 
 ---
 
-**문제 3.** Athena, Redshift Spectrum, EMR이 동일 S3 데이터에 대해 서로 다른 스키마를 정의해 결과가 불일치한다. 단일 진실 공급원을 제공하는 해결책은?
+**Question 2.** Before changing the definition of a revenue column, you want to understand which downstream reports and tables it affects. Which governance feature helps the most?
 
-A) 각 엔진에 별도 스키마 유지  
-B) 데이터를 CSV로 통일  
-C) 버킷마다 다른 KMS 키 적용  
-D) 공유 Glue Data Catalog 사용  
+A) Data lineage  
+B) S3 lifecycle policy  
+C) KMS key rotation  
+D) Partition projection  
 
-**정답: D**  
-해설: Glue Data Catalog를 공유하면 테이블/스키마를 한 번 정의해 Athena·Spectrum·EMR·Glue가 동일 메타데이터를 사용하므로 불일치가 사라집니다. 별도 스키마 유지는 문제의 원인이고, CSV 통일·KMS는 스키마 일관성과 무관합니다.
+**Answer: A**  
+Explanation: Data lineage records the flow from source to transformation to target to BI, enabling impact analysis (which downstream assets would break). Lifecycle, key rotation, and partition projection are unrelated to impact tracing.
 
 ---
 
-**문제 4.** 감사팀이 "지난주 누가 민감 S3 버킷의 어떤 객체를 읽었는지" 알고자 한다. 그러나 CloudTrail에는 관리 이벤트만 보인다. 필요한 조치는?
+**Question 3.** Athena, Redshift Spectrum, and EMR define different schemas for the same S3 data, so results are inconsistent. Which solution provides a single source of truth?
 
-A) S3 버전 관리 활성화  
-B) CloudTrail 데이터 이벤트(S3 객체 수준) 로깅 활성화  
-C) Macie 분류 작업 실행  
-D) IAM 정책에 Deny 추가  
+A) Maintain separate schemas for each engine  
+B) Standardize the data to CSV  
+C) Apply a different KMS key to each bucket  
+D) Use a shared Glue Data Catalog  
 
-**정답: B**  
-해설: S3 객체 수준 접근(GetObject 등)은 CloudTrail 데이터 이벤트로 기록되며 비용 때문에 기본 비활성이므로 명시적으로 켜야 추적됩니다. 버전 관리는 변경 이력, Macie는 탐지, Deny는 차단으로 접근 감사 로그를 만들지 않습니다.
+**Answer: D**  
+Explanation: If you share the Glue Data Catalog, tables/schemas are defined once and Athena, Spectrum, EMR, and Glue use the same metadata, so the inconsistency disappears. Maintaining separate schemas is the cause of the problem, and standardizing to CSV and KMS are unrelated to schema consistency.
+
+---
+
+**Question 4.** An audit team wants to know "who read which objects in a sensitive S3 bucket last week." However, only management events are visible in CloudTrail. What action is needed?
+
+A) Enable S3 versioning  
+B) Enable CloudTrail data event (S3 object-level) logging  
+C) Run a Macie classification job  
+D) Add a Deny to the IAM policy  
+
+**Answer: B**  
+Explanation: S3 object-level access (GetObject and so on) is recorded as CloudTrail data events, which are disabled by default because of cost, so they must be explicitly enabled to be tracked. Versioning is a change history, Macie is detection, and Deny is blocking; none of them creates access audit logs.
 
 ---

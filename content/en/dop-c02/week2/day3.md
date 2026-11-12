@@ -268,126 +268,126 @@ CodeArtifact stores packages; determining "are these packages really safe?" is s
 
 ## 📝 Practice Questions
 
-**문제 1.** Dependency Confusion 공격을 방어하기 위한 가장 적절한 CodeArtifact 구성은?
+**Question 1.** What is the most appropriate CodeArtifact configuration to defend against Dependency Confusion attacks?
 
-A) 모든 패키지를 npmjs.com에서 직접 설치하되 설치 후 `npm audit`로 취약점을 사후 점검
-B) 내부 패키지를 `@my-org` 같은 scoped namespace로 사설 CodeArtifact에 게시 + lock 파일 강제 + Upstream 경유로 외부 패키지 캐시
-C) 빌드 환경의 인터넷 아웃바운드를 전면 차단해 외부 레지스트리 접근 자체를 봉쇄
-D) 모든 빌드 산출물을 배포 전 보안팀이 의존성 트리까지 수동 검토해 승인
+A) Install all packages directly from npmjs.com and check for vulnerabilities after installation with `npm audit`
+B) Publish internal packages to a private CodeArtifact repository under a scoped namespace such as `@my-org` + enforce lock files + cache external packages through an upstream
+C) Block internet outbound access from the build environment entirely to shut off access to external registries
+D) Have the security team manually review every build artifact, including the dependency tree, and approve it before deployment
 
-**정답: B**
-해설: scoped namespace + 단일 registry + lock 파일이 표준 3종 방어. A는 정반대로 공격 표면 노출. C는 비현실적, D는 자동화 부재.
-
----
-
-**문제 2.** Domain과 Repository의 가장 큰 차이는?
-
-A) Domain은 npm/Maven 같은 패키지 형식별 분리, Repository는 dev/prod 환경별 분리 단위
-B) Domain은 자산 중복 제거 + KMS 키 단일화, Repository는 권한·Upstream의 단위
-C) Domain은 비용 청구만 분리하는 태그성 단위이고 실제 권한·저장은 Repository가 전담
-D) 둘 다 동일한 컨테이너이며 이름만 다를 뿐 기능적 차이는 없음
-
-**정답: B**
-해설: Domain은 광역 컨테이너(KMS·중복 제거·청구), Repository는 운영 단위.
+**Answer: B**
+Explanation: Scoped namespace + a single registry + lock files are the standard three-part defense. A does the opposite and exposes the attack surface. C is unrealistic, and D lacks automation.
 
 ---
 
-**문제 3.** CodeBuild에서 CodeArtifact 인증 토큰의 최대 수명은?
+**Question 2.** What is the biggest difference between a domain and a repository?
 
-A) 1시간 — STS AssumeRole 기본 세션과 동일한 짧은 수명
-B) 12시간
-C) 24시간 — 야간 멀티스테이지 릴리스를 하루 한 번 토큰으로 커버
-D) 무제한 — `login` 후 명시적 폐기 전까지 토큰이 유효
+A) A domain is a separation by package format such as npm/Maven, and a repository is a separation by environment such as dev/prod
+B) A domain provides asset deduplication + a single KMS key, and a repository is the unit for permissions and upstreams
+C) A domain is a tag-like unit that only separates billing, and a repository handles the actual permissions and storage
+D) They are the same container with different names and there is no functional difference
 
-**정답: B**
-해설: `get-authorization-token`의 기본·최대값 모두 12시간. 빌드 직전 갱신이 패턴.
-
----
-
-**문제 4.** npmjs.com에 있던 의존성이 unpublish됐다. CodeArtifact를 통해 가져오던 빌드는?
-
-A) Upstream이 외부와 동기화되며 unpublish가 전파돼 다음 빌드부터 즉시 실패
-B) CodeArtifact의 Upstream 캐시본이 남아 있다면 계속 사용 가능(left-pad 사고 방지)
-C) 캐시는 휘발성이라 사라지므로 AWS Support에 요청해 백업본을 복구해야 함
-D) CodeArtifact가 자동으로 GitHub Packages 등 다른 레지스트리로 재라우팅해 받아옴
-
-**정답: B**
-해설: Upstream 캐시의 가장 큰 가치 — 외부 삭제에도 캐시본 보존. 2016 left-pad 사고가 이 기능의 동기.
+**Answer: B**
+Explanation: A domain is a broad container (KMS, deduplication, billing), and a repository is the operational unit.
 
 ---
 
-**문제 5.** 빌드 봇만 패키지를 게시하고 개발자는 읽기만 가능하게 하려면?
+**Question 3.** What is the maximum lifetime of a CodeArtifact authorization token in CodeBuild?
 
-A) Repository Policy에서 Publish 권한을 CI Role로 제한, Read는 모든 Developer Role에 허용
-B) Publish용 Domain과 Read용 Domain 두 개로 분리해 권한 경계를 물리적으로 나눔
-C) 패키지가 담긴 S3 버킷의 버킷 정책만으로 게시·읽기 권한을 분리해 제어
-D) GitHub Branch Protection으로 게시 브랜치 머지를 CI만 가능하게 해 publish를 통제
+A) 1 hour — a short lifetime identical to the default STS AssumeRole session
+B) 12 hours
+C) 24 hours — a token once per day covers an overnight multi-stage release
+D) Unlimited — after `login`, the token remains valid until it is explicitly revoked
 
-**정답: A**
-해설: Repository Policy + IAM Role 조합으로 액션별 분리. 표준 패턴.
-
----
-
-**문제 6.** CodeArtifact가 지원하지 않는 패키지 형식은?
-
-A) npm — Node.js 패키지 레지스트리 프로토콜 네이티브 지원
-B) Maven — Java 빌드 의존성 저장소로 `~/.m2/settings.xml` 연동
-C) Docker/OCI 이미지
-D) PyPI — Python 패키지 인덱스 프로토콜 지원
-
-**정답: C**
-해설: Docker/OCI 이미지는 ECR. CodeArtifact는 라이브러리 패키지(npm/Maven/PyPI/NuGet/Generic/Ruby/Swift/Cargo) 저장소.
+**Answer: B**
+Explanation: Both the default and the maximum of `get-authorization-token` are 12 hours. The pattern is to refresh it right before the build.
 
 ---
 
-**문제 7.** 크로스 계정 CodeArtifact 사용 시 필수 인자는?
+**Question 4.** A dependency that was on npmjs.com has been unpublished. What happens to builds that were pulling it through CodeArtifact?
 
-A) `--region`만 — 소비자 계정과 같은 리전을 지정하면 cross-account가 동작
-B) `--domain-owner`(Domain 소유 계정 ID) + Repository Policy의 grant + KMS 키 정책
-C) `--profile`만 — 소유자 계정 자격을 가진 named profile만 지정하면 충분
-D) `--external` 플래그로 외부 계정 접근을 명시적으로 활성화
+A) The upstream syncs with the external registry and the unpublish propagates, so builds fail immediately starting with the next build
+B) They can keep using it as long as the CodeArtifact upstream cached copy remains (preventing a left-pad incident)
+C) The cache is volatile and disappears, so you must ask AWS Support to restore a backup copy
+D) CodeArtifact automatically reroutes to another registry such as GitHub Packages and fetches it from there
 
-**정답: B**
-해설: cross-account 시 Domain Policy + Repository Policy + KMS 키 정책이 모두 grant되어야 함. `--domain-owner`로 소유자 명시 필수.
-
----
-
-**문제 8.** SolarWinds 같은 공급망 사고를 빌드 인프라 수준에서 대응하려 한다. 가장 적절한 조합은?
-
-A) CodeArtifact + SBOM 자동 생성 + Sigstore/cosign 서명 + 배포 전 서명 검증
-B) GitHub Actions 워크플로 권한과 브랜치 보호만 강화해 빌드 진입점을 좁힘
-C) 빌드 Role의 IAM Policy를 최소 권한으로 조여 빌드 시스템 침해 영향을 축소
-D) 아티팩트 S3 버킷에 SSE-KMS 암호화를 적용해 저장된 산출물을 보호
-
-**정답: A**
-해설: 공급망 무결성은 단일 도구로 해결 안 됨. 패키지 저장(CodeArtifact) + 구성요소 목록(SBOM) + 서명(cosign) + 검증(배포 전 verify) 4단계가 표준. SLSA L3 패턴.
+**Answer: B**
+Explanation: The biggest value of the upstream cache — the cached copy is preserved even if the package is deleted externally. The 2016 left-pad incident motivated this feature.
 
 ---
 
-**문제 9.** Repository Policy로 다른 계정에 read 허용했는데 cross-account 접근이 실패한다. 가장 먼저 의심할 것은?
+**Question 5.** How can you ensure that only the build bot can publish packages while developers can only read?
 
-A) 접근 주체가 IAM User인지 assumed-role인지 차이로 Principal 매칭이 안 됨
-B) Domain Policy 또는 KMS 키 정책의 cross-account grant 누락
-C) 소비자 계정 서브넷의 Network ACL이 CodeArtifact 엔드포인트 트래픽을 막음
-D) Route 53 DNS 해석 실패로 CodeArtifact 엔드포인트에 도달하지 못함
+A) In the repository policy, restrict the Publish permission to the CI role and allow Read for all developer roles
+B) Split into two domains, one for Publish and one for Read, to physically separate the permission boundary
+C) Control publish and read permissions using only the bucket policy of the S3 bucket holding the packages
+D) Use GitHub Branch Protection so that only CI can merge the publishing branch, thereby controlling publishing
 
-**정답: B**
-해설: Domain Policy가 광역 우선 평가. Repository Policy 허용해도 Domain에서 차단되면 실패. KMS 키 정책에 사용 권한 grant도 필수.
+**Answer: A**
+Explanation: Separate by action using a combination of repository policy + IAM roles. This is the standard pattern.
 
 ---
 
-**문제 10.** Helm Chart 50개를 사내 안전 저장소에 두려 한다. 가장 적절한 서비스는?
+**Question 6.** Which package format does CodeArtifact not support?
 
-A) CodeArtifact Generic 패키지 형식으로 chart tarball을 버저닝해 저장
-B) ECR(OCI 호환)
-C) S3에 chart를 올리고 ChartMuseum 같은 helm registry를 직접 구축·운영
-D) DynamoDB에 chart 메타데이터와 base64 인코딩한 tarball을 저장
+A) npm — native support for the Node.js package registry protocol
+B) Maven — a Java build dependency repository integrated through `~/.m2/settings.xml`
+C) Docker/OCI images
+D) PyPI — supports the Python package index protocol
 
-**정답: B**
-해설: Helm 3+는 OCI 호환 → ECR이 네이티브 지원. 컨테이너 이미지와 같은 인프라(스캔, 서명, 권한) 활용 가능. CodeArtifact Generic도 가능하지만 권장은 ECR.
+**Answer: C**
+Explanation: Docker/OCI images belong in Amazon ECR. CodeArtifact is a repository for library packages (npm/Maven/PyPI/NuGet/Generic/Ruby/Swift/Cargo).
+
+---
+
+**Question 7.** Which arguments are required when using CodeArtifact across accounts?
+
+A) Only `--region` — specifying the same Region as the consumer account makes cross-account work
+B) `--domain-owner` (the account ID that owns the domain) + a grant in the repository policy + the KMS key policy
+C) Only `--profile` — specifying a named profile that holds the owner account credentials is enough
+D) The `--external` flag to explicitly enable access from an external account
+
+**Answer: B**
+Explanation: For cross-account use, the domain policy + repository policy + KMS key policy must all grant access. Specifying the owner with `--domain-owner` is required.
+
+---
+
+**Question 8.** You want to respond to a supply chain incident like SolarWinds at the build infrastructure level. What is the most appropriate combination?
+
+A) CodeArtifact + automatic SBOM generation + Sigstore/cosign signing + signature verification before deployment
+B) Only tighten GitHub Actions workflow permissions and branch protection to narrow the build entry point
+C) Tighten the build role IAM policy to least privilege to reduce the impact of a build system compromise
+D) Apply SSE-KMS encryption to the artifact S3 bucket to protect the stored artifacts
+
+**Answer: A**
+Explanation: Supply chain integrity cannot be solved by a single tool. The standard has four stages: package storage (CodeArtifact) + a bill of components (SBOM) + signing (cosign) + verification (verify before deployment). This is the SLSA L3 pattern.
+
+---
+
+**Question 9.** You allowed read access to another account through a repository policy, but cross-account access fails. What should you suspect first?
+
+A) The principal matching fails because of the difference between an IAM user and an assumed role
+B) A missing cross-account grant in the domain policy or the KMS key policy
+C) The network ACL of the consumer account subnet blocks traffic to the CodeArtifact endpoint
+D) A Route 53 DNS resolution failure prevents reaching the CodeArtifact endpoint
+
+**Answer: B**
+Explanation: The domain policy is evaluated first, as the broader scope. Even if the repository policy allows access, it fails if the domain blocks it. A grant of usage permission in the KMS key policy is also required.
+
+---
+
+**Question 10.** You want to keep 50 Helm charts in a secure internal repository. Which service is most appropriate?
+
+A) Store the chart tarballs as versioned packages in CodeArtifact using the Generic package format
+B) Amazon ECR (OCI compatible)
+C) Upload the charts to S3 and build and operate a helm registry such as ChartMuseum yourself
+D) Store the chart metadata and base64-encoded tarballs in DynamoDB
+
+**Answer: B**
+Explanation: Helm 3+ is OCI compatible → ECR supports it natively. You can reuse the same infrastructure as container images (scanning, signing, permissions). CodeArtifact Generic is also possible, but ECR is recommended.
 
 ---
 
 ## 📌 Today's Summary
 
-CodeArtifact의 진짜 가치는 "AWS-native npm/Maven 미러"가 아니라 **소프트웨어 공급망의 단일 진입점을 만들어 통제 가능한 신뢰 경계를 그리는 것**이다. Domain은 자산 중복 제거와 KMS 단일성을 담당하고, Repository는 권한·Upstream·외부 연결의 단위다. 표준 구조는 production → shared → external 3단으로, 모든 외부 패키지가 shared를 거치도록 강제해 차단/감사/스캐닝의 단일 지점을 만든다. Dependency Confusion 방어는 scoped namespace + 단일 registry + lock 파일 3종이 정답이고, SLSA/SBOM/Sigstore는 신흥 공급망 무결성 표준이다. Docker/OCI는 CodeArtifact 아닌 ECR임을 잊지 말 것. 내일은 CodeBuild에서 이 패키지들을 실제 어떻게 빌드 환경에 주입하는지로 넘어간다.
+The real value of CodeArtifact is not being an "AWS-native npm/Maven mirror" but **creating a single entry point to the software supply chain and drawing a controllable trust boundary**. The domain handles asset deduplication and a single KMS key, and the repository is the unit for permissions, upstreams, and external connections. The standard structure is three tiers, production → shared → external, forcing all external packages through shared to create a single point for blocking, auditing, and scanning. The answer for Dependency Confusion defense is the three-part combination of scoped namespace + a single registry + lock files, and SLSA/SBOM/Sigstore are the emerging standards for supply chain integrity. Do not forget that Docker/OCI belongs in ECR, not CodeArtifact. Tomorrow we move on to how these packages are actually injected into the build environment in CodeBuild.

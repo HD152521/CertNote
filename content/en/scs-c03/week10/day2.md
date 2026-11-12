@@ -133,62 +133,62 @@ Key: **Evidence preservation (2) comes before containment (3), or at least befor
 
 ## 📝 Practice Questions
 
-**문제 1.** GuardDuty가 EC2 인스턴스의 활성 C2 통신을 탐지했다. 휘발성 증거를 잃지 않으면서 즉시 봉쇄하려면 첫 조치로 가장 적절한 것은?
+**Question 1.** GuardDuty detected active C2 communication on an EC2 instance. Which first action is most appropriate to contain it immediately without losing volatile evidence?
 
-A) 인스턴스를 즉시 terminate한다  
-B) 인스턴스를 stop한다  
-C) 인스턴스를 실행 상태로 유지한 채 격리 전용 보안 그룹으로 교체해 네트워크를 차단한다  
-D) 인스턴스의 IAM 사용자를 삭제한다  
+A) Terminate the instance immediately  
+B) Stop the instance  
+C) Keep the instance running and replace its security group with an isolation-only security group to block the network  
+D) Delete the instance's IAM user  
 
-**정답: C**  
-해설: 종료나 중지는 RAM·네트워크 상태 등 휘발성 증거를 파괴하므로 첫 수단이 아니다. 실행 상태를 유지한 채 격리 보안 그룹으로 교체해 통신만 끊으면 봉쇄와 휘발성 증거 보존을 양립할 수 있다. EC2는 IAM 사용자가 아니라 인스턴스 역할로 권한을 받으므로 사용자 삭제는 핵심 조치가 아니다.
-
----
-
-**문제 2.** 침해 EC2가 인스턴스 프로파일을 통해 STS 임시 자격증명을 발급받았고, 공격자가 IMDS에서 이를 탈취했을 가능성이 있다. 인스턴스를 격리한 것만으로 부족한 이유와 추가 조치는?
-
-A) 격리하면 임시 키도 자동 만료되므로 추가 조치 불필요  
-B) 탈취된 임시 키는 인스턴스와 분리되어 만료 전까지 외부에서도 유효하므로, 역할에 aws:TokenIssueTime 기반 Deny를 추가해 기존 세션을 폐기한다  
-C) 인스턴스를 재부팅한다  
-D) 보안 그룹을 하나 더 추가한다  
-
-**정답: B**  
-해설: STS 임시 자격증명은 발급 후 인스턴스와 독립적으로 존재하는 bearer token이라, 격리해도 이미 유출된 키는 만료 시점까지 외부에서 유효하다. 역할에 aws:TokenIssueTime DateLessThan Deny를 추가하면(콘솔의 Revoke active sessions) 지정 시점 이전 발급 토큰을 즉시 무효화한다. 재부팅·보안 그룹 추가는 유출된 토큰을 무력화하지 못한다.
+**Answer: C**  
+Explanation: Terminating or stopping destroys volatile evidence such as RAM and network state, so it is not the first step. Keeping the instance running and replacing it with an isolation security group to cut only the communication achieves both containment and preservation of volatile evidence. EC2 receives permissions through an instance role, not an IAM user, so deleting a user is not a key action.
 
 ---
 
-**문제 3.** 포렌식 증거로 사용할 EBS 스냅샷의 무결성(chain of custody)을 보장하기 위한 모범은?
+**Question 2.** A compromised EC2 instance was issued STS temporary credentials through its instance profile, and the attacker may have stolen them from IMDS. Why is isolating the instance alone not enough, and what additional action is needed?
 
-A) 스냅샷을 원본 계정에 두고 운영팀 누구나 접근 가능하게 둔다  
-B) 스냅샷을 별도 포렌식 계정으로 공유하고, 증거 S3에 Object Lock(WORM)을 걸며 모든 접근을 CloudTrail로 기록한다  
-C) 스냅샷을 즉시 삭제하고 메모만 남긴다  
-D) 스냅샷을 공개 공유한다  
+A) Isolation also expires the temporary keys automatically, so no additional action is needed  
+B) The stolen temporary keys are separate from the instance and remain valid externally until they expire, so add an aws:TokenIssueTime-based Deny to the role to revoke existing sessions  
+C) Reboot the instance  
+D) Add one more security group  
 
-**정답: B**  
-해설: 증거는 변경 불가·접근 추적이 가능해야 법적 효력이 있다. 별도 포렌식 계정 공유로 원본 침해 시에도 보존하고, Object Lock으로 변경·삭제를 막으며, CloudTrail로 접근을 기록하는 것이 chain of custody의 모범이다. 누구나 접근·삭제·공개 공유는 증거 능력을 파괴한다.
-
----
-
-**문제 4.** 격리 보안 그룹으로 교체했는데도 진행 중이던 공격자 C2 세션이 한동안 끊기지 않았다. 원인과 보조 조치는?
-
-A) 보안 그룹은 stateless라 즉시 끊겨야 하는데 버그다  
-B) 보안 그룹은 stateful이라 이미 established된 연결이 유지될 수 있으므로, NACL(stateless 양방향 차단)이나 ENI 분리/재연결로 기존 세션을 강제 종료한다  
-C) 인스턴스 타입이 작아서다  
-D) NACL은 connection을 더 오래 유지하므로 NACL을 제거한다  
-
-**정답: B**  
-해설: 보안 그룹은 stateful이라 응답 트래픽을 자동 허용하고 기존 established 연결을 즉시 끊지 않을 수 있다. 진행 중 세션을 강제 종료하려면 stateless로 양방향을 명시 차단하는 NACL을 보조하거나 ENI를 분리/재연결한다. stateless인 것은 NACL이고, 인스턴스 타입과 무관하다.
+**Answer: B**  
+Explanation: STS temporary credentials are bearer tokens that exist independently of the instance after issuance, so even after isolation, keys that have already leaked remain valid externally until they expire. Adding an aws:TokenIssueTime DateLessThan Deny to the role (Revoke active sessions in the console) immediately invalidates tokens issued before the specified time. Rebooting or adding a security group does not neutralize the leaked tokens.
 
 ---
 
-**문제 5.** 침해 EC2 대응 런북의 단계 순서로 가장 적절한 것은?
+**Question 3.** What is the best practice for guaranteeing the integrity (chain of custody) of an EBS snapshot used as forensic evidence?
 
-A) 종료 → 스냅샷 → 격리 → 분석  
-B) 식별/분류 → 증거 보존(스냅샷·메모리 덤프) → 격리(봉쇄) → 자격증명 세션 폐기 → 근절/복구  
-C) 격리 → 종료 → IAM 사용자 삭제  
-D) 분석 → 격리 → 식별  
+A) Leave the snapshot in the original account, accessible to anyone on the operations team  
+B) Share the snapshot to a separate forensic account, apply Object Lock (WORM) to the evidence S3 bucket, and log all access with CloudTrail  
+C) Delete the snapshot immediately and keep only notes  
+D) Share the snapshot publicly  
 
-**정답: B**  
-해설: 정석은 식별·분류로 시작해, 인스턴스가 실행 중일 때 휘발성·디스크 증거를 보존하고, 네트워크 격리로 봉쇄한 뒤, 유출 가능한 임시 자격증명 세션을 폐기하고, 마지막에 근절·복구로 패치된 AMI 재배포 후 종료한다. 종료를 먼저 하면 휘발성 증거가 소실되고, 분석을 식별보다 앞세우는 순서는 성립하지 않는다.
+**Answer: B**  
+Explanation: Evidence must be immutable and have traceable access to have legal validity. Sharing to a separate forensic account preserves it even if the original is compromised, Object Lock prevents modification and deletion, and logging access with CloudTrail is the chain of custody best practice. Access by anyone, deletion, or public sharing destroys evidentiary value.
+
+---
+
+**Question 4.** Even after the security group was replaced with an isolation security group, the attacker's in-progress C2 session was not cut for a while. What are the cause and the supplementary action?
+
+A) Security groups are stateless, so it should have been cut immediately; this is a bug  
+B) Security groups are stateful, so already established connections may persist; forcibly terminate the existing session with a NACL (stateless bidirectional block) or by detaching and reattaching the ENI  
+C) The instance type is too small  
+D) A NACL keeps connections open longer, so remove the NACL  
+
+**Answer: B**  
+Explanation: Security groups are stateful, so they automatically allow response traffic and may not cut existing established connections immediately. To forcibly terminate an in-progress session, add a NACL that explicitly blocks both directions statelessly, or detach and reattach the ENI. It is the NACL that is stateless, and the cause is unrelated to the instance type.
+
+---
+
+**Question 5.** Which is the most appropriate step order for a compromised EC2 response runbook?
+
+A) Terminate -> snapshot -> isolate -> analyze  
+B) Identify/triage -> preserve evidence (snapshot, memory dump) -> isolate (contain) -> revoke credential sessions -> eradicate/recover  
+C) Isolate -> terminate -> delete the IAM user  
+D) Analyze -> isolate -> identify  
+
+**Answer: B**  
+Explanation: The standard approach starts with identification and triage, preserves volatile and disk evidence while the instance is running, contains by network isolation, revokes the potentially leaked temporary credential sessions, and finally eradicates and recovers by redeploying a patched AMI and then terminating. Terminating first loses volatile evidence, and putting analysis before identification is not a valid order.
 
 ---

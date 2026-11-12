@@ -210,96 +210,96 @@ Next article presents **Week 2 integrated scenarios 12 questions**. Organization
 
 ## 📝 Practice Questions
 
-**문제 1.** 100 AWS accounts + Okta IdP + console/CLI SSO. Best?
+**Question 1.** 100 AWS accounts + Okta IdP + console/CLI SSO. Best?
 
 A) Register SAML IdP in each account
 B) IAM Identity Center + Okta (SCIM + SAML)
 C) Cognito Hosted UI
 D) Direct Connect + AD
 
-**정답: B**
-해설: Multi-account SSO = IDC. Okta integrates via SCIM (user sync) + SAML (auth). 100 accounts managed together. C is customer-facing. D is networking.
+**Answer: B**
+Explanation: Multi-account SSO = IDC. Okta integrates via SCIM (user sync) + SAML (auth). 100 accounts managed together. C is customer-facing. D is networking.
 
 ---
 
-**문제 2.** Assign Permission Set to account·group. Result?
+**Question 2.** Assign Permission Set to account·group. Result?
 
 A) IAM User created
 B) Account's `AWSReservedSSO_*` IAM Role auto-created
 C) Resource Policy updated
 D) SCP created
 
-**정답: B**
-해설: IDC backend auto-creates IAM Role. User selecting account in SSO portal = AssumeRole-ing that Role. Role name format: `AWSReservedSSO_<PermissionSet>_<random>`.
+**Answer: B**
+Explanation: IDC backend auto-creates IAM Role. User selecting account in SSO portal = AssumeRole-ing that Role. Role name format: `AWSReservedSSO_<PermissionSet>_<random>`.
 
 ---
 
-**문제 3.** B2C app customer signup·login. Which service?
+**Question 3.** B2C app customer signup·login. Which service?
 
 A) IAM Identity Center
 B) Cognito User Pool
 C) IAM User
 D) Directory Service
 
-**정답: B**
-해설: Customer auth = Cognito. Employees = IDC. Never confuse this one line.
+**Answer: B**
+Explanation: Customer auth = Cognito. Employees = IDC. Never confuse this one line.
 
 ---
 
-**문제 4.** Consolidated Billing benefit that's NOT one?
+**Question 4.** Consolidated Billing benefit that's NOT one?
 
 A) RI/SP sharing
 B) Volume discount pooling
 C) Security boost
 D) Single invoice
 
-**정답: C**
-해설: Billing consolidation isn't security itself (but Org-level SCP/CT separately boost security). RI/SP share ON default.
+**Answer: C**
+Explanation: Billing consolidation isn't security itself (but Org-level SCP/CT separately boost security). RI/SP share ON default.
 
 ---
 
-**문제 5.** Okta employee resigns. Revoke from ALL AWS accounts fastest. Best?
+**Question 5.** Okta employee resigns. Revoke from ALL AWS accounts fastest. Best?
 
 A) Delete each account's IAM User
 B) Okta deactivate → IDC SCIM sync auto-revokes all (within 5 min)
 C) SCP block
 D) CloudTrail monitor
 
-**정답: B**
-해설: Okta deactivate → SCIM → IDC → Role access blocked. ~5 min. JIT provisioning waits for next login so SCIM dramatically faster. Post-Twilio (2020) phishing response standard.
+**Answer: B**
+Explanation: Okta deactivate → SCIM → IDC → Role access blocked. ~5 min. JIT provisioning waits for next login so SCIM dramatically faster. Post-Twilio (2020) phishing response standard.
 
 ---
 
-**문제 6.** Shorten IDC session to 1 hour. Why?
+**Question 6.** Shorten IDC session to 1 hour. Why?
 
 A) Cost saving
 B) Security — minimize exposed-token impact (especially admin)
 C) Performance
 D) IAM simplification
 
-**정답: B**
-해설: Short session = stolen token damages minimized. Admin 1h, dev 4h, readonly 8h standard. break-glass pattern: PowerUser day-to-day, Admin session temporarily for admin work.
+**Answer: B**
+Explanation: Short session = stolen token damages minimized. Admin 1h, dev 4h, readonly 8h standard. break-glass pattern: PowerUser day-to-day, Admin session temporarily for admin work.
 
 ---
 
-**문제 7.** 100 projects, each separate S3·EC2. User accesses only their project. RBAC = 100 Role explosion. Solution?
+**Question 7.** 100 projects, each separate S3·EC2. User accesses only their project. RBAC = 100 Role explosion. Solution?
 
 A) Create 100 Permission Sets
 B) ABAC + IDC (user attribute → session tag → resource tag match)
 C) 100 OUs
 D) 100 accounts
 
-**정답: B**
-해설: ABAC standard (NIST SP 800-162). IdP user attribute = Project → session tag → resource tag matching. One policy handles 100 projects. New project: set attribute, policy unchanged.
+**Answer: B**
+Explanation: ABAC standard (NIST SP 800-162). IdP user attribute = Project → session tag → resource tag matching. One policy handles 100 projects. New project: set attribute, policy unchanged.
 
 ---
 
-**문제 8.** 80 accounts: some 24/7, some 9-18h. Minimize RI cost?
+**Question 8.** 80 accounts: some 24/7, some 9-18h. Minimize RI cost?
 
 A) RI Sharing OFF
 B) Consolidated Billing + RI Sharing ON (default) + Compute Savings Plans
 C) On-Demand only
 D) Spot only
 
-**정답: B**
-해설: RI Sharing ON lets night-unused RI used by day-shift account. Compute SP covers EC2·Fargate·Lambda most flexible. Cost precise split? Sharing OFF or use Cost Allocation Tags.
+**Answer: B**
+Explanation: RI Sharing ON lets night-unused RI used by day-shift account. Compute SP covers EC2·Fargate·Lambda most flexible. Cost precise split? Sharing OFF or use Cost Allocation Tags.

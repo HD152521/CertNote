@@ -188,62 +188,62 @@ Organization CloudTrail activated from the Management Account automatically appl
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 OU에 `FullAWSAccess`가 그대로 붙어 있고, IAM 사용자에게 `s3:GetObject` Allow가 부여돼 있다. 그런데 상위 Root에 붙은 SCP가 `s3:*`를 Deny한다. 이 사용자는 S3 객체를 읽을 수 있는가?
+**Question 1.** An OU still has `FullAWSAccess` attached, and an IAM user has been granted an `s3:GetObject` Allow. However, an SCP attached to the parent Root denies `s3:*`. Can this user read S3 objects?
 
-A) 읽을 수 있다 — IAM Allow가 SCP보다 우선하므로  
-B) 읽을 수 없다 — SCP의 명시적 Deny가 IAM Allow를 무력화하므로  
-C) 읽을 수 있다 — OU에 FullAWSAccess가 있으므로  
-D) 계정 관리자만 읽을 수 있다  
+A) Yes — because the IAM Allow takes precedence over the SCP  
+B) No — because the explicit Deny in the SCP overrides the IAM Allow  
+C) Yes — because the OU has FullAWSAccess  
+D) Only the account administrator can read them  
 
-**정답: B**  
-해설: 유효 권한은 SCP 경계와 IAM Allow의 교집합에서 모든 Deny를 뺀 것이다. 상위 노드의 SCP가 명시적으로 거부하면 하위 어디서 Allow가 있어도 액세스가 불가능하다. IAM Allow가 SCP보다 우선한다는 것은 오해이며, FullAWSAccess는 거부를 무력화하지 못한다. 계정 관리자라도 SCP Deny는 동일하게 적용된다(단 관리 계정 멤버는 예외).
-
----
-
-**문제 2.** 규제 요구로 워크로드를 ap-northeast-2 외부에서 생성하지 못하게 SCP로 막으려 한다. 가장 올바른 설계는?
-
-A) 모든 액션을 ap-northeast-2 외에서 Deny하고 예외 없음  
-B) `NotAction`으로 IAM·CloudFront·Route 53 등 글로벌 서비스를 예외하고 `aws:RequestedRegion`이 허용 리전이 아닐 때 Deny하며 us-east-1을 허용 목록에 포함  
-C) 각 계정의 IAM 정책에서 리전을 제한  
-D) NACL로 타 리전 트래픽을 차단  
-
-**정답: B**  
-해설: 리전 잠금 SCP는 글로벌 서비스를 `NotAction`으로 예외하고 `aws:RequestedRegion` 조건으로 비허용 리전을 거부하되, 다수 글로벌 API가 호출되는 us-east-1을 허용 목록에 넣어야 콘솔·ACM·CloudFront가 깨지지 않는다. 예외 없는 전면 Deny는 글로벌 서비스를 함께 죽인다. IAM 정책은 계정마다 분산돼 거버넌스로 부적합하고, NACL은 API 리전 통제와 무관하다.
+**Answer: B**  
+Explanation: The effective permissions are the intersection of the SCP boundary and the IAM Allow, minus all Denies. If an SCP on a higher node explicitly denies, access is impossible no matter where an Allow exists below. It is a misconception that an IAM Allow takes precedence over an SCP, and FullAWSAccess does not override a Deny. Even an account administrator is subject to the SCP Deny in the same way (except members of the management account).
 
 ---
 
-**문제 3.** 보안 팀이 GuardDuty를 조직 전역에서 운영하되 관리 계정의 결제·조직 권한은 받지 않게 하려 한다. 올바른 방법은?
+**Question 2.** Due to a regulatory requirement, we want to use an SCP to prevent workloads from being created outside ap-northeast-2. What is the most correct design?
 
-A) 관리 계정에 보안 팀 IAM 사용자를 만든다  
-B) Audit 계정을 GuardDuty 위임 관리자로 등록(register-delegated-administrator)하고 보안 팀은 그 계정에서 운영  
-C) 각 워크로드 계정에서 GuardDuty를 개별 운영  
-D) 루트 사용자를 공유한다  
+A) Deny all actions outside ap-northeast-2 with no exceptions  
+B) Use `NotAction` to exempt global services such as IAM, CloudFront, and Route 53, Deny when `aws:RequestedRegion` is not an allowed Region, and include us-east-1 in the allow list  
+C) Restrict Regions in each account's IAM policies  
+D) Block traffic to other Regions with NACLs  
 
-**정답: B**  
-해설: 위임 관리자 모델은 관리 계정의 공격 표면을 줄이고 직무를 분리한다. Audit 계정을 GuardDuty 위임 관리자로 등록하면 보안 팀이 결제·조직 권한 없이 조직 전역 탐지를 운영할 수 있다. 관리 계정에 사용자를 두면 blast radius가 커지고, 계정별 개별 운영은 집계·일관성을 잃으며, 루트 공유는 직무 분리와 정면 충돌한다.
-
----
-
-**문제 4.** 다음 중 SCP로 통제할 수 *없는* 대상은?
-
-A) 워크로드 계정 관리자의 ec2:RunInstances 권한 상한  
-B) 멤버 계정에서 CloudTrail 로깅 중지 시도  
-C) 관리 계정에 속한 IAM 사용자의 액션  
-D) 멤버 계정의 특정 리전 사용 차단  
-
-**정답: C**  
-해설: SCP는 관리 계정(Management Account)의 멤버에게는 적용되지 않는다. 따라서 관리 계정 IAM 사용자의 액션은 SCP로 제한할 수 없고, 이 때문에 관리 계정에 워크로드를 두지 말라는 원칙이 나온다. 나머지는 모두 SCP의 정상 통제 범위로, 권한 상한·보안 서비스 비활성화 방지·리전 차단은 SCP의 전형적 용도다.
+**Answer: B**  
+Explanation: A Region-lock SCP exempts global services with `NotAction` and denies non-allowed Regions with an `aws:RequestedRegion` condition, but us-east-1, where many global APIs are called, must be in the allow list so that the console, ACM, and CloudFront do not break. A blanket Deny with no exceptions kills global services too. IAM policies are distributed per account and unsuitable for governance, and NACLs are unrelated to API Region control.
 
 ---
 
-**문제 5.** AWS SRA가 권장하는 중앙 보안 계정 모델에서 불변 로그 보관을 전담하는 계정과 그 보호 수단의 조합으로 가장 적절한 것은?
+**Question 3.** The security team wants to operate GuardDuty organization-wide without receiving the management account's billing and organization permissions. What is the correct method?
 
-A) Audit 계정 — Security Hub로 로그를 보관  
-B) Log Archive 계정 — S3 Object Lock, MFA Delete, 전용 KMS 키, 엄격한 버킷 정책으로 불변성 확보  
-C) 관리 계정 — 모든 로그를 직접 저장  
-D) 각 워크로드 계정 — 로컬에 로그 보관  
+A) Create security team IAM users in the management account  
+B) Register the Audit account as the GuardDuty delegated administrator (register-delegated-administrator) and have the security team operate from that account  
+C) Operate GuardDuty individually in each workload account  
+D) Share the root user  
 
-**정답: B**  
-해설: SRA는 탐지 집계·대응을 담당하는 Audit(Security Tooling) 계정과, 변경 불가 로그를 보관하는 Log Archive 계정을 분리한다. Log Archive는 S3 Object Lock(WORM), MFA Delete, 전용 KMS 키, 최소 권한 버킷 정책으로 로그의 위·변조·삭제를 막는다. Audit 계정은 보관이 아니라 분석·대응 허브이고, 관리 계정은 결제·조직 전용이며, 워크로드 로컬 보관은 탈취 시 함께 삭제될 위험이 있어 부적합하다.
+**Answer: B**  
+Explanation: The delegated administrator model reduces the attack surface of the management account and separates duties. Registering the Audit account as the GuardDuty delegated administrator lets the security team operate organization-wide detection without billing or organization permissions. Putting users in the management account enlarges the blast radius, operating individually per account loses aggregation and consistency, and sharing root directly conflicts with separation of duties.
+
+---
+
+**Question 4.** Which of the following can NOT be controlled by an SCP?
+
+A) The upper limit of ec2:RunInstances permission for a workload account administrator  
+B) An attempt to stop CloudTrail logging in a member account  
+C) Actions of an IAM user belonging to the management account  
+D) Blocking use of a specific Region in a member account  
+
+**Answer: C**  
+Explanation: SCPs do not apply to members of the management account. Therefore the actions of a management account IAM user cannot be restricted by an SCP, which is why the principle of not placing workloads in the management account exists. All the others are within the normal control scope of SCPs: capping permissions, preventing disabling of security services, and blocking Regions are typical uses of SCPs.
+
+---
+
+**Question 5.** In the central security account model recommended by the AWS SRA, which combination of the account dedicated to immutable log retention and its protection measures is most appropriate?
+
+A) Audit account — retain logs with Security Hub  
+B) Log Archive account — ensure immutability with S3 Object Lock, MFA Delete, a dedicated KMS key, and a strict bucket policy  
+C) Management account — store all logs directly  
+D) Each workload account — retain logs locally  
+
+**Answer: B**  
+Explanation: The SRA separates the Audit (Security Tooling) account, which handles detection aggregation and response, from the Log Archive account, which retains immutable logs. The Log Archive account prevents log tampering and deletion with S3 Object Lock (WORM), MFA Delete, a dedicated KMS key, and a least-privilege bucket policy. The Audit account is an analysis and response hub, not for retention, the management account is dedicated to billing and organization, and keeping logs locally in workloads is unsuitable because they could be deleted along with the workload if it is compromised.
 
 ---

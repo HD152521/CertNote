@@ -121,62 +121,62 @@ Real-time endpoint operations follow three axes: "Configuration (zero-downtime s
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 회사가 고객 1만 명 각각에 대해 동일한 XGBoost 프레임워크로 학습된 개인화 모델을 운영해야 한다. 모든 모델을 개별 엔드포인트로 띄우는 비용은 감당할 수 없다. 가장 적합한 방식은?
+**Question 1.** A company must operate a personalized model for each of its 10,000 customers, all trained with the same XGBoost framework. The cost of hosting every model on its own endpoint is unaffordable. Which approach is MOST appropriate?
 
-A) 모델 1만 개에 대해 각각 Real-time Endpoint 생성  
-B) 멀티모델 엔드포인트(MME)  
-C) 멀티컨테이너 엔드포인트 Direct 모드  
+A) Create a separate real-time endpoint for each of the 10,000 models  
+B) Multi-model endpoint (MME)  
+C) Multi-container endpoint in Direct mode  
 D) Batch Transform  
 
-**정답: B**  
-해설: "수천~수만 개의 동일 프레임워크 모델 + 비용 절감"은 멀티모델 엔드포인트의 정의다. 공유 인스턴스에 모델을 동적 로딩한다. 개별 엔드포인트(A)는 비용 폭증, MCE(C)는 서로 다른 컨테이너용, Batch(D)는 온라인 개인화 추론에 부적합하다.
+**Answer: B**  
+Explanation: "Thousands to tens of thousands of models on the same framework + cost savings" is the definition of a multi-model endpoint. It dynamically loads models onto shared instances. Individual endpoints (A) cause costs to explode, MCE (C) is for different containers, and Batch (D) is unsuitable for online personalized inference.
 
 ---
 
-**문제 2.** 실시간 엔드포인트의 인스턴스 수를, 인스턴스당 초당 호출 수를 일정하게 유지하도록 자동 조절하고 싶다. 가장 적절한 오토스케일링 정책은?
+**Question 2.** You want to automatically adjust the number of instances behind a real-time endpoint so that the number of invocations per second per instance stays constant. Which autoscaling policy is MOST appropriate?
 
 A) Scheduled Scaling  
 B) Step Scaling  
 C) Target Tracking (SageMakerVariantInvocationsPerInstance)  
-D) 수동으로 UpdateEndpoint 호출  
+D) Manually call UpdateEndpoint  
 
-**정답: C**  
-해설: 목표 지표값을 유지하도록 자동 조절하는 것은 Target Tracking이며, 인스턴스당 호출 수를 추적하는 기본 지표가 SageMakerVariantInvocationsPerInstance다. Scheduled(A)는 예측 가능한 시간표용, Step(B)은 알람 단계별 가감, 수동(D)은 자동화가 아니다.
-
----
-
-**문제 3.** 학습 시 Scikit-learn으로 전처리하고 XGBoost로 예측했다. 추론 시에도 동일한 전처리를 한 번의 요청으로 보장해 학습-서빙 스큐를 막고 싶다. 적절한 구성은?
-
-A) 추론 파이프라인(Inference Pipeline)으로 전처리 컨테이너와 예측 컨테이너를 직렬 연결  
-B) 멀티모델 엔드포인트  
-C) 두 개의 별도 실시간 엔드포인트를 클라이언트가 순서대로 호출  
-D) Batch Transform 두 번 실행  
-
-**정답: A**  
-해설: 추론 파이프라인은 여러 컨테이너를 직렬로 묶어 전처리→예측을 한 요청으로 처리하므로 학습과 동일한 전처리를 보장한다. MME(B)는 동일 컨테이너의 다른 모델용, 별도 엔드포인트 두 개(C)는 네트워크 왕복·정합성 문제, Batch 두 번(D)은 온라인 요청에 부적합하다.
+**Answer: C**  
+Explanation: Automatically adjusting to maintain a target metric value is Target Tracking, and the predefined metric that tracks invocations per instance is SageMakerVariantInvocationsPerInstance. Scheduled (A) is for predictable timetables, Step (B) adds or removes capacity by alarm step, and manual (D) is not automation.
 
 ---
 
-**문제 4.** 무중단으로 새 모델 버전을 배포하기 위한 SageMaker의 표준 메커니즘으로 옳은 것은?
+**Question 3.** During training, data was preprocessed with Scikit-learn and predictions were made with XGBoost. You want to guarantee the same preprocessing at inference time within a single request to prevent training-serving skew. Which configuration is appropriate?
 
-A) 기존 Endpoint를 삭제하고 새 Endpoint를 동일 이름으로 재생성  
-B) Model 아티팩트를 S3에서 직접 덮어쓴다  
-C) 인스턴스에 SSH로 접속해 모델 파일을 교체한다  
-D) 새 EndpointConfig를 만들고 UpdateEndpoint로 교체하면 SageMaker가 새 플릿을 띄운 뒤 트래픽을 옮긴다  
+A) Use an inference pipeline that connects the preprocessing container and the prediction container in series  
+B) Multi-model endpoint  
+C) Have the client call two separate real-time endpoints in order  
+D) Run Batch Transform twice  
 
-**정답: D**  
-해설: Endpoint와 EndpointConfig가 분리되어 있어, 새 EndpointConfig를 UpdateEndpoint로 바꿔 끼우면 새 플릿 기동→트래픽 이동→기존 플릿 종료의 무중단 교체가 일어난다. 삭제 후 재생성(A)은 다운타임 발생, S3 덮어쓰기(B)·SSH 교체(C)는 동작하지 않거나 비권장이다.
+**Answer: A**  
+Explanation: An inference pipeline chains multiple containers in series so that preprocessing and prediction are handled in a single request, which guarantees the same preprocessing as in training. MME (B) is for different models in the same container, two separate endpoints (C) introduce network round trips and consistency problems, and running Batch twice (D) is unsuitable for online requests.
 
 ---
 
-**문제 5.** 멀티모델 엔드포인트(MME)에서 오랫동안 호출되지 않던 모델을 처음 호출할 때 지연이 발생하는 이유는?
+**Question 4.** Which of the following is the standard SageMaker mechanism for deploying a new model version with zero downtime?
 
-A) 모델이 영구 삭제되었기 때문  
-B) 오토스케일링이 항상 0에서 시작하기 때문  
-C) 해당 모델이 메모리에 없어 S3에서 동적으로 로드해야 하기 때문  
-D) MME는 GPU만 지원하기 때문  
+A) Delete the existing endpoint and recreate a new endpoint with the same name  
+B) Overwrite the model artifact directly in S3  
+C) SSH into the instances and replace the model files  
+D) Create a new EndpointConfig and swap it in with UpdateEndpoint; SageMaker brings up a new fleet and then shifts traffic  
 
-**정답: C**  
-해설: MME는 호출된 모델을 메모리에 동적 로드하고 메모리가 부족하면 LRU로 언로드하므로, 오래 안 쓰인 모델은 첫 호출 시 S3에서 로드하는 콜드 지연이 생긴다. 모델이 삭제되는 것은 아니며(A), MME의 인스턴스는 0이 아니고(B), GPU 전용도 아니다(D).
+**Answer: D**  
+Explanation: Because Endpoint and EndpointConfig are separate, swapping in a new EndpointConfig with UpdateEndpoint performs a zero-downtime replacement: start the new fleet, shift traffic, and terminate the old fleet. Delete-and-recreate (A) causes downtime, and overwriting S3 (B) or replacing files over SSH (C) does not work or is not recommended.
+
+---
+
+**Question 5.** In a multi-model endpoint (MME), why does latency occur the first time a model that has not been invoked for a long time is called?
+
+A) Because the model was permanently deleted  
+B) Because autoscaling always starts from 0  
+C) Because the model is not in memory and must be dynamically loaded from S3  
+D) Because MME supports only GPUs  
+
+**Answer: C**  
+Explanation: MME dynamically loads an invoked model into memory and unloads models by LRU when memory runs low, so a model that has not been used for a long time incurs cold-start latency from loading from S3 on its first call. The model is not deleted (A), MME instances are not at 0 (B), and it is not GPU-only (D).
 
 ---

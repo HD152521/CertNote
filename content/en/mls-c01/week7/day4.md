@@ -103,62 +103,62 @@ SageMaker usage:
 
 ## 📝 Practice Questions
 
-**문제 1.** 학습을 시작하자마자 손실이 NaN으로 폭증한다. 가장 먼저 시도할 처방은?
+**Question 1.** As soon as training starts, the loss explodes to NaN. What remedy should you try first?
 
-A) 학습률을 낮춘다  
-B) 에폭 수를 늘린다  
-C) 드롭아웃을 제거한다  
-D) 배치 크기를 1로 고정한다  
+A) Lower the learning rate  
+B) Increase the number of epochs  
+C) Remove dropout  
+D) Fix the batch size at 1  
 
-**정답: A**  
-해설: 손실이 발산/폭증하는 전형적 원인은 과도하게 큰 학습률이다. 우선 학습률을 낮춰 안정시킨다. 에폭 증가(B)·드롭아웃 제거(C)·배치 1(D)은 발산 자체를 해결하지 못한다.
-
----
-
-**문제 2.** 학습 데이터가 1,000장뿐인데 도메인이 ImageNet과 유사하다. 가장 효율적인 전략은?
-
-A) 무작위 초기화로 처음부터 깊은 CNN 학습  
-B) 사전학습 백본을 동결하고 새 분류 헤드만 학습(특징 추출)  
-C) 모든 층을 큰 학습률로 동시에 재학습  
-D) 데이터를 버리고 규칙 기반으로 분류  
-
-**정답: B**  
-해설: 데이터가 적고 도메인이 유사하면 사전학습 백본을 동결하고 헤드만 학습하는 특징 추출이 과적합을 막고 효율적이다. 처음부터 학습(A)은 데이터 부족, 큰 학습률 전체 재학습(C)은 사전 지식을 망가뜨린다.
+**Answer: A**  
+Explanation: The classic cause of a diverging/exploding loss is an excessively large learning rate. First lower the learning rate to stabilize training. Increasing epochs (B), removing dropout (C), and a batch size of 1 (D) do not fix the divergence itself.
 
 ---
 
-**문제 3.** **다중 클래스 분류** 신경망의 손실 함수로 표준적인 것은?
+**Question 2.** You have only 1,000 training images, but the domain is similar to ImageNet. What is the MOST efficient strategy?
 
-A) 평균제곱오차(MSE)  
+A) Train a deep CNN from scratch with random initialization  
+B) Freeze the pretrained backbone and train only a new classification head (feature extraction)  
+C) Retrain all layers at once with a large learning rate  
+D) Discard the data and classify with rules  
+
+**Answer: B**  
+Explanation: When data is scarce and the domain is similar, feature extraction that freezes the pretrained backbone and trains only the head prevents overfitting and is efficient. Training from scratch (A) suffers from insufficient data, and retraining everything with a large learning rate (C) destroys prior knowledge.
+
+---
+
+**Question 3.** What is the standard loss function for a **multiclass classification** neural network?
+
+A) Mean squared error (MSE)  
 B) MAE  
-C) 코사인 유사도  
-D) 범주형 교차 엔트로피  
+C) Cosine similarity  
+D) Categorical cross-entropy  
 
-**정답: D**  
-해설: 다중 분류는 Softmax 출력에 대해 범주형 교차 엔트로피를 쓰는 것이 표준이다. MSE/MAE(A·B)는 회귀용, 코사인 유사도(C)는 임베딩 비교용 지표다.
+**Answer: D**  
+Explanation: For multiclass classification, it is standard to use categorical cross-entropy on the Softmax output. MSE/MAE (A, B) are for regression, and cosine similarity (C) is a metric for comparing embeddings.
 
 ---
 
-**문제 4.** 대부분의 딥러닝 프로젝트에서 학습률 튜닝 부담이 적고 빠른 수렴으로 **기본값으로 권장되는 옵티마이저**는?
+**Question 4.** Which **optimizer is recommended as the default** in most deep learning projects because it requires little learning rate tuning and converges quickly?
 
-A) 순수 SGD  
+A) Plain SGD  
 B) Adam  
-C) 경사하강 없이 그리드 탐색  
+C) Grid search without gradient descent  
 D) K-Means  
 
-**정답: B**  
-해설: Adam은 파라미터별 적응적 학습률(Momentum+RMSProp)로 학습률에 덜 민감하고 빠르게 수렴해 기본 출발점으로 권장된다. 순수 SGD(A)는 튜닝이 더 필요하고, 그리드 탐색(C)·K-Means(D)는 옵티마이저가 아니다.
+**Answer: B**  
+Explanation: Adam, with per-parameter adaptive learning rates (Momentum + RMSProp), is less sensitive to the learning rate and converges quickly, so it is recommended as the default starting point. Plain SGD (A) needs more tuning, and grid search (C) and K-Means (D) are not optimizers.
 
 ---
 
-**문제 5.** 학습 손실은 계속 낮아지는데 검증 손실은 어느 시점부터 다시 올라간다. 가장 적절한 대응은?
+**Question 5.** The training loss keeps decreasing, but the validation loss starts rising again from some point. What is the MOST appropriate response?
 
-A) 학습률을 크게 올린다  
-B) 모델을 더 깊고 크게 만든다  
-C) 드롭아웃·정규화·데이터 증강·조기 종료 등 과적합 방지 기법 적용  
-D) 손실 함수를 MSE로 바꾼다  
+A) Greatly increase the learning rate  
+B) Make the model deeper and larger  
+C) Apply overfitting-prevention techniques such as dropout, regularization, data augmentation, and early stopping  
+D) Change the loss function to MSE  
 
-**정답: C**  
-해설: 학습 손실은 낮고 검증 손실이 오르는 것은 과적합의 전형적 신호다. 드롭아웃·정규화·증강·조기 종료로 일반화를 높인다. 학습률 증가(A)·모델 확대(B)는 과적합을 악화시키고, 손실 변경(D)은 무관하다.
+**Answer: C**  
+Explanation: A low training loss with a rising validation loss is a classic sign of overfitting. Improve generalization with dropout, regularization, augmentation, and early stopping. Increasing the learning rate (A) and enlarging the model (B) worsen overfitting, and changing the loss (D) is unrelated.
 
 ---

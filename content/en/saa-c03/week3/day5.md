@@ -225,7 +225,7 @@ Additionally required:
 
 ## 📝 Scenario Practice Questions
 
-**문제 1.** A global e-commerce platform runs in the AWS Seoul region. Design an architecture that satisfies all of the following requirements.
+**Question 1.** A global e-commerce platform runs in the AWS Seoul region. Design an architecture that satisfies all of the following requirements.
 - Traffic is 5× normal on weekdays from 08:00 to 18:00
 - No service interruption during a single-AZ failure
 - Guarantee baseline capacity while minimizing cost
@@ -236,132 +236,132 @@ B) Spot EC2 ASG (Multi-AZ) + ALB (WAF) + RDS Multi-AZ + Scheduled Scaling + Comp
 C) RI 3y (all EC2) + NLB (Multi-AZ) + RDS Multi-AZ + Target Tracking
 D) Dedicated Host EC2 + ALB (WAF) + RDS Multi-AZ + Manual Scaling
 
-**정답: B**
-해설: The weekday pattern is pre-scaled with Scheduled Scaling, the baseline load runs on Compute SP (committed savings), and the peak overage is handled by Spot. ALB + WAF defends against SQL injection. Multi-AZ ASG + RDS Multi-AZ covers a single-AZ failure. A is Single-AZ, so it fails at failure handling. C can't apply WAF to an NLB. D's Manual Scaling is inefficient in both cost and elasticity.
+**Answer: B**
+Explanation: The weekday pattern is pre-scaled with Scheduled Scaling, the baseline load runs on Compute SP (committed savings), and the peak overage is handled by Spot. ALB + WAF defends against SQL injection. Multi-AZ ASG + RDS Multi-AZ covers a single-AZ failure. A is Single-AZ, so it fails at failure handling. C can't apply WAF to an NLB. D's Manual Scaling is inefficient in both cost and elasticity.
 
 ---
 
-**문제 2.** A company is migrating from on-premises NetApp ONTAP storage to AWS. Both Linux and Windows servers must access the same file system, and the plan is to migrate gradually while syncing from on-premises via SnapMirror. After the migration completes, it must also support both NFS and SMB. Which service fits?
+**Question 2.** A company is migrating from on-premises NetApp ONTAP storage to AWS. Both Linux and Windows servers must access the same file system, and the plan is to migrate gradually while syncing from on-premises via SnapMirror. After the migration completes, it must also support both NFS and SMB. Which service fits?
 
 A) EFS (NFSv4.1-based)
 B) FSx for Windows File Server (SMB-based)
 C) FSx for NetApp ONTAP
 D) FSx for OpenZFS
 
-**정답: C**
-해설: FSx for NetApp ONTAP supports NFS, SMB, and iSCSI multi-protocol access simultaneously. It can replicate with on-premises NetApp via SnapMirror, so gradual migration is natural. NetApp-native features like WAFL-based snapshots, thin provisioning, and deduplication are also usable as-is. EFS supports only NFS, FSx for Windows only SMB, and OpenZFS only NFS.
+**Answer: C**
+Explanation: FSx for NetApp ONTAP supports NFS, SMB, and iSCSI multi-protocol access simultaneously. It can replicate with on-premises NetApp via SnapMirror, so gradual migration is natural. NetApp-native features like WAFL-based snapshots, thin provisioning, and deduplication are also usable as-is. EFS supports only NFS, FSx for Windows only SMB, and OpenZFS only NFS.
 
 ---
 
-**문제 3.** A financial trading company is migrating a new order system to AWS. Requirements: (1) minimize network latency (μs scale), (2) partner systems must register a static IP in their firewall whitelist, (3) use the FIX protocol (a TCP-based custom protocol), (4) MPI communication between order-processing servers. What is the most suitable architecture?
+**Question 3.** A financial trading company is migrating a new order system to AWS. Requirements: (1) minimize network latency (μs scale), (2) partner systems must register a static IP in their firewall whitelist, (3) use the FIX protocol (a TCP-based custom protocol), (4) MPI communication between order-processing servers. What is the most suitable architecture?
 
 A) ALB (Multi-AZ) + EC2 ASG (Spread Placement Group)
 B) NLB (EIP) + EC2 Cluster Placement Group (EFA) + Nitro instances
 C) Global Accelerator + ALB + EC2 ASG
 D) GLB + NLB + EC2 ASG
 
-**정답: B**
-해설: FIX protocol (custom TCP) + partner static IP → NLB + EIP. Low-latency MPI communication between servers → Cluster Placement Group + EFA (OS-bypass networking). Nitro instances offload I/O overhead to hardware, minimizing latency. An ALB only routes HTTP/HTTPS and is incompatible with the FIX protocol. Spread is for isolation, the opposite of low-latency MPI.
+**Answer: B**
+Explanation: FIX protocol (custom TCP) + partner static IP → NLB + EIP. Low-latency MPI communication between servers → Cluster Placement Group + EFA (OS-bypass networking). Nitro instances offload I/O overhead to hardware, minimizing latency. An ALB only routes HTTP/HTTPS and is incompatible with the FIX protocol. Spread is for isolation, the opposite of low-latency MPI.
 
 ---
 
-**문제 4.** A startup is launching a new SaaS product. Traffic is very low at first, but could surge tenfold on success. It must handle a surge that could happen anytime within a year with no service interruption, while minimizing cost. Long term, it plans to run for 3+ years.
+**Question 4.** A startup is launching a new SaaS product. Traffic is very low at first, but could surge tenfold on success. It must handle a surge that could happen anytime within a year with no service interruption, while minimizing cost. Long term, it plans to run for 3+ years.
 
 A) Reserved Instance 3-year + Multi-AZ ASG
 B) On-Demand only + Manual Scaling
 C) Compute Savings Plans 3-year (baseline) + Spot (peak handling) + Target Tracking ASG
 D) Spot 100% + Target Tracking ASG + Multi-AZ
 
-**정답: C**
-해설: Although the plan is 3 years, the initial traffic pattern is uncertain, so Compute SP (free to change family and region) fits better than an RI. The baseline load runs on Compute SP for savings, and the surge window is handled by Spot. A Target Tracking ASG adjusts scale automatically. Spot 100% suits only stateless workloads, and a SaaS service may carry session state. B is inefficient in both cost and elasticity.
+**Answer: C**
+Explanation: Although the plan is 3 years, the initial traffic pattern is uncertain, so Compute SP (free to change family and region) fits better than an RI. The baseline load runs on Compute SP for savings, and the surge window is handled by Spot. A Target Tracking ASG adjusts scale automatically. Spot 100% suits only stateless workloads, and a SaaS service may carry session state. B is inefficient in both cost and elasticity.
 
 ---
 
-**문제 5.** A company runs a PostgreSQL database on EC2 using an EBS gp2 volume (200GB). The DBA analyzes it and finds average IOPS usage of 800 and a peak of 2,000, exceeding gp2's maximum of 600 IOPS (200GB × 3), causing performance degradation. What is the most cost-effective solution?
+**Question 5.** A company runs a PostgreSQL database on EC2 using an EBS gp2 volume (200GB). The DBA analyzes it and finds average IOPS usage of 800 and a peak of 2,000, exceeding gp2's maximum of 600 IOPS (200GB × 3), causing performance degradation. What is the most cost-effective solution?
 
 A) Expand the gp2 volume to 1,000GB
 B) Switch gp2 to io2 (provision 2,000 IOPS)
 C) Switch to gp3 and set IOPS to 3,000
 D) Add a second gp2 volume to the instance and configure RAID 0
 
-**정답: C**
-해설: gp3 lets you set up to 16,000 IOPS independently of size, and it's 20% cheaper than gp2. Since the peak needs 2,000 IOPS, setting 3,000 IOPS is plenty. A (expanding gp2) forces you to buy an unnecessarily large volume just to reach 1,000GB × 3 = 3,000 IOPS. io2 is for mission-critical environments that need 64K IOPS and is far more expensive than gp3. RAID 0 carries high complexity and management overhead.
+**Answer: C**
+Explanation: gp3 lets you set up to 16,000 IOPS independently of size, and it's 20% cheaper than gp2. Since the peak needs 2,000 IOPS, setting 3,000 IOPS is plenty. A (expanding gp2) forces you to buy an unnecessarily large volume just to reach 1,000GB × 3 = 3,000 IOPS. io2 is for mission-critical environments that need 64K IOPS and is far more expensive than gp3. RAID 0 carries high complexity and management overhead.
 
 ---
 
-**문제 6.** A web server running under an Auto Scaling Group needs the following each time it launches a new instance: fetch DB connection info from Parameter Store, generate a config file and start the app, then warm up the Redis cache. This whole process takes 4 minutes. If ALB traffic arrives before the 4 minutes complete, errors occur. What is the most appropriate configuration?
+**Question 6.** A web server running under an Auto Scaling Group needs the following each time it launches a new instance: fetch DB connection info from Parameter Store, generate a config file and start the app, then warm up the Redis cache. This whole process takes 4 minutes. If ALB traffic arrives before the 4 minutes complete, errors occur. What is the most appropriate configuration?
 
 A) Health Check Grace Period = 0, Slow Start = 240 seconds
 B) Health Check Grace Period = 240 seconds, ALB Target Group Slow Start = 120 seconds
 C) Lifecycle Hook (Pending:Wait) + complete-lifecycle-action call + Slow Start = 120 seconds
 D) Add a 4-minute sleep to the User Data script
 
-**정답: C**
-해설: A Lifecycle Hook Pending:Wait completes the 4-minute initialization, then calls `complete-lifecycle-action SUCCESS` to transition to InService. Up to this stage, any ALB health-check failure is shielded by the Grace Period. After transitioning to InService, Slow Start (120 seconds) admits gradual traffic to stabilize. Setting only the Health Check Grace Period to 240 seconds risks the ALB suddenly sending a lot of traffic once that time elapses. A User Data sleep is an anti-pattern that wastes resources.
+**Answer: C**
+Explanation: A Lifecycle Hook Pending:Wait completes the 4-minute initialization, then calls `complete-lifecycle-action SUCCESS` to transition to InService. Up to this stage, any ALB health-check failure is shielded by the Grace Period. After transitioning to InService, Slow Start (120 seconds) admits gradual traffic to stabilize. Setting only the Health Check Grace Period to 240 seconds risks the ALB suddenly sending a lot of traffic once that time elapses. A User Data sleep is an anti-pattern that wastes resources.
 
 ---
 
-**문제 7.** A company is migrating on-premises physical servers to AWS. Among the migration targets are SQL Server Enterprise licenses (billed per socket) and Oracle DB (billed per CPU core). To use these licenses in AWS via BYOL, what is needed?
+**Question 7.** A company is migrating on-premises physical servers to AWS. Among the migration targets are SQL Server Enterprise licenses (billed per socket) and Oracle DB (billed per CPU core). To use these licenses in AWS via BYOL, what is needed?
 
 A) EC2 Dedicated Instance
 B) EC2 Dedicated Host
 C) EC2 Spot instance (the cheap option)
 D) EC2 On-Demand (a general shared host)
 
-**정답: B**
-해설: SQL Server socket billing and Oracle core billing both compute the license against the number of physical CPU sockets/cores. A Dedicated Host occupies a specific physical server, and AWS exposes that server's socket count and core count. A Dedicated Instance isolates the physical host within the same account but doesn't reveal which physical server it is, so it can't be used for license counting. On a shared host (general On-Demand), the physical core count is unknown, so BYOL licensing can't be applied.
+**Answer: B**
+Explanation: SQL Server socket billing and Oracle core billing both compute the license against the number of physical CPU sockets/cores. A Dedicated Host occupies a specific physical server, and AWS exposes that server's socket count and core count. A Dedicated Instance isolates the physical host within the same account but doesn't reveal which physical server it is, so it can't be used for license counting. On a shared host (general On-Demand), the physical core count is unknown, so BYOL licensing can't be applied.
 
 ---
 
-**문제 8.** A video-streaming service runs a pipeline that processes user-uploaded videos. The video-encoding jobs are CPU-intensive and take 30-120 minutes. If an encoding job is interrupted, it can restart from the last checkpoint (saved to S3 every 10 minutes). To run reliably while minimizing cost as much as possible, what should you use?
+**Question 8.** A video-streaming service runs a pipeline that processes user-uploaded videos. The video-encoding jobs are CPU-intensive and take 30-120 minutes. If an encoding job is interrupted, it can restart from the last checkpoint (saved to S3 every 10 minutes). To run reliably while minimizing cost as much as possible, what should you use?
 
 A) c6i.8xlarge On-Demand EC2 + SQS message queue
 B) c7g.8xlarge Spot EC2 + SQS + EventBridge Spot interruption handler
 C) c6i.8xlarge RI 1-year + SQS
 D) Fargate Spot (vCPU = 8) + SQS
 
-**정답: B**
-해설: Video encoding is CPU-intensive (C family). c7g is Graviton3 ARM, 25% cheaper than c6i (x86). Since there are checkpoints, Spot interruptions are tolerable. Use EventBridge to catch the `EC2 Spot Instance Interruption Warning` event and re-enqueue the SQS message so another Spot instance picks up where it left off. SQS acts as the work queue, distributing jobs across multiple encoding instances. An RI is inefficient unless 30-120-minute jobs keep the instance always on.
+**Answer: B**
+Explanation: Video encoding is CPU-intensive (C family). c7g is Graviton3 ARM, 25% cheaper than c6i (x86). Since there are checkpoints, Spot interruptions are tolerable. Use EventBridge to catch the `EC2 Spot Instance Interruption Warning` event and re-enqueue the SQS message so another Spot instance picks up where it left off. SQS acts as the work queue, distributing jobs across multiple encoding instances. An RI is inefficient unless 30-120-minute jobs keep the instance always on.
 
 ---
 
-**문제 9.** Which configuration combination maximizes availability during Spot instance interruptions in an ASG?
+**Question 9.** Which configuration combination maximizes availability during Spot instance interruptions in an ASG?
 
 A) `lowest-price` Spot strategy + a single instance type
 B) `capacity-optimized` Spot strategy + multiple instance types + Capacity Rebalancing enabled
 C) `diversified` Spot strategy + a single AZ
 D) `lowest-price` Spot strategy + On-Demand 100% baseline
 
-**정답: B**
-해설: `capacity-optimized` picks the Spot pool with the most spare capacity in AWS right now, minimizing interruption probability. Allowing multiple instance types means that if Spot pressure hits one type, the others cover it. Capacity Rebalancing launches a replacement instance in advance upon an interruption warning to maintain the count. `lowest-price` can pile onto the cheapest pool, concentrating interruptions. A single AZ risks a total outage during an AZ failure or a Spot shortage in that AZ.
+**Answer: B**
+Explanation: `capacity-optimized` picks the Spot pool with the most spare capacity in AWS right now, minimizing interruption probability. Allowing multiple instance types means that if Spot pressure hits one type, the others cover it. Capacity Rebalancing launches a replacement instance in advance upon an interruption warning to maintain the count. `lowest-price` can pile onto the cheapest pool, concentrating interruptions. A single AZ risks a total outage during an AZ failure or a Spot shortage in that AZ.
 
 ---
 
-**문제 10.** A company runs a 10TB data analysis every Sunday at 2:00 AM. The analysis needs large RAM (256GB), and results are stored in S3. The analysis job cannot be interrupted, and the instance can be terminated after it completes. What is the most cost-effective approach?
+**Question 10.** A company runs a 10TB data analysis every Sunday at 2:00 AM. The analysis needs large RAM (256GB), and results are stored in S3. The analysis job cannot be interrupted, and the instance can be terminated after it completes. What is the most cost-effective approach?
 
 A) r6i.16xlarge (256GB RAM) On-Demand, started/stopped manually each week
 B) r6i.16xlarge Spot + checkpoints, Scheduled Scaling
 C) r7g.16xlarge On-Demand, auto start/stop via Scheduled Scaling
 D) r6i.16xlarge Reserved Instance 1-year + Scheduled Scaling
 
-**정답: C**
-해설: Since the analysis job can't be interrupted, Spot is unsuitable. r7g is Graviton3 ARM, about 25% cheaper than r6i (Intel x86). With Scheduled Scaling, raise Desired to 1 every Sunday at 2:00 AM and drop it to 0 after completion (since an ASG can't go to 0, set Min=0 or terminate via EventBridge + Lambda), paying only for the hours used. A 1-year RI wastes the remaining hours in a pattern used only a few hours per week (2.4% utilization at 4 hours per week). As for Graviton compatibility, Python/Java-based analysis tools are mostly fine.
+**Answer: C**
+Explanation: Since the analysis job can't be interrupted, Spot is unsuitable. r7g is Graviton3 ARM, about 25% cheaper than r6i (Intel x86). With Scheduled Scaling, raise Desired to 1 every Sunday at 2:00 AM and drop it to 0 after completion (since an ASG can't go to 0, set Min=0 or terminate via EventBridge + Lambda), paying only for the hours used. A 1-year RI wastes the remaining hours in a pattern used only a few hours per week (2.4% utilization at 4 hours per week). As for Graviton compatibility, Python/Java-based analysis tools are mostly fine.
 
 ---
 
-**문제 11.** In a multi-account environment, two teams want to place resources in the same `ap-northeast-2a` AZ to leverage VPC peering without Cross-AZ costs. But there's a concern that the actual physical AZ may differ. How should this be verified?
+**Question 11.** In a multi-account environment, two teams want to place resources in the same `ap-northeast-2a` AZ to leverage VPC peering without Cross-AZ costs. But there's a concern that the actual physical AZ may differ. How should this be verified?
 
 A) If the AZ name (`ap-northeast-2a`) matches, it's the same physical AZ
 B) If the AZ ID (a format like `apne2-az1`) matches, it's the same physical AZ
 C) If both accounts use the same subnet CIDR, it's the same AZ
 D) It can only be verified by contacting AWS Support
 
-**정답: B**
-해설: AWS intentionally shuffles the mapping between AZ names and actual physical AZs per account. Account A's `ap-northeast-2a` and account B's `ap-northeast-2a` may be different physical AZs. The AZ ID (e.g., `apne2-az1`) points to the same physical AZ across all accounts. You should run `aws ec2 describe-availability-zones --query 'AvailabilityZones[*].[ZoneName,ZoneId]'` via the CLI and compare the AZ IDs. If the AZ ID matches, it's the same physical AZ, so peering traffic incurs no Cross-AZ charge.
+**Answer: B**
+Explanation: AWS intentionally shuffles the mapping between AZ names and actual physical AZs per account. Account A's `ap-northeast-2a` and account B's `ap-northeast-2a` may be different physical AZs. The AZ ID (e.g., `apne2-az1`) points to the same physical AZ across all accounts. You should run `aws ec2 describe-availability-zones --query 'AvailabilityZones[*].[ZoneName,ZoneId]'` via the CLI and compare the AZ IDs. If the AZ ID matches, it's the same physical AZ, so peering traffic incurs no Cross-AZ charge.
 
 ---
 
-**문제 12.** From the following, select all the representative patterns of a wrong choice on the SAA exam.
+**Question 12.** From the following, select all the representative patterns of a wrong choice on the SAA exam.
 
 A) Using a Spot instance for a DB master server
 B) Using EFS for a Windows AD file share
@@ -370,5 +370,5 @@ D) Using a Cluster Placement Group + EFA for an HPC MPI cluster
 E) Switching gp2 to gp3 to optimize IOPS and cost simultaneously
 F) On new-instance launch, transitioning to InService after a Lifecycle Hook completes initialization
 
-**정답: A, B (wrong choices)**
-해설: A - Spot is unsuitable for stateful workloads (DB master). If the instance disappears after the 2-minute notice, DB data and sessions are lost. B - EFS is NFSv4.1 Linux-only. Windows AD integration, SMB, and NTFS ACLs require FSx for Windows File Server. C, D, E, and F are all correct choices.
+**Answer: A, B (wrong choices)**
+Explanation: A - Spot is unsuitable for stateful workloads (DB master). If the instance disappears after the 2-minute notice, DB data and sessions are lost. B - EFS is NFSv4.1 Linux-only. Windows AD integration, SMB, and NTFS ACLs require FSx for Windows File Server. C, D, E, and F are all correct choices.

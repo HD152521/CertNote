@@ -291,126 +291,126 @@ CodeGuru Reviewer ML-analyzes PRs to add automated comments. When you associate 
 
 ## 📝 Practice Questions
 
-**문제 1.** AWS SSO/페더레이션을 쓰는 회사에서 모든 개발자가 MFA를 강제받는다. CodeCommit에 git push를 가능하게 하는 가장 표준적인 방법은?
+**Question 1.** In a company that uses AWS SSO/federation, all developers are forced to use MFA. What is the most standard way to enable git push to CodeCommit?
 
-A) 개발자마다 IAM User를 만들어 HTTPS Git Credentials를 발급하고 OS keychain에 저장해 사용
-B) Personal SSH 공개키를 각 개발자 IAM User에 등록하고 `ssh://APKAxxx@` 엔드포인트로 접속
-C) git-remote-codecommit(GRC)를 설치하고 `codecommit::region://profile@repo` URL 사용
-D) SSO로 받은 임시 Access Key를 환경 변수로 export하고 git이 그대로 사용하게 설정
+A) Create an IAM User for each developer, issue HTTPS Git Credentials, and store them in the OS keychain
+B) Register a personal SSH public key on each developer's IAM User and connect through the `ssh://APKAxxx@` endpoint
+C) Install git-remote-codecommit (GRC) and use the `codecommit::region://profile@repo` URL
+D) Export the temporary Access Key received through SSO as environment variables and configure git to use it as is
 
-**정답: C**
-해설: 페더레이션/SSO 환경에서는 IAM User가 없거나 사용하지 않으므로 A/B는 부적합. GRC는 매 git 요청을 현재 AWS profile의 자격 증명(SSO 세션 토큰 포함)으로 SigV4 서명하므로 MFA·SSO와 자연스럽게 결합된다. D는 보안 안티패턴이고 SigV4 서명 변환이 별도 필요해 직접 동작 안 함.
+**Answer: C**
+Explanation: In a federation/SSO environment there are no IAM Users or they are not used, so A/B are unsuitable. GRC signs every git request with SigV4 using the current AWS profile's credentials (including the SSO session token), so it combines naturally with MFA and SSO. D is a security anti-pattern, and because a separate SigV4 signing conversion is required, it does not work directly.
 
 ---
 
-**문제 2.** EC2 인스턴스에서 CodeCommit으로 git push 하려 한다. 가장 안전하고 표준적인 인증 방식은?
+**Question 2.** You want to git push to CodeCommit from an EC2 instance. What is the safest and most standard authentication method?
 
-A) IAM User 액세스 키를 ~/.aws/credentials에 저장하고 CLI가 그 자격으로 git을 인증
-B) IAM Console에서 발급한 HTTPS Git Credential(username/password)을 인스턴스에 저장해 사용
+A) Store IAM User access keys in ~/.aws/credentials and have the CLI authenticate git with those credentials
+B) Store an HTTPS Git Credential (username/password) issued in the IAM Console on the instance and use it
 C) EC2 IAM Role + AWS CLI Credential Helper(HTTPS)
-D) Root 사용자의 장기 자격 증명을 환경 변수로 주입해 모든 권한으로 push
+D) Inject the Root user's long-term credentials as environment variables and push with all permissions
 
-**정답: C**
-해설: EC2에는 Instance Profile/IAM Role이 표준. Credential Helper가 IMDS에서 임시 자격 증명을 가져와 SigV4 서명으로 git에 주입한다. 정적 키 보관 불필요. B는 IAM Role에 발급 불가하므로 EC2 환경에 어울리지 않음.
-
----
-
-**문제 3.** Account A의 CodeCommit을 Account B의 CodePipeline이 소스로 쓰려 한다. 다음 중 필수가 아닌 것은?
-
-A) Account A의 CodeCommit Resource Policy에서 Account B의 Pipeline Role을 Principal로 허용
-B) Account B의 CodePipeline Source Action에 cross-account 접근용 `roleArn` 지정
-C) Account B Pipeline Role의 Identity Policy에 `codecommit:GitPull` 등 CodeCommit 권한 부여
-D) 두 계정 VPC 간 Direct Connect 또는 VPC Peering으로 사설 네트워크 경로 구성
-
-**정답: D**
-해설: CodeCommit cross-account는 IAM/Resource Policy + roleArn만으로 동작. 네트워크 측면에서 추가 연결 불필요(공용 endpoint + SigV4). KMS 키 정책도 추가로 필요하지만 D는 절대 불필요.
+**Answer: C**
+Explanation: For EC2, an Instance Profile/IAM Role is the standard. The Credential Helper fetches temporary credentials from IMDS and injects them into git with SigV4 signing. There is no need to store static keys. B cannot be issued to an IAM Role, so it does not suit an EC2 environment.
 
 ---
 
-**문제 4.** PR이 main 브랜치로 머지되면 자동으로 prod 파이프라인이 시작되어야 한다. 가장 적합한 구성은?
+**Question 3.** An Account B CodePipeline wants to use Account A's CodeCommit as its source. Which of the following is NOT required?
 
-A) EventBridge Rule이 `CodeCommit Repository State Change`의 `event=referenceUpdated`, `referenceName=main`을 캐치 → CodePipeline StartExecution
-B) CodeCommit이 머지 시 아티팩트를 S3에 올리고 그 S3 PutObject 이벤트로 파이프라인을 트리거
-C) CodeCommit Trigger를 SNS 토픽에 연결하고 파이프라인이 그 토픽을 주기적으로 polling
-D) Lambda가 매분 `git log`를 polling해 main의 새 커밋을 감지하면 StartPipelineExecution 호출
+A) In Account A's CodeCommit Resource Policy, allow Account B's Pipeline Role as the Principal
+B) Specify a `roleArn` for cross-account access in the Account B CodePipeline Source Action
+C) Grant CodeCommit permissions such as `codecommit:GitPull` in the Identity Policy of the Account B Pipeline Role
+D) Configure a private network path between the two accounts' VPCs with Direct Connect or VPC Peering
 
-**정답: A**
-해설: EventBridge가 표준. `pullRequestMergedStatusUpdated`도 사용 가능하지만 main 브랜치 ref 업데이트가 더 일반적이고 squash/rebase 머지에도 일관되게 트리거된다. D는 polling 안티패턴.
-
----
-
-**문제 5.** "Production main 브랜치에 PR 없이 직접 push를 막아라"는 정책을 IAM/CodeCommit으로 구현하려 한다. 가장 적합한 것은?
-
-A) IAM Policy로 `codecommit:GitPush` Deny + `Condition: codecommit:References = refs/heads/main`을 모든 개발자 Role에 적용
-B) Approval Rule Template만 만들어 main 대상 2명 승인을 강제하고 직접 push도 그 룰이 막게 함
-C) 저장소 전체를 Resource Policy로 read-only 전환하고 머지는 관리자만 수행하게 함
-D) Lambda가 main push 이벤트를 받아 PR 없이 올라온 커밋을 자동으로 사후 revert
-
-**정답: A**
-해설: CodeCommit의 IAM condition key `codecommit:References`로 특정 ref(브랜치) 단위 push 차단이 가능. Approval Rule은 PR 머지 시점 승인 강제용이지 직접 push 차단 기능이 아님. 실무에서는 A + Approval Rule Template을 조합한다.
+**Answer: D**
+Explanation: CodeCommit cross-account works with just IAM/Resource Policy + roleArn. No additional connectivity is needed on the network side (public endpoint + SigV4). A KMS key policy is also additionally required, but D is never necessary.
 
 ---
 
-**문제 6.** CodeCommit + EventBridge로 PR 생성 시 자동 빌드 시스템을 구축했다. 같은 PR 알림이 가끔 두 번씩 발생한다. 가장 적합한 해결책은?
+**Question 4.** When a PR is merged into the main branch, the prod pipeline must start automatically. What is the most suitable configuration?
 
-A) EventBridge 규칙을 삭제 후 재생성해 중복 전달을 유발하던 규칙 상태를 초기화
-B) Lambda에서 `pullRequestId + sourceCommit`을 키로 DynamoDB conditional put으로 dedup
-C) EventBridge 대신 SNS로 대체해 FIFO 토픽의 중복 제거 기능으로 단일 전달 보장
-D) EventBridge 타깃의 retry 정책을 0으로 설정하고 최대 이벤트 수명을 짧게 줄임
+A) An EventBridge Rule catches `CodeCommit Repository State Change` with `event=referenceUpdated` and `referenceName=main` → CodePipeline StartExecution
+B) CodeCommit uploads an artifact to S3 on merge, and the pipeline is triggered by that S3 PutObject event
+C) Connect a CodeCommit Trigger to an SNS topic and have the pipeline periodically poll that topic
+D) A Lambda function polls `git log` every minute, and when it detects a new commit on main, calls StartPipelineExecution
 
-**정답: B**
-해설: EventBridge는 at-least-once delivery로 중복 가능. 표준 패턴은 consumer 측 idempotency 처리. DynamoDB conditional write가 가장 안전. D는 EventBridge에서 직접 설정 불가능한 옵션.
-
----
-
-**문제 7.** CodeCommit 저장소를 us-east-1에서 us-west-2로 DR 복제하려 한다. 가장 적합한 패턴은?
-
-A) CodeCommit이 리전 장애에 대비해 자동 cross-region 복제를 제공하므로 추가 작업 불필요
-B) EventBridge `referenceUpdated` → Lambda → `git push --mirror`로 타 리전 CodeCommit에 미러
-C) 저장소 데이터가 담긴 S3에 Cross-Region Replication을 켜서 us-west-2로 객체를 복제
-D) RDS Cross-Region Read Replica로 저장소 메타데이터를 복제해 DR 리전에서 읽기 제공
-
-**정답: B**
-해설: CodeCommit native cross-region 미지원. Lambda 미러링이 표준. Mirror destination은 Resource Policy로 push 차단(read-only)해야 데이터 덮어쓰기 방지.
+**Answer: A**
+Explanation: EventBridge is the standard. `pullRequestMergedStatusUpdated` can also be used, but a main branch ref update is more general and triggers consistently even for squash/rebase merges. D is a polling anti-pattern.
 
 ---
 
-**문제 8.** GitHub Actions에서 AWS 리소스에 접근해야 한다. 가장 안전한 인증 방식은?
+**Question 5.** You want to implement, with IAM/CodeCommit, the policy "block direct pushes to the Production main branch without a PR." What is the most suitable approach?
 
-A) 전용 IAM User를 만들어 장기 Access Key를 GitHub Secrets에 저장하고 90일 주기로 회전
-B) 루트 계정의 자격 증명을 GitHub Secrets에 넣어 모든 AWS 리소스에 폭넓게 접근
-C) AWS IAM Identity Provider에 GitHub OIDC 등록 + IAM Role trust policy에 `sub=repo:org/repo:ref:refs/heads/main` 조건 → `aws-actions/configure-aws-credentials@v4`로 AssumeRoleWithWebIdentity
-D) EC2 인스턴스 한 대를 self-hosted GitHub runner로 등록하고 Instance Profile 권한으로 접근
+A) Apply `codecommit:GitPush` Deny + `Condition: codecommit:References = refs/heads/main` to all developer Roles through an IAM Policy
+B) Create only an Approval Rule Template to enforce 2 approvals for main, and let that rule also block direct pushes
+C) Switch the whole repository to read-only through a Resource Policy and have only administrators perform merges
+D) A Lambda function receives main push events and automatically reverts after the fact any commits that arrived without a PR
 
-**정답: C**
-해설: OIDC + Role assumption이 표준. 정적 키 없음 → 누출 위험 0. trust policy의 `sub` 조건으로 특정 repo/branch만 허용 가능. A는 키 노출 위험.
-
----
-
-**문제 9.** Approval Rule Template를 만들어 30개 저장소에 일괄 적용하려 한다. 어떻게 해야 가장 효율적인가?
-
-A) 30개 저장소 각각의 콘솔에서 동일한 승인 룰을 수동 생성하고 변경 시마다 모두 갱신
-B) 계정 수준에 Approval Rule Template 1개 생성 → `AssociateApprovalRuleTemplateWithRepository` API를 모든 저장소에 호출(루프 또는 IaC)
-C) 승인 정책 파일을 S3에 올려두고 각 저장소가 머지 시 그 파일을 polling해 규칙 평가
-D) Step Functions 워크플로로 PR마다 승인 조건을 매번 동적 평가해 머지 허용 여부 결정
-
-**정답: B**
-해설: Approval Rule Template은 의도적으로 계정 수준에 정의 + 저장소 association으로 분리됐다. 정확히 이 시나리오를 위한 설계.
+**Answer: A**
+Explanation: With CodeCommit's IAM condition key `codecommit:References`, pushes can be blocked per specific ref (branch). An Approval Rule enforces approval at PR merge time and is not a feature that blocks direct pushes. In practice, A is combined with an Approval Rule Template.
 
 ---
 
-**문제 10.** CodeCommit이 sunset됐다고 알려져 있다. 우리 회사는 5년 전부터 CodeCommit을 사용 중이고 새 마이크로서비스 repo가 필요하다. 가장 정확한 사실은?
+**Question 6.** You built an automatic build system triggered by PR creation with CodeCommit + EventBridge. The same PR notification occasionally occurs twice. What is the most suitable solution?
 
-A) 신규 가입 중단으로 기존 사용자도 추가 repo 생성이 막히고 GitHub 마이그레이션이 강제됨
-B) 기존 사용자는 신규 repo 생성을 포함해 정상 사용 가능
-C) 기존 고객도 신규 repo는 AWS Support 티켓으로 예외 승인을 받아야 생성 가능
-D) sunset 정책에 따라 기존 repo가 일정 유예 후 read-only로 자동 전환됨
+A) Delete the EventBridge rule and recreate it to reset the rule state that was causing duplicate delivery
+B) In Lambda, dedup with a DynamoDB conditional put using `pullRequestId + sourceCommit` as the key
+C) Replace EventBridge with SNS and guarantee single delivery with the deduplication feature of a FIFO topic
+D) Set the EventBridge target's retry policy to 0 and shorten the maximum event age
 
-**정답: B**
-해설: 2024-07-25 이후 신규 고객 가입만 중단. 기존 고객은 신규 repo 생성 포함 모든 기능 정상. 시험에서 자주 묻는 미묘한 경계.
+**Answer: B**
+Explanation: EventBridge has at-least-once delivery, so duplicates are possible. The standard pattern is idempotency handling on the consumer side. A DynamoDB conditional write is the safest. D is an option that cannot be set directly in EventBridge.
+
+---
+
+**Question 7.** You want to replicate a CodeCommit repository from us-east-1 to us-west-2 for DR. What is the most suitable pattern?
+
+A) CodeCommit provides automatic cross-region replication for Region failures, so no additional work is needed
+B) EventBridge `referenceUpdated` → Lambda → mirror to CodeCommit in the other Region with `git push --mirror`
+C) Enable Cross-Region Replication on the S3 that holds the repository data and replicate the objects to us-west-2
+D) Replicate the repository metadata with an RDS Cross-Region Read Replica and serve reads from the DR Region
+
+**Answer: B**
+Explanation: CodeCommit has no native cross-region support. Lambda mirroring is the standard. The mirror destination must block pushes (read-only) with a Resource Policy to prevent data from being overwritten.
+
+---
+
+**Question 8.** You need to access AWS resources from GitHub Actions. What is the safest authentication method?
+
+A) Create a dedicated IAM User, store long-term Access Keys in GitHub Secrets, and rotate them every 90 days
+B) Put the root account's credentials in GitHub Secrets for broad access to all AWS resources
+C) Register GitHub OIDC in the AWS IAM Identity Provider + a condition `sub=repo:org/repo:ref:refs/heads/main` in the IAM Role trust policy → AssumeRoleWithWebIdentity with `aws-actions/configure-aws-credentials@v4`
+D) Register one EC2 instance as a self-hosted GitHub runner and access resources with Instance Profile permissions
+
+**Answer: C**
+Explanation: OIDC + Role assumption is the standard. No static keys → zero leak risk. The `sub` condition in the trust policy can restrict access to a specific repo/branch. A carries a risk of key exposure.
+
+---
+
+**Question 9.** You want to create an Approval Rule Template and apply it to 30 repositories in bulk. What is the most efficient way?
+
+A) Manually create the same approval rule in each of the 30 repositories' consoles and update all of them whenever it changes
+B) Create one Approval Rule Template at the account level → call the `AssociateApprovalRuleTemplateWithRepository` API for all repositories (a loop or IaC)
+C) Upload an approval policy file to S3 and have each repository poll that file at merge time to evaluate the rule
+D) Use a Step Functions workflow to dynamically evaluate approval conditions for every PR and decide whether to allow the merge
+
+**Answer: B**
+Explanation: The Approval Rule Template is deliberately designed to be defined at the account level and separated from repository association. This is exactly the design for this scenario.
+
+---
+
+**Question 10.** It is known that CodeCommit has been sunset. Our company has used CodeCommit for 5 years and needs a repo for a new microservice. What is the most accurate fact?
+
+A) With new sign-ups halted, even existing users are blocked from creating additional repos and a GitHub migration is forced
+B) Existing users can continue normal use, including creating new repos
+C) Even existing customers must obtain an exception approval through an AWS Support ticket to create a new repo
+D) Under the sunset policy, existing repos are automatically switched to read-only after a grace period
+
+**Answer: B**
+Explanation: Only new customer sign-ups were halted after 2024-07-25. Existing customers have all features working normally, including creating new repos. This is a subtle boundary frequently asked about on the exam.
 
 ---
 
 ## 📌 Today's Summary
 
-CodeCommit의 가치는 "AWS가 만든 Git 호스팅"이라는 외피가 아니라 **Git protocol과 IAM/STS의 결합**이다. 이 결합이 ① 4종의 인증 방식 ② EventBridge 네이티브 이벤트 ③ Approval Rule Template ④ 멀티 계정 Resource Policy 패턴을 모두 가능하게 한다. 2024년 신규 가입 중단 이후 마이그레이션 시나리오가 늘었지만 시험에서는 여전히 빈출 영역이고, GitHub OIDC 페더레이션 패턴이 새로 등장하는 점도 함께 익혀두면 좋다. 내일은 Git 워크플로우 자체(trunk-based vs GitFlow)와 CodeCommit 위에서의 brunch 전략을 더 깊이 본다.
+The value of CodeCommit is not the outer shell of "Git hosting made by AWS" but the **combination of the Git protocol with IAM/STS**. This combination makes possible all of the following: ① the four authentication methods, ② native EventBridge events, ③ Approval Rule Templates, and ④ multi-account Resource Policy patterns. Although migration scenarios have increased since new sign-ups were halted in 2024, it remains a frequently tested area on the exam, and it is also good to learn the newly emerging GitHub OIDC federation pattern together. Tomorrow we look more deeply at the Git workflow itself (trunk-based vs GitFlow) and branching strategies on top of CodeCommit.

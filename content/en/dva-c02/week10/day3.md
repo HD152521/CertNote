@@ -80,7 +80,7 @@ Next we explore CloudWatch's advanced capabilities — deeper (container-level m
 
 ## 📝 Practice Questions
 
-**문제 1.** To track *who, when* downloaded a specific S3 object (GetObject), possible with CloudTrail defaults?
+**Question 1.** To track *who, when* downloaded a specific S3 object (GetObject), possible with CloudTrail defaults?
 
 A) Possible — recorded by Management Events automatically
 
@@ -90,13 +90,13 @@ C) Enable CloudWatch Logs
 
 D) Use X-Ray tracing
 
-**정답: B**
+**Answer: B**
 
-해설: S3 GetObject is **data plane** (Data Event), default OFF. Recording millions of daily data accesses would explode logs; AWS defaults it off. Object access tracking needs **explicit Data Events enable** with extra cost. Conversely, "who changed bucket policy" (`PutBucketPolicy`) is control plane (Management Event), recorded by default. Control/data plane split drives default distinction.
+Explanation: S3 GetObject is **data plane** (Data Event), default OFF. Recording millions of daily data accesses would explode logs; AWS defaults it off. Object access tracking needs **explicit Data Events enable** with extra cost. Conversely, "who changed bucket policy" (`PutBucketPolicy`) is control plane (Management Event), recorded by default. Control/data plane split drives default distinction.
 
 ---
 
-**문제 2.** Most accurate statement about CloudTrail's "default 90-day retention":
+**Question 2.** Most accurate statement about CloudTrail's "default 90-day retention":
 
 A) All CloudTrail logs deleted after 90 days
 
@@ -106,13 +106,13 @@ C) Data Events only retain 90 days
 
 D) Auto-moves to CloudTrail Lake after 90 days
 
-**정답: B**
+**Answer: B**
 
-해설: 90 days applies only to **Event History** (console quick-query cache), not all logs. Permanent retention requires **Trail** to S3 (unlimited) or CloudTrail Lake (7 days to 10 years). "90-day deletion" and "audit beyond 90 days needs Trail" are key distinctions.
+Explanation: 90 days applies only to **Event History** (console quick-query cache), not all logs. Permanent retention requires **Trail** to S3 (unlimited) or CloudTrail Lake (7 days to 10 years). "90-day deletion" and "audit beyond 90 days needs Trail" are key distinctions.
 
 ---
 
-**문제 3.** Relationship between CloudWatch Events and Amazon EventBridge:
+**Question 3.** Relationship between CloudWatch Events and Amazon EventBridge:
 
 A) Completely separate services
 
@@ -122,13 +122,13 @@ C) CloudWatch Events is newer
 
 D) EventBridge is part of X-Ray
 
-**정답: B**
+**Answer: B**
 
-해설: 2016 CloudWatch Events evolved 2019 into **EventBridge** (rebranded + added SaaS partners/custom buses, elevated to independent service). Old APIs still work; EventBridge is the superset. "Same service; EventBridge is the upgrade."
+Explanation: 2016 CloudWatch Events evolved 2019 into **EventBridge** (rebranded + added SaaS partners/custom buses, elevated to independent service). Old APIs still work; EventBridge is the superset. "Same service; EventBridge is the upgrade."
 
 ---
 
-**문제 4.** EventBridge's decisive distinction from SNS:
+**Question 4.** EventBridge's decisive distinction from SNS:
 
 A) EventBridge faster
 
@@ -138,13 +138,13 @@ C) SNS can't invoke Lambda
 
 D) EventBridge free
 
-**정답: B**
+**Answer: B**
 
-해설: SNS broadcasts same message to all topic subscribers. **EventBridge** inspects event *content* (pattern: bucket name is X, object size > 1MB) and routes only to matching targets — **content-based routing**. Bus-level filtering prevents uninterested targets from waking, saving cost. C) SNS can invoke Lambda.
+Explanation: SNS broadcasts same message to all topic subscribers. **EventBridge** inspects event *content* (pattern: bucket name is X, object size > 1MB) and routes only to matching targets — **content-based routing**. Bus-level filtering prevents uninterested targets from waking, saving cost. C) SNS can invoke Lambda.
 
 ---
 
-**문제 5.** Standard pattern to detect root console login, alert instantly:
+**Question 5.** Standard pattern to detect root console login, alert instantly:
 
 A) IAM policy blocks root login
 
@@ -154,13 +154,13 @@ C) CloudWatch basic metric alarm
 
 D) GuardDuty alone enough
 
-**정답: B**
+**Answer: B**
 
-해설: root login → CloudTrail records `ConsoleLogin` → **EventBridge Rule** filters `userIdentity.type = "Root"` → Lambda/SNS → notification is standard security automation. CloudTrail detects, EventBridge responds — "system acts before humans check logs." A) Can't IAM-block root (root is above IAM). C) Login is event, not metric.
+Explanation: root login → CloudTrail records `ConsoleLogin` → **EventBridge Rule** filters `userIdentity.type = "Root"` → Lambda/SNS → notification is standard security automation. CloudTrail detects, EventBridge responds — "system acts before humans check logs." A) Can't IAM-block root (root is above IAM). C) Login is event, not metric.
 
 ---
 
-**문제 6.** To run Lambda "every Monday 8 AM only," appropriate scheduling expression type:
+**Question 6.** To run Lambda "every Monday 8 AM only," appropriate scheduling expression type:
 
 A) `rate(...)` — periodic intervals
 
@@ -170,13 +170,13 @@ C) CloudWatch alarm
 
 D) SQS delay queue
 
-**정답: B**
+**Answer: B**
 
-해설: "Monday 8 AM" is calendar/specific-time, so **`cron(...)`**. `rate(...)` is "N intervals from last" (periodic). Calendar → cron; intervals → rate. Large scale/one-time/fine retry → EventBridge Scheduler; simple periodic → Rule.
+Explanation: "Monday 8 AM" is calendar/specific-time, so **`cron(...)`**. `rate(...)` is "N intervals from last" (periodic). Calendar → cron; intervals → rate. Large scale/one-time/fine retry → EventBridge Scheduler; simple periodic → Rule.
 
 ---
 
-**문제 7.** Filter/transform SQS messages and send to Step Functions without Lambda plumbing code, declaratively:
+**Question 7.** Filter/transform SQS messages and send to Step Functions without Lambda plumbing code, declaratively:
 
 A) EventBridge Pipes
 
@@ -186,6 +186,6 @@ C) CloudWatch Logs Subscription Filter
 
 D) Kinesis Data Analytics
 
-**정답: A**
+**Answer: A**
 
-해설: **EventBridge Pipes** connects source (SQS) to target (Step Functions) point-to-point with filter/enrichment, replacing manual Lambda glue with declarative config. C) Subscription Filter is CloudWatch Logs specific; B) SNS scope/integration different.
+Explanation: **EventBridge Pipes** connects source (SQS) to target (Step Functions) point-to-point with filter/enrichment, replacing manual Lambda glue with declarative config. C) Subscription Filter is CloudWatch Logs specific; B) SNS scope/integration different.

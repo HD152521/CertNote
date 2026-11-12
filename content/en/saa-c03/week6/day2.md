@@ -282,93 +282,93 @@ Tomorrow we cover Step Functions, which weaves multiple Lambda functions and ser
 
 ## 📝 Practice Questions
 
-**문제 1.** You want to provide an external API to partner companies while applying a per-partner limit of 10,000 requests per month and a 50 TPS cap. What is the most suitable API Gateway configuration?
+**Question 1.** You want to provide an external API to partner companies while applying a per-partner limit of 10,000 requests per month and a 50 TPS cap. What is the most suitable API Gateway configuration?
 
 A) HTTP API + JWT Authorizer (authenticate with the partner's JWT)
 B) REST API + API Key + Usage Plan
 C) WebSocket API + Lambda Authorizer
 D) HTTP API + Lambda Authorizer (track request counts directly)
 
-**정답: B**
+**Answer: B**
 
-해설: API Key + Usage Plan is a feature supported only on REST API. In the Usage Plan you set the monthly quota (10,000) and the throttling (50 TPS), and you issue and attach an API Key per partner. HTTP API has no API Key + Usage Plan, so A and D can't meet this requirement. C is wrong because WebSocket is for persistent connections and doesn't fit the REST API pattern.
+Explanation: API Key + Usage Plan is a feature supported only on REST API. In the Usage Plan you set the monthly quota (10,000) and the throttling (50 TPS), and you issue and attach an API Key per partner. HTTP API has no API Key + Usage Plan, so A and D can't meet this requirement. C is wrong because WebSocket is for persistent connections and doesn't fit the REST API pattern.
 
 ---
 
-**문제 2.** A mobile app calls an API with a JWT token issued through the company's own OAuth 2.0 server (in-house SSO), not Cognito. How do you handle this authentication with the least implementation effort?
+**Question 2.** A mobile app calls an API with a JWT token issued through the company's own OAuth 2.0 server (in-house SSO), not Cognito. How do you handle this authentication with the least implementation effort?
 
 A) REST API + Lambda Authorizer (implement token-validation logic yourself)
 B) HTTP API + JWT Authorizer (configure the in-house SSO as the OIDC Provider)
 C) REST API + Cognito User Pool Authorizer (requires integrating with Cognito)
 D) HTTP API + API Key (issue a key instead of a token)
 
-**정답: B**
+**Answer: B**
 
-해설: HTTP API's JWT Authorizer supports not only Cognito but any OIDC-compliant Provider. If the in-house SSO server complies with OIDC, you only need to set the Issuer URL and Audience. JWT validation is possible declaratively, without any Lambda code. A is also possible but requires writing Lambda Authorizer code, so it doesn't fit "the least implementation effort." C would require replacing the in-house SSO with Cognito, a large change.
+Explanation: HTTP API's JWT Authorizer supports not only Cognito but any OIDC-compliant Provider. If the in-house SSO server complies with OIDC, you only need to set the Issuer URL and Audience. JWT validation is possible declaratively, without any Lambda code. A is also possible but requires writing Lambda Authorizer code, so it doesn't fit "the least implementation effort." C would require replacing the in-house SSO with Cognito, a large change.
 
 ---
 
-**문제 3.** You enabled API Gateway response caching. The cache TTL for the `/products` endpoint is 5 minutes. Inventory has changed, but clients are receiving the old cached data. What is the way to invalidate the cache immediately?
+**Question 3.** You enabled API Gateway response caching. The cache TTL for the `/products` endpoint is 5 minutes. Inventory has changed, but clients are receiving the old cached data. What is the way to invalidate the cache immediately?
 
 A) Update ElastiCache directly from the Lambda function
 B) Flush the API Gateway cache from the console/CLI, or have the client include a Cache-Control: max-age=0 header
 C) Redeploy the API Gateway stage
 D) Redeploy the Lambda function
 
-**정답: B**
+**Answer: B**
 
-해설: There are two ways to invalidate the API Gateway response cache. ① Fully flush the cache from the console or API. ② Have the client include a `Cache-Control: max-age=0` header to make a cache-bypass request (this permission must be separately allowed in API Gateway). A is wrong because you can't access the API Gateway cache directly via the ElastiCache API. C and D are wrong because deployment and cache contents are unrelated.
+Explanation: There are two ways to invalidate the API Gateway response cache. ① Fully flush the cache from the console or API. ② Have the client include a `Cache-Control: max-age=0` header to make a cache-bypass request (this permission must be separately allowed in API Gateway). A is wrong because you can't access the API Gateway cache directly via the ElastiCache API. C and D are wrong because deployment and cache contents are unrelated.
 
 ---
 
-**문제 4.** You're building a financial app that must Push real-time stock prices from the server to the client. The client is a web browser, and the server must be able to send data first, without the client requesting it. What is the most suitable API Gateway type?
+**Question 4.** You're building a financial app that must Push real-time stock prices from the server to the client. The client is a web browser, and the server must be able to send data first, without the client requesting it. What is the most suitable API Gateway type?
 
 A) REST API (polling, where the client requests periodically)
 B) HTTP API (Server-Sent Events support)
 C) WebSocket API (can Push from server to client)
 D) REST API + CloudFront (caching at the edge)
 
-**정답: C**
+**Answer: C**
 
-해설: WebSocket API provides a bidirectional, persistent connection where the server can Push a message to the client first. It's the standard solution for cases where the server must Push updates, like real-time prices. The server-side Lambda sends a message to a specific client via the callback URL (`@connections/{connectionId}`). A is wrong because polling has latency and heavy server load. B is wrong because API Gateway HTTP API doesn't natively support Server-Sent Events. D is static-content caching and unrelated to real-time Push.
+Explanation: WebSocket API provides a bidirectional, persistent connection where the server can Push a message to the client first. It's the standard solution for cases where the server must Push updates, like real-time prices. The server-side Lambda sends a message to a specific client via the callback URL (`@connections/{connectionId}`). A is wrong because polling has latency and heavy server load. B is wrong because API Gateway HTTP API doesn't natively support Server-Sent Events. D is static-content caching and unrelated to real-time Push.
 
 ---
 
-**문제 5.** On an API Gateway REST API, you want to handle a direct PUT request to DynamoDB without Lambda. The JSON format the client sends differs from the DynamoDB API format, so transformation is needed. Which feature should you use?
+**Question 5.** On an API Gateway REST API, you want to handle a direct PUT request to DynamoDB without Lambda. The JSON format the client sends differs from the DynamoDB API format, so transformation is needed. Which feature should you use?
 
 A) HTTP API + Lambda Proxy integration
 B) REST API + AWS Service integration + Mapping Template (VTL)
 C) REST API + HTTP Proxy integration
 D) HTTP API + direct AWS Service integration
 
-**정답: B**
+**Answer: B**
 
-해설: REST API's AWS Service integration can call AWS services like DynamoDB, SQS, and Kinesis directly without Lambda. Request/response transformation is handled with a VTL (Velocity Template Language) Mapping Template. Transforming the client's JSON into the DynamoDB PutItem API format is the core role of this combination. HTTP API doesn't support direct AWS Service integration or Mapping Templates, so A and D are impossible.
+Explanation: REST API's AWS Service integration can call AWS services like DynamoDB, SQS, and Kinesis directly without Lambda. Request/response transformation is handled with a VTL (Velocity Template Language) Mapping Template. Transforming the client's JSON into the DynamoDB PutItem API format is the core role of this combination. HTTP API doesn't support direct AWS Service integration or Mapping Templates, so A and D are impossible.
 
 ---
 
-**문제 6.** The dev team wants to deploy a new version of the API while routing only 10% of existing traffic to the new version to verify stability. If there are no problems, they switch to 100%. How do you implement this?
+**Question 6.** The dev team wants to deploy a new version of the API while routing only 10% of existing traffic to the new version to verify stability. If there are no problems, they switch to 100%. How do you implement this?
 
 A) Create a new stage and send 10% to the new stage with Route 53 Weighted Routing
 B) Enable API Gateway Canary Release and set the canary weight to 10%
 C) Set the weight of the Lambda alias to 10%
 D) Route 10% to a new Origin in a CloudFront behavior
 
-**정답: B**
+**Answer: B**
 
-해설: When you enable Canary Release on an API Gateway stage, you can directly set the traffic percentage for the new deployment. Start at 10%, increase it gradually, and if there are no problems, Promote to switch to 100%. If a problem arises, roll back immediately. A is possible but has the complexity of managing Route 53 separately. C, a Lambda alias weight, is a similar feature, but API Gateway Canary is more direct and also lets you view API-level statistics separately. D is wrong because CloudFront doesn't provide this kind of weighted routing by default.
+Explanation: When you enable Canary Release on an API Gateway stage, you can directly set the traffic percentage for the new deployment. Start at 10%, increase it gradually, and if there are no problems, Promote to switch to 100%. If a problem arises, roll back immediately. A is possible but has the complexity of managing Route 53 separately. C, a Lambda alias weight, is a similar feature, but API Gateway Canary is more direct and also lets you view API-level statistics separately. D is wrong because CloudFront doesn't provide this kind of weighted routing by default.
 
 ---
 
-**문제 7.** In a microservice architecture, internal services are implemented as ECS containers behind an NLB inside a VPC. External clients need to access these services, but internet traffic must not pass directly through the VPC-internal network. What is the most suitable configuration?
+**Question 7.** In a microservice architecture, internal services are implemented as ECS containers behind an NLB inside a VPC. External clients need to access these services, but internet traffic must not pass directly through the VPC-internal network. What is the most suitable configuration?
 
 A) Assign public IPs to the ECS services to allow direct access
 B) Use API Gateway + VPC Link to connect to the NLB over the private network
 C) Place an ALB in a public subnet and connect it to ECS
 D) Call the ECS private IPs directly with an HTTP Proxy from API Gateway
 
-**정답: B**
+**Answer: B**
 
-해설: VPC Link is the mechanism by which API Gateway connects to an NLB inside a VPC over the AWS private network, without going through the internet. External clients access the API Gateway endpoint, and the actual traffic is delivered via the VPC Link to the NLB → ECS. The ECS containers stay in a private subnet. A is a large security risk. C, placing an ALB publicly, is possible but gives up the benefits of API Gateway such as authentication/throttling. D is wrong because API Gateway doesn't route to private IPs directly.
+Explanation: VPC Link is the mechanism by which API Gateway connects to an NLB inside a VPC over the AWS private network, without going through the internet. External clients access the API Gateway endpoint, and the actual traffic is delivered via the VPC Link to the NLB → ECS. The ECS containers stay in a private subnet. A is a large security risk. C, placing an ALB publicly, is possible but gives up the benefits of API Gateway such as authentication/throttling. D is wrong because API Gateway doesn't route to private IPs directly.
 
 ---

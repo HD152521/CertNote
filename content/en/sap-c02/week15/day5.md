@@ -14,16 +14,16 @@ Key mappings: (1) "Patient data HIPAA compliance" → **KMS encryption + Secrets
 
 ## 📝 Practice Questions
 
-**문제 1.** HIPAA 환자 데이터 암호화 → **KMS encryption**
+**Question 1.** HIPAA patient data encryption → **KMS encryption**
 
-**문제 2.** 의약품 감사 로그 21 CFR 파트 11 → **Object Lock Compliance 7년**
+**Question 2.** Pharmaceutical audit logs under 21 CFR Part 11 → **Object Lock Compliance for 7 years**
 
-**문제 3.** FedRAMP 서명 요구 HSM → **CloudHSM FIPS 140-2**
+**Question 3.** HSM required by FedRAMP signing → **CloudHSM FIPS 140-2**
 
-**문제 4.** 의료 사고 1시간 내 탐지·보고 → **GuardDuty + Security Hub + Incident Manager**
+**Question 4.** Detect and report a medical incident within 1 hour → **GuardDuty + Security Hub + Incident Manager**
 
-**문제 5.** 환자 접근 제어 최소권한 → **IAM ABAC Permission Boundary**
+**Question 5.** Least-privilege patient access control → **IAM ABAC Permission Boundary**
 
-**문제 6.** BAA(Business Associate Agreement) 필수 범위 → **Data processing, subprocessors, liability**
+**Question 6.** Required scope of a BAA (Business Associate Agreement) → **Data processing, subprocessors, liability**
 
 ---

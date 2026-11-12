@@ -107,74 +107,74 @@ Network isolation''s final goal is "leave only paths to data that were explicitl
 
 ## 📝 Practice Questions
 
-**문제 1.** VPC 내부의 Lambda 함수가 S3 버킷에 인터넷을 거치지 않고 사설로 접근해야 한다. 가장 비용 효율적인 방법은?
+**Question 1.** A Lambda function inside a VPC must privately access an S3 bucket without going through the internet. What is the most cost-effective method?
 
-A) Interface Endpoint(PrivateLink)를 S3용으로 생성한다  
-B) Gateway Endpoint를 생성해 라우팅 테이블에 S3 경로를 추가한다  
-C) NAT Gateway를 통해 S3로 나가게 한다  
-D) VPC Peering으로 S3 서비스 VPC와 연결한다  
+A) Create an Interface Endpoint (PrivateLink) for S3  
+B) Create a Gateway Endpoint and add the S3 route to the route table  
+C) Route out to S3 through a NAT Gateway  
+D) Connect to the S3 service VPC with VPC Peering  
 
-**정답: B**  
-해설: S3와 DynamoDB는 무료인 Gateway Endpoint를 지원하며, 라우팅 테이블에 해당 서비스 경로를 추가하는 방식으로 VPC 내부에서 사설 접근이 가능하다. Interface Endpoint는 시간당·데이터 처리 요금이 발생하므로 VPC 내부 전용 접근에는 비용 면에서 불리하고, S3는 서비스 VPC와 Peering할 수 있는 대상이 아니다.
-
----
-
-**문제 2.** 온프레미스 데이터센터에서 Direct Connect를 통해 S3에 사설로 접근해야 한다. 적절한 구성은?
-
-A) S3 Gateway Endpoint를 생성한다  
-B) S3 Interface Endpoint를 생성한다  
-C) NAT Gateway를 온프레미스 쪽에 둔다  
-D) S3 버킷을 퍼블릭으로 전환한다  
-
-**정답: B**  
-해설: Gateway Endpoint는 라우팅 기반이라 VPC 내부 전용이며 온프레미스에서 직접 도달할 수 없다. 온프레미스에서 Direct Connect나 VPN을 통해 사설로 접근하려면 서브넷에 ENI를 두는 S3 Interface Endpoint가 필요하다. 버킷을 퍼블릭으로 전환하는 방식은 사설 연결 요구에 어긋난다.
+**Answer: B**  
+Explanation: S3 and DynamoDB support the free Gateway Endpoint, and private access from inside the VPC is possible by adding the service route to the route table. An Interface Endpoint incurs hourly and data processing charges, so it is disadvantageous in cost for VPC-internal-only access, and S3 is not something you can Peer with a service VPC.
 
 ---
 
-**문제 3.** 민감 데이터가 담긴 S3 버킷을 오직 사내 VPC 엔드포인트를 거친 요청만 접근 가능하게 하려고 한다. 가장 효과적인 통제는?
+**Question 2.** Private access to S3 is needed from an on-premises data center through Direct Connect. What is the appropriate configuration?
 
-A) 버킷 정책에 aws:SourceVpce 조건으로 특정 엔드포인트 경유만 허용한다  
-B) 버킷에 ACL을 적용해 익명 접근을 막는다  
-C) 보안 그룹으로 버킷 인바운드를 제한한다  
-D) NACL로 S3 IP 범위를 차단한다  
+A) Create an S3 Gateway Endpoint  
+B) Create an S3 Interface Endpoint  
+C) Place a NAT Gateway on the on-premises side  
+D) Make the S3 bucket public  
 
-**정답: A**  
-해설: 버킷 정책에 특정 VPC 엔드포인트 경유 조건을 걸면, 그 엔드포인트를 통하지 않은 인터넷·콘솔·다른 계정의 직접 접근이 거부되어 데이터가 네트워크 경계 안에 갇힌다. S3는 보안 그룹이나 NACL이 직접 적용되는 대상이 아니며, ACL은 이런 네트워크 출처 기반 제약을 표현하지 못한다.
-
----
-
-**문제 4.** Interface Endpoint를 생성하고 Private DNS를 켰는데도 트래픽이 여전히 인터넷으로 나간다. 가장 먼저 확인할 항목은?
-
-A) 버킷 정책의 Resource 범위  
-B) VPC의 enableDnsSupport와 enableDnsHostnames 속성  
-C) NAT Gateway의 임시 포트 범위  
-D) NACL의 규칙 번호 순서  
-
-**정답: B**  
-해설: Private DNS가 서비스 도메인을 엔드포인트의 사설 IP로 해석하려면 VPC의 DNS 지원과 DNS 호스트네임 속성이 모두 켜져 있어야 한다. 이 속성이 꺼져 있으면 도메인이 공용 IP로 해석되어 트래픽이 인터넷 경로로 흐른다. 임시 포트나 NACL 순서는 DNS 해석 경로와 무관하다.
+**Answer: B**  
+Explanation: A Gateway Endpoint is routing-based and VPC-internal only, so it cannot be reached directly from on-premises. To access privately from on-premises through Direct Connect or VPN, you need an S3 Interface Endpoint, which places an ENI in the subnet. Making the bucket public goes against the private connectivity requirement.
 
 ---
 
-**문제 5.** SaaS 제공자가 다수 고객에게 자사 서비스를 사설로 제공하되, 자사 VPC 전체가 고객에게 노출되지 않도록 하려고 한다. VPC Peering 대비 PrivateLink의 장점은?
+**Question 3.** We want an S3 bucket holding sensitive data to be accessible only to requests that go through the corporate VPC endpoint. What is the most effective control?
 
-A) Peering보다 데이터 전송 비용이 항상 더 저렴하다  
-B) 제공자가 노출한 단일 서비스 엔드포인트만 보이고 나머지 VPC는 가려지며 CIDR 충돌도 없다  
-C) 양방향 라우팅을 자동으로 구성해 관리가 쉽다  
-D) 고객과 제공자의 CIDR이 반드시 겹쳐야 동작한다  
+A) Allow only via a specific endpoint with the aws:SourceVpce condition in the bucket policy  
+B) Apply an ACL to the bucket to block anonymous access  
+C) Restrict the bucket inbound with a security group  
+D) Block the S3 IP ranges with a NACL  
 
-**정답: B**  
-해설: Peering은 두 VPC의 CIDR 전체가 양방향으로 보이므로 노출 표면이 크고 CIDR이 겹치면 동작하지 않는다. PrivateLink는 제공자가 NLB로 노출한 단일 서비스만 소비자에게 보이고 나머지 제공자 VPC는 완전히 가려지며, 소비자 VPC 주소를 쓰는 ENI 방식이라 CIDR 충돌도 발생하지 않는다.
+**Answer: A**  
+Explanation: If you put a condition requiring a specific VPC endpoint in the bucket policy, direct access from the internet, console, or other accounts that does not go through that endpoint is denied, keeping the data inside the network boundary. S3 is not a target to which security groups or NACLs apply directly, and ACLs cannot express such network-origin-based constraints.
 
 ---
 
-**문제 6.** 인터넷 경로가 전혀 없는 "zero-internet VPC"에서 EC2 인스턴스를 Systems Manager로 관리하려고 한다. 필요한 구성은?
+**Question 4.** Even though an Interface Endpoint was created and Private DNS was turned on, traffic still goes out to the internet. What should be checked first?
 
-A) NAT Gateway를 임시로 열어 SSM Agent가 통신하게 한다  
-B) ssm, ssmmessages, ec2messages 등에 대한 Interface Endpoint를 생성한다  
-C) S3 Gateway Endpoint만 있으면 SSM이 동작한다  
-D) 인스턴스에 퍼블릭 IP를 부여한다  
+A) The Resource scope of the bucket policy  
+B) The VPC's enableDnsSupport and enableDnsHostnames attributes  
+C) The NAT Gateway's ephemeral port range  
+D) The rule number order of the NACL  
 
-**정답: B**  
-해설: 인터넷 경로가 없는 VPC에서 Systems Manager를 사용하려면 SSM 관련 서비스 엔드포인트를 Interface Endpoint로 사설 연결해야 한다. 이렇게 하면 패치·세션 관리 트래픽이 AWS 백본 내부로만 흐른다. NAT를 열거나 퍼블릭 IP를 부여하는 방식은 데이터 유출 경로를 다시 만드는 것이라 격리 목표에 어긋난다.
+**Answer: B**  
+Explanation: For Private DNS to resolve the service domain to the endpoint's private IP, both the VPC's DNS support and DNS hostnames attributes must be on. If these attributes are off, the domain resolves to a public IP and traffic flows over the internet path. Ephemeral ports or NACL order have nothing to do with the DNS resolution path.
+
+---
+
+**Question 5.** A SaaS provider wants to provide its service privately to many customers without exposing its entire VPC to the customers. What is the advantage of PrivateLink over VPC Peering?
+
+A) Data transfer costs are always cheaper than Peering  
+B) Only the single service endpoint the provider exposes is visible, the rest of the VPC is hidden, and there are no CIDR conflicts  
+C) It automatically configures bidirectional routing, making management easy  
+D) It works only if the customer and provider CIDRs overlap  
+
+**Answer: B**  
+Explanation: With Peering, the entire CIDR of both VPCs is visible in both directions, so the exposure surface is large and it does not work if the CIDRs overlap. With PrivateLink, only the single service the provider exposes with an NLB is visible to the consumer and the rest of the provider VPC is completely hidden, and because it is an ENI approach using consumer VPC addresses, CIDR conflicts do not occur either.
+
+---
+
+**Question 6.** In a "zero-internet VPC" with no internet path at all, we want to manage EC2 instances with Systems Manager. What configuration is needed?
+
+A) Temporarily open a NAT Gateway so the SSM Agent can communicate  
+B) Create Interface Endpoints for ssm, ssmmessages, ec2messages, and so on  
+C) An S3 Gateway Endpoint alone makes SSM work  
+D) Assign a public IP to the instance  
+
+**Answer: B**  
+Explanation: To use Systems Manager in a VPC with no internet path, you must privately connect the SSM-related service endpoints with Interface Endpoints. This way, patching and session management traffic flows only inside the AWS backbone. Opening a NAT or assigning a public IP recreates a data exfiltration path and goes against the isolation goal.
 
 ---

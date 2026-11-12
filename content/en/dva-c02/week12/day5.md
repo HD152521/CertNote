@@ -118,194 +118,194 @@ That closes out the Week 12 container and IaC unit. Next week we move on to obse
 
 ## 📝 Week 12 Comprehensive Scenario Questions
 
-**문제 1.** Fargate 태스크 50개를 /28 서브넷(가용 IP 약 11개) 하나에 배치하려 했더니 일부 태스크가 시작되지 않고 IP/네트워크 관련 오류가 난다. 근본 원인과 해결로 옳은 것은?
+**Question 1.** You tried to place 50 Fargate tasks in a single /28 subnet (about 11 usable IPs), but some tasks fail to start with IP/network-related errors. Which is the correct root cause and fix?
 
-A) taskRole에 EC2 ENI 생성 권한이 없어 IP를 못 받음 — taskRole에 `ec2:CreateNetworkInterface` 추가
+A) The taskRole lacks permission to create EC2 ENIs, so it cannot get an IP — add `ec2:CreateNetworkInterface` to the taskRole
 
-B) awsvpc 모드가 태스크마다 ENI/사설 IP를 소비해 서브넷 IP가 고갈됨 — 더 큰 CIDR 서브넷 추가 또는 여러 서브넷 분산
+B) awsvpc mode consumes an ENI/private IP per task, exhausting the subnet's IPs — add a subnet with a larger CIDR or spread tasks across multiple subnets
 
-C) executionRole의 ECR pull 권한 부족으로 일부 태스크만 시작 실패 — executionRole에 ECR 권한 추가
+C) Only some tasks fail to start because the executionRole lacks ECR pull permission — add ECR permissions to the executionRole
 
-D) 태스크 정의 리비전이 오래돼 네트워크 설정이 누락됨 — 새 리비전을 등록해 재배포
+D) The task definition revision is outdated and the network configuration is missing — register a new revision and redeploy
 
-**정답: B**
+**Answer: B**
 
-해설: Fargate는 awsvpc 모드를 강제하며, 이 모드는 **태스크마다 독립 ENI와 사설 IP를 하나씩** 부여한다. 태스크 50개는 IP 50개를 요구하는데 /28 서브넷은 약 11개뿐이라 고갈된다. 해결은 더 큰 CIDR 서브넷을 쓰거나 여러 서브넷/AZ에 분산하는 것이다. A·C는 IAM 권한 문제로 IP 고갈과 무관하고, D는 환경 변수 변경 시나리오로 무관하다.
-
----
-
-**문제 2.** 태스크 정의의 `secrets` 블록으로 Secrets Manager의 DB 비밀번호를 환경 변수에 주입하도록 설정했는데, 태스크가 시작조차 못 하고 비밀을 가져오지 못한다. 권한을 어디에 줘야 하나?
-
-A) taskRole에 `secretsmanager:GetSecretValue`를 부여해 앱이 비밀을 읽게 한다
-
-B) executionRole에 `secretsmanager:GetSecretValue`
-
-C) Fargate에는 없는 EC2 인스턴스 프로파일에 `secretsmanager:GetSecretValue`를 추가한다
-
-D) 권한이 아니라 Secrets Manager VPC 엔드포인트 부재로 인한 네트워크 도달성 문제다
-
-**정답: B**
-
-해설: 비밀을 가져와 환경 변수로 **주입하는 작업은 컨테이너가 뜨기 전, ECS 인프라(에이전트)가 수행**하므로 **executionRole**의 권한이 필요하다. taskRole은 앱이 런타임에 직접 SDK로 호출할 때 쓰인다 — 여기선 태스크가 시작도 못 했으므로 런타임 권한과 무관하다. "주입=시작 시점=executionRole"로 기억한다. 같은 Secrets Manager라도 "주입"이냐 "런타임 직접 호출"이냐로 역할이 갈린다. C) Fargate에는 EC2 인스턴스 프로파일 자체가 없다(서버리스 격리). D) 비밀 주입 실패는 전형적으로 IAM 권한 문제이지 네트워크 부재가 첫 의심 대상은 아니다.
+Explanation: Fargate enforces awsvpc mode, which assigns **a dedicated ENI and one private IP to each task**. 50 tasks require 50 IPs, but a /28 subnet has only about 11, so they are exhausted. The fix is to use a subnet with a larger CIDR or to spread tasks across multiple subnets/AZs. A and C are IAM permission issues unrelated to IP exhaustion, and D is an environment-variable change scenario that is irrelevant.
 
 ---
 
-**문제 3.** 사설 서브넷의 Fargate 태스크가 ECR에서 이미지를 pull하지 못한다. executionRole에는 ECR 권한이 충분하다. 다음으로 의심할 원인은?
+**Question 2.** You configured the task definition's `secrets` block to inject a DB password from Secrets Manager into an environment variable, but the task cannot even start because it cannot retrieve the secret. Where should the permission be granted?
 
-A) 태스크 정의 리비전이 불변이라 이미지 태그가 옛 다이제스트를 가리켜 pull 실패
+A) Grant `secretsmanager:GetSecretValue` to the taskRole so the app reads the secret
 
-B) 사설 서브넷에 NAT 게이트웨이나 ECR/S3용 VPC 엔드포인트가 없어 ECR에 도달하지 못함
+B) `secretsmanager:GetSecretValue` on the executionRole
 
-C) ECR 수명 주기 정책이 해당 이미지를 만료 삭제해 pull할 대상이 없음
+C) Add `secretsmanager:GetSecretValue` to an EC2 instance profile, which Fargate does not have
 
-D) taskRole에 ECR 읽기 권한이 빠져 런타임에 이미지를 못 가져옴
+D) It is a network reachability problem caused by a missing Secrets Manager VPC endpoint, not a permissions problem
 
-**정답: B**
+**Answer: B**
 
-해설: 권한이 충분한데도 pull이 안 되면 **네트워크 도달성** 문제다. 사설 서브넷의 태스크가 ECR(및 이미지 레이어가 저장된 S3)에 도달하려면 NAT 게이트웨이(인터넷 경유) 또는 ECR·S3 VPC 엔드포인트(프라이빗 경로)가 필요하다. 둘 다 없으면 "이미지 pull 실패"가 난다. A는 무관, C는 이미지가 실제로 없을 때의 별개 문제, D는 런타임 권한이라 pull과 무관하다. "권한 OK인데 pull 실패=네트워크"로 분기한다.
-
----
-
-**문제 4.** CloudFormation으로 운영 중인 스택을 업데이트하려는데, RDS 인스턴스가 의도치 않게 교체(replacement)되어 데이터가 날아갈까 걱정된다. 적용 전에 어떤 자원이 어떻게 바뀌는지 확인하려면?
-
-A) 바로 update-stack을 실행하고 롤백 트리거에 의존해 문제 시 자동 복구한다
-
-B) Change Set을 생성해 추가·수정·삭제·교체될 자원 목록을 검토한 뒤 적용
-
-C) Drift Detection을 실행해 적용 후 바뀔 자원을 미리 감지한다
-
-D) 스택을 삭제하고 다시 생성해 깨끗한 상태에서 원하는 구성을 만든다
-
-**정답: B**
-
-해설: **Change Set**은 업데이트를 실제 적용하기 **전에** 어떤 자원이 추가·수정·삭제·**교체(replacement)** 될지 미리 보여준다. RDS 같은 상태 저장 자원의 교체는 데이터 손실로 이어질 수 있으므로, Change Set 검토로 사람이 위험을 사전에 잡는다. A는 미리보기 없이 위험을 감수하는 것, C) Drift는 "이미 배포된 것과 실제의 차이"를 감지하는 별개 기능(미래 변경 미리보기가 아님), D는 데이터를 확실히 날린다.
+Explanation: **Fetching the secret and injecting it as an environment variable is done by the ECS infrastructure (agent) before the container starts**, so it requires the **executionRole** permissions. The taskRole is used when the app calls the SDK directly at runtime — here the task could not even start, so runtime permissions are irrelevant. Remember: "injection = startup time = executionRole". Even with the same Secrets Manager, the role differs depending on "injection" versus "direct runtime call". C) Fargate has no EC2 instance profile at all (serverless isolation). D) A secret injection failure is typically an IAM permission problem; a missing network path is not the first suspect.
 
 ---
 
-**문제 5.** 스택을 삭제하더라도 그 안의 S3 버킷(중요 데이터 보관)만은 삭제되지 않고 남기를 원한다. 어떻게 설정하나?
+**Question 3.** A Fargate task in a private subnet cannot pull an image from ECR. The executionRole has sufficient ECR permissions. What should you suspect next?
 
-A) 스택에 Termination Protection을 켜서 스택 삭제 시 버킷이 보존되게 한다
+A) The task definition revision is immutable, so the image tag points to an old digest and the pull fails
 
-B) 해당 S3 버킷 자원에 `DeletionPolicy: Retain` 설정
+B) The private subnet has no NAT gateway or VPC endpoints for ECR/S3, so ECR cannot be reached
 
-C) Stack Policy로 S3 버킷 자원을 Deny 대상에 넣어 삭제로부터 보호한다
+C) An ECR lifecycle policy expired and deleted the image, so there is nothing to pull
 
-D) Drift Detection을 켜서 버킷이 삭제되려 하면 차이를 감지해 막는다
+D) The taskRole lacks ECR read permission, so it cannot fetch the image at runtime
 
-**정답: B**
+**Answer: B**
 
-해설: **DeletionPolicy: Retain**은 **자원 단위**로 "스택이 삭제돼도 이 자원은 남긴다"를 지정한다. 데이터가 중요한 S3·RDS 등에 흔히 쓴다. A) Termination Protection은 **스택 자체**의 삭제를 막는 것(자원 단위가 아님)으로 목적이 다르다. C) Stack Policy는 업데이트 중 자원 보호이고, D) Drift는 차이 감지로 무관하다. "자원만 남김=DeletionPolicy, 스택 삭제 자체 차단=Termination Protection"으로 가른다.
-
----
-
-**문제 6.** 한 SAM 템플릿을 배포하려는데 `Transform` 선언이 빠져 일반 CloudFormation으로 처리되며 `AWS::Serverless::Function`을 알 수 없는 자원 타입이라 거부한다. 무엇이 필요한가?
-
-A) Parameters 섹션을 추가해 Serverless 자원 타입을 파라미터로 선언한다
-
-B) 템플릿 최상위에 `Transform: AWS::Serverless-2016-10-31` 선언
-
-C) Globals 섹션을 추가해 함수 공통 속성을 정의하면 타입이 인식된다
-
-D) Outputs 섹션에 함수 ARN을 내보내면 자원 타입이 등록된다
-
-**정답: B**
-
-해설: SAM은 CloudFormation **매크로**이고, `Transform: AWS::Serverless-2016-10-31` 선언이 "이 짧은 SAM 문법을 긴 CloudFormation으로 펼쳐라"라고 엔진에 지시한다. 이 선언이 없으면 CloudFormation은 `AWS::Serverless::*` 자원을 인식하지 못한다. A·C·D는 선택적 섹션으로 이 오류와 무관하다. "SAM=Transform 필수"는 단독으로도 출제되는 핵심이다.
+Explanation: If the pull fails despite sufficient permissions, it is a **network reachability** problem. For a task in a private subnet to reach ECR (and the S3 where image layers are stored), it needs a NAT gateway (via the internet) or ECR and S3 VPC endpoints (a private path). With neither, an "image pull failure" occurs. A is irrelevant, C is a separate problem for when the image actually does not exist, and D is a runtime permission and has nothing to do with the pull. Branch as: "permissions OK but pull fails = network".
 
 ---
 
-**문제 7.** 주문 완료 이벤트 하나가 발생하면 재고·이메일·분석 세 시스템이 **동시에** 각자 처리해야 하고, 각 소비자는 일시적 폭주를 버틸 버퍼와 실패 격리가 필요하다. 가장 적합한 구성은?
+**Question 4.** You are about to update a production CloudFormation stack and worry that the RDS instance may be unintentionally replaced and the data lost. How can you check which resources will change and how before applying?
 
-A) SQS 큐 하나에 재고·이메일·분석 세 소비자를 붙여 같은 메시지를 셋 다 받게 한다
+A) Run update-stack right away and rely on rollback triggers to recover automatically if there is a problem
 
-B) SNS 토픽 → 세 개의 SQS 구독(각 SQS에 소비자 + DLQ)으로 팬아웃
+B) Create a Change Set, review the list of resources to be added, modified, deleted, or replaced, and then apply it
 
-C) 주문 Lambda가 재고·이메일·분석 시스템을 순차로 동기 호출하고 실패 시 재시도한다
+C) Run Drift Detection to detect in advance the resources that will change after applying
 
-D) EventBridge 스케줄 규칙으로 주기적으로 세 시스템에 주문 이벤트를 전달한다
+D) Delete the stack and recreate it to build the desired configuration from a clean state
 
-**정답: B**
+**Answer: B**
 
-해설: "한 이벤트를 여러 시스템이 동시에" 받는 건 SNS 팬아웃이고, 각 구독을 **SQS로 받으면** 소비자별 버퍼·재시도·DLQ(실패 격리)가 생긴다. SNS가 Lambda를 직접 구독하는 것보다 SNS→SQS→소비자가 폭주 흡수와 유실 방지에 강하다. A) SQS는 1:1이라 한 메시지를 한 소비자만 가져가 세 곳이 모두 못 받는다. C) 순차 동기 호출은 결합·전파 문제, D) 스케줄은 이 요구와 무관하다.
-
----
-
-**문제 8.** SQS 표준 큐를 소비하는 결제 처리 Lambda가 같은 메시지를 가끔 두 번 처리해 이중 결제가 발생한다. 올바른 근본 대응은?
-
-A) SQS를 신뢰할 수 없으니 SNS로 교체
-
-B) 표준 큐는 at-least-once라 중복이 정상이므로, 멱등성 키 + DynamoDB 조건부 쓰기(`attribute_not_exists`)로 소비자를 멱등하게 만들거나 FIFO 큐 사용
-
-C) Lambda 동시성을 1로 제한
-
-D) 메시지 크기를 줄임
-
-**정답: B**
-
-해설: SQS 표준 큐는 **at-least-once** 전달이라 같은 메시지가 두 번 올 수 있다(두 장군 문제로 "정확히 한 번 전달"이 불가능). 결제처럼 중복이 치명적이면 소비자를 **멱등**하게 만들어야 한다 — 멱등성 키로 이미 처리한 요청을 식별하고 DynamoDB 조건부 쓰기로 중복을 무시한다. 또는 "정확히 한 번 처리"를 보장하는 **FIFO 큐**를 쓴다. A는 모델이 더 안 맞고, C는 성능을 죽이며 근본 해결도 아니고, D는 무관하다.
+Explanation: A **Change Set** shows in advance, **before** the update is actually applied, which resources will be added, modified, deleted, or **replaced**. Replacing a stateful resource such as RDS can lead to data loss, so reviewing the Change Set lets a person catch the risk beforehand. A accepts the risk with no preview, C) Drift is a separate feature that detects the "difference between what was deployed and what actually exists" (not a preview of future changes), and D certainly destroys the data.
 
 ---
 
-**문제 9.** API Gateway 뒤 Lambda A가 무거운 후처리를 Lambda B에 넘긴다. 현재 A가 B를 동기 호출하는데 비용이 높고, B가 느려지면 API 응답이 타임아웃난다. 개선안은?
+**Question 5.** Even if the stack is deleted, you want only the S3 bucket inside it (holding important data) to be retained and not deleted. How do you configure this?
 
-A) B의 메모리·타임아웃을 늘려 더 빨리 끝나게 하고 동기 호출 구조는 유지한다
+A) Turn on Termination Protection for the stack so the bucket is preserved when the stack is deleted
 
-B) A가 SQS에 작업을 넣고 즉시 응답, B가 큐를 비동기로 소비
+B) Set `DeletionPolicy: Retain` on that S3 bucket resource
 
-C) A와 B를 하나의 큰 Lambda로 합쳐 호출 간 오버헤드와 이중 과금을 없앤다
+C) Put the S3 bucket resource in a Stack Policy Deny to protect it from deletion
 
-D) A가 B를 비동기로 트리거한 뒤 결과가 나올 때까지 1초 간격으로 상태를 폴링한다
+D) Turn on Drift Detection so that it detects the difference and blocks the bucket when it is about to be deleted
 
-**정답: B**
+**Answer: B**
 
-해설: 동기 호출은 A가 B를 기다리며 **이중 과금**되고 B의 지연이 API 타임아웃으로 전파된다. A가 SQS에 작업을 넣고 즉시 반환하면 사용자는 빠른 응답을 받고, B는 자기 속도로 큐를 비워 독립 확장되며, B 장애 시에도 메시지가 보존된다(생산자-소비자를 유계 버퍼로 분리). A는 근본 문제(결합·과금)를 안 풀고, C는 단일 책임을 깨고, D는 비효율적이다.
-
----
-
-**문제 10.** CDK로 작성한 인프라를 새 AWS 계정의 ap-northeast-2 리전에 처음 배포하려 하자 자산 업로드용 버킷이 없다는 류의 오류가 난다. 먼저 무엇을 해야 하나?
-
-A) cdk synth를 다시 실행해 자산 버킷 정의가 포함된 템플릿을 재생성한다
-
-B) 해당 계정·리전에 `cdk bootstrap` 1회 실행해 배포용 S3·ECR·IAM 발판을 구성
-
-C) cdk destroy로 잔여 스택을 정리한 뒤 깨끗한 상태에서 다시 deploy한다
-
-D) CloudFormation 콘솔에서 자산용 S3 버킷 스택을 수동 생성한 뒤 deploy한다
-
-**정답: B**
-
-해설: CDK는 배포 시 Lambda zip·Docker 이미지 같은 자산을 올려둘 S3·ECR과 배포용 IAM 역할이 필요하고, `cdk bootstrap`이 이 발판을 **계정·리전 조합마다 1회** 깐다. 새 계정/리전이라면 bootstrap이 선행돼야 한다. A) synth는 템플릿 생성일 뿐 발판을 안 만들고, C) destroy는 삭제, D) 수동 생성은 CDK 워크플로가 아니다.
+Explanation: **DeletionPolicy: Retain** specifies, **per resource**, "keep this resource even if the stack is deleted". It is commonly used for S3, RDS, and other resources with important data. A) Termination Protection prevents deletion of the **stack itself** (not per resource), so its purpose is different. C) A Stack Policy protects resources during updates, and D) Drift detects differences and is irrelevant. Distinguish: "keep only the resource = DeletionPolicy, block deletion of the stack itself = Termination Protection".
 
 ---
 
-**문제 11.** ap-northeast-2의 네트워크 스택이 Export한 VPC ID를, us-east-1의 다른 스택에서 `!ImportValue`로 가져오려 했더니 동작하지 않는다. 이유는?
+**Question 6.** You try to deploy a SAM template, but the `Transform` declaration is missing, so it is processed as plain CloudFormation, which rejects `AWS::Serverless::Function` as an unknown resource type. What is needed?
 
-A) `!ImportValue` 구문에 Export 이름을 잘못 적은 문법 오류 때문
+A) Add a Parameters section to declare the Serverless resource type as a parameter
 
-B) !ImportValue는 같은 리전 내 스택 간 Export/Import만 지원하며 cross-region 참조가 불가능하기 때문
+B) Declare `Transform: AWS::Serverless-2016-10-31` at the top level of the template
 
-C) VPC ID는 Export 대상에서 제외되는 자원 타입이라 애초에 Import할 수 없어서
+C) Add a Globals section defining common function properties so that the type is recognized
 
-D) 가져오는 스택의 실행 역할에 us-east-1 자원 접근 권한이 없어서
+D) Export the function ARN in the Outputs section so that the resource type is registered
 
-**정답: B**
+**Answer: B**
 
-해설: `!ImportValue`(및 Export)는 **같은 리전 안의** 스택끼리만 값을 주고받는다 — cross-region·cross-account 참조를 지원하지 않는다. 리전을 가로질러 값을 공유하려면 SSM Parameter Store 같은 다른 메커니즘을 써야 한다. A는 문법 문제로 단정할 수 없고, C) VPC ID는 Export 가능하며, D는 무관하다. "ImportValue=동일 리전 한정"은 단독 출제 포인트다.
+Explanation: SAM is a CloudFormation **macro**, and the `Transform: AWS::Serverless-2016-10-31` declaration tells the engine to "expand this short SAM syntax into long-form CloudFormation". Without this declaration, CloudFormation does not recognize `AWS::Serverless::*` resources. A, C, and D are optional sections unrelated to this error. "SAM = Transform required" is a key point that is also tested on its own.
 
 ---
 
-**문제 12.** 같은 CloudFormation 템플릿을 동일 환경에 두 번 연속 적용했는데, 두 번째 적용에서 아무 변경도 발생하지 않고 자원이 그대로다. 이 동작의 근거는?
+**Question 7.** When a single order-completed event occurs, the inventory, email, and analytics systems must each process it **simultaneously**, and each consumer needs a buffer to withstand temporary bursts and failure isolation. What is the most suitable configuration?
 
-A) CloudFormation이 동일 템플릿을 캐싱해 두 번째 적용을 건너뛰는 버그 때문
+A) Attach the inventory, email, and analytics consumers to a single SQS queue so that all three receive the same message
 
-B) CloudFormation은 선언적 모델이라 "원하는 상태"와 현재 상태가 같으면 변경할 게 없어 멱등하게 동작함
+B) Fan out from an SNS topic to three SQS subscriptions (each SQS queue with a consumer and a DLQ)
 
-C) 두 번째 적용 시 Change Set이 빈 변경 집합을 만들어 업데이트를 차단했기 때문
+C) The order Lambda synchronously invokes the inventory, email, and analytics systems in sequence and retries on failure
 
-D) Termination Protection이 켜져 있어 두 번째 적용의 변경이 막혔기 때문
+D) Use an EventBridge scheduled rule to periodically deliver the order event to the three systems
 
-**정답: B**
+**Answer: B**
 
-해설: CloudFormation은 **선언적**이라 "목표 상태"를 선언하면 현재 상태와의 차이만 적용한다. 이미 목표 상태에 도달했다면 두 번째 적용은 적용할 차이가 없어 아무것도 바꾸지 않는다 — 이것이 **멱등성**이다(같은 입력을 여러 번 적용해도 결과가 한 번 적용한 것과 같음). 명령적 스크립트라면 두 번 실행 시 부작용이 누적될 수 있지만, 선언적 IaC는 그렇지 않다. A는 정상 동작을 오해한 것이고, C·D는 이 동작의 원인이 아니다.
+Explanation: Having multiple systems receive one event simultaneously is SNS fan-out, and **receiving each subscription through SQS** gives each consumer its own buffer, retries, and DLQ (failure isolation). SNS -> SQS -> consumer is better at absorbing bursts and preventing loss than having SNS subscribe Lambda directly. A) SQS is 1:1, so only one consumer takes a given message and all three cannot receive it. C) Sequential synchronous invocation causes coupling and propagation problems, and D) a schedule is irrelevant to this requirement.
+
+---
+
+**Question 8.** A payment-processing Lambda consuming an SQS standard queue occasionally processes the same message twice, causing double charges. What is the correct root-cause response?
+
+A) Replace SQS with SNS because SQS cannot be trusted
+
+B) A standard queue is at-least-once, so duplicates are normal; make the consumer idempotent with an idempotency key + DynamoDB conditional writes (`attribute_not_exists`), or use a FIFO queue
+
+C) Limit Lambda concurrency to 1
+
+D) Reduce the message size
+
+**Answer: B**
+
+Explanation: An SQS standard queue provides **at-least-once** delivery, so the same message may arrive twice (because of the Two Generals Problem, "exactly-once delivery" is impossible). When duplicates are fatal, as with payments, you must make the consumer **idempotent** — identify already-processed requests with an idempotency key and ignore duplicates with a DynamoDB conditional write. Alternatively, use a **FIFO queue**, which guarantees "exactly-once processing". A makes the model fit worse, C kills performance and is not a root-cause fix either, and D is irrelevant.
+
+---
+
+**Question 9.** Lambda A behind API Gateway hands heavy post-processing to Lambda B. Currently A invokes B synchronously, which is costly, and if B slows down the API response times out. What is the improvement?
+
+A) Increase B's memory and timeout so it finishes faster, and keep the synchronous invocation structure
+
+B) A puts the job into SQS and responds immediately, and B consumes the queue asynchronously
+
+C) Merge A and B into one large Lambda to eliminate the overhead between invocations and the double billing
+
+D) A triggers B asynchronously and then polls the status at 1-second intervals until the result is available
+
+**Answer: B**
+
+Explanation: With a synchronous invocation, A waits for B and is **billed twice**, and B's latency propagates into the API timeout. If A puts the job into SQS and returns immediately, the user gets a fast response, B drains the queue at its own pace and scales independently, and messages are preserved even if B fails (decoupling producer and consumer with a bounded buffer). A does not solve the root problems (coupling and billing), C breaks the single-responsibility principle, and D is inefficient.
+
+---
+
+**Question 10.** When you try to deploy infrastructure written with CDK for the first time to the ap-northeast-2 Region of a new AWS account, you get an error along the lines of the asset upload bucket not existing. What should you do first?
+
+A) Re-run cdk synth to regenerate the template that includes the asset bucket definition
+
+B) Run `cdk bootstrap` once for that account and Region to set up the S3, ECR, and IAM scaffolding for deployment
+
+C) Clean up leftover stacks with cdk destroy and then deploy again from a clean state
+
+D) Manually create the asset S3 bucket stack in the CloudFormation console and then deploy
+
+**Answer: B**
+
+Explanation: At deployment, CDK needs S3 and ECR to hold assets such as Lambda zips and Docker images, plus IAM roles for deployment, and `cdk bootstrap` lays down this scaffolding **once per account-Region combination**. For a new account/Region, bootstrap must come first. A) synth only generates the template and does not create the scaffolding, C) destroy is deletion, and D) manual creation is not part of the CDK workflow.
+
+---
+
+**Question 11.** You tried to use `!ImportValue` in a stack in us-east-1 to import a VPC ID that a network stack in ap-northeast-2 had exported, but it does not work. Why?
+
+A) Because of a syntax error in which the Export name was written incorrectly in the `!ImportValue` syntax
+
+B) Because !ImportValue supports Export/Import only between stacks within the same Region and cannot make cross-region references
+
+C) Because the VPC ID is a resource type excluded from Export and thus can never be imported
+
+D) Because the importing stack's execution role lacks permission to access us-east-1 resources
+
+**Answer: B**
+
+Explanation: `!ImportValue` (and Export) exchange values only between stacks **within the same Region** — cross-region and cross-account references are not supported. To share values across Regions you must use another mechanism such as SSM Parameter Store. A cannot be asserted to be a syntax problem, C) a VPC ID can be exported, and D is irrelevant. "ImportValue = same Region only" is a standalone exam point.
+
+---
+
+**Question 12.** You applied the same CloudFormation template twice in a row to the same environment, and the second application caused no changes and the resources stayed as they were. What is the basis for this behavior?
+
+A) A bug where CloudFormation caches the identical template and skips the second application
+
+B) CloudFormation is a declarative model, so if the "desired state" equals the current state there is nothing to change and it behaves idempotently
+
+C) Because on the second application a Change Set produced an empty change set and blocked the update
+
+D) Because Termination Protection was on and blocked the changes of the second application
+
+**Answer: B**
+
+Explanation: CloudFormation is **declarative**: you declare the "target state" and it applies only the difference from the current state. If the target state has already been reached, the second application has no difference to apply and changes nothing — this is **idempotency** (applying the same input multiple times gives the same result as applying it once). An imperative script could accumulate side effects when run twice, but declarative IaC does not. A misunderstands normal behavior, and C and D are not the cause of this behavior.
 
 ---

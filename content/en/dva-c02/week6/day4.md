@@ -312,86 +312,86 @@ Pattern's three core elements: ① `attribute_not_exists` creates lock only abse
 
 ## 📝 Practice Questions
 
-**문제 1.** DynamoDB TransactWriteItems의 최대 항목 수와 비용은?
+**Question 1.** What are the maximum number of items and the cost of DynamoDB TransactWriteItems?
 
-A) 최대 25개, 1× WCU
-B) 최대 100개, 2× WCU
-C) 최대 25개, 2× WCU
-D) 최대 100개, 1× WCU
+A) Up to 25 items, 1x WCU
+B) Up to 100 items, 2x WCU
+C) Up to 25 items, 2x WCU
+D) Up to 100 items, 1x WCU
 
-**정답: B**
-해설: TransactWriteItems는 최대 100개 항목(또는 4MB)을 하나의 트랜잭션으로 처리할 수 있다. 비용은 일반 쓰기의 2배 WCU를 소비한다 — 2단계 커밋(Prepare + Commit)이 필요하기 때문이다. 2023년부터 100개로 확대됐다(이전 25개). BatchWriteItem은 25개 제한, 비용 1× WCU이지만 원자성이 없다.
-
----
-
-**문제 2.** BatchWriteItem과 TransactWriteItems의 핵심 차이는?
-
-A) BatchWriteItem은 여러 테이블을 지원하지 않는다
-B) TransactWriteItems는 원자적이고 All-or-Nothing이지만, BatchWriteItem은 원자성이 없어 일부만 성공할 수 있다
-C) BatchWriteItem은 최대 100개, TransactWriteItems는 최대 25개
-D) 성능 차이만 있을 뿐 원자성은 동일하다
-
-**정답: B**
-해설: 가장 중요한 차이는 원자성이다. TransactWriteItems는 ACID 트랜잭션으로 모든 항목이 성공하거나 모두 실패한다. BatchWriteItem은 원자성이 없어 일부 항목만 성공하고 실패한 항목은 `UnprocessedItems`로 반환된다. BatchWriteItem이 여러 테이블을 지원하는 것은 맞다(A는 틀림). BatchWriteItem은 최대 25개, TransactWriteItems는 최대 100개다(C는 반대로 기술됨).
+**Answer: B**
+Explanation: TransactWriteItems can process up to 100 items (or 4 MB) in one transaction. The cost consumes 2x the WCU of a standard write — because a two-phase commit (Prepare + Commit) is required. It was expanded to 100 starting in 2023 (previously 25). BatchWriteItem has a 25-item limit and costs 1x WCU, but has no atomicity.
 
 ---
 
-**문제 3.** DynamoDB TTL에 대한 올바른 설명을 모두 고르시오.
+**Question 2.** What is the key difference between BatchWriteItem and TransactWriteItems?
 
-A) TTL 삭제는 WCU를 소비하지 않는다
-B) TTL이 만료된 항목은 즉시 삭제된다
-C) TTL로 삭제된 항목은 DynamoDB Streams에 REMOVE 이벤트로 기록된다
-D) TTL 속성값은 Unix epoch 밀리초 단위여야 한다
+A) BatchWriteItem does not support multiple tables
+B) TransactWriteItems is atomic and all-or-nothing, but BatchWriteItem has no atomicity, so only some items may succeed
+C) BatchWriteItem is up to 100 items, TransactWriteItems is up to 25
+D) There is only a performance difference; atomicity is the same
 
-**정답: A, C**
-해설: A(맞음) — TTL 삭제는 WCU를 소비하지 않아 비용 효율적이다. B(틀림) — TTL 만료 후 0~48시간 내 비동기로 삭제되며 즉시 삭제가 아니다. C(맞음) — Streams에 REMOVE 이벤트로 기록되며 `userIdentity`로 TTL 삭제임을 식별할 수 있다. D(틀림) — TTL 속성값은 Unix epoch **초** 단위여야 한다. 밀리초나 문자열은 TTL로 동작하지 않는다.
-
----
-
-**문제 4.** Optimistic Locking에서 ConditionalCheckFailedException이 발생했을 때 올바른 처리는?
-
-A) 오류를 무시하고 계속 진행한다
-B) 최신 데이터를 다시 읽고 비즈니스 로직을 재적용한 후 재시도한다
-C) 트랜잭션으로 전환한다
-D) 테이블을 재생성한다
-
-**정답: B**
-해설: ConditionalCheckFailedException은 버전 번호가 일치하지 않아 다른 프로세스가 먼저 항목을 수정했음을 의미한다. 올바른 처리는 최신 데이터를 다시 읽고(GetItem), 변경사항을 새 버전에 적용한 후 재시도하는 것이다. 이 재시도 로직을 구현할 때 최대 재시도 횟수와 지수 백오프(exponential backoff)를 포함해야 한다. 오류를 무시하면 데이터 손실이 발생하고, 무한 재시도는 라이브록(livelock)을 유발할 수 있다.
+**Answer: B**
+Explanation: The most important difference is atomicity. TransactWriteItems is an ACID transaction in which all items succeed or all fail. BatchWriteItem has no atomicity, so only some items may succeed and the failed items are returned as `UnprocessedItems`. It is true that BatchWriteItem supports multiple tables (A is wrong). BatchWriteItem is up to 25 items and TransactWriteItems is up to 100 (C states them in reverse).
 
 ---
 
-**문제 5.** 전자상거래에서 상품 구매 시 재고 감소와 주문 생성을 동시에 처리해야 한다. 재고가 부족하면 주문도 취소되어야 한다. 가장 적합한 DynamoDB 구현은?
+**Question 3.** Select all correct statements about DynamoDB TTL.
 
-A) 재고 Update → 주문 Put 순서로 별도 API 호출
-B) TransactWriteItems로 재고 Update(quantity >= 1 조건)와 주문 Put을 원자적으로 실행
-C) Lambda를 두 번 호출해 순차 처리
-D) SQS 큐로 비동기 처리
+A) TTL deletion does not consume WCUs
+B) Items whose TTL has expired are deleted immediately
+C) Items deleted by TTL are recorded in DynamoDB Streams as REMOVE events
+D) The TTL attribute value must be in Unix epoch milliseconds
 
-**정답: B**
-해설: 재고 감소와 주문 생성이 원자적이어야 한다. 별도 API 호출(A)은 재고 감소 성공 후 주문 생성 실패 시 재고만 감소하는 불일치가 생긴다. TransactWriteItems는 ACID 트랜잭션으로 재고의 `quantity >= 1` 조건이 실패하면 주문 Put도 실행되지 않는다. Lambda 순차 처리(C)도 중간 실패 시 불일치가 생긴다. SQS 비동기(D)는 원자성을 보장하지 않는다.
-
----
-
-**문제 6.** 분산 락 구현 시 TTL 속성을 함께 설정하는 이유는?
-
-A) 락 소유자를 식별하기 위해
-B) 락 홀더 프로세스가 비정상 종료되었을 때 락이 자동으로 해제되도록 하기 위해
-C) 락 획득 속도를 높이기 위해
-D) WCU 비용을 절감하기 위해
-
-**정답: B**
-해설: 분산 락의 가장 큰 위험은 락 홀더가 크래시되거나 네트워크 파티션으로 락을 해제하지 못하는 경우다. TTL을 설정하면 락 홀더가 사라져도 TTL 만료 후 DynamoDB가 자동으로 항목을 삭제해 다른 프로세스가 락을 획득할 수 있다. 다만 TTL 삭제가 비동기(0~48시간)이므로, 락 TTL을 비즈니스 요구 시간보다 충분히 짧게 설정해야 한다.
+**Answer: A, C**
+Explanation: A (correct) — TTL deletion does not consume WCUs, so it is cost-efficient. B (incorrect) — Items are deleted asynchronously within 0 to 48 hours after TTL expiration, not immediately. C (correct) — They are recorded in Streams as REMOVE events, and `userIdentity` can be used to identify them as TTL deletions. D (incorrect) — The TTL attribute value must be in Unix epoch **seconds**. Milliseconds or strings do not work as TTL.
 
 ---
 
-**문제 7.** DynamoDB TransactWriteItems에서 `ClientRequestToken`의 역할은?
+**Question 4.** What is the correct handling when ConditionalCheckFailedException occurs in Optimistic Locking?
 
-A) 트랜잭션 우선순위를 설정한다
-B) 같은 토큰으로 재시도할 때 트랜잭션이 중복 실행되지 않도록 멱등성을 보장한다 (10분 유효)
-C) 특정 파티션에 트랜잭션을 고정시킨다
-D) 트랜잭션 격리 수준을 설정한다
+A) Ignore the error and continue
+B) Re-read the latest data, reapply the business logic, and retry
+C) Switch to a transaction
+D) Recreate the table
 
-**정답: B**
-해설: `ClientRequestToken`은 트랜잭션 멱등성 토큰이다. 네트워크 오류로 트랜잭션 응답을 못 받았을 때, 같은 토큰으로 재시도하면 DynamoDB가 이전 결과를 그대로 반환하고 트랜잭션을 다시 실행하지 않는다. 토큰은 UUID로 생성하고 요청 ID나 주문 ID에서 파생시키는 것이 일반적이다. 10분 유효창 이후 같은 토큰으로 재시도하면 새 트랜잭션으로 처리된다.
+**Answer: B**
+Explanation: ConditionalCheckFailedException means the version numbers did not match, so another process modified the item first. The correct handling is to re-read the latest data (GetItem), apply your changes to the new version, and retry. When implementing this retry logic, include a maximum retry count and exponential backoff. Ignoring the error causes data loss, and infinite retries can cause livelock.
+
+---
+
+**Question 5.** In an e-commerce application, when a product is purchased, inventory reduction and order creation must be processed together. If inventory is insufficient, the order must also be canceled. What is the most suitable DynamoDB implementation?
+
+A) Separate API calls in the order inventory Update -> order Put
+B) Atomically execute the inventory Update (with a quantity >= 1 condition) and the order Put with TransactWriteItems
+C) Invoke Lambda twice for sequential processing
+D) Asynchronous processing with an SQS queue
+
+**Answer: B**
+Explanation: Inventory reduction and order creation must be atomic. Separate API calls (A) create an inconsistency where, if order creation fails after inventory reduction succeeds, only the inventory is reduced. TransactWriteItems is an ACID transaction, so if the inventory's `quantity >= 1` condition fails, the order Put is not executed either. Sequential Lambda processing (C) also creates an inconsistency on a mid-way failure. Asynchronous SQS (D) does not guarantee atomicity.
+
+---
+
+**Question 6.** Why is a TTL attribute also set when implementing a distributed lock?
+
+A) To identify the lock owner
+B) So that the lock is released automatically when the lock-holding process terminates abnormally
+C) To speed up lock acquisition
+D) To reduce WCU cost
+
+**Answer: B**
+Explanation: The biggest risk of a distributed lock is the case where the lock holder crashes or cannot release the lock because of a network partition. If a TTL is set, even if the lock holder disappears, DynamoDB automatically deletes the item after the TTL expires so that another process can acquire the lock. However, since TTL deletion is asynchronous (0 to 48 hours), the lock TTL must be set sufficiently shorter than the time required by the business requirements.
+
+---
+
+**Question 7.** What is the role of `ClientRequestToken` in DynamoDB TransactWriteItems?
+
+A) It sets the transaction priority
+B) It guarantees idempotency so that a transaction is not executed twice when retried with the same token (valid for 10 minutes)
+C) It pins the transaction to a specific partition
+D) It sets the transaction isolation level
+
+**Answer: B**
+Explanation: `ClientRequestToken` is a transaction idempotency token. When you do not receive the transaction response due to a network error, retrying with the same token makes DynamoDB return the previous result as is and not execute the transaction again. The token is typically generated as a UUID and derived from a request ID or order ID. If you retry with the same token after the 10-minute validity window, it is processed as a new transaction.
 
 ---

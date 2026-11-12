@@ -122,62 +122,62 @@ Next, we'll see SageMaker Data Wrangler, applying these transformations visually
 
 ## 📝 Practice Questions
 
-**문제 1.** 연봉(평균 5000만) 과 나이(평균 40)를 가진 데이터셋에서 KNN 모델을 학습한다. 연봉의 단위가 커서 모델이 나이 정보를 무시할 가능성이 크다. 해결책은?
+**Question 1.** You train a KNN model on a dataset with salary (average 50 million KRW) and age (average 40). Because salary has such a large scale, the model is likely to ignore the age information. What is the solution?
 
-A) 연봉을 절반으로 나눈다  
-B) StandardScaler로 표준화한다  
-C) 연봉과 나이 컬럼을 삭제한다  
-D) 데이터를 무작위로 섞는다  
+A) Divide salary in half  
+B) Standardize with StandardScaler  
+C) Delete the salary and age columns  
+D) Shuffle the data randomly  
 
-**정답: B**  
-해설: StandardScaler는 모든 특성을 평균 0, 표준편차 1로 변환하여 거리 기반 모델(KNN)이 모든 축을 동등하게 취급하게 한다. 수동 변환(A)은 비과학적이고, 컬럼 삭제(C)는 정보 손실이며, 섞기(D)는 문제를 해결하지 못한다.
-
----
-
-**문제 2.** One-Hot 인코딩과 Label 인코딩의 차이로 가장 옳은 설명은?
-
-A) One-Hot은 느리고, Label은 빠르다  
-B) One-Hot은 명목형(순서 없음) 범주에, Label은 서열형(순서 있음) 범주에 적합하다  
-C) Label 인코딩이 모든 경우 더 정확하다  
-D) 둘은 같은 결과를 낸다  
-
-**정답: B**  
-해설: One-Hot은 각 범주를 이진 열로 펼쳐 순서 없는 관계를 표현하고, Label은 정수를 매겨 순서 있는 범주를 표현한다. 명목형을 Label로 하면 모델이 가짜 순서를 학습한다. 속도나 정확도가 아니라 범주의 특성이 선택 기준이다.
+**Answer: B**  
+Explanation: StandardScaler transforms every feature to mean 0 and standard deviation 1 so that a distance-based model (KNN) treats all axes equally. Manual transformation (A) is unscientific, deleting columns (C) loses information, and shuffling (D) does not solve the problem.
 
 ---
 
-**문제 3.** 결측치가 5% 미만이고 무작위로 분포되어 있다. 가장 현실적인 처리 방법은?
+**Question 2.** Which statement most correctly describes the difference between One-Hot encoding and Label encoding?
 
-A) 모두 평균으로 대치한다  
-B) 해당 행을 삭제한다  
-C) KNNImputer를 사용한다  
-D) 모두 0으로 대치한다  
+A) One-Hot is slow and Label is fast  
+B) One-Hot suits nominal (unordered) categories, and Label suits ordinal (ordered) categories  
+C) Label encoding is more accurate in all cases  
+D) The two produce the same result  
 
-**정답: B**  
-해설: 결측이 5% 미만이고 완전 무작위(MCAR)이면 행 삭제는 편향을 만들지 않으며 가장 간단하다. 평균 대치(A)는 분산 감소와 상관 왜곡을 일으킬 수 있고, KNN(C)은 5%에 과하며, 0 대치(D)는 임의적이다.
-
----
-
-**문제 4.** IQR 방법으로 이상치를 탐지한 후, 사기 탐지 모델에 적용하려 한다. 가장 적절한 처리는?
-
-A) 이상치를 모두 삭제한다  
-B) 이상치를 평균값으로 대체한다  
-C) 이상치를 유지하고 모델이 학습하게 한다  
-D) 이상치만 별도 모델로 학습한다  
-
-**정답: C**  
-해설: 사기 탐지에서는 이상치가 곧 타깃(사기 사건)이므로 절대 제거하거나 조작하면 안 된다. 모든 데이터를 유지해 모델이 사기 패턴을 학습하게 한다.
+**Answer: B**  
+Explanation: One-Hot expands each category into binary columns to represent unordered relationships, and Label assigns integers to represent ordered categories. Applying Label encoding to nominal data makes the model learn a false ordering. The selection criterion is the nature of the category, not speed or accuracy.
 
 ---
 
-**문제 5.** Scaler를 train/test 데이터에 적용할 때 가장 중요한 주의점은?
+**Question 3.** Missing values are under 5% and randomly distributed. What is the most realistic way to handle them?
 
-A) train과 test에 동일한 스케일러를 사용한다  
-B) train으로 fit한 스케일러로 test를 transform한다 (test로 다시 fit하지 않음)  
-C) train과 test 각각 다른 스케일러를 fit한다  
-D) 스케일러 사용 순서는 상관없다  
+A) Impute all with the mean  
+B) Delete the affected rows  
+C) Use KNNImputer  
+D) Impute all with 0  
 
-**정답: B**  
-해설: Scaler는 train으로만 fit 통계량을 계산하고, 그 스케일러로 test를 transform하여 데이터 누수를 방지한다. test로 다시 fit(C)하면 test 정보가 학습에 섞여 현실 성능 평가가 왜곡된다.
+**Answer: B**  
+Explanation: If missingness is under 5% and completely at random (MCAR), deleting rows introduces no bias and is the simplest. Mean imputation (A) can reduce variance and distort correlations, KNN (C) is overkill for 5%, and imputing 0 (D) is arbitrary.
+
+---
+
+**Question 4.** After detecting outliers with the IQR method, you plan to apply the data to a fraud detection model. What is the most appropriate handling?
+
+A) Delete all outliers  
+B) Replace outliers with the mean  
+C) Keep the outliers and let the model learn from them  
+D) Train a separate model on the outliers only  
+
+**Answer: C**  
+Explanation: In fraud detection, outliers are the target (fraud events) themselves, so they must never be removed or manipulated. Keep all the data so the model learns the fraud patterns.
+
+---
+
+**Question 5.** When applying a Scaler to train/test data, what is the most important point to watch for?
+
+A) Use the same scaler for train and test  
+B) Transform test with a scaler fit on train (do not fit again on test)  
+C) Fit a different scaler for train and test each  
+D) The order in which the scaler is used does not matter  
+
+**Answer: B**  
+Explanation: The scaler computes its fit statistics from train only and transforms test with that scaler, preventing data leakage. Fitting again on test (C) mixes test information into training and distorts the realistic performance evaluation.
 
 ---

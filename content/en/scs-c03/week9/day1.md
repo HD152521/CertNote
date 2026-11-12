@@ -129,63 +129,63 @@ Example: `UnauthorizedAccess:EC2/SSHBruteForce` finding → EventBridge → Lamb
 
 ## 📝 Practice Questions
 
-**문제 1.** 보안팀이 50개 계정 조직에서 GuardDuty를 운영하려 한다. 신규로 생성되는 계정이 자동으로 탐지에 포함되고, 워크로드 계정 관리자가 GuardDuty를 끄지 못하게 하려면?
+**Question 1.** The security team wants to operate GuardDuty in a 50-account organization. How can newly created accounts be automatically included in detection, and workload account administrators be prevented from turning GuardDuty off?
 
-A) 관리 계정에서만 GuardDuty를 켜고 다른 계정은 수동 초대  
-B) 별도 Security Tooling 계정을 GuardDuty 위임 관리자로 지정하고 조직 모드로 auto-enable을 켠다  
-C) 각 계정 관리자에게 GuardDuty를 켜도록 이메일로 요청  
-D) CloudTrail만 조직 추적으로 켜면 GuardDuty가 자동 활성화된다  
+A) Turn on GuardDuty only in the management account and manually invite other accounts  
+B) Designate a separate Security Tooling account as the GuardDuty delegated administrator and turn on auto-enable in organization mode  
+C) Email each account administrator and ask them to turn on GuardDuty  
+D) Turning on only an organization trail for CloudTrail automatically enables GuardDuty  
 
-**정답: B**  
-해설: 멀티계정 베이스라인의 정답은 전용 Security Tooling 계정을 위임 관리자로 지정하고 조직 모드 + auto-enable로 신규 계정까지 자동 포함하는 것이다. 조직 모드에서는 위임 관리자가 멤버 계정의 GuardDuty를 중앙 관리하므로 워크로드 관리자가 임의로 끌 수 없다. 수동 초대·이메일 요청은 누락·사각지대를 낳고, CloudTrail을 켠다고 GuardDuty가 자동으로 켜지지는 않는다.
-
----
-
-**문제 2.** EC2 인스턴스 안에서 실행 중인 악성 프로세스와 파일 변경을 GuardDuty로 탐지하고 싶다. 기초 GuardDuty만으로는 보이지 않았다. 무엇을 해야 하는가?
-
-A) VPC Flow Logs를 별도로 S3에 저장한다  
-B) GuardDuty Runtime Monitoring을 활성화한다  
-C) CloudTrail 데이터 이벤트를 켠다  
-D) Inspector를 활성화한다  
-
-**정답: B**  
-해설: 기초 GuardDuty는 네트워크 흐름·DNS·API 관점만 분석하므로 호스트 *내부*의 프로세스·파일 행위는 보지 못한다. 호스트 런타임 가시성은 경량 에이전트를 배포하는 Runtime Monitoring이 제공한다. Flow Logs 저장은 GuardDuty 동작과 무관하고, CloudTrail 데이터 이벤트는 API/S3 관점이며, Inspector는 런타임 위협이 아닌 취약점 스캔 도구다.
+**Answer: B**  
+Explanation: The answer for a multi-account baseline is to designate a dedicated Security Tooling account as the delegated administrator and use organization mode + auto-enable so that even new accounts are automatically included. In organization mode, the delegated administrator centrally manages GuardDuty for member accounts, so workload administrators cannot turn it off arbitrarily. Manual invitations and email requests create omissions and blind spots, and enabling CloudTrail does not automatically enable GuardDuty.
 
 ---
 
-**문제 3.** GuardDuty가 DNS 기반 데이터 유출(DNS exfiltration) 탐지 결과를 전혀 생성하지 않는다. 조사 결과 해당 VPC는 커스텀 외부 DNS resolver를 사용한다. 원인은?
+**Question 2.** You want to use GuardDuty to detect malicious processes and file changes running inside an EC2 instance. Basic GuardDuty alone did not show them. What should you do?
 
-A) GuardDuty는 DNS를 분석하지 않는다  
-B) DNS 기반 탐지는 VPC 기본 Route 53 Resolver를 사용할 때만 동작하므로, 외부 resolver 사용 시 사각지대가 된다  
-C) DNS exfiltration 결과는 유료 플랜에만 있다  
-D) Trusted IP 리스트에 모든 IP가 등록되어 있다  
+A) Store VPC Flow Logs separately in S3  
+B) Enable GuardDuty Runtime Monitoring  
+C) Turn on CloudTrail data events  
+D) Enable Inspector  
 
-**정답: B**  
-해설: GuardDuty의 DNS 쿼리 분석은 VPC 기본 DNS(Route 53 Resolver)를 통과하는 질의에만 적용된다. 커스텀/외부 DNS resolver를 사용하면 GuardDuty가 DNS 질의를 볼 수 없어 DNS 기반 결과가 누락된다. GuardDuty는 기초 소스로 DNS를 분석하므로 A는 틀리고, DNS exfiltration은 기초 결과이며, 모든 IP를 신뢰 목록에 넣는 비정상 구성은 시나리오와 무관하다.
-
----
-
-**문제 4.** `CryptoCurrency:EC2/BitcoinTool.B!DNS` 결과가 발생했다. 이 결과가 알려주는 것과 가장 적절한 1차 대응은?
-
-A) EC2가 비트코인 채굴/통신 활동을 보이며, EventBridge로 해당 인스턴스 격리·스냅샷 자동화를 트리거한다  
-B) 단순 정보성 결과이므로 무시한다  
-C) S3 버킷이 공개되었다는 의미다  
-D) IAM 사용자의 권한이 과도하다는 의미다  
-
-**정답: A**  
-해설: 결과 명명 규칙상 ThreatPurpose가 CryptoCurrency, 대상이 EC2, DNS 기반 탐지(`.B!DNS`)이므로 인스턴스가 암호화폐 채굴/관련 도메인과 통신 중임을 뜻한다 — 흔히 침해의 강한 신호다. 적절한 대응은 결과를 EventBridge로 받아 인스턴스 격리·포렌식 스냅샷·티켓팅을 자동화하는 것이다. 무시는 위험하고, S3 공개나 IAM 과다 권한은 다른 결과 유형(Policy:S3, Recon:IAMUser 등)이다.
+**Answer: B**  
+Explanation: Basic GuardDuty analyzes only the network flow, DNS, and API perspectives, so it cannot see process and file behavior *inside* the host. Host runtime visibility is provided by Runtime Monitoring, which deploys a lightweight agent. Storing Flow Logs is unrelated to how GuardDuty works, CloudTrail data events are an API/S3 perspective, and Inspector is a vulnerability scanning tool, not a runtime threat tool.
 
 ---
 
-**문제 5.** GuardDuty의 Trusted IP list에 대한 설명으로 옳은 것은?
+**Question 3.** GuardDuty generates no DNS-based data exfiltration (DNS exfiltration) findings at all. Investigation shows that the VPC uses a custom external DNS resolver. What is the cause?
 
-A) 등록된 IP로부터의 접근을 네트워크 수준에서 허용(allow)한다  
-B) 등록된 IP의 활동에 대해 GuardDuty가 결과를 생성하지 않도록 억제하지만, 접근 자체를 허용하는 통제는 아니다  
-C) 등록된 IP와의 통신을 무조건 차단한다  
-D) 멤버 계정마다 자유롭게 추가할 수 있다  
+A) GuardDuty does not analyze DNS  
+B) DNS-based detection works only when the default VPC Route 53 Resolver is used, so using an external resolver creates a blind spot  
+C) DNS exfiltration findings exist only in the paid plan  
+D) All IPs are registered in the Trusted IP list  
 
-**정답: B**  
-해설: Trusted IP list는 해당 IP의 활동에 대한 결과 생성을 억제하는 탐지 측 설정일 뿐, 접근 허용/차단 같은 네트워크 예방 통제가 아니다. 접근 통제는 SG/NACL/WAF의 역할이다. 통신을 차단하는 것은 Threat IP list의 결과 생성과도 다른 개념이며, 조직 모드에서 이 리스트는 위임 관리자가 중앙 관리하므로 멤버가 임의 추가하지 못한다.
+**Answer: B**  
+Explanation: GuardDuty's DNS query analysis applies only to queries that pass through the VPC default DNS (Route 53 Resolver). If you use a custom/external DNS resolver, GuardDuty cannot see the DNS queries, so DNS-based findings are missing. GuardDuty analyzes DNS as a foundational source, so A is wrong; DNS exfiltration is a foundational finding; and the abnormal configuration of putting every IP in the trusted list is unrelated to the scenario.
+
+---
+
+**Question 4.** A `CryptoCurrency:EC2/BitcoinTool.B!DNS` finding was generated. What does this finding tell you, and what is the most appropriate first response?
+
+A) The EC2 instance shows Bitcoin mining/communication activity, so trigger automation to isolate the instance and snapshot it via EventBridge  
+B) It is merely an informational finding, so ignore it  
+C) It means an S3 bucket was made public  
+D) It means an IAM user's permissions are excessive  
+
+**Answer: A**  
+Explanation: By the finding naming convention, the ThreatPurpose is CryptoCurrency, the target is EC2, and it is DNS-based detection (`.B!DNS`), so it means the instance is communicating with cryptocurrency mining or related domains - often a strong sign of compromise. The appropriate response is to receive the finding through EventBridge and automate instance isolation, forensic snapshot, and ticketing. Ignoring it is dangerous, and S3 exposure or excessive IAM permissions are other finding types (Policy:S3, Recon:IAMUser, etc.).
+
+---
+
+**Question 5.** Which statement about GuardDuty's Trusted IP list is correct?
+
+A) It allows access from the registered IPs at the network level  
+B) It suppresses GuardDuty from generating findings for the registered IPs' activity, but it is not a control that permits access itself  
+C) It unconditionally blocks communication with the registered IPs  
+D) Each member account can freely add to it  
+
+**Answer: B**  
+Explanation: The Trusted IP list is only a detection-side setting that suppresses finding generation for that IP's activity; it is not a network preventive control such as allowing or blocking access. Access control is the role of SG/NACL/WAF. Blocking communication is also a different concept from the Threat IP list's finding generation, and in organization mode this list is centrally managed by the delegated administrator, so members cannot add to it arbitrarily.
 
 ---
 

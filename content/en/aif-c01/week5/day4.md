@@ -80,62 +80,62 @@ Tomorrow is comprehensive review of Week 5 — responsible AI principles, AWS to
 
 ## 📝 Practice Questions
 
-**문제 1.** "Which data was this model trained on, and what transformations did it go through?" You must be able to track this. What data governance concept does this describe?
+**Question 1.** "Which data was this model trained on, and what transformations did it go through?" You must be able to track this. What data governance concept does this describe?
 
 A) Data Lineage/Provenance  
 B) Data Compression  
 C) Model Deployment Speed  
 D) Network Bandwidth  
 
-**정답: A**  
-해설: Tracking where data came from and what processing it underwent is data lineage (provenance). This is core to post-incident tracing of copyright, bias, and regulatory violations. B·C·D are unrelated to data governance's origin-tracking concept.
+**Answer: A**  
+Explanation: Tracking where data came from and what processing it underwent is data lineage (provenance). This is core to post-incident tracing of copyright, bias, and regulatory violations. B·C·D are unrelated to data governance's origin-tracking concept.
 
 ---
 
-**문제 2.** For compliance audit, you need "who, when, what resource, what action" API call history. What's the most appropriate AWS service?
+**Question 2.** For compliance audit, you need "who, when, what resource, what action" API call history. What's the most appropriate AWS service?
 
 A) Amazon CloudWatch  
 B) AWS CloudTrail  
 C) AWS PrivateLink  
 D) Amazon Comprehend  
 
-**정답: B**  
-해설: CloudTrail records all API calls, enabling "who did what" audit and traceability for compliance. A's CloudWatch is performance metrics monitoring, C is network path protection, D is NLP, none for audit logging.
+**Answer: B**  
+Explanation: CloudTrail records all API calls, enabling "who did what" audit and traceability for compliance. A's CloudWatch is performance metrics monitoring, C is network path protection, D is NLP, none for audit logging.
 
 ---
 
-**문제 3.** The best explanation of the CloudTrail and CloudWatch difference is?
+**Question 3.** The best explanation of the CloudTrail and CloudWatch difference is?
 
 A) CloudTrail tracks "who did what" (audit), CloudWatch tracks "how is the system functioning" (performance metrics)  
 B) They're completely identical  
 C) CloudTrail trains models, CloudWatch encrypts data  
 D) CloudWatch exclusively does API call audit  
 
-**정답: A**  
-해설: CloudTrail is API audit and tracking, CloudWatch is metrics-based operational monitoring. B wrongly treats them as identical. C means neither service does those things. D is backwards — CloudTrail does audit.
+**Answer: A**  
+Explanation: CloudTrail is API audit and tracking, CloudWatch is metrics-based operational monitoring. B wrongly treats them as identical. C means neither service does those things. D is backwards — CloudTrail does audit.
 
 ---
 
-**문제 4.** Which is least likely a legal·ethical consideration for generative AI adoption?
+**Question 4.** Which is least likely a legal·ethical consideration for generative AI adoption?
 
 A) Copyright issues in training data  
 B) Liability from hallucination-induced misinformation  
 C) Deepfake misuse potential  
 D) GPU physical heat dissipation specs  
 
-**정답: D**  
-해설: GPU heat specs are hardware specs unrelated to generative AI's legal and ethical concerns. A's copyright, B's hallucination liability, and C's deepfake misuse are all unique legal and ethical considerations for generative AI.
+**Answer: D**  
+Explanation: GPU heat specs are hardware specs unrelated to generative AI's legal and ethical concerns. A's copyright, B's hallucination liability, and C's deepfake misuse are all unique legal and ethical considerations for generative AI.
 
 ---
 
-**문제 5.** Which is least clearly a model governance practice?
+**Question 5.** Which is least clearly a model governance practice?
 
 A) Manage model versions and approval status with SageMaker Model Registry  
 B) Document training data, performance, limitations (model card)  
 C) Monitor performance and bias drift after deployment with Model Monitor  
 D) Grant unlimited model modification and deployment permissions to all employees  
 
-**정답: D**  
-해설: Model governance includes access control (IAM) limiting who can modify and deploy, so unlimited permissions directly violate governance. A's version management, B's documentation, and C's operational monitoring are all legitimate governance practices.
+**Answer: D**  
+Explanation: Model governance includes access control (IAM) limiting who can modify and deploy, so unlimited permissions directly violate governance. A's version management, B's documentation, and C's operational monitoring are all legitimate governance practices.
 
 ---

@@ -73,6 +73,6 @@ That's all four domains. Next: synthesized full scenarios.
 
 ## 📝 Practice Questions
 
-**문제 1-5** [Practice questions in Korean follow after marker]
+**Questions 1-5** [Practice questions in Korean follow after marker]
 
 ---

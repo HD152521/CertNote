@@ -109,62 +109,62 @@ Next week (Week 10) shifts to Domain 4 — actually **deploying, operating, moni
 
 ## 📝 Practice Questions
 
-**문제 1.** 클래스가 95:5로 불균형한 이탈 예측 문제에서 모델을 평가하려 한다. 다음 중 가장 부적절한 평가 방식은?
+**Question 1.** You want to evaluate a model on a churn prediction problem with a 95:5 class imbalance. Which of the following evaluation approaches is the LEAST appropriate?
 
-A) F1 점수를 본다  
-B) PR 곡선의 AUC를 본다  
-C) 단순 정확도(Accuracy)만으로 판단한다  
-D) 재현율과 정밀도를 함께 본다  
+A) Look at the F1 score  
+B) Look at the AUC of the PR curve  
+C) Judge by simple accuracy alone  
+D) Look at recall and precision together  
 
-**정답: C**  
-해설: 불균형 데이터에서 정확도는 다수 클래스만 맞혀도 높게 나와 모델 성능을 과대평가하므로 단독 판단은 부적절하다. F1(A)·PR-AUC(B)·정밀도/재현율(D)은 불균형에 적합한 지표다.
-
----
-
-**문제 2.** 여러 후보 분류 모델을 임계값과 무관하게 변별력으로 비교한 뒤, 운영 임계값은 FP/FN 비용에 맞춰 따로 정하려 한다. 올바른 접근은?
-
-A) 모든 모델을 임계값 0.5의 정확도로만 비교한다  
-B) AUC로 모델을 고르고, 임계값은 곡선 위에서 기대비용이 최소인 지점으로 사후 결정한다  
-C) 임계값을 먼저 0.9로 고정하고 모델을 고른다  
-D) RMSE로 분류 모델을 비교한다  
-
-**정답: B**  
-해설: AUC는 임계값-무관 변별력 비교에 적합하고, 운영 임계값은 비용 구조에 맞춰 곡선 위에서 사후에 정하는 2단계 분리가 정석이다. 0.5 정확도(A)·임계값 선고정(C)은 비용을 무시하고, RMSE(D)는 회귀 지표다.
+**Answer: C**  
+Explanation: On imbalanced data, accuracy comes out high even if only the majority class is predicted correctly, overestimating model performance, so judging by it alone is inappropriate. F1 (A), PR-AUC (B), and precision/recall (D) are metrics suited to imbalance.
 
 ---
 
-**문제 3.** 회귀 모델 두 개를 비교하니 모델 A는 RMSE와 MAE가 비슷하고, 모델 B는 RMSE가 MAE보다 훨씬 크다. 이로부터 추론할 수 있는 것은?
+**Question 2.** You want to compare several candidate classification models by discriminative power independent of the threshold, and then set the operating threshold separately according to FP/FN costs. What is the correct approach?
 
-A) 모델 B에는 소수의 큰 오차(이상치성 잔차)가 있을 가능성이 높다  
-B) 모델 A는 분류 모델이다  
-C) 모델 B의 R²는 반드시 음수다  
-D) 두 모델은 완전히 동일하다  
+A) Compare all models only by accuracy at a threshold of 0.5  
+B) Choose the model by AUC, and decide the threshold afterward as the point on the curve with minimum expected cost  
+C) Fix the threshold at 0.9 first and then choose the model  
+D) Compare classification models by RMSE  
 
-**정답: A**  
-해설: RMSE는 큰 오차를 제곱으로 증폭하므로 RMSE-MAE 격차가 크면 소수의 큰 오차가 존재할 가능성이 높다. 지표 유형이 모델 종류를 정하지 않고(B), R² 부호는 별개이며(C), 지표가 다르므로 동일(D)하지 않다.
-
----
-
-**문제 4.** 다음 중 SageMaker 서비스와 역할의 짝이 틀린 것은?
-
-A) Debugger — 학습 중 기울기 소실/과적합을 실시간 탐지  
-B) Clarify — 집단 간 편향(Disparate Impact) 측정  
-C) Clarify — SHAP으로 개별 예측의 피처 기여도 설명  
-D) Debugger — 모델 예측의 성별 집단 간 공정성 측정  
-
-**정답: D**  
-해설: 집단 간 예측 공정성 측정은 Clarify의 역할이며 Debugger는 학습 과정의 텐서/손실을 다룬다. A·B·C는 모두 올바른 짝이다.
+**Answer: B**  
+Explanation: AUC suits threshold-independent discriminative power comparison, and the standard approach is the two-stage separation in which the operating threshold is decided afterward on the curve according to the cost structure. Accuracy at 0.5 (A) and fixing the threshold first (C) ignore cost, and RMSE (D) is a regression metric.
 
 ---
 
-**문제 5.** SageMaker Automatic Model Tuning에서 목적 지표 방향(objective_type) 설정으로 올바른 것은?
+**Question 3.** Comparing two regression models, Model A has similar RMSE and MAE, while Model B has an RMSE much larger than its MAE. What can be inferred from this?
 
-A) 회귀의 validation:rmse → Maximize  
-B) 분류의 validation:f1 → Minimize  
-C) 회귀의 validation:rmse → Minimize, 분류의 validation:auc → Maximize  
-D) 모든 지표는 항상 Maximize  
+A) Model B likely has a few large errors (outlier-like residuals)  
+B) Model A is a classification model  
+C) Model B's R² is necessarily negative  
+D) The two models are exactly identical  
 
-**정답: C**  
-해설: 오차 지표(RMSE)는 작을수록 좋으므로 Minimize, 성능 지표(F1·AUC)는 클수록 좋으므로 Maximize가 맞다. RMSE Maximize(A)·F1 Minimize(B)는 방향이 반대이고, 모든 지표 Maximize(D)는 오차 지표에 틀리다.
+**Answer: A**  
+Explanation: RMSE amplifies large errors by squaring them, so a large RMSE-MAE gap suggests a high likelihood of a few large errors. The type of metric does not determine the model type (B), the sign of R² is a separate matter (C), and since the metrics differ, the models are not identical (D).
+
+---
+
+**Question 4.** Which of the following pairings of SageMaker service and role is INCORRECT?
+
+A) Debugger - detects vanishing gradients/overfitting in real time during training  
+B) Clarify - measures bias between groups (Disparate Impact)  
+C) Clarify - explains feature contributions to individual predictions with SHAP  
+D) Debugger - measures fairness of model predictions between gender groups  
+
+**Answer: D**  
+Explanation: Measuring prediction fairness between groups is Clarify's role, while Debugger deals with tensors/loss during the training process. A, B, and C are all correct pairings.
+
+---
+
+**Question 5.** Which is the correct objective metric direction (objective_type) setting in SageMaker Automatic Model Tuning?
+
+A) Regression validation:rmse -> Maximize  
+B) Classification validation:f1 -> Minimize  
+C) Regression validation:rmse -> Minimize, classification validation:auc -> Maximize  
+D) All metrics are always Maximize  
+
+**Answer: C**  
+Explanation: Error metrics (RMSE) are better when smaller, so Minimize; performance metrics (F1, AUC) are better when larger, so Maximize. RMSE Maximize (A) and F1 Minimize (B) have the direction reversed, and Maximize for all metrics (D) is wrong for error metrics.
 
 ---

@@ -122,115 +122,115 @@ Next we'll synthesize Week 14 overall with scenario questions verifying end-to-e
 
 ## 📝 Practice Questions
 
-**문제 1.** Config/Security Hub와 Audit Manager의 역할 차이로 가장 정확한 것은?
+**Question 1.** Which statement MOST accurately describes the difference in roles between Config/Security Hub and Audit Manager?
 
-A) 셋 다 같은 일을 한다
+A) All three do the same thing
 
-B) Config/Security Hub는 "지금 컴플라이언트한가"를 평가·교정하는 운영 도구이고, Audit Manager는 "컴플라이언트함을 감사인에게 증명할 증거를 Config·CloudTrail·Security Hub에서 자동 수집·매핑·보고서화"하는 감사 준비 도구다
+B) Config/Security Hub are operational tools that evaluate and correct "is it compliant right now," while Audit Manager is an audit-readiness tool that automatically collects, maps, and reports from Config, CloudTrail, and Security Hub the evidence to prove compliance to auditors
 
-C) Audit Manager가 위반을 자동 수정한다
+C) Audit Manager automatically remediates violations
 
-D) Config가 감사 보고서를 생성한다
+D) Config generates audit reports
 
-**정답: B**
+**Answer: B**
 
-해설: Config/Security Hub는 리소스가 "지금 컴플라이언트한가"를 평가하고 위반을 교정하는 운영 도구다. Audit Manager는 그 위에서 "컴플라이언트함을 감사인에게 증명할 증거"(Config 스냅샷·CloudTrail 로그·Security Hub Finding)를 규제 Framework의 컨트롤에 자동 매핑하고 Assessment Report로 정리하는 감사 준비 도구다. "위반 자동 수정"은 Config(C 틀림), "감사 보고서 생성"은 Audit Manager(D 틀림)다. 셋의 역할은 다르다(A 틀림).
-
----
-
-**문제 2.** Macie가 16자리 숫자를 모두 신용카드 번호로 오탐하지 않고 정확히 분류하는 핵심 메커니즘은?
-
-A) 단순히 16자리 숫자 패턴만 찾는다
-
-B) 16자리 패턴을 찾은 뒤 Luhn 알고리즘(ISO/IEC 7812 체크섬) 검증을 돌려 우연히 16자리인 무작위 숫자(주문번호 등)를 걸러낸다 — "패턴 + 검증" 이중 구조
-
-C) 모든 숫자를 사람이 검토한다
-
-D) 카드번호는 탐지하지 못한다
-
-**정답: B**
-
-해설: 신용카드 번호는 Luhn 알고리즘(1954년 IBM, ISO/IEC 7812 표준)이라는 체크섬을 만족해야 한다 — 마지막 체크 디지트가 앞자리로 계산한 값과 맞아야 유효하다. Macie는 16자리 패턴을 찾은 뒤 Luhn 검증을 돌려 false positive를 걸러낸다. SSN도 발급 규칙을 검증한다. 이 "패턴 + 검증" 이중 구조가 데이터 분류 정확도를 좌우한다 — 패턴만으로는 오탐이 폭발한다. 단순 패턴(A)·수동 검토(C)·탐지 불가(D)는 틀리다.
+Explanation: Config/Security Hub are operational tools that evaluate "is the resource compliant right now" and correct violations. Audit Manager is an audit-readiness tool that, on top of them, automatically maps "the evidence to prove compliance to auditors" (Config snapshots, CloudTrail logs, Security Hub Findings) to the controls of a regulatory Framework and compiles it into an Assessment Report. "Automatic remediation of violations" belongs to Config (C is wrong), and "generating audit reports" belongs to Audit Manager (D is wrong). The three have different roles (A is wrong).
 
 ---
 
-**문제 3.** Inspector v2가 "어제는 안전했던 컨테이너 이미지를 오늘 취약하다고 자동 재평가"할 수 있는 이유는?
+**Question 2.** What is the key mechanism by which Macie accurately classifies credit card numbers without flagging every 16-digit number as a false positive?
 
-A) 매번 이미지를 다시 빌드해서
+A) It simply looks for a 16-digit pattern
 
-B) Inspector가 자산의 패키지 인벤토리를 끊임없이 갱신되는 CVE 피드(MITRE CVE·NVD의 CVSS)와 지속적으로 교차하므로, 새 CVE가 공개되면 이미 스캔한 자산을 자동 재평가한다
+B) After finding a 16-digit pattern, it runs Luhn algorithm (ISO/IEC 7812 checksum) validation to filter out random numbers that merely happen to be 16 digits (such as order numbers) — a "pattern + validation" two-layer structure
 
-C) 사람이 매일 수동 스캔해서
+C) Humans review every number
 
-D) 이미지가 시간이 지나면 손상돼서
+D) It cannot detect card numbers
 
-**정답: B**
+**Answer: B**
 
-해설: Inspector의 가치는 일회성 스캔이 아니라 "끊임없이 갱신되는 CVE 피드 × 내 자산 인벤토리의 상시 교차"에 있다. CVE(MITRE의 취약점 식별자 사전, 1999~)와 NVD(NIST의 CVSS 점수 DB)는 매일 새 취약점이 등록되고, Inspector는 자산의 패키지 인벤토리를 이와 지속 대조한다. 그래서 새 CVE 공개 시 이미 스캔한 EC2·컨테이너·Lambda를 자동 재평가한다. 재빌드(A)·수동 스캔(C)·이미지 손상(D)은 메커니즘이 아니다.
-
----
-
-**문제 4.** IAM Access Analyzer가 "이 정책이 외부 접근을 허용하는 경우가 존재하는가"를 운 나쁘게 놓치는 케이스 없이 보장하는 내부 기술은?
-
-A) 정책을 무작위 요청으로 테스트해 본다
-
-B) Zelkova 엔진의 자동 추론(automated reasoning) — IAM 정책을 SMT 솔버가 풀 논리식으로 변환해 모든 가능한 요청을 수학적으로 추론하는 형식 검증(formal verification)
-
-C) 머신러닝으로 추측한다
-
-D) 운영자가 수동 검토한다
-
-**정답: B**
-
-해설: Access Analyzer의 External Access Findings는 AWS의 Zelkova 엔진을 써 IAM 정책을 SMT(Satisfiability Modulo Theories) 솔버가 풀 수 있는 논리식으로 변환하고, "외부 주체가 접근 가능한 경우가 존재하는가"를 형식 증명한다. 이는 경험적 테스트가 아니라 모든 가능한 요청을 수학적으로 추론하는 형식 검증이라, 놓치는 케이스가 없다(AWS Provable Security). 무작위 테스트(A)·ML 추측(C)·수동 검토(D)는 완전성을 보장하지 못한다.
+Explanation: A credit card number must satisfy a checksum called the Luhn algorithm (IBM, 1954; the ISO/IEC 7812 standard) — the last check digit must match the value calculated from the preceding digits to be valid. Macie finds a 16-digit pattern and then runs Luhn validation to filter out false positives. For SSNs it also validates issuance rules. This "pattern + validation" two-layer structure determines data classification accuracy — pattern alone causes an explosion of false positives. A simple pattern (A), manual review (C), and inability to detect (D) are wrong.
 
 ---
 
-**문제 5.** 과도하게 부여된 IAM 권한을 "추측이 아니라 실제 사용 데이터 기반"으로 최소 권한까지 줄이려 한다. 올바른 도구 조합은?
+**Question 3.** Why can Inspector v2 "automatically re-evaluate a container image that was safe yesterday as vulnerable today"?
 
-A) 모든 권한을 일단 삭제하고 오류 나면 추가
+A) Because it rebuilds the image every time
 
-B) Access Analyzer Policy Generation(CloudTrail 활동 로그로 실제 사용된 권한만의 정책 생성) + Unused Access Findings(안 쓰는 역할·권한·키 발견)
+B) Because Inspector continuously cross-references the asset's package inventory against constantly updated CVE feeds (MITRE CVE and NVD's CVSS), it automatically re-evaluates already-scanned assets when a new CVE is published
 
-C) 모든 역할에 AdministratorAccess 부여
+C) Because a human scans manually every day
 
-D) GuardDuty로 권한 분석
+D) Because images degrade over time
 
-**정답: B**
+**Answer: B**
 
-해설: 최소 권한 원칙(Saltzer & Schroeder, 1975)의 실무 난제는 "꼭 필요한 권한"을 사람이 알기 어렵다는 것이다. Access Analyzer는 이를 관측으로 해결한다 — Policy Generation은 CloudTrail에 기록된 실제 사용 권한만 추출해 정책을 만들고(관측 기반 최소 권한), Unused Access Findings는 안 쓰는 권한을 찾아 회수를 유도한다. "추측이 아니라 관측으로 최소 권한 달성"이 핵심이다. 무작정 삭제(A)·과도 부여(C)는 안티패턴, GuardDuty(D)는 위협 탐지로 권한 분석 도구가 아니다.
-
----
-
-**문제 6.** Log4Shell(CVE-2021-44228, CVSS 10.0) 사고에서 많은 조직의 대응이 늦어진 근본 원인과, 이를 막기 위해 부상한 개념은?
-
-A) 패치가 없어서 — 백신
-
-B) "우리 어느 서비스가 Log4j를 쓰는지" 즉답하지 못한 의존성 가시성 부재 — SBOM(Software Bill of Materials)으로 빌드 컴포넌트 목록을 관리해 "어디에 취약 컴포넌트가 있나"를 즉시 답하고, SLSA로 공급망 무결성을 보장
-
-C) 네트워크가 느려서 — CDN
-
-D) 비밀번호가 약해서 — MFA
-
-**정답: B**
-
-해설: Log4Shell은 거의 모든 자바 앱이 Log4j를 직간접 의존했기에 광범위했고, 많은 조직이 "어느 서비스가 Log4j를 쓰는지" 즉답하지 못해 대응이 늦었다 — 의존성 가시성 부재가 근본 원인이다. 이것이 SBOM(빌드에 들어간 모든 컴포넌트 목록)과 SLSA(공급망 무결성 프레임워크, 구글 2021)가 중요해진 배경이다. Inspector의 컨테이너/Lambda 의존성 스캔이 이를 돕는다. "취약점 대응 속도는 내가 무엇을 쓰는지 아는 정도에 비례한다." 백신(A)·CDN(C)·MFA(D)는 무관하다.
+Explanation: The value of Inspector lies not in a one-time scan but in the "continuous cross-referencing of constantly updated CVE feeds × my asset inventory." CVE (MITRE's dictionary of vulnerability identifiers, 1999~) and NVD (NIST's database of CVSS scores) register new vulnerabilities every day, and Inspector keeps checking the asset's package inventory against them. That is why, when a new CVE is published, it automatically re-evaluates EC2 instances, containers, and Lambda functions that were already scanned. Rebuilds (A), manual scans (C), and image degradation (D) are not the mechanism.
 
 ---
 
-**문제 7.** 종합 보안 자동화 스택을 NIST CSF(식별·보호·탐지·대응·복구)에 매핑할 때, "식별(Identify)" 함수를 채우는 서비스 조합으로 가장 적절한 것은?
+**Question 4.** What is the internal technology that lets IAM Access Analyzer guarantee, without the bad luck of missing a case, whether "there exists a case in which this policy allows external access"?
+
+A) Test the policy with random requests
+
+B) The Zelkova engine's automated reasoning — formal verification that converts IAM policies into logical formulas that an SMT solver can solve and mathematically reasons over all possible requests
+
+C) Guess with machine learning
+
+D) Operators review it manually
+
+**Answer: B**
+
+Explanation: Access Analyzer's External Access Findings use AWS's Zelkova engine to convert IAM policies into logical formulas that an SMT (Satisfiability Modulo Theories) solver can solve, and formally prove "whether there exists a case in which an external principal can access." This is formal verification that mathematically reasons over all possible requests rather than empirical testing, so no case is missed (AWS Provable Security). Random testing (A), ML guessing (C), and manual review (D) cannot guarantee completeness.
+
+---
+
+**Question 5.** You want to reduce excessively granted IAM permissions to least privilege "based on actual usage data, not guesswork." What is the correct combination of tools?
+
+A) Delete all permissions first and add them back when errors occur
+
+B) Access Analyzer Policy Generation (generates a policy containing only the permissions actually used, from CloudTrail activity logs) + Unused Access Findings (discovers unused roles, permissions, and keys)
+
+C) Grant AdministratorAccess to all roles
+
+D) Analyze permissions with GuardDuty
+
+**Answer: B**
+
+Explanation: The practical difficulty of the principle of least privilege (Saltzer & Schroeder, 1975) is that it is hard for people to know "exactly the permissions needed." Access Analyzer solves this with observation — Policy Generation extracts only the permissions actually used, as recorded in CloudTrail, to build a policy (observation-based least privilege), and Unused Access Findings finds unused permissions and prompts their removal. The key is "achieving least privilege through observation rather than guesswork." Blind deletion (A) and over-granting (C) are anti-patterns, and GuardDuty (D) is threat detection, not a permission analysis tool.
+
+---
+
+**Question 6.** What was the root cause of the delayed response at many organizations during the Log4Shell (CVE-2021-44228, CVSS 10.0) incident, and what concept emerged to prevent it?
+
+A) There was no patch — vaccines
+
+B) The lack of dependency visibility, being unable to immediately answer "which of our services use Log4j" — manage the list of build components with an SBOM (Software Bill of Materials) to immediately answer "where are the vulnerable components," and guarantee supply chain integrity with SLSA
+
+C) The network was slow — a CDN
+
+D) Passwords were weak — MFA
+
+**Answer: B**
+
+Explanation: Log4Shell was widespread because almost every Java application depended on Log4j directly or indirectly, and many organizations were slow to respond because they could not immediately answer "which services use Log4j" — the lack of dependency visibility was the root cause. This is the background for the importance of SBOM (a list of all components that went into a build) and SLSA (a supply chain integrity framework, Google 2021). Inspector's container/Lambda dependency scanning helps with this. "The speed of vulnerability response is proportional to how well you know what you use." Vaccines (A), CDN (C), and MFA (D) are unrelated.
+
+---
+
+**Question 7.** When mapping a comprehensive security automation stack to the NIST CSF (Identify, Protect, Detect, Respond, Recover), which combination of services best fills the "Identify" function?
 
 A) EventBridge → SSM Automation
 
-B) Config(리소스 인벤토리) + Macie(데이터 분류) + IAM Access Analyzer(외부 노출·미사용 권한)
+B) Config (resource inventory) + Macie (data classification) + IAM Access Analyzer (external exposure and unused permissions)
 
-C) 스냅샷 + 백업 + PITR
+C) Snapshots + backups + PITR
 
 D) GuardDuty + Inspector
 
-**정답: B**
+**Answer: B**
 
-해설: NIST CSF의 "식별(Identify)"은 자산·데이터·위험을 파악하는 함수다. Config(리소스 인벤토리·관계 그래프), Macie(데이터 분류·다크 데이터 발견), Access Analyzer(외부 노출·미사용 권한 식별)가 이를 채운다. EventBridge→SSM(A)은 "대응(Respond)", 스냅샷·백업·PITR(C)은 "복구(Recover)", GuardDuty·Inspector(D)는 "탐지(Detect)"에 해당한다. 각 서비스가 CSF의 어느 함수를 채우는지 알면 시나리오에서 빈 단계를 빠르게 진단할 수 있다.
+Explanation: The NIST CSF "Identify" is the function of understanding assets, data, and risks. Config (resource inventory and relationship graph), Macie (data classification and dark data discovery), and Access Analyzer (identifying external exposure and unused permissions) fill it. EventBridge→SSM (A) corresponds to "Respond," snapshots, backups, and PITR (C) correspond to "Recover," and GuardDuty and Inspector (D) correspond to "Detect." Knowing which CSF function each service fills lets you quickly diagnose the missing stage in a scenario.
 
 ---
 

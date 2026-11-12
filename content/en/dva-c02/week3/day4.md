@@ -375,72 +375,72 @@ In the next article, we review all of Week 3, checking every Lambda concept with
 
 ## 📝 Practice Questions
 
-**문제 1.** If a Lambda function gets 2,000 requests per second and its average execution time is 300ms, what concurrency is required?
+**Question 1.** If a Lambda function gets 2,000 requests per second and its average execution time is 300ms, what concurrency is required?
 
 A) 100  
 B) 300  
 C) 600  
 D) 2,000  
 
-**정답: C**  
-해설: Concurrency = RPS × execution time (seconds) = 2,000 × 0.3 = 600. To reliably secure this concurrency, it occupies 60% of the account concurrency limit (default 1,000). Setting Reserved Concurrency of 700 on this function secures ample headroom while leaving 300 for other functions.
+**Answer: C**  
+Explanation: Concurrency = RPS × execution time (seconds) = 2,000 × 0.3 = 600. To reliably secure this concurrency, it occupies 60% of the account concurrency limit (default 1,000). Setting Reserved Concurrency of 700 on this function secures ample headroom while leaving 300 for other functions.
 
 ---
 
-**문제 2.** What is the result of setting a Lambda function's Reserved Concurrency to 0?
+**Question 2.** What is the result of setting a Lambda function's Reserved Concurrency to 0?
 
 A) The default concurrency limit (1,000) applies  
 B) The function runs only sequentially  
 C) Every invocation immediately returns ThrottlingException (429)  
 D) The function is removed from the Lambda service  
 
-**정답: C**  
-해설: Setting Reserved Concurrency to 0 means the function is allocated 0 concurrency, so every invocation is immediately throttled. This is used as a way to temporarily disable a function (without deploying code, without deleting it). It's useful for preventing accidental invocations outside the deployment window, or when an emergency block is needed.
+**Answer: C**  
+Explanation: Setting Reserved Concurrency to 0 means the function is allocated 0 concurrency, so every invocation is immediately throttled. This is used as a way to temporarily disable a function (without deploying code, without deleting it). It's useful for preventing accidental invocations outside the deployment window, or when an emergency block is needed.
 
 ---
 
-**문제 3.** In Kinesis Data Streams ESM, what problem occurs when one record keeps failing, and what is the most effective combination of solutions?
+**Question 3.** In Kinesis Data Streams ESM, what problem occurs when one record keeps failing, and what is the most effective combination of solutions?
 
 A) A Lambda DLQ automatically isolates the failed record  
 B) The entire shard is blocked — resolve with MaximumRetryAttempts and BisectBatchOnFunctionError + OnFailure Destination  
 C) Kinesis automatically deletes that record  
 D) Lambda automatically skips that record  
 
-**정답: B**  
-해설: Kinesis ESM by default retries a failed record infinitely, which blocks the processing of all new records in that shard. You can tell you're in this situation when the CloudWatch `IteratorAge` metric keeps increasing. Solutions: limit the retry count with `MaximumRetryAttempts`, isolate the problem record by binary-searching the failed batch with `BisectBatchOnFunctionError`, and send final-failure records to SQS/SNS with an `OnFailure Destination` for later analysis.
+**Answer: B**  
+Explanation: Kinesis ESM by default retries a failed record infinitely, which blocks the processing of all new records in that shard. You can tell you're in this situation when the CloudWatch `IteratorAge` metric keeps increasing. Solutions: limit the retry count with `MaximumRetryAttempts`, isolate the problem record by binary-searching the failed batch with `BisectBatchOnFunctionError`, and send final-failure records to SQS/SNS with an `OnFailure Destination` for later analysis.
 
 ---
 
-**문제 4.** Which is correct about the difference between an SQS DLQ and a Lambda DLQ?
+**Question 4.** Which is correct about the difference between an SQS DLQ and a Lambda DLQ?
 
 A) The SQS DLQ applies to asynchronous Lambda invocations, and the Lambda DLQ applies to ESM  
 B) The SQS DLQ is an attribute of the SQS queue and applies to ESM failure handling, while the Lambda DLQ sends the event on the final failure of an asynchronous invocation  
 C) The two concepts are identical and differ only in name  
 D) Only the Lambda DLQ supports EventBridge as a target  
 
-**정답: B**  
-해설: The SQS DLQ is an attribute of the SQS queue itself; when an SQS message exceeds `maxReceiveCount`, that message is moved to the DLQ. In an SQS-Lambda ESM, if Lambda repeatedly fails, the message returns to the queue after the visibility timeout, and when maxReceiveCount is exceeded, it moves to the SQS DLQ. The Lambda DLQ is part of the Lambda function's configuration; it sends the event to SQS or SNS when an asynchronous invocation (S3, SNS, etc.) finally fails (original + 2 retries all fail).
+**Answer: B**  
+Explanation: The SQS DLQ is an attribute of the SQS queue itself; when an SQS message exceeds `maxReceiveCount`, that message is moved to the DLQ. In an SQS-Lambda ESM, if Lambda repeatedly fails, the message returns to the queue after the visibility timeout, and when maxReceiveCount is exceeded, it moves to the SQS DLQ. The Lambda DLQ is part of the Lambda function's configuration; it sends the event to SQS or SNS when an asynchronous invocation (S3, SNS, etc.) finally fails (original + 2 retries all fail).
 
 ---
 
-**문제 5.** Which of the following is NOT an advantage of Lambda Destinations?
+**Question 5.** Which of the following is NOT an advantage of Lambda Destinations?
 
 A) You can set targets for both success and failure events  
 B) It supports EventBridge as a target  
 C) It automatically handles failed messages from an SQS ESM  
 D) It delivers the original event together with function response metadata  
 
-**정답: C**  
-해설: Lambda Destinations apply only to asynchronous invocations (S3, SNS, EventBridge, direct async invoke). Failures in an SQS ESM are handled by the SQS queue's own DLQ setting, not by Lambda Destinations. A, B, and D are all genuine advantages of Destinations.
+**Answer: C**  
+Explanation: Lambda Destinations apply only to asynchronous invocations (S3, SNS, EventBridge, direct async invoke). Failures in an SQS ESM are handled by the SQS queue's own DLQ setting, not by Lambda Destinations. A, B, and D are all genuine advantages of Destinations.
 
 ---
 
-**문제 6.** What is the Lambda burst concurrency limit in the Seoul region (ap-northeast-2)?
+**Question 6.** What is the Lambda burst concurrency limit in the Seoul region (ap-northeast-2)?
 
 A) 3,000  
 B) 1,000  
 C) 500  
 D) No limit  
 
-**정답: C**  
-해설: The Seoul region's initial burst concurrency limit is 500. us-east-1, us-west-2, and eu-west-1 are 3,000. After the initial burst, it can increase by +500 per minute, up to the account limit (default 1,000). On a sudden traffic surge that exceeds this limit, a ThrottlingException occurs.
+**Answer: C**  
+Explanation: The Seoul region's initial burst concurrency limit is 500. us-east-1, us-west-2, and eu-west-1 are 3,000. After the initial burst, it can increase by +500 per minute, up to the account limit (default 1,000). On a sudden traffic surge that exceeds this limit, a ThrottlingException occurs.

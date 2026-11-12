@@ -228,97 +228,97 @@ Next we'll see StackSets extending these patterns to thousands of accounts and m
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 회사가 200개 마이크로서비스 인프라를 단일 CloudFormation Stack에 담아 운영 중이다. 한 서비스의 IAM 변경 때문에 전체 Stack이 UPDATE_IN_PROGRESS로 30분간 묶이는 문제를 가장 적절히 해결하려면?
+**Question 1.** A company runs 200 microservices of infrastructure in a single CloudFormation stack. An IAM change for one service locks the entire stack in UPDATE_IN_PROGRESS for 30 minutes. What is the most appropriate way to solve this?
 
-A) Nested Stack으로 자식 50개를 만든다
-B) 도메인별로 Stack을 쪼개고 Cross-Stack Export/Import로 연결한다
-C) Terraform으로 마이그레이션
-D) Stack Policy로 변경 차단
+A) Create 50 child stacks as nested stacks
+B) Split the stack by domain and connect them with cross-stack Export/Import
+C) Migrate to Terraform
+D) Block changes with a stack policy
 
-**정답: B**
+**Answer: B**
 
-해설: Nested Stack은 자식이 늘어도 부모 Stack 한 트랜잭션 안에서 평가되므로 문제(변경 영향 격리 부재)가 해결되지 않는다. Cross-Stack은 독립 라이프사이클을 가져 한 서비스 변경이 다른 서비스 배포를 막지 않는다. 결합도-응집도 원칙의 적용. Terraform 마이그레이션(C)은 비용이 크고 본질을 해결하지 않으며 CFN의 거버넌스 자산(StackSets, Service Catalog)을 잃는다. Stack Policy(D)는 변경 보호이지 격리 도구가 아니다.
-
----
-
-**문제 2.** Cross-Stack에서 Export `prod-network-VpcId`가 다른 Stack의 ImportValue로 사용 중이다. 네트워크 Stack 업데이트로 VPC를 재생성(논리 ID 재사용, 물리 ID 변경)하려 할 때 일어나는 일은?
-
-A) 자동으로 의존 Stack까지 업데이트됨
-B) Export 값 변경 시도가 실패해 전체 Stack 업데이트 롤백
-C) Export가 자동 잠금 해제됨
-D) 변경 영향이 의존 Stack에 자동 전파
-
-**정답: B**
-
-해설: 사용 중인 Export의 값은 변경 불가. VPC 재생성은 Export 값(VpcId)을 바꾸므로 Stack 업데이트 자체가 실패한다. 의존 Stack에서 먼저 ImportValue를 제거(3단계 배포의 1단계) → 네트워크 Stack 업데이트 → 의존 Stack에 ImportValue 다시 추가 순으로 진행해야 한다. 2022년 게임사 12시간 prod 배포 마비 사례와 동일한 패턴. AWS Best Practices는 이런 경우 SSM Parameter Store 전환을 권장.
+Explanation: A nested stack is evaluated within a single parent stack transaction even as children grow, so the problem (lack of change impact isolation) is not solved. Cross-stack has independent lifecycles, so one service change does not block another service deployment. This applies the coupling-cohesion principle. A Terraform migration (C) is costly, does not solve the root problem, and loses CFN governance assets (StackSets, Service Catalog). A stack policy (D) is change protection, not an isolation tool.
 
 ---
 
-**문제 3.** 다음 중 `'{{resolve:secretsmanager:prod/db:SecretString:password}}'` 동적 참조에 대해 옳은 설명은?
+**Question 2.** The export `prod-network-VpcId` is being used as an ImportValue by another stack. What happens when a network stack update tries to recreate the VPC (logical ID reused, physical ID changed)?
 
-A) Secrets Manager 회전 시 RDS 비밀번호가 자동으로 동기화된다
-B) Drift Detection이 시크릿 값 변경을 자동 감지한다
-C) Stack 배포 시점에 CloudFormation Service Role이 GetSecretValue 호출로 fetch해 주입하고, 템플릿/ChangeSet에는 평문이 남지 않는다
-D) S3에 저장된 템플릿 안에 복호화된 평문이 저장된다
+A) The dependent stacks are updated automatically
+B) The attempt to change the export value fails and the entire stack update rolls back
+C) The export is automatically unlocked
+D) The change impact automatically propagates to the dependent stacks
 
-**정답: C**
+**Answer: B**
 
-해설: 동적 참조는 fetch 메커니즘. Stack 생성/업데이트 시점에 외부 서비스에서 가져와 임시 주입한다. 회전 동기화(A)는 별도 `SecretTargetAttachment` + 회전 Lambda가 필요. Drift Detection(B)은 템플릿의 `'{{resolve:...}}'` 문자열만 비교하므로 시크릿 값 변경 못 잡음 — EventBridge로 회전 이벤트 잡는 게 표준. 평문이 절대 템플릿/ChangeSet/S3에 저장되지 않는다는 게 동적 참조의 핵심 보안 이점.
-
----
-
-**문제 4.** Stack Policy와 IAM Policy의 차이로 가장 정확한 것은?
-
-A) Stack Policy는 IAM Policy의 별칭
-B) Stack Policy는 Stack 안의 특정 리소스에 대한 Update 종류(Replace/Delete/Modify)를 통제하는 변경 보호 계층이고, IAM은 사용자/역할의 API 호출 권한을 통제
-C) Stack Policy는 비용 최적화 도구
-D) 둘 다 동일한 시점에 평가됨
-
-**정답: B**
-
-해설: 권한(IAM)과 변경 보호(Stack Policy)는 다른 계층. PowerUser IAM 권한을 가진 운영자가 실수로 prod 템플릿을 잘못 수정해도 Stack Policy가 ProdDatabase의 Replace를 Deny하면 막힌다. NIST SP 800-53 CM-3/CM-5의 "변경 통제와 접근 통제 분리" 원칙의 구현. 변경을 진행하려면 Stack Policy를 일시 해제해야 하므로 사람의 한 단계 확인이 강제된다.
+Explanation: The value of an export that is in use cannot be changed. Recreating the VPC changes the export value (VpcId), so the stack update itself fails. You must proceed in this order: first remove the ImportValue from the dependent stacks (step 1 of a 3-step deployment) → update the network stack → add the ImportValue back to the dependent stacks. This is the same pattern as the 2022 case of a game company whose prod deployments were paralyzed for 12 hours. AWS best practices recommend switching to SSM Parameter Store in such cases.
 
 ---
 
-**문제 5.** RDS prod 인스턴스를 보호하기 위해 다음 중 가장 완전한 조합은?
+**Question 3.** Which of the following is a correct statement about the dynamic reference `'{{resolve:secretsmanager:prod/db:SecretString:password}}'`?
 
-A) DeletionPolicy: Retain만
-B) Termination Protection만
-C) DeletionPolicy: Snapshot + UpdateReplacePolicy: Snapshot + Stack Policy로 Replace/Delete Deny + Termination Protection
-D) IAM 정책으로 RDS DeleteDBInstance 거부
+A) When Secrets Manager rotates, the RDS password is synchronized automatically
+B) Drift detection automatically detects changes to the secret value
+C) At stack deployment time, the CloudFormation service role fetches it with a GetSecretValue call and injects it, and no plaintext remains in the template/change set
+D) The decrypted plaintext is stored inside the template saved in S3
 
-**정답: C**
+**Answer: C**
 
-해설: 네 가지가 모두 다른 시점에 작동. DeletionPolicy는 Stack 삭제 시, UpdateReplacePolicy는 속성 변경에 의한 교체 시(예: Engine 변경), Stack Policy는 Update API 진입 시점, Termination Protection은 DeleteStack API 호출 자체를 차단. 단일 정책으로는 우회 경로가 항상 존재. defense in depth 원칙. A는 Engine 변경 교체에 약함, B는 update 보호 없음, D는 Stack을 통한 변경에 약함(CFN이 IAM 우회).
-
----
-
-**문제 6.** ASG의 UpdatePolicy `AutoScalingRollingUpdate`에서 `WaitOnResourceSignals: true`의 효과는?
-
-A) ASG의 모든 인스턴스를 동시에 교체
-B) 각 배치 인스턴스가 cfn-signal로 정상 신호를 보낼 때까지 다음 배치 진행 보류 — 부팅 실패 인스턴스가 누적되는 것 방지
-C) 자동 롤백 비활성화
-D) IAM 권한 변경
-
-**정답: B**
-
-해설: cfn-signal은 EC2 UserData에서 `/opt/aws/bin/cfn-signal --exit-code $?`로 호출되며 "정상 부팅 완료"를 알린다. 이게 없으면 ASG는 RUNNING 상태만 보고 다음 배치를 시작해 부팅 실패가 누적되며 서비스 전체가 죽을 수 있다. CreationPolicy.ResourceSignal.Timeout과 짝을 이뤄 안전한 점진 교체를 보장. RollingUpdate는 in-place 교체(개별 인스턴스), ReplacingUpdate는 ASG 단위 블루/그린이라는 차이도 시험 포인트.
+Explanation: A dynamic reference is a fetch mechanism. At stack creation/update time, it is fetched from the external service and injected temporarily. Rotation synchronization (A) requires a separate `SecretTargetAttachment` + a rotation Lambda. Drift detection (B) only compares the `'{{resolve:...}}'` string in the template, so it cannot catch a change in the secret value — catching rotation events with EventBridge is the standard. The key security benefit of dynamic references is that plaintext is never stored in the template/change set/S3.
 
 ---
 
-**문제 7.** CFN Drift Detection이 자동 수정을 제공하지 않는 이유로 가장 정확한 것은?
+**Question 4.** What is the most accurate difference between a stack policy and an IAM policy?
 
-A) 기술적 한계
-B) Drift는 긴급 패치일 수도 실수일 수도 있어 자동 복원이 더 큰 사고로 이어질 위험 — 감지/알림은 CFN, 자동 수정은 Config Rules의 Remediation Action으로 책임 분리
-C) AWS 정책상 금지
-D) 비용 문제
+A) A stack policy is an alias of an IAM policy
+B) A stack policy is a change protection layer that controls the type of update (Replace/Delete/Modify) on specific resources in a stack, while IAM controls the API call permissions of users/roles
+C) A stack policy is a cost optimization tool
+D) Both are evaluated at the same time
 
-**정답: B**
+**Answer: B**
 
-해설: 자동 수정이 인시던트 대응 중 진행되면 운영자가 손으로 적용한 긴급 패치를 되돌려 장애를 악화시킨다. 그래서 보수적 설계 — CFN은 감지만, Config Rules + SSM Automation Document로 명시적 자동화 정책을 등록한 경우만 자동 복원. 책임 분리(separation of concerns)와 안전성 우선 설계의 전형. CloudTrail로 변경 추적, Config로 평가, SSM Automation으로 복원의 3단 구성이 표준.
+Explanation: Permissions (IAM) and change protection (stack policy) are different layers. Even if an operator with PowerUser IAM permissions mistakenly modifies the prod template incorrectly, a stack policy that denies Replace on ProdDatabase blocks it. It is an implementation of the NIST SP 800-53 CM-3/CM-5 principle of "separating change control from access control." To proceed with the change, the stack policy must be temporarily lifted, so a human confirmation step is enforced.
+
+---
+
+**Question 5.** What is the most complete combination to protect a prod RDS instance?
+
+A) DeletionPolicy: Retain only
+B) Termination protection only
+C) DeletionPolicy: Snapshot + UpdateReplacePolicy: Snapshot + a stack policy that denies Replace/Delete + termination protection
+D) Deny RDS DeleteDBInstance with an IAM policy
+
+**Answer: C**
+
+Explanation: All four work at different points in time. DeletionPolicy applies when the stack is deleted, UpdateReplacePolicy applies when a property change causes replacement (for example, an engine change), the stack policy applies at the entry point of the Update API, and termination protection blocks the DeleteStack API call itself. With a single policy, a bypass path always exists. This is the defense in depth principle. A is weak against replacement caused by an engine change, B has no update protection, and D is weak against changes made through the stack (CFN bypasses IAM).
+
+---
+
+**Question 6.** What is the effect of `WaitOnResourceSignals: true` in the ASG UpdatePolicy `AutoScalingRollingUpdate`?
+
+A) Replaces all ASG instances at the same time
+B) Holds off on proceeding to the next batch until each batch instance sends a success signal with cfn-signal — preventing instances that failed to boot from accumulating
+C) Disables automatic rollback
+D) Changes IAM permissions
+
+**Answer: B**
+
+Explanation: cfn-signal is called in EC2 user data as `/opt/aws/bin/cfn-signal --exit-code $?` and signals "boot completed successfully." Without it, the ASG looks only at the RUNNING state and starts the next batch, so boot failures accumulate and the whole service can go down. Paired with CreationPolicy.ResourceSignal.Timeout, it guarantees a safe gradual replacement. Another exam point is the difference that RollingUpdate is an in-place replacement (individual instances), while ReplacingUpdate is a blue/green at the ASG level.
+
+---
+
+**Question 7.** What is the most accurate reason CFN drift detection does not provide automatic remediation?
+
+A) A technical limitation
+B) Drift may be an emergency patch or a mistake, so automatic restoration risks causing a bigger incident — responsibilities are separated: CFN handles detection/notification, and automatic remediation is handled by the AWS Config rule remediation action
+C) Prohibited by AWS policy
+D) A cost issue
+
+**Answer: B**
+
+Explanation: If automatic remediation runs during incident response, it reverts an emergency patch that the operator applied by hand and worsens the outage. That is why the design is conservative — CFN only detects, and automatic restoration happens only when an explicit automation policy is registered with Config rules + an SSM Automation document. It is a classic case of separation of concerns and safety-first design. The standard is a three-tier setup: CloudTrail for change tracking, Config for evaluation, and SSM Automation for restoration.
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 다섯 가지다. 첫째, Nested(강결합, 한 트랜잭션)와 Cross-Stack(약결합, 독립 라이프사이클)은 1968년 결합도 원칙의 IaC 적용. 둘째, Export는 사용 중이면 잠기므로 Parameter Store 전환이 권장. 셋째, 동적 참조는 fetch이지 동기화가 아니며 Drift Detection이 못 잡는다. 넷째, Stack Policy / Termination Protection / DeletionPolicy / UpdateReplacePolicy는 모두 다른 시점의 보호 계층이고 defense in depth로 함께 써야 한다. 다섯째, Drift Detection은 의도적으로 감지만 하며 자동 수정은 Config Rules + SSM Automation으로 분리.
+The five key takeaways from today are as follows. First, nested stacks (tight coupling, one transaction) and cross-stack (loose coupling, independent lifecycles) are an IaC application of the 1968 coupling principle. Second, an export is locked while in use, so switching to Parameter Store is recommended. Third, a dynamic reference is a fetch, not a synchronization, and drift detection cannot catch it. Fourth, stack policy / termination protection / DeletionPolicy / UpdateReplacePolicy are protection layers at different points in time and should be used together as defense in depth. Fifth, drift detection intentionally only detects, and automatic remediation is separated out to Config rules + SSM Automation.

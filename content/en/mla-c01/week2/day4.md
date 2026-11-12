@@ -98,62 +98,62 @@ Next, we'll review the entire Week 2 on data collection and storage as we wrap u
 
 ## 📝 Practice Questions
 
-**문제 1.** Event data arrives daily and is stored in S3. Most analysis queries filter by date range. What is the most effective storage method to reduce scan costs?
+**Question 1.** Event data arrives daily and is stored in S3. Most analysis queries filter by date range. What is the most effective storage method to reduce scan costs?
 
 A) Store all data in a single folder as one file  
 B) Store as Parquet with Hive-style partitioning by date (year/month/day)  
 C) Partition by customer_id only  
 D) Store all data as compressed JSON  
 
-**정답: B**  
-해설: Since queries filter by date, date partitioning enables partition pruning to scan only matching partitions, and Parquet adds column-level scan reduction. Single file (A) forces full scan, partitioning by customer_id when filtering by date (C) prevents pruning, and compressed JSON (D) is row-based and inefficient.
+**Answer: B**  
+Explanation: Since queries filter by date, date partitioning enables partition pruning to scan only matching partitions, and Parquet adds column-level scan reduction. Single file (A) forces full scan, partitioning by customer_id when filtering by date (C) prevents pruning, and compressed JSON (D) is row-based and inefficient.
 
 ---
 
-**문제 2.** You want to store large ML training datasets that are read repeatedly. What is the best format and compression combination?
+**Question 2.** You want to store large ML training datasets that are read repeatedly. What is the best format and compression combination?
 
 A) CSV + Gzip  
 B) Parquet + Snappy  
 C) JSON + Gzip  
 D) Uncompressed single CSV  
 
-**정답: B**  
-해설: Parquet is columnar, reads only needed columns, and is splittable for distributed training; Snappy compresses/decompresses fast, ideal for frequently-read data. CSV+Gzip (A), JSON+Gzip (C) are row-based and Gzip's non-splittability blocks parallel reading, while uncompressed CSV (D) has large I/O.
+**Answer: B**  
+Explanation: Parquet is columnar, reads only needed columns, and is splittable for distributed training; Snappy compresses/decompresses fast, ideal for frequently-read data. CSV+Gzip (A), JSON+Gzip (C) are row-based and Gzip's non-splittability blocks parallel reading, while uncompressed CSV (D) has large I/O.
 
 ---
 
-**문제 3.** Training data is much larger than instance disk. You want to stream from S3 without copying everything and start training immediately. What SageMaker input mode is suitable?
+**Question 3.** Training data is much larger than instance disk. You want to stream from S3 without copying everything and start training immediately. What SageMaker input mode is suitable?
 
 A) File mode  
 B) Pipe mode  
 C) Local mode  
 D) Compress data and copy to disk  
 
-**정답: B**  
-해설: Pipe mode streams from S3 without waiting for download completion, ideal for data larger than disk. File mode (A) requires copying entire data to disk (impossible if oversized), local mode (C) is for debugging, and disk copy (D) hits the same capacity problem.
+**Answer: B**  
+Explanation: Pipe mode streams from S3 without waiting for download completion, ideal for data larger than disk. File mode (A) requires copying entire data to disk (impossible if oversized), local mode (C) is for debugging, and disk copy (D) hits the same capacity problem.
 
 ---
 
-**문제 4.** After compressing a CSV file with Gzip for distributed training, multiple workers couldn't read data in parallel. What is the cause?
+**Question 4.** After compressing a CSV file with Gzip for distributed training, multiple workers couldn't read data in parallel. What is the cause?
 
 A) Gzip-compressed CSV is non-splittable  
 B) CSV file is too small  
 C) Gzip compression ratio is low  
 D) Insufficient number of workers  
 
-**정답: A**  
-해설: Gzip-compressed CSV is non-splittable, forcing one worker to read the entire file sequentially, preventing parallel reading. Parquet is splittable at the row group level. File size (B), compression ratio (C), and worker count (D) don't explain the non-splittability.
+**Answer: A**  
+Explanation: Gzip-compressed CSV is non-splittable, forcing one worker to read the entire file sequentially, preventing parallel reading. Parquet is splittable at the row group level. File size (B), compression ratio (C), and worker count (D) don't explain the non-splittability.
 
 ---
 
-**문제 5.** SageMaker training shows low GPU usage and GPU starvation (waiting for data). Which is least relevant to storage/input improvements?
+**Question 5.** SageMaker training shows low GPU usage and GPU starvation (waiting for data). Which is least relevant to storage/input improvements?
 
 A) Convert data to efficient format like Parquet  
 B) Use Pipe/FastFile mode to relieve input bottleneck  
 C) Split data into multiple appropriately-sized shards  
 D) Lower learning rate  
 
-**정답: D**  
-해설: Learning rate affects model convergence, a hyperparameter unrelated to data input bottleneck (GPU starvation). Format conversion (A), streaming input mode (B), and proper sharding (C) all speed data supply to prevent GPU starvation, so they're storage/input improvements.
+**Answer: D**  
+Explanation: Learning rate affects model convergence, a hyperparameter unrelated to data input bottleneck (GPU starvation). Format conversion (A), streaming input mode (B), and proper sharding (C) all speed data supply to prevent GPU starvation, so they're storage/input improvements.
 
 ---

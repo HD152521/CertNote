@@ -417,84 +417,84 @@ StackSets (SERVICE_MANAGED + OrganizationsAutoDeployment) with CodePipeline can 
 
 ## 📝 Practice Questions
 
-**문제 1.** Tooling 계정의 CodePipeline이 Prod 계정에 CloudFormation 스택을 배포한다. "CloudFormation API 호출은 성공하지만 스택 내 ECS Task Definition 생성이 실패한다"는 문제의 원인으로 가장 가능성 높은 것은?
+**Question 1.** A CodePipeline in the Tooling account deploys a CloudFormation stack to the Prod account. What is the most likely cause of the problem "the CloudFormation API call succeeds, but creating the ECS task definition inside the stack fails"?
 
-A) CrossAccountDeployRole에 CloudFormation API 권한 부족  
-B) CloudFormationExecutionRole에 ECS Task Definition 생성 권한(ecs:RegisterTaskDefinition, iam:PassRole) 부족  
-C) KMS 복호화 실패  
-D) S3 버킷 정책 오류  
+A) The CrossAccountDeployRole lacks CloudFormation API permissions  
+B) The CloudFormationExecutionRole lacks permissions to create the ECS task definition (ecs:RegisterTaskDefinition, iam:PassRole)  
+C) KMS decryption failure  
+D) S3 bucket policy error  
 
-**정답: B**  
-해설: CloudFormation API 호출은 CrossAccountDeployRole이 담당하고, 실제 리소스 생성은 CloudFormationExecutionRole이 담당한다. CloudFormation API가 성공했다는 것은 CrossAccountDeployRole의 권한은 충분하다는 뜻이다. 스택 내 리소스 생성 실패는 CloudFormationExecutionRole에 해당 리소스(ECS Task Definition, 필요한 경우 iam:PassRole)를 생성할 권한이 없기 때문이다. 두 Role의 역할 분리를 명확히 이해해야 한다.
-
----
-
-**문제 2.** StackSets의 OrganizationsAutoDeployment 옵션의 정확한 기능은?
-
-A) 새 StackSet 인스턴스가 생성될 때 자동으로 배포를 시작한다  
-B) 지정된 OU에 새 멤버 계정이 추가되면 자동으로 StackSet 인스턴스를 그 계정에 생성한다  
-C) CloudFormation 스택 드리프트를 자동으로 복구한다  
-D) SCP를 자동으로 적용한다  
-
-**정답: B**  
-해설: OrganizationsAutoDeployment는 OU 멤버십 변화(계정 추가)를 감지해 자동으로 StackSet 인스턴스를 생성하는 기능이다. Landing Zone 자동화의 핵심이다. 반대로 계정이 OU에서 제거되면 StackSet 인스턴스를 자동 삭제하는 옵션도 있다. 드리프트 복구(C)는 StackSets의 기능이 아니고, SCP 적용(D)은 Organizations의 별도 기능이다. SERVICE_MANAGED 모드에서만 사용 가능하고 SELF_MANAGED 모드에서는 이 옵션이 없다.
+**Answer: B**  
+Explanation: The CrossAccountDeployRole is responsible for the CloudFormation API calls, and the CloudFormationExecutionRole is responsible for actually creating the resources. The CloudFormation API call succeeding means the CrossAccountDeployRole has sufficient permissions. A failure to create a resource inside the stack is because the CloudFormationExecutionRole lacks permission to create that resource (the ECS task definition and, if needed, iam:PassRole). You must clearly understand the separation of roles between the two roles.
 
 ---
 
-**문제 3.** 멀티 리전 CodePipeline에서 각 리전에 별도 Artifact S3 버킷과 KMS 키가 필요한 이유는?
+**Question 2.** What is the exact function of the StackSets OrganizationsAutoDeployment option?
 
-A) 비용 분산을 위해  
-B) KMS 키는 리전 범위 서비스이므로 다른 리전의 KMS 키로 암호화된 Artifact를 복호화할 수 없다  
-C) S3 버킷은 글로벌이라서 필요 없지만 KMS는 리전별로 필요하다  
-D) CodePipeline 서비스 제한으로 단일 S3 버킷은 여러 리전에서 사용 불가  
+A) It automatically starts a deployment when a new StackSet instance is created  
+B) When a new member account is added to a specified OU, it automatically creates a StackSet instance in that account  
+C) It automatically remediates CloudFormation stack drift  
+D) It automatically applies SCPs  
 
-**정답: B**  
-해설: KMS 키는 리전 범위 서비스다. 서울(ap-northeast-2) KMS 키로 암호화한 Artifact는 반드시 서울 KMS 키로만 복호화할 수 있다. 버지니아(us-east-1)의 CodeBuild가 서울 S3의 Artifact를 가져와도 복호화 API 호출은 서울 KMS 엔드포인트에 해야 한다. 이 레이턴시와 비용을 피하려면 각 리전에 S3 버킷과 KMS 키를 두는 것이 표준이다. S3는 리전 서비스지만 Cross-Region 읽기는 가능하다—그래서 기술적으로는 단일 S3 버킷도 가능하지만 KMS 레이턴시 문제로 각 리전 버킷을 권장한다.
-
----
-
-**문제 4.** 여러 팀의 파이프라인이 단일 Pipeline Service Role을 공유한다. 팀 A의 파이프라인이 팀 B의 Prod 계정 Role을 AssumeRole하는 것을 방지하려면?
-
-A) 팀별로 별도 Pipeline Service Role을 생성한다  
-B) Spoke 계정의 Trust Policy에 PrincipalTag 조건을 추가해 특정 파이프라인 태그가 있는 경우에만 AssumeRole을 허용한다  
-C) VPC 엔드포인트로 접근을 제한한다  
-D) S3 버킷을 팀별로 분리한다  
-
-**정답: B**  
-해설: 두 방법 모두 유효하지만 B가 더 실용적이다. A(별도 Service Role)는 파이프라인이 많을수록 관리 부담이 증가한다. B의 PrincipalTag 방식은 단일 Service Role을 유지하면서 파이프라인별로 세분화된 접근 제어가 가능하다. Pipeline Service Role에 `Pipeline=teamA-checkout` 태그를 붙이고 Spoke의 Trust Policy에 `aws:PrincipalTag/Pipeline`을 조건으로 넣으면, 태그가 다른 파이프라인은 해당 Spoke Role을 AssumeRole할 수 없다.
+**Answer: B**  
+Explanation: OrganizationsAutoDeployment detects OU membership changes (account additions) and automatically creates StackSet instances. It is key to landing zone automation. Conversely, there is also an option to automatically delete the StackSet instance when an account is removed from the OU. Drift remediation (C) is not a StackSets feature, and SCP application (D) is a separate Organizations feature. It is available only in SERVICE_MANAGED mode and this option does not exist in SELF_MANAGED mode.
 
 ---
 
-**문제 5.** CloudFormation 스택에서 명시적 이름이 있는 IAM Role을 생성하려 한다. CodePipeline Action Configuration에 추가해야 하는 설정은?
+**Question 3.** Why does a multi-Region CodePipeline need a separate artifact S3 bucket and KMS key in each Region?
+
+A) To distribute costs  
+B) KMS keys are Regional, so an artifact encrypted with a KMS key in another Region cannot be decrypted  
+C) S3 buckets are global so they are not needed, but KMS is needed per Region  
+D) Because of a CodePipeline service limit, a single S3 bucket cannot be used from multiple Regions  
+
+**Answer: B**  
+Explanation: KMS keys are Regional. An artifact encrypted with a Seoul (ap-northeast-2) KMS key can be decrypted only with the Seoul KMS key. Even if CodeBuild in Virginia (us-east-1) fetches the artifact from the Seoul S3 bucket, the decrypt API call must go to the Seoul KMS endpoint. To avoid this latency and cost, the standard is to have an S3 bucket and a KMS key in each Region. S3 is a Regional service but cross-Region reads are possible — so technically a single S3 bucket is also possible, but a bucket per Region is recommended because of the KMS latency issue.
+
+---
+
+**Question 4.** Pipelines of several teams share a single pipeline service role. How do you prevent team A pipeline from assuming team B Prod account role?
+
+A) Create a separate pipeline service role for each team  
+B) Add a PrincipalTag condition to the spoke account trust policy so that AssumeRole is allowed only when a specific pipeline tag is present  
+C) Restrict access with VPC endpoints  
+D) Separate the S3 buckets by team  
+
+**Answer: B**  
+Explanation: Both methods are valid, but B is more practical. With A (separate service roles), the management burden grows as the number of pipelines increases. The PrincipalTag approach in B keeps a single service role while allowing fine-grained access control per pipeline. If you attach a `Pipeline=teamA-checkout` tag to the pipeline service role and put `aws:PrincipalTag/Pipeline` as a condition in the spoke trust policy, pipelines with a different tag cannot assume that spoke role.
+
+---
+
+**Question 5.** You want to create an IAM role with an explicit name in a CloudFormation stack. What setting must be added to the CodePipeline action configuration?
 
 A) `Capabilities: CAPABILITY_IAM`  
 B) `Capabilities: CAPABILITY_NAMED_IAM`  
 C) `Capabilities: CAPABILITY_AUTO_EXPAND`  
-D) 별도 설정 불필요  
+D) No additional setting is needed  
 
-**정답: B**  
-해설: CloudFormation이 명시적 이름이 있는 IAM 리소스(예: `RoleName: MySpecificRole`)를 생성할 때는 `CAPABILITY_NAMED_IAM`이 필요하다. 이름이 없는(자동 생성 이름) IAM 리소스는 `CAPABILITY_IAM`만으로 충분하다. `CAPABILITY_AUTO_EXPAND`는 nested stack이나 SAM Transform을 사용할 때 필요하다. 이 Capability를 누락하면 `InsufficientCapabilitiesException`이 발생하고 스택 배포가 실패한다. 실무에서는 보통 `CAPABILITY_IAM,CAPABILITY_NAMED_IAM`을 모두 넣어 둔다.
+**Answer: B**  
+Explanation: When CloudFormation creates an IAM resource with an explicit name (for example, `RoleName: MySpecificRole`), `CAPABILITY_NAMED_IAM` is required. For IAM resources without a name (auto-generated name), `CAPABILITY_IAM` alone is sufficient. `CAPABILITY_AUTO_EXPAND` is needed when using nested stacks or the SAM transform. If this capability is missing, an `InsufficientCapabilitiesException` occurs and the stack deployment fails. In practice, both `CAPABILITY_IAM,CAPABILITY_NAMED_IAM` are usually included.
 
 ---
 
-**문제 6.** Cross-Account 배포에서 외부 서드파티 CI/CD 시스템이 Spoke 계정 Role을 AssumeRole하는 Trust Policy에 Confused Deputy 방어를 위해 추가해야 하는 조건은?
+**Question 6.** In a cross-account deployment, what condition should be added to the trust policy that lets an external third-party CI/CD system assume the spoke account role, to defend against the confused deputy problem?
 
 A) aws:PrincipalTag  
 B) sts:ExternalId  
 C) aws:SourceIp  
 D) aws:RequestedRegion  
 
-**정답: B**  
-해설: 서드파티 CI/CD(외부 시스템)가 Spoke 계정 Role을 AssumeRole하는 패턴에서 Confused Deputy 방어의 표준은 ExternalId다. ExternalId는 서드파티 시스템과 사전 합의한 비밀 값으로, Role을 AssumeRole할 때 이 값을 제공해야만 허용된다. 내부 멀티팀 환경에서는 PrincipalTag(A)가 더 적합하지만, 외부 시스템이 Principal인 경우 PrincipalTag를 강제하기 어렵다. aws:SourceIp(C)는 IP 주소 기반 제한으로 CI 서버 IP가 변하면 깨진다. OIDC를 지원하는 외부 CI(GitHub Actions)는 sub claim 조건이 ExternalId보다 더 강력하다.
+**Answer: B**  
+Explanation: In the pattern where a third-party CI/CD (an external system) assumes the spoke account role, the standard confused deputy defense is ExternalId. ExternalId is a secret value agreed in advance with the third-party system, and assuming the role is allowed only if this value is provided. In an internal multi-team environment PrincipalTag (A) is more suitable, but when the principal is an external system, it is hard to enforce PrincipalTag. aws:SourceIp (C) is an IP address-based restriction and breaks if the CI server IP changes. For an external CI that supports OIDC (GitHub Actions), the sub claim condition is stronger than ExternalId.
 
 ---
 
-**문제 7.** CloudFormation StackSet의 `MaxConcurrentPercentage: 50`과 `FailureTolerancePercentage: 20`이 100개 계정에 적용될 때의 동작은?
+**Question 7.** What is the behavior when `MaxConcurrentPercentage: 50` and `FailureTolerancePercentage: 20` of a CloudFormation StackSet are applied to 100 accounts?
 
-A) 전체를 50개씩 두 번 배포하고, 실패 계정이 20%를 초과하면 즉시 전체 중단한다  
-B) 동시에 50개 계정에 배포하고, 최대 20개 계정이 실패해도 나머지 계정에 계속 배포한다  
-C) 20개 계정에 먼저 배포 후 50개로 확대한다  
-D) 50개 완료 시 수동 승인을 요청한다  
+A) It deploys to all accounts in two rounds of 50 and immediately stops everything if failed accounts exceed 20%  
+B) It deploys to 50 accounts at the same time and keeps deploying to the remaining accounts even if up to 20 accounts fail  
+C) It deploys to 20 accounts first and then expands to 50  
+D) It requests manual approval when 50 are complete  
 
-**정답: B**  
-해설: MaxConcurrentPercentage는 동시에 배포하는 계정의 비율(속도 제어), FailureTolerancePercentage는 얼마나 많은 계정이 실패해도 계속 진행할지의 허용치(안정성 제어)다. 100개 계정에서: 동시에 50개 계정에 배포 시작, 20개 계정(20%)이 실패해도 나머지 계정에 계속 배포, 21개 계정이 실패하면 배포를 중단하고 실패로 표시. 두 파라미터는 독립적으로 작동한다—MaxConcurrentPercentage는 "얼마나 빠르게", FailureTolerancePercentage는 "얼마나 관대하게"를 제어한다.
+**Answer: B**  
+Explanation: MaxConcurrentPercentage is the percentage of accounts deployed to at the same time (speed control), and FailureTolerancePercentage is the tolerance for how many accounts can fail while still continuing (stability control). With 100 accounts: deployment starts on 50 accounts at once, continues to the remaining accounts even if 20 accounts (20%) fail, and if 21 accounts fail, the deployment stops and is marked as failed. The two parameters work independently — MaxConcurrentPercentage controls "how fast," and FailureTolerancePercentage controls "how tolerant."

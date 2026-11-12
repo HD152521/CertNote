@@ -457,72 +457,72 @@ In the next article, we cover API Gateway's security layer — the inner working
 
 ## 📝 Practice Questions
 
-**문제 1.** In a Lambda Proxy (AWS_PROXY) integration, what is the minimum set of required fields the Lambda function must return?
+**Question 1.** In a Lambda Proxy (AWS_PROXY) integration, what is the minimum set of required fields the Lambda function must return?
 
 A) Only body is required  
 B) statusCode and body are required  
 C) statusCode, headers, and body are all required  
 D) The return format is free-form  
 
-**정답: B**  
-해설: In a Lambda Proxy integration, the Lambda response must include `statusCode` — without it, API Gateway returns 502 Bad Gateway. `body` may be null but is usually included. `headers` is optional but effectively required if you need CORS. Any format API Gateway can't interpret (missing statusCode, or a non-integer statusCode) is all handled as a 502.
+**Answer: B**  
+Explanation: In a Lambda Proxy integration, the Lambda response must include `statusCode` — without it, API Gateway returns 502 Bad Gateway. `body` may be null but is usually included. `headers` is optional but effectively required if you need CORS. Any format API Gateway can't interpret (missing statusCode, or a non-integer statusCode) is all handled as a 502.
 
 ---
 
-**문제 2.** In a Lambda Proxy integration, when API Gateway itself returns a 401 error, there are no CORS headers, so the browser displays it as a CORS error. What is the most appropriate solution?
+**Question 2.** In a Lambda Proxy integration, when API Gateway itself returns a 401 error, there are no CORS headers, so the browser displays it as a CORS error. What is the most appropriate solution?
 
 A) Add CORS headers to the Lambda code  
 B) Set the Access-Control-Allow-Origin header on the Gateway Response  
 C) Replace the REST API with an HTTP API  
 D) Set CORS headers on CloudFront  
 
-**정답: B**  
-해설: In Lambda Proxy, the response Lambda returns can include CORS headers, but errors API Gateway generates on its own (401, 403, 429, etc. — occurring before Lambda is called) are ones Lambda cannot intervene in. Configuring a Gateway Response lets you attach CORS headers even to API Gateway's own errors. A has no effect on errors that occur before Lambda is called. C — replacing with an HTTP API may cost you other features (caching, API keys, etc.).
+**Answer: B**  
+Explanation: In Lambda Proxy, the response Lambda returns can include CORS headers, but errors API Gateway generates on its own (401, 403, 429, etc. — occurring before Lambda is called) are ones Lambda cannot intervene in. Configuring a Gateway Response lets you attach CORS headers even to API Gateway's own errors. A has no effect on errors that occur before Lambda is called. C — replacing with an HTTP API may cost you other features (caching, API keys, etc.).
 
 ---
 
-**문제 3.** To Put an Item directly into DynamoDB from API Gateway without Lambda, what integration type and configuration are needed?
+**Question 3.** To Put an Item directly into DynamoDB from API Gateway without Lambda, what integration type and configuration are needed?
 
 A) Lambda Proxy integration + calling the DynamoDB SDK from Lambda  
 B) HTTP integration + DynamoDB HTTP API  
 C) AWS Service integration + VTL mapping template + IAM role  
 D) Mock integration + DynamoDB Event Notification  
 
-**정답: C**  
-해설: A direct AWS Service integration has API Gateway call the AWS API directly with the permissions of a specified IAM role. A VTL mapping template transforms the client request into the DynamoDB `PutItem` request format, and transforms the DynamoDB response into the client response format via VTL. This makes CRUD operations possible without Lambda. A is not a direct integration without Lambda. B is wrong because DynamoDB has no HTTP API.
+**Answer: C**  
+Explanation: A direct AWS Service integration has API Gateway call the AWS API directly with the permissions of a specified IAM role. A VTL mapping template transforms the client request into the DynamoDB `PutItem` request format, and transforms the DynamoDB response into the client response format via VTL. This makes CRUD operations possible without Lambda. A is not a direct integration without Lambda. B is wrong because DynamoDB has no HTTP API.
 
 ---
 
-**문제 4.** In a VTL mapping template, which variable do you use to include the `userId` value returned by a Lambda Authorizer in a DynamoDB request?
+**Question 4.** In a VTL mapping template, which variable do you use to include the `userId` value returned by a Lambda Authorizer in a DynamoDB request?
 
 A) `$input.params('userId')`  
 B) `$event.requestContext.authorizer.userId`  
 C) `$context.authorizer.userId`  
 D) `$lambda.authorizer.userId`  
 
-**정답: C**  
-해설: The context values returned by a Lambda Authorizer are accessed via `$context.authorizer.*`. If you put `userId` in the Lambda Authorizer's `context` dictionary, reference it as `$context.authorizer.userId` in VTL. For a Cognito JWT, access it as `$context.authorizer.claims.sub`, `$context.authorizer.claims.email`, etc. A is for accessing path/header/query parameters. B and D are non-existent variables.
+**Answer: C**  
+Explanation: The context values returned by a Lambda Authorizer are accessed via `$context.authorizer.*`. If you put `userId` in the Lambda Authorizer's `context` dictionary, reference it as `$context.authorizer.userId` in VTL. For a Cognito JWT, access it as `$context.authorizer.claims.sub`, `$context.authorizer.claims.email`, etc. A is for accessing path/header/query parameters. B and D are non-existent variables.
 
 ---
 
-**문제 5.** What is the benefit of enabling Request Validation on a REST API?
+**Question 5.** What is the benefit of enabling Request Validation on a REST API?
 
 A) Lambda execution gets faster  
 B) It blocks malformed request formats with a 400 before Lambda is called, cutting Lambda costs  
 C) Response caching is enabled automatically  
 D) CORS is configured automatically  
 
-**정답: B**  
-해설: Request validation has API Gateway inspect a request's path parameters, query string, headers, and request body (JSON Schema based) before calling the backend. On validation failure it immediately returns 400 Bad Request and Lambda is not called. This cuts the cost and time of Lambda invocations caused by bad data, and protects the backend from malformed input.
+**Answer: B**  
+Explanation: Request validation has API Gateway inspect a request's path parameters, query string, headers, and request body (JSON Schema based) before calling the backend. On validation failure it immediately returns 400 Bad Request and Lambda is not called. This cuts the cost and time of Lambda invocations caused by bad data, and protects the backend from malformed input.
 
 ---
 
-**문제 6.** In a Lambda Proxy integration, how do you safely access `event['queryStringParameters']`?
+**Question 6.** In a Lambda Proxy integration, how do you safely access `event['queryStringParameters']`?
 
 A) `event['queryStringParameters']`  
 B) `event.queryStringParameters`  
 C) `event.get('queryStringParameters', {}) or {}`  
 D) `event['queryStringParameters'] if 'queryStringParameters' in event else {}`  
 
-**정답: C**  
-해설: On a request with no query parameters, `event['queryStringParameters']` can be `None`. `event.get('queryStringParameters', {})` returns `{}` when the key is missing, but returns `None` when the key exists and its value is `None`. Adding `or {}` handles the `None` case as `{}` too. This pattern applies equally to pathParameters and headers.
+**Answer: C**  
+Explanation: On a request with no query parameters, `event['queryStringParameters']` can be `None`. `event.get('queryStringParameters', {})` returns `{}` when the key is missing, but returns `None` when the key exists and its value is `None`. Adding `or {}` handles the `None` case as `{}` too. This pattern applies equally to pathParameters and headers.

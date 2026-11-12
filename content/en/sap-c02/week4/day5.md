@@ -222,78 +222,78 @@ Real-world calculation example:
 
 ## 📝 Practice Questions
 
-**문제 1.** 한국 의료법으로 환자 영상 데이터(CT, MRI)가 병원 건물 밖으로 반출되면 안 된다. AWS AI 진단 모델을 실시간으로 영상에 적용해야 하며, 의료 장비(PACS 서버)와 서브밀리초 수준의 낮은 지연으로 통신해야 한다. 가장 적합한 서비스는?
+**Question 1.** Under Korean medical law, patient imaging data (CT, MRI) must not leave the hospital building. An AWS AI diagnostic model must be applied to the images in real time, and it must communicate with the medical equipment (PACS server) at sub-millisecond latency. What is the most appropriate service?
 
-A) Local Zones (서울 확장) + PACS 서버 DX 연결  
-B) AWS Outposts (병원 서버실) + Local Gateway로 PACS 연결  
+A) Local Zones (Seoul expansion) + DX connection to the PACS server  
+B) AWS Outposts (hospital server room) + connect to the PACS through the Local Gateway  
 C) AWS Wavelength (SK Telecom 5G MEC)  
-D) AWS Lambda (서울 리전) + DX Private VIF  
+D) AWS Lambda (Seoul Region) + DX Private VIF  
 
-**정답: B**
+**Answer: B**
 
-해설: 두 가지 조건이 정답을 결정한다. (1) "건물 밖 반출 금지" = Outposts만이 AWS 하드웨어를 고객 건물 내에 배치해 데이터가 물리적으로 건물 안에 유지된다. (2) "PACS 서버와 서브밀리초 통신" = Local Gateway(LGW)로 Outposts가 온프레미스 LAN에 직접 연결되어 서브밀리초 지연을 달성한다. Local Zones(A)는 AWS가 운영하는 별도 시설이므로 "건물 밖"이다. Wavelength(C)는 통신사 시설이다. Lambda(D)는 서울 리전 데이터센터에서 실행된다. 세 서비스 모두 병원 건물 밖에 있어 의료법을 충족하지 못한다.
+Explanation: Two conditions decide the answer. (1) "No removal from the building" = only Outposts places AWS hardware inside the customer's building, so the data physically stays in the building. (2) "Sub-millisecond communication with the PACS server" = through the Local Gateway (LGW), Outposts connects directly to the on-premises LAN and achieves sub-millisecond latency. Local Zones (A) are separate facilities operated by AWS and are therefore "outside the building." Wavelength (C) is a telecom carrier facility. Lambda (D) runs in a data center in the Seoul Region. All three services are outside the hospital building and therefore do not satisfy the medical law.
 
 ---
 
-**문제 2.** 뉴욕 금융 트레이딩 회사가 알고리즘 트레이더에게 1ms 미만 지연의 실시간 시세 대시보드를 제공해야 한다. 트레이더는 사무실 유선 이더넷 네트워크를 사용한다. 5G는 사용하지 않는다. 데이터 주권 규제는 없다. 가장 적합한 서비스는?
+**Question 2.** A New York financial trading firm must provide algorithmic traders with a real-time market data dashboard at under 1 ms latency. The traders use the office wired Ethernet network. They do not use 5G. There is no data sovereignty regulation. What is the most appropriate service?
 
-A) AWS Outposts (사무실 서버실)  
+A) AWS Outposts (office server room)  
 B) AWS Local Zones (us-east-1-nyc-1a)  
-C) AWS Wavelength (Verizon 뉴욕)  
+C) AWS Wavelength (Verizon New York)  
 D) Global Accelerator + us-east-1 EC2  
 
-**정답: B**
+**Answer: B**
 
-해설: 유선 인터넷 환경 + 1ms 미만 지연 + 데이터 주권 규제 없음 = Local Zones가 정답이다. 뉴욕 Local Zone(us-east-1-nyc-1a)은 뉴욕 도심에 AWS 인프라를 배치해 1ms 미만 왕복 지연을 제공한다. Outposts(A)는 데이터 주권 요건이 없는 상황에서 하드웨어 구매/운영 비용과 복잡성이 과하다. Wavelength(C)는 5G 모바일 디바이스가 클라이언트일 때 최적이며 유선 사무실 환경에서는 이점이 없다(5G RAN을 경유하지 않으므로 Wavelength 배치의 지연 감소 효과가 없다). Global Accelerator + us-east-1(D)은 뉴욕-버지니아 물리 거리(약 350km)로 인해 최소 3-5ms 지연이 불가피해 1ms 요건을 충족할 수 없다.
-
----
-
-**문제 3.** 자율주행 배달 로봇이 도심에서 5G로 경로 재계산 요청을 보낸다. 응답 지연이 15ms를 초과하면 장애물 회피 알고리즘이 실패한다. 도시에 SK Telecom 5G 인프라가 있다. 가장 적합한 서비스는?
-
-A) AWS Outposts (로봇 유지보수 센터)  
-B) Local Zones (서울)  
-C) AWS Wavelength (SK Telecom 파트너십)  
-D) 서울 리전 EC2 + Global Accelerator  
-
-**정답: C**
-
-해설: "5G 연결 디바이스 + 15ms 이내 응답" = Wavelength의 정확한 사용 사례다. 5G 패킷이 기지국에서 5G 코어 네트워크를 거치지 않고 바로 인접한 Wavelength Zone EC2에서 처리된다. 기지국-컴퓨팅 거리가 수 km 이내이므로 총 왕복 지연 10ms 이내를 달성한다. Local Zones(B)는 일반 인터넷 연결 사용자에게 도시 수준 지연을 제공하지만, 5G 디바이스가 5G 코어를 통해 인터넷으로 나와 Local Zone에 접근하면 추가 홉이 생겨 15ms 달성이 불안정하다. 서울 리전 + GA(D)는 5G 코어 → 인터넷 → 서울 리전 경로로 20-30ms가 예상된다.
+Explanation: Wired network environment + under 1 ms latency + no data sovereignty regulation = Local Zones is the answer. The New York Local Zone (us-east-1-nyc-1a) places AWS infrastructure in downtown New York and provides under 1 ms round-trip latency. Outposts (A) is excessive in hardware purchase/operation cost and complexity when there is no data sovereignty requirement. Wavelength (C) is optimal when 5G mobile devices are the clients and offers no advantage in a wired office environment (since traffic does not go through the 5G RAN, Wavelength placement brings no latency reduction). Global Accelerator + us-east-1 (D) inevitably incurs at least 3-5 ms of latency because of the physical distance between New York and Virginia (about 350 km), so it cannot meet the 1 ms requirement.
 
 ---
 
-**문제 4.** 석유화학 회사가 250TB 데이터를 인터넷 연결이 없는 오프쇼어 플랫폼에서 AWS S3로 수집해야 한다. 플랫폼에서 데이터를 전처리하는 ML 추론 워크로드도 실행해야 한다. 가장 적합한 솔루션은?
+**Question 3.** Autonomous delivery robots send route recalculation requests over 5G in a downtown area. If the response latency exceeds 15 ms, the obstacle avoidance algorithm fails. The city has SK Telecom 5G infrastructure. What is the most appropriate service?
 
-A) 위성 인터넷(Starlink) 설치 + DataSync  
-B) Snowball Edge Compute Optimized (GPU 옵션) + 주기적 배송 회수  
-C) Snowcone + 해저케이블 연결  
-D) Storage Gateway S3 File + 위성 연결  
+A) AWS Outposts (robot maintenance center)  
+B) Local Zones (Seoul)  
+C) AWS Wavelength (SK Telecom partnership)  
+D) EC2 in the Seoul Region + Global Accelerator  
 
-**정답: B**
+**Answer: C**
 
-해설: 두 요건이 동시에 필요하다: (1) 네트워크 없는 환경의 대용량 데이터 수집, (2) 현장 ML 추론. Snowball Edge Compute Optimized는 28TB 스토리지 + 52 vCPU + 208GB RAM + NVIDIA V100 GPU를 내장해 현장에서 ML 추론을 실행하고 데이터를 수집한 뒤 플랫폼 공급선 편에 AWS로 배송한다. S3-compatible API가 온디바이스에서 동작해 기존 애플리케이션 수정이 최소화된다. Snowcone(C)은 14TB 이하 소규모이므로 250TB 수집에 부적합하다. 위성 인터넷(A, D)는 오프쇼어 플랫폼에서 250TB를 전송하기에 대역폭이 턱없이 부족하다(Starlink 100Mbps × 60% × 전송 시간 = 수 주).
+Explanation: "5G-connected devices + response within 15 ms" = the exact use case for Wavelength. 5G packets are processed directly by EC2 in the adjacent Wavelength Zone without passing from the base station through the 5G core network. Because the distance between the base station and the compute is within a few km, a total round-trip latency within 10 ms is achieved. Local Zones (B) provide city-level latency to users on ordinary internet connections, but when 5G devices exit to the internet through the 5G core and reach the Local Zone, an extra hop is added and meeting 15 ms is unreliable. The Seoul Region + GA (D) is expected to take 20-30 ms over the 5G core → internet → Seoul Region path.
 
 ---
 
-**문제 5.** 컨설팅 회사 20개 지사가 Windows 파일 서버를 운영한다. 본사와 지사에서 동일한 파일을 동시 편집하며 Active Directory 그룹 정책으로 접근을 제어한다. 지사 로컬 캐시로 응답 속도를 유지하면서 중앙 관리로 전환하려 한다. 적합한 솔루션은?
+**Question 4.** A petrochemical company must collect 250 TB of data into AWS S3 from an offshore platform with no internet connection. It must also run ML inference workloads on the platform to preprocess the data. What is the most appropriate solution?
 
-A) S3 File Gateway (각 지사에 배포) + S3 + S3 이벤트 알림으로 RefreshCache  
-B) FSx File Gateway (각 지사) + 중앙 FSx for Windows File Server  
+A) Install satellite internet (Starlink) + DataSync  
+B) Snowball Edge Compute Optimized (GPU option) + periodic shipping and retrieval  
+C) Snowcone + subsea cable connection  
+D) Storage Gateway S3 File + satellite connection  
+
+**Answer: B**
+
+Explanation: Two requirements are needed at the same time: (1) large-scale data collection in an environment without a network, and (2) on-site ML inference. Snowball Edge Compute Optimized has built-in 28 TB of storage + 52 vCPUs + 208 GB RAM + an NVIDIA V100 GPU, so it runs ML inference on site, collects the data, and is shipped to AWS on the platform's supply vessel. The S3-compatible API runs on the device, minimizing changes to existing applications. Snowcone (C) is small at 14 TB or less and is unsuitable for collecting 250 TB. Satellite internet (A, D) has far too little bandwidth to transfer 250 TB from an offshore platform (Starlink 100 Mbps × 60% × transfer time = several weeks).
+
+---
+
+**Question 5.** A consulting firm has 20 branch offices that operate Windows file servers. The headquarters and branches edit the same files simultaneously, and access is controlled by Active Directory group policy. It wants to move to central management while keeping response speed with a local cache at each branch. What is an appropriate solution?
+
+A) S3 File Gateway (deployed at each branch) + S3 + RefreshCache via S3 event notifications  
+B) FSx File Gateway (each branch) + central FSx for Windows File Server  
 C) Volume Gateway Cached Mode + EFS Multi-AZ  
-D) DataSync로 매일 동기화 + 로컬 파일 서버 유지  
+D) Synchronize daily with DataSync + keep the local file servers  
 
-**정답: B**
+**Answer: B**
 
-해설: Windows AD ACL + 동시 편집 충돌 방지(NTFS OpLock/파일 잠금) + 로컬 캐시가 모두 필요하다. FSx File Gateway가 이 세 가지를 모두 충족한다. 각 지사 FSx File Gateway가 자주 쓰는 파일을 로컬 캐시에 유지하고, 실제 저장은 중앙 FSx for Windows File Server에 한다. 도메인 조인으로 기존 AD 정책이 그대로 적용된다. S3 File Gateway(A)는 NTFS OpLock을 완전히 지원하지 않아 동시 편집 중 파일 잠금이 제대로 동작하지 않아 데이터 충돌이 발생할 수 있다. RefreshCache 자동화로 일관성은 개선할 수 있지만 파일 잠금은 해결되지 않는다. Volume Gateway(C)는 iSCSI 블록 스토리지로 SMB 파일 공유가 아니다. DataSync(D)는 배치 동기화로 실시간 파일 공유에 부적합하다.
+Explanation: Windows AD ACLs + prevention of concurrent-edit conflicts (NTFS OpLock/file locking) + a local cache are all required. FSx File Gateway satisfies all three. The FSx File Gateway at each branch keeps frequently used files in the local cache, and the actual storage is in the central FSx for Windows File Server. With a domain join, the existing AD policy applies as is. S3 File Gateway (A) does not fully support NTFS OpLock, so file locking does not work properly during concurrent editing and data conflicts can occur. Automating RefreshCache can improve consistency but does not solve file locking. Volume Gateway (C) is iSCSI block storage, not an SMB file share. DataSync (D) is batch synchronization and is unsuitable for real-time file sharing.
 
 ---
 
-**문제 6.** 방송사가 물리 LTO 테이프 4만 개에 30년치 아카이브를 보관한다. Veritas NetBackup 소프트웨어를 수정 없이 유지하면서 클라우드로 이전하고 복원 시간을 물리 테이프 운반 없이 단축하려 한다. 적합한 솔루션은?
+**Question 6.** A broadcaster keeps 30 years of archives on 40,000 physical LTO tapes. It wants to migrate to the cloud while keeping its Veritas NetBackup software unmodified, and to shorten restore time without transporting physical tapes. What is an appropriate solution?
 
 A) S3 File Gateway + S3 Glacier Deep Archive  
 B) Tape Gateway (iSCSI VTL) + S3 Glacier Deep Archive  
 C) DataSync + S3 Glacier  
-D) Snowball Edge로 물리 테이프 데이터 일괄 이전 + S3  
+D) Move the physical tape data in bulk with Snowball Edge + S3  
 
-**정답: B**
+**Answer: B**
 
-해설: "기존 NetBackup 소프트웨어 수정 없이"가 핵심이다. Tape Gateway는 iSCSI VTL(Virtual Tape Library) 인터페이스를 에뮬레이션해 NetBackup이 물리 테이프 장비처럼 인식한다. 백업 job이 그대로 실행되고 데이터가 S3 VTL에 저장된다. "Archive" 명령 실행 시 Glacier Deep Archive로 이동한다. 복원 시 물리 테이프 운반 없이 Glacier 복원 요청만으로 처리된다(표준 복원 3-5시간, Bulk 복원 12시간). S3 File Gateway(A)는 NFS/SMB 인터페이스이지 VTL이 없어 NetBackup이 테이프 장비로 인식하지 못한다. DataSync(C)는 파일 복사 도구로 백업 소프트웨어 VTL 통합이 없다. Snowball(D)은 일회성 물리 이전으로 지속적 백업에 부적합하다.
+Explanation: "Without modifying the existing NetBackup software" is the key. Tape Gateway emulates an iSCSI VTL (Virtual Tape Library) interface so NetBackup recognizes it like a physical tape device. Backup jobs run as they are and the data is stored in the S3 VTL. On an "Archive" command, it moves to Glacier Deep Archive. Restores are handled with only a Glacier restore request, without transporting physical tapes (Standard restore 3-5 hours, Bulk restore 12 hours). S3 File Gateway (A) has an NFS/SMB interface and no VTL, so NetBackup does not recognize it as a tape device. DataSync (C) is a file copy tool with no VTL integration for backup software. Snowball (D) is a one-time physical move and is unsuitable for ongoing backups.

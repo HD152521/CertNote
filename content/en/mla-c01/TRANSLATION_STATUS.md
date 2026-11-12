@@ -31,10 +31,10 @@
 ### Parser Tokens - 100% Preservation
 All critical Korean parser tokens are preserved exactly as-is:
 
-✅ `## 📝 연습 문제` - Kept exactly (NOT translated)  
-✅ `**문제 N.**` prefix - Preserved exactly  
-✅ `**정답: X**` format - Preserved exactly  
-✅ `해설:` prefix - Preserved exactly  
+✅ `## 📝 Practice Questions` - Kept exactly (NOT translated)  
+✅ `**Question N.**` prefix - Preserved exactly  
+✅ `**Answer: X**` format - Preserved exactly  
+✅ `Explanation:` prefix - Preserved exactly  
 ✅ All `---` separators - Maintained  
 ✅ Markdown structure - Fully preserved  
 
@@ -42,13 +42,13 @@ All critical Korean parser tokens are preserved exactly as-is:
 All narrative content translated to professional English:
 
 ✅ Headers translated  
-✅ Question texts (post "**문제 N.**") translated  
+✅ Question texts (post "**Question N.**") translated  
 ✅ Answer options A/B/C/D translated  
-✅ Explanation texts (post "해설:") translated  
+✅ Explanation texts (post "Explanation:") translated  
 ✅ Blockquote labels translated:
-  - "💡 관련 이론" → "💡 Related Theory"
-  - "🔍 더 깊이" → "🔍 Deeper Dive"
-  - "📚 사례" → "📚 Case Study"
+  - "💡 Related Theory" → "💡 Related Theory"
+  - "🔍 Deeper Dive" → "🔍 Deeper Dive"
+  - "📚 Case Study" → "📚 Case Study"
 ✅ Table descriptions translated  
 
 ### Preserved Elements (Unchanged)
@@ -100,7 +100,7 @@ Background agent is systematically translating:
 ## Output Locations
 
 ### Primary Output
-- **Location**: `C:\Users\안용식\webapp\content\en\mla-c01\`
+- **Location**: `C:\Users\user\webapp\content\en\mla-c01\`
 - **Structure**: `week{N}/day{D}.md` format
 - **Status**: 13/50 files synced and ready
 

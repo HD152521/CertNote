@@ -124,60 +124,60 @@ From Week 3 onward, we move to detection and logging (CloudTrail, GuardDuty, Sec
 
 ## 📝 Practice Questions
 
-**문제 1.** prod 계정의 사용자에게 `AdministratorAccess`가 할당되어 있는데, `eu-west-1`에서 EC2 시작이 거부되고 CloudTrail에 `explicitDeny`가 기록된다. 가장 유력한 원인과 해결책은?
+**Question 1.** A user in the prod account has `AdministratorAccess` assigned, but launching EC2 in `eu-west-1` is denied and `explicitDeny` is recorded in CloudTrail. What are the most likely cause and the solution?
 
-A) IAM 정책이 부족하므로 더 넓은 정책을 추가한다  
-B) prod OU에 리전 제한 SCP가 걸려 있으므로, 허용 리전에서 작업하거나 SCP를 수정한다  
-C) Permission Set을 다시 할당한다  
-D) MFA를 활성화한다  
+A) The IAM policy is insufficient, so add a broader policy  
+B) A Region-restriction SCP is attached to the prod OU, so work in an allowed Region or modify the SCP  
+C) Reassign the Permission Set  
+D) Enable MFA  
 
-**정답: B**  
-해설: AdministratorAccess는 Identity 정책일 뿐 SCP의 천장을 넘지 못한다. `eu-west-1` + EC2 + explicitDeny 조합은 리전 제한 SCP가 전형적 원인이다. SCP Deny는 IAM Allow로 풀 수 없으므로 정책을 더 넓혀도 소용없고, 허용 리전에서 작업하거나 SCP 자체를 수정해야 한다.
-
----
-
-**문제 2.** 개발자에게 롤 생성을 위임하면서 (1) 권한 상승 차단, (2) 리전 제한, (3) 팀별 리소스 격리를 모두 달성하려 한다. 올바른 도구 조합은?
-
-A) SCP 하나로 전부 해결한다  
-B) Permission Boundary 하나로 전부 해결한다  
-C) SCP(리전 제한) + Permission Boundary 강제(권한 상승 차단) + ABAC(팀 격리)를 함께 쓴다  
-D) AdministratorAccess를 주고 CloudTrail로 감시한다  
-
-**정답: C**  
-해설: 세 요구사항은 각기 다른 층이 담당한다. 리전 제한은 SCP, 권한 상승 차단은 Boundary 강제 부착, 팀 격리는 ABAC가 푼다. 어느 한 도구만으로는 세 가지를 모두 충족할 수 없다. AdministratorAccess + 사후 감시는 예방이 아니라 탐지일 뿐이라 위임 보안에 부적합하다.
+**Answer: B**  
+Explanation: AdministratorAccess is only an Identity policy and cannot exceed the ceiling of an SCP. The combination of `eu-west-1` + EC2 + explicitDeny is typically caused by a Region-restriction SCP. An SCP Deny cannot be lifted by an IAM Allow, so broadening the policy is useless; you must work in an allowed Region or modify the SCP itself.
 
 ---
 
-**문제 3.** Audit 계정의 보안팀이 여러 prod 계정의 S3 로그 버킷을 읽어야 한다. 임시 자격증명을 쓰고 감사 추적을 남기며 confused deputy를 방지하는 방법은?
+**Question 2.** While delegating role creation to developers, we want to achieve all of (1) blocking privilege escalation, (2) Region restriction, and (3) per-team resource isolation. What is the correct combination of tools?
 
-A) prod 계정에 IAM 사용자를 만들어 access key를 공유한다  
-B) 각 prod 계정에 읽기 전용 롤을 만들고, 신뢰 정책에서 Audit 계정만 AssumeRole 허용 + ExternalId 조건을 건다  
-C) 모든 버킷을 퍼블릭으로 만든다  
-D) Audit 계정에 AdministratorAccess를 준다  
+A) Solve everything with a single SCP  
+B) Solve everything with a single Permission Boundary  
+C) Use SCP (Region restriction) + enforced Permission Boundary (blocking privilege escalation) + ABAC (team isolation) together  
+D) Give AdministratorAccess and monitor with CloudTrail  
 
-**정답: B**  
-해설: 크로스 계정 읽기는 각 계정에 최소 권한 롤을 만들고 신뢰 정책으로 Audit 계정만 AssumeRole하게 하는 것이 표준이다. 임시 자격증명을 쓰고 CloudTrail에 AssumeRole이 남으며, ExternalId 조건으로 confused deputy를 막는다. access key 공유는 장기 자격증명 유출 위험, 퍼블릭 버킷은 심각한 노출, AdministratorAccess는 최소 권한 위반이다.
-
----
-
-**문제 4.** "운영 부담을 최소화하면서 50개 신규 계정에 표준 SCP 가드레일과 Identity Center 매핑을 일관되게 적용"하라는 시나리오에서 가장 적절한 솔루션은?
-
-A) 계정마다 SCP와 Permission Set을 수동으로 설정한다  
-B) AWS Control Tower로 OU 가드레일과 Account Factory 표준화를 적용한다  
-C) 각 계정에 Lambda 자동화를 따로 배포한다  
-D) 모든 계정을 하나로 합친다  
-
-**정답: B**  
-해설: "운영 부담 최소화 + 멀티 계정 표준화" 키워드는 Control Tower를 가리킨다. Control Tower는 OU별 SCP 가드레일을 매니지드로 제공하고 Account Factory로 새 계정 생성 시 표준 설정과 Identity Center 매핑을 자동 적용한다. 수동 설정과 계정별 Lambda는 운영 부담이 크고, 계정 통합은 blast radius 격리를 깨뜨린다.
+**Answer: C**  
+Explanation: The three requirements are each handled by a different layer. Region restriction is solved by an SCP, blocking privilege escalation by enforced Boundary attachment, and team isolation by ABAC. No single tool can satisfy all three. AdministratorAccess + after-the-fact monitoring is detection, not prevention, and is unsuitable for delegation security.
 
 ---
 
-**문제 5.** 다음 중 "권한을 부여하지 않고 오직 상한만 제한하는" 도구로만 묶인 것은?
+**Question 3.** The security team in the Audit account must read the S3 log buckets of multiple prod accounts. What method uses temporary credentials, leaves an audit trail, and prevents the confused deputy problem?
 
-A) Identity 정책, Resource 정책  
+A) Create an IAM user in the prod account and share the access key  
+B) Create a read-only role in each prod account, and in the trust policy allow AssumeRole only from the Audit account plus an ExternalId condition  
+C) Make all buckets public  
+D) Give the Audit account AdministratorAccess  
+
+**Answer: B**  
+Explanation: For cross-account reading, the standard is to create a least-privilege role in each account and allow only the Audit account to AssumeRole through the trust policy. It uses temporary credentials, AssumeRole is recorded in CloudTrail, and the ExternalId condition prevents the confused deputy. Sharing an access key risks leaking long-term credentials, public buckets are a serious exposure, and AdministratorAccess violates least privilege.
+
+---
+
+**Question 4.** In the scenario "consistently apply standard SCP guardrails and Identity Center mappings to 50 new accounts while minimizing operational burden," what is the most appropriate solution?
+
+A) Manually configure SCPs and Permission Sets for each account  
+B) Apply OU guardrails and Account Factory standardization with AWS Control Tower  
+C) Deploy Lambda automation separately to each account  
+D) Merge all accounts into one  
+
+**Answer: B**  
+Explanation: The keywords "minimize operational burden + multi-account standardization" point to Control Tower. Control Tower provides OU-level SCP guardrails as a managed feature and, through Account Factory, automatically applies standard settings and Identity Center mappings when a new account is created. Manual configuration and per-account Lambda carry a high operational burden, and merging accounts breaks blast radius isolation.
+
+---
+
+**Question 5.** Which of the following is grouped only with tools that "do not grant permissions and only restrict the upper limit"?
+
+A) Identity policy, Resource policy  
 B) SCP, Permission Boundary, Session Policy  
-C) Identity 정책, SCP  
-D) Resource 정책, ABAC  
+C) Identity policy, SCP  
+D) Resource policy, ABAC  
 
-**정답: B**  
-해설: SCP, Permission Boundary, Session Policy는 모두 권한을 부여하지 않고 상한(천장)만 정하는 가드레일이다. 실제 권한 부여는 Identity 정책과 Resource 정책이 담당한다. 따라서 부여 도구(Identity/Resource)가 섞인 보기는 모두 틀리며, 세 가드레일만 묶인 것이 정답이다.
+**Answer: B**  
+Explanation: SCPs, Permission Boundaries, and Session Policies are all guardrails that do not grant permissions and only set the upper limit (ceiling). Actual permission granting is handled by Identity policies and Resource policies. Therefore every choice that mixes in granting tools (Identity/Resource) is wrong, and the correct answer is the one that groups only the three guardrails.

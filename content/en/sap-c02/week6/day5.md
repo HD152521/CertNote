@@ -244,146 +244,146 @@ Organize enterprise migration end-to-end pipeline:
 
 ## 📝 12 Scenario Practice Questions
 
-**문제 1.** Large retailer must migrate 800 physical servers (700 app + 100 Oracle DB) to AWS within 6 months. Replace Oracle with Aurora PostgreSQL; quickly migrate app servers to EC2. Best tool combination?
+**Question 1.** Large retailer must migrate 800 physical servers (700 app + 100 Oracle DB) to AWS within 6 months. Replace Oracle with Aurora PostgreSQL; quickly migrate app servers to EC2. Best tool combination?
 
 A) MGN (all) + RDS Oracle (DB)
 B) MGN (700 apps) + DMS+SCT (100 Oracle DB → Aurora PG)
 C) App2Container (all) + DMS (DB)
 D) Refactor Spaces (all) + Babelfish (DB)
 
-**정답: B**
+**Answer: B**
 700 app servers = Rehost → MGN (block-level replication, no code change). 100 Oracle DB → Aurora PG = Replatform → DMS (data replication) + SCT (heterogeneous schema and PL/SQL conversion). A: Oracle license cost continues, no TCO improvement. C: A2C targets apps only, DB servers unsuitable. D: Refactor Spaces is monolith→microservices tool; Babelfish is SQL Server compatible (Oracle unsupported).
 
 ---
 
-**문제 2.** ADS discovered 3,000 servers, 500 showing avg CPU < 3%, no traffic, last login 2 years ago. Remaining 2,500 active. 7R strategy for 500?
+**Question 2.** ADS discovered 3,000 servers, 500 showing avg CPU < 3%, no traffic, last login 2 years ago. Remaining 2,500 active. 7R strategy for 500?
 
 A) Retain (on-premises, regulatory)
 B) Rehost (EC2 transfer, monitor)
 C) Retire (decommission)
 D) Repurchase (SaaS conversion)
 
-**정답: C**
+**Answer: C**
 "Unused systems" = Retire. ADS found CPU < 3% + no traffic + 2-year no login means systems effectively abandoned. Transferring unused systems to cloud wastes cost. Retain needs explicit reasons (regulation, dependency, no migration ROI). Simple abandonment = Retire. Pre-migration Retire judgment reduces transfer targets to 2,500—itself cost optimization.
 
 ---
 
-**문제 3.** Financial company with SQL Server hosting .NET Framework 4.6 app wants AWS transfer + SQL Server license removal with minimal code change. Limited dev resources, no large rewrites possible. Most realistic combination?
+**Question 3.** Financial company with SQL Server hosting .NET Framework 4.6 app wants AWS transfer + SQL Server license removal with minimal code change. Limited dev resources, no large rewrites possible. Most realistic combination?
 
 A) Porting Assistant for .NET Core porting + RDS PostgreSQL
 B) App2Container containerization + RDS SQL Server
 C) Aurora PostgreSQL Babelfish (DB) + MGN (app EC2)
 D) DMS+SCT (DB) + Refactor Spaces (app)
 
-**정답: C**
+**Answer: C**
 Minimal code change + SQL Server license removal = Babelfish. .NET app connecting via SQL Server driver to Babelfish runs T-SQL as-is. App servers → MGN for EC2 Rehost (no code change). A: Porting Assistant → .NET Core porting requires code modification (low dev resource condition unmet). B: SQL Server license continues (goal unmet). D: SCT conversion effort + Refactor Spaces development cost incurred.
 
 ---
 
-**문제 4.** Enterprise migration kickoff. Executives ask "5-year TCO savings?" Teams ask "Which 7R per server?" AWS services satisfying both?
+**Question 4.** Enterprise migration kickoff. Executives ask "5-year TCO savings?" Teams ask "Which 7R per server?" AWS services satisfying both?
 
 A) Cost Explorer + Trusted Advisor
 B) Migration Evaluator (TCO) + Migration Hub Strategy Recommendations (7R recommendation)
 C) AWS Pricing Calculator + Compute Optimizer
 D) AWS Budgets + AWS Config
 
-**정답: B**
+**Answer: B**
 5-year TCO comparison = Migration Evaluator. Analyzes current on-premises cost, calculates expected AWS post-migration cost, presents 5-year savings. Per-server 7R auto-recommendation = Migration Hub Strategy Recommendations. Based on ADS data, auto-recommends Retire/Retain/Rehost/Replatform per server. Cost Explorer analyzes already-AWS spending; Trusted Advisor recommends operating environments—both differ from migration Assess phase.
 
 ---
 
-**문제 5.** 500 VMs migrated to VMware Cloud on AWS (Relocate). After 6 months, VMware licensing costs remain high. Next step?
+**Question 5.** 500 VMs migrated to VMware Cloud on AWS (Relocate). After 6 months, VMware licensing costs remain high. Next step?
 
 A) Renegotiate VMware/AWS VMC subscription license unit price (architecture unchanged)
 B) MGN transfer VMC VMs to EC2 native (Relocate → Rehost)
 C) Immediately Refactor all 500 VMs to Lambda + DynamoDB serverless redesign
 D) Keep VMC, only Compute Optimizer Right-Sizing to review cost
 
-**정답: B**
+**Answer: B**
 Relocate → Rehost is natural cloud journey next step. VMC is intermediate stage for rapid on-premises VMware transfer to AWS. EC2 native transfer removes VMware license. MGN installs agents on VMs running atop VMC and operates. C: Immediate Refactor requires massive development cost/time, unsuitable as "next step."
 
 ---
 
-**문제 6.** Large monolithic Java app (2M lines) in microservices transition. Operate existing monolith while developing new order management module first as microservice, then gradually transition order API traffic from monolith to new service. Which service manages routing automation?
+**Question 6.** Large monolithic Java app (2M lines) in microservices transition. Operate existing monolith while developing new order management module first as microservice, then gradually transition order API traffic from monolith to new service. Which service manages routing automation?
 
 A) AWS App Mesh
 B) AWS Migration Hub Refactor Spaces
 C) Amazon API Gateway (manual setup)
 D) AWS Cloud Map
 
-**정답: B**
+**Answer: B**
 Strangler Fig pattern + gradual monolith-to-microservice traffic transition = Refactor Spaces. Register new order service URL in Refactor Spaces, auto-configures API Gateway and VPC links. Adjust traffic ratio (e.g., 10% → 50% → 100%) from console. App Mesh: microservices environment service-to-service traffic management; Cloud Map: service registration/discovery.
 
 ---
 
-**문제 7.** 1,000 VMware VM CPU/memory usage and TCP dependency collection without agents to design Waves. vCenter environment, no agent install desired. Suitable tool?
+**Question 7.** 1,000 VMware VM CPU/memory usage and TCP dependency collection without agents to design Waves. vCenter environment, no agent install desired. Suitable tool?
 
 A) DMS Fleet Advisor
 B) ADS Agentless Collector (vCenter virtual appliance)
 C) ADS Discovery Agent (install per VM)
 D) AWS Systems Manager Inventory
 
-**정답: B**
+**Answer: B**
 VMware vCenter + agentless + CPU/memory/network dependency = ADS Agentless Collector. Deploy virtual appliance in vCenter, collects all VMware VM metrics and TCP connections without agents at ESXi level. Fleet Advisor: DB specialized; Discovery Agent: per-VM install (agentless condition unmet); SSM Inventory: AWS EC2 only.
 
 ---
 
-**문제 8.** MySQL 5.7 → Aurora MySQL 2.x (MySQL 5.7 compatible) migration with 100 stored procedures. Which between DMS and SCT needed?
+**Question 8.** MySQL 5.7 → Aurora MySQL 2.x (MySQL 5.7 compatible) migration with 100 stored procedures. Which between DMS and SCT needed?
 
 A) DMS + SCT both (MySQL also heterogeneous)
 B) DMS only (homogeneous engine, no schema conversion)
 C) SCT only (stored procedure conversion)
 D) MGN server-as-is
 
-**정답: B**
+**Answer: B**
 MySQL → Aurora MySQL = homogeneous engine (MySQL compatible). SCT is heterogeneous engine schema and code conversion tool. Aurora MySQL compatible with MySQL 5.7/8.0, so MySQL stored procedures, triggers, views run mostly as-is. DMS Full Load + CDC only needed. D: MGN technically possible but DMS is DB migration Best Practice (transaction consistency guaranteed).
 
 ---
 
-**문제 9.** Migration manager running MGN 150, DMS 30, partner tool 20 simultaneously. Manage each server "Discovery → Ready → Testing → Cutover Complete" state and Wave-by-Wave progress in one console, including wave dependency automation. Which service?
+**Question 9.** Migration manager running MGN 150, DMS 30, partner tool 20 simultaneously. Manage each server "Discovery → Ready → Testing → Cutover Complete" state and Wave-by-Wave progress in one console, including wave dependency automation. Which service?
 
 A) CloudWatch Dashboards
 B) AWS Migration Hub + Migration Hub Orchestrator
 C) AWS Service Catalog
 D) AWS Config + Systems Manager
 
-**정답: B**
+**Answer: B**
 Unified migration progress tracking = Migration Hub. Wave-by-wave state management and stage workflow automation (Test Launch → manual approval → Cutover → validation) = Migration Hub Orchestrator. CloudWatch: operational metric monitoring; Service Catalog: product catalog; Config+SSM: compliance and operations.
 
 ---
 
-**문제 10.** Post-migration EC2 instances over-provisioned per source server specs. CPU avg 15%, memory 40%. Want instance type downsizing recommendations. Which service?
+**Question 10.** Post-migration EC2 instances over-provisioned per source server specs. CPU avg 15%, memory 40%. Want instance type downsizing recommendations. Which service?
 
 A) AWS Cost Explorer
 B) AWS Compute Optimizer
 C) AWS Trusted Advisor (cost category)
 D) AWS Pricing Calculator
 
-**정답: B**
+**Answer: B**
 Actual CPU/memory/network usage pattern based instance Right-Sizing recommendation = Compute Optimizer. Analyzes CloudWatch metrics for min 2 weeks, provides specific recommendations (e.g., m5.2xlarge → m5.large). Cost Explorer: cost trend analysis, not instance type recommendation. Trusted Advisor cost category: finds idle instances but Compute Optimizer more detailed type recommendation.
 
 ---
 
-**문제 11.** Company completed on-premises to AWS migration. Remaining on-premises data center to be used as AWS service DR site. Possible configuration?
+**Question 11.** Company completed on-premises to AWS migration. Remaining on-premises data center to be used as AWS service DR site. Possible configuration?
 
 A) Reinstall MGN in reverse—AWS EC2 source, on-premises block-level continuous replication
 B) Configure DRS with AWS EC2 source, on-premises DR target (reverse replication)
 C) AWS doesn't support on-premises as DR target; use different AWS region
 D) AWS DataSync copy EC2 EBS volume data to on-premises NFS, schedule-based periodic
 
-**정답: B**
+**Answer: B**
 DRS supports not only on-premises source case but also AWS EC2 source, on-premises (or different AWS region) as DR target reverse direction. "AWS to On-Prem DR" pattern. MGN: one-way migration tool, unsuitable for continuous DR replication. DataSync: file/object storage transfer tool, not server DR replication.
 
 ---
 
-**문제 12.** Company received Well-Architected migration review. "Domain 3: Migration and Modernization missing minimal-downtime DB migration design." 10TB Oracle DB → Aurora PostgreSQL within 2-hour downtime. Best Practice design?
+**Question 12.** Company received Well-Architected migration review. "Domain 3: Migration and Modernization missing minimal-downtime DB migration design." 10TB Oracle DB → Aurora PostgreSQL within 2-hour downtime. Best Practice design?
 
 A) Oracle Dump → S3 → Aurora import (Full Load only)
 B) Oracle Data Pump initial transfer + DMS CDC change sync → cutover at seconds lag, brief downtime
 C) Install Aurora on same server as Oracle for real-time replication
 D) Snowball Edge offline transfer, then switch
 
-**정답: B**
+**Answer: B**
 Minimal-downtime DB migration standard pattern: (1) SCT schema conversion, (2) DMS Full Load transfers 10TB (source continues), (3) Post-Full Load, DMS CDC continuously applies changes, (4) When lag shrinks to seconds → brief app stop → final CDC reflection → Aurora connection switch. Total downtime: minutes to tens of minutes. A: Full Load only, all source writes during 10TB transfer lost → downtime entire transfer duration (tens of hours). D: Snowball for S3 data transfer; DB unsupported.
 
 ---

@@ -90,62 +90,62 @@ Transit encryption's core is *enforcing* TLS (S3 `aws:SecureTransport` Deny, RDS
 
 ## 📝 Practice Questions
 
-**문제 1.** S3 버킷에 대한 *전송 중 암호화를 강제*하라는 요구를 받았다. 가장 정확한 구현은?
+**Question 1.** You are asked to *enforce encryption in transit* for an S3 bucket. What is the most accurate implementation?
 
-A) 버킷 기본 암호화를 SSE-KMS로 설정  
-B) 버킷 정책에서 `aws:SecureTransport`가 `false`인 요청을 Deny해 평문 HTTP 접근을 차단  
-C) CloudFront를 앞에 둔다  
-D) 객체에 SSE-C를 적용  
+A) Set the bucket default encryption to SSE-KMS  
+B) Deny requests in the bucket policy where `aws:SecureTransport` is `false` to block plaintext HTTP access  
+C) Put CloudFront in front  
+D) Apply SSE-C to the objects  
 
-**정답: B**  
-해설: 전송 중 암호화 강제는 평문(HTTP) 연결을 *거부*하는 것이다. 버킷 정책에서 `aws:SecureTransport: false`를 Deny하면 TLS가 아닌 요청이 차단된다. SSE-KMS·SSE-C는 *저장* 암호화 방식이라 전송과 무관하고, CloudFront 배치는 HTTP를 막는 강제가 아니다.
-
----
-
-**문제 2.** 기존에 암호화 없이 운영 중인 RDS MySQL 인스턴스를 저장 암호화하려 한다. 올바른 절차는?
-
-A) 인스턴스 설정에서 암호화 토글을 켠다  
-B) 스냅샷을 만들고 *암호화된 사본으로 복사*한 뒤 그 스냅샷에서 새 인스턴스를 복원한다  
-C) 파라미터 그룹에서 `force_ssl`을 켠다  
-D) DynamoDB로 마이그레이션한다  
-
-**정답: B**  
-해설: RDS 암호화는 인스턴스 생성 시에만 설정 가능하고 나중에 토글할 수 없다. 기존 미암호화 인스턴스는 스냅샷 → 암호화된 사본 복사 → 복원 경로로 암호화한다. `force_ssl`은 *전송* 암호화 강제이지 저장 암호화가 아니며, DynamoDB 마이그레이션은 불필요한 과잉 조치다.
+**Answer: B**  
+Explanation: Enforcing encryption in transit means *rejecting* plaintext (HTTP) connections. Denying `aws:SecureTransport: false` in the bucket policy blocks non-TLS requests. SSE-KMS and SSE-C are encryption *at rest* methods and are unrelated to transport, and placing CloudFront in front does not enforce blocking HTTP.
 
 ---
 
-**문제 3.** 운영 부담 없이 대칭 customer managed key를 정기적으로 회전하려 한다. 자동 키 회전에 대한 설명으로 가장 정확한 것은?
+**Question 2.** You want to enable encryption at rest for an RDS MySQL instance that has been running without encryption. What is the correct procedure?
 
-A) 회전 시 키 ID와 ARN이 바뀌므로 애플리케이션을 수정해야 한다  
-B) 키 자료만 갱신되고 키 ID·ARN·별칭은 유지되며, 옛 키 자료는 보관되어 기존 데이터도 계속 복호화된다  
-C) 회전하면 기존 데이터가 자동으로 새 키로 재암호화된다  
-D) 비대칭 키도 동일하게 자동 회전된다  
+A) Turn on the encryption toggle in the instance settings  
+B) Create a snapshot, *copy it as an encrypted copy*, and then restore a new instance from that snapshot  
+C) Turn on `force_ssl` in the parameter group  
+D) Migrate to DynamoDB  
 
-**정답: B**  
-해설: 자동 회전은 키 자료만 투명하게 갱신하고 키 식별자는 그대로라 애플리케이션 변경이 필요 없으며, 옛 키 자료가 보관되어 과거 데이터도 계속 복호화된다. 기존 데이터를 새 키로 재암호화하지는 않는다. 비대칭 키·BYOK는 자동 회전이 불가능하다.
-
----
-
-**문제 4.** 자동 회전이 불가능한 비대칭 KMS 키를 정기적으로 교체해야 한다. 가장 적절한 방법은?
-
-A) `enable-key-rotation`을 호출한다  
-B) 새 비대칭 키를 만들고 별칭(alias)을 새 키로 갱신하며, 옛 키는 과거 데이터 복호화용으로 유지하는 수동 회전을 수행한다  
-C) 키를 대칭으로 변환한다  
-D) 회전이 불가능하므로 아무것도 하지 않는다  
-
-**정답: B**  
-해설: 비대칭 키는 KMS 자동 회전을 지원하지 않으므로, 새 키를 만들고 별칭을 갱신해 새 암호화는 새 키로 보내고 옛 키는 과거 데이터 복호화를 위해 유지하는 수동 회전을 한다. `enable-key-rotation`은 비대칭 키에 적용되지 않고, 키 종류는 변환할 수 없으며, 보안상 정기 교체가 필요한 키를 방치하면 안 된다.
+**Answer: B**  
+Explanation: RDS encryption can be configured only when the instance is created and cannot be toggled later. An existing unencrypted instance is encrypted via the path of snapshot, encrypted copy, and restore. `force_ssl` enforces encryption *in transit*, not encryption at rest, and migrating to DynamoDB is an unnecessary overreaction.
 
 ---
 
-**문제 5.** 조직의 모든 신규 EBS 볼륨이 예외 없이 저장 암호화되도록 보장하려 한다. 가장 효과적인 조합은?
+**Question 3.** You want to rotate a symmetric customer managed key regularly without operational burden. Which statement about automatic key rotation is most accurate?
 
-A) 사용자에게 암호화 체크박스를 켜라고 안내  
-B) 각 리전에서 EBS encryption by default를 활성화하고, AWS Config 규칙(`encrypted-volumes` 등)으로 미암호화 볼륨을 탐지·교정  
-C) 볼륨마다 SSE-C 적용  
-D) S3 버킷 정책으로 통제  
+A) Rotation changes the key ID and ARN, so applications must be modified  
+B) Only the key material is refreshed while the key ID, ARN, and alias are retained, and the old key material is kept so existing data can still be decrypted  
+C) Rotation automatically re-encrypts existing data with the new key  
+D) Asymmetric keys are also rotated automatically in the same way  
 
-**정답: B**  
-해설: 리전별 EBS encryption by default는 신규 볼륨을 자동 암호화하고, Config 규칙으로 누락·드리프트를 탐지·교정하는 예방+탐지 조합이 보장 요구에 맞는다. 사용자 안내는 강제력이 없고, SSE-C는 S3 객체 암호화 방식이며, S3 버킷 정책은 EBS와 무관하다.
+**Answer: B**  
+Explanation: Automatic rotation transparently refreshes only the key material while the key identifier stays the same, so no application change is needed, and the old key material is retained so past data can still be decrypted. It does not re-encrypt existing data with the new key. Automatic rotation is not possible for asymmetric keys or BYOK.
+
+---
+
+**Question 4.** You must replace an asymmetric KMS key, which cannot be rotated automatically, on a regular basis. What is the most appropriate method?
+
+A) Call `enable-key-rotation`  
+B) Perform manual rotation: create a new asymmetric key, update the alias to point to the new key, and keep the old key for decrypting past data  
+C) Convert the key to symmetric  
+D) Do nothing because rotation is impossible  
+
+**Answer: B**  
+Explanation: Asymmetric keys do not support KMS automatic rotation, so you perform manual rotation: create a new key, update the alias so that new encryption goes to the new key, and keep the old key to decrypt past data. `enable-key-rotation` does not apply to asymmetric keys, the key type cannot be converted, and from a security standpoint you must not neglect a key that needs regular replacement.
+
+---
+
+**Question 5.** You want to guarantee that all new EBS volumes in the organization are encrypted at rest without exception. What is the most effective combination?
+
+A) Instruct users to check the encryption checkbox  
+B) Enable EBS encryption by default in each Region, and detect and remediate unencrypted volumes with AWS Config rules (such as `encrypted-volumes`)  
+C) Apply SSE-C to each volume  
+D) Control it with an S3 bucket policy  
+
+**Answer: B**  
+Explanation: EBS encryption by default per Region automatically encrypts new volumes, and the prevention-plus-detection combination of using Config rules to detect and remediate omissions and drift fits the guarantee requirement. User guidance has no enforcement power, SSE-C is an S3 object encryption method, and S3 bucket policies are unrelated to EBS.
 
 ---

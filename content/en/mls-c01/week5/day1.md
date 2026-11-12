@@ -116,62 +116,62 @@ Next, we examine relationships between variables—correlation and causation.
 
 ## 📝 Practice Questions
 
-**문제 1.** 오른쪽으로 길게 치우친 소득 분포에 표준화(StandardScaler)를 적용했다. 결과로 옳은 것은?
+**Question 1.** You applied standardization (StandardScaler) to a right-skewed income distribution. Which result is correct?
 
-A) 분포가 정규분포로 바뀐다  
-B) 왜도가 0이 되어 대칭이 된다  
-C) 평균이 0, 표준편차가 1이 되지만 치우친 모양은 그대로다  
-D) 중앙값이 평균보다 커진다  
+A) The distribution becomes a normal distribution  
+B) Skewness becomes 0 and the distribution becomes symmetric  
+C) The mean becomes 0 and the standard deviation becomes 1, but the skewed shape remains  
+D) The median becomes larger than the mean  
 
-**정답: C**  
-해설: 표준화는 선형 변환이라 위치(평균)와 척도(표준편차)만 바꾼다. 왜도·첨도 같은 분포의 모양은 변하지 않으므로 치우침은 그대로 남는다(A·B 오답). 치우침을 펴려면 로그·Box-Cox 같은 비선형 변환이 필요하다. 오른쪽 치우침에서는 변환과 무관하게 평균 > 중앙값이다(D 오답).
-
----
-
-**문제 2.** 같은 평균·분산·상관계수를 가진 네 데이터셋이 산점도에서는 전혀 다른 모양을 보였다. 이 사례가 강조하는 EDA 원칙은?
-
-A) 요약 통계량만 계산하면 충분하다  
-B) 요약 통계량에만 의존하지 말고 반드시 시각화로 분포·관계를 확인해야 한다  
-C) 평균보다 최빈값을 항상 사용해야 한다  
-D) 데이터가 많으면 분포는 항상 정규분포가 된다  
-
-**정답: B**  
-해설: 앤스컴의 4중주는 동일한 요약 통계량이라도 실제 데이터 구조가 완전히 다를 수 있음을 보여 준다. 따라서 히스토그램·산점도·박스플롯 같은 시각화로 분포와 관계를 직접 확인해야 한다. 요약값만 믿는 태도(A)가 바로 이 사례가 경고하는 함정이며, C·D는 무관한 일반화다.
+**Answer: C**  
+Explanation: Standardization is a linear transformation, so it changes only location (mean) and scale (standard deviation). Distribution shape, such as skewness and kurtosis, does not change, so the skew remains (A and B are wrong). Nonlinear transformations such as log or Box-Cox are needed to reduce skew. With right skew, mean > median regardless of the transformation (D is wrong).
 
 ---
 
-**문제 3.** 매우 치우친 주택 가격 데이터에서 "대표 가격"을 보고하려 한다. 이상치에 강건한 중심 통계량은?
+**Question 2.** Four datasets with the same mean, variance, and correlation coefficient showed completely different shapes on scatter plots. Which EDA principle does this case emphasize?
 
-A) 평균  
-B) 범위  
-C) 분산  
-D) 중앙값  
+A) Computing summary statistics alone is sufficient  
+B) Do not rely only on summary statistics; always check distributions and relationships through visualization  
+C) You should always use the mode rather than the mean  
+D) With a lot of data, the distribution always becomes normal  
 
-**정답: D**  
-해설: 중앙값은 정렬된 데이터의 가운데 값이라 극단적 고가 매물 같은 이상치에 거의 흔들리지 않는다. 평균(A)은 긴 꼬리에 끌려 위로 치우친다. 범위(B)와 분산(C)은 중심 통계량이 아니라 산포 통계량이며, 둘 다 이상치에 매우 민감하다.
-
----
-
-**문제 4.** pandas의 `series.std()`와 numpy의 `np.std(array)`가 같은 데이터에서 다른 값을 내는 이유로 옳은 것은?
-
-A) pandas는 모집단 표준편차, numpy는 표본 표준편차를 기본으로 한다  
-B) pandas는 표본 표준편차(ddof=1), numpy는 모집단 표준편차(ddof=0)를 기본으로 한다  
-C) pandas는 결측치를 0으로 채운다  
-D) 두 라이브러리의 계산 정밀도가 달라서다  
-
-**정답: B**  
-해설: pandas `.std()`는 표본 표준편차로 자유도 보정(n−1, ddof=1)을 기본 적용하고, numpy `np.std()`는 모집단 기준(n, ddof=0)을 기본으로 한다. 베셀 보정 때문에 작은 표본에서 차이가 두드러진다(A는 방향이 반대). 결측 처리나 정밀도 문제(C·D)와는 무관하다.
+**Answer: B**  
+Explanation: Anscombe's quartet shows that even with identical summary statistics, the actual data structure can be completely different. Therefore you must check distributions and relationships directly with visualizations such as histograms, scatter plots, and box plots. Trusting only summary values (A) is exactly the trap this case warns about, and C and D are unrelated generalizations.
 
 ---
 
-**문제 5.** 표본 크기가 커질수록 표본 평균이 모집단 평균에 더 정밀하게 수렴하고, 표본 평균의 분포가 정규분포에 가까워지는 현상의 근거가 되는 정리는?
+**Question 3.** You want to report a "representative price" for highly skewed housing price data. Which central tendency statistic is robust to outliers?
 
-A) 베이즈 정리  
-B) 큰 수의 법칙만으로 설명되며 정규성과는 무관하다  
-C) 중심극한정리(CLT)  
-D) 베셀 보정  
+A) Mean  
+B) Range  
+C) Variance  
+D) Median  
 
-**정답: C**  
-해설: 중심극한정리는 모집단 분포 모양과 무관하게, n이 충분히 크면 표본 평균들의 분포가 정규분포에 근사하고 표준오차가 σ/√n로 줄어든다고 말한다. 베이즈 정리(A)는 조건부 확률 갱신, 베셀 보정(D)은 분산 추정의 편향 보정으로 주제가 다르다. CLT는 정규성 수렴까지 보장하므로 B도 부정확하다.
+**Answer: D**  
+Explanation: The median is the middle value of the sorted data, so it is barely affected by outliers such as extremely expensive listings. The mean (A) is pulled upward by the long tail. Range (B) and variance (C) are measures of dispersion, not central tendency, and both are very sensitive to outliers.
+
+---
+
+**Question 4.** Which is the correct reason that pandas `series.std()` and numpy `np.std(array)` return different values on the same data?
+
+A) pandas defaults to the population standard deviation and numpy to the sample standard deviation  
+B) pandas defaults to the sample standard deviation (ddof=1) and numpy to the population standard deviation (ddof=0)  
+C) pandas fills missing values with 0  
+D) The two libraries differ in computational precision  
+
+**Answer: B**  
+Explanation: pandas `.std()` defaults to the sample standard deviation with the degrees-of-freedom correction (n-1, ddof=1), while numpy `np.std()` defaults to the population basis (n, ddof=0). Because of Bessel's correction, the difference is noticeable in small samples (A has the direction reversed). Missing-value handling and precision (C and D) are unrelated.
+
+---
+
+**Question 5.** Which theorem underlies the phenomenon in which, as the sample size grows, the sample mean converges more precisely to the population mean and the distribution of the sample mean approaches a normal distribution?
+
+A) Bayes' theorem  
+B) It is explained by the law of large numbers alone and has nothing to do with normality  
+C) Central limit theorem (CLT)  
+D) Bessel's correction  
+
+**Answer: C**  
+Explanation: The central limit theorem states that, regardless of the population distribution's shape, when n is sufficiently large the distribution of sample means approximates a normal distribution and the standard error shrinks as σ/√n. Bayes' theorem (A) is about updating conditional probabilities and Bessel's correction (D) is a bias correction for variance estimation, so they are different topics. The CLT also guarantees convergence to normality, so B is inaccurate as well.
 
 ---

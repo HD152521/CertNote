@@ -97,94 +97,94 @@ In the next article, we'll synthesize this week's resilience, DR, and migration 
 
 ## 📝 Practice Questions
 
-**문제 1.** A company wants to move an on-premises Oracle database to Aurora PostgreSQL while minimizing downtime during migration to within a few minutes. What is the most appropriate approach?
+**Question 1.** A company wants to move an on-premises Oracle database to Aurora PostgreSQL while minimizing downtime during migration to within a few minutes. What is the most appropriate approach?
 
 A) DMS Full Load + CDC, with SCT for schema pre-conversion
 B) Load a DB backup into a Snowball and ship it
 C) Copy the data files with DataSync
 D) Lift-and-shift the whole server with MGN
 
-**정답: A**
+**Answer: A**
 
-해설: Oracle→Aurora PostgreSQL is a Heterogeneous migration with a different engine, so you first convert the schema and stored procedures with SCT, then move the data with DMS's Full Load + CDC, catching up on changes in real time so downtime at cutover shrinks to minutes. Snowball (B) is for offline large-volume transfer and has no zero-downtime DB cutover mechanism, DataSync (C) is file transfer and doesn't handle DB transaction consistency, and MGN (D) is a whole-server lift so it can't do engine conversion (Oracle→PG). "Different engine + minimum downtime" = SCT + DMS (CDC).
+Explanation: Oracle→Aurora PostgreSQL is a Heterogeneous migration with a different engine, so you first convert the schema and stored procedures with SCT, then move the data with DMS's Full Load + CDC, catching up on changes in real time so downtime at cutover shrinks to minutes. Snowball (B) is for offline large-volume transfer and has no zero-downtime DB cutover mechanism, DataSync (C) is file transfer and doesn't handle DB transaction consistency, and MGN (D) is a whole-server lift so it can't do engine conversion (Oracle→PG). "Different engine + minimum downtime" = SCT + DMS (CDC).
 
 ---
 
-**문제 2.** A research institute must move 100TB of data at a remote site (low-bandwidth satellite line) to S3. Over the network it would take months. What is the most appropriate method?
+**Question 2.** A research institute must move 100TB of data at a remote site (low-bandwidth satellite line) to S3. Over the network it would take months. What is the most appropriate method?
 
 A) DataSync
 B) DMS
 C) Snowball Edge Storage Optimized
 D) S3 Multipart Upload
 
-**정답: C**
+**Answer: C**
 
-해설: Transferring 100TB online over low bandwidth takes months, so offline transfer via a physical device (Snowball Edge Storage Optimized, about 80TB/device, clustered for petabyte scale) is the answer. DataSync (A) and Multipart Upload (D) ride the network, so they're meaningless when the line is the bottleneck, and DMS (B) is a DB migration tool, not bulk file transfer. "Large data + insufficient network/months required" = Snow. Estimating transfer time by line speed × data volume is the key judgment.
+Explanation: Transferring 100TB online over low bandwidth takes months, so offline transfer via a physical device (Snowball Edge Storage Optimized, about 80TB/device, clustered for petabyte scale) is the answer. DataSync (A) and Multipart Upload (D) ride the network, so they're meaningless when the line is the bottleneck, and DMS (B) is a DB migration tool, not bulk file transfer. "Large data + insufficient network/months required" = Snow. Estimating transfer time by line speed × data volume is the key judgment.
 
 ---
 
-**문제 3.** A company wants to **periodically synchronize** data from an on-premises NFS file server to S3, and the dedicated-line bandwidth is sufficient. What is the appropriate tool?
+**Question 3.** A company wants to **periodically synchronize** data from an on-premises NFS file server to S3, and the dedicated-line bandwidth is sufficient. What is the appropriate tool?
 
 A) DataSync
 B) Snowball
 C) Storage Gateway (permanent cache)
 D) S3 Cross-Region Replication
 
-**정답: A**
+**Answer: A**
 
-해설: In an online environment with sufficient bandwidth, the tool that synchronizes NFS→S3 on a schedule and even verifies integrity after transfer is DataSync. Snowball (B) is the offline tool for when the network is insufficient, so it's unnecessary; Storage Gateway (C) isn't a one-time/periodic migration but a hybrid cache permanently bridging on-prem and cloud; and S3 CRR (D) is replication between S3 buckets, not handling an on-prem NFS source. "Online + periodic file sync" = DataSync.
+Explanation: In an online environment with sufficient bandwidth, the tool that synchronizes NFS→S3 on a schedule and even verifies integrity after transfer is DataSync. Snowball (B) is the offline tool for when the network is insufficient, so it's unnecessary; Storage Gateway (C) isn't a one-time/periodic migration but a hybrid cache permanently bridging on-prem and cloud; and S3 CRR (D) is replication between S3 buckets, not handling an on-prem NFS source. "Online + periodic file sync" = DataSync.
 
 ---
 
-**문제 4.** An enterprise wants to permanently relocate 200 virtual machines from its data center to AWS EC2 without code changes. What is the most appropriate tool?
+**Question 4.** An enterprise wants to permanently relocate 200 virtual machines from its data center to AWS EC2 without code changes. What is the most appropriate tool?
 
 A) DMS
 B) AWS Application Migration Service (MGN)
 C) DataSync
 D) AWS Elastic Disaster Recovery (DRS)
 
-**정답: B**
+**Answer: B**
 
-해설: The automation tool for lift-and-shift (Rehost) — moving servers OS-and-application-and-all to EC2 without code changes — is MGN, which does block-level real-time replication then boots as EC2. DMS (A) moves only DB data, DataSync (C) is file transfer, and DRS (D) uses the same block replication but its purpose is disaster recovery (keeping the source running and on standby), differing from "permanent relocation." MGN = one-time migration, DRS = continuous DR is the key distinction.
+Explanation: The automation tool for lift-and-shift (Rehost) — moving servers OS-and-application-and-all to EC2 without code changes — is MGN, which does block-level real-time replication then boots as EC2. DMS (A) moves only DB data, DataSync (C) is file transfer, and DRS (D) uses the same block replication but its purpose is disaster recovery (keeping the source running and on standby), differing from "permanent relocation." MGN = one-time migration, DRS = continuous DR is the key distinction.
 
 ---
 
-**문제 5.** An architect wants to explain the difference between MGN and DRS. What is the most accurate explanation?
+**Question 5.** An architect wants to explain the difference between MGN and DRS. What is the most accurate explanation?
 
 A) They're identical and only the name differs
 B) MGN is one-time migration (discard the source after cutover), DRS is continuous disaster recovery (keep the source running, fail over on failure)
 C) MGN is DB-only, DRS is server-only
 D) MGN is offline, DRS is online
 
-**정답: B**
+**Answer: B**
 
-해설: MGN and DRS share the same CloudEndure-lineage block-level real-time replication but their purposes are opposite — MGN is for migration, a one-time cutover discarding the source after moving, and DRS is for disaster recovery, keeping the source running with replication maintained around the clock and failing over only on failure. A ignores the purpose difference, C is wrong because both are server-level (DB-only is DMS), and D is wrong because both are online block replication. "Permanent relocation = MGN, DR preparation = DRS."
+Explanation: MGN and DRS share the same CloudEndure-lineage block-level real-time replication but their purposes are opposite — MGN is for migration, a one-time cutover discarding the source after moving, and DRS is for disaster recovery, keeping the source running with replication maintained around the clock and failing over only on failure. A ignores the purpose difference, C is wrong because both are server-level (DB-only is DMS), and D is wrong because both are online block replication. "Permanent relocation = MGN, DR preparation = DRS."
 
 ---
 
-**문제 6.** A team wants to **pre-process sensor data on-site** on a ship with no internet access, then ship it back to AWS later. What is the appropriate device?
+**Question 6.** A team wants to **pre-process sensor data on-site** on a ship with no internet access, then ship it back to AWS later. What is the appropriate device?
 
 A) Snowcone (storage only)
 B) Snowball Edge Compute Optimized
 C) DataSync
 D) Storage Gateway
 
-**정답: B**
+**Answer: B**
 
-해설: Snowball Edge Compute Optimized packs EC2, Lambda, and GPU inside, fitting the edge-computing scenario of processing data (inference, pre-processing) in a disconnected environment then shipping the results back to AWS. Snowcone (A) is small and storage-oriented, so it's limited for heavy on-site processing, and DataSync (C) and Storage Gateway (D) presuppose network connectivity, so they're unsuitable for "a ship with no internet." "Disconnected edge + on-site processing" = Snowball Edge Compute.
+Explanation: Snowball Edge Compute Optimized packs EC2, Lambda, and GPU inside, fitting the edge-computing scenario of processing data (inference, pre-processing) in a disconnected environment then shipping the results back to AWS. Snowcone (A) is small and storage-oriented, so it's limited for heavy on-site processing, and DataSync (C) and Storage Gateway (D) presuppose network connectivity, so they're unsuitable for "a ship with no internet." "Disconnected edge + on-site processing" = Snowball Edge Compute.
 
 ---
 
-**문제 7.** A company started an Oracle→Aurora migration with DMS, and Full Load succeeds but CDC can't catch up on the source's changes. What is the most likely cause?
+**Question 7.** A company started an Oracle→Aurora migration with DMS, and Full Load succeeds but CDC can't catch up on the source's changes. What is the most likely cause?
 
 A) Aurora doesn't support CDC
 B) The source DB's transaction logs (redo/binlog/WAL) are disabled or the retention period is too short
 C) The Replication Instance capacity is large
 D) SCT wasn't used
 
-**정답: B**
+**Answer: B**
 
-해설: DMS's CDC reads the source DB's transaction logs (Oracle redo, MySQL binlog, PostgreSQL WAL) to reconstruct changes, so if that log is disabled or its retention is short, it can't track and replay changes. The remedy is to enable the log on the source and extend the retention period sufficiently. A is the reverse of the truth (the target is the side receiving CDC application), C is actually favorable if capacity is large, and D is wrong because SCT is a schema conversion tool unrelated to CDC operation itself. It resolves once you know the principle that CDC = log-based replication.
+Explanation: DMS's CDC reads the source DB's transaction logs (Oracle redo, MySQL binlog, PostgreSQL WAL) to reconstruct changes, so if that log is disabled or its retention is short, it can't track and replay changes. The remedy is to enable the log on the source and extend the retention period sufficiently. A is the reverse of the truth (the target is the side receiving CDC application), C is actually favorable if capacity is large, and D is wrong because SCT is a schema conversion tool unrelated to CDC operation itself. It resolves once you know the principle that CDC = log-based replication.
 
 ---
 

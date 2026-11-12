@@ -263,86 +263,86 @@ Direct Connect is the most powerful and stable method for connecting AWS and on-
 
 ## 📝 Practice Questions
 
-**문제 1.** A global bank connected its on-premises core banking system to AWS with a single DX circuit. It operates a total of 150 VPCs spanning 3 regions (us-east-1, eu-west-1, ap-northeast-1). To access all these VPCs from on-premises using private IPs:
+**Question 1.** A global bank connected its on-premises core banking system to AWS with a single DX circuit. It operates a total of 150 VPCs spanning 3 regions (us-east-1, eu-west-1, ap-northeast-1). To access all these VPCs from on-premises using private IPs:
 
 A) Create 150 Private VIFs
 B) Create 3 Private VIFs (1 per region) + Connect to VGW
 C) 1 Transit VIF + DX Gateway + Regional TGWs
 D) 1 Public VIF + 150 VPN Tunnels
 
-**정답: C**
+**Answer: C**
 Explanation: Private VIF can connect to only a single VGW (single VPC), so 150 is impossible (A, B incorrect). Public VIF is for AWS public service access, not VPC private IP access (D incorrect). Transit VIF + DXGW + TGW structure is the standard architecture for single DX circuit multi-region and multi-VPC access. DXGW is a global service that can simultaneously connect TGWs in multiple regions.
 
 ---
 
-**문제 2.** A factory automation system is connected to AWS via DX. Factory downtime costs 1 billion won per hour, making network failures unacceptable. What is the AWS-recommended Maximum Resiliency configuration?
+**Question 2.** A factory automation system is connected to AWS via DX. Factory downtime costs 1 billion won per hour, making network failures unacceptable. What is the AWS-recommended Maximum Resiliency configuration?
 
 A) 2 ports bundled with LAG in a single DX Location
 B) 1 circuit each from 2 DX Locations, 2 circuits total
 C) 2 circuits each from 2 DX Locations, 4 total circuits + redundant on-premises routers
 D) 1 circuit in single DX Location + Site-to-Site VPN backup
 
-**정답: C**
+**Answer: C**
 Explanation: Maximum Resiliency (99.99% SLA) is AWS's highest resilience configuration level. A's LAG bundles multiple ports within the same location, powerless against location-wide failure. B's 2-location 2-circuit is High Resiliency (99.9%), where single port/cable failure in each location can cause service interruption. D is Development (99%) level. C is Maximum Resiliency defending against both single-location and single-port/cable failure. AWS DX Resiliency Toolkit automatically validates this configuration.
 
 ---
 
-**문제 3.** Operating DX and Site-to-Site VPN simultaneously, DX should be preferred during normal operation. On DX failure, automatic VPN switchover should occur. How to control path priority for on-premises → AWS traffic (outbound)?
+**Question 3.** Operating DX and Site-to-Site VPN simultaneously, DX should be preferred during normal operation. On DX failure, automatic VPN switchover should occur. How to control path priority for on-premises → AWS traffic (outbound)?
 
 A) Set DX as "Primary" in AWS console
 B) In on-premises BGP, set high Local Preference for DX path and low Local Preference for VPN path
 C) Add more specific CIDR to VPN route table
 D) Automatically prioritized when BFD is enabled on DX
 
-**정답: B**
+**Answer: B**
 Explanation: On-premises → AWS traffic path selection is controlled by on-premises BGP policy. Local Preference is an iBGP attribute; higher = preferred. Setting DX path to Local Pref 200 and VPN path to Local Pref 100 makes DX selected normally. On DX failure, the DX path disappears from BGP table and VPN automatically becomes active. There's no "Primary" setting option in AWS console (A incorrect). More specific CIDR is for reverse direction or subnet-specific control (C incorrect). BFD speeds up failure detection but doesn't set priority (D incorrect).
 
 ---
 
-**문제 4.** Financial regulators require "L2-layer encryption" on DX circuits. The appropriate AWS solution is:
+**Question 4.** Financial regulators require "L2-layer encryption" on DX circuits. The appropriate AWS solution is:
 
 A) IPsec VPN over DX (TLS-based)
 B) DX MACsec (IEEE 802.1AE)
 C) L7 encryption via TLS 1.3 at application layer
 D) Switch to AWS PrivateLink
 
-**정답: B**
+**Answer: B**
 Explanation: MACsec (IEEE 802.1AE) provides L2 (ethernet frame) level encryption. Supported on 10Gbps and 100Gbps Dedicated Connections. IPsec VPN over DX (A) is L3 encryption and places tunnel on top of DX, not L2. TLS is L4-L7 encryption (C incorrect). PrivateLink is a service endpoint exposure method unrelated to DX encryption (D incorrect). MACsec is not supported on 1Gbps circuits or Hosted Connections; those would use IPsec VPN over DX.
 
 ---
 
-**문제 5.** To shorten BGP failover time from 180 seconds to under 1 second on a DX connection after failure:
+**Question 5.** To shorten BGP failover time from 180 seconds to under 1 second on a DX connection after failure:
 
 A) Adjust BGP keepalive timer to 1 second
 B) Enable BFD (Bidirectional Forwarding Detection)
 C) Bundle 2 ports with LAG
 D) Enable TGW ECMP
 
-**정답: B**
+**Answer: B**
 Explanation: BFD (RFC 5880) independently exchanges hellos every 100~300ms and declares link down within 300ms on 3 consecutive failures, notifying BGP. BGP immediately switches to alternative paths. Lowering BGP keepalive to 1 second (A) speeds failover but still takes 3~5 seconds, and excessive BGP messages can increase router load. LAG (C) is port redundancy, not directly related to failover speed. TGW ECMP (D) is load balancing, unrelated to failover speed.
 
 ---
 
-**문제 6.** Two on-premises data centers (Tokyo, Seoul) each have AWS DX connections. To use AWS DX backbone for direct inter-datacenter communication:
+**Question 6.** Two on-premises data centers (Tokyo, Seoul) each have AWS DX connections. To use AWS DX backbone for direct inter-datacenter communication:
 
 A) TGW Inter-Region Peering
 B) DX SiteLink
 C) VPN Mesh between DCs
 D) AWS Cloud WAN
 
-**정답: B**
+**Answer: B**
 Explanation: SiteLink provides direct on-premises ↔ on-premises communication via AWS DX backbone between two DX Locations. Traffic is routed directly at DX infrastructure level without passing through AWS VPCs. TGW Inter-Region Peering (A) is for AWS VPC connectivity, not on-premises-to-on-premises. VPN Mesh (C) uses internet with less stable latency and bandwidth than DX backbone. Cloud WAN (D) is unified network management service for VPCs and on-premises, but SiteLink handles direct DX backbone connectivity between two on-premises sites.
 
 ---
 
-**문제 7.** An enterprise transfers 100TB of large-scale ML training data from on-premises to S3 over a single 10Gbps DX circuit. To maximize transfer efficiency:
+**Question 7.** An enterprise transfers 100TB of large-scale ML training data from on-premises to S3 over a single 10Gbps DX circuit. To maximize transfer efficiency:
 
 A) Enable Jumbo Frames (MTU 9001) + S3 Multipart Upload
 B) Use Snowball Edge for physical transfer
 C) Public VIF alone is sufficient, optimization unnecessary
 D) Access S3 via TGW
 
-**정답: A**
+**Answer: A**
 Explanation: S3 is accessible via Public VIF through DX. Enabling Jumbo Frames (MTU 9001) reduces packet header overhead, improving effective throughput on 10Gbps circuit. S3 Multipart Upload splits large files into parallel chunks for transfer, maximizing throughput. Snowball Edge (B) is for scenarios where no internet connectivity exists or DX bandwidth is insufficient, comparing whether physical shipment is faster. 100TB over 10Gbps takes approximately 22 hours (theoretical), requiring comparison with Snowball shipping time. TGW transit (D) limits MTU to 8500 and adds unnecessary hops.
 
 ---

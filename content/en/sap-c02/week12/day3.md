@@ -100,16 +100,16 @@ Common SAP exam mappings: (1) "hourly + all items + SQL analysis" → **CUR + At
 
 ## 📝 Practice Questions
 
-**문제 1.** FinOps 팀이 시간 단위로 모든 청구 항목을 SQL로 쪼개 단가(UsageType) 수준의 심층 분석을 하려 한다. 가장 적합한 것은?
+**Question 1.** A FinOps team wants to break down every billing line item hourly with SQL and perform deep analysis at the unit-price (UsageType) level. Which is the most appropriate?
 
 A) Cost Explorer
-B) CUR을 S3로 출력 후 Athena로 쿼리
+B) Output CUR to S3 and query it with Athena
 C) AWS Budgets
 D) Trusted Advisor
 
-**정답: B**
+**Answer: B**
 
-**해설:** CUR은 시간 단위로 약 200개 컬럼의 모든 청구 항목을 S3(보통 Parquet)에 출력하며, Athena로 임의 차원·임의 집계의 SQL 분석이 가능하다. lineItem/UsageType 컬럼으로 단가 수준 분석을 한다. A(Cost Explorer)는 일 단위 시각화로 컬럼 단위 심층 분석이 불가능하고 API 호출당 과금도 있다. C(Budgets)는 임계치 감시 도구다. D(Trusted Advisor)는 룰 기반 점검이다. 함정: "시간 단위 + 모든 항목 + SQL"은 항상 CUR이다.
+**Explanation:** CUR outputs every billing line item, with about 200 columns, hourly to S3 (usually in Parquet), and Athena enables SQL analysis along arbitrary dimensions and aggregations. You analyze at the unit-price level using the lineItem/UsageType columns. A (Cost Explorer) is a daily-granularity visualization that cannot do column-level deep analysis, and API calls are also charged per request. C (Budgets) is a threshold monitoring tool. D (Trusted Advisor) is a rule-based check. Trap: "hourly + all line items + SQL" is always CUR.
 
 [Remaining 3 questions preserved exactly in Korean]
 

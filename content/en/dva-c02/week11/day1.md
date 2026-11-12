@@ -270,58 +270,58 @@ Consumer ← msg2 → Processing complete
 
 ## 📝 Practice Questions
 
-**문제 1.** What is the throughput limit of an SQS FIFO queue?
+**Question 1.** What is the throughput limit of an SQS FIFO queue?
 
 A) 100 messages per second  
 B) 300 messages per second  
 C) Unlimited  
 D) 1000 messages per second  
 
-**정답: B** - FIFO queues can process 300 messages per second (3000 with batching).
+**Answer: B** - FIFO queues can process 300 messages per second (3000 with batching).
 
 ---
 
-**문제 2.** What setting prevents a message from being visible to other consumers while being processed?
+**Question 2.** What setting prevents a message from being visible to other consumers while being processed?
 
 A) MessageRetentionPeriod  
 B) DelaySeconds  
 C) VisibilityTimeout  
 D) WaitTimeSeconds  
 
-**정답: C** - VisibilityTimeout hides the message from other consumers for a specified duration after receipt.
+**Answer: C** - VisibilityTimeout hides the message from other consumers for a specified duration after receipt.
 
 ---
 
-**문제 3.** What is the best way to reduce costs and eliminate unnecessary empty responses in SQS?
+**Question 3.** What is the best way to reduce costs and eliminate unnecessary empty responses in SQS?
 
 A) Reduce message size  
 B) Use long polling (WaitTimeSeconds)  
 C) Reduce number of queues  
 D) Increase message retention period  
 
-**정답: B** - Long polling waits up to 20 seconds for messages, reducing empty responses and saving costs.
+**Answer: B** - Long polling waits up to 20 seconds for messages, reducing empty responses and saving costs.
 
 ---
 
-**문제 4.** What is the purpose of a DLQ?
+**Question 4.** What is the purpose of a DLQ?
 
 A) Improve message delivery speed  
 B) Isolate and analyze messages that have repeatedly failed processing  
 C) Encrypt messages  
 D) Improve throughput  
 
-**정답: B** - DLQ isolates messages that have failed multiple times for later analysis.
+**Answer: B** - DLQ isolates messages that have failed multiple times for later analysis.
 
 ---
 
-**문제 5.** What queue type should be used when processing financial transaction messages in order?
+**Question 5.** What queue type should be used when processing financial transaction messages in order?
 
 A) Standard queue  
 B) FIFO queue  
 C) Priority queue  
 D) Delay queue  
 
-**정답: B** - Financial transactions require order guarantee, so FIFO queue must be used for FIFO ordering.
+**Answer: B** - Financial transactions require order guarantee, so FIFO queue must be used for FIFO ordering.
 
 ---
 

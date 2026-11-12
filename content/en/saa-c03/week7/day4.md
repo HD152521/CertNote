@@ -266,95 +266,95 @@ The next article looks at a decision framework for messaging, event, and streami
 
 ## 📝 Practice Questions
 
-**문제 1.** A company wants to process clickstream data independently in four places: ① a real-time recommendation model, ② fraud detection, ③ 30-minute window aggregation, and ④ an S3 data lake. It must also be able to re-analyze the same data a few days later. What is the most appropriate infrastructure?
+**Question 1.** A company wants to process clickstream data independently in four places: ① a real-time recommendation model, ② fraud detection, ③ 30-minute window aggregation, and ④ an S3 data lake. It must also be able to re-analyze the same data a few days later. What is the most appropriate infrastructure?
 
 A) 4 SQS queues + a consumer for each
 B) An SNS topic + 4 SQS fanout queues
 C) Kinesis Data Streams (30-day retention) + 4 consumers (③ via Managed Flink, ④ via Firehose)
 D) 1 EventBridge bus + 4 rules
 
-**정답: C**
+**Answer: C**
 
-해설: Multiple consumers + reprocessing (replay) + high throughput = the definition of KDS. With 30-day retention, re-analysis a few days later is possible. ③ window aggregation via Managed Flink and ④ S3 loading via Firehose connect directly to KDS. A is a consume-once model, so even replicated across 4 queues replay is impossible, and clickstream throughput doesn't fit the SQS queue model. B has SNS retention of 0 — fanout works but re-analysis doesn't. D risks hitting the EventBridge throughput quota (~10K TPS per account) plus limited replay.
+Explanation: Multiple consumers + reprocessing (replay) + high throughput = the definition of KDS. With 30-day retention, re-analysis a few days later is possible. ③ window aggregation via Managed Flink and ④ S3 loading via Firehose connect directly to KDS. A is a consume-once model, so even replicated across 4 queues replay is impossible, and clickstream throughput doesn't fit the SQS queue model. B has SNS retention of 0 — fanout works but re-analysis doesn't. D risks hitting the EventBridge throughput quota (~10K TPS per account) plus limited replay.
 
 ---
 
-**문제 2.** A system that uses customerId as the PartitionKey in Kinesis Data Streams frequently sees `ProvisionedThroughputExceeded` errors. Analysis shows that one large customer accounts for 40% of traffic. What is the most appropriate fix?
+**Question 2.** A system that uses customerId as the PartitionKey in Kinesis Data Streams frequently sees `ProvisionedThroughputExceeded` errors. Analysis shows that one large customer accounts for 40% of traffic. What is the most appropriate fix?
 
 A) Double the shard count
 B) Switch to On-Demand mode
 C) Change the PartitionKey to a composite like `customerId + ":" + Math.floor(timestamp/1000)`
 D) Migrate to Firehose
 
-**정답: C**
+**Answer: C**
 
-해설: The root cause of the Hot Shard problem is an imbalanced PartitionKey distribution. Adding shards (A) doesn't help because all data for one PartitionKey goes to the same shard. A composite key spreads the same customerId's data across multiple shards (with the trade-off that ordering within that customerId is broken). B doesn't help either because a single shard's limit (1MB/s) is the same in On-Demand. D loses the multi-consumer, real-time processing model by moving to Firehose.
+Explanation: The root cause of the Hot Shard problem is an imbalanced PartitionKey distribution. Adding shards (A) doesn't help because all data for one PartitionKey goes to the same shard. A composite key spreads the same customerId's data across multiple shards (with the trade-off that ordering within that customerId is broken). B doesn't help either because a single shard's limit (1MB/s) is the same in On-Demand. D loses the multi-consumer, real-time processing model by moving to Firehose.
 
 ---
 
-**문제 3.** You want to automatically load log data into S3 in Parquet format while also transforming/enriching it with Lambda. What is the simplest architecture?
+**Question 3.** You want to automatically load log data into S3 in Parquet format while also transforming/enriching it with Lambda. What is the simplest architecture?
 
 A) KDS + a Lambda consumer that PUTs to S3 directly
 B) Firehose + Lambda transform + Parquet format conversion + Dynamic Partitioning
 C) SQS + Lambda + S3
 D) EventBridge + S3 target
 
-**정답: B**
+**Answer: B**
 
-해설: Firehose provides Lambda transformation, Parquet conversion, Dynamic Partitioning, and error isolation all as managed features. Configuration alone completes an analytics data lake. A is possible but you'd have to code buffering, batching, Parquet conversion, and partition management yourself. C is wrong because SQS isn't a stream model and has no automated S3 loading. D is wrong because an EventBridge S3 target is for object-metadata events, not data loading.
+Explanation: Firehose provides Lambda transformation, Parquet conversion, Dynamic Partitioning, and error isolation all as managed features. Configuration alone completes an analytics data lake. A is possible but you'd have to code buffering, batching, Parquet conversion, and partition management yourself. C is wrong because SQS isn't a stream model and has no automated S3 loading. D is wrong because an EventBridge S3 target is for object-metadata events, not data loading.
 
 ---
 
-**문제 4.** A stream is processed simultaneously by 6 microservices, each consumer needs 1MB/s or more of throughput, and latency must be within 100ms. What is the most appropriate configuration?
+**Question 4.** A stream is processed simultaneously by 6 microservices, each consumer needs 1MB/s or more of throughput, and latency must be within 100ms. What is the most appropriate configuration?
 
 A) 6 Standard consumers polling
 B) Register them as Enhanced Fan-out (EFO) consumers
 C) 6 Firehose streams
 D) 6 SQS queues
 
-**정답: B**
+**Answer: B**
 
-해설: Standard consumers share 2MB/s per shard across all consumers, so with 6 each gets only 0.33MB/s (below the 1MB/s requirement). EFO gives each consumer an independent 2MB/s + a push model with 70ms average latency. A is insufficient on both throughput and latency. C is wrong because Firehose is a sink model, not a general consumer. D is wrong because you can't move a KDS stream into SQS and the model is different.
+Explanation: Standard consumers share 2MB/s per shard across all consumers, so with 6 each gets only 0.33MB/s (below the 1MB/s requirement). EFO gives each consumer an independent 2MB/s + a push model with 70ms average latency. A is insufficient on both throughput and latency. C is wrong because Firehose is a sink model, not a general consumer. D is wrong because you can't move a KDS stream into SQS and the model is different.
 
 ---
 
-**문제 5.** A company is moving a stream-processing system that ran on an existing on-prem Kafka cluster to AWS. It wants to keep using Kafka Connect, Kafka Streams, and Confluent Schema Registry as-is. Which service fits best?
+**Question 5.** A company is moving a stream-processing system that ran on an existing on-prem Kafka cluster to AWS. It wants to keep using Kafka Connect, Kafka Streams, and Confluent Schema Registry as-is. Which service fits best?
 
 A) Kinesis Data Streams
 B) MSK (Managed Streaming for Kafka)
 C) Kinesis Firehose
 D) EventBridge
 
-**정답: B**
+**Answer: B**
 
-해설: MSK supports the Apache Kafka API as-is, so Kafka Connect, Kafka Streams, and Schema Registry code can be used with almost no changes. KDS is AWS-SDK-only, so Kafka ecosystem tools can't be used. C and D are fundamentally different models. Using MSK Serverless can also reduce the operational burden.
+Explanation: MSK supports the Apache Kafka API as-is, so Kafka Connect, Kafka Streams, and Schema Registry code can be used with almost no changes. KDS is AWS-SDK-only, so Kafka ecosystem tools can't be used. C and D are fundamentally different models. Using MSK Serverless can also reduce the operational burden.
 
 ---
 
-**문제 6.** The objects Firehose loads into S3 are so small that S3 LIST/GET costs are surging during Athena queries. What is the most appropriate fix?
+**Question 6.** The objects Firehose loads into S3 are so small that S3 LIST/GET costs are surging during Athena queries. What is the most appropriate fix?
 
 A) Run Athena queries more frequently
 B) Increase Firehose buffering from 60 seconds to 600~900 seconds, or raise the size threshold to 64MB or more
 C) Load directly with KDS + Lambda instead of Firehose
 D) Apply S3 Intelligent-Tiering
 
-**정답: B**
+**Answer: B**
 
-해설: Firehose creating many small objects is because the buffer hint is too short. Increasing the buffer time or size consolidates them into larger objects, improving Athena scan performance and cost (Athena is far more efficient with large files than small ones). A moves cost in the wrong direction. C only adds code-operation burden while the essence stays the same. D is a storage-class issue, not an object-count issue.
+Explanation: Firehose creating many small objects is because the buffer hint is too short. Increasing the buffer time or size consolidates them into larger objects, improving Athena scan performance and cost (Athena is far more efficient with large files than small ones). A moves cost in the wrong direction. C only adds code-operation burden while the essence stays the same. D is a storage-class issue, not an object-count issue.
 
 ---
 
-**문제 7.** What is the way to write the least code to "compute a per-user click average over a 10-minute sliding window and update DynamoDB"?
+**Question 7.** What is the way to write the least code to "compute a per-user click average over a 10-minute sliding window and update DynamoDB"?
 
 A) Implement your own window logic with Lambda + DynamoDB
 B) Managed Service for Apache Flink + SQL (windowing query) + DynamoDB sink
 C) Firehose → S3 → scheduled Athena query
 D) Step Functions Wait state
 
-**정답: B**
+**Answer: B**
 
-해설: Window aggregation is the textbook use case for stream processing, and Flink is the standard solution. A sliding window + group by can be expressed in 7~10 lines of SQL. A is complex and error-prone because you'd have to implement watermarks, late events, and exactly-once yourself. C is batch processing, different from real-time windowing. D is wrong because Step Functions is workflow orchestration, not a data-processing engine.
+Explanation: Window aggregation is the textbook use case for stream processing, and Flink is the standard solution. A sliding window + group by can be expressed in 7~10 lines of SQL. A is complex and error-prone because you'd have to implement watermarks, late events, and exactly-once yourself. C is batch processing, different from real-time windowing. D is wrong because Step Functions is workflow orchestration, not a data-processing engine.
 
 ---
 
-해설 보강: The core message of the Kinesis family is that "**a message queue and a log are different abstractions**." KDS answers the multi-consumer, replay, high-throughput, and ordering scenarios that the SQS model can't solve, and on top of it Firehose (automatic loading), Flink (real-time processing), and MSK (Kafka compatibility) exist as variants. The three most frequent causes of production incidents are ① Hot Shard from PartitionKey imbalance, ② insufficient throughput from attaching too many Standard consumers, and ③ small-object explosion from a short Firehose buffer — knowing these three prevents 70% of KDS/Firehose operational incidents in advance.
+Additional Explanation: The core message of the Kinesis family is that "**a message queue and a log are different abstractions**." KDS answers the multi-consumer, replay, high-throughput, and ordering scenarios that the SQS model can't solve, and on top of it Firehose (automatic loading), Flink (real-time processing), and MSK (Kafka compatibility) exist as variants. The three most frequent causes of production incidents are ① Hot Shard from PartitionKey imbalance, ② insufficient throughput from attaching too many Standard consumers, and ③ small-object explosion from a short Firehose buffer — knowing these three prevents 70% of KDS/Firehose operational incidents in advance.

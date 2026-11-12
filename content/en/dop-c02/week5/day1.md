@@ -302,86 +302,86 @@ Next article explores how Tooling and Spoke accounts connect via IAM/S3/KMS comb
 
 ## 📝 Practice Questions
 
-**문제 1.** CodePipeline의 한 Stage 내에서 두 Action을 병렬로 실행하려면 어떻게 해야 하는가?
+**Question 1.** How do you run two actions in parallel within a single stage of CodePipeline?
 
-A) 두 Action을 서로 다른 Stage에 배치한다
-B) 두 Action의 runOrder를 동일한 값으로 설정한다
-C) Transition을 비활성화한다
-D) Pipeline Execution Mode를 PARALLEL로 설정한다
+A) Place the two actions in different stages
+B) Set the runOrder of the two actions to the same value
+C) Disable the transition
+D) Set the pipeline execution mode to PARALLEL
 
-**정답: B**
-해설: runOrder는 Stage 내 Action의 실행 순서를 결정하는 정수값이다. 같은 runOrder를 가진 Action들은 병렬로 실행되고, 다른 runOrder를 가진 Action은 낮은 runOrder가 완료된 후 높은 runOrder가 실행된다. A는 Stage 간 관계이고(Stage 사이는 항상 직렬), C의 Transition 비활성화는 Stage 간 전이를 멈추는 것이며, D의 PARALLEL Execution Mode는 동일 Pipeline의 여러 실행을 동시에 허용하는 것이지 한 실행 내 Action 병렬화가 아니다.
-
----
-
-**문제 2.** Tooling 계정의 CodePipeline이 Prod 계정 ECS에 배포한다. "S3 GetObject는 성공하지만 Artifact 압축 해제 시 AccessDenied가 발생한다"는 문제의 원인으로 가장 가능성 높은 것은?
-
-A) S3 버킷 정책에 Prod 계정 Role이 누락
-B) Prod 계정 CrossAccountDeployRole에 kms:Decrypt 권한 또는 KMS Key Policy에 해당 Role 누락
-C) CodePipeline Service Role의 sts:AssumeRole 권한 부족
-D) ECS Task Definition 형식 오류
-
-**정답: B**
-해설: S3 GetObject가 성공한다는 것은 S3 버킷 정책과 Prod 계정의 S3 접근 권한은 정상이라는 뜻이다. Artifact는 KMS로 암호화되어 있어서 다운로드 후 복호화가 필요하다. 복호화에는 kms:Decrypt 권한이 Prod 계정 Role의 IAM Policy에 있어야 하고, Tooling 계정의 KMS Key Policy에도 해당 Prod 계정 Role이 명시되어야 한다. 양쪽 중 하나라도 빠지면 "GetObject 성공, Decrypt 실패"가 된다. CloudTrail에서 `kms:Decrypt` AccessDenied 이벤트를 확인하면 즉시 진단된다.
+**Answer: B**
+Explanation: runOrder is an integer that determines the execution order of actions within a stage. Actions with the same runOrder run in parallel, and for actions with different runOrder values, the higher runOrder runs after the lower runOrder completes. A concerns the relationship between stages (stages are always sequential), C, disabling the transition, stops the transition between stages, and D, PARALLEL execution mode, allows multiple executions of the same pipeline at the same time; it is not parallelization of actions within a single execution.
 
 ---
 
-**문제 3.** V2 Pipeline의 QUEUED Execution Mode가 필요한 시나리오로 가장 적절한 것은?
+**Question 2.** A CodePipeline in the Tooling account deploys to ECS in the Prod account. What is the most likely cause of the problem "S3 GetObject succeeds, but AccessDenied occurs when decrypting the artifact"?
 
-A) 빠른 main 브랜치 개발에서 최신 commit만 빌드하면 된다
-B) 감사 요구사항으로 모든 commit의 배포 이력이 필요하고, 새 commit이 진행 중 빌드를 취소해서는 안 된다
-C) 여러 PR 브랜치를 동시에 독립적으로 빌드해야 한다
-D) Pipeline 실행 비용을 최소화해야 한다
+A) The Prod account role is missing from the S3 bucket policy
+B) The Prod account CrossAccountDeployRole lacks the kms:Decrypt permission, or the role is missing from the KMS key policy
+C) The CodePipeline service role lacks the sts:AssumeRole permission
+D) An ECS task definition format error
 
-**정답: B**
-해설: QUEUED는 새 실행이 시작될 때 이전 실행을 취소하지 않고 큐에 추가해 FIFO 순서로 실행한다. 금융 규제나 SOC2 감사에서 "어떤 commit이 언제 prod에 배포됐는지"의 완전한 이력이 필요할 때 모든 commit 실행이 보장되어야 한다. A는 SUPERSEDED(기본)의 시나리오, C는 PARALLEL의 시나리오, D는 SUPERSEDED가 오히려 적게 실행되어 비용이 낮을 수 있다.
-
----
-
-**문제 4.** CodePipeline에서 Artifact Store의 KMS 키를 Customer Managed Key(CMK)로 설정해야 하는 이유로 가장 적절한 것은?
-
-A) CMK가 AWS 관리 키보다 저렴하다
-B) Cross-Account 배포 시 KMS Key Policy에서 다른 계정 Role에게 권한을 부여할 수 있다
-C) CMK가 더 강한 암호화 알고리즘을 사용한다
-D) AWS 관리 키는 S3와 함께 사용할 수 없다
-
-**정답: B**
-해설: AWS 관리 키(aws/s3 등)는 Key Policy를 사용자가 수정할 수 없다. 따라서 다른 계정의 Role에게 Decrypt 권한을 부여하는 것이 불가능하다. CMK는 Key Policy를 완전히 제어할 수 있어서 Spoke 계정의 CrossAccountDeployRole을 Principal로 추가해 Decrypt를 허용할 수 있다. Cross-Account Artifact 공유를 위해 CMK가 필수인 이유다. 암호화 알고리즘(AES-256)은 동일하다.
+**Answer: B**
+Explanation: The fact that S3 GetObject succeeds means the S3 bucket policy and the Prod account S3 access permissions are fine. The artifact is encrypted with KMS, so it must be decrypted after download. For decryption, the kms:Decrypt permission must be in the IAM policy of the Prod account role, and that Prod account role must also be explicitly listed in the KMS key policy of the Tooling account. If either side is missing, the result is "GetObject succeeds, Decrypt fails." Checking CloudTrail for the `kms:Decrypt` AccessDenied event diagnoses it immediately.
 
 ---
 
-**문제 5.** "주말 동안 prod 배포를 일시 중단하되, 빌드와 테스트는 계속 실행해야 한다"는 요구사항을 CodePipeline에서 구현하는 가장 적절한 방법은?
+**Question 3.** Which scenario most appropriately requires the QUEUED execution mode of a V2 pipeline?
 
-A) Pipeline 자체를 비활성화한다
-B) Deploy Stage의 Inbound Transition을 비활성화한다
-C) Deploy Stage의 Action을 삭제한다
-D) IAM Role의 권한을 일시적으로 제거한다
+A) In fast main branch development, building only the latest commit is enough
+B) Audit requirements need the deployment history of every commit, and a new commit must not cancel an in-progress build
+C) Multiple PR branches must be built independently at the same time
+D) Pipeline execution cost must be minimized
 
-**정답: B**
-해설: Transition 비활성화는 특정 Stage로의 진입만 막는다. Deploy Stage의 Inbound Transition을 비활성화하면 Source→Build→Test Stage는 계속 정상 실행되지만, Test Stage 완료 후 Deploy Stage로 자동 전이가 차단된다. Pipeline 비활성화(A)는 모든 Stage를 멈추고, Action 삭제(C)는 되돌리기가 어려우며, IAM Role 수정(D)은 부작용이 크다. Transition은 `disable-stage-transition`과 `enable-stage-transition` API로 간단히 제어할 수 있다.
-
----
-
-**문제 6.** Pipeline Execution Mode가 PARALLEL인 경우 발생할 수 있는 가장 심각한 문제는?
-
-A) 파이프라인 실행이 느려진다
-B) 두 실행이 동일한 prod 리소스(예: ECS Service, CloudFormation Stack)를 동시에 수정하려 할 때 충돌 또는 예측 불가능한 상태가 발생한다
-C) Artifact 저장 비용이 두 배가 된다
-D) IAM 권한이 자동으로 제한된다
-
-**정답: B**
-해설: PARALLEL 모드는 동시에 여러 Pipeline 실행을 허용하므로, 각 실행이 독립된 Artifact를 가지지만 대상 리소스(ECS Service, CloudFormation Stack, RDS)는 공유된다. 실행 A와 실행 B가 동시에 같은 ECS Service를 업데이트하려 하면 나중 업데이트가 먼저 업데이트를 덮어쓰거나 API 충돌이 발생한다. PARALLEL은 각 실행이 독립된 환경(별도 네임스페이스, 다른 리소스)을 대상으로 할 때만 안전하다—예: 각 PR이 독립된 스테이징 환경에 배포될 때.
+**Answer: B**
+Explanation: QUEUED does not cancel the previous execution when a new one starts; it adds the new execution to a queue and runs executions in FIFO order. When financial regulation or a SOC 2 audit requires a complete history of "which commit was deployed to prod and when," every commit execution must be guaranteed. A is the SUPERSEDED (default) scenario, C is the PARALLEL scenario, and for D, SUPERSEDED may actually run fewer executions and cost less.
 
 ---
 
-**문제 7.** CodePipeline V2에서 Build Action(CodeBuild)이 생성한 IMAGE_TAG 값을 같은 Pipeline의 Deploy Stage에서 사용하려면 어떤 방법이 올바른가?
+**Question 4.** In CodePipeline, what is the most appropriate reason to set the artifact store KMS key to a customer managed key (CMK)?
 
-A) Lambda Invoke Action을 중간에 추가해서 S3에 저장하고 다음 Stage가 읽는다
-B) CodeBuild의 exported-variables에 IMAGE_TAG를 정의하고 Deploy Action에서 `#{BuildVariables.IMAGE_TAG}`로 참조한다
-C) Pipeline 변수(variables)를 미리 선언하고 CodeBuild가 그 값을 변경한다
-D) buildspec.yml의 artifacts 섹션에 IMAGE_TAG를 포함시킨다
+A) A CMK is cheaper than an AWS managed key
+B) For cross-account deployments, the KMS key policy can grant permissions to roles in other accounts
+C) A CMK uses a stronger encryption algorithm
+D) AWS managed keys cannot be used with S3
 
-**정답: B**
-해설: CodeBuild의 buildspec.yml에서 `exported-variables` 섹션에 변수 이름을 정의하면, 해당 환경 변수 값이 V2 Pipeline의 Action 출력 변수로 자동 노출된다. 다음 Stage의 Action에서 `#{BuildVariables.IMAGE_TAG}` 형식으로 참조한다. A의 S3 경유는 불필요한 복잡성이고, C의 방식은 Pipeline 변수를 런타임에 수정하는 것인데 이는 지원되지 않는다. D의 artifacts는 Artifact 파일을 지정하는 것이지 변수 노출이 아니다.
+**Answer: B**
+Explanation: With AWS managed keys (such as aws/s3), the user cannot modify the key policy. Therefore it is impossible to grant Decrypt permission to a role in another account. With a CMK you have full control of the key policy, so you can add the spoke account CrossAccountDeployRole as a principal and allow Decrypt. This is why a CMK is required for cross-account artifact sharing. The encryption algorithm (AES-256) is the same.
+
+---
+
+**Question 5.** What is the most appropriate way to implement the requirement "suspend prod deployments over the weekend, but keep running builds and tests" in CodePipeline?
+
+A) Disable the pipeline itself
+B) Disable the inbound transition of the Deploy stage
+C) Delete the actions in the Deploy stage
+D) Temporarily remove the permissions of the IAM role
+
+**Answer: B**
+Explanation: Disabling a transition only blocks entry into a specific stage. If you disable the inbound transition of the Deploy stage, the Source→Build→Test stages continue to run normally, but the automatic transition to the Deploy stage after the Test stage completes is blocked. Disabling the pipeline (A) stops all stages, deleting the actions (C) is hard to undo, and modifying the IAM role (D) has large side effects. Transitions can be controlled simply with the `disable-stage-transition` and `enable-stage-transition` APIs.
+
+---
+
+**Question 6.** What is the most serious problem that can occur when the pipeline execution mode is PARALLEL?
+
+A) Pipeline executions become slower
+B) When two executions try to modify the same prod resource (for example, an ECS service or CloudFormation stack) at the same time, conflicts or unpredictable states occur
+C) Artifact storage cost doubles
+D) IAM permissions are automatically restricted
+
+**Answer: B**
+Explanation: PARALLEL mode allows multiple pipeline executions at the same time, so each execution has its own independent artifact, but the target resources (ECS service, CloudFormation stack, RDS) are shared. If execution A and execution B try to update the same ECS service at the same time, the later update overwrites the earlier one or an API conflict occurs. PARALLEL is safe only when each execution targets an independent environment (separate namespace, different resources) — for example, when each PR deploys to its own independent staging environment.
+
+---
+
+**Question 7.** In CodePipeline V2, which method is correct for using the IMAGE_TAG value generated by a build action (CodeBuild) in the Deploy stage of the same pipeline?
+
+A) Add a Lambda invoke action in between, store it in S3, and have the next stage read it
+B) Define IMAGE_TAG in the CodeBuild exported-variables and reference it in the Deploy action as `#{BuildVariables.IMAGE_TAG}`
+C) Declare pipeline variables in advance and have CodeBuild change their value
+D) Include IMAGE_TAG in the artifacts section of buildspec.yml
+
+**Answer: B**
+Explanation: If you define a variable name in the `exported-variables` section of the CodeBuild buildspec.yml, the value of that environment variable is automatically exposed as an action output variable of the V2 pipeline. Reference it in the next stage action in the form `#{BuildVariables.IMAGE_TAG}`. Going through S3 in A is unnecessary complexity, and the approach in C modifies a pipeline variable at runtime, which is not supported. The artifacts in D specify artifact files; they do not expose variables.
 
 ---

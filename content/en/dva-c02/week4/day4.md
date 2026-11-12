@@ -473,7 +473,7 @@ Lambda Function URL was launched in 2022. It's a feature that gives a Lambda an 
 
 ## 📝 Practice Questions
 
-**문제 1.**  
+**Question 1.**  
 In a WebSocket API, the route that runs when a client establishes a connection is `$connect`. What happens if the Lambda function returns `statusCode: 403`?
 
 A) The connection is established and subsequent messages are processed normally  
@@ -481,12 +481,12 @@ B) The connection is rejected and the client cannot connect
 C) It falls back to the `$default` route  
 D) The connection is established but `$disconnect` is called immediately  
 
-**정답: B**  
+**Answer: B**  
 If the `$connect` Lambda returns a 4XX or 5XX, the WebSocket handshake is rejected. The connection itself is not established. You can use this to implement authentication logic in `$connect` — for example, receiving a JWT token as a query parameter, validating it, and returning 403 if it's invalid.
 
 ---
 
-**문제 2.**  
+**Question 2.**  
 In a real-time chat application, the server's Lambda attempted a broadcast and got a `GoneException` for some clients. What is the correct way to handle this?
 
 A) Retry with the same connectionId after a short delay  
@@ -494,12 +494,12 @@ B) Immediately delete that connectionId from DynamoDB
 C) Manually trigger the `$disconnect` route  
 D) Ask API Gateway to renew the connectionId  
 
-**정답: B**  
+**Answer: B**  
 A `GoneException` (HTTP 410) means the WebSocket connection for that connectionId has been permanently severed. Since a connectionId is not reused, retrying is meaningless. You must immediately delete that connectionId from DynamoDB so that no unnecessary API calls occur in future broadcasts.
 
 ---
 
-**문제 3.**  
+**Question 3.**  
 You migrated an existing REST API Lambda function to HTTP API, and `KeyError: 'httpMethod'` occurred. What is the cause and solution?
 
 A) HTTP API doesn't support the GET method. Keep the REST API  
@@ -507,12 +507,12 @@ B) HTTP API Payload v2.0 is the default and the event structure is different. Se
 C) It's an IAM permission problem. Add permissions to the Lambda execution role  
 D) HTTP API doesn't support Lambda Proxy integration  
 
-**정답: B**  
+**Answer: B**  
 HTTP API uses Payload Format Version 2.0 by default. v2.0 uses `requestContext.http.method` instead of `httpMethod` and includes new fields like `routeKey`. Changing the integration setting to `payloadFormatVersion: "1.0"` makes it identical to the existing REST API event structure.
 
 ---
 
-**문제 4.**  
+**Question 4.**  
 A company wants to implement API authentication with Auth0 JWT tokens. What is the simplest way to implement it, without Lambda Authorizer code?
 
 A) Configure a Cognito User Pool Authorizer on the REST API and use Auth0 in place of Cognito  
@@ -520,12 +520,12 @@ B) Configure a JWT Authorizer on the HTTP API and specify Auth0's issuer URL and
 C) Allow Auth0's IP via a Resource Policy on the REST API  
 D) External JWT validation is impossible without a Lambda Authorizer  
 
-**정답: B**  
+**Answer: B**  
 HTTP API's JWT Authorizer supports any provider that follows the OIDC standard. For Auth0, specifying `issuer: "https://{your-domain}.auth0.com/"` and `audience: ["{your-api-identifier}"]` enables JWT validation with no Lambda code. REST API's Cognito User Pool Authorizer supports only Cognito.
 
 ---
 
-**문제 5.**  
+**Question 5.**  
 You need to continuously stream real-time stock prices from the server to clients. Clients only receive data and don't need to send data to the server. What is the simplest AWS implementation?
 
 A) WebSocket API + DynamoDB connection management  
@@ -533,12 +533,12 @@ B) REST API long polling
 C) Lambda Response Streaming + Function URL (SSE pattern)  
 D) SQS + client polling  
 
-**정답: C**  
+**Answer: C**  
 For server → client one-way streaming, the SSE pattern is simpler than WebSocket. Leveraging Lambda's Response Streaming, you can stream real-time data in `text/event-stream` format combined with a Function URL. WebSocket is for when bidirectional communication is needed, and it brings additional complexity such as managing a DynamoDB connection registry.
 
 ---
 
-**문제 6.**  
+**Question 6.**  
 Why is API Gateway HTTP API cheaper than REST API?
 
 A) HTTP API doesn't use Lambda, so there's no Lambda cost  
@@ -546,12 +546,12 @@ B) HTTP API removes many middleware layers such as VTL transformation, caching, 
 C) HTTP API caches via CloudFront, so the actual number of API calls is lower  
 D) HTTP API processes only a subset of requests through sampling  
 
-**정답: B**  
+**Answer: B**  
 HTTP API's low cost and low latency stem from its simplified processing pipeline. HTTP API doesn't include the middleware layers REST API supports — VTL mapping, response caching, usage plan evaluation, Gateway Response customization, X-Ray integration, and so on. It's a trade-off that improved speed and cost by cutting features.
 
 ---
 
-**문제 7.**  
+**Question 7.**  
 What are the WebSocket API's Idle Timeout and Maximum Connection Duration, respectively? And what happens to a connection that exceeds these limits?
 
 A) Idle Timeout 5 min, Max Duration 1 hour → automatic reconnection  
@@ -559,5 +559,5 @@ B) Idle Timeout 10 min, Max Duration 2 hours → connection forcibly terminated 
 C) Idle Timeout 30 min, Max Duration 24 hours → the connection is maintained  
 D) Idle Timeout 10 min, Max Duration 2 hours → connection forcibly terminated, $disconnect not guaranteed to run  
 
-**정답: D**  
+**Answer: D**  
 The Idle Timeout is 10 minutes (when there are no messages or pings), and the Maximum Connection Duration is 2 hours. When these limits are exceeded, the connection is forcibly terminated, and execution of the `$disconnect` route is **not guaranteed**. Therefore you must set a DynamoDB TTL aligned with the maximum connection duration to automatically clean up stale connections from abnormal terminations.

@@ -117,62 +117,62 @@ Next, we tackle EDA and validation's deadliest enemy: **data leakage**.
 
 ## 📝 Practice Questions
 
-**문제 1.** 두 변수 사이에 강한 U자형(비선형) 관계가 있는데 Pearson 상관계수가 거의 0으로 나왔다. 관계의 강도를 더 잘 포착할 방법은?
+**Question 1.** There is a strong U-shaped (nonlinear) relationship between two variables, yet the Pearson correlation coefficient came out near 0. Which method better captures the strength of the relationship?
 
-A) 표본 크기를 줄인다  
-B) Spearman 등 순위 기반 상관과 산점도로 비선형 관계를 확인한다  
-C) Pearson 값이 0이므로 관계가 없다고 결론짓는다  
-D) 두 변수를 표준화한 뒤 Pearson을 다시 계산한다  
+A) Reduce the sample size  
+B) Check the nonlinear relationship with a rank-based correlation such as Spearman and a scatter plot  
+C) Conclude there is no relationship because the Pearson value is 0  
+D) Standardize the two variables and recompute Pearson  
 
-**정답: B**  
-해설: Pearson은 선형 관계만 측정하므로 U자형처럼 강한 비선형 관계를 0에 가깝게 보고할 수 있다. 산점도로 모양을 확인하고 단조 관계를 잡는 Spearman 등을 함께 보는 것이 옳다. Pearson만 보고 관계 없음으로 단정하면 안 되며(C), 표준화는 선형 변환이라 Pearson 값을 바꾸지 않는다(D).
-
----
-
-**문제 2.** "아이스크림 판매량과 익사 사고 수가 강하게 양의 상관을 보인다"는 데이터에서 올바른 해석은?
-
-A) 아이스크림 판매를 줄이면 익사 사고가 줄어든다  
-B) 익사 사고가 아이스크림 판매를 증가시킨다  
-C) 기온이라는 교란변수가 두 변수를 동시에 끌어올린 결과일 수 있다  
-D) 상관이 강하므로 인과관계가 입증된 것이다  
-
-**정답: C**  
-해설: 더운 날씨(기온)가 아이스크림 소비와 물놀이를 동시에 늘려 두 변수가 함께 오르는 전형적인 교란변수 사례다. 상관은 인과를 입증하지 못하므로(D), 한쪽을 조절하면 다른 쪽이 변한다는 주장(A·B)은 근거가 없다. 인과 주장에는 실험 설계나 교란변수 통제가 필요하다.
+**Answer: B**  
+Explanation: Pearson measures only linear relationships, so it can report a strong nonlinear relationship such as a U shape as near 0. The right approach is to check the shape with a scatter plot and also look at measures such as Spearman that capture monotonic relationships. You must not conclude "no relationship" from Pearson alone (C), and standardization is a linear transformation that does not change the Pearson value (D).
 
 ---
 
-**문제 3.** 선형 회귀 모델에서 설명 변수들끼리 강하게 상관(VIF가 매우 높음)할 때 발생하는 문제로 옳은 것은?
+**Question 2.** In data showing that "ice cream sales and drowning incidents are strongly positively correlated," what is the correct interpretation?
 
-A) 예측이 항상 불가능해진다  
-B) 회귀 계수 추정이 불안정해지고 개별 변수 해석이 어려워진다  
-C) 타깃 변수의 분포가 정규분포로 바뀐다  
-D) 결측치가 자동으로 채워진다  
+A) Reducing ice cream sales will reduce drowning incidents  
+B) Drowning incidents increase ice cream sales  
+C) A confounding variable, temperature, may be raising both variables at the same time  
+D) Because the correlation is strong, causation has been proven  
 
-**정답: B**  
-해설: 다중공선성은 설명 변수들이 서로 정보를 공유해 계수 추정이 불안정해지고 표준오차가 커져, 어떤 변수가 진짜 영향을 주는지 분리하기 어렵게 만든다. 예측 자체가 불가능해지는 것은 아니며(A), 타깃 분포(C)나 결측 처리(D)와는 무관하다. VIF > 5~10이 경고 신호다.
-
----
-
-**문제 4.** 두 범주형 변수(지역, 이탈 여부)가 서로 독립인지 검정하려 한다. 가장 적절한 방법은?
-
-A) Pearson 상관계수  
-B) 표준편차 비교  
-C) 카이제곱 독립성 검정  
-D) 로그 변환  
-
-**정답: C**  
-해설: 두 범주형 변수의 연관성·독립성은 교차표를 기반으로 한 카이제곱 검정으로 판단하며, 연관 강도는 크래머의 V로 본다. Pearson 상관(A)은 수치형 변수용이고, 표준편차 비교(B)나 로그 변환(D)은 범주형 독립성 검정과 무관하다.
+**Answer: C**  
+Explanation: Hot weather (temperature) increases both ice cream consumption and swimming, so the two variables rise together - a classic confounding-variable case. Correlation does not prove causation (D), so claims that adjusting one will change the other (A and B) have no basis. Causal claims require experimental design or control of confounders.
 
 ---
 
-**문제 5.** 상관된 특성이 많은 데이터로 모델을 만들 때, 다중공선성에 상대적으로 둔감한 알고리즘은?
+**Question 3.** In a linear regression model, which problem occurs when the explanatory variables are strongly correlated with each other (very high VIF)?
 
-A) 선형 회귀  
-B) 로지스틱 회귀  
-C) 릿지 회귀 없이 사용하는 다중 선형 회귀  
-D) 랜덤 포레스트 등 트리 기반 모델  
+A) Prediction always becomes impossible  
+B) Coefficient estimates become unstable and interpreting individual variables becomes difficult  
+C) The distribution of the target variable becomes normal  
+D) Missing values are filled in automatically  
 
-**정답: D**  
-해설: 트리 기반 모델은 분할 시 상관된 변수 중 하나를 선택하면 되므로 예측 성능이 크게 저하되지 않아 다중공선성에 비교적 둔감하다(다만 변수 중요도는 나뉘어 과소평가될 수 있다). 선형·로지스틱 회귀(A·B·C)는 계수 추정 자체가 불안정해져 다중공선성에 민감하다.
+**Answer: B**  
+Explanation: With multicollinearity, the explanatory variables share information, making coefficient estimates unstable and standard errors larger, which makes it hard to separate which variable truly has an effect. Prediction itself does not become impossible (A), and it is unrelated to the target distribution (C) or missing-value handling (D). VIF > 5-10 is a warning sign.
+
+---
+
+**Question 4.** You want to test whether two categorical variables (region and churn status) are independent. Which method is MOST appropriate?
+
+A) Pearson correlation coefficient  
+B) Standard deviation comparison  
+C) Chi-square test of independence  
+D) Log transformation  
+
+**Answer: C**  
+Explanation: The association/independence of two categorical variables is assessed with a chi-square test based on a contingency table, and the strength of association is measured with Cramér's V. Pearson correlation (A) is for numeric variables, and standard deviation comparison (B) and log transformation (D) are unrelated to testing categorical independence.
+
+---
+
+**Question 5.** When building a model on data with many correlated features, which algorithm is relatively insensitive to multicollinearity?
+
+A) Linear regression  
+B) Logistic regression  
+C) Multiple linear regression used without ridge regression  
+D) Tree-based models such as random forest  
+
+**Answer: D**  
+Explanation: Tree-based models only need to pick one of the correlated variables at each split, so predictive performance does not degrade much and they are relatively insensitive to multicollinearity (although variable importance may be split and underestimated). Linear and logistic regression (A, B, C) have unstable coefficient estimates themselves and are therefore sensitive to multicollinearity.
 
 ---

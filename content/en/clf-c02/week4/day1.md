@@ -86,62 +86,62 @@ In the next article, we'll lay out the security services beyond IAM — WAF, Shi
 
 ## 📝 Practice Questions
 
-**문제 1.** In the shared responsibility model, which of the following is always the **customer's responsibility**?
+**Question 1.** In the shared responsibility model, which of the following is always the **customer's responsibility**?
 
 A) Physical security of the data center  
 B) Security of the hypervisor (virtualization layer)  
 C) Configuring access permissions for data stored in S3  
 D) Maintenance of server hardware  
 
-**정답: C**  
-해설: Data and its access permissions are always the customer's responsibility ("in the cloud"), regardless of the service used. Data center physical security, the hypervisor, and hardware maintenance all fall in the "of the cloud" area that AWS is responsible for.
+**Answer: C**  
+Explanation: Data and its access permissions are always the customer's responsibility ("in the cloud"), regardless of the service used. Data center physical security, the hypervisor, and hardware maintenance all fall in the "of the cloud" area that AWS is responsible for.
 
 ---
 
-**문제 2.** An application running on an EC2 instance needs to access an S3 bucket. What is the most secure way to grant permissions?
+**Question 2.** An application running on an EC2 instance needs to access an S3 bucket. What is the most secure way to grant permissions?
 
 A) Hardcode the access keys into the application code  
 B) Attach an IAM Role to the EC2 instance  
 C) Use the root user's credentials  
 D) Grant administrator permissions to all users  
 
-**정답: B**  
-해설: An IAM Role safely provides temporary permissions to EC2 without exposing access keys. Hardcoding keys into code or using root credentials carries high security risk, and granting administrator permissions violates the principle of least privilege.
+**Answer: B**  
+Explanation: An IAM Role safely provides temporary permissions to EC2 without exposing access keys. Hardcoding keys into code or using root credentials carries high security risk, and granting administrator permissions violates the principle of least privilege.
 
 ---
 
-**문제 3.** Which of the following is NOT a best practice for strengthening AWS account security?
+**Question 3.** Which of the following is NOT a best practice for strengthening AWS account security?
 
 A) Enable MFA on the root user  
 B) Perform daily work with an IAM user instead of root  
 C) Create root user access keys and use them for automation  
 D) Grant permissions according to the principle of least privilege  
 
-**정답: C**  
-해설: It is recommended not to create root access keys, and if compromised they put the entire account at risk. Enabling MFA, refraining from using root in favor of an IAM user, and the principle of least privilege are all correct best practices.
+**Answer: C**  
+Explanation: It is recommended not to create root access keys, and if compromised they put the entire account at risk. Enabling MFA, refraining from using root in favor of an IAM user, and the principle of least privilege are all correct best practices.
 
 ---
 
-**문제 4.** What is the most appropriate way to efficiently grant and manage the same permissions across multiple IAM users?
+**Question 4.** What is the most appropriate way to efficiently grant and manage the same permissions across multiple IAM users?
 
 A) Write a separate policy individually for each user  
 B) Attach a policy to an IAM group and add users to the group  
 C) Consolidate all users into the root user  
 D) Create a separate role for each user  
 
-**정답: B**  
-해설: Granting a policy to a group gives every user in the group the same permissions consistently, making management simple. Individual per-user policies are cumbersome to manage, consolidating into root is impossible and dangerous, and roles are for temporary permission delegation — not a tool for standardizing user permissions.
+**Answer: B**  
+Explanation: Granting a policy to a group gives every user in the group the same permissions consistently, making management simple. Individual per-user policies are cumbersome to manage, consolidating into root is impossible and dangerous, and roles are for temporary permission delegation — not a tool for standardizing user permissions.
 
 ---
 
-**문제 5.** Which of the following statements about IAM is correct?
+**Question 5.** Which of the following statements about IAM is correct?
 
 A) IAM is a Regional service that must be configured separately per Region  
 B) Using IAM incurs an additional charge  
 C) IAM is a global service and there is no additional charge to use it  
 D) IAM policies can only define Allow  
 
-**정답: C**  
-해설: IAM is a global service spanning all Regions, and there is no additional charge for using it. It does not require per-Region configuration, and policies can define not only Allow but also explicit Deny.
+**Answer: C**  
+Explanation: IAM is a global service spanning all Regions, and there is no additional charge for using it. It does not require per-Region configuration, and policies can define not only Allow but also explicit Deny.
 
 ---

@@ -290,91 +290,91 @@ Next article, we look at the two squares behind these — **CodeDeploy** and **C
 
 ## 📝 Practice Questions
 
-**문제 1.** Which of the following is NOT a supported authentication method for CodeCommit?
+**Question 1.** Which of the following is NOT a supported authentication method for CodeCommit?
 
 A) SSH key
 B) HTTPS Git Credentials
 C) AWS Credential Helper (SigV4)
 D) Direct input of IAM console login password
 
-**정답: D**
+**Answer: D**
 
-해설: CodeCommit supports three methods: SSH public key, HTTPS Git Credentials (IAM-issued username/password), and AWS Credential Helper (SigV4 signature per request). The IAM console login password cannot be used for git authentication — Git Credentials must be issued separately. This is why "direct username/password input" is the wrong answer. On EC2/Lambda and similar instance environments, C) Credential Helper is the best fit, as it uses the instance profile's temporary credentials to create a SigV4 signature for each git operation.
+Explanation: CodeCommit supports three methods: SSH public key, HTTPS Git Credentials (IAM-issued username/password), and AWS Credential Helper (SigV4 signature per request). The IAM console login password cannot be used for git authentication — Git Credentials must be issued separately. This is why "direct username/password input" is the wrong answer. On EC2/Lambda and similar instance environments, C) Credential Helper is the best fit, as it uses the instance profile's temporary credentials to create a SigV4 signature for each git operation.
 
 ---
 
-**문제 2.** Which phase in buildspec.yml **continues to run even if the build phase fails**? (EC2 In-Place basis)
+**Question 2.** Which phase in buildspec.yml **continues to run even if the build phase fails**? (EC2 In-Place basis)
 
 A) install
 B) pre_build
 C) build
 D) post_build
 
-**정답: D**
+**Answer: D**
 
-해설: The key is that ApplicationStop runs **the script from the previous revision**, making it the very first phase regardless of how the new revision's other phases fail. If ApplicationStop fails, that instance's deployment is marked failed but subsequent phases are not affected. B/C/D are all downstream phases and are skipped if earlier phases fail. When "ApplicationStop's special nature" appears on the exam, "previous revision's script runs" is the answer.
+Explanation: The key is that ApplicationStop runs **the script from the previous revision**, making it the very first phase regardless of how the new revision's other phases fail. If ApplicationStop fails, that instance's deployment is marked failed but subsequent phases are not affected. B/C/D are all downstream phases and are skipped if earlier phases fail. When "ApplicationStop's special nature" appears on the exam, "previous revision's script runs" is the answer.
 
 ---
 
-**문제 3.** A Lambda function triggering CodeBuild during burst traffic encounters burdensome 10-30 second container boot times per build, both cost and time. What is the most suitable solution?
+**Question 3.** A Lambda function triggering CodeBuild during burst traffic encounters burdensome 10-30 second container boot times per build, both cost and time. What is the most suitable solution?
 
 A) Switch to larger BUILD_GENERAL1_2XLARGE
 B) Switch to BUILD_LAMBDA compute type
 C) Enable Local cache
 D) Set privileged: true in build container
 
-**정답: B**
+**Answer: B**
 
-해설: The BUILD_LAMBDA compute type introduced in late 2023, based on Firecracker microVM, reduces build startup to under 1 second. Ideal for short, frequently occurring build workloads (e.g., PR validation, lint checks). A) Larger instances might actually slow startup and definitely increase costs. C) Local cache only helps with dependency caching when the host is reused, doesn't reduce startup itself. D) privileged mode is for Docker-in-Docker and unrelated to this problem. Note that Lambda compute has memory/disk limits unsuitable for large monorepo builds.
+Explanation: The BUILD_LAMBDA compute type introduced in late 2023, based on Firecracker microVM, reduces build startup to under 1 second. Ideal for short, frequently occurring build workloads (e.g., PR validation, lint checks). A) Larger instances might actually slow startup and definitely increase costs. C) Local cache only helps with dependency caching when the host is reused, doesn't reduce startup itself. D) privileged mode is for Docker-in-Docker and unrelated to this problem. Note that Lambda compute has memory/disk limits unsuitable for large monorepo builds.
 
 ---
 
-**문제 4.** A CodeBuild project needs to use a DB access password during builds. What is the safest approach?
+**Question 4.** A CodeBuild project needs to use a DB access password during builds. What is the safest approach?
 
 A) Write plaintext variable in buildspec.yml
 B) Set as CodeBuild project environment variable (Plaintext)
 C) Store in Secrets Manager and reference via `secrets-manager:` key
 D) Store in S3 text file and download during build
 
-**정답: C**
+**Answer: C**
 
-해설: Secrets Manager provides ① automatic KMS encryption ② automatic rotation (native support for RDS, Redshift, DocumentDB) ③ CloudTrail audit ④ extracting only specific JSON fields (`mysecret:password` syntax). While SSM Parameter Store SecureString offers similar protection, automatic rotation is Secrets Manager's strength. A) Plaintext means the secret is permanently recorded in the git repository — worst anti-pattern. B) Plaintext environment variables expose in console. D) S3 files risk exposure if bucket policy omits permission + no automated rotation.
+Explanation: Secrets Manager provides ① automatic KMS encryption ② automatic rotation (native support for RDS, Redshift, DocumentDB) ③ CloudTrail audit ④ extracting only specific JSON fields (`mysecret:password` syntax). While SSM Parameter Store SecureString offers similar protection, automatic rotation is Secrets Manager's strength. A) Plaintext means the secret is permanently recorded in the git repository — worst anti-pattern. B) Plaintext environment variables expose in console. D) S3 files risk exposure if bucket policy omits permission + no automated rotation.
 
 ---
 
-**문제 5.** A CodeBuild project needs to run a migration script on a private subnet RDS instance. What additional configuration is required?
+**Question 5.** A CodeBuild project needs to run a migration script on a private subnet RDS instance. What additional configuration is required?
 
 A) No additional config needed (CodeBuild can access all VPCs by default)
 B) Switch CodeBuild project to VPC mode and specify appropriate subnet + security group
 C) Change RDS to public
 D) Access RDS through Lambda
 
-**정답: B**
+**Answer: B**
 
-해설: By default CodeBuild runs in AWS managed VPC and cannot access private resources in your VPC. Switching to VPC mode creates ENI in specified subnet, enabling private resource access. Trade-off: ① ENI provisioning adds +30s to 1m startup ② internet outbound disappears → ECR/S3/CloudWatch Logs/Secrets Manager each need VPC endpoints ③ without NAT Gateway, can't download external packages. C) Exposing RDS publicly is security anti-pattern. D) Lambda bypass is unnecessary complexity. When "CodeBuild accesses private resources" appears on exam, VPC mode is the answer.
+Explanation: By default CodeBuild runs in AWS managed VPC and cannot access private resources in your VPC. Switching to VPC mode creates ENI in specified subnet, enabling private resource access. Trade-off: ① ENI provisioning adds +30s to 1m startup ② internet outbound disappears → ECR/S3/CloudWatch Logs/Secrets Manager each need VPC endpoints ③ without NAT Gateway, can't download external packages. C) Exposing RDS publicly is security anti-pattern. D) Lambda bypass is unnecessary complexity. When "CodeBuild accesses private resources" appears on exam, VPC mode is the answer.
 
 ---
 
-**문제 6.** To send Slack channel notification whenever Pull Request is created in CodeCommit, what is the most suitable configuration?
+**Question 6.** To send Slack channel notification whenever Pull Request is created in CodeCommit, what is the most suitable configuration?
 
 A) CodeCommit Triggers → Slack Incoming Webhook
 B) CodeCommit Notifications → AWS Chatbot → Slack
 C) CodeCommit Triggers → SNS → Slack email subscription
 D) CloudWatch Events → Direct Slack call
 
-**정답: B**
+**Answer: B**
 
-해설: CodeCommit Notifications based on EventBridge provides rich event filtering (PR creation, comments, merge, push, etc.) and AWS Chatbot **natively integrates** Slack/Chime. Messages go to channel without additional Lambda. A) Triggers support only SNS/Lambda, so reaching Slack requires additional Lambda + webhook code — inefficient. C) SNS email subscription goes to personal email, not Slack channel. D) CloudWatch Events cannot directly call Slack. When "Slack notification + minimum code" appears on exam, Notifications + Chatbot is the answer.
+Explanation: CodeCommit Notifications based on EventBridge provides rich event filtering (PR creation, comments, merge, push, etc.) and AWS Chatbot **natively integrates** Slack/Chime. Messages go to channel without additional Lambda. A) Triggers support only SNS/Lambda, so reaching Slack requires additional Lambda + webhook code — inefficient. C) SNS email subscription goes to personal email, not Slack channel. D) CloudWatch Events cannot directly call Slack. When "Slack notification + minimum code" appears on exam, Notifications + Chatbot is the answer.
 
 ---
 
-**문제 7.** In buildspec.yml v0.2, to pass a variable to subsequent CodePipeline stages, which item should be used?
+**Question 7.** In buildspec.yml v0.2, to pass a variable to subsequent CodePipeline stages, which item should be used?
 
 A) `env.variables`
 B) `env.exported-variables`
 C) `artifacts.files`
 D) Save to SSM in `phases.post_build.commands`
 
-**정답: B**
+**Answer: B**
 
-해설: Variables listed in `exported-variables` become accessible to the next CodePipeline stage using the `#{BuildVariables.VAR_NAME}` syntax at build end. When a dynamically-determined value (e.g., `IMAGE_TAG=$(git rev-parse --short HEAD)`) needs to flow to the deploy stage, this is the standard pattern. A) variables is simple static variable definition. C) artifacts is for file artifact passing, not variable passing. D) Saving to SSM is possible but requires separate permissions and fetch logic in the downstream stage — inefficient. When "CodeBuild → CodeDeploy/CodePipeline variable passing" appears on exam, exported-variables is the answer.
+Explanation: Variables listed in `exported-variables` become accessible to the next CodePipeline stage using the `#{BuildVariables.VAR_NAME}` syntax at build end. When a dynamically-determined value (e.g., `IMAGE_TAG=$(git rev-parse --short HEAD)`) needs to flow to the deploy stage, this is the standard pattern. A) variables is simple static variable definition. C) artifacts is for file artifact passing, not variable passing. D) Saving to SSM is possible but requires separate permissions and fetch logic in the downstream stage — inefficient. When "CodeBuild → CodeDeploy/CodePipeline variable passing" appears on exam, exported-variables is the answer.

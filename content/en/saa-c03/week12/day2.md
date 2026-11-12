@@ -94,53 +94,53 @@ In the next article, we'll re-weave Domain 3, high-performance architecture, by 
 
 ## 📝 Practice Questions
 
-**문제 1.** A company requires both RPO 0 and RTO ~0, and cost is no object. It must have zero downtime even during a region failure. What is the most appropriate DR pattern?
+**Question 1.** A company requires both RPO 0 and RTO ~0, and cost is no object. It must have zero downtime even during a region failure. What is the most appropriate DR pattern?
 
 A) Backup & Restore B) Pilot Light C) Warm Standby D) Active-Active
 
-**정답: D**
+**Answer: D**
 
-해설: **Active-Active** has both regions taking full-scale traffic simultaneously, so even if one region dies it provides zero downtime with near-0 RTO/RPO — the most expensive, matching the "cost is no object" condition. Backup & Restore (A) has RTO/RPO in hours, Pilot Light (B) has the app off so booting takes time, and Warm Standby (C) is reduced scale so scale-up takes time. "RTO ~0 / RPO ~0 / cost-insensitive" is the answer signal for Active-Active. Conversely, cost-sensitive + loose targets means picking the cheapest tier.
+Explanation: **Active-Active** has both regions taking full-scale traffic simultaneously, so even if one region dies it provides zero downtime with near-0 RTO/RPO — the most expensive, matching the "cost is no object" condition. Backup & Restore (A) has RTO/RPO in hours, Pilot Light (B) has the app off so booting takes time, and Warm Standby (C) is reduced scale so scale-up takes time. "RTO ~0 / RPO ~0 / cost-insensitive" is the answer signal for Active-Active. Conversely, cost-sensitive + loose targets means picking the cheapest tier.
 
 ---
 
-**문제 2.** An ASG instance must upload logs to S3 and clean up connections just before it terminates. What is the appropriate mechanism?
+**Question 2.** An ASG instance must upload logs to S3 and clean up connections just before it terminates. What is the appropriate mechanism?
 
 A) UserData script B) Lifecycle Hook (Terminating:Wait) C) CloudWatch alarm D) Scheduled Action
 
-**정답: B**
+**Answer: B**
 
-해설: A **Lifecycle Hook** pauses an instance briefly before it transitions to the terminating (or starting) state (Terminating:Wait) so that graceful-shutdown work like log uploads and connection draining can run in the meantime. UserData (A) runs once at boot and doesn't fit termination-time work, a CloudWatch alarm (C) is a metric-based trigger not a pre-termination wait mechanism, and a Scheduled Action (D) merely adjusts scale at a set time. "Cleanup work before termination" = Lifecycle Hook is the answer.
+Explanation: A **Lifecycle Hook** pauses an instance briefly before it transitions to the terminating (or starting) state (Terminating:Wait) so that graceful-shutdown work like log uploads and connection draining can run in the meantime. UserData (A) runs once at boot and doesn't fit termination-time work, a CloudWatch alarm (C) is a metric-based trigger not a pre-termination wait mechanism, and a Scheduled Action (D) merely adjusts scale at a set time. "Cleanup work before termination" = Lifecycle Hook is the answer.
 
 ---
 
-**문제 3.** A global service needs a low-latency NoSQL that reads and writes simultaneously across multiple regions. What is the most suitable choice?
+**Question 3.** A global service needs a low-latency NoSQL that reads and writes simultaneously across multiple regions. What is the most suitable choice?
 
 A) DocumentDB B) DynamoDB Global Tables C) Aurora Global Database D) RDS Cross-Region Read Replica
 
-**정답: B**
+**Answer: B**
 
-해설: **DynamoDB Global Tables** is an Active-Active NoSQL writable in all regions, auto-resolving conflicts with last-writer-wins and keeping replication lag usually under 1 second. Aurora Global (C) is single-writer (writes in only one region), so it doesn't fit "simultaneous writes in all regions"; a Cross-Region Read Replica (D) is a read-only copy; and DocumentDB (A) is a MongoDB-compatible document DB, not a global multi-master model. "Multi-region simultaneous-write NoSQL" = Global Tables.
+Explanation: **DynamoDB Global Tables** is an Active-Active NoSQL writable in all regions, auto-resolving conflicts with last-writer-wins and keeping replication lag usually under 1 second. Aurora Global (C) is single-writer (writes in only one region), so it doesn't fit "simultaneous writes in all regions"; a Cross-Region Read Replica (D) is a read-only copy; and DocumentDB (A) is a MongoDB-compatible document DB, not a global multi-master model. "Multi-region simultaneous-write NoSQL" = Global Tables.
 
 ---
 
-**문제 4.** A team wants the outbound internet (patching, external APIs) of private subnets to stay up even during an AZ failure. What is the correct design?
+**Question 4.** A team wants the outbound internet (patching, external APIs) of private subnets to stay up even during an AZ failure. What is the correct design?
 
 A) All AZs share a single NAT Gateway B) Place a NAT Gateway in each AZ and have that AZ's route point at its own NAT C) Consolidate onto one NAT Instance D) Attach an Internet Gateway directly to the private subnets
 
-**정답: B**
+**Answer: B**
 
-해설: A NAT Gateway is an **AZ-scoped resource**, so binding all AZs to a single NAT cuts outbound internet for other AZs too when that AZ fails. For resilience you must **place a NAT GW in each AZ** and have that AZ's route table point at its own AZ's NAT. A and C create a single point of failure, and D makes a private subnet no longer private if you attach an IGW directly (a misconfiguration). "Private-subnet internet resilience" = per-AZ NAT.
+Explanation: A NAT Gateway is an **AZ-scoped resource**, so binding all AZs to a single NAT cuts outbound internet for other AZs too when that AZ fails. For resilience you must **place a NAT GW in each AZ** and have that AZ's route table point at its own AZ's NAT. A and C create a single point of failure, and D makes a private subnet no longer private if you attach an IGW directly (a misconfiguration). "Private-subnet internet resilience" = per-AZ NAT.
 
 ---
 
-**문제 5.** You want to route users to the region with the lowest latency to give the fastest response. What is the appropriate Route 53 policy?
+**Question 5.** You want to route users to the region with the lowest latency to give the fastest response. What is the appropriate Route 53 policy?
 
 A) Geolocation B) Latency C) Weighted D) Failover
 
-**정답: B**
+**Answer: B**
 
-해설: **Latency-based routing** sends users to the fastest region based on the measured network latency between the user and each region. Geolocation (A) routes by the user's geographic location (country/continent) for regulation and content localization, which differs from "fastest" (nearest isn't always fastest); Weighted (C) distributes traffic by ratio (canary); and Failover (D) is for primary-backup switching. "Fastest region / lowest latency" = Latency is the answer signal.
+Explanation: **Latency-based routing** sends users to the fastest region based on the measured network latency between the user and each region. Geolocation (A) routes by the user's geographic location (country/continent) for regulation and content localization, which differs from "fastest" (nearest isn't always fastest); Weighted (C) distributes traffic by ratio (canary); and Failover (D) is for primary-backup switching. "Fastest region / lowest latency" = Latency is the answer signal.
 
 ---
 

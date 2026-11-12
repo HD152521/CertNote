@@ -119,74 +119,74 @@ The operations strategy is clear — fine-grained control via SG, absolute-deny 
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 엔지니어가 웹 서버 서브넷의 NACL 인바운드에 TCP 443을 0.0.0.0/0으로 허용했다. 그런데 외부에서 HTTPS 응답을 받지 못한다. 가장 가능성 높은 원인은?
+**Question 1.** An engineer allowed TCP 443 from 0.0.0.0/0 in the NACL inbound of the web server subnet. However, HTTPS responses are not being received from outside. What is the most likely cause?
 
-A) 보안 그룹의 아웃바운드 443이 차단되어 있다  
-B) NACL 아웃바운드에 임시 포트(1024-65535) 허용이 없다  
-C) 라우팅 테이블에 로컬 경로가 누락되어 있다  
-D) 보안 그룹이 stateless라 응답을 별도 허용해야 한다  
+A) The security group's outbound 443 is blocked  
+B) The NACL outbound has no allow for ephemeral ports (1024-65535)  
+C) The local route is missing from the route table  
+D) The security group is stateless, so the response must be allowed separately  
 
-**정답: B**  
-해설: 네트워크 ACL은 비저장 방식이라 요청을 허용해도 응답 트래픽을 자동으로 허용하지 않는다. HTTPS 응답은 클라이언트의 임시 포트 범위로 나가므로, 네트워크 ACL 아웃바운드에 임시 포트 범위를 명시적으로 허용해야 한다. 보안 그룹은 상태를 추적하므로 응답을 자동 허용하며, 이 증상의 원인이 아니다.
-
----
-
-**문제 2.** 단일 악성 IP 주소 하나를 서브넷 전체에서 명시적으로 차단해야 한다. 올바른 접근은?
-
-A) 보안 그룹 인바운드에 해당 IP를 Deny 규칙으로 추가한다  
-B) 보안 그룹에서 0.0.0.0/0을 허용하되 해당 IP만 예외 처리한다  
-C) 네트워크 ACL에 낮은 번호의 Deny 규칙으로 해당 IP를 추가한다  
-D) 라우팅 테이블에서 해당 IP로 향하는 경로를 블랙홀로 설정한다  
-
-**정답: C**  
-해설: 보안 그룹은 허용 규칙만 지원하고 거부 규칙이 없으므로 특정 IP를 명시적으로 차단할 수 없다. 명시적 거부는 네트워크 ACL에서만 가능하며, 규칙 번호 순서대로 첫 매치에서 평가가 종료되므로 거부 규칙을 허용 규칙보다 낮은 번호로 두어야 효과가 있다.
+**Answer: B**  
+Explanation: A network ACL is stateless, so even if it allows the request, it does not automatically allow the response traffic. The HTTPS response goes out to the client's ephemeral port range, so the ephemeral port range must be explicitly allowed in the network ACL outbound. A security group tracks state and automatically allows responses, so it is not the cause of this symptom.
 
 ---
 
-**문제 3.** 오토스케일링으로 IP가 수시로 바뀌는 백엔드 인스턴스 그룹에 대해, 특정 ALB에서 오는 트래픽만 허용하고 싶다. 가장 적절한 방법은?
+**Question 2.** A single malicious IP address must be explicitly blocked across the entire subnet. What is the correct approach?
 
-A) 백엔드 보안 그룹 인바운드의 소스로 ALB의 보안 그룹을 참조한다  
-B) 백엔드 NACL에 ALB 인스턴스들의 IP를 모두 나열한다  
-C) 백엔드 보안 그룹에 ALB 서브넷 CIDR을 허용한다  
-D) 라우팅 테이블에서 ALB로만 향하는 경로를 추가한다  
+A) Add the IP as a Deny rule in the security group inbound  
+B) Allow 0.0.0.0/0 in the security group but make an exception for that IP only  
+C) Add the IP to the network ACL with a low-numbered Deny rule  
+D) Set a blackhole route toward that IP in the route table  
 
-**정답: A**  
-해설: 보안 그룹은 소스로 다른 보안 그룹을 참조할 수 있어, IP가 변해도 그룹 멤버십으로 허용이 유지된다. 네트워크 ACL은 IP/CIDR만 참조하므로 IP가 자주 바뀌는 환경에 부적합하다. 서브넷 CIDR 허용은 같은 서브넷의 다른 리소스까지 열리므로 최소 권한에 어긋난다.
-
----
-
-**문제 4.** 같은 서브넷 안에 있는 두 인스턴스 A, B 사이의 통신을 격리(차단)하려고 한다. 어떤 통제가 효과적인가?
-
-A) 해당 서브넷의 네트워크 ACL 인바운드에 Deny 규칙을 추가한다  
-B) 두 인스턴스의 보안 그룹 규칙으로 상호 트래픽을 허용하지 않는다  
-C) 서브넷 라우팅 테이블에서 인스턴스 간 경로를 제거한다  
-D) 네트워크 ACL과 보안 그룹 둘 중 어느 것으로도 가능하다  
-
-**정답: B**  
-해설: 네트워크 ACL은 서브넷 경계를 넘는 트래픽만 검사하므로 같은 서브넷 내부 통신에는 적용되지 않는다. 따라서 동일 서브넷 내 리소스 간 격리는 보안 그룹으로만 강제할 수 있다. 라우팅 테이블의 로컬 경로는 삭제할 수 없으므로 경로 제거 방식도 불가능하다.
+**Answer: C**  
+Explanation: Security groups support only allow rules and have no deny rules, so a specific IP cannot be explicitly blocked. An explicit deny is possible only in a network ACL, and because evaluation ends at the first match in rule number order, the deny rule must have a lower number than the allow rules to be effective.
 
 ---
 
-**문제 5.** 보안 그룹과 네트워크 ACL의 평가 방식에 대한 설명으로 옳은 것은?
+**Question 3.** For a group of backend instances whose IPs change frequently due to auto scaling, we want to allow only traffic coming from a specific ALB. What is the most appropriate method?
 
-A) 보안 그룹은 규칙 번호 순서대로 첫 매치에서 평가를 종료한다  
-B) 네트워크 ACL은 모든 규칙을 종합 평가하여 하나라도 허용하면 통과시킨다  
-C) 보안 그룹은 모든 규칙을 종합 평가하고, 네트워크 ACL은 번호 순서대로 첫 매치에서 종료한다  
-D) 둘 다 명시적 Deny 규칙을 우선 평가한 뒤 Allow를 본다  
+A) Reference the ALB's security group as the source in the backend security group inbound  
+B) List all the ALB instances' IPs in the backend NACL  
+C) Allow the ALB subnet CIDR in the backend security group  
+D) Add a route in the route table that goes only to the ALB  
 
-**정답: C**  
-해설: 보안 그룹은 순서 개념 없이 모든 허용 규칙을 종합 평가해, 어느 하나라도 매치하면 트래픽을 허용한다. 네트워크 ACL은 규칙 번호가 낮은 것부터 순서대로 평가하고 첫 매치에서 종료하므로, 거부 규칙을 허용 규칙보다 낮은 번호에 두어야 의도대로 동작한다.
+**Answer: A**  
+Explanation: A security group can reference another security group as a source, so the allow is maintained by group membership even if IPs change. A network ACL references only IPs/CIDRs, so it is unsuitable for environments where IPs change often. Allowing the subnet CIDR also opens other resources in the same subnet, which goes against least privilege.
 
 ---
 
-**문제 6.** 보안 사고 대응 중 진행 중인 악성 연결을 즉시 끊어야 한다. 가장 즉각적으로 차단되는 통제는?
+**Question 4.** We want to isolate (block) communication between two instances A and B in the same subnet. Which control is effective?
 
-A) 보안 그룹에서 인바운드 허용 규칙을 삭제한다  
-B) 네트워크 ACL에 해당 소스에 대한 Deny 규칙을 추가한다  
-C) IAM 정책으로 해당 인스턴스의 권한을 회수한다  
-D) 라우팅 테이블에서 VPC 로컬 경로를 삭제한다  
+A) Add a Deny rule to the inbound of that subnet's network ACL  
+B) Do not allow mutual traffic in the security group rules of the two instances  
+C) Remove the path between the instances from the subnet route table  
+D) Either a network ACL or a security group can do it  
 
-**정답: B**  
-해설: 보안 그룹은 상태를 추적하므로 이미 수립된 연결은 규칙을 삭제해도 추적 정보로 한동안 유지될 수 있다. 반면 네트워크 ACL은 비저장 방식이라 규칙 변경이 다음 패킷부터 즉시 반영되므로 긴급 차단에 더 즉각적이다. 로컬 경로는 삭제할 수 없다.
+**Answer: B**  
+Explanation: A network ACL inspects only traffic that crosses the subnet boundary, so it does not apply to communication inside the same subnet. Therefore, isolation between resources in the same subnet can be enforced only with security groups. The local route in a route table cannot be deleted, so removing the path is also impossible.
+
+---
+
+**Question 5.** Which description of how security groups and network ACLs are evaluated is correct?
+
+A) A security group ends evaluation at the first match in rule number order  
+B) A network ACL evaluates all rules together and lets traffic through if any one allows it  
+C) A security group evaluates all rules together, and a network ACL ends at the first match in number order  
+D) Both evaluate explicit Deny rules first and then look at Allow  
+
+**Answer: C**  
+Explanation: A security group has no notion of order and evaluates all allow rules together, allowing the traffic if any one matches. A network ACL evaluates in order starting from the lowest rule number and ends at the first match, so deny rules must be placed at lower numbers than allow rules to work as intended.
+
+---
+
+**Question 6.** During security incident response, an in-progress malicious connection must be cut immediately. Which control blocks it most immediately?
+
+A) Delete the inbound allow rule in the security group  
+B) Add a Deny rule for that source to the network ACL  
+C) Revoke the instance's permissions with an IAM policy  
+D) Delete the VPC local route from the route table  
+
+**Answer: B**  
+Explanation: A security group tracks state, so an already established connection can persist for a while on tracking information even after the rule is deleted. A network ACL, on the other hand, is stateless, so a rule change takes effect from the next packet immediately, making it more immediate for emergency blocking. The local route cannot be deleted.
 
 ---

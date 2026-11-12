@@ -136,6 +136,6 @@ Tomorrow: network isolation — using VPC mode to isolate SageMaker from the int
 
 ## 📝 Practice Questions
 
-**문제 1-5** [Practice questions in Korean follow after marker]
+**Questions 1-5** [Practice questions in Korean follow after marker]
 
 ---

@@ -64,62 +64,62 @@ Tomorrow: All four domains, synthesis.
 
 ## 📝 Practice Questions
 
-**문제 1.** 매일 밤 수백만 건의 거래 기록을 한 번에 점수화해 S3에 저장하면 되고, 실시간 응답은 필요 없다. 가장 비용 효율적인 추론 방식은?
+**Question 1.** You only need to score millions of transaction records in one pass every night and store the results in S3, with no need for real-time responses. Which inference method is MOST cost-effective?
 
-A) Real-time Endpoint를 24시간 가동  
-B) Asynchronous Inference 엔드포인트 상시 가동  
+A) Run a Real-time Endpoint 24 hours a day  
+B) Keep an Asynchronous Inference endpoint always running  
 C) Batch Transform  
 D) Multi-Model Endpoint  
 
-**정답: C**  
-해설: 정해진 대량 데이터를 오프라인으로 한 번에 처리하고 상시 엔드포인트가 필요 없으면 Batch Transform이 가장 비용 효율적이다. 상시 Real-time(A)·상시 Async(B)는 불필요한 상시 비용이 들고, Multi-Model(D)은 여러 모델 호스팅용이다.
+**Answer: C**  
+Explanation: When a fixed large volume of data is processed offline in one pass and an always-on endpoint is not needed, Batch Transform is the most cost-effective. Always-on Real-time (A) and always-on Async (B) incur unnecessary standing costs, and Multi-Model (D) is for hosting multiple models.
 
 ---
 
-**문제 2.** 새 모델을 프로덕션에 올리기 전, 실제 트래픽으로 성능을 검증하되 사용자에게는 기존 모델 응답만 반환하고 싶다. 가장 적합한 전략은?
+**Question 2.** Before putting a new model into production, you want to validate its performance with real traffic while returning only the existing model's responses to users. Which strategy is MOST appropriate?
 
-A) Canary 배포  
-B) 즉시 전체 전환  
-C) Blue/Green 후 즉시 100% 전환  
-D) Shadow(섀도) 테스트  
+A) Canary deployment  
+B) Immediate full cutover  
+C) Blue/Green followed by an immediate 100% cutover  
+D) Shadow testing  
 
-**정답: D**  
-해설: Shadow 테스트는 프로덕션 트래픽을 신모델에 복제해 흘리되 응답은 사용자에게 반환하지 않아 무위험으로 검증한다. Canary(A)는 실제 사용자에게 일부 신모델 응답이 가고, 즉시 전환(B)·즉시 100%(C)는 검증 없이 위험을 키운다.
+**Answer: D**  
+Explanation: Shadow testing replicates production traffic to the new model but does not return its responses to users, so it validates with no risk. With Canary (A), some real users receive the new model's responses, and immediate cutover (B) or immediate 100% (C) raises risk without validation.
 
 ---
 
-**문제 3.** 배포된 모델의 예측 품질이 몇 주에 걸쳐 서서히 저하되고 있다. 입력 데이터 분포가 학습 시점과 달라졌는지 자동으로 감지하려면 무엇을 사용해야 하는가?
+**Question 3.** The prediction quality of a deployed model has been degrading gradually over several weeks. What should you use to automatically detect whether the input data distribution has changed from training time?
 
 A) CloudTrail  
 B) SageMaker Model Monitor  
 C) AWS Config  
 D) Elastic Inference  
 
-**정답: B**  
-해설: Model Monitor는 학습 시 베이스라인과 운영 입력을 비교해 데이터/모델 드리프트를 감지하고 임계 초과 시 알람을 보낸다. CloudTrail(A)은 API 감사, Config(C)는 리소스 구성 추적, Elastic Inference(D)는 추론 가속으로 드리프트 감지와 무관하다.
+**Answer: B**  
+Explanation: Model Monitor compares the training-time baseline with production inputs to detect data/model drift and sends an alarm when thresholds are exceeded. CloudTrail (A) is for API auditing, Config (C) tracks resource configuration, and Elastic Inference (D) is inference acceleration; none is related to drift detection.
 
 ---
 
-**문제 4.** 학습 잡의 비용을 크게 줄이고 싶고, 잡이 중간에 중단되어도 체크포인트에서 재개할 수 있도록 설계했다. 가장 적합한 옵션은?
+**Question 4.** You want to greatly reduce the cost of a training job and have designed it so that, even if the job is interrupted midway, it can resume from a checkpoint. Which option is MOST appropriate?
 
 A) Managed Spot Training  
-B) On-Demand 인스턴스만 사용  
+B) Use only On-Demand instances  
 C) Serverless Inference  
 D) Multi-Model Endpoint  
 
-**정답: A**  
-해설: Managed Spot Training은 중단 가능한 스팟 인스턴스로 학습 비용을 최대 90%까지 줄이며 체크포인팅으로 중단 시 재개한다. On-Demand(B)는 비용 절감이 없고, Serverless Inference(C)·Multi-Model(D)은 추론 측 기능이라 학습 비용과 무관하다.
+**Answer: A**  
+Explanation: Managed Spot Training reduces training cost by up to 90% using interruptible Spot Instances and resumes from checkpoints after an interruption. On-Demand (B) offers no cost savings, and Serverless Inference (C) and Multi-Model (D) are inference-side features unrelated to training cost.
 
 ---
 
-**문제 5.** 데이터 처리 → 학습 → 평가 → 조건부 모델 등록 → 배포로 이어지는 ML 워크플로를 코드로 정의해 재현 가능하게 자동화하려 한다. 핵심 서비스 조합으로 가장 적절한 것은?
+**Question 5.** You want to define an ML workflow consisting of data processing, training, evaluation, conditional model registration, and deployment as code, and automate it reproducibly. Which combination of core services is MOST appropriate?
 
-A) Lambda 단독으로 모든 단계 호출  
-B) EC2 인스턴스에 cron 스크립트  
+A) Lambda alone invoking every step  
+B) A cron script on an EC2 instance  
 C) SageMaker Pipelines + Model Registry  
-D) Glue 크롤러만 사용  
+D) Use only a Glue crawler  
 
-**정답: C**  
-해설: SageMaker Pipelines는 ML 단계를 DAG로 정의해 재현·버전 관리·CI/CD를 제공하고, Model Registry로 모델 버전·승인을 관리한다. Lambda 단독(A)·cron 스크립트(B)는 표준화·재현성이 약하고, Glue 크롤러(D)는 메타데이터 카탈로깅 용도다.
+**Answer: C**  
+Explanation: SageMaker Pipelines defines ML steps as a DAG and provides reproducibility, version control, and CI/CD, while Model Registry manages model versions and approval. Lambda alone (A) and cron scripts (B) are weak in standardization and reproducibility, and a Glue crawler (D) is for metadata cataloging.
 
 ---

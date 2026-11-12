@@ -345,93 +345,93 @@ Tomorrow is the day we review all of Week 5. RDS Multi-AZ vs Read Replica, Auror
 
 ## 📝 Practice Questions
 
-**문제 1.** You want to store a web application's session data and implement a stateless architecture where the session must be readable from servers other than the one the user logged in on. What is the most suitable service?
+**Question 1.** You want to store a web application's session data and implement a stateless architecture where the session must be readable from servers other than the one the user logged in on. What is the most suitable service?
 
 A) ElastiCache Memcached — it's a simple cache, so it's fast
 B) ElastiCache Redis — it supports replication and HA and is ideal as a session store
 C) RDS MySQL — persist sessions with a relational DB
 D) DynamoDB — store sessions with NoSQL
 
-**정답: B**
+**Answer: B**
 
-해설: For a session store, ElastiCache Redis is the standard answer. Fast reads/writes (microseconds to milliseconds), Multi-AZ HA, session-expiration automation via TTL, and a structure accessible concurrently by multiple application servers are all in place. Memcached has no replication or HA, making it unsuitable as a session store (a node failure loses all sessions = forced user logout). RDS is excessively heavy and has connection-count limits. DynamoDB is technically possible too, but it isn't as natural as Redis in terms of TTL and performance.
+Explanation: For a session store, ElastiCache Redis is the standard answer. Fast reads/writes (microseconds to milliseconds), Multi-AZ HA, session-expiration automation via TTL, and a structure accessible concurrently by multiple application servers are all in place. Memcached has no replication or HA, making it unsuitable as a session store (a node failure loses all sessions = forced user logout). RDS is excessively heavy and has connection-count limits. DynamoDB is technically possible too, but it isn't as natural as Redis in terms of TTL and performance.
 
 ---
 
-**문제 2.** A read-intensive application using DynamoDB must cut response time to the microsecond level. The data doesn't change often, and fast response matters more than strong consistency. What is the most suitable solution?
+**Question 2.** A read-intensive application using DynamoDB must cut response time to the microsecond level. The data doesn't change often, and fast response matters more than strong consistency. What is the most suitable solution?
 
 A) Add ElastiCache Redis in front of DynamoDB with the Cache-Aside pattern
 B) Increase DynamoDB Provisioned WCU/RCU by 10×
 C) Add a DAX cluster in front of DynamoDB
 D) Enable DynamoDB Global Tables to distribute reads regionally
 
-**정답: C**
+**Answer: C**
 
-해설: DAX is a DynamoDB-only in-memory cache that provides microsecond responses. Just changing the SDK means you don't have to implement cache logic yourself. A can achieve microseconds too, but you must implement the Cache-Aside logic yourself and it lacks full compatibility with the DynamoDB API. B doesn't reduce latency by raising cost (DynamoDB's own latency is in milliseconds). D distributes reads geographically but doesn't guarantee microsecond responses.
+Explanation: DAX is a DynamoDB-only in-memory cache that provides microsecond responses. Just changing the SDK means you don't have to implement cache logic yourself. A can achieve microseconds too, but you must implement the Cache-Aside logic yourself and it lacks full compatibility with the DynamoDB API. B doesn't reduce latency by raising cost (DynamoDB's own latency is in milliseconds). D distributes reads geographically but doesn't guarantee microsecond responses.
 
 ---
 
-**문제 3.** What is the difference between ElastiCache Redis Cluster Mode Enabled and Cluster Mode Disabled?
+**Question 3.** What is the difference between ElastiCache Redis Cluster Mode Enabled and Cluster Mode Disabled?
 
 A) Cluster Mode Enabled doesn't support Multi-AZ
 B) Cluster Mode Enabled divides data across multiple shards to scale to multiple TB, with restrictions on Multi-Key operations
 C) Cluster Mode Disabled works only in a single AZ
 D) Cluster Mode Enabled provides the same functionality as Memcached
 
-**정답: B**
+**Answer: B**
 
-해설: Cluster Mode Enabled distributes data by dividing 16,384 slots across multiple shards. Each shard has an independent Primary + Replica structure, so total capacity becomes shards × node capacity. However, Multi-Key operations (MGET, MSET, transactions) require all keys to be in the same slot. Cluster Mode Disabled is a single shard scalable only up to the maximum node size, but it has no restrictions on Multi-Key operations. A, C, and D are all incorrect statements.
+Explanation: Cluster Mode Enabled distributes data by dividing 16,384 slots across multiple shards. Each shard has an independent Primary + Replica structure, so total capacity becomes shards × node capacity. However, Multi-Key operations (MGET, MSET, transactions) require all keys to be in the same slot. Cluster Mode Disabled is a single shard scalable only up to the maximum node size, but it has no restrictions on Multi-Key operations. A, C, and D are all incorrect statements.
 
 ---
 
-**문제 4.** In a social network service, multi-hop relationship queries like "people connected to B among the friends of A's friends" are frequent. What is the most suitable database?
+**Question 4.** In a social network service, multi-hop relationship queries like "people connected to B among the friends of A's friends" are frequent. What is the most suitable database?
 
 A) DynamoDB (implement relationships with a GSI)
 B) RDS Aurora (traverse relationships with JOINs)
 C) Amazon Neptune (graph DB)
 D) OpenSearch (index relationship documents)
 
-**정답: C**
+**Answer: C**
 
-해설: Multi-hop relationship traversal (Graph Traversal) is a textbook use case for the graph database Neptune. Neptune efficiently handles "friends of friends," "N-hop relationships," "shortest path," and more with the Gremlin (Property Graph) and SPARQL (RDF) query languages. Implementing with JOINs in RDS makes performance degrade exponentially as the hops increase. Implementing relationships with a DynamoDB GSI works up to 1-hop relationships but is inefficient for multi-hop. OpenSearch is a search engine and is unsuitable for relationship traversal.
+Explanation: Multi-hop relationship traversal (Graph Traversal) is a textbook use case for the graph database Neptune. Neptune efficiently handles "friends of friends," "N-hop relationships," "shortest path," and more with the Gremlin (Property Graph) and SPARQL (RDF) query languages. Implementing with JOINs in RDS makes performance degrade exponentially as the hops increase. Implementing relationships with a DynamoDB GSI works up to 1-hop relationships but is inefficient for multi-hop. OpenSearch is a search engine and is unsuitable for relationship traversal.
 
 ---
 
-**문제 5.** In an application using the Redis API, cache data must never be lost on a Primary failure. Session and shopping-cart data are stored in Redis, and if this data is lost, users are logged out. Which service should you choose?
+**Question 5.** In an application using the Redis API, cache data must never be lost on a Primary failure. Session and shopping-cart data are stored in Redis, and if this data is lost, users are logged out. Which service should you choose?
 
 A) ElastiCache Redis (Multi-AZ)
 B) ElastiCache Redis (Cluster Mode Enabled)
 C) MemoryDB for Redis
 D) ElastiCache Redis (AOF enabled)
 
-**정답: C**
+**Answer: C**
 
-해설: ElastiCache Redis's Multi-AZ replication is asynchronous, so recent writes can be lost on a Primary failure. Even enabling AOF, the essential limit of asynchronous replication remains. MemoryDB for Redis synchronously persists all writes to multiple AZs via a Multi-AZ transaction log, so there's no data loss. It can use the Redis API as-is, so code changes are also minimized. The keyword "never lost" points to MemoryDB.
+Explanation: ElastiCache Redis's Multi-AZ replication is asynchronous, so recent writes can be lost on a Primary failure. Even enabling AOF, the essential limit of asynchronous replication remains. MemoryDB for Redis synchronously persists all writes to multiple AZs via a Multi-AZ transaction log, so there's no data loss. It can use the Redis API as-is, so code changes are also minimized. The keyword "never lost" points to MemoryDB.
 
 ---
 
-**문제 6.** Which architecture enables real-time collection of application logs to allow "searching log messages containing a specific error code," "visualizing error distribution by time period," and "detecting anomalous access patterns based on IP"?
+**Question 6.** Which architecture enables real-time collection of application logs to allow "searching log messages containing a specific error code," "visualizing error distribution by time period," and "detecting anomalous access patterns based on IP"?
 
 A) CloudWatch Logs → S3 → Athena queries
 B) CloudWatch Logs → Kinesis Data Firehose → Amazon OpenSearch Service → OpenSearch Dashboards
 C) CloudWatch Logs → RDS MySQL (logs table) → BI tool
 D) DynamoDB Streams → Lambda → S3
 
-**정답: B**
+**Answer: B**
 
-해설: Full-text search (containing specific text), aggregation analytics (distribution by time period), and anomaly detection (pattern search) are all OpenSearch's strengths. OpenSearch Dashboards (formerly Kibana) even provides real-time visualization. Kinesis Data Firehose is the standard pipeline that streams logs to OpenSearch in real time. A can do log analytics but isn't real-time and has limited full-text search. C is inefficient for full-text text search and isn't real-time. D is unrelated to this scenario.
+Explanation: Full-text search (containing specific text), aggregation analytics (distribution by time period), and anomaly detection (pattern search) are all OpenSearch's strengths. OpenSearch Dashboards (formerly Kibana) even provides real-time visualization. Kinesis Data Firehose is the standard pipeline that streams logs to OpenSearch in real time. A can do log analytics but isn't real-time and has limited full-text search. C is inefficient for full-text text search and isn't real-time. D is unrelated to this scenario.
 
 ---
 
-**문제 7.** In the Cache-Aside pattern, what is it called when hundreds of concurrent requests all rush to the DB the moment a frequently read cache item's TTL expires, and what is the most effective mitigation?
+**Question 7.** In the Cache-Aside pattern, what is it called when hundreds of concurrent requests all rush to the DB the moment a frequently read cache item's TTL expires, and what is the most effective mitigation?
 
 A) The Hot Partition phenomenon. Solve it with DynamoDB Adaptive Capacity
 B) Thundering Herd (Cache Stampede). Solve it by adding random jitter to the TTL or with a Mutex Lock
 C) The Cold Start phenomenon. Solve it with Provisioned Concurrency
 D) Read-After-Write Inconsistency. Solve it with strongly consistent reads
 
-**정답: B**
+**Answer: B**
 
-해설: Thundering Herd (Cache Stampede) is the phenomenon where all requests rush to the DB when a popular cache item's TTL expires simultaneously. Countermeasures: (1) add random jitter to the TTL — `TTL = base_ttl + random(0, max_jitter)` to spread out expiration times, (2) Mutex Lock — use Redis's `SET NX` so only the first request queries the DB while the rest wait, (3) Probabilistic Early Expiration — probabilistically refresh in advance just before TTL expiry. A is a DynamoDB partition problem. C is a Lambda initialization delay. D is a distributed-DB consistency problem.
+Explanation: Thundering Herd (Cache Stampede) is the phenomenon where all requests rush to the DB when a popular cache item's TTL expires simultaneously. Countermeasures: (1) add random jitter to the TTL — `TTL = base_ttl + random(0, max_jitter)` to spread out expiration times, (2) Mutex Lock — use Redis's `SET NX` so only the first request queries the DB while the rest wait, (3) Probabilistic Early Expiration — probabilistically refresh in advance just before TTL expiry. A is a DynamoDB partition problem. C is a Lambda initialization delay. D is a distributed-DB consistency problem.
 
 ---

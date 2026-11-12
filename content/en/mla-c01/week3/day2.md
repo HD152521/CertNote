@@ -112,62 +112,62 @@ Next, we explore SageMaker Feature Store for storing, sharing, and consistently 
 
 ## 📝 Practice Questions
 
-**문제 1.** A data scientist wants to design preprocessing by clicking GUI alone for missing imputation, One-Hot encoding, scaling, and visualizing distribution quickly. Most suitable tool?
+**Question 1.** A data scientist wants to design preprocessing by clicking GUI alone for missing imputation, One-Hot encoding, scaling, and visualizing distribution quickly. Most suitable tool?
 
 A) SageMaker Data Wrangler  
 B) Amazon Redshift  
 C) AWS Lambda  
 D) Amazon Kinesis  
 
-**정답: A**  
-해설: Data Wrangler provides 300+ transformations via GUI clicks, visual distribution checks, and no-code fast preprocessing design. B is data warehouse, C serverless compute, D real-time streaming—none for visual data prep.
+**Answer: A**  
+Explanation: Data Wrangler provides 300+ transformations via GUI clicks, visual distribution checks, and no-code fast preprocessing design. B is data warehouse, C serverless compute, D real-time streaming—none for visual data prep.
 
 ---
 
-**문제 2.** Transformations previewed on screen look good in Data Wrangler. To apply them to hundreds of GB of full dataset?
+**Question 2.** Transformations previewed on screen look good in Data Wrangler. To apply them to hundreds of GB of full dataset?
 
 A) Screen results already apply to full dataset; no extra work  
 B) Export flow as SageMaker Processing Job, run on full data  
 C) Re-upload data  
 D) Re-enter transformations manually one by one  
 
-**정답: B**  
-해설: Screen data is sample only; export flow to Processing Job for batch execution on full data. A assumes sample=full (wrong), C/D bypass export without efficiency.
+**Answer: B**  
+Explanation: Screen data is sample only; export flow to Processing Job for batch execution on full data. A assumes sample=full (wrong), C/D bypass export without efficiency.
 
 ---
 
-**문제 3.** Data Wrangler warns "last payment date" feature predicts target abnormally well. Which analysis caught this, and what suspect?
+**Question 3.** Data Wrangler warns "last payment date" feature predicts target abnormally well. Which analysis caught this, and what suspect?
 
 A) Quick Model—data insufficiency  
 B) Target Leakage analysis—target info leaked into features  
 C) Histograms—distribution distortion  
 D) PCA—excess dimensions  
 
-**정답: B**  
-해설: Target Leakage analysis detects abnormally high predictive features as target info leakage. Offline high accuracy becomes useless at inference when that info is unavailable. A estimates performance, C visualizes, D reduces dimensionality—not for leakage.
+**Answer: B**  
+Explanation: Target Leakage analysis detects abnormally high predictive features as target info leakage. Offline high accuracy becomes useless at inference when that info is unavailable. A estimates performance, C visualizes, D reduces dimensionality—not for leakage.
 
 ---
 
-**문제 4.** Want to load selective portions of huge S3 datasets via SQL condition in Data Wrangler. Most suitable source connection?
+**Question 4.** Want to load selective portions of huge S3 datasets via SQL condition in Data Wrangler. Most suitable source connection?
 
 A) Amazon Athena queries S3 data via SQL, load results  
 B) Download entire S3 file locally  
 C) Lambda read row-by-row  
 D) CloudFront cache  
 
-**정답: A**  
-해설: Athena queries S3 with SQL WHERE for efficient selective loading, ideal for large dataset sampling. B costly/slow, C unsuitable for ML loading, D is content delivery cache, not data query.
+**Answer: A**  
+Explanation: Athena queries S3 with SQL WHERE for efficient selective loading, ideal for large dataset sampling. B costly/slow, C unsuitable for ML loading, D is content delivery cache, not data query.
 
 ---
 
-**문제 5.** Want to reuse Data Wrangler preprocessing flow identically for training/inference to prevent training/serving skew. Most appropriate export strategy?
+**Question 5.** Want to reuse Data Wrangler preprocessing flow identically for training/inference to prevent training/serving skew. Most appropriate export strategy?
 
 A) Copy flow to notebook manually each time  
 B) Export flow to SageMaker Pipelines stage or Feature Store for reproducible pipeline integration  
 C) Capture transformation results as image  
 D) Skip transformations, use raw data  
 
-**정답: B**  
-해설: Exporting to Pipelines or Feature Store version-controls and reproducibly applies identical transformations at training and inference, preventing skew. A loses reproducibility, C only has result image not logic, D skips preprocessing.
+**Answer: B**  
+Explanation: Exporting to Pipelines or Feature Store version-controls and reproducibly applies identical transformations at training and inference, preventing skew. A loses reproducibility, C only has result image not logic, D skips preprocessing.
 
 ---

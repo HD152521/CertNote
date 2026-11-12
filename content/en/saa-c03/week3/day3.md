@@ -276,84 +276,84 @@ If you're hunting for keywords in an exam scenario: when HTTP path/host/header r
 
 ## 📝 Practice Questions
 
-**문제 1.** In a microservice architecture, `api.example.com/users` must route to the Users service and `api.example.com/orders` to the Orders service. Both services use the same port (443). What is the most suitable load balancer and configuration?
+**Question 1.** In a microservice architecture, `api.example.com/users` must route to the Users service and `api.example.com/orders` to the Orders service. Both services use the same port (443). What is the most suitable load balancer and configuration?
 
 A) NLB + TCP-based health check
 B) ALB + path-based routing rules
 C) GLB + GENEVE protocol
 D) CLB + sticky session
 
-**정답: B**
-해설: Routing to different backends based on the URL path (`/users`, `/orders`) is a task that requires L7 HTTP understanding. Only ALB supports path-based routing. NLB is L4 and can't see the URL path. GLB is dedicated to security-appliance chaining. CLB is legacy and has no path-based routing.
+**Answer: B**
+Explanation: Routing to different backends based on the URL path (`/users`, `/orders`) is a task that requires L7 HTTP understanding. Only ALB supports path-based routing. NLB is L4 and can't see the URL path. GLB is dedicated to security-appliance chaining. CLB is legacy and has no path-based routing.
 
 ---
 
-**문제 2.** A financial services company provides a B2B API to external partners. The partner's firewall must register the AWS load balancer's IP in a whitelist. The system also uses a custom TCP-based protocol. What is the appropriate solution?
+**Question 2.** A financial services company provides a B2B API to external partners. The partner's firewall must register the AWS load balancer's IP in a whitelist. The system also uses a custom TCP-based protocol. What is the appropriate solution?
 
 A) ALB (HTTPS) + WAF
 B) NLB + Elastic IP (one per AZ)
 C) CloudFront + ALB origin
 D) Global Accelerator + ALB
 
-**정답: B**
-해설: The static-IP requirement is solved with NLB + EIP (Elastic IP). NLB supports the TCP protocol. ALB's IPs change dynamically, making whitelist registration unstable. CloudFront is DNS-based and its IPs aren't fixed. Global Accelerator provides two Anycast IPs, but here attaching EIPs directly to the NLB is the more direct and simpler solution.
+**Answer: B**
+Explanation: The static-IP requirement is solved with NLB + EIP (Elastic IP). NLB supports the TCP protocol. ALB's IPs change dynamically, making whitelist registration unstable. CloudFront is DNS-based and its IPs aren't fixed. Global Accelerator provides two Anycast IPs, but here attaching EIPs directly to the NLB is the more direct and simpler solution.
 
 ---
 
-**문제 3.** A company must inspect all inbound traffic using a Palo Alto Networks NGFW on AWS. When traffic grows, the NGFW cluster must scale automatically, and if a particular NGFW instance fails, traffic must fail over automatically to another instance. Which AWS service should be used?
+**Question 3.** A company must inspect all inbound traffic using a Palo Alto Networks NGFW on AWS. When traffic grows, the NGFW cluster must scale automatically, and if a particular NGFW instance fails, traffic must fail over automatically to another instance. Which AWS service should be used?
 
 A) ALB (register the NGFW in a Target Group)
 B) NLB (register the NGFW in a Target Group)
 C) GLB (chain the NGFW via the GENEVE protocol)
 D) Transit Gateway + custom routing tables
 
-**정답: C**
-해설: Transparently inserting the NGFW into the traffic path, managing the NGFW cluster with Auto Scaling, and failing over automatically on failure is exactly what GLB is for. With the GENEVE protocol, the NGFW inspects the packet and returns it, and GLB forwards it to the original destination. ALB and NLB are HTTP/TCP-layer load balancing — they don't support a 3rd-party appliance chaining structure. Transit Gateway is for inter-VPC routing and has no appliance-chaining automation.
+**Answer: C**
+Explanation: Transparently inserting the NGFW into the traffic path, managing the NGFW cluster with Auto Scaling, and failing over automatically on failure is exactly what GLB is for. With the GENEVE protocol, the NGFW inspects the packet and returns it, and GLB forwards it to the original destination. ALB and NLB are HTTP/TCP-layer load balancing — they don't support a 3rd-party appliance chaining structure. Transit Gateway is for inter-VPC routing and has no appliance-chaining automation.
 
 ---
 
-**문제 4.** In an Auto Scaling Group, when an instance is terminated, in-flight requests are suddenly dropped. Additionally, a newly started JVM-based application server performs poorly for the first few minutes. What is the fix for each?
+**Question 4.** In an Auto Scaling Group, when an instance is terminated, in-flight requests are suddenly dropped. Additionally, a newly started JVM-based application server performs poorly for the first few minutes. What is the fix for each?
 
 A) Termination problem: Termination Protection | New-server problem: a larger instance
 B) Termination problem: configure Deregistration Delay | New-server problem: configure ALB Slow Start
 C) Termination problem: Enhanced Monitoring | New-server problem: a warm-up script via User Data
 D) Termination problem: Multi-AZ deployment | New-server problem: use a Reserved Instance
 
-**정답: B**
-해설: Deregistration Delay (default 300 seconds) waits for in-flight requests to complete when an instance is removed from the TG. Increase the 300 seconds if request processing takes a long time, and decrease it when you need fast termination such as a Spot interruption. ALB Slow Start gradually ramps up the traffic sent to a new target over the configured time (30–900 seconds) to wait for JVM JIT compilation to complete. Both settings are configured at the Target Group level.
+**Answer: B**
+Explanation: Deregistration Delay (default 300 seconds) waits for in-flight requests to complete when an instance is removed from the TG. Increase the 300 seconds if request processing takes a long time, and decrease it when you need fast termination such as a Spot interruption. ALB Slow Start gradually ramps up the traffic sent to a new target over the configured time (30–900 seconds) to wait for JVM JIT compilation to complete. Both settings are configured at the Target Group level.
 
 ---
 
-**문제 5.** Which statement about the difference in the default Cross-Zone Load Balancing setting between ALB and NLB is correct?
+**Question 5.** Which statement about the difference in the default Cross-Zone Load Balancing setting between ALB and NLB is correct?
 
 A) Both ALB and NLB default to on, with no extra cost
 B) ALB defaults to on (no extra cost) / NLB defaults to off (Cross-AZ data cost when enabled)
 C) ALB defaults to off / NLB defaults to on (no extra cost)
 D) Both LBs default to off, with the same extra cost
 
-**정답: B**
-해설: For ALB, even distribution is generally optimal for HTTP workloads, so it defaults to on with no extra cost. NLB and GLB default to off, and enabling it incurs a cost of around $0.01/GB for cross-AZ data transfer. If you keep Cross-Zone off on an NLB, you must keep the number of targets per AZ balanced to avoid uneven distribution.
+**Answer: B**
+Explanation: For ALB, even distribution is generally optimal for HTTP workloads, so it defaults to on with no extra cost. NLB and GLB default to off, and enabling it incurs a cost of around $0.01/GB for cross-AZ data transfer. If you keep Cross-Zone off on an NLB, you must keep the number of targets per AZ balanced to avoid uneven distribution.
 
 ---
 
-**문제 6.** A multi-tenant SaaS platform provides a different subdomain per customer (`tenant1.saas.com`, `tenant2.saas.com`). You want to use a single ALB for all domains while applying a separate TLS certificate to each domain. How do you configure this?
+**Question 6.** A multi-tenant SaaS platform provides a different subdomain per customer (`tenant1.saas.com`, `tenant2.saas.com`). You want to use a single ALB for all domains while applying a separate TLS certificate to each domain. How do you configure this?
 
 A) Create a separate ALB for each domain
 B) Register multiple ACM certificates on one ALB via SNI (Server Name Indication)
 C) Put CloudFront in front and apply a separate certificate to each domain
 D) Use NLB with TLS passthrough so each EC2 handles its own certificate
 
-**정답: B**
-해설: ALB supports SNI (RFC 6066), so you can register multiple ACM certificates on a single HTTPS listener. When the client includes the domain name in the SNI header during the TLS handshake, ALB responds with the matching certificate. You can register up to 25 certificates per ALB (default), and a limit-increase request is also possible. A separate ALB per domain carries heavy cost and management overhead. C is also a valid pattern, but the question presupposes the use of a single ALB.
+**Answer: B**
+Explanation: ALB supports SNI (RFC 6066), so you can register multiple ACM certificates on a single HTTPS listener. When the client includes the domain name in the SNI header during the TLS handshake, ALB responds with the matching certificate. You can register up to 25 certificates per ALB (default), and a limit-increase request is also possible. A separate ALB per domain carries heavy cost and management overhead. C is also a valid pattern, but the question presupposes the use of a single ALB.
 
 ---
 
-**문제 7.** You operate a UDP-based real-time game server (port 7000) on AWS. You must deliver consistent low latency to players worldwide, and in-progress game sessions must not be dropped when game servers scale in. What is the most suitable architecture?
+**Question 7.** You operate a UDP-based real-time game server (port 7000) on AWS. You must deliver consistent low latency to players worldwide, and in-progress game sessions must not be dropped when game servers scale in. What is the most suitable architecture?
 
 A) ALB (HTTP/HTTPS) + ASG + WAF
 B) Global Accelerator + NLB (UDP) + ASG + Deregistration Delay 300s
 C) CloudFront + ALB + ElastiCache session sharing
 D) Route 53 Geolocation + NLB + ASG
 
-**정답: B**
-해설: Only NLB supports the UDP protocol. Consistent low latency for players worldwide is delivered by Global Accelerator (BGP Anycast), which routes from the nearest edge over the AWS backbone network. Configure Deregistration Delay appropriately so that in-progress game sessions are allowed to complete on scale-in. Route 53 Geolocation is delayed by minutes for failover or traffic shifting because of DNS TTL.
+**Answer: B**
+Explanation: Only NLB supports the UDP protocol. Consistent low latency for players worldwide is delivered by Global Accelerator (BGP Anycast), which routes from the nearest edge over the AWS backbone network. Configure Deregistration Delay appropriately so that in-progress game sessions are allowed to complete on scale-in. Route 53 Geolocation is delayed by minutes for failover or traffic shifting because of DNS TTL.

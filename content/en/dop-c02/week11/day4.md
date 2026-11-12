@@ -135,118 +135,118 @@ The next article wraps Week 11 entirely in scenario problems — X-Ray tracing, 
 
 ## 📝 Practice Questions
 
-**문제 1.** "수억 줄 로그에서 특정 에러 메시지가 포함된 문서를 밀리초 안에 찾기"와 "지난 5분 API 에러율 p99 그리기"는 각각 어떤 엔진이 적합한가?
+**Question 1.** Which engine suits each of these: "finding a document containing a specific error message among hundreds of millions of log lines within milliseconds" and "plotting the p99 API error rate over the last 5 minutes"?
 
-A) 둘 다 CloudWatch
+A) CloudWatch for both
 
-B) 전자는 역인덱스(OpenSearch), 후자는 TSDB(Prometheus/AMP) — 데이터 본질이 달라 다른 엔진
+B) The former suits an inverted index (OpenSearch), the latter a TSDB (Prometheus/AMP) — the data is fundamentally different, so the engines differ
 
-C) 둘 다 OpenSearch
+C) OpenSearch for both
 
-D) 둘 다 Prometheus
+D) Prometheus for both
 
-**정답: B**
+**Answer: B**
 
-해설: 임의 텍스트에서 특정 문서를 찾는 전문 검색은 "단어→문서" 역인덱스(OpenSearch)에 최적이고, 시간축 위 수치를 집계하는 시계열 쿼리는 압축·범위 스캔에 최적화된 TSDB(Prometheus/AMP)에 적합하다. 두 데이터 특성(임의 텍스트 vs 규칙적 수치 시계열)이 근본적으로 달라 다른 자료구조를 쓰며, 그래서 OpenSearch와 Prometheus가 따로 존재한다. 한 엔진으로 둘 다 최적화할 수 없다.
-
----
-
-**문제 2.** OpenSearch에서 30일 지난 로그를 비용 효율적으로 삭제하는 표준 패턴은?
-
-A) 거대한 단일 인덱스에서 오래된 문서를 개별 삭제 쿼리로 제거
-
-B) 날짜별 인덱스(`logs-app-2026.06.02`)로 분리하고 ISM으로 오래된 인덱스를 통째로 drop — 인덱스 삭제는 파일 삭제 수준으로 싸다
-
-C) S3로 복사 후 OpenSearch 클러스터를 재생성
-
-D) FGAC로 접근을 막는다
-
-**정답: B**
-
-해설: 개별 문서 삭제는 비싸지만, 로그를 날짜별 인덱스로 분리하면 오래된 데이터 삭제가 그 날짜 인덱스를 통째로 drop하는 것으로 끝나 매우 싸다. ISM(Index State Management)이 "생성 7일 후 UltraWarm, 30일 후 삭제" 같은 생명주기를 자동화한다. 이는 시계열 데이터의 보편 패턴인 시간 파티셔닝(RDBMS 파티션, S3 날짜 prefix, X-Ray trace 시각 파티셔닝과 동일)이다. 개별 삭제(A)는 비효율적이다.
+Explanation: Full-text search, which finds a specific document in arbitrary text, is best served by a "word → document" inverted index (OpenSearch), while time-series queries that aggregate numeric values along the time axis suit a TSDB (Prometheus/AMP) optimized for compression and range scans. The two data characteristics (arbitrary text vs regular numeric time series) are fundamentally different and use different data structures, which is why OpenSearch and Prometheus exist separately. One engine cannot be optimized for both.
 
 ---
 
-**문제 3.** Prometheus의 pull 모델에서 짧게 살다 사라지는 배치 작업·Lambda의 메트릭을 놓치는 문제를 푸는 표준 방법은?
+**Question 2.** What is the standard pattern for cost-efficiently deleting logs older than 30 days in OpenSearch?
 
-A) FixedRate 샘플링
+A) Remove old documents from one huge single index with individual delete queries
 
-B) Pushgateway — 단명 작업이 메트릭을 push해두면 Prometheus가 거기서 scrape
+B) Split into daily indexes (`logs-app-2026.06.02`) and drop old indexes whole with ISM — deleting an index is as cheap as deleting a file
+
+C) Copy to S3 and then recreate the OpenSearch cluster
+
+D) Block access with FGAC
+
+**Answer: B**
+
+Explanation: Deleting individual documents is expensive, but if logs are split into daily indexes, deleting old data is done simply by dropping that day's index whole, which is very cheap. ISM (Index State Management) automates lifecycles such as "move to UltraWarm 7 days after creation, delete after 30 days." This is time partitioning, a universal pattern for time-series data (the same as RDBMS partitions, S3 date prefixes, and X-Ray's time-based trace partitioning). Individual deletion (A) is inefficient.
+
+---
+
+**Question 3.** What is the standard way to solve the problem in Prometheus's pull model of missing metrics from short-lived batch jobs and Lambda functions that disappear quickly?
+
+A) FixedRate sampling
+
+B) Pushgateway — short-lived jobs push their metrics there, and Prometheus scrapes from it
 
 C) UltraWarm
 
 D) BM25
 
-**정답: B**
+**Answer: B**
 
-해설: Prometheus는 타깃의 `/metrics`를 주기적으로 scrape하는 pull 모델이라, scrape하러 갔을 때 이미 죽은 단명 작업(배치·Lambda)의 메트릭을 놓친다. Pushgateway는 단명 작업이 종료 전 메트릭을 push해두는 중간 저장소로, Prometheus가 Pushgateway를 scrape해 메트릭을 회수한다. 이것이 pull 모델에서 단명 워크로드를 다루는 표준 우회다. 샘플링(A)·UltraWarm(C)·BM25(D)는 무관하다.
-
----
-
-**문제 4.** Prometheus/AMP를 죽이는 가장 흔한 운영 사고는?
-
-A) 디스크 부족
-
-B) 카디널리티 폭발 — `user_id`처럼 고유값이 수백만인 레이블을 넣으면 시계열이 폭발해 메모리가 터진다
-
-C) PromQL 문법 오류
-
-D) SigV4 인증 만료
-
-**정답: B**
-
-해설: Prometheus는 `metric{label=value}`의 고유 레이블 조합마다 별도 시계열을 만든다. `user_id`처럼 카디널리티가 수백만인 레이블을 넣으면 시계열이 폭발해 메모리가 고갈되고 Prometheus가 죽는다. 이는 Day 1(Week 10)에서 본 CloudWatch high-cardinality 함정과 동일한 원리다 — 차원/레이블이 곧 시계열 수이자 자원 소비다. 고카디널리티 식별자는 레이블이 아니라 로그(역인덱스)로 보내야 한다. 레이블 카디널리티 관리가 Prometheus 운영의 핵심이다.
+Explanation: Prometheus uses a pull model that periodically scrapes the target's `/metrics`, so it misses the metrics of short-lived jobs (batch, Lambda) that are already dead by the time it comes to scrape. The Pushgateway is an intermediate store where short-lived jobs push their metrics before terminating, and Prometheus scrapes the Pushgateway to retrieve them. This is the standard workaround for handling short-lived workloads in the pull model. Sampling (A), UltraWarm (C), and BM25 (D) are unrelated.
 
 ---
 
-**문제 5.** AWS(EKS)와 온프레미스 Kubernetes의 메트릭을 하나의 대시보드에서 나란히 보려 한다. 이를 가능하게 한 핵심은?
+**Question 4.** What is the most common operational incident that kills Prometheus/AMP?
 
-A) 두 환경을 같은 VPC로 합친다
+A) Running out of disk
 
-B) 양쪽 모두 Prometheus 호환(AWS는 AMP, 온프레미스는 자체 Prometheus)이라 AMG에 둘 다 데이터 소스로 연결하고 같은 PromQL·대시보드를 재사용
+B) Cardinality explosion — adding a label with millions of unique values such as `user_id` explodes the time series and exhausts memory
 
-C) 온프레미스를 AWS로 마이그레이션
+C) PromQL syntax errors
 
-D) CloudWatch로 통합
+D) SigV4 authentication expiry
 
-**정답: B**
+**Answer: B**
 
-해설: Grafana(AMG)의 가치는 백엔드 중립 시각화 계층이라는 점이다. AWS 쪽 AMP와 온프레미스 자체 Prometheus를 둘 다 Grafana 데이터 소스로 연결하면, 둘 다 Prometheus 호환이라 같은 PromQL 쿼리·같은 대시보드를 양쪽에 재사용해 하나의 화면에서 나란히 본다. 표준(PromQL)을 공유하면 이질적 인프라도 단일 시각화로 통합된다. VPC 합병(A)·마이그레이션(C)은 불필요하게 과하다.
-
----
-
-**문제 6.** OpenSearch의 BM25가 로그 검색에서 의미 있는 이유는?
-
-A) 데이터를 압축한다
-
-B) 단어 빈도(TF)와 희귀도(IDF)를 결합해 관련도를 점수화 — 흔한 노이즈("error", "the")보다 희귀한 신호("OutOfMemoryError")를 위로 끌어올린다
-
-C) 시계열을 집계한다
-
-D) 인덱스를 자동 삭제한다
-
-**정답: B**
-
-해설: BM25는 정보 검색의 관련도 순위 알고리즘으로, 단어가 문서에 자주 나오는지(TF)와 전체 문서 중 얼마나 희귀한지(IDF)를 결합해 점수를 매긴다. 흔한 단어는 IDF가 낮아 기여가 작고, 희귀한 단어는 IDF가 높아 검색의 핵심이 된다. 로그 검색에서 이는 수억 줄 중 진짜 신호가 되는 희귀 패턴을 노이즈 위로 끌어올린다 — 검색은 단순 매칭이 아니라 관련도 순위화다. 압축(A)·시계열 집계(C)는 TSDB의 영역이다.
+Explanation: Prometheus creates a separate time series for every unique label combination of `metric{label=value}`. Adding a label with millions of distinct values such as `user_id` explodes the number of time series, exhausts memory, and kills Prometheus. This is the same principle as the CloudWatch high-cardinality trap seen on Day 1 (Week 10) — dimensions/labels are the number of time series and therefore resource consumption. High-cardinality identifiers should be sent to logs (an inverted index), not to labels. Managing label cardinality is the core of Prometheus operations.
 
 ---
 
-**문제 7.** OpenSearch Serverless와 Provisioned의 핵심 차이는?
+**Question 5.** You want to view metrics from AWS (EKS) and on-premises Kubernetes side by side on a single dashboard. What is the key that makes this possible?
 
-A) Serverless는 검색이 불가능
+A) Merge the two environments into the same VPC
 
-B) Provisioned는 클러스터(노드·인스턴스)를 직접 관리하고 스토리지 계층화(Hot/UltraWarm/Cold)가 가능, Serverless는 OCU 시간 과금으로 클러스터 관리가 없고 indexing/search 용량이 분리 스케일
+B) Both sides are Prometheus-compatible (AMP on AWS, a self-managed Prometheus on-premises), so connect both as data sources in AMG and reuse the same PromQL and dashboards
 
-C) Serverless가 항상 더 비싸다
+C) Migrate on-premises to AWS
 
-D) Provisioned는 VPC를 못 쓴다
+D) Consolidate with CloudWatch
 
-**정답: B**
+**Answer: B**
 
-해설: Provisioned는 노드 수·인스턴스 타입을 직접 정하고 Hot/UltraWarm/Cold 스토리지 계층화로 비용을 최적화한다. Serverless는 클러스터 관리가 사라지고 OCU(OpenSearch Compute Unit) 시간당 과금이며 indexing과 search 용량이 분리되어 독립 스케일한다. 트래픽이 들쭉날쭉하거나 작은 워크로드엔 Serverless, 큰 안정 워크로드와 세밀한 스토리지 제어엔 Provisioned가 맞는다. Serverless도 검색 가능(A 틀림)하다.
+Explanation: The value of Grafana (AMG) is that it is a backend-neutral visualization layer. If both AMP on the AWS side and the self-managed Prometheus on-premises are connected as Grafana data sources, both are Prometheus-compatible, so the same PromQL queries and the same dashboards can be reused on both sides and viewed side by side on a single screen. Sharing a standard (PromQL) lets even heterogeneous infrastructure be unified into a single visualization. Merging VPCs (A) and migrating (C) are unnecessarily excessive.
+
+---
+
+**Question 6.** Why is OpenSearch's BM25 meaningful for log search?
+
+A) It compresses the data
+
+B) It scores relevance by combining term frequency (TF) and rarity (IDF) — lifting rare signals ("OutOfMemoryError") above common noise ("error", "the")
+
+C) It aggregates time series
+
+D) It deletes indexes automatically
+
+**Answer: B**
+
+Explanation: BM25 is a relevance-ranking algorithm from information retrieval that scores by combining how often a term appears in a document (TF) with how rare it is across all documents (IDF). Common words have a low IDF and contribute little, while rare words have a high IDF and become the key to the search. In log search, this lifts the rare patterns that are the real signal among hundreds of millions of lines above the noise — search is not simple matching but relevance ranking. Compression (A) and time-series aggregation (C) are the domain of a TSDB.
+
+---
+
+**Question 7.** What is the key difference between OpenSearch Serverless and Provisioned?
+
+A) Serverless cannot perform searches
+
+B) Provisioned requires you to manage the cluster (nodes/instances) yourself and supports storage tiering (Hot/UltraWarm/Cold), whereas Serverless is billed by OCU-hours, has no cluster management, and scales indexing and search capacity separately
+
+C) Serverless is always more expensive
+
+D) Provisioned cannot use a VPC
+
+**Answer: B**
+
+Explanation: With Provisioned, you choose the number of nodes and instance types yourself and optimize cost with Hot/UltraWarm/Cold storage tiering. With Serverless, cluster management disappears, billing is per OCU (OpenSearch Compute Unit) hour, and indexing and search capacity are separated and scale independently. Serverless suits spiky traffic or small workloads, while Provisioned suits large, stable workloads and fine-grained storage control. Serverless can also perform searches (A is wrong).
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 다섯 가지다. 첫째, 옵저버빌리티 저장소 선택은 데이터 본질의 문제로, 임의 텍스트 검색은 역인덱스(OpenSearch), 수치 시계열 집계는 TSDB(Prometheus/AMP)라는 근본적으로 다른 엔진이 푼다. 둘째, 역인덱스는 "단어→문서" 구조와 BM25(TF-IDF) 관련도로 텍스트 검색을, TSDB는 delta-of-delta·XOR 압축(Gorilla)으로 고빈도 시계열을 처리해 합칠 수 없다. 셋째, OpenSearch는 날짜별 인덱스 + ISM으로 오래된 데이터를 통째로 drop해 생명주기를 관리하며 Provisioned(계층 스토리지)/Serverless(OCU)로 나뉜다. 넷째, AMP는 관리형 Prometheus(remote_write·PromQL·SigV4·보존 확장)이고 pull 모델의 단명 작업은 Pushgateway로, 카디널리티 폭발이 최대 운영 사고다. 다섯째, AMG는 백엔드 중립 시각화 계층으로 이질적 데이터 소스(AMP·OpenSearch·X-Ray·CloudWatch)를 단일 대시보드로 통합하고 PromQL 표준 공유로 멀티 클라우드도 묶으며, EKS 관찰성 표준 스택은 ADOT + AMP + AMG다.
+There are five key takeaways today. First, choosing observability storage is a question of the nature of the data: arbitrary text search is solved by an inverted index (OpenSearch), and numeric time-series aggregation by a TSDB (Prometheus/AMP) — fundamentally different engines. Second, an inverted index handles text search with a "word → document" structure and BM25 (TF-IDF) relevance, while a TSDB handles high-frequency time series with delta-of-delta and XOR compression (Gorilla), so the two cannot be merged. Third, OpenSearch manages lifecycles with daily indexes + ISM that drop old data whole, and comes as Provisioned (tiered storage) or Serverless (OCU). Fourth, AMP is managed Prometheus (remote_write, PromQL, SigV4, extended retention); short-lived jobs in the pull model go through the Pushgateway, and cardinality explosion is the biggest operational incident. Fifth, AMG is a backend-neutral visualization layer that unifies heterogeneous data sources (AMP, OpenSearch, X-Ray, CloudWatch) into a single dashboard and ties multi-cloud together through the shared PromQL standard, and the standard EKS observability stack is ADOT + AMP + AMG.

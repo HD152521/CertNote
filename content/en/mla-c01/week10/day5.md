@@ -66,69 +66,69 @@ Trust your prep. Answer calmly. Good luck.
 
 ## 📝 Practice Questions
 
-**문제 1.** MLA-C01 시험 구성에 대한 설명으로 가장 정확한 것은?
+**Question 1.** Which statement about the MLA-C01 exam structure is most accurate?
 
-A) 65문항 모두 채점되며 100문항 중 80개를 맞혀야 한다  
-B) 총 65문항(채점 50 + 비채점 15), 130분, 합격 스케일 점수 720이며 비채점 문항은 점수에 반영되지 않는다  
-C) 50문항/60분, 합격 600점이다  
-D) 문항 수와 시간은 응시자마다 무작위로 다르다  
+A) All 65 questions are scored, and you must answer 80 of 100 questions correctly  
+B) 65 questions in total (50 scored + 15 unscored), 130 minutes, a passing scaled score of 720, and unscored questions do not count toward the score  
+C) 50 questions in 60 minutes, with a passing score of 600  
+D) The number of questions and time vary randomly for each candidate  
 
-**정답: B**  
-해설: MLA-C01은 65문항(채점 50 + 비채점 15)을 130분 동안 풀며 합격선은 1000점 만점에 720점이고, 비채점 15문항은 점수에 반영되지 않는다. A는 채점/비채점 구분과 점수 기준이 틀렸고, C는 문항 수·시간·합격선이 모두 다르며, D는 구성이 표준화되어 있어 사실이 아니다.
-
----
-
-**문제 2.** 1차 통과 중 한 시나리오 문항에서 2분이 지나도 답을 확신할 수 없다. 가장 권장되는 행동은?
-
-A) 확신이 설 때까지 그 문항에 계속 머문다  
-B) 가장 그럴듯한 답을 임시로 고르고 표시(flag)한 뒤 다음 문항으로 넘어가, 검토 단계에서 다시 본다  
-C) 그 문항을 빈칸으로 두고 넘어간다  
-D) 시험을 일찍 종료한다  
-
-**정답: B**  
-해설: 모든 문항 배점이 같으므로 한 문항에 시간을 과하게 쓰지 않고 임시 답 + 표시 후 넘어가 검토 단계에서 다시 보는 것이 점수를 지키는 전략이다. A는 뒤쪽 쉬운 문항을 놓치게 하고, C는 오답 감점이 없으므로 빈칸이 순손해이며, D는 남은 문항을 포기하는 것이다.
+**Answer: B**  
+Explanation: MLA-C01 has 65 questions (50 scored + 15 unscored) to be completed in 130 minutes, the passing score is 720 out of 1000, and the 15 unscored questions do not count toward the score. A is wrong about the scored/unscored distinction and the scoring criteria, C is wrong on the number of questions, time, and passing score, and D is untrue because the exam structure is standardized.
 
 ---
 
-**문제 3.** 긴 사례형 문항을 효율적으로 푸는 권장 순서로 가장 적절한 것은?
+**Question 2.** During the first pass, you cannot be confident of the answer to a scenario question after 2 minutes. What is the most recommended action?
 
-A) 본문을 처음부터 끝까지 정독한 뒤 마지막에 질문을 읽는다  
-B) 마지막 질문(무엇을 묻는지)을 먼저 읽고, 본문에서 결정 키워드를 찾아 보기를 보기 전에 정답을 떠올린 뒤 함정 보기를 소거한다  
-C) 보기 4개를 먼저 외운 뒤 본문을 읽는다  
-D) 키워드 무시하고 직관으로만 고른다  
+A) Stay on that question until you feel confident  
+B) Tentatively select the most plausible answer, flag it, move on to the next question, and revisit it in the review phase  
+C) Leave that question blank and move on  
+D) End the exam early  
 
-**정답: B**  
-해설: 질문을 먼저 읽으면 본문에서 무엇을 찾을지 명확해지고, 키워드→기능 번역으로 정답을 먼저 정한 뒤 요구를 위반하는 보기를 소거하는 순서가 가장 효율적이다. A는 무엇을 찾을지 모른 채 정독해 시간을 낭비하고, C는 비효율적이며, D는 함정에 빠지기 쉽다.
-
----
-
-**문제 4.** "다음 중 가장 비용 효율적인(MOST cost-effective) 옵션은?" 같은 최상급 한정어가 포함된 문항을 풀 때 핵심 주의점은?
-
-A) 기술적으로 작동하는 보기 아무거나 고른다  
-B) 여러 보기가 작동하더라도 한정어 기준(비용)에서 최선인 하나만 정답이므로, 한정어를 기준으로 비교해 고른다  
-C) 한정어는 무시해도 된다  
-D) 항상 가장 비싼 옵션이 정답이다  
-
-**정답: B**  
-해설: 최상급 한정어 문항은 여러 보기가 기술적으로 가능하더라도 그 기준(비용·운영부담·보안)에서 최선인 하나만 정답이므로, 한정어를 명시적 비교 기준으로 삼아야 한다. A·C는 한정어를 무시해 "작동하지만 최선이 아닌" 함정을 고르게 하고, D는 비용 효율과 정반대다.
+**Answer: B**  
+Explanation: Since every question is worth the same, the strategy that protects your score is not to spend too much time on one question, but to choose a tentative answer, flag it, move on, and revisit it in the review phase. A makes you miss easy questions later on, C is a pure loss because there is no penalty for wrong answers so leaving it blank gains nothing, and D means giving up on the remaining questions.
 
 ---
 
-**문제 5.** 시험 직전 마지막 복습 방법으로 가장 효과적인 것은?
+**Question 3.** What is the most appropriate recommended order for solving a long case-style question efficiently?
 
-A) 처음 보는 새 서비스 문서를 길게 읽어 지식을 추가한다  
-B) 이미 아는 키워드→기능 매핑을 인출 연습(소리 내어 매핑)하며 회상 경로를 다진다  
-C) 밤을 새워 모든 강의를 다시 본다  
-D) 아무 준비 없이 직관에만 의존한다  
+A) Read the passage thoroughly from beginning to end and read the question last  
+B) Read the final question (what is being asked) first, find the decision keywords in the passage, think of the answer before looking at the options, and then eliminate the trap options  
+C) Memorize the four options first, then read the passage  
+D) Ignore the keywords and choose by intuition alone  
 
-**정답: B**  
-해설: 시험 직전에는 새 정보를 추가하기보다 이미 학습한 내용을 인출(능동 회상)하는 연습이 시험장 회상에 가장 효과적이다. A는 단기간에 소화하기 어렵고, C는 수면 부족으로 컨디션을 해치며, D는 준비를 활용하지 못하는 방법이다.
+**Answer: B**  
+Explanation: Reading the question first makes clear what to look for in the passage, and the most efficient order is to settle on the answer first through keyword-to-feature translation and then eliminate the options that violate the requirements. A wastes time by reading closely without knowing what to look for, C is inefficient, and D makes it easy to fall into traps.
+
+---
+
+**Question 4.** When solving a question that contains a superlative qualifier such as "Which of the following is the MOST cost-effective option?", what is the key point to watch for?
+
+A) Pick any option that technically works  
+B) Even if several options work, only the one that is best on the qualifier's criterion (cost) is correct, so compare and choose based on the qualifier  
+C) The qualifier can be ignored  
+D) The most expensive option is always the answer  
+
+**Answer: B**  
+Explanation: In questions with a superlative qualifier, even if several options are technically feasible, only the one that is best on that criterion (cost, operational overhead, security) is correct, so you must use the qualifier as the explicit comparison criterion. A and C ignore the qualifier and lead you to choose the "works but is not the best" trap, and D is the exact opposite of cost efficiency.
+
+---
+
+**Question 5.** What is the most effective way to do a final review right before the exam?
+
+A) Read long documentation for new services you have never seen to add knowledge  
+B) Practice retrieval of keyword-to-feature mappings you already know (saying the mappings aloud) to strengthen recall pathways  
+C) Stay up all night rewatching all the lectures  
+D) Rely only on intuition with no preparation  
+
+**Answer: B**  
+Explanation: Right before the exam, practicing retrieval (active recall) of what you have already learned is most effective for recall in the exam room, rather than adding new information. A is hard to absorb in a short time, C hurts your condition through sleep deprivation, and D fails to make use of your preparation.
 
 ---
 
 
 ## 📝 Practice Questions
 
-**문제 1-5** [Practice questions in Korean follow after marker]
+**Questions 1-5** [Practice questions in Korean follow after marker]
 
 ---

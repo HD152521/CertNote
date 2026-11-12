@@ -149,91 +149,91 @@ Beanstalk: .ebextensions, Immutable is safest
 
 ## 📝 Final Mock Exam - Part 3
 
-**문제 1.** To safely encrypt 100MB file with KMS?
+**Question 1.** To safely encrypt 100MB file with KMS?
 
 A) Call kms:Encrypt API directly  
 B) Envelope Encryption (GenerateDataKey)  
 C) Use S3 SSE-S3  
 D) Not possible  
 
-**정답: B** - KMS direct encryption has 4KB limit, so 100MB file requires Envelope Encryption.
+**Answer: B** - KMS direct encryption has 4KB limit, so 100MB file requires Envelope Encryption.
 
 ---
 
-**문제 2.** To analyze where latency occurs in Lambda execution path?
+**Question 2.** To analyze where latency occurs in Lambda execution path?
 
 A) CloudWatch Metrics  
 B) CloudTrail  
 C) X-Ray  
 D) VPC Flow Logs  
 
-**정답: C** - X-Ray distributed tracing records execution time of each service as segments to identify bottlenecks.
+**Answer: C** - X-Ray distributed tracing records execution time of each service as segments to identify bottlenecks.
 
 ---
 
-**문제 3.** To gradually transition to new Lambda version with auto-rollback on error?
+**Question 3.** To gradually transition to new Lambda version with auto-rollback on error?
 
 A) CodeDeploy AllAtOnce  
 B) CodeDeploy Canary or Linear  
 C) CloudFormation update  
 D) Manual deployment  
 
-**정답: B** - CodeDeploy Canary/Linear gradually shifts traffic and auto-rollbacks on error detection.
+**Answer: B** - CodeDeploy Canary/Linear gradually shifts traffic and auto-rollbacks on error detection.
 
 ---
 
-**문제 4.** Architecture to instantly detect root login?
+**Question 4.** Architecture to instantly detect root login?
 
 A) CloudWatch alarm  
 B) CloudTrail + EventBridge + SNS  
 C) GuardDuty  
 D) Config rule  
 
-**정답: B** - Detect root login from CloudTrail, send instant notification via EventBridge→SNS.
+**Answer: B** - Detect root login from CloudTrail, send instant notification via EventBridge→SNS.
 
 ---
 
-**문제 5.** To use SSM Parameter Store SecureString in code?
+**Question 5.** To use SSM Parameter Store SecureString in code?
 
 A) Auto inject as environment variable without API  
 B) ssm:GetParameter API with --with-decryption option  
 C) Call KMS decrypt API directly  
 D) Use Secrets Manager API  
 
-**정답: B** - GetParameter API with `--with-decryption` returns KMS-decrypted value.
+**Answer: B** - GetParameter API with `--with-decryption` returns KMS-decrypted value.
 
 ---
 
-**문제 6.** Safe way to use DB password in buildspec.yml?
+**Question 6.** Safe way to use DB password in buildspec.yml?
 
 A) Plain text in buildspec.yml  
 B) Environment variable as plain text  
 C) Reference Secrets Manager ARN in secrets-manager section  
 D) Save to S3 file then download  
 
-**정답: C** - buildspec.yml `env.secrets-manager` section references Secrets Manager ARN for safe injection.
+**Answer: C** - buildspec.yml `env.secrets-manager` section references Secrets Manager ARN for safe injection.
 
 ---
 
-**문제 7.** To set different DB URL per environment in Elastic Beanstalk?
+**Question 7.** To set different DB URL per environment in Elastic Beanstalk?
 
 A) Modify buildspec.yml  
 B) Set environment variables in .ebextensions with option_settings  
 C) Store config file in S3  
 D) Hardcode in app  
 
-**정답: B** - `.ebextensions/*.config` `option_settings` allows different environment variables per environment.
+**Answer: B** - `.ebextensions/*.config` `option_settings` allows different environment variables per environment.
 
 ---
 
-**문제 8.** To filter traces by orderId in X-Ray?
+**Question 8.** To filter traces by orderId in X-Ray?
 
 A) Store orderId in Metadata  
 B) Store orderId in Annotation  
 C) Print orderId in logs  
 D) Use CloudWatch dashboard  
 
-**정답: B** - X-Ray Annotations are indexed for filtering. Metadata is not indexed and cannot filter.
+**Answer: B** - X-Ray Annotations are indexed for filtering. Metadata is not indexed and cannot filter.
 
 ---
 

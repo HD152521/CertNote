@@ -158,91 +158,91 @@ Next we look at Secrets Manager and Parameter Store, layering on top of KMS to h
 
 ## 📝 Practice Questions
 
-**문제 1.** To encrypt a 10MB file with KMS, what is the correct method?
+**Question 1.** To encrypt a 10MB file with KMS, what is the correct method?
 
 A) Encrypt the file directly with `kms:Encrypt` API
 B) Use `GenerateDataKey` to get a data key, then perform envelope encryption locally
 C) Split the file into 4KB chunks and call `kms:Encrypt` for each
 D) KMS cannot do it; create an AES key directly and store it in the file
 
-**정답: B**
+**Answer: B**
 
-해설: The maximum plaintext that can be directly encrypted with `kms:Encrypt` is **4KB**. 10MB far exceeds this limit, so envelope encryption is required — call `GenerateDataKey` to receive both plaintext DEK and encrypted DEK, encrypt the large data locally with the plaintext DEK, then immediately discard it. C) Splitting into chunks and calling KMS repeatedly causes API limit exhaustion and cost explosion. D) Managing keys manually is an anti-pattern. The 4KB limit reflects KMS's design intent: "tool to protect small secrets," not "tool to directly encrypt large data."
+Explanation: The maximum plaintext that can be directly encrypted with `kms:Encrypt` is **4KB**. 10MB far exceeds this limit, so envelope encryption is required — call `GenerateDataKey` to receive both plaintext DEK and encrypted DEK, encrypt the large data locally with the plaintext DEK, then immediately discard it. C) Splitting into chunks and calling KMS repeatedly causes API limit exhaustion and cost explosion. D) Managing keys manually is an anti-pattern. The 4KB limit reflects KMS's design intent: "tool to protect small secrets," not "tool to directly encrypt large data."
 
 ---
 
-**문제 2.** You allowed `kms:Decrypt` in IAM policy on a Customer Managed Key, yet decryption is denied. What is the most likely cause?
+**Question 2.** You allowed `kms:Decrypt` in IAM policy on a Customer Managed Key, yet decryption is denied. What is the most likely cause?
 
 A) The CMK is asymmetric
 B) The key policy lacks an IAM delegation (root principal Allow) statement
 C) Key rotation is disabled
 D) The region is not us-east-1
 
-**정답: B**
+**Answer: B**
 
-해설: KMS makes key policy the final authority. Without a `Principal: {"AWS": "...:root"}` IAM delegation statement in the key policy, even `kms:Decrypt` in IAM policy has no effect. This statement is auto-included in the default key policy but easy to omit when writing custom policy — resulting in "key lockout." The correct answer is always "both key policy AND IAM policy required." A) Asymmetric keys can still Decrypt. C) Rotation is unrelated to permissions. D) Region enforcement is CloudFront ACM, not KMS decryption.
+Explanation: KMS makes key policy the final authority. Without a `Principal: {"AWS": "...:root"}` IAM delegation statement in the key policy, even `kms:Decrypt` in IAM policy has no effect. This statement is auto-included in the default key policy but easy to omit when writing custom policy — resulting in "key lockout." The correct answer is always "both key policy AND IAM policy required." A) Asymmetric keys can still Decrypt. C) Rotation is unrelated to permissions. D) Region enforcement is CloudFront ACM, not KMS decryption.
 
 ---
 
-**문제 3.** What is the auto-rotation period for AWS Managed Key (`aws/s3`, etc.)?
+**Question 3.** What is the auto-rotation period for AWS Managed Key (`aws/s3`, etc.)?
 
 A) 90 days
 B) 1 year (365 days)
 C) 3 years (1095 days)
 D) Does not rotate
 
-**정답: B**
+**Answer: B**
 
-해설: AWS Managed Key auto-rotates every **1 year (365 days)**. Before May 2022, it was 3 years (1095 days), but AWS changed policy. Old study materials or test banks may contain "3 years"; watch for that. CMK default auto-rotation is also 1 year, and since 2024, custom periods (90–2560 days) are available. Rotation adds new backing key material but keeps the ARN, Key ID, and alias, so old data does not need re-encryption post-rotation.
+Explanation: AWS Managed Key auto-rotates every **1 year (365 days)**. Before May 2022, it was 3 years (1095 days), but AWS changed policy. Old study materials or test banks may contain "3 years"; watch for that. CMK default auto-rotation is also 1 year, and since 2024, custom periods (90–2560 days) are available. Rotation adds new backing key material but keeps the ARN, Key ID, and alias, so old data does not need re-encryption post-rotation.
 
 ---
 
-**문제 4.** Data must be encrypted with an **asymmetric key**. Which KMS Key Spec fits?
+**Question 4.** Data must be encrypted with an **asymmetric key**. Which KMS Key Spec fits?
 
 A) `ECC_NIST_P256`
 B) `RSA_2048`
 C) `HMAC_256`
 D) `SYMMETRIC_DEFAULT`
 
-**정답: B**
+**Answer: B**
 
-해설: Asymmetric encryption requires RSA keys. ECC (elliptic curve) keys can **only sign and verify, cannot encrypt** — ECDSA is a signing algorithm. C) HMAC is symmetric MAC for generating/verifying message auth codes. D) SYMMETRIC_DEFAULT is symmetric (AES-256), not "asymmetric." Asymmetric RSA keys allow exporting the public key via `GetPublicKey`, enabling external encryption and KMS-only decryption.
+Explanation: Asymmetric encryption requires RSA keys. ECC (elliptic curve) keys can **only sign and verify, cannot encrypt** — ECDSA is a signing algorithm. C) HMAC is symmetric MAC for generating/verifying message auth codes. D) SYMMETRIC_DEFAULT is symmetric (AES-256), not "asymmetric." Asymmetric RSA keys allow exporting the public key via `GetPublicKey`, enabling external encryption and KMS-only decryption.
 
 ---
 
-**문제 5.** A production CMK that must not be deleted is in a deletion request. How does KMS respond?
+**Question 5.** A production CMK that must not be deleted is in a deletion request. How does KMS respond?
 
 A) Immediately and permanently deleted
 B) Enters a 7–30 day waiting period; can be cancelled during this time
 C) Automatic backup is created; recovery is possible anytime
 D) Deleted immediately after IAM admin approval
 
-**정답: B**
+**Answer: B**
 
-해설: `ScheduleKeyDeletion` does not delete immediately but starts a **7–30 day waiting period**. During this window, the key is `PendingDeletion` (unusable) but can be recovered via `CancelKeyDeletion`. Deleting a CMK makes all data encrypted with it permanently irrecoverable (backups are useless), so a waiting period provides a safety window against accidents or malice. No immediate-deletion option exists. C) KMS does not auto-create key backups.
+Explanation: `ScheduleKeyDeletion` does not delete immediately but starts a **7–30 day waiting period**. During this window, the key is `PendingDeletion` (unusable) but can be recovered via `CancelKeyDeletion`. Deleting a CMK makes all data encrypted with it permanently irrecoverable (backups are useless), so a waiting period provides a safety window against accidents or malice. No immediate-deletion option exists. C) KMS does not auto-create key backups.
 
 ---
 
-**문제 6.** An S3 SSE-KMS workload encrypts millions of objects daily and hits KMS API throttling. What is the best way to cut costs and calls?
+**Question 6.** An S3 SSE-KMS workload encrypts millions of objects daily and hits KMS API throttling. What is the best way to cut costs and calls?
 
 A) Switch the CMK to asymmetric
 B) Enable S3 Bucket Key
 C) Increase key rotation period
 D) Split objects into ≤4KB pieces
 
-**정답: B**
+**Answer: B**
 
-해설: S3 Bucket Key adds a bucket-level cache layer to envelope encryption, cutting per-object `GenerateDataKey` KMS calls by up to 99%. The standard pattern for bulk-object KMS cost and throttling relief. A) Asymmetric keys have lower throughput — counterproductive. C) Rotation period is unrelated to call frequency. D) 4KB splitting explodes calls instead. "S3 + KMS cost/limit" appearing means Bucket Key is the answer.
+Explanation: S3 Bucket Key adds a bucket-level cache layer to envelope encryption, cutting per-object `GenerateDataKey` KMS calls by up to 99%. The standard pattern for bulk-object KMS cost and throttling relief. A) Asymmetric keys have lower throughput — counterproductive. C) Rotation period is unrelated to call frequency. D) 4KB splitting explodes calls instead. "S3 + KMS cost/limit" appearing means Bucket Key is the answer.
 
 ---
 
-**문제 7.** Regulations require storing keys on **dedicated hardware** that AWS cannot access. What is the right choice?
+**Question 7.** Regulations require storing keys on **dedicated hardware** that AWS cannot access. What is the right choice?
 
 A) KMS Customer Managed Key
 B) KMS AWS Managed Key
 C) CloudHSM (or KMS custom key store)
 D) Secrets Manager
 
-**정답: C**
+**Answer: C**
 
-해설: KMS keys run on multi-tenant HSM (logical isolation). "Dedicated HW + AWS no access" satisfies only CloudHSM (single-tenant, FIPS 140-2 Level 3). Connecting CloudHSM as KMS **custom key store** keeps keys on dedicated HW while maintaining familiar KMS API — meeting both requirements. A·B) KMS keys are multi-tenant, missing the "dedicated" requirement. D) Secrets Manager stores secrets, not HSM-isolated keys.
+Explanation: KMS keys run on multi-tenant HSM (logical isolation). "Dedicated HW + AWS no access" satisfies only CloudHSM (single-tenant, FIPS 140-2 Level 3). Connecting CloudHSM as KMS **custom key store** keeps keys on dedicated HW while maintaining familiar KMS API — meeting both requirements. A·B) KMS keys are multi-tenant, missing the "dedicated" requirement. D) Secrets Manager stores secrets, not HSM-isolated keys.

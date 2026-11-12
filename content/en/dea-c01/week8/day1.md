@@ -92,62 +92,62 @@ Meaning: Consumer lag accumulating, check shard/parallelism/processing logic
 
 ## 📝 Practice Questions
 
-**문제 1.** Kinesis Data Streams 컨슈머가 유입 속도를 따라가지 못해 처리 지연이 누적되고 있는지 가장 직접적으로 나타내는 CloudWatch 지표는?
+**Question 1.** Which CloudWatch metric most directly indicates whether a Kinesis Data Streams consumer is failing to keep up with the incoming rate and processing delay is accumulating?
 
 A) IncomingBytes  
 B) GetRecords.IteratorAgeMilliseconds  
 C) WriteProvisionedThroughputExceeded  
 D) PutRecord.Success  
 
-**정답: B**  
-해설: IteratorAgeMilliseconds는 컨슈머가 현재 읽고 있는 레코드의 나이를 나타내며, 값이 계속 커지면 컨슈머가 뒤처지고 있다는 핵심 신호입니다. IncomingBytes는 유입량, WriteProvisionedThroughputExceeded는 쓰기 스로틀링, PutRecord.Success는 생산자 성공률로 컨슈머 지연을 직접 나타내지 않습니다.
+**Answer: B**  
+Explanation: IteratorAgeMilliseconds indicates the age of the record the consumer is currently reading, and a value that keeps growing is the key signal that the consumer is falling behind. IncomingBytes is the inflow volume, WriteProvisionedThroughputExceeded is write throttling, and PutRecord.Success is the producer success rate; none of them directly indicates consumer lag.
 
 ---
 
-**문제 2.** Glue ETL 잡이 장시간 실행되는 동안 잡이 끝나기 전에도 실시간으로 로그를 CloudWatch Logs에서 확인하려면 어떤 기능을 활성화해야 하는가?
+**Question 2.** Which feature must be enabled to view the logs of a long-running Glue ETL job in CloudWatch Logs in real time, even before the job finishes?
 
 A) Job Bookmark  
 B) Partition Projection  
 C) DynamicFrame  
-D) Continuous Logging(연속 로깅)  
+D) Continuous Logging  
 
-**정답: D**  
-해설: 연속 로깅을 활성화하면 잡 완료 전에도 드라이버·익스큐터 로그가 실시간으로 CloudWatch Logs로 전송됩니다. Job Bookmark는 재처리 시 중복 방지용 상태, Partition Projection은 Athena 파티션 계산, DynamicFrame은 Glue의 데이터 추상화로 실시간 로깅과 무관합니다.
+**Answer: D**  
+Explanation: When continuous logging is enabled, driver and executor logs are sent to CloudWatch Logs in real time even before the job completes. Job Bookmark is state for preventing duplicates on reprocessing, Partition Projection is Athena partition computation, and DynamicFrame is Glue's data abstraction, so none relates to real-time logging.
 
 ---
 
-**문제 3.** Lambda나 컨테이너 기반 파이프라인에서 로그 한 줄에 지표와 풍부한 컨텍스트를 함께 남기고 CloudWatch가 자동으로 지표를 추출하게 하는 방식은?
+**Question 3.** Which approach lets a Lambda or container-based pipeline write metrics and rich context together in a single log line and have CloudWatch extract the metrics automatically?
 
-A) PutMetricData를 호출마다 동기 실행  
-B) X-Ray 세그먼트  
+A) Call PutMetricData synchronously on every invocation  
+B) X-Ray segments  
 C) EMF(Embedded Metric Format)  
-D) CloudTrail 데이터 이벤트  
+D) CloudTrail data events  
 
-**정답: C**  
-해설: EMF는 구조화된 JSON 로그를 출력하면 CloudWatch가 자동으로 커스텀 지표를 추출하는 방식으로, 별도 API 호출 없이 지표와 컨텍스트를 동시에 기록합니다. PutMetricData 동기 호출은 지연·비용 부담이 크고, X-Ray는 추적, CloudTrail은 API 감사 용도입니다.
+**Answer: C**  
+Explanation: With EMF, when you output structured JSON logs, CloudWatch automatically extracts custom metrics, recording metrics and context at the same time without separate API calls. Synchronous PutMetricData calls add latency and cost, X-Ray is for tracing, and CloudTrail is for API auditing.
 
 ---
 
-**문제 4.** 여러 개의 개별 알람이 동시에 울려 알림이 폭주(alarm storm)하는 것을 줄이기 위해, 알람들을 AND/OR 논리로 묶어 하나의 상위 상태로 평가하는 CloudWatch 기능은?
+**Question 4.** Which CloudWatch feature combines alarms with AND/OR logic and evaluates them as a single higher-level state, to reduce alarm storms where many individual alarms fire at the same time?
 
-A) Composite Alarm(복합 알람)  
+A) Composite Alarm  
 B) Metric Math  
 C) Anomaly Detection  
 D) Dashboard Widget  
 
-**정답: A**  
-해설: 복합 알람은 여러 알람의 상태를 불리언 식으로 결합해 단일 알람으로 평가하므로 알람 폭주를 줄이고 의미 있는 상황에서만 통보할 수 있습니다. Metric Math는 지표 계산, Anomaly Detection은 동적 임계값, Dashboard는 시각화 용도입니다.
+**Answer: A**  
+Explanation: A composite alarm combines the states of multiple alarms with a Boolean expression and evaluates them as a single alarm, which reduces alarm storms and lets you notify only in meaningful situations. Metric Math is for metric calculations, Anomaly Detection is for dynamic thresholds, and Dashboard is for visualization.
 
 ---
 
-**문제 5.** EMR 클러스터가 작업을 마치고 더 이상 처리할 것이 없어 비용만 발생하는 상태인지 판단해 자동 종료 결정을 돕는 CloudWatch 지표로 가장 적절한 것은?
+**Question 5.** Which CloudWatch metric is the most appropriate for determining whether an EMR cluster has finished its work and has nothing more to process and is only incurring cost, to help decide on automatic termination?
 
 A) IsIdle  
 B) ContainerPendingRatio  
 C) AppsRunning  
 D) IncomingRecords  
 
-**정답: A**  
-해설: IsIdle은 클러스터가 유휴 상태인지 나타내어 비용 절감을 위한 자동 종료 판단에 사용됩니다. ContainerPendingRatio는 리소스 부족, AppsRunning은 실행 중 앱 수를 나타내며, IncomingRecords는 Kinesis 지표로 EMR과 무관합니다.
+**Answer: A**  
+Explanation: IsIdle indicates whether the cluster is idle and is used to decide on automatic termination to save cost. ContainerPendingRatio indicates a resource shortage, AppsRunning indicates the number of running applications, and IncomingRecords is a Kinesis metric unrelated to EMR.
 
 ---

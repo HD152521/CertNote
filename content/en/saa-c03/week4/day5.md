@@ -252,103 +252,103 @@ Here are the numbers that appear often on the exam, gathered in one place.
 
 ## 📝 Practice Questions
 
-**문제 1.** A global media company streams 4K master videos stored in S3 to users worldwide. Which of the following is the correct design combination?
+**Question 1.** A global media company streams 4K master videos stored in S3 to users worldwide. Which of the following is the correct design combination?
 
 A) S3 Public bucket + CloudFront TTL=0 + no Lambda@Edge
 B) S3 Private bucket + BPA enabled + CloudFront OAC + Signed Cookie + Origin Shield
 C) S3 Public bucket + CloudFront OAI + Signed URL (per file)
 D) S3 Private bucket + Transfer Acceleration + Signed URL
 
-**정답: B**
-해설: Keep S3 Private (BPA fully enabled). Access S3 securely via CloudFront OAC. A Signed Cookie lets premium subscribers access thousands of video files (a Signed URL is per file, so managing thousands is infeasible). Origin Shield consolidates the origin requests of global RECs to reduce origin load. A leaves S3 Public, so anyone can access it directly. C's OAI is legacy and doesn't support SSE-KMS. D's Transfer Acceleration is for upload acceleration and unnecessary for streaming.
+**Answer: B**
+Explanation: Keep S3 Private (BPA fully enabled). Access S3 securely via CloudFront OAC. A Signed Cookie lets premium subscribers access thousands of video files (a Signed URL is per file, so managing thousands is infeasible). Origin Shield consolidates the origin requests of global RECs to reduce origin load. A leaves S3 Public, so anyone can access it directly. C's OAI is legacy and doesn't support SSE-KMS. D's Transfer Acceleration is for upload acceleration and unnecessary for streaming.
 
 ---
 
-**문제 2.** A hospital stores MRI imaging data in S3. It's accessed frequently for 6 months after a visit, then needs immediate access 1-2 times a year for the next 5 years, and is deleted after 7 years. What is the optimal lifecycle policy?
+**Question 2.** A hospital stores MRI imaging data in S3. It's accessed frequently for 6 months after a visit, then needs immediate access 1-2 times a year for the next 5 years, and is deleted after 7 years. What is the optimal lifecycle policy?
 
 A) Glacier Deep Archive immediately → delete after 7 years
 B) Day 0: Standard → Day 180: Glacier Instant Retrieval → 7 years (2,555 days): delete
 C) Day 0: Standard → Day 30: Standard-IA → Day 180: Glacier Instant → 7 years: delete
 D) Intelligent-Tiering immediately → delete after 7 years
 
-**정답: C**
-해설: Frequent access until 6 months (180 days) after a visit → Standard, or Standard-IA (after 30 days). After 6 months (180 days), 1-2 times a year with immediate need → Glacier Instant Retrieval (ms retrieval, meets the 90-day minimum duration). Expire after 7 years (2,555 days). B's Day-180 Glacier Instant meets the 90-day minimum, but the minimum transition period from Standard directly to Glacier Instant is 90 days. C adds Standard-IA in the middle to optimize cost further. D's Intelligent-Tiering is more expensive than a manual Lifecycle when the access pattern is predictable.
+**Answer: C**
+Explanation: Frequent access until 6 months (180 days) after a visit → Standard, or Standard-IA (after 30 days). After 6 months (180 days), 1-2 times a year with immediate need → Glacier Instant Retrieval (ms retrieval, meets the 90-day minimum duration). Expire after 7 years (2,555 days). B's Day-180 Glacier Instant meets the 90-day minimum, but the minimum transition period from Standard directly to Glacier Instant is 90 days. C adds Standard-IA in the middle to optimize cost further. D's Intelligent-Tiering is more expensive than a manual Lifecycle when the access pattern is predictable.
 
 ---
 
-**문제 3.** Under SEC regulations, financial transaction records must be retained for 7 years, non-modifiable and non-deletable. No one, including the AWS root account, must be able to delete the data. How do you configure it?
+**Question 3.** Under SEC regulations, financial transaction records must be retained for 7 years, non-modifiable and non-deletable. No one, including the AWS root account, must be able to delete the data. How do you configure it?
 
 A) S3 Versioning + MFA Delete
 B) S3 Object Lock Governance Mode, Retention Period 7 years
 C) S3 Object Lock Compliance Mode, Retention Period 7 years
 D) S3 Bucket Policy: Deny s3:DeleteObject for all principals
 
-**정답: C**
-해설: In Compliance Mode, no one — including the root account — can delete an object or modify the lock during the set period. It meets SEC Rule 17a-4's WORM (Write Once, Read Many) requirement and is certified by Cohasset Associates. In Governance Mode, a holder of the `s3:BypassGovernanceRetention` permission can delete, so it fails the "no one can" requirement. MFA Delete is for accident prevention, not legal WORM. A Bucket Policy Deny can be bypassed by modifying the policy itself.
+**Answer: C**
+Explanation: In Compliance Mode, no one — including the root account — can delete an object or modify the lock during the set period. It meets SEC Rule 17a-4's WORM (Write Once, Read Many) requirement and is certified by Cohasset Associates. In Governance Mode, a holder of the `s3:BypassGovernanceRetention` permission can delete, so it fails the "no one can" requirement. MFA Delete is for accident prevention, not legal WORM. A Bucket Policy Deny can be bypassed by modifying the policy itself.
 
 ---
 
-**문제 4.** A data-analytics team's EC2 processes sensitive customer data in an S3 data lake. The security team requires two things: (1) prevent S3 data exfiltration over the internet, and (2) prevent the analytics EC2 from accessing any S3 outside the approved data-lake bucket. How do you configure it?
+**Question 4.** A data-analytics team's EC2 processes sensitive customer data in an S3 data lake. The security team requires two things: (1) prevent S3 data exfiltration over the internet, and (2) prevent the analytics EC2 from accessing any S3 outside the approved data-lake bucket. How do you configure it?
 
 A) A policy on the EC2 IAM role allowing only a specific bucket + NAT Gateway
 B) VPC Gateway Endpoint for S3 + Endpoint policy (approved buckets only) + S3 bucket policy (allow only from that VPC Endpoint)
 C) Enable BPA on the S3 bucket + CloudFront OAC
 D) AWS PrivateLink for S3 + Security Group restriction
 
-**정답: B**
-해설: A VPC Gateway Endpoint provides a path to access S3 directly without the internet (no cost). Allowing only approved buckets in the Endpoint policy blocks access to other S3 buckets (including other accounts). Allowing only this Endpoint via the `aws:SourceVpce` condition in the S3 bucket policy also blocks access over the internet. A goes through the NAT Gateway, so it accesses S3 over the internet, leaving the possibility of data exfiltration. IAM policy alone can't block paths outside the Endpoint. C is a static-content distribution pattern.
+**Answer: B**
+Explanation: A VPC Gateway Endpoint provides a path to access S3 directly without the internet (no cost). Allowing only approved buckets in the Endpoint policy blocks access to other S3 buckets (including other accounts). Allowing only this Endpoint via the `aws:SourceVpce` condition in the S3 bucket policy also blocks access over the internet. A goes through the NAT Gateway, so it accesses S3 over the internet, leaving the possibility of data exfiltration. IAM policy alone can't block paths outside the Endpoint. C is a static-content distribution pattern.
 
 ---
 
-**문제 5.** Production data at an on-premises factory is generated by a SCADA system. You want to store this data in AWS S3 in real time, but the SCADA system supports only the NFS protocol. The factory network and AWS are connected via Direct Connect. What is the most suitable solution?
+**Question 5.** Production data at an on-premises factory is generated by a SCADA system. You want to store this data in AWS S3 in real time, but the SCADA system supports only the NFS protocol. The factory network and AWS are connected via Direct Connect. What is the most suitable solution?
 
 A) Install an AWS DataSync agent
 B) AWS Storage Gateway S3 File Gateway
 C) Amazon S3 Transfer Acceleration
 D) AWS Snow Family
 
-**정답: B**
-해설: S3 File Gateway is installed on-premises and provides an NFS (or SMB) mount point. When the SCADA system writes files over NFS, the File Gateway syncs them to S3 in the background. Since the requirement is "keep using it in real time," Storage Gateway, which is permanent hybrid operation, is suitable. DataSync is for one-time or scheduled migration/sync and doesn't provide a real-time NFS mount. Transfer Acceleration is for internet-based upload acceleration and is unnecessary in a Direct Connect environment. Snow Family is for offline migration.
+**Answer: B**
+Explanation: S3 File Gateway is installed on-premises and provides an NFS (or SMB) mount point. When the SCADA system writes files over NFS, the File Gateway syncs them to S3 in the background. Since the requirement is "keep using it in real time," Storage Gateway, which is permanent hybrid operation, is suitable. DataSync is for one-time or scheduled migration/sync and doesn't provide a real-time NFS mount. Transfer Acceleration is for internet-based upload acceleration and is unnecessary in a Direct Connect environment. Snow Family is for offline migration.
 
 ---
 
-**문제 6.** An e-commerce company distributes product images worldwide via CloudFront. The image URLs carry `?size=medium&format=webp` query parameters, but the parameter order differs per client (`?format=webp&size=medium`), so the same image is stored as a different cache entry. What is the most cost-effective way to raise the cache hit ratio?
+**Question 6.** An e-commerce company distributes product images worldwide via CloudFront. The image URLs carry `?size=medium&format=webp` query parameters, but the parameter order differs per client (`?format=webp&size=medium`), so the same image is stored as a different cache entry. What is the most cost-effective way to raise the cache hit ratio?
 
 A) Sort the query parameters with Lambda@Edge (Origin Request)
 B) Sort the query parameters with CloudFront Functions (Viewer Request)
 C) Normalize the query parameters at the ALB
 D) Exclude the query parameters from the cache key in the Cache Policy
 
-**정답: B**
-해설: Sorting query parameters alphabetically is simple string manipulation, for which CloudFront Functions (under 1ms, 2MB memory) is sufficient. It runs on the Viewer Request event, operates on 400+ PoPs, and costs about 1/6 of Lambda@Edge. Lambda@Edge is overkill when no external calls or complex logic are needed. If you exclude query parameters from the cache key as in D, `?size=medium` and `?size=large` return the same cache, delivering the wrong image.
+**Answer: B**
+Explanation: Sorting query parameters alphabetically is simple string manipulation, for which CloudFront Functions (under 1ms, 2MB memory) is sufficient. It runs on the Viewer Request event, operates on 400+ PoPs, and costs about 1/6 of Lambda@Edge. Lambda@Edge is overkill when no external calls or complex logic are needed. If you exclude query parameters from the cache key as in D, `?size=medium` and `?size=large` return the same cache, delivering the wrong image.
 
 ---
 
-**문제 7.** A startup stores user files in S3. Data is small initially but is expected to grow to hundreds of TB in 3 years. It's hard to predict each file's access frequency, and the team is small with no capacity for manual lifecycle management. What is the most suitable storage strategy?
+**Question 7.** A startup stores user files in S3. Data is small initially but is expected to grow to hundreds of TB in 3 years. It's hard to predict each file's access frequency, and the team is small with no capacity for manual lifecycle management. What is the most suitable storage strategy?
 
 A) Store all files in Standard and add Lifecycle later
 B) Store all files in the Intelligent-Tiering storage class + a Lifecycle to clean up incomplete multipart
 C) Store directly in Standard-IA
 D) Store in Glacier Instant Retrieval
 
-**정답: B**
-해설: Unpredictable access pattern + no capacity for manual management = Intelligent-Tiering. It automatically moves between Frequent/Infrequent Access to optimize cost and reverts with no retrieval cost. However, incomplete multipart uploads are billed like Standard even under Intelligent-Tiering, so an `AbortIncompleteMultipartUpload: 7 days` Lifecycle is a must-have additional setting. A risks forgetting the manual addition and wasting cost in the meantime. C incurs retrieval cost on frequently accessed files. D allows ms retrieval, but while its storage cost is cheaper than Standard, its cost is high with frequent access.
+**Answer: B**
+Explanation: Unpredictable access pattern + no capacity for manual management = Intelligent-Tiering. It automatically moves between Frequent/Infrequent Access to optimize cost and reverts with no retrieval cost. However, incomplete multipart uploads are billed like Standard even under Intelligent-Tiering, so an `AbortIncompleteMultipartUpload: 7 days` Lifecycle is a must-have additional setting. A risks forgetting the manual addition and wasting cost in the meantime. C incurs retrieval cost on frequently accessed files. D allows ms retrieval, but while its storage cost is cheaper than Standard, its cost is high with frequent access.
 
 ---
 
-**문제 8.** A company encrypts data in an S3 bucket with a KMS key (SSE-KMS). A data-analytics system reads 5,000 S3 objects per second, and KMS API call costs are 5x higher than expected. How do you reduce cost while keeping encryption?
+**Question 8.** A company encrypts data in an S3 bucket with a KMS key (SSE-KMS). A data-analytics system reads 5,000 S3 objects per second, and KMS API call costs are 5x higher than expected. How do you reduce cost while keeping encryption?
 
 A) Change the encryption method to SSE-S3
 B) Enable S3 Bucket Keys
 C) Decrypt the data and store it in a cache
 D) Create the KMS key in a different region
 
-**정답: B**
-해설: Bucket Keys generate a Bucket Key (temporary key) from KMS and cache it at the S3 level. Instead of calling KMS on every object request, DEKs are generated from the Bucket Key, reducing the number of KMS calls by up to 99%. SSE-KMS's audit trail (CloudTrail) and key-management features are retained as is. A loses the CloudTrail audit trail and fails the compliance requirement. C carries the security risk of keeping plaintext data in a cache. D doesn't change the number of KMS calls even in a different region.
+**Answer: B**
+Explanation: Bucket Keys generate a Bucket Key (temporary key) from KMS and cache it at the S3 level. Instead of calling KMS on every object request, DEKs are generated from the Bucket Key, reducing the number of KMS calls by up to 99%. SSE-KMS's audit trail (CloudTrail) and key-management features are retained as is. A loses the CloudTrail audit trail and fails the compliance requirement. C carries the security risk of keeping plaintext data in a cache. D doesn't change the number of KMS calls even in a different region.
 
 ---
 
-**문제 9.** Which mapping of scenarios to solutions is correct?
+**Question 9.** Which mapping of scenarios to solutions is correct?
 
 ① On-prem Veritas NetBackup writes to a tape library. Physical tape must go, but the backup software cannot be replaced.
 ② One-time migration of 10TB from on-prem to S3, with a 1Gbps Direct Connect link available.
@@ -360,12 +360,12 @@ B) ①-DataSync, ②-Tape Gateway, ③-S3 File Gateway, ④-Snowball Edge
 C) ①-Tape Gateway, ②-Snowball Edge, ③-S3 File Gateway, ④-DataSync
 D) ①-S3 File Gateway, ②-DataSync, ③-Tape Gateway, ④-Snowball Edge
 
-**정답: A**
-해설: 1. Tape Gateway fools existing backup software with an iSCSI VTL. Backups are stored in S3/Glacier without replacing the software. 2. DataSync migrates quickly via parallel transfer over Direct Connect. Optimal for one-time migration. 3. S3 File Gateway provides an NFS mount so employees keep their existing file-access method. Fast access via a local cache. 4. Snowball Edge collects data on a physical device and ships it to an AWS facility. Essential for large-volume migration in a no-internet environment.
+**Answer: A**
+Explanation: 1. Tape Gateway fools existing backup software with an iSCSI VTL. Backups are stored in S3/Glacier without replacing the software. 2. DataSync migrates quickly via parallel transfer over Direct Connect. Optimal for one-time migration. 3. S3 File Gateway provides an NFS mount so employees keep their existing file-access method. Fast access via a local cache. 4. Snowball Edge collects data on a physical device and ships it to an AWS facility. Essential for large-volume migration in a no-internet environment.
 
 ---
 
-**문제 10.** Find the error in the following CloudFront Distribution configuration. A team tried to protect an S3 bucket with OAC and make it accessible only through CloudFront.
+**Question 10.** Find the error in the following CloudFront Distribution configuration. A team tried to protect an S3 bucket with OAC and make it accessible only through CloudFront.
 
 Configuration:
 - S3 bucket: BPA disabled
@@ -378,29 +378,29 @@ B) Using the S3 static website endpoint as the origin is the problem
 C) OAC works only with SSE-S3
 D) The bucket policy is wrong
 
-**정답: A, B 모두 문제 (시험에서는 가장 큰 문제 하나를 고른다면 B)**
-해설: OAC works only with an S3 REST endpoint (`bucket.s3.region.amazonaws.com`). Using the S3 static website endpoint as the origin means OAC doesn't work, allowing access without authentication. Also, disabling BPA can allow direct public access to the bucket. Correct configuration: use the S3 REST endpoint as the origin + configure OAC + fully enable BPA + allow only the OAC Principal in the bucket policy. If static-hosting features (index document, error pages) are needed, handle them at CloudFront with `CustomErrorResponse`.
+**Answer: A, B are both problems (if you must pick the single biggest problem on the exam, B)**
+Explanation: OAC works only with an S3 REST endpoint (`bucket.s3.region.amazonaws.com`). Using the S3 static website endpoint as the origin means OAC doesn't work, allowing access without authentication. Also, disabling BPA can allow direct public access to the bucket. Correct configuration: use the S3 REST endpoint as the origin + configure OAC + fully enable BPA + allow only the OAC Principal in the bucket policy. If static-hosting features (index document, error pages) are needed, handle them at CloudFront with `CustomErrorResponse`.
 
 ---
 
-**문제 11.** A company wants to apply KMS encryption to all data in an S3 bucket and block uploads of unencrypted objects. How do you configure it?
+**Question 11.** A company wants to apply KMS encryption to all data in an S3 bucket and block uploads of unencrypted objects. How do you configure it?
 
 A) Setting the S3 bucket default encryption to SSE-KMS automatically encrypts all objects
 B) S3 bucket default encryption SSE-KMS + a bucket policy that Denies requests without the `s3:x-amz-server-side-encryption-aws:kms` header
 C) Reject requests without encryption in the KMS key policy
 D) Block unencrypted S3 PutObject with an SCP
 
-**정답: B**
-해설: Setting only S3 default encryption still auto-encrypts objects uploaded without encryption as SSE-S3 (with an S3-managed key, not KMS). To enforce SSE-KMS, the bucket policy must Deny requests where the `x-amz-server-side-encryption` header is not `aws:kms`. Without this policy, the bucket accepts uploads even if the client uses SSE-S3 or no encryption. A alone does not enforce SSE-KMS.
+**Answer: B**
+Explanation: Setting only S3 default encryption still auto-encrypts objects uploaded without encryption as SSE-S3 (with an S3-managed key, not KMS). To enforce SSE-KMS, the bucket policy must Deny requests where the `x-amz-server-side-encryption` header is not `aws:kms`. Without this policy, the bucket accepts uploads even if the client uses SSE-S3 or no encryption. A alone does not enforce SSE-KMS.
 
 ---
 
-**문제 12.** In an AWS Organizations environment, you want to centrally analyze the S3 data of 100 accounts. You need to see each account's bucket access patterns, cost-optimization opportunities, and security vulnerabilities at a glance. Which service is most suitable?
+**Question 12.** In an AWS Organizations environment, you want to centrally analyze the S3 data of 100 accounts. You need to see each account's bucket access patterns, cost-optimization opportunities, and security vulnerabilities at a glance. Which service is most suitable?
 
 A) AWS Config + S3 rules
 B) Amazon Macie
 C) S3 Storage Lens
 D) AWS Cost Explorer + S3 tags
 
-**정답: C**
-해설: S3 Storage Lens analyzes S3 usage patterns across the entire AWS Organizations at the organization level and provides per-bucket cost, access patterns, and security level as a dashboard. It also includes automated recommendations (potential savings from a Glacier transition, buckets without versioning, etc.). AWS Config is for compliance checks, not usage-pattern analysis. Macie is a PII (personally identifiable information) detection tool. Cost Explorer shows only cost and has no S3-specific access-pattern analysis.
+**Answer: C**
+Explanation: S3 Storage Lens analyzes S3 usage patterns across the entire AWS Organizations at the organization level and provides per-bucket cost, access patterns, and security level as a dashboard. It also includes automated recommendations (potential savings from a Glacier transition, buckets without versioning, etc.). AWS Config is for compliance checks, not usage-pattern analysis. Macie is a PII (personally identifiable information) detection tool. Cost Explorer shows only cost and has no S3-specific access-pattern analysis.

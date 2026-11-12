@@ -83,62 +83,62 @@ Tomorrow we cover the role humans play in all this—data labeling, feedback, an
 
 ## 📝 Practice Questions
 
-**문제 1.** 정상 메일을 스팸으로 잘못 분류하는 실수를 줄이는 것이 가장 중요한 스팸 필터에서, 우선적으로 높여야 할 지표는?
+**Question 1.** For a spam filter where it is most important to reduce mistakes that misclassify legitimate email as spam, which metric should be raised first?
 
 A) Recall  
 B) Precision  
 C) Training data accuracy  
 D) Model training speed  
 
-**정답: B**  
-해설: Wrongly flagging normal emails as spam is a false positive (FP), and precision focuses on "real proportion among what we caught" to reduce FP. Therefore, spam filters where false alarms are costly prioritize precision. Recall is a metric for reducing missed cases (FN) and has different priorities. Training accuracy and speed are unrelated to this goal.
+**Answer: B**  
+Explanation: Wrongly flagging normal emails as spam is a false positive (FP), and precision focuses on "real proportion among what we caught" to reduce FP. Therefore, spam filters where false alarms are costly prioritize precision. Recall is a metric for reducing missed cases (FN) and has different priorities. Training accuracy and speed are unrelated to this goal.
 
 ---
 
-**문제 2.** 암 진단 모델에서 실제 암 환자를 놓치는 것이 가장 치명적이다. 우선적으로 높여야 할 지표는?
+**Question 2.** In a cancer diagnosis model, missing an actual cancer patient is the most critical failure. Which metric should be raised first?
 
 A) Precision  
 B) Recall  
 C) Training speed  
 D) Data storage efficiency  
 
-**정답: B**  
-해설: Missing a real cancer patient is a false negative (FN), and recall focuses on "proportion we caught out of what's real" to reduce FN. In a life-or-death situation, missing a patient (FN) is far more critical than sending a healthy person for extra tests (FP), so recall takes priority. Precision has a different focus on reducing false alarms.
+**Answer: B**  
+Explanation: Missing a real cancer patient is a false negative (FN), and recall focuses on "proportion we caught out of what's real" to reduce FN. In a life-or-death situation, missing a patient (FN) is far more critical than sending a healthy person for extra tests (FP), so recall takes priority. Precision has a different focus on reducing false alarms.
 
 ---
 
-**문제 3.** 어떤 모델이 학습 데이터에서는 정확도 99%를 보이지만 처음 보는 테스트 데이터에서는 60%로 크게 떨어졌다. 이 모델의 문제는?
+**Question 3.** A model shows 99% accuracy on the training data, but its accuracy drops sharply to 60% on unseen test data. What is the problem with this model?
 
 A) Underfitting  
 B) Overfitting  
 C) No data leakage at all  
 D) Perfect class balance  
 
-**정답: B**  
-해설: A large gap where training score is very high but test score is much lower is a classic sign of overfitting. The model memorized the training data and failed to generalize. Underfitting would show low training scores too. C and D are unrelated statements to this symptom.
+**Answer: B**  
+Explanation: A large gap where training score is very high but test score is much lower is a classic sign of overfitting. The model memorized the training data and failed to generalize. Underfitting would show low training scores too. C and D are unrelated statements to this symptom.
 
 ---
 
-**문제 4.** 정밀도와 재현율을 하나의 값으로 균형 있게 요약하는 지표는?
+**Question 4.** Which metric summarizes precision and recall into a single balanced value?
 
 A) Accuracy  
 B) F1 Score  
 C) Learning Rate  
 D) Data leakage rate  
 
-**정답: B**  
-해설: F1 score is the harmonic mean of precision and recall, expressing the balance between the two metrics as one number. Accuracy is the proportion of correct classifications overall and doesn't reflect the balance between them. Learning rate is a training hyperparameter, and data leakage rate is not an evaluation metric.
+**Answer: B**  
+Explanation: F1 score is the harmonic mean of precision and recall, expressing the balance between the two metrics as one number. Accuracy is the proportion of correct classifications overall and doesn't reflect the balance between them. Learning rate is a training hyperparameter, and data leakage rate is not an evaluation metric.
 
 ---
 
-**문제 5.** 모델이 너무 단순해 학습 데이터에서도, 테스트 데이터에서도 성능이 모두 낮은 상태를 무엇이라 하는가?
+**Question 5.** What is it called when a model is too simple and performs poorly on both the training data and the test data?
 
 A) Overfitting  
 B) Underfitting  
 C) Data Drift  
 D) High Recall  
 
-**정답: B**  
-해설: Poor performance on both training and test data indicates underfitting—the model failed to learn even the training data's patterns. Overfitting is the opposite symptom: high training score but low test score. Data drift is distribution change during operation, and high recall is unrelated to performance degradation.
+**Answer: B**  
+Explanation: Poor performance on both training and test data indicates underfitting—the model failed to learn even the training data's patterns. Overfitting is the opposite symptom: high training score but low test score. Data drift is distribution change during operation, and high recall is unrelated to performance degradation.
 
 ---

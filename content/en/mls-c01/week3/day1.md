@@ -122,62 +122,62 @@ Next, we'll look at **feature engineering (scaling, encoding, binning)** that tr
 
 ## 📝 Practice Questions
 
-**문제 1.** 오른쪽으로 길게 치우친(right-skewed) 소득 변수에 결측치가 있다. 단순 대치로 베이스라인을 만들 때 가장 안전한 선택은?
+**Question 1.** An income variable that is long-tailed to the right (right-skewed) has missing values. What is the safest choice when building a baseline with simple imputation?
 
-A) 평균값으로 대치  
-B) 0으로 대치  
-C) 중앙값으로 대치  
-D) 결측 포함 행을 모두 삭제  
+A) Impute with the mean  
+B) Impute with 0  
+C) Impute with the median  
+D) Delete all rows with missing values  
 
-**정답: C**  
-해설: 치우친 분포에서는 평균이 이상치·긴 꼬리에 끌려가 대표성이 떨어진다. 중앙값은 이상치에 강건해 치우친 수치형의 단순 대치로 가장 안전하다. 평균 대치(A)는 꼬리에 왜곡되고, 0 대치(B)는 의미 없는 값을 주입해 분포를 망친다. 행 삭제(D)는 결측이 MCAR이고 비율이 매우 낮을 때만 정당하며 정보 손실 위험이 크다.
-
----
-
-**문제 2.** 사기 탐지 모델을 만드는데, 거래 금액에서 극단적으로 큰 값들이 다수 발견됐다. 이 이상치에 대한 가장 적절한 태도는?
-
-A) Z-score 3 이상을 모두 삭제한다  
-B) 이상치가 사기의 핵심 신호일 수 있으므로 함부로 제거하지 않는다  
-C) 모든 이상치를 평균으로 대치한다  
-D) IQR 경계로 즉시 클리핑한다  
-
-**정답: B**  
-해설: 사기 탐지에서 극단적 거래는 제거 대상 노이즈가 아니라 오히려 탐지해야 할 **정답 신호**일 가능성이 높다. 무조건 삭제·대치·클리핑(A, C, D)하면 모델이 잡아야 할 패턴을 지워 버린다. 이상치 처리는 도메인 맥락에 따라 결정해야 한다.
+**Answer: C**  
+Explanation: In a skewed distribution, the mean is pulled by outliers and the long tail and loses representativeness. The median is robust to outliers, so it is the safest simple imputation for a skewed numeric variable. Mean imputation (A) is distorted by the tail, and 0 imputation (B) injects a meaningless value and ruins the distribution. Row deletion (D) is justified only when the missingness is MCAR and the proportion is very low, and it carries a high risk of information loss.
 
 ---
 
-**문제 3.** scikit-learn으로 결측치 평균 대치를 적용할 때 데이터 누수를 피하는 올바른 방법은?
+**Question 2.** While building a fraud detection model, you find many extremely large values in the transaction amounts. What is the MOST appropriate attitude toward these outliers?
 
-A) 전체 데이터셋으로 평균을 계산해 모든 행에 적용  
-B) 학습셋으로 `fit`한 imputer를 테스트셋에는 `transform`만 적용  
-C) 테스트셋의 평균으로 테스트셋을 대치  
-D) 학습과 테스트를 합쳐 한 번에 대치한 뒤 분할  
+A) Delete everything with a Z-score of 3 or above  
+B) Do not remove them carelessly, because outliers may be the key signal of fraud  
+C) Impute all outliers with the mean  
+D) Immediately clip them at the IQR bounds  
 
-**정답: B**  
-해설: 대치 통계량(평균 등)은 학습셋에서만 산출해야 하며, 테스트셋에는 그 값을 `transform`으로 적용한다. 전체 데이터로 평균을 구하거나(A, D) 테스트셋 통계를 쓰면(C) 테스트 정보가 학습에 새어 들어가 성능이 낙관적으로 부풀려지는 데이터 누수가 발생한다.
-
----
-
-**문제 4.** 정규분포를 따르지 않고 분포 가정 없이 이상치를 탐지하려 한다. 가장 적절한 방법은?
-
-A) Z-score 기준 \|z\| > 3  
-B) 평균 ± 2 표준편차  
-C) IQR 기반 Q1 − 1.5×IQR, Q3 + 1.5×IQR  
-D) 최댓값과 최솟값만 확인  
-
-**정답: C**  
-해설: IQR(사분위 범위) 방법은 분포의 정규성을 가정하지 않고 사분위수에 기반하므로, 치우치거나 비정규 분포에 강건하다. Z-score(A)와 평균±표준편차(B)는 정규분포와 이상치에 민감한 평균/표준편차에 의존한다. 최대·최소(D)만으로는 이상치 경계를 정의할 수 없다.
+**Answer: B**  
+Explanation: In fraud detection, extreme transactions are not noise to be removed but rather likely to be the **signal** that must be detected. Unconditionally deleting, imputing, or clipping (A, C, D) erases the patterns the model needs to catch. Outlier handling must be decided based on domain context.
 
 ---
 
-**문제 5.** 사용자 단위 데이터에서 중복 레코드를 정리하는 시점으로 가장 올바른 것은?
+**Question 3.** What is the correct way to avoid data leakage when applying mean imputation of missing values with scikit-learn?
 
-A) 학습/검증 분할 이후 각 분할별로 따로 제거  
-B) 모델 학습 직전에만 제거  
-C) 학습/검증 분할 **이전**에 키 기준 중복을 정리  
-D) 평가 결과를 본 뒤 필요하면 제거  
+A) Compute the mean over the entire dataset and apply it to all rows  
+B) Fit the imputer on the training set and apply only `transform` to the test set  
+C) Impute the test set with the test set's mean  
+D) Combine training and test, impute once, and then split  
 
-**정답: C**  
-해설: 같은 사용자의 중복 레코드가 분할 후 학습셋과 검증셋에 흩어지면 데이터 누수로 평가가 부풀려진다. 따라서 분할 이전에 키 기준으로 중복을 정리해야 평가가 정직하다. 분할 후 처리(A)나 학습 직전 처리(B)는 이미 누수가 발생한 뒤이고, 평가 후 처리(D)는 순서가 거꾸로다.
+**Answer: B**  
+Explanation: Imputation statistics (such as the mean) must be computed only from the training set, and applied to the test set via `transform`. Computing the mean over the whole data (A, D) or using test set statistics (C) leaks test information into training, causing data leakage that inflates performance optimistically.
+
+---
+
+**Question 4.** The data does not follow a normal distribution, and you want to detect outliers without distributional assumptions. Which method is MOST appropriate?
+
+A) Z-score criterion \|z\| > 3  
+B) Mean ± 2 standard deviations  
+C) IQR-based Q1 − 1.5×IQR, Q3 + 1.5×IQR  
+D) Check only the maximum and minimum values  
+
+**Answer: C**  
+Explanation: The IQR (interquartile range) method does not assume normality of the distribution and is based on quartiles, so it is robust to skewed or non-normal distributions. Z-score (A) and mean ± standard deviation (B) depend on the normal distribution and on the mean/standard deviation, which are sensitive to outliers. The maximum and minimum alone (D) cannot define an outlier boundary.
+
+---
+
+**Question 5.** In user-level data, what is the most correct time to clean up duplicate records?
+
+A) After the train/validation split, remove them separately within each split  
+B) Only right before model training  
+C) **Before** the train/validation split, clean up duplicates based on the key  
+D) After seeing the evaluation results, remove them if necessary  
+
+**Answer: C**  
+Explanation: If duplicate records of the same user are scattered across the training and validation sets after splitting, data leakage inflates the evaluation. Therefore duplicates must be cleaned up by key before the split for the evaluation to be honest. Processing after the split (A) or right before training (B) happens after leakage has already occurred, and processing after evaluation (D) is in the wrong order.
 
 ---

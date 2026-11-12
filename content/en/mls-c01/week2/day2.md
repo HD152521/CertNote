@@ -143,62 +143,62 @@ Tomorrow we explore **data augmentation and synthesis** techniques to address in
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 팀이 데이터 추출(Glue), 외부 승인 대기, Lambda 후처리, SageMaker 학습을 하나의 흐름으로 묶고 분기·재시도를 선언적으로 관리하려 한다. 가장 적합한 오케스트레이터는?
+**Question 1.** A team wants to bundle data extraction (Glue), waiting for external approval, Lambda post-processing, and SageMaker training into a single flow and manage branching and retries declaratively. Which orchestrator is MOST appropriate?
 
 A) AWS Step Functions  
 B) SageMaker Pipelines  
 C) Amazon Athena  
 D) AWS Glue Crawler  
 
-**정답: A**  
-해설: Step Functions는 Glue·Lambda·SageMaker·승인 대기 등 이질적인 AWS 서비스와 비-ML 단계를 상태 머신으로 묶고 Choice·Retry·Catch로 분기·재시도를 선언적으로 처리하는 범용 오케스트레이터다. SageMaker Pipelines(B)는 ML 전용이라 비-ML 단계·승인 통합이 제한적이고, Athena·Glue Crawler는 오케스트레이션 도구가 아니다.
+**Answer: A**  
+Explanation: Step Functions is a general-purpose orchestrator that ties together heterogeneous AWS services such as Glue, Lambda, SageMaker, and approval waits, as well as non-ML steps, in a state machine and handles branching and retries declaratively with Choice, Retry, and Catch. SageMaker Pipelines (B) is ML-specific, so its integration of non-ML steps and approvals is limited, and Athena and Glue Crawler are not orchestration tools.
 
 ---
 
-**문제 2.** 순수 ML CI/CD 워크플로에서 "평가 정확도가 0.85 이상일 때만 모델을 레지스트리에 등록"하는 조건부 분기를 SageMaker Pipelines로 구현하려면 사용하는 단계는?
+**Question 2.** In a pure ML CI/CD workflow, which step do you use to implement, with SageMaker Pipelines, the conditional branch "register the model in the registry only when evaluation accuracy is 0.85 or higher"?
 
 A) ProcessingStep  
 B) TrainingStep  
 C) ConditionStep  
 D) TuningStep  
 
-**정답: C**  
-해설: ConditionStep은 평가 지표 등의 조건을 평가해 if_steps/else_steps로 분기하므로 "정확도 기준 충족 시에만 모델 등록"을 표현하는 데 정확히 들어맞는다. ProcessingStep(전처리), TrainingStep(학습), TuningStep(하이퍼파라미터 튜닝)은 각각 다른 역할로 조건 분기를 담당하지 않는다.
+**Answer: C**  
+Explanation: ConditionStep evaluates conditions such as evaluation metrics and branches with if_steps/else_steps, so it fits exactly for expressing "register the model only when the accuracy criterion is met." ProcessingStep (preprocessing), TrainingStep (training), and TuningStep (hyperparameter tuning) each have different roles and do not handle conditional branching.
 
 ---
 
-**문제 3.** ML 파이프라인 자동화가 제공하는 가장 본질적인 두 가지 가치로 옳은 것은?
+**Question 3.** Which are the two most essential values provided by ML pipeline automation?
 
-A) 비용 0원과 무제한 확장  
-B) 코드 삭제와 로그 비활성화  
-C) 수동 개입 강제와 단계 은닉  
-D) 재현성과 추적성(lineage)  
+A) Zero cost and unlimited scaling  
+B) Code deletion and log deactivation  
+C) Forced manual intervention and hidden steps  
+D) Reproducibility and traceability (lineage)  
 
-**정답: D**  
-해설: 자동화 파이프라인의 핵심 가치는 같은 입력이면 같은 결과를 내는 재현성과, 특정 모델이 어떤 데이터·코드·파라미터로 만들어졌는지 거슬러 추적하는 lineage다. 비용이 0이 되거나(A) 로그를 끄거나(B) 수동 개입을 강제하는 것(C)은 자동화의 목적과 반대된다.
-
----
-
-**문제 4.** 새 데이터가 S3에 도착할 때마다 ML 파이프라인을 자동으로 시작하고 싶다. 가장 일반적인 트리거 구성은?
-
-A) S3 이벤트 또는 EventBridge 규칙으로 파이프라인 시작  
-B) 사람이 매번 콘솔에서 수동 시작  
-C) RDS 백업 완료 시점에만 시작  
-D) IAM 정책 변경으로 트리거  
-
-**정답: A**  
-해설: S3 객체 생성 이벤트나 EventBridge 규칙(이벤트·cron)으로 파이프라인 실행을 트리거하는 것이 표준 패턴이며, 데이터 도착 시 자동 시작을 구현한다. 수동 시작(B)은 자동화에 어긋나고, RDS 백업(C)·IAM 변경(D)은 데이터 도착과 무관한 신호다.
+**Answer: D**  
+Explanation: The core values of an automated pipeline are reproducibility, where the same input produces the same result, and lineage, which traces back which data, code, and parameters produced a particular model. Reducing cost to zero (A), turning off logs (B), and forcing manual intervention (C) are contrary to the purpose of automation.
 
 ---
 
-**문제 5.** 상위에서는 데이터 파이프라인과 승인을 포함한 전체 흐름을 오케스트레이션하고, 그 내부에서 SageMaker 학습 작업을 호출하는 구성에 대한 설명으로 가장 옳은 것은?
+**Question 4.** You want to automatically start an ML pipeline every time new data arrives in S3. What is the most common trigger configuration?
 
-A) Step Functions와 SageMaker Pipelines는 함께 쓸 수 없다  
-B) SageMaker Pipelines만으로 모든 비-ML 단계를 완벽히 대체할 수 있다  
-C) Step Functions가 상위 오케스트레이션을 맡고 SageMaker 작업을 호출하는 혼합 구성이 가능하다  
-D) 두 도구는 동일하므로 구분이 불필요하다  
+A) Start the pipeline with an S3 event or an EventBridge rule  
+B) A person manually starts it from the console each time  
+C) Start only when an RDS backup completes  
+D) Trigger by changing an IAM policy  
 
-**정답: C**  
-해설: Step Functions가 상위에서 데이터·승인 등 전체 흐름을 오케스트레이션하고 그 안에서 SageMaker 학습/처리 작업을 호출하는 혼합 패턴은 실무에서 흔히 쓰인다. 둘은 함께 사용 가능하므로 A는 틀렸고, SageMaker Pipelines는 비-ML 단계 통합이 제한적이라 B도 부정확하며, 역할이 다르므로 D도 틀렸다.
+**Answer: A**  
+Explanation: Triggering pipeline execution with an S3 object-creation event or an EventBridge rule (event or cron) is the standard pattern and implements automatic start on data arrival. Manual start (B) runs counter to automation, and an RDS backup (C) and an IAM change (D) are signals unrelated to data arrival.
+
+---
+
+**Question 5.** Which statement is MOST correct about a configuration in which the upper level orchestrates the entire flow including the data pipeline and approvals, and calls SageMaker training jobs within it?
+
+A) Step Functions and SageMaker Pipelines cannot be used together  
+B) SageMaker Pipelines alone can completely replace all non-ML steps  
+C) A hybrid configuration is possible in which Step Functions handles top-level orchestration and calls SageMaker jobs  
+D) The two tools are identical, so there is no need to distinguish them  
+
+**Answer: C**  
+Explanation: A hybrid pattern in which Step Functions orchestrates the whole flow, such as data and approvals, at the upper level and calls SageMaker training/processing jobs within it is commonly used in practice. The two can be used together, so A is wrong; SageMaker Pipelines has limited integration of non-ML steps, so B is also inaccurate; and their roles differ, so D is also wrong.
 
 ---

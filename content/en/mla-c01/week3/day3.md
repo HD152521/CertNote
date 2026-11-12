@@ -105,62 +105,62 @@ Next, we examine whether prepared data is fair and balanced—data bias, quality
 
 ## 📝 Practice Questions
 
-**문제 1.** A real-time recommendation service must query latest features for a user in milliseconds every time they open a page. What's suitable in SageMaker Feature Store?
+**Question 1.** A real-time recommendation service must query latest features for a user in milliseconds every time they open a page. What's suitable in SageMaker Feature Store?
 
 A) Query offline store via Athena  
 B) Query online store with GetRecord to fetch latest record  
 C) Download entire S3 Parquet file every time  
 D) Full-scan Redshift table  
 
-**정답: B**  
-해설: Online store returns single latest feature via key-value in milliseconds, suitable for real-time inference queries. A/C are offline/batch with high latency, D is large-scale scan unsuitable for low-latency real-time demands.
+**Answer: B**  
+Explanation: Online store returns single latest feature via key-value in milliseconds, suitable for real-time inference queries. A/C are offline/batch with high latency, D is large-scale scan unsuitable for low-latency real-time demands.
 
 ---
 
-**문제 2.** Training pipeline in Python and inference server in Java each calculated "average purchase amount last 30 days" with subtle differences degrading model performance. How to fundamentally solve?
+**Question 2.** Training pipeline in Python and inference server in Java each calculated "average purchase amount last 30 days" with subtle differences degrading model performance. How to fundamentally solve?
 
 A) Fix Java code more precisely  
 B) Define feature once in Feature Store, store, and have training (offline) and inference (online) read from same repository  
 C) Disable inference  
 D) Make model larger  
 
-**정답: B**  
-해설: This is training/serving skew; Feature Store defines features once, centrally stored, so training and inference share identical values, preventing mismatches. A is temporary synchronizing two implementations, C abandons service, D unrelated to feature inconsistency.
+**Answer: B**  
+Explanation: This is training/serving skew; Feature Store defines features once, centrally stored, so training and inference share identical values, preventing mismatches. A is temporary synchronizing two implementations, C abandons service, D unrelated to feature inconsistency.
 
 ---
 
-**문제 3.** What must be specified when creating Feature Group and serves as the basis for reconstructing feature values at specific points in time?
+**Question 3.** What must be specified when creating Feature Group and serves as the basis for reconstructing feature values at specific points in time?
 
 A) Record Identifier and Event Time  
 B) VPC and Subnet  
 C) Instance type and count  
 D) Learning rate and batch size  
 
-**정답: A**  
-해설: Feature Group requires Record Identifier for row identification and Event Time for value recording time; Event Time is the basis for point-in-time queries and future-leakage prevention. B is network setup, C computing resources, D hyperparameters—not Feature Group definition essentials.
+**Answer: A**  
+Explanation: Feature Group requires Record Identifier for row identification and Event Time for value recording time; Event Time is the basis for point-in-time queries and future-leakage prevention. B is network setup, C computing resources, D hyperparameters—not Feature Group definition essentials.
 
 ---
 
-**문제 4.** To build a training dataset, query entire feature history in Feature Store in bulk. Most suitable method?
+**Question 4.** To build a training dataset, query entire feature history in Feature Store in bulk. Most suitable method?
 
 A) Repeatedly call GetRecord on online store row-by-row  
 B) Bulk query offline store (S3) via Athena  
 C) Load entire online store into memory  
 D) Delete and recreate Feature Group  
 
-**정답: B**  
-해설: Offline store keeps full history in S3 Parquet, allowing efficient bulk training dataset creation via Athena. A inefficiently repeats single queries, C not designed for offline bulk access, D destroys data.
+**Answer: B**  
+Explanation: Offline store keeps full history in S3 Parquet, allowing efficient bulk training dataset creation via Athena. A inefficiently repeats single queries, C not designed for offline bulk access, D destroys data.
 
 ---
 
-**문제 5.** Two teams each created identical "customer activity score" feature with mismatched definitions and bug fixes reflecting only partially. Feature Store solution?
+**Question 5.** Two teams each created identical "customer activity score" feature with mismatched definitions and bug fixes reflecting only partially. Feature Store solution?
 
 A) Teams meet more frequently  
 B) Define feature once in Feature Store, share for reuse; single fix applies to all using models  
 C) Merge two models  
 D) Remove all features  
 
-**정답: B**  
-해설: Feature Store makes features shared data assets, enabling reuse and single definition so fixing one place consistently applies to all models using that feature. A doesn't solve fundamentally, C merges separate models wrongly, D discards needed features.
+**Answer: B**  
+Explanation: Feature Store makes features shared data assets, enabling reuse and single definition so fixing one place consistently applies to all models using that feature. A doesn't solve fundamentally, C merges separate models wrongly, D discards needed features.
 
 ---

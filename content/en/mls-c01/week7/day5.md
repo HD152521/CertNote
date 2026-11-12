@@ -80,62 +80,62 @@ After Week 7, you should confidently answer:
 
 ## 📝 Practice Questions
 
-**문제 1.** 표 형태의 정형 데이터 5,000행으로 이진 분류를 한다. 학습 시간과 데이터가 제한적이다. 1차로 시도할 가장 합리적인 접근은?
+**Question 1.** You are doing binary classification on 5,000 rows of tabular structured data. Training time and data are limited. What is the most reasonable first approach to try?
 
-A) XGBoost 같은 트리 앙상블  
-B) 매우 깊은 CNN을 처음부터 학습  
-C) Transformer 사전학습 모델 파인튜닝  
+A) A tree ensemble such as XGBoost  
+B) Train a very deep CNN from scratch  
+C) Fine-tune a pretrained Transformer model  
 D) LSTM seq2seq  
 
-**정답: A**  
-해설: 정형 표 데이터·적은 양·짧은 시간에는 트리 앙상블(XGBoost)이 보통 가장 효율적이고 강력하다. CNN(B)은 이미지용, Transformer(C)는 대규모 텍스트, LSTM(D)은 시퀀스용으로 과제와 맞지 않는다.
+**Answer: A**  
+Explanation: For structured tabular data, small volume, and short time, a tree ensemble (XGBoost) is usually the most efficient and powerful. A CNN (B) is for images, a Transformer (C) is for large-scale text, and an LSTM (D) is for sequences, so none fit the task.
 
 ---
 
-**문제 2.** 학습 손실과 검증 손실이 **둘 다 높은 채로 정체**된다. 가장 적절한 진단과 대응은?
+**Question 2.** Both the training loss and the validation loss **plateau at high values**. What is the most appropriate diagnosis and response?
 
-A) 과적합 — 드롭아웃 추가  
-B) 과소적합 — 모델 용량을 키우거나 더 오래/특성 보강해 학습  
-C) 학습률 과대 — 학습률을 0으로  
-D) 데이터 누수 — 데이터를 삭제  
+A) Overfitting - add dropout  
+B) Underfitting - increase model capacity, or train longer/add features  
+C) Learning rate too high - set the learning rate to 0  
+D) Data leakage - delete the data  
 
-**정답: B**  
-해설: 두 손실이 모두 높으면 모델이 데이터를 충분히 학습하지 못한 과소적합이다. 모델을 키우거나 더 학습/특성을 보강한다. 과적합 처방(A)은 반대 상황, 학습률 0(C)은 학습 정지, 데이터 삭제(D)는 부적절하다.
-
----
-
-**문제 3.** 손글씨가 아닌 **위성 이미지에서 건물 영역을 픽셀 단위로 구분**해야 한다. 가장 적합한 과제·서비스 조합은?
-
-A) 이미지 분류 — Image Classification  
-B) 객체 탐지 — Object Detection  
-C) 시맨틱 세그멘테이션 — Semantic Segmentation  
-D) 토픽 모델링 — LDA  
-
-**정답: C**  
-해설: 픽셀 단위로 클래스를 부여하는 것은 시맨틱 세그멘테이션이며 SageMaker Semantic Segmentation이 적합하다. 분류(A)는 이미지당 레이블, 탐지(B)는 바운딩 박스, LDA(D)는 텍스트 주제 발견이다.
+**Answer: B**  
+Explanation: If both losses are high, the model has not learned the data sufficiently, which is underfitting. Increase the model size, train longer, or add features. The overfitting remedy (A) is for the opposite situation, a learning rate of 0 (C) stops training, and deleting data (D) is inappropriate.
 
 ---
 
-**문제 4.** 하이퍼파라미터(학습률·배치·드롭아웃)를 효율적으로 자동 탐색하려 한다. SageMaker에서 적절한 기능은?
+**Question 3.** You need to **segment building regions pixel by pixel in satellite images**, not handwriting. Which combination of task and service is MOST suitable?
+
+A) Image classification - Image Classification  
+B) Object detection - Object Detection  
+C) Semantic segmentation - Semantic Segmentation  
+D) Topic modeling - LDA  
+
+**Answer: C**  
+Explanation: Assigning a class to each pixel is semantic segmentation, and SageMaker Semantic Segmentation is suitable. Classification (A) gives one label per image, detection (B) gives bounding boxes, and LDA (D) discovers topics in text.
+
+---
+
+**Question 4.** You want to automatically and efficiently search hyperparameters (learning rate, batch size, dropout). Which SageMaker feature is appropriate?
 
 A) Ground Truth  
 B) Feature Store  
 C) Model Monitor  
-D) Automatic Model Tuning(베이지안 최적화)  
+D) Automatic Model Tuning (Bayesian optimization)  
 
-**정답: D**  
-해설: SageMaker Automatic Model Tuning은 베이지안 최적화로 하이퍼파라미터를 효율적으로 탐색한다. Ground Truth(A)는 라벨링, Feature Store(B)는 특성 저장, Model Monitor(C)는 운영 중 드리프트 감시용이다.
+**Answer: D**  
+Explanation: SageMaker Automatic Model Tuning efficiently searches hyperparameters using Bayesian optimization. Ground Truth (A) is for labeling, Feature Store (B) is for storing features, and Model Monitor (C) is for monitoring drift in production.
 
 ---
 
-**문제 5.** 매우 깊은 신경망을 학습하는데 층이 깊어질수록 오히려 학습이 나빠진다. 가장 효과적인 구조적 처방은?
+**Question 5.** While training a very deep neural network, training actually gets worse as layers get deeper. What is the MOST effective structural remedy?
 
-A) 잔차(skip) 연결을 도입(ResNet 계열)  
-B) 활성화 함수를 모두 제거  
-C) 배치 크기를 1로 고정  
-D) 출력층을 회귀로 변경  
+A) Introduce residual (skip) connections (ResNet family)  
+B) Remove all activation functions  
+C) Fix the batch size at 1  
+D) Change the output layer to regression  
 
-**정답: A**  
-해설: 깊은 망의 기울기 소실로 인한 성능 저하는 잔차 연결(ResNet)로 기울기가 지름길로 흐르게 해 완화한다. 활성화 제거(B)는 표현력 상실, 배치 1(C)·출력 변경(D)은 깊이 문제의 해법이 아니다.
+**Answer: A**  
+Explanation: Performance degradation caused by vanishing gradients in deep networks is mitigated by residual connections (ResNet), which let gradients flow through shortcuts. Removing activations (B) destroys expressive power, and a batch size of 1 (C) and changing the output (D) are not solutions to the depth problem.
 
 ---

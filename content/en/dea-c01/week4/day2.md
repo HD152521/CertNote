@@ -121,62 +121,62 @@ Glue ETL Job runs Spark transformations without server management. DynamicFrame 
 
 ## 📝 Practice Questions
 
-**문제 1.** Glue ETL Job에서 같은 컬럼이 어떤 행은 정수, 어떤 행은 문자열로 들어오는 타입 충돌을 깨지지 않고 다룰 수 있게 해 주는 Glue 고유 자료구조는?
+**Question 1.** Which Glue-specific data structure allows you to handle a type conflict in a Glue ETL job, where the same column arrives as an integer in some rows and a string in others, without breaking?
 
 A) Spark RDD  
 B) Pandas DataFrame  
 C) DynamicFrame  
 D) Glue Catalog Table  
 
-**정답: C**  
-해설: DynamicFrame은 Choice 타입으로 충돌하는 타입을 모두 보존했다가 ResolveChoice로 정리할 수 있는 Glue 고유 구조다. Spark DataFrame은 타입이 사전 고정이라 충돌에 취약하고, RDD는 저수준 구조, Catalog Table은 메타데이터일 뿐 변환 자료구조가 아니다.
+**Answer: C**  
+Explanation: DynamicFrame is a Glue-specific structure that preserves all conflicting types as a Choice type and lets you resolve them later with ResolveChoice. A Spark DataFrame has a schema fixed in advance and is vulnerable to conflicts, an RDD is a low-level structure, and a Catalog Table is only metadata, not a transformation data structure.
 
 ---
 
-**문제 2.** 매일 새 데이터가 추가되는 S3 소스를 Glue Job이 매 실행마다 전체 재처리하지 않고 신규분만 처리하게 하려면 무엇이 필요한가?
+**Question 2.** What is required so that a Glue Job processes only the new data from an S3 source that receives new data every day, instead of reprocessing everything on every run?
 
-A) Job 북마크를 Enable하고 소스에 transformation_ctx 지정 후 job.commit() 호출  
-B) 크롤러를 매번 재생성한다  
-C) DPU를 최대로 늘린다  
-D) Python Shell Job으로 전환한다  
+A) Enable the job bookmark, specify transformation_ctx on the source, and call job.commit()  
+B) Recreate the crawler every time  
+C) Increase DPUs to the maximum  
+D) Switch to a Python Shell job  
 
-**정답: A**  
-해설: 증분 처리는 Job 북마크로 구현한다. 북마크 Enable, 소스/싱크의 transformation_ctx 지정, 마지막 job.commit() 세 가지가 모두 갖춰져야 진행 상태가 추적된다. DPU 증설이나 Python Shell 전환은 증분 처리와 무관하다.
-
----
-
-**문제 3.** Glue ETL Job의 과금 단위와 관련해 옳은 설명은?
-
-A) 처리한 데이터 GB당 고정 요금만 부과된다  
-B) Job 개수당 월 고정 요금이다  
-C) 무료이며 Athena 쿼리에만 과금된다  
-D) DPU(1 DPU = 4 vCPU + 16GB) 사용량과 실행 시간에 비례해 과금된다  
-
-**정답: D**  
-해설: Glue ETL은 DPU 기반으로 실행 시간에 비례해 과금된다. 1 DPU는 4 vCPU + 16GB 메모리에 해당한다. 데이터 GB 고정요금이나 Job 개수당 고정요금이 아니며, 실행 자체에 비용이 발생한다.
+**Answer: A**  
+Explanation: Incremental processing is implemented with job bookmarks. The progress state is tracked only when all three are in place: enabling the bookmark, specifying transformation_ctx on the source/sink, and the final job.commit(). Adding DPUs or switching to a Python Shell job has nothing to do with incremental processing.
 
 ---
 
-**문제 4.** 수백 MB 이하의 가벼운 데이터 정리나 API 호출 같은 단순 작업을, 분산 Spark의 오버헤드 없이 더 저렴하게 실행하려면 어떤 Glue Job 타입이 적합한가?
+**Question 3.** Which statement about the billing unit of a Glue ETL job is correct?
 
-A) 표준 Spark Job에 DPU를 늘려 실행  
-B) EMR 전용 클러스터 상시 가동  
+A) Only a fixed charge per GB of data processed  
+B) A fixed monthly fee per job  
+C) It is free, and only Athena queries are charged  
+D) Billing is proportional to DPU usage (1 DPU = 4 vCPU + 16 GB) and run time  
+
+**Answer: D**  
+Explanation: Glue ETL is billed based on DPUs, in proportion to run time. 1 DPU corresponds to 4 vCPU + 16 GB of memory. It is not a fixed charge per GB of data or a fixed charge per job, and running a job itself incurs cost.
+
+---
+
+**Question 4.** Which Glue job type is suitable for running simple tasks, such as light data cleanup of a few hundred MB or less or API calls, more cheaply and without the overhead of distributed Spark?
+
+A) Run a standard Spark job with more DPUs  
+B) Keep a dedicated EMR cluster running at all times  
 C) Python Shell Job  
-D) Managed Flink 애플리케이션  
+D) Managed Flink application  
 
-**정답: C**  
-해설: Python Shell Job은 단일 노드에서 가벼운 파이썬 스크립트를 실행하는 타입으로, 작은 데이터나 오케스트레이션·메타데이터 정리에 적합하고 분산 Spark보다 저렴하다. 큰 분산 변환이 아니면 표준 Spark Job은 과한 비용이다.
+**Answer: C**  
+Explanation: A Python Shell job runs lightweight Python scripts on a single node, is suitable for small data, orchestration, and metadata cleanup, and is cheaper than distributed Spark. Unless the transformation is large and distributed, a standard Spark job is excessive cost.
 
 ---
 
-**문제 5.** Glue ETL Job의 일반적인 데이터 흐름을 가장 정확히 나타낸 것은?
+**Question 5.** Which option most accurately represents the typical data flow of a Glue ETL job?
 
 A) Sink → Transform → Source  
-B) Source(읽기) → Transform(변환) → Sink(기록)  
-C) Transform만 반복 실행  
-D) Catalog가 데이터를 직접 변환  
+B) Source (read) → Transform → Sink (write)  
+C) Run only Transform repeatedly  
+D) The Catalog transforms the data directly  
 
-**정답: B**  
-해설: 모든 Glue ETL Job은 소스에서 DynamicFrame을 읽고, 매핑·필터·조인·타입해소 등으로 변환한 뒤, S3/Catalog/Redshift 등 싱크로 기록하는 Source→Transform→Sink 흐름을 따른다. Catalog는 메타데이터 제공자일 뿐 직접 변환하지 않는다.
+**Answer: B**  
+Explanation: Every Glue ETL job follows the Source → Transform → Sink flow: it reads a DynamicFrame from a source, transforms it through mapping, filtering, joining, type resolution, and so on, and writes it to a sink such as S3, the Catalog, or Redshift. The Catalog is only a metadata provider and does not transform data directly.
 
 ---

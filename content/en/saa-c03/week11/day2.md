@@ -104,94 +104,94 @@ In the next article, we'll look at the last kilometer of this failover — **tra
 
 ## 📝 Practice Questions
 
-**문제 1.** A company is designing DR for an internal analytics system. It tolerates an RTO of 8 hours and RPO of 4 hours, and must minimize cost. What is the most appropriate strategy?
+**Question 1.** A company is designing DR for an internal analytics system. It tolerates an RTO of 8 hours and RPO of 4 hours, and must minimize cost. What is the most appropriate strategy?
 
 A) Multi-Site Active-Active
 B) Warm Standby
 C) Pilot Light
 D) Backup & Restore
 
-**정답: D**
+**Answer: D**
 
-해설: A loose target of RTO 8 hours and RPO 4 hours is well served by the cheapest Backup & Restore — copy periodic backups to another region and rebuild infrastructure on failure. Active-Active (A) and Warm Standby (B) are high-cost options for minute-scale RTO and are overkill when 8 hours is allowed, and Pilot Light (C) also incurs continuous-replication cost, but with an RPO of 4 hours that hot data is unnecessary. The key is "loose RTO/RPO + minimum cost = the lowest stage." Resilience exceeding the requirement is a waste.
+Explanation: A loose target of RTO 8 hours and RPO 4 hours is well served by the cheapest Backup & Restore — copy periodic backups to another region and rebuild infrastructure on failure. Active-Active (A) and Warm Standby (B) are high-cost options for minute-scale RTO and are overkill when 8 hours is allowed, and Pilot Light (C) also incurs continuous-replication cost, but with an RPO of 4 hours that hot data is unnecessary. The key is "loose RTO/RPO + minimum cost = the lowest stage." Resilience exceeding the requirement is a waste.
 
 ---
 
-**문제 2.** A financial firm requires, for regulatory compliance, that backups be tamper-proof so that **not even the root user can delete them** within the retention period. What is the appropriate control?
+**Question 2.** A financial firm requires, for regulatory compliance, that backups be tamper-proof so that **not even the root user can delete them** within the retention period. What is the appropriate control?
 
 A) Deny deletion with an S3 bucket policy
 B) AWS Backup Vault Lock (Compliance mode)
 C) Restrict backup deletion with an IAM policy
 D) MFA Delete
 
-**정답: B**
+**Answer: B**
 
-해설: AWS Backup Vault Lock's Compliance mode locks backups as WORM so that **not even the root user can delete or alter them** within the retention period, satisfying regulatory and ransomware-defense requirements for immutable backups. An S3 bucket policy (A) or IAM policy (C) can be changed or bypassed by a privileged principal (especially root), so they can't meet the "not even root" requirement. MFA Delete (D) only requires MFA to delete S3 objects — it's not immutability that enforces retention. "Tamper-proof, not even root can delete" = Vault Lock.
+Explanation: AWS Backup Vault Lock's Compliance mode locks backups as WORM so that **not even the root user can delete or alter them** within the retention period, satisfying regulatory and ransomware-defense requirements for immutable backups. An S3 bucket policy (A) or IAM policy (C) can be changed or bypassed by a privileged principal (especially root), so they can't meet the "not even root" requirement. MFA Delete (D) only requires MFA to delete S3 objects — it's not immutability that enforces retention. "Tamper-proof, not even root can delete" = Vault Lock.
 
 ---
 
-**문제 3.** An architect wants to lower DR cost while keeping RTO in minutes. Which AWS service automates the approach of replicating data continuously but keeping app servers off in normal times and booting them quickly on failure?
+**Question 3.** An architect wants to lower DR cost while keeping RTO in minutes. Which AWS service automates the approach of replicating data continuously but keeping app servers off in normal times and booting them quickly on failure?
 
 A) AWS Backup
 B) AWS Elastic Disaster Recovery (DRS)
 C) AWS DataSync
 D) AWS Storage Gateway
 
-**정답: B**
+**Answer: B**
 
-해설: AWS DRS replicates source servers in real time at the block level and keeps them in low-cost staging, then boots EC2 in minutes on failure — a service that economically automates Pilot Light. AWS Backup (A) is a backup/restore centralization tool, not real-time block replication; DataSync (C) is online file transfer; and Storage Gateway (D) is a hybrid storage cache, not DR orchestration. "Data hot-replicated, compute cold, minute-scale RTO" = DRS.
+Explanation: AWS DRS replicates source servers in real time at the block level and keeps them in low-cost staging, then boots EC2 in minutes on failure — a service that economically automates Pilot Light. AWS Backup (A) is a backup/restore centralization tool, not real-time block replication; DataSync (C) is online file transfer; and Storage Gateway (D) is a hybrid storage cache, not DR orchestration. "Data hot-replicated, compute cold, minute-scale RTO" = DRS.
 
 ---
 
-**문제 4.** A team wants to keep a **scaled-down full stack** always on in the secondary region and recover within minutes on failure by only scaling up and switching traffic. What is this strategy?
+**Question 4.** A team wants to keep a **scaled-down full stack** always on in the secondary region and recover within minutes on failure by only scaling up and switching traffic. What is this strategy?
 
 A) Backup & Restore
 B) Pilot Light
 C) Warm Standby
 D) Multi-Site Active-Active
 
-**정답: C**
+**Answer: C**
 
-해설: Having every tier always up at minimum capacity and only needing to scale up on failure is the definition of Warm Standby, with an RTO of minutes. Pilot Light (B) has app servers off, so it takes extra time to turn them on; Backup & Restore (A) builds infrastructure from scratch and takes hours–days; and Active-Active (D) has the secondary region taking traffic at full capacity even in normal times, so it isn't a "scaled-down version." "Scaled-down full stack always running + scale up" = Warm Standby. The difference from Pilot Light is whether the app is on.
+Explanation: Having every tier always up at minimum capacity and only needing to scale up on failure is the definition of Warm Standby, with an RTO of minutes. Pilot Light (B) has app servers off, so it takes extra time to turn them on; Backup & Restore (A) builds infrastructure from scratch and takes hours–days; and Active-Active (D) has the secondary region taking traffic at full capacity even in normal times, so it isn't a "scaled-down version." "Scaled-down full stack always running + scale up" = Warm Standby. The difference from Pilot Light is whether the app is on.
 
 ---
 
-**문제 5.** A company runs multi-region Active-Active and wants, on failover, to switch traffic between regions instantly and **explicitly by an operator without relying on health checks**, while continuously verifying the secondary region's readiness. What is the appropriate tool?
+**Question 5.** A company runs multi-region Active-Active and wants, on failover, to switch traffic between regions instantly and **explicitly by an operator without relying on health checks**, while continuously verifying the secondary region's readiness. What is the appropriate tool?
 
 A) Route 53 Failover policy alone
 B) Route 53 Application Recovery Controller (ARC)
 C) CloudWatch Alarm
 D) Auto Scaling
 
-**정답: B**
+**Answer: B**
 
-해설: Route 53 ARC lets an operator instantly switch "100%/0% region traffic" via routing controls without relying on health checks, and continuously verifies the secondary region's capacity, quota, and config readiness with Readiness Check. It also runs as a 5-region cluster so control stays alive even during a failure. A Failover policy alone (A) is health-check-based, so it has detection/propagation delay and isn't explicit control, and CloudWatch Alarm (C) and Auto Scaling (D) are not failover routing-control tools. "Explicit, health-check-independent failover + readiness verification" = ARC.
+Explanation: Route 53 ARC lets an operator instantly switch "100%/0% region traffic" via routing controls without relying on health checks, and continuously verifies the secondary region's capacity, quota, and config readiness with Readiness Check. It also runs as a 5-region cluster so control stays alive even during a failure. A Failover policy alone (A) is health-check-based, so it has detection/propagation delay and isn't explicit control, and CloudWatch Alarm (C) and Auto Scaling (D) are not failover routing-control tools. "Explicit, health-check-independent failover + readiness verification" = ARC.
 
 ---
 
-**문제 6.** A startup's operational account is hijacked and the attacker tries to delete EC2, S3, and snapshots. What is the most robust design to protect backups from such malicious deletion?
+**Question 6.** A startup's operational account is hijacked and the attacker tries to delete EC2, S3, and snapshots. What is the most robust design to protect backups from such malicious deletion?
 
 A) Store backups more frequently in the same account
 B) Triple isolation: Cross-Account + Cross-Region + Vault Lock (immutable)
 C) Create more EBS snapshots
 D) Strengthen the IAM user's password
 
-**정답: B**
+**Answer: B**
 
-해설: If a backup is inside the same trust boundary as production (account, region, controls), the hand that erased production erases the backup too (the 2014 Code Spaces case). Placing it in a separate account (Cross-Account) separates permissions even if the operational account is hijacked, placing it in another region (Cross-Region) separates it from regional failure, and Vault Lock (immutable) blocks deletion itself within the retention period. A and C are in the same account and can be deleted along with it, and D can't stop a situation where credentials are already hijacked. DR must assume malicious deletion and insider threats too.
+Explanation: If a backup is inside the same trust boundary as production (account, region, controls), the hand that erased production erases the backup too (the 2014 Code Spaces case). Placing it in a separate account (Cross-Account) separates permissions even if the operational account is hijacked, placing it in another region (Cross-Region) separates it from regional failure, and Vault Lock (immutable) blocks deletion itself within the retention period. A and C are in the same account and can be deleted along with it, and D can't stop a situation where credentials are already hijacked. DR must assume malicious deletion and insider threats too.
 
 ---
 
-**문제 7.** An organization has an elaborate DR document but has never actually executed a failover. What practice reduces the risk that, in a real disaster, the secondary region's config/quotas are insufficient and recovery fails?
+**Question 7.** An organization has an elaborate DR document but has never actually executed a failover. What practice reduces the risk that, in a real disaster, the secondary region's config/quotas are insufficient and recovery fails?
 
 A) Write the DR document in more detail
 B) Regular Game Days (planned failover rehearsals) + continuously measuring readiness with Resilience Hub/ARC Readiness Check
 C) Increase the backup frequency
 D) Simplify to a single region
 
-**정답: B**
+**Answer: B**
 
-해설: A DR plan is just a hypothesis until you actually trigger it, so you must run planned failovers via regular Game Days to validate the secondary region's config, quotas, and consistency. Resilience Hub scores resilience and ARC Readiness Check continuously verifies the secondary region's readiness, preventing the "turned out to be lacking when we actually failed over" incident. A only grows the document, not the validation; C affects only RPO; and D heads toward abandoning DR altogether. "An unrehearsed DR isn't DR."
+Explanation: A DR plan is just a hypothesis until you actually trigger it, so you must run planned failovers via regular Game Days to validate the secondary region's config, quotas, and consistency. Resilience Hub scores resilience and ARC Readiness Check continuously verifies the secondary region's readiness, preventing the "turned out to be lacking when we actually failed over" incident. A only grows the document, not the validation; C affects only RPO; and D heads toward abandoning DR altogether. "An unrehearsed DR isn't DR."
 
 ---
 

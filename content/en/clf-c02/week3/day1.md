@@ -92,62 +92,62 @@ In the next article, we'll look at the messaging services that **loosely connect
 
 ## 📝 Practice Questions
 
-**문제 1.** A company wants to migrate its existing on-premises Oracle database to AWS with minimal changes. Which service is most appropriate?
+**Question 1.** A company wants to migrate its existing on-premises Oracle database to AWS with minimal changes. Which service is most appropriate?
 
 A) Amazon RDS  
 B) Amazon DynamoDB  
 C) Amazon Redshift  
 D) Amazon ElastiCache  
 
-**정답: A**  
-해설: RDS offers familiar relational engines, including Oracle, in managed form, making it a good fit for migrating an existing DB with minimal changes. DynamoDB is NoSQL and would require redesigning the schema/queries, Redshift is an analytical data warehouse, and ElastiCache is a cache — none of which can replace the operational database itself.
+**Answer: A**  
+Explanation: RDS offers familiar relational engines, including Oracle, in managed form, making it a good fit for migrating an existing DB with minimal changes. DynamoDB is NoSQL and would require redesigning the schema/queries, Redshift is an analytical data warehouse, and ElastiCache is a cache — none of which can replace the operational database itself.
 
 ---
 
-**문제 2.** Which NoSQL database handles flexible data structures and unpredictable, massive-scale traffic while requiring no server management?
+**Question 2.** Which NoSQL database handles flexible data structures and unpredictable, massive-scale traffic while requiring no server management?
 
 A) Amazon Aurora  
 B) Amazon RDS  
 C) Amazon DynamoDB  
 D) Amazon Redshift  
 
-**정답: C**  
-해설: DynamoDB is a fully managed NoSQL database that provides flexible item structures, automatic scaling, and single-digit millisecond responses. Aurora and RDS are relational (fixed schema), and Redshift is a warehouse for large-scale data analysis, so it's not suited to handling operational traffic.
+**Answer: C**  
+Explanation: DynamoDB is a fully managed NoSQL database that provides flexible item structures, automatic scaling, and single-digit millisecond responses. Aurora and RDS are relational (fixed schema), and Redshift is a warehouse for large-scale data analysis, so it's not suited to handling operational traffic.
 
 ---
 
-**문제 3.** You want to reduce the read load on a database and speed up response times for frequently queried data. Which service is most appropriate?
+**Question 3.** You want to reduce the read load on a database and speed up response times for frequently queried data. Which service is most appropriate?
 
 A) Amazon Redshift  
 B) Amazon ElastiCache  
 C) Amazon RDS  
 D) Amazon DynamoDB  
 
-**정답: B**  
-해설: ElastiCache is an in-memory cache based on Redis/Memcached that keeps frequently used data in memory, reducing DB load and accelerating responses. Redshift is for analytics, and RDS/DynamoDB are source data stores, not caching layers.
+**Answer: B**  
+Explanation: ElastiCache is an in-memory cache based on Redis/Memcached that keeps frequently used data in memory, reducing DB load and accelerating responses. Redshift is for analytics, and RDS/DynamoDB are source data stores, not caching layers.
 
 ---
 
-**문제 4.** A company wants to gather several years of sales data to build large-scale aggregate analysis and BI reports. Which service is most appropriate?
+**Question 4.** A company wants to gather several years of sales data to build large-scale aggregate analysis and BI reports. Which service is most appropriate?
 
 A) Amazon Redshift  
 B) Amazon DynamoDB  
 C) Amazon ElastiCache  
 D) Amazon RDS  
 
-**정답: A**  
-해설: Redshift is a data warehouse optimized for aggregation and analysis (OLAP) of large data volumes. DynamoDB and RDS suit short, frequent operational queries (OLTP), and ElastiCache is a caching layer, so none are appropriate for large-scale analytical queries.
+**Answer: A**  
+Explanation: Redshift is a data warehouse optimized for aggregation and analysis (OLAP) of large data volumes. DynamoDB and RDS suit short, frequent operational queries (OLTP), and ElastiCache is a caching layer, so none are appropriate for large-scale analytical queries.
 
 ---
 
-**문제 5.** Which relational database, redesigned by AWS for the cloud, is compatible with MySQL/PostgreSQL while offering higher-than-standard performance and automatic storage scaling?
+**Question 5.** Which relational database, redesigned by AWS for the cloud, is compatible with MySQL/PostgreSQL while offering higher-than-standard performance and automatic storage scaling?
 
 A) Amazon RDS for MySQL  
 B) Amazon Aurora  
 C) Amazon DynamoDB  
 D) Amazon ElastiCache  
 
-**정답: B**  
-해설: Aurora is a cloud-native relational DB compatible with MySQL and PostgreSQL, characterized by high performance and auto-scaling storage. RDS for MySQL merely provides the standard engine in managed form, DynamoDB is NoSQL, and ElastiCache is a cache.
+**Answer: B**  
+Explanation: Aurora is a cloud-native relational DB compatible with MySQL and PostgreSQL, characterized by high performance and auto-scaling storage. RDS for MySQL merely provides the standard engine in managed form, DynamoDB is NoSQL, and ElastiCache is a cache.
 
 ---

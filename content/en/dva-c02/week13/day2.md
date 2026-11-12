@@ -133,91 +133,91 @@ Write-Through: Write to cache and DB simultaneously
 
 ## 📝 Final Mock Exam - Part 2
 
-**문제 1.** How many RCU consumed when reading 5KB item with strong consistency in DynamoDB?
+**Question 1.** How many RCU consumed when reading 5KB item with strong consistency in DynamoDB?
 
 A) 1 RCU  
 B) 1.5 RCU  
 C) 2 RCU  
 D) 3 RCU  
 
-**정답: C** - ceil(5/4) × 1 = 2 RCU (strong consistency is 1 RCU/4KB)
+**Answer: C** - ceil(5/4) × 1 = 2 RCU (strong consistency is 1 RCU/4KB)
 
 ---
 
-**문제 2.** S3 bucket policy condition to enforce HTTPS only?
+**Question 2.** S3 bucket policy condition to enforce HTTPS only?
 
 A) aws:SecureTransport = true  
 B) aws:SecureTransport = false → Deny  
 C) s3:ssl = required  
 D) aws:RequestedRegion setting  
 
-**정답: B** - Deny requests with `aws:SecureTransport=false` to reject HTTP and enforce HTTPS only.
+**Answer: B** - Deny requests with `aws:SecureTransport=false` to reject HTTP and enforce HTTPS only.
 
 ---
 
-**문제 3.** Can you add GSI to RDS table while running?
+**Question 3.** Can you add GSI to RDS table while running?
 
 A) Impossible (DynamoDB only)  
 B) Possible, RDS supports index addition  
 C) DynamoDB GSI can be added during operation  
 D) Must migrate to new table  
 
-**정답: C** - DynamoDB Global Secondary Index can be added/removed anytime after table creation.
+**Answer: C** - DynamoDB Global Secondary Index can be added/removed anytime after table creation.
 
 ---
 
-**문제 4.** Disadvantage of Write-Through strategy in ElastiCache?
+**Question 4.** Disadvantage of Write-Through strategy in ElastiCache?
 
 A) Old data exists in cache  
 B) Additional cache update cost for every write operation  
 C) Increased Cache Miss frequency  
 D) Implementation complexity  
 
-**정답: B** - Write-Through updates both DB and cache on every write, causing write latency and additional cost.
+**Answer: B** - Write-Through updates both DB and cache on every write, causing write latency and additional cost.
 
 ---
 
-**문제 5.** Prerequisite for S3 Cross-Region Replication (CRR)?
+**Question 5.** Prerequisite for S3 Cross-Region Replication (CRR)?
 
 A) Same account only  
 B) Versioning must be enabled  
 C) Transfer Acceleration required  
 D) S3 Sync tool required  
 
-**정답: B** - Both source and destination buckets must have versioning enabled for CRR/SRR.
+**Answer: B** - Both source and destination buckets must have versioning enabled for CRR/SRR.
 
 ---
 
-**문제 6.** Optimal use case for Aurora Serverless?
+**Question 6.** Optimal use case for Aurora Serverless?
 
 A) Always high-load service  
 B) Intermittent and unpredictable traffic  
 C) Multi-region service  
 D) Very high read-load service  
 
-**정답: B** - Aurora Serverless auto-scales down to 0 when traffic is absent, cost-efficient for intermittent usage.
+**Answer: B** - Aurora Serverless auto-scales down to 0 when traffic is absent, cost-efficient for intermittent usage.
 
 ---
 
-**문제 7.** Time until actual deletion after DynamoDB TTL expiry?
+**Question 7.** Time until actual deletion after DynamoDB TTL expiry?
 
 A) Immediately  
 B) 1 hour  
 C) Max 48 hours  
 D) 7 days  
 
-**정답: C** - TTL items are deleted asynchronously within 48 hours after expiry.
+**Answer: C** - TTL items are deleted asynchronously within 48 hours after expiry.
 
 ---
 
-**문제 8.** Minimum retention period to move to Glacier in S3 Lifecycle?
+**Question 8.** Minimum retention period to move to Glacier in S3 Lifecycle?
 
 A) 1 day  
 B) 30 days  
 C) 90 days  
 D) 180 days  
 
-**정답: C** - S3 Glacier has 90-day minimum retention requirement.
+**Answer: C** - S3 Glacier has 90-day minimum retention requirement.
 
 ---
 

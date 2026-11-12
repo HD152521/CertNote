@@ -145,62 +145,62 @@ With `Automatic: true`, remediation runs immediately upon violation detection (m
 
 ## 📝 Practice Questions
 
-**문제 1.** AWS Config와 CloudTrail의 역할 구분으로 가장 정확한 것은?
+**Question 1.** Which statement most accurately distinguishes the roles of AWS Config and CloudTrail?
 
-A) 둘 다 동일하게 API 호출만 기록하므로 하나만 켜면 된다  
-B) CloudTrail은 "누가 무엇을 했는가"(활동)를, Config는 "리소스가 각 시점에 어떤 상태였는가"(구성 상태·이력)를 기록한다  
-C) Config는 실시간 API 호출을, CloudTrail은 주기적 스냅샷을 기록한다  
-D) Config는 네트워크 트래픽을, CloudTrail은 구성 변경을 기록한다  
+A) Both record only API calls in the same way, so turning on one is enough  
+B) CloudTrail records "who did what" (activity), while Config records "what state a resource was in at each point in time" (configuration state and history)  
+C) Config records real-time API calls, while CloudTrail records periodic snapshots  
+D) Config records network traffic, while CloudTrail records configuration changes  
 
-**정답: B**  
-해설: CloudTrail은 API 호출 활동(누가/언제/무엇을)을 기록하고, Config는 리소스의 구성 항목(CI)을 통해 각 시점의 상태와 구성 타임라인, 리소스 간 관계를 기록한다. 둘은 보완적이며 함께 써야 활동과 상태를 교차 분석할 수 있다. 역할이 동일하지 않고, 트래픽 로깅은 VPC Flow Logs의 영역이다.
-
----
-
-**문제 2.** AWS 관리형 규칙으로는 표현할 수 없는, "모든 EBS 볼륨이 특정 CMK(지정된 KMS 키 ARN)로 암호화돼야 한다"는 조직 특화 요구를 평가해야 한다. 적절한 방법은?
-
-A) 관리형 규칙 `encrypted-volumes`만 사용  
-B) Custom Lambda rule 또는 Custom Policy(Guard) rule로 특정 키 ARN 일치를 평가  
-C) CloudTrail 데이터 이벤트로 평가  
-D) SCP로 EBS 생성을 차단  
-
-**정답: B**  
-해설: 관리형 `encrypted-volumes`는 암호화 *여부*만 본다. *특정 키*로의 암호화 강제는 커스텀 평가 로직이 필요하므로 Custom Lambda rule(또는 코드 없는 Custom Policy/Guard rule)로 `configuration.kmsKeyId`를 지정 ARN과 비교한다. CloudTrail은 활동 기록이지 준수 평가 엔진이 아니고, SCP는 예방 통제로 "특정 키 암호화" 평가를 표현하기 어렵다.
+**Answer: B**  
+Explanation: CloudTrail records API call activity (who/when/what), while Config records the state at each point in time, the configuration timeline, and relationships between resources through the resource's configuration items (CIs). The two are complementary and must be used together to cross-analyze activity and state. Their roles are not the same, and traffic logging is the domain of VPC Flow Logs.
 
 ---
 
-**문제 3.** 여러 규정(CIS, PCI-DSS)의 다수 Config 규칙과 교정을 다계정 조직에 일관되게 배포·관리하려 한다. 가장 적절한 것은?
+**Question 2.** You must evaluate an organization-specific requirement that cannot be expressed with AWS managed rules: "all EBS volumes must be encrypted with a specific CMK (a designated KMS key ARN)." What is an appropriate method?
 
-A) 각 계정에서 규칙을 하나씩 콘솔로 생성  
-B) Organization Conformance Pack으로 규칙·교정을 YAML 템플릿으로 묶어 모든 멤버 계정에 배포  
-C) 계정마다 별도 Lambda 규칙 작성  
-D) Config Aggregator만 설정  
+A) Use only the managed rule `encrypted-volumes`  
+B) Evaluate a match of the specific key ARN with a Custom Lambda rule or a Custom Policy (Guard) rule  
+C) Evaluate with CloudTrail data events  
+D) Block EBS creation with an SCP  
 
-**정답: B**  
-해설: Conformance Pack은 다수의 Config 규칙과 교정 액션을 하나의 YAML 템플릿으로 묶어 배포·관리하는 단위이며, organization conformance pack으로 조직 전체 멤버 계정에 일괄 배포하고 위임 관리자가 집계 준수 상태를 본다. 개별 생성은 일관성·확장성이 없고, Aggregator는 데이터를 *집계해 보는* 도구일 뿐 규칙을 배포하지 않는다.
-
----
-
-**문제 4.** 퍼블릭 읽기 가능한 S3 버킷이 생성되면 사람 개입 없이 자동으로 차단하려 한다. Config로 구현하는 방법은?
-
-A) `s3-bucket-public-read-prohibited` 규칙에 SSM Automation 교정(`AWS-DisableS3BucketPublicReadWrite`)을 `Automatic: true`로 연결한다  
-B) CloudTrail 무결성 검증을 켠다  
-C) Config Aggregator를 설정한다  
-D) 규칙을 만들고 매일 수동으로 검토한다  
-
-**정답: A**  
-해설: Config 규칙이 위반을 탐지하면 연결된 SSM Automation 문서를 교정 액션으로 호출하며, `Automatic: true`로 설정하면 탐지 즉시 자동 실행된다. `AWS-DisableS3BucketPublicReadWrite`는 퍼블릭 액세스를 차단하는 AWS 제공 문서다. 무결성 검증·Aggregator는 교정과 무관하고, 수동 검토는 "사람 개입 없이"라는 요구를 만족하지 못한다.
+**Answer: B**  
+Explanation: The managed `encrypted-volumes` rule only checks *whether* a volume is encrypted. Enforcing encryption with a *specific key* requires custom evaluation logic, so you compare `configuration.kmsKeyId` against the designated ARN with a Custom Lambda rule (or a codeless Custom Policy/Guard rule). CloudTrail records activity and is not a compliance evaluation engine, and an SCP is a preventive control that has difficulty expressing the "encrypted with a specific key" evaluation.
 
 ---
 
-**문제 5.** Config 자동 교정을 운영 환경에 도입할 때 가장 주의해야 할 위험은?
+**Question 3.** You want to consistently deploy and manage many Config rules and remediations for multiple standards (CIS, PCI-DSS) across a multi-account organization. What is most appropriate?
 
-A) Config가 리전 간 자동 복제되어 비용이 두 배가 된다  
-B) 교정이 리소스를 변경하면 새 CI가 생겨 규칙이 재평가되므로, 잘못 설계하면 변경→평가→교정 루프나 운영 중단을 유발할 수 있다  
-C) 교정은 IAM 역할 없이 동작하므로 권한 통제가 불가능하다  
-D) 자동 교정은 글로벌 리소스에만 적용된다  
+A) Create the rules one by one in the console in each account  
+B) Use an Organization Conformance Pack to bundle the rules and remediations into a YAML template and deploy it to all member accounts  
+C) Write a separate Lambda rule for each account  
+D) Set up only a Config Aggregator  
 
-**정답: B**  
-해설: 교정이 리소스를 수정하면 새 구성 항목이 생성되어 규칙이 다시 평가되며, 설계가 잘못되면 평가-교정 루프가 돌거나 운영상 필요한 설정(예: 의도된 공개 규칙)을 닫아 장애를 낼 수 있다. 그래서 먼저 수동 교정·알림으로 검증 후 자동화하는 것이 안전하다. 교정은 `AutomationAssumeRole`로 권한이 통제되며, 리전 자동 복제나 글로벌 한정 같은 동작은 없다.
+**Answer: B**  
+Explanation: A conformance pack is a unit that bundles many Config rules and remediation actions into one YAML template for deployment and management; an organization conformance pack deploys it in bulk to all member accounts in the organization, and a delegated administrator views the aggregated compliance status. Individual creation lacks consistency and scalability, and an Aggregator is merely a tool for *aggregating and viewing* data and does not deploy rules.
+
+---
+
+**Question 4.** When a publicly readable S3 bucket is created, you want to block it automatically without human intervention. How do you implement this with Config?
+
+A) Attach SSM Automation remediation (`AWS-DisableS3BucketPublicReadWrite`) to the `s3-bucket-public-read-prohibited` rule with `Automatic: true`  
+B) Turn on CloudTrail integrity validation  
+C) Set up a Config Aggregator  
+D) Create a rule and review it manually every day  
+
+**Answer: A**  
+Explanation: When a Config rule detects a violation, it invokes the attached SSM Automation document as the remediation action, and with `Automatic: true` it runs automatically as soon as the violation is detected. `AWS-DisableS3BucketPublicReadWrite` is an AWS-provided document that blocks public access. Integrity validation and an Aggregator are unrelated to remediation, and manual review does not satisfy the "without human intervention" requirement.
+
+---
+
+**Question 5.** What is the biggest risk to watch for when introducing Config automatic remediation into a production environment?
+
+A) Config is automatically replicated across Regions, doubling the cost  
+B) When remediation changes a resource, a new CI is created and the rule is re-evaluated, so a poor design can cause a change → evaluate → remediate loop or an operational outage  
+C) Remediation works without an IAM role, so permission control is impossible  
+D) Automatic remediation applies only to global resources  
+
+**Answer: B**  
+Explanation: When remediation modifies a resource, a new configuration item is created and the rule is evaluated again; if the design is wrong, an evaluate-remediate loop can run, or a setting that is operationally necessary (for example, an intentionally public rule) can be closed, causing an outage. That is why it is safer to validate with manual remediation and notifications first, then automate. Remediation permissions are controlled through `AutomationAssumeRole`, and there is no behavior such as automatic Region replication or global-only restriction.
 
 ---

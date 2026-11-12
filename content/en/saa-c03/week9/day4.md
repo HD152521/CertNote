@@ -120,94 +120,94 @@ In the next article, we integrate the week's observability and governance servic
 
 ## 📝 Practice Questions
 
-**문제 1.** An application processes a request in the order API Gateway → Lambda → DynamoDB → external payment API, and the response the user perceives is a slow 3 seconds. In CloudWatch Metrics you only see that Lambda Duration is long, and it isn't decomposed into which downstream call is the bottleneck. Which is the most appropriate tool?
+**Question 1.** An application processes a request in the order API Gateway → Lambda → DynamoDB → external payment API, and the response the user perceives is a slow 3 seconds. In CloudWatch Metrics you only see that Lambda Duration is long, and it isn't decomposed into which downstream call is the bottleneck. Which is the most appropriate tool?
 
 A) Full-scan the logs with CloudWatch Logs Insights
 B) Turn on X-Ray Active Tracing to decompose per-call latency into Segments/Subsegments
 C) Run Trusted Advisor's Performance check
 D) Increase the Lambda memory with Compute Optimizer
 
-**정답: B**
+**Answer: B**
 
-해설: "Decomposing latency, including downstream calls, on a per-call basis" is a capability unique to distributed tracing. X-Ray breaks DynamoDB and the external API into separate Subsegments inside the Lambda Segment and shows which span eats up the 2.8 seconds. A's Logs Insights only sees what you explicitly logged and can't automatically build the tree-shaped causal relationship. C's Trusted Advisor is a best-practice check, not runtime latency diagnosis. D's Compute Optimizer is a right-sizing tool, and if the cause is the external API, increasing memory is meaningless. Additionally, remembering that X-Ray propagates the Trace ID issued at the first entry point via the `X-Amzn-Trace-Id` header to bind everything across service boundaries into the same trace makes the scope of integration easy to understand.
+Explanation: "Decomposing latency, including downstream calls, on a per-call basis" is a capability unique to distributed tracing. X-Ray breaks DynamoDB and the external API into separate Subsegments inside the Lambda Segment and shows which span eats up the 2.8 seconds. A's Logs Insights only sees what you explicitly logged and can't automatically build the tree-shaped causal relationship. C's Trusted Advisor is a best-practice check, not runtime latency diagnosis. D's Compute Optimizer is a right-sizing tool, and if the cause is the external API, increasing memory is meaningless. Additionally, remembering that X-Ray propagates the Trace ID issued at the first entry point via the `X-Amzn-Trace-Id` header to bind everything across service boundaries into the same trace makes the scope of integration easy to understand.
 
 ---
 
-**문제 2.** A team uses X-Ray's default sampling (1 per second + 5%), but a slow request reported by a specific user isn't visible in the traces. Which is the most accurate explanation and response?
+**Question 2.** A team uses X-Ray's default sampling (1 per second + 5%), but a slow request reported by a specific user isn't visible in the traces. Which is the most accurate explanation and response?
 
 A) It's an X-Ray bug, so restart the daemon
 B) With 5% sampling most requests aren't traced, so this is normal; add a rule with a higher FixedRate on that path
 C) It's because the CloudWatch Agent is missing; install the Agent
 D) It's because Lambda Active Tracing is off; turn it on
 
-**정답: B**
+**Answer: B**
 
-해설: Default sampling doesn't trace every request, for both cost and statistical reasons. With a 5% rate, 95% aren't traced in the first place, so a specific request being invisible isn't a bug. When debugging, add a high-priority rule (FixedRate=1.0) on that URL path to trace only that path at 100%. A is a wrong diagnosis. C's memory-metric problem is unrelated to sampling. D is not the cause, because part of the trace is already visible (the sampled 5%), which means Active Tracing is already on. It's good to also remember that the reservoir (guarantee of 1 per second) lets low-traffic services secure a minimum of tracing while the rate (5%) suppresses high-traffic cost — a dual strategy.
+Explanation: Default sampling doesn't trace every request, for both cost and statistical reasons. With a 5% rate, 95% aren't traced in the first place, so a specific request being invisible isn't a bug. When debugging, add a high-priority rule (FixedRate=1.0) on that URL path to trace only that path at 100%. A is a wrong diagnosis. C's memory-metric problem is unrelated to sampling. D is not the cause, because part of the trace is already visible (the sampled 5%), which means Active Tracing is already on. It's good to also remember that the reservoir (guarantee of 1 per second) lets low-traffic services secure a minimum of tracing while the rate (5%) suppresses high-traffic cost — a dual strategy.
 
 ---
 
-**문제 3.** A security team wants to programmatically (via API) collect, every day, best-practice violations like "ports open to 0.0.0.0/0, root without MFA, public S3" and put them on a dashboard. Which is the correct precondition and tool?
+**Question 3.** A security team wants to programmatically (via API) collect, every day, best-practice violations like "ports open to 0.0.0.0/0, root without MFA, public S3" and put them on a dashboard. Which is the correct precondition and tool?
 
 A) Call the Trusted Advisor API on the free Basic Support
 B) Use the Trusted Advisor full check + API on the Business or Enterprise Support plan
 C) Use the Health Dashboard API
 D) Use the Compute Optimizer API
 
-**정답: B**
+**Answer: B**
 
-해설: Trusted Advisor's full check across all five categories and programmatic (API) access open only on the Business/Enterprise Support plans. The free scope is limited to some core security items and the service-limit checks and is unsuitable for API automation (A is wrong). C's Health Dashboard is a tool for viewing AWS-side infrastructure incidents, not for checking your account's best-practice violations. D's Compute Optimizer is dedicated to right-sizing. If you need more sophisticated, continuous security-posture management, expanding to Security Hub is the next step.
+Explanation: Trusted Advisor's full check across all five categories and programmatic (API) access open only on the Business/Enterprise Support plans. The free scope is limited to some core security items and the service-limit checks and is unsuitable for API automation (A is wrong). C's Health Dashboard is a tool for viewing AWS-side infrastructure incidents, not for checking your account's best-practice violations. D's Compute Optimizer is dedicated to right-sizing. If you need more sophisticated, continuous security-posture management, expanding to Security Hub is the next step.
 
 ---
 
-**문제 4.** An operations team wants to "automatically respond (move traffic to another AZ) to scheduled AWS-side maintenance and failures that actually affect the resources in my account." Which is the most appropriate configuration?
+**Question 4.** An operations team wants to "automatically respond (move traffic to another AZ) to scheduled AWS-side maintenance and failures that actually affect the resources in my account." Which is the most appropriate configuration?
 
 A) Periodically refresh the public Service Health Dashboard page
 B) Receive GuardDuty alerts via EventBridge
 C) Receive AWS Health API (Personal Health) events via EventBridge and trigger a Lambda auto-response
 D) Remediate Config Rule violations with SSM Automation
 
-**정답: C**
+**Answer: C**
 
-해설: AWS-side events that affect your account are the domain of Personal Health (Account health), and receiving them via Health API + EventBridge lets you set up automated responses to signals like "my instance will soon undergo a maintenance reboot." A is a global public page that doesn't provide personalized impact on your resources and is unsuitable for automation. B's GuardDuty is threat detection, not an AWS infrastructure-maintenance event. D's Config is a matter of your resources' configuration compliance, not an AWS-side incident. The case where the Service Health Dashboard itself depended on the same infrastructure and had delayed updates during the 2021 us-east-1 outage nicely illustrates the value of a "personalized Health signal."
+Explanation: AWS-side events that affect your account are the domain of Personal Health (Account health), and receiving them via Health API + EventBridge lets you set up automated responses to signals like "my instance will soon undergo a maintenance reboot." A is a global public page that doesn't provide personalized impact on your resources and is unsuitable for automation. B's GuardDuty is threat detection, not an AWS infrastructure-maintenance event. D's Config is a matter of your resources' configuration compliance, not an AWS-side incident. The case where the Service Health Dashboard itself depended on the same infrastructure and had delayed updates during the 2021 us-east-1 outage nicely illustrates the value of a "personalized Health signal."
 
 ---
 
-**문제 5.** A cost review revealed that 50 m5.2xlarge instances are over-provisioned at 12% average CPU and 18% memory. You want a prescription that goes as far as "exactly which instance type to shrink to for cost savings with no performance degradation." Also, how do you improve the accuracy of memory-based recommendations?
+**Question 5.** A cost review revealed that 50 m5.2xlarge instances are over-provisioned at 12% average CPU and 18% memory. You want a prescription that goes as far as "exactly which instance type to shrink to for cost savings with no performance degradation." Also, how do you improve the accuracy of memory-based recommendations?
 
 A) Trusted Advisor Cost check alone is enough
 B) Use Compute Optimizer, and install the CloudWatch Agent for accurate memory-based recommendations
 C) Right-size with X-Ray
 D) View instance sizes with the Health Dashboard
 
-**정답: B**
+**Answer: B**
 
-해설: Trusted Advisor's cost check only gives a coarse signal that "there's an underutilized instance" (A lacks a prescription), while Compute Optimizer gives a concrete prescription with ML: "switch to this type to save $X/month with no performance degradation." However, memory metrics are guest-OS-internal information, so without the CloudWatch Agent they aren't collected and memory-based right-sizing accuracy drops (the same principle as the memory-metric pitfall from Day 1). C's X-Ray is a latency-diagnosis tool, not resource sizing. D is irrelevant. A practical point is that the observation window must be representative of the workload (including the end-of-quarter surge) to avoid an incorrect downsize.
+Explanation: Trusted Advisor's cost check only gives a coarse signal that "there's an underutilized instance" (A lacks a prescription), while Compute Optimizer gives a concrete prescription with ML: "switch to this type to save $X/month with no performance degradation." However, memory metrics are guest-OS-internal information, so without the CloudWatch Agent they aren't collected and memory-based right-sizing accuracy drops (the same principle as the memory-metric pitfall from Day 1). C's X-Ray is a latency-diagnosis tool, not resource sizing. D is irrelevant. A practical point is that the observation window must be representative of the workload (including the end-of-quarter surge) to avoid an incorrect downsize.
 
 ---
 
-**문제 6.** A SaaS runs microservices on ECS on Fargate and wants to instrument tracing in a standard, vendor-neutral way, leaving room to send the same data to Prometheus/Jaeger as well as X-Ray in the future. Which is the most appropriate approach?
+**Question 6.** A SaaS runs microservices on ECS on Fargate and wants to instrument tracing in a standard, vendor-neutral way, leaving room to send the same data to Prometheus/Jaeger as well as X-Ray in the future. Which is the most appropriate approach?
 
 A) Instrument directly with the X-Ray SDK only
 B) Instrument with the OTel standard using ADOT (AWS Distro for OpenTelemetry) and export to X-Ray
 C) Install only the CloudWatch Agent
 D) Turn on Lambda Active Tracing
 
-**정답: B**
+**Answer: B**
 
-해설: If you want vendor neutrality and portability, the OpenTelemetry standard is the answer, and ADOT is AWS's packaged distribution of it. Once you instrument with OTel, you can swap the backend (X-Ray, Prometheus, Jaeger, etc.), reducing lock-in. A's X-Ray SDK-only instrumentation is strongly AWS-dependent. C's CloudWatch Agent is for metric/log collection, not the standard for distributed-tracing instrumentation. D is a Lambda-only feature, not for Fargate. Remembering that on ECS/EKS you have to run a daemon or Collector as a sidecar helps organize the integration structure.
+Explanation: If you want vendor neutrality and portability, the OpenTelemetry standard is the answer, and ADOT is AWS's packaged distribution of it. Once you instrument with OTel, you can swap the backend (X-Ray, Prometheus, Jaeger, etc.), reducing lock-in. A's X-Ray SDK-only instrumentation is strongly AWS-dependent. C's CloudWatch Agent is for metric/log collection, not the standard for distributed-tracing instrumentation. D is a Lambda-only feature, not for Fargate. Remembering that on ECS/EKS you have to run a daemon or Collector as a sidecar helps organize the integration structure.
 
 ---
 
-**문제 7.** An operations team wants to automatically extract SLIs (latency, error rate, throughput) from traces collected by X-Ray, track SLOs ("meet p99 < 300ms 99.9% of the time"), and alarm on violation. To handle this in a managed way without hand-building a separate dashboard, what should they use?
+**Question 7.** An operations team wants to automatically extract SLIs (latency, error rate, throughput) from traces collected by X-Ray, track SLOs ("meet p99 < 300ms 99.9% of the time"), and alarm on violation. To handle this in a managed way without hand-building a separate dashboard, what should they use?
 
 A) Manually combine CloudWatch Composite Alarms
 B) Use CloudWatch Application Signals
 C) Look at the Trusted Advisor Performance check
 D) Schedule Logs Insights queries
 
-**정답: B**
+**Answer: B**
 
-해설: CloudWatch Application Signals automatically extracts SLIs from OTel/X-Ray instrumentation and provides SLO tracking and alarming in a managed way, automatically generating a higher-level metric — the service-level objective — from the raw data that traces are. A is a manual threshold combination, so you'd have to implement the SLO's "attainment ratio (99.9%)" concept yourself, which is cumbersome. C is a best-practice check, not SLO tracking. D is possible with log queries but is far from managed SLO tracking and takes a lot of hands-on effort. Remember that Application Signals is the answer signal for the modern scenario "automatically track SLOs."
+Explanation: CloudWatch Application Signals automatically extracts SLIs from OTel/X-Ray instrumentation and provides SLO tracking and alarming in a managed way, automatically generating a higher-level metric — the service-level objective — from the raw data that traces are. A is a manual threshold combination, so you'd have to implement the SLO's "attainment ratio (99.9%)" concept yourself, which is cumbersome. C is a best-practice check, not SLO tracking. D is possible with log queries but is far from managed SLO tracking and takes a lot of hands-on effort. Remember that Application Signals is the answer signal for the modern scenario "automatically track SLOs."
 
 ---
 

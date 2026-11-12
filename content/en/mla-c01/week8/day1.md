@@ -120,62 +120,62 @@ Next, we'll see the remaining two monitors: Bias Drift and Feature Attribution D
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 팀이 실시간 엔드포인트로 들어오는 입력 피처의 분포가 학습 데이터와 달라지는지 감시하고 싶다. 단, 운영 환경에서는 예측에 대한 실제 정답 레이블을 즉시 얻을 수 없다. 적절한 Model Monitor 종류는?
+**Question 1.** A team wants to monitor whether the distribution of input features arriving at a real-time endpoint differs from the training data. However, in production the actual ground truth labels for predictions cannot be obtained immediately. What is the appropriate type of Model Monitor?
 
-A) 모델 품질(Model Quality) 모니터  
-B) 데이터 품질(Data Quality) 모니터  
-C) 편향 드리프트(Bias Drift) 모니터  
-D) 어떤 모니터도 사용할 수 없다  
+A) Model Quality monitor  
+B) Data Quality monitor  
+C) Bias Drift monitor  
+D) No monitor can be used  
 
-**정답: B**  
-해설: 입력 피처의 분포 변화(데이터 드리프트)를 감시하며 정답 레이블이 필요 없는 것은 데이터 품질 모니터다. A는 ground truth가 반드시 필요해 레이블을 얻을 수 없는 상황에서 불가능하고, C도 그룹별 정답이 필요하며, D는 데이터 품질로 충분히 가능하므로 틀리다.
-
----
-
-**문제 2.** SageMaker Model Monitor에서 드리프트를 감지하려면 가장 먼저 무엇을 준비해야 하는가?
-
-A) CloudWatch 알람  
-B) 학습/검증 데이터로 생성한 베이스라인(statistics·constraints)  
-C) Lambda 함수  
-D) A/B 테스트 배포  
-
-**정답: B**  
-해설: 드리프트 감지는 "정상의 기준"인 베이스라인을 만드는 것에서 출발한다. `suggest_baseline`이 statistics.json과 constraints.json을 산출한다. A는 베이스라인 비교 결과를 알리는 후속 단계이고, C·D는 모니터링과 직접 관련이 없다.
+**Answer: B**  
+Explanation: The monitor that watches for changes in the distribution of input features (data drift) and does not need ground truth labels is the Data Quality monitor. A is impossible when labels cannot be obtained because it requires ground truth, C also requires per-group ground truth, and D is wrong because Data Quality makes it entirely possible.
 
 ---
 
-**문제 3.** 모델 품질(Model Quality) 모니터가 데이터 품질 모니터와 근본적으로 다른 점은?
+**Question 2.** To detect drift with SageMaker Model Monitor, what must you prepare first?
 
-A) cron 스케줄을 사용하지 않는다  
-B) Data Capture가 필요 없다  
-C) 예측과 짝지을 실제 정답(ground truth) 레이블이 필요하다  
-D) S3 대신 DynamoDB에 결과를 저장한다  
+A) CloudWatch alarm  
+B) A baseline (statistics and constraints) generated from the training/validation data  
+C) Lambda function  
+D) A/B test deployment  
 
-**정답: C**  
-해설: 모델 품질 모니터는 정확도·F1 같은 성능 지표를 계산하려고 예측값과 실제 정답을 병합해야 하므로 ground truth가 필수다. A는 둘 다 cron 스케줄을 쓰고, B는 둘 다 Data Capture가 필요하며, D는 둘 다 결과를 S3에 저장하므로 틀리다.
-
----
-
-**문제 4.** 모니터링 스케줄을 매시간으로 설정하면 SageMaker는 각 주기마다 무엇을 수행하는가?
-
-A) 엔드포인트를 재시작한다  
-B) Processing Job을 띄워 최근 캡처된 데이터를 베이스라인과 비교하고 위반 보고서를 생성한다  
-C) 모델을 자동으로 재학습한다  
-D) 새 베이스라인을 매번 다시 생성한다  
-
-**정답: B**  
-해설: 모니터링 스케줄은 주기마다 Processing Job을 실행해 캡처 데이터와 베이스라인을 비교하고 violation report와 CloudWatch 지표를 산출한다. A·C는 모니터링이 자동으로 하지 않으며, D는 베이스라인을 매번 다시 만들지 않고 기존 기준과 비교한다.
+**Answer: B**  
+Explanation: Drift detection starts with creating a baseline, the "standard of normal." `suggest_baseline` produces statistics.json and constraints.json. A is a follow-up step that reports baseline comparison results, and C and D have no direct relation to monitoring.
 
 ---
 
-**문제 5.** Model Monitor가 베이스라인 통계와 제약을 자동 계산하는 데 내부적으로 사용하는 데이터 품질 검증 도구는?
+**Question 3.** What fundamentally differs between the Model Quality monitor and the Data Quality monitor?
+
+A) It does not use a cron schedule  
+B) It does not need Data Capture  
+C) It requires actual ground truth labels to pair with predictions  
+D) It stores results in DynamoDB instead of S3  
+
+**Answer: C**  
+Explanation: The Model Quality monitor must merge predictions with actual ground truth to compute performance metrics such as accuracy and F1, so ground truth is required. A is wrong because both use a cron schedule, B is wrong because both need Data Capture, and D is wrong because both store results in S3.
+
+---
+
+**Question 4.** If you set the monitoring schedule to hourly, what does SageMaker do at each interval?
+
+A) Restarts the endpoint  
+B) Launches a Processing Job that compares recently captured data against the baseline and generates a violation report  
+C) Automatically retrains the model  
+D) Regenerates a new baseline every time  
+
+**Answer: B**  
+Explanation: A monitoring schedule runs a Processing Job at each interval to compare captured data with the baseline and produce a violation report and CloudWatch metrics. A and C are not done automatically by monitoring, and D is wrong because it compares against the existing baseline rather than regenerating one each time.
+
+---
+
+**Question 5.** Which data quality verification tool does Model Monitor use internally to automatically compute baseline statistics and constraints?
 
 A) Deequ  
 B) Pandas Profiling  
 C) Great Expectations  
 D) TensorFlow Data Validation  
 
-**정답: A**  
-해설: SageMaker Model Monitor의 데이터 품질 베이스라인은 아마존이 개발한 데이터 품질 검증 라이브러리 Deequ를 사용한다. B·C·D는 모두 데이터 검증 도구이긴 하지만 Model Monitor가 내장으로 사용하는 도구는 아니다.
+**Answer: A**  
+Explanation: SageMaker Model Monitor's data quality baseline uses Deequ, a data quality verification library developed by Amazon. B, C, and D are all data validation tools, but none is the tool that Model Monitor uses as a built-in.
 
 ---

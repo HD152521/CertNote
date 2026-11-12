@@ -89,62 +89,62 @@ Next we dive deeper into batch transform and serverless inference, covering batc
 
 ## 📝 Practice Questions
 
-**문제 1.** 전국 1,500개 매장에 매장별 수요 예측 XGBoost 모델이 있다. 각 매장 모델은 가끔 호출되며, 1,500개 엔드포인트를 띄우는 비용이 부담이다. 가장 적절한 배포 방식은?
+**Question 1.** A nationwide retailer has an XGBoost demand forecasting model for each of its 1,500 stores. Each store model is invoked occasionally, and the cost of running 1,500 endpoints is a burden. What is the most appropriate deployment approach?
 
-A) 멀티컨테이너 엔드포인트(MCE)  
-B) 멀티모델 엔드포인트(MME)  
-C) 매장마다 별도 실시간 엔드포인트  
-D) 추론 파이프라인  
+A) Multi-container endpoint (MCE)  
+B) Multi-model endpoint (MME)  
+C) A separate real-time endpoint for each store  
+D) Inference pipeline  
 
-**정답: B**  
-해설: "같은 프레임워크(XGBoost) 모델이 매우 많고 개별 호출 빈도가 낮다"는 MME의 정확한 조건으로, 모델들을 소수 인스턴스에 공유 서빙해 비용을 크게 낮춘다. A는 서로 다른 프레임워크 소수 모델용이고, C는 1,500개 엔드포인트로 비용이 폭발하며, D는 전처리·추론 체인용이라 다수 모델 서빙과 무관하다.
-
----
-
-**문제 2.** 학습 시 적용한 스케일링·인코딩 전처리를 추론 시에도 정확히 동일하게 적용해 training-serving skew를 막고, 한 번의 호출로 전처리와 추론을 모두 처리하고 싶다. 적절한 방식은?
-
-A) 멀티모델 엔드포인트  
-B) 추론 파이프라인(전처리 컨테이너 → 모델 컨테이너)  
-C) 배치 변환  
-D) 멀티컨테이너 엔드포인트  
-
-**정답: B**  
-해설: 추론 파이프라인은 전처리 컨테이너와 모델 컨테이너를 선형으로 묶어 한 호출로 전처리→추론을 같은 인스턴스에서 실행하므로, 학습과 동일한 전처리 코드를 추론에 보장해 skew를 막는다. A는 다수 모델 서빙, C는 일괄 처리, D는 서로 다른 프레임워크를 독립 호출하는 구조로 전처리-추론 체인 목적과 다르다.
+**Answer: B**  
+Explanation: "Very many models on the same framework (XGBoost) with a low invocation frequency per model" is exactly the condition for MME, which serves the models on a small number of shared instances to greatly lower cost. A is for a small number of models on different frameworks, C makes costs explode with 1,500 endpoints, and D is for a preprocessing-inference chain and has nothing to do with serving many models.
 
 ---
 
-**문제 3.** 대규모 트랜스포머 기반 NLP 모델을 실시간 추론하는데 GPU 인스턴스 비용이 너무 높다. 처리량은 유지하면서 추론당 비용을 낮추려 한다. 가장 적절한 선택은?
+**Question 2.** You want to apply exactly the same scaling and encoding preprocessing used during training at inference time to prevent training-serving skew, and handle both preprocessing and inference in a single call. What is the appropriate approach?
 
-A) CPU 인스턴스(ml.m5)로 교체  
-B) AWS Inferentia(ml.inf2) 인스턴스로 모델을 컴파일해 배포  
-C) 멀티모델 엔드포인트  
-D) 인스턴스 수를 절반으로 줄인다  
+A) Multi-model endpoint  
+B) Inference pipeline (preprocessing container → model container)  
+C) Batch transform  
+D) Multi-container endpoint  
 
-**정답: B**  
-해설: Inferentia는 딥러닝 추론 전용 칩으로 동급 GPU 대비 추론당 비용과 지연을 낮추므로, "딥러닝 추론 비용 절감 + 처리량 유지"의 정답이다. A는 트랜스포머 추론에서 CPU가 너무 느려 처리량을 유지 못 하고, C는 단일 대형 모델엔 무관하며, D는 단순 축소로 처리량이 떨어진다.
-
----
-
-**문제 4.** 한 엔드포인트에 TensorFlow 이미지 분류 모델과 PyTorch 텍스트 모델을 함께 배포하고, 호출 시 어느 컨테이너를 쓸지 직접 지정하려 한다. 적절한 방식은?
-
-A) 멀티모델 엔드포인트(TargetModel 사용)  
-B) 멀티컨테이너 엔드포인트(TargetContainerHostname 사용)  
-C) 추론 파이프라인  
-D) 두 개의 별도 서버리스 엔드포인트만 가능  
-
-**정답: B**  
-해설: 서로 다른 프레임워크(TensorFlow, PyTorch) 컨테이너를 한 엔드포인트에 두고 `TargetContainerHostname`으로 직접 지정하는 것은 멀티컨테이너 엔드포인트(MCE)의 기능이다. A의 MME는 동일 컨테이너 전제라 프레임워크가 다르면 부적합하고, C는 컨테이너를 순차 체인으로 실행하는 것이지 선택 호출이 아니며, D는 한 엔드포인트 통합이 불가능하다는 잘못된 주장이다.
+**Answer: B**  
+Explanation: An inference pipeline chains a preprocessing container and a model container linearly so that preprocessing followed by inference runs on the same instance in a single call, guaranteeing the same preprocessing code as training at inference and preventing skew. A is for serving many models, C is bulk processing, and D is a structure that invokes different frameworks independently, which differs from the purpose of a preprocessing-inference chain.
 
 ---
 
-**문제 5.** Elastic Inference에 관한 설명으로 가장 정확한 것은?
+**Question 3.** You run real-time inference on a large transformer-based NLP model, but GPU instance costs are too high. You want to lower cost per inference while maintaining throughput. What is the most appropriate choice?
 
-A) 딥러닝 추론 비용 절감의 최신 일차 권장 방식이다  
-B) CPU 인스턴스에 분수 GPU 가속을 붙이는 레거시 기능이며 최신 권장은 Inferentia로의 대체다  
-C) 모델을 S3에서 동적 로드하는 멀티모델 기능이다  
-D) 전처리와 추론을 묶는 파이프라인 기능이다  
+A) Replace with CPU instances (ml.m5)  
+B) Compile the model and deploy it on AWS Inferentia (ml.inf2) instances  
+C) Multi-model endpoint  
+D) Cut the number of instances in half  
 
-**정답: B**  
-해설: Elastic Inference는 CPU 인스턴스에 GPU 가속의 일부(분수)를 붙여 딥러닝 추론을 가속하던 기능이지만, 현재는 신규 사용이 권장되지 않고 AWS가 Inferentia로의 전환을 안내한다. A는 최신 일차 권장이 Inferentia라는 점과 배치되고, C는 MME, D는 추론 파이프라인의 설명으로 EI와 무관하다.
+**Answer: B**  
+Explanation: Inferentia is a chip dedicated to deep learning inference that lowers cost per inference and latency compared with equivalent GPUs, making it the answer for "reduce deep learning inference cost + maintain throughput." A is too slow on CPU for transformer inference to maintain throughput, C is irrelevant for a single large model, and D is a simple reduction that lowers throughput.
+
+---
+
+**Question 4.** You want to deploy a TensorFlow image classification model and a PyTorch text model together on one endpoint and explicitly specify which container to use at invocation. What is the appropriate approach?
+
+A) Multi-model endpoint (using TargetModel)  
+B) Multi-container endpoint (using TargetContainerHostname)  
+C) Inference pipeline  
+D) Only two separate serverless endpoints are possible  
+
+**Answer: B**  
+Explanation: Placing containers of different frameworks (TensorFlow, PyTorch) on one endpoint and directly specifying one with `TargetContainerHostname` is a feature of the multi-container endpoint (MCE). A's MME assumes the same container and is unsuitable when the frameworks differ, C runs containers as a sequential chain rather than selective invocation, and D is a wrong claim that consolidating into one endpoint is impossible.
+
+---
+
+**Question 5.** Which statement about Elastic Inference is most accurate?
+
+A) It is the latest primary recommended way to reduce deep learning inference cost  
+B) It is a legacy feature that attaches fractional GPU acceleration to CPU instances, and the latest recommendation is to replace it with Inferentia  
+C) It is a multi-model feature that dynamically loads models from S3  
+D) It is a pipeline feature that bundles preprocessing and inference  
+
+**Answer: B**  
+Explanation: Elastic Inference was a feature that accelerated deep learning inference by attaching a fraction of GPU acceleration to CPU instances, but new use is no longer recommended and AWS guides customers to move to Inferentia. A conflicts with the fact that the latest primary recommendation is Inferentia, and C describes MME and D describes an inference pipeline, both unrelated to EI.
 
 ---

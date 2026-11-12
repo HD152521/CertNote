@@ -109,6 +109,6 @@ Tomorrow: protecting data and models themselves — KMS encryption and Secrets m
 
 ## 📝 Practice Questions
 
-**문제 1-5** [Practice questions in Korean follow after marker]
+**Questions 1-5** [Practice questions in Korean follow after marker]
 
 ---

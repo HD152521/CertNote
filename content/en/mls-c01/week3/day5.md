@@ -97,62 +97,62 @@ Next week (Week 4) covers the second half of EDA: data visualization, distributi
 
 ## 📝 Practice Questions
 
-**문제 1.** Random Forest 모델을 사용하기로 했다. 다음 전처리 중 이 모델에서 **효과가 가장 작은** 것은?
+**Question 1.** You have decided to use a Random Forest model. Which of the following preprocessing steps has the **LEAST effect** on this model?
 
-A) 결측치 대치  
-B) 피처 표준화(스케일링)  
-C) 고카디널리티 범주형 인코딩  
-D) 명백한 입력 오류 행 제거  
+A) Missing value imputation  
+B) Feature standardization (scaling)  
+C) High-cardinality categorical encoding  
+D) Removal of rows with obvious input errors  
 
-**정답: B**  
-해설: 트리 기반 모델(Random Forest)은 피처 내 분할 기준점만 사용하므로 스케일링이 사실상 불필요하다. 결측치 대치(A), 범주형 인코딩(C, 트리도 숫자 입력 필요), 오류 제거(D)는 트리 모델에서도 여전히 필요하다.
-
----
-
-**문제 2.** 다음 중 데이터 누수를 일으키는 잘못된 전처리 절차는?
-
-A) 학습셋으로 StandardScaler를 fit하고 테스트셋엔 transform만 적용  
-B) 전체 데이터셋의 평균으로 결측치를 대치한 뒤 학습/테스트로 분할  
-C) 사용자 단위 중복을 분할 이전에 정리  
-D) 타깃 인코딩 통계를 K-fold로 산출  
-
-**정답: B**  
-해설: 전체 데이터의 평균으로 대치하면 테스트셋 정보가 통계량에 섞여 학습에 새어 들어가는 누수가 발생한다. 학습셋 fit/테스트 transform(A), 분할 전 중복 정리(C), K-fold 타깃 인코딩(D)은 모두 누수를 방지하는 올바른 절차다.
+**Answer: B**  
+Explanation: Tree-based models (Random Forest) use only split points within a feature, so scaling is effectively unnecessary. Missing value imputation (A), categorical encoding (C; trees also need numeric input), and error removal (D) are still needed even for tree models.
 
 ---
 
-**문제 3.** "성별(남/여)", "등급(낮음<중간<높음)", "도시(수천 종)" 세 범주형이 있다. 각각에 가장 적절한 인코딩 짝으로 옳은 것은?
+**Question 2.** Which of the following is a faulty preprocessing procedure that causes data leakage?
 
-A) 성별=One-Hot, 등급=Ordinal, 도시=Target/Hashing  
-B) 성별=Target, 등급=One-Hot, 도시=Ordinal  
-C) 성별=Hashing, 등급=Target, 도시=One-Hot  
-D) 세 변수 모두 One-Hot  
+A) Fit StandardScaler on the training set and apply only transform to the test set  
+B) Impute missing values with the mean of the entire dataset and then split into train/test  
+C) Clean up user-level duplicates before the split  
+D) Compute target encoding statistics with K-fold  
 
-**정답: A**  
-해설: 성별은 저카디널리티 명목형이라 One-Hot, 등급은 순서형이라 Ordinal, 도시는 고카디널리티라 Target/Hashing이 적절하다. B·C는 순서·카디널리티에 맞지 않게 짝지었고, 도시를 One-Hot(C, D)하면 수천 차원으로 폭발한다.
+**Answer: B**  
+Explanation: Imputing with the mean of the entire data mixes test set information into the statistic, causing leakage into training. Fitting on the training set and transforming the test set (A), cleaning duplicates before the split (C), and K-fold target encoding (D) are all correct procedures that prevent leakage.
 
 ---
 
-**문제 4.** 시각적으로 데이터를 준비한 뒤 그 변환 흐름을 대규모 실행용 Processing Job과 Feature Store로 내보내려 한다. 시작 도구로 가장 적절한 것은?
+**Question 3.** There are three categorical variables: "gender (male/female)," "grade (low < medium < high)," and "city (thousands of values)." Which is the correct pairing of the most appropriate encoding for each?
+
+A) Gender=One-Hot, grade=Ordinal, city=Target/Hashing  
+B) Gender=Target, grade=One-Hot, city=Ordinal  
+C) Gender=Hashing, grade=Target, city=One-Hot  
+D) One-Hot for all three variables  
+
+**Answer: A**  
+Explanation: Gender is a low-cardinality nominal variable, so One-Hot; grade is ordinal, so Ordinal; and city is high-cardinality, so Target/Hashing is appropriate. B and C pair them inconsistently with order and cardinality, and One-Hot encoding city (C, D) would explode into thousands of dimensions.
+
+---
+
+**Question 4.** You want to prepare data visually and then export the transformation flow to a Processing Job for large-scale execution and to Feature Store. Which starting tool is MOST appropriate?
 
 A) Amazon QuickSight  
 B) Amazon Comprehend  
 C) SageMaker Data Wrangler  
-D) AWS Glue DataBrew 전용  
+D) AWS Glue DataBrew only  
 
-**정답: C**  
-해설: Data Wrangler는 시각적으로 정의한 변환 흐름을 Processing Job, Pipeline, Feature Store, Python 코드로 내보낼 수 있어 탐색과 프로덕션을 잇는다. QuickSight(A)는 BI 시각화, Comprehend(B)는 NLP 서비스이며, 흐름을 SageMaker Processing Job/Feature Store로 직접 익스포트하는 통합은 Data Wrangler의 강점이다.
+**Answer: C**  
+Explanation: Data Wrangler can export a visually defined transformation flow to a Processing Job, a Pipeline, Feature Store, and Python code, bridging exploration and production. QuickSight (A) is BI visualization and Comprehend (B) is an NLP service, and the integration that directly exports a flow to a SageMaker Processing Job/Feature Store is a strength of Data Wrangler.
 
 ---
 
-**문제 5.** 오른쪽으로 길게 치우친 분포의 수치 변수가 있고, 선형 회귀 모델을 쓸 예정이다. 다음 중 가장 부적절한 처리는?
+**Question 5.** There is a numeric variable with a distribution that is long-tailed to the right, and you plan to use a linear regression model. Which of the following is the MOST inappropriate treatment?
 
-A) 로그 변환으로 꼬리를 압축한다  
-B) 결측은 중앙값으로 대치한다  
-C) 이상치 경계를 IQR로 탐지한다  
-D) 트리 모델이므로 스케일링을 생략한다  
+A) Compress the tail with a log transformation  
+B) Impute missing values with the median  
+C) Detect outlier boundaries with IQR  
+D) Skip scaling because it is a tree model  
 
-**정답: D**  
-해설: 선형 회귀를 쓸 예정인데 "트리 모델이므로 스케일링 생략"은 전제 자체가 틀렸다. 선형 회귀는 스케일에 민감하므로 스케일링이 필요하다. 로그 변환(A), 중앙값 대치(B), IQR 이상치 탐지(C)는 치우친 분포에 모두 적절한 처리다.
+**Answer: D**  
+Explanation: Saying "skip scaling because it is a tree model" when you plan to use linear regression has a wrong premise to begin with. Linear regression is sensitive to scale, so scaling is needed. A log transformation (A), median imputation (B), and IQR outlier detection (C) are all appropriate treatments for a skewed distribution.
 
 ---

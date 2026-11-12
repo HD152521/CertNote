@@ -226,9 +226,9 @@ B) Set EvaluationPeriods=5, DatapointsToAlarm=4, ignore transient spike
 C) Reduce Period to 10s
 D) Change TreatMissingData to breaching
 
-**정답: B**
+**Answer: B**
 
-해설: 30-second spike within single 60s Period data point. M of N with N=5, M=4: "5min, 4 minutes violate → alarm." One-time spike passes. Raising Threshold misses real overload. Shorter Period detects more violations, worsens.
+Explanation: 30-second spike within single 60s Period data point. M of N with N=5, M=4: "5min, 4 minutes violate → alarm." One-time spike passes. Raising Threshold misses real overload. Shorter Period detects more violations, worsens.
 
 ---
 
@@ -239,9 +239,9 @@ B) INSUFFICIENT_DATA — insufficient missing
 C) OK — missing treated normal
 D) Alarm disabled
 
-**정답: B**
+**Answer: B**
 
-해설: missing ignores missing data, evals by others. 5 of 10 missing → evals remaining 2 points. If last 2 normal, alarm OK or INSUFFICIENT_DATA. True availability monitoring needs TreatMissingData=breaching.
+Explanation: missing ignores missing data, evals by others. 5 of 10 missing → evals remaining 2 points. If last 2 normal, alarm OK or INSUFFICIENT_DATA. True availability monitoring needs TreatMissingData=breaching.
 
 ---
 
@@ -252,9 +252,9 @@ B) Extend EvaluationPeriods all
 C) Composite Alarm group children, Actions Suppressor, parent to PagerDuty only
 D) Standardize Period 5min all
 
-**정답: C**
+**Answer: C**
 
-해설: Core Composite Alarm design purpose. Suppress child actions via Suppressor, AND/OR express "real service degradation," parent alarm alone to PagerDuty. Raising thresholds/Period slows detection, different problem.
+Explanation: Core Composite Alarm design purpose. Suppress child actions via Suppressor, AND/OR express "real service degradation," parent alarm alone to PagerDuty. Raising thresholds/Period slows detection, different problem.
 
 ---
 
@@ -265,9 +265,9 @@ B) StatusCheckFailed_Instance won't recover. System Check failure only
 C) Recovery needs no EBS
 D) Region limit
 
-**정답: B**
+**Answer: B**
 
-해설: Auto Recovery only `StatusCheckFailed_System` — AWS infrastructure (hardware, power, network). Guest OS panic = `StatusCheckFailed_Instance`, software layer AWS can't control. Needs Reboot or SSM Automation.
+Explanation: Auto Recovery only `StatusCheckFailed_System` — AWS infrastructure (hardware, power, network). Guest OS panic = `StatusCheckFailed_Instance`, software layer AWS can't control. Needs Reboot or SSM Automation.
 
 ---
 
@@ -278,9 +278,9 @@ B) GreaterThanUpperThreshold
 C) LessThanLowerThreshold
 D) GreaterThanThreshold
 
-**정답: B**
+**Answer: B**
 
-해설: Faster response not problem. Band exceeding = slower. `GreaterThanUpperThreshold` detects upper only. Bidirectional (too fast or too slow) needs `LessThanLowerOrGreaterThanUpperThreshold` — Lambda invocation count dropping = anomaly.
+Explanation: Faster response not problem. Band exceeding = slower. `GreaterThanUpperThreshold` detects upper only. Bidirectional (too fast or too slow) needs `LessThanLowerOrGreaterThanUpperThreshold` — Lambda invocation count dropping = anomaly.
 
 ---
 
@@ -291,9 +291,9 @@ B) Alarm evals same-region metrics only; can't direct-alarm other-region source
 C) Can't recover other-region EC2
 D) Composite Alarm children one-region only
 
-**정답: B**
+**Answer: B**
 
-해설: Fundamental limit: Alarms eval same-region metrics only. us-east-1 metric, alarm in ap-northeast-2 impossible. Multi-region needs Metric Stream copy to central, alarm there, or cross-region EventBridge rules.
+Explanation: Fundamental limit: Alarms eval same-region metrics only. us-east-1 metric, alarm in ap-northeast-2 impossible. Multi-region needs Metric Stream copy to central, alarm there, or cross-region EventBridge rules.
 
 ---
 
@@ -304,7 +304,7 @@ B) 1 of 10 violates → immediate alarm
 C) 5 of 10 violations needed
 D) INSUFFICIENT_DATA
 
-**정답: B**
+**Answer: B**
 
-해설: DatapointsToAlarm=1 most sensitive — single N-window violation triggers. Used when 10-min window any 5xx event = alarm scenario.
+Explanation: DatapointsToAlarm=1 most sensitive — single N-window violation triggers. Used when 10-min window any 5xx event = alarm scenario.
 

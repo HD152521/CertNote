@@ -260,97 +260,97 @@ Tomorrow: **CloudWatch Logs**, paired with metrics. We explore log groups, strea
 
 ## 📝 Practice Questions
 
-**문제 1.** How do you collect EC2 memory usage alarm?
+**Question 1.** How do you collect EC2 memory usage alarm?
 
 A) Enable EC2 Detailed Monitoring; automatic publish
 B) Install CloudWatch Agent on EC2, publish mem_used_percent. Bulk deploy via SSM Run Command + Parameter Store pattern
 C) Lambda SSH into every instance, run free -m every minute
 D) CloudWatch auto-collects at hypervisor level
 
-**정답: B**
-해설: EC2 standard metrics measure at Nitro hypervisor level, so guest OS memory/disk usage is invisible. CloudWatch Agent measures inside guest OS and pushes to CloudWatch. Operator standard is bulk SSM Run Command installation + apply config from Parameter Store. Detailed Monitoring only shortens 5-min → 1-min collection; memory/disk still absent.
+**Answer: B**
+Explanation: EC2 standard metrics measure at Nitro hypervisor level, so guest OS memory/disk usage is invisible. CloudWatch Agent measures inside guest OS and pushes to CloudWatch. Operator standard is bulk SSM Run Command installation + apply config from Parameter Store. Detailed Monitoring only shortens 5-min → 1-min collection; memory/disk still absent.
 
 ---
 
-**문제 2.** For fast traffic spike detection, you want ASG to respond in 10-second units instead of per-minute. Which option is required?
+**Question 2.** For fast traffic spike detection, you want ASG to respond in 10-second units instead of per-minute. Which option is required?
 
 A) Set ASG cooldown to 10 seconds
 B) Publish High-Resolution metric (1-second resolution) via PutMetricData + 10-second alarm evaluation + Step Scaling
 C) Enable Detailed Monitoring
 D) CloudWatch Logs Subscription for immediate processing
 
-**정답: B**
-해설: High-Resolution metric (StorageResolution=1) accumulates 1-second data points; alarms can evaluate at 10-second intervals. Step Scaling adds multiple instances based on threshold overage magnitude. Detailed Monitoring maxes at 1-minute resolution; cooldown is inter-scaling delay, unrelated to detection speed.
+**Answer: B**
+Explanation: High-Resolution metric (StorageResolution=1) accumulates 1-second data points; alarms can evaluate at 10-second intervals. Step Scaling adds multiple instances based on threshold overage magnitude. Detailed Monitoring maxes at 1-minute resolution; cooldown is inter-scaling delay, unrelated to detection speed.
 
 ---
 
-**문제 3.** Lambda average response is 200ms but some users report slowness. What metric and statistic should the operator watch?
+**Question 3.** Lambda average response is 200ms but some users report slowness. What metric and statistic should the operator watch?
 
 A) Average Duration
 B) Sum Duration
 C) p95, p99 Duration (Extended Statistic)
 D) SampleCount
 
-**정답: C**
-해설: Average hides long tail. Even if 1% takes 5 seconds but 99% are fast, average stays ~200ms. p95 (top 5%), p99 (top 1%) percentiles expose long tails showing bad user experience. SLO standard defines latency via percentiles, not average.
+**Answer: C**
+Explanation: Average hides long tail. Even if 1% takes 5 seconds but 99% are fast, average stays ~200ms. p95 (top 5%), p99 (top 1%) percentiles expose long tails showing bad user experience. SLO standard defines latency via percentiles, not average.
 
 ---
 
-**문제 4.** Operator wants to monitor ALB 5xx error rate (errors / total requests). How to build it?
+**Question 4.** Operator wants to monitor ALB 5xx error rate (errors / total requests). How to build it?
 
 A) Simple threshold on `HTTPCode_Target_5XX_Count`
 B) Math Expression `(m1/m2)*100` combining `HTTPCode_Target_5XX_Count` and `RequestCount`, then alarm on result
 C) CloudWatch Logs Insights ratio calculation
 D) ALB's built-in `5XXErrorRate` standard metric
 
-**정답: B**
-해설: Ratios with different numerator/denominator metrics require Math Expression `(5xxCount / RequestCount) * 100`. Set alarm on result expression. ALB doesn't provide ratio metrics directly; fixed absolute thresholds cause false positives with traffic variance.
+**Answer: B**
+Explanation: Ratios with different numerator/denominator metrics require Math Expression `(5xxCount / RequestCount) * 100`. Set alarm on result expression. ALB doesn't provide ratio metrics directly; fixed absolute thresholds cause false positives with traffic variance.
 
 ---
 
-**문제 5.** API bills soared calling `PutMetricData` for every HTTP request. Most efficient alternative?
+**Question 5.** API bills soared calling `PutMetricData` for every HTTP request. Most efficient alternative?
 
 A) Batch API calls together
 B) Embed metrics in logs using Embedded Metric Format (EMF) → CloudWatch auto-extracts (zero API calls)
 C) Reduce metric publication frequency
 D) Store metrics directly to S3
 
-**정답: B**
-해설: EMF embeds JSON metrics inside log messages; CloudWatch auto-extracts to metrics. Zero API cost. Standard pattern for Lambda/ECS/Fargate. AWS Lambda Powertools library auto-generates.
+**Answer: B**
+Explanation: EMF embeds JSON metrics inside log messages; CloudWatch auto-extracts to metrics. Zero API cost. Standard pattern for Lambda/ECS/Fargate. AWS Lambda Powertools library auto-generates.
 
 ---
 
-**문제 6.** After how many hours does 1-second CloudWatch metric resolution aggregate to 60-second?
+**Question 6.** After how many hours does 1-second CloudWatch metric resolution aggregate to 60-second?
 
 A) 1 hour
 B) 3 hours
 C) 15 days
 D) 63 days
 
-**정답: B**
-해설: 1s → 3hr to 60s aggregation, 15d to 5min, 63d to 1hr, 15mo permanent delete. To retain 1-second data long-term, export via GetMetricData or Metric Stream to S3.
+**Answer: B**
+Explanation: 1s → 3hr to 60s aggregation, 15d to 5min, 63d to 1hr, 15mo permanent delete. To retain 1-second data long-term, export via GetMetricData or Metric Stream to S3.
 
 ---
 
-**문제 7.** Workload has daily lunch/dinner traffic peaks with different weekend patterns. Build false-positive-free alarms?
+**Question 7.** Workload has daily lunch/dinner traffic peaks with different weekend patterns. Build false-positive-free alarms?
 
 A) Set fixed threshold above average
 B) Anomaly Detection alarm (apply after 2-week data accumulation)
 C) Composite Alarm combining multiple alarms
 D) Math Expression for trend calculation
 
-**정답: B**
-해설: Anomaly Detection ML-learns hourly/daily patterns, generates dynamic baseline. Normal pattern variance doesn't trigger; only genuine anomalies (true outliers) alarm. Requires 2-week minimum; immediate application on new metrics causes over-alarming.
+**Answer: B**
+Explanation: Anomaly Detection ML-learns hourly/daily patterns, generates dynamic baseline. Normal pattern variance doesn't trigger; only genuine anomalies (true outliers) alarm. Requires 2-week minimum; immediate application on new metrics causes over-alarming.
 
 ---
 
-**문제 8.** Company added `UserId` Dimension for 1M users' latency tracking. Bill exploded. Root cause and fix?
+**Question 8.** Company added `UserId` Dimension for 1M users' latency tracking. Bill exploded. Root cause and fix?
 
 A) Detailed Monitoring disabled / enable it
 B) Dimension cardinality explosion created 1M metrics / move to EMF metadata fields, analyze per-user via Logs Insights
 C) 1-second resolution was set / change to 60-second
 D) Wrong region / unify to same region
 
-**정답: B**
-해설: `(Namespace, MetricName, Dimensions)` tuple = separate metric; $0.30/metric/month. 1M users = 1M metrics = $300k/month. Per-user/per-request analysis belongs in logs (EMF metadata + Logs Insights), not metric dimensions.
+**Answer: B**
+Explanation: `(Namespace, MetricName, Dimensions)` tuple = separate metric; $0.30/metric/month. 1M users = 1M metrics = $300k/month. Per-user/per-request analysis belongs in logs (EMF metadata + Logs Insights), not metric dimensions.
 

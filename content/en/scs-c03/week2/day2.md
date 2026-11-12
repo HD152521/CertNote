@@ -133,60 +133,60 @@ Next, we'll zoom out and cover **AWS Organizations and SCP**, which control the 
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 회사가 개발자에게 `iam:CreateRole`과 `iam:AttachRolePolicy` 권한을 부여하려 한다. 권한 상승을 막으면서 위임하려면 반드시 추가해야 하는 것은?
+**Question 1.** A company wants to grant developers the `iam:CreateRole` and `iam:AttachRolePolicy` permissions. What must be added to delegate while preventing privilege escalation?
 
-A) 개발자 계정에 MFA를 강제한다  
-B) CreateRole 시 특정 Permission Boundary 부착을 조건으로 강제하고, Boundary 변경을 Deny한다  
-C) CloudTrail로 롤 생성을 사후 모니터링한다  
-D) 개발자에게 읽기 전용 권한만 준다  
+A) Enforce MFA on developer accounts  
+B) Enforce, as a condition on CreateRole, attaching a specific Permission Boundary, and Deny changing the Boundary  
+C) Monitor role creation after the fact with CloudTrail  
+D) Give developers read-only permissions only  
 
-**정답: B**  
-해설: 권한 상승의 핵심 차단 메커니즘은 `iam:PermissionsBoundary` 조건키로 Boundary 부착을 강제하고, 동시에 그 Boundary를 떼거나 바꾸는 액션을 명시적 Deny로 막는 것이다. MFA나 사후 모니터링은 상승 자체를 사전 차단하지 못하고, 읽기 전용은 위임 목적(롤 생성)을 달성하지 못한다.
-
----
-
-**문제 2.** Permission Boundary가 부착된 개발자가 자기가 만든 롤에서 Boundary를 제거하려 한다. 이를 막는 가장 직접적인 방법은?
-
-A) SCP로 모든 IAM 액션을 차단한다  
-B) 개발자 정책에 `iam:DeleteRolePermissionsBoundary`를 명시적 Deny로 추가한다  
-C) 롤을 읽기 전용으로 만든다  
-D) Boundary를 더 넓게 설정한다  
-
-**정답: B**  
-해설: Boundary 강제 생성만으로는 부족하며, 생성 후 Boundary를 제거하는 `iam:DeleteRolePermissionsBoundary`와 변경하는 `iam:PutRolePermissionsBoundary`를 명시적 Deny로 막아야 우회를 차단한다. SCP로 모든 IAM을 막으면 위임 자체가 불가능해지고, 나머지는 문제를 해결하지 못한다.
+**Answer: B**  
+Explanation: The key mechanism for blocking privilege escalation is to enforce Boundary attachment with the `iam:PermissionsBoundary` condition key and, at the same time, block the actions that detach or change that Boundary with an explicit Deny. MFA or after-the-fact monitoring does not block escalation in advance, and read-only does not achieve the delegation purpose (creating roles).
 
 ---
 
-**문제 3.** Permission Boundary와 SCP의 차이로 옳은 것은?
+**Question 2.** A developer with a Permission Boundary attached tries to remove the Boundary from a role they created. What is the most direct way to prevent this?
 
-A) Boundary는 권한을 부여하고, SCP는 권한을 제한한다  
-B) Boundary는 개별 주체의 상한이고, SCP는 계정 전체의 상한이다  
-C) 둘 다 멤버 계정의 root 사용자에게 동일하게 적용된다  
-D) SCP는 개발자가 직접 관리할 수 있다  
+A) Block all IAM actions with an SCP  
+B) Add `iam:DeleteRolePermissionsBoundary` as an explicit Deny in the developer policy  
+C) Make the role read-only  
+D) Set the Boundary more broadly  
 
-**정답: B**  
-해설: Permission Boundary는 특정 User/Role 한 명의 권한 상한이고, SCP는 OU/Account에 적용되어 계정 전체 주체의 상한을 정한다. 둘 다 권한을 부여하지 않고 상한만 정한다. SCP는 멤버 계정 root에도 적용되지만 Boundary는 그렇지 않으며, SCP는 Organizations 관리 계정에서만 관리한다.
-
----
-
-**문제 4.** 개발자에게 `role/dev-*` 패턴의 롤만 만들 수 있도록 `Resource`를 제한한 이유로 가장 적절한 것은?
-
-A) 롤 생성 속도를 높이기 위해  
-B) 개발자가 보안팀이나 운영팀의 롤(예: role/admin-*)을 건드리지 못하게 네임스페이스를 격리하기 위해  
-C) 롤 개수를 줄이기 위해  
-D) Boundary를 생략할 수 있게 하기 위해  
-
-**정답: B**  
-해설: 리소스를 이름 접두사로 제한하면 개발자가 자기 네임스페이스(`dev-`) 밖의 권한 높은 롤을 생성하거나 수정하는 것을 막는다. 이는 self-service IAM에서 격리를 구현하는 표준 패턴이며, Boundary를 대체하지는 않고 함께 쓰인다.
+**Answer: B**  
+Explanation: Enforcing Boundary creation alone is not enough; you must block `iam:DeleteRolePermissionsBoundary`, which removes the Boundary after creation, and `iam:PutRolePermissionsBoundary`, which changes it, with an explicit Deny to prevent bypass. Blocking all IAM with an SCP makes delegation itself impossible, and the others do not solve the problem.
 
 ---
 
-**문제 5.** 개발자가 만든 롤의 유효 권한을 계산하려 한다. 그 롤에는 Identity 정책 `s3:*, ec2:*`, Permission Boundary `s3:*, dynamodb:*`가 있고, 계정 SCP는 `s3:*`만 허용한다. 이 롤의 유효 권한은?
+**Question 3.** Which statement about the difference between a Permission Boundary and an SCP is correct?
 
-A) `s3:*, ec2:*, dynamodb:*` 전부  
-B) `s3:*`만  
+A) A Boundary grants permissions and an SCP restricts permissions  
+B) A Boundary is the upper limit for an individual principal, and an SCP is the upper limit for an entire account  
+C) Both apply equally to the root user of a member account  
+D) Developers can manage SCPs themselves  
+
+**Answer: B**  
+Explanation: A Permission Boundary is the permission upper limit for a single specific User/Role, while an SCP is applied to an OU/Account and sets the upper limit for all principals in the account. Neither grants permissions; they only set an upper limit. An SCP also applies to the member account root while a Boundary does not, and SCPs are managed only in the Organizations management account.
+
+---
+
+**Question 4.** What is the most appropriate reason for restricting `Resource` so that developers can create only roles matching the `role/dev-*` pattern?
+
+A) To speed up role creation  
+B) To isolate the namespace so developers cannot touch roles of the security or operations teams (for example, role/admin-*)  
+C) To reduce the number of roles  
+D) To allow the Boundary to be omitted  
+
+**Answer: B**  
+Explanation: Restricting the resource by name prefix prevents developers from creating or modifying highly privileged roles outside their own namespace (`dev-`). This is the standard pattern for implementing isolation in self-service IAM, and it is used together with the Boundary rather than replacing it.
+
+---
+
+**Question 5.** We want to calculate the effective permissions of a role created by a developer. The role has the Identity policy `s3:*, ec2:*` and the Permission Boundary `s3:*, dynamodb:*`, and the account SCP allows only `s3:*`. What are this role's effective permissions?
+
+A) All of `s3:*, ec2:*, dynamodb:*`  
+B) Only `s3:*`  
 C) `s3:*, dynamodb:*`  
-D) 아무 권한 없음  
+D) No permissions at all  
 
-**정답: B**  
-해설: 유효 권한은 SCP ∩ Boundary ∩ Identity의 교집합이다. SCP는 `s3:*`만, Boundary는 `s3:*`와 `dynamodb:*`, Identity는 `s3:*`와 `ec2:*`를 허용한다. 세 집합 모두에 공통으로 존재하는 것은 `s3:*`뿐이다. `ec2`는 SCP·Boundary에 없고, `dynamodb`는 SCP·Identity에 없어 모두 탈락한다.
+**Answer: B**  
+Explanation: The effective permissions are the intersection of SCP ∩ Boundary ∩ Identity. The SCP allows only `s3:*`, the Boundary allows `s3:*` and `dynamodb:*`, and the Identity policy allows `s3:*` and `ec2:*`. Only `s3:*` is common to all three sets. `ec2` is not in the SCP or Boundary, and `dynamodb` is not in the SCP or Identity policy, so both are dropped.

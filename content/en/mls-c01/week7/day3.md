@@ -91,62 +91,62 @@ Central to the **pretraining-finetuning paradigm** (large-scale pretraining + do
 
 ## 📝 Practice Questions
 
-**문제 1.** 단순 RNN이 긴 문장의 앞부분 정보를 뒷부분에서 잘 활용하지 못하는 근본 원인은?
+**Question 1.** What is the fundamental reason a simple RNN cannot make good use of information from the beginning of a long sentence at its end?
 
-A) 활성화 함수가 없어서  
-B) 시간축 역전파에서 기울기 소실/폭발로 장기 의존성을 학습하기 어려워서  
-C) 가중치를 공유하지 않아서  
-D) 출력층이 Softmax라서  
+A) It has no activation function  
+B) Vanishing/exploding gradients in backpropagation through time make long-term dependencies hard to learn  
+C) It does not share weights  
+D) The output layer is Softmax  
 
-**정답: B**  
-해설: RNN을 시간축으로 펼치면 매우 깊어져 기울기가 소실/폭발하고 먼 과거 정보가 사라진다. RNN도 활성화를 쓰고(A), 시간축 가중치를 공유하며(C), 출력 활성화(D)는 장기 의존성과 무관하다.
+**Answer: B**  
+Explanation: When an RNN is unrolled over time it becomes very deep, so gradients vanish/explode and information from the distant past is lost. RNNs do use activations (A), they share weights across time (C), and the output activation (D) is unrelated to long-term dependencies.
 
 ---
 
-**문제 2.** 다음 중 RNN 없이 **셀프 어텐션만으로** 시퀀스를 처리해 병렬 학습과 장거리 의존성에 강한 구조는?
+**Question 2.** Which of the following architectures processes sequences with **self-attention alone** and no RNN, making it strong in parallel training and long-range dependencies?
 
 A) LSTM  
 B) GRU  
 C) Transformer  
-D) seq2seq(RNN 기반)  
+D) seq2seq (RNN-based)  
 
-**정답: C**  
-해설: Transformer는 순환 구조 없이 셀프 어텐션으로 전체 시퀀스를 한 번에 처리해 병렬성과 장거리 의존성에 강하다. LSTM·GRU(A·B)·RNN 기반 seq2seq(D)는 모두 순차적 순환 구조를 사용한다.
+**Answer: C**  
+Explanation: The Transformer processes the entire sequence at once with self-attention and no recurrence, so it is strong in parallelism and long-range dependencies. LSTM and GRU (A, B) and RNN-based seq2seq (D) all use a sequential recurrent structure.
 
 ---
 
-**문제 3.** 다수의 상품(SKU)에 대해 미래 수요를 한꺼번에 예측하려 한다. SageMaker에서 가장 적합한 빌트인 알고리즘은?
+**Question 3.** You want to forecast future demand for many products (SKUs) at once. Which built-in algorithm in SageMaker is MOST suitable?
 
 A) DeepAR  
 B) BlazingText  
 C) Image Classification  
 D) K-Means  
 
-**정답: A**  
-해설: DeepAR은 여러 관련 시계열을 함께 학습하는 글로벌 모델로 다수 SKU 수요 예측에 적합하다. BlazingText(B)는 텍스트, Image Classification(C)은 이미지, K-Means(D)는 군집용이다.
+**Answer: A**  
+Explanation: DeepAR is a global model that trains on many related time series together, making it suitable for demand forecasting across many SKUs. BlazingText (B) is for text, Image Classification (C) is for images, and K-Means (D) is for clustering.
 
 ---
 
-**문제 4.** seq2seq에 **어텐션**을 추가하면 얻는 주된 이점은?
+**Question 4.** What is the main benefit of adding **attention** to seq2seq?
 
-A) 학습률을 자동 조정한다  
-B) 입력 전체를 동적으로 참조해 고정 컨텍스트 벡터의 정보 병목을 완화한다  
-C) 레이블 없이 학습할 수 있게 된다  
-D) GPU 없이 학습이 가능해진다  
+A) It automatically adjusts the learning rate  
+B) It dynamically references the entire input, easing the information bottleneck of a fixed context vector  
+C) It makes training without labels possible  
+D) It makes training possible without a GPU  
 
-**정답: B**  
-해설: 어텐션은 디코더가 출력 시점마다 입력의 관련 부분을 가중 참조하게 해, 긴 입력을 하나의 벡터로 압축할 때 생기는 병목을 줄인다. 학습률(A)·비지도화(C)·하드웨어(D)와는 무관하다.
+**Answer: B**  
+Explanation: Attention lets the decoder weight-reference the relevant parts of the input at each output step, reducing the bottleneck that arises when compressing a long input into a single vector. It is unrelated to the learning rate (A), unsupervised learning (C), or hardware (D).
 
 ---
 
-**문제 5.** LSTM과 비교한 **GRU**의 일반적 특징으로 옳은 것은?
+**Question 5.** Which statement about the general characteristics of a **GRU** compared with an LSTM is correct?
 
-A) 게이트가 더 많아 항상 더 정확하다  
-B) 순환 구조가 없다  
-C) 시계열에는 쓸 수 없다  
-D) 게이트 수가 적어 더 단순하고 빠르며 성능은 유사한 경우가 많다  
+A) It has more gates and is therefore always more accurate  
+B) It has no recurrent structure  
+C) It cannot be used for time series  
+D) It has fewer gates, so it is simpler and faster, with similar performance in many cases  
 
-**정답: D**  
-해설: GRU는 LSTM보다 게이트가 적어 파라미터가 적고 빠르며, 많은 과제에서 성능이 비슷하다. 게이트가 더 많다는 설명(A)은 반대이고, GRU도 순환 구조를 가지며(B) 시계열에 널리 쓰인다(C).
+**Answer: D**  
+Explanation: A GRU has fewer gates than an LSTM, so it has fewer parameters and is faster, with similar performance on many tasks. The claim that it has more gates (A) is the opposite, and a GRU also has a recurrent structure (B) and is widely used for time series (C).
 
 ---

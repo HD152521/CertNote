@@ -21,16 +21,16 @@ Key mappings: (1) "100TB ERP, 6 month deadline" → **Rehost + Refactor post-go-
 
 ## 📝 Practice Questions
 
-**문제 1.** 100TB Oracle 6개월 이전 → **Rehost(MGN) + Refactor 사후**
+**Question 1.** 100 TB Oracle migration in 6 months → **Rehost (MGN) + Refactor afterward**
 
-**문제 2.** 새 스타트업 greenfield → **Refactor(Serverless)**
+**Question 2.** New startup greenfield → **Refactor (Serverless)**
 
-**문제 3.** 유산 CICS 메인프레임 낮은 ROI → **Retain or Rehost**
+**Question 3.** Legacy CICS mainframe with low ROI → **Retain or Rehost**
 
-**문제 4.** License cost 우선 → **Repurchase(SaaS)**
+**Question 4.** License cost first → **Repurchase (SaaS)**
 
-**문제 5.** MGN vs CloudEndure 선택 → **MGN(AWS native), CloudEndure(multi-cloud)**
+**Question 5.** Choosing between MGN and CloudEndure → **MGN (AWS native), CloudEndure (multi-cloud)**
 
-**문제 6.** Post-migration 최적화 위상 → **1주 안정화 + 1개월 우선순위 성능 + 분기 continuous**
+**Question 6.** Phasing of post-migration optimization → **1 week of stabilization + 1 month of priority performance work + quarterly continuous**
 
 ---

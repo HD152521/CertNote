@@ -73,62 +73,62 @@ Next text organizes AWS AI services (foundation model applications) over this fo
 
 ## 📝 Practice Questions
 
-**문제 1.** Which correctly shows inclusion relationship of AI, ML, Deep Learning, Generative AI?
+**Question 1.** Which correctly shows inclusion relationship of AI, ML, Deep Learning, Generative AI?
 
 A) Generative AI ⊃ AI ⊃ ML ⊃ Deep Learning  
 B) AI ⊃ ML ⊃ Deep Learning ⊃ Generative AI  
 C) ML ⊃ AI ⊃ Deep Learning ⊃ Generative AI  
 D) Deep Learning ⊃ AI ⊃ ML ⊃ Generative AI  
 
-**정답: B**  
-해설: Broadest category is AI, within it data-learning ML, then deep-stacked neural networks Deep Learning, finally content-generating Generative AI are nested. Other choices mangle inclusion order.
+**Answer: B**  
+Explanation: Broadest category is AI, within it data-learning ML, then deep-stacked neural networks Deep Learning, finally content-generating Generative AI are nested. Other choices mangle inclusion order.
 
 ---
 
-**문제 2.** Predicting home sale price from square footage and room count (continuous number output) — task type?
+**Question 2.** Predicting home sale price from square footage and room count (continuous number output) — task type?
 
 A) Classification  
 B) Regression  
 C) Clustering  
 D) Reinforcement Learning  
 
-**정답: B**  
-해설: Continuous numeric output (price) is regression. Classification is category prediction (spam/normal etc.), clustering is label-less grouping, reinforcement learning is reward-driven sequential decision-making — none match.
+**Answer: B**  
+Explanation: Continuous numeric output (price) is regression. Classification is category prediction (spam/normal etc.), clustering is label-less grouping, reinforcement learning is reward-driven sequential decision-making — none match.
 
 ---
 
-**문제 3.** Most accurate about "token (token)" in generative AI?
+**Question 3.** Most accurate about "token (token)" in generative AI?
 
 A) File unit storing model weights  
 B) Text processing unit (word fragment), basis for cost and context limit  
 C) User authentication security credential  
 D) Single image pixel  
 
-**정답: B**  
-해설: Token is the basic LLM text-processing unit (word fragment), determining input/output token count → cost and context window limits. A is model file, C is auth token, D is pixel — all different concepts.
+**Answer: B**  
+Explanation: Token is the basic LLM text-processing unit (word fragment), determining input/output token count → cost and context window limits. A is model file, C is auth token, D is pixel — all different concepts.
 
 ---
 
-**문제 4.** Lower temperature setting (near 0) produces what output effect?
+**Question 4.** Lower temperature setting (near 0) produces what output effect?
 
 A) Output becomes more creative and varies greatly each time  
 B) Output becomes more consistent and predictable  
 C) Model understands info it never trained on accurately  
 D) Token cost becomes free  
 
-**정답: B**  
-해설: Lower temperature → model prefers high-probability tokens → consistent, conservative output. High temperature makes output diverse (opposite of A). Temperature unrelated to knowledge or cost (C, D wrong).
+**Answer: B**  
+Explanation: Lower temperature → model prefers high-probability tokens → consistent, conservative output. High temperature makes output diverse (opposite of A). Temperature unrelated to knowledge or cost (C, D wrong).
 
 ---
 
-**문제 5.** Recommended sequence when adjusting model behavior?
+**Question 5.** Recommended sequence when adjusting model behavior?
 
 A) Fine-tuning → RAG → Prompt Engineering  
 B) RAG → Prompt Engineering → Fine-tuning  
 C) Prompt Engineering → RAG → Fine-tuning  
 D) Fine-tuning → Prompt Engineering → RAG  
 
-**정답: C**  
-해설: Try cheapest/fastest Prompt Engineering first, then external/latest knowledge RAG, finally costly Fine-tuning if deep domain internalization needed. Leading with expensive Fine-tuning or scrambled order not recommended.
+**Answer: C**  
+Explanation: Try cheapest/fastest Prompt Engineering first, then external/latest knowledge RAG, finally costly Fine-tuning if deep domain internalization needed. Leading with expensive Fine-tuning or scrambled order not recommended.
 
 ---

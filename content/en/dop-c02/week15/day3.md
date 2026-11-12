@@ -111,118 +111,118 @@ Next: system running well; when it breaks, **serverless incident auto-response**
 
 ## 📝 Practice Questions
 
-**문제 1.** EKS에서 트래픽 급변에 분 단위가 아닌 초 단위로 대응하고, ASG에 고정된 타입이 아니라 파드 요구에 맞는 다양한 인스턴스를 동적으로 띄우며 Spot도 유연하게 쓰려면?
+**Question 1.** In EKS, how can you respond to traffic swings in seconds rather than minutes, dynamically launch a variety of instances matching pod requirements instead of fixed types in an ASG, and use Spot flexibly?
 
 A) Cluster Autoscaler
 
-B) Karpenter — ASG를 거치지 않고 펜딩 파드의 실제 요구를 보고 EC2 API로 직접 노드를 띄우며, bin-packing 최적화와 consolidation으로 인스턴스 타입을 동적 선택한다
+B) Karpenter — launches nodes directly through the EC2 API based on the actual requirements of pending pods without going through an ASG, and dynamically selects instance types with bin-packing optimization and consolidation
 
 C) ASG Scheduled Action
 
-D) Spot Fleet 단독
+D) Spot Fleet alone
 
-**정답: B**
+**Answer: B**
 
-해설: Cluster Autoscaler는 ASG를 전제로 분 단위로 동작하고 인스턴스 타입이 ASG에 사전 고정된다. Karpenter는 ASG 없이 EC2를 직접 띄우며 펜딩 파드 요구 기반 bin-packing(NP-hard 근사)으로 가장 싸고 잘 맞는 인스턴스 조합을 실시간 선택하고, consolidation으로 단편화 노드를 재배치한다. "빠른 스케일 + 다양한 인스턴스 동적 선택 + Spot 유연"은 Karpenter를 가리킨다. Scheduled Action(C)·Spot Fleet 단독(D)은 동적 스케줄링이 아니다.
-
----
-
-**문제 2.** GitOps(Argo CD/Flux)의 핵심 동작 원리로 가장 정확한 것은?
-
-A) kubectl apply를 자동화하는 스크립트일 뿐이다
-
-B) Git 저장소가 클러스터 목표 상태의 단일 진실이 되고, 에이전트가 현재 상태와 목표 상태의 차이를 0으로 수렴시키는 폐루프 제어(reconciliation)를 돌려, 드리프트를 자동 교정하고 롤백을 git revert로 만든다
-
-C) 빌드와 배포를 하나의 파이프라인에 합친다
-
-D) CloudFormation의 별칭이다
-
-**정답: B**
-
-해설: GitOps는 제어 이론의 폐루프 제어를 배포에 적용한 것이다 — 쿠버네티스의 reconciliation loop의 목표 상태 출처를 Git으로 끌어올린다. 결과로 Git이 완전한 감사 로그가 되고, 콘솔에서 손으로 바꿔도 에이전트가 되돌리며(드리프트 자동 교정), 롤백이 git revert가 된다. 선언적 패러다임의 정수다. 단순 스크립트(A)·빌드 합침(C, 오히려 빌드/배포 분리가 핵심)·CloudFormation 별칭(D)은 틀리다.
+Explanation: Cluster Autoscaler presupposes an ASG, operates on a minute scale, and instance types are fixed in advance in the ASG. Karpenter launches EC2 directly without an ASG, selects the cheapest well-fitting instance combination in real time through bin-packing based on pending pod requirements (an NP-hard approximation), and relocates fragmented nodes with consolidation. "Fast scaling + dynamic selection of diverse instances + flexible Spot" points to Karpenter. A Scheduled Action (C) or Spot Fleet alone (D) is not dynamic scheduling.
 
 ---
 
-**문제 3.** 신규 EKS 클러스터에서 OIDC Provider 셋업 없이 파드별 IAM 자격 증명을 부여하는 현재 권장 표준은?
+**Question 2.** Which statement MOST accurately describes the core operating principle of GitOps (Argo CD/Flux)?
 
-A) 모든 파드가 노드의 Instance Profile을 공유
+A) It is just a script that automates kubectl apply
 
-B) EKS Pod Identity — Pod Identity Agent 애드온을 깔고 namespace/ServiceAccount/Role을 직접 연결(association)하며, OIDC 셋업이 불필요하고 같은 Role을 여러 클러스터에서 재사용하기 쉽다
+B) The Git repository becomes the single source of truth for the cluster's desired state, and an agent runs a closed-loop control (reconciliation) that converges the difference between the current and desired state to zero, automatically correcting drift and turning rollback into git revert
 
-C) IAM User 키를 파드에 주입
+C) It merges build and deployment into a single pipeline
 
-D) STS GetSessionToken 수동 호출
+D) It is an alias for CloudFormation
 
-**정답: B**
+**Answer: B**
 
-해설: IRSA는 클러스터마다 OIDC Provider를 세우고 IAM 신뢰 정책에 OIDC ARN을 박아야 해 클러스터가 늘면 부담이 커진다. EKS Pod Identity는 OIDC 셋업 없이 애드온 + association으로 파드별 IAM을 부여하며, 신뢰 정책에 `pods.eks.amazonaws.com`만 두면 돼 Role 재사용이 쉽다 — 신원 간소화의 후속 표준이다. 노드 프로파일 공유(A)는 최소 권한 위배, IAM User 키(C)·수동 STS(D)는 안티패턴이다.
-
----
-
-**문제 4.** ECS Fargate에서 Canary/Linear 트래픽 시프트와 즉시 롤백이 필요한 Blue/Green 배포를 하려면?
-
-A) 기본 ECS Rolling Update로 충분하다
-
-B) 서비스의 deployment-controller를 CODE_DEPLOY로 지정하고 CodeDeploy Blue/Green + ALB의 두 Target Group/Listener를 구성한다
-
-C) Route 53 Weighted Routing만 쓴다
-
-D) Lambda Alias를 쓴다
-
-**정답: B**
-
-해설: ECS 기본 Rolling Update는 기존 Task를 점진 교체할 뿐 빠른 롤백·세밀한 트래픽 시프트 제어가 약하다. Blue/Green은 CodeDeploy 컨트롤러(`deployment-controller type=CODE_DEPLOY`)를 지정하고 ALB의 두 Target Group(Blue/Green)과 Listener를 요구한다 — 이것이 Canary/Linear 시프트와 즉시 롤백을 준다. Rolling(A)은 그 제어가 없고, Route 53 Weighted(C)·Lambda Alias(D)는 ECS 컨테이너 배포의 표준 트래픽 시프트가 아니다.
+Explanation: GitOps applies closed-loop control from control theory to deployment — it lifts the source of the desired state in Kubernetes' reconciliation loop up to Git. As a result, Git becomes a complete audit log, the agent reverts even manual changes made in the console (automatic drift correction), and rollback becomes git revert. It is the essence of the declarative paradigm. A simple script (A), merging build (C; in fact separating build and deployment is the key), and a CloudFormation alias (D) are wrong.
 
 ---
 
-**문제 5.** 컨테이너 로그를 CloudWatch·Kinesis·S3·OpenSearch 등 여러 목적지로 동시에 분기(fan-out) 라우팅하려면?
+**Question 3.** In a new EKS cluster, what is the currently recommended standard for granting per-pod IAM credentials without setting up an OIDC Provider?
+
+A) All pods share the node's Instance Profile
+
+B) EKS Pod Identity — install the Pod Identity Agent add-on and directly associate namespace/ServiceAccount/Role; no OIDC setup is needed and the same Role is easy to reuse across multiple clusters
+
+C) Inject IAM User keys into pods
+
+D) Manually call STS GetSessionToken
+
+**Answer: B**
+
+Explanation: IRSA requires setting up an OIDC Provider for each cluster and embedding the OIDC ARN in the IAM trust policy, which becomes a burden as clusters multiply. EKS Pod Identity grants per-pod IAM through an add-on + association without OIDC setup, and only `pods.eks.amazonaws.com` needs to be in the trust policy, making Role reuse easy — it is the successor standard for identity simplification. Sharing the node profile (A) violates least privilege, and IAM User keys (C) and manual STS (D) are anti-patterns.
+
+---
+
+**Question 4.** How can you perform a Blue/Green deployment on ECS Fargate that requires Canary/Linear traffic shifting and immediate rollback?
+
+A) The default ECS Rolling Update is sufficient
+
+B) Set the service's deployment-controller to CODE_DEPLOY and configure CodeDeploy Blue/Green + two Target Groups/Listeners on the ALB
+
+C) Use only Route 53 Weighted Routing
+
+D) Use a Lambda Alias
+
+**Answer: B**
+
+Explanation: The default ECS Rolling Update merely replaces existing Tasks gradually and is weak on fast rollback and fine-grained traffic shifting control. Blue/Green requires specifying the CodeDeploy controller (`deployment-controller type=CODE_DEPLOY`) and two ALB Target Groups (Blue/Green) and a Listener — this provides Canary/Linear shifting and immediate rollback. Rolling (A) lacks that control, and Route 53 Weighted (C) and a Lambda Alias (D) are not the standard traffic shifting for ECS container deployments.
+
+---
+
+**Question 5.** How can you route container logs simultaneously to multiple destinations such as CloudWatch, Kinesis, S3, and OpenSearch (fan-out)?
 
 A) CloudWatch Agent
 
-B) FireLens(Fluent Bit) 사이드카
+B) A FireLens (Fluent Bit) sidecar
 
 C) X-Ray
 
 D) Container Insights
 
-**정답: B**
+**Answer: B**
 
-해설: FireLens는 Fluent Bit(경량 로그 프로세서)를 사이드카로 띄워 컨테이너 로그를 여러 목적지로 동시에 fan-out 라우팅한다 — 실시간 분석은 Kinesis, 장기 보관은 S3, 검색은 OpenSearch처럼. Container Insights(D)는 메트릭, X-Ray(C)는 트레이스, CloudWatch Agent(A)는 단일 목적지 중심이라 다목적지 분기에는 FireLens가 표준이다.
-
----
-
-**문제 6.** "전년 대비 20% 비용 감축" 압박에서 컨테이너 컴퓨트 비용을 30~40% 줄이는 단일 최고의 액션과 그 함정은?
-
-A) Reserved Instance만 구매한다
-
-B) Graviton(arm64) 노드 그룹 + Spot 적용 — Graviton은 RISC 기반 전력 효율로 단가가 낮으나 x86 비호환이라 멀티 아키텍처 이미지(buildx)가 필요하고, Spot은 2분 통보 회수가 있어 PDB·Topology Spread와 함께 써야 한다
-
-C) Region을 옮긴다
-
-D) S3 IA로 전환한다
-
-**정답: B**
-
-해설: Graviton은 ARM(RISC) 기반으로 와트당 성능·비용이 우수하고 AWS 자체 설계로 가격을 낮춰 30~40% 절감을 준다. 단 ARM64는 x86과 바이너리 비호환이라 멀티 아키텍처 이미지 빌드가 필요하고 일부 네이티브 의존성이 미지원일 수 있다. Spot은 최대 90% 할인이지만 2분 통보 회수가 있어 PDB·Topology Spread·Karpenter 중단 처리와 함께 써야 안전하다. RI 단독(A)·Region 이동(C)·S3 IA(D)는 컨테이너 컴퓨트 단가의 핵심 레버가 아니다.
+Explanation: FireLens runs Fluent Bit (a lightweight log processor) as a sidecar to fan out container logs to multiple destinations at the same time — for example, Kinesis for real-time analysis, S3 for long-term retention, and OpenSearch for search. Container Insights (D) is for metrics, X-Ray (C) is for traces, and the CloudWatch Agent (A) is centered on a single destination, so FireLens is the standard for multi-destination fan-out.
 
 ---
 
-**문제 7.** ECS Fargate와 EKS를 워크로드별로 다르게 고르는(혼합) 것이 단일 도구로 전부를 덮는 것보다 나은 근본 이유는?
+**Question 6.** Under pressure to "cut costs 20% year over year," what is the single best action to reduce container compute costs by 30-40%, and what is its pitfall?
 
-A) AWS가 혼합 사용에 할인을 주기 때문
+A) Only buy Reserved Instances
 
-B) 추상화는 공짜가 아니라 편의(운영 단순성)를 얻으면 제어(노드 최적화)를 잃는 trade-off이므로, 비용·제어가 결정적인 소수엔 낮은 추상화(EKS+노드 제어)를, 운영 단순성이 중요한 다수엔 높은 추상화(Fargate)를 고르는 것이 최적이기 때문
+B) Apply Graviton (arm64) node groups + Spot — Graviton has a lower unit price due to RISC-based power efficiency, but it is not compatible with x86 so multi-architecture images (buildx) are required, and Spot has a 2-minute interruption notice so it must be used together with PDBs and Topology Spread
 
-C) EKS가 항상 더 싸기 때문
+C) Move the Region
 
-D) Fargate가 항상 더 안전하기 때문
+D) Switch to S3 IA
 
-**정답: B**
+**Answer: B**
 
-해설: Fargate는 노드를 추상화해 운영 부담을 없애지만 노드 수준 최적화(인스턴스 타입·Spot 세밀 제어)의 손잡이를 빼앗고, EKS는 제어를 다 주지만 컨트롤 플레인·CNI·노드 관리라는 운영 세금을 물린다 — "추상화는 공짜가 아니다." 그래서 워크로드별로 추상화 수준을 다르게(결제=EKS, 일반 웹=Fargate) 고르는 혼합이 성숙한 패턴이다. 할인(A)·EKS가 항상 저렴(C)·Fargate가 항상 안전(D)은 근거 없는 일반화다.
+Explanation: Graviton is ARM (RISC)-based, with excellent performance per watt and cost, and AWS's in-house design lowers the price, yielding 30-40% savings. However, ARM64 is binary-incompatible with x86, so multi-architecture image builds are required, and some native dependencies may be unsupported. Spot offers up to 90% discount but has a 2-minute interruption notice, so it is safe only when used with PDBs, Topology Spread, and Karpenter's interruption handling. RI alone (A), moving Regions (C), and S3 IA (D) are not key levers on container compute unit price.
+
+---
+
+**Question 7.** What is the fundamental reason that choosing ECS Fargate and EKS differently per workload (a mix) is better than covering everything with a single tool?
+
+A) Because AWS gives a discount for mixed usage
+
+B) Because abstraction is not free: gaining convenience (operational simplicity) means losing control (node optimization), so it is optimal to choose a low abstraction (EKS + node control) for the few workloads where cost and control are decisive, and a high abstraction (Fargate) for the many where operational simplicity matters
+
+C) Because EKS is always cheaper
+
+D) Because Fargate is always more secure
+
+**Answer: B**
+
+Explanation: Fargate abstracts away nodes and removes the operational burden, but it takes away the knobs for node-level optimization (instance types, fine-grained Spot control), while EKS gives full control but charges an operational tax of control plane, CNI, and node management — "abstraction is not free." Therefore a mix that chooses a different level of abstraction per workload (payments = EKS, general web = Fargate) is a mature pattern. A discount (A), EKS always being cheaper (C), and Fargate always being safer (D) are baseless generalizations.
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 다섯 가지다. 첫째, ECS Fargate vs EKS는 추상화 수준(편의 vs 제어)의 선택이며 워크로드별 혼합이 성숙한 패턴이다. 둘째, Karpenter는 ASG를 거치지 않고 EC2 직접 + bin-packing 최적화 + consolidation으로 초 단위·동적 인스턴스 선택·Spot 유연 활용을 달성한다. 셋째, GitOps는 Git을 단일 진실로 두는 폐루프 제어(reconciliation)로 드리프트 자동 교정과 git revert 롤백을 주며 빌드/배포를 분리한다. 넷째, EKS Pod Identity가 IRSA의 OIDC 셋업 부담을 없앤 신원 간소화 후속 표준이고, ECS Blue/Green은 CodeDeploy 컨트롤러를 요구한다. 다섯째, Container Insights·ADOT·FireLens가 관찰성 3종(메트릭·로그·트레이스, OpenTelemetry 표준)이며, Graviton(RISC 전력 효율)+Spot이 비용 30~40% 절감의 핵심 레버다(buildx·PDB 주의).
+There are five key takeaways today. First, ECS Fargate vs EKS is a choice of level of abstraction (convenience vs control), and a per-workload mix is a mature pattern. Second, Karpenter achieves second-level response, dynamic instance selection, and flexible Spot use by launching EC2 directly without an ASG, with bin-packing optimization and consolidation. Third, GitOps is closed-loop control (reconciliation) with Git as the single source of truth, providing automatic drift correction and git revert rollback while separating build and deployment. Fourth, EKS Pod Identity is the successor standard for identity simplification that removes IRSA's OIDC setup burden, and ECS Blue/Green requires the CodeDeploy controller. Fifth, Container Insights, ADOT, and FireLens are the three pillars of observability (metrics, logs, traces; the OpenTelemetry standard), and Graviton (RISC power efficiency) + Spot is the key lever for a 30-40% cost reduction (watch out for buildx and PDBs).

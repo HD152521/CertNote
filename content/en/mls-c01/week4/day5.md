@@ -88,62 +88,62 @@ X_tr_proc, y_tr_proc = pipe.fit_resample(X_tr, y_tr)
 
 ## 📝 Practice Questions
 
-**문제 1.** Week 3·4를 관통하는, 표준화·PCA·SMOTE·결측 대치에 공통으로 적용되는 누수 방지 원칙은?
+**Question 1.** Which leakage-prevention principle, common to standardization, PCA, SMOTE, and missing-value imputation and running through Weeks 3 and 4, applies?
 
-A) 모든 변환을 전체 데이터에 한 번에 적용한다  
-B) 테스트셋에서 통계량을 계산해 학습에 적용한다  
-C) 변환 순서는 중요하지 않다  
-D) 데이터를 먼저 분할하고 모든 fit은 학습셋에서만 수행한다  
+A) Apply all transformations to the entire dataset at once  
+B) Compute statistics on the test set and apply them to training  
+C) The order of transformations does not matter  
+D) Split the data first and perform every fit only on the training set  
 
-**정답: D**  
-해설: 데이터 의존 변환은 학습셋에서 학습한 통계/규칙을 테스트에 적용만 해야 누수가 없다 — "분할 먼저, fit은 학습셋에서만"이 일관된 원칙이다. 전체 적용(A)·테스트 통계 사용(B)은 누수를 일으키고, 순서 무관(C)도 틀리다.
-
----
-
-**문제 2.** 규제 산업에서 어떤 변수가 예측에 사용되었는지 설명해야 하고 다중공선성도 다뤄야 한다. PCA 대신 더 적절한 접근은?
-
-A) t-SNE 임베딩을 입력으로 사용  
-B) 상관·VIF 기반 특성 선택으로 해석 가능한 부분집합 유지  
-C) 무작위로 절반의 특성을 버림  
-D) 모든 특성을 그대로 사용  
-
-**정답: B**  
-해설: 특성 선택은 원본 특성을 유지해 해석 가능성을 보존하면서 상관·VIF로 다중공선성도 처리한다. t-SNE(A)는 시각화 전용·해석 불가, 무작위 제거(C)는 정보 손실, 전부 사용(D)은 다중공선성을 방치한다.
+**Answer: D**  
+Explanation: Data-dependent transformations must only apply to the test set the statistics/rules learned from the training set to avoid leakage - "split first, fit only on the training set" is the consistent principle. Applying to the entire dataset (A) and using test statistics (B) cause leakage, and order not mattering (C) is also wrong.
 
 ---
 
-**문제 3.** 다음 중 옳은 설명은?
+**Question 2.** In a regulated industry, you must explain which variables were used for prediction and also handle multicollinearity. Which approach is more appropriate than PCA?
 
-A) t-SNE는 학습된 매핑으로 새 데이터를 변환할 수 있다  
-B) 불균형 데이터에서는 항상 정확도가 최선의 지표다  
-C) PCA는 적용 전 표준화가 권장되며 새 데이터를 transform할 수 있다  
-D) SMOTE는 데이터 분할 전에 전체에 적용해야 한다  
+A) Use a t-SNE embedding as input  
+B) Keep an interpretable subset through correlation- and VIF-based feature selection  
+C) Randomly discard half of the features  
+D) Use all features as they are  
 
-**정답: C**  
-해설: PCA는 분산 기반이라 표준화가 권장되고, 학습된 주성분으로 새 데이터를 transform할 수 있다. t-SNE는 새 데이터 변환 불가(A), 불균형에서 정확도는 오해를 부르며(B), SMOTE는 분할 후 학습셋에만 적용해야 한다(D).
+**Answer: B**  
+Explanation: Feature selection keeps the original features to preserve interpretability while also handling multicollinearity using correlation and VIF. t-SNE (A) is for visualization only and not interpretable, random removal (C) loses information, and using everything (D) leaves multicollinearity unaddressed.
 
 ---
 
-**문제 4.** 코드를 작성하지 않는 비즈니스 사용자가 S3 데이터의 대시보드에서 자동 이상 탐지·예측을 원한다. 가장 적절한 도구는?
+**Question 3.** Which of the following statements is correct?
 
-A) SageMaker 내장 PCA  
+A) t-SNE can transform new data using a learned mapping  
+B) Accuracy is always the best metric for imbalanced data  
+C) Standardization is recommended before PCA, and PCA can transform new data  
+D) SMOTE must be applied to the entire dataset before splitting  
+
+**Answer: C**  
+Explanation: PCA is variance-based, so standardization is recommended, and new data can be transformed using the learned principal components. t-SNE cannot transform new data (A), accuracy is misleading on imbalanced data (B), and SMOTE must be applied only to the training set after splitting (D).
+
+---
+
+**Question 4.** A business user who does not write code wants automatic anomaly detection and forecasting on a dashboard of S3 data. Which tool is MOST appropriate?
+
+A) SageMaker built-in PCA  
 B) Amazon QuickSight(ML Insights)  
 C) imblearn Pipeline  
 D) statsmodels VIF  
 
-**정답: B**  
-해설: QuickSight ML Insights는 코드 없이 대시보드에서 이상 탐지·예측을 제공해 비즈니스 사용자에게 맞다. PCA(A)는 차원 축소, imblearn(C)은 불균형 처리, VIF(D)는 다중공선성 진단 도구다.
+**Answer: B**  
+Explanation: QuickSight ML Insights provides anomaly detection and forecasting on dashboards without code, which suits business users. PCA (A) is dimensionality reduction, imblearn (C) is for handling imbalance, and VIF (D) is a multicollinearity diagnostic tool.
 
 ---
 
-**문제 5.** 매우 큰 다수 클래스와 희소한 소수 클래스를 가진 데이터에서, 학습 속도를 위해 데이터 양 자체를 줄이면서 불균형을 완화하려 한다. 가장 적절한 방법은?
+**Question 5.** You have data with a very large majority class and a rare minority class, and you want to reduce the data volume itself for training speed while also mitigating the imbalance. Which method is MOST appropriate?
 
-A) 무작위 언더샘플링으로 다수 클래스를 줄인다  
-B) 소수 클래스를 수십 배 복제한다  
-C) 모든 특성을 다항 확장한다  
-D) 차원의 저주를 무시한다  
+A) Reduce the majority class with random undersampling  
+B) Duplicate the minority class dozens of times  
+C) Expand all features polynomially  
+D) Ignore the curse of dimensionality  
 
-**정답: A**  
-해설: 데이터가 매우 크고 속도가 중요하면 다수 클래스를 줄이는 언더샘플링이 불균형 완화와 학습 가속을 동시에 달성한다. 대량 복제(B)는 데이터를 오히려 키우고 과적합 위험이 크며, 다항 확장(C)은 차원을 늘리고, (D)는 해결책이 아니다.
+**Answer: A**  
+Explanation: When the data is very large and speed matters, undersampling that reduces the majority class both mitigates the imbalance and speeds up training. Mass duplication (B) actually enlarges the data and carries a high risk of overfitting, polynomial expansion (C) increases dimensionality, and (D) is not a solution.
 
 ---

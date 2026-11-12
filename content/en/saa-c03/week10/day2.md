@@ -120,94 +120,94 @@ In the next article we look at the cost of the data itself leaving storage — w
 
 ## 📝 Practice Questions
 
-**문제 1.** A company stores the output of a new data pipeline in S3, but it cannot predict at all how often this data will be accessed, and the pattern may change over time. To automatically optimize cost with no operational burden, what should it use?
+**Question 1.** A company stores the output of a new data pipeline in S3, but it cannot predict at all how often this data will be accessed, and the pattern may change over time. To automatically optimize cost with no operational burden, what should it use?
 
 A) S3 Standard
 B) S3 Standard-IA
 C) S3 Intelligent-Tiering
 D) S3 Glacier Deep Archive
 
-**정답: C**
+**Answer: C**
 
-해설: When the access pattern is uncertain or changes over time, Intelligent-Tiering is the answer. S3 tracks each object's last-access time and automatically promotes/demotes tiers, and with no retrieval cost or minimum-storage penalty it removes the risk of "wrong class choice." Standard (A) wastes storage cost on cold data, Standard-IA (B) gets bitten by retrieval costs and the 30-day minimum if accessed frequently, and Deep Archive (D) has a fatal 12-48 hour retrieval delay if you ever need it out fast.
+Explanation: When the access pattern is uncertain or changes over time, Intelligent-Tiering is the answer. S3 tracks each object's last-access time and automatically promotes/demotes tiers, and with no retrieval cost or minimum-storage penalty it removes the risk of "wrong class choice." Standard (A) wastes storage cost on cold data, Standard-IA (B) gets bitten by retrieval costs and the 30-day minimum if accessed frequently, and Deep Archive (D) has a fatal 12-48 hour retrieval delay if you ever need it out fast.
 
 ---
 
-**문제 2.** To cut cost, a team moved temporary analytics data — frequently modified and deleted within 30 days — from S3 Standard to Standard-IA, but cost actually went up. Why?
+**Question 2.** To cut cost, a team moved temporary analytics data — frequently modified and deleted within 30 days — from S3 Standard to Standard-IA, but cost actually went up. Why?
 
 A) IA has a higher storage unit price than Standard
 B) IA's 30-day minimum-storage penalty and high retrieval cost exceeded the storage savings
 C) IA has lower availability, incurring extra cost
 D) Moving to IA automatically incurs KMS cost
 
-**정답: B**
+**Answer: B**
 
-해설: Standard-IA has a 30-day minimum storage duration, so deleting/transitioning before then charges you the remaining days' storage as a penalty, and access also incurs a per-GB retrieval cost. For data frequently accessed and deleted within 30 days, these two costs overwhelm the storage-unit-price savings, making it more expensive than Standard. A is wrong — IA's storage unit price is cheaper than Standard. C and D are not the actual causes of the cost increase. IA fits only data that is "definitely accessed infrequently and kept for over a month."
+Explanation: Standard-IA has a 30-day minimum storage duration, so deleting/transitioning before then charges you the remaining days' storage as a penalty, and access also incurs a per-GB retrieval cost. For data frequently accessed and deleted within 30 days, these two costs overwhelm the storage-unit-price savings, making it more expensive than Standard. A is wrong — IA's storage unit price is cheaper than Standard. C and D are not the actual causes of the cost increase. IA fits only data that is "definitely accessed infrequently and kept for over a month."
 
 ---
 
-**문제 3.** A high-volume application writes and reads thousands of objects per second to an SSE-KMS-encrypted S3 bucket. KMS API call cost has spiked. What is the most suitable way to reduce cost while keeping the security level?
+**Question 3.** A high-volume application writes and reads thousands of objects per second to an SSE-KMS-encrypted S3 bucket. KMS API call cost has spiked. What is the most suitable way to reduce cost while keeping the security level?
 
 A) Change encryption to SSE-S3
 B) Enable S3 Bucket Keys
 C) Disable encryption
 D) Merge objects into larger units
 
-**정답: B**
+**Answer: B**
 
-해설: S3 Bucket Keys creates a bucket-level intermediate key, caches it briefly, and during that window encrypts/decrypts many objects with no additional KMS calls, reducing KMS API calls by up to 99%. The security level of a unique data key per object is preserved. SSE-S3 (A) loses KMS's key management/audit capabilities and may fail the security requirement, C abandons security and is inappropriate, and D doesn't fundamentally change the KMS call structure.
+Explanation: S3 Bucket Keys creates a bucket-level intermediate key, caches it briefly, and during that window encrypts/decrypts many objects with no additional KMS calls, reducing KMS API calls by up to 99%. The security level of a unique data key per object is preserved. SSE-S3 (A) loses KMS's key management/audit capabilities and may fail the security requirement, C abandons security and is inappropriate, and D doesn't fundamentally change the KMS call structure.
 
 ---
 
-**문제 4.** While reviewing an S3 bucket's cost, an operator found that significant storage charges are being billed even though nothing appears in the console. What is the most likely cause and fix?
+**Question 4.** While reviewing an S3 bucket's cost, an operator found that significant storage charges are being billed even though nothing appears in the console. What is the most likely cause and fix?
 
 A) Versioning is off — turn it on
 B) Incomplete multipart upload pieces have piled up — auto-clean with Lifecycle
 C) The region is wrong — change the region
 D) Storage Lens is on — turn it off
 
-**정답: B**
+**Answer: B**
 
-해설: When a large object's multipart upload fails partway, the already-uploaded pieces are not completed objects, so they keep eating storage charges invisibly in the console. Adding "automatically clean up incomplete multiparts older than N days (AbortIncompleteMultipartUpload)" to a Lifecycle rule is the standard hygiene rule. A actually increases cost as versions accumulate, C is irrelevant, and D — Storage Lens is a cost-visibility tool, not a cost cause.
+Explanation: When a large object's multipart upload fails partway, the already-uploaded pieces are not completed objects, so they keep eating storage charges invisibly in the console. Adding "automatically clean up incomplete multiparts older than N days (AbortIncompleteMultipartUpload)" to a Lifecycle rule is the standard hygiene rule. A actually increases cost as versions accumulate, C is irrelevant, and D — Storage Lens is a cost-visibility tool, not a cost cause.
 
 ---
 
-**문제 5.** A company wants to convert EBS volumes from gp2 to gp3. Which is the most accurate expected effect?
+**Question 5.** A company wants to convert EBS volumes from gp2 to gp3. Which is the most accurate expected effect?
 
 A) Cost stays the same but durability improves
 B) Capacity and IOPS/throughput can be set independently, so you get the same performance more cheaply (or higher baseline performance at the same price)
 C) gp3 is always more expensive than gp2 but has lower latency
 D) gp3 is magnetic storage, so cost drops sharply
 
-**정답: B**
+**Answer: B**
 
-해설: gp2 determines IOPS in proportion to capacity, so to get more performance you had to increase unnecessary capacity, but gp3 sets capacity, IOPS, and throughput independently and provides 3000 IOPS by default. So you get the same performance more cheaply, or higher baseline performance at the same price — almost always a win. A and C describe the cost relationship incorrectly, and D is wrong because gp3 is SSD-based, not magnetic.
+Explanation: gp2 determines IOPS in proportion to capacity, so to get more performance you had to increase unnecessary capacity, but gp3 sets capacity, IOPS, and throughput independently and provides 3000 IOPS by default. So you get the same performance more cheaply, or higher baseline performance at the same price — almost always a win. A and C describe the cost relationship incorrectly, and D is wrong because gp3 is SSD-based, not magnetic.
 
 ---
 
-**문제 6.** A healthcare organization pulls image data only about once a quarter, but when it does, it needs immediate millisecond-level access. Which class is most suitable when long-term storage cost must be low yet instant retrieval is required?
+**Question 6.** A healthcare organization pulls image data only about once a quarter, but when it does, it needs immediate millisecond-level access. Which class is most suitable when long-term storage cost must be low yet instant retrieval is required?
 
 A) S3 Standard
 B) S3 Glacier Instant Retrieval
 C) S3 Glacier Flexible Retrieval
 D) S3 Glacier Deep Archive
 
-**정답: B**
+**Answer: B**
 
-해설: Glacier Instant Retrieval provides a cheaper storage unit price than Standard-IA while allowing instant millisecond access, fitting exactly the "rarely pulled but fast when pulled" case of medical images/backups. Standard (A) offers instant access but wastes storage cost for quarterly access, and Flexible Retrieval (C) takes minutes-to-hours and Deep Archive (D) 12-48 hours, failing the "instant access" requirement.
+Explanation: Glacier Instant Retrieval provides a cheaper storage unit price than Standard-IA while allowing instant millisecond access, fitting exactly the "rarely pulled but fast when pulled" case of medical images/backups. Standard (A) offers instant access but wastes storage cost for quarterly access, and Flexible Retrieval (C) takes minutes-to-hours and Deep Archive (D) 12-48 hours, failing the "instant access" requirement.
 
 ---
 
-**문제 7.** An organization wants to see S3 usage across multiple accounts and buckets at a glance, and even get recommendations on which buckets have many incomplete multiparts or wrong-class objects. What is the most suitable tool?
+**Question 7.** An organization wants to see S3 usage across multiple accounts and buckets at a glance, and even get recommendations on which buckets have many incomplete multiparts or wrong-class objects. What is the most suitable tool?
 
 A) S3 Inventory alone
 B) S3 Storage Lens (advanced metrics)
 C) CloudWatch Alarm
 D) Trusted Advisor alone
 
-**정답: B**
+**Answer: B**
 
-해설: S3 Storage Lens visualizes storage across the organization, accounts, and buckets on a dashboard, and its advanced metrics even provide class distribution, access patterns, and cost-optimization recommendations (accumulated incomplete multiparts, etc.). S3 Inventory (A) gives an object list but is not an organization-level recommendation dashboard (you must analyze with Athena yourself). CloudWatch Alarm (C) is a metric-threshold alert, and Trusted Advisor (D) is not an S3-specific deep-analysis tool.
+Explanation: S3 Storage Lens visualizes storage across the organization, accounts, and buckets on a dashboard, and its advanced metrics even provide class distribution, access patterns, and cost-optimization recommendations (accumulated incomplete multiparts, etc.). S3 Inventory (A) gives an object list but is not an organization-level recommendation dashboard (you must analyze with Athena yourself). CloudWatch Alarm (C) is a metric-threshold alert, and Trusted Advisor (D) is not an S3-specific deep-analysis tool.
 
 ---
 

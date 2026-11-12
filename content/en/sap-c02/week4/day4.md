@@ -269,72 +269,72 @@ Internalizing this decision tree lets you correctly answer 4 out of 5 SAP-C02 hy
 
 ## 📝 Practice Questions
 
-**문제 1.** 방위산업체가 군용 네트워크에서 컨테이너 기반 물류 시스템을 운영한다. 군 보안 규정으로 인터넷 접근이 완전히 차단된 에어갭 환경이다. 자체 Kubernetes 운영팀이 있으며, AWS EKS와 호환되는 Kubernetes를 사용해야 한다. 가장 적합한 솔루션은?
+**Question 1.** A defense contractor runs a container-based logistics system on a military network. It is an air-gapped environment in which internet access is completely blocked by military security regulations. It has its own Kubernetes operations team and must use Kubernetes compatible with AWS EKS. What is the most appropriate solution?
 
-A) AWS ECS Anywhere (AWS 연결 필수)
-B) AWS EKS Anywhere (에어갭 지원)
-C) EKS on Outposts (Service Link 연결 필요)
+A) AWS ECS Anywhere (AWS connectivity required)
+B) AWS EKS Anywhere (supports air-gapped environments)
+C) EKS on Outposts (Service Link connectivity required)
 D) AWS Fargate
 
-**정답: B**
-해설: 에어갭 환경에서 Kubernetes를 운영하는 유일한 AWS 솔루션이 EKS Anywhere다. EKS-D 기반으로 표준 Kubernetes와 호환되고, Harbor를 로컬 컨테이너 레지스트리로 사용해 외부 연결 없이 운영 가능하다. ECS Anywhere(A)는 AWS 연결이 항상 필요하다. EKS on Outposts(C)는 AWS Outposts 하드웨어가 필요하고 Service Link 연결이 필요하다. Fargate(D)는 AWS 리전에서만 실행된다.
+**Answer: B**
+Explanation: EKS Anywhere is the only AWS solution for operating Kubernetes in an air-gapped environment. It is based on EKS-D, is compatible with standard Kubernetes, and can operate without external connectivity by using Harbor as a local container registry. ECS Anywhere (A) always requires AWS connectivity. EKS on Outposts (C) requires AWS Outposts hardware and a Service Link connection. Fargate (D) runs only in AWS Regions.
 
 ---
 
-**문제 2.** 유통 기업이 AWS ECS로 마이크로서비스를 운영한다. 일부 처리가 개인정보보호법으로 고객 데이터를 온프레미스에서만 처리해야 한다. Kubernetes 전문 인력이 없으며 기존 ECS 운영 방식을 최대한 유지하고 싶다. 적합한 솔루션은?
+**Question 2.** A retailer runs microservices on AWS ECS. Some processing must handle customer data only on premises because of the personal information protection law. It has no Kubernetes expertise and wants to keep its existing ECS operating model as much as possible. What is an appropriate solution?
 
-A) EKS Anywhere (온프레미스 K8s)
-B) ECS Anywhere (온프레미스 ECS 노드 추가)
+A) EKS Anywhere (on-premises K8s)
+B) ECS Anywhere (add on-premises ECS nodes)
 C) EKS on Outposts
-D) Fargate + VPC Endpoint (데이터를 AWS 내에서만 처리)
+D) Fargate + VPC Endpoint (process data only inside AWS)
 
-**정답: B**
-해설: 기존 ECS 운영 방식을 유지하면서 온프레미스 서버를 ECS 클러스터에 External 노드로 추가하는 것이 ECS Anywhere다. 기존 ECS 태스크 정의, 콘솔, CLI를 그대로 사용하면서 태스크를 온프레미스에서 실행할 수 있다. K8s 전문 인력이 없는 조건에서 EKS Anywhere(A)나 EKS on Outposts(C)는 적합하지 않다. Fargate + VPC Endpoint(D)는 AWS 리전에서 실행되므로 온프레미스 처리 요건을 충족하지 않는다.
+**Answer: B**
+Explanation: ECS Anywhere adds on-premises servers to an ECS cluster as External nodes while keeping the existing ECS operating model. You can run tasks on premises while continuing to use existing ECS task definitions, the console, and the CLI. Under the condition of having no K8s expertise, EKS Anywhere (A) or EKS on Outposts (C) is not suitable. Fargate + VPC Endpoint (D) runs in an AWS Region and therefore does not meet the on-premises processing requirement.
 
 ---
 
-**문제 3.** 제약회사가 온프레미스 GMP(의약품 제조 품질 관리) 시스템을 AWS Outposts에서 컨테이너로 운영한다. Outposts가 설치된 제조시설의 네트워크가 간혹 불안정해 AWS Service Link가 단절될 수 있다. 이 상황에서도 Kubernetes 클러스터가 자율적으로 동작해야 한다. 적합한 구성은?
+**Question 3.** A pharmaceutical company runs its on-premises GMP (good manufacturing practice quality control) system as containers on AWS Outposts. The network at the manufacturing facility where Outposts is installed is occasionally unstable, so the AWS Service Link can be disconnected. Even in this situation, the Kubernetes cluster must operate autonomously. What is an appropriate configuration?
 
 A) EKS on Outposts Extended Cluster
 B) EKS on Outposts Local Cluster
-C) ECS Anywhere (Outposts에 설치)
-D) EKS Anywhere (vSphere 모드)
+C) ECS Anywhere (installed on Outposts)
+D) EKS Anywhere (vSphere mode)
 
-**정답: B**
-해설: EKS on Outposts Local Cluster는 Kubernetes 제어 평면(API 서버, etcd, 스케줄러)이 Outposts에 배치된다. Service Link가 끊어져도 로컬 제어 평면이 계속 작동해 Pod 스케줄링, 오토힐링, 스케일링이 정상 동작한다. Extended Cluster(A)는 제어 평면이 AWS 리전에 있어 Service Link 단절 시 새 Pod 스케줄링이 불가능하다. ECS Anywhere(C)는 제어 평면이 AWS에 있어 연결 단절 시 새 태스크 시작이 불가능하다. EKS Anywhere(D)는 Outposts 하드웨어가 아닌 고객 직접 소유 인프라에 배포하는 것이고, AWS Managed가 아니다.
-
----
-
-**문제 4.** 멀티클라우드 전략을 사용하는 기업이 AWS EKS, GKE(GCP), On-Premise Kubernetes를 동시에 운영한다. 운영팀이 단일 대시보드에서 모든 클러스터를 모니터링하고 싶다. 별도 도구 도입 없이 AWS 콘솔에서 해결하는 방법은?
-
-A) AWS CloudWatch Container Insights (AWS 클러스터만 지원)
-B) EKS Connector (외부 K8s 클러스터를 EKS 콘솔에 연결)
-C) Prometheus + Grafana 중앙화
-D) AWS Control Tower로 멀티클라우드 통합
-
-**정답: B**
-해설: EKS Connector는 EKS Anywhere, GKE, AKS, On-Premise Kubernetes 등 외부 K8s 클러스터를 AWS EKS 콘솔에서 가시화한다. Connector 에이전트를 각 클러스터에 설치하면 클러스터 상태, 워크로드, 네임스페이스가 EKS 콘솔에 표시된다. CloudWatch Container Insights(A)는 AWS 내 컨테이너 서비스(EKS, ECS, Fargate)만 지원한다. Prometheus + Grafana(C)는 AWS 외부 도구로 "별도 도구 도입 없이"라는 조건에 맞지 않는다. Control Tower(D)는 AWS 멀티계정 거버넌스 도구이지 멀티클라우드 Kubernetes 가시화 도구가 아니다.
+**Answer: B**
+Explanation: In an EKS on Outposts Local Cluster, the Kubernetes control plane (API server, etcd, scheduler) is placed on Outposts. Even if the Service Link is disconnected, the local control plane keeps working, so Pod scheduling, auto-healing, and scaling continue normally. In an Extended Cluster (A), the control plane is in the AWS Region, so new Pods cannot be scheduled when the Service Link is cut. In ECS Anywhere (C), the control plane is in AWS, so new tasks cannot be started when connectivity is lost. EKS Anywhere (D) is deployed on infrastructure owned directly by the customer rather than on Outposts hardware, and it is not AWS-managed.
 
 ---
 
-**문제 5.** 소매 기업이 전국 500개 매장의 각 서버에서 재고 관리 컨테이너를 실행하려 한다. 각 매장 서버에는 Windows 또는 Linux가 혼재되어 있으며, 중앙 ECS 클러스터에서 모든 매장 컨테이너를 관리하고 싶다. AWS 연결은 가능하다. 가장 적합한 솔루션은?
+**Question 4.** A company with a multicloud strategy operates AWS EKS, GKE (GCP), and on-premises Kubernetes at the same time. The operations team wants to monitor all clusters from a single dashboard. What is the way to do this in the AWS console without adopting a separate tool?
 
-A) 각 매장에 EC2 인스턴스 500개 생성
-B) ECS Anywhere (매장 서버를 External Instance로 등록)
-C) EKS Anywhere (매장별 K8s 클러스터)
-D) AWS Outposts Servers (매장별 1U 서버 배포)
+A) AWS CloudWatch Container Insights (supports AWS clusters only)
+B) EKS Connector (connect external K8s clusters to the EKS console)
+C) Centralize with Prometheus + Grafana
+D) Integrate multicloud with AWS Control Tower
 
-**정답: B**
-해설: ECS Anywhere는 Windows와 Linux 모두 SSM Agent와 ECS Agent를 지원한다. 500개 매장 서버를 SSM Hybrid Activation으로 등록하면 중앙 ECS 클러스터의 External Instance로 관리된다. 새 버전 배포, 스케일 조정, 태스크 상태 모니터링을 단일 ECS 콘솔에서 처리할 수 있다. EC2 500개(A)는 매장에 AWS 하드웨어를 설치하는 것이 아니라 클라우드 EC2이므로 온프레미스 매장 서버를 활용하지 못한다. EKS Anywhere(C)는 500개 매장에 각자 Kubernetes 클러스터를 운영하는 것으로 운영 부담이 매우 크다. Outposts Servers(D)는 AWS가 매장에 하드웨어를 직접 배송하는 서비스로, 기존 매장 서버 활용보다 비용이 크게 높다.
+**Answer: B**
+Explanation: EKS Connector makes external K8s clusters such as EKS Anywhere, GKE, AKS, and on-premises Kubernetes visible in the AWS EKS console. When you install the Connector agent on each cluster, the cluster status, workloads, and namespaces are displayed in the EKS console. CloudWatch Container Insights (A) supports only container services within AWS (EKS, ECS, Fargate). Prometheus + Grafana (C) are tools outside AWS and do not meet the condition "without adopting a separate tool." Control Tower (D) is an AWS multi-account governance tool, not a multicloud Kubernetes visibility tool.
 
 ---
 
-**문제 6.** EKS Anywhere와 ECS Anywhere 중 "AWS 관리 제어 평면을 원하지만 온프레미스 하드웨어에서 컨테이너를 실행하고 싶다"는 요구사항에 더 직접적으로 맞는 서비스는?
+**Question 5.** A retailer wants to run an inventory management container on the server in each of its 500 stores nationwide. The store servers run a mix of Windows and Linux, and it wants to manage all store containers from a central ECS cluster. AWS connectivity is available. What is the most appropriate solution?
+
+A) Create 500 EC2 instances, one for each store
+B) ECS Anywhere (register the store servers as External Instances)
+C) EKS Anywhere (a K8s cluster per store)
+D) AWS Outposts Servers (deploy a 1U server per store)
+
+**Answer: B**
+Explanation: ECS Anywhere supports the SSM Agent and the ECS Agent on both Windows and Linux. If you register the 500 store servers with SSM Hybrid Activation, they are managed as External Instances of the central ECS cluster. Deploying new versions, adjusting scale, and monitoring task status can all be handled from a single ECS console. 500 EC2 instances (A) are cloud EC2, not AWS hardware installed in the stores, so they cannot use the on-premises store servers. EKS Anywhere (C) means operating a separate Kubernetes cluster at each of the 500 stores, which is a very heavy operational burden. Outposts Servers (D) is a service in which AWS ships hardware directly to the stores, and the cost is much higher than using the existing store servers.
+
+---
+
+**Question 6.** Between EKS Anywhere and ECS Anywhere, which service more directly fits the requirement "want an AWS-managed control plane but run containers on on-premises hardware"?
 
 A) EKS Anywhere
 B) ECS Anywhere
-C) 두 서비스 모두 동일하게 충족
+C) Both services meet it equally
 D) EKS on Outposts
 
-**정답: B**
-해설: ECS Anywhere는 제어 평면이 AWS ECS(완전 관리됨)에 있고 데이터 평면(컨테이너 실행)이 온프레미스 서버에 있다. "AWS 관리 제어 평면 + 온프레미스 실행"을 정확히 충족한다. EKS Anywhere(A)는 제어 평면도 고객이 직접 운영해야 한다. EKS on Outposts(D)는 AWS Outposts 하드웨어가 필요하고, 고객이 이미 보유한 온프레미스 서버를 활용하는 것이 아니다. 기존 서버를 그대로 활용하는 조건에서 ECS Anywhere가 가장 직접적인 답이다.
+**Answer: B**
+Explanation: In ECS Anywhere, the control plane is in AWS ECS (fully managed) and the data plane (container execution) is on on-premises servers. It exactly satisfies "AWS-managed control plane + on-premises execution." With EKS Anywhere (A), the customer must also operate the control plane. EKS on Outposts (D) requires AWS Outposts hardware and does not use on-premises servers the customer already owns. Under the condition of using existing servers as they are, ECS Anywhere is the most direct answer.
