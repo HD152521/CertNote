@@ -1,44 +1,204 @@
 # Day 4 - Full Practice Exam Pace: Six-Domain Synthesis Scenario Review
 
-Today is practical *pacing training*, not learning. Real SCS-C03: 65 questions, 170 minutes — ~2.6 min/question. We dissect long scenarios quickly in 1 minute, extracting the *skeleton*. Question bias matters: Domain 3/4 (infrastructure/IAM) ~38%, Domain 1/2 (detection/incident response) ~30%, Domain 5/6 (data/governance) ~32%.
+Today is not about learning; it is *real-exam pace training*. The actual SCS-C03 has 65 questions in 170 minutes — about 2.6 minutes per question. We build the muscle for quickly *decomposing* long, compound scenarios. After a short review, we work through comprehensive questions that cut across all six domains, centered on solving them. The weight of the questions is the heart of today.
 
-## Pacing Strategy: 4-Step Scenario Breakdown
+## Time Allocation: Engrave the Numbers into Your Body
 
-Long text in 1 minute:
+You must not do arithmetic during the exam. Memorize the checkpoints in advance, and each time you pass one, check *only whether you are ahead or behind*.
 
-1. **Find the core verb** — "automatically," "without managing," "least privilege," "cannot be deleted," "centrally," "private." Verb shapes answer pattern.
-2. **Mark constraints** — "multi-account," "no internet," "regulatory," "cost-effective," "existing X." Filters wrong answers.
-3. **Kill 2 obvious losers** — Requirements directly violated (hardcode keys, public, manual) → immediate elimination.
-4. **Choose "best" from 2 remaining** — More managed? More auto? More least-priv? More un-bypassable? More preventive > detective? More org-wide?
+| Point | Target elapsed time | Time that should remain | Judgment |
+|---|---|---|---|
+| Question 13 (1/5) | About 34 min | About 136 min | If you are already behind here, change how you read the stem |
+| Question 22 (1/3) | About 57 min | About 113 min | Normal |
+| Question 33 (halfway) | About 85 min | About 85 min | ★ The most important checkpoint |
+| Question 44 (2/3) | About 113 min | About 57 min | If you are ahead here, the second pass will be comfortable |
+| Question 55 | About 143 min | About 27 min | |
+| Question 65 (end of first pass) | Aim for within 150 min | **20 min or more** | Spend all the remaining time on flagged questions |
 
-> 💡 **Theory**: Specialty tests not "right vs wrong" but "better vs worse." Two choices both work; AWS prefers *managed > self, automated > manual, preventive > detect > respond, defense-in-depth > single control, org-wide > per-account*. Final 2-choice comes down to preference hierarchy.
+The core design is this — **finish the first pass within 150 minutes and leave 20 minutes for flagged questions.** The average is 2.6 minutes per question, but in reality *questions that finish in 1 minute* and *questions that need 4 minutes* are mixed together. Spending the time you earn on short questions on the long ones is the whole of pacing.
 
-## Quick Keyword→Service Mapping
+| Question type | Felt time | How to handle it |
+|---|---|---|
+| Single-concept matching ("which service does this feature belong to") | 30–60 sec | Answer instantly. Don't deliberate |
+| Trap-check ("which of the following is NOT true") | 1–1.5 min | Judge each option true or false one by one |
+| Short scenario + single answer | 1.5–2 min | Required verb → 2 candidates → choose |
+| Long multi-domain scenario | 3–4 min | Follow the decomposition procedure exactly |
+| Multiple answers (choose 2 or more) | 3–4 min | **There is no partial credit** — if unsure, flag it and carry it over |
+| Ordering ("what should be done first") | 2–3 min | Decide immediately on the reversibility and evidence-preservation axes |
 
-| Phrase | Service |
-|---|---|
-| "行为异常·恶意IP" | GuardDuty |
-| "根本原因·范围" | Detective |
-| "CVE·补丁" | Inspector |
-| "S3 PII发现" | Macie |
-| "自动无人干预" | EventBridge → Lambda |
-| "无互联网S3" | Gateway VPC Endpoint |
-| "我们独占HSM" | CloudHSM/custom key store |
-| "删除·变改不可" | S3 Object Lock + MFA Delete |
-| "第三方安全交接" | AssumeRole + External ID |
-| "组织全体强制" | SCP / Firewall Manager / Conformance Pack |
+The exam has 65 questions, but **some unscored questions are mixed in** (as is common across AWS exams, used to pre-validate future items). The implication for the real exam is just one — *spending time on one or two unusually unfamiliar, hard questions has a low expected value.* That question may not be scored at all, and even if it is, a single question is worth less than 2% of the total. The saying that **"overall pace, not the perfection of a single question, makes your score"** is not emotional comfort; it is arithmetic.
 
-## Traps (5 Expensive Mistakes)
+### The 3-Bucket Strategy
 
-- **CloudTrail管理事件 ≠ S3对象访问** → 数据事件单独激活.
-- **SCP不授予权限** → 仅上限.
-- **NAC L无状态** → 出站临时端口单独允许.
-- **CloudFront ACM=us-east-1** → 其他区域失败.
-- **KMS密钥删除=7-30天等待** → 前disable复原.
+On the first pass, put every question into one of three buckets. Making this classification *immediately* is the key.
 
-## Exam Mindset (30 Seconds Before Bell)
+```
+Read the question (last sentence → body → options)
+   │
+   ├─[A] Confident ───────► Answer and move on. Don't look back.
+   │                          (60–70% of the first pass should be here, normally)
+   │
+   ├─[B] Narrowed to 2 but can't choose ─► **Mark a tentative answer** and flag → 2nd pass
+   │                          (Don't leave it blank — you may run out of time)
+   │
+   └─[C] No idea at all ───► Eliminate only the obviously wrong ones, guess, then flag → 3rd pass (if time remains)
+                              Spending more than 2 minutes here is a loss
+```
 
-> 🔍 **Deeper**: Specialty tests "right *combination* in this situation," not "know this service." Scenario dissection → keyword translation → trap avoidance → preference hierarchy. One question perfection < 65-question pacing = pass. 12 weeks of domain mental models — apply them unchanged.
+You only need to keep two rules. **① Fill in an answer no matter which bucket** (there is no penalty for wrong answers). **② Rather than spend 4 minutes on [C], it is better to solve four [A] questions more accurately.**
+
+On the second pass, look only at [B]. One habit pays off a lot here — **don't try to remember your first-pass judgment; re-read starting from the requirement sentence.** The cause of most [B] cases is not a lack of knowledge but *misreading the requirement*, and re-reading sometimes resolves it. Conversely, if you get stuck at the same spot even after re-reading, that is a gap in knowledge, so split it with the preference hierarchy and get out immediately.
+
+> ⚠️ **Trap**: **Changing an answer without grounds** on the second pass is the most common way to lose points. There are only three cases where changing is acceptable — ① you discovered a constraint you missed on the first pass ("multi-account," "existing," "no internet"), ② you found a factual error in an option's statement, ③ another question reminded you of the basis for the correct answer. *"Somehow that one seems better"* is not grounds.
+
+## Pace Strategy: Six Steps to Decompose a Scenario
+
+Extract the skeleton of a long stem within 1 minute in this order.
+
+1. **Read the last sentence first** — what is actually being asked is there. Reading the body afterward filters out the noise.
+2. **Find the key verb of the requirement** — "automatically (automation)", "without managing servers (serverless)", "least privilege", "cannot be deleted (immutable)", "centrally", "private", "prevent", "detect", "investigate". The verb determines the pattern of the answer.
+3. **Mark the constraints** — "multi-account", "no internet", "regulatory", "cost-effective", "existing application (existing software can't be replaced)", "minimal operational overhead", "no downtime". These are filters for discarding wrong answers.
+4. **Check the qualifier** — if MOST / LEAST / BEST is attached, the question asks about *degree*, not *whether it works* (see the table below).
+5. **Eliminate the 2 obviously wrong options** — options that directly violate the requirement (hardcoded keys, making things public, manual procedures, extreme statements) are out immediately.
+6. **Choose the "best" of the remaining 2** — the one that is more automated, more managed, more least-privilege, more impossible to bypass.
+
+Specialty questions usually distinguish not the "wrong answer" but the "less good answer." Even when both options work, AWS prefers *managed > self-managed*, *automated > manual*, *defense in depth > a single control*, and *prevent > detect > respond*. This is not taste; it is the result of the principles of the Well-Architected security pillar (least privilege, layered defense, traceability, automated security, protecting data in transit and at rest) being reflected in the answers. In the final two-way choice, recall this preference hierarchy.
+
+### How to Interpret Qualifiers
+
+A single word at the end of the question moves the correct answer to the opposite side. Memorize this table and it translates directly into points.
+
+| Qualifier | What it asks | Direction the answer leans | Typical answer candidates |
+|---|---|---|---|
+| **MOST cost-effective** | Cost, among several working answers | Free, built-in, fewer calls | Gateway Endpoint (free), Parameter Store, S3 Bucket Keys, SSE-S3 |
+| **LEAST operational overhead** | Operational burden | **Managed > self-built**, automated > manual | Secrets Manager rotation, managed rules, Control Tower, Config auto-remediation |
+| **MOST secure** | Strength of security | Narrower permissions, stronger immutability, less exposure | Object Lock Compliance, SSE-KMS (+ key policy), least-privilege roles, PrivateLink |
+| **MOST resilient / highly available** | Availability | Multi-AZ, managed | Managed services, multi-AZ configurations |
+| **FASTEST to implement** | Speed of build | Combinations of existing managed offerings | Control Tower, managed rule sets, Conformance Pack |
+| **MINIMAL disruption / no downtime** | Impact on existing operations | Non-invasive, parallel introduction | Detect first → phased enforcement, WAF in count mode, warn then enforce |
+| **without changing the application** | Code cannot be modified | Solve at the infrastructure/platform layer | Handle at the ALB/CloudFront layer, sidecars/agents, endpoint policies |
+| **cannot be modified or deleted** | Immutability | WORM | Object Lock Compliance, Vault Lock, log file validation |
+| **immediately / in real time** | Immediacy | Event-driven | EventBridge, CloudWatch metric filter alarms |
+| **automatically / without manual intervention** | Automation | Event-driven remediation | EventBridge → Lambda / SSM Automation, Config auto-remediation |
+| **prevent** | Prevention | Make the action itself impossible | SCP Deny, proactive controls, resource policy Deny |
+| **detect** | Detection | After-the-fact discovery | Config rules, GuardDuty, Access Analyzer |
+| **all accounts / future accounts** | Organization scale | Organization tools | SCP/RCP, Control Tower, Firewall Manager, Conformance Pack, auto-enable |
+
+When two or more qualifiers are attached (for example, "MOST cost-effective way to privately access S3"), **the constraint attached later is often the stronger filter.** In the case above, "private" narrows the candidates to endpoints, and "cost-effective" picks the Gateway endpoint among them.
+
+> ⚠️ **Trap**: A typical way to lose points is to *ignore the qualifier* and choose "the answer that looks safest." On a question with `MOST cost-effective`, choosing an Interface Endpoint (paid) or CloudHSM (high cost) is wrong even if that option is stronger from a security standpoint. Conversely, when `MOST secure` is attached, you must not choose a weaker control on the grounds of cost. **The qualifier states the grading criterion explicitly.**
+
+## Six Patterns by Which Wrong Answers Are Made
+
+The speed at which you read options is as important as knowing the answer. The ways wrong answers are manufactured are narrow.
+
+1. **Flip the order by one step.** "Terminate → snapshot," "recover → eradicate," "delete → trace." → *If a step that destroys evidence comes first, discard it.*
+2. **Take only half the action.** It stops at "isolate the instance" with no credential revocation. It stops at "create the endpoint" with no policy. → *An option with containment but no tracing or eradication is usually wrong.*
+3. **Demand enforcement with a tool that cannot enforce.** "Block with a detection tool," "restrict root with an IAM policy," "prevent untagged creation with a Tag Policy." → *If the required verb is block, pick a preventive control (SCP, policy Deny).*
+4. **Get the scope wrong.** "A person checks each account in the console," "one rule in one Region protects everything." → *For multi-account or multi-Region, use organization tools and aggregation.*
+5. **Present an extreme.** "Automate everything," "do everything manually," "turn off detection," "revoke all permissions." → *Extreme statements are usually wrong.* The correct answer is usually the form that **divides the boundary** (automatic if reversible, approval if irreversible).
+6. **"AWS takes care of it."** "Support handles it," "the default settings are enough." → Under the shared responsibility model, *credentials, configuration, and data are the customer's domain*, so this form is wrong.
+
+## Question Map by Domain
+
+If you know which domain a question belongs to, the candidate services narrow immediately. This table ties together weights, typical forms, and candidate answers on one page.
+
+| Domain | Weight | Typical question form | Candidate services / patterns |
+|---|---|---|---|
+| **1. Detection** | ~16% | "This evidence isn't visible" / "tamper-proof central storage" / "immediate alert" / "to discover this" | CloudTrail (management, data, Insights), Config, Flow Logs, GuardDuty, Security Hub, Athena/Lake, metric filter alarms |
+| **2. Incident Response** | ~14% | "We detected it, what first?" / "to investigate scope and impact" / "to isolate automatically" | Detective, EventBridge→Lambda/SSM, isolation SG, snapshots, `aws:TokenIssueTime` Deny |
+| **3. Infrastructure Security** | ~18% | "Only this traffic passes" / "without the internet" / "defend against compound threats" | SG/NACL, Gateway and Interface Endpoints, WAF, Shield Advanced, Network Firewall, TGW, CloudFront+OAC |
+| **4. Identity and Access Management** | ~20% | "Why AccessDenied?" / "delegate safely" / "where do the keys go" | Evaluation order, SCP and permissions boundaries, AssumeRole+External ID, Identity Center, instance profiles, Roles Anywhere, Cognito |
+| **5. Data Protection** | ~18% | "Choose an encryption method" / "immutable retention for N years" / "solely own the key" | SSE-KMS/DSSE/SSE-C, CloudHSM and custom key store, Object Lock, `aws:SecureTransport`, ACM, Macie |
+| **6. Security Foundations and Governance** | ~14% | "Enforce across the whole organization" / "audit evidence" / "automatic for new accounts" | SCP/RCP, Control Tower, Config and Conformance Pack, Audit Manager, Firewall Manager, Service Catalog |
+
+One reading tip. When a question contains **"all accounts," "the entire organization," "created in the future," or "new accounts,"** then whatever the domain, **a governance tool takes the answer slot.** Account-level tools (attaching individual WAFs, manually enabling per account, individual Config rules) are usually wrong in that case.
+
+### The "Axis to Look at First" by Question Type
+
+```
+What does the last sentence of the question ask?
+   │
+   ├─ "What should be done first" ────► Axis: **reversibility · evidence preservation**
+   │     Evidence-destroying actions go later, reversible actions go earlier,
+   │     the cause of spread (credentials, logging) before the result (resources)
+   │
+   ├─ "Why doesn't it work" ──────────► Axis: **evaluation order · prerequisites**
+   │     Explicit Deny → SCP → both sides of cross-account Allow → KMS key policy → condition keys
+   │     (if networking) routing → endpoint policy → SG/NACL → ephemeral ports
+   │
+   ├─ "What is the most appropriate design" ─► Axis: **required verb + qualifier**
+   │     Which of prevent/detect/respond → the tool of that layer
+   │     Split the remaining two by the qualifier (cost/overhead/secure)
+   │
+   ├─ "Which service is it" ──────────► Axis: **the question it answers**
+   │     Threat = GuardDuty, weakness = Inspector, data = Macie,
+   │     exposure = Access Analyzer, relationships = Detective, aggregation = Security Hub
+   │
+   ├─ "Which is NOT true" ────────────► Axis: **check against the trap list**
+   │     ACM us-east-1 / data events / NACL ephemeral ports /
+   │     SCP doesn't grant / KMS waiting period / Gateway Endpoint is S3·DDB only
+   │
+   └─ "Across the whole organization" ─► Axis: **prevent > detect > respond**
+         SCP (prevent) · Config (detect) · auto-remediation (respond) · Firewall Manager (enforced rollout)
+```
+
+## Calibrating Your Sense with Cross-Domain Cases
+
+Real questions cut across domains. The three cases below show the form of the stem and the decomposition process as they are (we point only to the answer candidates; the detailed solutions are covered in the practice below).
+
+> 🎯 **Case 1 (crossing Domains 1, 5, and 6)**: *"A regulator requested administrator activity in all accounts over the past three years. The company has kept logs in S3, but there are signs that an administrator in one account deleted their own trail six months ago."* → Decomposed, there are three axes. ① **Proof axis** — evidence for a past period cannot be generated retroactively, so what can be done now is to establish *the interval whose integrity is guaranteed* from the organization trail that remains and the log file validation digests. ② **Cause axis** — the very fact that a member-account administrator could delete the trail is a design flaw. An organization trail cannot be deleted by members because they are not its owner. ③ **Recurrence-prevention axis** — an SCP denying `StopLogging` and `DeleteTrail`, separating out the Log Archive account, Object Lock. The wrong options in this case are usually "turn logging on from now" (cannot prove the past) or "extend the CloudWatch Logs retention" (not the cause).
+
+> 🎯 **Case 2 (crossing Domains 2, 3, and 4)**: *"An application in a private subnet was compromised, and GuardDuty caught signs that the instance role's credentials were used from an external IP. The application cannot be replaced."* → "Cannot be replaced" is the decisive constraint. Every answer that requires code changes (changing the SDK, changing how credentials are injected) is eliminated, leaving only **infrastructure-layer solutions**. ① Containment is an isolation SG + **profile separation + an `aws:TokenIssueTime` Deny** (network isolation alone cannot stop a token being used from outside). ② Prevention of recurrence is **enforcing IMDSv2 + hop limit**, reducing role permissions, and an `aws:SourceVpce` condition. ③ Investigation is exhaustive tracing in CloudTrail using that session ARN as the axis. This is the classic case where three domains each take one layer of a single incident.
+
+> 🎯 **Case 3 (crossing Domains 3 and 6)**: *"Internet-facing ALBs keep multiplying across 200 accounts. A standard WAF rule must be applied to every ALB, automatically applied to those created in the future as well, and existing services must not be interrupted."* → There are three clues. "All accounts" and "created in the future" → **Firewall Manager** (attaching manually per account is wrong). "Must not be interrupted" → deploy in **count mode** at first to observe false positives, then switch to block. And the fact that Firewall Manager **requires Config** and only reports when `RemediationEnabled` is off is used as a trap in the options.
+
+## Self-Diagnosis: Wrong Type → Where to Go Back
+
+The purpose of a mock exam is not the score but knowing *which axis is empty*.
+
+| If you missed it like this | What is missing | Where to go back |
+|---|---|---|
+| You were fooled by an option that swapped in a different service name | The "question it answers" for each service | Day 1's six-way detection comparison table |
+| You couldn't solve "why AccessDenied" | Evaluation order and condition keys | Day 2's six layers + diagnosis order |
+| You split on choosing an encryption method | The five S3 encryption methods and Object Lock modes | Day 3's comparison tables |
+| You got an ordering question wrong | The reversibility and evidence-preservation axes | Day 1's "what first" decision axis |
+| You answered an organization-scale requirement with an account tool | The four governance layers | Day 3's tool-matching table |
+| You chose while ignoring the qualifier | Qualifier interpretation | Today's qualifier table |
+| You ran out of time and couldn't see the later questions | Pace | Today's checkpoints and 3 buckets |
+
+The most wasted time in a mock exam is *reading the explanations of questions you got right*. Conversely, the most valuable time is spent reviewing **"questions you put in the [B] bucket but ended up getting right."** Those questions are points where you have the knowledge but *the judgment path is not yet automated*, they are candidates to eat time in the exam room, and they are the questions you will miss on a day when you are in poor condition. Grading that counts only right and wrong makes this layer invisible. That is why you leave [A]/[B]/[C] marks when doing a mock — the score tells you the result, but the bucket distribution tells you *what to fix next*.
+
+## Quick Keyword → Domain Mapping (Warm-Up)
+
+| Stem keyword | Area it points to |
+|-------------|---------------|
+| "Suspected data exfiltration / communication with a malicious IP" | GuardDuty (detection) → Detective (investigation) |
+| "Whether there is PII in S3" | Macie |
+| "Serverless automatic remediation" | EventBridge → Lambda |
+| "S3 without going over the internet" | VPC Gateway Endpoint |
+| "We solely own the key" | CloudHSM / custom key store |
+| "Enforce across the whole organization" | SCP / Firewall Manager / Conformance Pack |
+| "Cannot be deleted or tampered with" | S3 Object Lock (WORM) + MFA Delete |
+| "Safe cross-account delegation to a third party" | AssumeRole + External ID |
+| "Automatic rotation of DB credentials" | Secrets Manager |
+| "Automatic guardrails for new accounts" | Control Tower |
+| "The existing application can't be changed" | Infrastructure-layer solution (edge, endpoint, agent) |
+| "Must be invalidated immediately" | Disable the key / `aws:TokenIssueTime` Deny |
+| "Minimal operational burden" | Managed service + automation |
+| "Prove activity up to now" | CloudTrail (+ Config history) — not retroactive |
+
+"Issued only in us-east-1" (ACM for CloudFront), "data events must be enabled separately" (tracing S3 objects), "NACL ephemeral ports" (stateless responses), "SCPs don't grant permissions," "the KMS key policy must trust the root for IAM delegation" — these five are the distinctions that decide the final two-way choice. Adding two more blocks almost everything: **Gateway Endpoints are for S3 and DynamoDB only**, and **Object Lock Compliance cannot be deleted even by root**.
+
+There is one fact that repeatedly shows up when certification candidates organize their wrong-answer notes — a large share of the questions missed on the real exam are not *services seen for the first time* but **services you know placed in the wrong slot.** GuardDuty in the vulnerability-scanning slot, Inspector in the breach-response slot, Config in the blocking slot, Tag Policy in the enforcement slot. The learning strategy this implies is clear. With the time left, the expected value of **redrawing the boundaries of services you already know** is far greater than *memorizing more new services*. This is why today's and tomorrow's comparison tables are filled not with new knowledge but only with boundary lines.
+
+## Summary
+
+Today is not a day to increase knowledge but **a day to raise the efficiency of converting knowledge into score**.
+
+You only need to retain three things. ① **Checkpoint** — 85 minutes at question 33. Look only at whether you are ahead or behind. ② **3 buckets** — classify confident / narrowed / don't know immediately, and fill in an answer in every case. ③ **Qualifiers** — when MOST/LEAST is attached, the grading criterion is stated explicitly, so split on that axis.
+
+And after solving a mock, look not at the score but at **the bucket distribution and the types you missed**. If [C] is large, it is a knowledge gap; if [B] is large, the judgment path is not yet automated; and if it was [A] but wrong, you misread the requirement sentence. The prescriptions for the three causes are all different — respectively *review of the relevant week*, *repeating the comparison tables*, and *correcting the order in which you read the stem*.
 
 ---
 

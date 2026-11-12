@@ -1,23 +1,230 @@
-﻿# Day 3 - Full-Length Practice Test: Four-Domain Integrated Scenarios
+﻿# Day 3 - Full Mock Exam Pace: Final Check with the Four-Domain Service Map and Decision Trees
 
-Today runs exam-pace **full scenarios** mixing four domains without labels. Real exam won't say "this is Domain 1." Instead: "Fintech fraud detection with imbalanced data, real-time inference, cost limit, multi-team tracking" blends Domains 1, 2, 3, 4. Core skill: **spot decision keywords, translate to functions fast.**
+## 📌 Key Takeaways
 
-## Practice Test Method
+- The real exam does not tell you which domain a question belongs to. A single sentence has **2-3 condition keywords from multiple domains** embedded in it.
+- 65 questions / 130 minutes = **an average of 2 minutes per question**. Today's 8 questions should be solved within 16 minutes.
+- The solving order is fixed: question sentence → extract condition keywords → recall the answer before looking at the options → eliminate options that violate the requirements.
+- When there are several conditions, only the option that **satisfies all conditions at once** is correct. If it breaks even one, it is wrong no matter how plausible it sounds.
+- Review is complete for a missed question not when you memorize the answer, but when you can also say **why the other options were traps**.
 
-Eight scenarios below. Try to finish in ~16 minutes (2 min/question), then check answers. Before looking, ask yourself: "What domain(s)? Which keywords unlock the answer?" If wrong, explain "why this trap, why that's best."
+## How to Use the Mock Exam
 
-> 💡 **Related Theory**: Compound questions usually hide 2-3 keywords each. "Hundreds of identical models (→MME) + sporadic calls (→cost cut) + same framework (→MME confirmed)." Extract each, map to function, pick option satisfying all. Mismatch-hunting eliminates traps.
+Today we cut back on concept explanations and solve comprehensive scenarios that mix four domains at exam pace. Try to solve the 8 questions below within 16 minutes, and before looking at the answers, it is good to say out loud "which domain is this question, and what keyword decides the answer?"
 
-## Quick Reference by Domain
+| Step | What to do | Time |
+|------|-------|------|
+| First pass | Do all 8 questions straight through without stopping | 16 min |
+| Before self-grading | Write down each question's domain and deciding keyword | 4 min |
+| Grading and review | For wrong answers, explain "why the other options were wrong" too | No limit |
 
-| Domain | Keywords → Function |
-|--------|--------|
-| 1 Data | Real-time→Kinesis, visual prep→Data Wrangler, feature match→Feature Store, bias→Clarify |
-| 2 Model | Time series→DeepAR, anomaly→RCF, efficient tune→Bayesian/Hyperband, imbalance→F1/Recall |
-| 3 Deploy | Sporadic+0-scale→serverless, bulk→batch, ML CI/CD→Pipelines, event trigger→EventBridge |
-| 4 Monitor | Drift→Model Monitor, isolate→VPC Endpoint, encrypt at-rest→KMS, audit→CloudTrail |
+> 💡 **Related Theory**: A comprehensive question usually has 2-3 "condition keywords" embedded in one sentence. Example: "hundreds of same-type models (→ MME candidate)" + "called occasionally (→ stronger cost savings)" + "same framework (→ MME confirmed)." If you separate the keywords, map each to a feature, and then choose the option that satisfies all the keywords at once, you can filter out the trap options.
 
-Now eight scenarios.
+## Service Map Across All Four Domains
+
+As you read a question, if you first pin down "which box of this map is this?", a good share of the options are eliminated immediately.
+
+```text
+ Ingest        Store        Prepare        Train          Tune
+ ─────         ─────        ─────          ─────          ─────
+ Kinesis  ─▶   S3      ─▶  Data Wrangler ─▶ Training Job ─▶ AMT
+ Firehose      Glue        Processing Job   Built-in/custom Bayesian
+ Ground Truth  Catalog     Glue ETL/EMR     File·Pipe      Random·Grid
+ (labeling)                Athena (query)   FastFile       Hyperband
+                          Feature Store     Spot+checkpoint
+                          Clarify (pre-training bias)  Debugger
+                                                  │
+   ┌──────────────────────────────────────────────┘
+   ▼
+ Evaluate      Deploy                      Monitor               Security
+ ─────         ─────                       ──────────            ─────
+ Pick metric ─▶ Model Registry (version·approval) ─▶ Data capture ─▶ IAM (least privilege)
+ Accuracy/F1   Real-time · serverless       Model Monitor        VPC (endpoints·isolation)
+ AUC · RMSE    Asynchronous · batch transform ├ Data Quality     KMS (encryption at rest)
+ Clarify       MME · MCE · inference pipeline ├ Model Quality    TLS (encryption in transit)
+ (post-training bias) Variant weights (A/B)  ├ Bias Drift        CloudTrail (audit)
+               Pipelines · EventBridge       └ Attribution Drift CloudWatch (metrics)
+                                                    │
+                                            CloudWatch alarm ─▶ retraining trigger
+```
+
+## Quick Keyword Reference by Domain
+
+### Domain 1 - Data Preparation (28%)
+
+| Keyword | Correct feature |
+|--------|-----------|
+| Real-time stream ingestion | Kinesis Data Streams / Firehose |
+| Bulk loading into a data lake | S3 |
+| Serverless ETL, schema catalog | Glue / Glue Data Catalog |
+| Visual cleansing without code | Data Wrangler |
+| Run my own preprocessing script as a managed job | Processing Job |
+| SQL queries without moving S3 data | Athena |
+| Humans must attach labels | Ground Truth |
+| Training-inference feature consistency and reuse | Feature Store |
+| Bias check before deployment / explaining feature contribution | Clarify (SHAP) |
+| Handling class imbalance | Resampling, class weights |
+
+### Domain 2 - Model Development (26%)
+
+| Keyword | Correct feature |
+|--------|-----------|
+| Demand for the next N days, multiple related time series | DeepAR |
+| Unlabeled outliers, stream anomalies | Random Cut Forest |
+| Structured table classification/regression | XGBoost, Linear Learner |
+| Grouping without labels | K-Means |
+| Too many features | PCA |
+| Sparse user × item recommendations | Factorization Machines |
+| Document classification, word embeddings | BlazingText |
+| Efficient tuning with few trials | Bayesian |
+| Early termination of hopeless training runs | Hyperband |
+| Training data larger than disk | Pipe / Fast File mode |
+| I/O bottleneck from repeated reads every epoch | FSx for Lustre |
+| Training cost reduction (interruptions tolerated) | Managed Spot + checkpoints |
+| Diagnosing bottlenecks and overfitting during training | Debugger |
+
+### Domain 3 - Deployment and Orchestration (22%)
+
+| Keyword | Correct feature |
+|--------|-----------|
+| Steady traffic, immediate response | Real-time endpoint |
+| Intermittent traffic, scale to zero, cold start tolerated | Serverless inference |
+| Large payload, long processing, individual requests | Asynchronous inference |
+| Scoring the entire dataset in bulk | Batch transform |
+| Hundreds to thousands of same-type models | MME |
+| A small number of models on different frameworks | MCE |
+| Apply the same preprocessing at inference | Inference pipeline |
+| A/B testing, gradual migration | Production variant weights |
+| ML workflow DAG, CI/CD | SageMaker Pipelines |
+| Register only when the criteria are met | ConditionStep + Model Registry |
+| Retrain when new data arrives | EventBridge → Pipeline |
+| Reduce deep learning inference unit cost | Inferentia |
+
+### Domain 4 - Monitoring and Security (24%)
+
+| Keyword | Correct feature |
+|--------|-----------|
+| Whether the input distribution has changed | Model Monitor (Data Quality) |
+| Whether performance against ground truth has dropped | Model Monitor (Model Quality) + ground truth |
+| Bias changes in production | Bias Drift (integrated with Clarify) |
+| Feature contribution changes in production | Feature Attribution Drift |
+| Access S3 and ECR without the internet | VPC endpoints (Gateway/Interface) |
+| Block the container's outbound communication | EnableNetworkIsolation |
+| Encrypt data at rest | KMS |
+| Encrypt data in transit | TLS |
+| Who called which API | CloudTrail |
+| Latency and error rate alarms | CloudWatch |
+| Model documentation and governance | Model Cards |
+| Data → training → model lineage | Lineage Tracking |
+| A role with excessive permissions | IAM least privilege |
+
+## Three Frequently Used Decision Trees
+
+```text
+[① Inference options]
+  Immediate response needed? ──No──▶ Whole dataset in bulk? ──Yes──▶ Batch transform
+        │Yes                        └No (individual·large·long) ──▶ Asynchronous
+        ▼
+  Steady traffic? ──Yes──▶ Real-time (minimum 1 instance, cannot scale to 0)
+        └No ──▶ Cold start tolerated? ──Yes──▶ Serverless
+                                    └No ──▶ Real-time + auto scaling
+
+[② Algorithm]
+  Are there labels? ──No──▶ Looking for outliers? ──Yes──▶ RCF
+        │Yes                    └No ──▶ Grouping: K-Means / dimensionality reduction: PCA
+        ▼
+  Is the time axis central? ──Yes──▶ DeepAR
+        └No ──▶ What is the data?
+                      ├ Table (tabular) ──▶ XGBoost / Linear Learner
+                      ├ Text            ──▶ BlazingText
+                      ├ Images          ──▶ Image Classification / Object Detection
+                      └ Sparse interactions ──▶ Factorization Machines
+
+[③ Evaluation metric]
+  Classification? ──No──▶ Regression: RMSE (sensitive to large errors) / MAE (dampens outliers) / R²
+     │Yes
+     ▼
+  Imbalanced? ──No──▶ Accuracy is fine
+     │Yes
+     ▼
+  Is the cost of a miss high? ──Yes──▶ Recall
+     └No ──▶ Is the cost of a false alarm high? ──Yes──▶ Precision
+                            └No ──▶ F1 / AUC-ROC
+```
+
+## Reading Superlative Qualifiers
+
+When one sentence holds several conditions, what decides the final choice is usually the **qualifier**.
+
+| Qualifier | Comparison axis | Answer direction |
+|--------|---------|-----------------------|
+| MOST cost-effective | Cost | MME · serverless · batch · Spot · Inferentia |
+| LEAST operational overhead | Operational burden | Managed/serverless services (Glue, Pipelines, serverless inference) |
+| MOST secure | Security | VPC endpoints + network isolation + KMS + least privilege |
+| LEAST latency | Latency | Real-time endpoint, Feature Store online, caching |
+| FASTEST to implement | Implementation speed | Built-in algorithms · Data Wrangler · managed features |
+| MINIMUM code changes | Code changes | Keep the existing setup + solve with a configuration change |
+
+> ⚠️ **Trap**: Several options **all work technically.** The superlative qualifier is the only criterion that narrows the answer down to one. If the question says "reduce cost" but the option breaks the performance or availability requirement (setting real-time to 0, discarding data, using a GPU for XGBoost), it is wrong even if the cost goes down. Conversely, if the question says "reduce operational burden" and the option builds directly on EC2, it is wrong even though it works.
+
+## Practice Decomposing Compound Conditions
+
+This is not a question format; it is an example of the **habit of breaking conditions apart**. Follow with your eyes where each condition goes.
+
+Case A - "There are 2,000 per-store XGBoost models nationwide, and each is called only a few times a day. Minimize cost."
+
+| Condition fragment | Translation |
+|-----------|------|
+| 2,000 models | Many models → MME candidate |
+| All XGBoost | Same framework → MME confirmed (MCE eliminated) |
+| Called only a few times a day | Low frequency → sharing instances is advantageous |
+| Minimize cost | Qualifier = cost |
+
+Case B - "Training uses regulated data. It must not traverse the internet, the container must not send data outside, and data at rest must be encrypted."
+
+| Condition fragment | Translation |
+|-----------|------|
+| Not via the internet | VPC endpoints (Gateway for S3, Interface for ECR) |
+| Block outbound communication | EnableNetworkIsolation |
+| Encrypt at rest | KMS |
+| Three conditions at once | Only the option that includes all three is correct |
+
+Case C - "A real-time fraud detection model has been deployed. Monitor whether accuracy declines over time, and retrain automatically if it does."
+
+| Condition fragment | Translation |
+|-----------|------|
+| Whether accuracy declines | Model Quality monitor |
+| Prerequisite for computing accuracy | Ground truth labels must be collected |
+| Automatic retraining | CloudWatch alarm → EventBridge → Pipeline |
+| Real-time fraud | Imbalanced, so the metric is not Accuracy |
+
+When conditions span two domains as **monitoring + automation**, as in Case C, one of the options usually does "monitoring only" and another does "automation only." The option that contains both is correct. Conversely, when there is only one condition but an option attaches a pile of features, it is an over-engineered configuration and loses on the "LEAST operational overhead" criterion. Matching the number of conditions against the number of components in each option is also a quick elimination method.
+
+## Wrong-Answer Patterns: Symptom → Cause → Fix
+
+| Symptom (how people tend to get it wrong) | Cause | Fix |
+|------------------------|------|------|
+| Picked Accuracy for imbalanced data | Reflexive reaction to the word "accuracy" | Build the habit of finding the data ratio sentence first |
+| Picked the option that scales a real-time endpoint to 0 | Forgot real-time's minimum of 1 instance | Scale to 0 is only for serverless, asynchronous, and batch |
+| Picked batch transform for individual requests | Judged only by payload size | "Individual requests" means asynchronous; "entire dataset" means batch |
+| Picked KMS for a network requirement | Simple association of security = encryption | Network means VPC endpoints and isolation; storage means KMS |
+| Picked CloudWatch for an audit question | Confused because both are "logs" | "Who" is CloudTrail; "how slow and when" is CloudWatch |
+| Picked a regression algorithm for a time series | Association of forecasting = regression | If the time axis is central, DeepAR |
+| Picked a technically workable option and it was wrong | Did not read the superlative qualifier | Underline the qualifier in the last line of the question |
+| Picked an option satisfying only 2 of 3 conditions | Did not count the conditions through to the end | Count the conditions and check each option against them |
+
+Now it is time for the real thing. You will solve 8 questions. Tomorrow we reorganize these wrong-answer patterns again by trap type.
+
+## 📖 Glossary
+
+- **Comprehensive scenario question** : A case-based question that mixes conditions from several domains in a single item. It is the mainstream format on the real exam.
+- **Condition keyword** : A decisive word that determines the answer (intermittent, bulk, imbalanced, time series, drift, internet blocked, etc.). Extract these first from a question.
+- **Superlative qualifier** : An expression that specifies the comparison criterion, such as MOST cost-effective or LEAST operational overhead. It narrows the answer to one when several options all work.
+- **Elimination method** : A solving approach that reduces candidates by crossing out options that violate even one requirement. The more conditions there are, the more powerful it is.
+- **Over-engineered option** : An option that proposes a configuration far more complex than the requirement. It tends to be wrong on questions judged by operational burden.
+- **Scale to zero** : Bringing instances down to 0 when there are no requests so the cost disappears. Only serverless, asynchronous, and batch can do this; real-time cannot.
+- **Ground truth** : The actual outcome label used to judge whether a prediction was correct. Without it, Model Quality monitoring cannot work.
+- **Pace** : The time budget of an average of 2 minutes per question. The discipline of guessing, marking, and moving on when stuck keeps your pace.
 
 ---
 
