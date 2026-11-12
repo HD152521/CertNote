@@ -276,7 +276,7 @@ For DVA-C02 prep: six deployment strategies' trade-offs, Web vs Worker environme
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Best Beanstalk deployment strategy for production with **no downtime, fastest rollback possible**?
 

@@ -230,7 +230,7 @@ Placement Groups are the tool for mapping a distributed system's network-latency
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company is migrating an SAP HANA database to AWS. SAP HANA requires per-physical-CPU-socket licensing and uses specific CPU microarchitecture instructions (AVX-512) directly. What is the most suitable EC2 configuration?
 

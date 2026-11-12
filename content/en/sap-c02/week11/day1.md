@@ -120,7 +120,7 @@ Common SAP exam mappings: (1) "direct control over key policy, rotation, audit" 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** us-east-1에서 암호화한 RDS 스냅샷을 ap-northeast-2로 복사해 DR 환경을 구성한다. 장애 시 추가 KMS 호출이나 re-encrypt 없이 즉시 복원해야 하고, 두 리전의 키 접근 권한은 각각 다르게 통제하고 싶다. 가장 적합한 것은?
 

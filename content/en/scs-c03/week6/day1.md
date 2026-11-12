@@ -128,7 +128,7 @@ The KMS CMK key policy must also allow account B's `kms:Decrypt`. The IAM policy
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** RDS MySQL 마스터 비밀번호를 자동 회전하되, 회전 중 단 한 건의 인증 실패도 발생하면 안 된다. 가장 적절한 회전 전략은?
 

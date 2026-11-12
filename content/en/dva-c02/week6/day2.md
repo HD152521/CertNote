@@ -331,7 +331,7 @@ In Parallel Scan, segment count is typically set ≤ table partition count. Too 
 
 The mathematics of partition key cardinality, internal differences between LSI/GSI, and Single-Table Design pattern are the core of "properly" using DynamoDB. Next day we explore the mathematics of calculating read/write capacity units and internal workings of DynamoDB Streams.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** LSI를 사용해야 하는 상황과 GSI를 사용해야 하는 상황을 구분하는 기준은?
 

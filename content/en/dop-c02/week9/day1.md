@@ -145,7 +145,7 @@ Next we cover State Manager and Inventory. "Desired state enforcement" principle
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 프라이빗 서브넷의 EC2에서 Run Command는 정상 동작하는데 Session Manager만 "연결 실패"가 난다. 가장 가능성 높은 원인은?
 
@@ -238,6 +238,6 @@ D) SSM이 UDP를 쓰기 때문
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 네 가지다. 첫째, SSM Agent는 인스턴스가 SSM 엔드포인트로 아웃바운드 폴링하는 pull 모델이라 인바운드 포트가 필요 없으며, 동작하려면 에이전트·IAM(AmazonSSMManagedInstanceCore)·네트워크 경로(`ssm`/`ssmmessages`/`ec2messages`) 세 가지가 모두 맞아야 한다. 둘째, Run Command의 핵심 가치는 `max-concurrency`/`max-errors`라는 폭발 반경 통제(fail-fast + circuit break)에 있다. 셋째, Session Manager는 Bastion과 22번 포트를 제거하는 ZTNA 도구이며, 포트 포워딩으로 DB 터널링까지 대체하고 세션 전체를 변조 불가능하게 감사한다. 넷째, Patch Manager의 approve-after-days는 bake time의 정책화이고, Patch Baseline(무엇)·Patch Group(어디)·Maintenance Window(언제) 3종이 맞물려 동작하며 내부적으로 Run Command를 호출해 점진 배포한다.

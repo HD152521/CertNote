@@ -269,7 +269,7 @@ Tomorrow synthesizes Week 7 with 12-scenario questions. Knowledge accumulated—
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 핀테크가 ECS Fargate 위 마이크로서비스 30개를 운영한다. 다음을 모두 만족해야 한다. ① 모든 통신 mTLS ② 새 버전을 5% 트래픽 카나리 ③ 서비스별 서킷 브레이커. 어떤 도구를 쓰는가?
 
@@ -369,7 +369,7 @@ Service Connect is lightweight mesh: discovery, metrics, retries, timeouts stand
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 1. **Sidecar mesh = cross-cutting concern separation**, language-agnostic, Envoy de facto standard
 2. **Cloud Map = registry**, **Service Connect = ECS standard mesh** (Envoy auto), **App Mesh = full mesh** (EOL 2026.9)

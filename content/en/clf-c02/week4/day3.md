@@ -75,7 +75,7 @@ In the next article, we'll cover **data protection**, which is directly tied to 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** For an audit, you want to download AWS's SOC 2, ISO 27001, and PCI DSS compliance reports. Which service should you use?
 

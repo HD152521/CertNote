@@ -1,0 +1,49 @@
+{
+  "difficulty": "Advanced · 2+ years of hands-on experience recommended",
+  "prerequisites": "2+ years of experience designing and implementing cloud solutions using AWS services recommended",
+  "format": "75 multiple choice or multiple response questions",
+  "languages": [
+    "English",
+    "Korean",
+    "Japanese",
+    "Simplified Chinese",
+    "Portuguese (Brazil)",
+    "Spanish (Latin America)"
+  ],
+  "domains": [
+    {
+      "name": "Design for New Solutions"
+    },
+    {
+      "name": "Design Solutions for Organizational Complexity"
+    },
+    {
+      "name": "Continuous Improvement for Existing Solutions"
+    },
+    {
+      "name": "Accelerate Workload Migration and Modernization"
+    }
+  ],
+  "faq": [
+    {
+      "q": "How many questions are on the SAP-C02 exam, and how long is it?",
+      "a": "SAP-C02 has 75 questions and a time limit of 180 minutes. Questions are multiple choice and multiple response."
+    },
+    {
+      "q": "What is the passing score?",
+      "a": "You need 750 or higher out of 1000 to pass. The score is a scaled score adjusted for question difficulty, so it is not the same as a simple percentage of correct answers."
+    },
+    {
+      "q": "How much does the exam cost and how do I register?",
+      "a": "The exam fee is $300 USD, and you can take it through Pearson VUE at a test center or as an online proctored exam. There is no free retake, so you pay the full fee each time you sit the exam."
+    },
+    {
+      "q": "How long is the certification valid? How do I recertify?",
+      "a": "The certification is valid for 3 years after you pass, and you must recertify before it expires. When you pass, you receive a 50% discount voucher for your next exam, which you can use for recertification or for another AWS certification exam."
+    },
+    {
+      "q": "Can I take the exam in Korean?",
+      "a": "Yes, it is offered in 6 languages in total, including Korean. You can choose your language when you register for the exam."
+    }
+  ]
+}

@@ -73,7 +73,7 @@ In the next article, we'll review and consolidate all of Week 3 — databases, i
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You want to automatically create identical infrastructure environments (dev, test, prod) in a repeatable, version-controlled way. Which service is most appropriate?
 

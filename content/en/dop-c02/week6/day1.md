@@ -445,7 +445,7 @@ ECR is not just a Docker Hub replacement. OCI-standard content-addressable stora
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "Python 라이브러리(requests 패키지)에서 발견된 새 CVE를 ECR 이미지에서 자동으로 감지하고 Security Hub에 통합"하려면 어떤 구성이 필요한가?
 

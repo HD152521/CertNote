@@ -188,7 +188,7 @@ Lodge this table in your head and just seeing the first line of a scenario narro
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company has to connect all of 8 VPCs and 2 on-premises DCs. What is the most appropriate solution?
 

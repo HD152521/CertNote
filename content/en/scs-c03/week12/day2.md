@@ -63,7 +63,7 @@ Request authorized? ──► [IAM: Deny→SCP→Allow→Boundary] ── Permis
 
 Defense in depth: block at network (SG), then at IAM (least privilege), then at endpoint/bucket policy (SourceVpce condition). One layer breached, next catches.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 프라이빗 서브넷의 EC2가 인터넷을 경유하지 않고 특정 S3 버킷에만 접근해야 하며, 자격증명 하드코딩은 금지다. 가장 적절한 설계는?
 

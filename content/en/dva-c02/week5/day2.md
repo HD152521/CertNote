@@ -186,7 +186,7 @@ A lifecycle policy applies to newly stored objects but not to already-stored obj
 
 The internal operation of versioning, lifecycle, and replication we looked at today are the features that turn S3 from a mere file store into an enterprise-grade data management platform. In the next day, we take a deep look at the security model — bucket policies, ACLs, encryption — that controls who can access this data and how.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** After enabling versioning on an S3 bucket, you deleted a specific file with the DELETE API. When you then send a GET request for the same key, what is the result?
 

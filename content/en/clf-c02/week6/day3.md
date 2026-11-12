@@ -22,7 +22,7 @@ Today we solve problems the way the real exam does — mixing all four domains t
 
 Now solve them as if it were the real thing.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** What is the cloud characteristic called that automatically adds EC2 instances when traffic spikes and removes them when it drops?
 

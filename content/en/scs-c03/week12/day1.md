@@ -43,7 +43,7 @@ Compromised EC2 response order:
 4. **Investigate**: Detective for scope, share snapshots to forensic account.
 5. **Recover/Remediate**: Redeploy clean AMI, revoke compromised credentials.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 보안팀이 "어떤 IAM 사용자가 특정 S3 객체를 다운로드했는지"를 추적하려 한다. 기본 CloudTrail만 켜진 상태에서 이 정보가 보이지 않았다. 원인과 해결은?
 

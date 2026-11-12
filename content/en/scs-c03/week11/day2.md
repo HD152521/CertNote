@@ -128,7 +128,7 @@ Control Tower excels at rapidly establishing general best practices, but very sp
 - Mandatory controls cannot be disabled — do not attempt to bypass.
 - Control Tower establishes baselines, but formal *compliance evidence collection* is Audit Manager's job.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 새로 등록된 워크로드 계정에 회사 보안 베이스라인이 자동 적용되도록 하려 한다. Control Tower에서 가장 적절한 방법은?
 

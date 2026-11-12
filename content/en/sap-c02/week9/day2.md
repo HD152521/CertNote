@@ -109,7 +109,7 @@ SAP exam recurring mappings: (1) "large/small table join + network traffic" → 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 10억 행의 sales fact 테이블과 1만 행의 product dimension 테이블을 자주 조인한다. 쿼리가 느리고 노드 간 네트워크 트래픽이 높다. 최적 분산 설계는?
 

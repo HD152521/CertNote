@@ -392,7 +392,7 @@ Total: ~$19,500
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** How does the MGN Replication Agent capture disk I/O on an on-premises server?
 

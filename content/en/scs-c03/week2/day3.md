@@ -153,7 +153,7 @@ Next we'll shift perspective to the "granting" side: how to safely provide acces
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 보안팀이 조직의 모든 계정에서 CloudTrail이 절대 비활성화되지 않도록 강제하려 한다. 가장 적절한 방법은?
 

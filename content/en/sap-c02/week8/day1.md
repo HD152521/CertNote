@@ -141,7 +141,7 @@ Next day, we'll see Step Functions, which lets you chain Lambda functions into w
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Java 17 Spring Boot 기반 Lambda 함수의 콜드 스타트가 평균 4초다. 운영팀은 추가 비용 없이 이를 1초 이하로 줄이려 한다. 가장 적합한 방법은?
 
@@ -227,7 +227,7 @@ D) Container Image로 전환
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 1. **Firecracker micro VM**으로 격리, Slot 풀에서 워밍업 → 콜드 스타트 분해(다운로드/런타임/Init/JIT)
 2. **동시성 3종**: 계정 한도(1,000 기본) / Reserved(격리+상한) / Provisioned(따뜻함, 비용 발생)

@@ -65,7 +65,7 @@ Week 4 compresses SageMaker training into four axes: ① **Training Job**: spin 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 다음 중 SageMaker Training Job과 빌트인 알고리즘에 대한 설명으로 옳은 것은?
 

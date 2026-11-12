@@ -283,7 +283,7 @@ In the next article, we dig into the heart of API Gateway integrations: Lambda P
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You created a stage on an API Gateway REST API, but your changes are not reflected to clients. What is the cause?
 

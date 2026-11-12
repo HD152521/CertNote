@@ -172,7 +172,7 @@ This threefold vision is the starting point of Domain 1. Next we explore **Servi
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A fintech company needs PCI-DSS certification and wants to isolate payment workloads. What problem occurs if they keep payment, HR, and logistics workloads in the same AWS account and separate them only with IAM Roles?
 

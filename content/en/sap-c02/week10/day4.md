@@ -90,7 +90,7 @@ SAP exam common mappings: (1) "training/inference feature mismatch" → Feature 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 학습 때 배치로 계산한 피처와 실시간 추론 때 계산한 피처가 미묘하게 달라 모델이 조용히 부정확해지는 train-serve skew를 구조적으로 방지하려 한다. 가장 적합한 것은?
 

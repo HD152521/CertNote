@@ -161,7 +161,7 @@ Each execution gets a unique execution ARN, and Studio's Pipelines tab visually 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 데이터 과학팀이 전처리 → 학습 → 평가 → (정확도가 기준 이상이면) 모델 등록을 SageMaker 안에서 재현 가능하게 자동화하려 한다. 가장 적합한 서비스는?
 

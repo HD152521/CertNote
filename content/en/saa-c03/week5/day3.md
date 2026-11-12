@@ -344,7 +344,7 @@ Tomorrow we dig deep into DAX in more detail — and the difference between it a
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** What is the most important criterion when choosing a DynamoDB table's partition key?
 

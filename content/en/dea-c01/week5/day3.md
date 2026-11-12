@@ -129,7 +129,7 @@ Orchestration links work in a DAG, automating order, dependencies, retries, and 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 여러 작업이 순서·조건·재시도로 엮이는데, 한 작업이 다시 자신을 의존하는 순환은 허용되지 않는다. 이런 워크플로를 표현하는 보편 모델은?
 

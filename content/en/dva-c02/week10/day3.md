@@ -78,7 +78,7 @@ Next we explore CloudWatch's advanced capabilities — deeper (container-level m
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** To track *who, when* downloaded a specific S3 object (GetObject), possible with CloudTrail defaults?
 

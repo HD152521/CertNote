@@ -166,7 +166,7 @@ In the next article, we'll examine **X-Ray's sampling and cost tuning at operati
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 주문 서비스(X-Ray SDK)와 결제 서비스(OpenTelemetry)를 함께 운영하는데, 주문→결제 구간에서 Service Map의 trace가 두 동강 난다. 가장 가능성 높은 원인과 해결은?
 
@@ -280,6 +280,6 @@ D) exactly-once delivery (모든 trace를 정확히 한 번 전송 보장)
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, 분산 추적은 Google Dapper(2010)의 trace-span-context propagation 모델에서 태어났고, X-Ray의 Trace/Segment/Subsegment는 그 AWS판이며 trace는 트리가 아니라 DAG에 가깝다. 둘째, 모든 것이 context propagation에 달려 있다 — Trace ID를 헤더로 전파하며, X-Ray의 `X-Amzn-Trace-Id`와 W3C `traceparent` 불일치가 멀티 SDK 환경에서 trace 단절의 첫 원인이고 ADOT propagator로 잇는다. 셋째, Active vs Passive는 trace 시작 권한의 차이이고 SDK instrumentation과는 별개 스위치이며, Active Tracing만으로는 내부 subsegment가 안 보인다. 넷째, Annotation은 인덱싱(검색·저카디널리티 50개 제한), Metadata는 비인덱싱(상세 JSON)으로 역인덱스 경제학을 따른다. 다섯째, Service Map은 개별 인과 그래프의 위상적 합집합이고 fault/error/throttle 세 분류를 구분해야 하며, Daemon은 UDP 사이드카로 low overhead를 구현한다.

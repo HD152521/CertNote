@@ -556,7 +556,7 @@ Post-Deployment Check (daily auto):
     └── IN_SYNC ──────────── Normal, logged
 ```
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 운영자가 CloudFormation Stack에서 RDS 인스턴스 클래스를 `db.t3.medium`에서 `db.r5.large`로 업데이트하려 한다. 데이터 손실 없이 안전한지 확인하는 가장 좋은 방법은?
 

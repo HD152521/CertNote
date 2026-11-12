@@ -118,7 +118,7 @@ Next, we'll see the remaining two monitors: Bias Drift and Feature Attribution D
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 팀이 실시간 엔드포인트로 들어오는 입력 피처의 분포가 학습 데이터와 달라지는지 감시하고 싶다. 단, 운영 환경에서는 예측에 대한 실제 정답 레이블을 즉시 얻을 수 없다. 적절한 Model Monitor 종류는?
 

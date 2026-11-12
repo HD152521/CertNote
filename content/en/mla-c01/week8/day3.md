@@ -81,7 +81,7 @@ Next: What happens when monitoring detects drift or degradation—auto-retrainin
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 엔드포인트의 응답이 갑자기 느려졌다. `ModelLatency`는 평소와 같은데 전체 응답 시간만 급증했다. 다음 중 원인을 좁히는 데 가장 적절한 도구는?
 

@@ -158,7 +158,7 @@ Next: User experience measurement—Synthetics (external probe), RUM (real user)
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Lambda 함수에 사용자 정의 메트릭을 가장 효율적으로 게시하면서 같은 데이터를 여러 집계 관점으로도 보려면?
 
@@ -251,6 +251,6 @@ D) IAM Role 자동 생성
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, 관찰성의 세 기둥(로그·메트릭·추적)은 워크로드별 무게중심이 다르고 EMF/OpenTelemetry는 넓은 이벤트로 통합하려는 흐름이다. 둘째, Container Insights는 DaemonSet 수집기(cAdvisor/kubelet)로 클러스터/노드/파드 자원을 보며 ECS는 클러스터 설정, EKS는 에이전트 배포로 켜고 작은 클러스터에선 관찰성 비용이 워크로드를 넘을 수 있다. 셋째, Lambda Insights는 Extension 사이드카 패턴으로 함수 동결 중에도 콜드 스타트 init duration을 측정한다. 넷째, EMF의 다중 차원 조합은 OLAP 사전 집계처럼 필요한 집계 관점을 publish 시점에 materialize하고 고카디널리티 식별자는 로그 필드로 분리한다. 다섯째, 카디널리티는 비용의 핵심 변수라 차원에는 저카디널리티만, ID·URL은 정규화하며, Cost vs Visibility는 샘플링(정상 5% + 예외 전수)과 집계로 다룬다.

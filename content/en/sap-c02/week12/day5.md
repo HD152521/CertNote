@@ -157,7 +157,7 @@ Next week (Week 13) synthesizes **Well-Architected 6 Pillars**.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 | Compute Optimizer | ML/timeseries | EC2·EBS·Lambda·ASG·ECS·RDS rightsizing |
 | Trusted Advisor | Rules/thresholds | 5 categories broad scan |
 | Cost Explorer | Aggregated viz | Dashboard + 12m Forecast + Coverage/Util |
@@ -167,7 +167,7 @@ Memory recommendations need **CloudWatch Agent** (semantic gap from hypervisor o
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 [All 11 questions preserved exactly in Korean as required]
 

@@ -1,0 +1,1594 @@
+[
+  {
+    "number": 1,
+    "domain": "Deployment and Orchestration of ML Workflows",
+    "prompt": "Two ML engineers at a B2B SaaS company serve 400 models that were trained per customer with the same XGBoost framework. Each model currently has its own ml.m5.large real-time endpoint. Most models are invoked only a few times a day, yet endpoint costs are eating into revenue. Each model is a few tens of MB, the calling application must receive responses synchronously, and an occasional first-invocation delay (a few seconds) is acceptable. About 5 new customers are added every week, and the company also wants to reduce the work of creating or modifying an endpoint each time. The service level agreement requires each invocation to respond within 10 seconds, and the model files are already stored in Amazon S3, separated by model. Which deployment approach is the MOST cost-effective?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Host the models on a single multi-model endpoint. Upload each new customer's model to Amazon S3 and have the application specify TargetModel when invoking."
+      },
+      {
+        "label": "B",
+        "text": "Create a separate real-time endpoint for each customer model with a minimum of one instance, and have the calling application select the endpoint name for each customer."
+      },
+      {
+        "label": "C",
+        "text": "Include all 400 models in a single container image, and rebuild the image and update the endpoint whenever a new customer is added."
+      },
+      {
+        "label": "D",
+        "text": "Create an asynchronous inference endpoint for each customer model, and configure auto scaling individually so that the instance count scales to 0 when there are no requests."
+      }
+    ],
+    "explanation": "The correct answer is a multi-model endpoint. The 400 small models of the same framework share one fleet of instances and a shared container, a model is downloaded from Amazon S3 and loaded into memory when it is invoked, and adding or deleting a model does not require an endpoint update. The cold-start delay for rarely invoked models was explicitly allowed in the question, and responses are still received through synchronous real-time invocation. B does not meet the cost requirement because the instance cost for 400 endpoints stays the same. C requires an image rebuild and an endpoint update every time a customer is added, which conflicts with the operational overhead requirement. D uses asynchronous inference, so it does not meet the synchronous response requirement, and it requires creating an endpoint for each customer and configuring auto scaling separately, which also conflicts with the goal of reducing endpoint work."
+  },
+  {
+    "number": 2,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "Six teams at a company share Amazon SageMaker notebooks, training jobs, and endpoints in a single AWS account, and the monthly SageMaker cost keeps growing. The finance team wants to report monthly SageMaker costs separately for each team and wants to be notified during the month, not only at month end, when a team reaches 80% of its budget. Currently only some resources have a team tag, and there is no tagging rule for newly created resources. Because networking and security configurations are tied to a single account, moving the resources to per-team accounts is not possible this quarter. The finance team wants a view that is not mixed with costs from services other than SageMaker, the teams have agreed to standardize on a single tag key, team, and the monthly report must be exportable as CSV. Which solution meets these requirements with the LEAST amount of change?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create a separate AWS account for each team, migrate all SageMaker resources to the new accounts, and receive a bill for each account."
+      },
+      {
+        "label": "B",
+        "text": "Sum the InvocationsPerInstance metric of the endpoints by team, estimate the monthly cost in proportion to the invocation ratio, and use an Amazon CloudWatch alarm to send a notification when a threshold amount is exceeded. Do not include training job and notebook costs in the estimate."
+      },
+      {
+        "label": "C",
+        "text": "Add the team tag to all SageMaker resources, activate it as a cost allocation tag, and use the tag filter in AWS Cost Explorer and AWS Budgets alerts based on the tag."
+      },
+      {
+        "label": "D",
+        "text": "Aggregate the number of API calls by team from AWS CloudTrail logs, and report billing amounts allocated proportionally to the call ratio."
+      }
+    ],
+    "explanation": "The correct answer is to add the team tag to all SageMaker resources, activate it as a cost allocation tag, and use the tag filter in AWS Cost Explorer and AWS Budgets alerts based on the tag. If budgets are created with the same tag as the condition, threshold alerts such as reaching 80% can be received during the month, and resources do not need to be moved. A requires splitting accounts and migrating resources, which conflicts with the constraint that this is not possible this quarter and with the requirement for the least amount of change. B uses an invocation count metric, which only reflects request volume and not cost, and it does not include training job and notebook costs. D uses API call counts, which do not reflect instance types or usage time, so a proportional allocation would not match the actual bill."
+  },
+  {
+    "number": 3,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "A financial data platform team that is externally audited every quarter provides hundreds of AWS Glue Data Catalog tables to 8 data science teams. More than 10 new tables are added every week, classifications such as 'PII' or 'ML-Public' are attached to tables and columns, and the teams that can access a table depend on its classification. Currently the tables are listed one by one in each team's IAM policy, so omissions and excessive-permission incidents recur whenever a new table is created. The data is already in Amazon S3 and the AWS Glue Data Catalog and must not be moved, and the team wants to reduce operational overhead so that permissions are applied simply by attaching a classification. The history of policy changes must be retained as audit evidence, and the platform team (2 people) will not grow even if the number of data science teams increases. Which solution is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Define a table naming convention (for example, a team prefix), list the allowed table ARNs and the AWS Glue catalog read permissions in each team's IAM policy, and modify the policies whenever a new table is created."
+      },
+      {
+        "label": "B",
+        "text": "Use AWS Lake Formation tag-based access control. Attach LF-Tags to databases, tables, and columns, and grant permissions to team roles with tag conditions."
+      },
+      {
+        "label": "C",
+        "text": "Create separate Amazon S3 buckets for each classification, and divide object access by specifying each team's account root as the Principal in the bucket policies."
+      },
+      {
+        "label": "D",
+        "text": "Create an Amazon Athena workgroup for each team, and restrict the columns that can be accessed by using the workgroup's query result encryption settings."
+      }
+    ],
+    "explanation": "The correct answer is Lake Formation tag-based access control (LF-Tag). If the classification is attached as an LF-Tag to databases, tables, and columns and tag-conditioned permissions are granted to team roles once, the permissions are automatically applied to new tables that carry the same tag, and the access can be explained by tag during an audit. A leaves the current problem of having to modify policies for every new table. C requires relocating data into per-classification buckets, which conflicts with the condition that data must not be moved, and it provides no column-level control. D is wrong because a workgroup's encryption setting only determines how query results are stored and does not restrict column access."
+  },
+  {
+    "number": 4,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "An online loan screening service operates an Amazon SageMaker real-time inference endpoint made up of 3 ml.g4dn.xlarge instances. The operations team must be notified when the model response time exceeds 200 ms. The SLA is based on the processing time of the model container, excluding network and SageMaker overhead, and is evaluated using the 5-minute average. The notification must be sent to an existing Amazon SNS topic, and the operations team wants to solve this with a single Amazon CloudWatch alarm without writing a separate AWS Lambda function or code. The team is about to create the alarm without first checking the metric unit on the dashboard. It has been agreed that a single breach in a 5-minute evaluation period should alert immediately, and the on-call engineer is paged through Amazon SNS at night as well. Which CloudWatch alarm configuration is correct?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Specify the ModelLatency metric in the AWS/SageMaker namespace with the Average statistic, a period of 300 seconds, and a threshold of 200, along with the EndpointName and VariantName dimensions."
+      },
+      {
+        "label": "B",
+        "text": "Specify the Invocation4XXErrors metric in the AWS/SageMaker namespace with the Sum statistic, a period of 300 seconds, and a threshold of 200."
+      },
+      {
+        "label": "C",
+        "text": "Specify the OverheadLatency metric in the AWS/SageMaker namespace with the Average statistic, a period of 300 seconds, and a threshold of 200,000, along with the EndpointName and VariantName dimensions."
+      },
+      {
+        "label": "D",
+        "text": "Specify the ModelLatency metric in the AWS/SageMaker namespace with the Average statistic, a period of 300 seconds, and a threshold of 200,000 (microseconds), along with the EndpointName and VariantName dimensions."
+      }
+    ],
+    "explanation": "The correct answer is the configuration that specifies the ModelLatency metric with the Average statistic, a period of 300 seconds, and a threshold of 200,000. ModelLatency is the time the model container takes to process a request, and its unit is microseconds, so 200 ms is 200,000. In A, a threshold of 200 means 0.2 ms, so the alarm would fire continuously. In B, Invocation4XXErrors is a count of client errors and is unrelated to latency. In C, OverheadLatency is the time of SageMaker's own overhead, so it monitors a value different from the SLA basis of the model container's processing time."
+  },
+  {
+    "number": 5,
+    "domain": "ML Model Development",
+    "prompt": "The data science team at a fintech company uses SageMaker automatic model tuning to explore 200 hyperparameter combinations for an XGBoost fraud detection model. The strategy is Bayesian, the objective metric is validation AUC, and the maximum number of parallel training jobs is 5. Each combination takes an average of 40 minutes to train, and all jobs run on On-Demand ml.m5.2xlarge instances, so the monthly cost has exceeded the budget. Training can be resumed from checkpoints without any problem in the results, and it is acceptable for the tuning to take a few more days, but the search quality must not drop significantly. The tuning is repeated once a week and the results are needed only by the following Monday, and the results so far show that many combinations performed poorly from the early rounds. Which TWO methods can reduce the tuning cost? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Convert all hyperparameters to categorical and switch to grid search to increase the number of combinations tested."
+      },
+      {
+        "label": "B",
+        "text": "Set early stopping to AUTO to stop training jobs whose per-epoch objective metric is worse than the median of the previous jobs."
+      },
+      {
+        "label": "C",
+        "text": "Turn off Amazon CloudWatch metric collection and configure the training jobs not to emit the objective metric, to eliminate logging costs."
+      },
+      {
+        "label": "D",
+        "text": "Keep On-Demand instances and double the value of MaxNumberOfTrainingJobs to find better combinations."
+      },
+      {
+        "label": "E",
+        "text": "Enable managed Spot training for the training jobs used in tuning and configure them to save checkpoints to Amazon S3."
+      }
+    ],
+    "explanation": "The correct answers are early stopping AUTO and managed Spot training. Early stopping compares the metric with the median of previous jobs after each epoch (or round) and stops jobs that perform poorly, and it is supported for XGBoost. Managed Spot training reduces cost in exchange for accepting interruptions, and it resumes training from checkpoints, which fits the condition that a longer elapsed time is acceptable. A increases the number of combinations tested, which actually raises the cost, and grid search cannot be used with continuous hyperparameters. C fails because turning off metric collection means the tuning job cannot read the objective metric. D doubles the number of jobs, so the cost simply doubles."
+  },
+  {
+    "number": 6,
+    "domain": "ML Model Development",
+    "prompt": "An analytics team at a telecommunications company wants to build a binary classification model from 40 MB of structured customer churn CSV data (60 columns, about 300,000 rows). The team has no ML experts and wants to minimize coding, and the analysts prefer a flow in which they view the candidate leaderboard in the Autopilot UI of SageMaker Studio Classic and pick only the single best model. The requirement is to obtain the most accurate candidate, which combines base models trained with multiple algorithms by using a stacked ensemble, and a single run must not take more than a few hours. The analysts plan to deploy the selected model directly to a SageMaker endpoint, and a model explainability report is not a requirement at this stage. Which configuration in SageMaker Autopilot BEST meets this requirement?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Run Autopilot in HPO mode to tune the selected algorithms by using Bayesian optimization, without combining the candidate models into a single stack."
+      },
+      {
+        "label": "B",
+        "text": "Write an XGBoost training script yourself and run it in script mode, manually changing hyperparameters and comparing validation metrics to select the best training job."
+      },
+      {
+        "label": "C",
+        "text": "Select a JumpStart pre-trained image classification model, convert the structured data to an image format, and fine-tune it."
+      },
+      {
+        "label": "D",
+        "text": "Run Autopilot in ensembling mode to train multiple AutoGluon-based base models and obtain a model that combines them with a stacking ensemble."
+      }
+    ],
+    "explanation": "The correct answer is Autopilot ensembling mode. Ensembling mode trains multiple base models with AutoGluon and then combines them with a stacking ensemble, and it is recommended for data smaller than 100 MB; Auto mode also chooses ensembling at this size. The no-code flow of choosing a candidate from the leaderboard is also preserved. A: HPO mode tunes the hyperparameters of the selected algorithms but does not combine the base models into a stack. B requires writing the script yourself, which conflicts with the requirement to minimize coding. C: An image classification model does not fit structured churn data and only adds a conversion step."
+  },
+  {
+    "number": 7,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "Thirty data scientists at a financial company query S3 transaction tables registered in the AWS Glue Data Catalog by using Amazon Athena to build training data. The data is subject to regulation and is audited every quarter. The Korean resident registration number column must not be visible to anyone, and each user must be able to query only the rows of their assigned region (5 regions). Currently access is divided with per-user Amazon S3 bucket policies, so the policies must be edited whenever staff change. Only one copy of the data must be maintained, and the Athena query method must not change. The schema rarely changes, but a few new hires join each month, and the audit team requires that it be able to explain in one place who can query which columns and rows. Which solution is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Replicate the table data by region into separate S3 prefixes, and attach an IAM policy to each user that allows only the corresponding prefix."
+      },
+      {
+        "label": "B",
+        "text": "Create an Athena workgroup for each region to separate the query result locations, and announce that the resident registration number column should not be queried."
+      },
+      {
+        "label": "C",
+        "text": "In AWS Lake Formation, create a data filter for the table that excludes the column and filters rows, and grant it to the roles for each assigned region."
+      },
+      {
+        "label": "D",
+        "text": "Create a view that masks the resident registration numbers and guide users to it, but also grant SELECT permission on the original table to all users."
+      }
+    ],
+    "explanation": "The correct answer is a Lake Formation data filter. Lake Formation enforces column-, row-, and cell-level permissions in one place across multiple analytics services such as Athena and AWS Glue, so it meets both the exclusion of the resident registration number and the per-region row restriction without splitting bucket policies, and the data remains a single copy. A replicates data by region, which conflicts with the single-copy condition and also adds heavy IAM policy management. B: Separating workgroups only divides query result locations and cannot block column and row access, and it relies on an announcement. D leaves SELECT on the original table open to everyone, so users can read the resident registration numbers directly from the original."
+  },
+  {
+    "number": 8,
+    "domain": "ML Model Development",
+    "prompt": "A nationwide retail company forecasts the daily sales volume of 3,000 products for the next 28 days. Many of the products have short sales histories of less than 6 months, and similar product groups share weekday and seasonal patterns. Currently a separate model is built for each product, which is hard to manage, and accuracy is low for products with short histories. A single model must learn related time series together and produce probabilistic forecasts, and the results are used in quantile form to calculate safety stock. The training data is organized by day in Amazon S3, and the team wants to choose from the SageMaker built-in algorithms. The forecasts only need to be generated once as a batch for all products every Monday, and holiday and promotion schedules are already prepared as related time series features. Which algorithm is MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "The DeepAR forecasting algorithm. It uses a recurrent neural network to learn multiple related time series together and produces forecasts in the form of probability distributions."
+      },
+      {
+        "label": "B",
+        "text": "Linear Learner. It treats each row as an independent sample and performs linear regression with the sale date and product number as features."
+      },
+      {
+        "label": "C",
+        "text": "Random Cut Forest. It is an unsupervised anomaly detection algorithm that assigns an anomaly score to data points."
+      },
+      {
+        "label": "D",
+        "text": "BlazingText. It is an algorithm optimized for generating word embeddings and for text classification."
+      }
+    ],
+    "explanation": "The correct answer is DeepAR. DeepAR is a supervised forecasting algorithm based on recurrent neural networks that learns multiple similar time series together in a single model, so patterns are shared even for products with short histories, and it provides probabilistic forecasts that include quantiles. B: Linear Learner cannot handle the temporal structure of time series or learning across series, and it does not produce distribution forecasts. C: Random Cut Forest is for anomaly detection and does not forecast future sales volume. D: BlazingText is a text algorithm and does not fit sales time series."
+  },
+  {
+    "number": 9,
+    "domain": "ML Model Development",
+    "prompt": "A data scientist created a SageMaker hyperparameter tuning job with a custom PyTorch script and set TrainingJobEarlyStoppingType to AUTO. The tuning uses Bayesian optimization, the objective metric is validation loss, the number of concurrent training jobs is 4, and each training job runs for 50 epochs. However, poorly performing training jobs also run to completion, so costs do not decrease. On investigation, the training script prints the final validation loss only once after all training finishes, and the metric definition is set to read that single line. The script already computes the validation loss every epoch and stores it in a variable but does not print it, and the team wants to modify only a few lines without changing the training image or framework version. Which action is MOST appropriate to make early stopping work while leaving the tuning configuration as is?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Change the tuning strategy to grid search so that all hyperparameter combinations are run an equal number of times."
+      },
+      {
+        "label": "B",
+        "text": "Lower the number of concurrently running training jobs to 1 so that the jobs run sequentially."
+      },
+      {
+        "label": "C",
+        "text": "Print the objective metric to the logs every epoch and configure a regular-expression-based metric definition so that SageMaker collects it."
+      },
+      {
+        "label": "D",
+        "text": "Change the training instance to a faster GPU instance so that each training job finishes sooner, and recalculate the MaxRuntimeInSeconds limit and training volume size accordingly."
+      }
+    ],
+    "explanation": "The correct answer is to print the objective metric to the logs every epoch and have it collected through the metric definition. Early stopping makes its decision by comparing the objective metric with the median of previous jobs after each epoch, and a custom PyTorch script must write the metric to the log itself every epoch. If only the final value is printed once, there are no intermediate values to compare. A: Changing the strategy does not stop jobs if there are no intermediate metrics, and it also conflicts with the condition to leave the tuning configuration as is. B: Lowering the parallelism does not resolve the root cause, which is the lack of intermediate metrics. D: Even if training becomes faster with a GPU, poor jobs still run to completion."
+  },
+  {
+    "number": 10,
+    "domain": "Deployment and Orchestration of ML Workflows",
+    "prompt": "An ML engineer runs an AWS Step Functions state machine every night that runs a SageMaker processing job, a training job, and a batch transform in sequence. Each job depends on the output of the previous job, so the workflow must wait until it finishes before moving to the next step. The training job occasionally fails with an instance resource limit error for the account, and in that case it must be retried up to 3 times at intervals of a few minutes. The current draft consists of a polling AWS Lambda function and a Wait loop, which has increased the amount of code and alarms, and the engineer wants to remove them. The execution history of the state machine is required for auditing, so the success of each step must be verifiable in the Step Functions console, and the batch transform must start only after the training succeeds. How should this be implemented with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "In the Task state, start the job with the Request Response pattern, receive the completion event with an Amazon EventBridge rule, and start a new state machine execution for the next step."
+      },
+      {
+        "label": "B",
+        "text": "In the Task state, call the SageMaker training job with the .waitForTaskToken callback pattern, and configure it to return the token when the job completes."
+      },
+      {
+        "label": "C",
+        "text": "In the Task state, call the SageMaker job with the .sync pattern and specify the retry interval in the Retry field."
+      },
+      {
+        "label": "D",
+        "text": "Have a Lambda function check the job status every 30 seconds and return whether it is complete, and build a loop with Choice and Wait states that repeats until the job completes."
+      }
+    ],
+    "explanation": "The correct answer is the .sync pattern of the optimized integration together with the Retry field. The .sync pattern makes the state machine wait until the SageMaker processing, training, or transform job finishes before moving to the next step, so no polling code is needed, and Retry specifies the retry interval and count by error type. A: The Request Response pattern does not wait for job completion and requires starting a separate new execution, which breaks sequential execution and operational simplicity. B: The callback token pattern is not supported by the SageMaker optimized integration, and it would also require code to return the token. D: The Lambda polling loop is the configuration the engineer wants to remove."
+  },
+  {
+    "number": 11,
+    "domain": "ML Model Development",
+    "prompt": "A data scientist wants to move a scikit-learn training script developed on a notebook instance to a SageMaker training job. In addition to pandas, the script uses two packages that are not in the default SageMaker image, and the training data is 50 GB of CSV files in Amazon S3. It currently runs for hours at a time on the largest notebook instance, which blocks other work. The team wants to keep using SageMaker-managed container images without the burden of building Docker images and managing them in Amazon ECR, and script changes must be minimized. The trained model will later be deployed to a SageMaker endpoint, three data scientists must be able to run it repeatedly in the same way, and the transition must be finished within this month. What should the team do?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Build a Docker image that includes the script and all dependencies from scratch, push it to Amazon ECR, and manage the versions yourself."
+      },
+      {
+        "label": "B",
+        "text": "Upgrade the notebook instance to the largest type and keep running the script inside the notebook as it is now."
+      },
+      {
+        "label": "C",
+        "text": "Use script mode of a framework estimator, specify the script as entry_point, and install the additional packages with requirements.txt."
+      },
+      {
+        "label": "D",
+        "text": "Discard all the script's logic, rewrite the entire training code to fit the input format of the SageMaker built-in XGBoost algorithm, rename the hyperparameters to the names the built-in algorithm accepts, and define a new training job."
+      }
+    ],
+    "explanation": "The correct answer is script mode of a framework estimator. By passing the existing script as entry_point to the SageMaker-provided scikit-learn container and installing the additional packages with requirements.txt, the script runs as a training job without building an image, and the notebook is no longer tied up. A builds a Docker image from scratch, which creates build and version management overhead and is the opposite of the requirement. B keeps running in the notebook, so the blocking problem remains and none of the scalability and cost benefits of training jobs are gained. D requires rewriting for XGBoost, which is the opposite of the requirement to minimize script changes."
+  },
+  {
+    "number": 12,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "A recommendation service operates a SageMaker endpoint on 2 ml.c5.xlarge (4 vCPUs) instances, and auto scaling is not configured separately. The team wants to receive a capacity expansion review notification when the average instance CPU utilization exceeds 80%. The CloudWatch endpoint CPUUtilization metric is reported as the sum of the utilization of each core, so its range is 0 to the number of cores x 100. The alarm will be based on the average of the entire endpoint variant rather than on each individual instance, and the Average statistic will be used. When traffic increases, instances are currently added manually, and the alarm will be set by looking at the values of the metric graph in the CloudWatch console. What is the correct alarm threshold?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Set the threshold to 80, because the metric value is the average utilization percentage of the whole instance and the upper limit is 100% regardless of the number of cores."
+      },
+      {
+        "label": "B",
+        "text": "Set the threshold to 160, because the utilization of the 2 instances is summed and multiplied by 80%."
+      },
+      {
+        "label": "C",
+        "text": "Set the threshold to 320, because the sum of 4 cores ranges from 0 to 400%, so an average of 80% corresponds to 320."
+      },
+      {
+        "label": "D",
+        "text": "Set the threshold to 400, because saturation should be considered reached only at the maximum of the sum of 4 cores."
+      }
+    ],
+    "explanation": "The correct answer is a threshold of 320. The endpoint CPUUtilization is the sum of the utilization of each core (0 to 100), so for an instance with 4 vCPUs the range is 0 to 400%, and an average of 80% is 4 x 80 = 320. The 80 in A would trigger the alarm when a single core is only 80% used, so it alerts too early. The 160 in B is an incorrect calculation that multiplies by the number of instances, and on a variant-average basis it corresponds to about 40% per core. The 400 in D fires only when all cores are at 100%, so the alarm is effectively late."
+  },
+  {
+    "number": 13,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "The number of requests to a public service's SageMaker real-time inference endpoint varies greatly by time of day, from a few hundred in the early morning to tens of thousands during the day. The operations team must be notified when the ratio of requests for which the model returned a 5xx HTTP response exceeds 5 percent over 5 minutes, and wants to apply the same ratio-based criterion even in the early morning when there are few requests. The notification is sent to an existing Amazon SNS topic, and the team does not want to write separate code or a Lambda function for metric math. Client input errors (4xx) are not the target of this alarm. To avoid the alarm firing because of one or two errors in the early morning, the team decided to use only a single ratio-based criterion rather than a count, and not to use metric math or Lambda-based custom metric publishing. Which configuration is correct when using a single CloudWatch alarm?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Specify the Invocation5XXErrors metric in the AWS/SageMaker namespace with the Sum statistic, a period of 300 seconds, and a threshold of 5."
+      },
+      {
+        "label": "B",
+        "text": "Specify the Invocation5XXErrors metric in the AWS/SageMaker namespace with the Average statistic, a period of 300 seconds, and a threshold of 0.05."
+      },
+      {
+        "label": "C",
+        "text": "Specify the Invocation4XXErrors metric in the AWS/SageMaker namespace with the Average statistic, a period of 300 seconds, and a threshold of 0.05."
+      },
+      {
+        "label": "D",
+        "text": "Specify the InvocationModelErrors metric in the AWS/SageMaker namespace with the Average statistic, a period of 300 seconds, and a threshold of 0.05."
+      }
+    ],
+    "explanation": "The configuration that uses the Average statistic on Invocation5XXErrors is correct. This metric emits 1 for each 5xx response and 0 otherwise, so the average is the 5xx ratio itself, and the same criterion applies in the early morning regardless of the number of requests. A threshold of 5 with the Sum statistic is count-based, so it would fire during hours with many requests even when the ratio is low and would not fire during hours with few requests even when the ratio is high. Invocation4XXErrors counts client errors, so it differs from the model's 5xx. InvocationModelErrors includes 4xx errors, socket errors, and request timeouts, which conflicts with the condition to look only at 5xx."
+  },
+  {
+    "number": 14,
+    "domain": "ML Model Development",
+    "prompt": "A manufacturing company tunes a CNN-based defect detection model on SageMaker. The training script prints the validation accuracy every epoch, and the hyperparameters to explore are the learning rate (continuous), batch size, and dropout rate. One training job takes about 3 hours on an ml.p3.2xlarge instance, and the team wants to try 120 or more combinations, but there is a fixed monthly tuning budget and results are needed within 2 weeks. The maximum number of parallel training jobs for the tuning job is limited to 8, the training script and container will not be modified, and the team plans to use only the top few configurations with the highest validation accuracy for follow-up evaluation. Which strategy should the team choose to run many training jobs in parallel while stopping poorly performing combinations early, to reduce the tuning cost the MOST?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Choose the Hyperband strategy to automatically stop poorly performing training jobs based on intermediate results and reallocate resources to promising configurations."
+      },
+      {
+        "label": "B",
+        "text": "Choose the grid search strategy to divide the learning rate range at regular intervals and test every combination without omission, waiting for each combination's training to finish."
+      },
+      {
+        "label": "C",
+        "text": "Choose Bayesian optimization, but fix the number of concurrent training jobs at 1 and run them sequentially to make the most of previous results."
+      },
+      {
+        "label": "D",
+        "text": "Choose the random search strategy, increase the number of concurrent training jobs to the maximum, and let each job run to completion."
+      }
+    ],
+    "explanation": "The correct answer is the Hyperband strategy. Hyperband automatically stops poorly performing jobs based on the intermediate metrics that training jobs emit every epoch and reallocates resources to promising configurations, and it scales well even with many parallel training jobs, making it suitable for iterative training. B: Grid search supports only categorical parameters, so it cannot handle a continuous learning rate range, and it has no early stopping. C: Sequential Bayesian optimization fixes concurrency at 1, which makes it hard to meet the 2-week deadline and the parallelism requirement, and it has no early stopping benefit. D: Random search is easy to parallelize but runs every job to completion, so the cost reduction is the smallest."
+  },
+  {
+    "number": 15,
+    "domain": "Deployment and Orchestration of ML Workflows",
+    "prompt": "A computer vision startup wants to deploy a large inspection image classification model to SageMaker. Two requirements have been confirmed. The model is large and must run on a GPU instance, and to respond to financial customer audits, the full requests and responses of the endpoint must be stored in Amazon S3. The team had planned to start with serverless inference, whose cost is almost zero when usage is low, because there is no traffic for most of the day, to fetch the model artifact from Amazon S3 and serve it with a SageMaker-provided framework container, and to scale automatically with traffic. The service level requires a response within a few seconds per request, the model has already been tested with a SageMaker-supported PyTorch container, and the launch is next month. Which requirements cannot be met with serverless inference and therefore force the choice of a real-time endpoint? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Data capture must be enabled to store requests and responses in Amazon S3 for audits."
+      },
+      {
+        "label": "B",
+        "text": "The large vision model must run on a GPU instance."
+      },
+      {
+        "label": "C",
+        "text": "The model artifact must be fetched from Amazon S3 and served with a SageMaker-provided framework container."
+      },
+      {
+        "label": "D",
+        "text": "Compute costs must be almost zero during hours with no traffic."
+      },
+      {
+        "label": "E",
+        "text": "Compute resources must scale out and in automatically as requests increase."
+      }
+    ],
+    "explanation": "The correct answers are the use of a GPU and data capture. Serverless inference does not support real-time inference features such as GPUs, data capture, multi-model endpoints, and multiple production variants, so these two requirements need a real-time endpoint. C: Serving an Amazon S3 artifact with a SageMaker-provided framework container is also supported on serverless, so it does not force real-time. D: Almost no cost when there is no traffic is an advantage of serverless and a reason to choose it, not a reason to rule it out. E: Automatic scale-out and scale-in with traffic is also the default behavior of serverless."
+  },
+  {
+    "number": 16,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "A data science team's multi-terabyte training data is already stored in an Amazon EFS file system, and another application keeps writing new files to the same path. The team does not want to create or operate a new pipeline that copies the data to Amazon S3, and wants SageMaker training jobs to read the files in EFS directly, reflecting the latest files. The EFS file system and the training instances are in the same VPC in the same Region, and training runs on ml.p3.8xlarge instances. Files are also added to EFS during training, but the training job only needs to read the files as of its start time, and the EFS security group already allows the NFS port (2049) within the same VPC. How should this be configured?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Set the training input mode to Fast file and enter the EFS path as the input location."
+      },
+      {
+        "label": "B",
+        "text": "Attach the training job to the VPC and specify EFS as the training input source so that it is mounted."
+      },
+      {
+        "label": "C",
+        "text": "Set the training input mode to Pipe and read the contents of the EFS directory as they are delivered through a FIFO pipe."
+      },
+      {
+        "label": "D",
+        "text": "Periodically replicate the EFS data to Amazon S3 with AWS DataSync and read that S3 prefix in File mode."
+      }
+    ],
+    "explanation": "The correct answer is the configuration that attaches the training job to the VPC and specifies EFS as the training input data source so that it is mounted. SageMaker mounts the specified EFS file system on the training instances and then starts the script, and the data must already be in EFS before training. A: Fast file mode makes S3 data sources appear as a file system, so it does not accept an EFS path as input. C: Pipe mode also streams S3 data through a FIFO. D: DataSync replication conflicts with the condition of not building a new copy pipeline, and the latest files would be reflected only as often as the replication runs."
+  },
+  {
+    "number": 17,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "A healthcare AI company runs distributed deep learning training on patient imaging data on 8 ml.p3.16xlarge instances. Security regulations require that traffic moving between the training nodes also be encrypted, and a longer training time is acceptable. The training job already runs in a private subnet of a VPC, S3 access goes through a VPC endpoint, and the training volume and output are encrypted with an AWS KMS key. Communication between nodes takes place within private subnets of the same VPC. The training job runs once a day for about 6 hours at a time, the configuration must be completed this week because of a security review schedule, and the distributed training framework is already integrated into the training script. How should the team configure the job additionally to meet this requirement?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Turn on inter-container traffic encryption (EnableInterContainerTrafficEncryption) and add UDP 500 and ESP 50 rules to the security group with the group itself as the source."
+      },
+      {
+        "label": "B",
+        "text": "Specify a KMS key for the training volume and apply SSE-KMS to the output S3 bucket so that the stored data is encrypted."
+      },
+      {
+        "label": "C",
+        "text": "Turn on network isolation for the training job so that communication between the nodes is automatically encrypted."
+      },
+      {
+        "label": "D",
+        "text": "Add a bucket policy that allows S3 access only over HTTPS to encrypt the data-in-transit segment."
+      }
+    ],
+    "explanation": "The correct answer is inter-container traffic encryption. To encrypt the traffic between instances in distributed training, you must turn on EnableInterContainerTrafficEncryption and add UDP 500 and ESP 50 rules to the VPC security group with the group itself as the source, and distributed deep learning can increase training time, which is an allowed condition. B: The KMS volume and SSE-KMS are only the already applied protection for data at rest and do not encrypt communication between nodes. C: Network isolation blocks external calls from the container but does not encrypt traffic between peers, and it can also block node communication in distributed training. D: The S3 HTTPS policy only covers the S3 transfer segment."
+  },
+  {
+    "number": 18,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "A team run by 2 data engineers has a monthly cost cap. The team uses an AWS Glue Spark ETL job every day to clean JSON logs, which accumulate at about 200 GB per day under date partitions in Amazon S3, and appends them to training data. Currently every run re-reads the entire last year of data, so the run time and DPU cost keep growing. Files in past partitions are not modified once they have accumulated. The script is based on Glue DynamicFrame, the job is started every day at 2 AM by a Glue trigger, and the source is a single S3 prefix with date partitions. How can the team process only the newly arrived data while minimizing script changes?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Change the script to delete the entire previous result table at the start of the job and re-transform all input partitions from scratch."
+      },
+      {
+        "label": "B",
+        "text": "Enable job bookmarks and specify a transformation context so that already processed objects are skipped."
+      },
+      {
+        "label": "C",
+        "text": "Raise the worker type by one level and increase the number of DPUs in the job settings to shorten the time to read the entire data."
+      },
+      {
+        "label": "D",
+        "text": "Store a processed flag in an Amazon DynamoDB table and implement it yourself so that the script looks up the flag for each object and skips it."
+      }
+    ],
+    "explanation": "The correct answer is to enable job bookmarks. AWS Glue stores the state processed in previous runs and reads only new objects from the S3 source, so there are almost no script changes, and the amount read each day decreases, which lowers the cost. The condition that past files are not modified fits this approach. A deletes the results and re-transforms everything, so it does not reduce the amount read. C does not change the amount of data read even with more DPUs, and it is actually worse for the cost cap. D requires implementing DynamoDB flags yourself, which violates the constraint of minimizing script changes and adds management overhead."
+  },
+  {
+    "number": 19,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "A data team wants to use consultation records accumulated in multiple Amazon S3 buckets (about 40 TB) to train a model. The records may contain personally identifiable information (PII) such as Korean resident registration numbers and email addresses, so before training the team must determine where and in what types it exists. The objects are in text, CSV, and JSON formats, the buckets are shared by several departments, and there are only 2 engineers in charge. The search results are used by data engineers to decide what to mask. The search must be repeated regularly as new data arrives, not performed as a one-time check, and the results must be listed by object and PII type and delivered to the person in charge. Which solution has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Write regular expression queries in Amazon Athena for all buckets to search for PII patterns, and update the queries yourself whenever the patterns change."
+      },
+      {
+        "label": "B",
+        "text": "Run Amazon Macie sensitive data discovery jobs on the target buckets to find objects containing PII and their types, and use the results to decide on masking or exclusion."
+      },
+      {
+        "label": "C",
+        "text": "Enable Amazon GuardDuty and monitor the buckets with its S3 protection feature, receive a report of the locations and types of personal information inside the S3 objects, review it in AWS Security Hub, and then exclude them from the training data."
+      },
+      {
+        "label": "D",
+        "text": "Download all objects to an Amazon EC2 instance, run a grep script, and compile the results yourself to build a list of PII locations."
+      }
+    ],
+    "explanation": "The correct answer is an Amazon Macie sensitive data discovery job. Macie inspects S3 objects as a managed service and finds the locations and types of sensitive data such as personal information, so 40 TB can be examined without separate code or servers. A: Athena regular expressions require writing queries and updating them yourself whenever patterns change, which means a heavy operational burden. C: GuardDuty is a threat detection service and does not classify PII in object contents. D: The EC2 grep script involves downloading 40 TB and operating the script, which is a heavy burden."
+  },
+  {
+    "number": 20,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "The ML team of an online shopping mall is investigating intermittent latency spikes on a SageMaker real-time endpoint that runs on 4 ml.m5.xlarge instances. The operations team suspects that the CPU of only one specific instance is saturated, but CloudWatch CPUUtilization is currently available only per endpoint variant, so values for each instance cannot be seen. The endpoint is in operation, and the container image and model code cannot be changed. The problem reproduces during daytime hours when user traffic is heavy. The alarm must catch cases where per-instance CPU exceeds 90%, endpoint configuration changes must be applied without service interruption, and this investigation must be finished within two days. How can the team view per-instance CPU utilization without changing the container code?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Apply a new configuration with EnableEnhancedMetrics set to true by using UpdateEndpoint, and query by the InstanceId dimension."
+      },
+      {
+        "label": "B",
+        "text": "Aggregate the InvokeEndpoint calls recorded in AWS CloudTrail by instance and calculate the per-instance CPU usage trend."
+      },
+      {
+        "label": "C",
+        "text": "Query the Maximum statistic of the ModelLatency metric, treat it as the CPU utilization of the slowest instance, and create the alarm on it."
+      },
+      {
+        "label": "D",
+        "text": "Shorten the period of the CPUUtilization Average statistic to 1 second, since per-instance values are then displayed separately, so only change the period and do not change the endpoint configuration or instance settings."
+      }
+    ],
+    "explanation": "The correct answer is to apply a new endpoint configuration with EnableEnhancedMetrics set to true by using UpdateEndpoint. When this value is turned on in the MetricsConfig of the endpoint configuration, an InstanceId dimension is added to utilization metrics such as CPUUtilization so they can be queried per instance, and the container code does not change. B: CloudTrail has no per-instance CPU values, and InvokeEndpoint is a data event that does not contain instance information. C: ModelLatency is a latency metric and is not the same as CPU utilization. D: Shortening the statistic period does not change the dimensions of the variant-level metric."
+  },
+  {
+    "number": 21,
+    "domain": "ML Model Development",
+    "prompt": "A fintech company runs an image classification model training that takes about 20 hours with a PyTorch script as a SageMaker training job every week. The training can be interrupted and resumed without any problem in the results, and the completion deadline has a margin of a week. The training code can already save the model state at regular epoch intervals, and the training data is in Amazon S3. The team has little infrastructure operations staff and does not want to maintain a self-built recovery mechanism. Losing several hours of work when training is interrupted is not acceptable, the training script can write checkpoints to a local path in the container, and the training instance is a single GPU. How should the training be configured to reduce training costs the MOST while not restarting from scratch when a Spot interruption occurs?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Train on On-Demand instances but double the number of instances to shorten the training time, lowering the cost by reducing the total usage time."
+      },
+      {
+        "label": "B",
+        "text": "Enable managed Spot training and set MaxWaitTimeInSeconds greater than MaxRuntimeInSeconds, but do not configure checkpoints. Expect SageMaker to resume training from the last epoch on its own after an interruption."
+      },
+      {
+        "label": "C",
+        "text": "Enable managed Spot training, set MaxWaitTimeInSeconds greater than MaxRuntimeInSeconds, and configure checkpoints to be saved to Amazon S3."
+      },
+      {
+        "label": "D",
+        "text": "Build the training cluster directly with Amazon EC2 Spot Instances, write a recovery script that handles interruption notices, and have the team operate it."
+      }
+    ],
+    "explanation": "The correct answer is the configuration that uses managed Spot training together with checkpoints. Managed Spot training reduces cost by up to 90% compared with On-Demand, and checkpoints are copied to Amazon S3 and restored on restart so that training does not start over from the beginning. MaxWaitTimeInSeconds must be greater than MaxRuntimeInSeconds. A increases On-Demand instances, so it gets no Spot discount at all. B enables Spot without checkpoints, so after an interruption there is no saved state and training may restart from scratch. D requires operating an EC2 Spot cluster and recovery scripts yourself, which means a heavy operational burden and gives up the managed feature."
+  },
+  {
+    "number": 22,
+    "domain": "Deployment and Orchestration of ML Workflows",
+    "prompt": "A chatbot inference endpoint sees traffic surge to up to 10 times the usual level during event broadcast hours. Each request takes several seconds to process, so when traffic suddenly increases, requests pile up inside the containers, and the target tracking policy based on InvocationsPerInstance, which is aggregated per minute, scales slowly and latency spikes. The team has no staff to develop a new custom metric and does not want to increase cost during normal hours. The endpoint is currently configured to auto scale from a minimum of 2 to a maximum of 10 ml.g5.xlarge instances, and scaling policy changes must be applied without redeploying the model. What should the team do to speed up scaling response with the LEAST amount of change?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use a target tracking policy that targets the high-resolution predefined metric ConcurrentRequestsPerModel."
+      },
+      {
+        "label": "B",
+        "text": "Increase the scale-out cooldown of the existing InvocationsPerInstance policy so that once an instance is added it is kept longer."
+      },
+      {
+        "label": "C",
+        "text": "Set the minimum capacity of the endpoint variant much higher than normal usage so that instances are secured in advance and traffic increases are handled without scaling."
+      },
+      {
+        "label": "D",
+        "text": "Replace the policy with a target tracking policy on the CPUUtilization custom metric with a target value of 50 percent, and keep the policy statistic as the average."
+      }
+    ],
+    "explanation": "The correct answer is a target tracking policy that uses the high-resolution ConcurrentRequestsPerModel metric. It emits the number of concurrent requests, including requests waiting inside the container, at 10-second granularity, so it scales much faster than the standard metric, and because it is a predefined metric, no separate development is needed. B increases the scale-out cooldown, which makes scaling even slower. C sets a large minimum capacity, which raises cost even during normal hours and conflicts with the cost condition. D: The CPU average metric does not reflect requests queued up, so the response is slow."
+  },
+  {
+    "number": 23,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "An operations team's evaluation processing job calculates model accuracy every night and publishes it as an Amazon CloudWatch custom metric. The team wants to automatically start a retraining pipeline (SageMaker Pipelines) when the accuracy falls below a threshold. The pipeline already has preprocessing, training, and evaluation steps defined, and retraining runs no more than once a day. The team wants to implement this without human intervention and without servers that they manage directly, and there is only one person in charge, so night-time response is difficult. The evaluation job already publishes accuracy as a metric, so the evaluation code will not be modified, and it is enough for the alarm to be evaluated once a day so that retraining is not started repeatedly. What is the simplest solution?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Run a cron job every 5 minutes on an Amazon EC2 instance that reads the evaluation result JSON in Amazon S3, determines whether it is below the threshold, and runs a training script."
+      },
+      {
+        "label": "B",
+        "text": "Create a CloudWatch alarm on the accuracy metric, and have an Amazon EventBridge rule that receives the alarm state change event start the pipeline execution."
+      },
+      {
+        "label": "C",
+        "text": "Have an operator check the evaluation report and the CloudWatch dashboard in the console every day, and press the pipeline execution button to retrain if the value is below the threshold."
+      },
+      {
+        "label": "D",
+        "text": "Connect an Application Auto Scaling policy so that it automatically runs the retraining pipeline when the number of endpoint invocations increases."
+      }
+    ],
+    "explanation": "The correct answer is the configuration in which a CloudWatch alarm and an Amazon EventBridge rule start the pipeline. An alarm created on the metric sends an event to EventBridge when its state changes, and a SageMaker pipeline can be specified as the target of an EventBridge rule, so the process is fully automated without servers. A requires operating an EC2 cron job yourself, so the burden of server management remains. C requires an operator to check every day, which means human intervention and makes night-time response difficult. D: Application Auto Scaling is a service that adjusts endpoint capacity, so it is unrelated to running a retraining pipeline, and the invocation count is not a signal of accuracy degradation."
+  },
+  {
+    "number": 24,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "On a team that has no dedicated data quality staff, the data engineering team wants to define rules such as 'customer ID has no NULL values and is unique' and 'amount is 0 or greater' for a training source table (about 200 million rows of customer transactions) in the AWS Glue Data Catalog. The rules must be evaluated automatically and the results checked each time the AWS Glue ETL job runs every day, and the job must be able to know when a rule is violated. The team wants to avoid building a separate validation framework or operating servers. The rule violation results must remain in the job run history and be viewable as a quality score, and the job must be able to stop so that it does not proceed to the next training step when a mandatory rule is violated. Which solution is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Invoke an AWS Lambda function containing pandas validation code from an Amazon S3 event, and load the number of violations per rule into an Amazon DynamoDB table yourself."
+      },
+      {
+        "label": "B",
+        "text": "Put DQDL rules in the Evaluate Data Quality node of AWS Glue Studio and evaluate them in the ETL job."
+      },
+      {
+        "label": "C",
+        "text": "Have a person manually run a COUNT query for each rule in Amazon Athena, record the results in a spreadsheet, and have the person in charge check it every time."
+      },
+      {
+        "label": "D",
+        "text": "Turn on the schema change policy of an AWS Glue crawler so that records with NULL values and out-of-range column values are automatically rejected during crawling."
+      }
+    ],
+    "explanation": "The correct answer is the Evaluate Data Quality node of AWS Glue Data Quality. DQDL rules can be defined for Data Catalog tables, run in the ETL job, and the subsequent action can be decided based on the results, so there is no need to build a framework. A requires building and operating the Lambda validation code and the DynamoDB store yourself, and it is not suitable for a scale of 200 million rows. C is run manually by a person, so it does not meet the requirement to evaluate automatically on every job run. D: A crawler's schema change policy handles schema changes and does not validate value-level NULLs and ranges or reject records."
+  },
+  {
+    "number": 25,
+    "domain": "ML Model Development",
+    "prompt": "A telecommunications company wants to fine-tune a non-conversational text model, such as the Amazon Titan Text family that supports fine-tuning in Amazon Bedrock, with 5,000 customer support cases to align the response format. The support cases are question and model-answer pairs stored in Amazon S3, and personal information has already been removed from the training data. The customized model will be used in the same Region, and the team has no staff to handle ML infrastructure directly, so it wants to use only Bedrock managed features. The resulting customized model will be invoked with Provisioned Throughput, the service role has not yet been created, and the training data is gathered under a single prefix in Amazon S3. Which TWO things must be prepared to successfully start the model customization job? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Grant Amazon S3 permissions so that the Bedrock model customization service role can access the training files and the output location."
+      },
+      {
+        "label": "B",
+        "text": "Send the support cases one at a time through the InvokeModel API so that the model updates its weights during invocation."
+      },
+      {
+        "label": "C",
+        "text": "Create the training data as a JSONL file with prompt and completion fields and store it in Amazon S3."
+      },
+      {
+        "label": "D",
+        "text": "Provision SageMaker training instances for the training job in advance and connect them to the Bedrock job."
+      },
+      {
+        "label": "E",
+        "text": "Convert the training data to a CSV file and upload it with the question and answer column names in the header row."
+      }
+    ],
+    "explanation": "The correct answers are preparing the JSONL data and granting S3 permissions to the service role. Bedrock fine-tuning requires a .jsonl file in which each line is one record, and non-conversational text models use the prompt and completion fields (conversational models such as Claude 3 Haiku use the messages format, so the format for each model must be checked). For Bedrock to read the training files in Amazon S3 and write the output, the model customization service role needs S3 access permissions. B: InvokeModel is an inference API, and invoking it does not change the weights. D: Bedrock manages the training infrastructure, so there is no need to prepare SageMaker instances. E: CSV is not a supported format."
+  },
+  {
+    "number": 26,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "To respond to financial regulations, an audit team requires evidence of who changed the configuration of the production SageMaker endpoint and when during the last month. The period is within 90 days, and AWS CloudTrail records event history by default in the account. The endpoint is operated by several ML engineers who assume IAM roles, so the IAM identity that made the change, the time, and even the request parameters must be verifiable. There is no time to build a new log analysis tool. The endpoint configuration was changed several times last month, the staff access by assuming the same IAM role through SSO, and the audit team wants to verify the time of each change and even the session name. Which source can verify this MOST reliably?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Search the application logs that the endpoint container left in Amazon CloudWatch Logs for configuration change phrases, and estimate the change times by comparing log streams in chronological order."
+      },
+      {
+        "label": "B",
+        "text": "Check the changes in statistics at the time of configuration changes in the data quality reports generated by Model Monitor."
+      },
+      {
+        "label": "C",
+        "text": "Check the dates when the instance type changed and the cost changes in the usage report in Cost Explorer."
+      },
+      {
+        "label": "D",
+        "text": "Query the SageMaker API call events recorded in AWS CloudTrail, such as UpdateEndpoint and CreateEndpointConfig."
+      }
+    ],
+    "explanation": "The correct answer is to query the SageMaker API call events recorded in AWS CloudTrail, such as UpdateEndpoint and CreateEndpointConfig. CloudTrail records API calls and shows the IAM principal that made the call, the time, the source IP, and the request parameters, so it serves as evidence of who changed what, when, and how, and management events within 90 days can be queried directly in Event history. A: Container logs are the output of the model server and have no API caller information. B: Model Monitor reports cover changes in data statistics and do not tell who changed the configuration. C: Cost Explorer shows only changes in cost and does not contain the actor or the request content."
+  },
+  {
+    "number": 27,
+    "domain": "ML Model Development",
+    "prompt": "A research team trains a transformer model with a very large number of parameters on SageMaker ml.p4d.24xlarge instances. The model weights and optimizer state do not fit into the memory of a single GPU, so an out-of-memory error occurs even when the batch size is reduced to 1. This is a research experiment, so training must finish without any loss of accuracy, and the team has decided not to use methods that quantize or shrink the model. There is no additional infrastructure operations staff, and the multiple GPUs within the same instance can be used. The training script is based on PyTorch and uses a container that can use the SageMaker distributed training libraries, and given the research schedule it is difficult to rewrite the training code from scratch. Which distributed training approach should be applied FIRST to solve this problem?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Apply only data parallelism, replicating the entire model on each GPU and splitting only the training data."
+      },
+      {
+        "label": "B",
+        "text": "Reduce the size of the training dataset so that less data is loaded into GPU memory and the error disappears, and also reduce the batch size and sequence length to lower the input size."
+      },
+      {
+        "label": "C",
+        "text": "Increase only the number of training instances, keeping the size and structure of the model handled by each GPU unchanged."
+      },
+      {
+        "label": "D",
+        "text": "Apply model parallelism to split the model across multiple GPUs and process micro-batches in a pipelined manner."
+      }
+    ],
+    "explanation": "The correct answer is model parallelism. When a model does not fit on one GPU, the model itself is split across multiple GPUs so that each GPU holds only a part of it, and micro-batches are passed through with pipelined execution to improve GPU utilization. A: Data parallelism requires the entire model and a record to fit on one device, so the same error continues. B: Reducing the dataset does not change the memory occupied by the weights and optimizer state. C: Increasing only the number of instances does not resolve the out-of-memory error if the model per GPU stays the same."
+  },
+  {
+    "number": 28,
+    "domain": "Deployment and Orchestration of ML Workflows",
+    "prompt": "Several data science teams have built their own training and deployment automation, so encryption, tags, and IAM settings vary and exceptions pour in at every security review. The platform team wants teams to provision a training pipeline and CI/CD in one step from an approved AWS CloudFormation foundation. There are 6 teams, and a new team is created every quarter. The templates are version controlled in Amazon S3, and because the platform team is small, it wants to avoid operating an AWS Service Catalog portfolio. The approved configuration includes AWS KMS encryption, three required tags, least-privilege IAM roles, and CodePipeline-based CI/CD, and templates must become deployable only after the security team approves them. Which solution is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Select the CodeCommit repository-based project templates provided by SageMaker as they are, create a project for each team, and let each team modify the settings."
+      },
+      {
+        "label": "B",
+        "text": "Provision the pipeline and CI/CD with SageMaker Projects custom templates stored in Amazon S3."
+      },
+      {
+        "label": "C",
+        "text": "Write the standard setup method as a document, share it on a wiki, and have each team manually configure the pipeline and CI/CD in the console by following the document."
+      },
+      {
+        "label": "D",
+        "text": "Create a separate AWS account for each team and have each account's administrator configure CodePipeline in their own way, but review the tagging rules every quarter."
+      }
+    ],
+    "explanation": "The correct answer is SageMaker Projects custom templates stored in Amazon S3. If encryption, tags, IAM, the pipeline, and CI/CD are defined in CloudFormation, teams can provision the same configuration in one step, the templates are managed with S3 versioning, and operating Service Catalog is avoided. With A, the provided templates let teams change the settings, so the standard drifts, and the CodeCommit-based templates are no longer supported. C: A document-based manual configuration does not solve the problem of inconsistent settings. D: Per-account self-configuration does not meet the consistency requirement, and quarterly reviews are reactive."
+  },
+  {
+    "number": 29,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "Under security regulations, the ML team works in a separate AWS account from the central data account, and access records are audited every quarter. A SageMaker processing job in the ML account must read AWS Glue Data Catalog tables (Amazon S3 data) in the central data account. Some columns must not be exposed to the ML account, so column-level permissions must be maintained, and the team does not want to copy the data into the ML account. The team has no dedicated infrastructure staff. The SageMaker processing job in the ML account runs once a day, the two accounts belong to the same AWS Organizations organization, and the team in charge of the central account wants to control the sharing targets and scope itself. Which solution has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Copy the Amazon S3 bucket to the ML account with a cross-account replication rule, then create and register a separate new AWS Glue table in the ML account and use it."
+      },
+      {
+        "label": "B",
+        "text": "Use AWS Lake Formation cross-account sharing to grant the ML account table permissions that exclude the restricted columns."
+      },
+      {
+        "label": "C",
+        "text": "Allow the ML account to read the entire bucket with an Amazon S3 bucket policy, and have the ML team promise not to select the columns to be excluded in their queries."
+      },
+      {
+        "label": "D",
+        "text": "Issue an access key for an IAM user in the central account, pass it as an environment variable to the processing job in the ML account, and read the data as that user."
+      }
+    ],
+    "explanation": "The correct answer is Lake Formation cross-account sharing. The Data Catalog tables and column-level permissions of the central account can be granted to another account without copying data, so both requirements are met, management is done in one place, and access records are kept. A: Copying with a replication rule duplicates the data and the column permissions are lost. C: Allowing read access to the entire bucket exposes even the columns that must be excluded, relying only on a promise. D: Passing a long-term access key as an environment variable carries a high risk of key leakage and does not provide column-level restriction."
+  },
+  {
+    "number": 30,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "A vision team runs a SageMaker training job once a day on 4 TB of image data in Amazon S3. The data is larger than the training instance's volume, so File mode, which downloads everything, cannot be used, and the training code is structured so that multiple data loader processes read data through ordinary file paths, so modifications must be minimized. The team wants to reduce start-up delay and wants to avoid configuring a VPC file system or copying data. The data must stay in Amazon S3. The training instance is an ml.p4d.24xlarge, the images are files averaging several hundred KB, and the training reads the entire dataset in random order every epoch. Which input mode should the team choose?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Specify the S3 prefix in Fast file mode to expose the objects through a POSIX file interface and stream them during training when needed."
+      },
+      {
+        "label": "B",
+        "text": "Specify Pipe mode to receive the data through a FIFO pipe and modify the data loaders to fit a method in which only one process reads the pipe."
+      },
+      {
+        "label": "C",
+        "text": "Keep File mode, increase the volume size of the training instance to fit the data size, download everything before training starts, and repeatedly read the same local files every epoch."
+      },
+      {
+        "label": "D",
+        "text": "Copy the data to Amazon EFS and mount it, attach the training job to a VPC, and configure it to read the data from the file system path."
+      }
+    ],
+    "explanation": "The correct answer is Fast file mode. It makes S3 objects appear as a file system and streams them when training needs them, so the data can be larger than the instance disk, there is no wait for a download, and the code's file reading method is preserved. B: Pipe mode is a FIFO read by a single process, so data loaders that use multiple loaders would have to be modified. C: Even if the volume is enlarged, training cannot start until the entire download completes, which does not fit the start-up delay requirement. D: The EFS approach requires data copying and VPC attachment, which is the configuration the team wants to avoid."
+  },
+  {
+    "number": 31,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "A research team repeatedly runs dozens of SageMaker training jobs per day on a 2 TB dataset in Amazon S3 while changing hyperparameters. Training runs on 8 GPU instances, so I/O wait time is directly a cost, and the wait has grown long because data is fetched from Amazon S3 each time. S3 is the source of the data and must be kept, and the team can accept attaching the training job to a VPC and using a file system service. The training data does not change during the repeated experiments and is cleaned up when the experiments end, and if the throughput improvement is significant, the team can accept the additional cost of a file system service. Which method increases the throughput of repeatedly reading the same data the MOST?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Switch to Pipe mode to stream the S3 data through a FIFO pipe, and modify the training code so that only one process reads each pipe."
+      },
+      {
+        "label": "B",
+        "text": "Move the S3 objects to the Standard-IA storage class to lower storage costs, set a lifecycle rule to transition them automatically, and keep running the training jobs in File mode as they are now."
+      },
+      {
+        "label": "C",
+        "text": "Specify a larger EBS volume for the training instances and use File mode so that the entire data is downloaded again every time the job starts."
+      },
+      {
+        "label": "D",
+        "text": "Mount an Amazon FSx for Lustre file system linked to the S3 bucket on the training job and read the same data with high throughput and low latency."
+      }
+    ],
+    "explanation": "The correct answer is mounting FSx for Lustre linked to the S3 bucket. FSx for Lustre provides high-throughput, low-latency file access, lazy-loads S3 data so that the same data is read quickly across repeated runs, and mounting finishes quickly regardless of data size. Attaching to a VPC was stated as acceptable. A: Pipe mode must stream from S3 again each time and has the single-process read restriction. B: Standard-IA only reduces storage cost and does not increase throughput. C: Even with a larger volume, the time to download everything again on every run remains."
+  },
+  {
+    "number": 32,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "A recommendation team's model is retrained automatically once a week, and there are only 2 data engineers, so it is hard to operate new infrastructure directly. The feature group in SageMaker Feature Store has both the online store and the offline store enabled. For this retraining, a training dataset must be built in one pass from the last 3 years of history (hundreds of millions of rows), and the past feature values as of the time each training example was created are required. Each training example has an event time recorded, so only feature values from before that time may be used, the query results are stored in Amazon S3 as training input, and records are already accumulating in the offline store. Which method has the LEAST operational overhead and is suitable for large-scale historical queries?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Query the offline store, which accumulates as Parquet in Amazon S3, with Amazon Athena queries to build the training dataset."
+      },
+      {
+        "label": "B",
+        "text": "Repeatedly call GetRecord against the online store for each record identifier to gather the history, save it as CSV, and use it as training input."
+      },
+      {
+        "label": "C",
+        "text": "Create an extraction job that periodically scans the entire online store to reconstruct past values by date and load them into Amazon S3 for use."
+      },
+      {
+        "label": "D",
+        "text": "Export the ingestion logs of the feature group to Amazon CloudWatch Logs and extract feature values by point in time with Logs Insights queries to build the dataset."
+      }
+    ],
+    "explanation": "The correct answer is to query the offline store with Amazon Athena. The offline store keeps point-in-time history as Parquet in Amazon S3 and registers it in the catalog, so it suits large-scale historical queries and needs no separate infrastructure. B: The online store reads the latest value per identifier with low latency, so repeated GetRecord calls do not yield past values. C: Scanning the online store also does not reconstruct history and requires operating the extraction job yourself. D: Exporting logs is not meant to store feature values, so it cannot guarantee an accurate history."
+  },
+  {
+    "number": 33,
+    "domain": "Deployment and Orchestration of ML Workflows",
+    "prompt": "A recommendation service operates 24 hours a day with no maintenance window. The team deploys a new recommendation model v2 to the SageMaker real-time endpoint that is in operation. The team wants to first send only a portion of the traffic to the new fleet and watch it for 30 minutes before shifting the rest, and it must automatically roll back to the previous version if the latency CloudWatch alarm fires. The previous version's instances must be kept until validation is complete, and no one is on standby at night. The new model v2 uses the same input format and instance type as v1, requests must not be dropped even during deployment, and the latency CloudWatch alarm to be used for the rollback decision has already been created. Which method has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "In the blue/green deployment configuration of UpdateEndpoint, choose the method that shifts all traffic at once, and manually roll back to the previous version if a problem is seen."
+      },
+      {
+        "label": "B",
+        "text": "In the blue/green deployment configuration of UpdateEndpoint, specify canary traffic shifting, a 30-minute baking period, and automatic rollback based on the latency alarm."
+      },
+      {
+        "label": "C",
+        "text": "Add the new model variant to the same endpoint, have a person change the variant weights step by step while watching a dashboard, and roll back if an anomaly is seen."
+      },
+      {
+        "label": "D",
+        "text": "Create a separate new endpoint, split traffic with Amazon Route 53 weighted records, and have the person in charge manually edit the record weights if the alarm fires."
+      }
+    ],
+    "explanation": "The correct answer is blue/green deployment with canary traffic shifting, a baking period, and automatic rollback specified. A canary sends a small amount of traffic to the new fleet first, monitors the specified CloudWatch alarm during the baking period, and automatically returns to the previous fleet if there is a problem, and the previous fleet is kept during baking. A: Shifting all at once affects all traffic if there is a problem and does not meet the automatic rollback requirement. C: A person must change the weights and monitor, which conflicts with the condition that no one is on standby at night. D: The DNS weighting method also requires the person in charge to edit it manually after an alarm, so the operational burden is high."
+  },
+  {
+    "number": 34,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "Multiple projects run SageMaker training jobs in the same AWS account, and currently all jobs of 5 projects share a single execution role with AdministratorAccess attached. The security team requires least privilege so that each project can access only its own Amazon S3 prefix and the services it needs, and wants the scope of permissions to be easy to explain during audits. Each project keeps data only under its own S3 prefix, and ML engineers create and run jobs directly. Some projects do not need to access other teams' S3 prefixes, the training containers use internal images in Amazon ECR and write logs to CloudWatch Logs, and users sign in with IAM Identity Center. Which method meets this without significantly increasing operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Attach AmazonSageMakerFullAccess to all project roles and allow S3 with wildcards to eliminate permission errors, and separate projects by a resource tagging rule and agreement among team members."
+      },
+      {
+        "label": "B",
+        "text": "Leave the shared role as it is, and issue a long-term access key to each team member to be included in the training scripts."
+      },
+      {
+        "label": "C",
+        "text": "Create an execution role for each project that allows only the project's S3 prefix and the required ECR and CloudWatch Logs actions, trusts only SageMaker, and limit users' PassRole to the corresponding role."
+      },
+      {
+        "label": "D",
+        "text": "Pass the credentials of each team member's personal IAM user as environment variables to the training container and run training with personal permissions."
+      }
+    ],
+    "explanation": "The correct answer is a least-privilege execution role for each project. If each role allows only the required S3 prefix and service actions, the trust policy contains only sagemaker.amazonaws.com, and iam:PassRole is restricted so that users can pass only the corresponding role, access between projects is separated and the scope of permissions can be explained. A: FullAccess and wildcards violate least privilege. B: Putting long-term access keys in code carries a high risk of leakage and creates key management overhead. D: Passing personal credentials as environment variables makes auditing and separation of permissions difficult."
+  },
+  {
+    "number": 35,
+    "domain": "ML Model Development",
+    "prompt": "In the training data for a credit card company's fraud detection model, the fraud rate is 0.3%. The current XGBoost model shows 99.7% accuracy but catches almost none of the actual fraudulent transactions, and the cost of missing fraud is much greater than the cost of wrongly blocking legitimate transactions. The data scientist cannot collect more labeled data, and the model algorithm must remain XGBoost. An improvement plan is due within this sprint. Transactions flagged as suspected fraud by the model are reviewed by staff, so some false positives are acceptable, but there is a daily review capacity limit, and the model architecture and data scale will remain unchanged. Which TWO approaches should be applied at the model development stage to improve this problem? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Change the evaluation metric from accuracy to precision and recall, F1 score, or PR-AUC to directly measure the performance on the minority class."
+      },
+      {
+        "label": "B",
+        "text": "Correct the class imbalance by giving the minority class a larger weight (such as XGBoost's scale_pos_weight) or by oversampling."
+      },
+      {
+        "label": "C",
+        "text": "Remove all legitimate transactions from the validation data to raise the fraud ratio, and report that result as the final generalization performance."
+      },
+      {
+        "label": "D",
+        "text": "Treat the fraudulent transaction rows as noise, remove them from the training data, and retrain the model with only legitimate transactions."
+      },
+      {
+        "label": "E",
+        "text": "Keep accuracy as the objective metric as it is and increase the number of epochs, aiming to raise accuracy to 99.9%."
+      }
+    ],
+    "explanation": "The correct answers are using metrics focused on the minority class and correcting the class imbalance. If fraud is 0.3%, accuracy is 99.7% even when everything is predicted as legitimate, so accuracy does not show the model's ability, and metrics such as precision, recall, F1, and PR-AUC directly reflect the minority class. Weighting the minority class or oversampling lets the model learn fraud patterns. C manipulates the validation data, so the reported performance differs from the real one. D: Removing the fraud rows removes the very thing that must be detected. E: Trying to raise accuracy further only masks the problem and does not improve fraud detection."
+  },
+  {
+    "number": 36,
+    "domain": "Deployment and Orchestration of ML Workflows",
+    "prompt": "A team wants to validate a new candidate for a payment approval model with real production traffic. The response sent to users must always be the result of the existing model, and the team wants to compare the new model's latency and prediction distribution on the same requests. The model owner has a different schedule from the app team and cannot request an app deployment this quarter, so changing the client app to call twice must be avoided. The existing model is currently served on a SageMaker real-time endpoint. The new model is already registered in SageMaker with the same instance type, the comparison results will be accumulated and reviewed over one week, and the endpoint invocation volume is tens of requests per second, so the additional cost of shadow traffic is acceptable. Which solution is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create two production variants with weights of 90 and 10, and return the responses of the 10% received by the new model directly to users."
+      },
+      {
+        "label": "B",
+        "text": "Create a separate endpoint for the new model, and have the client app call both the existing endpoint and the new endpoint and compare the results."
+      },
+      {
+        "label": "C",
+        "text": "Add a shadow variant to the same endpoint configuration so that a copy of the production traffic is sent to the new model and its responses are not returned to users."
+      },
+      {
+        "label": "D",
+        "text": "Run a Batch Transform job with a test set extracted from last month's production logs and compare only the offline prediction distribution of the new model."
+      }
+    ],
+    "explanation": "The correct answer is a shadow variant. A shadow variant sends a copy of the requests received by the production variant to the candidate model so that latency and predictions can be compared, and the candidate's response does not go to the caller. No app code needs to change. A: A weighted split would let some users receive the new model's response, which violates the condition that only the existing model's result be returned. B is a client modification in which the app calls both endpoints, which conflicts with the condition that an app deployment is not possible. D: Batch Transform on past logs cannot confirm latency under real production traffic."
+  },
+  {
+    "number": 37,
+    "domain": "ML Model Development",
+    "prompt": "A quality control team builds a model that classifies 1,200 product photos (6 classes). Labeled data is scarce and the GPU training budget is limited, and training a CNN from scratch resulted in severe overfitting and long training times. The team has no computer vision experts, and the model will be deployed on edge devices on the factory floor, so the model size must not be too large either. There is no time to collect additional labels. The edge devices have ARM CPUs without GPUs and the on-site lighting is inconsistent, so brightness differs greatly from photo to photo; model training is done in SageMaker and reducing cloud training cost is the priority. Which approach improves accuracy with little data while reducing training cost the MOST?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Build a deeper randomly initialized CNN and train it from scratch for a long time with a greatly increased number of epochs."
+      },
+      {
+        "label": "B",
+        "text": "Summarize each image as a single average brightness value to make tabular data, and classify the 6 classes with Linear Learner."
+      },
+      {
+        "label": "C",
+        "text": "Postpone training until more labels are collected, and in the meantime group the photos into 6 clusters with K-means and use them as classes."
+      },
+      {
+        "label": "D",
+        "text": "Load a model pre-trained on large-scale images and use transfer learning to fine-tune the last layer for the new classes."
+      }
+    ],
+    "explanation": "The correct answer is transfer learning from a pre-trained model. Reusing the feature extraction layers trained on large-scale data and adjusting only the last layer for the new classes yields high accuracy with little data, greatly reduces training time and GPU cost, and mitigates overfitting. A trains a deeper CNN from scratch, which worsens the overfitting and cost problems and is also disadvantageous for edge deployment. B: Summarizing with a single average brightness removes the information needed for classification. C: There is no time to wait for label collection, and there is no guarantee that the clusters match the actual classes."
+  },
+  {
+    "number": 38,
+    "domain": "Deployment and Orchestration of ML Workflows",
+    "prompt": "A medical imaging company runs inference on CT files of up to 600 MB each as input. One file is a single input unit that cannot be split, processing takes up to 20 minutes, and the result only needs to be received within 30 minutes of the request. There are an average of a few dozen inference requests per day, and the company does not want to pay for instance costs during hours with no requests. A structure in which the calling application holds a connection open for a long time must also be avoided, and the result may be received as a file in Amazon S3. The calling application may fetch the result from S3 after receiving a notification, waiting in a queue for a few minutes when requests are concentrated is acceptable, and the model runs on a single GPU instance. Which deployment method is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create an asynchronous inference endpoint, place the input in Amazon S3 and invoke it, and configure auto scaling to reduce the instance count to 0 when there are no requests."
+      },
+      {
+        "label": "B",
+        "text": "Create a real-time inference endpoint with 2 instances, and have the caller keep the connection open and wait for the response until each request finishes."
+      },
+      {
+        "label": "C",
+        "text": "Load the model into an AWS Lambda function and invoke it through Amazon API Gateway so that there is no cost when there are no requests, and run the 20-minute processing in one invocation."
+      },
+      {
+        "label": "D",
+        "text": "Start a new Batch Transform job for each request, send one 600 MB file at a time, terminate the instances when processing ends, and write the results to Amazon S3."
+      }
+    ],
+    "explanation": "The correct answer is an asynchronous inference endpoint. It supports large payloads (up to 1 GB) and long processing times (up to 1 hour), queues requests and writes results to Amazon S3 so the caller does not hold a connection open, and the instance count can be scaled down to 0, so there is no idle cost. B: A real-time endpoint requires holding the connection and incurs always-on instance cost. C: Lambda has a maximum execution time of 15 minutes, so it cannot perform 20 minutes of processing. D: Batch Transform would have to send the unsplittable file as a single request, but MaxPayloadInMB, which sets the request size, cannot exceed 100 MB, so it cannot process a 600 MB input."
+  },
+  {
+    "number": 39,
+    "domain": "ML Model Development",
+    "prompt": "A legal services company wants to improve contract summarization quality by fine-tuning an open-weight large language model with 20,000 of its own contracts. The data must not leave the company, and the fine-tuned model must be operated directly on a SageMaker endpoint inside the company VPC. Prompt engineering alone did not give sufficient summary quality, and the team has almost no staff to manage GPU servers directly. The training data is already organized as JSONL in an internal Amazon S3 bucket, summary quality will be evaluated with human-reviewed samples, and approval has been obtained for the cost of GPU instances to be used for fine-tuning. Which method meets this requirement while writing the LEAST amount of code?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Download the model weights, install PyTorch and a serving server directly on Amazon EC2 GPU instances, build both the training and inference environments yourself, and have the team configure auto scaling, a load balancer, and model version management as well."
+      },
+      {
+        "label": "B",
+        "text": "Improve quality by requesting summaries with the full text of the contract included in the prompt each time, without changing the model weights."
+      },
+      {
+        "label": "C",
+        "text": "Upload the contracts to an external SaaS provider's public fine-tuning API, train, and then invoke the issued model ID."
+      },
+      {
+        "label": "D",
+        "text": "Fine-tune a foundation model from SageMaker JumpStart with the training data in Amazon S3, and deploy the resulting model to a SageMaker endpoint inside the VPC."
+      }
+    ],
+    "explanation": "The correct answer is JumpStart fine-tuning and deployment to a SageMaker endpoint. JumpStart can fine-tune with minimal code using preconfigured training scripts, and it runs training and the endpoint within the customer's VPC settings so the data does not leave. A: Building the environment on EC2 yourself increases the burden of code and GPU server operations. B: Putting the full text in the prompt is not fine-tuning, it is the approach that was already insufficient, and it increases per-call cost and length limits. C: Uploading to an external SaaS API violates the constraint that data must not leave the company."
+  },
+  {
+    "number": 40,
+    "domain": "Deployment and Orchestration of ML Workflows",
+    "prompt": "A data platform team orchestrates dozens of ETL jobs and SageMaker training jobs as Python DAGs with Apache Airflow that it installed itself on two Amazon EC2 instances. Operating system and Airflow patching cause repeated night-time failures, and jobs back up at month end because of a shortage of workers. The DAG code has accumulated to hundreds of lines each, and the team wants to keep using it as is while reducing the operational burden of patching and scaling the scheduler and workers. The team has 3 people and there is no schedule to rewrite the existing DAGs. The DAGs already use the official Airflow operators that call SageMaker training and AWS Glue jobs, dependent packages are managed with a single requirements file, and the new environment must run inside the existing VPC. Which solution is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Rewrite all DAGs as AWS Step Functions state machine definitions and move the job order and retry rules to Amazon States Language."
+      },
+      {
+        "label": "B",
+        "text": "Move all workflows to SageMaker Pipelines, convert the ETL steps into processing steps, and do not keep the DAG files."
+      },
+      {
+        "label": "C",
+        "text": "Create an Amazon MWAA environment, upload the existing DAGs to an Amazon S3 bucket, and run the DAGs, including those with the SageMaker integration operators, as they are."
+      },
+      {
+        "label": "D",
+        "text": "Create an Amazon EKS cluster, deploy the Airflow Helm chart, and have the team perform node group upgrades and Airflow version patches itself."
+      }
+    ],
+    "explanation": "The correct answer is Amazon MWAA. With managed Airflow, the DAGs are uploaded to Amazon S3 and run as they are, and the service takes care of worker auto scaling and version patching, so night-time patch failures and month-end capacity problems are reduced, and operators for SageMaker, AWS Glue, and other services are supported. A requires rewriting in Step Functions, which violates the conditions of using the DAG code as is and the schedule constraint. B: SageMaker Pipelines is tailored to ML steps, so rewriting dozens of general ETL jobs is a heavy burden. D: Deploying directly on EKS actually increases the operations of node upgrades and Airflow patching."
+  },
+  {
+    "number": 41,
+    "domain": "ML Model Development",
+    "prompt": "An autonomous driving startup trains a ResNet-family model, which fits comfortably in the memory of a single GPU, on 12 TB of image data. Even with the largest GPU instance currently available, training takes 3 weeks and cannot meet the release schedule. The team uses a framework supported by the distributed training libraries, and the budget has been prioritized for shortening training time. The model structure and the entire training data must be kept. The training code is already a PyTorch version that supports the SageMaker distributed data parallel library, the instance quota has been approved for an increase of up to 8 ml.p4d.24xlarge instances, and the accuracy must be equivalent to single-instance training. Which approach is suitable to reduce training time the MOST?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Apply model parallelism, which splits the model by layers across multiple GPUs so that each GPU holds only part of the model, and configure micro-batches to flow through each pipeline stage."
+      },
+      {
+        "label": "B",
+        "text": "Train on only a random 10% sample of the training data and use the remaining 90% only for validation to reduce training time."
+      },
+      {
+        "label": "C",
+        "text": "Apply data parallel distributed training, in which model replicas are placed on multiple GPU instances, the data is split and processed, and gradients are synchronized."
+      },
+      {
+        "label": "D",
+        "text": "Keep the instance type and reduce the batch size to 1 to lower memory usage and shorten the computation time of one step."
+      }
+    ],
+    "explanation": "The correct answer is data parallel distributed training. Since the model fits on a single GPU, replicating the model on each GPU, processing different batches, and synchronizing weight updates greatly shortens training that takes long because of the large amount of data. A: Model parallelism is used when the model does not fit in single-GPU memory, so it does not address the bottleneck here, which is the amount of data, and the implementation also becomes complex. B uses only 10% of the data, which violates the condition to keep all of the data. D: Reducing the batch size to 1 increases the number of steps and makes training slower."
+  },
+  {
+    "number": 42,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "An AWS Glue ETL job with job bookmarks turned on processes an S3 source every day and writes to an S3 target prefix for the daily aggregate table that the BI team queries every day. A bug in the transformation logic was found yesterday and the fix was deployed today, so the last 7 days must be reprocessed. The reprocessed results must be reflected to the BI team within two days, and duplicate records must not be created in the target. The existing target data must not be deleted because the BI team continues to query it until validation is complete. The source files have not been modified, results older than 7 days were processed correctly, and the BI team's Amazon Athena table points to the target prefix. What is the SAFEST procedure?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Only rewind the bookmark and write again to the same target prefix as is, expecting AWS Glue to clean up the target files it previously wrote on its own."
+      },
+      {
+        "label": "B",
+        "text": "Delete the job and recreate it with the same name so that it inherits the bookmark state, and rerun the job on the 7 days of source data."
+      },
+      {
+        "label": "C",
+        "text": "Change the bookmark option to Pause and append the last 7 days to the same target prefix without updating the state, filtering out duplicates afterward."
+      },
+      {
+        "label": "D",
+        "text": "Rewind the bookmark to 7 days ago, write the results to a new output location, and replace the existing data after validation."
+      }
+    ],
+    "explanation": "The correct answer is to rewind the bookmark to 7 days ago, write the results to a new output location, and replace the existing data after validation. AWS Glue bookmarks track only source files and not target files, so even if they are rewound or reset, the target is not cleaned up. Therefore, writing to a new location and replacing after validation prevents duplicates and also avoids interrupting the BI team's queries. A: Writing to the same prefix as is duplicates the 7 days of data. B: Deleting the job also deletes its bookmark, so the state is not inherited. C: Appending with Pause creates duplicates in the target and leaves the burden of filtering them out later."
+  },
+  {
+    "number": 43,
+    "domain": "ML Model Development",
+    "prompt": "An insurance company wants to build a regression model that predicts annual claim amounts using 300 columns of policyholder information (numerical and categorical features encoded as numbers). The data is 8 GB of CSV in Amazon S3, and the team does not want to write training code itself and wants to get high accuracy on structured data as quickly as possible with a SageMaker built-in algorithm. The team plans to run hyperparameter tuning in the same service, and the model will be used for batch inference after training. Prediction error is evaluated by RMSE, the training data has almost no missing values and most columns are already numerically encoded, and a model interpretability report is not in scope at this stage. Which approach is MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use the Random Cut Forest algorithm to classify policies with high claim amounts as outliers, and use the anomaly score as the predicted amount."
+      },
+      {
+        "label": "B",
+        "text": "Select the Image Classification algorithm and convert each column of the CSV into an image channel to match the input format."
+      },
+      {
+        "label": "C",
+        "text": "Select the XGBoost built-in algorithm, specify reg:squarederror as the objective function, and train with the CSV data."
+      },
+      {
+        "label": "D",
+        "text": "Cluster the policyholders with the K-means algorithm and use each cluster's average claim amount as the predicted value for individual policyholders."
+      }
+    ],
+    "explanation": "The correct answer is the XGBoost built-in algorithm. For regression on structured (tabular) data it delivers high accuracy without separate training code, the objective function can be specified as reg:squarederror, and automatic model tuning is supported. A: Random Cut Forest is for unsupervised anomaly detection and cannot directly predict amounts. B: Image Classification is an algorithm for image input and class labels and does not fit structured columns. D: K-means is a clustering algorithm, so using the cluster mean greatly reduces regression accuracy at the level of individual policyholders."
+  },
+  {
+    "number": 44,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "An ML team ingested features into a SageMaker Feature Store feature group (using both the online store and the offline store) with PutRecord, and immediately afterward queried the offline store with Amazon Athena to build a training snapshot, but some of the records that had just been ingested were missing. Retraining runs every day at dawn, and the snapshot job is scheduled to run right after ingestion finishes. The feature group settings and the Athena query are fine, and when the same query is run again much later, the records appear. The retraining snapshot job must read data through the last 24 hours of ingestion with an Athena query, the ingestion pipeline calls PutRecord every few seconds, and the feature group is automatically registered in the AWS Glue Data Catalog. What is the cause and the MOST appropriate action?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "The online store TTL has expired and the records were deleted, so extend the TTL period and re-ingest the same records from the beginning."
+      },
+      {
+        "label": "B",
+        "text": "Buffering causes a delay of up to 15 minutes, so run the snapshot job with a delay after ingestion."
+      },
+      {
+        "label": "C",
+        "text": "The offline store rejects all later records when the record identifier is the same, so ingest each record with a newly generated identifier."
+      },
+      {
+        "label": "D",
+        "text": "Athena has cached the query results, so turn off result reuse in the Athena workgroup and run the query again, saving it under a new name."
+      }
+    ],
+    "explanation": "The correct answer is to delay the snapshot timing to account for the buffering delay. The offline store collects PutRecord data and writes it to Amazon S3 in batches within 15 minutes, so records may be missing from queries right after ingestion, which matches the symptom of the same query returning them much later. A: The online store TTL has nothing to do with the offline store history. C: Even with the same identifier, records with different event times are all kept as history, so there is no need to create new identifiers. D: Since the records appear when the query is run again, the cause is the delay in writing to S3 rather than caching, so turning off result reuse is not a solution."
+  },
+  {
+    "number": 45,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "Three ML teams at a company share SageMaker training jobs, endpoints, and notebooks in a single AWS account. At month end, the finance team wants to see SageMaker costs by team separated out in the billing data. It is difficult to split the teams into separate accounts this quarter, and since a single platform owner operates the environment, the burden must also be minimized. The resources currently have a team tag identifying the team, but all other billing settings are at their defaults. The finance team wants to see the amount per team in US dollars in the month-end report, the cost reports can be viewed only by the owner who has Billing console permissions, and the tag key is standardized as team, including capitalization. Which solution is MOST appropriate to determine costs by team?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Attach the team tag to the SageMaker resources, activate it as a cost allocation tag in the Billing console, and view costs by tag in Cost Explorer."
+      },
+      {
+        "label": "B",
+        "text": "Simply attach the team tag to the resources; the amount per team then appears automatically in all cost reports without any activation step, so no additional work is done."
+      },
+      {
+        "label": "C",
+        "text": "Collect the endpoint instances' CPUUtilization metric by team and calculate the allocation of the total billed amount in proportion to the CPU usage ratio yourself, dividing it among the teams."
+      },
+      {
+        "label": "D",
+        "text": "Aggregate the number of SageMaker API calls made by team members from CloudTrail logs and divide the monthly billed amount among the teams in proportion to the call count ratio."
+      }
+    ],
+    "explanation": "The correct answer is to attach the team tag to the SageMaker resources, activate it as a cost allocation tag in the Billing console, and view costs by tag in Cost Explorer. A user-defined tag must be activated before it appears in billing reports and Cost Explorer, and it can take up to 24 hours for the tag key to appear and up to 24 hours for it to be activated. B: If the tag is only attached and not activated, it is not reflected in the reports. C: Allocating by CPU utilization ratio does not match the actual billed amount and creates a heavy calculation burden. D: The number of API calls is unrelated to the instance hours used, so it is not a valid basis for cost allocation."
+  },
+  {
+    "number": 46,
+    "domain": "Deployment and Orchestration of ML Workflows",
+    "prompt": "A manufacturer runs a defect detection model built with PyTorch on hundreds of ARM-based edge devices (150 per factory). The factory network is unstable, so inference must run offline on the devices, latency must be reduced to match the device hardware, and there is no IT staff on site, so model updates must be deployed remotely. The devices already run an OS on which AWS IoT Greengrass can be installed. The compilation target is ARM64 Linux devices, the model is an image classification model with a fixed input size, and the devices connect for only a few minutes once a day and can receive a new model then. Which combination has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Deploy the model to a cloud real-time endpoint and have the devices call the endpoint over the internet for every request to receive the inference results."
+      },
+      {
+        "label": "B",
+        "text": "Compile the model for the target device with SageMaker Neo and deploy it remotely with AWS IoT Greengrass."
+      },
+      {
+        "label": "C",
+        "text": "Connect to hundreds of devices over SSH and copy the original, uncompiled model file to them directly, repeating the same work for every update."
+      },
+      {
+        "label": "D",
+        "text": "Deploy the model to a serverless inference endpoint and have the devices reuse the last response from a cache when the network is disconnected."
+      }
+    ],
+    "explanation": "The correct answer is SageMaker Neo compilation and AWS IoT Greengrass deployment. Neo optimizes models such as PyTorch models for the target processor, including ARM, to reduce latency, and the compiled model can be deployed to Greengrass devices, which enables offline inference on the devices and managed remote updates. A calls a cloud endpoint, so inference is impossible when the network is disconnected. C: Copying directly over SSH imposes a heavy burden for updating hundreds of devices, there is no on-site staff, and there is no hardware optimization. D uses a serverless endpoint and a cache, so it cannot process inference for new inputs offline."
+  },
+  {
+    "number": 47,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "A team runs a SageMaker training job on data containing PII. The security requirements are that the data must not traverse a public internet path and must be encrypted at rest with a customer managed key. The training data bucket is in the same Region, and the team wants to meet the security regulations with minimal operational changes and without changing the existing training code. There is no reason for the training container to access the external internet. The training container uses a SageMaker-provided image, the S3 bucket is in the same account and the same Region, and the security team must submit confirmation of the VPC and security group settings during audits. Which TWO configurations meet this requirement? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Run the training job in a public subnet and configure it to read the data through the internet gateway to the public Amazon S3 endpoint."
+      },
+      {
+        "label": "B",
+        "text": "Copy the training data to the local disk of an unencrypted notebook instance and run the training script from there."
+      },
+      {
+        "label": "C",
+        "text": "Remove all AWS KMS permissions from the execution role and leave encryption to be handled arbitrarily by code inside the training container."
+      },
+      {
+        "label": "D",
+        "text": "Run the training job in a VPC in a private subnet with no internet path, and configure the data access path with an Amazon S3 gateway VPC endpoint."
+      },
+      {
+        "label": "E",
+        "text": "Specify a customer managed AWS KMS key for the output model artifact and the training volume, and grant the execution role permission to use that key."
+      }
+    ],
+    "explanation": "The correct answers are a private VPC with an Amazon S3 gateway endpoint, and a customer managed KMS key. In a private subnet with no internet access, the training container can reach the S3 data only if there is an S3 VPC endpoint, and the traffic does not traverse the public internet. Specifying a customer managed KMS key for the output and volume and granting key permissions to the execution role satisfies the encryption at rest requirement. A uses a public subnet and an internet gateway path, which allows traversal of the internet. B copies data to an unencrypted local disk, which violates the encryption requirement. C: Removing KMS permissions means the key cannot be used, and arbitrary handling inside the container does not meet the customer managed key requirement."
+  },
+  {
+    "number": 48,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "A data scientist has so far applied a preprocessing flow built with Data Wrangler by manually running notebook cells in order. Because the procedure depends on one individual, retraining once stopped when that person was on vacation. The team wants to operate this preprocessing as a reproducible automated workflow every week, connected with the training, evaluation, and model registration steps, and wants to avoid newly coding the transformation logic that has already been validated. The preprocessing input is raw CSV in Amazon S3 with new files accumulating under the same prefix every week, and the pipeline must register the model in the model registry only when the evaluation metric exceeds a threshold. Which solution is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Rewrite the flow's transformation sequence yourself as PySpark code, move it to an Amazon EMR step, and call it from AWS Step Functions. Store the intermediate results of each step in Amazon S3."
+      },
+      {
+        "label": "B",
+        "text": "Export the Data Wrangler flow to SageMaker Pipelines to create the preprocessing step, and chain the training, evaluation, and registration steps to it."
+      },
+      {
+        "label": "C",
+        "text": "Document the transformation sequence with screenshots, and have the person in charge manually run the flow in Studio whenever retraining is needed."
+      },
+      {
+        "label": "D",
+        "text": "Upload only the transformed result CSV to Amazon S3 and keep no preprocessing logic, reusing only that file for later training."
+      }
+    ],
+    "explanation": "The correct answer is to export the Data Wrangler flow to SageMaker Pipelines. The export feature turns the flow's transformations into a pipeline processing step, so the validated transformations are not recoded and are connected with the training, evaluation, and registration steps into a single workflow that is operated reproducibly. A requires rewriting in PySpark, which violates the constraint not to newly code. C is manual execution, so it does not meet the automated workflow requirement and the dependence on an individual remains. D: If only the result CSV is kept, the same preprocessing cannot be reproduced on new data."
+  },
+  {
+    "number": 49,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "An analyst with little coding experience must create training data this week. The analyst must join click logs in Amazon S3, an order table queried with Amazon Athena, and a customer master in Amazon Redshift, and data governance policy does not allow deleting or moving the source data. The team wants to avoid building a new pipeline that copies the three sources to one place, and wants to perform transformations and even data quality checks in a visual interface. All three sources are in the same Region, the analyst's Studio execution role has been granted query permissions, and the join result only needs to be saved to an S3 location to be used later as training input. Which solution is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Download each of the three sources as CSV, collect them on the local disk of a notebook instance, join them with pandas, and upload the result to Amazon S3."
+      },
+      {
+        "label": "B",
+        "text": "First UNLOAD the Redshift and Athena data to Amazon S3, create a new AWS Glue crawler and ETL job, and register the join result in the catalog."
+      },
+      {
+        "label": "C",
+        "text": "Connect the three sources as the input manifest of a Ground Truth labeling job and configure the job so that workers do the join directly."
+      },
+      {
+        "label": "D",
+        "text": "Import each of the three sources in Data Wrangler, join and transform them inside the flow, and check quality with a data insights report."
+      }
+    ],
+    "explanation": "The correct answer is a Data Wrangler flow. It can import data from Amazon S3, Amazon Athena, Amazon Redshift, and more, join and transform it within a single flow, and even generate data quality and insights reports, so it meets both the visual interface requirement and the requirement to avoid a new copy pipeline. A gathers data on a local disk, which has scale limits and involves a lot of manual work and does not suit an analyst with little coding experience. B creates a new UNLOAD and AWS Glue ETL, which is the copy pipeline the team wants to avoid. C: Ground Truth is a labeling service and is not meant for joins."
+  },
+  {
+    "number": 50,
+    "domain": "ML Model Development",
+    "prompt": "A retail company evaluates three regression models that forecast weekly demand per product, using data from the same validation period, and reports the results to the inventory manager. Rare large prediction errors lead to stockout losses and are much more critical than small errors. The average errors of the three models are similar, so the difference is not well revealed by the average error alone. The three candidate models use the same features and the same validation-period data, the comparison result must be reported as a single number at the model selection meeting, and model explainability is not a criterion for this comparison. Which evaluation metric BEST reflects this business characteristic when comparing the candidate models?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "RMSE. It squares the errors, averages them, and takes the square root, so it imposes a larger penalty on large errors."
+      },
+      {
+        "label": "B",
+        "text": "MAE. It averages the absolute values of the errors, so it reflects all errors with equal weight and does not specifically magnify large errors."
+      },
+      {
+        "label": "C",
+        "text": "Accuracy. It calculates the proportion of predictions that exactly match the actual values and shows how often the model is right."
+      },
+      {
+        "label": "D",
+        "text": "ROC AUC. It is a classification model metric that summarizes the relationship between sensitivity and specificity as the classification threshold changes."
+      }
+    ],
+    "explanation": "The correct answer is RMSE. Because the errors are squared before averaging, rare large errors are reflected strongly in the metric, which fits the requirement that large errors are critical. B: MAE averages errors linearly and does not particularly emphasize large errors, so it can easily hide differences between models with similar average errors. C: Accuracy means the proportion of exact matches in continuous-value regression, which is almost useless. D: ROC AUC is a threshold-based performance metric for classification models, so it does not suit evaluating continuous demand forecasts."
+  },
+  {
+    "number": 51,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "A team operates a SageMaker real-time endpoint on 2 instances, and the response time measured from the client has recently doubled. The number of invocations has barely changed and there are no 5xx errors. To avoid service interruption, the team will not deploy new code and wants to first determine whether the increased latency is caused by the inference time of the model container, by the SageMaker processing segment, or by the network. Default CloudWatch metrics are already being collected. The response time was measured from an Amazon EC2 client in the same Region, the request payload size and the model version have not changed, and the analysis must be finished within a day using a CloudWatch dashboard. Which solution is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Compare the ModelLatency and OverheadLatency metrics over the same period, and treat what remains after subtracting both from the client's total latency as the network."
+      },
+      {
+        "label": "B",
+        "text": "Compare only the sum of the Invocations metric, and conclude that if the invocation count has not increased, the model container and the SageMaker processing segment are not the cause."
+      },
+      {
+        "label": "C",
+        "text": "Delete the endpoint, recreate it with a larger instance type, and estimate the cause segment by checking whether the response time decreases."
+      },
+      {
+        "label": "D",
+        "text": "Judge that if the Invocation5XXErrors metric is 0, the cause of latency is always the client code, and skip investigating the endpoint-side metrics."
+      }
+    ],
+    "explanation": "The correct answer is to compare ModelLatency and OverheadLatency over the same period. The total response time is the sum of network latency, SageMaker overhead latency, and model latency. Model latency is the time the container spent on inference, and overhead latency is the time from when SageMaker receives the request until it returns the response, excluding model latency, so subtracting both from the client's total latency leaves the network segment. B: The model can slow down even if the invocation count is the same, so Invocations alone cannot separate the causes. C: It causes a service interruption, only costs money, and does not tell the cause. D: Latency can increase even without 5xx errors, so this is no basis for skipping the endpoint-side investigation."
+  },
+  {
+    "number": 52,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "A company manages transaction data accumulating in Amazon S3 as AWS Glue Data Catalog tables and retrains a model with this data every week. Training quality has recently dropped because of a column whose missing values have increased. The team finds it hard to write from scratch which quality rules suit the table and does not want to operate servers. It wants to obtain candidate rules automatically, evaluate them regularly before retraining, and receive a notification when a rule is violated. There is one data engineer, and the team already uses Amazon EventBridge and Amazon SNS. The quality rules must be column-level conditions such as missing ratio, value range, and duplicates, the evaluation results must be checkable before the retraining pipeline starts, and the table has about 500 million rows. Which solution is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use AWS Glue Data Quality to get rule recommendations for the catalog table, create DQDL rules, schedule the evaluation, and receive notifications through Amazon EventBridge."
+      },
+      {
+        "label": "B",
+        "text": "Install an open-source quality checking tool on an Amazon EC2 instance yourself, run it weekly with cron, and separately write and operate a script that emails the results."
+      },
+      {
+        "label": "C",
+        "text": "Search the training job logs with Amazon CloudWatch Logs Insights, treat the appearance of words related to missing values as a sign of a data problem, and have the person in charge check the columns directly."
+      },
+      {
+        "label": "D",
+        "text": "Turn on S3 object-level logging, treat the point at which the number of PutObject calls in the AWS CloudTrail logs decreases as a sign of increased missing values, and have the person in charge check the data directly."
+      }
+    ],
+    "explanation": "The correct answer is AWS Glue Data Quality. It is serverless, and for Data Catalog tables it can analyze the data and recommend rules, so the team does not have to write the rules from scratch. Rules can be created in DQDL, evaluation runs can be scheduled, and violations can be notified through integration with Amazon EventBridge or CloudWatch. B requires installing the tool on EC2 and operating the script, which creates server operations overhead. C is a word search in training logs, which cannot systematically measure data quality. D: The number of PutObject calls is just a count of files and has no relation to the missing ratio of a column."
+  },
+  {
+    "number": 53,
+    "domain": "ML Model Development",
+    "prompt": "Twelve data scientists on a data science team run dozens of training experiments per day on SageMaker and record hyperparameters and metrics by hand in a spreadsheet. The team already uses open-source MLflow tracking code and must be able to trace which run produced which model during audits. The team members want to record runs the same way in both SageMaker training jobs and notebooks, and there is no staff to operate a tracking server directly. The tracking server must keep parameters, metrics, and artifacts per run, the trained models must be linked to the model registry and managed as versions, and access is controlled with the team members' IAM permissions. Which method has the LEAST operational overhead while minimizing code changes?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create a managed MLflow tracking server in SageMaker AI and connect the existing MLflow logging code with the AWS MLflow plugin to record runs and models."
+      },
+      {
+        "label": "B",
+        "text": "Install an MLflow server and an Amazon RDS database yourself on Amazon EC2, store artifacts in an Amazon S3 bucket, and have the team operate patching, backups, and capacity management directly."
+      },
+      {
+        "label": "C",
+        "text": "Have each training script print metrics to CloudWatch Logs and reconstruct the run history by searching the logs for every audit."
+      },
+      {
+        "label": "D",
+        "text": "Query AWS CloudTrail logs with Amazon Athena to build a weekly report that extracts the API call records for each training job, and record metrics separately by hand."
+      }
+    ],
+    "explanation": "The correct answer is the managed MLflow tracking server with the AWS MLflow plugin. SageMaker AI integrates with MLflow, so the existing MLflow SDK code can be used almost as is to record and compare the parameters, metrics, and models of runs without operating a server, and training jobs and notebooks connect in the same way through the tracking server ARN. B installs on EC2 and RDS yourself, so the patching and backup burden remains, which conflicts with the constraint of having no operations staff. C: Searching CloudWatch Logs makes structured experiment comparison difficult and the audit evidence is unreliable. D: CloudTrail records API calls and does not contain metric values, so it does not suit comparison between runs and model tracking."
+  },
+  {
+    "number": 54,
+    "domain": "Deployment and Orchestration of ML Workflows",
+    "prompt": "A marketing team scores a single 400 GB CSV file with SageMaker Batch Transform early every Monday morning. Even when 10 instances are specified, only one instance works and the others sit idle, so the run time does not decrease, and the results are needed before the Tuesday morning meeting. The instance cost budget must stay the same as now, and the scoring model and output format cannot be changed. The scoring results must correspond to the order of the input rows, the output is stored under the same prefix in Amazon S3 regardless of the number of instances, and the input CSV has no header and can be split by row. How can the team process the job in parallel for the same instance cost and reduce the completion time MOST effectively?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Leave the input file as it is and set SplitType to Line, expecting that the single file will be split into mini-batches and distributed across the 10 instances."
+      },
+      {
+        "label": "B",
+        "text": "Increase the MaxConcurrentTransforms value to raise the number of concurrent requests that one instance processes for the same file in order to reduce the time."
+      },
+      {
+        "label": "C",
+        "text": "Instead of Batch Transform, create a real-time endpoint, send the entire file as a single request body, and receive the scores in the response."
+      },
+      {
+        "label": "D",
+        "text": "Split the input CSV into multiple Amazon S3 objects so that Batch Transform distributes the objects across the instances."
+      }
+    ],
+    "explanation": "The correct answer is to split the input CSV into multiple Amazon S3 objects. Batch Transform maps input objects to instances by key, so if there is only one object, only one instance processes it even when multiple instances are specified. A: SplitType Line only divides a single file into request-sized mini-batches and does not distribute the file across multiple instances. B: Raising the number of concurrent requests only increases parallelism within one instance, so the other instances continue to sit idle. C: Sending 400 GB in one request to a real-time endpoint does not fit the payload limit and also changes how the model is invoked."
+  },
+  {
+    "number": 55,
+    "domain": "Deployment and Orchestration of ML Workflows",
+    "prompt": "A customer center team operates a sentiment classification model on a SageMaker serverless endpoint, and its monthly budget is fixed. Requests are normally infrequent, but every day from 9 AM, dozens of concurrent requests arrive for 30 minutes, and the first requests are slow at that time because of cold starts. The team wants to avoid switching to a real-time endpoint with instances running 24 hours because of cost. The traffic pattern repeats at the same time every day. The endpoint's memory setting is 4 GB and its maximum concurrency is 20, and during the 9 AM surge the concurrent requests rise to about 15, and the team wants a configuration that incurs extra cost only during the surge window. How should the team solve this while keeping costs down?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Raise the endpoint memory to the maximum so the container uses more vCPUs, which eliminates the need for new compute even when concurrent requests surge."
+      },
+      {
+        "label": "B",
+        "text": "Schedule a Lambda function that sends a dummy request every minute to keep the container warm and have it absorb the concurrent requests during the surge window."
+      },
+      {
+        "label": "C",
+        "text": "Configure provisioned concurrency and raise its value only during the surge window with scheduled scaling."
+      },
+      {
+        "label": "D",
+        "text": "Change the serverless endpoint to a real-time endpoint, keep a minimum of 1 instance, and manually increase the instance count during the surge window."
+      }
+    ],
+    "explanation": "The correct answer is provisioned concurrency with scheduled scaling. Provisioned concurrency pre-initializes the specified amount of compute so that it responds without cold starts, and with Application Auto Scaling scheduled actions the value can be raised only during the surge window, so cost is also kept down for a pattern that repeats at the same time every day. A: Even if memory is raised, cold starts occur again when concurrent requests exceed the concurrency currently in use. B: A dummy request keeps only about one concurrent request warm and does not solve the situation where many requests arrive together. D: Switching to a real-time endpoint is the always-on cost structure the team wants to avoid, and it requires manual adjustment."
+  },
+  {
+    "number": 56,
+    "domain": "Deployment and Orchestration of ML Workflows",
+    "prompt": "A financial services organization must present deployment history and approvers during audits. The organization wants to register models produced by the training pipeline as versions in the model registry and deploy only the versions approved by the evaluator to the production endpoint. It must be able to roll back quickly to a previously approved version if a production failure occurs, and it must be possible to trace which training result was deployed. The team has a DevOps engineer who operates the CI/CD pipeline. Approval is given by a single evaluator after reviewing the metrics and the bias report, production deployment must proceed automatically only after approval, and the artifacts and evaluation results of previous versions must be retained for more than one year. Which configuration is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Store training results in Amazon S3 folders named by date, and have the deployment owner look at the folder names and manually edit the model location in the endpoint configuration to deploy."
+      },
+      {
+        "label": "B",
+        "text": "Keep overwriting the container image with the latest tag, push it to Amazon ECR, and restart the endpoint so that the latest image is deployed."
+      },
+      {
+        "label": "C",
+        "text": "Evaluate the model in a notebook, and when the owner announces approval via messenger, have a data scientist manually update the endpoint in the console."
+      },
+      {
+        "label": "D",
+        "text": "Register the model as a version in a model package group, use the approval status change as the deployment trigger, and roll back by deploying the previously approved version."
+      }
+    ],
+    "explanation": "The correct answer is the configuration that registers the model as a version in a model package group, uses the approval status change as the deployment trigger, and rolls back by deploying the previously approved version. Each version keeps its metadata and lineage, so it is possible to trace which training result was deployed, CI/CD deploys only approved versions, and approver records remain. A: The date-folder method has no approval status or lineage management and depends on manual edits. B: When the image is overwritten with the latest tag, it is hard to identify and roll back to the previous image. C: Approval by messenger and manual updates do not meet the audit trail and automation requirements."
+  },
+  {
+    "number": 57,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "A company must train on internal customer data with a third-party training container supplied by an outside vendor. Because the container code cannot be verified, data must not be exfiltrated to the internet or other services during training. The training data is in Amazon S3, and the container already includes all the components it needs so that it does not install external packages during training. The security team requires preventive blocking, not after-the-fact log review. The training input and output are in an Amazon S3 bucket in the same account and the execution role has access permissions, the vendor does not disclose the container's internal logic, and training logs are collected in Amazon CloudWatch Logs. Which configuration meets this requirement MOST securely?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Run the training job in a public subnet, restrict the security group's outbound rules to port 443 only, and allow S3 access through the public endpoint."
+      },
+      {
+        "label": "B",
+        "text": "Turn on network isolation for the training job to block outbound calls from the container, and have SageMaker handle S3 input and output outside the container with the execution role."
+      },
+      {
+        "label": "C",
+        "text": "Let the container read the Amazon S3 bucket directly with AWS credentials, and review the logs after training finishes to check afterward whether data was sent externally."
+      },
+      {
+        "label": "D",
+        "text": "Build the training data into the container image and remove all S3 access permissions from the execution role."
+      }
+    ],
+    "explanation": "The correct answer is network isolation. When EnableNetworkIsolation is turned on, the container cannot make outbound calls to any service, including Amazon S3, and no AWS credentials are provided, and SageMaker handles S3 downloads and uploads outside the container with the execution role. A allows port 443, so external transmission is possible over HTTPS. C is after-the-fact log review, which cannot prevent exfiltration, and it gives the container direct S3 access permissions. D: Building the data into the image leaves customer data in the image, which could leak through access to the image, and it also increases the management burden."
+  },
+  {
+    "number": 58,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "An application in a VPC invokes a SageMaker real-time endpoint. The security team wants the invocation traffic not to traverse the public internet, and wants this VPC path to allow only InvokeEndpoint for a single endpoint named myEndpoint. The subnet has no internet gateway or NAT device, and the application authenticates with the IAM role of an EC2 instance profile. The endpoint and the VPC are in the same Region, the calling app calls the default runtime address with the AWS SDK, and the security team wants to deny both invocations of other endpoints and all other SageMaker actions through the VPC path. Which TWO configurations meet this requirement? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create an interface VPC endpoint (AWS PrivateLink) for SageMaker Runtime and turn on private DNS."
+      },
+      {
+        "label": "B",
+        "text": "Add a NAT gateway to the subnet so that the app goes out to the public SageMaker Runtime address, and configure the security group to allow only the HTTPS port for outbound traffic."
+      },
+      {
+        "label": "C",
+        "text": "Attach to the app's IAM role a policy that allows all sagemaker actions on all resources so that no permission error ever occurs."
+      },
+      {
+        "label": "D",
+        "text": "In the VPC endpoint policy, allow sagemaker:InvokeEndpoint only for the ARN of myEndpoint."
+      },
+      {
+        "label": "E",
+        "text": "Include the long-term access key of an IAM user in the app code so that the same key invokes the endpoint from anywhere, inside or outside the VPC."
+      }
+    ],
+    "explanation": "The correct answers are an interface VPC endpoint for SageMaker Runtime and a VPC endpoint policy restricted to the single myEndpoint ARN. A PrivateLink interface endpoint connects the VPC to SageMaker Runtime without an internet gateway or NAT device, and when private DNS is turned on, the default runtime hostname resolves to this endpoint. Narrowing the allowed actions and resources with the endpoint policy means only invocations of the specified endpoint are possible through this path. B calls the public address through NAT, so it traverses the internet path and also does not match the subnet condition. C allows all actions on all resources, which violates least privilege. E puts a long-term access key in code, which carries a high risk of leakage, and an instance profile already exists."
+  },
+  {
+    "number": 59,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "After a service overhaul, the features for customer churn prediction have grown to more than 60, and the schedule to the model launch is tight. A team is building a Data Wrangler data flow in Studio, and among the features there are values that already reveal the outcome, such as 'refund amount', which is only generated after the cancellation has been processed, so validation accuracy is abnormally high. The team wants to minimize code writing and find such features before training the model. The flow's label column is the binary churn indicator, the training data is 8 million rows of CSV in Amazon S3, and once the team confirms the problematic features, it plans to exclude those columns and continue using the same flow. What should the team do?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use Data Wrangler's target leakage analysis to find features that predict the label too well."
+      },
+      {
+        "label": "B",
+        "text": "Add the SageMaker Debugger overfitting rule to the training job to automatically stop the training job when the validation loss starts to diverge."
+      },
+      {
+        "label": "C",
+        "text": "After deploying the model, attach the Model Monitor data quality monitor to detect whether input distributions different from those at training time are coming in."
+      },
+      {
+        "label": "D",
+        "text": "Train the model with hyperparameter tuning that raises the regularization strength to the maximum so that the influence of the suspected leakage features becomes small."
+      }
+    ],
+    "explanation": "The correct answer is Data Wrangler's target leakage analysis. Before training, it lets you visually check how excessively each feature explains the label, so leakage features can be found without code. B: The Debugger overfitting rule monitors the loss curve after training is run, so it does not match the requirement to check before training, and it cannot tell the leakage cause at the feature level. C: Model Monitor looks at input distribution drift after deployment, so the timing is different. D: Raising regularization does not remove leakage features and only lowers model performance."
+  },
+  {
+    "number": 60,
+    "domain": "ML Model Development",
+    "prompt": "While training a recommendation model, after epoch 40 the training loss continues to decrease but the validation loss begins to increase. Validation accuracy was highest around epoch 35. More training data cannot be obtained, the team does not want to change the model architecture, and the validation set does not overlap with the training data. The feature that saves model state every epoch is already in use, and training runs on a GPU instance and takes 20 minutes per epoch. Training runs as a SageMaker training job, hyperparameter tuning is not included in this schedule, and the validation metric is already recorded in CloudWatch every epoch. How can the team improve generalization performance with the LEAST amount of change?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Double the number of epochs and continue training with the same settings until the training loss converges sufficiently, saving checkpoints every epoch."
+      },
+      {
+        "label": "B",
+        "text": "Apply early stopping that monitors the validation loss and stops training when improvement stops, and use the model from the best point."
+      },
+      {
+        "label": "C",
+        "text": "Increase the number of hidden layers and nodes to enlarge the model capacity, then retrain with the same data and the same hyperparameters."
+      },
+      {
+        "label": "D",
+        "text": "Lower the regularization strength to 0 so that the model fits the patterns of the training data more precisely, then retrain."
+      }
+    ],
+    "explanation": "The correct answer is early stopping. A decreasing training loss with an increasing validation loss is a classic sign of overfitting, and stopping training when the validation loss no longer improves and using the model from the best point (around epoch 35) solves the problem without changing the data or the architecture. Since each epoch takes 20 minutes, cutting unnecessary epochs also reduces cost. A: Increasing the epochs makes the overfitting worse. C: Increasing model capacity lets the model memorize the training data more, widening the gap, and it also violates the condition of not changing the architecture. D: Removing regularization eliminates the mechanism that suppresses overfitting, which makes things worse."
+  },
+  {
+    "number": 61,
+    "domain": "ML Solution Monitoring, Maintenance, and Security",
+    "prompt": "A team deploys a new image classification model to a real-time endpoint. The P95 latency target is 120 ms, traffic is about 300 requests per second and relatively steady. There are 8 candidate instance types, so benchmarking them manually is difficult, the model artifact is already in Amazon S3, and the team plans to use 2 or more instances for availability. The team values cost efficiency, and a single ML engineer must decide within this week. The model size is about 300 MB, the input image is fixed at 224x224, the traffic does not vary much over the day, and there is a monthly cost cap, so the team needs the cheapest configuration among the candidates that meets the target. Which method finds the most cost-efficient instance type and configuration that meets the target with the LEAST effort?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Choose the largest GPU instance to be sure of meeting the latency target, set a high minimum instance count for auto scaling, and take the approach of reducing the cost later while operating."
+      },
+      {
+        "label": "B",
+        "text": "Pick one of the candidate instances at random, deploy it, and replace it with another type if a problem arises."
+      },
+      {
+        "label": "C",
+        "text": "Register the model with SageMaker Inference Recommender, run load tests on the candidate instances, and compare latency, throughput, and cost metrics."
+      },
+      {
+        "label": "D",
+        "text": "Run one inference manually on each instance type in a notebook, measure the average time, and choose the fastest type."
+      }
+    ],
+    "explanation": "The correct answer is SageMaker Inference Recommender. After the model is registered or created, it automatically runs load test (benchmark) jobs on the candidate instance types and compares performance and resource usage metrics, so the team can choose a cost-efficient configuration that meets the latency target with little effort. A: The largest GPU instance conflicts with the cost efficiency requirement. B: A random choice has no basis and incurs replacement cost. D: Manually measuring one inference does not reflect the concurrent load of 300 requests per second and the P95 latency."
+  },
+  {
+    "number": 62,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "A payment fraud detection service looks up each user's latest features with low latency at inference time, and uses the same features for automatic weekly retraining. Traffic is hundreds of requests per second and there is only one person who owns the feature definitions. The team wants to reduce the mismatch in which feature values differ between training time and serving time, and to manage feature definitions and ingestion code in only one place. The features are updated from a stream, such as the number of transactions per user in the last hour, the inference latency target is a lookup in single-digit milliseconds, and it must also be possible to reproduce the past feature values as of the time used for training. How should this be configured to minimize operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Load inference features into Redis and separately load training features into CSV files in Amazon S3, maintaining two separate pieces of preprocessing code."
+      },
+      {
+        "label": "B",
+        "text": "Create only an offline store and run an Amazon Athena query each time an inference request arrives to look up that user's latest features."
+      },
+      {
+        "label": "C",
+        "text": "Copy the feature calculation notebook code used for training into the endpoint container and recompute the features from the source data for every inference request."
+      },
+      {
+        "label": "D",
+        "text": "Use the same features for inference and training from a single feature group with both the online and offline stores turned on."
+      }
+    ],
+    "explanation": "The correct answer is a single feature group with both the online and offline stores turned on. Because there is one ingestion path, features with the same definition are provided as the latest low-latency values in the online store and as training history in the offline store, which reduces mismatch and keeps definition management in one place. A: Dual preprocessing code is exactly the structure in which logic diverges and causes the mismatch. B: Running Athena for each request makes latency large and violates the low-latency requirement. C: Copying notebook code and recomputing increases latency and leaves two copies of the code."
+  },
+  {
+    "number": 63,
+    "domain": "Deployment and Orchestration of ML Workflows",
+    "prompt": "A team deployed an inference container built with FastAPI to a SageMaker endpoint, but endpoint creation fails. The container accepts only POST /predict on port 5000, and the team plans to keep the model file in Amazon S3 rather than in the image. The service owner can modify the container code within this week, and the container image is in Amazon ECR. The container has already been pushed to ECR and the execution role has the required permissions, the logs show a message that the container terminated because of a health check failure, and the model file can be compressed and uploaded to Amazon S3. Which TWO changes must be made so that the container satisfies the SageMaker hosting contract? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Specify a non-root user in the Dockerfile and set tini as the ENTRYPOINT so that SIGTERM signals are handled more safely."
+      },
+      {
+        "label": "B",
+        "text": "Modify the web server to respond on port 8080 to POST /invocations requests and to GET /ping requests for health checks."
+      },
+      {
+        "label": "C",
+        "text": "Upload the model artifact to Amazon S3 as tar.gz, specify it in ModelDataUrl, and read it from /opt/ml/model."
+      },
+      {
+        "label": "D",
+        "text": "In the endpoint configuration, specify the container port as 5000 and register the /predict path as the invocation path so that SageMaker sends requests to that path."
+      },
+      {
+        "label": "E",
+        "text": "Have the code download the model file directly to the /opt/ml/model path when the container starts and use it there, and lift the read-only permission."
+      }
+    ],
+    "explanation": "The correct answers are implementing /invocations and /ping on port 8080, and specifying a tar.gz artifact in ModelDataUrl. A SageMaker inference container must accept /invocations and /ping on port 8080, and creation fails if the health check does not return 200 within 8 minutes after startup. If the model is placed in Amazon S3 as tar.gz, it is extracted to /opt/ml/model and provided read-only. A: A non-root user and tini are not requirements of the hosting contract, SageMaker expects to run as root, and tini cannot be used because of the train and serve arguments. D: There is no setting to change the port and path in the configuration. E: Having the container download directly to /opt/ml/model does not work because that path is read-only."
+  },
+  {
+    "number": 64,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "A logistics company loads CSV-format sensor records that arrive through Amazon Kinesis Data Streams into Amazon S3 with Amazon Data Firehose, and wants to run column-oriented queries with Amazon Athena in ML preprocessing. There are thousands of sensors, records arrive at thousands per second, and there are 2 data engineers. The team wants to change the storage format to Parquet but does not want to operate a separate always-running cluster. Firehose buffering is based on a maximum of 5 minutes or 128 MB, queries mainly retrieve only the sensor ID and measurement value columns, and the record schema is fixed enough to be defined in AWS Glue. Which TWO things must be configured to meet this requirement? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Add an AWS Lambda function invoked by S3 events that renames the extension of objects written by Firehose to .parquet and saves them."
+      },
+      {
+        "label": "B",
+        "text": "Launch an Amazon EMR cluster every hour and schedule a Spark job that rewrites the CSV objects in Amazon S3 as Parquet."
+      },
+      {
+        "label": "C",
+        "text": "Create a table schema in the AWS Glue Data Catalog that matches the record structure and have the Firehose format conversion reference it."
+      },
+      {
+        "label": "D",
+        "text": "Specify CSV as the input format of the format conversion so that the Parquet serializer reads the CSV records as they are."
+      },
+      {
+        "label": "E",
+        "text": "Add a Lambda transformation to the Firehose delivery stream to convert the CSV records to JSON before passing them to the conversion step."
+      }
+    ],
+    "explanation": "The correct answers are converting CSV to JSON with Lambda and referencing a Glue Data Catalog schema. Firehose format conversion reads only JSON input, so other formats such as CSV must first be converted to JSON with Lambda, and the converter interprets the data with the schema created in the AWS Glue Data Catalog. A only changes the extension and does not change the file content to Parquet. B rewrites with EMR every hour, which violates the constraint of not operating a separate cluster. D: Specifying that CSV be read directly does not work because there is no supported deserializer (Hive JSON SerDe, OpenX JSON SerDe) for it."
+  },
+  {
+    "number": 65,
+    "domain": "Data Preparation for Machine Learning (ML)",
+    "prompt": "An IoT team wants to convert JSON sensor records arriving through Firehose (thousands per second) to Parquet and store them in Amazon S3. The key naming conventions differ by equipment manufacturer, so conversion failures are frequent. The timestamp is an epoch-millisecond integer, and some JSON keys contain periods, such as sensor.temp. The record format cannot be changed because it is in the equipment firmware. The Firehose delivery stream is already configured to reference an AWS Glue table schema, sensor records arrive as one JSON document per line, and records that fail conversion are accumulating under a separate S3 prefix. How should the team configure the stream to map to columns without conversion errors, with the LEAST amount of change?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Select the OpenX JSON SerDe as the deserializer to handle the epoch time format, and use the option that replaces periods with underscores."
+      },
+      {
+        "label": "B",
+        "text": "Select the Hive JSON SerDe as the deserializer and use keys containing periods as they are as the column names in the AWS Glue schema."
+      },
+      {
+        "label": "C",
+        "text": "Bundle multiple JSON documents into a single JSON array and pass it as one record so that the converter reads all the documents in the array."
+      },
+      {
+        "label": "D",
+        "text": "Change the serializer from Parquet to the ORC SerDe, which naturally handles keys containing periods as column names."
+      }
+    ],
+    "explanation": "The correct answer is the OpenX JSON SerDe. OpenX handles timestamp formats such as epoch seconds and milliseconds and has an option that replaces periods in keys with underscores, so it satisfies both conditions. B: The Hive JSON SerDe does not allow periods in column names, so these keys cause problems. C: A JSON array is not a valid input format, and documents must be concatenated. D: The serializer only determines the output format and has nothing to do with handling periods in input JSON keys, so changing to ORC does not solve the problem."
+  }
+]

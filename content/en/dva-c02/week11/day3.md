@@ -289,7 +289,7 @@ Real-Time Data Pipeline
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** What is the write throughput per shard in Kinesis Data Streams?
 

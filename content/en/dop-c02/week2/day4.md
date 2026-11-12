@@ -390,7 +390,7 @@ artifacts:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Which of the following is the most appropriate AWS service for automated code review at the PR stage?
 

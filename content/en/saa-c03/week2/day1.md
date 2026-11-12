@@ -182,7 +182,7 @@ A VPC is isolation, a subnet is an IP slice bound to an AZ, and a route table is
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You launched an EC2 in a new subnet but it has no internet. The SG is fully open. What should you check first?
 

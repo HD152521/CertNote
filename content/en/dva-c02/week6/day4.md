@@ -310,7 +310,7 @@ Pattern's three core elements: ① `attribute_not_exists` creates lock only abse
 
 > 💡 **Related theory**: From CAP Theorem perspective (Brewer, 2000), DynamoDB transactions are interesting. General DynamoDB operations choose AP (Availability + Partition tolerance), sacrificing Consistency (eventual consistency). Transactions behave closer to CP (Consistency + Partition tolerance), sacrificing Availability on conflict (TransactionConflictException). Same system can selectively use both modes — showing DynamoDB's design flexibility.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** DynamoDB TransactWriteItems의 최대 항목 수와 비용은?
 

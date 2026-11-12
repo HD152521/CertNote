@@ -67,7 +67,7 @@ This single diagram contains every concept of the week — Multi-AZ HA (multi-AZ
 
 > 📚 **Case study**: Netflix's chaos engineering, which we saw on Day 2, is the final piece that turns this integrated architecture from "a document into a verified system." No matter how meticulously you draw it, until you actually kill Region A you can't know whether Region B's ECS truly scales up, whether Aurora promotion truly finishes in a minute, or whether ARC Readiness truly catches a shortfall. The week's operational philosophy — "a backup you haven't tested is not a backup, and a DR you haven't drilled is not DR" — is what breathes life into this picture. The reason SAA is an architect certification is precisely that it asks not for a mere list of services but for the judgment to make "does this design truly endure" verifiable.
 
-## 📝 시나리오 연습 문제
+## 📝 Scenario Practice Questions
 
 **문제 1.** A global fintech must keep serving even during a whole-region failure, with an RTO of 30 seconds and RPO near 0. Cost is secondary. What is the most appropriate architecture?
 

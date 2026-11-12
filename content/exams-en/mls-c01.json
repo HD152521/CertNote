@@ -1,0 +1,1598 @@
+[
+ {
+  "number": 1,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "The data science team (5 people) at a nationwide parcel delivery company uses logistic regression in a SageMaker notebook to predict whether a delivery will be delayed. About 2 million delivery records accumulate in Amazon S3 each day, and the training data is about 300 million records from the most recent 6 months. The postal code column has about 30,000 unique values. One-hot encoding would expand it to 30,000 columns, which slows training and causes severe sparsity. Label encoding, which converts postal codes to integers in sorted order, gives the values a false ordinal meaning in a linear model. New postal codes appear occasionally, the operations team must be able to explain results by looking at the coefficients, and training time must also be reduced. The team keeps a schedule of retraining once a week. The model coefficients are submitted every quarter to the logistics planning team as explanatory material, and the encoding must be reproducible inside the training pipeline. Additional infrastructure cost cannot increase. Given these constraints, which encoding is MOST appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Apply label encoding as is, assigning integers from 1 to 30,000 to the postal codes in sorted order"
+   },
+   {
+    "label": "B",
+    "text": "Encode the postal code into a single numeric column by using the target mean or the occurrence frequency calculated within the training folds"
+   },
+   {
+    "label": "C",
+    "text": "Calculate the delay rate for each postal code by using the entire dataset and add this value as a new column to both the training and test sets"
+   },
+   {
+    "label": "D",
+    "text": "Leave the postal code column as strings and feed it directly to the model, letting logistic regression handle the categorical values automatically"
+   }
+  ],
+  "explanation": "Target mean encoding or frequency encoding calculated within the training folds is the correct answer. It uses only one column, so it avoids the explosion in dimensionality, and it does not create an ordinal meaning. Label encoding is the method that the question has already stated is inappropriate. Calculating the delay rate by using the entire dataset causes target leakage, because information about the correct answers in the test set enters the features. If the strings are fed directly, logistic regression accepts only numeric input, so a separate encoding is required."
+ },
+ {
+  "number": 2,
+  "domain": "Machine Learning Implementation and Operations",
+  "prompt": "An internal document classification model (about 300 MB, able to run inference on a CPU) has been trained and registered in Amazon SageMaker. The model is called irregularly a few times a day, a few requests at a time, from an internal tool used by a handful of HR staff. There are no calls for most of the day. Callers must receive the response in the same request, but a delay of a few seconds on the first request after an idle period does not affect their work. The model is operated by a 3-person development team that has no staff to manage servers, and the team has been told to minimize monthly cost as much as possible. The deployment owner has set a monthly cost limit, and the call volume does not exceed several thousand requests in total for a month. The model is updated only once per quarter. The caller is a web screen on the company portal, so it is acceptable for the response to return within tens of seconds. Which deployment method is the MOST cost-effective without requiring infrastructure management?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Run a real-time endpoint continuously on two ml.m5.large instances distributed across two Availability Zones and keep them always warm"
+   },
+   {
+    "label": "B",
+    "text": "Create an asynchronous inference endpoint, fix the minimum instance count at 1, and queue requests in an S3-based queue for processing"
+   },
+   {
+    "label": "C",
+    "text": "Schedule a batch transform job to run every hour, classify the accumulated documents in bulk regardless of whether any calls were made, and load the results"
+   },
+   {
+    "label": "D",
+    "text": "Deploy to a SageMaker Serverless Inference endpoint with the memory set to at least the model size, and accept cold starts"
+   }
+  ],
+  "explanation": "A serverless inference endpoint is the correct answer. It suits intermittent traffic with long idle periods and tolerable cold starts, it requires no instance selection or scaling policy management, and it scales down to 0 when there are no requests. Memory is usually set to at least the model size. Two always-running instances incur cost even during hours with no calls. An asynchronous endpoint fixed at a minimum of 1 instance also incurs cost at all times and does not return the response immediately. An hourly batch job does not meet the requirement to respond immediately to each call."
+ },
+ {
+  "number": 3,
+  "domain": "Modeling",
+  "prompt": "A used-car price prediction team tunes XGBoost with SageMaker automatic model tuning. The team specified the eta range as 0.0001 to 1.0 and searched with a linear scale, and most of the values tried were concentrated in the 0.1 to 1.0 range, so the small learning rate region was barely explored. The learning rate has an effect across several orders of magnitude, so the entire range must be explored evenly. The training job budget is fixed at 30 jobs that have already been approved and cannot be increased. The search covers two hyperparameters, eta and max_depth, and the objective metric is validation RMSE. The existing training script and data will not be changed. The training data used for the search is about 800,000 rows, and each job finishes within a few minutes. The team manages the tuning job by defining it in SDK code to keep it reproducible. Which configuration is MOST appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Narrow the range to 0.1 to 1.0 to increase search density, and exclude the small learning rate region from the search"
+   },
+   {
+    "label": "B",
+    "text": "Specify the ScalingType of that continuous hyperparameter as Logarithmic and search on a log scale"
+   },
+   {
+    "label": "C",
+    "text": "Specify the ScalingType as ReverseLogarithmic to search more densely for values close to 1.0"
+   },
+   {
+    "label": "D",
+    "text": "Change the search strategy to Random, because values are then sampled uniformly across orders of magnitude and no scale needs to be specified"
+   }
+  ],
+  "explanation": "A positive range that spans several orders of magnitude should be searched on a Logarithmic scale so that each order of magnitude is sampled at a similar rate. With a linear scale, about 90% of the budget is spent on the 0.1 to 1.0 range. Narrowing the range prevents exploration of small learning rates and violates the requirement. ReverseLogarithmic is intended for ranges that are sensitive to values close to 1.0, so it works in the opposite direction from what the question needs. The Random strategy is independent of how the scale is specified, and if the ScalingType is linear, the same concentration occurs."
+ },
+ {
+  "number": 4,
+  "domain": "Modeling",
+  "prompt": "An online fashion store team is training a multi-label classification model that assigns several attributes, such as 'casual', 'summer', and 'cotton', to clothing images at the same time. The team uses the SageMaker built-in image classification algorithm with an augmented manifest (Pipe mode). The labels come from a manifest created by another department's system, and the class value is a list of the relevant class IDs, such as '[0, 2]', with num_classes set to 3. This manifest is a shared file that another team updates every day, so it cannot be modified on our side, but when training is run, the labels are interpreted differently from what is expected. There is no problem with the training instance or the image location. There are about 400,000 images, and the team wants to adjust only the settings in the training job definition without changing the training script or container. What is the MOST appropriate solution?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Specify the content type as 'application/x-recordio; label-format=class-id' so that the labels are interpreted as a list of class IDs"
+   },
+   {
+    "label": "B",
+    "text": "Reduce num_classes to 2 to match the maximum length of the class ID list"
+   },
+   {
+    "label": "C",
+    "text": "Change RecordWrapperType to None so that the manifest is read in the original image format"
+   },
+   {
+    "label": "D",
+    "text": "Change the class values in the manifest to multi-hot vectors such as '[1, 0, 1]', leave the content type at its default, re-upload the manifest file, and ask the other team that shares it to use the new format as well"
+   }
+  ],
+  "explanation": "Multi-label training for image classification accepts labels in two formats, multi-hot vectors (the default) or a list of class IDs. Because the default is multi-hot, the class ID format must be interpreted correctly by explicitly specifying label-format=class-id in the content type. Because the manifest cannot be modified, setting the content type is the solution. Converting to multi-hot requires modifying the data, which violates the constraint. num_classes is the total number of classes, so 3 is correct. For an augmented manifest, RecordWrapperType must be set to RecordIO."
+ },
+ {
+  "number": 5,
+  "domain": "Modeling",
+  "prompt": "A recommendation data team at an e-commerce company predicts purchase conversion by using the SageMaker built-in XGBoost algorithm. The training AUC is 0.99 but the validation AUC is 0.86, and the gap widens as num_round is increased. The current max_depth is 12, early_stopping_rounds is not set, and lambda and alpha are at their default values. Training uses a single ml.m5.4xlarge instance and one training run takes about 40 minutes. No additional data can be collected this quarter, and the feature set has already been finalized and cannot be changed. The validation set is a separate sample from the same period as the training data, and leakage has already been checked. The training pipeline is defined as a SageMaker training job and can be rerun by changing only the hyperparameters. Which actions MOST effectively reduce overfitting? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Double num_round to build more trees and train for longer so that validation performance catches up"
+   },
+   {
+    "label": "B",
+    "text": "Lower min_child_weight to 0 so that leaves with few samples are also allowed to split and the model learns in finer detail"
+   },
+   {
+    "label": "C",
+    "text": "Lower max_depth to around 6 to reduce the complexity of each individual tree"
+   },
+   {
+    "label": "D",
+    "text": "Set lambda and alpha to 0 to remove the regularization terms so that the model can fit the data more flexibly"
+   },
+   {
+    "label": "E",
+    "text": "Set early_stopping_rounds so that training stops if the validation metric does not improve for a given number of rounds"
+   }
+  ],
+  "explanation": "Increasing max_depth makes the model more complex and prone to overfitting, so lowering it from 12 to about 6 reduces the capacity of each tree. early_stopping_rounds stops training when the validation score no longer improves and uses the best model, which prevents the gap from widening as the number of rounds increases. Increasing num_round makes overfitting worse. The larger the values of lambda and alpha, the more conservative the model becomes, so setting them to 0 removes regularization. A larger min_child_weight is more conservative, so lowering it to 0 moves in the direction of overfitting."
+ },
+ {
+  "number": 6,
+  "domain": "Data Engineering",
+  "prompt": "Several teams at a financial holding company store source data for training in 120 Amazon S3 buckets. Under company regulations, objects that contain sensitive information such as credit card numbers and email addresses must be identified before they are used for training, and the object formats vary, including CSV, JSON, and logs. New objects are continually added to the buckets, and the security team (4 people) wants to receive the results in a regular report. Moving data is not allowed, so objects cannot be copied to another location for analysis, and the security team has no capacity to develop scanning code. All of the target buckets are in a single AWS account and Region, the results are compiled into the security team's regular report once a week, and real-time alerts for each finding are not required. Which approach MOST appropriately meets these requirements without writing or operating scanning code?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Write a scanner that reads all objects and finds patterns by using regular expressions in an AWS Lambda function, and run it periodically with Amazon EventBridge"
+   },
+   {
+    "label": "B",
+    "text": "Run an Amazon Macie sensitive data discovery job on the target buckets and review the findings produced by managed data identifiers"
+   },
+   {
+    "label": "C",
+    "text": "Query the object metadata in S3 Inventory reports with Amazon Athena to determine whether sensitive information is included"
+   },
+   {
+    "label": "D",
+    "text": "Turn on the S3 protection feature of Amazon GuardDuty to detect objects that contain sensitive information"
+   }
+  ],
+  "explanation": "Macie finds sensitive data such as credit card numbers and email addresses in S3 objects by using managed data identifiers based on machine learning and pattern matching, and it reports findings through discovery jobs for which you specify the target buckets and scope, so it meets the requirements without code. A Lambda scanner violates the constraint that it must not be written and operated by the team. Inventory metadata does not contain the contents of objects, so it cannot be used to determine whether sensitive information is present. GuardDuty is a service that detects threats and anomalous activity; it does not classify sensitive data in object contents."
+ },
+ {
+  "number": 7,
+  "domain": "Data Engineering",
+  "prompt": "An online marketplace collects purchase events for a real-time recommendation pipeline in a single account and Region. Three consumers, a fraud detection service, a recommendation feature computation, and an audit archive, must each read the same events independently, and when a failure occurs, they must be able to reread the last 24 hours of data for reprocessing. Two or three more consumers may be added in the future. Each event is about 2 KB, 5,000 events arrive per second, and it is sufficient to preserve event order only per user ID. There are only 2 data engineers, so they prefer a managed service with a small operational burden. The events contain no personally identifiable information, so there are no retention restrictions. Reprocessing is rare and happens only during failures, and the audit archive consumer stores events separately for 1 year. Which ingestion layer MOST appropriately meets these requirements?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Put the events into a single Amazon SQS standard queue and have the three consumers share and read messages from the same queue"
+   },
+   {
+    "label": "B",
+    "text": "Publish the events to an Amazon SNS topic and subscribe an HTTP endpoint for each consumer to receive them by push"
+   },
+   {
+    "label": "C",
+    "text": "Ingest into Amazon Kinesis Data Streams and have each consumer run as an independent application that reads the records within the retention period on its own"
+   },
+   {
+    "label": "D",
+    "text": "Store the events in Amazon S3 through a Firehose delivery stream, create a separate bucket for each consumer, and have each consumer read and process the files whenever an S3 object event arrives"
+   }
+  ],
+  "explanation": "Kinesis Data Streams retains records for the retention period (24 hours by default, up to 365 days), and multiple applications can read from one stream independently and concurrently, so it meets the requirements for reprocessing and consumer expansion. In an SQS standard queue, one message is processed and deleted by one consumer, so the three consumers cannot all read the same event. SNS delivers by push, so rereading for reprocessing is not possible. The combination of Firehose and S3 has buffering delay and is not a real-time consumption model."
+ },
+ {
+  "number": 8,
+  "domain": "Modeling",
+  "prompt": "The demand forecasting team at a large supermarket chain builds a daily sales regression model with Amazon SageMaker. The sales data contains extreme values, up to 20 times normal levels, caused by a few large promotions each year. These are real, normal sales, so they are not removed. The business team wants to understand 'how many units we are off by on average' in the same units as sales volume, and does not want a few extreme values to dominate the metric. Forecasts are generated by a batch job every morning, and only one metric appears in the management report. Three candidate models are compared on the same validation set. The management report is read by executives with no statistical background, and the ranking among the candidate models must not flip because of a few outliers. The model is trained on 3 years of daily historical data, and the last 2 months are used for validation. Which metric is MOST appropriate for comparing the models?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Root mean squared error (RMSE), the value obtained by squaring the errors and taking the square root to convert back to sales volume units"
+   },
+   {
+    "label": "B",
+    "text": "Mean squared error (MSE), the value that puts greater weight on large errors and strongly reflects failures to predict extreme values"
+   },
+   {
+    "label": "C",
+    "text": "Mean absolute error (MAE), the mean of the absolute values of the errors, interpreted in the same units as sales volume"
+   },
+   {
+    "label": "D",
+    "text": "Coefficient of determination (R²), the proportion of variance explained by the model, expressed as a unitless value"
+   }
+  ],
+  "explanation": "MAE is the mean of the absolute values of the errors, so it can be interpreted in the same units as sales volume, and because it does not square the errors, a few extreme values dominate the metric less. RMSE also has the same units, but it squares the errors, so it is pulled strongly by extreme values. MSE has squared units, which makes it hard to interpret, and it is even more sensitive to extreme values. R² is unitless and does not tell you how many units you are off by on average. Therefore, MAE is the metric that meets both requirements: interpretable units and insensitivity to extreme values."
+ },
+ {
+  "number": 9,
+  "domain": "Data Engineering",
+  "prompt": "A logistics data team wants to convert 1.5 TB of logs stored in Amazon S3 as gzip CSV into a columnar format just once, to reduce later Amazon Athena query costs. The team is familiar with SQL, does not want to operate a new cluster or servers, and the conversion is a one-time task. The source logs are organized by daily prefixes, and the monthly Athena query volume is tens of terabytes. The original data must be preserved as is after conversion for audit purposes, and the converted output is placed under a different S3 prefix in the same Region. The work must be finished within three days before the quarter close. The converted output is used by monthly reporting queries and dashboards, and the queries mainly read date ranges and a few columns. There is only one data engineer. Which method is the MOST cost-effective and has the LEAST operational overhead while meeting these requirements?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Create an Amazon EMR cluster, convert with a Spark job, and keep the cluster running so it can also be used for later conversions"
+   },
+   {
+    "label": "B",
+    "text": "Run an AWS Glue crawler to create a table, and the crawler automatically rewrites the S3 objects as Parquet"
+   },
+   {
+    "label": "C",
+    "text": "Use an Athena CTAS query to read the source table and store a new table converted to Parquet format in Amazon S3"
+   },
+   {
+    "label": "D",
+    "text": "Read the files one by one with pandas on a SageMaker notebook instance, save them as Parquet, upload them again, and keep the instance running after the conversion"
+   }
+  ],
+  "explanation": "An Athena CTAS query stores query results as a new table in a columnar format such as Parquet in one step, so the one-time conversion can be completed with SQL alone and without servers. When partitioning, a CTAS query has a limit of 100 partitions per query, so the work must be split and run with INSERT INTO. Keeping an EMR cluster running costs more and has a greater operational burden than a one-time job requires. A crawler only registers the schema in the catalog and does not convert the data files. Processing 1.5 TB with pandas on a single notebook has memory and time limits and requires a lot of manual work."
+ },
+ {
+  "number": 10,
+  "domain": "Machine Learning Implementation and Operations",
+  "prompt": "The ML team at a streaming service wants to automatically scale the number of instances up and down on a real-time endpoint whose traffic varies greatly between day and night. The endpoint has one production variant called Variant1 and uses ml.c5.xlarge instances. Traffic differs greatly, with hundreds of requests per second during the day and only a few per second at night. Cost reduction is needed, but response latency must also be maintained, and deleting and recreating the endpoint is not allowed because it would interrupt service. With limited operations staff, the team does not want to maintain a custom-built scheduler. The variant starts with 2 instances and must keep at least 1 instance even at night. The team wants to base scaling on the number of invocations per instance. Which two steps are required to configure auto scaling that meets these requirements? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Run a Lambda function every 5 minutes with Amazon EventBridge that creates a new endpoint configuration each time to change the instance count"
+   },
+   {
+    "label": "B",
+    "text": "Create an EC2 Auto Scaling group for each instance type directly and add the SageMaker endpoint instances to the group"
+   },
+   {
+    "label": "C",
+    "text": "Auto scaling can be used only with a serverless endpoint, so first change to a serverless endpoint"
+   },
+   {
+    "label": "D",
+    "text": "Register the variant as a scalable target of Application Auto Scaling by specifying the endpoint name and the variant name"
+   },
+   {
+    "label": "E",
+    "text": "Define a scaling policy such as target tracking and apply it to the registered scalable target so that the instance count is adjusted"
+   }
+  ],
+  "explanation": "The correct steps are registering the variant as a scalable target and defining and applying a scaling policy. The flow in the documentation is to register the model variant as a scalable target (the endpoint name and variant name are required), and then to define and apply a policy. Swapping endpoint configurations with Lambda creates a large operational burden because you build it yourself. An instance-based real-time endpoint cannot be converted to serverless, and there is no need to do so. Managed endpoint instances cannot be added to an EC2 Auto Scaling group."
+ },
+ {
+  "number": 11,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "The demand forecasting team at a retailer trains a model on 2 years of daily sales data to forecast next week's demand. The team randomly shuffled all rows and used 80% for training and 20% for validation. The validation error was very low, but after deployment the actual error increased significantly. There are 1,200 products, seasonality and promotion effects are pronounced, and the forecasts are used to decide order quantities every Friday. The model also uses lag features such as the previous week's sales, and the data has already been cleaned, so no additional collection is needed. There are no new products and only the existing 1,200 are handled, and the evaluation metric is WAPE. The team monitors the post-deployment error on a monthly basis. Orders are placed per product but only once a week. How should the validation set be constructed to estimate performance MOST realistically under production conditions?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Sample randomly stratified by day of the week, keep the current setup in which data from the same week is mixed between training and validation, and calculate the evaluation metric as mean absolute error"
+   },
+   {
+    "label": "B",
+    "text": "Increase the size of the validation set to 40% of the total and report the average error obtained by repeating the random split several times as the performance"
+   },
+   {
+    "label": "C",
+    "text": "Use only the dates with the highest sales volume as the validation set to confirm that the model performs well even in the worst case"
+   },
+   {
+    "label": "D",
+    "text": "Preserve the time order, train on an earlier period, and use the most recent period after it as the validation set so that the model predicts the future"
+   }
+  ],
+  "explanation": "A split that respects time order is the correct answer. After deployment the model always predicts the future beyond the training period, so validation should also use a period after the training period to be realistic. With a random split, values from adjacent dates are mixed into both sides and the model effectively sees future information, so the error comes out low. Stratifying by day of the week or repeating random splits has the same problem and only changes the size. Choosing only days with high sales biases the distribution and does not represent overall performance."
+ },
+ {
+  "number": 12,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "The demand forecasting team at a delivery platform wants to include an 'order time (0 to 23 hours)' feature in its model. The team uses a distance-based algorithm and a neural network, and if the hour is used as an integer, 23:00 and 0:00 become values that are very far apart, so the fact that they are adjacent times of day is not reflected. In addition to order time, the model uses numeric features such as day of the week, rainfall, and distance, and the training data is 8 million records. As the number of features increases, training time increases proportionally, and the current training time is already close to the limit of the overnight batch window. The encoding must be computed once in SageMaker Processing and applied in the same way to training and inference. The team does not use a separate trainable embedding layer. Which encoding preserves the cyclical nature of time BEST while adding the fewest columns?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "One-hot encode each of the 24 hour values, creating an independent binary column for each time slot, and feed them to the model"
+   },
+   {
+    "label": "B",
+    "text": "Standardize the hour to a mean of 0 and a standard deviation of 1 to reduce the range of values, and use it as is in the same single column"
+   },
+   {
+    "label": "C",
+    "text": "Transform the hour into two columns, sine and cosine, so that 23:00 and 0:00 are represented as close points on a circle"
+   },
+   {
+    "label": "D",
+    "text": "Divide the hour into only two categories, AM and PM, convert it into a single binary column, and discard the detailed time information"
+   }
+  ],
+  "explanation": "The sine and cosine transformation is the correct answer. It maps the hour to a point on a circle so that 23:00 and 0:00 are close, and only two columns are added. One-hot encoding increases the columns to 24 and loses the similarity of adjacent time slots. Standardization only changes the range of values, and the distance between 23 and 0 remains large. AM/PM binarization uses few columns but loses most of the detailed information, such as differences in demand by time slot."
+ },
+ {
+  "number": 13,
+  "domain": "Modeling",
+  "prompt": "A card company's fraud detection team trained a model in Amazon SageMaker. Evaluated on the test set with a threshold of 0.5, it shows accuracy of 99.6% and ROC AUC of 0.96. The fraud rate in the test set is 0.3%, and of the 1,200 actual fraudulent transactions, the model caught only 300. Management says that the accuracy is high so the model should be deployed, and wants to put the accuracy figure in the month-end report as is. The team, on the other hand, believes that the cost of missing fraud is high, and the operations team is concerned that more false positives will lead to more customer inquiries. The model is retrained once a month, and this evaluation result is an agenda item for the model approval meeting next week. The average loss when a single fraud is missed is much greater than the handling cost of one false positive. Which metrics should be checked together FIRST to judge model quality?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "The overall accuracy recalculated after increasing the size of the test set, and the value displayed to more decimal places"
+   },
+   {
+    "label": "B",
+    "text": "Recall (here 25%) and precision, and PR AUC, the area under the precision-recall curve"
+   },
+   {
+    "label": "C",
+    "text": "A learning curve that shows whether the loss on the training data decreased at every epoch"
+   },
+   {
+    "label": "D",
+    "text": "The specificity alone, the proportion of normal transactions correctly classified as normal"
+   }
+  ],
+  "explanation": "With imbalanced data in which positives are only 0.3%, accuracy comes out at nearly 99.7% even if every transaction is predicted as normal, so accuracy cannot reveal quality. Here recall is 300/1,200, or 25%, so 75% of fraud is being missed, which means recall and precision must be examined together with PR AUC, which is sensitive to the minority class. Increasing the test size does not remove the limitation of accuracy. A learning curve does not show generalization performance. Specificity is a metric for the majority normal class and cannot reveal the missed fraud."
+ },
+ {
+  "number": 14,
+  "domain": "Data Engineering",
+  "prompt": "A marketing analytics team trained the SageMaker built-in XGBoost algorithm on a CSV file exported from Athena (with a header row and the target column as the last column), specifying text/csv for the train channel. The results are meaningless and the validation metrics are abnormal. The training job uses the text/csv content type, the data is in the train prefix in Amazon S3, and the source of 30 million rows is re-exported every day by an Athena query. The training job definition and channel configuration are already approved and will not be changed. XGBoost training runs on a single ml.m5.2xlarge instance, and the validation channel is also stored in a separate prefix in the same way. The export query runs automatically every day in Athena. Which is the MOST appropriate way to resolve the problem with the MINIMUM change when regenerating the training data?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Leave the target column as the last column and add label_size=1 to the content type so that the last column is read as the label"
+   },
+   {
+    "label": "B",
+    "text": "The algorithm automatically skips the header row, so just change the channel name to validation and train again"
+   },
+   {
+    "label": "C",
+    "text": "Change the content type to application/json, leave the CSV file as is, and let the algorithm infer the format"
+   },
+   {
+    "label": "D",
+    "text": "Remove the header row, move the target column to be the first column, resave the CSV, and specify it as text/csv"
+   }
+  ],
+  "explanation": "For CSV training input to SageMaker built-in algorithms, there must be no header row and the target variable must be in the first column, so deleting the header and moving the target column to the front is the minimum change. The setting that reads the last column as the label differs from this rule, and label_size is a value that specifies the number of label columns. The header is not skipped automatically, and the training channel name must be train. Simply changing the content type to JSON does not cause a CSV file to be interpreted."
+ },
+ {
+  "number": 15,
+  "domain": "Modeling",
+  "prompt": "For a text classification neural network that a review analysis team trains in Amazon SageMaker, the training loss keeps decreasing through epoch 30, but the validation loss starts to increase after epoch 9. The model is trained on 50,000 English reviews, and the labeling budget is exhausted, so no more data can be collected. The evaluation metrics are validation accuracy and validation loss, and because changing the architecture would deviate from the already approved design, the number of hidden layers and the number of units per layer are left unchanged. Training runs on a single ml.p3.2xlarge instance and takes several minutes per epoch, so reducing unnecessary epochs also reduces cost. There is no budget to run an additional hyperparameter search this week, and the team must change one or two things in the current settings and retrain. The validation set has 5,000 records, and its class distribution is the same as that of the training set. Which actions appropriately improve generalization performance? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Merge the validation set into the training set and stop monitoring the validation loss to increase the training data"
+   },
+   {
+    "label": "B",
+    "text": "Increase the number of epochs to 100 and continue training while waiting for the validation loss to come back down"
+   },
+   {
+    "label": "C",
+    "text": "Apply early stopping, which stops training when the validation loss does not improve, and use the model from around epoch 9"
+   },
+   {
+    "label": "D",
+    "text": "Apply dropout to the outputs of the existing hidden layers and add weight decay (L2 regularization) to suppress overfitting"
+   },
+   {
+    "label": "E",
+    "text": "Greatly increase the number of hidden layers and units to enlarge model capacity, which should also bring the validation loss down"
+   }
+  ],
+  "explanation": "The point at which the validation loss starts to rise is a sign of overfitting, so using early stopping to take the model at the point of best validation performance, and using dropout and L2 regularization to reduce how much the model memorizes the training data, improves generalization while keeping the number of layers and units the same. Increasing capacity makes overfitting worse, and increasing epochs widens the gap. If the validation set is merged into training and monitoring is cut off, there is no way to detect overfitting, and it also becomes impossible to estimate generalization performance."
+ },
+ {
+  "number": 16,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "A clothing store team builds a return prediction model. The 'size' column has six values, XS, S, M, L, XL, and XXL, and the size order is meaningful. There are 250,000 samples and the data has already been cleaned. The model is from the regression family, and the team plans to keep using it in order to obtain easily interpretable coefficients. Several other categorical columns have already been one-hot encoded, bringing the number of columns above 400, and adding more would hit the memory limit of the training pipeline. The size values are already normalized with no typos. The model coefficient is used to report how much the return probability changes when the size goes up by one step. The handling of the size column must be changeable in a single line in a notebook, and no additional packages will be used. What is the SIMPLEST way to represent the size in a single column while preserving the order information?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Apply ordinal encoding that maps the sizes to integers in size order, from XS=1 to XXL=6, and represent them in a single column"
+   },
+   {
+    "label": "B",
+    "text": "Apply one-hot encoding that creates a binary column for each of the six values, completely removing any assumption about order, and estimate a separate regression coefficient for each size value"
+   },
+   {
+    "label": "C",
+    "text": "Apply label encoding that assigns integers after sorting alphabetically, and leave it to the model to learn the order on its own"
+   },
+   {
+    "label": "D",
+    "text": "Use the number of characters in the size string as a new numeric column, converting so that one-character values and values of two or more characters are distinguished"
+   }
+  ],
+  "explanation": "Ordinal encoding that maps integers in size order is the correct answer. It preserves the size order in a single column, so it respects the constraint that the number of columns must not increase, and it is easy to interpret with a single regression coefficient. However, it is a simplification that assumes the gaps between adjacent sizes are equal. One-hot encoding increases the columns to six and loses the order information. Label encoding in alphabetical order creates an order that differs from the actual sizes, such as L, M, S, XL, and gives the wrong meaning. The number of characters cannot distinguish M from S and is unrelated to size."
+ },
+ {
+  "number": 17,
+  "domain": "Modeling",
+  "prompt": "An online shopping company forecasts daily demand for about 6,000 products up to 28 days ahead. The products show similar seasonal patterns, and new products are added every week with short histories. Whether there is a promotion (0/1) is known in advance for the future period, and product category information is also available. The forecasts are delivered to the inventory system every morning, and only two people manage the models, so they cannot train, deploy, and monitor a separate model for each product. The company already uses Amazon SageMaker and the data is in Amazon S3. Forecast accuracy is evaluated with WAPE, and new products have less than 2 weeks of history. The forecasts must arrive in Amazon S3 by 6 AM every morning. It is acceptable if the forecast for a new product's first 4 weeks is not very different from the category average. Which configuration MOST appropriately meets these requirements?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Train a separate ARIMA model for each product and withhold forecasts for new products until enough history accumulates, with the number of models growing as the number of products grows"
+   },
+   {
+    "label": "B",
+    "text": "Train all of the time series in a single DeepAR model, and provide the category as cat and the promotion as dynamic_feat"
+   },
+   {
+    "label": "C",
+    "text": "Obtain anomaly scores for the demand time series with Random Cut Forest and use the average score as the demand estimate"
+   },
+   {
+    "label": "D",
+    "text": "Feed day of the week and product ID one-hot encoded into a Linear Learner regression to directly predict the value 28 days ahead"
+   }
+  ],
+  "explanation": "DeepAR trains many related time series together in a single RNN model and can also be applied to similar new time series, which is advantageous for new products with short histories, and the documentation explains that with hundreds or more related time series it is better than ARIMA or ETS. For cat you must provide the categories seen during training, and for dynamic_feat you must provide the promotion values, including those for the length of the forecast horizon. ARIMA forces you to manage a separate model for each product. Random Cut Forest is for anomaly detection. Linear Learner does not model time series structure."
+ },
+ {
+  "number": 18,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "A data scientist on a financial data team standardized the numeric features of 300,000 customer records and replaced missing values with the mean, and then split the result 80:20 into a training set and a test set. The test performance was high, but the performance on newly arriving data was low. Preprocessing and training are already running in production as a monthly batch pipeline consisting of a SageMaker Processing step and a training job, so changes to the structure must be small. The model review meeting is in two days, so a simple fix is needed. The preprocessing code is in one place, the Processing step, and the training step reads its output. New data arrives all at once at the beginning of the month. The evaluation metric is AUC, and the comparison target is the model deployed last month. What should be done to improve the reliability of the evaluation while minimizing changes to the pipeline?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Calculate the mean and standard deviation separately on the test set and standardize only the test set using its own reference so that the distributions match each other"
+   },
+   {
+    "label": "B",
+    "text": "Remove the standardization step entirely and use the raw values as is, eliminating all preprocessing steps from the pipeline"
+   },
+   {
+    "label": "C",
+    "text": "Keep the statistics calculated from the entire dataset and change only the split ratio to 70:30 to make the test set larger"
+   },
+   {
+    "label": "D",
+    "text": "First split into training and test sets, calculate the mean and standard deviation only on the training set, and apply the transformation to both sets with the same values"
+   }
+  ],
+  "explanation": "The correct answer is to split first, calculate the mean, standard deviation, and imputation values only on the training set, and apply the same values to the test set. In the existing order, information from the test set is mixed into the statistics, so the evaluation turns out optimistic. If the test set is standardized with its own statistics, the reference differs from the one used during training, and the model receives a transformation it has never seen. Removing all preprocessing can degrade training quality because of differences in scale. Changing only the split ratio leaves the leakage at the point where the statistics are calculated."
+ },
+ {
+  "number": 19,
+  "domain": "Machine Learning Implementation and Operations",
+  "prompt": "A medical AI startup runs Amazon SageMaker training jobs on hospital data. The code in the training container (including open-source libraries) must not be able to send data externally, and for this the container must not be able to make outbound calls to any service, including S3, let alone the internet. SageMaker must handle downloading the training data and uploading the results on its behalf. The data is encrypted in Amazon S3 with AWS KMS, and in the security review, training code that uses untrusted third-party packages was pointed out as a risk. Training runs once a month, and the security team requires a technical control that does not rely on code review. The training instance is an ml.p3.2xlarge, and the pretrained weights are included in the container image. SageMaker uploads the resulting artifacts to Amazon S3. Which configuration is MOST appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Place the training job in a VPC, block only the internet in the outbound rules of the security group, and allow the S3 gateway endpoint"
+   },
+   {
+    "label": "B",
+    "text": "Set EnableNetworkIsolation to True when creating the training job to block all outbound network calls from the container"
+   },
+   {
+    "label": "C",
+    "text": "Remove S3 access permissions from the execution role so that the container cannot access S3, and download the data from a user's PC"
+   },
+   {
+    "label": "D",
+    "text": "Only perform strict code reviews to remove all network calls of the requests library from the training container code, and obtain security team approval before installing third-party packages"
+   }
+  ],
+  "explanation": "The network isolation setting is the correct answer. When it is enabled, the training and inference containers cannot make outbound calls to any service, including S3, and no credentials are provided; the downloading and uploading of data is handled by SageMaker outside the container by using the execution role. If an S3 endpoint is allowed in the VPC, the container can send data to S3, which violates the requirement. If the S3 permissions are removed from the execution role, SageMaker's downloads and uploads also fail. Code review alone cannot technically block calls from external libraries."
+ },
+ {
+  "number": 20,
+  "domain": "Machine Learning Implementation and Operations",
+  "prompt": "The ML team at a fintech company wants to deploy a newly trained model as a real-time endpoint. The latency target is a p95 of 100 ms or less, and there are several candidate instance types available. The team wants to use load testing to determine which instance type and count give the best performance for the cost, but wants to minimize the operational burden of building its own benchmark scripts. The model is already registered in Amazon SageMaker, and real-time traffic is concentrated in the morning hours of the day. The decision must be made within two days before deployment, and no one on the team has operated load testing tools before. The candidates are three types, ml.c5.xlarge, ml.m5.2xlarge, and ml.g4dn.xlarge, and the load tests are performed in a development account rather than the production account. The final choice will be based on hourly cost. What is the MOST appropriate method?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Create an endpoint for each candidate instance, run a self-built load generator with Lambda, manually aggregate the metrics, compare them in a spreadsheet, and select the configuration with the lowest latency"
+   },
+   {
+    "label": "B",
+    "text": "Register the model with SageMaker Inference Recommender, run load test jobs for each instance type, and compare the performance and cost metrics"
+   },
+   {
+    "label": "C",
+    "text": "Select the largest GPU instance, check whether it meets the latency target, and evaluate cost after deployment by looking at the bill"
+   },
+   {
+    "label": "D",
+    "text": "Use the recommendation feature on the Savings Plans purchase screen to get recommended instance types and counts that match the model's characteristics, and apply them"
+   }
+  ],
+  "explanation": "Inference Recommender is the correct answer. You register the model and it automatically runs load tests for each instance type and compares performance and resource utilization metrics, and you pay only for the instances used while the job is running. A self-built load generator creates a large operational burden for scripting and aggregation. Choosing the largest GPU results in using excessive specifications without any comparison of performance against cost. Savings Plans is a commitment discount product and is not an instance recommendation tool based on model performance."
+ },
+ {
+  "number": 21,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "You are reviewing the preprocessing notebooks for a credit card company's credit scoring model. The goal is to predict, at the time of loan approval, whether a delinquency will occur within 12 months after approval. Three data scientists worked in separate notebooks, and the evaluation results are reported to the risk management committee, which decides whether to approve the model. The notebooks contain all 120 columns and many preprocessing operations, and there is only one day for the review. The evaluation is reported as the AUC on a holdout test set, and whether an operation is leakage is judged by whether that information would be known at prediction time. The data is 400,000 loans from the last 5 years, and the notebooks are version controlled with Git so the change history can be submitted to the committee. Select the two operations that cause data leakage that distorts the model evaluation optimistically and that should be fixed first. (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Split into a training set and a test set by using a stratified split that preserves the class ratio"
+   },
+   {
+    "label": "B",
+    "text": "Fill the missing values with the mean of the entire dataset and then split into a training set and a test set"
+   },
+   {
+    "label": "C",
+    "text": "Include as a model input feature a column that aggregates the number of delinquencies during the 12 months after approval"
+   },
+   {
+    "label": "D",
+    "text": "Calculate an average balance feature by using only the transaction history from the 6 months before the time of approval and use it as input"
+   },
+   {
+    "label": "E",
+    "text": "Standardize the test set in the same way by using the mean and standard deviation calculated on the training set"
+   }
+  ],
+  "explanation": "Splitting after filling with a mean calculated from the entire dataset, and putting the post-approval delinquency count column into the features, both cause leakage. In the former, information from the test set is mixed into the imputation value, and in the latter, information from the period in which the correct answer is determined is used as a feature, so it cannot be obtained at production time. Applying statistics from the training set to the test set is the correct procedure. Using only transactions before approval is information that is known at prediction time. A stratified split only preserves the class ratio."
+ },
+ {
+  "number": 22,
+  "domain": "Machine Learning Implementation and Operations",
+  "prompt": "A telecom marketing data team calculates scores for 50 million customer records at 2 AM every day and stores them in Amazon S3. The marketing team uses the results the next morning, and real-time responses for each record are not required. No compute cost should be incurred once the score calculation is finished, and the team wants the input records and the predictions in the same output. The input is organized by date in Amazon S3, intermediate processing results are not needed, and a day that fails may be rerun the next day. The model is already registered in Amazon SageMaker, and there is only one operator. The input is about 30 GB and the model is the SageMaker built-in XGBoost. After the job completes, a downstream AWS Glue job reads the results, and failure notifications are received through Amazon CloudWatch alarms. It is sufficient to store scores to four decimal places. Which approach is MOST appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Run a real-time endpoint continuously, and have a client on Amazon EC2 call it sequentially for 50 million records and write the responses directly to Amazon S3"
+   },
+   {
+    "label": "B",
+    "text": "Create a serverless inference endpoint, raise the concurrency to the maximum, call it in parallel for 50 million records, and collect the responses"
+   },
+   {
+    "label": "C",
+    "text": "Run a SageMaker batch transform job on a schedule and use the setting that joins the input records with the prediction results"
+   },
+   {
+    "label": "D",
+    "text": "Load multiple copies of the same model onto a multi-model endpoint and configure each model to process a share of the data"
+   }
+  ],
+  "explanation": "Batch transform is the correct answer. It is used for large-scale inference that does not need a persistent endpoint, the instances shut down when the job ends so cost stops, and it has a feature that joins and outputs the input records with the inference results. A real-time endpoint incurs cost throughout the day and requires separate calling code. Serverless is not suited to a batch of 50 million records because of concurrency and per-invocation limits. Loading multiple copies of the same model onto a multi-model endpoint has a different purpose and also does not distribute the processing."
+ },
+ {
+  "number": 23,
+  "domain": "Modeling",
+  "prompt": "A consumer goods company's demand planning team validated a model by randomly splitting 36 months of monthly data 80 to 20, and the validation RMSE was low, but the actual error increased significantly after deployment. The model uses the previous month's sales and a moving average as features and is used to forecast demand for the next 3 months, and the data has annual seasonality and a gentle upward trend. The validation results will be used as material for approving capital investment, so a reliable error estimate is needed. The data covers only 36 months, so the period available for training is also limited. There are two candidate models, and errors are compared with RMSE. The team prefers a method that is simple to implement, but the honesty of the validation takes priority. The upward trend and seasonality are both reflected in the features. Which validation method is MOST appropriate for estimating performance under the same conditions as the deployment environment?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Repeat the same random split 10 times and average the validation RMSE to reduce the effect of chance in the split"
+   },
+   {
+    "label": "B",
+    "text": "Perform stratified k-fold by month so that all months are evenly included in each fold, and report the average RMSE across folds"
+   },
+   {
+    "label": "C",
+    "text": "Use walk-forward (expanding window) cross-validation that preserves time order, always training on the past and evaluating on the following period"
+   },
+   {
+    "label": "D",
+    "text": "Increase the validation ratio to 50% to reduce the effect of training data bias and evaluate only once"
+   }
+  ],
+  "explanation": "In time series, a random split mixes information from future time points into training, and because of lag features such as the previous month's value, validation samples are directly connected to training samples, so performance is overestimated. Walk-forward validation, which preserves time order, always trains on the past and evaluates the period after it, reproducing the deployment conditions. Repeating the random split and stratified k-fold by month both fail to remove the leakage of future information. Increasing the validation ratio leaves the violation of time order unchanged."
+ },
+ {
+  "number": 24,
+  "domain": "Modeling",
+  "prompt": "A computer vision team optimizes an image classification CNN with SageMaker automatic model tuning. Each training job emits the validation accuracy as a metric at every epoch, and a single job takes several hours on a GPU. The team wants to stop configurations with poor intermediate results early and reallocate those resources to promising configurations while using many parallel training jobs. The tuning budget is 200 training jobs, and up to 20 can run at the same time. The hyperparameters being tuned are the learning rate (continuous), the batch size, and the dropout rate. The team does not use Spot training and trains on On-Demand GPU instances, and it emits the validation accuracy to Amazon CloudWatch at every epoch. The tuning must be completed within this quarter. Which tuning strategy MOST appropriately meets these requirements?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Select the Hyperband strategy and leave TrainingJobEarlyStoppingType set to OFF to use its internal early stopping feature"
+   },
+   {
+    "label": "B",
+    "text": "Select the grid search strategy, specify the learning rate range as a continuous interval, try all combinations, and then compare the final accuracy of all configurations based on the same number of epochs"
+   },
+   {
+    "label": "C",
+    "text": "Select the random search strategy, run all training jobs to completion, and compare only the final results"
+   },
+   {
+    "label": "D",
+    "text": "Select the Bayesian optimization strategy and limit the number of parallel training jobs to 1 so that previous results are reflected each time"
+   }
+  ],
+  "explanation": "Hyperband is a multi-fidelity strategy that uses both intermediate and final training results to reallocate epochs to promising configurations, automatically stops poorly performing configurations, and scales to many parallel jobs; when using its internal early stopping, TrainingJobEarlyStoppingType is left OFF. Grid search supports only categorical values, so it cannot be used for a continuous learning rate range. Random search does not reallocate resources based on intermediate results. Limiting parallel jobs to 1 is the opposite of the requirement to use many parallel jobs."
+ },
+ {
+  "number": 25,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "The rate-setting team at a health insurance company predicts claim risk using the policyholder's 'number of hospital visits in the last year' column. 18% of the 400,000 people have no value in this column. Analysis shows that the customers with missing values are those who did not submit health checkup history, and the fact of being missing is itself correlated with claim risk. The claim risk score is used to calculate insurance premiums, so approaches that arbitrarily exclude some customers or discard information are not acceptable. Missing values occur at the same rate in production. The model is logistic regression, which cannot handle missing values on its own, and because it is used for premium calculation, the basis for each customer's score must be explainable in an audit. Columns with imputed values must be indicated separately in the results documentation. Which method handles the missing values with the LEAST loss of information?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Delete all of the 18% of rows with missing values, and train and even evaluate the model with only the customers whose values are filled in"
+   },
+   {
+    "label": "B",
+    "text": "Fill the missing values with 0 and do not create an indicator column, treating them the same as customers who actually had 0 visits, and train"
+   },
+   {
+    "label": "C",
+    "text": "Impute with the median, and also add a binary indicator column showing whether the value was missing so that the model can use the missingness pattern"
+   },
+   {
+    "label": "D",
+    "text": "Exclude this column entirely from the features so that no handling of missing values is needed, and train the model with only the remaining columns"
+   }
+  ],
+  "explanation": "Using an imputed value together with a missingness indicator column is the correct answer. Because the missingness itself is information, you must fill in the value while also keeping the fact that it was missing in a separate column, so that no information is lost. Deleting the rows loses 18% of the customers and their risk signal altogether, and the distribution also differs from the production data. If you only fill with 0 and do not create an indicator column, it cannot be distinguished from actual 0 visits. Excluding the column discards all of the predictive information in the missingness pattern."
+ },
+ {
+  "number": 26,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "A data science team at a telecom company is building a subscriber churn prediction model. The training data has a 'number of cancellation consultation calls' column, and because this value is an item recorded by the agent after the customer applies for cancellation, it is filled in only after cancellation. The validation accuracy is very high at 99%, but performance is expected to drop significantly in real operation. This score is used by the marketing team every Monday to select recipients of churn prevention coupons, and the training data is 400,000 subscribers over the past 2 years. The model structure has already been approved and deployment is scheduled for next week. In addition to the cancellation consultation column, there is plenty of information available at the time of subscription, such as plan, tenure, and monthly usage. The marketing team sends coupons only to the top 5% with the highest scores. What action should the data analyst take FIRST?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Remove the post-cancellation record column, which cannot be known at prediction time, from the features and rebuild the features using only information available at prediction time"
+   },
+   {
+    "label": "B",
+    "text": "Replace the values in that column with the overall mean to reduce the skew in the distribution, and then retrain the model with the same feature set"
+   },
+   {
+    "label": "C",
+    "text": "Double the amount of training data to prevent overfitting and evaluate by increasing only the number of cross-validation folds while keeping the same column included"
+   },
+   {
+    "label": "D",
+    "text": "Give the column a large L2 regularization weight and adjust hyperparameters so that the model depends less on this column, and then train"
+   }
+  ],
+  "explanation": "Removing the post-cancellation record column that does not exist at prediction time is the correct answer. This column is a value generated after the correct answer (churn) has been determined, so it is target leakage, and it explains the gap between the 99% validation accuracy and the drop in production performance. Even if it is replaced with the mean, the problem that the source of the values is post-cancellation remains and information is still present. Increasing the amount of data or the number of folds will keep inflating the validation score as long as the leaked column remains. Regularization only reduces weights and does not eliminate the column, so the leakage remains."
+ },
+ {
+  "number": 27,
+  "domain": "Modeling",
+  "prompt": "An online retail marketing team wants to segment 200,000 customers by using 8 numeric features such as purchase frequency and amount. There are no labels, and the appropriate number of clusters is unknown. The team trained SageMaker K-Means for k=2 to 12 and recorded the within-cluster sum of squared distances for each k. The results will be used to design target groups for the next quarter's campaign, and the team has no statistics experts. Given the campaign budget, the number of target groups that can be managed is about 10 at most, and the number of clusters must allow marketers to describe the characteristics of each cluster. The customer features are already standardized and there are no missing values. Training takes a few minutes per k, and the final clustering model is trained one more time with the chosen k and used for the quarterly campaign. The point where the curve bends may not be clear, so the team wants to document its decision criteria. Which method MOST appropriately determines the number of clusters?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Select k=12, which gives the smallest within-cluster sum of squared distances, to split the clusters as finely as possible, and have people interpret each cluster later"
+   },
+   {
+    "label": "B",
+    "text": "Identify the elbow point, where the decrease in within-cluster sum of squared distances slows sharply as k increases, as a candidate, and finalize it based on how interpretable the clusters are"
+   },
+   {
+    "label": "C",
+    "text": "Compare the cluster numbers with the purchase label to choose the k with the highest validation accuracy"
+   },
+   {
+    "label": "D",
+    "text": "Fix k at about 447, the square root of the number of data rows, to determine the number of clusters"
+   }
+  ],
+  "explanation": "K-Means is an unsupervised algorithm that groups similar observations without labels, so the number of clusters cannot be compared against a correct answer. Because the within-cluster sum of squared distances keeps decreasing as k increases, the common approach is to take the elbow point, where the decrease slows sharply, as a candidate and finalize it based on business interpretability. Looking only at the minimum sum of squared distances always favors larger k, which leads to meaningless segmentation. An accuracy criterion cannot be calculated because there are no labels. Fixing k at the square root of the number of rows has no basis and would split 200,000 customers into 447 clusters."
+ },
+ {
+  "number": 28,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "The marketing analytics team at a subscription service company performs K-means clustering for customer segmentation. The features are annual purchase amount (0 to 5,000,000 KRW), number of visits (0 to 30), and app rating (1 to 5). The results show that the clusters are effectively divided by purchase amount alone. None of the three features has missing values, outliers have already been handled, and the marketing team wants to compare the profile of each cluster and design tailored benefits that reflect all three features. There are 800,000 customers, and the number of clusters k=6 has already been agreed upon. The clustering results will be used in the next quarter's CRM campaign, so it must be possible to interpret the average profile of each cluster in the original units. The team has agreed not to change the K-means algorithm itself. The scaling method must be reused with the same values when scoring new customers after training. Which preprocessing is MOST appropriate to solve this problem?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Keep only the purchase amount column and remove the other features, simplifying the data so that the basis for the clusters becomes a single clear criterion"
+   },
+   {
+    "label": "B",
+    "text": "K-means is an algorithm that is not affected by the scale of features, so treat the current results as normal and skip preprocessing"
+   },
+   {
+    "label": "C",
+    "text": "Multiply the number of visits and the app rating by 100,000 so that they become similar in magnitude to the purchase amount, using arbitrary weights"
+   },
+   {
+    "label": "D",
+    "text": "Standardize all numeric features to a mean of 0 and a standard deviation of 1 so that each feature contributes to the distance calculation with a similar weight"
+   }
+  ],
+  "explanation": "Standardization is the correct answer. K-means uses Euclidean distance, so the purchase amount, with its large range of values, dominates the distance, and the other features hardly contribute to cluster formation. If you keep only the purchase amount, you deliberately discard the information in the other features. The claim that K-means is not affected by scale is the opposite of the facts. Multiplying by arbitrary constants is a weighting without basis, and because the units differ by feature, it is hard to reproduce."
+ },
+ {
+  "number": 29,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "A manufacturer's sensor analytics team collects about 600 correlated sensor values per machine, and the training data is 40 million rows. To reduce noise and shorten training time, the team wants to reduce the dimensionality by using the SageMaker built-in PCA algorithm. Each row is the measurement of one machine at a single point in time, and this job is used as an input preprocessing step for a later anomaly detection model. All of the sensor values are numeric and missing values have already been interpolated, and the preprocessing job must finish within two hours every night. Training runs on several ml.m5.4xlarge instances, and the number of dimensions to keep is set to the number at which the explained variance reaches 95% or more. The PCA model is saved so that the same transformation can be applied at inference time. Which PCA mode is MOST appropriate for this data, which has very many observations and very many features?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Use randomized mode, which uses an approximation algorithm to efficiently handle data with many observations and many features"
+   },
+   {
+    "label": "B",
+    "text": "Use regular mode, because there is no difference between modes even for large-scale data, and perform the exact decomposition as is"
+   },
+   {
+    "label": "C",
+    "text": "PCA is a supervised learning algorithm, so create a label column and run it in classification mode to perform supervised dimensionality reduction"
+   },
+   {
+    "label": "D",
+    "text": "All features must be one-hot encoded before dimensionality reduction, so run it in regular mode after the encoding"
+   }
+  ],
+  "explanation": "Randomized mode is the correct answer. The documentation distinguishes between the two: regular is for sparse data with a moderate number of observations and features, and randomized is for data with a large number of both observations and features, using an approximation algorithm. 40 million rows and 600 features fall into the latter case. Regular mode does not suit this scale, and the claim that there is no difference between modes is also wrong. PCA is an unsupervised algorithm, so no labels are needed. The sensor values are already numeric, so one-hot encoding is not needed."
+ },
+ {
+  "number": 30,
+  "domain": "Machine Learning Implementation and Operations",
+  "prompt": "A financial MLOps team builds a retraining pipeline with SageMaker Pipelines. If the accuracy in the evaluation step is below 0.90, the model must not be registered in the registry, and a registered model must become a production deployment target only after a reviewer examines and approves it. The pipeline runs automatically every Monday on new data, and the approval history of the models must be kept for auditing. The team has limited the approvers to two people and does not want to introduce a new CI/CD tool. The evaluation report is stored in Amazon S3 as JSON, and the evaluation metrics are recorded together in the model package. The service operations team wants the deployment pipeline to pick up only approved versions. The approvers want to check the evaluation metrics and the model explainability material on a single screen. Select the two configurations that meet these requirements. (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Register the model as a new version in a model group in the Model Registry with the approval status left as pending manual approval, and deploy after approval"
+   },
+   {
+    "label": "B",
+    "text": "Turn on pipeline step caching to reuse the results of the previous run so that evaluation is not repeated, and use it in place of the criteria check"
+   },
+   {
+    "label": "C",
+    "text": "Store all model versions in Amazon S3 in folders by date and have operators verbally decide which model to deploy by looking at the folder names"
+   },
+   {
+    "label": "D",
+    "text": "Compare the evaluation result property with a threshold in a condition step, and connect it so that the model registration step runs only when it passes"
+   },
+   {
+    "label": "E",
+    "text": "Add code in the training step that fails the job if accuracy is low, and automatically approve all registered models regardless of the results"
+   }
+  ],
+  "explanation": "The correct configurations are comparing the evaluation metric with a threshold in a condition step, and registering the model in the Model Registry in a pending manual approval state. The condition step prevents the subsequent registration step from running if the criterion is not met, and the registry manages model versions and approval status so that only approved models become deployment targets. Code that fails in the training step and automatic approval of everything violate the approval review requirement. Step caching only reduces repeated runs and is not a quality criteria check. S3 folders and verbal decisions make tracking and governance difficult."
+ },
+ {
+  "number": 31,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "A marketing analytics team calculated the Pearson correlation coefficient between advertising spend and sales and got 0.02, almost zero, so one analyst proposed excluding the advertising spend column from the model. However, the scatter plot clearly shows an inverted-U shape, in which sales are highest when advertising spend is in the middle range and low at both extremes. The data is monthly records from 3,000 stores, and missing values and outliers have already been cleaned up. The results of this analysis are used for allocating the marketing budget, so the variable selection decision directly affects the accuracy of sales forecasts. The model is a gradient boosting tree that predicts monthly sales per store, and in addition to advertising spend, there are 20 features such as store area, trade area, and season. If the advertising spend column is excluded, the budget simulation feature cannot be used. Which conclusion is MOST appropriate from a data interpretation perspective?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "A correlation coefficient near 0 means that the two variables are independent, so treat the shape of the scatter plot as chance, exclude the advertising spend column, and retrain the model with only the remaining features"
+   },
+   {
+    "label": "B",
+    "text": "Standardizing the advertising spend raises the correlation coefficient, so standardize it and keep this column only if the correlation coefficient becomes sufficiently large"
+   },
+   {
+    "label": "C",
+    "text": "The shape of the scatter plot is due to outliers, so delete the values at both extremes, recalculate the correlation coefficient, and decide whether to keep it"
+   },
+   {
+    "label": "D",
+    "text": "The Pearson correlation coefficient measures only linear relationships, so a nonlinear relationship may exist; keep the column and use a nonlinear model or polynomial features"
+   }
+  ],
+  "explanation": "The Pearson correlation coefficient indicates only the strength of a linear relationship, so for a symmetric nonlinear relationship such as an inverted U, it can be close to 0. Therefore the column should be kept, and the relationship should be captured with a nonlinear model or polynomial features. A correlation of 0 does not mean independence. Standardization does not change the Pearson correlation coefficient. Deleting both extremes discards the information in the range where the relationship is clearest and amounts to manipulating the data to fit a conclusion."
+ },
+ {
+  "number": 32,
+  "domain": "Modeling",
+  "prompt": "The confusion matrix of a medical image screening model being introduced by a hospital's radiology department is TP 160, FP 40, FN 240, and TN 9,560. The medical staff consider missing a patient to be a much bigger problem than a false alarm, and a recall of 40% is unacceptable. Validation shows that the model's predicted probabilities are reasonably calibrated for whether a case is positive, and inference is provided through a real-time endpoint. Retraining would require more labeled images, which cannot be obtained this quarter. The threshold can be changed in the setting of the application that receives the call results, and the radiologists personally recheck every image flagged as positive. There are about 500 exams per day. Which action is MOST appropriate to increase recall without retraining the model, even if the precision of 80% is partly sacrificed?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Raise the probability threshold for classifying a case as positive above 0.5 to make positive classification stricter, and also check whether the number of false alarms decreases"
+   },
+   {
+    "label": "B",
+    "text": "Lower the probability threshold for classifying a case as positive below 0.5, and check the balance between recall and precision with the validation data"
+   },
+   {
+    "label": "C",
+    "text": "Change the evaluation metric to accuracy and select the threshold at which accuracy is highest"
+   },
+   {
+    "label": "D",
+    "text": "Add a post-processing rule that calibrates only the negative predictions in order to increase the number of TN"
+   }
+  ],
+  "explanation": "Precision is 160/(160+40)=0.8 and recall is 160/(160+240)=0.4. Lowering the threshold classifies more samples as positive, so FN decreases and recall rises, at the cost of increased FP and lower precision; this matches the requirement to prioritize recall without retraining, and the balance is checked with validation data. Raising the threshold lowers recall further. An accuracy criterion is pulled toward the majority class and does not reduce missed patients. Calibration that increases TN has nothing to do with missed patients."
+ },
+ {
+  "number": 33,
+  "domain": "Machine Learning Implementation and Operations",
+  "prompt": "A video analysis model at a media analytics company accepts videos of up to 600 MB per request and takes 10 to 20 minutes to process each one. Requests arrive only during business hours and not at all at night. Customer requests arrive with video files, several dozen at a time during business hours, and the results can be received a few minutes later or delivered through a separate notification. The model runs on one type of GPU instance, and there are only two operations staff. Result notifications are sent through Amazon SNS, and failed requests may be retried. Customers upload videos directly to Amazon S3, and the model container is already prepared to be compatible with SageMaker. The result files from one request are stored under a request ID prefix in Amazon S3. Which deployment method has the LEAST operational overhead while ensuring that no instance cost is incurred during idle time?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Run a real-time endpoint 24 hours a day, include the video directly in the request body and wait for the response synchronously, and extend the connection timeout limit in case processing takes longer"
+   },
+   {
+    "label": "B",
+    "text": "Create a serverless inference endpoint, set the memory to the maximum, and send the video file directly in the request body"
+   },
+   {
+    "label": "C",
+    "text": "Create a SageMaker asynchronous inference endpoint and configure auto scaling to reduce the instance count to 0 when there are no requests"
+   },
+   {
+    "label": "D",
+    "text": "Put API Gateway in front of a real-time endpoint, split the video into pieces, divide it into multiple requests, and call them synchronously"
+   }
+  ],
+  "explanation": "An asynchronous inference endpoint with scaling in to 0 instances is the correct answer. Asynchronous inference queues requests through Amazon S3 for large payloads (up to 1 GB) and long processing times (up to 1 hour), and it saves cost by scaling in to 0 instances when there are no requests. Running a real-time endpoint continuously incurs cost even at night. Serverless has no idle cost, but 600 MB videos and 10 to 20 minutes of processing do not match its intended use. Splitting the video and calling synchronously adds splitting and reassembly logic and more operational burden."
+ },
+ {
+  "number": 34,
+  "domain": "Modeling",
+  "prompt": "A generative AI research team wants to train a transformer with about 13 billion parameters in Amazon SageMaker. The model does not fit into the memory of a single GPU, so with data parallel training an out-of-memory error occurs at the start. The training script is already written based on PyTorch FSDP, and the team wants to modify it as little as possible. The training environment is several ml.p4d.24xlarge instances. Given the research schedule, there is no time to rewrite the script with a new framework, and because one training run takes several days, GPU utilization is also important. Training uses 4 ml.p4d.24xlarge instances and reads data directly from Amazon S3. The team wants to use the training containers provided by SageMaker as is. Which approach MOST appropriately meets these requirements?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Split the model across multiple GPUs by using the sharded data parallelism and tensor parallelism features of the SageMaker model parallelism library (SMP v2)"
+   },
+   {
+    "label": "B",
+    "text": "Increase only the number of GPUs with the data parallelism library so that the batch is split across GPUs for processing"
+   },
+   {
+    "label": "C",
+    "text": "Increase the number of training instances and raise the overall batch size to increase throughput while keeping the configuration in which each instance holds an identical full copy of the model"
+   },
+   {
+    "label": "D",
+    "text": "Change the input mode to Pipe to reduce the memory used for loading the training data"
+   }
+  ],
+  "explanation": "The model parallelism library is for splitting a large model that is hard to train because of the memory of a single GPU across multiple GPUs and nodes, and SMP v2 is designed to align with the PyTorch FSDP API so FSDP scripts can be brought over with minimal modification, and it provides hybrid sharded data parallelism and tensor parallelism. Data parallelism that only increases the number of GPUs does not split the model, so the single-GPU memory limit remains. The configuration that keeps replicas has the same limit, and Pipe mode only affects loading of input data and has nothing to do with model memory."
+ },
+ {
+  "number": 35,
+  "domain": "Machine Learning Implementation and Operations",
+  "prompt": "A SaaS company provides XGBoost demand forecasting models trained separately for each of 600 customers. All of the models use the same framework and container, and most models are invoked only a few times a day. When a new customer is added, the company wants to just add the model file without creating an endpoint. All customer models are retrained once a month and saved as new artifacts in Amazon S3, and each model is on the order of tens of megabytes. There is strong pressure to reduce cost and there are three operations staff. Each customer's training data must be stored separately, and the model artifacts are under customer prefixes. Which customer model to use is specified in the request at invocation. A delay of about a day before a new customer model takes effect is acceptable. Occasionally slow first invocations are acceptable. Which approach is the MOST cost-effective?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Create a single-model real-time endpoint on ml.m5.large for each customer so that the model is always loaded in memory"
+   },
+   {
+    "label": "B",
+    "text": "Include all 600 models in a single container image, increase the image size, and deploy it as a single-model endpoint"
+   },
+   {
+    "label": "C",
+    "text": "Deploy to a single multi-model endpoint, keeping the models in Amazon S3 so they are loaded dynamically when invoked"
+   },
+   {
+    "label": "D",
+    "text": "Create a serverless endpoint for each customer and individually set the memory of each endpoint to match the model size"
+   }
+  ],
+  "explanation": "A multi-model endpoint is the correct answer. It serves many models of the same framework from shared containers and instances to improve utilization, and models are loaded and cached from Amazon S3 at invocation time, so no endpoint update is needed when a model is added. The slow first invocation of rarely used models is an acceptable condition stated in the question. Having a single-model endpoint per customer multiplies cost by 600, and including everything in the image makes updates difficult. Serverless endpoints per customer also require creating an endpoint per model, which increases the management burden when adding models."
+ },
+ {
+  "number": 36,
+  "domain": "Data Engineering",
+  "prompt": "A smart factory company ingests events sent by about 200,000 factory sensors into Kinesis Data Streams (provisioned mode, 8 shards). It currently uses the factory code (5 values) as the partition key, so writes are concentrated on only some shards and ProvisionedThroughputExceeded errors occur. Consumers need only a guarantee of event order per sensor and do not need a global order across all events. The sensor firmware cannot be changed, but the producer code on the ingestion side can be modified, and switching to on-demand mode is not being considered this time because of a cost approval issue. The producer sends events in batches with the PutRecords API, and the errors are concentrated for a few minutes right after shift changes. The consumer is AWS Lambda. Which actions appropriately resolve the errors? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Increase the stream retention period to 7 days to raise the per-second write limit that each shard can accept"
+   },
+   {
+    "label": "B",
+    "text": "Leave the partition key as it is and increase the shards from 8 to 64 so that the 5 factory codes are spread across all shards"
+   },
+   {
+    "label": "C",
+    "text": "Use a random number as the partition key for each record to distribute the load while still preserving per-sensor ordering"
+   },
+   {
+    "label": "D",
+    "text": "If the write limit is still insufficient after the keys are distributed, split shards to increase the overall write throughput of the stream"
+   },
+   {
+    "label": "E",
+    "text": "Change the partition key to a high-cardinality value such as the sensor ID so that writes are distributed evenly across many shards"
+   }
+  ],
+  "explanation": "Kinesis maps a record to a single shard by the hash of the partition key, so if there are only 5 keys, then even if you add shards, the writes are concentrated on at most 5 shards; changing to a high-cardinality key such as the sensor ID distributes them. Because the same sensor goes to the same shard, per-sensor ordering is also preserved. If the per-shard write limit (1 MB per second or 1,000 records per second) is still insufficient after distribution, increase the shards to raise total throughput. A random key breaks per-sensor ordering, and the retention period has nothing to do with the write limit."
+ },
+ {
+  "number": 37,
+  "domain": "Modeling",
+  "prompt": "A customer support platform team trains a model that classifies 400,000 English customer inquiries into 12 categories by using SageMaker BlazingText in supervised mode. The data is currently stored as CSV in the form 'category,sentence', the sentences are raw text, and uppercase and lowercase letters and punctuation are mixed. There are about 30,000 records per class, and training runs on a single GPU instance. The transformation job can be run once with AWS Glue or Processing. At inference time as well, sentences preprocessed in the same way as in training must be sent. The training pipeline is built with Step Functions, so adding a preprocessing step at the front is not difficult. How should the input data be prepared for training to work correctly in the MOST appropriate way?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Upload a CSV with a header to the train channel as text/csv, and assume that the algorithm automatically skips the header row and reads the first column as the label"
+   },
+   {
+    "label": "B",
+    "text": "Leave the sentences as raw text and just add a prefix to the category, and BlazingText will tokenize the sentences automatically"
+   },
+   {
+    "label": "C",
+    "text": "Format each line as '__label__category token token ...', preprocess the sentences into space-separated tokens, and upload a single file to the train channel"
+   },
+   {
+    "label": "D",
+    "text": "Convert the sentences to JSON arrays, create the labels as a separate file, and upload it to the label channel"
+   }
+  ],
+  "explanation": "BlazingText expects a single text file preprocessed into space-separated tokens, and in supervised mode each line holds one sentence with a label that has the '__label__' prefix. So the category must be turned into a prefixed label and the sentences into tokenized form, and then uploaded to the train channel. The CSV format is not an input for this algorithm. The algorithm does not tokenize sentences automatically. There is no label-only channel, and the label must be included on each line."
+ },
+ {
+  "number": 38,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "A non-specialist analyst in the company wants to explore structured data in Amazon S3 and Amazon Athena without coding. The analyst wants to build, as a visual flow, a data quality report that checks for missing values and duplicates, target leakage analysis, and transformations such as categorical encoding, and to connect it to a later ML workflow. The analysis results must be reflected in a department dashboard every week, and the analyst has almost no programming experience other than SQL. The IT department cannot assign staff to operate a new server. The analyst's SageMaker domain and Canvas usage permissions have already been granted, and the analysis result data is stored in Amazon S3. Under the security policy, data must not leave the AWS account. The analyst prefers results that lead directly into the ML workflow rather than being downloaded as CSV. Which choice is MOST appropriate to minimize the operational burden?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Install Jupyter directly on Amazon EC2, implement all transformations and quality checks yourself with pandas scripts, operate it, and share the results as notebook files"
+   },
+   {
+    "label": "B",
+    "text": "Use the Data Wrangler data preparation flow and data insights features integrated into SageMaker Canvas"
+   },
+   {
+    "label": "C",
+    "text": "Stream the rows of the files with Kinesis Data Streams and check data quality by looking at real-time aggregation results"
+   },
+   {
+    "label": "D",
+    "text": "Send rows with suspected quality problems to a SageMaker Ground Truth labeling job so that people review them one by one"
+   }
+  ],
+  "explanation": "Data Wrangler integrated into Canvas is the correct answer. It lets you connect to Amazon S3 and Athena, and build and export a flow with data insights and quality reports, target leakage analysis, and transformations such as categorical encoding without coding. Building it directly on Amazon EC2 means operating servers and code, which creates a large operational burden. Kinesis streaming is not a data quality inspection tool for static data. Ground Truth is for labeling training data and is not used for quality checks."
+ },
+ {
+  "number": 39,
+  "domain": "Data Engineering",
+  "prompt": "A data platform team preprocesses 800 CSV files in Amazon S3 (400 GB in total) in a SageMaker Processing job on a single ml.m5.4xlarge, and it takes 6 hours. Each file is processed independently and the results are stored per file under an output prefix. The output file names must correspond one-to-one with the input file names. The preprocessing script is code shared with other teams, so changes must be minimized, and the job runs once a day with a goal of reducing the processing time to within 1 hour. Each input CSV is about 500 MB per file and there is no ordering dependency between files. The output is written to a different Amazon S3 prefix in the same Region, and the cost of one daily run should be at a similar level to what it is now. How should the job be configured so that each instance processes different files?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Increase the instance count to 8 and leave the input as FullyReplicated so that all instances download all the files and each outputs all of the results"
+   },
+   {
+    "label": "B",
+    "text": "Keep the instance count at 1 and change the input mode to Pipe to eliminate download time"
+   },
+   {
+    "label": "C",
+    "text": "Keep the instance count at 1 and switch to a larger instance type to increase the processing speed of a single node"
+   },
+   {
+    "label": "D",
+    "text": "Increase the instance count to 8 and specify ShardedByS3Key for the S3DataDistributionType of the input so that the files are divided among the instances"
+   }
+  ],
+  "explanation": "ShardedByS3Key divides the data by S3 object key and has each processing instance download one portion, so for this job, in which the files are independent, increasing the instances to 8 processes them in parallel without code changes. FullyReplicated replicates all of the data to every instance, so the same work is done 8 times and the time is not reduced. Pipe mode does not increase parallelism because there is only 1 instance. A larger instance does not match the requirement that each instance process different files."
+ },
+ {
+  "number": 40,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "In a real estate price prediction team's linear regression model, both the 'net floor area (m²)' and 'net floor area (pyeong)' columns are included as features, and their correlation coefficient is close to 1.0. Each time the model is retrained, the signs and magnitudes of the coefficients of the two columns fluctuate greatly, making interpretation impossible. The model already has sufficient predictive performance, but management has requested material explaining the price impact per unit of area, so coefficient interpretation is needed. There are 35 features in total, the model is retrained once a month, and the meaning of the remaining features must be preserved. The model is a scikit-learn linear regression in an internal notebook, and applying L2 regularization can be done in a single line of code. According to the data dictionary, one of the two columns is a derived column calculated from the other. Which action is MOST appropriate to stabilize the interpretation of the coefficients while maintaining predictive performance?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Remove one of the two columns that carry duplicate information, or apply L2 regularization, to reduce the coefficient instability caused by multicollinearity"
+   },
+   {
+    "label": "B",
+    "text": "Create and add a new interaction column by multiplying the values of the two columns so that the model learns the relationship between the two columns directly, and then re-estimate and interpret the coefficients"
+   },
+   {
+    "label": "C",
+    "text": "Randomly sample only half of the rows of the training data to weaken the correlation between the two columns, and then train the model"
+   },
+   {
+    "label": "D",
+    "text": "Apply a log transformation to both columns and keep them as they are, repeating training while watching whether the correlation coefficient becomes lower"
+   }
+  ],
+  "explanation": "Removing one column or using L2 regularization is the correct answer. The pyeong value is the m² value multiplied by a constant, so it is a complete duplicate, and this kind of multicollinearity makes the coefficients unstable. Adding an interaction column increases collinearity. Sampling rows does not weaken the correlation, because the linear relationship between the two columns is the same in every row. A log transformation only turns a constant multiple into a simple shift, so the two columns still have a perfect correlation."
+ },
+ {
+  "number": 41,
+  "domain": "Data Engineering",
+  "prompt": "A computer vision team at an autonomous driving parts company runs a PyTorch training job on an image dataset of about 6 TB in Amazon S3. The entire dataset does not fit in the training instance's local storage, and in File mode it takes a long time waiting for the download before starting. The training code opens and reads regular file paths, and code changes must be minimized, and the team does not want to configure separate storage such as FSx for Lustre. The team also wants to avoid changing the VPC network configuration. The dataset consists of hundreds of thousands of image files, and training runs on a single ml.p4d.24xlarge instance. The data loader has already been written to open images from a list of file paths. Which input method MOST appropriately meets these requirements?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Specify Pipe as the input mode and modify the training code to read the named pipe in order at every epoch"
+   },
+   {
+    "label": "B",
+    "text": "Keep File mode and enlarge the EBS volume of the training instance to be larger than the dataset, and then train after the download"
+   },
+   {
+    "label": "C",
+    "text": "Create an FSx for Lustre file system, mount it together with the VPC configuration so that the training job reads from it, and synchronize the Amazon S3 data separately"
+   },
+   {
+    "label": "D",
+    "text": "Specify FastFile as the input mode and set the S3 prefix as the channel data source so that the required objects are read on demand"
+   }
+  ],
+  "explanation": "FastFile mode exposes S3 objects like a POSIX file system and streams them on demand at the moment the training script reads them, so there is no waiting for a full download, the dataset can be larger than local storage, and code that uses regular file paths can be left as is. Pipe mode requires changing the code to read the pipes in epoch order. File mode with an enlarged EBS volume still waits for the full download. FSx for Lustre requires VPC configuration and operating separate storage, which conflicts with the constraints."
+ },
+ {
+  "number": 42,
+  "domain": "Modeling",
+  "prompt": "For a regression model built by a logistics company's forecasting team, the training RMSE is 18.2 and the validation RMSE is 18.9, which are almost the same, but both are far from the business target of 8 or less. The learning curve flattens out early and the L2 regularization strength is set very high. The current model is a linear regression, there are 12 available features, and there are 800,000 training rows. Training time is not a concern, improving prediction accuracy is the priority, and no new labeled data can be obtained. The validation set has the same distribution as the training set, and apart from the bottom few, the feature importances are all meaningful values. Training finishes in a few minutes on a single ml.m5.2xlarge instance. Additional feature candidates can be derived from the existing 12 features. Which actions appropriately improve this situation? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Add derived features such as interaction terms, or switch to a model with greater expressive power such as a deeper tree"
+   },
+   {
+    "label": "B",
+    "text": "Reduce the number of features in the training data to make the model simpler"
+   },
+   {
+    "label": "C",
+    "text": "Replicate the training rows from the same distribution 10 times to increase the number of samples, and retrain the same model"
+   },
+   {
+    "label": "D",
+    "text": "Lower the L2 regularization strength so that the model fits the training data better"
+   },
+   {
+    "label": "E",
+    "text": "Increase the dropout rate and reduce the early stopping patience so that training stops earlier"
+   }
+  ],
+  "explanation": "When both the training error and the validation error are high and similar, it is a sign of underfitting (high bias). In this case, you should reduce excessive regularization and increase capacity by adding derived features or switching to a more expressive model. Raising dropout or stopping earlier restricts the model further and makes underfitting worse. Reducing the number of features makes expressive power even lower. Replicating the same rows adds no information, so the training error does not improve and only the risk of overfitting increases."
+ },
+ {
+  "number": 43,
+  "domain": "Machine Learning Implementation and Operations",
+  "prompt": "A speech recognition service team is updating the model on a real-time endpoint and wants to avoid having a faulty model affect all traffic at once. The team wants to verify the model first with a small amount of traffic and move the rest if there are no problems, and if the error rate Amazon CloudWatch alarm fires, it must automatically roll back to the previous model. The endpoint handles an average of 150 requests per second, and the error rate of the currently running model is already monitored with CloudWatch. The deployment must proceed while the service is running, without a maintenance window, and the endpoint name must not change. The new model uses the same instance type as the existing one, and even if the deployment fails, serving of the previous model must be unaffected. The change to the endpoint configuration can be performed with the SageMaker deployment guardrails feature. Which configuration meets these requirements?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Shift traffic to the new fleet all at once with all-at-once traffic shifting, and if a problem occurs, have an operator manually restore the previous configuration from the console, judging by comparing the error rates before and after the deployment"
+   },
+   {
+    "label": "B",
+    "text": "Delete the existing endpoint and then create a new model endpoint with the same name, completing the deployment after a short interruption"
+   },
+   {
+    "label": "C",
+    "text": "Update the endpoint by specifying canary traffic shifting for blue/green deployment guardrails, a baking period, and CloudWatch alarms for automatic rollback"
+   },
+   {
+    "label": "D",
+    "text": "Deploy the new model as a shadow variant so that user responses are still served by the existing model, and when promoting it, replace everything at once without alarms"
+   }
+  ],
+  "explanation": "Canary traffic shifting with an automatic rollback alarm is the correct answer. In the canary approach, a small portion of traffic is first sent to the new fleet and then the rest is shifted, and if the specified alarm fires during the baking period, all traffic returns to the previous fleet. All-at-once affects all traffic at once and relies on manual restoration. Deleting and recreating causes an interruption and offers no means of rollback. A shadow variant is for validation, and replacing everything at once on promotion does not meet the requirements for gradual shifting and automatic rollback."
+ },
+ {
+  "number": 44,
+  "domain": "Machine Learning Implementation and Operations",
+  "prompt": "A commerce recommendation team wants to validate response latency and prediction distribution with actual production traffic before deploying a new version of the recommendation model. The responses returned to users must continue to be the results of the existing model, and the results of the new model must not be exposed to users. The offline metrics of the new model were slightly higher than those of the existing model, but its latency under real traffic is not yet known. The new model will run on the same instance type as the existing one, and the validation is planned to continue for several days. The latency target for recommendation responses is a p99 of 200 ms. The responses of the shadow variant must be stored separately so they can be compared later with the results of the existing model. The new model and the existing model are different versions of the same container image. What is the SAFEST way to validate this on a single endpoint?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Set both models as production variants with weights of 50:50 so that user requests are split half and half"
+   },
+   {
+    "label": "B",
+    "text": "Replace the endpoint with one containing only the new model so that it immediately handles all traffic, and roll back manually if a problem occurs"
+   },
+   {
+    "label": "C",
+    "text": "In the endpoint configuration, specify the existing model as the production variant and the new model as a shadow variant so that requests are duplicated and sent to it"
+   },
+   {
+    "label": "D",
+    "text": "Apply the new model to last month's logs as a batch transform job and compare the results, skipping validation with real-time traffic"
+   }
+  ],
+  "explanation": "A shadow variant is the correct answer. A shadow variant receives a copy of production traffic and is used to validate a new component over a long period, and the production variant continues to handle user responses, so the shadow results are not exposed to users. With 50:50 weights, half of the users receive the responses of the new model. Replacing the entire endpoint exposes all users to risk. A batch comparison using past logs does not meet the requirement to validate real-time latency and the current traffic distribution."
+ },
+ {
+  "number": 45,
+  "domain": "Modeling",
+  "prompt": "A team finished a SageMaker automatic model tuning job last week (100 training jobs, objective metric validation:auc). This time, newly collected data has been added, so the training data is different, and the team wants to tune again with narrowed hyperparameter ranges based on the previous results. The objective metric and the algorithm (XGBoost) are the same. This tuning can use at most 60 training jobs, and one tuning run takes several hours on CPU instances. The previous tuning job remains in the same account in a completed state, and the hyperparameter names and types are the same as last time. The new data is about 20% larger than before. The team wants to continue using the results of the previous job rather than discarding them. What is the MOST appropriate way to use the previous results to improve search efficiency?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Specify the previous tuning job as the parent and create a warm start job with WarmStartType set to TRANSFER_LEARNING"
+   },
+   {
+    "label": "B",
+    "text": "Specify the previous tuning job as the parent and create a warm start tuning job with WarmStartType set to IDENTICAL_DATA_AND_ALGORITHM"
+   },
+   {
+    "label": "C",
+    "text": "Fix the best hyperparameter values from the previous tuning job as static values and run a training job only once"
+   },
+   {
+    "label": "D",
+    "text": "Do not use the previous results, create a new tuning job from scratch with the new data, and increase the number of training jobs to 200"
+   }
+  ],
+  "explanation": "Warm start uses the results of previous tuning jobs in the search of the new job, and when the input data changes, you must use the TRANSFER_LEARNING type, which allows changes such as the input data and hyperparameter ranges. It also satisfies the constraints that the metric and the hyperparameter types be the same. IDENTICAL_DATA_AND_ALGORITHM assumes the same input data as the parent, so it does not fit this requirement, in which the data has changed. Fixing the best values and running once gives up the search, and starting over discards the existing results."
+ },
+ {
+  "number": 46,
+  "domain": "Modeling",
+  "prompt": "An ML platform team runs a training algorithm in SageMaker with its own Docker container (BYOC). In the CreateTrainingJob request, it passes learning_rate and epochs as hyperparameters and specifies two channels, train and validation, in File mode. The container image has already been pushed to Amazon ECR, and the training code uses a library shared with other internal services. The team does not want to hardcode S3 paths or channel names in the code. The training code was written directly without the SageMaker training toolkit, and when training finishes, the model must be saved to the designated path so that SageMaker can upload the model artifacts to Amazon S3. How should the training script in the container be implemented so that it reads these values and the data correctly?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Hyperparameters are passed automatically as command-line arguments when the container starts, so read argv, read the data from the /data/train path, and assume that the data from the two channels is merged into one directory"
+   },
+   {
+    "label": "B",
+    "text": "No code to read hyperparameters is needed; hardcode the S3 URI in the script and download directly with boto3"
+   },
+   {
+    "label": "C",
+    "text": "Hyperparameters are passed as JSON under /opt/ml/model, and the data from the two channels is provided merged into one directory"
+   },
+   {
+    "label": "D",
+    "text": "Read the hyperparameters from the hyperparameters.json file (/opt/ml/input/config), and read each channel's data from the /opt/ml/input/data/channel_name directories"
+   }
+  ],
+  "explanation": "SageMaker provides the hyperparameters from CreateTrainingJob to the container as the file /opt/ml/input/config/hyperparameters.json (the values are strings), and in File mode it creates a /opt/ml/input/data/channel_name directory for each channel and places the data there. By default, the container is started with the train argument, and the hyperparameters do not arrive as command-line arguments. Hardcoding the S3 URI ignores the channel configuration. /opt/ml/model is the location where the resulting training artifacts are written, and the channels are not merged but provided separately."
+ },
+ {
+  "number": 47,
+  "domain": "Modeling",
+  "prompt": "A manufacturing company's quality team builds a model that classifies 12 defect types. There are only about 300 labeled images per type, and training from scratch causes the validation accuracy to plateau. The team uses SageMaker built-in algorithms, does not want to write neural network code directly, and also wants to reduce training time and GPU cost. Training uses a single GPU instance, and the resulting model will be deployed to edge devices on the company's quality inspection line. Marking the location of the defect is not needed, and only classifying the type is required. Compilation for edge deployment is handled in a separate step, so this question deals only with the training approach. 50 validation images per type have been set aside separately. The inference latency target on the edge device is within 100 ms per image. What is the MOST appropriate approach?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Train the built-in image classification algorithm from scratch with the default (use_pretrained_model=0), greatly increase the number of epochs, and train without data augmentation"
+   },
+   {
+    "label": "B",
+    "text": "Group the images into 12 clusters with K-Means and use the cluster numbers as is as the defect types"
+   },
+   {
+    "label": "C",
+    "text": "Set use_pretrained_model=1 in the built-in image classification algorithm to load pretrained weights and fine-tune with transfer learning"
+   },
+   {
+    "label": "D",
+    "text": "Switch to the object detection algorithm to train it to learn the location of defects in the image as well"
+   }
+  ],
+  "explanation": "The built-in image classification algorithm can be trained with transfer learning when there are not many labeled images, and with use_pretrained_model=1 it loads pretrained network weights and converges quickly even with little data, which reduces time and GPU cost without writing code. Training from scratch and only increasing epochs continues to cause overfitting and plateaus with small data. K-Means is unsupervised clustering, so there is no guarantee that cluster numbers match the defect types. Object detection requires location annotations and is unrelated to the requirements."
+ },
+ {
+  "number": 48,
+  "domain": "Modeling",
+  "prompt": "An advertising platform team predicts whether an ad will be clicked using sparse features of about 3 million dimensions, produced by one-hot encoding user ID, ad ID, placement, and device type. Interactions between pairs of features (for example, the combination of a particular ad category and a particular placement category) are important, and assigning a separate weight to each interaction would cause the number of parameters to explode. The training data is 500 million rows per day, and the team plans to perform both training and inference with the model on CPU instances. Sufficient click labels have been obtained, and the team wants to deliver this with a SageMaker built-in algorithm. Predictions are computed once a day in a batch and uploaded to the ad server. User IDs have millions of distinct values, but the team decided to use the one-hot sparse representation as is rather than embeddings or hashing. Which algorithm MOST appropriately meets these requirements?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Use Linear Learner to learn linear weights for all features and leave it to the model to reflect the interactions implicitly"
+   },
+   {
+    "label": "B",
+    "text": "Use k-NN to predict by voting on the click outcomes of nearby neighbors in the 3-million-dimensional space"
+   },
+   {
+    "label": "C",
+    "text": "Use Factorization Machines to learn the pairwise feature interactions of high-dimensional sparse data as low-dimensional factors"
+   },
+   {
+    "label": "D",
+    "text": "Use K-Means to cluster users and use the average click rate of each cluster as the predicted value"
+   }
+  ],
+  "explanation": "Factorization Machines extend a linear model and are designed to capture second-order (pairwise) interactions between features in high-dimensional sparse data with few parameters through factorization, and click prediction and recommendation are the typical use cases. The training input is Float32 recordIO-protobuf, and CPU instances are recommended for sparse data. Linear Learner learns only linear terms and cannot reflect interactions. k-NN is inefficient for distance-based prediction in an extremely high-dimensional sparse space and does not learn interactions. K-Means is not supervised prediction."
+ },
+ {
+  "number": 49,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "A fintech company operates a fraud detection model. At payment authorization, the customer's recent transaction aggregate features must be read with a latency on the order of 10 milliseconds, and the model must also be periodically retrained using the past 2 years of history with the same feature definitions. The company also wants to reduce training-serving skew caused by differences between the feature computation code used for training and for serving. Model serving is done with a SageMaker real-time endpoint, and feature computation has so far been implemented separately by data engineers and data scientists. There are about 3 million payments per day, and staff to operate new infrastructure cannot be increased. The features are transaction aggregates over the last 1 hour, 24 hours, and 7 days, and are updated every time a new payment occurs. The data scientists and engineers want to write the same definition only once. Which configuration is MOST appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Create a SageMaker Feature Store feature group with both the online and offline stores turned on, and ingest with the same feature processing logic"
+   },
+   {
+    "label": "B",
+    "text": "Use only the offline store, query features with Athena for every payment request and use them in the authorization logic, fetching the query results anew each time without a cache"
+   },
+   {
+    "label": "C",
+    "text": "Store the training features as CSV in Amazon S3 and recompute the serving features separately in the application code"
+   },
+   {
+    "label": "D",
+    "text": "Use only the online store and do not keep historical data, so that retraining trains the model with only the latest values"
+   }
+  ],
+  "explanation": "A Feature Store feature group with both the online and offline stores turned on is the correct answer. The online store is for real-time prediction, reading the latest record with millisecond latency, and the offline store keeps all of the history for use in training and batch inference. Because ingestion uses the same processing logic, training-serving skew is also reduced. The offline store and Athena are for exploration and training, so they do not meet the authorization latency requirement. Recomputing with separate code leaves the skew, and using only the online store leaves no 2-year history."
+ },
+ {
+  "number": 50,
+  "domain": "Data Engineering",
+  "prompt": "A SaaS company's data engineering team has been accumulating 3 years of service logs in Amazon S3 with a year=/month=/day=/region= structure, and a new date partition is created every day. As the partitions have grown to tens of thousands, the planning phase of Athena queries has become slow, and the cost and delay of running a crawler every day to register new partitions are also a problem. The dates are continuous, and the regions are fixed at six. Most queries filter on the most recent month and a specific region, and all lookups are done only through Athena. Objects in past partitions do not change, and there is no possibility that new regions will be added. Several hundred cost reporting queries run every day, and the team does not want to change the Athena workgroup settings. Which method reduces query latency and operational burden the MOST?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Configure partition projection in the AWS Glue table properties, specifying the date range and the list of regions so that partition values are computed"
+   },
+   {
+    "label": "B",
+    "text": "Shorten the crawler schedule so that it runs every hour to reduce the delay in registering new partitions"
+   },
+   {
+    "label": "C",
+    "text": "Remove all partition columns and store the entire log under one prefix to eliminate partition metadata lookups, and filter queries only by date conditions"
+   },
+   {
+    "label": "D",
+    "text": "Split the daily partitions into smaller hourly partitions to reduce the amount of data that queries read"
+   }
+  ],
+  "explanation": "With partition projection, Athena computes the partition values and locations directly from the date range and region list specified in the table properties, so no AWS Glue catalog lookup is needed, queries become faster, and there is no need to register new partitions manually. Shortening the crawler interval only increases cost and calls. Removing partitions makes every query scan everything. Hourly splitting increases the number of partitions further and increases the metadata burden. Note that projection applies only when querying through Athena."
+ },
+ {
+  "number": 51,
+  "domain": "Modeling",
+  "prompt": "An insurance company's fraud investigation team trains a binary classification model for insurance fraud detection with SageMaker Linear Learner. Because of limited reviewer capacity, at least 90% of alerts must be actual fraud, and within that constraint the model must catch as much fraud as possible. The fraud rate is about 1% of the total, and in past validation the balance between precision and recall differed greatly from one candidate model to another. The candidate models are several produced by hyperparameter tuning, and each training run takes a few minutes. The validation set contains enough fraud cases to calculate precision and recall stably. The team does not want to adjust the threshold separately on the calling side and wants to reflect this goal at the model selection stage. Which setting most directly reflects this goal when choosing one of several candidate models with the validation data?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Set binary_classifier_model_selection_criteria to precision_at_target_recall and set target_recall to 0.9 to maximize precision"
+   },
+   {
+    "label": "B",
+    "text": "Set binary_classifier_model_selection_criteria to recall_at_target_precision and set target_precision to 0.9"
+   },
+   {
+    "label": "C",
+    "text": "Set binary_classifier_model_selection_criteria to accuracy and select the model with the highest validation accuracy"
+   },
+   {
+    "label": "D",
+    "text": "Change loss to hinge_loss, interpret the output score as a probability, and determine the threshold at the 90% precision point"
+   }
+  ],
+  "explanation": "recall_at_target_precision selects the model that maximizes recall while keeping precision at the target_precision value, which matches the goal that 90% of alerts must be actual fraud and that as much as possible must be caught within that constraint. Conversely, precision_at_target_recall fixes recall and maximizes precision, so the direction is reversed. The default, accuracy, cannot reflect the precision constraint on imbalanced data. hinge_loss corresponds to support vector classification, so the score cannot be interpreted as a probability."
+ },
+ {
+  "number": 52,
+  "domain": "Data Engineering",
+  "prompt": "A bank's data team stores financial data in Amazon S3 with SSE-KMS encryption using a customer managed KMS key, and audits key usage with AWS CloudTrail. Even though the execution role of the SageMaker training job already has s3:GetObject permission on the bucket, the job fails with AccessDenied at the data download step. The same key and bucket are not shared with other departments' accounts and are within the same account. The encryption and key auditing requirements must be maintained, and permissions must be granted at the minimum level. The download error message contains KMS-related AccessDenied wording. The training data is updated once a month, and this execution role is used only for that training purpose. CloudTrail records show denied key usage events for the role. What is the MOST appropriate solution?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Change the default encryption of the bucket to SSE-S3 so that objects can be read without calling KMS"
+   },
+   {
+    "label": "B",
+    "text": "Allow s3:* and kms:* permissions on all resources for the execution role to eliminate permission problems all at once, and do not change the key policy"
+   },
+   {
+    "label": "C",
+    "text": "Turn on bucket versioning to prevent the access denied error that occurs when objects are read"
+   },
+   {
+    "label": "D",
+    "text": "Add kms:Decrypt permission for that KMS key to the execution role policy and also allow that role in the key policy"
+   }
+  ],
+  "explanation": "To read an SSE-KMS object, the caller needs not only S3 read permission but also decrypt permission on the KMS key, so allowing only kms:Decrypt on that key in both the execution role policy and the key policy is the least-privilege solution. Changing to SSE-S3 gives up the requirement for auditing based on a customer managed key. Granting s3:* and kms:* on all resources violates the principle of least privilege. Versioning has nothing to do with read permission or decryption."
+ },
+ {
+  "number": 53,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "A price prediction team at a real estate information company uses linear regression. The area and price columns are skewed with a long right tail (a small number of ultra-high-priced homes exist), and the residuals grow larger as the price increases. The ultra-high-priced homes are real, normal data and cannot be deleted. The current mean absolute error is large and the error grows for higher-priced homes, and the model must remain a linear regression for interpretability. The training data is 120,000 records and missing value handling is already finished. The model coefficients can still be explained to the sales team as percentage changes after a log transformation. Predictions are converted back to the original units at the serving stage. Prediction error is evaluated on a relative error basis for higher-priced homes. Which transformation MOST appropriately mitigates this problem without discarding data?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Apply a log transformation to the price (and to the area if necessary) to reduce the skew in the distribution and the unevenness of the variance, and then train the model"
+   },
+   {
+    "label": "B",
+    "text": "Delete the rows for the ultra-high-priced homes in the top 5% to cut off the long tail of the distribution, and then train on the remaining data"
+   },
+   {
+    "label": "C",
+    "text": "Apply min-max normalization to all numeric columns to fit the range of values between 0 and 1, and then train with the same model"
+   },
+   {
+    "label": "D",
+    "text": "Bin the price column into intervals, one-hot encode it, and change the problem to a classification model designed to predict only the probability of each interval"
+   }
+  ],
+  "explanation": "A log transformation is the correct answer. It mitigates the right-skewed distribution and the variance that grows as values get larger, while keeping all rows. Deleting the ultra-high-priced rows violates the constraint that they cannot be deleted. Min-max normalization only changes the range and leaves the shape of the distribution and the heteroscedasticity as they are. Binning the price and converting to classification changes the regression objective itself, which loses information and also differs from the requirements."
+ },
+ {
+  "number": 54,
+  "domain": "Machine Learning Implementation and Operations",
+  "prompt": "A financial company must place the inference endpoint of a credit review assistance model inside a VPC in a private subnet, and under regulations must store all requests and responses in Amazon S3 with data capture. Callers must receive synchronous responses, and traffic is moderate during the day and almost none at night. Normal traffic is on the order of hundreds of requests per hour, and the security team has required that endpoint access be restricted to the internal network and AWS PrivateLink. The model can run inference on CPU, and the operations team also wants to reduce cost. The inference code runs in a container that uses an internal certificate, and the payload of one request is a few KB. The data capture logs are reviewed by the audit team every quarter. Even after the model is deployed, the change history of the network and data capture settings is subject to audit. Which deployment method is MOST appropriate to meet these requirements?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Turn on data capture for an instance-based real-time endpoint with VpcConfig specified, and adjust capacity with auto scaling"
+   },
+   {
+    "label": "B",
+    "text": "Configure both the VPC configuration and data capture on a serverless inference endpoint to eliminate instance cost during idle time"
+   },
+   {
+    "label": "C",
+    "text": "Deploy as serverless first, then add the VPC configuration and data capture later from the console during operation, and restrict invocation with IAM policies until then"
+   },
+   {
+    "label": "D",
+    "text": "Scale the instance count of an asynchronous endpoint down to 0 and keep only the input and output S3 paths without a data capture configuration"
+   }
+  ],
+  "explanation": "A real-time endpoint with a VPC configuration and data capture specified is the correct answer. Serverless inference has VPC configuration and data capture on its list of unsupported features, so it cannot satisfy both requirements, and adding them later is impossible for the same reason. An instance-based endpoint can reduce cost for night traffic through auto scaling. An asynchronous endpoint does not meet the synchronous response requirement and does not use data capture, so it violates the requirements."
+ },
+ {
+  "number": 55,
+  "domain": "Modeling",
+  "prompt": "A cloud operations team collects 14 numeric metrics, such as CPU, memory, and disk I/O, from each server at 1-minute intervals. There are almost no failure labels, and the team wants to score data points that deviate from normal patterns and raise alerts based on a threshold. There are about 3,000 servers, and the training data is stored as CSV files in Amazon S3. With few model development staff, the team cannot design a neural network architecture by hand, and the threshold must be adjustable to reduce alert fatigue for on-call staff. Alarms are sent to the on-call tool, and the threshold is readjusted weekly by looking at the anomaly score distribution. The metrics CSV includes server ID and timestamp columns. Which is the MOST appropriate choice to meet these requirements with a SageMaker built-in algorithm and no labeling cost?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Train a Linear Learner binary classifier on whether a failure occurred, with labels filled in gradually by people, and make servers with a high predicted probability the alert targets"
+   },
+   {
+    "label": "B",
+    "text": "Forecast the metrics with DeepAR and treat actual values that fall outside the prediction interval as anomalies"
+   },
+   {
+    "label": "C",
+    "text": "Train an XGBoost binary classifier and collect labels for the times when failures occurred afterward to reflect them next quarter"
+   },
+   {
+    "label": "D",
+    "text": "Train Random Cut Forest and make the points where the anomaly score deviates from the mean by three or more standard deviations the alert targets"
+   }
+  ],
+  "explanation": "Random Cut Forest is an unsupervised anomaly detection algorithm designed to handle input of arbitrary dimension, so it assigns an anomaly score to each data point while looking at all 14 metrics together, and it is common to treat scores that deviate from the mean by three or more standard deviations as anomalies, which meets the alert threshold requirement without labels. Linear Learner and XGBoost classification can be trained only if failure labels exist. DeepAR is a time series forecasting algorithm whose purpose is to forecast metrics, and it does not directly produce an anomaly score that looks at the 14 metrics together, so its design purpose is different."
+ },
+ {
+  "number": 56,
+  "domain": "Modeling",
+  "prompt": "A content analytics team at a media company trains a topic model that discovers topics without labels from 30 million English articles, using a SageMaker built-in algorithm. The LDA job takes several days on a single CPU instance, so the training time must be reduced by parallelizing across multiple GPU instances. The corpus is already prepared in Amazon S3 as a word count matrix, the number of topics is set to 50, and training must finish within a day. The editorial team looks at the representative words of each topic to name them, so the per-document topic distribution must be obtainable. Because there is a training cost limit, the team prefers fewer instances if they finish in the same time. The resulting model is also used to classify each document into its highest-weighted topic. Which is the MOST appropriate choice to meet these requirements?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Increase the instance count of the LDA training job and train in a distributed manner on multiple CPU instances"
+   },
+   {
+    "label": "B",
+    "text": "Train BlazingText in supervised mode on multiple CPU instances to classify the articles by topic"
+   },
+   {
+    "label": "C",
+    "text": "Train word embeddings with BlazingText Word2Vec, and the topics of the documents are labeled automatically"
+   },
+   {
+    "label": "D",
+    "text": "Train a Neural Topic Model (NTM) in parallel on multiple GPU instances"
+   }
+  ],
+  "explanation": "NTM runs on both CPU and GPU and can be parallelized across multiple GPU instances, so it scales well to topic modeling of a large corpus. LDA supports only single-instance CPU training, so increasing the instance count does not distribute it. BlazingText in supervised mode is for classifying labeled text and does not support training on multiple CPU instances either. Word2Vec only creates word embeddings and does not produce a topic distribution for documents."
+ },
+ {
+  "number": 57,
+  "domain": "Data Engineering",
+  "prompt": "An advertising platform ingests about 8,000 JSON click events per second with Kinesis Data Streams. The analytics team wants to store these events in Amazon S3 as Parquet to reduce Athena scan cost, and does not want to operate its own compute infrastructure for the conversion. The event schema is already finalized and there are two data engineers. The results are used for daily reporting, so second-level real-time delivery is not needed. The result files accumulate under hourly S3 prefixes and are queried through an Athena table with the same schema. The schema changes once a quarter or less. Which combination of actions should be taken to meet the requirements with the LEAST operational overhead? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Define a table in the AWS Glue Data Catalog that matches the event schema and use it as the basis for the conversion schema"
+   },
+   {
+    "label": "B",
+    "text": "Turn on record format conversion in the Firehose delivery stream and specify a JSON deserializer and a Parquet serializer"
+   },
+   {
+    "label": "C",
+    "text": "Deploy an EC2 consumer application that reads the stream, converts each record to a Parquet file, and uploads it to Amazon S3"
+   },
+   {
+    "label": "D",
+    "text": "Run an AWS Glue crawler on the Firehose output path, and the JSON objects are automatically converted to Parquet files"
+   },
+   {
+    "label": "E",
+    "text": "Specify GZIP as the S3 compression format of the Firehose delivery stream, and the JSON records are changed to Parquet format"
+   }
+  ],
+  "explanation": "Firehose converts JSON to Parquet by referring to the schema defined in the Glue Data Catalog, so combining the schema table definition and the record format conversion settings (JSON deserializer and Parquet serializer) meets the requirements without operating servers. A crawler only registers a table in the catalog and does not change the object format. Running your own EC2 consumer creates a server operations burden and many small files. A GZIP compression setting only reduces file size and does not change the format to columnar."
+ },
+ {
+  "number": 58,
+  "domain": "Machine Learning Implementation and Operations",
+  "prompt": "A payment anomaly detection team wants to apply a new model to only 10% of the total traffic on an endpoint first for comparison, and if the metrics are good, to increase the share without recreating or updating the endpoint. Latency and invocation counts per variant are checked in Amazon CloudWatch. The new model has finished offline evaluation, and the business team wants to compare metrics such as conversion rate between the two models over several weeks. The invoking code is shared by several services and is hard to modify. The share adjustment is performed by an operator through the CLI, and the conversion rate metric is aggregated from the invocation logs, distinguished by variant name. The new model starts with one instance of the same instance type. The two models use the same instance type, and the variant configuration does not change during the comparison period. What is the SIMPLEST way to meet this requirement without modifying the invoking code?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Implement the invoking code so that it chooses the new endpoint name with 10% probability, redeploy the application each time the share changes, and collect the metrics of the two endpoints separately"
+   },
+   {
+    "label": "B",
+    "text": "Create two variants and specify TargetVariant on all invocations so that the application directly controls the ratio at which it selects variants"
+   },
+   {
+    "label": "C",
+    "text": "Create a separate endpoint for the new model and configure the traffic share to be adjusted by using target group weights on a load balancer"
+   },
+   {
+    "label": "D",
+    "text": "Specify weights of 9:1 on two production variants and then adjust the weights later with UpdateEndpointWeightsAndCapacities"
+   }
+  ],
+  "explanation": "Production variant weights and UpdateEndpointWeightsAndCapacities are the correct answer. Invocations are distributed according to the weight ratio, this API lets you change the share without updating the endpoint, and metrics per variant can be checked in CloudWatch. Choosing in the invoking code and specifying TargetVariant on every invocation both violate the constraint that the invoking code cannot be modified. Using a separate endpoint and a load balancer adds components and is not the simplest method."
+ },
+ {
+  "number": 59,
+  "domain": "Data Engineering",
+  "prompt": "A manufacturing company wants to move a transaction table from an on-premises PostgreSQL database (about 3 TB) to an Amazon S3 data lake for ML training. It must first load everything and then keep reflecting inserts, updates, and deletes that occur at the source into Amazon S3 within a few minutes. The source service cannot be interrupted, and Parquet format is preferred for analytical query efficiency. On-premises and AWS are connected with AWS Direct Connect, and the data team has no capacity to develop or operate a CDC tool itself. The source PostgreSQL is a version that supports logical replication, and a read-only account is ready. Deleted rows must also be distinguishable in the lake. The read load on the source database must stay within an acceptable range even during the initial load. Which method has the LEAST operational overhead?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Configure an AWS DMS task with full load and ongoing change data capture (CDC), and specify Parquet as the format of the S3 target endpoint"
+   },
+   {
+    "label": "B",
+    "text": "Move the 3 TB first with AWS Snowball Edge, reflect subsequent changes to Amazon S3 by periodically bringing the device back in, and pause changes at the source while the device is being brought in"
+   },
+   {
+    "label": "C",
+    "text": "Dump the entire table every night with an AWS Glue JDBC job, overwrite the S3 partitions, and reflect changes the next day"
+   },
+   {
+    "label": "D",
+    "text": "Connect the query results of the source database directly to a Firehose delivery stream to write changed rows to Amazon S3 as Parquet"
+   }
+  ],
+  "explanation": "DMS supports both full load and CDC with Amazon S3 as a target, and the output format can be specified as Parquet, so it meets the requirement to continuously reflect changes without interrupting the source as a managed service. Snowball Edge is for one-time bulk transfers and cannot reflect changes within minutes. A nightly full dump has a one-day reflection delay and is disadvantageous for handling deletions and for cost. Firehose is not a source that reads the change logs of a database, so it cannot be used for this purpose."
+ },
+ {
+  "number": 60,
+  "domain": "Modeling",
+  "prompt": "A fintech company trains a binary classification model with the SageMaker built-in XGBoost on 40 million transaction rows in which about 2% are fraud (positive). With default settings, the model predicts almost all transactions as normal, so recall is low, and because fraud samples are valuable, the company does not want preprocessing that discards or duplicates data. Evaluation uses PR AUC. The training data is stored in Amazon S3, and the training job runs once a day. Only hyperparameters can be changed, and the structure of the training pipeline is kept. The positive ratio of the validation set is the same as that of the training set, and the team compares models by the ranking quality of the probability scores without adjusting the threshold. The resulting model is used for batch scoring every morning. Which action MOST appropriately meets these requirements?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Set scale_pos_weight to about 0.02 to match the positive ratio, reducing the weight of positive examples"
+   },
+   {
+    "label": "B",
+    "text": "Set scale_pos_weight to about 49, the ratio of the number of negatives to the number of positives, and compare models by validation PR AUC"
+   },
+   {
+    "label": "C",
+    "text": "Randomly remove negative samples to reduce the training data to a 1:1 ratio with positives, and train"
+   },
+   {
+    "label": "D",
+    "text": "Keep eval_metric at the default error and only greatly increase num_round to train for longer, without separately adjusting class weights"
+   }
+  ],
+  "explanation": "XGBoost's scale_pos_weight adjusts the balance between positive and negative weights for imbalanced classes, and the number of negatives divided by the number of positives is the typical setting. With 2% positives, negatives are 98%, so the value is about 49, and this also respects the constraint of not discarding or duplicating data. 0.02 is in the opposite direction and actually reduces the weight of positives. Undersampling by removing negatives violates the requirement not to discard data. The error metric and increasing rounds alone do not resolve the bias toward the majority class."
+ },
+ {
+  "number": 61,
+  "domain": "Modeling",
+  "prompt": "A logistics company needs a model that finds multiple pallets and forklifts per image from warehouse CCTV images and outputs the location (rectangle), type, and confidence of each object. The training data is JSON in which rectangle coordinates and classes are annotated for each image, and there is no plan to create pixel-level masks. The image resolution is 1920x1080, and about 50,000 new images arrive per day. Safety staff use the results for counting objects and proximity alerts, and the team has no staff who can design a neural network architecture. Training runs on a single ml.p3.2xlarge instance, and inference may be processed in a daily batch. There are three classes, pallet, forklift, and person, and there are on average 8 objects per image. Which SageMaker built-in algorithm is MOST appropriate to meet these requirements?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Use Semantic Segmentation to classify every pixel of the image into a class to obtain the object regions"
+   },
+   {
+    "label": "B",
+    "text": "Use Object Detection (SSD-based) to train on the rectangle annotations and output the location, class, and confidence of each object"
+   },
+   {
+    "label": "C",
+    "text": "Use the multi-label mode of Image Classification to output the names of all objects present in the image"
+   },
+   {
+    "label": "D",
+    "text": "Train Image Classification with a single label to output the single most likely class per image, and estimate the locations with post-processing"
+   }
+  ],
+  "explanation": "Object Detection uses the SSD framework to find all object instances in an image and outputs the rectangle location, class, and confidence, and it is trained on JSON annotations that contain rectangle coordinates and classes, so it matches the requirements exactly. Semantic Segmentation requires pixel-level mask annotations, which there is no plan to create, and it does not directly provide bounding boxes of instance locations. Image classification, whether multi-label or single-label, cannot output locations."
+ },
+ {
+  "number": 62,
+  "domain": "Data Engineering",
+  "prompt": "A financial company's fraud detection team creates derived features in SageMaker Processing during training and recomputes the same features with separate application code during real-time inference, so mismatches between training and serving values keep recurring. Inference must look up the latest features within tens of milliseconds per request, while training must read a large volume of feature history from past points in time. Two teams implement the same features separately, so the maintenance burden is also high. There are about 40 feature definitions, and new history is reflected once a day. The inference service runs on a SageMaker endpoint, and its execution role can read the feature store. All feature values are numeric, and online lookups need only the latest values. Which configuration MOST appropriately eliminates the duplication of feature computation logic?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Load the training features into Amazon S3 and the inference features into Amazon DynamoDB through separate pipelines, maintain two copies of the transformation code, and periodically reconcile the values in the two stores manually"
+   },
+   {
+    "label": "B",
+    "text": "Create a Feature Store feature group with both the online and offline stores turned on, ingest once, and use online lookups for inference and offline queries for training"
+   },
+   {
+    "label": "C",
+    "text": "Query the source data in Amazon S3 with Athena for every inference request to compute the latest features on the fly"
+   },
+   {
+    "label": "D",
+    "text": "Store all features in Amazon ElastiCache and read even the past history from the cache during training"
+   }
+  ],
+  "explanation": "A Feature Store feature group keeps features that were ingested once in both an online store for latest value lookups and an offline store that accumulates history in Amazon S3 (Parquet), so training reads the offline store with Athena or similar tools and inference looks up the online store with low latency, eliminating duplicated logic and value mismatches. Keeping two pipelines leaves the same mismatches to recur. An Athena query for every request cannot meet a latency of tens of milliseconds. ElastiCache is not suited to bulk reads of past history or to constructing point-in-time training data."
+ },
+ {
+  "number": 63,
+  "domain": "Machine Learning Implementation and Operations",
+  "prompt": "A computer vision team runs a training job that takes about 20 hours on GPU instances three times a week. The team wants to reduce cost, and the training gives the same result even if it is interrupted and resumed. It is acceptable for the job to wait if there is no Spot capacity. The job runs as a SageMaker training job, and the training script has already been written so that it can save the model state at every epoch. The training results are used at the meeting the next morning, so waiting up to two days is acceptable. The script is set up to write checkpoints to the local checkpoint path of the training container. The training job runs on a single instance and does not use distributed training. Training cost is aggregated monthly and reported to the finance team. Which configuration is MOST appropriate to reduce cost without losing progress when interrupted?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Turn on managed Spot training, store checkpoints in Amazon S3, and set MaxWaitTimeInSeconds greater than MaxRuntimeInSeconds"
+   },
+   {
+    "label": "B",
+    "text": "Turn on managed Spot training without checkpoints and set MaxWaitTimeInSeconds and MaxRuntimeInSeconds to the same value"
+   },
+   {
+    "label": "C",
+    "text": "Turn on managed Spot training and have SageMaker automatically switch to an On-Demand instance and continue training if Spot capacity is lacking, with checkpoints stored only on the local disk"
+   },
+   {
+    "label": "D",
+    "text": "Train on On-Demand instances, but launch EC2 Spot Instances yourself and run the job while manually moving the checkpoint files"
+   }
+  ],
+  "explanation": "Managed Spot training with checkpoints and a MaxWait greater than MaxRuntime is the correct answer. If interrupted, SageMaker restores the checkpoint from Amazon S3 and resumes from the last point, and MaxWait must be greater than MaxRuntime to allow waiting for Spot capacity. If the two values are made equal without checkpoints, an interruption means starting over or there is no wait time. Managed Spot does not switch automatically to On-Demand; it waits and then stops. Managing Spot yourself only adds operational burden."
+ },
+ {
+  "number": 64,
+  "domain": "Exploratory Data Analysis",
+  "prompt": "A team is building a card payment anomaly detection model. Normal transactions are 99.5% and fraudulent transactions are 0.5%, and the cost of missing fraud is much greater than the cost of a false positive. The team evaluated the model by accuracy, but classifying every transaction as normal also gave 99.5%. The model evaluates payment requests at hundreds per second, and suspected fraud transactions are reviewed manually by analysts, so the reviewers' workload must also be considered. The training data is 10 million records and XGBoost is used. The classification threshold must be adjusted to the analysts' daily review throughput (about 2,000 cases). The payment data has already been cleaned, and the training and validation split is by time order. The team intends to address the class imbalance through hyperparameters and changes to the evaluation method. Select the two actions that should be applied first to handle the imbalance correctly. (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Remove features with high variance from the normal transaction column so that the distribution difference between the two classes is reduced"
+   },
+   {
+    "label": "B",
+    "text": "Balance the entire dataset first with SMOTE, and then split into training and test sets to proceed with evaluation"
+   },
+   {
+    "label": "C",
+    "text": "Reduce the normal transactions in the test set to a 1:1 ratio and then continue to use accuracy as the main metric"
+   },
+   {
+    "label": "D",
+    "text": "Evaluate the model and the classification threshold based on the area under the precision-recall curve and recall"
+   },
+   {
+    "label": "E",
+    "text": "Adjust XGBoost's scale_pos_weight to give a greater weight to errors on the fraud class when training"
+   }
+  ],
+  "explanation": "The correct answers are giving weight to minority class errors with scale_pos_weight and evaluating by the area under the precision-recall curve and recall. The weight keeps training from ignoring fraud transactions, and since accuracy is meaningless under imbalance, a metric that is sensitive to the minority class is needed. If SMOTE is applied before the split, synthetic samples leak into the test set and inflate the evaluation. Reducing the test set to 1:1 distorts the real distribution, and accuracy is still an inappropriate metric. Removing high-variance features has nothing to do with imbalance."
+ },
+ {
+  "number": 65,
+  "domain": "Data Engineering",
+  "prompt": "An advertising data team converts JSON files that accumulate at several thousand per day under the raw/ prefix in Amazon S3 once a day with an AWS Glue Spark ETL job. Currently, every run reads all of the files again, and the run time keeps growing. The files accumulate under a single prefix with no date partitions, and objects that have already been processed are not modified. The job is a Glue 4.0 Spark job and the file format is JSON. The data ingestion structure is owned by another team and cannot be changed, and changes to the script must be minimized. The Glue job runs with 10 G.1X workers and writes its output as Parquet by date. On a day when the job fails, rerunning it with the same input must give the same result. What is the MOST appropriate way to process only the newly arrived objects?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Leave the job bookmark in the Pause state and manually specify the range of run IDs to process on each run"
+   },
+   {
+    "label": "B",
+    "text": "Run a crawler every day to register only new partitions in the catalog on the assumption that the job then reads only new data, leaving the bookmark disabled, adding no state-saving code, and leaving the read statements unchanged"
+   },
+   {
+    "label": "C",
+    "text": "Add a Lambda function that deletes objects after they are processed, and invoke a new job for each object through S3 events"
+   },
+   {
+    "label": "D",
+    "text": "Enable the job bookmark, and save the processing state by calling job.init and job.commit in the script and specifying transformation_ctx in the read statements"
+   }
+  ],
+  "explanation": "When the AWS Glue job bookmark is turned on, it saves the state processed in previous runs so that the next run processes only new data. The state is loaded with job.init and saved at job.commit, and it is managed per transformation_ctx attached to the read statements, so this value must be specified; the S3 source identifies new objects by object modification time, and JSON is a supported format. The pause option does not update the state, and the range must be managed manually, which creates a large operational burden. This data has no partitions, so running a crawler does not reduce the range that is read. Deleting objects and invoking a job per object is a large change to the entire pipeline and does not fit the requirement to minimize script changes."
+ }
+]

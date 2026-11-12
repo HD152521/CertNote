@@ -99,7 +99,7 @@ Today we organized builtins for special data shapes. Text (BlazingText), image (
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 1,000개 매장의 일별 판매 데이터가 있고, 최근 오픈해 데이터가 짧은 신규 매장의 향후 4주 수요를 P10/P50/P90 구간으로 예측하려 한다. 가장 적합한 빌트인은?
 

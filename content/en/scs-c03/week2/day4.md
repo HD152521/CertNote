@@ -143,7 +143,7 @@ In the next session, we integrate all of Week 2 (evaluation logic → Boundary �
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 회사가 GitHub Actions에서 AWS로 배포할 때 장기 access key를 워크플로우에 저장하지 않으려 한다. 가장 적절한 방법은?
 

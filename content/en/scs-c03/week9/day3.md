@@ -96,7 +96,7 @@ Management Account ──designate──▶ Inspector Delegated Admin (Security 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 보안팀이 EC2 인스턴스를 Amazon Inspector에 등록했지만 일부 인스턴스가 스캔되지 않는다. 에이전트 기반 스캔을 사용 중일 때 가장 먼저 확인할 것은?
 

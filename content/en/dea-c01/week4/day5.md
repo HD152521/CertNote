@@ -93,7 +93,7 @@ This week's core lesson is simple: **Transformation isn't just changing data—i
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 다음 중 Glue 크롤러와 Glue ETL Job의 역할을 가장 정확히 구분한 것은?
 

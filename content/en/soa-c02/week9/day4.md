@@ -35,7 +35,7 @@ Next article we'll tie together all the security and encryption tools covered th
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** EC2 인스턴스가 알려진 암호화폐 채굴 풀 도메인을 DNS로 조회하고 있다. 에이전트 설치 없이 이를 자동 탐지하려면?
 

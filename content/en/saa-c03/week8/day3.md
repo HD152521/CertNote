@@ -253,7 +253,7 @@ In the next article we'll look at security *after* user authentication — the s
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A mobile app needs to temporarily grant authenticated users permission to upload images directly to an S3 bucket. What is the most suitable solution?
 

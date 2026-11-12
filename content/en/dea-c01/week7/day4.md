@@ -83,7 +83,7 @@ Selection criteria summary:
 - Zero-ETL = AWS-managed CDC (codeless). Broad migration use DMS.
 - Store selection via access pattern, data shape, latency, operations/cost model.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 다음 중 행 기반 OLTP에 최적화되어 정규화된 트랜잭션·ACID 워크로드에 가장 적합한 스토어는?
 

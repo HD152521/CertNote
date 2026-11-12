@@ -137,7 +137,7 @@ with DAG("ml_retrain", schedule_interval="@daily") as dag:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** SageMaker 엔드포인트, IAM 역할, 버킷을 dev/staging/prod에 동일하게 재현하고 변경을 버전 관리하려 한다. 가장 적절한 접근은?
 

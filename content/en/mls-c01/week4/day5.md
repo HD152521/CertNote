@@ -86,7 +86,7 @@ X_tr_proc, y_tr_proc = pipe.fit_resample(X_tr, y_tr)
 - **Visualization**: Don't trust summary stats alone—visualize (Anscombe); Pearson is linear-only
 - **Imbalance**: Accuracy paradox; SMOTE on training set only; PR-AUC; class weights/threshold tuning
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Week 3·4를 관통하는, 표준화·PCA·SMOTE·결측 대치에 공통으로 적용되는 누수 방지 원칙은?
 

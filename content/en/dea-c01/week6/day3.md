@@ -103,7 +103,7 @@ VACUUM sales.orders;
 - Athena v3, Glue, and EMR integrate with all three formats, sharing Glue Data Catalog.
 - MoR/CoW tradeoffs and compaction/snapshot expiration maintenance are important.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 전통적 Hive 스타일 Parquet 테이블 대비 오픈 테이블 포맷(Iceberg/Hudi/Delta)이 제공하는 핵심 기능이 아닌 것은?
 

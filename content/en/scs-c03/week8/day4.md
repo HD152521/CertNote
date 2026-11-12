@@ -150,7 +150,7 @@ EventBridge is the router distributing detection signals to alerts, remediation,
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** GuardDuty 결과를 EventBridge 규칙으로 직접 잡으려는데 `"detail": { "severity": ["HIGH"] }` 패턴이 한 번도 매칭되지 않는다. 원인은?
 

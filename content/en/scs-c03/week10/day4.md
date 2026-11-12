@@ -123,7 +123,7 @@ mainSteps:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** NIST IR 생명주기에서 근절(Eradication)을 복구(Recovery)보다 먼저 수행해야 하는 이유로 가장 적절한 것은?
 

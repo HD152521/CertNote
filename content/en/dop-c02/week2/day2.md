@@ -264,7 +264,7 @@ jobs:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** GitHub Actions에서 AWS에 배포할 때 가장 안전한 자격 증명 관리 방법은?
 
@@ -386,6 +386,6 @@ D) 차단되지 않음 — main은 기본 브랜치라 environment 게이트가 
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 OIDC 페더레이션은 단순한 "키 없는 인증"이 아니라 **정적 자격 증명 자체를 시스템에서 제거하는 패러다임 전환**이다. JWT의 `sub` claim에 컨텍스트(repo, ref, environment, reusable workflow ref)가 모두 담겨 있어, Trust Policy 조건만 정확히 쓰면 매우 정밀한 권한 제어가 가능하다. GitHub Environments + Required Reviewers와 결합하면 GitHub 게이트와 AWS IAM 게이트의 이중 방어가 완성된다. 실무 함정은 `permissions: id-token: write` 누락, `sub` 와일드카드, `pull_request_target` 오용 세 가지가 단연 많다. 내일은 이걸 CodeBuild의 빌드 시스템 관점에서 다시 본다.

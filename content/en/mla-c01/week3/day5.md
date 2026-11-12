@@ -104,7 +104,7 @@ Next week (Week 4) we begin full model training, tuning, and evaluation with the
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 데이터 과학자가 코드를 거의 작성하지 않고 S3·Athena 데이터를 임포트해 결측·인코딩·스케일링을 시각적으로 적용하고, 그 변환 흐름을 재현 가능한 Processing Job으로 내보내려 한다. 가장 적합한 도구는?
 

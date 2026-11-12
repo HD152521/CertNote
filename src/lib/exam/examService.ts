@@ -1,4 +1,4 @@
-import { getAllExamQuestions, getExamQuestionById, getExamQuestionsByCert, type ExamBankQuestion } from './examBank';
+import { getAllExamQuestions, getExamQuestionById, getExamQuestionsByCert, localizeExamQuestion, type ExamBankQuestion, type ExamLang } from './examBank';
 import { isMultiAnswer, isSelectionCorrect, normalizeSelection } from '../quiz/correctness';
 import { getAttemptService } from '../quiz/attemptService';
 import { DOMAIN_KEY_SEP, domainKey } from './domainKey';
@@ -14,7 +14,8 @@ export interface ExamQuestion {
   prompt: string;
   choices: { label: string; text: string }[];
   slug: string;
-  domain: string; // 시험 도메인(예: "보안 설계"). day 위치(week/day)는 없음.
+  domain: string; // 시험 도메인(예: "보안 설계"). 필터·집계의 키라서 항상 한국어. day 위치(week/day)는 없음.
+  domainLabel: string; // 화면에 보일 도메인 이름(영어 모드면 영어).
   multi: boolean; // 복수 정답 여부(정답 자체는 노출하지 않고 "여러 개 선택" 안내용으로만 사용).
 }
 
@@ -29,6 +30,7 @@ export interface ExamResultItem extends ExamQuestion {
 export interface DomainScore {
   slug: string;
   domain: string;
+  domainLabel: string;
   total: number;
   correct: number;
   rate: number; // 0~100
@@ -53,8 +55,9 @@ export interface CheckResult {
 }
 
 
-function toExamQuestion(q: ExamBankQuestion): ExamQuestion {
-  return { questionId: q.id, number: q.number, prompt: q.prompt, choices: q.choices, slug: q.slug, domain: q.domain, multi: isMultiAnswer(q.answer) };
+function toExamQuestion(q: ExamBankQuestion, lang: ExamLang = 'ko'): ExamQuestion {
+  const loc = localizeExamQuestion(q, lang);
+  return { questionId: q.id, number: q.number, prompt: loc.prompt, choices: loc.choices, slug: q.slug, domain: q.domain, domainLabel: loc.domainLabel, multi: isMultiAnswer(q.answer) };
 }
 
 // Fisher–Yates 셔플(원본 불변 — 복사본을 섞는다).
@@ -113,11 +116,11 @@ function filterByDomains(pool: readonly ExamBankQuestion[], certSlug: string | n
 
 // 모의고사 은행(day 퀴즈와 별개)에서 자격증(없으면 전체) count문항을 도메인 비례로 정답 없이 반환.
 // domains 를 주면 그 도메인에서만 뽑는다(약한 도메인 다시 풀기·도메인 연습).
-export function buildExam(certSlug: string | null, count: number, domains: readonly string[] = []): ExamQuestion[] {
+export function buildExam(certSlug: string | null, count: number, domains: readonly string[] = [], lang: ExamLang = 'ko'): ExamQuestion[] {
   const pool = filterByDomains(certSlug ? getExamQuestionsByCert(certSlug) : getAllExamQuestions(), certSlug, domains);
   if (pool.length === 0) return [];
   const n = Math.min(Math.max(1, Math.floor(count) || 1), Math.min(MAX_COUNT, pool.length));
-  return sampleByDomain(pool, n).slice(0, n).map(toExamQuestion);
+  return sampleByDomain(pool, n).slice(0, n).map((q) => toExamQuestion(q, lang));
 }
 
 // 채점 항목을 자격증·도메인별로 묶어 정답률 낮은 순으로. 미응답은 오답으로 센다.
@@ -125,7 +128,7 @@ export function summarizeByDomain(items: readonly ExamResultItem[]): DomainScore
   const map = new Map<string, DomainScore>();
   for (const it of items) {
     const key = domainKey(it.slug, it.domain);
-    const cur = map.get(key) ?? { slug: it.slug, domain: it.domain, total: 0, correct: 0, rate: 0 };
+    const cur = map.get(key) ?? { slug: it.slug, domain: it.domain, domainLabel: it.domainLabel, total: 0, correct: 0, rate: 0 };
     map.set(key, { ...cur, total: cur.total + 1, correct: cur.correct + (it.correct ? 1 : 0) });
   }
   return [...map.values()]
@@ -134,11 +137,11 @@ export function summarizeByDomain(items: readonly ExamResultItem[]): DomainScore
 }
 
 // 연습 모드: 한 문제의 정답·해설. 기록은 하지 않는다(마지막 제출 때 gradeExam 이 한 번만 기록).
-export function checkAnswer(questionId: string, selected: string): CheckResult | null {
+export function checkAnswer(questionId: string, selected: string, lang: ExamLang = 'ko'): CheckResult | null {
   const q = getExamQuestionById(questionId);
   const picked = selected ? normalizeSelection(selected) : '';
   if (!q || !picked) return null;
-  return { correct: isSelectionCorrect(q.answer, picked), answer: q.answer, explanation: q.explanation };
+  return { correct: isSelectionCorrect(q.answer, picked), answer: q.answer, explanation: localizeExamQuestion(q, lang).explanation };
 }
 
 // 제출 채점: 미응답은 오답 처리, 응답분은 attempt로 기록(오답 자동 복습 적재 + 대시보드 반영).
@@ -147,6 +150,7 @@ export async function gradeExam(
   userId: string,
   questionIds: string[],
   answers: Record<string, string>,
+  lang: ExamLang = 'ko',
 ): Promise<ExamResult> {
   const items: ExamResultItem[] = [];
   let correct = 0;
@@ -162,7 +166,7 @@ export async function gradeExam(
     const isCorrect = selected ? isSelectionCorrect(q.answer, selected) : false;
     if (selected) answered += 1;
     if (isCorrect) correct += 1;
-    items.push({ ...toExamQuestion(q), selected, correct: isCorrect, answer: q.answer, explanation: q.explanation });
+    items.push({ ...toExamQuestion(q, lang), selected, correct: isCorrect, answer: q.answer, explanation: localizeExamQuestion(q, lang).explanation });
     if (selected) {
       try {
         // record()는 getQuestionById(통합 lookup)로 모의고사 문제도 인식 → 오답이 복습 큐·대시보드에 연동된다.

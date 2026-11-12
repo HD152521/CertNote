@@ -191,7 +191,7 @@ Outposts, Local Zones, and Wavelength are different answers to the question "Whe
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한국 금융감독원 규제로 고객 거래 데이터가 금융사 서울 본사 건물 밖으로 반출되면 안 된다. 동시에 ML 기반 사기 탐지 모델(AWS SageMaker 학습)의 추론을 실시간으로 실행해야 한다. 적합한 구성은?
 

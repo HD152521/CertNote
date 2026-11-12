@@ -114,7 +114,7 @@ Next, we'll explore feature engineering for specialized data types like dates an
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 다음 중 입력 피처 스케일링이 **필요 없는** 알고리즘은?
 

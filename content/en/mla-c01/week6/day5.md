@@ -75,7 +75,7 @@ Next week: deployed model operations—orchestration and monitoring.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 추론 워크로드가 "개별 요청, 입력 페이로드 300MB, 처리 약 10분, 결과는 완료 후 S3에서 수령"이라는 요구를 가진다. 가장 적절한 옵션은?
 

@@ -10,7 +10,7 @@ Key mappings: (1) "PB-scale CDN, minimal origin requests" → **CloudFront + S3 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 수십억 요청 origin 최소화 → **CloudFront S3 Intelligent-Tiering**
 

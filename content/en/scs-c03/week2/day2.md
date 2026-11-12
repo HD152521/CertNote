@@ -131,7 +131,7 @@ Next, we'll zoom out and cover **AWS Organizations and SCP**, which control the 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 회사가 개발자에게 `iam:CreateRole`과 `iam:AttachRolePolicy` 권한을 부여하려 한다. 권한 상승을 막으면서 위임하려면 반드시 추가해야 하는 것은?
 

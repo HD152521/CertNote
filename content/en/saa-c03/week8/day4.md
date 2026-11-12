@@ -272,7 +272,7 @@ In the next article, we'll bring this week's security services together in a sce
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company's web app is being hit with SQL injection and XSS attacks. What is the most suitable blocking solution?
 

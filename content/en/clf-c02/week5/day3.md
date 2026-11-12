@@ -61,7 +61,7 @@ In the next article, we'll look at the billing structure for grouping and paying
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You run a production workload 24/7 and need phone/chat technical support and the full set of Trusted Advisor checks. However, you don't need a dedicated TAM. Which support plan is the best fit?
 

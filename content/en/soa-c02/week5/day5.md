@@ -84,7 +84,7 @@ Knowing repeated operational mistakes helps avoid exam trap questions.
 
 > ⚠️ **Pitfall**: `ApproveAfterDays=0` means "approved from the day the patch is released." So the next time Patch Manager runs, any patch that has already been released is applied immediately. If the Maintenance Window runs once a week, the patch lands up to 7 days after release. It does not mean "applied instantly in real time" — it means "on the next Maintenance Window run, apply every patch released on or after its release date."
 
-## 📝 시나리오 연습 문제
+## 📝 Scenario Practice Questions
 
 **문제 1.** 운영팀이 사설 VPC(인터넷 게이트웨이 없음)에서 EC2 인스턴스를 SSM으로 관리하고 있다. 인스턴스에 `AmazonSSMManagedInstanceCore` IAM Role이 부착되어 있고 SSM Agent도 실행 중이지만, SSM 콘솔의 Fleet Manager에 인스턴스가 보이지 않는다. 원인은?
 

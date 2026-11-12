@@ -139,7 +139,7 @@ Next: Week 9 recap — KMS, Secrets Manager, Cognito, WAF/Shield/ACM stitched to
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Block SQL injection attacks at the request stage. Right service?
 

@@ -108,7 +108,7 @@ SET query_group TO 'critical_dashboards';
 - RA3 separates compute/storage, Spectrum queries S3 external tables.
 - Auto WLM + concurrency scaling elastically handle read spikes.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 두 큰 테이블을 customer_id로 자주 조인할 때, 네트워크 재분배 없이 조인(co-located join)되도록 하려면 어떤 설정이 가장 적절한가?
 

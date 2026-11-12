@@ -87,7 +87,7 @@ Next week we enter data storage and serving — data warehouses and catalog spac
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 다음 요구를 모두 만족하는 변환 엔진은? "수십 TB를 처리, Hive와 HBase를 함께 사용, 스팟 인스턴스로 비용을 극단적으로 제어, 클러스터를 세밀히 튜닝."
 

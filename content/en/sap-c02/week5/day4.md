@@ -370,7 +370,7 @@ DR scenario: "Route 53 Failover conversion slow" usually means DNS changes witho
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Company configured Route 53 Failover routing with Primary (us-east-1 ALB) and Secondary (us-west-2 ALB). Primary dies, Secondary should auto-switch. But ALB is inside VPC, no public IP. How configure Route 53 Health Check?
 

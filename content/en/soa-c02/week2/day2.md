@@ -322,7 +322,7 @@ Tomorrow: Deeper Logs Insights query language — build library of troubleshooti
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Running 500 Lambda functions, CloudWatch Logs costs exploded. Most effective first action?
 

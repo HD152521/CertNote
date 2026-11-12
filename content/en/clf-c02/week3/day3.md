@@ -74,7 +74,7 @@ In the next article, we'll look at how to **automatically generate and deploy th
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You want to track an EC2 instance's CPU utilization as a time series and send a notification when it exceeds 80%. Which service is most appropriate?
 

@@ -82,7 +82,7 @@ Week 2 covered the entire process of getting data to models—transformation (Gl
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 운영 인력이 적은 팀이 매일 표준 Spark 변환을 돌리고, 그 결과로 모델을 재학습하는 ML CI/CD를 lineage 추적과 함께 구성하려 한다. 가장 자연스러운 조합은?
 

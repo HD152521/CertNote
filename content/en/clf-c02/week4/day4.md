@@ -72,7 +72,7 @@ In the next article, we'll comprehensively review all of Week 4 — the shared r
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Protecting data traveling between a web browser and a server from interception is which type of encryption?
 

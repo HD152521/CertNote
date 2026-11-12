@@ -78,7 +78,7 @@ In the next article, we'll look at the tools for **watching over and managing** 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You want to decouple an order system and a payment system so that no messages are lost during a traffic spike and the payment system processes them one at a time at its own pace. Which service is most appropriate?
 

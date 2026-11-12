@@ -118,7 +118,7 @@ Today we organized four tabular data builtins. XGBoost (nonlinear trees, scaling
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 중간 규모의 정형(표 형식) 데이터로 이진 분류를 하는데, 피처 간 비선형 상호작용이 중요하고 결측치도 일부 있다. 가장 적합한 빌트인은?
 

@@ -211,7 +211,7 @@ The most confusing distinction on the exam.
 
 Blurry boundary case: "Migrate a Java app from Tomcat to EKS via App2Container." Code unchanged, but containerization applied → **Replatform leaning Refactor**, or classified as Refactor. On the exam, since App2Container's primary purpose is "containerize without code changes," it's classified as a Refactor tool.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company has 1,200 physical servers and 500 VMware VMs. They want to quickly migrate physical servers to the cloud, and they want to keep using their existing vCenter and vMotion for the VMware environment. Which R is most suitable for each?
 

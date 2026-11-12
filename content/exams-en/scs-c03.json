@@ -1,0 +1,1598 @@
+[
+  {
+    "number": 1,
+    "domain": "Identity and Access Management",
+    "prompt": "A fintech startup has 50 developers who deploy more than 40 microservices every week. Each service needs a dedicated IAM role, so role requests occur several times a day. Currently, the security team creates the roles on behalf of the developers, and deployments are frequently blocked while waiting for approval. The platform team wants to delegate to developers the ability to create IAM roles for their services on their own. However, the platform team must prevent developers from escalating their privileges by creating roles that have administrator permissions. Developers must be able to create roles immediately without waiting for approval. The security team has only 3 members and cannot rely on after-the-fact reviews or manual attachment. The developer accounts are consolidated in a single organization, and most service roles need access only to Amazon S3, Amazon SQS, and Amazon DynamoDB. The last audit flagged a large number of exception approvals. Which configuration will meet these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Grant developers the iam:* permission. Use an SCP to deny only the action of attaching the AdministratorAccess managed policy to a role, to block the escalation path."
+      },
+      {
+        "label": "B",
+        "text": "When a developer creates a role, use an AWS Config rule to detect roles that have no boundary policy. Have the security team manually attach a boundary policy the next day."
+      },
+      {
+        "label": "C",
+        "text": "In the developer policy, allow iam:CreateRole and iam:AttachRolePolicy only if a specified permissions boundary policy is attached. Deny modification and deletion of the boundary policy."
+      },
+      {
+        "label": "D",
+        "text": "Accept role creation requests as tickets. Have the security team create the roles on behalf of developers, and grant developers only the iam:PassRole permission."
+      }
+    ],
+    "explanation": "By using the iam:PermissionsBoundary condition key to allow role creation and policy attachment only when the specified boundary policy is attached, every role that is created is restricted within the boundary. Modification and deletion of the boundary policy must also be denied so that it cannot be bypassed. This approach allows immediate creation and requires no human involvement. An SCP that denies only iam:* and attachment of the administrator policy can be bypassed with other broad policies or inline policies. Manual attachment after the fact leaves the roles exposed without a boundary in the meantime. The ticket-based approach violates the requirement for immediate creation."
+  },
+  {
+    "number": 2,
+    "domain": "Detection",
+    "prompt": "A retail company's AWS organization consists of 120 accounts across 3 Regions, and each account administrator changes security groups frequently. Last quarter, there was an incident in which a development account left port 22 open to 0.0.0.0/0 for two weeks. The security team has only 4 members and cannot inspect every account. From now on, the company must detect the creation of such a rule within minutes and automatically revert it with no human involvement. The history of rule changes must be retained for auditing, and maintaining separate scripts for each account is not allowed. Different teams operate each Region, so once a rule is defined, it must be applied in the same way to new accounts and new Regions. The evaluation results for noncompliant resources must be viewable aggregated at the organization level. Which configuration will meet these requirements with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Deploy the restricted-ssh AWS Config managed rule as an organization conformance pack, and attach an AWS Systems Manager Automation automatic remediation action for violations."
+      },
+      {
+        "label": "B",
+        "text": "Export the AWS Trusted Advisor security group check results every week for the security team to review, and open a ticket for the responsible account administrator to fix each violation."
+      },
+      {
+        "label": "C",
+        "text": "Receive Amazon Inspector network reachability findings through Amazon EventBridge, and implement an AWS Lambda function that deletes the violating security group rules one account at a time."
+      },
+      {
+        "label": "D",
+        "text": "Create a custom AWS Config rule that runs every 24 hours in every account, review the results on a dashboard, and have the responsible person fix the rules directly in the console."
+      }
+    ],
+    "explanation": "restricted-ssh is a managed rule whose evaluation is triggered when a security group configuration changes, so it finds violations within minutes. Attaching a Systems Manager Automation runbook as an automatic remediation action reverts the change with no human involvement. An organization conformance pack deploys the rule and the remediation action to all accounts with the same configuration from a single template, and the evaluation history is also retained in AWS Config. A weekly Trusted Advisor review violates both the within-minutes requirement and the automatic reversion requirement. Inspector reachability applies to EC2 targets and requires you to implement Lambda directly. A 24-hour evaluation cycle with manual fixes leaves delay and human involvement."
+  },
+  {
+    "number": 3,
+    "domain": "Data Protection",
+    "prompt": "A banking-affiliated fintech company protects customer data with SSE-KMS in Amazon S3. The financial regulator requires that key material exist only in HSMs in the company's data center and that all encryption and decryption operations also be performed in those HSMs. The company already has redundant on-premises HSMs and a team that operates them. If the company revokes access, ciphertext remaining in AWS must be impossible to decrypt. Importing key material and using HSMs inside AWS are not allowed, and storing key material in any other way is considered a regulatory violation. The ciphertext is stored in Amazon S3. The regulator conducts an inspection every six months to verify proof of key ownership, and all S3 buckets used by the application are in the Seoul Region. Which AWS KMS configuration will meet these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Connect an external key store (XKS) to the on-premises external key manager through an XKS proxy that the company operates, and create the KMS key inside that external key store."
+      },
+      {
+        "label": "B",
+        "text": "Configure an AWS CloudHSM cluster in a VPC, create a CloudHSM key store, and have the key material and operations for the KMS key performed in dedicated HSMs."
+      },
+      {
+        "label": "C",
+        "text": "Create a customer managed KMS key, and use the key policy to allow only the Amazon S3 service principal to use it, keeping key usage under the company's control."
+      },
+      {
+        "label": "D",
+        "text": "Create an external-origin (EXTERNAL) KMS key by importing key material generated in the on-premises HSM, and set a short expiration time for the key material."
+      }
+    ],
+    "explanation": "The correct answer is an external key store. With XKS, an external key manager owned by the company stores the key material and performs encryption and decryption. If access is revoked, AWS cannot access the key and therefore cannot decrypt the ciphertext. In exchange, responsibility for availability, latency, and durability shifts to the customer. Importing key material copies the key material to AWS HSMs and the operations also occur in AWS, and this approach is prohibited. A CloudHSM key store has its HSMs inside AWS and so does not satisfy the on-premises storage requirement. Restricting the key policy does not change the fact that the key material is in an AWS HSM."
+  },
+  {
+    "number": 4,
+    "domain": "Security Foundations and Governance",
+    "prompt": "A financial company manages 28 AWS Config rules that implement its internal security standards, together with AWS Systems Manager Automation remediation actions to run on noncompliance, as a single bundle. Some of these are custom rules written directly by the company's security team. Currently, every time a new account is created, an administrator creates the rules by hand, so the settings differ slightly from account to account. The company wants to deploy this bundle consistently to the 90 member accounts of the organization and to make changes in only one place. The target Regions are Seoul and Tokyo, and the security team has 5 members. Changes occur about once per quarter, and every change must be completed in a single approved deployment. The audit team wants to see at a glance which accounts are using which version of the bundle. Which solution will meet these requirements with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Enable the AWS Control Tower mandatory controls on all OUs so that the organization applies, in bulk, the rules that correspond to the internal standards."
+      },
+      {
+        "label": "B",
+        "text": "Enable the AWS Foundational Security Best Practices standard in AWS Security Hub across the organization to check accounts against the same standard and automatically remediate violations."
+      },
+      {
+        "label": "C",
+        "text": "Log in to each member account, create the 28 Config rules one by one in the console, attach a remediation action to each rule, and distribute the procedure as a document."
+      },
+      {
+        "label": "D",
+        "text": "In the management account or a delegated administrator account, define the rules and remediation actions in a YAML template and deploy them to all member accounts as an organization conformance pack."
+      }
+    ],
+    "explanation": "The correct answer is an organization conformance pack. A conformance pack bundles AWS Config managed or custom rules and remediation actions in a single YAML template, deploys them as a single unit to a single account and Region or to an entire organization, and lets you modify them in one place. Creating rules manually per account requires repeating 28 rules across 90 accounts and breaks consistency. The FSBP standard is a set of controls defined by AWS and cannot contain the company's own rules and specified remediation actions. Control Tower mandatory controls are also protective controls defined by AWS and cannot be used as a bundle of custom company rules."
+  },
+  {
+    "number": 5,
+    "domain": "Infrastructure Security",
+    "prompt": "A VPC that runs 300 Amazon EC2 instances for a payment workload was recently assessed as having a high likelihood of a security incident. The company must block the instances in the VPC from resolving known malicious domains. In addition, a path has been identified in which some instances bypass the VPC resolver and query public DNS servers on the internet directly (port 53), and this path must also be blocked. Amazon Route 53 Resolver query logging and Amazon GuardDuty are already enabled, but an approach that only detects does not meet the requirements. All instances are in private subnets, and the security groups already restrict destination ports, but outbound port 53 is open. Resolution of internal names for normal services must continue to be handled by the VPC resolver. Which TWO actions will meet these two requirements? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Send Route 53 Resolver query logs to Amazon S3, periodically query for malicious domain lookups with Amazon Athena, and deliver a report to the responsible person."
+      },
+      {
+        "label": "B",
+        "text": "Add a stateful rule to AWS Network Firewall that drops TCP and UDP port 53 traffic leaving the VPC, and make the outbound path go through the firewall."
+      },
+      {
+        "label": "C",
+        "text": "Receive GuardDuty DNS-related findings through Amazon EventBridge, and automate an AWS Lambda function to isolate, after the fact, the instances that queried a malicious domain."
+      },
+      {
+        "label": "D",
+        "text": "Add a rule that blocks the AWS managed malicious domain list to a Route 53 Resolver DNS Firewall rule group, and associate the rule group with the VPC."
+      },
+      {
+        "label": "E",
+        "text": "Apply AWS Shield Advanced to the VPC and configure it to automatically mitigate abnormal query traffic destined for public DNS servers."
+      }
+    ],
+    "explanation": "DNS Firewall blocks queries that pass through the VPC resolver based on domain lists, but it cannot see queries that bypass the resolver and go directly to an external DNS server. Network Firewall blocks that path by dropping external port 53 traffic, so both actions must be used together to meet the requirements. Automatic isolation based on GuardDuty is a response after the fact, after the query has already gone out. Query logging and Athena lookups provide visibility only and cannot block. Shield Advanced is a DDoS protection service and is unrelated to domain blocking."
+  },
+  {
+    "number": 6,
+    "domain": "Incident Response",
+    "prompt": "CloudTrail confirms signs that temporary credentials for the IAM role PaymentProcessorRole, used by an e-commerce company's payment service, were leaked through malware on a developer's laptop. The role has a maximum session duration of 12 hours and hundreds of active sessions, and because it is the middle of a Black Friday event, payment processing cannot be stopped for long. Normal workloads must resume immediately by obtaining new credentials with the same role ARN, and deleting the role or modifying the content of the existing permissions policies is not allowed. It is not possible to identify individually which session the leaked credentials belong to, and although the laptop has been isolated, an attacker can access payment data for as long as the already-issued credentials remain valid. Which action will immediately invalidate the already-issued credentials?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Temporarily attach an SCP that denies all actions to the organization root so that all principals in the account are prevented from sending new requests."
+      },
+      {
+        "label": "B",
+        "text": "Delete the role, re-create it with the same name, and replicate the trust policy and permissions policy so that the existing credentials are no longer valid."
+      },
+      {
+        "label": "C",
+        "text": "Reduce the maximum session duration of the role from 12 hours to 1 hour so that credentials issued from now on expire within a short time."
+      },
+      {
+        "label": "D",
+        "text": "Run revoke active sessions for the role in the IAM console so that requests made with credentials issued before this moment are all denied."
+      }
+    ],
+    "explanation": "The correct answer is revoking the role's active sessions. This feature adds an AWSRevokeOlderSessions deny inline policy to the role, which denies all credentials issued up to the revocation time (about 30 seconds later, allowing for propagation delay). It does not apply to sessions assumed afterward, so normal workloads resume by obtaining new credentials with the same role ARN. The content of the existing permissions policies is not changed. Deleting and re-creating the role violates the constraint that prohibits deletion, and the role's unique ID changes, which can break references. Reducing the maximum session duration changes only the lifetime of sessions issued in the future and does not invalidate already-leaked credentials. Denying all actions with a root SCP also blocks workloads unrelated to this role and the resumption of normal operations, so it does not fit the requirements."
+  },
+  {
+    "number": 7,
+    "domain": "Detection",
+    "prompt": "A healthcare data company has an Amazon S3 bucket containing approximately 10 TB of patient consultation records, and it must check for personal information every quarter. The bucket is encrypted with a customer managed KMS key (SSE-KMS), and the key and the bucket are owned by the same account. When an Amazon Macie sensitive data discovery job was run, many objects were reported with metadata only and without content analysis, and almost no sensitive data findings were produced. There is no problem with the bucket policy, the sampling depth is 100%, and the security team has one week left before this quarter's inspection deadline. The discovery job must not affect other teams' buckets in the account, and the security administrator can modify the key policy directly. Because the same bucket is scanned again every quarter, the fix must continue to work afterward once it is applied. Which action will allow Macie to analyze the object content?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Add a statement to the bucket policy that allows the Macie service-linked role to perform s3:GetObject and s3:ListBucket, to open up object read permissions first."
+      },
+      {
+        "label": "B",
+        "text": "Lower the object sampling depth of the discovery job, and instead adjust the job scope to be split by object prefix and run in multiple separate runs."
+      },
+      {
+        "label": "C",
+        "text": "Change the bucket default encryption to SSE-C, and modify the application to pass a customer-provided key in the request header for every newly uploaded object."
+      },
+      {
+        "label": "D",
+        "text": "Add a statement to the KMS key policy that allows the Macie service-linked role AWSServiceRoleForAmazonMacie to perform kms:Decrypt."
+      }
+    ],
+    "explanation": "Macie decrypts and analyzes objects encrypted with a customer managed key only when the key policy allows the service-linked role to perform kms:Decrypt. If it is not allowed, Macie stores and reports only metadata. When the same account owns the key and the bucket, adding a statement to the key policy is sufficient. Adjusting the bucket policy is unrelated to the cause because the problem statement says there is no problem with it. The sampling depth is already 100%, so there is nothing more to change. Objects encrypted with SSE-C cannot be decrypted by Macie, so this would make analysis impossible instead."
+  },
+  {
+    "number": 8,
+    "domain": "Data Protection",
+    "prompt": "A logistics company must apply customer managed KMS key encryption to its unencrypted production Amazon RDS for PostgreSQL database (Multi-AZ, 1.5 TB). The service runs 24 hours a day, and orders are lost if write traffic is interrupted, so the write downtime during the transition must be kept as short as possible. Data loss is not allowed, and changes to the application's endpoint settings must be minimal. The transition will be performed during the nighttime maintenance window, and a plan to return to the previous state if a problem occurs must also be in place. Five reporting tools connected to the same database have hardcoded the endpoint and are difficult to change. The storage is gp3, and order processing stops if write latency exceeds a certain level. Before the switchover, the company must verify that all storage data in the new environment has been loaded and that latency has stabilized. Which method is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create a read replica from the unencrypted instance that is encrypted with a customer managed key, and promote the replica when the replication lag disappears."
+      },
+      {
+        "label": "B",
+        "text": "When creating a blue/green deployment, specify a customer managed key as the target KMS key for the green DB instance to create an encrypted green environment, and switch over after synchronization and storage loading are complete."
+      },
+      {
+        "label": "C",
+        "text": "Modify the running DB instance to turn on the storage encryption option, specify a customer managed key, and apply immediately with an instance reboot."
+      },
+      {
+        "label": "D",
+        "text": "Create a manual snapshot, copy it while encrypting it with a customer managed key, restore a new instance from the copy, and move the application to the new endpoint."
+      }
+    ],
+    "explanation": "The correct answer is encrypting the green environment of a blue/green deployment with a customer managed key. When you create a blue/green deployment, you can encrypt the green instance with a different KMS key by using TargetKmsKeyId in the target resource configuration, and this is documented as a way to encrypt an unencrypted instance. At switchover, RDS renames the green instance to the same name and endpoint as blue, so the hardcoded endpoints do not need to be changed. Because the switchover happens after synchronization catches up, the write downtime is short. If the switchover fails, the changes are rolled back and the previous blue instance also remains. The green instance is restored from a snapshot and then lazily loaded, so completing storage initialization before the switchover stabilizes latency. An instance can be encrypted only at creation, so you cannot turn on encryption by modifying an existing instance. An encrypted read replica of an unencrypted instance cannot be created. Copying and restoring a snapshot is possible, but writes made after the snapshot must be applied separately and the endpoint must be changed, so the downtime is longer."
+  },
+  {
+    "number": 9,
+    "domain": "Data Protection",
+    "prompt": "A company that operates a global service runs an Amazon Aurora global database in Seoul (primary) and Tokyo (secondary), and applications in both Regions read the same database credentials from AWS Secrets Manager. Security policy requires that the password be rotated automatically every 30 days and that the values in both Regions always match. Applications in Tokyo must be able to read the secret even during a Seoul Region outage. The operations team has 3 members and wants to avoid the burden of configuring and checking a rotation function separately for each Region. The Tokyo application normally reads the secret through the local Region endpoint to reduce latency, and redeploying the applications in both Regions when the database password changes is not allowed. At rotation, the applications in both Regions must see the same value. Which configuration is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Configure an Amazon EventBridge rule and an AWS Lambda function to copy the value to AWS Systems Manager Parameter Store in the Tokyo Region whenever the Seoul secret changes."
+      },
+      {
+        "label": "B",
+        "text": "Have the Tokyo application call the Secrets Manager endpoint in the Seoul Region directly, and do not create a separate secret in Tokyo."
+      },
+      {
+        "label": "C",
+        "text": "Create independent secrets in Seoul and Tokyo, and configure a rotation Lambda function for each secret so that the database password is rotated every 30 days."
+      },
+      {
+        "label": "D",
+        "text": "Configure automatic rotation only on the primary secret in Seoul and replicate it to the Tokyo Region, so that the Tokyo replica is encrypted with a KMS key in the Tokyo Region."
+      }
+    ],
+    "explanation": "The correct answer is to configure rotation on the primary secret and replicate it to Tokyo. When the primary secret is rotated, the new value is propagated to all replicas, so there is no need to manage rotation for each replica, and the replica can be encrypted with a key in the Tokyo Region, so it can be read from Tokyo even during a Seoul outage. Rotating two independent secrets separately would change the same database password twice independently and cause the values to diverge. Copying to Parameter Store would require a heavy burden of direct implementation. Calling the Seoul endpoint cannot read the secret during a Seoul outage."
+  },
+  {
+    "number": 10,
+    "domain": "Infrastructure Security",
+    "prompt": "A media service with users around the world operates an Amazon CloudFront distribution that uses an internet-facing ALB as its origin, and AWS WAF is associated with CloudFront. The ALB security group currently allows port 443 from 0.0.0.0/0. However, an attacker has discovered the ALB's DNS name and is connecting to it directly, bypassing CloudFront, where WAF is associated. The solution must not increase the maintenance burden of people continually updating security group rules, and the user response path must remain the same as it is now. Traffic averages tens of millions of requests per day, and origin response time must not increase. The security team wants to block the path by which requests that do not go through CloudFront reach the origin, at both L3/L4 and L7. Which TWO actions will ensure that the ALB accepts only requests that come through CloudFront? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Download the public IP ranges of the CloudFront edge servers directly, register them as ALB security group rules, and update them manually whenever the ranges change."
+      },
+      {
+        "label": "B",
+        "text": "Change the ALB security group inbound rules to allow only port 443 traffic from the AWS managed prefix list for CloudFront origin-facing servers."
+      },
+      {
+        "label": "C",
+        "text": "Replace the ALB listener certificate with an ACM public certificate and upgrade the TLS security policy to the latest version to block clients that connect directly."
+      },
+      {
+        "label": "D",
+        "text": "Have CloudFront add a custom header with a secret value to origin requests, and configure the ALB listener rule to forward only requests that have that header and return 403 for all others."
+      },
+      {
+        "label": "E",
+        "text": "Use Amazon Route 53 latency-based routing to steer users toward CloudFront, and do not publicly disclose the ALB's DNS name."
+      }
+    ],
+    "explanation": "The managed prefix list is updated by AWS even if the CloudFront origin-facing IPs change, so it blocks direct access at L3/L4 without any security group maintenance burden. The secret custom header lets the ALB listener rule forward only requests that came through CloudFront at L7. Managing the edge IP ranges directly keeps adding update work. Changing the certificate and TLS policy does not restrict the access path. Steering with DNS routing cannot stop an attacker who already knows the ALB DNS name from connecting directly."
+  },
+  {
+    "number": 11,
+    "domain": "Detection",
+    "prompt": "The AWS Security Hub CSPM findings that analysts on a large enterprise's security operations team review each day average 600, and most are low-risk items from development environments. Informational-level findings are piling up from 30 accounts in the organization's development OU, and analysts are missing findings from production accounts. Findings for the same controls in production accounts must continue to be displayed as they are now, and the company wants to avoid disabling controls or writing and operating code. The security team has 4 members, and the administrator account is already delegated. Findings from development accounts must not be deleted entirely and must be retrievable when needed, and suppressed findings must not appear on the analysts' default dashboard. Which solution has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Disable the relevant controls in all accounts across the organization and re-enable them only in production accounts, to stop findings from being generated in development accounts."
+      },
+      {
+        "label": "B",
+        "text": "In the administrator account, create an automation rule that uses the development account IDs and informational severity as conditions and changes the workflow status to SUPPRESSED."
+      },
+      {
+        "label": "C",
+        "text": "Write and deploy a function so that an Amazon EventBridge rule and AWS Lambda call BatchUpdateFindings to change the status whenever a development account finding is received."
+      },
+      {
+        "label": "D",
+        "text": "Create a custom insight filtered by the development account IDs, and change the work procedure so that analysts view only the insight instead of the default findings screen."
+      }
+    ],
+    "explanation": "An automation rule is defined in the administrator account with conditions such as account ID and severity, automatically changes attributes such as the workflow status when findings are ingested, and requires no code. Disabling controls stops the generation of findings, so there is a risk of affecting production accounts as well, and it is not the method requested. Lambda and BatchUpdateFindings create the burden of writing and operating code. An insight only filters the view and cannot change the status of findings, so development findings keep piling up. Also note that a rule applies to findings ingested after it is created."
+  },
+  {
+    "number": 12,
+    "domain": "Data Protection",
+    "prompt": "A data processing platform uses KMS CreateGrant just before a job starts to give the batch worker role in the same account the Decrypt permission on a specific key, and revokes the grant when the job finishes. This approach comes from a security design that grants only temporary permissions per job, and thousands of jobs run every day. The key policy cannot be modified each time because of the change approval process. However, the first Decrypt call immediately after a grant is created intermittently fails with AccessDenied, and the job is retried. The grant applies to only one specific key, and the permission must disappear as soon as the job ends. Lengthening the retry logic was not accepted because of job delays. Which method guarantees use immediately after the grant is created while minimizing code changes?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Add a kms:Decrypt allow for the worker role to the key policy as a permanent statement so that access is possible without a grant."
+      },
+      {
+        "label": "B",
+        "text": "Add kms:* permissions on the key to the worker role's IAM policy so that all KMS operations are allowed regardless of the grant propagation delay."
+      },
+      {
+        "label": "C",
+        "text": "Pass the grant token returned by CreateGrant in the GrantTokens parameter of the first Decrypt request so that the grant can be used before it propagates."
+      },
+      {
+        "label": "D",
+        "text": "Use ListGrants to look up the ID of the grant that was just created, and call Decrypt passing that grant ID as the GrantTokens value."
+      }
+    ],
+    "explanation": "The correct answer is to pass the grant token. KMS uses an eventual consistency model, so AccessDenied can occur immediately after a grant is created and before propagation completes. If you include the grant token returned by CreateGrant in the request, you can use the grant's permissions immediately, even before propagation. Adding a permanent allow to the key policy violates the change process constraint and also defeats the purpose of temporary permissions. Giving kms:* in the IAM policy grants excessive permissions and does not solve the problem if the key policy does not allow it. ListGrants returns only the grant ID and not the token, and the token can be obtained only from CreateGrant."
+  },
+  {
+    "number": 13,
+    "domain": "Security Foundations and Governance",
+    "prompt": "A cloud security team has an internal standard that EBS snapshots must not be shareable publicly from any account. Until now, the team has used an SCP that denies ec2:ModifySnapshotAttribute, but the team needs a guarantee that the standard will continue to hold even when the service adds new APIs or features. Account administrators already hold many IAM policies that include snapshot sharing permissions, so it is difficult to revoke the policies in bulk. The scope is 150 accounts, and the security team wants to enforce this standard without depending on the cooperation of account administrators. In the past, the security team had to modify the SCP every time a new API was added, and as a result the standard was left unenforced for two weeks on one occasion. Which method will apply the standard consistently across the 150 accounts?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Deploy to the organization a configuration that uses an AWS Config rule to detect snapshots that can be publicly restored and uses AWS Lambda automatic remediation to remove the sharing setting."
+      },
+      {
+        "label": "B",
+        "text": "In AWS Organizations, specify block public access for snapshots as blocked in an EC2 declarative policy, and attach it to the organization root."
+      },
+      {
+        "label": "C",
+        "text": "Add more EC2 API names related to snapshot sharing to the SCP to expand the deny list, and update the policy every time a new API is released."
+      },
+      {
+        "label": "D",
+        "text": "Distribute guidance for account administrators to turn on EBS snapshot block public access on their own, and verify whether it is set by using CloudTrail logs."
+      }
+    ],
+    "explanation": "The correct answer is an EC2 declarative policy. A declarative policy enforces the desired configuration directly at the service control plane, so the standard persists even when the service adds new features or APIs, and it supports the Snapshot Block Public Access attribute. SCPs control permissions at the API level, so the deny list must be updated whenever a new API appears, which does not meet the requirement for a lasting guarantee. Detection and automatic remediation with AWS Config are a reactive response that fixes the problem after the snapshot becomes public, leaving a window of exposure. Manual per-account settings cannot guarantee consistency or enforcement."
+  },
+  {
+    "number": 14,
+    "domain": "Incident Response",
+    "prompt": "The legal team requires both disk evidence and memory evidence from an EBS-backed Amazon EC2 instance suspected of being compromised. Traffic has already been drained from this instance in the production service, volatile data must not be lost, and the evidence collection process must be recorded. The collected evidence is stored in encrypted buckets and snapshots in a dedicated incident response account. The suspect instance is a single m5.2xlarge with 3 EBS volumes attached. The incident response account is in a separate security OU of the organization, and there are two forensic analysts. Every evidence collection step must be traceable to who did what and when, and the analysts can access the instance through SSM Agent. Which TWO actions are MOST appropriate to secure both kinds of evidence without stopping or terminating the instance? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use AWS Systems Manager Run Command to run a read-only memory acquisition tool on the running instance, save the memory image to the evidence bucket, and record its hash."
+      },
+      {
+        "label": "B",
+        "text": "Install an antivirus agent on the instance to clean up malicious files, then create a snapshot to keep evidence of the clean state, and return the instance to service."
+      },
+      {
+        "label": "C",
+        "text": "Stop the instance first, then create snapshots of the attached EBS volumes to freeze the disk state, and perform later analysis from the snapshots."
+      },
+      {
+        "label": "D",
+        "text": "Without stopping the instance, create snapshots of all attached EBS volumes, share them with the incident response account, and keep encrypted copies there."
+      },
+      {
+        "label": "E",
+        "text": "Terminate the instance with the delete-on-termination option turned off so that the EBS volumes remain, and attach them to another instance later for investigation."
+      }
+    ],
+    "explanation": "Volatile data such as memory and processes is lost when an instance is stopped, terminated, or rebooted, and EBS snapshots contain only the data written to the volume, so memory must be acquired separately. Therefore, two actions together preserve both kinds of evidence: first acquiring a memory image with a read-only tool while the instance remains running and recording its hash, and then creating snapshots of all volumes without stopping the instance and moving them to the incident response account. Stopping first and then taking snapshots preserves the disk but loses the memory evidence. Terminating and preserving only the volumes also loses the memory. Cleaning files with antivirus alters files and timestamps, which destroys evidence and also breaks the chain of custody."
+  },
+  {
+    "number": 15,
+    "domain": "Infrastructure Security",
+    "prompt": "A video streaming company protects its Amazon CloudFront distributions and ALB with AWS Shield Advanced and subscribes to Business Support. After an outage caused by a surge of web requests last quarter, the company wants to set up a system in which the AWS Shield Response Team (SRT) contacts the company first when an event occurs. The company has registered the protected resources and two SRT contacts, has enabled the proactive engagement feature, and has created the web ACLs with AWS WAF v2. However, the SRT did not contact the company first even in a recent web request surge incident. The operations team has 3 members, and the company does not want to upgrade the support plan because of cost. The SRT contacts have both an email address and a phone number registered, and the Shield Advanced subscription is under consolidated billing for the entire organization. Which action will make proactive engagement work?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Change the subscription tier by upgrading the support plan from Business to Enterprise, because that is the only way to meet the SRT proactive engagement requirement."
+      },
+      {
+        "label": "B",
+        "text": "Enable the Shield Advanced cost protection feature to meet the conditions for being reimbursed for usage charges that increased because of a DDoS attack, and then start the SRT contact procedure."
+      },
+      {
+        "label": "C",
+        "text": "Associate Route 53 health checks with each protected resource and configure the health checks to reflect the actual application health."
+      },
+      {
+        "label": "D",
+        "text": "Re-create the web ACLs with AWS WAF Classic and change the configuration to pre-delegate permissions that let the SRT modify rules directly."
+      }
+    ],
+    "explanation": "SRT proactive engagement determines whether an event qualifies for proactive engagement by looking at the status of the Route 53 health check associated with the protected resource. Without a health check, the SRT does not contact you first even if it detects the event. A Business or Enterprise Support plan satisfies the requirement, so no tier change is needed. Cost protection addresses charge increases caused by DDoS and is separate from proactive engagement. The web ACL must be AWS WAF v2, so reverting to Classic would actually violate the requirement."
+  },
+  {
+    "number": 16,
+    "domain": "Data Protection",
+    "prompt": "A global fintech company stores customer documents encrypted with the AWS Encryption SDK in Amazon S3 in the Seoul Region, and it must also decrypt the same documents in the Tokyo Region, its disaster recovery Region. Decryption must be possible even during a Seoul Region outage, and the data must not be re-encrypted and the KMS in the Seoul Region must not be called. The company wants to control key policies separately for each Region. Even during normal operation, the company wants decryption to complete within each Region without cross-Region calls, and the ciphertext has already been copied to both Regions. Security policy requires that documents be encrypted on the client side, and the audit team checks key usage records for the Seoul and Tokyo keys separately in each Region's CloudTrail. Encryption is handled using the envelope method by generating a data key for each object. There are not yet any resources in Tokyo created with this key. Which key configuration is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create a multi-Region primary key in Seoul, create a replica key in Tokyo, and set the key policy and grants separately on the key in each Region."
+      },
+      {
+        "label": "B",
+        "text": "Use AWS managed keys in both Seoul and Tokyo, and modify the policy of the Tokyo Region key to match the contents of the Seoul Region policy."
+      },
+      {
+        "label": "C",
+        "text": "Continue to use the single-Region KMS key in Seoul, and have the Tokyo application make cross-Region Decrypt calls to the KMS endpoint in the Seoul Region."
+      },
+      {
+        "label": "D",
+        "text": "Create a new single-Region KMS key in Tokyo, re-encrypt all ciphertext in Seoul with the Tokyo key, and copy it to a bucket in the Tokyo Region."
+      }
+    ],
+    "explanation": "The correct answer is a multi-Region key. Related multi-Region keys share the same key ID and key material, so data encrypted in one Region can be decrypted with the replica key in another Region without re-encryption or cross-Region calls, and key policies and grants are managed independently for each Region. Calling the Seoul key cross-Region makes decryption impossible during a Seoul outage and also conflicts with the prohibition on calling KMS. Creating a new key in Tokyo would require re-encrypting all data, which violates the constraints. AWS managed keys are always single-Region keys, so they cannot share key material across Regions, and their policies cannot be modified."
+  },
+  {
+    "number": 17,
+    "domain": "Security Foundations and Governance",
+    "prompt": "A company must record management events from all accounts in the organization in a single Amazon S3 bucket in a central log archive account. Newly created accounts must also be included automatically, and administrators of member accounts must not be able to stop or modify the trail. The company has a separate log archive account, and the audit team must also be able to verify the integrity of the log files. Dozens of accounts are added every month. Some existing accounts have trails that teams created themselves, but the company intends to consolidate to a single central bucket going forward. Logs must be retained for 7 years, and only the security team can modify the bucket policy in the log archive account. The security team has 3 members and has no capacity to handle per-account exceptions, and it verifies whether log files have been tampered with by using digests. Which method has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use AWS CloudFormation StackSets to create individual trails with the same settings in all accounts, and add stack instances when a new account is created."
+      },
+      {
+        "label": "B",
+        "text": "Have the trail in each account write to Amazon CloudWatch Logs, and configure log group subscription filters to replicate the logs to the central account."
+      },
+      {
+        "label": "C",
+        "text": "Forward the AWS CloudTrail events in each account to an event bus in the central account with Amazon EventBridge rules, and configure it to store them in Amazon S3 from there."
+      },
+      {
+        "label": "D",
+        "text": "In the management account or a CloudTrail delegated administrator account, create an organization trail that delivers the events of all member accounts to the central bucket."
+      }
+    ],
+    "explanation": "The correct answer is an organization trail. When an organization trail is created once in the management account or a delegated administrator account, it records the events of all member accounts in the organization and of accounts added later, and member accounts can view it but cannot modify or stop it. Individual trails created with StackSets can be stopped or modified by member account administrators. Event bus forwarding is not a trail, so it cannot prevent member accounts from deleting rules, and it adds configuration for cleaning up the delivery targets. Log group replication is also a per-account setting that members can modify."
+  },
+  {
+    "number": 18,
+    "domain": "Incident Response",
+    "prompt": "A threat intelligence report warned of possible malware infection on the company's EC2 instance i-0abc, but there are no related findings at all in Amazon GuardDuty. The instance is in production, and installing an agent or performance degradation is not allowed. The instance has two attached volumes, and rebooting or stopping it is not allowed under the change approval process. This instance uses two EBS volumes, and GuardDuty is already enabled across the organization. The inspection results must be reported within one day, and only one person has permission to access the instance. The investigation results must be attached to the incident report, and the indicators in the threat intelligence report point to only this one instance. Which method confirms whether the attached EBS volumes contain malware with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Scan the instance with Amazon Inspector, review the software vulnerability findings, and compare them against known malware signatures to determine whether it is infected."
+      },
+      {
+        "label": "B",
+        "text": "Wait and watch the status for a GuardDuty-initiated scan, which starts automatically when GuardDuty generates a malware-related finding."
+      },
+      {
+        "label": "C",
+        "text": "Start an on-demand scan of GuardDuty Malware Protection for EC2 by using the instance ARN."
+      },
+      {
+        "label": "D",
+        "text": "Use Systems Manager to install an antivirus agent on all instances, schedule a full file system scan, and check for infection."
+      }
+    ],
+    "explanation": "The correct answer is an on-demand malware scan. You can start it by providing only the instance ARN even when there are no related GuardDuty findings, it scans the attached EBS volumes without an agent, and it is designed not to affect resource performance. A GuardDuty-initiated scan starts only when a finding that indicates possible malware is generated, so it does not run now when there are no findings. Inspector is a service that finds software vulnerabilities and does not determine malware infection. Installing an antivirus agent violates the constraints that do not allow an agent or performance degradation."
+  },
+  {
+    "number": 19,
+    "domain": "Data Protection",
+    "prompt": "Under the company's ransomware response policy, no one, including administrator accounts and the root user, may be able to delete the recovery points in an AWS Backup vault during the retention period. However, because mistakes can be made in the retention period settings, it must be possible to cancel or change the configuration for a few days after the lock is applied. The backup targets are Amazon EBS and Amazon RDS, the retention period is 1 year, and no team other than the security team has permission to change vault settings. Backups run every day at dawn, and the recovery points are gathered in one vault in the same Region. The security team considers it sufficient to be able to correct configuration mistakes only within the first few days. The backup resources are 200 EBS volumes and 40 RDS instances, and the recovery points created after the time the vault lock is applied are the ones to be protected. Which configuration is MOST appropriate to meet the requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Set the vault access policy to deny the backup:DeleteRecoveryPoint action for all principals, and limit the permission to change the policy to the security team."
+      },
+      {
+        "label": "B",
+        "text": "Configure the backup plan to copy recovery points to a vault in another account, and operate without applying a separate lock to the source vault."
+      },
+      {
+        "label": "C",
+        "text": "Create a vault lock in governance mode, specify the minimum and maximum retention periods, and allow only users with sufficient permissions to remove the lock."
+      },
+      {
+        "label": "D",
+        "text": "Create a compliance mode vault lock and specify a changeable period (grace time) of at least 3 days."
+      }
+    ],
+    "explanation": "The correct answer is a compliance mode vault lock with a grace period. In compliance mode, after the grace period (minimum 3 days) ends, no one, including the customer, the account owner, or AWS, can change or delete the lock, and during the grace period the lock can be removed or the configuration changed, so configuration mistakes can be corrected. In governance mode, users with sufficient IAM permissions can remove the lock, which does not satisfy the requirement that no one can delete. A vault access policy can be removed by an administrator who can change the policy. Copying without locking leaves the original recovery points vulnerable to deletion."
+  },
+  {
+    "number": 20,
+    "domain": "Identity and Access Management",
+    "prompt": "120 developers at a SaaS company start and stop EC2 instances for 40 projects. A project tagging scheme is already applied to all instances, and each developer must be able to work only with instances that have the same Project tag as the project the developer belongs to. A few new projects are created each quarter, and the company wants to operate with a single policy without creating or modifying IAM policies each time. Employee accounts and per-project groups are managed in an external IdP, and users sign in to AWS with IAM Identity Center. The security team has 3 members. A developer belongs to only one project and not to multiple projects at the same time, and when a project ends, removing the developer from the group must be enough to complete the revocation of permissions. Which method is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create one permission set and IAM policy for each project that lists the ARNs of that project's instances, and assign it to the developer group."
+      },
+      {
+        "label": "B",
+        "text": "Pass the IdP's project value as an attribute for access control in IAM Identity Center, and in the permission set policy, allow EC2 actions only when the Project tag on the resource matches the tag on the principal."
+      },
+      {
+        "label": "C",
+        "text": "Configure an organization SCP to deny EC2 actions whose project tags do not match, and grant the PowerUserAccess permission commonly to developers."
+      },
+      {
+        "label": "D",
+        "text": "Attach a resource-based policy to each instance that allows the account IDs of that project's developers, and update the policy when a project is added."
+      }
+    ],
+    "explanation": "Attribute-based access control passes IdP attributes as session tags, and a single policy compares whether the aws:PrincipalTag and aws:ResourceTag values are equal, so no policy changes are needed even as projects increase. Per-project policies leave the burden of continually adding to 40 policies. An SCP cannot grant permissions, and even when combined with PowerUserAccess it cannot map the tag comparison to a person's tag. EC2 instances do not have resource-based policies."
+  },
+  {
+    "number": 21,
+    "domain": "Identity and Access Management",
+    "prompt": "A security analysis SaaS vendor uses a single account ID to call AssumeRole on read-only IAM roles in dozens of customer accounts to inspect their configurations. Customers enter the role ARN for each customer directly in the vendor's service screen. Currently, the trust policy is restricted to only the vendor's AWS account. However, there is a concern about the confused deputy problem: if one customer finds out another customer's role ARN and registers it with the vendor service, the vendor could assume that role on the customer's behalf and display the information. The number of customers keeps growing, so the vendor cannot make major changes to its code, and customers can modify only the trust policies in their own accounts. The vendor can issue and manage a unique identifier for each customer, and customers can copy the value that the vendor provides into the trust policy as is. Which method MOST appropriately reduces this risk?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Narrow the principal in the trust policy from the entire vendor account to one specific IAM role ARN used by the vendor, to restrict other principals from assuming it."
+      },
+      {
+        "label": "B",
+        "text": "Reduce the role maximum session duration from one hour to 15 minutes to change the setting so that the period in which issued temporary credentials can be abused is shortened."
+      },
+      {
+        "label": "C",
+        "text": "Put a sts:ExternalId condition that is unique to each customer in the trust policy, and have the vendor pass the per-customer value in the AssumeRole call."
+      },
+      {
+        "label": "D",
+        "text": "Create a read-only IAM user in the customer account and hand the access keys to the vendor so that the vendor calls directly without assuming a role."
+      }
+    ],
+    "explanation": "The external ID condition makes the role assumable only by a caller that knows the unique value that the vendor issued per customer. Therefore, even if another customer registers someone else's role ARN, the vendor's call that uses that customer's external ID is denied, which prevents the confused deputy problem. The value must be generated and controlled by the vendor for each customer, not by the customer. Narrowing to one specific vendor role still leaves confusion among customers because the vendor calls all customers with the same role. Reducing the session duration only shortens the period of abuse after issuance and does not block the cause. Long-term access keys increase the risk further."
+  },
+  {
+    "number": 22,
+    "domain": "Incident Response",
+    "prompt": "The security team used Amazon GuardDuty to confirm signs that an attacker has already opened an SSH session on an EC2 instance in a public subnet and is communicating with an external C2 server. The instance security group allows inbound port 22 only from a specific administrator IP range and allows only some ports outbound. There is only this one instance in the subnet, and the instance must remain running because of the memory evidence. The credentials the attacker used on the instance have already been disabled, but the forensics team must acquire memory from the running instance within one hour. The instance role is not used by other services. This instance is directly accessible through its public IP, and there are currently no other instances using the same subnet. The subnet's network ACL uses the default settings (allow all traffic). Which isolation method is MOST appropriate to immediately cut off connections that are already established while preserving evidence?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Add deny rules for all inbound and outbound traffic to the subnet network ACL at the highest priority, and also apply an isolation security group."
+      },
+      {
+        "label": "B",
+        "text": "Replace the instance's security group with a dedicated isolation security group that has empty inbound and outbound rules, and wait for the existing connections to be dropped."
+      },
+      {
+        "label": "C",
+        "text": "Stop the instance, then create snapshots of the attached EBS volumes and share them with the analysis account to make sure that the attacker's access is cut off."
+      },
+      {
+        "label": "D",
+        "text": "Terminate the instance, launch a new instance from a clean golden AMI, and detach only the compromised instance's EBS volumes to keep as evidence."
+      }
+    ],
+    "explanation": "The correct answer is to add deny rules to the subnet network ACL. Security groups use connection tracking, so even if you change or remove the rules, connections that are already tracked remain allowed until they time out, but block rules in a stateless network ACL also cut existing connections. There is only one instance in the subnet, so other workloads are not affected. Replacing the group with an empty security group alone may leave the SSH and C2 sessions in place, so it does not satisfy the requirement for immediate blocking. Stopping the instance causes the memory evidence to be lost, which violates the constraint to keep it running. Terminating and relaunching destroys both the volatile evidence and the running state."
+  },
+  {
+    "number": 23,
+    "domain": "Identity and Access Management",
+    "prompt": "A company that manages employee accounts and department groups in its on-premises identity provider wants employees to sign in to the AWS Management Console through its on-premises SAML 2.0 IdP. Employees must be able to choose different AWS roles depending on their department when they sign in, and the company has decided not to create separate IAM users on the AWS side. There are about 800 employees, and the IdP can already include department information in the SAML assertion. Two members of the infrastructure team will handle the federation work. The federation configuration on the AWS side is managed as IaC, and when the temporary credentials expire after an employee signs in, the employee signs in again through the IdP. The company plans to create 8 roles in total, one per department. Which TWO items must be configured for this federation to work? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Configure the IdP to include the Role and RoleSessionName attributes in the SAML response to pass the role ARN to assume and the provider ARN."
+      },
+      {
+        "label": "B",
+        "text": "Create an IAM SAML identity provider from the IdP's SAML metadata, and create IAM roles with a trust policy that allows sts:AssumeRoleWithSAML."
+      },
+      {
+        "label": "C",
+        "text": "Create roles with a trust policy that allows sts:AssumeRoleWithWebIdentity, and have the IdP submit OIDC ID tokens directly to AWS."
+      },
+      {
+        "label": "D",
+        "text": "Create an IAM user for each employee, name it the same as the IdP account name, and pass the console password in the SAML response."
+      },
+      {
+        "label": "E",
+        "text": "In the IAM role trust policy, add the public IP address of the IdP server as an aws:SourceIp condition so that only requests from that IP can assume the role."
+      }
+    ],
+    "explanation": "SAML federation requires an IAM SAML provider created from the IdP metadata and roles that trust that provider and allow AssumeRoleWithSAML, and the IdP must include the Role and RoleSessionName attributes in the SAML response to indicate which role to assume. There is no need to create IAM users for each employee, and passwords are not placed in the SAML response. AssumeRoleWithWebIdentity is used for OIDC-based federation, so it does not fit SAML. An IdP server IP condition does not match the request path of the user's browser and is not a required setting."
+  },
+  {
+    "number": 24,
+    "domain": "Infrastructure Security",
+    "prompt": "An online bookstore's login page receives millions of requests per day, and many enterprise customers connect from behind their corporate NAT. An AWS WAF web ACL is associated with the ALB. Recently, password brute-force attacks against the /login path have continued, and the company wants to block a client IP when it exceeds 100 requests in 5 minutes. However, enterprise customers behind the same NAT legitimately call paths other than /login thousands of times every 5 minutes, so they must not be blocked. The rule must be managed in the web ACL without a code deployment. The rule will be applied directly as Block without first being tested in Count, and the evaluation window will use 5 minutes from the values that WAF supports. Which rule will meet these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create a rate-based rule that aggregates by IP with a 5-minute evaluation window and a limit of 100, and use a scope-down statement so that only requests whose URI path is /login are counted."
+      },
+      {
+        "label": "B",
+        "text": "Create an IP-aggregated rate-based rule with a limit of 100 requests per 5 minutes without a scope-down, so that requests on all paths of the web ACL are counted against the same limit."
+      },
+      {
+        "label": "C",
+        "text": "Add the AWS WAF Bot Control targeted-protection-level managed rule group to the web ACL to automatically distinguish and block brute-force attacks on login requests."
+      },
+      {
+        "label": "D",
+        "text": "Set a request rate limit value in the ALB security group inbound rules to deny connection attempts of 100 or more per 5 minutes per client IP."
+      }
+    ],
+    "explanation": "A rate-based rule counts the requests within the evaluation window for each aggregation key such as IP, and by using a scope-down statement it can track only requests to the /login path and apply the limit, so normal calls to other paths are not affected. Without a scope-down, all calls from users behind the NAT are counted against the same IP limit and are blocked. Bot Control incurs additional charges and is excessive compared with the simple limit rule that was requested. Security groups do not have a request rate limiting feature."
+  },
+  {
+    "number": 25,
+    "domain": "Data Protection",
+    "prompt": "A company introduced a security requirement to turn on EBS encryption by default. The administrator enabled default encryption only in the Seoul Region, and a subsequent audit found that new unencrypted volumes had been created in the Virginia Region and that some existing volumes in Seoul are also not encrypted. There are hundreds of target volumes in each Region, and all changes are made through a planned procedure. The short downtime needed to replace volumes is allowed during the scheduled maintenance window, but data loss is not allowed. The volumes to be replaced include a mix of databases and file servers, so the mount points differ by volume, and each new volume must be created in the same Availability Zone as the existing volume. The tags and snapshot metadata before and after the replacement must be retained for cost tracking. Which TWO actions are MOST appropriate to resolve both problems? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use ModifyVolume to turn on the encryption attribute of the volume and encrypt the existing volume in place."
+      },
+      {
+        "label": "B",
+        "text": "Enable EBS encryption by default in every other Region where workloads run."
+      },
+      {
+        "label": "C",
+        "text": "Create a snapshot of each unencrypted volume, copy it with the encryption option, create a new volume from that snapshot, and replace the existing volume."
+      },
+      {
+        "label": "D",
+        "text": "Change the default key setting in the Seoul Region by switching the default encryption KMS key to a customer managed key, so that existing volumes are re-encrypted with the new key."
+      },
+      {
+        "label": "E",
+        "text": "Only recheck the setting status in the Regions that were flagged, because the Seoul default encryption setting is automatically propagated to all Regions in the account."
+      }
+    ],
+    "explanation": "The correct answers are to turn on default encryption in the other Regions and to replace existing volumes with encrypted snapshot copies. Default encryption is a per-Region setting, so it must be turned on in each Region, and it does not affect existing volumes and snapshots, so existing volumes are converted by encrypting the snapshot while copying it and creating a new volume. The statement that the Seoul setting propagates to other Regions is wrong. ModifyVolume has no capability to turn on encryption for an existing volume. Changing the default key affects only volumes created in the future and does not re-encrypt existing volumes."
+  },
+  {
+    "number": 26,
+    "domain": "Security Foundations and Governance",
+    "prompt": "An external auditor requires SOC 2 and ISO 27001 certification reports for the physical security of AWS data centers and for AWS infrastructure. What is requested is AWS's own compliance documentation, not evidence of the configuration of the company's workloads, and the responsible person wants to download it directly from the account and submit it. The audit deadline is tight, so the company wants to obtain the documents directly from the account without going through a separate request process. The company has already collected configuration evidence for its own accounts with AWS Config and AWS Security Hub CSPM, and the auditor received that as separate evidence. The responsible person must obtain the documents by the day before the audit starts. The requested items are the SOC 2 Type II report and the ISO 27001 certificate, and the responsible person already has permission to sign in to the account. Which service will meet these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Evaluate the compliance status of the company's resources with an AWS Config conformance pack, and submit the score and the list of noncompliant resources as a report."
+      },
+      {
+        "label": "B",
+        "text": "Create an assessment in AWS Audit Manager to automatically collect evidence about the company's AWS usage, generate a report, and submit it."
+      },
+      {
+        "label": "C",
+        "text": "Download the AWS infrastructure compliance reports and certificates on demand from AWS Artifact and submit them to the auditor."
+      },
+      {
+        "label": "D",
+        "text": "Export the security standard check results from AWS Security Hub and submit the per-account control pass rates to the auditor as evidence."
+      }
+    ],
+    "explanation": "The correct answer is AWS Artifact. Artifact is a self-service portal where you can download directly from your account the certificates and reports that show that AWS infrastructure meets compliance requirements. Audit Manager is a service that collects evidence showing whether the company's AWS usage complies with regulations, so it is not AWS's own certification documentation. An AWS Config conformance pack evaluates the configuration compliance of the company's resources. Security Hub only shows the results of security standard checks for the account and does not provide AWS's own certification reports."
+  },
+  {
+    "number": 27,
+    "domain": "Identity and Access Management",
+    "prompt": "A manufacturing company that manages the accounts of its 800 employees in Microsoft Entra ID wants to consolidate access to its 60 AWS accounts with AWS IAM Identity Center. Hires, departures, and department transfers occur every week, and the HR team enters changes only in Entra ID. The security team wants a departing employee's AWS access to be removed within one day. Permission sets are assigned to accounts at the department group level. The company does not want a procedure for creating and deleting users manually on the AWS side, and the cloud team has 2 members and cannot build and operate a separate synchronization program. The Entra ID group names are the same as the department names, and the AWS accounts belong to a single organization. Currently, IAM users exist in each account, and the company is phasing them out. Which configuration meets these requirements with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Connect Entra ID only as a SAML provider and bulk import users into Identity Center from a CSV file, with the responsible person re-importing whenever there are changes such as hires or departures."
+      },
+      {
+        "label": "B",
+        "text": "Connect Entra ID as the external identity provider for IAM Identity Center, synchronize users and groups with SCIM automatic provisioning, and assign permission sets to the groups."
+      },
+      {
+        "label": "C",
+        "text": "Register an IAM SAML provider in each of the 60 accounts, create an IAM role for each department, and have the Entra ID app pass the per-account role attributes."
+      },
+      {
+        "label": "D",
+        "text": "Create users directly in the Identity Center directory, and operate a procedure in which the responsible person receives an HR team request email and deletes the user when someone leaves."
+      }
+    ],
+    "explanation": "Identity Center automatically synchronizes users and groups with an external identity provider through SCIM, so hires, departures, and transfers are reflected on the AWS side without manual work, and assigning permission sets to the synchronized groups consolidates per-account access. Connecting only SAML and importing a CSV requires periodic manual handling of the user lifecycle. Per-account SAML providers and roles increase the configuration across 60 accounts and run counter to the goal of centralization. Creating and deleting users directly is in direct conflict with the requirement."
+  },
+  {
+    "number": 28,
+    "domain": "Security Foundations and Governance",
+    "prompt": "A security lead in an organization attached an SCP that denies all ec2:* actions to the organization root, and the default FullAWSAccess policy remains in place. The organization has a management account, a member account that acts as the delegated administrator for security services, and dozens of general workload member accounts. This SCP is attached to the organization root, so it applies normally to all member accounts. Afterward, the team found cases in which EC2-related calls still succeed in accounts that should not be using EC2, and is investigating the cause. The principle is that the management account is used only for organization management tasks, but some administrators sometimes sign in directly and use it when in a hurry. A few accounts still have workloads that use load balancers. Considering the scope of SCP application, which TWO cases are the most accurate in which EC2-related calls still succeed? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "A call by an administrator role in the member account designated as the delegated administrator to launch an instance"
+      },
+      {
+        "label": "B",
+        "text": "A call by the Elastic Load Balancing service-linked role in a member account to create a network interface for a load balancer"
+      },
+      {
+        "label": "C",
+        "text": "A call by an IAM role with the AdministratorAccess policy attached in a member account to launch an instance"
+      },
+      {
+        "label": "D",
+        "text": "A call by the root user of a member account to launch an instance with ec2:RunInstances"
+      },
+      {
+        "label": "E",
+        "text": "A call by an administrator role that has ec2:RunInstances permission in the management account to launch an instance"
+      }
+    ],
+    "explanation": "The correct answers are a call from the management account and a call by a service-linked role. SCPs do not affect the users and roles of the management account, and they cannot restrict actions performed by service-linked roles. The root user of a member account is subject to SCPs, so the call is denied. A member account role with AdministratorAccess also fails because the SCP deny takes precedence. A member account designated as a delegated administrator is also subject to the SCP as is, so the call is blocked. Therefore, only the management account and the service-linked role cases succeed."
+  },
+  {
+    "number": 29,
+    "domain": "Infrastructure Security",
+    "prompt": "A healthcare data company has received an audit requirement that, under regulations, data must be accessed only over private paths and that requests that pass through a NAT gateway are not allowed. The data bucket must be accessed only from workloads in the VPC vpc-0a1, and traffic must come only through an S3 gateway endpoint. The team allowed the VPC CIDR 10.0.0.0/16 with aws:SourceIp in the bucket policy, but all requests were denied. The workload instances are in private subnets, and the gateway endpoint is already associated with the route table. There is one bucket, and the changes must stay within the scope of the policy and the endpoint. The audit team prefers using a deny condition in the policy rather than an allow condition, and administrator console access has already been separated to a different path for this bucket. Which fix will meet the requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Add the VPC's NAT gateway Elastic IP address to the aws:SourceIp condition of the bucket policy, so that requests leaving through the internet path are also included in the same allowed range."
+      },
+      {
+        "label": "B",
+        "text": "Remove the aws:SourceIp condition from the bucket policy and change it to deny requests where aws:SourceVpce does not match the ID of that gateway endpoint."
+      },
+      {
+        "label": "C",
+        "text": "Attach an endpoint policy to the gateway endpoint that allows only that bucket, and keep only the block public access setting in the bucket policy."
+      },
+      {
+        "label": "D",
+        "text": "Associate a security group with the gateway endpoint that allows only port 443 from the VPC CIDR, and leave the IP condition in the bucket policy as it is."
+      }
+    ],
+    "explanation": "The aws:SourceIp key is not included in the request context for requests that go through a gateway endpoint, so allowing the VPC CIDR with this condition results in everything being denied. To allow only endpoint-based access, use an aws:SourceVpce condition in the bucket policy to deny requests that do not come from the specific endpoint. Allowing the NAT Elastic IP would open an internet path that is not the endpoint and violates the requirement. An endpoint policy only restricts requests leaving the VPC and is not a means for the bucket to block external access. A security group cannot be associated with a gateway endpoint."
+  },
+  {
+    "number": 30,
+    "domain": "Detection",
+    "prompt": "A financial company has only 3 incident response staff, and the time available for an investigation is within 1 hour per case. Today, GuardDuty produced a finding that the credentials of an EC2 instance role in a production account were used from an external IP. The analyst must check, in a single-screen workflow, without building a separate log pipeline or query tables, how much the role's API call volume and the connecting IPs and geolocations differ from the usual pattern, and what the related instances and IPs are. Time is short to determine the scope of the investigation and include it in the incident report. CloudTrail and VPC flow logs are already enabled in all accounts, but no query environment for analysis has been configured. The responsible analyst is using the relevant service for the first time. What should be used to perform this scoping investigation with the LEAST effort?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Collect the CloudTrail logs and VPC flow logs in Amazon S3, create Amazon Athena tables, and directly aggregate call statistics per role ARN and IP with SQL."
+      },
+      {
+        "label": "B",
+        "text": "Create an AWS Security Hub CSPM insight to gather the findings associated with the role, and compare the historical call volume trend on the insight screen."
+      },
+      {
+        "label": "C",
+        "text": "Scan the buckets the role accessed with Amazon Macie, and trace back records to determine what sensitive data was sent to which IP."
+      },
+      {
+        "label": "D",
+        "text": "Pivot from the GuardDuty finding to Amazon Detective, and compare against the normal pattern by using the entity profiles and behavior graph visualizations for the role and the IP."
+      }
+    ],
+    "explanation": "Detective automatically ingests CloudTrail, VPC flow logs, GuardDuty findings, and more to build a behavior graph. From a GuardDuty finding, you can go directly to an entity profile such as a role or IP, compare call volume and connecting geolocation against the usual pattern, and follow related entities. Athena aggregation requires you to build the log tables and queries yourself, which takes a lot of effort. Security Hub CSPM insights only group and display findings and do not provide behavioral baseline comparison. Macie is for detecting sensitive data in S3 and is not a tool for investigating the scope of credential misuse."
+  },
+  {
+    "number": 31,
+    "domain": "Data Protection",
+    "prompt": "A medical records archive system must ensure that all objects in an Amazon S3 bucket cannot be deleted or overwritten by anyone, including the root user, for 7 years. In addition, because of litigation, some objects must not be deleted even after 7 years, for a period whose end point is unknown, and only the legal team must be able to release them. Versioning is already turned on for the bucket, and there are tens of millions of objects. Some patient records may receive deletion requests before the retention period ends, but under regulations the retention period takes precedence. The security team wants to avoid the work of managing a retention period separately for each object. The legal team organizes the list of objects subject to litigation by case number and delivers it, and the targets change frequently. The auditor wants a history of changes to retention settings to remain. Which configuration will meet these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Set the Object Lock default retention to governance mode for 7 years, and give only the legal team role the s3:BypassGovernanceRetention permission so that it manages retention during litigation."
+      },
+      {
+        "label": "B",
+        "text": "Set the Object Lock default retention to compliance mode for 30 years, locking all objects for a long period so that retention is never released before the litigation ends."
+      },
+      {
+        "label": "C",
+        "text": "Turn on MFA delete for the bucket and deny s3:DeleteObjectVersion to all principals in the bucket policy to prevent deletion during the retention period."
+      },
+      {
+        "label": "D",
+        "text": "Set the Object Lock default retention to compliance mode for 7 years, apply legal holds to the objects subject to litigation, and grant the legal hold permission only to the legal team."
+      }
+    ],
+    "explanation": "The correct answer is the combination of compliance mode default retention and legal holds. Compliance mode prevents anyone, including the root user, from deleting or overwriting an object version within the retention period, and a legal hold has no expiration date and remains until it is explicitly released, and only users with the s3:PutObjectLegalHold permission can set or release it. Governance mode lets users with the bypass permission change retention or delete, which violates the requirement that not even root can do so. A 30-year compliance retention cannot be shortened and is excessive for all objects. MFA delete and a bucket policy can be removed by an administrator who can modify them, so they are not immutable."
+  },
+  {
+    "number": 32,
+    "domain": "Identity and Access Management",
+    "prompt": "In a company that uses two accounts in the same organization, the CI pipeline in account A tries to assume the deploy role in account B at every deployment but gets AccessDenied (no sts:AssumeRole permission). The trust policy of the deploy role in account B lists the account A root as the principal, and the CI role in account A has only an S3 access policy attached. Today's deployment is blocked and the release is delayed, and there is no time to touch organization-wide policies or the configuration of other accounts. The CI role is used only for the pipeline in account A, and account B has already reviewed and approved the permissions policy of the deploy role. The two accounts are in the same OU in Organizations, and only the default FullAWSAccess SCP is applied. Which method is MOST appropriate to resolve this with minimal changes?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Change the principal in the trust policy of the deploy role in account B from the account A root to the ARN of the account A CI role, to narrow the trust scope."
+      },
+      {
+        "label": "B",
+        "text": "Attach a permissions boundary to the deploy role in account B and include a statement that allows sts:AssumeRole in the boundary policy."
+      },
+      {
+        "label": "C",
+        "text": "Add an allow for sts:AssumeRole on the ARN of the deploy role in account B to the identity-based policy of the CI role in account A."
+      },
+      {
+        "label": "D",
+        "text": "Add an sts:AssumeRole allow statement to the SCP of the OU that account A belongs to so that all accounts can assume each other's roles."
+      }
+    ],
+    "explanation": "Cross-account role assumption must be allowed both in the trust policy of the target account and in the identity-based policy of the calling principal in the caller's account. The trust policy already allows account A, so what is missing is the sts:AssumeRole permission on the CI role. Narrowing the trust principal to the CI role is a more restrictive change and does not resolve the missing permission on the calling side. A permissions boundary does not grant permissions and only restricts them. An SCP also cannot grant permissions with an allow statement."
+  },
+  {
+    "number": 33,
+    "domain": "Detection",
+    "prompt": "An organization operates 80 accounts with AWS Organizations, and dozens of new accounts are created each month. The security team wants GuardDuty to be turned on in both the Seoul and Tokyo Regions for both existing accounts and accounts that will be created in the future. The team does not want to use management account credentials for day-to-day security operations, and wants to avoid having a responsible person enable it account by account or building and operating separate automation each time an account is created. Accounts are created directly with the Organizations API without using Control Tower, and new accounts must be protected by GuardDuty within the same day after creation. The security team has 3 members. The team wants to eliminate the procedure of making a request to a responsible person each time an account is created. Which method has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Designate a dedicated security member account as the GuardDuty delegated administrator, and from that account set organization auto-enable to all accounts (ALL) in each of the Seoul and Tokyo Regions."
+      },
+      {
+        "label": "B",
+        "text": "Designate a dedicated security member account as the GuardDuty delegated administrator, and from that account set organization auto-enable to new accounts only (NEW) in each of the Seoul and Tokyo Regions."
+      },
+      {
+        "label": "C",
+        "text": "Receive the account creation event of the management account with an Amazon EventBridge rule, and implement an AWS Lambda function that enables GuardDuty in both Regions of the new account."
+      },
+      {
+        "label": "D",
+        "text": "Document a procedure for signing in to each member account and enabling GuardDuty in both Regions in the console, and have the responsible person repeat it each time an account is created."
+      }
+    ],
+    "explanation": "The correct answer is a delegated administrator with organization auto-enable (ALL). When the management account designates the security account as the delegated administrator, that account manages the organization's member accounts, and setting auto-enable to ALL turns on GuardDuty for both existing accounts and newly joining accounts. GuardDuty is a Regional service, so it must be configured separately in Seoul and Tokyo. NEW applies only to new accounts, so the 80 existing accounts would be missed. An event plus Lambda implementation carries the burden of building and maintaining code. Manual per-account enablement results in omissions and repetition as accounts grow."
+  },
+  {
+    "number": 34,
+    "domain": "Infrastructure Security",
+    "prompt": "Application code calls AWS Secrets Manager by using the default name secretsmanager.ap-northeast-2.amazonaws.com, and the code cannot be changed. The company is creating an interface endpoint so that dozens of servers in private subnets can use this service without an internet path, but when the option to enable the private DNS name is selected, enabling fails because of the VPC settings. DNS resolution is turned on and DNS hostnames is turned off for this VPC. The endpoint security group already allows port 443 from the entire VPC. The VPC spans multiple subnets and Availability Zones, and the servers that use the same endpoint are replaced with new ones at every deployment. The application settings are fixed in the server image, so a deployment that changes the call address is not allowed. What should be done to resolve this with the fewest settings and without code changes?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Change the call URL in the application settings to the endpoint-specific DNS name, and apply it to all servers through the deployment pipeline."
+      },
+      {
+        "label": "B",
+        "text": "Create a Route 53 Resolver outbound endpoint and a forwarding rule to send queries for the default name to an internet DNS server to be resolved."
+      },
+      {
+        "label": "C",
+        "text": "Allow the entire VPC CIDR on port 443 in the inbound rules of the endpoint security group so that connections succeed even if the default name resolves to a public IP."
+      },
+      {
+        "label": "D",
+        "text": "Enable the DNS hostnames attribute of the VPC, and then turn on enabling the private DNS name for the endpoint."
+      }
+    ],
+    "explanation": "To use a private DNS name, both DNS resolution and the DNS hostnames attribute of the VPC must be turned on. Once hostnames is turned on, the endpoint resolves the default service name to the endpoint's private IP inside the VPC, so no code changes are needed. Changing to the endpoint-specific DNS name violates the constraint against code changes. An outbound endpoint and internet DNS forwarding would instead cause the name to resolve to a public IP. Allowing the security group does not change the name resolution problem."
+  },
+  {
+    "number": 35,
+    "domain": "Security Foundations and Governance",
+    "prompt": "An OU managed by AWS Control Tower already has 300 running Amazon RDS instances, and some of them have storage encryption turned off. The security team wants to view the list and status of the currently noncompliant databases on a dashboard without interrupting applications, and does not want to block existing operations or new deployments. Control Tower is already managing the accounts registered in the landing zone, and the security team wants to see the control status for each OU on a single screen. The RDS instances to be investigated number 300, spread across 40 accounts. The security team will carry out the encryption conversion separately after a schedule is set, so for now it needs only to understand the current state. The team wants to view noncompliance by OU on the Control Tower dashboard, and the development team is concerned that schedules will slip if new database deployments are interrupted. Which control type will meet these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "A preventive control, which uses an SCP to deny at the organizational unit level the action of creating an unencrypted RDS instance."
+      },
+      {
+        "label": "B",
+        "text": "A mandatory control, which applies to the OU the default controls that protect the resources deployed by Control Tower, to check RDS encryption."
+      },
+      {
+        "label": "C",
+        "text": "A detective control, in which an AWS Config rule evaluates the resources in the accounts and shows the noncompliant state as a violation on the dashboard."
+      },
+      {
+        "label": "D",
+        "text": "A proactive control, in which an AWS CloudFormation hook inspects the template before provisioning and stops the creation of noncompliant resources."
+      }
+    ],
+    "explanation": "The correct answer is a detective control. A detective control is implemented with an AWS Config rule, evaluates existing resources in the accounts, shows states such as clear or in violation on the dashboard, and does not block operations. A preventive control denies actions with a policy such as an SCP, so it cannot report the state of existing resources and blocks later operations, which conflicts with the requirements. A proactive control only inspects resources provisioned through CloudFormation before they are created and does not evaluate databases that are already running. Mandatory controls protect the resources that Control Tower deployed and are unrelated to checking RDS encryption."
+  },
+  {
+    "number": 36,
+    "domain": "Incident Response",
+    "prompt": "The key of an IAM user with administrator permissions in one member account of AWS Organizations has been leaked, and an attacker is creating resources. No one is responsible for the root user credentials of this account, so they cannot be used. The team wants to stop the attacker's activity immediately while preserving evidence without deleting resources, and to allow only one designated response role, IR-Forensics, to be used for the investigation. The attacker may have already created additional IAM users and roles, so the entire account must be controlled at once. The attacker has already created dozens of EC2 instances and S3 buckets, and the billing amount for the affected account continues to grow. The legal team requires that the state of the resources be preserved as is. Access must be blocked before checking the IAM users or roles the attacker created, and the organization's management account continues to be responsible for the billing information of this account. Which action is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "From the management account, attach to the account an SCP that denies all actions except for the response role."
+      },
+      {
+        "label": "B",
+        "text": "Run a script that sets permissions boundaries on all IAM users and roles to reduce the scope of permissions the attacker can use."
+      },
+      {
+        "label": "C",
+        "text": "Remove the account from the organization to make it a standalone account, register billing information separately, and completely isolate it from the other accounts in the organization."
+      },
+      {
+        "label": "D",
+        "text": "Close the account to put it in a suspended state, and then investigate the resources of the closed account within the suspension period to secure evidence."
+      }
+    ],
+    "explanation": "The correct answer is to attach to the account an SCP that denies everything except the response role. An SCP restricts the requests of all IAM users and roles in the member account, including the root user, so an attacker with administrator permissions is blocked, the resources remain as they are, and only the role allowed by the condition can investigate. Removing the account from the organization loses the SCP control from above and leaves no means of stopping the attacker. Closing the account puts it in a suspended state, which makes investigative access difficult, and the content is deleted after the suspension period. A permissions boundary can be removed or bypassed by an attacker with administrator permissions."
+  },
+  {
+    "number": 37,
+    "domain": "Detection",
+    "prompt": "A security audit has requested a list of software vulnerabilities for all instances. The account has 300 EC2 Linux instances, 40 of which do not have the SSM Agent, and security policy does not allow installing an agent. The 40 instances are EBS-backed with an ext4 file system and 2 volumes totaling 500 GB. The remaining 260 instances are already managed with the SSM Agent, Amazon Inspector is not enabled, and the audit deadline is 2 weeks away. The 40 instances are in production, so they must be assessed without restarting or installing software, and the results must be delivered as a CVE list for each instance. The account uses Inspector only in the Seoul Region. Which method requires the fewest changes to obtain OS package vulnerability results for these instances without installing an agent?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Keep the Amazon Inspector scan mode agent-based, and deploy the SSM Agent and an instance profile in bulk to the 40 instances to convert them into managed instances."
+      },
+      {
+        "label": "B",
+        "text": "Set the Amazon Inspector EC2 scan mode to hybrid scanning so that instances not managed by SSM receive agentless scanning based on EBS snapshots."
+      },
+      {
+        "label": "C",
+        "text": "Turn on GuardDuty Malware Protection for EC2 to periodically scan the volumes of the 40 instances and receive the OS package vulnerability list as the result."
+      },
+      {
+        "label": "D",
+        "text": "Turn on Amazon Inspector ECR container image scanning and judge host vulnerabilities instead from the vulnerabilities of the images deployed on the instances."
+      }
+    ],
+    "explanation": "Inspector's hybrid scan mode applies agent-based scanning to instances managed by SSM and agentless scanning that reads EBS snapshots to unmanaged instances, and these instances meet the conditions of being EBS-backed, using ext4, having fewer than 8 volumes, and totaling 1,200 GB or less. Keeping agent-based scanning conflicts with the constraint that an agent cannot be installed. Malware Protection for EC2 is malware detection and not package vulnerability scanning. ECR image scanning cannot substitute for the host OS packages."
+  },
+  {
+    "number": 38,
+    "domain": "Detection",
+    "prompt": "About 50,000 files are uploaded per day, with varied extensions and sizes. There is one Amazon S3 bucket (ap-northeast-2) to which customers upload documents, and this account does not use GuardDuty. The security team wants to scan only the uploaded files for malware without turning on all of GuardDuty, and it needs to receive the scan results as object tags or events and automatically decide whether to quarantine. Most uploaded objects are a few MB in size, and some PDF and Office documents reach hundreds of MB. The quarantine handling has already been built with AWS Lambda, and it is acceptable for the scan charges to be proportional to the upload volume. The bucket policy uses presigned URLs for uploads from outside, and the upload path cannot be changed. Objects determined to be quarantine targets must be blocked from access immediately. Which configuration meets these requirements with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Turn on GuardDuty Malware Protection for S3 as a standalone feature for the bucket, and build the quarantine flow with scan result tagging or Amazon EventBridge events."
+      },
+      {
+        "label": "B",
+        "text": "Turn on GuardDuty and S3 Protection in the account, treat anomaly detection findings based on AWS CloudTrail S3 data events as a malicious file verdict, and integrate a Lambda function that moves the object to a quarantine bucket when a finding appears."
+      },
+      {
+        "label": "C",
+        "text": "Run an Amazon Macie sensitive data discovery job every day to find malware signatures in the uploaded objects, and send the results to Amazon EventBridge."
+      },
+      {
+        "label": "D",
+        "text": "Enable Amazon Inspector and configure it to perform a vulnerability scan on every object uploaded to the bucket to determine whether the file is malicious."
+      }
+    ],
+    "explanation": "Malware Protection for S3 can be turned on for a bucket as a standalone feature without enabling the GuardDuty service. It automatically scans newly uploaded objects and new versions, then publishes the results to EventBridge and a CloudWatch namespace, and tagging is also optional. The combination of all of GuardDuty and S3 Protection only detects anomalous behavior in S3 data events, does not scan file contents for malware, and is broader than the requested scope. Macie is a service for finding sensitive data and not a malware scanner. Inspector scans software vulnerabilities in EC2, ECR, and Lambda, so it does not fit determining whether an S3 object is malware."
+  },
+  {
+    "number": 39,
+    "domain": "Identity and Access Management",
+    "prompt": "A deployment pipeline runs on GitHub-hosted runners, and security policy prohibits storing long-term AWS keys in repository secrets. The company wants a GitHub Actions workflow to deploy to an AWS account without long-term access keys. Only workflows on the main branch of a specific repository, acme/web, must be able to assume the deployment role. The workflow runs in a single repository, acme/web, and the deployment target is a single account, and the security team wants to prevent workflows from other repositories or workflows on development branches from assuming this role. The deployment tool is the AWS CDK, and only one role will exist in the deployment account. The default value for the temporary credential lifetime is sufficient. Which TWO configurations are MOST appropriate to meet these requirements? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Register the GitHub OIDC issuer token.actions.githubusercontent.com as an IAM OIDC identity provider."
+      },
+      {
+        "label": "B",
+        "text": "In the deployment role trust policy, allow sts:AssumeRoleWithWebIdentity and set conditions with aud as sts.amazonaws.com and sub as repo:acme/web:ref:refs/heads/main."
+      },
+      {
+        "label": "C",
+        "text": "Specify the root of the AWS account owned by GitHub as the principal in the deployment role trust policy and allow sts:AssumeRole, to allow all GitHub workflows to assume the role."
+      },
+      {
+        "label": "D",
+        "text": "Store the access key of a deployment IAM user in the GitHub repository secrets, and operate a procedure in which a responsible person rotates the key every 90 days."
+      },
+      {
+        "label": "E",
+        "text": "Put the entire IP range of GitHub-hosted runners in an aws:SourceIp condition on the deployment role and allow all requests coming from those IPs."
+      }
+    ],
+    "explanation": "GitHub Actions authenticates to AWS with an OIDC token, so you register the issuer as an IAM OIDC provider, allow AssumeRoleWithWebIdentity in the role trust policy, and restrict the repository and branch with the aud and sub conditions. This way no long-term keys are needed. Access keys in repository secrets violate the requirement against long-term credentials, and rotation is manual. Trusting the GitHub account root would make any workflow or repository a possible caller. Allowing the runner IP ranges also allows the runners of other repositories."
+  },
+  {
+    "number": 40,
+    "domain": "Security Foundations and Governance",
+    "prompt": "A data protection team wants to centrally enforce that the S3 buckets and KMS keys in all member accounts of the organization do not allow access to principals from AWS accounts outside the organization. The control must block mistakes even if a development team adds a statement allowing an external account to a bucket policy, and because there are 150 accounts, modifying bucket policies one by one would be too heavy an operational burden. The team determined that, because the teams that own buckets differ from account to account, owner education alone cannot fully prevent such mistakes. There are no buckets legitimately shared with accounts outside the organization, and when external auditors need access, a separate account is invited into the organization for their use. Requests in which AWS services access buckets and keys on behalf of users must continue to work. The compliance team wants to apply this control to the entire organization at once and to manage change history with a single policy. Which method is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Turn on the S3 account-level Block Public Access setting in all member accounts to block the path by which principals from external accounts access buckets and objects."
+      },
+      {
+        "label": "B",
+        "text": "Attach to the organization root an RCP that uses the aws:PrincipalOrgID condition to deny S3 and KMS access by principals outside the organization, excluding requests from AWS service principals where aws:PrincipalIsAWSService is true."
+      },
+      {
+        "label": "C",
+        "text": "Attach to the organization root a service control policy (SCP) that contains the same deny condition and the AWS service principal exception, to block S3 and KMS access by external principals all at once."
+      },
+      {
+        "label": "D",
+        "text": "Deploy, with AWS CloudFormation StackSets, bucket policies that contain a statement denying principals outside the organization to each bucket, and handle new buckets in the deployment pipeline."
+      }
+    ],
+    "explanation": "The correct answer is to attach an RCP to the organization root. Placing an aws:PrincipalIsAWSService exception in the deny condition keeps requests that AWS service principals make on behalf of users allowed. An RCP sets the maximum permissions on resources in member accounts, and even if a resource-based policy allows an external account, it can block requests from principals outside the organization, and it supports S3 and KMS. An SCP restricts only IAM users and roles inside the organization and does not apply to requests from principals in external accounts. Block Public Access blocks public access but does not block access that is allowed to a specific external account principal. Deploying bucket policies with StackSets can be overwritten by bucket owners who can modify the policies, and KMS keys would need to be handled separately."
+  },
+  {
+    "number": 41,
+    "domain": "Data Protection",
+    "prompt": "A financial company wants to continuously understand where personal information is located across thousands of S3 buckets in its organization's 120 accounts while minimizing cost, and to run a precise full-object scan on only a few buckets that appear to be high risk. The personal information to be identified includes common types such as credit card numbers and bank account numbers, and the 4 members of the security team will review the results every month. Some buckets have been reported in the past as having public read status. New buckets are continually created, the total data volume is several PB, and there are no staff to build and operate separate analysis code. Most buckets are archives with few changes, and a precise scan is needed only for the buckets that the security team designates. The results must be viewable for the entire organization in one place. The number of accounts and buckets keeps growing, so new buckets must also automatically become evaluation targets. Which approach is MOST cost-effective?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create an AWS Lambda function for each bucket to read objects and analyze personal information with Amazon Comprehend, and store the results in a central bucket."
+      },
+      {
+        "label": "B",
+        "text": "Turn on GuardDuty S3 Protection across the organization and configure it to detect the personal information types contained in objects along with anomalous access."
+      },
+      {
+        "label": "C",
+        "text": "Turn on automated sensitive data discovery across the organization, and run discovery jobs only on the buckets with high sensitivity."
+      },
+      {
+        "label": "D",
+        "text": "Create a sensitive data discovery job that targets all buckets and repeats daily, so that all objects are analyzed without omission every day."
+      }
+    ],
+    "explanation": "The correct answer is the combination of automated sensitive data discovery and targeted discovery jobs. Automated discovery continuously evaluates the bucket inventory, selects representative objects as samples to analyze, and provides broad visibility through sensitivity scores and heatmaps at a low cost, while jobs analyze risky buckets in greater depth. Running a daily job on all buckets repeatedly analyzes all objects, which makes the cost large. A per-bucket Lambda function with Comprehend requires direct implementation and management. GuardDuty S3 Protection detects anomalous access and does not identify personal information inside objects."
+  },
+  {
+    "number": 42,
+    "domain": "Infrastructure Security",
+    "prompt": "An e-commerce company's security team is strengthening its data loss prevention policy and wants to apply the same rule to both development and production accounts. Under the organization's policy, instances in a VPC must not be able to copy data through an S3 gateway endpoint to buckets in external AWS accounts that are not owned by the organization. Recently, a developer uploaded test data to a bucket in a personal account. The organization has many accounts, the company's own policies cannot be applied to external buckets, and access to buckets inside the organization must remain as it is now. Endpoints have already been created for each VPC, and there is no case in which data needs to be exchanged with external partners. The policy must be applied in the same way to new VPCs as well. Which method is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Deploy bucket policies that deny external account principals to all S3 buckets in the organization, to block copy requests to other accounts from the bucket side."
+      },
+      {
+        "label": "B",
+        "text": "Remove the S3 prefix list from the outbound rules of the instance security groups, and allow access to organization buckets only through the NAT gateway path."
+      },
+      {
+        "label": "C",
+        "text": "In the S3 gateway endpoint policy, allow S3 actions only on resources where aws:ResourceOrgID equals the organization ID."
+      },
+      {
+        "label": "D",
+        "text": "Add a rule to the VPC subnet NACL that denies the domain name of buckets in external accounts, to block data copy requests before they leave."
+      }
+    ],
+    "explanation": "The endpoint policy applies to requests going from the VPC to S3, and allowing only when the target resource is owned by the organization, by using the aws:ResourceOrgID condition, blocks copying to buckets in external accounts while keeping access to organization buckets. A bucket policy applies only to the organization's own buckets, so it cannot control requests that write to external buckets. Removing the prefix list and using a NAT path instead leaves an internet path for reaching external buckets. A NACL works on IP and port and cannot deny bucket domain names."
+  },
+  {
+    "number": 43,
+    "domain": "Identity and Access Management",
+    "prompt": "A broker service in a multi-tenant SaaS creates a new session for each request, calls AssumeRole on the per-tenant role tenant-role, and passes a session policy along with it. The role's identity-based policy allows only s3:GetObject on the entire bucket. The session policy passed with each call allows s3:GetObject and s3:PutObject on the tenantA/ prefix. The development team is verifying whether this configuration isolates tenants from each other and whether writes also work. The bucket policy has no separate denies or allows, and the session was created for tenantA. The broker runs in one of the organization's accounts, and the team wants to check only the policy configuration without code changes. Which is the MOST accurate description of the results of the actions that the tenantA session attempts?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Both reading and writing objects under tenantA/ succeed, and only reading objects under tenantB/ is denied because it is outside the scope of the session policy."
+      },
+      {
+        "label": "B",
+        "text": "Only reading objects under tenantA/ succeeds, and both writing objects under tenantA/ and reading objects under tenantB/ are denied."
+      },
+      {
+        "label": "C",
+        "text": "Reading and writing objects under tenantA/ succeed, and reading objects under tenantB/ also succeeds because the role policy allows it."
+      },
+      {
+        "label": "D",
+        "text": "Because the session policy takes precedence over the role policy, all actions succeed, including writes to the tenantA/ prefix that the session policy allows."
+      }
+    ],
+    "explanation": "A session policy does not grant permissions and only reduces the permissions allowed by the role's identity-based policy, and the effective permissions of the session are the intersection of the two policies. Reading is allowed by both policies, so reading tenantA/ objects succeeds. Writing is not allowed by the role policy, so it is denied even though the session policy allows it. Reading tenantB/ is allowed by the role policy but is not in the session policy, so it is denied. Any explanation that the session policy increases permissions beyond the role policy is wrong."
+  },
+  {
+    "number": 44,
+    "domain": "Infrastructure Security",
+    "prompt": "The security team of a company that creates 5 to 10 new accounts per month aims for consistent policy application without manual checks. The team created an AWS Firewall Manager AWS WAF policy so that an AWS WAF web ACL is automatically associated with all ALBs, including those in new accounts, across the 40 accounts of an AWS Organizations organization. However, in some accounts the resources within the policy scope are not evaluated and the noncompliant state persists. The policy itself and the organization configuration have been confirmed to be correct, and the Firewall Manager administrator account is also designated. Most of the problem accounts recently joined the organization. The administrator checked the status of those accounts in the Firewall Manager console, and they are not accounts excluded from the policy scope. Several weeks have passed since the policy was created. What should be checked and fixed first?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Add an inbound allow rule to the ALB security group of those accounts so that the Firewall Manager service can access it, to allow the policy association."
+      },
+      {
+        "label": "B",
+        "text": "Change the policy scope to the management account alone, move the ALBs to the management account, and have the same policy evaluated within a single account."
+      },
+      {
+        "label": "C",
+        "text": "Issue an IAM user access key in each account, and configure the Firewall Manager administrator account to associate web ACLs with those keys."
+      },
+      {
+        "label": "D",
+        "text": "Verify that AWS Config is enabled and recording resource configurations in the accounts and Regions included in the policy scope, and turn it on where it is off."
+      }
+    ],
+    "explanation": "Firewall Manager can evaluate resources and apply rules only when AWS Config is enabled in the accounts and Regions within the policy scope, and accounts in which Config is off remain noncompliant or unevaluated. The service works through service-linked roles and the Organizations integration rather than security group rules, so allowing it in a security group is irrelevant. Moving ALBs to the management account gives up the goal of automatic protection across the whole organization. Issuing access keys increases long-term credentials and is not how Firewall Manager works."
+  },
+  {
+    "number": 45,
+    "domain": "Identity and Access Management",
+    "prompt": "A role in account B must read S3 objects that are encrypted with a customer managed KMS key in account A. The two accounts are in different OUs of the same organization, and the objects are encrypted with SSE-KMS. The IAM policy of the account B role has an allow for kms:Decrypt on the key ARN, and the access allow on the S3 bucket side is also in place, but decryption fails with AccessDenied. The key policy in account A has only the default statement for the account A root. The key is also used by other workloads in account A, so account A's existing access method must not be changed. Account B is operated by another team, the security administrator of account A can modify the key policy directly, and the deployment deadline is within this week. Which resolution is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Because the account B IAM policy allow already exists, have the account A root user delete the default statement of the key policy so that only account B uses the key."
+      },
+      {
+        "label": "B",
+        "text": "In account A, convert the key to a multi-Region key to create a replica, and change the key ID so that account B decrypts with the replica."
+      },
+      {
+        "label": "C",
+        "text": "Specify the account A key ARN explicitly with a Condition in the kms:Decrypt allow of the account B role policy, to make the cross-account allow scope more specific."
+      },
+      {
+        "label": "D",
+        "text": "Add to the account A key policy a statement that allows kms:Decrypt with the account B account or that role as the principal."
+      }
+    ],
+    "explanation": "KMS key access is based on the key policy. For a principal in another account to use the key, the key policy must allow that account or principal, and the calling account's IAM policy must also allow it. The key policy has only account A, so account B's request is denied. Deleting the default statement also removes the delegation to IAM policies in account A itself, which actually makes access management harder. Multi-Region keys are for replication across Regions and cannot replace a cross-account access allow. Adding a condition to the IAM policy does not resolve the absence of an allow in the key policy."
+  },
+  {
+    "number": 46,
+    "domain": "Infrastructure Security",
+    "prompt": "A public subnet that hosts a public web service accepts connections from the internet on TCP 443. Currently, the NACL for this subnet has, besides the default deny rule, only one rule, numbered 100, that allows inbound TCP 443 from all IPs. This morning, attack traffic was confirmed to be coming from 198.51.100.0/24. Normal user access to the service must continue to be allowed, and without touching the security groups, only this range must be blocked at the subnet boundary within minutes. The subnet has 12 web servers, and the service spans multiple Availability Zones. NACLs are managed per subnet, and the current change history is retained in AWS CloudTrail. The blocking rule must be easy to remove after the attack stops. Which method is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Add an inbound deny rule for 198.51.100.0/24 TCP 443 to the NACL as rule number 200, so that the range is blocked after the existing allow rule."
+      },
+      {
+        "label": "B",
+        "text": "Add an inbound deny rule for 198.51.100.0/24 TCP 443 to the NACL with a number lower than 100, so that it is evaluated before the allow rule."
+      },
+      {
+        "label": "C",
+        "text": "Add a deny entry for 198.51.100.0/24 to the inbound rules of the web server security group to block HTTPS requests from that range in front of the servers."
+      },
+      {
+        "label": "D",
+        "text": "Add a route for the destination 198.51.100.0/24 to the subnet route table so that response traffic is directed to a blackhole target, cutting off the connections."
+      }
+    ],
+    "explanation": "NACL rules are evaluated starting from the lowest number, and the first matching rule is applied, so the deny rule must be given a number lower than the allow rule 100 so that the range is blocked before it reaches the allow rule. A deny rule numbered 200 is never evaluated because rule 100 matches first. Security groups have only allow rules and cannot have deny rules. Changing the response route cannot prevent the TCP connection from being established, so it is unreliable, and it also fails to meet the requirement to block at the subnet boundary."
+  },
+  {
+    "number": 47,
+    "domain": "Identity and Access Management",
+    "prompt": "A company wants users of its mobile app to sign up with email and, after signing in, have the app upload directly only to their own S3 prefix, uploads/{unique user ID}/. There are an average of 200,000 users per day, and uploads are made directly from the app, so they must be handled without server involvement. The development team has 3 members and has no capacity to create per-user policies separately or to operate an upload server. The app must obtain temporary AWS credentials without going through a server, and the company wants to handle per-user prefix isolation with a single policy. User information is stored in an Amazon Cognito user pool at email sign-up, and uploaded objects need to be read and written only by the user. The mobile app already uses the AWS SDK. Latency only needs to be at a level that does not affect the start of an upload. Which configuration is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Have the app present the ID token issued by the Cognito user pool directly to Amazon S3 for authentication, restrict the prefix in the bucket policy by the sub claim of the token, and when the token expires, have the app obtain a new token from the user pool with a refresh token and present it again."
+      },
+      {
+        "label": "B",
+        "text": "Build an Amazon API Gateway and AWS Lambda upload proxy so that the app sends the file to Lambda, and Lambda adds the prefix by user ID and stores it in Amazon S3."
+      },
+      {
+        "label": "C",
+        "text": "Sign in with the Cognito user pool, obtain temporary credentials for the authenticated role through an identity pool, and restrict the prefix in the role policy by using the cognito-identity.amazonaws.com:sub policy variable."
+      },
+      {
+        "label": "D",
+        "text": "Issue an IAM user and access key for each user and store it in the app, and attach an individual IAM policy that uses the user name as the prefix."
+      }
+    ],
+    "explanation": "The user pool handles authentication and token issuance, and the identity pool issues temporary credentials for an IAM role to authenticated users. Using the cognito-identity.amazonaws.com:sub policy variable in the role policy isolates per-user prefixes with a single policy. S3 does not directly authenticate user pool JWTs. A Lambda proxy creates problems with the requirement not to go through a server and with the cost of relaying upload data. Per-user IAM users and long-term keys are inappropriate for both security and management."
+  },
+  {
+    "number": 48,
+    "domain": "Incident Response",
+    "prompt": "After a breach, an auditor requires proof that the CloudTrail log files accumulated in the central S3 bucket over the last 90 days were not modified or deleted after delivery. The trail had log file integrity validation turned on from the beginning, and there are records of an attacker with administrator permissions attempting to access this bucket. The bucket is in the security account, and the logs contain management events from all Regions, with a retention period of 1 year. While the attacker was attempting access, objects in the log delivery bucket may have been deleted, so the auditor wants signature-based evidence. The validation will be performed in the security account, and the logs are stored in the bucket with SSE-S3. The security team wants to provide the proof using the method that CloudTrail provides by default, without building new tools or a separate server. Which method is MOST appropriate to meet this requirement with no additional infrastructure?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use the CLI validate-logs command to verify the digest file signatures and the log file hashes for that period."
+      },
+      {
+        "label": "B",
+        "text": "Apply S3 Object Lock in compliance mode to the bucket now, and explain to the auditor that the logs from the past 90 days could not have been modified."
+      },
+      {
+        "label": "C",
+        "text": "Query the bucket configuration change history in the AWS Config timeline, and present it as evidence that the contents of the log objects did not change."
+      },
+      {
+        "label": "D",
+        "text": "Import the CloudTrail event history into a new event data store, and report by comparing whether the event count equals the count in the original logs."
+      }
+    ],
+    "explanation": "The correct answer is to verify the digest files with validate-logs. When integrity validation is turned on, CloudTrail creates a hash for each log file and delivers a signed digest file to the same bucket every hour, so you can use SHA-256 and RSA signatures to check whether a file was modified or deleted after delivery. Because the feature was already turned on, there is no retroactivity problem. Object Lock only prevents future deletions and cannot prove that past data was not tampered with. The configuration history in AWS Config cannot show changes to object contents. Comparing counts cannot cryptographically prove that the contents were not tampered with."
+  },
+  {
+    "number": 49,
+    "domain": "Incident Response",
+    "prompt": "Amazon GuardDuty reported a finding about an unusual API call pattern from an IAM role in a development account. The analyst does not want to use SQL and wants to follow the IP addresses, other accounts, and resources associated with this role and compare them with normal activity to judge the scope of the damage. The period under investigation is the last 3 months, and the analyst is not given separate access to the raw log storage. The analyst must report the investigation results within one day, and the account is linked to other accounts in the organization through IAM role chaining, so the analyst must also check whether the damage spread to other accounts. The role under investigation is used jointly by the CI pipeline and developers in the development account and has high activity volume. Which service meets this requirement while minimizing the work of collecting and parsing logs directly?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create a CloudTrail log table with Amazon Athena and directly query the call history per role ARN to narrow down the anomaly times and counterpart resources."
+      },
+      {
+        "label": "B",
+        "text": "Use Amazon Detective to move from the finding to the role's entity profile and review the activity of the connected IPs and resources through the behavior graph."
+      },
+      {
+        "label": "C",
+        "text": "Scan the software vulnerabilities of the instances that use the role with Amazon Inspector, and trace back the breach path and affected resources."
+      },
+      {
+        "label": "D",
+        "text": "Aggregate the findings across accounts and Regions with AWS Security Hub, then create a custom insight to examine the role's call trend and connected targets."
+      }
+    ],
+    "explanation": "The correct answer is Amazon Detective. Detective builds a behavior graph from logs such as CloudTrail and VPC flow logs and lets you move directly from a GuardDuty finding to an entity profile and visualize the relationships among IPs, accounts, and resources, which suits the scoping stage. Security Hub aggregates and organizes findings but does not provide a log-based behavior graph or entity activity comparison. Athena requires you to write SQL and prepare tables yourself, which conflicts with the no-SQL condition and with minimizing operational burden. Inspector is a vulnerability scanner, so its purpose differs from investigating the scope of damage from API call patterns."
+  },
+  {
+    "number": 50,
+    "domain": "Incident Response",
+    "prompt": "It has been confirmed that a developer committed the access key of the IAM user deploy-bot to a public GitHub repository. This key may also be used in one nightly deployment pipeline, so the company must be able to check whether a usage site is interrupted and, if necessary, roll back. At the same time, use by an attacker must be blocked right now. Key usage history can be queried through CloudTrail, but the developer who created the key has left for the day and cannot be reached. The commit history of the public repository includes the secret value of the key, and this user has broad write permissions. The pipeline is scheduled to run once within 2 hours after the leak notice. The IAM user has no other access keys and does not use console access, and the security team plans to schedule the key rotation after the investigation. Which first action is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Detach all policies attached to the user, delete the user, and create a new user with the same name to clean up the impact of the key leak."
+      },
+      {
+        "label": "B",
+        "text": "Change the access key to the inactive state and check the call records for the key ID in CloudTrail."
+      },
+      {
+        "label": "C",
+        "text": "Delete the access key immediately, issue a new key and deploy it to the pipeline configuration, and check the usage history of the old key in CloudTrail."
+      },
+      {
+        "label": "D",
+        "text": "Reset the IAM user's console password and register a new MFA device so that the attacker can no longer use the user account."
+      }
+    ],
+    "explanation": "The correct answer is to change the key to the inactive state. Deactivation blocks authentication immediately while allowing the key to be reactivated, so it fits the requirement to check whether the pipeline actually uses this key and then restore it, and searching CloudTrail by key ID also lets you trace the attacker's activity. Deleting the key cannot be undone, so there is no way to roll back if the pipeline stops. The console password and MFA affect only console sign-in and have no effect on access key authentication. Deleting and re-creating the user is excessive, cannot be undone, and loses the linkage information needed for the investigation."
+  },
+  {
+    "number": 51,
+    "domain": "Infrastructure Security",
+    "prompt": "A company has AWS Network Firewall in an inspection VPC (10.100.0.0/16) and centrally inspects the outbound traffic of spoke VPCs (10.1.0.0/16, 10.2.0.0/16) through AWS Transit Gateway. The company put only .example.com in the domain list allow rule group, but HTTPS leaving the spoke VPCs passes even for domains that are not on the list. The firewall policy is already associated with the Transit Gateway attachment path, and the domain list in the stateful rule group is evaluated based on the HTTP host header and the TLS SNI. No variables were set separately for the domain list rule group, so it remains at the default values. The operations team has 2 members and wants to avoid additional configuration such as certificate deployment. Traffic is several TB per day, and increases in latency must be minimized. Firewall endpoints are already deployed in each Availability Zone. What should be done to apply domain filtering with the fewest changes and without TLS decryption?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Modify the HOME_NET variable of the rule group to include the CIDR ranges of the inspection VPC and both spoke VPCs."
+      },
+      {
+        "label": "B",
+        "text": "Add a TLS inspection configuration to the firewall policy and decrypt all HTTPS sessions with an ACM certificate to filter based on the body instead of the SNI."
+      },
+      {
+        "label": "C",
+        "text": "Switch the firewall policy rule evaluation order to strict order, and change the stateless default action so that traffic is not forwarded to the stateful engine."
+      },
+      {
+        "label": "D",
+        "text": "Deploy a separate Network Firewall and domain rule group for each spoke VPC so that each VPC uses its own CIDR as the home network."
+      }
+    ],
+    "explanation": "Domain list inspection by default filters only traffic within the range of HOME_NET, which is the CIDR of the VPC where the firewall is deployed, so to inspect traffic from other VPCs coming through Transit Gateway, you must manually add those CIDRs to HOME_NET. HTTPS domains are determined by SNI, so TLS decryption is not needed. Changing the evaluation order or the stateless default action does not change the reason that traffic outside HOME_NET does not match the domain rules. Deploying a firewall per VPC abandons the centralized inspection architecture, and the changes and cost are large."
+  },
+  {
+    "number": 52,
+    "domain": "Data Protection",
+    "prompt": "A company issued a *.example.com public certificate with ACM in the Seoul Region and completed DNS validation. However, this certificate does not appear in the custom SSL certificate list of the CloudFront distribution. The domain's DNS is managed in Route 53, and no person should have to track the certificate renewal schedule separately. The domain is also used by an ALB in the Seoul Region, so the Seoul certificate is still needed for the ALB. The CloudFront distribution already exists, and the domain name is registered as an alternate domain name (CNAME). The CNAME record for DNS validation has already been created in Route 53, and certificate issuance takes only a few minutes. The company wants to make changes only in the distribution settings on the CloudFront side. How can the problem be resolved with the fewest changes while keeping the certificate in an automatically renewing state?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Re-create the distribution in the Seoul Region so that the CloudFront distribution can use the Seoul Region certificate, and also move the origin server settings to be Seoul-based."
+      },
+      {
+        "label": "B",
+        "text": "Turn on cross-Region replication of the Seoul certificate in the ACM settings so that a copy of the same certificate is automatically created in the Region that CloudFront uses."
+      },
+      {
+        "label": "C",
+        "text": "Manually upload the Seoul Region certificate to the IAM certificate store as if it were an external CA certificate, attach it to the CloudFront distribution, and renew it yourself before it expires."
+      },
+      {
+        "label": "D",
+        "text": "Newly issue an ACM public certificate for the same domain with DNS validation in the US East (N. Virginia) Region, and attach it to the CloudFront distribution."
+      }
+    ],
+    "explanation": "The correct answer is to newly issue an ACM certificate in US East (N. Virginia) (us-east-1). ACM certificates are Regional resources and CloudFront uses only ACM certificates in us-east-1, so if you issue one in that Region and keep DNS validation, ACM renews it automatically. Uploading to the IAM certificate store is manual management and violates the automatic renewal requirement. CloudFront is a global service, so a distribution cannot be moved to the Seoul Region. ACM has no feature to automatically replicate a certificate between Regions."
+  },
+  {
+    "number": 53,
+    "domain": "Detection",
+    "prompt": "The security team received a report that abnormally long domain queries are going out from 200 servers in the Seoul Region and suspects DNS tunneling. The instances run in a VPC that uses the default Amazon DNS, and the security team had turned on VPC flow logs, but no queried domain names were found, and even the traffic going to the Amazon DNS server did not appear in the records. The servers are in production, so restarting them or installing an agent is difficult, and the security team has 3 members and has no capacity to operate a new separate analysis system. All the servers are in private subnets of the same VPC, and the team wants to retain query records for 90 days for use in forensics. The only DNS currently used is the VPC default resolver, and there are no custom DNS servers. What should be done with the fewest changes to obtain the queried domain names?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Customize the VPC flow log record format to add a query domain field, and reduce the maximum aggregation interval to 1 minute to collect again."
+      },
+      {
+        "label": "B",
+        "text": "Create a Traffic Mirroring session on every instance network interface and configure a fleet of separate analysis appliances to interpret the DNS packets."
+      },
+      {
+        "label": "C",
+        "text": "Modify the trail to enable the Route 53 item of CloudTrail data events so that DNS queries sent by instances are recorded as API calls."
+      },
+      {
+        "label": "D",
+        "text": "Configure Route 53 Resolver query logging for that VPC, associate the VPC, and deliver the query logs to Amazon CloudWatch Logs or Amazon S3."
+      }
+    ],
+    "explanation": "Traffic to and from the default Amazon DNS server is not recorded in VPC flow logs, and flow logs have no domain name field either, so the queried names are obtained by associating Route 53 Resolver query logging with the VPC. Customizing the format cannot add a domain field that does not exist and does not change what is collected. Traffic Mirroring and analysis appliances impose a very large configuration and operational burden compared with the requirement. DNS queries from instances are not recorded as CloudTrail events."
+  },
+  {
+    "number": 54,
+    "domain": "Security Foundations and Governance",
+    "prompt": "The 40 accounts in a sandbox OU must be able to use only four services: Amazon S3, AWS Lambda, Amazon DynamoDB, and Amazon CloudWatch, and any new services that AWS releases in the future must be automatically blocked until the SCP is explicitly modified. Currently, the default FullAWSAccess SCP is attached to this OU, and other OUs must be left unchanged. When a new account moves into this OU, the same restriction must be applied automatically without extra work. The sandbox OU is for developer experimentation and uses only the Seoul Region. The security team wants SCP changes to be made only through an approval process, and the core goal is to prevent new services from being used unnoticed. Which configuration is MOST appropriate to meet the requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Detach FullAWSAccess from the organization root and attach an SCP that allows only the four services to the root, to restrict the allowed scope for the entire organization."
+      },
+      {
+        "label": "B",
+        "text": "Detach FullAWSAccess from the sandbox OU and attach an SCP that allows only the four services. Leave the root as it is."
+      },
+      {
+        "label": "C",
+        "text": "Keep FullAWSAccess and additionally attach to the sandbox OU an SCP that allows the four services, to restrict the allowed scope to the four services."
+      },
+      {
+        "label": "D",
+        "text": "Keep FullAWSAccess and attach to the sandbox OU an SCP that denies all currently known services except the four, to restrict them."
+      }
+    ],
+    "explanation": "The correct answer is to replace FullAWSAccess on the sandbox OU. For a permission to be allowed, there must be an explicit Allow at every level from the root to the account, so keeping a full allow at the root and having only an SCP that allows the four services on the sandbox OU turns that OU into an allow list alone, and new services are denied by default. If FullAWSAccess remains at the same level, the allows are merged and effectively everything is allowed. A method that denies known services automatically allows services released later. Replacing it at the root would restrict other OUs as well, which violates the requirement."
+  },
+  {
+    "number": 55,
+    "domain": "Data Protection",
+    "prompt": "Five teams, including the analytics, marketing, and finance teams, share a single data lake bucket. Each team has different prefixes it can access, and the analytics team's access must be allowed only from within a specific VPC. The bucket policy has grown to hundreds of lines, and incidents in which changing one place affects other teams keep recurring. The data is separated by prefix, and multiple pipelines depend on this bucket, so splitting or migrating the bucket itself is difficult given the schedule. Per-team access history is reported separately in audits, and the work of migrating each team's application to use a new access path can be scheduled team by team. Which method separates per-team permission management with the LEAST risk without splitting the bucket?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Keep adding only per-team IAM policies, and put an allow for all prefixes in a single statement in the bucket policy so that no policy edits are needed."
+      },
+      {
+        "label": "B",
+        "text": "Create a separate bucket for each team and use S3 replication to copy the data lake prefixes to each team's bucket, to completely separate access permissions by team."
+      },
+      {
+        "label": "C",
+        "text": "Create an S3 access point and a per-prefix policy for each team, and make the analytics team's access point accept only requests from the designated VPC."
+      },
+      {
+        "label": "D",
+        "text": "Put all the aws:SourceVpce conditions and per-prefix conditions in a single bucket policy, to manage allow rules by team and network path in one policy."
+      }
+    ],
+    "explanation": "The correct answer is a per-team S3 access point. Each access point applies its own policy and network controls and can be configured to accept only requests coming from a VPC, and access point policies are evaluated together with the bucket policy, so team rules are separated and a change in one place does not spread to other teams. Only adding IAM policies and allowing all prefixes in the bucket policy loses per-prefix separation and the VPC restriction. Creating a bucket for each team and replicating violates the constraint of not splitting the bucket. Putting all conditions in a single policy leaves the current problem as it is."
+  },
+  {
+    "number": 56,
+    "domain": "Detection",
+    "prompt": "A company that operates dozens of payment-related microservices runs an Amazon EKS cluster built with EC2 node groups (not Fargate). The security team wants to use Amazon GuardDuty to detect both runtime behavior, such as malicious processes and file access running inside containers, and anonymous access and privilege escalation attempts against the Kubernetes API server. GuardDuty is already enabled in the account, and the team does not want to manage EKS control plane logging itself. The nodes are based on Amazon Linux, and the team wants to avoid introducing a new separate security product. The cluster is a single cluster in the Seoul Region, and the namespace to be monitored is a single production environment. The security team wants to merge the results directly into the existing GuardDuty findings flow. Which TWO actions are MOST appropriate to meet these two requirements? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Turn on Amazon Inspector ECR scanning to detect malicious processes in running containers in real time and deliver the results to the security team."
+      },
+      {
+        "label": "B",
+        "text": "Enable GuardDuty EKS Runtime Monitoring and deploy the GuardDuty security agent to the cluster to collect OS-level events from containers."
+      },
+      {
+        "label": "C",
+        "text": "Configure the cluster VPC to publish flow logs to Amazon S3 so that GuardDuty can analyze the network activity of containers."
+      },
+      {
+        "label": "D",
+        "text": "Enable GuardDuty EKS Audit Log Monitoring to analyze suspicious activity targeting the API server from the Kubernetes audit logs."
+      },
+      {
+        "label": "E",
+        "text": "Enable GuardDuty Lambda Protection to analyze process execution and file access events of containers in the cluster nodes."
+      }
+    ],
+    "explanation": "Audit Log Monitoring analyzes activity targeting the API server, such as anonymous access and privilege escalation, from Kubernetes audit logs, and Runtime Monitoring detects malicious behavior by having a security agent collect process, file, and network events from containers. Each of the two features handles one requirement. Lambda Protection targets the network activity of Lambda functions, so it is unrelated to EKS nodes. Inspector ECR scanning is image vulnerability scanning and not detection of running processes. GuardDuty analyzes flow logs through its own independent stream, so the user does not need to publish flow logs."
+  },
+  {
+    "number": 57,
+    "domain": "Infrastructure Security",
+    "prompt": "A company connects a central inspection VPC, with firewall endpoints in two Availability Zones, to a transit gateway to inspect traffic between spoke VPCs. The firewall endpoints are healthy in both zones and there are no errors in the route tables. However, TCP communication between spoke VPCs in different Availability Zones is intermittently dropped, and logs show that the stateful firewall's session state does not match. Communication within the same Availability Zone is normal. The service is in production, and for availability reasons the workloads cannot be consolidated into one zone, and the change must be completed on the inspection VPC side. The failure appears only for some flows at the moment a new connection is created, and monitoring has not shown a shortage of throughput. What should be done to resolve this problem with the fewest changes?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Enable appliance mode on the inspection VPC's transit gateway VPC attachment so that the round trip of a flow passes through the appliance in the same Availability Zone."
+      },
+      {
+        "label": "B",
+        "text": "Add two firewall endpoints in each Availability Zone and adjust the transit gateway route table to an evenly distributed path to increase throughput."
+      },
+      {
+        "label": "C",
+        "text": "Change the firewall policy's stateless default action to drop so that all packets whose state does not match are discarded and the client retransmits them."
+      },
+      {
+        "label": "D",
+        "text": "Merge the spoke VPC subnets by Availability Zone and move all workloads to one Availability Zone to eliminate cross-Availability Zone traffic altogether."
+      }
+    ],
+    "explanation": "When appliance mode is turned on, the transit gateway selects one network interface in the inspection VPC by hashing for each flow and uses the same interface for the round-trip traffic until the flow ends. Symmetric routing to the same Availability Zone is therefore guaranteed, and stateful inspection keeps session state consistently. Adding endpoints does not resolve the asymmetry in which the round trip splits across different Availability Zones. Changing the stateless default action to drop can discard normal traffic as well. Consolidating workloads into one Availability Zone undermines the availability requirement."
+  },
+  {
+    "number": 58,
+    "domain": "Incident Response",
+    "prompt": "A company collects GuardDuty findings from 60 accounts in AWS Organizations into a delegated administrator account. When a finding of the InstanceCredentialExfiltration type occurs, indicating that EC2 instance role credentials were used from an external IP, the sessions of that role must be automatically invalidated within 5 minutes. The company wants to avoid the operational burden of building separate detection infrastructure for each account. From detection to remediation, the process must complete automatically with no human judgment, and a dedicated response IAM role is already deployed in the target accounts. The audit team must be able to look up the response records later. The role subject to session revocation is used as an instance profile, and deleting or re-creating the role is not allowed. In case of a false positive, the affected workload must recover immediately with a new session. Which automated response configuration has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Evaluate IAM role configurations with an AWS Config organization rule, and attach a remediation action so that Systems Manager Automation revokes sessions when a noncompliant role is found."
+      },
+      {
+        "label": "B",
+        "text": "Create CloudTrail metric filters and Amazon CloudWatch alarms in every account, notify the responsible person through Amazon SNS, and have the responsible person revoke the role sessions directly in the console."
+      },
+      {
+        "label": "C",
+        "text": "Have an Amazon EventBridge rule in the delegated administrator account match the finding and invoke AWS Lambda, and have Lambda attach the session revocation policy through the response role in the target account."
+      },
+      {
+        "label": "D",
+        "text": "Export GuardDuty findings to Amazon S3 in each account, run an Amazon Athena query every hour, and have AWS Lambda revoke sessions when that type is found."
+      }
+    ],
+    "explanation": "The correct answer is the combination of an EventBridge rule and Lambda in the delegated administrator account. GuardDuty sends findings to EventBridge in near real time, and a rule in the delegated administrator account also reacts to findings from member accounts, so a single rule automatically handles 60 accounts and meets the 5-minute requirement. Per-account metric filters and alarms must be configured in each account and involve humans, which fits neither the speed nor the operational burden requirements. A Config rule only evaluates configuration state and does not take GuardDuty findings or anomalous credential usage as input. Exporting to S3 and hourly Athena queries cannot meet the 5-minute target."
+  },
+  {
+    "number": 59,
+    "domain": "Data Protection",
+    "prompt": "A media company's KMS request costs have surged because of billions of GET requests per month on an S3 bucket encrypted with SSE-KMS using a customer managed key. The client code cannot be changed, and the use of the customer managed key and the CloudTrail audit requirement must be maintained. Even after S3 Bucket Keys were turned on for the bucket, KMS calls did not decrease when existing objects were read. The data consists of about 800 million objects, and most objects are read several times a day. Objects are mostly small and are not modified, and bulk copy jobs can be run during the weekend maintenance window. There are 800 million objects, mostly small files, and read service must continue while the existing objects are copied. Cost analysis shows that the number of KMS requests is the main cause of the charges. Which additional action reduces the cost MOST efficiently?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use an S3 Batch Operations copy objects job to copy the existing objects in place so that they are re-encrypted with the Bucket Key applied."
+      },
+      {
+        "label": "B",
+        "text": "Switch the bucket default encryption to dual-layer server-side encryption (DSSE-KMS) so that the number of KMS requests is reduced together with Bucket Keys."
+      },
+      {
+        "label": "C",
+        "text": "Switch the bucket default encryption to SSE-S3 so that no KMS requests occur, and substitute S3 server access logs for object access auditing."
+      },
+      {
+        "label": "D",
+        "text": "Turn on automatic rotation of the KMS customer managed key so that the key material changes periodically and the KMS request cost on object reads decreases."
+      }
+    ],
+    "explanation": "The correct answer is to copy the existing objects so that Bucket Keys are applied. A Bucket Key applies only to objects written after it is configured, and existing objects do not use a Bucket Key. Rewriting them with CopyObject applies it, so the objects can be copied in bulk with a Batch Operations job. Switching to SSE-S3 violates the customer managed key and KMS-based audit requirements. DSSE-KMS does not support Bucket Keys. Automatic key rotation only changes the key material and has nothing to do with the number or cost of KMS requests generated by reading objects."
+  },
+  {
+    "number": 60,
+    "domain": "Identity and Access Management",
+    "prompt": "An SCP allow list approach has been applied to all member accounts in the development OU. In this OU, the default FullAWSAccess SCP was detached, and the SCP attached to the OU allows only ec2:* and s3:*. FullAWSAccess remains at the organization root. In one member account in this OU, a developer's IAM user has the AdministratorAccess managed policy attached directly, and the developer has asked since yesterday why they cannot create RDS instances. The security team wants to explain the cause with the policy evaluation logic. The user has no permissions boundary and no session policy is used. The SCP at the organization root is not being changed, and the account in question was recently moved to that OU. Which is the MOST accurate description of this user's effective permissions?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "The user can perform EC2 and S3 actions, but creating RDS instances, which the SCP does not allow, is denied even with the administrator policy."
+      },
+      {
+        "label": "B",
+        "text": "Because the administrator policy allows all actions, all service actions, including creating RDS instances, are possible even though the SCP is an allow list."
+      },
+      {
+        "label": "C",
+        "text": "Because an SCP is a policy that grants permissions, the user can perform EC2 and S3 actions even without the administrator policy."
+      },
+      {
+        "label": "D",
+        "text": "All actions are denied, and only the root user of the user's account is unaffected by the SCP and can perform EC2 and S3 actions."
+      }
+    ],
+    "explanation": "An SCP does not grant permissions but sets the boundary of the maximum permissions that principals in a member account can have, and the effective permissions are the intersection of the SCP allow and the allow in the user's identity-based policy. Therefore, a user with the administrator policy can perform only the EC2 and S3 actions that the SCP allows, and creating RDS is denied. The administrator policy cannot exceed the SCP. The explanation that an SCP grants permissions directly is wrong, and without a policy there is no allow. The root user of a member account is also affected by SCPs."
+  },
+  {
+    "number": 61,
+    "domain": "Identity and Access Management",
+    "prompt": "A security team that operates 60 accounts in an organization currently reviews permissions by team every quarter, but cleanup based on usage history is not taking place, so unused roles have accumulated. The team wants to find and clean up IAM roles that have not been used in the last 90 days, as well as service and action permissions that were granted but not used. The team does not want to run scripts in each account and needs to see organization-wide results in one place, and the results must be continuously updated. The delegated administrator account is already designated, and the security team has 4 members. The cleanup targets are thousands of roles, and the results must show the last used service and action information so that the responsible team can check before deletion. Which method is MOST appropriate to meet these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create an IAM Access Analyzer for external access with the organization as the zone of trust, and judge unused roles from the results about resources shared with external principals."
+      },
+      {
+        "label": "B",
+        "text": "In the delegated administrator account, create an IAM Access Analyzer for unused access at the organization level, set the tracking period to 90 days, and review the unused findings."
+      },
+      {
+        "label": "C",
+        "text": "Download the IAM credential report from each account every week, merge the last-used date columns, and organize into a table the items that have not been used for more than 90 days."
+      },
+      {
+        "label": "D",
+        "text": "Deploy the AWS Config managed rule iam-user-unused-credentials-check as an organization rule to check items with unused credentials."
+      }
+    ],
+    "explanation": "An Access Analyzer for unused access can be created at the organization level, continuously updates findings for unused roles, unused credentials, and unused service and action permissions, and lets you specify the unused-access tracking period. An external access analyzer finds access opened to external principals, so it cannot find unused permissions. Credential reports are collected manually per account and cover only user credentials. The Config rule checks only IAM user credentials and does not cover whether roles and permissions are used."
+  },
+  {
+    "number": 62,
+    "domain": "Security Foundations and Governance",
+    "prompt": "A company is migrating a MySQL database that it installed and operated directly on EC2 to Amazon RDS for MySQL. The company has only two DBAs, so reducing operational burden is the main reason for the migration, and all settings are subject to audit. The company intends to write a new security checklist after the migration. In the next security audit, the company must provide evidence that distinguishes which controls AWS is responsible for and which controls the company is responsible for. The database contains customer personal information, so both data at rest and data in transit must be protected, and the company wants to write the checklist separating the areas AWS handles from the areas the company handles. Under the shared responsibility model, which TWO responsibilities MOST appropriately remain with the customer after the migration to RDS? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Applying security patches to the host operating system on which the DB instance runs"
+      },
+      {
+        "label": "B",
+        "text": "Designing database user accounts and permissions, and deciding whether to use encryption of data at rest and which KMS key to use"
+      },
+      {
+        "label": "C",
+        "text": "Designing the security groups and subnets that allow access to the DB instance, and setting whether public access is enabled"
+      },
+      {
+        "label": "D",
+        "text": "Managing the security of the hypervisor and physical servers of the hosts on which the DB instance runs"
+      },
+      {
+        "label": "E",
+        "text": "Power and cooling equipment in the data center, and physical destruction of decommissioned storage devices"
+      }
+    ],
+    "explanation": "The correct answers are the network access configuration and the database account permissions and encryption decisions. Even with a managed service, who can connect through security groups and subnets, the database users and permissions, and whether to use encryption at rest and which key to select are the customer's security responsibilities. The security of the hypervisor and physical servers is security of the cloud itself, which AWS manages. Patching the host operating system is also handled by AWS in RDS, which is different from running it directly on EC2. Data center equipment and the destruction of storage devices are also AWS's physical security responsibilities."
+  },
+  {
+    "number": 63,
+    "domain": "Infrastructure Security",
+    "prompt": "The HTTPS listener of an ALB for a public web service that general users access with browsers uses 20 ACM public certificates, all issued with email validation. The domains are managed in a single hosted zone in Route 53. A certificate expired because the responsible person missed the renewal confirmation email for one certificate, which caused a service outage. The company wants certificates trusted by public browsers to be maintained and renewed automatically in the future with no human action, with minimal changes. The 20 certificates are for different subdomains and are all attached to ALBs in the same Region. The domain registrar is already in Route 53, so the company has permission to add DNS records directly. Which method is MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Request the certificates again with DNS validation and keep the validation CNAME records in Route 53 so that ACM automatically renews the certificates in use."
+      },
+      {
+        "label": "B",
+        "text": "Register commercial CA certificates by importing them instead of using ACM, create a scheduled job in each account to re-import the renewed certificate 30 days before expiration, and operate a procedure to manually replace the ALB listener certificate when the renewed certificate is ready."
+      },
+      {
+        "label": "C",
+        "text": "Issue private certificates from ACM Private CA and attach them to the ALB, and distribute the private root certificate to client devices so that they trust it."
+      },
+      {
+        "label": "D",
+        "text": "Receive certificate-expiring-soon events through EventBridge and send notifications to the responsible person so that the person does not miss approving the renewal confirmation email."
+      }
+    ],
+    "explanation": "An ACM public certificate issued with DNS validation is renewed automatically by ACM as long as the validation CNAME record is maintained, so no human action is needed and browser trust is maintained. Importing commercial CA certificates requires you to automate renewal yourself, which increases the operational burden. Private CA certificates are not trusted by public browsers, which violates the requirements. Expiration notifications leave the manual action of email approval in place, so the same mistake can be repeated."
+  },
+  {
+    "number": 64,
+    "domain": "Detection",
+    "prompt": "A company runs workloads in three Regions, ap-northeast-2, us-east-1, and eu-west-1, and AWS Security Hub CSPM is already enabled in all three Regions. Twelve security analysts work in shifts and want to handle everything in one place without switching consoles. The analysts want to view the findings of all Regions from the console in the single Seoul Region and want the workflow status they change there to be reflected in each original Region as well. The security team has no capacity to operate code directly, and the existing settings in each Region must be kept. All three Regions are in the same AWS account, and Regions may be added in the future. The analysts also want to see insights and control statuses together in the home Region console, and only the security team has permission to modify findings. Which method is MOST appropriate to meet these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Build a pipeline directly that uses Amazon EventBridge rules and AWS Lambda functions to bring each Region's Security Hub CSPM findings back into the Seoul Region."
+      },
+      {
+        "label": "B",
+        "text": "Use Security Hub CSPM only in the Seoul Region, and disable the service in the other two Regions to gather the findings in one place."
+      },
+      {
+        "label": "C",
+        "text": "Export each Region's findings to an Amazon S3 bucket, build a dashboard that combines them with Amazon Athena queries, and have analysts manage status there."
+      },
+      {
+        "label": "D",
+        "text": "Designate the Seoul Region as the home Region, turn on cross-Region aggregation, and select us-east-1 and eu-west-1 as linked Regions."
+      }
+    ],
+    "explanation": "With cross-Region aggregation, once you set the home Region and choose linked Regions, findings, insights, and control statuses are replicated to the home Region, and updates made in the home Region are also replicated back to the linked Regions. An EventBridge and Lambda pipeline requires operating code you build yourself and requires separate implementation of reverse reflection of status, which violates the requirements. Enabling only the home Region means findings for resources in the other Regions are not generated at all, so visibility is lost. The combination of S3 and Athena is read-only analysis and cannot reflect workflow status in the original findings."
+  },
+  {
+    "number": 65,
+    "domain": "Security Foundations and Governance",
+    "prompt": "In an organization that uses 180 accounts and 4 Regions, the AWS Foundational Security Best Practices (FSBP) standard in AWS Security Hub must be enabled in all accounts and Regions, and member account administrators must not be able to turn it off arbitrarily. New accounts must also automatically receive the same settings. The standard enablement status is checked in regular audits, and a situation in which settings differ between accounts is considered a security incident. Some existing accounts have already turned on Security Hub with local settings. The security team wants to make configuration changes only from a single delegated administrator account. Once central configuration is applied, account administrators must be prevented from turning off the standard directly in the console, and the audit team wants to see on a single screen which policy is applied to which account. Which method prevents configuration drift with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "In the delegated administrator account, turn on central configuration, and attach a configuration policy with FSBP enabled to the organization root to designate the accounts as centrally managed."
+      },
+      {
+        "label": "B",
+        "text": "Use AWS CloudFormation StackSets to deploy a stack that enables the FSBP standard to all accounts and Regions, and add stack instances for new accounts."
+      },
+      {
+        "label": "C",
+        "text": "Have each member account administrator turn on the standard directly, check whether the standard is disabled with an AWS Config rule, and send a notification to accounts that violate it."
+      },
+      {
+        "label": "D",
+        "text": "Keep local configuration, and specify in the delegated administrator account's settings that Security Hub and the default standards be turned on automatically for new organization accounts."
+      }
+    ],
+    "explanation": "The correct answer is a central configuration configuration policy. The delegated administrator applies Security Hub, the FSBP standard, and the controls in one step to the home Region and linked Regions with a configuration policy. For centrally managed accounts, only the delegated administrator can change the settings, so drift is prevented, and attaching it to the root makes new accounts inherit it. Auto-enable under local configuration applies only to new accounts and the current Region, so drift arises in existing accounts or other Regions. StackSets cannot prevent member administrators from turning off the standard in the console. Manual enablement with after-the-fact checks requires human involvement and is not preventive."
+  }
+]

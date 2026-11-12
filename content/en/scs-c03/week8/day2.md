@@ -131,7 +131,7 @@ If CloudWatch is single-signal threshold detection, Security Hub is *aggregation
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Security Hub의 보안 표준(CIS, FSBP) 컨트롤이 평가되려면 반드시 활성화되어 있어야 하는 선행 서비스는?
 

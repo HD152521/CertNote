@@ -224,7 +224,7 @@ Tomorrow we cover the schema-less world, DynamoDB. We'll see why the partition k
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A financial services company needs fast access to the same DB data from 3 regions — the US (us-east-1), Europe (eu-west-1), and Seoul (ap-northeast-2) — for a global application. Data consistency tolerates sub-second lag. What is the most suitable solution?
 

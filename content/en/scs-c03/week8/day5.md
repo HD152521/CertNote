@@ -107,7 +107,7 @@ Week 8 in one sentence: **"Logs are not just accumulated — they are *converted
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "S3에 PII가 저장되어 있는지 발견", "EC2의 CVE 취약점 스캔", "악성 IP와의 통신 탐지"에 각각 대응하는 서비스 조합으로 옳은 것은?
 

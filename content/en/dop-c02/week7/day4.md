@@ -90,7 +90,7 @@ aws cloudwatch get-metric-statistics \
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Lambda가 여러 AWS 서비스를 호출하는데 느리다면 병목지점 파악 방법은?
 

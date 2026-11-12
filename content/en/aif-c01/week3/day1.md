@@ -84,7 +84,7 @@ Tomorrow we'll explore when LLM "predicts the next token," what that token reall
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 다음 중 생성형 AI와 전통 머신러닝의 가장 본질적인 차이를 가장 잘 설명한 것은?
 

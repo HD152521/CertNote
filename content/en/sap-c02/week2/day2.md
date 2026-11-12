@@ -238,7 +238,7 @@ Next article we explore **AWS Control Tower and Landing Zone** that auto-attach 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Which statement about SCP is correct?
 

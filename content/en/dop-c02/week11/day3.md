@@ -127,7 +127,7 @@ The next article examines these telemetry's destination **backends — OpenSearc
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** ADOT(OpenTelemetry)의 가장 근본적인 가치는?
 
@@ -241,6 +241,6 @@ D) 지원 리전 수
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, OpenTelemetry는 OpenTracing(API)과 OpenCensus(구현)의 2019년 합병으로 추적 도구 전쟁을 끝냈고, 핵심 가치는 계측과 백엔드의 분리(의존성 역전)로 벤더 락인을 없앤 것이다. 둘째, OTel은 logs·metrics·traces 세 신호를 OTLP 하나로 통합해 trace ID·resource 공유로 상관관계를 자동화한다. 셋째, Collector는 receiver-processor-exporter 파이프라인(ETL/파이프-필터의 텔레메트리판)으로, 같은 데이터를 여러 백엔드로 fan-out하고 PII 마스킹·필터·tail 샘플링을 한곳에서 하며, tail 샘플링은 gateway 모드가 필요하다. 넷째, ADOT는 Lambda Layer·EKS Add-on 등으로 배포되고 `AWS_LAMBDA_EXEC_WRAPPER` 같은 인터셉션(AOP의 인프라 구현)으로 코드 변경 없이 자동 계측한다. 다섯째, ADOT vs X-Ray SDK의 차이는 결합도이며(표준 vs X-Ray 종속), EKS 관찰성 표준 스택은 ADOT + AMP + AMG다.

@@ -105,7 +105,7 @@ Common SAP exam mappings: (1) "precise type·IOPS·memory recommendations" → *
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 팀이 Compute Optimizer를 활성화했는데 EC2 인스턴스에 대해 CPU 기반 권고만 나오고 메모리 기반 권고가 전혀 없다. 가장 가능성 높은 원인은?
 

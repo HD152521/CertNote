@@ -93,7 +93,7 @@ Today's core is choosing the right tool. Glue Studio is an engineer's tool for v
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 코드를 작성할 줄 모르는 데이터 분석가가 데이터를 샘플로 대화식 미리보기하며 결측값 채우기·형식 표준화를 클릭으로 적용하고, 데이터 프로파일링까지 하려고 한다. 가장 적합한 서비스는?
 

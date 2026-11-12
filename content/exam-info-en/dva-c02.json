@@ -1,0 +1,49 @@
+{
+  "difficulty": "Intermediate · 1-2 years of relevant hands-on experience recommended",
+  "prerequisites": "1 or more years of experience developing and maintaining applications using AWS services recommended",
+  "format": "65 multiple-choice or multiple-response questions",
+  "languages": [
+    "English",
+    "Korean",
+    "Japanese",
+    "Simplified Chinese",
+    "Portuguese (Brazil)",
+    "Spanish (Latin America)"
+  ],
+  "domains": [
+    {
+      "name": "Development with AWS Services"
+    },
+    {
+      "name": "Security"
+    },
+    {
+      "name": "Deployment"
+    },
+    {
+      "name": "Troubleshooting and Optimization"
+    }
+  ],
+  "faq": [
+    {
+      "q": "How many questions are on the DVA-C02 exam, and how long is it?",
+      "a": "DVA-C02 has 65 questions and a time limit of 130 minutes. Questions are multiple-choice and multiple-response."
+    },
+    {
+      "q": "What is the passing score?",
+      "a": "A score of 720 or higher out of 1000 is required to pass. Scores are scaled to account for question difficulty, so they are not the same as a simple percentage of correct answers."
+    },
+    {
+      "q": "How much does the exam cost, and how do I register?",
+      "a": "The exam fee is US $150. You can take it through Pearson VUE at a test center or as an online proctored exam. There is no free retake, so you pay the full fee each time you sit the exam."
+    },
+    {
+      "q": "How long is the certification valid, and how do I recertify?",
+      "a": "The certification is valid for 3 years after you pass, and you must recertify before it expires. Passing the exam earns you a 50% discount voucher for your next exam, which you can use to recertify or to take another AWS certification."
+    },
+    {
+      "q": "Can I take the exam in Korean?",
+      "a": "Yes. The exam is offered in 6 languages, including Korean. You can choose your language when you register for the exam."
+    }
+  ]
+}

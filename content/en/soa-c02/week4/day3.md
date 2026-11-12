@@ -595,7 +595,7 @@ Using only one tool leaves incomplete audit capability. "CloudTrail alone is eno
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "S3 버킷이 퍼블릭으로 설정되면 자동으로 차단하고, 보안팀에 알림을 보내라"는 요구사항의 가장 완전한 구성은?
 

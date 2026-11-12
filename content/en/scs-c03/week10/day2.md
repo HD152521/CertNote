@@ -131,7 +131,7 @@ Key: **Evidence preservation (2) comes before containment (3), or at least befor
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** GuardDuty가 EC2 인스턴스의 활성 C2 통신을 탐지했다. 휘발성 증거를 잃지 않으면서 즉시 봉쇄하려면 첫 조치로 가장 적절한 것은?
 

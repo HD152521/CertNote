@@ -497,7 +497,7 @@ Explanation: 150 × 5% = 7 allowed failures. 3 < 7, circuit breaker doesn't trig
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 (Korean practice problems section — preserved in original)
 

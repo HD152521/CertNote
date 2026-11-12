@@ -286,7 +286,7 @@ User ──► [Shield Advanced] ──► CloudFront Distribution
                         A/B testing)
 ```
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** CloudFront is serving S3 Private bucket (SSE-KMS encrypted) content. Currently using OAI, getting AccessDenied on KMS bucket. How to resolve?
 

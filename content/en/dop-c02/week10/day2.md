@@ -146,7 +146,7 @@ Next we deep-dive Container Insights and Lambda Insights, and EMF. How observabi
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 여러 출처(컨테이너 인스턴스)가 같은 서비스의 로그를 보낸다. CloudWatch가 시간 순서를 보장하는 경계는?
 
@@ -239,6 +239,6 @@ D) 계정마다 별도 대시보드 수동 운영
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, Log Group(정책·권한·필터의 단위)/Log Stream(순서 보장의 단위)의 2단 구조는 Kafka 토픽/파티션과 같은 병렬 쓰기 대 순서 보장의 절충이다. 둘째, 기본 retention은 무제한이라 비용 함정이며 EventBridge/Config로 자동 retention 강제가 표준이다. 셋째, Subscription Filter는 로그를 실시간으로 Lambda(단순 처리)/Kinesis Data Streams(고처리량 팬아웃)/Firehose(저장소 적재)로 라우팅한다. 넷째, Metric Filter는 형식을 못 바꾸는 외부 로그에서 메트릭을 추출하는 schema-on-write 도구로 EMF와 역할을 나눈다. 다섯째, Logs Insights는 역색인 없는 풀스캔 엔진(스캔량 과금)이라 시간 범위·조기 필터가 핵심이고, 로그 비용 통제는 로그 레벨 조정(양) + 짧은 retention(시간) + S3 cold(저장소)의 조합이다.

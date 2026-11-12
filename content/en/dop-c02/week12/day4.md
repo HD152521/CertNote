@@ -237,7 +237,7 @@ The next article ties all of Week 12 together: **the five-stage pipeline and the
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** ChatOps의 핵심 가치는?
 
@@ -337,6 +337,6 @@ D) 의사 결정이 느려지니 IC가 모든 권한을 쥔다
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, **ChatOps**는 chat을 운영 제어 평면으로 삼아 컨텍스트 공유·투명성·감시성을 이룬다. 둘째, **AWS Chatbot과 CodeStar Notifications**은 AWS alert를 Slack에 중계하는 다리다. 셋째, **Guardrail Policy**는 chat 명령어에 IAM 권한을 최소로 바인딩해 안전한 자동화를 가능하게 한다. 넷째, **AWS Incident Manager**는 detection부터 post-mortem까지 lifecycle을 자동화하고, timeline 재구성으로 학습을 기반화한다. 다섯째, **MIR 전쟁 지휘소 패턴**은 명확한 역할·IC speak-last 원칙·single voice로 대규모 인시던트 압박 속에서도 구조를 유지한다. 모니터링 → 자동 치유 → 인간 조정 → 학습의 완전한 루프가 완성된다.

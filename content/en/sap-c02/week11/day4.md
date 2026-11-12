@@ -116,7 +116,7 @@ SAP exam frequent mappings: (1) "OWASP Top 10 immediate protection + minimal ope
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 웹 애플리케이션을 OWASP Top 10(SQL 인젝션·XSS 등)으로부터 즉시 보호하되, 룰을 직접 작성·유지보수하는 운영 부담을 최소화하고 싶다. 가장 적합한 것은?
 

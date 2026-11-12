@@ -68,7 +68,7 @@ In the next article, we'll take a step beyond security to cover **compliance**. 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You want to protect a web app from web application layer attacks such as SQL injection and cross-site scripting (XSS). Which service is most appropriate?
 

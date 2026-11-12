@@ -205,7 +205,7 @@ Next we'll see Custom Resource and Module/Hook expanding CloudFormation's expres
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 새 멤버 계정이 OU에 추가될 때 자동으로 보안 베이스라인이 적용되고, 운영자가 매번 손대지 않게 하려면 가장 적절한 구성은?
 
@@ -298,6 +298,6 @@ D) 콘솔에서 매일 수동 점검
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, StackSets는 fan-out + single source of truth의 결합이고 GitOps push 모델의 AWS 버전. 둘째, Self-managed의 닭과 달걀 문제로 인해 Service-managed + Organizations가 표준. 셋째, Delegated Administrator로 Management Account 일상 사용 차단이 Well-Architected의 최우선 보안 권고. 넷째, Operation Preferences는 규모별로 튜닝하고 카나리는 두 단계 호출로 직접 구성. 다섯째, StackSets/Control Tower/Config Conformance Pack의 경계 — 임의 리소스/landing zone/평가규칙으로 구분.

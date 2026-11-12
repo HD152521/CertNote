@@ -29,7 +29,7 @@ Key insight: **"What makes this architecture okay to fail at?" = "What constrain
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "Minimize cost" + "30 min RTO requirement" → **Pilot Light (not Backup), not Multi-Site**
 

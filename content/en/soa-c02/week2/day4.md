@@ -330,7 +330,7 @@ Tomorrow: Week 2 review + 10 scenario problems.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Created Metric Filter but no metric when no match, so alarm won't trigger. Root cause and fix?
 

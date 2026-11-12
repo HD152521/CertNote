@@ -66,7 +66,7 @@ Cost operations:
 - Retry safe on **idempotent work only**; repeat failures → **DLQ**.
 - Cost visibility: **allocation tags**; variance: **auto scaling**; baseline: **sizing/commitments**.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 다음 중 "어제 누가 prod Glue 테이블을 삭제했는지"와 "어젯밤 Kinesis 컨슈머가 얼마나 지연됐는지"를 각각 확인하기 위한 올바른 도구 조합은?
 

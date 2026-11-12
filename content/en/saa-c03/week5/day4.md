@@ -343,7 +343,7 @@ Tomorrow is the day we review all of Week 5. RDS Multi-AZ vs Read Replica, Auror
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You want to store a web application's session data and implement a stateless architecture where the session must be readable from servers other than the one the user logged in on. What is the most suitable service?
 

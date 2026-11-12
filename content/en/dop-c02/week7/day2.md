@@ -146,7 +146,7 @@ aws lambda put-provisioned-concurrency-config \
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Lambda 함수가 특정 S3 버킷에만 접근해야 한다면?
 

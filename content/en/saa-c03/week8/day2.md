@@ -234,7 +234,7 @@ In the next article we'll look at the tools that manage the users themselves —
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company needs to automatically rotate its RDS PostgreSQL admin password every 30 days, with no application downtime during rotation. What is the most suitable solution?
 

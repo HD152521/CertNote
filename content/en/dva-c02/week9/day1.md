@@ -156,7 +156,7 @@ Next we look at Secrets Manager and Parameter Store, layering on top of KMS to h
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** To encrypt a 10MB file with KMS, what is the correct method?
 

@@ -282,7 +282,7 @@ EOF
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Of 100 configuration values, 10 are DB passwords that need automatic rotation every 30 days, and the remaining 90 are ordinary settings such as host names and environment flags. What is the cost-optimal configuration?
 

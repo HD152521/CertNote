@@ -64,7 +64,7 @@ Today's core: **translation speed**. Catch scenario keywords (drift, bias, isola
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 배포 전에 모델 예측이 특정 집단에 불공정한지 한 번 점검하고, 동시에 각 특성의 예측 기여도를 SHAP로 보고하려 한다. 가장 적절한 기능은?
 
@@ -127,7 +127,7 @@ D) Model Quality는 학습 전에만 동작한다
 ---
 
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1-5** [Practice questions in Korean follow after marker]
 

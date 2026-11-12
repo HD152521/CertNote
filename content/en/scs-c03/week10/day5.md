@@ -92,7 +92,7 @@ Track these metrics post-incident to find *bottleneck phases* and invest in auto
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 프로덕션 EC2에서 GuardDuty가 암호화폐 채굴을 탐지했고 인스턴스 역할로 S3에 접근한 흔적이 있다. 가장 적절한 통합 대응 순서는?
 

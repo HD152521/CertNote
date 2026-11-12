@@ -99,7 +99,7 @@ Representative algorithms:
 - ResNet residual connections = solution for very deep network training
 - SageMaker provides Image Classification, Object Detection, Semantic Segmentation builtins + Ground Truth labeling
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "사진 속에 차량과 보행자가 각각 몇 개 있고 어디에 위치하는지" 알아야 한다. 가장 적절한 과제 유형은?
 

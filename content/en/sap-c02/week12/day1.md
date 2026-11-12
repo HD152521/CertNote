@@ -84,7 +84,7 @@ SAP exam frequent mappings: (1) "EC2+Fargate+Lambda unified discount" → **Comp
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 [Exercise questions 1-7 preserved exactly as in Korean source - not translated per requirement]
 

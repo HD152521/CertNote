@@ -1,0 +1,1598 @@
+[
+ {
+  "number": 1,
+  "domain": "Deployment",
+  "prompt": "A company's CI pipeline pushes a container image to Amazon ECR on every commit. A single repository in one account holds images for twenty services, and tens of thousands of untagged images and old development images have accumulated, increasing storage costs every month. Development tags start with dev-. Release-tagged images that start with v must not be deleted because of audits. Only two infrastructure engineers are on the team, and they do not want to maintain a separate cleanup script. The cleanup rule should be applied once to the entire repository regardless of service, and deleted images do not need to be recoverable. Currently, cleanup is done manually and occasionally by using a crontab on the CI server. Which cleanup method has the LEAST operational overhead?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Write a script that runs in an AWS Lambda function on a schedule, lists the images, selects the old images, and deletes them directly. Run the function by using Amazon EventBridge."
+   },
+   {
+    "label": "B",
+    "text": "Delete and re-create the repository, and then push only the release images again from another repository to remove all unnecessary images."
+   },
+   {
+    "label": "C",
+    "text": "Use an ECR lifecycle policy that expires untagged images after a set period and expires images with the development prefix tag beyond a set count. Exclude images with the v prefix from the rules."
+   },
+   {
+    "label": "D",
+    "text": "Enable tag immutability on the repository so that the same tag cannot be overwritten, which causes old images to be cleaned up automatically."
+   }
+  ],
+  "explanation": "A lifecycle policy is a managed ECR feature that automatically expires images according to rules, so there is no code or scheduler to operate, and a tag prefix condition can protect the release images. A Lambda deletion script does the same job, but you have to build and maintain it yourself. Re-creating the repository carries the risk and effort of moving the release images and also requires changing pipeline references. Tag immutability only prevents overwriting; it does not delete images."
+ },
+ {
+  "number": 2,
+  "domain": "Deployment",
+  "prompt": "A company deploys a web application by using an AWS CodeDeploy in-place deployment to an Amazon EC2 Auto Scaling group (12 instances) behind an Application Load Balancer. Deployments happen several times a day, including during business hours, and no staff are on call overnight. After the new version is installed, the deployment must check that the /health endpoint returns 200. If the check fails, the deployment must roll back to the last successful version without human intervention. The health check must be at the application level, not a port response, and the company wants to keep the existing deployment group configuration. Currently, deployments proceed one instance at a time and take less than 15 minutes. Changing the entire deployment process to a new tool is difficult given the schedule. Which configuration meets these requirements MOST appropriately?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Put a health check script in the ValidateService hook and enable automatic rollback on failure for the deployment group."
+   },
+   {
+    "label": "B",
+    "text": "Put a health check script in the BeforeInstall hook of the AppSpec file and, if it fails, skip the install step so that the existing version is kept."
+   },
+   {
+    "label": "C",
+    "text": "Connect only Amazon SNS notifications to the deployment group, without a CloudWatch alarm, and have an engineer manually redeploy the previous revision when the notification is received."
+   },
+   {
+    "label": "D",
+    "text": "Put a health check script in the ApplicationStop hook of the AppSpec file and, if there is no response, run the install script of the previous revision."
+   }
+  ],
+  "explanation": "ValidateService is a hook that runs after installation and service start are complete, so it is the right place to check the state of the new version. If the script fails, the deployment fails, and automatic rollback redeploys the last successful revision. BeforeInstall runs before the new version is installed, so there is nothing to check yet. Manually redeploying after an SNS notification requires human intervention, which conflicts with the requirement. ApplicationStop is the step that stops the existing version and is not meant for validating the new version."
+ },
+ {
+  "number": 3,
+  "domain": "Security",
+  "prompt": "An AWS Lambda function at a fintech company reads a SecureString parameter from AWS Systems Manager Parameter Store by using GetParameter (with WithDecryption set to true) to obtain a database connection string. The parameter is encrypted with a customer managed AWS KMS key in the same account, and other workloads also use this key. The key policy is set to allow delegation of permissions to IAM policies in the account. The function only reads the value, and the security team requires giving the execution role only the least privilege. The function code calls the parameter by a fixed name, and the parameter is in one location. The company has a single account, and the VPC endpoint configuration is already complete, so networking does not need to be considered. Which TWO least-privilege permissions should be granted to the function's execution role? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Add a statement to the execution role's policy that allows ssm:GetParameter on the ARN of the parameter."
+   },
+   {
+    "label": "B",
+    "text": "Add a statement that allows kms:Encrypt on the customer managed key so that the function can re-encrypt the value it reads."
+   },
+   {
+    "label": "C",
+    "text": "Add a statement to the execution role's policy that allows kms:Decrypt on the ARN of the customer managed key that was used for encryption."
+   },
+   {
+    "label": "D",
+    "text": "Add a statement that allows secretsmanager:GetSecretValue on all secrets in the account so that the function can read values broadly."
+   },
+   {
+    "label": "E",
+    "text": "Add a statement that allows ssm:PutParameter on the entire parameter path so that the function can read and update the value."
+   }
+  ],
+  "explanation": "To read and decrypt a SecureString, both the ssm:GetParameter permission to read the parameter and the kms:Decrypt permission to decrypt the value are required. PutParameter is an unnecessary write permission for a function that only reads. kms:Encrypt is needed when storing a value, not when reading it. Secrets Manager permissions are for secrets in a different service, so they are unrelated to retrieving a Parameter Store parameter, and their scope is also too broad."
+ },
+ {
+  "number": 4,
+  "domain": "Development with AWS Services",
+  "prompt": "A logistics company's inventory service stores inventory items in an Amazon DynamoDB table. During peak season, inventory changes are frequent. When two AWS Lambda functions that read an item, change the quantity, and save it run concurrently on the same item, the last write overwrites the earlier change, quantities are lost, and customers complain. The team does not want to introduce a new lock table or lock service and does not want to change the table structure significantly. Because call frequency is high, retry logic is acceptable, but a design that significantly increases user response latency must be avoided. The table is in on-demand mode, and each item is smaller than 1 KB. Which method safely detects concurrent modifications with the FEWEST changes?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Change reads to ConsistentRead, calculate the quantity after reading the latest quantity, and overwrite the same item with PutItem to reduce the gap between the read and the write."
+   },
+   {
+    "label": "B",
+    "text": "Have each function send an unconditional Put for the same item inside TransactWriteItems so that the two writes are processed serially."
+   },
+   {
+    "label": "C",
+    "text": "Add a version attribute to the item, write by using an UpdateItem condition expression only when the version matches the version that was read, increment the version, and re-read and retry on failure."
+   },
+   {
+    "label": "D",
+    "text": "Collect the inventory change requests with DynamoDB Streams, have a single Lambda function apply them in order, and remove the original write path."
+   }
+  ],
+  "explanation": "The correct answer is optimistic locking by using a version attribute and a conditional UpdateItem. If another write has changed the version since the read, the condition fails, so a lost update is detected, and only the failing side needs to re-read and retry, so no separate lock infrastructure is required. A strongly consistent read only guarantees the latest value at the moment of the read and does not prevent another write from slipping in between the read and the write. Putting an unconditional Put in a transaction does not change the fact that the last write wins. Streams are a record of changes made after a write, so they cannot remove the write path, and this approach significantly changes the structure."
+ },
+ {
+  "number": 5,
+  "domain": "Troubleshooting and Optimization",
+  "prompt": "A resize AWS Lambda function in an image processing service is configured with 512 MB of memory. It is invoked tens of thousands of times a day, so even small cost differences add up. The average run time is 8 seconds, and the function uses almost 100% of the CPU. Max Memory Used in the REPORT log is 180 MB. Users complain that processing delays are long, and the operations team wants to reduce the delay while minimizing any increase in monthly cost. The code is already optimized with no bottlenecks and will not be modified. The function runs outside a VPC, concurrency is sufficient, and the cold start time is negligible compared with the total of 8 seconds. Requests invoke the function asynchronously through Amazon S3 events. Which is the MOST cost-effective way to determine the memory setting?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Because actual usage is 180 MB, lower the memory to 256 MB to reduce the GB-second price, and ignore any change in run time."
+   },
+   {
+    "label": "B",
+    "text": "Configure provisioned concurrency to create execution environments in advance so that the 8-second processing time becomes shorter."
+   },
+   {
+    "label": "C",
+    "text": "Use AWS Lambda Power Tuning to measure run time and cost for each memory setting, and choose the setting with the lowest cost."
+   },
+   {
+    "label": "D",
+    "text": "Increase the function timeout so that processing is not cut off midway, assume this reduces processing time, and leave the memory as is."
+   }
+  ],
+  "explanation": "The correct answer is to use Lambda Power Tuning to measure run time and cost for each memory setting and choose from the results. Lambda allocates CPU in proportion to memory, so for a CPU-bound function, increasing memory can significantly reduce run time, and the cost can stay the same or even drop. Power Tuning is the tool that confirms this by measurement. Lowering memory also reduces CPU, making the function slower and conflicting with the latency requirement. Provisioned concurrency is meant to mitigate cold starts and has no effect on the processing time itself. Increasing the timeout has nothing to do with processing speed."
+ },
+ {
+  "number": 6,
+  "domain": "Security",
+  "prompt": "The task definition of an Amazon ECS Fargate service specifies an AWS Secrets Manager secret in the secrets field so that it is injected as a container environment variable. After a new deployment, the task fails to start and a permission error occurs when retrieving the secret. The application code calls only Amazon S3, and that permission already exists in the task role. The secret value must be injected as an environment variable when the container starts, and the security team does not allow excessive permissions. The service is scheduled to launch next week, so the schedule is tight, and other services in the same cluster are already working normally. The secret is in the same account and the same Region and is not encrypted with a customer managed KMS key. Which is the MOST appropriate solution that uses least privilege?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Add secretsmanager:GetSecretValue for the secret to the task role so that the container can read the secret when it starts."
+   },
+   {
+    "label": "B",
+    "text": "Attach the AdministratorAccess managed policy to the task execution role to resolve all permission errors, including secret retrieval, at once."
+   },
+   {
+    "label": "C",
+    "text": "Change the Principal in the secret's resource-based policy to a wildcard so that all principals in the account can retrieve the value."
+   },
+   {
+    "label": "D",
+    "text": "Allow secretsmanager:GetSecretValue for the secret on the task execution role, and also add kms:Decrypt if necessary."
+   }
+  ],
+  "explanation": "Values injected through the secrets field are retrieved by the ECS agent by using the task execution role before the container starts, so granting GetSecretValue (and kms:Decrypt if needed) for the secret to the execution role is enough. The task role is the role used by the application code inside the container, so it is not used for injection at the startup stage. An administrator policy breaks the principle of least privilege, and a wildcard Principal exposes the secret far too broadly."
+ },
+ {
+  "number": 7,
+  "domain": "Deployment",
+  "prompt": "At a company, the network team manages a VPC stack with AWS CloudFormation, and several application teams must each reference the subnet IDs of that VPC from their own stacks. All stacks are in the same account and Region and have different lifecycles. The subnet IDs rarely change after deployment, but each team has a different deployment schedule, so a change to one stack must not have to wait for the deployment of another stack. Stack changes happen a few times a month and are deployed automatically in a CI pipeline, and the teams do not want to operate any additional services. The subnet IDs in the VPC stack will be shared between stacks going forward. Which method avoids hardcoding the subnet IDs in templates and has the LEAST operational overhead?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Restructure all application stacks as nested stacks with the VPC stack as the parent, and have the parent pass the subnet IDs as parameters."
+   },
+   {
+    "label": "B",
+    "text": "Document a procedure in which the application teams look up the subnet IDs in the console on every deployment and enter them directly as template parameters."
+   },
+   {
+    "label": "C",
+    "text": "Export the subnet IDs from the Outputs of the VPC stack and import them in the application stacks by using Fn::ImportValue."
+   },
+   {
+    "label": "D",
+    "text": "Put a custom resource in each application stack so that a Lambda function finds the IDs with EC2 DescribeSubnets at deployment time and returns them."
+   }
+  ],
+  "explanation": "Export and Fn::ImportValue let stacks in the same Region and account reference output values directly, so no hardcoding or manual entry is needed. Nested stacks are a structure in which the parent and children share a single lifecycle, so they do not fit a situation where teams and lifecycles differ. Manual entry is error-prone and has a high operational burden. A custom resource requires creating and maintaining Lambda code, which is excessive for a simple reference."
+ },
+ {
+  "number": 8,
+  "domain": "Deployment",
+  "prompt": "An AWS CloudFormation stack includes an Amazon EBS volume (AWS::EC2::Volume) that holds data. This volume is managed only by this stack and is not referenced by other stacks, and stack deletion permissions are open to many operators. Recently, a stack in a development environment was deleted by operator mistake, so the data at the time of deletion must be recoverable. However, to reduce costs, the company does not want to keep the volume itself indefinitely, and normal stack deletion must not be blocked. The volume totals 500 GiB, the recovery requirement is for the data as of just before the stack deletion, and a recovery time of up to several hours is acceptable. Snapshot storage costs are much lower than the cost of keeping the volume. Which method requires the FEWEST changes?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Specify DeletionPolicy Snapshot on the volume so that a snapshot is created before the stack is deleted."
+   },
+   {
+    "label": "B",
+    "text": "Specify DeletionPolicy Retain on the volume resource so that the volume remains as is even if the stack is deleted."
+   },
+   {
+    "label": "C",
+    "text": "Enable termination protection on the stack so that deletion requests fail until an administrator disables it."
+   },
+   {
+    "label": "D",
+    "text": "Leave the deletion policy at its default and separately configure an Amazon EventBridge schedule rule so that a Lambda function creates volume snapshots every week."
+   }
+  ],
+  "explanation": "If DeletionPolicy is set to Snapshot, CloudFormation creates a snapshot of the volume when the stack is deleted and then deletes the volume, so the data at the time of deletion is preserved and the volume cost goes away. Retain leaves the volume in place, so costs continue and the volume moves outside the stack's management. Termination protection blocks deletion itself, which conflicts with the conditions. Periodic snapshots preserve data only up to the time of the last run, not the time of deletion, and they also require separate operation."
+ },
+ {
+  "number": 9,
+  "domain": "Security",
+  "prompt": "Several internal payment services running on Amazon ECS call an Amazon API Gateway REST API in the same account. The callers are AWS workloads, not end users, and the team does not want to operate a new token issuing server or user directory. The call volume is not high, but the APIs that each service can call must differ, and the team does not want to increase the work of distributing and rotating credentials to each service. All calls are made from ECS tasks in the same VPC, and each service already has its own task role. The API has a Regional endpoint, and the services are written with the AWS SDK. Which authorization method controls permissions per caller and has the LEAST operational overhead?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Create dedicated service users in an Amazon Cognito user pool, attach a Cognito authorizer, and have the services call by using the tokens they receive when they sign in."
+   },
+   {
+    "label": "B",
+    "text": "Create a Lambda token authorizer and implement it yourself so that it validates a secret string shared by the services and sent in a header."
+   },
+   {
+    "label": "C",
+    "text": "Set the method to AWS_IAM authorization, allow execute-api:Invoke on the task roles, and use SigV4 signing."
+   },
+   {
+    "label": "D",
+    "text": "Issue API keys through a usage plan, distribute them to each service, and turn on only the API key required setting on the method to identify callers."
+   }
+  ],
+  "explanation": "IAM authorization verifies SigV4 signatures with the caller's IAM credentials, so no separate authentication server is needed, and the task role policies can divide the call permissions per service. The Cognito user pool approach requires operating a user directory for services and token refresh. A Lambda authorizer that validates a shared secret means you take on the code and secret rotation yourself. API keys are for usage control and are not designed to be used as an authorization or strong authentication mechanism."
+ },
+ {
+  "number": 10,
+  "domain": "Development with AWS Services",
+  "prompt": "In an order processing system, an AWS Lambda function that processes messages from an Amazon SQS queue opens connections to an Amazon RDS database. When events surge and the queue builds up, the concurrent executions of this function rise into the hundreds, exceed the database's maximum of 100 connections, and cause connection errors. Scaling up the database will be reviewed next quarter, and until then the team wants to control this on the function side first. The change must not affect other functions in the same account, and the team wants to cap the concurrent executions of this function at no additional charge. Queue messages may be delayed but must not be lost, and the queue's visibility timeout and retry configuration are already set appropriately. This function is also invoked directly through an API in addition to SQS, so a cap on the concurrent executions of the entire function is needed regardless of the invocation path. The team wants to solve this through configuration only, without code changes. Which is the MOST appropriate method?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Set provisioned concurrency of 100 on this function to reserve 100 pre-initialized execution environments so that no more than that are created."
+   },
+   {
+    "label": "B",
+    "text": "Set reserved concurrency of 100 or less on this function to cap the concurrent executions of that function and separate it from the concurrency pool of other functions."
+   },
+   {
+    "label": "C",
+    "text": "Lower the account-wide concurrent execution quota to 100 so that the concurrent executions of all functions stay within the database connection limit."
+   },
+   {
+    "label": "D",
+    "text": "Shorten the function timeout to reduce connection hold time, hoping the connection count does not exceed the limit even as concurrent executions increase."
+   }
+  ],
+  "explanation": "The correct answer is to set reserved concurrency on this function. Reserved concurrency limits the maximum concurrent executions of the function to prevent downstream resources such as a database from being overloaded, separates the pool from other functions, and has no additional charge. Provisioned concurrency sets the number of pre-initialized environments, is meant to mitigate cold starts, incurs charges, and does not prevent scaling beyond that number. The account quota is a service quota, is not something to lower for this purpose, and affects all functions. Shortening the timeout does not guarantee a cap on concurrent executions. For reference, the maximum concurrency setting on the SQS event source mapping also limits concurrent invocations per queue at no additional charge, but it applies only to invocations coming from that event source and cannot block direct invocations. This question requires a function-wide cap regardless of the invocation path, so reserved concurrency is correct. The two settings are independent, so when they are used together, the mapping's maximum concurrency should be set to no more than the reserved concurrency so that messages are not throttled."
+ },
+ {
+  "number": 11,
+  "domain": "Security",
+  "prompt": "A fintech app must encrypt the Korean resident registration number attribute of an Amazon DynamoDB item before storing it, so that plaintext is not exposed to the DynamoDB service or to principals that have table read permissions. Other attributes are used as query conditions, so they must remain plaintext, and the company wants to manage the key in AWS KMS. Regulations require that decryption of this attribute be auditable through AWS CloudTrail. The application is written in Java, and the development team has three people who do not want to implement the encryption logic themselves. Key usage records must be kept by using the default AWS auditing mechanism, without building a separate service. The table has tens of millions of items, and reads are mostly primary key lookups. Which method meets the requirements MOST appropriately?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Use the AWS Database Encryption SDK to specify that only that attribute is encrypted on the client side, and use a KMS keyring."
+   },
+   {
+    "label": "B",
+    "text": "Change encryption at rest for the table to a customer managed KMS key so that all attributes are encrypted with that key inside DynamoDB."
+   },
+   {
+    "label": "C",
+    "text": "Enforce TLS on connections to DynamoDB and use a VPC gateway endpoint policy so that only allowed roles can access the table."
+   },
+   {
+    "label": "D",
+    "text": "Block access to the resident registration number attribute by using the IAM condition key dynamodb:Attributes, and restrict all callers to reading only hash values."
+   }
+  ],
+  "explanation": "The Database Encryption SDK provides attribute-level client-side encryption, so only the specified attribute is stored as ciphertext and the others can stay plaintext, and plaintext is not visible to the service or to principals with read permissions. Server-side encryption returns the decrypted value to callers that have permissions, so it does not meet the requirement. TLS and endpoint policies only control the transport and access path and do not hide the stored value itself. Restricting attribute access so that only hashes are read differs from the requirement to store the original value in a protected form."
+ },
+ {
+  "number": 12,
+  "domain": "Development with AWS Services",
+  "prompt": "An online store's order history screen has become slow, and the team is reviewing the Amazon DynamoDB table design. Each customer can accumulate up to several thousand orders, and the screen shows each customer's orders from most recent first. Customers must also be able to look up orders for a specific period (for example, from January 1 to March 31). Queries should use only Query, not Scan, and the team wants to avoid increased read costs from reading many items and discarding them with filters. Writes must not concentrate on a particular date. There are hundreds of thousands of customers, and a single customer does not place many orders per day. Each screen shows the 20 most recent orders. Which design is MOST appropriate when the problem is solved by primary key design alone, without adding secondary indexes?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Use the order date as the partition key and the customer ID as the sort key, and for per-customer lookups, Query all partitions for the relevant dates."
+   },
+   {
+    "label": "B",
+    "text": "Use only the order ID as the partition key, store the customer ID and date as regular attributes, and filter with a FilterExpression."
+   },
+   {
+    "label": "C",
+    "text": "Use the customer ID as the partition key and a value combining the date and the order ID as the sort key, and query by using a BETWEEN key condition."
+   },
+   {
+    "label": "D",
+    "text": "Use only the customer ID as the partition key, store the date as a regular attribute, and sort the results of a per-customer Query in the application."
+   }
+  ],
+  "explanation": "The correct answer is a design with the customer ID as the partition key and a value combining the date and the order ID as the sort key. A customer's orders sit in a single item collection sorted by date, so a sort key condition such as BETWEEN reads only the period needed, and ScanIndexForward=false returns the most recent orders first. Using the order date as the partition key concentrates writes on particular dates and scatters per-customer lookups across multiple partitions. A key of the order ID alone requires a Scan for per-customer lookups. Storing the date only as an attribute means reading all of a customer's orders and then filtering or sorting, which increases read cost."
+ },
+ {
+  "number": 13,
+  "domain": "Development with AWS Services",
+  "prompt": "A mobile app uploads files directly to Amazon S3 without going through a server. An AWS Lambda function (using its execution role) creates a presigned PUT URL for uploads with a validity period of 7 days and passes it to the app. Uploads succeed right after the URL is issued, but after a few hours they fail with an ExpiredToken error, according to inquiries. Bucket permissions and CORS are correct, and users often take photos and upload them later. The app is native, and the team wants to make server-side changes in only one place, the Lambda function. The target object key is a path separated by user ID, and for security reasons the URL should be valid only as long as necessary. What is the cause, and what is the MOST appropriate response?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "The signature expiration condition in the S3 bucket policy must be relaxed, so add a condition that allows s3:signatureAge and leave the URL validity period as is."
+   },
+   {
+    "label": "B",
+    "text": "The URL also expires when the role's temporary credentials expire, so shorten the URL validity period to fit within the credential lifetime and issue a new URL just before the upload."
+   },
+   {
+    "label": "C",
+    "text": "The IAM role lacks the s3:PutObject permission, so add write permissions on the entire target bucket to the execution role's policy."
+   },
+   {
+    "label": "D",
+    "text": "The PUT method is missing from the bucket CORS configuration, so add PUT to AllowedMethods to allow browser uploads."
+   }
+  ],
+  "explanation": "The correct answer is to understand the relationship between the temporary credential lifetime and the URL validity period, and to issue a new URL just before the upload. According to the official documentation, a presigned URL created with temporary credentials becomes invalid at whichever comes first: the specified validity period or the time the credentials expire. If the URL is signed with role credentials, the URL also expires when the role session ends, even if 7 days is specified (7 days is the maximum possible with IAM user credentials and SigV4). Because the upload succeeded right after issuance, insufficient permissions are not the cause. A missing CORS setting would block the request from the start in a browser and does not explain signature expiry. The signatureAge condition is meant to reject old signatures, so it is not something that relaxes anything, and it does not fix credential expiry."
+ },
+ {
+  "number": 14,
+  "domain": "Security",
+  "prompt": "An IAM role for a development team has an identity-based policy that allows s3:*, and the same role has a permissions boundary set with a policy that allows only s3:GetObject and s3:ListBucket. The bucket has no bucket policy, and the organization's SCPs do not block Amazon S3. The security team has formally approved uploads for this role, but developers' PutObject calls are blocked with AccessDenied. The role is shared by several developers, and its other permissions must be kept as they are now. The boundary policy is not attached to any other role and is dedicated to this role, and an IAM administrator can apply changes immediately. Which method resolves the problem with the SMALLEST change scope?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Explicitly add another statement that allows s3:PutObject to the role's identity-based policy to make the upload permission clear, and update the policy version."
+   },
+   {
+    "label": "B",
+    "text": "Add a statement that allows s3:PutObject to the permissions boundary policy so that uploads are included in the intersection of the boundary and the identity policy."
+   },
+   {
+    "label": "C",
+    "text": "Include an allow for s3:PutObject in the session policy passed when assuming the role to temporarily expand permissions beyond the boundary."
+   },
+   {
+    "label": "D",
+    "text": "Attach the AdministratorAccess managed policy to the role in addition to allow all actions, including those for Amazon S3."
+   }
+  ],
+  "explanation": "A permissions boundary is the maximum permissions that an identity-based policy can grant, so the effective permissions are the intersection of the boundary and the identity policy. Adding PutObject to the boundary creates an intersection with the identity policy that already allows s3:*, and uploads open up. Writing the same allow again in the identity policy does not change the situation, because it is already allowed and is blocked by the boundary. A session policy can only reduce permissions and cannot widen them beyond the boundary. Attaching an administrator policy does not solve it either, because the boundary still acts as the upper limit."
+ },
+ {
+  "number": 15,
+  "domain": "Development with AWS Services",
+  "prompt": "An online shopping company is building an order workflow with AWS Step Functions that runs payment approval, inventory deduction, and shipping request in order across different services. For high-value orders, the workflow waits up to 3 days for approval from a person by using a callback token, and non-idempotent tasks such as payment must run exactly once. The execution history must be kept as audit material so that responsibility can be traced when failures occur, and the company handles thousands of orders per day. The team does not want to operate a workflow engine itself. The approvers for high-value orders are integrated by pressing a button in an internal approval tool, which returns the token. The entire processing of a single order takes from a few minutes to up to 3 days. Which workflow type is MOST appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Use an Express asynchronous workflow. It is advantageous for high-volume processing, and execution status is checked in Amazon CloudWatch Logs."
+   },
+   {
+    "label": "B",
+    "text": "Use a Standard workflow. It supports executions of up to 1 year, an exactly-once execution model, and waiting for a callback token."
+   },
+   {
+    "label": "C",
+    "text": "Connect an Express synchronous workflow to Amazon API Gateway to receive the result in the call response, and also wait for the approval step in the same execution."
+   },
+   {
+    "label": "D",
+    "text": "Implement a chain in which a Lambda function directly invokes the next Lambda function, and handle the approval wait by repeated polling inside the function."
+   }
+  ],
+  "explanation": "The correct answer is a Standard workflow. Standard workflows run for up to 1 year and use an exactly-once execution model, which suits non-idempotent tasks such as payment, and they support the callback (.waitForTaskToken) pattern and execution history lookup. Express workflows run for up to 5 minutes, asynchronous ones use at-least-once execution, and they do not support the callback pattern, so they violate both the 3-day approval wait and the run-only-once requirement. A Lambda chain with polling cannot wait 3 days inside a function that has a maximum run time of 15 minutes, and you would have to implement state management and error handling yourself, which is a heavy operational burden."
+ },
+ {
+  "number": 16,
+  "domain": "Deployment",
+  "prompt": "The buildspec of an AWS CodeBuild project builds an image with docker build and then pushes it to Amazon ECR. The project uses a Linux container environment, the source is in AWS CodeCommit, and the ECR repository has already been created in the same account and Region. The build currently fails with an error that it cannot connect to the Docker daemon, and it is expected that even after this error is fixed, a permission error will occur in the later push step. The team wants to fix only the CodeBuild settings without moving the build environment to a new service. Under security policy, the build environment image is the AWS managed Ubuntu standard image as is, and the ECR login is handled in the pre_build phase of the buildspec. Which TWO actions are needed to resolve the problem? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Change the source provider to Amazon S3 so that the buildspec can read the Docker context from the local file system."
+   },
+   {
+    "label": "B",
+    "text": "Add the ecs:UpdateService permission to the CodeBuild service role so that the pushed image can be applied to the service immediately."
+   },
+   {
+    "label": "C",
+    "text": "Change the build environment image to a Windows Server image to use an environment in which the Docker daemon runs by default."
+   },
+   {
+    "label": "D",
+    "text": "Enable privileged mode in the project environment so that the Docker daemon can run inside the build container."
+   },
+   {
+    "label": "E",
+    "text": "Allow the CodeBuild service role ECR push permissions such as ecr:GetAuthorizationToken, image layer upload, and PutImage."
+   }
+  ],
+  "explanation": "To build a Docker image inside CodeBuild, privileged mode must be turned on in the environment, and to push to ECR, the service role must have the authorization token, layer upload, and PutImage permissions. Switching to a Windows image is not a solution to the daemon connection problem. ecs:UpdateService is a permission needed in the deployment stage and is unrelated to pushing images. The source provider has nothing to do with Docker daemon access or ECR permissions."
+ },
+ {
+  "number": 17,
+  "domain": "Troubleshooting and Optimization",
+  "prompt": "A startup's mobile backend uses an Amazon API Gateway REST API with an AWS Lambda proxy integration. After deploying a new endpoint, clients receive a 502 Bad Gateway response with Malformed Lambda proxy response. The Lambda logs show a normal completion with no errors, and the function returns a dictionary in the form {\"message\":\"ok\",\"items\":[1,2,3]} as is. Other endpoints of the same API work normally, and there are no timeout-related logs. The frontend team expects a JSON body and must also receive CORS values in the response headers. The backend is written in Python. Which fix is MOST appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Increase the function timeout beyond the API Gateway integration timeout so that the response is not cut off by delays."
+   },
+   {
+    "label": "B",
+    "text": "Change the handler return format so that the response is returned in a structure of statusCode, headers, and a string body."
+   },
+   {
+    "label": "C",
+    "text": "Add permission for the API Gateway service principal to invoke the function to the Lambda function's resource-based policy so that the invocation is not denied."
+   },
+   {
+    "label": "D",
+    "text": "Turn on a cache cluster on the stage so that API Gateway returns a cached response even if the function's response format is wrong."
+   }
+  ],
+  "explanation": "The correct answer is to change the handler to return a statusCode, headers, and body (string) format. In a Lambda proxy integration, API Gateway requires the function to respond in a defined JSON format, and it returns 502 Bad Gateway for any other format. The function being recorded as a normal completion is consistent with this explanation. A timeout is a setting for solving delay problems and is unrelated to a format error. If invocation permission were missing, the function itself would not be invoked and no normal completion would appear in the logs. A cache is meaningful only when there is a response with the correct format and cannot hide a format error."
+ },
+ {
+  "number": 18,
+  "domain": "Development with AWS Services",
+  "prompt": "A team that runs the post-payment stages serverlessly has an order processing AWS Lambda function that reads messages from an Amazon SQS standard queue with a batch size of 10. Daily volume is high, so reducing the batch size would significantly increase invocation costs. Currently, if even one message in a batch fails to process, the function throws an exception, and the remaining 9 messages also reappear in the queue and are processed twice, and some messages have already been processed twice. The function code can be modified. Processing takes about 1 second per message, and the function timeout is 30 seconds. Most failures are caused by transient external API errors, and a retry succeeds. Which is the MOST appropriate method to retry only the failed messages while keeping a batch size of 10 and making minimal changes?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Lower the batch size to 1 so that the function is invoked separately for each message, and also increase the function concurrency limit to handle the increased number of invocations."
+   },
+   {
+    "label": "B",
+    "text": "Turn on ReportBatchItemFailures on the event source mapping, and have the handler return only the messageId values of the failed messages as batchItemFailures."
+   },
+   {
+    "label": "C",
+    "text": "Lower the visibility timeout of the source queue to 0 seconds so that only the failed messages become visible again immediately and the remaining messages are deleted as is."
+   },
+   {
+    "label": "D",
+    "text": "Specify an SQS standard queue as the DLQ in the Lambda function configuration so that the entire batch in which a failure occurred is stored in a separate queue and an operator reprocesses it later."
+   }
+  ],
+  "explanation": "The correct answer is to set ReportBatchItemFailures on the event source mapping and return only the failed messageId values as batchItemFailures. This deletes the successful messages from the queue and makes only the failed messages visible again, so the batch size of 10 is kept while duplicate processing is prevented. Reducing the batch size to 1 breaks the condition of the question (keep a batch size of 10) and only increases the number of invocations and the cost. Setting the visibility timeout to 0 seconds does not change the behavior of returning the entire batch that ended in an exception and makes the same messages be received repeatedly right away. A function-level DLQ is for asynchronous invocations; for an SQS event source, the DLQ must be placed on the queue side, and in either case the whole batch is stored, so it does not prevent reprocessing of successful messages."
+ },
+ {
+  "number": 19,
+  "domain": "Development with AWS Services",
+  "prompt": "A mobile game service queries a global secondary index (GSI) keyed on playerId right after saving a score to the Amazon DynamoDB base table, but the score just written is sometimes missing from the results. When the team turns on ConsistentRead to fix this, a ValidationException occurs. The results screen shown right after score submission must always show the latest score, and the overall ranking list screen can be a few seconds late. The table is in on-demand mode, and the team does not want to migrate data to a new table. The GSI has playerId as the partition key and is sorted by score, and the screen right after submission already knows the primary key of the item that was just saved. Which solution is MOST appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "For the screen right after submission, call GetItem on the base table by using the primary key and ConsistentRead, and use the GSI only for the list that tolerates delay."
+   },
+   {
+    "label": "B",
+    "text": "Increase the read capacity units of the global secondary index so that the index catches up with changes to the base table more quickly."
+   },
+   {
+    "label": "C",
+    "text": "Put a DAX cluster in front of the global secondary index to get index query results back from the cache consistently."
+   },
+   {
+    "label": "D",
+    "text": "Change the projection of the global secondary index to ALL so that all attributes are in the index and the base table does not need to be read separately."
+   }
+  ],
+  "explanation": "The correct answer is to query the base table by primary key with a strongly consistent read on the screen right after submission, and to use the GSI only for lists that tolerate delay. Reads from GSIs and streams support only eventual consistency and do not support strongly consistent reads, which causes the ValidationException; only the base table and LSIs support strongly consistent reads. Increasing read capacity does not change the consistency model. DAX is a cache layer and cannot make the guarantee of the latest value any stronger. Changing the projection to ALL only reduces table lookups; the index data is still eventually consistent."
+ },
+ {
+  "number": 20,
+  "domain": "Troubleshooting and Optimization",
+  "prompt": "A cost alarm goes off at 2 a.m. because the number of AWS Lambda invocations suddenly spikes. The cause is a recursive structure in which the function sends its processing results to an Amazon SQS queue, and that queue invokes the same function as an event source. Reviewing and deploying the fix is expected to take several hours, and costs must be stopped in the meantime. The function configuration and the messages in the queue must be preserved, and other functions in the same account must keep working normally. The function is connected through an SQS event source mapping, the code path that caused the recursion has already been identified, and only preparing the fix remains. The messages that have accumulated must be processed normally after the fix. Which is the MOST appropriate way to immediately stop only further executions of this function before the fix is deployed?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Set the function's reserved concurrency to 0 so that all new invocations are throttled and not executed, and remove the limit after the fix."
+   },
+   {
+    "label": "B",
+    "text": "Delete the function so that no invocations occur, and when deploying the fix, create a new function with the same name and reconnect it."
+   },
+   {
+    "label": "C",
+    "text": "Reduce the function timeout to 1 second so that each invocation ends quickly, and wait for the recursion to die down naturally."
+   },
+   {
+    "label": "D",
+    "text": "Lower the account-level Lambda concurrent execution quota on the Service Quotas screen to limit the execution of all functions."
+   }
+  ],
+  "explanation": "The correct answer is to set reserved concurrency to 0. With reserved concurrency set to 0, all invocations of that function are throttled and not executed, so the cost increase can be stopped immediately before the code is fixed, the function configuration remains intact, and you only need to remove the setting after the fix. Deleting the function means you have to re-create the configuration and connection settings. Reducing the timeout does not stop the invocations themselves, so the recursion continues. Lowering the account quota stops other functions too, and service quotas are not meant to be lowered arbitrarily."
+ },
+ {
+  "number": 21,
+  "domain": "Security",
+  "prompt": "A compliance requirement states that all access to a specific Amazon S3 bucket must be encrypted in transit and that HTTP requests must be denied. The bucket is shared by several teams, dozens of applications access it by using SDKs, and code deployment schedules differ by team, so the code of each application cannot be modified. SSE-S3 default encryption is already applied to the bucket. The audit is next month, and the security team wants to apply the control once, centrally, without coordinating with each team. Both uploading and downloading objects are done through existing IAM roles, and whether VPC endpoints are used differs by team. Which method meets this requirement with the FEWEST changes?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Enable SSE-S3 default encryption on the bucket so that all objects are encrypted at rest and transport is also protected."
+   },
+   {
+    "label": "B",
+    "text": "Add a statement to the bucket policy that denies requests where aws:SecureTransport is false."
+   },
+   {
+    "label": "C",
+    "text": "Put a condition that allows only HTTPS requests into each team's application IAM policy, ask the teams to deploy the policies, and check whether they have been applied."
+   },
+   {
+    "label": "D",
+    "text": "Turn on bucket versioning so that objects written over unencrypted transport can be rolled back to a previous version."
+   }
+  ],
+  "explanation": "If the bucket policy explicitly denies requests where aws:SecureTransport is false, no caller can access the bucket over HTTP, and no client code change is needed. SSE-S3 encrypts data at rest and does not enforce the transport channel. Putting a condition in each team's IAM policy requires changes and coordination for every team and cannot block principals that are missed. Versioning is only a recovery feature and does not prevent plaintext transport."
+ },
+ {
+  "number": 22,
+  "domain": "Development with AWS Services",
+  "prompt": "The operations team has been receiving the same failure alarm repeatedly for several hours. In an AWS Lambda function that uses an Amazon SQS standard queue as its event source, a particular message always causes an exception and keeps being received again. An SQS queue was specified as the DLQ in the function settings, but no messages accumulate in that queue. The problem message must be kept for later root cause analysis, and processing of normal messages must continue. About 50,000 messages a day arrive in the source queue, the problem messages are a small number of malformed messages, and the alarm is set in Amazon CloudWatch on the function's error count. Which is the MOST appropriate action to isolate the problem message after a set number of attempts?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Change the on-failure destination of the event source mapping to an SQS queue and set the function's maximum retry attempts to 2 to configure the same isolation effect."
+   },
+   {
+    "label": "B",
+    "text": "Reduce the message retention period of the source queue to 1 minute so that messages that could not be processed disappear from the queue on their own."
+   },
+   {
+    "label": "C",
+    "text": "Change the function-level DLQ target to an Amazon SNS standard topic so that failure events are delivered at the same time to a subscribed email address and queue."
+   },
+   {
+    "label": "D",
+    "text": "Connect a DLQ to the source queue with a redrive policy that specifies maxReceiveCount, so that a message received a set number of times is moved to the DLQ."
+   }
+  ],
+  "explanation": "The correct answer is to connect a DLQ to the source queue with a redrive policy that has maxReceiveCount. When SQS is used as the event source, the DLQ must be configured on the queue itself, not on the Lambda function; a function-level DLQ applies only to asynchronous invocations, which is why the queue is empty now. The on-failure destination and maximum retry attempts are asynchronous invocation settings and are not an isolation mechanism for an SQS event source mapping. Reducing the retention period makes normal messages disappear along with the problem message, leaving no data to analyze. Changing the function-level DLQ to SNS does not change the situation, because it applies only to asynchronous invocations."
+ },
+ {
+  "number": 23,
+  "domain": "Development with AWS Services",
+  "prompt": "A fintech company's point transfer API processes, in a single Amazon DynamoDB table, a balance deduction for the sender (only when the balance is at least the amount), a balance increase for the recipient, and the addition of a history item. Because of financial regulations, all three operations must either all succeed or all fail, and intermediate states must not be visible externally. Even if the client resends the same request because of a network timeout, a double transfer must not occur. All items are in one table in the same Region, and the team does not want to add a separate coordination service. Traffic is at the level of hundreds of requests per second, and a single transfer touches three items. The app uses the AWS SDK directly, and the client sends a unique request ID with every request. Which implementation is MOST appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Send two Updates and one Put in a single BatchWriteItem call, and resend if UnprocessedItems appears in the response."
+   },
+   {
+    "label": "B",
+    "text": "Put two conditional Updates and one Put in a single TransactWriteItems call, and resend with the same ClientRequestToken."
+   },
+   {
+    "label": "C",
+    "text": "Call the three operations in order with UpdateItem and PutItem, and if one fails midway, perform compensating calls that undo the operations that already succeeded."
+   },
+   {
+    "label": "D",
+    "text": "Collect write results with DynamoDB Streams, and have a Lambda function correct the differences periodically if the balance totals do not match."
+   }
+  ],
+  "explanation": "The correct answer is to put two conditional Updates and one Put in a single TransactWriteItems call and secure idempotency with ClientRequestToken. A transaction either fully succeeds or fully fails and can also use condition expressions, and if it is resent with the same token, it returns success without any change within the token validity time (10 minutes). BatchWriteItem as a whole is not atomic and cannot specify condition expressions. The compensating call approach exposes intermediate states externally, and the compensation itself can fail. Correcting after the fact with Streams means there are moments when the balance is wrong, so it does not meet the atomicity requirement."
+ },
+ {
+  "number": 24,
+  "domain": "Deployment",
+  "prompt": "A payment service runs as an Amazon ECS service on Fargate (desired task count of 4) and is connected to Application Load Balancer health checks. Deployments are done several times a day as rolling updates, and no one is on standby at night. The number of healthy tasks must not drop during a deployment, and if new tasks repeatedly fail to start, the service must return to the last healthy deployment without human intervention. A large change such as switching the deployment method to AWS CodeDeploy is difficult this quarter. The ECS service already uses the rolling update deployment controller, and task definition updates are made automatically in the CI pipeline. The cluster has sufficient Fargate capacity quota. Which configuration meets the requirements MOST appropriately?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Set minimumHealthyPercent to 50 and maximumPercent to 100, and enable the circuit breaker with the rollback option."
+   },
+   {
+    "label": "B",
+    "text": "Set minimumHealthyPercent to 100 and maximumPercent to 200, and enable the deployment circuit breaker with the rollback option."
+   },
+   {
+    "label": "C",
+    "text": "Set both minimumHealthyPercent and maximumPercent to 100, and if it fails, have an engineer manually roll back to the previous task definition in the console."
+   },
+   {
+    "label": "D",
+    "text": "Switch the service to the CodeDeploy blue/green deployment controller and configure rollback with two target groups and a separate AppSpec file."
+   }
+  ],
+  "explanation": "If the minimum healthy percent is set to 100 and the maximum percent is opened to 200, new tasks are started first and then the old tasks are reduced, so capacity is maintained, and the circuit breaker of the rolling deployment controller automatically rolls back to the last completed deployment when the failure threshold is exceeded. A minimum percent of 50 allows healthy tasks to drop to half during a deployment. If both are 100, there is no room to start additional new tasks, so the deployment does not progress. Switching to blue/green is a big change, and the requirements can be met within rolling updates."
+ },
+ {
+  "number": 25,
+  "domain": "Development with AWS Services",
+  "prompt": "In a SaaS company's Amazon API Gateway REST API, a Lambda authorizer (TOKEN type) validates the token and then returns a policy that allows only the ARN of the single method that was requested first. The result cache TTL is the default of 300 seconds, and the cache was turned on intentionally to reduce the number of authorizer invocations. However, when the same token is used to call a different path, a 403 is returned for a period of time even though the user is authorized. Per-user permissions themselves are being calculated correctly. The authorizer Lambda function queries the user database every time to determine permissions, so reducing the number of invocations is important for cost. Which solution is MOST appropriate while keeping the cache?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Widen the policy Resource to a wildcard for the entire stage path of the API so that the cached policy is also valid for other methods."
+   },
+   {
+    "label": "B",
+    "text": "Increase the authorization result cache TTL to the maximum of 3600 seconds so that the policy for the same token is reused for longer."
+   },
+   {
+    "label": "C",
+    "text": "Change the authorizer type to REQUEST with only the Authorization header as the identity source and keep the TTL so that policies are generated anew."
+   },
+   {
+    "label": "D",
+    "text": "Increase the memory of the authorizer Lambda function to shorten validation time, which also widens the scope of the policy for the first request."
+   }
+  ],
+  "explanation": "The correct answer is to widen the policy Resource to the entire stage path so that the cached policy applies to other methods too. For the TOKEN type, the token header value is the cache key, so the same policy is reused during the TTL for the same token; if a policy that allows only a specific method ARN is cached, requests for other paths with the same token are denied because they are not covered by the policy. The official documentation also advises that when caching is on, the policy must fit all resources and methods of the API. Increasing the TTL only lengthens the time of denial. For the REQUEST type, the cache key is divided only when context variables such as the path are included in the identity source; if a single header is the only identity source, the same value uses the same cache, so this does not solve the problem. Function memory affects only validation speed and has nothing to do with the scope of the policy."
+ },
+ {
+  "number": 26,
+  "domain": "Development with AWS Services",
+  "prompt": "A SaaS company provides its API on a paid basis to three external B2B customers, and the allowed call volume differs by customer according to contract terms. A different request rate limit per second and a different monthly call quota must be applied to each customer, and a surge of calls from one customer must not block calls from other customers. The backend consists of AWS Lambda and Amazon DynamoDB, and the number of customers will increase to ten next month. The development team wants to implement this by using only Amazon API Gateway settings, without changing the backend code. Each customer can be identified by a key passed in a header, and authentication is already handled by a separate authorizer. There is a single stage, prod. Which method is MOST appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Lower the stage's default method throttling values so that all customers share the same per-second limit, and return 429 when a surge occurs."
+   },
+   {
+    "label": "B",
+    "text": "Issue an API key for each customer, create usage plans with different rate, burst, and quota values, and associate them with the keys and the stage."
+   },
+   {
+    "label": "C",
+    "text": "Set the backend Lambda function's reserved concurrency to the value divided by the number of customers so that throughput is split evenly among customers."
+   },
+   {
+    "label": "D",
+    "text": "Implement the backend Lambda function to count the calls per customer with a DynamoDB counter and to generate and return a 429 response itself when the limit is exceeded."
+   }
+  ],
+  "explanation": "The correct answer is a per-customer API key and usage plan. A usage plan uses an API key as a client identifier and sets rate, burst, and quota per key, so per-customer limits can be divided by configuration alone. Default stage throttling does not distinguish customers and applies the same limit, so one customer's surge affects other customers. Function reserved concurrency is a per-function cap and cannot express customer distinctions or a monthly quota. Implementing a counter yourself violates the constraint of not changing the backend code and also carries a heavy operational burden."
+ },
+ {
+  "number": 27,
+  "domain": "Development with AWS Services",
+  "prompt": "A Python AWS Lambda function in a news app backend is seeing both cost and response time rise as traffic grows. A performance review revealed a bottleneck: the function creates a new boto3 DynamoDB client inside the handler on every invocation. Of the 120 ms average run time, about 60 ms is spent creating the client and establishing the connection. The function is invoked dozens of times per second, and the cold start rate is low. Given the schedule, the development team allows only a fix of one or two lines and no structural changes. The function runs outside a VPC, there are no problems with IAM permissions or the runtime version, and the same function creates a few other AWS clients as well. Which method reduces run time MOST effectively with minimal code changes?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Move the client creation to the initialization phase outside the handler so that subsequent invocations reuse the same client."
+   },
+   {
+    "label": "B",
+    "text": "Double the function memory to increase the CPU used for client creation, and leave the handler code as is to reduce the scope of change."
+   },
+   {
+    "label": "C",
+    "text": "Configure provisioned concurrency to create execution environments in advance so that the client creation time disappears on every invocation."
+   },
+   {
+    "label": "D",
+    "text": "Keep creating the client inside the handler but reduce the SDK's maximum attempts to lower the cost of connection attempts."
+   }
+  ],
+  "explanation": "The correct answer is to create the client in the initialization phase outside the handler and reuse it. Lambda reuses execution environments, so SDK clients and connections created in the initialization phase are used as is in subsequent invocations, and the creation cost incurred on every invocation disappears. Increasing memory increases CPU and may reduce the time somewhat, but it raises cost and repeats the same work fundamentally. Provisioned concurrency is for cold starts, and the code that creates the client each time the handler is invoked still runs. Maximum attempts is a retry policy and is unrelated to creation cost."
+ },
+ {
+  "number": 28,
+  "domain": "Security",
+  "prompt": "A logistics company's order processing application runs on six Amazon EC2 instances and calls Amazon SQS and Amazon DynamoDB by using IAM user access keys stored in a configuration file. The burden of manually rotating the keys every quarter is large, and a security audit flagged the use of long-term credentials, so this must be improved by next month. The application uses the latest AWS SDK, and the instances are in the same account. Developer staff are limited, so the company wants to keep application code changes to a minimum. The instances are newly created when they are replaced by an Auto Scaling group, and the company has no separate in-house system for storing keys. The application runs only inside the instances. Which is the MOST appropriate way to eliminate the long-term keys?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Move the access keys to AWS Secrets Manager, configure automatic rotation with a rotation Lambda function, and have the application read the value at startup."
+   },
+   {
+    "label": "B",
+    "text": "Replace the access keys in the configuration file with values encrypted by AWS KMS, and have the application decrypt them at startup and pass them to the SDK client."
+   },
+   {
+    "label": "C",
+    "text": "Attach an IAM role that has the required permissions through an instance profile, and delete the keys from the configuration file so that the SDK default credential chain uses temporary credentials."
+   },
+   {
+    "label": "D",
+    "text": "Have the instance user data script call GetSessionToken with the IAM user keys, renew the credentials with cron before they expire, and write them to environment variables."
+   }
+  ],
+  "explanation": "An IAM role attached through an instance profile automatically issues and renews temporary credentials through instance metadata, and the SDK's default credential provider chain finds and uses them without code changes. Keys moved to Secrets Manager or encrypted with KMS are still long-term IAM user keys, so the audit finding is not resolved and rotation operations remain. The GetSessionToken approach also requires long-term IAM user keys and creates a new operational burden in the form of a renewal script."
+ },
+ {
+  "number": 29,
+  "domain": "Development with AWS Services",
+  "prompt": "In an image sharing service, when an object is created in the images bucket, an AWS Lambda function creates a thumbnail and saves it to the same bucket. However, the bucket notification is configured for all ObjectCreated events, so saving a thumbnail invokes the function again, creating a recursion, and the number of invocations and costs surged. For now, the team stopped the function by setting reserved concurrency to 0. Now the structure must be fixed so that the same problem does not recur, and the original objects uploaded by users must be preserved as they are. Both changing the output location in the function code and changing the bucket notification configuration are possible, and the original objects that have already accumulated will not be touched. In addition to the cost alarm, the team wants to block the recursion fundamentally. Which TWO actions are MOST appropriate to prevent recurrence? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Increase the function timeout so that no subsequent invocation for the same object starts before thumbnail creation finishes."
+   },
+   {
+    "label": "B",
+    "text": "Add a prefix filter (for example, uploads/) to the bucket notification and save thumbnails under a different prefix (for example, thumbs/)."
+   },
+   {
+    "label": "C",
+    "text": "Reduce the function memory to lower the cost per invocation so that the total cost stays below the threshold even if recursion occurs, accepting the performance degradation."
+   },
+   {
+    "label": "D",
+    "text": "Specify an SQS queue as the function-level DLQ so that failure events from recursive invocations are stored in the queue."
+   },
+   {
+    "label": "E",
+    "text": "Save thumbnails to a separate output bucket that is different from the original bucket so that output writes do not trigger notifications on the input bucket."
+   }
+  ],
+  "explanation": "The correct answers are to separate the output bucket and to apply a prefix filter on the notification that excludes the output path. The cause of the recursion is that the objects the function writes match the same notification conditions again, so the output must be excluded from the notification targets, and Lambda best practices also advise avoiding architectures in which a function invokes itself again. Increasing the timeout does not break the chain of invocations. Reducing memory only changes how fast cost grows and does not prevent recursion, while performance gets worse. A DLQ only stores failed events and does not block successful recursive invocations."
+ },
+ {
+  "number": 30,
+  "domain": "Troubleshooting and Optimization",
+  "prompt": "A daily report AWS Lambda function in an order management system reads OPEN items from an 8 GB Amazon DynamoDB table by using a Scan with ConsistentRead turned on and a FilterExpression (status = OPEN). OPEN items are only a tiny fraction of all items, yet a large amount of read capacity is consumed, and other requests that use the same table are throttled. The report results can be reflected a few seconds late, and the team does not want to change the table capacity mode. The report runs once a day, and the total number of items is tens of millions. The cost of adding an index is acceptable, but the table's existing key structure cannot be changed. Which TWO actions are MOST appropriate to reduce read capacity consumption? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Change the Scan to a parallel Scan with a large TotalSegments to reduce the total read capacity units consumed."
+   },
+   {
+    "label": "B",
+    "text": "Use ProjectionExpression to return only the needed attributes so that the size of the items read shrinks and read capacity decreases with it."
+   },
+   {
+    "label": "C",
+    "text": "Create a GSI that uses status as the partition key and Query that index instead of using Scan, so that only OPEN items are read."
+   },
+   {
+    "label": "D",
+    "text": "Because results may be a few seconds late, turn off ConsistentRead and switch to eventually consistent reads to halve the read cost."
+   },
+   {
+    "label": "E",
+    "text": "Make the FilterExpression condition stricter to reduce the number of items the server returns, which also reduces read capacity consumption."
+   }
+  ],
+  "explanation": "The correct answers are to Query a GSI based on status and to switch to eventually consistent reads. A Scan reads the entire table and consumes capacity regardless of the filter, so a Query that narrows the range to read by using a key condition is efficient, and an eventually consistent read costs half of a strongly consistent read, and the requirement tolerates a few seconds of delay. A filter is applied after reading, so making the condition stricter does not reduce consumed capacity. A parallel Scan increases speed but raises capacity demand even more. ProjectionExpression only reduces the returned attributes, and read capacity is calculated based on the full size of the items read."
+ },
+ {
+  "number": 31,
+  "domain": "Troubleshooting and Optimization",
+  "prompt": "In a message processing system, ten Amazon EC2 workers run 24 hours a day and repeatedly call ReceiveMessage on an Amazon SQS standard queue with default settings. Cost analysis shows that most of the SQS request charges come from empty responses. The queue is empty most of the time, empty responses number in the millions per day, and request costs keep rising. However, messages must be processed as quickly as possible once they arrive, so an approach that significantly increases processing delay is not acceptable. Each receive call currently returns up to 10 messages, and workers delete them immediately after processing. Changing the queue type is meaningless because message ordering is not required. Which is the MOST appropriate way to reduce cost while still receiving messages as soon as possible after they arrive?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Change the code so that a worker sleeps for 30 seconds after receiving an empty response and then calls again, to reduce the number of empty responses received."
+   },
+   {
+    "label": "B",
+    "text": "Increase the queue's visibility timeout to 12 hours so that a message stays hidden for a long time once it is received."
+   },
+   {
+    "label": "C",
+    "text": "Use long polling by setting WaitTimeSeconds to 20 seconds (or setting the queue attribute ReceiveMessageWaitTimeSeconds to 20)."
+   },
+   {
+    "label": "D",
+    "text": "Change the queue type from standard to FIFO so that responses are returned only in the order in which messages arrive."
+   }
+  ],
+  "explanation": "The correct answer is to use long polling (WaitTimeSeconds up to 20 seconds). With long polling, the server waits for a response until a message arrives, so empty responses and false empty responses decrease and request costs fall, and when a message arrives it is returned right away, so the delay is also short. Sleeping 30 seconds after an empty response reduces the number of calls but delays message receipt by that much. The visibility timeout is the time until a received message becomes visible again and has nothing to do with the number of empty responses. Switching to FIFO is an ordering feature and does not change the polling method."
+ },
+ {
+  "number": 32,
+  "domain": "Deployment",
+  "prompt": "A team created an AWS CodeDeploy deployment group for a new Amazon EC2 Auto Scaling group and deployed for the first time, but the deployment does not progress on the instances. The logs show that the agent cannot be found and an access denied error for the Amazon S3 revision. The service role and deployment group settings are correct. The instances run Amazon Linux, go out to the internet through NAT in a private subnet, and the revision is stored in an S3 bucket in the same account. The problem must be resolved without creating a new instance AMI. The deployment group identifies instances by Auto Scaling group name, and the instances already have the SSM Agent installed, so commands can be run through AWS Systems Manager if needed. Which TWO actions are needed to resolve the problem? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Allow the s3:GetObject permission to read objects in the S3 bucket where the revision is stored on the role of the instance profile."
+   },
+   {
+    "label": "B",
+    "text": "Install the CodeDeploy agent on the instances by using launch template user data or Systems Manager, and keep it running."
+   },
+   {
+    "label": "C",
+    "text": "Add a rule that allows inbound port 22 on the instance security group so that the CodeDeploy service can connect."
+   },
+   {
+    "label": "D",
+    "text": "Open inbound port 443 to all IP addresses on the instance security group so that the CodeDeploy service pushes deployments to the agent."
+   },
+   {
+    "label": "E",
+    "text": "Attach the CodeDeploy service role to the instances as an instance profile so that the instances download the revision with the service role permissions."
+   }
+  ],
+  "explanation": "EC2 deployments require the CodeDeploy agent to be installed on the instances, and because the agent downloads the revision from S3 with the permissions of the instance profile role, read permission on that bucket is required. The service role is a role that the CodeDeploy service assumes, so it is not attached to instances. The agent works by polling CodeDeploy outbound over port 443, so opening inbound port 22 or 443 does not make deployments get pushed."
+ },
+ {
+  "number": 33,
+  "domain": "Troubleshooting and Optimization",
+  "prompt": "In a service that invokes an AWS Lambda function from Amazon DynamoDB Streams whenever order data changes to update a search index, IteratorAge keeps increasing. The service owner is concerned that the processing delay could turn into a data consistency problem. The function takes a long time per batch of records and processes only one batch at a time per shard. Changes to the same item must be processed in order, and the number of shards is determined by AWS, so it cannot be increased directly. The current batch size is 100, and the cause of the longer processing time is that responses from the external search service have become slow. The function already has sufficient memory and concurrency. Which is the MOST appropriate way to increase throughput while preserving order?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Reduce the batch size to 1 so that processing time per invocation becomes shorter and processing speed increases as the number of invocations grows."
+   },
+   {
+    "label": "B",
+    "text": "Increase ParallelizationFactor to raise the number of concurrent batches per shard, while records with the same partition key are still processed in order."
+   },
+   {
+    "label": "C",
+    "text": "Increase the stream retention period to 7 days so that records do not expire even as IteratorAge grows."
+   },
+   {
+    "label": "D",
+    "text": "Change StartingPosition to LATEST and re-create the mapping so that the accumulated records are skipped and reading starts from the newest records."
+   }
+  ],
+  "explanation": "The correct answer is to increase ParallelizationFactor. This setting lets a single shard be processed with up to 10 concurrent batches, which raises throughput when IteratorAge is high, and records with the same partition key are grouped into the same concurrent batch and processed in order, and DynamoDB Streams guarantees ordering per item. Reducing the batch size to 1 could make serial per-shard processing even slower. The stream data retention period is fixed at 24 hours and cannot be increased by the user. Restarting with LATEST permanently loses the skipped records."
+ },
+ {
+  "number": 34,
+  "domain": "Development with AWS Services",
+  "prompt": "A sign-up API for a service expecting a large increase in concurrent requests because of a sign-up event saves a user item with PutItem to an Amazon DynamoDB table whose partition key is the email address. When two requests with the same email arrive almost simultaneously, there has been an incident in which the item saved first was overwritten. If the email already exists, the save must be rejected, but the team does not want to add read requests during the event period. The table structure will not be changed. Normally there is one request per user, but a double request can arrive because of a retry button. Response latency must stay in the single-digit milliseconds. Which implementation is MOST appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Before saving, check whether the email exists with GetItem using ConsistentRead, and save with PutItem only when there is no result."
+   },
+   {
+    "label": "B",
+    "text": "Create a global secondary index on the email attribute and Query that index before saving to check for a duplicate email first."
+   },
+   {
+    "label": "C",
+    "text": "Receive INSERT events with DynamoDB Streams and, if there are two or more items with the same email, delete the item that was written later."
+   },
+   {
+    "label": "D",
+    "text": "Add an attribute_not_exists(email) condition expression to PutItem and respond with a duplicate error when ConditionalCheckFailedException occurs."
+   }
+  ],
+  "explanation": "The correct answer is to add an attribute_not_exists(email) condition expression to PutItem and handle ConditionalCheckFailedException as a duplicate. Condition evaluation and the write happen in a single atomic request, so overwriting is prevented without any additional reads. Checking first with GetItem leaves a gap between the check and the write, so the same problem reproduces under concurrent requests, and it also incurs read costs. A global secondary index supports only eventual consistency and may miss an item that was just saved. Deleting after the fact with Streams cannot recover the data that was saved first and has already been overwritten."
+ },
+ {
+  "number": 35,
+  "domain": "Development with AWS Services",
+  "prompt": "In a file processing service, an AWS Lambda function is invoked asynchronously when a file is uploaded to Amazon S3. The operations team wants to analyze the causes of failures quickly. When the function still fails after two retries, the team wants to receive in Amazon SQS a record that includes not only the original event but also invocation result information such as the function error response and retry count, and analyze it. The function code uses a library shared by several teams, so the team wants to solve this by using configuration only, without modifying the code. The failure record must contain enough information to reprocess the failed event, and the queue has already been created as a standard SQS queue. The invoker is the S3 event notification. Which is the MOST appropriate method?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Specify an SQS standard queue as the function-level DLQ so that the failed event and the entire error response returned by the function accumulate in the queue together."
+   },
+   {
+    "label": "B",
+    "text": "Add try/catch to the function code and send the error information directly to SQS with the SDK's SendMessage whenever an exception occurs."
+   },
+   {
+    "label": "C",
+    "text": "In the asynchronous invocation configuration, specify an SQS standard queue as the On failure destination so that the invocation record JSON is delivered to the queue."
+   },
+   {
+    "label": "D",
+    "text": "Reduce the maximum retry attempts of the asynchronous invocation to 0 and send the error logs in Amazon CloudWatch Logs to SQS with a subscription filter."
+   }
+  ],
+  "explanation": "The correct answer is to specify an SQS standard queue as the On failure destination in the asynchronous invocation configuration. The destination record contains the request payload along with response information (such as the function error type and invocation count) as JSON. A DLQ delivers only the event content and does not include response details, so it does not meet the analysis requirement. Putting SendMessage in the code violates the constraint of not modifying the code and also cannot catch errors where the process terminates abnormally. Reducing retries to 0 and using a log subscription filter only removes the chance to retry and still does not deliver the invocation record itself."
+ },
+ {
+  "number": 36,
+  "domain": "Deployment",
+  "prompt": "A SAM template contains 20 AWS Lambda functions, and all of them include the same internal utility library of about 8 MB in each deployment package. The library is modified three or four times a month, and each time the 20 packages must be rebuilt and deployed, so the pipeline runs frequently and the burden is large. All functions use the same Python runtime and are in one account and one Region, and library loading must not increase cold start time. Both the total size and the per-function size of the deployment packages are within limits, so size limits are not a problem. The team builds and deploys with the SAM CLI and is familiar with using layers. Which is the MOST appropriate way to reduce duplication and simplify library updates?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Encode the entire library in Base64, put it in the environment variable of each function, and have the function decode it at startup and unpack it into a temporary directory to use."
+   },
+   {
+    "label": "B",
+    "text": "Merge the 20 functions into a single function that is rewritten to branch by path, so that the library is included only once."
+   },
+   {
+    "label": "C",
+    "text": "Upload the library to Amazon S3 and have each function download it on every invocation, so that it is updated without code changes."
+   },
+   {
+    "label": "D",
+    "text": "Separate the library into a Lambda layer and have each function reference a layer version; when updating, publish a new layer version and change the references."
+   }
+  ],
+  "explanation": "A Lambda layer separates a common library from function code so that several functions share it, which reduces package size and duplication, and updates are simplified by publishing a new layer version and having the functions reference that version. Environment variables have a size limit, so they cannot hold 8 MB. Merging the functions into one increases coupling and mixes permissions and deployment units. Downloading from S3 on every invocation increases latency and cost and also requires code changes."
+ },
+ {
+  "number": 37,
+  "domain": "Security",
+  "prompt": "An AWS Lambda function in account B must read and decrypt Amazon S3 objects that are encrypted with a customer managed KMS key in account A. Under security policy, the key stays only in account A and is not replicated to account B or shared as key material. The Lambda execution role is in account B, and the S3 permissions to read the objects have already been granted. There are thousands of encrypted objects, so the company wants to avoid re-encrypting them. The two accounts belong to the same organization. Because S3 permissions for reading objects already exist, only the key usage permission needs to be resolved. The security team of account B does not allow creating a new key. Which TWO configurations are needed to meet this requirement? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Add a statement to the key policy of the account A key that allows account B (or the relevant role in account B) to use kms:Decrypt."
+   },
+   {
+    "label": "B",
+    "text": "Create a new KMS key with the same alias name in account B and configure Lambda to decrypt by using the alias."
+   },
+   {
+    "label": "C",
+    "text": "Add a statement that allows kms:Decrypt on the ARN of the account A key to the IAM policy of the Lambda execution role in account B."
+   },
+   {
+    "label": "D",
+    "text": "Modify the key policy of the AWS managed key aws/s3 in account A to allow the root user of account B to decrypt, and also share the key alias setting with account B."
+   },
+   {
+    "label": "E",
+    "text": "Add the canonical user ID of account B to the ACL of the account A S3 bucket to delegate both object and key usage permissions."
+   }
+  ],
+  "explanation": "To use a KMS key across accounts, the key policy in the account that owns the key must allow the external account, and the IAM policy in the external account must delegate that permission to the execution role; neither one alone is sufficient. AWS managed keys have key policies that users cannot modify, so they cannot be used as a sharing target. A key with the same alias created in account B is a different key, so it cannot decrypt ciphertext from account A. A bucket ACL concerns object access and does not grant permission to use a KMS key."
+ },
+ {
+  "number": 38,
+  "domain": "Troubleshooting and Optimization",
+  "prompt": "An e-commerce backend application invokes an AWS Lambda function synchronously with the AWS SDK. Every time traffic surges during promotion periods, TooManyRequestsException (HTTP 429) is returned and the Throttles metric in Amazon CloudWatch rises. The account has many functions for other services that share the concurrent execution quota, and because callers wait for user responses, some delay is acceptable but requests must not be lost. Traffic spikes occur briefly a few times a day, and average concurrent executions normally stay within the quota. The number of requests arriving during a promotion jumps to several times the normal level for a moment, and most of the function's run time is spent waiting for responses from an external payment API, so increasing memory barely reduces run time. The function produces the same result on every invocation, so retrying has no side effects. Which TWO actions are MOST appropriate to reduce this error? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Increase the function timeout to the maximum so that invocations wait until the end without being throttled even if they take a long time."
+   },
+   {
+    "label": "B",
+    "text": "Specify an SQS queue as the function-level DLQ so that requests from throttled synchronous invocations are stored in the queue and automatically processed again."
+   },
+   {
+    "label": "C",
+    "text": "Use retries with exponential backoff and jitter on SDK calls so that temporarily throttled invocations are retried at staggered times."
+   },
+   {
+    "label": "D",
+    "text": "Increase the function memory to reduce the run time of each invocation, and leave the account quota and concurrency settings as they are."
+   },
+   {
+    "label": "E",
+    "text": "Request an increase of the account concurrent execution quota in Service Quotas, and assign reserved concurrency to the critical function."
+   }
+  ],
+  "explanation": "The correct answers are retries with exponential backoff and jitter, and an increase of the concurrent execution quota together with reserved concurrency for the critical function. When a synchronous invocation exceeds the concurrency limit, it is throttled with a 429, so the client's backoff retries smooth out the spike, and if the limit itself is insufficient, the quota is raised and reserved concurrency guarantees the critical function's share (reserved concurrency keeps other functions from using that share and has no additional charge). Increasing the timeout does not make over-limit invocations wait; they are rejected. A function-level DLQ is used for asynchronous invocation failures, so it does not store throttled synchronous requests. Increasing memory helps only if run time shrinks, given that concurrency is roughly requests per second multiplied by average run time; in this problem most of the time is spent waiting on an external API, so run time barely shrinks, and even if it did, it would not prevent exceeding the limit during an instantaneous surge or guarantee quota, and it only increases cost."
+ },
+ {
+  "number": 39,
+  "domain": "Security",
+  "prompt": "Developers on dozens of project teams must be able to start and stop only the Amazon EC2 instances that carry their own team's project tag. Developers use roles by assuming them through SSO, and the number of project teams keeps growing, so the company wants to eliminate the burden of modifying IAM policies every time a new project is created. Instances of other teams must not be operated, and the security team does not want the number of policy files to grow. The instances already carry a consistent project tag. Developers do not create instances for their own project; they only start and stop them, and the roles can pass team information as a session tag at SSO sign-in. Which permission model is the MOST scalable?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Create an IAM policy and group for each project, list the ARNs of that project's instances as the Resource, and add team members to the group."
+   },
+   {
+    "label": "B",
+    "text": "List the ARNs of all project instances in a single role shared by all developers, and update the policy every time a project is added."
+   },
+   {
+    "label": "C",
+    "text": "Give developers full EC2 permissions and detect instances without a project tag after the fact with an AWS CloudTrail alarm and correct them."
+   },
+   {
+    "label": "D",
+    "text": "Attach the project tag to both the principal and the instances, and use a single policy that allows actions only when aws:PrincipalTag and aws:ResourceTag match."
+   }
+  ],
+  "explanation": "Attribute-based access control (ABAC) handles all projects with a single condition that compares the principal tag with the resource tag, so even when a new project is created, you only need to set the tags without changing the policy. Creating a policy and group for each project increases the number of managed items in line with the number of projects. Listing ARNs in a shared role causes policy size limits and update burden and also does not separate teams. Granting full permissions and detecting afterward does not block access in advance."
+ },
+ {
+  "number": 40,
+  "domain": "Security",
+  "prompt": "A document management SaaS encrypts per-customer data keys with a symmetric AWS KMS key. The security team wants decryption to always fail if one customer's ciphertext is submitted for decryption with another customer's context, and wants to identify which customer's data was being decrypted through AWS CloudTrail during audits. There are millions of decrypt calls per day and thousands of customers, so the company wants to avoid the operational overhead of increasing the number of keys per customer. The application code can be modified. Currently, a single data key encrypts all customers' data, and there is only one KMS key. Call latency must not increase. Which is the MOST appropriate method that meets both requirements without increasing the number of keys to manage?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Create a separate KMS key for each customer, put the customer ID in the alias, encrypt and decrypt with that alias on each call, and manage a key policy for each customer separately."
+   },
+   {
+    "label": "B",
+    "text": "Pass the customer ID as the encryption context in the Encrypt and GenerateDataKey calls, and require the same context at Decrypt."
+   },
+   {
+    "label": "C",
+    "text": "Attach the customer ID as a plaintext prefix to the stored ciphertext, and implement the application to compare the prefix before decryption."
+   },
+   {
+    "label": "D",
+    "text": "Switch to an asymmetric KMS key, put the customer ID in the encryption context, and encrypt with the public key and decrypt with the private key."
+   }
+  ],
+  "explanation": "The encryption context is additional authenticated data that is cryptographically bound to the ciphertext, so if the same context is not supplied at decryption, KMS refuses to decrypt, and the context values are also recorded in CloudTrail logs. Creating a key per customer greatly increases the number of keys to manage, which conflicts with the requirement. Comparing a plaintext prefix is not cryptographically bound to the ciphertext and depends on the application having no bugs. The encryption context is supported only for symmetric key operations, so an asymmetric key cannot meet this requirement."
+ },
+ {
+  "number": 41,
+  "domain": "Security",
+  "prompt": "An AWS Lambda function retrieves database credentials with GetSecretValue from AWS Secrets Manager on every invocation. The function runs dozens of concurrent executions all day long, latency increases when hundreds of invocations per second arrive, and API call cost and the risk of throttling also grow. The secret is rotated periodically under security policy, so its value must not be fixed permanently, and the new value must be reflected soon after rotation. The function is currently written in Python and runs inside a VPC, and the secret has automatic rotation configured in Secrets Manager in the same Region. Which is the MOST efficient way to improve this with minimal code changes?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Read the secret value at deployment time, copy it as plaintext into the Lambda environment variables, and redeploy the function configuration every time the secret is rotated."
+   },
+   {
+    "label": "B",
+    "text": "Store the secret as an encrypted file in an Amazon S3 bucket, have the function download it once at startup and keep it in /tmp, and keep using it without checking whether it has been rotated."
+   },
+   {
+    "label": "C",
+    "text": "Include a credentials file in the function deployment package, and have the CI pipeline rebuild and redeploy the package on every rotation cycle."
+   },
+   {
+    "label": "D",
+    "text": "Use the Secrets Manager caching client (or the extension for Lambda) to cache the secret in execution environment memory and refresh it after it expires."
+   }
+  ],
+  "explanation": "With the caching client or the Parameters and Secrets extension, the value is reused inside the execution environment, which reduces the number of calls and latency, and a new value is fetched after the cache TTL elapses, so a rotated secret is also reflected. Copying it into an environment variable requires redeployment on every rotation and exposes the value in plaintext. Downloading an S3 file only once means rotation is not reflected. Including credentials in the package leaves secrets in the code repository and artifacts, which is the least secure option."
+ },
+ {
+  "number": 42,
+  "domain": "Troubleshooting and Optimization",
+  "prompt": "The logs of an order settlement batch job that calls Amazon DynamoDB contain a mix of three errors. ProvisionedThroughputExceededException appears intermittently, ConditionalCheckFailedException appears occasionally, and ValidationException appears repeatedly for certain requests. The batch runs overnight for several hours, and some failures are acceptable, but the job must not stop because of transient errors or loop forever because of permanent errors. The batch code relies on the default retry behavior of the AWS SDK, and the condition failures were confirmed to occur when another worker updated the item first. Which design for the retry policy by error type is MOST appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Leave throughput exceeded errors to the SDK's exponential backoff retries, decide on condition failures by re-reading the item, and fix the request for validation errors without retrying."
+   },
+   {
+    "label": "B",
+    "text": "Retry all three errors with exponential backoff the same number of times, keeping the policy simple by not distinguishing between transient and permanent problems."
+   },
+   {
+    "label": "C",
+    "text": "Do not retry throughput exceeded errors and record them as failures immediately, and repeat condition failures and validation errors with no wait until they succeed."
+   },
+   {
+    "label": "D",
+    "text": "Retry validation errors with exponential backoff because they are transient problems, and discard throughput exceeded errors on the assumption that the request itself is wrong."
+   }
+  ],
+  "explanation": "The correct answer is a design that leaves throughput exceeded errors to SDK retries, decides on condition failures after re-reading, and fixes the request for validation errors. Throttling is transient, so retrying with exponential backoff succeeds; a condition failure is the logical result of a false condition expression; and client errors such as ValidationException keep failing even if the same request is sent again, so they are not retry targets. Retrying all errors the same way wastes time and capacity on requests that will fail. Discarding throughput exceeded errors loses data because of a transient error, and retrying validation errors repeats the same failure."
+ },
+ {
+  "number": 43,
+  "domain": "Deployment",
+  "prompt": "A SaaS company's AWS CodePipeline has source, build, staging deployment, and production deployment stages. A release manager must approve immediately before the production deployment, and the approval request must be delivered by email. The approver is a single release manager who can use the AWS Management Console, and the approval history must remain in the pipeline execution record. The team does not want to introduce a separate approval tool or write code. Staging deployment results are verified by automated tests, and the approver usually responds in the console within a few hours of receiving the email. The pipeline runs once or twice a day. Which implementation has the LEAST operational overhead?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Add a Lambda invoke action after the staging deployment, and implement the function so that it sends an email and then checks the approval status in Amazon DynamoDB."
+   },
+   {
+    "label": "B",
+    "text": "Disable the transition in front of the production stage and have the release manager re-enable the transition in the console when needed."
+   },
+   {
+    "label": "C",
+    "text": "Run a script in the AWS CodeBuild project of the staging deployment stage that waits until an approval phrase is entered."
+   },
+   {
+    "label": "D",
+    "text": "Add a manual approval action after the staging deployment, connect an Amazon SNS topic, and have the release manager subscribe to it by email."
+   }
+  ],
+  "explanation": "A manual approval action stops the pipeline at that point and records approval or rejection, and connecting an SNS topic sets up the email notification without any code. Building the approval flow with Lambda means you operate the code and the state store yourself. Disabling a transition has no notification and no approval record, so it is hard to call it an approval procedure. A script that waits for input in the build stage does not match the purpose of CodeBuild and incurs cost while waiting."
+ },
+ {
+  "number": 44,
+  "domain": "Development with AWS Services",
+  "prompt": "An Amazon DynamoDB Query on a product management screen specifies a FilterExpression (status = ACTIVE) and a Limit of 50, and sometimes the response contains 0 items or only 3 items, so the screen displays that there are no active items. In reality there are hundreds of active items, and the table key design has no problem for the Query condition. The data evaluated by a single Query is limited to 1 MB, and the screen must show all active items page by page. The table has far more inactive items. Which is the MOST appropriate way to fetch all active items without omission, without greatly changing the code structure and without unnecessarily increasing the number of read requests?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Raise Limit to a large maximum value so that all items that pass the filter are returned in a single Query."
+   },
+   {
+    "label": "B",
+    "text": "Turn on ConsistentRead for the Query to guarantee that all the latest data is read before the filter is applied."
+   },
+   {
+    "label": "C",
+    "text": "Remove the FilterExpression and put the status attribute in ProjectionExpression so that the server returns only active items."
+   },
+   {
+    "label": "D",
+    "text": "If the response contains LastEvaluatedKey, pass it as ExclusiveStartKey and repeat the Query until there is no LastEvaluatedKey."
+   }
+  ],
+  "explanation": "The correct answer is pagination, which passes LastEvaluatedKey as ExclusiveStartKey and repeats until there is no more LastEvaluatedKey. A Query reads up to Limit or the 1 MB page limit before applying the filter, so LastEvaluatedKey can remain even when a page has few or no matching items. Raising Limit does not remove the 1 MB limit, so pagination is still required. Strong consistency is only a freshness matter and has nothing to do with the page limit. ProjectionExpression only selects the attributes to return and does not filter items."
+ },
+ {
+  "number": 45,
+  "domain": "Deployment",
+  "prompt": "An AWS CodeBuild build needs a private npm registry token. It is currently put in plaintext in the project environment variables, so the value is visible in the console and in the build settings, and it was flagged in a security audit. Builds run dozens of times a day, the token is rotated once a month, and rotation is managed in AWS Secrets Manager. The team does not want to modify the build project settings every time the token changes. The CodeBuild project runs outside a VPC, and its service role is dedicated to this project. The secret is in the same account and Region and is encrypted with the default key. Which is the safest method that requires few changes?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Keep the environment variable as plaintext but add a post-processing step to the buildspec that masks the token string in build logs."
+   },
+   {
+    "label": "B",
+    "text": "Reference the secret by using a secrets-manager mapping in the env section of the buildspec, and allow GetSecretValue for that secret on the CodeBuild service role."
+   },
+   {
+    "label": "C",
+    "text": "Put the token in an .npmrc file, commit it to the source repository, and restrict repository access to build owners only."
+   },
+   {
+    "label": "D",
+    "text": "Upload the token file to an Amazon S3 bucket, download and use it on every build, and allow bucket access only through the service role."
+   }
+  ],
+  "explanation": "The secrets-manager environment variable mapping in the buildspec fetches the secret value at build time and injects it, so the value does not remain in plaintext in the project settings, and a value rotated in Secrets Manager is automatically reflected in the next build. Keeping a plaintext environment variable and only adding masking does not solve the problem of the value remaining in the settings. Committing it to the repository leaves the secret in the history. An S3 file requires a separate rotation procedure and adds one more point to manage."
+ },
+ {
+  "number": 46,
+  "domain": "Troubleshooting and Optimization",
+  "prompt": "An order processing AWS Lambda function in an online store calls cloudwatch:PutMetricData synchronously on every invocation to record counts of processed items and errors. The dashboard must show order metrics in near real time and alarms must be set on them, but this synchronous call increases function latency and incurs API call costs. The team wants to produce metrics without increasing latency while also being able to find detailed logs for problem requests right away. The team does not want to operate separate collection infrastructure. The metrics are numeric values such as counts and error numbers, and one-minute granularity is sufficient. The function is written in Node.js and already outputs structured JSON logs. Which is the MOST appropriate method?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Output JSON logs in EMF format so that Amazon CloudWatch extracts metrics asynchronously, and query the original logs with Logs Insights."
+   },
+   {
+    "label": "B",
+    "text": "Move the PutMetricData call to a separate thread, but wait for the thread to finish before responding so that metrics are not lost, keeping the number of calls the same."
+   },
+   {
+    "label": "C",
+    "text": "Export the logs to Amazon S3, aggregate counts with Amazon Athena queries, and periodically publish the results as metrics."
+   },
+   {
+    "label": "D",
+    "text": "Record the counts in AWS X-Ray annotations, check totals on the service map, and do not create separate CloudWatch metrics."
+   }
+  ],
+  "explanation": "The correct answer is to output logs in the embedded metric format (EMF). When metric definitions are placed in structured logs, CloudWatch extracts metrics from the logs asynchronously, so the function does not call the metrics API synchronously and latency does not increase, and the same log events can be queried with Logs Insights to see the cause. Moving the call to a thread does not help if the function still waits before responding, because the latency remains. Aggregation with S3 and Athena does not fit the near-real-time metric and alarm requirements. X-Ray annotations are for trace search and do not replace ordinary CloudWatch metrics and alarms."
+ },
+ {
+  "number": 47,
+  "domain": "Deployment",
+  "prompt": "A team has run an AWS Elastic Beanstalk environment with an Amazon RDS database included in the environment, created in the console. It now wants to create a new environment with a new platform version and switch over by swapping CNAMEs (blue/green), and it plans to terminate the old environment after the switch. The database is MySQL, write traffic occurs continuously, and the existing data must be preserved during the switch. The team wants to minimize downtime. The current environment is in a single Region, and the new environment will be created in the same VPC subnets. The application reads the database endpoint as an environment property. What is the SAFEST approach?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Include RDS in the environment as well when creating the new environment so that it is newly created, and proceed on the assumption that swapping CNAMEs alone moves the data to the new environment's database."
+   },
+   {
+    "label": "B",
+    "text": "Terminate the existing environment to leave the database as a snapshot, create a new environment with the same name, restore from the snapshot, and accept a short downtime."
+   },
+   {
+    "label": "C",
+    "text": "Apply the Retain deletion policy to the database first, then in a separate operation decouple the database from the environment and leave it as an independent external RDS instance; then connect the new environment by directly configuring that endpoint and the security group allowance, and swap the CNAMEs."
+   },
+   {
+    "label": "D",
+    "text": "Immediately after the CNAME swap, change the deletion policy of the old environment's database to Delete to clean up so that the two environments do not share the same instance."
+   }
+  ],
+  "explanation": "A database included in an environment is tied to the environment lifecycle and does not fit a blue/green switch. The Elastic Beanstalk documentation explains that an external (decoupled) database can be connected from multiple environments and enables blue/green deployments. The procedure is to apply the Retain deletion policy first and then apply Decouple database as a separate operation (if applied together, the new policy is ignored, and if the existing policy is Delete or Snapshot, you can lose the database), and the decoupled DB remains as an external RDS instance whose environment properties and security group must be configured directly for the connection. A CNAME swap does not move the DB, and a DB newly included in the new environment is empty. Restoring after terminating the environment causes downtime and differs from the blue/green approach. Changing the deletion policy to Delete carries a high risk of losing data."
+ },
+ {
+  "number": 48,
+  "domain": "Development with AWS Services",
+  "prompt": "When stream processing that forwards order events to a downstream search service gets blocked, data delay in the downstream service grows. An AWS Lambda function invoked from Amazon DynamoDB Streams keeps throwing an exception on a particular record, so processing of that shard stops and IteratorAge keeps increasing. Normal records must continue to be processed, and the location information of the failed batch must be kept so that it can be analyzed later. The function must process changes to the same item in order, and the failure records can be received in Amazon SQS or Amazon SNS. There are only one or two problem records, and the code causing the problem will be fixed in a few days. Which TWO configurations are MOST appropriate for isolating the problem without losing data? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Limit retries with MaximumRetryAttempts and specify an SQS queue as the on-failure destination."
+   },
+   {
+    "label": "B",
+    "text": "Set StartingPosition to LATEST again and re-create the mapping so that only records after the current time are read."
+   },
+   {
+    "label": "C",
+    "text": "Raise ParallelizationFactor to 10 so that the shard containing the problem record is processed with more concurrent invocations to increase processing speed."
+   },
+   {
+    "label": "D",
+    "text": "Turn on BisectBatchOnFunctionError on the event source mapping so that a failed batch is split in two to narrow down the problem record."
+   },
+   {
+    "label": "E",
+    "text": "Greatly increase BatchSize to reduce the share that the problem record occupies in the whole batch in a single invocation."
+   }
+  ],
+  "explanation": "The correct answers are to turn on BisectBatchOnFunctionError and to set a retry limit together with an on-failure destination. Splitting the batch narrows down the range containing the problem record so that normal records can be processed first, and when the retry limit is exceeded, Lambda skips that batch and leaves batch information such as the shard ID and sequence numbers in the destination queue so that the shard does not stay blocked. The destination does not include the record body, so the records are looked up and analyzed with that information within the stream retention period. The default is -1 retry attempts (unlimited until expiry), so without setting it the processing keeps getting blocked. Increasing concurrent invocations does not help because the same record keeps failing, restarting with LATEST loses the skipped records, and increasing the batch size actually enlarges the failure range."
+ },
+ {
+  "number": 49,
+  "domain": "Deployment",
+  "prompt": "An AWS CodeDeploy in-place deployment is run on 10 Amazon EC2 instances in an Auto Scaling group. The instances are attached to an Application Load Balancer target group, and the normal traffic can be handled by even five instances. The default OneAtATime configuration is too slow, and AllAtOnce cannot be used because of the risk of a total outage. During a deployment, at least half of the instances must handle traffic normally, and the company wants to avoid the cost of adding instances during a deployment. The deployment group automatically deregisters instances from the target group and reattaches them after the deployment, and the deployment script takes an average of 2 minutes per instance. Which deployment configuration is MOST appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Choose CodeDeployDefault.HalfAtATime to deploy to at most half of the instances at a time while the rest handle traffic."
+   },
+   {
+    "label": "B",
+    "text": "Choose CodeDeployDefault.AllAtOnce and connect a rollback alarm so that the deployment is rolled back to the previous version immediately if a problem occurs."
+   },
+   {
+    "label": "C",
+    "text": "Keep CodeDeployDefault.OneAtATime and increase the number of instances in the deployment group to 20 to shorten the deployment time."
+   },
+   {
+    "label": "D",
+    "text": "Choose CodeDeployDefault.LambdaCanary10Percent5Minutes to send 10% of the traffic to the new version first."
+   }
+  ],
+  "explanation": "HalfAtATime deploys to at most half of the instances (rounded down) at a time, so it is faster than OneAtATime while always leaving at least half of the instances outside the deployment. AllAtOnce targets all instances at the same time, so there is a risk of an outage, which does not fit the conditions. Adding instances increases cost and leaves the deployment method itself unchanged, so it does not fundamentally solve the speed problem. The Lambda canary configurations are for the Lambda platform and cannot be used for EC2 in-place deployments."
+ },
+ {
+  "number": 50,
+  "domain": "Troubleshooting and Optimization",
+  "prompt": "In an AWS Lambda REST backend built with Java 17 and a large Spring-based codebase, initialization takes 4 to 5 seconds on cold starts, which makes p99 latency spike. A rewrite that changes frameworks is not realistic. The API invokes the function through an alias named live that points to a published version, and because of budget constraints, approaches that add charges, such as provisioned concurrency, cannot be used. The function runs on the x86_64 architecture, and deployments are done in CI by publishing a new version and moving the alias. Most of the initialization code is loading the Spring context. Which is the MOST appropriate way to reduce cold starts while keeping code structure changes to a minimum?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Configure provisioned concurrency on the live alias to secure initialized execution environments in advance and accept the resulting charges."
+   },
+   {
+    "label": "B",
+    "text": "Enable SnapStart on the unpublished version ($LATEST) and change the API integration target to $LATEST to apply it without any code changes."
+   },
+   {
+    "label": "C",
+    "text": "Raise the function memory to the maximum of 10,240 MB to increase CPU for the initialization phase and leave the code as is."
+   },
+   {
+    "label": "D",
+    "text": "Enable SnapStart on the function version that the live alias points to, publish a new version, and have the alias point to that version."
+   }
+  ],
+  "explanation": "The correct answer is to enable SnapStart for a published version and have the alias point to that version. SnapStart takes a snapshot of the initialized execution environment when a version is published and restores it to reduce cold starts, and there is no additional charge for Java managed runtimes. Provisioned concurrency incurs charges and cannot be used together with SnapStart on the same version. SnapStart can be used only on published versions and aliases that point to them, so it does not work on $LATEST. Raising memory to the maximum only increases cost and leaves the initialization structure unchanged."
+ },
+ {
+  "number": 51,
+  "domain": "Deployment",
+  "prompt": "Someone appears to have manually changed the inbound rules of a security group created by AWS CloudFormation in the console during operation. The stack is production, and the change history remains in AWS CloudTrail, but the audit team wants a report that shows, at the property level and at a glance, the difference between the template and the current state. The check must not modify resources or update the stack, and the stack has dozens of resources of the same type. The audit team needs a result that compares the property values defined in the template with the actual property values side by side, and does not care when the last healthy state was. Which is the MOST appropriate method?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Use a standard change set to preview the changes that would result from applying the current template as is, and find the properties that differ."
+   },
+   {
+    "label": "B",
+    "text": "Run a stack update with the same template so that CloudFormation overwrites the manual changes and restores the original state."
+   },
+   {
+    "label": "C",
+    "text": "Search CloudTrail for all security group API call events and have a person trace the changes while comparing them with the template."
+   },
+   {
+    "label": "D",
+    "text": "Run stack drift detection and check the drift status of each resource and the differences between expected and actual properties."
+   }
+  ],
+  "explanation": "Drift detection compares the actual configuration of the stack resources with the expected configuration defined in the template and reports the status and property differences per resource, without changing any resources. A standard change set compares only the new template with the last deployed template, so it cannot show manual changes if the template is unchanged. Updating with the same template is an attempt at remediation, not verification, and conflicts with the conditions. Searching CloudTrail requires a person to compare with the template one by one, which is inefficient for a property-level check."
+ },
+ {
+  "number": 52,
+  "domain": "Deployment",
+  "prompt": "An AWS Elastic Beanstalk environment runs 12 instances and is deployed to even during business hours. Average traffic is constant throughout the day, and the instance type and count do not change because of deployments. Total processing capacity must not decrease during a deployment, but the cost of launching 12 entirely new instances is a burden. Updating the existing instances in place is acceptable. During a deployment, a batch must not receive traffic until the health check of the new version is complete, and deployments happen three or four times a day. The environment has a load-balanced configuration. Which deployment policy that meets the requirements is the MOST cost-effective?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Choose the Rolling with additional batch policy and set the batch size to 25% of the total."
+   },
+   {
+    "label": "B",
+    "text": "Choose the Rolling policy and set the batch size to 25% of the total, so that each batch is taken out of service, reattached, and waits for the health check."
+   },
+   {
+    "label": "C",
+    "text": "Choose the Immutable policy to deploy the new version first to 12 new instances in a separate Auto Scaling group."
+   },
+   {
+    "label": "D",
+    "text": "Choose the All at once policy to update all instances at the same time and minimize deployment time."
+   }
+  ],
+  "explanation": "Rolling with additional batch first launches a new batch to maintain capacity, updates in batches, and terminates the additional instances when finished, so the extra cost is limited to the size of one batch. Plain Rolling reduces capacity by the batch size while a batch is out of service. Immutable maintains capacity but launches 12 entirely new instances, which costs more. All at once causes a brief outage."
+ },
+ {
+  "number": 53,
+  "domain": "Development with AWS Services",
+  "prompt": "In a customer data migration job, an AWS Lambda function reads a CSV file from Amazon S3 and loads it into a provisioned-mode Amazon DynamoDB table by using BatchWriteItem (25 items at a time). All calls end with HTTP 200, but after the load finishes, about 3% of the items are missing from the table. During the load, there are periods when write capacity is intermittently exceeded, and the load is not a one-time job but repeats every week. The company does not want to increase write capacity because of budget. A single CSV file contains hundreds of thousands of items, and the average item size is about 1 KB. The code currently does not check the BatchWriteItem response. Which is the MOST appropriate way to eliminate the missing items?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Replace BatchWriteItem with TransactWriteItems to increase the number of items that can be included at once, and resend a failed transaction in its entirety."
+   },
+   {
+    "label": "B",
+    "text": "Add a loop that immediately calls the same request again without waiting whenever UnprocessedItems is returned, to minimize the retry interval."
+   },
+   {
+    "label": "C",
+    "text": "Check UnprocessedItems in the response, and if it is not empty, apply exponential backoff and resend only those items with BatchWriteItem."
+   },
+   {
+    "label": "D",
+    "text": "Increase the Lambda function timeout and memory so that BatchWriteItem calls are processed to the end without exceeding capacity."
+   }
+  ],
+  "explanation": "The correct answer is to resend only UnprocessedItems with exponential backoff. BatchWriteItem returns items it could not process, for example because capacity was exceeded, as UnprocessedItems rather than as an error, so some items can be missing even with HTTP 200, and retrying immediately repeats the same throttling, so backoff is recommended. TransactWriteItems uses double the read and write capacity per item, which conflicts with the cost constraint. Immediate repetition without waiting can make throttling worse. Timeout and memory have nothing to do with the write capacity limit on the DynamoDB side."
+ },
+ {
+  "number": 54,
+  "domain": "Troubleshooting and Optimization",
+  "prompt": "A payment service consists of several microservices and AWS Lambda functions, and failure analysis takes a long time. When a customer inquiry comes in, the team must quickly find only that customer's request flow. In the order service traced with AWS X-Ray, the team needs to search for only slow requests of a specific customer ID by using a filter expression, and also wants to leave an order detail JSON object in the same trace, but there is no need to search by this object. The team does not want to change the service map structure. Tracing is already turned on for Lambda and for service SDK calls, and the team can record values directly in code with the X-Ray SDK. Which is the MOST appropriate way to record the two pieces of data?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Record the customer ID as an annotation and use it in the filter expression, and record the order detail object as metadata because it does not need to be searched."
+   },
+   {
+    "label": "B",
+    "text": "Record both the customer ID and the order detail object in metadata and search by the metadata key in the filter expression."
+   },
+   {
+    "label": "C",
+    "text": "Record both the customer ID and the order detail object as annotations so that both values can be searched with filter expressions."
+   },
+   {
+    "label": "D",
+    "text": "Put the customer ID in the segment name to create a separate service node for each customer, and put the detail object in the subsegment name."
+   }
+  ],
+  "explanation": "The correct answer is to record the customer ID as an annotation and the order detail object as metadata. Annotations are simple key-value pairs that are indexed for use in filter expressions and GetTraceSummaries, while metadata can hold any type such as objects or lists but is not indexed and cannot be used for search. If both are put in metadata, the customer ID cannot be searched. An object cannot be put in an annotation, and there is also a per-trace limit on the number of annotations. Putting values in segment names splits the service graph into as many nodes as there are customers, making the map unreadable."
+ },
+ {
+  "number": 55,
+  "domain": "Development with AWS Services",
+  "prompt": "In a data collection pipeline, a nightly batch AWS Lambda function writes in bulk to Amazon DynamoDB and intermittently receives ProvisionedThroughputExceededException. A developer built a loop that catches the exception and immediately retries three times without waiting, but failures actually increased when traffic surged, and multiple Lambda instances retry at the same moment. Increasing table capacity is not possible in this cycle. Code changes are possible. The batch only needs to finish before dawn, so it is fine if it becomes somewhat slower, but writes must not be lost. The SDK currently uses its default configuration. Which improvement is MOST appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Put a fixed 100 ms wait in the retry loop so that all instances retry at the same interval, and keep the number of attempts the same."
+   },
+   {
+    "label": "B",
+    "text": "Widen the retry targets to include client errors such as ValidationException so that any error is retried with exponential backoff, and keep the number of attempts the same."
+   },
+   {
+    "label": "C",
+    "text": "Turn off SDK retries and send failed writes immediately to an SQS DLQ so that a person manually reruns them later."
+   },
+   {
+    "label": "D",
+    "text": "Remove the custom retry loop and use the SDK's standard retry mode (exponential backoff with jitter), increasing only the maximum number of attempts if needed."
+   }
+  ],
+  "explanation": "The correct answer is to remove the custom loop and use the SDK's standard retry mode. Standard mode retries throttling errors with exponential backoff and jitter, which spreads out the retry times of the instances, and the maximum number of attempts can be adjusted by configuration. A fixed wait has no jitter, so the retries still pile up at the same time. Errors in which the request itself is wrong, such as ValidationException, do not succeed even when retried, so they are not retry targets. Turning off retries and handling failures manually makes people deal with even transient throttling, which raises the operational burden."
+ },
+ {
+  "number": 56,
+  "domain": "Deployment",
+  "prompt": "A developer is deploying an AWS CDK app for the first time to the ap-northeast-2 Region of a newly created account. The app includes AWS Lambda code assets and a container image. cdk deploy succeeds up to synthesizing the AWS CloudFormation template but stops at the asset upload step with an error saying that this environment requires bootstrapping. The team often creates and uses new accounts and Regions, so it wants a repeatable method and wants to avoid creating resources manually. The CDK app and account credentials are properly configured on the developer's PC, and another CDK app is already deployed in us-east-1 of the same account. Which action is MOST appropriate to resolve this error?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Run cdk synth again to generate a new CloudFormation template, which automatically creates the resources required for asset upload."
+   },
+   {
+    "label": "B",
+    "text": "Create an S3 bucket manually and hardcode the asset path in the template so that CDK uploads without bootstrapping."
+   },
+   {
+    "label": "C",
+    "text": "Run cdk bootstrap in that account and Region to first deploy the CDKToolkit stack, which contains an S3 bucket for assets, an Amazon ECR repository, and IAM roles for deployment."
+   },
+   {
+    "label": "D",
+    "text": "Upload the generated template directly in the CloudFormation console to create the stack, so that the assets are deployed without preparing the CDK environment."
+   }
+  ],
+  "explanation": "CDK requires the S3 bucket and ECR repository for uploading assets, and the deployment roles, to be prepared in advance by the bootstrap stack, and this preparation is needed once for each combination of account and Region. synth only creates a template and does not create environment resources. Creating a bucket manually and hardcoding the path is a makeshift workaround that bypasses CDK's asset management, and the image asset problem remains. Even if the template is uploaded through the console, the asset files still are not uploaded anywhere."
+ },
+ {
+  "number": 57,
+  "domain": "Deployment",
+  "prompt": "An API's AWS Lambda function has long first-request latency from cold starts during the morning peak. The team always sends traffic through the live alias and, when deploying a new version, changes only the version the alias points to. Traffic concentrates on weekday mornings and is almost nonexistent at other times, and a new version of the function code is published about once a day and the alias is updated. The team wants to reduce the cost of initialized environments that go unused at night. The function runs outside a VPC, initialization takes about 3 seconds, and concurrent executions normally rise to about 30 at the morning peak. Which configuration is MOST appropriate for reducing cold starts while keeping this deployment flow?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Configure provisioned concurrency on the $LATEST version so that the most recently uploaded code is always on standby in an initialized state."
+   },
+   {
+    "label": "B",
+    "text": "Set reserved concurrency on the function so that other functions cannot use the concurrency and execution environments are initialized in advance."
+   },
+   {
+    "label": "C",
+    "text": "Increase the function memory to the maximum to reduce initialization time and leave the alias settings as they are so that cold starts disappear."
+   },
+   {
+    "label": "D",
+    "text": "Configure provisioned concurrency on the live alias and adjust the value with an Application Auto Scaling schedule to match the peak hours."
+   }
+  ],
+  "explanation": "Provisioned concurrency is a feature that initializes execution environments in advance and can be configured only on a published version or an alias, so setting it on the live alias that receives traffic keeps the deployment flow, and schedule-based adjustment also manages cost. It cannot be configured on $LATEST. Reserved concurrency only guarantees capacity and sets an upper limit and does not pre-initialize. Increasing memory can make execution faster but does not eliminate cold starts themselves."
+ },
+ {
+  "number": 58,
+  "domain": "Security",
+  "prompt": "A single-page application (SPA) running at https://app.example.com reads a JSON file in an Amazon S3 bucket directly with fetch, but the browser console shows an error that the Access-Control-Allow-Origin header is missing. The bucket policy already allows reading that object, and curl can retrieve it normally. Other objects in this bucket must remain private, and the security team wants the allowed scope opened only as much as necessary. The SPA only reads with GET requests from the browser and does not send credentials such as cookies, and the team does not want to build a server-side proxy. Which is the MOST appropriate way to solve the problem while keeping security and without server code?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Change the Principal in the bucket policy to a wildcard so that all principals can read the objects, which removes the browser's access denial."
+   },
+   {
+    "label": "B",
+    "text": "Change the fetch call option to no-cors mode so that the browser skips the cross-origin check and can read the response body."
+   },
+   {
+    "label": "C",
+    "text": "Turn on SSE-KMS default encryption on the bucket so that the browser recognizes the encrypted response as coming from an allowable origin."
+   },
+   {
+    "label": "D",
+    "text": "In the bucket's CORS configuration, specify the app origin as AllowedOrigins and GET as AllowedMethods."
+   }
+  ],
+  "explanation": "If curl works but only the browser is blocked, the cause is not a permissions issue but the missing CORS response header, and specifying the allowed origin and method in the bucket CORS configuration makes S3 return that header. Widening the bucket policy has nothing to do with CORS and only enlarges the access scope. no-cors mode makes the response opaque, so the JSON body cannot be read. Encryption at rest has no relationship to CORS headers."
+ },
+ {
+  "number": 59,
+  "domain": "Security",
+  "prompt": "When saving a notification configuration that invokes an AWS Lambda function on the ObjectCreated event of an Amazon S3 bucket, an error occurs saying that there is no permission to invoke the target function. The function execution role already has S3 read permission. The bucket and the function are in the same account and the same Region, the notification is used only for new object uploads, and the target function is deployed with IaC, not the console. The security team requires the principle of least privilege. The notification configuration goes from one bucket to one function only, and the account ID is injected into the template as a parameter. A bucket in another account must not be able to invoke this function. Which is the MOST appropriate way to resolve this problem?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Add the S3 service principal to the trust policy of the Lambda execution role so that S3 assumes this role and invokes the function."
+   },
+   {
+    "label": "B",
+    "text": "In the Lambda function's resource-based policy, allow the S3 principal to perform InvokeFunction with a condition on the ARN of that bucket."
+   },
+   {
+    "label": "C",
+    "text": "Add an allow for lambda:InvokeFunction to the Lambda execution role so that the function can invoke itself."
+   },
+   {
+    "label": "D",
+    "text": "Allow s3:GetObject for the Lambda service principal in the S3 bucket policy so that the function can read objects even without an event and also stand in for the invoke permission."
+   }
+  ],
+  "explanation": "Because S3 is the principal that invokes the function, the function's resource-based policy must allow the S3 service principal to make only calls that come from that bucket (SourceArn). The execution role is the role the function code uses when it calls AWS, so it has nothing to do with the trigger's caller, and changing its trust policy is not an invoke permission either. Giving InvokeFunction to the execution role also misses that the invoking principal is S3. Allowing GetObject in the bucket policy is only an object read permission and not an event invocation permission."
+ },
+ {
+  "number": 60,
+  "domain": "Security",
+  "prompt": "In an Amazon API Gateway REST API, GET /orders must be callable only by clients that have the orders/read scope, and POST /orders only by clients that have the orders/write scope. Clients receive tokens from an Amazon Cognito user pool, there are several client apps, and scope definitions are managed in a single user pool. The team does not want to operate additional server code and is not considering detailed tuning, such as whether authorization results are cached, at this time. Tokens are passed in the Authorization header on API calls, and the two methods are on the same REST API in the same stage. Which configuration enforces per-method scopes declaratively, without code, MOST appropriately?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Define custom scopes in the user pool, specify them as per-method scopes of the Cognito authorizer, and have clients use access tokens."
+   },
+   {
+    "label": "B",
+    "text": "Configure the app client to issue only ID tokens, and put the scope names in the method authorization scopes so that they are checked against the claims of the ID token."
+   },
+   {
+    "label": "C",
+    "text": "Create a Lambda authorizer that parses the token itself and compares scope strings per path and method to return a policy."
+   },
+   {
+    "label": "D",
+    "text": "Issue separate API keys for GET and POST, set API key required on each method, and distribute the keys to clients in place of scopes."
+   }
+  ],
+  "explanation": "The Cognito user pool authorizer of API Gateway can specify OAuth scopes per method, and in that case clients must send an access token that carries the custom scopes. ID tokens are for user identity claims and are not used for scope-based authorization. A Lambda authorizer works but requires operating the code yourself, which conflicts with the declarative configuration condition. API keys are for usage control and cannot replace scope-based authorization."
+ },
+ {
+  "number": 61,
+  "domain": "Development with AWS Services",
+  "prompt": "A notification service receives payment completion events and sends text messages to customers, and inquiries from customers who received the same message twice are increasing. An AWS Lambda function that uses an SQS standard queue as its source sends the payment notifications. The function timeout is 60 seconds, and the queue's visibility timeout is also 60 seconds. When traffic surges, invocations are often throttled and the same batch is processed again. The notification sending API does not support idempotency. The function code can be modified, and the same message being delivered twice is explained by the at-least-once delivery characteristic of SQS standard queues. DynamoDB is already used in the account. Which TWO actions are MOST appropriate to reduce duplicate sends? (Select TWO.)",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Increase the visibility timeout of the source queue to at least six times the function timeout so that messages do not become visible again even during retries."
+   },
+   {
+    "label": "B",
+    "text": "Shorten the message retention period of the source queue so that messages that have remained for a long time are not delivered again."
+   },
+   {
+    "label": "C",
+    "text": "Increase the function memory to raise CPU and reduce processing time per invocation, leaving the timeout as is and keeping the visibility timeout at its current value."
+   },
+   {
+    "label": "D",
+    "text": "Increase the batch size to the maximum so that more messages are processed in a single invocation and the number of invocations is reduced."
+   },
+   {
+    "label": "E",
+    "text": "Conditionally write the processing history to DynamoDB by using the message ID as the key, and skip sending the notification for a message that has already been processed."
+   }
+  ],
+  "explanation": "The correct answers are to increase the visibility timeout to at least six times the function timeout and to add idempotency handling. The Lambda documentation recommends a visibility timeout of at least six times the function timeout to allow for throttling retries, and if the time is insufficient, messages that are being processed or waiting to be retried become visible again and are invoked in duplicate. The event source mapping processes at least once, so the code must be safe against duplicates. Increasing the batch size can increase the number of messages that return when one batch fails, which can make duplicates worse. The retention period is just the total time a message stays in the queue and has nothing to do with redelivery. Increasing memory to shorten processing time leaves the margin of the visibility timeout relative to the timeout unchanged, so the risk of duplicates during throttling retries remains."
+ },
+ {
+  "number": 62,
+  "domain": "Troubleshooting and Optimization",
+  "prompt": "The response to GET /products?category=...&page=... of a product lookup REST API barely changes for 5 minutes, but 800 requests per second are passed to the backend, putting a heavy load on the database. When stage caching was turned on, a problem appeared in which the response cached first is returned even when the category differs. It is acceptable to the business to show product data that is about 5 minutes old. The team does not want to modify the backend code. There are hundreds of combinations of category and page values in the query string, and cache capacity is sufficient. Most requests concentrate on the same popular combinations. Which method reduces backend calls the most while returning correct responses?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Set the cache TTL to 0 seconds so that no cache entries are stored and every request is newly generated by the backend."
+   },
+   {
+    "label": "B",
+    "text": "Have clients send the Cache-Control: max-age=0 header on every request to invalidate the cache and replace it with a new response, ensuring freshness."
+   },
+   {
+    "label": "C",
+    "text": "Specify the category and page query string parameters as cache keys and set the TTL to 300 seconds so that responses are cached separately for each parameter combination."
+   },
+   {
+    "label": "D",
+    "text": "Raise the stage cache capacity to the largest size, hoping that responses for different categories do not overwrite each other."
+   }
+  ],
+  "explanation": "The correct answer is to specify category and page as cache key parameters and set the TTL to 300 seconds. The API Gateway cache stores responses separately for each value of the parameters included in the cache key, so a different category becomes a different entry, and for 5 minutes responses are served from the cache without calling the backend. The cause of the current problem is that the same response is returned even when parameters not in the key differ. A TTL of 0 turns the cache off. A client's max-age=0 header refills the cache only when the client has permission to invalidate, and using it on every request removes the benefit of the cache and increases the load; without permission it is rejected or ignored. Increasing capacity does not change the cache key configuration."
+ },
+ {
+  "number": 63,
+  "domain": "Security",
+  "prompt": "A mobile app and a single-page application (SPA) sign in with the Amazon Cognito hosted UI. Both apps are client apps where users sign in directly, and there is no separate backend server. Neither app can safely store a client secret, and the company also wants to avoid exposing tokens in the browser URL. The security team wants to follow the latest OAuth recommendations. Sign-in is done through the hosted UI, and the app bundles are distributed to users, so internal code can be easily viewed. The user pool and hosted UI domain are already configured. Which app client configuration is the most secure for the user sign-in flow?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Enable the implicit grant so that tokens are received immediately in the redirect URL fragment right after authentication and used."
+   },
+   {
+    "label": "B",
+    "text": "Create an app client with a client secret, include the secret in the app bundle in obfuscated form, and use the authorization code grant."
+   },
+   {
+    "label": "C",
+    "text": "Enable the client credentials grant so that the app calls the token endpoint with the secret and receives tokens on behalf of the user."
+   },
+   {
+    "label": "D",
+    "text": "Use the authorization code grant with PKCE in a public app client that has no secret."
+   }
+  ],
+  "explanation": "For public clients that cannot keep a secret, the authorization code grant with PKCE is recommended because it prevents code interception without a secret, and tokens are delivered in the token endpoint response, not in the URL. The implicit grant exposes tokens in the URL. A secret obfuscated in the bundle can still be extracted. The client credentials grant is a machine-to-machine flow, not a user sign-in flow, so it does not fit user authentication."
+ },
+ {
+  "number": 64,
+  "domain": "Development with AWS Services",
+  "prompt": "Microservice teams deploy independently of each other and use Amazon SNS for event fan-out. The payment team's SQS queue and the shipping team's SQS queue are subscribed to an SNS standard topic that publishes order events. The shipping team's queue must receive only events whose orderType is DELIVERY. There are millions of order events per day, so the company also wants to reduce the cost of delivering unnecessary messages, and it wants to keep changes to publisher and consumer code to a minimum. The shipping team's consumer already reads and processes messages from SQS, and the publisher can be modified to attach message attributes with the SDK. The payment team must continue to receive all events. Which is the MOST appropriate method?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Attach an orderType message attribute when publishing, and set a subscription filter policy on the shipping team's subscription that matches only DELIVERY."
+   },
+   {
+    "label": "B",
+    "text": "Split the topic by order type and change the code so that the publisher determines the type and publishes only to the corresponding topic."
+   },
+   {
+    "label": "C",
+    "text": "Put a filtering AWS Lambda function in front of the shipping team's queue and configure it to read and then delete messages that are not DELIVERY."
+   },
+   {
+    "label": "D",
+    "text": "Let the shipping team's queue receive all messages, and have the consumer application check orderType just before processing and skip those that do not apply."
+   }
+  ],
+  "explanation": "The correct answer is to attach a message attribute and set a filter policy on the shipping team's subscription. A per-subscription filter policy makes SNS deliver only messages that match the condition to the subscriber, so unnecessary deliveries are reduced without consumer code, and the publisher only needs to add one attribute. Splitting the topic greatly changes the publisher code and configuration. A filtering Lambda function adds steps of reading and deleting after messages are put in the queue, which increases cost and operational burden. Having the consumer skip messages still incurs delivery and receipt costs and requires changing consumer code."
+ },
+ {
+  "number": 65,
+  "domain": "Security",
+  "prompt": "An internal management portal signs in through an Amazon Cognito user pool. Users in the admin group must be able to write to a specific Amazon S3 bucket, and users in the viewer group must only read. The browser calls Amazon S3 directly with the AWS SDK, and an IAM user cannot be created for each user. The portal has hundreds of users and only two groups, and the security team wants no code deployment to be required when permissions change. After signing in to the user pool, the browser receives temporary credentials from an identity pool. Administrators can directly change the permission policies of the two roles in IAM. Which configuration has the LEAST operational overhead while enforcing permissions on the server side?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Create two IAM users, one per group, put each access key in the web app bundle, and have the app call S3 with the key that matches the signed-in group."
+   },
+   {
+    "label": "B",
+    "text": "Give write permission to a single authenticated role of the identity pool, and implement the web app code to hide the upload button if the user is in the viewer group."
+   },
+   {
+    "label": "C",
+    "text": "Assign an IAM role to each user pool group, and configure the identity pool's authenticated role selection as Choose role from token."
+   },
+   {
+    "label": "D",
+    "text": "Create, deploy, and operate yourself a separate authentication API in which an AWS Lambda function checks the group at each sign-in, issues IAM user access keys, and returns them to the browser."
+   }
+  ],
+  "explanation": "When an IAM role is assigned to a user pool group, it is carried in the cognito:roles and preferred_role claims of the ID token, and if the identity pool is configured to choose the role from the token, temporary credentials for the role that matches the group are issued, so S3 access is enforced by IAM. Putting keys in the bundle exposes long-term keys. Hiding a button is only UI and does not enforce permissions. A separate API that issues keys leaves the burden of operating it yourself and the long-term credential problem."
+ }
+]

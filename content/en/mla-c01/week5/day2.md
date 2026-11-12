@@ -103,7 +103,7 @@ Next we see debugging and profiling—looking inside at how training runs, where
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 학습할 모델은 단일 GPU 메모리에 충분히 들어가지만, 데이터셋이 매우 커서 한 GPU로는 학습이 며칠 걸린다. 가장 적합한 분산 전략은?
 

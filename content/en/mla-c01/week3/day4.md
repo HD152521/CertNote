@@ -94,7 +94,7 @@ Next, we'll comprehensively review this week's feature engineering and data qual
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 대출 승인 모델을 만들기 전에 데이터가 성별 그룹 간 균형 잡혀 있는지, 긍정 레이블 비율에 차이가 없는지 측정하려 한다. 적합한 도구와 단계는?
 

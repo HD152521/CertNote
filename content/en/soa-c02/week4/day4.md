@@ -273,7 +273,7 @@ Three key exam/ops points: First, Audit Manager automates evidence collection, n
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 외부 감사 회사가 PCI-DSS 감사를 위해 지난 6개월간의 IAM 정책 변경 이력, RDS 암호화 상태, MFA 적용 현황을 모두 요청했다. 운영팀이 최소 노력으로 이 요구사항을 충족하는 방법은?
 

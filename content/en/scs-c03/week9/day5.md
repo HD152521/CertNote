@@ -113,7 +113,7 @@ These signals connect to *actual isolation, forensics, recovery* workflows next 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 인터넷에 노출된 EC2가 침해된 것으로 보인다. 50개 계정 조직에서 (a) 사전에 약점을 알고, (b) 공격을 탐지하고, (c) 근본원인을 조사하고, (d) 자동으로 격리·티켓팅하려 한다. 가장 적절한 통합 설계는?
 

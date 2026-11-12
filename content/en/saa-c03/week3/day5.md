@@ -223,7 +223,7 @@ Additionally required:
 
 ---
 
-## 📝 시나리오 연습 문제
+## 📝 Scenario Practice Questions
 
 **문제 1.** A global e-commerce platform runs in the AWS Seoul region. Design an architecture that satisfies all of the following requirements.
 - Traffic is 5× normal on weekdays from 08:00 to 18:00

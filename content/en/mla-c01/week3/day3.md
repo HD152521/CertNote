@@ -103,7 +103,7 @@ Next, we examine whether prepared data is fair and balanced—data bias, quality
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A real-time recommendation service must query latest features for a user in milliseconds every time they open a page. What's suitable in SageMaker Feature Store?
 

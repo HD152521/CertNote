@@ -24,7 +24,7 @@ This table on hand, scenarios become clear. Each scenario tests "which axis hold
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 (Continuing with all 12 integrated scenario problems in Korean...)
 

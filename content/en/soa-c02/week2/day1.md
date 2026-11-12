@@ -258,7 +258,7 @@ Tomorrow: **CloudWatch Logs**, paired with metrics. We explore log groups, strea
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** How do you collect EC2 memory usage alarm?
 

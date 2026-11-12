@@ -110,7 +110,7 @@ Next, we explore SageMaker Feature Store for storing, sharing, and consistently 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A data scientist wants to design preprocessing by clicking GUI alone for missing imputation, One-Hot encoding, scaling, and visualizing distribution quickly. Most suitable tool?
 

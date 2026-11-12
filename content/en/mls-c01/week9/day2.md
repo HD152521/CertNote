@@ -120,7 +120,7 @@ Tomorrow we shift from classification to regression model metrics — RMSE, MAE,
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 분류 모델의 임계값을 0.5에서 0.3으로 낮췄다. 일반적으로 일어나는 변화는?
 

@@ -1,0 +1,55 @@
+{
+  "difficulty": "Specialty · Hands-on experience in the relevant domain recommended",
+  "prerequisites": "None (recommended: 5 years of IT security experience and 2 years of securing AWS workloads)",
+  "format": "Multiple-choice, multiple-response, ordering, and matching",
+  "languages": [
+    "English",
+    "Korean",
+    "Japanese",
+    "Portuguese (Brazil)",
+    "Simplified Chinese",
+    "Spanish (Latin America)"
+  ],
+  "domains": [
+    {
+      "name": "Detection"
+    },
+    {
+      "name": "Incident Response"
+    },
+    {
+      "name": "Infrastructure Security"
+    },
+    {
+      "name": "Identity and Access Management"
+    },
+    {
+      "name": "Data Protection"
+    },
+    {
+      "name": "Security Foundations and Governance"
+    }
+  ],
+  "faq": [
+    {
+      "q": "How many questions are on the SCS-C03 exam, and how long is it?",
+      "a": "SCS-C03 has 65 questions and a time limit of 170 minutes. Questions are multiple-choice, multiple-response, ordering, and matching."
+    },
+    {
+      "q": "What is the passing score?",
+      "a": "A score of 750 or higher out of 1000 is required to pass. Scores are scaled to account for question difficulty, so they are not the same as a simple percentage of correct answers."
+    },
+    {
+      "q": "How much does the exam cost, and how do I register?",
+      "a": "The exam fee is US $300. You can take it through Pearson VUE at a test center or as an online proctored exam. There is no free retake, so you pay the full fee each time you sit the exam."
+    },
+    {
+      "q": "How long is the certification valid, and how do I recertify?",
+      "a": "The certification is valid for 3 years after you pass, and you must recertify before it expires. Passing the exam earns you a 50% discount voucher for your next exam, which you can use to recertify or to take another AWS certification."
+    },
+    {
+      "q": "Can I take the exam in Korean?",
+      "a": "Yes. The exam is offered in 6 languages, including Korean. You can choose your language when you register for the exam."
+    }
+  ]
+}

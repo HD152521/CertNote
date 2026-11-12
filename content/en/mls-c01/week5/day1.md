@@ -114,7 +114,7 @@ Today's essentials: (1) Before computing means, examine **distribution shape (sk
 
 Next, we examine relationships between variables—correlation and causation.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 오른쪽으로 길게 치우친 소득 분포에 표준화(StandardScaler)를 적용했다. 결과로 옳은 것은?
 

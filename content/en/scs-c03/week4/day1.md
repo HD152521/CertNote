@@ -171,7 +171,7 @@ In multi-account (Organizations) environments, enforce Web ACL consistently via 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Web ACL의 규칙들이 평가되는 방식으로 옳은 것은?
 

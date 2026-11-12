@@ -77,7 +77,7 @@ With that, we finish the billing, pricing, and support domain. Once you've made 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** It's certain your workload runs stably all year, and you want a commitment discount, but you also want the discount to be preserved even if you change the instance type and Region. Which pricing model is the best fit?
 

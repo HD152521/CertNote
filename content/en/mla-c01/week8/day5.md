@@ -74,7 +74,7 @@ Next week: ML solution monitoring and maintenance depth — security and governa
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 운영 중 모델의 실제 정답 레이블을 수집할 방법이 전혀 없는 상황에서 모델 성능 저하를 조기에 감지하려 한다. 가장 적절한 조합은?
 

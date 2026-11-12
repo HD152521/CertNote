@@ -126,7 +126,7 @@ Next, we explore the four DR strategies—Backup & Restore, Pilot Light, Warm St
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You want to send users worldwide to whichever region gives them the lowest latency, while making sure that during a regional failure only healthy regions answer. Which Route 53 configuration fits best?
 

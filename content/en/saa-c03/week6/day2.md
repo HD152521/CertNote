@@ -280,7 +280,7 @@ Tomorrow we cover Step Functions, which weaves multiple Lambda functions and ser
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You want to provide an external API to partner companies while applying a per-partner limit of 10,000 requests per month and a 50 TPS cap. What is the most suitable API Gateway configuration?
 

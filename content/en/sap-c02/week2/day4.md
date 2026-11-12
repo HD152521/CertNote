@@ -208,7 +208,7 @@ Next article presents **Week 2 integrated scenarios 12 questions**. Organization
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 100 AWS accounts + Okta IdP + console/CLI SSO. Best?
 

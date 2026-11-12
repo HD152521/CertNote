@@ -137,7 +137,7 @@ Next, we look at the actual built-in algorithms for this Training Job and their 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 학습 비용을 최대한 줄이고 싶지만, 인스턴스가 중간에 회수되어 학습이 중단되어도 진행 상황을 잃지 않고 재개되어야 한다. 가장 적합한 구성은?
 

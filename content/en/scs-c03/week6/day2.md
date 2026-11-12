@@ -101,7 +101,7 @@ You can set it at both account and bucket levels, and **account-level BPA overri
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** SSE-S3 대신 SSE-KMS를 선택해야 하는 가장 본질적인 이유는?
 

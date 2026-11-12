@@ -90,7 +90,7 @@ SAP exam common mappings: (1) "extract receipts/invoices" → Textract AnalyzeEx
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 사내 위키와 SharePoint에 흩어진 문서를 직원이 "작년 출장비 정산 규정이 뭐야?" 같은 자연어로 질문해 검색하게 하고, 문서별 접근 권한도 반영해야 한다. 가장 적합한 서비스는?
 

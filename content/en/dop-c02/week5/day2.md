@@ -415,7 +415,7 @@ StackSets (SERVICE_MANAGED + OrganizationsAutoDeployment) with CodePipeline can 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Tooling 계정의 CodePipeline이 Prod 계정에 CloudFormation 스택을 배포한다. "CloudFormation API 호출은 성공하지만 스택 내 ECS Task Definition 생성이 실패한다"는 문제의 원인으로 가장 가능성 높은 것은?
 

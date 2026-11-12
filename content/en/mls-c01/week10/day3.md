@@ -91,7 +91,7 @@ ml.inf1 / ml.inf2  : Inferentia. High-throughput, cost-efficient inference
 
 Inference optimization splits three ways: "change the model" (quantization, pruning, distillation, Neo), "change the hardware" (Inferentia, Elastic Inference, instance choice), and "change the structure" (inference pipelines, batching). In exams, identify whether cost/latency/throughput is the goal, then match the tool. Tomorrow covers safe deployment: A/B testing, blue/green, canary, shadow, and rollback.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 학습된 PyTorch 모델을 ARM 기반 엣지 디바이스에 배포하면서 추론 지연을 줄이고 메모리 사용을 낮추되 정확도는 유지하고 싶다. 가장 적합한 도구는?
 

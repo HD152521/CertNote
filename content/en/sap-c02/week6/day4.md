@@ -208,7 +208,7 @@ Judge every exam scenario with this map:
 
 > 🎯 **Scenario**: "On-premises data center has 3,000 servers. IT team doesn't know which apps run where. Need server inventory and DB complexity assessment, submit 5-year TCO report to executives, then secure enterprise migration funding." → ADS (inventory) + Fleet Advisor (DB complexity) + Migration Evaluator (TCO) + MAP (funding and program).
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A JBoss Java EE app is running on-premises. You want to migrate to EKS without modifying code, auto-generating container image and EKS manifest. Most suitable tool?
 

@@ -97,7 +97,7 @@ Link detection to response for consistent protection without ops burden.
 - Lake Formation data filter: exclude sensitive columns/rows entirely.
 - Regulation-tool map: GDPR delete (Iceberg DELETE), PCI (tokenization), detect (Macie), audit (CloudTrail).
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 수천 개의 S3 버킷 중 어디에 신용카드 번호·주민번호가 저장돼 있는지 모른다. 민감 데이터의 위치와 유형을 자동으로 발견하는 서비스는?
 

@@ -220,7 +220,7 @@ The combination of S3 + Athena + Glue Data Catalog is the standard architecture 
 
 S3 performance optimization is not simply about being "fast" but is a design problem of balancing throughput, latency, and cost. Multipart, Transfer Acceleration, Byte-Range, S3 Select, CloudFront OAC — once you understand which tool is optimal in which situation, you can naturally solve the scenario questions on the exam.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** What method must you use when uploading an S3 object exceeding 5GB? And what is the minimum size of each part in a multipart upload? (excluding the last part)
 

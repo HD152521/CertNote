@@ -163,7 +163,7 @@ The SG is stateful · ENI · Allow-only; the NACL is stateless · subnet · Allo
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** An instance called external HTTP on port 80, but no response comes back. The SG allows outbound 80. How should the NACL be configured?
 

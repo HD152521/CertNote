@@ -126,7 +126,7 @@ CloudTrail is a recording tool, but combined with **CloudWatch Logs** or **Event
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** S3 버킷에서 특정 객체를 누가 다운로드했는지 추적하려는데 기본 multi-region trail에 해당 `GetObject` 호출이 보이지 않는다. 원인과 해결로 옳은 것은?
 

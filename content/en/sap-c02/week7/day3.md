@@ -248,7 +248,7 @@ Tomorrow we cover service mesh and service discovery. ECS Service Connect, AWS C
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 SaaS가 ECS Fargate로 백오피스 API를 운영한다. 평균 트래픽은 5 Task로 충분하지만 마케팅 캠페인 때 30 Task까지 폭증한다. 1년 약정 가능, 일부 회수 허용. 비용 최적 구성은?
 
@@ -348,7 +348,7 @@ Fargate Task: average 60% utilization, 24/7 operation. 8 Tasks always-on. 1-year
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 1. **Fargate billing = vCPU·hours + memory·hours**, per-second minimum 1-minute, **image pull time billed**
 2. **vCPU-memory matrix**: 0.5 vCPU = 1-4GB, 1 vCPU = 2-8GB etc., EC2 family ratios exposed

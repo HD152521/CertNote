@@ -78,7 +78,7 @@ SAP exam frequent mappings: (1) "Auto-identify RTO/RPO gap + recommendations + C
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 팀이 워크로드의 현재 RTO/RPO가 목표를 충족하는지 자동으로 평가받고, 격차를 메우는 구체적 권고를 받아 CI/CD 파이프라인에서 복원력을 게이트로 강제하려 한다. 가장 적합한 도구는?
 

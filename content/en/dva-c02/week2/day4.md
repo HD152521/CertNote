@@ -388,7 +388,7 @@ In the next article, we pull all of Week 2 together and look at the real integra
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company wants to run a Blue/Green canary deployment with an ALB. What is the correct configuration?
 
@@ -486,7 +486,7 @@ D) The two LBs' health checks are identical
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 1. ALB is L7 (HTTP path/host/header/cookie routing, ACM integration, Lambda targets), NLB is L4 (TCP/UDP/TLS, static EIP, microsecond latency), GWLB is for inserting security appliances.
 2. A target group is a health-check-based stateful state machine. Combine it with an ASG via `HealthCheckType=ELB` and you get self-healing.

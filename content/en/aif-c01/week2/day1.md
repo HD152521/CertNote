@@ -81,7 +81,7 @@ Tomorrow we dive deeper into "data" itself, the fuel of this lifecycle. We'll co
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** ML 수명주기에서 데이터를 모은 직후, 모델 학습 전에 반드시 거쳐야 하는 단계는?
 

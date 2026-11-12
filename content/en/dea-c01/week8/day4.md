@@ -69,7 +69,7 @@ Typical pattern: EMR core nodes On-Demand/committed for stability, task nodes Sp
 - Auto scaling (Glue Auto Scaling, EMR Managed Scaling, Kinesis On-Demand) absorbs variation; baseline sizing first.
 - Spot (task nodes) + committed (baseline) mix; scan-billed services cut costs via Parquet, partitions, workgroup limits.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 데이터 팀이 프로젝트별·환경별 AWS 비용을 분해해서 보고 싶을 때 가장 먼저 해야 할 일은?
 

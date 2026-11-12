@@ -126,7 +126,7 @@ You can achieve the same result wiring CodePipeline, CodeBuild, and EventBridge 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** ML 팀이 MLOps에 필요한 소스 저장소, 빌드/배포 파이프라인, Model Registry를 미리 구성된 템플릿으로 한 번에 프로비저닝하려 한다. 가장 적합한 것은?
 

@@ -90,7 +90,7 @@ In the next article, we'll look at the messaging services that **loosely connect
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company wants to migrate its existing on-premises Oracle database to AWS with minimal changes. Which service is most appropriate?
 

@@ -170,7 +170,7 @@ Next we look at another face of secrets: not secret storage but **user authentic
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Production RDS MySQL password must auto-rotate every 30 days. What is the best service?
 

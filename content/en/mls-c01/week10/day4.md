@@ -105,7 +105,7 @@ Deployment isn't "launch or fail." A/B tests both (comparison). Blue/Green flips
 
 Next: Post-deployment — monitoring for drift.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 새 추천 모델을 실제 사용자에게 전혀 노출하지 않은 채, 프로덕션 트래픽에 대해 응답과 지연을 운영 모델과 비교 검증하고 싶다. 가장 적합한 전략은?
 

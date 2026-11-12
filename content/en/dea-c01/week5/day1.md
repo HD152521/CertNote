@@ -113,7 +113,7 @@ EMR is a managed big-data cluster where the Core/Task node distinction is key to
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** EMR 클러스터에서 비용을 절감하기 위해 스팟 인스턴스를 적용하려 한다. 데이터 손실 위험 없이 스팟을 쓰기에 가장 적합한 노드는?
 

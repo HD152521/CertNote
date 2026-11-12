@@ -297,7 +297,7 @@ The next article explores **ChatOps and Incident Manager** — when humans do ne
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** MAPE-K 루프의 순서와 AWS 서비스 매핑으로 옳은 것은?
 
@@ -395,6 +395,6 @@ D) FIS는 프로덕션에 쓸 수 없다
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, **MAPE-K**(Monitor-Analyze-Plan-Execute-Knowledge)는 자기 치유 루프의 틀로, AWS 서비스들이 각 단계를 구현한다. 둘째, **자동 치유 액션 티어**는 Tier 1(재시작·안전)부터 Tier 5(블루-그린·위험)까지 트레이드오프를 반영하고, 단계적 에스컬레이션으로 안전을 지킨다. 셋째, **안전망**(Automation Circuit Breaker, exponential backoff, execution count, change window)은 자동 치유 폭주를 막는다. 넷째, **FIS(Fault Injection Simulator)**는 실제 장애가 오기 전에 회복 절차를 검증하는 능동적 카오스 테스트다. 다섯째, 규모 확대에 따라 인간 중심에서 시스템 중심으로 전환하면 복구 시간을 분 단위에서 초 단위로 단축하고, 고객 경험을 "중단"에서 "투명한 치유"로 변모시킨다.

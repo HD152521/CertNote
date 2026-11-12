@@ -319,7 +319,7 @@ cache:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A build in CodeBuild VPC mode fails with an "ENI creation failed" error. What is the most likely cause?
 

@@ -108,7 +108,7 @@ Next we synthesize Week 5—custom training, distributed training, debugging·pr
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 사기 거래가 전체의 1%인 매우 불균형한 데이터셋에서 모델을 평가한다. 모델 성능을 판단하는 지표로 가장 부적절한 것은?
 

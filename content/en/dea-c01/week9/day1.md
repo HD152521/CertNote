@@ -93,7 +93,7 @@ Sharing data between AWS accounts:
 
 > 💡 **Related Theory**: Cross-account access requires trust policy (source) + permission policy (target) + (if encrypted) KMS key policy — three layers aligned.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 분석가가 Athena로 Glue 카탈로그 테이블을 조회하려는데 "Insufficient permissions" 오류가 발생한다. IAM 정책에는 `athena:*`, `glue:GetTable`, `s3:GetObject`가 모두 허용돼 있다. 가장 가능성 높은 원인은?
 

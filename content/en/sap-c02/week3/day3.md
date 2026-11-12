@@ -243,7 +243,7 @@ Site-to-Site VPN is the most frequently used hybrid connectivity solution in AWS
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Emergency situation: must connect on-premises data center and AWS immediately (within minutes). Direct Connect provisioning is underway but 6 weeks remain. Most suitable temporary connection:
 

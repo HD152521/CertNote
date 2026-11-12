@@ -104,7 +104,7 @@ In the next article we look at the governance layer that reports, forecasts, and
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** EC2 instances in a private subnet read and write large amounts of data to S3, and the NAT Gateway's data processing cost has spiked. What is the most effective cost-saving measure?
 

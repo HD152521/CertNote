@@ -80,7 +80,7 @@ SAP exam frequent mappings: (1) "RTO/RPO in minutes + global" → **Aurora Globa
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 글로벌 서비스가 여러 리전에서 동시에 읽고 쓰며, 한 리전이 장애가 나도 다른 리전에서 끊김 없이 쓰기를 계속 받아야 한다. 일시적 데이터 불일치는 비즈니스적으로 허용된다. 가장 적합한 데이터베이스는?
 

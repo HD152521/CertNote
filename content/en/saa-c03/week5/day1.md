@@ -225,7 +225,7 @@ Tomorrow we cover Aurora, which stands on RDS's foundation but chose a completel
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company runs RDS MySQL, and its read traffic is 10× its write traffic. What is the most suitable way to increase read throughput without sacrificing write performance?
 

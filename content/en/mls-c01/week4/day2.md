@@ -111,7 +111,7 @@ Remedies: remove one correlated feature, combine via PCA, or soften via L2 regul
 - **Feature importance**: Impurity-based (biased), Permutation/SHAP (more reliable)
 - **Multicollinearity**: Diagnose via correlation/VIF, deadly for linear models, ignorable for trees
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 수천 개의 특성을 가진 데이터에서 모델을 학습하기 전에 가장 빠르게 무관한 특성을 1차로 걸러내고 싶다. 어떤 접근이 가장 적합한가?
 

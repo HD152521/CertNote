@@ -5,6 +5,7 @@ import { cn } from '@/lib/cn';
 export interface DomainScore {
   slug: string;
   domain: string;
+  domainLabel?: string;
   total: number;
   correct: number;
   rate: number;
@@ -28,7 +29,7 @@ export function ExamDomainScores({ rows, passMark, multiCert, lang, onRetryWeak 
   const weak = weakDomains(rows, passMark);
   const en = lang === 'en';
   // 셋 이상이면 이름 대신 개수 — 버튼이 세 줄로 늘어나지 않게.
-  const what = weak.length <= 2 ? weak.map((d) => d.domain).join(', ') : (en ? `${weak.length} domains` : `${weak.length}곳`);
+  const what = weak.length <= 2 ? weak.map((d) => d.domainLabel ?? d.domain).join(', ') : (en ? `${weak.length} domains` : `${weak.length}곳`);
   return (
     <section className="rounded-lg border border-border bg-bg-elevated p-4 sm:p-5" aria-labelledby="exam-domain-title">
       <div className="mb-3 flex items-baseline justify-between gap-3">
@@ -43,7 +44,7 @@ export function ExamDomainScores({ rows, passMark, multiCert, lang, onRetryWeak 
               <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
                 <span className="text-fg">
                   {multiCert && <span className="mr-1.5 font-mono text-[11px] uppercase text-fg-faint">{d.slug}</span>}
-                  {d.domain}
+                  {d.domainLabel ?? d.domain}
                 </span>
                 <span className={cn('tabular-nums', low ? 'text-danger' : 'text-success')}>
                   {d.rate}% <span className="text-xs text-fg-faint">({d.correct}/{d.total})</span>

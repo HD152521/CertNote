@@ -129,7 +129,7 @@ Next post covers the principles in practice: **validation design — splitting, 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 이탈 예측 모델에서 한 특성 `해지_사유_코드`의 중요도가 비정상적으로 높고 검증 정확도가 99%였다. 이 현상의 가장 유력한 원인은?
 

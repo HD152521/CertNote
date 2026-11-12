@@ -117,7 +117,7 @@ Next we see SageMaker AutoML, which automatically optimizes this chosen algorith
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 100개의 특성을 가진 정형 테이블 데이터로 고객 이탈 여부(이진 분류)를 예측하려 한다. 별도 코드 작성 없이 빠르게 강력한 모델을 만들려면 가장 적합한 빌트인 알고리즘은?
 

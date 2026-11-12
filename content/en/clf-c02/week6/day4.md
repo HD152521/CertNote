@@ -77,7 +77,7 @@ Most CLF-C02 questions throw out **keywords describing a situation** and ask for
 
 The translation table and confused pairs are the parts that most quickly turn into points on exam day. Read the table over and over until seeing a keyword makes the service pop up reflexively. Tomorrow we finish with an exam-day final checklist.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** To "securely grant an EC2 instance permission to access an S3 bucket without storing credentials in the code," what should you use?
 

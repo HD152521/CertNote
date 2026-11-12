@@ -385,7 +385,7 @@ Tomorrow we review all of week 6, cementing the selection criteria for Lambda, A
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A development team is building an application on Kubernetes and plans to deploy the same workload on-premises, on GCP GKE, and on AWS. Which is the most suitable container orchestration service on AWS?
 

@@ -153,7 +153,7 @@ Design principle: **Externalize state as much as possible.** Store sessions in D
 
 > 🎯 **Scenario**: A SaaS company specifies "RTO 4 hours, RPO 1 hour" as requirements while saying "minimize cost." This condition is achievable with Backup & Restore. If Warm Standby appears in options and you choose it just because it offers better RTO, you've ignored the "minimize cost" keyword. Pro exams always factor cost-efficiency between "good enough solutions" and "over-engineered ones."
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A global financial service operates Aurora PostgreSQL in us-east-1. It wants to set up a DR region in eu-west-1 requiring RPO < 1 second and RTO < 1 minute. Cost is not a major constraint. Which configuration is most suitable?
 

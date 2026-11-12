@@ -89,7 +89,7 @@ KMS "provides computation without letting keys leave the HSM," controls usage wi
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 보안팀이 "키 정책을 직접 편집해 세밀한 접근 통제를 적용하고, 키 회전 주기를 통제하며, 다른 계정과 키를 공유해야 한다"고 요구한다. 어떤 종류의 키를 써야 하는가?
 

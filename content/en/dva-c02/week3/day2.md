@@ -325,7 +325,7 @@ In the next article, we cover the Lambda deployment lifecycle — environment va
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Which correctly describes the SQS integration in Lambda ESM (Event Source Mapping)?
 

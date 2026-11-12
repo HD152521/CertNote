@@ -96,7 +96,7 @@ Next: containers scale to 100+ microservices, **large-scale ECS/EKS ops** at dep
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 온프레미스 데이터센터의 방화벽이 인바운드를 차단하는 환경에서, SSM/CodeDeploy 에이전트가 동작하는 방식과 그 근본 원리는?
 
@@ -210,6 +210,6 @@ D) 멀티 리전 백업이 필수다
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, 방화벽의 인바운드 차단이 Pull 모델(아웃바운드로 끌어오는 SSM/CodeDeploy 에이전트)을 강제하며 이는 연결 방향성의 분산 시스템 원리다. 둘째, 인터넷 없이 AWS에 닿으려면 회선(DX+TGW, DX는 미암호화→MACsec/IPSec)과 엔드포인트(PrivateLink) 두 결정이 필요하고 Route 53 Resolver가 양방향 DNS를 잇는다. 셋째, SSM Hybrid Activation으로 DC 서버를 EC2처럼 관리하되 활성화 토큰(일회성·만료)과 mi-xxxx(영구)를 구분한다. 넷째, CodeDeploy On-Prem이 단일 AppSpec으로 양쪽 배포하되 ASG 통합 불가·정적 인벤토리·주로 In-Place라는 한계가 있다. 다섯째, IAM Roles Anywhere가 정적 키를 X.509 인증서 기반 단명 자격 증명으로 대체한다(Codecov 사건의 교훈, PKI 신뢰 사슬 RFC 5280).

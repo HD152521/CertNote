@@ -280,7 +280,7 @@ Next we see CDK expand to entire AWS ecosystem in Week 9 summary, then Week 10 d
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 (All practice problems in Korean preserved as required)
 
@@ -377,6 +377,6 @@ D) prod에서만 활성화
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, CDK는 코드 → CFN 템플릿 합성 모델로 CFN 거버넌스 자산 자동 활용(LLVM IR 패턴). 둘째, Construct L1/L2/L3는 추상화 세 계단이고 실무는 L2 기본 + 자체 L3 추출. 셋째, `cdk bootstrap`의 5종 IAM Role은 권한 분리 원칙, cfn-exec는 prod에서 좁힐 필요. 넷째, CDK Pipelines self-mutation은 GitOps "파이프라인도 코드" 원칙의 AWS 구현이고 멀티 계정엔 `crossAccountKeys: true` 필수. 다섯째, Aspects + cdk-nag(합성 시점) + Hooks(배포 시점) + Config Rules(배포 후)의 3단 검증 계층, 단계적 rollout이 거버넌스 도입의 표준.

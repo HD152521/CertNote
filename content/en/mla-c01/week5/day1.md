@@ -122,7 +122,7 @@ Next we see distributed training when a model doesn't fit one machine or trainin
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 팀이 PyTorch로 작성한 학습 코드를 SageMaker에서 최소한의 노력으로 돌리려 한다. 환경은 표준 PyTorch면 충분하고 특수한 시스템 패키지는 없다. 가장 적합한 방식은?
 

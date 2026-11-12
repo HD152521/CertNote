@@ -113,7 +113,7 @@ Post-deploy: capture traffic, baseline on clean train data, monitor stats, alarm
 
 Tomorrow: MLOps end-to-end — Pipelines, Registry, governance.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 운영 중인 SageMaker 엔드포인트의 입력 트래픽에서 특정 수치 피처의 평균과 분산이 학습 시점과 크게 달라졌다. 정답 레이블은 며칠 뒤에야 수집된다. 즉시 이 변화를 탐지하기에 가장 적합한 Model Monitor 유형은?
 

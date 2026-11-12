@@ -88,7 +88,7 @@ Remember again that the exam asks "situation → most appropriate service." In p
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You must read and write the session information of millions of users quickly, in milliseconds, and it must scale automatically even during traffic spikes. Which database is most appropriate?
 

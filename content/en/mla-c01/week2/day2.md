@@ -136,7 +136,7 @@ Next, we'll explore how to query data prepared this way using **Athena and Redsh
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A data engineer wants to automatically register thousands of Parquet files in S3 to Glue Data Catalog without manually defining schemas. What is the most suitable tool?
 

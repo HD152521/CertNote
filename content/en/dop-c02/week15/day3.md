@@ -109,7 +109,7 @@ Next: system running well; when it breaks, **serverless incident auto-response**
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** EKS에서 트래픽 급변에 분 단위가 아닌 초 단위로 대응하고, ASG에 고정된 타입이 아니라 파드 요구에 맞는 다양한 인스턴스를 동적으로 띄우며 Spot도 유연하게 쓰려면?
 
@@ -223,6 +223,6 @@ D) Fargate가 항상 더 안전하기 때문
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, ECS Fargate vs EKS는 추상화 수준(편의 vs 제어)의 선택이며 워크로드별 혼합이 성숙한 패턴이다. 둘째, Karpenter는 ASG를 거치지 않고 EC2 직접 + bin-packing 최적화 + consolidation으로 초 단위·동적 인스턴스 선택·Spot 유연 활용을 달성한다. 셋째, GitOps는 Git을 단일 진실로 두는 폐루프 제어(reconciliation)로 드리프트 자동 교정과 git revert 롤백을 주며 빌드/배포를 분리한다. 넷째, EKS Pod Identity가 IRSA의 OIDC 셋업 부담을 없앤 신원 간소화 후속 표준이고, ECS Blue/Green은 CodeDeploy 컨트롤러를 요구한다. 다섯째, Container Insights·ADOT·FireLens가 관찰성 3종(메트릭·로그·트레이스, OpenTelemetry 표준)이며, Graviton(RISC 전력 효율)+Spot이 비용 30~40% 절감의 핵심 레버다(buildx·PDB 주의).

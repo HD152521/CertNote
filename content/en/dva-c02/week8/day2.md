@@ -342,7 +342,7 @@ Next article covers the orchestrator flowing all these steps automatically — *
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** What are the mandatory prerequisites to use CodeDeploy with EC2 instances?
 

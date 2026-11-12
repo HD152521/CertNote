@@ -76,7 +76,7 @@ SAP exam common mappings: (1) "large payload + long inference + per-request" →
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 사용자가 800MB 의료 영상을 업로드하면 모델이 분석하는데 추론에 약 5분이 걸린다. 동기 HTTP 응답은 타임아웃이 나고, 트래픽은 하루 수십 건으로 불규칙하다. 가장 적합한 추론 옵션은?
 

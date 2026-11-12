@@ -78,7 +78,7 @@ After Week 7, you should confidently answer:
 - Can you diagnose learning curve symptoms and decide whether to adjust learning rate, regularization, or transfer learning?
 - Can you select SageMaker built-ins, JumpStart, or Script Mode appropriately?
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 표 형태의 정형 데이터 5,000행으로 이진 분류를 한다. 학습 시간과 데이터가 제한적이다. 1차로 시도할 가장 합리적인 접근은?
 

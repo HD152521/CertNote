@@ -102,7 +102,7 @@ In the next article, we'll look at the last kilometer of this failover — **tra
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company is designing DR for an internal analytics system. It tolerates an RTO of 8 hours and RPO of 4 hours, and must minimize cost. What is the most appropriate strategy?
 

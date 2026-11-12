@@ -289,7 +289,7 @@ CodeGuru Reviewer ML-analyzes PRs to add automated comments. When you associate 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** AWS SSO/페더레이션을 쓰는 회사에서 모든 개발자가 MFA를 강제받는다. CodeCommit에 git push를 가능하게 하는 가장 표준적인 방법은?
 
@@ -411,6 +411,6 @@ D) sunset 정책에 따라 기존 repo가 일정 유예 후 read-only로 자동 
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 CodeCommit의 가치는 "AWS가 만든 Git 호스팅"이라는 외피가 아니라 **Git protocol과 IAM/STS의 결합**이다. 이 결합이 ① 4종의 인증 방식 ② EventBridge 네이티브 이벤트 ③ Approval Rule Template ④ 멀티 계정 Resource Policy 패턴을 모두 가능하게 한다. 2024년 신규 가입 중단 이후 마이그레이션 시나리오가 늘었지만 시험에서는 여전히 빈출 영역이고, GitHub OIDC 페더레이션 패턴이 새로 등장하는 점도 함께 익혀두면 좋다. 내일은 Git 워크플로우 자체(trunk-based vs GitFlow)와 CodeCommit 위에서의 brunch 전략을 더 깊이 본다.

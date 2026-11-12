@@ -65,7 +65,7 @@ Example: "Ingest tens of thousands of events/sec with minimal ops, store as Parq
 - Scenarios: read question → extract constraints → eliminate obvious wrongs → pick best-fit.
 - D-Day: review, not learn. Stay rested and composed.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** DEA-C01 시험의 구성으로 옳은 것은?
 

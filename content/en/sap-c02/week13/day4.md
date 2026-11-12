@@ -90,7 +90,7 @@ SAP exam frequent mappings: (1) "Reduce cost, power, carbon simultaneously with 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 회사가 x86 EC2에서 웹·앱 워크로드를 운영 중이며, 경영진이 비용과 탄소 배출을 동시에 줄이라고 지시했다. 동급 성능을 유지하면서 가장 효과적인 단일 액션은?
 

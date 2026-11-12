@@ -125,7 +125,7 @@ This creates the closed loop of "detect → alert → auto-remediate" operating 
 - Abnormal cost spikes are *security signals* — connect Budgets/Cost Anomaly Detection to threat detection.
 - New account security bootstraps with auto-enable; non-compliance auto-remediates via EventBridge+Lambda/SSM.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 200개 계정의 모든 ALB에 공통 WAF 관리형 규칙을 적용하고, 앞으로 새로 생기는 ALB도 자동으로 보호되게 하려 한다. 가장 적절한 서비스는?
 

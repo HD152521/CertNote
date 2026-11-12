@@ -233,7 +233,7 @@ In the next article, we look at the layer where EC2 accesses disk — EBS, the i
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A developer designed an ECS task so that a Lambda calls a Secrets Manager Interface Endpoint. The Lambda SG's outbound is wide open to 0.0.0.0/0, yet a `ConnectTimeoutError` occurs. What is the most likely cause?
 
@@ -331,7 +331,7 @@ D) When a Lambda is connected to a VPC, DynamoDB calls become impossible
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 1. A Security Group is a per-ENI stateful firewall that tracks 5-tuples in a conntrack table to auto-allow responses. SG → SG self-reference is the standard pattern for intra-cluster communication.
 2. A NACL is a per-subnet stateless ACL that requires explicitly specifying ephemeral port outbound. It has more traps during debugging than an SG.

@@ -90,7 +90,7 @@ Meaning: Consumer lag accumulating, check shard/parallelism/processing logic
 - EMR: YARN memory, container pending, IsIdle for resource/cost, save logs to S3.
 - Kinesis latency core metric: `IteratorAgeMilliseconds`; throttling: ProvisionedThroughputExceeded.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Kinesis Data Streams 컨슈머가 유입 속도를 따라가지 못해 처리 지연이 누적되고 있는지 가장 직접적으로 나타내는 CloudWatch 지표는?
 

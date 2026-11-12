@@ -163,7 +163,7 @@ Next: expanding this standard to on-prem datacenters, **hybrid CI/CD** at depth.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 조직이 단일 계정에서 수십 개 계정으로 분리하는 가장 근본적인 보안·운영상 이유는?
 
@@ -277,6 +277,6 @@ D) Golden Path는 Service Catalog 없이는 존재할 수 없다
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, 계정 분리는 격벽·폭발 반경 축소라는 분산 시스템 회복성 원칙의 조직 적용이며, OU 트리로 SCP(권한 상한·Deny 가드레일)를 상속시킨다. 둘째, Landing Zone/Account Factory(AFT)가 계정을 코드로 찍어내 선언적·불변 인프라 사상을 계정 수준으로 끌어올리고 표준 베이스라인을 자동 부착한다. 셋째, Tooling 계정 Hub-Spoke가 파이프라인을 중앙화하고 cross-account AssumeRole로 권한만 빌려주며, KMS 키 정책 누락(SolarWinds류 공급망 위험과 함께)이 핵심 함정이다. 넷째, Service Catalog(Golden Path)·Permission Boundary(`iam:PermissionsBoundary` 강제)·SCP가 셀프서비스와 거버넌스를 동시에 만족시킨다. 다섯째, Service-Managed StackSets + Auto-Deployment + 위임 관리자가 "모든 계정 + 신규 계정"에 보안 베이스라인을 자동 적용하는 정답이다.

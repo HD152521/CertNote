@@ -134,7 +134,7 @@ Next we look at the defense layer **before requests reach the app** — WAF, Shi
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Mobile app user logs in via Cognito, then uploads photos to their S3 folder directly. Correct flow?
 

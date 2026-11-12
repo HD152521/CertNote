@@ -168,7 +168,7 @@ Next we explore **AWS Config** — the compliance evaluation engine beneath Secu
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 (Same 7 practice problems from Korean original, preserved in Korean)
 

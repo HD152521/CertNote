@@ -88,7 +88,7 @@ Next week: comprehensive wrap-up and exam prep to finish the full course.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 운영 모델이 시간이 지나며 정확도가 떨어진다고 의심되지만 정답 레이블은 즉시 얻을 수 없다. 또한 입력 피처 일부의 통계가 학습 시점과 달라 보인다. 가장 먼저 적용할 모니터링은?
 

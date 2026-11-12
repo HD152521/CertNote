@@ -92,7 +92,7 @@ This is the most important concept. It's split into "security *of* the cloud vs.
 
 Over two days we've compressed all four domains into a review. In particular, the **Shared Responsibility Model**, the **CloudTrail/Config/CloudWatch distinction**, and the **four pricing models** are asked very frequently, so make sure you have them at your fingertips. Tomorrow we'll check our pace with a comprehensive mock exam mixing all four domains.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** In the Shared Responsibility Model, which of the following is always the customer's responsibility?
 

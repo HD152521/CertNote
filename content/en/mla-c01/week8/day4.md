@@ -38,7 +38,7 @@ Continuous learning closes the loop: deploy → monitor → detect drift → aut
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 모델 정확도가 기준선 0.85 아래로 떨어졌을 때 자동으로 재학습 파이프라인을 시작시키려 한다. 가장 적절한 트리거는?
 

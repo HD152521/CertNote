@@ -112,7 +112,7 @@ Next week (Week 15): **Comprehensive Scenarios**. Industry-specific cases: enter
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** RTO 5분·RPO 1초·글로벌 SQL DB
 

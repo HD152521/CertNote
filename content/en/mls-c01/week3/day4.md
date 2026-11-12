@@ -124,7 +124,7 @@ Next, we'll do a comprehensive review of Week 3 (cleaning, feature engineering, 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 코드를 거의 작성하지 않고 시각적으로 결측치 대치·인코딩·스케일링을 적용하고 데이터 품질을 자동 진단하려 한다. 가장 적합한 SageMaker 도구는?
 

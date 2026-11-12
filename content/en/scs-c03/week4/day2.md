@@ -94,7 +94,7 @@ Shield Advanced provides attack metrics to CloudWatch: `DDoSDetected` (0/1), `DD
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Shield Standard와 Shield Advanced의 차이로 옳은 것은?
 

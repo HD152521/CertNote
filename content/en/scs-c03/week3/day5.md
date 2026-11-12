@@ -114,7 +114,7 @@ Next Week 4 examines the second pillar of infrastructure security — edge prote
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 프로덕션 RDS가 인터넷에서 접근 가능하다는 경고를 받았다. 가장 근본적인(표면적이 아닌) 차단 조치는?
 

@@ -187,7 +187,7 @@ Tomorrow we drill into EKS node groups, IRSA, and Karpenter. EKS spreads across 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 글로벌 핀테크가 AWS·GCP·온프레미스 데이터센터에 동일한 K8s 워크로드를 배포한다. 운영팀은 클러스터 컨트롤 플레인 운영(etcd 백업, 버전 업그레이드)의 부담을 AWS에서만큼은 줄이고 싶다. 이 요구를 가장 잘 만족하는 조합은?
 
@@ -287,7 +287,7 @@ ECS Exec provides SSH-free container shell via SSM Session Manager, with all ses
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 1. **ECS = AWS proprietary·free**, **EKS = K8s standard·$0.10/h**, **Fargate = data plane option** (not a separate orchestrator)
 2. ECS's 4 concepts: Cluster / Service / Task / Task Definition + **Task Role** (app) vs. **Execution Role** (infrastructure)

@@ -444,7 +444,7 @@ Automating from CodePipeline?
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Lambda Canary 배포에서 실제로 트래픽이 시프트되는 메커니즘은?
 

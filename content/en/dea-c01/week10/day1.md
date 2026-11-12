@@ -94,7 +94,7 @@ A typical exam scenario flow:
 - Redshift uses DISTKEY/SORTKEY to reduce shuffle and scans, Spectrum to tier S3 data.
 - Centralized fine-grained permissions → Lake Formation; shared metastore → Glue Data Catalog.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 스케줄로 매시간 실행되는 Glue 잡이 S3의 신규 파일만 처리해야 하는데, 매번 전체 데이터를 다시 읽어 비용과 시간이 과도하다. 가장 적절한 해결책은?
 

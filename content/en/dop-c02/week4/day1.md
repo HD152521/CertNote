@@ -250,7 +250,7 @@ GCP Cloud Deploy has multi-stage pipelines built-in to the service and integrate
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** EC2 Blue/Green 배포에서 롤백이 In-place보다 빠른 근본 이유는?
 

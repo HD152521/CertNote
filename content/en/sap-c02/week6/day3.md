@@ -253,7 +253,7 @@ Common issues in heterogeneous DB migration:
     └── Block Oracle connections → begin Aurora operation
 ```
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You need to migrate a 50TB Oracle DB to Aurora PostgreSQL. Zero downtime required, and stored procedures must be converted. Which stages are required?
 

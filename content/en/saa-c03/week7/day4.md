@@ -264,7 +264,7 @@ The next article looks at a decision framework for messaging, event, and streami
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company wants to process clickstream data independently in four places: ① a real-time recommendation model, ② fraud detection, ③ 30-minute window aggregation, and ④ an S3 data lake. It must also be able to re-analyze the same data a few days later. What is the most appropriate infrastructure?
 

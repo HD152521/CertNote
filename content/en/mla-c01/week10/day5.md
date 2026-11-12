@@ -64,7 +64,7 @@ Trust your prep. Answer calmly. Good luck.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** MLA-C01 시험 구성에 대한 설명으로 가장 정확한 것은?
 
@@ -127,7 +127,7 @@ D) 아무 준비 없이 직관에만 의존한다
 ---
 
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1-5** [Practice questions in Korean follow after marker]
 

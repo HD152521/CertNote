@@ -119,7 +119,7 @@ Performance/cost optimization's core: "minimize data read." Columnar formats (Pa
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Athena 쿼리가 대부분 100개 컬럼 중 3~4개만 조회하는데 데이터가 CSV로 저장돼 비용이 높다. 스캔 비용을 가장 효과적으로 줄이는 포맷 전환은?
 

@@ -278,7 +278,7 @@ SNS Fanout Architecture
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** When multiple Lambda functions need to process one event simultaneously?
 

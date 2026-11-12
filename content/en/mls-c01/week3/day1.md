@@ -120,7 +120,7 @@ Next, we'll look at **feature engineering (scaling, encoding, binning)** that tr
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 오른쪽으로 길게 치우친(right-skewed) 소득 변수에 결측치가 있다. 단순 대치로 베이스라인을 만들 때 가장 안전한 선택은?
 

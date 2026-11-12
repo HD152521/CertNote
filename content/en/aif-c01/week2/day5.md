@@ -84,7 +84,7 @@ Next week we enter machine learning and deep learning, plus AWS's AI/ML service 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** ML 수명주기에 대한 설명으로 가장 정확한 것은?
 

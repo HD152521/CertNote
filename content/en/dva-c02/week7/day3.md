@@ -235,7 +235,7 @@ Next article covers Aurora — RDS compatibility but storage/replication layer r
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Game company needs global real-time leaderboard: 100M scores instantly sorted, specific user rank queried < 10ms. Most fitting tool?
 

@@ -372,7 +372,7 @@ In practice, most people use Target Tracking as the baseline and add Predictive 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** An e-commerce platform has a pattern where traffic triples every day at 9 AM and returns to normal at 9 PM. It also experiences sudden additional traffic spikes. What is the most suitable scaling strategy?
 

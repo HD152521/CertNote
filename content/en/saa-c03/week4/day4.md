@@ -357,7 +357,7 @@ Storage Gateway is a hybrid structure where an on-premises app uses AWS storage 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A media company streams 4K video to users worldwide. The origin server is overloaded, and the same video is requested repeatedly from various edges around the world. Which setting minimizes origin load and raises the cache hit ratio?
 

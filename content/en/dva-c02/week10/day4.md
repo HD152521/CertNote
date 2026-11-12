@@ -86,7 +86,7 @@ Next we synthesize Week 10's four services — CloudWatch, X-Ray, CloudTrail, Ev
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** ECS cluster: "host average CPU 30% but one container hits 100%, restarts repeatedly." To detect this, appropriate choice:
 

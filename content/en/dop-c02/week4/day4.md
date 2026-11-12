@@ -379,7 +379,7 @@ CODE_DEPLOY vs ECS controller decision:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** ECS Service에서 Blue/Green 배포를 사용하려면 어떤 deployment controller를 설정해야 하는가?
 

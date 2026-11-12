@@ -159,7 +159,7 @@ In the next article, we look at another key RDS area — encryption, IAM authent
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** When a boto3 client is created with `s3 = boto3.client('s3')`, how is the region determined?
 

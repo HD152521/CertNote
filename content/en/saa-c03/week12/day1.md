@@ -97,7 +97,7 @@ In the next article, we'll re-weave Domain 2, resilience architecture, the same 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** An IAM user has an Identity policy granting read permission on an S3 bucket. However, the SCP of the organization the user belongs to explicitly Denies that S3 action. What is the result?
 

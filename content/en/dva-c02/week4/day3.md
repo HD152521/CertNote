@@ -416,7 +416,7 @@ A **504 Gateway Timeout** occurs when the integration timeout (max 29 seconds) i
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.**  
 A company's internal Lambda function must call an API Gateway REST API in another AWS account. What is the most secure way to authenticate while applying the principle of least privilege to the Lambda function?

@@ -80,7 +80,7 @@ DELETE FROM lake_clean.payments WHERE customer_id = 'GDPR-REQ-2026-042';
 - Data Exchange (transfer) vs Clean Rooms (no-exposure collab).
 - Audit via CloudTrail, object-level needs data-events (billable) enable.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 결제 데이터 플랫폼에서 분석가에게 카드번호는 토큰으로, 자기 지역 행만 노출하고, 새 테이블이 추가돼도 권한이 자동 적용되게 하려 한다. 가장 적절한 조합은?
 

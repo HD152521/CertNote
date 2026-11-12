@@ -141,7 +141,7 @@ Tomorrow we explore **data augmentation and synthesis** techniques to address in
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 팀이 데이터 추출(Glue), 외부 승인 대기, Lambda 후처리, SageMaker 학습을 하나의 흐름으로 묶고 분기·재시도를 선언적으로 관리하려 한다. 가장 적합한 오케스트레이터는?
 

@@ -105,7 +105,7 @@ In the next article we move beyond metrics that tell us "what's slow" but not "w
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** To monitor EC2 instance memory usage in CloudWatch, what's the most appropriate approach?
 

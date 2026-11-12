@@ -149,7 +149,7 @@ CloudWatch is a *first-line detector*: "quantize patterns from single log group,
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** CloudTrail 로그에서 루트 계정 사용을 탐지해 즉시 알림을 보내려 한다. 올바른 구성 순서는?
 

@@ -169,7 +169,7 @@ In the next article we'll look at SNS and the fanout pattern — the answer to t
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A payment service requires that "the same customer's payments are processed exactly once, in the order they occur." Throughput is on the order of tens of requests per second per customer. What is the most appropriate SQS configuration?
 

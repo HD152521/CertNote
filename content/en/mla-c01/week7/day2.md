@@ -137,7 +137,7 @@ Using this ARN to create a model object and deploy to an endpoint completes the 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** SageMaker Model Registry에서 "사기 탐지"라는 한 가지 목적의 모델들을 여러 버전으로 묶어 관리하는 최상위 컨테이너는?
 

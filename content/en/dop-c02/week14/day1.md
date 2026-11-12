@@ -135,7 +135,7 @@ Next time we explore how those accumulated Findings are **unified, normalized, a
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** GuardDuty가 "에이전트 없이(agentless)" 동작할 수 있는 근본 이유는?
 

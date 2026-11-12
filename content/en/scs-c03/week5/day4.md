@@ -88,7 +88,7 @@ Transit encryption's core is *enforcing* TLS (S3 `aws:SecureTransport` Deny, RDS
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** S3 버킷에 대한 *전송 중 암호화를 강제*하라는 요구를 받았다. 가장 정확한 구현은?
 

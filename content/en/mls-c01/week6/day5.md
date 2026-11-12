@@ -100,7 +100,7 @@ Next week (Week 7) moves to actually **training and tuning** models — training
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 다음 중 "데이터 형태와 알고리즘"의 짝이 가장 적절한 것은?
 

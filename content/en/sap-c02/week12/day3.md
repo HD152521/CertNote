@@ -98,7 +98,7 @@ Common SAP exam mappings: (1) "hourly + all items + SQL analysis" → **CUR + At
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** FinOps 팀이 시간 단위로 모든 청구 항목을 SQL로 쪼개 단가(UsageType) 수준의 심층 분석을 하려 한다. 가장 적합한 것은?
 

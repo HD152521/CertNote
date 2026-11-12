@@ -108,7 +108,7 @@ Key policy (required/permanent), IAM (delegated), and grant (temporary/granular)
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** AWS 서비스가 사용자를 대신해 *특정 암호화 컨텍스트에 한해, 임시로, 나중에 취소 가능하게* 키를 쓰도록 허용하되 키 정책 문서는 건드리지 않으려 한다. 가장 적절한 메커니즘은?
 

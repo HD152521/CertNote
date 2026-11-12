@@ -124,7 +124,7 @@ Next week (Week 14) is **Resilience and DR Advanced**: Four DR strategies (Backu
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "운영 부담 최소" + "EC2 → Fargate로 전환". 어느 기둥?
 

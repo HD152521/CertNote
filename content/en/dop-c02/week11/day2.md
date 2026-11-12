@@ -121,7 +121,7 @@ The next article examines **X-Ray's sampling and cost tuning at operational scal
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 초당 2건만 들어오는 결제 API에 FixedRate 5%만 걸었더니, 장애가 난 시점의 trace가 통째로 안 잡혔다. 저트래픽 엔드포인트의 추적 가시성을 보장하는 메커니즘은?
 
@@ -241,6 +241,6 @@ D) 샘플링 비율을 높인다
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, 샘플링은 추적의 필수 전제이고 X-Ray는 Reservoir(초당 최소 보장, 통계학의 reservoir sampling에서 유래) + FixedRate(초과분 비율)로 저트래픽 가시성과 비용을 동시에 잡는다. 둘째, X-Ray는 head-based 샘플링(입구에서 결정·전파)이라 단순·저오버헤드지만 결과 기반 선택이 불가능하며, "에러·느린 trace만 100% 유지"는 ADOT의 tail-based 샘플링으로 보완한다. 셋째, Priority는 규칙 평가 순서(낮은 숫자 먼저, 구체적 규칙 우선, Default 9000은 마지막)이고 reservoir는 계정·리전 전체에서 분산 조율되어 인스턴스 수와 무관하게 총합이 유지된다. 넷째, Group으로 거대한 Service Map을 슬라이스하고 검색 표현식으로 outlier(tail latency·에러 trace)를 질의하되 annotation으로 넣은 필드만 검색된다. 다섯째, X-Ray Insights는 baseline 학습으로 "절대값은 낮지만 비정상"인 초기 열화를 탐지해 고정 임계값의 사각지대를 메운다.

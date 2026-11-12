@@ -114,7 +114,7 @@ Tomorrow: ML security that backs all these pipelines — IAM execution roles, VP
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** SageMaker Pipeline에서 학습된 모델의 검증 AUC가 0.75 미만이면 Model Registry에 등록하지 않고 파이프라인을 중단하고 싶다. 사용해야 할 구성 요소는?
 

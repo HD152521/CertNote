@@ -77,7 +77,7 @@ Domain 3 = problem → algorithm → DL structure → tuning → evaluation. Pic
 
 Tomorrow: Domain 4 (deployment).
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 정형 표 형태의 고객 데이터(수치·범주 혼합, 일부 결측)로 이탈 여부를 예측하려 한다. 가장 먼저 시도할 SageMaker 빌트인 알고리즘으로 가장 적절한 것은?
 

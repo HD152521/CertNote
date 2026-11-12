@@ -156,7 +156,7 @@ Next we deep-dive CloudWatch Logs: how logs organize into groups and streams, ho
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Lambda가 초당 수천 번 호출되는 핫 패스에서 사용자 정의 메트릭을 게시한다. PutMetricData를 매 호출마다 동기로 부르자 API throttling과 응답 지연이 발생했다. 가장 적절한 개선은?
 
@@ -249,6 +249,6 @@ D) Composite Alarm
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, 메트릭의 정체성은 namespace+name+dimensions 전체 조합이며 차원 카디널리티가 곧 메트릭 수이자 비용이다(Prometheus/InfluxDB의 시리즈 개념과 동일). 둘째, 게시 경로 중 Lambda/ECS에서는 EMF가 구조적으로 우월하다 — 메트릭 API 호출 0, 로그/메트릭 통합, 다중 차원 조합 동시 게시, 고카디널리티 식별자는 로그 필드로 분리. 셋째, 알람은 "M out of N" + treat-missing-data라는 디바운싱 모델이고, sparse 지표는 notBreaching, 하트비트는 breaching처럼 지표 의미에 따라 missing 처리를 정반대로 골라야 한다. 넷째, Composite Alarm은 알람의 부울 대수로 증상 상관(symptom-based)을 표현해 노이즈를 줄인다. 다섯째, Anomaly Detection은 계절성 분해로 임계값을 학습하고, Metric Math는 비율 같은 파생 지표를, Metric Streams는 폴링→푸시 전환으로 외부 통합을 해결한다.

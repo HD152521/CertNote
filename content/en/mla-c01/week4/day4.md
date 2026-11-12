@@ -90,7 +90,7 @@ Next we comprehensively review this week (Model Development 1 — SageMaker Trai
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 검증된 텍스트 요약 모델을 거의 코드 작성 없이 빠르게 추론 엔드포인트로 배포하고 싶다. 가장 적합한 SageMaker 기능은?
 

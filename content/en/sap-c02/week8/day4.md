@@ -318,7 +318,7 @@ Next day (week recap) consolidates week 8 with 10 comprehensive scenarios.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 모바일 앱이 "사용자 + 주문 + 배송지 + 결제" 4개 리소스를 한 화면에 보여준다. 클라이언트가 필요한 필드만 받고, 실시간 주문 상태 push도 받아야 한다. Cognito 인증 필수. 가장 적합한 백엔드는?
 
@@ -404,7 +404,7 @@ D) BatchSize=1로 설정
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 1. **AppSync GraphQL**: schema-first + direct resolver(Lambda 없이 DDB) + Subscription(WebSocket) + 5 인증 모드
 2. **SQS Standard**(무한 TPS, 순서 X) vs **FIFO**(300 TPS, 순서 + dedup 5분) + High Throughput FIFO

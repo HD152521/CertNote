@@ -101,7 +101,7 @@ In the next article, we wrap up the final pre-exam checkpoint with a mock exam t
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company runs an RDS MySQL instance 24/7 year-round and wants the largest cost saving. Which commitment should it choose?
 

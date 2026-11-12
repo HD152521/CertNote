@@ -145,7 +145,7 @@ IAM Access Analyzer analyzes bucket policies, ACLs, and Access Points to automat
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 버킷에 IAM 정책은 GetObject를 Allow하지만 버킷 정책에 동일 객체에 대한 명시적 Deny가 있다. 최종 결과는?
 

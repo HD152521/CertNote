@@ -92,7 +92,7 @@ Correct architecture (Week 7 complete integration):
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** S3 데이터 유출 침해를 조사하는데, 어느 자격증명이 민감 객체를 다운로드했는지 CloudTrail에서 찾을 수 없다. 사전에 무엇이 누락됐기 때문인가?
 

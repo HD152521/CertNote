@@ -255,7 +255,7 @@ Connecting what we learned over the week into a single flow:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** `npm install` takes 4 minutes on every build. The build host may differ every time. What is the most effective improvement?
 

@@ -97,7 +97,7 @@ Today we consolidated unsupervised/anomaly builtins: RCF(general anomaly), IP In
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 서버 메트릭 스트림에서 평소와 다른 급변(스파이크)을 실시간으로, 레이블 없이 탐지하려 한다. 가장 적합한 조합은?
 

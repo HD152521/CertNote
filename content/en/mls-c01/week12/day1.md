@@ -86,7 +86,7 @@ Domains 1 & 2 form "data pipeline foundation." Collect (Kinesis), store (S3), tr
 
 Tomorrow: Domain 3 (modeling) review.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** IoT 센서 수천 대가 초당 수만 건의 이벤트를 보내고, 여러 독립 애플리케이션이 같은 스트림을 각자 다른 속도로 읽으며 과거 데이터도 재처리해야 한다. 가장 적합한 수집 서비스는?
 

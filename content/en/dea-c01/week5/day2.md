@@ -131,7 +131,7 @@ Lambda is a lightweight, event-driven, stateless transform tool with 15-minute c
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 매일 S3에 도착하는 단일 200GB 압축 로그 파일을 디코드하고 복잡한 집계를 수행해야 한다. 다음 중 가장 적절하지 않은 선택은?
 

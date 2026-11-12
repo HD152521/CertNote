@@ -156,7 +156,7 @@ Next article explores **IAM Identity Center** that Control Tower auto-enables. P
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "Pre-block S3 bucket becoming public" — Strongest guardrail combo?
 

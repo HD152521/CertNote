@@ -117,7 +117,7 @@ The operations strategy is clear — fine-grained control via SG, absolute-deny 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 엔지니어가 웹 서버 서브넷의 NACL 인바운드에 TCP 443을 0.0.0.0/0으로 허용했다. 그런데 외부에서 HTTPS 응답을 받지 못한다. 가장 가능성 높은 원인은?
 

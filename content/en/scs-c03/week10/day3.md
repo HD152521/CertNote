@@ -139,7 +139,7 @@ Integrated credential exposure playbook
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** IAM 사용자의 액세스 키가 공개 GitHub 저장소에 노출된 것을 발견했다. 정상 운영 중인 워크로드도 같은 키를 쓰고 있다. 가장 적절한 첫 조치는?
 

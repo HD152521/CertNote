@@ -373,7 +373,7 @@ In the next article, we review all of Week 3, checking every Lambda concept with
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** If a Lambda function gets 2,000 requests per second and its average execution time is 300ms, what concurrency is required?
 

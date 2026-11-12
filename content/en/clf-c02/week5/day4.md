@@ -68,7 +68,7 @@ In the next article, we'll review all of Week 5 — pricing models, cost tools, 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company running dozens of AWS accounts wants to combine payment into one bill and aggregate usage to grow volume discounts. Which feature is the best fit?
 

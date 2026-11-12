@@ -120,7 +120,7 @@ Next post reviews this entire week — statistics foundations through validation
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 하이퍼파라미터를 튜닝하면서 테스트셋 점수를 보고 모델을 반복 수정했다. 이때 발생하는 문제는?
 

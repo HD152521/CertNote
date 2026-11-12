@@ -153,7 +153,7 @@ Cost and operations tradeoff:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** S3에 90일치 CloudTrail 로그가 쌓여 있다. 특정 IAM 역할이 지난 7일간 호출한 API를 비용을 최소화하며 조사하려 한다. 가장 적절한 도구와 기법은?
 

@@ -60,7 +60,7 @@ The most common reason for lost points on the exam is not lack of knowledge but 
 - Keywords "serverless, minimal cost" eliminate always-on cluster options immediately.
 - "Most appropriate" beats "possible" — reread constraints when two answers work.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 스트리밍 데이터를 여러 독립 애플리케이션이 각자 컨슈머로 직접 읽고, 24시간 내 데이터를 재처리할 수 있어야 한다. 가장 적합한 서비스는?
 

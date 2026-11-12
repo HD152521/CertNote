@@ -102,7 +102,7 @@ In the next article, we'll look at the **migration tools that actually move data
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A global SaaS wants to send traffic to the region with the **lowest network latency** for users worldwide. What is the most appropriate Route 53 routing policy?
 

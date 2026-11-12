@@ -92,7 +92,7 @@ SAP exam common mappings: (1) "structured 6-pillar workload evaluation" → **WA
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 조직이 Lambda·API Gateway·Step Functions 기반 서버리스 애플리케이션을 운영하며, 콜드 스타트·동시성 한도·실행 시간 같은 서버리스 고유 위험을 WA Tool로 점검하려 한다. 가장 적합한 접근은?
 

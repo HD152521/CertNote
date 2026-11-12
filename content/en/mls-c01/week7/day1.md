@@ -113,7 +113,7 @@ Example: 1000 samples, batch size 100 → one epoch = 10 iterations
 - Forward pass predicts, loss measures error, backprop computes gradients, gradient descent updates
 - Epochs/batches/iterations: distinguish clearly
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 다중 클래스(10개 클래스) 이미지 분류 신경망의 **출력층 활성화 함수**로 가장 적절한 것은?
 

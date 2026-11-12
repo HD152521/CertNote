@@ -92,7 +92,7 @@ Both services bookend data protection. ACM makes the *channel where data moves* 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** EC2 인스턴스에서 직접 TLS를 종단하려 한다. ACM 퍼블릭 인증서를 EC2에 설치하려 했으나 불가능하다. 가장 적절한 대안은?
 

@@ -179,7 +179,7 @@ In the next article we'll look at a problem that's similar to SNS but on a diffe
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company wants an order event to be processed independently by four systems — payment, inventory, shipping, and notification. Even if one system goes down, the processing of the others must be unaffected. What is the most appropriate architecture?
 

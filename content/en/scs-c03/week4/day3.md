@@ -101,7 +101,7 @@ Network Firewall sends **flow logs** (connection metadata) and **alert logs** (s
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** AWS Network Firewall에서 stateless 규칙 그룹과 stateful 규칙 그룹의 차이로 옳은 것은?
 

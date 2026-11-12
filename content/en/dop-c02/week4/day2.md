@@ -428,7 +428,7 @@ Is it On-Premises?
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** CodeDeploy 배포가 진행 중일 때 ASG가 스케일 아웃하면, 새로 추가된 EC2 인스턴스의 코드 버전은?
 
