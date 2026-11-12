@@ -10,6 +10,7 @@ type Level = 'foundational' | 'associate' | 'specialty' | 'professional';
 
 interface Target {
   medianPromptMin: number; // 문제 길이 중앙값 하한(공백 포함 글자 수)
+  promptMin: number; // 어떤 문제도 이보다 짧으면 실제 시험보다 상황이 빈약하다
   multiMin: number; // 복수 선택 비율 하한
   multiMax: number; // 복수 선택 비율 상한
   qualifierMin: number; // 한정어(가장·최소·운영 부담…)가 있는 문제 비율 하한
@@ -17,13 +18,12 @@ interface Target {
 }
 
 const TARGETS: Record<Level, Target> = {
-  foundational: { medianPromptMin: 80, multiMin: 0.05, multiMax: 0.2, qualifierMin: 0.4, choiceAvgMin: 18 },
-  associate: { medianPromptMin: 170, multiMin: 0.1, multiMax: 0.22, qualifierMin: 0.6, choiceAvgMin: 28 },
-  specialty: { medianPromptMin: 200, multiMin: 0.08, multiMax: 0.22, qualifierMin: 0.6, choiceAvgMin: 30 },
-  professional: { medianPromptMin: 250, multiMin: 0.08, multiMax: 0.22, qualifierMin: 0.6, choiceAvgMin: 38 },
+  foundational: { medianPromptMin: 150, promptMin: 100, multiMin: 0.05, multiMax: 0.2, qualifierMin: 0.4, choiceAvgMin: 25 },
+  associate: { medianPromptMin: 330, promptMin: 240, multiMin: 0.1, multiMax: 0.22, qualifierMin: 0.6, choiceAvgMin: 45 },
+  specialty: { medianPromptMin: 380, promptMin: 280, multiMin: 0.08, multiMax: 0.22, qualifierMin: 0.6, choiceAvgMin: 50 },
+  professional: { medianPromptMin: 550, promptMin: 400, multiMin: 0.08, multiMax: 0.22, qualifierMin: 0.6, choiceAvgMin: 80 },
 };
 
-const MIN_PROMPT_CHARS = 40; // 어떤 문제도 이보다 짧으면 개념 한 줄 묻기다
 const SHORT_PROMPT_RATIO = 0.7; // 문제의 80% 는 중앙값 하한의 70% 이상이어야 한다
 const MIN_EXPLANATION_SINGLE = 150;
 const MIN_EXPLANATION_MULTI = 200;
@@ -58,7 +58,7 @@ describe('모의고사 틀 — AWS 자격증 은행', () => {
     test(`수준(${level}): 문제 길이 중앙값이 ${target.medianPromptMin}자 이상이고 개념 한 줄 문제가 없다`, () => {
       const lengths = questions.map((q) => len(q.prompt));
       expect(median(lengths)).toBeGreaterThanOrEqual(target.medianPromptMin);
-      const tooShort = questions.filter((q) => len(q.prompt) < MIN_PROMPT_CHARS);
+      const tooShort = questions.filter((q) => len(q.prompt) < target.promptMin);
       expect(tooShort.map((q) => q.number), '너무 짧은 문제').toEqual([]);
       const floor = target.medianPromptMin * SHORT_PROMPT_RATIO;
       const okRatio = lengths.filter((n) => n >= floor).length / lengths.length;
